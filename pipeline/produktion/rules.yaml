@@ -574,6 +574,14 @@ regeln:
     deckt_ab: "gilt nur für Arbeitskosten"
     quelle: "§ 35a Abs. 5 Satz 2 EStG"
     beschreibung: "Input-Semantik: der uebergebene Handwerkerbetrag enthaelt nur Arbeits-, Fahrt- und Maschinenkosten, kein Material."
+  # Vom Judge im Annahme-Mapping erzwungen: er weigerte sich, die Annahme ueber
+  # `haushaltsnahe_dienstleistungen` auf die Handwerker-Bedingung zu mappen. Zu
+  # Recht - § 35a Abs. 5 Satz 2 spricht von den Absaetzen 2 UND 3. Die Bedingung
+  # oben deckte nur Abs. 3 ab; das hier ist die fehlende Haelfte.
+  - bedingung: dienstleistungsbetrag_enthaelt_nur_arbeitskosten
+    deckt_ab: "nach den Absätzen 2 und 3 gilt nur für Arbeitskosten"
+    quelle: "§ 35a Abs. 5 Satz 2 EStG"
+    beschreibung: "Input-Semantik: der uebergebene Betrag fuer haushaltsnahe Dienstleistungen enthaelt nur Arbeitskosten, kein Material."
   - bedingung: kein_gemeinsamer_haushalt_zweier_alleinstehender
     deckt_ab: "Höchstbeträge nach den Absätzen 1 bis 3 insgesamt jeweils nur einmal"
     quelle: "§ 35a Abs. 5 Satz 4 EStG"

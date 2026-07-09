@@ -30,40 +30,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PIPELINE = os.path.dirname(HERE)
 ROOT = os.path.dirname(PIPELINE)
 sys.path.insert(0, PIPELINE)
+sys.path.insert(0, ROOT)
 
+from yamlstrict import load_yaml, DuplicateKeyError  # noqa: E402
 from cascade import run_candidate  # noqa: E402
 from client import mask_key, RoleCallError  # noqa: E402
 from quellen import build_norm_text, QuellenFehler  # noqa: E402
 import gates as G  # noqa: E402
 
 OUT_ROOT = os.path.join(PIPELINE, "runs", "produktion")
-
-
-class _StrictLoader(yaml.SafeLoader):
-    """YAML-Loader, der doppelte Schluessel meldet statt sie zu ueberschreiben.
-
-    `yaml.safe_load` nimmt bei zwei `test_seed:` im selben Mapping stillschweigend
-    das letzte. Beim Neuschnitt von § 35a blieb ein alter Block stehen und haette
-    unbemerkt die falschen Testfaelle gefahren - die Regel haette mit einem
-    gruenen Test-Gate dagestanden, das eine andere Signatur prueft.
-    """
-
-
-def _no_duplicates(loader, node, deep=False):
-    mapping = {}
-    for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=deep)
-        if key in mapping:
-            raise yaml.constructor.ConstructorError(
-                None, None, f"doppelter Schluessel {key!r} in rules.yaml "
-                            f"(Zeile {key_node.start_mark.line + 1})",
-                key_node.start_mark)
-        mapping[key] = loader.construct_object(value_node, deep=deep)
-    return mapping
-
-
-_StrictLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _no_duplicates)
 
 
 def build_candidate(rule: dict) -> dict:
@@ -114,6 +89,7 @@ def regate(rules: list[dict]) -> int:
         if verdict and not verdict.get("parse_error"):
             fresh["scope_gap"] = G.scope_gap_gate(verdict)
             fresh["geltungsbereich"] = G.geltungsbereich_gate(verdict, cand)
+            fresh["roundtrip"] = G.roundtrip_gate(verdict, cand)
         vorhanden = {g["name"] for g in rep["gates"]}
         for g in rep["gates"]:
             if g["name"] in fresh:
@@ -131,9 +107,12 @@ def regate(rules: list[dict]) -> int:
         rep["failed_gates"] = [g["name"] for g in rep["gates"]
                                if g["status"] == G.FAIL and not g["name"].endswith("_first")]
         rep["queue_status"] = _queue_status(rep["gates"], rule)
+        rep["bedingungen"] = [b["bedingung"] for b in rule.get("geltungsbedingungen", [])]
+        rep["annahmen_mapping"] = (rep.get("judge_verdict") or {}).get("stille_zusatzannahmen", [])
         rep["regated"] = True
         json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-        print(f"  {rule['rule_id']}: {rep['queue_status']} "
+        bed = f" unter {len(rep['bedingungen'])} Bedingung(en)" if rep["bedingungen"] else ""
+        print(f"  {rule['rule_id']}: {rep['queue_status']}{bed} "
               f"(offene Gates: {', '.join(rep['failed_gates']) or 'keine'})")
     print(f"\n{changed} Gate-Ergebnis(se) geaendert, keine Modellkosten.")
     return 0
@@ -195,7 +174,8 @@ def redo_a(rules: list[dict], dry_run: bool) -> int:
                 syn, tc = G.syntax_gate(src_a, mod_a), G.typecheck_gate(src_a, mod_a)
 
         j_text, pj = R.roundtrip(client, roles["judge"], cand["norm_text"], src_a or "",
-                                 models_hash, signature=cand["signature"])
+                                 models_hash, signature=cand["signature"],
+                                 geltungsbedingungen=cand["geltungsbedingungen"])
         cost += pj.cost_usd
         verdict = G.roundtrip_parse(j_text)
 
@@ -203,7 +183,7 @@ def redo_a(rules: list[dict], dry_run: bool) -> int:
                  "typecheck_a_first": G.GateResult("", first[1], "erster Versuch"),
                  "syntax_a": syn, "typecheck_a": tc,
                  "equivalence": G.equivalence_gate(src_a, src_b, cand),
-                 "roundtrip": G.roundtrip_gate(j_text),
+                 "roundtrip": G.roundtrip_gate(verdict, cand),
                  "scope_gap": G.scope_gap_gate(verdict),
                  "geltungsbereich": G.geltungsbereich_gate(verdict, cand),
                  "clerk": G.clerk_gate(src_a, mod_a, cand, ROOT)}
@@ -231,6 +211,62 @@ def redo_a(rules: list[dict], dry_run: bool) -> int:
     return 0
 
 
+def redo_judge(rules: list[dict], dry_run: bool) -> int:
+    """Nur den Judge neu laufen lassen. Formalisierungen bleiben unangetastet.
+
+    Noetig, wenn sich das Judge-Template aendert (hier: roundtrip_diff@4 verlangt
+    ein explizites Mapping jeder Zusatzannahme auf eine Bedingungs-ID). Alte
+    Verdikte tragen das Mapping nicht und gaelten pauschal als undeklariert - das
+    waere ein Artefakt des Formatwechsels, kein Befund ueber die Regel.
+    """
+    import roles as R
+    from client import OpenRouterClient
+    from provenance import load_roles
+
+    roles, models_hash = load_roles()
+    for rule in rules:
+        path = os.path.join(OUT_ROOT, rule["rule_id"], "report.json")
+        if not os.path.exists(path):
+            print(f"  {rule['rule_id']}: kein Report"); continue
+        rep = json.load(open(path, encoding="utf-8"))
+        src_a = rep.get("catala_a")
+        if not src_a:
+            print(f"  {rule['rule_id']}: kein catala_a"); continue
+        cand = build_candidate(rule)
+        client = OpenRouterClient(dry_run=dry_run)
+        j_text, pj = R.roundtrip(client, roles["judge"], cand["norm_text"], src_a,
+                                 models_hash, signature=cand["signature"],
+                                 geltungsbedingungen=cand["geltungsbedingungen"])
+        verdict = G.roundtrip_parse(j_text)
+        if pj.truncated:
+            verdict["truncated"] = True
+        fresh = {"roundtrip": G.roundtrip_gate(verdict, cand),
+                 "scope_gap": G.scope_gap_gate(verdict),
+                 "geltungsbereich": G.geltungsbereich_gate(verdict, cand)}
+        vorhanden = {g["name"] for g in rep["gates"]}
+        for g in rep["gates"]:
+            if g["name"] in fresh:
+                g["status"], g["detail"] = fresh[g["name"]].status, fresh[g["name"]].detail
+        for name, new in fresh.items():
+            if name not in vorhanden:
+                rep["gates"].append({"name": name, "status": new.status, "detail": new.detail})
+        rep["judge_verdict"] = verdict
+        rep["annahmen_mapping"] = verdict.get("stille_zusatzannahmen", [])
+        rep["backlog"] = G.unabhaengige_gaps(verdict)
+        rep["bedingungen"] = [b["bedingung"] for b in rule.get("geltungsbedingungen", [])]
+        rep["failed_gates"] = [g["name"] for g in rep["gates"]
+                               if g["status"] == G.FAIL and not g["name"].endswith("_first")]
+        rep["queue_status"] = _queue_status(rep["gates"], rule)
+        rep["provenance"].append(pj.to_dict())
+        rep["total_cost_usd"] = round(rep.get("total_cost_usd", 0.0) + pj.cost_usd, 6)
+        json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+        mapped = sum(1 for a in rep["annahmen_mapping"] if a.get("bedingung_id"))
+        print(f"  {rule['rule_id']}: {rep['queue_status']} | +${pj.cost_usd:.4f} | "
+              f"Annahmen {mapped}/{len(rep['annahmen_mapping'])} gemappt | "
+              f"offen: {', '.join(rep['failed_gates']) or 'keine'}", flush=True)
+    return 0
+
+
 def _queue_status(gates: list[dict], rule: dict | None = None) -> str:
     st = [g["status"] for g in gates if not g["name"].endswith("_first")]
     if G.FAIL in st:
@@ -242,6 +278,11 @@ def _queue_status(gates: list[dict], rule: dict | None = None) -> str:
         return "freigabe_blockiert"
     if G.SKIP in st:
         return "verified_partial (toolchain pending)"
+    # Statusehrlichkeit: eine Regel mit Geltungsbedingungen ist nie schlicht
+    # "verified". Sie gilt nur unter ihren Bedingungen; Phase 5 muss sie als
+    # Fragen stellen, und die Engine darf die Regel bei Verletzung nicht feuern.
+    if (rule or {}).get("geltungsbedingungen"):
+        return "verified_bedingt"
     return "verified"
 
 
@@ -252,16 +293,17 @@ def main() -> int:
     ap.add_argument("--force", action="store_true", help="fertige Reports neu rechnen")
     ap.add_argument("--regate", action="store_true",
                     help="nur deterministische Gates neu rechnen, ohne Modellkosten")
+    ap.add_argument("--redo-judge", action="store_true",
+                    help="nur den Judge neu laufen lassen (Template-Wechsel)")
     ap.add_argument("--redo-a", action="store_true",
                     help="nur Formalisierer A (und den Judge) neu laufen lassen, "
                          "B aus dem Report wiederverwenden")
     args = ap.parse_args()
 
     try:
-        cfg = yaml.load(open(os.path.join(HERE, "rules.yaml"), encoding="utf-8"),
-                        Loader=_StrictLoader)
-    except yaml.constructor.ConstructorError as e:
-        raise SystemExit(f"rules.yaml: {e}")
+        cfg = load_yaml(os.path.join(HERE, "rules.yaml"))
+    except DuplicateKeyError as e:
+        raise SystemExit(str(e))
     rules = cfg["regeln"]
     if args.only:
         rules = [r for r in rules if r["rule_id"] == args.only]
@@ -287,6 +329,8 @@ def main() -> int:
 
     if args.regate:
         return regate(rules)
+    if args.redo_judge:
+        return redo_judge(rules, args.dry_run)
     if args.redo_a:
         return redo_a(rules, args.dry_run)
 
@@ -336,6 +380,8 @@ def main() -> int:
             "dry_run": res.dry_run,
             "models_yaml_hash": res.models_yaml_hash,
             "queue_status": queue,
+            "bedingungen": res.bedingungen,
+            "annahmen_mapping": (res.judge_verdict or {}).get("stille_zusatzannahmen", []),
             "gates": res.gates_dict(),
             "failed_gates": [g.name for g in res.gate_results
                              if g.status == G.FAIL and not g.name.endswith("_first")],

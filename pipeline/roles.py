@@ -77,12 +77,32 @@ def repair(client, role: RoleConfig, prev_src: str, compiler_msg: str,
     return _call(client, rrole, task, f"{role.role}_repair", models_hash, exclude)
 
 
+def _bedingungen_block(bedingungen: list[dict] | None) -> str:
+    """Die deklarierten Geltungsbedingungen mit ihren IDs.
+
+    Der Judge muss jede Zusatzannahme genau einer ID zuordnen oder sie als
+    unmapped melden. Ohne diese Liste im Prompt gaebe es nichts zuzuordnen, und
+    der Runner muesste per Aehnlichkeit absorbieren - genau das soll nicht sein.
+    """
+    if not bedingungen:
+        return ("\n\nDeklarierte Geltungsbedingungen: KEINE. Jede Zusatzannahme "
+                "ist daher `\"bedingung_id\": null`.")
+    zeilen = "\n".join(
+        f"  - id: {b['bedingung']}\n    bedeutung: {b.get('beschreibung', '')}\n"
+        f"    norm: {b.get('quelle', '')}"
+        for b in bedingungen)
+    return (f"\n\nDeklarierte Geltungsbedingungen (nur diese IDs sind zulaessig):\n"
+            f"{zeilen}")
+
+
 def roundtrip(client, role: RoleConfig, norm_text: str, catala_src: str,
-              models_hash: str, exclude=None, signature: dict | None = None
+              models_hash: str, exclude=None, signature: dict | None = None,
+              geltungsbedingungen: list[dict] | None = None
               ) -> tuple[str, Provenance]:
     sig = (f"\n\nVorgegebene Scope-Signatur (die Grenze deiner Bewertung):\n"
            f"{signature_text(signature)}" if signature else "")
-    task = (f"Original-Norm:\n{norm_text}{sig}\n\n"
+    task = (f"Original-Norm:\n{norm_text}{sig}"
+            f"{_bedingungen_block(geltungsbedingungen)}\n\n"
             f"Catala-Formalisierung:\n{catala_src}\n\n"
             f"Rueckuebersetzen und vergleichen.")
     return _call(client, role, task, "judge", models_hash, exclude)

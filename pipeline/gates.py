@@ -298,9 +298,38 @@ def roundtrip_parse(judge_json_text: str) -> dict:
         "parse_error": False,
         "faithful": bool(d.get("faithful")),
         "abweichungen": list(d.get("abweichungen") or []),
-        "stille_zusatzannahmen": list(d.get("stille_zusatzannahmen") or []),
+        "stille_zusatzannahmen": [_normalize_annahme(a)
+                                  for a in (d.get("stille_zusatzannahmen") or [])],
         "scope_gap": [_normalize_gap(g) for g in (d.get("scope_gap") or [])],
     }
+
+
+def _normalize_annahme(a) -> dict:
+    """Akzeptiert den String von roundtrip_diff@3 und das Objekt von @4.
+
+    Ein blosser String traegt keine Zuordnung zu einer Geltungsbedingung und gilt
+    damit als `undeclared` - Schweigen darf nicht als Anrechnung durchgehen.
+    """
+    if isinstance(a, str):
+        return {"annahme": a, "bedingung_id": None}
+    bid = a.get("bedingung_id")
+    return {"annahme": str(a.get("annahme", ""))[:400],
+            "bedingung_id": bid if isinstance(bid, str) and bid.strip() else None}
+
+
+def annahmen_mapping(verdict: dict, candidate: dict | None = None) -> tuple[list, list]:
+    """(angerechnet, undeclared).
+
+    Angerechnet wird eine Zusatzannahme nur, wenn der Judge sie EXPLIZIT der ID
+    einer im Manifest deklarierten Geltungsbedingung zugeordnet hat. Eine ID, die
+    es nicht gibt, zaehlt als undeclared: der Runner absorbiert nichts per
+    Aehnlichkeit, und ein erfundenes Mapping wird nicht belohnt.
+    """
+    ids = {b.get("bedingung") for b in ((candidate or {}).get("geltungsbedingungen") or [])}
+    angerechnet, undeclared = [], []
+    for a in verdict.get("stille_zusatzannahmen", []):
+        (angerechnet if a["bedingung_id"] in ids else undeclared).append(a)
+    return angerechnet, undeclared
 
 
 def _normalize_gap(gap) -> dict:
@@ -333,17 +362,33 @@ def unabhaengige_gaps(verdict: dict) -> list[dict]:
     return [g for g in verdict.get("scope_gap", []) if g["klasse"] == "unabhaengig"]
 
 
-def roundtrip_gate(judge_json_text: str) -> GateResult:
-    d = roundtrip_parse(judge_json_text)
+def roundtrip_gate(judge, candidate: dict | None = None) -> GateResult:
+    """Abweichungen fallen immer. Zusatzannahmen fallen, solange sie undeclared sind.
+
+    Eine deklarierte Annahme ist keine stille Annahme: ist sie vom Judge explizit
+    der ID einer Geltungsbedingung zugeordnet, wird sie angerechnet. Das Mapping
+    steht im Report und ist Teil des Reviews - eine Annahme, die nur vage zu einer
+    breiten Bedingung passt, ist dort ein Reject des Mappings, kein PASS.
+    """
+    d = _verdict(judge)
     if d.get("parse_error"):
         return GateResult("roundtrip", FAIL, "judge output not valid JSON")
+    if d.get("truncated"):
+        return GateResult("roundtrip", FAIL, "judge answer truncated")
+    angerechnet, undeclared = annahmen_mapping(d, candidate)
     gap = len(d["scope_gap"])
-    if d["faithful"] and not d["stille_zusatzannahmen"]:
-        return GateResult("roundtrip", PASS,
-                          f"round-trip faithful, no silent assumptions; scope_gap={gap}")
-    return GateResult("roundtrip", FAIL,
-                      f"abweichungen={len(d['abweichungen'])} "
-                      f"annahmen={len(d['stille_zusatzannahmen'])} scope_gap={gap}")
+    if d["abweichungen"]:
+        return GateResult("roundtrip", FAIL,
+                          f"abweichungen={len(d['abweichungen'])}: "
+                          f"{str(d['abweichungen'][0])[:110]}")
+    if undeclared:
+        return GateResult("roundtrip", FAIL,
+                          f"{len(undeclared)} undeklarierte Zusatzannahme(n) "
+                          f"(angerechnet: {len(angerechnet)}); erste: "
+                          f"{undeclared[0]['annahme'][:110]}")
+    return GateResult("roundtrip", PASS,
+                      f"keine Abweichung; {len(angerechnet)} Zusatzannahme(n) einer "
+                      f"deklarierten Geltungsbedingung zugeordnet; scope_gap={gap}")
 
 
 def _verdict(judge) -> dict:
@@ -411,26 +456,24 @@ def geltungsbereich_gate(judge, candidate: dict | None = None) -> GateResult:
 
 
 def scope_gap_gate(judge) -> GateResult:
-    """Two classes, two outcomes.
+    """Informativ, nicht blockierend (Protokolldekret 2026-07-09).
 
-    (a) `unabhaengig` -> Backlog-Item, kein Flag. Der formalisierte Ausschnitt
-        bleibt ohne den Norm-Teil korrekt.
-    (b) `wirkt_hinein` -> ESKALATION. Der Norm-Teil greift in den Signatur-Scope
-        ein; ohne ihn ist der Ausschnitt falsch, nicht nur unvollstaendig.
+    (a) `unabhaengig` -> Backlog-Item.
+    (b) `wirkt_hinein` -> zaehlt hier nur. Blockierend ist `geltungsbereich`, das
+        auf jeden wirkt_hinein OHNE abdeckende Geltungsbedingung faellt.
+
+    Rationale: eine deklarierte Annahme ist keine stille Annahme. Wuerde
+    scope_gap weiter auf jeden wirkt_hinein fallen, koennte keine korrekt
+    spezifizierte Teilformalisierung je einen gruenen Zustand erreichen, und
+    `flagged_for_review` verloere seine Bedeutung.
     """
     d = _verdict(judge)
     if d.get("parse_error"):
         return GateResult("scope_gap", FAIL, "judge output not valid JSON")
     hinein, unabh = wirkt_hinein(d), unabhaengige_gaps(d)
-    if hinein:
-        first = hinein[0]
-        return GateResult("scope_gap", FAIL,
-                          f"{len(hinein)} Norm-Teil(e) wirken in den Signatur-Scope "
-                          f"hinein (Ausschnitt ohne sie falsch); erster: "
-                          f"{first['norm_teil'][:120]}")
     return GateResult("scope_gap", PASS,
-                      f"{len(unabh)} unabhaengige(r) Norm-Teil(e) -> Backlog, "
-                      f"kein Eingriff in den Signatur-Scope")
+                      f"informativ: {len(hinein)} wirkt_hinein (blockierend ist "
+                      f"geltungsbereich), {len(unabh)} unabhaengig -> Backlog")
 
 
 _UMLAUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",

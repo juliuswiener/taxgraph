@@ -85,7 +85,7 @@ roles:
     # lief bei der ersten Produktionsregel exakt ins Limit (completion=4096,
     # abgeschnittenes JSON). Gemessener Bedarf mit roundtrip_diff@3: ~8000.
     max_tokens: 12288         # Judge: Reasoning + JSON-Verdikt
-    prompt_template_id: "roundtrip_diff@3"   # scope_gap zweiklassig
+    prompt_template_id: "roundtrip_diff@4"   # scope_gap zweiklassig + Annahme-Mapping
     fewshot_set_id: "roundtrip_base@1"
 
   worker:

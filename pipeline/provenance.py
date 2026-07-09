@@ -11,9 +11,13 @@ from __future__ import annotations
 import datetime
 import hashlib
 import os
+import sys
 from dataclasses import dataclass, asdict
 
-import yaml
+import yaml  # noqa: F401
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from yamlstrict import load_yaml  # noqa: E402
 
 from client import RoleConfig, Completion, mask_key
 
@@ -28,7 +32,7 @@ def models_yaml_hash(path: str = MODELS_YAML) -> str:
 
 def load_roles(path: str = MODELS_YAML) -> tuple[dict[str, RoleConfig], str]:
     """Return (role_name -> RoleConfig, models.yaml hash)."""
-    data = yaml.safe_load(open(path, encoding="utf-8"))
+    data = load_yaml(path)   # strikt: doppelte Schluessel sind ein Fehler
     roles = {}
     for name, r in data["roles"].items():
         roles[name] = RoleConfig(

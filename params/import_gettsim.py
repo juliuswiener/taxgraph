@@ -17,7 +17,17 @@ import datetime
 import os
 
 import gettsim
-import yaml
+import yaml  # noqa: F401
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from yamlstrict import load_str
+
+
+def load_yaml_fh(fh):
+    """Strikt laden: doppelte Schluessel sind ein Fehler, kein Ueberschreiben."""
+    with fh:
+        return load_str(fh.read(), herkunft=getattr(fh, 'name', '<yaml>'))
+
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 GETTSIM_BASE = os.path.dirname(gettsim.__file__)
@@ -118,7 +128,7 @@ def main():
     n = 0
     for spec in IMPORTS:
         path = os.path.join(GETTSIM_BASE, spec["gettsim_rel"])
-        data = yaml.safe_load(open(path, encoding="utf-8"))
+        data = load_yaml_fh(open(path, encoding="utf-8"))
         param = data[spec["key"]]
         for vz in VZ_LIST:
             date_str, entry = effective_entry(param, vz)

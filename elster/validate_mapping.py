@@ -13,7 +13,16 @@ import os
 import re
 import sys
 
-import yaml
+import yaml  # noqa: F401
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from yamlstrict import load_str
+
+
+def load_yaml_fh(fh):
+    """Strikt laden: doppelte Schluessel sind ein Fehler, kein Ueberschreiben."""
+    with fh:
+        return load_str(fh.read(), herkunft=getattr(fh, 'name', '<yaml>'))
+
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -25,7 +34,7 @@ REGEL_OUTPUT_RE = re.compile(r"^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+){1,2}$")
 
 
 def main(path: str) -> int:
-    data = yaml.safe_load(open(path, encoding="utf-8"))
+    data = load_yaml_fh(open(path, encoding="utf-8"))
     rows = data.get("mapping", [])
     errors = []
     seen = {}

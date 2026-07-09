@@ -43,6 +43,7 @@ class CascadeResult:
     transport: dict = field(default_factory=dict)
     repaired: dict = field(default_factory=dict)   # {"a": bool, "b": bool}
     backlog: list = field(default_factory=list)    # unabhaengige scope_gaps
+    bedingungen: list = field(default_factory=list)  # IDs, gelten am Status
 
     def gates_dict(self):
         return [{"name": g.name, "status": g.status, "detail": g.detail}
@@ -95,7 +96,8 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
     #    nur, was innerhalb ihrer Grenze liegt; Norm-Teile ausserhalb -> scope_gap.
     if src_a:
         j_text, pj = R.roundtrip(client, roles["judge"], norm, src_a, models_hash,
-                                 signature=sig)
+                                 signature=sig,
+                                 geltungsbedingungen=candidate.get("geltungsbedingungen"))
         record(pj)
         res.judge_verdict = G.roundtrip_parse(j_text)
         if pj.truncated:
@@ -109,13 +111,14 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
             res.gate_results.append(G.GateResult("scope_gap", G.FAIL, det))
             res.gate_results.append(G.GateResult("geltungsbereich", G.FAIL, det))
         else:
-            res.gate_results.append(G.roundtrip_gate(j_text))
+            res.gate_results.append(G.roundtrip_gate(j_text, candidate))
             # scope_gap zweiklassig: (a) unabhaengig -> Backlog, kein Flag;
             # (b) wirkt in den Signatur-Scope hinein -> Eskalation, denn dann ist
             # der formalisierte Ausschnitt ohne den Rest falsch.
+            # scope_gap ist informativ (zaehlt, eskaliert nicht). Blockierend ist
+            # geltungsbereich: es faellt auf jeden wirkt_hinein OHNE abdeckende
+            # Bedingung. Eine deklarierte Annahme ist keine stille Annahme.
             res.gate_results.append(G.scope_gap_gate(j_text))
-            # Jede Teilformalisierung traegt ihren Geltungsbereich maschinenlesbar:
-            # was in den Scope hineinwirkt, muss als Bedingung deklariert sein.
             res.gate_results.append(G.geltungsbereich_gate(j_text, candidate))
             res.backlog = G.unabhaengige_gaps(res.judge_verdict)
     else:
@@ -137,12 +140,18 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
     # queue decision - the `_first` gates are diagnostics, not gates: a run that
     # only failed before its repair round must not be flagged for that.
     statuses = [g.status for g in res.gate_results if not g.name.endswith("_first")]
+    bedingungen = [b["bedingung"] for b in (candidate.get("geltungsbedingungen") or [])]
     if G.FAIL in statuses:
         res.queue_status = "flagged_for_review"
     elif G.SKIP in statuses:
         res.queue_status = "verified_partial (toolchain pending)"
+    elif bedingungen:
+        # Statusehrlichkeit: eine Teilformalisierung ist nie schlicht "verified".
+        # Sie gilt nur unter ihren Bedingungen, und die stehen am Status.
+        res.queue_status = "verified_bedingt"
     else:
         res.queue_status = "verified"
+    res.bedingungen = bedingungen
     return res
 
 

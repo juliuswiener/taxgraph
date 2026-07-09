@@ -52,39 +52,37 @@ CATALA SYNTAX (follow exactly):
       definition y under condition <cond> consequence equals <expr>
 - Labels are plain identifiers: `label grundregel`. No `§` and no spaces.
 
-NUMERIC CONVERSION CHEATSHEET. Every line below is copied from a Catala rule that
-compiles. When you need one of these operations, use the shape shown - do not
-improvise a variant.
+NUMERIC CONVERSION CHEATSHEET. Every shape below is taken from Catala code that
+compiles. The identifiers are placeholders - use your own names, keep the shape.
 
   # money -> decimal, floor to whole euro, back to money
-  definition x equals Decimal.truncate of (zu_versteuerndes_einkommen / $1.00)
-  definition betrag equals (Decimal.truncate of steuerbetrag_roh) * $1.00
+  definition ganze_euro equals Decimal.truncate of (betrag / $1.00)
+  definition gerundet equals (Decimal.truncate of roh_wert) * $1.00
 
   # truncate a decimal (it stays a decimal - never wrap it in `decimal of`)
-  definition entfernung_km equals Decimal.truncate of entfernung_km_roh
+  definition volle_einheiten equals Decimal.truncate of roh_menge
 
   # integer -> decimal, then multiply money by it
-  definition summe equals pro_tag * (decimal of arbeitstage)
-  definition abzug equals tagespauschale_pro_tag * (decimal of homeoffice_tage)
+  definition summe equals satz_je_stueck * (decimal of stueckzahl)
 
   # integer -> decimal inside a let, for comparisons against a decimal
-  definition y equals let grenze equals decimal of staffelgrenze_km in ...
+  definition ergebnis equals let schwelle equals decimal of grenze_ganzzahlig in ...
 
   # divide an integer-turned-decimal: the divisor must be a DECIMAL literal
-  definition anteil equals jahrespauschale * (decimal of monate_ohne_mittelpunkt / 12.0)
+  definition anteil equals jahresbetrag * (decimal of anzahl_monate / 12.0)
 
   # percentage of a money amount, capped
-  definition e equals if aufwendungen * 0.20 > $4,000.00 then $4,000.00
-                      else aufwendungen * 0.20
+  definition ermaessigung equals
+    if kosten * 0.20 > $4,000.00 then $4,000.00 else kosten * 0.20
 
 THE ONE MISTAKE THAT KEEPS HAPPENING - do not write this:
 
-  $1.00 * (decimal of (Decimal.truncate of (m / $1.00)))     # TYPE ERROR
+  $1.00 * (decimal of (Decimal.truncate of (betrag / $1.00)))     # TYPE ERROR
 
 `Decimal.truncate of` already returns a decimal. `decimal of` accepts ONLY an
 integer, never a decimal. The correct form is:
 
-  (Decimal.truncate of (m / $1.00)) * $1.00
+  (Decimal.truncate of (betrag / $1.00)) * $1.00
 
 RULES:
 - Take every number from the norm text. Do not invent values, do not round.

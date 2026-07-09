@@ -26,7 +26,9 @@ PIPELINE = os.path.dirname(HERE)
 ROOT = os.path.dirname(PIPELINE)
 sys.path.insert(0, PIPELINE)
 sys.path.insert(0, HERE)
+sys.path.insert(0, ROOT)
 
+from yamlstrict import load_yaml  # noqa: E402
 from cascade import run_candidate  # noqa: E402
 from blind import blind_repro_match  # noqa: E402
 from client import mask_key, RoleCallError  # noqa: E402
@@ -90,8 +92,8 @@ def main() -> int:
 
     leakage_guard()
 
-    cfg = yaml.safe_load(open(os.path.join(PIPELINE, "models.yaml"), encoding="utf-8"))
-    tasks_cfg = yaml.safe_load(open(os.path.join(HERE, "tasks.yaml"), encoding="utf-8"))
+    cfg = load_yaml(os.path.join(PIPELINE, "models.yaml"))
+    tasks_cfg = load_yaml(os.path.join(HERE, "tasks.yaml"))
     allow = cfg["bakeoff"]["provider_allowlists"]
     pairings = cfg["bakeoff"]["pairings"]
     check_pairings(pairings)

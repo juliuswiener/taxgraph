@@ -20,9 +20,18 @@ import os
 import re
 import sys
 
-import yaml
+import yaml  # noqa: F401
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, ROOT)
+
+from yamlstrict import load_str  # noqa: E402
+
+
+def load_yaml_fh(fh):
+    """Strikt laden: doppelte Schluessel sind ein Fehler, kein Ueberschreiben."""
+    with fh:
+        return load_str(fh.read(), herkunft=getattr(fh, "name", "<yaml>"))
 _CAT = os.path.join(ROOT, "oracle", "gettsim", "_catala")
 sys.path.insert(0, os.path.join(_CAT, "rt"))
 sys.path.insert(0, _CAT)
@@ -34,7 +43,7 @@ from catala_runtime import Money, Decimal, Bool  # noqa: E402
 
 
 def _az_params(year: int) -> dict:
-    p = yaml.safe_load(open(os.path.join(
+    p = load_yaml_fh(open(os.path.join(
         ROOT, "params", str(year), "arbeitszimmer_homeoffice.yaml"), encoding="utf-8"))
     return {k: p[k]["wert"] for k in
             ("jahrespauschale", "tagespauschale_pro_tag", "tagespauschale_hoechstbetrag")}
@@ -57,7 +66,7 @@ def catala_raumkosten(s: dict) -> int:
 
 def _ep_saetze(year: int) -> dict:
     """Read the Entfernungspauschale rates for a VZ from params/."""
-    p = yaml.safe_load(open(os.path.join(
+    p = load_yaml_fh(open(os.path.join(
         ROOT, "params", str(year), "entfernungspauschale.yaml"), encoding="utf-8"))
     return {k: p[k]["wert"] for k in
             ("satz_bis_20_km", "satz_ab_21_km", "staffelgrenze_km", "hoechstbetrag_ohne_kfz")}
@@ -131,7 +140,7 @@ def main() -> int:
     failures = []
 
     for path in cases:
-        c = yaml.safe_load(open(path, encoding="utf-8"))
+        c = load_yaml_fh(open(path, encoding="utf-8"))
         cid = c["id"]
         s = c["sachverhalt"]
         erw = c["erwartung"]

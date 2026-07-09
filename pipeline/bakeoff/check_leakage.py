@@ -18,12 +18,15 @@ import os
 import re
 import sys
 
-import yaml
+import yaml  # noqa: F401
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PIPELINE = os.path.dirname(HERE)
 ROOT = os.path.dirname(PIPELINE)
 sys.path.insert(0, PIPELINE)
+sys.path.insert(0, ROOT)
+
+from yamlstrict import load_yaml  # noqa: E402
 
 from prompts import build_messages, load_fewshots  # noqa: E402
 from provenance import load_roles  # noqa: E402
@@ -50,7 +53,7 @@ def _significant_lines(path: str) -> list[str]:
 
 
 def main() -> int:
-    tasks = yaml.safe_load(open(os.path.join(HERE, "tasks.yaml"), encoding="utf-8"))
+    tasks = load_yaml(os.path.join(HERE, "tasks.yaml"))
     roles, _ = load_roles()
     violations = []
 
