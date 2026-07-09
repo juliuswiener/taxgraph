@@ -1,0 +1,160 @@
+"""OpenRouter client with provider pinning, key masking and provenance.
+
+Key handling (binding):
+- The API key is read ONLY from os.environ["OPENROUTER_API_KEY"].
+- The key is never read from files, never printed, never logged. All logging
+  goes through mask_key(). If the key is missing the client aborts cleanly with
+  a hint; it never prompts for the key.
+- Provider pinning is mandatory: every request sends the role's provider
+  allowlist with allow_fallbacks=false. No :floor/:nitro shortcuts, no `latest`
+  aliases (slugs are pinned in pipeline/models.yaml).
+
+Dry-run: if PIPELINE_DRY_RUN=1 (or dry_run=True) the client returns a mocked
+response from pipeline/fixtures/ instead of calling OpenRouter, so the whole
+gate cascade runs without a key or cost.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import sys
+import time
+from dataclasses import dataclass, field
+from typing import Any
+
+import requests
+
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
+_ENV_KEY = "OPENROUTER_API_KEY"
+
+
+def mask_key(text: str) -> str:
+    """Replace any OpenRouter key (sk-or-...) in text with sk-or-***."""
+    return re.sub(r"sk-or-[A-Za-z0-9._-]+", "sk-or-***", str(text))
+
+
+def _require_key() -> str:
+    key = os.environ.get(_ENV_KEY)
+    if not key:
+        sys.stderr.write(
+            f"[pipeline] {_ENV_KEY} not set in the environment. Load it before "
+            "starting the session (Julius: source ~/.config/taxgraph/openrouter.env). "
+            "Aborting; the client never prompts for or reads the key from files.\n")
+        raise SystemExit(2)
+    return key
+
+
+def is_dry_run(dry_run: bool | None) -> bool:
+    if dry_run is not None:
+        return dry_run
+    return os.environ.get("PIPELINE_DRY_RUN", "") == "1"
+
+
+@dataclass
+class RoleConfig:
+    role: str
+    slug: str
+    providers: list[str]
+    temperature: float = 0.0
+    max_tokens: int = 4096
+    prompt_template_id: str = ""
+    fewshot_set_id: str = ""
+
+
+@dataclass
+class Completion:
+    text: str
+    role: str
+    slug: str
+    provider: str | None
+    prompt_tokens: int
+    completion_tokens: int
+    cost_usd: float
+    raw: dict = field(default_factory=dict, repr=False)
+
+
+class OpenRouterClient:
+    def __init__(self, dry_run: bool | None = None, timeout: int = 120,
+                 fixtures_dir: str | None = None):
+        self.dry_run = is_dry_run(dry_run)
+        self.timeout = timeout
+        self.fixtures_dir = fixtures_dir or os.path.join(
+            os.path.dirname(__file__), "fixtures")
+        self._key = None if self.dry_run else _require_key()
+
+    # -- model listing (free GET, used to resolve/verify slugs) ---------------
+    def list_models(self) -> list[dict]:
+        if self.dry_run:
+            return []
+        r = requests.get(OPENROUTER_MODELS_URL, timeout=self.timeout,
+                         headers={"Authorization": f"Bearer {self._key}"})
+        r.raise_for_status()
+        return r.json().get("data", [])
+
+    # -- chat completion ------------------------------------------------------
+    def complete(self, role: RoleConfig, messages: list[dict],
+                 fixture_id: str | None = None) -> Completion:
+        if self.dry_run:
+            return self._fixture_completion(role, messages, fixture_id)
+
+        body = {
+            "model": role.slug,
+            "messages": messages,
+            "temperature": role.temperature,
+            "max_tokens": role.max_tokens,
+            "provider": {"only": role.providers, "allow_fallbacks": False},
+            "usage": {"include": True},
+        }
+        headers = {
+            "Authorization": f"Bearer {self._key}",
+            "Content-Type": "application/json",
+            "X-Title": "TaxGraph-Pipeline",
+        }
+        # Bounded retry on transient upstream errors (429/5xx) against the SAME
+        # pinned provider set. This is NOT a provider fallback (allow_fallbacks
+        # stays false); it only handles transient rate limits before giving up
+        # (Nachtrag: checkpoint + retry, no silent config change).
+        last = None
+        for attempt in range(3):
+            try:
+                r = requests.post(OPENROUTER_URL, headers=headers, json=body,
+                                 timeout=self.timeout)
+            except requests.RequestException as e:
+                raise RuntimeError(mask_key(f"OpenRouter request failed: {e}")) from None
+            if r.status_code in (429, 500, 502, 503) and attempt < 2:
+                last = r
+                time.sleep(2 * (attempt + 1))
+                continue
+            break
+        if r.status_code >= 400:
+            raise RuntimeError(mask_key(
+                f"OpenRouter {r.status_code} for role={role.role} slug={role.slug}: "
+                f"{r.text[:400]}"))
+        data = r.json()
+        choice = data["choices"][0]["message"]["content"]
+        usage = data.get("usage", {}) or {}
+        provider = data.get("provider") or (data.get("choices", [{}])[0].get("provider"))
+        return Completion(
+            text=choice, role=role.role, slug=role.slug, provider=provider,
+            prompt_tokens=int(usage.get("prompt_tokens", 0)),
+            completion_tokens=int(usage.get("completion_tokens", 0)),
+            cost_usd=float(usage.get("cost", 0.0) or 0.0),
+            raw=data)
+
+    def _fixture_completion(self, role: RoleConfig, messages: list[dict],
+                            fixture_id: str | None = None) -> Completion:
+        key = fixture_id or role.role
+        path = os.path.join(self.fixtures_dir, f"{key}.json")
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                f"dry-run fixture missing for role '{role.role}': {path}")
+        fx = json.load(open(path, encoding="utf-8"))
+        return Completion(
+            text=fx["text"], role=role.role, slug=role.slug + " (dry-run)",
+            provider="dry-run",
+            prompt_tokens=fx.get("prompt_tokens", 0),
+            completion_tokens=fx.get("completion_tokens", 0),
+            cost_usd=0.0, raw={"dry_run": True})

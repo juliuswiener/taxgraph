@@ -1,0 +1,143 @@
+"""Gate cascade orchestration.
+
+Order per Nachtrag 2026-07-09 §4:
+  Extraktion (worker)
+  -> Doppelformalisierung (A und B, identisches Template + Few-Shots)
+  -> Syntax-Gate (tree-sitter/heuristic)
+  -> Compiler-Typecheck
+  -> extensionale Aequivalenz (A vs B auf Input-Raster)
+  -> Round-Trip-Diff (Judge)
+  -> Clerk-Tests
+  -> Review-Queue-Status
+
+Every model output is provenance-stamped; a run is valid only if all stamps
+carry the same models.yaml hash. Compiler gates SKIP cleanly when the toolchain
+is absent (wiring stays testable in dry-run).
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from dataclasses import dataclass, field
+
+from client import OpenRouterClient
+from provenance import load_roles, Provenance, now_iso
+import roles as R
+import gates as G
+
+
+@dataclass
+class CascadeResult:
+    candidate_id: str
+    dry_run: bool
+    models_yaml_hash: str
+    gate_results: list = field(default_factory=list)
+    provenance: list = field(default_factory=list)
+    module_name: str | None = None
+    catala_a: str | None = None
+    catala_b: str | None = None
+    total_cost_usd: float = 0.0
+    queue_status: str = "extracted"
+
+    def gates_dict(self):
+        return [{"name": g.name, "status": g.status, "detail": g.detail}
+                for g in self.gate_results]
+
+
+def run_candidate(candidate: dict, dry_run: bool | None = None,
+                  fixtures_dir: str | None = None) -> CascadeResult:
+    """Run one rule candidate through the cascade.
+
+    candidate: {id, norm_text, exclude_rule_ids?}
+    """
+    roles, models_hash = load_roles()
+    client = OpenRouterClient(dry_run=dry_run, fixtures_dir=fixtures_dir)
+    exclude = set(candidate.get("exclude_rule_ids", []))
+    norm = candidate["norm_text"]
+    res = CascadeResult(candidate_id=candidate["id"], dry_run=client.dry_run,
+                        models_yaml_hash=models_hash)
+
+    def record(prov: Provenance):
+        res.provenance.append(prov.to_dict())
+        res.total_cost_usd += prov.cost_usd
+
+    # 1. Extraktion (worker)
+    claims_text, p = R.extract(client, roles["worker"], norm, models_hash, exclude)
+    record(p)
+
+    # 2. Doppelformalisierung (A und B)
+    a_text, pa = R.formalize(client, roles["formalisierer_a"], norm, claims_text,
+                             models_hash, exclude)
+    record(pa)
+    b_text, pb = R.formalize(client, roles["formalisierer_b"], norm, claims_text,
+                             models_hash, exclude)
+    record(pb)
+    res.queue_status = "formalized"
+
+    mod_a, src_a = G.extract_catala(a_text)
+    mod_b, src_b = G.extract_catala(b_text)
+    res.module_name, res.catala_a, res.catala_b = mod_a, src_a, src_b
+
+    # 3. Syntax-Gate (beide)
+    res.gate_results.append(_named("syntax_a", G.syntax_gate(src_a)))
+    res.gate_results.append(_named("syntax_b", G.syntax_gate(src_b)))
+
+    # 4. Compiler-Typecheck (beide)
+    res.gate_results.append(_named("typecheck_a", G.typecheck_gate(src_a, mod_a)))
+    res.gate_results.append(_named("typecheck_b", G.typecheck_gate(src_b, mod_b)))
+
+    # 5. extensionale Aequivalenz A vs B auf dem Input-Raster
+    res.gate_results.append(G.equivalence_gate(src_a, src_b, candidate))
+
+    # 6. Round-Trip-Diff (Judge auf A)
+    if src_a:
+        j_text, pj = R.roundtrip(client, roles["judge"], norm, src_a, models_hash)
+        record(pj)
+        res.gate_results.append(G.roundtrip_gate(j_text))
+    else:
+        res.gate_results.append(G.GateResult("roundtrip", G.FAIL, "no A source"))
+
+    # 7. Clerk-Tests
+    res.gate_results.append(G.clerk_gate(src_a))
+
+    # verify all stamps share one models.yaml hash (run validity)
+    hashes = {p["models_yaml_hash"] for p in res.provenance}
+    if len(hashes) > 1:
+        res.queue_status = "invalid_mixed_models_yaml"
+        return res
+
+    # queue decision
+    statuses = [g.status for g in res.gate_results]
+    if G.FAIL in statuses:
+        res.queue_status = "flagged_for_review"
+    elif G.SKIP in statuses:
+        res.queue_status = "verified_partial (toolchain pending)"
+    else:
+        res.queue_status = "verified"
+    return res
+
+
+def _named(name: str, g: G.GateResult) -> G.GateResult:
+    g.name = name
+    return g
+
+
+def write_report(res: CascadeResult, out_dir: str | None = None) -> str:
+    out_dir = out_dir or os.path.join(os.path.dirname(__file__), "runs",
+                                      f"{res.candidate_id}_{now_iso().replace(':', '')}")
+    os.makedirs(out_dir, exist_ok=True)
+    report = {
+        "candidate_id": res.candidate_id,
+        "dry_run": res.dry_run,
+        "models_yaml_hash": res.models_yaml_hash,
+        "queue_status": res.queue_status,
+        "module_name": res.module_name,
+        "gates": res.gates_dict(),
+        "provenance": res.provenance,
+        "total_cost_usd": round(res.total_cost_usd, 6),
+    }
+    path = os.path.join(out_dir, "report.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+    return path

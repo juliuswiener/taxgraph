@@ -1,0 +1,246 @@
+"""Deterministic gate cascade steps.
+
+Model-produced text is mocked in dry-run (via fixtures in the client); the gates
+here are deterministic. Compiler-backed gates (typecheck, equivalence, clerk)
+require the Catala toolchain; if `catala`/`clerk` are not on PATH they return
+status SKIP with a reason instead of failing, so the full cascade wiring is
+testable now and the same gates run for real once the toolchain is reinstalled.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import tempfile
+from dataclasses import dataclass
+
+PASS, FAIL, SKIP = "PASS", "FAIL", "SKIP"
+
+
+@dataclass
+class GateResult:
+    name: str
+    status: str
+    detail: str = ""
+
+
+def have(tool: str) -> bool:
+    return shutil.which(tool) is not None
+
+
+# -- parsing model output ----------------------------------------------------
+
+def extract_catala(formalizer_text: str) -> tuple[str | None, str | None]:
+    """Return (module_name, catala_source) from a formaliser output."""
+    m = re.search(r"MODULE:\s*(\S+)", formalizer_text)
+    module = m.group(1) if m else None
+    b = re.search(r"```catala\s*(.*?)```", formalizer_text, re.DOTALL)
+    return module, (b.group(1).strip() if b else None)
+
+
+# -- gates -------------------------------------------------------------------
+
+def syntax_gate(catala_src: str | None) -> GateResult:
+    """Cheap structural syntax gate (tree-sitter when available, else heuristic)."""
+    if not catala_src:
+        return GateResult("syntax", FAIL, "no catala block in output")
+    # structural heuristic; a real tree-sitter-catala parse replaces this later.
+    ok = ("declaration scope" in catala_src and "definition" in catala_src)
+    if not ok:
+        return GateResult("syntax", FAIL, "missing declaration scope / definition")
+    return GateResult("syntax", PASS, "structural check ok (tree-sitter pending)")
+
+
+def _write_clerk_project(catala_src: str, module: str, d: str) -> str:
+    """Write a minimal clerk project so the Catala stdlib resolves.
+
+    `catala typecheck` on a bare file fails with "Stdlib_en could not be found";
+    the stdlib is set up by clerk within a project. So we materialise a temporary
+    clerk project and typecheck through clerk.
+    """
+    rules = os.path.join(d, "rules")
+    os.makedirs(rules, exist_ok=True)
+    with open(os.path.join(d, "clerk.toml"), "w", encoding="utf-8") as f:
+        f.write('[project]\ninclude_dirs = ["rules"]\nbuild_dir = "_build"\n')
+    path = os.path.join(rules, f"{module}.catala_en")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(f"# {module}\n\n> Module {module}\n\n```catala\n{catala_src}\n```\n")
+    return path
+
+
+def typecheck_gate(catala_src: str | None, module: str | None) -> GateResult:
+    if not catala_src or not module:
+        return GateResult("typecheck", FAIL, "no source/module")
+    if not have("clerk"):
+        return GateResult("typecheck", SKIP, "clerk not on PATH (toolchain missing)")
+    with tempfile.TemporaryDirectory() as d:
+        path = _write_clerk_project(catala_src, module, d)
+        rel = os.path.relpath(path, d)
+        try:
+            r = subprocess.run(["clerk", "typecheck", rel], cwd=d,
+                               capture_output=True, text=True, timeout=300)
+        except Exception as e:  # noqa: BLE001
+            return GateResult("typecheck", FAIL, f"clerk error: {e}")
+        if r.returncode != 0:
+            return GateResult("typecheck", FAIL, (r.stderr or r.stdout)[-400:])
+    return GateResult("typecheck", PASS, "clerk typecheck ok")
+
+
+def scope_name(catala_src: str) -> str | None:
+    m = re.search(r"declaration\s+scope\s+(\w+)\s*:", catala_src)
+    return m.group(1) if m else None
+
+
+def _snake(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+
+def _build_python(a_src: str, b_src: str, d: str) -> str:
+    """Materialise a clerk project with both candidates and build the python target."""
+    rules = os.path.join(d, "rules")
+    os.makedirs(rules, exist_ok=True)
+    with open(os.path.join(d, "clerk.toml"), "w", encoding="utf-8") as f:
+        f.write('[project]\ninclude_dirs = ["rules"]\nbuild_dir = "_build"\n\n'
+                '[[target]]\nname = "eq"\nmodules = ["ModA", "ModB"]\n'
+                'backends = ["python"]\ninclude_sources = true\n')
+    for mod, src in (("ModA", a_src), ("ModB", b_src)):
+        with open(os.path.join(rules, f"{mod}.catala_en"), "w", encoding="utf-8") as f:
+            f.write(f"# {mod}\n\n> Module {mod}\n\n```catala\n{src}\n```\n")
+    r = subprocess.run(["clerk", "build", "eq"], cwd=d, capture_output=True,
+                       text=True, timeout=600)
+    if r.returncode != 0:
+        raise RuntimeError((r.stderr or r.stdout)[-400:])
+    return d
+
+
+def _load_modules(d: str):
+    """Import generated ModA/ModB plus the catala python runtime from the build.
+
+    The generated modules use package-relative imports (`from . import Stdlib_en`)
+    and an absolute `from catala_runtime import *`. So the stdlib and the rule
+    modules are collected into one package directory, and the runtime is placed on
+    sys.path as a top-level module. The package name is unique per call so repeated
+    gate runs do not collide in sys.modules.
+    """
+    import glob as _glob
+    import importlib
+    import sys
+    import uuid
+
+    pkgname = "eqpkg_" + uuid.uuid4().hex[:8]
+    root = os.path.join(d, "_imp")
+    pkg = os.path.join(root, pkgname)
+    rt_dir = os.path.join(root, "_rt")
+    os.makedirs(pkg, exist_ok=True)
+    os.makedirs(rt_dir, exist_ok=True)
+
+    for p in _glob.glob(os.path.join(d, "_build", "libcatala", "python", "*.py")):
+        shutil.copy(p, pkg)
+    for p in _glob.glob(os.path.join(d, "_build", "rules", "python", "*.py")):
+        shutil.copy(p, pkg)
+    # the runtime and its own deps must be importable top-level
+    # (catala_runtime does `import dates`)
+    for name in ("catala_runtime.py", "dates.py"):
+        src_rt = os.path.join(pkg, name)
+        if os.path.exists(src_rt):
+            shutil.copy(src_rt, rt_dir)
+    open(os.path.join(pkg, "__init__.py"), "w").close()
+
+    sys.path.insert(0, rt_dir)
+    sys.path.insert(0, root)
+    importlib.invalidate_caches()
+    mods = {name: importlib.import_module(f"{pkgname}.{name}") for name in ("ModA", "ModB")}
+    rt = importlib.import_module("catala_runtime")
+    return mods, rt
+
+
+def _coerce(rt, value, typ: str):
+    if typ == "money":
+        return rt.Money(f"{int(value)}.00")
+    if typ == "decimal":
+        return rt.Decimal(str(value))
+    if typ == "bool":
+        return rt.Bool(bool(value))
+    return int(value)
+
+
+def equivalence_gate(a_src: str | None, b_src: str | None,
+                     candidate: dict | None = None) -> GateResult:
+    """Extensional equivalence of A and B on an input raster.
+
+    Compiles both candidates to Python via clerk and compares the declared output
+    field over `candidate["raster"]`. Falls back to a normalised-text proxy when
+    the toolchain or a raster spec is unavailable.
+    """
+    if not a_src or not b_src:
+        return GateResult("equivalence", FAIL, "missing A/B source")
+    norm = lambda s: re.sub(r"\s+", " ", s).strip()  # noqa: E731
+    if not have("clerk"):
+        same = norm(a_src) == norm(b_src)
+        return GateResult("equivalence", SKIP,
+                          f"clerk missing; textual-proxy {'match' if same else 'DIVERGENT'}")
+
+    cand = candidate or {}
+    out_field = cand.get("output_field")
+    if not out_field:
+        same = norm(a_src) == norm(b_src)
+        return GateResult("equivalence", SKIP,
+                          f"no output_field in candidate; textual-proxy "
+                          f"{'match' if same else 'DIVERGENT'}")
+
+    raster = cand.get("raster") or [{}]
+    types = cand.get("input_types") or {}
+    sa, sb = scope_name(a_src), scope_name(b_src)
+    if not sa or not sb:
+        return GateResult("equivalence", FAIL, "cannot determine scope name")
+
+    with tempfile.TemporaryDirectory() as d:
+        try:
+            _build_python(a_src, b_src, d)
+            mods, rt = _load_modules(d)
+        except Exception as e:  # noqa: BLE001
+            return GateResult("equivalence", FAIL, f"build/load failed: {str(e)[-300:]}")
+
+        diffs = []
+        for point in raster:
+            vals = {}
+            for k, v in point.items():
+                vals[f"{k}_in"] = _coerce(rt, v, types.get(k, "int"))
+            try:
+                ra = getattr(mods["ModA"], _snake(sa))(
+                    getattr(mods["ModA"], f"{sa}In")(**vals))
+                rb = getattr(mods["ModB"], _snake(sb))(
+                    getattr(mods["ModB"], f"{sb}In")(**vals))
+                va, vb = getattr(ra, out_field), getattr(rb, out_field)
+            except Exception as e:  # noqa: BLE001
+                return GateResult("equivalence", FAIL, f"run failed: {str(e)[-300:]}")
+            if str(va) != str(vb):
+                diffs.append((point, str(va), str(vb)))
+
+    if diffs:
+        return GateResult("equivalence", FAIL,
+                          f"{len(diffs)}/{len(raster)} raster points diverge; "
+                          f"first={diffs[0]}")
+    return GateResult("equivalence", PASS,
+                      f"A == B on {len(raster)} raster point(s) for '{out_field}'")
+
+
+def roundtrip_gate(judge_json_text: str) -> GateResult:
+    try:
+        d = json.loads(judge_json_text)
+    except json.JSONDecodeError:
+        return GateResult("roundtrip", FAIL, "judge output not valid JSON")
+    if d.get("faithful") is True and not d.get("stille_zusatzannahmen"):
+        return GateResult("roundtrip", PASS, "round-trip faithful, no silent assumptions")
+    return GateResult("roundtrip", FAIL,
+                      f"abweichungen={d.get('abweichungen')} "
+                      f"annahmen={d.get('stille_zusatzannahmen')}")
+
+
+def clerk_gate(catala_src: str | None) -> GateResult:
+    if not have("clerk"):
+        return GateResult("clerk", SKIP, "clerk not on PATH (toolchain reinstall pending)")
+    return GateResult("clerk", SKIP, "test generation + clerk run implemented at G2")

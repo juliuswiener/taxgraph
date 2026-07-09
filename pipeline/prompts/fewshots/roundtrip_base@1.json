@@ -1,0 +1,10 @@
+{
+  "description": "Few-shot examples for round-trip judging.",
+  "examples": [
+    {
+      "rule_id": "p10c_sonderausgabenpauschbetrag",
+      "input": "Original: Pauschbetrag 36 Euro. Catala: definition betrag equals $36.00",
+      "output": "{\"faithful\": true, \"abweichungen\": [], \"stille_zusatzannahmen\": []}"
+    }
+  ]
+}

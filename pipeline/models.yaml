@@ -1,0 +1,80 @@
+# TaxGraph Formalisierungspipeline - Modell-Besetzung (Phase 2, Nachtrag 2026-07-09).
+#
+# Hartes Prinzip: Formalisierer A, Formalisierer B und der Judge stammen aus drei
+# verschiedenen Modellfamilien/Labs (dekorrelierte Fehler -> Soundness des
+# Aequivalenz-Gates). Provider-Pinning ist Pflicht: allow_fallbacks=false, nur
+# westliche/EU-Hoster fuer GLM/DeepSeek (NIEMALS die offiziellen chinesischen
+# Endpoints Z.AI / DeepSeek / Baidu / SiliconFlow / StreamLake / Alibaba /
+# GMICloud fuer Legal-/Steuermaterial). Sonnet auf Provider "Anthropic" gepinnt
+# (nicht Bedrock/Azure/Vertex), damit der Pfad im Provenienz-Metadatum eindeutig
+# ist. Keine :floor/:nitro-Shortcuts, keine `latest`-Aliase.
+#
+# Modell-Slugs gegen die OpenRouter-Modellliste verifiziert (/models, /endpoints):
+# anthropic/claude-sonnet-4.6, z-ai/glm-5.2, deepseek/deepseek-v4-pro,
+# deepseek/deepseek-v4-flash. providers = exakte OpenRouter-Provider-Tags
+# (fireworks / fireworks/fast / together / anthropic); westliche Hoster, keine
+# chinesischen Endpoints.
+
+version: 1
+
+roles:
+  formalisierer_a:
+    slug: "anthropic/claude-sonnet-4.6"
+    providers: ["anthropic"]
+    temperature: 0.0
+    max_tokens: 8192
+    prompt_template_id: "formalisierung@1"
+    fewshot_set_id: "formalisierung_base@1"
+
+  formalisierer_b:
+    # G2 entscheidet endgueltig zwischen GLM und DeepSeek V4 Pro (siehe bakeoff).
+    slug: "z-ai/glm-5.2"
+    providers: ["together", "fireworks/fast", "digitalocean"]
+    temperature: 0.0
+    max_tokens: 8192
+    prompt_template_id: "formalisierung@1"   # identisches Template wie A
+    fewshot_set_id: "formalisierung_base@1"   # identische Few-Shots wie A
+
+  judge:
+    # Dritte Familie gegenueber A (Anthropic) und B (Z.AI): DeepSeek.
+    slug: "deepseek/deepseek-v4-pro"
+    providers: ["together", "fireworks", "digitalocean"]
+    temperature: 0.0
+    max_tokens: 4096
+    prompt_template_id: "roundtrip_diff@1"
+    fewshot_set_id: "roundtrip_base@1"
+
+  worker:
+    # Extraktion, Segmentierung, Zitatanker, Testfall-Generierung.
+    slug: "deepseek/deepseek-v4-flash"
+    # kein Together-Endpoint fuer v4-flash; nur unquantisierte westliche Hoster
+    # (fp4/fp8-Varianten bewusst ausgeschlossen: Quantisierung bricht Determinismus).
+    providers: ["fireworks", "digitalocean"]
+    temperature: 0.0
+    max_tokens: 4096
+    prompt_template_id: "extraktion@1"
+    fewshot_set_id: "extraktion_base@1"
+
+# Orchestrator/Eskalation laeuft als Opus in Claude Code (bestehendes Setup),
+# nicht ueber OpenRouter; hier nur zur Dokumentation.
+orchestrator:
+  slug: "claude-opus (Claude Code)"
+  via: "claude-code"
+
+# G2-Bake-off-Paarungen (Start gibt Julius separat frei). Judge jeweils die
+# dritte Familie. Few-Shot-Sets pro Task disjunkt (Leakage-Schutz, siehe bakeoff).
+bakeoff:
+  pairings:
+    - name: "A-sonnet_B-glm"
+      formalisierer_a: "anthropic/claude-sonnet-4.6"
+      formalisierer_b: "z-ai/glm-5.2"
+      judge: "deepseek/deepseek-v4-pro"
+    - name: "A-sonnet_B-deepseek"
+      formalisierer_a: "anthropic/claude-sonnet-4.6"
+      formalisierer_b: "deepseek/deepseek-v4-pro"
+      judge: "z-ai/glm-5.2"
+  provider_allowlists:
+    "anthropic/claude-sonnet-4.6": ["anthropic"]
+    "z-ai/glm-5.2": ["together", "fireworks/fast", "digitalocean"]
+    "deepseek/deepseek-v4-pro": ["together", "fireworks", "digitalocean"]
+    "deepseek/deepseek-v4-flash": ["fireworks", "digitalocean"]

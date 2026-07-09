@@ -1,0 +1,10 @@
+{
+  "description": "Few-shot examples for claim extraction with verbatim citation anchors.",
+  "examples": [
+    {
+      "rule_id": "p10c_sonderausgabenpauschbetrag",
+      "input": "§ 10c Satz 1 EStG: ... wird ein Pauschbetrag von 36 Euro abgezogen (Sonderausgaben-Pauschbetrag) ...",
+      "output": "{\"claims\": [{\"claim_typ\": \"parameter\", \"segment_label\": \"Satz 1\", \"zitatanker\": \"ein Pauschbetrag von 36 Euro\", \"payload\": {\"betrag_euro\": 36}}]}"
+    }
+  ]
+}

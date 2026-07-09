@@ -1,0 +1,15 @@
+{
+  "description": "Few-shot examples for Catala formalisation. Each tagged with rule_id so bake-off tasks can exclude the target hand rule (leakage protection).",
+  "examples": [
+    {
+      "rule_id": "p10c_sonderausgabenpauschbetrag",
+      "input": "Norm: § 10c Satz 1 EStG. Fuer Sonderausgaben ... wird ein Pauschbetrag von 36 Euro abgezogen. Claims: [{parameter, betrag: 36}]",
+      "output": "MODULE: Sonderausgabenpauschbetrag\n```catala\ndeclaration scope Pauschbetrag:\n  output betrag content money\nscope Pauschbetrag:\n  definition betrag equals $36.00\n```"
+    },
+    {
+      "rule_id": "p9a_arbeitnehmerpauschbetrag",
+      "input": "Norm: § 9a Satz 1 Nr. 1a EStG. Arbeitnehmer-Pauschbetrag von 1 230 Euro, wenn nicht hoehere Werbungskosten. Satz 2: nur bis zur Hoehe der Einnahmen.",
+      "output": "MODULE: Arbeitnehmerpauschbetrag\n```catala\ndeclaration scope Einkuenfte:\n  input bruttolohn content money\n  input werbungskosten content money\n  output einkuenfte content money\nscope Einkuenfte:\n  definition einkuenfte equals\n    if werbungskosten > $1,230.00 then bruttolohn - werbungskosten\n    else (if bruttolohn > $1,230.00 then bruttolohn - $1,230.00 else $0.00)\n```"
+    }
+  ]
+}

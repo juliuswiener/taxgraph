@@ -1,0 +1,1 @@
+{"text": "MODULE: SparerPauschbetrag\n```catala\ndeclaration scope Pauschbetrag:\n  output betrag content money\nscope Pauschbetrag:\n  definition betrag equals $1,000.00\n```", "prompt_tokens": 258, "completion_tokens": 70}

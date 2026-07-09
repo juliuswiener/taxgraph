@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(//home/julius/.config/taxgraph/**)",
+      "Read(~/.config/taxgraph/**)",
+      "Read(**/.env*)",
+      "Read(**/openrouter.env)"
+    ]
+  }
+}

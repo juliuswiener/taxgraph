@@ -12,3 +12,14 @@ __pycache__/
 
 # Scratch
 scratch/
+
+# Secrets (never commit)
+.env*
+openrouter.env
+**/.env*
+
+# OMC state
+.omc/
+
+# Pipeline run artifacts (logs may contain prompts/costs; keep out of git)
+pipeline/runs/
