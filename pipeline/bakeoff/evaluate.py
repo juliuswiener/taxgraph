@@ -233,9 +233,34 @@ def to_markdown(res: dict) -> str:
 
     ranked = sorted(res.items(), key=lambda kv: (kv[1]["eskalationsrate"],
                                                  kv[1]["kosten_pro_approved_usd"] or 0.0))
-    L.append(f"\n**Empfehlung:** `{ranked[0][0]}` "
-             f"(Eskalationsrate {ranked[0][1]['eskalationsrate']:.3f}; Kosten nur "
-             f"Tiebreaker). Entscheidung trifft Julius.\n")
+    rates = [m["eskalationsrate"] for m in res.values()]
+    spread = max(rates) - min(rates)
+    saturated = min(rates) >= 0.85   # praktisch jeder Lauf eskaliert
+    too_close = spread < 0.10        # Unterschied im Rauschen
+
+    L.append("\n## Empfehlung\n")
+    if saturated or too_close:
+        L.append("**Kein Entscheid moeglich.** Die Entscheidungsmetrik traegt nicht:\n")
+        if saturated:
+            L.append(f"- Die Eskalationsrate ist gesaettigt (Minimum {min(rates):.3f}). "
+                     f"Praktisch jeder Lauf wird eskaliert, also trennt sie die "
+                     f"Paarungen nicht.")
+        if too_close:
+            L.append(f"- Der Abstand betraegt nur {spread:.3f} und liegt bei "
+                     f"n={ranked[0][1]['n']} Tasks je Paarung im Rauschen.")
+        L.append("\nEin Sieger waere hier ein Artefakt der Metrik, kein Befund ueber "
+                 "die Modelle. Vor einer Entscheidung muss die Saettigungsursache "
+                 "behoben und der Bake-off wiederholt werden.\n")
+        L.append("Zur Orientierung, ohne Entscheidungscharakter:\n")
+        for name, m in ranked:
+            L.append(f"- `{name}`: eskalation {m['eskalationsrate']:.3f}, "
+                     f"syntax {m['syntaxvaliditaet']:.3f}, "
+                     f"aequivalenz-divergenz {m['aequivalenz_divergenzrate']:.3f}, "
+                     f"kosten ${m['kosten_gesamt_usd']:.4f}")
+    else:
+        L.append(f"**`{ranked[0][0]}`** (Eskalationsrate "
+                 f"{ranked[0][1]['eskalationsrate']:.3f}; Kosten nur Tiebreaker). "
+                 f"Entscheidung trifft Julius.\n")
     return "\n".join(L)
 
 
