@@ -49,6 +49,29 @@ def rate(n: int, d: int) -> float:
     return (n / d) if d else 0.0
 
 
+def _judge_missed(r: dict) -> bool:
+    """Stage 2 of the round-trip metric: judge said faithful, reality disagreed.
+
+    An assumption is *missed* when the judge reports `faithful` but a
+    deterministic gate (equivalence) or the blind reference contradicts it. A
+    judge that never flags anything looks perfect on stage 1 and fails here.
+    """
+    v = r.get("judge_verdict") or {}
+    if not v or v.get("parse_error") or not v.get("faithful"):
+        return False
+    if _gate(r, "equivalence") == "FAIL":
+        return True
+    if "blind_repro_match" in r and not r["blind_repro_match"]:
+        return True
+    return False
+
+
+def _judge_named(r: dict) -> bool:
+    """Stage 1: judge explicitly named a silent assumption."""
+    v = r.get("judge_verdict") or {}
+    return bool(v and not v.get("parse_error") and v.get("stille_zusatzannahmen"))
+
+
 def evaluate(reports: list[dict]) -> dict:
     by = defaultdict(list)
     for r in reports:
@@ -63,22 +86,33 @@ def evaluate(reports: list[dict]) -> dict:
                         and _gate(r, "typecheck_b") in ("PASS", None))
         equiv_div = sum(1 for r in rs if _gate(r, "equivalence") == "FAIL")
         rt_dev = sum(1 for r in rs if _gate(r, "roundtrip") == "FAIL")
-        silent = sum(1 for r in rs if "annahmen=[" in str(r.get("gates")) and
-                     "annahmen=[]" not in str(r.get("gates")))
-        escalated = sum(1 for r in rs if r.get("queue_status") == "flagged_for_review")
+        named = sum(1 for r in rs if _judge_named(r))
+        missed = sum(1 for r in rs if _judge_missed(r))
+        escalated = [r for r in rs if r.get("queue_status") == "flagged_for_review"]
+        # Eskalation getrennt nach ausloesendem Gate
+        per_gate = defaultdict(int)
+        for r in escalated:
+            for g in r.get("failed_gates", []):
+                per_gate[g] += 1
         blind = [r for r in rs if "blind_repro_match" in r]
         blind_ok = sum(1 for r in blind if r["blind_repro_match"])
         approved = [r for r in rs if r.get("queue_status", "").startswith("verified")]
         cost = sum(r.get("total_cost_usd", 0.0) for r in rs)
+        # Clerk-Gate n/a-Anteil (kein EStH/BMF-Rechenbeispiel)
+        clerk_na = sum(1 for r in rs if _gate(r, "clerk") == "SKIP")
 
         result[pairing] = {
             "n": n,
             "syntaxvaliditaet": rate(syntax_ok, n),
             "aequivalenz_divergenzrate": rate(equiv_div, n),
             "roundtrip_abweichungsrate": rate(rt_dev, n),
-            "stille_zusatzannahmen": rate(silent, n),
+            # zweistufig: benannt (gut) vs verpasst (schlecht)
+            "annahme_benannt": rate(named, n),
+            "annahme_verpasst": rate(missed, n),
             "blind_reproduktion": rate(blind_ok, len(blind)) if blind else None,
-            "eskalationsrate": rate(escalated, n),
+            "eskalationsrate": rate(len(escalated), n),
+            "eskalation_je_gate": {k: rate(v, n) for k, v in sorted(per_gate.items())},
+            "clerk_gate_na_anteil": rate(clerk_na, n),
             "kosten_gesamt_usd": round(cost, 6),
             "kosten_pro_approved_usd": round(cost / len(approved), 6) if approved else None,
         }
@@ -94,7 +128,7 @@ def to_markdown(res: dict) -> str:
         return "\n".join(L)
 
     cols = ["n", "syntaxvaliditaet", "aequivalenz_divergenzrate",
-            "roundtrip_abweichungsrate", "stille_zusatzannahmen",
+            "roundtrip_abweichungsrate", "annahme_benannt", "annahme_verpasst",
             "blind_reproduktion", "eskalationsrate", "kosten_pro_approved_usd"]
     L.append("| Paarung (Formalisierer B) | " + " | ".join(cols) + " |")
     L.append("|" + "---|" * (len(cols) + 1))
@@ -105,11 +139,33 @@ def to_markdown(res: dict) -> str:
             cells.append("n/a" if v is None else (f"{v:.3f}" if isinstance(v, float) else str(v)))
         L.append(f"| {pairing} | " + " | ".join(cells) + " |")
 
+    L.append("\n`annahme_benannt` = der Judge hat eine stille Zusatzannahme selbst "
+             "benannt (gut). `annahme_verpasst` = der Judge hielt die Formalisierung "
+             "fuer treu, aber Aequivalenz oder die Blind-Referenz widersprechen "
+             "(schlecht). Ein Judge, der nie etwas meldet, sieht in Spalte 1 gut aus "
+             "und faellt in Spalte 2 durch.\n")
+
+    L.append("\n## Eskalation getrennt nach ausloesendem Gate\n")
+    gates = sorted({g for m in res.values() for g in m["eskalation_je_gate"]})
+    if gates:
+        L.append("| Paarung | " + " | ".join(gates) + " |")
+        L.append("|" + "---|" * (len(gates) + 1))
+        for pairing, m in sorted(res.items()):
+            row = [f"{m['eskalation_je_gate'].get(g, 0.0):.3f}" for g in gates]
+            L.append(f"| {pairing} | " + " | ".join(row) + " |")
+    else:
+        L.append("Keine Eskalationen.\n")
+
+    L.append("\nClerk-Gate n/a-Anteil (kein EStH/BMF-Rechenbeispiel; Aequivalenz + "
+             "Round-Trip tragen):\n")
+    for pairing, m in sorted(res.items()):
+        L.append(f"- `{pairing}`: {m['clerk_gate_na_anteil']:.3f}")
+
     ranked = sorted(res.items(), key=lambda kv: (kv[1]["eskalationsrate"],
                                                  kv[1]["kosten_pro_approved_usd"] or 0.0))
     L.append(f"\n**Empfehlung:** `{ranked[0][0]}` "
-             f"(Eskalationsrate {ranked[0][1]['eskalationsrate']:.3f}). "
-             f"Entscheidung trifft Julius.\n")
+             f"(Eskalationsrate {ranked[0][1]['eskalationsrate']:.3f}; Kosten nur "
+             f"Tiebreaker). Entscheidung trifft Julius.\n")
     return "\n".join(L)
 
 

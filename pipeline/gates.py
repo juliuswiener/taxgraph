@@ -266,16 +266,42 @@ def equivalence_gate(a_src: str | None, b_src: str | None,
                       f"A == B on {len(raster)} raster point(s) for '{out_field}'")
 
 
-def roundtrip_gate(judge_json_text: str) -> GateResult:
+def roundtrip_parse(judge_json_text: str) -> dict:
+    """Structured judge verdict for the two-stage round-trip metric.
+
+    Stage 1 (here): did the judge itself flag deviations / silent assumptions?
+    Stage 2 (evaluate.py): if the judge said `faithful` but equivalence or the
+    blind reference disagrees, the judge *missed* an assumption. Both are needed;
+    a judge that never flags anything scores well on stage 1 and badly on stage 2.
+    """
     try:
         d = json.loads(judge_json_text)
     except json.JSONDecodeError:
+        # try to salvage a JSON object embedded in prose
+        m = re.search(r"\{.*\}", judge_json_text, re.DOTALL)
+        if not m:
+            return {"parse_error": True}
+        try:
+            d = json.loads(m.group(0))
+        except json.JSONDecodeError:
+            return {"parse_error": True}
+    return {
+        "parse_error": False,
+        "faithful": bool(d.get("faithful")),
+        "abweichungen": list(d.get("abweichungen") or []),
+        "stille_zusatzannahmen": list(d.get("stille_zusatzannahmen") or []),
+    }
+
+
+def roundtrip_gate(judge_json_text: str) -> GateResult:
+    d = roundtrip_parse(judge_json_text)
+    if d.get("parse_error"):
         return GateResult("roundtrip", FAIL, "judge output not valid JSON")
-    if d.get("faithful") is True and not d.get("stille_zusatzannahmen"):
+    if d["faithful"] and not d["stille_zusatzannahmen"]:
         return GateResult("roundtrip", PASS, "round-trip faithful, no silent assumptions")
     return GateResult("roundtrip", FAIL,
-                      f"abweichungen={d.get('abweichungen')} "
-                      f"annahmen={d.get('stille_zusatzannahmen')}")
+                      f"abweichungen={len(d['abweichungen'])} "
+                      f"annahmen={len(d['stille_zusatzannahmen'])}")
 
 
 _UMLAUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",

@@ -39,6 +39,7 @@ class CascadeResult:
     catala_b: str | None = None
     total_cost_usd: float = 0.0
     queue_status: str = "extracted"
+    judge_verdict: dict = field(default_factory=dict)
 
     def gates_dict(self):
         return [{"name": g.name, "status": g.status, "detail": g.detail}
@@ -95,6 +96,7 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
     if src_a:
         j_text, pj = R.roundtrip(client, roles["judge"], norm, src_a, models_hash)
         record(pj)
+        res.judge_verdict = G.roundtrip_parse(j_text)
         res.gate_results.append(G.roundtrip_gate(j_text))
     else:
         res.gate_results.append(G.GateResult("roundtrip", G.FAIL, "no A source"))
@@ -128,6 +130,7 @@ def write_report(res: CascadeResult, out_dir: str | None = None) -> str:
     out_dir = out_dir or os.path.join(os.path.dirname(__file__), "runs",
                                       f"{res.candidate_id}_{now_iso().replace(':', '')}")
     os.makedirs(out_dir, exist_ok=True)
+    failed = [g.name for g in res.gate_results if g.status == G.FAIL]
     report = {
         "candidate_id": res.candidate_id,
         "dry_run": res.dry_run,
@@ -135,6 +138,10 @@ def write_report(res: CascadeResult, out_dir: str | None = None) -> str:
         "queue_status": res.queue_status,
         "module_name": res.module_name,
         "gates": res.gates_dict(),
+        # Eskalation getrennt nach Gate auswertbar machen
+        "failed_gates": failed,
+        # zweistufige Round-Trip-Wertung (Stufe 2 in evaluate.py)
+        "judge_verdict": res.judge_verdict,
         "provenance": res.provenance,
         "total_cost_usd": round(res.total_cost_usd, 6),
     }
