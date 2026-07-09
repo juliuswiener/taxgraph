@@ -1,0 +1,289 @@
+# Phase-3 Produktions-Manifest, erste Charge.
+#
+# Die 10 Regeln aus dem G2-Task-Set, jetzt als echte Regeln: Norm-Texte sind
+# eingefroren (sha256, `make sources-check`), Signaturen existieren, und die
+# scope_gaps der Kaskade liefern den Zuschnitt-Backlog fuer die naechste Charge
+# gleich mit (reports/formalisierungs-backlog.md).
+#
+# Besetzung: eingefroren nach G2 (pipeline/models.yaml). Keine Paarungen mehr.
+#
+# DoD je Regel (unveraendert):
+#   1. Norm-Text eingefroren, Zitatanker verifizierbar
+#   2. Doppelformalisierung A/B, extensionale Aequivalenz auf dem Raster
+#   3. Round-Trip-Diff ohne Abweichung und ohne stille Zusatzannahme
+#   4. scope_gap: kein Norm-Teil der Klasse `wirkt_hinein`
+#   5. Clerk-Test-Gate GRUEN. Das Gate ist Pflicht. `test_seed: none` laesst es
+#      fallen. Entweder EStH/BMF-Rechenbeispiel mit Zitatanker, oder synthetische
+#      Faelle, die Julius im Review abgesegnet hat (`quelle: review/<datum>.md`).
+#      Nie LLM-erfundene Erwartungswerte.
+#   6. Human-Review durch Julius, dann Merge nach rules/estg/
+#
+# `test_seed: none` heisst hier NICHT "n/a" wie im Bake-off, sondern
+# "noch offen -> Gate faellt". Genau so soll es sein, bis die Seeds da sind.
+
+regeln:
+- rule_id: p9_1_3_nr5_doppelte_haushaltsfuehrung
+  norm: § 9 Abs. 1 S. 3 Nr. 5 EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt
+  struktur:
+  - monats_cap_1000
+  - bedingungen
+  - inland_ausland_fallunterscheidung
+  test_seed: none
+  signature:
+    scope: DoppelteHaushaltsfuehrung
+    inputs:
+      unterkunftskosten_monat: money
+      monate: int
+      im_inland: bool
+    output: abziehbare_unterkunftskosten
+  raster:
+  - unterkunftskosten_monat: 800
+    monate: 12
+    im_inland: true
+  - unterkunftskosten_monat: 1400
+    monate: 12
+    im_inland: true
+  - unterkunftskosten_monat: 1400
+    monate: 6
+    im_inland: false
+  - unterkunftskosten_monat: 2500
+    monate: 12
+    im_inland: false
+  exclude_rule_ids:
+  - p9_1_3_nr5_doppelte_haushaltsfuehrung
+- rule_id: p9_1_3_nr5a_uebernachtung
+  norm: § 9 Abs. 1 S. 3 Nr. 5a EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr5a_2026-07-09.txt
+  struktur:
+  - ist_kosten
+  - 48_monats_grenze
+  - neubeginn_regel
+  test_seed: none
+  signature:
+    scope: Uebernachtungskosten
+    inputs:
+      uebernachtungskosten: money
+      monate_taetigkeit: int
+    output: abziehbare_uebernachtungskosten
+  raster:
+  - uebernachtungskosten: 3000
+    monate_taetigkeit: 12
+  - uebernachtungskosten: 3000
+    monate_taetigkeit: 60
+  - uebernachtungskosten: 500
+    monate_taetigkeit: 48
+  exclude_rule_ids:
+  - p9_1_3_nr5a_uebernachtung
+- rule_id: p9_4a_verpflegungsmehraufwand
+  norm: § 9 Abs. 4a EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt
+  struktur:
+  - staffel_nach_abwesenheit
+  - dreimonatsfrist
+  - prozentuale_kuerzung
+  test_seed: none
+  signature:
+    scope: Verpflegungsmehraufwand
+    inputs:
+      abwesenheit_stunden: int
+      mit_uebernachtung: bool
+      an_oder_abreisetag: bool
+      monate_am_ort: int
+    output: verpflegungspauschale
+  raster:
+  - abwesenheit_stunden: 24
+    mit_uebernachtung: true
+    an_oder_abreisetag: false
+    monate_am_ort: 1
+  - abwesenheit_stunden: 10
+    mit_uebernachtung: false
+    an_oder_abreisetag: false
+    monate_am_ort: 1
+  - abwesenheit_stunden: 6
+    mit_uebernachtung: false
+    an_oder_abreisetag: false
+    monate_am_ort: 1
+  - abwesenheit_stunden: 24
+    mit_uebernachtung: true
+    an_oder_abreisetag: false
+    monate_am_ort: 5
+  exclude_rule_ids:
+  - p9_4a_verpflegungsmehraufwand
+- rule_id: p9_1_3_nr6_arbeitsmittel
+  norm: § 9 Abs. 1 S. 3 Nr. 6 EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr6_2026-07-09.txt
+  struktur:
+  - einfacher_abzug
+  - verweis_auf_nr7
+  test_seed: none
+  signature:
+    scope: Arbeitsmittel
+    inputs:
+      aufwendungen: money
+    output: abziehbar
+  raster:
+  - aufwendungen: 0
+  - aufwendungen: 300
+  - aufwendungen: 2500
+  exclude_rule_ids:
+  - p9_1_3_nr6_arbeitsmittel
+- rule_id: p9_1_3_nr7_afa
+  norm: § 9 Abs. 1 S. 3 Nr. 7 EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr7_2026-07-09.txt
+  struktur:
+  - verweisregel
+  - gwg_grenze_ueber_p6
+  test_seed: none
+  signature:
+    scope: Absetzungfuerabnutzung
+    inputs:
+      anschaffungskosten: money
+      nutzungsdauer_jahre: int
+    output: afa_jahresbetrag
+  raster:
+  - anschaffungskosten: 1200
+    nutzungsdauer_jahre: 3
+  - anschaffungskosten: 800
+    nutzungsdauer_jahre: 1
+  - anschaffungskosten: 5000
+    nutzungsdauer_jahre: 5
+  exclude_rule_ids:
+  - p9_1_3_nr7_afa
+- rule_id: p9_6_erstausbildung_abgrenzung
+  norm: § 9 Abs. 6 EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs6_2026-07-09.txt
+  struktur:
+  - praedikat_definition
+  - mindestdauer_12_monate
+  - abgrenzung
+  test_seed: none
+  signature:
+    scope: Erstausbildung
+    inputs:
+      erstausbildung_abgeschlossen: bool
+      im_dienstverhaeltnis: bool
+      aufwendungen: money
+    output: abziehbare_werbungskosten
+  raster:
+  - erstausbildung_abgeschlossen: true
+    im_dienstverhaeltnis: false
+    aufwendungen: 3000
+  - erstausbildung_abgeschlossen: false
+    im_dienstverhaeltnis: false
+    aufwendungen: 3000
+  - erstausbildung_abgeschlossen: false
+    im_dienstverhaeltnis: true
+    aufwendungen: 3000
+  exclude_rule_ids:
+  - p9_6_erstausbildung_abgrenzung
+- rule_id: p10_1_7_berufsausbildung
+  norm: § 10 Abs. 1 Nr. 7 EStG
+  norm_source: sources/gesetze-im-internet/estg_p10_abs1nr7_2026-07-09.txt
+  struktur:
+  - jahres_cap_6000
+  - verdopplung_ehegatten
+  - verweiskette
+  test_seed: none
+  signature:
+    scope: Berufsausbildung
+    inputs:
+      aufwendungen: money
+    output: abziehbare_sonderausgaben
+  raster:
+  - aufwendungen: 2000
+  - aufwendungen: 6000
+  - aufwendungen: 9000
+  exclude_rule_ids:
+  - p10_1_7_berufsausbildung
+- rule_id: p24b_entlastungsbetrag
+  norm: § 24b EStG
+  norm_source: sources/gesetze-im-internet/estg_p24b_2026-07-09.txt
+  struktur:
+  - grundbetrag_4260
+  - kindstaffel_240
+  - zwoelftelung
+  - praedikat_alleinstehend
+  test_seed: none
+  signature:
+    scope: Entlastungsbetrag
+    inputs:
+      alleinstehend: bool
+      anzahl_kinder: int
+      monate_ohne_voraussetzung: int
+    output: entlastungsbetrag
+  raster:
+  - alleinstehend: true
+    anzahl_kinder: 1
+    monate_ohne_voraussetzung: 0
+  - alleinstehend: true
+    anzahl_kinder: 3
+    monate_ohne_voraussetzung: 0
+  - alleinstehend: true
+    anzahl_kinder: 1
+    monate_ohne_voraussetzung: 6
+  - alleinstehend: false
+    anzahl_kinder: 2
+    monate_ohne_voraussetzung: 0
+  exclude_rule_ids:
+  - p24b_entlastungsbetrag
+- rule_id: p33_3_zumutbare_belastung
+  norm: § 33 Abs. 3 EStG
+  norm_source: sources/gesetze-im-internet/estg_p33_abs3_2026-07-09.txt
+  struktur:
+  - tabellen_lookup_2d
+  - gde_stufen
+  - kinderzahl_stufen
+  - prozent_des_gde
+  test_seed: none
+  signature:
+    scope: ZumutbareBelastung
+    inputs:
+      gesamtbetrag_der_einkuenfte: money
+      anzahl_kinder: int
+      splitting: bool
+    output: zumutbare_belastung
+  raster:
+  - gesamtbetrag_der_einkuenfte: 15000
+    anzahl_kinder: 0
+    splitting: false
+  - gesamtbetrag_der_einkuenfte: 30000
+    anzahl_kinder: 0
+    splitting: true
+  - gesamtbetrag_der_einkuenfte: 60000
+    anzahl_kinder: 1
+    splitting: false
+  - gesamtbetrag_der_einkuenfte: 60000
+    anzahl_kinder: 3
+    splitting: false
+  - gesamtbetrag_der_einkuenfte: 15340
+    anzahl_kinder: 0
+    splitting: false
+  exclude_rule_ids:
+  - p33_3_zumutbare_belastung
+- rule_id: p35a_2_3_haushaltsnahe
+  norm: § 35a Abs. 2 und 3 EStG
+  norm_source: sources/gesetze-im-internet/estg_p35a_abs2_3_2026-07-09.txt
+  struktur:
+  - prozent_20
+  - cap_4000
+  - cap_1200
+  - nur_arbeitskosten
+  test_seed: none
+  signature:
+    scope: Haushaltsnahe
+    inputs:
+      aufwendungen_dienstleistungen: money
+      aufwendungen_handwerker: money
+    output: steuerermaessigung
+  raster:
+  - aufwendungen_dienstleistungen: 1000
+    aufwendungen_handwerker: 0
+  - aufwendungen_dienstleistungen: 25000
+    aufwendungen_handwerker: 0
+  - aufwendungen_dienstleistungen: 0
+    aufwendungen_handwerker: 10000
+  - aufwendungen_dienstleistungen: 5000
+    aufwendungen_handwerker: 3000
+  exclude_rule_ids:
+  - p35a_2_3_haushaltsnahe
