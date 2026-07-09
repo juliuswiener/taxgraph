@@ -11,11 +11,16 @@ VENV312  := oracle/.venv312/bin/activate
 
 .PHONY: all s01 s03 tests build-python s02 clean
 
-all: tests s02
+all: unit tests s02
 
 ## Run all Catala/Clerk scope tests (S0.1 tariff, S0.3 Arbeitszimmer/Homeoffice).
 tests:
 	$(OPAM_ENV); clerk test -W rules/
+
+## Regressionstests der Gate-Semantik (kein Catala, kein Netz, <1s).
+unit:
+	python3 -m pytest tests/ -q
+
 
 ## S0.1: §32a tariff tests only.
 s01:

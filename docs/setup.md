@@ -197,3 +197,40 @@ Reasoning-Tokens; mit `roundtrip_diff@3` liegt der gemessene Bedarf bei rund
 
 Merksatz: bevor eine Modellantwort als inhaltlich falsch gilt, pruefe
 `finish_reason`.
+
+## Stille YAML-Semantik ist eine Gate-Umgehung
+
+Gelernt beim Neuschnitt von § 35a (2026-07-09).
+
+`yaml.safe_load` nimmt bei zwei gleichen Schluesseln im selben Mapping
+kommentarlos den letzten:
+
+```yaml
+regel:
+  test_seed:
+  - {expected: 1410.00}   # neu, drei Kategorien
+  test_seed:
+  - {expected: 1200.00}   # alter Block, vergessen
+```
+
+Beim Neuschnitt blieb ein alter `test_seed:`-Block stehen. Geladen wurde nur der
+alte. Die Regel haette mit einem **gruenen** Test-Gate dagestanden, das eine
+voellig andere Signatur prueft - der Fehler waere nicht als Fehler erschienen,
+sondern als Erfolg.
+
+Ein Gate, das man durch einen vergessenen Block umgehen kann, ist kein Gate.
+Deshalb laedt jedes Manifest dieses Projekts ueber `yamlstrict.load_yaml`; ein
+doppelter Schluessel ist dort ein Fehler, kein Ueberschreiben. Umgestellt sind
+`pipeline/` (models.yaml, rules.yaml, tasks.yaml, Leakage-Guard), `golden/`,
+`params/`, `docstore/` und `elster/`.
+
+Zwei Nebenbefunde, die die Regel bestaetigen:
+
+- Ein `ast.parse`-Check haette den Umbau fuer gruen erklaert. `golden/runner.py`
+  importierte `yamlstrict` vor dem `sys.path`-Setup und war kaputt. Umgestellte
+  Leser gehoeren gegen echte Daten getestet, nicht gegen den Parser.
+- Deterministische Pruefungen duerfen nicht an der Toolchain haengen. Das
+  Clerk-Gate prueft Herkunft, Rechenweg und Zitatanker seiner Test-Seeds jetzt
+  **bevor** es `clerk` auf dem PATH sucht. Vorher war seine Strenge davon
+  abhaengig, ob die opam-Umgebung geladen war - dieselbe Regel konnte je nach
+  Shell `FAIL` oder `SKIP` liefern.

@@ -108,7 +108,9 @@ def regate(rules: list[dict]) -> int:
                                if g["status"] == G.FAIL and not g["name"].endswith("_first")]
         rep["queue_status"] = _queue_status(rep["gates"], rule)
         rep["bedingungen"] = [b["bedingung"] for b in rule.get("geltungsbedingungen", [])]
-        rep["annahmen_mapping"] = (rep.get("judge_verdict") or {}).get("stille_zusatzannahmen", [])
+        # normalisiert: aeltere Verdikte tragen nackte Strings ohne Mapping
+        rep["annahmen_mapping"] = [G._normalize_annahme(a) for a in
+                                   (rep.get("judge_verdict") or {}).get("stille_zusatzannahmen", [])]
         rep["regated"] = True
         json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
         bed = f" unter {len(rep['bedingungen'])} Bedingung(en)" if rep["bedingungen"] else ""

@@ -2,61 +2,84 @@
 
 Automatisch erzeugt aus den Judge-Verdikten der Gate-Kaskade. Enthalten sind ausschliesslich Norm-Teile der Klasse `unabhaengig`: sie liegen ausserhalb der formalisierten Signatur und aendern deren Ergebnis nicht. Norm-Teile, die in den Signatur-Scope hineinwirken, stehen NICHT hier - sie eskalieren im `scope_gap`-Gate, weil der Ausschnitt ohne sie falsch waere.
 
-19 Item(s) aus 6 Regel(n).
+29 Item(s) aus 7 Regel(n).
 
 
 ## aus `p10_1_7_berufsausbildung`
 
-- **Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt Satz 1 für jeden Ehegatten.**
-  - Die Regelung betrifft die Anwendung des Höchstbetrags bei zusammenveranlagten Ehegatten, ändert aber nicht den Höchstbetrag selbst oder die Berechnung für einen einzelnen Steuerpflichtigen, die der Scope modelliert.
-- **Zu den Aufwendungen im Sinne des Satzes 1 gehören auch Aufwendungen für eine auswärtige Unterbringung.**
-  - Diese Erweiterung des Aufwendungsbegriffs liegt außerhalb des Scopes, der nur einen bereits ermittelten Geldbetrag als Input erhält; sie verändert die Kappungsregel nicht.
-- **§ 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz 8 und Absatz 4a sind bei der Ermittlung der Aufwendungen anzuwenden.**
-  - Die Verweise betreffen die Ermittlung der abziehbaren Aufwendungen, die der Scope als gegeben voraussetzt; sie wirken sich nicht auf die Höchstbetragsregelung selbst aus.
+- **Satz 2: Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt Satz 1 für jeden Ehegatten.**
+  - Regelt die Anwendung des Höchstbetrags bei Zusammenveranlagung, liegt außerhalb des Scopes, der nur eine Person betrachtet, und ändert die Kappungslogik für eine Person nicht.
+- **Satz 3: Zu den Aufwendungen im Sinne des Satzes 1 gehören auch Aufwendungen für eine auswärtige Unterbringung.**
+  - Erweitert die Definition der Aufwendungen, die als Input in den Scope eingehen; die Kappungsberechnung selbst bleibt unverändert.
+- **Satz 4: § 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz 8 und Absatz 4a sind bei der Ermittlung der Aufwendungen anzuwenden.**
+  - Betrifft die Ermittlung der Aufwendungen (Input), nicht die Höchstbetragsberechnung; der Scope bleibt korrekt.
 
 ## aus `p24b_entlastungsbetrag`
 
-- **§ 24b Abs. 1 EStG: „wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz 6 oder Kindergeld zusteht“ sowie die Meldepflicht-Regelung**
-  - Regelt, welche Kinder zählen, und liegt außerhalb der Signatur, die nur die Anzahl der Kinder als gegeben annimmt. Die Berechnungslogik des Entlastungsbetrags bleibt davon unberührt.
-- **§ 24b Abs. 3 EStG: Definition „allein stehend“ (Splitting-Verfahren, verwitwet, Haushaltsgemeinschaft mit Ausnahme)**
-  - Definiert den booleschen Input ‚alleinstehend‘, der außerhalb der Signatur bestimmt wird. Die Berechnung des Betrags aus den Inputs wird dadurch nicht verändert.
+- **Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige, die nicht die Voraussetzungen für die Anwendung des Splitting-Verfahrens (§ 26 Absatz 1) erfüllen oder verwitwet sind und keine Haushaltsgemeinschaft mit einer anderen volljährigen Person bilden, es sei denn, für diese steht ihnen ein Freibetrag nach § 32 Absatz 6 oder Kindergeld zu.**
+  - Die Definition beeinflusst nur die Bestimmung des Eingabewerts 'alleinstehend', nicht die Berechnung des Entlastungsbetrags selbst.
+- **wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz 6 oder Kindergeld zusteht**
+  - Die Kriterien für die Zählung der Kinder sind außerhalb der Berechnung; der formalisierte Code verwendet nur die bereits ermittelte Anzahl.
+- **Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden Steuerpflichtigen gemeldet ist.**
+  - Diese Vermutungsregel betrifft die Feststellung der Haushaltszugehörigkeit und damit den Eingabewert, nicht die Berechnung.
+- **von der Summe der Einkünfte abziehen**
+  - Die Art der steuerlichen Berücksichtigung (Abzug von der Summe der Einkünfte) liegt außerhalb des berechneten Geldbetrags.
 
 ## aus `p33_3_zumutbare_belastung`
 
-- **§ 33 Abs. 1 EStG: "Erwachsen einem Steuerpflichtigen zwangsläufig größere Aufwendungen ... so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen wird."**
-  - Regelt den Abzug der außergewöhnlichen Belastungen und die Rolle der zumutbaren Belastung als Kürzungsbetrag, nicht deren Berechnung. Die Berechnung der zumutbaren Belastung selbst bleibt unverändert.
-- **Tabelle in § 33 Abs. 3 Satz 1 EStG: "bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer a) nach § 32a Absatz 1, ... b) nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist"**
-  - Bestimmt, wann der Splitting-Tarif anzuwenden ist, also den Input 'splitting'. Die Berechnung der zumutbaren Belastung aus diesem Input ist davon nicht betroffen.
-- **§ 33 Abs. 3 Satz 2 EStG: "Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld hat."**
-  - Definiert den Kreis der zu berücksichtigenden Kinder und damit den Input 'anzahl_kinder'. Die Berechnung der zumutbaren Belastung aus einer gegebenen Kinderzahl ändert sich dadurch nicht.
+- **Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld hat.**
+  - The formalisation takes the number of children as input; this definition determines that input but does not alter the calculation logic inside the scope.
+- **bei denen die Einkommensteuer ... nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist**
+  - The formalisation takes a boolean splitting as input; the determination of that boolean is outside the scope and does not affect the calculation logic inside.
+
+## aus `p35a_2_3_haushaltsnahe`
+
+- **§ 35a Abs. 1: „handelt es sich um eine geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch“**
+  - Die Qualifikation als Minijob liegt außerhalb der Signatur; die Berechnung der Steuerermäßigung aus den bereits qualifizierten Aufwendungen bleibt unverändert.
+- **§ 35a Abs. 2 Satz 1: „andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme von haushaltsnahen Dienstleistungen, die nicht Dienstleistungen nach Absatz 3 sind“**
+  - Die Abgrenzung der haushaltsnahen Dienstleistungen ist nicht Teil der Signatur; die Berechnung wird dadurch nicht geändert.
+- **§ 35a Abs. 2 Satz 2: „für die Inanspruchnahme von Pflege- und Betreuungsleistungen sowie für Aufwendungen, die einem Steuerpflichtigen wegen der Unterbringung in einem Heim oder zur dauernden Pflege erwachsen“**
+  - Pflege- und Heimkosten sind vom Scope ausgeschlossen; die Signatur modelliert nur die übrigen haushaltsnahen Dienstleistungen.
+- **§ 35a Abs. 3 Satz 1: „Handwerkerleistungen für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen“**
+  - Die Eingrenzung auf bestimmte Handwerkerleistungen liegt außerhalb der Signatur; die Berechnung der Ermäßigung aus den bereits qualifizierten Arbeitskosten bleibt gleich.
+- **§ 35a Abs. 3 Satz 2: „Dies gilt nicht für öffentlich geförderte Maßnahmen, für die zinsverbilligte Darlehen oder steuerfreie Zuschüsse in Anspruch genommen werden.“**
+  - Der Ausschluss öffentlich geförderter Maßnahmen ist eine Vorbedingung für die Eingabe; die Berechnung selbst wird nicht modifiziert.
+- **§ 35a Abs. 4 Satz 1: „in einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum liegenden Haushalt“**
+  - Die räumliche Voraussetzung betrifft die Anspruchsberechtigung, nicht die Berechnung der Höhe der Ermäßigung.
+- **§ 35a Abs. 5 Satz 1: „soweit die Aufwendungen nicht Betriebsausgaben oder Werbungskosten darstellen und soweit sie nicht als Sonderausgaben oder außergewöhnliche Belastungen berücksichtigt worden sind“**
+  - Das Verbot der Doppelberücksichtigung ist eine außerhalb der Signatur liegende Vorbedingung; die Ermittlung des Ermäßigungsbetrags bleibt unberührt.
+- **§ 35a Abs. 5 Satz 2: „Der Abzug von der tariflichen Einkommensteuer nach den Absätzen 2 und 3 gilt nur für Arbeitskosten.“**
+  - Die Beschränkung auf Arbeitskosten definiert die zulässige Eingabe; die Signatur setzt bereits voraus, dass nur Arbeitskosten übergeben werden.
+- **§ 35a Abs. 5 Satz 3: „dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist“**
+  - Rechnung und unbare Zahlung sind Anspruchsvoraussetzungen, die die Berechnung der Ermäßigung nicht verändern.
+- **§ 35a Abs. 5 Satz 4: „Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge nach den Absätzen 1 bis 3 insgesamt jeweils nur einmal in Anspruch nehmen.“**
+  - Die Regelung betrifft die Aufteilung der Höchstbeträge zwischen zwei Personen; die Signatur berechnet die Ermäßigung für einen Haushalt ohne diese Aufteilung.
+- **§ 35a Abs. 1, 2, 3: „auf Antrag“**
+  - Das Antragserfordernis ist eine verfahrensrechtliche Bedingung, die außerhalb der Berechnungslogik liegt.
 
 ## aus `p9_1_3_nr5_doppelte_haushaltsfuehrung`
 
+- **notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen.**
+  - Diese Voraussetzung betrifft den Grund der Abziehbarkeit, ändert aber nicht die Berechnung der Unterkunftskosten innerhalb des Scopes.
+- **Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält und auch am Ort der ersten Tätigkeitsstätte wohnt.**
+  - Definiert den Tatbestand der doppelten Haushaltsführung, ohne die Höhe der abziehbaren Unterkunftskosten zu verändern.
+- **Das Vorliegen eines eigenen Hausstandes setzt das Innehaben einer Wohnung sowie eine finanzielle Beteiligung an den Kosten der Lebensführung voraus.**
+  - Präzisiert eine Tatbestandsvoraussetzung, die außerhalb des Scopes liegt und die Berechnung nicht beeinflusst.
 - **Aufwendungen für die Wege vom Ort der ersten Tätigkeitsstätte zum Ort des eigenen Hausstandes und zurück (Familienheimfahrt) können jeweils nur für eine Familienheimfahrt wöchentlich abgezogen werden.**
-  - Betrifft nur Familienheimfahrten, nicht die Unterkunftskosten; die Ausgabe des Scopes bleibt unverändert.
+  - Regelt eine andere Art von Aufwendungen (Familienheimfahrten), die nicht Gegenstand des Scopes sind.
 - **Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen Kilometer der Entfernung zwischen dem Ort des eigenen Hausstandes und dem Ort der ersten Tätigkeitsstätte anzusetzen.**
-  - Regelt die Pauschale für Familienheimfahrten, ohne Einfluss auf die Unterkunftskosten.
+  - Betrifft die Berechnung der Familienheimfahrten, die außerhalb des Scopes liegt.
 - **Nummer 4 Satz 3 bis 5 ist entsprechend anzuwenden.**
-  - Verweist auf Regelungen zu Fahrten zwischen Wohnung und Tätigkeitsstätte, die nur für Familienheimfahrten gelten; keine Auswirkung auf Unterkunftskosten.
+  - Verweist auf Regelungen zu anderen Werbungskosten, die für den Scope der Unterkunftskosten keine Rolle spielen.
 - **Aufwendungen für Familienheimfahrten mit einem dem Steuerpflichtigen im Rahmen einer Einkunftsart überlassenen Kraftfahrzeug werden nicht berücksichtigt.**
-  - Schließt Abzug für bestimmte Familienheimfahrten aus; betrifft nicht die Unterkunftskosten.
+  - Schließt bestimmte Aufwendungen bei Familienheimfahrten aus, hat aber keinen Einfluss auf die Unterkunftskosten.
 
 ## aus `p9_4a_verpflegungsmehraufwand`
 
-- **Mehraufwendungen des Arbeitnehmers für die Verpflegung sind nur nach Maßgabe der folgenden Sätze als Werbungskosten abziehbar.**
-  - Rein deklaratorische Einleitung, die den Anwendungsbereich umreißt, aber keine eigenständige, den Pauschalbetrag ändernde Regelung enthält.
 - **Hat der Arbeitnehmer keine erste Tätigkeitsstätte, gelten die Sätze 2 und 3 entsprechend.**
-  - Die Regelung stellt nur klar, dass die Berechnung auch ohne erste Tätigkeitsstätte anwendbar ist, ändert aber die Höhe der Pauschale nicht.
-- **Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn, wenn sie mindestens vier Wochen dauert.**
-  - Die Regelung betrifft die Ermittlung des Eingabewerts 'monate_am_ort', nicht die Berechnung der Pauschale aus diesem Wert.
+  - Die Regel erweitert nur den Anwendungsbereich, ändert aber nicht die Berechnung der Pauschale selbst.
 
 ## aus `p9_6_erstausbildung_abgrenzung`
 
-- **Satz 2: Eine Berufsausbildung als Erstausbildung nach Satz 1 liegt vor, wenn eine geordnete Ausbildung mit einer Mindestdauer von 12 Monaten bei vollzeitiger Ausbildung und mit einer Abschlussprüfung durchgeführt wird.**
-  - Definiert lediglich, wann der Eingabewert 'erstausbildung_abgeschlossen' als erfüllt gilt, ohne die im Scope modellierte Abzugsregel selbst zu verändern.
-- **Satz 3: Eine geordnete Ausbildung liegt vor, wenn sie auf der Grundlage von Rechts- oder Verwaltungsvorschriften oder internen Vorschriften eines Bildungsträgers durchgeführt wird.**
-  - Unterdefinition zu Satz 2; betrifft nur die Bestimmung des Eingabewerts, nicht die Berechnung der abziehbaren Werbungskosten.
-- **Satz 4: Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen, gilt die Ausbildung mit der tatsächlichen planmäßigen Beendigung als abgeschlossen.**
-  - Ergänzt die Definition des Abschlusses einer Erstausbildung; kein Einfluss auf die im Scope abgebildete Konditionallogik.
-- **Satz 5: Eine Berufsausbildung als Erstausbildung hat auch abgeschlossen, wer die Abschlussprüfung einer durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausbildung mit einer Mindestdauer von 12 Monaten bestanden hat, ohne dass er zuvor die entsprechende Berufsausbildung durchlaufen hat.**
-  - Erweitert den Kreis der Fälle, in denen 'erstausbildung_abgeschlossen' wahr ist; die Scope-Logik bleibt davon unberührt.
+- **Sätze 2 bis 5, die definieren, wann eine Berufsausbildung als Erstausbildung vorliegt und wann sie als abgeschlossen gilt.**
+  - Die Formalisierung verwendet den booleschen Input 'erstausbildung_abgeschlossen' als gegeben; die Definitionen ändern die konditionale Regel innerhalb des Scopes nicht.

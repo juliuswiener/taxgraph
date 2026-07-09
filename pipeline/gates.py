@@ -327,7 +327,11 @@ def annahmen_mapping(verdict: dict, candidate: dict | None = None) -> tuple[list
     """
     ids = {b.get("bedingung") for b in ((candidate or {}).get("geltungsbedingungen") or [])}
     angerechnet, undeclared = [], []
-    for a in verdict.get("stille_zusatzannahmen", []):
+    for raw in verdict.get("stille_zusatzannahmen", []):
+        # Gespeicherte Verdikte aelterer Laeufe tragen nackte Strings. Sie hier
+        # erneut zu normalisieren ist billiger als die Annahme, jeder Aufrufer
+        # habe schon geparst - und ein String zaehlt korrekt als undeclared.
+        a = _normalize_annahme(raw)
         (angerechnet if a["bedingung_id"] in ids else undeclared).append(a)
     return angerechnet, undeclared
 
@@ -396,7 +400,13 @@ def _verdict(judge) -> dict:
 
     `--regate` rechnet die deterministischen Gates aus gespeicherten Reports neu,
     ohne ein Modell erneut zu bezahlen; dort liegt das Verdikt als dict vor."""
-    return judge if isinstance(judge, dict) else roundtrip_parse(judge)
+    if not isinstance(judge, dict):
+        return roundtrip_parse(judge)
+    d = dict(judge)
+    d["scope_gap"] = [_normalize_gap(g) for g in (d.get("scope_gap") or [])]
+    d["stille_zusatzannahmen"] = [_normalize_annahme(a)
+                                  for a in (d.get("stille_zusatzannahmen") or [])]
+    return d
 
 
 def geltungsbereich_gate(judge, candidate: dict | None = None) -> GateResult:
@@ -514,8 +524,6 @@ def clerk_gate(catala_src: str | None, module: str | None = None,
     absegnet. Nur ein Kandidat, der `test_gate_required: False` fuehrt, darf ohne
     Seeds durch - das war die G2-Ausnahme und ist in den G2-Metriken fussnotiert.
     """
-    if not have("clerk"):
-        return GateResult("clerk", SKIP, "clerk not on PATH (toolchain missing)")
     cand = candidate or {}
     seeds = cand.get("test_seed")
     if not seeds or seeds == "none":
@@ -564,6 +572,12 @@ def clerk_gate(catala_src: str | None, module: str | None = None,
         if _normalize(s["zitatanker"]) not in _normalize(open(src, encoding="utf-8").read()):
             return GateResult("clerk", FAIL,
                               f"seed {i}: Zitatanker nicht im Quelltext ({s['quelle']})")
+
+    # Erst hier wird die Toolchain gebraucht. Die Pruefungen oben (Herkunft,
+    # Rechenweg, Zitatanker) sind deterministisch und laufen auch ohne clerk -
+    # sonst haenge die Strenge des Gates am zufaellig gesetzten PATH.
+    if not have("clerk"):
+        return GateResult("clerk", SKIP, "clerk not on PATH (toolchain missing)")
 
     # 2. generate test scopes, run clerk
     tests = []

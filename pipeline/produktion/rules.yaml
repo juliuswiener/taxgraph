@@ -222,6 +222,10 @@ regeln:
     - "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt"
     quelle: "§ 9 Abs. 4a Saetze 8 bis 10 EStG"
     beschreibung: "Bei Mahlzeitengestellung ist die Pauschale zu kuerzen (20/40/40 %). Der Scope kennt die Mahlzeiten nicht."
+  - bedingung: keine_unterbrechung_mit_neubeginn
+    deckt_ab: "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn"
+    quelle: "§ 9 Abs. 4a Satz 7 EStG"
+    beschreibung: "Eine Unterbrechung von mindestens vier Wochen setzt die Dreimonatsfrist neu in Gang. Der Scope kennt nur `monate_am_ort`, nicht die Unterbrechungshistorie."
   - bedingung: keine_steuerfreien_verpflegungserstattungen
     deckt_ab: "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung"
     quelle: "§ 9 Abs. 4a Satz 12 EStG"
@@ -408,6 +412,22 @@ regeln:
   - kindstaffel_240
   - zwoelftelung
   - praedikat_alleinstehend
+  # Vom Judge im Annahme-Mapping erzwungen: drei Eingaben tragen Semantik, die die
+  # Norm definiert und der Scope nicht pruefen kann. Klasse (2) der
+  # Abgrenzungsregel - sie variieren den Betrag nicht, sie schalten die Regel.
+  geltungsbedingungen:
+  - bedingung: alleinstehend_im_sinne_des_absatzes_3
+    deckt_ab: "Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige"
+    quelle: "§ 24b Abs. 3 EStG"
+    beschreibung: "Input-Semantik: `alleinstehend` traegt die Legaldefinition des Abs. 3 (kein Splitting, nicht verwitwet mit Splitting, keine Haushaltsgemeinschaft mit einer anderen volljaehrigen Person)."
+  - bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+    deckt_ab: "Freibetrag nach § 32 Absatz 6 oder Kindergeld zusteht"
+    quelle: "§ 24b Abs. 1 Satz 1 EStG"
+    beschreibung: "Input-Semantik: `anzahl_kinder` zaehlt nur Kinder, die zum Haushalt gehoeren und fuer die Kinderfreibetrag oder Kindergeld zusteht."
+  - bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
+    deckt_ab: "Für jeden vollen Kalendermonat, in dem die Voraussetzungen des Absatzes 1 nicht vorgelegen haben"
+    quelle: "§ 24b Abs. 4 EStG"
+    beschreibung: "Input-Semantik: `monate_ohne_voraussetzung` zaehlt volle Kalendermonate ohne die Voraussetzungen des Abs. 1."
   # Herkunft `abgeleitet`, kein synthetischer Fall. Das BMF-Schreiben v. 23.11.2022
   # rechnet die Zwoelftelung mit dem Grundbetrag 4.008 EUR der Jahre 2020-2022 vor;
   # sein Volltext ist zudem weder ueber esth/lsth.bundesfinanzministerium.de
