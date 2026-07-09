@@ -1,0 +1,3 @@
+# Python-Abhaengigkeiten fuer den Dokumentstore-Ingest.
+psycopg[binary]>=3.2
+PyYAML>=6.0

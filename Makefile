@@ -54,6 +54,22 @@ golden-generate:
 params-import:
 	. $(VENV312); python params/import_gettsim.py
 
+## Document store (M1.5). Requires a Docker daemon for up/down.
+docstore-up:
+	docker compose -f docstore/docker-compose.yml up -d
+
+docstore-down:
+	docker compose -f docstore/docker-compose.yml down
+
+## Apply the schema (used by the non-Docker path; Docker auto-applies it).
+docstore-schema:
+	. $(VENV312); python -c "import os,psycopg; psycopg.connect(os.environ.get('DOCSTORE_DSN','host=127.0.0.1 dbname=taxgraph_docstore user=taxgraph password=taxgraph')).cursor().execute(open('docstore/schema.sql').read())" || \
+	psql -d taxgraph_docstore -f docstore/schema.sql
+
+## Ingest the frozen sources/ into the document store.
+docstore-ingest:
+	. $(VENV312); python docstore/ingest.py
+
 clean:
 	$(OPAM_ENV); clerk clean || true
 	rm -rf _build _target oracle/gettsim/_catala

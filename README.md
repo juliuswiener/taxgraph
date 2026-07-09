@@ -41,11 +41,23 @@ rules/estg/p04_arbeitszimmer_homeoffice/# § 4 Abs. 5 Nr. 6b/6c literate Catala 
 params/2024|2025|2026/                  # Tarifparameter je VZ mit Quellen
 params/derive_coefficients.py           # Ableitung/Validierung der Koeffizienten
 oracle/gettsim/                         # Differentialtest-Harness + Assembler
+golden/                                 # Golden-Test-Korpus (M1.4) + Runner
+docstore/                               # Dokumentstore-Schema, Ingest, docker-compose (M1.5)
 sources/                                # Fassungsarchiv: eingefrorene Gesetzestexte + Hash
-reports/                                # s02-divergenzen, s03-ergonomie, gate-g0
+reports/                                # s02-divergenzen, s03-ergonomie, gate-g0, gettsim-issue-draft
 docs/                                   # setup.md, roadmap, handover
 scripts/                                # Installations- und Verifikationsskripte
 ```
+
+## Phase 1 (in Arbeit)
+
+- **M1.4 Golden-Korpus** (`golden/`): 40 § 32a-Faelle, je mit Zitatanker-Gate
+  gegen `sources/` und Wertabgleich gegen Catala (`make golden`).
+- **M1.2 Parameterschicht** (`params/`): kanonisches Format (`params/schema.md`)
+  plus GETTSIM-Import mit Herkunftsvermerk (`make params-import`).
+- **M1.5 Dokumentstore** (`docstore/`): Postgres-Schema Dokumente/Segmente/Claims
+  mit authority, redistributable, Zitatanker und Fassungs-Hash; Ingest der
+  eingefrorenen Fassungen (`make docstore-up docstore-ingest`).
 
 ## Quellenmodell (Update 2026-07-09)
 

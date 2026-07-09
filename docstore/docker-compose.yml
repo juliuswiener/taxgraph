@@ -1,0 +1,26 @@
+# Lokaler Postgres fuer den TaxGraph Dokumentstore (Roadmap M1.5).
+# Muster fuer nordserver, aber lokal lauffaehig:
+#   docker compose -f docstore/docker-compose.yml up -d
+#   make docstore-schema docstore-ingest
+services:
+  docstore:
+    image: postgres:16
+    container_name: taxgraph-docstore
+    environment:
+      POSTGRES_DB: taxgraph_docstore
+      POSTGRES_USER: taxgraph
+      POSTGRES_PASSWORD: taxgraph
+    ports:
+      - "5432:5432"
+    volumes:
+      - docstore_data:/var/lib/postgresql/data
+      # Schema wird beim ersten Start automatisch angewandt.
+      - ./schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taxgraph -d taxgraph_docstore"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  docstore_data:
