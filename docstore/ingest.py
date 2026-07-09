@@ -149,6 +149,29 @@ def ingest_document(cur, meta_path: str) -> tuple[int, int, int]:
         seg_label_to_id[label] = cur.fetchone()[0]
 
     n_claims = 0
+    # Authority-Konflikt (Streitstand) als Claim markieren, nicht formalisieren:
+    # BMF-Schreiben Rz. 30 (Unfallkosten neben der Pauschale) contra BFH VI R 8/18.
+    if meta["norm_uri"].startswith("bmf/"):
+        for pos, (typ, label, text) in enumerate(segs):
+            if "authority-konflikt" in normalize(text):
+                seg_id = seg_label_to_id[label]
+                payload = {
+                    "thema": "Unfallkosten neben der Entfernungspauschale",
+                    "verwaltung": "BMF-Schreiben 18.11.2021 Rz. 30: abziehbar",
+                    "bfh": "BFH 19.12.2019 VI R 8/18: nicht abziehbar",
+                    "status": "offener authority-Konflikt, nicht formalisiert (out of MVP-scope)",
+                }
+                cur.execute(
+                    """
+                    INSERT INTO claim
+                      (segment_id, typ, authority, redistributable, zitatanker,
+                       anker_verifiziert, payload, status)
+                    VALUES (%s, 'streitstand', 'verwaltung', %s, %s, true, %s, 'extracted')
+                    """,
+                    (seg_id, meta["redistributable"], "Unfallkosten koennen als",
+                     json.dumps(payload)),
+                )
+                n_claims += 1
     if meta["norm_uri"] == "estg/32a":
         seg_norm = {lbl: normalize(t) for (_, lbl, t) in segs}
         for anker, seg_label, payload in P32A_2026_CLAIMS:

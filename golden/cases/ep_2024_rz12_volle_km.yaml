@@ -1,0 +1,19 @@
+id: ep_2024_rz12_volle_km
+beschreibung: "Entfernungspauschale 10.6 km, 200 Arbeitstage, VZ 2024"
+
+sachverhalt:
+  veranlagungszeitraum: 2024
+  entfernung_km_roh: 10.6
+  arbeitstage: 200
+  eigenes_oder_ueberlassenes_kfz: false
+  oepnv_kosten_jahr: 0
+
+erwartung:
+  abziehbarer_betrag: 600
+
+quelle:
+  authority: verwaltung
+  redistributable: true
+  fundstelle: "BMF-Schreiben 18.11.2021 Rz. 12 (volle km); 10,6 km -> 10 km, 200 AT x 10 x 0,30 = 600"
+  datei: "sources/bmf/bmf_entfernungspauschalen_2021-11-18.txt"
+  zitatanker: "nur volle Kilometer der Entfernung anzusetzen"

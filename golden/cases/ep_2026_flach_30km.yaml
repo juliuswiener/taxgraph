@@ -1,0 +1,19 @@
+id: ep_2026_flach_30km
+beschreibung: "Entfernungspauschale 30.0 km, 220 Arbeitstage, VZ 2026"
+
+sachverhalt:
+  veranlagungszeitraum: 2026
+  entfernung_km_roh: 30.0
+  arbeitstage: 220
+  eigenes_oder_ueberlassenes_kfz: true
+  oepnv_kosten_jahr: 0
+
+erwartung:
+  abziehbarer_betrag: 2508
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 9 Abs. 1 S. 3 Nr. 4 Satz 2 EStG i.d.F. 2026 (StAendG 2025); ABGELEITET (0,38 ab km 1), nicht aus BMF-Beispiel zitiert"
+  datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
+  zitatanker: "von 0,38 Euro anzusetzen"

@@ -37,3 +37,5 @@ Kurzzitat gegen Quellsegment).
 | § 4 Abs. 5 S. 1 Nr. 6b/6c EStG | ab 2023 | 2026-07-09 | gesetz |
 | § 9a EStG | geltend (Nr. 1a 1230 Euro) | 2026-07-09 | gesetz |
 | § 10c EStG | geltend (36 Euro) | 2026-07-09 | gesetz |
+| § 9 Abs. 1 Nr. 4/Abs. 2 EStG | 2026 (StAendG 2025, 0,38 ab km 1) | 2026-07-09 | gesetz |
+| BMF-Schreiben Entfernungspauschalen | 18.11.2021 (BStBl I 2021, 2315) | 2026-07-09 | verwaltung |

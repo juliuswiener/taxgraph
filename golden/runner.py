@@ -28,7 +28,31 @@ sys.path.insert(0, os.path.join(_CAT, "rt"))
 sys.path.insert(0, _CAT)
 
 from pkg import Einkommensteuertarif as E  # noqa: E402  (Catala-generated)
-from catala_runtime import Money  # noqa: E402
+from pkg import Entfernungspauschale as EP  # noqa: E402
+from catala_runtime import Money, Decimal  # noqa: E402
+
+
+def _ep_saetze(year: int) -> dict:
+    """Read the Entfernungspauschale rates for a VZ from params/."""
+    p = yaml.safe_load(open(os.path.join(
+        ROOT, "params", str(year), "entfernungspauschale.yaml"), encoding="utf-8"))
+    return {k: p[k]["wert"] for k in
+            ("satz_bis_20_km", "satz_ab_21_km", "staffelgrenze_km", "hoechstbetrag_ohne_kfz")}
+
+
+def catala_entfernungspauschale(s: dict) -> int:
+    year = s["veranlagungszeitraum"]
+    r = _ep_saetze(year)
+    out = EP.berechnung(EP.BerechnungIn(
+        entfernung_km_roh_in=Decimal(str(s["entfernung_km_roh"])),
+        arbeitstage_in=int(s["arbeitstage"]),
+        eigenes_oder_ueberlassenes_kfz_in=bool(s.get("eigenes_oder_ueberlassenes_kfz", False)),
+        oepnv_kosten_jahr_in=Money(f"{int(s.get('oepnv_kosten_jahr', 0))}.00"),
+        satz_bis_20_km_in=Money(f"{r['satz_bis_20_km']:.2f}"),
+        satz_ab_21_km_in=Money(f"{r['satz_ab_21_km']:.2f}"),
+        staffelgrenze_km_in=int(r["staffelgrenze_km"]),
+        hoechstbetrag_in=Money(f"{int(r['hoechstbetrag_ohne_kfz'])}.00")))
+    return int(out.abziehbarer_betrag) // 100
 
 VZ_ENUM = {
     2024: E.Veranlagungszeitraum(E.Veranlagungszeitraum.Code.VZ2024, None),
@@ -46,7 +70,10 @@ def normalize(text: str) -> str:
 
 def catala_est(sachverhalt: dict) -> int:
     year = sachverhalt["veranlagungszeitraum"]
-    veranlagung = sachverhalt["veranlagung"]
+    veranlagung = sachverhalt.get("veranlagung")
+    # Entfernungspauschale (§ 9): abziehbarer Betrag.
+    if "entfernung_km_roh" in sachverhalt:
+        return catala_entfernungspauschale(sachverhalt)
     # End-to-end Arbeitnehmerfall (Bruttolohn -> festzusetzende ESt).
     if "bruttoarbeitslohn" in sachverhalt:
         out = E.festzusetzende_est_einzel(E.FestzusetzendeEstEinzelIn(
@@ -81,7 +108,8 @@ def main() -> int:
         c = yaml.safe_load(open(path, encoding="utf-8"))
         cid = c["id"]
         s = c["sachverhalt"]
-        exp = c["erwartung"]["tarifliche_est"]
+        erw = c["erwartung"]
+        exp = erw.get("tarifliche_est", erw.get("abziehbarer_betrag"))
         q = c["quelle"]
 
         # 1. citation-anchor gate

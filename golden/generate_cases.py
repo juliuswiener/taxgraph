@@ -149,6 +149,55 @@ quelle:
         f.write(yaml)
 
 
+BMF_FILE = "sources/bmf/bmf_entfernungspauschalen_2021-11-18.txt"
+P9_2026_FILE = "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
+
+# Entfernungspauschale-Faelle. (fid, VZ, sachverhalt, erwartung, anker, datei, fundstelle)
+EP_CASES = [
+    ("ep_2024_beispiel1_oepnv", 2024,
+     dict(km=20.0, at=220, kfz=False, oepnv=1380), 1380,
+     "220 x 20 x 0,30", BMF_FILE,
+     "BMF-Schreiben 18.11.2021 Rz. 2, Beispiel 1 (OePNV-Guenstigerpruefung); VZ 2024 (km <= 20, jahresunabhaengig)"),
+    ("ep_2024_rz12_volle_km", 2024,
+     dict(km=10.6, at=200, kfz=False, oepnv=0), 600,
+     "nur volle Kilometer der Entfernung anzusetzen", BMF_FILE,
+     "BMF-Schreiben 18.11.2021 Rz. 12 (volle km); 10,6 km -> 10 km, 200 AT x 10 x 0,30 = 600"),
+    ("ep_2024_staffel_30km", 2024,
+     dict(km=30.0, at=220, kfz=True, oepnv=0), 2156,
+     "restliche Entfernungskilometer x 0,38", BMF_FILE,
+     "BMF-Schreiben 18.11.2021 Rz. 9 (Staffel 2024-2026); 20 x 0,30 + 10 x 0,38, 220 AT, eigenes Kfz"),
+    ("ep_2026_flach_30km", 2026,
+     dict(km=30.0, at=220, kfz=True, oepnv=0), 2508,
+     "von 0,38 Euro anzusetzen", P9_2026_FILE,
+     "§ 9 Abs. 1 S. 3 Nr. 4 Satz 2 EStG i.d.F. 2026 (StAendG 2025); ABGELEITET (0,38 ab km 1), nicht aus BMF-Beispiel zitiert"),
+]
+
+
+def emit_ep(fid, year, sv, expected, anker, datei, fundstelle):
+    yaml = f"""id: {fid}
+beschreibung: "Entfernungspauschale {sv['km']} km, {sv['at']} Arbeitstage, VZ {year}"
+
+sachverhalt:
+  veranlagungszeitraum: {year}
+  entfernung_km_roh: {sv['km']}
+  arbeitstage: {sv['at']}
+  eigenes_oder_ueberlassenes_kfz: {str(sv['kfz']).lower()}
+  oepnv_kosten_jahr: {sv['oepnv']}
+
+erwartung:
+  abziehbarer_betrag: {expected}
+
+quelle:
+  authority: {"verwaltung" if datei == BMF_FILE else "gesetz"}
+  redistributable: true
+  fundstelle: "{esc(fundstelle)}"
+  datei: "{datei}"
+  zitatanker: "{esc(anker)}"
+"""
+    with open(os.path.join(CASES, fid + ".yaml"), "w") as f:
+        f.write(yaml)
+
+
 def main():
     os.makedirs(CASES, exist_ok=True)
     for f in os.listdir(CASES):
@@ -192,6 +241,9 @@ def main():
          2026, "zusammen", -72, splitting(-72, p), ANKER_SPLITTING,
          "§ 32a Abs. 5 EStG i.V.m. Abs. 1; " + p["quelle"])
     n += 1
+    for fid, year, sv, expected, anker, datei, fundstelle in EP_CASES:
+        emit_ep(fid, year, sv, expected, anker, datei, fundstelle)
+        n += 1
     print(f"generated {n} golden cases in golden/cases/")
 
 

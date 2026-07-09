@@ -18,7 +18,8 @@ rm -rf "$OUT"
 mkdir -p "$OUT/rt" "$OUT/pkg"
 
 cp _build/libcatala/python/*.py "$OUT/pkg/"
-cp _build/rules/estg/p32a/python/Einkommensteuertarif.py "$OUT/pkg/"
+# all generated rule-module python (Einkommensteuertarif, Entfernungspauschale, ...)
+find _build/rules -path '*/python/*.py' -exec cp {} "$OUT/pkg/" \;
 
 # Move the runtime out of the package to the top-level module directory.
 mv "$OUT/pkg/catala_runtime.py" "$OUT/rt/"

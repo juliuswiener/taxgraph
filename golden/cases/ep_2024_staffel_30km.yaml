@@ -1,0 +1,19 @@
+id: ep_2024_staffel_30km
+beschreibung: "Entfernungspauschale 30.0 km, 220 Arbeitstage, VZ 2024"
+
+sachverhalt:
+  veranlagungszeitraum: 2024
+  entfernung_km_roh: 30.0
+  arbeitstage: 220
+  eigenes_oder_ueberlassenes_kfz: true
+  oepnv_kosten_jahr: 0
+
+erwartung:
+  abziehbarer_betrag: 2156
+
+quelle:
+  authority: verwaltung
+  redistributable: true
+  fundstelle: "BMF-Schreiben 18.11.2021 Rz. 9 (Staffel 2024-2026); 20 x 0,30 + 10 x 0,38, 220 AT, eigenes Kfz"
+  datei: "sources/bmf/bmf_entfernungspauschalen_2021-11-18.txt"
+  zitatanker: "restliche Entfernungskilometer x 0,38"
