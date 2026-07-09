@@ -1,0 +1,140 @@
+{
+  "laeufe": {
+    "p9_4a_verpflegungsmehraufwand": [
+      {
+        "lauf": 1,
+        "parse_error": true,
+        "truncated": true,
+        "completion_tokens": 12288,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "abweichungen": -1,
+        "annahmen": -1,
+        "unmapped": -1,
+        "scope_gaps": -1,
+        "wirkt_hinein": -1,
+        "kosten_usd": 0.04647
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 2,
+        "abweichungen_text": [
+          "Die Formalisierung gewährt 28 Euro bereits bei einer Abwesenheit von mindestens 24 Stunden, ohne dass ein Kalendertag mi",
+          "Die Formalisierung setzt für den An- oder Abreisetag eine Übernachtung an diesem Tag selbst voraus; eine Übernachtung an"
+        ],
+        "annahmen": 9,
+        "unmapped": 3,
+        "scope_gaps": 7,
+        "wirkt_hinein": 5,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.03939
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 1,
+        "abweichungen_text": [
+          "Die Bedingung für den An-/Abreisetag verlangt eine Übernachtung genau an diesem Tag, während § 9 Abs. 4a Satz 3 Nr. 2 ES"
+        ],
+        "annahmen": 7,
+        "unmapped": 1,
+        "scope_gaps": 8,
+        "wirkt_hinein": 6,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.03257
+      }
+    ],
+    "p33_3_zumutbare_belastung": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 1,
+        "abweichungen_text": [
+          "Die Formalisierung rundet das Ergebnis durch Trunkierung auf ganze Euro ab, obwohl die Norm keine Rundung vorschreibt un"
+        ],
+        "annahmen": 1,
+        "unmapped": 1,
+        "scope_gaps": 2,
+        "wirkt_hinein": 0,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.01634
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 1,
+        "abweichungen_text": [
+          "Die Formalisierung rundet das Ergebnis der zumutbaren Belastung durch 'Decimal.truncate' auf ganze Euro ab, obwohl der N"
+        ],
+        "annahmen": 1,
+        "unmapped": 1,
+        "scope_gaps": 1,
+        "wirkt_hinein": 0,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.01468
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 1,
+        "abweichungen_text": [
+          "Die Formalisierung rundet das Ergebnis durch Abschneiden der Nachkommastellen auf ganze Euro ab (Decimal.truncate), obwo"
+        ],
+        "annahmen": 0,
+        "unmapped": 0,
+        "scope_gaps": 2,
+        "wirkt_hinein": 0,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.01379
+      }
+    ]
+  },
+  "zusammenfassung": {
+    "p9_4a_verpflegungsmehraufwand": {
+      "laeufe": 3,
+      "parse_fehler": 1,
+      "gate_urteile_stabil": false,
+      "verschiedene_gate_urteile": [
+        "FAIL/FAIL",
+        "FAIL/PASS"
+      ],
+      "abweichungen_min_max": [
+        1,
+        2
+      ],
+      "wirkt_hinein_min_max": [
+        5,
+        6
+      ],
+      "kosten_usd": 0.11843
+    },
+    "p33_3_zumutbare_belastung": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "gate_urteile_stabil": true,
+      "verschiedene_gate_urteile": [
+        "FAIL/PASS"
+      ],
+      "abweichungen_min_max": [
+        1,
+        1
+      ],
+      "wirkt_hinein_min_max": [
+        0,
+        0
+      ],
+      "kosten_usd": 0.04481
+    }
+  }
+}

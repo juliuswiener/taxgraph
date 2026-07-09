@@ -83,8 +83,14 @@ roles:
     # V4 Pro schreibt vor der Antwort ausfuehrlich Reasoning-Tokens.
     # 4096 reichten nicht: V4 Pro schreibt Reasoning-Tokens vor die Antwort und
     # lief bei der ersten Produktionsregel exakt ins Limit (completion=4096,
-    # abgeschnittenes JSON). Gemessener Bedarf mit roundtrip_diff@3: ~8000.
-    max_tokens: 12288         # Judge: Reasoning + JSON-Verdikt
+    # abgeschnittenes JSON). Mit roundtrip_diff@3 lag der Bedarf bei ~8000.
+    #
+    # 12288 reichten ebenfalls nicht: in der Stabilitaetsmessung (2026-07-10) lief
+    # der Judge bei § 9 Abs. 4a - sechs Geltungsbedingungen im Prompt, zwoelf
+    # scope_gaps in der Antwort - exakt in dieses Limit (completion=12288,
+    # finish_reason=length). Je mehr Bedingungen eine Regel deklariert, desto
+    # laenger das Verdikt. Das Budget waechst mit der Regel, nicht mit dem Modell.
+    max_tokens: 24576         # Judge: Reasoning + JSON-Verdikt + Annahme-Mapping
     prompt_template_id: "roundtrip_diff@4"   # scope_gap zweiklassig + Annahme-Mapping
     fewshot_set_id: "roundtrip_base@1"
 

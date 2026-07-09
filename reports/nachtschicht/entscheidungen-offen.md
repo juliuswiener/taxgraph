@@ -35,33 +35,57 @@ danebenliegt, ist der Re-Evaluations-Trigger für die A-Besetzung ausgelöst.
 
 ---
 
-## 2. Judge-Instabilität bei Temperatur 0
+## 2. Judge-Instabilität bei Temperatur 0 — gemessen, nicht vermutet
 
-Bei `p9_4a_verpflegungsmehraufwand` hat der Judge in zwei Läufen mit **identischem
-Input** unterschiedlich geurteilt:
+**Das ist der wichtigste Befund der Nacht.** Ich habe die Streuung gemessen statt sie
+zu behaupten: `pipeline/judge_stabilitaet.py`, dieselbe Regel, derselbe Catala-Quelltext,
+drei Judge-Läufe. Rohdaten in `reports/nachtschicht/judge-stabilitaet.json`.
 
-- Lauf 1: eine `abweichung` („gewährt 14 Euro für An- und Abreisetage, ohne die
-  Übernachtungsvoraussetzung zu prüfen"), `geltungsbereich` grün.
-- Lauf 2: keine `abweichung`, dafür ein zusätzlicher `wirkt_hinein` (Neubeginn-Regel),
-  `geltungsbereich` rot.
+**§ 9 Abs. 4a — instabil:**
 
-Beide Verdikte sind vertretbar. Das Problem ist nicht der Inhalt, sondern dass ein
-Gate, das über Rechtsregeln entscheidet, bei gleichem Input verschiedene Antworten
-gibt. Temperatur ist 0; die Streuung kommt vom Provider (Fireworks, unquantisiert)
-und vom Reasoning-Sampling.
+| Lauf | Abweichungen | Annahmen (undeklariert) | wirkt_hinein | roundtrip | geltungsbereich |
+|---|---|---|---|---|---|
+| 1 | — | — | — | Truncation am Token-Limit | — |
+| 2 | 2 | 9 (3) | 5 | FAIL | PASS |
+| 3 | 1 | 7 (1) | 6 | FAIL | PASS |
 
-**Ich habe das nicht angefasst.** Optionen, die ich sehe:
+**§ 33 Abs. 3 — stabil:** dreimal identisch, `abweichungen=1` (A's Abrundung),
+`wirkt_hinein=0`, gleiche Gate-Urteile. Der Befund gegen A ist damit robust.
 
-1. **Hinnehmen und protokollieren.** Der Judge ist ein Vorschlag, das Review
-   entscheidet. Kostet nichts, macht `flagged_for_review` aber unzuverlässig.
-2. **Mehrheitsentscheid**: den Judge dreimal laufen lassen, Mehrheit zählt. Verdreifacht
-   die Judge-Kosten (aktuell rund 0,03 USD je Regel), macht das Gate stabil und die
-   Streuung selbst messbar.
-3. **Zweiter Judge einer anderen Familie**, Dissens eskaliert. Das ist dieselbe
-   Dekorrelations-Logik wie beim Formalisierer-Paar und der sauberste Weg — aber es
-   ändert das Protokoll.
+**Die Konsequenz ist unangenehm.** Der gespeicherte Report von § 9 Abs. 4a zeigte
+`roundtrip=PASS` bei 5/5 gemappten Annahmen und stand auf `verified_bedingt`. **Kein
+einziger der drei frischen Läufe reproduziert das.** Dasselbe bei § 35a: der Report
+zeigte 12/12 gemappt und alle Gates grün, ein frischer Lauf liefert 12/15 und einen
+roten Geltungsbereich.
+
+Beide Regeln stehen jetzt wieder auf `flagged_for_review`. Ihr grüner Zustand war ein
+Zufallstreffer der Judge-Streuung, kein Befund über die Formalisierung. Ich habe ihn
+nicht stehengelassen.
+
+**Optionen, unverändert deine Entscheidung:**
+
+1. **Hinnehmen und protokollieren.** Der Judge ist ein Vorschlag, das Review entscheidet.
+   Kostet nichts, macht `verified_bedingt` aber bedeutungslos: der Status hängt davon ab,
+   welchen Wurf man erwischt hat.
+2. **Mehrheitsentscheid**, drei Läufe, Mehrheit zählt. Verdreifacht die Judge-Kosten
+   (rund 0,05 USD je Regel), macht das Gate stabil und die Streuung selbst messbar.
+3. **Zweiter Judge einer anderen Familie**, Dissens eskaliert. Dieselbe
+   Dekorrelations-Logik wie beim Formalisierer-Paar, der sauberste Weg — aber eine
+   Protokolländerung.
 
 Ich neige zu 2, weil es die Streuung sichtbar macht, bevor wir sie wegdefinieren.
+Punkt 1 halte ich nach dieser Messung nicht mehr für vertretbar.
+
+### Zwei Fehler, die die Messung nebenbei aufgedeckt hat
+
+- **Das Judge-Budget war weiterhin zu klein.** § 9 Abs. 4a lief in das erhöhte Limit von
+  12.288 Tokens (`finish_reason=length`), § 35a braucht 14.584. Je mehr Geltungsbedingungen
+  eine Regel deklariert, desto länger das Verdikt — das Budget wächst mit der Regel, nicht
+  mit dem Modell. Jetzt 24.576.
+- **`--regate` übersprang bei einem kaputten Verdikt die drei Judge-Gates** und ließ alte
+  `PASS`-Werte stehen. So kamen § 9 Abs. 4a und § 35a überhaupt erst zu ihrem grünen
+  Status: der Judge war abgeschnitten worden, und der Report behauptete trotzdem, er habe
+  geurteilt. Gefixt, mit Regressionstest (`judge_gates`).
 
 ---
 
@@ -71,13 +95,16 @@ Insgesamt 26 Bedingungen über fünf Regeln. Alle mit `bedingung`, `deckt_ab`,
 `quelle`, `beschreibung`; jeder `deckt_ab`-Anker wörtlich gegen den eingefrorenen
 Normtext geprüft.
 
-| Regel | Bedingungen | Annahme-Mapping |
+| Regel | Bedingungen | Annahme-Mapping (letzter Lauf) |
 |---|---|---|
 | § 9 Abs. 1 S. 3 Nr. 5 | 4 | 1/1 |
-| § 9 Abs. 4a | 6 | 5/5 |
+| § 9 Abs. 4a | 6 | schwankt, siehe Punkt 2 |
 | § 10 Abs. 1 Nr. 7 | 1 | – |
 | § 24b | 3 | 3/3 |
-| § 35a | 12 | 12/12 |
+| § 35a | 12 | 12/15 |
+
+Die Mapping-Zahlen sind Momentaufnahmen eines Judge-Laufs, keine Eigenschaft der
+Regel. Solange Punkt 2 offen ist, sagen sie nur, wie gut der letzte Wurf war.
 
 Drei davon hat **der Judge erzwungen**, indem er sich weigerte, eine Annahme auf eine
 nur ungefähr passende Bedingung zu mappen — bei § 35a (Arbeitskosten gelten für Abs. 2
@@ -107,9 +134,13 @@ Das explizite Mapping hat sich damit sofort bezahlt gemacht.
 Alles unter dieser Linie war mechanisch oder folgte einer bereits getroffenen
 Entscheidung.
 
-- Gate-Semantik nach Protokolldekret gebaut, 22 Regressionstests (`make unit`).
+- Gate-Semantik nach Protokolldekret gebaut, 25 Regressionstests (`make unit`).
 - Strikte YAML-Loader überall; 93 Bestands-Manifeste geprüft, keines mit Duplikaten.
-- Sechs Regeln erreichen einen grünen Zustand (eine `verified`, fünf `verified_bedingt`).
+- Drei Regeln stehen grün (§ 9 Abs. 6 `verified`; § 10 Abs. 1 Nr. 7 und § 24b
+  `verified_bedingt`). Zwei weitere standen zwischenzeitlich grün und stehen nach der
+  Stabilitätsmessung wieder auf `flagged_for_review` — siehe Punkt 2. Auch die drei
+  grünen beruhen auf je einem einzelnen Judge-Wurf; ihre Reproduzierbarkeit ist
+  ungeprüft.
 - `scripts/freeze_source.py` mit Plausibilitätsprüfung, weil ich beim Einfrieren von
   § 9 und § 6 zwei **leere** Quellen erzeugt habe. `sources-check` war grün — er prüfte
   nur, ob der Hash zum Inhalt passt, und ein leerer Inhalt passt zu seinem Hash. Der
@@ -118,5 +149,5 @@ Entscheidung.
   wörtliche Zeile der p09-Referenzregel (Leakage-Guard), und die Strenge des
   Clerk-Gates hing am `PATH` (ohne opam-Umgebung `SKIP` statt `FAIL`).
 
-Kosten der Nachtschicht: 0,0986 USD (nur `--redo-judge`, kein einziger voller Lauf).
-Charge 1 gesamt: 0,9196 USD.
+Kosten der Nachtschicht: 0.3176 USD (Judge-Laeufe und die Stabilitaetsmessung; kein einziger voller Kaskadenlauf).
+Charge 1 gesamt: 1.0121 USD.

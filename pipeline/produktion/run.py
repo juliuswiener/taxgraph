@@ -64,6 +64,27 @@ def build_candidate(rule: dict) -> dict:
     }
 
 
+def judge_gates(verdict: dict, cand: dict) -> dict:
+    """Die drei Judge-Gates aus einem gespeicherten Verdikt.
+
+    Ein unlesbares oder abgeschnittenes Verdikt darf sie nicht UEBERSPRINGEN:
+    sonst bleiben alte PASS-Werte im Report stehen und die Regel sieht gruen aus,
+    obwohl ihr Urteil nie zustande kam. Genau so stand § 9 Abs. 4a zwischenzeitlich
+    auf `verified_bedingt`, waehrend der Judge in Wahrheit am Token-Limit
+    abgeschnitten worden war.
+    """
+    if not verdict:
+        return {}
+    if verdict.get("parse_error") or verdict.get("truncated"):
+        det = ("judge answer truncated at max_tokens" if verdict.get("truncated")
+               else "judge output not valid JSON")
+        return {n: G.GateResult(n, G.FAIL, det)
+                for n in ("roundtrip", "scope_gap", "geltungsbereich")}
+    return {"scope_gap": G.scope_gap_gate(verdict),
+            "geltungsbereich": G.geltungsbereich_gate(verdict, cand),
+            "roundtrip": G.roundtrip_gate(verdict, cand)}
+
+
 def regate(rules: list[dict]) -> int:
     """Deterministische Gates aus gespeicherten Quellen neu rechnen. Keine Modelle."""
     changed = 0
@@ -85,11 +106,7 @@ def regate(rules: list[dict]) -> int:
             fresh["equivalence"] = G.equivalence_gate(src, rep["catala_b"], cand)
         # scope_gap und geltungsbereich sind ebenfalls deterministisch: sie lesen
         # das gespeicherte Judge-Verdikt, kein Modell laeuft erneut.
-        verdict = rep.get("judge_verdict") or {}
-        if verdict and not verdict.get("parse_error"):
-            fresh["scope_gap"] = G.scope_gap_gate(verdict)
-            fresh["geltungsbereich"] = G.geltungsbereich_gate(verdict, cand)
-            fresh["roundtrip"] = G.roundtrip_gate(verdict, cand)
+        fresh.update(judge_gates(rep.get("judge_verdict") or {}, cand))
         vorhanden = {g["name"] for g in rep["gates"]}
         for g in rep["gates"]:
             if g["name"] in fresh:

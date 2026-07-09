@@ -195,3 +195,25 @@ def test_manifeste_laden_strikt():
     for rel in ("pipeline/produktion/rules.yaml", "pipeline/models.yaml",
                 "pipeline/bakeoff/tasks.yaml"):
         assert load_yaml(os.path.join(ROOT, rel))
+
+
+# -- regate darf ein kaputtes Verdikt nicht ueberspringen ---------------------
+
+@pytest.mark.parametrize("kaputt", [{"parse_error": True}, {"truncated": True}])
+def test_judge_gates_fallen_bei_kaputtem_verdikt(kaputt):
+    """§ 9 Abs. 4a stand zwischenzeitlich gruen, weil `--regate` bei einem
+    parse_error-Verdikt die drei Judge-Gates uebersprang und alte PASS-Werte
+    stehen liess."""
+    from run import judge_gates
+    g = judge_gates(kaputt, BED)
+    assert set(g) == {"roundtrip", "scope_gap", "geltungsbereich"}
+    assert all(x.status == G.FAIL for x in g.values())
+
+
+def test_judge_gates_bei_gutem_verdikt():
+    from run import judge_gates
+    a = [{"annahme": "keine Mahlzeit", "bedingung_id": "keine_mahlzeitengestellung"}]
+    g = judge_gates(G.roundtrip_parse(verdict(a, gaps=WIRKT)), BED)
+    assert g["roundtrip"].status == G.PASS
+    assert g["geltungsbereich"].status == G.PASS
+    assert g["scope_gap"].status == G.PASS

@@ -179,6 +179,19 @@ regeln:
   - p9_1_3_nr5a_uebernachtung
 - rule_id: p9_4a_verpflegungsmehraufwand
   norm: § 9 Abs. 4a EStG
+  # FREIGABE BLOCKIERT (2026-07-10, Befund der Stabilitaetsmessung).
+  # Der gespeicherte Report zeigt roundtrip=PASS bei 5/5 gemappten Annahmen. Drei
+  # frische Judge-Laeufe mit IDENTISCHEM Input liefern das nicht wieder: einmal
+  # Truncation am 12288-Token-Limit, einmal 2 Abweichungen / 3 undeklarierte
+  # Annahmen, einmal 1 Abweichung / 1 undeklarierte. Kein einziger Lauf ergab
+  # roundtrip=PASS.
+  #
+  # Der gruene Zustand dieser Regel war ein Zufallstreffer der Judge-Streuung, kein
+  # Befund ueber die Formalisierung. Er wird nicht stehengelassen, bis entschieden
+  # ist, wie mit der Streuung umzugehen ist (reports/nachtschicht/entscheidungen-offen.md).
+  # Messdaten: reports/nachtschicht/judge-stabilitaet.json
+  freigabe: blockiert
+  freigabe_grund: "Judge-Verdikt nicht reproduzierbar: 3 Laeufe, 3 verschiedene Ergebnisse, kein roundtrip=PASS."
   norm_source: sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt
   struktur:
   - staffel_nach_abwesenheit
