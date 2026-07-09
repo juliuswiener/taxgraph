@@ -79,10 +79,19 @@ def catala_zusammen(bA, bB, vz):
 
 def run():
     lines = ["# Phase-1-Deliverable: Arbeitnehmerfall end-to-end\n",
-             "Bruttoarbeitslohn rein, festzusetzende ESt raus. Catala-Kette "
-             "(§ 9a -> § 10c -> § 32a) gegen GETTSIM (Pauschbetraege als Parameter, "
-             "Tarif als Funktion). MVP-Scope: nur Einkuenfte aus nichtselbstaendiger "
-             "Arbeit, ohne Vorsorgeaufwendungen.\n"]
+             "Bruttoarbeitslohn rein, festzusetzende ESt raus, entlang der "
+             "Stufenfolge des § 2 EStG:\n",
+             "    Summe der Einkuenfte (§ 2 Abs. 3 Satz 1)\n"
+             "      -> Gesamtbetrag der Einkuenfte (§ 2 Abs. 3)\n"
+             "      -> Einkommen (§ 2 Abs. 4)\n"
+             "      -> zu versteuerndes Einkommen (§ 2 Abs. 5)\n"
+             "      -> tarifliche Einkommensteuer (§ 2 Abs. 5, § 32a)\n"
+             "      -> festzusetzende Einkommensteuer (§ 2 Abs. 6)\n",
+             "\nOracle: die Pauschbetraege § 9a (1 230 Euro) und § 10c (36 Euro) "
+             "stammen aus der Gesetzesfassung (GETTSIM als Prueinstanz), der Tarif "
+             "aus GETTSIMs § 32a-Engine. MVP-Scope: nur Einkuenfte aus "
+             "nichtselbstaendiger Arbeit, ohne Vorsorgeaufwendungen. Im MVP sind die "
+             "Uebergaenge GdE/Einkommen/zvE bis auf den § 10c-Abzug Identitaeten.\n"]
     all_ok = True
     for vz in YEARS:
         an = gettsim_pauschbetrag(AN_REL, "arbeitnehmerpauschbetrag", vz)
@@ -96,9 +105,12 @@ def run():
         cat = [catala_einzel(b, vz) for b in brutto]
         zve_c = np.array([c[0] for c in cat])
         est_c = np.array([c[1] for c in cat])
-        # Oracle deduction step, then GETTSIM tariff vectorised (one call)
-        zve_o = np.maximum(0, np.array(brutto) - an - sa)
-        est_o = H.gettsim_single(zve_o, vz).astype(int)
+        # Oracle deduction step mirrors the § 2 semantics: § 9a Satz 2 caps the
+        # Pauschbetrag at the Einnahmen (max(0, brutto - AN)), § 10c is then
+        # subtracted without an additional floor.
+        einkuenfte_o = np.maximum(0, np.array(brutto) - an)
+        zve_o = einkuenfte_o - sa
+        est_o = H.gettsim_single(np.maximum(0, zve_o), vz).astype(int)
         zve_mismatch = int((zve_c != zve_o).sum())
         einzel_div = [(int(brutto[i]), int(zve_c[i]), int(est_c[i]), int(est_o[i]))
                       for i in np.where(est_c != est_o)[0]]
@@ -108,15 +120,16 @@ def run():
         bB = rng.randint(0, MAX_BRUTTO + 1, size=len(brutto))
         cat_z = [catala_zusammen(int(a), int(b), vz) for a, b in zip(bA, bB)]
         est_cz = np.array([c[1] for c in cat_z])
-        joint_o = np.maximum(0, np.maximum(0, bA - an) + np.maximum(0, bB - an) - 2 * sa)
-        est_oz = H.gettsim_splitting(joint_o, vz).astype(int)
+        joint_o = np.maximum(0, bA - an) + np.maximum(0, bB - an) - 2 * sa
+        est_oz = H.gettsim_splitting(np.maximum(0, joint_o), vz).astype(int)
         zus_div = [(int(bA[i]), int(bB[i]), int(cat_z[i][0]), int(est_cz[i]), int(est_oz[i]))
                    for i in np.where(est_cz != est_oz)[0]]
         pairs = list(zip(bA, bB))
 
         lines.append(f"\n## VZ {vz}\n")
-        lines.append(f"GETTSIM-Pauschbetraege: § 9a = {an} Euro, § 10c = {sa} Euro.\n")
-        lines.append(f"- zvE-Ableitung (Bruttolohn - § 9a - § 10c): "
+        lines.append(f"Pauschbetraege (Gesetz, GETTSIM-Prueinstanz): § 9a = {an} Euro, "
+                     f"§ 10c = {sa} Euro.\n")
+        lines.append(f"- zvE-Ableitung (§ 9a Satz 2 + § 10c): "
                      f"{len(brutto) - zve_mismatch}/{len(brutto)} exakt gleich der "
                      f"GETTSIM-Parameter-Rechnung (Abweichungen: {zve_mismatch}).\n")
         lines.append(f"- Einzelveranlagung: {len(einzel_div)} von {len(brutto)} "

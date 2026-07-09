@@ -1,7 +1,7 @@
-# Sonderausgaben-Pauschbetrag nach § 10c EStG (je Person; bei Zusammenveranlagung verdoppelt).
-# Veranlagungszeitraum 2024. Automatisch importiert aus GETTSIM
-# (params/import_gettsim.py). GETTSIM ist Datenquelle und Prueinstanz, nicht
-# Rechtsquelle; die rechtsquelle verweist auf das Gesetz.
+# Sonderausgaben-Pauschbetrag nach § 10c EStG (je Person; bei Zusammenveranlagung verdoppelt, § 10c Satz 2).
+# Veranlagungszeitraum 2024. Wert aus der eingefrorenen Gesetzesfassung
+# (sources/), gegengeprueft mit GETTSIM (params/import_gettsim.py). GETTSIM ist
+# Prueinstanz, nicht Rechtsquelle.
 
 parameter: sonderausgabenpauschbetrag
 veranlagungszeitraum: 2024
@@ -13,5 +13,5 @@ wert:
   wert: 36
   einheit: euro
   veranlagungszeitraum: 2024
-  rechtsquelle: {gesetz: "EStG", paragraph: "10c"}
-  datenquelle: "GETTSIM 1.2.1, germany/einkommensteuer/abzüge/sonderausgaben.yaml, Eintrag 2002-01-01 (Art. 1 G. v. 19.12.2000, BGBl. I S. 1790); importiert 2026-07-09"
+  rechtsquelle: {gesetz: "EStG", paragraph: "10c", satz: "1"}
+  datenquelle: "§ 10c Satz 1 EStG, sources/gesetze-im-internet/estg_p10c_2026-07-09.txt; Wert bestaetigt durch GETTSIM 1.2.1 (germany/einkommensteuer/abzüge/sonderausgaben.yaml, Eintrag 2002-01-01 (Art. 1 G. v. 19.12.2000, BGBl. I S. 1790)) als Prueinstanz; Stand 2026-07-09"

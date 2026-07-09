@@ -35,3 +35,5 @@ Kurzzitat gegen Quellsegment).
 |------|---------|-------|-----------|
 | § 32a EStG | ab VZ 2026 | 2026-07-09 | gesetz |
 | § 4 Abs. 5 S. 1 Nr. 6b/6c EStG | ab 2023 | 2026-07-09 | gesetz |
+| § 9a EStG | geltend (Nr. 1a 1230 Euro) | 2026-07-09 | gesetz |
+| § 10c EStG | geltend (36 Euro) | 2026-07-09 | gesetz |

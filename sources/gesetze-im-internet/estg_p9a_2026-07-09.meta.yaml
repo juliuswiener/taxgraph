@@ -1,0 +1,14 @@
+# Eingefrorener Quellabruf (Fassungsarchiv). Migriert spaeter in den Dokumentstore (M1.5).
+dokument:
+  norm_uri: "estg/9a"
+  norm: "§ 9a EStG"
+  fassung: "geltende Fassung (Nr. 1a 1230 Euro, seit VZ 2023)"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__9a.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p9a_2026-07-09.txt"
+  sha256: "bd5fbde9dd6bc525994c336e98a724b9a5638a74f96b84e9cd36c7066c43b338"
+  authority: gesetz
+  redistributable: true
+  verwendet_in:
+    - "params/*/arbeitnehmerpauschbetrag.yaml"
+    - "rules/estg/p32a/einkommensteuertarif.catala_en"

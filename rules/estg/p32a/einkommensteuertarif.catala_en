@@ -198,24 +198,37 @@ scope Splittingtarif:
   definition tarifliche_steuer equals steuer_haelfte * 2.0
 ```
 
-# Arbeitnehmerfall: festzusetzende Einkommensteuer (MVP)
+# Arbeitnehmerfall: von der Bemessungsgrundlage zur festzusetzenden ESt (MVP)
 
 Der Phase-1-Deliverable: Sachverhalt (Bruttoarbeitslohn) rein, festzusetzende
-Einkommensteuer raus. Zusammengesetzt aus dem Arbeitnehmer-Pauschbetrag
-(§ 9a Satz 1 Nr. 1a EStG), dem Sonderausgaben-Pauschbetrag (§ 10c EStG) und dem
-Tarif (§ 32a, oben). Einzel- und Zusammenveranlagung. MVP-Scope: nur Einkuenfte
-aus nichtselbstaendiger Arbeit, keine Vorsorgeaufwendungen, keine weiteren
-Abzuege.
+Einkommensteuer raus. Die Ermittlung folgt der Stufenfolge des § 2 EStG:
+
+    Summe der Einkuenfte (§ 2 Abs. 3 Satz 1)
+      -> Gesamtbetrag der Einkuenfte (§ 2 Abs. 3)
+      -> Einkommen (§ 2 Abs. 4)
+      -> zu versteuerndes Einkommen (§ 2 Abs. 5)
+      -> tarifliche Einkommensteuer (§ 2 Abs. 5 i.V.m. § 32a)
+      -> festzusetzende Einkommensteuer (§ 2 Abs. 6)
+
+MVP-Scope: nur Einkuenfte aus nichtselbstaendiger Arbeit, keine
+Vorsorgeaufwendungen. Mehrere Uebergaenge sind im MVP die Identitaet; sie sind
+als benannte Stufen ausgefuehrt, damit spaetere Regeln an der richtigen Stufe
+andocken: § 33 (aussergewoehnliche Belastungen, Bemessung an der Summe bzw. am
+Gesamtbetrag der Einkuenfte, Abzug beim Einkommen), § 32 Abs. 6 (Kinderfreibetrag,
+beim zvE), § 35a (Steuerermaessigung, bei der festzusetzenden ESt).
 
 Anmerkung zur Modulstruktur: Diese Scopes liegen bewusst im selben Modul wie der
 Tarif. Catala 1.2.0 exportiert moduluebergreifende Aufzaehlungstypen nicht in der
-OCaml-Schnittstelle, sodass ein separates Modul, das
-`Veranlagungszeitraum` als Eingabetyp verwendet, nicht nach OCaml kompiliert.
-Solange das offen ist, bleibt der Arbeitnehmerfall hier co-loziert.
+OCaml-Schnittstelle, sodass ein separates Modul, das `Veranlagungszeitraum` als
+Eingabetyp verwendet, nicht nach OCaml kompiliert. Solange das offen ist, bleibt
+der Arbeitnehmerfall hier co-loziert.
 
-Pauschbetraege je Veranlagungszeitraum, aus GETTSIM importiert (siehe
-`params/<vz>/arbeitnehmerpauschbetrag.yaml` und `.../sonderausgabenpauschbetrag.yaml`):
-1 230 Euro (§ 9a) bzw. 36 Euro (§ 10c) je Person.
+Pauschbetraege je Veranlagungszeitraum. Werte literal aus den eingefrorenen
+Fassungen: Arbeitnehmer-Pauschbetrag 1 230 Euro (§ 9a Satz 1 Nr. 1a EStG,
+`sources/gesetze-im-internet/estg_p9a_2026-07-09.txt`), Sonderausgaben-
+Pauschbetrag 36 Euro (§ 10c Satz 1 EStG,
+`sources/gesetze-im-internet/estg_p10c_2026-07-09.txt`). GETTSIM dient als
+Prueinstanz (siehe `params/<vz>/`).
 
 ```catala
 declaration arbeitnehmer_pauschbetrag content money
@@ -237,27 +250,35 @@ declaration sonderausgaben_pauschbetrag content money
 
 ## Einkuenfte aus nichtselbstaendiger Arbeit (§ 9a)
 
-Werbungskosten mindestens in Hoehe des Arbeitnehmer-Pauschbetrags.
+§ 9a Satz 1: es wird der Arbeitnehmer-Pauschbetrag abgezogen, wenn nicht hoehere
+Werbungskosten nachgewiesen werden. § 9a Satz 2: der Pauschbetrag darf nur bis
+zur Hoehe der Einnahmen abgezogen werden. Hoehere tatsaechliche Werbungskosten
+unterliegen dieser Kappung nicht und koennen negative Einkuenfte (einen Verlust)
+erzeugen. Genau diese Unterscheidung bildet der folgende Scope ab.
 
 ```catala
 declaration scope EinkuenfteNichtselbststaendig:
   input bruttoarbeitslohn content money
   input werbungskosten content money
   input veranlagungszeitraum content Veranlagungszeitraum
-  internal abzug content money
+  internal pauschbetrag content money
   output einkuenfte content money
 
 scope EinkuenfteNichtselbststaendig:
-  definition abzug equals
-    let pausch equals arbeitnehmer_pauschbetrag of veranlagungszeitraum in
-    if werbungskosten > pausch then werbungskosten else pausch
+  definition pauschbetrag equals arbeitnehmer_pauschbetrag of veranlagungszeitraum
 
   definition einkuenfte equals
-    if bruttoarbeitslohn - abzug > $0.00 then bruttoarbeitslohn - abzug
-    else $0.00
+    if werbungskosten > pauschbetrag then
+      # § 9a Satz 1: hoehere tatsaechliche Werbungskosten, keine Kappung
+      # (negative Einkuenfte / Verlust moeglich).
+      bruttoarbeitslohn - werbungskosten
+    else
+      # § 9a Satz 2: Pauschbetrag nur bis zur Hoehe der Einnahmen.
+      if bruttoarbeitslohn > pauschbetrag then bruttoarbeitslohn - pauschbetrag
+      else $0.00
 ```
 
-## Einzelveranlagung
+## Einzelveranlagung (§ 2 Abs. 3 bis 6)
 
 ```catala
 declaration scope FestzusetzendeEstEinzel:
@@ -265,39 +286,60 @@ declaration scope FestzusetzendeEstEinzel:
   input werbungskosten content money
   input sonderausgaben content money
   input veranlagungszeitraum content Veranlagungszeitraum
-  internal einkuenfte content money
+  internal einkuenfte_nichtselbststaendig content money
   internal sonderausgaben_abzug content money
-  output zu_versteuerndes_einkommen content money
-  output festzusetzende_est content money
+  output summe_der_einkuenfte content money            # § 2 Abs. 3 Satz 1
+  output gesamtbetrag_der_einkuenfte content money     # § 2 Abs. 3
+  output einkommen content money                       # § 2 Abs. 4
+  output zu_versteuerndes_einkommen content money      # § 2 Abs. 5
+  output tarifliche_est content money                  # § 2 Abs. 5, § 32a
+  output festzusetzende_est content money              # § 2 Abs. 6
 
 scope FestzusetzendeEstEinzel:
-  definition einkuenfte equals
+  definition einkuenfte_nichtselbststaendig equals
     (output of EinkuenfteNichtselbststaendig with {
        -- bruttoarbeitslohn: bruttoarbeitslohn
        -- werbungskosten: werbungskosten
        -- veranlagungszeitraum: veranlagungszeitraum
      }).einkuenfte
 
+  # § 2 Abs. 3 Satz 1: Summe der Einkuenfte. MVP: nur eine Einkunftsart.
+  definition summe_der_einkuenfte equals einkuenfte_nichtselbststaendig
+
+  # § 2 Abs. 3: Gesamtbetrag der Einkuenfte. MVP: Identitaet. Andockpunkt:
+  # Altersentlastungsbetrag, Entlastungsbetrag fuer Alleinerziehende.
+  definition gesamtbetrag_der_einkuenfte equals summe_der_einkuenfte
+
   definition sonderausgaben_abzug equals
     let pausch equals sonderausgaben_pauschbetrag of veranlagungszeitraum in
     if sonderausgaben > pausch then sonderausgaben else pausch
 
-  definition zu_versteuerndes_einkommen equals
-    if einkuenfte - sonderausgaben_abzug > $0.00 then einkuenfte - sonderausgaben_abzug
-    else $0.00
+  # § 2 Abs. 4: Einkommen = GdE minus Sonderausgaben minus aussergewoehnliche
+  # Belastungen. MVP: nur Sonderausgaben-Pauschbetrag. Andockpunkt: § 33.
+  definition einkommen equals gesamtbetrag_der_einkuenfte - sonderausgaben_abzug
 
-  definition festzusetzende_est equals
+  # § 2 Abs. 5: zu versteuerndes Einkommen = Einkommen minus Freibetraege.
+  # MVP: Identitaet. Andockpunkt: § 32 Abs. 6 (Kinderfreibetrag).
+  definition zu_versteuerndes_einkommen equals einkommen
+
+  # § 2 Abs. 5 i.V.m. § 32a: tarifliche Einkommensteuer.
+  definition tarifliche_est equals
     (output of Grundtarif with {
        -- zu_versteuerndes_einkommen: zu_versteuerndes_einkommen
        -- veranlagungszeitraum: veranlagungszeitraum
      }).tarifliche_steuer
+
+  # § 2 Abs. 6: festzusetzende Einkommensteuer = tarifliche ESt minus
+  # Steuerermaessigungen. MVP: Identitaet. Andockpunkt: § 35a.
+  definition festzusetzende_est equals tarifliche_est
 ```
 
-## Zusammenveranlagung
+## Zusammenveranlagung (§ 2 Abs. 3 bis 6, § 32a Abs. 5)
 
 Zwei Ehegatten mit je eigenem Arbeitslohn. Der Sonderausgaben-Pauschbetrag
-verdoppelt sich (§ 10c: 36 Euro je Person, zusammen 72 Euro). Gemeinsames zvE aus
-der Summe der Einkuenfte, festzusetzende ESt aus dem Splitting-Tarif.
+verdoppelt sich (§ 10c Satz 2: 36 Euro je Person, zusammen 72 Euro). Das
+gemeinsame zu versteuernde Einkommen durchlaeuft dieselbe § 2-Stufenfolge, die
+tarifliche ESt ergibt sich aus dem Splitting-Tarif.
 
 ```catala
 declaration scope FestzusetzendeEstZusammen:
@@ -310,7 +352,11 @@ declaration scope FestzusetzendeEstZusammen:
   internal einkuenfte_a content money
   internal einkuenfte_b content money
   internal sonderausgaben_abzug content money
+  output summe_der_einkuenfte content money
+  output gesamtbetrag_der_einkuenfte content money
+  output einkommen content money
   output zu_versteuerndes_einkommen_gemeinsam content money
+  output tarifliche_est content money
   output festzusetzende_est content money
 
 scope FestzusetzendeEstZusammen:
@@ -328,17 +374,28 @@ scope FestzusetzendeEstZusammen:
        -- veranlagungszeitraum: veranlagungszeitraum
      }).einkuenfte
 
+  # § 2 Abs. 3 Satz 1: Summe der Einkuenfte beider Ehegatten.
+  definition summe_der_einkuenfte equals einkuenfte_a + einkuenfte_b
+  definition gesamtbetrag_der_einkuenfte equals summe_der_einkuenfte
+
+  # § 10c Satz 2: Verdopplung des Sonderausgaben-Pauschbetrags.
   definition sonderausgaben_abzug equals
     let pausch equals sonderausgaben_pauschbetrag of veranlagungszeitraum * 2.0 in
     if sonderausgaben_gemeinsam > pausch then sonderausgaben_gemeinsam else pausch
 
-  definition zu_versteuerndes_einkommen_gemeinsam equals
-    let summe equals einkuenfte_a + einkuenfte_b - sonderausgaben_abzug in
-    if summe > $0.00 then summe else $0.00
+  # § 2 Abs. 4: Einkommen. Andockpunkt: § 33.
+  definition einkommen equals gesamtbetrag_der_einkuenfte - sonderausgaben_abzug
 
-  definition festzusetzende_est equals
+  # § 2 Abs. 5: gemeinsames zu versteuerndes Einkommen. Andockpunkt: § 32 Abs. 6.
+  definition zu_versteuerndes_einkommen_gemeinsam equals einkommen
+
+  # § 2 Abs. 5, § 32a Abs. 5: tarifliche Einkommensteuer (Splitting).
+  definition tarifliche_est equals
     (output of Splittingtarif with {
        -- zu_versteuerndes_einkommen_gemeinsam: zu_versteuerndes_einkommen_gemeinsam
        -- veranlagungszeitraum: veranlagungszeitraum
      }).tarifliche_steuer
+
+  # § 2 Abs. 6: festzusetzende Einkommensteuer. Andockpunkt: § 35a.
+  definition festzusetzende_est equals tarifliche_est
 ```

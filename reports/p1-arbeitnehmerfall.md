@@ -1,13 +1,23 @@
 # Phase-1-Deliverable: Arbeitnehmerfall end-to-end
 
-Bruttoarbeitslohn rein, festzusetzende ESt raus. Catala-Kette (§ 9a -> § 10c -> § 32a) gegen GETTSIM (Pauschbetraege als Parameter, Tarif als Funktion). MVP-Scope: nur Einkuenfte aus nichtselbstaendiger Arbeit, ohne Vorsorgeaufwendungen.
+Bruttoarbeitslohn rein, festzusetzende ESt raus, entlang der Stufenfolge des § 2 EStG:
+
+    Summe der Einkuenfte (§ 2 Abs. 3 Satz 1)
+      -> Gesamtbetrag der Einkuenfte (§ 2 Abs. 3)
+      -> Einkommen (§ 2 Abs. 4)
+      -> zu versteuerndes Einkommen (§ 2 Abs. 5)
+      -> tarifliche Einkommensteuer (§ 2 Abs. 5, § 32a)
+      -> festzusetzende Einkommensteuer (§ 2 Abs. 6)
+
+
+Oracle: die Pauschbetraege § 9a (1 230 Euro) und § 10c (36 Euro) stammen aus der Gesetzesfassung (GETTSIM als Prueinstanz), der Tarif aus GETTSIMs § 32a-Engine. MVP-Scope: nur Einkuenfte aus nichtselbstaendiger Arbeit, ohne Vorsorgeaufwendungen. Im MVP sind die Uebergaenge GdE/Einkommen/zvE bis auf den § 10c-Abzug Identitaeten.
 
 
 ## VZ 2024
 
-GETTSIM-Pauschbetraege: § 9a = 1230 Euro, § 10c = 36 Euro.
+Pauschbetraege (Gesetz, GETTSIM-Prueinstanz): § 9a = 1230 Euro, § 10c = 36 Euro.
 
-- zvE-Ableitung (Bruttolohn - § 9a - § 10c): 507/507 exakt gleich der GETTSIM-Parameter-Rechnung (Abweichungen: 0).
+- zvE-Ableitung (§ 9a Satz 2 + § 10c): 507/507 exakt gleich der GETTSIM-Parameter-Rechnung (Abweichungen: 0).
 
 - Einzelveranlagung: 0 von 507 Faellen weichen in der festzusetzenden ESt ab (erwartet: nur die § 32a-Grundtarif-Approximation, je 1 Euro).
 
@@ -16,9 +26,9 @@ GETTSIM-Pauschbetraege: § 9a = 1230 Euro, § 10c = 36 Euro.
 
 ## VZ 2025
 
-GETTSIM-Pauschbetraege: § 9a = 1230 Euro, § 10c = 36 Euro.
+Pauschbetraege (Gesetz, GETTSIM-Prueinstanz): § 9a = 1230 Euro, § 10c = 36 Euro.
 
-- zvE-Ableitung (Bruttolohn - § 9a - § 10c): 506/506 exakt gleich der GETTSIM-Parameter-Rechnung (Abweichungen: 0).
+- zvE-Ableitung (§ 9a Satz 2 + § 10c): 506/506 exakt gleich der GETTSIM-Parameter-Rechnung (Abweichungen: 0).
 
 - Einzelveranlagung: 4 von 506 Faellen weichen in der festzusetzenden ESt ab (erwartet: nur die § 32a-Grundtarif-Approximation, je 1 Euro).
 
@@ -31,9 +41,9 @@ GETTSIM-Pauschbetraege: § 9a = 1230 Euro, § 10c = 36 Euro.
 
 ## VZ 2026
 
-GETTSIM-Pauschbetraege: § 9a = 1230 Euro, § 10c = 36 Euro.
+Pauschbetraege (Gesetz, GETTSIM-Prueinstanz): § 9a = 1230 Euro, § 10c = 36 Euro.
 
-- zvE-Ableitung (Bruttolohn - § 9a - § 10c): 505/505 exakt gleich der GETTSIM-Parameter-Rechnung (Abweichungen: 0).
+- zvE-Ableitung (§ 9a Satz 2 + § 10c): 505/505 exakt gleich der GETTSIM-Parameter-Rechnung (Abweichungen: 0).
 
 - Einzelveranlagung: 6 von 505 Faellen weichen in der festzusetzenden ESt ab (erwartet: nur die § 32a-Grundtarif-Approximation, je 1 Euro).
 

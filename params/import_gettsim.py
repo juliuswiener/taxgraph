@@ -38,6 +38,8 @@ IMPORTS = [
         key="arbeitnehmerpauschbetrag",
         einheit="euro",
         rechtsquelle={"gesetz": "EStG", "paragraph": "9a", "absatz": "1", "nummer": "1a"},
+        # Primaerquelle: eingefrorene Gesetzesfassung. GETTSIM dient nur als Prueinstanz.
+        gesetzesquelle="§ 9a Satz 1 Nr. 1a EStG, sources/gesetze-im-internet/estg_p9a_2026-07-09.txt",
         kommentar="Arbeitnehmer-Pauschbetrag (Werbungskostenpauschbetrag) nach § 9a Satz 1 Nr. 1a EStG.",
     ),
     dict(
@@ -45,8 +47,9 @@ IMPORTS = [
         gettsim_rel="germany/einkommensteuer/abzüge/sonderausgaben.yaml",
         key="sonderausgabenpauschbetrag",
         einheit="euro",
-        rechtsquelle={"gesetz": "EStG", "paragraph": "10c", "absatz": "", "satz": ""},
-        kommentar="Sonderausgaben-Pauschbetrag nach § 10c EStG (je Person; bei Zusammenveranlagung verdoppelt).",
+        rechtsquelle={"gesetz": "EStG", "paragraph": "10c", "absatz": "", "satz": "1"},
+        gesetzesquelle="§ 10c Satz 1 EStG, sources/gesetze-im-internet/estg_p10c_2026-07-09.txt",
+        kommentar="Sonderausgaben-Pauschbetrag nach § 10c EStG (je Person; bei Zusammenveranlagung verdoppelt, § 10c Satz 2).",
     ),
 ]
 
@@ -83,13 +86,14 @@ def rq_inline(rq: dict) -> str:
 def emit(spec: dict, vz: int, date_str: str, entry: dict):
     value = entry["value"]
     ref = entry.get("reference") or entry.get("note") or ""
-    ref = f" ({ref})" if ref else ""
-    datenquelle = (f"GETTSIM {GETTSIM_VERSION}, {spec['gettsim_rel']}, "
-                   f"Eintrag {date_str}{ref}; importiert {IMPORT_DATE}")
+    ref = f", Eintrag {date_str} ({ref})" if ref else f", Eintrag {date_str}"
+    datenquelle = (f"{spec['gesetzesquelle']}; Wert bestaetigt durch GETTSIM "
+                   f"{GETTSIM_VERSION} ({spec['gettsim_rel']}{ref}) als Prueinstanz; "
+                   f"Stand {IMPORT_DATE}")
     out = f"""# {spec['kommentar']}
-# Veranlagungszeitraum {vz}. Automatisch importiert aus GETTSIM
-# (params/import_gettsim.py). GETTSIM ist Datenquelle und Prueinstanz, nicht
-# Rechtsquelle; die rechtsquelle verweist auf das Gesetz.
+# Veranlagungszeitraum {vz}. Wert aus der eingefrorenen Gesetzesfassung
+# (sources/), gegengeprueft mit GETTSIM (params/import_gettsim.py). GETTSIM ist
+# Prueinstanz, nicht Rechtsquelle.
 
 parameter: {spec['out']}
 veranlagungszeitraum: {vz}

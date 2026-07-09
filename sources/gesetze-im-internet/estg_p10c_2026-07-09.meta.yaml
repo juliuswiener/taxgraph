@@ -1,0 +1,14 @@
+# Eingefrorener Quellabruf (Fassungsarchiv). Migriert spaeter in den Dokumentstore (M1.5).
+dokument:
+  norm_uri: "estg/10c"
+  norm: "§ 10c EStG"
+  fassung: "geltende Fassung (36 Euro)"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__10c.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p10c_2026-07-09.txt"
+  sha256: "2d40819b7da2b9093a6a4561b646766522f55fdde3ac6d749b483ed055403bf3"
+  authority: gesetz
+  redistributable: true
+  verwendet_in:
+    - "params/*/sonderausgabenpauschbetrag.yaml"
+    - "rules/estg/p32a/einkommensteuertarif.catala_en"

@@ -129,3 +129,60 @@ scope TestZusammen2026:
   definition est2 equals r2.festzusetzende_est
   assertion est2 = $14,008.00
 ```
+
+## § 2-Stufenfolge und § 9a Satz 2 (negative Einkuenfte)
+
+```catala
+#[test]
+declaration scope TestStufen2026:
+  internal r content Einkommensteuertarif.FestzusetzendeEstEinzel
+  output sde content money
+  output gde content money
+  output eink content money
+  output zve content money
+  output tarif content money
+  output fest content money
+
+scope TestStufen2026:
+  # brutto 60000: einkuenfte 58770 -> SdE=GdE 58770 -> Einkommen 58734
+  # -> zvE 58734 -> tarifliche 13747 -> festzusetzende 13747
+  definition r equals output of Einkommensteuertarif.FestzusetzendeEstEinzel with {
+    -- bruttoarbeitslohn: $60,000.00
+    -- werbungskosten: $0.00
+    -- sonderausgaben: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition sde equals r.summe_der_einkuenfte
+  definition gde equals r.gesamtbetrag_der_einkuenfte
+  definition eink equals r.einkommen
+  definition zve equals r.zu_versteuerndes_einkommen
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  assertion sde = $58,770.00
+  assertion gde = $58,770.00
+  assertion eink = $58,734.00
+  assertion zve = $58,734.00
+  assertion tarif = $13,747.00
+  assertion fest = $13,747.00
+
+#[test]
+declaration scope TestNegativeEinkuenfte:
+  internal r content Einkommensteuertarif.FestzusetzendeEstEinzel
+  output eink content money
+  output tarif content money
+  output fest content money
+
+scope TestNegativeEinkuenfte:
+  # brutto 1000, tatsaechliche WK 5000 (> Pauschbetrag): § 9a Satz 2 greift NICHT
+  # -> negative Einkuenfte -4000, Einkommen -4036, tarifliche/festzusetzende 0
+  definition r equals output of Einkommensteuertarif.FestzusetzendeEstEinzel with {
+    -- bruttoarbeitslohn: $1,000.00
+    -- werbungskosten: $5,000.00
+    -- sonderausgaben: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition eink equals r.einkommen
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  assertion eink = -$4,036.00
+  assertion tarif = $0.00
+  assertion fest = $0.00
+```
