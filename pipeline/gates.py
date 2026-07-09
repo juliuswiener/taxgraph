@@ -43,15 +43,54 @@ def extract_catala(formalizer_text: str) -> tuple[str | None, str | None]:
 
 # -- gates -------------------------------------------------------------------
 
-def syntax_gate(catala_src: str | None) -> GateResult:
-    """Cheap structural syntax gate (tree-sitter when available, else heuristic)."""
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+_CHECK_CACHE: dict[tuple[str, str], tuple[int, str]] = {}
+
+
+def _strip(s: str) -> str:
+    return _ANSI.sub("", s)
+
+
+def _catala_check(catala_src: str, module: str) -> tuple[int, str]:
+    """Run the real Catala parser+typechecker once; cache per (src, module).
+
+    There is no tree-sitter grammar for Catala (not on PyPI, not in the Catala
+    sources - only editor highlighters). Rather than hand-roll a second grammar
+    that would drift from the compiler, the syntax gate uses the compiler's own
+    parser. `clerk typecheck` reports "Syntax error at ..." for parse failures and
+    "Incompatible types" for type failures, so one run feeds both gates
+    deterministically. Results are cached so the cascade does not pay twice.
+    """
+    key = (catala_src, module)
+    if key in _CHECK_CACHE:
+        return _CHECK_CACHE[key]
+    with tempfile.TemporaryDirectory() as d:
+        path = _write_clerk_project(catala_src, module, d)
+        rel = os.path.relpath(path, d)
+        try:
+            r = subprocess.run(["clerk", "typecheck", rel], cwd=d,
+                               capture_output=True, text=True, timeout=600)
+            out = _strip((r.stderr or "") + (r.stdout or ""))
+            res = (r.returncode, out)
+        except Exception as e:  # noqa: BLE001
+            res = (-1, f"clerk error: {e}")
+    _CHECK_CACHE[key] = res
+    return res
+
+
+def syntax_gate(catala_src: str | None, module: str | None = None) -> GateResult:
+    """Parse gate using the Catala compiler's own parser (deterministic)."""
     if not catala_src:
         return GateResult("syntax", FAIL, "no catala block in output")
-    # structural heuristic; a real tree-sitter-catala parse replaces this later.
-    ok = ("declaration scope" in catala_src and "definition" in catala_src)
-    if not ok:
-        return GateResult("syntax", FAIL, "missing declaration scope / definition")
-    return GateResult("syntax", PASS, "structural check ok (tree-sitter pending)")
+    if not have("clerk"):
+        return GateResult("syntax", SKIP, "clerk not on PATH (toolchain missing)")
+    rc, out = _catala_check(catala_src, module or "Cand")
+    if "Syntax error" in out:
+        first = next((l.strip() for l in out.splitlines() if "Syntax error" in l), "")
+        return GateResult("syntax", FAIL, first[:200])
+    # rc != 0 without a syntax error means it parsed and failed later (types):
+    # that is the typecheck gate's business, not the parser's.
+    return GateResult("syntax", PASS, "catala parser ok")
 
 
 def _write_clerk_project(catala_src: str, module: str, d: str) -> str:
@@ -76,17 +115,16 @@ def typecheck_gate(catala_src: str | None, module: str | None) -> GateResult:
         return GateResult("typecheck", FAIL, "no source/module")
     if not have("clerk"):
         return GateResult("typecheck", SKIP, "clerk not on PATH (toolchain missing)")
-    with tempfile.TemporaryDirectory() as d:
-        path = _write_clerk_project(catala_src, module, d)
-        rel = os.path.relpath(path, d)
-        try:
-            r = subprocess.run(["clerk", "typecheck", rel], cwd=d,
-                               capture_output=True, text=True, timeout=300)
-        except Exception as e:  # noqa: BLE001
-            return GateResult("typecheck", FAIL, f"clerk error: {e}")
-        if r.returncode != 0:
-            return GateResult("typecheck", FAIL, (r.stderr or r.stdout)[-400:])
-    return GateResult("typecheck", PASS, "clerk typecheck ok")
+    rc, out = _catala_check(catala_src, module)   # cached; shared with syntax_gate
+    if rc == 0:
+        return GateResult("typecheck", PASS, "clerk typecheck ok")
+    if "Syntax error" in out:
+        return GateResult("typecheck", FAIL, "did not parse (see syntax gate)")
+    # keep the informative head of the compiler diagnostic, not a tail slice
+    lines = [l.strip(" │├└┌─➤") for l in out.splitlines()]
+    lines = [l for l in lines if l and not l.startswith("[")]
+    msg = " ".join(lines[1:5]) if len(lines) > 1 else " ".join(lines)
+    return GateResult("typecheck", FAIL, msg[:220])
 
 
 def scope_name(catala_src: str) -> str | None:

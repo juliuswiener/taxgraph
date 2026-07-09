@@ -79,9 +79,10 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
     mod_b, src_b = G.extract_catala(b_text)
     res.module_name, res.catala_a, res.catala_b = mod_a, src_a, src_b
 
-    # 3. Syntax-Gate (beide)
-    res.gate_results.append(_named("syntax_a", G.syntax_gate(src_a)))
-    res.gate_results.append(_named("syntax_b", G.syntax_gate(src_b)))
+    # 3. Syntax-Gate (beide): echter Catala-Parser, Ergebnis wird mit dem
+    #    Typecheck-Gate geteilt (ein clerk-Lauf, gecacht).
+    res.gate_results.append(_named("syntax_a", G.syntax_gate(src_a, mod_a)))
+    res.gate_results.append(_named("syntax_b", G.syntax_gate(src_b, mod_b)))
 
     # 4. Compiler-Typecheck (beide)
     res.gate_results.append(_named("typecheck_a", G.typecheck_gate(src_a, mod_a)))
