@@ -193,7 +193,15 @@ class OpenRouterClient:
                 f"OpenRouter {r.status_code}: {r.text[:300]}",
                 kind="role_timeout" if r.status_code == 429 else "role_error")
         data = r.json()
-        choice = data["choices"][0]["message"]["content"]
+        msg = data["choices"][0].get("message", {}) or {}
+        # OpenRouter liefert content=null z.B. bei Refusal oder reinen
+        # Reasoning-Antworten. Das darf die Kaskade nicht zum Absturz bringen:
+        # leerer Text -> die Gates schlagen sauber fehl.
+        choice = msg.get("content") or ""
+        if not choice:
+            fr = data["choices"][0].get("finish_reason", "?")
+            self._event(role.role, role.slug, prov, "errors",
+                        f"empty content (finish_reason={fr})")
         usage = data.get("usage", {}) or {}
         provider = data.get("provider") or (data.get("choices", [{}])[0].get("provider"))
         return Completion(

@@ -23,7 +23,7 @@ roles:
     providers: ["anthropic"]
     temperature: 0.0
     max_tokens: 8192
-    prompt_template_id: "formalisierung@1"
+    prompt_template_id: "formalisierung@2"
     fewshot_set_id: "formalisierung_base@1"
 
   formalisierer_b:
@@ -32,7 +32,7 @@ roles:
     providers: ["together", "fireworks/fast", "digitalocean"]
     temperature: 0.0
     max_tokens: 8192
-    prompt_template_id: "formalisierung@1"   # identisches Template wie A
+    prompt_template_id: "formalisierung@2"   # identisches Template wie A
     fewshot_set_id: "formalisierung_base@1"   # identische Few-Shots wie A
 
   judge:

@@ -110,7 +110,10 @@ def evaluate(reports: list[dict]) -> dict:
         blind_tasks = [r for r in rs if "blind_repro_status" in r]
         blind_build_err = sum(1 for r in blind_tasks
                               if r["blind_repro_status"] in
-                              ("blind_build_error", "blind_call_error", "blind_no_scope"))
+                              ("blind_build_error", "blind_call_error", "blind_no_scope",
+                               "blind_runtime_error"))
+        blind_sig_mismatch = sum(1 for r in blind_tasks
+                                 if r["blind_repro_status"] == "blind_signature_mismatch")
         blind_ref_err = sum(1 for r in blind_tasks
                             if r["blind_repro_status"] == "blind_ref_error")
         approved = [r for r in rs if r.get("queue_status", "").startswith("verified")]
@@ -122,6 +125,7 @@ def evaluate(reports: list[dict]) -> dict:
         # Rolle und Provider, plus Laeufe, die an einer Rolle abgebrochen sind.
         role_timeouts = [r for r in rs if r.get("queue_status") in
                          ("role_timeout", "role_error")]
+        run_errors = [r for r in rs if r.get("queue_status") == "run_error"]
         transport = {"retries": 0, "timeouts": 0, "rate_limits": 0, "errors": 0}
         by_provider: dict = defaultdict(lambda: dict.fromkeys(transport, 0))
         for r in rs:
@@ -146,6 +150,8 @@ def evaluate(reports: list[dict]) -> dict:
             "blind_reproduktion": rate(blind_ok, len(blind)) if blind else None,
             "blind_build_error_rate": rate(blind_build_err, len(blind_tasks)) if blind_tasks else None,
             "blind_ref_error_rate": rate(blind_ref_err, len(blind_tasks)) if blind_tasks else None,
+            "blind_signature_mismatch_rate": rate(blind_sig_mismatch, len(blind_tasks)) if blind_tasks else None,
+            "run_error_rate": rate(len(run_errors), n),
             "eskalationsrate": rate(len(escalated), n),
             "eskalation_je_gate": {k: rate(v, n) for k, v in sorted(per_gate.items())},
             "clerk_gate_na_anteil": rate(clerk_na, n),

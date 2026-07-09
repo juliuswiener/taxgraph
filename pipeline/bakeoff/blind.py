@@ -171,7 +171,19 @@ def blind_repro_match(cand_src: str, task: dict, root_repo: str) -> tuple[bool |
             cvals = _evaluate(croot, "CandMod", cand_scope, sig["output"],
                               cand_raster, {})
         except Exception as e:  # noqa: BLE001
-            return None, "blind_call_error", f"candidate call failed: {e}"
+            msg = str(e)
+            # Der Kandidat hat die vorgegebene Signatur nicht eingehalten
+            # (zusaetzliche/fehlende Eingaben, anderer Scope- oder Feldname).
+            # Das ist ein Befund ueber das Modell, kein Infrastrukturfehler.
+            if ("Extra field" in msg or "missing" in msg.lower()
+                    or "AttributeError" in msg):
+                return None, "blind_signature_mismatch", f"signature violated: {msg[:180]}"
+            # Catala-Laufzeitfehler des Kandidaten: kollidierende Ausnahmen,
+            # fehlende Definition, Assertion. Modellfehler, nicht Infrastruktur.
+            if any(k in msg for k in ("Conflict", "NoValue", "AssertionFailed",
+                                      "Empty", "Uncomparable")):
+                return None, "blind_runtime_error", f"candidate runtime error: {msg[:180]}"
+            return None, "blind_call_error", f"candidate call failed: {msg[:180]}"
         try:
             rvals = _evaluate(rroot, ref["module"], ref["scope"], ref["output"],
                               ref_raster, ref.get("fixed_inputs") or {})

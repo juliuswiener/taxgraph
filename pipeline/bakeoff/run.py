@@ -17,6 +17,7 @@ import os
 import subprocess
 import sys
 import time
+import traceback
 
 import yaml
 
@@ -112,7 +113,17 @@ def main() -> int:
                 print(f"  {e.kind}: {e.role} ({e.slug}) -> weiter", flush=True)
                 continue
             except Exception as e:  # noqa: BLE001
-                print("  RUN FAILED:", mask_key(str(e))[:200], flush=True)
+                # Auch ein unerwarteter Fehler bekommt einen Report: sonst ist der
+                # Lauf weder resumierbar noch in der Auswertung sichtbar.
+                os.makedirs(d, exist_ok=True)
+                json.dump({"candidate_id": rid, "pairing": p["name"],
+                           "queue_status": "run_error",
+                           "reason": mask_key(f"{type(e).__name__}: {e}")[:300],
+                           "traceback": mask_key(traceback.format_exc())[-800:],
+                           "gates": [], "failed_gates": [], "judge_verdict": {},
+                           "provenance": [], "total_cost_usd": 0.0},
+                          open(done, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+                print("  run_error:", mask_key(str(e))[:150], flush=True)
                 continue
 
             report = {

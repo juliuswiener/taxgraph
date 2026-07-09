@@ -33,8 +33,14 @@ def have(tool: str) -> bool:
 
 # -- parsing model output ----------------------------------------------------
 
-def extract_catala(formalizer_text: str) -> tuple[str | None, str | None]:
-    """Return (module_name, catala_source) from a formaliser output."""
+def extract_catala(formalizer_text: str | None) -> tuple[str | None, str | None]:
+    """Return (module_name, catala_source) from a formaliser output.
+
+    Tolerates an empty/None answer (OpenRouter returns content=null on refusals
+    and pure-reasoning replies); the gates then fail cleanly instead of crashing.
+    """
+    if not formalizer_text:
+        return None, None
     m = re.search(r"MODULE:\s*(\S+)", formalizer_text)
     module = m.group(1) if m else None
     b = re.search(r"```catala\s*(.*?)```", formalizer_text, re.DOTALL)

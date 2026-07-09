@@ -26,13 +26,23 @@ def extract(client, role: RoleConfig, norm_text: str, models_hash: str,
     return _call(client, role, task, "worker", models_hash, exclude)
 
 
+# tasks.yaml uses short type names; Catala's are different. Emitting `int`/`bool`
+# into the prompt produced invalid Catala that both formalisers copied verbatim.
+_CATALA_TYPE = {"money": "money", "decimal": "decimal",
+                "int": "integer", "integer": "integer",
+                "bool": "boolean", "boolean": "boolean"}
+
+
 def _signature_block(sig: dict | None) -> str:
     """Prescribe the scope interface so A, B and the hand reference are
     extensionally comparable. Blind stays the semantics, not the naming."""
     if not sig:
         return ""
-    ins = "\n".join(f"  input {k} content {v}" for k, v in sig["inputs"].items())
-    return (f"\n\nVerbindliche Scope-Signatur (Namen und Typen exakt so verwenden):\n"
+    ins = "\n".join(f"  input {k} content {_CATALA_TYPE[v]}"
+                    for k, v in sig["inputs"].items())
+    return (f"\n\nVERBINDLICHE Scope-Signatur. Verwende exakt diesen Scope-Namen, "
+            f"exakt diese Eingabenamen und -typen und exakt diesen Ausgabenamen. "
+            f"Fuege KEINE weiteren Eingaben hinzu und benenne nichts um:\n\n"
             f"declaration scope {sig['scope']}:\n{ins}\n"
             f"  output {sig['output']} content money\n")
 
