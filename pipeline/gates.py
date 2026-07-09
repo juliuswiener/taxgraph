@@ -377,7 +377,11 @@ def _normalize(text: str) -> str:
 def _lit(value, typ: str) -> str | None:
     """Render a Catala literal. Unsupported type -> None."""
     if typ == "money":
-        return f"${int(value)}.00"
+        # Cent-Betraege muessen ueberleben: die amtlichen Rechenbeispiele nennen
+        # 1.408,70 EUR und 22,40 EUR. `int(value)` haette daraus $1408.00 gemacht -
+        # ein still falscher Erwartungswert, der genau das unterlaeuft, wofuer das
+        # Test-Gate da ist. Catala-Money will Tausendertrenner: $1,408.70
+        return "$" + f"{float(value):,.2f}"
     if typ == "int":
         return str(int(value))
     if typ == "bool":

@@ -1,0 +1,2565 @@
+POSTANSCHRIFT      Bundesministerium der Finanzen, 11016 Berlin
+
+                                                                                                                                       HAUSANSCHRIFT   Wilhelmstraße 97
+                   Nur per E-Mail                                                                                                                      10117 Berlin
+                                                                                                                                                 TEL
+                   Oberste Finanzbehörden                                                                                                        FAX
+                   der Länder                                                                                                                 E-MAIL
+
+                                                                                                                                              DATUM    25. November 2020
+
+
+
+
+          GZ       IV C 5 - S 2353/19/10011 :006
+         DOK       2020/1229128
+                       (bei Antwort bitte GZ und DOK angeben)
+
+
+
+
+                                                                                      Steuerliche Behandlung der Reisekosten von Arbeitnehmern
+                                                                                                (ersetzt das Schreiben vom 24. Oktober 2014 BStBl I S. 1412)
+
+
+                                                                                                                            Inhalt
+                                                                                                                                                                                                    Rz
+                I. Vorbemerkung                                                                                                                                                                 1
+                II. Anwendung der Regelungen bei den Einkünften aus nichtselbständiger Arbeit                                                                                                   2 - 135
+                                                                     1.               Erste Tätigkeitsstätte, auswärtige Tätigkeit, weiträumiges Tätigkeitsgebiet 2 - 46
+                                                                                     a)     Erste Tätigkeitsstätte, § 9 Absatz 4 EStG                                                           2 - 35
+                                                                                          aa)      Tätigkeitsstätte                                                                             3
+                                                                                          bb)      Häusliches Arbeitszimmer                                                                     4
+                                                                                          cc)      Tätigkeitsstätte des Arbeitgebers bei einem verbundenen Unternehmen
+                                                                                                   oder bei einem Dritten                                              5
+                                                                                          dd)      Zuordnung mittels dienst- oder arbeitsrechtlicher Festlegung durch
+                                                                                                   den Arbeitgeber                                                                              6 -13
+                                                                                          ee)      Dauerhafte Zuordnung                                                                         14 - 25
+                                                                                          ff)      Quantitative Zuordnungskriterien                                                             26 - 29
+                                                                                          gg)      Mehrere Tätigkeitsstätten                                                                    30 - 32
+                                                                                          hh)      Erste Tätigkeitsstätte bei Vollzeitstudium oder vollzeitigen
+                                                                                                   Bildungsmaßnahmen                                                                            33 -35
+                                                                                     b)     Fahrtkosten bei auswärtiger Tätigkeit, Sammelpunkt, weiträumiges
+                                                                                            Tätigkeitsgebiet, § 9 Absatz 1 Satz 3 Nummer 4a EStG                                                36 - 46
+
+
+
+
+                                                                                                                                                                          www.bundesfinanzministerium.de
+                Postanschrift Berlin: Bundesministerium der Finanzen, 11016 Berlin
+
+
+
+
+                                                                                                                                                                                  www.eu2020finance.de
+Seite 2             aa)   Tatsächliche Fahrtkosten und pauschaler Kilometersatz bei
+                          auswärtiger Tätigkeit                                       36 - 37
+                    bb)   „Sammelpunkt“                                               38 - 40
+                    cc)   Weiträumiges Tätigkeitsgebiet                               41 - 46
+          2.    Verpflegungsmehraufwendungen                                          47 - 60
+               a)    Vereinfachung bei der Ermittlung der Pauschalen,
+                     § 9 Absatz 4a Satz 2 bis 5 EStG                                  47 -52
+                    aa)   Eintägige Auswärtstätigkeiten im Inland                     47
+                    bb)   Mehrtägige Auswärtstätigkeiten im Inland                    48 - 50
+                    cc)   Auswärtstätigkeiten im Ausland                              51 - 52
+               b)    Dreimonatsfrist, § 9 Absatz 4a Satz 6 EStG                       53 - 57
+               c)    Pauschalbesteuerung, § 40 Absatz 2 Satz 1 Nummer 4 EStG          58 - 60
+          3.    Vereinfachung der steuerlichen Erfassung der vom Arbeitgeber zur
+                Verfügung gestellten Mahlzeiten während einer auswärtigen Tätigkeit   61 - 99
+               a)    Bewertung und Besteuerungsverzicht bei üblichen Mahlzeiten,
+                     § 8 Absatz 2 Satz 8 und 9 EStG                                   61 - 72
+               b)    Kürzung der Verpflegungspauschalen, § 9 Absatz 4a
+                     Satz 8 bis 10 EStG                                               73 - 90
+                    aa)   Kürzung bei Mahlzeitengestellung                            73 - 76
+                    bb)   Kürzung bei teilweiser Kostenerstattung                     77 - 86
+                    cc)   Minderung des Kürzungsbetrags, § 9 Absatz 4a Satz 10 EStG   87 - 89
+                    dd)   Ermittlung der Pauschalen bei gemischt veranlassten
+                          Veranstaltungen mit Mahlzeitengestellung                    90
+               c)    Doppelte Haushaltsführung, § 9 Absatz 4a Satz 12 EStG            91
+               d)    Bescheinigungspflicht „M“, § 41b Absatz 1 Satz 2 Nummer 8 EStG   92 - 93
+               e)    Pauschalbesteuerungsmöglichkeit üblicher Mahlzeiten,
+                     § 40 Absatz 2 Satz 1 Nummer 1a EStG                              94 - 99
+          4.    Unterkunftskosten                                                     100 - 128
+               a)    Unterkunftskosten bei einer doppelten Haushaltsführung,
+                     § 9 Absatz 1 Satz 3 Nummer 5 EStG                                100 - 114
+                    aa)   Vorliegen einer doppelten Haushaltsführung                  100 - 103
+                    bb)   Berufliche Veranlassung                                     104
+                    cc)   Ehegatten/Lebenspartner                                     105
+                    dd)   Höhe der Unterkunftskosten                                  106 - 112
+                    ee)   Steuerfreie Erstattung durch den Arbeitgeber und
+                          Werbungskostenabzug                                         113 - 114
+               b)    Unterkunftskosten bei einer Auswärtstätigkeit,
+                     § 9 Absatz 1 Satz 3 Nummer 5a EStG                               115 - 128
+                    aa)   Berufliche Veranlassung                                     116
+                    bb)   Unterkunftskosten                                           117 - 118
+Seite 3             cc)   Notwendige Mehraufwendungen                                          119 - 122
+                    dd)   Begrenzte Berücksichtigung von Unterkunftskosten bei einer
+                          längerfristigen Auswärtstätigkeit an derselben Tätigkeitsstätte im
+                          Inland                                                               123 - 126
+                    ee)   Anwendung der 48-Monatsfrist zur begrenzten Berücksichtigung der
+                          Unterkunftskosten bei einer längerfristigen Auswärtstätigkeit im
+                          Inland                                                               127
+                    ff)   Steuerfreie Erstattung durch den Arbeitgeber                         128
+             5.   Reisenebenkosten                                                             129 - 133
+             6.   Sonstiges                                                                    134 - 135
+          III. Zeitliche Anwendungsregelung                                                    136
+    Seite 4   I. Vorbemerkung
+
+1             Unter Bezugnahme auf das Ergebnis der Erörterungen mit den obersten Finanzbehörden der
+              Länder gelten zur steuerlichen Beurteilung von Reisekosten der Arbeitnehmer die folgenden
+              Grundsätze zur Anwendung des Einkommensteuergesetzes (EStG):
+
+
+
+              II. Anwendung der Regelungen bei den Einkünften aus nichtselbständiger
+                  Arbeit
+
+              1.     Erste Tätigkeitsstätte, auswärtige Tätigkeit, weiträumiges Tätigkeitsgebiet
+
+              a)      Erste Tätigkeitsstätte, § 9 Absatz 4 EStG
+
+
+2             Der Arbeitnehmer kann je Dienstverhältnis höchstens eine erste Tätigkeitsstätte, ggf. aber
+              auch keine erste, sondern nur auswärtige Tätigkeitsstätten haben (§ 9 Absatz 4 Satz 5 EStG).
+              Die Bestimmung der ersten Tätigkeitsstätte erfolgt vorrangig anhand der dienst- oder
+              arbeitsrechtlichen Festlegungen durch den Arbeitgeber (Rz. 6 ff.). Sind solche nicht
+              vorhanden oder sind die getroffenen Festlegungen nicht eindeutig, werden hilfsweise
+              quantitative Kriterien (Rz. 26 ff.) herangezogen. Voraussetzung ist zudem, dass der
+              Arbeitnehmer in einer der in § 9 Absatz 4 Satz 1 EStG genannten ortsfesten Einrichtungen
+              (Rz. 3 ff.) dauerhaft (Rz. 14 ff.) tätig werden soll. Ein Arbeitnehmer ohne erste
+              Tätigkeitsstätte ist außerhalb seiner Wohnung immer auswärts tätig.
+
+
+              aa)    Tätigkeitsstätte
+
+
+3             Tätigkeitsstätte ist eine von der Wohnung getrennte, ortsfeste betriebliche Einrichtung, die
+              räumlich zusammengefasste Sachmittel umfasst, die der Tätigkeit des Arbeitgebers,
+              eines verbundenen Unternehmens oder eines vom Arbeitgeber bestimmten Dritten
+              dienen und mit dem Erdboden verbunden oder dazu bestimmt sind, überwiegend
+              standortgebunden genutzt zu werden (BFH-Urteil vom 11. April 2019, VI R 12/17,
+              BStBl II S. 551). So stellen auch Baucontainer, die z. B. auf einer Großbaustelle längerfristig
+              fest mit dem Erdreich verbunden sind und in denen sich z. B. Baubüros, Aufenthaltsräume
+              oder Sanitäreinrichtungen befinden, „ortsfeste“ betriebliche Einrichtungen dar.
+              Eine (großräumige) erste Tätigkeitsstätte liegt auch vor, wenn eine Vielzahl solcher
+              Mittel, die für sich betrachtet selbständige betriebliche Einrichtungen darstellen
+              können, räumlich abgrenzbar in einem organisatorischen, technischen oder
+              wirtschaftlichen Zusammenhang mit der betrieblichen Tätigkeit des Arbeitgebers, eines
+              verbundenen Unternehmens oder eines vom Arbeitgeber bestimmten Dritten stehen.
+              Demgemäß kommt als eine solche erste Tätigkeitsstätte auch ein großflächiges und
+    Seite 5   entsprechend infrastrukturell erschlossenes Gebiet (z. B. Werksanlage, Betriebsgelände,
+              Zechengelände, Bahnhof oder Flughafen) in Betracht (BFH-Urteile vom 11. April 2019,
+              VI R 40/16 und VI R 12/17, BStBl II S. 546 und 551). Fahrzeuge, Flugzeuge, Schiffe oder
+              Tätigkeitsgebiete ohne ortsfeste betriebliche Einrichtungen sind keine Tätigkeitsstätten i. S. d.
+              § 9 Absatz 4 Satz 1 EStG.
+
+
+              bb)    Häusliches Arbeitszimmer
+
+
+4             Das häusliche Arbeitszimmer des Arbeitnehmers ist keine betriebliche Einrichtung des
+              Arbeitgebers oder eines Dritten und kann daher keine erste Tätigkeitsstätte sein. Dies gilt
+              auch, wenn der Arbeitgeber vom Arbeitnehmer einen oder mehrere Arbeitsräume anmietet,
+              die der Wohnung des Arbeitnehmers zuzurechnen sind. Auch in diesem Fall handelt es sich
+              bei einem häuslichen Arbeitszimmer um einen Teil der Wohnung des Arbeitnehmers. Zur
+              Abgrenzung, welche Räume der Wohnung des Arbeitnehmers zuzurechnen sind, ist auf das
+              Gesamtbild der Verhältnisse im Einzelfall abzustellen (z. B. unmittelbare Nähe zu den
+              privaten Wohnräumen).
+
+
+              cc)    Tätigkeitsstätte des Arbeitgebers bei einem verbundenen Unternehmen oder bei
+                     einem Dritten
+
+
+5             Die Annahme einer Tätigkeitsstätte erfordert nicht, dass es sich um eine ortsfeste betriebliche
+              Einrichtung des lohnsteuerlichen Arbeitgebers handelt. Erfasst werden auch Sachverhalte, in
+              denen der Arbeitnehmer statt beim eigenen Arbeitgeber in einer ortsfesten betrieblichen
+              Einrichtung eines der in § 15 AktG genannten Unternehmen oder eines Dritten (z. B. eines
+              Kunden) tätig werden soll. Von einem solchen Tätigwerden kann dann nicht ausgegangen
+              werden, wenn der Arbeitnehmer bei dem Dritten oder verbundenen Unternehmen z. B. nur
+              eine Dienstleistung des Dritten in Anspruch nimmt oder einen Einkauf tätigt.
+
+
+              dd)    Zuordnung mittels dienst- oder arbeitsrechtlicher Festlegung durch den
+                     Arbeitgeber
+
+
+6             Eine erste Tätigkeitsstätte liegt vor, wenn der Arbeitnehmer einer solchen Tätigkeitsstätte
+              (§ 9 Absatz 4 Satz 1 EStG) dauerhaft zugeordnet ist. Ist der Arbeitnehmer nur vorübergehend
+              einer Tätigkeitsstätte zugeordnet, begründet er dort keine erste Tätigkeitsstätte (zur Abgren-
+              zung der Merkmale „dauerhaft“ und „vorübergehend“ vgl. Rz. 14). Die dauerhafte Zuordnung
+              des Arbeitnehmers wird durch die dienst- oder arbeitsrechtlichen Festlegungen sowie die
+              diese ausfüllenden Absprachen oder Weisungen bestimmt (§ 9 Absatz 4 Satz 2 EStG). Das
+              gilt für einzelne Arbeitnehmer oder Arbeitnehmergruppen, unabhängig davon, ob diese
+              schriftlich oder mündlich erteilt worden sind. Die Zuordnung muss sich auf die Tätigkeit des
+    Seite 6   Arbeitnehmers beziehen; dies ergibt sich aus § 9 Absatz 4 Satz 3 EStG, der mit der beispiel-
+              haften Aufzählung darüber hinaus das Kriterium der Dauerhaftigkeit beschreibt.
+
+7             Die Zuordnung eines Arbeitnehmers zu einer betrieblichen Einrichtung allein aus tarifrecht-
+              lichen, mitbestimmungsrechtlichen oder organisatorischen Gründen (z. B. Personalakten-
+              führung), ohne dass der Arbeitnehmer in dieser Einrichtung tätig werden soll, ist keine
+              Zuordnung i. S. d. § 9 Absatz 4 EStG. Soll der Arbeitnehmer in einer vom Arbeitgeber
+              festgelegten Tätigkeitsstätte zumindest in ganz geringem Umfang tätig werden z. B. Hilfs-
+              und Nebentätigkeiten (Auftragsbestätigungen, Stundenzettel abgeben etc.), kann der
+              Arbeitgeber den Arbeitnehmer dieser Tätigkeitsstätte zuordnen. Dies gilt selbst dann, wenn
+              für die Zuordnung tarifrechtliche, mitbestimmungsrechtliche oder organisatorische Gründe
+              ausschlaggebend sind. Auf die Qualität des Tätigwerdens kommt es, anders als bei der
+              Bestimmung anhand der quantitativen Zuordnungskriterien (vgl. dazu Rz. 27), nicht an.
+              Vielmehr können, wie z. B. bei Festlegung einer Dienststelle/Dienststätte, auch Tätigkeiten
+              von untergeordneter Bedeutung ausreichend sein (Vorrang des Dienst- oder Arbeitsrechts,
+              BFH-Urteil vom 4. April 2019, VI R 27/17, BStBl II S. 536).
+
+8             Soll der Arbeitnehmer an mehreren Tätigkeitsstätten tätig werden und ist er einer bestimmten
+              Tätigkeitsstätte dienst- oder arbeitsrechtlich dauerhaft zugeordnet, ist es unerheblich, in
+              welchem Umfang er seine berufliche Tätigkeit an dieser oder an den anderen Tätigkeitsstätten
+              ausüben soll. Auch auf die Regelmäßigkeit des Aufsuchens dieser Tätigkeitsstätten kommt es
+              dann nicht mehr an.
+
+9             Nicht entscheidend ist, ob an der vom Arbeitgeber nach § 9 Absatz 4 Satz 1 EStG festgelegten
+              Tätigkeitsstätte der qualitative Schwerpunkt der Tätigkeit liegt oder liegen soll.
+              Für die Zuordnung ist lediglich entscheidend, ob der Arbeitnehmer bei einer in die
+              Zukunft gerichteten Prognose nach den dienst- oder arbeitsrechtlichen Festlegungen an
+              einer ortsfesten betrieblichen Einrichtung des Arbeitgebers, eines verbundenen
+              Unternehmens oder eines vom Arbeitgeber bestimmten Dritten tätig werden soll.
+              Erforderlich, aber ausreichend ist, dass der Arbeitnehmer am Ort der ersten
+              Tätigkeitsstätte zumindest in geringem Umfang Tätigkeiten zu erbringen hat, die er
+              arbeitsvertraglich oder dienstrechtlich schuldet und die zu dem von ihm ausgeübten
+              Berufsbild gehören (BFH-Urteil vom 4. April 2019, VI R 27/17, BStBl II S. 536 und
+              BFH-Urteil vom 11. April 2019, VI R 40/16, BStBl II S. 546).
+
+              Beispiel 1
+              Der Vertriebsmitarbeiter V für die Region A soll einmal wöchentlich an den Firmensitz nach
+              B fahren, dem er zugeordnet ist. Dort soll er die anfallenden Bürotätigkeiten erledigen und an
+              Dienstbesprechungen teilnehmen. B ist erste Tätigkeitsstätte auf Grund der arbeitsrechtlichen
+     Seite 7   Zuordnung. Dabei ist unerheblich, dass V überwiegend in der Region A und nicht in B tätig
+               werden soll.
+
+               Abwandlung
+               Ordnet der Arbeitgeber den V dem Firmensitz in B nicht oder nicht eindeutig zu, erfolgt die
+               Prüfung, ob eine erste Tätigkeitsstätte vorliegt, anhand der quantitativen Kriterien des § 9
+               Absatz 4 Satz 4 EStG (Rz. 26 ff.). In diesem Fall liegt in B keine erste Tätigkeitsstätte vor.
+
+10             § 42 AO ist zu beachten. Insbesondere bei Gesellschafter-Geschäftsführern, Arbeitnehmer-
+               Ehegatten/Lebenspartnern und sonstigen, mitarbeitenden Familienangehörigen ist ent-
+               scheidend, ob die getroffenen Vereinbarungen einem Fremdvergleich standhalten.
+
+11             Die vorrangige maßgebliche dienst- oder arbeitsrechtliche Zuordnung durch den
+               Arbeitgeber kann außerhalb des Dienst- oder Arbeitsvertrags erfolgen (auch mündlich
+               oder konkludent) und ist unabhängig davon, ob sich der Arbeitgeber der steuerlichen
+               Folgen bewusst ist. Die Zuordnungsentscheidung muss nicht dokumentiert werden. Die
+               Zuordnungsentscheidung des Arbeitgebers kann sich vielmehr auch ergeben aus:
+               Regelungen im Arbeitsvertrag, Tarifvertrag, Protokollnotizen, dienstrechtlichen
+               Verfügungen (u. a. Regelungen zum abweichenden Dienstsitz), Einsatzplänen,
+               Reiserichtlinien, Reisekostenabrechnungen, dem Ansatz eines geldwerten Vorteils für
+               die Nutzung eines Dienstwagens für die Fahrten zwischen Wohnung und erster
+               Tätigkeitsstätte oder vom Arbeitgeber als Nachweis seiner Zuordnungsentscheidung
+               vorgelegten Organigrammen (BFH-Urteil vom 11. April 2019, VI R 40/16, BStBl II S.
+               546, BFH-Urteil vom 4. April 2019, VI R 27/17, BStBl II S. 536). Fehlt eine Zuordnung,
+               gilt § 9 Absatz 4 Satz 4 EStG.
+
+12             Ein Organigramm kann gegen den Willen des Arbeitgebers nicht als Nachweis zur Bestim-
+               mung einer ersten Tätigkeitsstätte herangezogen werden, wenn der Arbeitgeber tatsächlich
+               keine Zuordnung seines Arbeitnehmers zu einer Tätigkeitsstätte getroffen hat und kein
+               anderer Nachweis über die Zuordnung erbracht wird. In diesen Fällen ist anhand der quan-
+               titativen Kriterien nach § 9 Absatz 4 Satz 4 EStG zu prüfen, ob der Arbeitnehmer eine erste
+               Tätigkeitsstätte hat. Indiz für eine dienst- oder arbeitsrechtliche Zuordnungsentscheidung des
+               Arbeitgebers kann auch sein, dass z. B. nach der Reiserichtlinie gerade für Tätigkeiten an
+               dieser Tätigkeitsstätte keine Reisekosten gezahlt werden bzw. die Besteuerung eines
+               geldwerten Vorteils für die Fahrten Wohnung - erste Tätigkeitsstätte bei Dienstwagen-
+               gestellung erfolgt.
+
+13             § 9 Absatz 4 Satz 1 bis 3 EStG sieht die Möglichkeit einer Zuordnungsentscheidung des
+               Arbeitgebers zu einer bestimmten Tätigkeitsstätte vor. Der Arbeitgeber kann dienst- oder
+               arbeitsrechtlich daher nicht festlegen, dass der Arbeitnehmer keine erste Tätigkeitsstätte hat
+     Seite 8   (Negativfestlegung). Er kann allerdings (ggf. auch ausdrücklich) darauf verzichten, eine erste
+               Tätigkeitsstätte dienst- oder arbeitsrechtlich festzulegen, oder ausdrücklich erklären, dass
+               organisatorische Zuordnungen keine erste Tätigkeitsstätte begründen sollen. In diesen Fällen
+               erfolgt die Prüfung, ob eine erste Tätigkeitsstätte gegeben ist, anhand der quantitativen
+               Zuordnungskriterien nach § 9 Absatz 4 Satz 4 EStG (Rz. 26 ff.). Der Arbeitgeber kann zudem
+               festlegen, dass sich die Bestimmung der ersten Tätigkeitsstätte nach den quantitativen
+               Zuordnungskriterien des § 9 Absatz 4 Satz 4 EStG richtet. Im Ergebnis ist eine
+               Zuordnungsentscheidung des Arbeitgebers mittels dienst- oder arbeitsrechtlicher Festlegung
+               (Rz. 6 ff.) somit lediglich erforderlich, wenn er die erste Tätigkeitsstätte abweichend von den
+               quantitativen Zuordnungskriterien festlegen will.
+
+               Beispiel 2
+               In Einstellungsbögen bzw. in Arbeitsverträgen ist aufgrund des Nachweisgesetzes und
+               tariflicher Regelungen ein Einstellungs-, Anstellungs- oder Arbeitsort des Arbeitnehmers
+               bestimmt. Hierbei handelt es sich nicht um eine Zuordnung i. S. d. § 9 Absatz 4 EStG, wenn
+               der Arbeitgeber schriftlich auch gegenüber dem Arbeitnehmer bzw. in der Reiserichtlinie des
+               Unternehmens erklärt, dass dadurch keine arbeitsrechtliche Zuordnung zu einer ersten
+               Tätigkeitsstätte erfolgen soll.
+
+
+               ee)    Dauerhafte Zuordnung
+
+
+14             Die Zuordnung durch den Arbeitgeber zu einer Tätigkeitsstätte muss auf Dauer angelegt sein
+               (Prognose). Typische Fälle einer dauerhaften Zuordnung sind die unbefristete Zuordnung des
+               Arbeitnehmers zu einer bestimmten betrieblichen Einrichtung, die Zuordnung für die gesamte
+               Dauer des - befristeten oder unbefristeten - Dienstverhältnisses oder die Zuordnung über
+               einen Zeitraum von 48 Monaten hinaus (§ 9 Absatz 4 Satz 3 EStG). Die Zuordnung „bis auf
+               Weiteres“ ist eine Zuordnung ohne Befristung und damit dauerhaft. Eine Zuordnung ist
+               unbefristet, wenn die Dauer der Zuordnung zu einer Tätigkeitsstätte nicht
+               kalendermäßig bestimmt ist und sich auch nicht aus Art, Zweck oder Beschaffenheit der
+               Arbeitsleistung ergibt. Auch der Umstand, dass der Arbeitnehmer jederzeit einer
+               anderen Tätigkeitsstätte zugeordnet werden könnte, führt nicht zur Annahme einer
+               befristeten Zuordnung (BFH-Urteil vom 4. April 2019, VI R 27/17, BStBl II S. 536).
+               Entscheidend sind allein die Festlegungen des Arbeitgebers und die dienstlich erteilten
+               Weisungen.
+
+               Beispiel 3
+               Der Arbeitnehmer A ist von der Firma Z als technischer Zeichner ausschließlich für ein
+               Projekt befristet eingestellt worden. Das Arbeitsverhältnis von A soll vertragsgemäß nach
+               Ablauf der Befristung enden.
+     Seite 9   A hat ab dem ersten Tag der Tätigkeit bei Z auf Grund der arbeitsrechtlichen Zuordnung des
+               Arbeitgebers seine erste Tätigkeitsstätte.
+
+15             Für die Beurteilung, ob eine dauerhafte Zuordnung vorliegt, ist die auf die Zukunft gerichtete
+               prognostische Betrachtung (Ex-ante-Betrachtung) maßgebend. Die Änderung einer Zuord-
+               nung durch den Arbeitgeber ist mit Wirkung für die Zukunft zu berücksichtigen.
+
+               Beispiel 4
+               Der in H wohnende Arbeitnehmer A ist bis auf Weiteres an drei Tagen in der Woche in einer
+               Filiale seines Arbeitgebers in H und an zwei Tagen in der Woche in einer Filiale seines
+               Arbeitgebers in S tätig. Der Arbeitgeber hatte zunächst die Filiale in S als erste Tätigkeits-
+               stätte festgelegt. Ab 1. Juli 01 legt er H als erste Tätigkeitsstätte fest.
+               Bis 30. Juni 01 hat der Arbeitnehmer in S seine erste Tätigkeitsstätte. Ab 1. Juli 01 ist die
+               erste Tätigkeitsstätte in H.
+
+               Beispiel 5
+               Der Arbeitnehmer A ist unbefristet beschäftigt. Für einen Zeitraum von 36 Monaten soll er
+               überwiegend in der Filiale X arbeiten. In der Filiale Y soll er nur an Teambesprechungen,
+               Mitarbeiterschulungen und sonstigen Firmenveranstaltungen teilnehmen. Diese finden
+               voraussichtlich einmal pro Monat statt. Der Arbeitgeber hat A der Filiale Y arbeitsrechtlich
+               dauerhaft zugeordnet.
+               Erste Tätigkeitsstätte ist die Filiale Y, da A dort arbeitsrechtlich dauerhaft zugeordnet ist.
+
+               Abwandlung
+               Ordnet der Arbeitgeber nicht zu, liegt keine erste Tätigkeitsstätte vor; in der Filiale X soll A
+               nicht dauerhaft tätig werden und in der Filiale Y nicht in dem nach § 9 Absatz 4 Satz 4 EStG
+               (Rz. 26 ff.) erforderlichen quantitativen Umfang.
+
+16             Eine Änderung der Zuordnung kann auch vorliegen, wenn sich das Berufsbild des Arbeit-
+               nehmers aufgrund der Vorgaben des Arbeitgebers dauerhaft ändert, so z. B. wenn ein
+               Außendienstmitarbeiter auf Dauer in den Innendienst wechselt.
+
+               Beispiel 6
+               Der Arbeitnehmer A ist von seinem Arbeitgeber unbefristet eingestellt worden, um dauerhaft
+               in der Filiale Y zu arbeiten. In den ersten 36 Monaten seiner Beschäftigung soll A aber
+               zunächst ausschließlich die Filiale X führen. In der Filiale Y soll er während dieser Zeit nicht,
+               auch nicht in ganz geringem Umfang tätig werden.
+               Die Filiale X ist keine erste Tätigkeitsstätte, da A dort lediglich für 36 Monate und damit
+               nicht dauerhaft tätig werden soll (unabhängig vom quantitativen Umfang der Tätigkeit). Die
+               Filiale Y wird erst nach Ablauf von 36 Monaten erste Tätigkeitsstätte.
+ Seite 10
+
+17          Weichen die tatsächlichen Verhältnisse durch unvorhersehbare Ereignisse, wie etwa Krank-
+            heit, politische Unruhen am Tätigkeitsort, Insolvenz des Kunden o. ä. von der ursprünglichen
+            Festlegung (Prognose) der dauerhaften Zuordnung ab, bleibt die zuvor getroffene Prognose-
+            entscheidung für die Vergangenheit bezüglich des Vorliegens der ersten Tätigkeitsstätte maß-
+            gebend.
+
+            Beispiel 7
+            Der Kundendienstmonteur K soll an der betrieblichen Einrichtung seines Arbeitgebers in A
+            lediglich in unregelmäßigen Abständen seine Aufträge abholen und abrechnen und
+            gelegentlich an Besprechungen teilnehmen (vgl. Rz. 27). K ist der betrieblichen Einrichtung
+            in A nicht arbeitsrechtlich zugeordnet. Seine eigentliche berufliche Tätigkeit soll K
+            ausschließlich bei verschiedenen Kunden ausüben. Auf Grund ungeplanter betrieblicher
+            Abläufe ergibt es sich, dass K über einen Zeitraum von 12 Monaten nun die betriebliche Ein-
+            richtung in A arbeitstäglich aufsuchen soll und auch aufsucht, um dort seine Berichte zu
+            verfassen (= Teil seiner eigentlichen beruflichen Tätigkeit).
+            Auch wenn K für einen Zeitraum von 12 Monaten arbeitstäglich einen Teil seiner beruflichen
+            Tätigkeit in der betrieblichen Einrichtung in A ausüben soll, führt dies mangels Dauer-
+            haftigkeit noch nicht zu einer ersten Tätigkeitsstätte. Die ursprüngliche Prognose sah dies
+            nicht vor und nach der neuen Prognose sollen diese Arbeiten am Betriebssitz in A nur
+            vorübergehend ausgeübt werden.
+
+18          Wird eine auf höchstens 48 Monate geplante Auswärtstätigkeit des Arbeitnehmers verlängert,
+            kommt es darauf an, ob dieser vom Zeitpunkt der Verlängerungsentscheidung an noch mehr
+            als 48 Monate an der Tätigkeitsstätte eingesetzt werden soll.
+
+            Beispiel 8
+            Der unbefristet beschäftigte Arbeitnehmer A wird für eine Projektdauer von voraussichtlich
+            18 Monaten der betrieblichen Einrichtung in M zugeordnet. Nach 18 Monaten wird die
+            Zuordnung um 36 Monate verlängert.
+            Obwohl A insgesamt 54 Monate in M tätig wird, hat er dort keine erste Tätigkeitsstätte. Die
+            vom Gesetz vorgegebene Prognose-Betrachtung bedeutet, dass A weder im Zeitpunkt der
+            erstmaligen Zuordnung noch im Zeitpunkt der Verlängerungsentscheidung für mehr als
+            48 Monate in M eingesetzt werden sollte.
+
+            Abwandlung
+            Die Zuordnung von A wird bereits nach drei Monaten um 36 Monate auf insgesamt
+            54 Monate verlängert.
+            Ab dem Zeitpunkt der Verlängerungsentscheidung hat A seine erste Tätigkeitsstätte in M, da
+            er ab diesem Zeitpunkt noch 51 Monate und somit dauerhaft in M tätig werden soll. Das gilt
+ Seite 11   auch, wenn A für diese Tätigkeit neu eingestellt und eine Probezeit vereinbart wurde oder das
+            Projekt planwidrig bereits nach 12 Monaten beendet wird. Die steuerliche Beurteilung der
+            ersten drei Monate als beruflich veranlasste Auswärtstätigkeit bleibt von der Verlängerungs-
+            entscheidung unberührt.
+
+19          Bei einer sog. Kettenabordnung ist keine dauerhafte Zuordnung zu einer Tätigkeitsstätte
+            gegeben, wenn die einzelne Abordnung jeweils einen Zeitraum von höchstens 48 Monaten
+            umfasst.
+
+20          Wird ein befristetes Beschäftigungsverhältnis vor Ablauf der Befristung schriftlich
+            durch bloßes Hinausschieben des Beendigungszeitpunkts bei ansonsten unverändertem
+            Vertragsinhalt verlängert, liegt ein einheitliches Beschäftigungsverhältnis vor. Für die
+            Frage, ob eine Zuordnung für die Dauer des Beschäftigungsverhältnisses erfolgt, ist
+            daher ab dem Zeitpunkt der Verlängerung auf das einheitliche Beschäftigungsverhältnis
+            und nicht lediglich auf den Zeitraum der Verlängerung abzustellen (BFH-Urteil vom 10.
+            April 2019, VI R 6/17, BStBl II S. 539).
+
+21          Eine dauerhafte Zuordnung ist gegeben, wenn das Dienstverhältnis auf einen anderen
+            Arbeitgeber ausgelagert wird und der Arbeitnehmer für die gesamte Dauer des neuen
+            Beschäftigungsverhältnisses oder länger als 48 Monate weiterhin an seiner früheren
+            Tätigkeitsstätte des bisherigen Arbeitgebers tätig werden soll (sog. Outsourcing).
+            Entsprechendes gilt, wenn ein Leiharbeitnehmer ausnahmsweise dauerhaft (nach § 9 Absatz 4
+            Satz 3 EStG, „bis auf Weiteres“ also unbefristet, für die gesamte Dauer des
+            Leiharbeitsverhältnisses oder länger als 48 Monate) in einer ortsfesten betrieblichen
+            Einrichtung des Entleihers tätig werden soll. Die Regelungen des § 1 Absatz 1 Satz 4
+            i. V. m. Absatz 1b Arbeitnehmerüberlassungsgesetz entfalten für das Steuerrecht keine
+            Wirkung.
+
+            Beispiel 9
+            Der Arbeitnehmer A ist von der Zeitarbeitsfirma Z als technischer Zeichner ausschließlich für
+            die Überlassung an die Projektentwicklungsfirma P eingestellt worden. Das Arbeitsverhältnis
+            von A endet vertragsgemäß nach Abschluss des aktuellen Projekts bei P.
+            A hat ab dem ersten Tag der Tätigkeit bei der Projektentwicklungsfirma P seine erste Tätig-
+            keitsstätte, da er seine Tätigkeit bei P für die gesamte Dauer seines Dienstverhältnisses bei Z
+            und damit dort dauerhaft ausüben soll.
+
+            Abwandlung
+            Der Arbeitnehmer A ist von der Zeitarbeitsfirma Z unbefristet als technischer Zeichner einge-
+            stellt worden und wird bis auf Weiteres an die Projektentwicklungsfirma P überlassen.
+ Seite 12   A hat ab dem ersten Tag der Tätigkeit bei der Projektentwicklungsfirma P seine erste
+            Tätigkeitsstätte, da er seine Tätigkeit bei P ohne Befristung und damit dort dauerhaft ausüben
+            soll.
+
+22          Dienststelle/Dienststätte i. S. d. öffentlichen Reisekosten-, Umzugskosten- und Trennungs-
+            geldrechts ist die Stelle, bei der der Arbeitnehmer eingestellt oder zu der er versetzt, abge-
+            ordnet, zugeteilt, zugewiesen oder kommandiert worden ist. Jede dieser dienstlichen Maß-
+            nahmen führt dazu, dass diese Stelle zur neuen dienstrechtlichen Dienststelle/Dienststätte
+            wird, unabhängig davon, ob die Maßnahme dauerhaft oder nur vorübergehend ist. Für die
+            steuerrechtliche Beurteilung der dauerhaften Zuordnung zu einer bestimmten Tätigkeitsstätte
+            gilt insbesondere Folgendes:
+               •   Versetzung ohne zeitliche Befristung - dauerhafte Zuordnung, es wird eine neue „erste
+                   Tätigkeitsstätte“ begründet.
+               •   Abordnung ohne zeitliche Befristung - dauerhafte Zuordnung, es wird eine neue „erste
+                   Tätigkeitsstätte“ begründet.
+               •   Versetzung mit einer zeitlichen Befristung bis zu 48 Monaten - keine dauerhafte
+                   Zuordnung, damit keine neue „erste Tätigkeitsstätte“.
+               •   Abordnung mit einer zeitlichen Befristung bis zu 48 Monaten, ggf. auch verbunden
+                   mit dem Ziel der Versetzung - keine dauerhafte Zuordnung, damit keine neue „erste
+                   Tätigkeitsstätte“.
+               •   Entsprechendes gilt für abordnungs- oder versetzungsgleiche Maßnahmen (z. B.
+                   Kommandierung, Zuteilung, Zuweisung).
+               •   Der Umstand, dass ein Beamter unter Beachtung der dienstrechtlichen
+                   Vorschriften (jederzeit) auch einer anderen Dienststelle zugeordnet werden
+                   könnte, führt nicht zur Annahme einer befristeten Zuordnung (BFH-Urteil vom
+                   4. April 2019, VI R 27/17, BStBl II S. 536).
+
+23          Bei grenzüberschreitender Arbeitnehmerentsendung zwischen verbundenen Unternehmen
+            liegt beim aufnehmenden Unternehmen eine erste Tätigkeitsstätte dann vor, wenn der
+            Arbeitnehmer im Rahmen eines eigenständigen Arbeitsvertrags mit dem aufnehmenden
+            Unternehmen einer ortsfesten betrieblichen Einrichtung dieses Unternehmens unbefristet
+            zugeordnet ist, die Zuordnung die Dauer des gesamten - befristeten oder unbefristeten -
+            Dienstverhältnisses umfasst oder die Zuordnung über einen Zeitraum von 48 Monaten hinaus
+            reicht (vgl. § 9 Absatz 4 Satz 3 EStG).
+
+            Beispiel 10
+            Der Arbeitnehmer A ist von der ausländischen Muttergesellschaft M für zwei Jahre an die
+            inländische Tochtergesellschaft T entsandt worden. A hat mit T einen eigenständigen Arbeits-
+            vertrag über zwei Jahre abgeschlossen, in dem er der inländischen Hauptniederlassung von T
+            zugeordnet wurde.
+ Seite 13   A hat bei T seine erste Tätigkeitsstätte.
+
+24          Wird ein Arbeitnehmer bei grenzüberschreitender Arbeitnehmerentsendung zwischen verbun-
+            denen Unternehmen ohne Abschluss eines eigenständigen Arbeitsvertrags mit dem aufneh-
+            menden Unternehmen in einer ortsfesten betrieblichen Einrichtung dieses Unternehmens tätig,
+            liegt beim aufnehmenden Unternehmen eine erste Tätigkeitsstätte nur dann vor, wenn der
+            Arbeitnehmer vom entsendenden Unternehmen einer ortsfesten Einrichtung des aufnehmen-
+            den Unternehmens unbefristet zugeordnet ist, die Zuordnung die Dauer des gesamten
+            - befristeten oder unbefristeten - Dienstverhältnisses umfasst oder die Zuordnung über einen
+            Zeitraum von 48 Monaten hinaus reicht (vgl. § 9 Absatz 4 Satz 3 EStG).
+
+            Beispiel 11
+            Der Arbeitnehmer A ist von der ausländischen Muttergesellschaft M im Rahmen eines unbe-
+            fristeten Arbeitsvertrags für zwei Jahre an die inländische Tochtergesellschaft T entsandt und
+            für diesen Zeitraum der inländischen Hauptniederlassung von T zugeordnet worden. A hat
+            mit T keinen eigenständigen Arbeitsvertrag abgeschlossen.
+            A hat bei T keine erste Tätigkeitsstätte, da er der inländischen Hauptniederlassung von T
+            nicht dauerhaft i. S. v. § 9 Absatz 4 Satz 1 i. V. m. Satz 3 EStG zugeordnet worden ist. Er übt
+            für die Dauer seiner zweijährigen Tätigkeit bei T eine beruflich veranlasste Auswärtstätigkeit
+            aus.
+
+25          Fehlt es bei grenzüberschreitender Arbeitnehmerentsendung zwischen verbundenen Unter-
+            nehmen an einer dauerhaften Zuordnung des Arbeitnehmers zu einer betrieblichen Einrich-
+            tung des aufnehmenden Unternehmens durch dienst- oder arbeitsrechtliche Festlegung oder
+            ist die getroffene Festlegung nicht eindeutig, gelten die quantitativen Zuordnungskriterien des
+            § 9 Absatz 4 Satz 4 EStG (vgl. hierzu die Ausführungen zur Dauerhaftigkeit unter Rz. 14 ff.
+            und zu den quantitativen Kriterien unter Rz. 26 ff.).
+
+
+            ff)       Quantitative Zuordnungskriterien
+
+26          Fehlt es an einer dauerhaften Zuordnung des Arbeitnehmers zu einer betrieblichen Einrich-
+            tung durch dienst- oder arbeitsrechtliche Festlegung nach den vorstehenden Kriterien (z. B.
+            weil der Arbeitgeber ausdrücklich auf eine Zuordnung verzichtet hat oder ausdrücklich
+            erklärt, dass organisatorische Zuordnungen keine steuerliche Wirkung entfalten sollen) oder
+            ist die getroffene Festlegung nicht eindeutig, ist nach § 9 Absatz 4 Satz 4 EStG von einer
+            ersten Tätigkeitsstätte an der betrieblichen Einrichtung auszugehen, an der der Arbeitnehmer
+                  •   typischerweise arbeitstäglich oder
+                  •   je Arbeitswoche zwei volle Arbeitstage oder mindestens ein Drittel seiner vereinbarten
+                      regelmäßigen Arbeitszeit
+ Seite 14   dauerhaft (vgl. Rz. 14 ff.) tätig werden soll.
+
+            Beispiel 12
+            Der Arbeitnehmer A ist von seinem Arbeitgeber unbefristet eingestellt worden, um dauerhaft
+            in der Filiale Y zu arbeiten. In den ersten 36 Monaten seiner Tätigkeit arbeitet er an drei
+            Tagen wöchentlich in der Filiale X und zwei volle Tage wöchentlich in der Filiale Y. Der
+            Arbeitgeber hat A für die ersten 36 Monate Filiale X zugeordnet.
+            In diesen 36 Monaten seiner Tätigkeit hat A in der Filiale X keine erste Tätigkeitsstätte, da er
+            dort nicht dauerhaft zugeordnet ist. Erste Tätigkeitsstätte ist jedoch - auch ohne Zuordnung
+            i. S. d. § 9 Absatz 4 Satz 1 EStG - Filiale Y, da A dort dauerhaft typischerweise an zwei vollen
+            Tagen i. S. d. § 9 Absatz 4 Satz 4 EStG tätig werden soll.
+
+            Beispiel 13
+            Der Arbeitnehmer A soll in den ersten 36 Monaten seiner Tätigkeit an vier Tagen wöchentlich
+            in der Filiale X und einen vollen Tag wöchentlich in der Filiale Y tätig werden.
+            In diesen 36 Monaten seiner Tätigkeit hat A in der Filiale X keine erste Tätigkeitsstätte, da er
+            dort nicht dauerhaft tätig werden soll. Erste Tätigkeitsstätte ist auch nicht die Filiale Y, da A
+            dort die quantitativen Kriterien nach § 9 Absatz 4 Satz 4 EStG nicht erfüllt.
+
+27          Bei der quantitativen Zuordnung muss der Arbeitnehmer an der betrieblichen Einrichtung
+            seine eigentliche berufliche Tätigkeit ausüben. Allein ein regelmäßiges Aufsuchen der
+            betrieblichen Einrichtung, z. B. für kurze Rüstzeiten, zur Berichtsfertigung, zur Vorbereitung
+            der Zustellroute, zur Wartung und Pflege des Fahrzeugs, zur Abholung oder Abgabe von
+            Kundendienstfahrzeugen oder LKWs einschließlich deren Be- und Entladung, zur Abgabe
+            von Auftragsbestätigungen und Stundenzetteln, Krankmeldungen und Urlaubsanträgen führt
+            hier noch nicht zu einer Qualifizierung der betrieblichen Einrichtung als erste Tätigkeitsstätte.
+
+            Beispiel 14
+            Der Kundendienstmonteur K, der von seinem Arbeitgeber keiner betrieblichen Einrichtung
+            dauerhaft zugeordnet ist, sucht den Betrieb seines Arbeitgebers regelmäßig auf, um den
+            Firmenwagen samt Material zu übernehmen, die Auftragsbestätigungen in Empfang zu
+            nehmen und die Stundenzettel vom Vortag abzugeben.
+            Der K hat keine erste Tätigkeitsstätte. Der Betrieb seines Arbeitgebers wird auch durch das
+            regelmäßige Aufsuchen nicht zur ersten Tätigkeitsstätte, da er seine eigentliche berufliche
+            Tätigkeit an diesem Ort nicht ausübt.
+
+            Beispiel 15
+            Die Fahrer im ÖPV sollen ihr Fahrzeug immer an wechselnden Stellen im Stadtgebiet
+            aufnehmen und in der Regel mindestens einmal wöchentlich die Kassen abrechnen. Die
+            Kassenabrechnung sollen sie in der Geschäftsstelle oder in einem Betriebshof durchführen.
+ Seite 15   Dort werden auch die Personalakten geführt oder sind Krank- und Urlaubsmeldungen
+            abzugeben.
+            Bei der quantitativen Zuordnung ist allein das bloße Abrechnen der Kassen, die Führung
+            der Personalakten sowie die Verpflichtung zur Abgabe der Krank- und Urlaubsmeldungen
+            nicht ausreichend, um zu einer ersten Tätigkeitsstätte am Betriebshof oder in der
+            Geschäftsstelle zu kommen. Ordnet der Arbeitgeber die Arbeitnehmer hingegen dem
+            Betriebshof oder der Geschäftsstelle arbeitsrechtlich zu, so genügen auch diese Hilfs- und
+            Nebentätigkeiten, um dort eine erste Tätigkeitsstätte zu begründen (Rz. 7).
+
+            Beispiel 16
+            Der LKW-Fahrer L soll typischerweise arbeitstäglich den Betriebssitz des Arbeitgebers auf-
+            suchen, um dort das Fahrzeug abzuholen sowie dessen Wartung und Pflege durchzuführen.
+            Allein das Abholen sowie die Wartung und Pflege des Fahrzeugs, als Hilfs- und Nebentätig-
+            keiten, führen im Rahmen der quantitativen Zuordnung nicht zu einer ersten Tätigkeitsstätte
+            am Betriebssitz des Arbeitgebers; allerdings handelt es sich in diesem Fall bei dem
+            Betriebssitz um einen sog. Sammelpunkt (Rz. 38). Etwas anderes gilt nur, wenn der
+            Arbeitgeber den Arbeitnehmer dem Betriebssitz arbeitsrechtlich als erste Tätigkeitsstätte
+            zuordnet (Rz. 13).
+
+28          Auch die in § 9 Absatz 4 Satz 4 EStG aufgeführten zeitlichen (= quantitativen) Kriterien sind
+            anhand einer in die Zukunft gerichteten Prognose zu beurteilen. Weichen die tatsächlichen
+            Verhältnisse durch unvorhersehbare Ereignisse (wie z. B. Krankheit) hiervon ab, bleibt es bei
+            der zuvor getroffenen Prognoseentscheidung bezüglich der ersten Tätigkeitsstätte. Die Prog-
+            noseentscheidung ist zu Beginn des Dienstverhältnisses zu treffen. Die auf Grundlage dieser
+            Prognose getroffene Beurteilung bleibt solange bestehen, bis sich die Verhältnisse maßgeblich
+            ändern. Davon ist insbesondere auszugehen, wenn sich das Berufsbild des Arbeitnehmers
+            (Außendienstmitarbeiter wechselt z. B. in den Innendienst) oder die quantitativen Zuord-
+            nungskriterien (Arbeitnehmer soll z. B. statt zwei nun drei Filialen betreuen) dauerhaft ändern
+            oder der Arbeitgeber erstmalig eine dienst- oder arbeitsrechtliche Zuordnungsentscheidung
+            trifft.
+
+            Beispiel 17
+            Der Arbeitnehmer A soll seine berufliche Tätigkeit an drei Tagen wöchentlich in einem häus-
+            lichen Arbeitszimmer ausüben und an zwei vollen Tagen wöchentlich in der betrieblichen
+            Einrichtung seines Arbeitgebers in D tätig werden.
+            Das häusliche Arbeitszimmer ist nie erste Tätigkeitsstätte. Erste Tätigkeitsstätte ist hier viel-
+            mehr die betriebliche Einrichtung des Arbeitgebers in D, da der Arbeitnehmer dort an zwei
+            vollen Tagen wöchentlich beruflich tätig werden soll.
+ Seite 16   Beispiel 18
+            Der Arbeitnehmer A soll seine berufliche Tätigkeit im häuslichen Arbeitszimmer ausüben und
+            zusätzlich jeden Arbeitstag für eine Stunde in der betrieblichen Einrichtung seines Arbeit-
+            gebers in D tätig werden.
+            Das häusliche Arbeitszimmer ist nie erste Tätigkeitsstätte. Erste Tätigkeitsstätte ist hier
+            vielmehr die betriebliche Einrichtung des Arbeitgebers in D, da der Arbeitnehmer dort
+            typischerweise arbeitstäglich tätig werden soll. In diesem Fall ist es unerheblich, dass dort
+            weniger als 1/3 der gesamten regelmäßigen Arbeitszeit erbracht werden soll.
+
+            Beispiel 19
+            Der Arbeitnehmer A soll seine berufliche Tätigkeit im häuslichen Arbeitszimmer ausüben und
+            zusätzlich jeden Tag in einer anderen betrieblichen Einrichtung seines Arbeitgebers tätig
+            werden. Die Arbeitszeit in den verschiedenen Tätigkeitsstätten beträgt jeweils weniger als 1/3
+            der gesamten Arbeitszeit des Arbeitnehmers.
+            Das häusliche Arbeitszimmer ist nie erste Tätigkeitsstätte. Auch an den anderen Tätigkeits-
+            stätten des Arbeitgebers hat der Arbeitnehmer keine erste Tätigkeitsstätte, da er diese Tätig-
+            keitsstätten nicht arbeitstäglich aufsucht und dort jeweils weniger als 1/3 seiner gesamten
+            Arbeitszeit tätig wird.
+
+            Beispiel 20
+            Der Arbeitnehmer A übt seine Tätigkeit nur bei wechselnden Kunden und im häuslichen
+            Arbeitszimmer aus. Er hat keine erste Tätigkeitsstätte.
+
+29          Zusammenfassung
+            Bei der quantitativen Prüfung kommt es somit allein auf den Umfang der an der Tätig-
+            keitsstätte zu leistenden arbeitsvertraglichen Arbeitszeit (mind. 1/3 der vereinbarten
+            regelmäßigen Arbeitszeit oder zwei volle Arbeitstage wöchentlich oder arbeitstäglich) an.
+            Dies bedeutet:
+               •   Soll der Arbeitnehmer an einer Tätigkeitsstätte zwei volle Arbeitstage je Arbeitswoche
+                   oder mindestens 1/3 der vereinbarten regelmäßigen Arbeitszeit tätig werden, dann ist
+                   dies die erste Tätigkeitsstätte.
+               •   Entsprechendes gilt, wenn der Arbeitnehmer an einer Tätigkeitsstätte arbeitstäglich
+                   und mindestens 1/3 der vereinbarten regelmäßigen Arbeitszeit tätig werden soll.
+               •   Soll der Arbeitnehmer an einer Tätigkeitsstätte arbeitstäglich, aber weniger als 1/3 der
+                   vereinbarten regelmäßigen Arbeitszeit tätig werden, dann führt dies nur zu einer ersten
+                   Tätigkeitsstätte, wenn der Arbeitnehmer dort typischerweise arbeitstäglich seine
+                   eigentliche berufliche Tätigkeit und nicht nur Vorbereitungs- , Hilfs- oder Neben-
+                   tätigkeiten (Rüstzeiten, Abholung oder Abgabe von Kundendienstfahrzeugen oder
+ Seite 17             LKWs einschließlich deren Be- und Entladung, die Abgabe von Auftrags-
+                      bestätigungen, Stundenzetteln, Krankmeldungen, Urlaubsanträgen oder Ähnlichem)
+                      durchführen soll.
+                  •   Erfüllen danach mehrere Tätigkeitsstätten die quantitativen Voraussetzungen für eine
+                      erste Tätigkeitsstätte, kann der Arbeitgeber bestimmen, welche dieser Tätigkeitsstätten
+                      die erste Tätigkeitsstätte ist.
+                  •   Fehlt eine solche Bestimmung des Arbeitgebers, wird zugunsten des Arbeitnehmers
+                      die Tätigkeitsstätte zugrunde gelegt, die der Wohnung des Arbeitnehmers am nächsten
+                      liegt.
+
+
+            gg)       Mehrere Tätigkeitsstätten
+
+30          Der Arbeitnehmer kann je Dienstverhältnis höchstens eine erste Tätigkeitsstätte haben (§ 9
+            Absatz 4 Satz 5 EStG). Hingegen kann ein Arbeitnehmer mit mehreren Dienstverhältnissen
+            auch mehrere erste Tätigkeitsstätten haben (je Dienstverhältnis jedoch höchstens eine).
+
+31          Erfüllen mehrere Tätigkeitsstätten in einem Dienstverhältnis die quantitativen Kriterien für
+            die Annahme einer ersten Tätigkeitsstätte, kann der Arbeitgeber die erste Tätigkeitsstätte
+            bestimmen (§ 9 Absatz 4 Satz 6 EStG). Dabei muss es sich nicht um die Tätigkeitsstätte
+            handeln, an der der Arbeitnehmer den zeitlich überwiegenden oder qualitativ bedeutsameren
+            Teil seiner beruflichen Tätigkeit ausüben soll.
+
+            Beispiel 21
+            Der in H wohnende Filialleiter A ist an drei Tagen in der Woche in einer Filiale seines
+            Arbeitgebers in H und an zwei Tagen in der Woche in einer Filiale seines Arbeitgebers in S
+            tätig. Der Arbeitgeber bestimmt die Filiale in S zur ersten Tätigkeitsstätte.
+            Durch die Bestimmung seines Arbeitgebers hat der Filialleiter A in der betrieblichen Einrich-
+            tung in S seine erste Tätigkeitsstätte. Unerheblich ist, dass er dort lediglich zwei Tage und
+            damit nicht zeitlich überwiegend beruflich tätig ist.
+
+32          Macht der Arbeitgeber von seinem Bestimmungsrecht nach § 9 Absatz 4 Satz 6 EStG keinen
+            Gebrauch oder ist die Bestimmung nicht eindeutig, ist die der Wohnung des Arbeitnehmers
+            örtlich am nächsten liegende Tätigkeitsstätte die erste Tätigkeitsstätte (§ 9 Absatz 4 Satz 7
+            EStG). Die Fahrten zu weiter entfernt liegenden Tätigkeitsstätten werden in diesem Fall als
+            Auswärtstätigkeit qualifiziert.
+
+            Beispiel 22
+            Der in H wohnende Filialleiter A soll typischerweise arbeitstäglich in drei Filialen (X, Y und
+            Z) seines Arbeitgebers tätig werden. Er fährt morgens mit seinem eigenen PKW regelmäßig
+            zur Filiale X, dann zur Filiale Y, von dort zur Filiale Z und von dieser zur Wohnung. Die
+Seite 18   Filiale in Y liegt der Wohnung am nächsten. Der Arbeitgeber ordnet A arbeitsrechtlich keine
+           Filiale (als erste Tätigkeitsstätte) zu.
+           Erste Tätigkeitsstätte ist die Filiale Y, da diese der Wohnung des A am nächsten liegt. Die
+           Tätigkeit in X und Z sind beruflich veranlasste Auswärtstätigkeiten. Da A von seiner
+           Wohnung zu einer auswärtigen Tätigkeitsstätte, von dort zur ersten Tätigkeitsstätte und von
+           dort wieder zu einer anderen auswärtigen Tätigkeitsstätte fährt, liegen keine Fahrten
+           zwischen Wohnung und erster Tätigkeitsstätte vor, sondern Fahrten, für die ein steuerfreier
+           Arbeitgeberersatz bzw. Werbungskostenabzug nach Reisekostengrundsätzen in Betracht
+           kommt.
+
+           Abwandlung
+           Wie Beispiel 22, allerdings nutzt der Filialleiter A für die arbeitstäglichen Fahrten einen ihm
+           vom Arbeitgeber überlassenen Dienstwagen; A führt kein Fahrtenbuch, sondern ermittelt den
+           geldwerten Vorteil nach der pauschalen Nutzungswertmethode.
+           Grundsätzlich ist ein geldwerter Vorteil, für die Möglichkeit den Dienstwagen für Fahrten
+           zwischen Wohnung und erster Tätigkeitsstätte zu nutzen, in Höhe von 0,03 % des
+           Listenpreises je Entfernungskilometer anzusetzen. Weist A mittels Einzelaufzeichnungen die
+           Zahl der tatsächlichen Fahrten zwischen Wohnung und erster Tätigkeitsstätte nach, ist statt-
+           dessen für jede Fahrt ein geldwerter Vorteil von 0,002 % des Listenpreises je Entfer-
+           nungskilometer anzusetzen. Im vorliegenden Fall hat A keine unmittelbaren Fahrten zwischen
+           Wohnung und erster Tätigkeitsstätte; daher ist - bei Nachweis der tatsächlichen Fahrten -
+           insoweit kein geldwerter Vorteil anzusetzen.
+
+           Beispiel 23
+           Die Pflegedienstkraft P hat täglich vier Personen zu betreuen. Alle vier Pflegepersonen sollen
+           von P nach Absprache mit der Pflegedienststelle (Arbeitgeber) bis auf Weiteres arbeitstäglich
+           regelmäßig betreut werden. Der Arbeitgeber hat keine dieser Pflegestellen als erste
+           Tätigkeitsstätte bestimmt.
+           Erste Tätigkeitsstätte der P ist die ihrer Wohnung am nächsten liegende Pflegestelle.
+
+           Abwandlung
+           Die vier Pflegepersonen sollen von P nach Absprache mit der Pflegedienststelle (Arbeitgeber)
+           zunächst für die Dauer von zwei Jahren arbeitstäglich regelmäßig betreut werden.
+           Die Pflegedienstkraft hat keine erste Tätigkeitsstätte, da sie an keiner der Pflegestellen
+           dauerhaft tätig werden soll.
+ Seite 19   hh)       Erste Tätigkeitsstätte bei Vollzeitstudium oder vollzeitigen Bildungsmaßnahmen
+
+
+33          Erste Tätigkeitsstätte ist auch eine Bildungseinrichtung, die außerhalb eines Dienstverhält-
+            nisses zum Zwecke eines Vollzeitstudiums oder einer vollzeitigen Bildungsmaßnahme aufge-
+            sucht wird (§ 9 Absatz 4 Satz 8 EStG).
+            Die Dauer einer vollzeitigen Bildungsmaßnahme ist für die Einordnung einer Bildungs-
+            einrichtung als erste Tätigkeitsstätte dabei unerheblich. Eine zeitliche Mindestdauer der
+            Bildungsmaßnahme ist nicht erforderlich. Eine Bildungseinrichtung gilt daher auch
+            dann als erste Tätigkeitsstätte, wenn sie vom Steuerpflichtigen im Rahmen einer nur
+            kurzzeitigen Bildungsmaßnahme aufgesucht wird. Davon ist auszugehen, wenn der
+            Steuerpflichtige die Bildungseinrichtung anlässlich der regelmäßig zeitlich befristeten
+            Bildungsmaßnahme nicht nur gelegentlich, sondern mit einer gewissen Nachhaltigkeit,
+            d.h. fortdauernd und immer wieder (dauerhaft) aufsucht (BFH-Urteil vom 14. Mai
+            2020, VI R 24/18, BStBl II S. XXX).
+
+            Ein Studium oder eine Bildungsmaßnahme findet insbesondere dann außerhalb eines
+            Dienstverhältnisses statt, wenn
+                  •   diese nicht Gegenstand des Dienstverhältnisses sind, auch wenn sie seitens des Arbeit-
+                      gebers durch Hingabe von Mitteln, wie z. B. eines Stipendiums, gefördert werden oder
+                  •   diese ohne arbeitsvertragliche Verpflichtung absolviert werden und die Beschäftigung
+                      lediglich das Studium oder die Bildungsmaßnahme ermöglicht.
+            Zur Abgrenzung gegenüber einem Studium oder einer Bildungsmaßnahme innerhalb eines
+            Dienstverhältnisses vgl. auch R 9.2 sowie 19.7 LStR 2015.
+
+34          Ein Vollzeitstudium oder eine vollzeitige Bildungsmaßnahme liegt insbesondere vor, wenn
+            der Steuerpflichtige im Studium oder in der Bildungsmaßnahme für einen Beruf ausgebildet
+            wird und daneben entweder
+                  •   keiner Erwerbstätigkeit nachgeht oder
+                  •   während der gesamten Dauer des Studiums oder der Bildungsmaßnahme eine
+                      Erwerbstätigkeit mit durchschnittlich bis zu 20 Stunden regelmäßiger wöchentlicher
+                      Arbeitszeit oder in Form eines geringfügigen Beschäftigungsverhältnisses i. S. d. §§ 8
+                      und 8a SGB IV ausübt.
+
+35          Dies gilt auch für den Sonderausgabenabzug nach § 10 Absatz 1 Nummer 7 EStG.
+ Seite 20   b)     Fahrtkosten bei auswärtiger Tätigkeit, Sammelpunkt, weiträumiges
+                   Tätigkeitsgebiet, § 9 Absatz 1 Satz 3 Nummer 4a EStG
+
+            aa)    Tatsächliche Fahrtkosten und pauschaler Kilometersatz bei auswärtiger
+                   Tätigkeit
+
+
+36          Ist ein Arbeitnehmer außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich
+            tätig (auswärtige berufliche Tätigkeit), gilt für die steuerliche Berücksichtigung der
+            tatsächlichen Fahrtkosten im Zusammenhang mit dieser beruflichen Tätigkeit
+            Folgendes:
+
+37          Statt der tatsächlichen Aufwendungen kann aus Vereinfachungsgründen typisierend je nach
+            Art des benutzten Verkehrsmittels (z. B. PKW, Motorrad) auch ein pauschaler Kilometersatz
+            (höchste Wegstreckenentschädigung nach dem Bundesreisekostengesetz für das jeweils
+            benutzte Beförderungsmittel: Benutzung eines Kraftwagens, z. B. PKW 0,30 €, für jedes
+            andere motorbetriebene Fahrzeug 0,20 €) für jeden gefahrenen Kilometer angesetzt werden
+            (§ 9 Absatz 1 Satz 3 Nummer 4a Satz 2 EStG). Eine Prüfung der tatsächlichen
+            Kilometerkosten ist demnach nicht mehr erforderlich, wenn der Arbeitnehmer von dieser
+            gesetzlichen Typisierung Gebrauch macht.
+
+
+            bb)    „Sammelpunkt“
+
+
+38          Liegt keine erste Tätigkeitsstätte (nach Rz. 6 ff. oder Rz. 26 ff.) vor und bestimmt der Arbeit-
+            geber durch dienst- oder arbeitsrechtliche Festlegung, dass der Arbeitnehmer sich dauerhaft
+            (Rz. 14 ff.) typischerweise arbeitstäglich an einem festgelegten Ort, der die Kriterien für eine
+            erste Tätigkeitsstätte nicht erfüllt (z. B. Treffpunkt für einen betrieblichen
+            Sammeltransport, das Busdepot, der Fährhafen), einfinden soll, um von dort seine
+            unterschiedlichen eigentlichen Einsatzorte aufzusuchen oder von dort seine berufliche
+            Tätigkeit aufzunehmen, werden die Fahrten des Arbeitnehmers von der Wohnung zu diesem
+            Ort wie Fahrten zu einer ersten Tätigkeitsstätte behandelt. Fahrtkosten für diese Fahrten
+            dürfen nur durch den Ansatz der Entfernungspauschale (§ 9 Absatz 1 Satz 3 Nummer 4
+            und Absatz 2 EStG) steuerlich berücksichtigt werden.
+
+            Beispiel 24
+            Bus- oder LKW-Fahrer haben regelmäßig keine erste Tätigkeitsstätte. Lediglich, wenn dauer-
+            haft und typischerweise arbeitstäglich ein vom Arbeitgeber festgelegter Ort aufgesucht
+            werden soll, werden die Fahrten von der Wohnung zu diesem Ort/Sammelpunkt gleich be-
+            handelt mit den Fahrten von der Wohnung zu einer ersten Tätigkeitsstätte.
+ Seite 21   Beispiel 25
+            Kundendienstmonteure haben ebenfalls in der Regel keine erste Tätigkeitsstätte. Nur dann,
+            wenn dauerhaft und typischerweise arbeitstäglich ein vom Arbeitgeber festgelegter Ort aufge-
+            sucht werden soll, werden die Fahrten von der Wohnung zu diesem Ort/Sammelpunkt ebenso
+            behandelt wie die Fahrten von der Wohnung zu einer ersten Tätigkeitsstätte.
+
+            Beispiel 26
+            Seeleute, die auf einem Schiff tätig werden sollen, haben in der Regel keine erste Tätigkeits-
+            stätte, da das Schiff keine ortsfeste betriebliche Einrichtung des Arbeitgebers ist. Soll der
+            Dienstantritt, die Ein- und Ausschiffung aber typischerweise arbeitstäglich von dem gleichen
+            Anleger (wie z. B. einem Fähranleger, Liegeplatz des Seenotrettungskreuzers, Anleger des
+            Fahrgastschiffes) erfolgen, werden die Fahrten zu diesem Ort/Sammelpunkt ebenso behandelt
+            wie die Fahrten von der Wohnung zu einer ersten Tätigkeitsstätte.
+
+            Beispiel 27
+            Angestellte Lotsen haben üblicherweise keine erste Tätigkeitsstätte, wenn sie ihre Tätigkeit
+            typischerweise auf verschiedenen Schiffen ausüben sollen. Fahrten von der Wohnung zu einer
+            vom Arbeitgeber festgelegten Lotsenstation oder Lotsenwechselstation, um von dort zum
+            Einsatz auf ein Schiff verbracht zu werden, werden ebenso behandelt wie die Fahrten von der
+            Wohnung zu einer ersten Tätigkeitsstätte.
+
+39          Treffen sich mehrere Arbeitnehmer typischerweise arbeitstäglich an einem bestimmten Ort,
+            um von dort aus gemeinsam zu ihren Tätigkeitsstätten zu fahren (privat organisierte Fahr-
+            gemeinschaft), liegt kein „Sammelpunkt“ nach § 9 Absatz 1 Satz 3 Nummer 4a Satz 3 EStG
+            vor. Es fehlt insoweit an einer dienst- oder arbeitsrechtlichen Festlegung des Arbeitgebers.
+
+40          Auf die Berücksichtigung von Verpflegungspauschalen oder Übernachtungskosten als Wer-
+            bungskosten oder den steuerfreien Arbeitgeberersatz hierfür hat die Festlegung als
+            Sammelpunkt keinen Einfluss, da der Arbeitnehmer weiterhin außerhalb einer ersten
+            Tätigkeitsstätte und somit auswärts beruflich tätig wird. Es wird keine erste Tätigkeitsstätte
+            fingiert, sondern nur die Anwendung der Entfernungspauschale für die Fahrtkosten von der
+            Wohnung zu diesem Ort sowie die Besteuerung eines geldwerten Vorteils bei
+            Dienstwagengestellung durch den Arbeitgeber nach § 8 Absatz 2 Satz 3 und 4 EStG festgelegt
+            und der steuerfreie Arbeitgeberersatz für diese Fahrten nach § 3 Nummer 13 oder Nummer 16
+            EStG ausgeschlossen.
+
+
+            cc)    Weiträumiges Tätigkeitsgebiet
+
+
+41          Soll der Arbeitnehmer auf Grund der Weisungen des Arbeitgebers seine berufliche Tätigkeit
+            typischerweise arbeitstäglich in einem weiträumigen Tätigkeitsgebiet ausüben, findet für die
+ Seite 22   Fahrten von der Wohnung zu diesem Tätigkeitsgebiet ebenfalls die Entfernungspauschale
+            Anwendung.
+
+42          Ein weiträumiges Tätigkeitsgebiet liegt in Abgrenzung zur ersten Tätigkeitsstätte vor, wenn
+            die vertraglich vereinbarte Arbeitsleistung auf einer festgelegten Fläche und nicht innerhalb
+            einer ortsfesten betrieblichen Einrichtung des Arbeitgebers, eines verbundenen Unternehmens
+            (§ 15 AktG) oder bei einem vom Arbeitgeber bestimmten Dritten ausgeübt werden soll. In
+            einem weiträumigen Tätigkeitsgebiet werden in der Regel z. B. Zusteller oder Forstarbeiter
+            tätig.
+            Hingegen sind z. B. Bezirksleiter und Vertriebsmitarbeiter, die verschiedene Niederlassungen
+            betreuen oder mobile Pflegekräfte, die verschiedene Personen in deren Wohnungen in einem
+            festgelegten Gebiet betreuen sowie Schornsteinfeger von dieser Regelung nicht betroffen.
+
+43          Wird das weiträumige Tätigkeitsgebiet immer von verschiedenen Zugängen aus betreten oder
+            befahren, ist die Entfernungspauschale aus Vereinfachungsgründen bei diesen Fahrten nur für
+            die kürzeste Entfernung von der Wohnung zum nächstgelegenen Zugang anzuwenden.
+
+44          Für alle Fahrten innerhalb des weiträumigen Tätigkeitsgebietes sowie für die zusätzlichen
+            Kilometer bei den Fahrten von der Wohnung zu einem weiter entfernten Zugang können
+            weiterhin die tatsächlichen Aufwendungen oder der sich am Bundesreisekostengesetz
+            orientierende maßgebliche pauschale Kilometersatz angesetzt werden.
+
+            Beispiel 28
+            Der Forstarbeiter A fährt an 150 Tagen mit dem PKW von seiner Wohnung zu dem 15 km
+            entfernten, nächstgelegenen Zugang des von ihm täglich zu betreuenden Waldgebietes
+            (weiträumiges Tätigkeitsgebiet). An 70 Tagen fährt A von seiner Wohnung über einen weiter
+            entfernt gelegenen Zugang (20 km) in das Waldgebiet.
+            Die Fahrten von der Wohnung zu dem weiträumigen Tätigkeitsgebiet werden behandelt wie
+            die Fahrten von der Wohnung zu einer ersten Tätigkeitsstätte. A kann somit für diese Fahrten
+            lediglich die Entfernungspauschale in Höhe von 0,30 € je Entfernungskilometer (= 15 km x
+            0,30 €) als Werbungskosten ansetzen. Die Fahrten innerhalb des Waldgebietes können mit
+            den tatsächlichen Kosten oder aus Vereinfachungsgründen mit dem pauschalen Kilometersatz
+            in Höhe von 0,30 € je tatsächlich gefahrenem Kilometer berücksichtigt werden.
+            Bei den Fahrten zu dem weiter entfernt gelegenen Zugang werden ebenfalls nur 15 Kilometer
+            mit der Entfernungspauschale (15 km x 0,30 €) berücksichtigt. Die jeweils zusätzlichen fünf
+            Kilometer für den tatsächlich längeren Hin- und Rückweg, werden ebenso wie die Fahrten
+            innerhalb des weiträumigen Tätigkeitsgebietes mit den tatsächlichen Kosten oder aus
+            Vereinfachungsgründen mit dem pauschalen Kilometersatz in Höhe von 0,30 € je gefahrenem
+            Kilometer berücksichtigt.
+ Seite 23   Somit sind für 220 Tage jeweils 15 km mit der Entfernungspauschale und die restlichen tat-
+            sächlich gefahrenen Kilometer mit den tatsächlichen Kosten oder aus Vereinfachungsgründen
+            mit dem pauschalen Kilometersatz in Höhe von 0,30 € anzusetzen.
+
+45          Auf die Berücksichtigung von Verpflegungspauschalen oder Übernachtungskosten als Wer-
+            bungskosten sowie den steuerfreien Arbeitgeberersatz hat diese Festlegung „tätig werden in
+            einem weiträumigen Tätigkeitsgebiet“ keinen Einfluss, da der Arbeitnehmer weiterhin
+            außerhalb einer ersten Tätigkeitsstätte - und damit auswärts - beruflich tätig wird. Es wird nur
+            die Anwendung der Entfernungspauschale für die Fahrtkosten von der Wohnung zum
+            nächstgelegenen Zugang zu dem weiträumigen Tätigkeitsgebiet sowie die Besteuerung eines
+            geldwerten Vorteils bei Dienstwagengestellung durch den Arbeitgeber nach § 8 Absatz 2 Satz
+            3 und 4 EStG festgelegt und der steuerfreie Arbeitgeberersatz für diese Fahrten nach § 3
+            Nummer 13 oder Nummer 16 EStG ausgeschlossen.
+
+46          Soll der Arbeitnehmer in mehreren ortsfesten Einrichtungen seines Arbeitgebers, eines ver-
+            bundenen Unternehmens oder eines Dritten, die innerhalb eines bestimmten Bezirks gelegen
+            sind, beruflich tätig werden, wird er nicht in einem weiträumigen Tätigkeitsgebiet, sondern an
+            verschiedenen, ggf. sogar ständig wechselnden Tätigkeitsstätten tätig.
+
+
+            2.     Verpflegungsmehraufwendungen
+
+            a)     Vereinfachung bei der Ermittlung der Pauschalen, § 9 Absatz 4a Satz 2 bis 5
+                   EStG
+
+            aa)    Eintägige Auswärtstätigkeiten im Inland
+
+
+47          Für eintägige auswärtige Tätigkeiten ohne Übernachtung kann ab einer Abwesenheit von
+            mehr als acht Stunden von der Wohnung und der ersten Tätigkeitsstätte eine Pauschale für
+            Verpflegungsmehraufwendungen von 14 € berücksichtigt werden. Dies gilt auch, wenn der
+            Arbeitnehmer seine auswärtige berufliche Tätigkeit über Nacht (also an zwei Kalendertagen)
+            ausübt - somit nicht übernachtet - und dadurch ebenfalls insgesamt mehr als acht Stunden von
+            der Wohnung und der ersten Tätigkeitsstätte abwesend ist. Ist der Arbeitnehmer an einem
+            Kalendertag mehrfach oder über Nacht (an zwei Kalendertagen ohne Übernachtung) auswärts
+            tätig, können die
+            Abwesenheitszeiten dieser Tätigkeiten zusammengerechnet und im Fall der Tätigkeit über
+            Nacht für den Kalendertag berücksichtigt werden, an dem der Arbeitnehmer den
+            überwiegenden Teil der insgesamt mehr als 8 Stunden abwesend ist (§ 9 Absatz 4a Satz 3
+            Nummer 3 2. Halbsatz EStG).
+Seite 24   Beispiel 29
+           Der Vertriebsleiter V verlässt um 8.00 Uhr seine Wohnung in B und besucht zuerst bis 12.00
+           Uhr einen Kunden. Von 12.30 Uhr bis 14.30 Uhr ist er in seinem Büro (erste Tätigkeitsstätte)
+           tätig. Anschließend fährt er von dort zu einer Tagung in C und kehrt um 19.00 Uhr noch
+           einmal für eine Stunde in sein Büro in B zurück.
+           Es zählen die Zeiten vom Verlassen der Wohnung bis zur Ankunft an der ersten Tätig-
+           keitsstätte (Büro) mittags sowie vom Verlassen der ersten Tätigkeitsstätte (Büro) bis zur
+           Rückkehr dorthin. V war zweimal beruflich auswärts tätig und dabei insgesamt mehr als acht
+           Stunden von seiner Wohnung und seiner ersten Tätigkeitsstätte abwesend. Er erfüllt daher die
+           Voraussetzungen der Verpflegungspauschale für eine eintägige Auswärtstätigkeit (14 €).
+
+           Beispiel 30
+           Der Kurierfahrer K ist typischerweise von 20.00 Uhr bis 5.30 Uhr des Folgetags beruflich
+           unterwegs. In dieser Zeit legt er regelmäßig auch eine Lenkpause von 45 Minuten ein. Seine
+           Wohnung verlässt K um 19.30 Uhr und kehrt um 6.00 Uhr dorthin zurück. Eine erste
+           Tätigkeitsstätte liegt nicht vor.
+           K ist im Rahmen seiner beruflichen Auswärtstätigkeit (Fahrtätigkeit) über Nacht von seiner
+           Wohnung abwesend. Bei der Lenkpause handelt es sich nicht um eine Übernachtung. Die
+           Abwesenheitszeiten über Nacht können aber zusammengerechnet werden. Sie werden für den
+           zweiten Kalendertag berücksichtigt, an dem A den überwiegenden Teil der Zeit abwesend ist.
+           A erfüllt die Voraussetzungen der Verpflegungspauschale für eine eintägige Auswärtstätigkeit
+           (14 €).
+
+           Abwandlung 1
+           Die berufliche Fahrtätigkeit des K verteilt sich wie folgt auf die Tage (in Stunden):
+               Montag         Dienstag         Mittwoch         Donnerstag     Freitag     Samstag
+                        5 4              5 4              5   4          4,5 5         5 4
+
+           Wählt K die Zusammenrechnung der Abwesenheitszeiten über Nacht, kann K eine
+           Verpflegungspauschale für eine eintägige Auswärtstätigkeit in Höhe von 14 € für folgende
+           Tage beanspruchen: Montag, Dienstag, Mittwoch und Freitag.
+           Rechnet K stattdessen die an dem jeweiligen Tag geleisteten einzelnen Abwesenheitszeiten
+           zusammen, dann kann K für Dienstag, Mittwoch, Donnerstag und Freitag eine
+           Verpflegungspauschale von jeweils 14 € beanspruchen.
+
+           Abwandlung 2
+           Die berufliche Fahrtätigkeit des K verteilt sich wie folgt auf die Tage (in Stunden):
+               Montag         Dienstag         Mittwoch         Donnerstag     Freitag     Samstag
+                        5 4              5 4              5   4          4,5 4         4 5
+Seite 25   Wählt K die Zusammenrechnung der Abwesenheitszeiten über Nacht, kann K eine Verpfle-
+           gungspauschale für eine eintägige Auswärtstätigkeit in Höhe von 14 € für folgende Tage
+           beanspruchen: Montag, Dienstag, Mittwoch, Donnerstag und Samstag.
+           Rechnet K die an dem jeweiligen Tag geleisteten einzelnen Abwesenheitszeiten zusammen,
+           kann K nur für Dienstag, Mittwoch und Donnerstag eine Verpflegungspauschale von jeweils
+           14 € beanspruchen.
+           Maßgeblich hierfür ist die gesetzliche Regelung des § 9 Absatz 4a Satz 3 Nummer 3 2.
+           Halbsatz EStG, die anstelle der auf den Kalendertag bezogenen Betrachtung bei auswärtigen
+           beruflichen Tätigkeiten über Nacht ohne Übernachtung ausnahmsweise die Zusammen-
+           rechnung dieser Zeiten ermöglicht.
+
+           Beispiel 31
+           Der Arbeitnehmer A unternimmt, ohne zu übernachten, eine Dienstreise, die am 5. Mai um
+           17.00 Uhr beginnt und am 6. Mai um 7.30 Uhr beendet wird. Am 6. Mai unternimmt A nach-
+           mittags eine weitere Dienstreise (von 14.00 Uhr bis 23.30 Uhr).
+           A hat hier die Möglichkeit die Abwesenheitszeiten der ersten Dienstreise über Nacht
+           zusammenzurechnen (= 14 Stunden und 30 Minuten). Bedingt durch die überwiegende
+           Abwesenheit am 6. Mai ist die dafür zu berücksichtigende Verpflegungspauschale dann dem
+           6. Mai zuzurechnen.
+           Alternativ können auch alle ausschließlich am 6. Mai geleisteten Abwesenheitszeiten
+           (7 Stunden 30 Minuten zuzüglich 9 Stunden 30 Minuten = 17 Stunden) zusammengerechnet
+           werden. In diesem Fall bleiben die während der ersten Dienstreise angefallenen
+           Abwesenheitszeiten unberücksichtigt.
+           Unabhängig davon, für welche Berechnungsmethode A sich entscheidet, steht ihm lediglich
+           eine Verpflegungspauschale von 14 € für den 6. Mai zu.
+           Eine Verpflegungspauschale von 28 € kommt nur in Betracht, wenn entweder die gesamte
+           Tätigkeit über Nacht oder die Tätigkeit an dem jeweiligen Kalendertag 24 Stunden erreicht.
+
+           Beispiel 32
+           Der Arbeitnehmer A arbeitet von 8.30 Uhr bis 17.00 Uhr in seinem Büro in B (erste Tätig-
+           keitsstätte), anschließend fährt er zu einem Geschäftstermin in C. Der Termin erstreckt sich
+           bis 0.30 Uhr des Folgetags. A kehrt um 1.30 Uhr in seine Wohnung zurück.
+           A war wegen beruflicher Tätigkeit mehr als acht Stunden auswärts tätig. Dass sich die
+           Abwesenheit über zwei Kalendertage ohne Übernachtung erstreckt, ist unschädlich. Die
+           Abwesenheiten werden zusammengerechnet und dem ersten Kalendertag zugeordnet, weil an
+           diesem Tag der überwiegende Teil der Abwesenheit stattgefunden hat. A erfüllt die Voraus-
+           setzungen der Verpflegungspauschale für eine eintägige Auswärtstätigkeit (14 €).
+ Seite 26   bb)    Mehrtägige Auswärtstätigkeiten im Inland
+
+
+48          Für jeden Kalendertag, an dem der Arbeitnehmer aufgrund einer auswärtigen beruflichen
+            Tätigkeit (Rz. 36) 24 Stunden von seiner Wohnung abwesend ist (Zwischentag), kann eine
+            Pauschale für Verpflegungsmehraufwendungen von 28 € als Werbungskosten geltend
+            gemacht bzw. vom Arbeitgeber steuerfrei ersetzt werden.
+
+49          Für den An- und Abreisetag einer mehrtägigen auswärtigen Tätigkeit mit Übernachtung
+            außerhalb der Wohnung kann ohne Prüfung einer Mindestabwesenheitszeit eine Pauschale
+            von jeweils 14 € als Werbungskosten berücksichtigt bzw. vom Arbeitgeber steuerfrei ersetzt
+            werden. Dabei ist es unerheblich, ob der Arbeitnehmer die Reise von der Wohnung, der ersten
+            oder einer anderen Tätigkeitsstätte aus antritt. Eine mehrtägige auswärtige Tätigkeit mit
+            Übernachtung liegt auch dann vor, wenn die berufliche Auswärtstätigkeit über Nacht
+            ausgeübt wird und sich daran eine Übernachtung am Tage sowie eine weitere Tätigkeit über
+            Nacht anschließt. Unerheblich ist auch, ob für die Übernachtung tatsächlich Über-
+            nachtungskosten anfallen (so z. B. bei Schlafen im Bus, LKW oder Lok).
+
+            Beispiel 33
+            Der Ingenieur I aus B ist von Montagabend bis Dienstag in M auswärts tätig. An diese
+            Tätigkeit schließt sich am Dienstag gleich die Weiterreise nach H zu einer neuen auswärtigen
+            Tätigkeit an. I fährt von M direkt nach H und kehrt am Mittwochmittag zu seiner Wohnung
+            zurück.
+            I kann folgende Verpflegungspauschalen beanspruchen: für Montag als Anreisetag und für
+            Mittwoch als Rückreisetag stehen ihm jeweils 14 € zu. Da I am Dienstag infolge der Abreise
+            aus M und direkten Anreise nach H 24 Stunden von seiner Wohnung und ersten
+            Tätigkeitsstätte abwesend ist, kann er für diesen Tag eine Pauschale von 28 € beanspruchen.
+
+            Abwandlung
+            I sucht am Dienstag kurz seine Wohnung in B auf, um Unterlagen und Kleidung einzupacken
+            und fährt nach einer Stunde weiter nach H.
+            In diesem Fall kann I auch für Dienstag als An- und gleichzeitig als Abreisetag nur 14 €
+            Verpflegungspauschale beanspruchen. Eine Verpflegungspauschale von 28 € kann nur dann
+            beansprucht werden, wenn I infolge seiner beruflichen Auswärtstätigkeit 24 Stunden von
+            seiner Wohnung und ersten Tätigkeitsstätte abwesend ist.
+
+            Beispiel 34
+            Monteur M aus D ist von Montag bis Mittwoch in S auswärts tätig. Eine erste Tätigkeitsstätte
+            besteht nicht. M verlässt am Montag um 10.30 Uhr seine Wohnung in D. M verlässt S am
+            Mittwochabend und erreicht seine Wohnung in D am Donnerstag um 1.45 Uhr.
+ Seite 27   M steht für Montag (Anreisetag) eine Verpflegungspauschale von 14 € zu. Für Dienstag und
+            Mittwoch kann M eine Pauschale von 28 € beanspruchen, da er an diesen Tagen 24 Stunden
+            von seiner Wohnung abwesend ist. Für Donnerstag steht ihm eine Pauschale von 14 € zu
+            (Abreisetag).
+
+50          Als Wohnung im vorstehenden Sinn gilt (§ 9 Absatz 4a Satz 4, 2. Halbsatz EStG)
+                  •   der Hausstand, der den Mittelpunkt der Lebensinteressen des Arbeitnehmers bildet
+                      und nicht nur gelegentlich aufgesucht wird oder
+                  •   die Zweitwohnung am Ort einer steuerlich anzuerkennenden doppelten Haushaltsfüh-
+                      rung (insbesondere zu berücksichtigen, wenn der Arbeitnehmer mehrere Wohnungen
+                      hat).
+
+            Beispiel 35
+            Wohnung in diesem Sinne kann somit z. B. bei Auszubildenden auch die elterliche Wohnung
+            sein, wenn sich dort noch der Lebensmittelpunkt des Auszubildenden befindet.
+
+            Beispiel 36
+            Übernachtet der Arbeitnehmer aus beruflichem Anlass z. B. im Rahmen einer
+            Auswärtstätigkeit in seinem eigenen Ferienappartement, welches er nur gelegentlich
+            aufsucht, handelt es sich um eine mehrtägige auswärtige Tätigkeit mit Übernachtung, auch
+            wenn für die Übernachtung selbst keine Kosten entstehen.
+
+
+            cc)       Auswärtstätigkeiten im Ausland
+
+
+51          Unter den gleichen Voraussetzungen wie bei inländischen Auswärtstätigkeiten werden
+            bei Auswärtstätigkeiten im Ausland Pauschalen für Verpflegungsmehraufwendungen
+            gewährt. Diese betragen bei einer Abwesenheit von 24 Stunden 120 % und für den An-
+            sowie Abreisetag oder eine Abwesenheit von mehr als 8 Stunden 80 % der
+            Auslandstagegelder nach dem Bundesreisekostengesetz. Die jeweiligen Beträge werden
+            regelmäßig durch BMF-Schreiben bekannt gemacht. Im Hinblick auf die bei auswärtigen
+            beruflichen Tätigkeiten im Ausland oftmals über Nacht oder mehrere Tage andauernden An-
+            und Abreisen genügt es für die Qualifizierung als An- und Abreisetag, wenn der
+            Arbeitnehmer unmittelbar nach der Anreise oder vor der Abreise auswärtig übernachtet. Die
+            übrigen Regelungen zu den Besonderheiten bei Auswärtstätigkeiten im Ausland gelten weiter
+            (so z. B. R 9.6 Absatz 3 LStR 2015).
+
+52          Bei Auswärtstätigkeiten in verschiedenen ausländischen Staaten gilt für die Ermittlung der
+            Verpflegungspauschalen am An- und Abreisetag Folgendes:
+ Seite 28        •   Bei einer Anreise vom Inland ins Ausland oder vom Ausland ins Inland jeweils ohne
+                     Tätigwerden ist die Verpflegungspauschale des Ortes maßgebend, der vor 24.00 Uhr
+                     erreicht wird.
+                 •   Bei einer Abreise vom Ausland ins Inland oder vom Inland ins Ausland ist die
+                     Verpflegungspauschale des letzten Tätigkeitsortes maßgebend.
+
+            Beispiel 37
+            Der Arbeitnehmer A reist am Montag um 20.00 Uhr zu einer beruflichen Auswärtstätigkeit
+            von seiner Wohnung in Berlin nach Brüssel. Er erreicht Belgien um 2.00 Uhr. Dienstag ist er
+            den ganzen Tag in Brüssel tätig. Am Mittwoch reist er zu einem weiteren Geschäftstermin um
+            8.00 Uhr nach Amsterdam. Er erreicht Amsterdam um 14.00 Uhr. Dort ist er bis Donnerstag
+            um 13.00 Uhr tätig und reist anschließend zurück nach Berlin. Er erreicht seine Wohnung am
+            Donnerstag um 22.30 Uhr.
+            Für Montag ist die inländische Verpflegungspauschale für den Anreisetag maßgebend, da A
+            sich um 24.00 Uhr noch im Inland befindet. Für Dienstag ist die Verpflegungspauschale für
+            Belgien anzuwenden. Für Mittwoch ist die Verpflegungspauschale für die Niederlande zu
+            Grunde zu legen, da sich der Ort, den A vor 24 Uhr Ortszeit zuletzt erreicht hat, in den
+            Niederlanden befindet (§ 9 Absatz 4a Satz 5 EStG). Für Donnerstag ist die Verpflegungs-
+            pauschale der Niederlande für den Abreisetag maßgeblich, da A noch bis 13.00 Uhr in
+            Amsterdam beruflich tätig war.
+
+            Beispiel 38
+            Der Arbeitnehmer A reist für ein berufliches Projekt am Sonntag um 21.00 Uhr von Paris
+            nach Mannheim. Am Sonntag um 24.00 Uhr befindet sich A noch in Frankreich. A ist in
+            Mannheim von Montag bis Freitag beruflich tätig und verlässt Mannheim am Freitag um
+            11.00 Uhr. Er erreicht Paris am Freitag um 21.00 Uhr.
+            Für Sonntag (Anreisetag) ist die Verpflegungspauschale für Frankreich maßgebend. Für
+            Montag bis Freitag ist die jeweils maßgebliche inländische Verpflegungspauschale anzu-
+            wenden.
+
+
+            b)       Dreimonatsfrist, § 9 Absatz 4a Satz 6 EStG
+
+
+53          Der Abzug der Verpflegungsmehraufwendungen ist auf die ersten drei Monate einer
+            längerfristigen auswärtigen beruflichen Tätigkeit an derselben Tätigkeitsstätte beschränkt
+            (vgl. Rz. 55). Werden während einer beruflichen Tätigkeit mehrere ortsfeste betriebliche
+            Einrichtungen innerhalb eines Werks- oder Betriebsgeländes aufgesucht, handelt es sich um
+            die Tätigkeit an einer (großräumigen) Tätigkeitsstätte (BFH-Urteile vom 11. April 2019,
+            VI R 40/16 und VI R 12/17, BStBl II S. 546 und 551). Handelt es sich um einzelne ortsfeste
+            betriebliche Einrichtungen verschiedener Auftraggeber oder Kunden, liegen mehrere
+ Seite 29   Tätigkeitsstätten vor. Dies gilt auch dann, wenn sich die Tätigkeitsstätten in unmittelbarer
+            räumlicher Nähe zueinander befinden.
+
+54          Um die Berechnung der Dreimonatsfrist zu vereinfachen, ist eine rein zeitliche Bemessung
+            der Unterbrechungsregelung vorzunehmen. Eine Unterbrechung der beruflichen Tätigkeit an
+            derselben Tätigkeitsstätte führt zu einem Neubeginn der Dreimonatsfrist, wenn sie
+            mindestens vier Wochen dauert (§ 9 Absatz 4a Satz 7 EStG). Der Grund der Unterbrechung
+            ist unerheblich; es zählt nur die Unterbrechungsdauer.
+
+55          Von einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte ist erst dann
+            auszugehen, sobald der Arbeitnehmer an dieser mindestens an drei Tagen in der Woche tätig
+            wird. Die Dreimonatsfrist beginnt daher nicht, solange die auswärtige Tätigkeitsstätte an nicht
+            mehr als zwei Tagen in der Woche aufgesucht wird. Die Prüfung des Unterbrechungs-
+            zeitraums und des Ablaufs der Dreimonatsfrist erfolgt stets im Nachhinein mit Blick auf die
+            zurückliegende Zeit (Ex-post-Betrachtung).
+
+            Beispiel 39
+            Der Bauarbeiter A soll ab März 01 arbeitstäglich an der Baustelle in H für 5 Monate tätig
+            werden. Am 1. April 01 nimmt er dort seine Tätigkeit auf. Ab 20. Mai 01 wird er nicht nur in
+            H, sondern für einen Tag wöchentlich auch an der Baustelle in B tätig, da dort ein Kollege
+            ausgefallen ist.
+            Für die Tätigkeit an der Baustelle in H beginnt die Dreimonatsfrist am 1. April 01 und endet
+            am 30. Juni 01. Eine vierwöchige Unterbrechung liegt nicht vor (immer nur eintägige
+            Unterbrechung).
+            Für die Tätigkeit an der Baustelle in B greift die Dreimonatsfrist hingegen nicht, da A dort
+            lediglich einen Tag wöchentlich tätig wird.
+
+            Beispiel 40
+            Wie Beispiel 39, allerdings wird A ab 1. April 01 zwei Tage wöchentlich in H und drei Tage
+            wöchentlich in B tätig. Ab 15. April 01 muss er für zwei Wochen nach M. Ab 1. Mai 01 ist er
+            dann bis auf Weiteres drei Tage wöchentlich in H und zwei Tage in B tätig.
+            Für die Tätigkeit an der Baustelle in B beginnt die Dreimonatsfrist am 1. April 01 und endet
+            am 30. Juni 01. Eine vierwöchige Unterbrechung liegt nicht vor (lediglich zwei Wochen und
+            dann immer nur dreitägige Unterbrechung).
+            Für die Tätigkeit an der Baustelle in H beginnt die Dreimonatsfrist hingegen erst am 1. Mai
+            01, da A dort erst ab diesem Tag an drei Tagen wöchentlich tätig wird.
+
+            Beispiel 41
+            Der Außendienstmitarbeiter A wohnt in K und hat am Betriebssitz seines Arbeitgebers in S
+            seine erste Tätigkeitsstätte (arbeitsrechtliche Zuordnung durch den Arbeitgeber). A sucht
+ Seite 30   arbeitstäglich die Filiale in K gegen 8.00 Uhr auf und bereitet sich dort üblicherweise für ein
+            bis zwei Stunden auf seinen Außendienst vor. Von ca. 10.00 Uhr bis 16.30 Uhr sucht er dann
+            verschiedene Kunden im Großraum K auf. Anschließend fährt er nochmals in die Filiale in K,
+            um Nacharbeiten zu erledigen.
+            Bei dem arbeitstäglichen Vor- und Nachbereiten der Außendiensttätigkeit in der Filiale in K
+            handelt es sich um eine längerfristige berufliche Auswärtstätigkeit an derselben Tätig-
+            keitsstätte; für die berufliche Tätigkeit an dieser Tätigkeitsstätte können nach Ablauf von drei
+            Monaten daher keine Verpflegungspauschalen mehr beansprucht werden. Für die restliche
+            eintägige berufliche Auswärtstätigkeit bei den verschiedenen Kunden im Großraum K gilt
+            dies nicht. Die Tätigkeitszeit in der Filiale in K kann für die Ermittlung der erforderlichen
+            Mindestabwesenheitszeit von mehr als 8 Stunden nach Ablauf von 3 Monaten nicht mehr
+            berücksichtigt werden, sondern ist abzuziehen. Ab dem vierten Monat kommt es für die
+            Ermittlung der Abwesenheitszeiten der eintägigen Auswärtstätigkeit daher jeweils auf die
+            Dauer der Abwesenheit von der Wohnung, abzüglich der Tätigkeitszeit(en) in der Filiale in K
+            an.
+
+56          Bei beruflichen Tätigkeiten auf mobilen, nicht ortsfesten betrieblichen Einrichtungen wie
+            z. B. Fahrzeugen, Flugzeugen, Schiffen findet die Dreimonatsfrist keine Anwendung.
+            Entsprechendes gilt für eine Tätigkeit in einem weiträumigen Tätigkeitsgebiet.
+
+57          Die Regelungen zu den Verpflegungspauschalen sowie die Dreimonatsfrist gelten auch bei
+            einer doppelten Haushaltsführung (§ 9 Absatz 4a Satz 12 EStG).
+
+
+            c)     Pauschalbesteuerung, § 40 Absatz 2 Satz 1 Nummer 4 EStG
+
+
+58          Der Arbeitgeber kann die Lohnsteuer mit einem Pauschsteuersatz von 25 % erheben, wenn
+            dem Arbeitnehmer anlässlich einer Auswärtstätigkeit i. S. v. § 9 Absatz 4a Satz 3, 5 und 6
+            EStG Vergütungen für Verpflegungsmehraufwendungen gezahlt werden, soweit diese die
+            dem Arbeitnehmer zustehenden Verpflegungspauschalen ohne Anwendung der
+            Kürzungsregelung nach § 9 Absatz 4a Satz 8 bis 10 EStG um nicht mehr als 100 %
+            übersteigen.
+
+59          Soweit nach Ablauf der Dreimonatsfrist eine steuerfreie Erstattung von Verpflegungsmehr-
+            aufwendungen nicht mehr möglich ist, kommt eine Pauschalbesteuerung nach § 40 Absatz 2
+            Satz 1 Nummer 4 EStG nicht in Betracht.
+
+            Beispiel 42
+            Der Arbeitnehmer A erhält während einer ununterbrochenen viermonatigen Auswärtstätigkeit
+            von seinem Arbeitgeber Vergütungen für Verpflegungsmehraufwendungen in Höhe von 56 €
+            für jeden vollen Kalendertag. Für An- und Abreisetage reduziert sich diese Vergütung auf
+ Seite 31   28 € pro Tag. Während seiner Auswärtstätigkeit wird dem Arbeitnehmer kostenlos eine
+            Unterkunft vom Arbeitgeber zur Verfügung gestellt.
+            In den ersten drei Monaten ist die Verpflegungspauschale für die vollen Kalendertage in
+            Höhe von 28 € und für die An- und Abreisetage jeweils in Höhe von 14 € steuerfrei. Der
+            Mehrbetrag von 28 € bzw. 14 € kann mit 25 % pauschal versteuert werden. Ab dem vierten
+            Monat sind die vom Arbeitgeber gezahlten Verpflegungsvergütungen von täglich 56 € bzw. 28
+            € wegen des Ablaufs der Dreimonatsfrist in voller Höhe als Arbeitslohn individuell zu
+            versteuern.
+
+60          Für Verpflegungszuschüsse, die während einer doppelten Haushaltsführung gezahlt werden
+            (§ 9 Absatz 4a Satz 12 EStG), ist die Pauschalbesteuerung nach § 40 Absatz 2 Satz 1
+            Nummer 4 EStG nicht zulässig.
+
+
+            3.     Vereinfachung der steuerlichen Erfassung der vom Arbeitgeber zur Verfügung
+                   gestellten Mahlzeiten während einer auswärtigen Tätigkeit
+
+
+            a)     Bewertung und Besteuerungsverzicht bei üblichen Mahlzeiten, § 8 Absatz 2
+                   Satz 8 und 9 EStG
+
+
+61          Eine vom Arbeitgeber während einer beruflich veranlassten Auswärtstätigkeit zur Verfügung
+            gestellte „übliche“ Mahlzeit wird mit dem amtlichen Sachbezugswert nach § 2 der Sozialver-
+            sicherungsentgeltverordnung bewertet. Entsprechendes gilt für die bei einer beruflich
+            veranlassten doppelten Haushaltsführung vom Arbeitgeber zur Verfügung gestellten
+            „üblichen“ Mahlzeiten. Als „üblich“ gilt eine Mahlzeit, deren Preis 60 € nicht übersteigt (§ 8
+            Absatz 2 Satz 8 EStG). Hierbei sind auch die zur Mahlzeit eingenommenen Getränke
+            einzubeziehen. Die Preisgrenze von 60 € gilt unabhängig davon, ob die Mahlzeit im
+            Inland oder im Ausland zur Verfügung gestellt wird.
+
+62          Mahlzeiten mit einem Preis von über 60 € dürfen nicht mit dem amtlichen Sachbezugswert
+            bewertet werden. Bei einer solchen Mahlzeit wird typisierend unterstellt, dass es sich um ein
+            „Belohnungsessen“ (R 8.1 Absatz 8 Nummer 2 LStR 2015) handelt. Belohnungsessen sind
+            mit dem tatsächlichen Preis als Arbeitslohn (§ 8 Absatz 2 Satz 1 EStG) anzusetzen.
+
+63          Für die Prüfung der 60 €-Grenze kommt es auf den Preis der Mahlzeit (einschließlich
+            Umsatzsteuer) an, den der Dritte dem Arbeitgeber in Rechnung stellt. Zuzahlungen des
+            Arbeitnehmers sind bei der Prüfung der 60 €-Grenze nicht zu berücksichtigen. Ist der Preis
+            der Mahlzeit in einem Gesamtpreis z. B. einer Fortbildungsveranstaltung enthalten und
+            in der Rechnung eines Dritten nicht beziffert, ist nach dem Gesamtbild der Verhältnisse im
+ Seite 32   Einzelfall zu beurteilen, ob es sich um eine „übliche“ Beköstigung i. S. d. § 8 Absatz 2 Satz 8
+            EStG gehandelt hat oder ob ein höherer Wert der Mahlzeit als 60 € anzunehmen ist.
+
+64          Die für eine unmittelbar vom Arbeitgeber abgegebene Mahlzeit maßgeblichen Grundsätze
+            gelten auch, wenn eine Mahlzeit auf Veranlassung des Arbeitgebers von einem Dritten an den
+            Arbeitnehmer abgegeben wird. Die Gestellung einer Mahlzeit ist vom Arbeitgeber veranlasst,
+            wenn er Tag und Ort der Mahlzeitengestellung bestimmt. Das ist insbesondere dann der Fall,
+            wenn
+               •   er die Verpflegungskosten im Hinblick auf die beruflich veranlasste Auswärtstätigkeit
+                   des Arbeitnehmers dienst- oder arbeitsrechtlich erstattet und
+               •   die Rechnung auf den Arbeitgeber ausgestellt ist oder es sich um eine
+                   Kleinbetragsrechnung i. S. d. § 14 UStG i. V. m. § 33 UStDV handelt, die als Beleg
+                   zur Buchführung des Arbeitgebers vorliegt oder vorgelegen hat und gesichert
+                   wurde.
+
+65          Zu den vom Arbeitgeber zur Verfügung gestellten Mahlzeiten (Rz. 73 ff.) gehören auch die
+            z. B. im Flugzeug, im Zug oder auf einem Schiff im Zusammenhang mit der Beförderung
+            unentgeltlich angebotenen Mahlzeiten, sofern die Rechnung für das Beförderungsticket auf
+            den Arbeitgeber ausgestellt ist und von diesem dienst- oder arbeitsrechtlich erstattet wird. Die
+            Verpflegung muss dabei nicht offen auf der Rechnung ausgewiesen werden. Lediglich dann,
+            wenn z. B. anhand des gewählten Beförderungstarifs feststeht, dass es sich um eine reine
+            Beförderungsleistung handelt, bei der keine Mahlzeiten unentgeltlich angeboten werden, liegt
+            keine Mahlzeitengestellung vor.
+
+66          Die steuerliche Erfassung einer solchen üblichen Mahlzeit als Arbeitslohn ist ausgeschlossen,
+            wenn der Arbeitnehmer für die betreffende Auswärtstätigkeit dem Grunde nach eine Ver-
+            pflegungspauschale i. S. d. § 9 Absatz 4a EStG als Werbungskosten geltend machen könnte.
+            Auf die Höhe der tatsächlich als Werbungskosten anzusetzenden Verpflegungspauschale
+            kommt es nicht an. Ebenso ist eine mögliche Kürzung des Werbungskostenabzugs nach § 9
+            Absatz 4a Satz 8 ff. EStG wegen der Gestellung einer Mahlzeit unerheblich.
+
+67          Im Ergebnis unterbleibt die Erfassung der mit dem Sachbezugswert bewerteten Mahlzeit
+            bereits immer dann, wenn der Arbeitnehmer anlässlich einer beruflich veranlassten Aus-
+            wärtstätigkeit eine Verpflegungspauschale beanspruchen kann, weil er innerhalb der
+            Dreimonatsfrist nach § 9 Absatz 4a Satz 6 EStG nachweislich mehr als acht Stunden von
+            seiner Wohnung und der ersten Tätigkeitsstätte abwesend ist oder eine mehrtägige Aus-
+            wärtstätigkeit mit Übernachtung vorliegt. Nach Ablauf der Dreimonatsfrist ist die Gestellung
+            einer Mahlzeit grundsätzlich als Arbeitslohn zu erfassen.
+ Seite 33   Beispiel 43
+            Der Arbeitnehmer A nimmt auf Veranlassung seines Arbeitgebers an einem zweitägigen
+            Seminar mit Übernachtung teil. Die Hotelrechnung ist auf den Arbeitgeber ausgestellt. Der
+            Arbeitgeber erstattet die vom Arbeitnehmer verauslagten Übernachtungskosten von 100 €
+            incl. 20 € für ein Frühstück mit der Reisekostenabrechnung des Arbeitnehmers. Die auf den
+            Arbeitgeber ausgestellte Rechnung des Seminarveranstalters hat der Arbeitgeber unmittelbar
+            bezahlt. Darin enthalten ist für beide Seminartage jeweils ein für derartige Veranstaltungen
+            typisches Mittagessen, dessen Preis in der Rechnung nicht gesondert ausgewiesen ist.
+            Der Arbeitnehmer A erhält sowohl das Frühstück als auch die beiden Mittagessen auf Veran-
+            lassung seines Arbeitgebers. Für den An- und den Abreisetag steht ihm grundsätzlich jeweils
+            eine Verpflegungspauschale i. H. v. 14 € zu.
+            Obgleich der Preis der Mittagessen in der Rechnung des Seminarveranstalters nicht beziffert
+            ist, kann aufgrund der Art und Durchführung der Seminarveranstaltung von einer üblichen
+            Beköstigung ausgegangen werden, deren Preis 60 € nicht übersteigt. Die Mahlzeiten sind
+            daher nicht als Arbeitslohn zu erfassen und die Verpflegungspauschale des Arbeitnehmers im
+            Hinblick auf die zur Verfügung gestellten Mahlzeiten nach § 9 Absatz 4a Satz 8 EStG zu
+            kürzen (vgl. Rz. 73 ff.).
+
+68          Eine vom Arbeitgeber oder auf dessen Veranlassung von einem Dritten abgegebene Mahlzeit
+            mit einem höheren Preis als 60 € ist stets als Arbeitslohn zu erfassen. Das gilt auch dann,
+            wenn der Preis der Mahlzeit zwar nicht offen in Rechnung gestellt, nach dem Gesamtbild der
+            Umstände aber als unüblich i. S. d. § 8 Absatz 2 Satz 8 EStG anzusehen ist und ein Wert der
+            Mahlzeit von mehr als 60 € unterstellt werden kann. Im Zweifel ist der Wert der Mahlzeit zu
+            schätzen. Eine unübliche Mahlzeit ist als Arbeitslohn zu erfassen, unabhängig davon, ob der
+            Arbeitnehmer für die betreffende Auswärtstätigkeit eine Verpflegungspauschale als
+            Werbungskosten geltend machen kann.
+
+            Beispiel 44
+            Der Arbeitnehmer A nimmt im Auftrag seines Arbeitgebers an einer eintägigen Podiums-
+            diskussion mit anschließender Abendveranstaltung teil. Die auf den Arbeitgeber ausgestellte
+            Rechnung des Veranstalters hat der Arbeitgeber unmittelbar bezahlt. Darin enthalten sind die
+            Kosten für ein Galadinner, das mit 80 € separat ausgewiesen ist. Der Arbeitnehmer ist mehr
+            als acht Stunden von seiner Wohnung und seiner ersten Tätigkeitsstätte abwesend. Der
+            Arbeitnehmer erhält das Galadinner vom Veranstalter der Podiumsdiskussion auf Veran-
+            lassung seines Arbeitgebers. Angesichts der Kosten von mehr als 60 € ist von einem
+            Belohnungsessen auszugehen (unübliche Beköstigung gemäß § 8 Absatz 2 Satz 8 EStG), so
+            dass die dafür berechneten 80 € als Arbeitslohn anzusetzen sind. Der Arbeitnehmer kann als
+            Werbungskosten eine ungekürzte Verpflegungspauschale i. H. v. 14 € geltend machen.
+ Seite 34
+
+69          Der Ansatz einer nach § 8 Absatz 2 Satz 8 EStG mit dem amtlichen Sachbezugswert bewer-
+            teten Mahlzeit als Arbeitslohn setzt voraus, dass es sich um eine übliche Mahlzeit handelt und
+            der Arbeitnehmer keine Verpflegungspauschale beanspruchen kann; dies liegt regelmäßig
+            vor, wenn er nicht mehr als acht Stunden außerhalb seiner Wohnung und seiner ersten Tätig-
+            keitsstätte beruflich tätig ist oder die Dreimonatsfrist nach § 9 Absatz 4a Satz 6 EStG über-
+            schritten ist.
+
+70          Zahlt der Arbeitnehmer in diesen Fällen ein Entgelt für die erhaltene Mahlzeit, mindert dieses
+            Entgelt den steuerpflichtigen geldwerten Vorteil. Es ist nicht zu beanstanden, wenn der
+            Arbeitgeber ein vereinbartes Entgelt für die Mahlzeit im Rahmen der Lohnabrechnung
+            unmittelbar aus dem Nettoentgelt des Arbeitnehmers entnimmt. Übersteigt das vom Arbeit-
+            nehmer gezahlte Entgelt den maßgebenden Sachbezugswert oder entspricht es dem Sach-
+            bezugswert, verbleibt kein steuerpflichtiger geldwerter Vorteil. Der den Sachbezugswert
+            übersteigende Betrag darf nicht als Werbungskosten abgezogen werden.
+
+71          Gleiches gilt, wenn der Arbeitnehmer bei der Gestellung einer Mahlzeit auf Veranlassung des
+            Arbeitgebers ein zuvor vereinbartes Entgelt unmittelbar an den Dritten entrichtet. Es muss
+            sich hierbei aber um ein Entgelt des Arbeitnehmers handeln. Wird das vom Dritten in
+            Rechnung gestellte Entgelt zunächst vom Arbeitnehmer verauslagt und diesem anschließend
+            vom Arbeitgeber erstattet, handelt es sich nicht um ein Entgelt des Arbeitnehmers. Das gilt
+            insbesondere für den auf den Arbeitgeber ausgestellten Rechnungsbetrag.
+
+            Beispiel 45
+            Der Arbeitnehmer A nimmt auf Veranlassung seines Arbeitgebers an einem zweitägigen
+            Seminar mit Übernachtung teil. Die auf den Arbeitgeber ausgestellte Hotelrechnung von
+            100 € incl. 20 € für ein Frühstück wird zunächst vom Arbeitnehmer bezahlt. Der Arbeitgeber
+            erstattet dem Arbeitnehmer die Übernachtungskosten incl. Frühstück mit der
+            Reisekostenabrechnung.
+            Im Hinblick auf die Rechnungsstellung und spätere Erstattung der Auslagen durch den
+            Arbeitgeber handelt es sich bei dem in der Hotelrechnung für das Frühstück enthaltenen
+            Kostenanteil nicht um ein Entgelt des Arbeitnehmers. Da es sich bei den zur Verfügung
+            gestellten Mahlzeiten um übliche Mahlzeiten handelt, sind diese nicht als Arbeitslohn zu
+            erfassen; beim Werbungskostenabzug des Arbeitnehmers sind die Verpflegungspauschalen
+            entsprechend zu kürzen (für den zweiten Tag zustehende Verpflegungspauschale um 5,60 €).
+
+            Beispiel 46
+            Der Arbeitnehmer A wird für sechs Monate von seinem Arbeitgeber an einen Tochterbetrieb
+            im Inland entsandt. Für die Zeit der Entsendung übernachtet der Arbeitnehmer während der
+            Woche in einem Hotel in der Nähe des Tochterbetriebs. Das Hotel stellt dem Arbeitgeber pro
+ Seite 35   Übernachtung 70 € zuzüglich 10 € für ein Frühstück in Rechnung, dass der Arbeitnehmer
+            zunächst verauslagt und dann im Rahmen der Reisekostenabrechnung von seinem Arbeit-
+            geber erstattet erhält. Es liegt eine beruflich veranlasste Auswärtstätigkeit vor. Der Arbeit-
+            nehmer erhält das Frühstück jeweils auf Veranlassung seines Arbeitgebers.
+            Für die ersten drei Monate der Auswärtstätigkeit stehen dem Arbeitnehmer arbeitstäglich
+            Verpflegungspauschalen zu. Da es sich bei den zur Verfügung gestellten Mahlzeiten um
+            übliche Mahlzeiten handelt, sind diese nicht als Arbeitslohn zu erfassen und beim
+            Werbungskostenabzug des Arbeitnehmers die Verpflegungspauschalen entsprechend zu
+            kürzen.
+            Ab dem vierten Monat der Auswärtstätigkeit stehen dem Arbeitnehmer keine Verpflegungs-
+            pauschalen mehr zu. Das Frühstück ist jeweils mit dem amtlichen Sachbezugswert als
+            Arbeitslohn zu erfassen, der nach § 40 Absatz 2 Satz 1 Nummer 1a EStG pauschal besteuert
+            (vgl. dazu Rz. 94 ff.) werden kann.
+
+            Abwandlung
+            Sachverhalt wie voriges Beispiel. Allerdings zahlt der Arbeitnehmer A für das Frühstück
+            jeweils 3 €.
+            Das vom Arbeitnehmer A für das Frühstück gezahlte Entgelt ist ab dem vierten Monat auf den
+            Sachbezugswert anzurechnen. Da das Entgelt höher ist als der Sachbezugswert, unterbleibt
+            eine Besteuerung als Arbeitslohn. Der den Sachbezugswert übersteigende Betrag darf nicht
+            als Werbungskosten abgezogen werden.
+
+72          Die Vorteile aus der Teilnahme des Arbeitnehmers an einer geschäftlich veranlassten Bewir-
+            tung i. S. d. § 4 Absatz 5 Satz 1 Nummer 2 EStG gehören nicht zum Arbeitslohn (R 8.1
+            Absatz 8 Nummer 1 LStR 2015). Entsprechendes gilt für die im ganz überwiegend
+            eigenbetrieblichen Interesse des Arbeitgebers abgegebenen Mahlzeiten. Hierzu gehören insbe-
+            sondere die Teilnahme an einem Arbeitsessen (R 19.6 Absatz 2 Satz 2 LStR 2015) sowie die
+            bei einer üblichen Betriebsveranstaltung (§ 19 Absatz 1 Satz 1 Nummer 1a EStG)
+            abgegebenen Mahlzeiten.
+
+
+            b)     Kürzung der Verpflegungspauschalen, § 9 Absatz 4a Satz 8 bis 10 EStG
+
+            aa)    Kürzung bei Mahlzeitengestellung
+
+
+73          Der Arbeitnehmer kann für ihm tatsächlich entstandene Mehraufwendungen für Verpflegung
+            auf Grund einer beruflich veranlassten Auswärtstätigkeit Verpflegungspauschalen als
+            Werbungskosten ansetzen oder in entsprechender Höhe einen steuerfreien Arbeitgeberersatz
+            erhalten. Die Höhe der Verpflegungspauschalen ist nach der Abwesenheitszeit des
+            Arbeitnehmers von seiner Wohnung und seiner ersten Tätigkeitsstätte gestaffelt. Das
+            Merkmal „tatsächlich entstandene“ Mehraufwendungen bringt dabei zum Ausdruck, dass die
+ Seite 36   Verpflegungspauschalen nicht mehr zum Ansatz kommen, soweit der Arbeitnehmer
+            während seiner beruflichen Auswärtstätigkeit durch den Arbeitgeber „verpflegt“ wird. Eine
+            Prüfungspflicht hinsichtlich der Höhe der tatsächlich entstandenen Aufwendungen besteht
+            nicht. Wird dem Arbeitnehmer von seinem Arbeitgeber oder auf dessen Veranlassung von
+            einem Dritten eine Mahlzeit zur Verfügung gestellt, wird der Werbungskostenabzug
+            tageweise gekürzt, und zwar
+
+               •   um 20 % für ein Frühstück und
+               •   um jeweils 40 % für ein Mittag- und Abendessen
+            der für die 24-stündige Abwesenheit geltenden höchsten Verpflegungspauschale. Das ent-
+            spricht für Auswärtstätigkeiten im Inland einer Kürzung der jeweils zustehenden Verpfle-
+            gungspauschale um 5,60 € für ein Frühstück und jeweils 11,20 € für ein Mittag- und
+            Abendessen. Diese typisierende, pauschale Kürzung der Verpflegungspauschale ist
+            tagesbezogen und maximal bis auf 0 € vorzunehmen.
+
+74          Eine Mahlzeit, die zur Kürzung der Verpflegungspauschale führt, kann auch ein vom
+            Arbeitgeber zur Verfügung gestellter Imbiss z. B. belegte Brötchen, Kuchen und Obst sein.
+            Die z. B. auf Flügen gereichten kleinen Tüten mit Chips, Salzgebäck, Schokowaffeln,
+            Müsliriegel oder bei anderen Anlässen zur Verfügung gestellte vergleichbare
+            Knabbereien und unbelegte Backwaren (BFH-Urteil vom 3. Juli 2019, VI R 36/17, BStBl
+            II 2020 S. XXX) erfüllen nicht die Kriterien für eine Mahlzeit. Sie führen zu keiner
+            Kürzung der Pauschalen. Eine feste zeitliche Grenze für die Frage, ob ein Frühstück,
+            Mittag- oder Abendessen zur Verfügung gestellt wird, gibt es nicht. Maßstab für die
+            Einordnung ist vielmehr, ob die zur Verfügung gestellte Verpflegung an die Stelle einer der
+            genannten Mahlzeiten tritt, welche üblicherweise zu der entsprechenden Zeit eingenommen
+            wird.
+
+75          Ob die vom Arbeitgeber zur Verfügung gestellte Mahlzeit vom Arbeitnehmer tatsächlich
+            eingenommen wird oder die Aufwendungen für die vom Arbeitgeber gestellte Mahlzeit
+            niedriger sind als der jeweilige pauschale Kürzungsbetrag, ist für die Kürzung der
+            Verpflegungspauschalen unbeachtlich. Das Zurverfügungstellen einer Mahlzeit durch
+            den Arbeitgeber (oder auf dessen Veranlassung durch einen Dritten) i. S. von § 9
+            Absatz 4a Satz 8 EStG erfordert nicht, dass der Arbeitnehmer die Mahlzeit auch
+            tatsächlich einnimmt. Aus welchen Gründen der Arbeitnehmer eine ihm von seinem
+            Arbeitgeber zur Verfügung gestellte Mahlzeit nicht einnimmt, ist insoweit ebenfalls
+            unerheblich (BFH-Urteil vom 7. Juli 2020 - VI R 16/18, BStBl II S. XXX). Die gesetzlich
+            vorgeschriebene pauschale Kürzung unterbleibt nur, wenn der Arbeitgeber keine Mahlzeit
+            zur Verfügung stellt, z. B. weil er die entsprechende Mahlzeit abbestellt oder der Arbeit-
+            nehmer die Mahlzeit selbst veranlasst und bezahlt.
+ Seite 37   Beispiel 47
+            Der Arbeitnehmer A ist von 9.00 Uhr bis 18.00 Uhr auswärts bei verschiedenen Kunden
+            beruflich tätig. In der Mittagspause kauft er sich eine Pizza und ein Wasser für 8 €.
+            Da A anlässlich einer eintägigen beruflichen Auswärtstätigkeit mehr als acht Stunden von
+            seiner Wohnung abwesend ist, könnte er eine Verpflegungspauschale von 14 € beanspruchen.
+            Würde A die Rechnung für die mittags verzehrte Pizza und das Wasser seinem Arbeitgeber
+            vorlegen und von diesem erstattet bekommen, könnte A neben 8 € Erstattungsbetrag nur noch
+            eine gekürzte Verpflegungspauschale von 2,80 € (14 € -11,20 €) beanspruchen.
+
+76          Bei der Hingabe von Essenmarken durch den Arbeitgeber im Rahmen einer beruflichen
+            Auswärtstätigkeit des Arbeitnehmers, handelt es sich innerhalb der Dreimonatsfrist
+            nicht um eine vom Arbeitgeber gestellte Mahlzeit, sondern lediglich um eine
+            Verbilligung der vom Arbeitnehmer selbst veranlassten und bezahlten Mahlzeit.
+            Nach Ablauf der Dreimonatsfrist sind die an diese Arbeitnehmer ausgegebenen
+            Essenmarken (Essensgutscheine, Restaurantschecks) abweichend von R 8.1 Absatz 7
+            Nummer 4 Buchstabe a Satz 1 Doppelbuchstabe dd LStR 2015 mit dem maßgebenden
+            Sachbezugswert zu bewerten. Der Ansatz des Sachbezugswerts setzt voraus, dass die
+            übrigen Voraussetzungen der R 8.1 Absatz 7 Nummer 4 Buchstabe a LStR 2015
+            vorliegen.
+
+            Beispiel 48
+            Der Arbeitnehmer A ist auf einer dreitägigen Auswärtstätigkeit. Der Arbeitgeber hat für den
+            Arbeitnehmer in einem Hotel zwei Übernachtungen jeweils mit Frühstück sowie am
+            Zwischentag ein Mittag- und ein Abendessen gebucht und bezahlt. Der Arbeitnehmer A erhält
+            vom Arbeitgeber keine weiteren Reisekostenerstattungen.
+            Der Arbeitgeber hat keinen geldwerten Vorteil für die Mahlzeiten zu versteuern. Der Arbeit-
+            nehmer kann für die Auswärtstätigkeit folgende Verpflegungspauschalen als Werbungskosten
+            geltend machen:
+
+                          Anreisetag:                                    14,00 €
+                          Zwischentag:                     28,00 €
+                          Kürzung:        Frühstück        - 5,60 €
+                                         Mittagessen      - 11,20 €
+                                         Abendessen       - 11,20 €
+                          verbleiben für Zwischentag                      0,00 €
+                          Abreisetag:                      14,00 €
+                          Kürzung:         Frühstück       - 5,60 €
+                          verbleiben für den Abreisetag                  8,40 €
+ Seite 38                 Insgesamt abziehbar                             22,40 €
+
+            Beispiel 49
+            Der Werbegrafiker W arbeitet von 10.00 Uhr bis 20.00 Uhr in seinem Büro in B (erste
+            Tätigkeitsstätte), anschließend fährt er noch zu einem Geschäftstermin in C. Der Termin
+            erstreckt sich bis 3.00 Uhr des Folgetags. W kehrt um 4.30 Uhr in seine Wohnung zurück. Zu
+            Beginn des Geschäftstermins nimmt W an einem Abendessen teil, welches vom Arbeitgeber
+            des W bestellt und bezahlt wird.
+            W ist bei seiner beruflichen Tätigkeit mehr als acht Stunden auswärts tätig. Dass sich diese
+            Abwesenheit über zwei Kalendertage ohne Übernachtung erstreckt, ist unschädlich. Die
+            Abwesenheitszeiten werden zusammengerechnet und dem zweiten Kalendertag zugeordnet, da
+            an diesem Tag der überwiegende Teil der Abwesenheit stattgefunden hat. Die
+            Verpflegungspauschale von 14 € für die berufliche Abwesenheit von mehr als acht Stunden
+            über Nacht ist allerdings um 11,20 € zu kürzen; dass die Mahlzeit am ersten Tag vom
+            Arbeitgeber gestellt wird und die Verpflegungspauschale dem Folgetag (Tag an dem die
+            Auswärtstätigkeit endet) zuzuordnen ist, ist dabei unbeachtlich; dem Arbeitnehmer wird im
+            Zusammenhang mit der beruflichen Auswärtstätigkeit, für die er die Verpflegungspauschale
+            beanspruchen kann, eine Mahlzeit vom Arbeitgeber gestellt.
+
+
+            bb)    Kürzung bei teilweiser Kostenerstattung
+
+
+77          Eine Kürzung der Verpflegungspauschalen ist auch dann vorzunehmen, wenn der
+            Arbeitgeber die dem Arbeitnehmer zustehende Reisekostenvergütung lediglich gekürzt
+            ausbezahlt. Nur ein für die Gestellung der Mahlzeit vereinbartes und vom Arbeitnehmer
+            tatsächlich gezahltes Entgelt mindert den Kürzungsbetrag. Es ist hierbei nicht zu beanstanden,
+            wenn der Arbeitgeber das für die Mahlzeit vereinbarte Entgelt unmittelbar aus dem Nettolohn
+            des Arbeitnehmers entnimmt. Gleiches gilt, wenn der Arbeitgeber das Entgelt mit der dem
+            Arbeitnehmer dienst- oder arbeitsrechtlich zustehenden Reisekostenerstattung verrechnet.
+
+            Beispiel 50
+            Der Arbeitnehmer A ist auf einer dreitägigen Auswärtstätigkeit. Der Arbeitgeber hat für den
+            Arbeitnehmer A in einem Hotel zwei Übernachtungen jeweils mit Frühstück sowie am
+            Zwischentag ein Mittag- und ein Abendessen gebucht und bezahlt. Zusätzlich möchte der
+            Arbeitgeber eine steuerfreie Reisekostenerstattung zahlen. Für die vom Arbeitgeber
+            veranlassten und bezahlten Mahlzeiten soll jeweils der geltende Sachbezugswert (2020:
+            Frühstück jeweils 1,80 € und Mittag-/Abendessen jeweils 3,40 €) einbehalten werden.
+Seite 39   Der Arbeitgeber hat keinen geldwerten Vorteil für die Mahlzeiten zu versteuern. Der Arbeit-
+           geber kann für die Auswärtstätigkeit höchstens noch folgende Beträge zusätzlich für die Ver-
+           pflegung steuerfrei auszahlen:
+
+
+                         Anreisetag:                                      14,00 €
+                         Zwischentag:                      28,00 €
+                         Kürzung:          Frühstück       - 5,60 €
+                                         Mittagessen     - 11,20 €
+                                        Abendessen       - 11,20 €
+                         verbleiben für Zwischentag                       0,00 €
+                         Abreisetag:                       14,00 €
+                         Kürzung:         Frühstück        - 5,60 €
+                         verbleiben für den Abreisetag                    8,40 €
+                         Insgesamt steuerfrei auszahlbar                22,40 €
+
+           Zahlt der Arbeitgeber angesichts der Mahlzeitengestellung nur eine (z. B. um die amtlichen
+           Sachbezugswerte für zwei Frühstücke je 1,80 €, ein Mittagessen je 3,40 € und ein Abendessen
+           je 3,40 € zusammen also um 10,40 €) gekürzte steuerfreie Reisekostenerstattung von 12,00 €
+           an seinen Arbeitnehmer, kann der Arbeitnehmer die Differenz von 10,40 € als
+           Werbungskosten geltend machen. In diesem Fall hat der Arbeitnehmer einen
+           arbeitsrechtlichen Anspruch (nur) auf eine gekürzte Reisekostenerstattung.
+
+                         Anreisetag:                                     14,00 €
+                         Zwischentag:                      28,00 €
+                         Kürzung:          Frühstück       - 5,60 €
+                                         Mittagessen     - 11,20 €
+                                         Abendessen      - 11,20 €
+                         verbleiben für Zwischentag                       0,00 €
+                         Abreisetag:                       14,00 €
+                         Kürzung:         Frühstück        - 5,60 €
+                         verbleiben für den Abreisetag                   8,40 €
+                         Insgesamt Verpflegungspauschalen              22,40 €
+                         abzüglich steuerfreie Reisekostenerstattung - 12,00 €
+                         verbleiben als Werbungskosten                 10,40 €
+Seite 40   Behält der Arbeitgeber die Sachbezugswerte (1,80 € + 3,40 € + 3,40 € + 1,80 € = 10,40 €) z.
+           B. von den ungekürzten Verpflegungspauschalen (14,00 € + 28,00 € + 14,00 € = 56 €) ein und
+           zahlt nur eine gekürzte Reisekostenerstattung von 45,60 € (56,00 € - 10,40 €) an den
+           Arbeitnehmer, können ebenfalls höchstens 22,40 € steuerfrei erstattet werden. Der darüber
+           hinausgehende, vom Arbeitgeber ausgezahlte Betrag von 23,20 € (= 45,60 € - 22,40 €) ist
+           pauschal (nach § 40 Absatz 2 Satz 1 Nummer 4 EStG höchstens bis zu 56,00 €) oder
+           individuell zu besteuern.
+
+           Zahlt der Arbeitgeber eine ungekürzte steuerfreie Reisekostenerstattung von 22,40 €, zieht
+           hiervon aber im Wege der Verrechnung ein Entgelt für die gestellten Mahlzeiten in Höhe der
+           amtlichen Sachbezugswerte (1,80 € + 3,40 € + 3,40 € + 1,80 € = 10,40 €) ab, ist die Kürzung
+           der steuerlichen Verpflegungspauschalen um die verrechneten Entgelte zu kürzen, im
+           Gegenzug aber die steuerfreie Reisekostenerstattung von 22,40 € von den steuerlichen
+           Pauschalen abzuziehen. Zwar erhält der Arbeitnehmer nur 12,00 € vom Arbeitgeber
+           ausgezahlt, dies ist aber wirtschaftlich die Differenz aus 22,40 € steuerfreie
+           Reisekostenerstattung und 10,40 € Entgelt für die gestellten Mahlzeiten. In diesem Fall hat
+           der Arbeitnehmer einen arbeitsrechtlichen Anspruch auf eine ungekürzte steuerfreie
+           Reisekostenerstattung, die der Arbeitgeber aber im Rahmen der Erfüllung dieses
+           Erstattungsanspruchs mit seinem Anspruch auf das für die Mahlzeiten vereinbarte Entgelt
+           aufrechnet. Die arbeitgeberinterne Verrechnung ändert nicht den wirtschaftlichen Charakter
+           oder die Anspruchsgrundlage der Reisekostenerstattung.
+
+                         Anreisetag:                                                      14,00 €
+                         Zwischentag:                     28,00 €
+                         Kürzung:       Frühstück        - 3,80 € (5,60 € - 1,80 €)
+                                        Mittagessen      - 7,80 € (11,20 € - 3,40 €)
+                                        Abendessen       - 7,80 € (11,20 € - 3,40 €)
+                         verbleiben für den Zwischentag                                    8,60 €
+                         Abreisetag:                     14,00 €
+                         Kürzung:       Frühstück     - 3,80 € (5,60 € - 1,80 €)
+                         verbleiben für den Abreisetag                                   10,20 €
+                         Insgesamt Verpflegungspauschalen                               32,80 €
+                         abzüglich steuerfreie Reisekostenerstattung                   - 22,40 €
+                         verbleiben als Werbungskosten                                  10,40 €
+Seite 41   Zahlt der Arbeitgeber eine ungekürzte Reisekostenerstattung von 56 € und zieht hiervon das
+           für die Mahlzeiten vereinbarte Entgelt in Höhe der Sachbezugswerte im Wege der Ver-
+           rechnung ab (56,00 € - 10,40 € = 45,60 €), ändert dies nichts an der Berechnung der dem
+           Arbeitnehmer steuerlich zustehenden Verpflegungspauschalen. In diesem Fall können
+           ebenfalls 32,80 € steuerfrei erstattet werden. Der darüber hinausgehende, dem Arbeitnehmer
+           arbeitsrechtlich zustehende Erstattungsbetrag von 23,20 € (= 56,00 € - 32,80 €) ist pauschal
+           (nach § 40 Absatz 2 Satz 1 Nummer 4 EStG höchstens bis zu 56,00 €) oder individuell zu
+           besteuern.
+
+           Abwandlung 1
+           Wie Beispiel 50 Ausgangsfall, allerdings zahlt der Arbeitnehmer A für das Frühstück je 6 €
+           und für das Mittag- und das Abendessen je 7 €.
+
+                         Anreisetag:                                                     14,00 €
+                         Zwischentag:                      28,00 €
+                         Kürzung:       Frühstück        - 0,00 € (5,60 € – 6,00 €)
+                                        Mittagessen      - 4,20 € (11,20 € - 7,00 €)
+                                        Abendessen       - 4,20 € (11,20 € - 7,00 €)
+                         verbleiben für den Zwischentag                                  19,60 €
+                         Abreisetag:                      14,00 €
+                         Kürzung:       Frühstück        - 0,00 € (5,60 € - 6,00 €)
+                         verbleiben für den Abreisetag                                   14,00 €
+                         Insgesamt steuerfrei auszahlbar                                 47,60 €
+
+
+           Abwandlung 2
+           Sachverhalt wie Beispiel 50 Ausgangsfall, allerdings zahlt der Arbeitnehmer für die volle
+           Verpflegung am Zwischentag pauschal 19,00 €.
+
+                         Anreisetag:                                                   14,00 €
+                         Zwischentag:                               28,00 €
+                         Kürzung: Tagesverpflegung
+                         (28 € - 19 €)                     - 9,00 €
+                         verbleiben für den Zwischentag                                19,00 €
+                         Abreisetag:                                14,00 €
+                         Kürzung: Frühstück                      - 5,60 €
+                         verbleiben für den Abreisetag                                 8,40 €
+ Seite 42                 Insgesamt steuerfrei auszahlbar                              41,40 €
+
+            Beispiel 51
+            Der Arbeitnehmer ist während einer eintägigen Auswärtstätigkeit von 5.00 bis 22.00 Uhr
+            abwesend. Der Arbeitgeber stellt am Reisetag zwei Mahlzeiten (Mittag- und Abendessen)
+            zur Verfügung. Für eintägige Auswärtstätigkeiten erstattet der Arbeitgeber dem Arbeit-
+            nehmer einen Verpflegungsmehraufwand von 30,00 €.
+            Aufgrund der Kürzung der Verpflegungspauschale verbleibt kein steuerfreier
+            Reisekostenersatz für Verpflegungsmehraufwendungen.
+
+            Verpflegungspauschale:                                                      14,00 €
+            Kürzung:                     Mittagessen                   - 11,20 €
+                                         Abendessen                    - 11,20 €
+            verbleibt Verpflegungspauschale:                                             0,00 €
+
+            Die Erstattung des Verpflegungsmehraufwands durch den Arbeitgeber ist in Höhe von
+            30,00 € grundsätzlich steuerpflichtiger Arbeitslohn. Nach § 40 Absatz 2 Satz 1 Nummer 4
+            EStG kann der Arbeitgeber einen Betrag von 14,00 € (100 % des in § 9 Absatz 4a Satz 3
+            Nummer 2 EStG genannten Betrags) pauschal mit 25 % besteuern. Die verbleibenden 16,00 €
+            (30,00 € abzüglich 14,00 €) sind nach den persönlichen Besteuerungsmerkmalen des
+            Arbeitnehmers individuell zu besteuern.
+
+78          Zuzahlungen des Arbeitnehmers sind jeweils vom Kürzungsbetrag derjenigen Mahlzeit abzu-
+            ziehen, für die der Arbeitnehmer das Entgelt zahlt. Übersteigt das vom Arbeitnehmer für die
+            Mahlzeit gezahlte Entgelt den Kürzungsbetrag, entfällt für diese Mahlzeit die Kürzung des
+            Werbungskostenabzugs. Eine Verrechnung etwaiger Überzahlungen des Arbeitnehmers mit
+            Kürzungsbeträgen für andere Mahlzeiten ist nicht zulässig.
+
+            Beispiel 52
+            Der Arbeitnehmer A ist auf einer dreitägigen Auswärtstätigkeit. Der Arbeitgeber hat für den
+            Arbeitnehmer in einem Hotel zwei Übernachtungen jeweils mit Frühstück sowie am
+            Zwischentag ein Mittag- und ein Abendessen gebucht und bezahlt. Der Arbeitnehmer A zahlt
+            für das Mittag- und Abendessen je 12 €.
+
+                          Anreisetag:                                                 14,00 €
+                          Zwischentag:                  28,00 €
+                          Kürzung:       Frühstück     - 5,60 €
+                                         Mittagessen   - 0,00 € (11,20 € - 12,00 €)
+                                         Abendessen    - 0,00 € (11,20 € - 12,00 €)
+ Seite 43                 verbleiben für den Zwischentag                            22,40 €
+                          Abreisetag:                    14,00 €
+                          Kürzung:      Frühstück    - 5,60 €
+                          verbleiben für den Abreisetag                             8,40 €
+                          Insgesamt Verpflegungspauschalen                         44,80 €
+
+
+79          Die Kürzung der Verpflegungspauschale ist auch dann vorzunehmen, wenn der Arbeitgeber
+            den amtlichen Sachbezugswert der Mahlzeit pauschal besteuert hat.
+
+            Beispiel 53
+            Der Arbeitnehmer A nimmt an einer eintägigen Fortbildungsveranstaltung teil. Der Arbeit-
+            geber hat für den Arbeitnehmer A auf dieser Fortbildungsveranstaltung ein Mittagessen
+            gebucht und bezahlt. Der Arbeitgeber besteuert das Mittagessen nach § 40 Absatz 2 Satz 1
+            Nummer 1a EStG pauschal, da er keine Aufzeichnungen über die Abwesenheit des Arbeit-
+            nehmers führt. Der Arbeitnehmer A erhält vom Arbeitgeber keine weiteren Reisekosten-
+            erstattungen.
+            Der A kann anhand seiner Bahntickets gegenüber dem Finanzamt nachweisen, dass er für die
+            Fortbildung insgesamt zehn Stunden von seiner Wohnung und seiner ersten Tätigkeitsstätte
+            abwesend war. Er kann für die Fortbildung folgende Verpflegungspauschalen als Werbungs-
+            kosten abziehen:
+
+                          eintägige Auswärtstätigkeit:                   14,00 €
+                          Kürzung: 1x Mittagessen                      - 11,20 €
+                          verbleiben als Verpflegungspauschale:           2,80 €
+
+
+80          Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung vom Arbeitgeber, ist ein
+            Werbungskostenabzug insoweit ausgeschlossen.
+
+            Beispiel 54
+            Der Arbeitnehmer A ist auf einer dreitägigen Auswärtstätigkeit. Der Arbeitgeber hat für den
+            Arbeitnehmer in einem Hotel zwei Übernachtungen jeweils mit Frühstück sowie am
+            Zwischentag ein Mittag- und ein Abendessen gebucht und bezahlt. Der Arbeitnehmer A erhält
+            von seinem Arbeitgeber zusätzlich zu den zur Verfügung gestellten Mahlzeiten noch eine
+            steuerfreie Reisekostenerstattung für Verpflegungsmehraufwendungen von 22,40 €.
+            Der Arbeitgeber muss keinen geldwerten Vorteil für die Mahlzeiten versteuern. Der A kann
+            für die Auswärtstätigkeit keine Verpflegungspauschalen als Werbungskosten geltend machen:
+ Seite 44                 Anreisetag:                                     14,00 €
+                          Zwischentag:                     28,00 €
+                          Kürzung:         Frühstück       - 5,60 €
+                                          Mittagessen - 11,20 €
+                                          Abendessen      - 11,20 €
+                          verbleiben für Zwischentag                      0,00 €
+                          Abreisetag:                      14,00 €
+                          Kürzung:          Frühstück      - 5,60 €
+                          verbleiben für den Abreisetag                   8,40 €
+                          Insgesamt Verpflegungspauschalen               22,40 €
+                          abzüglich steuerfreie Reisekostenerstattung: - 22,40 €
+                          verbleiben als Werbungskosten:                  0,00 €
+
+81          Verpflegungspauschalen sind immer zu kürzen, wenn dem Arbeitnehmer eine Mahlzeit von
+            seinem Arbeitgeber oder auf dessen Veranlassung von einem Dritten zur Verfügung gestellt
+            wird (§ 9 Absatz 4a Satz 8 EStG).
+
+82          Die Verpflegungspauschale ist daher auch zu kürzen, wenn der Arbeitnehmer an einer
+            geschäftlich veranlassten Bewirtung i. S. d. § 4 Absatz 5 Satz 1 Nummer 2 EStG oder an
+            einem außerhalb der ersten Tätigkeitsstätte gewährten Arbeitsessen (R 19.6 Absatz 2 Satz 2
+            LStR 2015) teilnimmt und der Arbeitgeber oder auf dessen Veranlassung ein Dritter die
+            Mahlzeit zur Verfügung stellt. Es kommt nicht darauf an, ob Vorteile aus der Gestellung
+            derartiger Mahlzeiten zum Arbeitslohn zählen.
+
+            Beispiel 55
+            Unternehmer U trifft sich am Samstagabend mit einigen Vertretern der Zulieferfirma Z in
+            einem Restaurant zum Essen, um mit diesen eine geschäftliche Kooperation zu erörtern. An
+            dem Essen nehmen auch der Vertriebsleiter und der Leiter der Konstruktionsabteilung des U
+            teil. Jeder Teilnehmer erhält ein Menü zum Preis von 55 € einschließlich Getränke. Die
+            Mahlzeit am Samstagabend erhalten die Arbeitnehmer des U im Rahmen einer geschäftlich
+            veranlassten Bewirtung; sie gehört nicht zum Arbeitslohn. Sofern bei den Arbeitnehmern des
+            U die Voraussetzungen für eine Verpflegungspauschale erfüllt wären (z. B. weil sie mehr als
+            acht Stunden abwesend waren oder weil sie nach dem Restaurantbesuch auswärtig über-
+            nachtet haben), wäre diese um 11,20 € zu kürzen.
+            Für die Arbeitnehmer der Zulieferfirma Z handelt es sich ebenfalls um die Teilnahme an einer
+            geschäftlich veranlassten Bewirtung, die auch für die Arbeitnehmer des Z keinen Arbeitslohn
+            darstellt. Sofern die Arbeitnehmer des Z die Voraussetzungen für eine Verpflegungspauschale
+            erfüllen, ist bei diesen keine Kürzung wegen der gestellten Mahlzeit vorzunehmen. Z selbst
+ Seite 45   hat seinen Arbeitnehmern keine Mahlzeit gestellt. Da U das Essen gestellt hat, um
+            Geschäftsbeziehungen zu Z zu knüpfen, ist das Merkmal: „ein Dritter auf Veranlassung des
+            Arbeitgebers“ nicht gegeben.
+
+83          Nimmt der Arbeitnehmer hingegen an der geschäftlich veranlassten Bewirtung durch einen
+            Dritten oder einem Arbeitsessen eines Dritten teil, fehlt es in aller Regel an einer durch den
+            Arbeitgeber zur Verfügung gestellten Mahlzeit; in diesem Fall sind die Verpflegungs-
+            pauschalen nicht zu kürzen.
+
+            Beispiel 56
+            Der Mitarbeiter einer deutschen Gesellschaft nimmt an einer Vertriebsveranstaltung im
+            Betriebssitz der italienischen Tochtergesellschaft teil (separate Firmierung). Die italienische
+            Gesellschaft trägt sämtliche Kosten der Vertriebsveranstaltung (so z. B. Hotel, Essen, etc.).
+            Die Verpflegungspauschalen des Arbeitnehmers der deutschen Gesellschaft sind nicht zu
+            kürzen, weil ihm die Mahlzeiten nicht auf Veranlassung seines Arbeitgebers, sondern eines
+            Dritten (der italienischen Tochtergesellschaft) zur Verfügung gestellt werden.
+
+            Abwandlung
+            Die italienische Tochtergesellschaft belastet der deutschen Gesellschaft die Kosten für den
+            Arbeitnehmer weiter.
+            In diesem Fall ist davon auszugehen, dass die dem Arbeitnehmer gestellten Mahlzeiten auf
+            Veranlassung des Arbeitgebers erfolgen, was zur gesetzlich vorgeschriebenen Kürzung der
+            Verpflegungspauschalen führt.
+
+84          Da die während einer herkömmlichen Betriebsveranstaltung (§ 19 Absatz 1 Satz 1 Nummer
+            1a EStG) abgegebenen Mahlzeiten in aller Regel durch den Arbeitgeber veranlasst sind,
+            gelten die in Rz. 90 dargestellten Grundsätze entsprechend, wenn die Betriebsveranstaltung
+            mit einer beruflichen Auswärtstätigkeit verknüpft ist.
+
+85          Die durch eine zusätzlich zur Betriebsveranstaltung veranlasste berufliche Auswärtstätigkeit
+            entstehenden Fahrt- und Übernachtungskosten sowie Verpflegungsmehraufwendungen sind
+            Reisekosten und können als Werbungskosten berücksichtigt oder in entsprechender Höhe als
+            steuerfreier Arbeitgeberersatz erstattet werden.
+            Die dem Arbeitgeber unmittelbar durch die Betriebsveranstaltung entstehenden Fahrt- und
+            Übernachtungskosten sowie Verpflegungsaufwendungen sind nach den für die
+            Betriebsveranstaltung geltenden allgemeinen Grundsätzen steuerlich zu beurteilen.
+
+86          Die Kürzung der Verpflegungspauschalen unterbleibt insoweit, als Mahlzeiten vom Arbeit-
+            geber zur Verfügung gestellt werden, deren Preis 60 € übersteigt und die daher individuell zu
+            versteuern sind.
+ Seite 46   cc)    Minderung des Kürzungsbetrags, § 9 Absatz 4a Satz 10 EStG
+
+
+87          Hat der Arbeitnehmer für die Mahlzeit ein Entgelt entrichtet, wird dieses Entgelt auf den
+            Kürzungsbetrag angerechnet. Es kommt insoweit auf das tatsächlich entrichtete Entgelt an,
+            nicht aber darauf, ob das Entgelt dem tatsächlichen Wert der Mahlzeit entsprochen oder der
+            Arbeitnehmer die Mahlzeit verbilligt erhalten hat.
+
+88          Nimmt der Arbeitnehmer eine ihm vom Arbeitgeber zur Verfügung gestellte Mahlzeit
+            nicht ein, kann ihm der Arbeitgeber eine weitere gleichartige Mahlzeit nach den
+            Grundsätzen der Rz. 63 und 70 zur Verfügung stellen (arbeitsrechtliche Erstattung und
+            Belegvorlage beim Arbeitgeber). Für die Betrachtung der 60 €-Grenze (Rz. 61 ff) sind
+            die Kosten beider Mahlzeiten zusammenzurechnen. Sofern der Arbeitnehmer für eine
+            solche weitere vom Arbeitgeber gestellte Mahlzeit eine Zuzahlung zu leisten hat, kommt
+            eine Minderung des Kürzungsbetrags nach den Grundsätzen der Rz. 73 ff in Betracht.
+
+89          Ein Werbungskostenabzug des Arbeitnehmers bei seiner Einkommensteuerveranlagung
+            durch die Vorlage von Belegen für eine auf eigene Veranlassung eingenommene
+            Verpflegung anstelle der vom Arbeitgeber zur Verfügung gestellten Mahlzeit ist
+            ausgeschlossen. Hier bleibt es bei der typisierenden Kürzung der steuerlichen
+            Verpflegungspauschalen (§ 9 Absatz 4a Satz 8 EStG).
+
+            Beispiel 57
+            Arbeitnehmer A verschläft auf dem vom Arbeitgeber gebuchten Flug das Frühstück. Nach
+            seiner Ankunft nimmt er ein Frühstück zum Preis von 16 € im Flughafenrestaurant ein. Er
+            reicht die Frühstücksrechnung beim Arbeitgeber ein und erhält die Kosten in voller Höhe
+            erstattet. Damit wird auch das zweite Frühstück vom Arbeitgeber gestellt.
+            Die Verpflegungspauschale ist wie folgt zu berechnen:
+            Anreisetag                                                               14,00 €
+            Kürzung für gestelltes Frühstück insgesamt                              - 5,60 €
+            verbleibende steuerfreie Verpflegungspauschale                            8,40 €
+
+
+            Abwandlung 1
+            A reicht die Frühstücksrechnung beim Arbeitgeber ein, der verlangt nun allerdings für das
+            zweite Frühstück von A ein Entgelt in Höhe von 6 €. Der Arbeitgeber verrechnet die
+            Kostenerstattung für das zweite Frühstück mit dem geforderten Entgelt und erstattet den
+            übersteigenden Betrag von 10 €.
+            Anreisetag                                                            14,00 €
+            Kürzung für gestelltes Frühstück                      (5,60 € - 6,00 €) - 0,00 €
+            verbleibende steuerfreie Verpflegungspauschale                         14,00 €
+ Seite 47
+
+            Abwandlung 2
+            A reicht die Frühstücksrechnung beim Arbeitgeber ein, der verlangt nun für das zweite
+            Frühstück von A ein Entgelt in Höhe von 16 €. Der Arbeitgeber verrechnet die
+            Kostenerstattung für das zweite Frühstück mit dem geforderten Entgelt in gleicher Höhe.
+            Anreisetag                                                               14,00 €
+            Kürzung für gestelltes Frühstück                      (5,60 € - 16,00 €) - 0,00 €
+            verbleibende steuerfreie Verpflegungspauschale                          14,00 €
+
+
+            Beispiel 58
+            Der Arbeitnehmer A nimmt an einer von seinem Arbeitgeber gebuchten eintägigen
+            Fortbildungsveranstaltung von mehr als 8 Stunden Dauer teil. In der Tagungsgebühr ist
+            ein Mittagessen zum Preis von 30 € enthalten. Der Arbeitnehmer A verzichtet auf die
+            Einnahme dieses Essens und nimmt stattdessen in der Mittagspause in einem
+            nahegelegenen Restaurant eine Mahlzeit zum Preis von 25 € ein, die ihm von seinem
+            Arbeitgeber gegen Einreichung der Rechnung vollständig erstattet wird.
+            Verpflegungspauschale                                                   14,00 €
+            Kürzung für gestelltes Mittagessen (zum Preis von insgesamt 55 €)       11,20 €
+            verbleibende steuerfreie Verpflegungspauschale                           2,80 €
+
+
+            Abwandlung
+            Der Preis der im Restaurant eingenommenen Mahlzeit beträgt 35 €, die der Arbeitgeber in
+            voller Höhe gegen Einreichung der Rechnung übernimmt.
+            Verpflegungspauschale                                                    14,00 €
+            Eine Kürzung der Verpflegungspauschale unterbleibt, da der Preis für die
+            gestellten Mittagessen (30 € + 35 €) insgesamt 60 € übersteigt. Die steuerfreie
+            Verpflegungspauschale beträgt unverändert 14,00 €. Die vom Arbeitgeber getragenen
+            Aufwendungen für die gestellten Mittagessen von 65 € sind steuerpflichtiger Arbeitslohn,
+            der mit einem Teilbetrag von 14 € nach § 40 Absatz 2 Satz 1 Nummer 4 EStG pauschal
+            besteuert werden kann.
+
+
+            dd)    Ermittlung der Pauschalen bei gemischt veranlassten Veranstaltungen mit
+                   Mahlzeitengestellung
+
+
+90          Bei gemischt veranlassten Reisen sind die entstehenden Kosten grundsätzlich in einen
+            beruflich veranlassten Anteil und einen den Kosten der Lebensführung zuzurechnenden
+            Anteil aufzuteilen (vgl. BFH-Urteil vom 18. August 2005, VI R 32/03, BStBl 2006 II S. 30).
+            Dies gilt auch für die entstehenden Verpflegungsmehraufwendungen. Stellt der Arbeitgeber
+ Seite 48   während einer gemischt veranlassten Reise Mahlzeiten zur Verfügung, ist die gesetzlich
+            vorgeschriebene Kürzung der Verpflegungspauschalen erst nach der Ermittlung des beruflich
+            veranlassten Teils der Verpflegungspauschalen vorzunehmen.
+
+            Beispiel 59
+            Der Arbeitnehmer A nimmt an einer einwöchigen vom Arbeitgeber organisierten und finan-
+            zierten Reise im Inland teil. Das Programm sieht morgens eine Fortbildungsmaßnahme vor,
+            der Nachmittag steht für touristische Aktivitäten zur Verfügung. Frühstück und Abendessen
+            sind inklusive (Halbpension).
+            Folgende Auswirkungen ergeben sich durch die gemischte Veranlassung der Reise (bei einer
+            angenommenen Quote von 50 %) auf die steuerliche Berücksichtigung des Verpfle-
+            gungsmehraufwands:
+            Die Verpflegungsmehraufwendungen sind - wie die übrigen Reisekosten - nur zu 50 %
+            beruflich veranlasst.
+                          Anreisetag:   14,00 € x 50 % =              7,00 €
+                          Kürzung:                                 - 11,20 €
+                          verbleibt Verpflegungspauschale                         0,00 €
+
+
+                          5 Zwischentage je 28,00 € x 50 % =      je 14,00 €
+                          Kürzung je 5,60 € und je 11,20 € =      je - 16,80 €
+                          verbleibt Verpflegungspauschale         5 x 0,00 € =    0,00 €
+
+
+                          Abreisetag: 14,00 € x 50 % =               7,00 €
+                          Kürzung:                                  - 5,60 €
+                          verbleibt Verpflegungspauschale                         1,40 €
+
+
+            c)     Doppelte Haushaltsführung, § 9 Absatz 4a Satz 12 EStG
+
+
+91          Die Verpflegungspauschalen gelten grundsätzlich auch für eine Übergangszeit von drei
+            Monaten nachdem eine steuerlich anzuerkennende doppelte Haushaltsführung begründet
+            wurde (§ 9 Absatz 4a Satz 12 EStG). Für den Fall der Gestellung von Mahlzeiten durch den
+            Arbeitgeber oder auf dessen Veranlassung von einem Dritten bei der doppelten
+            Haushaltsführung gelten die vorstehenden Ausführungen unter Rz. 61 bis 89 entsprechend.
+ Seite 49   Beispiel 60
+            Der Arbeitnehmer A wird vom Stammsitz seines Arbeitgebers, wo er mit seiner Familie
+            wohnt, an einen 250 km entfernten Tochterbetrieb im Inland ohne zeitliche Begrenzung umge-
+            setzt. A behält seinen Familienwohnsitz bei und übernachtet während der Woche in einem
+            Hotel in der Nähe des Tochterbetriebs. Das Hotel stellt dem Arbeitgeber pro Übernachtung
+            50 € zuzüglich 10 € für ein Frühstück in Rechnung, welche der Arbeitnehmer zunächst
+            verauslagt und dann von seinem Arbeitgeber erstattet erhält.
+            Es liegt eine doppelte Haushaltsführung vor, da der Tochterbetrieb mit der zeitlich unbe-
+            grenzten Zuordnung zur ersten Tätigkeitsstätte des Arbeitnehmers wird. Für die ersten drei
+            Monate der doppelten Haushaltsführung gelten die Regelungen zur Gestellung von Mahl-
+            zeiten bei Auswärtstätigkeit entsprechend. Nach Ablauf der Dreimonatsfrist sind dann die
+            Regeln der Gestellung von Mahlzeiten am Ort der ersten Tätigkeitsstätte anzuwenden.
+            In den ersten drei Monaten der doppelten Haushaltsführung unterbleibt folglich die Erfas-
+            sung des arbeitstäglichen Frühstücks mit dem amtlichen Sachbezugswert als Arbeitslohn bei
+            gleichzeitiger Kürzung der täglichen Verpflegungspauschalen um jeweils 5,60 €.
+            Nach Ablauf der ersten drei Monate ist für das Frühstück ein geldwerter Vorteil in Höhe des
+            Sachbezugswertes anzusetzen (§ 8 Absatz 2 Satz 8 EStG).
+
+
+            d)     Bescheinigungspflicht „M“, § 41b Absatz 1 Satz 2 Nummer 8 EStG
+
+
+92          Hat der Arbeitgeber oder auf dessen Veranlassung ein Dritter dem Arbeitnehmer während
+            seiner beruflichen Tätigkeit außerhalb seiner Wohnung und seiner ersten Tätigkeitsstätte oder
+            im Rahmen einer doppelten Haushaltsführung eine mit dem amtlichen Sachbezugswert zu
+            bewertende Mahlzeit zur Verfügung gestellt, muss im Lohnkonto der Großbuchstabe „M“
+            aufgezeichnet und in der elektronischen Lohnsteuerbescheinigung bescheinigt werden. Zur
+            Erläuterung der mit dem Großbuchstaben „M“ bescheinigten Mahlzeitengestellungen sind
+            neben den Reisekostenabrechnungen regelmäßig keine weiteren detaillierten Arbeitgeber-
+            bescheinigungen auszustellen.
+
+93          Diese Aufzeichnungs- und Bescheinigungspflicht gilt unabhängig von der Anzahl der Mahl-
+            zeitengestellungen an den Arbeitnehmer im Kalenderjahr. Es kommt nicht darauf an, ob eine
+            Besteuerung der Mahlzeiten ausgeschlossen ist (§ 8 Absatz 2 Satz 9 EStG) oder die Mahlzeit
+            pauschal nach § 40 Absatz 2 Satz 1 Nummer 1a EStG oder individuell besteuert wurde. Im
+            Fall der Gewährung von Mahlzeiten, die keinen Arbeitslohn darstellen oder deren Preis 60 €
+            übersteigt und die daher nicht mit dem amtlichen Sachbezugswert zu bewerten sind, besteht
+            keine Pflicht im Lohnkonto den Großbuchstaben „M“ aufzuzeichnen und zu bescheinigen.
+ Seite 50   e)       Pauschalbesteuerungsmöglichkeit üblicher Mahlzeiten, § 40 Absatz 2 Satz 1
+                     Nummer 1a EStG
+
+
+94          Nach § 40 Absatz 2 Satz 1 Nummer 1a EStG besteht bei Mahlzeiten die Möglichkeit der
+            pauschalen Besteuerung mit 25 %, wenn
+                 •   diese dem Arbeitnehmer von seinem Arbeitgeber oder auf dessen Veranlassung von
+                     einem Dritten während einer auswärtigen Tätigkeit unentgeltlich oder verbilligt zur
+                     Verfügung gestellt werden und
+                 •   deren Besteuerung nicht nach § 8 Absatz 2 Satz 9 EStG unterbleibt.
+
+95          Die Pauschalbesteuerung kommt demnach in Betracht, wenn
+                 •   der Arbeitnehmer ohne Übernachtung nicht mehr als acht Stunden auswärts tätig ist,
+                 •   der Arbeitgeber die Abwesenheitszeit nicht überwacht, nicht kennt oder
+                 •   die Dreimonatsfrist nach § 9 Absatz 4a Satz 6 EStG abgelaufen ist.
+
+            Beispiel 61
+            Der Arbeitnehmer A nimmt an einer halbtägigen auswärtigen Seminarveranstaltung teil. Der
+            Arbeitgeber hat für die teilnehmenden Arbeitnehmer neben dem Seminar auch ein
+            Mittagessen gebucht und bezahlt. Der Arbeitgeber besteuert das Mittagessen nach § 40
+            Absatz 2 Satz 1 Nummer 1a EStG pauschal mit 25 %, weil er keine Aufzeichnungen über die
+            Abwesenheitszeiten der Arbeitnehmer führt.
+
+96          Voraussetzung ist, dass es sich um übliche Mahlzeiten handelt, die nach § 8 Absatz 2 Satz 8
+            EStG mit dem Sachbezugswert anzusetzen sind.
+
+97          Nicht nach § 40 Absatz 2 Satz 1 Nummer 1a EStG pauschal besteuerbar sind somit sog.
+            Belohnungsessen mit einem Preis von mehr als 60 €.
+
+98          Im überwiegend eigenbetrieblichen Interesse des Arbeitgebers abgegebene Mahlzeiten (z. B.
+            sog. Arbeitsessen oder bei Beteiligung von Arbeitnehmern an einer geschäftlich veranlassten
+            Bewirtung) können nicht pauschal besteuert werden, da insoweit kein steuerpflichtiger
+            Arbeitslohn vorliegt.
+
+99          Die Pauschalierungsmöglichkeit nach § 40 Absatz 2 Satz 1 Nummer 1a EStG gilt zudem nicht
+            für die Gestellung von Mahlzeiten am Ort der ersten Tätigkeitsstätte im Rahmen einer
+            doppelten Haushaltsführung; hier kommt allerdings eine Pauschalierung nach § 40 Absatz 2
+            Satz 1 Nummer 1 EStG in Betracht.
+ Seite 51   4.     Unterkunftskosten
+
+            a)     Unterkunftskosten bei einer doppelten Haushaltsführung,
+                   § 9 Absatz 1 Satz 3 Nummer 5 EStG
+
+            aa)    Vorliegen einer doppelten Haushaltsführung
+
+
+100         Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes
+            seiner ersten Tätigkeitsstätte einen eigenen Haushalt unterhält (Hauptwohnung) und auch am
+            Ort der ersten Tätigkeitsstätte wohnt (Zweitwohnung). Die Anzahl der Übernachtungen ist
+            unerheblich.
+
+101         Das Vorliegen eines eigenen Hausstandes setzt neben dem Innehaben einer Wohnung aus
+            eigenem Recht als Eigentümer oder Mieter bzw. aus gemeinsamen oder abgeleitetem Recht
+            als Ehegatte, Lebenspartner oder Lebensgefährte sowie Mitbewohner auch eine finanzielle
+            Beteiligung an den Kosten der Lebensführung (laufende Kosten der Lebensführung) voraus
+            (§ 9 Absatz 1 Satz 3 Nummer 5 Satz 3 EStG). Es genügt nicht, wenn der Arbeitnehmer z. B.
+            im Haushalt der Eltern lediglich ein oder mehrere Zimmer unentgeltlich bewohnt oder wenn
+            dem Arbeitnehmer eine Wohnung im Haus der Eltern unentgeltlich zur Nutzung überlassen
+            wird. Die finanzielle Beteiligung an den Kosten der Lebensführung ist darzulegen und kann
+            auch bei volljährigen Kindern, die bei ihren Eltern oder einem Elternteil wohnen, nicht
+            generell unterstellt werden. Eine finanzielle Beteiligung an den Kosten der Lebensführung
+            mit Bagatellbeträgen ist nicht ausreichend. Betragen die Barleistungen des Arbeitnehmers
+            mehr als 10 % der monatlich regelmäßig anfallenden laufenden Kosten der Lebensführung
+            (z. B. Miete, Mietnebenkosten, Kosten für Lebensmittel und andere Dinge des täglichen
+            Bedarfs) ist von einer finanziellen Beteiligung oberhalb der Bagatellgrenze auszugehen.
+            Liegen die Barleistungen darunter, kann der Arbeitnehmer eine hinreichende finanzielle
+            Beteiligung auch auf andere Art und Weise darlegen. Bei Ehegatten oder Lebenspartnern mit
+            den Steuerklassen III, IV oder V kann eine finanzielle Beteiligung an den Kosten der
+            Lebensführung ohne entsprechenden Nachweis unterstellt werden (vgl. auch Rz. 113).
+
+102         Eine Hauptwohnung i. S. d. § 9 Absatz 1 Satz 3 Nummer 5 Satz 2 EStG ist am Ort der
+            ersten Tätigkeitsstätte belegen, wenn der Steuerpflichtige von dieser Wohnung seine
+            erste Tätigkeitsstätte in zumutbarer Weise täglich erreichen kann. Eine Fahrzeit von bis
+            zu einer Stunde je Wegstrecke unter Zugrundelegung individueller
+            Verkehrsverbindungen und Wegezeiten kann in der Regel als zumutbar angesehen
+            werden (vgl. BFH-Urteil vom 16. November 2017, VI R 31/16, BStBl 2018 II S. 404). Aus
+            Vereinfachungsgründen kann für die Frage, ob die Hauptwohnung am Ort der ersten
+            Tätigkeitsstätte belegen ist oder nicht, z. B. wenn sie innerhalb derselben politischen
+            Gemeinde, Stadt oder in deren unmittelbaren Umkreis liegen, die Entfernung der
+ Seite 52   kürzesten Straßenverbindung (§ 9 Absatz 1 Satz 3 Nummer 4 Satz 4 EStG) zwischen
+            Hauptwohnung und erster Tätigkeitsstätte herangezogen werden. Beträgt die
+            Entfernung zwischen Hauptwohnung und erster Tätigkeitsstätte mehr als 50 km, ist
+            davon auszugehen, dass sich die Hauptwohnung außerhalb des Ortes der ersten
+            Tätigkeitsstätte befindet.
+
+103         Eine Zweitwohnung oder -unterkunft in der Nähe des Ortes der ersten Tätigkeitsstätte
+            steht einer Zweitwohnung am Ort der ersten Tätigkeitsstätte gleich. Aus
+            Vereinfachungsgründen kann davon ausgegangen werden, dass die Zweitwohnung noch
+            am Ort der ersten Tätigkeitstätte belegen ist, wenn die Entfernung der kürzesten
+            Straßenverbindung (§ 9 Absatz 1 Satz 3 Nummer 4 Satz 4 EStG) zwischen
+            Zweitwohnung oder -unterkunft und erster Tätigkeitsstätte nicht mehr als 50 km
+            beträgt. Liegt die Zweitwohnung mehr als 50 km von dem Ort der ersten
+            Tätigkeitsstätte entfernt, ist zu prüfen, ob die erste Tätigkeitsstätte von der
+            Zweitwohnung oder -unterkunft noch in zumutbarer Weise täglich erreicht werden
+            kann. Eine Fahrzeit von bis zu einer Stunde je Wegstrecke unter Zugrundelegung
+            individueller Verkehrsverbindungen und Wegezeiten ist dabei als zumutbar anzusehen
+            (BFH-Urteil vom 19. April 2012, VI R 59/11, BStBl II S. 833).
+
+
+            bb)    Berufliche Veranlassung
+
+
+104         Das Beziehen der Zweitwohnung oder -unterkunft muss aus beruflichen Gründen erforderlich
+            sein. Das ist insbesondere der Fall, wenn dadurch die Fahrtstrecke oder Fahrzeit zur
+            ersten Tätigkeitsstätte wesentlich verkürzt wird. Aus Vereinfachungsgründen kann von
+            einer beruflichen Veranlassung des Beziehens der Zweitwohnung oder -unterkunft
+            ausgegangen werden, wenn die kürzeste Straßenverbindung von der Zweitwohnung oder -
+            unterkunft zur ersten Tätigkeitsstätte weniger als die Hälfte der kürzesten Straßenverbindung
+            zwischen der Hauptwohnung (Mittelpunkt der Lebensinteressen) und der ersten
+            Tätigkeitsstätte beträgt oder die Fahrzeit zur ersten Tätigkeitsstätte für eine Wegstrecke
+            halbiert wird. Sind die Voraussetzungen dieser Vereinfachungsregelung nicht erfüllt, ist
+            das Vorliegen einer beruflich veranlassten doppelten Haushaltsführung auf andere
+            Weise anhand der konkreten Umstände des Einzelfalles darzulegen.
+
+            Beispiel 62
+            Der Arbeitnehmer A hat seine Hauptwohnung in B und in C seine erste Tätigkeitsstätte.
+            Die Entfernung von B (Hauptwohnung) nach C beträgt 100 km und die Fahrzeit mit dem
+            ICE 50 Minuten. Der Arbeitnehmer nimmt sich in Z eine Zweitwohnung. Die Entfernung
+            von dieser Zweitwohnung in Z nach C (erste Tätigkeitsstätte) beträgt 30 km.
+Seite 53   Auf Grund der Entfernung von mehr als 50 km zwischen Hauptwohnung und erster
+           Tätigkeitsstätte liegt die Hauptwohnung nicht am Ort der ersten Tätigkeitsstätte (vgl. Rz.
+           102). Eine Prüfung, der Fahrzeit zwischen Hauptwohnung und erster Tätigkeitsstätte ist
+           nicht erforderlich. Die Zweitwohnung in Z liegt 30 km entfernt und damit noch am Ort der
+           ersten Tätigkeitsstätte. Es liegt daher eine doppelte Haushaltsführung vor. Da die kürzeste
+           Straßenverbindung von der Zweitwohnung zur ersten Tätigkeitsstätte (30 km) auch weniger
+           als die Hälfte der Straßenverbindung zwischen Hauptwohnung in B und erster
+           Tätigkeitsstätte beträgt (1/2 von 100 km = 50 km), kann auch von einer beruflichen
+           Veranlassung der doppelten Haushaltsführung ausgegangen werden.
+
+           Abwandlung 1
+           Die Entfernung von B (Hauptwohnung) zur ersten Tätigkeitsstätte beträgt 56 km und die
+           Fahrzeit 65 Minuten. Die Zweitwohnung in Z ist 30 km von der ersten Tätigkeitsstätte
+           entfernt und die tägliche Fahrzeit beträgt 25 Minuten.
+           Auf Grund der Entfernung von mehr als 50 km zwischen Hauptwohnung und erster
+           Tätigkeitsstätte liegt die Hauptwohnung nicht am Ort der ersten Tätigkeitsstätte (vgl. Rz.
+           102). Eine weitergehende Prüfung der Fahrzeit zwischen Hauptwohnung und erster
+           Tätigkeitsstätte ist nicht erforderlich. Die Zweitwohnung in Z liegt 30 km entfernt und
+           damit noch am Ort der ersten Tätigkeitsstätte. Es liegt daher eine doppelte
+           Haushaltsführung vor. Zwar beträgt die kürzeste Straßenverbindung von der
+           Zweitwohnung zur ersten Tätigkeitsstätte (30 km) mehr als die Hälfte der kürzesten
+           Straßenverbindung zwischen Hauptwohnung und erster Tätigkeitsstätte (28 km).
+           Allerdings kann A darlegen, dass sich die Fahrzeit zur ersten Tätigkeitsstätte von der
+           Zweitwohnung um mehr als die Hälfte und damit wesentlich verkürzt (Fahrzeit 25
+           Minuten); daher kann gleichwohl von einer beruflichen Veranlassung der doppelten
+           Haushaltsführung ausgegangen werden.
+
+           Abwandlung 2
+           Die Entfernung von B (Hauptwohnung) nach C beträgt 250 km. Die Zweitwohnung in Z ist
+           60 km von der ersten Tätigkeitsstätte entfernt. A legt den Weg mit einer günstigen
+           Zugverbindung täglich in jeweils 40 Minuten zurück.
+           Die Hauptwohnung liegt mehr als 50 km von der ersten Tätigkeitsstätte entfernt und damit
+           außerhalb des Orts der ersten Tätigkeitsstätte. Die Zweitwohnung dient, auch wenn sie
+           mehr als 50 km von der ersten Tätigkeitsstätte entfernt liegt, noch dem Wohnen am Ort der
+           ersten Tätigkeitsstätte, weil A von der Zweitwohnung aus seine erste Tätigkeitsstätte mit
+           dem von ihm genutzten Verkehrsmittel in zumutbarer Weise täglich erreichen kann, da die
+           Fahrzeit weniger als eine Stunde beträgt. Es liegt daher eine doppelte Haushaltsführung
+           vor. Die doppelte Haushaltsführung ist auch beruflich veranlasst, da die kürzeste
+           Straßenverbindung zwischen der Zweitwohnung und der ersten Tätigkeitsstätte weniger als
+ Seite 54   die Hälfte der kürzesten Straßenverbindung zwischen der Hauptwohnung und der ersten
+            Tätigkeitsstätte beträgt.
+
+            Abwandlung 3
+            Die Entfernung von B (Hauptwohnung) nach C beträgt 150 km und die Fahrzeit mit dem
+            ICE 90 Minuten. Die Zweitwohnung in Z ist 74 km von der ersten Tätigkeitsstätte entfernt
+            und die Fahrzeit beträgt 65 Minuten je Wegstrecke.
+            Auf Grund der Entfernung von mehr als 50 km zwischen Hauptwohnung und erster
+            Tätigkeitsstätte liegt die Hauptwohnung nicht am Ort der ersten Tätigkeitsstätte (vgl.
+            Rz. 102). Da die Entfernung von der Zweitwohnung in Z zur ersten Tätigkeitstätte in C
+            mehr als 50 km beträgt und die erste Tätigkeitsstätte in C auch nicht innerhalb einer
+            Fahrzeit von einer Stunde erreicht werden kann, liegt keine doppelte Haushaltsführung
+            vor.
+
+
+            cc)    Ehegatten/Lebenspartner
+
+
+105         Für Ehegatten/Lebenspartner müssen die Voraussetzungen der Rz. 100 – 104 jeweils
+            gesondert erfüllt sein, um für jeden von ihnen die beruflich veranlasste doppelte
+            Haushaltsführung anerkennen zu können.
+
+
+            dd)    Höhe der Unterkunftskosten
+
+
+106         Als Unterkunftskosten für eine doppelte Haushaltsführung im Inland werden die dem Arbeit-
+            nehmer tatsächlich entstandenen Aufwendungen für die Nutzung der Wohnung oder Unter-
+            kunft höchstens bis zu einem nachgewiesenen Betrag von 1.000 € im Monat (Höchstbetrag)
+            anerkannt. Die Prüfung der Notwendigkeit und Angemessenheit entfällt; auch auf die Zahl der
+            Wohnungsbenutzer (Angehörige) kommt es nicht an.
+
+107         Steht die Zweitwohnung oder -unterkunft im Eigentum des Arbeitnehmers, sind die tatsäch-
+            lichen Aufwendungen (z. B. AfA, Schuldzinsen, Reparaturkosten, Nebenkosten) bis zum
+            Höchstbetrag von 1.000 € monatlich zu berücksichtigen. Insoweit gelten die Grundsätze der
+            BFH-Rechtsprechung (vgl. BFH-Urteil vom 3. Dezember 1982, VI R 228/80, BStBl 1983 II
+            S. 467) weiter.
+
+108         Der Höchstbetrag umfasst sämtliche entstehenden Aufwendungen wie Miete, Betriebskosten,
+            Kosten der laufenden Reinigung und Pflege der Zweitwohnung oder -unterkunft,
+            Zweitwohnungsteuer, Rundfunkbeitrag, Miet- oder Pachtgebühren für Kfz-Stellplätze,
+            Aufwendungen für Sondernutzung (wie Garten), die vom Arbeitnehmer selbst getragen
+            werden, nicht jedoch Aufwendungen für Hausrat, Einrichtungsgegenstände oder
+ Seite 55   Arbeitsmittel, mit denen die Zweitwohnung ausgestattet ist. Aufwendungen für die
+            erforderliche Einrichtung und Ausstattung der Zweitwohnung, soweit sie nicht
+            überhöht sind, können als sonstige notwendige Mehraufwendungen der doppelten
+            Haushaltsführung berücksichtigt werden (BFH-Urteil vom 4. April 2019, VI R 18/17,
+            BStBl II S. 449). Übersteigen die Anschaffungskosten des Arbeitnehmers für
+            Einrichtung und Ausstattung der Zweitwohnung (ohne Arbeitsmittel) insgesamt nicht
+            den Betrag von 5.000 € einschließlich Umsatzsteuer, ist aus Vereinfachungsgründen
+            davon auszugehen, dass es sich um notwendige Mehraufwendungen der doppelten
+            Haushaltsführung handelt. Wird die Zweitwohnung oder -unterkunft möbliert angemietet,
+            überschreitet die Miete den Höchstbetrag und enthält der Mietvertrag keine Aufteilung
+            der Miete für die Überlassung der Wohnung und der Einrichtung und Ausstattung, ist
+            die Miete im Schätzwege aufzuteilen (BFH-Urteil vom 4. April 2019, VI R 18/17, BStBl
+            II S. 449). Aufwendungen für einen separat angemieteten Garagenstellplatz sind in den
+            Höchstbetrag einzubeziehen und können nicht als „sonstige“ notwendige Mehraufwendungen
+            zusätzlich berücksichtigt werden. Maklerkosten, die für die Anmietung einer Zweitwohnung
+            oder -unterkunft entstehen, sind als Umzugskosten zusätzlich als Werbungskosten abziehbar
+            (R 9.9 Absatz 2 LStR 2015) oder vom Arbeitgeber steuerfrei erstattbar. Sie sind nicht in die
+            Höchstbetragsberechnung mit einzubeziehen.
+
+109         Bei Beendigung der doppelten Haushaltsführung ist eine Vorfälligkeitsentschädigung
+            wegen vorzeitiger Ablösung einer Grundschuld aufgrund der Veräußerung der
+            Zweitwohnung nicht als Werbungskosten zu berücksichtigen (vgl. BFH-Urteil vom
+            3. April 2019, VI R 15/17, BStBl II S. 446).
+
+110         Bei der Anwendung des Höchstbetrags ist grundsätzlich § 11 EStG zu beachten. Soweit der
+            monatliche Höchstbetrag von 1.000 € nicht ausgeschöpft wird, ist eine Übertragung des nicht
+            ausgeschöpften Volumens in andere Monate des Bestehens der doppelten Haushaltsführung
+            im selben Kalenderjahr möglich. Erhält der Arbeitnehmer Erstattungen z. B. für Nebenkosten,
+            mindern diese Erstattungen im Zeitpunkt des Zuflusses die Unterkunftskosten der doppelten
+            Haushaltsführung.
+            Ein häusliches Arbeitszimmer in der Zweitwohnung am Ort der ersten Tätigkeitsstätte ist bei
+            der Ermittlung der anzuerkennenden Unterkunftskosten nicht einzubeziehen; der Abzug der
+            hierauf entfallenden Aufwendungen richtet sich nach § 4 Absatz 5 Satz 1 Nummer 6b EStG
+            (vgl. BFH-Urteil vom 9. August 2007, VI R 23/05, BStBl 2009 II S. 722).
+
+111         Der Höchstbetrag nach § 9 Absatz 1 Satz 3 Nummer 5 Satz 4 EStG in Höhe von 1.000 € ist
+            ein Monatsbetrag, der nicht auf einen Kalendertag umzurechnen ist und grundsätzlich für jede
+            doppelte Haushaltsführung des Arbeitnehmers gesondert gilt. Beziehen mehrere berufstätige
+            Arbeitnehmer (z. B. beiderseits berufstätige Ehegatten, Lebenspartner, Lebensgefährten,
+            Mitglieder einer Wohngemeinschaft) am gemeinsamen Beschäftigungsort eine gemeinsame
+ Seite 56   Zweitwohnung, handelt es sich jeweils um eine doppelte Haushaltsführung, so dass jeder
+            Arbeitnehmer den Höchstbetrag für die tatsächlich von ihm getragenen Aufwendungen
+            jeweils für sich beanspruchen kann.
+
+            Beispiel 63
+            Die beiderseits berufstätigen Ehegatten bewohnen an ihrem Beschäftigungsort in M (jeweils
+            Ort der ersten Tätigkeitsstätte) gemeinsam eine möblierte Unterkunft. Ihren Hausstand sowie
+            ihren Lebensmittelpunkt haben die Eheleute nachweislich im eigenen Einfamilienhaus in B.
+            Die Aufwendungen für die Nutzung der Unterkunft am Beschäftigungsort betragen inklusive
+            sämtlicher Nebenkosten 1.100 € im Monat. Diese werden auf Grund gemeinsamer
+            Verpflichtung von beiden Ehegatten zu gleichen Anteilen gezahlt.
+            Die tatsächlichen Aufwendungen für die Nutzung der Unterkunft können bei jedem Ehegatten
+            jeweils in Höhe von 550 € angesetzt werden.
+
+            Beispiel 64
+            Der Arbeitnehmer A bewohnt am Ort seiner ersten Tätigkeitsstätte in M eine Zweitwohnung.
+            Die Aufwendungen für die Nutzung dieser Unterkunft (Miete, inklusive sämtlicher berücksich-
+            tigungsfähiger Nebenkosten) betragen bis zum 30. Juni monatlich 990 €. Ab 1. Juli wird die
+            Miete um 30 € erhöht, so dass ab diesem Zeitpunkt die monatlichen Aufwendungen für die
+            Nutzung der Unterkunft 1.020 € betragen.
+            In den Monaten Januar bis Juni können die Aufwendungen für die Nutzung der Unterkunft in
+            voller Höhe vom Arbeitgeber steuerfrei erstattet bzw. von A als Werbungskosten geltend
+            gemacht werden.
+            Ab Juli ist grundsätzlich die Beschränkung auf den Höchstbetrag von 1.000 € zu beachten.
+            Die den Höchstbetrag übersteigenden Aufwendungen von monatlich 20 € können allerdings
+            mit dem noch nicht aufgebrauchten Höchstbetragsvolumen der Monate Januar - Juni (6 x 10
+            € = 60 €) verrechnet und insoweit steuerfrei erstattet oder als Werbungskosten geltend
+            gemacht werden.
+
+112         Bei doppelter Haushaltsführung im Ausland sind die Aufwendungen in tatsächlicher Höhe
+            notwendig, soweit sie die ortsübliche Miete für eine nach Lage und Ausstattung
+            durchschnittliche Wohnung am Ort der ersten Tätigkeitsstätte mit einer Wohnfläche bis zu 60
+            qm nicht überschreiten.
+
+
+            ee)    Steuerfreie Erstattung durch den Arbeitgeber und Werbungskostenabzug
+
+
+113         Für den steuerfreien Arbeitgeberersatz kann der Arbeitgeber bei Arbeitnehmern mit den
+            Steuerklassen III, IV oder V ohne Weiteres unterstellen, dass sie einen eigenen Hausstand
+            haben, an dem sie sich auch finanziell beteiligen. Bei anderen Arbeitnehmern darf der
+            Arbeitgeber einen eigenen Hausstand nur dann anerkennen, wenn sie schriftlich erklären, dass
+ Seite 57   sie neben einer Zweitwohnung oder -unterkunft am Beschäftigungsort außerhalb des
+            Beschäftigungsortes einen eigenen Hausstand unterhalten, an dem sie sich auch finanziell
+            beteiligen. Die Kosten der Zweitwohnung oder -unterkunft am Ort der ersten Tätigkeitsstätte
+            im Inland können weiterhin vom Arbeitgeber pauschal steuerfrei erstattet werden (R 9.11
+            Absatz 10 Satz 7 Nummer 3 LStR 2015).
+
+114         Der Arbeitnehmer hat das Vorliegen einer doppelten Haushaltsführung und die finanzielle
+            Beteiligung an der Haushaltsführung am Ort des eigenen Hausstands grundsätzlich in seiner
+            Einkommensteuererklärung darzulegen. Bei Arbeitnehmern, die mit ihrem Ehegatten oder
+            Lebenspartner einen gemeinsamen Haushalt führen, kann eine finanzielle Beteiligung
+            an den Kosten der Lebensführung ohne entsprechenden Nachweis unterstellt werden
+            (vgl. auch Rz. 101). Kosten der Zweitwohnung oder -unterkunft sind für die
+            Berücksichtigung als Werbungskosten grundsätzlich im Einzelnen nachzuweisen; sie können
+            geschätzt werden, wenn sie dem Grunde nach zweifelsfrei entstanden sind (vgl. BFH-Urteil
+            vom 12. September 2001, VI R 72/97, BStBl II S. 775).
+
+
+            b)     Unterkunftskosten bei einer Auswärtstätigkeit, § 9 Absatz 1 Satz 3
+                   Nummer 5a EStG
+
+
+115         Als Werbungskosten abzugsfähig sind Unterkunftskosten bei einer Auswärtstätigkeit. Hierbei
+            muss es sich um notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veran-
+            lasste Übernachtungen an einer Tätigkeitsstätte handeln, die nicht erste Tätigkeitsstätte ist.
+
+
+            aa)    Berufliche Veranlassung
+
+
+116         Die berufliche Veranlassung ist gegeben, wenn der Arbeitnehmer auf Weisung des Arbeit-
+            gebers so gut wie ausschließlich betrieblich bzw. dienstlich unterwegs ist. Dies ist zum
+            Beispiel der Fall, wenn der Arbeitnehmer einen Kunden besucht. Erledigt der Arbeitnehmer
+            im Zusammenhang mit der beruflich veranlassten Auswärtstätigkeit auch in einem mehr als
+            geringfügigen Umfang private Angelegenheiten, sind die beruflich veranlassten von den
+            privat veranlassten Aufwendungen zu trennen (vgl. BFH-Beschluss vom 21. September 2009,
+            GrS 1/06, BStBl 2010 II S. 672). Ist das nicht - auch nicht durch Schätzung - möglich,
+            gehören die gesamten Aufwendungen zu den nach § 12 EStG nicht abziehbaren
+            Aufwendungen für die Lebensführung.
+
+
+            bb)    Unterkunftskosten
+
+
+117         Unterkunfts- bzw. Übernachtungskosten sind die tatsächlichen Aufwendungen für die per-
+            sönliche Inanspruchnahme einer Unterkunft zur Übernachtung. Hierzu zählen zum Beispiel
+ Seite 58   Kosten für die Nutzung eines Hotelzimmers, Mietaufwendungen für die Nutzung eines (ggf.
+            möblierten) Zimmers oder einer Wohnung sowie Nebenleistungen (z. B. Kultur- und Touris-
+            musförderabgabe, Kurtaxe/Fremdenverkehrsabgabe, bei Auslandsübernachtungen die beson-
+            dere Kreditkartengebühr bei Zahlungen in Fremdwährungen). Als Werbungskosten können
+            lediglich die tatsächlich entstandenen Übernachtungskosten und keine Pauschalen abgezogen
+            werden.
+
+118         Kosten für Mahlzeiten gehören zu den Aufwendungen des Arbeitnehmers für die Verpflegung
+            und sind nur nach Maßgabe des § 9 Absatz 4a EStG abziehbar. Wird durch Zahlungsbelege
+            nur ein Gesamtpreis für Unterkunft und Verpflegung nachgewiesen und lässt sich der Preis
+            für die Verpflegung nicht feststellen (z. B. Tagungspauschale), so ist dieser Gesamtpreis zur
+            Ermittlung der Übernachtungskosten zu kürzen. Als Kürzungsbeträge sind dabei
+
+               •   für Frühstück 20 %,
+               •   für Mittag- und Abendessen jeweils 40 %
+            der für den Unterkunftsort maßgebenden Verpflegungspauschale bei einer Auswärtstätigkeit
+            mit einer Abwesenheitsdauer von mindestens 24 Stunden anzusetzen.
+
+            Beispiel 65
+            Der Arbeitnehmer A übernachtet während einer zweitägigen inländischen Auswärtstätigkeit
+            im Hotel. Die Rechnung des Hotels ist auf den Namen des Arbeitgebers ausgestellt. Das Hotel
+            rechnet eine Übernachtung mit Frühstück wie folgt ab:
+            Pauschalarrangement           70 €
+            Der Arbeitgeber hat folgende Möglichkeiten:
+            Zur Ermittlung der Übernachtungskosten kann der Gesamtpreis um 5,60 € (20 % von 28 €
+            für die auf das Frühstück entfallenden anteiligen Kosten) gekürzt werden. Der
+            verbleibende Betrag von 64,40 € kann vom Arbeitgeber dann als Übernachtungskosten
+            steuerfrei erstattet werden. Für den An- und Abreisetag stehen dem Arbeitnehmer Verpfle-
+            gungspauschalen von insgesamt 28 € (je 14 € für den An- und Abreisetag) zu. Die Verpfle-
+            gungspauschale für den Abreisetag ist nicht zu kürzen (um 5,60 € für das Frühstück), wenn
+            der Arbeitgeber dem Arbeitnehmer lediglich die 64,40 € als Übernachtungskosten erstattet.
+            Insgesamt kann der Arbeitgeber somit 92,40 € steuerfrei erstatten (64,40 € Unterkunft plus
+            28 € Verpflegung).
+            Erstattet der Arbeitgeber dem Arbeitnehmer hingegen den Gesamtpreis von 70 € (also
+            einschließlich Frühstück) sind die Verpflegungspauschalen zu kürzen auf einen Betrag von
+            22,40 € für Verpflegung (28 € Verpflegungspauschalen – 5,60 € Kürzung für ein Frühstück).
+            Insgesamt kann der Arbeitgeber somit 92,40 € steuerfrei erstatten (70 € Unterkunft und
+            Frühstück plus 22,40 € Verpflegung).
+            Die Berechnungen führen somit zum gleichen Ergebnis, egal von welchem Betrag der
+            pauschale Einbehalt bzw. die pauschale Kürzung erfolgt.
+ Seite 59
+
+            Abwandlung
+            Die Rechnung des Hotels ist auf den Namen des Arbeitnehmers ausgestellt.
+            Auch in diesem Fall kann der Arbeitgeber insgesamt höchstens 92,40 € steuerfrei erstatten
+            (64,40 € Unterkunft plus 28 € Verpflegung).
+
+            Beispiel 66
+            Der Arbeitnehmer A übernachtet während einer zweitägigen Auswärtstätigkeit im Hotel. Die
+            Rechnung ist auf den Namen des Arbeitgebers ausgestellt. Das Hotel rechnet eine Über-
+            nachtung mit Frühstück wie folgt ab:
+            Übernachtung                                       60 €
+            Frühstück                                          10 €
+            Die ausgewiesenen Übernachtungskosten von 60 € können vom Arbeitgeber steuerfrei
+            erstattet werden. Für den An- und Abreisetag stünden dem Arbeitnehmer zusätzlich auch
+            noch Verpflegungspauschalen von 28 € (je 14 € für den An- und Abreisetag) zu. Die Ver-
+            pflegungspauschale für den Abreisetag ist nicht zu kürzen, wenn der Arbeitgeber dem Arbeit-
+            nehmer lediglich die 60 € Übernachtungskosten erstattet.
+            Erstattet der Arbeitgeber hingegen auch den Betrag von 10 € für das Frühstück, ist die
+            Verpflegungspauschale für den Abreisetag um 5,60 € wegen des vom Arbeitgeber zur
+            Verfügung gestellten Frühstücks zu kürzen. Der Arbeitgeber kann dann zusätzlich einen
+            Betrag von 22,40 € für Verpflegung steuerfrei erstatten.
+
+            Abwandlung
+            Die Rechnung des Hotels ist auf den Namen des Arbeitnehmers ausgestellt.
+            In diesem Fall kann der Arbeitgeber insgesamt höchstens 88 € steuerfrei erstatten (60 €
+            Unterkunft plus 28 € Verpflegung).
+            Werden keine steuerfreien Erstattungen seitens des Arbeitgebers gezahlt, ist der Betrag von
+            88 € als Werbungskosten berücksichtigungsfähig.
+
+
+            cc)       Notwendige Mehraufwendungen
+
+
+119         Es ist lediglich die berufliche Veranlassung zu prüfen, nicht aber die Angemessenheit der
+            Unterkunft (bestimmte Hotelkategorie oder Größe der Unterkunft). Die Anerkennung von
+            Unterkunftskosten bei einer auswärtigen beruflichen Tätigkeit erfordert, dass noch eine
+            andere Wohnung besteht, für die dem Arbeitnehmer Aufwendungen entstehen, weil er dort
+                  •   seinen Lebensmittelpunkt hat, ohne dass dort jedoch ein eigener Hausstand vorliegen
+                      muss, oder
+                  •   seinen Lebensmittelpunkt wieder aufnehmen will.
+ Seite 60   Für die Berücksichtigung von Unterkunftskosten anlässlich einer Auswärtstätigkeit wird
+            somit - anders als bei der doppelten Haushaltsführung - nicht vorausgesetzt, dass der
+            Arbeitnehmer eine Wohnung aus eigenem Recht oder als Mieter innehat und eine finanzielle
+            Beteiligung an den Kosten der Lebensführung leistet. Es genügt, wenn der Arbeitnehmer z. B.
+            im Haushalt der Eltern ein Zimmer bewohnt.
+
+120         Ist die Unterkunft am auswärtigen Tätigkeitsort die einzige Wohnung/Unterkunft des Arbeit-
+            nehmers, liegt kein beruflich veranlasster Mehraufwand vor.
+
+121         Soweit höhere Übernachtungskosten anfallen, weil der Arbeitnehmer eine Unterkunft gemein-
+            sam mit Personen nutzt, die in keinem Dienstverhältnis zum selben Arbeitgeber stehen, sind
+            nur diejenigen Aufwendungen anzusetzen, die bei alleiniger Nutzung durch den Arbeitnehmer
+            angefallen wären. Nicht abziehbar sind somit Mehrkosten, die aufgrund der Mitnutzung der
+            Übernachtungsmöglichkeit durch eine Begleitperson entstehen, insbesondere wenn die
+            Begleitung privat und nicht beruflich veranlasst ist. Bei Mitnutzung eines Mehrbettzimmers
+            (z. B. Doppelzimmer) können die Aufwendungen angesetzt werden, die bei Inanspruchnahme
+            eines Einzelzimmers im selben Haus entstanden wären.
+
+122         Bei Nutzung einer Wohnung am auswärtigen Tätigkeitsort zur Übernachtung während einer
+            beruflich veranlassten Auswärtstätigkeit kann im Inland aus Vereinfachungsgründen -
+            entsprechend der Regelungen für Unterkunftskosten bei einer längerfristigen
+            Auswärtstätigkeit von mehr als 48 Monaten - bei Aufwendungen bis zu einem Betrag von
+            1.000 € monatlich von einer ausschließlichen beruflichen Veranlassung ausgegangen werden.
+            Betragen die Aufwendungen im Inland mehr als 1.000 € monatlich oder handelt es sich um
+            eine Wohnung im Ausland, können nur die Aufwendungen berücksichtigt werden, die durch
+            die beruflich veranlasste, alleinige Nutzung des Arbeitnehmers verursacht werden; dazu kann
+            z. B. die ortsübliche Miete für eine nach Lage und Ausstattung durchschnittliche Wohnung
+            am Ort der auswärtigen Tätigkeitsstätte mit einer Wohnfläche bis zu 60 qm als
+            Vergleichsmaßstab herangezogen werden.
+
+            Beispiel 67
+            Der Arbeitnehmer A wird aus persönlichen Gründen auf einer Auswärtstätigkeit von seiner
+            Ehefrau begleitet. Für die Übernachtung im Doppelzimmer entstehen Kosten von 150 €. Ein
+            Einzelzimmer hätte 90 € gekostet.
+            Als Werbungskosten abziehbar oder vom Arbeitgeber steuerfrei erstattungsfähig sind 90 €.
+
+            Abwandlung
+            Auf einer Auswärtstätigkeit teilt sich der Arbeitnehmer A das Doppelzimmer mit seinem
+            Kollegen B, der ihn aus betrieblichen Gründen begleitet.
+ Seite 61   Für jeden Arbeitnehmer können (150 €: 2 =) 75 € als Werbungskosten berücksichtigt oder
+            vom Arbeitgeber steuerfrei erstattet werden.
+
+
+            dd)    Begrenzte Berücksichtigung von Unterkunftskosten bei einer längerfristigen
+                   Auswärtstätigkeit an derselben Tätigkeitsstätte im Inland
+
+
+123         Bei einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte im Inland, die
+            nicht erste Tätigkeitsstätte ist, können nach Ablauf von 48 Monaten die tatsächlich
+            entstehenden Unterkunftskosten höchstens noch bis zur Höhe von 1.000 € im Monat als
+            Werbungskosten abgezogen oder vom Arbeitgeber steuerfrei erstattet werden. Das gilt auch
+            für Hotelübernachtungen.
+
+124         Bei Übernachtungen im Ausland im Rahmen einer längerfristigen Auswärtstätigkeit gelten
+            die Grundsätze zur beruflichen Veranlassung und Notwendigkeit der entstandenen
+            Aufwendungen unverändert weiter. Die Höchstgrenze von 1.000 € gilt hier nicht.
+
+125         Von einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte ist erst dann
+            auszugehen, sobald der Arbeitnehmer an dieser mindestens an drei Tagen in der Woche tätig
+            wird. Die 48-Monatsfrist beginnt daher nicht, solange die auswärtige Tätigkeitsstätte nur an
+            zwei Tagen in der Woche aufgesucht wird. Eine Unterbrechung von weniger als
+            sechs Monaten, z. B. wegen Urlaub, Krankheit, beruflicher Tätigkeit an einer anderen Tätig-
+            keitsstätte führt nicht zu einem Neubeginn der 48-Monatsfrist. Die Prüfung des Unter-
+            brechungszeitraums und des Ablaufs der 48-Monatsfrist erfolgt stets im Nachhinein mit Blick
+            auf die zurückliegende Zeit.
+
+            Beispiel 68
+            Der Arbeitnehmer A ist seit 1. April 01 an der sich an seinem Wohnort befindlichen ersten
+            Tätigkeitsstätte in H an zwei Tagen in der Woche tätig. An den anderen drei Tagen betreut er
+            aufgrund arbeitsrechtlicher Festlegungen eine 200 km entfernte Filiale in B. Dort über-
+            nachtet er regelmäßig zweimal wöchentlich.
+            Da der Arbeitnehmer A längerfristig infolge seiner beruflichen Tätigkeit an drei Tagen in der
+            Woche an derselben Tätigkeitsstätte in B, die nicht erste Tätigkeitsstätte ist, tätig wird und
+            dort übernachtet, können die ihm tatsächlich entstehenden Übernachtungskosten nach Ablauf
+            von 48 Monaten nur noch bis zur Höhe von 1.000 € monatlich als Werbungskosten geltend
+            gemacht oder steuerfrei erstattet werden.
+
+            Abwandlung
+            Wie Beispiel 68, allerdings muss A ab 15. Juli 01 für vier Monate nach M. Ab 16. November
+            01 ist er dann drei Tage wöchentlich in H und zwei Tage in B.
+ Seite 62   Für die längerfristige berufliche Auswärtstätigkeit in B beginnt die 48-Monatsfrist am
+            1. April 01 und endet voraussichtlich am 31. März 05. Eine sechsmonatige Unterbrechung
+            liegt noch nicht vor (lediglich vier Monate und dann immer nur dreitägige Unterbrechung).
+
+126         Für die Prüfung der 48-Monatsfrist wird auf den tatsächlich verwirklichten Sachverhalt abge-
+            stellt. Erst nach Ablauf von 48 Monaten greift die Begrenzung der Höhe nach auf den Betrag
+            von 1.000 € im Monat. Die unbegrenzte Berücksichtigung der entstandenen Aufwendungen in
+            den ersten 48 Monaten bleibt davon unberührt.
+
+
+            ee)        Anwendung der 48-Monatsfrist zur begrenzten Berücksichtigung der
+                       Unterkunftskosten bei einer längerfristigen Auswärtstätigkeit im Inland
+
+
+127         Maßgeblich für den Beginn der 48-Monatsfrist ist der jeweilige Beginn der längerfristigen
+            beruflichen Tätigkeit an derselben Tätigkeitsstätte im Inland. Aus Vereinfachungsgründen ist
+            es allerdings nicht zu beanstanden, wenn die abziehbaren Übernachtungskosten erst ab dem
+            ersten vollen Kalendermonat, der auf den Monat folgt, in dem die 48-Monatsfrist endet, auf
+            1.000 € begrenzt werden.
+
+
+            ff)        Steuerfreie Erstattung durch den Arbeitgeber
+
+
+128         Für jede Übernachtung im Inland darf der Arbeitgeber die nachgewiesenen Übernachtungs-
+            kosten nach Rz. 117 bis Rz. 126 oder ohne Einzelnachweis einen Pauschbetrag von 20 €
+            steuerfrei erstatten. Bei Übernachtungen während einer auswärtigen beruflichen Tätigkeit im
+            Ausland können die nachgewiesenen Übernachtungskosten oder ohne Einzelnachweis die
+            mit BMF-Schreiben bekannt gemachten Pauschbeträge steuerfrei erstattet werden (R9.7
+            Absatz 3 Satz 2 ff LStR 2015).
+
+
+            5.         Reisenebenkosten
+
+
+129         Zu den Reisenebenkosten gehören die tatsächlichen Aufwendungen z. B. für:
+                  1.   Beförderung und Aufbewahrung von Gepäck;
+                  2.   Telekommunikation und Schriftverkehr beruflichen Inhalts mit dem Arbeitgeber oder
+                       Geschäftspartnern;
+                  3.   Straßen- und Parkplatzbenutzung sowie Schadensbeseitigung infolge von Verkehrs-
+                       unfällen, wenn die jeweils damit verbundenen Fahrtkosten als Reisekosten anzusetzen
+                       sind;
+                  4.   Verlust von auf der Reise abhanden gekommener oder beschädigter Gegenstände, die
+                       der Arbeitnehmer auf der Reise verwenden musste, wenn der Verlust aufgrund einer
+ Seite 63          reisespezifischen Gefährdung eingetreten ist. Berücksichtigt wird der Verlust bis zur
+                   Höhe des Wertes, der dem Gegenstand zum Zeitpunkt des Verlustes beigemessen
+                   wird.
+              5.   Private Telefongespräche, soweit sie der beruflichen Sphäre zugeordnet werden
+                   können (vgl. BFH-Urteil vom 5. Juli 2012, VI R 50/10, BStBl 2013 II S. 282).
+
+130         Die Reisenebenkosten sind durch geeignete Unterlagen nachzuweisen bzw. glaubhaft zu
+            machen. Regelmäßig wiederkehrende Reisenebenkosten können zur Vereinfachung über
+            einen repräsentativen Zeitraum von drei Monaten im Einzelnen nachgewiesen werden und
+            dann in der Folgezeit mit dem täglichen Durchschnittsbetrag angesetzt werden.
+
+131         Zur Abgeltung der notwendigen Mehraufwendungen, die einem Arbeitnehmer während
+            seiner auswärtigen beruflichen Tätigkeit auf einem Kraftfahrzeug des Arbeitgebers
+            oder eines vom Arbeitgeber beauftragten Dritten im Zusammenhang mit einer
+            Übernachtung in dem Kraftfahrzeug entstehen, kann ab 1. Januar 2020 einheitlich im
+            Kalenderjahr eine Pauschale von 8 € für jeden Kalendertag berücksichtigt werden, an
+            dem der Arbeitnehmer eine Verpflegungspauschale nach § 9 Absatz 4a Satz 3 Nummer
+            1 und 2 sowie Satz 5 zur Nummer 1 und 2 EStG beanspruchen könnte. Die Pauschale
+            kann auch von mitfahrenden Arbeitnehmern beansprucht werden, die ebenfalls im
+            Fahrzeug übernachten, wenn der Arbeitgeber keine weiteren Erstattungen für
+            Übernachtungskosten leistet oder der Arbeitnehmer keine weiteren
+            Übernachtungskosten als Werbungskosten geltend macht. Die übrigen Voraussetzungen
+            des § 9 Absatz 1 Satz 3 Nummer 5b EStG müssen erfüllt sein.
+
+            Zur Berücksichtigung von höheren Mehraufwendungen ab 1. Januar 2020 vgl. BMF-
+            Schreiben vom 4. Dezember 2012, BStBl I S. 1249.
+
+132         Nicht zu den Reisenebenkosten gehören z. B.:
+              1.    Kosten für die persönliche Lebensführung wie Tageszeitungen, private Telefon-
+                    gespräche mit Ausnahme der Gespräche i. S. d. Rz. 129 Nummer 5, Massagen,
+                    Minibar oder Pay-TV,
+              2.   Ordnungs-, Verwarnungs- und Bußgelder, die auf einer Auswärtstätigkeit verhängt
+                   werden,
+              3.   Verlust von Geld oder Schmuck,
+              4.   Anschaffungskosten für Bekleidung, Koffer oder andere Reiseausrüstungsgegenstände,
+                   weil sie nur mittelbar mit einer Auswärtstätigkeit zusammenhängen,
+              5.   Essensgutscheine, z. B. in Form von Raststätten- oder Autohof-Wertbons.
+ Seite 64
+
+133         Gutscheine i. S. d. Rz. 132 Nummer 5 gehören nicht zu den Reisenebenkosten, da zur
+            Abgeltung der tatsächlich entstandenen, beruflich veranlassten Mehraufwendungen für
+            Verpflegung eine Verpflegungspauschale (§ 9 Absatz 4a EStG) angesetzt werden kann.
+
+            Beispiel 69
+            Der LKW-Fahrer L ist im Inland eintägig mehr als acht Stunden beruflich auswärts tätig. Er
+            nimmt ein Mittagessen im Wert von 8,50 € in einer Autobahnraststätte ein und bezahlt an der
+            Kasse 6 € in bar und den Rest in Wertbons, die er im Zusammenhang mit der vom Arbeitgeber
+            erstatteten Parkplatzgebühr erhalten hat.
+            Dem LKW-Fahrer L steht eine ungekürzte Verpflegungspauschale von 14 € zu.
+
+
+            6.     Sonstiges
+
+
+134         Zur Ermittlung der steuerfreien Leistungen für Reisekosten dürfen die einzelnen Aufwen-
+            dungsarten zusammengefasst werden; die Leistungen sind steuerfrei, soweit sie die Summe
+            der zulässigen steuerfreien Leistungen nicht übersteigen. Hierbei können mehrere Reisen
+            zusammengefasst abgerechnet werden. Dies gilt sinngemäß für Umzugskosten und für
+            Mehraufwendungen bei einer doppelten Haushaltsführung (R 3.16 Satz 1 bis 3 ggf. i. V. m.
+            R3.13 Abs. 1 Satz 3 LStR 2015).
+
+            Beispiel 70
+            Bei einer längerfristigen beruflichen Auswärtstätigkeit wird ein Monteur für die Dauer von
+            sechs Monaten (110 Arbeitstage) an derselben Tätigkeitsstätte tätig. Die arbeitstägliche
+            Abwesenheit von seiner Wohnung und der ersten Tätigkeitsstätte beträgt jeweils mehr als 8
+            Stunden. Während der sechs Monate seiner Tätigkeit steht dem Monteur nach der
+            Reiserichtlinie des Arbeitgebers ein Tagegeld in Höhe von insgesamt 770 € zu (110
+            Arbeitstage x 7 €/Arbeitstag).
+            Erfolgt eine monatliche Reisekostenabrechnung können die Tagegelder der ersten drei
+            Monate steuerfrei geleistet werden:
+            Steuerfreie Verpflegungspauschalen:          55 Arbeitstage x 14 €/Arbeitstag = 770 €
+            Gezahltes Tagegeld:                         55 Arbeitstage x 7 €/Arbeitstag = 385 €
+            Der Arbeitnehmer könnte somit zusätzlich für die ersten drei Monate noch 385 € als
+            Werbungskosten geltend machen.
+
+            Die Tagegelder der folgenden drei Monate sind steuerpflichtig und der Arbeitnehmer kann
+            keine Werbungskosten mehr geltend machen
+            Steuerfreie Verpflegungspauschalen:                                            = 0€
+            Gezahltes Tagegeld:                       55 Arbeitstage x 7 €/Arbeitstag      = 385 €
+ Seite 65   Wird die längerfristige berufliche Auswärtstätigkeit zusammengefasst abgerechnet, können
+            die Tagegelder der gesamten sechs Monate steuerfrei gezahlt werden. Der Arbeitnehmer kann
+            dann keinen Werbungskostenabzug mehr geltend machen.
+            Steuerfreie Verpflegungspauschalen:         55 Arbeitstage x 14 €/Arbeitstag = 770 €
+            Gezahltes Tagegeld:                        110 Arbeitstage x 7 €/Arbeitstag = 770 €
+
+135         In den Fällen, in denen keine steuerfreie Verpflegungspauschale gezahlt werden darf, ist es
+            nicht zu beanstanden, wenn der Arbeitgeber bei einer von ihm zur Verfügung gestellten
+            Mahlzeit eine Verrechnung des anzusetzenden Sachbezugswertes mit steuerfrei zu
+            erstattenden Fahrt-, Unterkunfts- oder Reisenebenkosten vornimmt.
+
+            Beispiel 71
+            Der Arbeitnehmer A nimmt an einem halbtägigen auswärtigen Seminar mit Mittagessen teil
+            und ist 6 Stunden von seiner Wohnung und der ersten Tätigkeitsstätte abwesend. Für die
+            Fahrt zum Seminar nutzt A seinen privaten PKW und könnte für die entstandenen Fahrtkosten
+            eine steuerfreie Erstattung in Höhe von 30 € von seinem Arbeitgeber beanspruchen.
+            Der Arbeitgeber kann die von ihm im Rahmen des Seminars gestellte Mahlzeit mit dem
+            Sachbezugswert individuell oder pauschal mit 25 % versteuern oder von den zu erstattenden
+            30 € abziehen.
+
+
+
+            III. Zeitliche Anwendungsregelung
+
+136         Dieses Schreiben ersetzt das BMF-Schreiben vom 24. Oktober 2014 (BStBl I S. 1412)
+            und ist in allen noch offenen Fällen anzuwenden. Änderungen sind durch Fettdruck
+            dargestellt. In den jeweiligen Beispielen wurden die ab 1. Januar 2020 geltenden
+            gesetzlichen Beträge für Verpflegungsmehraufwendungen und Sachbezugswerte
+            berücksichtigt.
+
+            Dieses Schreiben wird im Bundessteuerblatt Teil I veröffentlicht. Es steht für eine Übergangs-
+            zeit auf den Internet-Seiten des Bundesministeriums der Finanzen
+            (www.bundesfinanzministerium.de) zur Ansicht und zum Abruf bereit.
+
+            Im Auftrag
+

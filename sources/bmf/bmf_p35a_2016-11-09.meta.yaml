@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "bmf/2016-11-09/IV-C-8-S-2296-b-07-10003-008"
+  norm: "BMF-Anwendungsschreiben zu § 35a EStG v. 09.11.2016 (BStBl I 2016, 1213)"
+  fassung: "09.11.2016"
+  quelle_url: "https://www.steuerportal-mv.de/static/Regierungsportal/Finanzministerium/Steuerportal/Dateien/Downloads/Anwendungsschreiben_zu_35a_EStG,_09.11.2016.pdf"
+  abrufdatum: "2026-07-09"
+  datei: "bmf_p35a_2016-11-09.txt"
+  sha256: "c61330eb8bd95c83c8c07bf4c781131c1b5dc43b3b5fd77420bc553e8fe4ef1a"
+  authority: verwaltung
+  redistributable: true
+  hinweis: "PDF via pdftotext -layout extrahiert. Spiegel des Finanzministeriums M-V; bundesfinanzministerium.de ist gegen automatisierten Abruf gesperrt."
+  verwendet_in: ["pipeline/produktion/rules.yaml (test_seed p35a_2_3_haushaltsnahe)"]

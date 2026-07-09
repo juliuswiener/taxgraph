@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "bmf/2020-11-25/IV-C-5-S-2353-19-10011-006"
+  norm: "BMF-Schreiben Reisekosten v. 25.11.2020 (BStBl I 2020, 1228)"
+  fassung: "25.11.2020"
+  quelle_url: "https://www.bva.bund.de/SharedDocs/Downloads/DE/Bundesbedienstete/Mobilitaet-Reisen/RV_RK_TG_UK/Rechtsgrundlagen/Dienstreisen/bmf_erlass_201125_steuerliche_Behandlung_RK_AN.pdf?__blob=publicationFile&v=2"
+  abrufdatum: "2026-07-09"
+  datei: "bmf_reisekosten_2020-11-25.txt"
+  sha256: "ded5a38ef99d35219f7e9726476f0bcd559c58012af7e74a14588c284db8e395"
+  authority: verwaltung
+  redistributable: true
+  hinweis: "PDF via pdftotext -layout extrahiert. Der Server liefert die Datei nur mit ?__blob=publicationFile; ohne den Parameter kommt eine HTML-Seite zurueck."
+  verwendet_in: ["pipeline/produktion/rules.yaml (test_seed p9_4a_verpflegungsmehraufwand)"]

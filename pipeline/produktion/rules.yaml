@@ -20,6 +20,30 @@
 #
 # `test_seed: none` heisst hier NICHT "n/a" wie im Bake-off, sondern
 # "noch offen -> Gate faellt". Genau so soll es sein, bis die Seeds da sind.
+#
+# Stand der Seed-Recherche (2026-07-09), Quellen eingefroren und sha256-geprueft:
+#
+#   amtliches Rechenbeispiel gefunden, Zitatanker gegen den eingefrorenen Text
+#   verifiziert:
+#     p9_4a_verpflegungsmehraufwand  BMF Reisekosten 25.11.2020, Bsp. 48
+#     p33_3_zumutbare_belastung      BFH 19.01.2017 - VI R 75/14
+#     p35a_2_3_haushaltsnahe         BMF zu § 35a 09.11.2016
+#
+#   KEIN amtliches Rechenbeispiel auffindbar -> synthetische Faelle noetig, die
+#   Julius im Review absegnet (`quelle: review/<datum>.md`). Bis dahin faellt das
+#   Test-Gate, und das ist die richtige Anzeige:
+#     p9_1_3_nr5_doppelte_haushaltsfuehrung   (BMF Bsp. 63/64 rechnen mit
+#         unterjaehrig wechselnder Miete bzw. Ehegatten - passt nicht auf die
+#         Signatur, die eine konstante Monatsmiete kennt)
+#     p9_1_3_nr5a_uebernachtung               (BMF Bsp. 68 ist szenariobasiert,
+#         ohne Euro-Rechnung)
+#     p9_1_3_nr6_arbeitsmittel                (R 9.12 LStR nur qualitativ)
+#     p9_1_3_nr7_afa                          (nur Verweis auf § 6 Abs. 2 EStG)
+#     p9_6_erstausbildung_abgrenzung          (nur Legaldefinition)
+#     p10_1_7_berufsausbildung                (BMF nur qualitativ)
+#     p24b_entlastungsbetrag                  (BMF 23.11.2022 rechnet mit dem
+#         Grundbetrag 4.008 EUR der Jahre 2020-2022, nicht mit den heute
+#         geltenden 4.260 EUR - als Erwartungswert unbrauchbar)
 
 regeln:
 - rule_id: p9_1_3_nr5_doppelte_haushaltsfuehrung
@@ -82,7 +106,18 @@ regeln:
   - staffel_nach_abwesenheit
   - dreimonatsfrist
   - prozentuale_kuerzung
-  test_seed: none
+  test_seed:
+  # BMF-Schreiben Reisekosten v. 25.11.2020, Rz 73-77, Beispiel 48 (dreitaegige
+  # Auswaertstaetigkeit). Die Kuerzung wegen Mahlzeitengestellung liegt ausserhalb
+  # der Signatur; die ungekuerzten Tagesbetraege sind woertlich belegt.
+  - quelle: sources/bmf/bmf_reisekosten_2020-11-25.txt
+    zitatanker: "Zwischentag: 28,00 \u20ac"
+    inputs: {abwesenheit_stunden: 24, mit_uebernachtung: true, an_oder_abreisetag: false, monate_am_ort: 1}
+    expected: 28.00
+  - quelle: sources/bmf/bmf_reisekosten_2020-11-25.txt
+    zitatanker: "Anreisetag: 14,00 \u20ac"
+    inputs: {abwesenheit_stunden: 8, mit_uebernachtung: true, an_oder_abreisetag: true, monate_am_ort: 1}
+    expected: 14.00
   signature:
     scope: Verpflegungsmehraufwand
     inputs:
@@ -235,7 +270,15 @@ regeln:
   - gde_stufen
   - kinderzahl_stufen
   - prozent_des_gde
-  test_seed: none
+  test_seed:
+  # BFH, Urteil v. 19.01.2017 - VI R 75/14: die stufenweise Berechnung ist im
+  # Urteil vollstaendig vorgerechnet. Die Staffel 2/3/4 % gilt laut der im selben
+  # Urteil zitierten Tabelle fuer "einem Kind oder zwei Kindern"; der Familienstand
+  # ist fuer diese Zeile ohne Bedeutung.
+  - quelle: sources/bfh/bfh_vi_r_75-14_2017-01-19.txt
+    zitatanker: "zumutbare Belastung 1.408,70 \u20ac"
+    inputs: {gesamtbetrag_der_einkuenfte: 51835, anzahl_kinder: 1, splitting: false}
+    expected: 1408.70
   signature:
     scope: ZumutbareBelastung
     inputs:
@@ -269,7 +312,13 @@ regeln:
   - cap_4000
   - cap_1200
   - nur_arbeitskosten
-  test_seed: none
+  test_seed:
+  # BMF-Anwendungsschreiben zu § 35a EStG v. 09.11.2016, Beispiel zur
+  # Einzelveranlagung: voller Handwerker-Hoechstbetrag.
+  - quelle: sources/bmf/bmf_p35a_2016-11-09.txt
+    zitatanker: "20 % von 10.000 \u20ac (§ 35a Absatz 3 EStG) = 2.000 \u20ac, h\u00f6chstens 1.200 \u20ac"
+    inputs: {aufwendungen_dienstleistungen: 0, aufwendungen_handwerker: 10000}
+    expected: 1200.00
   signature:
     scope: Haushaltsnahe
     inputs:

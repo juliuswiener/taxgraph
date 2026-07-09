@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "bfh/2017-01-19/VI-R-75-14"
+  norm: "BFH, Urteil v. 19.01.2017 - VI R 75/14 (stufenweise Berechnung der zumutbaren Belastung, § 33 Abs. 3 EStG)"
+  fassung: "19.01.2017"
+  quelle_url: "https://www.bundesfinanzhof.de/de/entscheidung/entscheidungen-online/detail/STRE201710072/"
+  abrufdatum: "2026-07-09"
+  datei: "bfh_vi_r_75-14_2017-01-19.txt"
+  sha256: "67a66bcadd507e86c8c72c5af01b4a501cbfe06babc93d59e4ca380086a93463"
+  authority: rechtsprechung
+  redistributable: true
+  hinweis: "HTML entstrippt (Tags entfernt, Whitespace normalisiert). Die EStH-Hinweise H 33.1-33.4 uebernehmen diese Berechnung; der belastbare Beleg ist das Urteil selbst."
+  verwendet_in: ["pipeline/produktion/rules.yaml (test_seed p33_3_zumutbare_belastung)"]
