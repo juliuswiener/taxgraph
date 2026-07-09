@@ -1,0 +1,143 @@
+# § 4 Abs. 5 S. 1 Nr. 6b und 6c EStG - Arbeitszimmer und Homeoffice
+
+> Module Arbeitszimmer_homeoffice
+
+Ergonomietest fuer Catalas Default/Exception-Mechanik (S0.3). Formalisiert das
+haeusliche Arbeitszimmer (Nr. 6b) und die Homeoffice-Tagespauschale (Nr. 6c)
+inklusive des gegenseitigen Ausschlusses (Nr. 6c Satz 3). Fuer Arbeitnehmer
+gelten diese Regeln ueber § 9 Abs. 5 EStG entsprechend. Ziel ist nicht
+Vollstaendigkeit, sondern die Frage, ob Grundregel und Ausnahme sich natuerlich
+abbilden lassen.
+
+Gesetzestext (Fassung ab 2023, gesetze-im-internet.de/estg/__4.html, abgerufen
+2026-07-09), Zitat eingerueckt:
+
+    6b. Aufwendungen fuer ein haeusliches Arbeitszimmer sowie die Kosten der
+    Ausstattung. 2Dies gilt nicht, wenn das Arbeitszimmer den Mittelpunkt der
+    gesamten betrieblichen und beruflichen Betaetigung bildet. 3Anstelle der
+    Aufwendungen kann pauschal ein Betrag von 1 260 Euro (Jahrespauschale) fuer
+    das Wirtschafts- oder Kalenderjahr abgezogen werden. 4Fuer jeden vollen
+    Kalendermonat, in dem die Voraussetzungen nach Satz 2 nicht vorliegen,
+    ermaessigt sich der Betrag von 1 260 Euro um ein Zwoelftel;
+
+    6c. fuer jeden Kalendertag, an dem die betriebliche oder berufliche
+    Taetigkeit ueberwiegend in der haeuslichen Wohnung ausgeuebt und keine
+    ausserhalb der haeuslichen Wohnung belegene erste Taetigkeitsstaette
+    aufgesucht wird, kann ... ein Betrag von 6 Euro (Tagespauschale),
+    hoechstens 1 260 Euro im Wirtschafts- oder Kalenderjahr, abgezogen werden.
+    ... 3Der Abzug der Tagespauschale ist nicht zulaessig, soweit fuer die
+    Wohnung Unterkunftskosten im Rahmen der Nummer 6a oder des § 9 Absatz 1
+    Satz 3 Nummer 5 abgezogen werden koennen oder soweit ein Abzug nach
+    Nummer 6b vorgenommen wird;
+
+## Nr. 6b: Haeusliches Arbeitszimmer
+
+Grundregel (Satz 1): Aufwendungen sind nicht abziehbar, der abziehbare Betrag
+ist 0. Ausnahmen: bei Mittelpunkt der gesamten Betaetigung (Satz 2) die
+tatsaechlichen Aufwendungen, oder wahlweise die Jahrespauschale von 1 260 Euro
+(Satz 3), gekuerzt um ein Zwoelftel je vollem Monat ohne Mittelpunkt (Satz 4).
+
+```catala
+declaration scope HaeuslichesArbeitszimmer:
+  input arbeitszimmer_vorhanden content boolean
+  input ist_mittelpunkt content boolean                # Satz 2
+  input tatsaechliche_aufwendungen content money
+  input jahrespauschale_gewaehlt content boolean       # Satz 3 (Wahlrecht)
+  input monate_ohne_mittelpunkt content integer        # Satz 4 (0..12)
+  output abzug content money
+  output abzug_vorgenommen content boolean
+
+scope HaeuslichesArbeitszimmer:
+  # Grundregel Satz 1: nicht abziehbar.
+  label grundregel_6b
+  definition abzug equals $0.00
+
+  # Ausnahme Satz 2: Arbeitszimmer ist Mittelpunkt -> tatsaechliche Aufwendungen
+  # (sofern nicht die Jahrespauschale gewaehlt wurde).
+  exception grundregel_6b
+  definition abzug under condition
+    arbeitszimmer_vorhanden and ist_mittelpunkt and not jahrespauschale_gewaehlt
+  consequence equals tatsaechliche_aufwendungen
+
+  # Ausnahme Satz 3 und 4: Jahrespauschale 1 260 Euro, je vollem Monat ohne
+  # Mittelpunkt um ein Zwoelftel gekuerzt.
+  exception grundregel_6b
+  definition abzug under condition
+    arbeitszimmer_vorhanden and jahrespauschale_gewaehlt
+  consequence equals
+    $1,260.00 - ($1,260.00 * (decimal of monate_ohne_mittelpunkt / 12.0))
+
+  definition abzug_vorgenommen equals abzug > $0.00
+```
+
+## Nr. 6c: Homeoffice-Tagespauschale
+
+Grundregel: 6 Euro je Kalendertag ueberwiegender Taetigkeit in der haeuslichen
+Wohnung, hoechstens 1 260 Euro im Jahr. Ausnahme (Satz 3, gegenseitiger
+Ausschluss): kein Abzug, soweit ein Abzug nach Nr. 6b vorgenommen wird.
+
+```catala
+declaration scope HomeofficeTagespauschale:
+  input homeoffice_tage content integer                # Kalendertage nach Satz 1
+  input abzug_6b_vorgenommen content boolean           # aus Nr. 6b, fuer Satz 3
+  internal tagespauschale_ungedeckelt content money
+  output tagespauschale content money
+
+scope HomeofficeTagespauschale:
+  definition tagespauschale_ungedeckelt equals
+    $6.00 * (decimal of homeoffice_tage)
+
+  # Grundregel: 6 Euro je Tag, gedeckelt auf 1 260 Euro.
+  label grundregel_6c
+  definition tagespauschale equals
+    if tagespauschale_ungedeckelt > $1,260.00 then $1,260.00
+    else tagespauschale_ungedeckelt
+
+  # Ausnahme Satz 3: Ausschluss bei Abzug nach Nr. 6b.
+  exception grundregel_6c
+  definition tagespauschale under condition abzug_6b_vorgenommen
+  consequence equals $0.00
+```
+
+## Zusammenfuehrung
+
+Wiring der beiden Regeln: der Ausschluss nach Nr. 6c Satz 3 haengt vom Ergebnis
+der Nr. 6b ab. Ergebnis ist die Summe der abziehbaren Betraege.
+
+```catala
+declaration scope Raumkostenabzug:
+  input arbeitszimmer_vorhanden content boolean
+  input ist_mittelpunkt content boolean
+  input tatsaechliche_aufwendungen content money
+  input jahrespauschale_gewaehlt content boolean
+  input monate_ohne_mittelpunkt content integer
+  input homeoffice_tage content integer
+  output abzug_arbeitszimmer content money
+  output abzug_homeoffice content money
+  output abzug_gesamt content money
+
+scope Raumkostenabzug:
+  definition abzug_arbeitszimmer equals
+    (output of HaeuslichesArbeitszimmer with {
+       -- arbeitszimmer_vorhanden: arbeitszimmer_vorhanden
+       -- ist_mittelpunkt: ist_mittelpunkt
+       -- tatsaechliche_aufwendungen: tatsaechliche_aufwendungen
+       -- jahrespauschale_gewaehlt: jahrespauschale_gewaehlt
+       -- monate_ohne_mittelpunkt: monate_ohne_mittelpunkt
+     }).abzug
+
+  definition abzug_homeoffice equals
+    (output of HomeofficeTagespauschale with {
+       -- homeoffice_tage: homeoffice_tage
+       -- abzug_6b_vorgenommen:
+           (output of HaeuslichesArbeitszimmer with {
+              -- arbeitszimmer_vorhanden: arbeitszimmer_vorhanden
+              -- ist_mittelpunkt: ist_mittelpunkt
+              -- tatsaechliche_aufwendungen: tatsaechliche_aufwendungen
+              -- jahrespauschale_gewaehlt: jahrespauschale_gewaehlt
+              -- monate_ohne_mittelpunkt: monate_ohne_mittelpunkt
+            }).abzug_vorgenommen
+     }).tagespauschale
+
+  definition abzug_gesamt equals abzug_arbeitszimmer + abzug_homeoffice
+```

@@ -1,0 +1,169 @@
+# Tests § 4 Abs. 5 Nr. 6b/6c - Arbeitszimmer und Homeoffice
+
+> Using Arbeitszimmer_homeoffice as AZ
+
+Testfaelle fuer Default/Exception und den gegenseitigen Ausschluss. Jeder Fall
+prueft `abzug_arbeitszimmer`, `abzug_homeoffice` und die Summe.
+
+```catala
+# Fall 1: Nur Homeoffice, kein Arbeitszimmer. 120 Tage * 6 Euro = 720 Euro.
+#[test]
+declaration scope Fall1NurHomeoffice:
+  internal r content AZ.Raumkostenabzug
+  output az content money
+  output ho content money
+  output gesamt content money
+scope Fall1NurHomeoffice:
+  definition r equals output of AZ.Raumkostenabzug with {
+    -- arbeitszimmer_vorhanden: false
+    -- ist_mittelpunkt: false
+    -- tatsaechliche_aufwendungen: $0.00
+    -- jahrespauschale_gewaehlt: false
+    -- monate_ohne_mittelpunkt: 0
+    -- homeoffice_tage: 120 }
+  definition az equals r.abzug_arbeitszimmer
+  definition ho equals r.abzug_homeoffice
+  definition gesamt equals r.abzug_gesamt
+  assertion az = $0.00
+  assertion ho = $720.00
+  assertion gesamt = $720.00
+
+# Fall 2: Homeoffice ueber Hoechstbetrag. 250 Tage * 6 = 1500 -> gedeckelt 1260.
+#[test]
+declaration scope Fall2HomeofficeDeckel:
+  internal r content AZ.Raumkostenabzug
+  output ho content money
+scope Fall2HomeofficeDeckel:
+  definition r equals output of AZ.Raumkostenabzug with {
+    -- arbeitszimmer_vorhanden: false
+    -- ist_mittelpunkt: false
+    -- tatsaechliche_aufwendungen: $0.00
+    -- jahrespauschale_gewaehlt: false
+    -- monate_ohne_mittelpunkt: 0
+    -- homeoffice_tage: 250 }
+  definition ho equals r.abzug_homeoffice
+  assertion ho = $1,260.00
+
+# Fall 3: Nur Arbeitszimmer als Mittelpunkt, tatsaechliche Kosten 2000, kein Homeoffice.
+#[test]
+declaration scope Fall3NurArbeitszimmer:
+  internal r content AZ.Raumkostenabzug
+  output az content money
+  output gesamt content money
+scope Fall3NurArbeitszimmer:
+  definition r equals output of AZ.Raumkostenabzug with {
+    -- arbeitszimmer_vorhanden: true
+    -- ist_mittelpunkt: true
+    -- tatsaechliche_aufwendungen: $2,000.00
+    -- jahrespauschale_gewaehlt: false
+    -- monate_ohne_mittelpunkt: 0
+    -- homeoffice_tage: 0 }
+  definition az equals r.abzug_arbeitszimmer
+  definition gesamt equals r.abzug_gesamt
+  assertion az = $2,000.00
+  assertion gesamt = $2,000.00
+
+# Fall 4: Gegenseitiger Ausschluss. Arbeitszimmer (Mittelpunkt, 2000) UND
+# Homeoffice 100 Tage beantragt -> Tagespauschale ausgeschlossen (Nr. 6c Satz 3).
+#[test]
+declaration scope Fall4Ausschluss:
+  internal r content AZ.Raumkostenabzug
+  output az content money
+  output ho content money
+  output gesamt content money
+scope Fall4Ausschluss:
+  definition r equals output of AZ.Raumkostenabzug with {
+    -- arbeitszimmer_vorhanden: true
+    -- ist_mittelpunkt: true
+    -- tatsaechliche_aufwendungen: $2,000.00
+    -- jahrespauschale_gewaehlt: false
+    -- monate_ohne_mittelpunkt: 0
+    -- homeoffice_tage: 100 }
+  definition az equals r.abzug_arbeitszimmer
+  definition ho equals r.abzug_homeoffice
+  definition gesamt equals r.abzug_gesamt
+  assertion az = $2,000.00
+  assertion ho = $0.00
+  assertion gesamt = $2,000.00
+
+# Fall 5: Jahrespauschale (0 Monate ohne Mittelpunkt) = 1260, Homeoffice ausgeschlossen.
+#[test]
+declaration scope Fall5Jahrespauschale:
+  internal r content AZ.Raumkostenabzug
+  output az content money
+  output ho content money
+scope Fall5Jahrespauschale:
+  definition r equals output of AZ.Raumkostenabzug with {
+    -- arbeitszimmer_vorhanden: true
+    -- ist_mittelpunkt: true
+    -- tatsaechliche_aufwendungen: $500.00
+    -- jahrespauschale_gewaehlt: true
+    -- monate_ohne_mittelpunkt: 0
+    -- homeoffice_tage: 100 }
+  definition az equals r.abzug_arbeitszimmer
+  definition ho equals r.abzug_homeoffice
+  assertion az = $1,260.00
+  assertion ho = $0.00
+
+# Fall 6: Jahrespauschale, 6 Monate ohne Mittelpunkt -> 1260 - 630 = 630.
+#[test]
+declaration scope Fall6JahrespauschaleGekuerzt:
+  internal r content AZ.Raumkostenabzug
+  output az content money
+  output ho content money
+scope Fall6JahrespauschaleGekuerzt:
+  definition r equals output of AZ.Raumkostenabzug with {
+    -- arbeitszimmer_vorhanden: true
+    -- ist_mittelpunkt: true
+    -- tatsaechliche_aufwendungen: $0.00
+    -- jahrespauschale_gewaehlt: true
+    -- monate_ohne_mittelpunkt: 6
+    -- homeoffice_tage: 50 }
+  definition az equals r.abzug_arbeitszimmer
+  definition ho equals r.abzug_homeoffice
+  assertion az = $630.00
+  assertion ho = $0.00
+
+# Fall 7: Arbeitszimmer vorhanden, aber NICHT Mittelpunkt, keine Pauschale ->
+# nicht abziehbar (Grundregel), also Homeoffice zulaessig. 100 Tage = 600.
+#[test]
+declaration scope Fall7KeinMittelpunkt:
+  internal r content AZ.Raumkostenabzug
+  output az content money
+  output ho content money
+  output gesamt content money
+scope Fall7KeinMittelpunkt:
+  definition r equals output of AZ.Raumkostenabzug with {
+    -- arbeitszimmer_vorhanden: true
+    -- ist_mittelpunkt: false
+    -- tatsaechliche_aufwendungen: $2,000.00
+    -- jahrespauschale_gewaehlt: false
+    -- monate_ohne_mittelpunkt: 12
+    -- homeoffice_tage: 100 }
+  definition az equals r.abzug_arbeitszimmer
+  definition ho equals r.abzug_homeoffice
+  definition gesamt equals r.abzug_gesamt
+  assertion az = $0.00
+  assertion ho = $600.00
+  assertion gesamt = $600.00
+
+# Fall 8: Jahrespauschale voll gekuerzt (12 Monate ohne Mittelpunkt) = 0,
+# damit kein 6b-Abzug -> Homeoffice zulaessig. 80 Tage = 480.
+#[test]
+declaration scope Fall8VollGekuerzt:
+  internal r content AZ.Raumkostenabzug
+  output az content money
+  output ho content money
+scope Fall8VollGekuerzt:
+  definition r equals output of AZ.Raumkostenabzug with {
+    -- arbeitszimmer_vorhanden: true
+    -- ist_mittelpunkt: false
+    -- tatsaechliche_aufwendungen: $0.00
+    -- jahrespauschale_gewaehlt: true
+    -- monate_ohne_mittelpunkt: 12
+    -- homeoffice_tage: 80 }
+  definition az equals r.abzug_arbeitszimmer
+  definition ho equals r.abzug_homeoffice
+  assertion az = $0.00
+  assertion ho = $480.00
+```
