@@ -1,0 +1,21 @@
+id: ho_2024_ausschluss
+beschreibung: "Arbeitszimmer/Homeoffice, VZ 2024"
+
+sachverhalt:
+  veranlagungszeitraum: 2024
+  arbeitszimmer_vorhanden: true
+  ist_mittelpunkt: true
+  tatsaechliche_aufwendungen: 2000
+  jahrespauschale_gewaehlt: false
+  monate_ohne_mittelpunkt: 0
+  homeoffice_tage: 100
+
+erwartung:
+  abzug_gesamt: 2000
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 4 Abs. 5 S. 1 Nr. 6c Satz 3 EStG (Ausschluss bei Abzug nach Nr. 6b); Arbeitszimmer 2000, Homeoffice 0"
+  datei: "sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt"
+  zitatanker: "soweit ein Abzug nach Nummer 6b vorgenommen wird"

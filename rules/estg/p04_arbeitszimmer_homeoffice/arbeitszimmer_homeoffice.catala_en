@@ -2,12 +2,17 @@
 
 > Module Arbeitszimmer_homeoffice
 
-Ergonomietest fuer Catalas Default/Exception-Mechanik (S0.3). Formalisiert das
-haeusliche Arbeitszimmer (Nr. 6b) und die Homeoffice-Tagespauschale (Nr. 6c)
-inklusive des gegenseitigen Ausschlusses (Nr. 6c Satz 3). Fuer Arbeitnehmer
-gelten diese Regeln ueber § 9 Abs. 5 EStG entsprechend. Ziel ist nicht
-Vollstaendigkeit, sondern die Frage, ob Grundregel und Ausnahme sich natuerlich
-abbilden lassen.
+Formalisiert das haeusliche Arbeitszimmer (Nr. 6b) und die Homeoffice-
+Tagespauschale (Nr. 6c) inklusive des gegenseitigen Ausschlusses (Nr. 6c Satz 3)
+mit Catalas Default/Exception-Mechanik. Fuer Arbeitnehmer gelten diese Regeln
+ueber § 9 Abs. 5 EStG entsprechend; der abziehbare Raumkostenbetrag ist ein
+Werbungskosten-Posten, der VOR der § 9a-Vergleichsrechnung andockt (siehe
+`tests_andockung.catala_en`).
+
+GETTSIM deckt diese Regel nicht ab; Oracle ist der Gesetzeswortlaut. Die
+Betragswerte (Jahrespauschale 1 260 Euro, Tagespauschale 6 Euro, Hoechstbetrag
+1 260 Euro) werden als Parameter je VZ uebergeben (siehe
+`params/<vz>/arbeitszimmer_homeoffice.yaml`), seit VZ 2023 unveraendert.
 
 Quellenmodell (Update 2026-07-09): authority = `gesetz`, redistributable =
 `true`. Grundlage ist § 4 Abs. 5 EStG; eingefrorener Wortlaut in
@@ -48,6 +53,7 @@ declaration scope HaeuslichesArbeitszimmer:
   input tatsaechliche_aufwendungen content money
   input jahrespauschale_gewaehlt content boolean       # Satz 3 (Wahlrecht)
   input monate_ohne_mittelpunkt content integer        # Satz 4 (0..12)
+  input jahrespauschale content money                  # Parameter je VZ (1260)
   output abzug content money
   output abzug_vorgenommen content boolean
 
@@ -63,13 +69,13 @@ scope HaeuslichesArbeitszimmer:
     arbeitszimmer_vorhanden and ist_mittelpunkt and not jahrespauschale_gewaehlt
   consequence equals tatsaechliche_aufwendungen
 
-  # Ausnahme Satz 3 und 4: Jahrespauschale 1 260 Euro, je vollem Monat ohne
-  # Mittelpunkt um ein Zwoelftel gekuerzt.
+  # Ausnahme Satz 3 und 4: Jahrespauschale, je vollem Monat ohne Mittelpunkt um
+  # ein Zwoelftel gekuerzt.
   exception grundregel_6b
   definition abzug under condition
     arbeitszimmer_vorhanden and jahrespauschale_gewaehlt
   consequence equals
-    $1,260.00 - ($1,260.00 * (decimal of monate_ohne_mittelpunkt / 12.0))
+    jahrespauschale - (jahrespauschale * (decimal of monate_ohne_mittelpunkt / 12.0))
 
   definition abzug_vorgenommen equals abzug > $0.00
 ```
@@ -84,17 +90,19 @@ Ausschluss): kein Abzug, soweit ein Abzug nach Nr. 6b vorgenommen wird.
 declaration scope HomeofficeTagespauschale:
   input homeoffice_tage content integer                # Kalendertage nach Satz 1
   input abzug_6b_vorgenommen content boolean           # aus Nr. 6b, fuer Satz 3
+  input tagespauschale_pro_tag content money           # Parameter je VZ (6)
+  input tagespauschale_hoechstbetrag content money     # Parameter je VZ (1260)
   internal tagespauschale_ungedeckelt content money
   output tagespauschale content money
 
 scope HomeofficeTagespauschale:
   definition tagespauschale_ungedeckelt equals
-    $6.00 * (decimal of homeoffice_tage)
+    tagespauschale_pro_tag * (decimal of homeoffice_tage)
 
-  # Grundregel: 6 Euro je Tag, gedeckelt auf 1 260 Euro.
+  # Grundregel: Tagespauschale je Tag, gedeckelt auf den Hoechstbetrag.
   label grundregel_6c
   definition tagespauschale equals
-    if tagespauschale_ungedeckelt > $1,260.00 then $1,260.00
+    if tagespauschale_ungedeckelt > tagespauschale_hoechstbetrag then tagespauschale_hoechstbetrag
     else tagespauschale_ungedeckelt
 
   # Ausnahme Satz 3: Ausschluss bei Abzug nach Nr. 6b.
@@ -116,31 +124,31 @@ declaration scope Raumkostenabzug:
   input jahrespauschale_gewaehlt content boolean
   input monate_ohne_mittelpunkt content integer
   input homeoffice_tage content integer
+  input jahrespauschale content money                  # Parameter je VZ
+  input tagespauschale_pro_tag content money           # Parameter je VZ
+  input tagespauschale_hoechstbetrag content money     # Parameter je VZ
+  internal az content HaeuslichesArbeitszimmer
   output abzug_arbeitszimmer content money
   output abzug_homeoffice content money
   output abzug_gesamt content money
 
 scope Raumkostenabzug:
-  definition abzug_arbeitszimmer equals
-    (output of HaeuslichesArbeitszimmer with {
-       -- arbeitszimmer_vorhanden: arbeitszimmer_vorhanden
-       -- ist_mittelpunkt: ist_mittelpunkt
-       -- tatsaechliche_aufwendungen: tatsaechliche_aufwendungen
-       -- jahrespauschale_gewaehlt: jahrespauschale_gewaehlt
-       -- monate_ohne_mittelpunkt: monate_ohne_mittelpunkt
-     }).abzug
+  definition az equals output of HaeuslichesArbeitszimmer with {
+    -- arbeitszimmer_vorhanden: arbeitszimmer_vorhanden
+    -- ist_mittelpunkt: ist_mittelpunkt
+    -- tatsaechliche_aufwendungen: tatsaechliche_aufwendungen
+    -- jahrespauschale_gewaehlt: jahrespauschale_gewaehlt
+    -- monate_ohne_mittelpunkt: monate_ohne_mittelpunkt
+    -- jahrespauschale: jahrespauschale }
+
+  definition abzug_arbeitszimmer equals az.abzug
 
   definition abzug_homeoffice equals
     (output of HomeofficeTagespauschale with {
        -- homeoffice_tage: homeoffice_tage
-       -- abzug_6b_vorgenommen:
-           (output of HaeuslichesArbeitszimmer with {
-              -- arbeitszimmer_vorhanden: arbeitszimmer_vorhanden
-              -- ist_mittelpunkt: ist_mittelpunkt
-              -- tatsaechliche_aufwendungen: tatsaechliche_aufwendungen
-              -- jahrespauschale_gewaehlt: jahrespauschale_gewaehlt
-              -- monate_ohne_mittelpunkt: monate_ohne_mittelpunkt
-            }).abzug_vorgenommen
+       -- abzug_6b_vorgenommen: az.abzug_vorgenommen
+       -- tagespauschale_pro_tag: tagespauschale_pro_tag
+       -- tagespauschale_hoechstbetrag: tagespauschale_hoechstbetrag
      }).tagespauschale
 
   definition abzug_gesamt equals abzug_arbeitszimmer + abzug_homeoffice

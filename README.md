@@ -57,7 +57,7 @@ scripts/                                # Installations- und Verifikationsskript
   `rules/estg/arbeitnehmerfall/`). Differentiell gegen GETTSIM: die zvE-Ableitung
   ist exakt, Divergenzen reduzieren sich auf die dokumentierten § 32a-Effekte
   (`make p1`, Report `reports/p1-arbeitnehmerfall.md`).
-- **M1.4 Golden-Korpus** (`golden/`): 48 Faelle (§ 32a-Tarif und Arbeitnehmerfall
+- **M1.4 Golden-Korpus** (`golden/`): 57 Faelle (§ 32a-Tarif, Arbeitnehmerfall, Entfernungspauschale, Arbeitszimmer/Homeoffice
   end-to-end), je mit Zitatanker-Gate gegen `sources/` und Wertabgleich gegen
   Catala (`make golden`).
 - **M1.2 Parameterschicht** (`params/`): kanonisches Format (`params/schema.md`)

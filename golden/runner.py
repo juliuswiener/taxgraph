@@ -29,7 +29,30 @@ sys.path.insert(0, _CAT)
 
 from pkg import Einkommensteuertarif as E  # noqa: E402  (Catala-generated)
 from pkg import Entfernungspauschale as EP  # noqa: E402
-from catala_runtime import Money, Decimal  # noqa: E402
+from pkg import Arbeitszimmer_homeoffice as AZ  # noqa: E402
+from catala_runtime import Money, Decimal, Bool  # noqa: E402
+
+
+def _az_params(year: int) -> dict:
+    p = yaml.safe_load(open(os.path.join(
+        ROOT, "params", str(year), "arbeitszimmer_homeoffice.yaml"), encoding="utf-8"))
+    return {k: p[k]["wert"] for k in
+            ("jahrespauschale", "tagespauschale_pro_tag", "tagespauschale_hoechstbetrag")}
+
+
+def catala_raumkosten(s: dict) -> int:
+    r = _az_params(s["veranlagungszeitraum"])
+    out = AZ.raumkostenabzug(AZ.RaumkostenabzugIn(
+        arbeitszimmer_vorhanden_in=Bool(s.get("arbeitszimmer_vorhanden", False)),
+        ist_mittelpunkt_in=Bool(s.get("ist_mittelpunkt", False)),
+        tatsaechliche_aufwendungen_in=Money(f"{int(s.get('tatsaechliche_aufwendungen', 0))}.00"),
+        jahrespauschale_gewaehlt_in=Bool(s.get("jahrespauschale_gewaehlt", False)),
+        monate_ohne_mittelpunkt_in=int(s.get("monate_ohne_mittelpunkt", 0)),
+        homeoffice_tage_in=int(s.get("homeoffice_tage", 0)),
+        jahrespauschale_in=Money(f"{int(r['jahrespauschale'])}.00"),
+        tagespauschale_pro_tag_in=Money(f"{int(r['tagespauschale_pro_tag'])}.00"),
+        tagespauschale_hoechstbetrag_in=Money(f"{int(r['tagespauschale_hoechstbetrag'])}.00")))
+    return int(out.abzug_gesamt) // 100
 
 
 def _ep_saetze(year: int) -> dict:
@@ -46,7 +69,7 @@ def catala_entfernungspauschale(s: dict) -> int:
     out = EP.berechnung(EP.BerechnungIn(
         entfernung_km_roh_in=Decimal(str(s["entfernung_km_roh"])),
         arbeitstage_in=int(s["arbeitstage"]),
-        eigenes_oder_ueberlassenes_kfz_in=bool(s.get("eigenes_oder_ueberlassenes_kfz", False)),
+        eigenes_oder_ueberlassenes_kfz_in=Bool(s.get("eigenes_oder_ueberlassenes_kfz", False)),
         oepnv_kosten_jahr_in=Money(f"{int(s.get('oepnv_kosten_jahr', 0))}.00"),
         satz_bis_20_km_in=Money(f"{r['satz_bis_20_km']:.2f}"),
         satz_ab_21_km_in=Money(f"{r['satz_ab_21_km']:.2f}"),
@@ -74,6 +97,9 @@ def catala_est(sachverhalt: dict) -> int:
     # Entfernungspauschale (§ 9): abziehbarer Betrag.
     if "entfernung_km_roh" in sachverhalt:
         return catala_entfernungspauschale(sachverhalt)
+    # Arbeitszimmer/Homeoffice (§ 4 Abs. 5 Nr. 6b/6c): abzug_gesamt.
+    if "arbeitszimmer_vorhanden" in sachverhalt:
+        return catala_raumkosten(sachverhalt)
     # End-to-end Arbeitnehmerfall (Bruttolohn -> festzusetzende ESt).
     if "bruttoarbeitslohn" in sachverhalt:
         out = E.festzusetzende_est_einzel(E.FestzusetzendeEstEinzelIn(
@@ -109,7 +135,8 @@ def main() -> int:
         cid = c["id"]
         s = c["sachverhalt"]
         erw = c["erwartung"]
-        exp = erw.get("tarifliche_est", erw.get("abziehbarer_betrag"))
+        exp = erw.get("tarifliche_est",
+                      erw.get("abziehbarer_betrag", erw.get("abzug_gesamt")))
         q = c["quelle"]
 
         # 1. citation-anchor gate

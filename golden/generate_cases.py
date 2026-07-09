@@ -198,6 +198,52 @@ quelle:
         f.write(yaml)
 
 
+P04_FILE = "sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt"
+
+# Arbeitszimmer/Homeoffice-Faelle (§ 4 Abs. 5 Nr. 6b/6c). (fid, VZ, sv, abzug_gesamt, anker, fundstelle)
+HO_CASES = [
+    ("ho_2024_tagespauschale_cap",
+     dict(az=False, mp=False, aufw=0, jp=False, monate=0, tage=250), 1260,
+     "6 Euro (Tagespauschale)",
+     "§ 4 Abs. 5 S. 1 Nr. 6c Satz 1 EStG (6 Euro/Tag, hoechstens 1 260 Euro); 250 Tage -> Cap 1260"),
+    ("ho_2024_jahrespauschale",
+     dict(az=True, mp=True, aufw=0, jp=True, monate=0, tage=0), 1260,
+     "1 260 Euro (Jahrespauschale)",
+     "§ 4 Abs. 5 S. 1 Nr. 6b Satz 3 EStG (Jahrespauschale 1 260 Euro)"),
+    ("ho_2024_ausschluss",
+     dict(az=True, mp=True, aufw=2000, jp=False, monate=0, tage=100), 2000,
+     "soweit ein Abzug nach Nummer 6b vorgenommen wird",
+     "§ 4 Abs. 5 S. 1 Nr. 6c Satz 3 EStG (Ausschluss bei Abzug nach Nr. 6b); Arbeitszimmer 2000, Homeoffice 0"),
+]
+
+
+def emit_raumkosten(fid, sv, expected, anker, fundstelle):
+    yaml = f"""id: {fid}
+beschreibung: "Arbeitszimmer/Homeoffice, VZ 2024"
+
+sachverhalt:
+  veranlagungszeitraum: 2024
+  arbeitszimmer_vorhanden: {str(sv['az']).lower()}
+  ist_mittelpunkt: {str(sv['mp']).lower()}
+  tatsaechliche_aufwendungen: {sv['aufw']}
+  jahrespauschale_gewaehlt: {str(sv['jp']).lower()}
+  monate_ohne_mittelpunkt: {sv['monate']}
+  homeoffice_tage: {sv['tage']}
+
+erwartung:
+  abzug_gesamt: {expected}
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "{esc(fundstelle)}"
+  datei: "{P04_FILE}"
+  zitatanker: "{esc(anker)}"
+"""
+    with open(os.path.join(CASES, fid + ".yaml"), "w") as f:
+        f.write(yaml)
+
+
 def main():
     os.makedirs(CASES, exist_ok=True)
     for f in os.listdir(CASES):
@@ -243,6 +289,9 @@ def main():
     n += 1
     for fid, year, sv, expected, anker, datei, fundstelle in EP_CASES:
         emit_ep(fid, year, sv, expected, anker, datei, fundstelle)
+        n += 1
+    for fid, sv, expected, anker, fundstelle in HO_CASES:
+        emit_raumkosten(fid, sv, expected, anker, fundstelle)
         n += 1
     print(f"generated {n} golden cases in golden/cases/")
 

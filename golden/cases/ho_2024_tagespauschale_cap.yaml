@@ -1,0 +1,21 @@
+id: ho_2024_tagespauschale_cap
+beschreibung: "Arbeitszimmer/Homeoffice, VZ 2024"
+
+sachverhalt:
+  veranlagungszeitraum: 2024
+  arbeitszimmer_vorhanden: false
+  ist_mittelpunkt: false
+  tatsaechliche_aufwendungen: 0
+  jahrespauschale_gewaehlt: false
+  monate_ohne_mittelpunkt: 0
+  homeoffice_tage: 250
+
+erwartung:
+  abzug_gesamt: 1260
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 4 Abs. 5 S. 1 Nr. 6c Satz 1 EStG (6 Euro/Tag, hoechstens 1 260 Euro); 250 Tage -> Cap 1260"
+  datei: "sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt"
+  zitatanker: "6 Euro (Tagespauschale)"

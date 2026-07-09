@@ -14,6 +14,6 @@ target_dir = "_target"
 # GETTSIM differential-test harness (oracle/gettsim/).
 [[target]]
 name = "p32a-python"
-modules = ["Einkommensteuertarif", "Entfernungspauschale"]
+modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice"]
 backends = ["python"]
 include_sources = true

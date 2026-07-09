@@ -20,7 +20,10 @@ scope Fall1NurHomeoffice:
     -- tatsaechliche_aufwendungen: $0.00
     -- jahrespauschale_gewaehlt: false
     -- monate_ohne_mittelpunkt: 0
-    -- homeoffice_tage: 120 }
+    -- homeoffice_tage: 120
+    -- jahrespauschale: $1,260.00
+    -- tagespauschale_pro_tag: $6.00
+    -- tagespauschale_hoechstbetrag: $1,260.00 }
   definition az equals r.abzug_arbeitszimmer
   definition ho equals r.abzug_homeoffice
   definition gesamt equals r.abzug_gesamt
@@ -40,7 +43,10 @@ scope Fall2HomeofficeDeckel:
     -- tatsaechliche_aufwendungen: $0.00
     -- jahrespauschale_gewaehlt: false
     -- monate_ohne_mittelpunkt: 0
-    -- homeoffice_tage: 250 }
+    -- homeoffice_tage: 250
+    -- jahrespauschale: $1,260.00
+    -- tagespauschale_pro_tag: $6.00
+    -- tagespauschale_hoechstbetrag: $1,260.00 }
   definition ho equals r.abzug_homeoffice
   assertion ho = $1,260.00
 
@@ -57,7 +63,10 @@ scope Fall3NurArbeitszimmer:
     -- tatsaechliche_aufwendungen: $2,000.00
     -- jahrespauschale_gewaehlt: false
     -- monate_ohne_mittelpunkt: 0
-    -- homeoffice_tage: 0 }
+    -- homeoffice_tage: 0
+    -- jahrespauschale: $1,260.00
+    -- tagespauschale_pro_tag: $6.00
+    -- tagespauschale_hoechstbetrag: $1,260.00 }
   definition az equals r.abzug_arbeitszimmer
   definition gesamt equals r.abzug_gesamt
   assertion az = $2,000.00
@@ -78,7 +87,10 @@ scope Fall4Ausschluss:
     -- tatsaechliche_aufwendungen: $2,000.00
     -- jahrespauschale_gewaehlt: false
     -- monate_ohne_mittelpunkt: 0
-    -- homeoffice_tage: 100 }
+    -- homeoffice_tage: 100
+    -- jahrespauschale: $1,260.00
+    -- tagespauschale_pro_tag: $6.00
+    -- tagespauschale_hoechstbetrag: $1,260.00 }
   definition az equals r.abzug_arbeitszimmer
   definition ho equals r.abzug_homeoffice
   definition gesamt equals r.abzug_gesamt
@@ -99,7 +111,10 @@ scope Fall5Jahrespauschale:
     -- tatsaechliche_aufwendungen: $500.00
     -- jahrespauschale_gewaehlt: true
     -- monate_ohne_mittelpunkt: 0
-    -- homeoffice_tage: 100 }
+    -- homeoffice_tage: 100
+    -- jahrespauschale: $1,260.00
+    -- tagespauschale_pro_tag: $6.00
+    -- tagespauschale_hoechstbetrag: $1,260.00 }
   definition az equals r.abzug_arbeitszimmer
   definition ho equals r.abzug_homeoffice
   assertion az = $1,260.00
@@ -118,7 +133,10 @@ scope Fall6JahrespauschaleGekuerzt:
     -- tatsaechliche_aufwendungen: $0.00
     -- jahrespauschale_gewaehlt: true
     -- monate_ohne_mittelpunkt: 6
-    -- homeoffice_tage: 50 }
+    -- homeoffice_tage: 50
+    -- jahrespauschale: $1,260.00
+    -- tagespauschale_pro_tag: $6.00
+    -- tagespauschale_hoechstbetrag: $1,260.00 }
   definition az equals r.abzug_arbeitszimmer
   definition ho equals r.abzug_homeoffice
   assertion az = $630.00
@@ -139,7 +157,10 @@ scope Fall7KeinMittelpunkt:
     -- tatsaechliche_aufwendungen: $2,000.00
     -- jahrespauschale_gewaehlt: false
     -- monate_ohne_mittelpunkt: 12
-    -- homeoffice_tage: 100 }
+    -- homeoffice_tage: 100
+    -- jahrespauschale: $1,260.00
+    -- tagespauschale_pro_tag: $6.00
+    -- tagespauschale_hoechstbetrag: $1,260.00 }
   definition az equals r.abzug_arbeitszimmer
   definition ho equals r.abzug_homeoffice
   definition gesamt equals r.abzug_gesamt
@@ -161,7 +182,10 @@ scope Fall8VollGekuerzt:
     -- tatsaechliche_aufwendungen: $0.00
     -- jahrespauschale_gewaehlt: true
     -- monate_ohne_mittelpunkt: 12
-    -- homeoffice_tage: 80 }
+    -- homeoffice_tage: 80
+    -- jahrespauschale: $1,260.00
+    -- tagespauschale_pro_tag: $6.00
+    -- tagespauschale_hoechstbetrag: $1,260.00 }
   definition az equals r.abzug_arbeitszimmer
   definition ho equals r.abzug_homeoffice
   assertion az = $0.00

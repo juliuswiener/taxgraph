@@ -1,0 +1,50 @@
+# Test Andockung Arbeitszimmer/Homeoffice -> Werbungskosten -> § 9a -> § 32a
+
+> Using Arbeitszimmer_homeoffice as AZ
+
+> Using Einkommensteuertarif
+
+Der abziehbare Raumkostenbetrag (§ 4 Abs. 5 Nr. 6b/6c i.V.m. § 9 Abs. 5 EStG) ist
+fuer Arbeitnehmer ein Werbungskosten-Posten. Er dockt VOR der § 9a-Vergleichs-
+rechnung an, zusammen mit anderen Werbungskosten (z.B. Entfernungspauschale).
+
+```catala
+#[test]
+declaration scope TestAndockung:
+  internal raum content AZ.Raumkostenabzug
+  internal r content Einkommensteuertarif.FestzusetzendeEstEinzel
+  output werbungskosten content money
+  output einkuenfte content money
+  output tarif content money
+
+scope TestAndockung:
+  # Haeusliches Arbeitszimmer als Mittelpunkt, tatsaechliche Kosten 2000 -> 2000.
+  definition raum equals output of AZ.Raumkostenabzug with {
+    -- arbeitszimmer_vorhanden: true
+    -- ist_mittelpunkt: true
+    -- tatsaechliche_aufwendungen: $2,000.00
+    -- jahrespauschale_gewaehlt: false
+    -- monate_ohne_mittelpunkt: 0
+    -- homeoffice_tage: 0
+    -- jahrespauschale: $1,260.00
+    -- tagespauschale_pro_tag: $6.00
+    -- tagespauschale_hoechstbetrag: $1,260.00 }
+
+  # Andockpunkt: Raumkosten als Werbungskosten in die § 9a-Vergleichsrechnung.
+  definition werbungskosten equals raum.abzug_gesamt
+
+  definition r equals output of Einkommensteuertarif.FestzusetzendeEstEinzel with {
+    -- bruttoarbeitslohn: $40,000.00
+    -- werbungskosten: werbungskosten
+    -- sonderausgaben: $0.00
+    -- veranlagungszeitraum: VZ2024 }
+
+  definition einkuenfte equals r.summe_der_einkuenfte
+  definition tarif equals r.tarifliche_est
+
+  # WK 2000 > Arbeitnehmer-Pauschbetrag 1230 -> Einkuenfte 38000, zvE 37964,
+  # tarifliche ESt 6811 (VZ 2024).
+  assertion werbungskosten = $2,000.00
+  assertion einkuenfte = $38,000.00
+  assertion tarif = $6,811.00
+```
