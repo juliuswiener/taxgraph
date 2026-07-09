@@ -1,0 +1,115 @@
+# Tests § 32a Einkommensteuertarif
+
+> Using Einkommensteuertarif as P32a
+
+Testfaelle fuer den Grundtarif (Absatz 1) und das Splitting-Verfahren
+(Absatz 5). Die erwarteten Werte wurden gegen GETTSIM 1.2.1 abgeglichen
+(Einzeltarif) bzw. nach dem literalen Splitting `2 * abrunden(Grundtarif(Z/2))`
+bestimmt.
+
+```catala
+#[test]
+declaration scope TestGrundtarif2026:
+  output t_null content money            # zvE 0
+  output t_gfb content money             # zvE = Grundfreibetrag
+  output t_gfb_plus content money        # erster Euro ueber GFB
+  output t_20000 content money
+  output t_30000 content money
+  output t_66760 content money
+  output t_100000 content money
+  output t_300000 content money
+
+scope TestGrundtarif2026:
+  definition t_null equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $0.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion t_null = $0.00
+
+  definition t_gfb equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $12348.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion t_gfb = $0.00
+
+  definition t_gfb_plus equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $12349.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion t_gfb_plus = $0.00
+
+  definition t_20000 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $20000.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion t_20000 = $1570.00
+
+  definition t_30000 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $30000.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion t_30000 = $4217.00
+
+  definition t_66760 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $66760.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion t_66760 = $16920.00
+
+  definition t_100000 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $100000.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion t_100000 = $30864.00
+
+  definition t_300000 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $300000.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion t_300000 = $115529.00
+```
+
+Grundtarif fuer die weiteren Veranlagungszeitraeume.
+
+```catala
+#[test]
+declaration scope TestGrundtarif2025:
+  output t_30000 content money
+  output t_60000 content money
+  output t_100000 content money
+
+scope TestGrundtarif2025:
+  definition t_30000 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $30000.00 -- veranlagungszeitraum: VZ2025 }).tarifliche_steuer
+  assertion t_30000 = $4303.00
+  definition t_60000 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $60000.00 -- veranlagungszeitraum: VZ2025 }).tarifliche_steuer
+  assertion t_60000 = $14415.00
+  definition t_100000 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $100000.00 -- veranlagungszeitraum: VZ2025 }).tarifliche_steuer
+  assertion t_100000 = $31088.00
+
+#[test]
+declaration scope TestGrundtarif2024:
+  output t_30000 content money
+  output t_60000 content money
+  output t_100000 content money
+
+scope TestGrundtarif2024:
+  definition t_30000 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $30000.00 -- veranlagungszeitraum: VZ2024 }).tarifliche_steuer
+  assertion t_30000 = $4412.00
+  definition t_60000 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $60000.00 -- veranlagungszeitraum: VZ2024 }).tarifliche_steuer
+  assertion t_60000 = $14646.00
+  definition t_100000 equals (output of P32a.Grundtarif with {
+    -- zu_versteuerndes_einkommen: $100000.00 -- veranlagungszeitraum: VZ2024 }).tarifliche_steuer
+  assertion t_100000 = $31363.00
+```
+
+Splitting-Verfahren (Absatz 5). Erwartung: gerader Euro-Betrag, gleich dem
+Zweifachen des Grundtarifs auf der Haelfte. Bei geradem gemeinsamem zvE mit
+ganzzahliger Haelfte ergibt sich damit exakt `2 * Grundtarif(Z/2)`.
+
+```catala
+#[test]
+declaration scope TestSplitting2026:
+  output s_60000 content money
+  output s_100000 content money
+  output s_120000 content money
+
+scope TestSplitting2026:
+  definition s_60000 equals (output of P32a.Splittingtarif with {
+    -- zu_versteuerndes_einkommen_gemeinsam: $60000.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion s_60000 = $8434.00
+  definition s_100000 equals (output of P32a.Splittingtarif with {
+    -- zu_versteuerndes_einkommen_gemeinsam: $100000.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion s_100000 = $21096.00
+  definition s_120000 equals (output of P32a.Splittingtarif with {
+    -- zu_versteuerndes_einkommen_gemeinsam: $120000.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
+  assertion s_120000 = $28466.00
+```

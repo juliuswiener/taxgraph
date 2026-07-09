@@ -1,0 +1,195 @@
+# § 32a EStG - Einkommensteuertarif
+
+> Module Einkommensteuertarif
+
+Formalisierung des Einkommensteuertarifs nach § 32a EStG fuer die
+Veranlagungszeitraeume 2024, 2025 und 2026. Eine Formelstruktur, drei
+Parametersaetze. Grundtarif (Absatz 1) und Splitting-Verfahren (Absatz 5).
+
+Konvention: Gesetzestext in Prosa (deutsch), unmittelbar gefolgt von der
+Formalisierung. Bezeichner und Kommentare im Code englisch. Die Tarifkonstanten
+liegen getrennt in `params/<vz>/einkommensteuertarif_p32a.yaml`; sie sind hier
+im Parameter-Layer (Funktion `tariff_parameters`) mit derselben Quellenangabe
+gespiegelt.
+
+## Datentypen
+
+Der Veranlagungszeitraum als Aufzaehlung und die Tarifparameter als Struktur.
+
+```catala
+declaration enumeration Veranlagungszeitraum:
+  -- VZ2024
+  -- VZ2025
+  -- VZ2026
+
+declaration structure Tarifparameter:
+  # All monetary bounds and coefficients are held as decimals in units of euro.
+  data grundfreibetrag content decimal        # upper bound of the zero zone
+  data zone2_obergrenze content decimal       # upper bound of progressive zone I
+  data zone3_obergrenze content decimal       # upper bound of progressive zone II
+  data zone4_obergrenze content decimal       # upper bound of first proportional zone
+  data zone2_a content decimal                # quadratic coefficient, zone 2
+  data zone2_b content decimal                # linear coefficient, zone 2
+  data zone3_a content decimal                # quadratic coefficient, zone 3
+  data zone3_b content decimal                # linear coefficient, zone 3
+  data zone3_c content decimal                # intercept, zone 3
+  data zone4_faktor content decimal
+  data zone4_abzug content decimal
+  data zone5_faktor content decimal
+  data zone5_abzug content decimal
+```
+
+## Parameter-Layer
+
+Werte je Veranlagungszeitraum. Quellen siehe
+`params/<vz>/einkommensteuertarif_p32a.yaml`. VZ 2026 woertlich aus der Fassung
+"ab dem Veranlagungszeitraum 2026" (§ 32a Abs. 1 EStG, Art. 2 G. v. 30.12.2024
+BGBl. 2024 Nr. 449, gesetze-im-internet.de, abgerufen 2026-07-09). VZ 2024 und
+2025 aus den GETTSIM-Zonenparametern abgeleitet, Methode gegen die
+VZ-2026-Literalfassung validiert.
+
+```catala
+declaration tariff_parameters content Tarifparameter
+  depends on vz content Veranlagungszeitraum
+  equals
+  match vz with pattern
+  -- VZ2024: Tarifparameter {
+      -- grundfreibetrag: 11784.0
+      -- zone2_obergrenze: 17005.0
+      -- zone3_obergrenze: 66760.0
+      -- zone4_obergrenze: 277825.0
+      -- zone2_a: 954.80
+      -- zone2_b: 1400.0
+      -- zone3_a: 181.19
+      -- zone3_b: 2397.0
+      -- zone3_c: 991.21
+      -- zone4_faktor: 0.42
+      -- zone4_abzug: 10636.31
+      -- zone5_faktor: 0.45
+      -- zone5_abzug: 18971.06
+    }
+  -- VZ2025: Tarifparameter {
+      -- grundfreibetrag: 12096.0
+      -- zone2_obergrenze: 17443.0
+      -- zone3_obergrenze: 68480.0
+      -- zone4_obergrenze: 277825.0
+      -- zone2_a: 932.30
+      -- zone2_b: 1400.0
+      -- zone3_a: 176.64
+      -- zone3_b: 2397.0
+      -- zone3_c: 1015.13
+      -- zone4_faktor: 0.42
+      -- zone4_abzug: 10911.92
+      -- zone5_faktor: 0.45
+      -- zone5_abzug: 19246.67
+    }
+  -- VZ2026: Tarifparameter {
+      -- grundfreibetrag: 12348.0
+      -- zone2_obergrenze: 17799.0
+      -- zone3_obergrenze: 69878.0
+      -- zone4_obergrenze: 277825.0
+      -- zone2_a: 914.51
+      -- zone2_b: 1400.0
+      -- zone3_a: 173.10
+      -- zone3_b: 2397.0
+      -- zone3_c: 1034.87
+      -- zone4_faktor: 0.42
+      -- zone4_abzug: 11135.63
+      -- zone5_faktor: 0.45
+      -- zone5_abzug: 19470.38
+    }
+```
+
+## Absatz 1: Grundtarif
+
+Wortlaut (Fassung ab VZ 2026, sinngemaess auch fuer 2024/2025 mit den
+jeweiligen Parametern), Zitat eingerueckt:
+
+    (1) 1Die tarifliche Einkommensteuer bemisst sich nach dem auf volle Euro
+    abgerundeten zu versteuernden Einkommen. 2Sie betraegt ... jeweils in Euro
+    fuer zu versteuernde Einkommen
+    1. bis 12 348 Euro (Grundfreibetrag): 0;
+    2. von 12 349 Euro bis 17 799 Euro: (914,51 * y + 1 400) * y;
+    3. von 17 800 Euro bis 69 878 Euro: (173,10 * z + 2 397) * z + 1 034,87;
+    4. von 69 879 Euro bis 277 825 Euro: 0,42 * x - 11 135,63;
+    5. von 277 826 Euro an: 0,45 * x - 19 470,38.
+    3Die Groesse "y" ist ein Zehntausendstel des den Grundfreibetrag
+    uebersteigenden Teils des ... abgerundeten zu versteuernden Einkommens.
+    4Die Groesse "z" ist ein Zehntausendstel des 17 799 Euro uebersteigenden
+    Teils ... 5Die Groesse "x" ist das auf einen vollen Euro-Betrag abgerundete
+    zu versteuernde Einkommen. 6Der sich ergebende Steuerbetrag ist auf den
+    naechsten vollen Euro-Betrag abzurunden.
+
+`Decimal.truncate` schneidet die Nachkommastellen ab; fuer nichtnegative Werte
+(zvE und Steuer sind stets >= 0) entspricht das der gesetzlichen Abrundung auf
+volle Euro (Satz 1 fuer das zvE, Satz 6 fuer den Steuerbetrag).
+
+```catala
+declaration scope Grundtarif:
+  input zu_versteuerndes_einkommen content money
+  input veranlagungszeitraum content Veranlagungszeitraum
+  # abgerundetes zvE in ganzen Euro (Satz 1 / "x" nach Satz 5)
+  internal x content decimal
+  # Steuerbetrag vor Abrundung auf volle Euro (Satz 6)
+  internal steuerbetrag_roh content decimal
+  output tarifliche_steuer content money
+
+scope Grundtarif:
+  definition x equals Decimal.truncate of (zu_versteuerndes_einkommen / $1.00)
+
+  definition steuerbetrag_roh equals
+    let p equals tariff_parameters of veranlagungszeitraum in
+    if x <= p.grundfreibetrag then
+      # Nummer 1: bis Grundfreibetrag
+      0.0
+    else if x <= p.zone2_obergrenze then
+      # Nummer 2: Progressionszone I
+      let y equals (x - p.grundfreibetrag) / 10000.0 in
+      (p.zone2_a * y + p.zone2_b) * y
+    else if x <= p.zone3_obergrenze then
+      # Nummer 3: Progressionszone II
+      let z equals (x - p.zone2_obergrenze) / 10000.0 in
+      (p.zone3_a * z + p.zone3_b) * z + p.zone3_c
+    else if x <= p.zone4_obergrenze then
+      # Nummer 4: erste Proportionalzone
+      p.zone4_faktor * x - p.zone4_abzug
+    else
+      # Nummer 5: obere Proportionalzone
+      p.zone5_faktor * x - p.zone5_abzug
+
+  definition tarifliche_steuer equals
+    (Decimal.truncate of steuerbetrag_roh) * $1.00
+```
+
+## Absatz 5: Splitting-Verfahren
+
+Wortlaut, Zitat eingerueckt:
+
+    (5) Bei Ehegatten, die nach den §§ 26, 26b zusammen zur Einkommensteuer
+    veranlagt werden, betraegt die tarifliche Einkommensteuer ... das Zweifache
+    des Steuerbetrags, der sich fuer die Haelfte ihres gemeinsam zu
+    versteuernden Einkommens nach Absatz 1 ergibt (Splitting-Verfahren).
+
+Formalisierung: der "Steuerbetrag ... nach Absatz 1" ist der Grundtarif
+angewandt auf die Haelfte des gemeinsamen zvE. Absatz 1 schliesst die
+Abrundung des zvE (Satz 1) und die Abrundung des Steuerbetrags auf volle Euro
+(Satz 6) ein. Anschliessend wird verdoppelt. Der Steuerbetrag der Haelfte ist
+damit ganzzahlig, die tarifliche ESt beim Splitting stets ein gerader
+Euro-Betrag.
+
+```catala
+declaration scope Splittingtarif:
+  input zu_versteuerndes_einkommen_gemeinsam content money
+  input veranlagungszeitraum content Veranlagungszeitraum
+  internal steuer_haelfte content money
+  output tarifliche_steuer content money
+
+scope Splittingtarif:
+  definition steuer_haelfte equals
+    (output of Grundtarif with {
+       -- zu_versteuerndes_einkommen: zu_versteuerndes_einkommen_gemeinsam * 0.5
+       -- veranlagungszeitraum: veranlagungszeitraum
+     }).tarifliche_steuer
+
+  definition tarifliche_steuer equals steuer_haelfte * 2.0
+```
