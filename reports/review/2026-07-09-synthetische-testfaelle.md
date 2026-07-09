@@ -1,28 +1,35 @@
-# Synthetische Testfälle zur Absegnung — 2026-07-09
+# Synthetische Testfälle — abgesegnet von Julius am 2026-07-09
 
 Für diese Regeln existiert **kein amtliches Rechenbeispiel**, das auf die Signatur
 passt. Recherchiert wurden EStH/EStR, BMF-Schreiben und BFH-Rechtsprechung;
 Steuerberater-Portale sind keine zulässige Quelle.
 
-Die Fälle unten sind **synthetisch**: die Erwartungswerte sind aus dem
-eingefrorenen Normtext hergeleitet, nicht aus einem amtlichen Beispiel abgeschrieben
-und nicht von einem Modell geraten. Jeder trägt seinen `rechenweg`. Der
-`zitatanker` verweist auf die Norm, aus der sich der Wert ergibt, und ist gegen den
-eingefrorenen Text geprüft.
+Die Fälle sind **synthetisch**: die Erwartungswerte sind aus dem eingefrorenen
+Normtext hergeleitet, nicht aus einem amtlichen Beispiel abgeschrieben und nicht
+von einem Modell geraten. Jeder trägt seinen `rechenweg`.
 
-**Nichts davon ist im Manifest aktiv.** Erst deine Absegnung macht sie zu
-Test-Seeds; dann tragen sie `quelle: reports/review/2026-07-09-synthetische-testfaelle.md`
-und `herkunft: synthetisch`.
+Dieses Dokument ist der Beleg (`quelle`) der freigegebenen Test-Seeds. Jeder
+`zitatanker` unten steht wörtlich **sowohl hier als auch im eingefrorenen
+Normtext** — die Prüfung ist damit nicht zirkulär.
 
-Alle unten verwendeten `zitatanker` wurden zusätzlich gegen den **eingefrorenen
-Normtext** geprüft (nicht nur gegen dieses Dokument), damit die Prüfung nicht
-zirkulär ist: 8 von 8 stehen dort wörtlich.
+## Entscheidungen
 
-Nicht enthalten:
-- **§ 24b** — bekam stattdessen `herkunft: abgeleitet` aus der Gesetzesmechanik
-  (Abs. 2 Sätze 1/2, Abs. 4). Test-Gate ist grün, keine Absegnung nötig.
-- **§ 9 Abs. 1 S. 3 Nr. 5a** — `status: zuschnitt_offen`. Erst neu schneiden,
-  dann Testfälle.
+| Regel | Entscheidung |
+|---|---|
+| § 9 Abs. 1 S. 3 Nr. 5 (doppelte Haushaltsführung) | **Übernommen**, alle vier Fälle inkl. Auslandsgrenze. `im_inland` bleibt in der Signatur. |
+| § 9 Abs. 1 S. 3 Nr. 6 (Arbeitsmittel) | **Zurückgestellt.** Neuschnitt in Charge 2. |
+| § 9 Abs. 1 S. 3 Nr. 7 (AfA) | **Zurückgestellt.** Neuschnitt in Charge 2, gemeinsam mit Nr. 6. |
+| § 9 Abs. 6 (Erstausbildung) | **Übernommen**, alle drei Fälle. |
+| § 10 Abs. 1 Nr. 7 (Berufsausbildung) | **Übernommen**, alle drei Fälle, plus Geltungsbedingung. |
+| § 24b (Entlastungsbetrag) | Kein synthetischer Fall — `herkunft: abgeleitet` aus der Gesetzesmechanik. |
+| § 9 Abs. 1 S. 3 Nr. 5a (Übernachtung) | `status: zuschnitt_offen`, erst neu schneiden. |
+
+**Warum `im_inland` bei Nr. 5 in der Signatur bleibt, bei § 9 Abs. 4a aber nicht:**
+Bei Abs. 4a erfordert das Ausland ganze BMF-Ländertabellen mit länderweise
+unterschiedlichen Pauschbeträgen — das ist eine eigene Datenquelle und gehört in
+eine Geltungsbedingung. Bei Nr. 5 ist es ein einzelner Cap im selben Normsatz
+(1 000 € Inland, 2 000 € Ausland). Die Grenze verläuft dort, wo eine externe
+Datenquelle nötig würde.
 
 ---
 
@@ -31,45 +38,43 @@ Nicht enthalten:
 Signatur: `unterkunftskosten_monat: money`, `monate: int`, `im_inland: bool`
 → `abziehbare_unterkunftskosten: money`
 
-Kernsatz der Norm (eingefroren, wörtlich geprüft):
-`sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt`
+**Auflage Julius, umgesetzt:** der Zitatanker `"2 000 Euro"` war zu kurz. Er kommt
+im Normtext **zweimal** vor — einmal im Cap („höchstens 2 000 Euro im Monat bei
+einer Unterkunft im Ausland") und einmal im Ausnahmesatz („die Grenze von 2 000
+Euro … gilt nicht, wenn eine Dienst- oder Werkswohnung …"). Ein Match auf die
+falsche Stelle wäre unbemerkt geblieben. Beide Anker sind jetzt auf die umgebende
+Wortlaut-Passage verlängert und im Normtext eindeutig (je 1 Treffer).
 
-Zu deiner Prüfung: Die Norm kappt bei **1 000 Euro im Monat** für Unterkünfte im
-Inland. Für Auslandsunterkünfte gilt seit 2024 eine eigene Grenze von 2 000 Euro,
-die der Judge zu Recht als `wirkt_hinein` gemeldet hat — Fall 4 unten prüft sie.
-Wenn du die Auslandsgrenze **nicht** in der Signatur haben willst, muss Fall 4
-entfallen und `im_inland` als Geltungsbedingung deklariert werden. Das ist die
-Entscheidung, die ich dir nicht abnehmen kann.
+Vier Geltungsbedingungen decken die Norm-Teile ab, die in den Scope hineinwirken:
+`beruflich_veranlasste_doppelte_haushaltsfuehrung`,
+`eigener_hausstand_ausserhalb_des_taetigkeitsorts`,
+`finanzielle_beteiligung_an_lebensfuehrungskosten`,
+`keine_verpflichtende_dienst_oder_werkswohnung`.
 
 ```yaml
 - quelle: reports/review/2026-07-09-synthetische-testfaelle.md
-  zitatanker: "höchstens 1 000 Euro im Monat"
+  zitatanker: "höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland"
   herkunft: synthetisch
   rechenweg: "Monatsmiete 800 EUR liegt unter der Kappungsgrenze; 800 x 12 = 9.600,00 EUR."
   inputs: {unterkunftskosten_monat: 800, monate: 12, im_inland: true}
   expected: 9600.00
 
 - quelle: reports/review/2026-07-09-synthetische-testfaelle.md
-  zitatanker: "höchstens 1 000 Euro im Monat"
+  zitatanker: "höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland"
   herkunft: synthetisch
   rechenweg: "Monatsmiete 1.400 EUR wird auf 1.000 EUR gekappt; 1.000 x 12 = 12.000,00 EUR."
   inputs: {unterkunftskosten_monat: 1400, monate: 12, im_inland: true}
   expected: 12000.00
 
 - quelle: reports/review/2026-07-09-synthetische-testfaelle.md
-  zitatanker: "höchstens 1 000 Euro im Monat"
+  zitatanker: "höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland"
   herkunft: synthetisch
   rechenweg: "Kappung wirkt je Monat, nicht auf das Jahr: 1.000 x 6 = 6.000,00 EUR."
   inputs: {unterkunftskosten_monat: 1400, monate: 6, im_inland: true}
   expected: 6000.00
-```
 
-Offen (Fall 4, Auslandsgrenze) — nur aufnehmen, wenn `im_inland` in der Signatur
-bleiben soll:
-
-```yaml
 - quelle: reports/review/2026-07-09-synthetische-testfaelle.md
-  zitatanker: "2 000 Euro"
+  zitatanker: "höchstens 2 000 Euro im Monat bei einer Unterkunft im Ausland"
   herkunft: synthetisch
   rechenweg: "Auslandsunterkunft: Kappung bei 2.000 EUR je Monat; 2.000 x 12 = 24.000,00 EUR."
   inputs: {unterkunftskosten_monat: 2500, monate: 12, im_inland: false}
@@ -78,70 +83,33 @@ bleiben soll:
 
 ---
 
-## 2. § 9 Abs. 1 S. 3 Nr. 6 — Arbeitsmittel
+## 2. § 9 Abs. 1 S. 3 Nr. 6 — Arbeitsmittel (zurückgestellt)
 
-Signatur: `aufwendungen: money` → `abziehbar: money`
+Isoliert ist die Regel eine Identitätsfunktion: kein Cap, keine Schwelle. Ein Test
+darauf prüft nichts und gibt Scheinsicherheit. Nr. 6 verweist zudem auf Nr. 7
+(„Nummer 7 bleibt unberührt"), was der Judge als `wirkt_hinein` gemeldet hat.
 
-Die Norm kennt **keinen Cap und keine Schwelle**: Aufwendungen für Arbeitsmittel
-sind Werbungskosten. Die Identitätsabbildung ist der ganze Inhalt. Die Testfälle
-sind entsprechend arm — das ist kein Mangel der Fälle, sondern der Regel.
-
-```yaml
-- quelle: reports/review/2026-07-09-synthetische-testfaelle.md
-  zitatanker: "Aufwendungen für Arbeitsmittel"
-  herkunft: synthetisch
-  rechenweg: "Kein Cap, keine Schwelle: Aufwendungen sind in voller Hoehe abziehbar."
-  inputs: {aufwendungen: 300}
-  expected: 300.00
-
-- quelle: reports/review/2026-07-09-synthetische-testfaelle.md
-  zitatanker: "Aufwendungen für Arbeitsmittel"
-  herkunft: synthetisch
-  rechenweg: "Randfall null: kein Aufwand, kein Abzug."
-  inputs: {aufwendungen: 0}
-  expected: 0.00
-```
-
-**Meine Empfehlung:** diese Regel *nicht* mit einem Test-Gate belegen, sondern
-zusammen mit Nr. 7 (AfA) neu schneiden. Nr. 6 verweist auf Nr. 7 („Nummer 7 bleibt
-unberührt"), und der Judge hat genau das als `wirkt_hinein` gemeldet. Isoliert ist
-Nr. 6 eine Identitätsfunktion, die nichts prüft. Deine Entscheidung.
+Neuschnitt in Charge 2 als **gemeinsame Regel Nr. 6 + Nr. 7**.
 
 ---
 
-## 3. § 9 Abs. 1 S. 3 Nr. 7 — AfA / GWG-Grenze
+## 3. § 9 Abs. 1 S. 3 Nr. 7 — AfA (zurückgestellt)
 
-Signatur: `anschaffungskosten: money`, `nutzungsdauer_jahre: int`
-→ `afa_jahresbetrag: money`
+Zurückgestellt aus zwei Gründen:
 
-Die 800-Euro-Grenze steht **nicht** in § 9, sondern ergibt sich aus dem Verweis in
-Satz 2 auf § 6 Abs. 2 EStG. Der Zitatanker unten verweist auf den Verweis, nicht
-auf den Betrag. Sauberer wäre ein Multi-Source-Task mit § 6 Abs. 2 als zweiter
-Quelle — analog zu § 33 mit dem BFH-Leitsatz.
+1. Die 800-Euro-GWG-Grenze steht **nicht** in § 9, sondern ergibt sich aus dem
+   Verweis in Satz 2 auf § 6 Abs. 2 EStG. Der Neuschnitt bekommt § 6 Abs. 2 als
+   zweite Quelle (`typ: gesetz`, eingefroren) — dasselbe Muster wie § 33 Abs. 3
+   mit dem BFH-Leitsatz.
+2. **Der Anschaffungsmonat fehlt in der Signatur.** Die AfA ist im Anschaffungsjahr
+   zeitanteilig. Eine Signatur aus nur `anschaffungskosten` und
+   `nutzungsdauer_jahre` kann das nicht abbilden und bräuchte eine stille
+   Volljahr-Annahme — genau die Art von Annahme, die der Round-Trip-Judge zu Recht
+   als `stille_zusatzannahme` melden würde.
 
-**Meine Empfehlung:** § 6 Abs. 2 einfrieren und als `typ: gesetz` zweite Quelle
-anhängen, statt die 800 Euro über einen synthetischen Fall einzuschmuggeln. Bis
-dahin nur der Fall ohne GWG-Bezug:
-
-```yaml
-- quelle: reports/review/2026-07-09-synthetische-testfaelle.md
-  zitatanker: "Absetzungen für Abnutzung"
-  herkunft: synthetisch
-  rechenweg: "Lineare AfA ueber die Nutzungsdauer: 5.000 / 5 = 1.000,00 EUR je Jahr."
-  inputs: {anschaffungskosten: 5000, nutzungsdauer_jahre: 5}
-  expected: 1000.00
-
-- quelle: reports/review/2026-07-09-synthetische-testfaelle.md
-  zitatanker: "Absetzungen für Abnutzung"
-  herkunft: synthetisch
-  rechenweg: "1.200 / 3 = 400,00 EUR je Jahr."
-  inputs: {anschaffungskosten: 1200, nutzungsdauer_jahre: 3}
-  expected: 400.00
-```
-
-Der Fall `anschaffungskosten: 800, nutzungsdauer_jahre: 1` ist **bewusst
-weggelassen**: sein Ergebnis hängt an der GWG-Grenze aus § 6 Abs. 2, die die Regel
-nicht sieht. Ein Erwartungswert wäre hier geraten.
+Der Fall `anschaffungskosten: 800, nutzungsdauer_jahre: 1` war schon im Entwurf
+weggelassen: sein Ergebnis hängt an der GWG-Grenze, die die Regel nicht sieht. Ein
+Erwartungswert wäre dort geraten gewesen.
 
 ---
 
@@ -179,6 +147,10 @@ Signatur: `erstausbildung_abgeschlossen: bool`, `im_dienstverhaeltnis: bool`,
 
 Signatur: `aufwendungen: money` → `abziehbare_sonderausgaben: money`
 
+Geltungsbedingung `hoechstbetrag_gilt_je_person`: Satz 2 gewährt den Höchstbetrag
+jedem Ehegatten einzeln. Die Signatur bildet **eine Person** ab; die
+Zusammenveranlagungs-Mechanik kommt bei der § 2-Integration.
+
 ```yaml
 - quelle: reports/review/2026-07-09-synthetische-testfaelle.md
   zitatanker: "bis zu 6 000 Euro im Kalenderjahr"
@@ -201,22 +173,3 @@ Signatur: `aufwendungen: money` → `abziehbare_sonderausgaben: money`
   inputs: {aufwendungen: 9000}
   expected: 6000.00
 ```
-
-Hinweis: Satz 2 verdoppelt den Höchstbetrag bei zusammenveranlagten Ehegatten. Die
-Signatur kennt keinen Familienstand. Wenn du die Regel so freigibst, braucht sie
-eine Geltungsbedingung `keine_zusammenveranlagung`.
-
----
-
-## Was ich von dir brauche
-
-Pro Regel eine von drei Antworten:
-
-1. **Fälle so übernehmen** — ich trage sie als `herkunft: synthetisch` ins
-   Manifest, `--regate` prüft sie ohne Modellkosten.
-2. **Fälle ändern** — sag mir welche Werte, ich trage deine ein.
-3. **Regel zurückstellen** — wie § 9 Abs. 1 S. 3 Nr. 5a, Neuschnitt in Charge 2.
-
-Für Nr. 6 (Arbeitsmittel) und Nr. 7 (AfA) empfehle ich Antwort 3 mit Neuschnitt als
-gemeinsame Regel plus § 6 Abs. 2 als zweiter Quelle. Ein Test, der nur die
-Identitätsfunktion prüft, gibt falsche Sicherheit.

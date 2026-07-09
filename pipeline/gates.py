@@ -208,7 +208,10 @@ def _coerce(rt, value, typ: str):
         return rt.Decimal(str(value))
     if typ == "bool":
         return rt.Bool(bool(value))
-    return int(value)
+    # Ein nackter Python-int ist KEIN Catala-Integer. Vergleiche wie `i >= 3`
+    # scheitern dann mit "comparison of values of these types is not supported" -
+    # ein Laufzeitfehler des Gates, der wie eine Divergenz von A und B aussieht.
+    return rt.Integer(int(value))
 
 
 def equivalence_gate(a_src: str | None, b_src: str | None,

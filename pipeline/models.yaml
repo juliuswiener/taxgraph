@@ -54,8 +54,8 @@ roles:
     # Limit abgeschnittene Antwort, die wie ein Modellfehler aussieht; siehe
     # docs/setup.md ("Ein zu knappes max_tokens sieht aus wie ein Modellfehler").
     max_tokens: 8192          # Formalisierung: Catala-Quelltext, gemessen < 3000
-    prompt_template_id: "formalisierung@3"
-    repair_template_id: "formalisierung_repair@1"
+    prompt_template_id: "formalisierung@4"
+    repair_template_id: "formalisierung_repair@2"
     fewshot_set_id: "formalisierung_base@1"
 
   formalisierer_b:
@@ -65,8 +65,8 @@ roles:
     providers: ["together"]
     temperature: 0.0
     max_tokens: 8192          # identisch zu A, damit das Budget kein Faktor ist
-    prompt_template_id: "formalisierung@3"   # identisches Template wie A
-    repair_template_id: "formalisierung_repair@1"  # identische Reparaturrunde wie A
+    prompt_template_id: "formalisierung@4"   # identisches Template wie A
+    repair_template_id: "formalisierung_repair@2"  # identische Reparaturrunde wie A
     fewshot_set_id: "formalisierung_base@1"   # identische Few-Shots wie A
 
   judge:

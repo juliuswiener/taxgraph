@@ -103,7 +103,7 @@ def regate(rules: list[dict]) -> int:
                 changed += 1
         rep["failed_gates"] = [g["name"] for g in rep["gates"]
                                if g["status"] == G.FAIL and not g["name"].endswith("_first")]
-        rep["queue_status"] = _queue_status(rep["gates"])
+        rep["queue_status"] = _queue_status(rep["gates"], rule)
         rep["regated"] = True
         json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
         print(f"  {rule['rule_id']}: {rep['queue_status']} "
@@ -112,10 +112,107 @@ def regate(rules: list[dict]) -> int:
     return 0
 
 
-def _queue_status(gates: list[dict]) -> str:
+def redo_a(rules: list[dict], dry_run: bool) -> int:
+    """Formalisierer A neu laufen lassen, B aus dem Report wiederverwenden.
+
+    Sonnets Numeric-Tower-Fehler ist ein Muster (G2 und p33_3, ueberlebt die
+    Reparaturrunde). Statt ihn weiter zu messen, bekommen beide Formalisierer ein
+    Cheatsheet aus den geprueften Idiomen der Handregeln - symmetrisch, damit der
+    Vergleich A/B fair bleibt.
+
+    Nur A wird neu formalisiert. Der Judge laeuft mit, weil sein Verdikt A's
+    Quelltext beurteilt: ein altes Verdikt zu einem neuen Quelltext waere eine
+    Luege im Report. B bleibt unangetastet - das spart den teureren Teil und haelt
+    die Aequivalenzpruefung gegen genau dieselbe zweite Formalisierung.
+    """
+    import roles as R
+    from client import OpenRouterClient
+    from provenance import load_roles
+
+    roles, models_hash = load_roles()
+    for rule in rules:
+        path = os.path.join(OUT_ROOT, rule["rule_id"], "report.json")
+        if not os.path.exists(path):
+            print(f"  {rule['rule_id']}: kein Report - erst einen vollen Lauf fahren")
+            continue
+        rep = json.load(open(path, encoding="utf-8"))
+        src_b = rep.get("catala_b")
+        if not src_b:
+            print(f"  {rule['rule_id']}: kein catala_b gespeichert, uebersprungen")
+            continue
+
+        cand = build_candidate(rule)
+        client = OpenRouterClient(dry_run=dry_run)
+        exclude = set(cand["exclude_rule_ids"])
+        cost = 0.0
+        print(f"\n=== redo-a :: {rule['rule_id']} ===", flush=True)
+
+        claims, p = R.extract(client, roles["worker"], cand["norm_text"], models_hash, exclude)
+        cost += p.cost_usd
+        a_text, pa = R.formalize(client, roles["formalisierer_a"], cand["norm_text"],
+                                 claims, models_hash, exclude, signature=cand["signature"])
+        cost += pa.cost_usd
+        mod_a, src_a = G.extract_catala(a_text)
+        syn, tc = G.syntax_gate(src_a, mod_a), G.typecheck_gate(src_a, mod_a)
+        first = (syn.status, tc.status)
+        repaired = False
+        if src_a and G.FAIL in first:
+            msg = syn.detail if syn.status == G.FAIL else tc.detail
+            r_text, pr = R.repair(client, roles["formalisierer_a"], src_a, msg,
+                                  models_hash, exclude, cand["signature"])
+            cost += pr.cost_usd
+            r_mod, r_src = G.extract_catala(r_text)
+            if r_src:
+                repaired = True
+                mod_a, src_a = r_mod, r_src
+                syn, tc = G.syntax_gate(src_a, mod_a), G.typecheck_gate(src_a, mod_a)
+
+        j_text, pj = R.roundtrip(client, roles["judge"], cand["norm_text"], src_a or "",
+                                 models_hash, signature=cand["signature"])
+        cost += pj.cost_usd
+        verdict = G.roundtrip_parse(j_text)
+
+        fresh = {"syntax_a_first": G.GateResult("", first[0], "erster Versuch"),
+                 "typecheck_a_first": G.GateResult("", first[1], "erster Versuch"),
+                 "syntax_a": syn, "typecheck_a": tc,
+                 "equivalence": G.equivalence_gate(src_a, src_b, cand),
+                 "roundtrip": G.roundtrip_gate(j_text),
+                 "scope_gap": G.scope_gap_gate(verdict),
+                 "geltungsbereich": G.geltungsbereich_gate(verdict, cand),
+                 "clerk": G.clerk_gate(src_a, mod_a, cand, ROOT)}
+        vorhanden = {g["name"] for g in rep["gates"]}
+        for g in rep["gates"]:
+            if g["name"] in fresh:
+                g["status"], g["detail"] = fresh[g["name"]].status, fresh[g["name"]].detail
+        for name, new in fresh.items():
+            if name not in vorhanden:
+                rep["gates"].append({"name": name, "status": new.status, "detail": new.detail})
+        rep["catala_a"], rep["module_name"] = src_a, mod_a
+        rep["judge_verdict"] = verdict
+        rep["backlog"] = G.unabhaengige_gaps(verdict)
+        rep["repaired"] = {"a": repaired, "b": rep.get("repaired", {}).get("b", False)}
+        rep["failed_gates"] = [g["name"] for g in rep["gates"]
+                               if g["status"] == G.FAIL and not g["name"].endswith("_first")]
+        rep["queue_status"] = _queue_status(rep["gates"], rule)
+        rep["provenance"] += [x.to_dict() for x in (p, pa, pj)]
+        rep["total_cost_usd"] = round(rep.get("total_cost_usd", 0.0) + cost, 6)
+        json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+        gates = " ".join(f"{k}={v.status}" for k, v in fresh.items()
+                         if not k.endswith("_first"))
+        print(f"  {rep['queue_status']} | +${cost:.4f} | repaired_a={repaired}\n  {gates}",
+              flush=True)
+    return 0
+
+
+def _queue_status(gates: list[dict], rule: dict | None = None) -> str:
     st = [g["status"] for g in gates if not g["name"].endswith("_first")]
     if G.FAIL in st:
         return "flagged_for_review"
+    # Ein `freigabe: blockiert` im Manifest ueberstimmt gruene Gates. Sonst koennte
+    # eine Regel, deren Redundanz-Gate nie getragen hat, still auf `verified`
+    # rutschen, sobald das letzte technische Gate gruen wird.
+    if (rule or {}).get("freigabe") == "blockiert":
+        return "freigabe_blockiert"
     if G.SKIP in st:
         return "verified_partial (toolchain pending)"
     return "verified"
@@ -128,6 +225,9 @@ def main() -> int:
     ap.add_argument("--force", action="store_true", help="fertige Reports neu rechnen")
     ap.add_argument("--regate", action="store_true",
                     help="nur deterministische Gates neu rechnen, ohne Modellkosten")
+    ap.add_argument("--redo-a", action="store_true",
+                    help="nur Formalisierer A (und den Judge) neu laufen lassen, "
+                         "B aus dem Report wiederverwenden")
     args = ap.parse_args()
 
     cfg = yaml.safe_load(open(os.path.join(HERE, "rules.yaml"), encoding="utf-8"))
@@ -156,6 +256,8 @@ def main() -> int:
 
     if args.regate:
         return regate(rules)
+    if args.redo_a:
+        return redo_a(rules, args.dry_run)
 
     total_cost, t0 = 0.0, time.time()
     for rule in rules:
@@ -190,15 +292,19 @@ def main() -> int:
             print("  run_error:", mask_key(str(e))[:150], flush=True)
             continue
 
+        queue = res.queue_status
+        if rule.get("freigabe") == "blockiert" and queue.startswith("verified"):
+            queue = "freigabe_blockiert"
         report = {
             "candidate_id": rid,
             "norm": rule.get("norm"),
+            "freigabe": rule.get("freigabe", "offen"),
             # Herkunft der Modell-Eingabe: welche eingefrorenen Quellen, welcher Typ
             "quellen": build_candidate(rule)["quellen"],
             "geltungsbedingungen": rule.get("geltungsbedingungen", []),
             "dry_run": res.dry_run,
             "models_yaml_hash": res.models_yaml_hash,
-            "queue_status": res.queue_status,
+            "queue_status": queue,
             "gates": res.gates_dict(),
             "failed_gates": [g.name for g in res.gate_results
                              if g.status == G.FAIL and not g.name.endswith("_first")],

@@ -1,0 +1,11 @@
+dokument:
+  norm_uri: "estg/p6/abs2/2026-07-09"
+  norm: "§ 6 Abs. 2 EStG (geringwertige Wirtschaftsgueter)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__6.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p6_abs2_2026-07-09.txt"
+  sha256: "07e4b9da2b9415f5441211b0d73a3e08ff3469467f711c9a7636f95b701e0ea2"
+  authority: gesetz
+  redistributable: true
+  verwendet_in: ["pipeline/produktion/rules.yaml (Charge 2: Neuschnitt § 9 Abs. 1 S. 3 Nr. 6+7)"]

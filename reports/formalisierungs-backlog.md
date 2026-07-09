@@ -2,7 +2,7 @@
 
 Automatisch erzeugt aus den Judge-Verdikten der Gate-Kaskade. Enthalten sind ausschliesslich Norm-Teile der Klasse `unabhaengig`: sie liegen ausserhalb der formalisierten Signatur und aendern deren Ergebnis nicht. Norm-Teile, die in den Signatur-Scope hineinwirken, stehen NICHT hier - sie eskalieren im `scope_gap`-Gate, weil der Ausschnitt ohne sie falsch waere.
 
-19 Item(s) aus 7 Regel(n).
+21 Item(s) aus 7 Regel(n).
 
 
 ## aus `p10_1_7_berufsausbildung`
@@ -23,8 +23,12 @@ Automatisch erzeugt aus den Judge-Verdikten der Gate-Kaskade. Enthalten sind aus
 
 ## aus `p33_3_zumutbare_belastung`
 
-- **2Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld hat.**
-  - Die Definition, welche Kinder zählen, liegt außerhalb der Signatur, die nur die Anzahl Kinder als Integer entgegennimmt. Die Berechnung der zumutbaren Belastung ändert sich durch diese Definition nicht, da sie nur die Bestimmung des Eingabewerts betrifft.
+- **§ 33 Abs. 1 EStG: "Erwachsen einem Steuerpflichtigen zwangsläufig größere Aufwendungen ... so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen wird."**
+  - Regelt den Abzug der außergewöhnlichen Belastungen und die Rolle der zumutbaren Belastung als Kürzungsbetrag, nicht deren Berechnung. Die Berechnung der zumutbaren Belastung selbst bleibt unverändert.
+- **Tabelle in § 33 Abs. 3 Satz 1 EStG: "bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer a) nach § 32a Absatz 1, ... b) nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist"**
+  - Bestimmt, wann der Splitting-Tarif anzuwenden ist, also den Input 'splitting'. Die Berechnung der zumutbaren Belastung aus diesem Input ist davon nicht betroffen.
+- **§ 33 Abs. 3 Satz 2 EStG: "Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld hat."**
+  - Definiert den Kreis der zu berücksichtigenden Kinder und damit den Input 'anzahl_kinder'. Die Berechnung der zumutbaren Belastung aus einer gegebenen Kinderzahl ändert sich dadurch nicht.
 
 ## aus `p35a_2_3_haushaltsnahe`
 

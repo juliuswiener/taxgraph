@@ -50,7 +50,9 @@ def coerce(v, t):
     if t == "money":   return rt.Money(f"{float(v):.2f}")
     if t == "decimal": return rt.Decimal(str(v))
     if t == "bool":    return rt.Bool(bool(v))
-    return int(v)
+    # rt.Integer, nicht int: ein nackter Python-int laesst jeden Catala-Vergleich
+    # mit "comparison of values of these types is not supported" scheitern.
+    return rt.Integer(int(v))
 
 def snake(n):
     import re
