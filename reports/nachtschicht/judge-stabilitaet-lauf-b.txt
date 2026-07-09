@@ -1,0 +1,15 @@
+# Messung B (2026-07-10): dieselben vier Regeln, zweiter Durchgang, drei Judge-Laeufe je Regel.
+# Rohprotokoll. Die JSON-Datei judge-stabilitaet-gruene.json enthaelt Messung A.
+# Beide Durchgaenge zusammen sind der Beleg der Instabilitaet.
+  p9_6_erstausbildung_abgrenzung Lauf 1: abw=0 annahmen=0 (unmapped 0) gaps=4/0 roundtrip=PASS geltungsbereich=PASS
+  p9_6_erstausbildung_abgrenzung Lauf 2: abw=0 annahmen=0 (unmapped 0) gaps=1/0 roundtrip=PASS geltungsbereich=PASS
+  p9_6_erstausbildung_abgrenzung Lauf 3: abw=0 annahmen=0 (unmapped 0) gaps=4/0 roundtrip=PASS geltungsbereich=PASS
+  p10_1_7_berufsausbildung Lauf 1: abw=0 annahmen=1 (unmapped 0) gaps=3/0 roundtrip=PASS geltungsbereich=PASS
+  p10_1_7_berufsausbildung Lauf 2: PARSE-FEHLER (truncated=False, tokens=286)
+  p10_1_7_berufsausbildung Lauf 3: abw=0 annahmen=1 (unmapped 0) gaps=3/0 roundtrip=PASS geltungsbereich=PASS
+  p24b_entlastungsbetrag Lauf 1: abw=0 annahmen=3 (unmapped 0) gaps=5/0 roundtrip=PASS geltungsbereich=PASS
+  p24b_entlastungsbetrag Lauf 2: abw=0 annahmen=0 (unmapped 0) gaps=4/0 roundtrip=PASS geltungsbereich=PASS
+  p24b_entlastungsbetrag Lauf 3: abw=0 annahmen=0 (unmapped 0) gaps=3/0 roundtrip=PASS geltungsbereich=PASS
+  p9_1_3_nr5_doppelte_haushaltsfuehrung Lauf 1: PARSE-FEHLER (truncated=False, tokens=1132)
+  p9_1_3_nr5_doppelte_haushaltsfuehrung Lauf 2: abw=0 annahmen=1 (unmapped 1) gaps=9/5 roundtrip=FAIL geltungsbereich=FAIL
+  p9_1_3_nr5_doppelte_haushaltsfuehrung Lauf 3: abw=0 annahmen=1 (unmapped 0) gaps=8/1 roundtrip=PASS geltungsbereich=PASS

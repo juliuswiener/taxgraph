@@ -52,6 +52,31 @@ drei Judge-Läufe. Rohdaten in `reports/nachtschicht/judge-stabilitaet.json`.
 **§ 33 Abs. 3 — stabil:** dreimal identisch, `abweichungen=1` (A's Abrundung),
 `wirkt_hinein=0`, gleiche Gate-Urteile. Der Befund gegen A ist damit robust.
 
+### Alle sechs gemessenen Regeln
+
+Zwei Durchgänge, je drei Judge-Läufe pro Regel. Messung A in
+`judge-stabilitaet.json` und `judge-stabilitaet-gruene.json`, Messung B als
+Rohprotokoll in `judge-stabilitaet-lauf-b.txt`.
+
+| Regel | Gate-Urteile über die Läufe | stabil? |
+|---|---|---|
+| § 33 Abs. 3 | 3× `FAIL/PASS` | ja |
+| § 10 Abs. 1 Nr. 7 | `PASS/PASS`, dazu 1 Parse-Fehler | im Ergebnis ja |
+| § 24b | 3× `PASS/PASS` | ja |
+| § 9 Abs. 4a | `FAIL/PASS`, `FAIL/FAIL`, 1 Truncation | **nein** |
+| § 9 Abs. 6 | Durchgang A: `PASS/FAIL`, `FAIL/FAIL`, `PASS/PASS`. Durchgang B: 3× `PASS/PASS` | **nein** |
+| § 9 Abs. 1 S. 3 Nr. 5 | `FAIL/FAIL`, `PASS/PASS`, 1 Parse-Fehler | **nein** |
+
+**Drei von sechs Regeln bekommen bei identischem Input verschiedene Gate-Urteile.**
+Zwei von achtzehn Läufen (11 %) liefern überhaupt kein lesbares Verdikt — einmal
+Truncation, zweimal Prosa statt JSON bei 286 bzw. 1.132 Tokens.
+
+Betroffen ist auch **§ 9 Abs. 6**, die einzige Regel mit schlichtem `verified`. Sie
+war in einem Durchgang dreimal grün und im anderen nur einmal. Ihr Status ist damit
+so wenig reproduzierbar wie der der anderen.
+
+Kosten beider Messungen: 0,3193 USD.
+
 **Die Konsequenz ist unangenehm.** Der gespeicherte Report von § 9 Abs. 4a zeigte
 `roundtrip=PASS` bei 5/5 gemappten Annahmen und stand auf `verified_bedingt`. **Kein
 einziger der drei frischen Läufe reproduziert das.** Dasselbe bei § 35a: der Report
@@ -137,10 +162,9 @@ Entscheidung.
 - Gate-Semantik nach Protokolldekret gebaut, 25 Regressionstests (`make unit`).
 - Strikte YAML-Loader überall; 93 Bestands-Manifeste geprüft, keines mit Duplikaten.
 - Drei Regeln stehen grün (§ 9 Abs. 6 `verified`; § 10 Abs. 1 Nr. 7 und § 24b
-  `verified_bedingt`). Zwei weitere standen zwischenzeitlich grün und stehen nach der
-  Stabilitätsmessung wieder auf `flagged_for_review` — siehe Punkt 2. Auch die drei
-  grünen beruhen auf je einem einzelnen Judge-Wurf; ihre Reproduzierbarkeit ist
-  ungeprüft.
+  `verified_bedingt`), zwei davon reproduzierbar. § 9 Abs. 6 ist es nicht. Zwei weitere
+  standen zwischenzeitlich grün und stehen nach der Stabilitätsmessung wieder auf
+  `flagged_for_review` — siehe Punkt 2.
 - `scripts/freeze_source.py` mit Plausibilitätsprüfung, weil ich beim Einfrieren von
   § 9 und § 6 zwei **leere** Quellen erzeugt habe. `sources-check` war grün — er prüfte
   nur, ob der Hash zum Inhalt passt, und ein leerer Inhalt passt zu seinem Hash. Der

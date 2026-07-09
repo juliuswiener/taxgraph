@@ -92,7 +92,17 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("rule_ids", nargs="+")
     ap.add_argument("--n", type=int, default=3)
+    ap.add_argument("--out", default=OUT, help="Zieldatei")
+    ap.add_argument("--force", action="store_true",
+                    help="vorhandene Messung ueberschreiben")
     args = ap.parse_args()
+
+    # Eine Messung ist ein Datum, kein Zwischenstand. Sie wird nicht beilaeufig
+    # ueberschrieben - beim zweiten Lauf dieser Nacht waere die erste Messung sonst
+    # verloren gewesen.
+    if os.path.exists(args.out) and not args.force:
+        raise SystemExit(f"{args.out} existiert bereits. --out <andere Datei> oder "
+                         f"--force, wenn die alte Messung wirklich weg soll.")
 
     cfg = load_yaml(os.path.join(HERE, "produktion", "rules.yaml"))
     roles, models_hash = load_roles()
@@ -119,12 +129,12 @@ def main() -> int:
             "kosten_usd": round(sum(l["kosten_usd"] for l in laeufe), 5),
         }
 
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with open(OUT, "w", encoding="utf-8") as f:
+    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    with open(args.out, "w", encoding="utf-8") as f:
         json.dump({"laeufe": ergebnis, "zusammenfassung": zusammenfassung}, f,
                   ensure_ascii=False, indent=2)
     print("\n" + json.dumps(zusammenfassung, ensure_ascii=False, indent=2))
-    print(f"\ngeschrieben: {OUT}")
+    print(f"\ngeschrieben: {args.out}")
     return 0
 
 
