@@ -1,0 +1,12 @@
+# Eingefrorener Quellabruf (Fassungsarchiv). G2-Bake-off Task-Set.
+dokument:
+  norm_uri: "estg/9/1/3/6"
+  norm: "§ 9 Abs. 1 S. 3 Nr. 6 EStG"
+  fassung: "geltende Fassung"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__9.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p9_abs1nr6_2026-07-09.txt"
+  sha256: "6bc27bf39b545f6ed63758afb9e74e4835e7fcef40dcb15e15331bb14dded128"
+  authority: gesetz
+  redistributable: true
+  verwendet_in: ["pipeline/bakeoff/tasks.yaml"]

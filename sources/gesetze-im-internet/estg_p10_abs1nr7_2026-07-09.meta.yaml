@@ -1,0 +1,12 @@
+# Eingefrorener Quellabruf (Fassungsarchiv). G2-Bake-off Task-Set.
+dokument:
+  norm_uri: "estg/10/1/7"
+  norm: "§ 10 Abs. 1 Nr. 7 EStG"
+  fassung: "geltende Fassung"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__10.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p10_abs1nr7_2026-07-09.txt"
+  sha256: "05d732e48b5fcd7dc47b6dbfc72a31ccc95eeef62d35fdb983ac0c1563dcff75"
+  authority: gesetz
+  redistributable: true
+  verwendet_in: ["pipeline/bakeoff/tasks.yaml"]

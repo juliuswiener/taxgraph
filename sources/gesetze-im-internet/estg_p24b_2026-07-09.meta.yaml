@@ -1,0 +1,12 @@
+# Eingefrorener Quellabruf (Fassungsarchiv). G2-Bake-off Task-Set.
+dokument:
+  norm_uri: "estg/24b"
+  norm: "§ 24b EStG"
+  fassung: "geltende Fassung"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__24b.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p24b_2026-07-09.txt"
+  sha256: "87a56ab779504282245bbba6da92f5c307a587245e395701359a8da1bdc213f1"
+  authority: gesetz
+  redistributable: true
+  verwendet_in: ["pipeline/bakeoff/tasks.yaml"]

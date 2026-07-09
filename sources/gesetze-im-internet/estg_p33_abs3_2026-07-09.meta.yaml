@@ -1,0 +1,12 @@
+# Eingefrorener Quellabruf (Fassungsarchiv). G2-Bake-off Task-Set.
+dokument:
+  norm_uri: "estg/33/3"
+  norm: "§ 33 Abs. 3 EStG"
+  fassung: "geltende Fassung"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__33.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p33_abs3_2026-07-09.txt"
+  sha256: "10aafde8844ff43ed3713df93ee026355ae63352686da2865ee7b82fc43595f0"
+  authority: gesetz
+  redistributable: true
+  verwendet_in: ["pipeline/bakeoff/tasks.yaml"]

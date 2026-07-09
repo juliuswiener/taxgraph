@@ -1,0 +1,12 @@
+# Eingefrorener Quellabruf (Fassungsarchiv). G2-Bake-off Task-Set.
+dokument:
+  norm_uri: "estg/9/4a"
+  norm: "§ 9 Abs. 4a EStG"
+  fassung: "geltende Fassung"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__9.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p9_abs4a_2026-07-09.txt"
+  sha256: "586af0a06d056424584587a2168fc97a033ef0f60506dd14ca050d9500cafab6"
+  authority: gesetz
+  redistributable: true
+  verwendet_in: ["pipeline/bakeoff/tasks.yaml"]

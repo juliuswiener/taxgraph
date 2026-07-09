@@ -1,0 +1,12 @@
+# Eingefrorener Quellabruf (Fassungsarchiv). G2-Bake-off Task-Set.
+dokument:
+  norm_uri: "estg/35a/2+3"
+  norm: "§ 35a Abs. 2 und 3 EStG"
+  fassung: "geltende Fassung"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__35a.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p35a_abs2_3_2026-07-09.txt"
+  sha256: "05c7c597a3c025fa20740e4279f9ba7c34bfce6c798e24e68929e53da727caa7"
+  authority: gesetz
+  redistributable: true
+  verwendet_in: ["pipeline/bakeoff/tasks.yaml"]

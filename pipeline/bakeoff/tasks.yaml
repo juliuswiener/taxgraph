@@ -64,19 +64,80 @@ blind_repro:
       tagespauschale_hoechstbetrag: money
     raster_hint: "Mittelpunkt an/aus, Jahrespauschale an/aus, Tage 0/100/250 (Cap), Ausschluss 6c S.3"
 
-# Zehn neue Regeln (Anlage-N-Umfeld). Norm-Texte werden vor dem Lauf eingefroren
-# (sources/), wie bei den Hand-Regeln. Keine Referenz -> Bewertung ueber Gates.
+# Zehn neue Regeln. Norm-Texte eingefroren (sources/, sha256-verifiziert; siehe
+# `make sources-check`). Keine Referenz -> Bewertung ueber Gates.
+#
+# Bewusst strukturell gemischt statt 10x Anlage-N-Monokultur: eine Tabellen-/
+# Staffelregel (§ 33 Abs. 3) und eine Prozent+Cap-Regel (§ 35a Abs. 2/3) kommen
+# hinzu. Das testet die Formalisierer breiter: 2D-Tabellen-Lookup, Prozent-
+# rechnung, Caps, Fristen, Praedikate/Abgrenzung.
+#
+# `test_seed`: Rechenbeispiele aus EStH/BMF als Test-Seeds mit Zitatanker. Wo
+# keine existieren -> `test_seed: none`; das Clerk-Test-Gate wird fuer diese Task
+# als n/a gewertet, Aequivalenz + Round-Trip tragen. Keine LLM-erfundenen
+# Erwartungswerte als Testreferenz.
 neu:
-  - {rule_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, norm: "§ 9 Abs. 1 S. 3 Nr. 5 EStG"}
-  - {rule_id: p9_1_3_nr5_familienheimfahrten,        norm: "§ 9 Abs. 1 S. 3 Nr. 5 S. 5-6 EStG"}
-  - {rule_id: p9_1_3_nr5a_uebernachtung,             norm: "§ 9 Abs. 1 S. 3 Nr. 5a EStG"}
-  - {rule_id: p9_4a_verpflegungsmehraufwand,         norm: "§ 9 Abs. 4a EStG"}
-  - {rule_id: p9_1_3_nr6_arbeitsmittel,              norm: "§ 9 Abs. 1 S. 3 Nr. 6 EStG"}
-  - {rule_id: p9_1_3_nr3_berufsverbaende,            norm: "§ 9 Abs. 1 S. 3 Nr. 3 EStG"}
-  - {rule_id: p9a_nr1b_versorgungsbezuege,           norm: "§ 9a S. 1 Nr. 1b EStG"}
-  - {rule_id: p19_2_versorgungsfreibetrag,           norm: "§ 19 Abs. 2 EStG"}
-  - {rule_id: p3_nr15_jobticket,                     norm: "§ 3 Nr. 15 EStG"}
-  - {rule_id: p40_2_pauschalbesteuerung_fahrten,     norm: "§ 40 Abs. 2 EStG"}
+  - rule_id: p9_1_3_nr5_doppelte_haushaltsfuehrung
+    norm: "§ 9 Abs. 1 S. 3 Nr. 5 EStG"
+    norm_source: sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt
+    struktur: [monats_cap_1000, bedingungen, inland_ausland_fallunterscheidung]
+    test_seed: none
+
+  - rule_id: p9_1_3_nr5a_uebernachtung
+    norm: "§ 9 Abs. 1 S. 3 Nr. 5a EStG"
+    norm_source: sources/gesetze-im-internet/estg_p9_abs1nr5a_2026-07-09.txt
+    struktur: [ist_kosten, 48_monats_grenze, neubeginn_regel]
+    test_seed: none
+
+  - rule_id: p9_4a_verpflegungsmehraufwand
+    norm: "§ 9 Abs. 4a EStG"
+    norm_source: sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt
+    struktur: [staffel_nach_abwesenheit, dreimonatsfrist, prozentuale_kuerzung]
+    test_seed: none
+
+  - rule_id: p9_1_3_nr6_arbeitsmittel
+    norm: "§ 9 Abs. 1 S. 3 Nr. 6 EStG"
+    norm_source: sources/gesetze-im-internet/estg_p9_abs1nr6_2026-07-09.txt
+    struktur: [einfacher_abzug, verweis_auf_nr7]
+    test_seed: none
+
+  - rule_id: p9_1_3_nr7_afa
+    norm: "§ 9 Abs. 1 S. 3 Nr. 7 EStG"
+    norm_source: sources/gesetze-im-internet/estg_p9_abs1nr7_2026-07-09.txt
+    struktur: [verweisregel, gwg_grenze_ueber_p6]
+    test_seed: none
+
+  - rule_id: p9_6_erstausbildung_abgrenzung
+    norm: "§ 9 Abs. 6 EStG"
+    norm_source: sources/gesetze-im-internet/estg_p9_abs6_2026-07-09.txt
+    struktur: [praedikat_definition, mindestdauer_12_monate, abgrenzung]
+    test_seed: none
+
+  - rule_id: p10_1_7_berufsausbildung
+    norm: "§ 10 Abs. 1 Nr. 7 EStG"
+    norm_source: sources/gesetze-im-internet/estg_p10_abs1nr7_2026-07-09.txt
+    struktur: [jahres_cap_6000, verdopplung_ehegatten, verweiskette]
+    test_seed: none
+
+  - rule_id: p24b_entlastungsbetrag
+    norm: "§ 24b EStG"
+    norm_source: sources/gesetze-im-internet/estg_p24b_2026-07-09.txt
+    struktur: [grundbetrag_4260, kindstaffel_240, zwoelftelung, praedikat_alleinstehend]
+    test_seed: none
+
+  # Strukturvielfalt (Julius, 2026-07-09): Tabellen-/Staffelregel ...
+  - rule_id: p33_3_zumutbare_belastung
+    norm: "§ 33 Abs. 3 EStG"
+    norm_source: sources/gesetze-im-internet/estg_p33_abs3_2026-07-09.txt
+    struktur: [tabellen_lookup_2d, gde_stufen, kinderzahl_stufen, prozent_des_gde]
+    test_seed: none
+
+  # ... und Prozent+Cap-Regel.
+  - rule_id: p35a_2_3_haushaltsnahe
+    norm: "§ 35a Abs. 2 und 3 EStG"
+    norm_source: sources/gesetze-im-internet/estg_p35a_abs2_3_2026-07-09.txt
+    struktur: [prozent_20, cap_4000, cap_1200, nur_arbeitskosten]
+    test_seed: none
 
 # Metriken je Paarung (Nachtrag Abschnitt 5). Entscheid: niedrigste
 # Eskalationsrate gewinnt; Kosten nur als Tiebreaker.
