@@ -1,0 +1,13 @@
+# Eingefrorener Quellabruf (Fassungsarchiv). Migriert spaeter in den Dokumentstore (M1.5).
+dokument:
+  norm_uri: "estg/4/5/1/6b+6c"
+  norm: "§ 4 Abs. 5 Satz 1 Nr. 6b und 6c EStG"
+  fassung: "geltende Fassung (Nr. 6b/6c i.d.F. ab 2023)"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__4.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p04_abs5_2026-07-09.txt"
+  sha256: "e84900ac07c944f6499d5c5e2a4d847672eb31a1e0839802d746eda674616504"
+  authority: gesetz
+  redistributable: true
+  verwendet_in:
+    - "rules/estg/p04_arbeitszimmer_homeoffice/arbeitszimmer_homeoffice.catala_en"

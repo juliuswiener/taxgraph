@@ -41,10 +41,20 @@ rules/estg/p04_arbeitszimmer_homeoffice/# § 4 Abs. 5 Nr. 6b/6c literate Catala 
 params/2024|2025|2026/                  # Tarifparameter je VZ mit Quellen
 params/derive_coefficients.py           # Ableitung/Validierung der Koeffizienten
 oracle/gettsim/                         # Differentialtest-Harness + Assembler
+sources/                                # Fassungsarchiv: eingefrorene Gesetzestexte + Hash
 reports/                                # s02-divergenzen, s03-ergonomie, gate-g0
 docs/                                   # setup.md, roadmap, handover
-scripts/                                # Installationsskripte
+scripts/                                # Installations- und Verifikationsskripte
 ```
+
+## Quellenmodell (Update 2026-07-09)
+
+Jede Regel-, Definitions- und Parameterstruktur traegt `authority`
+(Quellenklasse: `gesetz` / `verwaltung` / `bfh` / `fg` / `literatur`) und
+`redistributable` (Exportierbarkeit). In Phase 0 durchgaengig `gesetz` / `true`.
+Abgerufene Gesetzestexte werden versioniert (URL, Abrufdatum, SHA256) im
+Fassungsarchiv `sources/` eingefroren; `make sources-check` prueft die
+Integritaet. Kommentar- oder Literaturinhalte erscheinen in keinem Artefakt.
 
 ## Ergebnis Gate G0
 

@@ -9,6 +9,10 @@ gelten diese Regeln ueber § 9 Abs. 5 EStG entsprechend. Ziel ist nicht
 Vollstaendigkeit, sondern die Frage, ob Grundregel und Ausnahme sich natuerlich
 abbilden lassen.
 
+Quellenmodell (Update 2026-07-09): authority = `gesetz`, redistributable =
+`true`. Grundlage ist § 4 Abs. 5 EStG; eingefrorener Wortlaut in
+`sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt`.
+
 Gesetzestext (Fassung ab 2023, gesetze-im-internet.de/estg/__4.html, abgerufen
 2026-07-09), Zitat eingerueckt:
 

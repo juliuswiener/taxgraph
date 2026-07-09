@@ -12,6 +12,10 @@ liegen getrennt in `params/<vz>/einkommensteuertarif_p32a.yaml`; sie sind hier
 im Parameter-Layer (Funktion `tariff_parameters`) mit derselben Quellenangabe
 gespiegelt.
 
+Quellenmodell (Update 2026-07-09): authority = `gesetz`, redistributable =
+`true`. Grundlage ist § 32a EStG; eingefrorener Wortlaut in
+`sources/gesetze-im-internet/estg_p32a_2026-07-09.txt`.
+
 ## Datentypen
 
 Der Veranlagungszeitraum als Aufzaehlung und die Tarifparameter als Struktur.

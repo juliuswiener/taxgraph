@@ -16,6 +16,11 @@
 
 veranlagungszeitraum: 2025
 
+# Quellenmodell (Update 2026-07-09): Bindungswirkung und Exportierbarkeit.
+authority: gesetz          # Klasse Gesetz/Verordnung
+redistributable: true      # darf in Open-Source-Exporte
+gueltig_ab: "2025-01-01"   # Gueltigkeitsbeginn
+
 grundfreibetrag:
   wert: 12096
   einheit: euro

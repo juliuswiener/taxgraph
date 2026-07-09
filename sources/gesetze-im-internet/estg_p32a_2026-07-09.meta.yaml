@@ -1,0 +1,14 @@
+# Eingefrorener Quellabruf (Fassungsarchiv). Migriert spaeter in den Dokumentstore (M1.5).
+dokument:
+  norm_uri: "estg/32a"
+  norm: "§ 32a EStG"
+  fassung: "ab Veranlagungszeitraum 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__32a.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p32a_2026-07-09.txt"
+  sha256: "40a11c7071939badba3b39cc64e3ccb2053b38f17507c61c6497eb5aeb289927"
+  authority: gesetz
+  redistributable: true
+  verwendet_in:
+    - "rules/estg/p32a/einkommensteuertarif.catala_en"
+    - "params/2026/einkommensteuertarif_p32a.yaml"

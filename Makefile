@@ -38,6 +38,10 @@ s02: build-python
 params-check:
 	. $(VENV312); python params/derive_coefficients.py
 
+## Verify the frozen source archive against the recorded SHA256 hashes.
+sources-check:
+	python3 scripts/verify_sources.py
+
 clean:
 	$(OPAM_ENV); clerk clean || true
 	rm -rf _build _target oracle/gettsim/_catala

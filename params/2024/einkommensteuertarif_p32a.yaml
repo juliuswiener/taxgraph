@@ -15,6 +15,11 @@
 
 veranlagungszeitraum: 2024
 
+# Quellenmodell (Update 2026-07-09): Bindungswirkung und Exportierbarkeit.
+authority: gesetz          # Klasse Gesetz/Verordnung
+redistributable: true      # darf in Open-Source-Exporte
+gueltig_ab: "2024-01-01"   # Gueltigkeitsbeginn
+
 grundfreibetrag:
   wert: 11784
   einheit: euro
