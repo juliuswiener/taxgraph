@@ -187,8 +187,10 @@ class OpenRouterClient:
                 if attempt < self.max_retries:
                     self._event(role.role, role.slug, prov, "retries",
                                 f"after {r.status_code}")
-                    # An upstream rate limit does not clear in one second.
-                    base = 10 if r.status_code in (403, 429) else 2
+                    # Neither an upstream rate limit nor a 503 clears in one
+                    # second. Together/Fireworks 503s cost 3 judge calls in the
+                    # G2 rerun before the backoff was widened.
+                    base = 10 if r.status_code in (403, 429) else 5
                     time.sleep(base * (2 ** attempt))
                     continue
             break
