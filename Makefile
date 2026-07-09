@@ -42,6 +42,14 @@ params-check:
 sources-check:
 	python3 scripts/verify_sources.py
 
+## Run the golden corpus against the Catala formalisation (value + citation anchor).
+golden: build-python
+	. $(VENV312); python golden/runner.py
+
+## Regenerate the golden § 32a cases from the published tariff.
+golden-generate:
+	python3 golden/generate_cases.py
+
 clean:
 	$(OPAM_ENV); clerk clean || true
 	rm -rf _build _target oracle/gettsim/_catala

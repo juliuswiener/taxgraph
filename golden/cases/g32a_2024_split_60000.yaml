@@ -1,0 +1,17 @@
+id: g32a_2024_split_60000
+beschreibung: "Splitting, gemeinsames zvE 60000 Euro, VZ 2024"
+
+sachverhalt:
+  veranlagungszeitraum: 2024
+  veranlagung: zusammen
+  zu_versteuerndes_einkommen: 60000
+
+erwartung:
+  tarifliche_est: 8824
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "das Zweifache des Steuerbetrags"

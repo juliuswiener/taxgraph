@@ -1,0 +1,17 @@
+id: g32a_2026_single_277825
+beschreibung: "Grundtarif, zvE 277825 Euro, VZ 2026"
+
+sachverhalt:
+  veranlagungszeitraum: 2026
+  veranlagung: einzel
+  zu_versteuerndes_einkommen: 277825
+
+erwartung:
+  tarifliche_est: 105550
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"

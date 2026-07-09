@@ -1,0 +1,17 @@
+id: g32a_2025_single_60000
+beschreibung: "Grundtarif, zvE 60000 Euro, VZ 2025"
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  zu_versteuerndes_einkommen: 60000
+
+erwartung:
+  tarifliche_est: 14415
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"
