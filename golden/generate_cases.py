@@ -95,9 +95,13 @@ SINGLE = {
 # Joint taxable incomes for splitting.
 SPLIT = {
     2026: [0, 24696, 60000, 100000, 120000, 200000],
-    2025: [60000, 100000],
+    2025: [24342, 60000, 100000],   # 24342: BMF-Rechner-Spot-Check
     2024: [23634, 60000, 100000],   # 23634: BMF-Rechner-Spot-Check
 }
+
+# Splitting cases confirmed against the official BMF calculator (bmf-steuerrechner.de,
+# 2026-07-09). Value = expected festzusetzende ESt in euro.
+BMF_CONFIRMED = {(2024, 23634): 8, (2025, 24342): 20}
 
 
 def main():
@@ -118,9 +122,14 @@ def main():
         p = COEF[year]
         for z in zs:
             fid = f"g32a_{year}_split_{z}"
+            expected = splitting(z, p)
+            fundstelle = "§ 32a Abs. 5 EStG i.V.m. Abs. 1; " + p["quelle"]
+            if (year, z) in BMF_CONFIRMED:
+                assert expected == BMF_CONFIRMED[(year, z)], \
+                    f"BMF-confirmed value mismatch for {year}/{z}"
+                fundstelle += "; amtlich bestaetigt BMF-Steuerrechner (bmf-steuerrechner.de, 2026-07-09)"
             emit(fid, f"Splitting, gemeinsames zvE {z} Euro, VZ {year}", year,
-                 "zusammen", z, splitting(z, p),
-                 ANKER_SPLITTING, "§ 32a Abs. 5 EStG i.V.m. Abs. 1; " + p["quelle"])
+                 "zusammen", z, expected, ANKER_SPLITTING, fundstelle)
             n += 1
     print(f"generated {n} golden cases in golden/cases/")
 

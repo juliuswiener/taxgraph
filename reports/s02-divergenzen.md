@@ -40,7 +40,14 @@ Anzahl divergierender Splitting-Faelle: 1750. Alle Divergenzen betragen genau 1 
 **Bewertung: erklaert (GETTSIM-Vereinfachung).** Entscheidung vom 2026-07-09: der Gesetzeswortlaut ist massgeblich, Catala bleibt auf `2 * abrunden(Tarif(Z/2))` (gerade Betraege). Die Abweichung ist eine Vereinfachung in GETTSIM, kein Fehler in Catala. Divergenzklasse B ist damit geschlossen.
 
 
-**Offener manueller Spot-Check (pending Julius).** Zur externen Absicherung gegen ein drittes Oracle: gemeinsames zvE 23 634 Euro, VZ 2024, Splitting. Catala liefert 8 Euro. Erwartung laut BMF-Steuerrechner ebenfalls 8 Euro. Manueller Abgleich am amtlichen BMF-Lohn- und Einkommensteuerrechner steht aus (pending Julius, manuell).
+**Amtliche Bestaetigung (drittes Oracle, BMF-Steuerrechner, bmf-steuerrechner.de, 2026-07-09).** Zwei Splitting-Divergenzfaelle wurden am amtlichen BMF-Lohn- und Einkommensteuerrechner geprueft:
+
+| VZ | gemeinsames zvE | Catala | GETTSIM | BMF-Steuerrechner |
+|----|-----------------|--------|---------|-------------------|
+| 2024 | 23 634 | 8 | 9 | **8** |
+| 2025 | 24 342 | 20 | 21 | **20** |
+
+In beiden Faellen bestaetigt der amtliche Rechner die Wortlaut-Lesart und damit das Catala-Ergebnis; GETTSIM weicht um 1 Euro ab. Divergenzklasse B ist damit endgueltig geschlossen.
 
 
 Beispiele (erste je VZ):

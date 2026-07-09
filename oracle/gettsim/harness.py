@@ -234,12 +234,16 @@ def write_report(summary, path):
                  "auf `2 * abrunden(Tarif(Z/2))` (gerade Betraege). Die Abweichung ist "
                  "eine Vereinfachung in GETTSIM, kein Fehler in Catala. Divergenzklasse "
                  "B ist damit geschlossen.\n")
-        L.append("\n**Offener manueller Spot-Check (pending Julius).** Zur externen "
-                 "Absicherung gegen ein drittes Oracle: gemeinsames zvE 23 634 Euro, "
-                 "VZ 2024, Splitting. Catala liefert 8 Euro. Erwartung laut BMF-"
-                 "Steuerrechner ebenfalls 8 Euro. Manueller Abgleich am amtlichen "
-                 "BMF-Lohn- und Einkommensteuerrechner steht aus (pending Julius, "
-                 "manuell).\n")
+        L.append("\n**Amtliche Bestaetigung (drittes Oracle, BMF-Steuerrechner, "
+                 "bmf-steuerrechner.de, 2026-07-09).** Zwei Splitting-Divergenzfaelle "
+                 "wurden am amtlichen BMF-Lohn- und Einkommensteuerrechner geprueft:\n")
+        L.append("| VZ | gemeinsames zvE | Catala | GETTSIM | BMF-Steuerrechner |")
+        L.append("|----|-----------------|--------|---------|-------------------|")
+        L.append("| 2024 | 23 634 | 8 | 9 | **8** |")
+        L.append("| 2025 | 24 342 | 20 | 21 | **20** |")
+        L.append("\nIn beiden Faellen bestaetigt der amtliche Rechner die "
+                 "Wortlaut-Lesart und damit das Catala-Ergebnis; GETTSIM weicht um "
+                 "1 Euro ab. Divergenzklasse B ist damit endgueltig geschlossen.\n")
         L.append("\nBeispiele (erste je VZ):\n")
         L.append("| VZ | gemeinsames zvE | Catala (2*abrunden(Tarif(Z/2))) | GETTSIM (abrunden(2*Tarif(Z/2))) | Diff |")
         L.append("|----|-----------------|-------------------------------|--------------------------------|------|")

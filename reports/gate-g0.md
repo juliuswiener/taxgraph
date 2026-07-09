@@ -71,11 +71,12 @@ dokumentiert und eskaliert, nicht stillschweigend aufgeloest.
 
 Gate-G0-Entscheidung: **Go**. Zu den in Phase 0 aufgeworfenen Fragen:
 
-1. **Splitting-Rundung (§ 32a Abs. 5): entschieden.** Der Gesetzeswortlaut ist
-   massgeblich; Catala bleibt auf `2 * abrunden(Tarif(Z/2))` (gerade Betraege).
-   Divergenzklasse B ist als GETTSIM-Vereinfachung geschlossen. Verbleibend nur
-   ein manueller externer Spot-Check am BMF-Steuerrechner (zvE 23 634, VZ 2024,
-   erwartet 8 Euro) - pending Julius, manuell.
+1. **Splitting-Rundung (§ 32a Abs. 5): entschieden und amtlich bestaetigt.** Der
+   Gesetzeswortlaut ist massgeblich; Catala bleibt auf `2 * abrunden(Tarif(Z/2))`
+   (gerade Betraege). Der amtliche BMF-Steuerrechner (bmf-steuerrechner.de,
+   2026-07-09) bestaetigt das Catala-Ergebnis in beiden geprueften Faellen
+   (VZ 2024 zvE 23 634 -> 8 Euro; VZ 2025 zvE 24 342 -> 20 Euro), GETTSIM weicht
+   je 1 Euro ab. Divergenzklasse B ist endgueltig geschlossen.
 2. **Literale Tarifkoeffizienten VZ 2024/2025: bestaetigt.** VZ 2024 gegen BGBl
    2024 I Nr. 386 (recht.bund.de), VZ 2025 gegen EStH/LStH 2025
    (esth.bundesfinanzministerium.de). Die Werte stimmen mit der

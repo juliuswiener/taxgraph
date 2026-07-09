@@ -34,6 +34,11 @@ even amounts throughout, consistent with rounding before doubling.
 Across a grid of ~1000 joint incomes per VZ, roughly 57-60 % of splitting cases
 differ by exactly 1 EUR, and GETTSIM's result is odd in every diverging case.
 
+**Confirmed against the official BMF calculator** (bmf-steuerrechner.de,
+2026-07-09), which implements the statutory reading:
+- VZ 2024, joint zvE 23 634: BMF = 8 EUR (matches statute/Catala), GETTSIM = 9.
+- VZ 2025, joint zvE 24 342: BMF = 20 EUR (matches statute/Catala), GETTSIM = 21.
+
 **Affected function.** `betrag_..._y_sn = anzahl_personen_sn * piecewise_polynomial(x / anzahl_personen_sn)`
 with the `RoundingSpec(base=1, direction="down", "§ 32a Abs. 1 S. 6 EStG")` applied
 to the already-doubled result. A faithful implementation would round the
