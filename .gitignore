@@ -1,0 +1,14 @@
+# Catala/Clerk build artifacts
+_build/
+_target/
+_targets/
+
+# Python environments and assembled Catala package
+oracle/.venv/
+oracle/.venv312/
+oracle/gettsim/_catala/
+__pycache__/
+*.pyc
+
+# Scratch
+scratch/

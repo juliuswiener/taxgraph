@@ -1,0 +1,12 @@
+[project]
+include_dirs = ["rules"]
+build_dir = "_build"
+target_dir = "_target"
+
+# Self-contained Python export of the § 32a tariff module, consumed by the
+# GETTSIM differential-test harness (oracle/gettsim/).
+[[target]]
+name = "p32a-python"
+modules = ["Einkommensteuertarif"]
+backends = ["python"]
+include_sources = true
