@@ -338,9 +338,25 @@ def to_markdown(res: dict) -> str:
                      f"aequivalenz-divergenz {m['aequivalenz_divergenzrate']:.3f}, "
                      f"kosten ${m['kosten_gesamt_usd']:.4f}")
     else:
-        L.append(f"**`{ranked[0][0]}`** (Eskalationsrate "
-                 f"{ranked[0][1]['eskalationsrate']:.3f}; Kosten nur Tiebreaker). "
+        best, second = ranked[0], ranked[1]
+        b_cnt = round(best[1]["eskalationsrate"] * best[1]["n"])
+        s_cnt = round(second[1]["eskalationsrate"] * second[1]["n"])
+        L.append(f"**`{best[0]}`** (Eskalationsrate "
+                 f"{best[1]['eskalationsrate']:.3f}; Kosten nur Tiebreaker). "
                  f"Entscheidung trifft Julius.\n")
+        # Prozentzahlen bei n=14 taeuschen Praezision vor. Der Vorsprung wird
+        # deshalb in Tasks ausgewiesen, nicht nur als Rate.
+        delta = s_cnt - b_cnt
+        L.append(f"\nVorsprung in absoluten Zahlen: {b_cnt}/{best[1]['n']} eskalierte "
+                 f"Laeufe gegenueber {s_cnt}/{second[1]['n']} beim Zweiten "
+                 f"(`{second[0]}`) - ein Unterschied von {delta} Task"
+                 f"{'s' if delta != 1 else ''}.")
+        if delta <= 2:
+            L.append(f"\n**Schwacher Vorsprung.** {delta} Task"
+                     f"{'s' if delta != 1 else ''} bei n={best[1]['n']} kann ein "
+                     f"einzelner anders geschnittener Norm-Ausschnitt drehen. Die "
+                     f"Rangfolge ist ein Hinweis, kein belastbarer Befund; wer sie "
+                     f"als Entscheidung liest, ueberdehnt die Datenlage.")
     return "\n".join(L)
 
 
