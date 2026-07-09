@@ -1,0 +1,55 @@
+# Feldmapping-Tabelle - STUB.
+# Platzhalter-Feld-IDs (status: stub) bis der ELSTER-Entwicklerzugang vorliegt.
+# Zeigt die Struktur und den Anschluss an vorhandene Regel-Outputs. Die
+# elster_feld_id-Werte (Praefix STUB-) sind KEINE amtlichen IDs.
+
+mapping:
+  - regel_output: "estg_p32a.Grundtarif.tarifliche_steuer"
+    elster_feld_id: "STUB-MB-EST-GRUND"
+    elster_feld_name: "Tarifliche Einkommensteuer (Grundtarif)"
+    anlage: "Mantelbogen"
+    typ: "euro"
+    pflicht: true
+    veranlagungszeitraum: "alle"
+    status: "stub"
+    quelle: "pending Zugang"
+
+  - regel_output: "estg_p32a.Splittingtarif.tarifliche_steuer"
+    elster_feld_id: "STUB-MB-EST-SPLIT"
+    elster_feld_name: "Tarifliche Einkommensteuer (Splitting)"
+    anlage: "Mantelbogen"
+    typ: "euro"
+    pflicht: true
+    veranlagungszeitraum: "alle"
+    status: "stub"
+    quelle: "pending Zugang"
+
+  - regel_output: "params.arbeitnehmerpauschbetrag"
+    elster_feld_id: "STUB-N-AN-PAUSCHBETRAG"
+    elster_feld_name: "Arbeitnehmer-Pauschbetrag (Werbungskosten)"
+    anlage: "Anlage N"
+    typ: "euro"
+    pflicht: false
+    veranlagungszeitraum: "alle"
+    status: "stub"
+    quelle: "pending Zugang"
+
+  - regel_output: "estg_p04.Raumkostenabzug.abzug_homeoffice"
+    elster_feld_id: "STUB-N-HOMEOFFICE"
+    elster_feld_name: "Homeoffice-Tagespauschale (§ 4 Abs. 5 Nr. 6c)"
+    anlage: "Anlage N"
+    typ: "euro"
+    pflicht: false
+    veranlagungszeitraum: "alle"
+    status: "stub"
+    quelle: "pending Zugang"
+
+  - regel_output: "estg_p04.Raumkostenabzug.abzug_arbeitszimmer"
+    elster_feld_id: "STUB-N-ARBEITSZIMMER"
+    elster_feld_name: "Haeusliches Arbeitszimmer (§ 4 Abs. 5 Nr. 6b)"
+    anlage: "Anlage N"
+    typ: "euro"
+    pflicht: false
+    veranlagungszeitraum: "alle"
+    status: "stub"
+    quelle: "pending Zugang"

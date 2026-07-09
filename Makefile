@@ -70,6 +70,10 @@ docstore-schema:
 docstore-ingest:
 	. $(VENV312); python docstore/ingest.py
 
+## Validate the ELSTER field-mapping stub against its format (no ELSTER access needed).
+elster-check:
+	. $(VENV312); python elster/validate_mapping.py
+
 clean:
 	$(OPAM_ENV); clerk clean || true
 	rm -rf _build _target oracle/gettsim/_catala
