@@ -65,6 +65,16 @@ class RoleConfig:
     repair_template_id: str = ""
 
 
+def _json_or_none(r) -> dict | None:
+    """Ein Body, der kein JSON ist (Gateway-HTML, leere Antwort), darf die
+    Kaskade nicht mit einer ValueError abbrechen."""
+    try:
+        d = r.json()
+    except ValueError:
+        return None
+    return d if isinstance(d, dict) else None
+
+
 class RoleCallError(RuntimeError):
     """A role call failed after all retries. Carries what is needed to flag the
     task and keep the bake-off running instead of hanging."""
@@ -197,6 +207,28 @@ class OpenRouterClient:
                     base = 10 if r.status_code in (403, 429) else 5
                     time.sleep(base * (2 ** attempt))
                     continue
+                break
+            if r.status_code >= 400:
+                break   # 401 u.ae.: nicht wiederholbar, unten sauber melden
+
+            # OpenRouter meldet Upstream-Fehler auch mit HTTP 200 und einem Body
+            # ohne `choices`. Ein blindes data["choices"] crasht dann mitten im
+            # Lauf (KeyError) - das kostete in Charge 1 drei Regeln.
+            data = _json_or_none(r)
+            if data is None or "choices" not in data:
+                err = ((data or {}).get("error") or {})
+                code = err.get("code", "?")
+                self._event(role.role, role.slug, prov, "errors",
+                            f"HTTP 200 ohne choices (code={code})")
+                if attempt < self.max_retries:
+                    self._event(role.role, role.slug, prov, "retries",
+                                "after 200-without-choices")
+                    time.sleep(5 * (2 ** attempt))
+                    continue
+                raise RoleCallError(
+                    role.role, role.slug, role.providers,
+                    f"OpenRouter 200 ohne choices: {str(data)[:300]}",
+                    kind="role_timeout" if str(code) == "429" else "role_error")
             break
 
         if r.status_code >= 400:
@@ -204,7 +236,6 @@ class OpenRouterClient:
                 role.role, role.slug, role.providers,
                 f"OpenRouter {r.status_code}: {r.text[:300]}",
                 kind="role_timeout" if r.status_code == 429 else "role_error")
-        data = r.json()
         msg = data["choices"][0].get("message", {}) or {}
         # OpenRouter liefert content=null z.B. bei Refusal oder reinen
         # Reasoning-Antworten. Das darf die Kaskade nicht zum Absturz bringen:
