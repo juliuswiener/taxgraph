@@ -17,8 +17,8 @@ in conjunction with Abs. 1 sentence 6 EStG) defines it as *twice the tax amount
 determined for half of the joint taxable income under Abs. 1*, and the Abs. 1 tax
 amount is itself already rounded down to full euro (sentence 6). The faithful
 reading is therefore `2 * floor_to_euro(tariff(floor_to_euro(zvE / 2)))`, which is
-always an **even** euro amount. GETTSIM's variant can produce odd amounts and
-deviates by exactly 1 euro in a large share of cases.
+always an **even** euro amount. GETTSIM's variant differs by 1 to 2 euro through
+two independent effects (see below).
 
 **Legal basis.** § 32a Abs. 5 EStG: "das Zweifache des Steuerbetrags, der sich
 fuer die Haelfte ihres gemeinsam zu versteuernden Einkommens nach Absatz 1
@@ -31,8 +31,32 @@ even amounts throughout, consistent with rounding before doubling.
   `2 * floor(tariff(11817))` = `2 * 4` = **8 EUR**.
 - GETTSIM `einkommensteuer.betrag_ohne_kinderfreibetrag_y_sn`: **9 EUR**.
 
-Across a grid of ~1000 joint incomes per VZ, roughly 57-60 % of splitting cases
-differ by exactly 1 EUR, and GETTSIM's result is odd in every diverging case.
+**Two independent effects.**
+1. *Rounding order.* GETTSIM rounds after doubling (`floor(2 * tariff(Z/2))`)
+   instead of doubling the already-rounded per-half amount. When the per-half
+   tariff has a fractional part >= 0.5, GETTSIM is 1 euro higher; its result is
+   then odd. This is the dominant effect (Diff -1).
+2. *Missing floor of Z/2.* GETTSIM halves the joint income without rounding it
+   down to full euro, so for odd Z it evaluates the tariff at x.5 instead of x.
+   Combined with effect 1 this yields a 2-euro deviation (Diff -2), with an even
+   GETTSIM result; it occurs (essentially) only for odd joint income.
+
+A third, unrelated effect: at some Z/2 the full-precision coefficient
+reconstruction (Issue 2) makes the statutory result 1 euro higher (Diff +1).
+
+**Distribution of (statute/Catala - GETTSIM)** over ~1000 joint incomes per VZ
+(identical grid, independently reproduced):
+
+| VZ   | Diff -2 | Diff -1 | Diff +1 |
+|------|---------|---------|---------|
+| 2024 | 102     | 480     | 1       |
+| 2025 | 89      | 475     | 5       |
+| 2026 | 102     | 496     | 0       |
+
+**Reproduction of a 2-euro case (VZ 2024).** Joint taxable income 43 139 (odd):
+- Statute / Catala: `2 * floor(tariff(floor(43139 / 2)))` = `2 * floor(tariff(21569))`
+  = `2 * 2122` = **4 244 EUR**.
+- GETTSIM: **4 246 EUR** (halves to 21 569.5, no floor; rounds after doubling).
 
 **Confirmed against the official BMF calculator** (bmf-steuerrechner.de,
 2026-07-09), which implements the statutory reading:
@@ -45,8 +69,9 @@ to the already-doubled result. A faithful implementation would round the
 per-half tariff amount before multiplying by `anzahl_personen_sn` (and floor the
 half-income to full euro before the tariff).
 
-**Note.** This may be an intentional modelling simplification in GETTSIM. Raising
-it mainly to confirm the interpretation and to document the 1-euro band.
+**Note.** Both effects may be intentional modelling simplifications in GETTSIM.
+Raising it mainly to confirm the interpretation and to document the 1-2 euro band.
+The statutory reading is confirmed by the official BMF calculator (above).
 
 ---
 

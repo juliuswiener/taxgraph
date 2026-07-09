@@ -31,13 +31,40 @@ Die Koeffizienten sind fuer alle drei VZ literal belegt: VZ 2026 aus der Gesetze
 
 ## Divergenzklasse B: Splitting-Verfahren (Absatz 5)
 
-Anzahl divergierender Splitting-Faelle: 1750. Alle Divergenzen betragen genau 1 Euro: False. Catala-Ergebnis stets gerade: True. GETTSIM-Ergebnis in allen Divergenzfaellen ungerade: False.
+Anzahl divergierender Splitting-Faelle: 1750. Die Abweichungen betragen 1 oder 2 Euro. Verteilung von (Catala - GETTSIM) je VZ:
+
+| VZ | Diff -2 | Diff -1 | Diff +1 |
+|----|----|----|----|
+| 2024 | 102 | 480 | 1 |
+| 2025 | 89 | 475 | 5 |
+| 2026 | 102 | 496 | 0 |
+
+Paritaeten (aus dem Lauf ermittelt):
+
+| VZ | Diff | GETTSIM-Ergebnis | gemeinsames zvE Z |
+|----|------|------------------|-------------------|
+| 2024 | -2 | gerade | ungerade |
+| 2024 | -1 | ungerade | gemischt |
+| 2024 | +1 | ungerade | gerade |
+| 2025 | -2 | gerade | ungerade |
+| 2025 | -1 | ungerade | gemischt |
+| 2025 | +1 | ungerade | gerade |
+| 2026 | -2 | gerade | gemischt |
+| 2026 | -1 | ungerade | gemischt |
+
+**Ursache: drei getrennte Effekte.**
+
+1. **Rundungsreihenfolge.** Das literale § 32a Abs. 5 i.V.m. Abs. 1 Satz 6 berechnet `2 * abrunden(Tarif(abrunden(Z/2)))`; der Steuerbetrag der Haelfte ist bereits auf volle Euro abgerundet, das Ergebnis daher stets gerade (so die amtliche Splittingtabelle). GETTSIM rundet erst am Ende: `abrunden(2 * Tarif(Z/2))`. Hat der Halbtarif einen Nachkommaanteil >= 0,5, liegt GETTSIM um 1 Euro hoeher (Diff -1); das GETTSIM-Ergebnis ist dann ungerade.
+
+2. **Fehlende Abrundung von Z/2.** GETTSIM halbiert das gemeinsame zvE ohne Abrundung auf volle Euro. Bei ungeradem Z ist Z/2 = x,5 und GETTSIM wertet den Tarif an x,5 statt an x aus. In Kombination mit Effekt 1 entsteht eine Abweichung von 2 Euro (Diff -2); das GETTSIM-Ergebnis ist dann gerade. Diese Faelle treten praktisch nur bei ungeradem gemeinsamem zvE auf.
+
+3. **Koeffizienten-Approximation am halbierten Einkommen (Klasse A).** Vereinzelt fuehrt GETTSIMs voll aufgeloeste Koeffizienten-Rekonstruktion (siehe Klasse A) am Wert Z/2 dazu, dass Catala um 1 Euro hoeher liegt (Diff +1).
 
 
-**Ursache (Rundungsinterpretation).** Das literale § 32a Abs. 5 berechnet die tarifliche ESt als das Zweifache des Steuerbetrags nach Absatz 1 fuer die Haelfte des gemeinsamen zvE. Der Steuerbetrag nach Absatz 1 ist nach Satz 6 auf volle Euro abgerundet. Das literale Ergebnis ist daher `2 * abrunden(Tarif(Z/2))` und stets ein gerader Euro-Betrag (so die amtliche Splittingtabelle). GETTSIM rundet dagegen erst am Ende: `abrunden(2 * Tarif(Z/2))`, wobei die Haelfte Z/2 zusaetzlich nicht auf volle Euro abgerundet wird. Beide Effekte erzeugen die 1-Euro-Abweichungen.
+**Reproduktionsbeispiel (Diff -2).** VZ 2024, gemeinsames zvE 43 139 (ungerade): literal `2 * abrunden(Tarif(21 569))` = 4 244 Euro, GETTSIM 4 246 Euro.
 
 
-**Bewertung: erklaert (GETTSIM-Vereinfachung).** Entscheidung vom 2026-07-09: der Gesetzeswortlaut ist massgeblich, Catala bleibt auf `2 * abrunden(Tarif(Z/2))` (gerade Betraege). Die Abweichung ist eine Vereinfachung in GETTSIM, kein Fehler in Catala. Divergenzklasse B ist damit geschlossen.
+**Bewertung: erklaert (GETTSIM-Vereinfachung).** Entscheidung vom 2026-07-09: der Gesetzeswortlaut ist massgeblich, Catala bleibt auf `2 * abrunden(Tarif(abrunden(Z/2)))`. Die Abweichungen sind Vereinfachungen in GETTSIM (Effekte 1 und 2) bzw. eine GETTSIM-Approximation (Effekt 3), kein Fehler in Catala.
 
 
 **Amtliche Bestaetigung (drittes Oracle, BMF-Steuerrechner, bmf-steuerrechner.de, 2026-07-09).** Zwei Splitting-Divergenzfaelle wurden am amtlichen BMF-Lohn- und Einkommensteuerrechner geprueft:
@@ -47,22 +74,8 @@ Anzahl divergierender Splitting-Faelle: 1750. Alle Divergenzen betragen genau 1 
 | 2024 | 23 634 | 8 | 9 | **8** |
 | 2025 | 24 342 | 20 | 21 | **20** |
 
-In beiden Faellen bestaetigt der amtliche Rechner die Wortlaut-Lesart und damit das Catala-Ergebnis; GETTSIM weicht um 1 Euro ab. Divergenzklasse B ist damit endgueltig geschlossen.
+In beiden Faellen bestaetigt der amtliche Rechner die Wortlaut-Lesart und damit das Catala-Ergebnis. Divergenzklasse B ist damit endgueltig geschlossen.
 
-
-Beispiele (erste je VZ):
-
-| VZ | gemeinsames zvE | Catala (2*abrunden(Tarif(Z/2))) | GETTSIM (abrunden(2*Tarif(Z/2))) | Diff |
-|----|-----------------|-------------------------------|--------------------------------|------|
-| 2024 | 23634 | 8 | 9 | -1 |
-| 2024 | 25046 | 216 | 217 | -1 |
-| 2024 | 25917 | 354 | 355 | -1 |
-| 2025 | 24342 | 20 | 21 | -1 |
-| 2025 | 26047 | 274 | 275 | -1 |
-| 2025 | 30981 | 1164 | 1165 | -1 |
-| 2026 | 24807 | 14 | 15 | -1 |
-| 2026 | 25824 | 162 | 163 | -1 |
-| 2026 | 25993 | 188 | 189 | -1 |
 
 ## Nicht ausgeloeste, aber bekannte Unterschiede
 

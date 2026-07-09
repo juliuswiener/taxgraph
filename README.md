@@ -51,7 +51,7 @@ scripts/                                # Installations- und Verifikationsskript
 
 ## Phase 1 (in Arbeit)
 
-- **M1.4 Golden-Korpus** (`golden/`): 40 § 32a-Faelle, je mit Zitatanker-Gate
+- **M1.4 Golden-Korpus** (`golden/`): 43 § 32a-Faelle, je mit Zitatanker-Gate
   gegen `sources/` und Wertabgleich gegen Catala (`make golden`).
 - **M1.2 Parameterschicht** (`params/`): kanonisches Format (`params/schema.md`)
   plus GETTSIM-Import mit Herkunftsvermerk (`make params-import`).

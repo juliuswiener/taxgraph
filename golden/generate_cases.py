@@ -92,11 +92,13 @@ SINGLE = {
     2025: [0, 12096, 17443, 30000, 60000, 100000, 300000],
     2024: [0, 11784, 17005, 30000, 60000, 100000, 300000],
 }
-# Joint taxable incomes for splitting.
+# Joint taxable incomes for splitting. Odd values (43139, 55555, 77777) exercise
+# the floor(Z/2) path (statute floors the half income; a case where the literal
+# reading diverges from GETTSIM by 2 euro).
 SPLIT = {
-    2026: [0, 24696, 60000, 100000, 120000, 200000],
-    2025: [24342, 60000, 100000],   # 24342: BMF-Rechner-Spot-Check
-    2024: [23634, 60000, 100000],   # 23634: BMF-Rechner-Spot-Check
+    2026: [0, 24696, 60000, 77777, 100000, 120000, 200000],
+    2025: [24342, 55555, 60000, 100000],   # 24342: BMF-Rechner-Spot-Check
+    2024: [23634, 43139, 60000, 100000],   # 23634: BMF-Spot-Check; 43139: odd-Z (Diff -2)
 }
 
 # Splitting cases confirmed against the official BMF calculator (bmf-steuerrechner.de,

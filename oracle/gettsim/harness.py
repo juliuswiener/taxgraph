@@ -145,24 +145,39 @@ def run():
 
 
 def classify(results):
-    """Return summary stats used by the report."""
+    """Return summary stats used by the report.
+
+    For splitting, record the full distribution of (Catala - GETTSIM) and, per
+    difference bucket, the parity of the GETTSIM result and of the joint zvE Z.
+    This makes the report self-describing instead of relying on booleans.
+    """
     summary = {}
     for year, r in results.items():
-        # splitting: check the even/odd rounding hypothesis
-        split_all_pm1 = all(abs(c - g) == 1 for _, c, g in r["split_div"])
-        split_cat_even = all(c % 2 == 0 for _, c, g in r["split_div"])
-        split_get_odd = all(g % 2 == 1 for _, c, g in r["split_div"])
-        single_all_pm1 = all(abs(c - g) == 1 for _, c, g in r["single_div"])
+        dist = defaultdict(int)
+        get_parity = defaultdict(set)   # diff -> set of GETTSIM result parities
+        z_parity = defaultdict(set)     # diff -> set of Z parities
+        for zve, c, g in r["split_div"]:
+            d = c - g
+            dist[d] += 1
+            get_parity[d].add(g % 2)
+            z_parity[d].add(zve % 2)
         summary[year] = dict(
             n=r["n"],
             single_div=r["single_div"],
             split_div=r["split_div"],
-            split_all_pm1=split_all_pm1,
-            split_cat_even=split_cat_even,
-            split_get_odd=split_get_odd,
-            single_all_pm1=single_all_pm1,
+            split_dist=dict(sorted(dist.items())),
+            split_get_parity={d: sorted(v) for d, v in get_parity.items()},
+            split_z_parity={d: sorted(v) for d, v in z_parity.items()},
         )
     return summary
+
+
+def _parity_word(parities):
+    if parities == [0]:
+        return "gerade"
+    if parities == [1]:
+        return "ungerade"
+    return "gemischt"
 
 
 def write_report(summary, path):
@@ -213,27 +228,52 @@ def write_report(summary, path):
     if total_split == 0:
         L.append("Keine Divergenzen im Splitting.\n")
     else:
-        all_pm1 = all(s["split_all_pm1"] for s in summary.values())
-        all_even = all(s["split_cat_even"] for s in summary.values())
-        all_odd = all(s["split_get_odd"] for s in summary.values())
-        L.append(f"Anzahl divergierender Splitting-Faelle: {total_split}. "
-                 f"Alle Divergenzen betragen genau 1 Euro: {all_pm1}. "
-                 f"Catala-Ergebnis stets gerade: {all_even}. "
-                 f"GETTSIM-Ergebnis in allen Divergenzfaellen ungerade: {all_odd}.\n")
-        L.append("\n**Ursache (Rundungsinterpretation).** Das literale § 32a Abs. 5 "
-                 "berechnet die tarifliche ESt als das Zweifache des Steuerbetrags "
-                 "nach Absatz 1 fuer die Haelfte des gemeinsamen zvE. Der "
-                 "Steuerbetrag nach Absatz 1 ist nach Satz 6 auf volle Euro "
-                 "abgerundet. Das literale Ergebnis ist daher `2 * abrunden(Tarif(Z/2))` "
-                 "und stets ein gerader Euro-Betrag (so die amtliche Splittingtabelle). "
-                 "GETTSIM rundet dagegen erst am Ende: `abrunden(2 * Tarif(Z/2))`, "
-                 "wobei die Haelfte Z/2 zusaetzlich nicht auf volle Euro abgerundet "
-                 "wird. Beide Effekte erzeugen die 1-Euro-Abweichungen.\n")
-        L.append("\n**Bewertung: erklaert (GETTSIM-Vereinfachung).** Entscheidung "
-                 "vom 2026-07-09: der Gesetzeswortlaut ist massgeblich, Catala bleibt "
-                 "auf `2 * abrunden(Tarif(Z/2))` (gerade Betraege). Die Abweichung ist "
-                 "eine Vereinfachung in GETTSIM, kein Fehler in Catala. Divergenzklasse "
-                 "B ist damit geschlossen.\n")
+        L.append(f"Anzahl divergierender Splitting-Faelle: {total_split}. Die "
+                 "Abweichungen betragen 1 oder 2 Euro. Verteilung von "
+                 "(Catala - GETTSIM) je VZ:\n")
+        buckets = sorted({d for s in summary.values() for d in s["split_dist"]})
+        header = "| VZ | " + " | ".join(f"Diff {d:+d}" for d in buckets) + " |"
+        L.append(header)
+        L.append("|----|" + "|".join("----" for _ in buckets) + "|")
+        for year, s in summary.items():
+            row = " | ".join(str(s["split_dist"].get(d, 0)) for d in buckets)
+            L.append(f"| {year} | {row} |")
+
+        L.append("\nParitaeten (aus dem Lauf ermittelt):\n")
+        L.append("| VZ | Diff | GETTSIM-Ergebnis | gemeinsames zvE Z |")
+        L.append("|----|------|------------------|-------------------|")
+        for year, s in summary.items():
+            for d in sorted(s["split_dist"]):
+                L.append(f"| {year} | {d:+d} | "
+                         f"{_parity_word(s['split_get_parity'][d])} | "
+                         f"{_parity_word(s['split_z_parity'][d])} |")
+
+        L.append("\n**Ursache: drei getrennte Effekte.**\n")
+        L.append("1. **Rundungsreihenfolge.** Das literale § 32a Abs. 5 i.V.m. Abs. 1 "
+                 "Satz 6 berechnet `2 * abrunden(Tarif(abrunden(Z/2)))`; der "
+                 "Steuerbetrag der Haelfte ist bereits auf volle Euro abgerundet, das "
+                 "Ergebnis daher stets gerade (so die amtliche Splittingtabelle). "
+                 "GETTSIM rundet erst am Ende: `abrunden(2 * Tarif(Z/2))`. Hat der "
+                 "Halbtarif einen Nachkommaanteil >= 0,5, liegt GETTSIM um 1 Euro "
+                 "hoeher (Diff -1); das GETTSIM-Ergebnis ist dann ungerade.\n")
+        L.append("2. **Fehlende Abrundung von Z/2.** GETTSIM halbiert das gemeinsame "
+                 "zvE ohne Abrundung auf volle Euro. Bei ungeradem Z ist Z/2 = x,5 und "
+                 "GETTSIM wertet den Tarif an x,5 statt an x aus. In Kombination mit "
+                 "Effekt 1 entsteht eine Abweichung von 2 Euro (Diff -2); das "
+                 "GETTSIM-Ergebnis ist dann gerade. Diese Faelle treten praktisch nur "
+                 "bei ungeradem gemeinsamem zvE auf.\n")
+        L.append("3. **Koeffizienten-Approximation am halbierten Einkommen (Klasse A).** "
+                 "Vereinzelt fuehrt GETTSIMs voll aufgeloeste Koeffizienten-"
+                 "Rekonstruktion (siehe Klasse A) am Wert Z/2 dazu, dass Catala um "
+                 "1 Euro hoeher liegt (Diff +1).\n")
+        L.append("\n**Reproduktionsbeispiel (Diff -2).** VZ 2024, gemeinsames zvE "
+                 "43 139 (ungerade): literal `2 * abrunden(Tarif(21 569))` = 4 244 Euro, "
+                 "GETTSIM 4 246 Euro.\n")
+        L.append("\n**Bewertung: erklaert (GETTSIM-Vereinfachung).** Entscheidung vom "
+                 "2026-07-09: der Gesetzeswortlaut ist massgeblich, Catala bleibt auf "
+                 "`2 * abrunden(Tarif(abrunden(Z/2)))`. Die Abweichungen sind "
+                 "Vereinfachungen in GETTSIM (Effekte 1 und 2) bzw. eine GETTSIM-"
+                 "Approximation (Effekt 3), kein Fehler in Catala.\n")
         L.append("\n**Amtliche Bestaetigung (drittes Oracle, BMF-Steuerrechner, "
                  "bmf-steuerrechner.de, 2026-07-09).** Zwei Splitting-Divergenzfaelle "
                  "wurden am amtlichen BMF-Lohn- und Einkommensteuerrechner geprueft:\n")
@@ -242,14 +282,8 @@ def write_report(summary, path):
         L.append("| 2024 | 23 634 | 8 | 9 | **8** |")
         L.append("| 2025 | 24 342 | 20 | 21 | **20** |")
         L.append("\nIn beiden Faellen bestaetigt der amtliche Rechner die "
-                 "Wortlaut-Lesart und damit das Catala-Ergebnis; GETTSIM weicht um "
-                 "1 Euro ab. Divergenzklasse B ist damit endgueltig geschlossen.\n")
-        L.append("\nBeispiele (erste je VZ):\n")
-        L.append("| VZ | gemeinsames zvE | Catala (2*abrunden(Tarif(Z/2))) | GETTSIM (abrunden(2*Tarif(Z/2))) | Diff |")
-        L.append("|----|-----------------|-------------------------------|--------------------------------|------|")
-        for year, s in summary.items():
-            for zve, c, g in s["split_div"][:3]:
-                L.append(f"| {year} | {zve} | {c} | {g} | {c-g:+d} |")
+                 "Wortlaut-Lesart und damit das Catala-Ergebnis. Divergenzklasse B ist "
+                 "damit endgueltig geschlossen.\n")
 
     L.append("\n## Nicht ausgeloeste, aber bekannte Unterschiede\n")
     L.append("- **Abrundung des zvE auf volle Euro (§ 32a Abs. 1 S. 1).** Catala "

@@ -60,12 +60,14 @@ ab, Catala entspricht dem Wortlaut. Fuer VZ 2024/2025 (abgeleitete Koeffizienten
 bleibt der literale BGBl-Abgleich offen (siehe offene Punkte).
 
 **Splitting (Absatz 5): systematische, vollstaendig erklaerte Divergenz.** Rund
-570 bis 600 von je 1000 Faellen weichen um genau 1 Euro ab. Ursache ist eine
-Rundungsinterpretation: das literale § 32a Abs. 5 i.V.m. Abs. 1 Satz 6 berechnet
-`2 * abrunden(Tarif(Z/2))` und liefert stets gerade Euro-Betraege (so die
-amtliche Splittingtabelle). GETTSIM rundet erst am Ende: `abrunden(2 * Tarif(Z/2))`.
-Catala folgt dem Wortlaut. Nach Handover-Vorgabe wird der Widerspruch
-dokumentiert und eskaliert, nicht stillschweigend aufgeloest.
+570 bis 600 von je 1000 Faellen weichen um 1 bis 2 Euro ab. Ursache sind drei
+getrennte Effekte (Verteilung und Paritaeten in `reports/s02-divergenzen.md`):
+Rundungsreihenfolge (Diff -1), fehlende Abrundung von Z/2 bei ungeradem
+gemeinsamem zvE (Diff -2) und vereinzelt die Koeffizienten-Approximation am
+halbierten Einkommen (Diff +1). Das literale § 32a Abs. 5 i.V.m. Abs. 1 Satz 6
+berechnet `2 * abrunden(Tarif(abrunden(Z/2)))` und liefert stets gerade
+Euro-Betraege (so die amtliche Splittingtabelle). Catala folgt dem Wortlaut. Der
+Widerspruch wird dokumentiert und eskaliert, nicht stillschweigend aufgeloest.
 
 ## Entscheidungen (2026-07-09) und offene Punkte
 
