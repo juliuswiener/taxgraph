@@ -1,0 +1,17 @@
+# Sonderausgaben-Pauschbetrag nach § 10c EStG (je Person; bei Zusammenveranlagung verdoppelt).
+# Veranlagungszeitraum 2025. Automatisch importiert aus GETTSIM
+# (params/import_gettsim.py). GETTSIM ist Datenquelle und Prueinstanz, nicht
+# Rechtsquelle; die rechtsquelle verweist auf das Gesetz.
+
+parameter: sonderausgabenpauschbetrag
+veranlagungszeitraum: 2025
+authority: gesetz
+redistributable: true
+gueltig_ab: "2025-01-01"
+
+wert:
+  wert: 36
+  einheit: euro
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: "EStG", paragraph: "10c"}
+  datenquelle: "GETTSIM 1.2.1, germany/einkommensteuer/abzüge/sonderausgaben.yaml, Eintrag 2002-01-01 (Art. 1 G. v. 19.12.2000, BGBl. I S. 1790); importiert 2026-07-09"

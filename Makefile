@@ -50,6 +50,10 @@ golden: build-python
 golden-generate:
 	python3 golden/generate_cases.py
 
+## Import scalar parameters from GETTSIM into params/<vz>/ with provenance.
+params-import:
+	. $(VENV312); python params/import_gettsim.py
+
 clean:
 	$(OPAM_ENV); clerk clean || true
 	rm -rf _build _target oracle/gettsim/_catala

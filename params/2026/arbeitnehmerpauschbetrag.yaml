@@ -1,0 +1,17 @@
+# Arbeitnehmer-Pauschbetrag (Werbungskostenpauschbetrag) nach § 9a Satz 1 Nr. 1a EStG.
+# Veranlagungszeitraum 2026. Automatisch importiert aus GETTSIM
+# (params/import_gettsim.py). GETTSIM ist Datenquelle und Prueinstanz, nicht
+# Rechtsquelle; die rechtsquelle verweist auf das Gesetz.
+
+parameter: arbeitnehmerpauschbetrag
+veranlagungszeitraum: 2026
+authority: gesetz
+redistributable: true
+gueltig_ab: "2026-01-01"
+
+wert:
+  wert: 1230
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: "EStG", paragraph: "9a", absatz: "1", nummer: "1a"}
+  datenquelle: "GETTSIM 1.2.1, germany/einkommensteuer/einkünfte/aus_nichtselbstständiger_arbeit/werbungskostenpauschale.yaml, Eintrag 2023-01-01 (G. v. 20.12.2022 BGBl. I S. 2294.); importiert 2026-07-09"
