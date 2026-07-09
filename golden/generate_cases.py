@@ -110,11 +110,18 @@ AN_PAUSCHBETRAG = 1230   # § 9a Satz 1 Nr. 1a EStG (GETTSIM, VZ 2024-2026)
 SA_PAUSCHBETRAG = 36     # § 10c EStG (GETTSIM, VZ 2024-2026)
 
 # End-to-end Arbeitnehmerfall (Einzelveranlagung): Bruttoarbeitslohn -> ESt.
+# 800: Kleinstlohn (Einkuenfte 0 nach § 9a Satz 2, zvE -36 nach § 10c, ESt 0).
 ARBEITNEHMER = {
-    2026: [30000, 60000, 100000],
+    2026: [800, 30000, 60000, 100000],
     2025: [80000],
     2024: [50000],
 }
+
+
+def arbeitnehmer_zve(brutto: int) -> int:
+    """§ 9a Satz 2 (Pauschbetrag bis Einnahmen) + § 10c (ohne Untergrenze)."""
+    einkuenfte = max(0, brutto - AN_PAUSCHBETRAG)   # § 9a Satz 2
+    return einkuenfte - SA_PAUSCHBETRAG              # § 10c, negativ zulaessig
 
 
 def emit_arbeitnehmer(fid, beschreibung, year, brutto, expected):
@@ -172,11 +179,19 @@ def main():
     for year, bs in ARBEITNEHMER.items():
         p = COEF[year]
         for b in bs:
-            zve = max(0, b - AN_PAUSCHBETRAG - SA_PAUSCHBETRAG)
+            zve = arbeitnehmer_zve(b)
             fid = f"arbeitnehmer_{year}_einzel_{b}"
             emit_arbeitnehmer(fid, f"Arbeitnehmerfall Einzel, Bruttolohn {b} Euro, VZ {year}",
                               year, b, tarif(zve, p))
             n += 1
+    # Splitting mit negativem gemeinsamem zvE (2 x Kleinstlohn 800 -> zvE -72):
+    # sichert die korrekte Verarbeitung negativer Tarif-Inputs (truncate/floor).
+    p = COEF[2026]
+    emit("g32a_2026_split_negativ_72",
+         "Splitting, gemeinsames zvE -72 Euro (2x Kleinstlohn), VZ 2026",
+         2026, "zusammen", -72, splitting(-72, p), ANKER_SPLITTING,
+         "§ 32a Abs. 5 EStG i.V.m. Abs. 1; " + p["quelle"])
+    n += 1
     print(f"generated {n} golden cases in golden/cases/")
 
 

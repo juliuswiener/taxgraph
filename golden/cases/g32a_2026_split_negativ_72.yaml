@@ -1,0 +1,17 @@
+id: g32a_2026_split_negativ_72
+beschreibung: "Splitting, gemeinsames zvE -72 Euro (2x Kleinstlohn), VZ 2026"
+
+sachverhalt:
+  veranlagungszeitraum: 2026
+  veranlagung: zusammen
+  zu_versteuerndes_einkommen: -72
+
+erwartung:
+  tarifliche_est: 0
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "das Zweifache des Steuerbetrags"

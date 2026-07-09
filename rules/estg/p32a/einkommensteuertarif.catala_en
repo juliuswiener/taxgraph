@@ -280,6 +280,16 @@ scope EinkuenfteNichtselbststaendig:
 
 ## Einzelveranlagung (§ 2 Abs. 3 bis 6)
 
+Bewusste Design-Entscheidung zur Einkommen-Stufe: § 2 Abs. 4 formuliert das
+Einkommen als Gesamtbetrag der Einkuenfte "vermindert um" die Sonderausgaben und
+aussergewoehnlichen Belastungen, ohne Untergrenze. Anders als § 9a Satz 2, der
+den Werbungskosten-Pauschbetrag ausdruecklich auf die Hoehe der Einnahmen kappt,
+gibt es hier keine Kappung bei null. Der Sonderausgaben-Pauschbetrag (§ 10c) wird
+daher auch dann abgezogen, wenn die Einkuenfte null oder negativ sind; das
+Einkommen und damit das zu versteuernde Einkommen koennen negativ werden. Der
+Tarif (§ 32a) behandelt ein zu versteuerndes Einkommen bis zum Grundfreibetrag
+als steuerfrei, ein negatives zvE ergibt also eine tarifliche ESt von null.
+
 ```catala
 declaration scope FestzusetzendeEstEinzel:
   input bruttoarbeitslohn content money
@@ -315,7 +325,9 @@ scope FestzusetzendeEstEinzel:
     if sonderausgaben > pausch then sonderausgaben else pausch
 
   # § 2 Abs. 4: Einkommen = GdE minus Sonderausgaben minus aussergewoehnliche
-  # Belastungen. MVP: nur Sonderausgaben-Pauschbetrag. Andockpunkt: § 33.
+  # Belastungen ("vermindert um", keine Untergrenze; Kontrast zu § 9a Satz 2).
+  # MVP: nur Sonderausgaben-Pauschbetrag. Andockpunkt: § 33. Negatives Einkommen
+  # ist zulaessig (Tarif -> 0).
   definition einkommen equals gesamtbetrag_der_einkuenfte - sonderausgaben_abzug
 
   # § 2 Abs. 5: zu versteuerndes Einkommen = Einkommen minus Freibetraege.
