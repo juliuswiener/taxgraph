@@ -1,0 +1,56 @@
+# Parameter des Einkommensteuertarifs § 32a Abs. 1 EStG
+# Veranlagungszeitraum 2025.
+#
+# Rechtsquelle des Tarifs: § 32a Abs. 1 EStG in der fuer VZ 2025 geltenden
+# Fassung (Art. 1 G. v. 30.12.2024 BGBl. 2024 Nr. 449, Steuerfortentwicklungs-
+# gesetz).
+#
+# Datenquelle der Zonengrenzen: GETTSIM 1.2.1, einkommensteuertarif.yaml,
+# Eintrag 2025-01-01 (dort mit BGBl-Referenz belegt).
+# Die geschlossenen Formelkoeffizienten sind aus diesen Zonengrenzen und den
+# Eingangsgrenzsteuersaetzen (0.14 / 0.2397) und Proportionalsaetzen
+# (0.42 / 0.45) via Progressionsfaktor-Konstruktion abgeleitet
+# (params/derive_coefficients.py). Die Methode reproduziert die woertlichen
+# VZ-2026-Koeffizienten exakt. OFFEN: literaler Abgleich der publizierten
+# Koeffizienten fuer VZ 2025 gegen BGBl 2024 Nr. 449 (siehe reports/s02).
+
+veranlagungszeitraum: 2025
+
+grundfreibetrag:
+  wert: 12096
+  einheit: euro
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 1"}
+  datenquelle: "GETTSIM 1.2.1 einkommensteuertarif.yaml (2025-01-01); BGBl 2024 Nr. 449"
+
+zone2_obergrenze:
+  wert: 17443
+  einheit: euro
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}
+  datenquelle: "GETTSIM 1.2.1 einkommensteuertarif.yaml (2025-01-01); BGBl 2024 Nr. 449"
+
+zone3_obergrenze:
+  wert: 68480
+  einheit: euro
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}
+  datenquelle: "GETTSIM 1.2.1 einkommensteuertarif.yaml (2025-01-01); BGBl 2024 Nr. 449"
+
+zone4_obergrenze:
+  wert: 277825
+  einheit: euro
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4/5"}
+  datenquelle: "GETTSIM 1.2.1 einkommensteuertarif.yaml (2025-01-01); BGBl 2024 Nr. 449"
+
+# Formelkoeffizienten, abgeleitet (params/derive_coefficients.py), publiziertes Format (2 Nachkommastellen).
+zone2_a2: {wert: 932.30, veranlagungszeitraum: 2025, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}, datenquelle: "abgeleitet aus GETTSIM-Zonenparametern via Progressionsfaktor; literaler BGBl-Abgleich offen"}
+zone2_b2: {wert: 1400,   veranlagungszeitraum: 2025, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}, datenquelle: "Eingangsgrenzsteuersatz 0.14 * 10000 (GETTSIM 2025-01-01)"}
+zone3_a3: {wert: 176.64, veranlagungszeitraum: 2025, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "abgeleitet aus GETTSIM-Zonenparametern via Progressionsfaktor; literaler BGBl-Abgleich offen"}
+zone3_b3: {wert: 2397,   veranlagungszeitraum: 2025, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "Eingangsgrenzsteuersatz 0.2397 * 10000 (GETTSIM 2025-01-01)"}
+zone3_c3: {wert: 1015.13, veranlagungszeitraum: 2025, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "abgeleitet (Stetigkeit bei zvE = zone2_obergrenze); literaler BGBl-Abgleich offen"}
+zone4_faktor: {wert: 0.42, veranlagungszeitraum: 2025, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4"}, datenquelle: "GETTSIM 2025-01-01"}
+zone4_abzug:  {wert: 10911.92, veranlagungszeitraum: 2025, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4"}, datenquelle: "abgeleitet (Stetigkeit bei zvE = zone3_obergrenze); literaler BGBl-Abgleich offen"}
+zone5_faktor: {wert: 0.45, veranlagungszeitraum: 2025, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 5"}, datenquelle: "GETTSIM 2025-01-01"}
+zone5_abzug:  {wert: 19246.67, veranlagungszeitraum: 2025, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 5"}, datenquelle: "abgeleitet (Stetigkeit bei zvE = zone4_obergrenze); literaler BGBl-Abgleich offen"}

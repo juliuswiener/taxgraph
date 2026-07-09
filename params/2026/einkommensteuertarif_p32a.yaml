@@ -1,0 +1,57 @@
+# Parameter des Einkommensteuertarifs § 32a Abs. 1 EStG
+# Veranlagungszeitraum 2026.
+#
+# Rechtsquelle des Tarifs: § 32a Abs. 1 EStG in der Fassung "ab dem
+# Veranlagungszeitraum 2026" (Art. 2 G. v. 30.12.2024 BGBl. 2024 Nr. 449).
+# Die geschlossenen Formelkoeffizienten sind der Fassung woertlich entnommen
+# (gesetze-im-internet.de/estg/__32a.html, abgerufen 2026-07-09).
+#
+# Struktur je Parameter: wert, veranlagungszeitraum, rechtsquelle
+# (gesetz/paragraph/absatz/satz), datenquelle.
+
+veranlagungszeitraum: 2026
+
+# --- Zonengrenzen (auf volle Euro abgerundetes zvE) ---
+grundfreibetrag:
+  wert: 12348
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 1"}
+  datenquelle: "gesetze-im-internet.de/estg/__32a.html, abgerufen 2026-07-09"
+
+zone2_obergrenze:   # letzter Euro der Zone 2 (Progressionszone I)
+  wert: 17799
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}
+  datenquelle: "gesetze-im-internet.de/estg/__32a.html, abgerufen 2026-07-09"
+
+zone3_obergrenze:   # letzter Euro der Zone 3 (Progressionszone II)
+  wert: 69878
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}
+  datenquelle: "gesetze-im-internet.de/estg/__32a.html, abgerufen 2026-07-09"
+
+zone4_obergrenze:   # letzter Euro der Zone 4 (obere Proportionalzone Beginn bei +1)
+  wert: 277825
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4/5"}
+  datenquelle: "gesetze-im-internet.de/estg/__32a.html, abgerufen 2026-07-09"
+
+# --- Formelkoeffizienten (woertlich aus der Fassung) ---
+# Zone 2:  (a2 * y + b2) * y,   y = (x - grundfreibetrag) / 10000
+# Zone 3:  (a3 * z + b3) * z + c3,   z = (x - zone2_obergrenze) / 10000
+# Zone 4:  faktor4 * x - abzug4
+# Zone 5:  faktor5 * x - abzug5
+# x = auf volle Euro abgerundetes zu versteuerndes Einkommen.
+zone2_a2: {wert: 914.51, veranlagungszeitraum: 2026, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}, datenquelle: "gesetze-im-internet.de, abgerufen 2026-07-09"}
+zone2_b2: {wert: 1400,   veranlagungszeitraum: 2026, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}, datenquelle: "gesetze-im-internet.de, abgerufen 2026-07-09"}
+zone3_a3: {wert: 173.10, veranlagungszeitraum: 2026, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "gesetze-im-internet.de, abgerufen 2026-07-09"}
+zone3_b3: {wert: 2397,   veranlagungszeitraum: 2026, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "gesetze-im-internet.de, abgerufen 2026-07-09"}
+zone3_c3: {wert: 1034.87, veranlagungszeitraum: 2026, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "gesetze-im-internet.de, abgerufen 2026-07-09"}
+zone4_faktor: {wert: 0.42, veranlagungszeitraum: 2026, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4"}, datenquelle: "gesetze-im-internet.de, abgerufen 2026-07-09"}
+zone4_abzug:  {wert: 11135.63, veranlagungszeitraum: 2026, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4"}, datenquelle: "gesetze-im-internet.de, abgerufen 2026-07-09"}
+zone5_faktor: {wert: 0.45, veranlagungszeitraum: 2026, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 5"}, datenquelle: "gesetze-im-internet.de, abgerufen 2026-07-09"}
+zone5_abzug:  {wert: 19470.38, veranlagungszeitraum: 2026, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 5"}, datenquelle: "gesetze-im-internet.de, abgerufen 2026-07-09"}
