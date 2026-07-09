@@ -1,5 +1,28 @@
 # TaxGraph Formalisierungspipeline - Modell-Besetzung (Phase 2, Nachtrag 2026-07-09).
 #
+# ============================================================================
+# EINGEFROREN nach Gate G2 (2026-07-09). Finale Besetzung:
+#   A = anthropic/claude-sonnet-4.6
+#   B = z-ai/glm-5.2
+#   Judge = deepseek/deepseek-v4-pro
+#   Worker = deepseek/deepseek-v4-flash
+#
+# Begruendung (Verdikt in reports/gate-g2.md):
+#   - Die Eskalationsdifferenz zwischen den Paarungen betrug einen einzigen Task
+#     (6/14 vs 7/14). Sie traegt keine Entscheidung ueber die Formalisierer.
+#   - Handlungsleitend war stattdessen die Judge-Besetzung: DeepSeek V4 Pro als
+#     Judge verpasste keine einzige stille Zusatzannahme (annahme_verpasst 0.000),
+#     GLM 0.143, Sonnet 0.286. Das ist das einzige Signal mit klarem Abstand.
+#   - Vorbehalt: n=14 Tasks je Paarung. Die Besetzung ist eine begruendete
+#     Festlegung, kein statistisch abgesicherter Befund.
+#
+# Re-Evaluations-Trigger (keine weiteren Bake-offs auf Vorrat):
+#   Die Paarung wird erst neu gemessen, wenn nach ~50 produktiven Regeln
+#   (a) die rollende Eskalationsrate ueber 0.6 liegt, oder
+#   (b) im Human-Review ein Judge-Miss auffaellt (Judge sagte treu, die Regel
+#       war es nicht).
+# ============================================================================
+#
 # Hartes Prinzip: Formalisierer A, Formalisierer B und der Judge stammen aus drei
 # verschiedenen Modellfamilien/Labs (dekorrelierte Fehler -> Soundness des
 # Aequivalenz-Gates). Provider-Pinning ist Pflicht: allow_fallbacks=false, nur
@@ -9,11 +32,16 @@
 # (nicht Bedrock/Azure/Vertex), damit der Pfad im Provenienz-Metadatum eindeutig
 # ist. Keine :floor/:nitro-Shortcuts, keine `latest`-Aliase.
 #
+# PRO ROLLE EXAKT EIN GEPINNTER PROVIDER. `provider.only` ist keine
+# Praeferenzliste: OpenRouter waehlt frei aus der Liste. Im G2-Lauf routete es den
+# Worker trotz ["morph", ...] auf Venice und lief in dessen 429. Ein Failover ist
+# deshalb kein Listeneintrag, sondern eine eigene, geloggte Konfigurationsaenderung
+# mit neuem models.yaml-Hash. Siehe docs/setup.md.
+#
 # Modell-Slugs gegen die OpenRouter-Modellliste verifiziert (/models, /endpoints):
 # anthropic/claude-sonnet-4.6, z-ai/glm-5.2, deepseek/deepseek-v4-pro,
-# deepseek/deepseek-v4-flash. providers = exakte OpenRouter-Provider-Tags
-# (fireworks / fireworks/fast / together / anthropic); westliche Hoster, keine
-# chinesischen Endpoints.
+# deepseek/deepseek-v4-flash. providers = exakte OpenRouter-Provider-Tags;
+# westliche Hoster, keine chinesischen Endpoints.
 
 version: 1
 
@@ -28,9 +56,10 @@ roles:
     fewshot_set_id: "formalisierung_base@1"
 
   formalisierer_b:
-    # G2 entscheidet endgueltig zwischen GLM und DeepSeek V4 Pro (siehe bakeoff).
+    # G2 abgeschlossen: GLM-5.2 (siehe Verdikt oben).
     slug: "z-ai/glm-5.2"
-    providers: ["together", "fireworks/fast"]
+    # Together bediente im G2-Lauf alle 44 B-Calls. Genau ein Provider (s.o.).
+    providers: ["together"]
     temperature: 0.0
     max_tokens: 8192
     prompt_template_id: "formalisierung@3"   # identisches Template wie A
@@ -38,12 +67,16 @@ roles:
     fewshot_set_id: "formalisierung_base@1"   # identische Few-Shots wie A
 
   judge:
-    # Dritte Familie gegenueber A (Anthropic) und B (Z.AI): DeepSeek.
+    # Dritte Familie gegenueber A (Anthropic) und B (Z.AI): DeepSeek. In G2 die
+    # einzige Judge-Besetzung mit annahme_verpasst = 0.000.
     slug: "deepseek/deepseek-v4-pro"
-    providers: ["together", "fireworks"]
+    # Fireworks statt Together: Together trug im G2-Lauf saemtliche 16 Rate-Limits
+    # (es bediente gleichzeitig GLM). Judge auf Fireworks mit einem echten
+    # Round-Trip-Prompt verifiziert (22.2s, $0.00652).
+    providers: ["fireworks"]
     temperature: 0.0
     max_tokens: 4096
-    prompt_template_id: "roundtrip_diff@2"
+    prompt_template_id: "roundtrip_diff@3"   # scope_gap zweiklassig
     fewshot_set_id: "roundtrip_base@1"
 
   worker:
@@ -100,6 +133,6 @@ bakeoff:
       judge: "anthropic/claude-sonnet-4.6"
   provider_allowlists:
     "anthropic/claude-sonnet-4.6": ["anthropic"]
-    "z-ai/glm-5.2": ["together", "fireworks/fast"]
-    "deepseek/deepseek-v4-pro": ["together", "fireworks"]
+    "z-ai/glm-5.2": ["together"]
+    "deepseek/deepseek-v4-pro": ["fireworks"]
     "deepseek/deepseek-v4-flash": ["morph"]

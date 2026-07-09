@@ -119,3 +119,40 @@ Abrufdatum und SHA256 abgelegt (`make sources-check`).
   (min/max), kein ganzzahliges Ab-/Aufrunden. Fuer die gesetzliche Abrundung auf
   volle Euro wird `Decimal.truncate` verwendet (bei nichtnegativen Werten gleich
   dem Abrunden).
+
+## OpenRouter: `provider.only` ist keine Praeferenzliste
+
+Gelernt im G2-Bake-off (2026-07-09), nachdem drei Laeufe daran gescheitert sind.
+
+`provider: {only: [...], allow_fallbacks: false}` schraenkt die zulaessigen Hoster
+ein, aber **OpenRouter waehlt frei aus der Liste**. Die Reihenfolge ist keine
+Praeferenz. Im Lauf war der Worker auf `["morph", "fireworks", "venice"]` gesetzt;
+geroutet wurde auf Venice, das mit `429 temporarily rate-limited upstream`
+antwortete, und der Task starb - obwohl Morph verfuegbar war.
+
+Konsequenz, verbindlich:
+
+- **Pro Rolle exakt ein gepinnter Provider** in `pipeline/models.yaml`.
+- **Failover ist kein Listeneintrag**, sondern eine eigene, bewusste
+  Konfigurationsaenderung. Sie aendert den `models.yaml`-Hash und ist damit in
+  jedem Provenienz-Stempel sichtbar. Ein Lauf bleibt nur gueltig, wenn alle
+  Rollen gegen genau eine eingefrorene Konfiguration liefen.
+- **DigitalOcean ist raus.** Es antwortet auf `deepseek/deepseek-v4-flash` mit
+  `403` und unter Last auch auf `deepseek/deepseek-v4-pro` - obwohl ein einzelner
+  Probe-Call durchging. Ein Einzel-Call beweist nichts ueber das Verhalten unter
+  Last.
+
+Weitere Fallstricke, jeweils an echten Fehlern gelernt:
+
+- `provider.only` erwartet den **Provider-Tag** (`fireworks`, `fireworks/fast`,
+  `together`, `anthropic`, `morph`), nicht den Anzeigenamen (`Fireworks`).
+- Endpoints eines Modells wechseln. Vor dem Pinnen abfragen, nicht raten:
+  `GET /api/v1/models/<slug>/endpoints`. Quantisierte Endpoints (`fp4`, `fp8`)
+  bleiben ausgeschlossen - Quantisierung bricht den Determinismus bei
+  Temperatur 0.
+- Ein `403` bei `allow_fallbacks: false` ist eine providerseitige Ablehnung, die
+  OpenRouter durchreicht; ein ungueltiger Key gibt `401`. Der Client wiederholt
+  deshalb auch `403`.
+- Ein Backoff von einer Sekunde hilft gegen ein Upstream-Rate-Limit nicht. Der
+  Client wartet bei `403`/`429` 10s und 20s, bei `5xx` 5s und 10s - bei
+  unveraenderten zwei Retries.

@@ -1,6 +1,49 @@
 # Gate G2: Bake-off-Auswertung
 
-Entscheid: niedrigste Eskalationsrate gewinnt; Kosten nur als Tiebreaker.
+Urspruengliche Entscheidungsregel: niedrigste Eskalationsrate gewinnt, Kosten nur als Tiebreaker. Sie hat nicht getragen - siehe Verdikt.
+
+
+## Verdikt: G2 abgeschlossen, Besetzung eingefroren
+
+Entschieden von Julius am 2026-07-09. `pipeline/models.yaml` ist eingefroren:
+
+| Rolle | Modell |
+|---|---|
+| Formalisierer A | `anthropic/claude-sonnet-4.6` |
+| Formalisierer B | `z-ai/glm-5.2` |
+| Judge | `deepseek/deepseek-v4-pro` |
+| Worker | `deepseek/deepseek-v4-flash` |
+
+**Die Eskalationsrate hat die Besetzung nicht entschieden.** Der Abstand zwischen
+der besten und der zweitbesten Paarung betrug einen einzigen Task (6/14 gegen
+7/14). Ein anders geschnittener Norm-Ausschnitt dreht das. Die Rangfolge der
+Formalisierer-Paare ist damit kein tragfaehiger Befund, und sie wurde auch nicht
+als solcher verwendet.
+
+**Handlungsleitend war die Judge-Besetzung.** `annahme_verpasst` misst, wie oft
+ein Judge eine Formalisierung fuer treu erklaerte, obwohl Aequivalenz oder die
+Blind-Referenz widersprachen - der einzige Wert mit klarem Abstand:
+
+| Judge | annahme_verpasst |
+|---|---|
+| `deepseek/deepseek-v4-pro` | 0.000 |
+| `z-ai/glm-5.2` | 0.143 |
+| `anthropic/claude-sonnet-4.6` | 0.286 |
+
+**Vorbehalt: n=14 Tasks je Paarung.** Auch der Judge-Befund ruht auf 14 Laeufen.
+Die Besetzung ist eine begruendete Festlegung, kein statistisch abgesicherter
+Befund, und sie wird als solche gefuehrt.
+
+**Fussnote zu allen Zahlen dieses Reports: gemessen OHNE Test-Gate.** Der
+Bake-off lief mit `test_gate_required: false`, weil fuer keine der 14 Tasks
+EStH/BMF-Rechenbeispiele recherchiert waren (`clerk_gate_na_anteil` 1.000).
+Aequivalenz und Round-Trip trugen allein. In Phase 3 ist das Clerk-Test-Gate
+Pflicht; die hier gemessenen Raten sind deshalb Obergrenzen.
+
+**Re-Evaluations-Trigger statt weiterer Bake-offs.** Die Paarung wird erst neu
+gemessen, wenn nach rund 50 produktiven Regeln entweder die rollende
+Eskalationsrate ueber 0.6 liegt oder im Human-Review ein Judge-Miss auffaellt.
+Bake-offs auf Vorrat kosten Geld und messen nichts, was sich geaendert haette.
 
 
 ## Protokollaenderung gegenueber dem ersten G2-Lauf
@@ -97,9 +140,11 @@ Timeouts, Retries und Rate-Limits sagen etwas ueber den Hoster, nicht ueber das 
 `A-sonnet_B-glm` je Provider:
 - together: retries=5 timeouts=0 rate_limits=5 errors=4
 
-## Empfehlung
+## Rangfolge nach Eskalationsrate (nicht die Entscheidung)
 
-**`A-sonnet_B-deepseek`** (Eskalationsrate 0.429; Kosten nur Tiebreaker). Entscheidung trifft Julius.
+Die Besetzung steht im Verdikt oben und folgt dem Judge-Signal, nicht dieser Rangfolge.
+
+Vorn liegt **`A-sonnet_B-deepseek`** (Eskalationsrate 0.429; Kosten nur Tiebreaker).
 
 
 Vorsprung in absoluten Zahlen: 6/14 eskalierte Laeufe gegenueber 7/14 beim Zweiten (`A-sonnet_B-glm`) - ein Unterschied von 1 Task.

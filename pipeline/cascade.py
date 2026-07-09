@@ -42,6 +42,7 @@ class CascadeResult:
     judge_verdict: dict = field(default_factory=dict)
     transport: dict = field(default_factory=dict)
     repaired: dict = field(default_factory=dict)   # {"a": bool, "b": bool}
+    backlog: list = field(default_factory=list)    # unabhaengige scope_gaps
 
     def gates_dict(self):
         return [{"name": g.name, "status": g.status, "detail": g.detail}
@@ -98,8 +99,14 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
         record(pj)
         res.judge_verdict = G.roundtrip_parse(j_text)
         res.gate_results.append(G.roundtrip_gate(j_text))
+        # scope_gap zweiklassig: (a) unabhaengig -> Backlog, kein Flag;
+        # (b) wirkt in den Signatur-Scope hinein -> Eskalation, denn dann ist der
+        # formalisierte Ausschnitt ohne den Rest falsch.
+        res.gate_results.append(G.scope_gap_gate(j_text))
+        res.backlog = G.unabhaengige_gaps(res.judge_verdict)
     else:
         res.gate_results.append(G.GateResult("roundtrip", G.FAIL, "no A source"))
+        res.gate_results.append(G.GateResult("scope_gap", G.FAIL, "no A source"))
 
     # 7. Clerk-Tests
     res.gate_results.append(G.clerk_gate(src_a, mod_a, candidate))
@@ -185,6 +192,7 @@ def write_report(res: CascadeResult, out_dir: str | None = None) -> str:
         # zweistufige Round-Trip-Wertung (Stufe 2 in evaluate.py)
         "judge_verdict": res.judge_verdict,
         "repaired": res.repaired,
+        "backlog": res.backlog,
         "provenance": res.provenance,
         "total_cost_usd": round(res.total_cost_usd, 6),
     }

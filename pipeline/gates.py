@@ -296,10 +296,38 @@ def roundtrip_parse(judge_json_text: str) -> dict:
         "faithful": bool(d.get("faithful")),
         "abweichungen": list(d.get("abweichungen") or []),
         "stille_zusatzannahmen": list(d.get("stille_zusatzannahmen") or []),
-        # Norm-Teile ausserhalb der vorgegebenen Signatur. Das ist Rueckmeldung
-        # zur Task-Spezifikation, kein Modellfehler, und faellt das Gate nicht.
-        "scope_gap": list(d.get("scope_gap") or []),
+        "scope_gap": [_normalize_gap(g) for g in (d.get("scope_gap") or [])],
     }
+
+
+def _normalize_gap(gap) -> dict:
+    """Accept both shapes: the plain strings of roundtrip_diff@2 and the
+    classified objects of @3. An unclassified gap is treated as `wirkt_hinein`:
+    the class that escalates. Silence must not read as harmless."""
+    if isinstance(gap, str):
+        return {"norm_teil": gap, "klasse": "unklassifiziert", "begruendung": ""}
+    klasse = str(gap.get("klasse", "")).strip().lower()
+    if klasse not in ("unabhaengig", "wirkt_hinein"):
+        klasse = "unklassifiziert"
+    return {"norm_teil": str(gap.get("norm_teil", ""))[:400],
+            "klasse": klasse,
+            "begruendung": str(gap.get("begruendung", ""))[:400]}
+
+
+def wirkt_hinein(verdict: dict) -> list[dict]:
+    """scope_gaps that change the result INSIDE the signature scope.
+
+    Without such a norm part the formalised excerpt is wrong, not merely
+    incomplete - so it escalates. `unklassifiziert` counts here too (a judge that
+    omits the class must not thereby wave a gap through).
+    """
+    return [g for g in verdict.get("scope_gap", [])
+            if g["klasse"] in ("wirkt_hinein", "unklassifiziert")]
+
+
+def unabhaengige_gaps(verdict: dict) -> list[dict]:
+    """scope_gaps that stand on their own -> Backlog, kein Flag."""
+    return [g for g in verdict.get("scope_gap", []) if g["klasse"] == "unabhaengig"]
 
 
 def roundtrip_gate(judge_json_text: str) -> GateResult:
@@ -313,6 +341,29 @@ def roundtrip_gate(judge_json_text: str) -> GateResult:
     return GateResult("roundtrip", FAIL,
                       f"abweichungen={len(d['abweichungen'])} "
                       f"annahmen={len(d['stille_zusatzannahmen'])} scope_gap={gap}")
+
+
+def scope_gap_gate(judge_json_text: str) -> GateResult:
+    """Two classes, two outcomes.
+
+    (a) `unabhaengig` -> Backlog-Item, kein Flag. Der formalisierte Ausschnitt
+        bleibt ohne den Norm-Teil korrekt.
+    (b) `wirkt_hinein` -> ESKALATION. Der Norm-Teil greift in den Signatur-Scope
+        ein; ohne ihn ist der Ausschnitt falsch, nicht nur unvollstaendig.
+    """
+    d = roundtrip_parse(judge_json_text)
+    if d.get("parse_error"):
+        return GateResult("scope_gap", FAIL, "judge output not valid JSON")
+    hinein, unabh = wirkt_hinein(d), unabhaengige_gaps(d)
+    if hinein:
+        first = hinein[0]
+        return GateResult("scope_gap", FAIL,
+                          f"{len(hinein)} Norm-Teil(e) wirken in den Signatur-Scope "
+                          f"hinein (Ausschnitt ohne sie falsch); erster: "
+                          f"{first['norm_teil'][:120]}")
+    return GateResult("scope_gap", PASS,
+                      f"{len(unabh)} unabhaengige(r) Norm-Teil(e) -> Backlog, "
+                      f"kein Eingriff in den Signatur-Scope")
 
 
 _UMLAUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
@@ -342,17 +393,27 @@ def clerk_gate(catala_src: str | None, module: str | None = None,
 
     Test seeds must come from EStH/BMF worked examples and carry a verbatim
     citation anchor, verified against the frozen source before anything runs.
-    Where no worked example exists the gate is n/a for that task (equivalence +
-    round-trip carry it); LLM-invented expected values are never a test reference.
+    LLM-invented expected values are never a test reference.
+
+    In production the gate is MANDATORY (DoD je Regel): existiert kein
+    EStH/BMF-Beispiel, muessen synthetische Faelle her, die Julius im Review
+    absegnet. Nur ein Kandidat, der `test_gate_required: False` fuehrt, darf ohne
+    Seeds durch - das war die G2-Ausnahme und ist in den G2-Metriken fussnotiert.
     """
     if not have("clerk"):
         return GateResult("clerk", SKIP, "clerk not on PATH (toolchain missing)")
     cand = candidate or {}
     seeds = cand.get("test_seed")
     if not seeds or seeds == "none":
+        if cand.get("test_gate_required", True):
+            return GateResult("clerk", FAIL,
+                              "Test-Gate ist Pflicht: keine Test-Seeds. EStH/BMF-"
+                              "Rechenbeispiel recherchieren (mit Zitatanker) oder "
+                              "synthetische Faelle im Review absegnen lassen")
         return GateResult("clerk", SKIP,
-                          "n/a: kein EStH/BMF-Rechenbeispiel; Aequivalenz + "
-                          "Round-Trip tragen (keine LLM-Erwartungswerte)")
+                          "n/a (test_gate_required=false): kein EStH/BMF-"
+                          "Rechenbeispiel; Aequivalenz + Round-Trip tragen "
+                          "(keine LLM-Erwartungswerte)")
     if not catala_src or not module:
         return GateResult("clerk", FAIL, "no source/module")
 

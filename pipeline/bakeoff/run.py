@@ -73,6 +73,10 @@ def build_candidate(task: dict) -> dict:
         "input_types": sig["inputs"],
         "raster": task["raster"],
         "test_seed": task.get("test_seed", "none"),
+        # G2-Ausnahme: der Bake-off lief ohne Clerk-Test-Gate (keine EStH/BMF-
+        # Rechenbeispiele recherchiert). In Phase 3 ist das Gate Pflicht; die
+        # G2-Metriken sind deshalb "ohne Test-Gate" zu lesen.
+        "test_gate_required": False,
         "output_type": "money",
     }
 
