@@ -39,6 +39,33 @@ import gates as G  # noqa: E402
 OUT_ROOT = os.path.join(PIPELINE, "runs", "produktion")
 
 
+class _StrictLoader(yaml.SafeLoader):
+    """YAML-Loader, der doppelte Schluessel meldet statt sie zu ueberschreiben.
+
+    `yaml.safe_load` nimmt bei zwei `test_seed:` im selben Mapping stillschweigend
+    das letzte. Beim Neuschnitt von § 35a blieb ein alter Block stehen und haette
+    unbemerkt die falschen Testfaelle gefahren - die Regel haette mit einem
+    gruenen Test-Gate dagestanden, das eine andere Signatur prueft.
+    """
+
+
+def _no_duplicates(loader, node, deep=False):
+    mapping = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in mapping:
+            raise yaml.constructor.ConstructorError(
+                None, None, f"doppelter Schluessel {key!r} in rules.yaml "
+                            f"(Zeile {key_node.start_mark.line + 1})",
+                key_node.start_mark)
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+
+_StrictLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _no_duplicates)
+
+
 def build_candidate(rule: dict) -> dict:
     sig = rule["signature"]
     # Multi-Source: Gesetz + auslegende Quellen, getrennt etikettiert. Zitatanker
@@ -230,7 +257,11 @@ def main() -> int:
                          "B aus dem Report wiederverwenden")
     args = ap.parse_args()
 
-    cfg = yaml.safe_load(open(os.path.join(HERE, "rules.yaml"), encoding="utf-8"))
+    try:
+        cfg = yaml.load(open(os.path.join(HERE, "rules.yaml"), encoding="utf-8"),
+                        Loader=_StrictLoader)
+    except yaml.constructor.ConstructorError as e:
+        raise SystemExit(f"rules.yaml: {e}")
     rules = cfg["regeln"]
     if args.only:
         rules = [r for r in rules if r["rule_id"] == args.only]
