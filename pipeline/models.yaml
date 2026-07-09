@@ -51,7 +51,14 @@ roles:
     slug: "deepseek/deepseek-v4-flash"
     # kein Together-Endpoint fuer v4-flash; nur unquantisierte westliche Hoster
     # (fp4/fp8-Varianten bewusst ausgeschlossen: Quantisierung bricht Determinismus).
-    providers: ["fireworks", "digitalocean"]
+    # Endpoints am 2026-07-09 einzeln geprobt (je ein Minimal-Call, provider.only):
+    #   morph          -> OK
+    #   fireworks      -> 429 "temporarily rate-limited"
+    #   venice         -> 429 "temporarily rate-limited"
+    #   digitalocean   -> 403 (Provider-seitig, kein Rate-Limit; deshalb raus:
+    #                    der Client wiederholt 429/5xx, aber nicht 403)
+    # fireworks/venice bleiben als Kapazitaet drin, falls das Limit abklingt.
+    providers: ["morph", "fireworks", "venice"]
     temperature: 0.0
     max_tokens: 4096
     prompt_template_id: "extraktion@1"
@@ -93,4 +100,4 @@ bakeoff:
     "anthropic/claude-sonnet-4.6": ["anthropic"]
     "z-ai/glm-5.2": ["together", "fireworks/fast", "digitalocean"]
     "deepseek/deepseek-v4-pro": ["together", "fireworks", "digitalocean"]
-    "deepseek/deepseek-v4-flash": ["fireworks", "digitalocean"]
+    "deepseek/deepseek-v4-flash": ["morph", "fireworks", "venice"]
