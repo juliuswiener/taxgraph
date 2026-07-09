@@ -1,130 +1,186 @@
 """Blind-reproduction check: candidate A vs the hand-formalised reference.
 
-The candidate never sees the reference (enforced by check_leakage.py). Here the
-candidate module and the untouched reference file are compiled together to Python
-via clerk, and both scopes are evaluated over the task's input raster. A match
-means the candidate reproduced the reference *extensionally*, not textually.
+Isolation by process boundary, not by namespace. Candidate and reference are
+compiled in SEPARATE clerk projects and evaluated in SEPARATE subprocesses:
+raster points go in as JSON, results come out as JSON, the comparison happens
+here. Consequences:
+
+  * no namespace/enum mixing between the two modules is even possible;
+  * the reference file is only ever read, never linked against candidate code -
+    a stronger isolation argument for the bake-off protocol;
+  * the same mechanism works unchanged for candidate-vs-candidate in the
+    equivalence gate.
 
 Reference inputs the prescribed signature deliberately omits (e.g. the
 Veranlagungszeitraum enum, which a blind formalisation cannot know - see
 CatalaLang/catala#1074) are supplied via `ref.fixed_inputs`.
+
+A build that fails is reported as `blind_build_error` (candidate) or
+`blind_ref_error` (reference) - never a crash and never a silent n/a.
 """
 
 from __future__ import annotations
 
-import glob
-import importlib
+import json
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
-import uuid
 
 PIPELINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PIPELINE)
 
-from gates import scope_name, _snake  # noqa: E402
+from gates import scope_name  # noqa: E402
+
+# Child program: imports one generated module, evaluates the scope on the raster,
+# prints results as JSON. Runs in its own interpreter, own sys.path, own package.
+_CHILD = r'''
+import json, sys, importlib, glob, os, shutil
+spec = json.load(sys.stdin)
+root, pkg = spec["root"], spec["pkg"]
+sys.path.insert(0, os.path.join(root, "_rt"))
+sys.path.insert(0, root)
+mod = importlib.import_module(pkg + "." + spec["module"])
+rt = importlib.import_module("catala_runtime")
+
+def coerce(v, t):
+    if t == "money":   return rt.Money(f"{int(v)}.00")
+    if t == "decimal": return rt.Decimal(str(v))
+    if t == "bool":    return rt.Bool(bool(v))
+    return int(v)
+
+def snake(n):
+    import re
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", n).lower()
+
+fixed = {}
+for k, s in (spec.get("fixed_inputs") or {}).items():
+    if isinstance(s, dict) and "enum" in s:
+        cls = getattr(mod, s["enum"])
+        fixed[k + "_in"] = cls(getattr(cls.Code, s["code"]), None)
+    else:
+        fixed[k + "_in"] = s
+
+out = []
+try:
+    scope, field = spec["scope"], spec["output"]
+    fn = getattr(mod, snake(scope))
+    In = getattr(mod, scope + "In")
+    for point in spec["raster"]:
+        kw = dict(fixed)
+        for name, (val, typ) in point.items():
+            kw[name + "_in"] = coerce(val, typ)
+        out.append(str(getattr(fn(In(**kw)), field)))
+except Exception as e:
+    print(json.dumps({"error": f"{type(e).__name__}: {e}"[:300]}))
+    sys.exit(0)
+print(json.dumps({"values": out}))
+'''
 
 
-def _clerk_project(cand_src: str, cand_module: str, ref_file: str, ref_module: str,
-                   d: str) -> None:
+def _build(module: str, d: str, *, src: str | None = None, file: str | None = None) -> str:
+    """Compile ONE module in its own clerk project; return the import root."""
     rules = os.path.join(d, "rules")
     os.makedirs(rules, exist_ok=True)
     with open(os.path.join(d, "clerk.toml"), "w", encoding="utf-8") as f:
         f.write('[project]\ninclude_dirs = ["rules"]\nbuild_dir = "_build"\n\n'
-                '[[target]]\nname = "blind"\n'
-                f'modules = ["{cand_module}", "{ref_module}"]\n'
+                f'[[target]]\nname = "one"\nmodules = ["{module}"]\n'
                 'backends = ["python"]\ninclude_sources = true\n')
-    with open(os.path.join(rules, f"{cand_module}.catala_en"), "w", encoding="utf-8") as f:
-        f.write(f"# {cand_module}\n\n> Module {cand_module}\n\n```catala\n{cand_src}\n```\n")
-    shutil.copy(ref_file, os.path.join(rules, f"{ref_module}.catala_en"))
-    r = subprocess.run(["clerk", "build", "blind"], cwd=d, capture_output=True,
+    dst = os.path.join(rules, f"{module}.catala_en")
+    if file:
+        shutil.copy(file, dst)          # reference: read-only copy, never edited
+    else:
+        with open(dst, "w", encoding="utf-8") as f:
+            f.write(f"# {module}\n\n> Module {module}\n\n```catala\n{src}\n```\n")
+    r = subprocess.run(["clerk", "build", "one"], cwd=d, capture_output=True,
                        text=True, timeout=900)
     if r.returncode != 0:
-        raise RuntimeError((r.stderr or r.stdout)[-300:])
+        raise RuntimeError((r.stderr or r.stdout)[-250:].replace("\n", " "))
 
-
-def _load(d: str, names: list[str]):
-    pkgname = "blindpkg_" + uuid.uuid4().hex[:8]
+    # assemble an importable package: stdlib + module in a package, runtime top-level
     root = os.path.join(d, "_imp")
-    pkg, rt_dir = os.path.join(root, pkgname), os.path.join(root, "_rt")
+    pkg = os.path.join(root, "pkg")
+    rt_dir = os.path.join(root, "_rt")
     os.makedirs(pkg, exist_ok=True)
     os.makedirs(rt_dir, exist_ok=True)
-    for p in glob.glob(os.path.join(d, "_build", "libcatala", "python", "*.py")):
-        shutil.copy(p, pkg)
-    for p in glob.glob(os.path.join(d, "_build", "rules", "python", "*.py")):
-        shutil.copy(p, pkg)
+    for pat in ("libcatala/python/*.py", "rules/python/*.py"):
+        for p in glob_py(os.path.join(d, "_build", pat)):
+            shutil.copy(p, pkg)
     for n in ("catala_runtime.py", "dates.py"):
-        src = os.path.join(pkg, n)
-        if os.path.exists(src):
-            shutil.copy(src, rt_dir)
+        s = os.path.join(pkg, n)
+        if os.path.exists(s):
+            shutil.copy(s, rt_dir)
     open(os.path.join(pkg, "__init__.py"), "w").close()
-    sys.path.insert(0, rt_dir)
-    sys.path.insert(0, root)
-    importlib.invalidate_caches()
-    mods = {n: importlib.import_module(f"{pkgname}.{n}") for n in names}
-    return mods, importlib.import_module("catala_runtime")
+    return root
 
 
-def _coerce(rt, value, typ: str):
-    if typ == "money":
-        return rt.Money(f"{int(value)}.00")
-    if typ == "decimal":
-        return rt.Decimal(str(value))
-    if typ == "bool":
-        return rt.Bool(bool(value))
-    return int(value)
+def glob_py(pattern: str) -> list[str]:
+    import glob as _g
+    return _g.glob(pattern)
 
 
-def _call(mod, scope: str, kwargs: dict, out_field: str):
-    inp = getattr(mod, f"{scope}In")(**kwargs)
-    res = getattr(mod, _snake(scope))(inp)
-    return getattr(res, out_field)
+def _evaluate(root: str, module: str, scope: str, output: str,
+              raster_typed: list[dict], fixed_inputs: dict) -> list[str]:
+    """Run the module in its own subprocess; raster in as JSON, values out."""
+    spec = {"root": root, "pkg": "pkg", "module": module, "scope": scope,
+            "output": output, "raster": raster_typed, "fixed_inputs": fixed_inputs}
+    r = subprocess.run([sys.executable, "-c", _CHILD], input=json.dumps(spec),
+                       capture_output=True, text=True, timeout=300)
+    if r.returncode != 0:
+        raise RuntimeError((r.stderr or "")[-250:].replace("\n", " "))
+    try:
+        d = json.loads(r.stdout.strip().splitlines()[-1])
+    except Exception:  # noqa: BLE001
+        raise RuntimeError(f"child produced no JSON: {r.stdout[-150:]}") from None
+    if "error" in d:
+        raise RuntimeError(d["error"])
+    return d["values"]
 
 
-def blind_repro_match(cand_src: str, task: dict, root: str) -> tuple[bool | None, str]:
-    """Return (match, detail). match=None when the check could not run."""
+def blind_repro_match(cand_src: str, task: dict, root_repo: str) -> tuple[bool | None, str, str]:
+    """Return (match, status, detail).
+
+    status: match | mismatch | blind_build_error | blind_ref_error |
+            blind_call_error | blind_no_scope
+    """
     ref = task["ref"]
     sig = task["signature"]
-    raster = task["raster"]
     types = sig["inputs"]
     cand_scope = scope_name(cand_src)
     if not cand_scope:
-        return None, "candidate has no scope"
+        return None, "blind_no_scope", "candidate has no declaration scope"
 
-    cand_module = "CandMod"
-    ref_file = os.path.join(root, ref["file"])
-    with tempfile.TemporaryDirectory() as d:
+    # raster carrying types, so each child can coerce without sharing objects
+    cand_raster = [{k: [v, types[k]] for k, v in p.items()} for p in task["raster"]]
+    ref_raster = [{ref["input_map"][k]: [v, types[k]] for k, v in p.items()}
+                  for p in task["raster"]]
+
+    with tempfile.TemporaryDirectory() as dc, tempfile.TemporaryDirectory() as dr:
         try:
-            _clerk_project(cand_src, cand_module, ref_file, ref["module"], d)
-            mods, rt = _load(d, [cand_module, ref["module"]])
+            croot = _build("CandMod", dc, src=cand_src)
         except Exception as e:  # noqa: BLE001
-            return None, f"build/load failed: {str(e)[-200:]}"
+            return None, "blind_build_error", f"candidate build failed: {e}"
+        try:
+            rroot = _build(ref["module"], dr,
+                           file=os.path.join(root_repo, ref["file"]))
+        except Exception as e:  # noqa: BLE001
+            return None, "blind_ref_error", f"reference build failed: {e}"
 
-        # fixed reference inputs the signature omits (e.g. enums)
-        fixed = {}
-        for k, spec in (ref.get("fixed_inputs") or {}).items():
-            if isinstance(spec, dict) and "enum" in spec:
-                enum_cls = getattr(mods[ref["module"]], spec["enum"])
-                fixed[f"{k}_in"] = enum_cls(getattr(enum_cls.Code, spec["code"]), None)
-            else:
-                fixed[f"{k}_in"] = spec
+        try:
+            cvals = _evaluate(croot, "CandMod", cand_scope, sig["output"],
+                              cand_raster, {})
+        except Exception as e:  # noqa: BLE001
+            return None, "blind_call_error", f"candidate call failed: {e}"
+        try:
+            rvals = _evaluate(rroot, ref["module"], ref["scope"], ref["output"],
+                              ref_raster, ref.get("fixed_inputs") or {})
+        except Exception as e:  # noqa: BLE001
+            return None, "blind_ref_error", f"reference call failed: {e}"
 
-        diffs = []
-        for point in raster:
-            ckw = {f"{k}_in": _coerce(rt, v, types[k]) for k, v in point.items()}
-            rkw = dict(fixed)
-            for sig_name, ref_name in ref["input_map"].items():
-                rkw[f"{ref_name}_in"] = _coerce(rt, point[sig_name], types[sig_name])
-            try:
-                cv = _call(mods[cand_module], cand_scope, ckw, sig["output"])
-                rv = _call(mods[ref["module"]], ref["scope"], rkw, ref["output"])
-            except Exception as e:  # noqa: BLE001
-                return None, f"call failed: {str(e)[-200:]}"
-            if str(cv) != str(rv):
-                diffs.append((point, str(cv), str(rv)))
-
+    diffs = [(task["raster"][i], c, r) for i, (c, r) in enumerate(zip(cvals, rvals))
+             if c != r]
     if diffs:
-        return False, f"{len(diffs)}/{len(raster)} raster points differ; first={diffs[0]}"
-    return True, f"matches reference on {len(raster)} raster point(s)"
+        return False, "mismatch", (f"{len(diffs)}/{len(cvals)} raster points differ; "
+                                   f"first={diffs[0]}")
+    return True, "match", f"matches reference on {len(cvals)} raster point(s)"

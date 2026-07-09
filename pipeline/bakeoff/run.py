@@ -127,14 +127,23 @@ def main() -> int:
                 "transport": res.transport,
                 "provenance": res.provenance,
                 "total_cost_usd": round(res.total_cost_usd, 6),
+                # Quellen mitschreiben: der Blind-Vergleich laesst sich damit
+                # offline nachrechnen, ohne die Modelle erneut zu bezahlen.
+                "catala_a": res.catala_a,
+                "catala_b": res.catala_b,
+                "module_name": res.module_name,
             }
 
-            if rid in blind and res.catala_a:
-                match, detail = blind_repro_match(res.catala_a, blind[rid], ROOT)
+            if rid in blind:
+                if res.catala_a:
+                    match, status, detail = blind_repro_match(res.catala_a, blind[rid], ROOT)
+                else:
+                    match, status, detail = None, "blind_no_scope", "no candidate source"
                 if match is not None:
                     report["blind_repro_match"] = match
+                report["blind_repro_status"] = status
                 report["blind_repro_detail"] = detail
-                print(f"  blind_repro: {match} ({detail[:80]})")
+                print(f"  blind_repro: {status} ({detail[:70]})", flush=True)
 
             os.makedirs(d, exist_ok=True)
             json.dump(report, open(os.path.join(d, "report.json"), "w",

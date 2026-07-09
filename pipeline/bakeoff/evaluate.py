@@ -38,7 +38,15 @@ def _gate(r: dict, name: str) -> str | None:
 
 
 def pairing_of(r: dict) -> str:
-    """Identify the pairing by the formaliser-B slug in the provenance."""
+    """Identify the pairing.
+
+    A run aborted at a role has empty provenance, so the explicit `pairing` field
+    is authoritative; the provenance slug is only a fallback for older reports.
+    Otherwise every role_timeout would land in an "unknown" bucket and the
+    flakiness would silently disappear from the comparison.
+    """
+    if r.get("pairing"):
+        return r["pairing"]
     for p in r.get("provenance", []):
         if p["role"] == "formalisierer_b":
             return p["slug"].replace(" (dry-run)", "")
@@ -94,8 +102,17 @@ def evaluate(reports: list[dict]) -> dict:
         for r in escalated:
             for g in r.get("failed_gates", []):
                 per_gate[g] += 1
+        # Blind-Reproduktion: nur Laeufe zaehlen, die ueberhaupt vergleichbar waren.
+        # Ein Build-Fehler des Kandidaten ist kein "nicht reproduziert", sondern
+        # gar kein Vergleich - er wird getrennt ausgewiesen.
         blind = [r for r in rs if "blind_repro_match" in r]
         blind_ok = sum(1 for r in blind if r["blind_repro_match"])
+        blind_tasks = [r for r in rs if "blind_repro_status" in r]
+        blind_build_err = sum(1 for r in blind_tasks
+                              if r["blind_repro_status"] in
+                              ("blind_build_error", "blind_call_error", "blind_no_scope"))
+        blind_ref_err = sum(1 for r in blind_tasks
+                            if r["blind_repro_status"] == "blind_ref_error")
         approved = [r for r in rs if r.get("queue_status", "").startswith("verified")]
         cost = sum(r.get("total_cost_usd", 0.0) for r in rs)
         # Clerk-Gate n/a-Anteil (kein EStH/BMF-Rechenbeispiel)
@@ -127,6 +144,8 @@ def evaluate(reports: list[dict]) -> dict:
             "annahme_benannt": rate(named, n),
             "annahme_verpasst": rate(missed, n),
             "blind_reproduktion": rate(blind_ok, len(blind)) if blind else None,
+            "blind_build_error_rate": rate(blind_build_err, len(blind_tasks)) if blind_tasks else None,
+            "blind_ref_error_rate": rate(blind_ref_err, len(blind_tasks)) if blind_tasks else None,
             "eskalationsrate": rate(len(escalated), n),
             "eskalation_je_gate": {k: rate(v, n) for k, v in sorted(per_gate.items())},
             "clerk_gate_na_anteil": rate(clerk_na, n),
@@ -150,7 +169,8 @@ def to_markdown(res: dict) -> str:
 
     cols = ["n", "syntaxvaliditaet", "aequivalenz_divergenzrate",
             "roundtrip_abweichungsrate", "annahme_benannt", "annahme_verpasst",
-            "blind_reproduktion", "eskalationsrate", "kosten_pro_approved_usd"]
+            "blind_reproduktion", "blind_build_error_rate", "eskalationsrate",
+            "kosten_pro_approved_usd"]
     L.append("| Paarung (Formalisierer B) | " + " | ".join(cols) + " |")
     L.append("|" + "---|" * (len(cols) + 1))
     for pairing, m in sorted(res.items()):
@@ -165,6 +185,10 @@ def to_markdown(res: dict) -> str:
              "fuer treu, aber Aequivalenz oder die Blind-Referenz widersprechen "
              "(schlecht). Ein Judge, der nie etwas meldet, sieht in Spalte 1 gut aus "
              "und faellt in Spalte 2 durch.\n")
+
+    L.append("\n`blind_reproduktion` zaehlt nur Laeufe, die ueberhaupt vergleichbar "
+             "waren. Ein Kandidat, der nicht baut, ist kein 'nicht reproduziert', "
+             "sondern gar kein Vergleich - er steht in `blind_build_error_rate`.\n")
 
     L.append("\n## Eskalation getrennt nach ausloesendem Gate\n")
     gates = sorted({g for m in res.values() for g in m["eskalation_je_gate"]})
