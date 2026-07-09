@@ -80,6 +80,20 @@ def _judge_named(r: dict) -> bool:
     return bool(v and not v.get("parse_error") and v.get("stille_zusatzannahmen"))
 
 
+def _syntax_ok(r: dict, suffix: str = "") -> bool:
+    """Both formalisers parsed and typechecked. `suffix='_first'` scores the
+    first pass, before any repair round."""
+    return (_gate(r, f"syntax_a{suffix}") == "PASS"
+            and _gate(r, f"syntax_b{suffix}") == "PASS"
+            and _gate(r, f"typecheck_a{suffix}") in ("PASS", None)
+            and _gate(r, f"typecheck_b{suffix}") in ("PASS", None))
+
+
+def _scope_gaps(r: dict) -> int:
+    v = r.get("judge_verdict") or {}
+    return len(v.get("scope_gap") or [])
+
+
 def evaluate(reports: list[dict]) -> dict:
     by = defaultdict(list)
     for r in reports:
@@ -88,10 +102,15 @@ def evaluate(reports: list[dict]) -> dict:
     result = {}
     for pairing, rs in by.items():
         n = len(rs)
-        syntax_ok = sum(1 for r in rs
-                        if _gate(r, "syntax_a") == "PASS" and _gate(r, "syntax_b") == "PASS"
-                        and _gate(r, "typecheck_a") in ("PASS", None)
-                        and _gate(r, "typecheck_b") in ("PASS", None))
+        syntax_ok = sum(1 for r in rs if _syntax_ok(r))
+        # Erstversuch getrennt: vor der Reparaturrunde. Reports ohne `_first`-Gate
+        # stammen aus dem Lauf vor der Protokollaenderung; dort ist der Endstand
+        # zugleich der Erstversuch.
+        syntax_first = sum(1 for r in rs
+                           if _syntax_ok(r, "_first" if _gate(r, "syntax_a_first") else ""))
+        repaired = sum(1 for r in rs if any((r.get("repaired") or {}).values()))
+        gap_runs = sum(1 for r in rs if _scope_gaps(r) > 0)
+        gap_total = sum(_scope_gaps(r) for r in rs)
         equiv_div = sum(1 for r in rs if _gate(r, "equivalence") == "FAIL")
         rt_dev = sum(1 for r in rs if _gate(r, "roundtrip") == "FAIL")
         named = sum(1 for r in rs if _judge_named(r))
@@ -141,7 +160,12 @@ def evaluate(reports: list[dict]) -> dict:
 
         result[pairing] = {
             "n": n,
-            "syntaxvaliditaet": rate(syntax_ok, n),
+            "syntaxvaliditaet_first_pass": rate(syntax_first, n),
+            "syntaxvaliditaet": rate(syntax_ok, n),   # nach der Reparaturrunde
+            "repair_rate": rate(repaired, n),
+            # Rueckmeldung zur Task-Spezifikation, nicht zur Modellqualitaet
+            "scope_gap_anteil": rate(gap_runs, n),
+            "scope_gap_je_task": round(gap_total / n, 3) if n else 0.0,
             "aequivalenz_divergenzrate": rate(equiv_div, n),
             "roundtrip_abweichungsrate": rate(rt_dev, n),
             # zweistufig: benannt (gut) vs verpasst (schlecht)
@@ -165,18 +189,58 @@ def evaluate(reports: list[dict]) -> dict:
     return result
 
 
+PROTOKOLL = """
+## Protokollaenderung gegenueber dem ersten G2-Lauf
+
+Der erste Lauf lieferte keinen Entscheid: die Eskalationsrate war gesaettigt
+(Minimum 0.929) und 19 von 25 inhaltlichen FAILs waren derselbe Befund - der
+Norm-Ausschnitt war breiter als die vorgegebene Scope-Signatur. Gemessen wurde
+der Task-Zuschnitt, nicht das Modell. Vier Aenderungen, von Julius freigegeben:
+
+1. **Judge kennt die Scope-Grenze.** Er bewertet `faithful` nur noch innerhalb
+   der vorgegebenen Signatur. Norm-Teile ausserhalb gehen als `scope_gap` in eine
+   eigene Metrik und fallen kein Gate. `scope_gap` ist Rueckmeldung zur
+   Task-Spezifikation, nicht zur Modellqualitaet. (`roundtrip_diff@2`)
+2. **Norm-Konstanten raus aus den Signaturen.** `p09` und `p04` reichten Betraege,
+   Saetze und Caps als Eingaben herein und verletzten damit das eigene Prinzip aus
+   dem Kopf von `tasks.yaml`; bei `p09` erzwang das zusaetzlich eine Staffel, die
+   die eingefrorene Fassung 2026 gar nicht mehr kennt (StAendG 2025: einheitlich
+   0,38 Euro ab km 1). Die Konstanten stehen jetzt in `ref.fixed_inputs` und
+   erreichen nur die Referenz. Signaturen sind VZ-agnostisch.
+3. **Genau eine Reparaturrunde**, nur bei Syntax- oder Typecheck-Fehler, Eingabe =
+   eigener Quelltext plus woertliche Compiler-Meldung, symmetrisch fuer A und B.
+   Der Report weist `syntaxvaliditaet_first_pass` und `syntaxvaliditaet`
+   (post-repair) getrennt aus; die Kaskade rechnet mit dem reparierten Quelltext
+   weiter. (`formalisierung_repair@1`)
+4. **Dritte Paarung `A-glm_B-deepseek`**, Judge Sonnet. Sie beantwortet die Frage,
+   die die ersten beiden Paarungen nicht stellen konnten: gehoert Sonnet ueberhaupt
+   ins Formalisierer-Paar? Der Judge ist in jeder Paarung die dritte Modellfamilie;
+   `check_pairings()` bricht ab, wenn eine Paarung das verletzt.
+
+Vorab-Diagnose (Punkt 5 der Freigabe): Sonnets drei Typecheck-Fails hatten eine
+gemeinsame, deterministische Ursache - den Numeric Tower. `p32a` und `p09` fielen
+in beiden Paarungen an derselben Stelle (`decimal of (Decimal.truncate of ...)`;
+`Decimal.truncate` liefert bereits ein `decimal`). Die Drift stammte nicht aus den
+Few-Shots (die enthalten kein `decimal of`), sondern aus dem zu duennen
+Syntax-Primer in `formalisierung@2`. `formalisierung@3` schreibt den Numeric Tower
+explizit aus; die Regeln sind gegen den Compiler gegengeprueft. Das hebt alle
+Paarungen gleichmaessig und verhindert, dass G2 ein Prompt-Artefakt misst.
+"""
+
+
 def to_markdown(res: dict) -> str:
     L = ["# Gate G2: Bake-off-Auswertung\n",
-         "Entscheid: niedrigste Eskalationsrate gewinnt; Kosten nur als Tiebreaker.\n"]
+         "Entscheid: niedrigste Eskalationsrate gewinnt; Kosten nur als Tiebreaker.\n",
+         PROTOKOLL]
     if not res:
         L.append("Keine Laeufe gefunden. Der Bake-off wurde noch nicht gestartet "
                  "(Freigabe durch Julius steht aus).\n")
         return "\n".join(L)
 
-    cols = ["n", "syntaxvaliditaet", "aequivalenz_divergenzrate",
-            "roundtrip_abweichungsrate", "annahme_benannt", "annahme_verpasst",
-            "blind_reproduktion", "blind_build_error_rate", "eskalationsrate",
-            "kosten_pro_approved_usd"]
+    cols = ["n", "syntaxvaliditaet_first_pass", "syntaxvaliditaet", "repair_rate",
+            "aequivalenz_divergenzrate", "roundtrip_abweichungsrate",
+            "annahme_benannt", "annahme_verpasst", "blind_reproduktion",
+            "blind_build_error_rate", "eskalationsrate", "kosten_pro_approved_usd"]
     L.append("| Paarung (Formalisierer B) | " + " | ".join(cols) + " |")
     L.append("|" + "---|" * (len(cols) + 1))
     for pairing, m in sorted(res.items()):
@@ -195,6 +259,22 @@ def to_markdown(res: dict) -> str:
     L.append("\n`blind_reproduktion` zaehlt nur Laeufe, die ueberhaupt vergleichbar "
              "waren. Ein Kandidat, der nicht baut, ist kein 'nicht reproduziert', "
              "sondern gar kein Vergleich - er steht in `blind_build_error_rate`.\n")
+
+    L.append("\n`syntaxvaliditaet_first_pass` ist der Erstversuch, `syntaxvaliditaet` "
+             "der Stand nach genau einer Reparaturrunde (Eingabe: eigener Quelltext "
+             "plus woertliche Compiler-Meldung, symmetrisch fuer A und B). "
+             "`repair_rate` = Anteil der Laeufe, in denen ueberhaupt repariert wurde. "
+             "Die Kaskade arbeitet mit dem reparierten Quelltext weiter.\n")
+
+    L.append("\n## scope_gap: Rueckmeldung zur Task-Spezifikation\n")
+    L.append("Norm-Teile, die ausserhalb der vorgegebenen Scope-Signatur liegen. Der "
+             "Judge meldet sie getrennt; sie sind KEIN Modellfehler und fallen kein "
+             "Gate. Ein hoher Wert heisst: der Norm-Ausschnitt ist breiter geschnitten "
+             "als die Signatur - ein Befund ueber den Task-Zuschnitt.\n")
+    L.append("| Paarung | scope_gap_anteil | scope_gap_je_task |")
+    L.append("|---|---|---|")
+    for pairing, m in sorted(res.items()):
+        L.append(f"| {pairing} | {m['scope_gap_anteil']:.3f} | {m['scope_gap_je_task']:.3f} |")
 
     L.append("\n## Eskalation getrennt nach ausloesendem Gate\n")
     gates = sorted({g for m in res.values() for g in m["eskalation_je_gate"]})

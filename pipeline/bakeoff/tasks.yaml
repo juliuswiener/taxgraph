@@ -4,6 +4,13 @@
 # extensional vergleichbar sind. Bewusst enthalten die Signaturen NUR Sachverhalts-
 # Eingaben, keine Norm-Konstanten: Betraege, Prozentsaetze, Caps und Fristen muss
 # das Modell selbst aus dem Norm-Text holen. Sonst waere das Aequivalenz-Gate trivial.
+#
+# Signaturen sind ausserdem VZ-agnostisch. Die Hand-Referenzen sind je VZ
+# parametrisiert; die Parameterwerte des VZ, dessen Norm-Fassung eingefroren ist,
+# stehen in `ref.fixed_inputs` und werden nur der Referenz zugefuehrt, nie dem
+# Modell. Beispiel p09: die eingefrorene Fassung 2026 kennt einheitlich 0,38 Euro
+# ab km 1 (StAendG 2025), also faehrt die Referenz mit satz_bis_20_km = 0,38.
+# `fixed_inputs` ist getypt: {value, type} bzw. {enum, code} fuer Aufzaehlungen.
 
 blind_repro:
 - rule_id: p32a_einkommensteuertarif
@@ -88,10 +95,6 @@ blind_repro:
       arbeitstage: int
       eigenes_oder_ueberlassenes_kfz: bool
       oepnv_kosten_jahr: money
-      satz_bis_20_km: money
-      satz_ab_21_km: money
-      staffelgrenze_km: int
-      hoechstbetrag: money
     output: abziehbarer_betrag
   ref:
     file: rules/estg/p09_entfernungspauschale/entfernungspauschale.catala_en
@@ -103,60 +106,39 @@ blind_repro:
       arbeitstage: arbeitstage
       eigenes_oder_ueberlassenes_kfz: eigenes_oder_ueberlassenes_kfz
       oepnv_kosten_jahr: oepnv_kosten_jahr
-      satz_bis_20_km: satz_bis_20_km
-      satz_ab_21_km: satz_ab_21_km
-      staffelgrenze_km: staffelgrenze_km
-      hoechstbetrag: hoechstbetrag
-    fixed_inputs: {}
+    # Parameter der eingefrorenen Fassung 2026: einheitlich 0,38 Euro ab km 1.
+    # Die Referenz ist VZ-parametrisiert, das Modell liest die Konstanten aus
+    # dem Norm-Text.
+    fixed_inputs:
+      satz_bis_20_km: {value: 0.38, type: money}
+      satz_ab_21_km: {value: 0.38, type: money}
+      staffelgrenze_km: {value: 20, type: int}
+      hoechstbetrag: {value: 4500, type: money}
   raster:
   - entfernung_km_roh: 10.6
     arbeitstage: 200
     eigenes_oder_ueberlassenes_kfz: false
     oepnv_kosten_jahr: 0
-    satz_bis_20_km: 0.3
-    satz_ab_21_km: 0.38
-    staffelgrenze_km: 20
-    hoechstbetrag: 4500
   - entfernung_km_roh: 30.0
     arbeitstage: 220
     eigenes_oder_ueberlassenes_kfz: true
     oepnv_kosten_jahr: 0
-    satz_bis_20_km: 0.3
-    satz_ab_21_km: 0.38
-    staffelgrenze_km: 20
-    hoechstbetrag: 4500
   - entfernung_km_roh: 100.0
     arbeitstage: 220
     eigenes_oder_ueberlassenes_kfz: false
     oepnv_kosten_jahr: 0
-    satz_bis_20_km: 0.3
-    satz_ab_21_km: 0.38
-    staffelgrenze_km: 20
-    hoechstbetrag: 4500
   - entfernung_km_roh: 100.0
     arbeitstage: 220
     eigenes_oder_ueberlassenes_kfz: true
     oepnv_kosten_jahr: 0
-    satz_bis_20_km: 0.3
-    satz_ab_21_km: 0.38
-    staffelgrenze_km: 20
-    hoechstbetrag: 4500
   - entfernung_km_roh: 20.0
     arbeitstage: 220
     eigenes_oder_ueberlassenes_kfz: false
     oepnv_kosten_jahr: 1380
-    satz_bis_20_km: 0.3
-    satz_ab_21_km: 0.38
-    staffelgrenze_km: 20
-    hoechstbetrag: 4500
-  - entfernung_km_roh: 30.0
+  - entfernung_km_roh: 0.9
     arbeitstage: 220
-    eigenes_oder_ueberlassenes_kfz: true
+    eigenes_oder_ueberlassenes_kfz: false
     oepnv_kosten_jahr: 0
-    satz_bis_20_km: 0.38
-    satz_ab_21_km: 0.38
-    staffelgrenze_km: 20
-    hoechstbetrag: 4500
 - rule_id: p04_arbeitszimmer_homeoffice
   norm_source: sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt
   exclude_rule_ids:
@@ -170,9 +152,6 @@ blind_repro:
       jahrespauschale_gewaehlt: bool
       monate_ohne_mittelpunkt: int
       homeoffice_tage: int
-      jahrespauschale: money
-      tagespauschale_pro_tag: money
-      tagespauschale_hoechstbetrag: money
     output: abzug_gesamt
   ref:
     file: rules/estg/p04_arbeitszimmer_homeoffice/arbeitszimmer_homeoffice.catala_en
@@ -186,10 +165,11 @@ blind_repro:
       jahrespauschale_gewaehlt: jahrespauschale_gewaehlt
       monate_ohne_mittelpunkt: monate_ohne_mittelpunkt
       homeoffice_tage: homeoffice_tage
-      jahrespauschale: jahrespauschale
-      tagespauschale_pro_tag: tagespauschale_pro_tag
-      tagespauschale_hoechstbetrag: tagespauschale_hoechstbetrag
-    fixed_inputs: {}
+    # Parameter der eingefrorenen Fassung (§ 4 Abs. 5 S. 1 Nr. 6b S. 3, Nr. 6c S. 1)
+    fixed_inputs:
+      jahrespauschale: {value: 1260, type: money}
+      tagespauschale_pro_tag: {value: 6, type: money}
+      tagespauschale_hoechstbetrag: {value: 1260, type: money}
   raster:
   - arbeitszimmer_vorhanden: false
     ist_mittelpunkt: false
@@ -197,54 +177,36 @@ blind_repro:
     jahrespauschale_gewaehlt: false
     monate_ohne_mittelpunkt: 0
     homeoffice_tage: 120
-    jahrespauschale: 1260
-    tagespauschale_pro_tag: 6
-    tagespauschale_hoechstbetrag: 1260
   - arbeitszimmer_vorhanden: false
     ist_mittelpunkt: false
     tatsaechliche_aufwendungen: 0
     jahrespauschale_gewaehlt: false
     monate_ohne_mittelpunkt: 0
     homeoffice_tage: 250
-    jahrespauschale: 1260
-    tagespauschale_pro_tag: 6
-    tagespauschale_hoechstbetrag: 1260
   - arbeitszimmer_vorhanden: true
     ist_mittelpunkt: true
     tatsaechliche_aufwendungen: 2000
     jahrespauschale_gewaehlt: false
     monate_ohne_mittelpunkt: 0
     homeoffice_tage: 100
-    jahrespauschale: 1260
-    tagespauschale_pro_tag: 6
-    tagespauschale_hoechstbetrag: 1260
   - arbeitszimmer_vorhanden: true
     ist_mittelpunkt: true
     tatsaechliche_aufwendungen: 500
     jahrespauschale_gewaehlt: true
     monate_ohne_mittelpunkt: 0
     homeoffice_tage: 100
-    jahrespauschale: 1260
-    tagespauschale_pro_tag: 6
-    tagespauschale_hoechstbetrag: 1260
   - arbeitszimmer_vorhanden: true
     ist_mittelpunkt: true
     tatsaechliche_aufwendungen: 0
     jahrespauschale_gewaehlt: true
     monate_ohne_mittelpunkt: 6
     homeoffice_tage: 50
-    jahrespauschale: 1260
-    tagespauschale_pro_tag: 6
-    tagespauschale_hoechstbetrag: 1260
   - arbeitszimmer_vorhanden: true
     ist_mittelpunkt: false
     tatsaechliche_aufwendungen: 2000
     jahrespauschale_gewaehlt: false
     monate_ohne_mittelpunkt: 12
     homeoffice_tage: 100
-    jahrespauschale: 1260
-    tagespauschale_pro_tag: 6
-    tagespauschale_hoechstbetrag: 1260
 neu:
 - rule_id: p9_1_3_nr5_doppelte_haushaltsfuehrung
   norm: § 9 Abs. 1 S. 3 Nr. 5 EStG
@@ -512,12 +474,17 @@ neu:
   exclude_rule_ids:
   - p35a_2_3_haushaltsnahe
 metriken:
-- syntaxvaliditaet
+- syntaxvaliditaet_first_pass     # Erstversuch, ohne Reparaturrunde
+- syntaxvaliditaet                # nach genau einer Reparaturrunde
+- repair_rate
 - aequivalenz_divergenzrate
 - roundtrip_abweichungsrate
-- stille_zusatzannahmen
+- annahme_benannt                 # Round-Trip Stufe 1
+- annahme_verpasst                # Round-Trip Stufe 2
+- scope_gap_anteil                # Task-Spezifikation, nicht Modellqualitaet
 - blind_reproduktion
 - eskalationsrate
+- eskalation_je_gate
 - kosten_pro_approved
 - wanduhrzeit_pro_approved
 worker_gate:

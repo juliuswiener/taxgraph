@@ -62,6 +62,7 @@ class RoleConfig:
     max_tokens: int = 4096
     prompt_template_id: str = ""
     fewshot_set_id: str = ""
+    repair_template_id: str = ""
 
 
 class RoleCallError(RuntimeError):

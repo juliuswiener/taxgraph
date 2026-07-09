@@ -36,7 +36,8 @@ def load_roles(path: str = MODELS_YAML) -> tuple[dict[str, RoleConfig], str]:
             temperature=float(r.get("temperature", 0.0)),
             max_tokens=int(r.get("max_tokens", 4096)),
             prompt_template_id=r.get("prompt_template_id", ""),
-            fewshot_set_id=r.get("fewshot_set_id", ""))
+            fewshot_set_id=r.get("fewshot_set_id", ""),
+            repair_template_id=r.get("repair_template_id", ""))
     return roles, models_yaml_hash(path)
 
 

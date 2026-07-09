@@ -203,7 +203,7 @@ def _load_modules(d: str):
 
 def _coerce(rt, value, typ: str):
     if typ == "money":
-        return rt.Money(f"{int(value)}.00")
+        return rt.Money(f"{float(value):.2f}")   # sub-euro amounts must survive
     if typ == "decimal":
         return rt.Decimal(str(value))
     if typ == "bool":
@@ -296,6 +296,9 @@ def roundtrip_parse(judge_json_text: str) -> dict:
         "faithful": bool(d.get("faithful")),
         "abweichungen": list(d.get("abweichungen") or []),
         "stille_zusatzannahmen": list(d.get("stille_zusatzannahmen") or []),
+        # Norm-Teile ausserhalb der vorgegebenen Signatur. Das ist Rueckmeldung
+        # zur Task-Spezifikation, kein Modellfehler, und faellt das Gate nicht.
+        "scope_gap": list(d.get("scope_gap") or []),
     }
 
 
@@ -303,11 +306,13 @@ def roundtrip_gate(judge_json_text: str) -> GateResult:
     d = roundtrip_parse(judge_json_text)
     if d.get("parse_error"):
         return GateResult("roundtrip", FAIL, "judge output not valid JSON")
+    gap = len(d["scope_gap"])
     if d["faithful"] and not d["stille_zusatzannahmen"]:
-        return GateResult("roundtrip", PASS, "round-trip faithful, no silent assumptions")
+        return GateResult("roundtrip", PASS,
+                          f"round-trip faithful, no silent assumptions; scope_gap={gap}")
     return GateResult("roundtrip", FAIL,
                       f"abweichungen={len(d['abweichungen'])} "
-                      f"annahmen={len(d['stille_zusatzannahmen'])}")
+                      f"annahmen={len(d['stille_zusatzannahmen'])} scope_gap={gap}")
 
 
 _UMLAUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",

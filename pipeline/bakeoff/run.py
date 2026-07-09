@@ -41,6 +41,27 @@ def leakage_guard() -> None:
     print(r.stdout.strip())
 
 
+def _family(slug: str) -> str:
+    return slug.split("/", 1)[0]
+
+
+def check_pairings(pairings: list[dict]) -> None:
+    """The judge must be the third model family, in every pairing.
+
+    The soundness of the equivalence gate rests on decorrelated errors; a judge
+    from the same lab as one of the formalisers is not valid redundancy. This is
+    a precondition of the run, not a warning.
+    """
+    for p in pairings:
+        fams = {_family(p["formalisierer_a"]), _family(p["formalisierer_b"]),
+                _family(p["judge"])}
+        if len(fams) != 3:
+            raise SystemExit(
+                f"pairing '{p['name']}': judge is not a third family "
+                f"({sorted(fams)}); aborting - see models.yaml Judge-Rotation")
+    print(f"pairing guard ok: {len(pairings)} pairings, judge always a third family")
+
+
 def build_candidate(task: dict) -> dict:
     sig = task["signature"]
     return {
@@ -69,6 +90,7 @@ def main() -> int:
     tasks_cfg = yaml.safe_load(open(os.path.join(HERE, "tasks.yaml"), encoding="utf-8"))
     allow = cfg["bakeoff"]["provider_allowlists"]
     pairings = cfg["bakeoff"]["pairings"]
+    check_pairings(pairings)
 
     blind = {t["rule_id"]: t for t in tasks_cfg["blind_repro"]}
     tasks = tasks_cfg["blind_repro"] + tasks_cfg["neu"]
@@ -133,7 +155,11 @@ def main() -> int:
                 "models_yaml_hash": res.models_yaml_hash,
                 "queue_status": res.queue_status,
                 "gates": res.gates_dict(),
-                "failed_gates": [g.name for g in res.gate_results if g.status == "FAIL"],
+                # `*_first`-Gates sind Diagnose (Erstversuch vor der Reparatur),
+                # keine Eskalationsgruende.
+                "failed_gates": [g.name for g in res.gate_results
+                                 if g.status == "FAIL" and not g.name.endswith("_first")],
+                "repaired": res.repaired,
                 "judge_verdict": res.judge_verdict,
                 "transport": res.transport,
                 "provenance": res.provenance,

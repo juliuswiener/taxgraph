@@ -6,6 +6,8 @@ Each returns (text, Provenance). In dry-run the client returns a fixture keyed b
 
 from __future__ import annotations
 
+import dataclasses
+
 from client import OpenRouterClient, RoleConfig
 from prompts import build_messages
 from provenance import stamp, Provenance
@@ -33,18 +35,22 @@ _CATALA_TYPE = {"money": "money", "decimal": "decimal",
                 "bool": "boolean", "boolean": "boolean"}
 
 
+def signature_text(sig: dict) -> str:
+    ins = "\n".join(f"  input {k} content {_CATALA_TYPE[v]}"
+                    for k, v in sig["inputs"].items())
+    return (f"declaration scope {sig['scope']}:\n{ins}\n"
+            f"  output {sig['output']} content money")
+
+
 def _signature_block(sig: dict | None) -> str:
     """Prescribe the scope interface so A, B and the hand reference are
     extensionally comparable. Blind stays the semantics, not the naming."""
     if not sig:
         return ""
-    ins = "\n".join(f"  input {k} content {_CATALA_TYPE[v]}"
-                    for k, v in sig["inputs"].items())
     return (f"\n\nVERBINDLICHE Scope-Signatur. Verwende exakt diesen Scope-Namen, "
             f"exakt diese Eingabenamen und -typen und exakt diesen Ausgabenamen. "
             f"Fuege KEINE weiteren Eingaben hinzu und benenne nichts um:\n\n"
-            f"declaration scope {sig['scope']}:\n{ins}\n"
-            f"  output {sig['output']} content money\n")
+            f"{signature_text(sig)}\n")
 
 
 def formalize(client, role: RoleConfig, norm_text: str, claims_text: str,
@@ -55,8 +61,28 @@ def formalize(client, role: RoleConfig, norm_text: str, claims_text: str,
     return _call(client, role, task, role.role, models_hash, exclude)
 
 
+def repair(client, role: RoleConfig, prev_src: str, compiler_msg: str,
+           models_hash: str, exclude=None, signature: dict | None = None,
+           template_id: str | None = None) -> tuple[str, Provenance]:
+    """One repair round on a syntax/typecheck failure, symmetric for A and B.
+
+    Same model, same few-shot exclusions (leakage protection must not lapse in
+    the repair round); only the template changes, and provenance records it.
+    """
+    tid = template_id or role.repair_template_id or "formalisierung_repair@1"
+    rrole = dataclasses.replace(role, prompt_template_id=tid)
+    task = (f"Deine Catala-Formalisierung:\n{prev_src}\n\n"
+            f"Woertliche Compiler-Meldung:\n{compiler_msg}"
+            f"{_signature_block(signature)}\n\nKorrigiere.")
+    return _call(client, rrole, task, f"{role.role}_repair", models_hash, exclude)
+
+
 def roundtrip(client, role: RoleConfig, norm_text: str, catala_src: str,
-              models_hash: str, exclude=None) -> tuple[str, Provenance]:
-    task = (f"Original-Norm:\n{norm_text}\n\nCatala-Formalisierung:\n{catala_src}\n\n"
+              models_hash: str, exclude=None, signature: dict | None = None
+              ) -> tuple[str, Provenance]:
+    sig = (f"\n\nVorgegebene Scope-Signatur (die Grenze deiner Bewertung):\n"
+           f"{signature_text(signature)}" if signature else "")
+    task = (f"Original-Norm:\n{norm_text}{sig}\n\n"
+            f"Catala-Formalisierung:\n{catala_src}\n\n"
             f"Rueckuebersetzen und vergleichen.")
     return _call(client, role, task, "judge", models_hash, exclude)

@@ -23,7 +23,8 @@ roles:
     providers: ["anthropic"]
     temperature: 0.0
     max_tokens: 8192
-    prompt_template_id: "formalisierung@2"
+    prompt_template_id: "formalisierung@3"
+    repair_template_id: "formalisierung_repair@1"
     fewshot_set_id: "formalisierung_base@1"
 
   formalisierer_b:
@@ -32,7 +33,8 @@ roles:
     providers: ["together", "fireworks/fast", "digitalocean"]
     temperature: 0.0
     max_tokens: 8192
-    prompt_template_id: "formalisierung@2"   # identisches Template wie A
+    prompt_template_id: "formalisierung@3"   # identisches Template wie A
+    repair_template_id: "formalisierung_repair@1"  # identische Reparaturrunde wie A
     fewshot_set_id: "formalisierung_base@1"   # identische Few-Shots wie A
 
   judge:
@@ -41,7 +43,7 @@ roles:
     providers: ["together", "fireworks", "digitalocean"]
     temperature: 0.0
     max_tokens: 4096
-    prompt_template_id: "roundtrip_diff@1"
+    prompt_template_id: "roundtrip_diff@2"
     fewshot_set_id: "roundtrip_base@1"
 
   worker:
@@ -61,8 +63,15 @@ orchestrator:
   slug: "claude-opus (Claude Code)"
   via: "claude-code"
 
-# G2-Bake-off-Paarungen (Start gibt Julius separat frei). Judge jeweils die
-# dritte Familie. Few-Shot-Sets pro Task disjunkt (Leakage-Schutz, siehe bakeoff).
+# G2-Bake-off-Paarungen (Start gibt Julius separat frei).
+#
+# Judge-Rotation: der Judge ist in JEDER Paarung die dritte Modellfamilie, die im
+# Formalisierer-Paar nicht vorkommt. Bei drei Familien (Anthropic, Z.AI, DeepSeek)
+# ist er dadurch eindeutig bestimmt - es gibt keine Wahlfreiheit, die man
+# zugunsten eines Modells ausnutzen koennte. Das haelt das harte Prinzip aus dem
+# Nachtrag ein (dekorrelierte Fehler) und macht die Rotation pruefbar:
+# check_pairings() in bakeoff/run.py bricht ab, wenn eine Paarung es verletzt.
+# Few-Shot-Sets pro Task disjunkt (Leakage-Schutz, siehe bakeoff).
 bakeoff:
   pairings:
     - name: "A-sonnet_B-glm"
@@ -73,6 +82,13 @@ bakeoff:
       formalisierer_a: "anthropic/claude-sonnet-4.6"
       formalisierer_b: "deepseek/deepseek-v4-pro"
       judge: "z-ai/glm-5.2"
+    # Entscheidungsfrage der dritten Paarung: gehoert Sonnet ueberhaupt ins
+    # Formalisierer-Paar? Ohne diese Paarung ist Sonnet in jedem Vergleich als
+    # A gesetzt und die Frage nicht stellbar.
+    - name: "A-glm_B-deepseek"
+      formalisierer_a: "z-ai/glm-5.2"
+      formalisierer_b: "deepseek/deepseek-v4-pro"
+      judge: "anthropic/claude-sonnet-4.6"
   provider_allowlists:
     "anthropic/claude-sonnet-4.6": ["anthropic"]
     "z-ai/glm-5.2": ["together", "fireworks/fast", "digitalocean"]

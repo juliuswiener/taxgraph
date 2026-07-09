@@ -45,7 +45,9 @@ mod = importlib.import_module(pkg + "." + spec["module"])
 rt = importlib.import_module("catala_runtime")
 
 def coerce(v, t):
-    if t == "money":   return rt.Money(f"{int(v)}.00")
+    # money must survive sub-euro amounts: 0.38 Euro/km is a money literal in the
+    # reference. int(v) would have silently turned it into $0.00.
+    if t == "money":   return rt.Money(f"{float(v):.2f}")
     if t == "decimal": return rt.Decimal(str(v))
     if t == "bool":    return rt.Bool(bool(v))
     return int(v)
@@ -59,6 +61,8 @@ for k, s in (spec.get("fixed_inputs") or {}).items():
     if isinstance(s, dict) and "enum" in s:
         cls = getattr(mod, s["enum"])
         fixed[k + "_in"] = cls(getattr(cls.Code, s["code"]), None)
+    elif isinstance(s, dict) and "value" in s:
+        fixed[k + "_in"] = coerce(s["value"], s["type"])
     else:
         fixed[k + "_in"] = s
 

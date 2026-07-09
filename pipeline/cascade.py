@@ -41,6 +41,7 @@ class CascadeResult:
     queue_status: str = "extracted"
     judge_verdict: dict = field(default_factory=dict)
     transport: dict = field(default_factory=dict)
+    repaired: dict = field(default_factory=dict)   # {"a": bool, "b": bool}
 
     def gates_dict(self):
         return [{"name": g.name, "status": g.status, "detail": g.detail}
@@ -76,35 +77,24 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
     claims_text, p = R.extract(client, roles["worker"], norm, models_hash, exclude)
     record(p)
 
-    # 2. Doppelformalisierung (A und B)
+    # 2.-4. Doppelformalisierung (A und B), je mit genau einer Reparaturrunde
+    #       auf Syntax-/Typecheck-Fehler. Symmetrisch fuer beide Formalisierer.
     sig = candidate.get("signature")
-    a_text, pa = R.formalize(client, roles["formalisierer_a"], norm, claims_text,
-                             models_hash, exclude, signature=sig)
-    record(pa)
-    b_text, pb = R.formalize(client, roles["formalisierer_b"], norm, claims_text,
-                             models_hash, exclude, signature=sig)
-    record(pb)
+    mod_a, src_a = _formalize_repair(client, roles["formalisierer_a"], "a", norm,
+                                     claims_text, models_hash, exclude, sig, res, record)
+    mod_b, src_b = _formalize_repair(client, roles["formalisierer_b"], "b", norm,
+                                     claims_text, models_hash, exclude, sig, res, record)
     res.queue_status = "formalized"
-
-    mod_a, src_a = G.extract_catala(a_text)
-    mod_b, src_b = G.extract_catala(b_text)
     res.module_name, res.catala_a, res.catala_b = mod_a, src_a, src_b
-
-    # 3. Syntax-Gate (beide): echter Catala-Parser, Ergebnis wird mit dem
-    #    Typecheck-Gate geteilt (ein clerk-Lauf, gecacht).
-    res.gate_results.append(_named("syntax_a", G.syntax_gate(src_a, mod_a)))
-    res.gate_results.append(_named("syntax_b", G.syntax_gate(src_b, mod_b)))
-
-    # 4. Compiler-Typecheck (beide)
-    res.gate_results.append(_named("typecheck_a", G.typecheck_gate(src_a, mod_a)))
-    res.gate_results.append(_named("typecheck_b", G.typecheck_gate(src_b, mod_b)))
 
     # 5. extensionale Aequivalenz A vs B auf dem Input-Raster
     res.gate_results.append(G.equivalence_gate(src_a, src_b, candidate))
 
-    # 6. Round-Trip-Diff (Judge auf A)
+    # 6. Round-Trip-Diff (Judge auf A). Der Judge sieht die Signatur und bewertet
+    #    nur, was innerhalb ihrer Grenze liegt; Norm-Teile ausserhalb -> scope_gap.
     if src_a:
-        j_text, pj = R.roundtrip(client, roles["judge"], norm, src_a, models_hash)
+        j_text, pj = R.roundtrip(client, roles["judge"], norm, src_a, models_hash,
+                                 signature=sig)
         record(pj)
         res.judge_verdict = G.roundtrip_parse(j_text)
         res.gate_results.append(G.roundtrip_gate(j_text))
@@ -122,8 +112,9 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
         res.queue_status = "invalid_mixed_models_yaml"
         return res
 
-    # queue decision
-    statuses = [g.status for g in res.gate_results]
+    # queue decision - the `_first` gates are diagnostics, not gates: a run that
+    # only failed before its repair round must not be flagged for that.
+    statuses = [g.status for g in res.gate_results if not g.name.endswith("_first")]
     if G.FAIL in statuses:
         res.queue_status = "flagged_for_review"
     elif G.SKIP in statuses:
@@ -138,11 +129,50 @@ def _named(name: str, g: G.GateResult) -> G.GateResult:
     return g
 
 
+def _formalize_repair(client, role, tag: str, norm: str, claims_text: str,
+                      models_hash: str, exclude, sig, res, record):
+    """Formalise, then repair once iff syntax or typecheck failed.
+
+    Exactly one repair round, only on a compiler failure, input = the candidate's
+    own source plus the verbatim compiler diagnostic. Both formalisers get the
+    same treatment. The first-pass gates are kept as `syntax_<tag>_first` /
+    `typecheck_<tag>_first` so the report can separate first-pass from post-repair
+    validity; the unsuffixed gates are the ones the cascade acts on.
+    """
+    text, p = R.formalize(client, role, norm, claims_text, models_hash,
+                          exclude, signature=sig)
+    record(p)
+    mod, src = G.extract_catala(text)
+    syn, tc = G.syntax_gate(src, mod), G.typecheck_gate(src, mod)
+    res.gate_results.append(_named(f"syntax_{tag}_first", _copy(syn)))
+    res.gate_results.append(_named(f"typecheck_{tag}_first", _copy(tc)))
+    res.repaired[tag] = False
+
+    if src and G.FAIL in (syn.status, tc.status):
+        msg = syn.detail if syn.status == G.FAIL else tc.detail
+        r_text, rp = R.repair(client, role, src, msg, models_hash, exclude, sig)
+        record(rp)
+        r_mod, r_src = G.extract_catala(r_text)
+        if r_src:
+            res.repaired[tag] = True
+            mod, src = r_mod, r_src
+            syn, tc = G.syntax_gate(src, mod), G.typecheck_gate(src, mod)
+
+    res.gate_results.append(_named(f"syntax_{tag}", syn))
+    res.gate_results.append(_named(f"typecheck_{tag}", tc))
+    return mod, src
+
+
+def _copy(g: G.GateResult) -> G.GateResult:
+    return G.GateResult(g.name, g.status, g.detail)
+
+
 def write_report(res: CascadeResult, out_dir: str | None = None) -> str:
     out_dir = out_dir or os.path.join(os.path.dirname(__file__), "runs",
                                       f"{res.candidate_id}_{now_iso().replace(':', '')}")
     os.makedirs(out_dir, exist_ok=True)
-    failed = [g.name for g in res.gate_results if g.status == G.FAIL]
+    failed = [g.name for g in res.gate_results
+              if g.status == G.FAIL and not g.name.endswith("_first")]
     report = {
         "candidate_id": res.candidate_id,
         "dry_run": res.dry_run,
@@ -154,6 +184,7 @@ def write_report(res: CascadeResult, out_dir: str | None = None) -> str:
         "failed_gates": failed,
         # zweistufige Round-Trip-Wertung (Stufe 2 in evaluate.py)
         "judge_verdict": res.judge_verdict,
+        "repaired": res.repaired,
         "provenance": res.provenance,
         "total_cost_usd": round(res.total_cost_usd, 6),
     }
