@@ -50,7 +50,10 @@ roles:
     slug: "anthropic/claude-sonnet-4.6"
     providers: ["anthropic"]
     temperature: 0.0
-    max_tokens: 8192
+    # max_tokens je Rolle explizit. Zu knapp bemessen liefert das Modell eine am
+    # Limit abgeschnittene Antwort, die wie ein Modellfehler aussieht; siehe
+    # docs/setup.md ("Ein zu knappes max_tokens sieht aus wie ein Modellfehler").
+    max_tokens: 8192          # Formalisierung: Catala-Quelltext, gemessen < 3000
     prompt_template_id: "formalisierung@3"
     repair_template_id: "formalisierung_repair@1"
     fewshot_set_id: "formalisierung_base@1"
@@ -61,7 +64,7 @@ roles:
     # Together bediente im G2-Lauf alle 44 B-Calls. Genau ein Provider (s.o.).
     providers: ["together"]
     temperature: 0.0
-    max_tokens: 8192
+    max_tokens: 8192          # identisch zu A, damit das Budget kein Faktor ist
     prompt_template_id: "formalisierung@3"   # identisches Template wie A
     repair_template_id: "formalisierung_repair@1"  # identische Reparaturrunde wie A
     fewshot_set_id: "formalisierung_base@1"   # identische Few-Shots wie A
@@ -78,7 +81,10 @@ roles:
     # 4096 reichten nicht: der Judge lief bei der ersten Produktionsregel exakt
     # ins Limit (completion_tokens=4096) und lieferte abgeschnittenes JSON.
     # V4 Pro schreibt vor der Antwort ausfuehrlich Reasoning-Tokens.
-    max_tokens: 12288
+    # 4096 reichten nicht: V4 Pro schreibt Reasoning-Tokens vor die Antwort und
+    # lief bei der ersten Produktionsregel exakt ins Limit (completion=4096,
+    # abgeschnittenes JSON). Gemessener Bedarf mit roundtrip_diff@3: ~8000.
+    max_tokens: 12288         # Judge: Reasoning + JSON-Verdikt
     prompt_template_id: "roundtrip_diff@3"   # scope_gap zweiklassig
     fewshot_set_id: "roundtrip_base@1"
 
@@ -98,7 +104,7 @@ roles:
     # unter Last mit 403, obwohl der Einzel-Probe-Call durchging.
     providers: ["morph"]
     temperature: 0.0
-    max_tokens: 4096
+    max_tokens: 4096          # Extraktion: Claims-JSON, gemessen < 1000
     prompt_template_id: "extraktion@1"
     fewshot_set_id: "extraktion_base@1"
 

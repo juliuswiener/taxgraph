@@ -156,3 +156,44 @@ Weitere Fallstricke, jeweils an echten Fehlern gelernt:
 - Ein Backoff von einer Sekunde hilft gegen ein Upstream-Rate-Limit nicht. Der
   Client wartet bei `403`/`429` 10s und 20s, bei `5xx` 5s und 10s - bei
   unveraenderten zwei Retries.
+
+## OpenRouter: ein Fehler kommt auch mit HTTP 200
+
+Gelernt in der ersten Produktionscharge (2026-07-09), die daran drei von zehn
+Regeln verlor.
+
+OpenRouter beantwortet Upstream-Probleme nicht immer mit einem Fehlerstatus. Es
+kommt ein `HTTP 200` mit einem Body, der statt `choices` ein `error`-Objekt
+traegt:
+
+```json
+{"error": {"code": 429, "message": "Provider returned error", ...}}
+```
+
+Ein Zugriff auf `data["choices"][0]` crasht dort mit `KeyError`. Der Statuscode
+allein ist also kein hinreichender Erfolgsindikator - der Body muss geprueft
+werden. Der Client behandelt ein `200` ohne `choices` als transienten Fehler
+(zwei Retries, 5s/10s), meldet danach `role_timeout` bei `code: 429` und sonst
+`role_error`. Ein Body, der ueberhaupt kein JSON ist (Gateway-HTML), faellt in
+denselben Pfad statt in eine `ValueError`.
+
+## Ein zu knappes `max_tokens` sieht aus wie ein Modellfehler
+
+Ebenfalls aus der ersten Charge. Der Judge meldete "judge output not valid JSON".
+Das Verdikt war aber nicht kaputt, sondern am Limit abgeschnitten:
+`completion_tokens == max_tokens == 4096`, `finish_reason == "length"`.
+
+DeepSeek V4 Pro schreibt vor der eigentlichen Antwort ausfuehrlich
+Reasoning-Tokens; mit `roundtrip_diff@3` liegt der gemessene Bedarf bei rund
+8.000 Tokens. Zwei Konsequenzen:
+
+- `max_tokens` steht in `pipeline/models.yaml` je Rolle explizit und mit einer
+  Notiz, wofuer das Budget gebraucht wird. Es ist kein Wert, den man beilaeufig
+  von einer Rolle zur naechsten kopiert.
+- `Completion` und `Provenance` fuehren ein `truncated`-Flag. Faellt es, nennen
+  die Gates die Ursache ("judge answer truncated at max_tokens") statt eines
+  Parse-Fehlers. Eine abgeschnittene Antwort ist kein Urteil und darf weder als
+  "ungueltiges JSON" noch als "keine Abweichung" durchgehen.
+
+Merksatz: bevor eine Modellantwort als inhaltlich falsch gilt, pruefe
+`finish_reason`.
