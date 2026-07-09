@@ -4,6 +4,7 @@
 include_dirs = [
   "rules/estg/p32a",
   "rules/estg/p04_arbeitszimmer_homeoffice",
+  "rules/estg/p09_entfernungspauschale",
   "rules/estg/arbeitnehmerfall",
 ]
 build_dir = "_build"

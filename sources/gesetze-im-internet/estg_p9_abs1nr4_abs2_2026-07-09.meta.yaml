@@ -1,0 +1,11 @@
+dokument:
+  norm_uri: "estg/9/1/3/4"
+  norm: "§ 9 Abs. 1 Satz 3 Nr. 4 und Abs. 2 EStG"
+  fassung: "geltend 2026 (StAendG 2025, einheitlich 0,38 ab km 1)"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__9.html"
+  abrufdatum: "2026-07-09"
+  datei: "estg_p9_abs1nr4_abs2_2026-07-09.txt"
+  sha256: "fca958059120669f3ce23f887005bbfea8db17a4ef4047e82eb7611cdf12b046"
+  authority: gesetz
+  redistributable: true
+  verwendet_in: ["rules/estg/p09_entfernungspauschale/", "params/*/entfernungspauschale.yaml"]

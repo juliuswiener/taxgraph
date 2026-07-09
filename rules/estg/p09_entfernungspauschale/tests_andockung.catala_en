@@ -1,0 +1,50 @@
+# Test Andockung Entfernungspauschale -> Werbungskosten -> § 9a -> § 32a
+
+> Using Entfernungspauschale as EP
+
+> Using Einkommensteuertarif
+
+Der abziehbare Entfernungspauschale-Betrag ist ein Werbungskosten-Posten. Er
+dockt VOR der § 9a-Vergleichsrechnung an: die Werbungskosten (hier die
+Entfernungspauschale) werden mit dem Arbeitnehmer-Pauschbetrag verglichen, der
+hoehere Betrag mindert die Einkuenfte.
+
+```catala
+#[test]
+declaration scope TestAndockung:
+  internal ep content EP.Berechnung
+  internal r content Einkommensteuertarif.FestzusetzendeEstEinzel
+  output werbungskosten content money
+  output einkuenfte content money
+  output tarif content money
+
+scope TestAndockung:
+  # Entfernungspauschale: 30 km, 220 Arbeitstage, VZ 2024, eigenes Kfz -> 2156.
+  definition ep equals output of EP.Berechnung with {
+    -- entfernung_km_roh: 30.0
+    -- arbeitstage: 220
+    -- eigenes_oder_ueberlassenes_kfz: true
+    -- oepnv_kosten_jahr: $0.00
+    -- satz_bis_20_km: $0.30
+    -- satz_ab_21_km: $0.38
+    -- staffelgrenze_km: 20
+    -- hoechstbetrag: $4,500.00 }
+
+  # Andockpunkt: EP-Betrag als Werbungskosten in die § 9a-Vergleichsrechnung.
+  definition werbungskosten equals ep.abziehbarer_betrag
+
+  definition r equals output of Einkommensteuertarif.FestzusetzendeEstEinzel with {
+    -- bruttoarbeitslohn: $40,000.00
+    -- werbungskosten: werbungskosten
+    -- sonderausgaben: $0.00
+    -- veranlagungszeitraum: VZ2024 }
+
+  definition einkuenfte equals r.summe_der_einkuenfte
+  definition tarif equals r.tarifliche_est
+
+  # WK 2156 > Arbeitnehmer-Pauschbetrag 1230 -> Einkuenfte 40000 - 2156 = 37844,
+  # zvE 37808, tarifliche ESt 6761 (VZ 2024).
+  assertion werbungskosten = $2,156.00
+  assertion einkuenfte = $37,844.00
+  assertion tarif = $6,761.00
+```

@@ -1,0 +1,38 @@
+# Entfernungspauschale § 9 Abs. 1 Satz 3 Nr. 4, Abs. 2 EStG, VZ 2026.
+# Ab VZ 2026 einheitlich 0,38 Euro ab dem 1. km (StAendG 2025, unbefristet);
+# die Staffel entfaellt. Datenquelle: eingefrorene Gesetzesfassung 2026
+# (sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt).
+
+parameter: entfernungspauschale
+veranlagungszeitraum: 2026
+authority: gesetz
+redistributable: true
+gueltig_ab: "2026-01-01"
+
+satz_bis_20_km:
+  wert: 0.38
+  einheit: euro_je_km
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "1", satz: "3 Nr. 4 Satz 2"}
+  datenquelle: "§ 9 Abs. 1 S. 3 Nr. 4 Satz 2 EStG i.d.F. 2026 (StAendG 2025), sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
+
+satz_ab_21_km:
+  wert: 0.38
+  einheit: euro_je_km
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "1", satz: "3 Nr. 4 Satz 2"}
+  datenquelle: "§ 9 Abs. 1 S. 3 Nr. 4 Satz 2 EStG i.d.F. 2026 (StAendG 2025); einheitlich, keine Staffel"
+
+staffelgrenze_km:
+  wert: 20
+  einheit: km
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "1", satz: "3 Nr. 4"}
+  datenquelle: "ohne Wirkung 2026 (Saetze bis 20 und ab 21 identisch 0,38)"
+
+hoechstbetrag_ohne_kfz:
+  wert: 4500
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "1", satz: "3 Nr. 4 Satz 2"}
+  datenquelle: "§ 9 Abs. 1 S. 3 Nr. 4 Satz 2 EStG i.d.F. 2026; Cap-Regel unveraendert"

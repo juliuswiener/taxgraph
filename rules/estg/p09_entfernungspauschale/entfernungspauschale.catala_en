@@ -1,0 +1,81 @@
+# § 9 Abs. 1 Satz 3 Nr. 4, Abs. 2 EStG - Entfernungspauschale
+
+> Module Entfernungspauschale
+
+Formalisierung der Entfernungspauschale fuer die Wege zwischen Wohnung und
+erster Taetigkeitsstaette. Oracle: BMF-Schreiben v. 18.11.2021 (BStBl I 2021,
+2315), da GETTSIM diese Regel nicht abdeckt. Wortlaut eingefroren in
+`sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt` und
+`sources/bmf/bmf_entfernungspauschalen_2021-11-18.txt`.
+
+Quellenmodell: authority = `gesetz` (Regelstruktur), Oracle-Beispiele aus dem
+BMF-Schreiben (authority `verwaltung`).
+
+Die VZ-abhaengigen Saetze werden als Parameter uebergeben (siehe
+`params/<vz>/entfernungspauschale.yaml`): VZ 2024/2025 Staffel 0,30 Euro bis
+km 20 und 0,38 Euro ab km 21; VZ 2026 einheitlich 0,38 Euro ab km 1 (StAendG
+2025). Durch die Uebergabe als Parameter kommt die Regel mit einer Formel aus.
+
+Semantik (§ 9, BMF-Schreiben):
+- Volle Entfernungskilometer, ein angefangener km bleibt unberuecksichtigt
+  (BMF Rz. 12). Massgebend ist die einfache Entfernung (kuerzeste
+  Strassenverbindung).
+- Staffel: Satz fuer km 1 bis 20, erhoehter Satz ab km 21 (BMF Rz. 6-9).
+- Hoechstbetrag 4 500 Euro im Kalenderjahr, aber nicht bei Benutzung eines
+  eigenen oder zur Nutzung ueberlassenen Kraftwagens (BMF Rz. 10-11).
+- Guenstigerpruefung: tatsaechliche Aufwendungen fuer oeffentliche
+  Verkehrsmittel sind ansetzbar, soweit sie den als Entfernungspauschale
+  abziehbaren Jahresbetrag uebersteigen (§ 9 Abs. 2 Satz 2 EStG, BMF Rz. 2);
+  jahresbezogener Vergleich.
+
+```catala
+declaration scope Berechnung:
+  input entfernung_km_roh content decimal          # einfache Entfernung
+  input arbeitstage content integer
+  input eigenes_oder_ueberlassenes_kfz content boolean
+  input oepnv_kosten_jahr content money            # tatsaechliche OePNV-Kosten
+  input satz_bis_20_km content money               # Parameter je VZ
+  input satz_ab_21_km content money                # Parameter je VZ
+  input staffelgrenze_km content integer           # 20
+  input hoechstbetrag content money                # 4500
+  internal entfernung_km content decimal           # volle km (abgerundet)
+  internal km_bis_grenze content decimal
+  internal km_ueber_grenze content decimal
+  internal jahrespauschale_ungedeckelt content money
+  internal jahrespauschale content money
+  output entfernungspauschale content money        # nach Hoechstbetrag
+  output abziehbarer_betrag content money          # nach OePNV-Guenstigerpruefung
+
+scope Berechnung:
+  # BMF Rz. 12: nur volle km, angefangener km bleibt unberuecksichtigt.
+  definition entfernung_km equals Decimal.truncate of entfernung_km_roh
+
+  definition km_bis_grenze equals
+    let grenze equals decimal of staffelgrenze_km in
+    if entfernung_km > grenze then grenze else entfernung_km
+
+  definition km_ueber_grenze equals
+    let grenze equals decimal of staffelgrenze_km in
+    if entfernung_km > grenze then entfernung_km - grenze else 0.0
+
+  # Jahresbetrag: Arbeitstage x (km bis Grenze x Satz1 + km ueber Grenze x Satz2).
+  definition jahrespauschale_ungedeckelt equals
+    let pro_tag equals
+      satz_bis_20_km * km_bis_grenze + satz_ab_21_km * km_ueber_grenze
+    in
+    pro_tag * (decimal of arbeitstage)
+
+  # BMF Rz. 10-11: Hoechstbetrag 4500, aber nicht bei eigenem/ueberlassenem Kfz.
+  definition jahrespauschale equals
+    if eigenes_oder_ueberlassenes_kfz then jahrespauschale_ungedeckelt
+    else if jahrespauschale_ungedeckelt > hoechstbetrag then hoechstbetrag
+    else jahrespauschale_ungedeckelt
+
+  definition entfernungspauschale equals jahrespauschale
+
+  # § 9 Abs. 2 Satz 2 EStG: OePNV-Kosten ansetzbar, soweit sie den als
+  # Entfernungspauschale abziehbaren Jahresbetrag uebersteigen (jahresbezogen).
+  definition abziehbarer_betrag equals
+    if oepnv_kosten_jahr > entfernungspauschale then oepnv_kosten_jahr
+    else entfernungspauschale
+```

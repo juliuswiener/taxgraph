@@ -1,0 +1,53 @@
+Quelle: BMF-Schreiben vom 18. November 2021, IV C 5 - S 2351/20/10001 :002,
+        BStBl I 2021, 2315 (Entfernungspauschalen). LStH 2026 Anhang 14.
+Abgerufen: 2026-07-09 (Volltext u.a. bundesfinanzministerium.de / bvl-verband.de)
+Norm-Bezug: § 9 Abs. 1 Satz 3 Nr. 4 und Abs. 2 EStG
+authority: verwaltung
+
+--- Wortlaut (abgerufener Ausschnitt, Randziffern) ---
+
+1.2 Höhe der Entfernungspauschale
+Rz. 6: Die Entfernungspauschale beträgt 0,30 Euro für jeden vollen
+Entfernungskilometer zwischen Wohnung und erster Tätigkeitsstätte.
+Rz. 7: Für die Jahre 2021 bis 2026 gilt ab dem 21. Entfernungskilometer eine
+erhöhte Entfernungspauschale von 0,35 Euro und ab 2024 von 0,38 Euro. Für die
+Entfernungen bis zu 20 km ist unverändert eine Entfernungspauschale von 0,30
+Euro zu berücksichtigen.
+Rz. 9: Für die Jahre 2024 bis 2026 ist die anzusetzende Entfernungspauschale
+wie folgt zu berechnen: Zahl der Arbeitstage x 20 Entfernungskilometer x 0,30
+Euro zuzüglich Zahl der Arbeitstage x restliche Entfernungskilometer x 0,38 Euro.
+
+1.3 Höchstbetrag von 4.500 Euro
+Rz. 10: Die anzusetzende Entfernungspauschale ist grundsätzlich auf einen
+Höchstbetrag von 4.500 Euro im Kalenderjahr begrenzt (u.a. Motorrad, Fahrrad,
+zu Fuß, öffentliche Verkehrsmittel).
+Rz. 11: Bei Benutzung eines eigenen oder zur Nutzung überlassenen Kraftwagens
+greift die Begrenzung auf 4.500 Euro nicht.
+
+1.4 Maßgebende Entfernung
+Rz. 12: Für die Bestimmung der Entfernung ist die kürzeste Straßenverbindung
+maßgebend. Dabei sind nur volle Kilometer der Entfernung anzusetzen, ein
+angefangener Kilometer bleibt unberücksichtigt.
+
+Öffentliche Verkehrsmittel (§ 9 Abs. 2 Satz 2 EStG)
+Rz. 2: Auch bei Benutzung öffentlicher Verkehrsmittel wird die
+Entfernungspauschale angesetzt. Übersteigen die Aufwendungen für die Benutzung
+öffentlicher Verkehrsmittel den im Kalenderjahr insgesamt als
+Entfernungspauschale anzusetzenden Betrag, können diese übersteigenden
+Aufwendungen zusätzlich angesetzt werden.
+
+Beispiel 1 (Rz. 2): Ein Arbeitnehmer benutzt an 220 Arbeitstagen für die Fahrten
+Bus und Bahn. Kürzeste Straßenverbindung 20 km. Monatskarte Bus 50 Euro, Bahn
+65 Euro (= 115 Euro). Entfernungspauschale 220 x 20 x 0,30 = 1.320 Euro. ÖPNV-
+Kosten 1.380 Euro (12 x 115). Da höher, ansetzbar insgesamt 1.380 Euro.
+
+Beispiel 3 (Rz. 12): Zurückgelegte Entfernung 15 km, kürzeste Straßenverbindung
+10,6 km. Für die Entfernungspauschale ist eine Entfernung von 10 km anzusetzen.
+
+Abgeltungswirkung
+Rz. 30: Durch die Entfernungspauschale sind sämtliche Aufwendungen abgegolten.
+Unfallkosten koennen als aussergewoehnliche Aufwendungen (§ 9 Abs. 1 Satz 1
+EStG) neben der Entfernungspauschale beruecksichtigt werden. Die
+Finanzverwaltung folgt insoweit nicht der Rechtsprechung des BFH (Urteil vom
+19.12.2019, VI R 8/18), wonach Unfallkosten nicht als Werbungskosten neben der
+Entfernungspauschale abziehbar seien - AUTHORITY-KONFLIKT verwaltung vs bfh.

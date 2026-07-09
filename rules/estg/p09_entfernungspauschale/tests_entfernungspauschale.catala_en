@@ -1,0 +1,120 @@
+# Tests § 9 Entfernungspauschale
+
+> Using Entfernungspauschale as EP
+
+Testfaelle fuer die vier Fallen: volle-km-Abrundung, Staffel ab km 21,
+4 500-Hoechstbetrag nur ohne eigenes/ueberlassenes Kfz, OePNV-Guenstigerpruefung.
+VZ-Saetze als Parameter (2024/2025: 0,30 / 0,38; 2026: 0,38 / 0,38).
+
+```catala
+# Falle 1: volle km. Entfernung 10,6 km -> 10 km (BMF Rz. 12).
+# 200 Arbeitstage x 10 km x 0,30 = 600 (nicht 636 bei 10,6).
+#[test]
+declaration scope Falle1VolleKm:
+  internal r content EP.Berechnung
+  output ep content money
+scope Falle1VolleKm:
+  definition r equals output of EP.Berechnung with {
+    -- entfernung_km_roh: 10.6
+    -- arbeitstage: 200
+    -- eigenes_oder_ueberlassenes_kfz: false
+    -- oepnv_kosten_jahr: $0.00
+    -- satz_bis_20_km: $0.30
+    -- satz_ab_21_km: $0.38
+    -- staffelgrenze_km: 20
+    -- hoechstbetrag: $4,500.00 }
+  definition ep equals r.entfernungspauschale
+  assertion ep = $600.00
+
+# Falle 2: Staffel ab km 21. Entfernung 30 km, 220 AT, eigenes Kfz (kein Cap).
+# pro Tag 20 x 0,30 + 10 x 0,38 = 9,80; Jahr 9,80 x 220 = 2156.
+#[test]
+declaration scope Falle2Staffel:
+  internal r content EP.Berechnung
+  output ep content money
+scope Falle2Staffel:
+  definition r equals output of EP.Berechnung with {
+    -- entfernung_km_roh: 30.0
+    -- arbeitstage: 220
+    -- eigenes_oder_ueberlassenes_kfz: true
+    -- oepnv_kosten_jahr: $0.00
+    -- satz_bis_20_km: $0.30
+    -- satz_ab_21_km: $0.38
+    -- staffelgrenze_km: 20
+    -- hoechstbetrag: $4,500.00 }
+  definition ep equals r.entfernungspauschale
+  assertion ep = $2,156.00
+
+# Falle 3: Hoechstbetrag nur ohne eigenes Kfz. Entfernung 100 km, 220 AT.
+# pro Tag 20 x 0,30 + 80 x 0,38 = 36,40; Jahr 8008. Ohne Kfz -> 4500, mit Kfz -> 8008.
+#[test]
+declaration scope Falle3Hoechstbetrag:
+  internal ohne content EP.Berechnung
+  internal mit content EP.Berechnung
+  output ep_ohne content money
+  output ep_mit content money
+scope Falle3Hoechstbetrag:
+  definition ohne equals output of EP.Berechnung with {
+    -- entfernung_km_roh: 100.0
+    -- arbeitstage: 220
+    -- eigenes_oder_ueberlassenes_kfz: false
+    -- oepnv_kosten_jahr: $0.00
+    -- satz_bis_20_km: $0.30
+    -- satz_ab_21_km: $0.38
+    -- staffelgrenze_km: 20
+    -- hoechstbetrag: $4,500.00 }
+  definition mit equals output of EP.Berechnung with {
+    -- entfernung_km_roh: 100.0
+    -- arbeitstage: 220
+    -- eigenes_oder_ueberlassenes_kfz: true
+    -- oepnv_kosten_jahr: $0.00
+    -- satz_bis_20_km: $0.30
+    -- satz_ab_21_km: $0.38
+    -- staffelgrenze_km: 20
+    -- hoechstbetrag: $4,500.00 }
+  definition ep_ohne equals ohne.entfernungspauschale
+  definition ep_mit equals mit.entfernungspauschale
+  assertion ep_ohne = $4,500.00
+  assertion ep_mit = $8,008.00
+
+# Falle 4: OePNV-Guenstigerpruefung (BMF Beispiel 1). 20 km, 220 AT, ohne Kfz.
+# EP = 220 x 20 x 0,30 = 1320; OePNV 1380 > 1320 -> abziehbar 1380.
+#[test]
+declaration scope Falle4Oepnv:
+  internal r content EP.Berechnung
+  output ep content money
+  output abziehbar content money
+scope Falle4Oepnv:
+  definition r equals output of EP.Berechnung with {
+    -- entfernung_km_roh: 20.0
+    -- arbeitstage: 220
+    -- eigenes_oder_ueberlassenes_kfz: false
+    -- oepnv_kosten_jahr: $1,380.00
+    -- satz_bis_20_km: $0.30
+    -- satz_ab_21_km: $0.38
+    -- staffelgrenze_km: 20
+    -- hoechstbetrag: $4,500.00 }
+  definition ep equals r.entfernungspauschale
+  definition abziehbar equals r.abziehbarer_betrag
+  assertion ep = $1,320.00
+  assertion abziehbar = $1,380.00
+
+# VZ 2026: einheitlich 0,38 ab km 1. 30 km, 220 AT, eigenes Kfz.
+# pro Tag 30 x 0,38 = 11,40; Jahr 2508.
+#[test]
+declaration scope FalleVz2026Flach:
+  internal r content EP.Berechnung
+  output ep content money
+scope FalleVz2026Flach:
+  definition r equals output of EP.Berechnung with {
+    -- entfernung_km_roh: 30.0
+    -- arbeitstage: 220
+    -- eigenes_oder_ueberlassenes_kfz: true
+    -- oepnv_kosten_jahr: $0.00
+    -- satz_bis_20_km: $0.38
+    -- satz_ab_21_km: $0.38
+    -- staffelgrenze_km: 20
+    -- hoechstbetrag: $4,500.00 }
+  definition ep equals r.entfernungspauschale
+  assertion ep = $2,508.00
+```

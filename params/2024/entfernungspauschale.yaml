@@ -1,0 +1,39 @@
+# Entfernungspauschale § 9 Abs. 1 Satz 3 Nr. 4, Abs. 2 EStG, VZ 2024.
+# Staffel: 0,30 Euro fuer die ersten 20 km, 0,38 Euro ab dem 21. km
+# (Klimaschutzprogramm 2030, BGBl. I 2019 S. 2886, erhoehte Pauschale ab 2024).
+# Datenquelle: eingefrorene Gesetzesfassung; BMF-Schreiben v. 18.11.2021 Rz. 6-9
+# (sources/bmf/bmf_entfernungspauschalen_2021-11-18.txt) als amtlicher Erlass.
+
+parameter: entfernungspauschale
+veranlagungszeitraum: 2024
+authority: gesetz
+redistributable: true
+gueltig_ab: "2024-01-01"
+
+satz_bis_20_km:
+  wert: 0.30
+  einheit: euro_je_km
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "1", satz: "3 Nr. 4 Satz 2"}
+  datenquelle: "§ 9 Abs. 1 S. 3 Nr. 4 EStG i.d.F. VZ 2024; BMF-Schreiben 18.11.2021 Rz. 6"
+
+satz_ab_21_km:
+  wert: 0.38
+  einheit: euro_je_km
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "1", satz: "3 Nr. 4 (erhoehte Pauschale)"}
+  datenquelle: "Klimaschutzprogramm 2030 (BGBl. I 2019 S. 2886); BMF-Schreiben 18.11.2021 Rz. 7, 9"
+
+staffelgrenze_km:
+  wert: 20
+  einheit: km
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "1", satz: "3 Nr. 4 (ab dem 21. km)"}
+  datenquelle: "BMF-Schreiben 18.11.2021 Rz. 7"
+
+hoechstbetrag_ohne_kfz:
+  wert: 4500
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "1", satz: "3 Nr. 4 Satz 2"}
+  datenquelle: "§ 9 Abs. 1 S. 3 Nr. 4 Satz 2 EStG; BMF-Schreiben 18.11.2021 Rz. 10-11"

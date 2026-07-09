@@ -1,0 +1,11 @@
+dokument:
+  norm_uri: "bmf/2021-11-18/IV-C-5-S-2351-20-10001-002"
+  norm: "BMF-Schreiben Entfernungspauschalen v. 18.11.2021 (BStBl I 2021, 2315)"
+  fassung: "18.11.2021, LStH 2026 Anhang 14"
+  quelle_url: "https://www.bundesfinanzministerium.de"
+  abrufdatum: "2026-07-09"
+  datei: "bmf_entfernungspauschalen_2021-11-18.txt"
+  sha256: "68f064a7cf789119381170d2575b5f70809369230c8b9b2ffd9b6caec0727462"
+  authority: verwaltung
+  redistributable: true
+  verwendet_in: ["rules/estg/p09_entfernungspauschale/", "golden/cases/entfernungspauschale_*"]
