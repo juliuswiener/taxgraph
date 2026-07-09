@@ -75,7 +75,10 @@ roles:
     # Round-Trip-Prompt verifiziert (22.2s, $0.00652).
     providers: ["fireworks"]
     temperature: 0.0
-    max_tokens: 4096
+    # 4096 reichten nicht: der Judge lief bei der ersten Produktionsregel exakt
+    # ins Limit (completion_tokens=4096) und lieferte abgeschnittenes JSON.
+    # V4 Pro schreibt vor der Antwort ausfuehrlich Reasoning-Tokens.
+    max_tokens: 12288
     prompt_template_id: "roundtrip_diff@3"   # scope_gap zweiklassig
     fewshot_set_id: "roundtrip_base@1"
 

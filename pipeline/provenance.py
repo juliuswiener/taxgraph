@@ -57,6 +57,7 @@ class Provenance:
     prompt_tokens: int
     completion_tokens: int
     cost_usd: float
+    truncated: bool = False   # Antwort lief ins max_tokens-Limit
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -71,7 +72,8 @@ def stamp(role: RoleConfig, comp: Completion, models_hash: str) -> Provenance:
         timestamp=now_iso(),
         prompt_tokens=comp.prompt_tokens,
         completion_tokens=comp.completion_tokens,
-        cost_usd=comp.cost_usd)
+        cost_usd=comp.cost_usd,
+        truncated=comp.truncated)
 
 
 def redact(obj) -> str:

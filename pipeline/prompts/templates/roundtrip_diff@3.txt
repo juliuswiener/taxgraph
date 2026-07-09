@@ -47,4 +47,7 @@ Output STRICT JSON only:
                ...]}
 
 `faithful` covers only what lies inside the signature; `scope_gap` never changes
-it. A `wirkt_hinein` gap is handled by the pipeline, not by you. Temperature 0.
+it. A `wirkt_hinein` gap is handled by the pipeline, not by you.
+
+Keep every `begruendung` to at most two sentences and quote at most one clause in
+`norm_teil`. Answer with the JSON object and nothing else. Temperature 0.

@@ -85,6 +85,10 @@ class Completion:
     prompt_tokens: int
     completion_tokens: int
     cost_usd: float
+    # finish_reason == "length": die Antwort ist am max_tokens-Limit abgeschnitten.
+    # Ohne dieses Flag verbucht ein JSON-Gate die Verstuemmelung als "ungueltiges
+    # JSON" und verschleiert die Ursache.
+    truncated: bool = False
     raw: dict = field(default_factory=dict, repr=False)
 
 
@@ -206,10 +210,14 @@ class OpenRouterClient:
         # Reasoning-Antworten. Das darf die Kaskade nicht zum Absturz bringen:
         # leerer Text -> die Gates schlagen sauber fehl.
         choice = msg.get("content") or ""
+        finish = data["choices"][0].get("finish_reason", "?")
         if not choice:
-            fr = data["choices"][0].get("finish_reason", "?")
             self._event(role.role, role.slug, prov, "errors",
-                        f"empty content (finish_reason={fr})")
+                        f"empty content (finish_reason={finish})")
+        truncated = finish == "length"
+        if truncated:
+            self._event(role.role, role.slug, prov, "errors",
+                        f"truncated at max_tokens={role.max_tokens}")
         usage = data.get("usage", {}) or {}
         provider = data.get("provider") or (data.get("choices", [{}])[0].get("provider"))
         return Completion(
@@ -217,7 +225,7 @@ class OpenRouterClient:
             prompt_tokens=int(usage.get("prompt_tokens", 0)),
             completion_tokens=int(usage.get("completion_tokens", 0)),
             cost_usd=float(usage.get("cost", 0.0) or 0.0),
-            raw=data)
+            truncated=truncated, raw=data)
 
     def _fixture_completion(self, role: RoleConfig, messages: list[dict],
                             fixture_id: str | None = None) -> Completion:

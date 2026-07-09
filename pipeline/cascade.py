@@ -98,12 +98,22 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
                                  signature=sig)
         record(pj)
         res.judge_verdict = G.roundtrip_parse(j_text)
-        res.gate_results.append(G.roundtrip_gate(j_text))
-        # scope_gap zweiklassig: (a) unabhaengig -> Backlog, kein Flag;
-        # (b) wirkt in den Signatur-Scope hinein -> Eskalation, denn dann ist der
-        # formalisierte Ausschnitt ohne den Rest falsch.
-        res.gate_results.append(G.scope_gap_gate(j_text))
-        res.backlog = G.unabhaengige_gaps(res.judge_verdict)
+        if pj.truncated:
+            # Eine am max_tokens-Limit abgeschnittene Antwort ist kein
+            # Judge-Urteil. Sie darf weder als "ungueltiges JSON" noch als
+            # "keine Abweichung" durchgehen - die Ursache muss im Report stehen.
+            res.judge_verdict["truncated"] = True
+            det = (f"judge answer truncated at max_tokens "
+                   f"(completion={pj.completion_tokens})")
+            res.gate_results.append(G.GateResult("roundtrip", G.FAIL, det))
+            res.gate_results.append(G.GateResult("scope_gap", G.FAIL, det))
+        else:
+            res.gate_results.append(G.roundtrip_gate(j_text))
+            # scope_gap zweiklassig: (a) unabhaengig -> Backlog, kein Flag;
+            # (b) wirkt in den Signatur-Scope hinein -> Eskalation, denn dann ist
+            # der formalisierte Ausschnitt ohne den Rest falsch.
+            res.gate_results.append(G.scope_gap_gate(j_text))
+            res.backlog = G.unabhaengige_gaps(res.judge_verdict)
     else:
         res.gate_results.append(G.GateResult("roundtrip", G.FAIL, "no A source"))
         res.gate_results.append(G.GateResult("scope_gap", G.FAIL, "no A source"))
