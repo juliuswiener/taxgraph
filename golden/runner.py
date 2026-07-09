@@ -44,8 +44,19 @@ def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text.translate(_UMLAUT).lower()).strip()
 
 
-def catala_est(year: int, veranlagung: str, zve: int) -> int:
-    m = Money(f"{int(zve)}.00")
+def catala_est(sachverhalt: dict) -> int:
+    year = sachverhalt["veranlagungszeitraum"]
+    veranlagung = sachverhalt["veranlagung"]
+    # End-to-end Arbeitnehmerfall (Bruttolohn -> festzusetzende ESt).
+    if "bruttoarbeitslohn" in sachverhalt:
+        out = E.festzusetzende_est_einzel(E.FestzusetzendeEstEinzelIn(
+            bruttoarbeitslohn_in=Money(f"{int(sachverhalt['bruttoarbeitslohn'])}.00"),
+            werbungskosten_in=Money(f"{int(sachverhalt.get('werbungskosten', 0))}.00"),
+            sonderausgaben_in=Money(f"{int(sachverhalt.get('sonderausgaben', 0))}.00"),
+            veranlagungszeitraum_in=VZ_ENUM[year]))
+        return int(out.festzusetzende_est) // 100
+    # Tariff-level case (zvE -> tarifliche ESt).
+    m = Money(f"{int(sachverhalt['zu_versteuerndes_einkommen'])}.00")
     if veranlagung == "einzel":
         out = E.grundtarif(E.GrundtarifIn(
             zu_versteuerndes_einkommen_in=m, veranlagungszeitraum_in=VZ_ENUM[year]))
@@ -80,8 +91,7 @@ def main() -> int:
         anchor_ok = normalize(q["zitatanker"]) in source_cache[src_path]
 
         # 2. value check against Catala
-        got = catala_est(s["veranlagungszeitraum"], s["veranlagung"],
-                         s["zu_versteuerndes_einkommen"])
+        got = catala_est(s)
         value_ok = got == exp
 
         if anchor_ok and value_ok:

@@ -34,6 +34,11 @@ build-python:
 s02: build-python
 	. $(VENV312); python oracle/gettsim/harness.py
 
+## Phase-1 deliverable: Arbeitnehmerfall end-to-end (Bruttolohn -> festzusetzende ESt)
+## differential vs GETTSIM. Regenerates reports/p1-arbeitnehmerfall.md.
+p1: build-python
+	. $(VENV312); python oracle/gettsim/harness_e2e.py
+
 ## Derive/validate the tariff coefficients from the GETTSIM zone parameters.
 params-check:
 	. $(VENV312); python params/derive_coefficients.py

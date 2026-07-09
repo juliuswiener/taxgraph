@@ -51,8 +51,15 @@ scripts/                                # Installations- und Verifikationsskript
 
 ## Phase 1 (in Arbeit)
 
-- **M1.4 Golden-Korpus** (`golden/`): 43 § 32a-Faelle, je mit Zitatanker-Gate
-  gegen `sources/` und Wertabgleich gegen Catala (`make golden`).
+- **Deliverable Arbeitnehmerfall end-to-end**: Bruttoarbeitslohn rein,
+  festzusetzende ESt raus. Kette § 9a-Pauschbetrag -> § 10c-Pauschbetrag ->
+  § 32a, Einzel- und Zusammenveranlagung (`rules/estg/p32a/`, Tests in
+  `rules/estg/arbeitnehmerfall/`). Differentiell gegen GETTSIM: die zvE-Ableitung
+  ist exakt, Divergenzen reduzieren sich auf die dokumentierten § 32a-Effekte
+  (`make p1`, Report `reports/p1-arbeitnehmerfall.md`).
+- **M1.4 Golden-Korpus** (`golden/`): 48 Faelle (§ 32a-Tarif und Arbeitnehmerfall
+  end-to-end), je mit Zitatanker-Gate gegen `sources/` und Wertabgleich gegen
+  Catala (`make golden`).
 - **M1.2 Parameterschicht** (`params/`): kanonisches Format (`params/schema.md`)
   plus GETTSIM-Import mit Herkunftsvermerk (`make params-import`).
 - **M1.5 Dokumentstore** (`docstore/`): Postgres-Schema Dokumente/Segmente/Claims

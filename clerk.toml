@@ -1,5 +1,11 @@
 [project]
-include_dirs = ["rules"]
+# One entry per directory that declares Catala modules (module resolution is not
+# recursive, so cross-directory `> Using` needs each module dir listed here).
+include_dirs = [
+  "rules/estg/p32a",
+  "rules/estg/p04_arbeitszimmer_homeoffice",
+  "rules/estg/arbeitnehmerfall",
+]
 build_dir = "_build"
 target_dir = "_target"
 

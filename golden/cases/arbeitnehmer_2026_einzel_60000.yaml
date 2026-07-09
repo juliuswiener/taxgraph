@@ -1,0 +1,19 @@
+id: arbeitnehmer_2026_einzel_60000
+beschreibung: "Arbeitnehmerfall Einzel, Bruttolohn 60000 Euro, VZ 2026"
+
+sachverhalt:
+  veranlagungszeitraum: 2026
+  veranlagung: einzel
+  bruttoarbeitslohn: 60000
+  werbungskosten: 0
+  sonderausgaben: 0
+
+erwartung:
+  tarifliche_est: 13747
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "Kette § 9a Satz 1 Nr. 1a + § 10c + § 32a EStG, VZ 2026"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"

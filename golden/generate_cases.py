@@ -106,6 +106,42 @@ SPLIT = {
 BMF_CONFIRMED = {(2024, 23634): 8, (2025, 24342): 20}
 
 
+AN_PAUSCHBETRAG = 1230   # § 9a Satz 1 Nr. 1a EStG (GETTSIM, VZ 2024-2026)
+SA_PAUSCHBETRAG = 36     # § 10c EStG (GETTSIM, VZ 2024-2026)
+
+# End-to-end Arbeitnehmerfall (Einzelveranlagung): Bruttoarbeitslohn -> ESt.
+ARBEITNEHMER = {
+    2026: [30000, 60000, 100000],
+    2025: [80000],
+    2024: [50000],
+}
+
+
+def emit_arbeitnehmer(fid, beschreibung, year, brutto, expected):
+    yaml = f"""id: {fid}
+beschreibung: "{esc(beschreibung)}"
+
+sachverhalt:
+  veranlagungszeitraum: {year}
+  veranlagung: einzel
+  bruttoarbeitslohn: {brutto}
+  werbungskosten: 0
+  sonderausgaben: 0
+
+erwartung:
+  tarifliche_est: {expected}
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "Kette § 9a Satz 1 Nr. 1a + § 10c + § 32a EStG, VZ {year}"
+  datei: "{SOURCE_FILE}"
+  zitatanker: "{esc(ANKER_ABRUNDUNG)}"
+"""
+    with open(os.path.join(CASES, fid + ".yaml"), "w") as f:
+        f.write(yaml)
+
+
 def main():
     os.makedirs(CASES, exist_ok=True)
     for f in os.listdir(CASES):
@@ -132,6 +168,14 @@ def main():
                 fundstelle += "; amtlich bestaetigt BMF-Steuerrechner (bmf-steuerrechner.de, 2026-07-09)"
             emit(fid, f"Splitting, gemeinsames zvE {z} Euro, VZ {year}", year,
                  "zusammen", z, expected, ANKER_SPLITTING, fundstelle)
+            n += 1
+    for year, bs in ARBEITNEHMER.items():
+        p = COEF[year]
+        for b in bs:
+            zve = max(0, b - AN_PAUSCHBETRAG - SA_PAUSCHBETRAG)
+            fid = f"arbeitnehmer_{year}_einzel_{b}"
+            emit_arbeitnehmer(fid, f"Arbeitnehmerfall Einzel, Bruttolohn {b} Euro, VZ {year}",
+                              year, b, tarif(zve, p))
             n += 1
     print(f"generated {n} golden cases in golden/cases/")
 
