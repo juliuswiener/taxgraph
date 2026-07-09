@@ -29,8 +29,10 @@ This script derives all coefficients from the GETTSIM zone parameters and
 verifies that, rounded to the published precision, they reproduce the literal
 VZ 2026 coefficients fetched from gesetze-im-internet.de (§ 32a, Fassung
 "ab dem Veranlagungszeitraum 2026", abgerufen 2026-07-09). This cross-check
-validates the derivation method; the same method is used for VZ 2024 and 2025,
-whose literal BGBl coefficients still have to be spot-checked (see reports).
+validates the derivation method; the same method is used for VZ 2024 and 2025.
+The literal coefficients for VZ 2024 (BGBl 2024 I Nr. 386, recht.bund.de) and
+VZ 2025 (EStH/LStH 2025, esth.bundesfinanzministerium.de) have been confirmed
+to match the derived values.
 
 Run: python params/derive_coefficients.py
 """

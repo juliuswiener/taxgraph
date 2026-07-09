@@ -8,10 +8,10 @@
 # 2024 betraegt daher 11784 Euro (nicht 11604 Euro der urspruenglichen
 # Fassung). Diese Endfassung ist massgeblich.
 #
-# Datenquelle der Zonengrenzen: GETTSIM 1.2.1, einkommensteuertarif.yaml,
-# Eintrag 2024-01-01 (mit BGBl-Referenz belegt).
-# Formelkoeffizienten abgeleitet (params/derive_coefficients.py). OFFEN:
-# literaler Abgleich gegen BGBl 2024 I Nr. 386 (siehe reports/s02).
+# Datenquelle: BGBl 2024 I Nr. 386, recht.bund.de/bgbl/1/2024/386/regelungstext.pdf
+# (Gesetz zur steuerlichen Freistellung des Existenzminimums 2024). Die
+# Progressionsfaktor-Ableitung (params/derive_coefficients.py) reproduziert die
+# publizierten Koeffizienten exakt; literaler Abgleich abgeschlossen.
 
 veranlagungszeitraum: 2024
 
@@ -25,36 +25,36 @@ grundfreibetrag:
   einheit: euro
   veranlagungszeitraum: 2024
   rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 1"}
-  datenquelle: "GETTSIM 1.2.1 einkommensteuertarif.yaml (2024-01-01); BGBl 2024 I Nr. 386"
+  datenquelle: "BGBl 2024 I Nr. 386, recht.bund.de/bgbl/1/2024/386"
 
 zone2_obergrenze:
   wert: 17005
   einheit: euro
   veranlagungszeitraum: 2024
   rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}
-  datenquelle: "GETTSIM 1.2.1 einkommensteuertarif.yaml (2024-01-01); BGBl 2024 I Nr. 386"
+  datenquelle: "BGBl 2024 I Nr. 386, recht.bund.de/bgbl/1/2024/386"
 
 zone3_obergrenze:
   wert: 66760
   einheit: euro
   veranlagungszeitraum: 2024
   rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}
-  datenquelle: "GETTSIM 1.2.1 einkommensteuertarif.yaml (2024-01-01); BGBl 2024 I Nr. 386"
+  datenquelle: "BGBl 2024 I Nr. 386, recht.bund.de/bgbl/1/2024/386"
 
 zone4_obergrenze:
   wert: 277825
   einheit: euro
   veranlagungszeitraum: 2024
   rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4/5"}
-  datenquelle: "GETTSIM 1.2.1 einkommensteuertarif.yaml (2024-01-01); BGBl 2024 I Nr. 386"
+  datenquelle: "BGBl 2024 I Nr. 386, recht.bund.de/bgbl/1/2024/386"
 
 # Formelkoeffizienten, abgeleitet (params/derive_coefficients.py), publiziertes Format (2 Nachkommastellen).
-zone2_a2: {wert: 954.80, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}, datenquelle: "abgeleitet aus GETTSIM-Zonenparametern via Progressionsfaktor; literaler BGBl-Abgleich offen"}
-zone2_b2: {wert: 1400,   veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}, datenquelle: "Eingangsgrenzsteuersatz 0.14 * 10000 (GETTSIM 2024-01-01)"}
-zone3_a3: {wert: 181.19, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "abgeleitet aus GETTSIM-Zonenparametern via Progressionsfaktor; literaler BGBl-Abgleich offen"}
-zone3_b3: {wert: 2397,   veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "Eingangsgrenzsteuersatz 0.2397 * 10000 (GETTSIM 2024-01-01)"}
-zone3_c3: {wert: 991.21, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "abgeleitet (Stetigkeit bei zvE = zone2_obergrenze); literaler BGBl-Abgleich offen"}
-zone4_faktor: {wert: 0.42, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4"}, datenquelle: "GETTSIM 2024-01-01"}
-zone4_abzug:  {wert: 10636.31, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4"}, datenquelle: "abgeleitet (Stetigkeit bei zvE = zone3_obergrenze); literaler BGBl-Abgleich offen"}
-zone5_faktor: {wert: 0.45, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 5"}, datenquelle: "GETTSIM 2024-01-01"}
-zone5_abzug:  {wert: 18971.06, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 5"}, datenquelle: "abgeleitet (Stetigkeit bei zvE = zone4_obergrenze); literaler BGBl-Abgleich offen"}
+zone2_a2: {wert: 954.80, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}, datenquelle: "BGBl 2024 I Nr. 386 (recht.bund.de/bgbl/1/2024/386), § 32a Abs. 1"}
+zone2_b2: {wert: 1400,   veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 2"}, datenquelle: "BGBl 2024 I Nr. 386 (recht.bund.de/bgbl/1/2024/386), § 32a Abs. 1 (Eingangsgrenzsteuersatz 0,14)"}
+zone3_a3: {wert: 181.19, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "BGBl 2024 I Nr. 386 (recht.bund.de/bgbl/1/2024/386), § 32a Abs. 1"}
+zone3_b3: {wert: 2397,   veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "BGBl 2024 I Nr. 386 (recht.bund.de/bgbl/1/2024/386), § 32a Abs. 1 (Eingangsgrenzsteuersatz 0,2397)"}
+zone3_c3: {wert: 991.21, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 3"}, datenquelle: "BGBl 2024 I Nr. 386 (recht.bund.de/bgbl/1/2024/386), § 32a Abs. 1"}
+zone4_faktor: {wert: 0.42, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4"}, datenquelle: "BGBl 2024 I Nr. 386 (recht.bund.de/bgbl/1/2024/386), § 32a Abs. 1"}
+zone4_abzug:  {wert: 10636.31, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 4"}, datenquelle: "BGBl 2024 I Nr. 386 (recht.bund.de/bgbl/1/2024/386), § 32a Abs. 1"}
+zone5_faktor: {wert: 0.45, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 5"}, datenquelle: "BGBl 2024 I Nr. 386 (recht.bund.de/bgbl/1/2024/386), § 32a Abs. 1"}
+zone5_abzug:  {wert: 18971.06, veranlagungszeitraum: 2024, rechtsquelle: {gesetz: EStG, paragraph: "32a", absatz: "1", satz: "2 Nr. 5"}, datenquelle: "BGBl 2024 I Nr. 386 (recht.bund.de/bgbl/1/2024/386), § 32a Abs. 1"}

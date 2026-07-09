@@ -17,17 +17,17 @@ Vergleich auf Euro-Ebene. Pro VZ: gesetzliche Randwerte (0, Grundfreibetrag +-1,
 
 ## Divergenzklasse A: Grundtarif (Absatz 1)
 
-Einzelne Divergenzen, jeweils genau 1 Euro, an Zonen-Innenpunkten (nicht an Zonengrenzen). Ursache: die im publizierten Format (2 Nachkommastellen) angegebenen Formelkoeffizienten des Tarifs gegen GETTSIMs voll aufgeloeste Progressionsfaktor-Rekonstruktion. An einzelnen zvE-Werten kippt der Rohbetrag dadurch ueber eine Euro-Grenze.
+Einzelne Divergenzen, jeweils genau 1 Euro, an Zonen-Innenpunkten (nicht an Zonengrenzen). Ursache: die im publizierten Format (2 Nachkommastellen) angegebenen, literal bestaetigten Formelkoeffizienten des Tarifs gegen GETTSIMs voll aufgeloeste Progressionsfaktor-Rekonstruktion. An einzelnen zvE-Werten kippt der Rohbetrag dadurch ueber eine Euro-Grenze.
 
-Fuer VZ 2026 verwendet Catala die woertlichen Koeffizienten der Gesetzesfassung (gesetze-im-internet.de). Die dort auftretende Divergenz bedeutet: GETTSIMs voll aufgeloeste Rekonstruktion weicht am betreffenden Punkt vom Gesetzeswortlaut ab, Catala entspricht dem Wortlaut. Fuer VZ 2024/2025 sind die Koeffizienten abgeleitet; dort bleibt der literale BGBl-Abgleich offen (siehe Status).
+Die Koeffizienten sind fuer alle drei VZ literal belegt: VZ 2026 aus der Gesetzesfassung (gesetze-im-internet.de), VZ 2024 aus BGBl 2024 I Nr. 386 (recht.bund.de), VZ 2025 aus EStH/LStH 2025 (esth.bundesfinanzministerium.de). Catala entspricht damit dem Wortlaut; die Divergenzen bedeuten, dass GETTSIMs voll aufgeloeste Rekonstruktion an diesen Punkten vom publizierten Tarif abweicht (GETTSIM-Approximation).
 
 | VZ | zvE | Catala | GETTSIM | Diff | vermutete Ursache | Status |
 |----|-----|--------|---------|------|-------------------|--------|
-| 2024 | 34218 | 5654 | 5653 | +1 | Koeffizienten-Rundung (abgeleitet, 2 dp) vs GETTSIM voll aufgeloest | OFFEN: literaler BGBl-Koeffizientenabgleich 2024 |
-| 2025 | 63954 | 15985 | 15984 | +1 | Koeffizienten-Rundung (abgeleitet, 2 dp) vs GETTSIM voll aufgeloest | OFFEN: literaler BGBl-Koeffizientenabgleich 2025 |
-| 2025 | 67349 | 17377 | 17376 | +1 | Koeffizienten-Rundung (abgeleitet, 2 dp) vs GETTSIM voll aufgeloest | OFFEN: literaler BGBl-Koeffizientenabgleich 2025 |
-| 2025 | 67690 | 17519 | 17518 | +1 | Koeffizienten-Rundung (abgeleitet, 2 dp) vs GETTSIM voll aufgeloest | OFFEN: literaler BGBl-Koeffizientenabgleich 2025 |
-| 2026 | 58832 | 13784 | 13785 | -1 | GETTSIM voll aufgeloest weicht von literalen § 32a-Koeffizienten ab (Catala = Wortlaut) | erklaert (GETTSIM-Approximation) |
+| 2024 | 34218 | 5654 | 5653 | +1 | GETTSIM voll aufgeloest weicht vom literalen § 32a-Tarif ab (Catala = Wortlaut) | erklaert (GETTSIM-Approximation) |
+| 2025 | 63954 | 15985 | 15984 | +1 | GETTSIM voll aufgeloest weicht vom literalen § 32a-Tarif ab (Catala = Wortlaut) | erklaert (GETTSIM-Approximation) |
+| 2025 | 67349 | 17377 | 17376 | +1 | GETTSIM voll aufgeloest weicht vom literalen § 32a-Tarif ab (Catala = Wortlaut) | erklaert (GETTSIM-Approximation) |
+| 2025 | 67690 | 17519 | 17518 | +1 | GETTSIM voll aufgeloest weicht vom literalen § 32a-Tarif ab (Catala = Wortlaut) | erklaert (GETTSIM-Approximation) |
+| 2026 | 58832 | 13784 | 13785 | -1 | GETTSIM voll aufgeloest weicht vom literalen § 32a-Tarif ab (Catala = Wortlaut) | erklaert (GETTSIM-Approximation) |
 
 ## Divergenzklasse B: Splitting-Verfahren (Absatz 5)
 
@@ -37,7 +37,10 @@ Anzahl divergierender Splitting-Faelle: 1750. Alle Divergenzen betragen genau 1 
 **Ursache (Rundungsinterpretation).** Das literale § 32a Abs. 5 berechnet die tarifliche ESt als das Zweifache des Steuerbetrags nach Absatz 1 fuer die Haelfte des gemeinsamen zvE. Der Steuerbetrag nach Absatz 1 ist nach Satz 6 auf volle Euro abgerundet. Das literale Ergebnis ist daher `2 * abrunden(Tarif(Z/2))` und stets ein gerader Euro-Betrag (so die amtliche Splittingtabelle). GETTSIM rundet dagegen erst am Ende: `abrunden(2 * Tarif(Z/2))`, wobei die Haelfte Z/2 zusaetzlich nicht auf volle Euro abgerundet wird. Beide Effekte erzeugen die 1-Euro-Abweichungen.
 
 
-**Bewertung.** Dies ist ein Widerspruch zwischen Gesetzeswortlaut und GETTSIM, kein Fehler in einer der beiden Implementierungen im engeren Sinn. Nach Handover-Vorgabe wird er dokumentiert und eskaliert, nicht stillschweigend aufgeloest. Empfehlung: Catala folgt dem Wortlaut (gerade Betraege); der Punkt ist Julius zur Bestaetigung gegen die amtliche Splittingtabelle / den Programmablaufplan vorzulegen.
+**Bewertung: erklaert (GETTSIM-Vereinfachung).** Entscheidung vom 2026-07-09: der Gesetzeswortlaut ist massgeblich, Catala bleibt auf `2 * abrunden(Tarif(Z/2))` (gerade Betraege). Die Abweichung ist eine Vereinfachung in GETTSIM, kein Fehler in Catala. Divergenzklasse B ist damit geschlossen.
+
+
+**Offener manueller Spot-Check (pending Julius).** Zur externen Absicherung gegen ein drittes Oracle: gemeinsames zvE 23 634 Euro, VZ 2024, Splitting. Catala liefert 8 Euro. Erwartung laut BMF-Steuerrechner ebenfalls 8 Euro. Manueller Abgleich am amtlichen BMF-Lohn- und Einkommensteuerrechner steht aus (pending Julius, manuell).
 
 
 Beispiele (erste je VZ):

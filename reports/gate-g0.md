@@ -67,27 +67,33 @@ amtliche Splittingtabelle). GETTSIM rundet erst am Ende: `abrunden(2 * Tarif(Z/2
 Catala folgt dem Wortlaut. Nach Handover-Vorgabe wird der Widerspruch
 dokumentiert und eskaliert, nicht stillschweigend aufgeloest.
 
-## Offene Punkte (an Julius)
+## Entscheidungen (2026-07-09) und offene Punkte
 
-1. **Splitting-Rundung (§ 32a Abs. 5).** Bestaetigung, dass der Wortlaut
-   (gerade Betraege, `2 * abrunden(Tarif(Z/2))`) gegenueber GETTSIMs Verfahren
-   massgeblich ist. Abgleich gegen amtliche Splittingtabelle oder
-   Programmablaufplan empfohlen. Catala ist aktuell auf den Wortlaut gesetzt.
-2. **Literale Tarifkoeffizienten VZ 2024/2025.** Die geschlossenen Koeffizienten
-   fuer 2024/2025 sind aus den GETTSIM-Zonenparametern abgeleitet (Methode gegen
-   die VZ-2026-Literalfassung validiert). Ein literaler Abgleich gegen BGBl 2024
-   I Nr. 386 (2024) und BGBl 2024 Nr. 449 (2025) steht noch aus.
+Gate-G0-Entscheidung: **Go**. Zu den in Phase 0 aufgeworfenen Fragen:
+
+1. **Splitting-Rundung (§ 32a Abs. 5): entschieden.** Der Gesetzeswortlaut ist
+   massgeblich; Catala bleibt auf `2 * abrunden(Tarif(Z/2))` (gerade Betraege).
+   Divergenzklasse B ist als GETTSIM-Vereinfachung geschlossen. Verbleibend nur
+   ein manueller externer Spot-Check am BMF-Steuerrechner (zvE 23 634, VZ 2024,
+   erwartet 8 Euro) - pending Julius, manuell.
+2. **Literale Tarifkoeffizienten VZ 2024/2025: bestaetigt.** VZ 2024 gegen BGBl
+   2024 I Nr. 386 (recht.bund.de), VZ 2025 gegen EStH/LStH 2025
+   (esth.bundesfinanzministerium.de). Die Werte stimmen mit der
+   Progressionsfaktor-Ableitung exakt ueberein. Die Grundtarif-Divergenzen sind
+   damit vollstaendig als GETTSIM-Approximation eingeordnet.
 3. **Abrundung des zvE auf volle Euro (§ 32a Abs. 1 S. 1).** Catala rundet das
    zvE ab, GETTSIM nicht. Im Testgrid (ganzzahlige Euro) nicht ausgeloest; bei
-   nicht ganzzahligem zvE separat zu pruefen.
+   nicht ganzzahligem zvE separat zu pruefen. Bleibt als Notiz fuer Phase 1+.
+
+Die beiden GETTSIM-Divergenzen sind zusaetzlich als Issue-Entwurf festgehalten
+(`reports/gettsim-issue-draft.md`, nicht abgesendet).
 
 ## Empfehlung
 
-**Go fuer Catala.** Alle vier Kriterien sind erfuellt. Der Compiler traegt den
-Spike-Umfang stabil, das Python-Backend ist als Oracle-Schnittstelle nutzbar,
-die Default-Logik bildet die schwierige Ausnahmestruktur natuerlich ab, und der
-Differentialtest zeigt am Grundtarif praktische Deckungsgleichheit mit GETTSIM.
-Die verbleibenden Divergenzen sind vollstaendig erklaert und laufen auf zwei
-steuerfachliche Klaerungen hinaus (Splitting-Rundung, literale Koeffizienten
-2024/2025), nicht auf Werkzeugmaengel. Der Fallback (eigene Regel-IR) ist nicht
+**Go fuer Catala** (bestaetigt). Alle vier Kriterien sind erfuellt. Der Compiler
+traegt den Spike-Umfang stabil, das Python-Backend ist als Oracle-Schnittstelle
+nutzbar, die Default-Logik bildet die schwierige Ausnahmestruktur natuerlich ab,
+und der Differentialtest zeigt am Grundtarif praktische Deckungsgleichheit mit
+GETTSIM. Alle verbleibenden Divergenzen sind erklaert und eingeordnet, keine
+laeuft auf einen Werkzeugmangel hinaus. Der Fallback (eigene Regel-IR) ist nicht
 noetig.

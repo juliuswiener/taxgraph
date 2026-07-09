@@ -94,6 +94,20 @@ zvE-Werte plus Randwerte durch Catala und GETTSIM schickt und
 | `make params-check` | Ableitung/Validierung der Tarifkoeffizienten. |
 | `make clean` | Build- und Zwischenartefakte entfernen. |
 
+## Quellenbeschaffung: Fallback bei gesetze-im-internet-503
+
+gesetze-im-internet.de liefert unter Last zeitweise HTTP 503 und hat nur die
+jeweils geltende Fassung. Standard-Fallback fuer datierte/historische Fassungen:
+
+- **Gesetzesfassungen (BGBl):** recht.bund.de, z. B.
+  `https://www.recht.bund.de/bgbl/1/2024/386/regelungstext.pdf` fuer BGBl 2024
+  I Nr. 386.
+- **Konsolidierte Tarifwerte:** Amtliches Einkommensteuer-Handbuch (EStH/LStH),
+  `esth.bundesfinanzministerium.de`, § 32a.
+
+Abgerufene Texte werden nach dem Einfrier-Prinzip in `sources/` mit URL,
+Abrufdatum und SHA256 abgelegt (`make sources-check`).
+
 ## Bekannte Reibungspunkte (dokumentiert, keine Blocker)
 
 - **Cross-Modul-Scope-Aufrufe** erfordern `catala --whole-program` bzw.
