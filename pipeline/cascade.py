@@ -100,7 +100,7 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
         res.gate_results.append(G.GateResult("roundtrip", G.FAIL, "no A source"))
 
     # 7. Clerk-Tests
-    res.gate_results.append(G.clerk_gate(src_a))
+    res.gate_results.append(G.clerk_gate(src_a, mod_a, candidate))
 
     # verify all stamps share one models.yaml hash (run validity)
     hashes = {p["models_yaml_hash"] for p in res.provenance}

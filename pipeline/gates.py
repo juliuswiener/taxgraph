@@ -278,7 +278,95 @@ def roundtrip_gate(judge_json_text: str) -> GateResult:
                       f"annahmen={d.get('stille_zusatzannahmen')}")
 
 
-def clerk_gate(catala_src: str | None) -> GateResult:
+_UMLAUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
+                         "Ä": "ae", "Ö": "oe", "Ü": "ue"})
+
+
+def _normalize(text: str) -> str:
+    return re.sub(r"\s+", " ", text.translate(_UMLAUT).lower()).strip()
+
+
+def _lit(value, typ: str) -> str | None:
+    """Render a Catala literal. Unsupported type -> None."""
+    if typ == "money":
+        return f"${int(value)}.00"
+    if typ == "int":
+        return str(int(value))
+    if typ == "bool":
+        return "true" if value else "false"
+    if typ == "decimal":
+        return str(float(value))
+    return None
+
+
+def clerk_gate(catala_src: str | None, module: str | None = None,
+               candidate: dict | None = None, root: str | None = None) -> GateResult:
+    """Run generated Clerk tests seeded from official worked examples.
+
+    Test seeds must come from EStH/BMF worked examples and carry a verbatim
+    citation anchor, verified against the frozen source before anything runs.
+    Where no worked example exists the gate is n/a for that task (equivalence +
+    round-trip carry it); LLM-invented expected values are never a test reference.
+    """
     if not have("clerk"):
-        return GateResult("clerk", SKIP, "clerk not on PATH (toolchain reinstall pending)")
-    return GateResult("clerk", SKIP, "test generation + clerk run implemented at G2")
+        return GateResult("clerk", SKIP, "clerk not on PATH (toolchain missing)")
+    cand = candidate or {}
+    seeds = cand.get("test_seed")
+    if not seeds or seeds == "none":
+        return GateResult("clerk", SKIP,
+                          "n/a: kein EStH/BMF-Rechenbeispiel; Aequivalenz + "
+                          "Round-Trip tragen (keine LLM-Erwartungswerte)")
+    if not catala_src or not module:
+        return GateResult("clerk", FAIL, "no source/module")
+
+    root = root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    types = cand.get("input_types") or {}
+    out_field = cand.get("output_field")
+    scope = scope_name(catala_src)
+    if not scope or not out_field:
+        return GateResult("clerk", FAIL, "cannot determine scope/output_field")
+
+    # 1. citation-anchor gate on every seed (deterministic, no model involved)
+    for i, s in enumerate(seeds):
+        src = os.path.join(root, s["quelle"])
+        if not os.path.exists(src):
+            return GateResult("clerk", FAIL, f"seed {i}: source missing {s['quelle']}")
+        if _normalize(s["zitatanker"]) not in _normalize(open(src, encoding="utf-8").read()):
+            return GateResult("clerk", FAIL,
+                              f"seed {i}: Zitatanker nicht im Quelltext ({s['quelle']})")
+
+    # 2. generate test scopes, run clerk
+    tests = []
+    for i, s in enumerate(seeds):
+        args = []
+        for k, v in (s.get("inputs") or {}).items():
+            lit = _lit(v, types.get(k, "int"))
+            if lit is None:
+                return GateResult("clerk", SKIP, f"seed {i}: unsupported input type '{k}'")
+            args.append(f"    -- {k}: {lit}")
+        exp = _lit(s["expected"], cand.get("output_type", "money"))
+        if exp is None:
+            return GateResult("clerk", SKIP, f"seed {i}: unsupported output type")
+        argblk = ("\n" + "\n".join(args)) if args else ""
+        tests.append(
+            f"#[test]\ndeclaration scope TestSeed{i}:\n"
+            f"  internal r content {module}.{scope}\n"
+            f"  output v content money\n"
+            f"scope TestSeed{i}:\n"
+            f"  definition r equals output of {module}.{scope} with {{{argblk} }}\n"
+            f"  definition v equals r.{out_field}\n"
+            f"  assertion v = {exp}\n")
+
+    with tempfile.TemporaryDirectory() as d:
+        _write_clerk_project(catala_src, module, d)
+        with open(os.path.join(d, "rules", "Tests.catala_en"), "w", encoding="utf-8") as f:
+            f.write(f"# Tests\n\n> Using {module}\n\n```catala\n" + "\n".join(tests) + "```\n")
+        try:
+            r = subprocess.run(["clerk", "test", "-W", "rules/Tests.catala_en"], cwd=d,
+                               capture_output=True, text=True, timeout=900)
+        except Exception as e:  # noqa: BLE001
+            return GateResult("clerk", FAIL, f"clerk error: {e}")
+        if r.returncode != 0:
+            out = _strip((r.stderr or "") + (r.stdout or ""))
+            return GateResult("clerk", FAIL, out[-250:].replace("\n", " ").strip())
+    return GateResult("clerk", PASS, f"{len(seeds)} seed test(s) passed, anchors verified")
