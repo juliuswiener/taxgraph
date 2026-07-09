@@ -1,7 +1,17 @@
-# GETTSIM Issue-Entwurf (NICHT abgesendet)
+# GETTSIM Issues (ABGESENDET 2026-07-09)
 
-Entwurf fuer ein oder zwei Issues an das GETTSIM-Projekt. Vor dem Absenden von
-Julius zu pruefen. Beide Punkte stammen aus dem TaxGraph-Differentialtest
+Status: beide Issues sind von Julius im Repo `ttsim-dev/gettsim` eroeffnet.
+
+| Hier | GitHub | Titel |
+|------|--------|-------|
+| Issue 1 | [#1209](https://github.com/ttsim-dev/gettsim/issues/1209) | BUG: § 32a Abs. 5 splitting rounds after doubling instead of before |
+| Issue 2 | [#1210](https://github.com/ttsim-dev/gettsim/issues/1210) | BUG: § 32a Abs. 1 Progressionsfaktor reconstruction deviates by 1 euro from the published coefficients |
+
+Dieses Dokument bleibt die Arbeitsfassung (Belege, Verteilung, Reproduktion).
+Die Regression-Umrahmung (PR #803) und der Code-Beleg unten sind ggf. im Issue
+nachzureichen, falls dort noch die urspruengliche Fassung steht.
+
+Beide Punkte stammen aus dem TaxGraph-Differentialtest
 (`oracle/gettsim/harness.py`) gegen GETTSIM 1.2.1 und sind vollstaendig in
 `reports/s02-divergenzen.md` belegt.
 
@@ -122,5 +132,6 @@ completeness; GETTSIM may prefer the continuous reconstruction by design.
 
 Beide Punkte sind fuer TaxGraph geklaert: Catala folgt dem Gesetzeswortlaut,
 die Divergenzen sind als GETTSIM-Vereinfachung bzw. GETTSIM-Approximation
-eingeordnet (siehe `reports/s02-divergenzen.md`, `reports/gate-g0.md`). Ein
-Absenden ist optional und dient der Community, nicht dem MVP.
+eingeordnet (siehe `reports/s02-divergenzen.md`, `reports/gate-g0.md`).
+Abgesendet als #1209 (Splitting-Rundung) und #1210 (Progressionsfaktor);
+Antworten des Projekts hier nachtragen.

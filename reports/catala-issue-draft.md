@@ -1,8 +1,10 @@
-# Catala Issue-Entwurf (NICHT abgesendet)
+# Catala Issue (ABGESENDET 2026-07-09)
 
-Entwurf fuer ein Issue an das Catala-Projekt (github.com/CatalaLang/catala,
-Zulip). Vor dem Absenden von Julius zu pruefen. Betrifft die Catala/Clerk-
-Version 1.2.0.
+Status: von Julius eroeffnet als
+[CatalaLang/catala#1074](https://github.com/CatalaLang/catala/issues/1074).
+
+Betrifft die Catala/Clerk-Version 1.2.0. Dieses Dokument bleibt die
+Arbeitsfassung (Minimalrepro, Workarounds).
 
 Sprache im Entwurf: Englisch (Projekt-Konvention).
 
@@ -80,4 +82,5 @@ enum-typed declarations compile with the OCaml backend, consistent with structs.
 Fuer TaxGraph aktuell durch die beiden Workarounds geloest (siehe
 `rules/estg/p32a/einkommensteuertarif.catala_en` Kopfnotiz und das Modul
 `Entfernungspauschale`, das die VZ-Saetze als Parameter erhaelt). Relevant, wenn
-in Phase 3 viele Regeln ueber Modulgrenzen komponieren. Absenden optional.
+in Phase 3 viele Regeln ueber Modulgrenzen komponieren.
+Abgesendet als CatalaLang/catala#1074; Antwort des Projekts hier nachtragen.
