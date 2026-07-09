@@ -73,7 +73,7 @@ def main() -> int:
             msgs = build_messages(role.prompt_template_id, role.fewshot_set_id,
                                   {"task_content": "PROBE"}, exclude_rule_ids=exclude)
             blob = "\n".join(m["content"] for m in msgs)
-            ref = os.path.join(ROOT, t["reference"])
+            ref = os.path.join(ROOT, t["ref"]["file"])
             if os.path.exists(ref):
                 hits = [l for l in _significant_lines(ref) if l in blob]
                 if hits:

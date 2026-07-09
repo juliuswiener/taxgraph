@@ -26,10 +26,22 @@ def extract(client, role: RoleConfig, norm_text: str, models_hash: str,
     return _call(client, role, task, "worker", models_hash, exclude)
 
 
+def _signature_block(sig: dict | None) -> str:
+    """Prescribe the scope interface so A, B and the hand reference are
+    extensionally comparable. Blind stays the semantics, not the naming."""
+    if not sig:
+        return ""
+    ins = "\n".join(f"  input {k} content {v}" for k, v in sig["inputs"].items())
+    return (f"\n\nVerbindliche Scope-Signatur (Namen und Typen exakt so verwenden):\n"
+            f"declaration scope {sig['scope']}:\n{ins}\n"
+            f"  output {sig['output']} content money\n")
+
+
 def formalize(client, role: RoleConfig, norm_text: str, claims_text: str,
-              models_hash: str, exclude=None) -> tuple[str, Provenance]:
-    task = (f"Norm-Ausschnitt:\n{norm_text}\n\nExtrahierte Claims:\n{claims_text}\n\n"
-            f"Formalisiere nach Catala.")
+              models_hash: str, exclude=None, signature: dict | None = None
+              ) -> tuple[str, Provenance]:
+    task = (f"Norm-Ausschnitt:\n{norm_text}\n\nExtrahierte Claims:\n{claims_text}"
+            f"{_signature_block(signature)}\n\nFormalisiere nach Catala.")
     return _call(client, role, task, role.role, models_hash, exclude)
 
 

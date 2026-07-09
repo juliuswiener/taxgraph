@@ -1,42 +1,89 @@
-# G2-Bake-off Task-Liste. Start gibt Julius separat frei (nur Vorbereitung).
+# G2-Bake-off Task-Liste.
 #
-# Zwei Gruppen:
-#  A) blind_repro: die vier handformalisierten Regeln. Die Hand-Referenz existiert,
-#     wird der Pipeline aber vorenthalten. LEAKAGE-SCHUTZ: `exclude_rule_ids` nimmt
-#     die eigene rule_id (und alle Teilregeln) aus dem Few-Shot-Set der Laeufe
-#     heraus, die sie reproduzieren sollen. pipeline/bakeoff/check_leakage.py
-#     erzwingt das vor jedem Lauf.
-#  B) neu: zehn neue Regeln aus dem Anlage-N-Umfeld (Phase-3-Liste), ohne Referenz;
-#     bewertet ueber Gates + Eskalationsrate.
-#
-# Paarungen und Judge stehen in pipeline/models.yaml (bakeoff.pairings).
+# Signaturen sind vorgegeben, damit A, B und (bei blind_repro) die Hand-Referenz
+# extensional vergleichbar sind. Bewusst enthalten die Signaturen NUR Sachverhalts-
+# Eingaben, keine Norm-Konstanten: Betraege, Prozentsaetze, Caps und Fristen muss
+# das Modell selbst aus dem Norm-Text holen. Sonst waere das Aequivalenz-Gate trivial.
 
 blind_repro:
-  - rule_id: p32a_einkommensteuertarif
-    norm_source: sources/gesetze-im-internet/estg_p32a_2026-07-09.txt
-    reference: rules/estg/p32a/einkommensteuertarif.catala_en
-    # Referenzdatei enthaelt die co-lozierte § 9a/§ 10c-Kette -> deren Few-Shots
-    # muessen fuer diese Blind-Reproduktion ebenfalls raus.
-    exclude_rule_ids: [p32a_einkommensteuertarif, p9a_arbeitnehmerpauschbetrag, p10c_sonderausgabenpauschbetrag]
-    output_field: tarifliche_steuer
-    input_types: {zu_versteuerndes_einkommen: money}
-    raster_hint: "zvE 0..300000, Zonengrenzen +-1 (siehe golden/cases/g32a_*)"
-
-  - rule_id: p9a_p10c_kette
-    norm_source: sources/gesetze-im-internet/estg_p9a_2026-07-09.txt
-    reference: rules/estg/p32a/einkommensteuertarif.catala_en   # Kette co-loziert
-    # Beide Teilregeln raus: sie stehen als Few-Shot-Beispiele im Basis-Set.
-    exclude_rule_ids: [p9a_arbeitnehmerpauschbetrag, p10c_sonderausgabenpauschbetrag, p9a_p10c_kette]
-    output_field: einkuenfte
-    input_types: {bruttoarbeitslohn: money, werbungskosten: money}
-    raster_hint: "brutto 0..200000, WK 0/2000/5000 (inkl. WK > Brutto)"
-
-  - rule_id: p09_entfernungspauschale
-    norm_source: sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt
-    reference: rules/estg/p09_entfernungspauschale/entfernungspauschale.catala_en
-    exclude_rule_ids: [p09_entfernungspauschale]
-    output_field: abziehbarer_betrag
-    input_types:
+- rule_id: p32a_einkommensteuertarif
+  norm_source: sources/gesetze-im-internet/estg_p32a_2026-07-09.txt
+  exclude_rule_ids:
+  - p32a_einkommensteuertarif
+  - p9a_arbeitnehmerpauschbetrag
+  - p10c_sonderausgabenpauschbetrag
+  signature:
+    scope: Grundtarif
+    inputs:
+      zu_versteuerndes_einkommen: money
+    output: tarifliche_steuer
+  ref:
+    file: rules/estg/p32a/einkommensteuertarif.catala_en
+    module: Einkommensteuertarif
+    scope: Grundtarif
+    output: tarifliche_steuer
+    input_map:
+      zu_versteuerndes_einkommen: zu_versteuerndes_einkommen
+    fixed_inputs:
+      veranlagungszeitraum:
+        enum: Veranlagungszeitraum
+        code: VZ2026
+  raster:
+  - zu_versteuerndes_einkommen: 0
+  - zu_versteuerndes_einkommen: 12348
+  - zu_versteuerndes_einkommen: 12349
+  - zu_versteuerndes_einkommen: 20000
+  - zu_versteuerndes_einkommen: 30000
+  - zu_versteuerndes_einkommen: 69878
+  - zu_versteuerndes_einkommen: 69879
+  - zu_versteuerndes_einkommen: 100000
+  - zu_versteuerndes_einkommen: 277825
+  - zu_versteuerndes_einkommen: 277826
+  - zu_versteuerndes_einkommen: 300000
+- rule_id: p9a_einkuenfte
+  norm_source: sources/gesetze-im-internet/estg_p9a_2026-07-09.txt
+  exclude_rule_ids:
+  - p9a_einkuenfte
+  - p9a_arbeitnehmerpauschbetrag
+  - p10c_sonderausgabenpauschbetrag
+  signature:
+    scope: Einkuenfte
+    inputs:
+      bruttoarbeitslohn: money
+      werbungskosten: money
+    output: einkuenfte
+  ref:
+    file: rules/estg/p32a/einkommensteuertarif.catala_en
+    module: Einkommensteuertarif
+    scope: EinkuenfteNichtselbststaendig
+    output: einkuenfte
+    input_map:
+      bruttoarbeitslohn: bruttoarbeitslohn
+      werbungskosten: werbungskosten
+    fixed_inputs:
+      veranlagungszeitraum:
+        enum: Veranlagungszeitraum
+        code: VZ2026
+  raster:
+  - bruttoarbeitslohn: 0
+    werbungskosten: 0
+  - bruttoarbeitslohn: 800
+    werbungskosten: 0
+  - bruttoarbeitslohn: 40000
+    werbungskosten: 0
+  - bruttoarbeitslohn: 40000
+    werbungskosten: 2000
+  - bruttoarbeitslohn: 1000
+    werbungskosten: 5000
+  - bruttoarbeitslohn: 60000
+    werbungskosten: 1230
+- rule_id: p09_entfernungspauschale
+  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt
+  exclude_rule_ids:
+  - p09_entfernungspauschale
+  signature:
+    scope: Berechnung
+    inputs:
       entfernung_km_roh: decimal
       arbeitstage: int
       eigenes_oder_ueberlassenes_kfz: bool
@@ -45,14 +92,78 @@ blind_repro:
       satz_ab_21_km: money
       staffelgrenze_km: int
       hoechstbetrag: money
-    raster_hint: "km 10.6/20/30/100, AT 200/220, Kfz an/aus, OePNV 0/1380"
-
-  - rule_id: p04_arbeitszimmer_homeoffice
-    norm_source: sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt
-    reference: rules/estg/p04_arbeitszimmer_homeoffice/arbeitszimmer_homeoffice.catala_en
-    exclude_rule_ids: [p04_arbeitszimmer_homeoffice]
-    output_field: abzug_gesamt
-    input_types:
+    output: abziehbarer_betrag
+  ref:
+    file: rules/estg/p09_entfernungspauschale/entfernungspauschale.catala_en
+    module: Entfernungspauschale
+    scope: Berechnung
+    output: abziehbarer_betrag
+    input_map:
+      entfernung_km_roh: entfernung_km_roh
+      arbeitstage: arbeitstage
+      eigenes_oder_ueberlassenes_kfz: eigenes_oder_ueberlassenes_kfz
+      oepnv_kosten_jahr: oepnv_kosten_jahr
+      satz_bis_20_km: satz_bis_20_km
+      satz_ab_21_km: satz_ab_21_km
+      staffelgrenze_km: staffelgrenze_km
+      hoechstbetrag: hoechstbetrag
+    fixed_inputs: {}
+  raster:
+  - entfernung_km_roh: 10.6
+    arbeitstage: 200
+    eigenes_oder_ueberlassenes_kfz: false
+    oepnv_kosten_jahr: 0
+    satz_bis_20_km: 0.3
+    satz_ab_21_km: 0.38
+    staffelgrenze_km: 20
+    hoechstbetrag: 4500
+  - entfernung_km_roh: 30.0
+    arbeitstage: 220
+    eigenes_oder_ueberlassenes_kfz: true
+    oepnv_kosten_jahr: 0
+    satz_bis_20_km: 0.3
+    satz_ab_21_km: 0.38
+    staffelgrenze_km: 20
+    hoechstbetrag: 4500
+  - entfernung_km_roh: 100.0
+    arbeitstage: 220
+    eigenes_oder_ueberlassenes_kfz: false
+    oepnv_kosten_jahr: 0
+    satz_bis_20_km: 0.3
+    satz_ab_21_km: 0.38
+    staffelgrenze_km: 20
+    hoechstbetrag: 4500
+  - entfernung_km_roh: 100.0
+    arbeitstage: 220
+    eigenes_oder_ueberlassenes_kfz: true
+    oepnv_kosten_jahr: 0
+    satz_bis_20_km: 0.3
+    satz_ab_21_km: 0.38
+    staffelgrenze_km: 20
+    hoechstbetrag: 4500
+  - entfernung_km_roh: 20.0
+    arbeitstage: 220
+    eigenes_oder_ueberlassenes_kfz: false
+    oepnv_kosten_jahr: 1380
+    satz_bis_20_km: 0.3
+    satz_ab_21_km: 0.38
+    staffelgrenze_km: 20
+    hoechstbetrag: 4500
+  - entfernung_km_roh: 30.0
+    arbeitstage: 220
+    eigenes_oder_ueberlassenes_kfz: true
+    oepnv_kosten_jahr: 0
+    satz_bis_20_km: 0.38
+    satz_ab_21_km: 0.38
+    staffelgrenze_km: 20
+    hoechstbetrag: 4500
+- rule_id: p04_arbeitszimmer_homeoffice
+  norm_source: sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt
+  exclude_rule_ids:
+  - p04_arbeitszimmer_homeoffice
+  signature:
+    scope: Raumkostenabzug
+    inputs:
       arbeitszimmer_vorhanden: bool
       ist_mittelpunkt: bool
       tatsaechliche_aufwendungen: money
@@ -62,96 +173,352 @@ blind_repro:
       jahrespauschale: money
       tagespauschale_pro_tag: money
       tagespauschale_hoechstbetrag: money
-    raster_hint: "Mittelpunkt an/aus, Jahrespauschale an/aus, Tage 0/100/250 (Cap), Ausschluss 6c S.3"
-
-# Zehn neue Regeln. Norm-Texte eingefroren (sources/, sha256-verifiziert; siehe
-# `make sources-check`). Keine Referenz -> Bewertung ueber Gates.
-#
-# Bewusst strukturell gemischt statt 10x Anlage-N-Monokultur: eine Tabellen-/
-# Staffelregel (§ 33 Abs. 3) und eine Prozent+Cap-Regel (§ 35a Abs. 2/3) kommen
-# hinzu. Das testet die Formalisierer breiter: 2D-Tabellen-Lookup, Prozent-
-# rechnung, Caps, Fristen, Praedikate/Abgrenzung.
-#
-# `test_seed`: Rechenbeispiele aus EStH/BMF als Test-Seeds mit Zitatanker. Wo
-# keine existieren -> `test_seed: none`; das Clerk-Test-Gate wird fuer diese Task
-# als n/a gewertet, Aequivalenz + Round-Trip tragen. Keine LLM-erfundenen
-# Erwartungswerte als Testreferenz.
+    output: abzug_gesamt
+  ref:
+    file: rules/estg/p04_arbeitszimmer_homeoffice/arbeitszimmer_homeoffice.catala_en
+    module: Arbeitszimmer_homeoffice
+    scope: Raumkostenabzug
+    output: abzug_gesamt
+    input_map:
+      arbeitszimmer_vorhanden: arbeitszimmer_vorhanden
+      ist_mittelpunkt: ist_mittelpunkt
+      tatsaechliche_aufwendungen: tatsaechliche_aufwendungen
+      jahrespauschale_gewaehlt: jahrespauschale_gewaehlt
+      monate_ohne_mittelpunkt: monate_ohne_mittelpunkt
+      homeoffice_tage: homeoffice_tage
+      jahrespauschale: jahrespauschale
+      tagespauschale_pro_tag: tagespauschale_pro_tag
+      tagespauschale_hoechstbetrag: tagespauschale_hoechstbetrag
+    fixed_inputs: {}
+  raster:
+  - arbeitszimmer_vorhanden: false
+    ist_mittelpunkt: false
+    tatsaechliche_aufwendungen: 0
+    jahrespauschale_gewaehlt: false
+    monate_ohne_mittelpunkt: 0
+    homeoffice_tage: 120
+    jahrespauschale: 1260
+    tagespauschale_pro_tag: 6
+    tagespauschale_hoechstbetrag: 1260
+  - arbeitszimmer_vorhanden: false
+    ist_mittelpunkt: false
+    tatsaechliche_aufwendungen: 0
+    jahrespauschale_gewaehlt: false
+    monate_ohne_mittelpunkt: 0
+    homeoffice_tage: 250
+    jahrespauschale: 1260
+    tagespauschale_pro_tag: 6
+    tagespauschale_hoechstbetrag: 1260
+  - arbeitszimmer_vorhanden: true
+    ist_mittelpunkt: true
+    tatsaechliche_aufwendungen: 2000
+    jahrespauschale_gewaehlt: false
+    monate_ohne_mittelpunkt: 0
+    homeoffice_tage: 100
+    jahrespauschale: 1260
+    tagespauschale_pro_tag: 6
+    tagespauschale_hoechstbetrag: 1260
+  - arbeitszimmer_vorhanden: true
+    ist_mittelpunkt: true
+    tatsaechliche_aufwendungen: 500
+    jahrespauschale_gewaehlt: true
+    monate_ohne_mittelpunkt: 0
+    homeoffice_tage: 100
+    jahrespauschale: 1260
+    tagespauschale_pro_tag: 6
+    tagespauschale_hoechstbetrag: 1260
+  - arbeitszimmer_vorhanden: true
+    ist_mittelpunkt: true
+    tatsaechliche_aufwendungen: 0
+    jahrespauschale_gewaehlt: true
+    monate_ohne_mittelpunkt: 6
+    homeoffice_tage: 50
+    jahrespauschale: 1260
+    tagespauschale_pro_tag: 6
+    tagespauschale_hoechstbetrag: 1260
+  - arbeitszimmer_vorhanden: true
+    ist_mittelpunkt: false
+    tatsaechliche_aufwendungen: 2000
+    jahrespauschale_gewaehlt: false
+    monate_ohne_mittelpunkt: 12
+    homeoffice_tage: 100
+    jahrespauschale: 1260
+    tagespauschale_pro_tag: 6
+    tagespauschale_hoechstbetrag: 1260
 neu:
-  - rule_id: p9_1_3_nr5_doppelte_haushaltsfuehrung
-    norm: "§ 9 Abs. 1 S. 3 Nr. 5 EStG"
-    norm_source: sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt
-    struktur: [monats_cap_1000, bedingungen, inland_ausland_fallunterscheidung]
-    test_seed: none
-
-  - rule_id: p9_1_3_nr5a_uebernachtung
-    norm: "§ 9 Abs. 1 S. 3 Nr. 5a EStG"
-    norm_source: sources/gesetze-im-internet/estg_p9_abs1nr5a_2026-07-09.txt
-    struktur: [ist_kosten, 48_monats_grenze, neubeginn_regel]
-    test_seed: none
-
-  - rule_id: p9_4a_verpflegungsmehraufwand
-    norm: "§ 9 Abs. 4a EStG"
-    norm_source: sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt
-    struktur: [staffel_nach_abwesenheit, dreimonatsfrist, prozentuale_kuerzung]
-    test_seed: none
-
-  - rule_id: p9_1_3_nr6_arbeitsmittel
-    norm: "§ 9 Abs. 1 S. 3 Nr. 6 EStG"
-    norm_source: sources/gesetze-im-internet/estg_p9_abs1nr6_2026-07-09.txt
-    struktur: [einfacher_abzug, verweis_auf_nr7]
-    test_seed: none
-
-  - rule_id: p9_1_3_nr7_afa
-    norm: "§ 9 Abs. 1 S. 3 Nr. 7 EStG"
-    norm_source: sources/gesetze-im-internet/estg_p9_abs1nr7_2026-07-09.txt
-    struktur: [verweisregel, gwg_grenze_ueber_p6]
-    test_seed: none
-
-  - rule_id: p9_6_erstausbildung_abgrenzung
-    norm: "§ 9 Abs. 6 EStG"
-    norm_source: sources/gesetze-im-internet/estg_p9_abs6_2026-07-09.txt
-    struktur: [praedikat_definition, mindestdauer_12_monate, abgrenzung]
-    test_seed: none
-
-  - rule_id: p10_1_7_berufsausbildung
-    norm: "§ 10 Abs. 1 Nr. 7 EStG"
-    norm_source: sources/gesetze-im-internet/estg_p10_abs1nr7_2026-07-09.txt
-    struktur: [jahres_cap_6000, verdopplung_ehegatten, verweiskette]
-    test_seed: none
-
-  - rule_id: p24b_entlastungsbetrag
-    norm: "§ 24b EStG"
-    norm_source: sources/gesetze-im-internet/estg_p24b_2026-07-09.txt
-    struktur: [grundbetrag_4260, kindstaffel_240, zwoelftelung, praedikat_alleinstehend]
-    test_seed: none
-
-  # Strukturvielfalt (Julius, 2026-07-09): Tabellen-/Staffelregel ...
-  - rule_id: p33_3_zumutbare_belastung
-    norm: "§ 33 Abs. 3 EStG"
-    norm_source: sources/gesetze-im-internet/estg_p33_abs3_2026-07-09.txt
-    struktur: [tabellen_lookup_2d, gde_stufen, kinderzahl_stufen, prozent_des_gde]
-    test_seed: none
-
-  # ... und Prozent+Cap-Regel.
-  - rule_id: p35a_2_3_haushaltsnahe
-    norm: "§ 35a Abs. 2 und 3 EStG"
-    norm_source: sources/gesetze-im-internet/estg_p35a_abs2_3_2026-07-09.txt
-    struktur: [prozent_20, cap_4000, cap_1200, nur_arbeitskosten]
-    test_seed: none
-
-# Metriken je Paarung (Nachtrag Abschnitt 5). Entscheid: niedrigste
-# Eskalationsrate gewinnt; Kosten nur als Tiebreaker.
+- rule_id: p9_1_3_nr5_doppelte_haushaltsfuehrung
+  norm: § 9 Abs. 1 S. 3 Nr. 5 EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt
+  struktur:
+  - monats_cap_1000
+  - bedingungen
+  - inland_ausland_fallunterscheidung
+  test_seed: none
+  signature:
+    scope: DoppelteHaushaltsfuehrung
+    inputs:
+      unterkunftskosten_monat: money
+      monate: int
+      im_inland: bool
+    output: abziehbare_unterkunftskosten
+  raster:
+  - unterkunftskosten_monat: 800
+    monate: 12
+    im_inland: true
+  - unterkunftskosten_monat: 1400
+    monate: 12
+    im_inland: true
+  - unterkunftskosten_monat: 1400
+    monate: 6
+    im_inland: false
+  - unterkunftskosten_monat: 2500
+    monate: 12
+    im_inland: false
+  exclude_rule_ids:
+  - p9_1_3_nr5_doppelte_haushaltsfuehrung
+- rule_id: p9_1_3_nr5a_uebernachtung
+  norm: § 9 Abs. 1 S. 3 Nr. 5a EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr5a_2026-07-09.txt
+  struktur:
+  - ist_kosten
+  - 48_monats_grenze
+  - neubeginn_regel
+  test_seed: none
+  signature:
+    scope: Uebernachtungskosten
+    inputs:
+      uebernachtungskosten: money
+      monate_taetigkeit: int
+    output: abziehbare_uebernachtungskosten
+  raster:
+  - uebernachtungskosten: 3000
+    monate_taetigkeit: 12
+  - uebernachtungskosten: 3000
+    monate_taetigkeit: 60
+  - uebernachtungskosten: 500
+    monate_taetigkeit: 48
+  exclude_rule_ids:
+  - p9_1_3_nr5a_uebernachtung
+- rule_id: p9_4a_verpflegungsmehraufwand
+  norm: § 9 Abs. 4a EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt
+  struktur:
+  - staffel_nach_abwesenheit
+  - dreimonatsfrist
+  - prozentuale_kuerzung
+  test_seed: none
+  signature:
+    scope: Verpflegungsmehraufwand
+    inputs:
+      abwesenheit_stunden: int
+      mit_uebernachtung: bool
+      an_oder_abreisetag: bool
+      monate_am_ort: int
+    output: verpflegungspauschale
+  raster:
+  - abwesenheit_stunden: 24
+    mit_uebernachtung: true
+    an_oder_abreisetag: false
+    monate_am_ort: 1
+  - abwesenheit_stunden: 10
+    mit_uebernachtung: false
+    an_oder_abreisetag: false
+    monate_am_ort: 1
+  - abwesenheit_stunden: 6
+    mit_uebernachtung: false
+    an_oder_abreisetag: false
+    monate_am_ort: 1
+  - abwesenheit_stunden: 24
+    mit_uebernachtung: true
+    an_oder_abreisetag: false
+    monate_am_ort: 5
+  exclude_rule_ids:
+  - p9_4a_verpflegungsmehraufwand
+- rule_id: p9_1_3_nr6_arbeitsmittel
+  norm: § 9 Abs. 1 S. 3 Nr. 6 EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr6_2026-07-09.txt
+  struktur:
+  - einfacher_abzug
+  - verweis_auf_nr7
+  test_seed: none
+  signature:
+    scope: Arbeitsmittel
+    inputs:
+      aufwendungen: money
+    output: abziehbar
+  raster:
+  - aufwendungen: 0
+  - aufwendungen: 300
+  - aufwendungen: 2500
+  exclude_rule_ids:
+  - p9_1_3_nr6_arbeitsmittel
+- rule_id: p9_1_3_nr7_afa
+  norm: § 9 Abs. 1 S. 3 Nr. 7 EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr7_2026-07-09.txt
+  struktur:
+  - verweisregel
+  - gwg_grenze_ueber_p6
+  test_seed: none
+  signature:
+    scope: Absetzungfuerabnutzung
+    inputs:
+      anschaffungskosten: money
+      nutzungsdauer_jahre: int
+    output: afa_jahresbetrag
+  raster:
+  - anschaffungskosten: 1200
+    nutzungsdauer_jahre: 3
+  - anschaffungskosten: 800
+    nutzungsdauer_jahre: 1
+  - anschaffungskosten: 5000
+    nutzungsdauer_jahre: 5
+  exclude_rule_ids:
+  - p9_1_3_nr7_afa
+- rule_id: p9_6_erstausbildung_abgrenzung
+  norm: § 9 Abs. 6 EStG
+  norm_source: sources/gesetze-im-internet/estg_p9_abs6_2026-07-09.txt
+  struktur:
+  - praedikat_definition
+  - mindestdauer_12_monate
+  - abgrenzung
+  test_seed: none
+  signature:
+    scope: Erstausbildung
+    inputs:
+      erstausbildung_abgeschlossen: bool
+      im_dienstverhaeltnis: bool
+      aufwendungen: money
+    output: abziehbare_werbungskosten
+  raster:
+  - erstausbildung_abgeschlossen: true
+    im_dienstverhaeltnis: false
+    aufwendungen: 3000
+  - erstausbildung_abgeschlossen: false
+    im_dienstverhaeltnis: false
+    aufwendungen: 3000
+  - erstausbildung_abgeschlossen: false
+    im_dienstverhaeltnis: true
+    aufwendungen: 3000
+  exclude_rule_ids:
+  - p9_6_erstausbildung_abgrenzung
+- rule_id: p10_1_7_berufsausbildung
+  norm: § 10 Abs. 1 Nr. 7 EStG
+  norm_source: sources/gesetze-im-internet/estg_p10_abs1nr7_2026-07-09.txt
+  struktur:
+  - jahres_cap_6000
+  - verdopplung_ehegatten
+  - verweiskette
+  test_seed: none
+  signature:
+    scope: Berufsausbildung
+    inputs:
+      aufwendungen: money
+    output: abziehbare_sonderausgaben
+  raster:
+  - aufwendungen: 2000
+  - aufwendungen: 6000
+  - aufwendungen: 9000
+  exclude_rule_ids:
+  - p10_1_7_berufsausbildung
+- rule_id: p24b_entlastungsbetrag
+  norm: § 24b EStG
+  norm_source: sources/gesetze-im-internet/estg_p24b_2026-07-09.txt
+  struktur:
+  - grundbetrag_4260
+  - kindstaffel_240
+  - zwoelftelung
+  - praedikat_alleinstehend
+  test_seed: none
+  signature:
+    scope: Entlastungsbetrag
+    inputs:
+      alleinstehend: bool
+      anzahl_kinder: int
+      monate_ohne_voraussetzung: int
+    output: entlastungsbetrag
+  raster:
+  - alleinstehend: true
+    anzahl_kinder: 1
+    monate_ohne_voraussetzung: 0
+  - alleinstehend: true
+    anzahl_kinder: 3
+    monate_ohne_voraussetzung: 0
+  - alleinstehend: true
+    anzahl_kinder: 1
+    monate_ohne_voraussetzung: 6
+  - alleinstehend: false
+    anzahl_kinder: 2
+    monate_ohne_voraussetzung: 0
+  exclude_rule_ids:
+  - p24b_entlastungsbetrag
+- rule_id: p33_3_zumutbare_belastung
+  norm: § 33 Abs. 3 EStG
+  norm_source: sources/gesetze-im-internet/estg_p33_abs3_2026-07-09.txt
+  struktur:
+  - tabellen_lookup_2d
+  - gde_stufen
+  - kinderzahl_stufen
+  - prozent_des_gde
+  test_seed: none
+  signature:
+    scope: ZumutbareBelastung
+    inputs:
+      gesamtbetrag_der_einkuenfte: money
+      anzahl_kinder: int
+      splitting: bool
+    output: zumutbare_belastung
+  raster:
+  - gesamtbetrag_der_einkuenfte: 15000
+    anzahl_kinder: 0
+    splitting: false
+  - gesamtbetrag_der_einkuenfte: 30000
+    anzahl_kinder: 0
+    splitting: true
+  - gesamtbetrag_der_einkuenfte: 60000
+    anzahl_kinder: 1
+    splitting: false
+  - gesamtbetrag_der_einkuenfte: 60000
+    anzahl_kinder: 3
+    splitting: false
+  - gesamtbetrag_der_einkuenfte: 15340
+    anzahl_kinder: 0
+    splitting: false
+  exclude_rule_ids:
+  - p33_3_zumutbare_belastung
+- rule_id: p35a_2_3_haushaltsnahe
+  norm: § 35a Abs. 2 und 3 EStG
+  norm_source: sources/gesetze-im-internet/estg_p35a_abs2_3_2026-07-09.txt
+  struktur:
+  - prozent_20
+  - cap_4000
+  - cap_1200
+  - nur_arbeitskosten
+  test_seed: none
+  signature:
+    scope: Haushaltsnahe
+    inputs:
+      aufwendungen_dienstleistungen: money
+      aufwendungen_handwerker: money
+    output: steuerermaessigung
+  raster:
+  - aufwendungen_dienstleistungen: 1000
+    aufwendungen_handwerker: 0
+  - aufwendungen_dienstleistungen: 25000
+    aufwendungen_handwerker: 0
+  - aufwendungen_dienstleistungen: 0
+    aufwendungen_handwerker: 10000
+  - aufwendungen_dienstleistungen: 5000
+    aufwendungen_handwerker: 3000
+  exclude_rule_ids:
+  - p35a_2_3_haushaltsnahe
 metriken:
-  - syntaxvaliditaet          # nach Syntax-Gate + Compiler-Typecheck
-  - aequivalenz_divergenzrate # A vs B auf dem Input-Raster
-  - roundtrip_abweichungsrate # Judge: faithful=false
-  - stille_zusatzannahmen     # Anteil Laeufe mit nichtleerem Feld
-  - blind_reproduktion        # extensionale Uebereinstimmung mit Hand-Referenz
-  - eskalationsrate           # queue_status == flagged_for_review
-  - kosten_pro_approved
-  - wanduhrzeit_pro_approved
-
-# Worker-Stufe laeuft mit V4 Flash mit. Zitatanker-Rejectrate > 10 % -> Eskalation
-# und separater Mini-Bake-off der Worker-Rolle.
+- syntaxvaliditaet
+- aequivalenz_divergenzrate
+- roundtrip_abweichungsrate
+- stille_zusatzannahmen
+- blind_reproduktion
+- eskalationsrate
+- kosten_pro_approved
+- wanduhrzeit_pro_approved
 worker_gate:
-  zitatanker_rejectrate_schwelle: 0.10
+  zitatanker_rejectrate_schwelle: 0.1

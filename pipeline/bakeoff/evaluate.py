@@ -101,6 +101,23 @@ def evaluate(reports: list[dict]) -> dict:
         # Clerk-Gate n/a-Anteil (kein EStH/BMF-Rechenbeispiel)
         clerk_na = sum(1 for r in rs if _gate(r, "clerk") == "SKIP")
 
+        # Provider-Flakiness getrennt von Modellqualitaet: Timeouts/Retries je
+        # Rolle und Provider, plus Laeufe, die an einer Rolle abgebrochen sind.
+        role_timeouts = [r for r in rs if r.get("queue_status") in
+                         ("role_timeout", "role_error")]
+        transport = {"retries": 0, "timeouts": 0, "rate_limits": 0, "errors": 0}
+        by_provider: dict = defaultdict(lambda: dict.fromkeys(transport, 0))
+        for r in rs:
+            t = r.get("transport") or {}
+            for k in transport:
+                transport[k] += t.get(k, 0)
+            for prov, counts in (t.get("by_provider") or {}).items():
+                for k, v in counts.items():
+                    by_provider[prov][k] += v
+        by_role_timeout = defaultdict(int)
+        for r in role_timeouts:
+            by_role_timeout[f"{r.get('failed_role')} ({r.get('failed_slug')})"] += 1
+
         result[pairing] = {
             "n": n,
             "syntaxvaliditaet": rate(syntax_ok, n),
@@ -113,6 +130,10 @@ def evaluate(reports: list[dict]) -> dict:
             "eskalationsrate": rate(len(escalated), n),
             "eskalation_je_gate": {k: rate(v, n) for k, v in sorted(per_gate.items())},
             "clerk_gate_na_anteil": rate(clerk_na, n),
+            "role_timeout_rate": rate(len(role_timeouts), n),
+            "transport": transport,
+            "transport_by_provider": {k: dict(v) for k, v in by_provider.items()},
+            "role_timeouts_by_role": dict(by_role_timeout),
             "kosten_gesamt_usd": round(cost, 6),
             "kosten_pro_approved_usd": round(cost / len(approved), 6) if approved else None,
         }
@@ -160,6 +181,25 @@ def to_markdown(res: dict) -> str:
              "Round-Trip tragen):\n")
     for pairing, m in sorted(res.items()):
         L.append(f"- `{pairing}`: {m['clerk_gate_na_anteil']:.3f}")
+
+    L.append("\n## Provider-Flakiness (Transport, nicht Modellqualitaet)\n")
+    L.append("Timeouts, Retries und Rate-Limits sagen etwas ueber den Hoster, nicht "
+             "ueber das Modell. Sie fliessen deshalb nicht in die Entscheidung ein.\n")
+    L.append("| Paarung | role_timeout_rate | retries | timeouts | rate_limits | errors |")
+    L.append("|---|---|---|---|---|---|")
+    for pairing, m in sorted(res.items()):
+        t = m["transport"]
+        L.append(f"| {pairing} | {m['role_timeout_rate']:.3f} | {t['retries']} | "
+                 f"{t['timeouts']} | {t['rate_limits']} | {t['errors']} |")
+    for pairing, m in sorted(res.items()):
+        if m["transport_by_provider"]:
+            L.append(f"\n`{pairing}` je Provider:")
+            for prov, c in sorted(m["transport_by_provider"].items()):
+                L.append(f"- {prov}: retries={c['retries']} timeouts={c['timeouts']} "
+                         f"rate_limits={c['rate_limits']} errors={c['errors']}")
+        if m["role_timeouts_by_role"]:
+            L.append(f"\n`{pairing}` abgebrochene Rollen: "
+                     + ", ".join(f"{k} x{v}" for k, v in m["role_timeouts_by_role"].items()))
 
     ranked = sorted(res.items(), key=lambda kv: (kv[1]["eskalationsrate"],
                                                  kv[1]["kosten_pro_approved_usd"] or 0.0))

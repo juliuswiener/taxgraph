@@ -40,6 +40,7 @@ class CascadeResult:
     total_cost_usd: float = 0.0
     queue_status: str = "extracted"
     judge_verdict: dict = field(default_factory=dict)
+    transport: dict = field(default_factory=dict)
 
     def gates_dict(self):
         return [{"name": g.name, "status": g.status, "detail": g.detail}
@@ -47,12 +48,20 @@ class CascadeResult:
 
 
 def run_candidate(candidate: dict, dry_run: bool | None = None,
-                  fixtures_dir: str | None = None) -> CascadeResult:
+                  fixtures_dir: str | None = None,
+                  role_overrides: dict | None = None) -> CascadeResult:
     """Run one rule candidate through the cascade.
 
-    candidate: {id, norm_text, exclude_rule_ids?}
+    candidate: {id, norm_text, exclude_rule_ids?, signature?, ...}
+    role_overrides: {role_name: {"slug": ..., "providers": [...]}} for a bake-off
+    pairing. The models.yaml hash still stamps every output, so a run stays
+    traceable to one frozen config.
     """
     roles, models_hash = load_roles()
+    for rname, ov in (role_overrides or {}).items():
+        if rname in roles:
+            roles[rname].slug = ov["slug"]
+            roles[rname].providers = list(ov["providers"])
     client = OpenRouterClient(dry_run=dry_run, fixtures_dir=fixtures_dir)
     exclude = set(candidate.get("exclude_rule_ids", []))
     norm = candidate["norm_text"]
@@ -68,11 +77,12 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
     record(p)
 
     # 2. Doppelformalisierung (A und B)
+    sig = candidate.get("signature")
     a_text, pa = R.formalize(client, roles["formalisierer_a"], norm, claims_text,
-                             models_hash, exclude)
+                             models_hash, exclude, signature=sig)
     record(pa)
     b_text, pb = R.formalize(client, roles["formalisierer_b"], norm, claims_text,
-                             models_hash, exclude)
+                             models_hash, exclude, signature=sig)
     record(pb)
     res.queue_status = "formalized"
 
@@ -103,6 +113,8 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
 
     # 7. Clerk-Tests
     res.gate_results.append(G.clerk_gate(src_a, mod_a, candidate))
+
+    res.transport = client.transport_summary()
 
     # verify all stamps share one models.yaml hash (run validity)
     hashes = {p["models_yaml_hash"] for p in res.provenance}

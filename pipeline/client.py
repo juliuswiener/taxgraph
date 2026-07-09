@@ -64,6 +64,17 @@ class RoleConfig:
     fewshot_set_id: str = ""
 
 
+class RoleCallError(RuntimeError):
+    """A role call failed after all retries. Carries what is needed to flag the
+    task and keep the bake-off running instead of hanging."""
+
+    def __init__(self, role: str, slug: str, providers: list[str], reason: str,
+                 kind: str = "role_error"):
+        super().__init__(mask_key(f"{role}/{slug}: {reason}"))
+        self.role, self.slug, self.providers = role, slug, list(providers)
+        self.reason, self.kind = mask_key(reason), kind
+
+
 @dataclass
 class Completion:
     text: str
@@ -77,13 +88,38 @@ class Completion:
 
 
 class OpenRouterClient:
-    def __init__(self, dry_run: bool | None = None, timeout: int = 120,
-                 fixtures_dir: str | None = None):
+    def __init__(self, dry_run: bool | None = None,
+                 timeout: tuple[int, int] = (10, 180),
+                 max_retries: int = 2, fixtures_dir: str | None = None):
+        """timeout = (connect, read) seconds. A slow-trickling response cannot
+        stall a run forever: the read timeout fires between chunks, and the whole
+        call is bounded by max_retries attempts."""
         self.dry_run = is_dry_run(dry_run)
         self.timeout = timeout
+        self.max_retries = max_retries
         self.fixtures_dir = fixtures_dir or os.path.join(
             os.path.dirname(__file__), "fixtures")
         self._key = None if self.dry_run else _require_key()
+        # Provider-Flakiness getrennt von Modellqualitaet messbar machen.
+        self.transport: list[dict] = []
+
+    def _event(self, role: str, slug: str, provider: str, kind: str, detail: str = ""):
+        self.transport.append({"role": role, "slug": slug, "provider": provider,
+                               "kind": kind, "detail": mask_key(detail)[:160]})
+
+    def transport_summary(self) -> dict:
+        s: dict = {"retries": 0, "timeouts": 0, "rate_limits": 0, "errors": 0,
+                   "by_provider": {}}
+        for e in self.transport:
+            k = e["kind"]
+            if k in s:
+                s[k] += 1
+            p = e["provider"] or "unknown"
+            s["by_provider"].setdefault(p, {"retries": 0, "timeouts": 0,
+                                            "rate_limits": 0, "errors": 0})
+            if k in s["by_provider"][p]:
+                s["by_provider"][p][k] += 1
+        return s
 
     # -- model listing (free GET, used to resolve/verify slugs) ---------------
     def list_models(self) -> list[dict]:
@@ -113,26 +149,49 @@ class OpenRouterClient:
             "Content-Type": "application/json",
             "X-Title": "TaxGraph-Pipeline",
         }
-        # Bounded retry on transient upstream errors (429/5xx) against the SAME
-        # pinned provider set. This is NOT a provider fallback (allow_fallbacks
-        # stays false); it only handles transient rate limits before giving up
-        # (Nachtrag: checkpoint + retry, no silent config change).
-        last = None
-        for attempt in range(3):
+        # Bounded retry on transient upstream errors (timeout / 429 / 5xx) against
+        # the SAME pinned provider set. NOT a provider fallback (allow_fallbacks
+        # stays false); after the last attempt the call raises RoleCallError so the
+        # caller can flag the task and keep going instead of hanging.
+        prov = role.providers[0] if role.providers else "unknown"
+        r = None
+        for attempt in range(self.max_retries + 1):
             try:
                 r = requests.post(OPENROUTER_URL, headers=headers, json=body,
-                                 timeout=self.timeout)
+                                  timeout=self.timeout)
+            except requests.Timeout as e:
+                self._event(role.role, role.slug, prov, "timeouts", str(e))
+                if attempt < self.max_retries:
+                    self._event(role.role, role.slug, prov, "retries", "after timeout")
+                    time.sleep(2 ** attempt)
+                    continue
+                raise RoleCallError(role.role, role.slug, role.providers,
+                                    f"timeout after {self.max_retries + 1} attempts",
+                                    kind="role_timeout") from None
             except requests.RequestException as e:
-                raise RuntimeError(mask_key(f"OpenRouter request failed: {e}")) from None
-            if r.status_code in (429, 500, 502, 503) and attempt < 2:
-                last = r
-                time.sleep(2 * (attempt + 1))
-                continue
+                self._event(role.role, role.slug, prov, "errors", str(e))
+                if attempt < self.max_retries:
+                    self._event(role.role, role.slug, prov, "retries", "after neterr")
+                    time.sleep(2 ** attempt)
+                    continue
+                raise RoleCallError(role.role, role.slug, role.providers,
+                                    f"request failed: {e}") from None
+
+            if r.status_code in (429, 500, 502, 503):
+                kind = "rate_limits" if r.status_code == 429 else "errors"
+                self._event(role.role, role.slug, prov, kind, f"HTTP {r.status_code}")
+                if attempt < self.max_retries:
+                    self._event(role.role, role.slug, prov, "retries",
+                                f"after {r.status_code}")
+                    time.sleep(2 ** attempt)
+                    continue
             break
+
         if r.status_code >= 400:
-            raise RuntimeError(mask_key(
-                f"OpenRouter {r.status_code} for role={role.role} slug={role.slug}: "
-                f"{r.text[:400]}"))
+            raise RoleCallError(
+                role.role, role.slug, role.providers,
+                f"OpenRouter {r.status_code}: {r.text[:300]}",
+                kind="role_timeout" if r.status_code == 429 else "role_error")
         data = r.json()
         choice = data["choices"][0]["message"]["content"]
         usage = data.get("usage", {}) or {}
