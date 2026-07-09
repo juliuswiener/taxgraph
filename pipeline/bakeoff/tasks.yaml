@@ -1,0 +1,96 @@
+# G2-Bake-off Task-Liste. Start gibt Julius separat frei (nur Vorbereitung).
+#
+# Zwei Gruppen:
+#  A) blind_repro: die vier handformalisierten Regeln. Die Hand-Referenz existiert,
+#     wird der Pipeline aber vorenthalten. LEAKAGE-SCHUTZ: `exclude_rule_ids` nimmt
+#     die eigene rule_id (und alle Teilregeln) aus dem Few-Shot-Set der Laeufe
+#     heraus, die sie reproduzieren sollen. pipeline/bakeoff/check_leakage.py
+#     erzwingt das vor jedem Lauf.
+#  B) neu: zehn neue Regeln aus dem Anlage-N-Umfeld (Phase-3-Liste), ohne Referenz;
+#     bewertet ueber Gates + Eskalationsrate.
+#
+# Paarungen und Judge stehen in pipeline/models.yaml (bakeoff.pairings).
+
+blind_repro:
+  - rule_id: p32a_einkommensteuertarif
+    norm_source: sources/gesetze-im-internet/estg_p32a_2026-07-09.txt
+    reference: rules/estg/p32a/einkommensteuertarif.catala_en
+    # Referenzdatei enthaelt die co-lozierte § 9a/§ 10c-Kette -> deren Few-Shots
+    # muessen fuer diese Blind-Reproduktion ebenfalls raus.
+    exclude_rule_ids: [p32a_einkommensteuertarif, p9a_arbeitnehmerpauschbetrag, p10c_sonderausgabenpauschbetrag]
+    output_field: tarifliche_steuer
+    input_types: {zu_versteuerndes_einkommen: money}
+    raster_hint: "zvE 0..300000, Zonengrenzen +-1 (siehe golden/cases/g32a_*)"
+
+  - rule_id: p9a_p10c_kette
+    norm_source: sources/gesetze-im-internet/estg_p9a_2026-07-09.txt
+    reference: rules/estg/p32a/einkommensteuertarif.catala_en   # Kette co-loziert
+    # Beide Teilregeln raus: sie stehen als Few-Shot-Beispiele im Basis-Set.
+    exclude_rule_ids: [p9a_arbeitnehmerpauschbetrag, p10c_sonderausgabenpauschbetrag, p9a_p10c_kette]
+    output_field: einkuenfte
+    input_types: {bruttoarbeitslohn: money, werbungskosten: money}
+    raster_hint: "brutto 0..200000, WK 0/2000/5000 (inkl. WK > Brutto)"
+
+  - rule_id: p09_entfernungspauschale
+    norm_source: sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt
+    reference: rules/estg/p09_entfernungspauschale/entfernungspauschale.catala_en
+    exclude_rule_ids: [p09_entfernungspauschale]
+    output_field: abziehbarer_betrag
+    input_types:
+      entfernung_km_roh: decimal
+      arbeitstage: int
+      eigenes_oder_ueberlassenes_kfz: bool
+      oepnv_kosten_jahr: money
+      satz_bis_20_km: money
+      satz_ab_21_km: money
+      staffelgrenze_km: int
+      hoechstbetrag: money
+    raster_hint: "km 10.6/20/30/100, AT 200/220, Kfz an/aus, OePNV 0/1380"
+
+  - rule_id: p04_arbeitszimmer_homeoffice
+    norm_source: sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt
+    reference: rules/estg/p04_arbeitszimmer_homeoffice/arbeitszimmer_homeoffice.catala_en
+    exclude_rule_ids: [p04_arbeitszimmer_homeoffice]
+    output_field: abzug_gesamt
+    input_types:
+      arbeitszimmer_vorhanden: bool
+      ist_mittelpunkt: bool
+      tatsaechliche_aufwendungen: money
+      jahrespauschale_gewaehlt: bool
+      monate_ohne_mittelpunkt: int
+      homeoffice_tage: int
+      jahrespauschale: money
+      tagespauschale_pro_tag: money
+      tagespauschale_hoechstbetrag: money
+    raster_hint: "Mittelpunkt an/aus, Jahrespauschale an/aus, Tage 0/100/250 (Cap), Ausschluss 6c S.3"
+
+# Zehn neue Regeln (Anlage-N-Umfeld). Norm-Texte werden vor dem Lauf eingefroren
+# (sources/), wie bei den Hand-Regeln. Keine Referenz -> Bewertung ueber Gates.
+neu:
+  - {rule_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, norm: "§ 9 Abs. 1 S. 3 Nr. 5 EStG"}
+  - {rule_id: p9_1_3_nr5_familienheimfahrten,        norm: "§ 9 Abs. 1 S. 3 Nr. 5 S. 5-6 EStG"}
+  - {rule_id: p9_1_3_nr5a_uebernachtung,             norm: "§ 9 Abs. 1 S. 3 Nr. 5a EStG"}
+  - {rule_id: p9_4a_verpflegungsmehraufwand,         norm: "§ 9 Abs. 4a EStG"}
+  - {rule_id: p9_1_3_nr6_arbeitsmittel,              norm: "§ 9 Abs. 1 S. 3 Nr. 6 EStG"}
+  - {rule_id: p9_1_3_nr3_berufsverbaende,            norm: "§ 9 Abs. 1 S. 3 Nr. 3 EStG"}
+  - {rule_id: p9a_nr1b_versorgungsbezuege,           norm: "§ 9a S. 1 Nr. 1b EStG"}
+  - {rule_id: p19_2_versorgungsfreibetrag,           norm: "§ 19 Abs. 2 EStG"}
+  - {rule_id: p3_nr15_jobticket,                     norm: "§ 3 Nr. 15 EStG"}
+  - {rule_id: p40_2_pauschalbesteuerung_fahrten,     norm: "§ 40 Abs. 2 EStG"}
+
+# Metriken je Paarung (Nachtrag Abschnitt 5). Entscheid: niedrigste
+# Eskalationsrate gewinnt; Kosten nur als Tiebreaker.
+metriken:
+  - syntaxvaliditaet          # nach Syntax-Gate + Compiler-Typecheck
+  - aequivalenz_divergenzrate # A vs B auf dem Input-Raster
+  - roundtrip_abweichungsrate # Judge: faithful=false
+  - stille_zusatzannahmen     # Anteil Laeufe mit nichtleerem Feld
+  - blind_reproduktion        # extensionale Uebereinstimmung mit Hand-Referenz
+  - eskalationsrate           # queue_status == flagged_for_review
+  - kosten_pro_approved
+  - wanduhrzeit_pro_approved
+
+# Worker-Stufe laeuft mit V4 Flash mit. Zitatanker-Rejectrate > 10 % -> Eskalation
+# und separater Mini-Bake-off der Worker-Rolle.
+worker_gate:
+  zitatanker_rejectrate_schwelle: 0.10
