@@ -33,6 +33,7 @@ sys.path.insert(0, PIPELINE)
 
 from cascade import run_candidate  # noqa: E402
 from client import mask_key, RoleCallError  # noqa: E402
+from quellen import build_norm_text, QuellenFehler  # noqa: E402
 import gates as G  # noqa: E402
 
 OUT_ROOT = os.path.join(PIPELINE, "runs", "produktion")
@@ -40,9 +41,14 @@ OUT_ROOT = os.path.join(PIPELINE, "runs", "produktion")
 
 def build_candidate(rule: dict) -> dict:
     sig = rule["signature"]
+    # Multi-Source: Gesetz + auslegende Quellen, getrennt etikettiert. Zitatanker
+    # und Auszuege werden hier gegen die eingefrorenen Dateien geprueft - ein
+    # Verstoss bricht ab, bevor ein Modell laeuft.
+    norm_text, quellen_meta = build_norm_text(rule, ROOT)
     return {
         "id": rule["rule_id"],
-        "norm_text": open(os.path.join(ROOT, rule["norm_source"]), encoding="utf-8").read(),
+        "norm_text": norm_text,
+        "quellen": quellen_meta,
         "exclude_rule_ids": rule.get("exclude_rule_ids", []),
         "signature": sig,
         "output_field": sig["output"],
@@ -51,6 +57,7 @@ def build_candidate(rule: dict) -> dict:
         "test_seed": rule.get("test_seed", "none"),
         # Phase 3: das Clerk-Test-Gate ist Pflicht. Fehlen Seeds, faellt es.
         "test_gate_required": True,
+        "geltungsbedingungen": rule.get("geltungsbedingungen", []),
         "output_type": "money",
     }
 
@@ -74,12 +81,26 @@ def regate(rules: list[dict]) -> int:
                  "clerk": G.clerk_gate(src, mod, cand, ROOT)}
         if rep.get("catala_b"):
             fresh["equivalence"] = G.equivalence_gate(src, rep["catala_b"], cand)
+        # scope_gap und geltungsbereich sind ebenfalls deterministisch: sie lesen
+        # das gespeicherte Judge-Verdikt, kein Modell laeuft erneut.
+        verdict = rep.get("judge_verdict") or {}
+        if verdict and not verdict.get("parse_error"):
+            fresh["scope_gap"] = G.scope_gap_gate(verdict)
+            fresh["geltungsbereich"] = G.geltungsbereich_gate(verdict, cand)
+        vorhanden = {g["name"] for g in rep["gates"]}
         for g in rep["gates"]:
             if g["name"] in fresh:
                 new = fresh[g["name"]]
                 if (g["status"], g["detail"]) != (new.status, new.detail):
                     changed += 1
                 g["status"], g["detail"] = new.status, new.detail
+        # Ein neu eingefuehrtes Gate steht in aelteren Reports noch nicht drin und
+        # wuerde sonst nie erscheinen.
+        for name, new in fresh.items():
+            if name not in vorhanden:
+                rep["gates"].append({"name": name, "status": new.status,
+                                     "detail": new.detail})
+                changed += 1
         rep["failed_gates"] = [g["name"] for g in rep["gates"]
                                if g["status"] == G.FAIL and not g["name"].endswith("_first")]
         rep["queue_status"] = _queue_status(rep["gates"])
@@ -113,8 +134,25 @@ def main() -> int:
     rules = cfg["regeln"]
     if args.only:
         rules = [r for r in rules if r["rule_id"] == args.only]
+    else:
+        # Regeln, deren Zuschnitt offen ist, laufen nicht: ein Approval-Versuch
+        # waere sinnlos, solange die Signatur den Norm-Ausschnitt verfehlt.
+        offen = [r["rule_id"] for r in rules if r.get("status") == "zuschnitt_offen"]
+        if offen:
+            print(f"uebersprungen (zuschnitt_offen): {', '.join(offen)}")
+        rules = [r for r in rules if r.get("status") != "zuschnitt_offen"]
     if not rules:
         raise SystemExit(f"keine Regel {args.only!r} im Manifest")
+
+    # Quellen-Vorbedingung: Zitatanker und Auszuege gegen die eingefrorenen
+    # Dateien pruefen, bevor ein Modell laeuft. Ein Verstoss ist ein Abbruch.
+    try:
+        for r in rules:
+            build_candidate(r)
+    except QuellenFehler as e:
+        raise SystemExit(f"Quellen-Gate: {e}")
+    print(f"Quellen-Gate ok: {len(rules)} Regel(n), alle Zitatanker und Auszuege "
+          f"woertlich in den eingefrorenen Quellen")
 
     if args.regate:
         return regate(rules)
@@ -155,6 +193,9 @@ def main() -> int:
         report = {
             "candidate_id": rid,
             "norm": rule.get("norm"),
+            # Herkunft der Modell-Eingabe: welche eingefrorenen Quellen, welcher Typ
+            "quellen": build_candidate(rule)["quellen"],
+            "geltungsbedingungen": rule.get("geltungsbedingungen", []),
             "dry_run": res.dry_run,
             "models_yaml_hash": res.models_yaml_hash,
             "queue_status": res.queue_status,

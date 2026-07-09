@@ -343,7 +343,71 @@ def roundtrip_gate(judge_json_text: str) -> GateResult:
                       f"annahmen={len(d['stille_zusatzannahmen'])} scope_gap={gap}")
 
 
-def scope_gap_gate(judge_json_text: str) -> GateResult:
+def _verdict(judge) -> dict:
+    """Akzeptiert rohen Judge-Text oder ein bereits geparstes Verdikt.
+
+    `--regate` rechnet die deterministischen Gates aus gespeicherten Reports neu,
+    ohne ein Modell erneut zu bezahlen; dort liegt das Verdikt als dict vor."""
+    return judge if isinstance(judge, dict) else roundtrip_parse(judge)
+
+
+def geltungsbereich_gate(judge, candidate: dict | None = None) -> GateResult:
+    """Jede Teilformalisierung traegt ihren Geltungsbereich maschinenlesbar.
+
+    Ein `wirkt_hinein`-Norm-Teil heisst: die Regel ist nur unter einer Bedingung
+    richtig, die sie selbst nicht modelliert. § 9 Abs. 4a etwa besteht den
+    amtlichen Test, gilt aber nur ohne Mahlzeitengestellung und nur im Inland.
+
+    Solche Bedingungen muessen im Manifest als `geltungsbedingungen` deklariert
+    sein - je eine mit `bedingung` (maschinenlesbarer Praedikatsname), `deckt_ab`
+    (welchen scope_gap sie abdeckt) und `quelle`. Erst dann darf die Regel
+    ueberhaupt zur Freigabe. Die Relevanzpropagation (Phase 5) stellt sie spaeter
+    als Fragen; die Engine darf die Regel nicht feuern, wenn eine verletzt ist.
+
+    Undeklarierte `wirkt_hinein`-Gaps -> FAIL. Ohne diese Kopplung waeren die
+    Bedingungen eine Notiz, die beim naechsten Refactoring verschwindet.
+    """
+    d = _verdict(judge)
+    if d.get("parse_error"):
+        return GateResult("geltungsbereich", FAIL, "judge output not valid JSON")
+    if d.get("truncated"):
+        return GateResult("geltungsbereich", FAIL, "judge answer truncated")
+    hinein = wirkt_hinein(d)
+    if not hinein:
+        return GateResult("geltungsbereich", PASS,
+                          "kein Norm-Teil wirkt in den Signatur-Scope hinein")
+
+    bedingungen = (candidate or {}).get("geltungsbedingungen") or []
+    if not bedingungen:
+        return GateResult("geltungsbereich", FAIL,
+                          f"{len(hinein)} Norm-Teil(e) wirken hinein, aber keine "
+                          f"`geltungsbedingungen` deklariert")
+
+    # `deckt_ab` darf ein String oder eine Liste sein: eine Bedingung
+    # ("keine Mahlzeitengestellung") deckt oft mehrere Norm-Teile ab.
+    abgedeckt: list[str] = []
+    for b in bedingungen:
+        d = b.get("deckt_ab", "")
+        abgedeckt += [_normalize(x) for x in (d if isinstance(d, list) else [d])]
+    offen = [g for g in hinein
+             if not any(a and a in _normalize(g["norm_teil"]) for a in abgedeckt)]
+    fehlende_felder = [b for b in bedingungen
+                       if not (b.get("bedingung") and b.get("quelle"))]
+    if fehlende_felder:
+        return GateResult("geltungsbereich", FAIL,
+                          f"{len(fehlende_felder)} Geltungsbedingung(en) ohne "
+                          f"`bedingung` oder `quelle`")
+    if offen:
+        return GateResult("geltungsbereich", FAIL,
+                          f"{len(offen)} von {len(hinein)} wirkt_hinein-Norm-Teil(en) "
+                          f"nicht von einer Geltungsbedingung abgedeckt; erster: "
+                          f"{offen[0]['norm_teil'][:100]}")
+    return GateResult("geltungsbereich", PASS,
+                      f"{len(hinein)} wirkt_hinein-Norm-Teil(e) durch "
+                      f"{len(bedingungen)} Geltungsbedingung(en) abgedeckt")
+
+
+def scope_gap_gate(judge) -> GateResult:
     """Two classes, two outcomes.
 
     (a) `unabhaengig` -> Backlog-Item, kein Flag. Der formalisierte Ausschnitt
@@ -351,7 +415,7 @@ def scope_gap_gate(judge_json_text: str) -> GateResult:
     (b) `wirkt_hinein` -> ESKALATION. Der Norm-Teil greift in den Signatur-Scope
         ein; ohne ihn ist der Ausschnitt falsch, nicht nur unvollstaendig.
     """
-    d = roundtrip_parse(judge_json_text)
+    d = _verdict(judge)
     if d.get("parse_error"):
         return GateResult("scope_gap", FAIL, "judge output not valid JSON")
     hinein, unabh = wirkt_hinein(d), unabhaengige_gaps(d)
@@ -428,8 +492,26 @@ def clerk_gate(catala_src: str | None, module: str | None = None,
     if not scope or not out_field:
         return GateResult("clerk", FAIL, "cannot determine scope/output_field")
 
-    # 1. citation-anchor gate on every seed (deterministic, no model involved)
+    # 1. Herkunft + Zitatanker je Seed (deterministisch, ohne Modell)
+    #
+    #    amtlich      - der Erwartungswert steht woertlich im amtlichen Beispiel.
+    #    abgeleitet   - die Rechenmechanik steht woertlich dort, die Parameter
+    #                   stammen aus der eingefrorenen Fassung (z.B. § 24b: das
+    #                   BMF-Beispiel rechnet mit 4.008 EUR, geltend sind 4.260).
+    #    synthetisch  - kein amtliches Beispiel; Fall von Julius im Review
+    #                   abgesegnet.
+    #
+    #    `rechenweg` ist fuer alles ausser `amtlich` Pflicht. Ohne ihn waere ein
+    #    abgeleiteter Wert von einem erfundenen nicht zu unterscheiden - und genau
+    #    das soll dieses Gate ausschliessen.
     for i, s in enumerate(seeds):
+        herkunft = s.get("herkunft", "amtlich")
+        if herkunft not in ("amtlich", "abgeleitet", "synthetisch"):
+            return GateResult("clerk", FAIL, f"seed {i}: unbekannte herkunft {herkunft!r}")
+        if herkunft != "amtlich" and not str(s.get("rechenweg", "")).strip():
+            return GateResult("clerk", FAIL,
+                              f"seed {i}: herkunft={herkunft} verlangt einen "
+                              f"`rechenweg` (Herleitung des Erwartungswerts)")
         src = os.path.join(root, s["quelle"])
         if not os.path.exists(src):
             return GateResult("clerk", FAIL, f"seed {i}: source missing {s['quelle']}")

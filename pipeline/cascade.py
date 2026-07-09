@@ -107,16 +107,21 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
                    f"(completion={pj.completion_tokens})")
             res.gate_results.append(G.GateResult("roundtrip", G.FAIL, det))
             res.gate_results.append(G.GateResult("scope_gap", G.FAIL, det))
+            res.gate_results.append(G.GateResult("geltungsbereich", G.FAIL, det))
         else:
             res.gate_results.append(G.roundtrip_gate(j_text))
             # scope_gap zweiklassig: (a) unabhaengig -> Backlog, kein Flag;
             # (b) wirkt in den Signatur-Scope hinein -> Eskalation, denn dann ist
             # der formalisierte Ausschnitt ohne den Rest falsch.
             res.gate_results.append(G.scope_gap_gate(j_text))
+            # Jede Teilformalisierung traegt ihren Geltungsbereich maschinenlesbar:
+            # was in den Scope hineinwirkt, muss als Bedingung deklariert sein.
+            res.gate_results.append(G.geltungsbereich_gate(j_text, candidate))
             res.backlog = G.unabhaengige_gaps(res.judge_verdict)
     else:
         res.gate_results.append(G.GateResult("roundtrip", G.FAIL, "no A source"))
         res.gate_results.append(G.GateResult("scope_gap", G.FAIL, "no A source"))
+        res.gate_results.append(G.GateResult("geltungsbereich", G.FAIL, "no A source"))
 
     # 7. Clerk-Tests
     res.gate_results.append(G.clerk_gate(src_a, mod_a, candidate))

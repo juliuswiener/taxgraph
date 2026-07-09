@@ -78,6 +78,10 @@ regeln:
   - p9_1_3_nr5_doppelte_haushaltsfuehrung
 - rule_id: p9_1_3_nr5a_uebernachtung
   norm: § 9 Abs. 1 S. 3 Nr. 5a EStG
+  # Charge 1: 5 wirkt_hinein-Norm-Teile bei null unabhaengigen. Der Judge sagt
+  # damit, dass die Signatur den Ausschnitt verfehlt, nicht dass das Modell
+  # schlecht formalisiert. Kein Approval-Versuch; Neuschnitt in Charge 2.
+  status: zuschnitt_offen
   norm_source: sources/gesetze-im-internet/estg_p9_abs1nr5a_2026-07-09.txt
   struktur:
   - ist_kosten
@@ -118,6 +122,36 @@ regeln:
     zitatanker: "Anreisetag: 14,00 \u20ac"
     inputs: {abwesenheit_stunden: 8, mit_uebernachtung: true, an_oder_abreisetag: true, monate_am_ort: 1}
     expected: 14.00
+  # Geltungsbereich der Teilformalisierung, maschinenlesbar. Jeder Norm-Teil, den
+  # der Judge als `wirkt_hinein` meldet, muss hier abgedeckt sein - sonst faellt
+  # das geltungsbereich-Gate. Die Relevanzpropagation (Phase 5) stellt diese
+  # Bedingungen als Fragen; die Engine darf die Regel nicht feuern, wenn eine
+  # verletzt ist. Die Freigabe gilt NUR mit diesen Bedingungen.
+  geltungsbedingungen:
+  - bedingung: auswaertige_berufliche_taetigkeit
+    deckt_ab: "Wird der Arbeitnehmer außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig"
+    quelle: "§ 9 Abs. 4a Satz 2 EStG"
+    beschreibung: "Die Regel gilt nur, wenn ueberhaupt eine auswaertige berufliche Taetigkeit vorliegt."
+  - bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+    deckt_ab:
+    - "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtung"
+    - "wenn der Arbeitnehmer an diesem, einem anschließenden oder vorhergehenden Tag außerhalb seiner Wohnung übernachtet"
+    quelle: "§ 9 Abs. 4a Satz 3 Nr. 2 und Satz 5 EStG"
+    beschreibung: "Der Scope kennt An-/Abreisetag und Abwesenheitsdauer, aber nicht die Mitternachtsregel fuer eintaegige Reisen ohne Uebernachtung."
+  - bedingung: taetigkeit_im_inland
+    deckt_ab: "Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge"
+    quelle: "§ 9 Abs. 4a Satz 5 EStG"
+    beschreibung: "Nur Inlandspauschalen. Auslandspauschbetraege werden vom BMF laenderweise bekanntgemacht und sind nicht modelliert."
+  - bedingung: keine_mahlzeitengestellung
+    deckt_ab:
+    - "eine Mahlzeit zur Verfügung gestellt"
+    - "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt"
+    quelle: "§ 9 Abs. 4a Saetze 8 bis 10 EStG"
+    beschreibung: "Bei Mahlzeitengestellung ist die Pauschale zu kuerzen (20/40/40 %). Der Scope kennt die Mahlzeiten nicht."
+  - bedingung: keine_steuerfreien_verpflegungserstattungen
+    deckt_ab: "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung"
+    quelle: "§ 9 Abs. 4a Satz 12 EStG"
+    beschreibung: "Steuerfreie Erstattungen schliessen den Werbungskostenabzug insoweit aus."
   signature:
     scope: Verpflegungsmehraufwand
     inputs:
@@ -239,7 +273,32 @@ regeln:
   - kindstaffel_240
   - zwoelftelung
   - praedikat_alleinstehend
-  test_seed: none
+  # Herkunft `abgeleitet`, kein synthetischer Fall. Das BMF-Schreiben v. 23.11.2022
+  # rechnet die Zwoelftelung mit dem Grundbetrag 4.008 EUR der Jahre 2020-2022 vor;
+  # sein Volltext ist zudem weder ueber esth/lsth.bundesfinanzministerium.de
+  # (Bot-Sperre) noch ueber den frueheren Landes-Spiegel woertlich abrufbar. Zitiert
+  # wird deshalb die Rechenmechanik dort, wo sie woertlich und eingefroren vorliegt:
+  # im Gesetz selbst. Die Parameter stammen aus der geltenden Fassung (4.260 / 240).
+  # Jeder Erwartungswert traegt seinen `rechenweg`; nichts ist geraten.
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p24b_2026-07-09.txt
+    zitatanker: "beträgt der Entlastungsbetrag im Kalenderjahr 4 260 Euro"
+    herkunft: abgeleitet
+    rechenweg: "Abs. 2 Satz 1: ein Kind, keine Ausfallmonate -> Grundbetrag 4.260,00 EUR."
+    inputs: {alleinstehend: true, anzahl_kinder: 1, monate_ohne_voraussetzung: 0}
+    expected: 4260.00
+  - quelle: sources/gesetze-im-internet/estg_p24b_2026-07-09.txt
+    zitatanker: "erhöht sich der Betrag nach Satz 1 um 240 Euro je weiterem Kind"
+    herkunft: abgeleitet
+    rechenweg: "Abs. 2 Satz 2: drei Kinder = Grundbetrag + 2 x 240 EUR = 4.260 + 480 = 4.740,00 EUR."
+    inputs: {alleinstehend: true, anzahl_kinder: 3, monate_ohne_voraussetzung: 0}
+    expected: 4740.00
+  - quelle: sources/gesetze-im-internet/estg_p24b_2026-07-09.txt
+    zitatanker: "ermäßigt sich der Entlastungsbetrag nach Absatz 2 um ein Zwölftel"
+    herkunft: abgeleitet
+    rechenweg: "Abs. 4: sechs volle Kalendermonate ohne Voraussetzungen -> 4.260 EUR x 6/12 = 2.130,00 EUR. Dies ist die Mechanik des BMF-Beispiels (dort 4.008 EUR x 9/12), mit den Parametern der geltenden Fassung."
+    inputs: {alleinstehend: true, anzahl_kinder: 1, monate_ohne_voraussetzung: 6}
+    expected: 2130.00
   signature:
     scope: Entlastungsbetrag
     inputs:
@@ -264,6 +323,20 @@ regeln:
   - p24b_entlastungsbetrag
 - rule_id: p33_3_zumutbare_belastung
   norm: § 33 Abs. 3 EStG
+  # Multi-Source: der Wortlaut allein laesst beide Lesarten zu. Charge 1 zeigte,
+  # dass Formalisierer A die vom BFH verworfene Auslegung waehlt, wenn nur das
+  # Gesetz im Input steht. Der Leitsatz kommt als GETRENNTE, etikettierte Quelle
+  # dazu - der Normtext bleibt unangetastet.
+  quellen:
+  - typ: gesetz
+    label: "§ 33 Abs. 3 EStG"
+    datei: sources/gesetze-im-internet/estg_p33_abs3_2026-07-09.txt
+  - typ: rechtsprechung
+    label: "BFH, Urteil v. 19.01.2017 - VI R 75/14, Leitsatz 1"
+    datei: sources/bfh/bfh_vi_r_75-14_2017-01-19.txt
+    ecli: "ECLI:DE:BFH:2017:U.190117.VIR75.14.0"
+    zitatanker: "nur der Teil des Gesamtbetrags der Einkünfte, der den im Gesetz genannten Grenzbetrag übersteigt, mit dem jeweils höheren Prozentsatz belastet wird"
+    auszug: "Abweichend von der bisherigen (durch die Rechtsprechung gebilligten) Verwaltungsauffassung, wonach sich die Höhe der zumutbaren Belastung ausschließlich nach dem höheren Prozentsatz richtet, sobald der Gesamtbetrag der Einkünfte eine der in § 33 Abs. 3 Satz 1 EStG genannten Grenzen überschreitet, ist die Regelung so zu verstehen, dass nur der Teil des Gesamtbetrags der Einkünfte, der den im Gesetz genannten Grenzbetrag übersteigt, mit dem jeweils höheren Prozentsatz belastet wird."
   norm_source: sources/gesetze-im-internet/estg_p33_abs3_2026-07-09.txt
   struktur:
   - tabellen_lookup_2d

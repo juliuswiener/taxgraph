@@ -23,8 +23,8 @@ Automatisch erzeugt aus den Judge-Verdikten der Gate-Kaskade. Enthalten sind aus
 
 ## aus `p33_3_zumutbare_belastung`
 
-- **so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen wird.**
-  - Dieser Teil regelt die Verwendung der zumutbaren Belastung im Rahmen des Abzugs, ändert aber nicht die Höhe des im Scope berechneten Betrags.
+- **2Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld hat.**
+  - Die Definition, welche Kinder zählen, liegt außerhalb der Signatur, die nur die Anzahl Kinder als Integer entgegennimmt. Die Berechnung der zumutbaren Belastung ändert sich durch diese Definition nicht, da sie nur die Bestimmung des Eingabewerts betrifft.
 
 ## aus `p35a_2_3_haushaltsnahe`
 
