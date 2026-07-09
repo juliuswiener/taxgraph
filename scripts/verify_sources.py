@@ -16,6 +16,19 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC = os.path.join(ROOT, "sources")
 
+# Gemessen wird der WORTLAUT nach dem Marker, nicht die Datei: der Metadaten-Kopf
+# allein bringt schon rund 300 Bytes mit. § 9 Abs. 1 S. 3 Nr. 6 ist ein einziger
+# Satz und damit legitim kurz.
+MARKER = "--- Wortlaut"
+MIN_WORTLAUT = 60
+
+
+def wortlaut_laenge(path: str) -> int:
+    t = open(path, encoding="utf-8", errors="replace").read()
+    i = t.find(MARKER)
+    body = t[i + len(MARKER):] if i >= 0 else t
+    return len(body.strip())
+
 
 def sha256_of(path: str) -> str:
     h = hashlib.sha256()
@@ -49,10 +62,21 @@ def main() -> int:
             ok = False
             continue
         actual = sha256_of(target)
-        status = "OK" if actual == expected else "MISMATCH"
         if actual != expected:
             ok = False
-        print(f"{status:8} {os.path.relpath(target, ROOT)}")
+            print(f"{'MISMATCH':8} {os.path.relpath(target, ROOT)}")
+            continue
+        # Eine leere Quelle passt zu ihrem sha256 - der Integritaetscheck allein
+        # haette zwei versehentlich leer eingefrorene Paragraphen durchgewunken.
+        # Sie faellt sonst erst auf, wenn Wochen spaeter ein Zitatanker ins Leere
+        # zeigt. Ein Gesetzesausschnitt unter 200 Zeichen ist kein Wortlaut.
+        laenge = wortlaut_laenge(target)
+        if laenge < MIN_WORTLAUT:
+            ok = False
+            print(f"{'LEER':8} {os.path.relpath(target, ROOT)} "
+                  f"(Wortlaut nur {laenge} Zeichen)")
+            continue
+        print(f"{'OK':8} {os.path.relpath(target, ROOT)}")
     return 0 if ok else 1
 
 
