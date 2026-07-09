@@ -178,13 +178,18 @@ class OpenRouterClient:
                 raise RoleCallError(role.role, role.slug, role.providers,
                                     f"request failed: {e}") from None
 
-            if r.status_code in (429, 500, 502, 503):
+            # 403 with allow_fallbacks=false is a provider-side refusal surfaced
+            # through OpenRouter (an invalid key gives 401, not 403), so it is
+            # transient and worth re-rolling within the same pinned set.
+            if r.status_code in (403, 429, 500, 502, 503):
                 kind = "rate_limits" if r.status_code == 429 else "errors"
                 self._event(role.role, role.slug, prov, kind, f"HTTP {r.status_code}")
                 if attempt < self.max_retries:
                     self._event(role.role, role.slug, prov, "retries",
                                 f"after {r.status_code}")
-                    time.sleep(2 ** attempt)
+                    # An upstream rate limit does not clear in one second.
+                    base = 10 if r.status_code in (403, 429) else 2
+                    time.sleep(base * (2 ** attempt))
                     continue
             break
 

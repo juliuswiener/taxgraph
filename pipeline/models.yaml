@@ -30,7 +30,7 @@ roles:
   formalisierer_b:
     # G2 entscheidet endgueltig zwischen GLM und DeepSeek V4 Pro (siehe bakeoff).
     slug: "z-ai/glm-5.2"
-    providers: ["together", "fireworks/fast", "digitalocean"]
+    providers: ["together", "fireworks/fast"]
     temperature: 0.0
     max_tokens: 8192
     prompt_template_id: "formalisierung@3"   # identisches Template wie A
@@ -40,7 +40,7 @@ roles:
   judge:
     # Dritte Familie gegenueber A (Anthropic) und B (Z.AI): DeepSeek.
     slug: "deepseek/deepseek-v4-pro"
-    providers: ["together", "fireworks", "digitalocean"]
+    providers: ["together", "fireworks"]
     temperature: 0.0
     max_tokens: 4096
     prompt_template_id: "roundtrip_diff@2"
@@ -55,10 +55,12 @@ roles:
     #   morph          -> OK
     #   fireworks      -> 429 "temporarily rate-limited"
     #   venice         -> 429 "temporarily rate-limited"
-    #   digitalocean   -> 403 (Provider-seitig, kein Rate-Limit; deshalb raus:
-    #                    der Client wiederholt 429/5xx, aber nicht 403)
-    # fireworks/venice bleiben als Kapazitaet drin, falls das Limit abklingt.
-    providers: ["morph", "fireworks", "venice"]
+    #   digitalocean   -> 403
+    # Mehrere Eintraege in `only` heissen nicht "erst morph": OpenRouter routete im
+    # Lauf trotzdem auf Venice und lief in dessen 429. Deshalb hier genau ein
+    # Provider. DigitalOcean ist ueberall raus - es antwortete auch fuer v4-pro
+    # unter Last mit 403, obwohl der Einzel-Probe-Call durchging.
+    providers: ["morph"]
     temperature: 0.0
     max_tokens: 4096
     prompt_template_id: "extraktion@1"
@@ -98,6 +100,6 @@ bakeoff:
       judge: "anthropic/claude-sonnet-4.6"
   provider_allowlists:
     "anthropic/claude-sonnet-4.6": ["anthropic"]
-    "z-ai/glm-5.2": ["together", "fireworks/fast", "digitalocean"]
-    "deepseek/deepseek-v4-pro": ["together", "fireworks", "digitalocean"]
-    "deepseek/deepseek-v4-flash": ["morph", "fireworks", "venice"]
+    "z-ai/glm-5.2": ["together", "fireworks/fast"]
+    "deepseek/deepseek-v4-pro": ["together", "fireworks"]
+    "deepseek/deepseek-v4-flash": ["morph"]
