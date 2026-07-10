@@ -56,16 +56,42 @@ PARALLEL = 3              # Stimmen eines Items sind unabhaengig und laufen para
 
 # -- Hilfen -------------------------------------------------------------------
 
+# Floskeln, die in fast jedem Item stehen und die Aehnlichkeit dominieren. Ohne
+# sie verglich "Die Formalisierung nimmt an, dass anzahl_kinder ..." mit
+# "Die Formalisierung nimmt an, dass monate_ohne_voraussetzung ..." zu 64 Prozent -
+# zwei voellig verschiedene Annahmen. Uebrig bleiben die tragenden Begriffe:
+# Eingabenamen, Paragraphen, Zahlen.
+_FLOSKELN = {
+    "die", "der", "das", "den", "dem", "des", "ein", "eine", "einer", "eines",
+    "und", "oder", "dass", "wird", "werden", "wurde", "ist", "sind", "als",
+    "nicht", "nur", "auch", "fuer", "von", "vom", "mit", "bei", "aus", "auf",
+    "sich", "seiner", "seine", "ihre", "ihrer", "korrekte", "korrekten",
+    "formalisierung", "nimmt", "setzt", "voraus", "annahme", "annimmt",
+    "eingabe", "eingaben", "gelesen", "interpretiert", "verstanden", "behandelt",
+    "zutreffende", "zutreffend", "anwendung", "beurteilung", "geht", "davon",
+    "scope", "regel", "norm", "estg", "absatz", "abs", "satz", "nummer", "nr",
+}
+
+
 def _worte(text: str) -> set[str]:
-    return {w for w in re.findall(r"\w+", G._normalize(text)) if len(w) > 2}
+    """Tragende Begriffe eines Items: Floskeln raus, kurze Woerter raus."""
+    return {w for w in re.findall(r"\w+", G._normalize(text))
+            if len(w) > 2 and w not in _FLOSKELN}
 
 
 def _gleich(a: str, b: str) -> bool:
-    """Zwei Item-Texte meinen dasselbe, wenn ihre Wortmengen stark ueberlappen."""
+    """Zwei Item-Texte meinen dasselbe.
+
+    Gemessen wird die Ueberdeckung der kleineren Wortmenge, nicht Jaccard: derselbe
+    Befund wird mal knapp und mal ausfuehrlich formuliert ("Die Eingabe X ist ein
+    Nettobetrag" vs. "Die Formalisierung nimmt an, dass die Eingabe X als
+    Nettobetrag zu lesen ist"). Jaccard bestraft die Laengendifferenz und haette
+    beide als verschiedene Items gezaehlt.
+    """
     wa, wb = _worte(a), _worte(b)
     if not wa or not wb:
         return G._normalize(a) == G._normalize(b)
-    return len(wa & wb) / len(wa | wb) >= AEHNLICHKEIT
+    return len(wa & wb) / min(len(wa), len(wb)) >= AEHNLICHKEIT
 
 
 def _json_of(text: str | None) -> dict | None:
@@ -159,9 +185,14 @@ def _inventar(client, role, kontext: str, models_hash: str, provenance: list):
     if not laeufe:
         return None, {"inventar_ungueltig": ungueltig}
 
-    # Mehrheits-Mitgliedschaft je Feld: ein Item zaehlt, wenn es in der Mehrheit
-    # der Inventarlaeufe vorkommt.
-    schwelle = len(laeufe) // 2 + 1
+    # VEREINIGUNG, nicht Mehrheit. Ein Item, das nur ein Inventarlauf sieht,
+    # wird trotzdem beurteilt: es wegzulassen waere stilles Gruen, und genau das
+    # ist die Fehlerklasse, die dieses Protokoll ausschliessen soll. Die
+    # Item-Abstimmung filtert Rauschen ohnehin - ein erfundener Befund wird
+    # dreimal als "nicht echt" beurteilt.
+    #
+    # Wie oft ein Item gesehen wurde, steht als `inventar_streuung` im Report:
+    # das ist das Mass der Inventar-Instabilitaet, das Julius sehen will.
     ergebnis, streuung = {}, {}
     for f in felder:
         kandidaten: list[tuple[str, int]] = []
@@ -176,8 +207,9 @@ def _inventar(client, role, kontext: str, models_hash: str, provenance: list):
                 else:
                     kandidaten.append((text, 1))
                     gesehen.add(len(kandidaten) - 1)
-        ergebnis[f] = [t for t, n in kandidaten if n >= schwelle]
-        streuung[f] = [{"text": t, "in_laeufen": n} for t, n in kandidaten if n < schwelle]
+        ergebnis[f] = [t for t, _ in kandidaten]
+        streuung[f] = [{"text": t, "in_laeufen": n} for t, n in kandidaten
+                       if n < len(laeufe)]
     return ergebnis, {"inventar_laeufe": len(laeufe), "inventar_ungueltig": ungueltig,
                       "inventar_streuung": streuung}
 

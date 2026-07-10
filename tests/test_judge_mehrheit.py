@@ -5,7 +5,8 @@ Jeder Test steht fuer eine Regel des Protokolldekrets 2026-07-10:
   * ein Parse-Fehler ist KEINE Stimme -> es wird nachgelaufen,
   * ohne Mehrheit gilt das Item konservativ (Schweigen winkt nichts durch),
   * ein 2:1-Split wird vermerkt und eskaliert auf blockierenden Gates,
-  * ein Item, das nur in einem von drei Inventaren auftaucht, ist Rauschen.
+  * ein Item, das nur ein Inventarlauf sah, wird trotzdem beurteilt (es
+    wegzulassen waere stilles Gruen).
 
 Kein Netz, kein Modell: der Client ist ein Skript aus vorgegebenen Antworten.
 """
@@ -60,17 +61,32 @@ def lauf(antworten):
     return v, c
 
 
-# -- Inventar: Mehrheits-Mitgliedschaft ---------------------------------------
+# -- Inventar: Vereinigung, kein Weglassen ------------------------------------
 
-def test_item_nur_in_einem_inventar_ist_rauschen():
+def test_item_aus_nur_einem_inventar_wird_trotzdem_beurteilt():
+    """Ein Item wegzulassen, weil es nur ein Inventarlauf sah, waere stilles Gruen.
+
+    Die Vereinigung nimmt es auf; die Item-Abstimmung filtert Rauschen ohnehin.
+    Wie oft es gesehen wurde, steht als `inventar_streuung` im Report.
+    """
     dreimal_gleich = inv(ann=["Die Eingabe x wird als Nettobetrag gelesen"])
     einmal_extra = inv(ann=["Die Eingabe x wird als Nettobetrag gelesen",
                             "Ein voellig anderer Gedanke ueber Fristen"])
     v, _ = lauf({"inventar@1": [dreimal_gleich, einmal_extra, dreimal_gleich],
-                 "item_annahme@1": ['{"mapping": "nur_inland"}'] * 3})
-    assert len(v["stille_zusatzannahmen"]) == 1
+                 "item_annahme@1": ['{"mapping": "nur_inland"}'] * 6})
+    assert len(v["stille_zusatzannahmen"]) == 2
     streuung = v["judge_instability"]["inventar_streuung"]["annahmen"]
     assert len(streuung) == 1 and streuung[0]["in_laeufen"] == 1
+
+
+def test_umformulierung_ist_dasselbe_item():
+    """Derselbe Befund, einmal knapp und einmal ausfuehrlich. Jaccard haette zwei
+    Items daraus gemacht; gemessen wird die Ueberdeckung der kleineren Wortmenge."""
+    kurz = inv(ann=["Die Eingabe x ist ein Nettobetrag"])
+    lang = inv(ann=["Die Formalisierung nimmt an, dass die Eingabe x als Nettobetrag zu lesen ist"])
+    v, _ = lauf({"inventar@1": [kurz, lang, kurz],
+                 "item_annahme@1": ['{"mapping": "nur_inland"}'] * 3})
+    assert len(v["stille_zusatzannahmen"]) == 1
 
 
 def test_item_in_zwei_von_drei_inventaren_zaehlt():
