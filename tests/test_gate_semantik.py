@@ -206,7 +206,7 @@ def test_judge_gates_fallen_bei_kaputtem_verdikt(kaputt):
     stehen liess."""
     from run import judge_gates
     g = judge_gates(kaputt, BED)
-    assert set(g) == {"roundtrip", "scope_gap", "geltungsbereich"}
+    assert set(g) == {"roundtrip", "scope_gap", "geltungsbereich", "grenzfall"}
     assert all(x.status == G.FAIL for x in g.values())
 
 

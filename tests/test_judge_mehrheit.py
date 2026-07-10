@@ -24,6 +24,7 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "pipeline"))
 
 import judge as J          # noqa: E402
+import gates as G          # noqa: E402
 from client import RoleConfig, Completion   # noqa: E402
 
 
@@ -267,3 +268,74 @@ def test_annahme_traegt_anker():
                  "item_annahme@1": ['{"mapping": "nur_inland"}'] * 3})
     a = v["stille_zusatzannahmen"][0]
     assert a["betrifft"] == "x" and a["kategorie"] == "interpretation"
+
+
+# -- Union-until-Saturation ---------------------------------------------------
+
+def test_inventar_stoppt_bei_saettigung():
+    """Zwei identische Inventare -> Lauf 2 bringt nichts Neues -> Stopp nach 2."""
+    i = inv(ann=["Die Eingabe x ist ein Nettobetrag"])
+    c = FakeClient({"inventar@2": [i, i, i, i, i],
+                    "item_annahme@1": ['{"mapping": "nur_inland"}'] * 3})
+    v, prov, _ = J.judge_regel(c, ROLE, "norm", "src", SIG, BED, "hash")
+    assert c.calls.count("inventar@2") == 2
+    assert v["judge_instability"]["gesaettigt"] is True
+    assert v["judge_instability"]["saettigungskurve"][-1] == 0
+
+
+def test_inventar_deckelt_bei_fuenf():
+    """Jeder Lauf bringt etwas Neues -> Deckel greift bei 5."""
+    verschieden = [json.dumps({"abweichungen": [], "annahmen": [],
+        "norm_teile": [{"referenz": f"§ {k}", "zitat": f"Klausel {k}"}]}, ensure_ascii=False)
+        for k in range(6)]
+    c = FakeClient({"inventar@2": verschieden,
+                    "item_normteil@1": ['{"klasse": "unabhaengig", "abgedeckt_von": "none"}'] * 20})
+    v, _, _ = J.judge_regel(c, ROLE, "norm", "src", SIG, BED, "hash")
+    assert c.calls.count("inventar@2") == J.INVENTAR_MAX == 5
+    assert v["judge_instability"]["gesaettigt"] is False
+
+
+# -- Grenzfall / Dauersplitter ------------------------------------------------
+
+def test_dauersplitter_wird_als_grenzfall_markiert():
+    teil = json.dumps({"abweichungen": [], "annahmen": [],
+        "norm_teile": [{"referenz": "§ 9 Abs. 4a", "zitat": "Auslandsbetraege"}]}, ensure_ascii=False)
+    key = J._kkey("norm_teile", {"key": ("ref", "§ 9 abs. 4a")})
+    c = FakeClient({"inventar@2": [teil, teil],
+                    "item_normteil@1": ['{"klasse": "wirkt_hinein", "abgedeckt_von": "none"}'] * 3})
+    v, _, _ = J.judge_regel(c, ROLE, "norm", "src", SIG, BED, "hash",
+                            dauersplitter={key})
+    assert v["scope_gap"][0]["grenzfall"] is True
+    assert len(v["grenzfaelle"]) == 1
+
+
+def test_grenzfall_gate_faellt_bei_registriertem_dauersplitter():
+    v = {"grenzfaelle": [{"schluessel": "k", "norm_teil": "x"}],
+         "scope_gap": [], "abweichungen": [], "stille_zusatzannahmen": []}
+    assert G.grenzfall_gate(v).status == G.FAIL
+
+
+def test_grenzfall_gate_pass_ohne_dauersplitter():
+    v = {"grenzfaelle": [], "scope_gap": [], "abweichungen": [], "stille_zusatzannahmen": []}
+    assert G.grenzfall_gate(v).status == G.PASS
+
+
+# -- Registry-Builder ---------------------------------------------------------
+
+def test_grenzfall_builder_erkennt_dauersplitter(tmp_path):
+    import grenzfaelle as GF
+    mess = {"laeufe": {"r1": [
+        {"parse_error": False, "item_split_keys": [
+            {"schluessel": "k_dauer", "art": "norm_teil", "item": "ambig"},
+            {"schluessel": "k_einmal", "art": "norm_teil", "item": "einmalig"}]},
+        {"parse_error": False, "item_split_keys": [
+            {"schluessel": "k_dauer", "art": "norm_teil", "item": "ambig"}]},
+        {"parse_error": True},
+    ]}}
+    f = tmp_path / "mess.json"
+    f.write_text(json.dumps(mess), encoding="utf-8")
+    neu = GF.bauen([str(f)])
+    # k_dauer split in 2 Laeufen -> Dauersplitter; k_einmal nur 1 -> nicht
+    assert "r1" in neu
+    keys = {e["schluessel"] for e in neu["r1"]}
+    assert keys == {"k_dauer"}

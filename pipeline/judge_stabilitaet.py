@@ -31,6 +31,7 @@ from yamlstrict import load_yaml          # noqa: E402
 from client import OpenRouterClient       # noqa: E402
 from provenance import load_roles         # noqa: E402
 import judge as J                          # noqa: E402
+import grenzfaelle as GF                    # noqa: E402
 import gates as G                          # noqa: E402
 from run import build_candidate            # noqa: E402
 
@@ -62,13 +63,13 @@ def _itemzahlen(v: dict) -> dict:
         splits_je_gate[gate] = splits_je_gate.get(gate, 0) + splits_je_art.get(art, 0)
         items_je_gate[gate] = items_je_gate.get(gate, 0) + beurteilt.get(art, 0)
     cl = inst.get("cluster") or {}
-    deck = inst.get("in_allen_laeufen") or {}
     items_ges = sum(cl.values())
-    in_allen = sum(deck.values())
+    kurve = inst.get("saettigungskurve") or []
     return {"items_beurteilt": sum(beurteilt.values()),
             "inventar_items": items_ges,
-            "inventar_in_allen_laeufen": in_allen,
-            "inventar_deckung": round(in_allen / items_ges, 4) if items_ges else None,
+            "inventar_laeufe": inst.get("inventar_laeufe"),
+            "saettigungskurve": kurve,
+            "gesaettigt": inst.get("gesaettigt", False),
             "items_je_art": beurteilt,
             "splits_je_art": splits_je_art,
             "splits_je_gate": splits_je_gate,
@@ -90,7 +91,8 @@ def messe(rid: str, n: int, cfg: dict, roles: dict, models_hash: str,
     for i in range(n):
         v, prov_liste, kosten = J.judge_regel(
             client, roles["judge"], cand["norm_text"], src, cand["signature"],
-            cand["geltungsbedingungen"], models_hash)
+            cand["geltungsbedingungen"], models_hash,
+            dauersplitter=GF.dauersplitter(rid))
 
         class _P:  # Kostentraeger, damit die Auswertung unveraendert bleibt
             cost_usd = kosten
@@ -127,7 +129,12 @@ def messe(rid: str, n: int, cfg: dict, roles: dict, models_hash: str,
             "geltungsbereich": G.geltungsbereich_gate(v, cand).status,
             "kosten_usd": round(prov.cost_usd, 5),
             "item_splits": len((v.get("judge_instability") or {}).get("item_splits", [])),
+            "item_split_keys": [{"schluessel": x["schluessel"], "art": x["art"],
+                                 "item": x["item"]}
+                                for x in (v.get("judge_instability") or {}).get("item_splits", [])
+                                if "schluessel" in x],
             "items_ohne_mehrheit": len((v.get("judge_instability") or {}).get("items_ohne_mehrheit", [])),
+            "grenzfaelle": len(v.get("grenzfaelle") or []),
             "lauf_id": v.get("lauf_id"),
             **_itemzahlen(v),
         })
@@ -185,7 +192,10 @@ def main() -> int:
             "merges": sum(sum(l["merges"].values()) for l in gut),
             "inventar_streuung_items": sum(sum(l["inventar_streuung"].values()) for l in gut),
             "inventar_items": sum(l.get("inventar_items", 0) for l in gut),
-            "inventar_in_allen_laeufen": sum(l.get("inventar_in_allen_laeufen", 0) for l in gut),
+            "gesaettigt_anteil": (round(sum(1 for l in gut if l.get("gesaettigt")) / len(gut), 4)
+                                  if gut else None),
+            "inventar_laeufe_schnitt": (round(sum(l.get("inventar_laeufe", 0) for l in gut) / len(gut), 2)
+                                        if gut else None),
             "gate_urteile_stabil": len(gates) == 1,
             "verschiedene_gate_urteile": sorted(f"{a}/{b}" for a, b in gates),
             "abweichungen_min_max": ([min(l["abweichungen"] for l in gut),

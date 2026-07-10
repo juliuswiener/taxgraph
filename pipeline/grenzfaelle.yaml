@@ -1,0 +1,8 @@
+# Dauersplitter-Registry (Protokolldekret 2026-07-10, Punkt 4).
+# Objektiv ambige Items, die ueber Kampagnen hinweg wiederholt 2:1 splitten.
+# Sie routen fest in die Review-Queue (grenzfall-Gate) statt neu ausgewuerfelt zu
+# werden. Noch LEER: die Split-Schluessel je Lauf werden erst seit dieser Version
+# gespeichert; die Registry wird nach der naechsten Messung mit
+#   python pipeline/grenzfaelle.py bauen reports/nachtschicht/judge-stabilitaet-*.json
+# befuellt.
+{}

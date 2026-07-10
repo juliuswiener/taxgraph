@@ -73,10 +73,14 @@ roles:
     # Dritte Familie gegenueber A (Anthropic) und B (Z.AI): DeepSeek. In G2 die
     # einzige Judge-Besetzung mit annahme_verpasst = 0.000.
     slug: "deepseek/deepseek-v4-pro"
-    # Fireworks statt Together: Together trug im G2-Lauf saemtliche 16 Rate-Limits
-    # (es bediente gleichzeitig GLM). Judge auf Fireworks mit einem echten
-    # Round-Trip-Prompt verifiziert (22.2s, $0.00652).
-    providers: ["fireworks"]
+    # Provider-Wechsel 2026-07-10 (geloggt, nicht stiller Retry-Ausweich):
+    # Fireworks rate-limitet deepseek-v4-pro persistent mit 429 (drei
+    # Replikationslaeufe abgebrochen). Zurueck auf Together, das im Provider-Probe
+    # sauber liefert. Zuvor war Fireworks gewaehlt, weil Together im G2-Lauf die
+    # Rate-Limits trug - inzwischen bedient Together nicht mehr gleichzeitig GLM
+    # (Formalisierer B laeuft ueber together/fireworks-fast, der Judge exklusiv
+    # ueber together). Dieser Wechsel aendert den models.yaml-Hash bewusst.
+    providers: ["together"]
     temperature: 0.0
     # 4096 reichten nicht: der Judge lief bei der ersten Produktionsregel exakt
     # ins Limit (completion_tokens=4096) und lieferte abgeschnittenes JSON.
@@ -159,5 +163,5 @@ bakeoff:
   provider_allowlists:
     "anthropic/claude-sonnet-4.6": ["anthropic"]
     "z-ai/glm-5.2": ["together"]
-    "deepseek/deepseek-v4-pro": ["fireworks"]
+    "deepseek/deepseek-v4-pro": ["together"]
     "deepseek/deepseek-v4-flash": ["morph"]

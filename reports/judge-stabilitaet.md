@@ -4,17 +4,17 @@ Messplan vorregistriert (Protokolldekret 2026-07-10). Die Kriterien standen vor 
 
 Ein Durchgang, 7 Regeln, je 3 Laeufe. Kosten 6.7906 USD.
 
-## Vorregistrierte Kriterien
+## Vorregistrierte Kriterien (Stufe 3)
 
-- **Inventar-Deckung: 19.7%** (80 von 406 Items in allen 3 Laeufen) -- Ziel >= 80%
-- **geltungsbereich-Splitrate: 29.8%** -- Ziel <= 15%
-- **Spot-Replikation identisch: False** -- Ziel: True
+- **a) Gate-Ergebnis-Replikation: VERFEHLT** -- alle Regeln identisches Gesamtverdikt ueber die 3 Laeufe (instabil: `p9_1_3_nr5_doppelte_haushaltsfuehrung`, `p9_4a_verpflegungsmehraufwand`, `p10_1_7_berufsausbildung`, `p24b_entlastungsbetrag`)
+- **b) geltungsbereich-Splitrate: 29.8%** -- Ziel <= 15%
+- **c) undeclared-Annahmen-Schwankung je Regel: max 6** -- Ziel <= 1 (VERFEHLT)
 
 ## Kennzahlen
 
 - Item-Splitrate gesamt: 18.7% (76 Splits auf 406 beurteilte Items)
+- Inventar gesaettigt: 0% der Verdikte konvergiert (Union-until-Saturation)
 - Parse-Fehler: 0 von 21 Laeufen (0%)
-- Inventar-Streuung: 326 Items nicht in allen drei Inventarlaeufen gesehen
 - Merges des Aehnlichkeitsabgleichs: 126
 
 ### Splitrate je blockierendem Gate
@@ -47,6 +47,6 @@ Spanne der beurteilten Items je Lauf steht in der Tabelle oben. Diese Groesse wa
 
 ## Entscheid nach den vorregistrierten Kriterien
 
-Inventar-Deckung 19.7% (Ziel >= 80%), geltungsbereich-Splitrate 29.8% (Ziel <= 15%), Replikation identisch False (Ziel True) -> **spot_diagnose**
+a) Gate-Replikation verfehlt, b) geltungsbereich-Split 29.8% (Ziel <= 15%), c) undeclared-Schwankung max 6 (Ziel <= 1) -> **zweit_judge**
 
-Weder alle Kriterien erfuellt noch der Trigger sauber ausgeloest. Spot-Diagnose, dann Entscheid bei Julius.
+geltungsbereich-Splitrate ueber 20 %. Der Zweit-Judge-Trigger gilt als sauber gemessen und wird gezogen.

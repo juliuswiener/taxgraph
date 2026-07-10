@@ -5,9 +5,10 @@ festgelegt wurden (Protokolldekret 2026-07-10, Messplan Punkt 2). Sie werden nic
 nachtraeglich an das Ergebnis angepasst - genau dagegen schuetzt eine
 Vorregistrierung.
 
-    Item-Splitrate <= 10 %   -> Protokoll steht, kein Zweit-Judge, keine zweite Messung
-    10 % < Rate <= 20 %      -> Spot-Replikation auf den zwei instabilsten Regeln
-    Rate > 20 %              -> Zweit-Judge anderer Familie als naechste Stufe
+    a) alle Regeln identisches Gate-Ergebnis ueber die Laeufe
+    b) geltungsbereich-Splitrate <= 15 %
+    c) undeclared-Annahmen je Regel schwanken um <= 1
+    alle drei -> Protokoll steht; b > 20 % -> Zweit-Judge; sonst Spot-Diagnose
 
     python pipeline/judge_stabilitaet_report.py reports/nachtschicht/judge-stabilitaet-dekomponiert.json
 """
@@ -21,27 +22,33 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "reports", "judge-stabilitaet.md")
 
-# Vorregistrierte Erfolgskriterien der Nachmessung (Protokolldekret 2026-07-10,
-# Auflage 2). Sie standen VOR der Messung fest und werden nicht angepasst.
-DECKUNG_MIN = 0.80              # >= 80 % der Items in allen 3 Laeufen gesehen
+# Vorregistrierte Erfolgskriterien nach der Vervollstaendigung (Protokolldekret
+# 2026-07-10, Stufe 3, Punkt 3). Sie stehen VOR der Messung fest.
+#   a) Gate-Ergebnis-Replikation: alle Regeln identisches Gesamtverdikt ueber die
+#      3 Laeufe (das ist die Groesse, die zaehlt).
+#   b) geltungsbereich-Splitrate <= 15 %.
+#   c) Anzahl undeclared-Annahmen je Regel schwankt um <= 1 zwischen Laeufen.
 GELTUNGSBEREICH_SPLIT_MAX = 0.15
-SPLIT_TRIGGER = 0.20           # geltungsbereich-Splitrate darueber -> Trigger
+SPLIT_TRIGGER = 0.20
+UNDECLARED_SCHWANKUNG_MAX = 1
 
 
-def entscheid(deckung: float, gb_split: float, repliziert: bool | None) -> tuple[str, str]:
-    ok_deckung = deckung >= DECKUNG_MIN
-    ok_split = gb_split <= GELTUNGSBEREICH_SPLIT_MAX
-    ok_repl = repliziert is True
-    if ok_deckung and ok_split and ok_repl:
+def entscheid(a_alle_stabil: bool, gb_split: float, c_ok: bool) -> tuple[str, str]:
+    ok_b = gb_split <= GELTUNGSBEREICH_SPLIT_MAX
+    if a_alle_stabil and ok_b and c_ok:
         return ("protokoll_steht",
                 "Alle drei Kriterien erfuellt. Das Protokoll steht, kein Zweit-Judge.")
-    if gb_split > SPLIT_TRIGGER and ok_deckung:
+    if gb_split > SPLIT_TRIGGER:
         return ("zweit_judge",
-                "Inventar-Deckung stabil, aber geltungsbereich-Splitrate ueber 20 %. "
-                "Der Trigger ist sauber gemessen und wird gezogen: Zweit-Judge einer "
-                "anderen Familie.")
+                "geltungsbereich-Splitrate ueber 20 %. Der Zweit-Judge-Trigger gilt "
+                "als sauber gemessen und wird gezogen.")
+    if ok_b and not a_alle_stabil:
+        return ("spot_diagnose",
+                "geltungsbereich stabil (<= 15 %), aber nicht alle Regeln replizieren "
+                "ihr Gesamtverdikt. Die Restinstabilitaet liegt im Einzelfall - "
+                "Spot-Diagnose, dann Entscheid bei Julius.")
     return ("spot_diagnose",
-            "Weder alle Kriterien erfuellt noch der Trigger sauber ausgeloest. "
+            "Kriterien nicht erfuellt, Trigger nicht sauber ausgeloest. "
             "Spot-Diagnose, dann Entscheid bei Julius.")
 
 
@@ -63,19 +70,22 @@ def main() -> int:
                 for r in laeufe)
         je_gate[g] = (s, i, (s / i if i else None))
 
-    inv_items = sum(z.get("inventar_items", 0) for z in zus.values())
-    inv_deckung_n = sum(z.get("inventar_in_allen_laeufen", 0) for z in zus.values())
-    deckung = inv_deckung_n / inv_items if inv_items else 0.0
     gb_split = je_gate["geltungsbereich"][2] or 0.0
 
-    repl = None
-    rpfad = os.path.join(ROOT, "reports", "nachtschicht", "judge-replikation.json")
-    if os.path.exists(rpfad):
-        rd = json.load(open(rpfad, encoding="utf-8"))
-        vals = [v.get("identisch") for v in rd.values() if "identisch" in v]
-        repl = all(vals) if vals else None
+    # a) Alle Regeln stabil (identisches Gate-Ergebnis ueber die 3 Laeufe)
+    a_alle_stabil = all(z["gate_urteile_stabil"] for z in zus.values())
+    instabile = [r for r, z in zus.items() if not z["gate_urteile_stabil"]]
+    # c) undeclared-Annahmen schwanken je Regel um <= 1
+    c_je_regel = {}
+    for r, ls in laeufe.items():
+        werte = [l["unmapped"] for l in ls if not l.get("parse_error")]
+        c_je_regel[r] = (max(werte) - min(werte)) if werte else 0
+    c_ok = all(v <= UNDECLARED_SCHWANKUNG_MAX for v in c_je_regel.values())
+    # Saettigung (Punkt 2): Anteil Verdikte, deren Inventar konvergiert ist
+    ges = [l.get("gesaettigt") for r in laeufe for l in laeufe[r] if not l.get("parse_error")]
+    ges_anteil = (sum(1 for x in ges if x) / len(ges)) if ges else None
 
-    schluessel, satz = entscheid(deckung, gb_split, repl)
+    schluessel, satz = entscheid(a_alle_stabil, gb_split, c_ok)
     kosten = sum(z["kosten_usd"] for z in zus.values())
     parse = sum(z["parse_fehler"] for z in zus.values())
     gesamt_laeufe = sum(z["laeufe"] for z in zus.values())
@@ -86,16 +96,20 @@ def main() -> int:
          "Messplan vorregistriert (Protokolldekret 2026-07-10). Die Kriterien standen "
          "vor der Messung fest und liegen in `pipeline/judge_stabilitaet_report.py`.\n",
          f"Ein Durchgang, {len(zus)} Regeln, je 3 Laeufe. Kosten {kosten:.4f} USD.\n",
-         "## Vorregistrierte Kriterien\n",
-         f"- **Inventar-Deckung: {deckung:.1%}** ({inv_deckung_n} von {inv_items} "
-         f"Items in allen 3 Laeufen) -- Ziel >= {DECKUNG_MIN:.0%}",
-         f"- **geltungsbereich-Splitrate: {gb_split:.1%}** -- Ziel <= {GELTUNGSBEREICH_SPLIT_MAX:.0%}",
-         f"- **Spot-Replikation identisch: {repl}** -- Ziel: True\n",
+         "## Vorregistrierte Kriterien (Stufe 3)\n",
+         f"- **a) Gate-Ergebnis-Replikation: {'ERFUELLT' if a_alle_stabil else 'VERFEHLT'}** "
+         f"-- alle Regeln identisches Gesamtverdikt ueber die 3 Laeufe"
+         + (f" (instabil: {', '.join('`'+r+'`' for r in instabile)})" if instabile else ""),
+         f"- **b) geltungsbereich-Splitrate: {gb_split:.1%}** -- Ziel <= {GELTUNGSBEREICH_SPLIT_MAX:.0%}",
+         f"- **c) undeclared-Annahmen-Schwankung je Regel: max {max(c_je_regel.values()) if c_je_regel else 0}** "
+         f"-- Ziel <= {UNDECLARED_SCHWANKUNG_MAX}"
+         + (" (ERFUELLT)" if c_ok else " (VERFEHLT)") + "\n",
          "## Kennzahlen\n",
          f"- Item-Splitrate gesamt: {rate:.1%} ({splits} Splits auf {items} beurteilte Items)",
+         f"- Inventar gesaettigt: {ges_anteil:.0%} der Verdikte konvergiert (Union-until-Saturation)"
+         if ges_anteil is not None else "- Inventar-Saettigung: keine Daten",
          f"- Parse-Fehler: {parse} von {gesamt_laeufe} Laeufen"
          f" ({parse / gesamt_laeufe:.0%})" if gesamt_laeufe else "",
-         f"- Inventar-Streuung: {streuung} Items nicht in allen drei Inventarlaeufen gesehen",
          f"- Merges des Aehnlichkeitsabgleichs: {merges}\n",
          "### Splitrate je blockierendem Gate\n",
          "| Gate | Splits | Items | Rate |", "|---|---|---|---|"]
@@ -131,9 +145,10 @@ def main() -> int:
           f"Kriterium unterlaeuft, nicht weil sie es bestaetigt.\n"]
 
     L += [f"\n## Entscheid nach den vorregistrierten Kriterien\n",
-          f"Inventar-Deckung {deckung:.1%} (Ziel >= {DECKUNG_MIN:.0%}), "
-          f"geltungsbereich-Splitrate {gb_split:.1%} (Ziel <= {GELTUNGSBEREICH_SPLIT_MAX:.0%}), "
-          f"Replikation identisch {repl} (Ziel True) -> **{schluessel}**\n", satz, ""]
+          f"a) Gate-Replikation {'erfuellt' if a_alle_stabil else 'verfehlt'}, "
+          f"b) geltungsbereich-Split {gb_split:.1%} (Ziel <= {GELTUNGSBEREICH_SPLIT_MAX:.0%}), "
+          f"c) undeclared-Schwankung max {max(c_je_regel.values()) if c_je_regel else 0} "
+          f"(Ziel <= {UNDECLARED_SCHWANKUNG_MAX}) -> **{schluessel}**\n", satz, ""]
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:

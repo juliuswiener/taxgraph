@@ -38,6 +38,7 @@ from client import mask_key, RoleCallError  # noqa: E402
 from quellen import build_norm_text, QuellenFehler  # noqa: E402
 import gates as G  # noqa: E402
 import judge as J  # noqa: E402
+import grenzfaelle as GF  # noqa: E402
 
 OUT_ROOT = os.path.join(PIPELINE, "runs", "produktion")
 
@@ -80,9 +81,10 @@ def judge_gates(verdict: dict, cand: dict) -> dict:
         det = ("judge answer truncated at max_tokens" if verdict.get("truncated")
                else "judge output not valid JSON")
         return {n: G.GateResult(n, G.FAIL, det)
-                for n in ("roundtrip", "scope_gap", "geltungsbereich")}
+                for n in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall")}
     return {"scope_gap": G.scope_gap_gate(verdict),
             "geltungsbereich": G.geltungsbereich_gate(verdict, cand),
+            "grenzfall": G.grenzfall_gate(verdict),
             "roundtrip": G.roundtrip_gate(verdict, cand)}
 
 
@@ -196,7 +198,8 @@ def redo_a(rules: list[dict], dry_run: bool) -> int:
 
         verdict, jprov, jkosten = J.judge_regel(
             client, roles["judge"], cand["norm_text"], src_a or "", cand["signature"],
-            cand["geltungsbedingungen"], models_hash)
+            cand["geltungsbedingungen"], models_hash,
+            dauersplitter=GF.dauersplitter(rule["rule_id"]))
         cost += jkosten
 
         fresh = {"syntax_a_first": G.GateResult("", first[0], "erster Versuch"),
@@ -255,7 +258,8 @@ def redo_judge(rules: list[dict], dry_run: bool) -> int:
         client = OpenRouterClient(dry_run=dry_run)
         verdict, jprov, kosten = J.judge_regel(
             client, roles["judge"], cand["norm_text"], src_a, cand["signature"],
-            cand["geltungsbedingungen"], models_hash)
+            cand["geltungsbedingungen"], models_hash,
+            dauersplitter=GF.dauersplitter(rule["rule_id"]))
 
         fresh = judge_gates(verdict, cand)
         vorhanden = {g["name"] for g in rep["gates"]}

@@ -35,6 +35,7 @@ from yamlstrict import load_yaml          # noqa: E402
 from client import OpenRouterClient       # noqa: E402
 from provenance import load_roles         # noqa: E402
 import judge as J                          # noqa: E402
+import grenzfaelle as GF                    # noqa: E402
 from run import build_candidate            # noqa: E402
 
 OUT = os.path.join(ROOT, "reports", "nachtschicht", "judge-replikation.json")
@@ -117,7 +118,7 @@ def main() -> int:
         for _ in range(2):
             v, prov, k = J.judge_regel(client, roles["judge"], cand["norm_text"], src,
                                        cand["signature"], cand["geltungsbedingungen"],
-                                       models_hash)
+                                       models_hash, dauersplitter=GF.dauersplitter(rid))
             verdikte.append(v)
             kosten += k
         if any(v.get("parse_error") for v in verdikte):

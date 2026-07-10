@@ -372,6 +372,14 @@ def unabhaengige_gaps(verdict: dict) -> list[dict]:
 def roundtrip_gate(judge, candidate: dict | None = None) -> GateResult:
     """Abweichungen fallen immer. Zusatzannahmen fallen, solange sie undeclared sind.
 
+    RESTRISIKO (Protokolldekret 2026-07-10, Punkt 5, woertlich): Nach der
+    Vervollstaendigung der Bedingungslisten ist die verbleibende Aufgabe dieses
+    Gates die Erkennung UNdeklarierter Annahmen, und dort bleibt Recall-Rauschen
+    ein False-PASS-Risiko - eine Annahme, die alle Inventarlaeufe verpassen. Das
+    Gate garantiert KEINE Vollstaendigkeit. Gegenlager: Union-until-Saturation,
+    Golden-Tests, Human-Review.
+
+
     Eine deklarierte Annahme ist keine stille Annahme: ist sie vom Judge explizit
     der ID einer Geltungsbedingung zugeordnet, wird sie angerechnet. Das Mapping
     steht im Report und ist Teil des Reviews - eine Annahme, die nur vage zu einer
@@ -406,6 +414,7 @@ def _verdict(judge) -> dict:
     if not isinstance(judge, dict):
         return roundtrip_parse(judge)
     d = dict(judge)
+    d["grenzfaelle"] = list(d.get("grenzfaelle") or [])
     d["scope_gap"] = [_normalize_gap(g) for g in (d.get("scope_gap") or [])]
     d["stille_zusatzannahmen"] = [_normalize_annahme(a)
                                   for a in (d.get("stille_zusatzannahmen") or [])]
@@ -479,6 +488,23 @@ def geltungsbereich_gate(judge, candidate: dict | None = None) -> GateResult:
     return GateResult("geltungsbereich", PASS,
                       f"{len(hinein)} wirkt_hinein-Norm-Teil(e) durch "
                       f"{len(bedingungen)} Geltungsbedingung(en) abgedeckt")
+
+
+def grenzfall_gate(judge) -> GateResult:
+    """Objektiv ambige Items routen fest in die Review-Queue.
+
+    Ein Item, das ueber Kampagnen hinweg wiederholt 2:1 gesplittet hat, wird nicht
+    in jeder Messung neu ausgewuerfelt (Protokolldekret 2026-07-10, Punkt 4). Der
+    Judge markiert es als Grenzfall; dieses Gate faellt dann, damit die Regel in den
+    Human-Review geht und nicht mit einem zufaelligen Mehrheitswurf durchlaeuft.
+    """
+    d = _verdict(judge)
+    gf = d.get("grenzfaelle") or []
+    if gf:
+        return GateResult("grenzfall", FAIL,
+                          f"{len(gf)} objektiv ambige(s) Item(s) -> Review; "
+                          f"erstes: {str(gf[0].get('norm_teil',''))[:110]}")
+    return GateResult("grenzfall", PASS, "keine registrierten Dauersplitter")
 
 
 def scope_gap_gate(judge) -> GateResult:

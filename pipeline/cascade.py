@@ -26,6 +26,7 @@ from provenance import load_roles, Provenance, now_iso
 import roles as R
 import gates as G
 import judge as J
+import grenzfaelle as GF
 
 
 @dataclass
@@ -101,13 +102,14 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
         # Stimme; ohne Mehrheit gilt das Item konservativ.
         verdict, jprov, jkosten = J.judge_regel(
             client, roles["judge"], norm, src_a, sig,
-            candidate.get("geltungsbedingungen"), models_hash)
+            candidate.get("geltungsbedingungen"), models_hash,
+            dauersplitter=GF.dauersplitter(candidate["id"]))
         res.provenance.extend(jprov)
         res.total_cost_usd += jkosten
         res.judge_verdict = verdict
         if verdict.get("parse_error"):
             det = "judge inventory produced no valid verdict"
-            for name in ("roundtrip", "scope_gap", "geltungsbereich"):
+            for name in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall"):
                 res.gate_results.append(G.GateResult(name, G.FAIL, det))
         else:
             res.gate_results.append(G.roundtrip_gate(verdict, candidate))
@@ -116,6 +118,7 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
             # Bedingung. Eine deklarierte Annahme ist keine stille Annahme.
             res.gate_results.append(G.scope_gap_gate(verdict))
             res.gate_results.append(G.geltungsbereich_gate(verdict, candidate))
+            res.gate_results.append(G.grenzfall_gate(verdict))
             res.backlog = G.unabhaengige_gaps(verdict)
     else:
         res.gate_results.append(G.GateResult("roundtrip", G.FAIL, "no A source"))

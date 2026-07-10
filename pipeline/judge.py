@@ -199,8 +199,24 @@ def _anker(feld: str, item: dict, input_names: set[str]) -> tuple:
     return ("betrifft_kat", betrifft, kat if kat in KATEGORIEN else "sonstige")
 
 
+INVENTAR_MIN = 2          # unter zwei Laeufen ist keine Saettigung feststellbar
+INVENTAR_MAX = 5          # Deckel
+INVENTAR_MAX_UNGUELTIG = 3
+
+
 def _inventar(client, role, kontext: str, signature: dict, models_hash: str,
               provenance: list):
+    """Union-until-Saturation (Protokolldekret 2026-07-10, Punkt 2).
+
+    Statt fester drei Inventarlaeufe wird gelaufen, bis ein Lauf KEINEN neuen Anker
+    mehr zur Union beitraegt (Deckel 5). Die Saettigungskurve - neue Items je Lauf -
+    ist ab jetzt das Deckungsmass; die alte "in allen Laeufen"-Deckung ist
+    gestrichen, weil sie die Union-Strategie strukturell bestraft.
+
+    Geclustert wird ueber den stabilen Schluessel (Anker + Kategorie); innerhalb
+    eines Buckets entscheidet der Textabgleich als Sekundaerstufe, damit zwei
+    verschiedene Befunde mit gleichem Anker nicht ueber-mergen.
+    """
     input_names = {G._normalize(k) for k in (signature or {}).get("inputs", {})}
 
     def pruefe(d):
@@ -214,53 +230,63 @@ def _inventar(client, role, kontext: str, signature: dict, models_hash: str,
             for x in d[f]:
                 if not isinstance(x, dict):
                     return None                 # kein Struktur-Item -> Antwort ungueltig
-                if _text(f, x):                 # leere Items sind kein Befund, kein Drop-Risiko
+                if _text(f, x):                 # leere Items sind kein Befund
                     gute.append(x)
             out[f] = gute
         return out
 
-    laeufe, ungueltig = _stimmen(client, role, "inventar@2", kontext, "judge_inventar",
-                                 models_hash, pruefe, provenance)
-    if not laeufe:
-        return None, {"inventar_ungueltig": ungueltig}
+    kand = {f: [] for f in FELDER}          # je Feld: {key, text, anker, count}
+    merge_log = {f: [] for f in FELDER}
+    saettigung = []                          # neue Anker je gueltigem Lauf
+    laeufe = ungueltig = 0
 
-    # VEREINIGUNG, nicht Mehrheit: ein Item, das nur ein Lauf sieht, wird trotzdem
-    # beurteilt (Weglassen waere stilles Gruen). Geclustert wird ueber den stabilen
-    # Schluessel (Anker + Kategorie); innerhalb eines Buckets entscheidet der
-    # Textabgleich als Sekundaerstufe, damit zwei verschiedene Befunde mit gleichem
-    # Anker nicht ueber-mergen. Jede Verschmelzung steht im Merge-Log.
-    ergebnis, streuung, merge_log = {}, {}, {}
-    for f in FELDER:
-        kand: list[dict] = []      # {key, text, anker, count}
-        merges: list[dict] = []
-        for lauf in laeufe:
+    while laeufe < INVENTAR_MAX and ungueltig <= INVENTAR_MAX_UNGUELTIG:
+        comp, prov = _call(client, role, "inventar@2", kontext, "judge_inventar",
+                           models_hash)
+        provenance.append(prov.to_dict())
+        d = None if comp.truncated else _json_of(comp.text)
+        parsed = pruefe(d) if d is not None else None
+        if parsed is None:
+            ungueltig += 1
+            continue
+        laeufe += 1
+        neu = 0
+        for f in FELDER:
             gesehen = set()
-            for item in lauf[f]:
+            for item in parsed[f]:
                 key = _anker(f, item, input_names)
                 txt = _text(f, item)
-                for i, k in enumerate(kand):
-                    if i in gesehen or k["key"] != key:
-                        continue
-                    if _gleich(txt, k["text"]):
-                        k["count"] += 1
-                        gesehen.add(i)
-                        if G._normalize(txt) != G._normalize(k["text"]):
-                            merges.append({"key": list(key), "cluster": k["text"][:160],
-                                           "eingeschmolzen": txt[:160]})
+                treffer = None
+                for i, k in enumerate(kand[f]):
+                    if i not in gesehen and k["key"] == key and _gleich(txt, k["text"]):
+                        treffer = i
                         break
+                if treffer is not None:
+                    kand[f][treffer]["count"] += 1
+                    gesehen.add(treffer)
+                    if G._normalize(txt) != G._normalize(kand[f][treffer]["text"]):
+                        merge_log[f].append({"key": list(key),
+                                             "cluster": kand[f][treffer]["text"][:160],
+                                             "eingeschmolzen": txt[:160]})
                 else:
-                    kand.append({"key": key, "text": txt, "anker": item, "count": 1})
-                    gesehen.add(len(kand) - 1)
-        ergebnis[f] = kand
-        streuung[f] = [{"text": k["text"][:120], "key": list(k["key"]),
-                        "in_laeufen": k["count"]} for k in kand if k["count"] < len(laeufe)]
-        merge_log[f] = merges
-    deckung = {f: sum(1 for k in ergebnis[f] if k["count"] == len(laeufe)) for f in FELDER}
-    return ergebnis, {"inventar_laeufe": len(laeufe), "inventar_ungueltig": ungueltig,
-                      "inventar_streuung": streuung, "merge_log": merge_log,
-                      "roh_items": {f: sum(len(l[f]) for l in laeufe) for f in FELDER},
-                      "cluster": {f: len(ergebnis[f]) for f in FELDER},
-                      "in_allen_laeufen": deckung}
+                    kand[f].append({"key": key, "text": txt, "anker": item, "count": 1})
+                    gesehen.add(len(kand[f]) - 1)
+                    neu += 1
+        saettigung.append(neu)
+        if laeufe >= INVENTAR_MIN and neu == 0:
+            break
+
+    if laeufe == 0:
+        return None, {"inventar_ungueltig": ungueltig}
+
+    streuung = {f: [{"text": k["text"][:120], "key": list(k["key"]),
+                     "in_laeufen": k["count"]} for k in kand[f] if k["count"] < laeufe]
+                for f in FELDER}
+    return kand, {"inventar_laeufe": laeufe, "inventar_ungueltig": ungueltig,
+                  "saettigungskurve": saettigung,
+                  "gesaettigt": bool(saettigung and saettigung[-1] == 0),
+                  "inventar_streuung": streuung, "merge_log": merge_log,
+                  "cluster": {f: len(kand[f]) for f in FELDER}}
 
 
 # -- Stufe 2: Urteil je Item --------------------------------------------------
@@ -316,11 +342,24 @@ def _urteil_abweichung(client, role, kontext, befund, models_hash, prov):
 
 # -- oeffentliche API ---------------------------------------------------------
 
+def _kkey(feld: str, cl: dict) -> str:
+    """Stabiler String-Schluessel eines Item-Clusters, ueber Kampagnen vergleichbar."""
+    return json.dumps([feld] + list(cl["key"]), ensure_ascii=False)
+
+
 def judge_regel(client: OpenRouterClient, role: RoleConfig, norm_text: str,
                 catala_src: str, signature: dict, geltungsbedingungen: list[dict],
-                models_hash: str) -> tuple[dict, list[dict], float]:
-    """Vollstaendiges Verdikt einer Regel. Rueckgabe: (verdict, provenance, kosten)."""
+                models_hash: str, dauersplitter: set[str] | None = None
+                ) -> tuple[dict, list[dict], float]:
+    """Vollstaendiges Verdikt einer Regel. Rueckgabe: (verdict, provenance, kosten).
+
+    `dauersplitter`: String-Schluessel von Items, die ueber Kampagnen hinweg
+    wiederholt 2:1 gesplittet haben (Grenzfaelle). Ein solches Item wird nicht neu
+    ausgewuerfelt, sondern fest als objektiv ambig markiert und routet in die
+    Review-Queue (Protokolldekret 2026-07-10, Punkt 4).
+    """
     provenance: list[dict] = []
+    dauersplitter = dauersplitter or set()
     bedingungen = geltungsbedingungen or []
     ids = {b["bedingung"] for b in bedingungen}
     bed_block = _bedingungen_block(bedingungen)
@@ -342,22 +381,23 @@ def judge_regel(client: OpenRouterClient, role: RoleConfig, norm_text: str,
     instab = dict(inv_meta)
     instab["item_splits"] = []
     instab["items_ohne_mehrheit"] = []
+    grenzfaelle = []
 
     abweichungen = []
     for cl in inventar["abweichungen"]:
-        befund = cl["text"]
+        befund, kk = cl["text"], _kkey("abweichungen", cl)
         urteil, split, ungueltig, n = _urteil_abweichung(client, role, kontext, befund,
                                                          models_hash, provenance)
-        _vermerke(instab, "abweichung", befund, split, ungueltig, n)
+        _vermerke(instab, "abweichung", befund, kk, split, ungueltig, n)
         if urteil["ist_echt"]:
             abweichungen.append(befund)
 
     annahmen = []
     for cl in inventar["annahmen"]:
-        annahme = cl["text"]
+        annahme, kk = cl["text"], _kkey("annahmen", cl)
         urteil, split, ungueltig, n = _urteil_annahme(client, role, kontext, bed_block,
                                                       annahme, models_hash, provenance, ids)
-        _vermerke(instab, "annahme", annahme, split, ungueltig, n)
+        _vermerke(instab, "annahme", annahme, kk, split, ungueltig, n)
         bid = urteil["mapping"]
         annahmen.append({"annahme": annahme,
                          "bedingung_id": None if bid == "undeclared" else bid,
@@ -366,35 +406,43 @@ def judge_regel(client: OpenRouterClient, role: RoleConfig, norm_text: str,
 
     gaps = []
     for cl in inventar["norm_teile"]:
-        teil = cl["text"]
+        teil, kk = cl["text"], _kkey("norm_teile", cl)
         urteil, split, ungueltig, n = _urteil_normteil(client, role, kontext, bed_block,
                                                        teil, models_hash, provenance, ids)
-        _vermerke(instab, "norm_teil", teil, split, ungueltig, n)
+        _vermerke(instab, "norm_teil", teil, kk, split, ungueltig, n)
+        ist_grenzfall = kk in dauersplitter
+        if ist_grenzfall:
+            grenzfaelle.append({"schluessel": kk, "norm_teil": teil[:160]})
         gaps.append({"norm_teil": teil, "klasse": urteil["klasse"],
                      "begruendung": "",
                      "abgedeckt_von": urteil["abgedeckt_von"],
-                     "referenz": cl["anker"].get("referenz")})
+                     "referenz": cl["anker"].get("referenz"),
+                     "grenzfall": ist_grenzfall})
 
+    instab["grenzfaelle"] = grenzfaelle
     verdict = {
         "parse_error": False,
         "faithful": not abweichungen and all(a["bedingung_id"] for a in annahmen),
         "abweichungen": abweichungen,
         "stille_zusatzannahmen": annahmen,
         "scope_gap": gaps,
+        "grenzfaelle": grenzfaelle,
         "judge_instability": instab,
-        "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Mehrheit aus 3 Stimmen je Item)",
+        "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
         "lauf_id": lauf_id,
         "timestamp": now_iso(),
     }
     return verdict, provenance, _kosten(provenance)
 
 
-def _vermerke(instab: dict, art: str, text: str, split: bool, ungueltig: int, n: int):
+def _vermerke(instab: dict, art: str, text: str, kkey: str, split: bool,
+              ungueltig: int, n: int):
     if split:
         instab["item_splits"].append({"art": art, "item": text[:120],
-                                      "gueltige_stimmen": n})
+                                      "schluessel": kkey, "gueltige_stimmen": n})
     if n < STIMMEN:
         instab["items_ohne_mehrheit"].append({"art": art, "item": text[:120],
+                                              "schluessel": kkey,
                                               "gueltige_stimmen": n,
                                               "ungueltige_versuche": ungueltig})
 

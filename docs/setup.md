@@ -265,3 +265,21 @@ Verwandte Fallstricke derselben Klasse:
 
 Gemeinsamer Nenner: Der Fehler zeigt sich nicht als Fehler, sondern als Erfolg.
 Deshalb muss jeder dieser Pfade einen expliziten Negativtest haben.
+
+## Das Round-Trip-Gate garantiert keine Vollständigkeit
+
+Wörtlich ins Protokoll (Dekret 2026-07-10, Punkt 5), damit niemand dem Gate eine
+Eigenschaft zuschreibt, die es nicht hat:
+
+> Nach der Vervollständigung der Bedingungslisten ist die verbleibende Aufgabe des
+> Round-Trip-Gates die Erkennung **undeklarierter** Annahmen, und dort bleibt
+> Recall-Rauschen ein False-PASS-Risiko — eine Annahme, die alle Inventarläufe
+> verpassen. Gegenlager: Union-until-Saturation, Golden-Tests, Human-Review.
+
+Konkret: der Judge listet das Inventar der Prüf-Items als Freitext-Schritt, und
+sein Recall streut (gemessen: in einer Kampagne waren von je ~11 Annahmen einer
+Regel nur 1 in beiden Läufen). Ein `roundtrip=PASS` heißt daher „unter den
+gefundenen Items war keine undeklarierte Annahme", nicht „es gibt keine". Die
+Union-until-Saturation-Strategie mildert das (sie läuft, bis ein Inventarlauf nichts
+Neues mehr bringt), beseitigt es aber nicht. Vollständigkeit kommt erst aus dem
+Zusammenspiel mit dem Golden-Test-Gate und dem Human-Review.
