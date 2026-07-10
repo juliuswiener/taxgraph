@@ -27,6 +27,7 @@ import roles as R
 import gates as G
 import judge as J
 import grenzfaelle as GF
+import item_registry as IR
 
 
 @dataclass
@@ -45,6 +46,7 @@ class CascadeResult:
     transport: dict = field(default_factory=dict)
     repaired: dict = field(default_factory=dict)   # {"a": bool, "b": bool}
     backlog: list = field(default_factory=list)    # unabhaengige scope_gaps
+    discoveries: list = field(default_factory=list)  # neue Items -> Triage
     bedingungen: list = field(default_factory=list)  # IDs, gelten am Status
 
     def gates_dict(self):
@@ -107,23 +109,20 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
         res.provenance.extend(jprov)
         res.total_cost_usd += jkosten
         res.judge_verdict = verdict
-        if verdict.get("parse_error"):
-            det = "judge inventory produced no valid verdict"
-            for name in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall"):
-                res.gate_results.append(G.GateResult(name, G.FAIL, det))
-        else:
-            res.gate_results.append(G.roundtrip_gate(verdict, candidate))
-            # scope_gap ist informativ (zaehlt, eskaliert nicht). Blockierend ist
-            # geltungsbereich: es faellt auf jeden wirkt_hinein OHNE abdeckende
-            # Bedingung. Eine deklarierte Annahme ist keine stille Annahme.
-            res.gate_results.append(G.scope_gap_gate(verdict))
-            res.gate_results.append(G.geltungsbereich_gate(verdict, candidate))
-            res.gate_results.append(G.grenzfall_gate(verdict))
+        # Registry-Ratsche (Stufe 4): der Judge ist Detektor. Die Gates pruefen
+        # gegen die Registry, nicht gegen diesen Lauf; neue Funde landen in der
+        # Discovery-Queue und kippen kein Gate.
+        rule_min = {"geltungsbedingungen": candidate.get("geltungsbedingungen") or []}
+        judge_gates, discoveries = IR.gates_fuer(candidate["id"], rule_min, verdict)
+        for name in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall", "discovery"):
+            if name in judge_gates:
+                res.gate_results.append(_named(name, judge_gates[name]))
+        res.discoveries = discoveries
+        if not verdict.get("parse_error"):
             res.backlog = G.unabhaengige_gaps(verdict)
     else:
-        res.gate_results.append(G.GateResult("roundtrip", G.FAIL, "no A source"))
-        res.gate_results.append(G.GateResult("scope_gap", G.FAIL, "no A source"))
-        res.gate_results.append(G.GateResult("geltungsbereich", G.FAIL, "no A source"))
+        for name in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall"):
+            res.gate_results.append(G.GateResult(name, G.FAIL, "no A source"))
 
     # 7. Clerk-Tests
     res.gate_results.append(G.clerk_gate(src_a, mod_a, candidate))
@@ -136,26 +135,30 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
         res.queue_status = "invalid_mixed_models_yaml"
         return res
 
-    # queue decision - the `_first` gates are diagnostics, not gates: a run that
-    # only failed before its repair round must not be flagged for that.
-    statuses = [g.status for g in res.gate_results if not g.name.endswith("_first")]
-    bedingungen = [b["bedingung"] for b in (candidate.get("geltungsbedingungen") or [])]
-    if G.FAIL in statuses:
-        res.queue_status = "flagged_for_review"
-    elif G.SKIP in statuses:
-        res.queue_status = "verified_partial (toolchain pending)"
-    elif J.hat_split_auf_blockierendem_gate(res.judge_verdict):
-        # Ein 2:1-Split auf einem blockierenden Gate ist kein stilles PASS.
-        # Der Split ist Information und gehoert vor Julius.
-        res.queue_status = "judge_split_eskaliert"
-    elif bedingungen:
-        # Statusehrlichkeit: eine Teilformalisierung ist nie schlicht "verified".
-        # Sie gilt nur unter ihren Bedingungen, und die stehen am Status.
-        res.queue_status = "verified_bedingt"
-    else:
-        res.queue_status = "verified"
-    res.bedingungen = bedingungen
+    res.queue_status = _queue_status(res.gate_results, candidate, res.discoveries)
+    res.bedingungen = [b["bedingung"] for b in (candidate.get("geltungsbedingungen") or [])]
     return res
+
+
+def _queue_status(gate_results, candidate, discoveries) -> str:
+    """Queue-Entscheidung der Registry-Ratsche.
+
+    Das `discovery`-Gate ist SKIP bei neuen Funden - das darf NICHT als
+    "toolchain pending" gelten. Neue Funde routen in die Triage-Queue, kippen aber
+    kein deterministisches Gate (Punkt 3). Judge-Splits sind informativ und
+    entscheiden nichts mehr.
+    """
+    echte = [g for g in gate_results
+             if not g.name.endswith("_first") and g.name != "discovery"]
+    if G.FAIL in [g.status for g in echte]:
+        return "flagged_for_review"
+    if discoveries:
+        return "discovery_triage"
+    if G.SKIP in [g.status for g in echte]:
+        return "verified_partial (toolchain pending)"
+    if candidate.get("geltungsbedingungen"):
+        return "verified_bedingt"
+    return "verified"
 
 
 def _named(name: str, g: G.GateResult) -> G.GateResult:

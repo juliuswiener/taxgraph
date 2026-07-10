@@ -1,0 +1,37 @@
+# Signatur-Konventionen (Protokolldekret Stufe 4, Punkt 4).
+#
+# Generische Annahmen, die fuer JEDE Regel gelten und daher EINMAL global
+# deklariert werden - statt in jeder Regel-Bedingungsliste erneut. Der Judge
+# bekommt sie als Mapping-Ziel: eine Annahme, die eine dieser Konventionen
+# ausdrueckt, mappt hierher (bedingung_id = "konv:<id>") und ist damit keine
+# undeklarierte Annahme. Erwartung: ein Grossteil der oszillierenden Inventar-Funde
+# ist genau diese Klasse (Betraege-in-EUR, VZ-Bezug, Ganzzahl-Monate ...).
+#
+# Diese Datei ist Teil der Freigabe-Semantik: `verified_bedingt` heisst, alle
+# registrierten Items sind abgedeckt - durch eine Regel-Bedingung ODER eine
+# Konvention hier.
+konventionen:
+- id: betraege_in_euro
+  kategorie: einheit
+  beschreibung: "Alle Geldbetraege sind Euro-Betraege; Money-Literale tragen die
+    Waehrung implizit. Keine Fremdwaehrung, keine Cent-als-Ganzzahl-Interpretation."
+- id: vz_bezug_der_regel
+  kategorie: zeitbezug
+  beschreibung: "Die Regel gilt fuer den Veranlagungszeitraum, dessen Norm-Fassung
+    eingefroren ist. Betraege und Saetze sind die dieses VZ."
+- id: ganzzahl_monate
+  kategorie: zeitbezug
+  beschreibung: "Monatsangaben sind volle Kalendermonate als nichtnegative
+    Ganzzahl (0..12), keine anteiligen Tage."
+- id: input_nur_etikettiertes
+  kategorie: interpretation
+  beschreibung: "Eine Eingabe enthaelt genau das, was ihr Name/Etikett angibt, und
+    nichts anderes - der aufrufende Kontext hat sie bereits sauber abgegrenzt."
+- id: nichtnegative_betraege
+  kategorie: einheit
+  beschreibung: "Aufwendungen, Kosten und Einkuenfte sind als nichtnegativ
+    angenommen, sofern die Norm nichts anderes sagt."
+- id: keine_zusaetzliche_rundung
+  kategorie: rundung
+  beschreibung: "Es wird nur dort gerundet, wo die Norm es anordnet. Zwischen-
+    ergebnisse bleiben ungerundet."

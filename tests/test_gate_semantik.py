@@ -199,21 +199,29 @@ def test_manifeste_laden_strikt():
 
 # -- regate darf ein kaputtes Verdikt nicht ueberspringen ---------------------
 
+REGCAND = {"id": "testregel_ohne_registry", "geltungsbedingungen": []}
+
+
 @pytest.mark.parametrize("kaputt", [{"parse_error": True}, {"truncated": True}])
 def test_judge_gates_fallen_bei_kaputtem_verdikt(kaputt):
     """§ 9 Abs. 4a stand zwischenzeitlich gruen, weil `--regate` bei einem
-    parse_error-Verdikt die drei Judge-Gates uebersprang und alte PASS-Werte
-    stehen liess."""
+    parse_error-Verdikt die Judge-Gates uebersprang. judge_gates gibt jetzt
+    (gates, discoveries) zurueck (Registry-Ratsche)."""
     from run import judge_gates
-    g = judge_gates(kaputt, BED)
-    assert set(g) == {"roundtrip", "scope_gap", "geltungsbereich", "grenzfall"}
+    g, disc = judge_gates(kaputt, REGCAND)
+    assert {"roundtrip", "geltungsbereich", "grenzfall"} <= set(g)
     assert all(x.status == G.FAIL for x in g.values())
+    assert disc == []
 
 
-def test_judge_gates_bei_gutem_verdikt():
+def test_judge_gates_bei_gutem_verdikt_leere_registry():
+    """Ohne registrierte Items sind die deterministischen Gates gruen; neue Funde
+    landen in der Discovery-Queue, kippen aber kein Gate."""
     from run import judge_gates
-    a = [{"annahme": "keine Mahlzeit", "bedingung_id": "keine_mahlzeitengestellung"}]
-    g = judge_gates(G.roundtrip_parse(verdict(a, gaps=WIRKT)), BED)
+    a = [{"annahme": "keine Mahlzeit", "bedingung_id": "keine_mahlzeitengestellung",
+          "betrifft": "x", "kategorie": "interpretation"}]
+    g, disc = judge_gates(G.roundtrip_parse(verdict(a, gaps=WIRKT)), REGCAND)
     assert g["roundtrip"].status == G.PASS
     assert g["geltungsbereich"].status == G.PASS
-    assert g["scope_gap"].status == G.PASS
+    assert g["discovery"].status == G.SKIP
+    assert len(disc) >= 1

@@ -48,6 +48,27 @@ from provenance import stamp, Provenance, now_iso
 from roles import signature_text, _bedingungen_block
 import gates as G
 
+_KONVENTIONEN = None
+
+
+def _konventionen() -> list[dict]:
+    global _KONVENTIONEN
+    if _KONVENTIONEN is None:
+        import os
+        from yamlstrict import load_yaml
+        p = os.path.join(os.path.dirname(__file__), "signatur_konventionen.yaml")
+        _KONVENTIONEN = (load_yaml(p) or {}).get("konventionen", []) if os.path.exists(p) else []
+    return _KONVENTIONEN
+
+
+def _konv_block() -> str:
+    ks = _konventionen()
+    if not ks:
+        return ""
+    zeilen = "\n".join(f"  - konv:{k['id']} ({k.get('kategorie','')}): {k.get('beschreibung','')}"
+                        for k in ks)
+    return ("\n\nGlobale Konventionen (nur diese konv-IDs sind zulaessig):\n" + zeilen)
+
 STIMMEN = 3
 MAX_VERSUCHE = 6          # pro Item bzw. pro Inventarlauf
 AEHNLICHKEIT = 0.6        # Jaccard-Schwelle fuer "dasselbe Item"
@@ -292,14 +313,17 @@ def _inventar(client, role, kontext: str, signature: dict, models_hash: str,
 # -- Stufe 2: Urteil je Item --------------------------------------------------
 
 def _urteil_annahme(client, role, kontext, bed_block, annahme, models_hash, prov, ids):
+    konv_ids = {f"konv:{k['id']}" for k in _konventionen()}
+    gueltig = set(ids) | konv_ids
+
     def pruefe(d):
         m = d.get("mapping") if isinstance(d, dict) else None
         if not isinstance(m, str) or not m.strip():
             return None
-        return {"mapping": m if m in ids else "undeclared"}
+        return {"mapping": m if m in gueltig else "undeclared"}
 
-    task = f"{kontext}{bed_block}\n\nZu beurteilende Zusatzannahme:\n{annahme}"
-    stimmen, ungueltig = _stimmen(client, role, "item_annahme@1", task,
+    task = f"{kontext}{bed_block}{_konv_block()}\n\nZu beurteilende Zusatzannahme:\n{annahme}"
+    stimmen, ungueltig = _stimmen(client, role, "item_annahme@2", task,
                                   "judge_item", models_hash, pruefe, prov)
     gewinner, split = _mehrheit(stimmen)
     if gewinner is None:                       # keine gueltige Stimme -> konservativ

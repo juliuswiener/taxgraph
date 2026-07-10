@@ -39,6 +39,7 @@ from quellen import build_norm_text, QuellenFehler  # noqa: E402
 import gates as G  # noqa: E402
 import judge as J  # noqa: E402
 import grenzfaelle as GF  # noqa: E402
+import item_registry as IR  # noqa: E402
 
 OUT_ROOT = os.path.join(PIPELINE, "runs", "produktion")
 
@@ -66,26 +67,18 @@ def build_candidate(rule: dict) -> dict:
     }
 
 
-def judge_gates(verdict: dict, cand: dict) -> dict:
-    """Die drei Judge-Gates aus einem gespeicherten Verdikt.
+def judge_gates(verdict: dict, cand: dict) -> tuple[dict, list]:
+    """Registry-getriebene Judge-Gates + Discovery-Liste aus einem Verdikt.
 
-    Ein unlesbares oder abgeschnittenes Verdikt darf sie nicht UEBERSPRINGEN:
-    sonst bleiben alte PASS-Werte im Report stehen und die Regel sieht gruen aus,
-    obwohl ihr Urteil nie zustande kam. Genau so stand § 9 Abs. 4a zwischenzeitlich
-    auf `verified_bedingt`, waehrend der Judge in Wahrheit am Token-Limit
-    abgeschnitten worden war.
+    Die Gates pruefen gegen die Registry, nicht gegen das frische Verdikt (Stufe 4).
+    Ein unlesbares oder abgeschnittenes Verdikt darf sie nicht UEBERSPRINGEN: sonst
+    bleiben alte PASS-Werte im Report stehen und die Regel sieht gruen aus, obwohl
+    ihr Urteil nie zustande kam. Rueckgabe: ({gate_name: GateResult}, discoveries).
     """
     if not verdict:
-        return {}
-    if verdict.get("parse_error") or verdict.get("truncated"):
-        det = ("judge answer truncated at max_tokens" if verdict.get("truncated")
-               else "judge output not valid JSON")
-        return {n: G.GateResult(n, G.FAIL, det)
-                for n in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall")}
-    return {"scope_gap": G.scope_gap_gate(verdict),
-            "geltungsbereich": G.geltungsbereich_gate(verdict, cand),
-            "grenzfall": G.grenzfall_gate(verdict),
-            "roundtrip": G.roundtrip_gate(verdict, cand)}
+        return {}, []
+    rule_min = {"geltungsbedingungen": cand.get("geltungsbedingungen") or []}
+    return IR.gates_fuer(cand["id"], rule_min, verdict)
 
 
 def regate(rules: list[dict]) -> int:
@@ -109,7 +102,8 @@ def regate(rules: list[dict]) -> int:
             fresh["equivalence"] = G.equivalence_gate(src, rep["catala_b"], cand)
         # scope_gap und geltungsbereich sind ebenfalls deterministisch: sie lesen
         # das gespeicherte Judge-Verdikt, kein Modell laeuft erneut.
-        fresh.update(judge_gates(rep.get("judge_verdict") or {}, cand))
+        jg, disc = judge_gates(rep.get("judge_verdict") or {}, cand)
+        fresh.update(jg)
         vorhanden = {g["name"] for g in rep["gates"]}
         for g in rep["gates"]:
             if g["name"] in fresh:
@@ -126,8 +120,9 @@ def regate(rules: list[dict]) -> int:
                 changed += 1
         rep["failed_gates"] = [g["name"] for g in rep["gates"]
                                if g["status"] == G.FAIL and not g["name"].endswith("_first")]
+        rep["discoveries"] = disc
         rep["queue_status"] = _queue_status(rep["gates"], rule,
-                                            rep.get("judge_verdict"))
+                                            rep.get("judge_verdict"), disc)
         rep["bedingungen"] = [b["bedingung"] for b in rule.get("geltungsbedingungen", [])]
         # normalisiert: aeltere Verdikte tragen nackte Strings ohne Mapping
         rep["annahmen_mapping"] = [G._normalize_annahme(a) for a in
@@ -202,11 +197,12 @@ def redo_a(rules: list[dict], dry_run: bool) -> int:
             dauersplitter=GF.dauersplitter(rule["rule_id"]))
         cost += jkosten
 
+        jg, disc = judge_gates(verdict, cand)
         fresh = {"syntax_a_first": G.GateResult("", first[0], "erster Versuch"),
                  "typecheck_a_first": G.GateResult("", first[1], "erster Versuch"),
                  "syntax_a": syn, "typecheck_a": tc,
                  "equivalence": G.equivalence_gate(src_a, src_b, cand),
-                 **judge_gates(verdict, cand),
+                 **jg,
                  "clerk": G.clerk_gate(src_a, mod_a, cand, ROOT)}
         vorhanden = {g["name"] for g in rep["gates"]}
         for g in rep["gates"]:
@@ -224,7 +220,8 @@ def redo_a(rules: list[dict], dry_run: bool) -> int:
         rep["judge_instability"] = verdict.get("judge_instability", {})
         rep["failed_gates"] = [g["name"] for g in rep["gates"]
                                if g["status"] == G.FAIL and not g["name"].endswith("_first")]
-        rep["queue_status"] = _queue_status(rep["gates"], rule, verdict)
+        rep["discoveries"] = disc
+        rep["queue_status"] = _queue_status(rep["gates"], rule, verdict, disc)
         rep["provenance"] += [x.to_dict() for x in (p, pa)] + jprov
         rep["total_cost_usd"] = round(rep.get("total_cost_usd", 0.0) + cost, 6)
         json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
@@ -261,7 +258,7 @@ def redo_judge(rules: list[dict], dry_run: bool) -> int:
             cand["geltungsbedingungen"], models_hash,
             dauersplitter=GF.dauersplitter(rule["rule_id"]))
 
-        fresh = judge_gates(verdict, cand)
+        fresh, disc = judge_gates(verdict, cand)
         vorhanden = {g["name"] for g in rep["gates"]}
         for g in rep["gates"]:
             if g["name"] in fresh:
@@ -278,7 +275,8 @@ def redo_judge(rules: list[dict], dry_run: bool) -> int:
         rep["bedingungen"] = [b["bedingung"] for b in rule.get("geltungsbedingungen", [])]
         rep["failed_gates"] = [g["name"] for g in rep["gates"]
                                if g["status"] == G.FAIL and not g["name"].endswith("_first")]
-        rep["queue_status"] = _queue_status(rep["gates"], rule, verdict)
+        rep["discoveries"] = disc
+        rep["queue_status"] = _queue_status(rep["gates"], rule, verdict, disc)
         rep["provenance"] += jprov
         rep["total_cost_usd"] = round(rep.get("total_cost_usd", 0.0) + kosten, 6)
         json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
@@ -295,24 +293,25 @@ def redo_judge(rules: list[dict], dry_run: bool) -> int:
 
 
 def _queue_status(gates: list[dict], rule: dict | None = None,
-                  verdict: dict | None = None) -> str:
-    st = [g["status"] for g in gates if not g["name"].endswith("_first")]
+                  verdict: dict | None = None, discoveries: list | None = None) -> str:
+    # Das `discovery`-Gate ist SKIP bei neuen Funden - kein "toolchain pending".
+    st = [g["status"] for g in gates
+          if not g["name"].endswith("_first") and g["name"] != "discovery"]
     if G.FAIL in st:
         return "flagged_for_review"
-    # Ein `freigabe: blockiert` im Manifest ueberstimmt gruene Gates. Sonst koennte
-    # eine Regel, deren Redundanz-Gate nie getragen hat, still auf `verified`
-    # rutschen, sobald das letzte technische Gate gruen wird.
+    # Ein `freigabe: blockiert` im Manifest ueberstimmt gruene Gates.
     if (rule or {}).get("freigabe") == "blockiert":
         return "freigabe_blockiert"
+    # Neue Funde routen in die Triage-Queue (Registry-Ratsche, Punkt 3). Sie kippen
+    # kein deterministisches Gate, aber die Regel ist nicht fertig, bis Julius sie
+    # triagiert hat.
+    if discoveries:
+        return "discovery_triage"
     if G.SKIP in st:
         return "verified_partial (toolchain pending)"
-    # Ein 2:1-Split auf einem blockierenden Gate ist kein stilles PASS: der Split
-    # ist Information und eskaliert.
-    if verdict and J.hat_split_auf_blockierendem_gate(verdict):
-        return "judge_split_eskaliert"
     # Statusehrlichkeit: eine Regel mit Geltungsbedingungen ist nie schlicht
-    # "verified". Sie gilt nur unter ihren Bedingungen; Phase 5 muss sie als
-    # Fragen stellen, und die Engine darf die Regel bei Verletzung nicht feuern.
+    # "verified". verified_bedingt = alle REGISTRIERTEN Items abgedeckt +
+    # deterministische Gates gruen.
     if (rule or {}).get("geltungsbedingungen"):
         return "verified_bedingt"
     return "verified"
@@ -413,6 +412,7 @@ def main() -> int:
             "models_yaml_hash": res.models_yaml_hash,
             "queue_status": queue,
             "bedingungen": res.bedingungen,
+            "discoveries": res.discoveries,
             "annahmen_mapping": (res.judge_verdict or {}).get("stille_zusatzannahmen", []),
             "gates": res.gates_dict(),
             "failed_gates": [g.name for g in res.gate_results

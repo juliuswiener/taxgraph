@@ -89,7 +89,7 @@ def test_item_aus_nur_einem_inventar_wird_trotzdem_beurteilt():
     einmal_extra = inv(ann=["Die Eingabe x wird als Nettobetrag gelesen",
                             "Ein voellig anderer Gedanke ueber Fristen"])
     v, _ = lauf({"inventar@2": [dreimal_gleich, einmal_extra, dreimal_gleich],
-                 "item_annahme@1": ['{"mapping": "nur_inland"}'] * 6})
+                 "item_annahme@2": ['{"mapping": "nur_inland"}'] * 6})
     assert len(v["stille_zusatzannahmen"]) == 2
     streuung = v["judge_instability"]["inventar_streuung"]["annahmen"]
     assert len(streuung) == 1 and streuung[0]["in_laeufen"] == 1
@@ -101,7 +101,7 @@ def test_umformulierung_ist_dasselbe_item():
     kurz = inv(ann=["Die Eingabe x ist ein Nettobetrag"])
     lang = inv(ann=["Die Formalisierung nimmt an, dass die Eingabe x als Nettobetrag zu lesen ist"])
     v, _ = lauf({"inventar@2": [kurz, lang, kurz],
-                 "item_annahme@1": ['{"mapping": "nur_inland"}'] * 3})
+                 "item_annahme@2": ['{"mapping": "nur_inland"}'] * 3})
     assert len(v["stille_zusatzannahmen"]) == 1
 
 
@@ -118,13 +118,13 @@ def test_item_in_zwei_von_drei_inventaren_zaehlt():
 def test_parse_fehler_ist_keine_stimme():
     i = inv(ann=["Die Eingabe x ist ein Nettobetrag"])
     c = FakeClient({"inventar@2": [i, i, i],
-                    "item_annahme@1": ["kein JSON", '{"mapping": "nur_inland"}',
+                    "item_annahme@2": ["kein JSON", '{"mapping": "nur_inland"}',
                                        '{"mapping": "nur_inland"}',
                                        '{"mapping": "nur_inland"}']})
     v, prov, _ = J.judge_regel(c, ROLE, "norm", "src", SIG, BED, "hash")
     assert v["stille_zusatzannahmen"][0]["bedingung_id"] == "nur_inland"
     # vier Versuche fuer drei gueltige Stimmen
-    assert c.calls.count("item_annahme@1") == 4
+    assert c.calls.count("item_annahme@2") == 4
     assert not v["judge_instability"]["item_splits"]
 
 
@@ -144,7 +144,7 @@ def test_ohne_gueltige_stimme_gilt_konservativ():
     unlesbar = ["Prosa"] * J.MAX_VERSUCHE
     v, _ = lauf({"inventar@2": [i, i, i],
                  "item_abweichung@1": list(unlesbar),
-                 "item_annahme@1": list(unlesbar),
+                 "item_annahme@2": list(unlesbar),
                  "item_normteil@1": list(unlesbar)})
     assert v["abweichungen"] == ["Ein Befund"]
     assert v["stille_zusatzannahmen"][0]["bedingung_id"] is None
@@ -157,7 +157,7 @@ def test_ohne_gueltige_stimme_gilt_konservativ():
 def test_zwei_zu_eins_mehrheit_entscheidet_und_wird_vermerkt():
     i = inv(ann=["Die Eingabe x ist ein Nettobetrag"])
     v, _ = lauf({"inventar@2": [i, i, i],
-                 "item_annahme@1": ['{"mapping": "nur_inland"}',
+                 "item_annahme@2": ['{"mapping": "nur_inland"}',
                                     '{"mapping": "undeclared"}',
                                     '{"mapping": "nur_inland"}']})
     assert v["stille_zusatzannahmen"][0]["bedingung_id"] == "nur_inland"
@@ -168,7 +168,7 @@ def test_zwei_zu_eins_mehrheit_entscheidet_und_wird_vermerkt():
 def test_split_auf_blockierendem_gate_eskaliert():
     i = inv(ann=["Die Eingabe x ist ein Nettobetrag"])
     v, _ = lauf({"inventar@2": [i, i, i],
-                 "item_annahme@1": ['{"mapping": "nur_inland"}',
+                 "item_annahme@2": ['{"mapping": "nur_inland"}',
                                     '{"mapping": "undeclared"}',
                                     '{"mapping": "nur_inland"}']})
     assert J.hat_split_auf_blockierendem_gate(v) is True
@@ -177,7 +177,7 @@ def test_split_auf_blockierendem_gate_eskaliert():
 def test_einstimmig_eskaliert_nicht():
     i = inv(ann=["Die Eingabe x ist ein Nettobetrag"])
     v, _ = lauf({"inventar@2": [i, i, i],
-                 "item_annahme@1": ['{"mapping": "nur_inland"}'] * 3})
+                 "item_annahme@2": ['{"mapping": "nur_inland"}'] * 3})
     assert J.hat_split_auf_blockierendem_gate(v) is False
     assert v["faithful"] is True
 
@@ -185,7 +185,7 @@ def test_einstimmig_eskaliert_nicht():
 def test_erfundene_bedingungs_id_wird_zu_undeclared():
     i = inv(ann=["Die Eingabe x ist ein Nettobetrag"])
     v, _ = lauf({"inventar@2": [i, i, i],
-                 "item_annahme@1": ['{"mapping": "gibt_es_nicht"}'] * 3})
+                 "item_annahme@2": ['{"mapping": "gibt_es_nicht"}'] * 3})
     assert v["stille_zusatzannahmen"][0]["bedingung_id"] is None
     assert v["faithful"] is False
 
@@ -224,7 +224,7 @@ def test_gleicher_anker_andere_kategorie_bleibt_getrennt():
         "annahmen": [{"betrifft": "x", "kategorie": "zeitbezug",
                       "aussage": "x gilt ganzjaehrig"}]}, ensure_ascii=False)
     v, _ = lauf({"inventar@2": [interp, zeit, interp],
-                 "item_annahme@1": ['{"mapping": "nur_inland"}'] * 6})
+                 "item_annahme@2": ['{"mapping": "nur_inland"}'] * 6})
     assert len(v["stille_zusatzannahmen"]) == 2
 
 
@@ -238,7 +238,7 @@ def test_gleicher_schluessel_verschiedener_text_bleibt_getrennt():
         "annahmen": [{"betrifft": "x", "kategorie": "interpretation",
                       "aussage": "x umfasst ausschliesslich inlaendische Sachverhalte"}]}, ensure_ascii=False)
     v, _ = lauf({"inventar@2": [a, b, a],
-                 "item_annahme@1": ['{"mapping": "nur_inland"}'] * 6})
+                 "item_annahme@2": ['{"mapping": "nur_inland"}'] * 6})
     assert len(v["stille_zusatzannahmen"]) == 2
 
 
@@ -249,7 +249,7 @@ def test_erfundener_anker_faellt_auf_sammelbucket():
         "annahmen": [{"betrifft": "gibt_es_nicht", "kategorie": "interpretation",
                       "aussage": "Eine Annahme ueber etwas Erfundenes"}]}, ensure_ascii=False)
     v, _ = lauf({"inventar@2": [erfunden, erfunden, erfunden],
-                 "item_annahme@1": ['{"mapping": "undeclared"}'] * 3})
+                 "item_annahme@2": ['{"mapping": "undeclared"}'] * 3})
     assert len(v["stille_zusatzannahmen"]) == 1
     assert v["stille_zusatzannahmen"][0]["bedingung_id"] is None
 
@@ -265,7 +265,7 @@ def test_norm_teil_traegt_referenz():
 
 def test_annahme_traegt_anker():
     v, _ = lauf({"inventar@2": [inv(ann=["Die Eingabe x ist ein Nettobetrag"])] * 3,
-                 "item_annahme@1": ['{"mapping": "nur_inland"}'] * 3})
+                 "item_annahme@2": ['{"mapping": "nur_inland"}'] * 3})
     a = v["stille_zusatzannahmen"][0]
     assert a["betrifft"] == "x" and a["kategorie"] == "interpretation"
 
@@ -276,7 +276,7 @@ def test_inventar_stoppt_bei_saettigung():
     """Zwei identische Inventare -> Lauf 2 bringt nichts Neues -> Stopp nach 2."""
     i = inv(ann=["Die Eingabe x ist ein Nettobetrag"])
     c = FakeClient({"inventar@2": [i, i, i, i, i],
-                    "item_annahme@1": ['{"mapping": "nur_inland"}'] * 3})
+                    "item_annahme@2": ['{"mapping": "nur_inland"}'] * 3})
     v, prov, _ = J.judge_regel(c, ROLE, "norm", "src", SIG, BED, "hash")
     assert c.calls.count("inventar@2") == 2
     assert v["judge_instability"]["gesaettigt"] is True
