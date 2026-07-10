@@ -339,3 +339,33 @@ def test_grenzfall_builder_erkennt_dauersplitter(tmp_path):
     assert "r1" in neu
     keys = {e["schluessel"] for e in neu["r1"]}
     assert keys == {"k_dauer"}
+
+
+# -- Vervollstaendigungs-Werkzeug ---------------------------------------------
+
+def test_vervollstaendigung_union_und_paket(tmp_path):
+    import vervollstaendigung as VV
+    v1 = {"judge_verdict": {"parse_error": False,
+          "scope_gap": [{"norm_teil": "Satz 2 Ausnahme", "referenz": "§ 9 Abs. 2",
+                         "klasse": "wirkt_hinein", "abgedeckt_von": "none"}],
+          "stille_zusatzannahmen": [{"annahme": "x ist netto", "betrifft": "x",
+                                     "kategorie": "einheit", "bedingung_id": None}]},
+          "candidate_id": "r1"}
+    f = tmp_path / "r1.json"; f.write_text(json.dumps(v1), encoding="utf-8")
+    u = VV._union([v1["judge_verdict"]])
+    assert u["gaps"]["§ 9 Abs. 2"]["wirkt"] == 1
+    assert u["gaps"]["§ 9 Abs. 2"]["gedeckt"] == 0
+    assert u["annahmen"][("x", "einheit")]["undeclared"] == 1
+    md = VV._paket("r1", {}, u, "2026-07-11")
+    assert "§ 9 Abs. 2" in md and "x_einheit" in md
+
+
+def test_vervollstaendigung_gedeckter_gap_kein_kandidat():
+    import vervollstaendigung as VV
+    v = {"scope_gap": [{"norm_teil": "t", "referenz": "§ 1", "klasse": "wirkt_hinein",
+                        "abgedeckt_von": "eine_bedingung"}],
+         "stille_zusatzannahmen": []}
+    u = VV._union([v])
+    md = VV._paket("r", {}, u, "2026-07-11")
+    # gedeckter wirkt_hinein taucht NICHT als offener Kandidat auf
+    assert "Keine." in md
