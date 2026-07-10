@@ -114,14 +114,14 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
         # Discovery-Queue und kippen kein Gate.
         rule_min = {"geltungsbedingungen": candidate.get("geltungsbedingungen") or []}
         judge_gates, discoveries = IR.gates_fuer(candidate["id"], rule_min, verdict)
-        for name in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall", "discovery"):
+        for name in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall", "defekt", "discovery"):
             if name in judge_gates:
                 res.gate_results.append(_named(name, judge_gates[name]))
         res.discoveries = discoveries
         if not verdict.get("parse_error"):
             res.backlog = G.unabhaengige_gaps(verdict)
     else:
-        for name in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall"):
+        for name in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall", "defekt"):
             res.gate_results.append(G.GateResult(name, G.FAIL, "no A source"))
 
     # 7. Clerk-Tests

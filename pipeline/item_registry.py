@@ -16,10 +16,17 @@ Ablauf (AINA):
   4. Die Gates pruefen gegen die Registry, nicht gegen den frischen Lauf.
 
 Triage-Status eines registrierten Items:
-  bedingung_neu   - abgedeckt durch eine Geltungsbedingung (`bedingung` gesetzt)
-  grenzfall       - objektiv ambig -> routet in den Review (grenzfall-Gate)
-  nicht_material  - generische Annahme, global in Signatur-Konventionen gemappt
-  nicht_echt      - kein echter Befund
+  bedingung_neu        - abgedeckt durch eine Geltungsbedingung (`bedingung` gesetzt)
+  grenzfall            - objektiv ambig -> routet in den Review (grenzfall-Gate)
+  nicht_material       - generisch (Konvention) oder auf eine bestehende Bedingung
+                         gemappt; blockiert nie
+  nicht_echt           - kein echter Befund
+  defekt_formalisierer - KEINE Annahme, sondern ein Formalisierungsfehler. Darf NIE
+                         Bedingung werden (das legalisierte den Fehler). Marker,
+                         gekoppelt an freigabe: blockiert; erlischt mit dem A-Neulauf.
+  offen_bis_neuschnitt - Kern-Anwendbarkeit, gehoert beim Charge-Neuschnitt in
+                         Signatur ODER Bedingung. Bis dahin registriert, blockiert
+                         die (zuschnitt_offen-)Regel nicht.
 
 Datei je Regel: pipeline/item_registry/<rule_id>.yaml
 """
@@ -38,7 +45,8 @@ sys.path.insert(0, HERE)
 from yamlstrict import load_yaml   # noqa: E402
 import gates as G                   # noqa: E402
 
-TRIAGE = ("bedingung_neu", "grenzfall", "nicht_material", "nicht_echt")
+TRIAGE = ("bedingung_neu", "grenzfall", "nicht_material", "nicht_echt",
+          "defekt_formalisierer", "offen_bis_neuschnitt")
 
 
 def _anker(art: str, item: dict) -> list:
@@ -128,6 +136,11 @@ def grenzfaelle(reg: dict) -> list[dict]:
     return [it for it in reg.get("items", []) if it.get("triage") == "grenzfall"]
 
 
+def defekte(reg: dict) -> list[dict]:
+    return [it for it in reg.get("items", [])
+            if it.get("triage") == "defekt_formalisierer"]
+
+
 def registrierte_bedingungen(reg: dict) -> set[str]:
     return {it["bedingung"] for it in reg.get("items", [])
             if it.get("triage") == "bedingung_neu" and it.get("bedingung")}
@@ -180,6 +193,21 @@ def grenzfall_gate(reg: dict) -> "G.GateResult":
     return G.GateResult("grenzfall", G.PASS, "keine Grenzfaelle in der Registry")
 
 
+def defekt_gate(reg: dict) -> "G.GateResult":
+    """Ein registrierter Formalisierungsfehler blockiert die Freigabe.
+
+    `defekt_formalisierer` ist keine Annahme, sondern ein bekannter A-Fehler (z.B.
+    Rundung ohne Normbefehl). Er darf nie eine Bedingung werden - das legalisierte
+    den Fehler. Der Marker haelt die Regel im Review, bis der A-Neulauf ihn
+    aufloest."""
+    d = defekte(reg)
+    if d:
+        return G.GateResult("defekt", G.FAIL,
+                            f"{len(d)} registrierte(r) Formalisierungsfehler -> "
+                            f"freigabe blockiert bis A-Neulauf")
+    return G.GateResult("defekt", G.PASS, "kein registrierter Formalisierungsfehler")
+
+
 def discovery_gate(neu: list[dict]) -> "G.GateResult":
     """Informativ, nicht blockierend im Sinne der Gate-Ausgabe: neue Funde kippen
     NIE ein Gate (Punkt 3). Sie erzeugen Review-Items, die Julius triagiert. Der
@@ -201,7 +229,7 @@ def gates_fuer(rule_id: str, rule: dict, verdict: dict) -> tuple[dict, list]:
         det = ("judge answer truncated at max_tokens" if (verdict or {}).get("truncated")
                else "judge output not valid JSON")
         gates = {n: G.GateResult(n, G.FAIL, det)
-                 for n in ("roundtrip", "geltungsbereich", "grenzfall")}
+                 for n in ("roundtrip", "geltungsbereich", "grenzfall", "defekt")}
         gates["discovery"] = G.GateResult("discovery", G.FAIL, det)
         return gates, []
     reg = load(rule_id)
@@ -210,6 +238,7 @@ def gates_fuer(rule_id: str, rule: dict, verdict: dict) -> tuple[dict, list]:
         "geltungsbereich": geltungsbereich_gate(reg, rule),
         "roundtrip": roundtrip_gate(reg, rule),
         "grenzfall": grenzfall_gate(reg),
+        "defekt": defekt_gate(reg),
         "discovery": discovery_gate(ab["neu"]),
         "scope_gap": G.scope_gap_gate(verdict),   # informativ, aus dem Lauf
     }
@@ -283,6 +312,10 @@ def aufnehmen(draft: dict) -> tuple[str, int]:
             if not it.get("bedingung"):
                 raise SystemExit(f"triage bedingung_neu ohne bedingung-ID: {k}")
             e["bedingung"] = it["bedingung"]
+        if tri == "defekt_formalisierer" and it.get("bedingung"):
+            # Ein Formalisierungsfehler darf nie eine Bedingung werden - das
+            # legalisierte den Fehler.
+            raise SystemExit(f"defekt_formalisierer darf keine bedingung tragen: {k}")
         if k not in idx:
             reg.setdefault("items", []).append(e)
             idx[k] = e

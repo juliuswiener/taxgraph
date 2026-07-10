@@ -327,6 +327,13 @@ regeln:
   - p9_1_3_nr7_afa
 - rule_id: p9_6_erstausbildung_abgrenzung
   norm: § 9 Abs. 6 EStG
+  # Erstbefuellung der Registry (Julius, 2026-07-11). Muster Rechtspraedikat wie
+  # p24b/p33: erstausbildung_abgeschlossen traegt die Legaldefinition.
+  geltungsbedingungen:
+  - bedingung: erstausbildung_nach_legaldefinition
+    deckt_ab: "geordnete Ausbildung mit einer Mindestdauer"
+    quelle: "§ 9 Abs. 6 Saetze 2 bis 5 EStG"
+    beschreibung: "Input-Semantik: erstausbildung_abgeschlossen entspricht der Legaldefinition (geordnete Ausbildung >= 12 Monate mit Abschlusspruefung bzw. gleichgestellte Faelle)."
   norm_source: sources/gesetze-im-internet/estg_p9_abs6_2026-07-09.txt
   struktur:
   - praedikat_definition
@@ -506,6 +513,18 @@ regeln:
   # verschaerftem Review fuer diese eine Regel ausweichen.
   freigabe: blockiert
   freigabe_grund: "Redundanz-Gate hat gefeuert: A rundet ab, B nicht. Aequivalenz traegt nicht."
+  # Erstbefuellung der Registry (Julius, 2026-07-11). Muster "Input ist ein
+  # vorgepruefte Rechtspraedikat": die booleschen/gezaehlten Eingaben spiegeln ein
+  # bereits geprueftes Ergebnis; Phase 5 stellt die Teilfragen.
+  geltungsbedingungen:
+  - bedingung: kinder_sind_anspruchskinder
+    deckt_ab: "Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld hat"
+    quelle: "§ 33 Abs. 3 Satz 2 EStG"
+    beschreibung: "Input-Semantik: anzahl_kinder zaehlt nur Kinder mit Anspruch auf Freibetrag (§ 32 Abs. 6) oder Kindergeld. Phase 5 fragt das ab."
+  - bedingung: splitting_ist_veranlagungsergebnis
+    deckt_ab: "nach § 32a Absatz 5 oder 6 (Splitting-Verfahren)"
+    quelle: "§ 33 Abs. 3 Satz 1 Nr. 1 Buchst. b EStG"
+    beschreibung: "Input-Semantik: splitting spiegelt die tatsaechliche Tarifberechnung. Kommt bei der § 2-Integration aus der Veranlagungsart, nicht vom Nutzer."
   # Multi-Source: der Wortlaut allein laesst beide Lesarten zu. Charge 1 zeigte,
   # dass Formalisierer A die vom BFH verworfene Auslegung waehlt, wenn nur das
   # Gesetz im Input steht. Der Leitsatz kommt als GETRENNTE, etikettierte Quelle
@@ -576,6 +595,12 @@ regeln:
   # nicht die Einkuenfte. Bei der Integration gehoert die Regel an die
   # tarifliche_est -> festzusetzende_est-Stufe des Stufen-Refactorings, nicht in
   # die Werbungskosten.
+  #
+  # REIHENFOLGE (Julius, 2026-07-11): Abs. 3 ermaessigt die tarifliche ESt,
+  # "vermindert um die sonstigen Steuerermaessigungen" (§ 35a Abs. 3 Satz 1). Die
+  # Reihenfolge der Ermaessigungen ist damit NICHT Aufgabe dieser Regel, sondern der
+  # Stufenfolge in der § 2-Integration. Der entsprechende Registry-Fund ist
+  # nicht_material und mappt hierher, nicht in eine Regel-Bedingung.
   norm_source: sources/gesetze-im-internet/estg_p35a_2026-07-09.txt
   struktur:
   - prozent_20

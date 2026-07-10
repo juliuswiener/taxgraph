@@ -101,3 +101,37 @@ def test_kaputtes_verdikt_faellt_gates():
     assert gates["geltungsbereich"].status == G.FAIL
     assert gates["roundtrip"].status == G.FAIL
     assert neu == []
+
+
+# -- neue Triage-Status (Stufe 4, Erstbefuellung) -----------------------------
+
+def test_defekt_formalisierer_blockiert_freigabe_nicht_als_bedingung():
+    r = reg([{"art": "annahme", "anker": ["betrifft_kat", "ergebnis", "rundung"],
+              "triage": "defekt_formalisierer"}])
+    assert IR.defekt_gate(r).status == G.FAIL
+    # kein bedingung_neu -> roundtrip/geltungsbereich unberuehrt
+    assert IR.roundtrip_gate(r, rule()).status == G.PASS
+    assert IR.geltungsbereich_gate(r, rule()).status == G.PASS
+
+
+def test_aufnehmen_verweigert_bedingung_auf_defekt(tmp_path, monkeypatch):
+    monkeypatch.setattr(IR, "REG_DIR", str(tmp_path))
+    import pytest
+    with pytest.raises(SystemExit):
+        IR.aufnehmen({"rule_id": "r", "items": [
+            {"art": "annahme", "anker": ["betrifft_kat", "e", "rundung"],
+             "triage": "defekt_formalisierer", "bedingung": "boese"}]})
+
+
+def test_offen_bis_neuschnitt_blockiert_nicht():
+    r = reg([{"art": "norm_teil", "anker": ["ref", "§ 9 abs. 1 s. 3 nr. 5a s. 1"],
+              "klasse": "wirkt_hinein", "triage": "offen_bis_neuschnitt"}])
+    # kein bedingung_neu -> keine geltungsbereich-Luecke
+    assert IR.geltungsbereich_gate(r, rule()).status == G.PASS
+    assert IR.defekt_gate(r).status == G.PASS
+
+
+def test_gates_fuer_enthaelt_defekt():
+    gates, _ = IR.gates_fuer("t", rule(), {"abweichungen": [], "scope_gap": [],
+                                           "stille_zusatzannahmen": []})
+    assert "defekt" in gates

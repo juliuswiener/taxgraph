@@ -1,0 +1,92 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p33_3_zumutbare_belastung
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder
+  - interpretation
+  formulierungen:
+  - Die Eingabe 'anzahl_kinder' wird als Anzahl der Kinder im Sinne des § 33 Abs.
+    3 Satz 2 EStG interpretiert, ohne dass die Anspruchsvoraussetzungen geprüft werden.
+  - Die Anzahl der Kinder wird als die nach § 33 Abs. 3 Satz 2 EStG definierte Kinderzahl
+    interpretiert.
+  - Die Anzahl der Kinder wird als bereits gemäß § 33 Abs. 3 Satz 2 EStG bestimmt
+    vorausgesetzt.
+  - Die Eingabe 'anzahl_kinder' setzt voraus, dass nur Kinder nach § 33 Abs. 3 Satz
+    2 EStG gezählt werden.
+  triage: bedingung_neu
+  bedingung: kinder_sind_anspruchskinder
+- art: annahme
+  anker:
+  - betrifft_kat
+  - splitting
+  - interpretation
+  formulierungen:
+  - Die boolesche Eingabe 'splitting' wird als Indikator dafür interpretiert, dass
+    die Einkommensteuer nach dem Splitting-Verfahren berechnet wird.
+  - Der Splitting-Status wird als bereits gemäß § 32a Abs. 5 oder 6 EStG festgestellt
+    vorausgesetzt.
+  triage: bedingung_neu
+  bedingung: splitting_ist_veranlagungsergebnis
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Das Ergebnis wird durch Abschneiden der Nachkommastellen auf ganze Euro abgerundet,
+    obwohl die Norm keine Rundung vorschreibt.
+  - Die zumutbare Belastung wird durch Abrunden auf ganze Euro (Truncation) berechnet.
+  triage: defekt_formalisierer
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 2
+  formulierungen:
+  - Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag
+    nach § 32 Absatz 6 oder auf Kindergeld hat.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kinder_sind_anspruchskinder
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1 nr. 1 buchst. b
+  formulierungen:
+  - nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: splitting_ist_veranlagungsergebnis
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 2 estg
+  formulierungen:
+  - Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag
+    nach § 32 Absatz 6 oder auf Kindergeld hat.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kinder_sind_anspruchskinder
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1 nr. 1 b) estg
+  formulierungen:
+  - nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist
+  triage: bedingung_neu
+  klasse: unabhaengig
+  bedingung: splitting_ist_veranlagungsergebnis
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1
+  formulierungen:
+  - bei denen die Einkommensteuer nach § 32a Absatz 5 oder 6 (Splitting-Verfahren)
+    zu berechnen ist
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: splitting_ist_veranlagungsergebnis
