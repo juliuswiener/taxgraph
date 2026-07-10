@@ -1,0 +1,251 @@
+{
+  "laeufe": {
+    "p9_6_erstausbildung_abgrenzung": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 0,
+        "unmapped": 0,
+        "scope_gaps": 4,
+        "wirkt_hinein": 0,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.0053
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 0,
+        "unmapped": 0,
+        "scope_gaps": 1,
+        "wirkt_hinein": 0,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.00352
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 0,
+        "unmapped": 0,
+        "scope_gaps": 4,
+        "wirkt_hinein": 0,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.00786
+      }
+    ],
+    "p10_1_7_berufsausbildung": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 1,
+        "unmapped": 0,
+        "scope_gaps": 3,
+        "wirkt_hinein": 0,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.00742
+      },
+      {
+        "lauf": 2,
+        "parse_error": true,
+        "truncated": false,
+        "completion_tokens": 286,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "abweichungen": -1,
+        "annahmen": -1,
+        "unmapped": -1,
+        "scope_gaps": -1,
+        "wirkt_hinein": -1,
+        "kosten_usd": 0.0
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 1,
+        "unmapped": 0,
+        "scope_gaps": 3,
+        "wirkt_hinein": 0,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.00888
+      }
+    ],
+    "p24b_entlastungsbetrag": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 3,
+        "unmapped": 0,
+        "scope_gaps": 5,
+        "wirkt_hinein": 0,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.02202
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 0,
+        "unmapped": 0,
+        "scope_gaps": 4,
+        "wirkt_hinein": 0,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.01592
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 0,
+        "unmapped": 0,
+        "scope_gaps": 2,
+        "wirkt_hinein": 0,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.00954
+      }
+    ],
+    "p9_1_3_nr5_doppelte_haushaltsfuehrung": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 0,
+        "unmapped": 0,
+        "scope_gaps": 5,
+        "wirkt_hinein": 4,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.01283
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 0,
+        "unmapped": 0,
+        "scope_gaps": 8,
+        "wirkt_hinein": 4,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.01313
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 0,
+        "unmapped": 0,
+        "scope_gaps": 5,
+        "wirkt_hinein": 4,
+        "roundtrip": "PASS",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.01321
+      }
+    ]
+  },
+  "zusammenfassung": {
+    "p9_6_erstausbildung_abgrenzung": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "gate_urteile_stabil": true,
+      "verschiedene_gate_urteile": [
+        "PASS/PASS"
+      ],
+      "abweichungen_min_max": [
+        0,
+        0
+      ],
+      "wirkt_hinein_min_max": [
+        0,
+        0
+      ],
+      "kosten_usd": 0.01668
+    },
+    "p10_1_7_berufsausbildung": {
+      "laeufe": 3,
+      "parse_fehler": 1,
+      "gate_urteile_stabil": false,
+      "verschiedene_gate_urteile": [
+        "FAIL/FAIL",
+        "PASS/PASS"
+      ],
+      "abweichungen_min_max": [
+        0,
+        0
+      ],
+      "wirkt_hinein_min_max": [
+        0,
+        0
+      ],
+      "kosten_usd": 0.0163
+    },
+    "p24b_entlastungsbetrag": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "gate_urteile_stabil": true,
+      "verschiedene_gate_urteile": [
+        "PASS/PASS"
+      ],
+      "abweichungen_min_max": [
+        0,
+        0
+      ],
+      "wirkt_hinein_min_max": [
+        0,
+        0
+      ],
+      "kosten_usd": 0.04748
+    },
+    "p9_1_3_nr5_doppelte_haushaltsfuehrung": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "gate_urteile_stabil": true,
+      "verschiedene_gate_urteile": [
+        "PASS/PASS"
+      ],
+      "abweichungen_min_max": [
+        0,
+        0
+      ],
+      "wirkt_hinein_min_max": [
+        4,
+        4
+      ],
+      "kosten_usd": 0.03917
+    }
+  }
+}
