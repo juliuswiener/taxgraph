@@ -61,7 +61,14 @@ def _itemzahlen(v: dict) -> dict:
     for art, gate in GATE_VON_ART.items():
         splits_je_gate[gate] = splits_je_gate.get(gate, 0) + splits_je_art.get(art, 0)
         items_je_gate[gate] = items_je_gate.get(gate, 0) + beurteilt.get(art, 0)
+    cl = inst.get("cluster") or {}
+    deck = inst.get("in_allen_laeufen") or {}
+    items_ges = sum(cl.values())
+    in_allen = sum(deck.values())
     return {"items_beurteilt": sum(beurteilt.values()),
+            "inventar_items": items_ges,
+            "inventar_in_allen_laeufen": in_allen,
+            "inventar_deckung": round(in_allen / items_ges, 4) if items_ges else None,
             "items_je_art": beurteilt,
             "splits_je_art": splits_je_art,
             "splits_je_gate": splits_je_gate,
@@ -177,6 +184,8 @@ def main() -> int:
                                   for g in sg},
             "merges": sum(sum(l["merges"].values()) for l in gut),
             "inventar_streuung_items": sum(sum(l["inventar_streuung"].values()) for l in gut),
+            "inventar_items": sum(l.get("inventar_items", 0) for l in gut),
+            "inventar_in_allen_laeufen": sum(l.get("inventar_in_allen_laeufen", 0) for l in gut),
             "gate_urteile_stabil": len(gates) == 1,
             "verschiedene_gate_urteile": sorted(f"{a}/{b}" for a, b in gates),
             "abweichungen_min_max": ([min(l["abweichungen"] for l in gut),

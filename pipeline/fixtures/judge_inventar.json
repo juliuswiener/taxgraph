@@ -1,1 +1,1 @@
-{"text": "{\"abweichungen\": [], \"annahmen\": [\"Die Eingabe x wird als Nettobetrag gelesen.\"], \"norm_teile\": [\"Bei einer Taetigkeit im Ausland gelten andere Betraege\"]}", "prompt_tokens": 900, "completion_tokens": 60}
+{"text": "{\"abweichungen\": [], \"annahmen\": [{\"betrifft\": \"aufwendungen\", \"kategorie\": \"einheit\", \"aussage\": \"Die Eingabe aufwendungen wird als Nettobetrag gelesen.\"}], \"norm_teile\": [{\"referenz\": \"§ 9 Abs. 4a\", \"zitat\": \"Bei einer Taetigkeit im Ausland gelten andere Betraege\"}]}", "prompt_tokens": 900, "completion_tokens": 70}

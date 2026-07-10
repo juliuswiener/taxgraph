@@ -41,42 +41,54 @@ OUT = os.path.join(ROOT, "reports", "nachtschicht", "judge-replikation.json")
 
 
 def _kanonisch(v: dict) -> dict:
-    return {
-        "abweichungen": sorted(v.get("abweichungen", [])),
-        "annahmen": sorted((a["annahme"], a["bedingung_id"])
-                           for a in v.get("stille_zusatzannahmen", [])),
-        "norm_teile": sorted((g["norm_teil"], g["klasse"], g.get("abgedeckt_von"))
-                             for g in v.get("scope_gap", [])),
-    }
+    """Kanonische Items mit Anker-Schluessel, Urteil und Text.
+
+    Jedes Item ist (schluessel, urteil, text). Der Schluessel ist der stabile
+    Anker aus dem Inventar (Signatur-Eingabe + Kategorie bzw. Norm-Referenz), NICHT
+    die Prosa - genau das war der Grund, den Anker einzufuehren.
+    """
+    abw = [(a, ("ergebnis",), a) for a in v.get("abweichungen", [])]
+    ann = [((str(a.get("betrifft")), str(a.get("kategorie"))),
+            (a["bedingung_id"],), a["annahme"])
+           for a in v.get("stille_zusatzannahmen", [])]
+    teil = [((str(g.get("referenz")),), (g["klasse"], g.get("abgedeckt_von")),
+             g["norm_teil"]) for g in v.get("scope_gap", [])]
+    return {"abweichungen": abw, "annahmen": ann, "norm_teile": teil}
 
 
 def _vergleiche(a: dict, b: dict) -> dict:
-    """Vergleicht zwei kanonische Verdikte item-weise ueber den Aehnlichkeitsabgleich."""
+    """Zwei Verdikte item-weise, gematcht ueber den Anker-Schluessel.
+
+    Der Textabgleich bleibt Sekundaerstufe innerhalb eines Schluessels: zwei Items
+    mit gleichem Anker gelten als dasselbe, WENN auch ihre Texte aehnlich sind.
+    Fuer Abweichungen (Schluessel 'ergebnis') traegt der Text die Identitaet allein.
+    """
     bericht = {}
     for feld in ("abweichungen", "annahmen", "norm_teile"):
-        xa, xb = a[feld], b[feld]
-        text = (lambda x: x) if feld == "abweichungen" else (lambda x: x[0])
-        rest_b = list(xb)
+        rest_b = list(b[feld])
         gleich, nur_a = [], []
-        for ia in xa:
-            treffer = next((ib for ib in rest_b if J._gleich(text(ia), text(ib))), None)
+        for schluessel_a, urteil_a, text_a in a[feld]:
+            treffer = None
+            for eintrag in rest_b:
+                schluessel_b, _, text_b = eintrag
+                if schluessel_a == schluessel_b and J._gleich(text_a, text_b):
+                    treffer = eintrag
+                    break
             if treffer is None:
-                nur_a.append(ia)
+                nur_a.append(text_a)
                 continue
             rest_b.remove(treffer)
-            # gleiches Item: stimmen auch die Urteile ueberein?
-            gleich.append({"item": text(ia)[:110],
-                           "urteil_gleich": (ia[1:] == treffer[1:]) if feld != "abweichungen" else True,
-                           "a": ia[1:] if feld != "abweichungen" else None,
-                           "b": treffer[1:] if feld != "abweichungen" else None})
+            gleich.append({"item": text_a[:110],
+                           "urteil_gleich": urteil_a == treffer[1],
+                           "a": urteil_a, "b": treffer[1]})
         bericht[feld] = {
             "gemeinsam": len(gleich),
             "urteil_abweichend": [g for g in gleich if not g["urteil_gleich"]],
-            "nur_in_lauf_a": [text(x)[:110] for x in nur_a],
-            "nur_in_lauf_b": [text(x)[:110] for x in rest_b],
+            "nur_in_lauf_a": [t[:110] for t in nur_a],
+            "nur_in_lauf_b": [t[2][:110] for t in rest_b],
         }
-    identisch = all(not b["urteil_abweichend"] and not b["nur_in_lauf_a"]
-                    and not b["nur_in_lauf_b"] for b in bericht.values())
+    identisch = all(not x["urteil_abweichend"] and not x["nur_in_lauf_a"]
+                    and not x["nur_in_lauf_b"] for x in bericht.values())
     return {"identisch": identisch, "je_feld": bericht}
 
 

@@ -170,59 +170,97 @@ def _key(wert) -> str:
 
 # -- Stufe 1: Inventar --------------------------------------------------------
 
-def _inventar(client, role, kontext: str, models_hash: str, provenance: list):
-    felder = ("abweichungen", "annahmen", "norm_teile")
+FELDER = ("abweichungen", "annahmen", "norm_teile")
+KATEGORIEN = ("interpretation", "geltungsvoraussetzung", "rundung",
+              "zeitbezug", "einheit", "sonstige")
+
+
+def _text(feld: str, item: dict) -> str:
+    return str(item.get("zitat" if feld == "norm_teile" else "aussage", "")).strip()
+
+
+def _anker(feld: str, item: dict, input_names: set[str]) -> tuple:
+    """Der stabile Schluessel eines Items: Anker + (bei Annahmen) Kategorie.
+
+    Der Anker allein wuerde zwei verschiedene Annahmen ueber dieselbe Eingabe
+    verschmelzen. Deshalb traegt eine Annahme zusaetzlich ihre Kategorie aus einem
+    geschlossenen Enum - "alleinstehend erfuellt Abs. 3" (interpretation) und
+    "alleinstehend gilt ganzjaehrig" (zeitbezug) landen in verschiedenen Buckets.
+    """
+    if feld == "norm_teile":
+        ref = re.sub(r"\s+", " ", str(item.get("referenz", "?"))).strip().lower()
+        return ("ref", ref or "?")
+    betrifft = G._normalize(str(item.get("betrifft", "?")))
+    if betrifft not in input_names and betrifft != "ergebnis":
+        betrifft = "?"          # erfundener Anker faellt auf den Sammel-Bucket zurueck
+    if feld == "abweichungen":
+        return ("betrifft", betrifft)
+    kat = str(item.get("kategorie", "sonstige"))
+    return ("betrifft_kat", betrifft, kat if kat in KATEGORIEN else "sonstige")
+
+
+def _inventar(client, role, kontext: str, signature: dict, models_hash: str,
+              provenance: list):
+    input_names = {G._normalize(k) for k in (signature or {}).get("inputs", {})}
 
     def pruefe(d):
-        if not isinstance(d, dict) or any(f not in d for f in felder):
+        if not isinstance(d, dict) or any(f not in d for f in FELDER):
             return None
-        if any(not isinstance(d[f], list) for f in felder):
+        if any(not isinstance(d[f], list) for f in FELDER):
             return None
-        return {f: [str(x)[:300] for x in d[f] if str(x).strip()] for f in felder}
+        out = {}
+        for f in FELDER:
+            gute = []
+            for x in d[f]:
+                if not isinstance(x, dict):
+                    return None                 # kein Struktur-Item -> Antwort ungueltig
+                if _text(f, x):                 # leere Items sind kein Befund, kein Drop-Risiko
+                    gute.append(x)
+            out[f] = gute
+        return out
 
-    laeufe, ungueltig = _stimmen(client, role, "inventar@1", kontext, "judge_inventar",
+    laeufe, ungueltig = _stimmen(client, role, "inventar@2", kontext, "judge_inventar",
                                  models_hash, pruefe, provenance)
     if not laeufe:
         return None, {"inventar_ungueltig": ungueltig}
 
-    # VEREINIGUNG, nicht Mehrheit. Ein Item, das nur ein Inventarlauf sieht,
-    # wird trotzdem beurteilt: es wegzulassen waere stilles Gruen, und genau das
-    # ist die Fehlerklasse, die dieses Protokoll ausschliessen soll. Die
-    # Item-Abstimmung filtert Rauschen ohnehin - ein erfundener Befund wird
-    # dreimal als "nicht echt" beurteilt.
-    #
-    # Wie oft ein Item gesehen wurde, steht als `inventar_streuung` im Report:
-    # das ist das Mass der Inventar-Instabilitaet, das Julius sehen will.
+    # VEREINIGUNG, nicht Mehrheit: ein Item, das nur ein Lauf sieht, wird trotzdem
+    # beurteilt (Weglassen waere stilles Gruen). Geclustert wird ueber den stabilen
+    # Schluessel (Anker + Kategorie); innerhalb eines Buckets entscheidet der
+    # Textabgleich als Sekundaerstufe, damit zwei verschiedene Befunde mit gleichem
+    # Anker nicht ueber-mergen. Jede Verschmelzung steht im Merge-Log.
     ergebnis, streuung, merge_log = {}, {}, {}
-    for f in felder:
-        kandidaten: list[tuple[str, int]] = []
+    for f in FELDER:
+        kand: list[dict] = []      # {key, text, anker, count}
         merges: list[dict] = []
         for lauf in laeufe:
             gesehen = set()
-            for text in lauf[f]:
-                for i, (bekannt, _) in enumerate(kandidaten):
-                    if _gleich(text, bekannt) and i not in gesehen:
-                        kandidaten[i] = (bekannt, kandidaten[i][1] + 1)
+            for item in lauf[f]:
+                key = _anker(f, item, input_names)
+                txt = _text(f, item)
+                for i, k in enumerate(kand):
+                    if i in gesehen or k["key"] != key:
+                        continue
+                    if _gleich(txt, k["text"]):
+                        k["count"] += 1
                         gesehen.add(i)
-                        if G._normalize(text) != G._normalize(bekannt):
-                            # Zwei verschieden formulierte Rohtexte gelten als
-                            # dasselbe Item. Das ist eine Entscheidung des
-                            # Abgleichs, keine des Modells - sie gehoert
-                            # nachpruefbar in den Report.
-                            merges.append({"cluster": bekannt[:160],
-                                           "eingeschmolzen": text[:160]})
+                        if G._normalize(txt) != G._normalize(k["text"]):
+                            merges.append({"key": list(key), "cluster": k["text"][:160],
+                                           "eingeschmolzen": txt[:160]})
                         break
                 else:
-                    kandidaten.append((text, 1))
-                    gesehen.add(len(kandidaten) - 1)
-        ergebnis[f] = [t for t, _ in kandidaten]
-        streuung[f] = [{"text": t, "in_laeufen": n} for t, n in kandidaten
-                       if n < len(laeufe)]
+                    kand.append({"key": key, "text": txt, "anker": item, "count": 1})
+                    gesehen.add(len(kand) - 1)
+        ergebnis[f] = kand
+        streuung[f] = [{"text": k["text"][:120], "key": list(k["key"]),
+                        "in_laeufen": k["count"]} for k in kand if k["count"] < len(laeufe)]
         merge_log[f] = merges
+    deckung = {f: sum(1 for k in ergebnis[f] if k["count"] == len(laeufe)) for f in FELDER}
     return ergebnis, {"inventar_laeufe": len(laeufe), "inventar_ungueltig": ungueltig,
                       "inventar_streuung": streuung, "merge_log": merge_log,
-                      "roh_items": {f: sum(len(l[f]) for l in laeufe) for f in felder},
-                      "cluster": {f: len(ergebnis[f]) for f in felder}}
+                      "roh_items": {f: sum(len(l[f]) for l in laeufe) for f in FELDER},
+                      "cluster": {f: len(ergebnis[f]) for f in FELDER},
+                      "in_allen_laeufen": deckung}
 
 
 # -- Stufe 2: Urteil je Item --------------------------------------------------
@@ -291,7 +329,8 @@ def judge_regel(client: OpenRouterClient, role: RoleConfig, norm_text: str,
     kontext = (f"Original-Norm:\n{norm_text}{sig}\n\n"
                f"Catala-Formalisierung:\n{catala_src}")
 
-    inventar, inv_meta = _inventar(client, role, kontext, models_hash, provenance)
+    inventar, inv_meta = _inventar(client, role, kontext, signature, models_hash,
+                                   provenance)
     lauf_id = hashlib.sha256(
         (catala_src + now_iso() + str(len(provenance))).encode()).hexdigest()[:12]
 
@@ -305,7 +344,8 @@ def judge_regel(client: OpenRouterClient, role: RoleConfig, norm_text: str,
     instab["items_ohne_mehrheit"] = []
 
     abweichungen = []
-    for befund in inventar["abweichungen"]:
+    for cl in inventar["abweichungen"]:
+        befund = cl["text"]
         urteil, split, ungueltig, n = _urteil_abweichung(client, role, kontext, befund,
                                                          models_hash, provenance)
         _vermerke(instab, "abweichung", befund, split, ungueltig, n)
@@ -313,22 +353,27 @@ def judge_regel(client: OpenRouterClient, role: RoleConfig, norm_text: str,
             abweichungen.append(befund)
 
     annahmen = []
-    for annahme in inventar["annahmen"]:
+    for cl in inventar["annahmen"]:
+        annahme = cl["text"]
         urteil, split, ungueltig, n = _urteil_annahme(client, role, kontext, bed_block,
                                                       annahme, models_hash, provenance, ids)
         _vermerke(instab, "annahme", annahme, split, ungueltig, n)
         bid = urteil["mapping"]
         annahmen.append({"annahme": annahme,
-                         "bedingung_id": None if bid == "undeclared" else bid})
+                         "bedingung_id": None if bid == "undeclared" else bid,
+                         "betrifft": cl["anker"].get("betrifft"),
+                         "kategorie": cl["anker"].get("kategorie")})
 
     gaps = []
-    for teil in inventar["norm_teile"]:
+    for cl in inventar["norm_teile"]:
+        teil = cl["text"]
         urteil, split, ungueltig, n = _urteil_normteil(client, role, kontext, bed_block,
                                                        teil, models_hash, provenance, ids)
         _vermerke(instab, "norm_teil", teil, split, ungueltig, n)
         gaps.append({"norm_teil": teil, "klasse": urteil["klasse"],
                      "begruendung": "",
-                     "abgedeckt_von": urteil["abgedeckt_von"]})
+                     "abgedeckt_von": urteil["abgedeckt_von"],
+                     "referenz": cl["anker"].get("referenz")})
 
     verdict = {
         "parse_error": False,
@@ -337,7 +382,7 @@ def judge_regel(client: OpenRouterClient, role: RoleConfig, norm_text: str,
         "stille_zusatzannahmen": annahmen,
         "scope_gap": gaps,
         "judge_instability": instab,
-        "judge_protokoll": "dekomponiert@1 (Mehrheit aus 3 Stimmen je Item)",
+        "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Mehrheit aus 3 Stimmen je Item)",
         "lauf_id": lauf_id,
         "timestamp": now_iso(),
     }

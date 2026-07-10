@@ -21,19 +21,28 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "reports", "judge-stabilitaet.md")
 
-SCHWELLE_OK = 0.10
-SCHWELLE_ZWEIT_JUDGE = 0.20
+# Vorregistrierte Erfolgskriterien der Nachmessung (Protokolldekret 2026-07-10,
+# Auflage 2). Sie standen VOR der Messung fest und werden nicht angepasst.
+DECKUNG_MIN = 0.80              # >= 80 % der Items in allen 3 Laeufen gesehen
+GELTUNGSBEREICH_SPLIT_MAX = 0.15
+SPLIT_TRIGGER = 0.20           # geltungsbereich-Splitrate darueber -> Trigger
 
 
-def entscheid(rate: float) -> tuple[str, str]:
-    if rate <= SCHWELLE_OK:
+def entscheid(deckung: float, gb_split: float, repliziert: bool | None) -> tuple[str, str]:
+    ok_deckung = deckung >= DECKUNG_MIN
+    ok_split = gb_split <= GELTUNGSBEREICH_SPLIT_MAX
+    ok_repl = repliziert is True
+    if ok_deckung and ok_split and ok_repl:
         return ("protokoll_steht",
-                "Das Protokoll steht. Kein Zweit-Judge, kein zweiter Messdurchgang.")
-    if rate <= SCHWELLE_ZWEIT_JUDGE:
-        return ("spot_replikation",
-                "Spot-Replikation auf den zwei instabilsten Regeln, dann Entscheid.")
-    return ("zweit_judge",
-            "Zweit-Judge einer anderen Modellfamilie als naechste Stufe.")
+                "Alle drei Kriterien erfuellt. Das Protokoll steht, kein Zweit-Judge.")
+    if gb_split > SPLIT_TRIGGER and ok_deckung:
+        return ("zweit_judge",
+                "Inventar-Deckung stabil, aber geltungsbereich-Splitrate ueber 20 %. "
+                "Der Trigger ist sauber gemessen und wird gezogen: Zweit-Judge einer "
+                "anderen Familie.")
+    return ("spot_diagnose",
+            "Weder alle Kriterien erfuellt noch der Trigger sauber ausgeloest. "
+            "Spot-Diagnose, dann Entscheid bei Julius.")
 
 
 def main() -> int:
@@ -54,7 +63,19 @@ def main() -> int:
                 for r in laeufe)
         je_gate[g] = (s, i, (s / i if i else None))
 
-    schluessel, satz = entscheid(rate)
+    inv_items = sum(z.get("inventar_items", 0) for z in zus.values())
+    inv_deckung_n = sum(z.get("inventar_in_allen_laeufen", 0) for z in zus.values())
+    deckung = inv_deckung_n / inv_items if inv_items else 0.0
+    gb_split = je_gate["geltungsbereich"][2] or 0.0
+
+    repl = None
+    rpfad = os.path.join(ROOT, "reports", "nachtschicht", "judge-replikation.json")
+    if os.path.exists(rpfad):
+        rd = json.load(open(rpfad, encoding="utf-8"))
+        vals = [v.get("identisch") for v in rd.values() if "identisch" in v]
+        repl = all(vals) if vals else None
+
+    schluessel, satz = entscheid(deckung, gb_split, repl)
     kosten = sum(z["kosten_usd"] for z in zus.values())
     parse = sum(z["parse_fehler"] for z in zus.values())
     gesamt_laeufe = sum(z["laeufe"] for z in zus.values())
@@ -65,8 +86,13 @@ def main() -> int:
          "Messplan vorregistriert (Protokolldekret 2026-07-10). Die Kriterien standen "
          "vor der Messung fest und liegen in `pipeline/judge_stabilitaet_report.py`.\n",
          f"Ein Durchgang, {len(zus)} Regeln, je 3 Laeufe. Kosten {kosten:.4f} USD.\n",
+         "## Vorregistrierte Kriterien\n",
+         f"- **Inventar-Deckung: {deckung:.1%}** ({inv_deckung_n} von {inv_items} "
+         f"Items in allen 3 Laeufen) -- Ziel >= {DECKUNG_MIN:.0%}",
+         f"- **geltungsbereich-Splitrate: {gb_split:.1%}** -- Ziel <= {GELTUNGSBEREICH_SPLIT_MAX:.0%}",
+         f"- **Spot-Replikation identisch: {repl}** -- Ziel: True\n",
          "## Kennzahlen\n",
-         f"- **Item-Splitrate gesamt: {rate:.1%}** ({splits} Splits auf {items} beurteilte Items)",
+         f"- Item-Splitrate gesamt: {rate:.1%} ({splits} Splits auf {items} beurteilte Items)",
          f"- Parse-Fehler: {parse} von {gesamt_laeufe} Laeufen"
          f" ({parse / gesamt_laeufe:.0%})" if gesamt_laeufe else "",
          f"- Inventar-Streuung: {streuung} Items nicht in allen drei Inventarlaeufen gesehen",
@@ -104,13 +130,10 @@ def main() -> int:
           f"Groesse war nicht vorregistriert; sie wird berichtet, weil sie das "
           f"Kriterium unterlaeuft, nicht weil sie es bestaetigt.\n"]
 
-    L += [f"\n## Entscheid nach dem vorregistrierten Kriterium\n",
-          f"Splitrate {rate:.1%} -> **{schluessel}**\n", satz, ""]
-
-    if schluessel == "spot_replikation":
-        instabil = sorted(zus.items(), key=lambda kv: -(kv[1]["item_splitrate"] or 0))[:2]
-        L.append("Instabilste Regeln fuer die Spot-Replikation: "
-                 + ", ".join(f"`{r}`" for r, _ in instabil))
+    L += [f"\n## Entscheid nach den vorregistrierten Kriterien\n",
+          f"Inventar-Deckung {deckung:.1%} (Ziel >= {DECKUNG_MIN:.0%}), "
+          f"geltungsbereich-Splitrate {gb_split:.1%} (Ziel <= {GELTUNGSBEREICH_SPLIT_MAX:.0%}), "
+          f"Replikation identisch {repl} (Ziel True) -> **{schluessel}**\n", satz, ""]
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
