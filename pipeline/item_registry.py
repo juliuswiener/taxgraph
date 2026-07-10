@@ -273,13 +273,20 @@ def discover_draft(rule_id: str) -> dict:
     items = []
     for n in ab["neu"]:
         bid = n.get("bedingung_id")
-        # Eine per Konvention gemappte Annahme ist generisch -> nicht_material
-        # vorbelegen (Julius bestaetigt). Reduziert das Triage-Rauschen.
-        vor = "nicht_material" if isinstance(bid, str) and bid.startswith("konv:") else "offen"
-        e = {"art": n["art"], "anker": n["anker"], "text": n["text"],
-             "triage": vor, "bedingung": ""}
-        if vor == "nicht_material":
+        # Detektor-Vorschlag vorbelegen (Julius bestaetigt/korrigiert - AINA):
+        #  konv:X            -> nicht_material (globale Konvention)
+        #  deklarierte Bed.  -> bedingung_neu mit dieser Bedingung
+        #  None              -> offen (Julius entscheidet)
+        e = {"art": n["art"], "anker": n["anker"], "text": n["text"], "bedingung": ""}
+        if isinstance(bid, str) and bid.startswith("konv:"):
+            e["triage"] = "nicht_material"
             e["konvention"] = bid
+        elif isinstance(bid, str) and bid:
+            e["triage"] = "bedingung_neu"
+            e["bedingung"] = bid
+            e["vorschlag"] = "detektor"
+        else:
+            e["triage"] = "offen"
         if n.get("klasse"):
             e["klasse"] = n["klasse"]
         items.append(e)
@@ -321,6 +328,45 @@ def aufnehmen(draft: dict) -> tuple[str, int]:
             idx[k] = e
         n += 1
     return save(reg), n
+
+
+def seed_mechanisch(rule_id: str, triage_eintraege: list[dict],
+                    verdict: dict) -> tuple[int, list[dict]]:
+    """Mechanisches Seeding (Protokolldekret 2026-07-11, Punkt 2).
+
+    Ein frisches Item uebernimmt einen Triage-Status NUR, wenn sein Anker EXAKT
+    einem Eintrag der Triage entspricht (fuer Annahmen: betrifft+kategorie; fuer
+    Norm-Teile: referenz). KEINE Aehnlichkeits-Zuordnung. Items ohne exakte
+    Entsprechung gehen in die Discovery-Queue und warten auf Julius.
+
+    Rueckgabe: (aufgenommen, offene_discovery-items).
+    """
+    tri_idx = {_key(e["art"], e["anker"]): e for e in triage_eintraege}
+    reg = load(rule_id)
+    ab = abgleich(reg, verdict)
+    aufnahme = []
+    offen = []
+    for n in ab["neu"]:
+        e = tri_idx.get(n["schluessel"])
+        if e is None:
+            offen.append(n)                    # keine Entsprechung -> Discovery
+            continue
+        eintrag = {"art": n["art"], "anker": n["anker"],
+                   "formulierungen": [n["text"]], "triage": e["triage"]}
+        if n.get("klasse"):
+            eintrag["klasse"] = n["klasse"]
+        if e["triage"] == "bedingung_neu":
+            eintrag["bedingung"] = e["bedingung"]
+        aufnahme.append(eintrag)
+    if aufnahme:
+        idx = _index(reg)
+        for e in aufnahme:
+            k = _key(e["art"], e["anker"])
+            if k not in idx:
+                reg.setdefault("items", []).append(e)
+                idx[k] = e
+        save(reg)
+    return len(aufnahme), offen
 
 
 def main() -> int:

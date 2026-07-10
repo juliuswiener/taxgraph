@@ -1,0 +1,287 @@
+rule_id: p24b_entlastungsbetrag
+hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt; bei bedingung_neu
+  die bedingung-ID eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>'
+items:
+- art: abweichung
+  anker:
+  - betrifft
+  - '?'
+  text: Bei mehr als 12 Monaten ohne Voraussetzungen wird der Entlastungsbetrag negativ, obwohl die Norm
+    nur eine Minderung bis auf null vorsieht.
+  bedingung: ''
+  triage: offen
+- art: abweichung
+  anker:
+  - betrifft
+  - '?'
+  text: Die Berechnung kann zu einem negativen Entlastungsbetrag führen, wenn monate_ohne_voraussetzung
+    größer als 12 ist.
+  bedingung: ''
+  triage: offen
+- art: abweichung
+  anker:
+  - betrifft
+  - '?'
+  text: Die Formalisierung kappt monate_ohne_voraussetzung nicht auf 12, was bei Werten über 12 zu einem
+    negativen Entlastungsbetrag führt.
+  bedingung: ''
+  triage: offen
+- art: abweichung
+  anker:
+  - betrifft
+  - '?'
+  text: Die Formalisierung lässt Werte über 12 zu und erzeugt dann einen negativen Entlastungsbetrag,
+    obwohl die Norm maximal 12 Fehlmonate vorsieht.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  text: Das Ergebnis der Berechnung wird kaufmännisch auf Cent gerundet, obwohl die Norm keine Rundung
+    vorschreibt.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  text: Die Formalisierung verwendet Dezimalarithmetik ohne explizite Rundungsregel, was implizit eine
+    Rundung auf Cent oder ähnliches annimmt.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  text: The computation uses decimal arithmetic without explicit rounding, assuming that the resulting
+    money amount is rounded to cents in an unspecified manner.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder
+  - sonstige
+  text: Negative values for anzahl_kinder are treated as zero, which is not specified in the norm.
+  bedingung: ''
+  triage: offen
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1 satz 1
+  text: wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz
+    6 oder Kindergeld zusteht
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1 satz 2
+  text: Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden
+    Steuerpflichtigen gemeldet ist.
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 3
+  text: Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige, die nicht die Voraussetzungen für
+    die Anwendung des Splitting-Verfahrens (§ 26 Absatz 1) erfüllen oder verwitwet sind und keine Haushaltsg
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1 s. 1
+  text: wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz
+    6 oder Kindergeld zusteht
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1 s. 2
+  text: Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden
+    Steuerpflichtigen gemeldet ist.
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 4
+  text: Für jeden vollen Kalendermonat, in dem die Voraussetzungen des Absatzes 1 nicht vorgelegen haben,
+    ermäßigt sich der Entlastungsbetrag nach Absatz 2 um ein Zwölftel.
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1
+  text: von der Summe der Einkünfte abziehen
+  bedingung: ''
+  triage: offen
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 2
+  text: beträgt der Entlastungsbetrag im Kalenderjahr 4 260 Euro
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 2 satz 1
+  text: ein Kind im Sinne des Absatzes 1
+  bedingung: ''
+  triage: offen
+  klasse: unabhaengig
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder
+  - interpretation
+  text: Die Anzahl der Kinder wird als Anzahl der Kinder interpretiert, die die Voraussetzungen des §
+    24b Abs. 1 erfüllen.
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - alleinstehend
+  - interpretation
+  text: Der boolesche Wert wird als Erfüllung der Definition des Alleinstehenden nach § 24b Abs. 3 interpretiert.
+  bedingung: alleinstehend_im_sinne_des_absatzes_3
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - zeitbezug
+  text: Die Anzahl wird als Anzahl der vollen Kalendermonate ohne Voraussetzungen des Abs. 1 gelesen,
+    ohne Bereichsprüfung.
+  bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - alleinstehend
+  - interpretation
+  text: Der boolesche Wert 'alleinstehend' wird als korrekte Umsetzung der komplexen Definition in § 24b
+    Abs. 3 EStG vorausgesetzt.
+  bedingung: alleinstehend_im_sinne_des_absatzes_3
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - interpretation
+  text: Die Anzahl der Monate ohne Voraussetzungen wird als korrekte Zählung voller Kalendermonate gemäß
+    § 24b Abs. 4 EStG vorausgesetzt.
+  bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder
+  - interpretation
+  text: Die Formalisierung nimmt an, dass anzahl_kinder ausschließlich Kinder zählt, für die ein Freibetrag
+    nach §32 Abs. 6 oder Kindergeld zusteht.
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - alleinstehend
+  - interpretation
+  text: Die Formalisierung setzt voraus, dass alleinstehend bereits gemäß §24b Abs. 3 EStG bestimmt wurde.
+  bedingung: alleinstehend_im_sinne_des_absatzes_3
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - interpretation
+  text: Die Formalisierung geht davon aus, dass monate_ohne_voraussetzung die Anzahl der vollen Kalendermonate
+    ohne Voraussetzungen nach Abs. 1 korrekt angibt.
+  bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - alleinstehend
+  - interpretation
+  text: The boolean input alleinstehend is assumed to correctly reflect the legal definition of 'allein
+    stehend' from § 24b Abs. 3 EStG.
+  bedingung: alleinstehend_im_sinne_des_absatzes_3
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder
+  - interpretation
+  text: The integer anzahl_kinder is assumed to count only children who meet the criteria of § 24b Abs.
+    1 EStG.
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - interpretation
+  text: The integer monate_ohne_voraussetzung is assumed to correctly count the full calendar months without
+    the conditions of § 24b Abs. 1.
+  bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  text: Die Berechnung verwendet Gleitkommadivision ohne Rundungsregel, was zu Bruchteilen von Cent führen
+    kann.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:keine_zusaetzliche_rundung
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - sonstige
+  text: The input monate_ohne_voraussetzung is assumed to be between 0 and 12 inclusive, as the norm does
+    not specify behavior for out-of-range values.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:ganzzahl_monate
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  text: Die Formalisierung rundet das Ergebnis nicht, obwohl die Norm keine Rundungsregel enthält und
+    Bruchteile von Cent entstehen können.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:keine_zusaetzliche_rundung

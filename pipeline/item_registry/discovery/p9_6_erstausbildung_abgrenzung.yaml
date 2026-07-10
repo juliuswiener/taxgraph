@@ -1,0 +1,170 @@
+rule_id: p9_6_erstausbildung_abgrenzung
+hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt; bei bedingung_neu
+  die bedingung-ID eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>'
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 6 satz 1
+  text: Aufwendungen des Steuerpflichtigen für seine Berufsausbildung oder für sein Studium
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 6 satz 2
+  text: Eine Berufsausbildung als Erstausbildung nach Satz 1 liegt vor, wenn eine geordnete Ausbildung
+    mit einer Mindestdauer von 12 Monaten bei vollzeitiger Ausbildung und mit einer Abschlussprüfung durchgef
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 6 satz 3
+  text: Eine geordnete Ausbildung liegt vor, wenn sie auf der Grundlage von Rechts- oder Verwaltungsvorschriften
+    oder internen Vorschriften eines Bildungsträgers durchgeführt wird.
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 6 satz 4
+  text: Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen, gilt die Ausbildung mit der
+    tatsächlichen planmäßigen Beendigung als abgeschlossen.
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 6 satz 5
+  text: Eine Berufsausbildung als Erstausbildung hat auch abgeschlossen, wer die Abschlussprüfung einer
+    durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausbildung mit einer Mindestdauer von
+    12 Mon
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - satz 2
+  text: geordnete Ausbildung mit einer Mindestdauer von 12 Monaten
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - satz 3
+  text: auf der Grundlage von Rechts- oder Verwaltungsvorschriften
+  bedingung: ''
+  triage: offen
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 4
+  text: Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - satz 5
+  text: wer die Abschlussprüfung einer durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausbildung
+    mit einer Mindestdauer von 12 Monaten bestanden hat
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: annahme
+  anker:
+  - betrifft_kat
+  - erstausbildung_abgeschlossen
+  - interpretation
+  text: Die Eingabe 'erstausbildung_abgeschlossen' wird als zutreffende rechtliche Feststellung einer
+    abgeschlossenen Erstausbildung vorausgesetzt.
+  bedingung: erstausbildung_nach_legaldefinition
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - erstausbildung_abgeschlossen
+  - interpretation
+  text: Die Eingabe 'erstausbildung_abgeschlossen' wird als bereits gemäß § 9 Abs. 6 Sätze 2-5 EStG geprüft
+    vorausgesetzt.
+  bedingung: erstausbildung_nach_legaldefinition
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - erstausbildung_abgeschlossen
+  - interpretation
+  text: The boolean input 'erstausbildung_abgeschlossen' is assumed to already reflect the legal definition
+    of a completed first education as per §9 Abs. 6 Sätze 2-5.
+  bedingung: erstausbildung_nach_legaldefinition
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - erstausbildung_abgeschlossen
+  - interpretation
+  text: The input 'erstausbildung_abgeschlossen' is assumed to correctly indicate a prior completed Erstausbildung.
+  bedingung: erstausbildung_nach_legaldefinition
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - im_dienstverhaeltnis
+  - interpretation
+  text: Die Eingabe 'im_dienstverhaeltnis' wird als zutreffende Feststellung interpretiert, dass die Ausbildung
+    im Dienstverhältnis stattfindet.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:input_nur_etikettiertes
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aufwendungen
+  - interpretation
+  text: Die Eingabe 'aufwendungen' wird als Aufwendungen für die eigene Berufsausbildung oder das Studium
+    des Steuerpflichtigen interpretiert.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:input_nur_etikettiertes
+- art: annahme
+  anker:
+  - betrifft_kat
+  - im_dienstverhaeltnis
+  - interpretation
+  text: Die Eingabe 'im_dienstverhaeltnis' wird als zutreffende Prüfung des Dienstverhältnisses vorausgesetzt.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:input_nur_etikettiertes
+- art: annahme
+  anker:
+  - betrifft_kat
+  - im_dienstverhaeltnis
+  - interpretation
+  text: The input 'im_dienstverhaeltnis' is assumed to correctly indicate that the education occurs within
+    a service relationship.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:input_nur_etikettiertes
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aufwendungen
+  - interpretation
+  text: The input 'aufwendungen' is assumed to be the taxpayer's expenses for their own vocational training
+    or studies.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:input_nur_etikettiertes

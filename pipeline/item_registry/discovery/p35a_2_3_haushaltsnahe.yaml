@@ -1,0 +1,525 @@
+rule_id: p35a_2_3_haushaltsnahe
+hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt; bei bedingung_neu
+  die bedingung-ID eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>'
+items:
+- art: abweichung
+  anker:
+  - betrifft
+  - '?'
+  text: Die Formaliserung wendet 20% auf den gesamten Betrag an, obwohl nach § 35a Abs. 5 Satz 2 nur Arbeitskosten
+    abziehbar sind.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - handwerker_arbeitskosten
+  - interpretation
+  text: Die Handwerkerleistungen sind für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen und
+    nicht öffentlich gefördert.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - minijob_aufwendungen
+  - geltungsvoraussetzung
+  text: Die minijob_aufwendungen erfüllen die Voraussetzungen der Absätze 4 und 5 (keine Betriebsausgaben,
+    EU/EWR-Haushalt).
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - geltungsvoraussetzung
+  text: Die haushaltsnahe_dienstleistungen erfüllen die Voraussetzungen der Absätze 4 und 5 (keine Betriebsausgaben,
+    EU/EWR-Haushalt).
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - handwerker_arbeitskosten
+  - geltungsvoraussetzung
+  text: Die handwerker_arbeitskosten sind nicht für öffentlich geförderte Maßnahmen und erfüllen die Voraussetzungen
+    der Absätze 4 und 5.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - interpretation
+  text: Die Eingabe umfasst ausschließlich Arbeitskosten im Sinne des § 35a Abs. 5 Satz 2 EStG.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  text: Die Aufwendungen sind nicht als Betriebsausgaben, Werbungskosten oder Sonderausgaben berücksichtigt
+    worden.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - interpretation
+  text: Die Eingabe umfasst nur die begünstigten Kosten für Pflege- und Betreuungsleistungen sowie Heimunterbringung,
+    soweit sie mit haushaltsnahen Dienstleistungen vergleichbar sind.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - interpretation
+  text: Die Eingabe wird als ausschließlich Arbeitskosten interpretiert, obwohl die Norm dies nicht für
+    den gesamten Betrag vorschreibt.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  text: Es wird angenommen, dass die tarifliche Einkommensteuer nach anderen Ermäßigungen die Summe der
+    Einzelermäßigungen nicht unterschreitet.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  text: Die 20%-Berechnung der Aufwendungen erfolgt ohne gesetzliche Rundungsvorschrift, es wird standardmäßig
+    gerundet.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - minijob_aufwendungen
+  - zeitbezug
+  text: Es wird angenommen, dass die Aufwendungen im jeweiligen Veranlagungsjahr angefallen sind.
+  bedingung: ''
+  triage: offen
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 5 satz 1
+  text: soweit die Aufwendungen nicht Betriebsausgaben oder Werbungskosten darstellen und soweit sie nicht
+    als Sonderausgaben oder außergewöhnliche Belastungen berücksichtigt worden sind
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 5 satz 2
+  text: Der Abzug von der tariflichen Einkommensteuer nach den Absätzen 2 und 3 gilt nur für Arbeitskosten.
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 5 satz 3
+  text: Voraussetzung ... ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat
+    und die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist.
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 5 satz 4
+  text: Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge nach den Absätzen
+    1 bis 3 insgesamt jeweils nur einmal in Anspruch nehmen.
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 4 satz 1
+  text: wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in
+    der Europäischen Union oder dem Europäischen Wirtschaftsraum liegenden Haushalt ... ausgeübt oder
+    erbracht
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 3 satz 2
+  text: Dies gilt nicht für öffentlich geförderte Maßnahmen, für die zinsverbilligte Darlehen oder steuerfreie
+    Zuschüsse in Anspruch genommen werden.
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 1
+  text: auf Antrag
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 1
+  text: geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 1
+  text: ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen
+  bedingung: ''
+  triage: offen
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 2 satz 1
+  text: andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme
+    von haushaltsnahen Dienstleistungen
+  bedingung: ''
+  triage: offen
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 2 satz 2
+  text: für die Inanspruchnahme von Pflege- und Betreuungsleistungen sowie für Aufwendungen, die einem
+    Steuerpflichtigen wegen der Unterbringung in einem Heim oder zur dauernden Pflege erwachsen
+  bedingung: ''
+  triage: offen
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 3 satz 1
+  text: Handwerkerleistungen für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 4 satz 2
+  text: das Heim oder der Ort der dauernden Pflege in der Europäischen Union oder dem Europäischen Wirtschaftsraum
+    liegt
+  bedingung: ''
+  triage: offen
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 2 satz 1
+  text: ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen,
+    auf Antrag
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 3 satz 1
+  text: ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen,
+    auf Antrag
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 4
+  text: wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in
+    der Europäischen Union oder dem Europäischen Wirtschaftsraum liegenden Haushalt des Steuerpflichtigen
+    … au
+  bedingung: ''
+  triage: offen
+  klasse: wirkt_hinein
+- art: annahme
+  anker:
+  - betrifft_kat
+  - minijob_aufwendungen
+  - interpretation
+  text: Die minijob_aufwendungen stammen aus einem haushaltsnahen geringfügigen Beschäftigungsverhältnis.
+  bedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - minijob_aufwendungen
+  - geltungsvoraussetzung
+  text: Die Aufwendungen sind keine Betriebsausgaben oder Werbungskosten und nicht als Sonderausgaben
+    oder außergewöhnliche Belastungen berücksichtigt.
+  bedingung: keine_beruecksichtigung_als_wk_sa_agb
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - minijob_aufwendungen
+  - geltungsvoraussetzung
+  text: Der Steuerpflichtige hat einen Antrag auf Steuerermäßigung gestellt.
+  bedingung: antrag_gestellt
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - geltungsvoraussetzung
+  text: Der Steuerpflichtige hat eine Rechnung erhalten und die Zahlung auf das Konto des Leistungserbringers
+    geleistet.
+  bedingung: rechnung_und_unbare_zahlung
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - interpretation
+  text: Die haushaltsnahen Dienstleistungen umfassen ausschließlich Arbeitskosten.
+  bedingung: dienstleistungsbetrag_enthaelt_nur_arbeitskosten
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - handwerker_arbeitskosten
+  - geltungsvoraussetzung
+  text: Der Steuerpflichtige hat eine Rechnung erhalten und die Zahlung auf das Konto des Leistungserbringers
+    geleistet.
+  bedingung: rechnung_und_unbare_zahlung
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - handwerker_arbeitskosten
+  - interpretation
+  text: Die handwerker_arbeitskosten umfassen ausschließlich Arbeitskosten.
+  bedingung: handwerkerbetrag_enthaelt_nur_arbeitskosten
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - geltungsvoraussetzung
+  text: Die Dienstleistung wird in einem Haushalt in der EU oder dem EWR erbracht.
+  bedingung: haushalt_in_eu_ewr
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - minijob_aufwendungen
+  - interpretation
+  text: Die minijob_aufwendungen werden als Aufwendungen für eine geringfügige Beschäftigung im Sinne
+    des §8a SGB IV behandelt.
+  bedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - interpretation
+  text: Die haushaltsnahe_dienstleistungen werden als Arbeitskosten für haushaltsnahe Dienstleistungen
+    im Sinne des Absatzes 2 behandelt.
+  bedingung: dienstleistungsbetrag_enthaelt_nur_arbeitskosten
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  text: Es wird ein Antrag auf Steuerermäßigung gestellt.
+  bedingung: antrag_gestellt
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  text: Der Steuerpflichtige lebt nicht mit einem anderen Alleinstehenden in einem Haushalt zusammen,
+    so dass die Höchstbeträge nur einmal in Anspruch genommen werden.
+  bedingung: kein_gemeinsamer_haushalt_zweier_alleinstehender
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - minijob_aufwendungen
+  - geltungsvoraussetzung
+  text: Die Aufwendungen stammen aus einer geringfügigen Beschäftigung im Sinne des § 8a SGB IV.
+  bedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - interpretation
+  text: Die Eingabe betrifft nur haushaltsnahe Dienstleistungen oder Beschäftigungsverhältnisse, die nicht
+    unter § 35a Abs. 3 EStG fallen.
+  bedingung: dienstleistungen_sind_keine_handwerkerleistungen
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - handwerker_arbeitskosten
+  - interpretation
+  text: Die Eingabe umfasst ausschließlich Arbeitskosten für Handwerkerleistungen im Sinne des § 35a Abs.
+    3 EStG.
+  bedingung: handwerkerbetrag_enthaelt_nur_arbeitskosten
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - handwerker_arbeitskosten
+  - geltungsvoraussetzung
+  text: Die Handwerkerleistungen sind nicht öffentlich gefördert im Sinne des § 35a Abs. 3 Satz 2 EStG.
+  bedingung: handwerker_keine_oeffentliche_foerderung
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  text: Die Leistungen werden im Haushalt des Steuerpflichtigen in der EU oder dem EWR erbracht.
+  bedingung: haushalt_in_eu_ewr
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  text: Die Höchstbeträge werden nicht mit einer weiteren alleinstehenden Person im selben Haushalt geteilt.
+  bedingung: kein_gemeinsamer_haushalt_zweier_alleinstehender
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - geltungsvoraussetzung
+  text: Es wird angenommen, dass die Aufwendungen keine Betriebsausgaben oder Werbungskosten sind und
+    nicht anderweitig berücksichtigt wurden.
+  bedingung: keine_beruecksichtigung_als_wk_sa_agb
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - handwerker_arbeitskosten
+  - geltungsvoraussetzung
+  text: Es wird angenommen, dass die Aufwendungen keine Betriebsausgaben oder Werbungskosten sind und
+    nicht anderweitig berücksichtigt wurden.
+  bedingung: keine_beruecksichtigung_als_wk_sa_agb
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - geltungsvoraussetzung
+  text: Es wird angenommen, dass eine Rechnung vorliegt und die Zahlung auf das Konto des Leistungserbringers
+    erfolgt ist.
+  bedingung: rechnung_und_unbare_zahlung
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - handwerker_arbeitskosten
+  - geltungsvoraussetzung
+  text: Es wird angenommen, dass eine Rechnung vorliegt und die Zahlung auf das Konto des Leistungserbringers
+    erfolgt ist.
+  bedingung: rechnung_und_unbare_zahlung
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  text: Es wird angenommen, dass keine zwei Alleinstehenden im Haushalt zusammenleben und die Höchstbeträge
+    nur einmal gelten.
+  bedingung: kein_gemeinsamer_haushalt_zweier_alleinstehender
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - minijob_aufwendungen
+  - geltungsvoraussetzung
+  text: Es wird angenommen, dass das Beschäftigungsverhältnis im Haushalt in der EU oder dem EWR ausgeübt
+    wird.
+  bedingung: haushalt_in_eu_ewr
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - handwerker_arbeitskosten
+  - geltungsvoraussetzung
+  text: Es wird angenommen, dass die Handwerkerleistung im Haushalt in der EU oder dem EWR erbracht wird.
+  bedingung: haushalt_in_eu_ewr
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - minijob_aufwendungen
+  - interpretation
+  text: Die Eingabe wird als Aufwendungen für ein haushaltsnahes Minijob nach §8a SGB IV interpretiert.
+  bedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - handwerker_arbeitskosten
+  - interpretation
+  text: Die Eingabe wird als Aufwendungen für nicht öffentlich geförderte Handwerkerleistungen interpretiert.
+  bedingung: handwerker_keine_oeffentliche_foerderung
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haushaltsnahe_dienstleistungen
+  - interpretation
+  text: Die haushaltsnahen Dienstleistungen sind keine Handwerkerleistungen und werden im Haushalt erbracht.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:input_nur_etikettiertes
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - interpretation
+  text: Es wird angenommen, dass sich die Aufwendungen der drei Kategorien nicht überschneiden.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:input_nur_etikettiertes
