@@ -345,9 +345,12 @@ def _normalize_gap(gap) -> dict:
     klasse = str(gap.get("klasse", "")).strip().lower()
     if klasse not in ("unabhaengig", "wirkt_hinein"):
         klasse = "unklassifiziert"
-    return {"norm_teil": str(gap.get("norm_teil", ""))[:400],
-            "klasse": klasse,
-            "begruendung": str(gap.get("begruendung", ""))[:400]}
+    d = {"norm_teil": str(gap.get("norm_teil", ""))[:400],
+         "klasse": klasse,
+         "begruendung": str(gap.get("begruendung", ""))[:400]}
+    if "abgedeckt_von" in gap:
+        d["abgedeckt_von"] = str(gap["abgedeckt_von"])[:120]
+    return d
 
 
 def wirkt_hinein(verdict: dict) -> list[dict]:
@@ -441,14 +444,27 @@ def geltungsbereich_gate(judge, candidate: dict | None = None) -> GateResult:
                           f"{len(hinein)} Norm-Teil(e) wirken hinein, aber keine "
                           f"`geltungsbedingungen` deklariert")
 
+    ids = {b.get("bedingung") for b in bedingungen}
     # `deckt_ab` darf ein String oder eine Liste sein: eine Bedingung
     # ("keine Mahlzeitengestellung") deckt oft mehrere Norm-Teile ab.
     abgedeckt: list[str] = []
     for b in bedingungen:
         d = b.get("deckt_ab", "")
         abgedeckt += [_normalize(x) for x in (d if isinstance(d, list) else [d])]
-    offen = [g for g in hinein
-             if not any(a and a in _normalize(g["norm_teil"]) for a in abgedeckt)]
+
+    def gedeckt(g: dict) -> bool:
+        # Der dekomponierte Judge nennt die abdeckende Bedingung explizit. Sobald
+        # das Feld vorliegt, ist es autoritativ - auch sein "none". Sonst wuerde
+        # der Textabgleich ein ausdrueckliches "nicht abgedeckt" ueberstimmen.
+        # Eine ID, die es nicht gibt, deckt nichts ab: ein erfundenes Mapping darf
+        # nichts durchwinken.
+        if "abgedeckt_von" in g:
+            av = g["abgedeckt_von"]
+            return bool(av) and av != "none" and av in ids
+        # Fallback fuer Verdikte des monolithischen Judge: Textabgleich.
+        return any(a and a in _normalize(g["norm_teil"]) for a in abgedeckt)
+
+    offen = [g for g in hinein if not gedeckt(g)]
     fehlende_felder = [b for b in bedingungen
                        if not (b.get("bedingung") and b.get("quelle"))]
     if fehlende_felder:

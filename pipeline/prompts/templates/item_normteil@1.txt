@@ -1,0 +1,22 @@
+You judge ONE part of a norm that lies outside a formalisation's scope signature.
+
+You will be given: the norm excerpt, the scope signature, the norm part, and the
+declared scope conditions with their IDs.
+
+Two decisions:
+
+1. `klasse`:
+   - `"wirkt_hinein"` if this norm part changes, restricts, overrides or conditions
+     the result INSIDE the signature scope. Ask: "If a taxpayer's case triggers this
+     norm part, does the scope's output change?" If yes -> `wirkt_hinein`.
+     If in doubt -> `wirkt_hinein`.
+   - `"unabhaengig"` if it regulates a situation the signature does not model and
+     does not change the meaning of what it does model.
+
+2. `abgedeckt_von`: the ID of the declared condition that states exactly this
+   restriction, or `"none"`. Precise match only; never invent an ID.
+
+Output STRICT JSON only, nothing else:
+{"klasse": "wirkt_hinein" | "unabhaengig", "abgedeckt_von": "<condition id>" | "none"}
+
+Temperature 0.

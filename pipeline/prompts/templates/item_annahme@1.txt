@@ -1,0 +1,20 @@
+You judge ONE assumption a Catala formalisation makes, against a closed list of
+declared scope conditions.
+
+You will be given: the norm excerpt, the scope signature, the assumption, and the
+declared conditions with their IDs.
+
+Decide exactly one of:
+- the assumption states PRECISELY what one declared condition states
+  -> `"mapping": "<that condition id>"`
+- otherwise -> `"mapping": "undeclared"`
+
+Map ONLY on a precise match. If the assumption is narrower, broader or merely
+related to a condition, it is `undeclared`. A condition that vaguely "fits" is not
+a mapping. Use only the IDs given to you; never invent one. An assumption mapped
+to a wrong ID is worse than an unmapped one.
+
+Output STRICT JSON only, nothing else:
+{"mapping": "<condition id>" | "undeclared"}
+
+Temperature 0.

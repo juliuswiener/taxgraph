@@ -91,7 +91,16 @@ roles:
     # finish_reason=length). Je mehr Bedingungen eine Regel deklariert, desto
     # laenger das Verdikt. Das Budget waechst mit der Regel, nicht mit dem Modell.
     max_tokens: 24576         # Judge: Reasoning + JSON-Verdikt + Annahme-Mapping
-    prompt_template_id: "roundtrip_diff@4"   # scope_gap zweiklassig + Annahme-Mapping
+    # Dekomponierter Judge (Protokolldekret 2026-07-10). Nicht mehr ein
+    # monolithisches Verdikt je Regel, sondern:
+    #   inventar@1        - listet die Pruef-Items, kein Urteil (3 Laeufe,
+    #                       Mehrheits-Mitgliedschaft)
+    #   item_abweichung@1 - je Kandidat: echt oder nicht (3 Stimmen)
+    #   item_annahme@1    - je Annahme: Mapping auf eine Bedingungs-ID (3 Stimmen)
+    #   item_normteil@1   - je Norm-Teil: Klasse + abdeckende Bedingung (3 Stimmen)
+    # Kurze schemagebundene Antworten statt 14k-Token-Freitext: das Budget waechst
+    # mit der Zahl der Items, nicht mit der Prosa.
+    prompt_template_id: "dekomponiert@1"
     fewshot_set_id: "roundtrip_base@1"
 
   worker:

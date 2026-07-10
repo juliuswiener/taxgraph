@@ -37,6 +37,7 @@ from cascade import run_candidate  # noqa: E402
 from client import mask_key, RoleCallError  # noqa: E402
 from quellen import build_norm_text, QuellenFehler  # noqa: E402
 import gates as G  # noqa: E402
+import judge as J  # noqa: E402
 
 OUT_ROOT = os.path.join(PIPELINE, "runs", "produktion")
 
@@ -123,7 +124,233 @@ def regate(rules: list[dict]) -> int:
                 changed += 1
         rep["failed_gates"] = [g["name"] for g in rep["gates"]
                                if g["status"] == G.FAIL and not g["name"].endswith("_first")]
-        rep["queue_status"] = _queue_status(rep["gates"], rule)
+        rep["queue_status"] = _queue_status(rep["gates"], rule,
+                                            rep.get("judge_verdict"))
+        rep["bedingungen"] = [b["bedingung"] for b in rule.get("geltungsbedingungen", [])]
+        # normalisiert: aeltere Verdikte tragen nackte Strings ohne Mapping
+        rep["annahmen_mapping"] = [G._normalize_annahme(a) for a in
+                                   (rep.get("judge_verdict") or {}).get("stille_zusatzannahmen", [])]
+        rep["regated"] = True
+        json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+        bed = f" unter {len(rep['bedingungen'])} Bedingung(en)" if rep["bedingungen"] else ""
+        print(f"  {rule['rule_id']}: {rep['queue_status']}{bed} "
+              f"(offene Gates: {', '.join(rep['failed_gates']) or 'keine'})")
+    print(f"\n{changed} Gate-Ergebnis(se) geaendert, keine Modellkosten.")
+    return 0
+
+
+def redo_a(rules: list[dict], dry_run: bool) -> int:
+    """Formalisierer A neu laufen lassen, B aus dem Report wiederverwenden.
+
+    Sonnets Numeric-Tower-Fehler ist ein Muster (G2 und p33_3, ueberlebt die
+    Reparaturrunde). Statt ihn weiter zu messen, bekommen beide Formalisierer ein
+    Cheatsheet aus den geprueften Idiomen der Handregeln - symmetrisch, damit der
+    Vergleich A/B fair bleibt.
+
+    Nur A wird neu formalisiert. Der Judge laeuft mit, weil sein Verdikt A's
+    Quelltext beurteilt: ein altes Verdikt zu einem neuen Quelltext waere eine
+    Luege im Report. B bleibt unangetastet - das spart den teureren Teil und haelt
+    die Aequivalenzpruefung gegen genau dieselbe zweite Formalisierung.
+    """
+    import roles as R
+    from client import OpenRouterClient
+    from provenance import load_roles
+
+    roles, models_hash = load_roles()
+    for rule in rules:
+        path = os.path.join(OUT_ROOT, rule["rule_id"], "report.json")
+        if not os.path.exists(path):
+            print(f"  {rule['rule_id']}: kein Report - erst einen vollen Lauf fahren")
+            continue
+        rep = json.load(open(path, encoding="utf-8"))
+        src_b = rep.get("catala_b")
+        if not src_b:
+            print(f"  {rule['rule_id']}: kein catala_b gespeichert, uebersprungen")
+            continue
+
+        cand = build_candidate(rule)
+        client = OpenRouterClient(dry_run=dry_run)
+        exclude = set(cand["exclude_rule_ids"])
+        cost = 0.0
+        print(f"\n=== redo-a :: {rule['rule_id']} ===", flush=True)
+
+        claims, p = R.extract(client, roles["worker"], cand["norm_text"], models_hash, exclude)
+        cost += p.cost_usd
+        a_text, pa = R.formalize(client, roles["formalisierer_a"], cand["norm_text"],
+                                 claims, models_hash, exclude, signature=cand["signature"])
+        cost += pa.cost_usd
+        mod_a, src_a = G.extract_catala(a_text)
+        syn, tc = G.syntax_gate(src_a, mod_a), G.typecheck_gate(src_a, mod_a)
+        first = (syn.status, tc.status)
+        repaired = False
+        if src_a and G.FAIL in first:
+            msg = syn.detail if syn.status == G.FAIL else tc.detail
+            r_text, pr = R.repair(client, roles["formalisierer_a"], src_a, msg,
+                                  models_hash, exclude, cand["signature"])
+            cost += pr.cost_usd
+            r_mod, r_src = G.extract_catala(r_text)
+            if r_src:
+                repaired = True
+                mod_a, src_a = r_mod, r_src
+                syn, tc = G.syntax_gate(src_a, mod_a), G.typecheck_gate(src_a, mod_a)
+
+        verdict, jprov, jkosten = J.judge_regel(
+            client, roles["judge"], cand["norm_text"], src_a or "", cand["signature"],
+            cand["geltungsbedingungen"], models_hash)
+        cost += jkosten
+
+        fresh = {"syntax_a_first": G.GateResult("", first[0], "erster Versuch"),
+                 "typecheck_a_first": G.GateResult("", first[1], "erster Versuch"),
+                 "syntax_a": syn, "typecheck_a": tc,
+                 "equivalence": G.equivalence_gate(src_a, src_b, cand),
+                 **judge_gates(verdict, cand),
+                 "clerk": G.clerk_gate(src_a, mod_a, cand, ROOT)}
+        vorhanden = {g["name"] for g in rep["gates"]}
+        for g in rep["gates"]:
+            if g["name"] in fresh:
+                g["status"], g["detail"] = fresh[g["name"]].status, fresh[g["name"]].detail
+        for name, new in fresh.items():
+            if name not in vorhanden:
+                rep["gates"].append({"name": name, "status": new.status, "detail": new.detail})
+        rep["catala_a"], rep["module_name"] = src_a, mod_a
+        rep["judge_verdict"] = verdict
+        rep["backlog"] = G.unabhaengige_gaps(verdict)
+        rep["repaired"] = {"a": repaired, "b": rep.get("repaired", {}).get("b", False)}
+        rep["judge_lauf_id"] = verdict.get("lauf_id")
+        rep["judge_timestamp"] = verdict.get("timestamp")
+        rep["judge_instability"] = verdict.get("judge_instability", {})
+        rep["failed_gates"] = [g["name"] for g in rep["gates"]
+                               if g["status"] == G.FAIL and not g["name"].endswith("_first")]
+        rep["queue_status"] = _queue_status(rep["gates"], rule, verdict)
+        rep["provenance"] += [x.to_dict() for x in (p, pa)] + jprov
+        rep["total_cost_usd"] = round(rep.get("total_cost_usd", 0.0) + cost, 6)
+        json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+        gates = " ".join(f"{k}={v.status}" for k, v in fresh.items()
+                         if not k.endswith("_first"))
+        print(f"  {rep['queue_status']} | +${cost:.4f} | repaired_a={repaired}\n  {gates}",
+              flush=True)
+    return 0
+
+
+def redo_judge(rules: list[dict], dry_run: bool) -> int:
+    """Nur den Judge neu laufen lassen. Formalisierungen bleiben unangetastet.
+
+    Seit dem Protokolldekret 2026-07-10 ist der Judge dekomponiert: Inventar mit
+    Mehrheits-Mitgliedschaft, dann ein Mini-Call je Pruef-Item mit drei Stimmen.
+    Ein 2:1-Split auf einem blockierenden Gate eskaliert.
+    """
+    from client import OpenRouterClient
+    from provenance import load_roles
+
+    roles, models_hash = load_roles()
+    for rule in rules:
+        path = os.path.join(OUT_ROOT, rule["rule_id"], "report.json")
+        if not os.path.exists(path):
+            print(f"  {rule['rule_id']}: kein Report"); continue
+        rep = json.load(open(path, encoding="utf-8"))
+        src_a = rep.get("catala_a")
+        if not src_a:
+            print(f"  {rule['rule_id']}: kein catala_a"); continue
+        cand = build_candidate(rule)
+        client = OpenRouterClient(dry_run=dry_run)
+        verdict, jprov, kosten = J.judge_regel(
+            client, roles["judge"], cand["norm_text"], src_a, cand["signature"],
+            cand["geltungsbedingungen"], models_hash)
+
+        fresh = judge_gates(verdict, cand)
+        vorhanden = {g["name"] for g in rep["gates"]}
+        for g in rep["gates"]:
+            if g["name"] in fresh:
+                g["status"], g["detail"] = fresh[g["name"]].status, fresh[g["name"]].detail
+        for name, new in fresh.items():
+            if name not in vorhanden:
+                rep["gates"].append({"name": name, "status": new.status, "detail": new.detail})
+        rep["judge_verdict"] = verdict
+        rep["judge_lauf_id"] = verdict.get("lauf_id")
+        rep["judge_timestamp"] = verdict.get("timestamp")
+        rep["judge_instability"] = verdict.get("judge_instability", {})
+        rep["annahmen_mapping"] = verdict.get("stille_zusatzannahmen", [])
+        rep["backlog"] = G.unabhaengige_gaps(verdict) if not verdict.get("parse_error") else []
+        rep["bedingungen"] = [b["bedingung"] for b in rule.get("geltungsbedingungen", [])]
+        rep["failed_gates"] = [g["name"] for g in rep["gates"]
+                               if g["status"] == G.FAIL and not g["name"].endswith("_first")]
+        rep["queue_status"] = _queue_status(rep["gates"], rule, verdict)
+        rep["provenance"] += jprov
+        rep["total_cost_usd"] = round(rep.get("total_cost_usd", 0.0) + kosten, 6)
+        json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+
+        inst = verdict.get("judge_instability") or {}
+        splits = len(inst.get("item_splits", []))
+        ohne = len(inst.get("items_ohne_mehrheit", []))
+        mapped = sum(1 for a in rep["annahmen_mapping"] if a.get("bedingung_id"))
+        print(f"  {rule['rule_id']}: {rep['queue_status']} | +${kosten:.4f} | "
+              f"Annahmen {mapped}/{len(rep['annahmen_mapping'])} | splits={splits} "
+              f"ohne_mehrheit={ohne} | offen: {', '.join(rep['failed_gates']) or 'keine'}",
+              flush=True)
+    return 0
+
+
+def judge_gates(verdict: dict, cand: dict) -> dict:
+    """Die drei Judge-Gates aus einem gespeicherten Verdikt.
+
+    Ein unlesbares oder abgeschnittenes Verdikt darf sie nicht UEBERSPRINGEN:
+    sonst bleiben alte PASS-Werte im Report stehen und die Regel sieht gruen aus,
+    obwohl ihr Urteil nie zustande kam. Genau so stand § 9 Abs. 4a zwischenzeitlich
+    auf `verified_bedingt`, waehrend der Judge in Wahrheit am Token-Limit
+    abgeschnitten worden war.
+    """
+    if not verdict:
+        return {}
+    if verdict.get("parse_error") or verdict.get("truncated"):
+        det = ("judge answer truncated at max_tokens" if verdict.get("truncated")
+               else "judge output not valid JSON")
+        return {n: G.GateResult(n, G.FAIL, det)
+                for n in ("roundtrip", "scope_gap", "geltungsbereich")}
+    return {"scope_gap": G.scope_gap_gate(verdict),
+            "geltungsbereich": G.geltungsbereich_gate(verdict, cand),
+            "roundtrip": G.roundtrip_gate(verdict, cand)}
+
+
+def regate(rules: list[dict]) -> int:
+    """Deterministische Gates aus gespeicherten Quellen neu rechnen. Keine Modelle."""
+    changed = 0
+    for rule in rules:
+        path = os.path.join(OUT_ROOT, rule["rule_id"], "report.json")
+        if not os.path.exists(path):
+            print(f"  {rule['rule_id']}: kein Report - erst einen echten Lauf fahren")
+            continue
+        rep = json.load(open(path, encoding="utf-8"))
+        src, mod = rep.get("catala_a"), rep.get("module_name")
+        if not src:
+            print(f"  {rule['rule_id']}: kein catala_a gespeichert, uebersprungen")
+            continue
+        cand = build_candidate(rule)
+        fresh = {"syntax_a": G.syntax_gate(src, mod),
+                 "typecheck_a": G.typecheck_gate(src, mod),
+                 "clerk": G.clerk_gate(src, mod, cand, ROOT)}
+        if rep.get("catala_b"):
+            fresh["equivalence"] = G.equivalence_gate(src, rep["catala_b"], cand)
+        # scope_gap und geltungsbereich sind ebenfalls deterministisch: sie lesen
+        # das gespeicherte Judge-Verdikt, kein Modell laeuft erneut.
+        fresh.update(judge_gates(rep.get("judge_verdict") or {}, cand))
+        vorhanden = {g["name"] for g in rep["gates"]}
+        for g in rep["gates"]:
+            if g["name"] in fresh:
+                new = fresh[g["name"]]
+                if (g["status"], g["detail"]) != (new.status, new.detail):
+                    changed += 1
+                g["status"], g["detail"] = new.status, new.detail
+        # Ein neu eingefuehrtes Gate steht in aelteren Reports noch nicht drin und
+        # wuerde sonst nie erscheinen.
+        for name, new in fresh.items():
+            if name not in vorhanden:
+                rep["gates"].append({"name": name, "status": new.status,
+                                     "detail": new.detail})
+                changed += 1
+        rep["failed_gates"] = [g["name"] for g in rep["gates"]
+                               if g["status"] == G.FAIL and not g["name"].endswith("_first")]
+        rep["queue_status"] = _queue_status(rep["gates"], rule,
+                                            rep.get("judge_verdict"))
         rep["bedingungen"] = [b["bedingung"] for b in rule.get("geltungsbedingungen", [])]
         # normalisiert: aeltere Verdikte tragen nackte Strings ohne Mapping
         rep["annahmen_mapping"] = [G._normalize_annahme(a) for a in
@@ -202,9 +429,7 @@ def redo_a(rules: list[dict], dry_run: bool) -> int:
                  "typecheck_a_first": G.GateResult("", first[1], "erster Versuch"),
                  "syntax_a": syn, "typecheck_a": tc,
                  "equivalence": G.equivalence_gate(src_a, src_b, cand),
-                 "roundtrip": G.roundtrip_gate(verdict, cand),
-                 "scope_gap": G.scope_gap_gate(verdict),
-                 "geltungsbereich": G.geltungsbereich_gate(verdict, cand),
+                 **judge_gates(verdict, cand),
                  "clerk": G.clerk_gate(src_a, mod_a, cand, ROOT)}
         vorhanden = {g["name"] for g in rep["gates"]}
         for g in rep["gates"]:
@@ -217,10 +442,13 @@ def redo_a(rules: list[dict], dry_run: bool) -> int:
         rep["judge_verdict"] = verdict
         rep["backlog"] = G.unabhaengige_gaps(verdict)
         rep["repaired"] = {"a": repaired, "b": rep.get("repaired", {}).get("b", False)}
+        rep["judge_lauf_id"] = verdict.get("lauf_id")
+        rep["judge_timestamp"] = verdict.get("timestamp")
+        rep["judge_instability"] = verdict.get("judge_instability", {})
         rep["failed_gates"] = [g["name"] for g in rep["gates"]
                                if g["status"] == G.FAIL and not g["name"].endswith("_first")]
-        rep["queue_status"] = _queue_status(rep["gates"], rule)
-        rep["provenance"] += [x.to_dict() for x in (p, pa, pj)]
+        rep["queue_status"] = _queue_status(rep["gates"], rule, verdict)
+        rep["provenance"] += [x.to_dict() for x in (p, pa)] + jprov
         rep["total_cost_usd"] = round(rep.get("total_cost_usd", 0.0) + cost, 6)
         json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
         gates = " ".join(f"{k}={v.status}" for k, v in fresh.items()
@@ -286,7 +514,8 @@ def redo_judge(rules: list[dict], dry_run: bool) -> int:
     return 0
 
 
-def _queue_status(gates: list[dict], rule: dict | None = None) -> str:
+def _queue_status(gates: list[dict], rule: dict | None = None,
+                  verdict: dict | None = None) -> str:
     st = [g["status"] for g in gates if not g["name"].endswith("_first")]
     if G.FAIL in st:
         return "flagged_for_review"
@@ -297,6 +526,10 @@ def _queue_status(gates: list[dict], rule: dict | None = None) -> str:
         return "freigabe_blockiert"
     if G.SKIP in st:
         return "verified_partial (toolchain pending)"
+    # Ein 2:1-Split auf einem blockierenden Gate ist kein stilles PASS: der Split
+    # ist Information und eskaliert.
+    if verdict and J.hat_split_auf_blockierendem_gate(verdict):
+        return "judge_split_eskaliert"
     # Statusehrlichkeit: eine Regel mit Geltungsbedingungen ist nie schlicht
     # "verified". Sie gilt nur unter ihren Bedingungen; Phase 5 muss sie als
     # Fragen stellen, und die Engine darf die Regel bei Verletzung nicht feuern.
@@ -406,6 +639,11 @@ def main() -> int:
                              if g.status == G.FAIL and not g.name.endswith("_first")],
             "repaired": res.repaired,
             "judge_verdict": res.judge_verdict,
+            # Punkt 5 des Protokolldekrets: ein Verdikt-Report nennt den Judge-Lauf,
+            # der ihn erzeugt hat. Ein Gate ohne frisches Verdikt hat keinen Zustand.
+            "judge_lauf_id": (res.judge_verdict or {}).get("lauf_id"),
+            "judge_timestamp": (res.judge_verdict or {}).get("timestamp"),
+            "judge_instability": (res.judge_verdict or {}).get("judge_instability", {}),
             "backlog": res.backlog,
             "transport": res.transport,
             "provenance": res.provenance,

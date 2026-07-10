@@ -234,3 +234,34 @@ Zwei Nebenbefunde, die die Regel bestaetigen:
   **bevor** es `clerk` auf dem PATH sucht. Vorher war seine Strenge davon
   abhaengig, ob die opam-Umgebung geladen war - dieselbe Regel konnte je nach
   Shell `FAIL` oder `SKIP` liefern.
+
+## Ein Gate ohne frisches Verdikt hat KEINEN Zustand, niemals den alten
+
+Dieselbe Fehlerklasse wie die stille YAML-Semantik: **falsches Grün**.
+
+`--regate` rechnet die deterministischen Gates aus gespeicherten Quellen neu. Traf
+es dabei ein Judge-Verdikt, das gar keines war — abgeschnitten am Token-Limit oder
+kein gültiges JSON —, übersprang es die drei Judge-Gates und ließ deren **alte
+`PASS`-Werte stehen**. § 9 Abs. 4a und § 35a standen so auf `verified_bedingt`,
+während ihr Judge in Wahrheit nie geurteilt hatte.
+
+Die Regel lautet deshalb: ein Gate, für das kein frisches, gültiges Verdikt
+vorliegt, ist `FAIL`. Nicht „unverändert", nicht „unbekannt", nicht der alte Wert.
+Die Entscheidung liegt in `judge_gates()` und ist in beide Richtungen getestet.
+
+Damit die Herkunft eines Urteils prüfbar bleibt, trägt jeder Verdikt-Report seit
+2026-07-10 die `lauf_id` und den `timestamp` des Judge-Calls, der ihn erzeugt hat.
+Ein Report, der ein Urteil behauptet, muss sagen können, woher es stammt.
+
+Verwandte Fallstricke derselben Klasse:
+
+- Eine **leere Quelle** passt zu ihrem eigenen SHA256. `sources-check` war grün,
+  während zwei Paragraphen leer eingefroren waren. Der Verifier misst jetzt den
+  Wortlaut, nicht die Dateigröße, und `scripts/freeze_source.py` prüft vor dem
+  Schreiben.
+- Ein **doppelter YAML-Schlüssel** überschreibt still den vorherigen Wert. Ein
+  vergessener `test_seed:`-Block hätte eine Regel mit einem grünen Test-Gate
+  dastehen lassen, das eine andere Signatur prüft.
+
+Gemeinsamer Nenner: Der Fehler zeigt sich nicht als Fehler, sondern als Erfolg.
+Deshalb muss jeder dieser Pfade einen expliziten Negativtest haben.

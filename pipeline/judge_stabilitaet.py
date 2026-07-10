@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.join(HERE, "produktion"))
 from yamlstrict import load_yaml          # noqa: E402
 from client import OpenRouterClient       # noqa: E402
 from provenance import load_roles         # noqa: E402
-import roles as R                          # noqa: E402
+import judge as J                          # noqa: E402
 import gates as G                          # noqa: E402
 from run import build_candidate            # noqa: E402
 
@@ -46,11 +46,16 @@ def messe(rid: str, n: int, cfg: dict, roles: dict, models_hash: str,
     src = rep["catala_a"]
     laeufe = []
     for i in range(n):
-        text, prov = R.roundtrip(client, roles["judge"], cand["norm_text"], src,
-                                 models_hash, signature=cand["signature"],
-                                 geltungsbedingungen=cand["geltungsbedingungen"])
-        v = G.roundtrip_parse(text)
-        if v.get("parse_error") or prov.truncated:
+        v, prov_liste, kosten = J.judge_regel(
+            client, roles["judge"], cand["norm_text"], src, cand["signature"],
+            cand["geltungsbedingungen"], models_hash)
+
+        class _P:  # Kostentraeger, damit die Auswertung unveraendert bleibt
+            cost_usd = kosten
+            truncated = False
+            completion_tokens = sum(p["completion_tokens"] for p in prov_liste)
+        prov = _P()
+        if v.get("parse_error"):
             # Ein unlesbares oder abgeschnittenes Verdikt ist selbst ein Messwert:
             # es zeigt, wie stabil der Judge antwortet. Es darf die Messung nicht
             # abbrechen.
@@ -79,12 +84,17 @@ def messe(rid: str, n: int, cfg: dict, roles: dict, models_hash: str,
             "roundtrip": G.roundtrip_gate(v, cand).status,
             "geltungsbereich": G.geltungsbereich_gate(v, cand).status,
             "kosten_usd": round(prov.cost_usd, 5),
+            "item_splits": len((v.get("judge_instability") or {}).get("item_splits", [])),
+            "items_ohne_mehrheit": len((v.get("judge_instability") or {}).get("items_ohne_mehrheit", [])),
+            "lauf_id": v.get("lauf_id"),
         })
         print(f"  {rid} Lauf {i+1}: abw={laeufe[-1]['abweichungen']} "
               f"annahmen={laeufe[-1]['annahmen']} (unmapped {unmapped}) "
               f"gaps={laeufe[-1]['scope_gaps']}/{laeufe[-1]['wirkt_hinein']} "
+              f"splits={laeufe[-1]['item_splits']} "
               f"roundtrip={laeufe[-1]['roundtrip']} "
-              f"geltungsbereich={laeufe[-1]['geltungsbereich']}", flush=True)
+              f"geltungsbereich={laeufe[-1]['geltungsbereich']} "
+              f"${laeufe[-1]['kosten_usd']}", flush=True)
     return laeufe
 
 

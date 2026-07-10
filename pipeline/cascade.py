@@ -25,6 +25,7 @@ from client import OpenRouterClient
 from provenance import load_roles, Provenance, now_iso
 import roles as R
 import gates as G
+import judge as J
 
 
 @dataclass
@@ -95,32 +96,27 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
     # 6. Round-Trip-Diff (Judge auf A). Der Judge sieht die Signatur und bewertet
     #    nur, was innerhalb ihrer Grenze liegt; Norm-Teile ausserhalb -> scope_gap.
     if src_a:
-        j_text, pj = R.roundtrip(client, roles["judge"], norm, src_a, models_hash,
-                                 signature=sig,
-                                 geltungsbedingungen=candidate.get("geltungsbedingungen"))
-        record(pj)
-        res.judge_verdict = G.roundtrip_parse(j_text)
-        if pj.truncated:
-            # Eine am max_tokens-Limit abgeschnittene Antwort ist kein
-            # Judge-Urteil. Sie darf weder als "ungueltiges JSON" noch als
-            # "keine Abweichung" durchgehen - die Ursache muss im Report stehen.
-            res.judge_verdict["truncated"] = True
-            det = (f"judge answer truncated at max_tokens "
-                   f"(completion={pj.completion_tokens})")
-            res.gate_results.append(G.GateResult("roundtrip", G.FAIL, det))
-            res.gate_results.append(G.GateResult("scope_gap", G.FAIL, det))
-            res.gate_results.append(G.GateResult("geltungsbereich", G.FAIL, det))
+        # Dekomponierter Judge: Inventar (3 Laeufe, Mehrheits-Mitgliedschaft) und
+        # ein Mini-Call je Pruef-Item mit 3 Stimmen. Ein Parse-Fehler ist keine
+        # Stimme; ohne Mehrheit gilt das Item konservativ.
+        verdict, jprov, jkosten = J.judge_regel(
+            client, roles["judge"], norm, src_a, sig,
+            candidate.get("geltungsbedingungen"), models_hash)
+        res.provenance.extend(jprov)
+        res.total_cost_usd += jkosten
+        res.judge_verdict = verdict
+        if verdict.get("parse_error"):
+            det = "judge inventory produced no valid verdict"
+            for name in ("roundtrip", "scope_gap", "geltungsbereich"):
+                res.gate_results.append(G.GateResult(name, G.FAIL, det))
         else:
-            res.gate_results.append(G.roundtrip_gate(j_text, candidate))
-            # scope_gap zweiklassig: (a) unabhaengig -> Backlog, kein Flag;
-            # (b) wirkt in den Signatur-Scope hinein -> Eskalation, denn dann ist
-            # der formalisierte Ausschnitt ohne den Rest falsch.
+            res.gate_results.append(G.roundtrip_gate(verdict, candidate))
             # scope_gap ist informativ (zaehlt, eskaliert nicht). Blockierend ist
             # geltungsbereich: es faellt auf jeden wirkt_hinein OHNE abdeckende
             # Bedingung. Eine deklarierte Annahme ist keine stille Annahme.
-            res.gate_results.append(G.scope_gap_gate(j_text))
-            res.gate_results.append(G.geltungsbereich_gate(j_text, candidate))
-            res.backlog = G.unabhaengige_gaps(res.judge_verdict)
+            res.gate_results.append(G.scope_gap_gate(verdict))
+            res.gate_results.append(G.geltungsbereich_gate(verdict, candidate))
+            res.backlog = G.unabhaengige_gaps(verdict)
     else:
         res.gate_results.append(G.GateResult("roundtrip", G.FAIL, "no A source"))
         res.gate_results.append(G.GateResult("scope_gap", G.FAIL, "no A source"))
@@ -145,6 +141,10 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
         res.queue_status = "flagged_for_review"
     elif G.SKIP in statuses:
         res.queue_status = "verified_partial (toolchain pending)"
+    elif J.hat_split_auf_blockierendem_gate(res.judge_verdict):
+        # Ein 2:1-Split auf einem blockierenden Gate ist kein stilles PASS.
+        # Der Split ist Information und gehoert vor Julius.
+        res.queue_status = "judge_split_eskaliert"
     elif bedingungen:
         # Statusehrlichkeit: eine Teilformalisierung ist nie schlicht "verified".
         # Sie gilt nur unter ihren Bedingungen, und die stehen am Status.
