@@ -77,13 +77,32 @@ def main() -> int:
         L.append(f"| `{g}` | {s} | {i} | {'-' if r is None else f'{r:.1%}'} |")
 
     L += ["\n### Je Regel\n",
-          "| Regel | Items | Splits | Rate | Gate-Urteile | Parse-Fehler |",
+          "| Regel | Items je Lauf | Splits | Rate | Gate-Urteile | stabil? |",
           "|---|---|---|---|---|---|"]
+    instabile_gates = []
     for r, z in sorted(zus.items(), key=lambda kv: -(kv[1]["item_splitrate"] or 0)):
         sr = z["item_splitrate"]
-        L.append(f"| `{r}` | {z['items_beurteilt']} | {z['item_splits']} | "
-                 f"{'-' if sr is None else f'{sr:.1%}'} | "
-                 f"{', '.join(z['verschiedene_gate_urteile'])} | {z['parse_fehler']} |")
+        gut = [l for l in laeufe[r] if not l.get("parse_error")]
+        spanne = [l["items_beurteilt"] for l in gut]
+        stabil = z["gate_urteile_stabil"]
+        if not stabil:
+            instabile_gates.append(r)
+        L.append(f"| `{r}` | {min(spanne) if spanne else '-'}-{max(spanne) if spanne else '-'} | "
+                 f"{z['item_splits']} | {'-' if sr is None else f'{sr:.1%}'} | "
+                 f"{', '.join(z['verschiedene_gate_urteile'])} | "
+                 f"{'ja' if stabil else '**nein**'} |")
+
+    L += ["\n### Was die Splitrate NICHT misst\n",
+          "Die vorregistrierte Splitrate misst die Uneinigkeit der drei Stimmen ueber "
+          "EIN Item. Sie sagt nichts darueber, ob in zwei Laeufen dieselben Items "
+          "ueberhaupt gefunden wurden. Genau dort sitzt die verbliebene Streuung: das "
+          "Inventar findet mal mehr, mal weniger Norm-Teile, und ein zusaetzlich "
+          "gefundener `wirkt_hinein`-Teil kippt das `geltungsbereich`-Gate.\n",
+          f"Regeln mit wechselnden Gate-Urteilen trotz stabiler Item-Urteile: "
+          f"{', '.join(f'`{r}`' for r in instabile_gates) if instabile_gates else 'keine'}.",
+          f"\nSpanne der beurteilten Items je Lauf steht in der Tabelle oben. Diese "
+          f"Groesse war nicht vorregistriert; sie wird berichtet, weil sie das "
+          f"Kriterium unterlaeuft, nicht weil sie es bestaetigt.\n"]
 
     L += [f"\n## Entscheid nach dem vorregistrierten Kriterium\n",
           f"Splitrate {rate:.1%} -> **{schluessel}**\n", satz, ""]

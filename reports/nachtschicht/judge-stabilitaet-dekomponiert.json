@@ -1,0 +1,1294 @@
+{
+  "laeufe": {
+    "p9_1_3_nr5_doppelte_haushaltsfuehrung": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 3,
+        "unmapped": 1,
+        "scope_gaps": 8,
+        "wirkt_hinein": 4,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.15594,
+        "item_splits": 2,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "38c88910eb9d",
+        "items_beurteilt": 12,
+        "items_je_art": {
+          "abweichung": 1,
+          "annahme": 3,
+          "norm_teil": 8
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 2
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 2
+        },
+        "items_je_gate": {
+          "roundtrip": 4,
+          "geltungsbereich": 8
+        },
+        "roh_items": {
+          "abweichungen": 1,
+          "annahmen": 3,
+          "norm_teile": 11
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 0,
+          "norm_teile": 0
+        },
+        "inventar_streuung": {
+          "abweichungen": 1,
+          "annahmen": 3,
+          "norm_teile": 7
+        }
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 2,
+        "unmapped": 1,
+        "scope_gaps": 11,
+        "wirkt_hinein": 5,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.23266,
+        "item_splits": 5,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "849054d6728e",
+        "items_beurteilt": 14,
+        "items_je_art": {
+          "abweichung": 1,
+          "annahme": 2,
+          "norm_teil": 11
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 5
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 5
+        },
+        "items_je_gate": {
+          "roundtrip": 3,
+          "geltungsbereich": 11
+        },
+        "roh_items": {
+          "abweichungen": 1,
+          "annahmen": 3,
+          "norm_teile": 11
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 1,
+          "norm_teile": 0
+        },
+        "inventar_streuung": {
+          "abweichungen": 1,
+          "annahmen": 2,
+          "norm_teile": 11
+        }
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 2,
+        "unmapped": 2,
+        "scope_gaps": 8,
+        "wirkt_hinein": 1,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.18022,
+        "item_splits": 2,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "3c03c6684a1f",
+        "items_beurteilt": 12,
+        "items_je_art": {
+          "abweichung": 2,
+          "annahme": 2,
+          "norm_teil": 8
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 2
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 2
+        },
+        "items_je_gate": {
+          "roundtrip": 4,
+          "geltungsbereich": 8
+        },
+        "roh_items": {
+          "abweichungen": 3,
+          "annahmen": 3,
+          "norm_teile": 13
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 1,
+          "norm_teile": 5
+        },
+        "inventar_streuung": {
+          "abweichungen": 2,
+          "annahmen": 2,
+          "norm_teile": 7
+        }
+      }
+    ],
+    "p9_4a_verpflegungsmehraufwand": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 1,
+        "abweichungen_text": [
+          "Die Bedingung für den An- und Abreisetag verlangt eine Übernachtung genau an diesem Tag, nicht auch an einem angrenzende"
+        ],
+        "annahmen": 7,
+        "unmapped": 4,
+        "scope_gaps": 13,
+        "wirkt_hinein": 7,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.39199,
+        "item_splits": 3,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "e0c508ba6b3b",
+        "items_beurteilt": 23,
+        "items_je_art": {
+          "abweichung": 3,
+          "annahme": 7,
+          "norm_teil": 13
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 1,
+          "norm_teil": 2
+        },
+        "splits_je_gate": {
+          "roundtrip": 1,
+          "geltungsbereich": 2
+        },
+        "items_je_gate": {
+          "roundtrip": 10,
+          "geltungsbereich": 13
+        },
+        "roh_items": {
+          "abweichungen": 5,
+          "annahmen": 8,
+          "norm_teile": 20
+        },
+        "merges": {
+          "abweichungen": 2,
+          "annahmen": 1,
+          "norm_teile": 3
+        },
+        "inventar_streuung": {
+          "abweichungen": 2,
+          "annahmen": 7,
+          "norm_teile": 11
+        }
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 4,
+        "abweichungen_text": [
+          "Die Formalisierung gewährt 14 Euro für An-/Abreisetag bei beliebiger Übernachtung, die Norm verlangt Übernachtung an die",
+          "Die Formalisierung gewährt 14 Euro für jeden Tag mit mehr als 8 Stunden ohne Übernachtung, die Norm beschränkt dies bei ",
+          "Die Formalisierung verlangt für 14 Euro ohne Übernachtung mehr als 8 Stunden, die Norm hat eine Mehrheitsregel für Zweit",
+          "Die Sonderregelung für eine über zwei Kalendertage ohne Übernachtung andauernde Abwesenheit fehlt, sodass die Pauschale "
+        ],
+        "annahmen": 8,
+        "unmapped": 2,
+        "scope_gaps": 12,
+        "wirkt_hinein": 8,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.44744,
+        "item_splits": 9,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "ab769780a76a",
+        "items_beurteilt": 24,
+        "items_je_art": {
+          "abweichung": 4,
+          "annahme": 8,
+          "norm_teil": 12
+        },
+        "splits_je_art": {
+          "abweichung": 4,
+          "annahme": 1,
+          "norm_teil": 4
+        },
+        "splits_je_gate": {
+          "roundtrip": 5,
+          "geltungsbereich": 4
+        },
+        "items_je_gate": {
+          "roundtrip": 12,
+          "geltungsbereich": 12
+        },
+        "roh_items": {
+          "abweichungen": 6,
+          "annahmen": 8,
+          "norm_teile": 20
+        },
+        "merges": {
+          "abweichungen": 2,
+          "annahmen": 0,
+          "norm_teile": 8
+        },
+        "inventar_streuung": {
+          "abweichungen": 4,
+          "annahmen": 8,
+          "norm_teile": 9
+        }
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 1,
+        "abweichungen_text": [
+          "Die Bedingung für 14 Euro am An- oder Abreisetag verlangt eine Übernachtung am selben Tag, die Norm erlaubt auch Übernac"
+        ],
+        "annahmen": 7,
+        "unmapped": 4,
+        "scope_gaps": 10,
+        "wirkt_hinein": 7,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.33624,
+        "item_splits": 3,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "82324213cdcd",
+        "items_beurteilt": 19,
+        "items_je_art": {
+          "abweichung": 2,
+          "annahme": 7,
+          "norm_teil": 10
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 1,
+          "norm_teil": 2
+        },
+        "splits_je_gate": {
+          "roundtrip": 1,
+          "geltungsbereich": 2
+        },
+        "items_je_gate": {
+          "roundtrip": 9,
+          "geltungsbereich": 10
+        },
+        "roh_items": {
+          "abweichungen": 4,
+          "annahmen": 9,
+          "norm_teile": 19
+        },
+        "merges": {
+          "abweichungen": 2,
+          "annahmen": 2,
+          "norm_teile": 7
+        },
+        "inventar_streuung": {
+          "abweichungen": 1,
+          "annahmen": 6,
+          "norm_teile": 6
+        }
+      }
+    ],
+    "p9_6_erstausbildung_abgrenzung": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 4,
+        "unmapped": 4,
+        "scope_gaps": 10,
+        "wirkt_hinein": 8,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.15921,
+        "item_splits": 1,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "e7495d317573",
+        "items_beurteilt": 14,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 4,
+          "norm_teil": 10
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 1
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 1
+        },
+        "items_je_gate": {
+          "roundtrip": 4,
+          "geltungsbereich": 10
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 4,
+          "norm_teile": 12
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 0,
+          "norm_teile": 2
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 4,
+          "norm_teile": 10
+        }
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 1,
+        "unmapped": 1,
+        "scope_gaps": 8,
+        "wirkt_hinein": 3,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.11676,
+        "item_splits": 5,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "98355a5441ee",
+        "items_beurteilt": 9,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 1,
+          "norm_teil": 8
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 5
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 5
+        },
+        "items_je_gate": {
+          "roundtrip": 1,
+          "geltungsbereich": 8
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 1,
+          "norm_teile": 12
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 0,
+          "norm_teile": 4
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 1,
+          "norm_teile": 7
+        }
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 6,
+        "unmapped": 6,
+        "scope_gaps": 2,
+        "wirkt_hinein": 2,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.0843,
+        "item_splits": 0,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "ec74a03e21ff",
+        "items_beurteilt": 8,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 6,
+          "norm_teil": 2
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 0
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 0
+        },
+        "items_je_gate": {
+          "roundtrip": 6,
+          "geltungsbereich": 2
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 6,
+          "norm_teile": 3
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 0,
+          "norm_teile": 1
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 6,
+          "norm_teile": 2
+        }
+      }
+    ],
+    "p10_1_7_berufsausbildung": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 2,
+        "unmapped": 1,
+        "scope_gaps": 3,
+        "wirkt_hinein": 2,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.06674,
+        "item_splits": 1,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "1e13720a868f",
+        "items_beurteilt": 5,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 2,
+          "norm_teil": 3
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 1
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 1
+        },
+        "items_je_gate": {
+          "roundtrip": 2,
+          "geltungsbereich": 3
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 5,
+          "norm_teile": 9
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 3,
+          "norm_teile": 0
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 1,
+          "norm_teile": 0
+        }
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 5,
+        "unmapped": 3,
+        "scope_gaps": 5,
+        "wirkt_hinein": 2,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.10534,
+        "item_splits": 1,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "c0e60abd7603",
+        "items_beurteilt": 10,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 5,
+          "norm_teil": 5
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 1
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 1
+        },
+        "items_je_gate": {
+          "roundtrip": 5,
+          "geltungsbereich": 5
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 6,
+          "norm_teile": 9
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 1,
+          "norm_teile": 2
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 5,
+          "norm_teile": 3
+        }
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 7,
+        "unmapped": 6,
+        "scope_gaps": 6,
+        "wirkt_hinein": 2,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.15148,
+        "item_splits": 4,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "dc7f5e06b419",
+        "items_beurteilt": 14,
+        "items_je_art": {
+          "abweichung": 1,
+          "annahme": 7,
+          "norm_teil": 6
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 1,
+          "norm_teil": 3
+        },
+        "splits_je_gate": {
+          "roundtrip": 1,
+          "geltungsbereich": 3
+        },
+        "items_je_gate": {
+          "roundtrip": 8,
+          "geltungsbereich": 6
+        },
+        "roh_items": {
+          "abweichungen": 1,
+          "annahmen": 9,
+          "norm_teile": 10
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 1,
+          "norm_teile": 0
+        },
+        "inventar_streuung": {
+          "abweichungen": 1,
+          "annahmen": 7,
+          "norm_teile": 4
+        }
+      }
+    ],
+    "p24b_entlastungsbetrag": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 6,
+        "unmapped": 2,
+        "scope_gaps": 6,
+        "wirkt_hinein": 2,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.17711,
+        "item_splits": 1,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "bb46579abab3",
+        "items_beurteilt": 12,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 6,
+          "norm_teil": 6
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 1
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 1
+        },
+        "items_je_gate": {
+          "roundtrip": 6,
+          "geltungsbereich": 6
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 10,
+          "norm_teile": 11
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 4,
+          "norm_teile": 3
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 5,
+          "norm_teile": 4
+        }
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 1,
+        "abweichungen_text": [
+          "The formalisation does not cap the result at zero when monate_ohne_voraussetzung exceeds 12, potentially yielding a nega"
+        ],
+        "annahmen": 6,
+        "unmapped": 2,
+        "scope_gaps": 4,
+        "wirkt_hinein": 2,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.15446,
+        "item_splits": 3,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "52a104f51393",
+        "items_beurteilt": 11,
+        "items_je_art": {
+          "abweichung": 1,
+          "annahme": 6,
+          "norm_teil": 4
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 3
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 3
+        },
+        "items_je_gate": {
+          "roundtrip": 7,
+          "geltungsbereich": 4
+        },
+        "roh_items": {
+          "abweichungen": 2,
+          "annahmen": 9,
+          "norm_teile": 9
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 0,
+          "norm_teile": 5
+        },
+        "inventar_streuung": {
+          "abweichungen": 1,
+          "annahmen": 6,
+          "norm_teile": 2
+        }
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": true,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 3,
+        "unmapped": 0,
+        "scope_gaps": 7,
+        "wirkt_hinein": 6,
+        "roundtrip": "PASS",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.17362,
+        "item_splits": 3,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "2e74a7bde061",
+        "items_beurteilt": 10,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 3,
+          "norm_teil": 7
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 3
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 3
+        },
+        "items_je_gate": {
+          "roundtrip": 3,
+          "geltungsbereich": 7
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 9,
+          "norm_teile": 11
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 6,
+          "norm_teile": 4
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 0,
+          "norm_teile": 6
+        }
+      }
+    ],
+    "p33_3_zumutbare_belastung": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 4,
+        "unmapped": 4,
+        "scope_gaps": 2,
+        "wirkt_hinein": 0,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.10444,
+        "item_splits": 2,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "19d21750f642",
+        "items_beurteilt": 6,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 4,
+          "norm_teil": 2
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 2
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 2
+        },
+        "items_je_gate": {
+          "roundtrip": 4,
+          "geltungsbereich": 2
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 7,
+          "norm_teile": 4
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 3,
+          "norm_teile": 2
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 3,
+          "norm_teile": 1
+        }
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 5,
+        "unmapped": 5,
+        "scope_gaps": 2,
+        "wirkt_hinein": 1,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.09118,
+        "item_splits": 0,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "5431b58e03cd",
+        "items_beurteilt": 7,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 5,
+          "norm_teil": 2
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 0
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 0
+        },
+        "items_je_gate": {
+          "roundtrip": 5,
+          "geltungsbereich": 2
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 7,
+          "norm_teile": 4
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 0,
+          "norm_teile": 0
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 5,
+          "norm_teile": 1
+        }
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 6,
+        "unmapped": 6,
+        "scope_gaps": 3,
+        "wirkt_hinein": 2,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.13802,
+        "item_splits": 1,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "00a2c3115218",
+        "items_beurteilt": 9,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 6,
+          "norm_teil": 3
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 1
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 1
+        },
+        "items_je_gate": {
+          "roundtrip": 6,
+          "geltungsbereich": 3
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 7,
+          "norm_teile": 6
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 1,
+          "norm_teile": 2
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 6,
+          "norm_teile": 2
+        }
+      }
+    ],
+    "p35a_2_3_haushaltsnahe": [
+      {
+        "lauf": 1,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 2,
+        "abweichungen_text": [
+          "Die Formalisierung wendet die 20 % auf die gesamten Eingaben an, obwohl § 35a Abs. 5 S. 2 den Abzug auf Arbeitskosten be",
+          "Die Steuerermäßigung für haushaltsnahe Dienstleistungen wird auf die gesamten Aufwendungen statt nur auf Arbeitskosten b"
+        ],
+        "annahmen": 15,
+        "unmapped": 7,
+        "scope_gaps": 9,
+        "wirkt_hinein": 5,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "PASS",
+        "kosten_usd": 0.62269,
+        "item_splits": 6,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "25e4f0bf1527",
+        "items_beurteilt": 31,
+        "items_je_art": {
+          "abweichung": 7,
+          "annahme": 15,
+          "norm_teil": 9
+        },
+        "splits_je_art": {
+          "abweichung": 1,
+          "annahme": 2,
+          "norm_teil": 3
+        },
+        "splits_je_gate": {
+          "roundtrip": 3,
+          "geltungsbereich": 3
+        },
+        "items_je_gate": {
+          "roundtrip": 22,
+          "geltungsbereich": 9
+        },
+        "roh_items": {
+          "abweichungen": 7,
+          "annahmen": 22,
+          "norm_teile": 23
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 7,
+          "norm_teile": 14
+        },
+        "inventar_streuung": {
+          "abweichungen": 7,
+          "annahmen": 14,
+          "norm_teile": 2
+        }
+      },
+      {
+        "lauf": 2,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 0,
+        "abweichungen_text": [],
+        "annahmen": 15,
+        "unmapped": 7,
+        "scope_gaps": 9,
+        "wirkt_hinein": 8,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.49289,
+        "item_splits": 5,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "691fb5e0c078",
+        "items_beurteilt": 24,
+        "items_je_art": {
+          "abweichung": 0,
+          "annahme": 15,
+          "norm_teil": 9
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 5
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 5
+        },
+        "items_je_gate": {
+          "roundtrip": 15,
+          "geltungsbereich": 9
+        },
+        "roh_items": {
+          "abweichungen": 0,
+          "annahmen": 17,
+          "norm_teile": 19
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 2,
+          "norm_teile": 10
+        },
+        "inventar_streuung": {
+          "abweichungen": 0,
+          "annahmen": 15,
+          "norm_teile": 5
+        }
+      },
+      {
+        "lauf": 3,
+        "parse_error": false,
+        "faithful": false,
+        "abweichungen": 1,
+        "abweichungen_text": [
+          "Die Berechnung für haushaltsnahe Dienstleistungen (Abs. 2) wendet 20% auf die gesamten Aufwendungen an, obwohl nur Arbei"
+        ],
+        "annahmen": 18,
+        "unmapped": 9,
+        "scope_gaps": 12,
+        "wirkt_hinein": 10,
+        "roundtrip": "FAIL",
+        "geltungsbereich": "FAIL",
+        "kosten_usd": 0.55459,
+        "item_splits": 2,
+        "items_ohne_mehrheit": 0,
+        "lauf_id": "9e77331495be",
+        "items_beurteilt": 31,
+        "items_je_art": {
+          "abweichung": 1,
+          "annahme": 18,
+          "norm_teil": 12
+        },
+        "splits_je_art": {
+          "abweichung": 0,
+          "annahme": 0,
+          "norm_teil": 2
+        },
+        "splits_je_gate": {
+          "roundtrip": 0,
+          "geltungsbereich": 2
+        },
+        "items_je_gate": {
+          "roundtrip": 19,
+          "geltungsbereich": 12
+        },
+        "roh_items": {
+          "abweichungen": 1,
+          "annahmen": 23,
+          "norm_teile": 29
+        },
+        "merges": {
+          "abweichungen": 0,
+          "annahmen": 5,
+          "norm_teile": 16
+        },
+        "inventar_streuung": {
+          "abweichungen": 1,
+          "annahmen": 17,
+          "norm_teile": 5
+        }
+      }
+    ]
+  },
+  "zusammenfassung": {
+    "p9_1_3_nr5_doppelte_haushaltsfuehrung": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "items_beurteilt": 38,
+      "item_splits": 9,
+      "item_splitrate": 0.2368,
+      "splitrate_je_gate": {
+        "roundtrip": 0.0,
+        "geltungsbereich": 0.3333
+      },
+      "merges": 7,
+      "inventar_streuung_items": 36,
+      "gate_urteile_stabil": false,
+      "verschiedene_gate_urteile": [
+        "FAIL/FAIL",
+        "FAIL/PASS"
+      ],
+      "abweichungen_min_max": [
+        0,
+        0
+      ],
+      "wirkt_hinein_min_max": [
+        1,
+        5
+      ],
+      "kosten_usd": 0.56882
+    },
+    "p9_4a_verpflegungsmehraufwand": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "items_beurteilt": 66,
+      "item_splits": 15,
+      "item_splitrate": 0.2273,
+      "splitrate_je_gate": {
+        "roundtrip": 0.2258,
+        "geltungsbereich": 0.2286
+      },
+      "merges": 27,
+      "inventar_streuung_items": 54,
+      "gate_urteile_stabil": false,
+      "verschiedene_gate_urteile": [
+        "FAIL/FAIL",
+        "FAIL/PASS"
+      ],
+      "abweichungen_min_max": [
+        1,
+        4
+      ],
+      "wirkt_hinein_min_max": [
+        7,
+        8
+      ],
+      "kosten_usd": 1.17567
+    },
+    "p9_6_erstausbildung_abgrenzung": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "items_beurteilt": 31,
+      "item_splits": 6,
+      "item_splitrate": 0.1935,
+      "splitrate_je_gate": {
+        "roundtrip": 0.0,
+        "geltungsbereich": 0.3
+      },
+      "merges": 7,
+      "inventar_streuung_items": 30,
+      "gate_urteile_stabil": true,
+      "verschiedene_gate_urteile": [
+        "FAIL/FAIL"
+      ],
+      "abweichungen_min_max": [
+        0,
+        0
+      ],
+      "wirkt_hinein_min_max": [
+        2,
+        8
+      ],
+      "kosten_usd": 0.36027
+    },
+    "p10_1_7_berufsausbildung": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "items_beurteilt": 29,
+      "item_splits": 6,
+      "item_splitrate": 0.2069,
+      "splitrate_je_gate": {
+        "roundtrip": 0.0667,
+        "geltungsbereich": 0.3571
+      },
+      "merges": 7,
+      "inventar_streuung_items": 21,
+      "gate_urteile_stabil": true,
+      "verschiedene_gate_urteile": [
+        "FAIL/FAIL"
+      ],
+      "abweichungen_min_max": [
+        0,
+        0
+      ],
+      "wirkt_hinein_min_max": [
+        2,
+        2
+      ],
+      "kosten_usd": 0.32356
+    },
+    "p24b_entlastungsbetrag": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "items_beurteilt": 33,
+      "item_splits": 7,
+      "item_splitrate": 0.2121,
+      "splitrate_je_gate": {
+        "roundtrip": 0.0,
+        "geltungsbereich": 0.4118
+      },
+      "merges": 22,
+      "inventar_streuung_items": 24,
+      "gate_urteile_stabil": false,
+      "verschiedene_gate_urteile": [
+        "FAIL/PASS",
+        "PASS/FAIL"
+      ],
+      "abweichungen_min_max": [
+        0,
+        1
+      ],
+      "wirkt_hinein_min_max": [
+        2,
+        6
+      ],
+      "kosten_usd": 0.50519
+    },
+    "p33_3_zumutbare_belastung": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "items_beurteilt": 22,
+      "item_splits": 3,
+      "item_splitrate": 0.1364,
+      "splitrate_je_gate": {
+        "roundtrip": 0.0,
+        "geltungsbereich": 0.4286
+      },
+      "merges": 8,
+      "inventar_streuung_items": 18,
+      "gate_urteile_stabil": false,
+      "verschiedene_gate_urteile": [
+        "FAIL/FAIL",
+        "FAIL/PASS"
+      ],
+      "abweichungen_min_max": [
+        0,
+        0
+      ],
+      "wirkt_hinein_min_max": [
+        0,
+        2
+      ],
+      "kosten_usd": 0.33364
+    },
+    "p35a_2_3_haushaltsnahe": {
+      "laeufe": 3,
+      "parse_fehler": 0,
+      "items_beurteilt": 86,
+      "item_splits": 13,
+      "item_splitrate": 0.1512,
+      "splitrate_je_gate": {
+        "roundtrip": 0.0536,
+        "geltungsbereich": 0.3333
+      },
+      "merges": 54,
+      "inventar_streuung_items": 66,
+      "gate_urteile_stabil": false,
+      "verschiedene_gate_urteile": [
+        "FAIL/FAIL",
+        "FAIL/PASS"
+      ],
+      "abweichungen_min_max": [
+        0,
+        2
+      ],
+      "wirkt_hinein_min_max": [
+        5,
+        10
+      ],
+      "kosten_usd": 1.67017
+    }
+  }
+}

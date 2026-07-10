@@ -1,0 +1,148 @@
+{
+  "p9_4a_verpflegungsmehraufwand": {
+    "identisch": false,
+    "je_feld": {
+      "abweichungen": {
+        "gemeinsam": 0,
+        "urteil_abweichend": [],
+        "nur_in_lauf_a": [
+          "Die Formalisierung verlangt eine Übernachtung am An-/Abreisetag selbst, die Norm lässt Übernachtung an angrenz"
+        ],
+        "nur_in_lauf_b": [
+          "Die Bedingung für 14 Euro am An-/Abreisetag verlangt eine Übernachtung an diesem Tag, die Norm erlaubt auch Üb",
+          "Die Formalisierung versagt die Pauschale vollständig, wenn die Tätigkeit insgesamt länger als drei Monate daue"
+        ]
+      },
+      "annahmen": {
+        "gemeinsam": 2,
+        "urteil_abweichend": [],
+        "nur_in_lauf_a": [
+          "Die Abwesenheitsstunden beziehen sich stillschweigend auf die Abwesenheit von Wohnung und erster Tätigkeitsstä",
+          "Die Formalisierung nimmt an, dass 'monate_am_ort' ununterbrochene Monate zählt, ohne die Vier-Wochen-Unterbrec",
+          "Die Formalisierung nimmt an, dass die Eingaben für einen einzelnen Kalendertag gelten.",
+          "Die Formalisierung setzt voraus, dass eine auswärtige berufliche Tätigkeit vorliegt.",
+          "Die Formalisierung unterstellt, dass 'abwesenheit_stunden' bereits die Mehrheitsregel für mehrtägige Abwesenhe",
+          "Es wird angenommen, dass der Arbeitnehmer eine erste Tätigkeitsstätte hat.",
+          "Es wird angenommen, dass keine Mahlzeiten gestellt werden, die die Pauschale kürzen.",
+          "Es wird angenommen, dass keine steuerfreien Erstattungen vorliegen, die den Abzug ausschließen."
+        ],
+        "nur_in_lauf_b": [
+          "Die Eingabe abwesenheit_stunden wird als Abwesenheitsstunden an einem Kalendertag interpretiert und übersteigt",
+          "Die Eingabe mit_uebernachtung bildet bereits ab, ob eine Übernachtung am An- oder Abreisetag oder einem angren",
+          "Die Formalisierung nimmt an, dass 'monate_am_ort' die Gesamtdauer der Tätigkeit angibt und bei Überschreitung ",
+          "Die Formalisierung setzt voraus, dass die Eingabe 'abwesenheit_stunden' die Stunden nur dieses Tages sind und ",
+          "Die Formalisierung unterstellt, dass 'abwesenheit_stunden' nur die Stunden des aktuellen Tages umfasst, nicht "
+        ]
+      },
+      "norm_teile": {
+        "gemeinsam": 8,
+        "urteil_abweichend": [
+          {
+            "item": "Satz 2: 'auswärtige berufliche Tätigkeit' als Voraussetzung.",
+            "urteil_gleich": false,
+            "a": [
+              "wirkt_hinein",
+              "auswaertige_berufliche_taetigkeit"
+            ],
+            "b": [
+              "wirkt_hinein",
+              "uebernachtung_oder_eintaegig_ueber_acht_stunden"
+            ]
+          }
+        ],
+        "nur_in_lauf_a": [
+          "Satz 3 Nr. 3 Halbsatz 2: '... werden 14 Euro für den Kalendertag gewährt, an dem der Arbeitnehmer den überwieg",
+          "Satz 3 Nr. 3 Halbsatz 2: Sonderregel für zweitägige Abwesenheit ohne Übernachtung.",
+          "Satz 8 bis 10: Kürzungsregeln bei Mahlzeitengestellung."
+        ],
+        "nur_in_lauf_b": [
+          "Satz 10: Minderung des Kürzungsbetrags bei eigenem Entgelt für Mahlzeit.",
+          "Satz 5 (Auslandspauschalen)",
+          "Satz 8 (Kürzung bei Mahlzeitengestellung)",
+          "Satz 8: Kürzung der Pauschale bei Gestellung von Mahlzeiten.",
+          "Satz 9: Prozentsätze für Kürzung (20% Frühstück, 40% Mittag-/Abendessen)."
+        ]
+      }
+    },
+    "kosten_usd": 1.02652,
+    "lauf_ids": [
+      "9be46794ea9e",
+      "c33eb5ba107a"
+    ]
+  },
+  "p24b_entlastungsbetrag": {
+    "identisch": false,
+    "je_feld": {
+      "abweichungen": {
+        "gemeinsam": 0,
+        "urteil_abweichend": [],
+        "nur_in_lauf_a": [],
+        "nur_in_lauf_b": []
+      },
+      "annahmen": {
+        "gemeinsam": 0,
+        "urteil_abweichend": [],
+        "nur_in_lauf_a": [
+          "Die Eingabe 'alleinstehend' wird als zutreffend gemäß der Legaldefinition in § 24b Abs. 3 EStG vorausgesetzt.",
+          "Die Eingabe 'anzahl_kinder' wird als Anzahl der Kinder vorausgesetzt, die die Voraussetzungen des § 24b Abs. 1",
+          "Die Eingabe 'monate_ohne_voraussetzung' wird als korrekte Anzahl der Monate ohne Voraussetzungen nach § 24b Ab",
+          "Die Eingabe alleinstehend wird als gegeben angenommen, ohne die Definition des § 24b Abs. 3 zu prüfen.",
+          "Die Formaliserung setzt voraus, dass 'alleinstehend' die gesetzliche Definition erfüllt.",
+          "Die Formaliserung setzt voraus, dass 'monate_ohne_voraussetzung' korrekt die Monate ohne Voraussetzungen zählt"
+        ],
+        "nur_in_lauf_b": [
+          "Die Eingabe 'alleinstehend' setzt voraus, dass die Definition des Alleinstehenden nach Abs. 3 bereits geprüft ",
+          "Die Eingabe 'anzahl_kinder' setzt voraus, dass die Kinder die Voraussetzungen des § 32 Abs. 6 oder Kindergeld ",
+          "Die Eingabe 'monate_ohne_voraussetzung' setzt voraus, dass sie die Anzahl der vollen Kalendermonate ohne Vorau",
+          "Die Formalisierung nimmt an, dass 'anzahl_kinder' die Anzahl der Kinder mit Anspruch auf Freibetrag oder Kinde",
+          "Die Formalisierung nimmt an, dass die boolesche Eingabe 'alleinstehend' die Definition aus § 24b Abs. 3 EStG k",
+          "Die Formalisierung rundet den Betrag nicht, obwohl das Gesetz keine Rundungsregel enthält.",
+          "Die Formalisierung setzt voraus, dass die Person steuerpflichtig ist."
+        ]
+      },
+      "norm_teile": {
+        "gemeinsam": 4,
+        "urteil_abweichend": [
+          {
+            "item": "wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz 6 oder Kinder",
+            "urteil_gleich": false,
+            "a": [
+              "wirkt_hinein",
+              "none"
+            ],
+            "b": [
+              "unabhaengig",
+              "kinder_mit_freibetrag_oder_kindergeld_im_haushalt"
+            ]
+          },
+          {
+            "item": "§ 24b Abs. 3: Definition von 'allein stehend'",
+            "urteil_gleich": false,
+            "a": [
+              "unabhaengig",
+              "alleinstehend_im_sinne_des_absatzes_3"
+            ],
+            "b": [
+              "wirkt_hinein",
+              "alleinstehend_im_sinne_des_absatzes_3"
+            ]
+          }
+        ],
+        "nur_in_lauf_a": [
+          "Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige, die nicht die Voraussetzungen für die Anwendung ",
+          "Für jeden vollen Kalendermonat, in dem die Voraussetzungen des Absatzes 1 nicht vorgelegen haben, ermäßigt sic",
+          "§ 24b Abs. 1 S. 2 EStG (Meldung in der Wohnung)"
+        ],
+        "nur_in_lauf_b": [
+          "§ 24b Abs. 1 S. 1 EStG: 'wenn zu ihrem Haushalt mindestens ein Kind gehört'.",
+          "§ 24b Abs. 3 EStG definiert 'allein stehend'."
+        ]
+      }
+    },
+    "kosten_usd": 0.40619,
+    "lauf_ids": [
+      "77a48a6a25bc",
+      "6cdd95018e4b"
+    ]
+  }
+}
