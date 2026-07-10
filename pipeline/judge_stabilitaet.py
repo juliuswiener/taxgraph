@@ -36,6 +36,41 @@ from run import build_candidate            # noqa: E402
 
 OUT = os.path.join(ROOT, "reports", "nachtschicht", "judge-stabilitaet.json")
 
+# Welches Item speist welches blockierende Gate? Splits werden danach getrennt
+# ausgewiesen - eine Splitrate ohne Gate-Bezug sagt nicht, was auf dem Spiel steht.
+GATE_VON_ART = {"abweichung": "roundtrip", "annahme": "roundtrip",
+                "norm_teil": "geltungsbereich"}
+
+
+def _itemzahlen(v: dict) -> dict:
+    inst = v.get("judge_instability") or {}
+    items = {"abweichung": len(v.get("abweichungen", [])),
+             "annahme": len(v.get("stille_zusatzannahmen", [])),
+             "norm_teil": len(v.get("scope_gap", []))}
+    # Abweichungen: nur die als echt beurteilten stehen im Verdikt; die Zahl der
+    # BEURTEILTEN Items steht im Inventar-Cluster.
+    cluster = inst.get("cluster") or {}
+    beurteilt = {"abweichung": cluster.get("abweichungen", items["abweichung"]),
+                 "annahme": cluster.get("annahmen", items["annahme"]),
+                 "norm_teil": cluster.get("norm_teile", items["norm_teil"])}
+    splits_je_art = {a: 0 for a in beurteilt}
+    for sp in inst.get("item_splits", []):
+        splits_je_art[sp["art"]] = splits_je_art.get(sp["art"], 0) + 1
+    splits_je_gate: dict[str, int] = {}
+    items_je_gate: dict[str, int] = {}
+    for art, gate in GATE_VON_ART.items():
+        splits_je_gate[gate] = splits_je_gate.get(gate, 0) + splits_je_art.get(art, 0)
+        items_je_gate[gate] = items_je_gate.get(gate, 0) + beurteilt.get(art, 0)
+    return {"items_beurteilt": sum(beurteilt.values()),
+            "items_je_art": beurteilt,
+            "splits_je_art": splits_je_art,
+            "splits_je_gate": splits_je_gate,
+            "items_je_gate": items_je_gate,
+            "roh_items": inst.get("roh_items", {}),
+            "merges": {f: len(m) for f, m in (inst.get("merge_log") or {}).items()},
+            "inventar_streuung": {f: len(x) for f, x in
+                                  (inst.get("inventar_streuung") or {}).items()}}
+
 
 def messe(rid: str, n: int, cfg: dict, roles: dict, models_hash: str,
           client: OpenRouterClient) -> list[dict]:
@@ -87,6 +122,7 @@ def messe(rid: str, n: int, cfg: dict, roles: dict, models_hash: str,
             "item_splits": len((v.get("judge_instability") or {}).get("item_splits", [])),
             "items_ohne_mehrheit": len((v.get("judge_instability") or {}).get("items_ohne_mehrheit", [])),
             "lauf_id": v.get("lauf_id"),
+            **_itemzahlen(v),
         })
         print(f"  {rid} Lauf {i+1}: abw={laeufe[-1]['abweichungen']} "
               f"annahmen={laeufe[-1]['annahmen']} (unmapped {unmapped}) "
@@ -127,9 +163,20 @@ def main() -> int:
     for rid, laeufe in ergebnis.items():
         gates = {(l["roundtrip"], l["geltungsbereich"]) for l in laeufe}
         gut = [l for l in laeufe if not l.get("parse_error")]
+        items = sum(l.get("items_beurteilt", 0) for l in gut)
+        splits = sum(l.get("item_splits", 0) for l in gut)
+        sg = {g: sum(l["splits_je_gate"].get(g, 0) for l in gut) for g in ("roundtrip", "geltungsbereich")}
+        ig = {g: sum(l["items_je_gate"].get(g, 0) for l in gut) for g in ("roundtrip", "geltungsbereich")}
         zusammenfassung[rid] = {
             "laeufe": len(laeufe),
             "parse_fehler": len(laeufe) - len(gut),
+            "items_beurteilt": items,
+            "item_splits": splits,
+            "item_splitrate": round(splits / items, 4) if items else None,
+            "splitrate_je_gate": {g: (round(sg[g] / ig[g], 4) if ig[g] else None)
+                                  for g in sg},
+            "merges": sum(sum(l["merges"].values()) for l in gut),
+            "inventar_streuung_items": sum(sum(l["inventar_streuung"].values()) for l in gut),
             "gate_urteile_stabil": len(gates) == 1,
             "verschiedene_gate_urteile": sorted(f"{a}/{b}" for a, b in gates),
             "abweichungen_min_max": ([min(l["abweichungen"] for l in gut),

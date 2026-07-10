@@ -193,9 +193,10 @@ def _inventar(client, role, kontext: str, models_hash: str, provenance: list):
     #
     # Wie oft ein Item gesehen wurde, steht als `inventar_streuung` im Report:
     # das ist das Mass der Inventar-Instabilitaet, das Julius sehen will.
-    ergebnis, streuung = {}, {}
+    ergebnis, streuung, merge_log = {}, {}, {}
     for f in felder:
         kandidaten: list[tuple[str, int]] = []
+        merges: list[dict] = []
         for lauf in laeufe:
             gesehen = set()
             for text in lauf[f]:
@@ -203,6 +204,13 @@ def _inventar(client, role, kontext: str, models_hash: str, provenance: list):
                     if _gleich(text, bekannt) and i not in gesehen:
                         kandidaten[i] = (bekannt, kandidaten[i][1] + 1)
                         gesehen.add(i)
+                        if G._normalize(text) != G._normalize(bekannt):
+                            # Zwei verschieden formulierte Rohtexte gelten als
+                            # dasselbe Item. Das ist eine Entscheidung des
+                            # Abgleichs, keine des Modells - sie gehoert
+                            # nachpruefbar in den Report.
+                            merges.append({"cluster": bekannt[:160],
+                                           "eingeschmolzen": text[:160]})
                         break
                 else:
                     kandidaten.append((text, 1))
@@ -210,8 +218,11 @@ def _inventar(client, role, kontext: str, models_hash: str, provenance: list):
         ergebnis[f] = [t for t, _ in kandidaten]
         streuung[f] = [{"text": t, "in_laeufen": n} for t, n in kandidaten
                        if n < len(laeufe)]
+        merge_log[f] = merges
     return ergebnis, {"inventar_laeufe": len(laeufe), "inventar_ungueltig": ungueltig,
-                      "inventar_streuung": streuung}
+                      "inventar_streuung": streuung, "merge_log": merge_log,
+                      "roh_items": {f: sum(len(l[f]) for l in laeufe) for f in felder},
+                      "cluster": {f: len(ergebnis[f]) for f in felder}}
 
 
 # -- Stufe 2: Urteil je Item --------------------------------------------------
