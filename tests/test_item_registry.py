@@ -135,3 +135,38 @@ def test_gates_fuer_enthaelt_defekt():
     gates, _ = IR.gates_fuer("t", rule(), {"abweichungen": [], "scope_gap": [],
                                            "stille_zusatzannahmen": []})
     assert "defekt" in gates
+
+
+# -- Daempfung 2a: unabhaengige Norm-Teile -> Backlog, kein Gate --------------
+
+def test_nicht_material_backlog_blockiert_nie():
+    r = reg([{"art": "norm_teil", "anker": ["ref", "§ 1"], "klasse": "unabhaengig",
+              "triage": "nicht_material_backlog"}])
+    assert IR.geltungsbereich_gate(r, rule()).status == G.PASS
+    assert IR.roundtrip_gate(r, rule()).status == G.PASS
+    assert IR.defekt_gate(r).status == G.PASS
+    assert IR.grenzfall_gate(r).status == G.PASS
+
+
+def test_discover_draft_daempft_unabhaengig(tmp_path, monkeypatch):
+    """Ein unabhaengiger Norm-Teil geht mechanisch in den Backlog; ein
+    wirkt_hinein mit Deckung wird Detektor-Vorschlag; ohne Deckung -> offen."""
+    import json
+    run = tmp_path / "pipeline" / "runs" / "produktion" / "r"
+    run.mkdir(parents=True)
+    (run / "report.json").write_text(json.dumps({"judge_verdict": {
+        "abweichungen": [], "stille_zusatzannahmen": [],
+        "scope_gap": [
+            {"norm_teil": "unabh Satz", "referenz": "§ 1", "klasse": "unabhaengig",
+             "abgedeckt_von": "none"},
+            {"norm_teil": "deckt Satz", "referenz": "§ 2", "klasse": "wirkt_hinein",
+             "abgedeckt_von": "eine_bedingung"},
+            {"norm_teil": "offen Satz", "referenz": "§ 3", "klasse": "wirkt_hinein",
+             "abgedeckt_von": "none"}]}}))
+    monkeypatch.setattr(IR, "ROOT", str(tmp_path))
+    monkeypatch.setattr(IR, "REG_DIR", str(tmp_path / "reg"))
+    d = IR.discover_draft("r")
+    tri = {e["anker"][1]: e["triage"] for e in d["items"]}
+    assert tri["§ 1"] == "nicht_material_backlog"
+    assert tri["§ 2"] == "bedingung_neu"
+    assert tri["§ 3"] == "offen"

@@ -46,7 +46,7 @@ from yamlstrict import load_yaml   # noqa: E402
 import gates as G                   # noqa: E402
 
 TRIAGE = ("bedingung_neu", "grenzfall", "nicht_material", "nicht_echt",
-          "defekt_formalisierer", "offen_bis_neuschnitt")
+          "defekt_formalisierer", "offen_bis_neuschnitt", "nicht_material_backlog")
 
 
 def _anker(art: str, item: dict) -> list:
@@ -104,6 +104,7 @@ def abgleich(reg: dict, verdict: dict) -> dict:
                                      or item.get("aussage") or it)[:200],
                             "klasse": item.get("klasse"),
                             "kategorie": item.get("kategorie"),
+                            "abgedeckt_von": item.get("abgedeckt_von"),
                             "bedingung_id": item.get("bedingung_id")})
     return {"bekannt": bekannt, "neu": neu}
 
@@ -272,12 +273,32 @@ def discover_draft(rule_id: str) -> dict:
     ab = abgleich(reg, v)
     items = []
     for n in ab["neu"]:
-        bid = n.get("bedingung_id")
-        # Detektor-Vorschlag vorbelegen (Julius bestaetigt/korrigiert - AINA):
+        e = {"art": n["art"], "anker": n["anker"], "text": n["text"], "bedingung": ""}
+        if n["art"] == "norm_teil":
+            # Daempfung 2a (Dekret 2026-07-11): Norm-Teile OHNE wirkt_hinein-Urteil
+            # sind per Abgrenzungsregel + "scope_gap ist informativ" KEINE
+            # Coverage-Items -> Formalisierungs-Backlog (backlog.py), kein Julius.
+            klasse = n.get("klasse")
+            if klasse:
+                e["klasse"] = klasse
+            deck = n.get("abgedeckt_von")
+            if klasse == "unabhaengig":
+                e["triage"] = "nicht_material_backlog"
+            elif klasse == "wirkt_hinein" and isinstance(deck, str) and deck and deck != "none":
+                # wirkt_hinein + Detektor mappt auf eine Bedingung -> Vorschlag
+                e["triage"] = "bedingung_neu"
+                e["bedingung"] = deck
+                e["vorschlag"] = "detektor"
+            else:
+                # wirkt_hinein ohne Deckung, oder Klasse fehlt -> Julius entscheidet
+                e["triage"] = "offen"
+            items.append(e)
+            continue
+        # Annahmen / Abweichungen: Detektor-Vorschlag aus bedingung_id (AINA):
         #  konv:X            -> nicht_material (globale Konvention)
         #  deklarierte Bed.  -> bedingung_neu mit dieser Bedingung
         #  None              -> offen (Julius entscheidet)
-        e = {"art": n["art"], "anker": n["anker"], "text": n["text"], "bedingung": ""}
+        bid = n.get("bedingung_id")
         if isinstance(bid, str) and bid.startswith("konv:"):
             e["triage"] = "nicht_material"
             e["konvention"] = bid

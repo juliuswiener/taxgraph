@@ -54,82 +54,8 @@ items:
   text: notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten
     Haushaltsführung entstehen
   bedingung: ''
-  triage: offen
   klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - satz 2
-  text: Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner
-    ersten Tätigkeitsstätte einen eigenen Hausstand unterhält und auch am Ort der ersten Tätigkeitsstätte
-    woh
-  bedingung: ''
   triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - satz 3
-  text: Das Vorliegen eines eigenen Hausstandes setzt das Innehaben einer Wohnung sowie eine finanzielle
-    Beteiligung an den Kosten der Lebensführung voraus.
-  bedingung: ''
-  triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - satz 4
-  text: die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung
-    verpflichtend und zweckgebunden genutzt werden muss oder deren Kosten für Zwecke des Mietzusch
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - satz 5
-  text: Aufwendungen für die Wege vom Ort der ersten Tätigkeitsstätte zum Ort des eigenen Hausstandes
-    und zurück (Familienheimfahrt) können jeweils nur für eine Familienheimfahrt wöchentlich abgezogen
-    werden.
-  bedingung: ''
-  triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - satz 6
-  text: Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38
-    Euro für jeden vollen Kilometer der Entfernung zwischen dem Ort des eigenen Hausstandes und dem Ort
-    der
-  bedingung: ''
-  triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - satz 7
-  text: Nummer 4 Satz 3 bis 5 ist entsprechend anzuwenden.
-  bedingung: ''
-  triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - satz 8
-  text: Aufwendungen für Familienheimfahrten mit einem dem Steuerpflichtigen im Rahmen einer Einkunftsart
-    überlassenen Kraftfahrzeug werden nicht berücksichtigt.
-  bedingung: ''
-  triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - satz 4, 2. halbsatz
-  text: die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung
-    verpflichtend und zweckgebunden genutzt werden muss oder deren Kosten für Zwecke des Mietzusch
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
 - art: annahme
   anker:
   - betrifft_kat
@@ -150,6 +76,26 @@ items:
   bedingung: keine_verpflichtende_dienst_oder_werkswohnung
   triage: bedingung_neu
   vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - satz 4
+  text: die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung
+    verpflichtend und zweckgebunden genutzt werden muss oder deren Kosten für Zwecke des Mietzusch
+  bedingung: keine_verpflichtende_dienst_oder_werkswohnung
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - satz 4, 2. halbsatz
+  text: die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung
+    verpflichtend und zweckgebunden genutzt werden muss oder deren Kosten für Zwecke des Mietzusch
+  bedingung: keine_verpflichtende_dienst_oder_werkswohnung
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
 - art: annahme
   anker:
   - betrifft_kat
@@ -160,3 +106,59 @@ items:
   bedingung: ''
   triage: nicht_material
   konvention: konv:ganzzahl_monate
+- art: norm_teil
+  anker:
+  - ref
+  - satz 2
+  text: Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner
+    ersten Tätigkeitsstätte einen eigenen Hausstand unterhält und auch am Ort der ersten Tätigkeitsstätte
+    woh
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - satz 3
+  text: Das Vorliegen eines eigenen Hausstandes setzt das Innehaben einer Wohnung sowie eine finanzielle
+    Beteiligung an den Kosten der Lebensführung voraus.
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - satz 5
+  text: Aufwendungen für die Wege vom Ort der ersten Tätigkeitsstätte zum Ort des eigenen Hausstandes
+    und zurück (Familienheimfahrt) können jeweils nur für eine Familienheimfahrt wöchentlich abgezogen
+    werden.
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - satz 6
+  text: Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38
+    Euro für jeden vollen Kilometer der Entfernung zwischen dem Ort des eigenen Hausstandes und dem Ort
+    der
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - satz 7
+  text: Nummer 4 Satz 3 bis 5 ist entsprechend anzuwenden.
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - satz 8
+  text: Aufwendungen für Familienheimfahrten mit einem dem Steuerpflichtigen im Rahmen einer Einkunftsart
+    überlassenen Kraftfahrzeug werden nicht berücksichtigt.
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog

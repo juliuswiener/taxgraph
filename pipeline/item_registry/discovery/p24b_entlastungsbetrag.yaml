@@ -72,39 +72,12 @@ items:
 - art: norm_teil
   anker:
   - ref
-  - § 24b abs. 1 satz 1
-  text: wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz
-    6 oder Kindergeld zusteht
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
   - § 24b abs. 1 satz 2
   text: Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden
     Steuerpflichtigen gemeldet ist.
   bedingung: ''
-  triage: offen
   klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 24b abs. 3
-  text: Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige, die nicht die Voraussetzungen für
-    die Anwendung des Splitting-Verfahrens (§ 26 Absatz 1) erfüllen oder verwitwet sind und keine Haushaltsg
-  bedingung: ''
   triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 24b abs. 1 s. 1
-  text: wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz
-    6 oder Kindergeld zusteht
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
 - art: norm_teil
   anker:
   - ref
@@ -112,8 +85,8 @@ items:
   text: Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden
     Steuerpflichtigen gemeldet ist.
   bedingung: ''
-  triage: offen
   klasse: wirkt_hinein
+  triage: offen
 - art: norm_teil
   anker:
   - ref
@@ -121,32 +94,16 @@ items:
   text: Für jeden vollen Kalendermonat, in dem die Voraussetzungen des Absatzes 1 nicht vorgelegen haben,
     ermäßigt sich der Entlastungsbetrag nach Absatz 2 um ein Zwölftel.
   bedingung: ''
-  triage: offen
   klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 24b abs. 1
-  text: von der Summe der Einkünfte abziehen
-  bedingung: ''
   triage: offen
-  klasse: unabhaengig
 - art: norm_teil
   anker:
   - ref
   - § 24b abs. 2
   text: beträgt der Entlastungsbetrag im Kalenderjahr 4 260 Euro
   bedingung: ''
-  triage: offen
   klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 24b abs. 2 satz 1
-  text: ein Kind im Sinne des Absatzes 1
-  bedingung: ''
   triage: offen
-  klasse: unabhaengig
 - art: annahme
   anker:
   - betrifft_kat
@@ -255,6 +212,36 @@ items:
   bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
   triage: bedingung_neu
   vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1 satz 1
+  text: wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz
+    6 oder Kindergeld zusteht
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 3
+  text: Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige, die nicht die Voraussetzungen für
+    die Anwendung des Splitting-Verfahrens (§ 26 Absatz 1) erfüllen oder verwitwet sind und keine Haushaltsg
+  bedingung: alleinstehend_im_sinne_des_absatzes_3
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1 s. 1
+  text: wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz
+    6 oder Kindergeld zusteht
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
 - art: annahme
   anker:
   - betrifft_kat
@@ -285,3 +272,19 @@ items:
   bedingung: ''
   triage: nicht_material
   konvention: konv:keine_zusaetzliche_rundung
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1
+  text: von der Summe der Einkünfte abziehen
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 2 satz 1
+  text: ein Kind im Sinne des Absatzes 1
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog

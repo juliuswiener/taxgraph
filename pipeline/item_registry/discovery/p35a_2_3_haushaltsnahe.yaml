@@ -110,125 +110,11 @@ items:
 - art: norm_teil
   anker:
   - ref
-  - § 35a abs. 5 satz 1
-  text: soweit die Aufwendungen nicht Betriebsausgaben oder Werbungskosten darstellen und soweit sie nicht
-    als Sonderausgaben oder außergewöhnliche Belastungen berücksichtigt worden sind
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
   - § 35a abs. 5 satz 2
   text: Der Abzug von der tariflichen Einkommensteuer nach den Absätzen 2 und 3 gilt nur für Arbeitskosten.
   bedingung: ''
-  triage: offen
   klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 5 satz 3
-  text: Voraussetzung ... ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat
-    und die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist.
-  bedingung: ''
   triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 5 satz 4
-  text: Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge nach den Absätzen
-    1 bis 3 insgesamt jeweils nur einmal in Anspruch nehmen.
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 4 satz 1
-  text: wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in
-    der Europäischen Union oder dem Europäischen Wirtschaftsraum liegenden Haushalt ... ausgeübt oder
-    erbracht
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 3 satz 2
-  text: Dies gilt nicht für öffentlich geförderte Maßnahmen, für die zinsverbilligte Darlehen oder steuerfreie
-    Zuschüsse in Anspruch genommen werden.
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 1
-  text: auf Antrag
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 1
-  text: geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 1
-  text: ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen
-  bedingung: ''
-  triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 2 satz 1
-  text: andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme
-    von haushaltsnahen Dienstleistungen
-  bedingung: ''
-  triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 2 satz 2
-  text: für die Inanspruchnahme von Pflege- und Betreuungsleistungen sowie für Aufwendungen, die einem
-    Steuerpflichtigen wegen der Unterbringung in einem Heim oder zur dauernden Pflege erwachsen
-  bedingung: ''
-  triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 3 satz 1
-  text: Handwerkerleistungen für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 4 satz 2
-  text: das Heim oder der Ort der dauernden Pflege in der Europäischen Union oder dem Europäischen Wirtschaftsraum
-    liegt
-  bedingung: ''
-  triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 2 satz 1
-  text: ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen,
-    auf Antrag
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
 - art: norm_teil
   anker:
   - ref
@@ -236,18 +122,8 @@ items:
   text: ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen,
     auf Antrag
   bedingung: ''
-  triage: offen
   klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 35a abs. 4
-  text: wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in
-    der Europäischen Union oder dem Europäischen Wirtschaftsraum liegenden Haushalt des Steuerpflichtigen
-    … au
-  bedingung: ''
   triage: offen
-  klasse: wirkt_hinein
 - art: annahme
   anker:
   - betrifft_kat
@@ -505,6 +381,105 @@ items:
   bedingung: handwerker_keine_oeffentliche_foerderung
   triage: bedingung_neu
   vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 5 satz 1
+  text: soweit die Aufwendungen nicht Betriebsausgaben oder Werbungskosten darstellen und soweit sie nicht
+    als Sonderausgaben oder außergewöhnliche Belastungen berücksichtigt worden sind
+  bedingung: keine_beruecksichtigung_als_wk_sa_agb
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 5 satz 3
+  text: Voraussetzung ... ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat
+    und die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist.
+  bedingung: rechnung_und_unbare_zahlung
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 5 satz 4
+  text: Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge nach den Absätzen
+    1 bis 3 insgesamt jeweils nur einmal in Anspruch nehmen.
+  bedingung: kein_gemeinsamer_haushalt_zweier_alleinstehender
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 4 satz 1
+  text: wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in
+    der Europäischen Union oder dem Europäischen Wirtschaftsraum liegenden Haushalt ... ausgeübt oder
+    erbracht
+  bedingung: haushalt_in_eu_ewr
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 3 satz 2
+  text: Dies gilt nicht für öffentlich geförderte Maßnahmen, für die zinsverbilligte Darlehen oder steuerfreie
+    Zuschüsse in Anspruch genommen werden.
+  bedingung: handwerker_keine_oeffentliche_foerderung
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 1
+  text: auf Antrag
+  bedingung: antrag_gestellt
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 1
+  text: geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch
+  bedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 3 satz 1
+  text: Handwerkerleistungen für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen
+  bedingung: handwerker_nur_renovierung_erhaltung_modernisierung
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 2 satz 1
+  text: ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen,
+    auf Antrag
+  bedingung: antrag_gestellt
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 4
+  text: wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in
+    der Europäischen Union oder dem Europäischen Wirtschaftsraum liegenden Haushalt des Steuerpflichtigen
+    … au
+  bedingung: haushalt_in_eu_ewr
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
 - art: annahme
   anker:
   - betrifft_kat
@@ -523,3 +498,38 @@ items:
   bedingung: ''
   triage: nicht_material
   konvention: konv:input_nur_etikettiertes
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 1
+  text: ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 2 satz 1
+  text: andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme
+    von haushaltsnahen Dienstleistungen
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 2 satz 2
+  text: für die Inanspruchnahme von Pflege- und Betreuungsleistungen sowie für Aufwendungen, die einem
+    Steuerpflichtigen wegen der Unterbringung in einem Heim oder zur dauernden Pflege erwachsen
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - § 35a abs. 4 satz 2
+  text: das Heim oder der Ort der dauernden Pflege in der Europäischen Union oder dem Europäischen Wirtschaftsraum
+    liegt
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog

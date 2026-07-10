@@ -8,78 +8,8 @@ items:
   - § 9 abs. 6 satz 1
   text: Aufwendungen des Steuerpflichtigen für seine Berufsausbildung oder für sein Studium
   bedingung: ''
-  triage: offen
   klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 9 abs. 6 satz 2
-  text: Eine Berufsausbildung als Erstausbildung nach Satz 1 liegt vor, wenn eine geordnete Ausbildung
-    mit einer Mindestdauer von 12 Monaten bei vollzeitiger Ausbildung und mit einer Abschlussprüfung durchgef
-  bedingung: ''
   triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 9 abs. 6 satz 3
-  text: Eine geordnete Ausbildung liegt vor, wenn sie auf der Grundlage von Rechts- oder Verwaltungsvorschriften
-    oder internen Vorschriften eines Bildungsträgers durchgeführt wird.
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 9 abs. 6 satz 4
-  text: Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen, gilt die Ausbildung mit der
-    tatsächlichen planmäßigen Beendigung als abgeschlossen.
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - § 9 abs. 6 satz 5
-  text: Eine Berufsausbildung als Erstausbildung hat auch abgeschlossen, wer die Abschlussprüfung einer
-    durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausbildung mit einer Mindestdauer von
-    12 Mon
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - satz 2
-  text: geordnete Ausbildung mit einer Mindestdauer von 12 Monaten
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - satz 3
-  text: auf der Grundlage von Rechts- oder Verwaltungsvorschriften
-  bedingung: ''
-  triage: offen
-  klasse: unabhaengig
-- art: norm_teil
-  anker:
-  - ref
-  - satz 4
-  text: Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
-- art: norm_teil
-  anker:
-  - ref
-  - satz 5
-  text: wer die Abschlussprüfung einer durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausbildung
-    mit einer Mindestdauer von 12 Monaten bestanden hat
-  bedingung: ''
-  triage: offen
-  klasse: wirkt_hinein
 - art: annahme
   anker:
   - betrifft_kat
@@ -117,6 +47,75 @@ items:
   - interpretation
   text: The input 'erstausbildung_abgeschlossen' is assumed to correctly indicate a prior completed Erstausbildung.
   bedingung: erstausbildung_nach_legaldefinition
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 6 satz 2
+  text: Eine Berufsausbildung als Erstausbildung nach Satz 1 liegt vor, wenn eine geordnete Ausbildung
+    mit einer Mindestdauer von 12 Monaten bei vollzeitiger Ausbildung und mit einer Abschlussprüfung durchgef
+  bedingung: erstausbildung_nach_legaldefinition
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 6 satz 3
+  text: Eine geordnete Ausbildung liegt vor, wenn sie auf der Grundlage von Rechts- oder Verwaltungsvorschriften
+    oder internen Vorschriften eines Bildungsträgers durchgeführt wird.
+  bedingung: erstausbildung_nach_legaldefinition
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 6 satz 4
+  text: Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen, gilt die Ausbildung mit der
+    tatsächlichen planmäßigen Beendigung als abgeschlossen.
+  bedingung: erstausbildung_nach_legaldefinition
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 6 satz 5
+  text: Eine Berufsausbildung als Erstausbildung hat auch abgeschlossen, wer die Abschlussprüfung einer
+    durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausbildung mit einer Mindestdauer von
+    12 Mon
+  bedingung: erstausbildung_nach_legaldefinition
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - satz 2
+  text: geordnete Ausbildung mit einer Mindestdauer von 12 Monaten
+  bedingung: erstausbildung_nach_legaldefinition
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - satz 4
+  text: Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen
+  bedingung: erstausbildung_nach_legaldefinition
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - satz 5
+  text: wer die Abschlussprüfung einer durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausbildung
+    mit einer Mindestdauer von 12 Monaten bestanden hat
+  bedingung: erstausbildung_nach_legaldefinition
+  klasse: wirkt_hinein
   triage: bedingung_neu
   vorschlag: detektor
 - art: annahme
@@ -168,3 +167,11 @@ items:
   bedingung: ''
   triage: nicht_material
   konvention: konv:input_nur_etikettiertes
+- art: norm_teil
+  anker:
+  - ref
+  - satz 3
+  text: auf der Grundlage von Rechts- oder Verwaltungsvorschriften
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
