@@ -44,6 +44,21 @@ import item_registry as IR  # noqa: E402
 OUT_ROOT = os.path.join(PIPELINE, "runs", "produktion")
 
 
+def _archive_report(path: str) -> str | None:
+    """Vor dem Ueberschreiben (--force / redo) die alte report.json daneben sichern.
+    Ein role_timeout oder ein schlechteres Formalisierungs-Artefakt darf ein
+    besseres nicht spurlos ersetzen (2026-07-11: ein 5/6-A ging so verloren).
+    Suffix = mtime der alten Datei (deterministisch aus der Datei selbst)."""
+    if not os.path.exists(path):
+        return None
+    arch = f"{path}.{int(os.path.getmtime(path))}"
+    try:
+        os.replace(path, arch)
+        return arch
+    except OSError:
+        return None
+
+
 def build_candidate(rule: dict) -> dict:
     sig = rule["signature"]
     # Multi-Source: Gesetz + auslegende Quellen, getrennt etikettiert. Zitatanker
@@ -394,6 +409,9 @@ def main() -> int:
 
         print(f"\n=== {rid} ===", flush=True)
         os.makedirs(d, exist_ok=True)
+        arch = _archive_report(done)   # --force: alte report.json sichern, nicht ueberschreiben
+        if arch:
+            print(f"  (alte report.json -> {os.path.basename(arch)})", flush=True)
         try:
             res = run_candidate(build_candidate(rule), dry_run=args.dry_run)
         except RoleCallError as e:
