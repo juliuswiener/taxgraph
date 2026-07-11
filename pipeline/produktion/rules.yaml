@@ -1212,7 +1212,7 @@ regeln:
     label: "§ 33 Abs. 1, 2 EStG (agB-Abzug, Zwangslaeufigkeit)"
     datei: sources/gesetze-im-internet/estg_p33_2026-07-11.txt
     zitatanker: "zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen"
-    auszug: "den Umständen nach notwendig sind und einen angemessenen Betrag nicht übersteigen"
+    auszug: "Erwachsen einem Steuerpflichtigen zwangsläufig größere Aufwendungen als der überwiegenden Mehrzahl der Steuerpflichtigen gleicher Einkommensverhältnisse, gleicher Vermögensverhältnisse und gleichen Familienstands (außergewöhnliche Belastung), so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen wird."
   geltungsbedingungen:
   - bedingung: agb_ist_zwangslaeufig
     deckt_ab: "wenn er sich ihnen aus rechtlichen, tatsächlichen oder sittlichen Gründen nicht entziehen kann"
@@ -1274,7 +1274,7 @@ regeln:
     label: "§ 32 Abs. 6 EStG (Kinderfreibetrag + BEA-Freibetrag)"
     datei: sources/gesetze-im-internet/estg_p32_2026-07-11.txt
     zitatanker: "für das sächliche Existenzminimum des Kindes (Kinderfreibetrag)"
-    auszug: "für jedes zu berücksichtigende Kind des Steuerpflichtigen ein Freibetrag"
+    auszug: "Bei der Veranlagung zur Einkommensteuer wird für jedes zu berücksichtigende Kind des Steuerpflichtigen ein Freibetrag von 3 414 Euro für das sächliche Existenzminimum des Kindes (Kinderfreibetrag) sowie ein Freibetrag von 1 464 Euro für den Betreuungs- und Erziehungs- oder Ausbildungsbedarf des Kindes vom Einkommen abgezogen. 2 Bei Ehegatten, die nach den §§ 26, 26b zusammen zur Einkommensteuer veranlagt werden, verdoppeln sich die Beträge nach Satz 1, wenn das Kind zu beiden Ehegatten in einem Kindschaftsverhältnis steht."
   geltungsbedingungen:
   - bedingung: kinder_sind_zu_beruecksichtigen
     deckt_ab: "für jedes zu berücksichtigende Kind des Steuerpflichtigen ein Freibetrag"
