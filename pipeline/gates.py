@@ -601,7 +601,10 @@ def _lit(value, typ: str) -> str | None:
         # 1.408,70 EUR und 22,40 EUR. `int(value)` haette daraus $1408.00 gemacht -
         # ein still falscher Erwartungswert, der genau das unterlaeuft, wofuer das
         # Test-Gate da ist. Catala-Money will Tausendertrenner: $1,408.70
-        return "$" + f"{float(value):,.2f}"
+        # Negative Betraege (Erstattung/Ueberschuss, z.B. § 36): das Minus steht in
+        # Catala VOR dem Dollar (`-$3,000.00`), nicht dahinter - sonst Parse-Fehler.
+        v = float(value)
+        return f"{'-' if v < 0 else ''}${abs(v):,.2f}"
     if typ == "int":
         return str(int(value))
     if typ == "bool":
