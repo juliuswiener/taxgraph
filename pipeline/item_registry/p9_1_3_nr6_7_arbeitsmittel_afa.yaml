@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p9_1_3_nr6_7_arbeitsmittel_afa
-version: 1
+version: 2
 items:
 - art: abweichung
   anker:
@@ -46,7 +46,9 @@ items:
     und direkt als Divisor verwendet werden kann.
   - Die Formalisierung setzt voraus, dass die betriebsgewöhnliche Nutzungsdauer in
     ganzen Jahren als Integer-Wert bekannt ist.
-  triage: nicht_material
+  - Die Formalisierung nimmt eine lineare Jahres-AfA an, obwohl die Norm eine monatsgenaue
+    Zwölftelung vorschreibt.
+  triage: nicht_echt
 - art: annahme
   anker:
   - betrifft_kat
@@ -76,7 +78,9 @@ items:
   formulierungen:
   - Die Formalisierung nimmt an, dass der Anschaffungsmonat als Kalendermonatsnummer
     vorliegt und für die AfA-Berechnung direkt verwendbar ist.
-  triage: nicht_material
+  - Die Formalisierung nimmt an, dass der Anschaffungsmonat bei der zeitanteiligen
+    AfA nicht mitzählt.
+  triage: defekt_formalisierer
 - art: annahme
   anker:
   - betrifft_kat
