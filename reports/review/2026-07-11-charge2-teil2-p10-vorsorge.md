@@ -110,9 +110,18 @@ formalisieren, als Backlog notieren, bei Bedarf spaeter.
 
 ---
 
-## Frage an dich
+## Nachtrag: freigegeben SO + Auflagen (Instructor msg 1197)
 
-Reihenfolge v1 → v2 → v4, v3 Backlog. Kernfragen: (a) v1 Abs.-3-Formel (Kürzung
-AG-Anteil vor/nach Kappung, 100 %-Annahme) — bitte bestaetigen. (b) v2-Mechanik
-`basis + min(weitere, max(0, Höchstbetrag − basis))` normgetreu? (c) hoechstbeitrag_
-knappschaft als Input/Parameter ok, oder soll v1 ihn aus params ziehen?
+- **v1 Abs.-3-Formel gepinnt**: Inputs `gesamtbeitraege_inkl_ag` (AN-Anteil + steuer-
+  freier AG-Anteil) und `ag_anteil_steuerfrei`. Reihenfolge: (1) gesamt, (2) cap =
+  min(gesamt, Knappschaft-Höchstbetrag), (3) 100 %-Ansatz (seit 2023 fix, versionierter
+  Parameter mit Anker "100 Prozent" [1] deklariert, KEINE Übergangs-Treppe), (4) MINUS
+  ag_anteil_steuerfrei (Kürzung NACH dem Cap). Ergebnis bei gesamt>HB und ag>0 =
+  HB − ag (nicht (gesamt−ag) gecappt). Seeds: unter Cap / über Cap / AG-Kürzung-nach-Cap
+  sichtbar. hoechstbeitrag_knappschaft als versionierter Parameter (params/), nicht Input.
+- **v2 bestaetigt SO** (Abs.-4-Mechanismus inkl. Basis-Durchbruch). Seeds: basis>HB /
+  basis<HB mit Rest-Raum / Grenzfall basis==HB.
+- **v4 AUFLAGE — neue Bedingung `kein_erstattungsueberhang`**: § 10 Abs. 4b (Hinzu-
+  rechnung eines Erstattungsüberhangs) liegt außerhalb des Scope; Null-Boden im Output
+  (max(0, gezahlte − erstattete)). quelle § 10 Abs. 4b EStG.
+- **v3 Backlog bestaetigt**.
