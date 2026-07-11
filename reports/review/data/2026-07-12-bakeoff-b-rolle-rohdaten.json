@@ -1,0 +1,902 @@
+[
+  {
+    "cand": "gemini",
+    "rule": "p9_1_3_nr6_7_arbeitsmittel_afa",
+    "run": 1,
+    "wall_s": 106.1,
+    "cost": 0.114153,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "PASS",
+    "clerk_b_detail": "6 seed test(s) passed, anchors verified",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "anschaffungskosten": 500,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 500.0,
+          "got": "$500.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "anschaffungskosten": 800,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 800.0,
+          "got": "$800.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "anschaffungskosten": 801,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 267.0,
+          "got": "$267.00",
+          "ok": true
+        },
+        {
+          "i": 3,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 200.0,
+          "got": "$200.00",
+          "ok": true
+        },
+        {
+          "i": 4,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 1
+          },
+          "expected": 400.0,
+          "got": "$400.00",
+          "ok": true
+        },
+        {
+          "i": 5,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 3
+          },
+          "expected": 200.0,
+          "got": "$200.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": true
+  },
+  {
+    "cand": "gemini",
+    "rule": "p9_1_3_nr6_7_arbeitsmittel_afa",
+    "run": 2,
+    "wall_s": 153.2,
+    "cost": 0.130529,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": false,
+    "returncode": 0,
+    "syntax_b": "FAIL(no catala_b)",
+    "typecheck_b": "FAIL(no catala_b)",
+    "clerk_b": "FAIL(no catala_b)",
+    "equivalence": "FAIL(no catala_b)",
+    "waechter_ok": false,
+    "stderr_tail": ""
+  },
+  {
+    "cand": "gemini",
+    "rule": "p9_1_3_nr5a_uebernachtung",
+    "run": 1,
+    "wall_s": 55.2,
+    "cost": 0.0,
+    "queue_status": "role_timeout",
+    "b_hat_catala": false,
+    "returncode": 0,
+    "syntax_b": "FAIL(no catala_b)",
+    "typecheck_b": "FAIL(no catala_b)",
+    "clerk_b": "FAIL(no catala_b)",
+    "equivalence": "FAIL(no catala_b)",
+    "waechter_ok": false,
+    "stderr_tail": ""
+  },
+  {
+    "cand": "gemini",
+    "rule": "p9_1_3_nr5a_uebernachtung",
+    "run": 2,
+    "wall_s": 47.6,
+    "cost": 0.05072,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "\u2503 \u2503   tests                  1          2          3       66 %                  \u2503 \u2503                                    ",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "uebernachtungskosten_monat": 800,
+            "monate": 12,
+            "monate_bisher_am_ort": 10
+          },
+          "expected": 9600.0,
+          "got": "$9,600.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "uebernachtungskosten_monat": 1400,
+            "monate": 12,
+            "monate_bisher_am_ort": 47
+          },
+          "expected": 16800.0,
+          "got": "$12,000.00",
+          "ok": false
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "uebernachtungskosten_monat": 1400,
+            "monate": 12,
+            "monate_bisher_am_ort": 48
+          },
+          "expected": 12000.0,
+          "got": "$12,000.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "gemini",
+    "rule": "p24b_entlastungsbetrag",
+    "run": 1,
+    "wall_s": 81.1,
+    "cost": 0.071311,
+    "queue_status": "discovery_triage",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "PASS",
+    "clerk_b_detail": "3 seed test(s) passed, anchors verified",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4260.0,
+          "got": "$4,260.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 3,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4740.0,
+          "got": "$4,740.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 6
+          },
+          "expected": 2130.0,
+          "got": "$2,130.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": null
+  },
+  {
+    "cand": "gemini",
+    "rule": "p24b_entlastungsbetrag",
+    "run": 2,
+    "wall_s": 98.4,
+    "cost": 0.070669,
+    "queue_status": "verified_bedingt",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "PASS",
+    "clerk_b_detail": "3 seed test(s) passed, anchors verified",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4260.0,
+          "got": "$4,260.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 3,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4740.0,
+          "got": "$4,740.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 6
+          },
+          "expected": 2130.0,
+          "got": "$2,130.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": null
+  },
+  {
+    "cand": "mistral",
+    "rule": "p9_1_3_nr6_7_arbeitsmittel_afa",
+    "run": 1,
+    "wall_s": 102.2,
+    "cost": 0.054764,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "FAIL",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "scope ArbeitsmittelUndAfa \u2502 \u251c\u2500\u27a4 rules/ArbeitsmittelUndAfa.catala_en:14.14-23: \u2502    \u2502 \u2502 14 \u2502   definition grenzwert equal",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "error": "build/load: ndAfa\n\u2502\n\u251c\u2500\u27a4 rules/ModB.catala_en:14.14-23:\n\u2502    \u2502\n\u2502 14 \u2502   definition grenzwert equals $800.00\n\u2502    \u2502              \u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\n\u2514\u2500 ModB\nninja: build stopped: cannot make progress due to previous errors.\n"
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "mistral",
+    "rule": "p9_1_3_nr6_7_arbeitsmittel_afa",
+    "run": 2,
+    "wall_s": 169.0,
+    "cost": 0.065143,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "\u2503 \u2503   tests                  2          4          6       66 %                  \u2503 \u2503                                    ",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "anschaffungskosten": 500,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 500.0,
+          "got": "$500.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "anschaffungskosten": 800,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 800.0,
+          "got": "$800.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "anschaffungskosten": 801,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 267.0,
+          "got": "$267.00",
+          "ok": true
+        },
+        {
+          "i": 3,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 200.0,
+          "got": "$199.98",
+          "ok": false
+        },
+        {
+          "i": 4,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 1
+          },
+          "expected": 400.0,
+          "got": "$400.00",
+          "ok": true
+        },
+        {
+          "i": 5,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 3
+          },
+          "expected": 200.0,
+          "got": "$400.00",
+          "ok": false
+        }
+      ]
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "mistral",
+    "rule": "p9_1_3_nr5a_uebernachtung",
+    "run": 1,
+    "wall_s": 57.0,
+    "cost": 0.034906,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "FAIL",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "cope Uebernachtungskosten \u2502 \u251c\u2500\u27a4 rules/Uebernachtungskosten.catala_en:12.14-26: \u2502    \u2502 \u2502 12 \u2502   definition monatsbetrag e",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "error": "build/load: skosten\n\u2502\n\u251c\u2500\u27a4 rules/ModA.catala_en:12.14-26:\n\u2502    \u2502\n\u2502 12 \u2502   definition monatsbetrag equals\n\u2502    \u2502              \u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\n\u2514\u2500 ModA\nninja: build stopped: cannot make progress due to previous errors.\n"
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "mistral",
+    "rule": "p9_1_3_nr5a_uebernachtung",
+    "run": 2,
+    "wall_s": 44.4,
+    "cost": 0.039741,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "FAIL",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "en \u2502 \u251c\u2500\u27a4 rules/Uebernachtungskosten.catala_en:12.14-33: \u2502    \u2502 \u2502 12 \u2502   definition monatshoechstbetrag equals $1000.00 \u2502",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "error": "build/load: B.catala_en:12.14-33:\n\u2502    \u2502\n\u2502 12 \u2502   definition monatshoechstbetrag equals $1000.00\n\u2502    \u2502              \u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\n\u2514\u2500 ModB\nninja: build stopped: cannot make progress due to previous errors.\n"
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "mistral",
+    "rule": "p24b_entlastungsbetrag",
+    "run": 1,
+    "wall_s": 103.1,
+    "cost": 0.053418,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "FAIL",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "riable of scope Entlastungsbetrag \u2502 \u251c\u2500\u27a4 rules/Entlastungsbetrag.catala_en:13.14-25: \u2502    \u2502 \u2502 13 \u2502   definition grundbetr",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "error": "build/load: ngsbetrag\n\u2502\n\u251c\u2500\u27a4 rules/ModB.catala_en:13.14-25:\n\u2502    \u2502\n\u2502 13 \u2502   definition grundbetrag equals\n\u2502    \u2502              \u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\u203e\n\u2514\u2500 ModB\nninja: build stopped: cannot make progress due to previous errors.\n"
+    },
+    "waechter_ok": null
+  },
+  {
+    "cand": "mistral",
+    "rule": "p24b_entlastungsbetrag",
+    "run": 2,
+    "wall_s": 88.7,
+    "cost": 0.066291,
+    "queue_status": "discovery_triage",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "PASS",
+    "clerk_b_detail": "3 seed test(s) passed, anchors verified",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4260.0,
+          "got": "$4,260.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 3,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4740.0,
+          "got": "$4,740.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 6
+          },
+          "expected": 2130.0,
+          "got": "$2,130.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": null
+  },
+  {
+    "cand": "llama",
+    "rule": "p9_1_3_nr6_7_arbeitsmittel_afa",
+    "run": 1,
+    "wall_s": 75.6,
+    "cost": 0.047205,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "\u2503 \u2503   tests                  4          2          6       33 %                  \u2503 \u2503                                    ",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "anschaffungskosten": 500,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 500.0,
+          "got": "$500.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "anschaffungskosten": 800,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 800.0,
+          "got": "$800.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "anschaffungskosten": 801,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 267.0,
+          "got": "$0.00",
+          "ok": false
+        },
+        {
+          "i": 3,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 200.0,
+          "got": "$0.00",
+          "ok": false
+        },
+        {
+          "i": 4,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 1
+          },
+          "expected": 400.0,
+          "got": "$0.00",
+          "ok": false
+        },
+        {
+          "i": 5,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 3
+          },
+          "expected": 200.0,
+          "got": "$0.00",
+          "ok": false
+        }
+      ]
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "llama",
+    "rule": "p9_1_3_nr6_7_arbeitsmittel_afa",
+    "run": 2,
+    "wall_s": 76.4,
+    "cost": 0.047244,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "\u2503 \u2503   tests                  4          2          6       33 %                  \u2503 \u2503                                    ",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "anschaffungskosten": 500,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 500.0,
+          "got": "$500.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "anschaffungskosten": 800,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 800.0,
+          "got": "$800.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "anschaffungskosten": 801,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 267.0,
+          "got": "$0.00",
+          "ok": false
+        },
+        {
+          "i": 3,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 200.0,
+          "got": "$0.00",
+          "ok": false
+        },
+        {
+          "i": 4,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 1
+          },
+          "expected": 400.0,
+          "got": "$0.00",
+          "ok": false
+        },
+        {
+          "i": 5,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 3
+          },
+          "expected": 200.0,
+          "got": "$0.00",
+          "ok": false
+        }
+      ]
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "llama",
+    "rule": "p9_1_3_nr5a_uebernachtung",
+    "run": 1,
+    "wall_s": 21.4,
+    "cost": 0.021098,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "\u2503 \u2503   tests                  1          2          3       66 %                  \u2503 \u2503                                    ",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "uebernachtungskosten_monat": 800,
+            "monate": 12,
+            "monate_bisher_am_ort": 10
+          },
+          "expected": 9600.0,
+          "got": "$9,600.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "uebernachtungskosten_monat": 1400,
+            "monate": 12,
+            "monate_bisher_am_ort": 47
+          },
+          "expected": 16800.0,
+          "got": "$12,000.00",
+          "ok": false
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "uebernachtungskosten_monat": 1400,
+            "monate": 12,
+            "monate_bisher_am_ort": 48
+          },
+          "expected": 12000.0,
+          "got": "$12,000.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "llama",
+    "rule": "p9_1_3_nr5a_uebernachtung",
+    "run": 2,
+    "wall_s": 29.9,
+    "cost": 0.022997,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "\u2503 \u2503   tests                  1          2          3       66 %                  \u2503 \u2503                                    ",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "uebernachtungskosten_monat": 800,
+            "monate": 12,
+            "monate_bisher_am_ort": 10
+          },
+          "expected": 9600.0,
+          "got": "$9,600.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "uebernachtungskosten_monat": 1400,
+            "monate": 12,
+            "monate_bisher_am_ort": 47
+          },
+          "expected": 16800.0,
+          "got": "$12,000.00",
+          "ok": false
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "uebernachtungskosten_monat": 1400,
+            "monate": 12,
+            "monate_bisher_am_ort": 48
+          },
+          "expected": 12000.0,
+          "got": "$12,000.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "llama",
+    "rule": "p24b_entlastungsbetrag",
+    "run": 1,
+    "wall_s": 99.3,
+    "cost": 0.051343,
+    "queue_status": "discovery_triage",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "PASS",
+    "clerk_b_detail": "3 seed test(s) passed, anchors verified",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4260.0,
+          "got": "$4,260.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 3,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4740.0,
+          "got": "$4,740.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 6
+          },
+          "expected": 2130.0,
+          "got": "$2,130.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": null
+  },
+  {
+    "cand": "llama",
+    "rule": "p24b_entlastungsbetrag",
+    "run": 2,
+    "wall_s": 124.3,
+    "cost": 0.058593,
+    "queue_status": "discovery_triage",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "PASS",
+    "clerk_b_detail": "3 seed test(s) passed, anchors verified",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4260.0,
+          "got": "$4,260.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 3,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4740.0,
+          "got": "$4,740.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 6
+          },
+          "expected": 2130.0,
+          "got": "$2,130.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": null
+  }
+]
