@@ -2,7 +2,7 @@
 # Praezedenzfaelle. Auto-Apply nur bei EXAKTER Anker-Gleichheit.
 # gesperrt: true -> durch Widerruf gesperrt, nie wieder Auto-Apply.
 
-version: 41
+version: 42
 faelle:
 - schluessel: '["[\"annahme\", \"betrifft_kat\", \"uebernachtungskosten_monat\", \"einheit\"]",
     "einheit", "nicht_material", "input_nur_etikettiertes"]'
@@ -642,3 +642,22 @@ faelle:
   quelle_text: sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne
     des Absatzes 1 Nummer 3a scheidet aus
   entschieden_am: '2026-07-11T13:22:20.086478+00:00'
+- schluessel: '["[\"abweichung\", \"abweichung_text\", \"die formalisierung gibt bei
+    basis_kv_pv > beruecksichtigt_ohne_durchbruch den vollen basis_kv_pv-betrag zurueck,
+    ohne den hoechstbetrag zu begrenzen.\"]", null, "nicht_echt", null]'
+  anker_schluessel: '["abweichung", "abweichung_text", "die formalisierung gibt bei
+    basis_kv_pv > beruecksichtigt_ohne_durchbruch den vollen basis_kv_pv-betrag zurueck,
+    ohne den hoechstbetrag zu begrenzen."]'
+  art: abweichung
+  anker:
+  - abweichung_text
+  - die formalisierung gibt bei basis_kv_pv > beruecksichtigt_ohne_durchbruch den
+    vollen basis_kv_pv-betrag zurueck, ohne den hoechstbetrag zu begrenzen.
+  kategorie: null
+  entscheidungstyp: nicht_echt
+  ziel_id: null
+  gesperrt: false
+  quelle_rule_id: p10_1_3_3a_kv_pv
+  quelle_text: Judge-Falschpositiv auf normbefohlenem Basis-Durchbruch (§10 Abs4 S4),
+    per Waechter-Seed 4000->4000 bewiesen
+  entschieden_am: '2026-07-11T13:24:00.755300+00:00'

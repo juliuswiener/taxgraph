@@ -994,3 +994,24 @@ entscheidungen:
       Absatzes 1 Nummer 3a scheidet aus
   entschieden_via: batch4-triage
   timestamp: '2026-07-11T13:22:20.206005+00:00'
+- rule_id: p10_1_3_3a_kv_pv
+  schluessel: '["abweichung", "abweichung_text", "die formalisierung gibt bei basis_kv_pv
+    > beruecksichtigt_ohne_durchbruch den vollen basis_kv_pv-betrag zurueck, ohne
+    den hoechstbetrag zu begrenzen."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - die formalisierung gibt bei basis_kv_pv > beruecksichtigt_ohne_durchbruch den
+      vollen basis_kv_pv-betrag zurueck, ohne den hoechstbetrag zu begrenzen.
+    text: Judge-Falschpositiv auf normbefohlenem Basis-Durchbruch (§10 Abs4 S4), per
+      Waechter-Seed 4000->4000 bewiesen
+  entschieden_via: msg1291-judge-falschpositiv
+  timestamp: '2026-07-11T13:24:00.878011+00:00'

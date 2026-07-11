@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p10_1_3_3a_kv_pv
-version: 4
+version: 5
 items:
 - art: annahme
   anker:
@@ -25,4 +25,13 @@ items:
   formulierungen:
   - sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne des Absatzes
     1 Nummer 3a scheidet aus
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die formalisierung gibt bei basis_kv_pv > beruecksichtigt_ohne_durchbruch den
+    vollen basis_kv_pv-betrag zurueck, ohne den hoechstbetrag zu begrenzen.
+  formulierungen:
+  - Judge-Falschpositiv auf normbefohlenem Basis-Durchbruch (§10 Abs4 S4), per Waechter-Seed
+    4000->4000 bewiesen
   triage: nicht_echt
