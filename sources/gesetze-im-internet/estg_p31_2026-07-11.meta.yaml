@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p31/2026-07-11"
+  norm: "§ 31 EStG (Familienleistungsausgleich)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__31.html"
+  abrufdatum: "2026-07-11"
+  datei: "estg_p31_2026-07-11.txt"
+  sha256: "6c5504727ab9117084365159c5cab2833d44e1cf91fba9d125c09d7eb6a007d2"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: []

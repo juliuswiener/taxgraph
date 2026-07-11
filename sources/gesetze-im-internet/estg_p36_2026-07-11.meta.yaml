@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p36/2026-07-11"
+  norm: "§ 36 EStG (Anrechnung)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__36.html"
+  abrufdatum: "2026-07-11"
+  datei: "estg_p36_2026-07-11.txt"
+  sha256: "e6696a9eaa464fe4f8b4266f30fd78b275e30eed78496cd3e04ea5075d73118b"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: []

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p10/2026-07-11"
+  norm: "§ 10 EStG (Sonderausgaben)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__10.html"
+  abrufdatum: "2026-07-11"
+  datei: "estg_p10_2026-07-11.txt"
+  sha256: "a4238d6d6416ce940d727697875654deedea9245294c96802e49d36a18bce09d"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: []

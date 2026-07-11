@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p32/2026-07-11"
+  norm: "§ 32 EStG (Kinder, Freibeträge)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__32.html"
+  abrufdatum: "2026-07-11"
+  datei: "estg_p32_2026-07-11.txt"
+  sha256: "9dd3d7ee9eeea306f55c653f66f22a340bc0df3b487967b3551d078790f7a2e6"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: []
