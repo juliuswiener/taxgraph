@@ -38,8 +38,14 @@ hoechstens 24 Stunden, keine tagesuebergreifende Aggregation im Input."
 **Damit sind alle 7 aktiven Regeln `verified_bedingt`** — die 12 gesperrten
 Abweichungen waren der einzige Rest.
 
-## Statusgrenze
+## Statusgrenze / Bestätigung
 
-verified_bedingt vom Regate deterministisch berechnet, in die (gitignored)
-report.json geschrieben. NICHT als final erklaert — Meldung an den Instructor vor
-Bestaetigung/Julius-Freigabe (Widerrufsvorbehalt Morgen-Review). Nacht-Summe: $0.
+verified_bedingt vom Regate deterministisch berechnet.
+
+**BESTÄTIGT verified_bedingt** (Instructor-Verifikation msg 1156, eigener Regate-Lauf,
+0 Änderungen nach dem dev-Lauf = Determinismus bestätigt; `bestaetigt_von: instructor,
+2026-07-11 Nacht`, Widerrufsvorbehalt Julius' Morgen-Review): `p24b_entlastungsbetrag`,
+`p9_4a_verpflegungsmehraufwand`, `p35a_2_3_haushaltsnahe`.
+
+**Damit CHARGE 1 komplett durch die Ratsche** — alle 7 aktiven Regeln verified_bedingt,
+doppelt unabhängig gerechnet (dev + instructor). Nacht-Summe: $0.
