@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p9_1_3_nr5a_uebernachtung
-version: 1
+version: 2
 items:
 - art: annahme
   anker:
@@ -34,3 +34,12 @@ items:
   - notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen
   triage: nicht_echt
   klasse: unabhaengig
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate
+  - interpretation
+  formulierungen:
+  - monate wird als Anzahl der abziehbaren Monate / Multiplikator fuer die Monatskosten
+    verwendet (freigegebenes Signatur-Design des Neuschnitts, keine stille Annahme).
+  triage: nicht_material
