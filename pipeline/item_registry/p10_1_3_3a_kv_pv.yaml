@@ -1,0 +1,28 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10_1_3_3a_kv_pv
+version: 4
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - mit_anspruch_auf_zuschuss
+  - interpretation
+  formulierungen:
+  - Die Formalisierung setzt den Höchstbetrag von 1.900 Euro nur bei mit_anspruch_auf_zuschuss
+    = true, obwohl der Normtext weitere Alternativen nennt.
+  - Die Formalisierung setzt den reduzierten Höchstbetrag von 1.900 Euro für alle
+    Steuerpflichtigen mit Anspruch auf Zuschuss an.
+  - Die Formalisierung setzt den Höchstbetrag von 1.900 Euro allein aufgrund des Inputs
+    'mit_anspruch_auf_zuschuss' fest, ohne die weiteren gesetzlichen Alternativen
+    zu prüfen.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 4 satz 4
+  formulierungen:
+  - sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne des Absatzes
+    1 Nummer 3a scheidet aus
+  triage: nicht_echt

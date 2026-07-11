@@ -881,3 +881,116 @@ entscheidungen:
       auf, während die Norm 'aufgerundet auf einen vollen Betrag in Euro' verlangt.
   entschieden_via: msg1285-toter-zweig-ganzeuro
   timestamp: '2026-07-11T13:02:49.312162+00:00'
+- rule_id: p10_1_4_kirchensteuer
+  schluessel: '["annahme", "betrifft_kat", "ergebnis", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: kein_erstattungsueberhang
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - ergebnis
+    - interpretation
+    text: Die Formalisierung interpretiert die Verrechnung des Erstattungsüberhangs
+      als einfache Saldierung innerhalb der Kirchensteuer selbst.
+  entschieden_via: batch4-triage
+  timestamp: '2026-07-11T13:22:19.345942+00:00'
+- rule_id: p10_1_4_kirchensteuer
+  schluessel: '["norm_teil", "ref", "§ 10 abs. 4b satz 2 estg"]'
+  triage: bedingung_neu
+  bedingung: kein_erstattungsueberhang
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 10 abs. 4b satz 2 estg
+    text: mit anderen im Rahmen der jeweiligen Nummer anzusetzenden Aufwendungen zu
+      verrechnen
+  entschieden_via: batch4-triage
+  timestamp: '2026-07-11T13:22:19.520171+00:00'
+- rule_id: p10_1_3_3a_kv_pv
+  schluessel: '["annahme", "betrifft_kat", "mit_anspruch_auf_zuschuss", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - mit_anspruch_auf_zuschuss
+    - interpretation
+    text: Die Formalisierung setzt den Höchstbetrag von 1.900 Euro nur bei mit_anspruch_auf_zuschuss
+      = true, obwohl der Normtext weitere Alternativen nennt.
+  entschieden_via: batch4-triage
+  timestamp: '2026-07-11T13:22:19.693911+00:00'
+- rule_id: p10_1_3_3a_kv_pv
+  schluessel: '["annahme", "betrifft_kat", "mit_anspruch_auf_zuschuss", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - mit_anspruch_auf_zuschuss
+    - interpretation
+    text: Die Formalisierung setzt den reduzierten Höchstbetrag von 1.900 Euro für
+      alle Steuerpflichtigen mit Anspruch auf Zuschuss an.
+  entschieden_via: batch4-triage
+  timestamp: '2026-07-11T13:22:19.857515+00:00'
+- rule_id: p10_1_3_3a_kv_pv
+  schluessel: '["annahme", "betrifft_kat", "mit_anspruch_auf_zuschuss", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - mit_anspruch_auf_zuschuss
+    - interpretation
+    text: Die Formalisierung setzt den Höchstbetrag von 1.900 Euro allein aufgrund
+      des Inputs 'mit_anspruch_auf_zuschuss' fest, ohne die weiteren gesetzlichen
+      Alternativen zu prüfen.
+  entschieden_via: batch4-triage
+  timestamp: '2026-07-11T13:22:20.023591+00:00'
+- rule_id: p10_1_3_3a_kv_pv
+  schluessel: '["norm_teil", "ref", "§ 10 abs. 4 satz 4"]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 10 abs. 4 satz 4
+    text: sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne des
+      Absatzes 1 Nummer 3a scheidet aus
+  entschieden_via: batch4-triage
+  timestamp: '2026-07-11T13:22:20.206005+00:00'

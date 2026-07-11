@@ -1,0 +1,24 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10_1_4_kirchensteuer
+version: 2
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - interpretation
+  formulierungen:
+  - Die Formalisierung interpretiert die Verrechnung des Erstattungsüberhangs als
+    einfache Saldierung innerhalb der Kirchensteuer selbst.
+  triage: bedingung_neu
+  bedingung: kein_erstattungsueberhang
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 4b satz 2 estg
+  formulierungen:
+  - mit anderen im Rahmen der jeweiligen Nummer anzusetzenden Aufwendungen zu verrechnen
+  triage: bedingung_neu
+  bedingung: kein_erstattungsueberhang

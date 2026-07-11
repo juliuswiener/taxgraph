@@ -2,7 +2,7 @@
 # Praezedenzfaelle. Auto-Apply nur bei EXAKTER Anker-Gleichheit.
 # gesperrt: true -> durch Widerruf gesperrt, nie wieder Auto-Apply.
 
-version: 37
+version: 41
 faelle:
 - schluessel: '["[\"annahme\", \"betrifft_kat\", \"uebernachtungskosten_monat\", \"einheit\"]",
     "einheit", "nicht_material", "input_nur_etikettiertes"]'
@@ -580,3 +580,65 @@ faelle:
   quelle_text: Die Formalisierung rundet den Höchstbeitrag kaufmännisch auf ganze
     Euro auf, während die Norm 'aufgerundet auf einen vollen Betrag in Euro' verlangt.
   entschieden_am: '2026-07-11T13:02:49.194288+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"ergebnis\", \"interpretation\"]",
+    "interpretation", "bedingung_neu", "kein_erstattungsueberhang"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "ergebnis", "interpretation"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - interpretation
+  kategorie: interpretation
+  entscheidungstyp: bedingung_neu
+  ziel_id: kein_erstattungsueberhang
+  gesperrt: false
+  quelle_rule_id: p10_1_4_kirchensteuer
+  quelle_text: Die Formalisierung interpretiert die Verrechnung des Erstattungsüberhangs
+    als einfache Saldierung innerhalb der Kirchensteuer selbst.
+  entschieden_am: '2026-07-11T13:22:19.223295+00:00'
+- schluessel: '["[\"norm_teil\", \"ref\", \"§ 10 abs. 4b satz 2 estg\"]", null, "bedingung_neu",
+    "kein_erstattungsueberhang"]'
+  anker_schluessel: '["norm_teil", "ref", "§ 10 abs. 4b satz 2 estg"]'
+  art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 4b satz 2 estg
+  kategorie: null
+  entscheidungstyp: bedingung_neu
+  ziel_id: kein_erstattungsueberhang
+  gesperrt: false
+  quelle_rule_id: p10_1_4_kirchensteuer
+  quelle_text: mit anderen im Rahmen der jeweiligen Nummer anzusetzenden Aufwendungen
+    zu verrechnen
+  entschieden_am: '2026-07-11T13:22:19.399946+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"mit_anspruch_auf_zuschuss\", \"interpretation\"]",
+    "interpretation", "nicht_material", "input_nur_etikettiertes"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "mit_anspruch_auf_zuschuss", "interpretation"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - mit_anspruch_auf_zuschuss
+  - interpretation
+  kategorie: interpretation
+  entscheidungstyp: nicht_material
+  ziel_id: input_nur_etikettiertes
+  gesperrt: false
+  quelle_rule_id: p10_1_3_3a_kv_pv
+  quelle_text: Die Formalisierung setzt den Höchstbetrag von 1.900 Euro nur bei mit_anspruch_auf_zuschuss
+    = true, obwohl der Normtext weitere Alternativen nennt.
+  entschieden_am: '2026-07-11T13:22:19.575824+00:00'
+- schluessel: '["[\"norm_teil\", \"ref\", \"§ 10 abs. 4 satz 4\"]", null, "nicht_echt",
+    null]'
+  anker_schluessel: '["norm_teil", "ref", "§ 10 abs. 4 satz 4"]'
+  art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 4 satz 4
+  kategorie: null
+  entscheidungstyp: nicht_echt
+  ziel_id: null
+  gesperrt: false
+  quelle_rule_id: p10_1_3_3a_kv_pv
+  quelle_text: sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne
+    des Absatzes 1 Nummer 3a scheidet aus
+  entschieden_am: '2026-07-11T13:22:20.086478+00:00'
