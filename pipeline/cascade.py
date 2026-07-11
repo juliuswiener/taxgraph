@@ -56,7 +56,8 @@ class CascadeResult:
 
 def run_candidate(candidate: dict, dry_run: bool | None = None,
                   fixtures_dir: str | None = None,
-                  role_overrides: dict | None = None) -> CascadeResult:
+                  role_overrides: dict | None = None,
+                  skip_judge: bool = False) -> CascadeResult:
     """Run one rule candidate through the cascade.
 
     candidate: {id, norm_text, exclude_rule_ids?, signature?, ...}
@@ -123,7 +124,9 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
 
     # 6. Round-Trip-Diff (Judge auf A). Der Judge sieht die Signatur und bewertet
     #    nur, was innerhalb ihrer Grenze liegt; Norm-Teile ausserhalb -> scope_gap.
-    if src_a:
+    # skip_judge: nur fuer Experimente, die den Judge nicht brauchen (B1: nur
+    #    catala_a/b + clerk). Produktion laesst den Judge immer laufen (default False).
+    if src_a and not skip_judge:
         # Dekomponierter Judge: Inventar (3 Laeufe, Mehrheits-Mitgliedschaft) und
         # ein Mini-Call je Pruef-Item mit 3 Stimmen. Ein Parse-Fehler ist keine
         # Stimme; ohne Mehrheit gilt das Item konservativ.

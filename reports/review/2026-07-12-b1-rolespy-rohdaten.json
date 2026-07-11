@@ -1,0 +1,1102 @@
+[
+ {
+  "case": "p9_1_3_nr5a_uebernachtung",
+  "arm": "A",
+  "run": 1,
+  "cost": 0.06000080856,
+  "A": [
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 47
+    },
+    "exp": 16800.0,
+    "got": "$12,000.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 48
+    },
+    "exp": 12000.0,
+    "got": "$0.00",
+    "ok": false
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 47
+    },
+    "exp": 16800.0,
+    "got": "$12,000.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 48
+    },
+    "exp": 12000.0,
+    "got": "$12,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p9_1_3_nr5a_uebernachtung",
+  "arm": "A",
+  "run": 2,
+  "cost": 0.05016753618,
+  "A": [
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 47
+    },
+    "exp": 16800.0,
+    "got": "$12,000.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 48
+    },
+    "exp": 12000.0,
+    "got": "$0.00",
+    "ok": false
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 47
+    },
+    "exp": 16800.0,
+    "got": "$12,000.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 48
+    },
+    "exp": 12000.0,
+    "got": "$0.00",
+    "ok": false
+   }
+  ]
+ },
+ {
+  "case": "p9_1_3_nr6_7_afa_laufend",
+  "arm": "A",
+  "run": 1,
+  "cost": 0.05947010073,
+  "A": [
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 0
+    },
+    "exp": 200.0,
+    "got": "$200.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 1
+    },
+    "exp": 400.0,
+    "got": "$400.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 0
+    },
+    "exp": 200.0,
+    "got": "$200.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 1
+    },
+    "exp": 400.0,
+    "got": "$400.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p10_1_3_3a_kv_pv",
+  "arm": "A",
+  "run": 1,
+  "cost": 0.03867044052,
+  "A": [
+   {
+    "inp": {
+     "basis_kv_pv": 4000,
+     "weitere_vorsorgeaufwendungen": 500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 4000.0,
+    "got": "$1,900.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "basis_kv_pv": 2000,
+     "weitere_vorsorgeaufwendungen": 1500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 2800.0,
+    "got": "$1,900.00",
+    "ok": false
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "basis_kv_pv": 4000,
+     "weitere_vorsorgeaufwendungen": 500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 4000.0,
+    "got": "$4,000.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "basis_kv_pv": 2000,
+     "weitere_vorsorgeaufwendungen": 1500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 2800.0,
+    "got": "$2,800.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p9_1_3_nr6_7_afa_laufend",
+  "arm": "A",
+  "run": 2,
+  "cost": 0.04824387513,
+  "A": [
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 0
+    },
+    "exp": 200.0,
+    "got": "$200.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 1
+    },
+    "exp": 400.0,
+    "got": "$400.00",
+    "ok": true
+   }
+  ],
+  "B": null
+ },
+ {
+  "case": "p10_1_3_3a_kv_pv",
+  "arm": "A",
+  "run": 2,
+  "cost": 0.01672358292,
+  "A": [
+   {
+    "inp": {
+     "basis_kv_pv": 4000,
+     "weitere_vorsorgeaufwendungen": 500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 4000.0,
+    "got": "$1,900.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "basis_kv_pv": 2000,
+     "weitere_vorsorgeaufwendungen": 1500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 2800.0,
+    "got": "$1,900.00",
+    "ok": false
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "basis_kv_pv": 4000,
+     "weitere_vorsorgeaufwendungen": 500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 4000.0,
+    "got": "$4,500.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "basis_kv_pv": 2000,
+     "weitere_vorsorgeaufwendungen": 1500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 2800.0,
+    "got": "$3,500.00",
+    "ok": false
+   }
+  ]
+ },
+ {
+  "case": "p33_1_2_agb_abzug",
+  "arm": "A",
+  "run": 1,
+  "cost": 0.01166749155,
+  "A": [
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 5000,
+     "zumutbare_belastung": 1408.7
+    },
+    "exp": 3591.3,
+    "got": "$3,591.30",
+    "ok": true
+   },
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 10000,
+     "zumutbare_belastung": 2000
+    },
+    "exp": 8000.0,
+    "got": "$8,000.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 5000,
+     "zumutbare_belastung": 1408.7
+    },
+    "exp": 3591.3,
+    "got": "$3,591.30",
+    "ok": true
+   },
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 10000,
+     "zumutbare_belastung": 2000
+    },
+    "exp": 8000.0,
+    "got": "$8,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p33_1_2_agb_abzug",
+  "arm": "A",
+  "run": 2,
+  "cost": 0.01217611791,
+  "A": [
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 5000,
+     "zumutbare_belastung": 1408.7
+    },
+    "exp": 3591.3,
+    "got": "$3,591.30",
+    "ok": true
+   },
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 10000,
+     "zumutbare_belastung": 2000
+    },
+    "exp": 8000.0,
+    "got": "$8,000.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 5000,
+     "zumutbare_belastung": 1408.7
+    },
+    "exp": 3591.3,
+    "got": "$3,591.30",
+    "ok": true
+   },
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 10000,
+     "zumutbare_belastung": 2000
+    },
+    "exp": 8000.0,
+    "got": "$8,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p10_1_4_kirchensteuer",
+  "arm": "A",
+  "run": 1,
+  "cost": 0.010093792499999999,
+  "A": [
+   {
+    "inp": {
+     "gezahlte_kirchensteuer": 1200,
+     "erstattete_kirchensteuer": 200
+    },
+    "exp": 1000.0,
+    "got": "$1,000.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "gezahlte_kirchensteuer": 1200,
+     "erstattete_kirchensteuer": 200
+    },
+    "exp": 1000.0,
+    "got": "$1,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p10_1_4_kirchensteuer",
+  "arm": "A",
+  "run": 2,
+  "cost": 0.010035738899999999,
+  "A": [
+   {
+    "inp": {
+     "gezahlte_kirchensteuer": 1200,
+     "erstattete_kirchensteuer": 200
+    },
+    "exp": 1000.0,
+    "got": "$1,000.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "gezahlte_kirchensteuer": 1200,
+     "erstattete_kirchensteuer": 200
+    },
+    "exp": 1000.0,
+    "got": "$1,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "solzg_solidaritaetszuschlag",
+  "arm": "A",
+  "run": 1,
+  "cost": 0.01674192168,
+  "A": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 25000,
+     "splitting": false
+    },
+    "exp": 553.35,
+    "got": "$0.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "bemessungsgrundlage": 45000,
+     "splitting": false
+    },
+    "exp": 2475.0,
+    "got": "$511.70",
+    "ok": false
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 25000,
+     "splitting": false
+    },
+    "exp": 553.35,
+    "got": "$0.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "bemessungsgrundlage": 45000,
+     "splitting": false
+    },
+    "exp": 2475.0,
+    "got": "$511.70",
+    "ok": false
+   }
+  ],
+  "A_prec": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 20351,
+     "splitting": false
+    },
+    "exp": 0.11,
+    "got": "$0.00",
+    "ok": false
+   }
+  ],
+  "B_prec": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 20351,
+     "splitting": false
+    },
+    "exp": 0.11,
+    "got": "$0.00",
+    "ok": false
+   }
+  ]
+ },
+ {
+  "case": "solzg_solidaritaetszuschlag",
+  "arm": "A",
+  "run": 2,
+  "cost": 0.02725623648,
+  "A": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 25000,
+     "splitting": false
+    },
+    "exp": 553.35,
+    "got": "$0.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "bemessungsgrundlage": 45000,
+     "splitting": false
+    },
+    "exp": 2475.0,
+    "got": "$511.70",
+    "ok": false
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 25000,
+     "splitting": false
+    },
+    "exp": 553.35,
+    "got": "$0.00",
+    "ok": false
+   },
+   {
+    "inp": {
+     "bemessungsgrundlage": 45000,
+     "splitting": false
+    },
+    "exp": 2475.0,
+    "got": "$511.70",
+    "ok": false
+   }
+  ],
+  "A_prec": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 20351,
+     "splitting": false
+    },
+    "exp": 0.11,
+    "got": "$0.00",
+    "ok": false
+   }
+  ],
+  "B_prec": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 20351,
+     "splitting": false
+    },
+    "exp": 0.11,
+    "got": "$0.00",
+    "ok": false
+   }
+  ]
+ },
+ {
+  "case": "p9_1_3_nr5a_uebernachtung",
+  "arm": "B",
+  "run": 1,
+  "cost": 0.01193740416,
+  "A": [
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 47
+    },
+    "exp": 16800.0,
+    "got": "$16,800.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 48
+    },
+    "exp": 12000.0,
+    "got": "$12,000.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 47
+    },
+    "exp": 16800.0,
+    "got": "$16,800.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 48
+    },
+    "exp": 12000.0,
+    "got": "$12,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p9_1_3_nr5a_uebernachtung",
+  "arm": "B",
+  "run": 2,
+  "cost": 0.01341615132,
+  "A": [
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 47
+    },
+    "exp": 16800.0,
+    "got": "$16,800.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 48
+    },
+    "exp": 12000.0,
+    "got": "$12,000.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 47
+    },
+    "exp": 16800.0,
+    "got": "$16,800.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "uebernachtungskosten_monat": 1400,
+     "monate": 12,
+     "monate_bisher_am_ort": 48
+    },
+    "exp": 12000.0,
+    "got": "$12,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p9_1_3_nr6_7_afa_laufend",
+  "arm": "B",
+  "run": 1,
+  "cost": 0.01096027713,
+  "A": [
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 0
+    },
+    "exp": 200.0,
+    "got": "$200.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 1
+    },
+    "exp": 400.0,
+    "got": "$400.00",
+    "ok": true
+   }
+  ],
+  "B": null
+ },
+ {
+  "case": "p9_1_3_nr6_7_afa_laufend",
+  "arm": "B",
+  "run": 2,
+  "cost": 0.02846655801,
+  "A": [
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 0
+    },
+    "exp": 200.0,
+    "got": "$200.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 1
+    },
+    "exp": 400.0,
+    "got": "$400.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 0
+    },
+    "exp": 200.0,
+    "got": "$200.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "anschaffungskosten": 1200,
+     "nutzungsdauer_jahre": 3,
+     "anschaffungsmonat": 7,
+     "jahre_seit_anschaffung": 1
+    },
+    "exp": 400.0,
+    "got": "$400.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p10_1_3_3a_kv_pv",
+  "arm": "B",
+  "run": 1,
+  "cost": 0.01907494974,
+  "A": [
+   {
+    "inp": {
+     "basis_kv_pv": 4000,
+     "weitere_vorsorgeaufwendungen": 500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 4000.0,
+    "got": "$4,000.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "basis_kv_pv": 2000,
+     "weitere_vorsorgeaufwendungen": 1500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 2800.0,
+    "got": "$2,800.00",
+    "ok": true
+   }
+  ],
+  "B": {
+   "err": "e:\n\u2502   \u2502 \n\u2514\u2500\nninja: build stopped: cannot make progress due to previous errors.\n"
+  }
+ },
+ {
+  "case": "p10_1_3_3a_kv_pv",
+  "arm": "B",
+  "run": 2,
+  "cost": 0.01950936372,
+  "A": [
+   {
+    "inp": {
+     "basis_kv_pv": 4000,
+     "weitere_vorsorgeaufwendungen": 500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 4000.0,
+    "got": "$4,000.00",
+    "ok": true
+   },
+   {
+    "inp": {
+     "basis_kv_pv": 2000,
+     "weitere_vorsorgeaufwendungen": 1500,
+     "mit_anspruch_auf_zuschuss": false
+    },
+    "exp": 2800.0,
+    "got": "$2,800.00",
+    "ok": true
+   }
+  ],
+  "B": {
+   "err": "\u203e\u203e\u203e\u203e\n\u2514\u2500 ModA\nninja: build stopped: cannot make progress due to previous errors.\n"
+  }
+ },
+ {
+  "case": "p33_1_2_agb_abzug",
+  "arm": "B",
+  "run": 1,
+  "cost": 0.00923106393,
+  "A": [
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 5000,
+     "zumutbare_belastung": 1408.7
+    },
+    "exp": 3591.3,
+    "got": "$3,591.30",
+    "ok": true
+   },
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 10000,
+     "zumutbare_belastung": 2000
+    },
+    "exp": 8000.0,
+    "got": "$8,000.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 5000,
+     "zumutbare_belastung": 1408.7
+    },
+    "exp": 3591.3,
+    "got": "$3,591.30",
+    "ok": true
+   },
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 10000,
+     "zumutbare_belastung": 2000
+    },
+    "exp": 8000.0,
+    "got": "$8,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p33_1_2_agb_abzug",
+  "arm": "B",
+  "run": 2,
+  "cost": 0.00929058471,
+  "A": [
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 5000,
+     "zumutbare_belastung": 1408.7
+    },
+    "exp": 3591.3,
+    "got": "$3,591.30",
+    "ok": true
+   },
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 10000,
+     "zumutbare_belastung": 2000
+    },
+    "exp": 8000.0,
+    "got": "$8,000.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 5000,
+     "zumutbare_belastung": 1408.7
+    },
+    "exp": 3591.3,
+    "got": "$3,591.30",
+    "ok": true
+   },
+   {
+    "inp": {
+     "aussergewoehnliche_belastungen": 10000,
+     "zumutbare_belastung": 2000
+    },
+    "exp": 8000.0,
+    "got": "$8,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p10_1_4_kirchensteuer",
+  "arm": "B",
+  "run": 1,
+  "cost": 0.0093680037,
+  "A": [
+   {
+    "inp": {
+     "gezahlte_kirchensteuer": 1200,
+     "erstattete_kirchensteuer": 200
+    },
+    "exp": 1000.0,
+    "got": "$1,000.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "gezahlte_kirchensteuer": 1200,
+     "erstattete_kirchensteuer": 200
+    },
+    "exp": 1000.0,
+    "got": "$1,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "p10_1_4_kirchensteuer",
+  "arm": "B",
+  "run": 2,
+  "cost": 0.0091346013,
+  "A": [
+   {
+    "inp": {
+     "gezahlte_kirchensteuer": 1200,
+     "erstattete_kirchensteuer": 200
+    },
+    "exp": 1000.0,
+    "got": "$1,000.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "gezahlte_kirchensteuer": 1200,
+     "erstattete_kirchensteuer": 200
+    },
+    "exp": 1000.0,
+    "got": "$1,000.00",
+    "ok": true
+   }
+  ]
+ },
+ {
+  "case": "solzg_solidaritaetszuschlag",
+  "arm": "B",
+  "run": 1,
+  "cost": 0.02532672648,
+  "A": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 25000,
+     "splitting": false
+    },
+    "exp": 553.35,
+    "got": "$553.35",
+    "ok": true
+   },
+   {
+    "inp": {
+     "bemessungsgrundlage": 45000,
+     "splitting": false
+    },
+    "exp": 2475.0,
+    "got": "$2,475.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 25000,
+     "splitting": false
+    },
+    "exp": 553.35,
+    "got": "$553.35",
+    "ok": true
+   },
+   {
+    "inp": {
+     "bemessungsgrundlage": 45000,
+     "splitting": false
+    },
+    "exp": 2475.0,
+    "got": "$2,475.00",
+    "ok": true
+   }
+  ],
+  "A_prec": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 20351,
+     "splitting": false
+    },
+    "exp": 0.11,
+    "got": "$0.12",
+    "ok": false
+   }
+  ],
+  "B_prec": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 20351,
+     "splitting": false
+    },
+    "exp": 0.11,
+    "got": "$0.12",
+    "ok": false
+   }
+  ]
+ },
+ {
+  "case": "solzg_solidaritaetszuschlag",
+  "arm": "B",
+  "run": 2,
+  "cost": 0.02419274088,
+  "A": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 25000,
+     "splitting": false
+    },
+    "exp": 553.35,
+    "got": "$553.35",
+    "ok": true
+   },
+   {
+    "inp": {
+     "bemessungsgrundlage": 45000,
+     "splitting": false
+    },
+    "exp": 2475.0,
+    "got": "$2,475.00",
+    "ok": true
+   }
+  ],
+  "B": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 25000,
+     "splitting": false
+    },
+    "exp": 553.35,
+    "got": "$553.35",
+    "ok": true
+   },
+   {
+    "inp": {
+     "bemessungsgrundlage": 45000,
+     "splitting": false
+    },
+    "exp": 2475.0,
+    "got": "$2,475.00",
+    "ok": true
+   }
+  ],
+  "A_prec": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 20351,
+     "splitting": false
+    },
+    "exp": 0.11,
+    "got": "$0.12",
+    "ok": false
+   }
+  ],
+  "B_prec": [
+   {
+    "inp": {
+     "bemessungsgrundlage": 20351,
+     "splitting": false
+    },
+    "exp": 0.11,
+    "got": "$0.12",
+    "ok": false
+   }
+  ]
+ }
+]
