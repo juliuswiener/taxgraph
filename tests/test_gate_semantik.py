@@ -281,3 +281,30 @@ def test_lit_negatives_money_ist_catala_parsebar():
     assert G._lit(4499.0, "money") == "$4,499.00"
     assert G._lit(1408.70, "money") == "$1,408.70"
     assert G._lit(0.0, "money") == "$0.00"
+
+
+def test_rundungs_lint_faengt_richtung():
+    """rundungs_lint prueft die RICHTUNG der deklarierten Rundung. Die Norm ordnet
+    floor an ('Bruchteile eines Cents bleiben ausser Ansatz'=abschneiden), der Code
+    rundet kaufmaennisch (round) -> FAIL. Regression fuer das solzg-Residual
+    (2026-07-12): der Lint gibt dem Repair-Loop ein deterministisches Richtungssignal
+    statt Interpretationsglueck. Waere vor der Richtungs-Erweiterung gruen gewesen."""
+    cand = {"norm_text": "Bruchteile eines Cents bleiben ausser Ansatz",
+            "rundung": [{"zitatanker": "Bruchteile eines Cents bleiben ausser Ansatz",
+                         "quelle": "§ 4 SolzG", "richtung": "floor"}]}
+    src_round = "scope X:\n  definition y equals round of z\n"   # kaufmaennisch
+    src_trunc = "scope X:\n  definition y equals truncate of z\n"  # floor
+    assert G.rundungs_lint_gate(src_round, cand).status == G.FAIL   # kaufmaennisch != floor
+    assert G.rundungs_lint_gate(src_trunc, cand).status == G.PASS   # floor == floor
+    # aufrunden (ceil) deklariert, Code schneidet ab (truncate/floor) -> FAIL
+    cand_ceil = {"norm_text": "auf volle Euro aufzurunden",
+                 "rundung": [{"zitatanker": "auf volle Euro aufzurunden",
+                              "quelle": "§ 36 Abs. 3", "richtung": "ceil"}]}
+    assert G.rundungs_lint_gate(src_trunc, cand_ceil).status == G.FAIL
+    assert G.rundungs_lint_gate("scope X:\n  definition y equals ceiling of z\n",
+                                cand_ceil).status == G.PASS
+    # Legacy: rundung ohne richtung-Feld -> deklarierte Rundung genuegt (jede Richtung)
+    cand_legacy = {"norm_text": "Bruchteile eines Cents bleiben ausser Ansatz",
+                   "rundung": [{"zitatanker": "Bruchteile eines Cents bleiben ausser Ansatz",
+                                "quelle": "§ 4 SolzG"}]}
+    assert G.rundungs_lint_gate(src_round, cand_legacy).status == G.PASS

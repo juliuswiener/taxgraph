@@ -1089,6 +1089,7 @@ regeln:
   - deckt_ab: "Bruchteile eines Cents bleiben außer Ansatz"
     zitatanker: "Bruchteile eines Cents bleiben außer Ansatz"
     quelle: "§ 4 Satz 3 SolzG 1995"
+    richtung: floor   # "bleiben ausser Ansatz" = abschneiden, nicht kaufmaennisch (B3-Lint)
   signature:
     scope: Solidaritaetszuschlag
     inputs:

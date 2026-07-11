@@ -302,35 +302,78 @@ def _rundung_erlaubt(candidate: dict | None) -> str | None:
     return None
 
 
+# Catala-Rundungsoperation -> Richtung. truncate schneidet ab (Richtung floor fuer
+# die nichtnegativen Steuerbetraege), ceiling rundet auf, round ist kaufmaennisch.
+_OP_RICHTUNG = {"truncate": "floor", "floor": "floor",
+                "ceiling": "ceil", "ceil": "ceil", "round": "kaufmaennisch"}
+_RICHTUNGEN = {"floor", "ceil", "kaufmaennisch"}
+
+
+def _rundung_richtungen(candidate: dict | None) -> set:
+    """Deklarierte Rundungs-Richtungen (floor/ceil/kaufmaennisch), falls die
+    `rundung`-Deklaration(en) ein `richtung`-Feld tragen. Leere Menge = keine
+    Richtung deklariert (Legacy: jede Richtung erlaubt, nur Existenz gelintet)."""
+    if not candidate:
+        return set()
+    decls = candidate.get("rundung") or []
+    if isinstance(decls, dict):
+        decls = [decls]
+    out = set()
+    for d in decls:
+        if isinstance(d, dict) and d.get("richtung"):
+            out.add(str(d["richtung"]).strip().lower())
+    return out
+
+
 def rundungs_lint_gate(catala_src: str | None,
                        candidate: dict | None = None) -> GateResult:
-    """Deterministischer Rundungs-Lint (Dekret 2026-07-11).
+    """Deterministischer Rundungs-Lint (Dekret 2026-07-11, Richtung 2026-07-12).
 
     Jede Rundungsoperation (truncate/round/floor/ceil) im Kandidaten-Source ist
     nur zulaessig, wenn die Regel eine deklarierte `rundung`-Erlaubnis mit Quelle
-    und Zitatanker traegt. Sonst FAIL mit Zeilenangabe. Laeuft VOR der Aequivalenz
-    und kostet nichts. Der Befund geht woertlich in die Repair-Runde (wie ein
-    Compiler-Fehler) und faengt kuenftig jede Regel, nicht nur § 33.
+    und Zitatanker traegt. Traegt die Deklaration zusaetzlich ein `richtung`-Feld
+    (floor/ceil/kaufmaennisch), muss die im Catala genutzte Rundungs-RICHTUNG damit
+    uebereinstimmen - sonst FAIL (faengt 'Bruchteile bleiben ausser Ansatz'=floor,
+    das Modell rundet aber kaufmaennisch: solzg-Residual). Sonst FAIL bei
+    undeklarierter Rundung. Laeuft VOR der Aequivalenz, kostenlos; der Befund geht
+    woertlich in die Repair-Runde (wie ein Compiler-Fehler).
     """
     if not catala_src:
         return GateResult("rundungs_lint", SKIP, "kein A-Source")
-    treffer = []
+    treffer = []                              # (zeile, text, {richtungen der ops})
     for i, line in enumerate(catala_src.splitlines(), 1):
         code = line.split("#", 1)[0]          # Zeilenkommentare ignorieren
-        if _RUNDUNG_RE.search(code):
-            treffer.append((i, line.strip()))
+        richt = {_OP_RICHTUNG[m.group(1).lower()]
+                 for m in _RUNDUNG_RE.finditer(code)}
+        if richt:
+            treffer.append((i, line.strip(), richt))
     if not treffer:
         return GateResult("rundungs_lint", PASS, "keine Rundungsoperation")
     erlaubt = _rundung_erlaubt(candidate)
-    if erlaubt:
+    if not erlaubt:
+        z = "; ".join(f"Zeile {i}: {t}" for i, t, _ in treffer[:5])
+        return GateResult("rundungs_lint", FAIL,
+                          f"{len(treffer)} nicht deklarierte Rundungsoperation(en). Die "
+                          f"Norm schreibt keine Rundung vor (keine rundung-Quelle mit "
+                          f"Zitatanker deklariert). Entferne die Rundung und rechne "
+                          f"exakt weiter. {z}")
+    # Rundung deklariert. Wenn eine Richtung deklariert ist: Richtungs-Abgleich.
+    richtungen = _rundung_richtungen(candidate)
+    if richtungen:
+        falsch = [(i, t, r) for i, t, richt in treffer
+                  for r in richt if r not in richtungen]
+        if falsch:
+            z = "; ".join(f"Zeile {i}: Richtung '{r}' ({t})" for i, t, r in falsch[:5])
+            return GateResult("rundungs_lint", FAIL,
+                              f"{len(falsch)} Rundungs-RICHTUNGS-Abweichung(en). Die Norm "
+                              f"ordnet {sorted(richtungen)} an (floor=truncate, ceil=ceiling, "
+                              f"kaufmaennisch=round), der Code rundet anders. Nutze die "
+                              f"deklarierte Richtung. {z}")
         return GateResult("rundungs_lint", PASS,
-                          f"{len(treffer)} Rundungsop(s) durch {erlaubt} gedeckt")
-    z = "; ".join(f"Zeile {i}: {t}" for i, t in treffer[:5])
-    return GateResult("rundungs_lint", FAIL,
-                      f"{len(treffer)} nicht deklarierte Rundungsoperation(en). Die "
-                      f"Norm schreibt keine Rundung vor (keine rundung-Quelle mit "
-                      f"Zitatanker deklariert). Entferne die Rundung und rechne "
-                      f"exakt weiter. {z}")
+                          f"{len(treffer)} Rundungsop(s) durch {erlaubt} gedeckt, "
+                          f"Richtung {sorted(richtungen)} ok")
+    return GateResult("rundungs_lint", PASS,
+                      f"{len(treffer)} Rundungsop(s) durch {erlaubt} gedeckt")
 
 
 def roundtrip_parse(judge_json_text: str) -> dict:
