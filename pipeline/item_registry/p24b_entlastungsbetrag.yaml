@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p24b_entlastungsbetrag
-version: 2
+version: 4
 items:
 - art: annahme
   anker:
@@ -212,4 +212,22 @@ items:
   formulierungen:
   - Die Formalisierung lässt Werte über 12 zu und erzeugt dann einen negativen Entlastungsbetrag,
     obwohl die Norm maximal 12 Fehlmonate vorsieht.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - alleinstehend
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Formalisierung setzt voraus, dass die Eigenschaft 'alleinstehend' bereits
+    gemäß § 24b Abs. 3 EStG geprüft und festgestellt wurde.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - rundung
+  formulierungen:
+  - Die Formalisierung verwendet eine Gleitkommadivision für die Kürzung, ohne eine
+    Rundungsregel für das Ergebnis zu spezifizieren.
   triage: nicht_material

@@ -1,0 +1,25 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p36_2_anrechnung
+version: 3
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - lohnsteuer
+  - rundung
+  formulierungen:
+  - Die Formalisierung rundet die Lohnsteuer kaufmännisch auf volle Euro auf, während
+    die Norm eine Aufrundung vorschreibt.
+  triage: nicht_echt
+- art: norm_teil
+  anker:
+  - ref
+  - § 36 abs. 2 nr. 2
+  formulierungen:
+  - die durch Steuerabzug erhobene Einkommensteuer, soweit sie entfällt auf a) die
+    bei der Veranlagung erfassten Einkünfte oder b) die nach § 3 Nummer 40 dieses
+    Gesetzes [...] bei der Ermittlung des Einko
+  - und keine Erstattung beantragt oder durchgeführt worden ist
+  triage: nicht_echt

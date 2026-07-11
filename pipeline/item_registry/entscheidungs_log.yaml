@@ -1015,3 +1015,96 @@ entscheidungen:
       Waechter-Seed 4000->4000 bewiesen
   entschieden_via: msg1291-judge-falschpositiv
   timestamp: '2026-07-11T13:24:00.878011+00:00'
+- rule_id: p24b_entlastungsbetrag
+  schluessel: '["annahme", "betrifft_kat", "alleinstehend", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - alleinstehend
+    - geltungsvoraussetzung
+    text: Die Formalisierung setzt voraus, dass die Eigenschaft 'alleinstehend' bereits
+      gemäß § 24b Abs. 3 EStG geprüft und festgestellt wurde.
+  entschieden_via: sammelregate-fix
+  timestamp: '2026-07-11T13:28:46.989935+00:00'
+- rule_id: p24b_entlastungsbetrag
+  schluessel: '["annahme", "betrifft_kat", "monate_ohne_voraussetzung", "rundung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: keine_zusaetzliche_rundung
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - monate_ohne_voraussetzung
+    - rundung
+    text: Die Formalisierung verwendet eine Gleitkommadivision für die Kürzung, ohne
+      eine Rundungsregel für das Ergebnis zu spezifizieren.
+  entschieden_via: sammelregate-fix
+  timestamp: '2026-07-11T13:28:47.206745+00:00'
+- rule_id: p36_2_anrechnung
+  schluessel: '["annahme", "betrifft_kat", "lohnsteuer", "rundung"]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - lohnsteuer
+    - rundung
+    text: Die Formalisierung rundet die Lohnsteuer kaufmännisch auf volle Euro auf,
+      während die Norm eine Aufrundung vorschreibt.
+  entschieden_via: sammelregate-fix
+  timestamp: '2026-07-11T13:28:47.422865+00:00'
+- rule_id: p36_2_anrechnung
+  schluessel: '["norm_teil", "ref", "§ 36 abs. 2 nr. 2"]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 36 abs. 2 nr. 2
+    text: die durch Steuerabzug erhobene Einkommensteuer, soweit sie entfällt auf
+      a) die bei der Veranlagung erfassten Einkünfte oder b) die nach § 3 Nummer 40
+      dieses Gesetzes [...] bei der Ermittlung des Einko
+  entschieden_via: sammelregate-fix
+  timestamp: '2026-07-11T13:28:47.613065+00:00'
+- rule_id: p36_2_anrechnung
+  schluessel: '["norm_teil", "ref", "§ 36 abs. 2 nr. 2"]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 36 abs. 2 nr. 2
+    text: und keine Erstattung beantragt oder durchgeführt worden ist
+  entschieden_via: sammelregate-fix
+  timestamp: '2026-07-11T13:28:47.789324+00:00'

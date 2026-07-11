@@ -2,7 +2,7 @@
 # Praezedenzfaelle. Auto-Apply nur bei EXAKTER Anker-Gleichheit.
 # gesperrt: true -> durch Widerruf gesperrt, nie wieder Auto-Apply.
 
-version: 42
+version: 46
 faelle:
 - schluessel: '["[\"annahme\", \"betrifft_kat\", \"uebernachtungskosten_monat\", \"einheit\"]",
     "einheit", "nicht_material", "input_nur_etikettiertes"]'
@@ -661,3 +661,67 @@ faelle:
   quelle_text: Judge-Falschpositiv auf normbefohlenem Basis-Durchbruch (§10 Abs4 S4),
     per Waechter-Seed 4000->4000 bewiesen
   entschieden_am: '2026-07-11T13:24:00.755300+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"alleinstehend\", \"geltungsvoraussetzung\"]",
+    "geltungsvoraussetzung", "nicht_material", "input_nur_etikettiertes"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "alleinstehend", "geltungsvoraussetzung"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - alleinstehend
+  - geltungsvoraussetzung
+  kategorie: geltungsvoraussetzung
+  entscheidungstyp: nicht_material
+  ziel_id: input_nur_etikettiertes
+  gesperrt: false
+  quelle_rule_id: p24b_entlastungsbetrag
+  quelle_text: Die Formalisierung setzt voraus, dass die Eigenschaft 'alleinstehend'
+    bereits gemäß § 24b Abs. 3 EStG geprüft und festgestellt wurde.
+  entschieden_am: '2026-07-11T13:28:46.864382+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"monate_ohne_voraussetzung\", \"rundung\"]",
+    "rundung", "nicht_material", "keine_zusaetzliche_rundung"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "monate_ohne_voraussetzung", "rundung"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - rundung
+  kategorie: rundung
+  entscheidungstyp: nicht_material
+  ziel_id: keine_zusaetzliche_rundung
+  gesperrt: false
+  quelle_rule_id: p24b_entlastungsbetrag
+  quelle_text: Die Formalisierung verwendet eine Gleitkommadivision für die Kürzung,
+    ohne eine Rundungsregel für das Ergebnis zu spezifizieren.
+  entschieden_am: '2026-07-11T13:28:47.081214+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"lohnsteuer\", \"rundung\"]", "rundung",
+    "nicht_echt", null]'
+  anker_schluessel: '["annahme", "betrifft_kat", "lohnsteuer", "rundung"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - lohnsteuer
+  - rundung
+  kategorie: rundung
+  entscheidungstyp: nicht_echt
+  ziel_id: null
+  gesperrt: false
+  quelle_rule_id: p36_2_anrechnung
+  quelle_text: Die Formalisierung rundet die Lohnsteuer kaufmännisch auf volle Euro
+    auf, während die Norm eine Aufrundung vorschreibt.
+  entschieden_am: '2026-07-11T13:28:47.297824+00:00'
+- schluessel: '["[\"norm_teil\", \"ref\", \"§ 36 abs. 2 nr. 2\"]", null, "nicht_echt",
+    null]'
+  anker_schluessel: '["norm_teil", "ref", "§ 36 abs. 2 nr. 2"]'
+  art: norm_teil
+  anker:
+  - ref
+  - § 36 abs. 2 nr. 2
+  kategorie: null
+  entscheidungstyp: nicht_echt
+  ziel_id: null
+  gesperrt: false
+  quelle_rule_id: p36_2_anrechnung
+  quelle_text: die durch Steuerabzug erhobene Einkommensteuer, soweit sie entfällt
+    auf a) die bei der Veranlagung erfassten Einkünfte oder b) die nach § 3 Nummer
+    40 dieses Gesetzes [...] bei der Ermittlung des Einko
+  entschieden_am: '2026-07-11T13:28:47.486934+00:00'
