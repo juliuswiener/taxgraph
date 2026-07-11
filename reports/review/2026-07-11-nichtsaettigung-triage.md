@@ -1,11 +1,11 @@
 # Nicht-Saettigungs-Steuer 2026-07-11 — EIN Review
 
 Nach Daempfung 2a (unabhaengige Norm-Teile -> Formalisierungs-Backlog, mechanisch). 
-Detektor schlaegt vor, die Ratsche schreibt erst nach deiner Zeile. Vage Passung = Reject 
-(-> zurueck auf offen). Backlog-Items brauchen keinen Entscheid.
+Detektor schlaegt vor, die Ratsche schreibt erst nach deiner Zeile. Vage Passung = Reject. 
+Backlog-Items brauchen keinen Entscheid. p33 neu dabei (Block aufgehoben, s.u.).
 
 
-**Summe: 82 Bedingung-, 19 Konvention-Vorschlaege · 49 offen · 23 Backlog (auto).**
+**Summe: 83 Bedingung-, 23 Konvention-Vorschlaege · 52 offen · 25 Backlog (auto).**
 
 
 ## p24b_entlastungsbetrag
@@ -323,3 +323,28 @@ _konv 2 · bedingung 37 · offen 14 · backlog 4 (auto)_
 | 12 | annahme | `minijob_aufwendungen / zeitbezug` | Es wird angenommen, dass die Aufwendungen im jeweiligen Veranlagungsjahr angefallen sind. |
 | 13 | norm_teil | `§ 35a abs. 5 satz 2` | Der Abzug von der tariflichen Einkommensteuer nach den Absätzen 2 und 3 gilt nur für Arbei |
 | 14 | norm_teil | `§ 35a abs. 3 satz 1` | ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigung |
+
+## p33_3_zumutbare_belastung
+_konv 4 · bedingung 1 · offen 3 · backlog 2 (auto)_
+
+### Det→Konvention (bestaetige alle / streiche Zeile)
+| # | Anker | konv-ID | Zitat |
+|--|--|--|--|
+| 1 | `gesamtbetrag_der_einkuenfte / interpretation` | `konv:input_nur_etikettiertes` | Der Gesamtbetrag der Einkünfte ist der steuerrechtlich definierte Gesamtbetrag der Einkünf |
+| 2 | `ergebnis / rundung` | `konv:keine_zusaetzliche_rundung` | Die Berechnung multipliziert Geldbeträge mit Prozentsätzen, ohne dass die Norm eine Rundun |
+| 3 | `ergebnis / rundung` | `konv:keine_zusaetzliche_rundung` | Die Multiplikation von Geldbeträgen mit Prozentsätzen erfolgt ohne explizite Rundungsregel |
+| 4 | `ergebnis / rundung` | `konv:keine_zusaetzliche_rundung` | Das Ergebnis wird ohne Rundung als exakter Geldbetrag berechnet, obwohl die Norm keine Run |
+
+### Det→Bedingung (bestaetige zeilenweise; nicht bestaetigt -> offen)
+
+**`splitting_ist_veranlagungsergebnis`** — _nach § 32a Absatz 5 oder 6 (Splitting-Verfahren)_
+| # | Anker | Zitat |
+|--|--|--|
+| 1 | `§ 33 abs. 3 satz 1 nr. 1 b)` | nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist |
+
+### Offen — Triage noetig
+| # | Art | Anker | Zitat |
+|--|--|--|--|
+| 1 | norm_teil | `§ 33 abs. 3 satz 1 nr. 1b estg` | bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer ... nach § |
+| 2 | norm_teil | `§ 33 abs. 3 satz 1 nr. 1` | bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer a) nach §  |
+| 3 | norm_teil | `§ 33 abs. 3 satz 1 tabelle` | 5 | 6 | 7, 4 | 5 | 6, 2 | 3 | 4, 1 | 1 | 2 Prozent des Gesamtbetrags der Einkünfte |

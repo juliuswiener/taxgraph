@@ -493,21 +493,15 @@ regeln:
   - p24b_entlastungsbetrag
 - rule_id: p33_3_zumutbare_belastung
   norm: § 33 Abs. 3 EStG
-  # FREIGABE BLOCKIERT (Julius, 2026-07-09). Der Rechtsfehler aus Charge 1 ist
-  # behoben: mit dem BFH-Leitsatz als zweiter Quelle formalisiert B die
-  # stufenweise Berechnung und besteht den amtlichen Testfall.
-  #
-  # A baut inzwischen (Numeric-Tower-Cheatsheet, typecheck beim ersten Versuch),
-  # aber die Aequivalenz traegt nicht: A rundet das Ergebnis auf volle Euro ab
-  # (Decimal.truncate), die Norm tut das nicht. Drei unabhaengige Gates sagen
-  # dasselbe - equivalence (A $1,346.00 vs B $1,346.60), der Judge benennt die
-  # stille Zusatzannahme, und der amtliche Testfall (1.408,70) faellt bei A.
-  #
-  # Kein stilles Durchwinken. Freigabe erst, wenn entweder A und B extensional
-  # uebereinstimmen, oder wir dokumentiert auf Einzel-Formalisierung mit
-  # verschaerftem Review fuer diese eine Regel ausweichen.
-  freigabe: blockiert
-  freigabe_grund: "Redundanz-Gate hat gefeuert: A rundet ab, B nicht. Aequivalenz traegt nicht."
+  # BLOCK AUFGEHOBEN (2026-07-11, lint-informierter A-Neulauf). Der Block stand,
+  # weil A das Ergebnis auf volle Euro abrundete (Decimal.truncate) und die
+  # Aequivalenz nicht trug (A $1,346.00 vs B $1,346.60). Der neue rundungs_lint
+  # (Dekret 2026-07-11) fuettert den Rundungsbefund in die Repair-Runde; der
+  # A-Neulauf ergab A ohne Rundung: rundungs_lint=PASS, equivalence=PASS, A==B
+  # auf allen 5 Rasterpunkten, amtlicher Testfall gruen. Der Lint bleibt der
+  # deterministische Dauerguard gegen die Rundungs-Regression - strikt staerker
+  # als der bisherige manuelle defekt-Marker (Registry v1->v2, Item entfernt).
+  # Freigabe-Bedingung "A und B stimmen extensional ueberein" ist erfuellt.
   # Erstbefuellung der Registry (Julius, 2026-07-11). Muster "Input ist ein
   # vorgepruefte Rechtspraedikat": die booleschen/gezaehlten Eingaben spiegeln ein
   # bereits geprueftes Ergebnis; Phase 5 stellt die Teilfragen.

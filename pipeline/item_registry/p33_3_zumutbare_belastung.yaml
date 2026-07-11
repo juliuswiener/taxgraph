@@ -1,8 +1,15 @@
 # Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
-
+#
+# ABLAUF (2026-07-11): das defekt_formalisierer-Item (ergebnis/rundung) war per
+# Definition "coupled to freigabe:blockiert, expires with A-rerun". Der
+# lint-informierte A-Neulauf ergab A ohne Rundung (rundungs_lint=PASS,
+# equivalence=PASS, A==B auf allen 5 Rasterpunkten). Der deterministische
+# rundungs_lint_gate ist ab jetzt der Dauerguard gegen die Rundungs-Regression -
+# strikt staerker als der manuelle Marker. Ablaufbedingung erfuellt -> Item
+# entfernt, version 1 -> 2.
 rule_id: p33_3_zumutbare_belastung
-version: 1
+version: 2
 items:
 - art: annahme
   anker:
@@ -32,16 +39,6 @@ items:
     vorausgesetzt.
   triage: bedingung_neu
   bedingung: splitting_ist_veranlagungsergebnis
-- art: annahme
-  anker:
-  - betrifft_kat
-  - ergebnis
-  - rundung
-  formulierungen:
-  - Das Ergebnis wird durch Abschneiden der Nachkommastellen auf ganze Euro abgerundet,
-    obwohl die Norm keine Rundung vorschreibt.
-  - Die zumutbare Belastung wird durch Abrunden auf ganze Euro (Truncation) berechnet.
-  triage: defekt_formalisierer
 - art: norm_teil
   anker:
   - ref

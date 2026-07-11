@@ -1,0 +1,95 @@
+rule_id: p33_3_zumutbare_belastung
+hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt; bei bedingung_neu
+  die bedingung-ID eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>'
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1 nr. 1b estg
+  text: bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer ... nach § 32a
+    Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist
+  bedingung: ''
+  klasse: wirkt_hinein
+  triage: offen
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1 nr. 1
+  text: bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer a) nach § 32a
+    Absatz 1, b) nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist
+  bedingung: ''
+  klasse: wirkt_hinein
+  triage: offen
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1 tabelle
+  text: 5 | 6 | 7, 4 | 5 | 6, 2 | 3 | 4, 1 | 1 | 2 Prozent des Gesamtbetrags der Einkünfte
+  bedingung: ''
+  klasse: wirkt_hinein
+  triage: offen
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1 nr. 1 b)
+  text: nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist
+  bedingung: splitting_ist_veranlagungsergebnis
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gesamtbetrag_der_einkuenfte
+  - interpretation
+  text: Der Gesamtbetrag der Einkünfte ist der steuerrechtlich definierte Gesamtbetrag der Einkünfte.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:input_nur_etikettiertes
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  text: Die Berechnung multipliziert Geldbeträge mit Prozentsätzen, ohne dass die Norm eine Rundungsregel
+    vorschreibt.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:keine_zusaetzliche_rundung
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  text: Die Multiplikation von Geldbeträgen mit Prozentsätzen erfolgt ohne explizite Rundungsregel.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:keine_zusaetzliche_rundung
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  text: Das Ergebnis wird ohne Rundung als exakter Geldbetrag berechnet, obwohl die Norm keine Rundungsregel
+    vorgibt.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:keine_zusaetzliche_rundung
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 1 estg
+  text: so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die
+    dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezog
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 1
+  text: so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die
+    dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezog
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
