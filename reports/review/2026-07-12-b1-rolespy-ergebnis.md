@@ -41,12 +41,15 @@ kuratierten Hinweis. Das ist das strukturelle Signal, das der Plan gesucht hat.
 
 ## Ehrliche Gaps / Residuen (nicht überverkaufen)
 
-1. **Klasse-5-Präzision UNGEMESSEN.** Der Plan sah für solzg zusätzlich den Präzisions-Seed
-   `20351→0,11` (Cent-Schnitt-am-Ende, Numeric-Idiom-Test). Der Runner fuhr solzg nur mit
-   `25000` + `45000` — das ist die **Klasse-1-Milderungszone**, NICHT der Klasse-5-Präzisionsfall.
-   → **Der Numeric-Idiom-Effekt auf Klasse 5 ist NICHT belegt.** solzg-Fix hier = Kontext-Hunger
-   (Milderung), nicht Präzision. Wenn Julius das Klasse-5-Signal will: Nachlauf mit dem
-   `20351→0,11`-Seed (1 Zelle, ~$0,05).
+1. **Klasse-5-Präzision GEMESSEN — Numeric-Idiom fixt sie NICHT (negativ).** Korrektur einer
+   früheren Fassung dieses Reports, die den Präzisions-Seed fälschlich „ungemessen" nannte: der
+   Runner speicherte ihn separat in den `A_prec`/`B_prec`-Feldern (Seed `20351→0,11`), ich hatte
+   die Felder zunächst übersehen. Ergebnis solzg Arm B, beide Läufe, beide Formalisierer:
+   **`got $0,12` statt `0,11` → 2/2 FAIL.** Das Idiom („rechne in decimal, Cent-Schnitt erst am
+   Ende, floor nicht kaufmännisch") änderte die Ausgabe NICHT — das Modell rundet 0,119 weiter
+   Cent-mittig auf 0,12. **Klasse-5 ist ein struktureller Rest, den ein Prompt-Hinweis nicht
+   schließt; er braucht Code (decimal-Refactor / Präzisions-Lint), nicht Kurierung.** Der
+   solzg-**Milderungs**-Fix (25000/45000, Klasse-1) durch Arm B steht davon unberührt und zählt.
 2. **B-Formalisierer (glm) trägt den Kanal nur teilweise** (Sekundärmetrik, Gewicht 0,10). glm-B
    clerk grün, Arm B: nr5a 2/2, p33 2/2, solzg 2/2, nr6_7 1/2, **p10v2 0/2**. Der Hinweis hilft dem
    A-Formalisierer robust; glm zieht bei p10v2 nicht mit (0/2) und ist bei nr6_7 instabil. Zwei
@@ -74,7 +77,8 @@ bereits produktions-sicher mit Default leer in `roles.py:formalize`/`cascade.py`
 - Prompt-Change = Julius-Freigabe (Produktion). Der `zusatz`-Parameter ist bereits verdrahtet und
   bei leerem Default prompt-neutral; „adoptieren" heißt: `hinweis`-Feld in rules.yaml + Befüllung
   je Regel + Prompt-Template-Bump/Hash-Stempel — kein neuer Code-Pfad.
-- Klasse-5-Numeric-Idiom bleibt **unbelegt** bis zum Nachlauf-Seed.
+- Klasse-5-Numeric-Idiom **widerlegt** (solzg `20351→0,11`, Arm B 2/2 FAIL `$0,12`): der Hinweis-
+  Kanal löst Klasse-1-Hunger, aber KEINE Präzisions-Ordnung. Klasse-5 bleibt Code-Aufgabe.
 - glm-B-Schwäche bei p10v2 dokumentieren; der Kanal ist auf A verlässlich, auf B nicht garantiert.
 - Auszug-Leitlinie NICHT abschaffen — Hinweis ist Ergänzung, nicht Ersatz; die grüne Produktion
   läuft weiter auf geweiteten auszügen.
