@@ -152,29 +152,64 @@ regeln:
   - p9_1_3_nr5_doppelte_haushaltsfuehrung
 - rule_id: p9_1_3_nr5a_uebernachtung
   norm: § 9 Abs. 1 S. 3 Nr. 5a EStG
-  # Charge 1: 5 wirkt_hinein-Norm-Teile bei null unabhaengigen. Der Judge sagt
-  # damit, dass die Signatur den Ausschnitt verfehlt, nicht dass das Modell
-  # schlecht formalisiert. Kein Approval-Versuch; Neuschnitt in Charge 2.
-  status: zuschnitt_offen
-  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr5a_2026-07-09.txt
-  struktur:
-  - ist_kosten
-  - 48_monats_grenze
-  - neubeginn_regel
-  test_seed: none
+  # Charge-2-Neuschnitt (2026-07-11, reports/review/2026-07-11-charge2-zuschnitt-teil1.md,
+  # Instructor-Freigabe msg 1163). Monatsbetrag statt Jahresbetrag; 48-Monats-Kappung
+  # auf den Nr.-5-Betrag (1.000 EUR/Monat, via Verweis); eigene Neubeginn-Regel
+  # (sechs Monate, Nr. 5a Satz 5 - NICHT die vier Wochen aus § 9 Abs. 4a S. 7).
+  quellen:
+  - typ: gesetz
+    label: "§ 9 Abs. 1 S. 3 Nr. 5a EStG"
+    datei: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
+    zitatanker: "bis zur Höhe des Betrags nach Nummer 5"
+    auszug: "notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen"
+  geltungsbedingungen:
+  - bedingung: keine_unterbrechung_mit_neubeginn
+    deckt_ab: "wenn die Unterbrechung mindestens sechs Monate dauert"
+    quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 5 EStG"
+    beschreibung: "Eigene Neubeginn-Regel des Nr. 5a: sechs Monate (nicht die vier Wochen aus § 9 Abs. 4a S. 7). Der Scope kennt die Unterbrechungshistorie nicht."
+  - bedingung: unterkunft_im_inland
+    deckt_ab: "2 000 Euro im Monat bei einer Unterkunft im Ausland"
+    quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 4 EStG (via Verweis Nr. 5a Satz 4)"
+    beschreibung: "MVP-Linie Inland. Der Verweis auf Nr. 5 zieht die 2.000-Euro-Auslandsgrenze mit; Auslandsfall zurueckgestellt."
+  - bedingung: kosten_bei_alleiniger_nutzung
+    deckt_ab: "die bei alleiniger Nutzung durch den Arbeitnehmer angefallen wären"
+    quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 3 EStG"
+    beschreibung: "Bei gemeinsamer Nutzung nur die Kosten bei alleiniger Nutzung ansetzbar. Input-Semantik von uebernachtungskosten_monat."
+  - bedingung: erste_taetigkeitsstaette_liegt_nicht_am_ort
+    deckt_ab: "an einer Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist"
+    quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 1 EStG"
+    beschreibung: "Uebernachtung an einer Taetigkeitsstaette, die nicht erste Taetigkeitsstaette ist."
+  test_seed:
+  - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
+    zitatanker: "bis zur Höhe des Betrags nach Nummer 5"
+    herkunft: synthetisch
+    rechenweg: "monate_bisher_am_ort 10 <= 48 -> keine Kappung; 800 x 12 = 9.600,00."
+    inputs: {uebernachtungskosten_monat: 800, monate: 12, monate_bisher_am_ort: 10}
+    expected: 9600.00
+  - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
+    zitatanker: "1 000 Euro im Monat"
+    herkunft: synthetisch
+    rechenweg: "Nach Ablauf von 48 Monaten kappt ab Monat 49; bei monate_bisher_am_ort 48 noch keine Kappung -> 1.400 x 12 = 16.800,00. Randfall 48."
+    inputs: {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 48}
+    expected: 16800.00
+  - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
+    zitatanker: "1 000 Euro im Monat"
+    herkunft: synthetisch
+    rechenweg: "monate_bisher_am_ort 49 > 48 -> Kappung auf 1.000/Monat; 1.000 x 12 = 12.000,00. Randfall 49."
+    inputs: {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 49}
+    expected: 12000.00
   signature:
     scope: Uebernachtungskosten
     inputs:
-      uebernachtungskosten: money
-      monate_taetigkeit: int
+      uebernachtungskosten_monat: money
+      monate: int
+      monate_bisher_am_ort: int
     output: abziehbare_uebernachtungskosten
   raster:
-  - uebernachtungskosten: 3000
-    monate_taetigkeit: 12
-  - uebernachtungskosten: 3000
-    monate_taetigkeit: 60
-  - uebernachtungskosten: 500
-    monate_taetigkeit: 48
+  - {uebernachtungskosten_monat: 800, monate: 12, monate_bisher_am_ort: 10}
+  - {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 10}
+  - {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 48}
+  - {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 49}
   exclude_rule_ids:
   - p9_1_3_nr5a_uebernachtung
 - rule_id: p9_4a_verpflegungsmehraufwand
@@ -265,61 +300,93 @@ regeln:
     monate_am_ort: 5
   exclude_rule_ids:
   - p9_4a_verpflegungsmehraufwand
-- rule_id: p9_1_3_nr6_arbeitsmittel
-  norm: § 9 Abs. 1 S. 3 Nr. 6 EStG
-  # Zurueckgestellt (Julius, 2026-07-09). Isoliert eine Identitaetsfunktion: kein
-  # Cap, keine Schwelle. Ein Test darauf prueft nichts. Nr. 6 verweist auf Nr. 7
-  # ("Nummer 7 bleibt unberuehrt"); Neuschnitt in Charge 2 als gemeinsame Regel.
-  status: zuschnitt_offen
-  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr6_2026-07-09.txt
-  struktur:
-  - einfacher_abzug
-  - verweis_auf_nr7
-  test_seed: none
+- rule_id: p9_1_3_nr6_7_arbeitsmittel_afa
+  norm: § 9 Abs. 1 S. 3 Nr. 6 und Nr. 7 EStG
+  # Charge-2-Neuschnitt (2026-07-11, reports/review/2026-07-11-charge2-zuschnitt-teil1.md,
+  # Instructor-Freigabe msg 1163). Ersetzt p9_1_3_nr6_arbeitsmittel + p9_1_3_nr7_afa.
+  # Multi-Source: Nr. 6 verweist auf Nr. 7 ("Nummer 7 bleibt unberuehrt"); die
+  # 800-Euro-GWG-Grenze folgt aus Nr. 7 S. 2 -> § 6 Abs. 2; die zeitanteilige
+  # AfA-Zwoelftelung aus § 7 Abs. 1 S. 4.
+  quellen:
+  - typ: gesetz
+    label: "§ 9 Abs. 1 S. 3 Nr. 6 und Nr. 7 EStG"
+    datei: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
+    zitatanker: "Nummer 7 bleibt unberührt"
+    auszug: "Aufwendungen für Arbeitsmittel"
+  - typ: gesetz
+    label: "§ 6 Abs. 2 EStG (geringwertige Wirtschaftsgüter, 800-Euro-Grenze)"
+    datei: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
+    zitatanker: "800 Euro nicht übersteigen"
+    auszug: "an deren Stelle tretende Wert für das einzelne Wirtschaftsgut 800 Euro nicht übersteigen"
+  - typ: gesetz
+    label: "§ 7 Abs. 1 S. 4 EStG (zeitanteilige AfA im Anschaffungsjahr)"
+    datei: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: "ein Zwölftel für jeden vollen Monat"
+    auszug: "ein Zwölftel für jeden vollen Monat, der dem Monat der Anschaffung oder Herstellung vorangeht"
+  geltungsbedingungen:
+  - bedingung: gwg_sofortabzug_gewaehlt
+    deckt_ab: "in voller Höhe als Betriebsausgaben abgezogen werden"
+    quelle: "§ 6 Abs. 2 Satz 1 EStG"
+    beschreibung: "GWG-Sofortabzug ist ein Wahlrecht (koennen); der Scope nimmt an, dass es ausgeuebt wird."
+  - bedingung: anschaffungskosten_sind_massgebliche_ak
+    deckt_ab: "an deren Stelle tretende Wert für das einzelne Wirtschaftsgut 800 Euro nicht übersteigen"
+    quelle: "§ 6 Abs. 2 Satz 1 EStG (Verweis § 9b Abs. 1)"
+    beschreibung: "Input = massgebliche AK i.S.d. § 6 Abs. 2 S. 1. Netto/Brutto nicht still festgelegt (§ 9b Abs. 1: Vorsteuer nur raus, soweit bei USt abziehbar - beim AN i.d.R. nicht). Grenzfall -> Morgen-Paket Julius."
+  test_seed:
+  - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
+    zitatanker: "800 Euro nicht übersteigen"
+    herkunft: synthetisch
+    rechenweg: "GWG: 500 <= 800 -> Sofortabzug in voller Hoehe = 500,00 (Anschaffungsjahr)."
+    inputs: {anschaffungskosten: 500, nutzungsdauer_jahre: 3, anschaffungsmonat: 1, jahre_seit_anschaffung: 0}
+    expected: 500.00
+  - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
+    zitatanker: "800 Euro nicht übersteigen"
+    herkunft: synthetisch
+    rechenweg: "GWG-Grenze: 800 <= 800 (nicht uebersteigen) -> Sofortabzug 800,00. Randfall <=."
+    inputs: {anschaffungskosten: 800, nutzungsdauer_jahre: 3, anschaffungsmonat: 1, jahre_seit_anschaffung: 0}
+    expected: 800.00
+  - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
+    zitatanker: "ein Zwölftel für jeden vollen Monat"
+    herkunft: synthetisch
+    rechenweg: "801 > 800 -> AfA: 801/3 = 267,00/Jahr; Anschaffungsmonat 1 -> voller Jahresbetrag = 267,00. Randfall 801."
+    inputs: {anschaffungskosten: 801, nutzungsdauer_jahre: 3, anschaffungsmonat: 1, jahre_seit_anschaffung: 0}
+    expected: 267.00
+  - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
+    zitatanker: "ein Zwölftel für jeden vollen Monat"
+    herkunft: synthetisch
+    rechenweg: "1200/3 = 400/Jahr; Anschaffung Monat 7 -> 6/12 (ein Zwoelftel je vollem Monat davor) = 200,00 (Anschaffungsjahr)."
+    inputs: {anschaffungskosten: 1200, nutzungsdauer_jahre: 3, anschaffungsmonat: 7, jahre_seit_anschaffung: 0}
+    expected: 200.00
+  - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
+    zitatanker: "ein Zwölftel für jeden vollen Monat"
+    herkunft: synthetisch
+    rechenweg: "Folgejahr (jahre_seit_anschaffung 1) -> voller Jahresbetrag 400,00."
+    inputs: {anschaffungskosten: 1200, nutzungsdauer_jahre: 3, anschaffungsmonat: 7, jahre_seit_anschaffung: 1}
+    expected: 400.00
+  - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
+    zitatanker: "ein Zwölftel für jeden vollen Monat"
+    herkunft: synthetisch
+    rechenweg: "Letztjahr (jahre_seit_anschaffung 3): Rest = 1200 - 200 (Jahr 0) - 400 - 400 = 200,00 (Gegenstueck zur 6/12-Kuerzung)."
+    inputs: {anschaffungskosten: 1200, nutzungsdauer_jahre: 3, anschaffungsmonat: 7, jahre_seit_anschaffung: 3}
+    expected: 200.00
   signature:
-    scope: Arbeitsmittel
-    inputs:
-      aufwendungen: money
-    output: abziehbar
-  raster:
-  - aufwendungen: 0
-  - aufwendungen: 300
-  - aufwendungen: 2500
-  exclude_rule_ids:
-  - p9_1_3_nr6_arbeitsmittel
-- rule_id: p9_1_3_nr7_afa
-  norm: § 9 Abs. 1 S. 3 Nr. 7 EStG
-  # Zurueckgestellt (Julius, 2026-07-09). Zwei Gruende:
-  #  1. Die 800-Euro-GWG-Grenze steht nicht in § 9, sondern folgt aus dem Verweis
-  #     in Satz 2 auf § 6 Abs. 2 EStG -> Neuschnitt als Multi-Source-Task mit
-  #     § 6 Abs. 2 als zweiter Quelle (eingefroren:
-  #     sources/gesetze-im-internet/estg_p6_abs2_2026-07-09.txt).
-  #  2. Der Anschaffungsmonat fehlt in der Signatur. Die AfA ist im
-  #     Anschaffungsjahr zeitanteilig; ohne den Monat braeuchte die Regel eine
-  #     stille Volljahr-Annahme - genau das, was der Round-Trip-Judge zu Recht
-  #     als stille_zusatzannahme meldet.
-  # Charge 2, gemeinsam mit Nr. 6.
-  status: zuschnitt_offen
-  norm_source: sources/gesetze-im-internet/estg_p9_abs1nr7_2026-07-09.txt
-  struktur:
-  - verweisregel
-  - gwg_grenze_ueber_p6
-  test_seed: none
-  signature:
-    scope: Absetzungfuerabnutzung
+    scope: ArbeitsmittelUndAfa
     inputs:
       anschaffungskosten: money
       nutzungsdauer_jahre: int
-    output: afa_jahresbetrag
+      anschaffungsmonat: int
+      jahre_seit_anschaffung: int
+    output: abziehbar
   raster:
-  - anschaffungskosten: 1200
-    nutzungsdauer_jahre: 3
-  - anschaffungskosten: 800
-    nutzungsdauer_jahre: 1
-  - anschaffungskosten: 5000
-    nutzungsdauer_jahre: 5
+  - {anschaffungskosten: 500, nutzungsdauer_jahre: 3, anschaffungsmonat: 1, jahre_seit_anschaffung: 0}
+  - {anschaffungskosten: 800, nutzungsdauer_jahre: 3, anschaffungsmonat: 1, jahre_seit_anschaffung: 0}
+  - {anschaffungskosten: 801, nutzungsdauer_jahre: 3, anschaffungsmonat: 1, jahre_seit_anschaffung: 0}
+  - {anschaffungskosten: 1200, nutzungsdauer_jahre: 3, anschaffungsmonat: 7, jahre_seit_anschaffung: 0}
+  - {anschaffungskosten: 1200, nutzungsdauer_jahre: 3, anschaffungsmonat: 7, jahre_seit_anschaffung: 1}
+  - {anschaffungskosten: 1200, nutzungsdauer_jahre: 3, anschaffungsmonat: 7, jahre_seit_anschaffung: 3}
+  - {anschaffungskosten: 5000, nutzungsdauer_jahre: 5, anschaffungsmonat: 12, jahre_seit_anschaffung: 0}
   exclude_rule_ids:
-  - p9_1_3_nr7_afa
+  - p9_1_3_nr6_7_arbeitsmittel_afa
 - rule_id: p9_6_erstausbildung_abgrenzung
   norm: § 9 Abs. 6 EStG
   # Erstbefuellung der Registry (Julius, 2026-07-11). Muster Rechtspraedikat wie
