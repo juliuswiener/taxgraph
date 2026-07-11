@@ -1460,7 +1460,7 @@ regeln:
     label: "§ 10 Abs. 1 Nr. 3/3a, Abs. 4 EStG (KV/PV + sonstige Vorsorge, Höchstbetrag)"
     datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
     zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
-    auszug: "2 800 Euro abgezogen werden"
+    auszug: "Vorsorgeaufwendungen im Sinne des Absatzes 1 Nummer 3 und 3a können je Kalenderjahr insgesamt bis 2 800 Euro abgezogen werden. 2 Der Höchstbetrag beträgt 1 900 Euro bei Steuerpflichtigen, die ganz oder teilweise ohne eigene Aufwendungen einen Anspruch auf vollständige oder teilweise Erstattung oder Übernahme von Krankheitskosten haben oder für deren Krankenversicherung Leistungen im Sinne des § 3 Nummer 9, 14, 57 oder 62 erbracht werden. 3 Bei zusammen veranlagten Ehegatten bestimmt sich der gemeinsame Höchstbetrag aus der Summe der jedem Ehegatten unter den Voraussetzungen von Satz 1 und 2 zustehenden Höchstbeträge. 4 Übersteigen die Vorsorgeaufwendungen im Sinne des Absatzes 1 Nummer 3 die nach den Sätzen 1 bis 3 zu berücksichtigenden Vorsorgeaufwendungen, sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne des Absatzes 1 Nummer 3a scheidet aus."
   geltungsbedingungen:
   - bedingung: basis_kv_pv_ist_basisabsicherung
     deckt_ab: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
@@ -1508,6 +1508,11 @@ regeln:
     datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
     zitatanker: "gezahlte Kirchensteuer"
     auszug: "gezahlte Kirchensteuer"
+  - typ: gesetz
+    label: "§ 10 Abs. 4b Satz 2 EStG (Erstattungsüberhang-Verrechnung)"
+    datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: "die geleisteten Aufwendungen"
+    auszug: "Übersteigen bei den Sonderausgaben nach Absatz 1 Nummer 2 bis 3a die im Veranlagungszeitraum erstatteten Aufwendungen die geleisteten Aufwendungen (Erstattungsüberhang), ist der Erstattungsüberhang mit anderen im Rahmen der jeweiligen Nummer anzusetzenden Aufwendungen zu verrechnen."
   geltungsbedingungen:
   - bedingung: keine_zuschlagsteuer_kappung
     deckt_ab: "gezahlte Kirchensteuer"
