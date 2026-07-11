@@ -218,7 +218,7 @@ regeln:
     deckt_ab:
     - "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtung"
     - "wenn der Arbeitnehmer an diesem, einem anschließenden oder vorhergehenden Tag außerhalb seiner Wohnung übernachtet"
-    quelle: "§ 9 Abs. 4a Satz 3 Nr. 2 und Satz 5 EStG"
+    quelle: "§ 9 Abs. 4a Satz 3 Nr. 2 und Nr. 3 EStG"
     beschreibung: "Der Scope kennt An-/Abreisetag und Abwesenheitsdauer, aber nicht die Mitternachtsregel fuer eintaegige Reisen ohne Uebernachtung."
   - bedingung: taetigkeit_im_inland
     deckt_ab: "Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge"
@@ -236,7 +236,7 @@ regeln:
     beschreibung: "Eine Unterbrechung von mindestens vier Wochen setzt die Dreimonatsfrist neu in Gang. Der Scope kennt nur `monate_am_ort`, nicht die Unterbrechungshistorie."
   - bedingung: keine_steuerfreien_verpflegungserstattungen
     deckt_ab: "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung"
-    quelle: "§ 9 Abs. 4a Satz 12 EStG"
+    quelle: "§ 9 Abs. 4a Satz 11 EStG"
     beschreibung: "Steuerfreie Erstattungen schliessen den Werbungskostenabzug insoweit aus."
   signature:
     scope: Verpflegungsmehraufwand

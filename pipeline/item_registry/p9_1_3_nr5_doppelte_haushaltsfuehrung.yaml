@@ -1,0 +1,149 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p9_1_3_nr5_doppelte_haushaltsfuehrung
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate
+  - interpretation
+  formulierungen:
+  - Die Formalisation legt die monatliche Höchstgrenze so aus, dass der Gesamtbetrag
+    durch Multiplikation mit der Anzahl der Monate zu berechnen ist.
+  - Die Formalisierung interpretiert die monatliche Höchstgrenze so, dass sie für
+    jeden Monat einzeln gilt und die Beträge über die Anzahl der Monate aufsummiert
+    werden.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - unterkunftskosten_monat
+  - interpretation
+  formulierungen:
+  - Die Formalisierung unterstellt, dass der Steuerpflichtige stets die tatsächlichen
+    Aufwendungen in voller Höhe bis zur Höchstgrenze geltend macht, obwohl die Norm
+    ein Wahlrecht einräumt.
+  - Die Formalisierung nimmt an, dass die monatlichen Unterkunftskosten über alle
+    Monate konstant sind, obwohl die Norm keine solche Konstanz voraussetzt.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate
+  - zeitbezug
+  formulierungen:
+  - Die Norm nennt nur eine monatliche Höchstgrenze; die Formalisierung berechnet
+    den Gesamtabzug durch Multiplikation mit der Monatsanzahl.
+  - Die Formalisierung setzt voraus, dass die Unterkunft für eine ganzzahlige Anzahl
+    von Monaten genutzt wurde.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - satz 1
+  formulierungen:
+  - notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten
+    doppelten Haushaltsführung entstehen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: beruflich_veranlasste_doppelte_haushaltsfuehrung
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Formalisation setzt voraus, dass die Höchstgrenze von 2.000 Euro im Ausland
+    stets gilt und die Ausnahme für Dienst- oder Werkswohnungen nicht eintritt.
+  triage: bedingung_neu
+  bedingung: keine_verpflichtende_dienst_oder_werkswohnung
+- art: annahme
+  anker:
+  - betrifft_kat
+  - im_inland
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Formalisierung setzt voraus, dass die Voraussetzungen für die Ausnahme von
+    der 2.000-Euro-Grenze (Dienst- oder Werkswohnung) nicht erfüllt sind.
+  triage: bedingung_neu
+  bedingung: keine_verpflichtende_dienst_oder_werkswohnung
+- art: norm_teil
+  anker:
+  - ref
+  - satz 4
+  formulierungen:
+  - die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine
+    Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss
+    oder deren Kosten für Zwecke des Mietzusch
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: keine_verpflichtende_dienst_oder_werkswohnung
+- art: norm_teil
+  anker:
+  - ref
+  - satz 4, 2. halbsatz
+  formulierungen:
+  - die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine
+    Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss
+    oder deren Kosten für Zwecke des Mietzusch
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: keine_verpflichtende_dienst_oder_werkswohnung
+- art: norm_teil
+  anker:
+  - ref
+  - satz 2
+  formulierungen:
+  - Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb
+    des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält und
+    auch am Ort der ersten Tätigkeitsstätte woh
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 3
+  formulierungen:
+  - Das Vorliegen eines eigenen Hausstandes setzt das Innehaben einer Wohnung sowie
+    eine finanzielle Beteiligung an den Kosten der Lebensführung voraus.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 5
+  formulierungen:
+  - Aufwendungen für die Wege vom Ort der ersten Tätigkeitsstätte zum Ort des eigenen
+    Hausstandes und zurück (Familienheimfahrt) können jeweils nur für eine Familienheimfahrt
+    wöchentlich abgezogen werden.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 6
+  formulierungen:
+  - Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale
+    von 0,38 Euro für jeden vollen Kilometer der Entfernung zwischen dem Ort des eigenen
+    Hausstandes und dem Ort der
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 7
+  formulierungen:
+  - Nummer 4 Satz 3 bis 5 ist entsprechend anzuwenden.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 8
+  formulierungen:
+  - Aufwendungen für Familienheimfahrten mit einem dem Steuerpflichtigen im Rahmen
+    einer Einkunftsart überlassenen Kraftfahrzeug werden nicht berücksichtigt.
+  triage: nicht_material_backlog
+  klasse: unabhaengig

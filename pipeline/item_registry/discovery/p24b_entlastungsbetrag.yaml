@@ -1,116 +1,107 @@
 rule_id: p24b_entlastungsbetrag
-hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt; bei bedingung_neu
-  die bedingung-ID eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>'
+hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt; bei bedingung_neu die bedingung-ID
+  eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>'
 items:
 - art: abweichung
   anker:
   - betrifft
   - '?'
-  text: Bei mehr als 12 Monaten ohne Voraussetzungen wird der Entlastungsbetrag negativ, obwohl die Norm
-    nur eine Minderung bis auf null vorsieht.
-  bedingung: ''
+  text: Bei mehr als 12 Monaten ohne Voraussetzungen wird der Entlastungsbetrag negativ, obwohl die Norm nur eine Minderung
+    bis auf null vorsieht.
   triage: offen
 - art: abweichung
   anker:
   - betrifft
   - '?'
-  text: Die Berechnung kann zu einem negativen Entlastungsbetrag führen, wenn monate_ohne_voraussetzung
-    größer als 12 ist.
-  bedingung: ''
+  text: Die Berechnung kann zu einem negativen Entlastungsbetrag führen, wenn monate_ohne_voraussetzung größer als 12 ist.
   triage: offen
 - art: abweichung
   anker:
   - betrifft
   - '?'
-  text: Die Formalisierung kappt monate_ohne_voraussetzung nicht auf 12, was bei Werten über 12 zu einem
-    negativen Entlastungsbetrag führt.
-  bedingung: ''
+  text: Die Formalisierung kappt monate_ohne_voraussetzung nicht auf 12, was bei Werten über 12 zu einem negativen Entlastungsbetrag
+    führt.
   triage: offen
 - art: abweichung
   anker:
   - betrifft
   - '?'
-  text: Die Formalisierung lässt Werte über 12 zu und erzeugt dann einen negativen Entlastungsbetrag,
-    obwohl die Norm maximal 12 Fehlmonate vorsieht.
-  bedingung: ''
+  text: Die Formalisierung lässt Werte über 12 zu und erzeugt dann einen negativen Entlastungsbetrag, obwohl die Norm maximal
+    12 Fehlmonate vorsieht.
   triage: offen
 - art: annahme
   anker:
   - betrifft_kat
   - ergebnis
   - rundung
-  text: Das Ergebnis der Berechnung wird kaufmännisch auf Cent gerundet, obwohl die Norm keine Rundung
-    vorschreibt.
-  bedingung: ''
-  triage: offen
+  text: Das Ergebnis der Berechnung wird kaufmännisch auf Cent gerundet, obwohl die Norm keine Rundung vorschreibt.
+  triage: nicht_material
+  konvention: konv:keine_zusaetzliche_rundung
 - art: annahme
   anker:
   - betrifft_kat
   - ergebnis
   - rundung
-  text: Die Formalisierung verwendet Dezimalarithmetik ohne explizite Rundungsregel, was implizit eine
-    Rundung auf Cent oder ähnliches annimmt.
-  bedingung: ''
-  triage: offen
+  text: Die Formalisierung verwendet Dezimalarithmetik ohne explizite Rundungsregel, was implizit eine Rundung auf Cent oder
+    ähnliches annimmt.
+  triage: nicht_material
+  konvention: konv:keine_zusaetzliche_rundung
 - art: annahme
   anker:
   - betrifft_kat
   - ergebnis
   - rundung
-  text: The computation uses decimal arithmetic without explicit rounding, assuming that the resulting
-    money amount is rounded to cents in an unspecified manner.
-  bedingung: ''
-  triage: offen
+  text: The computation uses decimal arithmetic without explicit rounding, assuming that the resulting money amount is rounded
+    to cents in an unspecified manner.
+  triage: nicht_material
+  konvention: konv:keine_zusaetzliche_rundung
 - art: annahme
   anker:
   - betrifft_kat
   - anzahl_kinder
   - sonstige
   text: Negative values for anzahl_kinder are treated as zero, which is not specified in the norm.
-  bedingung: ''
-  triage: offen
+  triage: nicht_material
+  konvention: konv:nichtnegative_betraege
 - art: norm_teil
   anker:
   - ref
   - § 24b abs. 1 satz 2
-  text: Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden
-    Steuerpflichtigen gemeldet ist.
-  bedingung: ''
+  text: Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden Steuerpflichtigen
+    gemeldet ist.
   klasse: wirkt_hinein
-  triage: offen
+  triage: bedingung_neu
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
 - art: norm_teil
   anker:
   - ref
   - § 24b abs. 1 s. 2
-  text: Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden
-    Steuerpflichtigen gemeldet ist.
-  bedingung: ''
+  text: Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden Steuerpflichtigen
+    gemeldet ist.
   klasse: wirkt_hinein
-  triage: offen
+  triage: bedingung_neu
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
 - art: norm_teil
   anker:
   - ref
   - § 24b abs. 4
-  text: Für jeden vollen Kalendermonat, in dem die Voraussetzungen des Absatzes 1 nicht vorgelegen haben,
-    ermäßigt sich der Entlastungsbetrag nach Absatz 2 um ein Zwölftel.
-  bedingung: ''
+  text: Für jeden vollen Kalendermonat, in dem die Voraussetzungen des Absatzes 1 nicht vorgelegen haben, ermäßigt sich der
+    Entlastungsbetrag nach Absatz 2 um ein Zwölftel.
   klasse: wirkt_hinein
-  triage: offen
+  triage: nicht_echt
 - art: norm_teil
   anker:
   - ref
   - § 24b abs. 2
   text: beträgt der Entlastungsbetrag im Kalenderjahr 4 260 Euro
-  bedingung: ''
   klasse: wirkt_hinein
-  triage: offen
+  triage: nicht_echt
 - art: annahme
   anker:
   - betrifft_kat
   - anzahl_kinder
   - interpretation
-  text: Die Anzahl der Kinder wird als Anzahl der Kinder interpretiert, die die Voraussetzungen des §
-    24b Abs. 1 erfüllen.
+  text: Die Anzahl der Kinder wird als Anzahl der Kinder interpretiert, die die Voraussetzungen des § 24b Abs. 1 erfüllen.
   bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
   triage: bedingung_neu
   vorschlag: detektor
@@ -128,8 +119,7 @@ items:
   - betrifft_kat
   - monate_ohne_voraussetzung
   - zeitbezug
-  text: Die Anzahl wird als Anzahl der vollen Kalendermonate ohne Voraussetzungen des Abs. 1 gelesen,
-    ohne Bereichsprüfung.
+  text: Die Anzahl wird als Anzahl der vollen Kalendermonate ohne Voraussetzungen des Abs. 1 gelesen, ohne Bereichsprüfung.
   bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
   triage: bedingung_neu
   vorschlag: detektor
@@ -138,8 +128,7 @@ items:
   - betrifft_kat
   - alleinstehend
   - interpretation
-  text: Der boolesche Wert 'alleinstehend' wird als korrekte Umsetzung der komplexen Definition in § 24b
-    Abs. 3 EStG vorausgesetzt.
+  text: Der boolesche Wert 'alleinstehend' wird als korrekte Umsetzung der komplexen Definition in § 24b Abs. 3 EStG vorausgesetzt.
   bedingung: alleinstehend_im_sinne_des_absatzes_3
   triage: bedingung_neu
   vorschlag: detektor
@@ -148,8 +137,8 @@ items:
   - betrifft_kat
   - monate_ohne_voraussetzung
   - interpretation
-  text: Die Anzahl der Monate ohne Voraussetzungen wird als korrekte Zählung voller Kalendermonate gemäß
-    § 24b Abs. 4 EStG vorausgesetzt.
+  text: Die Anzahl der Monate ohne Voraussetzungen wird als korrekte Zählung voller Kalendermonate gemäß § 24b Abs. 4 EStG
+    vorausgesetzt.
   bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
   triage: bedingung_neu
   vorschlag: detektor
@@ -158,8 +147,8 @@ items:
   - betrifft_kat
   - anzahl_kinder
   - interpretation
-  text: Die Formalisierung nimmt an, dass anzahl_kinder ausschließlich Kinder zählt, für die ein Freibetrag
-    nach §32 Abs. 6 oder Kindergeld zusteht.
+  text: Die Formalisierung nimmt an, dass anzahl_kinder ausschließlich Kinder zählt, für die ein Freibetrag nach §32 Abs.
+    6 oder Kindergeld zusteht.
   bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
   triage: bedingung_neu
   vorschlag: detektor
@@ -177,8 +166,8 @@ items:
   - betrifft_kat
   - monate_ohne_voraussetzung
   - interpretation
-  text: Die Formalisierung geht davon aus, dass monate_ohne_voraussetzung die Anzahl der vollen Kalendermonate
-    ohne Voraussetzungen nach Abs. 1 korrekt angibt.
+  text: Die Formalisierung geht davon aus, dass monate_ohne_voraussetzung die Anzahl der vollen Kalendermonate ohne Voraussetzungen
+    nach Abs. 1 korrekt angibt.
   bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
   triage: bedingung_neu
   vorschlag: detektor
@@ -187,8 +176,8 @@ items:
   - betrifft_kat
   - alleinstehend
   - interpretation
-  text: The boolean input alleinstehend is assumed to correctly reflect the legal definition of 'allein
-    stehend' from § 24b Abs. 3 EStG.
+  text: The boolean input alleinstehend is assumed to correctly reflect the legal definition of 'allein stehend' from § 24b
+    Abs. 3 EStG.
   bedingung: alleinstehend_im_sinne_des_absatzes_3
   triage: bedingung_neu
   vorschlag: detektor
@@ -197,8 +186,7 @@ items:
   - betrifft_kat
   - anzahl_kinder
   - interpretation
-  text: The integer anzahl_kinder is assumed to count only children who meet the criteria of § 24b Abs.
-    1 EStG.
+  text: The integer anzahl_kinder is assumed to count only children who meet the criteria of § 24b Abs. 1 EStG.
   bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
   triage: bedingung_neu
   vorschlag: detektor
@@ -207,8 +195,8 @@ items:
   - betrifft_kat
   - monate_ohne_voraussetzung
   - interpretation
-  text: The integer monate_ohne_voraussetzung is assumed to correctly count the full calendar months without
-    the conditions of § 24b Abs. 1.
+  text: The integer monate_ohne_voraussetzung is assumed to correctly count the full calendar months without the conditions
+    of § 24b Abs. 1.
   bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
   triage: bedingung_neu
   vorschlag: detektor
@@ -216,8 +204,8 @@ items:
   anker:
   - ref
   - § 24b abs. 1 satz 1
-  text: wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz
-    6 oder Kindergeld zusteht
+  text: wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz 6 oder Kindergeld
+    zusteht
   bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
   klasse: wirkt_hinein
   triage: bedingung_neu
@@ -226,8 +214,8 @@ items:
   anker:
   - ref
   - § 24b abs. 3
-  text: Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige, die nicht die Voraussetzungen für
-    die Anwendung des Splitting-Verfahrens (§ 26 Absatz 1) erfüllen oder verwitwet sind und keine Haushaltsg
+  text: Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige, die nicht die Voraussetzungen für die Anwendung des
+    Splitting-Verfahrens (§ 26 Absatz 1) erfüllen oder verwitwet sind und keine Haushaltsg
   bedingung: alleinstehend_im_sinne_des_absatzes_3
   klasse: wirkt_hinein
   triage: bedingung_neu
@@ -236,8 +224,8 @@ items:
   anker:
   - ref
   - § 24b abs. 1 s. 1
-  text: wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz
-    6 oder Kindergeld zusteht
+  text: wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz 6 oder Kindergeld
+    zusteht
   bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
   klasse: wirkt_hinein
   triage: bedingung_neu
@@ -247,9 +235,7 @@ items:
   - betrifft_kat
   - ergebnis
   - rundung
-  text: Die Berechnung verwendet Gleitkommadivision ohne Rundungsregel, was zu Bruchteilen von Cent führen
-    kann.
-  bedingung: ''
+  text: Die Berechnung verwendet Gleitkommadivision ohne Rundungsregel, was zu Bruchteilen von Cent führen kann.
   triage: nicht_material
   konvention: konv:keine_zusaetzliche_rundung
 - art: annahme
@@ -257,8 +243,8 @@ items:
   - betrifft_kat
   - monate_ohne_voraussetzung
   - sonstige
-  text: The input monate_ohne_voraussetzung is assumed to be between 0 and 12 inclusive, as the norm does
-    not specify behavior for out-of-range values.
+  text: The input monate_ohne_voraussetzung is assumed to be between 0 and 12 inclusive, as the norm does not specify behavior
+    for out-of-range values.
   bedingung: ''
   triage: nicht_material
   konvention: konv:ganzzahl_monate
@@ -267,9 +253,8 @@ items:
   - betrifft_kat
   - ergebnis
   - rundung
-  text: Die Formalisierung rundet das Ergebnis nicht, obwohl die Norm keine Rundungsregel enthält und
-    Bruchteile von Cent entstehen können.
-  bedingung: ''
+  text: Die Formalisierung rundet das Ergebnis nicht, obwohl die Norm keine Rundungsregel enthält und Bruchteile von Cent
+    entstehen können.
   triage: nicht_material
   konvention: konv:keine_zusaetzliche_rundung
 - art: norm_teil

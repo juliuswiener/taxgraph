@@ -29,8 +29,9 @@ konventionen:
     nichts anderes - der aufrufende Kontext hat sie bereits sauber abgegrenzt."
 - id: nichtnegative_betraege
   kategorie: einheit
-  beschreibung: "Aufwendungen, Kosten und Einkuenfte sind als nichtnegativ
-    angenommen, sofern die Norm nichts anderes sagt."
+  beschreibung: "Aufwendungen, Kosten, Einkuenfte UND Zaehlgroessen (Kinder,
+    Monate, Tage) sind als nichtnegativ angenommen, sofern die Norm nichts
+    anderes sagt."
 - id: keine_zusaetzliche_rundung
   kategorie: rundung
   beschreibung: "Es wird nur dort gerundet, wo die Norm es anordnet. Zwischen-

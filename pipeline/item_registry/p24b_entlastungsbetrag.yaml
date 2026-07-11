@@ -1,0 +1,179 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p24b_entlastungsbetrag
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Das Ergebnis der Berechnung wird kaufmännisch auf Cent gerundet, obwohl die Norm
+    keine Rundung vorschreibt.
+  - Die Formalisierung verwendet Dezimalarithmetik ohne explizite Rundungsregel, was
+    implizit eine Rundung auf Cent oder ähnliches annimmt.
+  - The computation uses decimal arithmetic without explicit rounding, assuming that
+    the resulting money amount is rounded to cents in an unspecified manner.
+  - Die Berechnung verwendet Gleitkommadivision ohne Rundungsregel, was zu Bruchteilen
+    von Cent führen kann.
+  - Die Formalisierung rundet das Ergebnis nicht, obwohl die Norm keine Rundungsregel
+    enthält und Bruchteile von Cent entstehen können.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder
+  - sonstige
+  formulierungen:
+  - Negative values for anzahl_kinder are treated as zero, which is not specified
+    in the norm.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1 satz 2
+  formulierungen:
+  - Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des
+    allein stehenden Steuerpflichtigen gemeldet ist.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1 s. 2
+  formulierungen:
+  - Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des
+    allein stehenden Steuerpflichtigen gemeldet ist.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 4
+  formulierungen:
+  - Für jeden vollen Kalendermonat, in dem die Voraussetzungen des Absatzes 1 nicht
+    vorgelegen haben, ermäßigt sich der Entlastungsbetrag nach Absatz 2 um ein Zwölftel.
+  triage: nicht_echt
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 2
+  formulierungen:
+  - beträgt der Entlastungsbetrag im Kalenderjahr 4 260 Euro
+  triage: nicht_echt
+  klasse: wirkt_hinein
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder
+  - interpretation
+  formulierungen:
+  - Die Anzahl der Kinder wird als Anzahl der Kinder interpretiert, die die Voraussetzungen
+    des § 24b Abs. 1 erfüllen.
+  - Die Formalisierung nimmt an, dass anzahl_kinder ausschließlich Kinder zählt, für
+    die ein Freibetrag nach §32 Abs. 6 oder Kindergeld zusteht.
+  - The integer anzahl_kinder is assumed to count only children who meet the criteria
+    of § 24b Abs. 1 EStG.
+  triage: bedingung_neu
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - alleinstehend
+  - interpretation
+  formulierungen:
+  - Der boolesche Wert wird als Erfüllung der Definition des Alleinstehenden nach
+    § 24b Abs. 3 interpretiert.
+  - Der boolesche Wert 'alleinstehend' wird als korrekte Umsetzung der komplexen Definition
+    in § 24b Abs. 3 EStG vorausgesetzt.
+  - Die Formalisierung setzt voraus, dass alleinstehend bereits gemäß §24b Abs. 3
+    EStG bestimmt wurde.
+  - The boolean input alleinstehend is assumed to correctly reflect the legal definition
+    of 'allein stehend' from § 24b Abs. 3 EStG.
+  triage: bedingung_neu
+  bedingung: alleinstehend_im_sinne_des_absatzes_3
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - zeitbezug
+  formulierungen:
+  - Die Anzahl wird als Anzahl der vollen Kalendermonate ohne Voraussetzungen des
+    Abs. 1 gelesen, ohne Bereichsprüfung.
+  triage: bedingung_neu
+  bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - interpretation
+  formulierungen:
+  - Die Anzahl der Monate ohne Voraussetzungen wird als korrekte Zählung voller Kalendermonate
+    gemäß § 24b Abs. 4 EStG vorausgesetzt.
+  - Die Formalisierung geht davon aus, dass monate_ohne_voraussetzung die Anzahl der
+    vollen Kalendermonate ohne Voraussetzungen nach Abs. 1 korrekt angibt.
+  - The integer monate_ohne_voraussetzung is assumed to correctly count the full calendar
+    months without the conditions of § 24b Abs. 1.
+  triage: bedingung_neu
+  bedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1 satz 1
+  formulierungen:
+  - wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag
+    nach § 32 Absatz 6 oder Kindergeld zusteht
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 3
+  formulierungen:
+  - Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige, die nicht die Voraussetzungen
+    für die Anwendung des Splitting-Verfahrens (§ 26 Absatz 1) erfüllen oder verwitwet
+    sind und keine Haushaltsg
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: alleinstehend_im_sinne_des_absatzes_3
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1 s. 1
+  formulierungen:
+  - wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag
+    nach § 32 Absatz 6 oder Kindergeld zusteht
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - sonstige
+  formulierungen:
+  - The input monate_ohne_voraussetzung is assumed to be between 0 and 12 inclusive,
+    as the norm does not specify behavior for out-of-range values.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 1
+  formulierungen:
+  - von der Summe der Einkünfte abziehen
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 24b abs. 2 satz 1
+  formulierungen:
+  - ein Kind im Sinne des Absatzes 1
+  triage: nicht_material_backlog
+  klasse: unabhaengig

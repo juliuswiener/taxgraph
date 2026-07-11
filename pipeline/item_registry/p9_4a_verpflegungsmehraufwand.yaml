@@ -1,0 +1,204 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p9_4a_verpflegungsmehraufwand
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - mit_uebernachtung
+  - interpretation
+  formulierungen:
+  - Die Formalisierung interpretiert die Übernachtungsangabe als auf den jeweiligen
+    Tag bezogen, ohne die Möglichkeit einer Übernachtung an angrenzenden Tagen zu
+    berücksichtigen.
+  - Die Formalisierung nimmt an, dass 'mit_uebernachtung' nur Übernachtung am selben
+    Tag bedeutet, nicht an angrenzenden Tagen.
+  - Die Eingabe mit_uebernachtung wird so interpretiert, dass sie auch Übernachtungen
+    an angrenzenden Tagen umfasst, wie von der Norm für An- und Abreisetage gefordert.
+  - Die Formalisierung interpretiert 'mit_uebernachtung' so, dass eine Übernachtung
+    am An-/Abreisetag oder einem angrenzenden Tag stattfindet.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Formalisierung geht davon aus, dass der Arbeitnehmer eine erste Tätigkeitsstätte
+    hat.
+  - Die Formalisierung setzt voraus, dass eine auswärtige berufliche Tätigkeit vorliegt,
+    ohne dies zu prüfen.
+  triage: bedingung_neu
+  bedingung: auswaertige_berufliche_taetigkeit
+- art: annahme
+  anker:
+  - betrifft_kat
+  - abwesenheit_stunden
+  - interpretation
+  formulierungen:
+  - Die Formalisierung nimmt an, dass die eingegebene Abwesenheit in Stunden 24 nicht
+    übersteigt.
+  - Die Stundenangabe wird als exakte Abwesenheitsdauer an einem Kalendertag interpretiert.
+  - Die Formalisierung nimmt an, dass bei tagesübergreifender Tätigkeit ohne Übernachtung
+    die Eingabe für den Tag mit dem überwiegenden Teil der Abwesenheit erfolgt.
+  - Die Eingabe abwesenheit_stunden wird als die für den Tag maßgebliche Stundenzahl
+    nach der Mehrheitsregel bei tagesübergreifender Abwesenheit interpretiert.
+  - Die Formalisierung setzt voraus, dass die Stundenanzahl die Abwesenheit von Wohnung
+    und erster Tätigkeitsstätte bereits beinhaltet.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 4a
+  formulierungen:
+  - Verpflegungsmehraufwand, Dreimonatsfrist
+  triage: nicht_echt
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - satz 6
+  formulierungen:
+  - Der Abzug der Verpflegungspauschalen ist auf die ersten drei Monate einer längerfristigen
+    beruflichen Tätigkeit an derselben Tätigkeitsstätte beschränkt.
+  triage: nicht_echt
+  klasse: wirkt_hinein
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_am_ort
+  - interpretation
+  formulierungen:
+  - Die Formalisierung setzt voraus, dass die Monatsangabe die Unterbrechungsregel
+    von vier Wochen bereits berücksichtigt.
+  - Die Formalisierung nimmt an, dass 'monate_am_ort' die Dauer ohne Unterbrechungen
+    nach Satz 7 angibt.
+  - Die Monatsangabe wird als ununterbrochene Dauer am selben Ort ohne Berücksichtigung
+    von Unterbrechungen interpretiert.
+  - Die Eingabe monate_am_ort wird als bereits um Unterbrechungen von mindestens vier
+    Wochen bereinigte Dauer interpretiert.
+  - Die Formalisierung interpretiert 'monate_am_ort' als die Anzahl der Monate einer
+    längerfristigen Tätigkeit, ohne die Längerfristigkeit eigenständig zu prüfen.
+  triage: bedingung_neu
+  bedingung: keine_unterbrechung_mit_neubeginn
+- art: norm_teil
+  anker:
+  - ref
+  - satz 3 nr. 3 halbsatz 2
+  formulierungen:
+  - beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am
+    nachfolgenden Kalendertag ohne Übernachtung, werden 14 Euro für den Kalendertag
+    gewährt, an dem der Arbeitnehmer den überw
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+- art: norm_teil
+  anker:
+  - ref
+  - satz 5
+  formulierungen:
+  - Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge nach Satz
+    3 länderweise unterschiedliche Pauschbeträge.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: taetigkeit_im_inland
+- art: norm_teil
+  anker:
+  - ref
+  - satz 7
+  formulierungen:
+  - Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt
+    zu einem Neubeginn, wenn sie mindestens vier Wochen dauert.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: keine_unterbrechung_mit_neubeginn
+- art: norm_teil
+  anker:
+  - ref
+  - satz 8
+  formulierungen:
+  - Wird dem Arbeitnehmer anlässlich oder während einer Tätigkeit außerhalb seiner
+    ersten Tätigkeitsstätte vom Arbeitgeber oder auf dessen Veranlassung von einem
+    Dritten eine Mahlzeit zur Verfügung gestel
+  - für Frühstück um 20 Prozent, für Mittag- und Abendessen um jeweils 40 Prozent
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: keine_mahlzeitengestellung
+- art: norm_teil
+  anker:
+  - ref
+  - satz 11
+  formulierungen:
+  - Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug
+    insoweit ausgeschlossen.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: keine_steuerfreien_verpflegungserstattungen
+- art: norm_teil
+  anker:
+  - ref
+  - satz 2
+  formulierungen:
+  - außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig (auswärtige
+    berufliche Tätigkeit)
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: auswaertige_berufliche_taetigkeit
+- art: norm_teil
+  anker:
+  - ref
+  - satz 3 nr. 3 satz 2
+  formulierungen:
+  - beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am
+    nachfolgenden Kalendertag ohne Übernachtung, werden 14 Euro für den Kalendertag
+    gewährt, an dem der Arbeitnehmer den überw
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_am_ort
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Formalisierung setzt voraus, dass eine längerfristige Tätigkeit an derselben
+    Tätigkeitsstätte vorliegt, ohne dies zu prüfen.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - satz 4
+  formulierungen:
+  - Hat der Arbeitnehmer keine erste Tätigkeitsstätte, gelten die Sätze 2 und 3 entsprechend.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 10
+  formulierungen:
+  - Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag
+    den Kürzungsbetrag nach Satz 8.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 1
+  formulierungen:
+  - Mehraufwendungen des Arbeitnehmers für die Verpflegung sind nur nach Maßgabe der
+    folgenden Sätze als Werbungskosten abziehbar.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 8 nummer 1 und 2
+  formulierungen:
+  - für Frühstück um 20 Prozent, für Mittag- und Abendessen um jeweils 40 Prozent
+  triage: nicht_material_backlog
+  klasse: unabhaengig

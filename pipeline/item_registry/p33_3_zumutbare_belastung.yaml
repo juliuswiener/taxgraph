@@ -1,15 +1,8 @@
 # Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
-#
-# ABLAUF (2026-07-11): das defekt_formalisierer-Item (ergebnis/rundung) war per
-# Definition "coupled to freigabe:blockiert, expires with A-rerun". Der
-# lint-informierte A-Neulauf ergab A ohne Rundung (rundungs_lint=PASS,
-# equivalence=PASS, A==B auf allen 5 Rasterpunkten). Der deterministische
-# rundungs_lint_gate ist ab jetzt der Dauerguard gegen die Rundungs-Regression -
-# strikt staerker als der manuelle Marker. Ablaufbedingung erfuellt -> Item
-# entfernt, version 1 -> 2.
+
 rule_id: p33_3_zumutbare_belastung
-version: 2
+version: 3
 items:
 - art: annahme
   anker:
@@ -87,3 +80,81 @@ items:
   triage: bedingung_neu
   klasse: wirkt_hinein
   bedingung: splitting_ist_veranlagungsergebnis
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1 nr. 1b estg
+  formulierungen:
+  - bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer
+    ... nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: splitting_ist_veranlagungsergebnis
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1 nr. 1
+  formulierungen:
+  - bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer
+    a) nach § 32a Absatz 1, b) nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu
+    berechnen ist
+  triage: nicht_echt
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1 tabelle
+  formulierungen:
+  - 5 | 6 | 7, 4 | 5 | 6, 2 | 3 | 4, 1 | 1 | 2 Prozent des Gesamtbetrags der Einkünfte
+  triage: nicht_echt
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 3 satz 1 nr. 1 b)
+  formulierungen:
+  - nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: splitting_ist_veranlagungsergebnis
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gesamtbetrag_der_einkuenfte
+  - interpretation
+  formulierungen:
+  - Der Gesamtbetrag der Einkünfte ist der steuerrechtlich definierte Gesamtbetrag
+    der Einkünfte.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Die Berechnung multipliziert Geldbeträge mit Prozentsätzen, ohne dass die Norm
+    eine Rundungsregel vorschreibt.
+  - Die Multiplikation von Geldbeträgen mit Prozentsätzen erfolgt ohne explizite Rundungsregel.
+  - Das Ergebnis wird ohne Rundung als exakter Geldbetrag berechnet, obwohl die Norm
+    keine Rundungsregel vorgibt.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 1 estg
+  formulierungen:
+  - so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen,
+    der die dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag
+    der Einkünfte abgezog
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 1
+  formulierungen:
+  - so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen,
+    der die dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag
+    der Einkünfte abgezog
+  triage: nicht_material_backlog
+  klasse: unabhaengig

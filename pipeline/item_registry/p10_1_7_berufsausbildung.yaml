@@ -1,0 +1,93 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10_1_7_berufsausbildung
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aufwendungen
+  - geltungsvoraussetzung
+  formulierungen:
+  - Es wird vorausgesetzt, dass die Ehegattenregelung des Satzes 2 nicht anwendbar
+    ist oder bereits eingerechnet wurde.
+  triage: bedingung_neu
+  bedingung: hoechstbetrag_gilt_je_person
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aufwendungen
+  - interpretation
+  formulierungen:
+  - Die Eingabe 'aufwendungen' entspricht den Aufwendungen im Sinne des § 10 Abs.
+    1 Nr. 7 EStG.
+  - Die Eingabe wird als Aufwendungen für die eigene Berufsausbildung verstanden,
+    ohne dass dies geprüft wird.
+  - Die Eingabe wird als bereits nach § 4 Abs. 5 und § 9 EStG ermittelte Aufwendungen
+    behandelt.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aufwendungen
+  - zeitbezug
+  formulierungen:
+  - Die Eingabe bezieht sich auf ein Kalenderjahr.
+  - Die Eingabe wird als die Aufwendungen eines Kalenderjahres behandelt, ohne dass
+    ein Zeitraum geprüft wird.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - satz 2
+  formulierungen:
+  - Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt
+    Satz 1 für jeden Ehegatten.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 3
+  formulierungen:
+  - Zu den Aufwendungen im Sinne des Satzes 1 gehören auch Aufwendungen für eine auswärtige
+    Unterbringung.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - satz 4
+  formulierungen:
+  - § 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5,
+    Absatz 2, 4 Satz 8 und Absatz 4a sind bei der Ermittlung der Aufwendungen anzuwenden.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 1 nr. 7 satz 2
+  formulierungen:
+  - Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt
+    Satz 1 für jeden Ehegatten.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 1 nr. 7 satz 3
+  formulierungen:
+  - Zu den Aufwendungen im Sinne des Satzes 1 gehören auch Aufwendungen für eine auswärtige
+    Unterbringung.
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 1 nr. 7 satz 4
+  formulierungen:
+  - § 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5,
+    Absatz 2, 4 Satz 8 und Absatz 4a sind bei der Ermittlung der Aufwendungen anzuwenden.
+  triage: nicht_material_backlog
+  klasse: unabhaengig

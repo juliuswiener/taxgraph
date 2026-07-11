@@ -1,14 +1,13 @@
 rule_id: p10_1_7_berufsausbildung
-hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt; bei bedingung_neu
-  die bedingung-ID eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>'
+hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt; bei bedingung_neu die bedingung-ID
+  eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>'
 items:
 - art: annahme
   anker:
   - betrifft_kat
   - aufwendungen
   - geltungsvoraussetzung
-  text: Es wird vorausgesetzt, dass die Ehegattenregelung des Satzes 2 nicht anwendbar ist oder bereits
-    eingerechnet wurde.
+  text: Es wird vorausgesetzt, dass die Ehegattenregelung des Satzes 2 nicht anwendbar ist oder bereits eingerechnet wurde.
   bedingung: hoechstbetrag_gilt_je_person
   triage: bedingung_neu
   vorschlag: detektor
@@ -35,8 +34,7 @@ items:
   - betrifft_kat
   - aufwendungen
   - interpretation
-  text: Die Eingabe wird als Aufwendungen für die eigene Berufsausbildung verstanden, ohne dass dies geprüft
-    wird.
+  text: Die Eingabe wird als Aufwendungen für die eigene Berufsausbildung verstanden, ohne dass dies geprüft wird.
   bedingung: ''
   triage: nicht_material
   konvention: konv:input_nur_etikettiertes
@@ -54,8 +52,7 @@ items:
   - betrifft_kat
   - aufwendungen
   - zeitbezug
-  text: Die Eingabe wird als die Aufwendungen eines Kalenderjahres behandelt, ohne dass ein Zeitraum geprüft
-    wird.
+  text: Die Eingabe wird als die Aufwendungen eines Kalenderjahres behandelt, ohne dass ein Zeitraum geprüft wird.
   bedingung: ''
   triage: nicht_material
   konvention: konv:vz_bezug_der_regel
@@ -63,8 +60,7 @@ items:
   anker:
   - ref
   - satz 2
-  text: Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt Satz 1 für jeden
-    Ehegatten.
+  text: Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt Satz 1 für jeden Ehegatten.
   bedingung: ''
   klasse: unabhaengig
   triage: nicht_material_backlog
@@ -80,8 +76,8 @@ items:
   anker:
   - ref
   - satz 4
-  text: § 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz
-    8 und Absatz 4a sind bei der Ermittlung der Aufwendungen anzuwenden.
+  text: § 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz 8 und Absatz 4a sind
+    bei der Ermittlung der Aufwendungen anzuwenden.
   bedingung: ''
   klasse: unabhaengig
   triage: nicht_material_backlog
@@ -89,8 +85,7 @@ items:
   anker:
   - ref
   - § 10 abs. 1 nr. 7 satz 2
-  text: Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt Satz 1 für jeden
-    Ehegatten.
+  text: Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt Satz 1 für jeden Ehegatten.
   bedingung: ''
   klasse: unabhaengig
   triage: nicht_material_backlog
@@ -106,8 +101,8 @@ items:
   anker:
   - ref
   - § 10 abs. 1 nr. 7 satz 4
-  text: § 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz
-    8 und Absatz 4a sind bei der Ermittlung der Aufwendungen anzuwenden.
+  text: § 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz 8 und Absatz 4a sind
+    bei der Ermittlung der Aufwendungen anzuwenden.
   bedingung: ''
   klasse: unabhaengig
   triage: nicht_material_backlog

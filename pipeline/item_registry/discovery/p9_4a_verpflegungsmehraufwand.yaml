@@ -1,214 +1,200 @@
 rule_id: p9_4a_verpflegungsmehraufwand
-hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt; bei bedingung_neu
-  die bedingung-ID eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>'
+hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt; bei bedingung_neu die bedingung-ID
+  eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>'
 items:
 - art: abweichung
   anker:
   - betrifft
   - '?'
-  text: Die Formalisierung verlangt eine Übernachtung am An- oder Abreisetag selbst, die Norm lässt auch
-    eine Übernachtung an einem angrenzenden Tag genügen.
-  bedingung: ''
+  text: Die Formalisierung verlangt eine Übernachtung am An- oder Abreisetag selbst, die Norm lässt auch eine Übernachtung
+    an einem angrenzenden Tag genügen.
   triage: offen
 - art: abweichung
   anker:
   - betrifft
   - '?'
-  text: Die Formalisierung gewährt 28 Euro bei 24 oder mehr Stunden Abwesenheit, die Norm verlangt genau
-    24 Stunden Abwesenheit an einem Kalendertag.
-  bedingung: ''
+  text: Die Formalisierung gewährt 28 Euro bei 24 oder mehr Stunden Abwesenheit, die Norm verlangt genau 24 Stunden Abwesenheit
+    an einem Kalendertag.
   triage: offen
 - art: abweichung
   anker:
   - betrifft
   - '?'
-  text: Die Formalisierung setzt für den An- und Abreisetag eine Übernachtung am selben Tag voraus, die
-    Norm erlaubt auch Übernachtung an angrenzenden Tagen.
-  bedingung: ''
+  text: Die Formalisierung setzt für den An- und Abreisetag eine Übernachtung am selben Tag voraus, die Norm erlaubt auch
+    Übernachtung an angrenzenden Tagen.
   triage: offen
 - art: abweichung
   anker:
   - betrifft
   - '?'
-  text: Die 14-Euro-Regel für An-/Abreisetag erfordert fälschlich eine Übernachtung am selben Tag, nicht
-    an angrenzenden Tagen.
-  bedingung: ''
+  text: Die 14-Euro-Regel für An-/Abreisetag erfordert fälschlich eine Übernachtung am selben Tag, nicht an angrenzenden Tagen.
   triage: offen
 - art: abweichung
   anker:
   - betrifft
   - '?'
   text: Die Ausgabe der Verpflegungspauschale erfolgt in Dollar statt in Euro.
-  bedingung: ''
   triage: offen
 - art: abweichung
   anker:
   - betrifft
   - '?'
-  text: Die Bedingung für den An- oder Abreisetag verlangt eine Übernachtung am selben Tag, die Norm erlaubt
-    aber auch Übernachtung an einem anschließenden oder vorhergehenden Tag.
-  bedingung: ''
+  text: Die Bedingung für den An- oder Abreisetag verlangt eine Übernachtung am selben Tag, die Norm erlaubt aber auch Übernachtung
+    an einem anschließenden oder vorhergehenden Tag.
   triage: offen
 - art: abweichung
   anker:
   - betrifft
   - '?'
-  text: Die Formalisierung gewährt 14 Euro für jeden Tag mit mehr als 8 Stunden Abwesenheit ohne Übernachtung,
-    aber die Norm beschränkt dies bei tagesübergreifender Abwesenheit auf den Tag mit dem überwiegend
-  bedingung: ''
+  text: Die Formalisierung gewährt 14 Euro für jeden Tag mit mehr als 8 Stunden Abwesenheit ohne Übernachtung, aber die Norm
+    beschränkt dies bei tagesübergreifender Abwesenheit auf den Tag mit dem überwiegend
   triage: offen
 - art: annahme
   anker:
   - betrifft_kat
   - mit_uebernachtung
   - interpretation
-  text: Die Formalisierung interpretiert die Übernachtungsangabe als auf den jeweiligen Tag bezogen, ohne
-    die Möglichkeit einer Übernachtung an angrenzenden Tagen zu berücksichtigen.
-  bedingung: ''
-  triage: offen
+  text: Die Formalisierung interpretiert die Übernachtungsangabe als auf den jeweiligen Tag bezogen, ohne die Möglichkeit
+    einer Übernachtung an angrenzenden Tagen zu berücksichtigen.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
 - art: annahme
   anker:
   - betrifft_kat
   - ergebnis
   - geltungsvoraussetzung
   text: Die Formalisierung geht davon aus, dass der Arbeitnehmer eine erste Tätigkeitsstätte hat.
-  bedingung: ''
-  triage: offen
+  triage: bedingung_neu
+  bedingung: auswaertige_berufliche_taetigkeit
 - art: annahme
   anker:
   - betrifft_kat
   - abwesenheit_stunden
   - interpretation
   text: Die Formalisierung nimmt an, dass die eingegebene Abwesenheit in Stunden 24 nicht übersteigt.
-  bedingung: ''
-  triage: offen
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
 - art: annahme
   anker:
   - betrifft_kat
   - mit_uebernachtung
   - interpretation
-  text: Die Formalisierung nimmt an, dass 'mit_uebernachtung' nur Übernachtung am selben Tag bedeutet,
-    nicht an angrenzenden Tagen.
-  bedingung: ''
-  triage: offen
+  text: Die Formalisierung nimmt an, dass 'mit_uebernachtung' nur Übernachtung am selben Tag bedeutet, nicht an angrenzenden
+    Tagen.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
 - art: annahme
   anker:
   - betrifft_kat
   - abwesenheit_stunden
   - interpretation
   text: Die Stundenangabe wird als exakte Abwesenheitsdauer an einem Kalendertag interpretiert.
-  bedingung: ''
-  triage: offen
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
 - art: annahme
   anker:
   - betrifft_kat
   - mit_uebernachtung
   - interpretation
-  text: Die Eingabe mit_uebernachtung wird so interpretiert, dass sie auch Übernachtungen an angrenzenden
-    Tagen umfasst, wie von der Norm für An- und Abreisetage gefordert.
-  bedingung: ''
-  triage: offen
+  text: Die Eingabe mit_uebernachtung wird so interpretiert, dass sie auch Übernachtungen an angrenzenden Tagen umfasst, wie
+    von der Norm für An- und Abreisetage gefordert.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
 - art: annahme
   anker:
   - betrifft_kat
   - mit_uebernachtung
   - interpretation
-  text: Die Formalisierung interpretiert 'mit_uebernachtung' so, dass eine Übernachtung am An-/Abreisetag
-    oder einem angrenzenden Tag stattfindet.
-  bedingung: ''
-  triage: offen
+  text: Die Formalisierung interpretiert 'mit_uebernachtung' so, dass eine Übernachtung am An-/Abreisetag oder einem angrenzenden
+    Tag stattfindet.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
 - art: norm_teil
   anker:
   - ref
   - § 9 abs. 4a
   text: Verpflegungsmehraufwand, Dreimonatsfrist
-  bedingung: ''
   klasse: wirkt_hinein
-  triage: offen
+  triage: nicht_echt
 - art: norm_teil
   anker:
   - ref
   - satz 6
-  text: Der Abzug der Verpflegungspauschalen ist auf die ersten drei Monate einer längerfristigen beruflichen
-    Tätigkeit an derselben Tätigkeitsstätte beschränkt.
-  bedingung: ''
+  text: Der Abzug der Verpflegungspauschalen ist auf die ersten drei Monate einer längerfristigen beruflichen Tätigkeit an
+    derselben Tätigkeitsstätte beschränkt.
   klasse: wirkt_hinein
-  triage: offen
+  triage: nicht_echt
 - art: annahme
   anker:
   - betrifft_kat
   - monate_am_ort
   - interpretation
-  text: Die Formalisierung setzt voraus, dass die Monatsangabe die Unterbrechungsregel von vier Wochen
-    bereits berücksichtigt.
-  bedingung: keine_unterbrechung_mit_neubeginn
+  text: Die Formalisierung setzt voraus, dass die Monatsangabe die Unterbrechungsregel von vier Wochen bereits berücksichtigt.
   triage: bedingung_neu
   vorschlag: detektor
+  bedingung: keine_unterbrechung_mit_neubeginn
 - art: annahme
   anker:
   - betrifft_kat
   - monate_am_ort
   - interpretation
   text: Die Formalisierung nimmt an, dass 'monate_am_ort' die Dauer ohne Unterbrechungen nach Satz 7 angibt.
-  bedingung: keine_unterbrechung_mit_neubeginn
   triage: bedingung_neu
   vorschlag: detektor
+  bedingung: keine_unterbrechung_mit_neubeginn
 - art: annahme
   anker:
   - betrifft_kat
   - abwesenheit_stunden
   - interpretation
-  text: Die Formalisierung nimmt an, dass bei tagesübergreifender Tätigkeit ohne Übernachtung die Eingabe
-    für den Tag mit dem überwiegenden Teil der Abwesenheit erfolgt.
-  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+  text: Die Formalisierung nimmt an, dass bei tagesübergreifender Tätigkeit ohne Übernachtung die Eingabe für den Tag mit
+    dem überwiegenden Teil der Abwesenheit erfolgt.
   triage: bedingung_neu
   vorschlag: detektor
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
 - art: annahme
   anker:
   - betrifft_kat
   - monate_am_ort
   - interpretation
-  text: Die Monatsangabe wird als ununterbrochene Dauer am selben Ort ohne Berücksichtigung von Unterbrechungen
-    interpretiert.
-  bedingung: keine_unterbrechung_mit_neubeginn
+  text: Die Monatsangabe wird als ununterbrochene Dauer am selben Ort ohne Berücksichtigung von Unterbrechungen interpretiert.
   triage: bedingung_neu
   vorschlag: detektor
+  bedingung: keine_unterbrechung_mit_neubeginn
 - art: annahme
   anker:
   - betrifft_kat
   - ergebnis
   - geltungsvoraussetzung
-  text: Die Formalisierung setzt voraus, dass eine auswärtige berufliche Tätigkeit vorliegt, ohne dies
-    zu prüfen.
-  bedingung: auswaertige_berufliche_taetigkeit
+  text: Die Formalisierung setzt voraus, dass eine auswärtige berufliche Tätigkeit vorliegt, ohne dies zu prüfen.
   triage: bedingung_neu
   vorschlag: detektor
+  bedingung: auswaertige_berufliche_taetigkeit
 - art: annahme
   anker:
   - betrifft_kat
   - monate_am_ort
   - interpretation
-  text: Die Eingabe monate_am_ort wird als bereits um Unterbrechungen von mindestens vier Wochen bereinigte
-    Dauer interpretiert.
-  bedingung: keine_unterbrechung_mit_neubeginn
+  text: Die Eingabe monate_am_ort wird als bereits um Unterbrechungen von mindestens vier Wochen bereinigte Dauer interpretiert.
   triage: bedingung_neu
   vorschlag: detektor
+  bedingung: keine_unterbrechung_mit_neubeginn
 - art: annahme
   anker:
   - betrifft_kat
   - abwesenheit_stunden
   - interpretation
-  text: Die Eingabe abwesenheit_stunden wird als die für den Tag maßgebliche Stundenzahl nach der Mehrheitsregel
-    bei tagesübergreifender Abwesenheit interpretiert.
-  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+  text: Die Eingabe abwesenheit_stunden wird als die für den Tag maßgebliche Stundenzahl nach der Mehrheitsregel bei tagesübergreifender
+    Abwesenheit interpretiert.
   triage: bedingung_neu
   vorschlag: detektor
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
 - art: norm_teil
   anker:
   - ref
   - satz 3 nr. 3 halbsatz 2
-  text: beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag
-    ohne Übernachtung, werden 14 Euro für den Kalendertag gewährt, an dem der Arbeitnehmer den überw
+  text: beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtung,
+    werden 14 Euro für den Kalendertag gewährt, an dem der Arbeitnehmer den überw
   bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
   klasse: wirkt_hinein
   triage: bedingung_neu
@@ -217,8 +203,7 @@ items:
   anker:
   - ref
   - satz 5
-  text: Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge nach Satz 3 länderweise
-    unterschiedliche Pauschbeträge.
+  text: Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge nach Satz 3 länderweise unterschiedliche Pauschbeträge.
   bedingung: taetigkeit_im_inland
   klasse: wirkt_hinein
   triage: bedingung_neu
@@ -227,8 +212,8 @@ items:
   anker:
   - ref
   - satz 7
-  text: Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn,
-    wenn sie mindestens vier Wochen dauert.
+  text: Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn, wenn sie mindestens
+    vier Wochen dauert.
   bedingung: keine_unterbrechung_mit_neubeginn
   klasse: wirkt_hinein
   triage: bedingung_neu
@@ -237,8 +222,8 @@ items:
   anker:
   - ref
   - satz 8
-  text: Wird dem Arbeitnehmer anlässlich oder während einer Tätigkeit außerhalb seiner ersten Tätigkeitsstätte
-    vom Arbeitgeber oder auf dessen Veranlassung von einem Dritten eine Mahlzeit zur Verfügung gestel
+  text: Wird dem Arbeitnehmer anlässlich oder während einer Tätigkeit außerhalb seiner ersten Tätigkeitsstätte vom Arbeitgeber
+    oder auf dessen Veranlassung von einem Dritten eine Mahlzeit zur Verfügung gestel
   bedingung: keine_mahlzeitengestellung
   klasse: wirkt_hinein
   triage: bedingung_neu
@@ -247,8 +232,7 @@ items:
   anker:
   - ref
   - satz 11
-  text: Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug
-    insoweit ausgeschlossen.
+  text: Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug insoweit ausgeschlossen.
   bedingung: keine_steuerfreien_verpflegungserstattungen
   klasse: wirkt_hinein
   triage: bedingung_neu
@@ -275,8 +259,8 @@ items:
   anker:
   - ref
   - satz 3 nr. 3 satz 2
-  text: beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag
-    ohne Übernachtung, werden 14 Euro für den Kalendertag gewährt, an dem der Arbeitnehmer den überw
+  text: beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtung,
+    werden 14 Euro für den Kalendertag gewährt, an dem der Arbeitnehmer den überw
   bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
   klasse: wirkt_hinein
   triage: bedingung_neu
@@ -286,18 +270,17 @@ items:
   - betrifft_kat
   - abwesenheit_stunden
   - interpretation
-  text: Die Formalisierung setzt voraus, dass die Stundenanzahl die Abwesenheit von Wohnung und erster
-    Tätigkeitsstätte bereits beinhaltet.
-  bedingung: ''
-  triage: nicht_material
-  konvention: konv:input_nur_etikettiertes
+  text: Die Formalisierung setzt voraus, dass die Stundenanzahl die Abwesenheit von Wohnung und erster Tätigkeitsstätte bereits
+    beinhaltet.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
 - art: annahme
   anker:
   - betrifft_kat
   - monate_am_ort
   - geltungsvoraussetzung
-  text: Die Formalisierung setzt voraus, dass eine längerfristige Tätigkeit an derselben Tätigkeitsstätte
-    vorliegt, ohne dies zu prüfen.
+  text: Die Formalisierung setzt voraus, dass eine längerfristige Tätigkeit an derselben Tätigkeitsstätte vorliegt, ohne dies
+    zu prüfen.
   bedingung: ''
   triage: nicht_material
   konvention: konv:input_nur_etikettiertes
@@ -306,11 +289,10 @@ items:
   - betrifft_kat
   - monate_am_ort
   - interpretation
-  text: Die Formalisierung interpretiert 'monate_am_ort' als die Anzahl der Monate einer längerfristigen
-    Tätigkeit, ohne die Längerfristigkeit eigenständig zu prüfen.
-  bedingung: ''
-  triage: nicht_material
-  konvention: konv:input_nur_etikettiertes
+  text: Die Formalisierung interpretiert 'monate_am_ort' als die Anzahl der Monate einer längerfristigen Tätigkeit, ohne die
+    Längerfristigkeit eigenständig zu prüfen.
+  triage: bedingung_neu
+  bedingung: keine_unterbrechung_mit_neubeginn
 - art: norm_teil
   anker:
   - ref
@@ -323,8 +305,7 @@ items:
   anker:
   - ref
   - satz 10
-  text: Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag
-    nach Satz 8.
+  text: Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag nach Satz 8.
   bedingung: ''
   klasse: unabhaengig
   triage: nicht_material_backlog
@@ -332,8 +313,8 @@ items:
   anker:
   - ref
   - satz 1
-  text: Mehraufwendungen des Arbeitnehmers für die Verpflegung sind nur nach Maßgabe der folgenden Sätze
-    als Werbungskosten abziehbar.
+  text: Mehraufwendungen des Arbeitnehmers für die Verpflegung sind nur nach Maßgabe der folgenden Sätze als Werbungskosten
+    abziehbar.
   bedingung: ''
   klasse: unabhaengig
   triage: nicht_material_backlog
