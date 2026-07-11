@@ -63,6 +63,7 @@ def build_candidate(rule: dict) -> dict:
         # Phase 3: das Clerk-Test-Gate ist Pflicht. Fehlen Seeds, faellt es.
         "test_gate_required": True,
         "geltungsbedingungen": rule.get("geltungsbedingungen", []),
+        "rundung": rule.get("rundung", []),
         "output_type": "money",
     }
 
@@ -97,6 +98,7 @@ def regate(rules: list[dict]) -> int:
         cand = build_candidate(rule)
         fresh = {"syntax_a": G.syntax_gate(src, mod),
                  "typecheck_a": G.typecheck_gate(src, mod),
+                 "rundungs_lint": G.rundungs_lint_gate(src, cand),
                  "clerk": G.clerk_gate(src, mod, cand, ROOT)}
         if rep.get("catala_b"):
             fresh["equivalence"] = G.equivalence_gate(src, rep["catala_b"], cand)
@@ -191,6 +193,20 @@ def redo_a(rules: list[dict], dry_run: bool) -> int:
                 mod_a, src_a = r_mod, r_src
                 syn, tc = G.syntax_gate(src_a, mod_a), G.typecheck_gate(src_a, mod_a)
 
+        # Rundungs-Lint: Befund geht als Compiler-artige Meldung in DIESELBE
+        # Repair-Maschinerie (Dekret 2026-07-11, Punkt 2), kein neuer Prompt-Versuch.
+        lint = G.rundungs_lint_gate(src_a, cand)
+        if src_a and lint.status == G.FAIL:
+            r_text, pr = R.repair(client, roles["formalisierer_a"], src_a, lint.detail,
+                                  models_hash, exclude, cand["signature"])
+            cost += pr.cost_usd
+            r_mod, r_src = G.extract_catala(r_text)
+            if r_src:
+                repaired = True
+                mod_a, src_a = r_mod, r_src
+                syn, tc = G.syntax_gate(src_a, mod_a), G.typecheck_gate(src_a, mod_a)
+                lint = G.rundungs_lint_gate(src_a, cand)
+
         verdict, jprov, jkosten = J.judge_regel(
             client, roles["judge"], cand["norm_text"], src_a or "", cand["signature"],
             cand["geltungsbedingungen"], models_hash,
@@ -201,6 +217,7 @@ def redo_a(rules: list[dict], dry_run: bool) -> int:
         fresh = {"syntax_a_first": G.GateResult("", first[0], "erster Versuch"),
                  "typecheck_a_first": G.GateResult("", first[1], "erster Versuch"),
                  "syntax_a": syn, "typecheck_a": tc,
+                 "rundungs_lint": lint,
                  "equivalence": G.equivalence_gate(src_a, src_b, cand),
                  **jg,
                  "clerk": G.clerk_gate(src_a, mod_a, cand, ROOT)}

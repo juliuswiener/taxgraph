@@ -161,6 +161,43 @@ def test_bakeoff_ausnahme_darf_ohne_seeds_durch():
     assert G.clerk_gate(SRC, "X", cand, ROOT).status == G.SKIP
 
 
+# -- Rundungs-Lint: Rundung nur mit deklarierter Quelle -----------------------
+
+_ROUND_SRC = ("scope X:\n  definition y equals\n"
+              "  (Decimal.truncate of (roh / $1.00)) * $1.00\n")
+_PLAIN_SRC = "scope X:\n  definition y equals a + b\n"
+_NORM = "... nach § 32a Absatz 1 Satz 6 ist auf den naechsten vollen Euro abzurunden ..."
+
+
+def test_rundung_ohne_deklaration_faellt_mit_zeile():
+    r = G.rundungs_lint_gate(_ROUND_SRC, {"rundung": [], "norm_text": _NORM})
+    assert r.status == G.FAIL
+    assert "Zeile 3" in r.detail and "truncate" in r.detail
+
+
+def test_keine_rundung_passt():
+    assert G.rundungs_lint_gate(_PLAIN_SRC, {}).status == G.PASS
+
+
+def test_rundung_mit_gueltiger_deklaration_passt():
+    cand = {"norm_text": _NORM, "rundung": [
+        {"quelle": "§ 32a Abs. 1 S. 6", "zitatanker": "auf den naechsten vollen Euro abzurunden"}]}
+    assert G.rundungs_lint_gate(_ROUND_SRC, cand).status == G.PASS
+
+
+def test_rundungs_deklaration_ohne_anker_in_norm_faellt():
+    """Eine Rundungs-Erlaubnis, deren Zitatanker nicht in der Norm steht, ist eine
+    leere Behauptung und deckt nichts."""
+    cand = {"norm_text": _NORM, "rundung": [
+        {"quelle": "erfunden", "zitatanker": "diesen Satz gibt es nicht"}]}
+    assert G.rundungs_lint_gate(_ROUND_SRC, cand).status == G.FAIL
+
+
+def test_rundung_kommentar_zaehlt_nicht():
+    src = "scope X:\n  # hier wuerde man round benutzen\n  definition y equals a\n"
+    assert G.rundungs_lint_gate(src, {}).status == G.PASS
+
+
 # -- Money-Literale: Cent-Betraege muessen ueberleben -------------------------
 
 def test_money_literal_behaelt_cent():

@@ -90,10 +90,34 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
                                      claims_text, models_hash, exclude, sig, res, record)
     mod_b, src_b = _formalize_repair(client, roles["formalisierer_b"], "b", norm,
                                      claims_text, models_hash, exclude, sig, res, record)
+    # Rundungs-Lint auf A (Dekret 2026-07-11): eine nicht deklarierte
+    # Rundungsoperation geht als Compiler-artige Meldung in dieselbe Repair-Runde.
+    lint = G.rundungs_lint_gate(src_a, candidate)
+    if src_a and lint.status == G.FAIL:
+        r_text, rp = R.repair(client, roles["formalisierer_a"], src_a, lint.detail,
+                              models_hash, exclude, sig)
+        record(rp)
+        r_mod, r_src = G.extract_catala(r_text)
+        if r_src:
+            res.repaired["a"] = True
+            mod_a, src_a = r_mod, r_src
+            lint = G.rundungs_lint_gate(src_a, candidate)
+            # syntax_a/typecheck_a stehen schon in der Liste (aus _formalize_repair)
+            # und muessen die reparierte Quelle widerspiegeln.
+            syn2, tc2 = G.syntax_gate(src_a, mod_a), G.typecheck_gate(src_a, mod_a)
+            for g in res.gate_results:
+                if g.name == "syntax_a":
+                    g.status, g.detail = syn2.status, syn2.detail
+                elif g.name == "typecheck_a":
+                    g.status, g.detail = tc2.status, tc2.detail
+
     res.queue_status = "formalized"
     res.module_name, res.catala_a, res.catala_b = mod_a, src_a, src_b
 
-    # 5. extensionale Aequivalenz A vs B auf dem Input-Raster
+    # 5. Rundungs-Lint (deterministisch, kostenlos) VOR der Aequivalenz
+    res.gate_results.append(_named("rundungs_lint", lint))
+
+    # 5b. extensionale Aequivalenz A vs B auf dem Input-Raster
     res.gate_results.append(G.equivalence_gate(src_a, src_b, candidate))
 
     # 6. Round-Trip-Diff (Judge auf A). Der Judge sieht die Signatur und bewertet

@@ -275,6 +275,64 @@ def equivalence_gate(a_src: str | None, b_src: str | None,
                       f"A == B on {len(raster)} raster point(s) for '{out_field}'")
 
 
+# Rundungsoperationen in Catala. `truncate` fing den § 33-Defekt (A schnitt auf
+# ganze Euro ab, obwohl die Norm keine Rundung vorschreibt).
+_RUNDUNG_RE = re.compile(r"\b(round|truncate|floor|ceiling|ceil)\b", re.I)
+
+
+def _rundung_erlaubt(candidate: dict | None) -> str | None:
+    """Traegt die Regel eine deklarierte Rundungs-Erlaubnis (Quelle + Zitatanker,
+    Muster § 32a Abs. 1 S. 6)? Der Zitatanker muss woertlich in der Norm stehen -
+    sonst ist die Deklaration eine leere Behauptung. Rueckgabe: Herkunft oder None."""
+    if not candidate:
+        return None
+    decls = candidate.get("rundung") or []
+    if isinstance(decls, dict):
+        decls = [decls]
+    norm = candidate.get("norm_text") or ""
+    norm_n = _normalize(norm)
+    for d in decls:
+        if not isinstance(d, dict):
+            continue
+        anker, quelle = d.get("zitatanker"), d.get("quelle")
+        if not anker or not quelle:
+            continue
+        if not norm or _normalize(anker) in norm_n:
+            return f"{quelle} ('{str(anker)[:40]}')"
+    return None
+
+
+def rundungs_lint_gate(catala_src: str | None,
+                       candidate: dict | None = None) -> GateResult:
+    """Deterministischer Rundungs-Lint (Dekret 2026-07-11).
+
+    Jede Rundungsoperation (truncate/round/floor/ceil) im Kandidaten-Source ist
+    nur zulaessig, wenn die Regel eine deklarierte `rundung`-Erlaubnis mit Quelle
+    und Zitatanker traegt. Sonst FAIL mit Zeilenangabe. Laeuft VOR der Aequivalenz
+    und kostet nichts. Der Befund geht woertlich in die Repair-Runde (wie ein
+    Compiler-Fehler) und faengt kuenftig jede Regel, nicht nur § 33.
+    """
+    if not catala_src:
+        return GateResult("rundungs_lint", SKIP, "kein A-Source")
+    treffer = []
+    for i, line in enumerate(catala_src.splitlines(), 1):
+        code = line.split("#", 1)[0]          # Zeilenkommentare ignorieren
+        if _RUNDUNG_RE.search(code):
+            treffer.append((i, line.strip()))
+    if not treffer:
+        return GateResult("rundungs_lint", PASS, "keine Rundungsoperation")
+    erlaubt = _rundung_erlaubt(candidate)
+    if erlaubt:
+        return GateResult("rundungs_lint", PASS,
+                          f"{len(treffer)} Rundungsop(s) durch {erlaubt} gedeckt")
+    z = "; ".join(f"Zeile {i}: {t}" for i, t in treffer[:5])
+    return GateResult("rundungs_lint", FAIL,
+                      f"{len(treffer)} nicht deklarierte Rundungsoperation(en). Die "
+                      f"Norm schreibt keine Rundung vor (keine rundung-Quelle mit "
+                      f"Zitatanker deklariert). Entferne die Rundung und rechne "
+                      f"exakt weiter. {z}")
+
+
 def roundtrip_parse(judge_json_text: str) -> dict:
     """Structured judge verdict for the two-stage round-trip metric.
 
