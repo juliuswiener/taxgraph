@@ -862,3 +862,22 @@ entscheidungen:
       des Kinderfreibetrags angesetzt
   entschieden_via: batch23-triage
   timestamp: '2026-07-11T12:59:33.111434+00:00'
+- rule_id: p10_1_2_altersvorsorge
+  schluessel: '["annahme", "betrifft_kat", "hoechstbeitrag_knappschaft", "rundung"]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - hoechstbeitrag_knappschaft
+    - rundung
+    text: Die Formalisierung rundet den Höchstbeitrag kaufmännisch auf ganze Euro
+      auf, während die Norm 'aufgerundet auf einen vollen Betrag in Euro' verlangt.
+  entschieden_via: msg1285-toter-zweig-ganzeuro
+  timestamp: '2026-07-11T13:02:49.312162+00:00'

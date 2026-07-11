@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p10_1_2_altersvorsorge
-version: 1
+version: 2
 items:
 - art: norm_teil
   anker:
@@ -11,4 +11,13 @@ items:
   formulierungen:
   - vermindert um den nach § 3 Nummer 62 steuerfreien Arbeitgeberanteil zur gesetzlichen
     Rentenversicherung
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - hoechstbeitrag_knappschaft
+  - rundung
+  formulierungen:
+  - Die Formalisierung rundet den Höchstbeitrag kaufmännisch auf ganze Euro auf, während
+    die Norm 'aufgerundet auf einen vollen Betrag in Euro' verlangt.
   triage: nicht_echt

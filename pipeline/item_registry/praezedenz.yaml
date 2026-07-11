@@ -2,7 +2,7 @@
 # Praezedenzfaelle. Auto-Apply nur bei EXAKTER Anker-Gleichheit.
 # gesperrt: true -> durch Widerruf gesperrt, nie wieder Auto-Apply.
 
-version: 36
+version: 37
 faelle:
 - schluessel: '["[\"annahme\", \"betrifft_kat\", \"uebernachtungskosten_monat\", \"einheit\"]",
     "einheit", "nicht_material", "input_nur_etikettiertes"]'
@@ -564,3 +564,19 @@ faelle:
   quelle_text: bei nicht zusammenveranlagten Eltern wird der Kindergeldanspruch im
     Umfang des Kinderfreibetrags angesetzt
   entschieden_am: '2026-07-11T12:59:32.992342+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"hoechstbeitrag_knappschaft\", \"rundung\"]",
+    "rundung", "nicht_echt", null]'
+  anker_schluessel: '["annahme", "betrifft_kat", "hoechstbeitrag_knappschaft", "rundung"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - hoechstbeitrag_knappschaft
+  - rundung
+  kategorie: rundung
+  entscheidungstyp: nicht_echt
+  ziel_id: null
+  gesperrt: false
+  quelle_rule_id: p10_1_2_altersvorsorge
+  quelle_text: Die Formalisierung rundet den Höchstbeitrag kaufmännisch auf ganze
+    Euro auf, während die Norm 'aufgerundet auf einen vollen Betrag in Euro' verlangt.
+  entschieden_am: '2026-07-11T13:02:49.194288+00:00'
