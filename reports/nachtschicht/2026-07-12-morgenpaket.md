@@ -116,14 +116,25 @@ betraf JEDE Erstattungs-/negativ-Output-Regel.
 
 ---
 
-## 8. In Arbeit / offen bei Session-Ende
+## 8. Teil-2-Rest-Batches ABGESCHLOSSEN + zwei Residuals
 
-- **Auszug-Sweep freigegeben** → Rest-Batches (§33+§32, §31+§10v1, §10v2+v4) mit geweiteten
-  auszügen, ~0,4 USD, rollierende Triage beim Instructor. (Falls bei Session-Ende noch offen:
-  Sweep-Report reports/review/2026-07-12-auszug-sweep-teil2.md hat die Widenings + Reihenfolge.)
-- Bulk-Triage-Klassen + 3-Stufen-Taxonomie dokumentiert (Memory formalisierer-kontext-kanal).
+Alle 8 Teil-2-Regeln adressiert (Sweep-Widenings, Kontext-Hunger 7× via auszug-Weitung gelöst):
+- **grün/verified_bedingt**: p36, p33_1_2, p32_6, p31, p10_1_2 (Rundungs-Richtung als toter
+  Zweig geklärt), p10_1_4. nr5a_vor_48/_nach_48, nr6_7_afa_laufend (Splits).
+- **solzg 4/5**: Rundungs-Richtung (Punkt 3).
+- **p10_1_3_3a (kv_pv) — BASIS-DURCHBRUCH-RESIDUAL**: A+B verfehlen STABIL, dass die Basis
+  (Nr-3) den Höchstbetrag durchbricht (basis 4.000 > 2.800 → soll 4.000 voll, beide kappen
+  2.800). Klausel ist im auszug — subtile Sub-Mechanik-Assemblierung, NICHT Kontext-Hunger.
+  2. echtes Residual neben solzg. Offen: (b) auszug-Schärfung oder (a) als Residual doku.
+- **Batch-4-Triage** (p10_1_4 + p10_1_3_3a-Discoveries) offen (Instructor-Klassen + Apply).
+- Bulk-Triage-Klassen + 3-Stufen-Taxonomie + 4. Klasse dokumentiert (Memory formalisierer-
+  kontext-kanal; Reports reports/review/2026-07-12-*.md).
+
+**~17 Regeln verified_bedingt/grün.** Zwei ehrliche Residuals (solzg-Rundungsrichtung,
+p10_1_3_3a-Basis-Durchbruch) — beide Sub-Mechanik, kein Kanal-Problem, deterministisch fixbar
+(Schärfung / rundungs_lint-Richtungsausbau).
 
 ## Kosten-Schlusszeile
-**Nacht gesamt ~$3,0 / 10 USD.** Bake-off-Kette ~$1,7 · Batch-1 + Splits + Neuläufe ~$0,9 ·
-Charge-2-Stufe-B-Reste ~$0,4. Alles andere (Seeding, Freezes, Regates, Triagen, Diagnosen,
-Tooling-Fix, Reports, Sweep) $0. Rahmen (10 USD) hält locker, Rest ~7 USD.
+**Nacht gesamt ~$3,4 / 10 USD.** Bake-off-Kette ~$1,7 · Batch-1 + Splits + Neuläufe ~$0,9 ·
+Rest-Batches (2-4) + Charge-2-Reste ~$0,8. Alles andere (Seeding, Freezes, Regates, Triagen,
+Diagnosen, Tooling-Fix, Reports, Sweep, Morgenpaket) $0. Rahmen (10 USD) hält, Rest ~6,6 USD.
