@@ -2,7 +2,7 @@
 # Praezedenzfaelle. Auto-Apply nur bei EXAKTER Anker-Gleichheit.
 # gesperrt: true -> durch Widerruf gesperrt, nie wieder Auto-Apply.
 
-version: 48
+version: 49
 faelle:
 - schluessel: '["[\"annahme\", \"betrifft_kat\", \"uebernachtungskosten_monat\", \"einheit\"]",
     "einheit", "nicht_material", "input_nur_etikettiertes"]'
@@ -672,11 +672,13 @@ faelle:
   kategorie: geltungsvoraussetzung
   entscheidungstyp: nicht_material
   ziel_id: input_nur_etikettiertes
-  gesperrt: false
+  gesperrt: true
   quelle_rule_id: p24b_entlastungsbetrag
   quelle_text: Die Formalisierung setzt voraus, dass die Eigenschaft 'alleinstehend'
     bereits gemäß § 24b Abs. 3 EStG geprüft und festgestellt wurde.
   entschieden_am: '2026-07-11T13:28:46.864382+00:00'
+  gesperrt_grund: Ziel-Korrektur 2026-07-12, ersetzt durch Praezedenz mit Ziel bedingung_neu
+    alleinstehend_im_sinne_des_absatzes_3 (Instructor msg 1295/1297)
 - schluessel: '["[\"annahme\", \"betrifft_kat\", \"monate_ohne_voraussetzung\", \"rundung\"]",
     "rundung", "nicht_material", "keine_zusaetzliche_rundung"]'
   anker_schluessel: '["annahme", "betrifft_kat", "monate_ohne_voraussetzung", "rundung"]'
@@ -688,11 +690,13 @@ faelle:
   kategorie: rundung
   entscheidungstyp: nicht_material
   ziel_id: keine_zusaetzliche_rundung
-  gesperrt: false
+  gesperrt: true
   quelle_rule_id: p24b_entlastungsbetrag
   quelle_text: Die Formalisierung verwendet eine Gleitkommadivision für die Kürzung,
     ohne eine Rundungsregel für das Ergebnis zu spezifizieren.
   entschieden_am: '2026-07-11T13:28:47.081214+00:00'
+  gesperrt_grund: Ziel-Korrektur 2026-07-12, ersetzt durch Praezedenz mit Ziel nicht_material
+    konv:ganzzahl_monate (Instructor msg 1295/1297)
 - schluessel: '["[\"annahme\", \"betrifft_kat\", \"lohnsteuer\", \"rundung\"]", "rundung",
     "nicht_echt", null]'
   anker_schluessel: '["annahme", "betrifft_kat", "lohnsteuer", "rundung"]'
