@@ -545,3 +545,41 @@ entscheidungen:
       verwendet.
   entschieden_via: bulk-triage-1266-restwelle
   timestamp: '2026-07-11T12:33:29.403561+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_nach_48
+  schluessel: '["annahme", "betrifft_kat", "monate", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - monate
+    - interpretation
+    text: Die Formalisation multipliziert den gekappten Monatsbetrag mit der Anzahl
+      der Monate, was die Norm nicht explizit vorschreibt.
+  entschieden_via: msg1273-monatsdesign
+  timestamp: '2026-07-11T12:36:23.532986+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_nach_48
+  schluessel: '["annahme", "betrifft_kat", "monate", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - monate
+    - interpretation
+    text: Die Variable 'monate' wird als Multiplikator für die monatlichen Kosten
+      verwendet, obwohl die Norm nur einen monatlichen Höchstbetrag definiert.
+  entschieden_via: msg1273-monatsdesign
+  timestamp: '2026-07-11T12:36:23.670285+00:00'

@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p9_1_3_nr5a_uebernachtung_nach_48
-version: 3
+version: 5
 items:
 - art: norm_teil
   anker:
@@ -27,4 +27,15 @@ items:
   - sonstige
   formulierungen:
   - Der Input 'monate_bisher_am_ort' wird in der Formalisierung überhaupt nicht verwendet.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate
+  - interpretation
+  formulierungen:
+  - Die Formalisation multipliziert den gekappten Monatsbetrag mit der Anzahl der
+    Monate, was die Norm nicht explizit vorschreibt.
+  - Die Variable 'monate' wird als Multiplikator für die monatlichen Kosten verwendet,
+    obwohl die Norm nur einen monatlichen Höchstbetrag definiert.
   triage: nicht_material

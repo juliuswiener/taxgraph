@@ -242,6 +242,18 @@ regeln:
     deckt_ab: bis zur Höhe des Betrags nach Nummer 5
     quelle: § 9 Abs. 1 S. 3 Nr. 5a Satz 4 EStG
     beschreibung: 'Binaere Auswahlbedingung: gilt nur, wenn der Abrechnungszeitraum vollstaendig vor Ablauf der 48 Monate liegt (monate_bisher_am_ort < 48). Auswahl macht die § 2-Integration; ueberspannende Zeitraeume splittet der Aufrufer.'
+  - bedingung: erste_taetigkeitsstaette_liegt_nicht_am_ort
+    deckt_ab: an einer Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist
+    quelle: § 9 Abs. 1 S. 3 Nr. 5a Satz 1 EStG
+    beschreibung: 'Uebernachtung an einer Taetigkeitsstaette, die nicht erste Taetigkeitsstaette ist. Migriert aus Split-Report (Instructor msg 1273).'
+  - bedingung: kosten_bei_alleiniger_nutzung
+    deckt_ab: die bei alleiniger Nutzung durch den Arbeitnehmer angefallen wären
+    quelle: § 9 Abs. 1 S. 3 Nr. 5a Satz 3 EStG
+    beschreibung: 'Bei gemeinsamer Nutzung nur Kosten bei alleiniger Nutzung. Input-Semantik von uebernachtungskosten_monat. Migriert (msg 1273).'
+  - bedingung: keine_unterbrechung_mit_neubeginn
+    deckt_ab: wenn die Unterbrechung mindestens sechs Monate dauert
+    quelle: § 9 Abs. 1 S. 3 Nr. 5a Satz 5 EStG
+    beschreibung: 'Eigene Neubeginn-Regel Nr. 5a: sechs Monate. Scope kennt die Unterbrechungshistorie nicht. Migriert (msg 1273).'
   test_seed:
   - quelle: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
     zitatanker: notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen
@@ -297,6 +309,18 @@ regeln:
     deckt_ab: höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland
     quelle: § 9 Abs. 1 S. 3 Nr. 5 Satz 4 EStG
     beschreibung: MVP-Linie Inland (1.000). Auslandsfall (2.000) zurueckgestellt.
+  - bedingung: erste_taetigkeitsstaette_liegt_nicht_am_ort
+    deckt_ab: an einer Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist
+    quelle: § 9 Abs. 1 S. 3 Nr. 5a Satz 1 EStG
+    beschreibung: 'Uebernachtung an einer Taetigkeitsstaette, die nicht erste Taetigkeitsstaette ist. Migriert aus Split-Report (Instructor msg 1273).'
+  - bedingung: kosten_bei_alleiniger_nutzung
+    deckt_ab: die bei alleiniger Nutzung durch den Arbeitnehmer angefallen wären
+    quelle: § 9 Abs. 1 S. 3 Nr. 5a Satz 3 EStG
+    beschreibung: 'Bei gemeinsamer Nutzung nur Kosten bei alleiniger Nutzung. Input-Semantik von uebernachtungskosten_monat. Migriert (msg 1273).'
+  - bedingung: keine_unterbrechung_mit_neubeginn
+    deckt_ab: wenn die Unterbrechung mindestens sechs Monate dauert
+    quelle: § 9 Abs. 1 S. 3 Nr. 5a Satz 5 EStG
+    beschreibung: 'Eigene Neubeginn-Regel Nr. 5a: sechs Monate. Scope kennt die Unterbrechungshistorie nicht. Migriert (msg 1273).'
   test_seed:
   - quelle: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
     zitatanker: 1 000 Euro im Monat
