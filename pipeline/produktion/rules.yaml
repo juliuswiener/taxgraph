@@ -424,6 +424,10 @@ regeln:
   exclude_rule_ids:
   - p9_4a_verpflegungsmehraufwand
 - rule_id: p9_1_3_nr6_7_arbeitsmittel_afa
+  # ERSETZT durch p9_1_3_nr6_7_afa_{laufend,ueberhangsjahr} (2026-07-12: § 7-auszug-Weitung
+  # bewegte A 0->400 auf dem Letztjahr-Rest, aber "Summe=AK" ist arithmetische Folge, nicht
+  # im Gesetzestext -> strukturell geloest via Split, Ueberhangsjahr = eine Formel. defekt-Historie bleibt hier.
+  status: zuschnitt_ersetzt
   norm: § 9 Abs. 1 S. 3 Nr. 6 und Nr. 7 EStG
   # Charge-2-Neuschnitt (2026-07-11, reports/review/2026-07-11-charge2-zuschnitt-teil1.md,
   # Instructor-Freigabe msg 1163). Ersetzt p9_1_3_nr6_arbeitsmittel + p9_1_3_nr7_afa.
@@ -441,11 +445,20 @@ regeln:
     datei: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
     zitatanker: "800 Euro nicht übersteigen"
     auszug: "an deren Stelle tretende Wert für das einzelne Wirtschaftsgut 800 Euro nicht übersteigen"
+  # auszug-Leitlinie (Instructor 2026-07-12): das Modell braucht die GESAMTVERTEILUNG
+  # (S. 1-2), sonst droppt es den Letztjahr-Rest bei unterjaehrigem Beginn (Bake-off:
+  # 5/6 Seeds richtig, nur Ueberhang-Jahr -> 0). S. 3 (Firmenwert) ausgelassen (variiert
+  # den Output nicht). S. 4 pro-rata als voller Satz (nicht nur das Fragment).
+  - typ: gesetz
+    label: "§ 7 Abs. 1 S. 1-2 EStG (lineare AfA, gleiche Jahresbeträge über die Nutzungsdauer)"
+    datei: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: "Absetzung für Abnutzung in gleichen Jahresbeträgen"
+    auszug: "Bei Wirtschaftsgütern, deren Verwendung oder Nutzung durch den Steuerpflichtigen zur Erzielung von Einkünften sich erfahrungsgemäß auf einen Zeitraum von mehr als einem Jahr erstreckt, ist jeweils für ein Jahr der Teil der Anschaffungs- oder Herstellungskosten abzusetzen, der bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung auf ein Jahr entfällt (Absetzung für Abnutzung in gleichen Jahresbeträgen). 2 Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer des Wirtschaftsguts."
   - typ: gesetz
     label: "§ 7 Abs. 1 S. 4 EStG (zeitanteilige AfA im Anschaffungsjahr)"
     datei: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
     zitatanker: "ein Zwölftel für jeden vollen Monat"
-    auszug: "ein Zwölftel für jeden vollen Monat, der dem Monat der Anschaffung oder Herstellung vorangeht"
+    auszug: "Im Jahr der Anschaffung oder Herstellung des Wirtschaftsguts vermindert sich für dieses Jahr der Absetzungsbetrag nach Satz 1 um jeweils ein Zwölftel für jeden vollen Monat, der dem Monat der Anschaffung oder Herstellung vorangeht"
   geltungsbedingungen:
   - bedingung: gwg_sofortabzug_gewaehlt
     deckt_ab: "in voller Höhe als Betriebsausgaben abgezogen werden"
@@ -510,6 +523,120 @@ regeln:
   - {anschaffungskosten: 5000, nutzungsdauer_jahre: 5, anschaffungsmonat: 12, jahre_seit_anschaffung: 0}
   exclude_rule_ids:
   - p9_1_3_nr6_7_arbeitsmittel_afa
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  norm: § 9 Abs. 1 S. 3 Nr. 6/7 i.V.m. § 6 Abs. 2, § 7 Abs. 1 EStG (laufende Jahre, jahre_seit < Nutzungsdauer)
+  quellen:
+  - typ: gesetz
+    label: § 9 Abs. 1 S. 3 Nr. 6/7 EStG (Arbeitsmittel)
+    datei: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
+    zitatanker: Nummer 7 bleibt unberührt
+    auszug: Aufwendungen für Arbeitsmittel
+  - typ: gesetz
+    label: § 6 Abs. 2 EStG (GWG 800-Euro-Sofortabzug)
+    datei: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
+    zitatanker: 800 Euro nicht übersteigen
+    auszug: an deren Stelle tretende Wert für das einzelne Wirtschaftsgut 800 Euro nicht übersteigen
+  - typ: gesetz
+    label: § 7 Abs. 1 S. 1-2 EStG (lineare AfA, gleiche Jahresbeträge)
+    datei: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: Absetzung für Abnutzung in gleichen Jahresbeträgen
+    auszug: Bei Wirtschaftsgütern, deren Verwendung oder Nutzung durch den Steuerpflichtigen zur Erzielung von Einkünften sich erfahrungsgemäß auf einen Zeitraum von mehr als einem Jahr erstreckt, ist jeweils für ein Jahr der Teil der Anschaffungs- oder Herstellungskosten abzusetzen, der bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung auf ein Jahr entfällt (Absetzung für Abnutzung in gleichen Jahresbeträgen). 2 Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer des Wirtschaftsguts.
+  - typ: gesetz
+    label: § 7 Abs. 1 S. 4 EStG (pro-rata Anschaffungsjahr)
+    datei: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: ein Zwölftel für jeden vollen Monat
+    auszug: Im Jahr der Anschaffung oder Herstellung des Wirtschaftsguts vermindert sich für dieses Jahr der Absetzungsbetrag nach Satz 1 um jeweils ein Zwölftel für jeden vollen Monat, der dem Monat der Anschaffung oder Herstellung vorangeht
+  geltungsbedingungen:
+  - bedingung: gwg_sofortabzug_gewaehlt
+    deckt_ab: 800 Euro nicht übersteigen
+    quelle: § 6 Abs. 2 Satz 1 EStG
+    beschreibung: 'AK <= 800: Sofortabzug in voller Hoehe (GWG). Sonst lineare AfA.'
+  - bedingung: zeitraum_laufend
+    deckt_ab: Absetzung für Abnutzung in gleichen Jahresbeträgen
+    quelle: § 7 Abs. 1 S. 1 EStG
+    beschreibung: 'Binaere Auswahlbedingung: gilt fuer laufende Jahre (jahre_seit_anschaffung < nutzungsdauer_jahre): Jahr0 anteilig, Volljahre voll. Das Ueberhangsjahr (jahre_seit == nutzungsdauer) ist eine eigene Teilregel; Auswahl macht die § 2-Integration.'
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
+    zitatanker: 800 Euro nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: AK 500 <= 800 -> GWG Sofortabzug 500.
+    inputs:
+      anschaffungskosten: 500
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 1
+      jahre_seit_anschaffung: 0
+    expected: 500.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
+    zitatanker: 800 Euro nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: AK 800 = Grenze -> GWG 800.
+    inputs:
+      anschaffungskosten: 800
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 1
+      jahre_seit_anschaffung: 0
+    expected: 800.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: ein Zwölftel für jeden vollen Monat
+    herkunft: synthetisch
+    rechenweg: 'AK 801 > 800, Monat1 -> voll: 801/3 = 267.'
+    inputs:
+      anschaffungskosten: 801
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 1
+      jahre_seit_anschaffung: 0
+    expected: 267.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: ein Zwölftel für jeden vollen Monat
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Jahr0 anteilig: Monat7 -> 6/12; 1200/3 x 6/12 = 200.'
+    inputs:
+      anschaffungskosten: 1200
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 7
+      jahre_seit_anschaffung: 0
+    expected: 200.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: ein Zwölftel für jeden vollen Monat
+    herkunft: synthetisch
+    rechenweg: 'Jahr1 voll: 1200/3 = 400.'
+    inputs:
+      anschaffungskosten: 1200
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 7
+      jahre_seit_anschaffung: 1
+    expected: 400.0
+  signature:
+    scope: ArbeitsmittelUndAfaLaufend
+    inputs: &id001
+      anschaffungskosten: money
+      nutzungsdauer_jahre: int
+      anschaffungsmonat: int
+      jahre_seit_anschaffung: int
+    output: abziehbar
+  raster:
+  - anschaffungskosten: 500
+    nutzungsdauer_jahre: 3
+    anschaffungsmonat: 1
+    jahre_seit_anschaffung: 0
+  - anschaffungskosten: 1200
+    nutzungsdauer_jahre: 3
+    anschaffungsmonat: 7
+    jahre_seit_anschaffung: 0
+  - anschaffungskosten: 1200
+    nutzungsdauer_jahre: 3
+    anschaffungsmonat: 7
+    jahre_seit_anschaffung: 1
+  exclude_rule_ids:
+  - p9_1_3_nr6_7_afa_laufend
+# NICHT-GEGENSTAND: p9_1_3_nr6_7_afa_ueberhangsjahr entfaellt als Formalisierungsregel
+# (Instructor msg 1256, Option 2). Der Terminal-/Ueberhangsjahr-Rest bei unterjaehrigem
+# Beginn = AK minus Summe der laufend-Jahre = arithmetischer Abschluss der linearen AfA,
+# steht NICHT im Gesetzeswortlaut (erste echte Kanal-Grenze der Nacht). Er lebt in der
+# handgeschriebenen § 2-Integrationsschicht (rules/estg/arbeitnehmerfall) mit EIGENEM
+# deterministischen clerk-Test: seed 1200/ND3/Monat7 -> Jahr3 (jahre_seit==ND) = 200,00.
+# Backlog-Alternative (Phase 5): EStR R 7.4 als typ:verwaltung-Quelle fuer einen zitierbaren
+# Text-Anker. p9_1_3_nr6_7_afa_laufend (jahre_seit < Nutzungsdauer) traegt alle Rechtssaetze.
 - rule_id: p9_6_erstausbildung_abgrenzung
   norm: § 9 Abs. 6 EStG
   # Erstbefuellung der Registry (Julius, 2026-07-11). Muster Rechtspraedikat wie
