@@ -1,0 +1,131 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p9_1_3_nr6_7_arbeitsmittel_afa
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die afa im anschaffungsjahr wird mit 12 minus anschaffungsmonat berechnet, die
+    norm verlangt ein zwoelftel fuer jeden vollen monat vor der anschaffung.
+  formulierungen:
+  - Die AfA im Anschaffungsjahr wird mit 12 minus Anschaffungsmonat berechnet, die
+    Norm verlangt ein Zwölftel für jeden vollen Monat vor der Anschaffung.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die afa-berechnung verwendet eine lineare formel, die nicht der gesetzlichen zeitanteiligen
+    zwoelftelregelung fuer das anschaffungsjahr entspricht.
+  formulierungen:
+  - Die AfA-Berechnung verwendet eine lineare Formel, die nicht der gesetzlichen zeitanteiligen
+    Zwölftelregelung für das Anschaffungsjahr entspricht.
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungsmonat
+  - interpretation
+  formulierungen:
+  - Der Anschaffungsmonat wird als ganzzahliger Monatswert interpretiert, wobei der
+    Monat der Anschaffung selbst nicht als voller Monat zählt.
+  - Die Formalisierung interpretiert den Anschaffungsmonat als Zahl von 1 bis 12,
+    wobei 1 für Januar steht.
+  - Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzzahl von 1 bis
+    12 kodiert ist.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - nutzungsdauer_jahre
+  - interpretation
+  formulierungen:
+  - Die Nutzungsdauer wird als lineare Abschreibungsdauer ohne Restwert interpretiert.
+  - Die Formalisierung nimmt an, dass die Nutzungsdauer in Jahren als ganze Zahl vorliegt
+    und direkt als Divisor verwendet werden kann.
+  - Die Formalisierung setzt voraus, dass die betriebsgewöhnliche Nutzungsdauer in
+    ganzen Jahren als Integer-Wert bekannt ist.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungskosten
+  - interpretation
+  formulierungen:
+  - Die Anschaffungskosten werden als Nettobetrag ohne Umsatzsteuer interpretiert.
+  - Die Formalisierung behandelt die Anschaffungskosten als Wert eines einzelnen Wirtschaftsguts,
+    obwohl die Norm Aufwendungen für Arbeitsmittel betrifft.
+  triage: bedingung_neu
+  bedingung: anschaffungskosten_sind_massgebliche_ak
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungskosten
+  - einheit
+  formulierungen:
+  - Die Formalisierung nimmt an, dass die Anschaffungskosten als Nettobetrag ohne
+    Umsatzsteuer zu verstehen sind.
+  triage: bedingung_neu
+  bedingung: anschaffungskosten_sind_massgebliche_ak
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungsmonat
+  - zeitbezug
+  formulierungen:
+  - Die Formalisierung nimmt an, dass der Anschaffungsmonat als Kalendermonatsnummer
+    vorliegt und für die AfA-Berechnung direkt verwendbar ist.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - jahre_seit_anschaffung
+  - interpretation
+  formulierungen:
+  - Die Formalisierung nimmt an, dass das Jahr der Anschaffung mit 0 gezählt wird.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Die Formalisierung enthält keine Rundungsvorschrift für das Ergebnis, obwohl steuerliche
+    Beträge üblicherweise auf volle Euro abgerundet werden.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 1 s. 3 nr. 6 und nr. 7 estg
+  formulierungen:
+  - Aufwendungen für Arbeitsmittel
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 2 estg
+  formulierungen:
+  - an deren Stelle tretende Wert für das einzelne Wirtschaftsgut 800 Euro nicht übersteigen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: gwg_sofortabzug_gewaehlt
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 abs. 1 s. 4 estg
+  formulierungen:
+  - ein Zwölftel für jeden vollen Monat, der dem Monat der Anschaffung oder Herstellung
+    vorangeht
+  triage: nicht_echt
+  klasse: unabhaengig
+- art: abweichung
+  anker:
+  - abweichung_text
+  - formalisierer a modelliert den letztjahr-afa-rest nicht (jahre_seit_anschaffung=3,
+    {1200,3,monat7} erwartet 200,00; ueber zwei unabhaengige a-laeufe persistent).
+  formulierungen:
+  - Formalisierer A modelliert den Letztjahr-AfA-Rest nicht (jahre_seit_anschaffung=3,
+    {1200,3,Monat7} erwartet 200,00; ueber zwei unabhaengige A-Laeufe persistent).
+  triage: defekt_formalisierer
