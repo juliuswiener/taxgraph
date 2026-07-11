@@ -1,0 +1,14 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10_1_2_altersvorsorge
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 3 satz 5
+  formulierungen:
+  - vermindert um den nach § 3 Nummer 62 steuerfreien Arbeitgeberanteil zur gesetzlichen
+    Rentenversicherung
+  triage: nicht_echt

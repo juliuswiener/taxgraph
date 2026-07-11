@@ -1,0 +1,46 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p33_1_2_agb_abzug
+version: 5
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aussergewoehnliche_belastungen
+  - interpretation
+  formulierungen:
+  - Die Formalisierung behandelt den Eingangswert als bereits festgestellte außergewöhnliche
+    Belastungen, ohne die gesetzlichen Voraussetzungen der Zwangsläufigkeit und des
+    Vergleichsmaßstabs zu prüfen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Die Formalisierung gibt den Abzugsbetrag auf zwei Dezimalstellen gerundet aus,
+    obwohl die Norm keine Rundungsregel vorschreibt.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aussergewoehnliche_belastungen
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Formalisierung setzt voraus, dass die Aufwendungen zwangsläufig und größer
+    als bei der Vergleichsgruppe sind, ohne dies zu modellieren.
+  triage: bedingung_neu
+  bedingung: agb_ist_zwangslaeufig
+- art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 1
+  formulierungen:
+  - vom Gesamtbetrag der Einkünfte abgezogen
+  - Erwachsen einem Steuerpflichtigen zwangsläufig größere Aufwendungen als der überwiegenden
+    Mehrzahl der Steuerpflichtigen gleicher Einkommensverhältnisse, gleicher Vermögensverhältnisse
+    und gleichen Fa
+  triage: bedingung_neu
+  bedingung: agb_ist_zwangslaeufig

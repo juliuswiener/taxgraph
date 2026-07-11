@@ -1,0 +1,32 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p32_6_kinderfreibetraege
+version: 3
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - zusammenveranlagung
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Formalisierung setzt voraus, dass bei Zusammenveranlagung das Kind zu beiden
+    Ehegatten in einem Kindschaftsverhältnis steht.
+  triage: bedingung_neu
+  bedingung: kind_zu_beiden_ehegatten
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder
+  - interpretation
+  formulierungen:
+  - Die Formalisierung nimmt an, dass 'anzahl_kinder' die Anzahl der zu berücksichtigenden
+    Kinder ist.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - satz 2
+  formulierungen:
+  - wenn das Kind zu beiden Ehegatten in einem Kindschaftsverhältnis steht
+  triage: nicht_echt

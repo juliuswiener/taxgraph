@@ -2,7 +2,7 @@
 # Praezedenzfaelle. Auto-Apply nur bei EXAKTER Anker-Gleichheit.
 # gesperrt: true -> durch Widerruf gesperrt, nie wieder Auto-Apply.
 
-version: 22
+version: 36
 faelle:
 - schluessel: '["[\"annahme\", \"betrifft_kat\", \"uebernachtungskosten_monat\", \"einheit\"]",
     "einheit", "nicht_material", "input_nur_etikettiertes"]'
@@ -347,3 +347,220 @@ faelle:
   quelle_text: Die Formalisation multipliziert den gekappten Monatsbetrag mit der
     Anzahl der Monate, was die Norm nicht explizit vorschreibt.
   entschieden_am: '2026-07-11T12:36:23.425614+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"aussergewoehnliche_belastungen\",
+    \"interpretation\"]", "interpretation", "nicht_material", "input_nur_etikettiertes"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "aussergewoehnliche_belastungen",
+    "interpretation"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - aussergewoehnliche_belastungen
+  - interpretation
+  kategorie: interpretation
+  entscheidungstyp: nicht_material
+  ziel_id: input_nur_etikettiertes
+  gesperrt: false
+  quelle_rule_id: p33_1_2_agb_abzug
+  quelle_text: Die Formalisierung behandelt den Eingangswert als bereits festgestellte
+    außergewöhnliche Belastungen, ohne die gesetzlichen Voraussetzungen der Zwangsläufigkeit
+    und des Vergleichsmaßstabs zu prüfen.
+  entschieden_am: '2026-07-11T12:59:30.794608+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"aussergewoehnliche_belastungen\",
+    \"geltungsvoraussetzung\"]", "geltungsvoraussetzung", "bedingung_neu", "agb_ist_zwangslaeufig"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "aussergewoehnliche_belastungen",
+    "geltungsvoraussetzung"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - aussergewoehnliche_belastungen
+  - geltungsvoraussetzung
+  kategorie: geltungsvoraussetzung
+  entscheidungstyp: bedingung_neu
+  ziel_id: agb_ist_zwangslaeufig
+  gesperrt: false
+  quelle_rule_id: p33_1_2_agb_abzug
+  quelle_text: Die Formalisierung setzt voraus, dass die Aufwendungen zwangsläufig
+    und größer als bei der Vergleichsgruppe sind, ohne dies zu modellieren.
+  entschieden_am: '2026-07-11T12:59:31.081824+00:00'
+- schluessel: '["[\"norm_teil\", \"ref\", \"§ 33 abs. 1\"]", null, "nicht_echt", null]'
+  anker_schluessel: '["norm_teil", "ref", "§ 33 abs. 1"]'
+  art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 1
+  kategorie: null
+  entscheidungstyp: nicht_echt
+  ziel_id: null
+  gesperrt: false
+  quelle_rule_id: p33_1_2_agb_abzug
+  quelle_text: vom Gesamtbetrag der Einkünfte abgezogen
+  entschieden_am: '2026-07-11T12:59:31.231175+00:00'
+- schluessel: '["[\"norm_teil\", \"ref\", \"§ 33 abs. 1\"]", null, "bedingung_neu",
+    "agb_ist_zwangslaeufig"]'
+  anker_schluessel: '["norm_teil", "ref", "§ 33 abs. 1"]'
+  art: norm_teil
+  anker:
+  - ref
+  - § 33 abs. 1
+  kategorie: null
+  entscheidungstyp: bedingung_neu
+  ziel_id: agb_ist_zwangslaeufig
+  gesperrt: false
+  quelle_rule_id: p33_1_2_agb_abzug
+  quelle_text: Erwachsen einem Steuerpflichtigen zwangsläufig größere Aufwendungen
+    als der überwiegenden Mehrzahl der Steuerpflichtigen gleicher Einkommensverhältnisse,
+    gleicher Vermögensverhältnisse und gleichen Fa
+  entschieden_am: '2026-07-11T12:59:31.386675+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"zusammenveranlagung\", \"geltungsvoraussetzung\"]",
+    "geltungsvoraussetzung", "bedingung_neu", "kind_zu_beiden_ehegatten"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "zusammenveranlagung", "geltungsvoraussetzung"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - zusammenveranlagung
+  - geltungsvoraussetzung
+  kategorie: geltungsvoraussetzung
+  entscheidungstyp: bedingung_neu
+  ziel_id: kind_zu_beiden_ehegatten
+  gesperrt: false
+  quelle_rule_id: p32_6_kinderfreibetraege
+  quelle_text: Die Formalisierung setzt voraus, dass bei Zusammenveranlagung das Kind
+    zu beiden Ehegatten in einem Kindschaftsverhältnis steht.
+  entschieden_am: '2026-07-11T12:59:31.545471+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"anzahl_kinder\", \"interpretation\"]",
+    "interpretation", "nicht_material", "input_nur_etikettiertes"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "anzahl_kinder", "interpretation"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder
+  - interpretation
+  kategorie: interpretation
+  entscheidungstyp: nicht_material
+  ziel_id: input_nur_etikettiertes
+  gesperrt: false
+  quelle_rule_id: p32_6_kinderfreibetraege
+  quelle_text: Die Formalisierung nimmt an, dass 'anzahl_kinder' die Anzahl der zu
+    berücksichtigenden Kinder ist.
+  entschieden_am: '2026-07-11T12:59:31.698433+00:00'
+- schluessel: '["[\"norm_teil\", \"ref\", \"satz 2\"]", null, "nicht_echt", null]'
+  anker_schluessel: '["norm_teil", "ref", "satz 2"]'
+  art: norm_teil
+  anker:
+  - ref
+  - satz 2
+  kategorie: null
+  entscheidungstyp: nicht_echt
+  ziel_id: null
+  gesperrt: false
+  quelle_rule_id: p32_6_kinderfreibetraege
+  quelle_text: wenn das Kind zu beiden Ehegatten in einem Kindschaftsverhältnis steht
+  entschieden_am: '2026-07-11T12:59:31.854276+00:00'
+- schluessel: '["[\"norm_teil\", \"ref\", \"§ 10 abs. 3 satz 5\"]", null, "nicht_echt",
+    null]'
+  anker_schluessel: '["norm_teil", "ref", "§ 10 abs. 3 satz 5"]'
+  art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 3 satz 5
+  kategorie: null
+  entscheidungstyp: nicht_echt
+  ziel_id: null
+  gesperrt: false
+  quelle_rule_id: p10_1_2_altersvorsorge
+  quelle_text: vermindert um den nach § 3 Nummer 62 steuerfreien Arbeitgeberanteil
+    zur gesetzlichen Rentenversicherung
+  entschieden_am: '2026-07-11T12:59:32.007703+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"est_mit_freibetraegen\", \"interpretation\"]",
+    "interpretation", "nicht_material", "input_nur_etikettiertes"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "est_mit_freibetraegen", "interpretation"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - est_mit_freibetraegen
+  - interpretation
+  kategorie: interpretation
+  entscheidungstyp: nicht_material
+  ziel_id: input_nur_etikettiertes
+  gesperrt: false
+  quelle_rule_id: p31_familienleistungsausgleich
+  quelle_text: Die Formalisierung behandelt est_mit_freibetraegen als die unter Abzug
+    der Freibeträge ermittelte tarifliche Einkommensteuer.
+  entschieden_am: '2026-07-11T12:59:32.161055+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"est_ohne_freibetraege\", \"interpretation\"]",
+    "interpretation", "nicht_material", "input_nur_etikettiertes"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "est_ohne_freibetraege", "interpretation"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - est_ohne_freibetraege
+  - interpretation
+  kategorie: interpretation
+  entscheidungstyp: nicht_material
+  ziel_id: input_nur_etikettiertes
+  gesperrt: false
+  quelle_rule_id: p31_familienleistungsausgleich
+  quelle_text: Die Formalisierung behandelt est_ohne_freibetraege als die tarifliche
+    Einkommensteuer ohne Abzug der Freibeträge.
+  entschieden_am: '2026-07-11T12:59:32.323975+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"kindergeld\", \"interpretation\"]",
+    "interpretation", "nicht_material", "input_nur_etikettiertes"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "kindergeld", "interpretation"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - kindergeld
+  - interpretation
+  kategorie: interpretation
+  entscheidungstyp: nicht_material
+  ziel_id: input_nur_etikettiertes
+  gesperrt: false
+  quelle_rule_id: p31_familienleistungsausgleich
+  quelle_text: Die Formalisierung behandelt kindergeld als den Anspruch auf Kindergeld
+    für den gesamten Veranlagungszeitraum.
+  entschieden_am: '2026-07-11T12:59:32.489906+00:00'
+- schluessel: '["[\"norm_teil\", \"ref\", \"§ 31 satz 1 estg\"]", null, "nicht_echt",
+    null]'
+  anker_schluessel: '["norm_teil", "ref", "§ 31 satz 1 estg"]'
+  art: norm_teil
+  anker:
+  - ref
+  - § 31 satz 1 estg
+  kategorie: null
+  entscheidungstyp: nicht_echt
+  ziel_id: null
+  gesperrt: false
+  quelle_rule_id: p31_familienleistungsausgleich
+  quelle_text: 'Die steuerliche Freistellung eines Einkommensbetrags in Höhe des Existenzminimums
+    eines Kindes [...] wird im gesamten Veranlagungszeitraum entweder durch die Freibeträge
+    nach § 32 Absatz 6 oder durch '
+  entschieden_am: '2026-07-11T12:59:32.660456+00:00'
+- schluessel: '["[\"norm_teil\", \"ref\", \"§ 31 estg\"]", null, "nicht_echt", null]'
+  anker_schluessel: '["norm_teil", "ref", "§ 31 estg"]'
+  art: norm_teil
+  anker:
+  - ref
+  - § 31 estg
+  kategorie: null
+  entscheidungstyp: nicht_echt
+  ziel_id: null
+  gesperrt: false
+  quelle_rule_id: p31_familienleistungsausgleich
+  quelle_text: Bewirkt der Anspruch auf Kindergeld für den gesamten Veranlagungszeitraum
+    die nach Satz 1 gebotene steuerliche Freistellung nicht vollständig
+  entschieden_am: '2026-07-11T12:59:32.824137+00:00'
+- schluessel: '["[\"norm_teil\", \"ref\", \"§ 31 estg\"]", null, "bedingung_neu",
+    "zusammenveranlagte_eltern"]'
+  anker_schluessel: '["norm_teil", "ref", "§ 31 estg"]'
+  art: norm_teil
+  anker:
+  - ref
+  - § 31 estg
+  kategorie: null
+  entscheidungstyp: bedingung_neu
+  ziel_id: zusammenveranlagte_eltern
+  gesperrt: false
+  quelle_rule_id: p31_familienleistungsausgleich
+  quelle_text: bei nicht zusammenveranlagten Eltern wird der Kindergeldanspruch im
+    Umfang des Kinderfreibetrags angesetzt
+  entschieden_am: '2026-07-11T12:59:32.992342+00:00'

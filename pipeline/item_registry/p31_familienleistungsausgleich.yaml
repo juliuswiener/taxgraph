@@ -1,0 +1,53 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p31_familienleistungsausgleich
+version: 6
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_mit_freibetraegen
+  - interpretation
+  formulierungen:
+  - Die Formalisierung behandelt est_mit_freibetraegen als die unter Abzug der Freibeträge
+    ermittelte tarifliche Einkommensteuer.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_ohne_freibetraege
+  - interpretation
+  formulierungen:
+  - Die Formalisierung behandelt est_ohne_freibetraege als die tarifliche Einkommensteuer
+    ohne Abzug der Freibeträge.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kindergeld
+  - interpretation
+  formulierungen:
+  - Die Formalisierung behandelt kindergeld als den Anspruch auf Kindergeld für den
+    gesamten Veranlagungszeitraum.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 31 satz 1 estg
+  formulierungen:
+  - 'Die steuerliche Freistellung eines Einkommensbetrags in Höhe des Existenzminimums
+    eines Kindes [...] wird im gesamten Veranlagungszeitraum entweder durch die Freibeträge
+    nach § 32 Absatz 6 oder durch '
+  triage: nicht_echt
+- art: norm_teil
+  anker:
+  - ref
+  - § 31 estg
+  formulierungen:
+  - Bewirkt der Anspruch auf Kindergeld für den gesamten Veranlagungszeitraum die
+    nach Satz 1 gebotene steuerliche Freistellung nicht vollständig
+  - bei nicht zusammenveranlagten Eltern wird der Kindergeldanspruch im Umfang des
+    Kinderfreibetrags angesetzt
+  triage: bedingung_neu
+  bedingung: zusammenveranlagte_eltern
