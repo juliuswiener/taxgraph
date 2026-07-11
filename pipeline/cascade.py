@@ -86,10 +86,11 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
     # 2.-4. Doppelformalisierung (A und B), je mit genau einer Reparaturrunde
     #       auf Syntax-/Typecheck-Fehler. Symmetrisch fuer beide Formalisierer.
     sig = candidate.get("signature")
+    zusatz = candidate.get("formalisierer_zusatz", "")   # B1-Experiment, sonst leer
     mod_a, src_a = _formalize_repair(client, roles["formalisierer_a"], "a", norm,
-                                     claims_text, models_hash, exclude, sig, res, record)
+                                     claims_text, models_hash, exclude, sig, res, record, zusatz)
     mod_b, src_b = _formalize_repair(client, roles["formalisierer_b"], "b", norm,
-                                     claims_text, models_hash, exclude, sig, res, record)
+                                     claims_text, models_hash, exclude, sig, res, record, zusatz)
     # Rundungs-Lint auf A (Dekret 2026-07-11): eine nicht deklarierte
     # Rundungsoperation geht als Compiler-artige Meldung in dieselbe Repair-Runde.
     lint = G.rundungs_lint_gate(src_a, candidate)
@@ -191,7 +192,7 @@ def _named(name: str, g: G.GateResult) -> G.GateResult:
 
 
 def _formalize_repair(client, role, tag: str, norm: str, claims_text: str,
-                      models_hash: str, exclude, sig, res, record):
+                      models_hash: str, exclude, sig, res, record, zusatz: str = ""):
     """Formalise, then repair once iff syntax or typecheck failed.
 
     Exactly one repair round, only on a compiler failure, input = the candidate's
@@ -201,7 +202,7 @@ def _formalize_repair(client, role, tag: str, norm: str, claims_text: str,
     validity; the unsuffixed gates are the ones the cascade acts on.
     """
     text, p = R.formalize(client, role, norm, claims_text, models_hash,
-                          exclude, signature=sig)
+                          exclude, signature=sig, zusatz=zusatz)
     record(p)
     mod, src = G.extract_catala(text)
     syn, tc = G.syntax_gate(src, mod), G.typecheck_gate(src, mod)

@@ -54,10 +54,15 @@ def _signature_block(sig: dict | None) -> str:
 
 
 def formalize(client, role: RoleConfig, norm_text: str, claims_text: str,
-              models_hash: str, exclude=None, signature: dict | None = None
-              ) -> tuple[str, Provenance]:
+              models_hash: str, exclude=None, signature: dict | None = None,
+              zusatz: str = "") -> tuple[str, Provenance]:
+    # `zusatz`: optionaler Zusatz-Block VOR der Formalisier-Anweisung (B1-Experiment
+    # roles.py-Messplan: Bedingungs-beschreibungen / Hinweis-Feld an den Formalisierer).
+    # Default leer -> Produktions-Prompt unveraendert.
     task = (f"Norm-Ausschnitt:\n{norm_text}\n\nExtrahierte Claims:\n{claims_text}"
-            f"{_signature_block(signature)}\n\nFormalisiere nach Catala.")
+            f"{_signature_block(signature)}"
+            f"{(chr(10) + chr(10) + zusatz) if zusatz else ''}"
+            f"\n\nFormalisiere nach Catala.")
     return _call(client, role, task, role.role, models_hash, exclude)
 
 
