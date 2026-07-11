@@ -1,0 +1,506 @@
+[
+  {
+    "cand": "gemini",
+    "rule": "p9_1_3_nr6_7_arbeitsmittel_afa",
+    "run": 1,
+    "wall_s": 111.0,
+    "cost": 0.089946,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "\u2503 \u2503   tests                  1          5          6       83 %                  \u2503 \u2503                                    ",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "anschaffungskosten": 500,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 500.0,
+          "got": "$500.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "anschaffungskosten": 800,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 800.0,
+          "got": "$800.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "anschaffungskosten": 801,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 267.0,
+          "got": "$267.00",
+          "ok": true
+        },
+        {
+          "i": 3,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 200.0,
+          "got": "$200.00",
+          "ok": true
+        },
+        {
+          "i": 4,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 1
+          },
+          "expected": 400.0,
+          "got": "$400.00",
+          "ok": true
+        },
+        {
+          "i": 5,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 3
+          },
+          "expected": 200.0,
+          "got": "$0.00",
+          "ok": false
+        }
+      ]
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "gemini",
+    "rule": "p9_1_3_nr6_7_arbeitsmittel_afa",
+    "run": 2,
+    "wall_s": 149.8,
+    "cost": 0.138485,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "\u2503 \u2503   tests                  1          5          6       83 %                  \u2503 \u2503                                    ",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "anschaffungskosten": 500,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 500.0,
+          "got": "$500.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "anschaffungskosten": 800,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 800.0,
+          "got": "$800.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "anschaffungskosten": 801,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 267.0,
+          "got": "$267.00",
+          "ok": true
+        },
+        {
+          "i": 3,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 200.0,
+          "got": "$200.00",
+          "ok": true
+        },
+        {
+          "i": 4,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 1
+          },
+          "expected": 400.0,
+          "got": "$400.00",
+          "ok": true
+        },
+        {
+          "i": 5,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 3
+          },
+          "expected": 200.0,
+          "got": "$0.00",
+          "ok": false
+        }
+      ]
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "gemini",
+    "rule": "p24b_entlastungsbetrag",
+    "run": 1,
+    "wall_s": 71.7,
+    "cost": 0.061949,
+    "queue_status": "verified_bedingt",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "PASS",
+    "clerk_b_detail": "3 seed test(s) passed, anchors verified",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4260.0,
+          "got": "$4,260.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 3,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4740.0,
+          "got": "$4,740.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 6
+          },
+          "expected": 2130.0,
+          "got": "$2,130.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": null
+  },
+  {
+    "cand": "gemini",
+    "rule": "p24b_entlastungsbetrag",
+    "run": 2,
+    "wall_s": 75.8,
+    "cost": 0.073597,
+    "queue_status": "discovery_triage",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "PASS",
+    "clerk_b_detail": "3 seed test(s) passed, anchors verified",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4260.0,
+          "got": "$4,260.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 3,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4740.0,
+          "got": "$4,740.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 6
+          },
+          "expected": 2130.0,
+          "got": "$2,130.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": null
+  },
+  {
+    "cand": "glm",
+    "rule": "p9_1_3_nr6_7_arbeitsmittel_afa",
+    "run": 1,
+    "wall_s": 202.0,
+    "cost": 0.099634,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "FAIL",
+    "clerk_b_detail": "\u2503 \u2503   tests                  1          5          6       83 %                  \u2503 \u2503                                    ",
+    "equivalence": "FAIL",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "anschaffungskosten": 500,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 500.0,
+          "got": "$500.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "anschaffungskosten": 800,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 800.0,
+          "got": "$800.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "anschaffungskosten": 801,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 1,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 267.0,
+          "got": "$267.00",
+          "ok": true
+        },
+        {
+          "i": 3,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 0
+          },
+          "expected": 200.0,
+          "got": "$200.00",
+          "ok": true
+        },
+        {
+          "i": 4,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 1
+          },
+          "expected": 400.0,
+          "got": "$400.00",
+          "ok": true
+        },
+        {
+          "i": 5,
+          "inputs": {
+            "anschaffungskosten": 1200,
+            "nutzungsdauer_jahre": 3,
+            "anschaffungsmonat": 7,
+            "jahre_seit_anschaffung": 3
+          },
+          "expected": 200.0,
+          "got": "$0.00",
+          "ok": false
+        }
+      ]
+    },
+    "waechter_ok": false
+  },
+  {
+    "cand": "glm",
+    "rule": "p9_1_3_nr6_7_arbeitsmittel_afa",
+    "run": 2,
+    "wall_s": 279.4,
+    "cost": 0.134018,
+    "queue_status": "flagged_for_review",
+    "b_hat_catala": false,
+    "returncode": 0,
+    "syntax_b": "FAIL(no catala_b)",
+    "typecheck_b": "FAIL(no catala_b)",
+    "clerk_b": "FAIL(no catala_b)",
+    "equivalence": "FAIL(no catala_b)",
+    "waechter_ok": false,
+    "stderr_tail": ""
+  },
+  {
+    "cand": "glm",
+    "rule": "p24b_entlastungsbetrag",
+    "run": 1,
+    "wall_s": 154.3,
+    "cost": 0.075281,
+    "queue_status": "discovery_triage",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "PASS",
+    "clerk_b_detail": "3 seed test(s) passed, anchors verified",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4260.0,
+          "got": "$4,260.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 3,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4740.0,
+          "got": "$4,740.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 6
+          },
+          "expected": 2130.0,
+          "got": "$2,130.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": null
+  },
+  {
+    "cand": "glm",
+    "rule": "p24b_entlastungsbetrag",
+    "run": 2,
+    "wall_s": 161.3,
+    "cost": 0.070812,
+    "queue_status": "discovery_triage",
+    "b_hat_catala": true,
+    "returncode": 0,
+    "syntax_b": "PASS",
+    "typecheck_b": "PASS",
+    "clerk_b": "PASS",
+    "clerk_b_detail": "3 seed test(s) passed, anchors verified",
+    "equivalence": "PASS",
+    "per_seed": {
+      "rows": [
+        {
+          "i": 0,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4260.0,
+          "got": "$4,260.00",
+          "ok": true
+        },
+        {
+          "i": 1,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 3,
+            "monate_ohne_voraussetzung": 0
+          },
+          "expected": 4740.0,
+          "got": "$4,740.00",
+          "ok": true
+        },
+        {
+          "i": 2,
+          "inputs": {
+            "alleinstehend": true,
+            "anzahl_kinder": 1,
+            "monate_ohne_voraussetzung": 6
+          },
+          "expected": 2130.0,
+          "got": "$2,130.00",
+          "ok": true
+        }
+      ]
+    },
+    "waechter_ok": null
+  }
+]
