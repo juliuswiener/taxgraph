@@ -583,6 +583,10 @@ regeln:
     deckt_ab: an deren Stelle tretende Wert für das einzelne Wirtschaftsgut 800 Euro nicht übersteigen
     quelle: § 6 Abs. 2 Satz 1 EStG (Verweis § 9b Abs. 1)
     beschreibung: 'Input = massgebliche AK i.S.d. § 6 Abs. 2 S. 1. Netto/Brutto nicht still festgelegt (§ 9b Abs. 1). Migriert aus Monolith (Triage-Praezedenz A1, msg 1266). Grenzfall -> Julius-Morgen.'
+  - bedingung: grenzwert_und_abzugsbetrag_fallen_zusammen
+    deckt_ab: 800 Euro nicht übersteigen
+    quelle: § 6 Abs. 2 Satz 1 EStG i.V.m. R 9b Abs. 2 EStR
+    beschreibung: 'Interim (Instructor B5, 2026-07-12): anschaffungskosten dient Grenzpruefung UND Abzug. R 9b Abs. 2 EStR: GWG-Grenze vom NETTO auch ohne Vorsteuerabzug, Abzug aber BRUTTO. Gilt nur, wenn Netto- und Bruttowert auf derselben Seite der 800-Grenze liegen oder kein USt-Anteil (sonst Brutto 900/Netto 756 -> GWG-Sofortabzug 900, nicht AfA). Sauberer Neuschnitt ak_netto/ak_brutto = Backlog Charge 3.'
   test_seed:
   - quelle: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
     zitatanker: 800 Euro nicht übersteigen
