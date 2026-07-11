@@ -1,0 +1,36 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p9_1_3_nr5a_uebernachtung
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_bisher_am_ort
+  - sonstige
+  formulierungen:
+  - Die Formalisierung ignoriert die Eingabe 'monate_bisher_am_ort' vollständig, obwohl
+    sie in der Signatur vorhanden ist.
+  - Der Input 'monate_bisher_am_ort' wird in der Formalisierung überhaupt nicht verwendet.
+  - A UND B kappen unbedingt (bei jedem monate_bisher_am_ort), die Gatterung nach
+    Nr. 5a Satz 4 fehlt.
+  triage: defekt_formalisierer
+- art: annahme
+  anker:
+  - betrifft_kat
+  - uebernachtungskosten_monat
+  - interpretation
+  formulierungen:
+  - Die Formalisierung behandelt 'uebernachtungskosten_monat' als bereits auf einen
+    Monat bezogene Größe, die Norm spricht von Mehraufwendungen für beruflich veranlasste
+    Übernachtungen.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 1 s. 3 nr. 5a estg
+  formulierungen:
+  - notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen
+  triage: nicht_echt
+  klasse: unabhaengig
