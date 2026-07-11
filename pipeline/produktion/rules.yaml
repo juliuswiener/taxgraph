@@ -670,6 +670,18 @@ regeln:
     zitatanker: "20 % von 10.000 € (§ 35a Absatz 3 EStG) = 2.000 €, höchstens 1.200 €"
     inputs: {minijob_aufwendungen: 0, haushaltsnahe_dienstleistungen: 0, handwerker_arbeitskosten: 10000}
     expected: 1200.00
+  - quelle: reports/review/2026-07-10-p35a-cap4000.md
+    zitatanker: "auf Antrag um 20 Prozent, höchstens 4 000 Euro"
+    herkunft: synthetisch
+    rechenweg: "Abs. 2: 20 % von 25.000 EUR = 5.000 EUR, gekappt auf den Hoechstbetrag 4.000,00 EUR. Kein Minijob, keine Handwerkerleistungen."
+    inputs: {minijob_aufwendungen: 0, haushaltsnahe_dienstleistungen: 25000, handwerker_arbeitskosten: 0}
+    expected: 4000.00
+  - quelle: reports/review/2026-07-10-p35a-cap4000.md
+    zitatanker: "auf Antrag um 20 Prozent, höchstens 4 000 Euro"
+    herkunft: synthetisch
+    rechenweg: "Randfall genau an der Kappungsgrenze: 20 % von 20.000 EUR = 4.000,00 EUR. Der Cap greift, aendert das Ergebnis aber nicht - er darf es auch nicht senken."
+    inputs: {minijob_aufwendungen: 0, haushaltsnahe_dienstleistungen: 20000, handwerker_arbeitskosten: 0}
+    expected: 4000.00
   signature:
     scope: Haushaltsnahe
     inputs:
