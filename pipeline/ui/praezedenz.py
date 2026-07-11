@@ -36,6 +36,21 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+# Nur diese Entscheidungstypen werden je cross-rule automatisch angewendet
+# (Design-Entscheid Julius 2026-07-11). defekt_formalisierer/nicht_echt/grenzfall/
+# offen_bis_neuschnitt/backlog sind kontextgebunden -> nur Praezedenz-Hinweis in
+# der Queue, nie Auto-Apply in einer anderen Regel.
+AUTO_APPLY_WHITELIST = {"bedingung_neu", "nicht_material"}
+
+
+def _anker_degeneriert(item: dict) -> bool:
+    """Degenerierter Anker (enthaelt "?"): kein tragfaehiger Praezedenz-Schluessel.
+    Betrifft v.a. art:abweichung (Anker ["betrifft","?"]); ein einziger Registry-
+    Eintrag je Regel, jeder kuenftige echte Fund kollidierte als "bekannt" ->
+    stilles Gruen per Konstruktion. Solche Anker werden nie Praezedenz."""
+    return "?" in (item.get("anker") or [])
+
+
 # -- Schluessel ---------------------------------------------------------------
 
 def item_kategorie(item: dict) -> str | None:
@@ -83,8 +98,8 @@ def save_praez(d: dict) -> str:
     kopf = ("# Praezedenz-Ratsche (M-UI.3). Von Julius entschiedene Triagen als\n"
             "# Praezedenzfaelle. Auto-Apply nur bei EXAKTER Anker-Gleichheit.\n"
             "# gesperrt: true -> durch Widerruf gesperrt, nie wieder Auto-Apply.\n\n")
-    with open(PRAEZ_YAML, "w", encoding="utf-8") as f:
-        f.write(kopf + yaml.safe_dump(d, allow_unicode=True, sort_keys=False))
+    IR._atomic_write(PRAEZ_YAML, kopf + yaml.safe_dump(d, allow_unicode=True,
+                                                       sort_keys=False))
     return PRAEZ_YAML
 
 
@@ -100,8 +115,8 @@ def load_log() -> dict:
 def save_log(d: dict) -> None:
     import yaml
     os.makedirs(IR.REG_DIR, exist_ok=True)
-    with open(PRAEZ_LOG, "w", encoding="utf-8") as f:
-        f.write(yaml.safe_dump(d, allow_unicode=True, sort_keys=False))
+    IR._atomic_write(PRAEZ_LOG, yaml.safe_dump(d, allow_unicode=True,
+                                               sort_keys=False))
 
 
 # -- Fall registrieren (jede Julius-Entscheidung) -----------------------------
@@ -115,6 +130,9 @@ def record_precedent(rule_id: str, item: dict, triage: str,
     Bereits gesperrte Faelle bleiben gesperrt (ein Widerruf reaktiviert NICHT).
     """
     now = now or _now()
+    if _anker_degeneriert(item):
+        # Kein Praezedenzfall aus einem degenerierten Anker (D0).
+        return {"skipped": "degenerierter Anker", "anker": item.get("anker")}
     d = load_praez()
     sk = praez_schluessel(item, triage, bedingung, konvention)
     for f in d["faelle"]:
@@ -141,6 +159,8 @@ def record_precedent(rule_id: str, item: dict, triage: str,
 # -- Treffer suchen -----------------------------------------------------------
 
 def _kandidaten(item: dict) -> list[dict]:
+    if _anker_degeneriert(item):
+        return []  # D0: degenerierter Anker matcht nie
     ak = anker_schluessel(item)
     d = load_praez()
     return [f for f in d["faelle"]
@@ -191,13 +211,29 @@ def auto_apply(rule_id: str, now: str | None = None,
     Auto-Apply-Quote der Charge (Durchsatz-Kennzahl).
     """
     now = now or _now()
+    if service.get_rule(rule_id) is None:
+        # m2: rule_id validieren, BEVOR daraus ein Report-/Draft-Pfad wird.
+        raise KeyError(f"unbekannte Regel: {rule_id}")
     draft = service.open_draft(rule_id)
     items = draft.get("items", [])
+    # C1(a): Schluessel, die bereits in der Registry stehen (Seeding oder Human-
+    # Triage), sind vom Auto-Apply ausgenommen - sonst schriebe die Ratsche auf
+    # einen fremden Eintrag, den ein Widerruf spaeter mit-loeschte.
+    reg_keys = {IR._key(it["art"], it["anker"])
+                for it in IR.load(rule_id).get("items", [])}
     anwendbar = []
+    gesehen: set[str] = set()          # M2: Charge-interner Anker-Dedupe
     for it in items:
+        if it.get("triage") != "offen":    # M2: nur offene Items
+            continue
+        ak = anker_schluessel(it)
+        if ak in reg_keys or ak in gesehen:    # C1(a) + M2
+            continue
         f = treffer(rule_id, it)
-        if f is not None:
-            anwendbar.append((it, f))
+        if f is None or f["entscheidungstyp"] not in AUTO_APPLY_WHITELIST:
+            continue                        # Whitelist: nur bedingung_neu/nicht_material
+        gesehen.add(ak)
+        anwendbar.append((it, f))
 
     quote = (len(anwendbar) / len(items)) if items else 0.0
     charge = {
@@ -209,33 +245,32 @@ def auto_apply(rule_id: str, now: str | None = None,
         "dry_run": dry_run,
     }
     angewendet = []
-    if not dry_run and anwendbar:
+    if not dry_run:
         log = load_log()
-        for it, fall in anwendbar:
-            bed, konv = _bedingung_konv(fall)
-            res = service.submit(
-                rule_id, it, fall["entscheidungstyp"],
-                bedingung=bed, konvention=konv, now=now,
-                entschieden_via="praezedenz-auto")
-            eintrag = {
-                "id": f"{rule_id}:{res['schluessel']}",
-                "rule_id": rule_id,
-                "anker_schluessel": anker_schluessel(it),
-                "praezedenz_schluessel": fall["schluessel"],
-                "entscheidungstyp": fall["entscheidungstyp"],
-                "ziel_id": fall["ziel_id"],
-                "item_snapshot": it,
-                "timestamp": now,
-                "widerrufen": False,
-            }
-            log["anwendungen"].append(eintrag)
-            angewendet.append(eintrag)
-        log["chargen"].append(charge)
-        save_log(log)
-    elif not dry_run:
-        log = load_log()
-        log["chargen"].append(charge)
-        save_log(log)
+        try:
+            for it, fall in anwendbar:
+                bed, konv = _bedingung_konv(fall)
+                res = service.submit(
+                    rule_id, it, fall["entscheidungstyp"],
+                    bedingung=bed, konvention=konv, now=now,
+                    entschieden_via="praezedenz-auto")
+                eintrag = {
+                    "id": f"{rule_id}:{res['schluessel']}",
+                    "rule_id": rule_id,
+                    "anker_schluessel": anker_schluessel(it),
+                    "praezedenz_schluessel": fall["schluessel"],
+                    "entscheidungstyp": fall["entscheidungstyp"],
+                    "ziel_id": fall["ziel_id"],
+                    "item_snapshot": it,
+                    "timestamp": now,
+                    "widerrufen": False,
+                }
+                log["anwendungen"].append(eintrag)
+                angewendet.append(eintrag)
+                save_log(log)               # M1: Audit sofort je Item, nicht am Ende
+        finally:
+            log["chargen"].append(charge)
+            save_log(log)
 
     charge["angewendete"] = angewendet
     return charge
@@ -243,21 +278,28 @@ def auto_apply(rule_id: str, now: str | None = None,
 
 # -- Widerruf -----------------------------------------------------------------
 
-def _registry_item_entfernen(rule_id: str, ak: str) -> bool:
-    """Audit-Undo einer Auto-Apply: entfernt genau das per Praezedenz gesetzte
-    Item aus der Registry (der einzige nicht-aufnehmen-Schreibzugriff, eng auf
-    den Widerruf begrenzt und protokolliert). Auto-applied Items sind stets
-    frische Eintraege - Entfernen setzt sie auf `offen` (discover_draft findet
-    sie erneut) und der gesperrte Praezedenzfall verhindert Re-Apply.
+def _registry_item_entfernen(rule_id: str, ak: str, anwendung: dict) -> str:
+    """Audit-Undo einer Auto-Apply: entfernt das Item NUR, wenn es exakt der von
+    dieser Anwendung angelegte frische Eintrag ist (C1). Snapshot-Match = gleiche
+    Triage UND einzig die eine, von uns hinzugefuegte Formulierung. Hat Seeding
+    oder eine Human-Triage den Eintrag inzwischen angefasst (andere Triage, weitere
+    Formulierungen), bleibt er stehen - der Widerruf sperrt dann nur den
+    Praezedenzfall. Rueckgabe: "entfernt" | "kein_match" | "nicht_gefunden".
     """
     reg = IR.load(rule_id)
-    vorher = len(reg.get("items", []))
-    reg["items"] = [it for it in reg.get("items", [])
-                    if IR._key(it["art"], it["anker"]) != ak]
-    if len(reg["items"]) != vorher:
-        IR.save(reg)
-        return True
-    return False
+    items = reg.get("items", [])
+    ziel = next((it for it in items if IR._key(it["art"], it["anker"]) == ak), None)
+    if ziel is None:
+        return "nicht_gefunden"
+    snap = anwendung.get("item_snapshot") or {}
+    snap_text = snap.get("text") or snap.get("formulierung") or ""
+    match = (ziel.get("triage") == anwendung.get("entscheidungstyp")
+             and ziel.get("formulierungen", []) == [snap_text])
+    if not match:
+        return "kein_match"
+    reg["items"] = [it for it in items if IR._key(it["art"], it["anker"]) != ak]
+    IR.save(reg)
+    return "entfernt"
 
 
 def widerruf(anwendung_id: str, now: str | None = None) -> dict:
@@ -271,9 +313,11 @@ def widerruf(anwendung_id: str, now: str | None = None) -> dict:
         raise KeyError(f"keine offene Auto-Apply mit id {anwendung_id}")
     a = treffer_[0]
 
-    entfernt = _registry_item_entfernen(a["rule_id"], a["anker_schluessel"])
+    item_status = _registry_item_entfernen(a["rule_id"], a["anker_schluessel"], a)
+    entfernt = item_status == "entfernt"
 
-    # Praezedenzfall sperren
+    # Praezedenzfall IMMER sperren (auch wenn der Eintrag geschuetzt blieb): nie
+    # wieder Auto-Apply dieses Schluessels.
     d = load_praez()
     gesperrt = False
     for f in d["faelle"]:
@@ -291,12 +335,13 @@ def widerruf(anwendung_id: str, now: str | None = None) -> dict:
         "praezedenz_schluessel": a["praezedenz_schluessel"],
         "rule_id": a["rule_id"],
         "item_entfernt": entfernt,
+        "item_status": item_status,      # C1: entfernt | kein_match | nicht_gefunden
         "praezedenz_gesperrt": gesperrt,
         "timestamp": now,
     })
     save_log(log)
     return {"anwendung_id": anwendung_id, "item_entfernt": entfernt,
-            "praezedenz_gesperrt": gesperrt}
+            "item_status": item_status, "praezedenz_gesperrt": gesperrt}
 
 
 # -- Anzeige ------------------------------------------------------------------

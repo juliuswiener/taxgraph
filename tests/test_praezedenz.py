@@ -37,7 +37,7 @@ def wire(tmp_path, monkeypatch):
 
 def item(anker2="x", kat="interpretation", text="t"):
     return {"art": "annahme", "anker": ["betrifft_kat", anker2, kat],
-            "text": text, "kategorie": kat}
+            "text": text, "kategorie": kat, "triage": "offen"}
 
 
 def test_exakter_treffer_wendet_an__abweichender_anker_nicht(wire):
@@ -123,3 +123,116 @@ def test_record_ist_idempotent_und_reaktiviert_nicht(wire):
                                      now="t1")
     assert f2["schluessel"] == f1["schluessel"]
     assert praezedenz.load_praez()["faelle"][0]["gesperrt"] is True
+
+
+# -- D0: Degenerate-Anchor-Guard ----------------------------------------------
+
+def _abw(text="a"):
+    return {"art": "abweichung", "anker": ["betrifft", "?"], "text": text,
+            "triage": "offen"}
+
+
+def test_D0_degenerierter_anker_wird_nie_praezedenz(wire):
+    r = praezedenz.record_precedent("rA", _abw(), "bedingung_neu", bedingung="b1",
+                                    now="t0")
+    assert r.get("skipped")                          # nicht gespeichert
+    assert praezedenz.load_praez()["faelle"] == []
+    # Abweichung B, gleicher degenerierter Anker -> kein Kandidat, kein Treffer
+    assert praezedenz._kandidaten(_abw("anders")) == []
+    assert praezedenz.treffer("rB", _abw("anders")) is None
+
+
+# -- C1: Widerruf loescht nie Human/Seeding-Eintraege -------------------------
+
+def test_C1a_auto_apply_ueberspringt_bereits_registrierten_key(wire, monkeypatch):
+    # Human-triagiertes Item steht schon in der Registry (andere Triage/Formulierung)
+    service.submit("rB", item("kinder", text="Human-Formulierung"), "grenzfall")
+    praezedenz.record_precedent("rA", item("kinder"), "bedingung_neu",
+                                bedingung="b1", now="t0")
+    draft = {"rule_id": "rB", "items": [item("kinder")]}
+    monkeypatch.setattr(service, "open_draft", lambda rid: draft)
+    charge = praezedenz.auto_apply("rB", now="t1")
+    assert charge["angewendet"] == 0                 # Key steht schon -> kein Auto-Apply
+    e = IR.load("rB")["items"][0]
+    assert e["triage"] == "grenzfall"                # Human-Item unveraendert
+    assert e["formulierungen"] == ["Human-Formulierung"]
+
+
+def test_C1b_widerruf_schuetzt_veraenderten_eintrag(wire, monkeypatch):
+    praezedenz.record_precedent("rA", item("kinder"), "bedingung_neu",
+                                bedingung="b1", now="t0")
+    draft = {"rule_id": "rB", "items": [item("kinder", text="auto-text")]}
+    monkeypatch.setattr(service, "open_draft", lambda rid: draft)
+    aid = praezedenz.auto_apply("rB", now="t1")["angewendete"][0]["id"]
+    # Human ergaenzt eine zweite Formulierung auf demselben Key
+    service.submit("rB", item("kinder", text="human-zusatz"), "bedingung_neu",
+                   bedingung="b1")
+    assert len(IR.load("rB")["items"][0]["formulierungen"]) == 2
+
+    res = praezedenz.widerruf(aid, now="t2")
+    assert res["item_status"] == "kein_match"        # veraendert -> nicht loeschen
+    assert res["item_entfernt"] is False
+    assert res["praezedenz_gesperrt"] is True         # Praezedenz trotzdem gesperrt
+    assert len(IR.load("rB")["items"]) == 1           # Item bleibt
+
+
+# -- M1: Audit-Log sofort je Item ---------------------------------------------
+
+def test_M1_audit_sofort_wenn_zweites_item_wirft(wire, monkeypatch):
+    praezedenz.record_precedent("rA", item("k1"), "bedingung_neu", bedingung="b1",
+                                now="t0")
+    praezedenz.record_precedent("rA", item("k2"), "bedingung_neu", bedingung="b1",
+                                now="t0")
+    draft = {"rule_id": "rB", "items": [item("k1"), item("k2")]}
+    monkeypatch.setattr(service, "open_draft", lambda rid: draft)
+    calls = {"n": 0}
+    echt = service.submit
+
+    def boom(*a, **k):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise RuntimeError("kaputt beim 2. Item")
+        return echt(*a, **k)
+
+    monkeypatch.setattr(service, "submit", boom)
+    with pytest.raises(RuntimeError):
+        praezedenz.auto_apply("rB", now="t1")
+    aw = praezedenz.anwendungen()
+    assert len(aw) == 1                               # 1. Item bereits protokolliert
+    assert aw[0]["anker_schluessel"] == praezedenz.anker_schluessel(item("k1"))
+
+
+# -- M2: Idempotenz -----------------------------------------------------------
+
+def test_M2_zweiter_auto_apply_erzeugt_keine_duplikate(wire, monkeypatch):
+    praezedenz.record_precedent("rA", item("kinder"), "bedingung_neu",
+                                bedingung="b1", now="t0")
+    draft = {"rule_id": "rB", "items": [item("kinder")]}
+    monkeypatch.setattr(service, "open_draft", lambda rid: draft)
+    assert praezedenz.auto_apply("rB", now="t1")["angewendet"] == 1
+    n = len(praezedenz.anwendungen())
+    c2 = praezedenz.auto_apply("rB", now="t2")        # Key jetzt registriert
+    assert c2["angewendet"] == 0
+    assert len(praezedenz.anwendungen()) == n         # 0 neue Anwendungen
+
+
+# -- Whitelist: nur bedingung_neu / nicht_material auto-apply ------------------
+
+def test_whitelist_defekt_nur_hinweis_kein_auto_apply(wire, monkeypatch):
+    praezedenz.record_precedent("rA", item("dfk"), "defekt_formalisierer", now="t0")
+    # Hinweis in der Queue bleibt (treffer zeigt ihn) ...
+    assert praezedenz.treffer("rB", item("dfk")) is not None
+    # ... aber Auto-Apply feuert nicht (nicht in der Whitelist)
+    draft = {"rule_id": "rB", "items": [item("dfk")]}
+    monkeypatch.setattr(service, "open_draft", lambda rid: draft)
+    charge = praezedenz.auto_apply("rB", now="t1")
+    assert charge["angewendet"] == 0
+    assert IR.load("rB").get("items", []) == []
+
+
+# -- m2: unbekannte rule_id -> KeyError vor Pfadkonstruktion -------------------
+
+def test_m2_unbekannte_rule_id_wirft_vor_draft(wire, monkeypatch):
+    monkeypatch.setattr(service, "get_rule", lambda rid: None)
+    with pytest.raises(KeyError):
+        praezedenz.auto_apply("gibt_es_nicht", now="t1")

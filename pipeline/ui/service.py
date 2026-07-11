@@ -212,8 +212,7 @@ def _load_log(path: str, key: str) -> dict:
 def _save_log(path: str, data: dict) -> None:
     import yaml
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(yaml.safe_dump(data, allow_unicode=True, sort_keys=False))
+    IR._atomic_write(path, yaml.safe_dump(data, allow_unicode=True, sort_keys=False))
 
 
 def entscheidungs_log() -> list[dict]:

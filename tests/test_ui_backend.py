@@ -147,3 +147,44 @@ def test_queue_und_read_endpoints(wire):
     assert c.get("/api/queue").status_code == 200
     assert c.get("/api/merge-log").status_code == 200
     assert c.get("/api/praezedenz").status_code == 200
+
+
+def test_m1_dry_run_verlangt_token(wire, monkeypatch):
+    # m1: auch dry_run-Auto-Apply ist tokenpflichtig (kein anonymer Endpoint).
+    from fastapi.testclient import TestClient
+    from pipeline.ui import app as appmod
+    monkeypatch.delenv("TAXGRAPH_UI_TOKEN", raising=False)
+    c = TestClient(appmod.app)
+    r = c.post(f"/api/rule/{RID}/praezedenz-anwenden", json={"dry_run": True})
+    assert r.status_code == 503                      # kein Token -> gesperrt
+
+
+def test_m2_unbekannte_rule_id_gibt_404(wire, monkeypatch):
+    # m2: rule_id wird via get_rule validiert, bevor daraus ein Pfad wird.
+    from fastapi.testclient import TestClient
+    from pipeline.ui import app as appmod
+    monkeypatch.setenv("TAXGRAPH_UI_TOKEN", "geheim")
+    c = TestClient(appmod.app)
+    r = c.post("/api/rule/gibt_es_nicht/praezedenz-anwenden",
+               json={"dry_run": False}, headers={"X-Taxgraph-Token": "geheim"})
+    assert r.status_code == 404
+
+
+def test_m3_record_precedent_fehler_blockt_submit_nicht(wire, monkeypatch):
+    # m3: ein Fehlschlag in record_precedent wird geloggt, blockt aber nicht den
+    # Schreibpfad (submit bleibt 200).
+    from fastapi.testclient import TestClient
+    from pipeline.ui import app as appmod
+    from pipeline.ui import praezedenz as pz
+
+    def boom(*a, **k):
+        raise RuntimeError("praezedenz kaputt")
+
+    monkeypatch.setenv("TAXGRAPH_UI_TOKEN", "geheim")
+    monkeypatch.setattr(pz, "record_precedent", boom)
+    c = TestClient(appmod.app)
+    r = c.post(f"/api/rule/{RID}/submit",
+               json={"item": ITEM, "triage": "bedingung_neu",
+                     "bedingung": "kinder_sind_anspruchskinder"},
+               headers={"X-Taxgraph-Token": "geheim"})
+    assert r.status_code == 200, r.text

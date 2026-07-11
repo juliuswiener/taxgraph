@@ -13,7 +13,9 @@ oder:
 
 from __future__ import annotations
 
+import logging
 import os
+import secrets
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
@@ -21,6 +23,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import praezedenz, service
+
+log = logging.getLogger(__name__)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(HERE, "static")
@@ -32,7 +36,8 @@ def _require_token(x_taxgraph_token: str | None) -> None:
     token = os.environ.get("TAXGRAPH_UI_TOKEN")
     if not token:
         raise HTTPException(503, "TAXGRAPH_UI_TOKEN nicht gesetzt - Schreiben gesperrt")
-    if x_taxgraph_token != token:
+    # m4: zeitkonstanter Vergleich (secrets.compare_digest) statt `!=`.
+    if not x_taxgraph_token or not secrets.compare_digest(x_taxgraph_token, token):
         raise HTTPException(401, "Token fehlt oder falsch")
 
 
@@ -115,8 +120,10 @@ def submit(rule_id: str, req: SubmitReq,
     try:
         praezedenz.record_precedent(rule_id, req.item, req.triage,
                                     bedingung=req.bedingung, konvention=req.konvention)
-    except Exception:
-        pass  # Praezedenz ist Beschleuniger, kein Blocker des Schreibens
+    except Exception:  # noqa: BLE001
+        # Praezedenz ist Beschleuniger, kein Blocker des Schreibens - aber ein
+        # stiller Fehlschlag darf nicht spurlos bleiben (m3).
+        log.exception("record_precedent fehlgeschlagen fuer %s", rule_id)
     return res
 
 
@@ -128,9 +135,13 @@ class AutoApplyReq(BaseModel):
 def praezedenz_anwenden(rule_id: str, req: AutoApplyReq | None = None,
                         x_taxgraph_token: str | None = Header(default=None)):
     dry = bool(req and req.dry_run)
-    if not dry:
-        _require_token(x_taxgraph_token)
-    return praezedenz.auto_apply(rule_id, dry_run=dry)
+    # m1: Token auch fuer dry_run - der Endpoint fasst die Registry an (auch dry_run
+    # laeuft open_draft/discover) und ist kein anonymer Lese-Endpoint.
+    _require_token(x_taxgraph_token)
+    try:
+        return praezedenz.auto_apply(rule_id, dry_run=dry)
+    except KeyError as e:  # m2: unbekannte rule_id -> 404 statt Pfad-Konstruktion
+        raise HTTPException(404, str(e))
 
 
 class WiderrufReq(BaseModel):

@@ -246,6 +246,26 @@ def gates_fuer(rule_id: str, rule: dict, verdict: dict) -> tuple[dict, list]:
     return gates, ab["neu"]
 
 
+def _atomic_write(path: str, content: str) -> None:
+    """Schreibt via temp-Datei + os.replace: entweder der alte oder der neue
+    Inhalt, nie ein halb geschriebener. Ein Abbruch mitten im Schreiben darf die
+    monoton wachsende Registry nicht truncaten."""
+    import tempfile
+    d = os.path.dirname(path) or "."
+    os.makedirs(d, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=d, prefix=".tmp_", suffix=".yaml")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(content)
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
 def save(reg: dict) -> str:
     import yaml
     os.makedirs(REG_DIR, exist_ok=True)
@@ -253,8 +273,7 @@ def save(reg: dict) -> str:
     p = os.path.join(REG_DIR, f"{reg['rule_id']}.yaml")
     kopf = ("# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.\n"
             "# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.\n\n")
-    with open(p, "w", encoding="utf-8") as f:
-        f.write(kopf + yaml.safe_dump(reg, allow_unicode=True, sort_keys=False))
+    _atomic_write(p, kopf + yaml.safe_dump(reg, allow_unicode=True, sort_keys=False))
     return p
 
 
