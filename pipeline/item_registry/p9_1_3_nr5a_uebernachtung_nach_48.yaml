@@ -1,0 +1,30 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p9_1_3_nr5a_uebernachtung_nach_48
+version: 3
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 1 s. 3 nr. 5a satz 4
+  formulierungen:
+  - höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_bisher_am_ort
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Formalisation ignoriert die Eingabe monate_bisher_am_ort, obwohl die Norm
+    eine zeitliche Bedingung enthalten könnte.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_bisher_am_ort
+  - sonstige
+  formulierungen:
+  - Der Input 'monate_bisher_am_ort' wird in der Formalisierung überhaupt nicht verwendet.
+  triage: nicht_material

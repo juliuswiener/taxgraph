@@ -1,0 +1,79 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+version: 9
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - uebernachtungskosten_monat
+  - einheit
+  formulierungen:
+  - Die Formalisierung nimmt an, dass die Kosten als monatlicher Pauschalbetrag vorliegen,
+    nicht als tatsächliche Einzelaufwendungen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_bisher_am_ort
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Formalisierung setzt voraus, dass die bisherige Aufenthaltsdauer am Ort für
+    die Berechnung relevant ist.
+  - Die Formalisierung setzt eine Dauer am Ort voraus, die Norm enthält keine solche
+    Voraussetzung.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - uebernachtungskosten_monat
+  - interpretation
+  formulierungen:
+  - Die Formalisierung interpretiert die tatsächlichen Aufwendungen als monatlichen
+    Pauschalbetrag.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate
+  - zeitbezug
+  formulierungen:
+  - Die Formalisierung unterstellt eine monatsweise Abrechnung, die Norm nennt keine
+    Periode.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_bisher_am_ort
+  - sonstige
+  formulierungen:
+  - Die Formalisierung verwendet den Input monate_bisher_am_ort, obwohl die Norm keine
+    zeitliche Begrenzung am Ort erwähnt.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - satz 1
+  formulierungen:
+  - notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen
+    an einer Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist
+  triage: nicht_echt
+- art: norm_teil
+  anker:
+  - ref
+  - satz 2
+  formulierungen:
+  - Übernachtungskosten sind die tatsächlichen Aufwendungen für die persönliche Inanspruchnahme
+    einer Unterkunft zur Übernachtung
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - satz 3
+  formulierungen:
+  - Soweit höhere Übernachtungskosten anfallen, weil der Arbeitnehmer eine Unterkunft
+    gemeinsam mit Personen nutzt, die in keinem Dienstverhältnis zum selben Arbeitgeber
+    stehen, sind nur diejenigen Aufwen
+  triage: bedingung_neu
+  bedingung: kosten_bei_alleiniger_nutzung

@@ -1,0 +1,123 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p9_1_3_nr6_7_afa_laufend
+version: 17
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungskosten
+  - interpretation
+  formulierungen:
+  - Die Formalisierung behandelt die Anschaffungskosten als Nettobetrag ohne Umsatzsteuer,
+    was die Norm nicht explizit festlegt.
+  triage: bedingung_neu
+  bedingung: anschaffungskosten_sind_massgebliche_ak
+- art: annahme
+  anker:
+  - betrifft_kat
+  - nutzungsdauer_jahre
+  - rundung
+  formulierungen:
+  - Die Formalisierung setzt eine ganzzahlige betriebsgewöhnliche Nutzungsdauer in
+    Jahren voraus, die Norm enthält keine Rundungsregel.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - jahre_seit_anschaffung
+  - zeitbezug
+  formulierungen:
+  - Die Formalisierung nimmt an, dass jahre_seit_anschaffung=0 das Anschaffungsjahr
+    bezeichnet, ohne Berücksichtigung unterjähriger Anschaffungszeitpunkte.
+  - Die Formalisierung nimmt an, dass 'jahre_seit_anschaffung' die Anzahl voller Kalenderjahre
+    nach dem Jahr der Anschaffung angibt.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - nutzungsdauer_jahre
+  - interpretation
+  formulierungen:
+  - Die Formalisierung nimmt an, dass die Nutzungsdauer in vollen Jahren angegeben
+    wird und der betriebsgewöhnlichen Nutzungsdauer entspricht.
+  - Die Formalisierung setzt voraus, dass die betriebsgewöhnliche Nutzungsdauer in
+    ganzen Jahren angegeben und als Divisor verwendet werden kann.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungskosten
+  - einheit
+  formulierungen:
+  - Die Formalisierung nimmt an, dass die Anschaffungskosten brutto und nicht netto
+    zu verstehen sind.
+  triage: bedingung_neu
+  bedingung: anschaffungskosten_sind_massgebliche_ak
+- art: annahme
+  anker:
+  - betrifft_kat
+  - jahre_seit_anschaffung
+  - interpretation
+  formulierungen:
+  - Die Formalisierung interpretiert jahre_seit_anschaffung als ganzzahlige Anzahl
+    vollendeter Jahre seit der Anschaffung.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 abs. 1 s. 1 estg
+  formulierungen:
+  - der Teil der Anschaffungs- oder Herstellungskosten abzusetzen, der bei gleichmäßiger
+    Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung auf ein
+    Jahr entfällt
+  - deren Verwendung oder Nutzung durch den Steuerpflichtigen zur Erzielung von Einkünften
+    sich erfahrungsgemäß auf einen Zeitraum von mehr als einem Jahr erstreckt
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 abs. 1 s. 2 estg
+  formulierungen:
+  - Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer
+    des Wirtschaftsguts.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 1 s. 3 nr. 6/7 estg
+  formulierungen:
+  - Aufwendungen für Arbeitsmittel
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungsmonat
+  - zeitbezug
+  formulierungen:
+  - Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzes für die Nutzung
+    zur Verfügung steht und nur volle Monate vor der Anschaffung kürzend wirken.
+  - Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzes für die AfA
+    zählt, die Norm spricht von vollen Monaten vor der Anschaffung.
+  - Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzzahl von 1 bis
+    12 vorliegt und der Monat der Anschaffung selbst nicht als voller Monat zählt.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Die Formalisierung enthält keine Rundungsvorschrift für das Ergebnis der Division
+    oder der Kürzungsberechnung.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungsmonat
+  - interpretation
+  formulierungen:
+  - Die Formalisierung interpretiert den Anschaffungsmonat als numerischen Wert von
+    1 bis 12.
+  triage: nicht_material

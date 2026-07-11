@@ -555,6 +555,10 @@ regeln:
     deckt_ab: Absetzung für Abnutzung in gleichen Jahresbeträgen
     quelle: § 7 Abs. 1 S. 1 EStG
     beschreibung: 'Binaere Auswahlbedingung: gilt fuer laufende Jahre (jahre_seit_anschaffung < nutzungsdauer_jahre): Jahr0 anteilig, Volljahre voll. Das Ueberhangsjahr (jahre_seit == nutzungsdauer) ist eine eigene Teilregel; Auswahl macht die § 2-Integration.'
+  - bedingung: anschaffungskosten_sind_massgebliche_ak
+    deckt_ab: an deren Stelle tretende Wert für das einzelne Wirtschaftsgut 800 Euro nicht übersteigen
+    quelle: § 6 Abs. 2 Satz 1 EStG (Verweis § 9b Abs. 1)
+    beschreibung: 'Input = massgebliche AK i.S.d. § 6 Abs. 2 S. 1. Netto/Brutto nicht still festgelegt (§ 9b Abs. 1). Migriert aus Monolith (Triage-Praezedenz A1, msg 1266). Grenzfall -> Julius-Morgen.'
   test_seed:
   - quelle: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
     zitatanker: 800 Euro nicht übersteigen

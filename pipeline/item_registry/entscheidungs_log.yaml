@@ -1,0 +1,547 @@
+entscheidungen:
+- rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+  schluessel: '["annahme", "betrifft_kat", "uebernachtungskosten_monat", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - uebernachtungskosten_monat
+    - einheit
+    text: Die Formalisierung nimmt an, dass die Kosten als monatlicher Pauschalbetrag
+      vorliegen, nicht als tatsächliche Einzelaufwendungen.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:33.924816+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+  schluessel: '["annahme", "betrifft_kat", "monate_bisher_am_ort", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: ganzzahl_monate
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - monate_bisher_am_ort
+    - geltungsvoraussetzung
+    text: Die Formalisierung setzt voraus, dass die bisherige Aufenthaltsdauer am
+      Ort für die Berechnung relevant ist.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:34.011165+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+  schluessel: '["annahme", "betrifft_kat", "uebernachtungskosten_monat", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - uebernachtungskosten_monat
+    - interpretation
+    text: Die Formalisierung interpretiert die tatsächlichen Aufwendungen als monatlichen
+      Pauschalbetrag.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:34.100198+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+  schluessel: '["annahme", "betrifft_kat", "monate", "zeitbezug"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: ganzzahl_monate
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - monate
+    - zeitbezug
+    text: Die Formalisierung unterstellt eine monatsweise Abrechnung, die Norm nennt
+      keine Periode.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:34.197844+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+  schluessel: '["annahme", "betrifft_kat", "monate_bisher_am_ort", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: ganzzahl_monate
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - monate_bisher_am_ort
+    - geltungsvoraussetzung
+    text: Die Formalisierung setzt eine Dauer am Ort voraus, die Norm enthält keine
+      solche Voraussetzung.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:34.293718+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+  schluessel: '["annahme", "betrifft_kat", "monate_bisher_am_ort", "sonstige"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: ganzzahl_monate
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - monate_bisher_am_ort
+    - sonstige
+    text: Die Formalisierung verwendet den Input monate_bisher_am_ort, obwohl die
+      Norm keine zeitliche Begrenzung am Ort erwähnt.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:34.394889+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+  schluessel: '["norm_teil", "ref", "satz 1"]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - satz 1
+    text: notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste
+      Übernachtungen an einer Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:34.497607+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+  schluessel: '["norm_teil", "ref", "satz 2"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - satz 2
+    text: Übernachtungskosten sind die tatsächlichen Aufwendungen für die persönliche
+      Inanspruchnahme einer Unterkunft zur Übernachtung
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:34.597361+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+  schluessel: '["norm_teil", "ref", "satz 3"]'
+  triage: bedingung_neu
+  bedingung: kosten_bei_alleiniger_nutzung
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: false
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - satz 3
+    text: Soweit höhere Übernachtungskosten anfallen, weil der Arbeitnehmer eine Unterkunft
+      gemeinsam mit Personen nutzt, die in keinem Dienstverhältnis zum selben Arbeitgeber
+      stehen, sind nur diejenigen Aufwen
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:34.703221+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "anschaffungskosten", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: anschaffungskosten_sind_massgebliche_ak
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - anschaffungskosten
+    - interpretation
+    text: Die Formalisierung behandelt die Anschaffungskosten als Nettobetrag ohne
+      Umsatzsteuer, was die Norm nicht explizit festlegt.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:34.807791+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "nutzungsdauer_jahre", "rundung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - nutzungsdauer_jahre
+    - rundung
+    text: Die Formalisierung setzt eine ganzzahlige betriebsgewöhnliche Nutzungsdauer
+      in Jahren voraus, die Norm enthält keine Rundungsregel.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:34.908701+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "jahre_seit_anschaffung", "zeitbezug"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - jahre_seit_anschaffung
+    - zeitbezug
+    text: Die Formalisierung nimmt an, dass jahre_seit_anschaffung=0 das Anschaffungsjahr
+      bezeichnet, ohne Berücksichtigung unterjähriger Anschaffungszeitpunkte.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:35.013376+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "nutzungsdauer_jahre", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - nutzungsdauer_jahre
+    - interpretation
+    text: Die Formalisierung nimmt an, dass die Nutzungsdauer in vollen Jahren angegeben
+      wird und der betriebsgewöhnlichen Nutzungsdauer entspricht.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:35.129843+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "jahre_seit_anschaffung", "zeitbezug"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - jahre_seit_anschaffung
+    - zeitbezug
+    text: Die Formalisierung nimmt an, dass 'jahre_seit_anschaffung' die Anzahl voller
+      Kalenderjahre nach dem Jahr der Anschaffung angibt.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:35.238575+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "nutzungsdauer_jahre", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - nutzungsdauer_jahre
+    - interpretation
+    text: Die Formalisierung setzt voraus, dass die betriebsgewöhnliche Nutzungsdauer
+      in ganzen Jahren angegeben und als Divisor verwendet werden kann.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:35.349613+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "anschaffungskosten", "einheit"]'
+  triage: bedingung_neu
+  bedingung: anschaffungskosten_sind_massgebliche_ak
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - anschaffungskosten
+    - einheit
+    text: Die Formalisierung nimmt an, dass die Anschaffungskosten brutto und nicht
+      netto zu verstehen sind.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:35.466332+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "jahre_seit_anschaffung", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - jahre_seit_anschaffung
+    - interpretation
+    text: Die Formalisierung interpretiert jahre_seit_anschaffung als ganzzahlige
+      Anzahl vollendeter Jahre seit der Anschaffung.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:35.582792+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["norm_teil", "ref", "§ 7 abs. 1 s. 1 estg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 7 abs. 1 s. 1 estg
+    text: der Teil der Anschaffungs- oder Herstellungskosten abzusetzen, der bei gleichmäßiger
+      Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung auf
+      ein Jahr entfällt
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:35.706126+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["norm_teil", "ref", "§ 7 abs. 1 s. 2 estg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 7 abs. 1 s. 2 estg
+    text: Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer
+      des Wirtschaftsguts.
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:35.830798+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["norm_teil", "ref", "§ 9 abs. 1 s. 3 nr. 6/7 estg"]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 9 abs. 1 s. 3 nr. 6/7 estg
+    text: Aufwendungen für Arbeitsmittel
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:35.963436+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["norm_teil", "ref", "§ 7 abs. 1 s. 1 estg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 7 abs. 1 s. 1 estg
+    text: deren Verwendung oder Nutzung durch den Steuerpflichtigen zur Erzielung
+      von Einkünften sich erfahrungsgemäß auf einen Zeitraum von mehr als einem Jahr
+      erstreckt
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:36.088314+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_nach_48
+  schluessel: '["norm_teil", "ref", "§ 9 abs. 1 s. 3 nr. 5a satz 4"]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 9 abs. 1 s. 3 nr. 5a satz 4
+    text: höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland
+  entschieden_via: bulk-triage-1266
+  timestamp: '2026-07-11T12:30:36.222144+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "anschaffungsmonat", "zeitbezug"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: ganzzahl_monate
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - anschaffungsmonat
+    - zeitbezug
+    text: Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzes für die
+      Nutzung zur Verfügung steht und nur volle Monate vor der Anschaffung kürzend
+      wirken.
+  entschieden_via: bulk-triage-1266-restwelle
+  timestamp: '2026-07-11T12:33:28.577511+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "anschaffungsmonat", "zeitbezug"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: ganzzahl_monate
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - anschaffungsmonat
+    - zeitbezug
+    text: Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzes für die
+      AfA zählt, die Norm spricht von vollen Monaten vor der Anschaffung.
+  entschieden_via: bulk-triage-1266-restwelle
+  timestamp: '2026-07-11T12:33:28.709800+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "anschaffungsmonat", "zeitbezug"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: ganzzahl_monate
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - anschaffungsmonat
+    - zeitbezug
+    text: Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzzahl von
+      1 bis 12 vorliegt und der Monat der Anschaffung selbst nicht als voller Monat
+      zählt.
+  entschieden_via: bulk-triage-1266-restwelle
+  timestamp: '2026-07-11T12:33:28.843361+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "ergebnis", "rundung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: keine_zusaetzliche_rundung
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - ergebnis
+    - rundung
+    text: Die Formalisierung enthält keine Rundungsvorschrift für das Ergebnis der
+      Division oder der Kürzungsberechnung.
+  entschieden_via: bulk-triage-1266-restwelle
+  timestamp: '2026-07-11T12:33:28.982854+00:00'
+- rule_id: p9_1_3_nr6_7_afa_laufend
+  schluessel: '["annahme", "betrifft_kat", "anschaffungsmonat", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: ganzzahl_monate
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - anschaffungsmonat
+    - interpretation
+    text: Die Formalisierung interpretiert den Anschaffungsmonat als numerischen Wert
+      von 1 bis 12.
+  entschieden_via: bulk-triage-1266-restwelle
+  timestamp: '2026-07-11T12:33:29.127977+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_nach_48
+  schluessel: '["annahme", "betrifft_kat", "monate_bisher_am_ort", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: ganzzahl_monate
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - monate_bisher_am_ort
+    - geltungsvoraussetzung
+    text: Die Formalisation ignoriert die Eingabe monate_bisher_am_ort, obwohl die
+      Norm eine zeitliche Bedingung enthalten könnte.
+  entschieden_via: bulk-triage-1266-restwelle
+  timestamp: '2026-07-11T12:33:29.273937+00:00'
+- rule_id: p9_1_3_nr5a_uebernachtung_nach_48
+  schluessel: '["annahme", "betrifft_kat", "monate_bisher_am_ort", "sonstige"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: ganzzahl_monate
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - monate_bisher_am_ort
+    - sonstige
+    text: Der Input 'monate_bisher_am_ort' wird in der Formalisierung überhaupt nicht
+      verwendet.
+  entschieden_via: bulk-triage-1266-restwelle
+  timestamp: '2026-07-11T12:33:29.403561+00:00'
