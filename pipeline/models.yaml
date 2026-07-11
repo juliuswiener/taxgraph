@@ -80,7 +80,14 @@ roles:
     # Rate-Limits trug - inzwischen bedient Together nicht mehr gleichzeitig GLM
     # (Formalisierer B laeuft ueber together/fireworks-fast, der Judge exklusiv
     # ueber together). Dieser Wechsel aendert den models.yaml-Hash bewusst.
-    providers: ["together"]
+    #
+    # Provider-Pin 2026-07-11 (Nachtsession, Instructor msg 1165 - NUR Provider,
+    # KEIN Modellwechsel): Together fuer deepseek-v4-pro ist degradiert (OpenRouter
+    # endpoint-status -2), die Judge-Calls hingen >300s in der Bounded-Retry-
+    # Schleife (Charge-2-Stufe-B, nr6_7 + nr5a beide role_timeout). DeepInfra
+    # (US/westlicher Hoster, NICHT auf der Chinesisch-Ausschlussliste) antwortete im
+    # Probe-Call in 0.7s mit "OK". Deshalb hier gepinnt. Aendert den Hash bewusst.
+    providers: ["deepinfra"]
     temperature: 0.0
     # 4096 reichten nicht: der Judge lief bei der ersten Produktionsregel exakt
     # ins Limit (completion_tokens=4096) und lieferte abgeschnittenes JSON.
