@@ -262,3 +262,22 @@ def test_judge_gates_bei_gutem_verdikt_leere_registry():
     assert g["geltungsbereich"].status == G.PASS
     assert g["discovery"].status == G.SKIP
     assert len(disc) >= 1
+
+
+def test_lit_negatives_money_ist_catala_parsebar():
+    """gates._lit fuer negatives Money: das Minus steht VOR dem Dollar
+    (-$3,000.00), nicht dahinter ($-3,000.00 = Catala-Parse-Fehler).
+
+    Regression fuer § 36 (Erstattung/Ueberschuss zugunsten des Steuerpflichtigen)
+    und jede Regel mit negativem Output. Vor dem Fix (2026-07-12) erzeugte _lit
+    '$-3,000.00' und liess das clerk-Gate still an einem Harness-Defekt scheitern -
+    ein roter Test hat nie existiert, der Fix war damit unbewiesen. Dieser Test
+    schliesst die Luecke: er waere vor dem Fix rot gewesen."""
+    assert G._lit(-3000.0, "money") == "-$3,000.00"
+    assert G._lit(-22.40, "money") == "-$22.40"
+    # Kein Dollar-vor-Minus mehr (der eigentliche Bug).
+    assert not G._lit(-1.0, "money").startswith("$-")
+    # Positive und Cent-Betraege bleiben unveraendert korrekt.
+    assert G._lit(4499.0, "money") == "$4,499.00"
+    assert G._lit(1408.70, "money") == "$1,408.70"
+    assert G._lit(0.0, "money") == "$0.00"
