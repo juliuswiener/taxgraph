@@ -36,3 +36,7 @@ konventionen:
   kategorie: rundung
   beschreibung: "Es wird nur dort gerundet, wo die Norm es anordnet. Zwischen-
     ergebnisse bleiben ungerundet."
+- id: stunden_je_kalendertag
+  kategorie: zeitbezug
+  beschreibung: "Stundenangaben je Kalendertag liegen in 0..24; ein Kalendertag
+    hat hoechstens 24 Stunden, keine tagesuebergreifende Aggregation im Input."

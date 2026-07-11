@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p9_4a_verpflegungsmehraufwand
-version: 1
+version: 2
 items:
 - art: annahme
   anker:
@@ -202,3 +202,73 @@ items:
   - für Frühstück um 20 Prozent, für Mittag- und Abendessen um jeweils 40 Prozent
   triage: nicht_material_backlog
   klasse: unabhaengig
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die formalisierung verlangt eine uebernachtung am an- oder abreisetag selbst,
+    die norm laesst auch eine uebernachtung an einem angrenzenden tag genuegen.
+  formulierungen:
+  - Die Formalisierung verlangt eine Übernachtung am An- oder Abreisetag selbst, die
+    Norm lässt auch eine Übernachtung an einem angrenzenden Tag genügen.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die formalisierung gewaehrt 28 euro bei 24 oder mehr stunden abwesenheit, die
+    norm verlangt genau 24 stunden abwesenheit an einem kalendertag.
+  formulierungen:
+  - Die Formalisierung gewährt 28 Euro bei 24 oder mehr Stunden Abwesenheit, die Norm
+    verlangt genau 24 Stunden Abwesenheit an einem Kalendertag.
+  triage: nicht_material
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die formalisierung setzt fuer den an- und abreisetag eine uebernachtung am selben
+    tag voraus, die norm erlaubt auch uebernachtung an angrenzenden tagen.
+  formulierungen:
+  - Die Formalisierung setzt für den An- und Abreisetag eine Übernachtung am selben
+    Tag voraus, die Norm erlaubt auch Übernachtung an angrenzenden Tagen.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die 14-euro-regel fuer an-/abreisetag erfordert faelschlich eine uebernachtung
+    am selben tag, nicht an angrenzenden tagen.
+  formulierungen:
+  - Die 14-Euro-Regel für An-/Abreisetag erfordert fälschlich eine Übernachtung am
+    selben Tag, nicht an angrenzenden Tagen.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die ausgabe der verpflegungspauschale erfolgt in dollar statt in euro.
+  formulierungen:
+  - Die Ausgabe der Verpflegungspauschale erfolgt in Dollar statt in Euro.
+  triage: nicht_material
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die bedingung fuer den an- oder abreisetag verlangt eine uebernachtung am selben
+    tag, die norm erlaubt aber auch uebernachtung an einem anschliessenden oder vorhergehenden
+    tag.
+  formulierungen:
+  - Die Bedingung für den An- oder Abreisetag verlangt eine Übernachtung am selben
+    Tag, die Norm erlaubt aber auch Übernachtung an einem anschließenden oder vorhergehenden
+    Tag.
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die formalisierung gewaehrt 14 euro fuer jeden tag mit mehr als 8 stunden abwesenheit
+    ohne uebernachtung, aber die norm beschraenkt dies bei tagesuebergreifender abwesenheit
+    auf den tag mit dem ueberwiegenden anteil.
+  formulierungen:
+  - Die Formalisierung gewährt 14 Euro für jeden Tag mit mehr als 8 Stunden Abwesenheit
+    ohne Übernachtung, aber die Norm beschränkt dies bei tagesübergreifender Abwesenheit
+    auf den Tag mit dem überwiegend
+  triage: bedingung_neu
+  bedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden

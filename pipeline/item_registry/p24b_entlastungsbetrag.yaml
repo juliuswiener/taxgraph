@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p24b_entlastungsbetrag
-version: 1
+version: 2
 items:
 - art: annahme
   anker:
@@ -177,3 +177,39 @@ items:
   - ein Kind im Sinne des Absatzes 1
   triage: nicht_material_backlog
   klasse: unabhaengig
+- art: abweichung
+  anker:
+  - abweichung_text
+  - bei mehr als 12 monaten ohne voraussetzungen wird der entlastungsbetrag negativ,
+    obwohl die norm nur eine minderung bis auf null vorsieht.
+  formulierungen:
+  - Bei mehr als 12 Monaten ohne Voraussetzungen wird der Entlastungsbetrag negativ,
+    obwohl die Norm nur eine Minderung bis auf null vorsieht.
+  triage: nicht_material
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die berechnung kann zu einem negativen entlastungsbetrag fuehren, wenn monate_ohne_voraussetzung
+    groesser als 12 ist.
+  formulierungen:
+  - Die Berechnung kann zu einem negativen Entlastungsbetrag führen, wenn monate_ohne_voraussetzung
+    größer als 12 ist.
+  triage: nicht_material
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die formalisierung kappt monate_ohne_voraussetzung nicht auf 12, was bei werten
+    ueber 12 zu einem negativen entlastungsbetrag fuehrt.
+  formulierungen:
+  - Die Formalisierung kappt monate_ohne_voraussetzung nicht auf 12, was bei Werten
+    über 12 zu einem negativen Entlastungsbetrag führt.
+  triage: nicht_material
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die formalisierung laesst werte ueber 12 zu und erzeugt dann einen negativen entlastungsbetrag,
+    obwohl die norm maximal 12 fehlmonate vorsieht.
+  formulierungen:
+  - Die Formalisierung lässt Werte über 12 zu und erzeugt dann einen negativen Entlastungsbetrag,
+    obwohl die Norm maximal 12 Fehlmonate vorsieht.
+  triage: nicht_material

@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p35a_2_3_haushaltsnahe
-version: 1
+version: 2
 items:
 - art: annahme
   anker:
@@ -282,3 +282,13 @@ items:
     Europäischen Wirtschaftsraum liegt
   triage: nicht_material_backlog
   klasse: unabhaengig
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die formaliserung wendet 20% auf den gesamten betrag an, obwohl nach § 35a abs.
+    5 satz 2 nur arbeitskosten abziehbar sind.
+  formulierungen:
+  - Die Formaliserung wendet 20% auf den gesamten Betrag an, obwohl nach § 35a Abs.
+    5 Satz 2 nur Arbeitskosten abziehbar sind.
+  triage: bedingung_neu
+  bedingung: dienstleistungsbetrag_enthaelt_nur_arbeitskosten
