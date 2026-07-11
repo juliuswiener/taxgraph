@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p24b_entlastungsbetrag
-version: 4
+version: 6
 items:
 - art: annahme
   anker:
@@ -221,7 +221,9 @@ items:
   formulierungen:
   - Die Formalisierung setzt voraus, dass die Eigenschaft 'alleinstehend' bereits
     gemäß § 24b Abs. 3 EStG geprüft und festgestellt wurde.
-  triage: nicht_material
+  - Praezedenz-Hygiene-Korrektur (Instructor msg 1295)
+  triage: bedingung_neu
+  bedingung: alleinstehend_im_sinne_des_absatzes_3
 - art: annahme
   anker:
   - betrifft_kat
@@ -230,4 +232,5 @@ items:
   formulierungen:
   - Die Formalisierung verwendet eine Gleitkommadivision für die Kürzung, ohne eine
     Rundungsregel für das Ergebnis zu spezifizieren.
+  - Praezedenz-Hygiene-Korrektur (Instructor msg 1295)
   triage: nicht_material

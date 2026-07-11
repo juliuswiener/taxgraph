@@ -2,7 +2,7 @@
 # Praezedenzfaelle. Auto-Apply nur bei EXAKTER Anker-Gleichheit.
 # gesperrt: true -> durch Widerruf gesperrt, nie wieder Auto-Apply.
 
-version: 46
+version: 48
 faelle:
 - schluessel: '["[\"annahme\", \"betrifft_kat\", \"uebernachtungskosten_monat\", \"einheit\"]",
     "einheit", "nicht_material", "input_nur_etikettiertes"]'
@@ -725,3 +725,33 @@ faelle:
     auf a) die bei der Veranlagung erfassten Einkünfte oder b) die nach § 3 Nummer
     40 dieses Gesetzes [...] bei der Ermittlung des Einko
   entschieden_am: '2026-07-11T13:28:47.486934+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"alleinstehend\", \"geltungsvoraussetzung\"]",
+    "geltungsvoraussetzung", "bedingung_neu", "alleinstehend_im_sinne_des_absatzes_3"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "alleinstehend", "geltungsvoraussetzung"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - alleinstehend
+  - geltungsvoraussetzung
+  kategorie: geltungsvoraussetzung
+  entscheidungstyp: bedingung_neu
+  ziel_id: alleinstehend_im_sinne_des_absatzes_3
+  gesperrt: false
+  quelle_rule_id: p24b_entlastungsbetrag
+  quelle_text: Praezedenz-Hygiene-Korrektur (Instructor msg 1295)
+  entschieden_am: '2026-07-11T13:31:50.825082+00:00'
+- schluessel: '["[\"annahme\", \"betrifft_kat\", \"monate_ohne_voraussetzung\", \"rundung\"]",
+    "rundung", "nicht_material", "ganzzahl_monate"]'
+  anker_schluessel: '["annahme", "betrifft_kat", "monate_ohne_voraussetzung", "rundung"]'
+  art: annahme
+  anker:
+  - betrifft_kat
+  - monate_ohne_voraussetzung
+  - rundung
+  kategorie: rundung
+  entscheidungstyp: nicht_material
+  ziel_id: ganzzahl_monate
+  gesperrt: false
+  quelle_rule_id: p24b_entlastungsbetrag
+  quelle_text: Praezedenz-Hygiene-Korrektur (Instructor msg 1295)
+  entschieden_am: '2026-07-11T13:31:51.047915+00:00'
