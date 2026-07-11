@@ -170,3 +170,39 @@ def test_discover_draft_daempft_unabhaengig(tmp_path, monkeypatch):
     assert tri["§ 1"] == "nicht_material_backlog"
     assert tri["§ 2"] == "bedingung_neu"
     assert tri["§ 3"] == "offen"
+
+
+# -- Anker-Fix Abweichungen (Schritt 5): nicht mehr degeneriert ---------------
+
+def test_abweichung_verschiedene_texte_verschiedene_schluessel():
+    """Verschiedene Abweichungen einer Regel bekommen verschiedene Schluessel -
+    kein Sammel-Eintrag ["betrifft","?"] mehr, der jede weitere echte Abweichung
+    als "bekannt" schluckte (stilles Gruen)."""
+    v = {"abweichungen": ["A rundet das Ergebnis ab, B nicht.",
+                          "A verlangt Uebernachtung am selben Tag."],
+         "stille_zusatzannahmen": [], "scope_gap": []}
+    neu = IR.abgleich(reg([]), v)["neu"]
+    keys = {n["schluessel"] for n in neu}
+    assert len(neu) == 2 and len(keys) == 2
+    assert all(n["anker"] != ["betrifft", "?"] for n in neu)
+
+
+def test_abweichung_gleicher_wortlaut_stabiler_schluessel():
+    """Dieselbe Abweichung mit IDENTISCHEM Wortlaut -> derselbe Schluessel ueber
+    Laeufe. Achtung: gilt nur bei identischem Wortlaut. Driftet der Judge-Wortlaut,
+    entsteht ein neuer Schluessel -> Re-Discovery + erneute Triage (sichere
+    Fehlrichtung, kein stilles Schlucken). Stabil wird es erst mit dem
+    verpflichtenden `betrifft`-Feld (Backlog, siehe _anker)."""
+    a = "A rundet das Ergebnis ab, B nicht."
+    mk = lambda: IR.abgleich(  # noqa: E731
+        reg([]), {"abweichungen": [a], "stille_zusatzannahmen": [],
+                  "scope_gap": []})["neu"][0]["schluessel"]
+    assert mk() == mk()
+
+
+def test_abweichung_betrifft_wird_bevorzugt():
+    """Traegt die Abweichung ein `betrifft`, ankert sie darauf (stabil) statt am
+    driftenden Text - der Dict-Pfad des Judge-Schemas."""
+    an = IR._anker("abweichung", {"betrifft": "ergebnis",
+                                  "aussage": "irgendein driftender Wortlaut"})
+    assert an == ["betrifft", "ergebnis"]

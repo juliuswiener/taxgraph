@@ -58,7 +58,16 @@ def _anker(art: str, item: dict) -> list:
         return ["ref", ref or "?"]
     betrifft = G._normalize(str(item.get("betrifft") or "?")) or "?"
     if art == "abweichung":
-        return ["betrifft", betrifft]
+        # Nicht-degeneriert (statt frueher immer ["betrifft","?"]): `betrifft`
+        # wenn vorhanden (dict-Abweichung, im Judge-Schema verpflichtend), sonst
+        # ein normalisierter Text-Anker aus der Aussage. Verschiedene Abweichungen
+        # -> verschiedene Schluessel; dieselbe Abweichung ueber Laeufe -> derselbe.
+        # Kein Sammel-Schluessel mehr, der jede kuenftige echte Abweichung als
+        # "bekannt" schluckte (stilles Gruen).
+        if betrifft != "?":
+            return ["betrifft", betrifft]
+        txt = G._normalize(str(item.get("aussage") or item.get("text") or ""))
+        return ["abweichung_text", txt or "?"]
     return ["betrifft_kat", betrifft, str(item.get("kategorie") or "sonstige")]
 
 
