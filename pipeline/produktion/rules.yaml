@@ -161,7 +161,7 @@ regeln:
     label: "§ 9 Abs. 1 S. 3 Nr. 5a EStG"
     datei: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
     zitatanker: "bis zur Höhe des Betrags nach Nummer 5"
-    auszug: "notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen"
+    auszug: "notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen an einer Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist. 2 Übernachtungskosten sind die tatsächlichen Aufwendungen für die persönliche Inanspruchnahme einer Unterkunft zur Übernachtung. 3 Soweit höhere Übernachtungskosten anfallen, weil der Arbeitnehmer eine Unterkunft gemeinsam mit Personen nutzt, die in keinem Dienstverhältnis zum selben Arbeitgeber stehen, sind nur diejenigen Aufwendungen anzusetzen, die bei alleiniger Nutzung durch den Arbeitnehmer angefallen wären. 4 Nach Ablauf von 48 Monaten einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist, können Unterkunftskosten nur noch bis zur Höhe des Betrags nach Nummer 5 angesetzt werden."
   - typ: gesetz
     label: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 4 EStG (1.000-Euro-Kappung, via Verweis Nr. 5a Satz 4)"
     datei: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
