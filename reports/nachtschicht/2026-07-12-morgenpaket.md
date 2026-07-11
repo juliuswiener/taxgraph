@@ -154,3 +154,30 @@ Doppel-Treffer. **bestaetigt_von: instructor, 2026-07-12 Nacht. Julius-Review = 
 
 Verifizierte 17: dHf, nr5a_vor_48, nr5a_nach_48, p9_4a, nr6_7_afa_laufend, p9_6, p10_1_7,
 p24b, p33_3, p35a, p36, p33_1_2, p32_6, p31, p10_1_2, p10_1_3_3a, p10_1_4.
+
+---
+
+## 9. Post-Julius-Review-Aufträge (2026-07-12, nach Freigabe)
+
+**Julius-Review 2026-07-12: alle Empfehlungen übernommen** — A-Block ohne Widerrufsvorbehalt bestätigt.
+
+- **B3 Rundungs-RICHTUNGS-Lint** geliefert (gates.py + Negativtest, pytest 32/32): deklarierte
+  Rundung trägt `richtung` (floor/ceil/kaufmaennisch), Lint gleicht die Catala-Op ab, Mismatch →
+  Repair-Signal. solzg richtung:floor deklariert → Lint PASS (A floort korrekt).
+- **KLASSE 5 der Taxonomie: PRÄZISIONS-ORDNUNG** (neu, via solzg entdeckt): `money × decimal`
+  rundet auf Cent VOR dem finalen Schnitt (Catala-money cent-präzise: $1 × 0,119 = $0,12). solzg
+  bleibt bewusst **flagged_for_review** mit Sub-Cent-Residual (1 Cent, nur direkt über der
+  Freigrenze, 20351 = pathologischer Rand) — kein blinder Repair-Lauf (Varianz-Glücksspiel).
+  Fix-Backlog: Präzisions-Lint (money-Mult vor Cent-Schnitt) + als Numeric-Idiom-Arm in den
+  B1-Messplan. **checkESt (ELSTER) wird den Cent amtlich flaggen → erster Testkandidat fürs CI-Gate.**
+- **B5 GWG Netto/Brutto** (Instructor-Recherche R 9b Abs. 2 EStR): GWG-Grenze NETTO, Abzug BRUTTO.
+  afa_laufend hat materielle Lücke (ein AK-Input trägt nicht beides). (a) Interim-Geltungsbedingung
+  `grenzwert_und_abzugsbetrag_fallen_zusammen` gesetzt (dokumentiert die Einschränkung, afa_laufend
+  bleibt verified_bedingt). (b) Backlog Charge 3: Neuschnitt ak_netto/ak_brutto. (c) EStR R 6.13 +
+  R 9b als verwaltung-Quellen einfrieren (esth.bundesfinanzministerium.de, offen).
+- **B1 roles.py-Messplan** (Bedingungen→Formalisierer): in Arbeit, jetzt inkl. Numeric-Idiom-Arm
+  (Prozent in decimal, Cent-Schnitt am Ende). Vorregistriert an Instructor zur Freigabe VOR Lauf.
+- **B4 §2-Arithmetik** (nr6_7-Überhang) + **B6 Phase 4** (ELSTER-Feldmapping nach Julius-Download): eingeplant.
+
+Fehler-Taxonomie jetzt FÜNFSTUFIG: Kontext-Hunger → Boundary-Kodierung → Integrations-Arithmetik
+→ Rundungs-Richtung → Präzisions-Ordnung. Weiterhin NULL Modell-Capability-Deltas.
