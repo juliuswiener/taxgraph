@@ -146,4 +146,11 @@ Rest-Batches (2-4) + Charge-2-Reste ~$0,8. Alles andere (Seeding, Freezes, Regat
 Diagnosen, Tooling-Fix, Reports, Sweep, Morgenpaket) $0. Rahmen (10 USD) hält, Rest ~6,5 USD.
 
 ---
-*v3-Endstand (dev). Instructor baut sein Sammel-Regate-Verdikt hier ein; final = Julius-Review.*
+**Endstand von instructor doppelt unabhängig verifiziert** (frischer Sammel-Regate @b8109d4:
+17 verified_bedingt, 0 Gate-Änderungen, pytest 98/98, Quellen-Gate 18/18 verbatim; solzg
+flagged_for_review = einziger Rest-Rot, Rundungsrichtungs-Residual). Monolithe nr5a/nr6_7
+sauber übersprungen (zuschnitt_ersetzt); Präzedenz-Store 3 gesperrte Fälle, keine ungesperrten
+Doppel-Treffer. **bestaetigt_von: instructor, 2026-07-12 Nacht. Julius-Review = finale Instanz.**
+
+Verifizierte 17: dHf, nr5a_vor_48, nr5a_nach_48, p9_4a, nr6_7_afa_laufend, p9_6, p10_1_7,
+p24b, p33_3, p35a, p36, p33_1_2, p32_6, p31, p10_1_2, p10_1_3_3a, p10_1_4.
