@@ -68,8 +68,20 @@ Kein amtliches Rechenbeispiel bekannt -> synthetisch mit rechenweg nach deiner
 Abgrenzungs-Freigabe (Randfaelle: Freigrenze exakt, Milderungszone, Milderungszonen-
 Ende, Splitting). Bis dahin "fehlt bewusst".
 
-## Frage an dich
+## Nachtrag: Auflagen eingearbeitet (Instructor msg 1192, "SO mit Auflagen")
 
-So / anders (wie) / zurueckstellen? Besonders: die drei Bedingungen (v.a. ob die
-Bemessungsgrundlage-Semantik als Bedingung ODER als schlichte Input-Etikettierung
-(konv:input_nur_etikettiertes) laufen soll), und ob `splitting` als bool reicht.
+1. **bemessungsgrundlage_ist_est_mit_kinderfreibetraegen** bleibt BEDINGUNG (nicht
+   konv): das Label traegt die § 3-Abs.-2-Fiktion nicht aus sich heraus (weicht bei
+   Kindern von der festgesetzten ESt ab). deckt_ab auf die verifizierte Passage.
+2. **splitting** zusaetzlich als Bedingung `splitting_ist_veranlagungsergebnis`
+   (gleiche Ziel-ID wie p33 -> Praezedenz-Ratsche), deckt_ab Splitting-Passage.
+3. **Cent-Regel als deklarierte Rundung**: `rundung:` mit zitatanker "Bruchteile
+   eines Cents bleiben außer Ansatz" [§ 4 Satz 3] -> rundungs_lint zaehlt sie als
+   angeordnet, nicht als stille Annahme.
+4. **Boundary-Raster+Seeds**: BMG=20.350 -> 0 (nur wenn UEBERSTEIGT); 20.351 -> 0,11
+   (11,9 % x 1 = 0,119, Cent abgeschnitten -> 0,11); ein Punkt in der Zone; Zonen-
+   Ende-Umgebung (~37.838); ein Punkt klar darueber (5,5 % voll); Splitting analog.
+5. **Rechenwege je Seed mit exakter Cent-Behandlung** (Abschneiden, nicht kaufmaennisch).
+
+Damit ist der Zuschnitt final; Manifest-Eintrag + Seeds folgen vor Stufe B (die
+selbst erst nach Julius' Morgen-Entscheid zur Formalisierer-Besetzung laeuft).
