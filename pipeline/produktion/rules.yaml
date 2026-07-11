@@ -151,6 +151,10 @@ regeln:
   exclude_rule_ids:
   - p9_1_3_nr5_doppelte_haushaltsfuehrung
 - rule_id: p9_1_3_nr5a_uebernachtung
+  # ERSETZT durch p9_1_3_nr5a_uebernachtung_{vor,nach}_48 (Bake-off 2026-07-12:
+  # bedingte Kappung war Kontext-Hunger; nach auszug-Weitung Boundary-Oszillation an 48:
+  # run1 48->12000 (clerk PASS), run2 48->16800 (clerk FAIL). defekt-Item bleibt am Monolithen.
+  status: zuschnitt_ersetzt
   norm: § 9 Abs. 1 S. 3 Nr. 5a EStG
   # Charge-2-Neuschnitt (2026-07-11, reports/review/2026-07-11-charge2-zuschnitt-teil1.md,
   # Instructor-Freigabe msg 1163). Monatsbetrag statt Jahresbetrag; 48-Monats-Kappung
@@ -225,6 +229,112 @@ regeln:
   - {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 48}
   exclude_rule_ids:
   - p9_1_3_nr5a_uebernachtung
+- rule_id: p9_1_3_nr5a_uebernachtung_vor_48
+  norm: § 9 Abs. 1 S. 3 Nr. 5a EStG (Zeitraum vor Ablauf 48 Monate)
+  quellen:
+  - typ: gesetz
+    label: § 9 Abs. 1 S. 3 Nr. 5a Satz 1-3 EStG (ungekappt)
+    datei: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
+    zitatanker: notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen
+    auszug: notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen an einer Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist. 2 Übernachtungskosten sind die tatsächlichen Aufwendungen für die persönliche Inanspruchnahme einer Unterkunft zur Übernachtung. 3 Soweit höhere Übernachtungskosten anfallen, weil der Arbeitnehmer eine Unterkunft gemeinsam mit Personen nutzt, die in keinem Dienstverhältnis zum selben Arbeitgeber stehen, sind nur diejenigen Aufwendungen anzusetzen, die bei alleiniger Nutzung durch den Arbeitnehmer angefallen wären.
+  geltungsbedingungen:
+  - bedingung: zeitraum_vollstaendig_vor_48_monate
+    deckt_ab: bis zur Höhe des Betrags nach Nummer 5
+    quelle: § 9 Abs. 1 S. 3 Nr. 5a Satz 4 EStG
+    beschreibung: 'Binaere Auswahlbedingung: gilt nur, wenn der Abrechnungszeitraum vollstaendig vor Ablauf der 48 Monate liegt (monate_bisher_am_ort < 48). Auswahl macht die § 2-Integration; ueberspannende Zeitraeume splittet der Aufrufer.'
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
+    zitatanker: notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen
+    herkunft: synthetisch
+    rechenweg: 'vor 48: ungekappt; 800 x 12 = 9.600,00.'
+    inputs:
+      uebernachtungskosten_monat: 800
+      monate: 12
+      monate_bisher_am_ort: 10
+    expected: 9600.0
+  - quelle: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
+    zitatanker: notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER 47er: monate_bisher 47 < 48 -> ungekappt; 1.400 x 12 = 16.800,00.'
+    inputs:
+      uebernachtungskosten_monat: 1400
+      monate: 12
+      monate_bisher_am_ort: 47
+    expected: 16800.0
+  signature:
+    scope: UebernachtungskostenVor48
+    inputs:
+      uebernachtungskosten_monat: money
+      monate: int
+      monate_bisher_am_ort: int
+    output: abziehbare_uebernachtungskosten
+  raster:
+  - uebernachtungskosten_monat: 800
+    monate: 12
+    monate_bisher_am_ort: 10
+  - uebernachtungskosten_monat: 1400
+    monate: 12
+    monate_bisher_am_ort: 47
+  exclude_rule_ids:
+  - p9_1_3_nr5a_uebernachtung_vor_48
+- rule_id: p9_1_3_nr5a_uebernachtung_nach_48
+  norm: § 9 Abs. 1 S. 3 Nr. 5a i.V.m. Nr. 5 S. 4 EStG (Zeitraum nach Ablauf 48 Monate)
+  quellen:
+  # Split-Leitlinie: auszug NUR Cap-Mechanik, KEIN Selektions-Konditional. Satz 4
+  # ("Nach Ablauf von 48 Monaten...") bleibt als zitatanker/label Provenance (geht
+  # nicht ans Modell), damit es die 48-Grenze nicht erneut raet (Instructor msg 1250).
+  - typ: gesetz
+    label: § 9 Abs. 1 S. 3 Nr. 5a Satz 4 i.V.m. Nr. 5 EStG (Kappung 1.000/Monat; Rechtsgrund Satz 4)
+    datei: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
+    zitatanker: bis zur Höhe des Betrags nach Nummer 5
+    auszug: höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland
+  geltungsbedingungen:
+  - bedingung: zeitraum_vollstaendig_nach_48_monate
+    deckt_ab: bis zur Höhe des Betrags nach Nummer 5
+    quelle: § 9 Abs. 1 S. 3 Nr. 5a Satz 4 EStG
+    beschreibung: 'Binaere Auswahlbedingung: gilt nur, wenn der Abrechnungszeitraum vollstaendig nach Ablauf der 48 Monate liegt (monate_bisher_am_ort >= 48). Innerhalb greift die 1.000er-Kappung ausnahmslos.'
+  - bedingung: unterkunft_im_inland
+    deckt_ab: höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland
+    quelle: § 9 Abs. 1 S. 3 Nr. 5 Satz 4 EStG
+    beschreibung: MVP-Linie Inland (1.000). Auslandsfall (2.000) zurueckgestellt.
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
+    zitatanker: 1 000 Euro im Monat
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER 48er: monate_bisher 48 >= 48 -> Kappung; min(1.400,1.000) x 12 = 12.000,00.'
+    inputs:
+      uebernachtungskosten_monat: 1400
+      monate: 12
+      monate_bisher_am_ort: 48
+    expected: 12000.0
+  - quelle: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
+    zitatanker: 1 000 Euro im Monat
+    herkunft: synthetisch
+    rechenweg: 'Unter-Cap nach 48: min(800,1.000) x 12 = 9.600,00 (Kappung ist Obergrenze, kein Fixbetrag).'
+    inputs:
+      uebernachtungskosten_monat: 800
+      monate: 12
+      monate_bisher_am_ort: 48
+    expected: 9600.0
+  signature:
+    scope: UebernachtungskostenNach48
+    inputs:
+      uebernachtungskosten_monat: money
+      monate: int
+      monate_bisher_am_ort: int
+    output: abziehbare_uebernachtungskosten
+  raster:
+  - uebernachtungskosten_monat: 1400
+    monate: 12
+    monate_bisher_am_ort: 48
+  - uebernachtungskosten_monat: 800
+    monate: 12
+    monate_bisher_am_ort: 48
+  - uebernachtungskosten_monat: 1400
+    monate: 12
+    monate_bisher_am_ort: 60
+  exclude_rule_ids:
+  - p9_1_3_nr5a_uebernachtung_nach_48
 - rule_id: p9_4a_verpflegungsmehraufwand
   norm: § 9 Abs. 4a EStG
   # BLOCK AUFGEHOBEN (2026-07-11, Dekret Nicht-Saettigungs-Steuer, Punkt 1).

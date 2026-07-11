@@ -373,10 +373,12 @@ def main() -> int:
     else:
         # Regeln, deren Zuschnitt offen ist, laufen nicht: ein Approval-Versuch
         # waere sinnlos, solange die Signatur den Norm-Ausschnitt verfehlt.
-        offen = [r["rule_id"] for r in rules if r.get("status") == "zuschnitt_offen"]
-        if offen:
-            print(f"uebersprungen (zuschnitt_offen): {', '.join(offen)}")
-        rules = [r for r in rules if r.get("status") != "zuschnitt_offen"]
+        # zuschnitt_ersetzt: durch Teilregeln abgeloeste Monolithen (Historie bleibt).
+        SKIP_STATUS = ("zuschnitt_offen", "zuschnitt_ersetzt")
+        uebersprungen = [r["rule_id"] for r in rules if r.get("status") in SKIP_STATUS]
+        if uebersprungen:
+            print(f"uebersprungen (status): {', '.join(uebersprungen)}")
+        rules = [r for r in rules if r.get("status") not in SKIP_STATUS]
     if not rules:
         raise SystemExit(f"keine Regel {args.only!r} im Manifest")
 
