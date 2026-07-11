@@ -184,6 +184,10 @@ regeln:
     deckt_ab: "an einer Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist"
     quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 1 EStG"
     beschreibung: "Uebernachtung an einer Taetigkeitsstaette, die nicht erste Taetigkeitsstaette ist."
+  - bedingung: zeitraum_ohne_schwellenuebertritt
+    deckt_ab: "bis zur Höhe des Betrags nach Nummer 5"
+    quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 4 EStG"
+    beschreibung: "Der Abrechnungszeitraum liegt vollstaendig VOR oder vollstaendig NACH Ablauf der 48 Monate. Ueberspannende Zeitraeume (z.B. monate_bisher_am_ort 45, monate 6 = 3 ungekappt + 3 gekappt) bildet die Signatur nicht ab; der Aufrufer muss an der Schwelle splitten. Ehrliche Teilformalisierung (Instructor msg 1185)."
   test_seed:
   - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
     zitatanker: "bis zur Höhe des Betrags nach Nummer 5"
@@ -194,27 +198,31 @@ regeln:
   - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
     zitatanker: "1 000 Euro im Monat"
     herkunft: synthetisch
-    rechenweg: "Nach Ablauf von 48 Monaten kappt ab Monat 49; bei monate_bisher_am_ort 48 noch keine Kappung -> 1.400 x 12 = 16.800,00. Randfall 48."
-    inputs: {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 48}
+    rechenweg: "monate_bisher_am_ort 47 = 47 volle Monate abgelaufen, laufender Monat ist der 48. -> Ablauf von 48 Monaten noch nicht erreicht, keine Kappung; 1.400 x 12 = 16.800,00. Randfall 47 (ungekappt)."
+    inputs: {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 47}
     expected: 16800.00
   - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
     zitatanker: "1 000 Euro im Monat"
     herkunft: synthetisch
-    rechenweg: "monate_bisher_am_ort 49 > 48 -> Kappung auf 1.000/Monat; 1.000 x 12 = 12.000,00. Randfall 49."
-    inputs: {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 49}
+    rechenweg: "monate_bisher_am_ort 48 = 48 volle Monate abgelaufen, laufender Monat ist der 49. -> Nach Ablauf von 48 Monaten, Kappung auf 1.000/Monat; 1.000 x 12 = 12.000,00. Randfall 48 (gekappt)."
+    inputs: {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 48}
     expected: 12000.00
   signature:
     scope: Uebernachtungskosten
     inputs:
       uebernachtungskosten_monat: money
       monate: int
+      # monate_bisher_am_ort: VOR dem Abrechnungszeitraum abgeschlossene volle Monate
+      # an derselben Taetigkeitsstaette (Neubeginn-bereinigt); "bisher" = vorausgegangen.
+      # Wert 48 = laufender Monat ist der 49. -> Kappung greift ab Wert 48 (Instructor
+      # msg 1185, Selbstkorrektur der 48/49-Spec: Index- vs. Ablauf-Semantik).
       monate_bisher_am_ort: int
     output: abziehbare_uebernachtungskosten
   raster:
   - {uebernachtungskosten_monat: 800, monate: 12, monate_bisher_am_ort: 10}
   - {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 10}
+  - {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 47}
   - {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 48}
-  - {uebernachtungskosten_monat: 1400, monate: 12, monate_bisher_am_ort: 49}
   exclude_rule_ids:
   - p9_1_3_nr5a_uebernachtung
 - rule_id: p9_4a_verpflegungsmehraufwand
