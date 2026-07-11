@@ -116,25 +116,34 @@ betraf JEDE Erstattungs-/negativ-Output-Regel.
 
 ---
 
-## 8. Teil-2-Rest-Batches ABGESCHLOSSEN + zwei Residuals
+## 8. Teil-2-Rest-Batches ABGESCHLOSSEN — alle verified_bedingt (1 Residual)
 
-Alle 8 Teil-2-Regeln adressiert (Sweep-Widenings, Kontext-Hunger 7× via auszug-Weitung gelöst):
-- **grün/verified_bedingt**: p36, p33_1_2, p32_6, p31, p10_1_2 (Rundungs-Richtung als toter
-  Zweig geklärt), p10_1_4. nr5a_vor_48/_nach_48, nr6_7_afa_laufend (Splits).
-- **solzg 4/5**: Rundungs-Richtung (Punkt 3).
-- **p10_1_3_3a (kv_pv) — BASIS-DURCHBRUCH-RESIDUAL**: A+B verfehlen STABIL, dass die Basis
-  (Nr-3) den Höchstbetrag durchbricht (basis 4.000 > 2.800 → soll 4.000 voll, beide kappen
-  2.800). Klausel ist im auszug — subtile Sub-Mechanik-Assemblierung, NICHT Kontext-Hunger.
-  2. echtes Residual neben solzg. Offen: (b) auszug-Schärfung oder (a) als Residual doku.
-- **Batch-4-Triage** (p10_1_4 + p10_1_3_3a-Discoveries) offen (Instructor-Klassen + Apply).
-- Bulk-Triage-Klassen + 3-Stufen-Taxonomie + 4. Klasse dokumentiert (Memory formalisierer-
-  kontext-kanal; Reports reports/review/2026-07-12-*.md).
+Alle 8 Teil-2-Regeln adressiert (Sweep-Widenings, Kontext-Hunger via auszug-Weitung gelöst):
+- **verified_bedingt**: p36, p33_1_2, p32_6, p31, p10_1_2, p10_1_4, **p10_1_3_3a**.
+  nr5a_vor_48/_nach_48, nr6_7_afa_laufend (Splits). Triage komplett (Instructor-Klassen).
+- **p10_1_3_3a-Basis-Durchbruch GELÖST**: A+B verfehlten den Durchbruch zunächst (basis 4.000
+  > 2.800 → kappten 2.800), obwohl die Klausel im auszug war — weil sie in der langen Abs-4-
+  Passage nach Zusammenveranlagten-Rauschen VERGRABEN war. Als eigener prominenter auszug-Block
+  → sofort getroffen (4.000). **War doch Kontext-Hunger** (Prominenz-Verfeinerung der Leitlinie:
+  Klausel muss nicht nur enthalten, sondern GEWICHTET/prominent sein). Der Judge-Abweichungs-
+  Flag darauf war ein Falschpositiv (nicht_echt, per Wächter-Seed bewiesen).
 
-**~17 Regeln verified_bedingt/grün.** Zwei ehrliche Residuals (solzg-Rundungsrichtung,
-p10_1_3_3a-Basis-Durchbruch) — beide Sub-Mechanik, kein Kanal-Problem, deterministisch fixbar
-(Schärfung / rundungs_lint-Richtungsausbau).
+**~17 Regeln verified_bedingt.** EIN einziges echtes Residual: **solzg-Rundungsrichtung**
+(Punkt 3, deterministisch fixbar via rundungs_lint-Richtungsausbau). NULL Modell-Capability-
+Deltas die ganze Nacht — Prominenz-Verfeinerung eliminierte auch das letzte vermeintliche
+Sub-Mechanik-Delta.
+
+## 8a. Auszug-Leitlinie (finalisiert, für Zuschnitts-Reviews)
+
+Der auszug muss jede OUTPUT-variierende Klausel (1) ENTHALTEN und (2) PROMINENT zeigen — als
+eigenen kohärenten Block, NICHT in Fremd-Sätzen/Sonderfall-Rauschen vergraben. Reine
+Anwendbarkeits-Klauseln bleiben draußen (Geltungsbedingungs-Territorium). Bei Split-Teilregeln:
+Selektions-Konditional AUSSCHLIESSEN (§2-Territorium), nur lokale Formel-Mechanik.
 
 ## Kosten-Schlusszeile
 **Nacht gesamt ~$3,4 / 10 USD.** Bake-off-Kette ~$1,7 · Batch-1 + Splits + Neuläufe ~$0,9 ·
 Rest-Batches (2-4) + Charge-2-Reste ~$0,8. Alles andere (Seeding, Freezes, Regates, Triagen,
-Diagnosen, Tooling-Fix, Reports, Sweep, Morgenpaket) $0. Rahmen (10 USD) hält, Rest ~6,6 USD.
+Diagnosen, Tooling-Fix, Reports, Sweep, Morgenpaket) $0. Rahmen (10 USD) hält, Rest ~6,5 USD.
+
+---
+*v3-Endstand (dev). Instructor baut sein Sammel-Regate-Verdikt hier ein; final = Julius-Review.*
