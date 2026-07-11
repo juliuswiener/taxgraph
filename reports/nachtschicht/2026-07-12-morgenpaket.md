@@ -1,90 +1,129 @@
 # Morgen-Paket — Julius-Entscheidungen (Nacht 2026-07-11/12)
 
-Konsolidiert für den Morgen-Review. Alles unten ist entweder entschieden (mit
-Widerrufsvorbehalt) oder wartet auf deine Entscheidung. Nacht-Summe **$0,50 / 10 USD**.
-Alle Gate-Verdikte frisch, doppelt gerechnet (dev + instructor), kein Falschgrün.
+Konsolidiert für den Morgen-Review. **Nacht-Summe ~$3,0 / 10 USD.** Alle Gate-Verdikte
+frisch, doppelt gerechnet (dev + instructor Regate), kein Falschgrün. Version 2 (ersetzt
+die 06:04-Fassung — deren zentrale Prämisse „drei Capability-Fehler" wurde über Nacht
+FALSIFIZIERT, siehe Punkt 1).
 
 ---
 
-## 1. Formalisierer-Besetzung — RE-EVALUATIONS-TRIGGER AUSGELÖST (deine Entscheidung)
+## 0. Die zentrale Erkenntnis der Nacht: NULL Modell-Capability-Defizite
 
-Drei Formalisierer-Schwäche-Fälle in Folge (models.yaml-Trigger: rollende Eskalation /
-Human-Review-Miss):
-- **p33** Rundung (A rundete ab, B nicht) — in Charge 1 gelöst durch A-Neulauf.
-- **nr6_7** Letztjahr-AfA-Rest (A modelliert ihn nicht) + year0-Zwölftelung-Regress
-  im redo_a (A-Lauf-Varianz).
-- **nr5a** 48-Monats-Gate fehlt — **A UND B** kappen unbedingt (nicht nur A). Erstes
-  Mal, dass BEIDE Formalisierer denselben Norm-Mechanismus verfehlen.
+Der 06:04-Trigger „drei Formalisierer-Schwächen → Besetzung neu" war ein FEHLURTEIL.
+Ein zweistufiger Bake-off ($1,7) + gezielte Diagnose zeigten: der Formalisierer-Prompt
+sieht NUR den quellen-**auszug** (Geltungsbedingungen/Signatur-Kommentare erreichen ihn
+NIE — verifiziert im Code). Die „Fehler" waren **KONTEXT-HUNGER**: enge auszüge, die den
+Trigger einer Bedingung wegließen. Beispiel nr5a: der auszug erwähnte die 48-Monats-Schwelle
+NIE → das Modell kappte korrekterweise immer. Klausel stand im frozen source, nur nicht im
+auszug. Nach Weitung: A trifft 47→16.800 (ungekappt) sofort.
 
-Besetzung ist Julius-Entscheid (nicht dev/instructor). Optionen + Kostenrahmen:
-- **(A) Modellwechsel A und/oder B**: anderes Modell für Formalisierer A (aktuell
-  anthropic/claude-sonnet-4.6) und/oder B (z-ai/glm-5.2). Erfordert einen kleinen
-  Bake-off (G2-Muster, ~14 Tasks × Paarung) zur begründeten Neubesetzung — Größen-
-  ordnung ~2-4 USD einmalig. Ändert den models.yaml-Hash.
-- **(B) Provider-Variante**: nur Provider-Pin (wie beim Judge together→deepinfra
-  heute Nacht). $0 Config + Re-Runs. Hilft NUR bei Infra/Quantisierung, NICHT bei
-  echten Modell-Fähigkeitslücken (die drei Fälle sind Fähigkeit, nicht Infra) →
-  vermutlich unzureichend allein.
-- **(C) Zuschnitts-Feedback-Schleife**: die failenden Seeds/Gaps strukturiert in die
-  Kaskade zurückspielen (Prompt-Anreicherung). ACHTUNG: Prompt-Änderung → braucht
-  vorregistrierten Messplan (Dekret), nicht heute Nacht umsetzbar. Mittelfristig das
-  sauberste, aber methodisch teuerste.
-Empfehlung dev/instructor: (A) für B (glm-5.2 fiel bei nr5a UND lieferte bei nr6_7
-erst gar kein Catala) prüfen; A (sonnet) hält sich besser (year0 war im 5/6-Lauf
-korrekt). Aber das ist deine Entscheidung.
+**Dreistufige Fehler-Taxonomie (alle drei empirisch belegt, in dieser Reihenfolge prüfen):**
+1. **Kontext-Hunger** → auszug weiten (Trigger fehlt im Prompt). nr5a, solzg, p36, p10-Rest.
+2. **Boundary-Kodierung** → Split in Teilregeln, Schwelle wird §2-Selektion (der Name
+   trägt die Kodierung nicht, der Pin erreicht das Modell nicht). nr5a vor/nach_48.
+3. **Arithmetische Folgerung ohne Wortlaut** → Integrations-Arithmetik, keine
+   Formalisierungsregel (steht nicht im Gesetz). nr6_7 Überhangsjahr = AK − Σ(laufend).
+
+Über die ganze Nacht KEIN einziges echtes Modell-Fähigkeitsdefizit — alles löste sich in
+Kanal, Kodierung oder Arithmetik auf. (Instructor-Selbstkorrektur #3: Capability-Deutung
+war voreilig. Selbstkorrektur #4: „nach_48 MIT Satz 4"-Vorgabe holte die Boundary zurück.)
 
 ---
 
-## 2. Widerrufsvorbehalt-Bestätigungen (Nacht-Delegation → dein OK)
+## 1. Formalisierer-Besetzung — glm GEHALTEN (Widerruf), KEIN Wechsel nötig
 
-Vom Instructor unter Nacht-Delegation bestätigt, mit deinem Widerrufsvorbehalt:
-- **7× verified_bedingt (Charge 1)**: p10_1_7, p9_6, p9_1_3_nr5, p33 (Schritt 2) +
-  p24b, p9_4a, p35a (nach Abweichungs-Triage). Alle Gates frisch grün, doppelt gerechnet.
-- **K1-Konvention** `stunden_je_kalendertag` (0..24) in signatur_konventionen.yaml.
-- **K2-Konvention** `nichtnegative_betraege` um Zählgrößen erweitert.
-- **cap4000-Seeds** (§35a Abs2, synthetisch, Sichtprüfung bracket 4.000,00).
-- **Auto-Apply-Whitelist** {bedingung_neu, nicht_material} (feat/triage-ui, gemergt).
-- **dHf/p9_4a-Triage-Mappings** (Abweichungs-Triage der 12 Items).
-
----
-
-## 3. Netto/Brutto-GWG-Grenzfall (§ 6 Abs. 2 → § 9b Abs. 1) — Recherche nötig
-
-nr6_7: `anschaffungskosten` = maßgebliche AK i.S.d. § 6 Abs. 2 S. 1. § 6 Abs. 2
-verweist auf § 9b Abs. 1 (Vorsteuer nur raus, SOWEIT bei der USt abziehbar — beim
-Arbeitnehmer i.d.R. NICHT). Also für den AN: Brutto-AK (inkl. USt) ist die maßgebliche
-Grenze für die 800-Euro-Prüfung. Nicht still festgelegt; als Bedingung
-`anschaffungskosten_sind_massgebliche_ak` deklariert. Braucht BMF/LStR-Bestätigung,
-dann Kommentar/Seed. Materiell für die 800/801-Grenze (Brutto vs Netto verschiebt sie).
+Bake-off-Kette (Haupt: gemini-2.5-pro vs mistral-large-2512 vs llama-4-maverick, $1,0;
+Mikro: gemini vs glm @16384 Token-Parität, $0,74):
+- **KEIN Kandidat** löste die defekt-Regeln besser als glm. gemini == glm auf nr6_7 (exakt
+  derselbe Einzelfehler), mistral regredierte sogar die Kontroll-Regel.
+- Mikro-Bake-off falsifizierte die Trunkierungs-Hypothese: @16384 emittierten beide Catala,
+  scheiterten am SELBEN Seed. gemini's einziger 8192-Solve war Run-Varianz (Glück).
+- Nach den Splits ist glm auf allen gelösten Teilregeln A-gleich sauber → das vermeintliche
+  glm-Capability-Delta (nr5a 47→12.400) war Schwellen-Kodierungs-Raten, nicht Fähigkeit.
+**Entscheidung (dev+instructor, Widerruf bei dir): B = z-ai/glm-5.2 bestätigt, A = sonnet-4.6
+bestätigt, kein Modellwechsel.** Reports: reports/review/2026-07-12-bakeoff-b-rolle-ergebnis.md
++ -mikro-bakeoff-nr6_7.md.
 
 ---
 
-## 4. Zwei dokumentierte Selbstkorrekturen (Kultur: sichtbar, nicht geglättet)
+## 2. NEUER Entscheidungspunkt: roles.py-Erweiterung (Bedingungen → Formalisierer)
 
-- **nr5a-Boundary-Fehlurteil (Instructor)**: Instructor entschied zunächst (b) "kein
-  defekt, nur Seed-Korrektur" unter der Prämisse "A kappt ab 48 korrekt". Die dev-
-  Per-Seed-Probe **falsifizierte** das (A kappt unbedingt ab 0). Instructor zog die
-  Konsequenz → (a) defekt. Prämisse offen falsch, Korrektur sichtbar.
-- **Seed-Spec-Selbstkorrektur (Instructor)**: die 48/49-Boundary-Spec war unter Index-
-  Semantik gedacht; die tatsächliche Norm (Ablauf-Semantik) + un-gepinnte Input-
-  Semantik von monate_bisher_am_ort → Neupinnung (Wert 48 = Kappung). Dokumentiert.
+Der Code-Fakt (Bedingungen erreichen den Formalisierer nicht) ist eine strukturelle Grenze.
+Der auszug-Weitungs-Ansatz umgeht sie, aber eine **roles.py-Erweiterung** (Geltungsbedingung-
+beschreibungen ODER ein dediziertes Hinweis-Feld auch in den Formalisierer-Prompt) wäre der
+robustere Fix. **Ändert faktisch den Prompt-Inhalt global → braucht dich + einen
+vorregistrierten Messplan** (Prompt-Change-Dekret). Zwei Varianten zu vergleichen:
+(a) Bedingungs-beschreibungen durchreichen, (b) dediziertes `hinweis`-Feld. Nicht heute Nacht.
+
+---
+
+## 3. NEUE 4. Taxonomie-Klasse: Rundungs-RICHTUNG (solzg-Residual)
+
+solzg ist ehrlich 4/5 (Milderungszone via Weitung gefixt, war 0/0/511 kaputt). Residual:
+seed 20.351 → 0,12 statt 0,11. „Bruchteile eines Cents bleiben außer Ansatz" = Trunkierung,
+das Modell rundet kaufmännisch. Klausel IST im auszug — Rundungs-RICHTUNGS-Fehler.
+**Backlog-Empfehlung: rundungs_lint um Richtungsprüfung erweitern** (deklarierte Rundung
+trägt künftig floor/ceil/kaufmännisch; truncate vs round ist im Catala-Code syntaktisch
+sichtbar) → deterministisches Repair-Signal statt Interpretationsglück. Vierte Klasse der
+Taxonomie neben Kontext-Hunger / Boundary / Integrations-Arithmetik.
 
 ---
 
-## 5. Stufe-B-Go Teil 2 (nach Besetzungsentscheid #1)
+## 4. nr6_7 Überhangsjahr = §2-Integrations-Arithmetik (Task, Integrations-Phase)
 
-Teil 2 Stufe A ist komplett reviewed + freigegeben: 8 Zuschnitte (SolzG, § 36 Abs2,
-§ 33 Abs1/2, § 32 Abs6, § 31, § 10 v1/v2/v4; v3 Backlog). Manifest-Einträge werden mit
-den Auflagen finalisiert ($0). **Stufe B (Kaskaden-Läufe) wartet bewusst auf deinen
-Besetzungsentscheid** (#1) — mit einer geschwächten Formalisierer-Paarung zu laufen
-verbrennt Budget. Kostenrahmen Stufe B Teil 2: ~0,5-0,8 USD für 8 Regeln. PLUS die
-zwei defekt-Neuläufe (nr6_7, nr5a) nach Besetzungsfix.
+Der Terminal-AfA-Rest bei unterjährigem Beginn (Jahr N = AK − Σ Vorjahre) steht NICHT im
+Gesetzeswortlaut → keine Formalisierungsregel (Klasse 3). Lebt in der handgeschriebenen
+§2-Integrationsschicht (rules/estg/arbeitnehmerfall) mit eigenem clerk-Test (seed 1200/ND3/
+M7 → Jahr3 = 200). Task notiert, eigenes Subsystem, Integrations-Phase. Backlog-Alt: EStR
+R 7.4 als typ:verwaltung-Quelle für einen zitierbaren Text-Anker (Phase 5).
 
 ---
+
+## 5. Netto/Brutto-GWG-Grenzfall (§ 6 Abs. 2 → § 9b Abs. 1) — Recherche offen
+
+nr6_7_laufend: `anschaffungskosten` = maßgebliche AK i.S.d. § 6 Abs. 2 S. 1 (Verweis § 9b
+Abs. 1: Vorsteuer nur raus, soweit bei USt abziehbar — beim AN i.d.R. NICHT → Brutto-AK).
+Als Bedingung `anschaffungskosten_sind_massgebliche_ak` deklariert (aus Monolith migriert).
+Materiell für die 800/801-Grenze (Brutto vs Netto verschiebt sie). Braucht BMF/LStR-Bestätigung.
+
+---
+
+## 6. NEU: ELSTER-Zugang aktiv — Phase 4 startklar (5-Minuten-Julius-Download)
+
+Entwicklerzugang da (.env.elster, gitignored via **/.env* — verifiziert). ERiC/checkESt-
+Download braucht Portal-Login → **das machst DU (5 Min Browser-Login + Download, ablegen unter
+elster/)**, weil ich keine Passwörter in Login-Felder eingebe (harte Boundary) und die Deny-Rule
+mein Lesen der .env eh blockt. SOBALD die Dateien lokal liegen, läuft mein Smoke-Test-Skelett
+automatisch (ERiC-Version, checkESt-Trivialaufruf, Offline-Verdikt fürs CI-Gate) — $0, rein lokal.
+**Phase-4-Schnitt-Vorschlag** (deine Wahl): (i) Feldmapping ESt1A ↔ Signatur-Outputs, (ii)
+checkESt als CI-Gate, (iii) Versand. Empfehlung: erst (ii) checkESt-CI-Gate (validiert die
+formalisierten Werte gegen ELSTERs eigene Prüfung, ohne Versand-Risiko).
+
+---
+
+## 7. Widerrufsvorbehalt-Bestätigungen (Nacht-Delegation → dein OK)
+
+**12 Regeln verified_bedingt** (doppelt gerechnet dev+instructor, pytest 98/98):
+- 7× Charge 1: p10_1_7, p9_6, p9_1_3_nr5, p33 (Schritt 2), p24b, p9_4a, p35a.
+- **p36_2_anrechnung** (Batch 1, nach auszug-Weitung + _lit-Fix): alle 4 Seeds korrekt.
+- **3 Teilregeln** (Split-Erfolge, A+B grün, Registry vollständig): p9_1_3_nr5a_uebernachtung
+  _vor_48 (4 Bed.), _nach_48 (5 Bed.), p9_1_3_nr6_7_afa_laufend (3 Bed.).
+Weiter: **solzg 4/5** (Punkt 3), **nr5a/nr6_7-Monolithen → zuschnitt_ersetzt** (Historie
+bleibt, aus Läufen raus, run.py SKIP_STATUS erweitert).
+Neue Konventionen genutzt: input_nur_etikettiertes, ganzzahl_monate, keine_zusaetzliche_rundung.
+Bugfix committet + Regressionstest: gates._lit negatives Money (-$3.000,00 statt $-3.000,00) —
+betraf JEDE Erstattungs-/negativ-Output-Regel.
+
+---
+
+## 8. In Arbeit / offen bei Session-Ende
+
+- **Auszug-Sweep freigegeben** → Rest-Batches (§33+§32, §31+§10v1, §10v2+v4) mit geweiteten
+  auszügen, ~0,4 USD, rollierende Triage beim Instructor. (Falls bei Session-Ende noch offen:
+  Sweep-Report reports/review/2026-07-12-auszug-sweep-teil2.md hat die Widenings + Reihenfolge.)
+- Bulk-Triage-Klassen + 3-Stufen-Taxonomie dokumentiert (Memory formalisierer-kontext-kanal).
 
 ## Kosten-Schlusszeile
-
-**Nacht gesamt: $0,50 / 10 USD.** Aufschlüsselung: Charge-2-Stufe-B Kaskaden + Redos
-+ Infra-Schleife (Judge-Hang) ~$0,50; alles andere (Charge-1-Seeding, Restore, Regates,
-Triagen, Probes, 8 Teil-2-Zuschnitte, 8 Quellen-Freezes, Tooling-Fix) **$0**
-(deterministisch/lokal).
+**Nacht gesamt ~$3,0 / 10 USD.** Bake-off-Kette ~$1,7 · Batch-1 + Splits + Neuläufe ~$0,9 ·
+Charge-2-Stufe-B-Reste ~$0,4. Alles andere (Seeding, Freezes, Regates, Triagen, Diagnosen,
+Tooling-Fix, Reports, Sweep) $0. Rahmen (10 USD) hält locker, Rest ~7 USD.
