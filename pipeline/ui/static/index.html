@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaxGraph Triage</title>
+<style>
+  :root { --bg:#0f1115; --card:#191c23; --line:#2a2f3a; --fg:#e6e8ee; --mut:#9aa3b2;
+          --acc:#5b9dff; --ok:#3fb950; --warn:#d29922; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--fg); }
+  header { position:sticky; top:0; background:#12141a; border-bottom:1px solid var(--line);
+           padding:.6rem .8rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; z-index:5; }
+  header h1 { font-size:1rem; margin:0; flex:1; }
+  header input { background:#0c0e12; border:1px solid var(--line); color:var(--fg);
+                 border-radius:6px; padding:.35rem .5rem; font-size:.85rem; width:9rem; }
+  nav button, .btn { background:var(--card); border:1px solid var(--line); color:var(--fg);
+          border-radius:6px; padding:.4rem .6rem; font-size:.85rem; cursor:pointer; }
+  nav button.active { border-color:var(--acc); color:var(--acc); }
+  main { padding:.7rem; max-width:900px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:9px; padding:.7rem; margin-bottom:.7rem; }
+  .row { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+  .mut { color:var(--mut); }
+  .pill { font-size:.72rem; padding:.1rem .4rem; border-radius:20px; border:1px solid var(--line); color:var(--mut); }
+  .pill.offen { color:var(--warn); border-color:var(--warn); }
+  .pill.vor { color:var(--acc); border-color:var(--acc); }
+  .pill.praez { color:var(--ok); border-color:var(--ok); }
+  .norm { background:#0c0e12; border:1px solid var(--line); border-radius:6px; padding:.5rem;
+          font-size:.82rem; white-space:pre-wrap; color:#c7cedb; max-height:14rem; overflow:auto; }
+  .quote { border-left:3px solid var(--acc); padding-left:.6rem; margin:.4rem 0; color:#dfe6f2; }
+  label { font-size:.8rem; color:var(--mut); display:block; margin:.4rem 0 .15rem; }
+  select, textarea, .card input[type=text] { width:100%; background:#0c0e12; border:1px solid var(--line);
+          color:var(--fg); border-radius:6px; padding:.4rem; font-size:.85rem; }
+  select[multiple] { min-height:5rem; }
+  .actions { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; margin-top:.5rem; }
+  .actions .btn { text-align:center; }
+  .btn.go { background:#15321c; border-color:var(--ok); color:#79e08c; }
+  .btn.bad { background:#3a1618; border-color:var(--bad); color:#ff9b95; }
+  .hidden { display:none; }
+  .toast { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); background:#0c0e12;
+           border:1px solid var(--acc); padding:.5rem .8rem; border-radius:8px; font-size:.85rem; z-index:20; }
+  h2 { font-size:1rem; margin:.2rem 0 .6rem; }
+  a { color:var(--acc); cursor:pointer; }
+  code { background:#0c0e12; padding:.05rem .3rem; border-radius:4px; font-size:.8rem; }
+  @media (max-width:520px){ .actions{grid-template-columns:1fr;} header input{width:6.5rem;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>TaxGraph Triage</h1>
+  <input id="tok" type="password" placeholder="Token" title="TAXGRAPH_UI_TOKEN">
+  <nav class="row">
+    <button data-v="queue" class="active">Queue</button>
+    <button data-v="auto">Auto</button>
+    <button data-v="merge">Merges</button>
+  </nav>
+</header>
+<main id="app">Lade…</main>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+const $ = (s,r=document)=>r.querySelector(s);
+const el = (t,a={},...c)=>{const e=document.createElement(t);for(const k in a){if(k==='class')e.className=a[k];else if(k==='html')e.innerHTML=a[k];else e.setAttribute(k,a[k]);}for(const x of c)e.append(x);return e;};
+const tok = ()=>$('#tok').value.trim();
+$('#tok').value = localStorage.getItem('tgtok')||'';
+$('#tok').oninput = ()=>localStorage.setItem('tgtok',tok());
+let toastT;
+function toast(m,bad){const t=$('#toast');t.textContent=m;t.style.borderColor=bad?'var(--bad)':'var(--acc)';t.classList.remove('hidden');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.add('hidden'),3500);}
+async function api(path,opts={}){
+  opts.headers=Object.assign({'Content-Type':'application/json','X-Taxgraph-Token':tok()},opts.headers||{});
+  const r=await fetch('/api'+path,opts);
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.detail||r.status);
+  return j;
+}
+let view='queue', curRule=null;
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{view=b.dataset.v;curRule=null;document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));render();});
+
+async function render(){
+  const app=$('#app'); app.innerHTML='Lade…';
+  try{
+    if(view==='queue') curRule?await renderRule(app):await renderQueue(app);
+    else if(view==='auto') await renderAuto(app);
+    else if(view==='merge') await renderMerge(app);
+  }catch(e){ app.innerHTML=''; app.append(el('div',{class:'card'},'Fehler: '+e.message)); }
+}
+
+async function renderQueue(app){
+  const {regeln}=await api('/queue');
+  app.innerHTML=''; app.append(el('h2',{},'Regeln'));
+  regeln.forEach(r=>{
+    const c=el('div',{class:'card'});
+    const head=el('div',{class:'row'},
+      el('strong',{},r.rule_id),
+      el('span',{class:'pill offen'},r.offen+' offen'),
+      r.mit_vorschlag?el('span',{class:'pill vor'},r.mit_vorschlag+' Vorschlag'):'' );
+    c.append(head, el('div',{class:'mut',style:'font-size:.78rem;margin-top:.3rem'},
+      (r.norm||'')+' · Stand '+(r.stand?String(r.stand).slice(0,16).replace('T',' '):'—')));
+    const open=el('button',{class:'btn',style:'margin-top:.5rem'},'Triagieren →');
+    open.onclick=()=>{curRule=r.rule_id;render();};
+    c.append(open); app.append(c);
+  });
+}
+
+async function renderRule(app){
+  const ctx=await api('/rule/'+curRule);
+  app.innerHTML='';
+  const back=el('a',{},'← Queue'); back.onclick=()=>{curRule=null;render();};
+  app.append(el('div',{class:'row'},back,el('strong',{},curRule)));
+  app.append(el('div',{class:'mut',style:'font-size:.8rem;margin:.3rem 0'},ctx.norm||''));
+  if(!ctx.items.length) app.append(el('div',{class:'card'},'Keine offenen Items.'));
+  ctx.items.forEach((it,i)=>app.append(itemCard(ctx,it,i)));
+}
+
+function itemCard(ctx,it,i){
+  const c=el('div',{class:'card'});
+  const kat=(it.anker&&it.anker.length>2)?it.anker[it.anker.length-1]:(it.kategorie||'');
+  c.append(el('div',{class:'row'},
+    el('span',{class:'pill'},it.art),
+    kat?el('span',{class:'pill'},kat):'',
+    el('span',{class:'pill '+(it.triage==='offen'?'offen':'vor')},'triage: '+it.triage),
+    it.praezedenz_treffer?el('span',{class:'pill praez'},'Präzedenz: '+it.praezedenz_treffer.entscheidungstyp):''));
+  c.append(el('div',{class:'row mut',style:'font-size:.75rem;margin-top:.25rem'},'Anker: '+JSON.stringify(it.anker)));
+  c.append(el('div',{class:'quote'},it.text||''));
+  const norm=el('div',{class:'norm mut'},'Normtext lädt…');
+  c.append(el('label',{},'Eingefrorener Normtext (Anker-Umgebung)'),norm);
+  api('/rule/'+ctx.rule_id+'/item-context',{method:'POST',body:JSON.stringify({quote:it.text||''})})
+    .then(r=>{const n=r.normtext;norm.textContent=(n.gefunden?'':'[Anker nicht wörtlich im Normtext — Kontext:]\n')+(n.ausschnitt||n.fehler||'');})
+    .catch(e=>norm.textContent='Fehler: '+e.message);
+
+  // Mapping auf bestehende Bedingung (Multi erlaubt)
+  const beds=ctx.geltungsbedingungen||[];
+  if(beds.length){
+    const sel=el('select',{multiple:'multiple'});
+    beds.forEach(b=>sel.append(el('option',{value:b.bedingung},b.bedingung)));
+    c.append(el('label',{},'Mapping auf Bedingung (Mehrfachauswahl)'),sel);
+    const mb=el('button',{class:'btn go',style:'margin-top:.4rem'},'→ bedingung_neu (Mapping)');
+    mb.onclick=()=>{const chosen=[...sel.selectedOptions].map(o=>o.value);
+      if(!chosen.length)return toast('Bedingung wählen',1);
+      doSubmit(ctx.rule_id,it,'bedingung_neu',{bedingung:chosen[0],weitere_bedingungen:chosen.slice(1)});};
+    c.append(mb);
+  }
+
+  // neue Bedingung (Kurzformular)
+  const nbId=el('input',{type:'text',placeholder:'neue bedingung-id'});
+  const nbQ=el('input',{type:'text',placeholder:'quelle (z.B. § / BMF)'});
+  const nbA=el('input',{type:'text',placeholder:'anker (Zitat)'});
+  const nbB=el('textarea',{placeholder:'beschreibung',rows:'2'});
+  const nbBox=el('div',{class:'hidden'},el('label',{},'Neue Bedingung deklarieren'),nbId,nbQ,nbA,nbB,
+    (()=>{const b=el('button',{class:'btn go',style:'margin-top:.4rem'},'bedingung_neu anlegen');
+      b.onclick=()=>{if(!nbId.value.trim())return toast('id fehlt',1);
+        doSubmit(ctx.rule_id,it,'bedingung_neu',{bedingung:nbId.value.trim(),
+          neue_bedingung:{id:nbId.value.trim(),quelle:nbQ.value,anker:nbA.value,beschreibung:nbB.value}});};return b;})());
+
+  // nicht_material mit Konvention
+  const konvSel=el('select',{});
+  konvSel.append(el('option',{value:''},'(ohne Konvention)'));
+  (ctx.konventionen||[]).forEach(k=>konvSel.append(el('option',{value:'konv:'+k.id},k.id)));
+  const nmBox=el('div',{class:'hidden'},el('label',{},'Konvention'),konvSel,
+    (()=>{const b=el('button',{class:'btn go',style:'margin-top:.4rem'},'nicht_material bestätigen');
+      b.onclick=()=>doSubmit(ctx.rule_id,it,'nicht_material',{konvention:konvSel.value||null});return b;})());
+
+  const acts=el('div',{class:'actions'});
+  const mk=(lbl,fn,cls)=>{const b=el('button',{class:'btn '+(cls||'')},lbl);b.onclick=fn;return b;};
+  acts.append(
+    mk('+ neue Bedingung',()=>{nbBox.classList.toggle('hidden');}),
+    mk('nicht_material…',()=>{nmBox.classList.toggle('hidden');}),
+    mk('grenzfall',()=>doSubmit(ctx.rule_id,it,'grenzfall',{}),'bad'),
+    mk('nicht_echt',()=>doSubmit(ctx.rule_id,it,'nicht_echt',{})),
+    mk('defekt_formalisierer',()=>doSubmit(ctx.rule_id,it,'defekt_formalisierer',{}),'bad'),
+    mk('offen_bis_neuschnitt',()=>doSubmit(ctx.rule_id,it,'offen_bis_neuschnitt',{})));
+  c.append(acts,nbBox,nmBox);
+  return c;
+}
+
+async function doSubmit(rid,item,triage,extra){
+  if(!tok())return toast('Token fehlt',1);
+  try{
+    const body=Object.assign({item,triage},extra);
+    const r=await api('/rule/'+rid+'/submit',{method:'POST',body:JSON.stringify(body)});
+    let m=triage+' ✓ (v'+r.version+')';
+    if(r.gemerged)m+=' · gemerged';
+    if(r.bedingung_deklariert===false)m+=' · ⚠ Bedingung noch nicht im Manifest';
+    toast(m);
+    setTimeout(()=>render(),400);
+  }catch(e){toast('Fehler: '+e.message,1);}
+}
+
+async function renderAuto(app){
+  app.innerHTML=''; app.append(el('h2',{},'Präzedenz-Ratsche'));
+  // Auto-Apply Steuerung
+  const {regeln}=await api('/queue');
+  const ctl=el('div',{class:'card'});
+  const rsel=el('select',{});
+  regeln.forEach(r=>rsel.append(el('option',{value:r.rule_id},r.rule_id+' ('+r.gesamt+' Items)')));
+  ctl.append(el('label',{},'Regel für Auto-Apply'),rsel,el('div',{class:'row',style:'margin-top:.5rem'},
+    (()=>{const b=el('button',{class:'btn'},'Vorschau (dry-run)');b.onclick=()=>runAuto(rsel.value,true);return b;})(),
+    (()=>{const b=el('button',{class:'btn go'},'Anwenden');b.onclick=()=>runAuto(rsel.value,false);return b;})()));
+  app.append(ctl);
+
+  const {faelle,anwendungen,chargen}=await api('/praezedenz');
+  // Metrik
+  if(chargen.length){
+    const mc=el('div',{class:'card'});
+    mc.append(el('h2',{},'Auto-Apply-Quote je Charge'));
+    chargen.slice(-8).reverse().forEach(ch=>mc.append(el('div',{class:'row'},
+      el('span',{},ch.rule_id),el('span',{class:'pill '+(ch.dry_run?'':'praez')},
+        (ch.quote*100).toFixed(0)+'% · '+ch.angewendet+'/'+ch.charge_groesse+(ch.dry_run?' (dry)':'')))));
+    app.append(mc);
+  }
+  // automatisch angewendet + Widerruf
+  const ac=el('div',{class:'card'}); ac.append(el('h2',{},'Automatisch angewendet'));
+  const offen=anwendungen.filter(a=>!a.widerrufen);
+  if(!offen.length)ac.append(el('div',{class:'mut'},'—'));
+  offen.slice().reverse().forEach(a=>{
+    const row=el('div',{class:'row',style:'border-top:1px solid var(--line);padding:.4rem 0'},
+      el('span',{class:'pill praez'},a.entscheidungstyp),
+      el('span',{style:'flex:1;font-size:.8rem'},a.rule_id+' · '+(a.ziel_id||'')),
+      (()=>{const b=el('button',{class:'btn bad'},'Widerruf');
+        b.onclick=()=>widerruf(a.id);return b;})());
+    ac.append(row);
+  });
+  app.append(ac);
+  // Präzedenzfälle
+  const fc=el('div',{class:'card'}); fc.append(el('h2',{},'Präzedenzfälle ('+faelle.length+')'));
+  faelle.slice().reverse().forEach(f=>fc.append(el('div',{class:'row',style:'font-size:.78rem;padding:.2rem 0'},
+    el('span',{class:'pill '+(f.gesperrt?'bad':'praez')},f.gesperrt?'gesperrt':'aktiv'),
+    el('span',{},f.entscheidungstyp+' → '+(f.ziel_id||'—')),
+    el('span',{class:'mut'},f.anker_schluessel))));
+  app.append(fc);
+}
+async function runAuto(rid,dry){
+  if(!dry&&!tok())return toast('Token fehlt',1);
+  try{const r=await api('/rule/'+rid+'/praezedenz-anwenden',{method:'POST',body:JSON.stringify({dry_run:dry})});
+    toast((dry?'Vorschau: ':'Angewendet: ')+r.angewendet+'/'+r.charge_groesse+' ('+(r.quote*100).toFixed(0)+'%)');
+    if(!dry)setTimeout(()=>render(),400);
+  }catch(e){toast('Fehler: '+e.message,1);}
+}
+async function widerruf(id){
+  if(!tok())return toast('Token fehlt',1);
+  try{const r=await api('/praezedenz/widerruf',{method:'POST',body:JSON.stringify({anwendung_id:id})});
+    toast('Widerrufen · Fall gesperrt: '+r.praezedenz_gesperrt);setTimeout(()=>render(),400);
+  }catch(e){toast('Fehler: '+e.message,1);}
+}
+
+async function renderMerge(app){
+  const {merges}=await api('/merge-log');
+  app.innerHTML=''; app.append(el('h2',{},'Gemergte Items ('+merges.length+')'));
+  if(!merges.length)app.append(el('div',{class:'card'},'Keine Merges.'));
+  merges.forEach(m=>{
+    const c=el('div',{class:'card'});
+    c.append(el('div',{class:'row'},el('strong',{},m.rule_id),el('span',{class:'pill'},m.art),
+      el('span',{class:'pill'},'triage: '+m.triage),m.bedingung?el('span',{class:'pill vor'},m.bedingung):''));
+    c.append(el('div',{class:'mut',style:'font-size:.75rem;margin:.2rem 0'},'Anker: '+JSON.stringify(m.anker)));
+    c.append(el('label',{},'Original-Formulierungen (alle sichtbar)'));
+    m.formulierungen.forEach(f=>c.append(el('div',{class:'quote'},f)));
+    app.append(c);
+  });
+}
+render();
+</script>
+</body>
+</html>
