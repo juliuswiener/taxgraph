@@ -787,3 +787,485 @@ regeln:
     handwerker_arbeitskosten: 3000
   exclude_rule_ids:
   - p35a_2_3_haushaltsnahe
+# === Charge 2 Teil 2 (Rest-Charge) - finalisiert 2026-07-12, Instructor-reviewed ===
+# Zuschnitts-Reports reports/review/2026-07-11-charge2-teil2-*.md, Auflagen msg 1192/1195/1197.
+# Stufe B (Kaskade) wartet auf Julius' Formalisierer-Besetzungsentscheid.
+- rule_id: solzg_solidaritaetszuschlag
+  norm: § 3, § 4 SolzG 1995
+  quellen:
+  - typ: gesetz
+    label: "§ 3 SolzG 1995 (Bemessungsgrundlage, Freigrenze)"
+    datei: sources/gesetze-im-internet/solzg_1995_p3_2026-07-11.txt
+    zitatanker: "unter Berücksichtigung von Freibeträgen nach § 32 Abs. 6 des Einkommensteuergesetzes"
+    auszug: "40 700 Euro"
+  - typ: gesetz
+    label: "§ 4 SolzG 1995 (Zuschlagssatz 5,5 %, Milderungszone)"
+    datei: sources/gesetze-im-internet/solzg_1995_p4_2026-07-11.txt
+    zitatanker: "Der Solidaritätszuschlag beträgt 5,5 Prozent der Bemessungsgrundlage"
+    auszug: "nicht mehr als 11,9 Prozent des Unterschiedsbetrages"
+  geltungsbedingungen:
+  - bedingung: veranlagung_zur_einkommensteuer
+    deckt_ab: "nur zu erheben, wenn die Bemessungsgrundlage"
+    quelle: "§ 3 Abs. 3 SolzG 1995"
+    beschreibung: "MVP-Veranlagungsfall; Lohnsteuerabzug/Jahresausgleich/KapESt (Abs. 2a/4/4a/5) nicht modelliert."
+  - bedingung: bemessungsgrundlage_ist_est_mit_kinderfreibetraegen
+    deckt_ab: "unter Berücksichtigung von Freibeträgen nach § 32 Abs. 6 des Einkommensteuergesetzes"
+    quelle: "§ 3 Abs. 2 SolzG 1995"
+    beschreibung: "Input = ESt, die mit § 32 Abs. 6-Kinderfreibetraegen festzusetzen waere (SolZ-eigene Bemessung). Von der § 2-Integration."
+  - bedingung: splitting_ist_veranlagungsergebnis
+    deckt_ab: "40 700 Euro"
+    quelle: "§ 3 Abs. 3 Satz 1 Nr. 1 SolzG 1995"
+    beschreibung: "splitting = Ergebnis des Veranlagungsverfahrens (§ 32a Abs. 5/6). Gleiche Ziel-ID wie p33."
+  - bedingung: keine_abgeltungsteuer_nach_32d
+    deckt_ab: "nur zu erheben, wenn die Bemessungsgrundlage"
+    quelle: "§ 3 Abs. 3 / § 4 Satz 2 SolzG 1995"
+    beschreibung: "MVP-AN ohne Kapitalertraege; § 32d-Abs-3/4-Sonderbehandlung entfaellt."
+  rundung:
+  - deckt_ab: "Bruchteile eines Cents bleiben außer Ansatz"
+    zitatanker: "Bruchteile eines Cents bleiben außer Ansatz"
+    quelle: "§ 4 Satz 3 SolzG 1995"
+  signature:
+    scope: Solidaritaetszuschlag
+    inputs:
+      bemessungsgrundlage: money
+      splitting: bool
+    output: solidaritaetszuschlag
+  test_seed:
+  - quelle: reports/review/2026-07-11-charge2-teil2-solzg.md
+    zitatanker: "20 350 Euro"
+    herkunft: synthetisch
+    rechenweg: "BMG 20.350 = Freigrenze (nicht splitting), uebersteigt nicht -> 0."
+    inputs: {bemessungsgrundlage: 20350, splitting: false}
+    expected: 0.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-solzg.md
+    zitatanker: "nicht mehr als 11,9 Prozent des Unterschiedsbetrages"
+    herkunft: synthetisch
+    rechenweg: "BMG 20.351: Milderung 11,9 % x (20.351-20.350) = 0,119; Bruchteile Cent abgeschnitten -> 0,11."
+    inputs: {bemessungsgrundlage: 20351, splitting: false}
+    expected: 0.11
+  - quelle: reports/review/2026-07-11-charge2-teil2-solzg.md
+    zitatanker: "Der Solidaritätszuschlag beträgt 5,5 Prozent der Bemessungsgrundlage"
+    herkunft: synthetisch
+    rechenweg: "Milderungszone: min(5,5 % x 25.000 = 1.375; 11,9 % x (25.000-20.350) = 553,35) = 553,35."
+    inputs: {bemessungsgrundlage: 25000, splitting: false}
+    expected: 553.35
+  - quelle: reports/review/2026-07-11-charge2-teil2-solzg.md
+    zitatanker: "Der Solidaritätszuschlag beträgt 5,5 Prozent der Bemessungsgrundlage"
+    herkunft: synthetisch
+    rechenweg: "Ueber Milderungszone (Ende ~37.838): min(5,5 % x 45.000 = 2.475; 11,9 % x 24.650 = 2.933,35) = 2.475,00 (volle 5,5 %)."
+    inputs: {bemessungsgrundlage: 45000, splitting: false}
+    expected: 2475.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-solzg.md
+    zitatanker: "40 700 Euro"
+    herkunft: synthetisch
+    rechenweg: "Splitting-Freigrenze: BMG 40.700 uebersteigt nicht -> 0."
+    inputs: {bemessungsgrundlage: 40700, splitting: true}
+    expected: 0.00
+  raster:
+  - {bemessungsgrundlage: 18000, splitting: false}
+  - {bemessungsgrundlage: 20350, splitting: false}
+  - {bemessungsgrundlage: 20351, splitting: false}
+  - {bemessungsgrundlage: 25000, splitting: false}
+  - {bemessungsgrundlage: 45000, splitting: false}
+  - {bemessungsgrundlage: 40700, splitting: true}
+  - {bemessungsgrundlage: 60000, splitting: true}
+  exclude_rule_ids:
+  - solzg_solidaritaetszuschlag
+- rule_id: p36_2_anrechnung
+  norm: § 36 Abs. 2 EStG
+  quellen:
+  - typ: gesetz
+    label: "§ 36 Abs. 2-4 EStG (Anrechnung, Abschlusszahlung/Erstattung)"
+    datei: sources/gesetze-im-internet/estg_p36_2026-07-11.txt
+    zitatanker: "Auf die Einkommensteuer werden angerechnet"
+    auszug: "die durch Steuerabzug erhobene Einkommensteuer"
+  geltungsbedingungen:
+  - bedingung: lohnsteuer_ist_anrechenbar
+    deckt_ab: "die durch Steuerabzug erhobene Einkommensteuer"
+    quelle: "§ 36 Abs. 2 Satz 1 Nr. 2 EStG"
+    beschreibung: "LSt entfaellt auf veranlagte Einkuenfte, Bescheinigung (§ 45a) liegt vor. Input-Semantik."
+  - bedingung: keine_weiteren_anrechnungsbetraege
+    deckt_ab: "die für den Veranlagungszeitraum entrichteten Einkommensteuer-Vorauszahlungen"
+    quelle: "§ 36 Abs. 2 Satz 1 EStG"
+    beschreibung: "MVP-AN: nur LSt + VZ. Keine KapESt darueber, keine Forschungszulage (Nr. 3), kein § 32c (Nr. 4)."
+  - bedingung: ein_dienstverhaeltnis
+    deckt_ab: "auf volle Euro aufzurunden"
+    quelle: "§ 36 Abs. 3 Satz 2 EStG"
+    beschreibung: "lohnsteuer aus EINEM Dienstverhaeltnis; mehrere Abzugsbetraege sind vor Aufruf je einzeln aufzurunden und zu summieren (Abs. 3 rundet je Betrag einzeln)."
+  rundung:
+  - deckt_ab: "auf volle Euro aufzurunden"
+    zitatanker: "auf volle Euro aufzurunden"
+    quelle: "§ 36 Abs. 3 Satz 1 EStG"
+  signature:
+    scope: Anrechnung
+    inputs:
+      festzusetzende_est: money
+      lohnsteuer: money
+      vorauszahlungen: money
+    output: abschlusszahlung
+  test_seed:
+  - quelle: reports/review/2026-07-11-charge2-teil2-p36.md
+    zitatanker: "Auf die Einkommensteuer werden angerechnet"
+    herkunft: synthetisch
+    rechenweg: "10.000 - 8.000 - 0 = 2.000,00 (Nachzahlung, positiv)."
+    inputs: {festzusetzende_est: 10000, lohnsteuer: 8000, vorauszahlungen: 0}
+    expected: 2000.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p36.md
+    zitatanker: "ein Überschuss zugunsten des Steuerpflichtigen"
+    herkunft: synthetisch
+    rechenweg: "5.000 - 8.000 - 0 = -3.000,00 (Erstattung, negativ)."
+    inputs: {festzusetzende_est: 5000, lohnsteuer: 8000, vorauszahlungen: 0}
+    expected: -3000.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p36.md
+    zitatanker: "auf volle Euro aufzurunden"
+    herkunft: synthetisch
+    rechenweg: "LSt 7.500,30 auf volle Euro AUFgerundet = 7.501; 12.000 - 7.501 - 0 = 4.499,00."
+    inputs: {festzusetzende_est: 12000, lohnsteuer: 7500.30, vorauszahlungen: 0}
+    expected: 4499.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p36.md
+    zitatanker: "Auf die Einkommensteuer werden angerechnet"
+    herkunft: synthetisch
+    rechenweg: "10.000 - 6.000 - 3.000 = 1.000,00."
+    inputs: {festzusetzende_est: 10000, lohnsteuer: 6000, vorauszahlungen: 3000}
+    expected: 1000.00
+  raster:
+  - {festzusetzende_est: 10000, lohnsteuer: 8000, vorauszahlungen: 0}
+  - {festzusetzende_est: 5000, lohnsteuer: 8000, vorauszahlungen: 0}
+  - {festzusetzende_est: 12000, lohnsteuer: 7500.30, vorauszahlungen: 0}
+  - {festzusetzende_est: 8000, lohnsteuer: 8000, vorauszahlungen: 0}
+  exclude_rule_ids:
+  - p36_2_anrechnung
+- rule_id: p33_1_2_agb_abzug
+  norm: § 33 Abs. 1, 2 EStG
+  quellen:
+  - typ: gesetz
+    label: "§ 33 Abs. 1, 2 EStG (agB-Abzug, Zwangslaeufigkeit)"
+    datei: sources/gesetze-im-internet/estg_p33_2026-07-11.txt
+    zitatanker: "zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen"
+    auszug: "den Umständen nach notwendig sind und einen angemessenen Betrag nicht übersteigen"
+  geltungsbedingungen:
+  - bedingung: agb_ist_zwangslaeufig
+    deckt_ab: "wenn er sich ihnen aus rechtlichen, tatsächlichen oder sittlichen Gründen nicht entziehen kann"
+    quelle: "§ 33 Abs. 2 Satz 1 EStG"
+    beschreibung: "agB zwangslaeufig i.S.d. Abs. 2 S. 1. Input-Semantik."
+  - bedingung: agb_notwendig_und_angemessen
+    deckt_ab: "den Umständen nach notwendig sind und einen angemessenen Betrag nicht übersteigen"
+    quelle: "§ 33 Abs. 2 Satz 1 EStG"
+    beschreibung: "Nur der notwendige und angemessene Teil. Input-Semantik."
+  - bedingung: keine_ausgeschlossenen_aufwendungen
+    deckt_ab: "Aufwendungen, die zu den Betriebsausgaben, Werbungskosten oder Sonderausgaben gehören, bleiben dabei außer Betracht"
+    quelle: "§ 33 Abs. 2 Satz 2-4 EStG"
+    beschreibung: "BA/WK/SA, Diaetverpflegung, Prozesskosten ausser Betracht. Input enthaelt sie nicht."
+  - bedingung: keine_behinderungsbedingten_fahrtkosten
+    deckt_ab: "behinderungsbedingte Fahrtkostenpauschale"
+    quelle: "§ 33 Abs. 2a EStG"
+    beschreibung: "Behinderungs-Fahrtkosten laufen ueber die Pauschale (900/4.500), eigener Zweig - MVP ausgeklammert."
+  - bedingung: zumutbare_belastung_ist_p33_3_ergebnis
+    deckt_ab: "zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen"
+    quelle: "§ 33 Abs. 1 EStG"
+    beschreibung: "zumutbare_belastung = Ergebnis von p33_3 (Abs. 3). Von der § 2-Integration."
+  rundung: []
+  signature:
+    scope: AgbAbzug
+    inputs:
+      aussergewoehnliche_belastungen: money
+      zumutbare_belastung: money
+    output: abzug_agb
+  test_seed:
+  - quelle: reports/review/2026-07-11-charge2-teil2-p33_1_2.md
+    zitatanker: "zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen"
+    herkunft: synthetisch
+    rechenweg: "5.000 - 1.408,70 = 3.591,30 (nur der uebersteigende Teil)."
+    inputs: {aussergewoehnliche_belastungen: 5000, zumutbare_belastung: 1408.70}
+    expected: 3591.30
+  - quelle: reports/review/2026-07-11-charge2-teil2-p33_1_2.md
+    zitatanker: "zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen"
+    herkunft: synthetisch
+    rechenweg: "1.000 < 1.408,70 -> kein uebersteigender Teil -> max(0, -408,70) = 0,00."
+    inputs: {aussergewoehnliche_belastungen: 1000, zumutbare_belastung: 1408.70}
+    expected: 0.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p33_1_2.md
+    zitatanker: "zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen"
+    herkunft: synthetisch
+    rechenweg: "10.000 - 2.000 = 8.000,00."
+    inputs: {aussergewoehnliche_belastungen: 10000, zumutbare_belastung: 2000}
+    expected: 8000.00
+  raster:
+  - {aussergewoehnliche_belastungen: 5000, zumutbare_belastung: 1408.70}
+  - {aussergewoehnliche_belastungen: 1000, zumutbare_belastung: 1408.70}
+  - {aussergewoehnliche_belastungen: 1408.70, zumutbare_belastung: 1408.70}
+  - {aussergewoehnliche_belastungen: 10000, zumutbare_belastung: 2000}
+  exclude_rule_ids:
+  - p33_1_2_agb_abzug
+- rule_id: p32_6_kinderfreibetraege
+  norm: § 32 Abs. 6 EStG
+  quellen:
+  - typ: gesetz
+    label: "§ 32 Abs. 6 EStG (Kinderfreibetrag + BEA-Freibetrag)"
+    datei: sources/gesetze-im-internet/estg_p32_2026-07-11.txt
+    zitatanker: "für das sächliche Existenzminimum des Kindes (Kinderfreibetrag)"
+    auszug: "für jedes zu berücksichtigende Kind des Steuerpflichtigen ein Freibetrag"
+  geltungsbedingungen:
+  - bedingung: kinder_sind_zu_beruecksichtigen
+    deckt_ab: "für jedes zu berücksichtigende Kind des Steuerpflichtigen ein Freibetrag"
+    quelle: "§ 32 Abs. 6 Satz 1 EStG"
+    beschreibung: "anzahl_kinder = nach § 32 Abs. 1-5 zu beruecksichtigende Kinder (Anspruch). Muster p24b/p33."
+  - bedingung: kind_zu_beiden_ehegatten
+    deckt_ab: "verdoppeln sich die Beträge nach Satz 1"
+    quelle: "§ 32 Abs. 6 Satz 2 EStG"
+    beschreibung: "Verdopplung bei Zusammenveranlagung nur, wenn Kind zu BEIDEN Ehegatten im Kindschaftsverhaeltnis. MVP-Annahme."
+  - bedingung: keine_uebertragung_oder_sonderfaelle
+    deckt_ab: "für das sächliche Existenzminimum des Kindes (Kinderfreibetrag)"
+    quelle: "§ 32 Abs. 6 Satz 3-11 EStG"
+    beschreibung: "Sonderfaelle (Elternteil verstorben/nicht unbeschr., Uebertragung, Kuerzung S. 4) MVP ausgeklammert."
+  rundung: []
+  signature:
+    scope: Kinderfreibetraege
+    inputs:
+      anzahl_kinder: int
+      zusammenveranlagung: bool
+    output: kinderfreibetraege_gesamt
+  test_seed:
+  - quelle: reports/review/2026-07-11-charge2-teil2-p32.md
+    zitatanker: "für das sächliche Existenzminimum des Kindes (Kinderfreibetrag)"
+    herkunft: synthetisch
+    rechenweg: "1 Kind, einfach: 3.414 + 1.464 = 4.878,00."
+    inputs: {anzahl_kinder: 1, zusammenveranlagung: false}
+    expected: 4878.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p32.md
+    zitatanker: "verdoppeln sich die Beträge nach Satz 1"
+    herkunft: synthetisch
+    rechenweg: "1 Kind, Zusammenveranlagung: (3.414 + 1.464) x 2 = 9.756,00."
+    inputs: {anzahl_kinder: 1, zusammenveranlagung: true}
+    expected: 9756.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p32.md
+    zitatanker: "verdoppeln sich die Beträge nach Satz 1"
+    herkunft: synthetisch
+    rechenweg: "2 Kinder, Zusammenveranlagung: 2 x 9.756 = 19.512,00."
+    inputs: {anzahl_kinder: 2, zusammenveranlagung: true}
+    expected: 19512.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p32.md
+    zitatanker: "für das sächliche Existenzminimum des Kindes (Kinderfreibetrag)"
+    herkunft: synthetisch
+    rechenweg: "0 Kinder -> 0,00."
+    inputs: {anzahl_kinder: 0, zusammenveranlagung: false}
+    expected: 0.00
+  raster:
+  - {anzahl_kinder: 0, zusammenveranlagung: false}
+  - {anzahl_kinder: 1, zusammenveranlagung: false}
+  - {anzahl_kinder: 1, zusammenveranlagung: true}
+  - {anzahl_kinder: 2, zusammenveranlagung: true}
+  - {anzahl_kinder: 3, zusammenveranlagung: false}
+  exclude_rule_ids:
+  - p32_6_kinderfreibetraege
+- rule_id: p31_familienleistungsausgleich
+  norm: § 31 EStG
+  quellen:
+  - typ: gesetz
+    label: "§ 31 EStG (Günstigerprüfung Freibeträge vs. Kindergeld)"
+    datei: sources/gesetze-im-internet/estg_p31_2026-07-11.txt
+    zitatanker: "entweder durch die Freibeträge nach § 32 Absatz 6 oder durch Kindergeld"
+    auszug: "erhöht sich die unter Abzug dieser Freibeträge ermittelte tarifliche Einkommensteuer um den Anspruch auf Kindergeld"
+  geltungsbedingungen:
+  - bedingung: tarifwerte_sind_p32a_ergebnis
+    deckt_ab: "entweder durch die Freibeträge nach § 32 Absatz 6 oder durch Kindergeld"
+    quelle: "§ 31 Satz 1 EStG"
+    beschreibung: "est_ohne/est_mit sind Tarifergebnisse (p32a) mit/ohne § 32-Abs-6-Abzug. Kein Tarif hier."
+  - bedingung: kindergeld_ist_anspruchsbetrag
+    deckt_ab: "erhöht sich die unter Abzug dieser Freibeträge ermittelte tarifliche Einkommensteuer um den Anspruch auf Kindergeld"
+    quelle: "§ 31 Satz 4 EStG"
+    beschreibung: "Input kindergeld = ANSPRUCH fuer den gesamten VZ (Hinzurechnung), nicht Auszahlung."
+  - bedingung: zusammenveranlagte_eltern
+    deckt_ab: "entweder durch die Freibeträge nach § 32 Absatz 6 oder durch Kindergeld"
+    quelle: "§ 31 Satz 4 EStG"
+    beschreibung: "MVP: zusammenveranlagt -> voller KG-Ansatz. Halbteilung bei nicht zusammenveranlagten Eltern ausgeklammert."
+  - bedingung: keine_kindergeld_sonderfaelle
+    deckt_ab: "entweder durch die Freibeträge nach § 32 Absatz 6 oder durch Kindergeld"
+    quelle: "§ 31 Satz 5-7 EStG"
+    beschreibung: "Nicht ausgezahltes festgesetztes KG (§ 70 Abs. 1 S. 2), vergleichbare/auslaendische Leistungen ausgeklammert."
+  rundung: []
+  signature:
+    scope: Familienleistungsausgleich
+    inputs:
+      est_ohne_freibetraege: money
+      est_mit_freibetraegen: money
+      kindergeld: money
+    output: est_nach_familienausgleich
+  test_seed:
+  - quelle: reports/review/2026-07-11-charge2-teil2-p31.md
+    zitatanker: "entweder durch die Freibeträge nach § 32 Absatz 6 oder durch Kindergeld"
+    herkunft: synthetisch
+    rechenweg: "Entlastung 8.000-6.500 = 1.500 < KG 3.000 -> KG guenstiger -> min(8.000; 6.500+3.000=9.500) = 8.000,00."
+    inputs: {est_ohne_freibetraege: 8000, est_mit_freibetraegen: 6500, kindergeld: 3000}
+    expected: 8000.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p31.md
+    zitatanker: "erhöht sich die unter Abzug dieser Freibeträge ermittelte tarifliche Einkommensteuer um den Anspruch auf Kindergeld"
+    herkunft: synthetisch
+    rechenweg: "Entlastung 12.000-8.000 = 4.000 > KG 3.000 -> Freibetraege guenstiger, Hinzurechnung -> min(12.000; 8.000+3.000=11.000) = 11.000,00."
+    inputs: {est_ohne_freibetraege: 12000, est_mit_freibetraegen: 8000, kindergeld: 3000}
+    expected: 11000.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p31.md
+    zitatanker: "entweder durch die Freibeträge nach § 32 Absatz 6 oder durch Kindergeld"
+    herkunft: synthetisch
+    rechenweg: "Entlastung 3.000 = KG 3.000 -> gleich -> min(10.000; 10.000) = 10.000,00."
+    inputs: {est_ohne_freibetraege: 10000, est_mit_freibetraegen: 7000, kindergeld: 3000}
+    expected: 10000.00
+  raster:
+  - {est_ohne_freibetraege: 8000, est_mit_freibetraegen: 6500, kindergeld: 3000}
+  - {est_ohne_freibetraege: 12000, est_mit_freibetraegen: 8000, kindergeld: 3000}
+  - {est_ohne_freibetraege: 10000, est_mit_freibetraegen: 7000, kindergeld: 3000}
+  exclude_rule_ids:
+  - p31_familienleistungsausgleich
+- rule_id: p10_1_2_altersvorsorge
+  norm: § 10 Abs. 1 Nr. 2, Abs. 3 EStG
+  quellen:
+  - typ: gesetz
+    label: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG (Altersvorsorge, Höchstbeitrag)"
+    datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+    auszug: "bis zu dem Höchstbeitrag zur knappschaftlichen Rentenversicherung, aufgerundet auf einen vollen Betrag in Euro"
+  geltungsbedingungen:
+  - bedingung: beitraege_enthalten_ag_anteil
+    deckt_ab: "Beiträge zu den gesetzlichen Rentenversicherungen"
+    quelle: "§ 10 Abs. 3 EStG"
+    beschreibung: "gesamtbeitraege_inkl_ag = AN-Anteil + steuerfreier AG-Anteil; die AG-Kuerzung erfolgt NACH dem Cap. Input-Semantik gepinnt (Instructor msg 1197)."
+  - bedingung: hoechstbeitrag_ist_parameter
+    deckt_ab: "bis zu dem Höchstbeitrag zur knappschaftlichen Rentenversicherung"
+    quelle: "§ 10 Abs. 3 Satz 1 EStG"
+    beschreibung: "hoechstbeitrag = dynamischer Höchstbeitrag zur knappschaftl. RV, aufgerundet auf volle Euro; Parameter (params/), hier als Input abgebildet bis zur params-Anbindung."
+  - bedingung: voller_abzug_100_prozent
+    deckt_ab: "Beiträge zu den gesetzlichen Rentenversicherungen"
+    quelle: "§ 10 Abs. 3 EStG"
+    beschreibung: "MVP 2026: 100 %-Ansatz (seit 2023 fix, versionierter Parameter, Anker '100 Prozent'; keine Uebergangs-Treppe)."
+  rundung:
+  - deckt_ab: "aufgerundet auf einen vollen Betrag in Euro"
+    zitatanker: "aufgerundet auf einen vollen Betrag in Euro"
+    quelle: "§ 10 Abs. 3 Satz 1 EStG"
+  signature:
+    scope: Altersvorsorge
+    inputs:
+      gesamtbeitraege_inkl_ag: money
+      ag_anteil_steuerfrei: money
+      hoechstbeitrag_knappschaft: money
+    output: abziehbare_altersvorsorge
+  test_seed:
+  - quelle: reports/review/2026-07-11-charge2-teil2-p10-vorsorge.md
+    zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+    herkunft: synthetisch
+    rechenweg: "gesamt 10.000 < HB 30.000 -> min = 10.000; minus AG 2.000 = 8.000,00 (unter Cap)."
+    inputs: {gesamtbeitraege_inkl_ag: 10000, ag_anteil_steuerfrei: 2000, hoechstbeitrag_knappschaft: 30000}
+    expected: 8000.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p10-vorsorge.md
+    zitatanker: "bis zu dem Höchstbeitrag zur knappschaftlichen Rentenversicherung, aufgerundet auf einen vollen Betrag in Euro"
+    herkunft: synthetisch
+    rechenweg: "gesamt 40.000 > HB 30.000 -> Cap 30.000; minus AG 8.000 = 22.000,00 (Kuerzung NACH Cap, nicht (40.000-8.000) gecappt)."
+    inputs: {gesamtbeitraege_inkl_ag: 40000, ag_anteil_steuerfrei: 8000, hoechstbeitrag_knappschaft: 30000}
+    expected: 22000.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p10-vorsorge.md
+    zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+    herkunft: synthetisch
+    rechenweg: "gesamt 5.000 < HB; minus AG 1.000 = 4.000,00."
+    inputs: {gesamtbeitraege_inkl_ag: 5000, ag_anteil_steuerfrei: 1000, hoechstbeitrag_knappschaft: 30000}
+    expected: 4000.00
+  raster:
+  - {gesamtbeitraege_inkl_ag: 10000, ag_anteil_steuerfrei: 2000, hoechstbeitrag_knappschaft: 30000}
+  - {gesamtbeitraege_inkl_ag: 40000, ag_anteil_steuerfrei: 8000, hoechstbeitrag_knappschaft: 30000}
+  - {gesamtbeitraege_inkl_ag: 5000, ag_anteil_steuerfrei: 1000, hoechstbeitrag_knappschaft: 30000}
+  exclude_rule_ids:
+  - p10_1_2_altersvorsorge
+- rule_id: p10_1_3_3a_kv_pv
+  norm: § 10 Abs. 1 Nr. 3 und 3a, Abs. 4 EStG
+  quellen:
+  - typ: gesetz
+    label: "§ 10 Abs. 1 Nr. 3/3a, Abs. 4 EStG (KV/PV + sonstige Vorsorge, Höchstbetrag)"
+    datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+    auszug: "2 800 Euro abgezogen werden"
+  geltungsbedingungen:
+  - bedingung: basis_kv_pv_ist_basisabsicherung
+    deckt_ab: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+    quelle: "§ 10 Abs. 1 Nr. 3 EStG"
+    beschreibung: "basis_kv_pv = Basisabsicherung (Nr. 3, sozialhilfegleiches Niveau), immer voll abziehbar. Input-Semantik."
+  rundung: []
+  signature:
+    scope: KrankenPflegeVorsorge
+    inputs:
+      basis_kv_pv: money
+      weitere_vorsorgeaufwendungen: money
+      mit_anspruch_auf_zuschuss: bool
+    output: abziehbare_kv_pv_vorsorge
+  test_seed:
+  - quelle: reports/review/2026-07-11-charge2-teil2-p10-vorsorge.md
+    zitatanker: "2 800 Euro abgezogen werden"
+    herkunft: synthetisch
+    rechenweg: "basis 4.000 > HB 2.800 -> Basis-Durchbruch: 4.000 + min(500; max(0; 2.800-4.000)=0) = 4.000,00."
+    inputs: {basis_kv_pv: 4000, weitere_vorsorgeaufwendungen: 500, mit_anspruch_auf_zuschuss: false}
+    expected: 4000.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p10-vorsorge.md
+    zitatanker: "2 800 Euro abgezogen werden"
+    herkunft: synthetisch
+    rechenweg: "basis 2.000 < HB 2.800: 2.000 + min(1.500; 2.800-2.000=800) = 2.800,00."
+    inputs: {basis_kv_pv: 2000, weitere_vorsorgeaufwendungen: 1500, mit_anspruch_auf_zuschuss: false}
+    expected: 2800.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p10-vorsorge.md
+    zitatanker: "2 800 Euro abgezogen werden"
+    herkunft: synthetisch
+    rechenweg: "mit Zuschuss -> HB 1.900; basis 1.500: 1.500 + min(1.000; 1.900-1.500=400) = 1.900,00."
+    inputs: {basis_kv_pv: 1500, weitere_vorsorgeaufwendungen: 1000, mit_anspruch_auf_zuschuss: true}
+    expected: 1900.00
+  raster:
+  - {basis_kv_pv: 4000, weitere_vorsorgeaufwendungen: 500, mit_anspruch_auf_zuschuss: false}
+  - {basis_kv_pv: 2000, weitere_vorsorgeaufwendungen: 1500, mit_anspruch_auf_zuschuss: false}
+  - {basis_kv_pv: 2800, weitere_vorsorgeaufwendungen: 500, mit_anspruch_auf_zuschuss: false}
+  - {basis_kv_pv: 1500, weitere_vorsorgeaufwendungen: 1000, mit_anspruch_auf_zuschuss: true}
+  exclude_rule_ids:
+  - p10_1_3_3a_kv_pv
+- rule_id: p10_1_4_kirchensteuer
+  norm: § 10 Abs. 1 Nr. 4 EStG
+  quellen:
+  - typ: gesetz
+    label: "§ 10 Abs. 1 Nr. 4 EStG (Kirchensteuer-Abzug)"
+    datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: "gezahlte Kirchensteuer"
+    auszug: "gezahlte Kirchensteuer"
+  geltungsbedingungen:
+  - bedingung: keine_zuschlagsteuer_kappung
+    deckt_ab: "gezahlte Kirchensteuer"
+    quelle: "§ 10 Abs. 1 Nr. 4 EStG"
+    beschreibung: "Die als Zuschlag zur Abgeltungsteuer gezahlte KiSt ist ausgenommen (MVP-AN ohne KapErtr). Kein Cap sonst."
+  - bedingung: kein_erstattungsueberhang
+    deckt_ab: "gezahlte Kirchensteuer"
+    quelle: "§ 10 Abs. 4b EStG"
+    beschreibung: "Ein Erstattungsueberhang (erstattete > gezahlte) wird nach § 10 Abs. 4b dem Gesamtbetrag hinzugerechnet - ausserhalb des Scope; Null-Boden im Output."
+  rundung: []
+  signature:
+    scope: Kirchensteuerabzug
+    inputs:
+      gezahlte_kirchensteuer: money
+      erstattete_kirchensteuer: money
+    output: abziehbare_kirchensteuer
+  test_seed:
+  - quelle: reports/review/2026-07-11-charge2-teil2-p10-vorsorge.md
+    zitatanker: "gezahlte Kirchensteuer"
+    herkunft: synthetisch
+    rechenweg: "1.200 - 200 = 1.000,00."
+    inputs: {gezahlte_kirchensteuer: 1200, erstattete_kirchensteuer: 200}
+    expected: 1000.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p10-vorsorge.md
+    zitatanker: "gezahlte Kirchensteuer"
+    herkunft: synthetisch
+    rechenweg: "erstattet 800 > gezahlt 500 -> Null-Boden (Erstattungsueberhang ausserhalb Scope) -> 0,00."
+    inputs: {gezahlte_kirchensteuer: 500, erstattete_kirchensteuer: 800}
+    expected: 0.00
+  - quelle: reports/review/2026-07-11-charge2-teil2-p10-vorsorge.md
+    zitatanker: "gezahlte Kirchensteuer"
+    herkunft: synthetisch
+    rechenweg: "1.000 - 0 = 1.000,00."
+    inputs: {gezahlte_kirchensteuer: 1000, erstattete_kirchensteuer: 0}
+    expected: 1000.00
+  raster:
+  - {gezahlte_kirchensteuer: 1200, erstattete_kirchensteuer: 200}
+  - {gezahlte_kirchensteuer: 500, erstattete_kirchensteuer: 800}
+  - {gezahlte_kirchensteuer: 1000, erstattete_kirchensteuer: 0}
+  exclude_rule_ids:
+  - p10_1_4_kirchensteuer
