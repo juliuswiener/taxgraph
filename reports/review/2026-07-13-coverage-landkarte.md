@@ -91,8 +91,8 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 | Vermietung und Verpachtung | § 21 | ⬜ Anlage V | — |
 | Sonstige Einkünfte / private Veräußerung | § 22 Nr. 2/3, § 23 | ⬜ Anlage SO | — |
 
-### Übergreifende Tarif-Mechanismen — ⬜ offen (0/4)
-| Progressionsvorbehalt (Lohnersatz ALG/Elterngeld) | § 32b | ⬜ | — |
+### Übergreifende Tarif-Mechanismen — 🟡 (1/4)
+| Progressionsvorbehalt (Lohnersatz ALG/Elterngeld) | § 32b | ✅ | p32b_progressionsvorbehalt (Charge 4, verified_bedingt) |
 | Außerordentliche Einkünfte / Fünftelregelung | § 34 | ⬜ | — |
 | Verlustabzug (Rück-/Vortrag) | § 10d | ⬜ | — |
 | Altersentlastungsbetrag | § 24a | ⬜ | — |
@@ -118,8 +118,10 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 AN-Kern-Blöcke (Mantel 5 + N-WK 7 + N-DHF 1 + Vorsorge 2 + Haushaltsnahe 1 + Familie-Kern 2 +
 SA-Kern 2 + agB-Kern 2 = **22 formalisiert**) gegen den vollen AN-nahen Nenner (die 22 plus:
 Kind 2, SA 2, agB 2, KAP/R/V/SO 4, § 32b/§ 34/§ 10d/§ 24a 4, Riester/§ 35c/Mobilität/FW 4 =
-**40 Regelungsbereiche**). **22/40 ≈ 55 %** aller AN-nahen Blöcke; der AN-Kern selbst ~90 %.
-Die 55 % sind die ehrliche Startmarke fürs 100-%-Programm.
+**40 Regelungsbereiche**). Startmarke war **22/40 ≈ 55 %** aller AN-nahen Blöcke; der AN-Kern
+selbst ~90 %.
+
+**Fortschritt:** Charge 4 (§ 32b Progressionsvorbehalt) verified_bedingt → **23/40 ≈ 57 %**.
 
 ## Priorisierungs-Vorschlag Charge 4 ff.
 Kriterien: (a) Häufigkeit in realen AN-nahen Erklärungen, (b) § 2-Abhängigkeit (was der

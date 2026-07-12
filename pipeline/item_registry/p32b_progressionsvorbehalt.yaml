@@ -1,0 +1,68 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p32b_progressionsvorbehalt
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - progressionseinkuenfte
+  - interpretation
+  formulierungen:
+  - Die Formalisierung nimmt an, dass progressionseinkuenfte bereits um den Arbeitnehmer-Pauschbetrag
+    gemindert sind.
+  triage: bedingung_neu
+  bedingung: progressionseinkuenfte_sind_netto_nach_an_pauschbetrag
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_auf_erhoehte_bemessung
+  - interpretation
+  formulierungen:
+  - Die Formalisierung setzt voraus, dass est_auf_erhoehte_bemessung die tarifliche
+    Einkommensteuer auf das erhöhte Einkommen ist.
+  - Die Formalisierung nimmt an, dass est_auf_erhoehte_bemessung die fiktive Steuer
+    auf das vermehrte Einkommen ist.
+  triage: bedingung_neu
+  bedingung: tarifwert_ist_p32a_ergebnis
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Die Formalisierung enthält keine Rundungsvorschrift für den besonderen Steuersatz
+    oder das Ergebnis.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 32b abs. 1 s. 1 estg
+  formulierungen:
+  - so ist auf das nach § 32a Absatz 1 zu versteuernde Einkommen ein besonderer Steuersatz
+    anzuwenden
+  triage: bedingung_neu
+  bedingung: tarifwert_ist_p32a_ergebnis
+- art: norm_teil
+  anker:
+  - ref
+  - § 32b abs. 2 s. 1 nr. 1 estg
+  formulierungen:
+  - das nach § 32a Absatz 1 zu versteuernde Einkommen vermehrt oder vermindert wird
+    um
+  - die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz
+    1 Nummer 1)
+  - soweit er nicht bei der Ermittlung der Einkünfte aus nichtselbständiger Arbeit
+    abziehbar ist
+  triage: bedingung_neu
+  bedingung: progressionseinkuenfte_sind_netto_nach_an_pauschbetrag
+- art: norm_teil
+  anker:
+  - ref
+  - § 32b abs. 2 s. 1 nr. 1
+  formulierungen:
+  - nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1), soweit er nicht
+    bei der Ermittlung der Einkünfte aus nichtselbständiger Arbeit abziehbar ist
+  triage: bedingung_neu
+  bedingung: progressionseinkuenfte_sind_netto_nach_an_pauschbetrag
