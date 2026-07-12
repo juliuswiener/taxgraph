@@ -1,0 +1,26 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p33b_hinterbliebenen_pauschbetrag
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - hat_hinterbliebenenbezuege
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Formalisierung setzt voraus, dass der Antrag bereits gestellt und bewilligt
+    wurde.
+  triage: bedingung_neu
+  bedingung: hinterbliebenenbezuege_bewilligt
+- art: norm_teil
+  anker:
+  - ref
+  - § 33b abs. 4 s. 1 estg
+  formulierungen:
+  - auf Antrag
+  - bewilligt worden sind
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: hinterbliebenenbezuege_bewilligt

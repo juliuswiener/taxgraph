@@ -1,0 +1,46 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p33b_pflege_pauschbetrag
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die formalisierung gewaehrt 1.800 euro bei hilflosigkeit unabhaengig vom pflegegrad,
+    waehrend die norm dies nur zusaetzlich zu pflegegrad 4 oder 5 vorsieht.
+  formulierungen:
+  - 'Judge-Fehllesen des erweiternden ''auch'' (Abs. 6 S. 4): der 1.800-Betrag (Satz
+    3 Nr. 3) wird auch bei hilflos gewaehrt, unabhaengig vom Pflegegrad; Formalisierung
+    wortlautgetreu, per Wortlaut-Grep belegt.'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - pflegegrad
+  - interpretation
+  formulierungen:
+  - Die Formalisierung behandelt Pflegegrade außerhalb von 2, 3, 4 und 5 einheitlich
+    als nicht anspruchsbegründend, ohne dass die Norm dies explizit regelt.
+  triage: bedingung_neu
+  bedingung: pflegegrad_staffel
+- art: norm_teil
+  anker:
+  - ref
+  - satz 3
+  formulierungen:
+  - bei Pflegegrad 2 600 Euro, 2. bei Pflegegrad 3 1 100 Euro, 3. bei Pflegegrad 4
+    oder 5 1 800 Euro
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: pflegegrad_staffel
+- art: norm_teil
+  anker:
+  - ref
+  - satz 4
+  formulierungen:
+  - Ein Pflege-Pauschbetrag nach Satz 3 Nummer 3 wird auch gewährt, wenn die gepflegte
+    Person hilflos im Sinne des § 33b Absatz 3 Satz 4 ist.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: pflegegrad_staffel

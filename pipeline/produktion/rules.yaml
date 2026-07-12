@@ -1898,6 +1898,11 @@ regeln:
   - {grad_der_behinderung: 50, ist_hilflos_blind_taubblind: true}
   - {grad_der_behinderung: 19, ist_hilflos_blind_taubblind: false}
 - rule_id: p33b_pflege_pauschbetrag
+  # hinweis-Kanal (Instructor-Freigabe 2026-07-13, Stufe-B Lauf 1): der hilflos-Override
+  # (Abs. 6 S. 4 "auch") ist ein Konditional-VORRANG, kein Tabellenwert -> Hunger-Risiko
+  # (Tabelle trug sich selbst, der Vorrang nicht). Ohne Pin prueft A die Pflegegrad-Staffel
+  # VOR ist_hilflos und maskiert den Override (PG3+hilflos -> 1.100 statt 1.800).
+  hinweis: 'ist_hilflos hat VORRANG vor der Pflegegrad-Staffel: bei ist_hilflos = wahr immer 1.800, unabhaengig vom Pflegegrad; die Pflegegrad-Staffel (PG2 600, PG3 1.100, PG4/5 1.800, sonst 0) gilt nur, wenn NICHT hilflos.'
   norm: § 33b Abs. 6 EStG (Pflege-Pauschbetrag, Pflegegrad-Staffel)
   quellen:
   - typ: gesetz
@@ -1939,8 +1944,14 @@ regeln:
   - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
     zitatanker: Als Pflege-Pauschbetrag wird gewährt
     herkunft: synthetisch
-    rechenweg: 'WAECHTER hilflos-Override (Satz 4): Pflegegrad 1 aber hilflos -> 1.800.'
+    rechenweg: 'WAECHTER hilflos-Override (Satz 4), Legal-Edge: Pflegegrad 1 aber hilflos -> 1.800 (beweist Unabhaengigkeit vom Pflegegrad).'
     inputs: {pflegegrad: 1, ist_hilflos: true}
+    expected: 1800.0
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pflege-Pauschbetrag wird gewährt
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER hilflos-Override ueber echtem Staffelwert: Pflegegrad 3 (Staffel 1.100) + hilflos -> 1.800 (Override hebt an, nicht additiv).'
+    inputs: {pflegegrad: 3, ist_hilflos: true}
     expected: 1800.0
   - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
     zitatanker: Als Pflege-Pauschbetrag wird gewährt
@@ -1953,6 +1964,7 @@ regeln:
   - {pflegegrad: 3, ist_hilflos: false}
   - {pflegegrad: 5, ist_hilflos: false}
   - {pflegegrad: 1, ist_hilflos: true}
+  - {pflegegrad: 3, ist_hilflos: true}
   - {pflegegrad: 1, ist_hilflos: false}
 - rule_id: p33b_hinterbliebenen_pauschbetrag
   norm: § 33b Abs. 4 EStG (Hinterbliebenen-Pauschbetrag)

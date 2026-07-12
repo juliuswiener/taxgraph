@@ -1,0 +1,61 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p33b_behinderten_pauschbetrag
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - grad_der_behinderung
+  - interpretation
+  formulierungen:
+  - Die Norm staffelt nach festen GdB-Werten, die Formalisierung verwendet Schwellenwerte
+    mit 'größer gleich'.
+  - Die Formalisierung nimmt an, dass der GdB als ganzzahliger Wert vorliegt und stufenweise
+    ab 20 gilt.
+  - Die Formalisierung behandelt die GdB-Staffel als Mindestgrenzen (>=), die Norm
+    listet nur GdB-Werte und Beträge ohne expliziten Vergleichsoperator.
+  triage: bedingung_neu
+  bedingung: gdb_stufenfunktion_von_mindestens
+- art: annahme
+  anker:
+  - betrifft_kat
+  - grad_der_behinderung
+  - rundung
+  formulierungen:
+  - Die Formalisierung gibt für GdB unter 20 null Euro, die Norm enthält keine Aussage
+    zu GdB unter 20.
+  - Die Formalisierung rundet die Beträge auf zwei Dezimalstellen, die Norm gibt sie
+    als ganze Euro an.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - grad_der_behinderung
+  - sonstige
+  formulierungen:
+  - Die Formalisierung nimmt an, dass für GdB unter 20 ein Pauschbetrag von 0 Euro
+    gilt.
+  triage: bedingung_neu
+  bedingung: gdb_stufenfunktion_von_mindestens
+- art: norm_teil
+  anker:
+  - ref
+  - § 33b abs. 3 s. 3
+  formulierungen:
+  - in diesem Fall kann der Pauschbetrag nach Satz 2 nicht zusätzlich in Anspruch
+    genommen werden
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: hilflos_blind_taubblind_override
+- art: norm_teil
+  anker:
+  - ref
+  - § 33b abs. 3 s. 3 estg
+  formulierungen:
+  - in diesem Fall kann der Pauschbetrag nach Satz 2 nicht zusätzlich in Anspruch
+    genommen werden
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: hilflos_blind_taubblind_override
