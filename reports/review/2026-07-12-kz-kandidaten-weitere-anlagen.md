@@ -43,6 +43,12 @@ Minijob 510 €, Dienstleistungen 4.000 €, Handwerker 1.200 €) mappen 1:1 au
 Töpfe → unser 3-Input-Zuschnitt ist amtlich gedeckt. Das Vordruck-Feld nennt „Aufwendungen abzüglich
 [Erstattungen]" → Erstattung ist schon im deklarierten Betrag verrechnet (nicht separates Feld).
 
+**Phase-5-Anker (Instructor):** der Vordruck-Klammertext beim Handwerker-Topf („ohne
+Handwerkerleistungen, für die eine öffentliche Förderung durch zinsverbilligte Darlehen oder
+steuerfreie Zuschüsse [z. B. KfW-…] in Anspruch genommen wird") ist der AMTLICHE Anker für unsere
+Geltungsbedingung `handwerker_keine_oeffentliche_foerderung` — später die Interview-/Prüf-Kennzahl
+zu dieser Bedingung (wie E0205508 für keine_mahlzeitengestellung).
+
 ---
 
 ## (3) Anlage Außergewöhnliche Belastungen — p33
@@ -83,8 +89,8 @@ DEKLARIERT Arbeitnehmer- und Arbeitgeberanteil GETRENNT:
 
 | Regel-Input | Vordruck-Zeile | Form-Kz (A/B) | wörtliches Label | Konfidenz |
 |---|---|---|---|---|
-| p10 v1/v2: Arbeitnehmeranteil geset. RV | Zeile 4 „Arbeitnehmeranteil laut Nr. 23 a/b LStB" | 300 / 400 | Arbeitnehmeranteil laut Nr. 23 a / b der Lohnsteuerbescheinigung | **STARK (Vordruck)** |
-| p10 v1/v2: Arbeitgeberanteil / -zuschuss | Zeile 5 „Arbeitgeberanteil / -zuschuss laut Nr. 22 a/b LStB" | (getrennt) | Arbeitgeberanteil / -zuschuss laut Nr. 22 a / b der Lohnsteuerbescheinigung | **STARK (Vordruck)** |
+| p10 v1/v2: Arbeitnehmeranteil geset. RV | Zeile 4 | 300 / 400 | **E2000401** | Arbeitnehmeranteil laut Nr. 23 a / b der Lohnsteuerbescheinigung | **STARK (Vordruck⋂XSD)** |
+| p10 v1/v2: Arbeitgeberanteil / -zuschuss | Zeile 5 | **E2000801** | Arbeitgeberanteil / -zuschuss laut Nr. 22 a / b der Lohnsteuerbescheinigung | **STARK (Vordruck⋂XSD)** |
 | p10 v1/v2: Basis-KV/PV inländisch gesetzlich | Zeile ~9 | — | Beiträge zur inländischen gesetzlichen Kranken- und Pflegeversicherung | **STARK (Vordruck)** |
 
 **Validiert unsere `gesamtbeitraege_inkl_ag`-Semantik amtlich:** weil AN- und AG-Anteil getrennt
@@ -109,6 +115,18 @@ BERECHNET (Freibeträge, nicht deklarierter Betrag); die Anlage Kind deklariert 
 Anspruchs-/Übertragungs-Sachverhalte → deckt sich mit unseren Regeln (die die Freibeträge rechnen).
 
 ---
+
+## Nachträge — E-Nr-Lookups (gebündelt, Instructor)
+
+- **Vorsorge (5): ERLEDIGT** — AN E2000401, AG E2000801 (oben eingesetzt, jetzt Vordruck⋂XSD STARK).
+- **Sonderausgaben-KiSt (4) + Anlage-N-€-Summen (Entfernungspauschale, Arbeitsmittel-Summe Kz 320)
+  + Basis-KV/PV: E-Nr per Flat-XSD-Grep NICHT erreichbar** — das XSD-Label dieser Felder enthält die
+  disambiguierenden Vordruck-Wörter NICHT (z. B. „gezahlt/erstattet" ist Spalten-Kontext, nicht Teil
+  des Feld-Labels; „Summe" ist generisch). Ehrlicher Stand: die **Vordruck-Zeile + Form-Kz** (KiSt
+  103/104, Arbeitsmittel-Summe 320) ist der belegte Primär-Anker; die **E-Nr löst sich beim
+  tatsächlichen Submission-XML-Bau** (Phase 4 proper) über den amtlichen Kz→E-Nr-Schlüssel deterministisch
+  auf — KEIN Rate-Mapping hier (Zitatanker-Doktrin). Ein struktur-tiefer XSD-Element-Baum-Parse (Eltern-
+  Navigation statt Flat-Annotation-Grep) wäre die Alternative; nicht MVP-blockierend.
 
 ## Zusammenfassung (rollierend)
 

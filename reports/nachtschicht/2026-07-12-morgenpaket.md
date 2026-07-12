@@ -276,3 +276,16 @@ Kz-Katalog `E10-2025.html` (3948 Kz) liegt vor. **Substanz-Fund:** die XSD-Annot
 Vordruckzeilen-quervernetzt — zuverlässiges Konzept→Kz braucht die ELSTER-Vordruck-Struktur, nicht
 Keyword-Grep (der ergibt Rauschen). Nächster Schritt: Kz-Kandidaten-Review-Tabelle je Regel-Input,
 aus der Vordruck-Struktur, vollständig durch Instructor-Review (Zitatanker-Doktrin auf Kz-Ebene).
+
+## 14. Charge-3-Zuschnittskandidat: Familienheimfahrten (aus dem Feldmapping entdeckt)
+
+Beim Anlage-N-DHF-Feldmapping (2026-07-12) aufgefallen: der Vordruck deklariert **Familienheimfahrten**
+(Anlage N-Doppelte Haushaltsführung, Zeile 17: einfache Entfernung km Kz 514 / Anzahl Kz 515;
+XSD E0207116/E0207117) — Rechtsgrundlage **§ 9 Abs. 1 S. 3 Nr. 5 Sätze 5-6** (eine Heimfahrt je Woche,
+0,38 €/km wie die Entfernungspauschale). **KEINE aktive Regel rechnet das:** p09 deckt nur Wege
+Wohnung↔erste Tätigkeitsstätte, die dHf-Teilregeln nur Unterkunft (mit 1000-€-Cap). Norm-Teil unserer
+dHf-Familie, bisher Lücke.
+
+→ **Charge-3-Kandidat `p9_1_3_nr5_familienheimfahrten`**: mechanisch nah an p09 (km × 0,38 €, gedeckelt
+auf eine Fahrt/Woche), Quelle liegt eingefroren (`sources/gesetze-im-internet/estg_p9_abs1nr5a…` bzw.
+§ 9-Freeze), amtlicher Vordruck-Anker jetzt bekannt (Kz 514/515, E0207116/117). Instructor-Backlog.
