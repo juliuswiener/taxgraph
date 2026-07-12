@@ -106,3 +106,28 @@ verbraucht).
 Status: `strukturgeprueft_judge_offen` + clerk-rot auf 2 Konventions-Seeds. Rule-Spec in `rules.yaml`
 bis zum Konventions-Fix uncommitted gehalten. Infra `--skip-judge` + Falschgrün-Sperre + Test:
 Commit `53b6ec5` (Suite 115 passed).
+
+## Auflösung — hinweis-2-Pin grün (2026-07-12)
+
+Der hinweis wurde um den Jahr-Index-Pin erweitert (Instructor-Schärfung: „`jahre_seit_anschaffung
+= 0` ist das Anschaffungsjahr, AfA anteilig `(13 − anschaffungsmonat)/12` der JahresAfA; 1..ND−1
+Volljahre") und die Rule-Spec eingecheckt (`5ffcb73`). Zwei weitere `--skip-judge`-Läufe:
+
+1. **Lauf mit 2-Pin-hinweis:** `catala_b` **7/7 clerk-grün** — B setzte beide Pins korrekt
+   (netto/brutto UND Jahr-Index, pro-rata auf `jahres_afa = brutto/ND`). `catala_a` bekam den
+   Jahr-Index korrekt (der nächtliche year0-Bug bleibt weg), machte aber einen unabhängigen
+   Arithmetik-Slip: pro-rata auf die volle Brutto-AK statt auf `jahres_afa` (die `/ND`-Division im
+   j0-Zweig vergessen). `equivalence=FAIL` flaggte A≠B korrekt — das Doppelformalisierungs-Netz
+   arbeitete wie designed. **Kein Index-Rate** (Index in A und B korrekt) → Klasse-2-Split-Fallback
+   griff nicht.
+2. **A-seitiger Nachlauf (Instructor-Freigabe):** A rekonvergierte auf `jahres_afa × (monate/12)`.
+   **A und B beide clerk 7/7, `equivalence=PASS`, alle deterministischen Gates grün.** Der A-Slip war
+   Run-Varianz (dieselbe Sorte wie der frühere typecheck-Glitch), keine Encoding-Persistenz.
+
+**Taxonomie-Beleg (Instructor-Nachtrag):** Die Klasse-2-Leiter Stufe 1 (Encoding-hinweis) ist
+empirisch bestätigt — B landete beide Pins ohne Split. Neue Klasse-2-Reihenfolge: erst
+Encoding-hinweis, Split nur als Fallback.
+
+**Endstand:** `p9_1_3_nr6_7_afa_laufend_nb` deterministisch grün (`strukturgeprueft_judge_offen`
+wegen Falschgrün-Sperre — `verified_bedingt` zieht der Judge-Nachzug via `--redo-judge`). Der
+Monolith `p9_1_3_nr6_7_afa_laufend` ist `zuschnitt_ersetzt`; die drei Interim-Bedingungen erloschen.

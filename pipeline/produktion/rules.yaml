@@ -572,6 +572,16 @@ regeln:
   exclude_rule_ids:
   - p9_1_3_nr6_7_arbeitsmittel_afa
 - rule_id: p9_1_3_nr6_7_afa_laufend
+  # ERSETZT durch p9_1_3_nr6_7_afa_laufend_nb (Charge-3-Neuschnitt 2026-07-12,
+  # reports/review/2026-07-12-charge3-gwg-neuschnitt.md). Der Monolith trug EINEN Input
+  # anschaffungskosten fuer Grenzpruefung UND Abzug/AfA - Netto/Brutto nicht trennbar. Der
+  # Neuschnitt splittet in ak_netto (800-Grenze, § 6 Abs. 2 S. 1 i.V.m. § 9b Abs. 1) und
+  # ak_brutto (Abzug/AfA). Deterministisch belegt (--skip-judge): A und B clerk 7/7 grün,
+  # equivalence PASS; Kreuz-Waechter (netto800/brutto952->952; netto850/brutto1011,50->202,30)
+  # gruen. Die drei Interim-Bedingungen (anschaffungskosten_sind_massgebliche_ak,
+  # grenzwert_und_abzugsbetrag_fallen_zusammen) erloeschen mit dem Split. verified_bedingt
+  # zieht der Neuschnitt beim Judge-Nachzug (--redo-judge); bis dahin strukturgeprueft_judge_offen.
+  status: zuschnitt_ersetzt
   norm: § 9 Abs. 1 S. 3 Nr. 6/7 i.V.m. § 6 Abs. 2, § 7 Abs. 1 EStG (laufende Jahre, jahre_seit < Nutzungsdauer)
   quellen:
   - typ: gesetz
