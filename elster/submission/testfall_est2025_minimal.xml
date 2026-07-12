@@ -92,7 +92,9 @@
 						<Wk>
 							<EP>
 								<Erste_Taetig>
-									<!-- p09 Entfernungspauschale, clerk-Seed tests_entfernungspauschale "220 x 20 km x 0,30 = 1320":
+									<!-- p09 Entfernungspauschale, VZ 2025 (Satz 0,30 EUR/km fuer km 1-20), clerk-Seed
+					     tests_entfernungspauschale "220 Tage x 20 km x 0,30 = 1320" - NICHT gegen VZ-2026-Seeds
+					     (0,38 EUR/km) abgleichen, sonst Phantom-Delta:
 									     aufgesucht an Tagen = 220 (E0203503 / Vordruck-Kz 110, Anlage-N-Mapping) -->
 									<E0203503>220</E0203503>
 									<!-- einfache Entfernung km = 20 (E0203504 / Kz 111) -->
