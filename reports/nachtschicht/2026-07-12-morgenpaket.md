@@ -225,3 +225,27 @@ ohne diese Stufe, hätte korrekte künftige Regeln abgelehnt.** Deshalb: Stufe 1
 (Empirie sammeln), Stufe 2 blockierend erst nach Julius — und erst nachdem solzg selbst gefixt ist
 (sonst blockiert das Gate die einzige betroffene Regel ohne grünen Pfad). Reports:
 `reports/review/2026-07-12-praezisions-lint-{vorregistrierung,stufe1}.md`.
+
+## 12. Endstand (2026-07-12, instructor-verifiziert) — Regelbibliothek komplett grün
+
+Alle Post-Review-Aufträge abgeschlossen und doppelt verifiziert (dev + instructor):
+
+- **hinweis-Kanal adoptiert** (§10): Schema + Verdrahtung + Report-Provenance (hinweis_sha256) +
+  validierte Bibliothek. Erstbefüllung leer (kein Rückbau grüner Weitungen).
+- **Präzisions-Lint Klasse 5** (§11): gebaut, Vorregistrierung → Stufe 1 → **Stufe 2 aktiv**
+  (`_PRAEZISION_BLOCKIEREND=True`). Post-Flip-Sweep 18 aktive Regeln = 0 Flaggen.
+- **solzg-Residual GESCHLOSSEN**: als Handregel `rules/estg/solzg/` migriert (Julius c′, decimal-Form),
+  clerk **20351→0,11 grün** (der Klasse-5-Beweis). Manifest status=handgeschrieben, aus Pipeline-Gates
+  raus; Bedingungen/Registry bleiben. Modell-Fassung als Historie in runs/.
+
+**Verifikations-Verdikt (instructor, eigener Lauf): clerk 26/26, pytest 114/114, Quellen-Gate 17/17,
+Regate 0 Änderungen. Regelbibliothek komplett grün — 17 pipeline-verifizierte Regeln + Handregeln
+(inkl. solzg), NULL Residuals.**
+
+Taxonomie-Ergänzung: **Klasse-5-Fixes sind Handschrift-Territorium** — ein Modell-Repair refaktoriert
+(hier: let-Kette → definitions), vollzieht aber den money→decimal-Typwechsel nicht, auch mit
+deterministischem Signal. Empirisch belegt (1 Fehlversuch), erwartungskonform.
+
+**Offen (nach Julius):** ELSTER-Download → Phase 4 (Feldmapping, checkESt-CI mit dem 0,11-Fall als
+erstem Kandidaten). Charge-3-Backlog geordnet: GWG-Neuschnitt + EStR-Freeze, §2-Arithmetik (nr6_7-
+Überhangsjahr).
