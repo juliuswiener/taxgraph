@@ -62,6 +62,17 @@ Anmerkung: „Kürzung Mahlzeitengestellung" (E0205508) berührt direkt unsere n
 Verpflegung ist bei uns kein €-Input, sondern Tage×Pauschale (p9_4a rechnet die Pauschbeträge selbst)
 → die Anzahl-Kz (470/471/472) sind die Deklarations-Inputs, nicht ein €-Betrag.
 
+### Validierungs-Notizen (amtliche Deckung, Instructor 2026-07-12)
+
+- **p9_4a-Signatur ↔ amtliche Deklarationsstruktur DECKUNGSGLEICH:** der Vordruck-Wortlaut („Anzahl
+  der Tage mit Abwesenheit > 8 h **ohne** Übernachtung" / „An- und Abreisetage bei mehrtägiger
+  Auswärtstätigkeit **mit** Übernachtung" / „24 Stunden") ist eins zu eins unsere Tages-Kategorisierung
+  — inklusive der nachts adjudizierten Übernachtungs-Semantik. Das amtliche Formular BESTÄTIGT die
+  Signatur; kein Zuschnitt-Zweifel mehr an p9_4a.
+- **Phase-5-Vorgriff:** E0205508 (Kürzung Mahlzeitengestellung) ist später die Interview-/Abfrage-
+  Kennzahl zur Geltungsbedingung `keine_mahlzeitengestellung` — die Engine fragt genau dieses Feld
+  ab, um die Bedingung zu prüfen. Amtlicher Anker Bedingung↔Kz steht damit.
+
 ## Offene Punkte (Instructor / Nachtrag)
 
 - **Betragsfelder** (die eigentlichen €-Kz je Werbungskosten-Position) sauber je Zeile zuordnen —
