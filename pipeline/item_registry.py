@@ -308,6 +308,12 @@ def discover_draft(rule_id: str) -> dict:
     if not os.path.exists(rep_p):
         raise SystemExit(f"kein Report fuer {rule_id}")
     v = json.load(open(rep_p, encoding="utf-8")).get("judge_verdict") or {}
+    # Falschgruen-Tuer im Triage-Workflow: ein skipped-Verdikt hat null Items, der
+    # Abgleich liefe leer und der Entwurf saehe aus wie "Queue sauber". Kein Triage-
+    # Entwurf ohne echtes Judge-Verdikt.
+    if v.get("skipped"):
+        raise SystemExit(f"{rule_id}: Judge uebersprungen - erst --redo-judge, "
+                         f"kein Triage-Entwurf ableitbar")
     reg = load(rule_id)
     ab = abgleich(reg, v)
     items = []

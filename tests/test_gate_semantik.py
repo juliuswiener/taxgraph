@@ -483,3 +483,19 @@ def test_regate_queue_status_skipped_nie_verified():
     st = R._queue_status(gruen, rule_bed, {"skipped": True}, [])
     assert st == "strukturgeprueft_judge_offen"
     assert "verified" not in st
+
+
+def test_discover_draft_skipped_bricht_ab(tmp_path, monkeypatch):
+    # Falschgruen-Tuer im Triage-Workflow: ein skipped-Verdikt hat null Items; ein
+    # stiller Leer-Entwurf saehe aus wie "Queue sauber". discover_draft muss abbrechen,
+    # nicht einen leeren Entwurf liefern.
+    import item_registry as IR
+    monkeypatch.setattr(IR, "ROOT", str(tmp_path))
+    rid = "beliebige_regel"
+    d = tmp_path / "pipeline" / "runs" / "produktion" / rid
+    d.mkdir(parents=True)
+    (d / "report.json").write_text(
+        json.dumps({"candidate_id": rid, "judge_verdict": {"skipped": True}}),
+        encoding="utf-8")
+    with pytest.raises(SystemExit, match="uebersprungen"):
+        IR.discover_draft(rid)
