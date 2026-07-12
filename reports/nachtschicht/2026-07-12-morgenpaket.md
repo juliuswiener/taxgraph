@@ -289,3 +289,19 @@ dHf-Familie, bisher Lücke.
 → **Charge-3-Kandidat `p9_1_3_nr5_familienheimfahrten`**: mechanisch nah an p09 (km × 0,38 €, gedeckelt
 auf eine Fahrt/Woche), Quelle liegt eingefroren (`sources/gesetze-im-internet/estg_p9_abs1nr5a…` bzw.
 § 9-Freeze), amtlicher Vordruck-Anker jetzt bekannt (Kz 514/515, E0207116/117). Instructor-Backlog.
+
+## 15. Grenzfall-Akten geschlossen: GWG-netto + dHf-monatlich (amtliche Anleitungs-Anker)
+
+Aus dem FMS-227-Berg (Julius-Export 2026-07-12), Research in den eingefrorenen MVP-Anleitungen
+(`sources/bfinv/anleitungen/`, typ:verwaltung):
+
+- **GWG Netto/Brutto — AKTE GESCHLOSSEN.** Anleitung N (`anl_n_2025.txt:307`) wörtlich: „Arbeitsmittel,
+  die höchstens **800 € (ohne Umsatzsteuer)** … angeschafft haben (sog. geringwertige
+  Wirtschaftsgüter)." → die 800-€-Grenze prüft die **Netto**-AK, der Abzug erfolgt brutto (§ 9b). Der
+  Charge-3-Neuschnitt `ak_netto/ak_brutto` (nr6_7) ist damit **amtlich spezifiziert**, nicht mehr
+  recherche-abhängig — dritte Quelle: gesetz § 6 Abs. 2 + § 9b-Bezug + verwaltung Anleitung-N-Passage.
+- **dHf 1000-€-Cap — MONATSBETRACHTUNG amtlich bestätigt.** Anleitung N-DHF (`anl_ndhf_2025.txt:56`,
+  auch `anl_n_2025.txt:424`): „bis zu **1.000 € im Monat**". Bestätigt den p9_1_3_nr5-Zuschnitt
+  (Monats-Cap). Die dHf-Registry-Begründungen tragen die „Wiedervorlage bei BMF-Befund"-Klausel → um
+  diesen Verwaltungs-Anker ergänzt (kein Statuswechsel; Items waren nicht_material, jetzt amtlich belegt).
+- **Alte Handover-Recherchefrage (dHf-Monats/Jahr) damit ERLEDIGT.**

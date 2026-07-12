@@ -10,7 +10,7 @@ items:
   text: Die Formalisation legt die monatliche Höchstgrenze so aus, dass der Gesamtbetrag durch Multiplikation mit der Anzahl
     der Monate zu berechnen ist.
   triage: nicht_material
-  konvention: MVP-Monatsbetrachtung (BMF-Wiedervorlage Jahresbetrachtung)
+  konvention: Monatsbetrachtung AMTLICH BESTAETIGT (Anleitung N-DHF 2025 'bis zu 1.000 Euro im Monat', sources/bfinv/anleitungen/anl_ndhf_2025.txt:56) - BMF-Wiedervorlage erledigt 2026-07-12
 - art: annahme
   anker:
   - betrifft_kat
@@ -19,7 +19,7 @@ items:
   text: Die Formalisierung interpretiert die monatliche Höchstgrenze so, dass sie für jeden Monat einzeln gilt und die Beträge
     über die Anzahl der Monate aufsummiert werden.
   triage: nicht_material
-  konvention: MVP-Monatsbetrachtung (BMF-Wiedervorlage Jahresbetrachtung)
+  konvention: Monatsbetrachtung AMTLICH BESTAETIGT (Anleitung N-DHF 2025 'bis zu 1.000 Euro im Monat', sources/bfinv/anleitungen/anl_ndhf_2025.txt:56) - BMF-Wiedervorlage erledigt 2026-07-12
 - art: annahme
   anker:
   - betrifft_kat
@@ -46,7 +46,7 @@ items:
   text: Die Norm nennt nur eine monatliche Höchstgrenze; die Formalisierung berechnet den Gesamtabzug durch Multiplikation
     mit der Monatsanzahl.
   triage: nicht_material
-  konvention: MVP-Monatsbetrachtung (BMF-Wiedervorlage Jahresbetrachtung)
+  konvention: Monatsbetrachtung AMTLICH BESTAETIGT (Anleitung N-DHF 2025 'bis zu 1.000 Euro im Monat', sources/bfinv/anleitungen/anl_ndhf_2025.txt:56) - BMF-Wiedervorlage erledigt 2026-07-12
 - art: norm_teil
   anker:
   - ref
@@ -103,7 +103,7 @@ items:
   - zeitbezug
   text: Die Formalisierung setzt voraus, dass die Unterkunft für eine ganzzahlige Anzahl von Monaten genutzt wurde.
   triage: nicht_material
-  konvention: MVP-Monatsbetrachtung (BMF-Wiedervorlage Jahresbetrachtung)
+  konvention: Monatsbetrachtung AMTLICH BESTAETIGT (Anleitung N-DHF 2025 'bis zu 1.000 Euro im Monat', sources/bfinv/anleitungen/anl_ndhf_2025.txt:56) - BMF-Wiedervorlage erledigt 2026-07-12
 - art: norm_teil
   anker:
   - ref
