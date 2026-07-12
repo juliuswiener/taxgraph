@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p33b_pflege_pauschbetrag
-version: 1
+version: 2
 items:
 - art: abweichung
   anker:
@@ -43,4 +43,23 @@ items:
     Person hilflos im Sinne des § 33b Absatz 3 Satz 4 ist.
   triage: bedingung_neu
   klasse: wirkt_hinein
+  bedingung: pflegegrad_staffel
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die formalisierung gewaehrt den pauschbetrag bei hilflosigkeit unabhaengig vom
+    pflegegrad, die norm nur bei pflegegrad 4 oder 5.
+  formulierungen:
+  - Die Formalisierung gewährt den Pauschbetrag bei Hilflosigkeit unabhängig vom Pflegegrad,
+    die Norm nur bei Pflegegrad 4 oder 5.
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - pflegegrad
+  - sonstige
+  formulierungen:
+  - Die Formalisierung nimmt an, dass bei nicht erfüllten Bedingungen ein Pauschbetrag
+    von 0 Euro ausgegeben wird.
+  triage: bedingung_neu
   bedingung: pflegegrad_staffel

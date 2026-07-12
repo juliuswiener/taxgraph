@@ -79,11 +79,11 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 | Spenden/Mitgliedsbeiträge | § 10b | ⬜ | — |
 | Unterhalt-Realsplitting (Anlage U) | § 10 Abs. 1a | ⬜ | — |
 
-### Anlage Außergewöhnliche Belastungen — 🟡 Kern (2/4)
+### Anlage Außergewöhnliche Belastungen — 🟡 (3/4)
 | agB allgemein — Abzug | § 33 Abs. 1, 2 | ✅ | p33_1_2_agb_abzug |
 | zumutbare Belastung | § 33 Abs. 3 | ✅ | p33_3_zumutbare_belastung |
 | Unterhalt an bedürftige Personen (Anlage Unterhalt) | § 33a Abs. 1 | ⬜ | — |
-| Pauschbeträge Behinderte/Hinterbliebene/Pflege | § 33b | ⬜ | — |
+| Pauschbeträge Behinderte/Hinterbliebene/Pflege | § 33b | ✅ | p33b_behinderten/pflege/hinterbliebenen_pauschbetrag (Charge 5, verified_bedingt) |
 
 ### Andere Einkunftsarten — ⬜ komplett offen (0/4 Anlagen)
 | Kapitalvermögen (Abgeltungsteuer, Sparer-PB) | § 20, § 32d, § 20 Abs. 9 | ⬜ Anlage KAP | — |
@@ -121,7 +121,8 @@ Kind 2, SA 2, agB 2, KAP/R/V/SO 4, § 32b/§ 34/§ 10d/§ 24a 4, Riester/§ 35c/
 **40 Regelungsbereiche**). Startmarke war **22/40 ≈ 55 %** aller AN-nahen Blöcke; der AN-Kern
 selbst ~90 %.
 
-**Fortschritt:** Charge 4 (§ 32b Progressionsvorbehalt) verified_bedingt → **23/40 ≈ 57 %**.
+**Fortschritt:** Charge 4 (§ 32b) verified_bedingt → 23/40 ≈ 57 %. Charge 5 §33b-Trio
+(Behinderten-/Pflege-/Hinterbliebenen-Pauschbetrag) verified_bedingt → **24/40 ≈ 60 %**.
 
 ## Priorisierungs-Vorschlag Charge 4 ff.
 Kriterien: (a) Häufigkeit in realen AN-nahen Erklärungen, (b) § 2-Abhängigkeit (was der
