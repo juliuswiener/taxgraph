@@ -374,6 +374,11 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--only", help="eine rule_id")
     ap.add_argument("--force", action="store_true", help="fertige Reports neu rechnen")
+    ap.add_argument("--skip-judge", action="store_true",
+                    help="Judge-Rolle ueberspringen (deterministischer Struktur/clerk-Lauf, "
+                         "z.B. bei Judge-Provider-Ausfall). queue_status bleibt strukturell "
+                         "'strukturgeprueft_judge_offen' - NIE verified (Falschgruen-Sperre). "
+                         "Judge-Nachzug spaeter via --redo-judge.")
     ap.add_argument("--regate", action="store_true",
                     help="nur deterministische Gates neu rechnen, ohne Modellkosten")
     ap.add_argument("--redo-judge", action="store_true",
@@ -437,7 +442,8 @@ def main() -> int:
         if arch:
             print(f"  (alte report.json -> {os.path.basename(arch)})", flush=True)
         try:
-            res = run_candidate(build_candidate(rule), dry_run=args.dry_run)
+            res = run_candidate(build_candidate(rule), dry_run=args.dry_run,
+                                skip_judge=args.skip_judge)
         except RoleCallError as e:
             json.dump({"candidate_id": rid, "queue_status": e.kind,
                        "failed_role": e.role, "failed_slug": e.slug,

@@ -176,8 +176,16 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
         if not verdict.get("parse_error"):
             res.backlog = G.unabhaengige_gaps(verdict)
     else:
+        # skip_judge MIT gueltiger A-Quelle: die Judge-Gates sind SKIPPED (nicht FAIL) -
+        # das Judge-Verdikt fehlt bewusst (deterministischer Struktur/clerk-Lauf).
+        # Ohne A-Quelle bleibt es FAIL "no A source".
+        judge_skipped = bool(skip_judge and src_a)
+        st = G.SKIP if judge_skipped else G.FAIL
+        det = "judge uebersprungen (skip_judge)" if judge_skipped else "no A source"
         for name in ("roundtrip", "scope_gap", "geltungsbereich", "grenzfall", "defekt"):
-            res.gate_results.append(G.GateResult(name, G.FAIL, "no A source"))
+            res.gate_results.append(G.GateResult(name, st, det))
+        if judge_skipped:
+            res.judge_verdict = {"skipped": True}
 
     # 7. Clerk-Tests
     res.gate_results.append(G.clerk_gate(src_a, mod_a, candidate))
@@ -190,18 +198,24 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
         res.queue_status = "invalid_mixed_models_yaml"
         return res
 
-    res.queue_status = _queue_status(res.gate_results, candidate, res.discoveries)
+    res.queue_status = _queue_status(res.gate_results, candidate, res.discoveries,
+                                     judge_skipped=bool(skip_judge and src_a))
     res.bedingungen = [b["bedingung"] for b in (candidate.get("geltungsbedingungen") or [])]
     return res
 
 
-def _queue_status(gate_results, candidate, discoveries) -> str:
+def _queue_status(gate_results, candidate, discoveries, judge_skipped=False) -> str:
     """Queue-Entscheidung der Registry-Ratsche.
 
     Das `discovery`-Gate ist SKIP bei neuen Funden - das darf NICHT als
     "toolchain pending" gelten. Neue Funde routen in die Triage-Queue, kippen aber
     kein deterministisches Gate (Punkt 3). Judge-Splits sind informativ und
     entscheiden nichts mehr.
+
+    Falschgrün-Sperre (Instructor-Leitplanke 2026-07-12): ein skip_judge-Lauf hat KEIN
+    Judge-Verdikt und darf daher NIE Richtung verified/verified_bedingt laufen - egal wie
+    gruen die deterministischen Gates sind. Er bleibt strukturell/vorlaeufig, bis der
+    Judge-Nachzug (redo-judge) die Ratsche schliesst.
     """
     echte = [g for g in gate_results
              if not g.name.endswith("_first") and g.name != "discovery"]
@@ -209,6 +223,8 @@ def _queue_status(gate_results, candidate, discoveries) -> str:
         return "flagged_for_review"
     if discoveries:
         return "discovery_triage"
+    if judge_skipped:
+        return "strukturgeprueft_judge_offen"
     if G.SKIP in [g.status for g in echte]:
         return "verified_partial (toolchain pending)"
     if candidate.get("geltungsbedingungen"):

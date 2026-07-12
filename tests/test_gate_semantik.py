@@ -429,3 +429,23 @@ def test_praezisions_lint_geklammerte_money_differenz_wird_erkannt():
            "  definition mild equals (bmg - fg) * 0.119\n"
            "  definition out equals (Decimal.truncate of (mild / $0.01)) * $0.01")
     assert G.praezisions_lint_gate(src).status == G.FAIL
+
+
+def test_skip_judge_queue_status_nie_verified():
+    # Falschgruen-Sperre (Instructor-Leitplanke 2026-07-12): ein skip_judge-Lauf hat kein
+    # Judge-Verdikt und darf NIE Richtung verified/verified_bedingt laufen - auch wenn alle
+    # deterministischen Gates gruen sind. Er bleibt strukturell/vorlaeufig.
+    import cascade as C
+    def gr(n, st): return G.GateResult(n, st)
+    gruen = [gr("syntax_a", G.PASS), gr("typecheck_a", G.PASS),
+             gr("clerk", G.PASS), gr("rundungs_lint", G.PASS)]
+    cand_bed = {"geltungsbedingungen": [{"bedingung": "x", "deckt_ab": "y", "quelle": "z"}]}
+    # Ohne skip_judge waere das verified_bedingt:
+    assert C._queue_status(gruen, cand_bed, [], judge_skipped=False) == "verified_bedingt"
+    # MIT skip_judge NIE verified:
+    st = C._queue_status(gruen, cand_bed, [], judge_skipped=True)
+    assert st == "strukturgeprueft_judge_offen"
+    assert "verified" not in st
+    # Ein FAIL kippt weiterhin Vorrang (skip_judge macht kein rotes Gate gruen):
+    rot = gruen + [gr("typecheck_a", G.FAIL)]
+    assert C._queue_status(rot, cand_bed, [], judge_skipped=True) == "flagged_for_review"
