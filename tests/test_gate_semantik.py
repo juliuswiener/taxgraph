@@ -398,3 +398,31 @@ def test_praezisions_lint_stufe2_blockiert(monkeypatch):
     monkeypatch.setattr(G, "_PRAEZISION_BLOCKIEREND", True)
     assert G.praezisions_lint_gate(PRAEZ_BUGGY).status == G.FAIL
     assert G.praezisions_lint_gate(PRAEZ_FIX).status == G.PASS
+
+
+def test_praezisions_lint_definition_form_wird_erkannt():
+    # Regression (solzg-Repair 2026-07-12): ein Repair schrieb die let-Kette in top-level
+    # `definition`s um und behielt money x decimal - das Gate gab faelschlich PASS, weil
+    # die Fluss-Erreichbarkeit nur `let` verfolgte. Muss jetzt INFO sein.
+    src = ("declaration scope S:\n  input bmg content money\n"
+           "  output solz content money\n  internal fg content money\n"
+           "  internal normal content money\n  internal milderung content money\n"
+           "  internal vor content money\nscope S:\n"
+           "  definition fg equals $20,350.00\n"
+           "  definition normal equals bmg * 0.055\n"
+           "  definition milderung equals (bmg - fg) * 0.119\n"
+           "  definition vor equals\n"
+           "    if bmg <= fg then $0.00\n"
+           "    else (if normal <= milderung then normal else milderung)\n"
+           "  definition solz equals (Decimal.truncate of (vor / $0.01)) * $0.01")
+    assert G.praezisions_lint_gate(src).status == G.INFO
+
+
+def test_praezisions_lint_geklammerte_money_differenz_wird_erkannt():
+    # Regression: `(a - b) * 0.119` - der linke Operand ist ein geklammerter money-
+    # Ausdruck, kein blosser Name. Die fruehere Operanden-Heuristik uebersah das.
+    src = ("declaration scope S:\n  input bmg content money\n  input fg content money\n"
+           "  output out content money\n  internal mild content money\nscope S:\n"
+           "  definition mild equals (bmg - fg) * 0.119\n"
+           "  definition out equals (Decimal.truncate of (mild / $0.01)) * $0.01")
+    assert G.praezisions_lint_gate(src).status == G.INFO

@@ -407,15 +407,50 @@ _CATALA_KW = {"let", "equals", "in", "if", "then", "else", "of", "content", "sco
               "true", "false", "and", "or", "not", "date", "duration"}
 
 
-def _praez_money_names(src: str) -> set:
-    """money-typisierte Namen. Typ-Tracking: `let Y equals RHS` erbt money nur, wenn RHS
-    money traegt UND nicht durch ein money-Literal/-Name teilt (money/money -> decimal)
-    und kein `decimal of` traegt. Ohne dieses Tracking flaggt der Lint die Fix-Form."""
+_SCALE_RE = re.compile(rf"[*/]\s*(?:{_DEC_LIT})")     # * oder / durch ein decimal-Literal
+_TO_DEC_RE = re.compile(r"/\s*\$|decimal\s+of", re.I)  # money/money oder `decimal of` -> decimal
+
+
+def _praez_idents(expr: str) -> set:
+    return {w for w in _WORD_RE.findall(expr) if w not in _CATALA_KW}
+
+
+def _praez_bindings(src: str) -> dict:
+    """{Variable: Body-Text} fuer `let ... equals ... in` (verschachtelt, let/in-Tiefe) UND
+    `definition X equals ...` (bis zur naechsten definition/declaration/scope oder EOF).
+    Beide Bindungsarten sind noetig: ein Repair, der let-Ketten in top-level definitions
+    umschreibt, darf die Fluss-Erreichbarkeit und money-Inferenz NICHT blenden (sonst
+    Falsch-PASS trotz money x decimal - real bei solzg-Repair 2026-07-12 aufgetreten)."""
+    bodies = {}
+    for m in re.finditer(r"\blet\s+(\w+)\s+equals\b", src):
+        start, depth, end = m.end(), 0, len(src)
+        for t in re.finditer(r"\blet\b|\bin\b", src[start:]):
+            if t.group() == "let":
+                depth += 1
+            elif depth == 0:
+                end = start + t.start()
+                break
+            else:
+                depth -= 1
+        bodies.setdefault(m.group(1), src[start:end])
+    defs = list(re.finditer(r"(?m)^[ \t]*definition\s+(\w+)\s+equals\b", src))
+    stops = [s.start() for s in
+             re.finditer(r"(?m)^[ \t]*(?:definition|declaration|scope)\b", src)]
+    for m in defs:
+        start = m.end()
+        nxt = [s for s in stops if s >= start]
+        bodies[m.group(1)] = src[start:(min(nxt) if nxt else len(src))]
+    return bodies
+
+
+def _praez_money_names(src: str, bindings: dict) -> set:
+    """money-typisierte Namen: deklarierte (input/output/internal content money) PLUS
+    per Fixpunkt inferierte Bindungen. `Y equals RHS` erbt money nur, wenn RHS money
+    traegt UND nicht nach decimal konvertiert (money/money oder `decimal of`)."""
     names = set(_MONEY_DECL_RE.findall(src))
-    for _ in range(8):                               # Fixpunkt ueber let-Ketten
+    for _ in range(8):
         added = False
-        for m in _LET_RE.finditer(src):
-            y, rhs = m.group(1), m.group(2)
+        for y, rhs in bindings.items():
             if y in names:
                 continue
             has_money = "$" in rhs or any(re.search(rf"\b{re.escape(n)}\b", rhs)
@@ -430,77 +465,55 @@ def _praez_money_names(src: str) -> set:
     return names
 
 
-def _praez_idents(expr: str) -> set:
-    return {w for w in _WORD_RE.findall(expr) if w not in _CATALA_KW}
-
-
-def _praez_let_bodies(src: str) -> dict:
-    """{let-Variable: Body-Text}. Erfasst MEHRZEILIGE Bodies bis zum schliessenden `in`
-    derselben Verschachtelungstiefe (`let` +1, `in` -1). Ohne das bleibt ein `let X
-    equals\\n  if ...`-Body leer und die Fluss-Erreichbarkeit bricht ab."""
-    bodies = {}
-    for m in re.finditer(r"\blet\s+(\w+)\s+equals\b", src):
-        start = m.end()
-        depth, end = 0, len(src)
-        for t in re.finditer(r"\blet\b|\bin\b", src[start:]):
-            if t.group() == "let":
-                depth += 1
-            elif depth == 0:                         # das 'in', das DIESES let schliesst
-                end = start + t.start()
-                break
-            else:
-                depth -= 1
-        bodies[m.group(1)] = src[start:end]
-    return bodies
-
-
-def _praez_cut_reachable(src: str) -> set | None:
-    """Alle Bezeichner, die (transitiv ueber let-Bindungen) in einen finalen Cent-
-    Schnitt fliessen. None, wenn kein Catala-Cent-Schnitt-Idiom vorhanden ist (dann
-    ist Fluss nicht verfolgbar)."""
+def _praez_cut_reachable(src: str, bindings: dict) -> set | None:
+    """Alle Bezeichner, die (transitiv ueber let- UND definition-Bindungen) in einen
+    finalen Cent-Schnitt fliessen. None, wenn kein Cent-Schnitt-Idiom vorhanden ist."""
     seeds = set()
     for m in _CENT_CUT_RE.finditer(src):
         seeds |= _praez_idents(m.group(1))
     if not seeds:
         return None
-    bodies = _praez_let_bodies(src)
     seen, stack = set(), list(seeds)
     while stack:
         v = stack.pop()
         if v in seen:
             continue
         seen.add(v)
-        if v in bodies:
-            stack.extend(_praez_idents(bodies[v]))
+        if v in bindings:
+            stack.extend(_praez_idents(bindings[v]))
     return seen
 
 
-def _praez_scale_frag(code: str, money_names: set) -> str | None:
-    """Erstes money [*/] decimal-Literal (oder decimal-Literal * money) in `code`, das
-    MONEY produziert - Prozent-/Quotient-auf-Geld. Der Cent-Schnitt (`/ $0.01`, `* $0.01`)
-    matcht nie, da _DEC_LIT $-Literale ausschliesst."""
-    for m in re.finditer(rf"([\w.$]+)\s*[*/]\s*(?:{_DEC_LIT})", code):
-        left = m.group(1)
-        if left.startswith("$") or left.strip("$") in money_names \
-                or any(left.endswith(n) for n in money_names):
-            return m.group(0)
-    for m in re.finditer(rf"(?:{_DEC_LIT})\s*[*]\s*([\w$]+)", code):   # decimal LINKS
-        right = m.group(1)
-        if right.startswith("$") or right in money_names:
-            return m.group(0)
+def _praez_body_scaling(text: str, money_names: set) -> str | None:
+    """Skalierung mit decimal-Literal (`* 0.055`, `/ 2.0`) in einem money-fuehrenden
+    Ausdruck. money x decimal rundet auf Cent - unabhaengig davon, ob der linke Operand
+    ein Name, $-Literal oder geklammerter money-Ausdruck `(a - b)` ist. Nicht gezaehlt:
+    reine decimal-Rechnung (`/ $..`/`decimal of` -> decimal). Der Cent-Schnitt selbst
+    (`* $0.01`, `/ $0.01`) matcht nie, da _DEC_LIT $-Literale ausschliesst."""
+    code = "\n".join(ln.split("#", 1)[0] for ln in text.splitlines())
+    m = _SCALE_RE.search(code)
+    if not m:
+        return None
+    touches_money = "$" in code or any(re.search(rf"\b{re.escape(n)}\b", code)
+                                       for n in money_names)
+    if touches_money and not _TO_DEC_RE.search(code):
+        return m.group(0).strip()
     return None
 
 
-def _praez_money_scaled(src: str, money_names: set) -> list:
-    """Zeilen mit money [*/] decimal-Literal, die money produzieren. Rueckgabe
-    (zeile, fragment, bound_var|None); bound_var aus `let`- ODER `definition`-Kopf."""
+def _praez_money_scaled(bindings: dict, money_names: set) -> list:
+    """(var, fragment) je money-typisierter Bindung, deren Body eine decimal-Skalierung
+    traegt - money x decimal (cent-gerundet). Nutzt den DEKLARIERTEN/inferierten money-Typ
+    des Bindungs-Ergebnisses statt Operanden-Parsing (robust gegen geklammerte Operanden
+    und definition-Umschreibung)."""
     hits = []
-    for i, line in enumerate(src.splitlines(), 1):
-        code = line.split("#", 1)[0]
-        bm = re.match(r"\s*(?:let|definition)\s+(\w+)\s+equals\b", code)
-        frag = _praez_scale_frag(code, money_names)
-        if frag:
-            hits.append((i, frag, bm.group(1) if bm else None))
+    for var, body in bindings.items():
+        if var not in money_names:
+            continue
+        code = "\n".join(ln.split("#", 1)[0] for ln in body.splitlines())
+        m = _SCALE_RE.search(code)
+        if m:
+            hits.append((var, m.group(0).strip()))
     return hits
 
 
@@ -514,27 +527,27 @@ def praezisions_lint_gate(catala_src: str | None,
     """
     if not catala_src:
         return GateResult("praezisions_lint", SKIP, "kein A-Source")
-    reachable = _praez_cut_reachable(catala_src)
+    bindings = _praez_bindings(catala_src)
+    reachable = _praez_cut_reachable(catala_src, bindings)
     if reachable is None:
         return GateResult("praezisions_lint", PASS, "kein finaler Cent-Schnitt-Idiom")
-    money_names = _praez_money_names(catala_src)
-    scaled = _praez_money_scaled(catala_src, money_names)
+    money_names = _praez_money_names(catala_src, bindings)
+    scaled = _praez_money_scaled(bindings, money_names)
     # money x decimal INLINE in der Schnitt-Expression X selbst (truncate of (X/$0.01)):
     # fliesst direkt in den Schnitt, ist immer confident.
-    inline = [(0, f) for m in _CENT_CUT_RE.finditer(catala_src)
-              for f in [_praez_scale_frag(m.group(1), money_names)] if f]
+    inline = [f"inline: {f}" for m in _CENT_CUT_RE.finditer(catala_src)
+              for f in [_praez_body_scaling(m.group(1), money_names)] if f]
     if not scaled and not inline:
         return GateResult("praezisions_lint", PASS,
                           "money x decimal vor Cent-Schnitt: keine")
-    # confident: bound_var fliesst (transitiv) in den Schnitt, ODER inline in X. Ein
-    # money x decimal NACH dem Schnitt (Nachverarbeitung) oder in einer Nebenvariable
-    # (bound_var NICHT in reachable) ist NICHT confident -> kein Flag (Fluss zaehlt).
-    confident = inline + [(i, frag) for (i, frag, bv) in scaled
-                          if bv is not None and bv in reachable]
-    moeglich = [(i, frag) for (i, frag, bv) in scaled
-                if not (bv is not None and bv in reachable)]
+    # confident: die money-Bindung fliesst (transitiv) in den Schnitt, ODER inline in X.
+    # Ein money x decimal NACH dem Schnitt (Nachverarbeitung) oder in einer Nebenvariable
+    # (var NICHT in reachable) ist NICHT confident -> kein Flag (Fluss zaehlt).
+    confident = list(inline) + [f"{var}: {frag}" for (var, frag) in scaled
+                                if var in reachable]
+    moeglich = [f"{var}: {frag}" for (var, frag) in scaled if var not in reachable]
     if confident:
-        z = "; ".join(f"Zeile {i}: {frag}" for i, frag in confident[:5])
+        z = "; ".join(confident[:5])
         status = FAIL if _PRAEZISION_BLOCKIEREND else INFO
         vor = "" if _PRAEZISION_BLOCKIEREND else " (Stufe 1 informativ, wuerde in Stufe 2 blockieren)"
         return GateResult("praezisions_lint", status,
@@ -544,7 +557,7 @@ def praezisions_lint_gate(catala_src: str | None,
                           f"`decimal of` nach decimal), Cent-Schnitt am Ende, keine "
                           f"Zwischenrundung. {z}")
     if moeglich:
-        z = "; ".join(f"Zeile {i}: {frag}" for i, frag in moeglich[:5])
+        z = "; ".join(moeglich[:5])
         return GateResult("praezisions_lint", PASS,
                           f"money x decimal vorhanden, fliesst nicht nachweisbar in den "
                           f"Cent-Schnitt (Fluss ok oder manuell pruefen). {z}")
