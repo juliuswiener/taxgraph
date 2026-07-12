@@ -693,6 +693,162 @@ regeln:
 # deterministischen clerk-Test: seed 1200/ND3/Monat7 -> Jahr3 (jahre_seit==ND) = 200,00.
 # Backlog-Alternative (Phase 5): EStR R 7.4 als typ:verwaltung-Quelle fuer einen zitierbaren
 # Text-Anker. p9_1_3_nr6_7_afa_laufend (jahre_seit < Nutzungsdauer) traegt alle Rechtssaetze.
+- rule_id: p9_1_3_nr6_7_afa_laufend_nb
+  # hinweis-Kanal (Julius-Freigabe 2026-07-12, Instructor-Review erste Produktions-Nutzung):
+  # Zwei Pins. (1) Klasse-1-Klarheit netto/brutto - der Brutto-Abzug ist Auslegungsfolge
+  # (§9b + Anleitung), kein zitierbarer Wortlaut -> auszug-Weitung kann ihn nicht liefern.
+  # (2) Klasse-2-Encoding (Jahr-Index): jahre_seit_anschaffung = 0 ist das Anschaffungsjahr;
+  # die Zwoelftel-Richtung steht nicht im Wortlaut des Inputs -> Encoding-hinweis statt Split
+  # (Instructor-Taxonomie-Nachtrag 2026-07-12: neue Klasse-2-Leiter erst Encoding-hinweis,
+  # Split nur als Fallback; dieser Lauf ist der Testfall).
+  hinweis: 'Zwei Groessen strikt trennen: die 800-Euro-GWG-Grenze prueft ausschliesslich anschaffungskosten_netto. Sofortabzug (GWG-Fall) und lineare Jahres-AfA bemessen sich ausschliesslich auf anschaffungskosten_brutto. Also: ist_gwg anhand netto entscheiden; abziehbar bzw. JahresAfA immer aus brutto rechnen. Jahr-Index: jahre_seit_anschaffung = 0 ist das Anschaffungsjahr (AfA anteilig: ein Zwoelftel je vollem Monat AB Anschaffungsmonat einschliesslich, d.h. (13 - anschaffungsmonat)/12 der JahresAfA); 1 bis nutzungsdauer_jahre - 1 sind Volljahre mit voller JahresAfA.'
+  norm: § 9 Abs. 1 S. 3 Nr. 6/7 i.V.m. § 6 Abs. 2 (§ 9b Abs. 1), § 7 Abs. 1 EStG (Netto/Brutto-Neuschnitt, laufende Jahre)
+  # Charge-3-Neuschnitt (Instructor-Freigabe 2026-07-12, Zuschnitts-Report
+  # reports/review/2026-07-12-charge3-gwg-neuschnitt.md): loest den GWG-Netto/Brutto-Gap.
+  # ak_netto = Grenzpruefung (§ 6 Abs. 2 S. 1: vermindert um Vorsteuer, § 9b Abs. 1);
+  # ak_brutto = Abzug/AfA-Bemessung (beim AN i.d.R. brutto). Ersetzt afa_laufend; dessen
+  # Interim-Bedingungen (grenzwert_und_abzugsbetrag_fallen_zusammen +
+  # anschaffungskosten_sind_massgebliche_ak) erloeschen mit dem Split.
+  quellen:
+  - typ: gesetz
+    label: § 9 Abs. 1 S. 3 Nr. 6/7 EStG (Arbeitsmittel)
+    datei: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
+    zitatanker: Nummer 7 bleibt unberührt
+    auszug: Aufwendungen für Arbeitsmittel
+  - typ: gesetz
+    label: § 6 Abs. 2 S. 1 EStG (GWG-Grenze NETTO via § 9b Abs. 1)
+    datei: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
+    zitatanker: 800 Euro nicht übersteigen
+    auszug: vermindert um einen darin enthaltenen Vorsteuerbetrag (§ 9b Absatz 1), oder der nach Absatz 1 Nummer 5 bis 6 an deren Stelle tretende Wert für das einzelne Wirtschaftsgut 800 Euro nicht übersteigen
+  - typ: verwaltung
+    label: Anleitung Anlage N 2025 (GWG-Grenze ohne Umsatzsteuer)
+    datei: sources/bfinv/anleitungen/anl_n_2025.txt
+    zitatanker: geringwertige Wirtschaftsgüter
+    auszug: Arbeitsmittel, die höchstens 800 € (ohne Umsatzsteu
+  - typ: gesetz
+    label: § 7 Abs. 1 S. 1-2 EStG (lineare AfA, gleiche Jahresbeträge)
+    datei: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: Absetzung für Abnutzung in gleichen Jahresbeträgen
+    auszug: Bei Wirtschaftsgütern, deren Verwendung oder Nutzung durch den Steuerpflichtigen zur Erzielung von Einkünften sich erfahrungsgemäß auf einen Zeitraum von mehr als einem Jahr erstreckt, ist jeweils für ein Jahr der Teil der Anschaffungs- oder Herstellungskosten abzusetzen, der bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung auf ein Jahr entfällt (Absetzung für Abnutzung in gleichen Jahresbeträgen). 2 Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer des Wirtschaftsguts.
+  - typ: gesetz
+    label: § 7 Abs. 1 S. 4 EStG (pro-rata Anschaffungsjahr)
+    datei: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: ein Zwölftel für jeden vollen Monat
+    auszug: Im Jahr der Anschaffung oder Herstellung des Wirtschaftsguts vermindert sich für dieses Jahr der Absetzungsbetrag nach Satz 1 um jeweils ein Zwölftel für jeden vollen Monat, der dem Monat der Anschaffung oder Herstellung vorangeht
+  geltungsbedingungen:
+  - bedingung: gwg_sofortabzug_gewaehlt
+    deckt_ab: 800 Euro nicht übersteigen
+    quelle: § 6 Abs. 2 Satz 1 EStG i.V.m. § 9b Abs. 1
+    beschreibung: 'ak_netto <= 800 (Grenzpruefung auf dem um Vorsteuer verminderten Wert, § 9b Abs. 1; Anleitung N: ohne Umsatzsteuer): Sofortabzug in voller Hoehe des ak_brutto (GWG). Sonst lineare AfA auf ak_brutto.'
+  - bedingung: zeitraum_laufend
+    deckt_ab: Absetzung für Abnutzung in gleichen Jahresbeträgen
+    quelle: § 7 Abs. 1 S. 1 EStG
+    beschreibung: 'Binaere Auswahlbedingung: gilt fuer laufende Jahre (jahre_seit_anschaffung < nutzungsdauer_jahre): Jahr0 anteilig, Volljahre voll. Ueberhangsjahr eigene Teilregel; Auswahl macht die § 2-Integration.'
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
+    zitatanker: 800 Euro nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: 'Altfall USt-frei (netto=brutto): AK 500 netto <= 800 -> GWG Sofortabzug brutto 500.'
+    inputs:
+      anschaffungskosten_netto: 500
+      anschaffungskosten_brutto: 500
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 1
+      jahre_seit_anschaffung: 0
+    expected: 500.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
+    zitatanker: 800 Euro nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: 'Altfall USt-frei: AK 800 netto = Grenze (<=) -> GWG brutto 800.'
+    inputs:
+      anschaffungskosten_netto: 800
+      anschaffungskosten_brutto: 800
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 1
+      jahre_seit_anschaffung: 0
+    expected: 800.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: ein Zwölftel für jeden vollen Monat
+    herkunft: synthetisch
+    rechenweg: 'Altfall USt-frei: netto 801 > 800, Monat1 -> AfA voll brutto 801/3 = 267.'
+    inputs:
+      anschaffungskosten_netto: 801
+      anschaffungskosten_brutto: 801
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 1
+      jahre_seit_anschaffung: 0
+    expected: 267.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: ein Zwölftel für jeden vollen Monat
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Jahr0 anteilig USt-frei: netto 1200 > 800, Monat7 -> 6/12; AfA brutto 1200/3 x 6/12 = 200.'
+    inputs:
+      anschaffungskosten_netto: 1200
+      anschaffungskosten_brutto: 1200
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 7
+      jahre_seit_anschaffung: 0
+    expected: 200.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: ein Zwölftel für jeden vollen Monat
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Jahr1 voll USt-frei: 1200/3 = 400.'
+    inputs:
+      anschaffungskosten_netto: 1200
+      anschaffungskosten_brutto: 1200
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 7
+      jahre_seit_anschaffung: 1
+    expected: 400.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-10.txt
+    zitatanker: 800 Euro nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: 'KREUZ GWG (USt 19%): netto 800 <= 800 -> GWG; Abzug BRUTTO 800 x 1,19 = 952. Monat1, Jahr0.'
+    inputs:
+      anschaffungskosten_netto: 800
+      anschaffungskosten_brutto: 952
+      nutzungsdauer_jahre: 3
+      anschaffungsmonat: 1
+      jahre_seit_anschaffung: 0
+    expected: 952.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: ein Zwölftel für jeden vollen Monat
+    herkunft: synthetisch
+    rechenweg: 'KREUZ AfA (USt 19%): netto 850 > 800 -> AfA auf BRUTTO 850 x 1,19 = 1011,50; ND5, Monat1 (Volljahr 12/12), Jahr0 -> 1011,50/5 = 202,30.'
+    inputs:
+      anschaffungskosten_netto: 850
+      anschaffungskosten_brutto: 1011.5
+      nutzungsdauer_jahre: 5
+      anschaffungsmonat: 1
+      jahre_seit_anschaffung: 0
+    expected: 202.30
+  signature:
+    scope: ArbeitsmittelUndAfaLaufendNettoBrutto
+    inputs:
+      anschaffungskosten_netto: money
+      anschaffungskosten_brutto: money
+      nutzungsdauer_jahre: int
+      anschaffungsmonat: int
+      jahre_seit_anschaffung: int
+    output: abziehbar
+  raster:
+  - anschaffungskosten_netto: 500
+    anschaffungskosten_brutto: 500
+    nutzungsdauer_jahre: 3
+    anschaffungsmonat: 1
+    jahre_seit_anschaffung: 0
+  - anschaffungskosten_netto: 800
+    anschaffungskosten_brutto: 952
+    nutzungsdauer_jahre: 3
+    anschaffungsmonat: 1
+    jahre_seit_anschaffung: 0
+  - anschaffungskosten_netto: 850
+    anschaffungskosten_brutto: 1011.50
+    nutzungsdauer_jahre: 5
+    anschaffungsmonat: 1
+    jahre_seit_anschaffung: 0
+  exclude_rule_ids:
+  - p9_1_3_nr6_7_afa_laufend_nb
 - rule_id: p9_6_erstausbildung_abgrenzung
   norm: § 9 Abs. 6 EStG
   # Erstbefuellung der Registry (Julius, 2026-07-11). Muster Rechtspraedikat wie

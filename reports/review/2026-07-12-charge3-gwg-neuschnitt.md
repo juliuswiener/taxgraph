@@ -64,3 +64,45 @@ verified_bedingt mit Interim) wird durch die neu geschnittene Regel abgelöst.
 2. Wächter-Seeds als test_seed (Rechenweg belegt, keine LLM-Erwartungswerte).
 3. Doppelformalisierung + Gates; die Präzisions-/Rundungs-Lints greifen automatisch.
 4. clerk-Gate grün auf den vier Seeds. Erst dann verified_bedingt.
+
+## Addendum — deterministischer Lauf-Befund (skip-judge, 2026-07-12)
+
+Der Zuschnitt wurde formalisiert. Nach zwei durch Infrastruktur verdorbenen Läufen (typecheck-
+Run-Varianz; Judge-Provider DeepInfra-429, $0) lieferte ein `--skip-judge`-Lauf ($0,028) den
+**deterministischen Zuschnitts-Nachweis** ohne Judge-Abhängigkeit:
+
+- **typecheck_a=PASS** (A kompiliert sauber — der vorige typecheck-Fehler war Run-Varianz).
+- **Judge-Gates SKIP** (Falschgrün-Sperre wirkt: `judge_verdict={skipped:true}`, queue_status würde
+  ohne clerk-FAIL `strukturgeprueft_judge_offen`, nie verified).
+- `catala_a`: `ist_gwg = netto <= 800`, GWG-Abzug = **brutto**, JahresAfA = **brutto**/ND. **hinweis
+  gelandet.**
+
+**clerk per-Seed (selbst gefahren, Ground-Truth):**
+
+| Seed | netto | brutto | ND | M | jahre_seit | erwartet | clerk |
+|---|---|---|---|---|---|---|---|
+| 0 | 500 | 500 | 3 | 1 | 0 | 500,00 | PASS |
+| 1 | 800 | 800 | 3 | 1 | 0 | 800,00 | PASS |
+| 2 | 801 | 801 | 3 | 1 | 0 | 267,00 | PASS |
+| 3 | 1200 | 1200 | 3 | 7 | **0** | **200,00** | **FAIL** (liefert 400) |
+| 4 | 1200 | 1200 | 3 | 7 | **1** | **400,00** | **FAIL** (liefert 200) |
+| 5 (KREUZ GWG) | 800 | 952 | 3 | 1 | 0 | 952,00 | **PASS** |
+| 6 (KREUZ AfA) | 850 | 1011,50 | 5 | 1 | 0 | 202,30 | **PASS** |
+
+**Netto/Brutto-Achse GELÖST:** die beiden Kreuz-Seeds (5, 6) — der Kern-Beweis, dass netto die
+Grenze prüft und brutto den Abzug/die AfA trägt — **passen**. hinweis-Kanal-Erfolg deterministisch
+belegt (Klasse 1, Netto/Brutto).
+
+**Zweiter, orthogonaler Defekt (Klasse 2, Boundary-Kodierung):** Seeds 3/4 fallen, weil das Modell
+die pro-rata-Kürzung an `jahre_seit_anschaffung = 1` bindet; die Seeds definieren das Anschaffungs-
+jahr als `jahre_seit_anschaffung = 0`. Off-by-one in der Jahr-Index-Konvention — sauber getrennt von
+der Netto/Brutto-Sache. Der auszug (§ 7 Abs. 1 S. 4: „Im Jahr der Anschaffung … ein Zwölftel für
+jeden vollen Monat") liefert die Input-Encoding-Semantik (0 = Anschaffungsjahr) nicht → erneut ein
+**hinweis-Kandidat**, keine auszug-Weitung. Vorschlag: hinweis um einen Satz erweitern
+(„`jahre_seit_anschaffung = 0` ist das Anschaffungsjahr, anteilig; 1..ND-1 sind Volljahre"), dann
+EIN Neulauf — pendet auf Instructor-Freigabe (die „genau einer"-Marke ist mit dem Nachweis-Lauf
+verbraucht).
+
+Status: `strukturgeprueft_judge_offen` + clerk-rot auf 2 Konventions-Seeds. Rule-Spec in `rules.yaml`
+bis zum Konventions-Fix uncommitted gehalten. Infra `--skip-judge` + Falschgrün-Sperre + Test:
+Commit `53b6ec5` (Suite 115 passed).
