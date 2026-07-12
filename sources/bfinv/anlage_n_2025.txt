@@ -1,0 +1,314 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anlage N 2025 (Einkünfte aus nichtselbständiger Arbeit)
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                                                    2025
+                    Name
+
+                1
+                                                                                                                                             Anlage N
+                    Vorname                                                                                                                  Jeder Ehegatte / Lebenspartner mit
+                                                                                                                                             Einkünften aus nichtselbständiger
+                2                                                                                                                            Arbeit hat eine eigene Anlage N
+                                                                                                                                             abzugeben.
+                3   Steuernummer                                                                                                                   Steuerpflichtige Person /
+
+
+202500303201
+                        Daten für die mit   gekennzeichneten Zeilen liegen im Regelfall vor und müssen nicht eingetragen werden.                   Ehemann / Person A
+                                                            – Bitte Anleitung beachten. –
+                                                                                                                                                   Ehefrau / Person B
+
+
+                    Einkünfte aus nichtselbständiger Arbeit
+                    Angaben zum Arbeitslohn                                                                                                                                47 / 48
+                                                                          Summe Lohnsteuerbescheinigung(en)                             Summe Lohnsteuerbescheinigung(en)
+                                                                                  Steuerklasse 1-5                                     Steuerklasse 6 oder einer Urlaubskasse
+
+                4                                                  168
+                    Steuerklasse
+                                                                                         EUR                       Ct                                 EUR                  Ct
+                  Bruttoarbeitslohn
+                5 einschließlich Sachbezüge                        110                                             ,–            111                                       ,–
+                6                                                  140                                                           141
+                    Lohnsteuer
+
+                7                                                  150                                                           151
+                    Solidaritätszuschlag
+
+                8                                                  142                                                           143
+                    Kirchensteuer des Arbeitnehmers
+
+                    Nur bei Konfessionsverschiedenheit:
+                    Kirchensteuer für den Ehegatten / Le-          144                                                           145
+                9   benspartner
+                    In Zeile 5 wurde ein von der Lohnsteuerbescheinigung abweichender Brutto-                                      1 = Ja
+               10   arbeitslohn wegen einer Korrektur der Firmenwagenbesteuerung erklärt.                               197
+                                                                                             1. Versorgungsbezug                                   2. Versorgungsbezug
+                                                                                                      EUR                                                  EUR
+                  Steuerbegünstigte Versorgungsbezüge laut Nr. 8
+                  der Lohnsteuerbescheinigung (im Bruttoarbeitslohn
+               11 laut Zeile 5 enthalten)                                          200                                      ,–          210                                ,–
+                  Bemessungsgrundlage für den Versorgungsfreibe-
+               12 trag laut Nr. 29 der Lohnsteuerbescheinigung                     201                                      ,–          211                                ,–
+                  Maßgebendes Kalenderjahr des Versorgungsbe-
+               13 ginns laut Nr. 30 der Lohnsteuerbescheinigung                    206                                                  216
+                                                                                          Monat                     Monat                         Monat            Monat
+                  Bei unterjähriger Zahlung: Erster und letzter Monat,
+                  für den Versorgungsbezüge gezahlt wurden, laut                                             203                                             213
+               14 Nr.31 der Lohnsteuerbescheinigung                                202                                                  212
+
+                  Sterbegeld, Kapitalauszahlungen / Abfindungen und                 EUR                                                                    EUR
+                  Nachzahlungen von Versorgungsbezügen laut
+                  Nr. 32 der Lohnsteuerbescheinigung
+               15 (in den Zeilen 5 und 11 enthalten)                      204                                               ,–          214                                ,–
+                  Versorgungsbezüge für mehrere Kalenderjahre laut
+               16 Nr. 9 der Lohnsteuerbescheinigung (im Bruttoar-
+                  beitslohn laut Zeile 5 enthalten)
+                                                                          209                                                    ,–     219                                     ,–
+                  Arbeitslohn für mehrere Jahre, Entschädigungen (z. B. Abfindungen) laut Nr. 10 der Lohn-
+               17 steuerbescheinigung (im Bruttoarbeitslohn laut Zeile 5 enthalten)                                                     165                                     ,–
+                    Steuerpflichtiger Arbeitslohn, von dem kein Steuerabzug vorgenommen worden ist (soweit
+               18   nicht in der Lohnsteuerbescheinigung enthalten)                                                                         115                                 ,–
+                    Steuerfreie Aufwandsentschädigungen / Einnahmen
+                    aus der Tätigkeit als                                                                                                                    EUR
+
+               19                                                                                                                           118                                 ,–
+                  Kurzarbeitergeld, Zuschuss zum Mutterschaftsgeld, Verdienstausfallentschädigung (In-                                                      EUR
+                  fektionsschutzgesetz), Aufstockungsbeträge nach dem Altersteilzeitgesetz, Altersteil-
+                  zeitzuschläge nach Besoldungsgesetzen, Qualifizierungsgeld (laut Nr. 15 der Lohnsteu-
+               20 erbescheinigung)                                                                                                      119                                     ,–
+                    Steuerfreier Arbeitslohn / steuerfreie Einkünfte laut Anlage(n) N-AUS
+                                                                                                                                                             EUR
+                    Steuerfreier Arbeitslohn nach Doppelbesteuerungsabkommen / sonstigen zwischenstaatlichen
+               21   Übereinkommen (Summe aus den Zeilen 47, 56 und / oder 63 aller Anlagen N-AUS)                                           139                                 ,–
+                  Steuerfreier Arbeitslohn nach Auslandstätigkeitserlass (Summe aus den Zeilen 52 aller Anla-
+               22 gen N-AUS)                                                                                                                136                                 ,–
+                  Steuerfreie Einkünfte (Besondere Lohnbestandteile) nach Doppelbesteuerungsabkommen /
+                  sonstigen zwischenstaatlichen Übereinkommen / Auslandstätigkeitserlass (Summe aus den
+               23 Zeilen 62 aller Anlagen N-AUS)                                                                                            178                                 ,–
+               24   Anzahl der beigefügten Anlagen N-AUS
+
+                             2025AnlN031NET                                               - Oktober 2025 -                                                2025AnlN031NET
+                                                                               -2-
+
+     Ansässigkeit in Belgien (gemäß Artikel 4 des Doppelbesteuerungsabkommens mit Belgien)
+     Adresse in Belgien                                                                                                                      EUR
+
+25                                                                                                    Arbeitslohn         127                                       ,–
+     Angaben zu Grenzgängern
+                                          2 = Frankreich
+                                          3 = Schweiz, Arbeitslohn
+                                              in CHF gezahlt
+                                          0 = Schweiz, Arbeitslohn         Arbeitslohn in CHF / EUR                         Schweizerische Abzugsteuer in CHF / EUR
+   Grenzgänger                                in EUR gezahlt
+                                                                                                           ,–
+                                                                                                                                                                         202500303202
+26 nach                    117            4 = Österreich             116                                            135
+     Werbungskosten                                                                                                                                          87 / 88
+     – ohne Beträge laut den Zeilen 78 bis 81 –
+     Hinweis:
+     Mehraufwendungen für eine doppelte Haushaltsführung erklären Sie bitte in der Anlage N-Doppelte Haushaltsführung.
+
+     Entfernungspauschale
+     Wege zwischen Wohnung und erster Tätigkeitsstätte / Sammelpunkt / weiträumigem Tätigkeitsgebiet
+     (1. Angabe)
+          1 = erste Tätigkeitsstätte         PLZ, Ort und Straße                                                                   vom                     bis
+          2 = Sammelpunkt / weit-
+27            räumiges Tätigkeitsgebiet
+                                            Urlaubs-, Krankheits-,
+   Arbeitstage                              Heimarbeits- und                              Behinderungsgrad mindestens 70 oder                              1 = Ja
+28 je Woche                                 Dienstreisetage                               mindestens 50 und Merkzeichen „G“                  115
+
+29   aufgesucht an Tagen                                                                                                                   110
+
+30   einfache Entfernung in Kilometern (auf volle Kilometer abgerundet)                                                                    111                      km
+
+31       davon mit eigenem oder zur Nutzung überlassenem PKW zurückgelegt                                                                  112                      km
+
+32       davon mit Sammelbeförderung des Arbeitgebers zurückgelegt                                                                         113                      km
+
+         davon mit öffentlichen Verkehrsmitteln, Motorrad, Fahrrad oder Ähnlichem, als Fußgänger
+33       und / oder als Mitfahrer einer Fahrgemeinschaft zurückgelegt                                                                                               km
+                                                                                                                                                     EUR
+
+34   Aufwendungen für Fahrten mit öffentlichen Verkehrsmitteln (ohne Fähr- und Flugkosten)                                             114                          ,–
+     Wege zwischen Wohnung und erster Tätigkeitsstätte / Sammelpunkt / weiträumigem Tätigkeitsgebiet
+     (2. Angabe)
+         1 = erste Tätigkeitsstätte          PLZ, Ort und Straße                                                                   vom                     bis
+         2 = Sammelpunkt / weit-
+35           räumiges Tätigkeitsgebiet
+                                            Urlaubs-, Krankheits-,
+     Arbeitstage                            Heimarbeits- und                              Behinderungsgrad mindestens 70 oder                              1 = Ja
+36   je Woche                               Dienstreisetage                               mindestens 50 und Merkzeichen „G“                  135
+
+37   aufgesucht an Tagen                                                                                                                  130
+
+38   einfache Entfernung in Kilometern (auf volle Kilometer abgerundet)                                                                   131                       km
+
+39       davon mit eigenem oder zur Nutzung überlassenem PKW zurückgelegt                                                                 132                       km
+
+40       davon mit Sammelbeförderung des Arbeitgebers zurückgelegt                                                                        133                       km
+
+         davon mit öffentlichen Verkehrsmitteln, Motorrad, Fahrrad oder Ähnlichem, als Fußgänger
+41       und / oder als Mitfahrer einer Fahrgemeinschaft zurückgelegt                                                                                               km
+                                                                                                                                                     EUR
+
+42   Aufwendungen für Fahrten mit öffentlichen Verkehrsmitteln (ohne Fähr- und Flugkosten)                                             134                          ,–
+
+
+
+
+             2025AnlN032NET                                                                                                            2025AnlN032NET
+                                                                                       -3-
+
+                    Wege zwischen Wohnung und erster Tätigkeitsstätte / Sammelpunkt / weiträumigem Tätigkeitsgebiet
+                    (3. Angabe)
+                          1 = erste Tätigkeitsstätte      PLZ, Ort und Straße                                                    vom                      bis
+                          2 = Sammelpunkt / weit-
+               43             räumiges Tätigkeitsgebiet
+                                                          Urlaubs-, Krankheits-,
+                  Arbeitstage                             Heimarbeits- und                     Behinderungsgrad mindestens 70 oder                        1 = Ja
+               44 je Woche                                Dienstreisetage                      mindestens 50 und Merkzeichen „G“             155
+
+                                                                                                                                            150
+
+202500303203
+               45   aufgesucht an Tagen
+
+               46   einfache Entfernung in Kilometern (auf volle Kilometer abgerundet)                                                      151                    km
+
+               47        davon mit eigenem oder zur Nutzung überlassenem PKW zurückgelegt                                                   152                    km
+
+               48        davon mit Sammelbeförderung des Arbeitgebers zurückgelegt                                                          153                    km
+                         davon mit öffentlichen Verkehrsmitteln, Motorrad, Fahrrad oder Ähnlichem, als Fußgänger
+               49        und / oder als Mitfahrer einer Fahrgemeinschaft zurückgelegt                                                                              km
+                                                                                                                                                    EUR
+
+               50   Aufwendungen für Fahrten mit öffentlichen Verkehrsmitteln (ohne Fähr- und Flugkosten)                              154                         ,–
+                    Arbeitgeberleistungen / Fahrtkostenzuschüsse
+                                                                                EUR                                                               EUR
+                  Arbeitgeberleistungen laut Nr. 17                                        Arbeitgeberleistungen laut Nr. 18
+                  der Lohnsteuerbescheinigung                                              der Lohnsteuerbescheinigung
+               51 (steuerfrei ersetzt)              290                               ,–   (pauschal besteuert)
+                                                                                                                                295                                ,–
+               52   Von der Agentur für Arbeit oder dem Jobcenter gezahlte Fahrtkostenzuschüsse                                  291                               ,–
+                    Beiträge zu Berufsverbänden
+                    Bezeichnung der Verbände                                                                                                       EUR
+
+               53                                                                                                                 310                              ,–
+                    Aufwendungen für Arbeitsmittel
+                    – soweit nicht steuerfrei ersetzt –
+                    Art der Arbeitsmittel                                                                                                          EUR
+
+               54                                                                                                                                                  ,–
+               55                                                                                                                  +                               ,–
+               56                                                                                                  Summe       320 =                               ,–
+                    Häusliches Arbeitszimmer, das den Mittelpunkt der gesamten betrieblichen und beruflichen Tätigkeit bildet
+                    Bitte nur ausfüllen, wenn für denselben Zeitraum keine Eintragungen zur Tagespauschale in den Zeilen 58 und 59 vorgenommen wer-
+                    den.
+                    – tatsächliche Aufwendungen oder
+                    – Jahrespauschale i. H. v. 1.260 € (bei nicht ganzjährig vorliegenden Voraussetzungen zeitanteilig)
+                                                                                                                                                   EUR
+
+               57                                                                                                                 325                              ,–
+                    Tagespauschale (bei beruflicher Tätigkeit im Homeoffice)
+                    Bitte nur ausfüllen, wenn für denselben Zeitraum keine Eintragung zum häuslichen Arbeitszimmer in Zeile 57 vorgenommen wird.
+                    – Die Tagespauschale wird von Ihrem Finanzamt anhand Ihrer Angaben zur Anzahl der Tage berechnet. –
+                    Für die berufliche Tätigkeit steht ein anderer Arbeitsplatz zur Verfügung:
+                    Anzahl der Kalendertage, an denen die berufliche Tätigkeit ganz oder überwiegend in der häuslichen
+                    Wohnung ausgeübt und keine erste Tätigkeitsstätte aufgesucht wurde
+               58   – Diese Kalendertage dürfen nicht in Zeile 59 enthalten sein. –                                                   335
+                    Für die berufliche Tätigkeit steht dauerhaft kein anderer Arbeitsplatz zur Verfügung:
+                    Anzahl der Kalendertage, an denen die berufliche Tätigkeit (auch) in der häuslichen Wohnung ausgeübt
+                    wurde
+               59   – Diese Kalendertage dürfen nicht in Zeile 58 enthalten sein. –                                                   336
+
+                    Fortbildungskosten
+                    – soweit nicht steuerfrei ersetzt –
+                                                                                                                                                   EUR
+
+               60                                                                                                                 330                              ,–
+
+
+
+
+                             2025AnlN033NET                                                                                            2025AnlN033NET
+                                                                                        -4-
+
+     Weitere Werbungskosten
+     – soweit nicht steuerfrei ersetzt –
+     Fähr- und Flugkosten bei Wegen zwischen Wohnung und erster Tätigkeitsstätte / Sammelpunkt / weiträumigem Tätigkeitsgebiet                         EUR
+
+61                                                                                                                                                                      ,–
+     Sonstiges (z. B. Bewerbungskosten, Kontoführungsgebühren)
+
+62                                                                                                                                   +                                  ,–
+                                                                                                                                     +                                  ,–
+                                                                                                                                                                             202500303204
+63
+
+
+64                                                                             Summe der weiteren Werbungskosten                 380 =                                  ,–
+     Reisekosten bei beruflich veranlassten Auswärtstätigkeiten
+   Die Fahrten wurden ganz oder teilweise mit einem Firmenwagen oder im Rahmen einer unentgeltlichen Sam-
+   melbeförderung des Arbeitgebers durchgeführt
+   – Falls „Ja“: Für die Fahrten mit Firmenwagen oder Sammelbeförderung dürfen mangels Aufwands keine Eintra-                                                    1 = Ja
+65 gungen zu Fahrtkosten in Zeile 66 vorgenommen werden. –                                                                                           401         2 = Nein
+     Fahrtkosten                                                                                                                                           EUR
+
+66                                                                                                                                                                     ,–
+     Übernachtungskosten
+
+67                                                                                                                                        +                            ,–
+     Reisenebenkosten
+
+68                                                                                                                                        +                            ,–
+69                                                                 Gesamtsumme der Aufwendungen für Reisekosten                    410 =                                ,–
+70   Pauschbeträge für Berufskraftfahrer bei Übernachtung im Kraftfahrzeug (Anzahl der Tage)                                               411
+                                                                                                                                                           EUR
+
+71   Vom Arbeitgeber steuerfrei ersetzt                                                                                                  420                            ,–
+     Pauschbeträge für Mehraufwendungen für Verpflegung
+     Bei einer Auswärtstätigkeit im Inland:
+
+72       Anzahl der Tage mit einer Abwesenheit von mehr als 8 Stunden (bei Auswärtstätigkeit ohne                                                          470
+         Übernachtung)
+73       Anzahl der An- und Abreisetage (bei einer mehrtägigen Auswärtstätigkeit mit Übernachtung)                                                         471
+
+74       Anzahl der Tage mit einer Abwesenheit von 24 Stunden                                                                                              472
+                                                                                                                                                             EUR
+
+75       Kürzungsbeträge wegen Mahlzeitengestellung (eigene Zuzahlungen sind ggf. gegenzurechnen)                                              473                      ,–
+76   Bei einer Auswärtstätigkeit im Ausland (Berechnung bitte in einer gesonderten Aufstellung):                                         474                            ,–
+77   Vom Arbeitgeber steuerfrei ersetzt                                                                                                  490                            ,–
+     Werbungskosten in Sonderfällen
+     – Die in den Zeilen 78 bis 81 erklärten Werbungskosten dürfen nicht in den Zeilen 27 bis 77 und in der Anlage N-Doppelte Haus-
+     haltsführung enthalten sein. –
+     Werbungskosten zu steuerbegünstigten Versorgungsbezügen laut Zeile 11
+     Art der Aufwendungen                                                                                                                                  EUR
+
+78                                                                                                                                       682                            ,–
+     Werbungskosten zu steuerbegünstigten Versorgungsbezügen für mehrere Jahre laut Zeile 16
+     Art der Aufwendungen
+
+79                                                                                                                                       659                            ,–
+     Werbungskosten zu Arbeitslohn für mehrere Jahre, Entschädigungen laut Zeile 17
+     Art der Aufwendungen
+
+80                                                                                                                                       660                            ,–
+   Werbungskosten zu steuerfreiem Arbeitslohn laut den Zeilen 21 und 22 (Summe aus den Zeilen 59
+81 und 64 aller Anlagen N-AUS)                                                                                                           657                            ,–
+     Werbungskosten zu steuerpflichtigem Arbeitslohn, von dem kein Steuerabzug vorgenommen worden ist laut Zeile 18
+     – in den Zeilen 27 bis 77 und in der Anlage N-Doppelte Haushaltsführung enthalten –
+     Art der Aufwendungen                                                                                                                                  EUR
+
+82                                                                                                                                       656                            ,–
+                                                                                                                                                           EUR
+     Werbungskosten zu Arbeitslohn für eine Tätigkeit im Inland, wenn die Ansässigkeit in Belgien gegeben
+83   ist – in den Zeilen 27 bis 77 und in der Anlage N-Doppelte Haushaltsführung enthalten –                                             675                            ,–
+
+             2025AnlN034NET                                                                                                                   2025AnlN034NET
+

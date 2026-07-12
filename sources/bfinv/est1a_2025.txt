@@ -1,0 +1,191 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: ESt 1 A 2025 (Einkommensteuererklärung Hauptvordruck)
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                                                                  2025
+                                                                                                                                                            — Eingangsstempel —
+                    Hauptvordruck ESt 1 A
+                                                                                          Festsetzung der
+               1        Einkommensteuererklärung                                          Arbeitnehmer-Sparzulage
+                        Erklärung zur Festsetzung der                                     Erklärung zur Feststellung des
+               2        Kirchensteuer auf Kapitalerträge                                  verbleibenden Verlustvortrags
+
+
+202500301201
+               3        Festsetzung der Mobilitätsprämie
+
+               4    Steuernummer
+                    An das Finanzamt                                                                                                   Daten für die mit     gekennzeichneten Zeilen liegen im
+                                                                                                                                        Regelfall vor und müssen nicht eingetragen werden.
+               5                                                                                                                                     – Bitte Anleitung beachten. –
+
+                    Bei Wohnsitzwechsel: bisheriges Finanzamt
+
+               6
+                                                Belege müssen Sie nur einreichen, wenn Sie in den Vordrucken / Anleitungen darauf hingewiesen werden.
+                                                         Bitte reichen Sie in diesen Fällen ausschließlich Kopien und keine Originalbelege ein.
+
+                    Allgemeine Angaben
+                                                                                                                       Telefonische Rückfragen tagsüber unter Nummer
+
+               7
+                    Steuerpflichtige Person
+                    Nur bei Zusammenveranlagung: Ehemann oder Person A (Ehepartner/-in A / Lebenspartner/-in A nach dem LPartG) – Bitte Anleitung
+                    beachten.
+                    Identifikationsnummer                                                                  Geburtsdatum                                      im Sterbefall: Sterbedatum
+
+               8
+
+                    Name
+                                                                                                                                                                 Religionsschlüssel:
+                                                                                                                                                                    Evangelisch = EV
+               9                                                                                                                                              Römisch-Katholisch = RK
+                    Vorname
+                                                                                                                                                      nicht kirchensteuerpflichtig = VD
+               10                                                                                                                                               Weitere siehe Anleitung
+                    Titel, akademischer Grad
+
+               11                                                                                                                                      Religion am 31.12.2025
+                    Ausgeübter Beruf                                                                                                                                                    1 = Austritt
+                                                                                                                                                    Änderung der Reli-                  2 = Wechsel
+               12                                                                                                                                   gion im Jahr 2025                   3 = Eintritt
+                    Straße (derzeitige Adresse)
+
+               13
+                    Hausnummer                 Hausnummerzusatz                     Adressergänzung
+
+               14
+                    Postleitzahl (Inland)            Postleitzahl (Ausland)
+
+               15
+                    Wohnort
+
+               16
+                    Staat (falls Anschrift im Ausland)
+
+               17
+                    Verheiratet / Lebenspartnerschaft be-                                                       Geschieden / Lebenspartnerschaft              Dauernd getrennt lebend
+                    gründet seit dem                                 Verwitwet seit dem                         aufgehoben seit dem                           (Tag der Trennung)
+
+               18
+
+                                                                              Nur bei Ehegatten / Lebenspartnern: Veranlagungsart
+                                                                                  Einzelveranlagung von Ehegatten /
+               19       Zusammenveranlagung                                       Lebenspartnern                                        Wir haben Gütergemeinschaft vereinbart
+
+                    Nur bei Zusammenveranlagung: Ehefrau oder Person B (Ehepartner/-in B / Lebenspartner/-in B nach dem LPartG)
+                    Identifikationsnummer                                                                  Geburtsdatum                                      im Sterbefall: Sterbedatum
+
+               20
+
+                    Name
+                                                                                                                                                                 Religionsschlüssel:
+                                                                                                                                                                    Evangelisch = EV
+               21                                                                                                                                             Römisch-Katholisch = RK
+                    Vorname
+                                                                                                                                                      nicht kirchensteuerpflichtig = VD
+               22                                                                                                                                               Weitere siehe Anleitung
+                    Titel, akademischer Grad
+
+               23                                                                                                                                      Religion am 31.12.2025
+                    Ausgeübter Beruf                                                                                                                                                    1 = Austritt
+                                                                                                                                                    Änderung der Reli-                  2 = Wechsel
+               24                                                                                                                                   gion im Jahr 2025                   3 = Eintritt
+
+
+
+                              2025ESt1A011NET                                                     - September 2025 -                                             2025ESt1A011NET
+         Steuernummer, Name und Vorname                                                   -2-
+
+     Abweichende Anschrift der Ehefrau oder Person B
+     Bitte füllen Sie die Zeilen 25 bis 29 nur aus, wenn die Adressangaben von den Zeilen 13 bis 17 abweichen.
+     Straße
+
+25
+     Hausnummer                 Hausnummerzusatz                       Adressergänzung
+
+26
+     Postleitzahl (Inland)              Postleitzahl (Ausland)
+
+
+
+                                                                                                                                                                                         202500301202
+27
+     Wohnort
+
+28
+     Staat (falls Anschrift im Ausland)
+
+29
+
+                                                                       Bankverbindung – Bitte stets angeben –
+     IBAN (inländisches Geldinstitut)
+
+30   D E
+     IBAN (ausländisches Geldinstitut)
+
+31
+     BIC zur IBAN des ausländischen Geldinstituts
+
+32
+
+     Kontoinhaber/-in
+                                                                                              Name (im Fall der Abtretung bitte amtlichen Abtretungsvordruck einreichen)
+         Steuerpflichtige Person /                               Ehefrau /
+33       Ehemann / Person A                                      Person B        oder:
+     Antrag auf Festsetzung der Arbeitnehmer-Sparzulage                                                                                                                             15
+                                                                                                                                   Steuerpflichtige Per-
+                                                                                                                                   son / Ehemann / Per-
+                                                                                                                                           son A                Ehefrau / Person B
+   Für alle vom Anbieter und / oder Arbeitgeber übermittelten elektronischen Vermögensbil-                                                    1 = Ja                       1 = Ja
+34 dungsbescheinigungen wird die Festsetzung der Arbeitnehmer-Sparzulage beantragt.                                               17                          18
+
+     Einkommensersatzleistungen                                                                                                                                                     18
+     – ohne Beträge laut Zeile 20 der Anlage N –
+                                                                                          Steuerpflichtige Person / Ehemann / Per-
+                                                                                                            son A                                      Ehefrau / Person B
+   Einkommensersatzleistungen, die dem Progressionsvorbe-                                                    EUR                                              EUR
+   halt unterliegen, z. B. Arbeitslosengeld, Elterngeld, Insolvenz-
+   geld, Krankengeld, Mutterschaftsgeld, Verdienstausfallent-
+35 schädigung (Infektionsschutzgesetz)                                                    120                                    ,–       121                                       ,–
+   Leistungen aus einem EU- / EWR-Staat oder der Schweiz,
+   die mit Einkommensersatzleistungen i. S. d. Zeile 35 ver-
+36 gleichbar sind                                                                         136                                  ,–         137                                   ,–
+     Ergänzende Angaben zur Steuererklärung                                                                                                                                         86
+     Eine Eintragung ist in Zeile 37 nur vorzunehmen, wenn einer der dort genannten Sachverhalte vorliegt. In diesem Fall erläutern Sie
+     bitte diese Sachverhalte in den „Ergänzenden Angaben zur Steuererklärung“. Die ergänzenden Angaben werden gesondert ge-
+     prüft. Dies kann die Bearbeitungsdauer verlängern. Falls Sie mit der Abgabe der Steuererklärung lediglich Belege und Aufstellungen
+     übermitteln, ist in Zeile 37 keine Eintragung vorzunehmen.
+                                                                                 1 = konnten steuererhebliche Sachverhalte nicht erklärt werden.
+                                                                                 2 = wird bewusst eine von der Verwaltungsauffassung abweichende Rechtsauffassung vertreten.
+                                                                                 3 = sollen Sachverhalte personell vertieft geprüft werden.
+37   In dieser Steuererklärung                                       500         4 = liegen mehrere der vorgenannten Gründe vor (Mehrfachauswahl).
+     Hinweis: Bitte übermitteln Sie Ihre ergänzenden Angaben nur für die vorstehend genannten Sachverhalte mit einer gesonderten An-
+     lage mit der Überschrift „Ergänzende Angaben zur Steuererklärung“.
+     Unterschrift
+     Datenschutzhinweis:
+     Die mit der Steuererklärung / dem Antrag angeforderten Daten werden aufgrund der §§ 149, 150 und 181 Abs. 2 der Abgabenord-
+     nung, der §§ 25, 46 und 51a Abs. 2d des Einkommensteuergesetzes sowie des § 14 Abs. 4 des Fünften Vermögensbildungsgeset-
+     zes erhoben. Informationen über die Verarbeitung personenbezogener Daten in der Steuerverwaltung und über Ihre Rechte nach der
+     Datenschutz-Grundverordnung sowie über Ihre Ansprechpartner in Datenschutzfragen entnehmen Sie bitte dem allgemeinen Infor-
+     mationsschreiben der Finanzverwaltung. Dieses Informationsschreiben finden Sie unter www.finanzamt.de (unter der Rubrik „Daten-
+     schutz“) oder erhalten Sie bei Ihrem Finanzamt.
+
+38
+
+
+
+     Datum, Unterschrift(en)                  Steuererklärungen sind eigenhändig – bei Ehegatten / Lebenspartnern von beiden – zu unterschreiben.
+
+     Die Steuererklärung wurde unter Mitwirkung einer selbständig und eigenverantwortlich tätigen und zur Hilfeleistung in                                                 1 = Ja
+39   Steuersachen nach den §§ 3 und 4 des Steuerberatungsgesetzes befugten Person oder Vereinigung angefertigt.
+     Bei der Anfertigung dieser Steuererklärung hat mitgewirkt:
+40
+
+
+
+
+               2025ESt1A012NET                                                                                                                      2025ESt1A012NET
+
