@@ -359,6 +359,12 @@ def _queue_status(gates: list[dict], rule: dict | None = None,
     # triagiert hat.
     if discoveries:
         return "discovery_triage"
+    # Falschgruen-Sperre (spiegelt cascade._queue_status): ein skip_judge-Report hat kein
+    # Judge-Verdikt und darf NIE Richtung verified*/verified_partial laufen, egal wie gruen die
+    # deterministischen Gates sind. Muss VOR dem SKIP->verified_partial-Zweig stehen, sonst
+    # laeuft er faelschlich auf "verified_partial". strukturgeprueft bis zum Judge-Nachzug.
+    if (verdict or {}).get("skipped"):
+        return "strukturgeprueft_judge_offen"
     if G.SKIP in st:
         return "verified_partial (toolchain pending)"
     # Statusehrlichkeit: eine Regel mit Geltungsbedingungen ist nie schlicht

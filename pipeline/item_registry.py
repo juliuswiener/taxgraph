@@ -242,6 +242,17 @@ def gates_fuer(rule_id: str, rule: dict, verdict: dict) -> tuple[dict, list]:
                  for n in ("roundtrip", "geltungsbereich", "grenzfall", "defekt")}
         gates["discovery"] = G.GateResult("discovery", G.FAIL, det)
         return gates, []
+    # Falschgruen-Sperre im Regate-/Ableitungs-Pfad: ein bewusst uebersprungenes Judge-
+    # Verdikt (skip_judge) ist KEIN Verdikt. gates_fuer darf es nicht als vollwertig lesen -
+    # sonst faellt der Abgleich gegen eine leere Registry auf null Items und alle Registry-
+    # Gates werden faelschlich PASS -> verified_bedingt. Judge-abhaengige Gates auf SKIP mit
+    # ehrlichem Detail; der Status bleibt strukturgeprueft_judge_offen bis zum Judge-Nachzug.
+    if verdict.get("skipped"):
+        det = "judge uebersprungen - Nachzug ausstehend"
+        gates = {n: G.GateResult(n, G.SKIP, det)
+                 for n in ("roundtrip", "geltungsbereich", "grenzfall", "defekt", "scope_gap")}
+        gates["discovery"] = G.GateResult("discovery", G.SKIP, det)
+        return gates, []
     reg = load(rule_id)
     ab = abgleich(reg, verdict)
     gates = {

@@ -42,7 +42,9 @@ def _verdikte(pfade: list[str]) -> dict[str, list[dict]]:
         except (json.JSONDecodeError, OSError):
             continue
         v = r.get("judge_verdict")
-        if v and not v.get("parse_error"):
+        # skipped-Verdikte sind kein Judge-Lauf (skip_judge) - nicht als Verdikt zaehlen,
+        # sonst verfaelschen sie die Union-Zaehlung (tragen ohnehin null Items).
+        if v and not v.get("parse_error") and not v.get("skipped"):
             out[r["candidate_id"]].append(v)
     return out
 

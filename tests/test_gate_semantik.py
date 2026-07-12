@@ -449,3 +449,37 @@ def test_skip_judge_queue_status_nie_verified():
     # Ein FAIL kippt weiterhin Vorrang (skip_judge macht kein rotes Gate gruen):
     rot = gruen + [gr("typecheck_a", G.FAIL)]
     assert C._queue_status(rot, cand_bed, [], judge_skipped=True) == "flagged_for_review"
+
+
+def test_gates_fuer_skipped_verdikt_nie_registry_pass():
+    # Regate-Falschgruen (Instructor-Verifikations-Befund 2026-07-12): ein bewusst
+    # uebersprungenes Judge-Verdikt {skipped:true} darf im Ableitungs-Pfad (gates_fuer,
+    # genutzt von --regate) NICHT als vollwertiges Verdikt gelesen werden - sonst faellt der
+    # Abgleich auf null Items gegen eine leere Registry und alle Registry-Gates werden
+    # faelschlich PASS -> verified_bedingt. Judge-abhaengige Gates muessen SKIP sein.
+    import item_registry as IR
+    gates, disc = IR.gates_fuer("beliebige_regel", {"geltungsbedingungen": []}, {"skipped": True})
+    assert disc == []
+    for n in ("roundtrip", "geltungsbereich", "grenzfall", "defekt", "scope_gap", "discovery"):
+        assert gates[n].status == G.SKIP, (n, gates[n].status)
+        assert "Nachzug" in gates[n].detail
+    # kein einziges Registry-Gate PASS - das war die Falschgruen-Quelle:
+    assert G.PASS not in [g.status for g in gates.values()]
+
+
+def test_regate_queue_status_skipped_nie_verified():
+    # Der Regate-Pfad nutzt run._queue_status (NICHT cascade._queue_status - zwei getrennte
+    # Funktionen, die Sperre muss in BEIDEN sein). skipped-Verdikt + gruene Gates +
+    # Geltungsbedingungen -> strukturgeprueft_judge_offen, NIE verified_bedingt. Dieser Test
+    # haette das Instructor-Regate-Gruen von 2026-07-12 gefangen.
+    import run as R
+    def g(n, st): return {"name": n, "status": st, "detail": ""}
+    gruen = [g("syntax_a", G.PASS), g("typecheck_a", G.PASS),
+             g("clerk", G.PASS), g("equivalence", G.PASS)]
+    rule_bed = {"geltungsbedingungen": [{"bedingung": "x"}]}
+    # Echtes Verdikt -> verified_bedingt:
+    assert R._queue_status(gruen, rule_bed, {"stille_zusatzannahmen": []}, []) == "verified_bedingt"
+    # skipped-Verdikt -> nie verified:
+    st = R._queue_status(gruen, rule_bed, {"skipped": True}, [])
+    assert st == "strukturgeprueft_judge_offen"
+    assert "verified" not in st
