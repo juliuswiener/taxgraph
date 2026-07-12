@@ -116,3 +116,61 @@ Ein Standard-Doppelformalisierungs-Lauf (A+B + Gates + ggf. Judge) liegt erfahru
    `rules.yaml`; Seeds gegen p32a-Tarif final rechnen.
 3. Stufe B: Doppelformalisierung + Gates (Instructor-Freigabe je Lauf).
 4. Coverage-Landkarte aktualisieren: § 32b von ⬜ auf ✅, %-Zahl in den Chargen-Report.
+
+## Addendum — Freeze verifiziert + Wortlaut-Befunde (2026-07-13)
+
+Der § 32b-Freeze wurde vom Instructor gefahren (Julius-Delegation dessen Session; ich habe
+nichts heruntergeladen, meine Download-Boundary bleibt unberührt). Selbst verifiziert
+(falsches-gruen): `sources/gesetze-im-internet/estg_p32b_2026-07-13.txt`, 8970 B, **sha256
+1bf7e924…** (Claim bestätigt), enthält den echten § 32b-Wortlaut (Progressionsvorbehalt,
+besonderer Steuersatz, Lohnersatz-Katalog). `make sources-check` grün.
+
+### Befund 1 — Abs. 2 Nr. 1: AN-Pauschbetrag mindert die Progressionseinkünfte
+Wortlaut Abs. 2 S. 1: „Der besondere Steuersatz … ist der Steuersatz, der sich ergibt, wenn …
+das nach § 32a Absatz 1 zu versteuernde Einkommen vermehrt oder vermindert wird um 1. … die
+**Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1), soweit
+er nicht bei der Ermittlung der Einkünfte aus nichtselbständiger Arbeit abziehbar ist**".
+
+→ Die augmentierte Bemessung ist NICHT zvE + Roh-Leistungssumme, sondern zvE + (Summe −
+Rest-AN-Pauschbetrag). Der § 9a-Pauschbetrag (2026: 1.230 €) mindert die Progressionseinkünfte,
+soweit er nicht schon gegen den regulären Arbeitslohn verbraucht ist. Konsequenz für die
+Signatur (Andockung wie § 31): die § 2-Integration reicht die **bereits netto gerechneten**
+`progressionseinkuenfte` (Summe − unverbrauchter Pauschbetrag) herein; die Regel trägt den
+Wortlaut-Anker „nach Abzug des Arbeitnehmer-Pauschbetrags" als Geltungsbedingung
+(`progressionseinkuenfte_sind_netto_nach_an_pauschbetrag`).
+
+### Befund 2 — Vier-Dezimalstellen-Regel ist KEIN Gesetzestext → Rundungs-Entscheid nötig
+`grep "Dezimalstell" §32b-Freeze` = 0; `grep "dezimalstell|steuersatz…rund"` über die
+eingefrorenen Anleitungen = 0. Die 4-Dezimalstellen-Rundung des besonderen Steuersatzes ist eine
+**Verwaltungs-/Berechnungskonvention** (amtliche Programmablaufpläne PAP zur maschinellen
+Lohn-/Einkommensteuer, R 32b EStR), NICHT § 32b-Wortlaut. Sie darf daher nicht als gesetzlich
+deklarierte Rundung ins Manifest. Zwei saubere Wege — **Instructor/Julius-Entscheid**:
+
+- **(b1) EMPFEHLUNG — reine Wortlaut-Formalisierung, keine Satz-Rundung.** Der besondere
+  Steuersatz bleibt voller `decimal`-Quotient, `× zvE`, Cent-Schnitt zuletzt. Deckt sich exakt
+  mit dem § 32b-Wortlaut (der KEINE Satz-Rundung anordnet). Grenzfall-Notiz dokumentiert: die
+  amtliche PAP-4-Dezimal-Rundung wird bewusst NICHT repliziert → mögliche Cent-Divergenz zur
+  ELSTER/checkESt-Berechnung; Wiedervorlage, wenn der PAP als `typ:verwaltung` eingefroren ist.
+  Vorteil: rein Wortlaut-gedeckt, kein Raten, `rundungs_lint` sauber (keine undeklarierte Rundung,
+  weil gar nicht gerundet).
+- **(b2) Alternative — 4-Dezimal-Rundung als deklarierte Konvention.** Rundung ins Manifest mit
+  Begründung „amtliche Berechnungspraxis (PAP § 32b), verwaltung-Quelle folgt" + Grenzfall-Notiz.
+  Matcht die amtlichen Euro-Werte, aber die deklarierte Rundung hat (noch) keinen eingefrorenen
+  Quell-Anker — ein „Quelle folgt"-Zustand, den wir bisher vermieden haben.
+
+Der Unterschied ist ein Cent-Effekt am Endbetrag. **Empfehlung (b1):** erst das reine
+Wortlaut-§32b grün, die PAP-Rundung als eigener, sauber quellenbelegter Nachtrag (eigener kleiner
+Backlog: PAP freezen → Rundung deklarieren → Seeds auf amtliche Werte nachziehen). So bleibt jede
+Zahl im Manifest quellenbelegt.
+
+### Verbatim-Zitatanker (aus dem Freeze, für den quellen-Block)
+- Abs. 1 S. 1: „ein besonderer Steuersatz anzuwenden" (Progressionsvorbehalt-Grundsatz).
+- Abs. 1 Nr. 1 a: „Arbeitslosengeld, Teilarbeitslosengeld … Kurzarbeitergeld, Insolvenzgeld" +
+  Nr. 1 j „Elterngeld nach dem Bundeselterngeld- und Elternzeitgesetz" (Lohnersatz-Katalog).
+- Abs. 2 S. 1 Nr. 1: „die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags"
+  (Bemessungs-Ermittlung + Pauschbetrag-Abzug).
+
+### Blockade-Status
+Der Rundungs-Entscheid (b1/b2) ist die offene Frage VOR den Seeds — die Euro-Erwartungswerte
+hängen daran (Instructor-Auflage). Signatur, Andockung, Kz, Quellen-Anker stehen. Nach dem
+Entscheid: Seeds mit exaktem Rechenweg (inkl. gewählter Satz-Behandlung) → Stufe B.
