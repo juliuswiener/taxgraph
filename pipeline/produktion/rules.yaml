@@ -1763,3 +1763,69 @@ regeln:
   - {gezahlte_kirchensteuer: 1000, erstattete_kirchensteuer: 0}
   exclude_rule_ids:
   - p10_1_4_kirchensteuer
+# Charge-4 Vollabdeckung (Coverage-Landkarte, Instructor-GO 2026-07-13,
+# reports/review/2026-07-13-charge4-p32b-zuschnitt.md): § 32b Progressionsvorbehalt.
+# Andockung wie § 31 (Rechtspraedikat): der § 32a-Tarif wird NICHT selbst gerechnet, die
+# Tarif-Ergebnisse kommen als Input aus der § 2-Integration (est_auf_erhoehte_bemessung).
+# Rundungs-Entscheid b1 (Instructor 2026-07-13): reines Wortlaut-§32b, KEINE Satz-Rundung
+# (die amtliche PAP-4-Dezimal-Rundung steht nicht im Gesetz -> rundung: []). Grenzfall:
+# moegliche Cent-Divergenz zu ELSTER/checkESt, dokumentiert im Zuschnitts-Report;
+# Wiedervorlage nach BMF-PAP-Freeze (Backlog). Seeds gegen p32a VZ2026 validiert.
+- rule_id: p32b_progressionsvorbehalt
+  # hinweis-Kanal (Instructor-Freigabe 2026-07-13, Stufe-B Lauf 1): Kontext-Hunger wie GWG -
+  # der auszug sagt "nach Abzug des Arbeitnehmer-Pauschbetrags", unser Input ist aber schon
+  # netto; die Geltungsbedingung erreicht nur den Judge. Ohne hinweis zog A den Pauschbetrag
+  # nochmal ab (Doppelzaehlung). Architektur-Spec, kein Gesetzes-Paraphrase-Ersatz.
+  hinweis: 'progressionseinkuenfte kommen bereits NETTO herein - der Arbeitnehmer-Pauschbetrag (§ 9a) ist in der vorgelagerten § 2-Integration abgezogen (dort ist bekannt, ob er schon gegen den Arbeitslohn verbraucht ist). In DIESER Regel KEIN weiterer Pauschbetrag-Abzug: die erhoehte Bemessung ist zu_versteuerndes_einkommen + progressionseinkuenfte direkt; besonderer Steuersatz = est_auf_erhoehte_bemessung / erhoehte Bemessung, angewandt auf zu_versteuerndes_einkommen.'
+  norm: § 32b Abs. 1, 2 EStG (Progressionsvorbehalt, besonderer Steuersatz)
+  quellen:
+  - typ: gesetz
+    label: § 32b Abs. 1 S. 1 EStG (Progressionsvorbehalt-Grundsatz)
+    datei: sources/gesetze-im-internet/estg_p32b_2026-07-13.txt
+    zitatanker: ein besonderer Steuersatz anzuwenden
+    auszug: 'so ist auf das nach § 32a Absatz 1 zu versteuernde Einkommen ein besonderer Steuersatz anzuwenden'
+  - typ: gesetz
+    label: § 32b Abs. 2 S. 1 Nr. 1 EStG (besonderer Steuersatz, AN-Pauschbetrag-Abzug)
+    datei: sources/gesetze-im-internet/estg_p32b_2026-07-13.txt
+    zitatanker: die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags
+    auszug: 'Der besondere Steuersatz nach Absatz 1 ist der Steuersatz, der sich ergibt, wenn bei der Berechnung der Einkommensteuer das nach § 32a Absatz 1 zu versteuernde Einkommen vermehrt oder vermindert wird um 1. im Fall des Absatzes 1 Nummer 1 die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1), soweit er nicht bei der Ermittlung der Einkünfte aus nichtselbständiger Arbeit abziehbar ist'
+  geltungsbedingungen:
+  - bedingung: tarifwert_ist_p32a_ergebnis
+    deckt_ab: ein besonderer Steuersatz anzuwenden
+    quelle: § 32b Abs. 2 S. 1 i.V.m. § 32a Abs. 1 EStG
+    beschreibung: 'est_auf_erhoehte_bemessung ist das p32a-Tarifergebnis fuer (zu_versteuerndes_einkommen + progressionseinkuenfte). Andockung wie § 31: der Tarif wird in der § 2-Integration gerechnet, nicht in dieser Regel (Rechtspraedikat, kein Selbst-Tarif). besonderer Steuersatz = est_auf_erhoehte_bemessung / erhoehte_bemessung, angewendet auf zu_versteuerndes_einkommen.'
+  - bedingung: progressionseinkuenfte_sind_netto_nach_an_pauschbetrag
+    deckt_ab: die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags
+    quelle: § 32b Abs. 2 S. 1 Nr. 1 EStG (§ 9a Satz 1 Nummer 1)
+    beschreibung: 'progressionseinkuenfte = Summe der Lohnersatzleistungen NACH Abzug des noch nicht gegen den Arbeitslohn verbrauchten Arbeitnehmer-Pauschbetrags (§ 9a S. 1 Nr. 1, 2026: 1.230 EUR). Der Netto-Abzug erfolgt in der § 2-Integration; hier kommt der Netto-Wert herein.'
+  rundung: []
+  signature:
+    scope: Progressionsvorbehalt
+    inputs:
+      zu_versteuerndes_einkommen: money
+      progressionseinkuenfte: money
+      est_auf_erhoehte_bemessung: money
+    output: festzusetzende_est_mit_progression
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p32b_2026-07-13.txt
+    zitatanker: ein besonderer Steuersatz anzuwenden
+    herkunft: synthetisch
+    rechenweg: 'Standard: zvE 30.000, progressionseinkuenfte (netto) 10.000 -> erhoehte Bemessung 40.000. est_auf_erhoehte_bemessung = ESt(40.000) via p32a VZ2026 = 7.209 (gegen p32a validiert). besonderer Steuersatz = 7.209 / 40.000 = 0,180225 (UNGERUNDET, b1). festzusetzende = 0,180225 * 30.000 = 5.406,75. Progressionswirkung: ohne § 32b waere ESt(30.000) = 4.217.'
+    inputs: {zu_versteuerndes_einkommen: 30000, progressionseinkuenfte: 10000, est_auf_erhoehte_bemessung: 7209}
+    expected: 5406.75
+  - quelle: sources/gesetze-im-internet/estg_p32b_2026-07-13.txt
+    zitatanker: ein besonderer Steuersatz anzuwenden
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER kein Lohnersatz: zvE 30.000, progressionseinkuenfte 0 -> Bemessung 30.000. est = ESt(30.000) = 4.217. Satz = 4.217/30.000 (ungerundet). festzus = Satz * 30.000 = 4.217,00. § 32b reproduziert bei PE=0 exakt die normale ESt (keine Verzerrung).'
+    inputs: {zu_versteuerndes_einkommen: 30000, progressionseinkuenfte: 0, est_auf_erhoehte_bemessung: 4217}
+    expected: 4217.00
+  - quelle: sources/gesetze-im-internet/estg_p32b_2026-07-13.txt
+    zitatanker: ein besonderer Steuersatz anzuwenden
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Anhebung: zvE 10.000 (allein unter Grundfreibetrag, ESt(10.000)=0), progressionseinkuenfte (netto) 5.000 -> Bemessung 15.000. est = ESt(15.000) = 435. Satz = 435/15.000 = 0,029 (ungerundet). festzus = 0,029 * 10.000 = 290,00. Kern-Beweis des Progressionsvorbehalts: eine allein steuerfreie Bemessung wird angehoben.'
+    inputs: {zu_versteuerndes_einkommen: 10000, progressionseinkuenfte: 5000, est_auf_erhoehte_bemessung: 435}
+    expected: 290.00
+  raster:
+  - {zu_versteuerndes_einkommen: 30000, progressionseinkuenfte: 10000, est_auf_erhoehte_bemessung: 7209}
+  - {zu_versteuerndes_einkommen: 30000, progressionseinkuenfte: 0, est_auf_erhoehte_bemessung: 4217}
+  - {zu_versteuerndes_einkommen: 10000, progressionseinkuenfte: 5000, est_auf_erhoehte_bemessung: 435}
