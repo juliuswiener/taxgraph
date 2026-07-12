@@ -78,6 +78,38 @@ richtig gedeuteten Returncode. Er liest die ID aus `$ELSTER_HERSTELLER_ID` (z.B.
 ist die Harness-Verdrahtung + die deterministische API-Antwort der belegbare Stand. Kein Falsch-Gruen:
 ich melde NICHT „plausibel rc==0", weil ERiC am Hersteller-ID-Gate blockt.
 
+## Zusatzauftrag: unverbindliche Steuerberechnung offline? — NEIN (in 44.2.4)
+
+Instructor-Hoffnung: ein Bearbeitungsflag (ERIC_BERECHNE o.ae.) fuer eine amtliche Offline-
+Probeberechnung der ESt = amtliches Rechen-Oracle. **Ergebnis: existiert in ERiC 44.2.4 NICHT.**
+Belege:
+- Bearbeitungsflags (`eric_types.h`) sind vollstaendig: `ERIC_VALIDIERE` (1<<1), `ERIC_SENDE`
+  (1<<2), `ERIC_DRUCKE` (1<<5), `ERIC_PRUEFE_HINWEISE` (1<<7), `ERIC_VALIDIERE_OHNE_FREIGABEDATUM`
+  (1<<8). **Kein Berechnungs-Flag.**
+- Keine `Eric*`-API-Funktion mit `berechn`/`rechn`/`calc`. Kein Compute-Plugin (nur `libcheck*.so`
+  + `libcommonData.so`). Keine Compute-Datenart (ESt1/ESt2/ESt6/EStA = Deklaration + Bescheid-
+  abholung). Weder im Entwicklerhandbuch noch in den Releasenotes eine „Steuerberechnung".
+- Der „Bescheid" (Kap. 7.4) ist Server-Rueckuebermittlung — online, Zertifikat, nach Abgabe.
+
+**Was checkESt (ERIC_VALIDIERE) LEISTET:** die Plausibilitaetspruefung enthaelt eine Formelsprache
+(`Summe(...)`, `SummeVonProdukten(...)`, Vergleiche) und prueft deklarierte Summen- und abhaengige
+Felder auf interne Konsistenz. Das ist ein PARTIELLES Konsistenz-Oracle fuer deklarierte
+Rechenfelder — KEINE vollstaendige, unabhaengige Steuerberechnung.
+
+**Konsequenz fuer das zweistufige Gate:** Stufe 2 (Vergleich gegen unsere festzusetzende Steuer)
+laesst sich NICHT ueber ERiC offline abbilden. Das Projekt hat den Offline-Rechen-Oracle aber
+bereits: das **GETTSIM-Differential** (`Makefile` Ziel `s02`, Catala vs GETTSIM). Damit steht die
+Arbeitsteilung: **GETTSIM = Offline-Rechen-Oracle (vorhanden), ERiC checkESt = amtliche
+Deklarations-Plausibilitaet (neu, komplementaer).** Amtliche Steuerberechnung nur online (Bescheid)
+= Julius/spaeter.
+
+## Feldmapping (Richtung a) — Groundwork
+
+Kz-Katalog liegt vor: `E10-2025.html` (ESt-Schemadok, **3948 Kz**, parsebar). Stub auf Richtung (a)
+korrigiert (berechnete-Steuer-Zeilen entfernt). Kz je Zeile folgen als Instructor-Review-Tabelle
+(Kz-Kandidaten je Regel-Input; Labels mappen nicht 1:1 — z.B. Kirchensteuer hat Sonderausgabe-/
+KapESt-/Lohnsteuer-Varianten).
+
 ## Ablage / Provenance
 
 - ERiC unter `~/02_Software/eric/` (ausserhalb Repo, `$ERIC_DIR`; kein absoluter Pfad im Code).
