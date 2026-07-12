@@ -17,8 +17,8 @@ noch zu exportieren):
 
 | Konzept | Regel | Anlage | Status |
 |---|---|---|---|
-| Werbungskosten nichtselbst. Arbeit (Entfernung, Arbeitsmittel, Reisekosten) | p09, nr6_7, p9_4a | **Anlage N** | ✅ hier |
-| doppelte Haushaltsführung (Übernachtung) | nr5a | **Anlage N-Doppelte Haushaltsführung** (eigene Anlage, Vordruck-Zeile 288) | ⏳ Export offen |
+| Werbungskosten nichtselbst. Arbeit (Entfernung, Arbeitsmittel, Reisekosten, Übernachtung+Verpflegung bei Auswärtstätigkeit) | p09, nr6_7, **nr5a** (Übernachtung Auswärtstätigkeit), p9_4a (Verpflegung) | **Anlage N** | ✅ hier |
+| doppelte Haushaltsführung | **p9_1_3_nr5** (NICHT nr5a!) | **Anlage N-Doppelte Haushaltsführung** (eigene Anlage, ID 034027d_25, Vordruck-Zeile 288) | ⏳ Julius lädt |
 | Sonderausgaben (KiSt, §10er) | p10_1_4, p10_1_2 | Anlage Sonderausgaben / Vorsorgeaufwand | ⏳ Export offen |
 | außergewöhnliche Belastungen | p33 | **Anlage Außergewöhnliche Belastungen** (nicht mehr in ESt1A) | ⏳ Export offen |
 | haushaltsnahe (§35a) | p35a | Anlage Haushaltsnahe Aufwendungen | ⏳ Export offen |
@@ -33,12 +33,34 @@ noch zu exportieren):
 | p09: ÖPNV-Fahrtkosten | Zeile 34 „Aufwendungen für Fahrten mit öffentlichen Verkehrsmitteln" | 114 | E0203611 / E0223405 | Erste_Taetig | Aufwendungen für Fahrten mit öffentlichen Verkehrsmitteln (ohne Fähr- und Flugkosten) | **STARK** |
 | nr6_7: Arbeitsmittel (Art) | Zeile 54 „Art der Arbeitsmittel" | — | E0204401 / E0224401 | Einz | Art der Arbeitsmittel | **STARK** |
 | nr6_7: Arbeitsmittel (Summe/Betrag) | Zeile 56 „Summe" Arbeitsmittel | 320³ | (E-Nr Betragsfeld, s. Nachtrag) | Einz/Sum | — | MITTEL |
-| p9_4a: Übernachtungskosten | Zeile 67 „Übernachtungskosten" | — | E0206301 / E0226104 | Uebernacht | Übernachtungskosten | **STARK** |
+| **nr5a**: Übernachtungskosten (Auswärtstätigkeit) | Zeile 67 „Übernachtungskosten" | — | E0206301 / E0226104 | Uebernacht | Übernachtungskosten | **STARK** |
 
 ¹ Form-Kennzahl aus pdftotext, spaltenweise unsicher — Orientierung, nicht Identifier.
 ² Kollidiert scheinbar mit Bruttoarbeitslohn-Kz 110 (Zeile 5) — pdftotext-Layout-Artefakt, deshalb
 E-Nr maßgeblich; die E-Nr trennt die Konzepte eindeutig.
 ³ 320 = Summenfeld Arbeitsmittel (Zeile 56 „Summe").
+
+## Betragsfeld-Nachtrag — Reisekosten/Verpflegung (nr5a, p9_4a), inkl. Arbeitgeber-Erstattung
+
+Instructor-Auflage: je Position gehören die **Erstattungs-Felder** („vom Arbeitgeber steuerfrei
+ersetzt") mit in die Tabelle — unsere Regeln rechnen NETTO (erstattete Beträge mindern), Phase 5
+muss sie abfragen. Alle Zeilen STARK (Vordruck ⋂ XSD verbatim):
+
+| Regel-Input | Vordruck-Zeile | XSD E-Nr (A / B) | XSD-Sektion | wörtliches Label | Art | Konfidenz |
+|---|---|---|---|---|---|---|
+| nr5a: Übernachtungskosten (Betrag) | Zeile 67 | E0206301 / E0226104 | Uebernacht | Übernachtungskosten | Aufwand € | **STARK** |
+| nr5a/Reisek.: Reisenebenkosten | Zeile 68 | E0206402 / E0226207 | Reisenebenk | Reisenebenkosten | Aufwand € | **STARK** |
+| nr5a/Reisek.: **Arbeitgeber-Erstattung** (mindert) | Zeile 71 (Kz 420) | E0205608 / E0224703 | Rk_Ersatz | Vom Arbeitgeber steuerfrei ersetzt | Erstattung € | **STARK** |
+| p9_4a: Tage Abwesenheit > 8 h | Zeile 72 (Kz 470) | E0205201 | Inl | Anzahl der Tage mit einer Abwesenheit von mehr als 8 Stunden … | Anzahl | **STARK** |
+| p9_4a: Tage An-/Abreise | Zeile 73 (Kz 471) | E0205302 | Inl | Anzahl der An- und Abreisetage … | Anzahl | **STARK** |
+| p9_4a: Tage Abwesenheit 24 h | Zeile 74 (Kz 472) | E0205409 | Inl | Anzahl der Tage mit einer Abwesenheit von 24 Stunden | Anzahl | **STARK** |
+| p9_4a/nr5a: Kürzung Mahlzeitengestellung | Zeile 75 (Kz 473) | E0205508 | Inl | Kürzungsbeträge wegen Mahlzeitengestellung … | Kürzung € | **STARK** |
+| p9_4a: **Verpflegung Arbeitgeber-Erstattung** (mindert) | Zeile 77 (Kz 490) | E0205108 / … | VMA_Ersatz | Vom Arbeitgeber steuerfrei ersetzt | Erstattung € | **STARK** |
+
+Anmerkung: „Kürzung Mahlzeitengestellung" (E0205508) berührt direkt unsere nr5a-Geltungsbedingung
+`keine_mahlzeitengestellung` / §9 Abs. 4a S. 8 — amtlicher Anker für die Bedingung, nicht nur Betrag.
+Verpflegung ist bei uns kein €-Input, sondern Tage×Pauschale (p9_4a rechnet die Pauschbeträge selbst)
+→ die Anzahl-Kz (470/471/472) sind die Deklarations-Inputs, nicht ein €-Betrag.
 
 ## Offene Punkte (Instructor / Nachtrag)
 
