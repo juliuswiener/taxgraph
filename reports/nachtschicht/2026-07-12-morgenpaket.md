@@ -19,8 +19,11 @@ auszug. Nach Weitung: A trifft 47→16.800 (ungekappt) sofort.
 
 **Dreistufige Fehler-Taxonomie (alle drei empirisch belegt, in dieser Reihenfolge prüfen):**
 1. **Kontext-Hunger** → auszug weiten (Trigger fehlt im Prompt). nr5a, solzg, p36, p10-Rest.
-2. **Boundary-Kodierung** → Split in Teilregeln, Schwelle wird §2-Selektion (der Name
-   trägt die Kodierung nicht, der Pin erreicht das Modell nicht). nr5a vor/nach_48.
+2. **Boundary-Kodierung** → **NEU (2026-07-12, empirisch belegt): erst Encoding-hinweis über den
+   hinweis-Kanal, Split nur als Fallback.** Der hinweis-Kanal erreicht das Modell doch (anders als
+   der Signatur-Kommentar) — ein Encoding-Pin (welche Semantik ein Input trägt) landet. Beleg:
+   GWG-Neuschnitt nr6_7, Jahr-Index-Pin → Formalisierer B setzte ihn auf Anhieb clerk 7/7.
+   Split (nr5a vor/nach_48) bleibt der Fallback, wenn der hinweis nachweislich nicht greift.
 3. **Arithmetische Folgerung ohne Wortlaut** → Integrations-Arithmetik, keine
    Formalisierungsregel (steht nicht im Gesetz). nr6_7 Überhangsjahr = AK − Σ(laufend).
 
@@ -305,3 +308,31 @@ Aus dem FMS-227-Berg (Julius-Export 2026-07-12), Research in den eingefrorenen M
   (Monats-Cap). Die dHf-Registry-Begründungen tragen die „Wiedervorlage bei BMF-Befund"-Klausel → um
   diesen Verwaltungs-Anker ergänzt (kein Statuswechsel; Items waren nicht_material, jetzt amtlich belegt).
 - **Alte Handover-Recherchefrage (dHf-Monats/Jahr) damit ERLEDIGT.**
+
+## 16. Charge-3 GWG-Neuschnitt VOLLZOGEN + hinweis-Kanal als Klasse-2-Werkzeug belegt
+
+Der Charge-3-Zuschnitt `p9_1_3_nr6_7_afa_laufend_nb` (Netto/Brutto-Split) ist deterministisch grün.
+Der Weg dahin belegt zwei Methodik-Punkte:
+
+- **hinweis-Kanal trägt jetzt Klasse-1 UND Klasse-2.** Zwei Pins in EINEM hinweis: (1) netto/brutto
+  (die 800-Grenze prüft netto, Abzug/AfA brutto — Auslegungsfolge § 9b, kein Wortlaut → auszug kann
+  es nicht liefern); (2) Jahr-Index-Encoding (`jahre_seit_anschaffung = 0` = Anschaffungsjahr,
+  pro-rata `(13 − anschaffungsmonat)/12`). **Beide Pins landeten** — Formalisierer B clerk 7/7 auf
+  Anhieb. Damit ist die Klasse-2-Leiter neu: erst Encoding-hinweis, Split nur Fallback (§0, Punkt 2).
+- **Doppelformalisierungs-Netz griff sichtbar.** Im 2-Pin-Lauf setzte B beide Pins korrekt, A bekam
+  den Jahr-Index auch korrekt, machte aber einen unabhängigen Arithmetik-Slip (pro-rata auf volle
+  Brutto statt auf JahresAfA). `equivalence=FAIL` flaggte A≠B, `clerk` gab Ground-Truth. Ein
+  A-seitiger Nachlauf rekonvergierte → A und B beide 7/7, equivalence PASS. Run-Varianz, keine
+  Encoding-Persistenz.
+- **Kosten:** drei produktive `--skip-judge`-Läufe (~$0,03–0,04 je) + zwei infrastruktur-verdorbene
+  (typecheck-Glitch; DeepInfra-429 auf Judge, $0). Judge bewusst übersprungen (Provider-Flakiness) —
+  Falschgrün-Sperre hält den Status auf `strukturgeprueft_judge_offen`, nie verified.
+
+**Offen für dich (Julius):**
+- **Judge-Nachzug** `p9_1_3_nr6_7_afa_laufend_nb` via `--redo-judge`, sobald die DeepInfra-Lage
+  stabil ist → zieht `verified_bedingt` (Discoveries → Triage → Registry). Kein neuer Modell-Inhalt,
+  nur das fehlende Judge-Verdikt.
+- **Infra committed:** `--skip-judge`-Flag mit Falschgrün-Sperre (`53b6ec5`, Test, Suite 115). Nützt
+  generell bei Judge-Provider-Ausfall: deterministische Struktur/clerk-Verdikte ohne Judge-Abhängig-
+  keit, aber garantiert nie verified.
+- **Monolith** `p9_1_3_nr6_7_afa_laufend` → `zuschnitt_ersetzt` (drei Interim-Bedingungen erloschen).
