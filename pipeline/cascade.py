@@ -113,6 +113,28 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
                 elif g.name == "typecheck_a":
                     g.status, g.detail = tc2.status, tc2.detail
 
+    # Praezisions-Lint auf A (Klasse 5): der confident-Befund (money x decimal vor
+    # finalem Cent-Schnitt) geht mit seinem decimal-Idiom als deterministisches Signal
+    # in EINE Repair-Runde - Gate-Output, kein Prompt-Change. INFO/FAIL loesen die
+    # Reparatur aus; der Queue-Status wird davon (Stufe 1) trotzdem nicht gekippt.
+    plint = G.praezisions_lint_gate(src_a, candidate)
+    if src_a and plint.status in (G.INFO, G.FAIL):
+        r_text, rp = R.repair(client, roles["formalisierer_a"], src_a, plint.detail,
+                              models_hash, exclude, sig)
+        record(rp)
+        r_mod, r_src = G.extract_catala(r_text)
+        if r_src:
+            res.repaired["a"] = True
+            mod_a, src_a = r_mod, r_src
+            plint = G.praezisions_lint_gate(src_a, candidate)
+            lint = G.rundungs_lint_gate(src_a, candidate)   # reparierte Quelle spiegeln
+            syn2, tc2 = G.syntax_gate(src_a, mod_a), G.typecheck_gate(src_a, mod_a)
+            for g in res.gate_results:
+                if g.name == "syntax_a":
+                    g.status, g.detail = syn2.status, syn2.detail
+                elif g.name == "typecheck_a":
+                    g.status, g.detail = tc2.status, tc2.detail
+
     res.queue_status = "formalized"
     res.module_name, res.catala_a, res.catala_b = mod_a, src_a, src_b
 
@@ -122,7 +144,7 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
     # 5a. Praezisions-Lint (Klasse 5, deterministisch, kostenlos). Stufe-1-Rollout:
     #     INFO-Befund, kippt kein Gate (Vorregistrierung 2026-07-12). Stufe 2
     #     (blockierend) erst nach Julius via G._PRAEZISION_BLOCKIEREND.
-    res.gate_results.append(G.praezisions_lint_gate(src_a, candidate))
+    res.gate_results.append(_named("praezisions_lint", plint))
 
     # 5b. extensionale Aequivalenz A vs B auf dem Input-Raster
     res.gate_results.append(G.equivalence_gate(src_a, src_b, candidate))
