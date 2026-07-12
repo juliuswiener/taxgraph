@@ -1,0 +1,177 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anlage Sonderausgaben 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                                                     2025
+                    Name
+
+               1
+                                                                                                                                            Anlage Sonder-
+                    Vorname
+                                                                                                                                            ausgaben
+               2
+                                                                                                                                            Diese Anlage ist bei Zusammen-
+                                                                                                                                            veranlagung von Ehegatten / Lebens-
+               3    Steuernummer                                                                                                            partnern gemeinsam auszufüllen.
+
+
+
+202500340201
+                    Angaben zu Sonderausgaben
+                    – Ohne Versicherungsaufwendungen und Altersvorsorgebeiträge –
+                    Kirchensteuer                                                                                                                                               52
+                                                                                                                     2025 gezahlt                          2025 erstattet
+                                                                                                                       EUR                                     EUR
+                    soweit diese nicht als Zuschlag zur Abgeltungsteuer einbehalten
+               4    oder gezahlt wurde                                              103                                                ,–     104                                ,–
+                    Zuwendungen (Spenden und Mitgliedsbeiträge)
+                    Spenden und Mitgliedsbeiträge (ohne Spenden in das zu erhaltende Vermögen einer Stiftung)
+                                                                                                       laut Bestätigungen                           laut Betriebsfinanzamt
+                                                                                                               EUR                                         EUR
+                      – zur Förderung steuerbegünstigter Zwecke an Emp-
+               5        fänger im Inland                                123                                                     ,–      124                                      ,–
+                      – zur Förderung steuerbegünstigter Zwecke an Emp-
+               6        fänger im EU- / EWR-Ausland                     133                                                     ,–      134                                      ,–
+               7      – an politische Parteien (§§ 34g, 10b EStG)                       127                                     ,–      128                                      ,–
+                      – an unabhängige Wählervereinigungen
+               8        (§ 34g EStG)                                                    129                                     ,–      130                                      ,–
+                    Spenden in das zu erhaltende Vermögen (Vermögensstock) einer Stiftung
+                                                                                        Steuerpflichtige Person / Ehemann / Person A                Ehefrau / Person B
+                                                                                                              EUR                                           EUR
+                  2025 geleistete Spenden an Empfänger im Inland (laut
+               9  Bestätigungen / laut Betriebsfinanzamt)                               208                                     ,–      209                                      ,–
+                  2025 geleistete Spenden an Empfänger im EU- /
+                  EWR-Ausland (laut Bestätigungen / laut Betriebsfi-
+               10 nanzamt)                                                              224                                     ,–      225                                      ,–
+                  Von den Spenden in den Zeilen 9 und 10 sollen 2025
+               11 berücksichtigt werden                                                 212                                     ,–      213                                      ,–
+                  2025 zu berücksichtigende Spenden aus Vorjahren in
+                  das zu erhaltende Vermögen (Vermögensstock) einer
+               12 Stiftung, die bisher noch nicht berücksichtigt wurden                 214                                     ,–      215                                      ,–
+                    Aufwendungen für die eigene Berufsausbildung
+                    Steuerpflichtige Person / Ehemann / Person A
+                    Bezeichnung der Ausbildung, Art der Aufwendungen                                                                                     EUR
+
+               13                                                                                                                       200                                ,–
+                    Ehefrau / Person B
+                    Bezeichnung der Ausbildung, Art der Aufwendungen                                                                                     EUR
+
+               14                                                                                                                       201                                ,–
+                    Weitere Aufwendungen
+                    Gezahlte Versorgungsleistungen aus Renten laut Vertrag
+                    Angaben zur 1. empfangsberechtigten Person
+                                                                                                                        abziehbar                 tatsächlich gezahlt
+                    Rechtsgrund, Datum des Vertrags                                                                       in %                            EUR
+
+               15                                                                                                       102             101                                 ,–
+                    Name und Geburtsdatum der empfangsberechtigten Person
+
+               16
+                              Identifikationsnummer der empfangsberechtigten Person
+                                                                                      Die empfangsberechtigte Person hat ihren Wohnsitz /                                1 = Ja
+               17    136                                                              gewöhnlichen Aufenthalt im Inland                                   153            2 = Nein
+
+                    Angaben zur 2. empfangsberechtigten Person
+                                                                                                                        abziehbar                 tatsächlich gezahlt
+                    Rechtsgrund, Datum des Vertrags                                                                       in %                            EUR
+
+               18                                                                                                       138             137                                 ,–
+                    Name und Geburtsdatum der empfangsberechtigten Person
+
+               19
+                              Identifikationsnummer der empfangsberechtigten Person
+                                                                                      Die empfangsberechtigte Person hat ihren Wohnsitz /                                1 = Ja
+               20    139                                                              gewöhnlichen Aufenthalt im Inland                                   154            2 = Nein
+
+
+
+                            2025AnlSonderausgaben401NET                                   - September 2025 -                   2025AnlSonderausgaben401NET
+         Steuernummer, Name und Vorname
+
+
+
+     Gezahlte Versorgungsleistungen aus Renten laut gesonderter und ein-
+21   heitlicher Feststellung                                                                  150           %       151                            ,–
+     Gezahlte und erbrachte Versorgungsleistungen aus Dauernden Lasten laut Vertrag
+     Angaben zur 1. empfangsberechtigten Person
+     Rechtsgrund, Datum des Vertrags                                                                                                   EUR
+                                                                                             tatsächlich gezahlte
+22                                                                                           Geldleistungen           100                               ,–
+     Name und Geburtsdatum der empfangsberechtigten Person
+                                                                                             tatsächlich erbrachte
+                                                                                                                                                        ,–
+                                                                                                                                                             202500340202
+23                                                                                           Sachleistungen           161
+              Identifikationsnummer der empfangsberechtigten Person
+                                                                      Die empfangsberechtigte Person hat ihren Wohnsitz /                      1 = Ja
+24    144                                                             gewöhnlichen Aufenthalt im Inland                             155        2 = Nein
+
+     Angaben zur 2. empfangsberechtigten Person
+     Rechtsgrund, Datum des Vertrags                                                                                                   EUR
+                                                                                             tatsächlich gezahlte
+25                                                                                           Geldleistungen           145                               ,–
+     Name und Geburtsdatum der empfangsberechtigten Person
+                                                                                             tatsächlich erbrachte
+26                                                                                           Sachleistungen           162                               ,–
+              Identifikationsnummer der empfangsberechtigten Person
+                                                                      Die empfangsberechtigte Person hat ihren Wohnsitz /                      1 = Ja
+27    146                                                             gewöhnlichen Aufenthalt im Inland                             156        2 = Nein
+
+     Gezahlte und erbrachte Versorgungsleistungen aus Dauernden Lasten laut gesonderter
+28   und einheitlicher Feststellung                                                                                  152                                ,–
+     Unterhaltsleistungen laut Anlage U – ohne Kindesunterhalt – an den
+     - geschiedenen Ehegatten, Lebenspartner einer aufgehobenen Lebenspartnerschaft
+     - dauernd getrennt lebenden Ehegatten / Lebenspartner
+     Angaben zur 1. unterstützten Person
+     – Bitte Anleitung beachten. –
+                                                                                                                            tatsächlich erbracht
+     Name und Geburtsdatum der unterstützten Person                                                                                 EUR
+
+29                                                                                                                  116                            ,–
+              Identifikationsnummer der unterstützten Person
+                                                                      Die unterstützte Person hat ihren Wohnsitz / gewöhnli-                   1 = Ja
+30    117                                                             chen Aufenthalt im Inland                                     157        2 = Nein
+     In Zeile 29 enthaltene Beiträge (abzüglich Erstattungen und Zuschüsse) zur Basis-Kranken- und
+31   gesetzlichen Pflegeversicherung                                                                                  118                          ,–
+32       Davon entfallen auf Krankenversicherungsbeiträge mit Anspruch auf Krankengeld                                119                          ,–
+     Angaben zur 2. unterstützten Person
+     – Bitte Anleitung beachten. –
+                                                                                                                            tatsächlich erbracht
+     Name und Geburtsdatum der unterstützten Person                                                                                 EUR
+
+33                                                                                                                  140                            ,–
+              Identifikationsnummer der unterstützten Person
+                                                                      Die unterstützte Person hat ihren Wohnsitz / gewöhnli-                   1 = Ja
+34    141                                                             chen Aufenthalt im Inland                                     158        2 = Nein
+     In Zeile 33 enthaltene Beiträge (abzüglich Erstattungen und Zuschüsse) zur Basis-Kranken- und
+35   gesetzlichen Pflegeversicherung                                                                                 142                           ,–
+36       Davon entfallen auf Krankenversicherungsbeiträge mit Anspruch auf Krankengeld                               143                           ,–
+     Ausgleichszahlungen im Rahmen des schuldrechtlichen Versorgungsausgleichs
+                                                                                                                            tatsächlich gezahlt
+     Rechtsgrund, Datum der erstmaligen Zahlung                                                                                     EUR
+
+37                                                                                                                  121                            ,–
+     Name und Geburtsdatum der empfangsberechtigten Person
+
+38
+              Identifikationsnummer der empfangsberechtigten Person
+                                                                      Die empfangsberechtigte Person hat ihren Wohnsitz /                      1 = Ja
+39    132                                                             gewöhnlichen Aufenthalt im Inland                             159        2 = Nein
+
+     Ausgleichsleistungen zur Vermeidung des Versorgungsausgleichs laut Anlage U
+     – Bitte Anleitung beachten. –
+                                                                                                                            tatsächlich erbracht
+     Name und Geburtsdatum der empfangsberechtigten Person                                                                          EUR
+
+40                                                                                                                  131                            ,–
+              Identifikationsnummer der empfangsberechtigten Person
+                                                                      Die empfangsberechtigte Person hat ihren Wohnsitz /                      1 = Ja
+41    135                                                             gewöhnlichen Aufenthalt im Inland                             160        2 = Nein
+
+
+
+
+             2025AnlSonderausgaben402NET                                                                2025AnlSonderausgaben402NET
+

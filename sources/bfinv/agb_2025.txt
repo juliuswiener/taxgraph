@@ -1,0 +1,177 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anlage Außergewöhnliche Belastungen 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                                                               2025
+                    Name
+
+               1
+                                                                                                                                                        Anlage Außer-
+                    Vorname
+                                                                                                                                                        gewöhnliche
+               2
+
+               3    Steuernummer
+                                                                                                                                                        Belastungen
+                                                                                                                                                        Diese Anlage ist bei Zusammen-
+
+
+202500339201
+                    Außergewöhnliche Belastungen / Pauschbeträge                                                                                        veranlagung von Ehegatten / Lebens-
+                                                                                                                                                        partnern gemeinsam auszufüllen.
+
+
+                    Behinderten-Pauschbetrag                                                                                                                                                53
+                    Steuerpflichtige Person / Ehemann / Person A
+                    Ausweis / (Renten-) Bescheid / Bescheinigung
+                    – bei erstmaliger Beantragung / Änderung bitte Nachweis in Kopie einreichen –
+                              gültig von                    gültig bis                     unbefristet gültig             Grad der Behinderung
+
+               4     100                           101                            102           1 = Ja           105
+
+                    Ich bin
+                                                                                                                                                                        104        1 = Ja
+               5      – erheblich gehbehindert (Merkzeichen „G“) / außergewöhnlich gehbehindert (Merkzeichen „aG“)
+                      – blind / taubblind / ständig hilflos (Merkzeichen „Bl“, „TBl“ und / oder „H“), schwerstpflegebedürftig (Pflege-                                             1 = Ja
+               6        grad 4 oder 5)                                                                                                                                  103
+
+                    Ehefrau / Person B
+                    Ausweis / (Renten-) Bescheid / Bescheinigung
+                    – bei erstmaliger Beantragung / Änderung bitte Nachweis in Kopie einreichen –
+                              gültig von                    gültig bis                     unbefristet gültig             Grad der Behinderung
+
+               7     150                           151                            152           1 = Ja           155
+
+                    Ich bin
+                                                                                                                                                                        154        1 = Ja
+               8      – erheblich gehbehindert (Merkzeichen „G“) / außergewöhnlich gehbehindert (Merkzeichen „aG“)
+                      – blind / taubblind / ständig hilflos (Merkzeichen „Bl“, „TBl“ und / oder „H“), schwerstpflegebedürftig (Pflege-                                             1 = Ja
+               9        grad 4 oder 5)                                                                                                                                  153
+
+                    Hinterbliebenen-Pauschbetrag
+                    – Nur bei Hinterbliebenenbezügen nach § 33b Abs. 4 EStG; der alleinige Bezug einer Witwen- / Witwerrente ist nicht ausreichend –
+                                                                                                                                            Steuerpflichtige Person /
+                                                                                                                                              Ehemann / Person A         Ehefrau / Person B
+
+                                                                                                                                            380           1 = Ja        381        1 = Ja
+               10   Ich beantrage den Hinterbliebenen-Pauschbetrag
+                    Pflege-Pauschbetrag
+                    – bei erstmaliger Beantragung / Änderung bitte Nachweis in Kopie einreichen –
+                    Angaben zur pflegebedürftigen Person
+                    Name, Anschrift, Geburtsdatum und Verwandtschaftsverhältnis der pflegebedürftigen Person
+
+               11
+
+               12
+
+               13   Identifikationsnummer der pflegebedürftigen Person                                                         202
+                    Die pflegebedürftige Person hat ihren Wohnsitz / gewöhnlichen Aufenthalt im                                              1 = Ja
+               14   Inland                                                                                                     204           2 = Nein
+                                                                                                                                             2 = Pflegegrad 2
+                                                                                                                                             3 = Pflegegrad 3
+               15   Für die pflegebedürftige Person wurde folgender Pflegegrad festgestellt                                    203           4 = Pflegegrad 4 oder 5
+
+                                                                                                                               205           1 = Ja
+               16   Für die pflegebedürftige Person wurde das Merkzeichen „H“ festgestellt
+                  Angaben zur pflegenden Person
+                  Die unentgeltliche persönliche Pflege einer pflegebedürftigen Person in ihrer                                              1 = Steuerpflichtige Person / Ehemann / Person A
+                  oder in meiner Wohnung im Inland oder in einem EU- / EWR-Staat erfolgte                                                    2 = Ehefrau / Person B
+               17 durch                                                                                                        200           3 = beide Ehegatten / Lebenspartner
+
+                    Angaben zu an der Pflege beteiligten Personen
+                    Anzahl der weiteren an der Pflege beteiligten Personen
+                    – Sofern an der Pflege keine weiteren Personen beteiligt waren, tragen Sie bitte eine „0“
+               18   ein. –                                                                                                     201
+                    Name, Anschrift und Geburtsdatum der weiteren an der Pflege beteiligten Person(en) sowie Verwandtschaftsverhältnis zur pflegebedürftigen Person
+
+               19
+
+               20
+
+
+
+
+                              2025Anl-agB391NET                                                   - September 2025 -                                           2025Anl-agB391NET
+                                                                   -2-
+
+     Behinderungsbedingte Fahrtkostenpauschale
+     – bei erstmaliger Beantragung / Änderung bitte Nachweis in Kopie einreichen –
+
+     Ich beantrage die Berücksichtigung der behinderungsbedingten Fahrtkostenpauschale, da ich die nachfolgenden Voraussetzungen er-
+     fülle:
+                                                                                             Steuerpflichtige Person /
+                                                                                               Ehemann / Person A         Ehefrau / Person B
+   Ich habe einen Grad der Behinderung von mindestens 80 oder einen Grad der Behinde-                     1 = Ja                   1 = Ja
+21 rung von mindestens 70 und Merkzeichen „G“                                                250                         251
+
+
+                                                                                                                                                 202500339202
+   Ich bin außergewöhnlich gehbehindert / blind / taubblind / ständig hilflos (Merkzeichen                1 = Ja                   1 = Ja
+22 „aG“ / „Bl“ / „TBl“ und / oder „H“), schwerstpflegebedürftig (Pflegegrad 4 oder 5)        252                         253
+
+     Andere Aufwendungen
+     Krankheitskosten (z. B. Arzt- und Behandlungskosten, Arznei-, Heil- und Hilfsmittel, Kurkosten)
+     Art der Aufwendungen
+
+23
+                                                                                                                           EUR
+
+24   Summe der Aufwendungen                                                                               302                               ,–
+   Summe der erhaltenen und / oder zu erwartenden Versicherungsleistungen, Beihilfen, Unterstüt-
+25 zungen usw. (ggf. „0“)                                                                                 303                               ,–
+     Pflegekosten (z. B. häusliche Pflege und Heimunterbringung)
+     Art der Aufwendungen
+
+26
+                                                                                                                           EUR
+
+27   Summe der Aufwendungen                                                                               304                               ,–
+   Haushaltsersparnis sowie Summe der erhaltenen und / oder zu erwartenden Versicherungsleistun-
+28 gen, Beihilfen, Unterstützungen usw. (ggf. „0“)                                                        305                               ,–
+     Behinderungsbedingte Aufwendungen (z. B. Umbaukosten)
+     Art der Aufwendungen
+
+29
+                                                                                                                           EUR
+
+30   Summe der Aufwendungen                                                                               306                               ,–
+   Summe der erhaltenen und / oder zu erwartenden Versicherungsleistungen, Beihilfen, Unterstüt-
+31 zungen usw. (ggf. „0“)                                                                                 307                               ,–
+     Bestattungskosten (z. B. Grabstätte, Sarg, Todesanzeige)
+     Art der Aufwendungen
+
+32
+                                                                                                                           EUR
+
+33   Summe der Aufwendungen                                                                               310                               ,–
+   Summe der erhaltenen und / oder zu erwartenden Versicherungsleistungen, Beihilfen, Unterstüt-
+34 zungen usw. (ggf. „0“)                                                                                 311                               ,–
+   Gesamtwert des Nachlasses (z. B. Bargeld, Bankguthaben, Grundstücke, Wertpapiere, Lebensver-
+35 sicherungen, Nachlassverbindlichkeiten)                                                                314                               ,–
+     Sonstige außergewöhnliche Belastungen
+     Art der Aufwendungen
+
+36
+                                                                                                                           EUR
+
+37   Summe der Aufwendungen                                                                               312                               ,–
+   Summe der erhaltenen und / oder zu erwartenden Versicherungsleistungen, Beihilfen, Unterstüt-
+38 zungen usw. (ggf. „0“)                                                                                 313                               ,–
+     Für folgende Aufwendungen wird die Steuerermäßigung für haushaltsnahe Beschäftigungsverhältnisse / Dienstleistungen / Handwer-
+     kerleistungen beantragt, soweit sie wegen Abzugs der zumutbaren Belastung nicht als außergewöhnliche Belastungen berücksichtigt
+     werden (die Beträge sind nicht zusätzlich in den Zeilen 4 bis 9 der Anlage Haushaltsnahe Aufwendungen einzutragen):
+                                                                                                                           EUR
+         Die in Zeile 27 enthaltenen Pflegeleistungen im Rahmen eines geringfügigen Beschäftigungs-
+39       verhältnisses im Privathaushalt – sog. Minijob – betragen (abzüglich Erstattungen)               370                               ,–
+         Die in Zeile 27 enthaltenen übrigen haushaltsnahen Pflegeleistungen (ohne Minijob) und in
+         Heimunterbringungskosten enthaltenen Aufwendungen für Dienstleistungen, die denen einer
+40       Haushaltshilfe vergleichbar sind, betragen (abzüglich Erstattungen)                              371                               ,–
+         Die in den Zeilen 27, 30 und 37 enthaltenen Arbeitskosten für Handwerkerleistungen betragen
+41       (abzüglich Erstattungen)                                                                         372                               ,–
+
+
+
+            2025Anl-agB392NET                                                                                  2025Anl-agB392NET
+

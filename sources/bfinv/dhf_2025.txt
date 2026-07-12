@@ -1,0 +1,140 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anlage N-Doppelte Haushaltsführung 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                                                                        2025
+                    Name
+
+               1
+                                                                                                                                                           Anlage N-
+                    Vorname
+                                                                                                                                                           Doppelte Haus-
+               2
+
+               3    Steuernummer
+                                                                                                                                                           haltsführung
+
+202500348201
+                                                                                                                                                           Jeder Ehegatte / Lebenspartner mit
+                                                                                                                                                           Mehraufwendungen für doppelte Haus-
+                                                                                                                                                           haltsführung hat eine eigene Anlage N-
+                    Mehraufwendungen für doppelte Haushaltsführung                                                                                         Doppelte Haushaltsführung abzugeben.
+
+                    bei Einkünften aus nichtselbständiger Arbeit                                                                                                 Steuerpflichtige Person /
+                                                                                                                                                                 Ehemann / Person A
+
+                                                                                                                                                                 Ehefrau / Person B
+
+                    Allgemeine Angaben                                                                                                                                                         87 / 88
+
+               4    Der doppelte Haushalt wurde aus beruflichem Anlass begründet am                                                                       501
+                    Grund
+
+               5
+
+               6    Der doppelte Haushalt hat seitdem ununterbrochen bestanden bis                                                                           502                            2025
+                    Beschäftigungsort (PLZ, Ort, sowie zusätzlich den Staat - falls im Ausland und abweichend vom Staat, in dem der doppelte Haushalt liegt -)
+
+               7
+                                                                                   Ausländischer Staat, in dem der doppelte Haushalt liegt
+                    Der doppelte Haus-                          1 = Ja
+               8    halt liegt im Ausland         507
+                                                                                                                                                                                             1 = Ja
+               9    Es liegt ein eigener Hausstand am Lebensmittelpunkt vor                                                                                                     503          2 = Nein
+                    – Falls Zeile 9 mit „Nein“ beantwortet wird, sind in den Zeilen 10 bis 32 keine Eintragungen vorzunehmen. –
+                    PLZ, Ort des eigenen Hausstandes                                                                                                               seit
+
+               10                                                                                                                                         504
+                    Der Begründung des doppelten Haushalts ist eine Auswärtstätigkeit am selben Beschäftigungsort unmittelbar                                                                1 = Ja
+               11   vorausgegangen                                                                                                                                              505
+                  Anstelle der Mehraufwendungen für doppelte Haushaltsführung werden bei den Wegen zwischen Wohnung und
+                  erster Tätigkeitsstätte in den Zeilen 27 bis 50 der Anlage N Fahrtkosten für mehr als eine Heimfahrt wöchent-                                                              1 = Ja
+               12 lich geltend gemacht                                                                                          506
+                    – Falls Zeile 12 mit „Ja“ beantwortet wird, sind in den Zeilen 13 bis 32 keine Eintragungen vorzunehmen. –
+                    Fahrtkosten
+                                                                                                                                                                                       1 = Ja, insgesamt
+                    Die Fahrten wurden mit einem Firmenwagen oder im Rahmen einer unentgeltlichen Sammelbeförderung                                                                    2 = Nein
+               13   des Arbeitgebers durchgeführt                                                                                                                         510          3 = Ja, teilweise
+                    – Falls Zeile 13 mit „Ja, insgesamt“ beantwortet wird, sind in den Zeilen 14, 15, 17 und 19 keine Eintragungen vorzunehmen. Bei „Ja,
+                    teilweise“ sind in diesen Zeilen nur Eintragungen für die mit dem eigenen oder zur Nutzung überlassenen privaten Fahrzeug durch-
+                    geführten Fahrten vorzunehmen. –
+
+                    Erste Fahrt zum Ort der ersten Tätigkeitsstätte und letzte Fahrt zum eigenen Hausstand
+                                                                                                                                                                           EUR    Ct
+                                                                                                        Kilometersatz bei Einzelnachweis (Be-
+               14   mit privatem Kfz gefahrene km                    511                                rechnung laut gesonderter Aufstellung)                     512
+                    mit privatem Motorrad / Motorrol-                                                   Kilometersatz bei Einzelnachweis (Be-
+               15   ler gefahrene km                                522                                 rechnung laut gesonderter Aufstellung)                     523
+                                                                                                                                                                                      EUR
+
+               16 mit öffentlichen Verkehrsmitteln oder entgeltlicher Sammelbeförderung                                                                            513                                ,–
+                    Wöchentliche Familienheimfahrten
+
+               17   einfache Entfernung in km (ohne Flugstrecken) 514                                                 Anzahl der Familienheimfahrten 515
+                                                                                                                                                                                      EUR
+
+               18   Kosten für öffentliche Verkehrsmittel (ohne Fähr- und Flugkosten)                                                                              516                                ,–
+                  Nur bei Behinderungsgrad von mindestens 70 oder mindestens 50 und Merkzeichen „G“
+                  Einfache Entfernung in km                    davon mit privatem Kfz                                                                        Anzahl der Famili-
+               19 (ohne Flugstrecken)       524                zurückgelegt in km     517                                                                    enheimfahrten               518
+                                                                                                                                                                          EUR    Ct
+
+               20   Kilometersatz bei Einzelnachweis (Berechnung laut gesonderter Aufstellung)                                                                     519
+                                                                                                                                                                                  EUR
+
+               21   Kosten für öffentliche Verkehrsmittel (ohne Fähr- und Flugkosten)                                                                              520                                ,–
+                  Fähr- und Flugkosten (zu den wöchentlichen Heimfahrten laut den Zeilen 17 bis 21) oder Kosten für
+               22 entgeltliche Sammelbeförderung für Heimfahrten                                                                                                   521                                ,–
+                            2025AnlN-DHF481NET                                                      - September 2025 -                                           2025AnlN-DHF481NET
+        Steuernummer, Name und Vorname
+
+
+     Kosten der Unterkunft am Ort der ersten Tätigkeitsstätte
+                                                                                                                          EUR
+
+23   Aufwendungen (z. B. Miete einschließlich Stellplatz- / Garagenkosten, Nebenkosten)                       530                   ,–
+24   Größe der Zweitwohnung des doppelten Haushalts im Ausland in m²                                          531
+     Pauschbeträge für Mehraufwendungen für Verpflegung
+     Die Verpflegungsmehraufwendungen laut den Zeilen 25 bis 31 können nur für einen Zeitraum von 3 Monaten nach Bezug der Unter-
+
+
+                                                                                                                                           202500348202
+     kunft am Ort der ersten Tätigkeitsstätte geltend gemacht werden; geht der doppelten Haushaltsführung eine Auswärtstätigkeit voraus,
+     ist dieser Zeitraum auf den Dreimonatszeitraum anzurechnen.
+     Bei einer doppelten Haushaltsführung im Inland
+
+25       Anzahl der An- und Abreisetage                                                                       541
+
+26       Anzahl der Tage mit einer Abwesenheit von 24 Stunden                                                 542
+                                                                                                                            EUR
+
+27       Kürzungsbetrag wegen Mahlzeitengestellung (eigene Zuzahlungen sind ggf. gegenzurechnen)                    544              ,–
+     Bei einer doppelten Haushaltsführung im Ausland
+                                                                                              EUR
+                                                              Pauschbetrag für An- und Ab-
+28       Anzahl der An- und Abreisetage                X      reisetage                             ,–    =                          ,–
+         Anzahl der Tage mit einer Ab-                        Pauschbetrag bei Abwesen-
+29       wesenheit von 24 Stunden                      X      heit von 24 Stunden                   ,–    =           +              ,–
+30       Kürzungsbetrag wegen Mahlzeitengestellung (eigene Zuzahlungen sind ggf. gegenzurechnen)                      −              ,–
+31       Summe der Verpflegungsmehraufwendungen bei einer doppelten Haushaltsführung im Ausland 543 =                                ,–
+     Sonstige Aufwendungen
+     (z. B. Kosten für den Umzug, die Einrichtung und den Hausrat, jedoch ohne Kosten der Unterkunft laut Zeile 23)
+                                                                                                                          EUR
+
+32                                                                                                            550                    ,–
+     Weitere doppelte Haushaltsführungen
+                                                                                                                          EUR
+     Summe der Mehraufwendungen für weitere doppelte Haushaltsführungen
+33   (Berechnung laut gesonderter Aufstellung)                                                                551                    ,–
+     Steuerfreie Arbeitgeberleistungen / Zuschüsse
+                                                                                                                          EUR
+
+34   Vom Arbeitgeber / von der Agentur für Arbeit insgesamt steuerfrei ersetzt                                590                    ,–
+
+
+
+
+            2025AnlN-DHF482NET                                                                            2025AnlN-DHF482NET
+

@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage Sonderausgaben 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "sonderausgaben_2025.txt"
+  pdf_datei: "sonderausgaben_2025.pdf"
+  sha256: "0d7da200def42a62d65478710941c01a3b9f5b1295e89389e07cfdda1c1db3f1"
+  pdf_sha256: "18b1d2f001d7e46568987f1163f066544ac10971a4806c5724843fdaa8ab6ef3"
+  authority: amtlicher_vordruck
+  redistributable: true
+  erwartete_anker: ['Kirchensteuer', 'Berufsausbildung']
+  verwendet_in:
+    - ""

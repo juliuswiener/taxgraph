@@ -1,0 +1,319 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anlage Kind 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                                                  2025
+                    Name
+
+               1
+                                                                                                                                      Anlage Kind
+                    Vorname                                                                                                           Für jedes Kind bitte eine eigene Anlage
+                                                                                                                                      Kind abgeben.
+               2
+                                                                                                                                       Daten für die mit      gekennzeichneten
+                                                                                                           lfd. Nr.                   Zeilen liegen im Regelfall vor und müssen
+               3    Steuernummer                                                                           der Anlage                          nicht eingetragen werden.
+
+
+
+202500302201
+                                                                                                                                             – Bitte Anleitung beachten. –
+
+
+                    Angaben zum Kind                                                                                                                                       36 / 37
+
+               4    Identifikationsnummer           01
+                    Vorname                                                                             ggf. abweichender Familienname
+
+               5
+                         Geburtsdatum                                                                                                                            EUR
+                                                                                                        Anspruch auf Kindergeld oder ver-
+               6         16                                                                             gleichbare Leistungen für 2025               15
+                                                                                                                                                                               ,–
+                    Für die Kindergeldfestsetzung zuständige Familienkasse
+
+               7
+                    Wohnsitz im Inland:
+                               vom                       bis       ggf. abweichende Adresse
+
+               8    00
+                    Wohnsitz im Ausland:
+                               vom                       bis       ggf. abweichende Adresse                                                          Staat (Kz 14)
+
+               9    07
+                    Kindschaftsverhältnis
+                  Kindschaftsverhältnis zur                    1 = leibliches Kind / Adoptivkind                                            1 = leibliches Kind / Adoptivkind
+                  steuerpflichtigen Person /                   2 = Pflegekind                       Kindschaftsverhältnis                   2 = Pflegekind
+               10 Ehemann / Person A         02                3 = Enkelkind / Stiefkind            zur Ehefrau / Person B       03         3 = Enkelkind / Stiefkind
+
+                    Kindschaftsverhältnis zu einer anderen Person
+                                                                                                                                        Dauer des Kindschaftsverhältnisses
+                    Name, Vorname                                                            Geburtsdatum dieser Person                 (Zeitraum vom – bis)
+
+               11                                                                                                                04
+                    Letzte bekannte Adresse                                                                                             Art des Kindschaftsverhältnisses
+                                                                                                                                            1 = leibliches Kind / Adoptivkind
+               12                                                                                                                           2 = Pflegekind
+                                                                                                                                             vom                       bis
+
+               13   Der andere Elternteil lebte im Ausland im Zeitraum                                                           37
+
+               14   Das Kindschaftsverhältnis zum anderen Elternteil ist durch dessen Tod erloschen am                           06
+                    Der Wohnsitz oder gewöhnliche Aufenthalt des anderen Elternteils ist nicht zu ermitteln oder                            1 = Ja
+               15   der Vater des Kindes ist amtlich nicht feststellbar                                                          05
+                    Angaben für ein volljähriges Kind
+                    Das Kind
+                    - befand sich in Schul-, Hochschul- oder Berufsausbildung,
+                    - befand sich in einer Übergangszeit von höchstens vier Monaten (z. B. zwischen zwei Ausbildungsabschnitten),
+                    - konnte eine Berufsausbildung mangels Ausbildungsplatzes nicht beginnen oder fortsetzen und / oder
+                    - hat ein freiwilliges soziales oder ökologisches Jahr (Jugendfreiwilligendienstegesetz), eine Freiwilligentätigkeit im Rahmen des Euro-
+                    päischen Solidaritätskorps, einen entwicklungspolitischen Freiwilligendienst, einen Freiwilligendienst aller Generationen (§ 2 Abs. 1a
+                    SGB VII), einen Internationalen Jugendfreiwilligendienst, Bundesfreiwilligendienst oder einen anderen Dienst im Ausland (§ 5 Bundes-
+                    freiwilligendienstgesetz) geleistet.
+
+                    Folgen einzelne Abschnitte unmittelbar aufeinander, sind sie zu einem Zeitraum zusammenzufassen.
+
+
+               16   1. Zeitraum vom – bis                                                          80
+                    Erläuterungen zum 1. Be-
+               17   rücksichtigungszeitraum
+
+               18   2. Zeitraum vom – bis                                                          81
+                    Erläuterungen zum 2. Be-
+               19   rücksichtigungszeitraum
+                    Das Kind war ohne Beschäftigung und bei einer Agentur für Ar-
+               20   beit als arbeitsuchend gemeldet (Zeitraum vom – bis)          82
+                    Das Kind war wegen einer vor Vollendung des 25. Lebensjah-
+                    res eingetretenen Behinderung außerstande, sich selbst finanzi-
+                    ell zu unterhalten (Zeitraum vom – bis)
+               21   – Bitte Anleitung beachten. –                                                  83
+
+
+                              2025AnlKind021NET                                         - September 2025 -                                   2025AnlKind021NET
+         Steuernummer, Name und Vorname, lfd. Nr. der Anlage
+
+
+     Angaben zur Erwerbstätigkeit eines volljährigen Kindes
+     (nur bei Eintragungen in Zeile 16)
+                                                                                                                                              1 = Ja
+22   Das Kind hat bereits eine erstmalige Berufsausbildung oder ein Erststudium abgeschlossen                                      84         2 = Nein
+                                                                                                                                              1 = Ja
+23   Falls Zeile 22 mit „Ja“ beantwortet wurde: Das Kind war erwerbstätig (kein Ausbildungsdienstverhältnis)                                  2 = Nein
+
+
+     Falls Zeile 23 mit „Ja“ beantwortet wurde:
+
+
+                                                                                                                                                            202500302202
+   Das Kind übte eine / mehrere ge-                                  Beschäftigungszeitraum vom - bis       (Vereinbarte) regelmäßige
+   ringfügige Beschäftigung(en) i. S. d.                  1 = Ja                                            wöchentliche Arbeitszeit der
+24 §§ 8, 8a SGB IV (sog. Minijob) aus                     2 = Nein                                          Tätigkeit(en) in Stunden
+                                                                     Erwerbszeitraum vom - bis              (Vereinbarte) regelmäßige
+   Das Kind übte andere Erwerbstätig-                     1 = Ja                                            wöchentliche Arbeitszeit der
+25 keiten aus                                             2 = Nein                                          Tätigkeit(en) in Stunden
+     Angaben zur Kinderzulage bei steuerlicher Förderung von Altersvorsorgebeiträgen (sog. Riester-                                                 39
+     Verträge)
+     – Eintragungen sind nur erforderlich, wenn Sie auf der Anlage AV einen zusätzlichen Sonderausgabenabzug für Altersvorsorgebeiträ-
+     ge beantragen. –
+                                                                                                        1 = Steuerpflichtige Person / Ehemann / Person A
+     Welche Person hat für 2025 Anspruch auf die Kinderzulage für dieses Kind?                          2 = Ehefrau / Person B
+     – Wurde die Kinderzulage im Antrag auf Altersvorsorgezulage beansprucht, müssen die                3 = andere Person
+26   Angaben übereinstimmen. –                                                             501          4 = keine Person (kein Anspruch auf Kinderzulage)
+     Beiträge zur inländischen Kranken- und Pflegeversicherung
+     (Nicht in der Anlage Vorsorgeaufwand enthalten)
+     Aufwendungen von mir / uns als Versicherungsnehmer geschuldet und von mir / uns getragen
+                                                                                                                                      EUR
+
+27   Beiträge zu Krankenversicherungen des Kindes (nur Basisabsicherung, keine Wahlleistungen)                          66                           ,–
+28   Beiträge zur sozialen Pflegeversicherung und / oder zur privaten Pflege-Pflichtversicherung                        67                           ,–
+29   Von den Versicherungen laut den Zeilen 27 und / oder 28 erstattete Beträge                                         68                           ,–
+30
+     Über die Basisabsicherung hinausgehende Beiträge zu Kranken- und Pflegeversicherungen des Kindes
+     (z. B. für Wahlleistungen, Zusatzversicherungen) abzüglich erstatteter Beiträge                                      69                         ,–
+     Aufwendungen vom Kind als Versicherungsnehmer geschuldet und von mir / uns getragen
+
+31   Beiträge zu Krankenversicherungen des Kindes (nur Basisabsicherung, keine Wahlleistungen)                            70                         ,–
+32       In Zeile 31 enthaltene Beiträge, aus denen sich ein Anspruch auf Krankengeld ergibt                              71                         ,–
+33   Beiträge zur sozialen Pflegeversicherung und / oder zur privaten Pflege-Pflichtversicherung                          72                         ,–
+34   Von den Versicherungen laut den Zeilen 31 und / oder 33 erstattete Beträge                                           73                         ,–
+35       In Zeile 34 enthaltene Beiträge, aus denen sich ein Anspruch auf Krankengeld ergibt                              74                         ,–
+36   Zuschuss von dritter Seite zu den Beiträgen laut den Zeilen 31 und / oder 33 (z. B. nach § 13a BAföG)                75                         ,–
+     Beiträge zur ausländischen Kranken- und Pflegeversicherung
+     (Nicht in der Anlage Vorsorgeaufwand enthalten)
+   Aufwendungen von mir / uns / dem Kind als Versicherungsnehmer geschuldet und von mir / uns getragen
+   Beiträge (abzüglich steuerfreier Zuschüsse und / oder Erstattungen) zu ausländischen Kranken- und Pfle-
+   geversicherungen des Kindes, die mit inländischen gesetzlichen Kranken- und Pflegeversicherungen ver-                                EUR
+   gleichbar sind (nur Basisabsicherung) – Über die Basisabsicherung hinausgehende Beiträge, die von mir / uns als
+37 Versicherungsnehmer geschuldet und getragen wurden, in Zeile 30 eintragen –                                     89                                ,–
+38       In Zeile 37 enthaltene Beiträge, aus denen sich ein Anspruch auf Krankengeld ergibt                              90                         ,–
+
+
+
+
+            2025AnlKind022NET                                                                                           2025AnlKind022NET
+                      Steuernummer, Name und Vorname, lfd. Nr. der Anlage
+
+
+                    Übertragung des Kinderfreibetrags / des Freibetrags für den Betreuungs- und Erziehungs- oder Ausbil-
+                    dungsbedarf
+                  Ich beantrage den vollen Kinderfreibetrag und den vollen Freibetrag für den Betreuungs- und Erziehungs- oder
+                  Ausbildungsbedarf, weil der andere Elternteil
+                    – seiner Unterhaltsverpflichtung nicht zu mindestens 75 % nachkommt oder                                                                                   1 = Ja
+               39   – mangels Leistungsfähigkeit nicht unterhaltspflichtig ist                                                                                      36
+                                                                                                                                                         vom                    bis
+                      Falls die Frage in Zeile 39 mit „Ja“ beantwortet wurde: Es wurden Unterhaltsleistungen
+               40     nach dem Unterhaltsvorschussgesetz gezahlt für den Zeitraum                                                             38
+
+
+202500302203
+                  Ich beantrage den vollen Freibetrag für den Betreuungs- und Erziehungs-
+                  oder Ausbildungsbedarf, weil das minderjährige Kind bei dem anderen El-              1 = Ja
+               41 ternteil nicht gemeldet war.                                               39                                               43
+                  Nur beim Stief- / Großelternteil: Ich beantrage / Wir beantragen die Über-                                                       Zeitraum der Haushaltszugehörigkeit /
+                  tragung des Kinderfreibetrags und des Freibetrags für den Betreuungs-                                                                   Unterhaltsverpflichtung
+                  und Erziehungs- oder Ausbildungsbedarf, weil ich / wir das Kind in mei-                                                               vom                    bis
+                  nem / unserem Haushalt aufgenommen habe(n) oder ich / wir als Großel-                1 = Ja
+               42 ternteil gegenüber dem Kind unterhaltspflichtig bin / sind.                76                                               77
+                  Nur beim Stief- / Großelternteil: Der Kinderfreibetrag und der Freibetrag für den Be-          1 = Zustimmung eines Elternteils liegt vor
+               43 treuungs- und Erziehungs- oder Ausbildungsbedarf sind laut Anlage K zu übertragen. 41          2 = Zustimmungen beider Elternteile liegen vor
+                  Nur bei den berechtigten Elternteilen: Der Übertragung des Kinderfreibetrags und des Freibetrags für den Betreu-
+                                                                                                                                       40           1 = Ja
+               44 ungs- und Erziehungs- oder Ausbildungsbedarf auf den Stief- / Großelternteil wurde laut Anlage K zugestimmt.
+
+                    Entlastungsbetrag für Alleinerziehende
+                                                                                                                                                         vom                    bis
+
+               45   Das Kind war mit mir in der gemeinsamen Wohnung gemeldet im Zeitraum                                                      42
+
+               46   Für das Kind wurde mir Kindergeld ausgezahlt im Zeitraum                                                                  44
+                  Außer mir war(en) in der gemeinsamen Wohnung eine /
+                  mehrere volljährige Person(en) gemeldet, für die (zeitwei-
+                  se) kein Anspruch auf Kindergeld oder Freibeträge für Kin-                                1 = Ja         Falls „Ja“
+               47 der bestand.                                               46                             2 = Nein       (Zeitraum)         47
+                  Es bestand eine Haushaltsgemeinschaft mit mindestens
+                  einer weiteren volljährigen Person, für die (zeitweise) kein
+                  Anspruch auf Kindergeld oder Freibeträge für Kinder be-                                   1 = Ja         Falls „Ja“
+               48 stand.                                                       49                           2 = Nein       (Zeitraum)         50
+                    Name, Vorname (weitere Personen bitte in einer gesonderten Aufstellung angeben)
+
+               49
+                    Verwandtschaftsverhältnis                                                                Beschäftigung / Tätigkeit
+
+               50
+
+                    Nur bei Zusammenveranlagung im Jahr der Eheschließung, der Trennung oder des Todes eines Elternteils:
+                                                                                                                                                   1 = Ehemann / Person A
+               51   Der Antrag auf einen Entlastungsbetrag für Alleinerziehende wird gestellt für                                                  2 = Ehefrau / Person B
+                    Freibetrag zur Abgeltung eines Sonderbedarfs bei Berufsausbildung eines volljährigen Kindes
+                                                                                                        1. Zeitraum                                       2. Zeitraum
+                                                                                                      vom                  bis                     vom
+
+               52   Das Kind war auswärtig untergebracht im Zeitraum 85                                                                  86
+                    Anschrift(en), Staat(en) – falls im Ausland
+
+               53
+
+                                                                                                                                                                    87         1 = Ja
+               54   Es handelte sich zumindest zeitweise um eine auswärtige Unterbringung im Ausland
+                  Nur bei nicht zusammen veranlagten Eltern:
+                  Laut gesondertem gemeinsamen Antrag ist der Freibetrag zur Abgeltung eines Sonderbedarfs bei Berufsausbildung in
+               55 einem anderen Verhältnis als je zur Hälfte aufzuteilen. Der bei mir zu berücksichtigende Anteil beträgt (in %)   88
+                    Schulgeld (Privatschule oder Schule in freier Trägerschaft)
+                    – ohne Aufwendungen für die Beherbergung, Betreuung und Verpflegung des Kindes –
+                                                                                                                                                                berücksichtigungsfähige
+                                                                                                                                                               Gesamtaufwendungen der
+                                                                                                                                                                         Eltern
+                    Bezeichnung der Schule oder deren Träger                                                                                                           EUR
+
+               56                                                                                                                                      24                             ,–
+                    Nur bei nicht zusammen veranlagten Eltern:
+                                                                                                                                                                         EUR
+
+               57   Das von mir übernommene Schulgeld beträgt                                                                                            56                             ,–
+                  Laut gesondertem gemeinsamen Antrag ist für das Kind der Höchstbetrag für das Schulgeld in einem anderen Ver-
+               58 hältnis als je zur Hälfte aufzuteilen. Der bei mir zu berücksichtigende Anteil beträgt (in %)                                                          57
+
+
+
+
+                             2025AnlKind023NET                                                                                                         2025AnlKind023NET
+         Steuernummer, Name und Vorname, lfd. Nr. der Anlage
+
+
+     Übertragung des Behinderten- und / oder Hinterbliebenen-Pauschbetrags
+     – bei erstmaliger Beantragung / Änderung bitte Nachweis in Kopie einreichen –
+     Die Übertragung des Behinderten-Pauschbetrags wird beantragt:
+
+     Ausweis / (Renten-)bescheid / Bescheinigung
+          gültig von                 gültig bis                unbefristet gültig              Grad der Behinderung
+
+59                                                                                        25
+
+
+                                                                                                                                                                     202500302204
+     Das Kind ist
+                                                                                                                                                       1 = Ja
+60     – erheblich gehbehindert (Merkzeichen „G“) / außergewöhnlich gehbehindert (Merkzeichen „aG“)
+       – blind / taubblind / ständig hilflos (Merkzeichen „Bl“, „TBl“ und / oder „H“), schwerstpflegebedürftig (Pflegegrad                             1 = Ja
+61       4 oder 5)                                                                                                                           55
+
+                                                                                                                                             26        1 = Ja
+62   Die Übertragung des Hinterbliebenen-Pauschbetrags wird beantragt:
+   Nur bei nicht zusammen veranlagten Eltern:
+   Laut gesondertem gemeinsamen Antrag sind die für das Kind zu gewährenden Pauschbeträge für Behinderte / Hinter-
+   bliebene in einem anderen Verhältnis als je zur Hälfte aufzuteilen. Der bei mir zu berücksichtigende Anteil beträgt
+63 (in %)                                                                                                              28
+
+     Übertragung der behinderungsbedingten Fahrtkostenpauschale
+     – bei erstmaliger Beantragung / Änderung bitte Nachweis in Kopie einreichen –
+     Die Übertragung der behinderungsbedingten Fahrtkostenpauschale wird beantragt.
+     Das Kind erfüllt die nachfolgenden Voraussetzungen:
+          Das Kind hat einen Grad der Behinderung von mindestens 80 oder einen Grad der Behinderung von mindes-
+64        tens 70 und Merkzeichen „G“                                                                                                        91
+          Das Kind ist außergewöhnlich gehbehindert / blind / taubblind / ständig hilflos (Merkzeichen „aG“ / „Bl“ / „TBl“
+65        und / oder „H“), schwerstpflegebedürftig (Pflegegrad 4 oder 5)                                                                     92
+
+   Nur bei nicht zusammen veranlagten Eltern:
+   Laut gesondertem gemeinsamen Antrag ist die für das Kind zu gewährende behinderungsbedingte Fahrtkostenpau-
+66 schale in einem anderen Verhältnis als je zur Hälfte aufzuteilen. Der bei mir zu berücksichtigende Anteil beträgt (in %) 45
+
+     Kinderbetreuungskosten
+     – ohne Aufwendungen für die Verpflegung, den (Nachhilfe-) Unterricht, die Vermittlung besonderer Fähigkeiten, die sportlichen und
+     anderen Freizeitbetätigungen des Kindes –
+                                                                                                                                        berücksichtigungsfähige
+                                                                                                                                       Gesamtaufwendungen der
+                                                                                                                                                 Eltern
+     Art der Dienstleistung, Name und Anschrift des Dienstleisters                               vom                  bis                     EUR
+
+67                                                                                                                                51                       ,–
+     Steuerfreier Ersatz / Erstattungen
+                                                                                                 vom                  bis                     EUR
+     Steuerfreier Ersatz (z. B. vom Arbeitgeber), Erstattungen
+68                                                                                                                                79                       ,–
+     Angaben zum Haushalt
+                                                               vom                  bis          Das Kind gehörte zu un-           vom
+   Es bestand ein gemeinsamer                                                                    serem Haushalt im Zeit-
+69 Haushalt der Elternteile im Zeitraum                                                          raum
+                                                                                                 Das Kind gehörte zu
+   Es bestand kein gemeinsamer                                                                   meinem Haushalt im
+70 Haushalt der Elternteile im Zeitraum                                                          Zeitraum
+                                                                                                 Das Kind gehörte zum
+                                                                                                 Haushalt des anderen
+71                                                                                               Elternteils im Zeitraum
+     Nur bei nicht zusammen veranlagten Eltern:
+                                                                                                                                         berücksichtigungsfähige
+                                                                                                                                             Aufwendungen
+                                                                                                     vom                    bis                EUR
+
+72
+   Ich habe Kinderbetreuungskosten in folgender Höhe getragen                                                                                                   ,–
+     Laut übereinstimmendem Antrag ist für das Kind der Höchstbetrag für die Kinderbetreuung in einem anderen Verhältnis
+73   als je zur Hälfte aufzuteilen. Der bei mir zu berücksichtigende Anteil beträgt (in %)
+
+
+
+
+             2025AnlKind024NET                                                                                                    2025AnlKind024NET
+

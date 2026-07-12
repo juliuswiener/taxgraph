@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage Vorsorgeaufwand 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "vorsorgeaufwand_2025.txt"
+  pdf_datei: "vorsorgeaufwand_2025.pdf"
+  sha256: "4008f2acef9ea00810da400a937c3dfaf448ef6cffe7bd3e6037c8bc3966fe01"
+  pdf_sha256: "c5d5230a28df32136697b68f04c3c21ec283d42b017e6097d8efee9b6ac5913d"
+  authority: amtlicher_vordruck
+  redistributable: true
+  erwartete_anker: ['Vorsorgeaufwendungen', 'Krankenversicherung']
+  verwendet_in:
+    - ""

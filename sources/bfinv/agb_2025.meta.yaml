@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage Außergewöhnliche Belastungen 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "agb_2025.txt"
+  pdf_datei: "agb_2025.pdf"
+  sha256: "1f5d7efb7af066a5e6cf1725239ea126e30a4998113fb91bc473ee5bc4f7379a"
+  pdf_sha256: "5c7e0e2d8e9ed3eb8eb0d1ef7ce2824aa07b487704c24e4c8fe9c7c52a7a0ade"
+  authority: amtlicher_vordruck
+  redistributable: true
+  erwartete_anker: ['Außergewöhnliche Belastungen', 'zumutbaren Belastung']
+  verwendet_in:
+    - ""

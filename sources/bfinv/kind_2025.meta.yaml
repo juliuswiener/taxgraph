@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage Kind 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "kind_2025.txt"
+  pdf_datei: "kind_2025.pdf"
+  sha256: "5bd682bebcb7630308f04ed265f084ff1eb5877131b5e51827cffefca1f78673"
+  pdf_sha256: "046e6cfa68efaa0be4c091cbae342300d42e7983417e705ede014fa0cde3d121"
+  authority: amtlicher_vordruck
+  redistributable: true
+  erwartete_anker: ['Kinderfreibetrag', 'Kindergeld']
+  verwendet_in:
+    - ""

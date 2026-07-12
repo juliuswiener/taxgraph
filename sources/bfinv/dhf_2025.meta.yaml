@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage N-Doppelte Haushaltsführung 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "dhf_2025.txt"
+  pdf_datei: "dhf_2025.pdf"
+  sha256: "a37dfc437bf4f2c5c21bd40d719fd20577628b842f6904953a0801780d5d7c43"
+  pdf_sha256: "e436cf0d723433c1d9206027d5d83427ef2ead0376f5e56a672e7a73460baec2"
+  authority: amtlicher_vordruck
+  redistributable: true
+  erwartete_anker: ['doppelte Haushaltsführung', 'Familienheimfahrten']
+  verwendet_in:
+    - ""

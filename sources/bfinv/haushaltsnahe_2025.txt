@@ -1,0 +1,89 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anlage Haushaltsnahe Aufwendungen 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                                  2025
+                    Name
+
+               1
+                                                                                                                        Anlage
+                    Vorname
+                                                                                                                        Haushaltsnahe
+               2
+
+               3    Steuernummer
+                                                                                                                        Aufwendungen
+                                                                                                                        Diese Anlage ist bei Zusammen-
+
+
+202500338201
+                    Haushaltsnahe Beschäftigungsverhältnisse, Dienstleistungen                                          veranlagung von Ehegatten / Lebens-
+                                                                                                                        partnern gemeinsam auszufüllen.
+                    und Handwerkerleistungen
+                    Steuerermäßigung für Aufwendungen                                                                                                        18
+
+                    Geringfügige Beschäftigungen im Privathaushalt – sog. Minijobs –
+                                                                                                                                    Aufwendungen (abzüglich
+                                                                                                                                         Erstattungen)
+                    Art der Tätigkeit                                                                                                       EUR
+
+               4                                                                                                            202                              ,–
+                    Haushaltsnahe Beschäftigungsverhältnisse / Dienstleistungen
+                    – sozialversicherungspflichtige Beschäftigungen im Privathaushalt
+                    – haushaltsnahe Dienstleistungen, Hilfe im eigenen Haushalt
+                    – Pflege- und Betreuungsleistungen im Haushalt, bei eigener Heimunterbringung in den Heimkosten enthaltene Aufwendungen für
+                      Dienstleistungen, die mit denen einer Haushaltshilfe vergleichbar sind, sowie das in Zeile 28 der Anlage Außergewöhnliche Belas-
+                      tungen als Erstattung für häusliche Pflege- und Betreuungskosten berücksichtigte Pflegegeld (§ 37 SGB XI) / Pflegetagegeld
+                                                                                                                                 Aufwendungen (abzüglich
+                                                                                                                                      Erstattungen)
+                    Art der Tätigkeit / Aufwendungen                                                                                        EUR
+
+               5                                                                                                            212                              ,–
+                    Handwerkerleistungen
+                    für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen im eigenen Haushalt
+                    (ohne Handwerkerleistungen, für die eine öffentliche Förderung durch zinsverbilligte Darlehen oder steuerfreie Zuschüsse [z. B. KfW-
+                    Bank, BAFA, landeseigener Förderbanken oder Gemeinden] oder für die eine Steuerermäßigung für energetische Maßnahmen nach
+                    § 35c EStG in Anspruch genommen wird)
+                                                                                               Rechnungsbeträge (bei        darin enthaltene Lohnanteile,
+                                                                                              Eintragungen in Zeile 10       Maschinen- und Fahrtkosten
+                                                                                                       nur anteilig)            inklusive Umsatzsteuer
+                    Art der Aufwendungen                                                               EUR                                  EUR
+
+               6                                                                                                      ,–                                     ,–
+               7                                                                                                      ,–      +                              ,–
+               8                                                                                                      ,–      +                              ,–
+                    Summe steuerlich berücksichtigungsfähiger Lohnanteile, Maschinen- und Fahrtkosten inklusive
+               9    Umsatzsteuer                                                                                      214 =                                  ,–
+                    Nur bei Alleinstehenden und Eintragungen in den Zeilen 39 bis 41 der Anlage Außergewöhnliche Belastungen
+                    und / oder in den Zeilen 4 bis 9 der Anlage Haushaltsnahe Aufwendungen:
+                    Es bestand ganzjährig ein gemeinsamer Haushalt mit einer oder mehreren anderen alleinstehenden Person(en):
+               10   Anzahl der weiteren Personen im Haushalt                                                                               223
+                    Name, Vorname, Geburtsdatum
+
+               11
+
+                    Nur bei Alleinstehenden oder Einzelveranlagung von Ehegatten / Lebenspartnern und Eintragungen in den Zei-
+                    len 39 bis 41 der Anlage Außergewöhnliche Belastungen und / oder in den Zeilen 4 bis 9 der Anlage Haushaltsna-
+                    he Aufwendungen:
+                  Laut einzureichendem gemeinsamen Antrag ist der Höchstbetrag für die Aufwendungen in einem anderen Verhältnis als je
+                  zur Hälfte aufzuteilen:
+                    – Der bei mir zu berücksichtigende Anteil am Höchstbetrag für Aufwendungen laut Zeile 39 der Anlage Außer-
+               12     gewöhnliche Belastungen und / oder Zeile 4 der Anlage Haushaltsnahe Aufwendungen beträgt                  224    %
+                    – Der  bei mir zu berücksichtigende Anteil am Höchstbetrag für Aufwendungen laut Zeile 40 der Anlage Außer-
+               13     gewöhnliche Belastungen und / oder Zeile 5 der Anlage Haushaltsnahe Aufwendungen beträgt                  225    %
+                    – Der bei mir zu berücksichtigende Anteil am Höchstbetrag für Aufwendungen laut Zeile 41 der Anlage Außer-
+               14     gewöhnliche Belastungen und / oder Zeile 9 der Anlage Haushaltsnahe Aufwendungen beträgt                  226    %
+
+                    Nur in Fällen der Zusammenveranlagung oder Einzelveranlagung von Ehegatten / Lebenspartnern und Eintragun-
+                    gen in den Zeilen 39 bis 41 der Anlage Außergewöhnliche Belastungen und / oder in den Zeilen 4 bis 9 der Anlage
+                    Haushaltsnahe Aufwendungen:
+                                                                                                              Steuerpflichtige Person /
+                                                                                                                Ehemann / Person A         Ehefrau / Person B
+                  Es wurde 2025 ein gemeinsamer Haushalt begründet oder aufgelöst und für einen Teil
+                                                                                                               219         1 = Ja         220       1 = Ja
+               15 des Kalenderjahres ein Einzelhaushalt geführt
+
+                             2025Anl35a381NET                                  - September 2025 -                                   2025Anl35a381NET
+

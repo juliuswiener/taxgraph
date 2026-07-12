@@ -1,0 +1,229 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anlage Vorsorgeaufwand 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                                           2025
+                    Name
+
+                1
+                                                                                                                                 Anlage Vorsor-
+                    Vorname
+                                                                                                                                 geaufwand
+                2
+                                                                                                                                 Diese Anlage ist bei Zusammen-
+                                                                                                                                 veranlagung von Ehegatten / Lebens-
+                3   Steuernummer                                                                                                 partnern gemeinsam auszufüllen.
+
+
+202500324201
+                                                                                                                                   Daten für die mit      gekennzeichneten
+                                                                                                                                  Zeilen liegen im Regelfall vor und müssen
+                    Angaben zu Vorsorgeaufwendungen                                                                                        nicht eingetragen werden.
+                                                                                                                                         – Bitte Anleitung beachten. –
+
+
+                    Beiträge zur Altersvorsorge                                                                                                                      52
+                                                                                                 Steuerpflichtige Person / Ehemann /
+                                                                                                               Person A                        Ehefrau / Person B
+                                                                                                                EUR                                    EUR
+
+                4   Arbeitnehmeranteil laut Nr. 23 a / b der Lohnsteuerbescheinigung              300                          ,–      400                            ,–
+                    Beiträge zur landwirtschaftlichen Alterskasse; zu berufsständischen
+                    Versorgungseinrichtungen, die den gesetzlichen Rentenversicherun-
+                    gen vergleichbare Leistungen erbringen (abzüglich steuerfreier Zu-
+                    schüsse laut Nr. 22 b der Lohnsteuerbescheinigung)
+                5   – ohne Beiträge, die in Zeile 4 geltend gemacht werden –                      301                         ,–       401                           ,–
+                    Beiträge zu gesetzlichen Rentenversicherungen
+                6   – ohne Beiträge, die in Zeile 4 geltend gemacht werden –                      302                         ,–       402                           ,–
+                  Erstattete Beiträge und / oder steuerfreie Zuschüsse zu den Zeilen 4
+                  bis 6 (ohne Zuschüsse, die von den Beiträgen laut Zeile 8 abzuzie-
+                7
+                  hen sind und ohne Zuschüsse laut den Zeilen 9 und 10)                           309                          ,–      409                            ,–
+                    Beiträge zu zertifizierten Basisrentenverträgen (sog. Rürup-Verträge)
+                    mit Laufzeitbeginn nach dem 31.12.2004 (abzüglich steuerfreier Zu-
+                    schüsse) – ohne Altersvorsorgebeiträge, die in der Anlage AV geltend ge-
+                8   macht werden –                                                                303                          ,–      403                            ,–
+                  Arbeitgeberanteil / -zuschuss laut Nr. 22 a / b der Lohnsteuerbeschei-
+                9 nigung                                                                 304                                   ,–      404                            ,–
+                    Arbeitgeberanteil zu gesetzlichen Rentenversicherungen im Rahmen
+               10   einer pauschal besteuerten geringfügigen Beschäftigung                        306                         ,–       406                           ,–
+                    Beiträge zur inländischen gesetzlichen Kranken- und Pflegeversicherung
+                                                                                                                EUR                                    EUR
+                    Arbeitnehmerbeiträge zu Krankenversicherungen laut Nr. 25 der
+               11   Lohnsteuerbescheinigung                                                       320                          ,–      420                            ,–
+                        In Zeile 11 enthaltene Beiträge, aus denen sich kein Anspruch auf
+               12       Krankengeld ergibt                                                322                                 ,–       422                           ,–
+                    Arbeitnehmerbeiträge zu sozialen Pflegeversicherungen laut Nr. 26
+               13   der Lohnsteuerbescheinigung                                                   323                          ,–      423                            ,–
+                    Zu den Zeilen 11 bis 13:
+
+                  Von der Kranken- und / oder sozialen Pflegeversicherung erstattete
+               14 Beiträge                                                                        324                          ,–      424                            ,–
+                      In Zeile 14 enthaltene Beiträge zur Krankenversicherung, aus
+                      denen sich kein Anspruch auf Krankengeld ergibt, und zur sozia-
+               15
+                      len Pflegeversicherung                                                      325                          ,–      425                            ,–
+                    Beiträge zu Krankenversicherungen                                                           EUR                                    EUR
+                    – ohne Beiträge, die in Zeile 11 geltend gemacht werden –
+                  (z. B. bei Rentnern, bei freiwillig gesetzlich versicherten Selbstzah-
+               16 lern)                                                                           326                          ,–      426                            ,–
+                        In Zeile 16 enthaltene Beiträge zur Krankenversicherung, aus
+               17       denen sich ein Anspruch auf Krankengeld ergibt                            328                         ,–       428                           ,–
+                    Beiträge zu sozialen Pflegeversicherungen
+                    – ohne Beiträge, die in Zeile 13 geltend gemacht werden –
+                    (z. B. bei Rentnern, bei freiwillig gesetzlich versicherten Selbstzah-
+               18   lern)                                                                         329                          ,–      429                            ,–
+                    Zu den Zeilen 16 bis 18:
+
+                    Von der Kranken- und / oder sozialen Pflegeversicherung erstattete
+               19   Beiträge                                                                      330                          ,–      430                            ,–
+                        In Zeile 19 enthaltene Beiträge zur Krankenversicherung, aus
+               20       denen sich ein Anspruch auf Krankengeld ergibt                            331                         ,–       431                           ,–
+                    Zuschuss zu den Beiträgen laut den Zeilen 16 und / oder 18
+                    – ohne Beträge laut den Zeilen 34 und 36 –
+               21   (z. B. von der Deutschen Rentenversicherung)                                  332                          ,–      432                            ,–
+                  Über die Basisabsicherung hinausgehende Beiträge zu Krankenver-                               EUR                                    EUR
+                  sicherungen (z. B. für Wahlleistungen, Zusatzversicherungen) abzüg-
+               22 lich erstatteter Beiträge                                                       338                         ,–       438                           ,–
+                           2025AnlVor241NET                                        - Oktober 2025 -                                       2025AnlVor241NET
+                                                                      -2-
+
+     Beiträge zur inländischen privaten Kranken- und Pflegeversicherung
+                                                                                Steuerpflichtige Person / Ehemann /
+                                                                                              Person A                        Ehefrau / Person B
+                                                                                               EUR                                    EUR
+   Beiträge zu privaten Krankenversicherungen (nur Basisabsicherung,
+23 keine Wahlleistungen)                                                        350                           ,–      450                            ,–
+24   Beiträge zu Pflege-Pflichtversicherungen                                   351                           ,–      451                            ,–
+
+                                                                                                                                                          202500324202
+     Zu den Zeilen 23 und 24:
+
+   Von der privaten Kranken- und / oder Pflege-Pflichtversicherung er-
+25 stattete Beiträge                                                            352                           ,–      452                            ,–
+   Zuschuss von dritter Seite zu den Beiträgen laut den Zeilen 23 und/
+26 oder 24 (z. B. von der Deutschen Rentenversicherung)                         353                           ,–      453                            ,–
+   Über die Basisabsicherung hinausgehende Beiträge zu Krankenver-
+   sicherungen (z. B. für Wahlleistungen, Zusatzversicherungen) und /
+   oder zu zusätzlichen Pflegeversicherungen abzüglich erstatteter Bei-
+27 träge                                                                        354                          ,–       454                           ,–
+     Beiträge zur ausländischen gesetzlichen oder privaten Kranken- und Pflegeversicherung
+   Beiträge (abzüglich steuerfreier Zuschüsse – ohne Beträge laut Zeile 34 –)                     EUR                                  EUR
+   zur Krankenversicherung, die mit einer inländischen Krankenversiche-
+28 rung vergleichbar ist (nur Basisabsicherung, keine Wahlleistungen)              333                          ,–    433                            ,–
+       In Zeile 28 enthaltene Beiträge zur Krankenversicherung, aus
+29     denen sich kein Anspruch auf Krankengeld ergibt                             334                          ,–    434                            ,–
+   Beiträge (abzüglich steuerfreier Zuschüsse – ohne Beträge laut Zeile 36 –)
+   zur sozialen Pflegeversicherung / Pflege-Pflichtversicherung, die mit
+30 einer inländischen Pflegeversicherung vergleichbar ist                          335                          ,–    435                            ,–
+     Zu den Zeilen 28 bis 30:
+
+   Von der Kranken- und / oder sozialen Pflegeversicherung / Pflege-
+31 Pflichtversicherung erstattete Beiträge                                         336                          ,–    436                            ,–
+        In Zeile 31 enthaltene Beiträge zur Krankenversicherung, aus
+        denen sich kein Anspruch auf Krankengeld ergibt, und zur sozialen
+32      Pflegeversicherung                                                         337                          ,–    437                            ,–
+   Über die Basisabsicherung hinausgehende Beiträge zu Krankenversi-
+   cherungen und zusätzlichen Pflegeversicherungen (z. B. für Wahlleis-
+33 tungen, Zusatzversicherungen) abzüglich erstatteter Beiträge                    339                          ,–    439                            ,–
+     Steuerfreie Arbeitgeberzuschüsse
+                                                                                               EUR                                    EUR
+   Gesetzliche Krankenversicherung laut Nr. 24 a der Lohnsteuerbe-
+34 scheinigung                                                                  360                           ,–      460                            ,–
+   Private Krankenversicherung laut Nr. 24 b der Lohnsteuerbescheini-
+35 gung                                                                         361                           ,–      461                            ,–
+   Gesetzliche Pflegeversicherung laut Nr. 24 c der Lohnsteuerbeschei-
+36 nigung                                                                       362                           ,–      462                            ,–
+     Als Versicherungsnehmer für andere Personen übernommene Kranken- und Pflege-
+     Versicherungsbeiträge
+     – „Andere Personen“ sind z. B. Kinder, für die kein Anspruch auf Kindergeld / Kinderfreibetrag besteht (bei Anspruch auf Kindergeld /
+     Kinderfreibetrag sind die Eintragungen in den Zeilen 26 bis 37 der Anlage Kind vorzunehmen). –
+              Identifikationsnummer der mitversicherten Person
+
+37    600
+     Name, Vorname, Geburtsdatum der mitversicherten Person
+
+38
+                                                                                                                             Steuerpflichtige Person /
+                                                                                                                            Ehegatten / Lebenspartner
+
+                                                                                                                                      EUR
+   Beiträge (abzüglich steuerfreier Zuschüsse) zu privaten Krankenversicherungen (nur Basisabsiche-
+39 rung, keine Wahlleistungen)                                                                                        601                            ,–
+40   Beiträge (abzüglich steuerfreier Zuschüsse) zu Pflege-Pflichtversicherungen
+                                                                                                                      602                            ,–
+     Zu den Zeilen 39 und 40:
+
+
+41   Von der privaten Kranken- und / oder Pflege-Pflichtversicherung erstattete Beiträge
+                                                                                                                      603                            ,–
+     Beiträge (abzüglich erstatteter Beiträge) zu privaten Kranken- und / oder Pflegeversicherungen (ohne
+42   Basisabsicherung, z. B. für Wahlleistungen, Zusatzversicherungen)                                                604                            ,–
+
+
+
+
+            2025AnlVor242NET                                                                                           2025AnlVor242NET
+                                                                                        -3-
+
+                    Weitere sonstige Vorsorgeaufwendungen
+                                                                                                  Steuerpflichtige Person / Ehemann /
+                                                                                                                Person A                         Ehefrau / Person B
+                                                                                                                    EUR                                  EUR
+                  Arbeitnehmerbeiträge zur Arbeitslosenversicherung laut Nr. 27 der
+               43 Lohnsteuerbescheinigung                                                         370                           ,–       470                            ,–
+
+
+202500324203
+                                                                                                                                                Steuerpflichtige Person /
+                                                                                                                                               Ehegatten / Lebenspartner
+
+                    Beiträge (abzüglich steuerfreier Zuschüsse und erstatteter Beiträge) zu
+                                                                                                                                                            EUR
+
+               44     – Versicherungen gegen Arbeitslosigkeit – ohne Beiträge, die in Zeile 43 geltend gemacht werden –                   500                           ,–
+               45     – freiwilligen eigenständigen Erwerbs- und Berufsunfähigkeitsversicherungen                                         501                           ,–
+                      – Unfall- und Haftpflichtversicherungen sowie Risikoversicherungen, die nur für den Todesfall eine
+               46       Leistung vorsehen                                                                                                 502                           ,–
+                      – Rentenversicherungen mit Kapitalwahlrecht und / oder Kapitallebensversicherungen mit einer Lauf-
+                        zeit von mindestens 12 Jahren sowie einem Laufzeitbeginn und der ersten Beitragszahlung vor
+               47       dem 1.1.2005                                                                                                      503                           ,–
+                      – Rentenversicherungen ohne Kapitalwahlrecht mit Laufzeitbeginn und erster Beitragszahlung vor
+                        dem 1.1.2005 (auch steuerpflichtige Beiträge zu Versorgungs- und Pensionskassen)
+               48       – ohne Altersvorsorgebeiträge, die in der Anlage AV geltend gemacht werden –                                      504                           ,–
+                    Ergänzende Angaben zu Vorsorgeaufwendungen
+                                                                                              Steuerpflichtige Person / Ehemann /
+                                                                                                            Person A                            Ehefrau / Person B
+                  Haben Sie zu Ihrer Krankenversicherung oder Ihren Krankheits-
+                  kosten Anspruch auf steuerfreie Zuschüsse, steuerfreie Arbeitge-
+               49 berbeiträge oder steuerfreie Beihilfen?                                   307          2 = Nein                       407        2 = Nein
+
+                    Es bestand 2025 keine gesetzliche Rentenversicherungspflicht
+                    aus dem aktiven Dienstverhältnis / aus der Tätigkeit
+                                                                                            380          1 = Ja                         480        1 = Ja
+               50 – als Beamter / Beamtin
+                  – als Vorstandsmitglied / GmbH-Gesellschafter-                                         1 = Ja                                    1 = Ja
+               51   Geschäftsführer/in                                                      381                                         481
+
+                                                                                            382          1 = Ja                         482        1 = Ja
+               52   – als (z. B. Praktikant/in, Student/in im Praktikum)
+
+               53     Tätigkeitsbezeichnung zu Zeile 52
+
+                    Aufgrund des genannten Dienstverhältnisses / der Tätigkeit be-                       1 = Ja                                    1 = Ja
+               54   stand hingegen eine Anwartschaft auf Altersversorgung                   383          2 = Nein                       483        2 = Nein
+
+
+                  Es wurde Arbeitslohn aus einem nicht aktiven Dienstverhältnis –
+                  insbesondere Betriebsrente / Werkspension – bezogen, bei dem
+                  es sich nicht um steuerbegünstigte Versorgungsbezüge (Zeile 11
+                  bis 16 der Anlage N) handelt.                                                          1 = Ja                                    1 = Ja
+               55 Bei Altersteilzeit ist hier keine Eintragung vorzunehmen.       385                                                   485
+
+
+
+
+                           2025AnlVor243NET                                                                                                   2025AnlVor243NET
+

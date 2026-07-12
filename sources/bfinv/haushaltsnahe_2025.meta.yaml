@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage Haushaltsnahe Aufwendungen 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "haushaltsnahe_2025.txt"
+  pdf_datei: "haushaltsnahe_2025.pdf"
+  sha256: "5ac98be49af8cfb0dd7241c4825eb04f82ebfee3e0cdd2bce362e1b69877aeaa"
+  pdf_sha256: "15658e81a35ab1cb56ed9a5e8959ccb26cc9a6c9dca4d8b19d4d263853088e0f"
+  authority: amtlicher_vordruck
+  redistributable: true
+  erwartete_anker: ['haushaltsnahe', 'Handwerkerleistungen']
+  verwendet_in:
+    - ""
