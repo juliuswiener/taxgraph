@@ -1,0 +1,68 @@
+# Tests § 3, § 4 SolzG - Solidaritaetszuschlag
+
+> Using Solzg
+
+Testfaelle fuer den Veranlagungsfall. Erwartungswerte synthetisch, gegen den
+Gesetzeswortlaut gerechnet (Rechenweg je Fall). Der Fall 20.351 -> 0,11 ist der
+Beweis der decimal-Form: die fruehere money-x-decimal-Fassung ergab hier 0,12
+(Klasse-5-Praezisionsfehler). Freigrenze ist eine Freigrenze - bei Gleichstand
+mit ihr faellt kein Zuschlag an.
+
+```catala
+#[test]
+declaration scope TestSolzgEinzel:
+  output t_freigrenze content money       # BMG = Freigrenze -> 0 (uebersteigt nicht)
+  output t_erster_cent content money       # 1 Euro darueber -> 0,11 (decimal-Beweis)
+  output t_milderungszone content money    # in der Milderungszone: 11,9 % greift
+  output t_zonengrenze content money        # nahe Zonenende ~37.838: Milderung knapp
+  output t_volle_55 content money           # ueber der Zone: volle 5,5 %
+
+scope TestSolzgEinzel:
+  # BMG 20.350 = Freigrenze (nicht splitting), uebersteigt nicht -> 0.
+  definition t_freigrenze equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $20350.00 -- splitting: false }).solidaritaetszuschlag
+  assertion t_freigrenze = $0.00
+
+  # BMG 20.351: Milderung 11,9 % x (20.351 - 20.350) = 0,119; Cent-Schnitt -> 0,11.
+  definition t_erster_cent equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $20351.00 -- splitting: false }).solidaritaetszuschlag
+  assertion t_erster_cent = $0.11
+
+  # BMG 25.000: min(5,5 % x 25.000 = 1.375; 11,9 % x 4.650 = 553,35) = 553,35.
+  definition t_milderungszone equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $25000.00 -- splitting: false }).solidaritaetszuschlag
+  assertion t_milderungszone = $553.35
+
+  # BMG 37.838 (nahe Zonenende): milderung 11,9 % x 17.488 = 2.081,072;
+  # regel 5,5 % x 37.838 = 2.081,09; min = milderung -> Cent-Schnitt 2.081,07.
+  definition t_zonengrenze equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $37838.00 -- splitting: false }).solidaritaetszuschlag
+  assertion t_zonengrenze = $2081.07
+
+  # BMG 45.000 (ueber der Zone): min(5,5 % x 45.000 = 2.475; 11,9 % x 24.650 =
+  # 2.933,35) = 2.475,00 (volle 5,5 %).
+  definition t_volle_55 equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $45000.00 -- splitting: false }).solidaritaetszuschlag
+  assertion t_volle_55 = $2475.00
+```
+
+Splitting-Faelle (§ 32a Abs. 5/6): die hoehere Freigrenze 40.700 gilt.
+
+```catala
+#[test]
+declaration scope TestSolzgSplitting:
+  output s_freigrenze content money        # BMG = Splitting-Freigrenze -> 0
+  output s_milderung content money          # darueber: Milderung mit 40.700-Freigrenze
+
+scope TestSolzgSplitting:
+  # Splitting-Freigrenze: BMG 40.700 uebersteigt nicht -> 0.
+  definition s_freigrenze equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $40700.00 -- splitting: true }).solidaritaetszuschlag
+  assertion s_freigrenze = $0.00
+
+  # BMG 60.000 splitting: min(5,5 % x 60.000 = 3.300; 11,9 % x (60.000-40.700) =
+  # 11,9 % x 19.300 = 2.296,70) = 2.296,70 (Milderung mit Splitting-Freigrenze).
+  definition s_milderung equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $60000.00 -- splitting: true }).solidaritaetszuschlag
+  assertion s_milderung = $2296.70
+```

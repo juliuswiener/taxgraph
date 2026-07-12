@@ -1085,6 +1085,13 @@ regeln:
 # Stufe B (Kaskade) wartet auf Julius' Formalisierer-Besetzungsentscheid.
 - rule_id: solzg_solidaritaetszuschlag
   norm: § 3, § 4 SolzG 1995
+  # Handschrift-Migration 2026-07-12 nach Klasse-5-Befund (Praezisions-Ordnung),
+  # Julius-Freigabe (c'). Als Handregel unter rules/estg/solzg/ implementiert
+  # (decimal-Form, clerk 20351->0,11 gruen); aus den Pipeline-Gates raus wie die
+  # anderen Handregeln. Geltungsbedingungen + Registry-Items BLEIBEN hier gueltig
+  # (sie gelten unabhaengig vom Implementierungsweg). Modell-Artefakte in
+  # pipeline/runs/produktion/solzg_solidaritaetszuschlag/ bleiben als Historie.
+  status: handgeschrieben
   quellen:
   - typ: gesetz
     label: "§ 3 SolzG 1995 (Bemessungsgrundlage, Freigrenze)"

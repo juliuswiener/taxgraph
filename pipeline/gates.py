@@ -387,9 +387,13 @@ def rundungs_lint_gate(catala_src: str | None,
 # decimal), Cent-Schnitt am Ende. Getrennt von rundungs_lint (Klasse 4: Richtung des
 # Schnitts) - hier zaehlt die ORDNUNG davor.
 # Vorregistrierung: reports/review/2026-07-12-praezisions-lint-vorregistrierung.md.
-# STUFE 1 (informativ, jetzt): confident-Befund -> INFO, kippt kein Gate. STUFE 2
-# (blockierend, erst nach Julius auf Stufe-1-Empirie): confident -> FAIL. Umschalter:
-_PRAEZISION_BLOCKIEREND = False
+# STUFE 1 (informativ): confident-Befund -> INFO, kippt kein Gate. STUFE 2
+# (blockierend): confident -> FAIL. Umschalter:
+# Stufe 2 aktiv seit 2026-07-12 (Julius-Freigabe): Stufe-1-Empirie war eindeutig
+# (Bestandssweep 21 Regeln -> nur solzg, 0 FP; Negativtests inkl. Fluss-Sensitivitaet
+# gruen), und solzg wurde zur decimal-Handregel migriert -> es blockiert keine aktive
+# Pipeline-Regel mehr. Der Negativ-Beleg existiert (die Modell-Form flaggte INFO).
+_PRAEZISION_BLOCKIEREND = True
 
 # Finaler Cent-Schnitt-Idiom: (truncate|round|floor|ceil) of ( <X> / $0.01 )
 # X = Ausdruck vor `/ $0.01`; [^\n]*? ueberspannt innere Klammern (lazy bis zum

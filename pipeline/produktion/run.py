@@ -394,7 +394,9 @@ def main() -> int:
         # Regeln, deren Zuschnitt offen ist, laufen nicht: ein Approval-Versuch
         # waere sinnlos, solange die Signatur den Norm-Ausschnitt verfehlt.
         # zuschnitt_ersetzt: durch Teilregeln abgeloeste Monolithen (Historie bleibt).
-        SKIP_STATUS = ("zuschnitt_offen", "zuschnitt_ersetzt")
+        # handgeschrieben: als Handregel unter rules/estg/ migriert (aus den Pipeline-
+        # Gates raus wie p32a/p04/p09; Registry + Geltungsbedingungen gelten weiter).
+        SKIP_STATUS = ("zuschnitt_offen", "zuschnitt_ersetzt", "handgeschrieben")
         uebersprungen = [r["rule_id"] for r in rules if r.get("status") in SKIP_STATUS]
         if uebersprungen:
             print(f"uebersprungen (status): {', '.join(uebersprungen)}")

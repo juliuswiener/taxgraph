@@ -333,9 +333,9 @@ PRAEZ_FIX = _scope(
 
 
 def test_praezisions_lint_flaggt_money_dec_vor_cent_schnitt():
-    # Stufe 1: confident-Befund ist INFO (kippt kein Gate), nicht FAIL/PASS.
+    # Stufe 2 (Default seit Julius-Freigabe 2026-07-12): confident-Befund -> FAIL.
     r = G.praezisions_lint_gate(PRAEZ_BUGGY)
-    assert r.status == G.INFO
+    assert r.status == G.FAIL
     assert "Klasse-5" in r.detail
 
 
@@ -356,7 +356,7 @@ def test_praezisions_lint_division_flaggt_wie_multiplikation():
         "  definition out equals\n"
         "    let anteil equals bmg / 2.0 in\n"
         "    (Decimal.truncate of (anteil / $0.01)) * $0.01")
-    assert G.praezisions_lint_gate(src).status == G.INFO
+    assert G.praezisions_lint_gate(src).status == G.FAIL
 
 
 def test_praezisions_lint_money_dec_NACH_schnitt_flaggt_nicht():
@@ -386,17 +386,20 @@ def test_praezisions_lint_inline_in_schnitt_flaggt():
     # money x decimal INLINE in der Schnitt-Expression selbst -> fliesst direkt hinein.
     src = _scope(
         "  definition out equals (Decimal.truncate of ((bmg * 0.119) / $0.01)) * $0.01")
-    assert G.praezisions_lint_gate(src).status == G.INFO
+    assert G.praezisions_lint_gate(src).status == G.FAIL
 
 
 def test_praezisions_lint_ohne_source_skip():
     assert G.praezisions_lint_gate(None).status == G.SKIP
 
 
-def test_praezisions_lint_stufe2_blockiert(monkeypatch):
-    # Stufe 2 (nach Julius): derselbe confident-Befund wird FAIL statt INFO.
-    monkeypatch.setattr(G, "_PRAEZISION_BLOCKIEREND", True)
-    assert G.praezisions_lint_gate(PRAEZ_BUGGY).status == G.FAIL
+def test_praezisions_lint_stufe1_fallback_informativ(monkeypatch):
+    # Der Stufe-1-Modus (informativ) bleibt per Umschalter erreichbar: confident-Befund
+    # -> INFO (kippt kein Gate) statt FAIL. Belegt beide Rollout-Stufen des einen Gates.
+    monkeypatch.setattr(G, "_PRAEZISION_BLOCKIEREND", False)
+    r = G.praezisions_lint_gate(PRAEZ_BUGGY)
+    assert r.status == G.INFO
+    assert "Stufe 1 informativ" in r.detail
     assert G.praezisions_lint_gate(PRAEZ_FIX).status == G.PASS
 
 
@@ -415,7 +418,7 @@ def test_praezisions_lint_definition_form_wird_erkannt():
            "    if bmg <= fg then $0.00\n"
            "    else (if normal <= milderung then normal else milderung)\n"
            "  definition solz equals (Decimal.truncate of (vor / $0.01)) * $0.01")
-    assert G.praezisions_lint_gate(src).status == G.INFO
+    assert G.praezisions_lint_gate(src).status == G.FAIL
 
 
 def test_praezisions_lint_geklammerte_money_differenz_wird_erkannt():
@@ -425,4 +428,4 @@ def test_praezisions_lint_geklammerte_money_differenz_wird_erkannt():
            "  output out content money\n  internal mild content money\nscope S:\n"
            "  definition mild equals (bmg - fg) * 0.119\n"
            "  definition out equals (Decimal.truncate of (mild / $0.01)) * $0.01")
-    assert G.praezisions_lint_gate(src).status == G.INFO
+    assert G.praezisions_lint_gate(src).status == G.FAIL

@@ -1,0 +1,111 @@
+# § 3, § 4 SolzG 1995 - Solidaritaetszuschlag (Veranlagungsfall)
+
+> Module Solzg
+
+Handschrift-Migration 2026-07-12 nach Klasse-5-Befund (Praezisions-Ordnung),
+Julius-Freigabe (c'). Zuvor lief die Regel durch die Doppelformalisierungs-
+Pipeline; ein Modell-Repair traf die decimal-Form nicht (money x decimal rundete
+auf Cent VOR dem finalen Schnitt -> 20.351 ergab 0,12 statt 0,11). Die
+Rechenlogik ist trivial und deterministisch, daher als Handregel im § 32a-Muster.
+Die Pipeline-Fassung bleibt als Historie unter
+`pipeline/runs/produktion/solzg_solidaritaetszuschlag/` erhalten.
+
+Konvention (wie § 32a): Gesetzestext in Prosa (deutsch), unmittelbar gefolgt von
+der Formalisierung. Bezeichner und Kommentare im Code englisch. Die gesamte
+Prozentrechnung laeuft in `decimal` (Euro-Einheiten); erst der finale Cent-
+Schnitt (§ 4 Satz 3) konvertiert nach `money`. So bleibt "Bruchteile eines Cents
+bleiben ausser Ansatz" praezise (kein Zwischenrunden auf Cent).
+
+Quellenmodell: authority = `gesetz`, redistributable = `true`. Grundlage ist
+§ 3, § 4 SolzG 1995; eingefrorener Wortlaut in
+`sources/gesetze-im-internet/solzg_1995_p3_2026-07-11.txt` und `..._p4_...txt`.
+
+## Geltungsbereich (MVP-Veranlagungsfall)
+
+Modelliert ist der Veranlagungsfall des § 3 Abs. 1 Nr. 1/2 i.V.m. Abs. 2:
+Bemessungsgrundlage ist die Einkommensteuer, die unter Beruecksichtigung der
+Kinderfreibetraege nach § 32 Abs. 6 EStG festzusetzen waere. Lohnsteuerabzug,
+Jahresausgleich und Kapitalertragsteuer (Abs. 2a/4/4a/5, § 32d Abs. 3/4 EStG)
+sind NICHT modelliert - diese Geltungsbedingungen fuehrt das Manifest weiter.
+
+## Datentyp
+
+`splitting` unterscheidet die beiden Freigrenzen des § 3 Abs. 3 Satz 1: die
+Faelle des § 32a Abs. 5 und 6 EStG (Zusammenveranlagung/Splitting) gegen die
+uebrigen Faelle.
+
+```catala
+declaration scope Solidaritaetszuschlag:
+  input bemessungsgrundlage content money
+  # true = Fall des § 32a Abs. 5/6 EStG (Splitting), sonst false
+  input splitting content boolean
+  # Freigrenze nach § 3 Abs. 3 Satz 1, in Euro (decimal)
+  internal freigrenze content decimal
+  # Bemessungsgrundlage in Euro als decimal - Ausgangspunkt der Prozentrechnung
+  internal bemessungsgrundlage_dec content decimal
+  # § 4 Satz 1: 5,5 % der Bemessungsgrundlage
+  internal regelbetrag content decimal
+  # § 4 Satz 2: 11,9 % des Unterschiedsbetrags (Milderungszone)
+  internal milderungsbetrag content decimal
+  # SolZ in Euro, volle decimal-Praezision - VOR dem Cent-Schnitt
+  internal solz_vor_cent_schnitt content decimal
+  output solidaritaetszuschlag content money
+```
+
+## § 3 Abs. 3 Satz 1: Freigrenze
+
+    (3) Der Solidaritaetszuschlag ist ... nur zu erheben, wenn die
+    Bemessungsgrundlage ... 1. in den Faellen des § 32a Absatz 5 und 6 des
+    Einkommensteuergesetzes 40 700 Euro, 2. in anderen Faellen 20 350 Euro
+    uebersteigt.
+
+Eine Freigrenze (kein Freibetrag): wird sie nicht ueberschritten, faellt kein
+Zuschlag an; wird sie ueberschritten, greift § 4 auf der vollen
+Bemessungsgrundlage (nicht nur auf dem uebersteigenden Teil).
+
+```catala
+scope Solidaritaetszuschlag:
+  definition freigrenze equals
+    if splitting then 40700.0 else 20350.0
+
+  definition bemessungsgrundlage_dec equals bemessungsgrundlage / $1.00
+```
+
+## § 4: Zuschlagssatz und Milderungszone
+
+    Der Solidaritaetszuschlag betraegt 5,5 Prozent der Bemessungsgrundlage. Er
+    betraegt nicht mehr als 11,9 Prozent des Unterschiedsbetrages zwischen der
+    Bemessungsgrundlage ... und der ... massgebenden Freigrenze. Bruchteile eines
+    Cents bleiben ausser Ansatz.
+
+Satz 1 gibt den Regelsatz 5,5 %, Satz 2 deckelt ihn in der Uebergangszone auf
+11,9 % des Unterschiedsbetrags (Bemessungsgrundlage minus Freigrenze). Der
+niedrigere der beiden Betraege gilt. Beide Prozentsaetze werden in `decimal`
+gerechnet; Satz 3 (Cent-Schnitt) wirkt erst ganz am Ende.
+
+```catala
+scope Solidaritaetszuschlag:
+  definition regelbetrag equals bemessungsgrundlage_dec * 0.055
+
+  definition milderungsbetrag equals
+    (bemessungsgrundlage_dec - freigrenze) * 0.119
+
+  definition solz_vor_cent_schnitt equals
+    if bemessungsgrundlage_dec <= freigrenze then 0.0
+    else if regelbetrag <= milderungsbetrag then regelbetrag
+    else milderungsbetrag
+```
+
+## § 4 Satz 3: Bruchteile eines Cents bleiben ausser Ansatz
+
+Abschnitt (floor) auf volle Cent. Die Rechnung lief bis hier in `decimal`; erst
+jetzt wird auf Cent geschnitten und nach `money` konvertiert. `Decimal.truncate`
+schneidet die Nachkommastellen ab; fuer den nichtnegativen SolZ entspricht das
+dem gesetzlichen "ausser Ansatz". Das Zwischenprodukt wird NIE vorher auf Cent
+gerundet - genau daran scheiterte die Pipeline-Fassung (Klasse-5-Praezision).
+
+```catala
+scope Solidaritaetszuschlag:
+  definition solidaritaetszuschlag equals
+    (Decimal.truncate of (solz_vor_cent_schnitt * 100.0)) / 100.0 * $1.00
+```
