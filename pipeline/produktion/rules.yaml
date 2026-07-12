@@ -1829,3 +1829,163 @@ regeln:
   - {zu_versteuerndes_einkommen: 30000, progressionseinkuenfte: 10000, est_auf_erhoehte_bemessung: 7209}
   - {zu_versteuerndes_einkommen: 30000, progressionseinkuenfte: 0, est_auf_erhoehte_bemessung: 4217}
   - {zu_versteuerndes_einkommen: 10000, progressionseinkuenfte: 5000, est_auf_erhoehte_bemessung: 435}
+# Charge-5 Paket A (Instructor-Freigabe 2026-07-13, reports/review/2026-07-13-charge5-paketA-p33b-p24a.md):
+# § 33b-Trio - drei Pauschbeträge, je eigene Teilregel (Instructor: Uniformitaet > Mikro-Optimierung).
+- rule_id: p33b_behinderten_pauschbetrag
+  norm: § 33b Abs. 1-3 EStG (Behinderten-Pauschbetrag, GdB-Staffel)
+  quellen:
+  - typ: gesetz
+    label: § 33b Abs. 3 S. 2 EStG (GdB-Staffel)
+    datei: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens
+    auszug: '20 384 Euro, 30 620 Euro, 40 860 Euro, 50 1 140 Euro, 60 1 440 Euro, 70 1 780 Euro, 80 2 120 Euro, 90 2 460 Euro, 100 2 840 Euro'
+  - typ: gesetz
+    label: § 33b Abs. 3 S. 3 EStG (hilflos/blind/taubblind Override)
+    datei: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Blinde und Taubblinde erhalten einen Pauschbetrag von 7 400 Euro
+    auszug: 'Menschen, die hilflos im Sinne des Satzes 4 sind, Blinde und Taubblinde erhalten einen Pauschbetrag von 7 400 Euro; in diesem Fall kann der Pauschbetrag nach Satz 2 nicht zusätzlich in Anspruch genommen werden.'
+  geltungsbedingungen:
+  - bedingung: gdb_stufenfunktion_von_mindestens
+    deckt_ab: Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens
+    quelle: § 33b Abs. 3 S. 2 EStG
+    beschreibung: 'Halboffene Stufenfunktion: der Pauschbetrag richtet sich nach der GROESSTEN Staffelschwelle <= grad_der_behinderung ("von mindestens"). GdB unter 20 -> 0 (Abs. 2 Mindest-GdB 20).'
+  - bedingung: hilflos_blind_taubblind_override
+    deckt_ab: Blinde und Taubblinde erhalten einen Pauschbetrag von 7 400 Euro
+    quelle: § 33b Abs. 3 S. 3 EStG
+    beschreibung: 'Ist ist_hilflos_blind_taubblind wahr, gilt 7.400 EUR STATT der GdB-Staffel (nicht zusaetzlich).'
+  rundung: []
+  signature:
+    scope: BehindertenPauschbetrag
+    inputs:
+      grad_der_behinderung: int
+      ist_hilflos_blind_taubblind: bool
+    output: behinderten_pauschbetrag
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens
+    herkunft: synthetisch
+    rechenweg: 'GdB 20 (untere Mindestschwelle) -> 384.'
+    inputs: {grad_der_behinderung: 20, ist_hilflos_blind_taubblind: false}
+    expected: 384.0
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Stufenfunktion: GdB 45 -> naechstniedrigere Schwelle 40 -> 860 (NICHT 1.140).'
+    inputs: {grad_der_behinderung: 45, ist_hilflos_blind_taubblind: false}
+    expected: 860.0
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens
+    herkunft: synthetisch
+    rechenweg: 'GdB 100 -> Hoechststufe 2.840.'
+    inputs: {grad_der_behinderung: 100, ist_hilflos_blind_taubblind: false}
+    expected: 2840.0
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Blinde und Taubblinde erhalten einen Pauschbetrag von 7 400 Euro
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Override: hilflos -> 7.400 unabhaengig vom GdB.'
+    inputs: {grad_der_behinderung: 50, ist_hilflos_blind_taubblind: true}
+    expected: 7400.0
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Untergrenze: GdB 19 < 20 -> 0 (kein Pauschbetrag).'
+    inputs: {grad_der_behinderung: 19, ist_hilflos_blind_taubblind: false}
+    expected: 0.0
+  raster:
+  - {grad_der_behinderung: 20, ist_hilflos_blind_taubblind: false}
+  - {grad_der_behinderung: 45, ist_hilflos_blind_taubblind: false}
+  - {grad_der_behinderung: 100, ist_hilflos_blind_taubblind: false}
+  - {grad_der_behinderung: 50, ist_hilflos_blind_taubblind: true}
+  - {grad_der_behinderung: 19, ist_hilflos_blind_taubblind: false}
+- rule_id: p33b_pflege_pauschbetrag
+  norm: § 33b Abs. 6 EStG (Pflege-Pauschbetrag, Pflegegrad-Staffel)
+  quellen:
+  - typ: gesetz
+    label: § 33b Abs. 6 S. 3-4 EStG (Pflege-Pauschbetrag)
+    datei: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pflege-Pauschbetrag wird gewährt
+    auszug: 'Als Pflege-Pauschbetrag wird gewährt: 1. bei Pflegegrad 2 600 Euro, 2. bei Pflegegrad 3 1 100 Euro, 3. bei Pflegegrad 4 oder 5 1 800 Euro. 4 Ein Pflege-Pauschbetrag nach Satz 3 Nummer 3 wird auch gewährt, wenn die gepflegte Person hilflos im Sinne des § 33b Absatz 3 Satz 4 ist.'
+  geltungsbedingungen:
+  - bedingung: pflegegrad_staffel
+    deckt_ab: Als Pflege-Pauschbetrag wird gewährt
+    quelle: § 33b Abs. 6 S. 3-4 EStG
+    beschreibung: 'Lookup Pflegegrad -> Betrag: PG2 600, PG3 1.100, PG4/5 1.800. Pflegegrad unter 2 -> 0. ist_hilflos (Satz 4) -> 1.800 (Betrag wie PG4/5), auch bei niedrigerem/keinem Pflegegrad.'
+  rundung: []
+  signature:
+    scope: PflegePauschbetrag
+    inputs:
+      pflegegrad: int
+      ist_hilflos: bool
+    output: pflege_pauschbetrag
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pflege-Pauschbetrag wird gewährt
+    herkunft: synthetisch
+    rechenweg: 'Pflegegrad 2 -> 600.'
+    inputs: {pflegegrad: 2, ist_hilflos: false}
+    expected: 600.0
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pflege-Pauschbetrag wird gewährt
+    herkunft: synthetisch
+    rechenweg: 'Pflegegrad 3 -> 1.100.'
+    inputs: {pflegegrad: 3, ist_hilflos: false}
+    expected: 1100.0
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pflege-Pauschbetrag wird gewährt
+    herkunft: synthetisch
+    rechenweg: 'Pflegegrad 5 -> Stufe 4/5 -> 1.800.'
+    inputs: {pflegegrad: 5, ist_hilflos: false}
+    expected: 1800.0
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pflege-Pauschbetrag wird gewährt
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER hilflos-Override (Satz 4): Pflegegrad 1 aber hilflos -> 1.800.'
+    inputs: {pflegegrad: 1, ist_hilflos: true}
+    expected: 1800.0
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: Als Pflege-Pauschbetrag wird gewährt
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Untergrenze: Pflegegrad 1, nicht hilflos -> 0 (kein Pauschbetrag unter PG2).'
+    inputs: {pflegegrad: 1, ist_hilflos: false}
+    expected: 0.0
+  raster:
+  - {pflegegrad: 2, ist_hilflos: false}
+  - {pflegegrad: 3, ist_hilflos: false}
+  - {pflegegrad: 5, ist_hilflos: false}
+  - {pflegegrad: 1, ist_hilflos: true}
+  - {pflegegrad: 1, ist_hilflos: false}
+- rule_id: p33b_hinterbliebenen_pauschbetrag
+  norm: § 33b Abs. 4 EStG (Hinterbliebenen-Pauschbetrag)
+  quellen:
+  - typ: gesetz
+    label: § 33b Abs. 4 S. 1 EStG (370-Euro-Festbetrag)
+    datei: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: einen Pauschbetrag von 370 Euro
+    auszug: 'Personen, denen laufende Hinterbliebenenbezüge bewilligt worden sind, erhalten auf Antrag einen Pauschbetrag von 370 Euro (Hinterbliebenen-Pauschbetrag)'
+  geltungsbedingungen:
+  - bedingung: hinterbliebenenbezuege_bewilligt
+    deckt_ab: einen Pauschbetrag von 370 Euro
+    quelle: § 33b Abs. 4 S. 1 EStG
+    beschreibung: 'Rechtspraedikat: bei bewilligten laufenden Hinterbliebenenbezuegen (Katalog Nr. 1-5) -> 370 EUR Festbetrag, sonst 0.'
+  rundung: []
+  signature:
+    scope: HinterbliebenenPauschbetrag
+    inputs:
+      hat_hinterbliebenenbezuege: bool
+    output: hinterbliebenen_pauschbetrag
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: einen Pauschbetrag von 370 Euro
+    herkunft: synthetisch
+    rechenweg: 'Bewilligte Hinterbliebenenbezuege -> 370.'
+    inputs: {hat_hinterbliebenenbezuege: true}
+    expected: 370.0
+  - quelle: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    zitatanker: einen Pauschbetrag von 370 Euro
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER kein Anspruch -> 0.'
+    inputs: {hat_hinterbliebenenbezuege: false}
+    expected: 0.0
+  raster:
+  - {hat_hinterbliebenenbezuege: true}
+  - {hat_hinterbliebenenbezuege: false}
