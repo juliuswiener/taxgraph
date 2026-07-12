@@ -208,3 +208,20 @@ prompt-geändert. Provenance-Marker = per-Regel `hinweis` (auditierbar) + `schem
 
 **Offen:** Erstbefüllungs-Vorschläge je Regel → Instructor-Review (Mini-Report
 `reports/review/2026-07-12-hinweis-erstbefuellung-vorschlaege.md`).
+
+## 11. Addendum: Präzisions-Lint (Klasse 5) — Stufe 1 gebaut, zweistufiger Prozess bewährt
+
+Der Klasse-5-Rest (solzg Sub-Cent: 20351 → 0,12 statt 0,11) hat jetzt ein deterministisches Gate.
+Vorregistrierung → Instructor-Freigabe → Bau, alles $0. Ergebnis: `gates.py:praezisions_lint_gate`,
+Stufe 1 informativ (Status INFO, kippt kein Gate), Bestandssweep über 21 Regeln → **nur solzg flaggt,
+0 False Positives**. 112/112 Tests.
+
+**Warum der zweistufige Prozess (Vorregistrierung vor Bau) sich sofort bezahlt gemacht hat:** Der
+erste Prototyp der Erkennungsregel (v1, ohne Typ-Tracking) hätte die KORREKTE Fix-Form fälschlich als
+Fehler markiert — er hielt eine `money / $1.00 → decimal`-Umwandlung für money und hätte damit genau
+die Lösung blockiert, die das Gate erzwingen soll. Erst die Vorregistrierung mit Prototyp-gegen-
+Bestand fing das ab (v2 mit `money/money → decimal`-Tracking). **Ein blockierendes Gate direkt gebaut,
+ohne diese Stufe, hätte korrekte künftige Regeln abgelehnt.** Deshalb: Stufe 1 informativ zuerst
+(Empirie sammeln), Stufe 2 blockierend erst nach Julius — und erst nachdem solzg selbst gefixt ist
+(sonst blockiert das Gate die einzige betroffene Regel ohne grünen Pfad). Reports:
+`reports/review/2026-07-12-praezisions-lint-{vorregistrierung,stufe1}.md`.

@@ -308,3 +308,93 @@ def test_rundungs_lint_faengt_richtung():
                    "rundung": [{"zitatanker": "Bruchteile eines Cents bleiben ausser Ansatz",
                                 "quelle": "§ 4 SolzG"}]}
     assert G.rundungs_lint_gate(src_round, cand_legacy).status == G.PASS
+
+
+# --- Praezisions-Lint (Klasse 5): money x/ decimal VOR finalem Cent-Schnitt -------
+# Vorregistrierung reports/review/2026-07-12-praezisions-lint-vorregistrierung.md,
+# inkl. der drei Adversarial-Faelle des Instructors (Fluss-Sensitivitaet, Division).
+
+def _scope(body: str) -> str:
+    return ("declaration scope S:\n  input bmg content money\n"
+            "  output out content money\nscope S:\n" + body)
+
+
+PRAEZ_BUGGY = _scope(
+    "  definition out equals\n"
+    "    let unterschied equals bmg - $20,350.00 in\n"
+    "    let milderung equals unterschied * 0.119 in\n"
+    "    (Decimal.truncate of (milderung / $0.01)) * $0.01")
+
+PRAEZ_FIX = _scope(
+    "  definition out equals\n"
+    "    let unterschied_dec equals (bmg - $20,350.00) / $1.00 in\n"
+    "    let milderung_dec equals unterschied_dec * 0.119 in\n"
+    "    (Decimal.truncate of (milderung_dec / $0.01)) * $0.01")
+
+
+def test_praezisions_lint_flaggt_money_dec_vor_cent_schnitt():
+    # Stufe 1: confident-Befund ist INFO (kippt kein Gate), nicht FAIL/PASS.
+    r = G.praezisions_lint_gate(PRAEZ_BUGGY)
+    assert r.status == G.INFO
+    assert "Klasse-5" in r.detail
+
+
+def test_praezisions_lint_fix_form_passt():
+    # decimal bis zum Ende, Cent-Schnitt am Schluss -> kein money x decimal -> PASS.
+    assert G.praezisions_lint_gate(PRAEZ_FIX).status == G.PASS
+
+
+def test_praezisions_lint_money_dec_ohne_cut_passt():
+    # money x decimal OHNE finalen Cent-Schnitt -> Cent-Rundung gewollt, legitim.
+    src = _scope("  definition out equals bmg * 0.05")
+    assert G.praezisions_lint_gate(src).status == G.PASS
+
+
+def test_praezisions_lint_division_flaggt_wie_multiplikation():
+    # Adversarial 3: money / decimal rundet genauso cent-mittig -> MUSS flaggen.
+    src = _scope(
+        "  definition out equals\n"
+        "    let anteil equals bmg / 2.0 in\n"
+        "    (Decimal.truncate of (anteil / $0.01)) * $0.01")
+    assert G.praezisions_lint_gate(src).status == G.INFO
+
+
+def test_praezisions_lint_money_dec_NACH_schnitt_flaggt_nicht():
+    # Adversarial 1: Nachverarbeitung nach dem Schnitt -> Ordnung zaehlt, nicht Praesenz.
+    src = ("declaration scope S:\n  input bmg content money\n"
+           "  input darstellung content money\n  output out content money\nscope S:\n"
+           "  definition out equals\n"
+           "    let geschnitten equals (Decimal.truncate of (bmg / $0.01)) * $0.01 in\n"
+           "    let angezeigt equals darstellung * 1.5 in\n"
+           "    geschnitten + angezeigt")
+    assert G.praezisions_lint_gate(src).status == G.PASS
+
+
+def test_praezisions_lint_nebenvariable_ohne_fluss_flaggt_nicht():
+    # Adversarial 2: korrekte decimal-Form im Fluss zum Schnitt, plus ein money x
+    # decimal in einer Nebenvariable, die NICHT in den Schnitt fliesst -> kein Flag.
+    src = ("declaration scope S:\n  input bmg content money\n"
+           "  input extra content money\n  output out content money\nscope S:\n"
+           "  definition out equals\n"
+           "    let dec equals (bmg / $1.00) * 0.119 in\n"
+           "    let nebensache equals extra * 0.05 in\n"
+           "    (Decimal.truncate of (dec / $0.01)) * $0.01")
+    assert G.praezisions_lint_gate(src).status == G.PASS
+
+
+def test_praezisions_lint_inline_in_schnitt_flaggt():
+    # money x decimal INLINE in der Schnitt-Expression selbst -> fliesst direkt hinein.
+    src = _scope(
+        "  definition out equals (Decimal.truncate of ((bmg * 0.119) / $0.01)) * $0.01")
+    assert G.praezisions_lint_gate(src).status == G.INFO
+
+
+def test_praezisions_lint_ohne_source_skip():
+    assert G.praezisions_lint_gate(None).status == G.SKIP
+
+
+def test_praezisions_lint_stufe2_blockiert(monkeypatch):
+    # Stufe 2 (nach Julius): derselbe confident-Befund wird FAIL statt INFO.
+    monkeypatch.setattr(G, "_PRAEZISION_BLOCKIEREND", True)
+    assert G.praezisions_lint_gate(PRAEZ_BUGGY).status == G.FAIL
+    assert G.praezisions_lint_gate(PRAEZ_FIX).status == G.PASS

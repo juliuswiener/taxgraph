@@ -119,6 +119,11 @@ def run_candidate(candidate: dict, dry_run: bool | None = None,
     # 5. Rundungs-Lint (deterministisch, kostenlos) VOR der Aequivalenz
     res.gate_results.append(_named("rundungs_lint", lint))
 
+    # 5a. Praezisions-Lint (Klasse 5, deterministisch, kostenlos). Stufe-1-Rollout:
+    #     INFO-Befund, kippt kein Gate (Vorregistrierung 2026-07-12). Stufe 2
+    #     (blockierend) erst nach Julius via G._PRAEZISION_BLOCKIEREND.
+    res.gate_results.append(G.praezisions_lint_gate(src_a, candidate))
+
     # 5b. extensionale Aequivalenz A vs B auf dem Input-Raster
     res.gate_results.append(G.equivalence_gate(src_a, src_b, candidate))
 
