@@ -64,3 +64,13 @@ ich sie in eine committete `hinweis_bibliothek.yaml`, sobald die erste künftige
 
 Bibliothek so lassen (Referenz im Report) oder gleich als committete `hinweis_bibliothek.yaml`
 anlegen? Und: siehst du eine aktuelle Regel, die ich als hinweis-bedürftig übersehe (ich sehe keine)?
+
+## Instructor-Entscheid (2026-07-12) — umgesetzt
+
+- **(a) Kein Template-Bump** bestätigt. ZUSATZ: report.json schreibt je Lauf den verwendeten
+  `hinweis` + `hinweis_sha256` mit (`run.py:hinweis_provenance`, Test `test_hinweis_provenance.py`,
+  pytest 103/103) → auditierbar, falls der hinweis in rules.yaml später geändert wird.
+- **(b) Erstbefüllung leer** bestätigt (Residuen Klasse 3/5, nicht hinweis-adressierbar).
+- **(c) Bibliothek committed** als `pipeline/hinweis_bibliothek.yaml` (Review-Artefakt wie
+  `signatur_konventionen.yaml`), Pflicht-Kopfkommentar: B1-validierte Vorlagen, jede Verwendung
+  braucht Instructor-Review, kein Copy-Paste ohne Freigabe.

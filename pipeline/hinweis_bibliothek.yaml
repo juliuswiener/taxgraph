@@ -1,0 +1,75 @@
+# hinweis-Bibliothek — B1-validierte Vorlagen fuer den Formalisierer-hinweis-Kanal.
+#
+# ACHTUNG: B1-validierte Vorlagen; jede Verwendung je Regel braucht Instructor-Review
+# (Auflage iii des hinweis-Dekrets, Morgenpaket 2026-07-12), KEIN Copy-Paste ohne Freigabe.
+#
+# Herkunft: reports/review/2026-07-12-b1-rolespy-ergebnis.md. Diese fuenf Strings loesten
+# in B1 (Arm B) je einen Kontext-Hunger-Fall (Klasse 1) mit ENGEM auszug (A-Formalisierer
+# clerk 2/2). Sie stehen hier als FORM-Muster (operativ; min/max/Bedingung explizit; kein
+# Gesetzeszitat) fuer KUENFTIGE Regeln derselben Mechanik - nicht zur automatischen
+# Uebernahme. Die fuenf Ursprungsregeln selbst sind ueber auszug-Weitung gruen und tragen
+# KEINEN hinweis (Auflage i: kein Rueckbau).
+#
+# Kanal-Grenze (empirisch, Auflage iv): wirkt auf Klasse-1-Kontext-Hunger, NICHT auf
+# Klasse-5-Praezisionsordnung (siehe solzg-Warnung) und nicht auf Klasse 3 (Arithmetik
+# ohne Wortlaut) / Klasse 4 (Rundungs-Richtung) - dort greifen die strukturellen Fixes.
+#
+# Regel fuer neue Eintraege: nur nach Instructor-Review aufnehmen, Feld `wirkung` mit der
+# empirischen Grundlage (welcher Waechter-Seed, welcher Lauf) fuellen.
+
+vorlagen:
+- id: kappung_ab_zeitschwelle
+  muster_regel: p9_1_3_nr5a_uebernachtung
+  klasse: 1
+  wirkung: "B1 Arm B 2/2 (Seeds 47->16800 ungekappt / 48->12000 gekappt)."
+  hinweis: >-
+    Hinweis zur Berechnung: Liegt der Abrechnungszeitraum vollstaendig NACH Ablauf von
+    48 Monaten am selben Ort (monate_bisher_am_ort >= 48), werden die Uebernachtungskosten
+    auf hoechstens 1000 Euro je Monat gekappt (min(kosten_monat,1000) x monate). Davor
+    (monate_bisher_am_ort < 48) gelten die tatsaechlichen Kosten voll (kosten_monat x monate).
+
+- id: lineare_afa_mit_anschaffungsjahr_anteil
+  muster_regel: p9_1_3_nr6_7_afa_laufend
+  klasse: 1
+  wirkung: "B1 Arm B 2/2 (Seeds Jahr0->200 anteilig / Jahr1->400 voll)."
+  hinweis: >-
+    Hinweis zur Berechnung: Uebersteigt anschaffungskosten die GWG-Grenze 800, wird linear
+    abgeschrieben: JahresAfA = anschaffungskosten / nutzungsdauer_jahre. Im Anschaffungsjahr
+    (jahre_seit_anschaffung=0) anteilig: JahresAfA x (12 - (anschaffungsmonat-1)) / 12. In
+    Volljahren die volle JahresAfA. Bei anschaffungskosten <= 800 Sofortabzug in voller Hoehe.
+
+- id: voller_grundbetrag_plus_gedeckelter_rest
+  muster_regel: p10_1_3_3a_kv_pv
+  klasse: 1
+  wirkung: "B1 Arm B 2/2 (Basis-Durchbruch 4000>2800 -> 4000 statt Kappung)."
+  hinweis: >-
+    Hinweis zur Berechnung: Basis-KV/PV (basis_kv_pv) ist IMMER voll abziehbar, auch ueber
+    dem Hoechstbetrag. Weitere Vorsorgeaufwendungen nur bis zum verbleibenden Rest-Raum:
+    min(weitere, max(0, Hoechstbetrag - basis_kv_pv)). Hoechstbetrag 2800, bei
+    mit_anspruch_auf_zuschuss 1900. Ergebnis = basis_kv_pv + dieser Rest.
+
+- id: abzug_ueber_zumutbarer_schwelle
+  muster_regel: p33_1_2_agb_abzug
+  klasse: 1
+  wirkung: "B1 Arm B 2/2 (Seed 5000/1408,7 -> 3591,3)."
+  hinweis: >-
+    Hinweis zur Berechnung: Abziehbar ist nur der Teil der aussergewoehnlichen Belastungen,
+    der die zumutbare Belastung UEBERSTEIGT: max(0, aussergewoehnliche_belastungen -
+    zumutbare_belastung).
+
+- id: zuschlag_mit_milderungszone
+  muster_regel: solzg_solidaritaetszuschlag
+  klasse: 1
+  wirkung: >-
+    B1 Arm B 2/2 auf der Milderungszone (Seed 25000->553,35). WARNUNG: der NUMERIC-IDIOM-Teil
+    loest die Klasse-5-Praezision NICHT - B1 zeigte solzg 20351->0,11 blieb $0,12 (2/2 FAIL),
+    das Modell rundet 0,119 weiter Cent-mittig. Klasse-5 braucht einen Code-Fix
+    (decimal-Refactor / Praezisions-Lint), kein hinweis. Der Idiom-Satz bleibt hier nur als
+    Form-Vorlage, nicht als wirksamer Praezisions-Fix.
+  hinweis: >-
+    Hinweis zur Berechnung: SolZ = min(5,5% der Bemessungsgrundlage, 11,9% x
+    (Bemessungsgrundlage - Freigrenze)); unterhalb der Freigrenze (20350 einzeln / 40700
+    splitting) betraegt er 0. NUMERIC-IDIOM: Fuehre die Prozentrechnung in decimal-Praezision
+    durch und schneide ERST das Endergebnis auf volle Cent ab (Bruchteile eines Cents bleiben
+    ausser Ansatz = abschneiden/floor, NICHT kaufmaennisch runden); runde keine Zwischenwerte
+    auf Cent.

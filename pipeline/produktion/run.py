@@ -18,6 +18,7 @@ noch einmal bezahlt werden. Der Judge-Teil des Reports bleibt dabei unangetastet
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -87,6 +88,19 @@ def build_candidate(rule: dict) -> dict:
         # Prompt byte-identisch, kein Regress fuer Regeln ohne hinweis.
         "formalisierer_zusatz": rule.get("hinweis", ""),
     }
+
+
+def hinweis_provenance(rule: dict) -> dict:
+    """Auditierbarer Nachweis des im Lauf verwendeten hinweis (Instructor 2026-07-12).
+
+    Der hinweis geht ueber `formalisierer_zusatz` in den Formalisierer-Prompt. Wird er
+    spaeter in rules.yaml geaendert, muss ein alter report.json noch zeigen, WAS damals
+    gesendet wurde. Leerer hinweis -> leere Provenance (kein Kanal aktiv), damit "kein
+    hinweis" im Report sofort sichtbar ist statt als Hash von "".
+    """
+    h = rule.get("hinweis", "") or ""
+    return {"hinweis": h,
+            "hinweis_sha256": hashlib.sha256(h.encode("utf-8")).hexdigest() if h else ""}
 
 
 def judge_gates(verdict: dict, cand: dict) -> tuple[dict, list]:
@@ -450,6 +464,9 @@ def main() -> int:
             "freigabe": rule.get("freigabe", "offen"),
             # Herkunft der Modell-Eingabe: welche eingefrorenen Quellen, welcher Typ
             "quellen": build_candidate(rule)["quellen"],
+            # hinweis-Kanal-Provenance: WAS in diesem Lauf an den Formalisierer ging
+            # (auditierbar, auch wenn rule["hinweis"] spaeter geaendert wird).
+            **hinweis_provenance(rule),
             "geltungsbedingungen": rule.get("geltungsbedingungen", []),
             "dry_run": res.dry_run,
             "models_yaml_hash": res.models_yaml_hash,
