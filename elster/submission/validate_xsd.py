@@ -53,18 +53,30 @@ def _prove() -> int:
     ok, msg = validate(valid, "2025")
     print(f"[xsd] Valider Testfall ({os.path.basename(valid)}) -> "
           f"{'PASS' if ok else 'FAIL'}: {msg[:80]}")
-    # Negativfall: ein Element durch ein schema-fremdes ersetzen -> muss fallen.
     import tempfile
     with open(valid, encoding="utf-8") as f:
-        broken = f.read().replace("<E0100201>", "<E9999999>").replace("</E0100201>", "</E9999999>")
-    tmp = tempfile.NamedTemporaryFile("w", suffix=".xml", delete=False, encoding="utf-8")
-    tmp.write(broken)
-    tmp.close()
-    bad_ok, _ = validate(tmp.name, "2025")
-    os.unlink(tmp.name)
-    print(f"[xsd] Kaputter Testfall (schema-fremdes Element) -> "
-          f"{'FAIL (erwartet)' if not bad_ok else 'PASS (FEHLER: Gate wirkungslos!)'}")
-    passed = ok and not bad_ok
+        src = f.read()
+
+    def _neg(name: str, mutate) -> bool:
+        tmp = tempfile.NamedTemporaryFile("w", suffix=".xml", delete=False, encoding="utf-8")
+        tmp.write(mutate(src))
+        tmp.close()
+        bad_ok, _ = validate(tmp.name, "2025")
+        os.unlink(tmp.name)
+        print(f"[xsd] Negativ '{name}' -> "
+              f"{'FAIL (erwartet)' if not bad_ok else 'PASS (FEHLER: Gate wirkungslos!)'}")
+        return not bad_ok
+
+    # (1) schema-fremdes Element.
+    n1 = _neg("schema-fremdes Element",
+              lambda s: s.replace("<E0100201>", "<E9999999>").replace("</E0100201>", "</E9999999>"))
+    # (2) Feld-Verrutscher: das populierte p09-Feld E0203504 aus seinem Erste_Taetig-Container
+    #     an eine schema-falsche Stelle (direkt unter </EP>) verschieben -> muss fallen.
+    def _slip(s: str) -> str:
+        s = s.replace("\t\t\t\t\t\t\t\t\t<E0203504>20</E0203504>\n", "")
+        return s.replace("\t\t\t\t\t\t\t</EP>", "\t\t\t\t\t\t\t</EP>\n\t\t\t\t\t\t\t<E0203504>20</E0203504>")
+    n2 = _neg("Feld-Verrutscher (E0203504 ausserhalb Erste_Taetig)", _slip)
+    passed = ok and n1 and n2
     print(f"[xsd] Verdikt Stufe (a): {'STRUKTUR-GATE FUNKTIONSFAEHIG' if passed else 'FEHLGESCHLAGEN'} "
           f"(valide -> PASS, kaputt -> FAIL). Offline, keine Hersteller-ID. VZ 2025 = Pipe-Proof; "
           f"amtliche 2026-Werte spaeter, wenn das VZ-2026-Modul vorliegt.")

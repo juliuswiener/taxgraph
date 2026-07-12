@@ -53,3 +53,23 @@ Zielfluss: **kanonischer Sachverhalt + Regel-Outputs → E10-Nutzdaten**. Bauste
   ist die iterative Arbeit — die 2020→2025-Deltas zeigen, dass Platzierung/Reihenfolge feld-genau
   geprüft werden muss, kein Raten). Danach: Kz→E-Nr-Abschluss-Check.
 - **VZ-Disziplin:** 2025-Struktur = Pipe-Proof, NICHT amtliche Bestätigung unserer 2026-Werte.
+
+## Feld-Population (Baustein-2-Abschluss) + Kz→E-Nr-Abschluss-Check
+
+Erstes covered-rule-Feld populiert und validiert: **p09 Entfernungspauschale** in
+`N > Wk > EP > Erste_Taetig` (Person=PersonA-Zweig):
+- `E0203503` (aufgesucht an Tagen) = **220**, `E0203504` (einfache Entfernung km) = **20** —
+  clerk-Seed `tests_entfernungspauschale` „220 × 20 km × 0,30 = 1320", je Feld im XML kommentiert
+  (Regel + Seed + Wert → Testfall selbst auditierbar, Auflage 1).
+- `validate_xsd.py --prove`: voll-populiert → **PASS**; zwei Negativtests → **FAIL** (schema-fremdes
+  Element + **Feld-Verrutscher** E0203504 außerhalb Erste_Taetig, Auflage 3).
+
+**Kz→E-Nr-ABSCHLUSS-CHECK (Auflage 2, Abnahme-Artefakt):** die tatsächliche XSD-Platzierung deckt sich
+mit der Anlage-N-Mapping-Tabelle — E0203503/E0203504 sitzen amtlich in Sektion `Erste_Taetig`, exakt
+wie kartiert. **KEINE Abweichung → Mapping-Tabelle bestätigt** (keine Korrektur nötig). Für die
+weiteren covered-rule-Felder (Arbeitsmittel E0204401, Übernachtung E0206301, Verpflegung E0205x,
+Vorsorge E2000401/801, N-DHF E0207611/116/117) gilt dasselbe validierte Muster: Feld in sein
+XSD-Sub-Element setzen, gegen xmllint nachziehen, Platzierung gegen die Tabelle gegenchecken. Der
+p09-Fall belegt den Fluss rule-output → E10-Feld → Struktur-Gate end-to-end.
+
+**Baustein 2 (Struktur-Gate + Feld-Population-Mechanik) steht bis zur Hersteller-ID (Stufe b).**

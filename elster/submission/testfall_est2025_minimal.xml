@@ -89,6 +89,17 @@
 								<E0200501>50,10</E0200501>
 							</LStB_1_5_Sum>
 						</ArbL>
+						<Wk>
+							<EP>
+								<Erste_Taetig>
+									<!-- p09 Entfernungspauschale, clerk-Seed tests_entfernungspauschale "220 x 20 km x 0,30 = 1320":
+									     aufgesucht an Tagen = 220 (E0203503 / Vordruck-Kz 110, Anlage-N-Mapping) -->
+									<E0203503>220</E0203503>
+									<!-- einfache Entfernung km = 20 (E0203504 / Kz 111) -->
+									<E0203504>20</E0203504>
+								</Erste_Taetig>
+							</EP>
+						</Wk>
 					</N>
 					<KAP>
 						<Person>PersonA</Person>
