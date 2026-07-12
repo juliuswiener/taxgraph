@@ -174,3 +174,26 @@ Zahl im Manifest quellenbelegt.
 Der Rundungs-Entscheid (b1/b2) ist die offene Frage VOR den Seeds — die Euro-Erwartungswerte
 hängen daran (Instructor-Auflage). Signatur, Andockung, Kz, Quellen-Anker stehen. Nach dem
 Entscheid: Seeds mit exaktem Rechenweg (inkl. gewählter Satz-Behandlung) → Stufe B.
+
+## Stufe B — Läufe (2026-07-13)
+
+Rundungs-Entscheid: **(b1)** (Instructor) — reines Wortlaut, keine Satz-Rundung, `rundung: []`.
+Seeds gegen p32a VZ2026 validiert (Formel gegen bekannte Testwerte 28734→3862, 58734→13747
+geprüft): A 5.406,75 · B(PE=0) 4.217,00 · C(Anhebung) 290,00.
+
+- **Lauf 1** ($0,0538, Judge lief sauber): `equivalence=FAIL`, `clerk=FAIL`. catala_a zog den
+  AN-Pauschbetrag (1.230) INNERHALB der Regel ab (Doppelzählung — unser Input ist bereits netto),
+  catala_b korrekt. Kontext-Hunger wie GWG: der auszug „nach Abzug des Arbeitnehmer-Pauschbetrags"
+  erreicht den Formalisierer, die netto-Geltungsbedingung nur den Judge. Dreifach geflaggt
+  (clerk + equivalence + Judge-Discovery).
+- **Fix:** `hinweis` pinnt die netto-Semantik an den Formalisierer (Instructor-Freigabe).
+- **Lauf 2** ($0,0427): **alle Gates grün** — `equivalence=PASS`, `clerk=PASS` (3/3),
+  Judge-Gates PASS. catala_a rechnet jetzt `erhoehte = zvE + progressionseinkuenfte` (kein
+  Pauschbetrag-Abzug), `satz = est/erhoehte`, `festzus = satz × zvE`. A ≡ B.
+- **Zustand:** `discovery_triage` (backlog +4). Die Judge-Discoveries betreffen unsere eigenen
+  dokumentierten Design-Entscheidungen (netto-Semantik, p32a-Andockung, b1-Rundung) + § 32b-
+  norm_teil-Referenzen — Standard-Triage, kein Gate-Defekt. verified_bedingt zieht nach der
+  Julius-Triage.
+
+Landkarte: § 32b von ⬜ auf 🟠 (deterministisch grün, Triage offen) — auf ✅, sobald die Triage
+durch ist und die Ratsche schließt.
