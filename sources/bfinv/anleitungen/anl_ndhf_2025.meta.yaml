@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung N-DHF 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "anl_ndhf_2025.txt"
+  pdf_datei: "anl_ndhf_2025.pdf"
+  sha256: "6973cad73305c3b4774603b5d27fd49530e27f954695595238f06fa5705dd961"
+  pdf_sha256: "00a1ca5ef5ebd8ddb96aa23ab79a0a4e20599b0d355851268b7be5146ded8edf"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['doppelten']
+  verwendet_in:
+    - ""

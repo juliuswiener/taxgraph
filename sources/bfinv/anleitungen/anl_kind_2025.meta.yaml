@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung Kind 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "anl_kind_2025.txt"
+  pdf_datei: "anl_kind_2025.pdf"
+  sha256: "ff9a54826721a58a5d0e0686c14c2cec4a355f8e5b9185d724876f3194c3e17c"
+  pdf_sha256: "cd99ff6619dd0284b1f18981d68bba6efbfc2f9f24d1312455063fab62b4d2f8"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Familienleistungsausgleich']
+  verwendet_in:
+    - ""

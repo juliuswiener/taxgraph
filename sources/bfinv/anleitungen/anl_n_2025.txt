@@ -1,0 +1,464 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anleitung Anlage N 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+Anleitung zur Anlage N                                                                                                     2025
+Allgemeines        Dieser Vordruck ist vorgesehen für Angaben über            Dies gilt nur, wenn Sie unbeschränkt steuerpflichtig
+                       den Arbeitslohn einschließlich Versorgungsbezü­-       sind. Möchten Sie von den elektronisch übermittelten
+                       ge,                                                    Daten abweichen oder hat Ihr Arbeitgeber die Daten
+                       bestimmte Lohn- / Entgeltersatzleistungen,             nicht elektronisch übermittelt und Ihnen stattdessen
+                       steuerfreien Arbeitslohn für Auslandstätigkeit und     eine „Besondere Lohnsteuerbescheinigung“ für das
+                       die Werbungskosten ohne Mehraufwendungen für           Kalenderjahr 2025 ausgehändigt, sind die Eintragun­-
+                       doppelte Haushaltsführung; hierfür verwenden Sie       gen weiterhin vorzunehmen.
+                       bitte die Anlage N-Doppelte Haushaltsführung.          Die Abgabe der Anlage N entfällt, wenn:
+
+       e           Bei verheirateten oder verpartnerten Personen muss
+                   jede Person ihre Angaben in einer eigenen Anlage N
+                                                                                  die Daten elektronisch übermittelt wurden und
+                                                                                  in den Zeilen 10, 18 und 19 sowie 21 bis 26 keine
+                   machen.                                                        Eintragungen vorzunehmen sind und
+                   Daten für die mit e gekennzeichneten Zeilen werden             die Werbungskosten (Anlage N Seite 2 bis 4
+                   von den mitteilungspflichtigen Stellen (z. B. Arbeitge­-       sowie Anlage N-Doppelte Haushaltsführung)
+                   ber) elektronisch an Ihr Finanzamt übermittelt. Sie            den Arbeitnehmer-Pauschbetrag i. H. v. 1.230 €
+                   müssen diese Daten nicht mehr in die mit e gekenn­-            oder 102 € bei Versorgungsbezügen nicht über­-
+                   zeichneten Zeilen / Bereiche der Anlage N eintragen.           steigen.
+
+
+
+
+                                                                                                                            Beispiel
+
+                                                                              Herr Muster war vom 1. Januar 2025 bis zum
+                                                                              31. Dezember 2025 als Metallbauer tätig. Im Juli
+                                                                              2025 bezog er wegen Kurzarbeit in seiner Firma
+                                                                              Kurzarbeitergeld i. H. v. 685 €. Herr Muster stellt
+                                                                              fest, dass die in seiner Lohnsteuerbescheinigung
+                                                                              ausgewiesenen Daten vom Arbeitgeber elektronisch
+                                                                              an das Finanzamt übermittelt wurden.
+                                                                              Herr Muster muss in seiner Anlage N keine Eintra­-
+                                                                              gungen zum Arbeitslohn, den Steuerabzugsbeträ­-
+                                                                              gen und den Lohnersatzleistungen vornehmen.
+                                                                              Die erste Tätigkeitsstätte von Herrn Muster liegt
+                                                                              39 km von seiner Wohnung entfernt. Den Weg zu
+                                                                              dieser Tätigkeitsstätte hat er an 214 Tagen im Jahr
+                                                                              mit dem eigenen Auto zurückgelegt. Damit das Fi­-
+                                                                              nanzamt seine Angaben nachprüfen kann, rechnet
+                                                                              er auch seine Krankheits- und Urlaubstage zusam­-
+                                                                              men (30 Tage) und trägt diese ein.
+                                                                              An die Gewerkschaft hat Herr Muster Beiträge
+                                                                              i. H. v. 178 € gezahlt, die er in Zeile 53 einträgt.
+                                                                              Im April und im September hat er sich jeweils einen
+                                                                              Monteuranzug für 45 € gekauft. Für die Reinigung
+                                                                              sind 19 € angefallen. Die Quittungen hat Herr Mus­-
+                                                                              ter aufbewahrt. Die Summe trägt er in die Zeilen 54
+                                                                              und 56 ein. Für die ihm entstandenen Kontofüh­-
+                                                                              rungsgebühren trägt er pauschal 16 € in die Zei­-
+                                                                              len 62 und 64 ein.
+                                                                              Frau Muster war ganzjährig als Pflegekraft ange­-
+                                                                              stellt. Sie stellt fest, dass die in ihrer Lohnsteuerbe­-
+                                                                              scheinigung ausgewiesenen Daten vom Arbeitgeber
+                                                                              elektronisch an das Finanzamt übermittelt wurden.
+                                                                              Bei ihr sind zwar auch Werbungskosten angefallen;
+                                                                              sie liegen jedoch unter dem Arbeitnehmer-Pausch­-
+                                                                              betrag i. H. v. 1.230 €.
+                                                                              Aufgrund der übermittelten Daten des Arbeitgebers
+                                                                              sowie den unter dem Arbeitnehmer-Pauschbetrag
+                                                                              liegenden Werbungskosten muss Frau Muster keine
+                                                                              Anlage N ausfüllen.
+
+
+
+
+Anleitung zur Anlage N - September 2025
+                                                               -2-
+
+Zeile 4 bis 17      Für Arbeitslohn und Versorgungsbezüge für mehrere             sonstige Korrekturen bei der Ermittlung des geld­-
+Angaben zum         Jahre sowie für Entschädigungen kommt eine ermä­-             werten Vorteils aus der Firmenwagennutzung gel­-
+Arbeitslohn         ßigte Besteuerung in Betracht (sog. Fünftelregelung).         tend machen oder
+                    Diese wird ab 2025 nicht mehr beim Lohnsteuerabzug            ein geleistetes Nutzungsentgelt (z. B. Zuzahlungen
+                    durch den Arbeitgeber, sondern ausschließlich im              zu den Betriebskosten des Firmenwagens) korri­-
+                    Rahmen der Veranlagung zur Einkommensteuer be­-               gieren?
+      Neu!          rücksichtigt. Werbungskosten, die mit diesen Einnah­-     Dann tragen Sie in Zeile 5 den insoweit geminderten
+                    men in Zusammenhang stehen, tragen Sie bitte in die       Bruttoarbeitslohn ein. Vergessen Sie bitte nicht, zu­-
+                    Zeilen 79 und / oder 80 ein.                              sätzlich in Zeile 10 eine „1“ einzutragen. Weitere Er­-
+  e Zeile 4
+    bis 9 und       Sie haben einen Firmenwagen genutzt und möchten           läuterungen entnehmen Sie bitte dem Schreiben des
+      11 bis 17         abweichend von der bisherigen pauschalen Be­-         Bundesministeriums der Finanzen vom 3. März 2022,
+                        rücksichtigung vom Arbeitgeber die Fahrtenbuch­-      Bundessteuerblatt (BStBl) I Seite 232.
+                        methode geltend machen oder
+
+Zeile 18            Sie haben steuerpflichtigen Arbeitslohn erhalten, von         steuerpflichtige Teile der Ausgleichsleistungen
+Arbeitslohn ohne    dem kein Steuerabzug vorgenommen wurde?                       (bitte erläutern Sie bisher gezahlte steuerfreie
+Steuerabzug         Dann tragen Sie diesen bitte in Zeile 18 ein.                 Leistungen in einer gesonderten Aufstellung) und
+                    Dazu gehören z. B.                                            steuerbegünstigte Versorgungsbezüge von ehe­-
+                       Arbeitslohn von ausländischen Arbeitgebern,                maligen Bediensteten bestimmter internationaler
+                       von Dritten gezahlter Arbeitslohn,                         Organisationen (z. B. Europäisches Patentamt;
+                       Verdienstausfallentschädigungen einer beruflichen          tragen Sie den Betrag bitte zusätzlich in Zeile 11
+                       Unfallversicherung,                                        ein).
+                       von öffentlichen Kassen geleistete Beiträge zur ge­-   Werbungskosten, die mit diesen Einnahmen in Zu­-
+                       setzlichen Rentenversicherung und Arbeitgeberan­-      sammenhang stehen, tragen Sie bitte in die Zeilen 27
+                       teile zur Krankenversicherung nach dem Gesetz          bis 77 und 82 der Anlage N und / oder in die Anlage
+                       zur Förderung der Einstellung der landwirtschaftli­-   N-Doppelte Haushaltsführung ein.
+                       chen Erwerbstätigkeit,
+
+Zeile 19            Tragen Sie bitte steuerfreie Aufwandsentschädigun­-       gesetzlichen Freibeträge, tragen Sie bitte nur den tat­-
+Steuerfreie         gen / Einnahmen ein, die Sie als Arbeitnehmerin oder      sächlichen steuerfreien Teil ein.
+Aufwandsent­-       Arbeitnehmer erhalten haben, z. B.                        Der übersteigende Betrag ist in Zeile 18 zu erklären.
+schädigungen /         aus öffentlichen Kassen,                               Die Eintragung ist nur erforderlich, wenn der Betrag
+Einnahmen              als mit der Übungsleitung im Nebenberuf, mit der       nicht beim Lohnsteuerabzug berücksichtigt wurde und
+                       Ausbildung, Erziehung, Betreuung oder mit ver­-        soweit er nicht in der Lohnsteuerbescheinigung enthal­-
+                       gleichbaren Tätigkeiten betraute Person,               ten ist.
+                       für eine nebenberufliche künstlerische Tätigkeit,      Werbungskosten dürfen Sie nur eintragen, wenn und
+                       für die nebenberufliche Pflege alter oder kranker      soweit sie den steuerfreien Betrag übersteigen. Die
+                       Menschen oder von Menschen mit Behinderungen           den steuerfreien Betrag übersteigenden Werbungs­-
+                       oder                                                   kosten tragen Sie bitte in die Zeilen 27 bis 77 und 82
+                       für eine sonstige nebenberufliche Tätigkeit im ge­-    der Anlage N und / oder in die Anlage N-Doppelte
+                       meinnützigen, mildtätigen oder kirchlichen Bereich.    Haushaltsführung ein.
+                    Übersteigen diese steuerfrei erhaltenen Zahlungen die
+
+Zeile 20            Lohn- / Entgeltersatzleistungen sind zwar steuerfrei, Steuersatzes auf den Arbeitslohn und etwaige weitere
+Lohn- / Entgelt-​   wirken sich aber auf die Höhe Ihres persönlichen Einkünfte aus (Progressionsvorbehalt).
+ersatzleistungen
+
+
+  e Zeile 20
+Zeile 21 bis 24     Arbeitslohn kann unter bestimmten Voraussetzungen         erfreie Arbeitslohn wirkt sich auf die Höhe Ihres per­-
+Steuerfreier        nach einem Doppelbesteuerungsabkommen (DBA),              sönlichen Steuersatzes aus (Progressionsvorbehalt).
+Arbeitslohn bei     nach sonstigen zwischenstaatlichen Übereinkommen          Bitte fügen Sie für jeden Staat und jede Person eine
+Auslands-​          oder nach dem Auslandstätigkeitserlass von der Ein­-      eigene Anlage N-AUS bei, um die in den Zeilen 21
+tätigkeit           kommensteuer (Lohnsteuer) freigestellt sein. Der steu­-   bis 23 einzutragenden Beträge korrekt zu ermitteln.
+
+Zeile 25            Sie sind in Belgien ansässig (Artikel 4 Abs. 1 oder 2     daraufhin eine Minderung der tariflichen Einkommen­-
+Ansässigkeit in     DBA Belgien) und haben noch einen weiteren Wohn­-         steuer aufgrund der belgischen Gemeindesteuer. Die
+Belgien             sitz im Inland?                                           mit dem Arbeitslohn im Zusammenhang stehenden
+                    Dann tragen Sie hier die Adresse in Belgien sowie den     Werbungskosten tragen Sie bitte in Zeile 83 ein.
+                    entsprechenden Arbeitslohn ein. Ihr Finanzamt prüft
+                                                                    -3-
+
+Wenn Sie in Frankreich, Österreich oder der Schweiz         lich zu Ihrem Wohnort in Deutschland zurückkehren,                   Zeile 26
+Ihren Arbeitsort haben und arbeitstäglich zu Ihrem          oder wenn Sie die Voraussetzungen nach den DBA                   Grenzgänger
+Wohnort in Deutschland zurückkehren, dann werden            mit Frankreich, Österreich oder der Schweiz als
+Sie als sog. „Grenzgänger“ bezeichnet. Sind Sie hier­-      „Grenzgänger“ nicht erfüllen, werden Sie als sog.
+nach als „Grenzgänger“ eingestuft, erklären Sie bitte       „Grenzpendler“ bezeichnet. Erklären Sie in diesen Fäl­-
+den im Beschäftigungsland erzielten Arbeitslohn aus­-       len den im Ausland erzielten Arbeitslohn bitte in den
+schließlich in Zeile 26.                                    Zeilen 5 oder 21 sowie in der Anlage N-AUS.
+Wenn Sie in anderen Staaten arbeiten und arbeitstäg­-
+
+Werbungskosten im steuerlichen Sinne sind alle Auf­-        doppelte Haushaltsführung(en) hatten, verwenden Sie            Zeile 27 bis 83
+wendungen, die durch Ihr Arbeitsverhältnis veranlasst       bitte hierfür die gesonderte Anlage N-Doppelte Haus­-        Werbungskosten
+sind. Diese kann Ihr Finanzamt jedoch nur berücksich­-      haltsführung.
+tigen, soweit sie höher sind als steuerfreie oder pau­-     Ihr Finanzamt berücksichtigt für Werbungskosten, wie
+schal besteuerte Ersatzleistungen Ihres Arbeitgebers.       z. B. Aufwendungen für die Wege zwischen Wohnung
+Die Kosten Ihrer Lebensführung gehören nicht zu den         und erster Tätigkeitsstätte (Entfernungspauschale),
+Werbungskosten, selbst wenn diese Ihrer beruflichen         jährlich einen Arbeitnehmer-Pauschbetrag i. H. v.
+Tätigkeit zugutekommen.                                     1.230 €. Erhalten Sie Versorgungsbezüge, liegt dieser
+Sofern Sie Mehraufwendungen für eine oder mehrere           Betrag jährlich bei 102 €.
+
+Allgemeines                                                 Die Entfernungspauschale ist grundsätzlich auf einen           Zeile 27 bis 50
+Unabhängig davon, wie Sie zu Ihrer ersten Tätigkeits­-      Höchstbetrag i. H. v. 4.500 € begrenzt. Nur soweit Sie        Aufwendungen
+stätte gelangen, erhalten Sie für die Wege zwischen         Ihr eigenes oder zur Nutzung überlassenes Kraftfahr­-                für Wege
+Wohnung und erster Tätigkeitsstätte eine Entfernungs­-      zeug (z. B. Firmenwagen) nutzen, kann Ihr Finanzamt                 zwischen
+pauschale. Diese Pauschale beträgt 0,30 € für jeden         einen höheren Betrag als 4.500 € berücksichtigen.              Wohnung und
+vollen Entfernungskilometer der ersten 20 km und            Die Entfernungspauschale können Sie für die Wege                         erster
+0,38 € für jeden weiteren vollen Entfernungskilometer.      zur ersten Tätigkeitsstätte für jeden Arbeitstag nur ein­-    Tätigkeitsstätte
+Für die Entfernung zwischen Wohnung und erster Tä­-         mal beantragen, auch wenn Sie den Weg zwischen                 (Entfernungs-​
+tigkeitsstätte berücksichtigt Ihr Finanzamt grundsätz­-     Wohnung und erster Tätigkeitsstätte mehrmals je Ar­-               pauschale)
+lich die kürzeste Straßenverbindung. Auch hier spielt       beitstag zurücklegen.
+es keine Rolle, wie Sie tatsächlich zu Ihrer ersten Tä­-    Tage, an denen Sie die erste Tätigkeitsstätte nicht auf­-
+tigkeitsstätte gelangt sind. Wenn Sie ein Kraftfahrzeug     gesucht haben (z. B. wegen Krankheit, Urlaub, Aus­-
+nutzen, können Sie statt der kürzesten Strecke eine         wärtstätigkeit, Dienstreise, Heimarbeit, Kurzarbeit),
+andere Straßenverbindung angeben, wenn diese of­-           dürfen Sie bei der Ermittlung der Entfernungspauscha­-
+fensichtlich verkehrsgünstiger ist und von Ihnen regel­-    le nicht mit berücksichtigen.
+mäßig benutzt wurde.
+
+Die erste Tätigkeitsstätte ist die ortsfeste betriebliche   bers bestimmt.                                                          Erste
+Einrichtung des Arbeitgebers, eines verbundenen Un­-        Von einer dauerhaften Zuordnung müssen Sie insbe­-            Tätigkeitsstätte
+ternehmens oder eines vom Arbeitgeber bestimmten            sondere dann ausgehen, wenn Sie unbefristet, für die
+Dritten, der Sie von Ihrem Arbeitgeber dauerhaft zuge­-     Dauer des Dienstverhältnisses oder länger als 48 Mo­-
+ordnet worden sind.                                         nate an einer bestimmten betrieblichen Einrichtung
+Eine erste Tätigkeitsstätte kann ebenso ein großflächi­-    tätig werden sollen.
+ges und entsprechend infrastrukturell erschlossenes         Fehlt die dauerhafte Zuordnung oder ist sie nicht ein­-
+Gebiet (z. B. Werksanlage, Betriebsgelände, Bahnhof,        deutig, ist die erste Tätigkeitsstätte die betriebliche
+Flughafen) oder eine Bildungseinrichtung, die außer­-       Einrichtung, an der Sie
+halb eines Dienstverhältnisses aufgrund eines Vollzeit­-         typischerweise arbeitstäglich oder
+studiums oder einer vollzeitigen Bildungsmaßnahme                je Arbeitswoche zwei volle Arbeitstage oder
+aufgesucht wird, sein.                                           mindestens ein Drittel Ihrer vereinbarten regelmä­-
+Die dauerhafte Zuordnung wird durch die dienst- oder             ßigen Arbeitszeit
+arbeitsrechtlichen Festlegungen sowie die diese aus­-       dauerhaft tätig werden sollen. Je Dienstverhältnis
+füllenden Absprachen oder Weisungen des Arbeitge­-          kann höchstens eine erste Tätigkeitsstätte vorliegen.
+
+Liegt keine erste Tätigkeitsstätte vor und bestimmt Ihr     dort die berufliche Tätigkeit aufzunehmen oder die              Sammelpunkt
+Arbeitgeber, dass Sie sich dauerhaft typischerweise         Einsatzorte aufzusuchen, werden die Fahrten von der
+arbeitstäglich an einem festgelegten Ort einfinden sol­-    Wohnung zu diesem Sammelpunkt wie Fahrten zu
+len (z. B. Busdepot, Betrieb des Arbeitgebers), um von      einer ersten Tätigkeitsstätte behandelt.
+                                                                -4-
+
+Weiträumiges       Ein weiträumiges Tätigkeitsgebiet liegt vor, wenn Sie       Entfernungspauschale bei diesen Fahrten nur für die
+Tätigkeitsgebiet   Ihre vertraglich vereinbarte Arbeitsleistung auf einer      kürzeste Entfernung von der Wohnung zu dem nächst­-
+                   festgelegten Fläche und nicht innerhalb einer ortsfes­-     gelegenen Zugang anwenden.
+                   ten betrieblichen Einrichtung des Arbeitgebers, eines       Aufwendungen für die Fahrten innerhalb des weiträu­-
+                   verbundenen Unternehmens oder bei einem vom Ar­-            migen Tätigkeitsgebietes sowie für die zusätzlichen Ki­-
+                   beitgeber bestimmten Dritten ausüben sollen. Üben           lometer bei Fahrten von der Wohnung zu einem weiter
+                   Sie (z. B. als Forstarbeiterin oder Forstarbeiter) Ihre     entfernten Zugang tragen Sie bitte in Zeile 66 ein. An­-
+                   berufliche Tätigkeit typischerweise arbeitstäglich in       stelle der tatsächlich entstandenen Aufwendungen
+                   einem weiträumigen Tätigkeitsgebiet aus, werden die         können Sie pauschal für jeden gefahrenen Kilometer
+                   Fahrten von der Wohnung zu dem nächstgelegenen              die folgenden Beträge als Werbungskosten geltend
+                   Zugang des weiträumigen Tätigkeitsgebietes wie              machen:
+                   Fahrten zu einer ersten Tätigkeitsstätte behandelt.             bei einem Pkw 0,30 € oder
+                   Wird das weiträumige Tätigkeitsgebiet immer von ver­-           bei anderen motorbetriebenen Fahrzeugen (z. B.
+                   schiedenen Zugängen aus betreten, dürfen Sie die                Motorrad, Motorroller) 0,20 €.
+
+Einfache Hin-      Für die Arbeitstage, an denen Sie aufgrund einer Aus­-      Entsprechendes gilt, wenn Hin- und Rückfahrt zur
+und Rückwege       wärtstätigkeit nur jeweils einen einfachen Hin- oder        oder von der ersten Tätigkeitsstätte an unterschiedli­-
+                   Rückweg zur oder von der ersten Tätigkeitsstätte zu­-       chen Wohnungen beginnen oder enden. Tragen Sie in
+                   rückgelegt haben (z. B. bei fliegendem Personal), kön­-     diesen Fällen in Zeile 29 sowie ggf. in die Zeilen 40
+                   nen Sie nur die halbe Entfernungspauschale als Wer­-        und 48 daher bitte nur die halbe Anzahl der Arbeitsta­-
+                   bungskosten geltend machen.                                 ge ein.
+
+Pkw                Tragen Sie bitte Ihre erste Tätigkeitsstätte, den Sam­-     gebühren, Reparaturkosten und Mautgebühren). Un­-
+                   melpunkt oder das weiträumige Tätigkeitsgebiet in           fallkosten, die Sie selbst tragen mussten, werden je­-
+                   Zeile 27 ein. Geben Sie bitte in Zeile 29 die Anzahl der    doch zusätzlich berücksichtigt, wenn sich der Unfall
+                   Arbeitstage und in die Zeilen 30 bis 33 die gesamten        auf der Fahrt zwischen Wohnung und erster Tätig­-
+                   Entfernungskilometer ein. Bei mehreren Dienstverhält­-      keitsstätte, dem Sammelpunkt oder dem weiträumigen
+                   nissen oder bei einem Arbeitsplatzwechsel im laufen­-       Tätigkeitsgebiet ereignet hat (Zeile 62 bis 64). Unfall­-
+                   den Jahr machen Sie bitte die entsprechenden Anga­-         kosten sind jedoch keine Werbungskosten, wenn der
+                   ben ab Zeile 38.                                            Unfall von Ihnen absichtlich oder unter Alkoholeinfluss
+                   Mit der Entfernungspauschale sind sämtliche Fahr­-          verursacht worden ist.
+                   zeugkosten abgegolten (z. B. die Garagenmiete, Park­-
+
+Öffentliche        Wenn Sie öffentliche Verkehrsmittel benutzen, können        (z. B. durch die Tätigkeit im Homeoffice).
+Verkehrsmittel     Ihre tatsächlichen Kosten höher als die Entfernungs­-       Tragen Sie deshalb bitte zusätzlich zu Ihren Angaben
+                   pauschale oder als der Höchstbetrag i. H. v. 4.500 €        in Zeile 34 sowie ggf. in die Zeilen 45 und 53 diese
+                   sein. Das gilt auch, wenn Sie eine Zeitfahrkarte zur re­-   Kosten in das dafür vorgesehene Feld „Aufwendungen
+                   gelmäßigen Benutzung für den Weg von der Wohnung            für Fahrten mit öffentlichen Verkehrsmitteln (ohne
+                   zur ersten Tätigkeitsstätte erworben haben, diese           Fähr- und Flugkosten)“ ein. Ihr Finanzamt berücksich­-
+                   dann aber nicht im geplanten Umfang nutzen konnten          tigt dann den höheren Betrag.
+
+Pkw und            Haben Sie den Weg zwischen Wohnung und erster               Zeilen 42 und 50 die mit dem Pkw zurückgelegten Ki­-
+öffentliche        Tätigkeitsstätte, dem Sammelpunkt oder dem weiträu­-        lometer und die restlichen Entfernungskilometer in die
+Verkehrsmittel     migen Tätigkeitsgebiet z. B. teilweise mit dem Pkw          Zeilen 32 und / oder 33 sowie ggf. in die Zeilen 43
+                   und teilweise mit öffentlichen Verkehrsmitteln zurück­-     und / oder 44 und 51 und / oder 52 ein.
+                   gelegt, tragen Sie bitte in Zeile 31 sowie ggf. in die
+
+Fähr- und Flug­-   Tragen Sie bitte in die Zeilen 61 und 64 die tatsächli­- fahrten zu und von Fähr- und Flughäfen gilt die Entfer­-
+kosten             chen Fähr- und Flugkosten ein. Für die An- und Ab­- nungspauschale.
+                                                                   -5-
+
+Sie waren Teil einer Fahrgemeinschaft?                      Arbeit fahren, steht die Entfernungspauschale jeder                 Fahr-
+Dann ist die Entfernungspauschale grundsätzlich auf         Person zu. Das gilt selbst dann, wenn sie beim selben        gemeinschaft
+den Höchstbetrag i. H. v. 4.500 € begrenzt. Diese Be­-      Arbeitgeber beschäftigt sind.
+grenzung gilt nicht für die Tage, an denen Sie Ihren ei­-   Bei den Eintragungen unterscheiden Sie bitte nach
+genen oder zur Nutzung überlassenen Pkw benutzt             Tagen, an denen Sie
+haben.                                                           selbst mit Ihrem eigenen oder zur Nutzung über­-
+Die Entfernung ermittelt sich wie folgt:                         lassenen Pkw gefahren oder
+Als Teil einer Fahrgemeinschaft tragen alle Personen             ganz oder teilweise mit einer anderen Person mit­-
+als Entfernung zwischen Wohnung und erster Tätig­-               gefahren
+keitsstätte, dem Sammelpunkt oder dem weiträumigen          sind. Tragen Sie bitte die jeweilige Anzahl der Tage
+Tätigkeitsgebiet die kürzeste benutzbare Straßenver­-       und die entsprechenden Kilometerangaben separat
+bindung ein; Umwege zum Abholen der jeweiligen              ein. Nutzen Sie hierfür bitte die einzelnen Abschnitte
+Personen werden nicht berücksichtigt. Bei verheirate­-      („1. Angabe“, „2. Angabe“ und ggf. „3. Angabe“).
+ten oder verpartnerten Personen, die gemeinsam zur
+
+Wenn Ihr Arbeitgeber Sie unentgeltlich oder verbilligt      machen.                                                          Sammel-​
+zur ersten Tätigkeitsstätte, zum Sammelpunkt oder           Haben Sie jedoch für die Sammelbeförderung ein Ent­-          beförderung
+zum weiträumigen Tätigkeitsgebiet befördert (Sam­-          gelt an den Arbeitgeber entrichtet, tragen Sie diese
+melbeförderung), können Sie für die Strecke der Sam­-       Aufwendungen bitte in die Zeilen 62 bis 64 ein.
+melbeförderung keine Entfernungspauschale geltend
+
+Wenn bei Ihnen der Grad der Behinderung mindes­-            Finanzamt mit 0,30 € je gefahrenen Kilometer berück­-       Menschen mit
+tens 70 betragen hat oder bei einem Grad der Behin­-        sichtigt werden. Achten Sie bitte darauf, dass in der      Behinderungen
+derung von mindestens 50 gleichzeitig eine erhebliche       Bescheinigung über den Grad Ihrer Behinderung ggf.
+Gehbehinderung bestand, erkennt Ihr Finanzamt die           eine Aussage über die Gehbehinderung enthalten ist.
+tatsächlichen Kosten für die Hin- und Rückfahrt an,         Bitte machen Sie in diesen Fällen in Zeile 28 sowie
+auch wenn Sie Ihren eigenen Pkw benutzt haben. Die          ggf. in die Zeilen 39 und 47 die entsprechenden Anga­-
+Kosten brauchen Sie nur nachzuweisen, wenn Sie              ben oder tragen Sie bei Einzelnachweis die tatsächli­-
+hierzu von Ihrem Finanzamt aufgefordert werden.             chen Kosten in die Zeilen 62 bis 64 ein.
+Ohne Einzelnachweis der tatsächlichen Kosten wer­-          Wenn bei Menschen mit Behinderungen der besonde­-
+den 0,60 € je Entfernungskilometer (0,30 € je gefahre­-     re Kilometersatz von 0,60 € anerkannt wurde, kann Ihr
+nen Kilometer) anerkannt. Aufwendungen für die Fahr­-       Finanzamt zusätzlich Gebühren für einen Parkplatz an
+ten, die durch die An- und Abfahrt eines Dritten (z. B.     der ersten Tätigkeitsstätte, am Sammelpunkt oder im
+des Ehegatten) zur ersten Tätigkeitsstätte, zum Sam­-       Zusammenhang mit Fahrten zum weiträumigen Tätig­-
+melpunkt oder zum weiträumigen Tätigkeitsgebiet ent­-       keitsgebiet als Werbungskosten berücksichtigen (Ab­-
+stehen (sog. Leerfahrten), können ebenfalls von Ihrem       schnitt Sonstige Werbungskosten, Zeile 62 bis 64).
+
+Steuerfreie Leistungen des Arbeitgebers in Form von         gung verzichtet, sie also gar nicht erst angenommen        Zeile 51 und 52
+z. B. Job-Tickets oder entsprechenden Zuschüssen            oder zurückgegeben wird. Die steuerfreien und pau­-       Ersatzleistungen
+und pauschal besteuerte Leistungen des Arbeitgebers         schal besteuerten Ersatzleistungen werden in der                       des
+für andere Fahrtkostenzuschüsse für die Wege zwi­-          Regel elektronisch von Ihrem Arbeitgeber an Ihr Fi­-        Arbeitgebers /
+schen Wohnung und erster Tätigkeitsstätte mindern           nanzamt übermittelt.                                       der Agentur für
+den Betrag, den Sie als Entfernungspauschale abzie­-        Von der Agentur für Arbeit oder dem Jobcenter ge­-                   Arbeit
+hen können (maximal bis auf 0 €). Die tatsächliche          währte Fahrtkostenzuschüsse für die Wege zwischen
+Nutzung einer dem Arbeitnehmer überlassenen Fahr­-          Wohnung und erster Tätigkeitsstätte mindern ebenfalls
+berechtigung ist nicht von Bedeutung. Von der Kür­-
+zung kann nur dann abgesehen werden, wenn gegen­-
+                                                            die Entfernungspauschale. Tragen Sie bitte die steuer­-
+                                                            frei erhaltenen Erstattungen in Zeile 52 ein.
+                                                                                                                         Zeile 51
+                                                                                                                                    e
+über dem Arbeitgeber gänzlich auf eine Fahrberechti­-
+
+Zu den Arbeitsmitteln gehören z. B. Werkzeuge, typi­-       Sind die Anschaffungskosten höher als 800 €, müssen         Zeile 54 bis 56
+sche Berufsbekleidung oder Fachzeitschriften. Dabei         Sie diese auf die Jahre der üblichen Nutzungsdauer         Aufwendungen
+können Sie nicht nur die Anschaffungskosten, sondern        verteilen.                                                für Arbeitsmittel
+auch die Kosten für Reparaturen und Reinigungen an­-        Die Anschaffungskosten für Computerhardware und
+setzen.                                                     Software können im Jahr der Anschaffung vollständig
+Arbeitsmittel, die höchstens 800 € (ohne Umsatzsteu­-       abgezogen werden. Weitere Erläuterungen entneh­-
+er) gekostet haben, können Sie in dem Jahr voll als         men Sie bitte dem Schreiben des Bundesministeriums
+Werbungskosten absetzen, in dem Sie diese ange­-            der Finanzen vom 22. Februar 2022, BStBl I
+schafft haben (sog. geringwertige Wirtschaftsgüter).        Seite 187.
+
+Aufwendungen für ein häusliches Arbeitszimmer kön­-         beitszimmer entfallenden Aufwendungen oder die Jah­-              Zeile 57
+nen Sie als Werbungskosten abziehen, wenn dieses            respauschale von 1.260 € eintragen. Für jeden vollen       Aufwendungen
+den Mittelpunkt Ihrer gesamten betrieblichen und be­-       Kalendermonat, in dem die Voraussetzungen für die                  für ein
+ruflichen Tätigkeit bildet.                                 Berücksichtigung eines häuslichen Arbeitszimmers              häusliches
+Sie können hier die tatsächlich auf das häusliche Ar­-      nicht vorliegen, mindern Sie bitte die Jahrespauschale     Arbeitszimmer
+                                                                -6-
+
+                   um jeweils ein Zwölftel. Machen Sie die tatsächlichen       ten verzichten und diese insgesamt einer Tätigkeit zu­-
+                   Aufwendungen geltend und bildet Ihr häusliches Ar­-         ordnen.
+                   beitszimmer nicht das ganze Jahr den Mittelpunkt            Bildet das Arbeitszimmer nicht den Mittelpunkt Ihrer
+                   Ihrer gesamten betrieblichen und beruflichen Tätigkeit,     gesamten betrieblichen und beruflichen Tätigkeit, kön­-
+                   dürfen Sie diese Aufwendungen hier nur zeitanteilig         nen Sie für Ihre beruflichen Tätigkeiten im Homeoffice
+                   eintragen.                                                  die Tagespauschale (Zeile 58 und / oder 59) geltend
+                   Nutzen Sie Ihr Arbeitszimmer für mehrere betriebliche       machen.
+                   und berufliche Tätigkeiten nebeneinander und bildet         Arbeitsmittel (z. B. ausschließlich beruflich genutzte
+                   dieses den Mittelpunkt Ihrer gesamten betrieblichen         Schreibtische, Bücherschränke oder Computer in
+                   und beruflichen Tätigkeiten, sind die tatsächlichen Auf­-   Höhe des beruflichen Nutzungsumfangs) gehören
+                   wendungen des Arbeitszimmers oder die Jahrespau­-           nicht zu den Aufwendungen für ein häusliches Arbeits­-
+                   schale entsprechend dem Nutzungsumfang auf die              zimmer. Sie können diese – ggf. im Wege der Abset­-
+                   verschiedenen Tätigkeiten aufzuteilen. Tragen Sie in        zung für Abnutzung – in den Zeilen 54 bis 56 geltend
+                   Zeile 57 den auf Ihre berufliche Tätigkeit entfallenden     machen.
+                   Betrag ein. Aus Vereinfachungsgründen können Sie            Weitere Einzelheiten entnehmen Sie bitte dem Schrei­-
+                   aber auch auf eine Aufteilung der Aufwendungen oder         ben des Bundesministeriums der Finanzen vom
+                   der Jahrespauschale auf die verschiedenen Tätigkei­-        15. August 2023, BStBl I Seite 1551.
+
+Zeile 58 und 59    Für die Kalendertage, an denen Sie Ihre berufliche Tä­-     Haben Sie an einem Kalendertag verschiedene be­-
+Tagespauschale     tigkeit ganz oder überwiegend in der häuslichen Woh­-       triebliche oder berufliche Tätigkeiten in Ihrer häusli­-
+(bei beruflicher   nung ausgeübt und Sie Ihre erste Tätigkeitsstätte nicht     chen Wohnung ausgeübt, können Sie die Tagespau­-
+Tätigkeit im       aufgesucht haben, können Sie einen Betrag von 6 € je        schale auf die verschiedenen Tätigkeiten aufteilen
+Homeoffice)        Kalendertag als Werbungskosten abziehen (Tages­-            oder insgesamt einer Tätigkeit zuordnen.
+                   pauschale). Die Tagespauschale ist auf 1.260 € jähr­-       Die Tagespauschale dürfen Sie nicht für Zeiträume
+                   lich begrenzt und kann für das Arbeiten in der häusli­-     geltend machen, in denen Sie Aufwendungen für Ihr
+                   chen Wohnung an maximal 210 Tagen in Anspruch               häusliches Arbeitszimmer in Zeile 57 eintragen.
+                   genommen werden (210 Tage x 6 € je Tag = 1.260 €).          Arbeitsmittel (z. B. ausschließlich beruflich genutzte
+                   Tragen Sie in Zeile 58 bitte die Anzahl der Tage mit        Schreibtische, Bücherschränke oder Computer in
+                   beruflicher Tätigkeit in der häuslichen Wohnung ein.        Höhe des beruflichen Nutzungsumfangs) können Sie
+                   Ihr Finanzamt berücksichtigt die Tagespauschale auch        neben der Tagespauschale – ggf. im Wege der Abset­-
+                   für Tage, an denen Sie sowohl in der häuslichen Woh­-       zung für Abnutzung – in den Zeilen 54 bis 56 geltend
+                   nung tätig geworden sind, als auch Ihre erste Tätig­-       machen.
+                   keitsstätte aufgesucht haben, wenn Ihnen für die Tä­-       Weitere Einzelheiten – insbesondere zum Abzug der
+                   tigkeit dauerhaft kein anderer Arbeitsplatz zur Verfü­-     Tagespauschale bei einer doppelten Haushaltsfüh­-
+                   gung stand. Tragen Sie bitte die Anzahl dieser Tage in      rung – entnehmen Sie bitte dem Schreiben des Bun­-
+                   Zeile 59 ein.                                               desministeriums der Finanzen vom 15. August 2023,
+                   Ein häusliches Arbeitszimmer ist für die Berücksichti­-     BStBl I Seite 1551.
+                   gung der Tagespauschale nicht erforderlich.
+
+Zeile 60           Ist die erstmalige Berufsausbildung oder das Erststudi­-    (z. B. Masterstudium), wenn dieses mit späteren steu­-
+Fortbildungs-​     um Gegenstand eines Dienstverhältnisses (Ausbil­-           erpflichtigen Einnahmen aus der angestrebten berufli­-
+kosten             dungsdienstverhältnis), können die dabei entstande­-        chen Tätigkeit im Zusammenhang steht.
+                   nen Aufwendungen Werbungskosten sein. Unabhän­-             Als Aufwendungen können Sie z. B. Prüfungsgebüh­-
+                   gig davon, ob ein Dienstverhältnis besteht, können          ren, Fachliteratur, Schreibmaterial oder Reisekosten
+                   Aufwendungen für die Fortbildung in einem bereits er­-      geltend machen. Ersatzleistungen von Dritten (auch
+                   lernten Beruf und für einen Berufswechsel vorbereiten­-     zweckgebundene Leistungen nach dem SGB III oder
+                   de Umschulungsmaßnahmen als Werbungskosten ab­-             nach dem Bundesausbildungsförderungsgesetz oder
+                   ziehbar sein.                                               Zuschüsse im Rahmen des sog. Aufstiegs-BaföG)
+                   Das gilt auch für die Aufwendungen für ein Erststudi­-      müssen Sie jedoch von Ihren Aufwendungen abzie­-
+                   um nach einer bereits abgeschlossenen nichtakademi­-        hen.
+                   schen Berufsausbildung oder ein weiteres Studium
+
+Zeile 61 bis 64    Bewerbungskosten                                            gen entfallen, sind Werbungskosten. Ohne Einzel­-
+Weitere            Wenn Sie im Jahr 2025 eine Arbeitsstelle gesucht            nachweis erkennt Ihr Finanzamt jährlich pauschal 16 €
+Werbungskosten     haben, dann können Sie die dadurch entstandenen             an.
+                   und nicht erstatteten Kosten (z. B. Inseratskosten, Te­-
+                                                                          Umzugskosten
+                   lefonkosten, Porto, Kosten für Kopien von Zeugnissen
+                                                                          Umzugskosten können Sie als Werbungskosten gel­-
+                   oder Reisekosten anlässlich einer Vorstellung) hier
+                                                                          tend machen, wenn Sie aus beruflichen Gründen um­-
+                   geltend machen. Dafür kommt es nicht darauf an, ob
+                                                                          gezogen sind. Berufliche Gründe liegen vor, wenn Sie
+                   Ihre Bewerbung Erfolg hatte.
+                                                                          erstmals eine Stelle antreten oder den Arbeitgeber
+                   Kontoführungsgebühren                                  wechseln. Bei Umzügen innerhalb derselben Gemein­-
+                   Kontoführungsgebühren, die auf die Gutschrift von Ar­- de ist ein beruflicher Anlass auch gegeben, wenn der
+                   beitslohn und auf beruflich veranlasste Überweisun­- Umzug vom Arbeitgeber gefordert wird (z. B. beim
+                                                                    -7-
+
+Bezug oder der Räumung einer Dienstwohnung). Ihre            Pauschbeträge entnehmen Sie bitte dem Schreiben
+tatsächlichen Umzugskosten sowie umzugsbedingte              des Bundesministeriums der Finanzen vom 28. De­-
+Unterrichtskosten für Kinder werden von Ihrem Fi­-           zember 2023, BStBl I 2024 Seite 84.
+nanzamt grundsätzlich bis zu der im Bundesumzugs­-           Zur Berücksichtigung von Umzugskosten im Rahmen
+kostengesetz vorgesehenen Höhe anerkannt. Sonsti­-           einer doppelten Haushaltsführung beachten Sie bitte
+ge Umzugsauslagen können Sie mit Pauschbeträgen              die Erläuterungen zu Zeile 32 in der Anleitung zur An­-
+geltend machen. Die für das Jahr 2025 maßgebenden            lage N-Doppelte Haushaltsführung.
+
+Zu den Reisekosten gehören Fahrtkosten, Verpfle­-            entsprechende Aufwendungen im Rahmen einer Aus­-            Zeile 65 bis 77
+gungsmehraufwendungen, Übernachtungskosten und               wärtstätigkeit geltend machen.                                Reisekosten
+Reisenebenkosten, wenn Ihnen diese durch eine fast           Dies gilt auch, wenn Sie aufgrund Ihrer Tätigkeit typi­-     bei beruflich
+ausschließlich beruflich veranlasste Auswärtstätigkeit       scherweise nur an ständig wechselnden Einsatzstellen          veranlasster
+entstanden sind.                                             beschäftigt oder auf einem Fahrzeug tätig waren.            Auswärtstätig­-
+Eine Auswärtstätigkeit liegt vor, wenn Sie vorüberge­-       Wegen der Besonderheit bei der Berücksichtigung von                    keit
+hend außerhalb Ihrer Wohnung und Ihrer ersten Tätig­-        Fahrtkosten zu einem Sammelpunkt oder einem weit­-
+keitsstätte beruflich tätig waren. Liegt keine erste Tä­-    räumigen Tätigkeitsgebiet beachten Sie bitte die ent­-
+tigkeitsstätte vor (z. B. bei einem Sammelpunkt oder         sprechenden Erläuterungen zu den Zeilen 27 bis 53.
+weiträumigen Tätigkeitsgebiet), können Sie ebenfalls
+
+Fahrtkosten können Sie in der Höhe der tatsächlich           von Gepäck, für Telefon, Porto, Garage und Park­-           Zeile 65 bis 71
+entstandenen Aufwendungen als Werbungskosten gel­-           platz).                                                         Fahrt- und
+tend machen. Bei der Benutzung eines eigenen Fahr­-          Als Berufskraftfahrerin oder Berufskraftfahrer kön­-       Übernachtungs-​
+zeugs können Sie anstelle der tatsächlichen Kosten           nen Sie statt der tatsächlich entstandenen Kosten                  kosten,
+pauschal für jeden gefahrenen Kilometer die folgen­-         während einer mehrtägigen beruflichen Tätigkeit in            Reiseneben-​
+den Beträge geltend machen:                                  Verbindung mit einer Übernachtung im Fahrzeug                       kosten
+    beim Pkw 0,30 € oder                                     einen Pauschbetrag i. H. v. 9 € pro Kalendertag gel­-
+    bei anderen motorbetriebenen Fahrzeugen 0,20 €.          tend machen. Voraussetzung hierfür ist, dass Ihnen für
+Ein Abzug von Werbungskosten ist nicht möglich,              diesen Tag eine Pauschale für Mehraufwendungen für
+wenn Sie für die Fahrten ein vom Arbeitgeber gestell­-       Verpflegung zusteht. Für Kalendertage, an denen Sie
+tes Beförderungsmittel benutzt haben (Firmenwagen­-          eine Verpflegungspauschale bei einer eintägigen Aus­-
+gestellung, unentgeltliche Sammelbeförderung).               wärtstätigkeit ohne Übernachtung mit Abwesenheit
+Übernachtungskosten erkennt Ihr Finanzamt in der             von mehr als 8 Stunden beanspruchen können, kann
+tatsächlich entstandenen Höhe als Werbungskosten             der Pauschbetrag nicht berücksichtigt werden.
+an; bei ein und derselben Tätigkeitsstätte im Inland je­-    Als Werbungskosten können Sie je Kalenderjahr ent­-
+doch maximal für 48 Monate und danach höchstens              weder nur die tatsächlich entstandenen Kosten oder
+bis zu 1.000 € im Monat.                                     nur die Pauschale ansetzen.
+Reisenebenkosten erkennt Ihr Finanzamt in tatsäch­-          Steuerfreie Leistungen des Arbeitgebers mindern die
+lich entstandener Höhe als Werbungskosten an (z. B.          abzugsfähigen Werbungskosten. Tragen Sie diese
+Aufwendungen für die Beförderung und Aufbewahrung            bitte in Zeile 71 ein.
+
+Mehraufwendungen für Verpflegung können Sie für              tigkeit eine Mahlzeit zur Verfügung gestellt, sind die      Zeile 72 bis 77
+dieselbe Auswärtstätigkeit – höchstens jedoch für            Werbungskosten tageweise zu kürzen, und zwar für                     Mehr-
+3 Monate – nur pauschal geltend machen:                      ein zur Verfügung gestelltes:                               aufwendungen
+    für eine eintägige auswärtige Tätigkeit ohne Über­-           Frühstück um 5,60 € (entspricht 20 % von 28 €),                    für
+    nachtung mit einer Abwesenheit von mehr als                   Mittagessen um 11,20 € (entspricht 40 % von              Verpflegung
+    8 Stunden von Ihrer Wohnung und der ersten Tä­-               28 €),
+    tigkeitsstätte, jeweils 14 €. Dies gilt auch, wenn die        Abendessen um 11,20 € (entspricht 40 % von
+    auswärtige berufliche Tätigkeit über Nacht ausge­-            28 €)
+    übt wurde (also an 2 Kalendertagen ohne Über­-           Trifft dies bei Ihnen zu, geben Sie die Kürzungsbeträ­-
+    nachtung),                                               ge in Zeile 75 an. Je Kalendertag erfolgt eine Kürzung
+    für An- und Abreisetage einer mehrtägigen aus­-          der Verpflegungspauschale auf maximal 0 €. Haben
+    wärtigen Tätigkeit mit Übernachtung außerhalb            Sie für eine zur Verfügung gestellte Mahlzeit ein Ent­-
+    Ihrer Wohnung, jeweils 14 €,                             gelt gezahlt, sind die pauschalen Kürzungsbeträge um
+    für die Kalendertage, an denen Sie außerhalb Ihrer       die gezahlten Entgelte zu mindern.
+    Wohnung und ersten Tätigkeitsstätte beruflich tätig      Ob Sie die Verpflegungspauschalen kürzen müssen,               Neu!
+    und daher 24 Stunden von Ihrer Wohnung abwe­-            können Sie im Regelfall der Reisekostenabrechnung
+    send waren, jeweils 28 €.                                Ihres Arbeitgebers entnehmen.
+Dazu tragen Sie die Anzahl der Tage bitte in die Zei­-       Für Auslandsdienstreisen gelten andere Pauschbeträ­-
+len 72 bis 74 ein. Nach einer Unterbrechung der beruf­-      ge. Die für das Jahr 2025 maßgebenden Pauschbeträ­-
+lichen Tätigkeit an derselben Tätigkeitsstätte von min­-     ge bei Auslandsdienstreisen entnehmen Sie bitte dem
+destens 4 Wochen beginnt die Dreimonatsfrist neu.            Schreiben des Bundesministeriums der Finanzen vom
+Wurde Ihnen von Ihrem Arbeitgeber oder auf dessen            2. Dezember 2024, BStBl I Seite 1549.
+Veranlassung von einem Dritten für eine Auswärtstä­-         Die Dreimonatsfrist gilt nicht, wenn Sie aufgrund Ihrer
+                                                            -8-
+
+                  Tätigkeit typischerweise auf einem Fahrzeug oder in abzugsfähigen Werbungskosten. Tragen Sie diese
+                  einem weiträumigen Tätigkeitsgebiet tätig waren. bitte in Zeile 77 ein.
+                  Steuerfreie Leistungen Ihres Arbeitgebers mindern die
+
+Zeile 78 bis 83   Werbungskosten zu                                          sowie bei
+Werbungskosten       steuerbegünstigten Versorgungsbezügen,                  Arbeitslohn für eine Tätigkeit im Inland, wenn die
+in Sonderfällen      Entschädigungen / Arbeitslohn für mehrere Jahre,        Ansässigkeit in Belgien (Artikel 4 Abs. 1 oder
+                     steuerfreiem Arbeitslohn laut Anlage N-AUS,             Abs. 2 DBA Belgien) gegeben ist,
+                     steuerpflichtigem Arbeitslohn, von dem Ihr Arbeit­- tragen Sie bitte in die Zeilen 78 bis 83 ein.
+                     geber keinen Steuerabzug vorgenommen hat,
+

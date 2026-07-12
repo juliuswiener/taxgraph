@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung Vorsorgeaufwand 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "anl_vorsorge_2025.txt"
+  pdf_datei: "anl_vorsorge_2025.pdf"
+  sha256: "ff586a9b672c3df296d102b8b451c0dd5e3bfe00a6e4763a123d4de62db42cfe"
+  pdf_sha256: "ef76d371f136f018d4502dc8ab59162801a3aec23a74bc6f86750daf40d2df7f"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Vorsorge']
+  verwendet_in:
+    - ""

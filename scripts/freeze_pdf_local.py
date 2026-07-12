@@ -58,6 +58,8 @@ def main() -> int:
     ap.add_argument("--erwarte", action="append", default=[],
                     help="Passage, die woertlich im Text vorkommen MUSS (mehrfach)")
     ap.add_argument("--min-laenge", type=int, default=500)
+    ap.add_argument("--authority", default="amtlicher_vordruck",
+                    help="amtlicher_vordruck (Formular) | verwaltung (Anleitung/Auslegung)")
     ap.add_argument("--verwendet-in", default="")
     args = ap.parse_args()
 
@@ -97,7 +99,7 @@ def main() -> int:
         f'  pdf_datei: "{args.name}.pdf"\n'
         f'  sha256: "{txt_sha}"\n'
         f'  pdf_sha256: "{pdf_sha}"\n'
-        "  authority: amtlicher_vordruck\n"
+        f"  authority: {args.authority}\n"
         "  redistributable: true\n"
         f'  erwartete_anker: {args.erwarte!r}\n'
         f'  verwendet_in:\n    - "{args.verwendet_in}"\n'

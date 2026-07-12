@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung agB 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "anl_agb_2025.txt"
+  pdf_datei: "anl_agb_2025.pdf"
+  sha256: "f72b487407304f3b69dbf08e040ac8db4cd7adc76474c7e91c19395433421111"
+  pdf_sha256: "0067f79570ae3a537f2b65d1bec78f4d3a42694765cb4b40b2ce2015dcf67316"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Außergewöhnliche Belastungen']
+  verwendet_in:
+    - ""

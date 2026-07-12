@@ -1,0 +1,240 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anleitung Vorsorgeaufwand 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+Anleitung zur Anlage Vorsorgeaufwand                                                                                   2025
+Allgemeines       Die Anlage Vorsorgeaufwand ist vorgesehen für:                Beiträge zur Altersvorsorge und
+                                                                                Beiträge zu sonstigen Vorsorgeaufwendungen.
+
+
+                  Daten für die mit e gekennzeichneten Zeilen werden         Ihnen stattdessen eine „Besondere Lohnsteuerbe­-
+                  von den mitteilungspflichtigen Stellen (z. B. Arbeitge­-   scheinigung“ für das Kalenderjahr 2025 ausgehändigt,
+                  ber, Krankenversicherungsunternehmen) elektronisch         sind die Eintragungen weiterhin vorzunehmen. Das
+                  an Ihr Finanzamt übermittelt. Sie müssen diese Daten       Gleiche gilt, wenn Ihre Versicherung die Daten nicht
+       e          nicht mehr in die mit e gekennzeichneten Zeilen / Be­-     elektronisch übermittelt und Ihnen die „Bescheinigung
+                  reiche der Anlage Vorsorgeaufwand eintragen. Möch­-        zur Vorlage beim Finanzamt“ über die geleisteten Bei­-
+                  ten Sie von diesen Daten abweichen oder hat Ihr Ar­-       träge erteilt hat.
+                  beitgeber die Daten nicht elektronisch übermittelt und
+
+
+
+
+                                                                                                                        Beispiel
+
+                                                                             Die Eheleute Muster stellen fest, dass die in ihren
+                                                                             Lohnsteuerbescheinigungen ausgewiesenen Sozial­-
+                                                                             versicherungsbeiträge vom Arbeitgeber elektronisch
+                                                                             an das Finanzamt übermittelt wurden. Eintragungen
+                                                                             in den Zeilen 4, 9, 11, 13 und 43 sind deshalb nicht
+                                                                             erforderlich.
+                                                                             Die Musters haben sowohl eine Insassen- als auch
+                                                                             eine Freizeit-Unfallversicherung abgeschlossen. Für
+                                                                             beide Versicherungen haben sie im Jahr 2025 ins­-
+                                                                             gesamt 118 € überwiesen. Die Kfz-Haftpflichtversi­-
+                                                                             cherung hat 240 € an Beiträgen gekostet. Die Bei­-
+                                                                             träge für die Kaskoversicherung sind hierin nicht
+                                                                             enthalten. Außerdem haben sie 49 € für eine private
+                                                                             Haftpflichtversicherung gezahlt. Die Summe dieser
+                                                                             Beträge (407 €) kürzen sie um eine von der Kfz-​
+                                                                             Haftpflichtversicherung    erhaltene  Beitragsrück­-
+                                                                             erstattung von 18 € und tragen den verbleibenden
+                                                                             Betrag von 389 € in Zeile 46 ein.
+
+
+
+Vorsorge-​        Vorsorgeaufwendungen sind Ausgaben für Versiche­-          füllt sein:
+aufwendungen      rungen, mit denen Sie für Ihre Zukunft vorsorgen. Sie           Der andere Staat lässt keinen Abzug dieser mit
+                  gliedern sich in Aufwendungen für Ihre Altersvorsorge           den steuerfreien Einnahmen in unmittelbarem wirt­-
+                  (Rente), Kranken- und Pflegeversicherung und sonsti­-           schaftlichem Zusammenhang stehenden Beiträge
+                  ge Vorsorgeaufwendungen.                                        im Besteuerungsverfahren zu.
+                  Vorsorgeaufwendungen sind grundsätzlich bis zu be­-             Das Doppelbesteuerungsabkommen (DBA) weist
+                  stimmten Höchstbeträgen abziehbar. Dies gilt auch für           die Berücksichtigung der persönlichen Abzüge
+                  Vorsorgeaufwendungen, die in unmittelbarem Zusam­-              nicht dem anderen Staat zu.
+                  menhang stehen mit steuerfreien Einnahmen, wenn            Andere Vorsorgeaufwendungen, die in unmittelbarem
+                  diese in einem EU- oder EWR-Mitgliedsstaat oder der        wirtschaftlichen Zusammenhang mit steuerfreien Ein­-
+                  Schweizerischen Eidgenossenschaft erzielt werden.          nahmen stehen, tragen Sie bitte nicht ein.
+                  Hierfür müssen die beiden folgenden Bedingungen er­-
+
+
+
+
+Anleitung zur Anlage Vorsorgeaufwand - September 2025
+                                                                  -2-
+
+Beiträge zur        Zu den Beiträgen zur Altersvorsorge (Zeile 4 bis 10)               vom 19. Juni 2020, Bundessteuerblatt I Seite 617
+Altersvorsorge      gehören in der Regel die Beiträge                                  – (hierzu gehört bei Arbeitnehmerinnen und Arbeit­-
+                       zu gesetzlichen Rentenversicherungen (hierzu ge­-               nehmern auch der Arbeitgeberanteil),
+                       hört bei Arbeitnehmerinnen und Arbeitnehmern                    zu zertifizierten Rentenverträgen (Verträge zu sog.
+                       auch der Arbeitgeberanteil),                                    Rürup-Renten oder Basis-Renten) und
+                       zur landwirtschaftlichen Alterskasse (hierzu gehört             zu ausländischen gesetzlichen Rentenversicherun­-
+                       bei Arbeitnehmerinnen und Arbeitnehmern auch                    gen.
+                       der Arbeitgeberanteil),                                    Für geleistete Altersvorsorgebeiträge (sog. Riester-​
+                       zu berufsständischen Versorgungseinrichtungen,             Rente) können Sie einen zusätzlichen Sonderausga­-
+                       die Leistungen erbringen, die den gesetzlichen             benabzug geltend machen. Fügen Sie hierzu bitte die
+                       Rentenversicherungen vergleichbar sind – diese             Anlage AV bei. Weitere Einzelheiten entnehmen Sie
+                       sind abschließend aufgeführt in der Anlage zum             bitte der Anleitung zur Anlage AV.
+                       Schreiben des Bundesministeriums der Finanzen
+
+Beiträge zu         Sonstige Vorsorgeaufwendungen (Zeile 11 bis 48) sind             dem 1. Januar 2005,
+sonstigen           z. B. die Beiträge                                               zu Kapitallebensversicherungen mit einer Laufzeit
+Vorsorge-​              zur gesetzlichen Sozialversicherung (ohne Ren­-              von mindestens 12 Jahren sowie Laufzeitbeginn
+aufwendungen            tenversicherungsbeiträge),                                   und der ersten Beitragszahlung vor dem 1. Januar
+                        zu entsprechenden privaten Versicherungen (z. B.             2005,
+                        private Krankenversicherungen),                              zu Unfall- und Haftpflichtversicherungen sowie
+                        zu Rentenversicherungen mit Kapitalwahlrecht und             zu Risikoversicherungen, die nur für den Todesfall
+                        Laufzeitbeginn sowie erster Beitragszahlung vor              eine Leistung vorsehen.
+
+Zeile 4 bis 10      Beiträge für eine öffentlich-rechtliche Versicherungs-        schlossen, wenn die (ggf. anteiligen) Beiträge im
+Gesetzliche         oder Versorgungseinrichtung oder zur landwirtschaftli­-       Wohnsitzstaat steuermindernd berücksichtigt werden
+Renten-​            chen Alterskasse tragen Sie bitte in Zeile 5 ein, wenn        können.
+versicherungen          Sie keine Arbeitnehmerin oder kein Arbeitnehmer           Wenn Sie freiwillig in der gesetzlichen Rentenversi­-
+und                     sind oder                                                 cherung versichert sind oder als Nichtarbeitnehmer
+gleichgestellte         Ihr Arbeitgeber die Beiträge nicht auf der Lohn­-         Pflichtbeiträge zur gesetzlichen Rentenversicherung
+Aufwendungen            steuerbescheinigung ausweist, weil Sie die Beiträ­-       leisten (z. B. selbständige Hebammen und Künstler),
+                        ge direkt an die Einrichtung leisten; in diesem Fall      tragen Sie die Beiträge zur gesetzlichen Rentenversi­-
+                        mindern Sie bitte die Beiträge um die auf der             cherung bitte in Zeile 6 ein.
+                        Lohnsteuerbescheinigung unter Nr. 22 b ausge­-            Wenn Sie im Rahmen einer geringfügigen Beschäfti­-
+                        wiesenen steuerfreien Arbeitgeberzuschüsse.               gung eigene Beiträge geleistet haben, können Sie den
+                    Kammermitglieder können ihre Pflichtbeiträge zur be­-         Arbeitnehmeranteil in Zeile 6 und den pauschalen Ar­-
+                    rufsständischen Versorgungseinrichtung als Sonder­-           beitgeberanteil in Zeile 10 eintragen.
+  e Zeile
+    bis 9
+          4, 7
+                    ausgaben abziehen, wenn ein unmittelbarer wirtschaft­-        Sind Sie in der gesetzlichen Rentenversicherung
+                    licher Zusammenhang der Beiträge mit der Berufstä­-           pflichtversichert und zahlen Sie über Ihre Pflichtbeiträ­-
+                    tigkeit im Inland besteht. Die Pflichtbeiträge zur berufs­-   ge hinaus zusätzliche freiwillige Beiträge (z. B. zur
+                    ständischen Versorgung können Sie nur anteilig abzie­-        Vermeidung von Abschlägen bei Renteneintritt vor der
+                    hen, wenn sich die Berufstätigkeit auch auf das Aus­-         Regelaltersgrenze), tragen Sie diese Beiträge bitte
+                    land erstreckt. Der Sonderausgabenabzug ist ausge­-           ebenfalls in Zeile 6 ein.
+
+Zeile 11 bis 42     Ihr Finanzamt berücksichtigt tatsächlich geleistete Bei­-     prüft die Einhaltung dieser Regelung.
+Kranken- und        träge zur privaten und zur gesetzlichen Krankenversi­-        Tragen Sie Ihre Beiträge wie folgt ein:
+Pflege-​            cherung (ggf. inklusive Zusatzbeitrag i. S. d. § 242              in Zeile 22 Beiträge für Wahlleistungen und Zu­-
+versicherung        SGB V) sowie zur gesetzlichen Pflegeversicherung                  satzversicherungen an die gesetzliche Kranken­-
+                    (soziale Pflegeversicherung und private Pflege-Pflicht­-          versicherung,
+                    versicherung) für eine Absicherung bis zur Höhe des               in Zeile 27 Beiträge für Wahlleistungen und Zu­-
+                    Sozialhilfeniveaus (Basisabsicherung) in vollem Um­-              satzversicherungen an die private Kranken- / Pfle­-
+                    fang. Sie müssen deshalb bei den sonstigen Vorsorge­-             geversicherung,
+                    aufwendungen zwischen folgenden Beiträgen unter­-                 in die Zeilen 28 bis 33 Beiträge an eine ausländi­-
+                    scheiden:                                                         sche Kranken- und / oder Pflegeversicherung (Rei­-
+  e Zeile 11, 13
+    bis 16, 18
+                        Beiträge zur Basis-Krankenversicherung,
+                        Beiträge zur gesetzlichen Pflegeversicherung,
+                                                                                      chen Sie bitte zu diesen Beiträgen einen Nachweis
+                                                                                      in Kopie nur ein, wenn Sie von Ihrem Finanzamt
+      und 19, 21,       Beiträge oder Beitragsanteile, die eine höhere Ab­-           dazu aufgefordert werden.).
+      23 bis 26,        sicherung garantieren; hierbei handelt es sich z. B.      Haben Sie als Versicherungsnehmerin oder Versiche­-
+      34 bis 36,        um Beiträge, mit denen Wahlleistungen finanziert          rungsnehmer Ihr Kind, für das Sie keinen Anspruch
+      39 bis 41         werden.                                                   auf Freibeträge für Kinder oder Kindergeld haben, im
+                    Sofern Sie Kranken- und / oder Pflegeversicherungs­-          Rahmen einer privaten Krankenversicherung als versi­-
+                    beiträge für zukünftige Jahre vorausgezahlt haben,            cherte Person mitversichert, tragen Sie bitte die Identi­-
+                    können Sie diese maximal in Höhe des Dreifachen               fikationsnummer, Name, Vorname und Geburtsdatum
+                    des vertraglich geschuldeten Jahresbeitrags abziehen,         der mitversicherten Person in die Zeilen 37 und 38
+                    der auf die Basisabsicherung entfällt. Ihr Finanzamt          und Beiträge zu Wahlleistungen und Zusatzversiche‐
+                                                                   -3-
+
+rungen für die mitversicherte Person in Zeile 42 ein.       cherung bereits durch eine andere Person (z. B. El­-
+Für weitere Personen, die die o. g. Voraussetzungen         tern) steuerlich geltend gemacht, tragen Sie in die be­-
+erfüllen, machen Sie die Angaben bitte in einer formlo­-    treffenden Zeilen eine „0“ ein. Beachten Sie hierzu
+sen Anlage mit der Überschrift „Ergänzende Angaben          bitte die Erläuterungen zu den Zeilen 27 bis 38 der An­-
+zur Steuererklärung“ und tragen in Zeile 37 des             leitung zur Anlage Kind und zu Allgemeines der Anlei­-
+Hauptvordrucks ESt 1 A eine „1“ ein.                        tung zur Anlage Unterhalt.
+Werden Ihre Beiträge zur Kranken- und Pflegeversi­-
+
+Sie haben keinen Anspruch auf Krankengeld oder eine         Hinweis:                                                     Zeile 12, 15, 29
+vergleichbare Leistung?                                     Grundsätzlich ergibt sich aus den Krankenversiche­-                  und 32
+Dann tragen Sie Ihren Beitrag zur Kranken- und Pfle­-       rungsbeiträgen im Krankheitsfall (z. B. bei Arbeitneh­-       Beiträge ohne
+geversicherung, der keinen Anspruch auf Krankengeld         merinnen und Arbeitnehmern), bei Vorliegen weiterer           Anspruch auf
+begründet, bitte in die Zeilen 12 oder 29 und / oder 32     Voraussetzungen, ein Anspruch auf Krankengeld oder             Krankengeld
+ein.                                                        eine Leistung, die anstelle von Krankengeld gewährt
+                                                            wird.                                                         Zeile 15
+                                                                                                                                       e
+Sie haben einen Anspruch auf Krankengeld oder eine          Hinweis:                                                    Zeile 17 und 20
+Leistung, die anstelle von Krankengeld gewährt wird?        Im Regelfall ergibt sich aus den Krankenversiche­-             Beiträge mit
+Dann tragen Sie Ihren Beitrag zur Kranken- und Pfle­-       rungsbeiträgen (z. B. von Rentnerinnen und Rentnern)         Anspruch auf
+geversicherung, der einen Anspruch auf Krankengeld          kein Anspruch auf Krankengeld oder eine Leistung, die         Krankengeld
+begründet, bitte in Zeile 17 oder 20 ein.                   anstelle von Krankengeld gewährt wird.
+
+
+Steuerfreie Zuschüsse zu den Kranken- und Pflege­-             der Künstlersozialkasse,                                  Zeile 21, 26, 34
+versicherungsbeiträgen mindern die abziehbaren Bei­-           der Deutschen Rentenversicherung Bund und /                         bis 36
+träge.                                                         oder                                                          Zuschüsse
+Dies sind z. B. steuerfreie Zuschüsse                          die von der Besoldungsstelle während der Eltern­-
+    des Arbeitgebers,                                          zeit gewährt werden.                                    Zeile 21,
+                                                                                                                       26, 34 bis
+                                                                                                                                       e
+                                                                                                                       36
+
+
+Sie haben Beiträge                                          i. H. v. 2.800 € oder 1.900 € aus, soweit dieser nicht       Zeile 43 bis 48
+    zur Arbeitslosenversicherung,                           bereits durch Beiträge zur Basis-Krankenversicherung                Weitere
+    zu Erwerbs- und Berufsunfähigkeitsversicherun­-         und gesetzlichen Pflegeversicherung ausgeschöpft                  Vorsorge-​
+    gen,                                                    wurde. Dies gilt auch für Beiträge zu Kranken- und           aufwendungen
+    zu Unfall- und Haftpflichtversicherungen und / oder     Pflegeversicherungen, soweit diese nicht der Basisab­-
+    zu Renten- und Lebensversicherungen gezahlt?
+Diese Beiträge wirken sich bis zum Höchstbetrag
+                                                            sicherung zuzurechnen sind.                                   Zeile 43
+                                                                                                                                       e
+Sie haben Beiträge zu Versicherungen gegen Arbeits­- Sie haben Beiträge zu eigenständigen Erwerbs- und                  Zeile 44 und 45
+losigkeit gezahlt, die nicht auf einer Lohnsteuerbe­- Berufsunfähigkeitsversicherungen gezahlt?
+scheinigung enthalten sind?                           Dann tragen Sie diese bitte in Zeile 45 ein.
+Dann tragen Sie diese bitte in Zeile 44 ein.
+
+Sie haben Beiträge für private Haftpflichtversiche­-        berufliche Risiken ab, tragen Sie in der Regel den hal­-                Zeile 46
+rungen sowie für private Unfallversicherungen ge­-          ben Beitrag hier und die andere Hälfte des Beitrags
+zahlt?                                                      bei den Werbungskosten oder den Betriebsausgaben
+Dann tragen Sie in Zeile 46 bitte die tatsächlichen Bei­-   ein.
+tragszahlungen ein, also nach Kürzung um den Scha­-         Beiträge zu Kasko-, Hausrat- und Rechtsschutzversi­-
+denfreiheitsrabatt und um Beitragsrückerstattungen.         cherungen sind nicht abziehbar.
+Deckt eine Unfallversicherung sowohl private als auch
+
+Sie haben Beiträge zu Risikoversicherungen ge­-             gezahlt,                                                     Zeile 46 bis 48
+zahlt, die nur im Todesfall eine Leistung vorsehen (Ri­-        die eine Laufzeit von mindestens 12 Jahren
+sikolebensversicherung, ggf. in Kombination mit Be­-            haben,
+rufs- oder Erwerbsunfähigkeitsversicherung)?                    deren Laufzeit vor dem 1. Januar 2005 begonnen
+Dann tragen Sie diese bitte in Zeile 46 ein.                    hat und
+Beiträge zu Witwen-, Waisen- und Sterbekassen kön­-             für die mindestens ein Versicherungsbeitrag vor
+nen Sie ebenfalls hier eintragen.                               dem 1. Januar 2005 gezahlt wurde?
+Sie haben Beiträge zu Rentenversicherungen mit              Dann tragen Sie diese Beiträge bitte in Zeile 47 ein.
+Kapitalwahlrecht oder zu Kapitallebensversicherun­-         Sie haben Beiträge zu Rentenversicherungen ohne
+gen (auch Ausbildungs- und Aussteuerversicherungen          Kapitalwahlrecht gezahlt, mit Laufzeitbeginn und ers­-
+sowie Unfallversicherungen mit Prämienrückgewähr)           ter Beitragszahlung vor dem 1. Januar 2005?
+                                                               -4-
+
+                  Dann tragen Sie die Beiträge bitte in Zeile 48 ein.     Fälligkeit der Leistung vereinbart wurden (Eintrag in
+                  Bei Beiträgen zu Versorgungs- und Pensionskassen, Zeile 48).
+                  einschließlich der von Ihrem Arbeitgeber für Sie er­- Sie dürfen nicht eintragen:
+                  brachten Zukunftssicherungsleistungen (z. B. an Zu­-        fondsgebundene Lebensversicherungen,
+                  satzversorgungskassen des öffentlichen Dienstes), die       von anderen Personen abgeschlossene entgeltlich
+                  zu Ihren Lasten besteuert worden sind, richtet sich die     erworbene Lebensversicherungen und
+                  Zuordnung zu den Zeilen 47 und 48 danach, ob eine           pauschal besteuerte oder steuerfrei gezahlte Ar­-
+                  Kapitalisierung der Leistungen möglich ist (Eintrag in      beitgeberbeiträge.
+                  Zeile 47) oder ob ausschließlich Rentenzahlungen bei
+
+Zeile 49 bis 55   Sie haben zu Ihrer Krankenversicherung oder Ihren           pflichtig waren.
+Ergänzende        Krankheitskosten einen Anspruch auf                         Dies betrifft insbesondere
+Angaben zu den         steuerfreie Zuschüsse,                                      in einem Beamtenverhältnis beschäftigte Perso­-
+Vorsorge-​             steuerfreie Arbeitgeberbeiträge oder                        nen,
+aufwendungen           steuerfreie Beihilfen?                                      Soldatinnen und Soldaten,
+                  Dann brauchen Sie in Zeile 49 nichts eintragen.                  Geistliche und andere Personen mit beamtenähnli­-
+                  Sie                                                              chen Versorgungsansprüchen,
+                       haben Beiträge für eine Krankenversicherung aus­-           Personen, die Werkspensionen und Altersrenten
+                       schließlich selbst bezahlt oder                             beziehen,
+                       sind als Arbeitnehmerin oder Arbeitnehmer privat            Personen, die Altersbezüge beziehen, weiter be­-
+                       krankenversichert und die mit Ihnen verheiratete            schäftigt sind und nicht auf die Rentenversiche­-
+                       oder verpartnerte Person ist nicht berufstätig und          rungsfreiheit verzichtet haben und / oder
+                       freiwillig gesetzlich krankenversichert oder                Vorstandsmitglieder von Aktiengesellschaften und
+                       sind geringfügig beschäftigt und nicht unentgeltlich        Gesellschafter-Geschäftsführerinnen oder -Ge­-
+                       familienversichert bei der mit Ihnen verheirateten          schäftsführer einer GmbH, die nicht in der gesetzli­-
+                       oder verpartnerten Person?                                  chen Rentenversicherung versichert sind.
+                  Dann beantworten Sie die in Zeile 49 gestellte Frage        Nicht betroffen sind Personen, die in ein berufsständi­-
+                  bitte mit „Nein“ und tragen eine „2“ ein.                   sches Versorgungswerk eingezahlt haben und deshalb
+                  Die Eintragungen in Zeile 49 werden zur Berechnung          von der gesetzlichen Rentenversicherungspflicht be­-
+                  der abziehbaren Vorsorgeaufwendungen benötigt.              freit sind. In diesem Fall handelt es sich bei dem be­-
+                  Bitte füllen Sie die Zeilen 50 bis 54 nur aus, wenn Sie     rufsständischen Versorgungswerk um ein auf öffent­-
+                  Arbeitnehmerin oder Arbeitnehmer sind und im Jahr           lich-rechtlicher Grundlage beruhendes Ersatzsystem
+                  2025 ganz oder zeitweise nicht rentenversicherungs­-        zur gesetzlichen Rentenversicherung.
+

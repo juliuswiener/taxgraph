@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung Haushaltsnahe 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "anl_haushaltsnahe_2025.txt"
+  pdf_datei: "anl_haushaltsnahe_2025.pdf"
+  sha256: "7724ef36418388ef080e7191d1c3188b1bef594bf00a4d0f2a0a194c6664322d"
+  pdf_sha256: "a3a0211afad405a958a528094da18fd71be48add29c60bf4670c1728f0420a3b"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Haushalt']
+  verwendet_in:
+    - ""

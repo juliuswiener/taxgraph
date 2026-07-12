@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung ESt1A 2025 (Hauptvordruck)"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "anl_est1a_2025.txt"
+  pdf_datei: "anl_est1a_2025.pdf"
+  sha256: "31ca22f92d1992c6dfd7c9090de74e951fe74a7d25e9604293e6c199e6453945"
+  pdf_sha256: "7ce9ce1c9777502672150bab1c352ab2b5fca5cdde0ba947168c50fe1f4ea3e2"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Einkommensteuererklärung']
+  verwendet_in:
+    - ""

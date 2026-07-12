@@ -1,0 +1,422 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anleitung Kind 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+Anleitung zur Anlage Kind                                                                                                     2025
+Allgemeines        Beim Familienleistungsausgleich wird Ihnen im Laufe           träge für Kinder in jedem Fall. Füllen Sie bitte auch
+                   des Jahres in der Regel Kindergeld gezahlt. Ihr Fi­-          dann für jedes Kind eine Anlage Kind aus, wenn
+                   nanzamt prüft, ob das gezahlte Kindergeld zum Fami­-          Sie entsprechende Angaben bereits gegenüber der
+                   lienleistungsausgleich ausreicht. Ggf. gewährt Ihnen          Familienkasse gemacht haben.
+                   Ihr Finanzamt einen Kinderfreibetrag (3.336 € bei Ein­-       Nur für Kinder, für die keine Freibeträge für Kinder ge­-
+                   zelveranlagung oder 6.672 € bei zusammen veranlag­-           währt werden können (z. B. wegen Überschreitens
+                   ten Eltern) und zusätzlich einen Freibetrag für den Be­-      der Altersgrenze), brauchen Sie keine Anlage Kind ab­-
+                   treuungs- und Erziehungs- oder Ausbildungsbedarf              zugeben. Stehen Ihnen oder einer anderen Person im
+       Neu!        (1.464 € bei Einzelveranlagung oder 2.928 € bei zu­-          Kalenderjahr 2025 ganz oder teilweise keine Freibe­-
+                   sammen veranlagten Eltern). Beachten Sie bitte die            träge für Kinder zu, können Sie bei Vorliegen der ge­-
+                   Erläuterungen zu den Zeilen 39 bis 44. Gewährt Ihr Fi­-       setzlichen Voraussetzungen für diese Zeiträume Un­-
+                   nanzamt diese Freibeträge, muss es den für das Ka­-           terhaltszahlungen an diese Kinder als außergewöhnli­-
+                   lenderjahr bestehenden Anspruch auf Kindergeld der            che Belastungen in der Anlage Unterhalt geltend ma­-
+                   Einkommensteuer hinzurechnen.                                 chen. Beachten Sie bitte die Erläuterungen in der An­-
+                   Bei der Berechnung des Solidaritätszuschlags und der          leitung zur Anlage Unterhalt.
+                   Kirchensteuer berücksichtigt Ihr Finanzamt die Freibe­-
+
+
+
+
+                                                                                                                               Beispiel
+
+                                                                                 Bei Familie Muster liegen die Verhältnisse so:
+                                                                                 Sie haben ein gemeinsames Kind. Tochter Anna,
+                                                                                 geboren am 3. Januar 2006, beendet die Schulaus­-
+                                                                                 bildung im Mai mit dem Abitur und beginnt ihr Studi­-
+                                                                                 um im Oktober. Für Anna bestand Anspruch auf Kin­-
+                                                                                 dergeld i. H. v. 3.060 €, den die Eltern in Zeile 6 ein­-
+                                                                                 tragen.
+                                                                                 Die Eheleute tragen in Zeile 16 als 1. Zeitraum
+                                                                                 01012025 bis 31122025 ein.
+
+
+
+
+Zeile 4 bis 9      Bitte machen Sie auch dann Angaben zu Kindern,                mer angefordert werden.
+Angaben zu         wenn diese nicht in der Lohnsteuerbescheinigung aus­-         Ihr Finanzamt gewährt für Kinder, die ihren Wohnsitz
+Kindern            gewiesen sind.                                                oder gewöhnlichen Aufenthalt im Inland haben, die
+                   Dies gilt auch bei Kindern, die im Inland keinen Wohn­-       Freibeträge für Kinder in voller Höhe.
+                   sitz oder gewöhnlichen Aufenthalt hatten. Geben Sie           Liegt der Wohnsitz oder gewöhnliche Aufenthalt im
+                   in diesem Fall in Zeile 9 bitte auch den Staat an, in         Ausland, so berücksichtigt Ihr Finanzamt die Freibeträ­-
+                   dem das Kind im Jahr 2025 wohnte.                             ge für Kinder wie folgt:
+                   Bei Kindern, die sich zum Zwecke der Berufsausbil­-                in Ländern der Ländergruppe 1 in voller Höhe,
+                   dung im Ausland aufhalten, die aber                                in Ländern der Ländergruppe 2 zu drei Vierteln,
+                        weiterhin zum Haushalt der Eltern gehören oder                in Ländern der Ländergruppe 3 zur Hälfte und
+                        über einen eigenen Haushalt im Inland verfügen,               in Ländern der Ländergruppe 4 zu einem Viertel.
+                   tragen Sie bitte die Anschrift im Inland ein.                 Die Ländergruppeneinteilung finden Sie in der Anlei­-
+                   Bitte vergessen Sie nicht, die (inländische) Identifikati­-   tung zum Hauptvordruck ESt 1 A.
+                   onsnummer des Kindes in Zeile 4 einzutragen. Diese            Die Angaben in den Zeilen 4 bis 9 dienen Ihrem Fi­-
+       Neu!        ist Voraussetzung für die Berücksichtigung des Kinder­-       nanzamt zur Prüfung, ob Freibeträge für Kinder für
+                   freibetrags und des Freibetrags für den Betreuungs-           jedes einzelne Kind (unter Anrechnung des Anspruchs
+                   und Erziehungs- oder Ausbildungsbedarf. Sollte an             auf Kindergeld) abzuziehen sind oder ob es beim Kin­-
+                   das Kind keine inländische Identifikationsnummer ver­-        dergeld verbleibt. Der Anspruch auf Kindergeld beträgt
+                   geben worden sein, reichen Sie zur Identifizierung            für jedes Kind monatlich 255 € (Jahresbetrag 3.060 €).
+                   bitte andere geeignete Nachweise in Kopie ein (z. B.          Tragen Sie bitte für jedes einzelne Kind den für das
+                   Ausweisdokumente, ausländische Urkunden). Sofern              Jahr 2025 bestehenden Anspruch auf Kindergeld ein.
+                   Ihnen die Identifikationsnummer Ihres Kindes nicht            Dies gilt im Regelfall unabhängig davon, in welcher
+                   (mehr) vorliegt, kann diese auf der Internetseite des         Höhe tatsächlich Kindergeld ausgezahlt worden ist.
+                   Bundeszentralamtes für Steuern über das Anfragefor­-          Einen Anspruch auf vergleichbare Leistungen (z. B.
+                   mular zur erneuten Mitteilung der Identifikationsnum­-        ausländisches Kindergeld) tragen Sie bitte ebenfalls
+
+Anleitung zur Anlage Kind - September 2025
+                                                               -2-
+
+                  ein.                                                        Fall zusätzlich in Zeile 37 des Hauptvordrucks
+                  In den Fällen, in denen Kindergeld zwar festgesetzt,        ESt 1 A eine „1“ ein und legen Sie Ihrem Finanzamt
+                  aber aufgrund der Auszahlungsbeschränkung nicht             eine Kopie des entsprechenden Kindergeldbescheids
+                  ausgezahlt wurde, tragen Sie bitte in Zeile 6 nur den       oder eine Kopie der Bescheinigung der Familienkasse
+                  ausgezahlten Betrag ein. Tragen Sie bitte in diesem         über das ausgezahlte Kindergeld vor.
+
+Beispiel          Für das im Dezember 2025 geborene Kind haben die zahlt. Dennoch müssen sie 255 € in Zeile 6 der Anlage
+                  Eltern einen Kindergeldanspruch i. H. v. 255 €. Dieses Kind 2025 eintragen.
+      Neu!        Kindergeld wird jedoch erst im Januar 2026 ausge­-
+
+
+
+                  Ein Elternteil hat auch dann einen Anspruch auf Kin­-       bis 44.
+                  dergeld, wenn ihm das Kindergeld nicht ausgezahlt,          Hat ein Elternteil Anspruch auf den vollen Kinderfrei­-
+                  sondern bei der Bemessung seiner Unterhaltsver­-            betrag, weil der halbe Kinderfreibetrag des anderen
+                  pflichtung berücksichtigt wird. In diesem Fall ist beim     Elternteils auf ihn übertragen wurde, ist bei dem El­-
+                  anderen Elternteil nur der hälftige Anspruch anzuset­-      ternteil, dem der volle Kinderfreibetrag zusteht, auch
+                  zen. Das gilt auch dann, wenn der Freibetrag für den        der volle Anspruch auf Kindergeld anzusetzen. Dies
+                  Betreuungs- und Erziehungs- oder Ausbildungsbedarf          gilt unabhängig davon, an wen das Kindergeld ausge­-
+                  auf den anderen Elternteil übertragen wurde. Beach­-        zahlt wurde. Beachten Sie bitte die Erläuterungen zu
+                  ten Sie dazu bitte die Erläuterungen zu den Zeilen 39       den Zeilen 10 bis 15 und 39 bis 44.
+
+Beispiel          Das 17-jährige Kind der geschiedenen Eltern lebt bei        steht nicht. Die Mutter muss in Zeile 6 den vollen An­-
+                  der Mutter. Auf Antrag wird der halbe Kinderfreibetrag,     spruch auf Kindergeld i. H. v. 3.060 € eintragen, da ihr
+                  der dem Vater zusteht, auf die Mutter übertragen, weil      der volle Kinderfreibetrag zusteht.
+      Neu!        der Vater seine Unterhaltspflicht gegenüber dem Kind        Dem Vater hingegen steht kein Kinderfreibetrag zu.
+                  nicht erfüllt. Ein Anspruch auf Unterhaltsvorschuss be­-
+
+                  Die in Zeile 7 einzutragende Familienkasse können nehmen.
+                  Sie dem Bescheid über die Kindergeldfestsetzung ent­-
+
+Zeile 10 bis 15   Ein Kindschaftsverhältnis besteht zwischen Eltern und       der sind Kinder, mit denen Sie durch ein familienähnli­-
+und 39 bis 44         ihrem leiblichen Kind,                                  ches, auf längere Dauer berechnetes Band verbunden
+Kindschafts-​         ihrem Adoptivkind und                                   sind und die Sie nicht zu Erwerbszwecken (z. B. als
+verhältnis            ihrem Pflegekind.                                       Tagesmutter) in Ihren Haushalt aufgenommen haben.
+                  Wenn Sie ein leibliches Kind haben, zu dem das Kind­-       Es darf kein Obhuts- und Pflegeverhältnis mehr zu
+                  schaftsverhältnis vor dem 1. Januar 2025 durch Adop­-       den leiblichen Eltern bestehen.
+                  tion erloschen ist, dürfen Sie dieses Kind nicht mehr       Sie haben Anspruch auf die vollen Freibeträge für Kin­-
+                  angeben. Ist Ihr leibliches Kind bei einer anderen steu­-   der,
+                  erpflichtigen Person ein Pflegekind, ist es ab diesem           wenn der andere Elternteil verstorben ist,
+                  Zeitpunkt nicht mehr als Ihr Kind zu berücksichtigen,           wenn der andere Elternteil im Ausland lebte und
+                  sondern nur als Pflegekind bei der anderen Person.              nicht unbeschränkt steuerpflichtig war,
+                  Haben Sie ein Kind im Laufe des Jahres 2025 ange­-              wenn der Wohnsitz oder gewöhnliche Aufenthalt
+                  nommen, teilen Sie bitte Ihrem Finanzamt das Datum              des anderen Elternteils nicht zu ermitteln ist oder
+                  auf einer formlosen Anlage mit der Überschrift „Ergän­-         wenn der Vater des Kindes amtlich nicht feststell­-
+                  zende Angaben zur Steuererklärung” mit und tragen in            bar ist.
+                  Zeile 37 des Hauptvordrucks ESt 1 A eine „1” ein.           Hierzu reichen Angaben in den Zeilen 11 bis 15 aus.
+                  Entsprechendes gilt, wenn Ihr leibliches Kind im Laufe      Wenn Sie Stief- und Enkelkinder berücksichtigt haben
+                  des Jahres bei einer anderen steuerpflichtigen Person       möchten, beachten Sie bitte die Erläuterungen zu den
+                  Pflegekind oder Adoptivkind geworden ist. Pflegekin­-       Zeilen 39 bis 44.
+
+Minderjährige     Für Kinder unter 18 Jahren machen Sie Angaben nur lich in den Zeilen 16 bis 25 die entsprechenden Anga­-
+Kinder            in den Zeilen 4 bis 15. Hat das Kind im Laufe des Jah­- ben.
+                  res das 18. Lebensjahr vollendet, machen Sie zusätz­-
+
+Zeile 16 bis 25   Für Kinder über 18 Jahre, die das 25. Lebensjahr noch          datengesetz);
+Volljährige       nicht vollendet haben, müssen Sie außerdem Anga­-              wenn sie eine Berufsausbildung mangels Ausbil­-
+Kinder            ben in den Zeilen 16 bis 25 machen. Volljährige Kinder         dungsplatzes nicht beginnen oder fortsetzen konn­-
+                  können von Ihrem Finanzamt nur berücksichtigt wer­-            ten;
+                  den,                                                           wenn sie ein freiwilliges soziales oder ökologi­-
+                      wenn sie sich in Berufsausbildung befanden (ein­-          sches Jahr (Jugendfreiwilligendienstegesetz), eine
+                      schließlich Schulausbildung). Als Berufsausbildung         Freiwilligentätigkeit im Rahmen des Europäischen
+                      gilt auch die dreimonatige Grundausbildung und             Solidaritätskorps, einen entwicklungspolitischen
+                      die sich anschließende Dienstpostenausbildung im           Freiwilligendienst, einen Freiwilligendienst aller
+                      Rahmen des freiwilligen Wehrdienstes (§ 58b Sol­-          Generationen (§ 2 Abs. 1a SGB VII), einen Inter‐
+                                                                    -3-
+
+    nationalen Jugendfreiwilligendienst, einen Bundes­-      Kinder ohne Beschäftigung können bis zur Vollendung
+    freiwilligendienst oder einen anderen Dienst im          des 21. Lebensjahres berücksichtigt werden, wenn sie
+    Ausland (§ 5 Bundesfreiwilligendienstgesetz) ge­-        bei einer Agentur für Arbeit oder einem Jobcenter im
+    leistet haben.                                           Inland, in einem EU- / EWR-Staat oder in der Schweiz
+Ein Kind wird auch für die Zeiten berücksichtigt, in         als arbeitsuchend gemeldet sind. Bitte reichen Sie die
+denen es sich in einer Übergangszeit von höchstens           entsprechenden Unterlagen oder Bescheinigungen
+vier Monaten zwischen zwei Ausbildungsabschnitten            (z. B. Schul- oder Studienbescheinigung, Ausbildungs­-
+befand. Dies gilt entsprechend für die Übergangszeit         vertrag oder Ausbildungsbescheinigung) nur dann ein,
+zwischen Beginn oder Ende eines Ausbildungsab­-              wenn Sie vom Finanzamt dazu aufgefordert werden.
+schnitts und dem Beginn oder Ende eines freiwilligen         Die Freibeträge für Kinder werden für jeden angefan­-
+Wehrdienstes oder der Ableistung eines der vorge­-           genen Kalendermonat gewährt, in dem die Vorausset­-
+nannten freiwilligen Dienste.                                zungen für eine Berücksichtigung als Kind vorlagen.
+
+Ohne Altersbegrenzung werden Kinder berücksichtigt,              Pflegebedarf in Höhe des gezahlten Pflegegeldes,              Zeile 21
+die sich wegen körperlicher, geistiger oder seelischer           ggf. Behinderten-Pauschbetrag).                             Kinder mit
+Behinderung nicht selbst finanziell unterhalten können.      Als Grundbedarf ist bei der Prüfung der Voraussetzun­-      Behinderungen
+Die Behinderung muss jedoch vor Vollendung des               gen der Grundfreibetrag i. H. v. 12.096 € anzusetzen.
+25. Lebensjahres eingetreten sein. Kinder, bei denen         Der ermittelte notwendige Lebensbedarf wird mit den
+die Behinderung vor dem 1. Januar 2007 in der Zeit ab        eigenen finanziellen Mitteln des Kindes verglichen. Die
+Vollendung des 25. Lebensjahres, aber vor Vollendung         eigenen finanziellen Mittel des Kindes setzen sich aus
+des 27. Lebensjahres eingetreten ist, sind auch be­-         dem verfügbaren Nettoeinkommen und den Leistun­-
+rücksichtigungsfähig. Ein Kind kann sich dann nicht          gen Dritter zusammen.
+selbst finanziell unterhalten, wenn es seinen gesamten       Bei der Ermittlung des verfügbaren Nettoeinkommens
+Lebensbedarf nicht mit eigenen Mitteln bestreiten            müssen Sie alle steuerpflichtigen Einkünfte, alle steu­-         Neu!
+kann.                                                        erfreien Einnahmen sowie etwaige Steuererstattungen
+Dieser notwendige Lebensbedarf setzt sich typischer­-        einbeziehen. Davon ziehen Sie die tatsächlich gezahl­-
+weise zusammen aus                                           ten Steuern sowie die unvermeidbaren Vorsorgeauf­-
+    dem allgemeinen Lebensbedarf (Grundbedarf) und           wendungen (Beiträge zu einer Basiskranken- und Pfle­-
+    dem individuellen behinderungsbedingten Mehrbe­-         ge-Pflichtversicherung, gesetzliche Sozialabgaben bei
+    darf (u. a. Kosten für eine Heimunterbringung,           Arbeitnehmerinnen und Arbeitnehmern) ab.
+
+Volljährige Kinder können grundsätzlich nach Ab­-            Arbeitszeit und die Anzahl der monatlichen Arbeitsein­-       Zeile 22 bis 25
+schluss einer erstmaligen Berufsausbildung oder eines        sätze sind dabei unerheblich. Eine geringfügige Be­-           Angaben zur
+Erststudiums nur dann von Ihrem Finanzamt berück­-           schäftigung liegt auch vor, wenn das Entgelt zwar           Erwerbstätigkeit
+sichtigt werden, wenn sie keiner Erwerbstätigkeit            höher als 556 € im Monat ist, die Beschäftigung aber             volljähriger
+nachgehen. Eine erstmalige Berufsausbildung oder             innerhalb eines Kalenderjahres auf längstens drei Mo­-                Kinder
+ein Erststudium sind dann abgeschlossen, wenn sie            nate oder 70 Arbeitstage begrenzt ist (kurzfristige Be­-
+das Kind zur Aufnahme eines Berufs befähigen. Eine           schäftigung). Hat das Kind im Jahr 2025 ausschließ­-
+weiterführende Ausbildung kann dann noch zur erst­-          lich eine oder mehrere geringfügige Beschäftigung(en)
+maligen Berufsausbildung oder zum Erststudium ge­-           ausgeübt, müssen Sie in den Zeilen 24 und / oder 25
+hören, wenn sie im zeitlichen und sachlichen Zusam­-         nichts eintragen.
+menhang mit dem Abschluss der vorangegangenen                Eine geringfügige Beschäftigung kann neben einer an­-
+Ausbildung durchgeführt wird. Führt das Kind eine            deren Erwerbstätigkeit nur dann unschädlich ausgeübt
+weiterführende Ausbildung neben einer Erwerbstätig­-         werden, wenn dadurch insgesamt die 20-Stunden-​
+keit durch, gilt dies nur dann als einheitliche erstmalige   Grenze nicht überschritten wird. Ihr Finanzamt erkennt
+Berufsausbildung, wenn                                       eine vorübergehende (höchstens zwei Monate andau­-
+     die weiterführende Ausbildung im Vergleich zur Er­-     ernde) Ausweitung der Beschäftigung auf mehr als
+     werbstätigkeit im Vordergrund steht und                 20 Stunden dann als unschädlich an, wenn während
+     es sich nicht nur um eine Weiterbildung oder um         der Kalendermonate, in denen eine Berücksichtigung
+     eine auf den Aufstieg im bereits ausgeübten Beruf       möglich ist, die durchschnittliche wöchentliche Arbeits­-
+     gerichtete Ausbildung handelt (Zweitausbildung).        zeit die 20-Stunden-Grenze nicht überschreitet.                  Neu!
+Ihr Kind kann steuerlich nur berücksichtigt werden,          Der Begriff der Erwerbstätigkeit umfasst neben der
+wenn es eine Erwerbstätigkeit mit bis zu 20 Stunden          nichtselbständigen Tätigkeit auch eine land- und forst­-
+vertraglich vereinbarter regelmäßiger wöchentlicher          wirtschaftliche, eine gewerbliche und eine selbständi­-
+Arbeitszeit oder ein Ausbildungsdienstverhältnis aus­-       ge Tätigkeit. Die Verwaltung des eigenen Vermögens
+übt.                                                         fällt nicht darunter.
+Auch eine geringfügige Beschäftigung i. S. d. §§ 8, 8a       Darüber hinaus muss mindestens eine der folgenden
+SGB IV Ihres Kindes ist unschädlich. Sie liegt vor,          Voraussetzungen erfüllt sein:
+wenn das Arbeitsentgelt aus dieser Beschäftigung re­-        Das Kind
+gelmäßig 556 € im Monat nicht überschreitet (gering­-             wurde für einen weiteren Beruf ausgebildet,
+fügig entlohnte Beschäftigung). Sie ist nicht unschäd­-           befand sich in einer Übergangszeit von höchstens
+lich, wenn gleichzeitig mehrere geringfügige Beschäfti­-          vier Monaten zwischen zwei Ausbildungsabschnit­-
+gungsverhältnisse bestehen und das Entgelt hieraus                ten, in einer Übergangszeit zwischen Beginn oder
+insgesamt mehr als 556 € beträgt. Die wöchentliche                Ende eines freiwilligen Wehrdienstes (§ 58b Sol‐
+                                                                  -4-
+
+                       datengesetz) oder eines Ausbildungsabschnitts                 hat ein freiwilliges soziales oder ökologisches Jahr
+                       und dem Beginn oder Ende eines freiwilligen so­-              (Jugendfreiwilligendienstegesetz), eine Freiwilli­-
+                       zialen oder ökologischen Jahres i. S. d. Förderge­-           gentätigkeit im Rahmen des Europäischen Solida­-
+                       setze oder eines Europäischen Freiwilligendiens­-             ritätskorps, einen entwicklungspolitischen Freiwilli­-
+                       tes, eines Bundesfreiwilligendienstes oder eines              gendienst, einen Freiwilligendienst aller Generatio­-
+                       anderen Dienstes im Ausland (§ 5 Bundesfreiwilli­-            nen (§ 2 Abs. 1a SGB VII), einen Internationalen
+                       gendienstgesetz),                                             Jugendfreiwilligendienst, einen Bundesfreiwilligen­-
+                       konnte eine Berufsausbildung mangels Ausbil­-                 dienst oder einen anderen Dienst im Ausland ge­-
+                       dungsplatzes nicht beginnen oder fortsetzen,                  leistet (§ 5 Bundesfreiwilligendienstgesetz).
+
+Zeile 26            Ein Eintrag ist hier nur dann erforderlich, sofern Sie       Vater oder der Mutter festgesetzt worden ist. Sie kön­-
+Kinderzulage bei    auf der Anlage AV einen zusätzlichen Sonderausga­-           nen aber zusammen festlegen, dass davon abwei­-
+steuerlicher        benabzug für Altersvorsorgebeiträge beantragen wol­-         chend der Vater die Kinderzulage in Anspruch nimmt.
+Förderung von       len.                                                         Bei Eltern, die miteinander eine gleichgeschlechtliche
+Altersvorsorge-​    Anspruch auf Kinderzulage besteht bei einer Zulage­-         Ehe oder eine Lebenspartnerschaft führen, und die die
+beiträgen (sog.     berechtigung für jedes Kind, für das für mindestens          oben genannten Voraussetzungen zum Wohnsitz und
+Riester-Verträge)   einen Monat im Jahr 2025 Kindergeld festgesetzt wor­-        zum Zusammenleben erfüllen, steht die Kinderzulage
+                    den ist. Hat die Familienkasse das Kindergeld im             der Person zu, gegenüber der das Kindergeld festge­-
+                    Laufe des Jahres gegenüber mehreren zulageberech­-           setzt worden ist. Sie können aber zusammen festle­-
+                    tigten Personen festgesetzt, ist der Bezug für den ers­-     gen, dass davon abweichend der andere Elternteil die
+                    ten Anspruchszeitraum im Jahr 2025 (in der Regel:            Kinderzulage in Anspruch nimmt.
+                    Monat Januar) maßgebend.                                     Tragen Sie bitte hier die Person ein, die im gegenseiti­-
+                    Bei leiblichen Eltern, Adoptiv- oder Pflegeeltern,           gen Einvernehmen die Kinderzulage bei der Zulagen­-
+      Neu!               die ihren Wohnsitz oder gewöhnlichen Aufenthalt         gewährung in Anspruch nimmt. Die Angaben zur Be­-
+                         in einem EU- / EWR-Staat haben,                         antragung der Kinderzulage im Antrag auf Altersvor­-
+                         die miteinander verheiratet sind und                    sorgezulage müssen mit dieser Angabe übereinstim­-
+                         die im Jahr 2025 nicht oder nur teilweise dauernd       men.
+                         getrennt gelebt haben,                                  Dies gilt auch im Fall der Einzelveranlagung von Ehe­-
+                    steht die Kinderzulage der Mutter zu. Dies gilt unab­-       gatten / Lebenspartnern.
+                    hängig davon, ob das Kindergeld gegenüber dem
+
+Zeile 27 bis 38     Sie haben als Versicherungsnehmerin oder Versiche­-          Einkommensteuererklärung verpflichtet.
+Übernommene         rungsnehmer Beiträge zur Kranken- und Pflegeversi­-          Gibt Ihr Kind dann eine eigene Einkommensteuer­-
+Kranken- und        cherung für die Absicherung eines Kindes geleistet, für      erklärung ab, muss es in der Anlage Vorsorgeauf­-
+Pflege-​            das Sie Anspruch auf Kindergeld oder Freibeträge für         wand in den entsprechenden Zeilen für die Beiträge
+versicherungs-​     Kinder haben?                                                zur Kranken- und Pflegeversicherung eine „0“ eintra­-
+beiträge            Dann können Sie die Beiträge der Basisabsicherung            gen.
+                    und auch darüber hinaus geleistete Beiträge als Son­-        Wenn Sie mit dem anderen Elternteil Ihres Kindes
+                    derausgaben abziehen.                                        nicht zusammen zur Einkommensteuer veranlagt wer­-
+                    Sie haben aufgrund Ihrer Unterhaltsverpflichtung Bei­-       den, können Sie nur die Beiträge abziehen, die Sie
+                    träge für Ihr Kind zur Kranken- und Pflegeversicherung       selbst geleistet haben.
+                    durch Leistung in Form von Bar- oder Sachunterhalt           Bitte tragen Sie in Zeile 4 die (inländische) Identifikati­-
+                    wirtschaftlich getragen, die Sie nicht als Versiche­-        onsnummer des Kindes ein. Diese ist Voraussetzung
+                    rungsnehmerin oder Versicherungsnehmer schulden?             für den Sonderausgabenabzug der Basiskranken- und
+  e Zeile
+    29
+          27 bis
+                    Dann können Sie diese Beiträge als Vorsorgeaufwen­-          gesetzlichen Pflegeversicherungsbeiträge des Kindes.
+                    dungen abziehen. Dies gilt jedoch nur für die Beiträge       Sie haben für das Kind Beiträge an eine ausländische
+                    der Basisabsicherung. Ihr Kind oder der andere Eltern­-      Kranken- und / oder Pflegeversicherung geleistet?
+                    teil können diese Beiträge dann nicht als Sonderaus­-        Dann tragen Sie diese bitte in die Zeilen 37 und 38
+                    gaben abziehen. Wurde in diesen Fällen im Lohnsteu­-         ein. Weisen Sie diese in geeigneter Form nach. Die
+                    erabzugsverfahren Ihres Kindes eine Vorsorgepau­-            Angabe der Identifikationsnummer ist auch in diesem
+                    schale berücksichtigt, ist Ihr Kind zur Abgabe einer         Fall Voraussetzung für den Sonderausgabenabzug.
+
+Zeile 39 bis 44     Sie sind ein geschiedener oder dauernd getrennt le­-              Unterhaltsleistungen nach dem Unterhaltsvor­-
+Übertragung des     bender Elternteil oder ein Elternteil nichtehelicher Kin­-        schussgesetz gezahlt worden sind.
+Kinder-​            der?                                                         Sie erhalten dann auch den Freibetrag für den Betreu­-
+freibetrags / des   Dann können Sie in Zeile 39 beantragen, dass der             ungs- und Erziehungs- oder Ausbildungsbedarf.
+Freibetrags für     Kinderfreibetrag des anderen Elternteils auf Sie über­-      Nachweise über die konkrete Höhe der Unterhaltsver­-
+den Betreuungs-     tragen wird.                                                 pflichtung des anderen Elternteils sowie seine tatsäch­-
+und                 Dies gilt,                                                   lichen Unterhaltsleistungen (z. B. Scheidungsurteil,
+Erziehungs- oder        wenn Sie, nicht aber der andere Elternteil, seine        Zahlungsbelege) müssen Sie Ihrem Finanzamt nur
+Ausbildungs-​           Unterhaltsverpflichtung gegenüber dem Kind für           dann vorlegen, wenn es Sie dazu auffordert.
+bedarf                  das Jahr 2025 zu mindestens 75 % erfüllt hat oder        Auch wenn Sie sich mit dem anderen Elternteil über
+                        wenn der andere Elternteil mangels Leistungsfä­-         eine abweichende Regelung einig sind, so ist eine
+                        higkeit nicht unterhaltspflichtig ist und wenn keine     Übertragung des Kinderfreibetrags nur unter den oben
+                                                                    -5-
+
+aufgeführten Bedingungen möglich.                            Sie können als Stief- und Großelternteil auch die
+Sie sind ein geschiedener oder dauernd getrennt le­-         Übertragung des Kinderfreibetrags und des Freibe­-
+bender Elternteil oder Elternteil eines minderjährigen       trags für den Betreuungs- und Erziehungs- oder Aus­-
+nichtehelichen Kindes?                                       bildungsbedarf beantragen, wenn Sie das Kind in
+Dann können Sie abweichend vom Kinderfreibetrag              Ihren Haushalt aufgenommen haben. Eine Übertra­-
+die Übertragung des halben Freibetrags für den Be­-          gung auf Sie als Großelternteil ist außerdem möglich,
+treuungs- und Erziehungs- oder Ausbildungsbedarf             wenn Sie gegenüber dem Kind unterhaltspflichtig sind.
+des anderen Elternteils in Zeile 41 beantragen. Vor­-        Die Übertragung kann auch mit Zustimmung des / der
+aussetzung dafür ist, dass das minderjährige Kind bei        berechtigten Elternteils / Elternteile erfolgen. Verwen­-
+dem anderen Elternteil nicht gemeldet war.                   den Sie in diesem Fall bitte die Anlage K. Eine mo­-
+Die Übertragung ist nicht möglich, wenn der andere           natsweise Übertragung der Freibeträge ist nicht mög­-
+Elternteil, Kinderbetreuungskosten trägt oder das Kind       lich.
+regelmäßig in einem nicht unwesentlichen Umfang be­-         Steht dem übertragenden Elternteil der Kinderfreibe­-
+treut (z. B. regelmäßig an Wochenenden und in den            trag in voller Höhe zu (z. B. weil der andere Elternteil
+Ferien) und der Übertragung des Freibetrags wider­-          verstorben ist), tragen Sie als Stief- und Großelternteil
+spricht.                                                     in Zeile 43 eine „2“ ein.
+
+Sie sind alleinstehend mit mindestens einem Kind, das        nes Kind, für das Sie keinen Anspruch auf Kindergeld           Zeile 45 bis 51
+zu Ihrem Haushalt gehört und für das Sie einen An­-          oder Freibeträge für Kinder mehr haben. Ihr Finanz­-            Entlastungs-​
+spruch auf Kindergeld oder die Freibeträge für Kinder        amt vermutet, dass bereits dann eine Haushaltsge­-                  betrag für
+haben?                                                       meinschaft (d. h. das gemeinsame Wirtschaften in            Alleinerziehende
+Dann erhalten Sie einen Entlastungsbetrag für Allein­-       einer gemeinsamen Wohnung) vorliegt, wenn eine an­-
+erziehende i. H. v. 4.260 €.                                 dere Person mit Haupt- oder Nebenwohnsitz bei Ihnen
+Der Entlastungsbetrag erhöht sich für das zweite und         gemeldet ist. Personen, die nicht in einer eheähnli­-
+jedes weitere berücksichtigungsfähige Kind, das in           chen Gemeinschaft leben, können diese Vermutung
+Ihrem Haushalt lebt, um jeweils 240 €. Ihr Finanzamt         widerlegen.
+unterstellt, dass ein Kind dann in Ihrem Haushalt lebt,      Sie erhalten den Entlastungsbetrag auch für den Zeit­-
+wenn es bei Ihnen gemeldet ist. Ist ein Kind auch noch       raum, in dem die vorstehenden Voraussetzungen er­-
+bei einer anderen alleinstehenden Person gemeldet,           füllt sind, wenn
+erhält diejenige Person den Entlastungsbetrag, die die            Sie im Jahr 2025 geheiratet haben,
+Voraussetzungen auf Auszahlung des Kindergeldes                   Sie sich im Jahr 2025 von der mit Ihnen verheira­-
+erfüllt.                                                          teten oder verpartnerten Person getrennt haben
+Ist ein Kind bei beiden Elternteilen gemeldet und nur             und / oder
+ein Elternteil alleinstehend, erhält der alleinstehende           die mit Ihnen verheiratete oder verpartnerte Per­-
+Elternteil den Entlastungsbetrag.                                 son im Jahr 2025 verstorben ist.
+Zur Gewährung des Entlastungsbetrags für Alleiner­-          Ihr Finanzamt kürzt den Entlastungsbetrag um ein
+ziehende dürfen Sie in keiner Haushaltsgemeinschaft          Zwölftel für jeden vollen Kalendermonat, in dem die
+mit einer anderen volljährigen Person leben. Als ande­-      Voraussetzungen nicht vorgelegen haben.
+re volljährige Person zählt auch ein volljähriges eige­-
+
+Ihr volljähriges Kind befindet sich in Berufsausbildung      te aufgeteilt. Auf gemeinsamen Antrag der Eltern ist         Zeile 52 bis 55
+oder in Schulausbildung und ist auswärtig unterge­-          eine andere Aufteilung möglich. Die vorstehenden              Freibetrag zur
+bracht?                                                      Ausführungen gelten für Großeltern sinngemäß.               Abgeltung eines
+Dann berücksichtigt Ihr Finanzamt einen Freibetrag           Lebt Ihr Kind im Ausland, wird der Freibetrag ggf. ge­-      Sonderbedarfs
+von bis zu 1.200 € jährlich. Dies gilt jedoch nur, wenn      kürzt. Beachten Sie bitte die Ländergruppeneinteilung            bei Berufs-​
+Sie für das Kind Anspruch auf einen Freibetrag für Kin­-     in der Anleitung zum Hauptvordruck ESt 1 A.                      ausbildung
+der oder auf Kindergeld haben.                               Für jeden vollen Monat, in dem eine der Vorausset­-
+Sind Sie ein geschiedener oder dauernd getrennt le­-         zungen nicht vorgelegen hat, kürzt Ihr Finanzamt den
+bender Elternteil oder ein Elternteil nichtehelicher Kin­-   Freibetrag zur Abgeltung eines Sonderbedarfs bei Be­-
+der, wird der Freibetrag zur Abgeltung eines Sonder­-        rufsausbildung um ein Zwölftel.
+bedarfs bei Berufsausbildung grundsätzlich je zur Hälf­-
+
+Sie zahlen für Ihr Kind Schulgeld?                               berufsbildenden Schul-, Jahrgangs- oder Berufs­-          Zeile 56 bis 58
+Dann können Sie 30 % des Entgelts bis zu einem                   abschluss führt.                                               Schulgeld
+Höchstbetrag von 5.000 € je Kind als Sonderausgaben          Der Besuch einer anderen Einrichtung steht dem
+beantragen. Voraussetzungen hierfür sind:                    Schulbesuch gleich, wenn dieser – ggf. beabsichtig­-
+    dass Sie für Ihr Kind Anspruch auf Kindergeld oder       te – Abschluss gleichwertig ist. Deutsche Schulen im
+    einen Freibetrag für Kinder haben,                       Ausland sind den oben genannten Schulen gleichge­-
+    dass das Kind eine Schule im Inland oder einem           stellt.
+    anderen EU- / EWR-Staat besucht,                         Tragen Sie bitte die an die Schule oder den Schulträ­-
+    dass es sich um eine Schule in freier Trägerschaft       ger entrichteten Zahlungen abzüglich der Beträge für
+    oder eine überwiegend privat finanzierte Schule          Beherbergung, Betreuung und Verpflegung in Zeile 56
+    handelt,                                                 ein. Die entsprechenden Belege (z. B. Bescheinigung
+    dass die Schule zu einem allgemeinbildenden oder         der Schule) über die Höhe des Schulgeldes und eine
+                                                                  -6-
+
+                      Bescheinigung der zuständigen Behörde (z. B. Bil­-         Dies gilt nicht für Entgelte an Hochschulen und Fach­-
+                      dungs- und Kultusministerium eines Bundeslandes,           hochschulen sowie Entgelte für den Besuch einer Be­-
+                      Kultusministerkonferenz der Bundesländer, eine Zeug­-      rufsakademie oder Dualen Hochschule, mit dem im
+                      nisanerkennungsstelle oder eine Schulbehörde) über         Anschluss an den Erwerb der Hochschul- oder Fach­-
+                      die Anerkennung des Abschlusses müssen Sie nur auf         hochschulreife ein akademischer Abschluss (z. B. Ba­-
+                      Anforderung Ihres Finanzamts vorlegen.                     chelor) erreicht werden soll. Diese sind nicht abzieh­-
+                      Neben dem Schulgeld können Sie auch Investitions­-         bar.
+                      beiträge, Ergänzungsbeiträge und ähnlich bezeichnete       Beachten Sie bitte, dass Sie den Höchstbetrag für
+                      Beiträge, die die Kosten des laufenden Schulbetriebs       jedes Kind, bei dem die Voraussetzungen vorliegen, je
+                      decken sollen, als Sonderausgaben geltend machen.          Elternpaar nur einmal erhalten können.
+
+Zeile 59 bis 63       Ihr Kind oder Enkelkind, für das Sie Anspruch auf Kin­-    gungsbehörde oder eines Trägers der gesetzlichen
+Übertragung des       dergeld oder einen Freibetrag für Kinder haben, hat        Unfallversicherung) müssen Sie nur auf Anforderung
+Behinderten-​         Anspruch auf einen Behinderten- und / oder Hinterblie­-    Ihres Finanzamts in Kopie erbringen.
+und / oder Hinter­-   benen-Pauschbetrag?                                        Der Rentenbescheid eines Trägers der gesetzlichen
+bliebenen-​           Dann können Sie diesen geltend machen, wenn das            Rentenversicherung genügt nicht als Nachweis. Der
+Pauschbetrages        Kind den Pauschbetrag nicht selbst in Anspruch             Behinderten-Pauschbetrag i. H. v. 7.400 € kann auch
+                      nimmt. Sie müssen dafür die (inländische) Identifikati­-   bei Vorlage des Bescheids über die Einstufung als
+                      onsnummer des Kindes in Zeile 4 angeben. Bitte be­-        pflegebedürftige Person in die Pflegegrade 4 oder 5
+                      achten Sie zur Höhe der Pauschbeträge die Erläute­-        gewährt werden.
+                      rungen zu den Zeilen 4 bis 9 (Behinderten-Pauschbe­-       Sind Sie ein geschiedener oder dauernd getrennt le­-
+                      trag) sowie zu Zeile 10 (Hinterbliebenen-Pauschbe­-        bender Elternteil oder ein Elternteil nichtehelicher Kin­-
+                      trag) in der Anleitung zur Anlage Außergewöhnliche         der und wollen Sie einen dem Kind zustehenden Be­-
+                      Belastungen.                                               hinderten- oder Hinterbliebenen-Pauschbetrag über­-
+                      Geben Sie bitte den Grad der Behinderung an und rei­-      tragen, so erfolgt dies grundsätzlich je zur Hälfte auf
+                      chen Sie bei erstmaliger Beantragung oder Änderung         die Eltern. Wurde Ihr Anteil am Kinderfreibetrag auf
+                      die Nachweise in Kopie ein. Die notwendigen Nach­-         den anderen Elternteil übertragen, ist stets auch der
+                      weise erhalten Sie bei Behinderung von der für die         volle Behinderten- oder Hinterbliebenen-Pauschbetrag
+                      Durchführung des Bundesversorgungsgesetzes zu­-            zu übertragen.
+                      ständigen Behörde (z. B. Versorgungsamt). Den Nach­-       Auf gemeinsamen Antrag beider Eltern erhalten Sie
+                      weis für Hinterbliebenenbezüge (z. B. Rentenbescheid       den Pauschbetrag in einem aufgeteilten Verhältnis
+                      des Versorgungsamts, der zuständigen Entschädi­-           Ihrer Wahl.
+
+Zeile 64 bis 66       Ihr Kind hat eine Behinderung mit einem Grad der Be­-      bedingte Fahrtkostenpauschale für Ihr Kind in der ent­-
+Übertragung der       hinderung von mindestens 80 oder von mindestens 70         sprechenden Höhe für das gesamte Kalenderjahr.
+behinderungs-​        und Merkzeichen „G“?                                       Wünschen Sie die Übertragung der behinderungsbe­-
+bedingten Fahrt­-     Dann hat es Anspruch auf eine behinderungsbedingte         dingten Fahrtkostenpauschale für ein Kind oder ein
+kostenpauschale       Fahrtkostenpauschale i. H. v. 900 €.                       Enkelkind, für das Sie Anspruch auf Kindergeld oder
+                      Wurde bei Ihrem Kind das Merkzeichen „aG“, „Bl“,           die Freibeträge für Kinder haben, so tragen Sie bitte
+                      „TBl“ und / oder das Merkzeichen „H“ festgestellt oder     eine „1“ in den Zeilen 64 oder 65 ein. Die behinde­-
+                      liegt bei Ihrem Kind der Pflegegrad 4 oder 5 vor, hat      rungsbedingte Fahrtkostenpauschale wird bei Ihrer
+                      Ihr Kind einen Anspruch auf eine behinderungsbeding­-      Einkommensteuerveranlagung zusammen mit den an­-
+                      te Fahrtkostenpauschale i. H. v. 4.500 €.                  deren außergewöhnlichen Belastungen von Ihrem Fi­-
+                      Darüber hinaus können Sie oder Ihr Kind keine weite­-      nanzamt um die „zumutbare Belastung“ gemindert.
+                      ren behinderungsbedingten Fahrtkosten als außerge­-        Beachten Sie bitte die Erläuterungen zu den Zeilen 23
+                      wöhnliche Belastungen geltend machen – auch nicht          bis 41 in der Anleitung zur Anlage Außergewöhnliche
+                      Ihre eigenen Fahrtkosten, die Ihnen aufgrund der Be­-      Belastungen.
+                      hinderung Ihres Kindes entstanden sind.                    Auf gemeinsamen Antrag beider Eltern erhalten Sie
+                      Ihr Kind hat die oben genannten Voraussetzungen erst       den Pauschbetrag in einem aufgeteilten Verhältnis
+                      im Laufe des Kalenderjahres erfüllt?                       Ihrer Wahl.
+                      Dann berücksichtigt Ihr Finanzamt die behinderungs­-
+
+Zeile 67 bis 73       Sie können Kinderbetreuungskosten für zu Ihrem             des 27. Lebensjahres eingetretenen körperlichen,
+Kinder-​              Haushalt gehörende Kinder, für die Ihnen Kindergeld        geistigen oder seelischen Behinderung außerstande
+betreuungskos­-       oder ein Freibetrag für Kinder zusteht, ab Geburt des      sind, sich selbst finanziell zu unterhalten.
+ten                   Kindes bis zur Vollendung des 14. Lebensjahres steu­-      Sie können 80 % Ihrer tatsächlich gezahlten Kinderbe­-
+                      erlich geltend machen. Bei älteren Kindern können          treuungskosten abzüglich Erstattungen (z. B. von
+                      solche Aufwendungen dann berücksichtigt werden,            Ihrem Arbeitgeber) geltend machen, höchstens jedoch
+                      wenn sie wegen einer vor Vollendung des 25. Lebens­-       4.800 € je Kind und Kalenderjahr. Der Abzug von Kin­-
+                      jahres eingetretenen körperlichen, geistigen oder see­-    derbetreuungskosten ist nur dann möglich, wenn Sie
+      Neu!            lischen Behinderung außerstande sind, sich selbst fi­-     für die Aufwendungen Rechnungen erhalten haben
+                      nanziell zu unterhalten. Das gilt auch für Kinder, die     und der Rechnungsbetrag auf ein Konto des Leis­-
+                      wegen einer vor dem 1. Januar 2007 in der Zeit ab          tungserbringers bezahlt wurde. Ihr Finanzamt erkennt
+                      Vollendung des 25. Lebensjahres und vor Vollendung         keine Barzahlungen und Barschecks an. Sie müssen
+                                                             -7-
+
+Kopien der Rechnungen sowie der Zahlungsnachwei­-          und in Ganztagspflegestellen,
+se nur dann vorlegen, wenn Ihr Finanzamt Sie dazu          die Beschäftigung von Kinderpflegerinnen oder
+auffordert. Wie eine Rechnung wird z. B. bei einem so­-    Kinderpflegern, Erzieherinnen oder Erziehern und
+zialversicherungspflichtigen Beschäftigungsverhältnis      Kinderschwestern,
+oder einem Minijob der zwischen Ihnen und der Be­-         die Beschäftigung von Hilfen im Haushalt, soweit
+treuungsperson abgeschlossene schriftliche (Arbeits-​      sie Kinder betreuen,
+)Vertrag behandelt.                                        die Beaufsichtigung von Kindern bei der Erledi­-
+Wird Ihr Kind in einem Kindergarten oder Hort betreut,     gung der häuslichen Schulaufgaben.
+so genügt der Bescheid des öffentlichen oder privaten Nicht geltend machen können Sie Aufwendungen für
+Trägers über die zu zahlenden Gebühren sowie der (Nachhilfe-)Unterricht, für die Vermittlung besonderer
+Überweisungsbeleg. Geltend machen können Sie z. B. Fähigkeiten, für sportliche und andere Freizeitbetäti­-
+Aufwendungen für                                        gungen sowie für die Verpflegung Ihres Kindes.
+    die Unterbringung von Kindern in Kindergärten, Lebt Ihr Kind im Ausland, so wird der Höchstbetrag
+    Kindertagesstätten, Kinderhorten, Kinderheimen ggf. gekürzt. Beachten Sie bitte die Erläuterungen zur
+    und Kinderkrippen sowie bei Tagesmüttern oder Ländergruppeneinteilung in der Anleitung zum Haupt­-
+    Tagesvätern, Wochenmüttern oder Wochenvätern vordruck ESt 1 A.
+

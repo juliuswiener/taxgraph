@@ -1,0 +1,109 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anleitung Haushaltsnahe 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+Anleitung                                                                                                                2025
+zur Anlage Haushaltsnahe Aufwendungen
+Allgemeines        Für Aufwendungen, die in Ihrem Haushalt im Inland              richtet wurden und für die Inanspruchnahme von
+                   oder in einem anderen EU- / EWR-Staat angefallen               haushaltsnahen Dienstleistungen einschließlich
+                   sind, können Sie folgende Steuerermäßigungen bean­-            Pflege- und Betreuungsleistungen: 20 % der Auf­-
+                   tragen:                                                        wendungen, höchstens 4.000 € jährlich
+                       für geringfügige Beschäftigungen im Privathaus­-           für die Inanspruchnahme von Handwerkerleistun­-
+                       halt: 20 % der Aufwendungen, höchstens 510 €               gen für Renovierungs-, Erhaltungs- und Moderni­-
+                       jährlich                                                   sierungsmaßnahmen: 20 % der Aufwendungen,
+                       für Beschäftigungsverhältnisse im Privathaushalt,          höchstens 1.200 € jährlich
+                       für die Pflichtbeiträge zur Sozialversicherung ent­-
+
+Zeile 4 bis 9      Tragen Sie bitte Ihre Aufwendungen in die jeweiligen        Belastungen noch im Rahmen der Steuerermäßigung
+                   Zeilen ein. Diese sind dabei zu kürzen um:                  für Pflegeleistungen im Haushalt laut Zeile 5 geltend
+                        bereits erhaltene oder noch zu erwartende Erstat­-     machen.
+                        tungen von dritter Seite (z. B. einer Versicherung),   Leben mehrere alleinstehende Personen ganzjährig in
+                        Leistungen der Pflegeversicherung und des per­-        einem Haushalt, können die Höchstbeträge insgesamt
+                        sönlichen Budgets (§ 29 SGB IX), soweit sie aus­-      jeweils nur einmal in Anspruch genommen werden.
+                        schließlich und zweckgebunden für Pflege- und          Sind die alleinstehenden Personen Arbeitgeber im
+                        Betreuungsleistungen sowie für haushaltsnahe           Rahmen eines haushaltsnahen Beschäftigungsverhält­-
+                        Dienstleistungen gewährt werden. Das Pflegegeld        nisses oder Auftraggeber von haushaltsnahen Dienst­-
+                        (§ 37 SGB XI) brauchen Sie nicht von den Aufwen­-      leistungen, von Pflege- und Betreuungsleistungen
+                        dungen abzuziehen. Für die – wegen Anrechnung          oder von Handwerkerleistungen, kann jeder seine tat­-
+                        von Pflegegeld oder Pflegetagegeld – nicht als au­-    sächlichen, anteiligen Aufwendungen grundsätzlich
+                        ßergewöhnliche Belastung abziehbaren Aufwen­-          nur bis zur Höhe des hälftigen Abzugshöchstbetrages
+                        dungen für die häusliche Pflege können Sie in          geltend machen. Etwas anderes gilt nur dann, wenn
+                        Zeile 5 die Steuerermäßigung für haushaltsnahe         alle einvernehmlich eine andere Aufteilung wählen
+                        Dienstleistungen beantragen.                           (Zeile 12 bis 14).
+                   Alle Aufwendungen dürfen                                    Eine Steuerermäßigung für haushaltsnahe Dienstleis­-
+                        keine Betriebsausgaben oder Werbungskosten             tungen (einschließlich Pflege- und Betreuungsleistun­-
+                        sein,                                                  gen) und Handwerkerleistungen erhalten Sie nur,
+                        sich noch nicht als außergewöhnliche Belastungen       wenn Sie die Aufwendungen durch
+                        ausgewirkt haben,                                           Rechnungen belegen können und
+                        nicht als Sonderausgaben berücksichtigt worden              die Rechnungen auf ein Konto des Leistungser­-
+                        sein und                                                    bringers beglichen haben.
+                        nicht zu den Kinderbetreuungskosten (Zeile 67          Bitte reichen Sie entsprechende Belege in Kopie nur
+                        bis 73 der Anlage Kind) gehören.                       ein, wenn Sie von Ihrem Finanzamt dazu aufgefordert
+                   Sofern Sie den Behinderten-Pauschbetrag berücksich­-        werden. Für Barzahlungen, Baranzahlungen oder Bar­-
+                   tigt haben möchten, können Sie die Pflegeaufwendun­-        teilzahlungen und Barschecks erhalten Sie keine Steu­-
+                   gen weder als außergewöhnliche Belastungen laut             erermäßigung.
+                   den Zeilen 26 bis 28 der Anlage Außergewöhnliche
+
+Haushaltsnahe      Haushaltsnahe Tätigkeiten und Dienstleistungen sind             ten Wohnens“.
+Beschäftigungs­-   z. B.                                                       Zu den haushaltsnahen Dienstleistungen zählt auch
+verhältnisse /         die Reinigung der Wohnung,                              die mit einer Hilfe im Haushalt vergleichbare Tätigkeit
+Dienstleistungen       die Gartenpflege,                                       bei eigener Unterbringung in einem Heim. In Frage
+                       der Winterdienst auf dem eigenen Grundstück             kommen die (anteiligen) Aufwendungen für
+                       oder auf davor liegenden Gehwegen,                          die Reinigung des Zimmers oder des Apparte­-
+                       die Zubereitung von Mahlzeiten im Haushalt,                 ments,
+                       die Fütterung und Pflege von Haustieren im Haus­-           die Reinigung der Gemeinschaftsflächen,
+                       halt,                                                       das Zubereiten und / oder das Servieren von Mahl­-
+                       die Pflege, Versorgung und Betreuung von Kin­-              zeiten und
+                       dern, kranken, alten und pflegebedürftigen Perso­-          den Wäscheservice
+                       nen, auch wenn die Pflege- und Betreuungsleis­-         im Heim.
+                       tungen im Haushalt der gepflegten / betreuten Per­-     Ein eigener Haushalt in einer Pflegeeinrichtung ist
+                       son ausgeübt werden,                                    hierfür nicht erforderlich.
+                       das Hausnotrufsystem innerhalb des sog. „Betreu­-
+
+
+
+
+Anleitung zur Anlage Haushaltsnahe Aufwendungen - September 2025
+                                                                   -2-
+
+Handwerker-​          Handwerkerleistungen sind z. B.                             Rahmen einer Neubaumaßnahme. Dazu zählen alle
+leistungen                die Reparatur und das Streichen oder Lackieren          Baumaßnahmen, die im Zusammenhang mit der Er­-
+                          von Fenstern und Türen,                                 richtung eines Haushalts bis zu dessen Fertigstellung
+                          die Reparatur oder der Austausch von Bodenbelä­-        anfallen.
+                          gen,                                                    Darüber hinaus ist eine Steuerermäßigung für die je­-
+                          die Modernisierung des Badezimmers oder der             weilige Handwerkerleistung vollständig ausgeschlos­-
+                          Einbauküche,                                            sen, wenn die Aufwendungen hierfür durch zinsverbil­-
+                          Dichtheitsprüfungen von Abwasserleitungen,              ligte Darlehen oder steuerfreie Zuschüsse öffentlich
+                          die Kontrolle des TÜV bei Fahrstühlen,                  gefördert werden (z. B. KfW-Bank, Bundesamt für
+                          die Kontrolle von Blitzschutzanlagen.                   Wirtschaft und Ausfuhrkontrolle [BAFA], landeseigener
+                      Begünstigt sind nur die in der Rechnung oder Be­-           Förderbanken oder Gemeinden).
+                      triebskostenabrechnung enthaltenen Aufwendungen             Handelt es sich um eine energetische Sanierung Ihres
+                      für Lohnanteile, Maschinen- und Fahrtkosten ein­-           zu eigenen Wohnzwecken genutzten Gebäudes, kön­-
+                      schließlich der darauf entfallenen Umsatzsteuer. Fül­-      nen Sie an Stelle der Steuerermäßigung für Handwer­-
+                      len Sie daher bitte in den Zeilen 6 bis 8 die beiden        kerleistungen bei Vorliegen der gesetzlichen Voraus­-
+                      Spalten „Rechnungsbeträge (bei Eintragung in                setzungen des § 35c des Einkommensteuergesetzes
+                      Zeile 10 nur anteilig)“ und „darin enthaltene Lohnantei­-   die Steuerermäßigung für energetische Maßnahmen
+                      le, Maschinen- und Fahrtkosten inkl. Umsatzsteuer“          in der Anlage Energetische Maßnahmen beantra­-
+                      aus. Nicht begünstigt sind Aufwendungen für das ver­-       gen. Beachten Sie bitte die Erläuterungen in der Anlei­-
+                      wendete Material und für gelieferte Waren. Ebenfalls        tung zur Anlage Energetische Maßnahmen.
+                      nicht begünstigt sind handwerkliche Tätigkeiten im
+
+Zeile 10 und 11       Sie haben ganzjährig mit einer oder mehreren ande­-         der Personen ein, mit denen Sie zusammen im Haus­-
+Haushaltsbezo­-       ren alleinstehenden Person(en) in einem Haushalt zu­-       halt gelebt haben. Erläutern Sie bitte den Sachverhalt
+gener Höchst-​        sammengelebt?                                               in einer formlosen Anlage mit der Überschrift „Ergän­-
+betrag bei Allein­-   Dann tragen Sie bitte in Zeile 10 die Anzahl der Perso­-    zende Angaben zur Steuererklärung“ und tragen in
+stehenden             nen ein, mit denen Sie zusammen im Haushalt gelebt          Zeile 37 des Hauptvordrucks ESt 1 A eine „1“ ein.
+                      haben.                                                      Sie haben ganzjährig mit mehreren Personen in einem
+                      Sie haben ganzjährig mit mehreren anderen alleinste­-       Haushalt zusammengelebt, aber in dem einen Teil des
+                      henden Personen in einem Haushalt zusammenge­-              Kalenderjahres mit anderen Personen als im anderen
+                      lebt, aber immer nur mit einer Person zeitgleich?           Teil des Kalenderjahres (z. B. Umzug von Elternhaus
+                      Dann tragen Sie bitte in Zeile 10 nur eine „1“ ein.         in Wohngemeinschaft)?
+                      Sie haben ganzjährig mit einer oder mehreren Per­-          Dann tragen Sie bitte in Zeile 10 die Gesamtanzahl
+                      son(en) in einem Haushalt zusammengelebt, aber für          der Personen ein, mit denen Sie zusammen im Haus­-
+                      einen Teil des Kalenderjahres mit mehreren Personen         halt gelebt haben. Erläutern Sie bitte den Sachverhalt
+                      (z. B. Eltern) und für den anderen Teil des Kalender­-      in einer formlosen Anlage mit der Überschrift „Ergän­-
+                      jahres mit nur einer Person?                                zende Angaben zur Steuererklärung“ und tragen in
+                      Dann tragen Sie bitte in Zeile 10 die Gesamtanzahl          Zeile 37 des Hauptvordrucks ESt 1 A eine „1“ ein.
+

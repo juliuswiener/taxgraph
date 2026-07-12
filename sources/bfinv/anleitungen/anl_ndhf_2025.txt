@@ -1,0 +1,93 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anleitung N-DHF 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+Anleitung                                                                                                                2025
+zur Anlage N-Doppelte Haushaltsführung
+Allgemeines        Müssen Sie aus beruflichem Anlass einen doppelten          gungsort einen Zweithaushalt führen, von dem aus Sie
+                   Haushalt führen, können Sie die notwendigen Mehr­-         Ihrer Beschäftigung weiter nachgehen (sog. Wegverle­-
+                   aufwendungen als Werbungskosten geltend machen.            gungsfall). Anstelle der Mehraufwendungen für dop­-
+                   Eine doppelte Haushaltsführung liegt nur vor, wenn         pelte Haushaltsführung können Sie die Fahrtkosten für
+                   Sie außerhalb des Ortes Ihrer ersten Tätigkeitsstätte      mehr als eine Heimfahrt wöchentlich geltend machen.
+                   einen eigenen Haushalt unterhalten und Sie auch am         Füllen Sie in diesem Fall bitte Zeile 12 der Anlage N-​
+                   Ort der ersten Tätigkeitsstätte wohnen. Die Zweitwoh­-     Doppelte Haushaltsführung und nur die Zeilen 27
+                   nung oder -unterkunft kann auch in der Nähe des            bis 50 und / oder 52 der Anlage N sowie bei Leistun­-
+                   Ortes der ersten Tätigkeitsstätte belegen sein. Ihr Fi­-   gen des Arbeitgebers oder bei steuerfreiem Ersatz der
+                   nanzamt erkennt es an, wenn Sie den Haupthaushalt          Agentur für Arbeit Zeile 34 der Anlage N-Doppelte
+                   aus privaten Gründen vom Beschäftigungsort wegver­-        Haushaltsführung aus.
+                   legen und daraufhin in einer Wohnung am Beschäfti­-
+
+Eigener            Ein eigener Hausstand liegt im Allgemeinen bei verhei­-    diglich ein oder mehrere Zimmer unentgeltlich bewoh­-
+Hausstand          rateten oder verpartnerten Personen vor.                   nen oder wenn Ihnen eine Wohnung im Haus der El­-
+                   Ein eigener Hausstand setzt neben dem Innehaben            tern unentgeltlich zur Nutzung überlassen wird. Die fi­-
+                   einer Wohnung aus eigenem Recht als Eigentümerin           nanzielle Beteiligung an den Kosten der Haushaltsfüh­-
+                   oder Eigentümer oder als Mieterin oder Mieter oder         rung müssen Sie darlegen können und diese kann
+                   aus gemeinsamen oder abgeleitetem Recht als verhei­-       auch bei volljährigen Kindern, die bei ihren Eltern oder
+                   ratete oder verpartnerte Person sowie als Mitbewoh­-       einem Elternteil wohnen, nicht generell unterstellt wer­-
+                   nerin oder Mitbewohner auch eine finanzielle Beteili­-     den. Eine finanzielle Beteiligung an den Kosten der
+                   gung an den Kosten der Lebensführung voraus (lau­-         Haushaltsführung mit Bagatellbeträgen ist nicht aus­-
+                   fende Kosten der Haushaltsführung).                        reichend.
+                   Es genügt nicht, wenn Sie im Haushalt der Eltern le­-
+
+Zeile 13 bis 22    Erste und letzte Fahrt zum / vom neuen Arbeitsort          beträgt 0,30 € für jeden vollen Entfernungskilometer
+Fahrtkosten        Anerkannt werden die Kosten für die erste Fahrt vom        der ersten 20 km und 0,38 € für jeden weiteren vollen
+                   Ort des eigenen Hausstands zum Arbeitsort bei Be­-         Entfernungskilometer. Die Art des benutzten Verkehrs­-
+                   ginn der Tätigkeit und die letzte Fahrt vom Arbeitsort     mittels ist dafür unerheblich. Die Angaben zur Entfer­-
+                   zum Ort des eigenen Hausstands nach Abschluss der          nungspauschale, die nicht für Flugstrecken, jedoch für
+                   Tätigkeit. Haben Sie für diese Fahrten ein eigenes         die An- und Abfahrten zum und vom Flughafen ge­-
+                   Kraftfahrzeug benutzt, werden pauschal 0,30 € je ge­-      währt wird, tragen Sie bitte in Zeile 17 ein. Haben Sie
+                   fahrenem Kilometer anerkannt. Wenn Sie andere mo­-         öffentliche Verkehrsmittel benutzt, tragen Sie bitte die
+                   torbetriebene Fahrzeuge benutzt haben, werden pau­-        tatsächlichen Kosten in Zeile 18 ein. Flug- und Fähr­-
+                   schal 0,20 € je gefahrenem Kilometer anerkannt. Auf­-      kosten sowie Kosten für die entgeltliche Sammelbeför­-
+                   wendungen für die Benutzung öffentlicher Verkehrs­-        derung werden in der tatsächlichen Höhe berücksich­-
+                   mittel werden in der tatsächlichen Höhe anerkannt.         tigt. Tragen Sie diese Kosten bitte in Zeile 22 ein. Sie
+                                                                              können keine Entfernungspauschale geltend machen,
+                   Fahrten zum eigenen Hausstand (Familienheim­-              wenn Sie einen Firmen- oder Dienstwagen nutzen
+                   fahrten)                                                   oder an einer Sammelbeförderung des Arbeitgebers
+                   Sind Ihnen Fahrtkosten für tatsächliche Fahrten zwi­-      teilnehmen. Anstelle der Aufwendungen für eine Fami­-
+                   schen Ihrem Beschäftigungsort und dem Ort des eige­-       lienheimfahrt werden als Werbungskosten die Gebüh­-
+                   nen Hausstands entstanden, dann werden diese Kos­-         ren für ein Telefonat bis zu einer Dauer von 15 Minu­-
+                   ten mit der Entfernungspauschale berücksichtigt            ten mit zum Hausstand gehörenden Angehörigen be­-
+                   (höchstens eine Fahrt wöchentlich). Diese Pauschale        rücksichtigt.
+
+Zeile 23 und 24    Im Inland werden die tatsächlichen Unterkunftskosten kunftskosten in nachgewiesener Höhe für eine ange­-
+Kosten der         bis zu 1.000 € im Monat (z. B. Miete, Betriebskosten messene Zweitwohnung (60 m²) anerkannt.
+Unterkunft am      usw.) berücksichtigt. Im Ausland werden die Unter­-
+Ort der ersten
+Tätigkeitsstätte
+
+Zeile 25 bis 31    Die Mehraufwendungen für Verpflegung werden für geltenden Pauschbeträgen angesetzt.
+Pauschbeträge      die ersten 3 Monate mit den für Auswärtstätigkeiten
+für Mehraufwen­-
+dungen für
+Verpflegung
+
+
+
+
+Anleitung zur Anlage N-Doppelte Haushaltsführung - September 2025
+                                                            -2-
+
+Zeile 32           Umzugskosten                                          Einrichtung und Hausrat
+Sonstige           Sofern die Aufwendungen aufgrund der Begründung,      Sofern Sie Aufwendungen für Einrichtungsgegenstän­-
+Aufwendungen       Beendigung oder des Wechsels einer doppelten Haus­-   de und Hausrat hatten, beachten Sie bitte die Erläute­-
+                   haltsführung entstanden sind, werden diese aner­-     rungen in der Randziffer 108 des Schreibens des Bun­-
+                   kannt. Sie können nur die tatsächlich entstandenen    desministeriums der Finanzen vom 25. November
+                   Aufwendungen geltend machen. Die Pauschbeträge        2020, Bundessteuerblatt I Seite 1228.
+                   für sonstige Umzugsauslagen können Sie im Rahmen
+                   der doppelten Haushaltsführung nicht ansetzen.
+
+Zeile 33           Führen Sie aus beruflichem Anlass mehr als einen digen Mehraufwendungen für jeden weiteren doppel­-
+Weitere doppelte   doppelten Haushalt, tragen Sie hier bitte Ihre notwen­- ten Haushalt als Gesamtsumme ein.
+Haushalts-​
+führungen
+
+Zeile 34           Tragen Sie bitte in Zeile 34 die erhaltenen steuerfreien kostenersatz während der doppelten Haushaltsfüh­-
+Ersatzleistungen   Ersatzleistungen (z. B. Trennungsentschädigungen, rung, Mobilitätsbeihilfen) ein.
+des                Auslösungen, Fahrtkostenersatz oder Verpflegungs­-
+Arbeitgebers /
+der Agentur für
+Arbeit
+

@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung Sonderausgaben 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)"
+  abrufdatum: "2026-07-12"
+  datei: "anl_sonderausgaben_2025.txt"
+  pdf_datei: "anl_sonderausgaben_2025.pdf"
+  sha256: "02dbd0a888ce31057dcbbe982865d09ec4b7b11e7e9e43119ad5f9a5c15b6d41"
+  pdf_sha256: "ff058fdff8f64719049b87d2c2f9b51ec081210d1d98a36e8ac989aea6fa6d8a"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Sonderausgaben']
+  verwendet_in:
+    - ""

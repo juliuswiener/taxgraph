@@ -1,0 +1,234 @@
+Quelle: https://www.formulare-bfinv.de/ (FMS-Export, Julius 2026-07-12)
+Abgerufen: 2026-07-12
+Titel: Anleitung agB 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+Anleitung                               2025
+zur Anlage Außergewöhnliche Belastungen
+Allgemeines         Außergewöhnliche Belastungen sind private Ausga­-        sog. zumutbare Belastung übersteigen. Ihr Finanzamt
+                    ben, die Ihnen aufgrund besonderer Umstände              berechnet die zumutbare Belastung automatisch. Es
+                    zwangsläufig entstehen, z. B. aufgrund von               berücksichtigt dabei Ihre familiären Verhältnisse und
+                         Krankheit,                                          die Höhe Ihrer Einkünfte. Die genaue Berechnung
+                         Behinderung,                                        können Sie im § 33 Abs. 3 des Einkommensteuerge­-
+                         Unwetterschäden oder                                setzes nachlesen.
+                         Bestattung einer Angehörigen oder eines Angehö­-    Prozesskosten, wie z. B. die Kosten einer Scheidung
+                         rigen.                                              oder für die Aufhebung einer Lebenspartnerschaft,
+                    Diese Ausgaben können Sie, soweit sie Ihnen nicht er­-   stellen grundsätzlich keine außergewöhnlichen Belas­-
+                    setzt werden, steuermindernd geltend machen. Dies        tungen dar.
+                    ist jedoch nur insoweit möglich, als die Ausgaben die
+
+Zeile 4 bis 9       Es wurde eine Behinderung bei Ihnen festgestellt?      chen Sie Nachweise nur bei erstmaliger Beantragung
+Behinderten-​       Dann können Sie wählen, ob Sie Ihre mit der Behinde­- oder bei Änderung in Kopie ein. Nachweise sind z. B.
+Pauschbetrag        rung zusammenhängenden Aufwendungen im Einzel­-            ein Bescheid über die Feststellung der Schwerbe­-
+                    nen geltend machen (Zeile 23 bis 38) oder einen            hinderung,
+                    Pauschbetrag in Anspruch nehmen.                           ein Rentenbescheid des Versorgungsamts,
+                                                                               ein Rentenbescheid eines Trägers der gesetzli­-
+                    Der Behinderten-Pauschbetrag richtet sich nach dem         chen Unfallversicherung oder
+                    höchsten Grad der Behinderung, der im Kalenderjahr         ein Bescheid über Unfallruhegeld bei Beamtinnen
+                    festgestellt wurde:                                        oder Beamten.
+                    Grad der Behinderung von mindestens             Euro Der Behinderten-Pauschbetrag berücksichtigt Aufwen­-
+                                                                           dungen für
+                    20                                                384
+                                                                               die Hilfe im alltäglichen Leben,
+                    30                                                620      die Pflege und
+                    40                                                860      einen ggf. erhöhten Wäschebedarf.
+                    50                                              1.140 Wählen Sie den Behinderten-Pauschbetrag, dürfen
+                    60                                              1.440 Sie die Pflegeaufwendungen weder als außergewöhn­-
+                    70                                              1.780 liche Belastungen in den Zeilen 23 bis 38 noch als
+                                                                           Pflegeleistungen im Haushalt in Zeile 5 der Anlage
+                    80                                              2.120
+                                                                           Haushaltsnahe Aufwendungen eintragen. Zusätzlich
+                    90                                              2.460 zum Pauschbetrag können Sie unter bestimmten Vor­-
+                    100                                             2.840 aussetzungen weitere Aufwendungen (z. B. Kosten für
+                                                                           Heilbehandlungen, Kurkosten) eintragen. Bitte beach­-
+                                                                           ten Sie dazu die Erläuterungen zu den Zeilen 23
+                    Blinde, Taubblinde sowie Menschen, die ständig hilflos
+                                                                           bis 41.
+                    sind (Merkzeichen „Bl“, „TBl“ oder „H“), können einen Sie können den Behinderten-Pauschbetrag für ein
+                    Behinderten-Pauschbetrag von 7.400 € jährlich erhal­- Kind oder Enkelkind, für das Sie Anspruch auf Kinder­-
+                    ten. Dieser kann auch gewährt werden, wenn Sie als geld oder einen Kinderfreibetrag haben, auf sich über­-
+                    pflegebedürftige Person in die Pflegegrade 4 oder 5 tragen lassen. Einen entsprechenden Antrag stellen
+                    eingestuft werden.                                     Sie in den Zeilen 59 bis 61 und 63 der Anlage Kind.
+                    Geben Sie bitte den Grad Ihrer Behinderung an. Rei­-
+
+Zeile 10            Ihnen sind Hinterbliebenenbezüge                         Dann können Sie den Hinterbliebenen-Pauschbetrag
+Hinterbliebenen-​      nach dem SGB XIV oder einem anderen Gesetz,           von jährlich 370 € beantragen. Den Pauschbetrag er­-
+Pauschbetrag           das die Vorschriften des SGB XIV über Hinterblie­-    halten Sie auch dann, wenn Ihr Recht auf die Bezüge
+                       benenbezüge für entsprechend anwendbar erklärt,       ruht oder Sie dafür eine Kapitalabfindung erhalten
+                       aus der gesetzlichen Unfallversicherung,              haben. Reichen Sie Nachweise bitte nur bei erstmali­-
+                       nach beamtenrechtlichen Vorschriften an Hinter­-      ger Beantragung in Kopie ein.
+                       bliebene von an den Folgen eines Dienstunfalls        Als Nachweis eignen sich z. B. der Rentenbescheid
+                       verstorbenen Beamtinnen oder Beamten und /            des Versorgungsamts, der zuständigen Entschädi­-
+                       oder                                                  gungsbehörde oder eines Trägers der gesetzlichen
+                       nach den Vorschriften des Bundesentschädigungs­-      Unfallversicherung. Der Rentenbescheid eines Trä­-
+                       gesetzes über die Entschädigung an Leben, Kör­-       gers der gesetzlichen Rentenversicherung genügt
+                       per oder Gesundheit                                   nicht als Nachweis.
+                    bewilligt worden?
+
+
+
+
+Anleitung zur Anlage Außergewöhnliche Belastungen - September 2025
+                                                               -2-
+
+Zeile 11 bis 20    Sie pflegen eine pflegebedürftige Person in Ihrer oder lastung angerechnet. Beachten Sie bitte die Erläute­-
+Pflege-​           deren Wohnung im Inland oder EU- / EWR-Ausland rungen zu den Zeilen 23 bis 41.
+Pauschbetrag       und erhalten dafür keine Einnahmen?                      Der Pflege-Pauschbetrag kann Ihnen in der Regel nur
+                   Dann können Sie für Ihre Aufwendungen einen Pflege-​ für die Pflege von Angehörigen gewährt werden. Wird
+                   Pauschbetrag beantragen. Der Pflege-Pauschbetrag die Pflege von mehreren Personen vorgenommen, ist
+                   beträgt:                                                 der Pflege-Pauschbetrag nach der Zahl der Pflegeper­-
+                       bei Pflegegrad 2: 600 €,                             sonen zu teilen. Tragen Sie bitte die Anzahl der weite­-
+                       bei Pflegegrad 3: 1.100 €,                           ren an der Pflege beteiligten Personen in Zeile 18 ein
+                       bei Pflegegrad 4 oder 5 und / oder Merkzei­- und machen Sie in den Zeilen 19 und 20 zusätzliche
+                       chen „H“: 1.800 €                                    Angaben zu den weiteren an der Pflege beteiligten
+                   Zu den Einnahmen aus der Pflege zählt z. B. das Pfle­- Personen. Sofern Sie die pflegebedürftige Person al­-
+                   gegeld, das die pflegebedürftige Person von einer lein pflegen, tragen Sie hier bitte eine „0“ ein. Eine
+                   Pflegeversicherung erhält und an Sie weitergibt.         Person, die für die Pflege Einnahmen erhält, ist nicht
+                   Nicht zu den Einnahmen zählt das Pflegegeld,             in die Aufteilung einzubeziehen und nicht in Zeile 18
+                       das Sie als Elternteil eines Kindes mit Behinde­- einzutragen. Sie können den Pflege-Pauschbetrag zu­-
+                       rung erhalten haben oder                             sätzlich zu einem übertragenen Behinderten-Pausch­-
+                       das Sie zur erforderlichen Grundpflege der pflege­- betrag beantragen. Beachten Sie hierzu bitte die Er­-
+                       bedürftigen Person verwenden (z. B. Bezahlung läuterungen zu den Zeilen 4 bis 9. Weisen Sie bitte bei
+                       einer fremden Pflegekraft, Anschaffung von pflege­- erstmaliger Beantragung oder bei Änderung der Ver­-
+                       notwendigen oder pflegeerleichternden Bedarfsge­- hältnisse (z. B. Änderung des Pflegegrades) die Pfle­-
+      Neu!             genständen).                                         gebedürftigkeit durch Vorlage des entsprechenden Be­-
+                   Der Pflege-Pauschbetrag richtet sich nach dem höchs­- scheides (z. B. der Pflegekasse) oder durch einen
+                   ten Pflegegrad, der im Kalenderjahr festgestellt wurde. Schwerbehindertenausweis mit dem Merkzeichen „H“
+                   Bitte vergessen Sie nicht, die Identifikationsnummer in Kopie nach.
+                   der pflegebedürftigen Person in Zeile 13 einzutragen Sie lassen sich bei der Pflegeleistung unterstützen,
+                   und geben Sie in Zeile 14 an, ob diese Person ihren z. B. durch einen ambulanten Pflegedienst?
+                   Wohnsitz oder gewöhnlichen Aufenthalt im Inland hat. Dann können Sie für die entstandenen Aufwendungen
+                   Ohne diese Angaben kann Ihr Finanzamt den Pflege-​ zusätzlich zu dem Pauschbetrag eine Steuerermäßi­-
+                   Pauschbetrag nicht gewähren.                             gung beantragen. Beachten Sie bitte die Erläuterun­-
+                   Anstelle des Pflege-Pauschbetrages können Sie die gen in der Anleitung zur Anlage Haushaltsnahe Auf­-
+                   einzelnen Aufwendungen als außergewöhnliche Be­- wendungen.
+                   lastungen in die Zeilen 26 bis 28 eintragen. Dies wirkt Sie pflegen mehr als eine Person?
+                   sich dann steuerlich aus, wenn die Pflegeaufwendun­- Dann machen Sie die erforderlichen Angaben zu den
+                   gen den jeweiligen Pflege-Pauschbetrag oder die Ein­- Zeilen 11 bis 20 bitte in einer formlosen Anlage mit der
+                   nahmen aus der Pflege übersteigen und die pflegebe­- Überschrift „Ergänzende Angaben zur Steuererklä­-
+                   dürftige Person die Pflegekosten nicht selbst finanziell rung“ und tragen in Zeile 37 des Hauptvordrucks
+                   tragen kann. Allerdings wird dann Ihre zumutbare Be­- ESt 1 A eine „1“ ein.
+
+Zeile 21 und 22    Sie haben einen Grad der Behinderung von mindes­-         Dann berücksichtigt Ihr Finanzamt die behinderungs­-
+Behinderungs-​     tens 80 oder von mindestens 70 und Merkzei­-              bedingte Fahrtkostenpauschale in der entsprechenden
+bedingte Fahrt­-   chen „G“?                                                 Höhe für das gesamte Kalenderjahr.
+kostenpauschale    Dann haben Sie Anspruch auf eine behinderungsbe­-         Die behinderungsbedingte Fahrtkostenpauschale wird
+                   dingte Fahrtkostenpauschale i. H. v. 900 €.               bei der Einkommensteuerveranlagung zusammen mit
+                   Wurde das Merkzeichen „aG“, „Bl“, „TBl“ und / oder        den anderen außergewöhnlichen Belastungen von
+                   das Merkzeichen „H“ festgestellt oder liegt bei Ihnen     Ihrem Finanzamt um die zumutbare Belastung gemin­-
+                   der Pflegegrad 4 oder 5 vor, haben Sie Anspruch auf       dert. Beachten Sie hierzu bitte die Erläuterungen zu
+                   eine behinderungsbedingte Fahrtkostenpauschale            den Zeilen 23 bis 41.
+                   i. H. v. 4.500 €. Darüber hinaus können Sie keine wei­-   Sie können die behinderungsbedingte Fahrtkosten­-
+                   teren behinderungsbedingten Fahrtkosten als außer­-       pauschale für ein Kind oder ein Enkelkind, für das Sie
+                   gewöhnliche Belastungen beantragen.                       Anspruch auf Kindergeld oder einen Kinderfreibetrag
+                   Sie haben die oben genannten Voraussetzungen erst         haben, auf sich übertragen lassen. Den Antrag stellen
+                   im Laufe des Kalenderjahres erfüllt?                      Sie bitte in den Zeilen 64 und 65 der Anlage Kind.
+                                                                   -3-
+
+Anstelle oder neben den Pauschbeträgen (bei Aufwen­-        ßergewöhnlichen Belastungen enthaltenen Aufwen­-           Zeile 23 bis 41
+dungen wegen Behinderung oder Pflege) können Sie            dungen aufgrund der zumutbaren Belastung nicht aus­-              Andere
+andere Aufwendungen geltend machen. Diese wirken            wirkt. Für die Aufwendungen, die sich nicht auswirken,    Aufwendungen
+sich steuerlich aus, soweit sie Ihre zumutbare Belas­-      können Sie eine Steuerermäßigung für haushaltsnahe
+tung übersteigen. Ihr Finanzamt berechnet die zumut­-       Beschäftigungsverhältnisse, Dienstleistungen und /
+bare Belastung automatisch.                                 oder Handwerkerleistungen geltend machen. Tragen
+Sind in den von Ihnen beantragten außergewöhnli­-           Sie bitte in die Zeilen 39 bis 41 alle in den außerge­-
+chen Belastungen Aufwendungen für haushaltsnahe             wöhnlichen Belastungen enthaltenen Aufwendungen
+Beschäftigungsverhältnisse, Dienstleistungen und /          für haushaltsnahe Beschäftigungsverhältnisse, Dienst­-
+oder Handwerkerleistungen enthalten?                        leistungen und / oder Handwerkerleistungen ein.
+Dann kann es sein, dass sich ein Teil der in den au­-
+
+
+
+
+                                                                                                                          Beispiel
+
+                                                                                Welche außergewöhnlichen Belastungen haben
+                                                                                die Eheleute Muster?
+                                                                                Frau Muster war mehrere Wochen krank. Der Kran­-
+                                                                                kenhausaufenthalt hat insgesamt 4.750 € gekostet.
+                                                                                Davon hat die Krankenkasse nur 3.400 € bezahlt.
+                                                                                Ferner hat Frau Muster von ihrem Arbeitgeber eine
+                                                                                steuerfreie Unterstützung von 250 € erhalten. Die
+                                                                                Eheleute Muster benennen die Art der Aufwendun­-
+                                                                                gen in Zeile 23, tragen in Zeile 24 die Krankheits­-
+                                                                                kosten und in Zeile 25 die Summe der erstatteten
+                                                                                Beträge ein. Sie wissen, dass die verbleibenden
+                                                                                Kosten von 1.100 € nicht in voller Höhe berücksich­-
+                                                                                tigt, sondern von ihrem Finanzamt um die sog. zu­-
+                                                                                mutbare Belastung gekürzt werden.
+
+
+
+Andere Aufwendungen sind z. B.:                             ge Medikamente. Bei einer andauernden Erkrankung                Beispiele
+                                                            mit anhaltendem Verbrauch bestimmter Medikamente
+Behinderungsbedingte Aufwendungen,                          reicht die einmalige Vorlage einer solchen Verordnung
+die Menschen mit Behinderungen erfahrungsgemäß              aus.
+durch ihre Krankheit oder Behinderung entstehen.            Sofern Sie Kosten für Arzneimittel geltend machen
+Hierzu gehören z. B. Aufwendungen für den behinder­-        möchten, die Ihnen per Elektronischem Rezept (E-Re­-
+tengerechten Umbau oder Neubau einer Wohnung                zept) verordnet wurden, genügt als Nachweis der Kas­-
+oder eines Hauses.                                          senbeleg der Apotheke oder die Rechnung der Online-​
+                                                            Apotheke, wenn darauf folgende Angaben vermerkt
+                                                            sind:
+Bestattungskosten
+                                                                der Name der versicherten Person,
+für Angehörige, soweit sie den Nachlass und etwaige
+                                                                die Art der Leistung (z. B. Name des Arzneimit­-
+nicht steuerpflichtige Ersatzleistungen (z. B. Sterbe­-
+                                                                tels),
+geldversicherung) übersteigen. Sie können nur die
+                                                                der (Zuzahlungs-​) Betrag,
+Kosten geltend machen, die mit der Bestattung unmit­-
+                                                                die Art des Rezeptes (z. B. Rezept mit Gebühr,
+telbar zusammenhängen (z. B. für Grabstätte, Sarg,
+                                                                grünes Rezept oder Privatrezept)
+Blumen, Kränze, Todesanzeigen usw.). Kosten für
+                                                            Falls Sie privat krankenversichert sein sollten, kann         Neu!
+Trauerkleidung und Bewirtung der Trauergäste sowie
+                                                            der Nachweis alternativ auch durch den Kostenbeleg
+Reisekosten anlässlich der Bestattung erkennt Ihr Fi­-
+                                                            der Apotheke erbracht werden. Auf die zusätzliche
+nanzamt nicht an.
+                                                            Vorlage der ärztlichen Verordnung oder der Verord­-
+                                                            nung einer Heilpraktikerin oder eines Heilpraktikers
+Krankheitskosten,                                           kann dann verzichtet werden.
+soweit sie nicht durch einen Dritten steuerfrei ersetzt     Nachweise in Kopie müssen Sie nur einreichen, wenn
+werden oder Ihnen ein Anspruch auf Ersatz zusteht,          Sie von Ihrem Finanzamt dazu aufgefordert werden.
+z. B. durch eine Krankenkasse.
+Kosten für Arzneimittel, Heilmittel und Hilfsmittel dür­-
+                                                            Kurkosten,
+fen Sie nur als außergewöhnliche Belastung eintra­-
+                                                            wenn Sie die Notwendigkeit der Kur nachweisen kön­-
+gen, wenn Sie ihre medizinische Notwendigkeit durch
+                                                            nen. Nachweise in Kopie müssen Sie nur einreichen,
+eine ärztliche Verordnung oder die Verordnung einer
+                                                            wenn Sie von Ihrem Finanzamt dazu aufgefordert wer­-
+Heilpraktikerin oder eines Heilpraktikers nachweisen
+                                                            den. Als Nachweis eignet sich
+können. Dies gilt auch für nicht verschreibungspflichti­-
+                                                               ein vor Kurbeginn ausgestelltes amtsärztliches
+                                            -4-
+
+    Gutachten oder                                         gebracht und haben Ihren bisherigen Haushalt aufge­-
+    andere Unterlagen, aus denen sich die Notwendig­-      löst, ziehen Sie von den Pflegekosten bitte eine Haus­-
+    keit ergibt (z. B. bei Pflichtversicherten aus einer   haltsersparnis von 33,60 € täglich (1.008 € monatlich,
+    Bescheinigung der zuständigen Krankenkasse).           12.096 € jährlich) ab. Sind Sie und Ihre Ehegattin / Ihr
+Der Zuschuss einer Krankenversicherung zu Arztkos­-        Ehegatte oder Ihre Lebenspartnerin / Ihr Lebenspart­-
+ten, Arzneimittelkosten und Kurmittelkosten reicht als     ner krankheitsbedingt in einem Alten- und Pflegeheim
+Nachweis nicht aus.                                        untergebracht, ist für Sie beide eine Haushaltserspar­-
+                                                           nis anzusetzen.
+                                                           Ein Abzug ist auch für Aufwendungen möglich, die
+Pflegekosten
+                                                           Ihnen aus der Pflegebedürftigkeit einer anderen Per­-
+für
+                                                           son zwangsläufig entstehen.
+    die Beschäftigung einer ambulanten Pflegekraft
+    oder
+    die Unterbringung in einem Pflegeheim, in der Wiederbeschaffungskosten
+    Pflegestation eines Altenheims oder in einem Al­- für Hausrat und Kleidung, die durch ein unabwendba­-
+    tenpflegeheim.                                    res Ereignis, z. B. Brand oder Hochwasser, vernichtet
+Wenn Sie hier die tatsächlichen Pflegekosten ange­- wurden, wenn keine allgemein zugängliche und übli­-
+ben, erhalten Sie nicht zusätzlich den Behinderten-​ che Versicherung möglich war. Dazu gehören auch die
+Pauschbetrag. Sind Sie krankheitsbedingt nicht nur notwendigen und angemessenen Kosten für die Scha­-
+vorübergehend in einem Alten- und Pflegeheim unter­- densbeseitigung.
+
