@@ -1,0 +1,45 @@
+# Tests § 7 Abs. 1 - Ueberhangsjahr (arithmetischer AfA-Abschluss)
+
+> Using Afa_ueberhangsjahr
+
+Zwei Faelle, Erwartungswerte synthetisch gegen den Rechenweg (keine LLM-Werte). Beide
+belegen die Rest-Identitaet: Anteil-Anschaffungsjahr + Volljahre + Ueberhangsjahr =
+Anschaffungskosten. Fall 1 = das migrierte seed5-Aequivalent des Monolithen (USt-frei,
+netto = brutto). Fall 2 = Kreuz-Fall auf echter Brutto-Basis (USt 19 %), konsistent mit
+den Kreuz-Waechtern von p9_1_3_nr6_7_afa_laufend_nb (1011,50 = 850 x 1,19).
+
+```catala
+#[test]
+declaration scope TestUeberhangsjahr:
+  internal r1 content Afa_ueberhangsjahr.Ueberhangsjahr
+  internal r2 content Afa_ueberhangsjahr.Ueberhangsjahr
+  output rest1 content money
+  output rest2 content money
+
+scope TestUeberhangsjahr:
+  # Fall 1 - seed5-Aequivalent (USt-frei, netto = brutto): AK 1200, ND 3, Monat 7.
+  #   jahres_afa        = 1200 / 3            = 400,00
+  #   anteil (j0, M7)   = 400 x (13-7)/12     = 400 x 0,5 = 200,00
+  #   summe_volljahre   = 400 x (3-1)         = 800,00     (Jahre j1, j2)
+  #   Ueberhangsjahr j3 = 1200 - 200 - 800    = 200,00
+  #   Kontrolle: 200 + 800 + 200 = 1200 = AK.
+  definition r1 equals output of Afa_ueberhangsjahr.Ueberhangsjahr with {
+    -- anschaffungskosten_brutto: $1,200.00
+    -- nutzungsdauer_jahre: 3
+    -- anschaffungsmonat: 7 }
+  definition rest1 equals r1.ueberhangsjahr_rest
+  assertion rest1 = $200.00
+
+  # Fall 2 - Kreuz auf ak_brutto-Basis (USt 19 %): AK brutto 1011,50, ND 5, Monat 7.
+  #   jahres_afa        = 1011,50 / 5         = 202,30
+  #   anteil (j0, M7)   = 202,30 x 0,5        = 101,15
+  #   summe_volljahre   = 202,30 x (5-1)      = 809,20     (Jahre j1..j4)
+  #   Ueberhangsjahr j5 = 1011,50 - 101,15 - 809,20 = 101,15
+  #   Kontrolle: 101,15 + 809,20 + 101,15 = 1011,50 = AK.
+  definition r2 equals output of Afa_ueberhangsjahr.Ueberhangsjahr with {
+    -- anschaffungskosten_brutto: $1,011.50
+    -- nutzungsdauer_jahre: 5
+    -- anschaffungsmonat: 7 }
+  definition rest2 equals r2.ueberhangsjahr_rest
+  assertion rest2 = $101.15
+```

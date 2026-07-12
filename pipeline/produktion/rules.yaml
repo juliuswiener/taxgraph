@@ -699,10 +699,12 @@ regeln:
 # (Instructor msg 1256, Option 2). Der Terminal-/Ueberhangsjahr-Rest bei unterjaehrigem
 # Beginn = AK minus Summe der laufend-Jahre = arithmetischer Abschluss der linearen AfA,
 # steht NICHT im Gesetzeswortlaut (erste echte Kanal-Grenze der Nacht). Er lebt in der
-# handgeschriebenen § 2-Integrationsschicht (rules/estg/arbeitnehmerfall) mit EIGENEM
-# deterministischen clerk-Test: seed 1200/ND3/Monat7 -> Jahr3 (jahre_seit==ND) = 200,00.
-# Backlog-Alternative (Phase 5): EStR R 7.4 als typ:verwaltung-Quelle fuer einen zitierbaren
-# Text-Anker. p9_1_3_nr6_7_afa_laufend (jahre_seit < Nutzungsdauer) traegt alle Rechtssaetze.
+# handgeschriebenen § 2-Integrationsschicht (rules/estg/p07_afa_ueberhangsjahr, Modul
+# Afa_ueberhangsjahr) mit EIGENEM deterministischen clerk-Test: seed 1200/ND3/Monat7 ->
+# Jahr3 (jahre_seit==ND) = 200,00 + Brutto-Kreuz 1011,50/ND5/Monat7 -> 101,15. Bemessung auf
+# ak_brutto, konsistent mit dem _nb-Neuschnitt. Backlog-Alternative (Phase 5): EStR R 7.4 als
+# typ:verwaltung-Quelle fuer einen zitierbaren Text-Anker. p9_1_3_nr6_7_afa_laufend_nb
+# (jahre_seit < Nutzungsdauer) traegt alle Rechtssaetze der laufenden Jahre.
 - rule_id: p9_1_3_nr6_7_afa_laufend_nb
   # hinweis-Kanal (Julius-Freigabe 2026-07-12, Instructor-Review erste Produktions-Nutzung):
   # Zwei Pins. (1) Klasse-1-Klarheit netto/brutto - der Brutto-Abzug ist Auslegungsfolge

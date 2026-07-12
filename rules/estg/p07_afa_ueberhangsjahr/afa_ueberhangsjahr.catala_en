@@ -1,0 +1,54 @@
+# § 7 Abs. 1 EStG - lineare AfA, Ueberhangsjahr (arithmetischer Abschluss)
+
+> Module Afa_ueberhangsjahr
+
+Handschrift-Schicht der § 2-Integration (arbeitnehmerfall-Muster). Bei unterjaehrigem
+Beginn (Anschaffungsmonat > 1) verteilt sich die lineare AfA eines Wirtschaftsguts ueber
+nutzungsdauer_jahre + 1 Kalenderjahre: das Anschaffungsjahr (jahre_seit = 0) traegt nur
+den Zwoelftel-Anteil ab dem Anschaffungsmonat, die nutzungsdauer_jahre - 1 folgenden
+Volljahre je die volle JahresAfA, und ein letztes Ueberhangsjahr (jahre_seit =
+nutzungsdauer_jahre) den arithmetischen Rest.
+
+Dieser Rest steht NICHT im Gesetzeswortlaut. Er ist der Abschluss der linearen AfA:
+Ueberhangsjahr = Anschaffungskosten - Summe der bereits abgesetzten laufenden Jahre. So
+summieren sich alle Jahresbetraege exakt auf die Anschaffungskosten (kein Cent-Drift), und
+der Restbetrag absorbiert die Cent-Rundung der Jahresbetraege. Deshalb ist er
+Integrations-Arithmetik in dieser Handschrift-Schicht, KEINE Formalisierungsregel der
+Pipeline (Instructor msg 1256, Option 2). Text-Anker als Phase-5-Backlog: EStR R 7.4.
+
+Bemessungsgrundlage ist die Brutto-Anschaffungskosten (§ 9b Abs. 1: Vorsteuer beim
+Arbeitnehmer i.d.R. nicht abziehbar), konsistent mit dem Netto/Brutto-Neuschnitt
+p9_1_3_nr6_7_afa_laufend_nb, der die laufenden Jahre traegt.
+
+Konvention (wie § 32a / solzg): Prosa deutsch, Bezeichner/Kommentare im Code englisch.
+
+```catala
+declaration scope Ueberhangsjahr:
+  input anschaffungskosten_brutto content money
+  input nutzungsdauer_jahre content integer
+  input anschaffungsmonat content integer
+  internal jahres_afa content money
+  internal anteil_anschaffungsjahr content money
+  internal summe_volljahre content money
+  output ueberhangsjahr_rest content money
+
+scope Ueberhangsjahr:
+  # Volle lineare JahresAfA = Anschaffungskosten / Nutzungsdauer (§ 7 Abs. 1 S. 1-2).
+  definition jahres_afa equals
+    anschaffungskosten_brutto / (decimal of nutzungsdauer_jahre)
+
+  # Anschaffungsjahr (jahre_seit = 0): ein Zwoelftel je vollem Monat ab dem
+  # Anschaffungsmonat einschliesslich, d.h. (13 - anschaffungsmonat)/12 (§ 7 Abs. 1 S. 4).
+  definition anteil_anschaffungsjahr equals
+    jahres_afa * ((decimal of (13 - anschaffungsmonat)) / 12.0)
+
+  # Die nutzungsdauer_jahre - 1 Volljahre (jahre_seit = 1 .. Nutzungsdauer - 1) je volle
+  # JahresAfA.
+  definition summe_volljahre equals
+    jahres_afa * (decimal of (nutzungsdauer_jahre - 1))
+
+  # Ueberhangsjahr (jahre_seit = Nutzungsdauer): arithmetischer Rest, damit die Summe aller
+  # Jahre exakt die Anschaffungskosten ergibt.
+  definition ueberhangsjahr_rest equals
+    anschaffungskosten_brutto - anteil_anschaffungsjahr - summe_volljahre
+```
