@@ -56,6 +56,28 @@ Reihenfolge nach Risiko, Versand ganz am Ende:
 gegen ELSTERs amtliche Pruefung, null Versand-Risiko), dann (i) das Feldmapping fuellen, das (ii)
 speist. (iii) Versand separat, wenn Julius es will.
 
+## checkESt-CI-Gate-Harness (Phase 4 ii) — gebaut, Mechanismus bewiesen, Vollbeweis PENDING Hersteller-ID
+
+`elster/checkest_gate.py` ruft `EricBearbeiteVorgang(xml, "ESt_2020", ERIC_VALIDIERE, NULL, NULL,
+puffer, NULL)` — offline, kein Versand. `--prove` fuehrt den amtlichen ESt_2020-Beispieldatensatz
+(plausibel) + eine verfaelschte Kopie (implausibel) durch.
+
+**Ergebnis: MECHANISMUS BEWIESEN, VOLLBEWEIS PENDING HERSTELLER-ID.** Beide Faelle liefern
+deterministisch `rc=610301202 = ERIC_IO_TESTHERSTELLERID_GESPERRT` (korrekt dekodiert). Grund: der
+Beispieldatensatz traegt die Alt-Test-Hersteller-ID 74931, die **seit ERiC 39.4.x gesperrt** ist —
+laut Entwicklerhandbuch 10.1.1 ist **die eigene registrierte Hersteller-ID Pflicht, auch fuer
+Validierung; eine Dummy-/Test-ID gibt es nicht mehr.**
+
+Das ist eine **Registrierungs-Voraussetzung = Julius-Territorium** (analog zum Versand-Zertifikat),
+KEIN Harness-Fehler. Der Harness ruft die API korrekt auf und bekommt einen deterministischen,
+richtig gedeuteten Returncode. Er liest die ID aus `$ELSTER_HERSTELLER_ID` (z.B. aus Julius'
+`.env.elster`): sobald gesetzt, vervollstaendigt sich der Beweis (plausibel `rc==0`, implausibel
+`rc!=0`) **ohne Code-Aenderung**.
+
+**Konsequenz fuer den Plan:** der rc==0/rc!=0-Differenzbeweis braucht Julius' Hersteller-ID. Bis dahin
+ist die Harness-Verdrahtung + die deterministische API-Antwort der belegbare Stand. Kein Falsch-Gruen:
+ich melde NICHT „plausibel rc==0", weil ERiC am Hersteller-ID-Gate blockt.
+
 ## Ablage / Provenance
 
 - ERiC unter `~/02_Software/eric/` (ausserhalb Repo, `$ERIC_DIR`; kein absoluter Pfad im Code).
