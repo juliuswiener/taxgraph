@@ -249,3 +249,30 @@ deterministischem Signal. Empirisch belegt (1 Fehlversuch), erwartungskonform.
 **Offen (nach Julius):** ELSTER-Download → Phase 4 (Feldmapping, checkESt-CI mit dem 0,11-Fall als
 erstem Kandidaten). Charge-3-Backlog geordnet: GWG-Neuschnitt + EStR-Freeze, §2-Arithmetik (nr6_7-
 Überhangsjahr).
+
+## 13. Phase 4 — ERiC-Anbindung: Stand + Oracle-Arbeitsteilung (2026-07-12)
+
+ERiC 44.2.4.0 unter `~/02_Software/eric/` ($ERIC_DIR), Smoke-Test READY. Details:
+`reports/review/2026-07-12-eric-smoke-befund.md`.
+
+**Oracle-Arbeitsteilung (final dokumentiert):**
+- **GETTSIM-Differential** (`Makefile` `s02`, Catala vs GETTSIM) = **Offline-Rechen-Oracle** — der
+  starke, unabhängige Berechnungs-Gegencheck unserer festzusetzenden Steuer. Vorhanden.
+- **ERiC checkESt** (`ERIC_VALIDIERE`, offline) = **amtliche Deklarations-Plausibilität** — prüft die
+  deklarierten Kz + interne Summen-/Feldabhängigkeits-Konsistenz (Formelsprache). Komplementär, NEU.
+- **Amtliche Steuerberechnung** = nur online via Bescheid (Zertifikat + Netz) → Julius, später.
+- **BMF-Steuerrechner** = Dritt-Stichprobe für Tariffälle.
+- **Befund:** ERiC 44.2.4 hat KEINE Offline-Steuerberechnung (kein ERIC_BERECHNE-Flag, kein Compute-
+  Plugin/-API/-Datenart) — sauber falsifiziert, nicht erhofft. Der Compute-Oracle bleibt GETTSIM.
+
+**checkESt-CI-Gate-Harness** (`elster/checkest_gate.py`): Mechanismus bewiesen (deterministischer rc),
+**Vollbeweis wartet auf ELSTER-Softwarehersteller-Registrierung** (Julius hat den Antrag angestoßen;
+Behörden-Latenz in Tagen). Seit ERiC 39.4.x ist die eigene registrierte Hersteller-ID Pflicht auch für
+Validierung — kein offenes Loch, sondern Registrierungs-Wartezeit. Harness vervollständigt sich bei
+`$ELSTER_HERSTELLER_ID` ohne Code-Änderung.
+
+**Feldmapping (Richtung a):** bildet DEKLARATIONS-Größen → amtliche Kz (berechnete Steuer NICHT).
+Kz-Katalog `E10-2025.html` (3948 Kz) liegt vor. **Substanz-Fund:** die XSD-Annotationen sind
+Vordruckzeilen-quervernetzt — zuverlässiges Konzept→Kz braucht die ELSTER-Vordruck-Struktur, nicht
+Keyword-Grep (der ergibt Rauschen). Nächster Schritt: Kz-Kandidaten-Review-Tabelle je Regel-Input,
+aus der Vordruck-Struktur, vollständig durch Instructor-Review (Zitatanker-Doktrin auf Kz-Ebene).
