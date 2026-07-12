@@ -44,6 +44,26 @@
 # wuerde. Deshalb bleibt `im_inland` bei § 9 Abs. 1 S. 3 Nr. 5 in der Signatur
 # (ein einzelner Cap im selben Normsatz), waehrend es bei § 9 Abs. 4a eine
 # Geltungsbedingung ist (BMF-Laendertabellen).
+#
+# 4. HINWEIS (optionales Feld `hinweis:`, Julius-Freigabe 2026-07-12)
+#    Ein kuratierter Bearbeitungshinweis, der den Formalisierer erreicht (eigener
+#    Block VOR der Formalisier-Anweisung, ueber den zusatz-Kanal). Messgrundlage:
+#    reports/review/2026-07-12-b1-rolespy-ergebnis.md (Arm B loeste 5/5 Kontext-
+#    Hunger-Faelle mit engem auszug; bloasse Bedingungs-beschreibung nur 2/5).
+#    AUFLAGEN (Julius):
+#      (i)   Die auszug-Leitlinie bleibt PRIMAER. hinweis ERGAENZT, ersetzt nicht.
+#            Wo auszug-Weitung reicht (die 5 gemessenen Faelle), KEIN hinweis.
+#      (ii)  Inhalt = Spezifikation / Catala-Rechen-Idiom. NIE paraphrasierter
+#            Gesetzestext (Quellen-Heiligkeit) und kein Erwartungswert.
+#      (iii) Jede Befuellung laeuft durch Instructor-Review (wie deckt_ab-Fenster),
+#            bevor sie hier landet.
+#      (iv)  Wirkungsgrenze dokumentiert: der Kanal traegt Klasse-1-Kontext-Hunger,
+#            NICHT Klasse-5-Praezisionsordnung (solzg 20351->0,11 blieb $0,12 trotz
+#            Numeric-Idiom); glm-B traegt ihn nur teilweise (p10v2 0/2).
+#    Provenance: der hinweis steht je Regel in dieser Datei (auditierbar); ein
+#    prompt_template_id-Bump entfaellt bewusst - der zusatz ist Task-Content, nicht
+#    Template; ein Bump wuerde die frozen-gruenen Regeln OHNE hinweis falsch als
+#    prompt-geaendert stempeln. Marker ist stattdessen `schema_version` unten.
 # ---------------------------------------------------------------------------
 #
 # Stand der Seed-Recherche (2026-07-09), Quellen eingefroren und sha256-geprueft:
@@ -70,6 +90,10 @@
 #         Grundbetrag 4.008 EUR der Jahre 2020-2022, nicht mit den heute
 #         geltenden 4.260 EUR - als Erwartungswert unbrauchbar)
 
+# schema_version markiert die Manifest-Schema-Generation (nicht Prompt/Modell):
+#   1 = vor hinweis-Kanal;  2 = hinweis-Feld verfuegbar (Julius-Freigabe 2026-07-12).
+# Der loader liest nur `regeln`; dieser Marker ist reine Provenance/Doku.
+schema_version: 2
 regeln:
 - rule_id: p9_1_3_nr5_doppelte_haushaltsfuehrung
   norm: § 9 Abs. 1 S. 3 Nr. 5 EStG

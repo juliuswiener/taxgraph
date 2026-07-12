@@ -175,9 +175,36 @@ p24b, p33_3, p35a, p36, p33_1_2, p32_6, p31, p10_1_2, p10_1_3_3a, p10_1_4.
   `grenzwert_und_abzugsbetrag_fallen_zusammen` gesetzt (dokumentiert die Einschränkung, afa_laufend
   bleibt verified_bedingt). (b) Backlog Charge 3: Neuschnitt ak_netto/ak_brutto. (c) EStR R 6.13 +
   R 9b als verwaltung-Quellen einfrieren (esth.bundesfinanzministerium.de, offen).
-- **B1 roles.py-Messplan** (Bedingungen→Formalisierer): in Arbeit, jetzt inkl. Numeric-Idiom-Arm
-  (Prozent in decimal, Cent-Schnitt am Ende). Vorregistriert an Instructor zur Freigabe VOR Lauf.
+- **B1 roles.py-Messplan** (Bedingungen→Formalisierer): **ABGESCHLOSSEN + adoptiert** (s. §10).
+  Arm B (kuratierter `hinweis`) löste 5/5 Kontext-Hunger mit engem auszug, Arm A (bloße
+  `beschreibung`) 2/5, Kontrolle grün. Numeric-Idiom fixt Klasse-5-Präzision NICHT (solzg
+  20351→0,11 blieb $0,12). Report: `reports/review/2026-07-12-b1-rolespy-ergebnis.md`.
 - **B4 §2-Arithmetik** (nr6_7-Überhang) + **B6 Phase 4** (ELSTER-Feldmapping nach Julius-Download): eingeplant.
 
 Fehler-Taxonomie jetzt FÜNFSTUFIG: Kontext-Hunger → Boundary-Kodierung → Integrations-Arithmetik
 → Rundungs-Richtung → Präzisions-Ordnung. Weiterhin NULL Modell-Capability-Deltas.
+
+## 10. Dekret: hinweis-Kanal adoptiert (2026-07-12)
+
+**Beschluss:** Der `hinweis`-Kanal ist ab 2026-07-12 offizieller Formalisierer-Kanal.
+**Messgrundlage:** `reports/review/2026-07-12-b1-rolespy-ergebnis.md` (Arm B 5/5 Klasse-1-Hunger-Fix
+mit engem auszug, Arm A 2/5, Kontrolle grün). **Freigabe:** Julius, 2026-07-12.
+
+**Auflagen (bindend):**
+1. Auszug-Leitlinie bleibt PRIMÄR; `hinweis` ergänzt, ersetzt nicht. Kein Rückbau der bereits
+   geweiteten grünen Regeln — `hinweis` ist Werkzeug für KÜNFTIGE Regeln bzw. wo Weitung nicht reicht.
+2. `hinweis`-Inhalt = Spezifikation / Catala-Rechen-Idiom, NIE paraphrasierter Gesetzestext, kein
+   Erwartungswert (Quellen-Heiligkeit).
+3. Jede Befüllung läuft durch Instructor-Review (wie `deckt_ab`-Fenster), bevor sie in `rules.yaml` landet.
+4. Wirkungsgrenze dokumentiert: Kanal trägt Klasse-1-Kontext-Hunger, **NICHT** Klasse-5-Präzisions-
+   ordnung; glm-B trägt ihn nur teilweise (p10v2 0/2).
+
+**Umsetzung (committed):** `rules.yaml`-Schema um optionales `hinweis:`-Feld erweitert (Abgrenzungs-
+regel §4 + `schema_version: 2`); `run.py:build_candidate` reicht `hinweis` → `formalisierer_zusatz`
+durch (Default leer → Prompt byte-identisch für Regeln ohne hinweis, kein Regress). `zusatz`-Mechanik
+in `roles.py`/`cascade.py` bereits vorhanden. **Kein prompt_template_id-Bump** (bewusst): der zusatz
+ist Task-Content, nicht Template; ein Bump stempelte die frozen-grünen Regeln OHNE hinweis falsch als
+prompt-geändert. Provenance-Marker = per-Regel `hinweis` (auditierbar) + `schema_version`.
+
+**Offen:** Erstbefüllungs-Vorschläge je Regel → Instructor-Review (Mini-Report
+`reports/review/2026-07-12-hinweis-erstbefuellung-vorschlaege.md`).

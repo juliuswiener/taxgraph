@@ -80,6 +80,12 @@ def build_candidate(rule: dict) -> dict:
         "geltungsbedingungen": rule.get("geltungsbedingungen", []),
         "rundung": rule.get("rundung", []),
         "output_type": "money",
+        # hinweis-Kanal (Julius-Freigabe 2026-07-12, Messgrundlage
+        # reports/review/2026-07-12-b1-rolespy-ergebnis.md): optionaler kuratierter
+        # Bearbeitungshinweis (Spec/Catala-Idiom, NIE paraphrasierter Gesetzestext),
+        # geht als eigener Block VOR die Formalisier-Anweisung. Default leer ->
+        # Prompt byte-identisch, kein Regress fuer Regeln ohne hinweis.
+        "formalisierer_zusatz": rule.get("hinweis", ""),
     }
 
 
