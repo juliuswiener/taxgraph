@@ -379,6 +379,15 @@ def _queue_status(gates: list[dict], rule: dict | None = None,
     return "verified"
 
 
+def _select_rules(rules: list[dict], only_arg: str) -> list[dict]:
+    """--only akzeptiert eine rule_id oder mehrere kommagetrennt. Mehrere in EINEM Lauf =
+    kumulativer --cost-cap ueber den Aufruf (schliesst die Pro-Aufruf-Cap-Nuance der
+    Einzel-Aufruf-Serien). Reihenfolge = Manifest-Reihenfolge (nicht Argument-Reihenfolge),
+    damit die Kosten-Akkumulation deterministisch ist."""
+    wanted = {x.strip() for x in only_arg.split(",") if x.strip()}
+    return [r for r in rules if r["rule_id"] in wanted]
+
+
 def _estimate_cost(rule: dict) -> float:
     """Kalibrierte Vorab-Kostenschaetzung eines Kaskaden-Laufs (deterministisch, kein LLM).
     Empirie Charge 8-11: multi-quellige Regeln (>= 2 Quellen, mehr Judge-Tokens) ~$0.15,
@@ -408,7 +417,9 @@ def _budget_abbruch_report(rid: str, total_cost: float, est: float, cap: float) 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--only", help="eine rule_id")
+    ap.add_argument("--only", help="eine rule_id oder mehrere kommagetrennt "
+                    "(z.B. --only a,b,c); mehrere in EINEM Lauf lassen --cost-cap kumulativ "
+                    "ueber den Aufruf greifen (statt pro Einzel-Aufruf).")
     ap.add_argument("--force", action="store_true", help="fertige Reports neu rechnen")
     ap.add_argument("--skip-judge", action="store_true",
                     help="Judge-Rolle ueberspringen (deterministischer Struktur/clerk-Lauf, "
@@ -439,7 +450,7 @@ def main() -> int:
         raise SystemExit(str(e))
     rules = cfg["regeln"]
     if args.only:
-        rules = [r for r in rules if r["rule_id"] == args.only]
+        rules = _select_rules(rules, args.only)
     else:
         # Regeln, deren Zuschnitt offen ist, laufen nicht: ein Approval-Versuch
         # waere sinnlos, solange die Signatur den Norm-Ausschnitt verfehlt.

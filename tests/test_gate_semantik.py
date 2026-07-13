@@ -270,6 +270,18 @@ def test_pre_call_cap_schwellenlogik():
     assert not (total + _estimate_cost({"quellen": [{}]}) > cap)
 
 
+def test_only_multi_selektion():
+    """Multi-only: --only nimmt eine oder mehrere kommagetrennte rule_ids; Reihenfolge =
+    Manifest (nicht Argument), Whitespace toleriert, unbekannte ignoriert."""
+    from run import _select_rules
+    rules = [{"rule_id": "a"}, {"rule_id": "b"}, {"rule_id": "c"}]
+    assert [r["rule_id"] for r in _select_rules(rules, "a")] == ["a"]
+    assert [r["rule_id"] for r in _select_rules(rules, "a,c")] == ["a", "c"]
+    assert [r["rule_id"] for r in _select_rules(rules, "c, a")] == ["a", "c"]  # Manifest-Reihenfolge
+    assert [r["rule_id"] for r in _select_rules(rules, "b , c")] == ["b", "c"]  # Whitespace
+    assert _select_rules(rules, "x") == []  # unbekannt -> leer (Aufrufer wirft "keine Regel")
+
+
 def test_budget_abbruch_kein_checkpoint():
     """F1 Checkpoint-Falle: ein budget_abbruch-Report (nie gelaufene Regel) darf beim
     Wiederanlauf NICHT als Checkpoint uebersprungen werden, echte Reports schon."""
