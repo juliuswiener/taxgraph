@@ -2597,3 +2597,106 @@ regeln:
   - {jahresrente: 12000, besteuerungsanteil_prozent: 80.0}
   - {jahresrente: 12000, besteuerungsanteil_prozent: 100.0}
   - {jahresrente: 0, besteuerungsanteil_prozent: 84.0}
+# Charge-8 Vermietung (Instructor-Freigabe 2026-07-13, reports/review/2026-07-13-charge8-vermietung-zuschnitt.md).
+- rule_id: p7_4_gebaeude_afa
+  # hinweis-Kanal (%-Wert-Leitlinie, §24a/§22-Praezedenz): der auszug nennt "Prozent", pinnt die
+  # /100-Division nicht -> ohne Pin rechnet das Modell ak * satz ohne /100.
+  hinweis: 'afa_satz_prozent ist ein PROZENTWERT (2 bedeutet 2 %, 3 bedeutet 3 %, 2,5 bedeutet 2,5 %). Die Gebaeude-AfA ist (afa_satz_prozent / 100) * gebaeude_ak; die Division durch 100 in decimal rechnen, Cent-Schnitt zuletzt.'
+  norm: § 7 Abs. 4 EStG (lineare Gebaeude-AfA, Wohngebaeude-Saetze)
+  quellen:
+  - typ: gesetz
+    label: § 7 Abs. 4 S. 1 Nr. 2 EStG (Wohngebaeude-AfA-Saetze 3/2/2,5 %)
+    datei: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: nach dem 31. Dezember 2022 fertiggestellt worden sind, jährlich 3 Prozent
+    auszug: 'bei Gebäuden, soweit sie die Voraussetzungen der Nummer 1 nicht erfüllen und die a) nach dem 31. Dezember 2022 fertiggestellt worden sind, jährlich 3 Prozent, b) vor dem 1. Januar 2023 und nach dem 31. Dezember 1924 fertiggestellt worden sind, jährlich 2 Prozent, c) vor dem 1. Januar 1925 fertiggestellt worden sind, jährlich 2,5 Prozent der Anschaffungs- oder Herstellungskosten'
+  geltungsbedingungen:
+  - bedingung: afa_satz_aus_fertigstellungskategorie
+    deckt_ab: nach dem 31. Dezember 2022 fertiggestellt worden sind, jährlich 3 Prozent
+    quelle: § 7 Abs. 4 S. 1 Nr. 2 EStG
+    beschreibung: 'afa_satz_prozent ergibt sich aus der Fertigstellungs-Kategorie des Wohngebaeudes: nach 2022-12-31 = 3 %, 1925-2022 = 2 %, vor 1925 = 2,5 % (§ 7 Abs. 4 S. 1 Nr. 2 a/b/c). Die Kategorie-Zuordnung erfolgt in der § 2-Integration; hier kommt der Satz als Input (Andockung). gebaeude_afa = (afa_satz_prozent / 100) x gebaeude_ak. Betriebsgebaeude (Nr. 1, 3 %) = ausserhalb AN-nah/Vermietung.'
+  rundung: []
+  signature:
+    scope: GebaeudeAfa
+    inputs:
+      gebaeude_ak: money
+      afa_satz_prozent: decimal
+    output: gebaeude_afa
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: nach dem 31. Dezember 2022 fertiggestellt worden sind, jährlich 3 Prozent
+    herkunft: synthetisch
+    rechenweg: 'Neubau (nach 2022, 3 %): AK 300.000. 0,03 x 300.000 = 9.000,00.'
+    inputs: {gebaeude_ak: 300000, afa_satz_prozent: 3.0}
+    expected: 9000.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: nach dem 31. Dezember 2022 fertiggestellt worden sind, jährlich 3 Prozent
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Bestandsbau (1925-2022, 2 %): AK 300.000. 0,02 x 300.000 = 6.000,00.'
+    inputs: {gebaeude_ak: 300000, afa_satz_prozent: 2.0}
+    expected: 6000.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: nach dem 31. Dezember 2022 fertiggestellt worden sind, jährlich 3 Prozent
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Altbau (vor 1925, 2,5 %): AK 300.000. 0,025 x 300.000 = 7.500,00.'
+    inputs: {gebaeude_ak: 300000, afa_satz_prozent: 2.5}
+    expected: 7500.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: nach dem 31. Dezember 2022 fertiggestellt worden sind, jährlich 3 Prozent
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: 0,02 x 0 = 0,00.'
+    inputs: {gebaeude_ak: 0, afa_satz_prozent: 2.0}
+    expected: 0.0
+  raster:
+  - {gebaeude_ak: 300000, afa_satz_prozent: 3.0}
+  - {gebaeude_ak: 300000, afa_satz_prozent: 2.0}
+  - {gebaeude_ak: 300000, afa_satz_prozent: 2.5}
+  - {gebaeude_ak: 0, afa_satz_prozent: 2.0}
+- rule_id: p21_vermietung_einkuenfte
+  # hinweis-Kanal: Vermietungsverluste sind mit anderen Einkunftsarten verrechenbar (§2 Abs3),
+  # anders als KAP (Topf-Boden) -> das Ergebnis KANN NEGATIV sein, KEIN max(0)-Boden.
+  hinweis: 'vermietung_einkuenfte = einnahmen - (gebaeude_afa + schuldzinsen + erhaltungsaufwand + sonstige_werbungskosten). Das Ergebnis KANN NEGATIV sein (Vermietungsverlust) - KEIN max(0)-Boden, kein Null-Abschneiden: das Vorzeichen wird durchgereicht (§ 2 Abs. 3: Vermietungsverluste sind mit anderen Einkunftsarten verrechenbar, anders als Kapitalvermoegen).'
+  norm: § 21 i.V.m. § 2 Abs. 2 Nr. 2 EStG (Einkuenfte aus Vermietung und Verpachtung)
+  quellen:
+  - typ: gesetz
+    label: § 21 Abs. 1 EStG (Einkuenfte aus Vermietung und Verpachtung)
+    datei: sources/gesetze-im-internet/estg_p21_2026-07-13.txt
+    zitatanker: Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen
+    auszug: 'Einkünfte aus Vermietung und Verpachtung sind 1. Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen'
+  geltungsbedingungen:
+  - bedingung: einkuenfte_ueberschuss_einnahmen_ueber_wk
+    deckt_ab: Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen
+    quelle: § 21 i.V.m. § 2 Abs. 2 Nr. 2, § 9 EStG
+    beschreibung: 'Einkuenfte = Ueberschuss der Einnahmen ueber die Werbungskosten (§ 2 Abs. 2 Nr. 2). WK-Summe = gebaeude_afa + schuldzinsen + erhaltungsaufwand + sonstige_werbungskosten (in der § 2-Integration aggregiert, keine eigene Rechtsfolge). Das Ergebnis kann NEGATIV sein (Verlust, § 2 Abs. 3 verrechenbar) - kein max(0)-Boden, anders als KAP.'
+  rundung: []
+  signature:
+    scope: VermietungEinkuenfte
+    inputs:
+      einnahmen: money
+      gebaeude_afa: money
+      schuldzinsen: money
+      erhaltungsaufwand: money
+      sonstige_werbungskosten: money
+    output: vermietung_einkuenfte
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p21_2026-07-13.txt
+    zitatanker: Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen
+    herkunft: synthetisch
+    rechenweg: 'Standard: Einnahmen 12.000 - (AfA 6.000 + Zinsen 3.000 + Erhaltung 1.000 + sonst 0) = 12.000 - 10.000 = 2.000,00.'
+    inputs: {einnahmen: 12000, gebaeude_afa: 6000, schuldzinsen: 3000, erhaltungsaufwand: 1000, sonstige_werbungskosten: 0}
+    expected: 2000.0
+  - quelle: sources/gesetze-im-internet/estg_p21_2026-07-13.txt
+    zitatanker: Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER VERLUST (Negativ-Durchreichung): Einnahmen 8.000 - (AfA 6.000 + Zinsen 4.000) = 8.000 - 10.000 = -2.000,00. KEIN max(0)-Boden - Verlust wird durchgereicht.'
+    inputs: {einnahmen: 8000, gebaeude_afa: 6000, schuldzinsen: 4000, erhaltungsaufwand: 0, sonstige_werbungskosten: 0}
+    expected: -2000.0
+  - quelle: sources/gesetze-im-internet/estg_p21_2026-07-13.txt
+    zitatanker: Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER keine WK: Einnahmen 12.000 - 0 = 12.000,00.'
+    inputs: {einnahmen: 12000, gebaeude_afa: 0, schuldzinsen: 0, erhaltungsaufwand: 0, sonstige_werbungskosten: 0}
+    expected: 12000.0
+  raster:
+  - {einnahmen: 12000, gebaeude_afa: 6000, schuldzinsen: 3000, erhaltungsaufwand: 1000, sonstige_werbungskosten: 0}
+  - {einnahmen: 8000, gebaeude_afa: 6000, schuldzinsen: 4000, erhaltungsaufwand: 0, sonstige_werbungskosten: 0}
+  - {einnahmen: 12000, gebaeude_afa: 0, schuldzinsen: 0, erhaltungsaufwand: 0, sonstige_werbungskosten: 0}
