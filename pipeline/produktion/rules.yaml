@@ -2157,3 +2157,90 @@ regeln:
   raster:
   - {hat_anspruch: true}
   - {hat_anspruch: false}
+- rule_id: p33a_unterhalt
+  # hinweis-Kanal (Instructor-Freigabe 2026-07-13): (1) Anrechnungs-Konditional (Kuerzung nur
+  # soweit Eink.+Bezuege > 624-Schonbetrag) = Konditional-Prosa, Hunger-Risiko. (2) grundfreibetrag
+  # ist eine VZ-versionierte Norm-KONSTANTE (§32a Abs1 S2 Nr1, params/2026 = 12.348), KEIN Input -
+  # Doktrin: Signaturen tragen nur Sachverhalts-Inputs; eine Norm-Konstante darf der Aufrufer nie
+  # verstellen. Der Wert kommt aus der §32a-Quelle (Verweis-Anker), nicht als Signatur-Input.
+  hinweis: 'Der Hoechstbetrag basiert auf dem Grundfreibetrag nach § 32a Absatz 1 Satz 2 Nummer 1 - eine VZ-versionierte Norm-Konstante (VZ 2026 = 12.348 Euro, params/2026, dieselbe Quelle wie der Tarif), KEIN Input. Rechenkern: hoechstbetrag = $12,348.00 + kv_pv_beitraege - (wenn andere_einkuenfte_bezuege > $624.00 dann andere_einkuenfte_bezuege - $624.00 sonst $0.00); unterhalt_abzug = min(aufwendungen, wenn hoechstbetrag > $0.00 dann hoechstbetrag sonst $0.00). andere_einkuenfte_bezuege kommt bereits als Summe/netto (Eink. + Bezuege der unterhaltenen Person) herein.'
+  norm: § 33a Abs. 1 EStG (Unterhaltsabzug, gedeckelt auf Grundfreibetrag)
+  quellen:
+  - typ: gesetz
+    label: § 33a Abs. 1 S. 1 EStG (Unterhaltsabzug bis Grundfreibetrag)
+    datei: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: bis zur Höhe des Grundfreibetrags nach § 32a Absatz 1 Satz 2 Nummer 1
+    auszug: 'Erwachsen einem Steuerpflichtigen Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten Person, so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass die Aufwendungen bis zur Höhe des Grundfreibetrags nach § 32a Absatz 1 Satz 2 Nummer 1 im Kalenderjahr vom Gesamtbetrag der Einkünfte abgezogen werden.'
+  - typ: gesetz
+    label: § 33a Abs. 1 S. 2 EStG (Erhoehung um KV/PV-Beitraege)
+    datei: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3
+    auszug: 'Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3 für die Absicherung der unterhaltsberechtigten Person aufgewandten Beiträge'
+  - typ: gesetz
+    label: § 33a Abs. 1 S. 5 EStG (Anrechnung eigener Einkuenfte ueber 624 Euro)
+    datei: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: den Betrag von 624 Euro im Kalenderjahr übersteigen
+    auszug: 'so vermindert sich die Summe der nach Satz 1 und Satz 2 ermittelten Beträge um den Betrag, um den diese Einkünfte und Bezüge den Betrag von 624 Euro im Kalenderjahr übersteigen'
+  - typ: gesetz
+    label: § 32a Abs. 1 S. 2 Nr. 1 EStG (Grundfreibetrag-Wert VZ 2026, params/2026)
+    datei: sources/gesetze-im-internet/estg_p32a_2026-07-09.txt
+    zitatanker: bis 12 348 Euro (Grundfreibetrag)
+    auszug: 'bis 12 348 Euro (Grundfreibetrag)'
+  geltungsbedingungen:
+  - bedingung: grundfreibetrag_norm_konstante_nicht_input
+    deckt_ab: bis zur Höhe des Grundfreibetrags nach § 32a Absatz 1 Satz 2 Nummer 1
+    quelle: § 33a Abs. 1 S. 1 i.V.m. § 32a Abs. 1 S. 2 Nr. 1 EStG
+    beschreibung: 'Der Grundfreibetrag (§ 32a Abs. 1 S. 2 Nr. 1) ist eine VZ-versionierte Norm-Konstante (VZ 2026 = 12.348, params/2026, dieselbe Quelle wie der Tarif), KEINE Signatur-Eingabe. Doktrin: nur Sachverhalts-Inputs in die Signatur; eine Norm-Konstante darf der Aufrufer nicht verstellen.'
+  - bedingung: anrechnung_ueber_schonbetrag_624
+    deckt_ab: den Betrag von 624 Euro im Kalenderjahr übersteigen
+    quelle: § 33a Abs. 1 S. 5 EStG
+    beschreibung: 'Der Hoechstbetrag mindert sich nur, SOWEIT die eigenen Einkuenfte + Bezuege der unterhaltenen Person den Schonbetrag von 624 Euro uebersteigen (max(0, andere - 624)); darunter keine Minderung.'
+  - bedingung: andere_einkuenfte_bezuege_netto
+    deckt_ab: den Betrag von 624 Euro im Kalenderjahr übersteigen
+    quelle: § 33a Abs. 1 S. 5 EStG
+    beschreibung: 'andere_einkuenfte_bezuege = Summe der eigenen Einkuenfte UND Bezuege der unterhaltenen Person (S. 5 zaehlt die Bezuege auf), bereits in der § 2-Integration ermittelt; hier kommt der Summenwert herein.'
+  rundung: []
+  signature:
+    scope: Unterhaltsabzug
+    inputs:
+      aufwendungen: money
+      kv_pv_beitraege: money
+      andere_einkuenfte_bezuege: money
+    output: unterhalt_abzug
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: bis zur Höhe des Grundfreibetrags nach § 32a Absatz 1 Satz 2 Nummer 1
+    herkunft: synthetisch
+    rechenweg: 'Standard: Aufw. 10.000, kein KV/PV, keine eigenen Eink. Hoechstbetrag 12.348. min(10.000; 12.348) = 10.000,00.'
+    inputs: {aufwendungen: 10000, kv_pv_beitraege: 0, andere_einkuenfte_bezuege: 0}
+    expected: 10000.0
+  - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: bis zur Höhe des Grundfreibetrags nach § 32a Absatz 1 Satz 2 Nummer 1
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Deckelung: Aufw. 15.000 > Hoechstbetrag 12.348 -> 12.348,00.'
+    inputs: {aufwendungen: 15000, kv_pv_beitraege: 0, andere_einkuenfte_bezuege: 0}
+    expected: 12348.0
+  - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: den Betrag von 624 Euro im Kalenderjahr übersteigen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Anrechnung: Aufw. 15.000, eigene Eink. 2.000 (>624). Hoechst 12.348 - (2.000-624)=1.376 -> 10.972. min(15.000; 10.972) = 10.972,00.'
+    inputs: {aufwendungen: 15000, kv_pv_beitraege: 0, andere_einkuenfte_bezuege: 2000}
+    expected: 10972.0
+  - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER KV/PV-Erhoehung: Aufw. 15.000, KV/PV 1.500. Hoechst 12.348 + 1.500 = 13.848. min(15.000; 13.848) = 13.848,00.'
+    inputs: {aufwendungen: 15000, kv_pv_beitraege: 1500, andere_einkuenfte_bezuege: 0}
+    expected: 13848.0
+  - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: den Betrag von 624 Euro im Kalenderjahr übersteigen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER unter Schonbetrag: eigene Eink. 500 < 624 -> keine Minderung -> Hoechst 12.348. min(15.000; 12.348) = 12.348,00.'
+    inputs: {aufwendungen: 15000, kv_pv_beitraege: 0, andere_einkuenfte_bezuege: 500}
+    expected: 12348.0
+  raster:
+  - {aufwendungen: 10000, kv_pv_beitraege: 0, andere_einkuenfte_bezuege: 0}
+  - {aufwendungen: 15000, kv_pv_beitraege: 0, andere_einkuenfte_bezuege: 0}
+  - {aufwendungen: 15000, kv_pv_beitraege: 0, andere_einkuenfte_bezuege: 2000}
+  - {aufwendungen: 15000, kv_pv_beitraege: 1500, andere_einkuenfte_bezuege: 0}
+  - {aufwendungen: 15000, kv_pv_beitraege: 0, andere_einkuenfte_bezuege: 500}
