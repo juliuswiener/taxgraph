@@ -85,8 +85,8 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 | Unterhalt an bedürftige Personen (Anlage Unterhalt) | § 33a Abs. 1 | ✅ | p33a_unterhalt (Charge 5, strukturgeprueft) |
 | Pauschbeträge Behinderte/Hinterbliebene/Pflege | § 33b | ✅ | p33b_behinderten/pflege/hinterbliebenen_pauschbetrag (Charge 5, verified_bedingt) |
 
-### Andere Einkunftsarten — ⬜ komplett offen (0/4 Anlagen)
-| Kapitalvermögen (Abgeltungsteuer, Sparer-PB) | § 20, § 32d, § 20 Abs. 9 | ⬜ Anlage KAP | — |
+### Andere Einkunftsarten — 🟡 (1/4 Anlagen)
+| Kapitalvermögen (Abgeltungsteuer, Sparer-PB) | § 20, § 32d, § 20 Abs. 9 | ✅ | p20_6/p20_9/p32d_1 (Charge 6, strukturgeprueft) |
 | Renten / sonstige wiederkehrende Bezüge | § 22 Nr. 1 | ⬜ Anlage R | — |
 | Vermietung und Verpachtung | § 21 | ⬜ Anlage V | — |
 | Sonstige Einkünfte / private Veräußerung | § 22 Nr. 2/3, § 23 | ⬜ Anlage SO | — |
@@ -124,7 +124,8 @@ selbst ~90 %.
 **Fortschritt:** Charge 4 (§ 32b) verified_bedingt → 23/40 ≈ 57 %. Charge 5 §33b-Trio
 (Behinderten-/Pflege-/Hinterbliebenen-Pauschbetrag) verified_bedingt → 24/40. § 24a
 Altersentlastungsbetrag (Kohorten-Muster) verified_bedingt → 25/40. Charge 5 Paket B+C
-(§10b, §33a Abs1+2, §10 Nr5, §10 Abs1a, strukturgeprueft/Judge-geparkt) → **30/40 ≈ 75 %**.
+(§10b, §33a Abs1+2, §10 Nr5, §10 Abs1a) → 30/40. Charge 6 KAP (§20/§32d, Verlust/Sparer-PB/
+Abgeltung, strukturgeprueft) → **31/40 ≈ 78 %**.
 
 **AN-Kern: die 🟡-Lücken (Kind, Sonderausgaben, agB) sind mit Charge 5 auf 4/4 geschlossen -
 der AN-Kern ist damit auf echte ~100 %.** Judge-Nachzug fuer die 6 strukturgeprueft-Regeln
