@@ -2532,6 +2532,10 @@ regeln:
   - {kapitaleinkuenfte: 0, est_regulaer_mit_kap: 5000, est_regulaer_ohne_kap: 5000}
 # Charge-7 Renten (Instructor-Freigabe 2026-07-13, reports/review/2026-07-13-charge7-renten-zuschnitt.md).
 - rule_id: p22_1_leibrente_besteuerungsanteil
+  # hinweis-Kanal (§24a-Praezedenz): der auszug nennt "Prozentsatz", sagt aber nicht, dass ein
+  # Prozentwert (50 = 50%) durch 100 zu teilen ist. Ohne Pin rechnete A/B jahresrente * prozent
+  # ohne /100 (12.000 x 50 = 600.000). Encoding-Pin wie bei §24a-prozentsatz.
+  hinweis: 'besteuerungsanteil_prozent ist ein PROZENTWERT (z.B. 50 bedeutet 50 %, 80 bedeutet 80 %). Der steuerpflichtige Anteil ist (besteuerungsanteil_prozent / 100) * jahresrente; die Division durch 100 in decimal rechnen, Cent-Schnitt zuletzt.'
   norm: § 22 Nr. 1 S. 3 a aa EStG (Leibrente, Besteuerungsanteil nach Rentenbeginn-Kohorte)
   quellen:
   - typ: gesetz
