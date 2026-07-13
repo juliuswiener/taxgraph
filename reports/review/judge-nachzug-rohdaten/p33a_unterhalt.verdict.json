@@ -1,0 +1,596 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Aufwendungen werden als Bruttobetrag ohne weitere Differenzierung angenommen.",
+   "bedingung_id": null,
+   "betrifft": "aufwendungen",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "KV/PV-Beiträge werden als direkt abziehbarer Betrag interpretiert.",
+   "bedingung_id": null,
+   "betrifft": "kv_pv_beitraege",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Annahme, dass andere Einkünfte/Bezüge in Euro vorliegen.",
+   "bedingung_id": "konv:betraege_in_euro",
+   "betrifft": "andere_einkuenfte_bezuege",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Grundfreibetrag wird als fester Wert für 2026 (12.348 €) angenommen.",
+   "bedingung_id": "grundfreibetrag_norm_konstante_nicht_input",
+   "betrifft": "grundfreibetrag",
+   "kategorie": "sonstige"
+  },
+  {
+   "annahme": "KV/PV-Beiträge gelten als direkt für die unterhaltsberechtigte Person geleistet.",
+   "bedingung_id": null,
+   "betrifft": "kv_pv_beitraege",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Einkünfte/Bezüge der unterhaltsberechtigten Person werden als Jahresbetrag verstanden.",
+   "bedingung_id": null,
+   "betrifft": "andere_einkuenfte_bezuege",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Grundfreibetrag wird als fester Wert für 2026 (12.348 €) angenommen.",
+   "bedingung_id": "grundfreibetrag_norm_konstante_nicht_input",
+   "betrifft": "grundfreibetrag",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Anrechnung erfolgt nur, wenn Einkünfte 624 € übersteigen.",
+   "bedingung_id": "anrechnung_ueber_schonbetrag_624",
+   "betrifft": "anrechnungsbetrag",
+   "kategorie": "geltungsvoraussetzung"
+  },
+  {
+   "annahme": "Aufwendungen umfassen nur Unterhalt und Berufsausbildungskosten.",
+   "bedingung_id": "konv:input_nur_etikettiertes",
+   "betrifft": "aufwendungen",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "KV/PV-Beiträge sind die nach § 10 Abs. 1 Nr. 3 aufgewandten Beiträge.",
+   "bedingung_id": null,
+   "betrifft": "kv_pv_beitraege",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Grundfreibetrag ist auf 12.348 Euro für den Veranlagungszeitraum 2026 festgelegt.",
+   "bedingung_id": "grundfreibetrag_norm_konstante_nicht_input",
+   "betrifft": "grundfreibetrag",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Der Höchstbetrag wird als Summe aus Grundfreibetrag und KV/PV-Beiträgen definiert.",
+   "bedingung_id": null,
+   "betrifft": "hoechstbetrag",
+   "kategorie": "interpretation"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten Person",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 33a Abs. 1 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3 für die Absicherung der unterhaltsberechtigten Person aufgewandten Beiträge",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 33a Abs. 1 S. 2 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "so vermindert sich die Summe der nach Satz 1 und Satz 2 ermittelten Beträge um den Betrag, um den diese Einkünfte und Bezüge den Betrag von 624 Euro im Kalenderjahr übersteigen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "anrechnung_ueber_schonbetrag_624",
+   "referenz": "§ 33a Abs. 1 S. 5 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "bis 12 348 Euro (Grundfreibetrag)",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "grundfreibetrag_norm_konstante_nicht_input",
+   "referenz": "§ 32a Abs. 1 S. 2 Nr. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten Person",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 33a Abs. 1 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "auf Antrag die Einkommensteuer dadurch ermäßigt",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 33a Abs. 1 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Einkünfte und Bezüge der unterhaltsberechtigten Person",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "andere_einkuenfte_bezuege_netto",
+   "referenz": "§ 33a Abs. 1 S. 5 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "vom Gesamtbetrag der Einkünfte abgezogen werden",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 33a Abs. 1 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "bis zur Höhe des Grundfreibetrags nach § 32a Absatz 1 Satz 2 Nummer 1",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "grundfreibetrag_norm_konstante_nicht_input",
+   "referenz": "§ 33a Abs. 1 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "um den Betrag, um den diese Einkünfte und Bezüge den Betrag von 624 Euro im Kalenderjahr übersteigen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "anrechnung_ueber_schonbetrag_624",
+   "referenz": "§ 33a Abs. 1 S. 5 EStG",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 5,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   10,
+   7,
+   5,
+   2,
+   2
+  ],
+  "gesaettigt": false,
+  "inventar_streuung": {
+   "abweichungen": [
+    {
+     "text": "Keine explizite Berücksichtigung der gesetzlichen Unterhaltsberechtigung in der Berechnung.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Der Abzug wird nicht vom Gesamtbetrag der Einkünfte abgezogen, sondern direkt als Ergebnis ausgegeben.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Der Abzug wird um eigene Einkünfte über 624 Euro vermindert, nicht nur die Aufwendungen.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "annahmen": [
+    {
+     "text": "Aufwendungen werden als Bruttobetrag ohne weitere Differenzierung angenommen.",
+     "key": [
+      "betrifft_kat",
+      "aufwendungen",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "KV/PV-Beiträge werden als direkt abziehbarer Betrag interpretiert.",
+     "key": [
+      "betrifft_kat",
+      "kv_pv_beitraege",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Annahme, dass andere Einkünfte/Bezüge in Euro vorliegen.",
+     "key": [
+      "betrifft_kat",
+      "andere_einkuenfte_bezuege",
+      "einheit"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Grundfreibetrag wird als fester Wert für 2026 (12.348 €) angenommen.",
+     "key": [
+      "betrifft_kat",
+      "?",
+      "sonstige"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "KV/PV-Beiträge gelten als direkt für die unterhaltsberechtigte Person geleistet.",
+     "key": [
+      "betrifft_kat",
+      "kv_pv_beitraege",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Einkünfte/Bezüge der unterhaltsberechtigten Person werden als Jahresbetrag verstanden.",
+     "key": [
+      "betrifft_kat",
+      "andere_einkuenfte_bezuege",
+      "interpretation"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Grundfreibetrag wird als fester Wert für 2026 (12.348 €) angenommen.",
+     "key": [
+      "betrifft_kat",
+      "?",
+      "einheit"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Anrechnung erfolgt nur, wenn Einkünfte 624 € übersteigen.",
+     "key": [
+      "betrifft_kat",
+      "?",
+      "geltungsvoraussetzung"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "Aufwendungen umfassen nur Unterhalt und Berufsausbildungskosten.",
+     "key": [
+      "betrifft_kat",
+      "aufwendungen",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "KV/PV-Beiträge sind die nach § 10 Abs. 1 Nr. 3 aufgewandten Beiträge.",
+     "key": [
+      "betrifft_kat",
+      "kv_pv_beitraege",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Grundfreibetrag ist auf 12.348 Euro für den Veranlagungszeitraum 2026 festgelegt.",
+     "key": [
+      "betrifft_kat",
+      "?",
+      "einheit"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Der Höchstbetrag wird als Summe aus Grundfreibetrag und KV/PV-Beiträgen definiert.",
+     "key": [
+      "betrifft_kat",
+      "?",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": [
+    {
+     "text": "so vermindert sich die Summe der nach Satz 1 und Satz 2 ermittelten Beträge um den Betrag, um den diese Einkünfte und Be",
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 5 estg"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "bis 12 348 Euro (Grundfreibetrag)",
+     "key": [
+      "ref",
+      "§ 32a abs. 1 s. 2 nr. 1 estg"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten Person",
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 1 estg"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "auf Antrag die Einkommensteuer dadurch ermäßigt",
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 1 estg"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Einkünfte und Bezüge der unterhaltsberechtigten Person",
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 5 estg"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "vom Gesamtbetrag der Einkünfte abgezogen werden",
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 1 estg"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "bis zur Höhe des Grundfreibetrags nach § 32a Absatz 1 Satz 2 Nummer 1",
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 1 estg"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "um den Betrag, um den diese Einkünfte und Bezüge den Betrag von 624 Euro im Kalenderjahr übersteigen",
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 5 estg"
+     ],
+     "in_laeufen": 1
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Abzug begrenzt auf Höchstbetrag, nicht auf Grundfreibetrag plus KV/PV-Beiträge minus Anrechnung.",
+     "eingeschmolzen": "Der Abzug ist auf den Höchstbetrag begrenzt, nicht auf den Grundfreibetrag plus KV/PV-Beiträge."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Abzug begrenzt auf Höchstbetrag, nicht auf Grundfreibetrag plus KV/PV-Beiträge minus Anrechnung.",
+     "eingeschmolzen": "Der Abzug ist auf den Höchstbetrag begrenzt, nicht auf den Grundfreibetrag allein."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Abzug begrenzt auf Höchstbetrag, nicht auf Grundfreibetrag plus KV/PV-Beiträge minus Anrechnung.",
+     "eingeschmolzen": "Der Abzug ist auf den Grundfreibetrag plus KV/PV-Beiträge begrenzt, nicht auf den Grundfreibetrag allein."
+    }
+   ],
+   "annahmen": [
+    {
+     "key": [
+      "betrifft_kat",
+      "aufwendungen",
+      "interpretation"
+     ],
+     "cluster": "Aufwendungen werden als Bruttobetrag ohne weitere Differenzierung angenommen.",
+     "eingeschmolzen": "Aufwendungen werden als Bruttobetrag ohne weitere Bedingungen interpretiert."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "andere_einkuenfte_bezuege",
+      "interpretation"
+     ],
+     "cluster": "Einkünfte/Bezüge der unterhaltsberechtigten Person werden als Jahresbetrag verstanden.",
+     "eingeschmolzen": "Andere Einkünfte/Bezüge sind die der unterhaltsberechtigten Person."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "?",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Anrechnung erfolgt nur, wenn Einkünfte 624 € übersteigen.",
+     "eingeschmolzen": "Anrechnung erfolgt nur, wenn andere Einkünfte/Bezüge 624 Euro übersteigen."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "kv_pv_beitraege",
+      "interpretation"
+     ],
+     "cluster": "KV/PV-Beiträge gelten als direkt für die unterhaltsberechtigte Person geleistet.",
+     "eingeschmolzen": "Beiträge sind nur die nach § 10 Abs. 1 Nr. 3 für die unterhaltsberechtigte Person."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "andere_einkuenfte_bezuege",
+      "interpretation"
+     ],
+     "cluster": "Einkünfte/Bezüge der unterhaltsberechtigten Person werden als Jahresbetrag verstanden.",
+     "eingeschmolzen": "Einkünfte und Bezüge der unterhaltsberechtigten Person sind gemeint."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "?",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Anrechnung erfolgt nur, wenn Einkünfte 624 € übersteigen.",
+     "eingeschmolzen": "Anrechnung erfolgt nur, wenn andere_einkuenfte_bezuege 624 Euro übersteigen."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "?",
+      "einheit"
+     ],
+     "cluster": "Grundfreibetrag wird als fester Wert für 2026 (12.348 €) angenommen.",
+     "eingeschmolzen": "Der Grundfreibetrag wird als fester Wert von 12.348 Euro angenommen."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "?",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Anrechnung erfolgt nur, wenn Einkünfte 624 € übersteigen.",
+     "eingeschmolzen": "Die Anrechnung erfolgt nur, wenn eigene Einkünfte 624 Euro übersteigen."
+    }
+   ],
+   "norm_teile": [
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 1 estg"
+     ],
+     "cluster": "Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten P",
+     "eingeschmolzen": "Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 2 estg"
+     ],
+     "cluster": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3 für die Absicherung der unterhaltsbere",
+     "eingeschmolzen": "für die Absicherung der unterhaltsberechtigten Person aufgewandten Beiträge"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 1 estg"
+     ],
+     "cluster": "Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten P",
+     "eingeschmolzen": "Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 2 estg"
+     ],
+     "cluster": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3 für die Absicherung der unterhaltsbere",
+     "eingeschmolzen": "erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 5 estg"
+     ],
+     "cluster": "so vermindert sich die Summe der nach Satz 1 und Satz 2 ermittelten Beträge um den Betrag, um den diese Einkünfte und Bezüge den Betrag von 624 Euro im Kalender",
+     "eingeschmolzen": "vermindert sich die Summe der nach Satz 1 und Satz 2 ermittelten Beträge"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 1 estg"
+     ],
+     "cluster": "Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten P",
+     "eingeschmolzen": "Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 1 estg"
+     ],
+     "cluster": "vom Gesamtbetrag der Einkünfte abgezogen werden",
+     "eingeschmolzen": "vom Gesamtbetrag der Einkünfte abgezogen"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 2 estg"
+     ],
+     "cluster": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3 für die Absicherung der unterhaltsbere",
+     "eingeschmolzen": "erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 5 estg"
+     ],
+     "cluster": "so vermindert sich die Summe der nach Satz 1 und Satz 2 ermittelten Beträge um den Betrag, um den diese Einkünfte und Bezüge den Betrag von 624 Euro im Kalender",
+     "eingeschmolzen": "vermindert sich die Summe der nach Satz 1 und Satz 2 ermittelten Beträge"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 1 estg"
+     ],
+     "cluster": "Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten P",
+     "eingeschmolzen": "Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 2 estg"
+     ],
+     "cluster": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3 für die Absicherung der unterhaltsbere",
+     "eingeschmolzen": "Erhöhung um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3 für die Absicherung der unterhaltsberechtigten Person aufgewandten Bei"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 1 s. 5 estg"
+     ],
+     "cluster": "so vermindert sich die Summe der nach Satz 1 und Satz 2 ermittelten Beträge um den Betrag, um den diese Einkünfte und Bezüge den Betrag von 624 Euro im Kalender",
+     "eingeschmolzen": "Verminderung um den Betrag, um den diese Einkünfte und Bezüge den Betrag von 624 Euro im Kalenderjahr übersteigen"
+    }
+   ]
+  },
+  "cluster": {
+   "abweichungen": 4,
+   "annahmen": 12,
+   "norm_teile": 10
+  },
+  "item_splits": [
+   {
+    "art": "annahme",
+    "item": "Aufwendungen umfassen nur Unterhalt und Berufsausbildungskosten.",
+    "schluessel": "[\"annahmen\", \"betrifft_kat\", \"aufwendungen\", \"interpretation\"]",
+    "gueltige_stimmen": 3
+   }
+  ],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "6b43b113f0ff",
+ "timestamp": "2026-07-13T20:07:10+00:00"
+}

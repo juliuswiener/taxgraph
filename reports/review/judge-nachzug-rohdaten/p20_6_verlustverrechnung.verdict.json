@@ -1,0 +1,191 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [
+  "Verluste aus Aktien werden nicht mit anderen Kapitalerträgen verrechnet, sondern nur untereinander.",
+  "Verluste aus sonstigem Kapitalvermögen werden nicht mit Aktiengewinnen verrechnet.",
+  "Verluste aus Kapitalvermögen dürfen nicht mit anderen Einkunftsarten ausgeglichen werden.",
+  "Keine Beschränkung auf § 20 Abs. 2 Satz 1 Nr. 1 Satz 1 (Aktiengewinne)."
+ ],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Gewinne aus Aktien gelten als Kapitalerträge nach § 20 Abs. 2 Satz 1 Nr. 1 Satz 1.",
+   "bedingung_id": null,
+   "betrifft": "gewinn_aktien",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Verluste aus Aktien gelten als Kapitalverluste.",
+   "bedingung_id": null,
+   "betrifft": "verlust_aktien",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Sonstige Gewinne gelten als Kapitalerträge.",
+   "bedingung_id": null,
+   "betrifft": "gewinn_sonstige",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Sonstige Verluste gelten als Kapitalverluste.",
+   "bedingung_id": null,
+   "betrifft": "verlust_sonstige",
+   "kategorie": "interpretation"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden; sie dürfen auch nicht nach § 10d abgezogen werden.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 20 Abs. 6 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "die aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen im Sinne des Absatzes 2 Satz 1 Nummer 1 Satz 1",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "aktienverlust_nur_gegen_aktiengewinn",
+   "referenz": "§ 20 Abs. 6 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "sie dürfen auch nicht nach § 10d abgezogen werden",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 20 Abs. 6 S. 1 EStG",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 3,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   5,
+   6,
+   0
+  ],
+  "gesaettigt": true,
+  "inventar_streuung": {
+   "abweichungen": [
+    {
+     "text": "Verluste aus Kapitalvermögen dürfen nicht mit anderen Einkunftsarten ausgeglichen werden.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Keine Beschränkung auf § 20 Abs. 2 Satz 1 Nr. 1 Satz 1 (Aktiengewinne).",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "annahmen": [
+    {
+     "text": "Gewinne aus Aktien gelten als Kapitalerträge nach § 20 Abs. 2 Satz 1 Nr. 1 Satz 1.",
+     "key": [
+      "betrifft_kat",
+      "gewinn_aktien",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Verluste aus Aktien gelten als Kapitalverluste.",
+     "key": [
+      "betrifft_kat",
+      "verlust_aktien",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Sonstige Gewinne gelten als Kapitalerträge.",
+     "key": [
+      "betrifft_kat",
+      "gewinn_sonstige",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Sonstige Verluste gelten als Kapitalverluste.",
+     "key": [
+      "betrifft_kat",
+      "verlust_sonstige",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": [
+    {
+     "text": "sie dürfen auch nicht nach § 10d abgezogen werden",
+     "key": [
+      "ref",
+      "§ 20 abs. 6 s. 1 estg"
+     ],
+     "in_laeufen": 1
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Verluste aus Aktien werden nicht mit anderen Kapitalerträgen verrechnet, sondern nur untereinander.",
+     "eingeschmolzen": "Verluste aus Aktien werden nicht mit anderen Kapitalerträgen verrechnet."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Verluste aus sonstigem Kapitalvermögen werden nicht mit Aktiengewinnen verrechnet.",
+     "eingeschmolzen": "Verluste aus sonstigem Kapitalvermögen werden nicht berücksichtigt."
+    }
+   ],
+   "annahmen": [],
+   "norm_teile": [
+    {
+     "key": [
+      "ref",
+      "§ 20 abs. 6 s. 1 estg"
+     ],
+     "cluster": "Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden; sie dürfen auch nicht nach § 10d abgezogen werden.",
+     "eingeschmolzen": "Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 20 abs. 6 s. 1 estg"
+     ],
+     "cluster": "Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden; sie dürfen auch nicht nach § 10d abgezogen werden.",
+     "eingeschmolzen": "Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
+    }
+   ]
+  },
+  "cluster": {
+   "abweichungen": 4,
+   "annahmen": 4,
+   "norm_teile": 3
+  },
+  "item_splits": [],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "0aa67d2f9a2f",
+ "timestamp": "2026-07-13T20:09:17+00:00"
+}

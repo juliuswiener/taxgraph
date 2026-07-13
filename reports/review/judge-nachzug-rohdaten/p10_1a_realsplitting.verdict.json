@@ -1,0 +1,271 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Annahme, dass der Geber unbeschränkt einkommensteuerpflichtig ist.",
+   "bedingung_id": null,
+   "betrifft": "unterhaltsleistungen",
+   "kategorie": "geltungsvoraussetzung"
+  },
+  {
+   "annahme": "Annahme, dass der Empfänger geschieden oder dauernd getrennt lebend ist.",
+   "bedingung_id": null,
+   "betrifft": "unterhaltsleistungen",
+   "kategorie": "geltungsvoraussetzung"
+  },
+  {
+   "annahme": "Annahme, dass der Geber die Zustimmung des Empfängers hat.",
+   "bedingung_id": "antrag_mit_zustimmung",
+   "betrifft": "unterhaltsleistungen",
+   "kategorie": "geltungsvoraussetzung"
+  },
+  {
+   "annahme": "Annahme, dass kv_pv_beitraege die Beiträge nach § 10 Abs. 1 Nr. 3 sind.",
+   "bedingung_id": "deckel_13805_plus_kv_pv",
+   "betrifft": "kv_pv_beitraege",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Annahme, dass kv_pv_beitraege den jeweiligen Veranlagungszeitraum betreffen.",
+   "bedingung_id": "konv:vz_bezug_der_regel",
+   "betrifft": "kv_pv_beitraege",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "Annahme, dass der Höchstbetrag in Euro angegeben ist.",
+   "bedingung_id": "konv:betraege_in_euro",
+   "betrifft": "ergebnis",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Annahme, dass der Veranlagungszeitraum ein Kalenderjahr ist.",
+   "bedingung_id": "konv:vz_bezug_der_regel",
+   "betrifft": "ergebnis",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "Annahme, dass KV/PV-Beiträge dem Veranlagungszeitraum entsprechen.",
+   "bedingung_id": "konv:vz_bezug_der_regel",
+   "betrifft": "kv_pv_beitraege",
+   "kategorie": "zeitbezug"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung des Empfängers beantragt",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "antrag_mit_zustimmung",
+   "referenz": "§ 10 Abs. 1a Nr. 1 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder dauernd getrennt lebenden Ehegatten",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "deckel_13805_plus_kv_pv",
+   "referenz": "§ 10 Abs. 1a Nr. 1 S. 2 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 10 Abs. 1a Nr. 1 S. 1 EStG",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 4,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   7,
+   3,
+   1,
+   0
+  ],
+  "gesaettigt": true,
+  "inventar_streuung": {
+   "abweichungen": [],
+   "annahmen": [
+    {
+     "text": "Annahme, dass kv_pv_beitraege den jeweiligen Veranlagungszeitraum betreffen.",
+     "key": [
+      "betrifft_kat",
+      "kv_pv_beitraege",
+      "zeitbezug"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Annahme, dass der Höchstbetrag in Euro angegeben ist.",
+     "key": [
+      "betrifft_kat",
+      "ergebnis",
+      "einheit"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Annahme, dass der Veranlagungszeitraum ein Kalenderjahr ist.",
+     "key": [
+      "betrifft_kat",
+      "ergebnis",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Annahme, dass KV/PV-Beiträge dem Veranlagungszeitraum entsprechen.",
+     "key": [
+      "betrifft_kat",
+      "kv_pv_beitraege",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": [
+    {
+     "text": "an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten",
+     "key": [
+      "ref",
+      "§ 10 abs. 1a nr. 1 s. 1 estg"
+     ],
+     "in_laeufen": 3
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [],
+   "annahmen": [
+    {
+     "key": [
+      "betrifft_kat",
+      "unterhaltsleistungen",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Annahme, dass der Geber unbeschränkt einkommensteuerpflichtig ist.",
+     "eingeschmolzen": "Annahme, dass der Empfänger unbeschränkt einkommensteuerpflichtig ist."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "unterhaltsleistungen",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Annahme, dass der Empfänger geschieden oder dauernd getrennt lebend ist.",
+     "eingeschmolzen": "Annahme, dass der Ehegatte geschieden oder dauernd getrennt lebend ist."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "unterhaltsleistungen",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Annahme, dass der Geber unbeschränkt einkommensteuerpflichtig ist.",
+     "eingeschmolzen": "Annahme, dass der Empfänger unbeschränkt einkommensteuerpflichtig ist."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "unterhaltsleistungen",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Annahme, dass der Empfänger geschieden oder dauernd getrennt lebend ist.",
+     "eingeschmolzen": "Annahme, dass der Ehegatte geschieden oder dauernd getrennt lebend ist."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "kv_pv_beitraege",
+      "interpretation"
+     ],
+     "cluster": "Annahme, dass kv_pv_beitraege die Beiträge nach § 10 Abs. 1 Nr. 3 sind.",
+     "eingeschmolzen": "Annahme, dass KV/PV-Beiträge nach § 10 Abs. 1 Nr. 3 EStG sind."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "unterhaltsleistungen",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Annahme, dass der Geber unbeschränkt einkommensteuerpflichtig ist.",
+     "eingeschmolzen": "Annahme, dass der Empfänger unbeschränkt einkommensteuerpflichtig ist."
+    }
+   ],
+   "norm_teile": [
+    {
+     "key": [
+      "ref",
+      "§ 10 abs. 1a nr. 1 s. 1 estg"
+     ],
+     "cluster": "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung de",
+     "eingeschmolzen": "wenn der Geber dies mit Zustimmung des Empfängers beantragt"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 10 abs. 1a nr. 1 s. 2 estg"
+     ],
+     "cluster": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d",
+     "eingeschmolzen": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 10 abs. 1a nr. 1 s. 1 estg"
+     ],
+     "cluster": "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung de",
+     "eingeschmolzen": "wenn der Geber dies mit Zustimmung des Empfängers beantragt"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 10 abs. 1a nr. 1 s. 2 estg"
+     ],
+     "cluster": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d",
+     "eingeschmolzen": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 10 abs. 1a nr. 1 s. 1 estg"
+     ],
+     "cluster": "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung de",
+     "eingeschmolzen": "wenn der Geber dies mit Zustimmung des Empfängers beantragt"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 10 abs. 1a nr. 1 s. 2 estg"
+     ],
+     "cluster": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d",
+     "eingeschmolzen": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d"
+    }
+   ]
+  },
+  "cluster": {
+   "abweichungen": 0,
+   "annahmen": 8,
+   "norm_teile": 3
+  },
+  "item_splits": [
+   {
+    "art": "annahme",
+    "item": "Annahme, dass kv_pv_beitraege die Beiträge nach § 10 Abs. 1 Nr. 3 sind.",
+    "schluessel": "[\"annahmen\", \"betrifft_kat\", \"kv_pv_beitraege\", \"interpretation\"]",
+    "gueltige_stimmen": 3
+   }
+  ],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "635ceb142188",
+ "timestamp": "2026-07-13T20:08:42+00:00"
+}

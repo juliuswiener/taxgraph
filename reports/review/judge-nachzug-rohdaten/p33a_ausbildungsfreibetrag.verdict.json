@@ -1,0 +1,170 @@
+{
+ "parse_error": false,
+ "faithful": true,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Annahme, dass 'hat_anspruch' den Anspruch auf Freibetrag nach § 32 Abs. 6 oder Kindergeld abdeckt.",
+   "bedingung_id": "anspruch_ausbildung_auswaertig_volljaehrig",
+   "betrifft": "hat_anspruch",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Annahme, dass der Freibetrag in Euro (1.200) und als Geldbetrag ausgezahlt wird.",
+   "bedingung_id": "konv:betraege_in_euro",
+   "betrifft": "ergebnis",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Annahme, dass der Freibetrag pro Kalenderjahr gilt.",
+   "bedingung_id": "konv:vz_bezug_der_regel",
+   "betrifft": "ergebnis",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "Annahme, dass der Anspruch auf § 32 Abs. 6 oder Kindergeld bereits geprüft ist.",
+   "bedingung_id": "anspruch_ausbildung_auswaertig_volljaehrig",
+   "betrifft": "hat_anspruch",
+   "kategorie": "interpretation"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "Zur Abgeltung des Sonderbedarfs eines sich in Berufsausbildung befindenden, auswärtig untergebrachten, volljährigen Kindes",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "anspruch_ausbildung_auswaertig_volljaehrig",
+   "referenz": "§ 33a Abs. 2 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "für das Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder Kindergeld besteht",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "anspruch_ausbildung_auswaertig_volljaehrig",
+   "referenz": "§ 33a Abs. 2 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "kann der Steuerpflichtige einen Freibetrag in Höhe von 1 200 Euro je Kalenderjahr vom Gesamtbetrag der Einkünfte abziehen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "anspruch_ausbildung_auswaertig_volljaehrig",
+   "referenz": "§ 33a Abs. 2 S. 1 EStG",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 3,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   4,
+   3,
+   0
+  ],
+  "gesaettigt": true,
+  "inventar_streuung": {
+   "abweichungen": [],
+   "annahmen": [
+    {
+     "text": "Annahme, dass 'hat_anspruch' den Anspruch auf Freibetrag nach § 32 Abs. 6 oder Kindergeld abdeckt.",
+     "key": [
+      "betrifft_kat",
+      "hat_anspruch",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Annahme, dass der Freibetrag pro Kalenderjahr gilt.",
+     "key": [
+      "betrifft_kat",
+      "ergebnis",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Annahme, dass der Anspruch auf § 32 Abs. 6 oder Kindergeld bereits geprüft ist.",
+     "key": [
+      "betrifft_kat",
+      "hat_anspruch",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    }
+   ],
+   "norm_teile": [
+    {
+     "text": "für das Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder Kindergeld besteht",
+     "key": [
+      "ref",
+      "§ 33a abs. 2 s. 1 estg"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "kann der Steuerpflichtige einen Freibetrag in Höhe von 1 200 Euro je Kalenderjahr vom Gesamtbetrag der Einkünfte abziehe",
+     "key": [
+      "ref",
+      "§ 33a abs. 2 s. 1 estg"
+     ],
+     "in_laeufen": 2
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [],
+   "annahmen": [
+    {
+     "key": [
+      "betrifft_kat",
+      "ergebnis",
+      "einheit"
+     ],
+     "cluster": "Annahme, dass der Freibetrag in Euro (1.200) und als Geldbetrag ausgezahlt wird.",
+     "eingeschmolzen": "Freibetrag wird als fester Geldbetrag (1.200 Euro) ohne weitere Bedingungen umgesetzt."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "ergebnis",
+      "einheit"
+     ],
+     "cluster": "Annahme, dass der Freibetrag in Euro (1.200) und als Geldbetrag ausgezahlt wird.",
+     "eingeschmolzen": "Freibetrag wird als fester Geldbetrag (1.200 Euro) ohne weitere Bedingungen umgesetzt."
+    }
+   ],
+   "norm_teile": [
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 2 s. 1 estg"
+     ],
+     "cluster": "Zur Abgeltung des Sonderbedarfs eines sich in Berufsausbildung befindenden, auswärtig untergebrachten, volljährigen Kindes",
+     "eingeschmolzen": "eines sich in Berufsausbildung befindenden, auswärtig untergebrachten, volljährigen Kindes"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 33a abs. 2 s. 1 estg"
+     ],
+     "cluster": "Zur Abgeltung des Sonderbedarfs eines sich in Berufsausbildung befindenden, auswärtig untergebrachten, volljährigen Kindes",
+     "eingeschmolzen": "eines sich in Berufsausbildung befindenden, auswärtig untergebrachten, volljährigen Kindes"
+    }
+   ]
+  },
+  "cluster": {
+   "abweichungen": 0,
+   "annahmen": 4,
+   "norm_teile": 3
+  },
+  "item_splits": [],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "b6609ac3198d",
+ "timestamp": "2026-07-13T20:05:34+00:00"
+}

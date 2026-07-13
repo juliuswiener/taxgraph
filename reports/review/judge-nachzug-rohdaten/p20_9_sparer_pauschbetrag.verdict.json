@@ -1,0 +1,114 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [
+  "Der Sparer-Pauschbetrag wird nur abgezogen, wenn Kapitalerträge darüber liegen."
+ ],
+ "stille_zusatzannahmen": [],
+ "scope_gap": [
+  {
+   "norm_teil": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "sparer_pb_1000_2000_konstante",
+   "referenz": "§ 20 Abs. 9 Satz 1",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "sparer_pb_1000_2000_konstante",
+   "referenz": "§ 20 Abs. 9 Satz 1 EStG",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 4,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   2,
+   2,
+   1,
+   0
+  ],
+  "gesaettigt": true,
+  "inventar_streuung": {
+   "abweichungen": [
+    {
+     "text": "Negative Kapitalerträge werden auf 0 gesetzt statt beizubehalten.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Negative Kapitalerträge werden auf 0 begrenzt, Norm sieht keinen Abzug unter Null vor.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Der Sparer-Pauschbetrag wird nur abgezogen, wenn Kapitalerträge darüber liegen.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "annahmen": [],
+   "norm_teile": [
+    {
+     "text": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen",
+     "key": [
+      "ref",
+      "§ 20 abs. 9 satz 1"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen",
+     "key": [
+      "ref",
+      "§ 20 abs. 9 satz 1 estg"
+     ],
+     "in_laeufen": 1
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [],
+   "annahmen": [],
+   "norm_teile": []
+  },
+  "cluster": {
+   "abweichungen": 3,
+   "annahmen": 0,
+   "norm_teile": 2
+  },
+  "item_splits": [
+   {
+    "art": "norm_teil",
+    "item": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen",
+    "schluessel": "[\"norm_teile\", \"ref\", \"§ 20 abs. 9 satz 1\"]",
+    "gueltige_stimmen": 3
+   },
+   {
+    "art": "norm_teil",
+    "item": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen",
+    "schluessel": "[\"norm_teile\", \"ref\", \"§ 20 abs. 9 satz 1 estg\"]",
+    "gueltige_stimmen": 3
+   }
+  ],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "6aabc60501f4",
+ "timestamp": "2026-07-13T20:09:35+00:00"
+}

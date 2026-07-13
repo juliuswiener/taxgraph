@@ -1,0 +1,60 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Zuwendungen umfassen Spenden und Mitgliedsbeiträge.",
+   "bedingung_id": null,
+   "betrifft": "zuwendungen",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Gesamtbetrag der Einkünfte wird als Bruttowert interpretiert.",
+   "bedingung_id": null,
+   "betrifft": "gesamtbetrag_der_einkuenfte",
+   "kategorie": "einheit"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "zur Förderung steuerbegünstigter Zwecke im Sinne der §§ 52 bis 54 der Abgabenordnung",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 10b Abs. 1 S. 1 EStG",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 2,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   3,
+   0
+  ],
+  "gesaettigt": true,
+  "inventar_streuung": {
+   "abweichungen": [],
+   "annahmen": [],
+   "norm_teile": []
+  },
+  "merge_log": {
+   "abweichungen": [],
+   "annahmen": [],
+   "norm_teile": []
+  },
+  "cluster": {
+   "abweichungen": 0,
+   "annahmen": 2,
+   "norm_teile": 1
+  },
+  "item_splits": [],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "06947568c96d",
+ "timestamp": "2026-07-13T20:05:03+00:00"
+}

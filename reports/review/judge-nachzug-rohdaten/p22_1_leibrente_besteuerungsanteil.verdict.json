@@ -1,0 +1,47 @@
+{
+ "parse_error": false,
+ "faithful": true,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [],
+ "scope_gap": [
+  {
+   "norm_teil": "nach dem Jahr des Rentenbeginns und dem in diesem Jahr maßgebenden Prozentsatz aus der nachstehenden Tabelle zu entnehmen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "besteuerungsanteil_aus_kohortentabelle",
+   "referenz": "§ 22 Nr. 1 S. 2-3 EStG",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 2,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   1,
+   0
+  ],
+  "gesaettigt": true,
+  "inventar_streuung": {
+   "abweichungen": [],
+   "annahmen": [],
+   "norm_teile": []
+  },
+  "merge_log": {
+   "abweichungen": [],
+   "annahmen": [],
+   "norm_teile": []
+  },
+  "cluster": {
+   "abweichungen": 0,
+   "annahmen": 0,
+   "norm_teile": 1
+  },
+  "item_splits": [],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "5f1189565532",
+ "timestamp": "2026-07-13T20:10:38+00:00"
+}

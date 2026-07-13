@@ -1,0 +1,65 @@
+{
+  "judge": "mistralai/mistral-medium-3-5",
+  "summary": {
+    "p9_1_3_nr6_7_afa_laufend_nb": {
+      "annahmen": 6,
+      "scope_gap": 7,
+      "abweichungen": 7,
+      "backlog": 20
+    },
+    "p10b_spenden": {
+      "annahmen": 2,
+      "scope_gap": 1,
+      "abweichungen": 0,
+      "backlog": 3
+    },
+    "p33a_ausbildungsfreibetrag": {
+      "annahmen": 4,
+      "scope_gap": 3,
+      "abweichungen": 0,
+      "backlog": 7
+    },
+    "p33a_unterhalt": {
+      "annahmen": 12,
+      "scope_gap": 10,
+      "abweichungen": 0,
+      "backlog": 22
+    },
+    "p10_1_5_kinderbetreuung": {
+      "annahmen": 5,
+      "scope_gap": 3,
+      "abweichungen": 0,
+      "backlog": 8
+    },
+    "p10_1a_realsplitting": {
+      "annahmen": 8,
+      "scope_gap": 3,
+      "abweichungen": 0,
+      "backlog": 11
+    },
+    "p20_6_verlustverrechnung": {
+      "annahmen": 4,
+      "scope_gap": 3,
+      "abweichungen": 4,
+      "backlog": 11
+    },
+    "p20_9_sparer_pauschbetrag": {
+      "annahmen": 0,
+      "scope_gap": 2,
+      "abweichungen": 1,
+      "backlog": 3
+    },
+    "p32d_1_abgeltung": {
+      "annahmen": 5,
+      "scope_gap": 2,
+      "abweichungen": 1,
+      "backlog": 8
+    },
+    "p22_1_leibrente_besteuerungsanteil": {
+      "annahmen": 0,
+      "scope_gap": 1,
+      "abweichungen": 0,
+      "backlog": 1
+    }
+  }
+}

@@ -1,0 +1,161 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Aufwendungen beziehen sich nur auf Dienstleistungen zur Kinderbetreuung.",
+   "bedingung_id": null,
+   "betrifft": "aufwendungen",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Das Kind gehört zum Haushalt und ist unter 14 Jahre alt.",
+   "bedingung_id": null,
+   "betrifft": "aufwendungen",
+   "kategorie": "geltungsvoraussetzung"
+  },
+  {
+   "annahme": "Der Abzug wird in Euro berechnet.",
+   "bedingung_id": "konv:betraege_in_euro",
+   "betrifft": "ergebnis",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Der Höchstbetrag von 4.800 Euro gilt pro Kind.",
+   "bedingung_id": "achtzig_prozent_deckel_4800_je_kind",
+   "betrifft": "ergebnis",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Aufwendungen sind in Euro angegeben.",
+   "bedingung_id": "konv:betraege_in_euro",
+   "betrifft": "aufwendungen",
+   "kategorie": "einheit"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "achtzig_prozent_deckel_4800_je_kind",
+   "referenz": "§ 10 Abs. 1 Nr. 5 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "für Dienstleistungen zur Betreuung eines zum Haushalt des Steuerpflichtigen gehörenden Kindes im Sinne des § 32 Absatz 1",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 10 Abs. 1 Nr. 5 S. 1 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "welches das 14. Lebensjahr noch nicht vollendet hat",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 10 Abs. 1 Nr. 5 S. 1 EStG",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 4,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   6,
+   1,
+   1,
+   0
+  ],
+  "gesaettigt": true,
+  "inventar_streuung": {
+   "abweichungen": [],
+   "annahmen": [
+    {
+     "text": "Der Abzug wird in Euro berechnet.",
+     "key": [
+      "betrifft_kat",
+      "ergebnis",
+      "einheit"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Der Höchstbetrag von 4.800 Euro gilt pro Kind.",
+     "key": [
+      "betrifft_kat",
+      "ergebnis",
+      "einheit"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Aufwendungen sind in Euro angegeben.",
+     "key": [
+      "betrifft_kat",
+      "aufwendungen",
+      "einheit"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": [
+    {
+     "text": "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind",
+     "key": [
+      "ref",
+      "§ 10 abs. 1 nr. 5 s. 1 estg"
+     ],
+     "in_laeufen": 2
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [],
+   "annahmen": [
+    {
+     "key": [
+      "betrifft_kat",
+      "aufwendungen",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Das Kind gehört zum Haushalt und ist unter 14 Jahre alt.",
+     "eingeschmolzen": "Das Kind gehört zum Haushalt und ist unter 14 Jahren."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "aufwendungen",
+      "interpretation"
+     ],
+     "cluster": "Aufwendungen beziehen sich nur auf Dienstleistungen zur Kinderbetreuung.",
+     "eingeschmolzen": "Aufwendungen beziehen sich nur auf Dienstleistungen zur Betreuung."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "aufwendungen",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Das Kind gehört zum Haushalt und ist unter 14 Jahre alt.",
+     "eingeschmolzen": "Kind gehört zum Haushalt und ist unter 14 Jahren."
+    }
+   ],
+   "norm_teile": []
+  },
+  "cluster": {
+   "abweichungen": 0,
+   "annahmen": 5,
+   "norm_teile": 3
+  },
+  "item_splits": [],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "c3830133fad7",
+ "timestamp": "2026-07-13T20:07:46+00:00"
+}
