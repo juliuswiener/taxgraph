@@ -91,10 +91,10 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 | Vermietung und Verpachtung | § 21 | ✅ | p21_vermietung_einkuenfte + p7_4_gebaeude_afa (Charge 8, verified_bedingt) |
 | Sonstige Einkünfte / private Veräußerung | § 22 Nr. 2/3, § 23 | ⬜ Anlage SO | — |
 
-### Übergreifende Tarif-Mechanismen — 🟡 (2/4)
+### Übergreifende Tarif-Mechanismen — ✅ (4/4)
 | Progressionsvorbehalt (Lohnersatz ALG/Elterngeld) | § 32b | ✅ | p32b_progressionsvorbehalt (Charge 4, verified_bedingt) |
-| Außerordentliche Einkünfte / Fünftelregelung | § 34 | ⬜ | — |
-| Verlustabzug (Rück-/Vortrag) | § 10d | ⬜ | — |
+| Außerordentliche Einkünfte / Fünftelregelung | § 34 | ✅ | p34_fuenftel_ao_est (Charge 9, Tarif-Andockung, verified_bedingt; Abs. 3 ermäßigter Satz = benannter Nachtrag) |
+| Verlustabzug (Vortrag) | § 10d Abs. 2 | ✅ | p10d_2_verlustvortrag_abzug (Charge 9, verified_bedingt; Abs. 1 Rücktrag = Nicht-Gegenstand) |
 | Altersentlastungsbetrag | § 24a | ✅ | p24a_altersentlastungsbetrag (Charge 5, Kohorten-params, verified_bedingt) |
 
 ### Spezial-Anlagen / Förderung — ⬜ offen (0/4)
@@ -113,6 +113,13 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
   Komplex, außerhalb AN-nah; Ausland/DBA + EÜR bleiben laut Julius-Grobreihenfolge zuletzt.
 - **§ 2-Terminal-Arithmetik** (AfA-Überhangsjahr) — Integrations-Arithmetik, kein Wortlaut →
   bereits Handschrift-Schicht (p07), keine Formalisierungsregel.
+- **§ 10d Abs. 1 Verlustrücktrag** — ändert den Steuerbescheid des vorangegangenen VZ (Abs. 1
+  S. 4–5) → Verfahrens-/Mehrjahres-State-Territorium (§ 2-Integration + AO-Bescheidänderung);
+  isolierte Betrags-Kappung ohne Ziel-VZ-Mechanik wäre Scheinabdeckung. Vortrag (Abs. 2) deckt
+  den AN-nahen Kern. Fortschreibung (Abs. 4) ebenfalls § 2-/State-Territorium.
+- **§ 34 Abs. 3 (ermäßigter 56-%-Durchschnittssatz)** — antragsabhängiger Sonder-Tarifpfad ab
+  55. LJ / Berufsunfähigkeit, nur Betriebsveräußerung, einmal im Leben; AN-fern → benannter
+  Nachtrag, kein Charge-9-Gegenstand.
 
 ## Startmarke (auditierbar)
 AN-Kern-Blöcke (Mantel 5 + N-WK 7 + N-DHF 1 + Vorsorge 2 + Haushaltsnahe 1 + Familie-Kern 2 +
@@ -126,7 +133,10 @@ selbst ~90 %.
 Altersentlastungsbetrag (Kohorten-Muster) verified_bedingt → 25/40. Charge 5 Paket B+C
 (§10b, §33a Abs1+2, §10 Nr5, §10 Abs1a) → 30/40. Charge 6 KAP (§20/§32d, Verlust/Sparer-PB/
 Abgeltung) → 31/40. Charge 7 Renten (§22 Nr1 Leibrente-Besteuerungsanteil, Kohorten,
-strukturgeprueft) → **32/40 ≈ 80 %**.
+strukturgeprueft) → 32/40 ≈ 80 %. Charge 8 Vermietung (§21 Einkuenfte + §7 Abs4 Gebaeude-AfA,
+Negativ-Durchreichung) verified_bedingt → 33/40. Charge 9 (§34 Fuenftelregelung Tarif-Andockung
++ §10d Abs2 Verlustvortrag-Hoechstbetrag 70%) verified_bedingt → **35/40 ≈ 87,5 %**. Damit ist
+die Tarif-Mechanismen-Gruppe (§32b/§34/§10d/§24a) auf 4/4 geschlossen.
 
 **AN-Kern: die 🟡-Lücken (Kind, Sonderausgaben, agB) sind mit Charge 5 auf 4/4 geschlossen -
 der AN-Kern ist damit auf echte ~100 %.** Judge-Nachzug erledigt (2026-07-13, neuer Judge

@@ -1,0 +1,58 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10d_2_verlustvortrag_abzug
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der sockelbetrag wird bei zusammenveranlagung verdoppelt, was die norm nicht vorsieht.
+  formulierungen:
+  - 'mistral-Falschpositiv (Instructor-Adjudikation msg1657): Mistral UEBERLAS Abs2
+    S2 - Verdopplung steht verbatim im Freeze: ''tritt an die Stelle des Betrags von
+    1 Million Euro ein Betrag von 2 Millionen Euro''. Design normkonform.'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - zusammenveranlagung
+  - interpretation
+  formulierungen:
+  - normkonform abgebildete Mechanik (§10d Abs2 S2 Ehegatten-Verdopplung, Sparer-PB-Muster).
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gesamtbetrag_einkuenfte
+  - einheit
+  formulierungen:
+  - 'konv: GdE ist definierte §2-Groesse (Input-Etikett, keine eigene Rechtsfolge).'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verlustvortrag_bestand
+  - geltungsvoraussetzung
+  formulierungen:
+  - Der Verlustvortragsbestand ist nicht ausgeglichene negative Einkünfte.
+  triage: bedingung_neu
+  bedingung: verlustvortrag_bestand_festgestellt
+- art: norm_teil
+  anker:
+  - ref
+  - § 10d abs. 2 s. 1
+  formulierungen:
+  - bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt
+  - darüber hinaus bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags
+    der Einkünfte
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 10d abs. 2 s. 2
+  formulierungen:
+  - vorrangig vor Sonderausgaben, außergewöhnlichen Belastungen und sonstigen Abzugsbeträgen
+  triage: nicht_material_backlog
+  klasse: unabhaengig

@@ -2700,3 +2700,144 @@ regeln:
   - {einnahmen: 12000, gebaeude_afa: 6000, schuldzinsen: 3000, erhaltungsaufwand: 1000, sonstige_werbungskosten: 0}
   - {einnahmen: 8000, gebaeude_afa: 6000, schuldzinsen: 4000, erhaltungsaufwand: 0, sonstige_werbungskosten: 0}
   - {einnahmen: 12000, gebaeude_afa: 0, schuldzinsen: 0, erhaltungsaufwand: 0, sonstige_werbungskosten: 0}
+- rule_id: p34_fuenftel_ao_est
+  hinweis: est_ao = 5 * (est_verbleibendes_zve_plus_fuenftel_ao - est_verbleibendes_zve). BEIDE ESt-Werte sind INPUTS (Tarif-Andockung § 31/§ 32b-Muster) - KEIN Selbst-Tarif, KEINE Tariffunktion in dieser Regel. Faktor 5 ist eine exakte Struktur-Konstante (NICHT /100). Kein max(0)-Boden noetig (Differenz konstruktiv >= 0 bei verbleibendem zvE >= 0).
+  norm: § 34 Abs. 1 EStG (Fuenftelregelung, ausserordentliche Einkuenfte)
+  quellen:
+  - typ: gesetz
+    label: § 34 Abs. 1 S. 2 EStG (Fuenftelregelung)
+    datei: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: beträgt das Fünffache des Unterschiedsbetrags
+    auszug: Die für die außerordentlichen Einkünfte anzusetzende Einkommensteuer beträgt das Fünffache des Unterschiedsbetrags zwischen der Einkommensteuer für das um diese Einkünfte verminderte zu versteuernde Einkommen (verbleibendes zu versteuerndes Einkommen) und der Einkommensteuer für das verbleibende zu versteuernde Einkommen zuzüglich eines Fünftels dieser Einkünfte.
+  geltungsbedingungen:
+  - bedingung: ao_einkuenfte_zusammengeballt
+    deckt_ab: Als außerordentliche Einkünfte kommen nur in Betracht
+    quelle: § 34 Abs. 2 EStG
+    beschreibung: 'Nur qualifizierte ao-Einkuenfte (Abs 2: Veraeusserungsgewinne Nr1, Entschaedigungen § 24 Nr1 = Abfindungen Nr2, Nachzahlungen >3J Nr3, mehrjaehrige Verguetungen Nr4). Die Zusammenballungs-/ao-Qualifikation erfolgt in der § 2-Integration; hier sind beide ESt-Vergleichswerte bereits Inputs (Andockung).'
+  - bedingung: verbleibendes_zve_nicht_negativ
+    deckt_ab: Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde Einkommen positiv
+    quelle: § 34 Abs. 1 S. 3 EStG
+    beschreibung: Sonderpfad Abs1 S3 (verbleibendes zvE negativ, zvE positiv -> est_ao = 5 x est(zvE/5)) ausgeklammert; braucht dritten Tarif-Input, Verlust-Sonderfall AN-fern. Diese Regel deckt den Kernfall verbleibendes zvE >= 0.
+  rundung: []
+  signature:
+    scope: FuenftelAoEst
+    inputs:
+      est_verbleibendes_zve: money
+      est_verbleibendes_zve_plus_fuenftel_ao: money
+    output: est_ao
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: beträgt das Fünffache des Unterschiedsbetrags
+    herkunft: synthetisch
+    rechenweg: 'Abfindung 20.000 auf vzvE 40.000: est(40.000)=8.000, est(40.000+4.000)=9.200. est_ao = 5 x (9.200-8.000) = 5 x 1.200 = 6.000,00.'
+    inputs:
+      est_verbleibendes_zve: 8000
+      est_verbleibendes_zve_plus_fuenftel_ao: 9200
+    expected: 6000.0
+  - quelle: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: beträgt das Fünffache des Unterschiedsbetrags
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER keine ao-Einkuenfte (Differenz 0): est_ao = 5 x (8.000-8.000) = 0,00.'
+    inputs:
+      est_verbleibendes_zve: 8000
+      est_verbleibendes_zve_plus_fuenftel_ao: 8000
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: beträgt das Fünffache des Unterschiedsbetrags
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER groessere Zusammenballung: est_ao = 5 x (13.500-12.000) = 5 x 1.500 = 7.500,00.'
+    inputs:
+      est_verbleibendes_zve: 12000
+      est_verbleibendes_zve_plus_fuenftel_ao: 13500
+    expected: 7500.0
+  raster:
+  - est_verbleibendes_zve: 8000
+    est_verbleibendes_zve_plus_fuenftel_ao: 9200
+  - est_verbleibendes_zve: 8000
+    est_verbleibendes_zve_plus_fuenftel_ao: 8000
+  - est_verbleibendes_zve: 12000
+    est_verbleibendes_zve_plus_fuenftel_ao: 13500
+- rule_id: p10d_2_verlustvortrag_abzug
+  hinweis: sockel = wenn zusammenveranlagung dann 2000000 sonst 1000000 (Norm-Konstante nach Veranlagung). verlustabzug = min(verlustvortrag_bestand, sockel + (70 / 100) * max(0, gesamtbetrag_einkuenfte - sockel)). 70 ist ein PROZENTWERT -> Division durch 100 in decimal rechnen, Cent-Schnitt zuletzt. Bestand ist Input/State; Mehrjahres-Fortschreibung (Abs 4) gehoert NICHT in diese Regel.
+  norm: § 10d Abs. 2 EStG (Verlustvortrag-Hoechstbetrag)
+  quellen:
+  - typ: gesetz
+    label: § 10d Abs. 2 S. 1-2 EStG (Verlustvortrag, 1/2 Mio Sockel + 70 %)
+    datei: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    auszug: Nicht ausgeglichene negative Einkünfte, die nicht nach Absatz 1 abgezogen worden sind, sind in den folgenden Veranlagungszeiträumen bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt, darüber hinaus bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte vorrangig vor Sonderausgaben, außergewöhnlichen Belastungen und sonstigen Abzugsbeträgen abzuziehen (Verlustvortrag).
+  geltungsbedingungen:
+  - bedingung: verlustvortrag_bestand_festgestellt
+    deckt_ab: Nicht ausgeglichene negative Einkünfte, die nicht nach Absatz 1 abgezogen worden sind
+    quelle: § 10d Abs. 2 i.V.m. Abs. 4 EStG
+    beschreibung: verlustvortrag_bestand ist der zum Schluss des Vorjahres gesondert festgestellte verbleibende Verlustvortrag (Abs 4) - kommt als State-Input aus der § 2/VZ-Integration; die Fortschreibung selbst ist nicht Gegenstand dieser Regel. Bestand >= 0 vorausgesetzt. Verlustruecktrag (Abs 1) = Nicht-Gegenstand (fremder VZ-Bescheid, Verfahren/State).
+  rundung: []
+  signature:
+    scope: VerlustvortragAbzug
+    inputs:
+      gesamtbetrag_einkuenfte: money
+      verlustvortrag_bestand: money
+      zusammenveranlagung: bool
+    output: verlustabzug
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'GdE 500.000 < Sockel 1 Mio (single): cap = 1.000.000. min(800.000, 1.000.000) = 800.000,00 (voller Bestand).'
+    inputs:
+      gesamtbetrag_einkuenfte: 500000
+      verlustvortrag_bestand: 800000
+      zusammenveranlagung: false
+    expected: 800000.0
+  - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: '70%-STAFFEL (single): cap = 1 Mio + 0,70 x (3 Mio - 1 Mio) = 1.000.000 + 1.400.000 = 2.400.000. min(5 Mio, 2,4 Mio) = 2.400.000,00.'
+    inputs:
+      gesamtbetrag_einkuenfte: 3000000
+      verlustvortrag_bestand: 5000000
+      zusammenveranlagung: false
+    expected: 2400000.0
+  - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Zusammenveranlagung (2 Mio Sockel): cap = 2 Mio + 0,70 x (3 Mio - 2 Mio) = 2.700.000. min(5 Mio, 2,7 Mio) = 2.700.000,00.'
+    inputs:
+      gesamtbetrag_einkuenfte: 3000000
+      verlustvortrag_bestand: 5000000
+      zusammenveranlagung: true
+    expected: 2700000.0
+  - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Bestand kappt: cap = 2,4 Mio, aber Bestand nur 1,5 Mio. min(1.500.000, 2.400.000) = 1.500.000,00.'
+    inputs:
+      gesamtbetrag_einkuenfte: 3000000
+      verlustvortrag_bestand: 1500000
+      zusammenveranlagung: false
+    expected: 1500000.0
+  - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER kein Vortrag: min(0, ...) = 0,00.'
+    inputs:
+      gesamtbetrag_einkuenfte: 3000000
+      verlustvortrag_bestand: 0
+      zusammenveranlagung: false
+    expected: 0.0
+  raster:
+  - gesamtbetrag_einkuenfte: 500000
+    verlustvortrag_bestand: 800000
+    zusammenveranlagung: false
+  - gesamtbetrag_einkuenfte: 3000000
+    verlustvortrag_bestand: 5000000
+    zusammenveranlagung: false
+  - gesamtbetrag_einkuenfte: 3000000
+    verlustvortrag_bestand: 5000000
+    zusammenveranlagung: true
+  - gesamtbetrag_einkuenfte: 3000000
+    verlustvortrag_bestand: 1500000
+    zusammenveranlagung: false
+  - gesamtbetrag_einkuenfte: 3000000
+    verlustvortrag_bestand: 0
+    zusammenveranlagung: false

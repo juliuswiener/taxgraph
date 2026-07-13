@@ -1,0 +1,34 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p34_fuenftel_ao_est
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die differenz wird mit 5 multipliziert, nicht die steuerdifferenz.
+  formulierungen:
+  - 'mistral-Falschpositiv (Instructor-Adjudikation msg1657, Tautologie): Unterschiedsbetrag
+    zweier Steuerbetraege = deren Differenz. Design 5x(est_a-est_b) normkonform. Orig:
+    Die Differenz wird mit 5 multipliziert, nicht die Steuerdifferenz.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - das ergebnis ist der fuenfache unterschiedsbetrag, nicht die differenz der steuerbetraege.
+  formulierungen:
+  - 'mistral-Falschpositiv (Instructor-Adjudikation msg1657, Tautologie): Unterschiedsbetrag
+    zweier Steuerbetraege = deren Differenz. Design 5x(est_a-est_b) normkonform. Orig:
+    Das Ergebnis ist der fünfache Unterschiedsbetrag, nicht die Differenz der Steuerbeträge.'
+  triage: nicht_echt
+- art: norm_teil
+  anker:
+  - ref
+  - § 34 abs. 1 s. 2 estg
+  formulierungen:
+  - Die für die außerordentlichen Einkünfte anzusetzende Einkommensteuer beträgt das
+    Fünffache des Unterschiedsbetrags zwischen der Einkommensteuer für das um diese
+    Einkünfte verminderte zu versteuernde E
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
