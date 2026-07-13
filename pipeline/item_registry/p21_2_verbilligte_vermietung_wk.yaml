@@ -1,0 +1,45 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p21_2_verbilligte_vermietung_wk
+version: 2
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - entgelt_quote_prozent
+  - interpretation
+  formulierungen:
+  - 50%-Grenze wird ignoriert, nur 66%-Schwelle berücksichtigt.
+  - 'konv: Input-Etikett/normkonforme Interpretation (Wert kommt wie definiert; Zeitbezug/Prozent-/Bruttoansatz
+    deckt sich mit Wortlaut). Entgeltquote wird als Prozentsatz der ortsüblichen Marktmiete
+    interpretiert.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - entgelt_quote_prozent
+  - geltungsvoraussetzung
+  formulierungen:
+  - Dauerhafte Vermietung wird als immer erfüllt angenommen.
+  - Dauerhafte Wohnungsvermietung wird vorausgesetzt.
+  triage: bedingung_neu
+  bedingung: auf_dauer_angelegte_wohnungsvermietung
+- art: norm_teil
+  anker:
+  - ref
+  - § 21 abs. 2 s. 1
+  formulierungen:
+  - Beträgt das Entgelt [...] weniger als 50 Prozent [...] aufzuteilen.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: entgelt_quote_ausserhalb_prognosekorridor
+- art: norm_teil
+  anker:
+  - ref
+  - § 21 abs. 2 s. 2
+  formulierungen:
+  - Beträgt das Entgelt [...] mindestens 66 Prozent [...] als entgeltlich.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: auf_dauer_angelegte_wohnungsvermietung

@@ -2841,3 +2841,231 @@ regeln:
   - gesamtbetrag_einkuenfte: 3000000
     verlustvortrag_bestand: 0
     zusammenveranlagung: false
+- rule_id: p35c_sanierung_ermaessigung
+  hinweis: 'satz = wenn ist_uebernaechstes_foerderjahr dann 6 sonst 7 (Prozentwert -> /100). hoechst = wenn ist_uebernaechstes_foerderjahr dann 12000 sonst 14000. sanierung_ermaessigung = min((satz/100) * sanierungsaufwendungen, hoechst). Division durch 100 in decimal, Cent-Schnitt zuletzt. Die Ermaessigung mindert die tarifliche ESt vermindert um sonstige Steuerermaessigungen (§ 35a-Andock-Reihenfolge) - Verrechnung ist § 2-Integration, NICHT diese Regel. WICHTIG: sanierungsaufwendungen enthaelt AUCH die Kosten der Bescheinigung nach Satz 7 (Abs1 S4 "gehoeren auch"), aber NICHT die Energieberater-Kosten (die kriegen 50 %, eigene Regel p35c_energieberater_ermaessigung).'
+  norm: § 35c Abs. 1 EStG (Steuerermaessigung energetische Massnahmen, 7/6-Prozent-Staffel)
+  quellen:
+  - typ: gesetz
+    label: § 35c Abs. 1 S. 1 EStG (7 %/7 %/6 %, Hoechst 14k/14k/12k)
+    datei: sources/gesetze-im-internet/estg_p35c_2026-07-13.txt
+    zitatanker: höchstens jedoch um je 14 000 Euro
+    auszug: Für energetische Maßnahmen an einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum belegenen zu eigenen Wohnzwecken genutzten eigenen Gebäude (begünstigtes Objekt) ermäßigt sich auf Antrag die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, im Kalenderjahr des Abschlusses der energetischen Maßnahme und im nächsten Kalenderjahr um je 7 Prozent der Aufwendungen des Steuerpflichtigen, höchstens jedoch um je 14 000 Euro und im übernächsten Kalenderjahr um 6 Prozent der Aufwendungen des Steuerpflichtigen, höchstens jedoch um 12 000 Euro für das begünstigte Objekt.
+  geltungsbedingungen:
+  - bedingung: objekt_aelter_zehn_jahre
+    deckt_ab: bei der Durchführung der energetischen Maßnahme älter als zehn Jahre
+    quelle: § 35c Abs. 1 S. 2 EStG
+    beschreibung: Begünstigtes Objekt muss bei Massnahmen-Durchfuehrung aelter als 10 Jahre sein (Herstellungsbeginn massgebend).
+  - bedingung: ausschliesslich_eigene_wohnzwecke
+    deckt_ab: ausschließlich zu eigenen Wohnzwecken nutzt
+    quelle: § 35c Abs. 2 EStG
+    beschreibung: Gebaeude im jeweiligen Kalenderjahr ausschliesslich zu eigenen Wohnzwecken genutzt (unentgeltliche Teilueberlassung unschaedlich).
+  - bedingung: kein_doppelabzug_ba_wk_sa_agb
+    deckt_ab: als Betriebsausgaben, Werbungskosten, Sonderausgaben oder außergewöhnliche Belastungen berücksichtigt worden sind
+    quelle: § 35c Abs. 3 S. 1 EStG
+    beschreibung: Keine Ermaessigung soweit Aufwendungen bereits als BA/WK/SA/agB beruecksichtigt.
+  - bedingung: keine_10f_35a_oeffentliche_foerderung
+    deckt_ab: eine Steuerbegünstigung nach § 10f oder eine Steuerermäßigung nach § 35a in Anspruch genommen wird
+    quelle: § 35c Abs. 3 S. 2 EStG
+    beschreibung: 'Doppelfoerderungs-Sperre: kein § 10f/§ 35a, keine oeffentlich gefoerderte Massnahme (zinsverbilligte Darlehen/steuerfreie Zuschuesse).'
+  - bedingung: rechnung_und_zahlung_aufs_konto
+    deckt_ab: die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist
+    quelle: § 35c Abs. 4 EStG
+    beschreibung: Rechnung (deutsch, Massnahme+Arbeitsleistung+Objektadresse) + unbare Zahlung aufs Konto des Leistungserbringers.
+  - bedingung: fachunternehmen_bescheinigung
+    deckt_ab: nach amtlich vorgeschriebenem Muster erstellte Bescheinigung des ausführenden Fachunternehmens
+    quelle: § 35c Abs. 1 S. 6-7 EStG
+    beschreibung: Ausfuehrung durch Fachunternehmen + Bescheinigung nach amtlichem Muster (Voraussetzungen S1-3 + Rechtsverordnung Abs7 dem Grunde+Hoehe nach).
+  - bedingung: objekt_hoechstbetrag_40k_nicht_ausgeschoepft
+    deckt_ab: je begünstigtes Objekt beträgt der Höchstbetrag der Steuerermäßigung 40 000 Euro
+    quelle: § 35c Abs. 1 S. 5 EStG
+    beschreibung: 'Objekt-Lebensdauer-Deckel 40.000 EUR ueber alle Massnahmen + alle Jahre. Kumulation = § 2/VZ-State (analog § 10d Abs4), hier als Vorbedingung deklariert: der 40k-Deckel darf durch die VZ-Ermaessigung nicht ueberschritten werden. Rechnerisch im Einzelfall redundant (14+14+12=40).'
+  rundung: []
+  signature:
+    scope: SanierungErmaessigung
+    inputs:
+      sanierungsaufwendungen: money
+      ist_uebernaechstes_foerderjahr: bool
+    output: sanierung_ermaessigung
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p35c_2026-07-13.txt
+    zitatanker: höchstens jedoch um je 14 000 Euro
+    herkunft: synthetisch
+    rechenweg: 'Abschluss-/Folgejahr (7 %), hohe AK: 0,07 x 200.000 = 14.000, Deckel 14.000 exakt erreicht -> 14.000,00.'
+    inputs:
+      sanierungsaufwendungen: 200000
+      ist_uebernaechstes_foerderjahr: false
+    expected: 14000.0
+  - quelle: sources/gesetze-im-internet/estg_p35c_2026-07-13.txt
+    zitatanker: höchstens jedoch um je 14 000 Euro
+    herkunft: synthetisch
+    rechenweg: 'Abschluss-/Folgejahr (7 %): 0,07 x 100.000 = 7.000 < Deckel 14.000 -> 7.000,00.'
+    inputs:
+      sanierungsaufwendungen: 100000
+      ist_uebernaechstes_foerderjahr: false
+    expected: 7000.0
+  - quelle: sources/gesetze-im-internet/estg_p35c_2026-07-13.txt
+    zitatanker: höchstens jedoch um je 14 000 Euro
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER uebernaechstes Jahr (6 %): 0,06 x 100.000 = 6.000,00.'
+    inputs:
+      sanierungsaufwendungen: 100000
+      ist_uebernaechstes_foerderjahr: true
+    expected: 6000.0
+  - quelle: sources/gesetze-im-internet/estg_p35c_2026-07-13.txt
+    zitatanker: höchstens jedoch um je 14 000 Euro
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER uebernaechstes Jahr Deckel: 0,06 x 250.000 = 15.000 > Deckel 12.000 -> 12.000,00.'
+    inputs:
+      sanierungsaufwendungen: 250000
+      ist_uebernaechstes_foerderjahr: true
+    expected: 12000.0
+  - quelle: sources/gesetze-im-internet/estg_p35c_2026-07-13.txt
+    zitatanker: höchstens jedoch um je 14 000 Euro
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: 0,07 x 0 = 0,00.'
+    inputs:
+      sanierungsaufwendungen: 0
+      ist_uebernaechstes_foerderjahr: false
+    expected: 0.0
+  raster:
+  - sanierungsaufwendungen: 200000
+    ist_uebernaechstes_foerderjahr: false
+  - sanierungsaufwendungen: 100000
+    ist_uebernaechstes_foerderjahr: false
+  - sanierungsaufwendungen: 100000
+    ist_uebernaechstes_foerderjahr: true
+  - sanierungsaufwendungen: 250000
+    ist_uebernaechstes_foerderjahr: true
+  - sanierungsaufwendungen: 0
+    ist_uebernaechstes_foerderjahr: false
+- rule_id: p35c_energieberater_ermaessigung
+  hinweis: 'energieberater_ermaessigung = (50 / 100) * energieberater_aufwendungen. 50 ist ein PROZENTWERT -> /100 in decimal, Cent-Schnitt zuletzt. Sondersatz "abweichend von Satz 1" (Abs1 S4) - gilt NUR fuer BAFA-zugelassene Energieberater-Kosten, NICHT fuer sonstige Sanierungsaufwendungen. BENANNTER NACHTRAG (wortlaut-offen, BMF): (a) in welchem der Foerderjahre die 50 % wirken (VZ-Zuordnung = § 2-Integration, wie Regel-1-Jahreswahl); (b) ob die 50 % gegen die Jahresdeckel 14k/12k und den 40k-Objektdeckel zaehlen.'
+  norm: § 35c Abs. 1 S. 4 EStG (Energieberater-Sondersatz 50 %)
+  quellen:
+  - typ: gesetz
+    label: § 35c Abs. 1 S. 4 EStG (Energieberater 50 %, abweichend von Satz 1)
+    datei: sources/gesetze-im-internet/estg_p35c_2026-07-13.txt
+    zitatanker: abweichend von Satz 1 um 50 Prozent der Aufwendungen für den Energieberater
+    auszug: die tarifliche Einkommensteuer vermindert sich abweichend von Satz 1 um 50 Prozent der Aufwendungen für den Energieberater.
+  geltungsbedingungen:
+  - bedingung: energieberater_bafa_zugelassen_und_beauftragt
+    deckt_ab: vom Bundesamt für Wirtschaft und Ausfuhrkontrolle (BAFA) als fachlich qualifiziert
+    quelle: § 35c Abs. 1 S. 4 EStG
+    beschreibung: Energieberater BAFA-zugelassen (Foerderprogramm Energieberatung fuer Wohngebaeude) UND vom Steuerpflichtigen mit planerischer Begleitung/Beaufsichtigung der Massnahmen beauftragt.
+  - bedingung: objekt_hoechstbetrag_40k_nicht_ausgeschoepft
+    deckt_ab: je begünstigtes Objekt beträgt der Höchstbetrag der Steuerermäßigung 40 000 Euro
+    quelle: § 35c Abs. 1 S. 5 EStG
+    beschreibung: Objekt-Lebensdauer-Deckel 40.000 EUR (§ 2/VZ-State, analog § 10d Abs4). Ob die Energieberater-50 % gegen diesen Deckel zaehlen = benannter Nachtrag (wortlaut-offen).
+  rundung: []
+  signature:
+    scope: EnergieberaterErmaessigung
+    inputs:
+      energieberater_aufwendungen: money
+    output: energieberater_ermaessigung
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p35c_2026-07-13.txt
+    zitatanker: abweichend von Satz 1 um 50 Prozent der Aufwendungen für den Energieberater
+    herkunft: synthetisch
+    rechenweg: '50 % der Energieberater-Kosten: 0,50 x 2.000 = 1.000,00.'
+    inputs:
+      energieberater_aufwendungen: 2000
+    expected: 1000.0
+  - quelle: sources/gesetze-im-internet/estg_p35c_2026-07-13.txt
+    zitatanker: abweichend von Satz 1 um 50 Prozent der Aufwendungen für den Energieberater
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER: 0,50 x 1.000 = 500,00.'
+    inputs:
+      energieberater_aufwendungen: 1000
+    expected: 500.0
+  - quelle: sources/gesetze-im-internet/estg_p35c_2026-07-13.txt
+    zitatanker: abweichend von Satz 1 um 50 Prozent der Aufwendungen für den Energieberater
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: 0,50 x 0 = 0,00.'
+    inputs:
+      energieberater_aufwendungen: 0
+    expected: 0.0
+  raster:
+  - energieberater_aufwendungen: 2000
+  - energieberater_aufwendungen: 1000
+  - energieberater_aufwendungen: 0
+- rule_id: p21_2_verbilligte_vermietung_wk
+  hinweis: entgelt_quote_prozent ist ein PROZENTWERT (vereinbarte Miete / ortsuebliche Miete x 100) -> /100 in decimal. abziehbare_werbungskosten = wenn entgelt_quote_prozent >= 66 dann werbungskosten sonst (entgelt_quote_prozent / 100) * werbungskosten. Schwelle 66 INKLUSIV (>=). Bei quote < 50 volle anteilige Kuerzung. Der Korridor 50 <= quote < 66 ist NICHT Gegenstand (Totalueberschussprognose, BMF, kein Wortlaut). Cent-Schnitt zuletzt.
+  norm: § 21 Abs. 2 EStG (verbilligte Wohnungsueberlassung, anteilige WK-Kuerzung)
+  quellen:
+  - typ: gesetz
+    label: § 21 Abs. 2 S. 1-2 EStG (50-%-Aufteilung / 66-%-Vollentgeltlichkeit)
+    datei: sources/gesetze-im-internet/estg_p21_2026-07-13.txt
+    zitatanker: mindestens 66 Prozent der ortsüblichen Miete, gilt die Wohnungsvermietung als entgeltlich
+    auszug: Beträgt das Entgelt für die Überlassung einer Wohnung zu Wohnzwecken weniger als 50 Prozent der ortsüblichen Marktmiete, so ist die Nutzungsüberlassung in einen entgeltlichen und einen unentgeltlichen Teil aufzuteilen. 2 Beträgt das Entgelt bei auf Dauer angelegter Wohnungsvermietung mindestens 66 Prozent der ortsüblichen Miete, gilt die Wohnungsvermietung als entgeltlich.
+  geltungsbedingungen:
+  - bedingung: entgelt_quote_ausserhalb_prognosekorridor
+    deckt_ab: weniger als 50 Prozent der ortsüblichen Marktmiete
+    quelle: § 21 Abs. 2 S. 1-2 EStG
+    beschreibung: Regel gilt nur fuer quote < 50 (S1 anteilige Aufteilung zwingend) ODER quote >= 66 (S2 voll entgeltlich). Korridor 50 <= quote < 66 = Totalueberschussprognose (BMF, kein Norm-Wortlaut), ausgeklammert.
+  - bedingung: wohnung_zu_wohnzwecken_ueberlassen
+    deckt_ab: Überlassung einer Wohnung zu Wohnzwecken
+    quelle: § 21 Abs. 2 S. 1 EStG
+    beschreibung: Regel gilt nur fuer Ueberlassung einer WOHNUNG zu WOHNzwecken - nicht Gewerberaum/Sachinbegriffe/§ 21 Abs1 Nr2-4.
+  - bedingung: auf_dauer_angelegte_wohnungsvermietung
+    deckt_ab: bei auf Dauer angelegter Wohnungsvermietung
+    quelle: § 21 Abs. 2 S. 2 EStG
+    beschreibung: Die 66-%-Vollentgeltlichkeits-Fiktion (S2) gilt nur bei auf Dauer angelegter Wohnungsvermietung (nicht Ferienwohnung/kurzfristige Vermietung).
+  rundung: []
+  signature:
+    scope: VerbilligteVermietungWk
+    inputs:
+      werbungskosten: money
+      entgelt_quote_prozent: decimal
+    output: abziehbare_werbungskosten
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p21_2026-07-13.txt
+    zitatanker: mindestens 66 Prozent der ortsüblichen Miete, gilt die Wohnungsvermietung als entgeltlich
+    herkunft: synthetisch
+    rechenweg: 'Volle Miete (quote 100 >= 66): voller WK-Abzug 10.000,00.'
+    inputs:
+      werbungskosten: 10000
+      entgelt_quote_prozent: 100
+    expected: 10000.0
+  - quelle: sources/gesetze-im-internet/estg_p21_2026-07-13.txt
+    zitatanker: mindestens 66 Prozent der ortsüblichen Miete, gilt die Wohnungsvermietung als entgeltlich
+    herkunft: synthetisch
+    rechenweg: 'quote 70 >= 66: voll entgeltlich (S2) -> 10.000,00.'
+    inputs:
+      werbungskosten: 10000
+      entgelt_quote_prozent: 70
+    expected: 10000.0
+  - quelle: sources/gesetze-im-internet/estg_p21_2026-07-13.txt
+    zitatanker: mindestens 66 Prozent der ortsüblichen Miete, gilt die Wohnungsvermietung als entgeltlich
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Grenzfall quote 66 (Schwelle inklusiv): voll -> 12.000,00.'
+    inputs:
+      werbungskosten: 12000
+      entgelt_quote_prozent: 66
+    expected: 12000.0
+  - quelle: sources/gesetze-im-internet/estg_p21_2026-07-13.txt
+    zitatanker: mindestens 66 Prozent der ortsüblichen Miete, gilt die Wohnungsvermietung als entgeltlich
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER quote 40 < 50 (S1 Aufteilung): 0,40 x 10.000 = 4.000,00.'
+    inputs:
+      werbungskosten: 10000
+      entgelt_quote_prozent: 40
+    expected: 4000.0
+  - quelle: sources/gesetze-im-internet/estg_p21_2026-07-13.txt
+    zitatanker: mindestens 66 Prozent der ortsüblichen Miete, gilt die Wohnungsvermietung als entgeltlich
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER quote 30 < 50: 0,30 x 9.000 = 2.700,00.'
+    inputs:
+      werbungskosten: 9000
+      entgelt_quote_prozent: 30
+    expected: 2700.0
+  raster:
+  - werbungskosten: 10000
+    entgelt_quote_prozent: 100
+  - werbungskosten: 10000
+    entgelt_quote_prozent: 70
+  - werbungskosten: 12000
+    entgelt_quote_prozent: 66
+  - werbungskosten: 10000
+    entgelt_quote_prozent: 40
+  - werbungskosten: 9000
+    entgelt_quote_prozent: 30

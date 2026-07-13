@@ -1,0 +1,15 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p35c_energieberater_ermaessigung
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 35c abs. 1 s. 4 estg
+  formulierungen:
+  - die tarifliche Einkommensteuer vermindert sich abweichend von Satz 1 um 50 Prozent
+    der Aufwendungen für den Energieberater.
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein

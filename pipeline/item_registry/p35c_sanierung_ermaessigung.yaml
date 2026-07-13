@@ -1,0 +1,45 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p35c_sanierung_ermaessigung
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - sanierungsaufwendungen
+  - einheit
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation (Wert kommt wie definiert; Zeitbezug/Prozent-/Bruttoansatz
+    deckt sich mit Wortlaut). Aufwendungen werden als Bruttowerte interpretiert.'
+  - 'konv: Input-Etikett/normkonforme Interpretation (Wert kommt wie definiert; Zeitbezug/Prozent-/Bruttoansatz
+    deckt sich mit Wortlaut). Aufwendungen werden als Bruttobetrag interpretiert.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ist_uebernaechstes_foerderjahr
+  - zeitbezug
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation (Wert kommt wie definiert; Zeitbezug/Prozent-/Bruttoansatz
+    deckt sich mit Wortlaut). Das übernächste Förderjahr wird als drittes Kalenderjahr
+    nach Maßnahmeabschluss verstanden.'
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 35c abs. 1 s. 1 estg
+  formulierungen:
+  - Für energetische Maßnahmen an einem in der Europäischen Union oder dem Europäischen
+    Wirtschaftsraum belegenen zu eigenen Wohnzwecken genutzten eigenen Gebäude (begünstigtes
+    Objekt)
+  - auf Antrag
+  - Andockungs-Teil (Verrechnung tarifl. ESt vermindert um sonstige Steuerermaessigungen)
+    = § 2-Integration/§ 35a-Reihenfolge, bewusst ausserhalb dieser Regel. vermindert
+    um die sonstigen Steuerermäßigungen
+  - im Kalenderjahr des Abschlusses der energetischen Maßnahme und im nächsten Kalenderjahr
+    um je 7 Prozent
+  - für das begünstigte Objekt
+  - für ein in der EU/EWR belegenes, zu eigenen Wohnzwecken genutztes eigenes Gebäude
+  triage: nicht_material_backlog
+  klasse: unabhaengig

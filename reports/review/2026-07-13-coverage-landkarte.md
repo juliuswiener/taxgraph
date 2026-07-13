@@ -88,7 +88,7 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 ### Andere Einkunftsarten — 🟡 (3/4 Anlagen)
 | Kapitalvermögen (Abgeltungsteuer, Sparer-PB) | § 20, § 32d, § 20 Abs. 9 | ✅ | p20_6/p20_9/p32d_1 (Charge 6, verified_bedingt) |
 | Renten / sonstige wiederkehrende Bezüge | § 22 Nr. 1 | ✅ | p22_1_leibrente_besteuerungsanteil (Charge 7, Kohorten-params, verified_bedingt) |
-| Vermietung und Verpachtung | § 21 | ✅ | p21_vermietung_einkuenfte + p7_4_gebaeude_afa (Charge 8, verified_bedingt) |
+| Vermietung und Verpachtung | § 21 | ✅ | p21_vermietung_einkuenfte + p7_4_gebaeude_afa (Charge 8) + p21_2_verbilligte_vermietung_wk (Charge 10, Abs2 50/66-Schwellen; Korridor 50–66 = Prognose-Nachtrag) — verified_bedingt |
 | Sonstige Einkünfte / private Veräußerung | § 22 Nr. 2/3, § 23 | ⬜ Anlage SO | — |
 
 ### Übergreifende Tarif-Mechanismen — ✅ (4/4)
@@ -97,9 +97,9 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 | Verlustabzug (Vortrag) | § 10d Abs. 2 | ✅ | p10d_2_verlustvortrag_abzug (Charge 9, verified_bedingt; Abs. 1 Rücktrag = Nicht-Gegenstand) |
 | Altersentlastungsbetrag | § 24a | ✅ | p24a_altersentlastungsbetrag (Charge 5, Kohorten-params, verified_bedingt) |
 
-### Spezial-Anlagen / Förderung — ⬜ offen (0/4)
-| Riester / Altersvorsorgezulage (Anlage AV) | § 10a, § 79 ff. | ⬜ | — |
-| Energetische Maßnahmen (Anlage Energ.) | § 35c | ⬜ | — |
+### Spezial-Anlagen / Förderung — 🟡 (1/4)
+| Riester / Altersvorsorgezulage (Anlage AV) | § 10a, § 79 ff. | ⬜ | — (Charge 11 geplant) |
+| Energetische Maßnahmen (Anlage Energ.) | § 35c | ✅ | p35c_sanierung_ermaessigung (7/6 %-Staffel) + p35c_energieberater_ermaessigung (50 %-Sondersatz) — Charge 10, verified_bedingt |
 | Mobilitätsprämie | §§ 101 ff. | ⬜ | — |
 | Wohneigentumsförderung (Anlage FW) | § 10e/10f/10g | ⬜ (überw. Altfälle) | — |
 
@@ -120,6 +120,15 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 - **§ 34 Abs. 3 (ermäßigter 56-%-Durchschnittssatz)** — antragsabhängiger Sonder-Tarifpfad ab
   55. LJ / Berufsunfähigkeit, nur Betriebsveräußerung, einmal im Leben; AN-fern → benannter
   Nachtrag, kein Charge-9-Gegenstand.
+- **§ 35c 40 000-€-Objekt-Höchstbetrag (Abs. 1 S. 5)** — Lebensdauer-Deckel über alle Maßnahmen +
+  3 VZ, kumulativ = § 2-/State-Territorium (§ 10d-Abs4-Präzedenz); als Geltungsbedingung
+  `objekt_hoechstbetrag_40k_nicht_ausgeschoepft` deklariert (Charge 10), aber pro-VZ nicht gerechnet.
+- **§ 35c Energieberater-Deckel-Interaktion** — ob die 50-%-Energieberater-Ermäßigung gegen die
+  Jahresdeckel 14k/12k und den 40k-Objektdeckel zählt, ist wortlaut-offen (BMF) → benannter Nachtrag.
+  Ebenso die VZ-Zuordnung der 50 % (Integration).
+- **§ 21 Abs. 2 Korridor 50–< 66 % (Totalüberschussprognose)** — die Aufteilungsentscheidung im
+  Zwischenband hängt an der BMF-Prognose, kein Norm-Wortlaut → benannter Nachtrag; Regel deckt
+  quote < 50 (anteilig) und quote ≥ 66 (voll).
 
 ## Startmarke (auditierbar)
 AN-Kern-Blöcke (Mantel 5 + N-WK 7 + N-DHF 1 + Vorsorge 2 + Haushaltsnahe 1 + Familie-Kern 2 +
@@ -135,8 +144,11 @@ Altersentlastungsbetrag (Kohorten-Muster) verified_bedingt → 25/40. Charge 5 P
 Abgeltung) → 31/40. Charge 7 Renten (§22 Nr1 Leibrente-Besteuerungsanteil, Kohorten,
 strukturgeprueft) → 32/40 ≈ 80 %. Charge 8 Vermietung (§21 Einkuenfte + §7 Abs4 Gebaeude-AfA,
 Negativ-Durchreichung) verified_bedingt → 33/40. Charge 9 (§34 Fuenftelregelung Tarif-Andockung
-+ §10d Abs2 Verlustvortrag-Hoechstbetrag 70%) verified_bedingt → **35/40 ≈ 87,5 %**. Damit ist
-die Tarif-Mechanismen-Gruppe (§32b/§34/§10d/§24a) auf 4/4 geschlossen.
++ §10d Abs2 Verlustvortrag-Hoechstbetrag 70%) verified_bedingt → 35/40 ≈ 87,5 %. Damit ist
+die Tarif-Mechanismen-Gruppe (§32b/§34/§10d/§24a) auf 4/4 geschlossen. Charge 10 (§35c energetisch
+7/6%-Staffel + Energieberater-50%-Sondersatz, §21 Abs2 verbilligte Vermietung) verified_bedingt →
+**36/40 ≈ 90 %** (Foerderungs-Gruppe geoeffnet 1/4; §21-Abs2-Nachtrag schliesst benannte
+Vermietungs-Luecke).
 
 **AN-Kern: die 🟡-Lücken (Kind, Sonderausgaben, agB) sind mit Charge 5 auf 4/4 geschlossen -
 der AN-Kern ist damit auf echte ~100 %.** Judge-Nachzug erledigt (2026-07-13, neuer Judge
