@@ -52,9 +52,15 @@ die Fehlerklassen.
   ist Unzuverlässigkeit).
 - Unter den zuverlässigen: niedrigstes annahme_verpasst gewinnt; bei Gleichstand höherer
   Inventar-Recall, dann Kosten.
-- **Kein Sieger** (alle unzuverlässig oder alle schlechter als GLM-als-Judge): Rückfall = GLM-5.2 als
-  Judge + Sonnet als B (Rotation, dritte Familie bleibt gewahrt) — als benannte Fallback-Option in
-  die Vorlage.
+- **Regelfall bei Sieger:** der Bake-off-Sieger (dritte Familie) wird Judge, **A bleibt Sonnet, B
+  bleibt GLM** — Dekorrelation A(Anthropic)/B(Z.AI)/Judge(dritte Familie) unveraendert intakt.
+- **Kein Sieger** (alle unzuverlässig): Rückfall = **GLM-5.2 als Judge, dann muss B aus GLM WEG in
+  eine dritte Familie** (Gemini war im B-Bake-off der beste Rest, mit dokumentiertem Trunkierungs-
+  Caveat → mit 24k-Budget messen). Also A(Sonnet)/B(Gemini)/Judge(GLM). ACHTUNG: „GLM-als-Judge +
+  Sonnet-als-B" waere FALSCH — dann sind A UND B beide Anthropic, gleiche Familie teilt Modell-
+  Idiosynkrasien, equivalence verliert ihre Beweiskraft. Die dritte Familie MUSS ueber alle drei
+  Rollen erhalten bleiben. Alternativ, falls B-Umbesetzung zu teuer: Judge bleibt deepseek-v4-pro
+  geparkt, Queue wartet, bis ein zuverlaessiger Kandidat verfuegbar wird.
 
 ## Ablauf
 1. Julius-Freigabe (Kandidaten + Budget ~$1-2).
