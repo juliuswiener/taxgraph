@@ -2001,3 +2001,76 @@ regeln:
   raster:
   - {hat_hinterbliebenenbezuege: true}
   - {hat_hinterbliebenenbezuege: false}
+# Charge-5 Paket A (Instructor-Freigabe 2026-07-13): § 24a Altersentlastungsbetrag.
+# NEUES Muster: Kohorten-versionierte Parameter (prozentsatz + hoechstbetrag je "Folgejahr
+# der 64.-Lebensjahr-Vollendung", lebenslang fix, params/kohorten/altersentlastungsbetrag_p24a.yaml,
+# aus dem Freeze geparst + validiert). Andockung wie § 32b/§ 31: die Kohorten-Werte kommen als
+# INPUTS aus der § 2-Integration (params-Lookup), die Regel macht nur die min-Kappungs-Arithmetik.
+# So bleibt die 54-Zeilen-Tabelle in params, nicht im Regel-Hardcode.
+- rule_id: p24a_altersentlastungsbetrag
+  # hinweis-Kanal (Instructor-Freigabe 2026-07-13, § 32b-Praezedenz): netto-Bemessung + Andockung.
+  hinweis: 'arbeitslohn und positive_andere_einkuenfte kommen bereits NETTO herein - die Ausschluesse nach § 24a Satz 2 (Versorgungsbezuege § 19 Abs. 2, Leibrenten § 22 Nr. 1a u.a.) sind in der vorgelagerten § 2-Integration ausgesondert; in DIESER Regel KEIN weiterer Ausschluss. prozentsatz und hoechstbetrag kommen aus der Kohorten-Tabelle (massgebendes_folgejahr) als Inputs herein, hier NICHT selbst nachschlagen. Rechenkern: der Altersentlastungsbetrag ist min((prozentsatz / 100) * (arbeitslohn + positive_andere_einkuenfte), hoechstbetrag); die Prozentrechnung in decimal, Cent-Schnitt zuletzt.'
+  norm: § 24a EStG (Altersentlastungsbetrag, Kohorten-Staffel)
+  quellen:
+  - typ: gesetz
+    label: § 24a Satz 1 EStG (Bemessung, Prozentsatz, Hoechstbetrag)
+    datei: sources/gesetze-im-internet/estg_p24a_2026-07-13.txt
+    zitatanker: Der Altersentlastungsbetrag ist bis zu einem Höchstbetrag
+    auszug: 'Der Altersentlastungsbetrag ist bis zu einem Höchstbetrag im Kalenderjahr ein nach einem Prozentsatz ermittelter Betrag des Arbeitslohns und der positiven Summe der Einkünfte, die nicht solche aus nichtselbständiger Arbeit sind.'
+  - typ: gesetz
+    label: § 24a Satz 5 EStG (Prozentsatz + Hoechstbetrag aus Kohorten-Tabelle)
+    datei: sources/gesetze-im-internet/estg_p24a_2026-07-13.txt
+    zitatanker: Der maßgebende Prozentsatz und der Höchstbetrag
+    auszug: 'Der maßgebende Prozentsatz und der Höchstbetrag des Altersentlastungsbetrags sind der nachstehenden Tabelle zu entnehmen'
+  geltungsbedingungen:
+  - bedingung: prozentsatz_hoechstbetrag_aus_kohortentabelle
+    deckt_ab: Der maßgebende Prozentsatz und der Höchstbetrag
+    quelle: § 24a Satz 5 EStG
+    beschreibung: 'prozentsatz und hoechstbetrag sind der Kohorten-Tabelle (§ 24a S. 5, params/kohorten/altersentlastungsbetrag_p24a.yaml) zu entnehmen, Schluessel = massgebendes_folgejahr (Jahr nach Vollendung des 64. Lebensjahres, lebenslang fix). Der Lookup erfolgt in der § 2-Integration; hier kommen die Werte als Inputs herein (Andockung wie § 32b, kein Selbst-Lookup).'
+  - bedingung: bemessung_netto_nach_ausschluessen
+    deckt_ab: die nicht solche aus nichtselbständiger Arbeit sind
+    quelle: § 24a Satz 1-2 EStG
+    beschreibung: 'positive_andere_einkuenfte = positive Summe der Nicht-nsA-Einkuenfte NACH den Ausschluessen des Satzes 2 (Versorgungsbezuege § 19 Abs. 2, Leibrenten § 22 Nr. 1a u.a.). Die Filterung braucht den Einkunftsarten-Kontext der § 2-Integration; hier kommt der Netto-Wert herein.'
+  - bedingung: alter_64_vor_bezugsjahr_vollendet
+    deckt_ab: das 64. Lebensjahr vollendet hatte
+    quelle: § 24a Satz 3 EStG
+    beschreibung: 'Anspruchsvoraussetzung (Anwendbarkeit, nicht output-variierend): der Steuerpflichtige muss das 64. Lebensjahr VOR Beginn des Kalenderjahres vollendet haben. Auswahl/Anwendbarkeit in der § 2-Integration.'
+  rundung: []
+  signature:
+    scope: Altersentlastungsbetrag
+    inputs:
+      arbeitslohn: money
+      positive_andere_einkuenfte: money
+      prozentsatz: decimal
+      hoechstbetrag: money
+    output: altersentlastungsbetrag
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p24a_2026-07-13.txt
+    zitatanker: Der Altersentlastungsbetrag ist bis zu einem Höchstbetrag
+    herkunft: synthetisch
+    rechenweg: 'Kohorte 2026 (Folgejahr 2026 -> 12,8 % / Hoechst 608). Bemessung Arbeitslohn 2.000 + andere 1.000 = 3.000. 0,128 * 3.000 = 384,00 < 608 -> 384,00.'
+    inputs: {arbeitslohn: 2000, positive_andere_einkuenfte: 1000, prozentsatz: 12.8, hoechstbetrag: 608}
+    expected: 384.0
+  - quelle: sources/gesetze-im-internet/estg_p24a_2026-07-13.txt
+    zitatanker: Der Altersentlastungsbetrag ist bis zu einem Höchstbetrag
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Kappung: Kohorte 2026 (12,8 % / 608), Bemessung 8.000 + 2.000 = 10.000. 0,128 * 10.000 = 1.280 > 608 -> Hoechstbetrag 608,00.'
+    inputs: {arbeitslohn: 8000, positive_andere_einkuenfte: 2000, prozentsatz: 12.8, hoechstbetrag: 608}
+    expected: 608.0
+  - quelle: sources/gesetze-im-internet/estg_p24a_2026-07-13.txt
+    zitatanker: Der Altersentlastungsbetrag ist bis zu einem Höchstbetrag
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Alt-Kohorte 2005 (40,0 % / 1.900). Bemessung 3.000. 0,40 * 3.000 = 1.200,00 < 1.900 -> 1.200,00.'
+    inputs: {arbeitslohn: 3000, positive_andere_einkuenfte: 0, prozentsatz: 40.0, hoechstbetrag: 1900}
+    expected: 1200.0
+  - quelle: sources/gesetze-im-internet/estg_p24a_2026-07-13.txt
+    zitatanker: Der Altersentlastungsbetrag ist bis zu einem Höchstbetrag
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Auslauf-Kohorte 2058 (0,0 % / 0). Bemessung 5.000. 0,0 * 5.000 = 0 -> min(0; 0) = 0,00.'
+    inputs: {arbeitslohn: 5000, positive_andere_einkuenfte: 0, prozentsatz: 0.0, hoechstbetrag: 0}
+    expected: 0.0
+  raster:
+  - {arbeitslohn: 2000, positive_andere_einkuenfte: 1000, prozentsatz: 12.8, hoechstbetrag: 608}
+  - {arbeitslohn: 8000, positive_andere_einkuenfte: 2000, prozentsatz: 12.8, hoechstbetrag: 608}
+  - {arbeitslohn: 3000, positive_andere_einkuenfte: 0, prozentsatz: 40.0, hoechstbetrag: 1900}
+  - {arbeitslohn: 5000, positive_andere_einkuenfte: 0, prozentsatz: 0.0, hoechstbetrag: 0}

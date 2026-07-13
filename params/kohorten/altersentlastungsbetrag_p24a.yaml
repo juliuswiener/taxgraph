@@ -1,0 +1,67 @@
+# § 24a EStG Altersentlastungsbetrag - Kohorten-Staffel (Prozentsatz + Hoechstbetrag).
+# NICHT vz-versioniert: der Wert haengt am 'auf die Vollendung des 64. Lebensjahres
+# folgenden Kalenderjahr' (Kohorte) und gilt lebenslang fix. Quelle: § 24a Satz 5 Tabelle.
+# Aus dem Freeze geparst (nicht hand-transkribiert), gegen bekannte Anker validiert.
+parameter: altersentlastungsbetrag_kohorten
+authority: gesetz
+redistributable: true
+rechtsquelle: {gesetz: EStG, paragraph: '24a', satz: '5', tabelle: 'Folgejahr-Kohorten-Staffel'}
+datenquelle: 'sources/gesetze-im-internet/estg_p24a_2026-07-13.txt (sha256 6e426c9f, § 24a Satz 5 Tabelle)'
+einheit: {prozentsatz: prozent, hoechstbetrag: euro}
+
+# Schluessel = massgebendes_folgejahr (Jahr nach Vollendung des 64. Lebensjahres).
+kohorten:
+  2005: {prozentsatz: 40.0, hoechstbetrag: 1900}
+  2006: {prozentsatz: 38.4, hoechstbetrag: 1824}
+  2007: {prozentsatz: 36.8, hoechstbetrag: 1748}
+  2008: {prozentsatz: 35.2, hoechstbetrag: 1672}
+  2009: {prozentsatz: 33.6, hoechstbetrag: 1596}
+  2010: {prozentsatz: 32.0, hoechstbetrag: 1520}
+  2011: {prozentsatz: 30.4, hoechstbetrag: 1444}
+  2012: {prozentsatz: 28.8, hoechstbetrag: 1368}
+  2013: {prozentsatz: 27.2, hoechstbetrag: 1292}
+  2014: {prozentsatz: 25.6, hoechstbetrag: 1216}
+  2015: {prozentsatz: 24.0, hoechstbetrag: 1140}
+  2016: {prozentsatz: 22.4, hoechstbetrag: 1064}
+  2017: {prozentsatz: 20.8, hoechstbetrag: 988}
+  2018: {prozentsatz: 19.2, hoechstbetrag: 912}
+  2019: {prozentsatz: 17.6, hoechstbetrag: 836}
+  2020: {prozentsatz: 16.0, hoechstbetrag: 760}
+  2021: {prozentsatz: 15.2, hoechstbetrag: 722}
+  2022: {prozentsatz: 14.4, hoechstbetrag: 684}
+  2023: {prozentsatz: 14.0, hoechstbetrag: 665}
+  2024: {prozentsatz: 13.6, hoechstbetrag: 646}
+  2025: {prozentsatz: 13.2, hoechstbetrag: 627}
+  2026: {prozentsatz: 12.8, hoechstbetrag: 608}
+  2027: {prozentsatz: 12.4, hoechstbetrag: 589}
+  2028: {prozentsatz: 12.0, hoechstbetrag: 570}
+  2029: {prozentsatz: 11.6, hoechstbetrag: 551}
+  2030: {prozentsatz: 11.2, hoechstbetrag: 532}
+  2031: {prozentsatz: 10.8, hoechstbetrag: 513}
+  2032: {prozentsatz: 10.4, hoechstbetrag: 494}
+  2033: {prozentsatz: 10.0, hoechstbetrag: 475}
+  2034: {prozentsatz: 9.6, hoechstbetrag: 456}
+  2035: {prozentsatz: 9.2, hoechstbetrag: 437}
+  2036: {prozentsatz: 8.8, hoechstbetrag: 418}
+  2037: {prozentsatz: 8.4, hoechstbetrag: 399}
+  2038: {prozentsatz: 8.0, hoechstbetrag: 380}
+  2039: {prozentsatz: 7.6, hoechstbetrag: 361}
+  2040: {prozentsatz: 7.2, hoechstbetrag: 342}
+  2041: {prozentsatz: 6.8, hoechstbetrag: 323}
+  2042: {prozentsatz: 6.4, hoechstbetrag: 304}
+  2043: {prozentsatz: 6.0, hoechstbetrag: 285}
+  2044: {prozentsatz: 5.6, hoechstbetrag: 266}
+  2045: {prozentsatz: 5.2, hoechstbetrag: 247}
+  2046: {prozentsatz: 4.8, hoechstbetrag: 228}
+  2047: {prozentsatz: 4.4, hoechstbetrag: 209}
+  2048: {prozentsatz: 4.0, hoechstbetrag: 190}
+  2049: {prozentsatz: 3.6, hoechstbetrag: 171}
+  2050: {prozentsatz: 3.2, hoechstbetrag: 152}
+  2051: {prozentsatz: 2.8, hoechstbetrag: 133}
+  2052: {prozentsatz: 2.4, hoechstbetrag: 114}
+  2053: {prozentsatz: 2.0, hoechstbetrag: 95}
+  2054: {prozentsatz: 1.6, hoechstbetrag: 76}
+  2055: {prozentsatz: 1.2, hoechstbetrag: 57}
+  2056: {prozentsatz: 0.8, hoechstbetrag: 38}
+  2057: {prozentsatz: 0.4, hoechstbetrag: 19}
+  2058: {prozentsatz: 0.0, hoechstbetrag: 0}
