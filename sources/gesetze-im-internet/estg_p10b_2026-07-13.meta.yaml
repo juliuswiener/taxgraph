@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p10b/2026-07-13"
+  norm: "§ 10b EStG (Spenden/Mitgliedsbeitraege)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__10b.html"
+  abrufdatum: "2026-07-13"
+  datei: "estg_p10b_2026-07-13.txt"
+  sha256: "230fac4c4cc66cde39a24f72e47e4e85fa4f17ae6d4fca6d4a80afedda874d40"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Charge 5"]

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p21/2026-07-13"
+  norm: "§ 21 EStG (Vermietung und Verpachtung)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__21.html"
+  abrufdatum: "2026-07-13"
+  datei: "estg_p21_2026-07-13.txt"
+  sha256: "8a9435aedeb586ae4a9740bde39db6e919c02e75b2086cf172f0e77b8cf02863"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Charge 8 Vermietung"]

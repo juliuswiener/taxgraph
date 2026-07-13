@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p32d/2026-07-13"
+  norm: "§ 32d EStG (gesonderter Steuertarif Kapitalvermoegen)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__32d.html"
+  abrufdatum: "2026-07-13"
+  datei: "estg_p32d_2026-07-13.txt"
+  sha256: "6ad58bb52791959ff6e08a1452d49430758de2c25465596badeee2dc38843a20"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Charge 6 KAP"]
