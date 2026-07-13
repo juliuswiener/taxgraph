@@ -2356,6 +2356,10 @@ regeln:
 # Charge-6 KAP (Instructor-Freigabe 2026-07-13, reports/review/2026-07-13-charge6-kap-zuschnitt.md).
 # Kette in der § 2-Integration: C (Verlust-Toepfe) -> A (Sparer-PB) -> B (Tarifwahl).
 - rule_id: p20_6_verlustverrechnung
+  # hinweis-Kanal (Instructor-vorgeflaggt 2026-07-13, Stufe-B Lauf 1): die Topf-Trennung ist
+  # Konditional-Prosa (Hunger-Risiko). Ohne Pin baute B eine topfuebergreifende Netto-Rechnung
+  # mit negativem Ergebnis; korrekt sind ZWEI getrennte Toepfe mit Boden bei 0.
+  hinweis: 'Zwei GETRENNTE Verlust-Toepfe, jeder mit Boden bei 0 (kein negativer Saldo): saldo_aktien = wenn (gewinn_aktien - verlust_aktien) < 0 dann 0 sonst (gewinn_aktien - verlust_aktien); saldo_sonstige = wenn (gewinn_sonstige - verlust_sonstige) < 0 dann 0 sonst (gewinn_sonstige - verlust_sonstige); verrechnete_kapitaleinkuenfte = saldo_aktien + saldo_sonstige. KEINE topfuebergreifende Verrechnung (Aktienverlust mindert NUR Aktiengewinn, nie den sonstigen Topf); ein negativer Topf ist Verlustvortrag (ausserhalb dieser Regel) und wird hier als 0 behandelt.'
   norm: § 20 Abs. 6 EStG (Verlustverrechnung, getrennte Toepfe Aktien/sonstige)
   quellen:
   - typ: gesetz
