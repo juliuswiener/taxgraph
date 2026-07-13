@@ -1,0 +1,42 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10a_sonderausgabenabzug
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - altersvorsorgebeitraege
+  - interpretation
+  formulierungen:
+  - Altersvorsorgebeiträge werden als Geldbetrag ohne weitere Bedingungen interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - zulage_anspruch
+  - interpretation
+  formulierungen:
+  - Zulageanspruch wird als Geldbetrag ohne weitere Bedingungen interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - einheit
+  formulierungen:
+  - Der Höchstbetrag wird als 2.100,00 Euro in Geld interpretiert.
+  - Der Höchstbetrag wird als exakt 2100 Euro ohne Rundung angenommen.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 10a abs. 1 s. 1 estg
+  formulierungen:
+  - In der inländischen gesetzlichen Rentenversicherung Pflichtversicherte können
+  - Altersvorsorgebeiträge (§ 82) zuzüglich der dafür nach Abschnitt XI zustehenden
+    Zulage
+  - jährlich bis zu 2 100 Euro als Sonderausgaben abziehen
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein

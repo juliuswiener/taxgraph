@@ -1,0 +1,107 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p8x_zulage_anspruch
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die berufseinsteigerzulage wird ohne pruefung des alters zu beginn des beitragsjahres
+    gewaehrt.
+  formulierungen:
+  - 'mistral-Falschpositiv (Instructor-Adjudikation msg1687, Freeze/Seed-widerlegt):
+    Die Berufseinsteigerzulage wird ohne Prüfung des Alters zu Beginn des Beitragsjahres
+    gewährt.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die berufseinsteiger-zulage wird nicht auf das erste beitragsjahr beschraenkt.
+  formulierungen:
+  - 'mistral-Falschpositiv (Instructor-Adjudikation msg1687, Freeze/Seed-widerlegt):
+    Die Berufseinsteiger-Zulage wird nicht auf das erste Beitragsjahr beschränkt.'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ist_berufseinsteiger_erstjahr
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die Berufseinsteiger-Zulage gilt nur im ersten Beitragsjahr.
+  - Es wird angenommen, dass der Zulageberechtigte die Voraussetzungen nach § 79 Satz
+    1 erfüllt.
+  triage: bedingung_neu
+  bedingung: unmittelbar_zulageberechtigt_p79s1
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder_geboren_vor_2008
+  - einheit
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation. Die Anzahl der Kinder wird als
+    Dezimalzahl interpretiert.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder_geboren_ab_2008
+  - einheit
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation. Die Anzahl der Kinder wird als
+    Dezimalzahl interpretiert.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder_geboren_vor_2008
+  - geltungsvoraussetzung
+  formulierungen:
+  - Annahme, dass Kindergeld für diese Kinder festgesetzt ist.
+  triage: bedingung_neu
+  bedingung: kindergeld_festgesetzt_nicht_zurueckgefordert
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzahl_kinder_geboren_ab_2008
+  - geltungsvoraussetzung
+  formulierungen:
+  - Annahme, dass Kindergeld für diese Kinder festgesetzt ist.
+  triage: bedingung_neu
+  bedingung: kindergeld_festgesetzt_nicht_zurueckgefordert
+- art: norm_teil
+  anker:
+  - ref
+  - § 84 s. 2 estg
+  formulierungen:
+  - die zu Beginn des Beitragsjahres (§ 88) das 25. Lebensjahr noch nicht vollendet
+    haben
+  - erhöht sich die Grundzulage nach Satz 1 um einmalig 200 Euro
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: berufseinsteiger_erstmalig
+- art: norm_teil
+  anker:
+  - ref
+  - § 85 abs. 1 s. 1 estg
+  formulierungen:
+  - für das gegenüber dem Zulageberechtigten Kindergeld festgesetzt wird
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kindergeld_festgesetzt_nicht_zurueckgefordert
+- art: norm_teil
+  anker:
+  - ref
+  - § 84 s. 1 estg
+  formulierungen:
+  - ab dem Beitragsjahr 2018 jährlich 175 Euro
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 85 abs. 1 s. 2 estg
+  formulierungen:
+  - Für ein nach dem 31. Dezember 2007 geborenes Kind
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein

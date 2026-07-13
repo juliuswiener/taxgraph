@@ -97,8 +97,8 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 | Verlustabzug (Vortrag) | § 10d Abs. 2 | ✅ | p10d_2_verlustvortrag_abzug (Charge 9, verified_bedingt; Abs. 1 Rücktrag = Nicht-Gegenstand) |
 | Altersentlastungsbetrag | § 24a | ✅ | p24a_altersentlastungsbetrag (Charge 5, Kohorten-params, verified_bedingt) |
 
-### Spezial-Anlagen / Förderung — 🟡 (1/4)
-| Riester / Altersvorsorgezulage (Anlage AV) | § 10a, § 79 ff. | ⬜ | — (Charge 11 geplant) |
+### Spezial-Anlagen / Förderung — 🟡 (2/4)
+| Riester / Altersvorsorgezulage (Anlage AV) | § 10a, § 79 ff. | ✅ | p8x_zulage_anspruch + p86_mindesteigenbeitrag + p86_zulage_kuerzung + p10a_sonderausgabenabzug + p10a_guenstigerpruefung — Charge 11, verified_bedingt (Zulage §§83-86 + §10a SA/Günstigerprüfung) |
 | Energetische Maßnahmen (Anlage Energ.) | § 35c | ✅ | p35c_sanierung_ermaessigung (7/6 %-Staffel) + p35c_energieberater_ermaessigung (50 %-Sondersatz) — Charge 10, verified_bedingt |
 | Mobilitätsprämie | §§ 101 ff. | ⬜ | — |
 | Wohneigentumsförderung (Anlage FW) | § 10e/10f/10g | ⬜ (überw. Altfälle) | — |
@@ -129,6 +129,14 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 - **§ 21 Abs. 2 Korridor 50–< 66 % (Totalüberschussprognose)** — die Aufteilungsentscheidung im
   Zwischenband hängt an der BMF-Prognose, kein Norm-Wortlaut → benannter Nachtrag; Regel deckt
   quote < 50 (anteilig) und quote ≥ 66 (voll).
+- **Riester § 10a Abs. 2 Hinzurechnung voll vs. bereinigt** — ob die Hinzurechnung des Zulage­anspruchs
+  zur tariflichen ESt den vollen Anspruch (inkl. § 84-S 2-Erhöhung 200 €) oder den bereinigten Wert
+  nimmt, ist wortlaut-offen (Abs 1 S 5 bereinigt nur die Günstigerprüfung selbst) → benannter Nachtrag
+  (BMF), NICHT stillschweigend in der Integration entschieden.
+- **Riester Berufseinsteiger-Einmaligkeit** (§ 84 S 2/3) = Einmal-im-Leben-State (40k-Präzedenz),
+  bool-Input; **Ehegatten-Übertragung / mittelbar Zulageberechtigte** (§ 10a Abs 3, § 79 S 2, § 86
+  Abs 1 S 2 Hs 2, § 85 Abs 2), **ausländische Alterssicherung** (§ 10a Abs 6, § 86 Abs 5),
+  **Landwirte** (§ 86 Abs 3), **§ 86 Abs 2 Entgelt-Sonderfälle** = Nicht-Gegenstand/Nachträge.
 
 ## Startmarke (auditierbar)
 AN-Kern-Blöcke (Mantel 5 + N-WK 7 + N-DHF 1 + Vorsorge 2 + Haushaltsnahe 1 + Familie-Kern 2 +
@@ -147,8 +155,10 @@ Negativ-Durchreichung) verified_bedingt → 33/40. Charge 9 (§34 Fuenftelregelu
 + §10d Abs2 Verlustvortrag-Hoechstbetrag 70%) verified_bedingt → 35/40 ≈ 87,5 %. Damit ist
 die Tarif-Mechanismen-Gruppe (§32b/§34/§10d/§24a) auf 4/4 geschlossen. Charge 10 (§35c energetisch
 7/6%-Staffel + Energieberater-50%-Sondersatz, §21 Abs2 verbilligte Vermietung) verified_bedingt →
-**36/40 ≈ 90 %** (Foerderungs-Gruppe geoeffnet 1/4; §21-Abs2-Nachtrag schliesst benannte
-Vermietungs-Luecke).
+36/40 ≈ 90 % (Foerderungs-Gruppe geoeffnet 1/4; §21-Abs2-Nachtrag schliesst benannte
+Vermietungs-Luecke). Charge 11 Riester (§10a SA-Abzug + Guenstigerpruefung, §§83-86 Zulage:
+Grund/Kinder/Berufseinsteiger + Mindesteigenbeitrag 4% + Kuerzung; 5 Regeln, Andockung §31/§34)
+verified_bedingt → **37/40 ≈ 92,5 %** (Foerderungs-Gruppe 2/4).
 
 **AN-Kern: die 🟡-Lücken (Kind, Sonderausgaben, agB) sind mit Charge 5 auf 4/4 geschlossen -
 der AN-Kern ist damit auf echte ~100 %.** Judge-Nachzug erledigt (2026-07-13, neuer Judge

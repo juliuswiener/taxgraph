@@ -1,0 +1,126 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p86_mindesteigenbeitrag
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - sockelbetrag (60€) wird nicht als mindestwert beruecksichtigt, wenn er hoeher
+    als der berechnete mindesteigenbeitrag ist.
+  formulierungen:
+  - 'mistral-Falschpositiv (Instructor-Adjudikation msg1687, Freeze/Seed-widerlegt):
+    Sockelbetrag (60€) wird nicht als Mindestwert berücksichtigt, wenn er höher als
+    der berechnete Mindesteigenbeitrag ist.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - berechnung verwendet 4% der vorjahres-einnahmen, nicht der vorjahres-summe.
+  formulierungen:
+  - 'konv:summe_der_4_posten_aggregiert - WAHRE Beobachtung aber immateriell (Instructor
+    msg1687 Item4): vorjahres_einnahmen ist die aggregierte Summe §86 Abs1 S2 Nr1-4,
+    Aggregation=§2-Integration. Berechnung verwendet 4% der Vorjahres-Einnahmen, nicht
+    der Vorjahres-Summe.'
+  triage: nicht_material
+- art: abweichung
+  anker:
+  - abweichung_text
+  - sockelbetrag wird nicht explizit als mindesteigenbeitrag gesetzt, falls er hoeher
+    als nach_zulage ist.
+  formulierungen:
+  - 'mistral-Falschpositiv (Instructor-Adjudikation msg1687, Freeze/Seed-widerlegt):
+    Sockelbetrag wird nicht explizit als Mindesteigenbeitrag gesetzt, falls er höher
+    als nach_zulage ist.'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - vorjahres_einnahmen
+  - interpretation
+  formulierungen:
+  - Vorjahres-Einnahmen werden als Vorjahres-Summe interpretiert.
+  triage: bedingung_neu
+  bedingung: vorjahres_einnahmen_beitragspflichtig
+- art: annahme
+  anker:
+  - betrifft_kat
+  - zulage_anspruch
+  - interpretation
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation. Zulage-Anspruch wird als Summe
+    der Zulagen nach §§ 84 und 85 interpretiert.'
+  - Zulage-Anspruch wird als positiver Geldbetrag angenommen.
+  - 'konv: Input-Etikett/normkonforme Interpretation. Zulage wird als direkter Abzug
+    vom gedeckelten Betrag behandelt.'
+  - 'konv: Input-Etikett/normkonforme Interpretation. Zulage_anspruch wird als Betrag
+    nach §§ 84 und 85 EStG gelesen.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - einheit
+  formulierungen:
+  - Höchstbetrag wird als 2100€ (brutto) angenommen.
+  - Sockelbetrag von 60 wird als 60.00 Euro angenommen.
+  - Mindestbeitrag wird in Euro berechnet.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Keine Rundung der 4%-Berechnung oder Endergebnisse.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - vorjahres_einnahmen
+  - einheit
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation. Vorjahres-Einnahmen werden als
+    Bruttobetrag interpretiert.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation. Sockelbetrag gilt ab 2005 als
+    fest vorgegeben.'
+  - 'konv: Input-Etikett/normkonforme Interpretation. Annahme, dass der Sockelbetrag
+    ab 2005 immer 60 Euro beträgt.'
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 86 abs. 1 s. 4-5 estg
+  formulierungen:
+  - Als Sockelbetrag sind ab dem Jahr 2005 jährlich 60 Euro zu leisten.
+  - Ist der Sockelbetrag höher als der Mindesteigenbeitrag nach Satz 2, so ist der
+    Sockelbetrag als Mindesteigenbeitrag zu leisten.
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 86 abs. 1 s. 5 estg
+  formulierungen:
+  - Ist der Sockelbetrag höher als der Mindesteigenbeitrag nach Satz 2, so ist der
+    Sockelbetrag als Mindesteigenbeitrag zu leisten.
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 86 abs. 1 s. 2 estg
+  formulierungen:
+  - 4 Prozent der Summe der in dem dem Kalenderjahr vorangegangenen Kalenderjahr
+  - jedoch nicht mehr als der in § 10a Absatz 1 Satz 1 genannte Höchstbetrag, vermindert
+    um die Zulage nach den §§ 84 und 85
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein

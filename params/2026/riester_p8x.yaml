@@ -1,0 +1,19 @@
+# Riester-Zulage + Sonderausgabenabzug §§ 10a, 83-86 EStG - Norm-Konstanten (Referenz-Doku).
+# Veranlagungszeitraum/Beitragsjahr 2026, aus eingefrorenen Quellen (sources/). Die Regeln in
+# rules.yaml hardcoden diese Konstanten (Konstanten-Doktrin: Norm-Werte sind KEINE Signatur-Inputs);
+# diese Datei ist der Audit-Anker mit Rechtsquelle, nicht maschinell von den Gates gelesen.
+
+parameter: riester_p8x
+veranlagungszeitraum: 2026
+authority: gesetz
+redistributable: true
+gueltig_ab: "2026-01-01"
+
+werte:
+  grundzulage:            {wert: 175,  einheit: euro, rechtsquelle: {gesetz: EStG, paragraph: "84",  satz: "1"}, hinweis: "ab Beitragsjahr 2018"}
+  berufseinsteiger_bonus: {wert: 200,  einheit: euro, rechtsquelle: {gesetz: EStG, paragraph: "84",  satz: "2"}, hinweis: "einmalig, < 25 J zu Beitragsjahresbeginn"}
+  kinderzulage_vor_2008:  {wert: 185,  einheit: euro, rechtsquelle: {gesetz: EStG, paragraph: "85",  satz: "1"}, hinweis: "Kind geboren vor 01.01.2008"}
+  kinderzulage_ab_2008:   {wert: 300,  einheit: euro, rechtsquelle: {gesetz: EStG, paragraph: "85",  satz: "2"}, hinweis: "Kind geboren nach 31.12.2007"}
+  sockelbetrag:           {wert: 60,   einheit: euro, rechtsquelle: {gesetz: EStG, paragraph: "86",  satz: "4"}, hinweis: "ab 2005"}
+  hoechstbetrag:          {wert: 2100, einheit: euro, rechtsquelle: {gesetz: EStG, paragraph: "10a", absatz: "1", satz: "1"}}
+  mindesteigenbeitrag_prozent: {wert: 4, einheit: prozent, rechtsquelle: {gesetz: EStG, paragraph: "86", absatz: "1", satz: "2"}}

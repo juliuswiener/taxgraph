@@ -3069,3 +3069,390 @@ regeln:
     entgelt_quote_prozent: 40
   - werbungskosten: 9000
     entgelt_quote_prozent: 30
+- rule_id: p8x_zulage_anspruch
+  hinweis: zulage_anspruch = 175 + (wenn ist_berufseinsteiger_erstjahr dann 200 sonst 0) + anzahl_kinder_geboren_vor_2008 * 185 + anzahl_kinder_geboren_ab_2008 * 300. Alle Betraege sind feste Norm-Konstanten (Grundzulage 175 § 84 S1, Berufseinsteiger 200 § 84 S2, Kinderzulage 185 § 85 S1 / 300 § 85 S2 fuer nach 31.12.2007 geborene Kinder). Zulage VOR § 86-Kuerzung.
+  norm: '§§ 83, 84, 85 EStG (Altersvorsorgezulage: Grund- + Kinderzulage vor Kuerzung)'
+  quellen:
+  - typ: gesetz
+    label: § 84 S. 1 EStG (Grundzulage 175)
+    datei: sources/gesetze-im-internet/estg_p84_2026-07-13.txt
+    zitatanker: Jeder Zulageberechtigte erhält eine Grundzulage; diese beträgt ab dem Beitragsjahr 2018 jährlich 175 Euro.
+    auszug: Jeder Zulageberechtigte erhält eine Grundzulage; diese beträgt ab dem Beitragsjahr 2018 jährlich 175 Euro.
+  - typ: gesetz
+    label: § 84 S. 2 EStG (Berufseinsteiger +200)
+    datei: sources/gesetze-im-internet/estg_p84_2026-07-13.txt
+    zitatanker: erhöht sich die Grundzulage nach Satz 1 um einmalig 200 Euro
+    auszug: Für Zulageberechtigte nach § 79 Satz 1, die zu Beginn des Beitragsjahres (§ 88) das 25. Lebensjahr noch nicht vollendet haben, erhöht sich die Grundzulage nach Satz 1 um einmalig 200 Euro.
+  - typ: gesetz
+    label: § 85 Abs. 1 S. 1-2 EStG (Kinderzulage 185/300)
+    datei: sources/gesetze-im-internet/estg_p85_2026-07-13.txt
+    zitatanker: jährlich 185 Euro
+    auszug: Die Kinderzulage beträgt für jedes Kind, für das gegenüber dem Zulageberechtigten Kindergeld festgesetzt wird, jährlich 185 Euro. 2 Für ein nach dem 31. Dezember 2007 geborenes Kind erhöht sich die Kinderzulage nach Satz 1 auf 300 Euro.
+  geltungsbedingungen:
+  - bedingung: unmittelbar_zulageberechtigt_p79s1
+    deckt_ab: Jeder Zulageberechtigte erhält eine Grundzulage
+    quelle: § 79 S. 1 i.V.m. § 10a Abs. 1 EStG
+    beschreibung: 'Nur unmittelbar Zulageberechtigte (§ 79 S1: rentenversicherungspflichtige AN/Beamte etc. nach § 10a Abs1). Mittelbar Zulageberechtigte (§ 79 S2 Ehegatte) + Ehegatten-Uebertragung = Nicht-Gegenstand.'
+  - bedingung: berufseinsteiger_erstmalig
+    deckt_ab: das 25. Lebensjahr noch nicht vollendet haben
+    quelle: § 84 S. 2-3 EStG
+    beschreibung: 'Berufseinsteiger-Erhoehung 200 setzt voraus, dass der Zulageberechtigte zu Beginn des Beitragsjahres das 25. Lebensjahr noch nicht vollendet hat (§ 84 S2 woertlich); nur einmalig im ersten beantragten Beitragsjahr (§ 84 S3). Beide Voraussetzungen = Input-Semantik/State (Einmaligkeit ueber Lebenszeit = Nicht-Gegenstand, 40k-Praezedenz); hier als bool-Input ist_berufseinsteiger_erstjahr gekapselt, die Regel prueft Alter/Erstjahr nicht selbst.'
+  - bedingung: kindergeld_festgesetzt_nicht_zurueckgefordert
+    deckt_ab: für das gegenüber dem Zulageberechtigten Kindergeld festgesetzt wird
+    quelle: § 85 Abs. 1 S. 1/3 EStG
+    beschreibung: Kinderzulage nur fuer Kinder mit festgesetztem Kindergeld; entfaellt bei Kindergeld-Rueckforderung (S3). Zuordnung Elternteil (§ 85 Abs2) = Integration.
+  rundung: []
+  signature:
+    scope: ZulageAnspruch
+    inputs:
+      anzahl_kinder_geboren_vor_2008: decimal
+      anzahl_kinder_geboren_ab_2008: decimal
+      ist_berufseinsteiger_erstjahr: bool
+    output: zulage_anspruch
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p84_2026-07-13.txt
+    zitatanker: jährlich 175 Euro
+    herkunft: synthetisch
+    rechenweg: 'Basis (keine Kinder, kein Berufseinsteiger): 175 + 0 + 0 + 0 = 175,00.'
+    inputs:
+      anzahl_kinder_geboren_vor_2008: 0
+      anzahl_kinder_geboren_ab_2008: 0
+      ist_berufseinsteiger_erstjahr: false
+    expected: 175.0
+  - quelle: sources/gesetze-im-internet/estg_p85_2026-07-13.txt
+    zitatanker: jährlich 185 Euro
+    herkunft: synthetisch
+    rechenweg: '1 Kind vor 2008: 175 + 185 = 360,00.'
+    inputs:
+      anzahl_kinder_geboren_vor_2008: 1
+      anzahl_kinder_geboren_ab_2008: 0
+      ist_berufseinsteiger_erstjahr: false
+    expected: 360.0
+  - quelle: sources/gesetze-im-internet/estg_p85_2026-07-13.txt
+    zitatanker: auf 300 Euro
+    herkunft: synthetisch
+    rechenweg: '2 Kinder ab 2008: 175 + 2*300 = 775,00.'
+    inputs:
+      anzahl_kinder_geboren_vor_2008: 0
+      anzahl_kinder_geboren_ab_2008: 2
+      ist_berufseinsteiger_erstjahr: false
+    expected: 775.0
+  - quelle: sources/gesetze-im-internet/estg_p84_2026-07-13.txt
+    zitatanker: um einmalig 200 Euro
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Berufseinsteiger + 1+1 Kind: 175 + 200 + 185 + 300 = 860,00.'
+    inputs:
+      anzahl_kinder_geboren_vor_2008: 1
+      anzahl_kinder_geboren_ab_2008: 1
+      ist_berufseinsteiger_erstjahr: true
+    expected: 860.0
+  - quelle: sources/gesetze-im-internet/estg_p84_2026-07-13.txt
+    zitatanker: um einmalig 200 Euro
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER nur Berufseinsteiger: 175 + 200 = 375,00.'
+    inputs:
+      anzahl_kinder_geboren_vor_2008: 0
+      anzahl_kinder_geboren_ab_2008: 0
+      ist_berufseinsteiger_erstjahr: true
+    expected: 375.0
+  raster:
+  - anzahl_kinder_geboren_vor_2008: 0
+    anzahl_kinder_geboren_ab_2008: 0
+    ist_berufseinsteiger_erstjahr: false
+  - anzahl_kinder_geboren_vor_2008: 1
+    anzahl_kinder_geboren_ab_2008: 0
+    ist_berufseinsteiger_erstjahr: false
+  - anzahl_kinder_geboren_vor_2008: 0
+    anzahl_kinder_geboren_ab_2008: 2
+    ist_berufseinsteiger_erstjahr: false
+  - anzahl_kinder_geboren_vor_2008: 1
+    anzahl_kinder_geboren_ab_2008: 1
+    ist_berufseinsteiger_erstjahr: true
+  - anzahl_kinder_geboren_vor_2008: 0
+    anzahl_kinder_geboren_ab_2008: 0
+    ist_berufseinsteiger_erstjahr: true
+- rule_id: p86_mindesteigenbeitrag
+  hinweis: 'mindesteigenbeitrag = max( min((4/100) * vorjahres_einnahmen, 2100) - zulage_anspruch, 60 ). 4 ist PROZENTWERT -> /100 in decimal, Cent-Schnitt zuletzt. 2100 = Hoechstbetrag § 10a Abs1 S1 (Deckel auf die 4%-Bemessung). Abzug der Zulage nach §§ 84/85 (= zulage_anspruch). Aeusseres max(...,60) = Sockelbetrag-hoeher-Regel (§ 86 Abs1 S5, an-die-Stelle-Sondersatz): Mindesteigenbeitrag ist nie kleiner als 60. vorjahres_einnahmen = Sachverhalts-Input (Vorjahres-Faktum, kein State).'
+  norm: '§ 86 Abs. 1 EStG (Mindesteigenbeitrag: 4 % Vorjahr, Deckel 2100, minus Zulage, Sockel 60)'
+  quellen:
+  - typ: gesetz
+    label: § 86 Abs. 1 S. 2 EStG (4 % der Vorjahres-Summe)
+    datei: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: Dieser beträgt jährlich 4 Prozent der Summe der in dem dem Kalenderjahr vorangegangenen Kalenderjahr
+    auszug: Dieser beträgt jährlich 4 Prozent der Summe der in dem dem Kalenderjahr vorangegangenen Kalenderjahr
+  - typ: gesetz
+    label: § 86 Abs. 1 S. 2 EStG (Deckel 2100 minus Zulage)
+    datei: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: jedoch nicht mehr als der in § 10a Absatz 1 Satz 1 genannte Höchstbetrag, vermindert um die Zulage nach den §§ 84 und 85
+    auszug: jedoch nicht mehr als der in § 10a Absatz 1 Satz 1 genannte Höchstbetrag, vermindert um die Zulage nach den §§ 84 und 85
+  - typ: gesetz
+    label: § 86 Abs. 1 S. 4-5 EStG (Sockel 60, Sockel-hoeher)
+    datei: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: Als Sockelbetrag sind ab dem Jahr 2005 jährlich 60 Euro zu leisten.
+    auszug: Als Sockelbetrag sind ab dem Jahr 2005 jährlich 60 Euro zu leisten. 5 Ist der Sockelbetrag höher als der Mindesteigenbeitrag nach Satz 2, so ist der Sockelbetrag als Mindesteigenbeitrag zu leisten.
+  geltungsbedingungen:
+  - bedingung: vorjahres_einnahmen_beitragspflichtig
+    deckt_ab: 4 Prozent der Summe der in dem dem Kalenderjahr vorangegangenen Kalenderjahr
+    quelle: § 86 Abs. 1 S. 2 EStG
+    beschreibung: 'vorjahres_einnahmen = die SUMME der vier Posten nach § 86 Abs1 S2 Nr1-4 (beitragspflichtige Einnahmen SGB VI + bezogene Besoldung/Amtsbezuege + Einnahmen § 10a Abs1 S1 Nr3/4 + bezogene Erwerbsminderungs-/Dienstunfaehigkeitsrente) des Vorjahres. Die Aggregation der vier Posten erfolgt in der § 2-Integration; vorjahres_einnahmen ist der bereits aggregierte Summenwert (die Regel summiert nicht selbst - konv, Instructor-Adjudikation msg1687 Item 4). Landwirte (Abs3), Auslandsbezug (Abs5), Entgelt-Sonderfaelle (Abs2 S2-3) = Nicht-Gegenstand.'
+  rundung: []
+  signature:
+    scope: Mindesteigenbeitrag
+    inputs:
+      vorjahres_einnahmen: money
+      zulage_anspruch: money
+    output: mindesteigenbeitrag
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: 4 Prozent der Summe der in dem dem Kalenderjahr vorangegangenen Kalenderjahr
+    herkunft: synthetisch
+    rechenweg: '4% unter Deckel: min(0,04x30.000=1.200, 2.100)=1.200; 1.200-175=1.025; max(1.025,60)=1.025,00.'
+    inputs:
+      vorjahres_einnahmen: 30000
+      zulage_anspruch: 175
+    expected: 1025.0
+  - quelle: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: jedoch nicht mehr als der in § 10a Absatz 1 Satz 1 genannte Höchstbetrag, vermindert um die Zulage nach den §§ 84 und 85
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER 4%-DECKEL (>52.500): min(0,04x60.000=2.400, 2.100)=2.100; 2.100-175=1.925,00.'
+    inputs:
+      vorjahres_einnahmen: 60000
+      zulage_anspruch: 175
+    expected: 1925.0
+  - quelle: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: Als Sockelbetrag sind ab dem Jahr 2005 jährlich 60 Euro zu leisten.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER SOCKEL-GRIFF: min(0,04x5.000=200, 2.100)=200; 200-775=-575; max(-575,60)=60,00.'
+    inputs:
+      vorjahres_einnahmen: 5000
+      zulage_anspruch: 775
+    expected: 60.0
+  - quelle: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: 4 Prozent der Summe der in dem dem Kalenderjahr vorangegangenen Kalenderjahr
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER ohne Zulage: min(1.200,2.100)-0=1.200,00.'
+    inputs:
+      vorjahres_einnahmen: 30000
+      zulage_anspruch: 0
+    expected: 1200.0
+  raster:
+  - vorjahres_einnahmen: 30000
+    zulage_anspruch: 175
+  - vorjahres_einnahmen: 60000
+    zulage_anspruch: 175
+  - vorjahres_einnahmen: 5000
+    zulage_anspruch: 775
+  - vorjahres_einnahmen: 30000
+    zulage_anspruch: 0
+- rule_id: p86_zulage_kuerzung
+  hinweis: 'gewaehrte_zulage = zulage_anspruch * min(1, altersvorsorgebeitraege / mindesteigenbeitrag). KLASSE 5 PRAEZISION: zulage_anspruch (money) * Quote (decimal) - die Quote (beitraege/mindesteigenbeitrag) in decimal rechnen, dann multiplizieren, Cent-Schnitt ZULETZT. Quote auf 1 gekappt: voller Eigenbeitrag (>= Mindesteigenbeitrag) -> volle Zulage. § 86 Abs1 S6.'
+  norm: § 86 Abs. 1 S. 6 EStG (Zulage-Kuerzung nach Beitrags-Verhaeltnis)
+  quellen:
+  - typ: gesetz
+    label: § 86 Abs. 1 S. 6 EStG (Kuerzungs-Verhaeltnis)
+    datei: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: Die Kürzung der Zulage ermittelt sich nach dem Verhältnis der Altersvorsorgebeiträge zum Mindesteigenbeitrag.
+    auszug: Die Kürzung der Zulage ermittelt sich nach dem Verhältnis der Altersvorsorgebeiträge zum Mindesteigenbeitrag.
+  geltungsbedingungen:
+  - bedingung: mindesteigenbeitrag_positiv
+    deckt_ab: nach dem Verhältnis der Altersvorsorgebeiträge zum Mindesteigenbeitrag
+    quelle: § 86 Abs. 1 S. 5-6 EStG
+    beschreibung: mindesteigenbeitrag > 0 (durch Sockel 60 stets erfuellt, § 86 Abs1 S5). Quote = beitraege/mindesteigenbeitrag, auf 1 gekappt.
+  rundung: []
+  signature:
+    scope: ZulageKuerzung
+    inputs:
+      zulage_anspruch: money
+      altersvorsorgebeitraege: money
+      mindesteigenbeitrag: money
+    output: gewaehrte_zulage
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: Die Kürzung der Zulage ermittelt sich nach dem Verhältnis der Altersvorsorgebeiträge zum Mindesteigenbeitrag.
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL beitrag=mindest exakt: min(1, 1.000/1.000=1)=1; 360x1=360,00 (volle Zulage).'
+    inputs:
+      zulage_anspruch: 360
+      altersvorsorgebeitraege: 1000
+      mindesteigenbeitrag: 1000
+    expected: 360.0
+  - quelle: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: Die Kürzung der Zulage ermittelt sich nach dem Verhältnis der Altersvorsorgebeiträge zum Mindesteigenbeitrag.
+    herkunft: synthetisch
+    rechenweg: 'Anteilige Kuerzung: min(1, 500/1.000=0,5)=0,5; 360x0,5=180,00.'
+    inputs:
+      zulage_anspruch: 360
+      altersvorsorgebeitraege: 500
+      mindesteigenbeitrag: 1000
+    expected: 180.0
+  - quelle: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: Die Kürzung der Zulage ermittelt sich nach dem Verhältnis der Altersvorsorgebeiträge zum Mindesteigenbeitrag.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER beitrag=0: 360 x 0 = 0,00.'
+    inputs:
+      zulage_anspruch: 360
+      altersvorsorgebeitraege: 0
+      mindesteigenbeitrag: 1000
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p86_2026-07-13.txt
+    zitatanker: Die Kürzung der Zulage ermittelt sich nach dem Verhältnis der Altersvorsorgebeiträge zum Mindesteigenbeitrag.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER ueber-Mindest (Kappung auf 1): min(1, 2.000/1.000=2)=1; 775x1=775,00.'
+    inputs:
+      zulage_anspruch: 775
+      altersvorsorgebeitraege: 2000
+      mindesteigenbeitrag: 1000
+    expected: 775.0
+  raster:
+  - zulage_anspruch: 360
+    altersvorsorgebeitraege: 1000
+    mindesteigenbeitrag: 1000
+  - zulage_anspruch: 360
+    altersvorsorgebeitraege: 500
+    mindesteigenbeitrag: 1000
+  - zulage_anspruch: 360
+    altersvorsorgebeitraege: 0
+    mindesteigenbeitrag: 1000
+  - zulage_anspruch: 775
+    altersvorsorgebeitraege: 2000
+    mindesteigenbeitrag: 1000
+- rule_id: p10a_sonderausgabenabzug
+  hinweis: sonderausgabenabzug = min(altersvorsorgebeitraege + zulage_anspruch, 2100). 2100 = fester Hoechstbetrag § 10a Abs1 S1 (Norm-Konstante). Eigenbeitraege + zustehende Zulage, gedeckelt.
+  norm: § 10a Abs. 1 S. 1 EStG (Sonderausgabenabzug bis 2100)
+  quellen:
+  - typ: gesetz
+    label: § 10a Abs. 1 S. 1 EStG (Hoechstbetrag 2100)
+    datei: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: zuzüglich der dafür nach Abschnitt XI zustehenden Zulage jährlich bis zu 2 100 Euro als Sonderausgaben abziehen
+    auszug: In der inländischen gesetzlichen Rentenversicherung Pflichtversicherte können Altersvorsorgebeiträge (§ 82) zuzüglich der dafür nach Abschnitt XI zustehenden Zulage jährlich bis zu 2 100 Euro als Sonderausgaben abziehen
+  geltungsbedingungen:
+  - bedingung: unmittelbar_zulageberechtigt_p79s1
+    deckt_ab: In der inländischen gesetzlichen Rentenversicherung Pflichtversicherte
+    quelle: § 10a Abs. 1 S. 1 EStG
+    beschreibung: Nur beguenstigter Personenkreis § 10a Abs1 (Pflichtversicherte + gleichgestellte S1 Nr1-5). Ehegatten-Hoechstbetrag +60 (Abs3) + Auslandsfaelle (Abs6) = Nicht-Gegenstand.
+  rundung: []
+  signature:
+    scope: SonderausgabenabzugRiester
+    inputs:
+      altersvorsorgebeitraege: money
+      zulage_anspruch: money
+    output: sonderausgabenabzug
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: jährlich bis zu 2 100 Euro als Sonderausgaben abziehen
+    herkunft: synthetisch
+    rechenweg: 'Unter Deckel: min(1.000+360, 2.100)=1.360,00.'
+    inputs:
+      altersvorsorgebeitraege: 1000
+      zulage_anspruch: 360
+    expected: 1360.0
+  - quelle: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: jährlich bis zu 2 100 Euro als Sonderausgaben abziehen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER 2100-DECKEL: min(2.000+360=2.360, 2.100)=2.100,00.'
+    inputs:
+      altersvorsorgebeitraege: 2000
+      zulage_anspruch: 360
+    expected: 2100.0
+  - quelle: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: jährlich bis zu 2 100 Euro als Sonderausgaben abziehen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER exakt am Deckel: min(1.740+360=2.100, 2.100)=2.100,00.'
+    inputs:
+      altersvorsorgebeitraege: 1740
+      zulage_anspruch: 360
+    expected: 2100.0
+  - quelle: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: jährlich bis zu 2 100 Euro als Sonderausgaben abziehen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER null: min(0, 2.100)=0,00.'
+    inputs:
+      altersvorsorgebeitraege: 0
+      zulage_anspruch: 0
+    expected: 0.0
+  raster:
+  - altersvorsorgebeitraege: 1000
+    zulage_anspruch: 360
+  - altersvorsorgebeitraege: 2000
+    zulage_anspruch: 360
+  - altersvorsorgebeitraege: 1740
+    zulage_anspruch: 360
+  - altersvorsorgebeitraege: 0
+    zulage_anspruch: 0
+- rule_id: p10a_guenstigerpruefung
+  hinweis: 'zusaetzliche_steuerermaessigung = max(0, (est_ohne_sonderausgabenabzug - est_mit_sonderausgabenabzug) - zulageanspruch_guenstigerpruefung). BEIDE ESt-Werte sind INPUTS (Tarif-Andockung § 31/§ 34-Muster) - KEIN Selbst-Tarif. Wenn SA-Vorteil > Zulageanspruch: Differenz gewaehrt (SA guenstiger, § 10a Abs2 S1); sonst 0 (nur Zulage, Abs2 S2). Die Hinzurechnung des Zulageanspruchs zur tariflichen ESt = § 2-Integration. zulageanspruch_guenstigerpruefung = Zulage OHNE § 84-S2-Erhoehung (§ 10a Abs1 S5, kommt bereinigt als Input). NACHTRAG (wortlaut-offen, BMF): ob die HINZURECHNUNG Abs2 voll (inkl 200) oder bereinigt erfolgt - nicht in dieser Regel entschieden.'
+  norm: § 10a Abs. 2 + Abs. 4 S. 1 EStG (Guenstigerpruefung, hinausgehende Steuerermaessigung)
+  quellen:
+  - typ: gesetz
+    label: § 10a Abs. 2 S. 1-2 EStG (Guenstigerpruefung)
+    datei: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: erhöht sich die unter Berücksichtigung des Sonderausgabenabzugs ermittelte tarifliche Einkommensteuer um den Anspruch auf Zulage.
+    auszug: Ist der Sonderausgabenabzug nach Absatz 1 für den Steuerpflichtigen günstiger als der Anspruch auf die Zulage nach Abschnitt XI, erhöht sich die unter Berücksichtigung des Sonderausgabenabzugs ermittelte tarifliche Einkommensteuer um den Anspruch auf Zulage. 2 In den anderen Fällen scheidet der Sonderausgabenabzug aus.
+  - typ: gesetz
+    label: § 10a Abs. 4 S. 1 EStG (hinausgehende Steuerermaessigung)
+    datei: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: über den Zulageanspruch nach Abschnitt XI hinausgehende Steuerermäßigung gesondert fest
+    auszug: stellt das Finanzamt die über den Zulageanspruch nach Abschnitt XI hinausgehende Steuerermäßigung gesondert fest
+  geltungsbedingungen:
+  - bedingung: guenstigerpruefung_von_amts_wegen
+    deckt_ab: Die Günstigerprüfung wird von Amts wegen vorgenommen
+    quelle: § 10a Abs. 2 S. 3 EStG
+    beschreibung: 'Guenstigerpruefung von Amts wegen (kein Antrag). Ergebnis: entweder SA-Abzug + Hinzurechnung Zulage (Abs2 S1) oder nur Zulage (Abs2 S2). Diese Regel liefert die ueber den Zulageanspruch hinausgehende Ermaessigung (Abs4 S1).'
+  rundung: []
+  signature:
+    scope: GuenstigerpruefungRiester
+    inputs:
+      est_ohne_sonderausgabenabzug: money
+      est_mit_sonderausgabenabzug: money
+      zulageanspruch_guenstigerpruefung: money
+    output: zusaetzliche_steuerermaessigung
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: erhöht sich die unter Berücksichtigung des Sonderausgabenabzugs ermittelte tarifliche Einkommensteuer um den Anspruch auf Zulage.
+    herkunft: synthetisch
+    rechenweg: 'SA GUENSTIGER: (10.000-9.000)-360 = 1.000-360 = 640,00.'
+    inputs:
+      est_ohne_sonderausgabenabzug: 10000
+      est_mit_sonderausgabenabzug: 9000
+      zulageanspruch_guenstigerpruefung: 360
+    expected: 640.0
+  - quelle: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: In den anderen Fällen scheidet der Sonderausgabenabzug aus.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER ZULAGE guenstiger: (10.000-9.800)-360 = 200-360 = -160; max(0,-160)=0,00.'
+    inputs:
+      est_ohne_sonderausgabenabzug: 10000
+      est_mit_sonderausgabenabzug: 9800
+      zulageanspruch_guenstigerpruefung: 360
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: In den anderen Fällen scheidet der Sonderausgabenabzug aus.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Gleichstand: (10.000-9.640)-360 = 360-360 = 0,00.'
+    inputs:
+      est_ohne_sonderausgabenabzug: 10000
+      est_mit_sonderausgabenabzug: 9640
+      zulageanspruch_guenstigerpruefung: 360
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p10a_2026-07-13.txt
+    zitatanker: erhöht sich die unter Berücksichtigung des Sonderausgabenabzugs ermittelte tarifliche Einkommensteuer um den Anspruch auf Zulage.
+    herkunft: synthetisch
+    rechenweg: 'SA deutlich guenstiger: (12.000-10.000)-775 = 2.000-775 = 1.225,00.'
+    inputs:
+      est_ohne_sonderausgabenabzug: 12000
+      est_mit_sonderausgabenabzug: 10000
+      zulageanspruch_guenstigerpruefung: 775
+    expected: 1225.0
+  raster:
+  - est_ohne_sonderausgabenabzug: 10000
+    est_mit_sonderausgabenabzug: 9000
+    zulageanspruch_guenstigerpruefung: 360
+  - est_ohne_sonderausgabenabzug: 10000
+    est_mit_sonderausgabenabzug: 9800
+    zulageanspruch_guenstigerpruefung: 360
+  - est_ohne_sonderausgabenabzug: 10000
+    est_mit_sonderausgabenabzug: 9640
+    zulageanspruch_guenstigerpruefung: 360
+  - est_ohne_sonderausgabenabzug: 12000
+    est_mit_sonderausgabenabzug: 10000
+    zulageanspruch_guenstigerpruefung: 775

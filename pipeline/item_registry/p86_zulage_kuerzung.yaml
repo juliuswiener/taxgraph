@@ -1,0 +1,55 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p86_zulage_kuerzung
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - altersvorsorgebeitraege
+  - einheit
+  formulierungen:
+  - Altersvorsorgebeiträge werden als Geldbetrag interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - mindesteigenbeitrag
+  - einheit
+  formulierungen:
+  - Mindesteigenbeitrag wird als Geldbetrag interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - zulage_anspruch
+  - einheit
+  formulierungen:
+  - Zulageanspruch wird als Geldbetrag interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - altersvorsorgebeitraege
+  - rundung
+  formulierungen:
+  - Division wird ohne explizite Rundungsvorschrift durchgeführt.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - mindesteigenbeitrag
+  - geltungsvoraussetzung
+  formulierungen:
+  - Mindesteigenbeitrag wird als nicht null angenommen.
+  triage: bedingung_neu
+  bedingung: mindesteigenbeitrag_positiv
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewaehrte_zulage
+  - rundung
+  formulierungen:
+  - Keine Rundung der Quote oder des Ergebnisses vorgesehen.
+  triage: nicht_material

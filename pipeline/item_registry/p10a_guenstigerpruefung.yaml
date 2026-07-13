@@ -1,0 +1,69 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10a_guenstigerpruefung
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die ausgabe berechnet die differenz statt die erhoehung der tariflichen einkommensteuer
+    um den zulageanspruch.
+  formulierungen:
+  - 'mistral-Falschpositiv (Instructor-Adjudikation msg1687, Freeze/Seed-widerlegt):
+    Die Ausgabe berechnet die Differenz statt die Erhöhung der tariflichen Einkommensteuer
+    um den Zulageanspruch.'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_ohne_sonderausgabenabzug
+  - interpretation
+  formulierungen:
+  - Wird als tarifliche Einkommensteuer ohne Sonderausgabenabzug interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_mit_sonderausgabenabzug
+  - interpretation
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation. Wird als tarifliche Einkommensteuer
+    mit Sonderausgabenabzug interpretiert.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - zulageanspruch_guenstigerpruefung
+  - interpretation
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation. Wird als Anspruch auf Zulage
+    nach Abschnitt XI interpretiert.'
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 10a abs. 2 s. 1
+  formulierungen:
+  - erhöht sich die unter Berücksichtigung des Sonderausgabenabzugs ermittelte tarifliche
+    Einkommensteuer um den Anspruch auf Zulage
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 10a abs. 2 s. 2
+  formulierungen:
+  - In den anderen Fällen scheidet der Sonderausgabenabzug aus
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: guenstigerpruefung_von_amts_wegen
+- art: norm_teil
+  anker:
+  - ref
+  - § 10a abs. 4 s. 1
+  formulierungen:
+  - stellt das Finanzamt die über den Zulageanspruch nach Abschnitt XI hinausgehende
+    Steuerermäßigung gesondert fest
+  triage: nicht_material_backlog
+  klasse: unabhaengig
