@@ -2074,3 +2074,86 @@ regeln:
   - {arbeitslohn: 8000, positive_andere_einkuenfte: 2000, prozentsatz: 12.8, hoechstbetrag: 608}
   - {arbeitslohn: 3000, positive_andere_einkuenfte: 0, prozentsatz: 40.0, hoechstbetrag: 1900}
   - {arbeitslohn: 5000, positive_andere_einkuenfte: 0, prozentsatz: 0.0, hoechstbetrag: 0}
+# Charge-5 Paket B (Instructor-Freigabe 2026-07-13, reports/review/2026-07-13-charge5-paketB-p33a-p10b.md).
+- rule_id: p10b_spenden
+  norm: § 10b Abs. 1 EStG (Spenden/Mitgliedsbeitraege, 20-%-GdE-Deckel)
+  quellen:
+  - typ: gesetz
+    label: § 10b Abs. 1 S. 1 EStG (Spendenabzug bis 20 % des GdE)
+    datei: sources/gesetze-im-internet/estg_p10b_2026-07-13.txt
+    zitatanker: 20 Prozent des Gesamtbetrags der Einkünfte
+    auszug: 'Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke im Sinne der §§ 52 bis 54 der Abgabenordnung können insgesamt bis zu 1. 20 Prozent des Gesamtbetrags der Einkünfte'
+  geltungsbedingungen:
+  - bedingung: gde_ist_p2_ergebnis
+    deckt_ab: 20 Prozent des Gesamtbetrags der Einkünfte
+    quelle: § 10b Abs. 1 S. 1 i.V.m. § 2 Abs. 3 EStG
+    beschreibung: 'gesamtbetrag_der_einkuenfte ist das § 2-Ergebnis (Andockung wie § 31/§ 32b): der GdE wird in der § 2-Integration gerechnet, hier kommt er als Input herein. Der Deckel ist 20 % dieses GdE.'
+  - bedingung: nur_zwanzig_prozent_gde_deckel
+    deckt_ab: 20 Prozent des Gesamtbetrags der Einkünfte
+    quelle: § 10b Abs. 1 S. 1 Nr. 1 EStG
+    beschreibung: 'MVP-Scope: nur der 20-%-GdE-Deckel (Nr. 1). Die 4-Promille-Umsatz-Alternative (Nr. 2) ist der Betriebs-/Unternehmerfall (ausserhalb AN-nah); Vortrag (S. 9), Stiftungs-Vermoegensstock (Abs. 1a) und Parteispenden (Abs. 2, § 34g) sind eigene Zuschnitte.'
+  rundung: []
+  signature:
+    scope: SpendenAbzug
+    inputs:
+      zuwendungen: money
+      gesamtbetrag_der_einkuenfte: money
+    output: spenden_abzug
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p10b_2026-07-13.txt
+    zitatanker: 20 Prozent des Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'Zuwendungen 1.000, GdE 50.000. Deckel 0,20 x 50.000 = 10.000. min(1.000; 10.000) = 1.000,00.'
+    inputs: {zuwendungen: 1000, gesamtbetrag_der_einkuenfte: 50000}
+    expected: 1000.0
+  - quelle: sources/gesetze-im-internet/estg_p10b_2026-07-13.txt
+    zitatanker: 20 Prozent des Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Deckelung: Zuwendungen 15.000, GdE 50.000. Deckel 10.000. min(15.000; 10.000) = 10.000,00.'
+    inputs: {zuwendungen: 15000, gesamtbetrag_der_einkuenfte: 50000}
+    expected: 10000.0
+  - quelle: sources/gesetze-im-internet/estg_p10b_2026-07-13.txt
+    zitatanker: 20 Prozent des Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER GdE 0: Deckel 0 -> min(1.000; 0) = 0,00.'
+    inputs: {zuwendungen: 1000, gesamtbetrag_der_einkuenfte: 0}
+    expected: 0.0
+  raster:
+  - {zuwendungen: 1000, gesamtbetrag_der_einkuenfte: 50000}
+  - {zuwendungen: 15000, gesamtbetrag_der_einkuenfte: 50000}
+  - {zuwendungen: 1000, gesamtbetrag_der_einkuenfte: 0}
+- rule_id: p33a_ausbildungsfreibetrag
+  norm: § 33a Abs. 2 EStG (Ausbildungsfreibetrag, 1.200-Euro-Festbetrag)
+  quellen:
+  - typ: gesetz
+    label: § 33a Abs. 2 S. 1 EStG (1.200-Euro-Freibetrag)
+    datei: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: einen Freibetrag in Höhe von 1 200 Euro
+    auszug: 'Zur Abgeltung des Sonderbedarfs eines sich in Berufsausbildung befindenden, auswärtig untergebrachten, volljährigen Kindes, für das Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder Kindergeld besteht, kann der Steuerpflichtige einen Freibetrag in Höhe von 1 200 Euro je Kalenderjahr vom Gesamtbetrag der Einkünfte abziehen.'
+  geltungsbedingungen:
+  - bedingung: anspruch_ausbildung_auswaertig_volljaehrig
+    deckt_ab: einen Freibetrag in Höhe von 1 200 Euro
+    quelle: § 33a Abs. 2 S. 1 EStG
+    beschreibung: 'Rechtspraedikat: bei Anspruch (volljaehriges Kind in Berufsausbildung, auswaertig untergebracht, mit Kindergeld-/§32-Abs-6-Anspruch) -> 1.200 EUR Festbetrag, sonst 0. Zwoelftelung (Abs. 3), Halbteilung Eltern (Abs. 2 S. 4) und Kind-Anrechnung sind § 2-Integration/Sonderfall, nicht Grundbetrag.'
+  rundung: []
+  signature:
+    scope: Ausbildungsfreibetrag
+    inputs:
+      hat_anspruch: bool
+    output: ausbildungsfreibetrag
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: einen Freibetrag in Höhe von 1 200 Euro
+    herkunft: synthetisch
+    rechenweg: 'Anspruch -> 1.200.'
+    inputs: {hat_anspruch: true}
+    expected: 1200.0
+  - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
+    zitatanker: einen Freibetrag in Höhe von 1 200 Euro
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER kein Anspruch -> 0.'
+    inputs: {hat_anspruch: false}
+    expected: 0.0
+  raster:
+  - {hat_anspruch: true}
+  - {hat_anspruch: false}
