@@ -91,11 +91,11 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 | Vermietung und Verpachtung | § 21 | ⬜ Anlage V | — |
 | Sonstige Einkünfte / private Veräußerung | § 22 Nr. 2/3, § 23 | ⬜ Anlage SO | — |
 
-### Übergreifende Tarif-Mechanismen — 🟡 (1/4)
+### Übergreifende Tarif-Mechanismen — 🟡 (2/4)
 | Progressionsvorbehalt (Lohnersatz ALG/Elterngeld) | § 32b | ✅ | p32b_progressionsvorbehalt (Charge 4, verified_bedingt) |
 | Außerordentliche Einkünfte / Fünftelregelung | § 34 | ⬜ | — |
 | Verlustabzug (Rück-/Vortrag) | § 10d | ⬜ | — |
-| Altersentlastungsbetrag | § 24a | ⬜ | — |
+| Altersentlastungsbetrag | § 24a | ✅ | p24a_altersentlastungsbetrag (Charge 5, Kohorten-params, verified_bedingt) |
 
 ### Spezial-Anlagen / Förderung — ⬜ offen (0/4)
 | Riester / Altersvorsorgezulage (Anlage AV) | § 10a, § 79 ff. | ⬜ | — |
@@ -122,7 +122,8 @@ Kind 2, SA 2, agB 2, KAP/R/V/SO 4, § 32b/§ 34/§ 10d/§ 24a 4, Riester/§ 35c/
 selbst ~90 %.
 
 **Fortschritt:** Charge 4 (§ 32b) verified_bedingt → 23/40 ≈ 57 %. Charge 5 §33b-Trio
-(Behinderten-/Pflege-/Hinterbliebenen-Pauschbetrag) verified_bedingt → **24/40 ≈ 60 %**.
+(Behinderten-/Pflege-/Hinterbliebenen-Pauschbetrag) verified_bedingt → 24/40. § 24a
+Altersentlastungsbetrag (Kohorten-Muster) verified_bedingt → **25/40 ≈ 62 %**.
 
 ## Priorisierungs-Vorschlag Charge 4 ff.
 Kriterien: (a) Häufigkeit in realen AN-nahen Erklärungen, (b) § 2-Abhängigkeit (was der

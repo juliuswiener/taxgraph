@@ -1,0 +1,32 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p24a_altersentlastungsbetrag
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - prozentsatz
+  - einheit
+  formulierungen:
+  - Der Prozentsatz wird als Dezimalzahl interpretiert und durch 100 geteilt, obwohl
+    die Norm einen Prozentwert vorgibt.
+  triage: bedingung_neu
+  bedingung: prozentsatz_hoechstbetrag_aus_kohortentabelle
+- art: norm_teil
+  anker:
+  - ref
+  - § 24a satz 1
+  formulierungen:
+  - im Kalenderjahr
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 24a satz 5
+  formulierungen:
+  - der nachstehenden Tabelle zu entnehmen
+  triage: nicht_material_backlog
+  klasse: unabhaengig
