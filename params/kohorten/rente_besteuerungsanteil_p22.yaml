@@ -1,0 +1,66 @@
+# § 22 Nr. 1 S. 3 a aa EStG - Renten-Besteuerungsanteil-Kohorten (Jahr des Rentenbeginns -> %).
+# NICHT vz-versioniert: der Prozentsatz ist am Rentenbeginn fixiert und gilt lebenslang.
+# Aus dem Freeze geparst (2-Spalten-Tabelle de-interleaved) + gegen bekannte Anker validiert.
+parameter: rente_besteuerungsanteil_kohorten
+authority: gesetz
+redistributable: true
+rechtsquelle: {gesetz: EStG, paragraph: '22', nummer: '1', satz: '3', buchstabe: 'a aa'}
+datenquelle: 'sources/gesetze-im-internet/estg_p22_2026-07-13.txt (sha256 064ba262, § 22 Nr. 1 S. 3 a aa Tabelle)'
+einheit: {besteuerungsanteil_prozent: prozent}
+
+# Schluessel = Jahr des Rentenbeginns (Kohorte).
+kohorten:
+  2005: {besteuerungsanteil_prozent: 50.0}
+  2006: {besteuerungsanteil_prozent: 52.0}
+  2007: {besteuerungsanteil_prozent: 54.0}
+  2008: {besteuerungsanteil_prozent: 56.0}
+  2009: {besteuerungsanteil_prozent: 58.0}
+  2010: {besteuerungsanteil_prozent: 60.0}
+  2011: {besteuerungsanteil_prozent: 62.0}
+  2012: {besteuerungsanteil_prozent: 64.0}
+  2013: {besteuerungsanteil_prozent: 66.0}
+  2014: {besteuerungsanteil_prozent: 68.0}
+  2015: {besteuerungsanteil_prozent: 70.0}
+  2016: {besteuerungsanteil_prozent: 72.0}
+  2017: {besteuerungsanteil_prozent: 74.0}
+  2018: {besteuerungsanteil_prozent: 76.0}
+  2019: {besteuerungsanteil_prozent: 78.0}
+  2020: {besteuerungsanteil_prozent: 80.0}
+  2021: {besteuerungsanteil_prozent: 81.0}
+  2022: {besteuerungsanteil_prozent: 82.0}
+  2023: {besteuerungsanteil_prozent: 82.5}
+  2024: {besteuerungsanteil_prozent: 83.0}
+  2025: {besteuerungsanteil_prozent: 83.5}
+  2026: {besteuerungsanteil_prozent: 84.0}
+  2027: {besteuerungsanteil_prozent: 84.5}
+  2028: {besteuerungsanteil_prozent: 85.0}
+  2029: {besteuerungsanteil_prozent: 85.5}
+  2030: {besteuerungsanteil_prozent: 86.0}
+  2031: {besteuerungsanteil_prozent: 86.5}
+  2032: {besteuerungsanteil_prozent: 87.0}
+  2033: {besteuerungsanteil_prozent: 87.5}
+  2034: {besteuerungsanteil_prozent: 88.0}
+  2035: {besteuerungsanteil_prozent: 88.5}
+  2036: {besteuerungsanteil_prozent: 89.0}
+  2037: {besteuerungsanteil_prozent: 89.5}
+  2038: {besteuerungsanteil_prozent: 90.0}
+  2039: {besteuerungsanteil_prozent: 90.5}
+  2040: {besteuerungsanteil_prozent: 91.0}
+  2041: {besteuerungsanteil_prozent: 91.5}
+  2042: {besteuerungsanteil_prozent: 92.0}
+  2043: {besteuerungsanteil_prozent: 92.5}
+  2044: {besteuerungsanteil_prozent: 93.0}
+  2045: {besteuerungsanteil_prozent: 93.5}
+  2046: {besteuerungsanteil_prozent: 94.0}
+  2047: {besteuerungsanteil_prozent: 94.5}
+  2048: {besteuerungsanteil_prozent: 95.0}
+  2049: {besteuerungsanteil_prozent: 95.5}
+  2050: {besteuerungsanteil_prozent: 96.0}
+  2051: {besteuerungsanteil_prozent: 96.5}
+  2052: {besteuerungsanteil_prozent: 97.0}
+  2053: {besteuerungsanteil_prozent: 97.5}
+  2054: {besteuerungsanteil_prozent: 98.0}
+  2055: {besteuerungsanteil_prozent: 98.5}
+  2056: {besteuerungsanteil_prozent: 99.0}
+  2057: {besteuerungsanteil_prozent: 99.5}
+  2058: {besteuerungsanteil_prozent: 100.0}
