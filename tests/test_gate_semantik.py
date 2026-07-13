@@ -220,6 +220,56 @@ def test_queue_status():
     assert _queue_status(gruen + [{"name": "typecheck_a_first", "status": G.FAIL}], {}) == "verified"
 
 
+# -- Pre-Call-Kosten-Cap (budget_abbruch) + Falschgruen-Sperre ----------------
+
+def test_leere_gates_nie_verified_run():
+    """Falschgruen-Sperre: ein Report ohne bewertbare Gates (budget_abbruch/Abbruch)
+    darf in KEINEM Pfad verified werden - auch nicht mit Geltungsbedingungen."""
+    from run import _queue_status
+    assert _queue_status([], {}) == "unbewertet"
+    assert _queue_status([], {"geltungsbedingungen": [{"bedingung": "x"}]}) == "unbewertet"
+    # nur _first-/discovery-Gates zaehlen nicht als bewertbar -> weiter unbewertet
+    assert _queue_status([{"name": "discovery", "status": G.SKIP}], {}) == "unbewertet"
+    assert _queue_status([{"name": "syntax_a_first", "status": G.PASS}], {}) == "unbewertet"
+
+
+def test_leere_gates_nie_verified_cascade():
+    """Zwei-Funktions-Falle: dieselbe Invariante im cascade-Pfad."""
+    import cascade as C
+    assert C._queue_status([], {}, []) == "unbewertet"
+    assert C._queue_status([], {"geltungsbedingungen": [{"bedingung": "x"}]}, []) == "unbewertet"
+
+
+def test_estimate_cost_kalibrierung():
+    from run import _estimate_cost
+    assert _estimate_cost({"quellen": [{}, {}, {}]}) == 0.15  # multi-quellig
+    assert _estimate_cost({"quellen": [{}]}) == 0.07          # 1-quellig
+    assert _estimate_cost({}) == 0.07                          # ohne Quellen -> 1-quellig-Default
+
+
+def test_budget_abbruch_report_bleibt_unbewertet():
+    """Simulierter Ueberlauf: der Pre-Call-Cap-Report muss durch BEIDE _queue_status-Pfade
+    unbewertet bleiben - nie verified (auch mit Geltungsbedingungen)."""
+    from run import _budget_abbruch_report, _queue_status
+    import cascade as C
+    rep = _budget_abbruch_report("regelX", total_cost=0.39, est=0.15, cap=0.40)
+    assert rep["queue_status"] == "budget_abbruch"
+    assert rep["gates"] == []
+    gb = {"geltungsbedingungen": [{"bedingung": "x"}]}
+    assert _queue_status(rep["gates"], gb) == "unbewertet"
+    assert C._queue_status(rep["gates"], gb, []) == "unbewertet"
+
+
+def test_pre_call_cap_schwellenlogik():
+    """Deterministische Abbruch-Entscheidung: kumuliert + Schaetzung > Cap -> Abbruch."""
+    from run import _estimate_cost
+    cap, total = 0.40, 0.30
+    # multi-quellig (est 0.15): 0.30 + 0.15 = 0.45 > 0.40 -> Abbruch
+    assert total + _estimate_cost({"quellen": [{}, {}]}) > cap
+    # 1-quellig (est 0.07): 0.30 + 0.07 = 0.37 <= 0.40 -> laeuft weiter
+    assert not (total + _estimate_cost({"quellen": [{}]}) > cap)
+
+
 # -- Strikter YAML-Loader -----------------------------------------------------
 
 def test_doppelter_schluessel_ist_ein_fehler():

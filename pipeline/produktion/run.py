@@ -349,6 +349,10 @@ def _queue_status(gates: list[dict], rule: dict | None = None,
     # Das `discovery`-Gate ist SKIP bei neuen Funden - kein "toolchain pending".
     st = [g["status"] for g in gates
           if not g["name"].endswith("_first") and g["name"] != "discovery"]
+    # Falschgruen-Sperre (budget_abbruch/Abbruch-Reports): keine bewertbaren Gates =
+    # die Regel lief nie. Ohne Gates NIE verified, egal welcher Pfad hier landet.
+    if not st:
+        return "unbewertet"
     if G.FAIL in st:
         return "flagged_for_review"
     # Ein `freigabe: blockiert` im Manifest ueberstimmt gruene Gates.
@@ -375,6 +379,24 @@ def _queue_status(gates: list[dict], rule: dict | None = None,
     return "verified"
 
 
+def _estimate_cost(rule: dict) -> float:
+    """Kalibrierte Vorab-Kostenschaetzung eines Kaskaden-Laufs (deterministisch, kein LLM).
+    Empirie Charge 8-11: multi-quellige Regeln (>= 2 Quellen, mehr Judge-Tokens) ~$0.15,
+    1-quellige ~$0.07. Konservativ (eher zu hoch), damit der Cap nicht knapp gerissen wird."""
+    return 0.15 if len(rule.get("quellen", [])) >= 2 else 0.07
+
+
+def _budget_abbruch_report(rid: str, total_cost: float, est: float, cap: float) -> dict:
+    """Report eines nicht gestarteten Laufs (Pre-Call-Cap ueberschritten). queue_status
+    budget_abbruch, gates leer - die Falschgruen-Sperre in _queue_status haelt das auf
+    'unbewertet', falls der Report je durch die Queue-Logik laeuft."""
+    return {"candidate_id": rid, "queue_status": "budget_abbruch",
+            "reason": f"Pre-Call-Cap ${cap:.2f} wuerde gerissen: kumuliert ${total_cost:.4f} "
+                      f"+ Schaetzung ${est:.2f} > Cap. Regel {rid} nicht gestartet.",
+            "gates": [], "failed_gates": [], "judge_verdict": {},
+            "backlog": [], "provenance": [], "total_cost_usd": 0.0}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
@@ -392,6 +414,12 @@ def main() -> int:
     ap.add_argument("--redo-a", action="store_true",
                     help="nur Formalisierer A (und den Judge) neu laufen lassen, "
                          "B aus dem Report wiederverwenden")
+    ap.add_argument("--cost-cap", type=float, default=None,
+                    help="Vorab-Kosten-Cap in USD fuer den gesamten Lauf. Deterministischer "
+                         "Pre-Call-Check: uebersteigt kumulierte Ist-Kosten + kalibrierte "
+                         "Schaetzung des naechsten Calls den Cap, wird die Regel NICHT "
+                         "gestartet (queue_status budget_abbruch) und der Lauf abgebrochen - "
+                         "nie stiller Weiterlauf. Default: kein Cap (Instructor-Freigabe je Charge).")
     args = ap.parse_args()
 
     try:
@@ -447,6 +475,17 @@ def main() -> int:
         arch = _archive_report(done)   # --force: alte report.json sichern, nicht ueberschreiben
         if arch:
             print(f"  (alte report.json -> {os.path.basename(arch)})", flush=True)
+        # Pre-Call-Kosten-Cap (deterministisch): wuerde der naechste Call den Cap reissen,
+        # Regel NICHT starten -> budget_abbruch + Lauf beenden (nie stiller Weiterlauf).
+        if args.cost_cap is not None:
+            est = _estimate_cost(rule)
+            if total_cost + est > args.cost_cap:
+                json.dump(_budget_abbruch_report(rid, total_cost, est, args.cost_cap),
+                          open(done, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+                print(f"  budget_abbruch: kumuliert ${total_cost:.4f} + est ${est:.2f} "
+                      f"> cap ${args.cost_cap:.2f} - {rid} nicht gestartet, Rest uebersprungen",
+                      flush=True)
+                break
         try:
             res = run_candidate(build_candidate(rule), dry_run=args.dry_run,
                                 skip_judge=args.skip_judge)

@@ -219,6 +219,10 @@ def _queue_status(gate_results, candidate, discoveries, judge_skipped=False) -> 
     """
     echte = [g for g in gate_results
              if not g.name.endswith("_first") and g.name != "discovery"]
+    # Falschgruen-Sperre (spiegelt run._queue_status): keine bewertbaren Gates = die
+    # Regel lief nie (z.B. budget_abbruch). Ohne Gates NIE verified.
+    if not echte:
+        return "unbewertet"
     if G.FAIL in [g.status for g in echte]:
         return "flagged_for_review"
     if discoveries:
