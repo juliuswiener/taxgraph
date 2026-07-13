@@ -71,3 +71,20 @@ die Fehlerklassen.
 6. Dann: der geparkte 9er-Judge-Nachzug läuft auf dem neuen Judge (Batch-Disziplin).
 
 Bis zur Entscheidung: KEIN --redo-judge; die 9 (+ künftige) strukturgeprueft-Regeln warten ehrlich.
+
+## Addendum — Kandidaten-Swap vor dem Lauf (2026-07-13, dokumentiert)
+
+Die Slug-Verifikation (Auflage 1) gegen das aktuelle OpenRouter-/models deckte auf: die Plan-
+Beispiel-Kandidaten (Mistral-Large / Gemini-2.5-pro / Llama-4) sind generations-veraltet und im
+Katalog NICHT vorhanden. Vorregistrierung bleibt gewahrt (Änderung VOR dem Lauf, dokumentiert,
+Instructor-bestätigt). Korrigierte Kandidaten (dritte Familie, westlich/EU, aus dem aktuellen /models):
+
+1. `mistralai/mistral-medium-3-5` (Mistral, EU-Sovereignty).
+2. `google/gemini-pro-latest` (Google, pro-Tier — Inventar-Tiefe + 24k-Stabilität > Flash-Preisvorteil).
+3. Dritter Slot: Llama NICHT verfügbar (kein Meta/Llama im /models). Instructor-Fallback:
+   `google/gemini-3.5-flash` (zweiter Google). **Bessere Alternative gefunden: `openai/gpt-5.5`**
+   (OpenAI = eigene westliche Familie, echte Familien-Vielfalt statt redundantem zweitem Google) —
+   Slot-3-Entscheid beim Instructor. Qwen bleibt raus (Alibaba-Chinesisch-Ausschluss).
+
+Endpoint-Kriterien je Kandidat: westlicher/EU-Host, echter Probe-Call als K.O.-Filter (Endpoint-Fail
+= "nicht angetreten", nicht "gemessen schlecht"), unquant bevorzugt, Quant dokumentiert.
