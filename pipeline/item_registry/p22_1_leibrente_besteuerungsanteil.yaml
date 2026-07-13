@@ -1,0 +1,16 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p22_1_leibrente_besteuerungsanteil
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 22 nr. 1 s. 2-3 estg
+  formulierungen:
+  - nach dem Jahr des Rentenbeginns und dem in diesem Jahr maßgebenden Prozentsatz
+    aus der nachstehenden Tabelle zu entnehmen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: besteuerungsanteil_aus_kohortentabelle

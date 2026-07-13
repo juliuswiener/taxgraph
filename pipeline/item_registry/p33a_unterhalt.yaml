@@ -1,0 +1,125 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p33a_unterhalt
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aufwendungen
+  - interpretation
+  formulierungen:
+  - Aufwendungen werden als Bruttobetrag ohne weitere Differenzierung angenommen.
+  - Aufwendungen umfassen nur Unterhalt und Berufsausbildungskosten.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kv_pv_beitraege
+  - interpretation
+  formulierungen:
+  - KV/PV-Beiträge werden als direkt abziehbarer Betrag interpretiert.
+  - KV/PV-Beiträge gelten als direkt für die unterhaltsberechtigte Person geleistet.
+  - KV/PV-Beiträge sind die nach § 10 Abs. 1 Nr. 3 aufgewandten Beiträge.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - andere_einkuenfte_bezuege
+  - einheit
+  formulierungen:
+  - Annahme, dass andere Einkünfte/Bezüge in Euro vorliegen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - grundfreibetrag
+  - sonstige
+  formulierungen:
+  - Grundfreibetrag wird als fester Wert für 2026 (12.348 €) angenommen.
+  triage: bedingung_neu
+  bedingung: grundfreibetrag_norm_konstante_nicht_input
+- art: annahme
+  anker:
+  - betrifft_kat
+  - andere_einkuenfte_bezuege
+  - interpretation
+  formulierungen:
+  - Einkünfte/Bezüge der unterhaltsberechtigten Person werden als Jahresbetrag verstanden.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - grundfreibetrag
+  - einheit
+  formulierungen:
+  - Grundfreibetrag wird als fester Wert für 2026 (12.348 €) angenommen.
+  - Grundfreibetrag ist auf 12.348 Euro für den Veranlagungszeitraum 2026 festgelegt.
+  triage: bedingung_neu
+  bedingung: grundfreibetrag_norm_konstante_nicht_input
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anrechnungsbetrag
+  - geltungsvoraussetzung
+  formulierungen:
+  - Anrechnung erfolgt nur, wenn Einkünfte 624 € übersteigen.
+  triage: bedingung_neu
+  bedingung: anrechnung_ueber_schonbetrag_624
+- art: annahme
+  anker:
+  - betrifft_kat
+  - hoechstbetrag
+  - interpretation
+  formulierungen:
+  - Der Höchstbetrag wird als Summe aus Grundfreibetrag und KV/PV-Beiträgen definiert.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 33a abs. 1 s. 1 estg
+  formulierungen:
+  - Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung einer dem Steuerpflichtigen
+    oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten Person
+  - einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten
+    Person
+  - auf Antrag die Einkommensteuer dadurch ermäßigt
+  - vom Gesamtbetrag der Einkünfte abgezogen werden
+  - bis zur Höhe des Grundfreibetrags nach § 32a Absatz 1 Satz 2 Nummer 1
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: grundfreibetrag_norm_konstante_nicht_input
+- art: norm_teil
+  anker:
+  - ref
+  - § 33a abs. 1 s. 2 estg
+  formulierungen:
+  - Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum
+    nach § 10 Absatz 1 Nummer 3 für die Absicherung der unterhaltsberechtigten Person
+    aufgewandten Beiträge
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 33a abs. 1 s. 5 estg
+  formulierungen:
+  - so vermindert sich die Summe der nach Satz 1 und Satz 2 ermittelten Beträge um
+    den Betrag, um den diese Einkünfte und Bezüge den Betrag von 624 Euro im Kalenderjahr
+    übersteigen
+  - Einkünfte und Bezüge der unterhaltsberechtigten Person
+  - um den Betrag, um den diese Einkünfte und Bezüge den Betrag von 624 Euro im Kalenderjahr
+    übersteigen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: anrechnung_ueber_schonbetrag_624
+- art: norm_teil
+  anker:
+  - ref
+  - § 32a abs. 1 s. 2 nr. 1 estg
+  formulierungen:
+  - bis 12 348 Euro (Grundfreibetrag)
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: grundfreibetrag_norm_konstante_nicht_input

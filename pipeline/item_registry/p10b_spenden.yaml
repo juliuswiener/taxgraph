@@ -1,0 +1,30 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10b_spenden
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - zuwendungen
+  - interpretation
+  formulierungen:
+  - Zuwendungen umfassen Spenden und Mitgliedsbeiträge.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gesamtbetrag_der_einkuenfte
+  - einheit
+  formulierungen:
+  - Gesamtbetrag der Einkünfte wird als Bruttowert interpretiert.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 10b abs. 1 s. 1 estg
+  formulierungen:
+  - zur Förderung steuerbegünstigter Zwecke im Sinne der §§ 52 bis 54 der Abgabenordnung
+  triage: nicht_material_backlog
+  klasse: unabhaengig

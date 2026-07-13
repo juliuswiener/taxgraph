@@ -1,0 +1,172 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p9_1_3_nr6_7_afa_laufend_nb
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - gwg-pruefung verwendet netto-kosten, aber abzug erfolgt mit brutto-kosten.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    GWG-Prüfung verwendet netto-Kosten, aber Abzug erfolgt mit brutto-Kosten.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - pro-rata-afa im anschaffungsjahr nutzt brutto-kosten statt netto-kosten.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    Pro-rata-AfA im Anschaffungsjahr nutzt brutto-Kosten statt netto-Kosten.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - afa-betrag berechnet sich aus brutto-kosten, nicht netto-kosten.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    AfA-Betrag berechnet sich aus brutto-Kosten, nicht netto-Kosten.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - berechnung nutzt brutto-kosten statt netto-kosten.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    Berechnung nutzt brutto-Kosten statt netto-Kosten.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - berechnung geht von 13 - anschaffungsmonat aus, nicht von tatsaechlichen monaten.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    Berechnung geht von 13 - anschaffungsmonat aus, nicht von tatsächlichen Monaten.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - gwg-abzug verwendet bruttowert statt nettowert.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    GWG-Abzug verwendet Bruttowert statt Nettowert.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - jahres-afa berechnet sich aus bruttowert, nicht nettowert.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    Jahres-AfA berechnet sich aus Bruttowert, nicht Nettowert.'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungskosten_netto
+  - einheit
+  formulierungen:
+  - GWG-Grenze von 800 € bezieht sich auf netto-Kosten.
+  triage: bedingung_neu
+  bedingung: gwg_sofortabzug_gewaehlt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungskosten_brutto
+  - einheit
+  formulierungen:
+  - AfA und GWG-Abzug basieren auf brutto-Kosten.
+  - AfA-Berechnung verwendet brutto-Kosten als Basis.
+  triage: bedingung_neu
+  bedingung: gwg_sofortabzug_gewaehlt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungsmonat
+  - zeitbezug
+  formulierungen:
+  - Anschaffungsmonat wird als 1-12 interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - nutzungsdauer_jahre
+  - interpretation
+  formulierungen:
+  - Nutzungsdauer wird als betriebsgewöhnlich angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - jahre_seit_anschaffung
+  - zeitbezug
+  formulierungen:
+  - Jahre seit Anschaffung werden als ganze Jahre gezählt.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 abs. 1 s. 3 nr. 6/7 estg
+  formulierungen:
+  - Aufwendungen für Arbeitsmittel
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 2 s. 1 estg
+  formulierungen:
+  - vermindert um einen darin enthaltenen Vorsteuerbetrag (§ 9b Absatz 1), oder der
+    nach Absatz 1 Nummer 5 bis 6 an deren Stelle tretende Wert für das einzelne Wirtschaftsgut
+    800 Euro nicht übersteigen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: gwg_sofortabzug_gewaehlt
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 abs. 1 s. 1-2 estg
+  formulierungen:
+  - Bei Wirtschaftsgütern, deren Verwendung oder Nutzung durch den Steuerpflichtigen
+    zur Erzielung von Einkünften sich erfahrungsgemäß auf einen Zeitraum von mehr
+    als einem Jahr erstreckt, ist jeweils für
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: zeitraum_laufend
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 abs. 1 s. 2 estg
+  formulierungen:
+  - Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer
+    des Wirtschaftsguts.
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 abs. 1 s. 4 estg
+  formulierungen:
+  - Im Jahr der Anschaffung oder Herstellung des Wirtschaftsguts vermindert sich für
+    dieses Jahr der Absetzungsbetrag nach Satz 1 um jeweils ein Zwölftel für jeden
+    vollen Monat, der dem Monat der Anschaff
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - anleitung anlage n 2025
+  formulierungen:
+  - Arbeitsmittel, die höchstens 800 € (ohne Umsatzsteuer)
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: gwg_sofortabzug_gewaehlt
+- art: norm_teil
+  anker:
+  - ref
+  - § 9b abs. 1 estg
+  formulierungen:
+  - vermindert um einen darin enthaltenen Vorsteuerbetrag
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: gwg_sofortabzug_gewaehlt

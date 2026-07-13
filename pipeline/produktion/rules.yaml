@@ -2258,6 +2258,10 @@ regeln:
     deckt_ab: 80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind
     quelle: § 10 Abs. 1 Nr. 5 S. 1 EStG
     beschreibung: 'Abzug = min(0,80 x aufwendungen, 4.800). Der 4.800-Deckel gilt JE KIND; die Regel rechnet je Kind, Aggregation ueber mehrere Kinder in der § 2-Integration. Altersgrenze (< 14 bzw. behindert) und Haushaltszugehoerigkeit sind Anwendbarkeit (§ 2-Integration).'
+  - bedingung: kind_unter_14_haushaltszugehoerig
+    deckt_ab: welches das 14. Lebensjahr noch nicht vollendet hat
+    quelle: § 10 Abs. 1 Nr. 5 S. 1 EStG
+    beschreibung: 'Anwendbarkeitsvoraussetzung (binaer): das betreute Kind gehoert zum Haushalt des Steuerpflichtigen (§ 32 Abs. 1) und hat das 14. Lebensjahr noch nicht vollendet (oder ist wegen Behinderung ausserstande, sich selbst zu unterhalten). Auswahl in der § 2-Integration. Nachdeklariert nach mistral-Judge-Nachzug (Bucket B, Instructor-Adjudikation msg 1639: Anwendbarkeit = Geltungsbedingung, nicht nicht_material).'
   rundung: []
   signature:
     scope: Kinderbetreuung
@@ -2316,6 +2320,10 @@ regeln:
     deckt_ab: wenn der Geber dies mit Zustimmung des Empfängers beantragt
     quelle: § 10 Abs. 1a Nr. 1 S. 1 EStG
     beschreibung: 'Anwendbarkeit (nicht output-variierend): Antrag des Gebers + Zustimmung des Empfaengers; der Empfaenger versteuert korrespondierend (§ 22 Nr. 1a). Auswahl in der § 2-Integration.'
+  - bedingung: empfaenger_geschieden_getrennt_unbeschraenkt
+    deckt_ab: geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten
+    quelle: § 10 Abs. 1a Nr. 1 S. 1 EStG
+    beschreibung: 'Anwendbarkeitsvoraussetzung (binaer): der Empfaenger der Unterhaltsleistungen ist der geschiedene oder dauernd getrennt lebende, unbeschraenkt einkommensteuerpflichtige Ehegatte (und der Geber ist als Steuerpflichtiger unbeschraenkt stpfl.). Auswahl in der § 2-Integration. Nachdeklariert nach mistral-Judge-Nachzug (Bucket B, Instructor-Adjudikation msg 1639: Anwendbarkeit = Geltungsbedingung).'
   rundung: []
   signature:
     scope: Realsplitting

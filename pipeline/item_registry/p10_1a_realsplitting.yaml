@@ -1,0 +1,74 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10_1a_realsplitting
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - unterhaltsleistungen
+  - geltungsvoraussetzung
+  formulierungen:
+  - Annahme, dass der Geber unbeschränkt einkommensteuerpflichtig ist.
+  - Annahme, dass der Empfänger geschieden oder dauernd getrennt lebend ist.
+  - Annahme, dass der Geber die Zustimmung des Empfängers hat.
+  triage: bedingung_neu
+  bedingung: antrag_mit_zustimmung
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kv_pv_beitraege
+  - interpretation
+  formulierungen:
+  - Annahme, dass kv_pv_beitraege die Beiträge nach § 10 Abs. 1 Nr. 3 sind.
+  triage: bedingung_neu
+  bedingung: deckel_13805_plus_kv_pv
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kv_pv_beitraege
+  - zeitbezug
+  formulierungen:
+  - Annahme, dass kv_pv_beitraege den jeweiligen Veranlagungszeitraum betreffen.
+  - Annahme, dass KV/PV-Beiträge dem Veranlagungszeitraum entsprechen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - einheit
+  formulierungen:
+  - Annahme, dass der Höchstbetrag in Euro angegeben ist.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - zeitbezug
+  formulierungen:
+  - Annahme, dass der Veranlagungszeitraum ein Kalenderjahr ist.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 1a nr. 1 s. 1 estg
+  formulierungen:
+  - Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt
+    einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung des Empfängers
+    beantragt
+  - an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen
+    Ehegatten
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 1a nr. 1 s. 2 estg
+  formulierungen:
+  - Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum
+    nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder dauernd getrennt
+    lebenden Ehegatten
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: deckel_13805_plus_kv_pv

@@ -1,0 +1,50 @@
+rule_id: p10_1_5_kinderbetreuung
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aufwendungen
+  - interpretation
+  formulierungen:
+  - Aufwendungen beziehen sich nur auf Dienstleistungen zur Kinderbetreuung.
+  triage: bedingung_neu
+  bedingung: kind_unter_14_haushaltszugehoerig
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aufwendungen
+  - geltungsvoraussetzung
+  formulierungen:
+  - Das Kind gehört zum Haushalt und ist unter 14 Jahre alt.
+  triage: bedingung_neu
+  bedingung: kind_unter_14_haushaltszugehoerig
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - einheit
+  formulierungen:
+  - Der Abzug wird in Euro berechnet.
+  - Der Höchstbetrag von 4.800 Euro gilt pro Kind.
+  triage: bedingung_neu
+  bedingung: achtzig_prozent_deckel_4800_je_kind
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aufwendungen
+  - einheit
+  formulierungen:
+  - Aufwendungen sind in Euro angegeben.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 1 nr. 5 s. 1 estg
+  formulierungen:
+  - 80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind
+  - für Dienstleistungen zur Betreuung eines zum Haushalt des Steuerpflichtigen gehörenden
+    Kindes im Sinne des § 32 Absatz 1
+  - welches das 14. Lebensjahr noch nicht vollendet hat
+  triage: nicht_material_backlog
+  klasse: unabhaengig

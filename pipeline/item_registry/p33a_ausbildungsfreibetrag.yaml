@@ -1,0 +1,46 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p33a_ausbildungsfreibetrag
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - hat_anspruch
+  - interpretation
+  formulierungen:
+  - Annahme, dass 'hat_anspruch' den Anspruch auf Freibetrag nach § 32 Abs. 6 oder
+    Kindergeld abdeckt.
+  - Annahme, dass der Anspruch auf § 32 Abs. 6 oder Kindergeld bereits geprüft ist.
+  triage: bedingung_neu
+  bedingung: anspruch_ausbildung_auswaertig_volljaehrig
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - einheit
+  formulierungen:
+  - Annahme, dass der Freibetrag in Euro (1.200) und als Geldbetrag ausgezahlt wird.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - zeitbezug
+  formulierungen:
+  - Annahme, dass der Freibetrag pro Kalenderjahr gilt.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 33a abs. 2 s. 1 estg
+  formulierungen:
+  - Zur Abgeltung des Sonderbedarfs eines sich in Berufsausbildung befindenden, auswärtig
+    untergebrachten, volljährigen Kindes
+  - für das Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder Kindergeld besteht
+  - kann der Steuerpflichtige einen Freibetrag in Höhe von 1 200 Euro je Kalenderjahr
+    vom Gesamtbetrag der Einkünfte abziehen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: anspruch_ausbildung_auswaertig_volljaehrig

@@ -1,0 +1,95 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p20_6_verlustverrechnung
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - verluste aus aktien werden nicht mit anderen kapitalertraegen verrechnet, sondern
+    nur untereinander.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    Verluste aus Aktien werden nicht mit anderen Kapitalerträgen verrechnet, sondern
+    nur untereinander.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - verluste aus sonstigem kapitalvermoegen werden nicht mit aktiengewinnen verrechnet.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    Verluste aus sonstigem Kapitalvermögen werden nicht mit Aktiengewinnen verrechnet.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - verluste aus kapitalvermoegen duerfen nicht mit anderen einkunftsarten ausgeglichen
+    werden.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    Verluste aus Kapitalvermögen dürfen nicht mit anderen Einkunftsarten ausgeglichen
+    werden.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - keine beschraenkung auf § 20 abs. 2 satz 1 nr. 1 satz 1 (aktiengewinne).
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    Keine Beschränkung auf § 20 Abs. 2 Satz 1 Nr. 1 Satz 1 (Aktiengewinne).'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewinn_aktien
+  - interpretation
+  formulierungen:
+  - Gewinne aus Aktien gelten als Kapitalerträge nach § 20 Abs. 2 Satz 1 Nr. 1 Satz
+    1.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verlust_aktien
+  - interpretation
+  formulierungen:
+  - Verluste aus Aktien gelten als Kapitalverluste.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewinn_sonstige
+  - interpretation
+  formulierungen:
+  - Sonstige Gewinne gelten als Kapitalerträge.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verlust_sonstige
+  - interpretation
+  formulierungen:
+  - Sonstige Verluste gelten als Kapitalverluste.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 20 abs. 6 s. 1 estg
+  formulierungen:
+  - Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten
+    ausgeglichen werden; sie dürfen auch nicht nach § 10d abgezogen werden.
+  - sie dürfen auch nicht nach § 10d abgezogen werden
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 20 abs. 6 estg
+  formulierungen:
+  - die aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen
+    im Sinne des Absatzes 2 Satz 1 Nummer 1 Satz 1
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: aktienverlust_nur_gegen_aktiengewinn

@@ -1,0 +1,32 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p20_9_sparer_pauschbetrag
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der sparer-pauschbetrag wird nur abgezogen, wenn kapitalertraege darueber liegen.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    Der Sparer-Pauschbetrag wird nur abgezogen, wenn Kapitalerträge darüber liegen.'
+  triage: nicht_echt
+- art: norm_teil
+  anker:
+  - ref
+  - § 20 abs. 9 satz 1
+  formulierungen:
+  - der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: sparer_pb_1000_2000_konstante
+- art: norm_teil
+  anker:
+  - ref
+  - § 20 abs. 9 satz 1 estg
+  formulierungen:
+  - der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: sparer_pb_1000_2000_konstante

@@ -1,0 +1,65 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p32d_1_abgeltung
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die steuer wird nicht nur bei antrag, sondern immer dann angepasst, wenn guenstiger_delta
+    < abgeltung.
+  formulierungen:
+  - 'mistral-Falschpositiv auf validiertem Design (Instructor-Adjudikation msg 1639):
+    Die Steuer wird nicht nur bei Antrag, sondern immer dann angepasst, wenn guenstiger_delta
+    < abgeltung.'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kapitaleinkuenfte
+  - interpretation
+  formulierungen:
+  - Kapitaleinkünfte umfassen alle Einkünfte aus Kapitalvermögen außer § 20 Abs. 8.
+  - Kapitaleinkünfte umfassen nur solche, die nicht unter § 20 Abs. 8 fallen.
+  - Kapitaleinkünfte werden als nicht unter § 20 Abs. 8 fallend angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_regulaer_mit_kap
+  - interpretation
+  formulierungen:
+  - est_regulaer_mit_kap ist die tarifliche Einkommensteuer inkl. Kapitaleinkünfte.
+  triage: bedingung_neu
+  bedingung: tarifwerte_sind_p2_ergebnis
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_regulaer_ohne_kap
+  - interpretation
+  formulierungen:
+  - est_regulaer_ohne_kap ist die tarifliche Einkommensteuer ohne Kapitaleinkünfte.
+  triage: bedingung_neu
+  bedingung: tarifwerte_sind_p2_ergebnis
+- art: norm_teil
+  anker:
+  - ref
+  - § 32d abs. 6 s. 1 estg
+  formulierungen:
+  - Auf Antrag des Steuerpflichtigen werden anstelle der Anwendung der Absätze 1,
+    3 und 4 die nach § 20 ermittelten Kapitaleinkünfte den Einkünften im Sinne des
+    § 2 hinzugerechnet und der tariflichen Eink
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: guenstigerpruefung_beantragt
+- art: norm_teil
+  anker:
+  - ref
+  - § 32d abs. 1 s. 1 estg
+  formulierungen:
+  - Die Einkommensteuer für Einkünfte aus Kapitalvermögen, die nicht unter § 20 Absatz
+    8 fallen, beträgt 25 Prozent.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: keine_kirchensteuer_auf_kapitalertraege
