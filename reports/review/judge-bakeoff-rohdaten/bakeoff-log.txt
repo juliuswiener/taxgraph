@@ -1,0 +1,21 @@
+tee: reports/review/judge-bakeoff-rohdaten/bakeoff-log.txt: No such file or directory
+=== PROBE (K.O.-Filter, CORPUS[0]) ===
+  mistral-medium-3-5  : ANGETRETEN | 36.3s | $0.0624 | spent $0.0624
+  gemini-pro-latest   : NICHT ANGETRETEN (RoleCallError: judge/google/gemini-pro-latest: OpenRouter 400: {"error":{"message":"google/gemini-pro-latest is not a valid model ID",") | 0.2s | $0.0000 | spent $0.0624
+  gpt-5-5             : ANGETRETEN | 155.8s | $0.1285 | spent $0.1909
+
+=== BAKE-OFF (2 eligible) ueber CORPUS[1:] ===
+  mistral-medium-3-5   p32b_progressionsvorbehalt              : ok | 38.0s | $0.0564 | spent $0.2473
+  gpt-5-5              p32b_progressionsvorbehalt              : ok | 384.6s | $0.2940 | spent $0.5413
+  mistral-medium-3-5   p9_1_3_nr5_doppelte_haushaltsfuehrung   : ok | 118.2s | $0.2675 | spent $0.8088
+  gpt-5-5              p9_1_3_nr5_doppelte_haushaltsfuehrung   : ok | 660.1s | $0.2698 | spent $1.0786
+  mistral-medium-3-5   p9_4a_verpflegungsmehraufwand           : ok | 146.6s | $0.4056 | spent $1.4843
+  gpt-5-5              p9_4a_verpflegungsmehraufwand           : ok | 1193.5s | $1.0051 | spent $2.4894
+  $2-DECKEL erreicht ($2.4894) -> STOP vor p33_3_zumutbare_belastung
+
+=== SCORE (Inventar-Recall vs Registry + Kennzahlen) ===
+  mistral-medium-3-5   angetreten=True completion=1.0 mean_recall=0.191 auch_falsch=False $0.7919
+  gemini-pro-latest    angetreten=False completion=0.0 mean_recall=None auch_falsch=None $0
+  gpt-5-5              angetreten=True completion=1.0 mean_recall=0.218 auch_falsch=False $1.6974
+
+Rohdaten + score-matrix.json -> reports/review/judge-bakeoff-rohdaten/  | Gesamt-Kosten $2.4894

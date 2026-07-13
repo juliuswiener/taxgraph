@@ -1,0 +1,922 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [
+  "An- oder Abreisetage mit 24 Stunden Abwesenheit erhalten 28 Euro statt der normierten 14 Euro.",
+  "Bei gleichzeitig 24 Stunden Abwesenheit und An- oder Abreisetag wird vorrangig 28 Euro angesetzt.",
+  "Bei abwesenheit_stunden >= 24 setzt die Formalisierung 28 Euro auch für An- oder Abreisetage mit Übernachtung an."
+ ],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Der Wert wird als Abwesenheit von Wohnung und erster Tätigkeitsstätte an einem Kalendertag verstanden.",
+   "bedingung_id": null,
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Der Wert wird als Übernachtung außerhalb der Wohnung im Sinne der Verpflegungspauschalen gelesen.",
+   "bedingung_id": "konv:input_nur_etikettiertes",
+   "betrifft": "mit_uebernachtung",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Der Wert wird als steuerlicher An- oder Abreisetag der auswärtigen Tätigkeit verstanden.",
+   "bedingung_id": "konv:input_nur_etikettiertes",
+   "betrifft": "an_oder_abreisetag",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Der Wert wird als Dauer derselben längerfristigen Tätigkeit an derselben Tätigkeitsstätte gelesen.",
+   "bedingung_id": null,
+   "betrifft": "monate_am_ort",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Es werden volle Monate gezählt; erst Werte größer als 3 sperren den Abzug vollständig.",
+   "bedingung_id": null,
+   "betrifft": "monate_am_ort",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "abwesenheit_stunden wird als ganzzahlige Stundenzahl verwendet; die Norm regelt keine Rundung von Teilstunden.",
+   "bedingung_id": null,
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "rundung"
+  },
+  {
+   "annahme": "abwesenheit_stunden wird als Abwesenheit am maßgeblichen Kalendertag verstanden.",
+   "bedingung_id": "konv:stunden_je_kalendertag",
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "monate_am_ort wird als laufende Monatsnummer verstanden, sodass Werte eins bis drei vollständig innerhalb der Frist liegen.",
+   "bedingung_id": null,
+   "betrifft": "monate_am_ort",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "monate_am_ort setzt voraus, dass eine längerfristige Tätigkeit an derselben Tätigkeitsstätte vorliegt.",
+   "bedingung_id": null,
+   "betrifft": "monate_am_ort",
+   "kategorie": "geltungsvoraussetzung"
+  },
+  {
+   "annahme": "abwesenheit_stunden bezeichnet nur beruflich veranlasste Abwesenheit von Wohnung und erster Tätigkeitsstätte.",
+   "bedingung_id": "konv:input_nur_etikettiertes",
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Abwesenheitszeiten werden auf ganze Stunden als Integer reduziert; Teilstunden bleiben unberücksichtigt.",
+   "bedingung_id": null,
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "rundung"
+  },
+  {
+   "annahme": "mit_uebernachtung bezeichnet eine Übernachtung außerhalb der Wohnung am relevanten, vorhergehenden oder anschließenden Tag.",
+   "bedingung_id": null,
+   "betrifft": "mit_uebernachtung",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "monate_am_ort wird so verstanden, dass vierwöchige Unterbrechungen bereits als Neubeginn berücksichtigt sind.",
+   "bedingung_id": null,
+   "betrifft": "monate_am_ort",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "monate_am_ort wird in ganzen Monaten gemessen; angebrochene Monate oder Tage werden nicht gesondert berücksichtigt.",
+   "bedingung_id": "konv:ganzzahl_monate",
+   "betrifft": "monate_am_ort",
+   "kategorie": "rundung"
+  },
+  {
+   "annahme": "abwesenheit_stunden wird als Stundenanzahl eines einzelnen Kalendertags verstanden.",
+   "bedingung_id": "konv:stunden_je_kalendertag",
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "monate_am_ort zählt volle Monate seit Beginn derselben längerfristigen Tätigkeit an derselben Tätigkeitsstätte.",
+   "bedingung_id": "konv:ganzzahl_monate",
+   "betrifft": "monate_am_ort",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "monate_am_ort ist bereits um einen Neubeginn nach mindestens vierwöchiger Unterbrechung bereinigt.",
+   "bedingung_id": null,
+   "betrifft": "monate_am_ort",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Abwesenheitszeiten werden als ganze Stunden ohne gesetzlich bestimmte Behandlung von Bruchteilen übergeben.",
+   "bedingung_id": null,
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "rundung"
+  },
+  {
+   "annahme": "Der Wert bezieht sich auf den jeweils zu beurteilenden Kalendertag.",
+   "bedingung_id": null,
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "zeitbezug"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "Mehraufwendungen des Arbeitnehmers für die Verpflegung sind nur nach Maßgabe der folgenden Sätze als Werbungskosten abziehbar.",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "Satz 1",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Wird der Arbeitnehmer außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "auswaertige_berufliche_taetigkeit",
+   "referenz": "Satz 2",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtung",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "uebernachtung_oder_eintaegig_ueber_acht_stunden",
+   "referenz": "Satz 3 Nummer 3",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Hat der Arbeitnehmer keine erste Tätigkeitsstätte",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "Satz 4",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "taetigkeit_im_inland",
+   "referenz": "Satz 5",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "Satz 6",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_unterbrechung_mit_neubeginn",
+   "referenz": "Satz 7",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "vom Arbeitgeber oder auf dessen Veranlassung von einem Dritten eine Mahlzeit zur Verfügung gestellt",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_mahlzeitengestellung",
+   "referenz": "Satz 8",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_mahlzeitengestellung",
+   "referenz": "Satz 10",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_steuerfreien_verpflegungserstattungen",
+   "referenz": "Satz 11",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "tatsächlich entstandenen, beruflich veranlassten Mehraufwendungen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "Satz 2",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "an diesem, einem anschließenden oder vorhergehenden Tag außerhalb seiner Wohnung übernachtet",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "Satz 3 Nummer 2",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "an dem der Arbeitnehmer den überwiegenden Teil der insgesamt mehr als 8 Stunden abwesend ist",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "uebernachtung_oder_eintaegig_ueber_acht_stunden",
+   "referenz": "Satz 3 Nummer 3",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "länderweise unterschiedliche Pauschbeträge",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "taetigkeit_im_inland",
+   "referenz": "Satz 5",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "wenn sie mindestens vier Wochen dauert",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_unterbrechung_mit_neubeginn",
+   "referenz": "Satz 7",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "für Frühstück um 20 Prozent",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_mahlzeitengestellung",
+   "referenz": "Satz 8 Nummer 1",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "für Mittag- und Abendessen um jeweils 40 Prozent",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_mahlzeitengestellung",
+   "referenz": "Satz 8 Nummer 2",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "die Kürzung darf die ermittelte Verpflegungspauschale nicht übersteigen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_mahlzeitengestellung",
+   "referenz": "Satz 8",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "mindert dieser Betrag den Kürzungsbetrag",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_mahlzeitengestellung",
+   "referenz": "Satz 10",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 5,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   18,
+   16,
+   7,
+   6,
+   3
+  ],
+  "gesaettigt": false,
+  "inventar_streuung": {
+   "abweichungen": [
+    {
+     "text": "An- oder Abreisetage mit 24 Stunden Abwesenheit erhalten 28 Euro statt der normierten 14 Euro.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Für An- und Abreisetage wird eine Übernachtung im Eingabewert verlangt, nicht auch am anschließenden oder vorhergehenden",
+     "key": [
+      "betrifft",
+      "mit_uebernachtung"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Die Sonderregel für eine über Mitternacht laufende Tätigkeit ohne Übernachtung wird nicht abgebildet.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Die Sonderregel für kalendertagsübergreifende Tätigkeiten ohne Übernachtung mit insgesamt mehr als acht Stunden wird nic",
+     "key": [
+      "betrifft",
+      "abwesenheit_stunden"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "An- und Abreisetage werden nur berücksichtigt, wenn mit_uebernachtung wahr ist; angrenzende Übernachtungstage sind nicht",
+     "key": [
+      "betrifft",
+      "mit_uebernachtung"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Eine mindestens vierwöchige Unterbrechung löst in der Formel keinen Neubeginn der Dreimonatsfrist aus.",
+     "key": [
+      "betrifft",
+      "monate_am_ort"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Bei gleichzeitigem an_oder_abreisetag, mit_uebernachtung und abwesenheit_stunden >=24 setzt die Formalisierung 28 statt ",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Die Zweitagesregel ohne Übernachtung weist 14 Euro nicht nur dem Kalendertag mit überwiegender Abwesenheit zu.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Bei gleichzeitig 24 Stunden Abwesenheit und An- oder Abreisetag wird vorrangig 28 Euro angesetzt.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Die Zweitagesregel ohne Übernachtung mit überwiegendem Abwesenheitsteil wird nicht gesondert umgesetzt.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Abwesenheiten von mehr als 24 Stunden werden wie ein einzelner voller Kalendertag behandelt.",
+     "key": [
+      "betrifft",
+      "abwesenheit_stunden"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Bei abwesenheit_stunden >= 24 setzt die Formalisierung 28 Euro auch für An- oder Abreisetage mit Übernachtung an.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "annahmen": [
+    {
+     "text": "Der Wert wird als Abwesenheit von Wohnung und erster Tätigkeitsstätte an einem Kalendertag verstanden.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Der Wert wird als Übernachtung außerhalb der Wohnung im Sinne der Verpflegungspauschalen gelesen.",
+     "key": [
+      "betrifft_kat",
+      "mit_uebernachtung",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Der Wert wird als Dauer derselben längerfristigen Tätigkeit an derselben Tätigkeitsstätte gelesen.",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Es werden volle Monate gezählt; erst Werte größer als 3 sperren den Abzug vollständig.",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "abwesenheit_stunden wird als ganzzahlige Stundenzahl verwendet; die Norm regelt keine Rundung von Teilstunden.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "rundung"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "abwesenheit_stunden wird als Abwesenheit am maßgeblichen Kalendertag verstanden.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "monate_am_ort wird als laufende Monatsnummer verstanden, sodass Werte eins bis drei vollständig innerhalb der Frist lieg",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "monate_am_ort setzt voraus, dass eine längerfristige Tätigkeit an derselben Tätigkeitsstätte vorliegt.",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "geltungsvoraussetzung"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "abwesenheit_stunden bezeichnet nur beruflich veranlasste Abwesenheit von Wohnung und erster Tätigkeitsstätte.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Abwesenheitszeiten werden auf ganze Stunden als Integer reduziert; Teilstunden bleiben unberücksichtigt.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "rundung"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "mit_uebernachtung bezeichnet eine Übernachtung außerhalb der Wohnung am relevanten, vorhergehenden oder anschließenden T",
+     "key": [
+      "betrifft_kat",
+      "mit_uebernachtung",
+      "interpretation"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "monate_am_ort wird so verstanden, dass vierwöchige Unterbrechungen bereits als Neubeginn berücksichtigt sind.",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "zeitbezug"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "monate_am_ort wird in ganzen Monaten gemessen; angebrochene Monate oder Tage werden nicht gesondert berücksichtigt.",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "rundung"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "abwesenheit_stunden wird als Stundenanzahl eines einzelnen Kalendertags verstanden.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "monate_am_ort zählt volle Monate seit Beginn derselben längerfristigen Tätigkeit an derselben Tätigkeitsstätte.",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "zeitbezug"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "monate_am_ort ist bereits um einen Neubeginn nach mindestens vierwöchiger Unterbrechung bereinigt.",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Abwesenheitszeiten werden als ganze Stunden ohne gesetzlich bestimmte Behandlung von Bruchteilen übergeben.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "rundung"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Der Wert bezieht sich auf den jeweils zu beurteilenden Kalendertag.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": [
+    {
+     "text": "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtun",
+     "key": [
+      "ref",
+      "satz 3 nummer 3"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte",
+     "key": [
+      "ref",
+      "satz 6"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn",
+     "key": [
+      "ref",
+      "satz 7"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt",
+     "key": [
+      "ref",
+      "satz 10"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "tatsächlich entstandenen, beruflich veranlassten Mehraufwendungen",
+     "key": [
+      "ref",
+      "satz 2"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "an diesem, einem anschließenden oder vorhergehenden Tag außerhalb seiner Wohnung übernachtet",
+     "key": [
+      "ref",
+      "satz 3 nummer 2"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "an dem der Arbeitnehmer den überwiegenden Teil der insgesamt mehr als 8 Stunden abwesend ist",
+     "key": [
+      "ref",
+      "satz 3 nummer 3"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "länderweise unterschiedliche Pauschbeträge",
+     "key": [
+      "ref",
+      "satz 5"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "wenn sie mindestens vier Wochen dauert",
+     "key": [
+      "ref",
+      "satz 7"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "für Frühstück um 20 Prozent",
+     "key": [
+      "ref",
+      "satz 8 nummer 1"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "für Mittag- und Abendessen um jeweils 40 Prozent",
+     "key": [
+      "ref",
+      "satz 8 nummer 2"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "die Kürzung darf die ermittelte Verpflegungspauschale nicht übersteigen",
+     "key": [
+      "ref",
+      "satz 8"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "mindert dieser Betrag den Kürzungsbetrag",
+     "key": [
+      "ref",
+      "satz 10"
+     ],
+     "in_laeufen": 1
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [],
+   "annahmen": [
+    {
+     "key": [
+      "betrifft_kat",
+      "mit_uebernachtung",
+      "interpretation"
+     ],
+     "cluster": "Der Wert wird als Übernachtung außerhalb der Wohnung im Sinne der Verpflegungspauschalen gelesen.",
+     "eingeschmolzen": "mit_uebernachtung wird als Übernachtung außerhalb der Wohnung im Sinne der Pauschalregel gelesen."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "an_oder_abreisetag",
+      "interpretation"
+     ],
+     "cluster": "Der Wert wird als steuerlicher An- oder Abreisetag der auswärtigen Tätigkeit verstanden.",
+     "eingeschmolzen": "an_oder_abreisetag wird als normativer An- oder Abreisetag einer auswärtigen beruflichen Tätigkeit verstanden."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "an_oder_abreisetag",
+      "interpretation"
+     ],
+     "cluster": "Der Wert wird als steuerlicher An- oder Abreisetag der auswärtigen Tätigkeit verstanden.",
+     "eingeschmolzen": "an_oder_abreisetag wird als gesetzlicher An- oder Abreisetag einer auswärtigen beruflichen Tätigkeit verstanden."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "interpretation"
+     ],
+     "cluster": "Der Wert wird als Dauer derselben längerfristigen Tätigkeit an derselben Tätigkeitsstätte gelesen.",
+     "eingeschmolzen": "monate_am_ort bezeichnet Monate einer längerfristigen Tätigkeit an derselben Tätigkeitsstätte."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "interpretation"
+     ],
+     "cluster": "abwesenheit_stunden bezeichnet nur beruflich veranlasste Abwesenheit von Wohnung und erster Tätigkeitsstätte.",
+     "eingeschmolzen": "abwesenheit_stunden meint Abwesenheit zugleich von Wohnung und erster Tätigkeitsstätte während einer auswärtigen beruflichen Tätigkeit."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "mit_uebernachtung",
+      "interpretation"
+     ],
+     "cluster": "mit_uebernachtung bezeichnet eine Übernachtung außerhalb der Wohnung am relevanten, vorhergehenden oder anschließenden Tag.",
+     "eingeschmolzen": "mit_uebernachtung umfasst die Übernachtung am selben, anschließenden oder vorhergehenden Tag."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "an_oder_abreisetag",
+      "interpretation"
+     ],
+     "cluster": "Der Wert wird als steuerlicher An- oder Abreisetag der auswärtigen Tätigkeit verstanden.",
+     "eingeschmolzen": "an_oder_abreisetag wird als gesetzlicher An- oder Abreisetag einer auswärtigen Tätigkeit verstanden."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "mit_uebernachtung",
+      "interpretation"
+     ],
+     "cluster": "mit_uebernachtung bezeichnet eine Übernachtung außerhalb der Wohnung am relevanten, vorhergehenden oder anschließenden Tag.",
+     "eingeschmolzen": "mit_uebernachtung bedeutet eine Übernachtung außerhalb der Wohnung im für den An- oder Abreisetag relevanten Zeitraum."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "an_oder_abreisetag",
+      "interpretation"
+     ],
+     "cluster": "Der Wert wird als steuerlicher An- oder Abreisetag der auswärtigen Tätigkeit verstanden.",
+     "eingeschmolzen": "an_oder_abreisetag wird als gesetzlicher An- oder Abreisetag einer auswärtigen beruflichen Tätigkeit verstanden."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "zeitbezug"
+     ],
+     "cluster": "monate_am_ort zählt volle Monate seit Beginn derselben längerfristigen Tätigkeit an derselben Tätigkeitsstätte.",
+     "eingeschmolzen": "monate_am_ort zählt volle Monate derselben Tätigkeitsstätte seit Tätigkeitsbeginn und entscheidet die Dreimonatsfrist."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "zeitbezug"
+     ],
+     "cluster": "monate_am_ort wird so verstanden, dass vierwöchige Unterbrechungen bereits als Neubeginn berücksichtigt sind.",
+     "eingeschmolzen": "Etwaige Unterbrechungen von mindestens vier Wochen sind im Monatswert bereits als Neubeginn berücksichtigt."
+    }
+   ],
+   "norm_teile": [
+    {
+     "key": [
+      "ref",
+      "satz 1"
+     ],
+     "cluster": "Mehraufwendungen des Arbeitnehmers für die Verpflegung sind nur nach Maßgabe der folgenden Sätze als Werbungskosten abziehbar.",
+     "eingeschmolzen": "als Werbungskosten abziehbar"
+    },
+    {
+     "key": [
+      "ref",
+      "satz 2"
+     ],
+     "cluster": "Wird der Arbeitnehmer außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig",
+     "eingeschmolzen": "außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig"
+    },
+    {
+     "key": [
+      "ref",
+      "satz 5"
+     ],
+     "cluster": "Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge",
+     "eingeschmolzen": "Bei einer Tätigkeit im Ausland"
+    },
+    {
+     "key": [
+      "ref",
+      "satz 11"
+     ],
+     "cluster": "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung",
+     "eingeschmolzen": "steuerfreie Erstattungen für Verpflegung"
+    },
+    {
+     "key": [
+      "ref",
+      "satz 1"
+     ],
+     "cluster": "Mehraufwendungen des Arbeitnehmers für die Verpflegung sind nur nach Maßgabe der folgenden Sätze als Werbungskosten abziehbar.",
+     "eingeschmolzen": "als Werbungskosten abziehbar"
+    },
+    {
+     "key": [
+      "ref",
+      "satz 2"
+     ],
+     "cluster": "Wird der Arbeitnehmer außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig",
+     "eingeschmolzen": "außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig"
+    },
+    {
+     "key": [
+      "ref",
+      "satz 2"
+     ],
+     "cluster": "Wird der Arbeitnehmer außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig",
+     "eingeschmolzen": "außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig"
+    },
+    {
+     "key": [
+      "ref",
+      "satz 4"
+     ],
+     "cluster": "Hat der Arbeitnehmer keine erste Tätigkeitsstätte",
+     "eingeschmolzen": "Hat der Arbeitnehmer keine erste Tätigkeitsstätte, gelten die Sätze 2 und 3 entsprechend."
+    },
+    {
+     "key": [
+      "ref",
+      "satz 5"
+     ],
+     "cluster": "Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge",
+     "eingeschmolzen": "Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge nach Satz 3 länderweise unterschiedliche Pauschbeträge."
+    },
+    {
+     "key": [
+      "ref",
+      "satz 10"
+     ],
+     "cluster": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt",
+     "eingeschmolzen": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag"
+    },
+    {
+     "key": [
+      "ref",
+      "satz 11"
+     ],
+     "cluster": "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung",
+     "eingeschmolzen": "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug insoweit ausgeschlossen."
+    }
+   ]
+  },
+  "cluster": {
+   "abweichungen": 12,
+   "annahmen": 19,
+   "norm_teile": 19
+  },
+  "item_splits": [
+   {
+    "art": "abweichung",
+    "item": "Bei gleichzeitigem an_oder_abreisetag, mit_uebernachtung und abwesenheit_stunden >=24 setzt die Formalisierung 28 statt ",
+    "schluessel": "[\"abweichungen\", \"betrifft\", \"ergebnis\"]",
+    "gueltige_stimmen": 3
+   },
+   {
+    "art": "abweichung",
+    "item": "Abwesenheiten von mehr als 24 Stunden werden wie ein einzelner voller Kalendertag behandelt.",
+    "schluessel": "[\"abweichungen\", \"betrifft\", \"abwesenheit_stunden\"]",
+    "gueltige_stimmen": 3
+   },
+   {
+    "art": "annahme",
+    "item": "Der Wert wird als Abwesenheit von Wohnung und erster Tätigkeitsstätte an einem Kalendertag verstanden.",
+    "schluessel": "[\"annahmen\", \"betrifft_kat\", \"abwesenheit_stunden\", \"interpretation\"]",
+    "gueltige_stimmen": 3
+   },
+   {
+    "art": "annahme",
+    "item": "Der Wert wird als Dauer derselben längerfristigen Tätigkeit an derselben Tätigkeitsstätte gelesen.",
+    "schluessel": "[\"annahmen\", \"betrifft_kat\", \"monate_am_ort\", \"interpretation\"]",
+    "gueltige_stimmen": 3
+   },
+   {
+    "art": "annahme",
+    "item": "Es werden volle Monate gezählt; erst Werte größer als 3 sperren den Abzug vollständig.",
+    "schluessel": "[\"annahmen\", \"betrifft_kat\", \"monate_am_ort\", \"zeitbezug\"]",
+    "gueltige_stimmen": 3
+   },
+   {
+    "art": "annahme",
+    "item": "abwesenheit_stunden bezeichnet nur beruflich veranlasste Abwesenheit von Wohnung und erster Tätigkeitsstätte.",
+    "schluessel": "[\"annahmen\", \"betrifft_kat\", \"abwesenheit_stunden\", \"interpretation\"]",
+    "gueltige_stimmen": 3
+   },
+   {
+    "art": "annahme",
+    "item": "monate_am_ort wird so verstanden, dass vierwöchige Unterbrechungen bereits als Neubeginn berücksichtigt sind.",
+    "schluessel": "[\"annahmen\", \"betrifft_kat\", \"monate_am_ort\", \"zeitbezug\"]",
+    "gueltige_stimmen": 3
+   },
+   {
+    "art": "annahme",
+    "item": "monate_am_ort ist bereits um einen Neubeginn nach mindestens vierwöchiger Unterbrechung bereinigt.",
+    "schluessel": "[\"annahmen\", \"betrifft_kat\", \"monate_am_ort\", \"interpretation\"]",
+    "gueltige_stimmen": 3
+   },
+   {
+    "art": "annahme",
+    "item": "Der Wert bezieht sich auf den jeweils zu beurteilenden Kalendertag.",
+    "schluessel": "[\"annahmen\", \"betrifft_kat\", \"abwesenheit_stunden\", \"zeitbezug\"]",
+    "gueltige_stimmen": 3
+   }
+  ],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "0377384fc542",
+ "timestamp": "2026-07-13T19:56:43+00:00"
+}

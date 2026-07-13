@@ -1,0 +1,147 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "progressionseinkuenfte werden direkt zum zu_versteuerndes_einkommen addiert.",
+   "bedingung_id": null,
+   "betrifft": "progressionseinkuenfte",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "est_auf_erhoehte_bemessung wird als die Einkommensteuer auf die erhöhte Bemessungsgrundlage interpretiert.",
+   "bedingung_id": "tarifwert_ist_p32a_ergebnis",
+   "betrifft": "est_auf_erhoehte_bemessung",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Die erhöhte Bemessungsgrundlage wird als Summe aus zu_versteuerndes_einkommen und progressionseinkuenfte definiert.",
+   "bedingung_id": null,
+   "betrifft": "erhoehte_bemessung",
+   "kategorie": "sonstige"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1), soweit er nicht bei der Ermittlung der Einkünfte aus nichtselbständiger Arbeit abziehbar ist",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+   "referenz": "§ 32b Abs. 2 S. 1 Nr. 1 EStG",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 3,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   5,
+   3,
+   0
+  ],
+  "gesaettigt": true,
+  "inventar_streuung": {
+   "abweichungen": [
+    {
+     "text": "Der besondere Steuersatz wird als Quotient aus est_auf_erhoehte_bemessung und erhoehte_bemessung berechnet.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Die festzusetzende Einkommensteuer mit Progression ist das Produkt aus besonderer_steuersatz und zu_versteuerndes_einkom",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Der besondere Steuersatz wird direkt auf das zu versteuernde Einkommen angewendet, ohne Berücksichtigung des AN-Pauschbe",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Die Berechnung des besonderen Steuersatzes erfolgt ohne explizite Berücksichtigung der Leistungen nach § 32b Abs. 2 S. 1",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "annahmen": [
+    {
+     "text": "Die erhöhte Bemessungsgrundlage wird als Summe aus zu_versteuerndes_einkommen und progressionseinkuenfte definiert.",
+     "key": [
+      "betrifft_kat",
+      "?",
+      "sonstige"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": []
+  },
+  "merge_log": {
+   "abweichungen": [
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Die festzusetzende Einkommensteuer mit Progression ist das Produkt aus besonderer_steuersatz und zu_versteuerndes_einkommen.",
+     "eingeschmolzen": "Die festzusetzende Einkommensteuer mit Progression wird als Produkt aus besonderer_steuersatz und zu_versteuerndes_einkommen berechnet."
+    }
+   ],
+   "annahmen": [
+    {
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "interpretation"
+     ],
+     "cluster": "progressionseinkuenfte werden direkt zum zu_versteuerndes_einkommen addiert.",
+     "eingeschmolzen": "Progressionseinkünfte werden direkt zum zu versteuernden Einkommen addiert."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "est_auf_erhoehte_bemessung",
+      "interpretation"
+     ],
+     "cluster": "est_auf_erhoehte_bemessung wird als die Einkommensteuer auf die erhöhte Bemessungsgrundlage interpretiert.",
+     "eingeschmolzen": "Die Einkommensteuer auf die erhöhte Bemessungsgrundlage wird als direkter Input angenommen."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "est_auf_erhoehte_bemessung",
+      "interpretation"
+     ],
+     "cluster": "est_auf_erhoehte_bemessung wird als die Einkommensteuer auf die erhöhte Bemessungsgrundlage interpretiert.",
+     "eingeschmolzen": "est_auf_erhoehte_bemessung wird als absolute Steuer auf die erhöhte Bemessungsgrundlage interpretiert."
+    }
+   ],
+   "norm_teile": []
+  },
+  "cluster": {
+   "abweichungen": 4,
+   "annahmen": 3,
+   "norm_teile": 1
+  },
+  "item_splits": [],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "ac3a686f1dca",
+ "timestamp": "2026-07-13T19:15:00+00:00"
+}

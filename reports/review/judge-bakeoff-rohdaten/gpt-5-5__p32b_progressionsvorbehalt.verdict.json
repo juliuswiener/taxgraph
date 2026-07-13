@@ -1,0 +1,390 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "progressionseinkuenfte wird als bereits um den Arbeitnehmer-Pauschbetrag gekürzte Summe der Leistungen verstanden.",
+   "bedingung_id": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+   "betrifft": "progressionseinkuenfte",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "progressionseinkuenfte wird als vorzeichenbehafteter Betrag für Vermehrung oder Verminderung des zu versteuernden Einkommens verstanden.",
+   "bedingung_id": null,
+   "betrifft": "progressionseinkuenfte",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "est_auf_erhoehte_bemessung wird als Einkommensteuer auf die um Progressionseinkünfte geänderte Bemessung verstanden.",
+   "bedingung_id": "tarifwert_ist_p32a_ergebnis",
+   "betrifft": "est_auf_erhoehte_bemessung",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Der Eingabewert wird als Einkommensteuer verstanden, die sich bei Berechnung auf die angepasste Bemessungsgrundlage ergibt.",
+   "bedingung_id": "tarifwert_ist_p32a_ergebnis",
+   "betrifft": "est_auf_erhoehte_bemessung",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Der Betrag wird als vorzeichenbehafteter Betrag verstanden, sodass Verminderungen durch negative Werte abgebildet werden.",
+   "bedingung_id": null,
+   "betrifft": "progressionseinkuenfte",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "progressionseinkuenfte wird als bereits saldierter vorzeichenbehafteter Erhöhungs- oder Minderungsbetrag des zu versteuernden Einkommens verstanden.",
+   "bedingung_id": null,
+   "betrifft": "progressionseinkuenfte",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "progressionseinkuenfte wird als Betrag nach Arbeitnehmer-Pauschbetrag und dessen Nichtabziehbarkeit bei Lohneinkünften verstanden.",
+   "bedingung_id": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+   "betrifft": "progressionseinkuenfte",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "zu_versteuerndes_einkommen wird als das nach § 32a Absatz 1 zu versteuernde Einkommen verstanden.",
+   "bedingung_id": "konv:input_nur_etikettiertes",
+   "betrifft": "zu_versteuerndes_einkommen",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "progressionseinkuenfte kann als negativer Geldbetrag eingegeben werden, um die gesetzliche Verminderung abzubilden.",
+   "bedingung_id": null,
+   "betrifft": "progressionseinkuenfte",
+   "kategorie": "sonstige"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "im Fall des Absatzes 1 Nummer 1",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+   "referenz": "§ 32b Abs. 2 S. 1 Nr. 1",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1)",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+   "referenz": "§ 32b Abs. 2 S. 1 Nr. 1",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "soweit er nicht bei der Ermittlung der Einkünfte aus nichtselbständiger Arbeit abziehbar ist",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+   "referenz": "§ 32b Abs. 2 S. 1 Nr. 1",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "nach § 32a Absatz 1 zu versteuernde Einkommen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 32b Abs. 1 S. 1",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "bei der Berechnung der Einkommensteuer",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "tarifwert_ist_p32a_ergebnis",
+   "referenz": "§ 32b Abs. 2 S. 1 Nr. 1",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "die Summe der Leistungen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+   "referenz": "§ 32b Abs. 2 S. 1 Nr. 1",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "bei der Berechnung der Einkommensteuer",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "tarifwert_ist_p32a_ergebnis",
+   "referenz": "§ 32b Abs. 2 S. 1",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 5,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   7,
+   2,
+   1,
+   5,
+   3
+  ],
+  "gesaettigt": false,
+  "inventar_streuung": {
+   "abweichungen": [
+    {
+     "text": "Bei erhöhter Bemessung von 0 setzt die Formalisierung den besonderen Steuersatz auf 0.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Bei angepasster Bemessungsgrundlage von null setzt die Formalisierung den besonderen Steuersatz auf 0.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 3
+    }
+   ],
+   "annahmen": [
+    {
+     "text": "progressionseinkuenfte wird als bereits um den Arbeitnehmer-Pauschbetrag gekürzte Summe der Leistungen verstanden.",
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "interpretation"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "progressionseinkuenfte wird als vorzeichenbehafteter Betrag für Vermehrung oder Verminderung des zu versteuernden Einkom",
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "est_auf_erhoehte_bemessung wird als Einkommensteuer auf die um Progressionseinkünfte geänderte Bemessung verstanden.",
+     "key": [
+      "betrifft_kat",
+      "est_auf_erhoehte_bemessung",
+      "interpretation"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Der Eingabewert wird als Einkommensteuer verstanden, die sich bei Berechnung auf die angepasste Bemessungsgrundlage ergi",
+     "key": [
+      "betrifft_kat",
+      "est_auf_erhoehte_bemessung",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Der Betrag wird als vorzeichenbehafteter Betrag verstanden, sodass Verminderungen durch negative Werte abgebildet werden",
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "progressionseinkuenfte wird als bereits saldierter vorzeichenbehafteter Erhöhungs- oder Minderungsbetrag des zu versteue",
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "progressionseinkuenfte wird als Betrag nach Arbeitnehmer-Pauschbetrag und dessen Nichtabziehbarkeit bei Lohneinkünften v",
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "einheit"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "zu_versteuerndes_einkommen wird als das nach § 32a Absatz 1 zu versteuernde Einkommen verstanden.",
+     "key": [
+      "betrifft_kat",
+      "zu_versteuerndes_einkommen",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "progressionseinkuenfte kann als negativer Geldbetrag eingegeben werden, um die gesetzliche Verminderung abzubilden.",
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "sonstige"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": [
+    {
+     "text": "nach § 32a Absatz 1 zu versteuernde Einkommen",
+     "key": [
+      "ref",
+      "§ 32b abs. 1 s. 1"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "bei der Berechnung der Einkommensteuer",
+     "key": [
+      "ref",
+      "§ 32b abs. 2 s. 1 nr. 1"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "die Summe der Leistungen",
+     "key": [
+      "ref",
+      "§ 32b abs. 2 s. 1 nr. 1"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "bei der Berechnung der Einkommensteuer",
+     "key": [
+      "ref",
+      "§ 32b abs. 2 s. 1"
+     ],
+     "in_laeufen": 1
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Bei erhöhter Bemessung von 0 setzt die Formalisierung den besonderen Steuersatz auf 0.",
+     "eingeschmolzen": "Bei erhöhter Bemessung von null setzt die Formalisierung den besonderen Steuersatz auf null, was die Norm nicht ausdrücklich vorgibt."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Bei angepasster Bemessungsgrundlage von null setzt die Formalisierung den besonderen Steuersatz auf 0.",
+     "eingeschmolzen": "Bei einer Bemessungsgrundlage von 0 setzt die Formalisierung den besonderen Steuersatz auf 0; die Norm regelt diesen Fall nicht."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Bei angepasster Bemessungsgrundlage von null setzt die Formalisierung den besonderen Steuersatz auf 0.",
+     "eingeschmolzen": "Bei einer erhöhten Bemessungsgrundlage von 0 Euro setzt die Formalisierung den besonderen Steuersatz auf 0."
+    }
+   ],
+   "annahmen": [
+    {
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "interpretation"
+     ],
+     "cluster": "progressionseinkuenfte wird als vorzeichenbehafteter Betrag für Vermehrung oder Verminderung des zu versteuernden Einkommens verstanden.",
+     "eingeschmolzen": "Progressionseinkuenfte werden als vorzeichenbehafteter Nettobetrag der Vermehrung oder Verminderung des zu versteuernden Einkommens gelesen."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "interpretation"
+     ],
+     "cluster": "progressionseinkuenfte wird als bereits um den Arbeitnehmer-Pauschbetrag gekürzte Summe der Leistungen verstanden.",
+     "eingeschmolzen": "Progressionseinkuenfte werden als Summe der Leistungen nach maßgeblichem Arbeitnehmer-Pauschbetrag-Abzug verstanden."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "interpretation"
+     ],
+     "cluster": "progressionseinkuenfte wird als bereits um den Arbeitnehmer-Pauschbetrag gekürzte Summe der Leistungen verstanden.",
+     "eingeschmolzen": "Der Betrag wird als bereits um den Arbeitnehmer-Pauschbetrag geminderte Summe der Leistungen verstanden."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "est_auf_erhoehte_bemessung",
+      "interpretation"
+     ],
+     "cluster": "Der Eingabewert wird als Einkommensteuer verstanden, die sich bei Berechnung auf die angepasste Bemessungsgrundlage ergibt.",
+     "eingeschmolzen": "Der Betrag wird als Einkommensteuer verstanden, die sich bei Berechnung auf die veränderte Bemessungsgrundlage ergibt."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "est_auf_erhoehte_bemessung",
+      "interpretation"
+     ],
+     "cluster": "est_auf_erhoehte_bemessung wird als Einkommensteuer auf die um Progressionseinkünfte geänderte Bemessung verstanden.",
+     "eingeschmolzen": "est_auf_erhoehte_bemessung wird als Einkommensteuer verstanden, die auf die um progressionseinkuenfte angepasste Bemessungsgrundlage berechnet wurde."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "progressionseinkuenfte",
+      "interpretation"
+     ],
+     "cluster": "progressionseinkuenfte wird als bereits saldierter vorzeichenbehafteter Erhöhungs- oder Minderungsbetrag des zu versteuernden Einkommens verstanden.",
+     "eingeschmolzen": "progressionseinkuenfte wird als saldierter Erhöhungs- oder Minderungsbetrag nach § 32b Absatz 2 Satz 1 Nummer 1 verstanden."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "est_auf_erhoehte_bemessung",
+      "interpretation"
+     ],
+     "cluster": "est_auf_erhoehte_bemessung wird als Einkommensteuer auf die um Progressionseinkünfte geänderte Bemessung verstanden.",
+     "eingeschmolzen": "est_auf_erhoehte_bemessung wird als Einkommensteuer auf das um progressionseinkuenfte veränderte zu versteuernde Einkommen verstanden."
+    }
+   ],
+   "norm_teile": [
+    {
+     "key": [
+      "ref",
+      "§ 32b abs. 2 s. 1 nr. 1"
+     ],
+     "cluster": "nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1)",
+     "eingeschmolzen": "die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1)"
+    }
+   ]
+  },
+  "cluster": {
+   "abweichungen": 2,
+   "annahmen": 9,
+   "norm_teile": 7
+  },
+  "item_splits": [
+   {
+    "art": "norm_teil",
+    "item": "im Fall des Absatzes 1 Nummer 1",
+    "schluessel": "[\"norm_teile\", \"ref\", \"§ 32b abs. 2 s. 1 nr. 1\"]",
+    "gueltige_stimmen": 3
+   }
+  ],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "d5b4a0588af3",
+ "timestamp": "2026-07-13T19:21:25+00:00"
+}

@@ -1,0 +1,130 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Nicht genannte Pflegegrade werden bei fehlender Hilflosigkeit als Anspruch auf 0 Euro behandelt.",
+   "bedingung_id": "pflegegrad_staffel",
+   "betrifft": "pflegegrad",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Pflegegrade außerhalb 2 bis 5 werden als Nichtgewährung mit 0 Euro statt als ungültiger Fall behandelt.",
+   "bedingung_id": null,
+   "betrifft": "pflegegrad",
+   "kategorie": "interpretation"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "im Sinne des § 33b Absatz 3 Satz 4",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "pflegegrad_staffel",
+   "referenz": "Satz 4",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "hilflos im Sinne des § 33b Absatz 3 Satz 4",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "pflegegrad_staffel",
+   "referenz": "§ 33b Absatz 3 Satz 4",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 4,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   2,
+   1,
+   1,
+   0
+  ],
+  "gesaettigt": true,
+  "inventar_streuung": {
+   "abweichungen": [],
+   "annahmen": [
+    {
+     "text": "Nicht genannte Pflegegrade werden bei fehlender Hilflosigkeit als Anspruch auf 0 Euro behandelt.",
+     "key": [
+      "betrifft_kat",
+      "pflegegrad",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Pflegegrade außerhalb 2 bis 5 werden als Nichtgewährung mit 0 Euro statt als ungültiger Fall behandelt.",
+     "key": [
+      "betrifft_kat",
+      "pflegegrad",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": [
+    {
+     "text": "im Sinne des § 33b Absatz 3 Satz 4",
+     "key": [
+      "ref",
+      "satz 4"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "hilflos im Sinne des § 33b Absatz 3 Satz 4",
+     "key": [
+      "ref",
+      "§ 33b absatz 3 satz 4"
+     ],
+     "in_laeufen": 1
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [],
+   "annahmen": [],
+   "norm_teile": [
+    {
+     "key": [
+      "ref",
+      "satz 4"
+     ],
+     "cluster": "im Sinne des § 33b Absatz 3 Satz 4",
+     "eingeschmolzen": "hilflos im Sinne des § 33b Absatz 3 Satz 4"
+    },
+    {
+     "key": [
+      "ref",
+      "satz 4"
+     ],
+     "cluster": "im Sinne des § 33b Absatz 3 Satz 4",
+     "eingeschmolzen": "hilflos im Sinne des § 33b Absatz 3 Satz 4"
+    }
+   ]
+  },
+  "cluster": {
+   "abweichungen": 0,
+   "annahmen": 2,
+   "norm_teile": 2
+  },
+  "item_splits": [
+   {
+    "art": "norm_teil",
+    "item": "im Sinne des § 33b Absatz 3 Satz 4",
+    "schluessel": "[\"norm_teile\", \"ref\", \"satz 4\"]",
+    "gueltige_stimmen": 3
+   }
+  ],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "590dbda38013",
+ "timestamp": "2026-07-13T19:14:22+00:00"
+}

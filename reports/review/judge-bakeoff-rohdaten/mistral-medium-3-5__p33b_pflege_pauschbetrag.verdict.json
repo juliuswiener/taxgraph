@@ -1,0 +1,209 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Pflegegrad wird als ganzzahliger Wert (2, 3, 4, 5) interpretiert.",
+   "bedingung_id": null,
+   "betrifft": "pflegegrad",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Hilflosigkeit nach § 33b Abs. 3 Satz 4 wird als boolean angenommen.",
+   "bedingung_id": null,
+   "betrifft": "ist_hilflos",
+   "kategorie": "geltungsvoraussetzung"
+  },
+  {
+   "annahme": "Pflegegrad 4 oder 5 wird als separate Bedingung behandelt.",
+   "bedingung_id": "pflegegrad_staffel",
+   "betrifft": "pflegegrad",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Hilflosigkeit führt direkt zu 1.800 Euro, unabhängig vom Pflegegrad.",
+   "bedingung_id": "pflegegrad_staffel",
+   "betrifft": "ist_hilflos",
+   "kategorie": "geltungsvoraussetzung"
+  },
+  {
+   "annahme": "Pflegegrade außerhalb 2-5 werden als nicht förderungswürdig angenommen.",
+   "bedingung_id": "pflegegrad_staffel",
+   "betrifft": "pflegegrad",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Hilflosigkeit wird als eigenständiger Fall mit 1.800 Euro interpretiert.",
+   "bedingung_id": "pflegegrad_staffel",
+   "betrifft": "ist_hilflos",
+   "kategorie": "interpretation"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "Ein Pflege-Pauschbetrag nach Satz 3 Nummer 3 wird auch gewährt, wenn die gepflegte Person hilflos im Sinne des § 33b Absatz 3 Satz 4 ist.",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "pflegegrad_staffel",
+   "referenz": "§ 33b Abs. 6 S. 4",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 4,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   4,
+   3,
+   4,
+   0
+  ],
+  "gesaettigt": true,
+  "inventar_streuung": {
+   "abweichungen": [
+    {
+     "text": "Pflegegrad 1 wird nicht explizit auf 0 Euro gesetzt, aber implizit durch else $0.00.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Pauschbetrag für Pflegegrad 4 oder 5 wird auch bei Hilflosigkeit gewährt, nicht nur für Pflegegrad 4 oder 5.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Pflegegrad 1 oder 0 führt zu 0 Euro, obwohl die Norm nur Pflegegrade 2-5 und Hilflosigkeit regelt.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Hilflosigkeit gewährt immer 1.800 Euro, auch ohne Pflegegrad 4 oder 5.",
+     "key": [
+      "betrifft",
+      "ist_hilflos"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "annahmen": [
+    {
+     "text": "Pflegegrad wird als ganzzahliger Wert (2, 3, 4, 5) interpretiert.",
+     "key": [
+      "betrifft_kat",
+      "pflegegrad",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Hilflosigkeit nach § 33b Abs. 3 Satz 4 wird als boolean angenommen.",
+     "key": [
+      "betrifft_kat",
+      "ist_hilflos",
+      "geltungsvoraussetzung"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Pflegegrad 4 oder 5 wird als separate Bedingung behandelt.",
+     "key": [
+      "betrifft_kat",
+      "pflegegrad",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Hilflosigkeit führt direkt zu 1.800 Euro, unabhängig vom Pflegegrad.",
+     "key": [
+      "betrifft_kat",
+      "ist_hilflos",
+      "geltungsvoraussetzung"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Pflegegrade außerhalb 2-5 werden als nicht förderungswürdig angenommen.",
+     "key": [
+      "betrifft_kat",
+      "pflegegrad",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Hilflosigkeit wird als eigenständiger Fall mit 1.800 Euro interpretiert.",
+     "key": [
+      "betrifft_kat",
+      "ist_hilflos",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": []
+  },
+  "merge_log": {
+   "abweichungen": [
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Pauschbetrag für Pflegegrad 4 oder 5 wird auch bei Hilflosigkeit gewährt, nicht nur für Pflegegrad 4 oder 5.",
+     "eingeschmolzen": "Pauschbetrag wird auch bei Pflegegrad 4 oder 5 gewährt, nicht nur bei 2, 3 oder Hilflosigkeit."
+    }
+   ],
+   "annahmen": [
+    {
+     "key": [
+      "betrifft_kat",
+      "pflegegrad",
+      "interpretation"
+     ],
+     "cluster": "Pflegegrad 4 oder 5 wird als separate Bedingung behandelt.",
+     "eingeschmolzen": "Pflegegrad 4 oder 5 wird als separate Bedingung geprüft."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "ist_hilflos",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Hilflosigkeit führt direkt zu 1.800 Euro, unabhängig vom Pflegegrad.",
+     "eingeschmolzen": "Hilflosigkeit führt unabhängig vom Pflegegrad zu 1.800 Euro."
+    }
+   ],
+   "norm_teile": []
+  },
+  "cluster": {
+   "abweichungen": 4,
+   "annahmen": 6,
+   "norm_teile": 1
+  },
+  "item_splits": [
+   {
+    "art": "annahme",
+    "item": "Hilflosigkeit nach § 33b Abs. 3 Satz 4 wird als boolean angenommen.",
+    "schluessel": "[\"annahmen\", \"betrifft_kat\", \"ist_hilflos\", \"geltungsvoraussetzung\"]",
+    "gueltige_stimmen": 3
+   }
+  ],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "09fe605469ac",
+ "timestamp": "2026-07-13T19:11:46+00:00"
+}

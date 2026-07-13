@@ -1,0 +1,585 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Annahme, dass 'im_inland' die Unterkunftslage eindeutig klassifiziert.",
+   "bedingung_id": "konv:input_nur_etikettiertes",
+   "betrifft": "im_inland",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Annahme, dass 'unterkunftskosten_monat' nur die reinen Nutzungskosten umfasst.",
+   "bedingung_id": "konv:input_nur_etikettiertes",
+   "betrifft": "unterkunftskosten_monat",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Unterkunftskosten im Inland werden pauschal auf 1.000 Euro begrenzt.",
+   "bedingung_id": null,
+   "betrifft": "im_inland",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Unterkunftskosten im Ausland werden pauschal auf 2.000 Euro begrenzt.",
+   "bedingung_id": null,
+   "betrifft": "im_inland",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Tatsächliche Aufwendungen werden als monatliche Kosten interpretiert.",
+   "bedingung_id": null,
+   "betrifft": "unterkunftskosten_monat",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Unterkunftskosten werden als monatliche Bruttoaufwendungen verstanden.",
+   "bedingung_id": "konv:input_nur_etikettiertes",
+   "betrifft": "unterkunftskosten_monat",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Die Dauer wird in vollen Kalendermonaten gemessen.",
+   "bedingung_id": "konv:ganzzahl_monate",
+   "betrifft": "monate",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "Unterkunftskosten beziehen sich nur auf die Nutzung der Unterkunft.",
+   "bedingung_id": "konv:input_nur_etikettiertes",
+   "betrifft": "unterkunftskosten_monat",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Unterkunftskosten werden als monatliche Bruttobeträge interpretiert.",
+   "bedingung_id": null,
+   "betrifft": "im_inland",
+   "kategorie": "einheit"
+  },
+  {
+   "annahme": "Anzahl der Monate wird als ganzzahliger Zeitraum angenommen.",
+   "bedingung_id": "konv:ganzzahl_monate",
+   "betrifft": "monate",
+   "kategorie": "zeitbezug"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_verpflichtende_dienst_oder_werkswohnung",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 Satz 4",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Aufwendungen für die Wege vom Ort der ersten Tätigkeitsstätte zum Ort des eigenen Hausstandes und zurück (Familienheimfahrt) können jeweils nur für eine Familienheimfahrt wöchentlich abgezogen werden.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 Satz 5",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen Kilometer der Entfernung anzusetzen.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 Satz 6",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Aufwendungen für Familienheimfahrten mit einem dem Steuerpflichtigen im Rahmen einer Einkunftsart überlassenen Kraftfahrzeug werden nicht berücksichtigt.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 Satz 8",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält und auch am Ort der ersten Tätigkeitsstätte wohnt.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "eigener_hausstand_ausserhalb_des_taetigkeitsorts",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 Satz 2",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Das Vorliegen eines eigenen Hausstandes setzt das Innehaben einer Wohnung sowie eine finanzielle Beteiligung an den Kosten der Lebensführung voraus.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "finanzielle_beteiligung_an_lebensfuehrungskosten",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 Satz 3",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Nummer 4 Satz 3 bis 5 ist entsprechend anzuwenden.",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 Satz 7",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält und auch am Ort der ersten Tätigkeitsstätte wohnt.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "eigener_hausstand_ausserhalb_des_taetigkeitsorts",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Das Vorliegen eines eigenen Hausstandes setzt das Innehaben einer Wohnung sowie eine finanzielle Beteiligung an den Kosten der Lebensführung voraus.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "finanzielle_beteiligung_an_lebensfuehrungskosten",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Als Unterkunftskosten für eine doppelte Haushaltsführung können die tatsächlichen Aufwendungen für die Nutzung der Unterkunft angesetzt werden, höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland und höchstens 2 000 Euro im Monat bei einer Unterkunft im Ausland;",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss oder deren Kosten für Zwecke des Mietzuschusses nach § 54 des Bundesbesoldungsgesetzes als notwendig anerkannt worden sind.",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_verpflichtende_dienst_oder_werkswohnung",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Aufwendungen für die Wege vom Ort der ersten Tätigkeitsstätte zum Ort des eigenen Hausstandes und zurück (Familienheimfahrt) können jeweils nur für eine Familienheimfahrt wöchentlich abgezogen werden.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen Kilometer der Entfernung zwischen dem Ort des eigenen Hausstandes und dem Ort der ersten Tätigkeitsstätte anzusetzen.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Nummer 4 Satz 3 bis 5 ist entsprechend anzuwenden.",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Aufwendungen für Familienheimfahrten mit einem dem Steuerpflichtigen im Rahmen einer Einkunftsart überlassenen Kraftfahrzeug werden nicht berücksichtigt.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 EStG",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Als Unterkunftskosten für eine doppelte Haushaltsführung können die tatsächlichen Aufwendungen für die Nutzung der Unterkunft angesetzt werden, höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland und höchstens 2 000 Euro im Monat bei einer Unterkunft im Ausland",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 Satz 4",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss oder deren Kosten für Zwecke des Mietzuschusses nach § 54 des Bundesbesoldungsgesetzes als notwendig anerkannt worden sind.",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_verpflichtende_dienst_oder_werkswohnung",
+   "referenz": "§ 9 Abs. 1 S. 3 Nr. 5 Satz 4 Halbsatz 2",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 5,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   10,
+   4,
+   11,
+   3,
+   4
+  ],
+  "gesaettigt": false,
+  "inventar_streuung": {
+   "abweichungen": [
+    {
+     "text": "Fehlende Multiplikation mit der Anzahl der Monate für die Entfernungspauschale.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Die Formalisierung begrenzt die Unterkunftskosten nicht auf 2.000 Euro bei zwingender Nutzung einer Dienstwohnung.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Fehlende Multiplikation mit 0.38 Euro/km für Familienheimfahrten.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Fehlende Begrenzung auf eine Familienheimfahrt pro Woche.",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "annahmen": [
+    {
+     "text": "Annahme, dass 'im_inland' die Unterkunftslage eindeutig klassifiziert.",
+     "key": [
+      "betrifft_kat",
+      "im_inland",
+      "einheit"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Annahme, dass 'unterkunftskosten_monat' nur die reinen Nutzungskosten umfasst.",
+     "key": [
+      "betrifft_kat",
+      "unterkunftskosten_monat",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Unterkunftskosten im Inland werden pauschal auf 1.000 Euro begrenzt.",
+     "key": [
+      "betrifft_kat",
+      "im_inland",
+      "einheit"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Unterkunftskosten im Ausland werden pauschal auf 2.000 Euro begrenzt.",
+     "key": [
+      "betrifft_kat",
+      "im_inland",
+      "einheit"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Tatsächliche Aufwendungen werden als monatliche Kosten interpretiert.",
+     "key": [
+      "betrifft_kat",
+      "unterkunftskosten_monat",
+      "interpretation"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Unterkunftskosten werden als monatliche Bruttoaufwendungen verstanden.",
+     "key": [
+      "betrifft_kat",
+      "unterkunftskosten_monat",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Die Dauer wird in vollen Kalendermonaten gemessen.",
+     "key": [
+      "betrifft_kat",
+      "monate",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Unterkunftskosten beziehen sich nur auf die Nutzung der Unterkunft.",
+     "key": [
+      "betrifft_kat",
+      "unterkunftskosten_monat",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Unterkunftskosten werden als monatliche Bruttobeträge interpretiert.",
+     "key": [
+      "betrifft_kat",
+      "im_inland",
+      "einheit"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Anzahl der Monate wird als ganzzahliger Zeitraum angenommen.",
+     "key": [
+      "betrifft_kat",
+      "monate",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": [
+    {
+     "text": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend ",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 4"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Aufwendungen für die Wege vom Ort der ersten Tätigkeitsstätte zum Ort des eigenen Hausstandes und zurück (Familienheimfa",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 5"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen K",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 6"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Aufwendungen für Familienheimfahrten mit einem dem Steuerpflichtigen im Rahmen einer Einkunftsart überlassenen Kraftfahr",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 8"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte e",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 2"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Das Vorliegen eines eigenen Hausstandes setzt das Innehaben einer Wohnung sowie eine finanzielle Beteiligung an den Kost",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 3"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Nummer 4 Satz 3 bis 5 ist entsprechend anzuwenden.",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 7"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte e",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 estg"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Das Vorliegen eines eigenen Hausstandes setzt das Innehaben einer Wohnung sowie eine finanzielle Beteiligung an den Kost",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 estg"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Als Unterkunftskosten für eine doppelte Haushaltsführung können die tatsächlichen Aufwendungen für die Nutzung der Unter",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 estg"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend ",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 estg"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Aufwendungen für die Wege vom Ort der ersten Tätigkeitsstätte zum Ort des eigenen Hausstandes und zurück (Familienheimfa",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 estg"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen K",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 estg"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Nummer 4 Satz 3 bis 5 ist entsprechend anzuwenden.",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 estg"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Aufwendungen für Familienheimfahrten mit einem dem Steuerpflichtigen im Rahmen einer Einkunftsart überlassenen Kraftfahr",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 estg"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Als Unterkunftskosten für eine doppelte Haushaltsführung können die tatsächlichen Aufwendungen für die Nutzung der Unter",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 4"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend ",
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 4 halbsatz 2"
+     ],
+     "in_laeufen": 1
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Multiplikation mit der Anzahl der Monate für die Entfernungspauschale.",
+     "eingeschmolzen": "Fehlende Multiplikation mit der Anzahl der Monate für die Höchstbeträge."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Berücksichtigung der Ausnahme für Dienst-/Werkswohnungen im Ausland.",
+     "eingeschmolzen": "Die Formalisierung berücksichtigt keine Ausnahme für Dienst- oder Werkswohnungen im Ausland."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Multiplikation mit der Anzahl der Monate für die Entfernungspauschale.",
+     "eingeschmolzen": "Fehlende Multiplikation mit der Anzahl der Monate für die Entfernungs-pauschale."
+    }
+   ],
+   "annahmen": [
+    {
+     "key": [
+      "betrifft_kat",
+      "im_inland",
+      "einheit"
+     ],
+     "cluster": "Unterkunftskosten im Inland werden pauschal auf 1.000 Euro begrenzt.",
+     "eingeschmolzen": "Unterkunftskosten im Ausland werden pauschal mit 2.000 Euro begrenzt."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "im_inland",
+      "einheit"
+     ],
+     "cluster": "Unterkunftskosten im Inland werden pauschal auf 1.000 Euro begrenzt.",
+     "eingeschmolzen": "Unterkunftskosten werden pauschal als Inland/Ausland klassifiziert."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "unterkunftskosten_monat",
+      "interpretation"
+     ],
+     "cluster": "Tatsächliche Aufwendungen werden als monatliche Kosten interpretiert.",
+     "eingeschmolzen": "Tatsächliche Aufwendungen werden als monatliche Beträge verstanden."
+    }
+   ],
+   "norm_teile": [
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 4"
+     ],
+     "cluster": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss",
+     "eingeschmolzen": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss od"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 6"
+     ],
+     "cluster": "Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen Kilometer der Entfernung anzusetzen.",
+     "eingeschmolzen": "Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen Kilometer der Entfernung zwischen dem Ort"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 1 s. 3 nr. 5 satz 6"
+     ],
+     "cluster": "Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen Kilometer der Entfernung anzusetzen.",
+     "eingeschmolzen": "Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen Kilometer der Entfernung zwischen dem Ort"
+    }
+   ]
+  },
+  "cluster": {
+   "abweichungen": 5,
+   "annahmen": 10,
+   "norm_teile": 17
+  },
+  "item_splits": [
+   {
+    "art": "abweichung",
+    "item": "Die Formalisierung begrenzt die Unterkunftskosten nicht auf 2.000 Euro bei zwingender Nutzung einer Dienstwohnung.",
+    "schluessel": "[\"abweichungen\", \"betrifft\", \"ergebnis\"]",
+    "gueltige_stimmen": 3
+   }
+  ],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "0f8aa560fc15",
+ "timestamp": "2026-07-13T19:23:23+00:00"
+}

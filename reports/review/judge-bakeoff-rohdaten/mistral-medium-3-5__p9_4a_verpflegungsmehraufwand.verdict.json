@@ -1,0 +1,854 @@
+{
+ "parse_error": false,
+ "faithful": false,
+ "abweichungen": [
+  "Dreimonatsfrist wird strikt als >3 geprüft, nicht als erste drei Monate.",
+  "Keine Differenzierung zwischen An-/Abreisetag ohne Übernachtung (Satz 3 Nr. 2 vs. 3).",
+  "Mehr als 8 Stunden wird nicht auf überwiegenden Teil bei zwei Tagen geprüft (Satz 3 Nr. 3)."
+ ],
+ "stille_zusatzannahmen": [
+  {
+   "annahme": "Abwesenheit wird als reine Stundenangabe ohne Tagesbezug interpretiert.",
+   "bedingung_id": null,
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Übernachtung wird als binärer Fakt ohne Zeitbezug angenommen.",
+   "bedingung_id": null,
+   "betrifft": "mit_uebernachtung",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "An-/Abreisetag wird ohne Verknüpfung zu Übernachtung oder Kalendertag angenommen.",
+   "bedingung_id": null,
+   "betrifft": "an_oder_abreisetag",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Monate werden als durchgehende Dauer ohne Unterbrechungslogik angenommen.",
+   "bedingung_id": "keine_unterbrechung_mit_neubeginn",
+   "betrifft": "monate_am_ort",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "24 Stunden Abwesenheit impliziert automatische Pauschale.",
+   "bedingung_id": null,
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "An-/Abreisetag wird nur mit Übernachtung als Pauschale berücksichtigt.",
+   "bedingung_id": "uebernachtung_oder_eintaegig_ueber_acht_stunden",
+   "betrifft": "an_oder_abreisetag",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Unterbrechungen >4 Wochen werden nicht modelliert (Satz 7).",
+   "bedingung_id": "keine_unterbrechung_mit_neubeginn",
+   "betrifft": "monate_am_ort",
+   "kategorie": "geltungsvoraussetzung"
+  },
+  {
+   "annahme": "Übernachtung wird als binärer Faktor für Pauschale behandelt.",
+   "bedingung_id": null,
+   "betrifft": "mit_uebernachtung",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Abwesenheit wird als kontinuierliche Stundenanzahl interpretiert.",
+   "bedingung_id": "konv:stunden_je_kalendertag",
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "An-/Abreisetag wird als boolescher Wert ohne Übernachtungsprüfung interpretiert.",
+   "bedingung_id": null,
+   "betrifft": "an_oder_abreisetag",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Abwesenheit wird in Stunden als ganzzahliger Wert angenommen.",
+   "bedingung_id": "konv:stunden_je_kalendertag",
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Übernachtung wird als boolescher Wert (ja/nein) interpretiert.",
+   "bedingung_id": "konv:input_nur_etikettiertes",
+   "betrifft": "mit_uebernachtung",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Abwesenheit wird als Stunden pro Tag interpretiert",
+   "bedingung_id": "konv:stunden_je_kalendertag",
+   "betrifft": "abwesenheit_stunden",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Übernachtung bezieht sich auf den aktuellen Tag",
+   "bedingung_id": null,
+   "betrifft": "mit_uebernachtung",
+   "kategorie": "interpretation"
+  },
+  {
+   "annahme": "Monate werden als ganze Monate gezählt",
+   "bedingung_id": "konv:ganzzahl_monate",
+   "betrifft": "monate_am_ort",
+   "kategorie": "zeitbezug"
+  },
+  {
+   "annahme": "Dreimonatsfrist beginnt mit erster Tätigkeit am Ort",
+   "bedingung_id": null,
+   "betrifft": "monate_am_ort",
+   "kategorie": "geltungsvoraussetzung"
+  }
+ ],
+ "scope_gap": [
+  {
+   "norm_teil": "sind die nach den Sätzen 3 und 5 ermittelten Verpflegungspauschalen zu kürzen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_mahlzeitengestellung",
+   "referenz": "§ 9 Abs. 4a Satz 8",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge nach Satz 3 länderweise unterschiedliche Pauschbeträge",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "taetigkeit_im_inland",
+   "referenz": "§ 9 Abs. 4a Satz 5",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag nach Satz 8",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "keine_mahlzeitengestellung",
+   "referenz": "§ 9 Abs. 4a Satz 10",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug insoweit ausgeschlossen",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_steuerfreien_verpflegungserstattungen",
+   "referenz": "§ 9 Abs. 4a Satz 11",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Hat der Arbeitnehmer keine erste Tätigkeitsstätte, gelten die Sätze 2 und 3 entsprechend",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 4a Satz 4",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn, wenn sie mindestens vier Wochen dauert",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_unterbrechung_mit_neubeginn",
+   "referenz": "§ 9 Abs. 4a Satz 7",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "jeweils 14 Euro für den An- und Abreisetag, wenn der Arbeitnehmer an diesem, einem anschließenden oder vorhergehenden Tag außerhalb seiner Wohnung übernachtet",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "uebernachtung_oder_eintaegig_ueber_acht_stunden",
+   "referenz": "§ 9 Abs. 4a Satz 3 Nr. 2",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "14 Euro für den Kalendertag, an dem der Arbeitnehmer ohne Übernachtung außerhalb seiner Wohnung mehr als 8 Stunden von seiner Wohnung und der ersten Tätigkeitsstätte abwesend ist",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "uebernachtung_oder_eintaegig_ueber_acht_stunden",
+   "referenz": "§ 9 Abs. 4a Satz 3 Nr. 3",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Kürzung der Pauschale bei bereitgestellten Mahlzeiten um 20%/40%.",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_mahlzeitengestellung",
+   "referenz": "§ 9 Abs. 4a Satz 8",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Länderspezifische Pauschbeträge bei Auslandsaufenthalt.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "taetigkeit_im_inland",
+   "referenz": "§ 9 Abs. 4a Satz 5",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Minderung des Kürzungsbetrags durch gezahltes Entgelt.",
+   "klasse": "unabhaengig",
+   "begruendung": "",
+   "abgedeckt_von": "none",
+   "referenz": "§ 9 Abs. 4a Satz 10",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Ausschluss des Werbungskostenabzugs bei steuerfreien Erstattungen.",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_steuerfreien_verpflegungserstattungen",
+   "referenz": "§ 9 Abs. 4a Satz 11",
+   "grenzfall": false
+  },
+  {
+   "norm_teil": "Wird dem Arbeitnehmer eine Mahlzeit zur Verfügung gestellt, sind die Verpflegungspauschalen zu kürzen.",
+   "klasse": "wirkt_hinein",
+   "begruendung": "",
+   "abgedeckt_von": "keine_mahlzeitengestellung",
+   "referenz": "§ 9 Abs. 4a Satz 8",
+   "grenzfall": false
+  }
+ ],
+ "grenzfaelle": [],
+ "judge_instability": {
+  "inventar_laeufe": 5,
+  "inventar_ungueltig": 0,
+  "saettigungskurve": [
+   20,
+   9,
+   4,
+   6,
+   5
+  ],
+  "gesaettigt": false,
+  "inventar_streuung": {
+   "abweichungen": [
+    {
+     "text": "Fehlende Berücksichtigung länderspezifischer Pauschalen (Satz 5).",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "Fehlende Berücksichtigung von Entgeltzahlungen für Mahlzeiten (Satz 10).",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "Fehlende Berücksichtigung steuerfreier Erstattungen (Satz 11).",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Dreimonatsfrist wird strikt als >3 geprüft, nicht als erste drei Monate.",
+     "key": [
+      "betrifft",
+      "monate_am_ort"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "24-Stunden-Abwesenheit wird nicht mit Übernachtung verknüpft (Satz 3 Nr. 1).",
+     "key": [
+      "betrifft",
+      "abwesenheit_stunden"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Fehlende Regelung für Fälle ohne erste Tätigkeitsstätte (Satz 4).",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Fehlende Regelung für Unterbrechungen (Satz 7).",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Keine Differenzierung zwischen An-/Abreisetag ohne Übernachtung (Satz 3 Nr. 2 vs. 3).",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Mehr als 8 Stunden wird nicht auf überwiegenden Teil bei zwei Tagen geprüft (Satz 3 Nr. 3).",
+     "key": [
+      "betrifft",
+      "abwesenheit_stunden"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Unterbrechungen von mindestens vier Wochen führen nicht zu Neubeginn (Satz 7).",
+     "key": [
+      "betrifft",
+      "monate_am_ort"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Fehlende länderweise unterschiedliche Pauschbeträge bei Auslandstätigkeit (Satz 5).",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Fehlende 14-Euro-Regelung bei mehr als 8 Stunden Abwesenheit ohne Übernachtung (Satz 3 Nr. 3).",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "24-Stunden-Abwesenheit wird als >=24 Stunden (nicht exakt 24) geprüft.",
+     "key": [
+      "betrifft",
+      "abwesenheit_stunden"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Fehlende Berücksichtigung von Auslands-Pauschbeträgen (Satz 5)",
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "annahmen": [
+    {
+     "text": "Abwesenheit wird als reine Stundenangabe ohne Tagesbezug interpretiert.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Übernachtung wird als binärer Fakt ohne Zeitbezug angenommen.",
+     "key": [
+      "betrifft_kat",
+      "mit_uebernachtung",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "An-/Abreisetag wird ohne Verknüpfung zu Übernachtung oder Kalendertag angenommen.",
+     "key": [
+      "betrifft_kat",
+      "an_oder_abreisetag",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Monate werden als durchgehende Dauer ohne Unterbrechungslogik angenommen.",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "zeitbezug"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "24 Stunden Abwesenheit impliziert automatische Pauschale.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "An-/Abreisetag wird nur mit Übernachtung als Pauschale berücksichtigt.",
+     "key": [
+      "betrifft_kat",
+      "an_oder_abreisetag",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Unterbrechungen >4 Wochen werden nicht modelliert (Satz 7).",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "geltungsvoraussetzung"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Übernachtung wird als binärer Faktor für Pauschale behandelt.",
+     "key": [
+      "betrifft_kat",
+      "mit_uebernachtung",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Abwesenheit wird als kontinuierliche Stundenanzahl interpretiert.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "An-/Abreisetag wird als boolescher Wert ohne Übernachtungsprüfung interpretiert.",
+     "key": [
+      "betrifft_kat",
+      "an_oder_abreisetag",
+      "interpretation"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Abwesenheit wird in Stunden als ganzzahliger Wert angenommen.",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Übernachtung wird als boolescher Wert (ja/nein) interpretiert.",
+     "key": [
+      "betrifft_kat",
+      "mit_uebernachtung",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Abwesenheit wird als Stunden pro Tag interpretiert",
+     "key": [
+      "betrifft_kat",
+      "abwesenheit_stunden",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Übernachtung bezieht sich auf den aktuellen Tag",
+     "key": [
+      "betrifft_kat",
+      "mit_uebernachtung",
+      "interpretation"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Monate werden als ganze Monate gezählt",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "zeitbezug"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Dreimonatsfrist beginnt mit erster Tätigkeit am Ort",
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "geltungsvoraussetzung"
+     ],
+     "in_laeufen": 1
+    }
+   ],
+   "norm_teile": [
+    {
+     "text": "sind die nach den Sätzen 3 und 5 ermittelten Verpflegungspauschalen zu kürzen",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 8"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge nach Satz 3 länderweise unterschiedliche Pauschbet",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 5"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag nach Satz 8",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 10"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug insoweit ausgeschlossen",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 11"
+     ],
+     "in_laeufen": 4
+    },
+    {
+     "text": "Hat der Arbeitnehmer keine erste Tätigkeitsstätte, gelten die Sätze 2 und 3 entsprechend",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 4"
+     ],
+     "in_laeufen": 3
+    },
+    {
+     "text": "jeweils 14 Euro für den An- und Abreisetag, wenn der Arbeitnehmer an diesem, einem anschließenden oder vorhergehenden Ta",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 3 nr. 2"
+     ],
+     "in_laeufen": 2
+    },
+    {
+     "text": "Kürzung der Pauschale bei bereitgestellten Mahlzeiten um 20%/40%.",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 8"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Länderspezifische Pauschbeträge bei Auslandsaufenthalt.",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 5"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Minderung des Kürzungsbetrags durch gezahltes Entgelt.",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 10"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Ausschluss des Werbungskostenabzugs bei steuerfreien Erstattungen.",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 11"
+     ],
+     "in_laeufen": 1
+    },
+    {
+     "text": "Wird dem Arbeitnehmer eine Mahlzeit zur Verfügung gestellt, sind die Verpflegungspauschalen zu kürzen.",
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 8"
+     ],
+     "in_laeufen": 1
+    }
+   ]
+  },
+  "merge_log": {
+   "abweichungen": [
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Kürzung bei bereitgestellten Mahlzeiten (Satz 8).",
+     "eingeschmolzen": "Fehlende Kürzung bei bereitgestellten Mahlzeiten (Satz 8-10)."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Berücksichtigung länderspezifischer Pauschalen (Satz 5).",
+     "eingeschmolzen": "Keine Berücksichtigung länderspezifischer Pauschalen (Satz 5)."
+    },
+    {
+     "key": [
+      "betrifft",
+      "monate_am_ort"
+     ],
+     "cluster": "Dreimonatsfrist wird strikt als >3 geprüft, nicht als erste drei Monate.",
+     "eingeschmolzen": "Dreimonatsfrist wird als strikte Obergrenze (nicht 'erste drei Monate') umgesetzt."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Berücksichtigung von Entgeltzahlungen für Mahlzeiten (Satz 10).",
+     "eingeschmolzen": "Fehlende Berücksichtigung gezahlter Entgelte für Mahlzeiten (Satz 10)."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Regelung für Fälle ohne erste Tätigkeitsstätte (Satz 4).",
+     "eingeschmolzen": "Fehlende Regelung für Arbeitnehmer ohne erste Tätigkeitsstätte (Satz 4)."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Regelung für Unterbrechungen (Satz 7).",
+     "eingeschmolzen": "Fehlende 14-Euro-Regelung bei Übernachtung ohne An-/Abreisetag (Satz 3 Nr. 2)."
+    },
+    {
+     "key": [
+      "betrifft",
+      "monate_am_ort"
+     ],
+     "cluster": "Dreimonatsfrist wird strikt als >3 geprüft, nicht als erste drei Monate.",
+     "eingeschmolzen": "Dreimonatsfrist wird als strikte Obergrenze (nicht 'erste drei Monate') umgesetzt."
+    },
+    {
+     "key": [
+      "betrifft",
+      "abwesenheit_stunden"
+     ],
+     "cluster": "Mehr als 8 Stunden wird nicht auf überwiegenden Teil bei zwei Tagen geprüft (Satz 3 Nr. 3).",
+     "eingeschmolzen": "Mehr als 8 Stunden wird als >8 (nicht >=8) umgesetzt."
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Kürzung bei bereitgestellten Mahlzeiten (Satz 8).",
+     "eingeschmolzen": "Fehlende Kürzung bei bereitgestellten Mahlzeiten (Satz 8)"
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Berücksichtigung länderspezifischer Pauschalen (Satz 5).",
+     "eingeschmolzen": "Fehlende Berücksichtigung von Unterbrechungen (Satz 7)"
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Berücksichtigung von Entgeltzahlungen für Mahlzeiten (Satz 10).",
+     "eingeschmolzen": "Fehlende Berücksichtigung von Entgeltzahlungen (Satz 10)"
+    },
+    {
+     "key": [
+      "betrifft",
+      "ergebnis"
+     ],
+     "cluster": "Fehlende Berücksichtigung steuerfreier Erstattungen (Satz 11).",
+     "eingeschmolzen": "Fehlende Berücksichtigung steuerfreier Erstattungen (Satz 11)"
+    },
+    {
+     "key": [
+      "betrifft",
+      "abwesenheit_stunden"
+     ],
+     "cluster": "Mehr als 8 Stunden wird nicht auf überwiegenden Teil bei zwei Tagen geprüft (Satz 3 Nr. 3).",
+     "eingeschmolzen": "Mehr als 8 Stunden wird als >8 statt >=8 geprüft"
+    },
+    {
+     "key": [
+      "betrifft",
+      "monate_am_ort"
+     ],
+     "cluster": "Dreimonatsfrist wird strikt als >3 geprüft, nicht als erste drei Monate.",
+     "eingeschmolzen": "Dreimonatsfrist wird als >3 statt >=3 geprüft"
+    }
+   ],
+   "annahmen": [
+    {
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "zeitbezug"
+     ],
+     "cluster": "Monate werden als durchgehende Dauer ohne Unterbrechungslogik angenommen.",
+     "eingeschmolzen": "Monate werden als kalendarische Dauer ohne Unterbrechungsregelung gelesen."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "monate_am_ort",
+      "geltungsvoraussetzung"
+     ],
+     "cluster": "Unterbrechungen >4 Wochen werden nicht modelliert (Satz 7).",
+     "eingeschmolzen": "Unterbrechungen von mindestens vier Wochen führen zu Neubeginn der Frist."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "an_oder_abreisetag",
+      "interpretation"
+     ],
+     "cluster": "An-/Abreisetag wird als boolescher Wert ohne Übernachtungsprüfung interpretiert.",
+     "eingeschmolzen": "An-/Abreisetag wird als boolescher Wert (ja/nein) interpretiert."
+    },
+    {
+     "key": [
+      "betrifft_kat",
+      "an_oder_abreisetag",
+      "interpretation"
+     ],
+     "cluster": "An-/Abreisetag wird als boolescher Wert ohne Übernachtungsprüfung interpretiert.",
+     "eingeschmolzen": "An-/Abreisetag wird als boolescher Wert angenommen"
+    }
+   ],
+   "norm_teile": [
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 7"
+     ],
+     "cluster": "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn, wenn sie mindestens vier Wochen dauert",
+     "eingeschmolzen": "Neubeginn der Frist bei Unterbrechung von mindestens vier Wochen."
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 3 nr. 3"
+     ],
+     "cluster": "14 Euro für den Kalendertag, an dem der Arbeitnehmer ohne Übernachtung außerhalb seiner Wohnung mehr als 8 Stunden von seiner Wohnung und der ersten Tätigkeitss",
+     "eingeschmolzen": "14 Euro bei >8 Stunden Abwesenheit ohne Übernachtung."
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 4"
+     ],
+     "cluster": "Hat der Arbeitnehmer keine erste Tätigkeitsstätte, gelten die Sätze 2 und 3 entsprechend",
+     "eingeschmolzen": "Keine erste Tätigkeitsstätte: Sätze 2 und 3 gelten entsprechend."
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 3 nr. 3"
+     ],
+     "cluster": "14 Euro für den Kalendertag, an dem der Arbeitnehmer ohne Übernachtung außerhalb seiner Wohnung mehr als 8 Stunden von seiner Wohnung und der ersten Tätigkeitss",
+     "eingeschmolzen": "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtung, werden 14 Euro für den Kalendertag ge"
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 10"
+     ],
+     "cluster": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag nach Satz 8",
+     "eingeschmolzen": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag."
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 5"
+     ],
+     "cluster": "Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge nach Satz 3 länderweise unterschiedliche Pauschbeträge",
+     "eingeschmolzen": "Bei einer Tätigkeit im Ausland treten länderweise unterschiedliche Pauschbeträge an die Stelle der Pauschbeträge nach Satz 3."
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 4"
+     ],
+     "cluster": "Hat der Arbeitnehmer keine erste Tätigkeitsstätte, gelten die Sätze 2 und 3 entsprechend",
+     "eingeschmolzen": "Hat der Arbeitnehmer keine erste Tätigkeitsstätte, gelten die Sätze 2 und 3 entsprechend."
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 7"
+     ],
+     "cluster": "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn, wenn sie mindestens vier Wochen dauert",
+     "eingeschmolzen": "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn, wenn sie mindestens vier Wochen dauert."
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 11"
+     ],
+     "cluster": "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug insoweit ausgeschlossen",
+     "eingeschmolzen": "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug insoweit ausgeschlossen."
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 3 nr. 2"
+     ],
+     "cluster": "jeweils 14 Euro für den An- und Abreisetag, wenn der Arbeitnehmer an diesem, einem anschließenden oder vorhergehenden Tag außerhalb seiner Wohnung übernachtet",
+     "eingeschmolzen": "14 Euro für den An- und Abreisetag, wenn der Arbeitnehmer an diesem, einem anschließenden oder vorhergehenden Tag außerhalb seiner Wohnung übernachtet."
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 3 nr. 3"
+     ],
+     "cluster": "14 Euro für den Kalendertag, an dem der Arbeitnehmer ohne Übernachtung außerhalb seiner Wohnung mehr als 8 Stunden von seiner Wohnung und der ersten Tätigkeitss",
+     "eingeschmolzen": "14 Euro für den Kalendertag, an dem der Arbeitnehmer ohne Übernachtung außerhalb seiner Wohnung mehr als 8 Stunden abwesend ist."
+    },
+    {
+     "key": [
+      "ref",
+      "§ 9 abs. 4a satz 3 nr. 3"
+     ],
+     "cluster": "14 Euro für den Kalendertag, an dem der Arbeitnehmer ohne Übernachtung außerhalb seiner Wohnung mehr als 8 Stunden von seiner Wohnung und der ersten Tätigkeitss",
+     "eingeschmolzen": "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtung, werden 14 Euro für den Kalendertag ge"
+    }
+   ]
+  },
+  "cluster": {
+   "abweichungen": 15,
+   "annahmen": 16,
+   "norm_teile": 13
+  },
+  "item_splits": [
+   {
+    "art": "norm_teil",
+    "item": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag nach Satz 8",
+    "schluessel": "[\"norm_teile\", \"ref\", \"§ 9 abs. 4a satz 10\"]",
+    "gueltige_stimmen": 3
+   },
+   {
+    "art": "norm_teil",
+    "item": "Minderung des Kürzungsbetrags durch gezahltes Entgelt.",
+    "schluessel": "[\"norm_teile\", \"ref\", \"§ 9 abs. 4a satz 10\"]",
+    "gueltige_stimmen": 3
+   }
+  ],
+  "items_ohne_mehrheit": [],
+  "grenzfaelle": []
+ },
+ "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+ "lauf_id": "9d12cab472c1",
+ "timestamp": "2026-07-13T19:36:50+00:00"
+}

@@ -1,0 +1,129 @@
+{
+  "budget_spent": 2.4894,
+  "models_hash": "sha256:11d48c8ec3b4ecb9",
+  "candidates": {
+    "mistral-medium-3-5": {
+      "slug": "mistralai/mistral-medium-3-5",
+      "provider": [
+        "mistral"
+      ],
+      "angetreten": true,
+      "completion_rate": 1.0,
+      "mean_recall": 0.191,
+      "total_kosten": 0.7919,
+      "auch_abweichung_geflaggt": false,
+      "per_rule": {
+        "p33b_pflege_pauschbetrag": {
+          "completion": true,
+          "json_ok": true,
+          "n_annahmen": 6,
+          "n_scope_gap": 1,
+          "n_abweichungen": 0,
+          "registry_recall": 0.167,
+          "kosten": 0.0624,
+          "latenz_s": 36.3
+        },
+        "p32b_progressionsvorbehalt": {
+          "completion": true,
+          "json_ok": true,
+          "n_annahmen": 3,
+          "n_scope_gap": 1,
+          "n_abweichungen": 0,
+          "registry_recall": 0.333,
+          "kosten": 0.0564,
+          "latenz_s": 38.0
+        },
+        "p9_1_3_nr5_doppelte_haushaltsfuehrung": {
+          "completion": true,
+          "json_ok": true,
+          "n_annahmen": 10,
+          "n_scope_gap": 17,
+          "n_abweichungen": 0,
+          "registry_recall": 0.143,
+          "kosten": 0.2675,
+          "latenz_s": 118.2
+        },
+        "p9_4a_verpflegungsmehraufwand": {
+          "completion": true,
+          "json_ok": true,
+          "n_annahmen": 16,
+          "n_scope_gap": 13,
+          "n_abweichungen": 3,
+          "registry_recall": 0.12,
+          "kosten": 0.4056,
+          "latenz_s": 146.6
+        }
+      }
+    },
+    "gemini-pro-latest": {
+      "slug": "google/gemini-pro-latest",
+      "provider": [
+        "google"
+      ],
+      "angetreten": false,
+      "completion_rate": 0.0,
+      "mean_recall": null,
+      "total_kosten": 0,
+      "auch_abweichung_geflaggt": null,
+      "per_rule": {
+        "p33b_pflege_pauschbetrag": {
+          "completion": false,
+          "error": "RoleCallError: judge/google/gemini-pro-latest: OpenRouter 400: {\"error\":{\"message\":\"google/gemini-pro-latest is not a valid model ID\",\""
+        }
+      }
+    },
+    "gpt-5-5": {
+      "slug": "openai/gpt-5.5",
+      "provider": [
+        "openai"
+      ],
+      "angetreten": true,
+      "completion_rate": 1.0,
+      "mean_recall": 0.218,
+      "total_kosten": 1.6974,
+      "auch_abweichung_geflaggt": false,
+      "per_rule": {
+        "p33b_pflege_pauschbetrag": {
+          "completion": true,
+          "json_ok": true,
+          "n_annahmen": 2,
+          "n_scope_gap": 2,
+          "n_abweichungen": 0,
+          "registry_recall": 0.167,
+          "kosten": 0.1285,
+          "latenz_s": 155.8
+        },
+        "p32b_progressionsvorbehalt": {
+          "completion": true,
+          "json_ok": true,
+          "n_annahmen": 9,
+          "n_scope_gap": 7,
+          "n_abweichungen": 0,
+          "registry_recall": 0.333,
+          "kosten": 0.294,
+          "latenz_s": 384.6
+        },
+        "p9_1_3_nr5_doppelte_haushaltsfuehrung": {
+          "completion": true,
+          "json_ok": true,
+          "n_annahmen": 16,
+          "n_scope_gap": 19,
+          "n_abweichungen": 0,
+          "registry_recall": 0.214,
+          "kosten": 0.2698,
+          "latenz_s": 660.1
+        },
+        "p9_4a_verpflegungsmehraufwand": {
+          "completion": true,
+          "json_ok": true,
+          "n_annahmen": 19,
+          "n_scope_gap": 19,
+          "n_abweichungen": 3,
+          "registry_recall": 0.16,
+          "kosten": 1.0051,
+          "latenz_s": 1193.5
+        }
+      }
+    }
+  }
+}
