@@ -386,6 +386,14 @@ def _estimate_cost(rule: dict) -> float:
     return 0.15 if len(rule.get("quellen", [])) >= 2 else 0.07
 
 
+def _ist_checkpoint(prev: dict) -> bool:
+    """Zaehlt ein vorhandener Report als Checkpoint (Skip beim Wiederanlauf)? Ja - AUSSER es
+    ist ein budget_abbruch: der markiert eine NIE gelaufene Regel (Pre-Call-Cap-Stopp) und muss
+    beim Wiederanlauf (erhoehter Cap) neu anlaufen. Sonst wuerde die nie verifizierte Regel als
+    'done' still uebersprungen (Checkpoint-Falle, F1)."""
+    return prev.get("queue_status") != "budget_abbruch"
+
+
 def _budget_abbruch_report(rid: str, total_cost: float, est: float, cap: float) -> dict:
     """Report eines nicht gestarteten Laufs (Pre-Call-Cap ueberschritten). queue_status
     budget_abbruch, gates leer - die Falschgruen-Sperre in _queue_status haelt das auf
@@ -419,7 +427,10 @@ def main() -> int:
                          "Pre-Call-Check: uebersteigt kumulierte Ist-Kosten + kalibrierte "
                          "Schaetzung des naechsten Calls den Cap, wird die Regel NICHT "
                          "gestartet (queue_status budget_abbruch) und der Lauf abgebrochen - "
-                         "nie stiller Weiterlauf. Default: kein Cap (Instructor-Freigabe je Charge).")
+                         "nie stiller Weiterlauf. Default: kein Cap (Instructor-Freigabe je Charge). "
+                         "Grenze (N1): RoleCallError/run_error-Pfade akkumulieren die Partial-Kosten "
+                         "des gescheiterten Calls nicht (total_cost_usd 0.0), der Cap undercountet auf "
+                         "Fehlerpfaden daher marginal.")
     args = ap.parse_args()
 
     try:
@@ -466,9 +477,13 @@ def main() -> int:
         d = os.path.join(OUT_ROOT, rid)
         done = os.path.join(d, "report.json")
         if os.path.exists(done) and not args.force:
-            print(f"=== {rid} :: skip (checkpoint) ===")
-            total_cost += json.load(open(done, encoding="utf-8")).get("total_cost_usd", 0.0)
-            continue
+            prev = json.load(open(done, encoding="utf-8"))
+            if _ist_checkpoint(prev):
+                print(f"=== {rid} :: skip (checkpoint) ===")
+                total_cost += prev.get("total_cost_usd", 0.0)
+                continue
+            # budget_abbruch-Report: nie gelaufene Regel, neu anlaufen lassen (F1).
+            print(f"=== {rid} :: budget_abbruch-Report gefunden -> Neuanlauf ===")
 
         print(f"\n=== {rid} ===", flush=True)
         os.makedirs(d, exist_ok=True)

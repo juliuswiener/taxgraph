@@ -270,6 +270,16 @@ def test_pre_call_cap_schwellenlogik():
     assert not (total + _estimate_cost({"quellen": [{}]}) > cap)
 
 
+def test_budget_abbruch_kein_checkpoint():
+    """F1 Checkpoint-Falle: ein budget_abbruch-Report (nie gelaufene Regel) darf beim
+    Wiederanlauf NICHT als Checkpoint uebersprungen werden, echte Reports schon."""
+    from run import _ist_checkpoint
+    assert _ist_checkpoint({"queue_status": "verified_bedingt"}) is True
+    assert _ist_checkpoint({"queue_status": "discovery_triage"}) is True
+    assert _ist_checkpoint({"queue_status": "flagged_for_review"}) is True
+    assert _ist_checkpoint({"queue_status": "budget_abbruch"}) is False  # Neuanlauf, kein Skip
+
+
 # -- Strikter YAML-Loader -----------------------------------------------------
 
 def test_doppelter_schluessel_ist_ein_fehler():
