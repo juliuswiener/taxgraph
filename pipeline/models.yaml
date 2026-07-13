@@ -70,9 +70,18 @@ roles:
     fewshot_set_id: "formalisierung_base@1"   # identische Few-Shots wie A
 
   judge:
-    # Dritte Familie gegenueber A (Anthropic) und B (Z.AI): DeepSeek. In G2 die
-    # einzige Judge-Besetzung mit annahme_verpasst = 0.000.
-    slug: "deepseek/deepseek-v4-pro"
+    # SIEGER-PIN 2026-07-13 (Judge-Modell-Bake-off, Instructor-Adjudikation msg 1631,
+    # Rohdaten reports/review/judge-bakeoff-rohdaten/, Messplan 1dd44f2 + Addendum 6f43abb):
+    # NEUE Judge-Besetzung = mistralai/mistral-medium-3-5 (dritte Familie ggue. A=Anthropic,
+    # B=Z.AI/GLM; EU-Host). Anlass: deepseek-v4-pro chronisch schlecht ueber westliche Provider
+    # (deepinfra timeout + together hang, beide an Regel 1). Bake-off (2 von 3 Kandidaten angetreten;
+    # gemini-pro-latest invalid-slug, nicht angetreten): mistral schlug gpt-5.5 auf ZUVERLAESSIGKEIT
+    # (mistral 36-147s vs gpt bis 1194s Hang-Territorium), bei vergleichbarem Recall (Delta +0,027
+    # im Rauschband) - beide lasen den hilflos-"auch"-Vorrang KORREKT (deepseek-fp4-Blindfleck
+    # ueberwunden). mistral: schnell, billig (~0,06/Regel), EU. Zuverlaessigkeit war vorregistrierte
+    # Vorbedingung. A bleibt Sonnet, B bleibt GLM - Dekorrelation ueber alle drei Rollen intakt.
+    # (Alt-Besetzung deepseek-v4-pro: in G2 annahme_verpasst 0.000, aber Provider-untragbar.)
+    slug: "mistralai/mistral-medium-3-5"
     # Provider-Wechsel 2026-07-10 (geloggt, nicht stiller Retry-Ausweich):
     # Fireworks rate-limitet deepseek-v4-pro persistent mit 429 (drei
     # Replikationslaeufe abgebrochen). Zurueck auf Together, das im Provider-Probe
@@ -96,9 +105,13 @@ roles:
     # ist der einzige westliche Kandidat mit Historie. Eskalations-Regel: failt Together an der ersten
     # Nachzug-Regel -> STOPP, kein dritter Provider-Wurf; dann Judge-MODELL-Frage (Julius +
     # vorregistrierter Messplan, Kandidaten-Bake-off wie B-Rolle). Bewusster Hash-Bump.
-    providers: ["together"]
-    # QUANT-AUSNAHME (dokumentiert, Instructor-Delegation 2026-07-13, Julius-Widerruf moeglich):
-    # Judge-Endpoints koennen quantisiert sein (deepinfra war fp4, together unknown). Die Unquant-Doktrin
+    providers: ["mistral"]
+    # QUANT-STATUS mistral-Endpoint: OpenRouter /endpoints meldet Quantisierung "unknown" (NICHT
+    # fp4 - die fruehere fp4-Ausnahme-Notiz fuer deepinfra ist damit obsolet; mistral ist kein
+    # sichtbar quantisierter Tier). Die frueheren Provider-Kommentare (fireworks/together/deepinfra
+    # fuer deepseek-v4-pro) sind Historie der Alt-Besetzung und dokumentieren die Eskalationskette.
+    # QUANT-AUSNAHMEN-DOKTRIN bleibt gueltig (Instructor-Delegation 2026-07-13, Julius-Widerruf
+    # moeglich): auch ein quantisierter Judge waere zulaessig. Die Unquant-Doktrin
     # (fp4/fp8 ausgeschlossen) schuetzt die FORMALISIERER (deren Output wird Code, muss exakt
     # sein) - der Judge ist per Registry-Ratsche reiner DETEKTOR: seine Streuung ist konstruktiv
     # neutralisiert, die Gates haengen nie an seiner Wahrheit, Quantisierung ist nur Rauschen im
