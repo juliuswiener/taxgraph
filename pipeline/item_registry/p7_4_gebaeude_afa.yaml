@@ -1,0 +1,20 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p7_4_gebaeude_afa
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 abs. 4 s. 1 nr. 2 estg
+  formulierungen:
+  - bei Gebäuden, soweit sie die Voraussetzungen der Nummer 1 nicht erfüllen
+  - nach dem 31. Dezember 2022 fertiggestellt worden sind, jährlich 3 Prozent
+  - vor dem 1. Januar 2023 und nach dem 31. Dezember 1924 fertiggestellt worden sind,
+    jährlich 2 Prozent
+  - vor dem 1. Januar 1925 fertiggestellt worden sind, jährlich 2,5 Prozent der Anschaffungs-
+    oder Herstellungskosten
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: afa_satz_aus_fertigstellungskategorie

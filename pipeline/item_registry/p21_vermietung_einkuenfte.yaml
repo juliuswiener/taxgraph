@@ -1,0 +1,14 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p21_vermietung_einkuenfte
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 21 abs. 1 estg
+  formulierungen:
+  - Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen
+  triage: nicht_material_backlog
+  klasse: unabhaengig

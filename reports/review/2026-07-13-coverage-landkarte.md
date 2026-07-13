@@ -85,10 +85,10 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 | Unterhalt an bedürftige Personen (Anlage Unterhalt) | § 33a Abs. 1 | ✅ | p33a_unterhalt (Charge 5, verified_bedingt) |
 | Pauschbeträge Behinderte/Hinterbliebene/Pflege | § 33b | ✅ | p33b_behinderten/pflege/hinterbliebenen_pauschbetrag (Charge 5, verified_bedingt) |
 
-### Andere Einkunftsarten — 🟡 (2/4 Anlagen)
+### Andere Einkunftsarten — 🟡 (3/4 Anlagen)
 | Kapitalvermögen (Abgeltungsteuer, Sparer-PB) | § 20, § 32d, § 20 Abs. 9 | ✅ | p20_6/p20_9/p32d_1 (Charge 6, verified_bedingt) |
 | Renten / sonstige wiederkehrende Bezüge | § 22 Nr. 1 | ✅ | p22_1_leibrente_besteuerungsanteil (Charge 7, Kohorten-params, verified_bedingt) |
-| Vermietung und Verpachtung | § 21 | ⬜ Anlage V | — |
+| Vermietung und Verpachtung | § 21 | ✅ | p21_vermietung_einkuenfte + p7_4_gebaeude_afa (Charge 8, verified_bedingt) |
 | Sonstige Einkünfte / private Veräußerung | § 22 Nr. 2/3, § 23 | ⬜ Anlage SO | — |
 
 ### Übergreifende Tarif-Mechanismen — 🟡 (2/4)
