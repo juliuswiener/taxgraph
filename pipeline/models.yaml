@@ -87,9 +87,18 @@ roles:
     # Schleife (Charge-2-Stufe-B, nr6_7 + nr5a beide role_timeout). DeepInfra
     # (US/westlicher Hoster, NICHT auf der Chinesisch-Ausschlussliste) antwortete im
     # Probe-Call in 0.7s mit "OK". Deshalb hier gepinnt. Aendert den Hash bewusst.
-    providers: ["deepinfra"]
-    # fp4-AUSNAHME (dokumentiert, Instructor-Delegation 2026-07-13, Julius-Widerruf moeglich):
-    # der deepinfra-Endpoint fuer deepseek-v4-pro ist fp4-quantisiert. Die Unquant-Doktrin
+    # Provider-SWAP 2026-07-13 (deepinfra -> together, doktrin-konformer Single-Swap, Instructor-
+    # Freigabe): deepinfra-Judge chronisch instabil (5+ Ausfaelle diese Session: 2x429 + 2x timeout
+    # Paket B + 1x timeout beim 9er-Judge-Nachzug, _inventar-Call judge.py:265). LEHRSTUECK: das
+    # oeffentliche OpenRouter /endpoints-Signal (Status 0, 100% Uptime) ist als Go-Signal FALSIFIZIERT
+    # - zeigte deepinfra gesund, der echte Call failte trotzdem; nur ein authentifizierter Probe-Call
+    # taugt zum Timing. Together (US-Host, nicht-chinesisch, war 07-11 degradiert, beim Swap Online)
+    # ist der einzige westliche Kandidat mit Historie. Eskalations-Regel: failt Together an der ersten
+    # Nachzug-Regel -> STOPP, kein dritter Provider-Wurf; dann Judge-MODELL-Frage (Julius +
+    # vorregistrierter Messplan, Kandidaten-Bake-off wie B-Rolle). Bewusster Hash-Bump.
+    providers: ["together"]
+    # QUANT-AUSNAHME (dokumentiert, Instructor-Delegation 2026-07-13, Julius-Widerruf moeglich):
+    # Judge-Endpoints koennen quantisiert sein (deepinfra war fp4, together unknown). Die Unquant-Doktrin
     # (fp4/fp8 ausgeschlossen) schuetzt die FORMALISIERER (deren Output wird Code, muss exakt
     # sein) - der Judge ist per Registry-Ratsche reiner DETEKTOR: seine Streuung ist konstruktiv
     # neutralisiert, die Gates haengen nie an seiner Wahrheit, Quantisierung ist nur Rauschen im
