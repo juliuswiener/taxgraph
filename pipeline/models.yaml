@@ -88,6 +88,17 @@ roles:
     # (US/westlicher Hoster, NICHT auf der Chinesisch-Ausschlussliste) antwortete im
     # Probe-Call in 0.7s mit "OK". Deshalb hier gepinnt. Aendert den Hash bewusst.
     providers: ["deepinfra"]
+    # fp4-AUSNAHME (dokumentiert, Instructor-Delegation 2026-07-13, Julius-Widerruf moeglich):
+    # der deepinfra-Endpoint fuer deepseek-v4-pro ist fp4-quantisiert. Die Unquant-Doktrin
+    # (fp4/fp8 ausgeschlossen) schuetzt die FORMALISIERER (deren Output wird Code, muss exakt
+    # sein) - der Judge ist per Registry-Ratsche reiner DETEKTOR: seine Streuung ist konstruktiv
+    # neutralisiert, die Gates haengen nie an seiner Wahrheit, Quantisierung ist nur Rauschen im
+    # Rauschkanal. Daher fp4 fuer die Judge-Rolle ZULAESSIG; Formalisierer_a/b bleiben strikt
+    # unquantisiert. Julius-Entscheidungsliste (Widerruf: falls Unquant-Judge gewuenscht ->
+    # Messplan). Randnotiz: der konstante "auch"-Vorrang-Blindfleck + Streuung koennten
+    # Quant-Artefakte sein - bei einem kuenftigen Judge-Messplan fp4 vs unquant als Arm mitmessen.
+    # Failover-Backlog: client provider.order (statt provider.only) mit Messplan - zieht nur, wenn
+    # deepinfra-Judge-Ausfaelle chronisch werden (2026-07-13: 2x429 + 2x timeout, bisher transient).
     temperature: 0.0
     # 4096 reichten nicht: der Judge lief bei der ersten Produktionsregel exakt
     # ins Limit (completion_tokens=4096) und lieferte abgeschnittenes JSON.
