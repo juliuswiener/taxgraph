@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p34/2026-07-13"
+  norm: "§ 34 EStG (ausserordentliche Einkuenfte, Fuenftelregelung)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__34.html"
+  abrufdatum: "2026-07-13"
+  datei: "estg_p34_2026-07-13.txt"
+  sha256: "4d3337ee9f2f82eca9b8bbc3edef1f6716c71235dc1976efa54954dd61a81d9a"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Charge 9"]

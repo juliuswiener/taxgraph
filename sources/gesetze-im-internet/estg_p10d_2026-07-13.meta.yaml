@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p10d/2026-07-13"
+  norm: "§ 10d EStG (Verlustabzug)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__10d.html"
+  abrufdatum: "2026-07-13"
+  datei: "estg_p10d_2026-07-13.txt"
+  sha256: "7b86a8a72aad034f92032241cebcaba5bb1ad0bb382484c140e98f81ea245b9a"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Charge 9"]
