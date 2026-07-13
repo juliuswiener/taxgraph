@@ -70,24 +70,24 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 ### Anlage Kind — ✅ (4/4)
 | Kinderfreibeträge | § 32 Abs. 6 | ✅ | p32_6_kinderfreibetraege |
 | Familienleistungsausgleich (Günstigerprüfung) | § 31 | ✅ | p31_familienleistungsausgleich |
-| Ausbildungsfreibetrag | § 33a Abs. 2 | ✅ | p33a_ausbildungsfreibetrag (Charge 5, strukturgeprueft, Judge-Nachzug offen) |
-| Kinderbetreuungskosten | § 10 Abs. 1 Nr. 5 | ✅ | p10_1_5_kinderbetreuung (Charge 5, strukturgeprueft) |
+| Ausbildungsfreibetrag | § 33a Abs. 2 | ✅ | p33a_ausbildungsfreibetrag (Charge 5, verified_bedingt) |
+| Kinderbetreuungskosten | § 10 Abs. 1 Nr. 5 | ✅ | p10_1_5_kinderbetreuung (Charge 5, verified_bedingt) |
 
 ### Anlage Sonderausgaben — ✅ (4/4 ohne Vorsorge)
 | Berufsausbildung (eigene) | § 10 Abs. 1 Nr. 7 | ✅ | p10_1_7_berufsausbildung |
 | Kirchensteuer | § 10 Abs. 1 Nr. 4 | ✅ | p10_1_4_kirchensteuer |
-| Spenden/Mitgliedsbeiträge | § 10b | ✅ | p10b_spenden (Charge 5, strukturgeprueft) |
-| Unterhalt-Realsplitting (Anlage U) | § 10 Abs. 1a | ✅ | p10_1a_realsplitting (Charge 5, strukturgeprueft) |
+| Spenden/Mitgliedsbeiträge | § 10b | ✅ | p10b_spenden (Charge 5, verified_bedingt) |
+| Unterhalt-Realsplitting (Anlage U) | § 10 Abs. 1a | ✅ | p10_1a_realsplitting (Charge 5, verified_bedingt) |
 
 ### Anlage Außergewöhnliche Belastungen — ✅ (4/4)
 | agB allgemein — Abzug | § 33 Abs. 1, 2 | ✅ | p33_1_2_agb_abzug |
 | zumutbare Belastung | § 33 Abs. 3 | ✅ | p33_3_zumutbare_belastung |
-| Unterhalt an bedürftige Personen (Anlage Unterhalt) | § 33a Abs. 1 | ✅ | p33a_unterhalt (Charge 5, strukturgeprueft) |
+| Unterhalt an bedürftige Personen (Anlage Unterhalt) | § 33a Abs. 1 | ✅ | p33a_unterhalt (Charge 5, verified_bedingt) |
 | Pauschbeträge Behinderte/Hinterbliebene/Pflege | § 33b | ✅ | p33b_behinderten/pflege/hinterbliebenen_pauschbetrag (Charge 5, verified_bedingt) |
 
 ### Andere Einkunftsarten — 🟡 (2/4 Anlagen)
-| Kapitalvermögen (Abgeltungsteuer, Sparer-PB) | § 20, § 32d, § 20 Abs. 9 | ✅ | p20_6/p20_9/p32d_1 (Charge 6, strukturgeprueft) |
-| Renten / sonstige wiederkehrende Bezüge | § 22 Nr. 1 | ✅ | p22_1_leibrente_besteuerungsanteil (Charge 7, Kohorten-params, strukturgeprueft) |
+| Kapitalvermögen (Abgeltungsteuer, Sparer-PB) | § 20, § 32d, § 20 Abs. 9 | ✅ | p20_6/p20_9/p32d_1 (Charge 6, verified_bedingt) |
+| Renten / sonstige wiederkehrende Bezüge | § 22 Nr. 1 | ✅ | p22_1_leibrente_besteuerungsanteil (Charge 7, Kohorten-params, verified_bedingt) |
 | Vermietung und Verpachtung | § 21 | ⬜ Anlage V | — |
 | Sonstige Einkünfte / private Veräußerung | § 22 Nr. 2/3, § 23 | ⬜ Anlage SO | — |
 
@@ -129,8 +129,9 @@ Abgeltung) → 31/40. Charge 7 Renten (§22 Nr1 Leibrente-Besteuerungsanteil, Ko
 strukturgeprueft) → **32/40 ≈ 80 %**.
 
 **AN-Kern: die 🟡-Lücken (Kind, Sonderausgaben, agB) sind mit Charge 5 auf 4/4 geschlossen -
-der AN-Kern ist damit auf echte ~100 %.** Judge-Nachzug fuer die 6 strukturgeprueft-Regeln
-(_nb + 5 Paket B/C) gebuendelt bei deepinfra-Erholung.
+der AN-Kern ist damit auf echte ~100 %.** Judge-Nachzug erledigt (2026-07-13, neuer Judge
+mistral-medium-3-5): alle 10 vormals strukturgeprueft-Regeln (_nb + Paket B/C + KAP + §22)
+verified_bedingt.
 
 ## Priorisierungs-Vorschlag Charge 4 ff.
 Kriterien: (a) Häufigkeit in realen AN-nahen Erklärungen, (b) § 2-Abhängigkeit (was der
