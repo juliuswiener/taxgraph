@@ -67,22 +67,22 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 ### Anlage Haushaltsnahe Aufwendungen — ✅ (1/1)
 | Haushaltsnahe Beschäftigung/Dienstleistung/Handwerker | § 35a | ✅ | p35a_2_3_haushaltsnahe (12 Bedingungen) |
 
-### Anlage Kind — 🟡 teilweise (2/4)
+### Anlage Kind — ✅ (4/4)
 | Kinderfreibeträge | § 32 Abs. 6 | ✅ | p32_6_kinderfreibetraege |
 | Familienleistungsausgleich (Günstigerprüfung) | § 31 | ✅ | p31_familienleistungsausgleich |
-| Ausbildungsfreibetrag | § 33a Abs. 2 | ⬜ | — |
-| Kinderbetreuungskosten | § 10 Abs. 1 Nr. 5 | ⬜ | — |
+| Ausbildungsfreibetrag | § 33a Abs. 2 | ✅ | p33a_ausbildungsfreibetrag (Charge 5, strukturgeprueft, Judge-Nachzug offen) |
+| Kinderbetreuungskosten | § 10 Abs. 1 Nr. 5 | ✅ | p10_1_5_kinderbetreuung (Charge 5, strukturgeprueft) |
 
-### Anlage Sonderausgaben — 🟡 teilweise (2/4 ohne Vorsorge)
+### Anlage Sonderausgaben — ✅ (4/4 ohne Vorsorge)
 | Berufsausbildung (eigene) | § 10 Abs. 1 Nr. 7 | ✅ | p10_1_7_berufsausbildung |
 | Kirchensteuer | § 10 Abs. 1 Nr. 4 | ✅ | p10_1_4_kirchensteuer |
-| Spenden/Mitgliedsbeiträge | § 10b | ⬜ | — |
-| Unterhalt-Realsplitting (Anlage U) | § 10 Abs. 1a | ⬜ | — |
+| Spenden/Mitgliedsbeiträge | § 10b | ✅ | p10b_spenden (Charge 5, strukturgeprueft) |
+| Unterhalt-Realsplitting (Anlage U) | § 10 Abs. 1a | ✅ | p10_1a_realsplitting (Charge 5, strukturgeprueft) |
 
-### Anlage Außergewöhnliche Belastungen — 🟡 (3/4)
+### Anlage Außergewöhnliche Belastungen — ✅ (4/4)
 | agB allgemein — Abzug | § 33 Abs. 1, 2 | ✅ | p33_1_2_agb_abzug |
 | zumutbare Belastung | § 33 Abs. 3 | ✅ | p33_3_zumutbare_belastung |
-| Unterhalt an bedürftige Personen (Anlage Unterhalt) | § 33a Abs. 1 | ⬜ | — |
+| Unterhalt an bedürftige Personen (Anlage Unterhalt) | § 33a Abs. 1 | ✅ | p33a_unterhalt (Charge 5, strukturgeprueft) |
 | Pauschbeträge Behinderte/Hinterbliebene/Pflege | § 33b | ✅ | p33b_behinderten/pflege/hinterbliebenen_pauschbetrag (Charge 5, verified_bedingt) |
 
 ### Andere Einkunftsarten — ⬜ komplett offen (0/4 Anlagen)
@@ -123,7 +123,12 @@ selbst ~90 %.
 
 **Fortschritt:** Charge 4 (§ 32b) verified_bedingt → 23/40 ≈ 57 %. Charge 5 §33b-Trio
 (Behinderten-/Pflege-/Hinterbliebenen-Pauschbetrag) verified_bedingt → 24/40. § 24a
-Altersentlastungsbetrag (Kohorten-Muster) verified_bedingt → **25/40 ≈ 62 %**.
+Altersentlastungsbetrag (Kohorten-Muster) verified_bedingt → 25/40. Charge 5 Paket B+C
+(§10b, §33a Abs1+2, §10 Nr5, §10 Abs1a, strukturgeprueft/Judge-geparkt) → **30/40 ≈ 75 %**.
+
+**AN-Kern: die 🟡-Lücken (Kind, Sonderausgaben, agB) sind mit Charge 5 auf 4/4 geschlossen -
+der AN-Kern ist damit auf echte ~100 %.** Judge-Nachzug fuer die 6 strukturgeprueft-Regeln
+(_nb + 5 Paket B/C) gebuendelt bei deepinfra-Erholung.
 
 ## Priorisierungs-Vorschlag Charge 4 ff.
 Kriterien: (a) Häufigkeit in realen AN-nahen Erklärungen, (b) § 2-Abhängigkeit (was der
