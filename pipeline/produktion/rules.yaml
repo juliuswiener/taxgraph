@@ -2353,3 +2353,176 @@ regeln:
   - {unterhaltsleistungen: 15000, kv_pv_beitraege: 0}
   - {unterhaltsleistungen: 15000, kv_pv_beitraege: 2000}
   - {unterhaltsleistungen: 20000, kv_pv_beitraege: 0}
+# Charge-6 KAP (Instructor-Freigabe 2026-07-13, reports/review/2026-07-13-charge6-kap-zuschnitt.md).
+# Kette in der § 2-Integration: C (Verlust-Toepfe) -> A (Sparer-PB) -> B (Tarifwahl).
+- rule_id: p20_6_verlustverrechnung
+  norm: § 20 Abs. 6 EStG (Verlustverrechnung, getrennte Toepfe Aktien/sonstige)
+  quellen:
+  - typ: gesetz
+    label: § 20 Abs. 6 S. 1 EStG (kein Ausgleich mit anderen Einkunftsarten)
+    datei: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden
+    auszug: 'Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden; sie dürfen auch nicht nach § 10d abgezogen werden.'
+  - typ: gesetz
+    label: § 20 Abs. 6 EStG (Aktien-Sondertopf)
+    datei: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen
+    auszug: 'die aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen im Sinne des Absatzes 2 Satz 1 Nummer 1 Satz 1'
+  geltungsbedingungen:
+  - bedingung: aktienverlust_nur_gegen_aktiengewinn
+    deckt_ab: aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen
+    quelle: § 20 Abs. 6 EStG (Aktien-Sondertopf)
+    beschreibung: 'Aktienverluste sind NUR mit Aktiengewinnen verrechenbar (eigener Topf): aktien_netto = max(0, gewinn_aktien - verlust_aktien). Sonstige KAP-Verluste im eigenen Topf: sonstige_netto = max(0, gewinn_sonstige - verlust_sonstige). Kein topfuebergreifender Ausgleich.'
+  - bedingung: verlustvortrag_ist_10d_grenze
+    deckt_ab: nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden
+    quelle: § 20 Abs. 6 S. 1-2 EStG
+    beschreibung: 'Nur INNERJAEHRLICHE Verrechnung. Ein nicht ausgeglichener Verlust (Topf negativ) geht als Verlustvortrag in Folge-VZ (S. 2ff) - mehrjaehrig, § 10d-analog, NICHT in dieser Regel formalisiert (Backlog-Grenze). Hier: Topf-Boden bei 0 (max(0, ...)).'
+  rundung: []
+  signature:
+    scope: Verlustverrechnung
+    inputs:
+      gewinn_aktien: money
+      verlust_aktien: money
+      gewinn_sonstige: money
+      verlust_sonstige: money
+    output: verrechnete_kapitaleinkuenfte
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen
+    herkunft: synthetisch
+    rechenweg: 'Aktien 5.000 - 2.000 = 3.000; sonstige 0. Summe 3.000,00.'
+    inputs: {gewinn_aktien: 5000, verlust_aktien: 2000, gewinn_sonstige: 0, verlust_sonstige: 0}
+    expected: 3000.0
+  - quelle: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Topf-Boden: Aktienverlust 8.000 > Gewinn 5.000 -> aktien_netto 0 (Rest = Vortrag, ausserhalb). Summe 0,00.'
+    inputs: {gewinn_aktien: 5000, verlust_aktien: 8000, gewinn_sonstige: 0, verlust_sonstige: 0}
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen
+    herkunft: synthetisch
+    rechenweg: 'Sonstiger Topf: 4.000 - 1.000 = 3.000; Aktien 0. Summe 3.000,00.'
+    inputs: {gewinn_aktien: 0, verlust_aktien: 0, gewinn_sonstige: 4000, verlust_sonstige: 1000}
+    expected: 3000.0
+  - quelle: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Topf-Trennung: Aktienverlust 3.000 (kein Aktiengewinn) darf sonstige 4.000 NICHT mindern -> aktien_netto 0, sonstige_netto 4.000. Summe 4.000,00.'
+    inputs: {gewinn_aktien: 0, verlust_aktien: 3000, gewinn_sonstige: 4000, verlust_sonstige: 0}
+    expected: 4000.0
+  raster:
+  - {gewinn_aktien: 5000, verlust_aktien: 2000, gewinn_sonstige: 0, verlust_sonstige: 0}
+  - {gewinn_aktien: 5000, verlust_aktien: 8000, gewinn_sonstige: 0, verlust_sonstige: 0}
+  - {gewinn_aktien: 0, verlust_aktien: 0, gewinn_sonstige: 4000, verlust_sonstige: 1000}
+  - {gewinn_aktien: 0, verlust_aktien: 3000, gewinn_sonstige: 4000, verlust_sonstige: 0}
+- rule_id: p20_9_sparer_pauschbetrag
+  norm: § 20 Abs. 9 EStG (Sparer-Pauschbetrag 1.000/2.000)
+  quellen:
+  - typ: gesetz
+    label: § 20 Abs. 9 EStG (Sparer-Pauschbetrag)
+    datei: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: als Werbungskosten ein Betrag von 1 000 Euro abzuziehen
+    auszug: 'Bei der Ermittlung der Einkünfte aus Kapitalvermögen ist als Werbungskosten ein Betrag von 1 000 Euro abzuziehen (Sparer-Pauschbetrag); der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen. 2 Ehegatten, die zusammen veranlagt werden, wird ein gemeinsamer Sparer-Pauschbetrag von 2 000 Euro gewährt.'
+  geltungsbedingungen:
+  - bedingung: sparer_pb_1000_2000_konstante
+    deckt_ab: als Werbungskosten ein Betrag von 1 000 Euro abzuziehen
+    quelle: § 20 Abs. 9 EStG
+    beschreibung: 'Sparer-Pauschbetrag = Norm-Konstante 1.000 (einzeln) bzw. 2.000 (Zusammenveranlagung), Werte aus dem Wortlaut (Konstanten-Doktrin, nicht Input). einkuenfte_nach_sparer_pb = max(0, kapitalertraege - sparer_pb). zusammenveranlagung ist bool-INPUT (Sachverhalts-Verzweigung, p32_6-Muster). Der Abzug der tatsaechlichen WK ist ausgeschlossen (Pauschbetrag ersetzt WK).'
+  rundung: []
+  signature:
+    scope: SparerPauschbetrag
+    inputs:
+      kapitalertraege: money
+      zusammenveranlagung: bool
+    output: einkuenfte_nach_sparer_pb
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: als Werbungskosten ein Betrag von 1 000 Euro abzuziehen
+    herkunft: synthetisch
+    rechenweg: 'Einzeln: 3.000 - 1.000 = 2.000,00.'
+    inputs: {kapitalertraege: 3000, zusammenveranlagung: false}
+    expected: 2000.0
+  - quelle: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: gemeinsamer Sparer-Pauschbetrag von 2 000 Euro
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Zusammenveranlagung: 3.000 - 2.000 = 1.000,00.'
+    inputs: {kapitalertraege: 3000, zusammenveranlagung: true}
+    expected: 1000.0
+  - quelle: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: als Werbungskosten ein Betrag von 1 000 Euro abzuziehen
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Boden: Ertraege 800 < 1.000 -> max(0, 800-1.000) = 0,00.'
+    inputs: {kapitalertraege: 800, zusammenveranlagung: false}
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p20_2026-07-13.txt
+    zitatanker: gemeinsamer Sparer-Pauschbetrag von 2 000 Euro
+    herkunft: synthetisch
+    rechenweg: 'Zusammen: 5.000 - 2.000 = 3.000,00.'
+    inputs: {kapitalertraege: 5000, zusammenveranlagung: true}
+    expected: 3000.0
+  raster:
+  - {kapitalertraege: 3000, zusammenveranlagung: false}
+  - {kapitalertraege: 3000, zusammenveranlagung: true}
+  - {kapitalertraege: 800, zusammenveranlagung: false}
+  - {kapitalertraege: 5000, zusammenveranlagung: true}
+- rule_id: p32d_1_abgeltung
+  # hinweis-Kanal (Instructor-Freigabe 2026-07-13): Andockung wie § 31 - die tariflichen
+  # Vergleichswerte kommen als Inputs, kein Selbst-Tarif. Guenstigerpruefung = min-Mechanik.
+  hinweis: 'Andockung wie § 31/§ 32b: est_regulaer_mit_kap und est_regulaer_ohne_kap sind p32a-Tarifergebnisse aus der § 2-Integration, hier NICHT selbst rechnen. Rechenkern: abgeltung = (25 / 100) * kapitaleinkuenfte (Prozent in decimal, Cent-Schnitt zuletzt); guenstiger_delta = est_regulaer_mit_kap - est_regulaer_ohne_kap; kapital_steuer = min(abgeltung, guenstiger_delta). Der glatte 25-Prozent-Satz gilt (keine Kirchensteuer-Ermaessigung, das ist Scope-Grenze).'
+  norm: § 32d Abs. 1, 6 EStG (25-%-Abgeltung + Guenstigerpruefung)
+  quellen:
+  - typ: gesetz
+    label: § 32d Abs. 1 S. 1 EStG (25-%-Satz)
+    datei: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: beträgt 25 Prozent
+    auszug: 'Die Einkommensteuer für Einkünfte aus Kapitalvermögen, die nicht unter § 20 Absatz 8 fallen, beträgt 25 Prozent.'
+  - typ: gesetz
+    label: § 32d Abs. 6 S. 1 EStG (Guenstigerpruefung auf Antrag)
+    datei: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: Auf Antrag des Steuerpflichtigen werden anstelle
+    auszug: 'Auf Antrag des Steuerpflichtigen werden anstelle der Anwendung der Absätze 1, 3 und 4 die nach § 20 ermittelten Kapitaleinkünfte den Einkünften im Sinne des § 2 hinzugerechnet und der tariflichen Einkommensteuer unterworfen'
+  geltungsbedingungen:
+  - bedingung: tarifwerte_sind_p2_ergebnis
+    deckt_ab: den Einkünften im Sinne des § 2 hinzugerechnet und der tariflichen Einkommensteuer unterworfen
+    quelle: § 32d Abs. 6 i.V.m. § 2, § 32a EStG
+    beschreibung: 'est_regulaer_mit_kap / est_regulaer_ohne_kap sind p32a-Tarifergebnisse (mit/ohne Hinzurechnung der Kapitaleinkuenfte), aus der § 2-Integration. Andockung wie § 31 (kein Selbst-Tarif). guenstiger_delta = Differenz = persoenliche Steuer AUF die Kapitaleinkuenfte.'
+  - bedingung: guenstigerpruefung_beantragt
+    deckt_ab: Auf Antrag des Steuerpflichtigen werden anstelle
+    quelle: § 32d Abs. 6 S. 1 EStG
+    beschreibung: 'Anwendbarkeit (p35a-antrag_gestellt-Praezedenz): die Guenstigerpruefung (min mit dem persoenlichen Tarif) greift NUR AUF ANTRAG. Ohne Antrag gilt stur die 25-%-Abgeltung, auch wenn schlechter. Die min-Mechanik ist die Rechenform bei gestelltem Antrag. Phase-5-Vorgriff: die min-Differenz ist spaeter der automatische Antrags-HINWEIS an den Nutzer (Antrag lohnt X Euro).'
+  - bedingung: keine_kirchensteuer_auf_kapitalertraege
+    deckt_ab: beträgt 25 Prozent
+    quelle: § 32d Abs. 1 S. 1 (Umkehr S. 3)
+    beschreibung: 'MVP-Linie (a): glatter 25-%-Satz. Die Kirchensteuer-Ermaessigung (§ 32d Abs. 1 S. 3, e/(4+k)-Mechanik) ist ausgeklammert - der KiSt-Fall ist Scope-Grenze (Nachtrag b), nicht still falsch gerechnet.'
+  rundung: []
+  signature:
+    scope: KapitalAbgeltung
+    inputs:
+      kapitaleinkuenfte: money
+      est_regulaer_mit_kap: money
+      est_regulaer_ohne_kap: money
+    output: kapital_steuer
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: beträgt 25 Prozent
+    herkunft: synthetisch
+    rechenweg: 'Abgeltung guenstiger: Kapitaleink. 10.000 -> 0,25 x 10.000 = 2.500. delta = 8.000 - 5.000 = 3.000. min(2.500; 3.000) = 2.500,00.'
+    inputs: {kapitaleinkuenfte: 10000, est_regulaer_mit_kap: 8000, est_regulaer_ohne_kap: 5000}
+    expected: 2500.0
+  - quelle: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: Auf Antrag des Steuerpflichtigen werden anstelle
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Guenstigerpruefung greift: Kapitaleink. 10.000 -> Abgeltung 2.500. delta = 6.500 - 5.000 = 1.500 (persoenlicher Satz 15 %). min(2.500; 1.500) = 1.500,00.'
+    inputs: {kapitaleinkuenfte: 10000, est_regulaer_mit_kap: 6500, est_regulaer_ohne_kap: 5000}
+    expected: 1500.0
+  - quelle: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: beträgt 25 Prozent
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: keine Kapitaleinkuenfte -> 0,25 x 0 = 0; delta 0. min = 0,00.'
+    inputs: {kapitaleinkuenfte: 0, est_regulaer_mit_kap: 5000, est_regulaer_ohne_kap: 5000}
+    expected: 0.0
+  raster:
+  - {kapitaleinkuenfte: 10000, est_regulaer_mit_kap: 8000, est_regulaer_ohne_kap: 5000}
+  - {kapitaleinkuenfte: 10000, est_regulaer_mit_kap: 6500, est_regulaer_ohne_kap: 5000}
+  - {kapitaleinkuenfte: 0, est_regulaer_mit_kap: 5000, est_regulaer_ohne_kap: 5000}
