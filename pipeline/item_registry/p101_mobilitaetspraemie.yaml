@@ -1,0 +1,74 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p101_mobilitaetspraemie
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - entfernungspauschale_ab_21km
+  - interpretation
+  formulierungen:
+  - Die Entfernungspauschale ab 21 km wird als Bemessungsgrundlage interpretiert.
+  triage: bedingung_neu
+  bedingung: entfernung_ab_21_km
+- art: annahme
+  anker:
+  - betrifft_kat
+  - zu_versteuerndes_einkommen
+  - geltungsvoraussetzung
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation (Brutto/Netto/Rundung/WK-Abzug
+    deckt sich mit Wortlaut). Es wird angenommen, dass das zu versteuernde Einkommen
+    den Grundfreibetrag unterschreiten kann.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - grundfreibetrag
+  - geltungsvoraussetzung
+  formulierungen:
+  - Der Grundfreibetrag wird als positiver Wert vorausgesetzt.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - grundfreibetrag
+  - interpretation
+  formulierungen:
+  - Der Grundfreibetrag wird als fester Geldbetrag interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - zu_versteuerndes_einkommen
+  - interpretation
+  formulierungen:
+  - Das zu versteuernde Einkommen wird als Geldbetrag ohne weitere Anpassungen verwendet.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - entfernungspauschale_ab_21km
+  - einheit
+  formulierungen:
+  - Die Entfernungspauschale ab 21km wird als Geldbetrag angenommen.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 101 s. 2 estg
+  formulierungen:
+  - begrenzt auf den Betrag, um den das zu versteuernde Einkommen den Grundfreibetrag
+    im Sinne des § 32a Absatz 1 Satz 2 Nummer 1 unterschreitet
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 101 s. 4 estg
+  formulierungen:
+  - Die Mobilitätsprämie beträgt 14 Prozent dieser Bemessungsgrundlage.
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein

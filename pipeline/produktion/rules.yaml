@@ -3456,3 +3456,287 @@ regeln:
   - est_ohne_sonderausgabenabzug: 12000
     est_mit_sonderausgabenabzug: 10000
     zulageanspruch_guenstigerpruefung: 775
+- rule_id: p23_veraeusserungsgewinn
+  hinweis: veraeusserungsgewinn = veraeusserungspreis - anschaffungs_herstellungskosten - werbungskosten. Das Ergebnis KANN NEGATIV sein (Veraeusserungsverlust) - KEIN max(0)-Boden. Die AfA-Minderung der Anschaffungs-/Herstellungskosten (§ 23 Abs3 S4) erfolgt in der § 2-Integration; anschaffungs_herstellungskosten kommt bereits AfA-gemindert als Input. Verlustverrechnung § 23 Abs3 S7 (nur mit § 23-Gewinnen desselben Jahres) = benannter Nachtrag (formalisierbar, p20_6-Praezedenz); S8 (Vor-/Ruecktrag § 10d-artig) = Nicht-Gegenstand/State.
+  norm: § 23 Abs. 3 S. 1 EStG (Gewinn aus privaten Veraeusserungsgeschaeften)
+  quellen:
+  - typ: gesetz
+    label: § 23 Abs. 3 S. 1 EStG (Gewinnermittlung)
+    datei: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Unterschied zwischen Veräußerungspreis
+    auszug: Gewinn oder Verlust aus Veräußerungsgeschäften nach Absatz 1 ist der Unterschied zwischen Veräußerungspreis einerseits und den Anschaffungs- oder Herstellungskosten und den Werbungskosten andererseits.
+  geltungsbedingungen:
+  - bedingung: veraeusserung_innerhalb_frist
+    deckt_ab: bei denen der Zeitraum zwischen Anschaffung und Veräußerung nicht mehr als zehn Jahre beträgt
+    quelle: § 23 Abs. 1 Nr. 1-2 EStG
+    beschreibung: 'Steuerbar nur innerhalb Frist: Grundstuecke 10 Jahre (Nr1), andere WG 1 Jahr (Nr2). Fristverlaengerung auf 10 Jahre bei Einkunftsquelle (Nr2 S4) = hier ausgeklammert.'
+  - bedingung: nicht_ausschliesslich_eigene_wohnzwecke
+    deckt_ab: ausschließlich zu eigenen Wohnzwecken oder im Jahr der Veräußerung und in den beiden vorangegangenen Jahren zu eigenen Wohnzwecken genutzt wurden
+    quelle: § 23 Abs. 1 Nr. 1 S. 3 EStG
+    beschreibung: Selbstgenutzte Objekte (ausschliesslich eigene Wohnzwecke oder Veraeusserungsjahr + 2 Vorjahre) sind ausgenommen - dann nicht steuerbar.
+  - bedingung: kein_gegenstand_taeglichen_gebrauchs
+    deckt_ab: Ausgenommen sind Veräußerungen von Gegenständen des täglichen Gebrauchs
+    quelle: § 23 Abs. 1 Nr. 2 S. 2 EStG
+    beschreibung: Gegenstaende des taeglichen Gebrauchs (Nr2 S2) sind ausgenommen.
+  - bedingung: anschaffung_veraeusserung_originaerer_erwerb
+    deckt_ab: Als Anschaffung gilt auch die Überführung eines Wirtschaftsguts in das Privatvermögen des Steuerpflichtigen durch Entnahme oder Betriebsaufgabe.
+    quelle: § 23 Abs. 1 S. 2/4/5 EStG
+    beschreibung: 'Die Regel deckt den ORIGINAEREN entgeltlichen Erwerb+Veraeusserung. Die Tatbestands-FIKTIONEN (definieren WAS als Anschaffung/Veraeusserung zaehlt, nicht WIE gerechnet wird) sind AUSGEKLAMMERT: (a) Abs1 S2 Ueberfuehrung ins Privatvermoegen durch Entnahme/Betriebsaufgabe, (b) Abs1 S4 Anteile an Personengesellschaft = anteilige Wirtschaftsgueter, (c) Abs1 S5 Einlage ins Betriebsvermoegen + verdeckte Einlage in Kapitalgesellschaft (dann tritt nach Abs3 S2 der Einlage-/gemeine Wert an die Stelle des Veraeusserungspreises). Unentgeltlicher Erwerb (Rechtsnachfolge Abs1 S3) ebenfalls ausgeklammert.'
+  rundung: []
+  signature:
+    scope: VeraeusserungsGewinn
+    inputs:
+      veraeusserungspreis: money
+      anschaffungs_herstellungskosten: money
+      werbungskosten: money
+    output: veraeusserungsgewinn
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Unterschied zwischen Veräußerungspreis
+    herkunft: synthetisch
+    rechenweg: 'Gewinn: 200.000 - 150.000 - 5.000 = 45.000,00.'
+    inputs:
+      veraeusserungspreis: 200000
+      anschaffungs_herstellungskosten: 150000
+      werbungskosten: 5000
+    expected: 45000.0
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Unterschied zwischen Veräußerungspreis
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER VERLUST (Durchreichung): 100.000 - 120.000 - 3.000 = -23.000,00. KEIN max(0).'
+    inputs:
+      veraeusserungspreis: 100000
+      anschaffungs_herstellungskosten: 120000
+      werbungskosten: 3000
+    expected: -23000.0
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Unterschied zwischen Veräußerungspreis
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: 50.000 - 50.000 - 0 = 0,00.'
+    inputs:
+      veraeusserungspreis: 50000
+      anschaffungs_herstellungskosten: 50000
+      werbungskosten: 0
+    expected: 0.0
+  raster:
+  - veraeusserungspreis: 200000
+    anschaffungs_herstellungskosten: 150000
+    werbungskosten: 5000
+  - veraeusserungspreis: 100000
+    anschaffungs_herstellungskosten: 120000
+    werbungskosten: 3000
+  - veraeusserungspreis: 50000
+    anschaffungs_herstellungskosten: 50000
+    werbungskosten: 0
+- rule_id: p23_freigrenze
+  hinweis: 'steuerpflichtiger_gewinn = wenn gesamtgewinn >= 1000 dann gesamtgewinn sonst 0. Das 1000 ist eine FREIGRENZE, KEIN Freibetrag: bei gesamtgewinn >= 1000 ist der VOLLE Gewinn steuerpflichtig (NICHT gesamtgewinn - 1000). Unter 1000 ist der ganze Gewinn steuerfrei. Schwelle 1000 so, dass "weniger als 1000" (< 1000) steuerfrei ist -> >= 1000 voll. Gilt nur fuer positiven Gesamtgewinn (gesamtgewinn = aggregierte Summe aller § 23-Gewinne des KJ, § 2-Integration).'
+  norm: § 23 Abs. 3 S. 5 EStG (1000-Euro-Freigrenze private Veraeusserungsgeschaefte)
+  quellen:
+  - typ: gesetz
+    label: § 23 Abs. 3 S. 5 EStG (Freigrenze 1000)
+    datei: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: weniger als 1 000 Euro betragen hat
+    auszug: Gewinne bleiben steuerfrei, wenn der aus den privaten Veräußerungsgeschäften erzielte Gesamtgewinn im Kalenderjahr weniger als 1 000 Euro betragen hat.
+  geltungsbedingungen:
+  - bedingung: gesamtgewinn_nicht_negativ
+    deckt_ab: Verluste dürfen nur bis zur Höhe des Gewinns, den der Steuerpflichtige im gleichen Kalenderjahr aus privaten Veräußerungsgeschäften erzielt hat, ausgeglichen werden
+    quelle: § 23 Abs. 3 S. 7-8 EStG
+    beschreibung: 'Freigrenze gilt fuer positiven Gesamtgewinn. Verluste: S7 (Ausgleich nur bis zur Hoehe der § 23-Gewinne DESSELBEN Kalenderjahres) = BENANNTER NACHTRAG, formalisierbar (p20_6-Praezedenz Topf-Trennung); S8 (Vor-/Ruecktrag nach § 10d-Massgabe) = Nicht-Gegenstand/Mehrjahres-State.'
+  rundung: []
+  signature:
+    scope: VeraeusserungFreigrenze
+    inputs:
+      gesamtgewinn: money
+    output: steuerpflichtiger_gewinn
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Gewinne bleiben steuerfrei, wenn der aus den privaten Veräußerungsgeschäften erzielte Gesamtgewinn im Kalenderjahr weniger als 1 000 Euro betragen hat.
+    herkunft: synthetisch
+    rechenweg: 'Ueber Freigrenze: 5.000 >= 1.000 -> voll 5.000,00.'
+    inputs:
+      gesamtgewinn: 5000
+    expected: 5000.0
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Gewinne bleiben steuerfrei, wenn der aus den privaten Veräußerungsgeschäften erzielte Gesamtgewinn im Kalenderjahr weniger als 1 000 Euro betragen hat.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER unter Freigrenze: 999 < 1.000 -> steuerfrei 0,00.'
+    inputs:
+      gesamtgewinn: 999
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Gewinne bleiben steuerfrei, wenn der aus den privaten Veräußerungsgeschäften erzielte Gesamtgewinn im Kalenderjahr weniger als 1 000 Euro betragen hat.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Schwelle (FREIGRENZE, voll): 1.000 >= 1.000 -> 1.000,00 (NICHT 0).'
+    inputs:
+      gesamtgewinn: 1000
+    expected: 1000.0
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Gewinne bleiben steuerfrei, wenn der aus den privaten Veräußerungsgeschäften erzielte Gesamtgewinn im Kalenderjahr weniger als 1 000 Euro betragen hat.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: 0 < 1.000 -> 0,00.'
+    inputs:
+      gesamtgewinn: 0
+    expected: 0.0
+  raster:
+  - gesamtgewinn: 5000
+  - gesamtgewinn: 999
+  - gesamtgewinn: 1000
+  - gesamtgewinn: 0
+- rule_id: p22_3_sonstige_leistungen
+  hinweis: 'steuerpflichtige_einkuenfte = wenn (einnahmen - werbungskosten) >= 256 dann (einnahmen - werbungskosten) sonst 0. Das 256 ist eine FREIGRENZE, KEIN Freibetrag: bei Einkuenften >= 256 sind sie VOLL steuerpflichtig (NICHT einkuenfte - 256). Unter 256 ganz steuerfrei. einkuenfte = einnahmen - werbungskosten (§ 22 Nr3 S3 WK-Abzug). Gilt fuer positive Einkuenfte.'
+  norm: § 22 Nr. 3 EStG (sonstige Leistungen, 256-Euro-Freigrenze)
+  quellen:
+  - typ: gesetz
+    label: § 22 Nr. 3 S. 2 EStG (Freigrenze 256)
+    datei: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+    zitatanker: weniger als 256 Euro im Kalenderjahr betragen haben
+    auszug: Solche Einkünfte sind nicht einkommensteuerpflichtig, wenn sie weniger als 256 Euro im Kalenderjahr betragen haben.
+  geltungsbedingungen:
+  - bedingung: leistung_subsidiaer
+    deckt_ab: soweit sie weder zu anderen Einkunftsarten
+    quelle: § 22 Nr. 3 S. 1 EStG
+    beschreibung: Einkuenfte aus Leistungen (gelegentliche Vermittlungen, Vermietung beweglicher Gegenstaende) nur SOWEIT nicht zu anderen Einkunftsarten oder § 22 Nr1/1a/2/4 gehoerig (Subsidiaritaet).
+  - bedingung: einkuenfte_nicht_negativ
+    deckt_ab: Übersteigen die Werbungskosten
+    quelle: § 22 Nr. 3 S. 3 EStG
+    beschreibung: Freigrenze gilt fuer positive Einkuenfte. WK-Uebersteigen (Verlust, S3-Verlustabzugsbeschraenkung) = Nicht-Gegenstand.
+  rundung: []
+  signature:
+    scope: SonstigeLeistungen
+    inputs:
+      einnahmen: money
+      werbungskosten: money
+    output: steuerpflichtige_einkuenfte
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+    zitatanker: weniger als 256 Euro im Kalenderjahr betragen haben
+    herkunft: synthetisch
+    rechenweg: 'Ueber Freigrenze: 500 - 100 = 400 >= 256 -> voll 400,00.'
+    inputs:
+      einnahmen: 500
+      werbungskosten: 100
+    expected: 400.0
+  - quelle: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+    zitatanker: weniger als 256 Euro im Kalenderjahr betragen haben
+    herkunft: synthetisch
+    rechenweg: 'Unter Freigrenze: 300 - 50 = 250 < 256 -> steuerfrei 0,00.'
+    inputs:
+      einnahmen: 300
+      werbungskosten: 50
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+    zitatanker: weniger als 256 Euro im Kalenderjahr betragen haben
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Schwelle (FREIGRENZE, voll): 256 - 0 = 256 >= 256 -> 256,00.'
+    inputs:
+      einnahmen: 256
+      werbungskosten: 0
+    expected: 256.0
+  - quelle: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+    zitatanker: weniger als 256 Euro im Kalenderjahr betragen haben
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER knapp unter: 255 - 0 = 255 < 256 -> 0,00.'
+    inputs:
+      einnahmen: 255
+      werbungskosten: 0
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+    zitatanker: weniger als 256 Euro im Kalenderjahr betragen haben
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER hohe WK: 1.000 - 800 = 200 < 256 -> 0,00.'
+    inputs:
+      einnahmen: 1000
+      werbungskosten: 800
+    expected: 0.0
+  raster:
+  - einnahmen: 500
+    werbungskosten: 100
+  - einnahmen: 300
+    werbungskosten: 50
+  - einnahmen: 256
+    werbungskosten: 0
+  - einnahmen: 255
+    werbungskosten: 0
+  - einnahmen: 1000
+    werbungskosten: 800
+- rule_id: p101_mobilitaetspraemie
+  hinweis: mobilitaetspraemie = (14 / 100) * min(entfernungspauschale_ab_21km, max(0, grundfreibetrag - zu_versteuerndes_einkommen)). 14 ist PROZENTWERT -> /100 in decimal, Cent-Schnitt zuletzt (Klasse 5 money x decimal). Bemessungsgrundlage = die Entfernungspauschale ab dem 21. km, BEGRENZT auf den Betrag um den das zvE den Grundfreibetrag unterschreitet (max(0, GFB - zvE)). grundfreibetrag = Andockung (§ 32a, VZ-versioniert; bei Ehegatten doppelter GFB + gemeinsames zvE in § 2-Integration).
+  norm: § 101 EStG (Mobilitaetspraemie, 14 % der Bemessungsgrundlage)
+  quellen:
+  - typ: gesetz
+    label: § 101 S. 4 EStG (14 Prozent)
+    datei: sources/gesetze-im-internet/estg_p101_2026-07-13.txt
+    zitatanker: Die Mobilitätsprämie beträgt 14 Prozent dieser Bemessungsgrundlage.
+    auszug: Die Mobilitätsprämie beträgt 14 Prozent dieser Bemessungsgrundlage.
+  - typ: gesetz
+    label: § 101 S. 2 EStG (Begrenzung auf GFB-Unterschreitung)
+    datei: sources/gesetze-im-internet/estg_p101_2026-07-13.txt
+    zitatanker: begrenzt auf den Betrag, um den das zu versteuernde Einkommen den Grundfreibetrag im Sinne des § 32a Absatz 1 Satz 2 Nummer 1 unterschreitet
+    auszug: begrenzt auf den Betrag, um den das zu versteuernde Einkommen den Grundfreibetrag im Sinne des § 32a Absatz 1 Satz 2 Nummer 1 unterschreitet
+  geltungsbedingungen:
+  - bedingung: entfernung_ab_21_km
+    deckt_ab: ab dem 21. vollen Entfernungskilometer
+    quelle: § 101 S. 1 EStG
+    beschreibung: Nur die Entfernungspauschale AB dem 21. vollen km (die ersten 20 km begruenden keine Praemie).
+  - bedingung: ep_ueber_arbeitnehmer_pauschbetrag
+    deckt_ab: den Arbeitnehmer-Pauschbetrag nach § 9a Satz 1 Nummer 1 Buchstabe a übersteigen
+    quelle: § 101 S. 3 EStG
+    beschreibung: Bei AN nur soweit die Entfernungspauschale zusammen mit uebrigen WK den AN-Pauschbetrag uebersteigt (sonst greift ohnehin der Pauschbetrag).
+  rundung: []
+  signature:
+    scope: Mobilitaetspraemie
+    inputs:
+      entfernungspauschale_ab_21km: money
+      zu_versteuerndes_einkommen: money
+      grundfreibetrag: money
+    output: mobilitaetspraemie
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p101_2026-07-13.txt
+    zitatanker: Die Mobilitätsprämie beträgt 14 Prozent dieser Bemessungsgrundlage.
+    herkunft: synthetisch
+    rechenweg: 'zvE unter GFB, EP < Unterschreitung: min(600, 12.096-10.000=2.096)=600; 0,14 x 600 = 84,00.'
+    inputs:
+      entfernungspauschale_ab_21km: 600
+      zu_versteuerndes_einkommen: 10000
+      grundfreibetrag: 12096
+    expected: 84.0
+  - quelle: sources/gesetze-im-internet/estg_p101_2026-07-13.txt
+    zitatanker: Die Mobilitätsprämie beträgt 14 Prozent dieser Bemessungsgrundlage.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER GFB-Deckel greift: min(3.000, 2.096)=2.096; 0,14 x 2.096 = 293,44.'
+    inputs:
+      entfernungspauschale_ab_21km: 3000
+      zu_versteuerndes_einkommen: 10000
+      grundfreibetrag: 12096
+    expected: 293.44
+  - quelle: sources/gesetze-im-internet/estg_p101_2026-07-13.txt
+    zitatanker: Die Mobilitätsprämie beträgt 14 Prozent dieser Bemessungsgrundlage.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER zvE ueber GFB (keine Praemie): max(0, 12.096-15.000)=0; min(600,0)=0; 0,14 x 0 = 0,00.'
+    inputs:
+      entfernungspauschale_ab_21km: 600
+      zu_versteuerndes_einkommen: 15000
+      grundfreibetrag: 12096
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p101_2026-07-13.txt
+    zitatanker: Die Mobilitätsprämie beträgt 14 Prozent dieser Bemessungsgrundlage.
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER keine EP: 0,14 x min(0, 2.096) = 0,00.'
+    inputs:
+      entfernungspauschale_ab_21km: 0
+      zu_versteuerndes_einkommen: 10000
+      grundfreibetrag: 12096
+    expected: 0.0
+  raster:
+  - entfernungspauschale_ab_21km: 600
+    zu_versteuerndes_einkommen: 10000
+    grundfreibetrag: 12096
+  - entfernungspauschale_ab_21km: 3000
+    zu_versteuerndes_einkommen: 10000
+    grundfreibetrag: 12096
+  - entfernungspauschale_ab_21km: 600
+    zu_versteuerndes_einkommen: 15000
+    grundfreibetrag: 12096
+  - entfernungspauschale_ab_21km: 0
+    zu_versteuerndes_einkommen: 10000
+    grundfreibetrag: 12096

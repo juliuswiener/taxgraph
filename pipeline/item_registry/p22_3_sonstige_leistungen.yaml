@@ -1,0 +1,90 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p22_3_sonstige_leistungen
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - freigrenze von 256 euro wird als absolute grenze (>=) statt als untergrenze (<)
+    geprueft.
+  formulierungen:
+  - 'mistral-Falschpositiv (Instructor-Adjudikation msg1699): Freigrenzen-Richtung
+    verwechselt. Wortlaut "weniger als 256" -> <256 steuerfrei, >=256 voll; unsere
+    >=-Kodierung korrekt (clerk 256->256/255->0). Freigrenze von 256 Euro wird als
+    absolute Grenze (>=) statt als Untergrenze (<) geprüft.'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - einnahmen
+  - einheit
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation (Brutto/Netto/Rundung/WK-Abzug
+    deckt sich mit Wortlaut). Einnahmen werden als Bruttobetrag interpretiert.'
+  - 'konv: Input-Etikett/normkonforme Interpretation (Brutto/Netto/Rundung/WK-Abzug
+    deckt sich mit Wortlaut). Einnahmen werden als Bruttowert (ohne Abzug) interpretiert.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - werbungskosten
+  - einheit
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation (Brutto/Netto/Rundung/WK-Abzug
+    deckt sich mit Wortlaut). Werbungskosten werden als Bruttobetrag interpretiert.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation (Brutto/Netto/Rundung/WK-Abzug
+    deckt sich mit Wortlaut). Beträge werden auf zwei Dezimalstellen gerundet.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - zeitbezug
+  formulierungen:
+  - Die 256-Euro-Grenze bezieht sich auf das Kalenderjahr.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - einnahmen
+  - zeitbezug
+  formulierungen:
+  - Einnahmen beziehen sich auf das gesamte Kalenderjahr.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - werbungskosten
+  - interpretation
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation (Brutto/Netto/Rundung/WK-Abzug
+    deckt sich mit Wortlaut). Werbungskosten werden als abzugsfähig von den Einnahmen
+    angenommen.'
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - interpretation
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation (Brutto/Netto/Rundung/WK-Abzug
+    deckt sich mit Wortlaut). Steuerpflichtige Einkünfte werden als Nettobetrag nach
+    Abzug der Werbungskosten berechnet.'
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 22 nr. 3 s. 2 estg
+  formulierungen:
+  - wenn sie weniger als 256 Euro im Kalenderjahr betragen haben
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein

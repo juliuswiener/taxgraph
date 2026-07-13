@@ -1,0 +1,33 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p23_freigrenze
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gesamtgewinn
+  - einheit
+  formulierungen:
+  - Gewinn wird in Euro angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - 'konv: Input-Etikett/normkonforme Interpretation (Brutto/Netto/Rundung/WK-Abzug
+    deckt sich mit Wortlaut). Steuerpflichtiger Gewinn wird auf zwei Dezimalstellen
+    gerundet.'
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 23 abs. 3 s. 5 estg
+  formulierungen:
+  - Gewinne bleiben steuerfrei, wenn der aus den privaten Veräußerungsgeschäften erzielte
+    Gesamtgewinn im Kalenderjahr weniger als 1 000 Euro betragen hat.
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein

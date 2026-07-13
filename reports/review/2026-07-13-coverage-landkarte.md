@@ -85,11 +85,11 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 | Unterhalt an bedürftige Personen (Anlage Unterhalt) | § 33a Abs. 1 | ✅ | p33a_unterhalt (Charge 5, verified_bedingt) |
 | Pauschbeträge Behinderte/Hinterbliebene/Pflege | § 33b | ✅ | p33b_behinderten/pflege/hinterbliebenen_pauschbetrag (Charge 5, verified_bedingt) |
 
-### Andere Einkunftsarten — 🟡 (3/4 Anlagen)
+### Andere Einkunftsarten — ✅ (4/4 Anlagen)
 | Kapitalvermögen (Abgeltungsteuer, Sparer-PB) | § 20, § 32d, § 20 Abs. 9 | ✅ | p20_6/p20_9/p32d_1 (Charge 6, verified_bedingt) |
 | Renten / sonstige wiederkehrende Bezüge | § 22 Nr. 1 | ✅ | p22_1_leibrente_besteuerungsanteil (Charge 7, Kohorten-params, verified_bedingt) |
 | Vermietung und Verpachtung | § 21 | ✅ | p21_vermietung_einkuenfte + p7_4_gebaeude_afa (Charge 8) + p21_2_verbilligte_vermietung_wk (Charge 10, Abs2 50/66-Schwellen; Korridor 50–66 = Prognose-Nachtrag) — verified_bedingt |
-| Sonstige Einkünfte / private Veräußerung | § 22 Nr. 2/3, § 23 | ⬜ Anlage SO | — |
+| Sonstige Einkünfte / private Veräußerung | § 22 Nr. 3, § 23 | ✅ | p23_veraeusserungsgewinn + p23_freigrenze (1.000-€-Freigrenze) + p22_3_sonstige_leistungen (256-€-Freigrenze) — Charge 12, verified_bedingt (§ 22 Nr. 2 Spekulation via § 23 abgedeckt) |
 
 ### Übergreifende Tarif-Mechanismen — ✅ (4/4)
 | Progressionsvorbehalt (Lohnersatz ALG/Elterngeld) | § 32b | ✅ | p32b_progressionsvorbehalt (Charge 4, verified_bedingt) |
@@ -97,11 +97,11 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 | Verlustabzug (Vortrag) | § 10d Abs. 2 | ✅ | p10d_2_verlustvortrag_abzug (Charge 9, verified_bedingt; Abs. 1 Rücktrag = Nicht-Gegenstand) |
 | Altersentlastungsbetrag | § 24a | ✅ | p24a_altersentlastungsbetrag (Charge 5, Kohorten-params, verified_bedingt) |
 
-### Spezial-Anlagen / Förderung — 🟡 (2/4)
+### Spezial-Anlagen / Förderung — ✅ (4/4: 3 formalisiert + 1 begründeter Nicht-Gegenstand)
 | Riester / Altersvorsorgezulage (Anlage AV) | § 10a, § 79 ff. | ✅ | p8x_zulage_anspruch + p86_mindesteigenbeitrag + p86_zulage_kuerzung + p10a_sonderausgabenabzug + p10a_guenstigerpruefung — Charge 11, verified_bedingt (Zulage §§83-86 + §10a SA/Günstigerprüfung) |
 | Energetische Maßnahmen (Anlage Energ.) | § 35c | ✅ | p35c_sanierung_ermaessigung (7/6 %-Staffel) + p35c_energieberater_ermaessigung (50 %-Sondersatz) — Charge 10, verified_bedingt |
-| Mobilitätsprämie | §§ 101 ff. | ⬜ | — |
-| Wohneigentumsförderung (Anlage FW) | § 10e/10f/10g | ⬜ (überw. Altfälle) | — |
+| Mobilitätsprämie | §§ 101 ff. | ✅ | p101_mobilitaetspraemie (14 % × min(EP ab 21 km, GFB-Unterschreitung)) — Charge 12, verified_bedingt |
+| Wohneigentumsförderung (Anlage FW) | § 10e/10f/10g | 🚫 | Nicht-Gegenstand mit Grund: § 10e Altfall „vor dem 1. Januar 1995" (Freeze-Anker), Förderzeitraum ~2002 ausgelaufen; § 10f/g Nischen. Keine AN-Relevanz (Charge 12) |
 
 ## Nicht-Gegenstand (bewusst außerhalb, mit Grund)
 - **Zoll/Energiesteuer/Verbrauchsteuer** (010xxx, 033xxx, 1102–2735 usw., ~150 PDFs) — nicht ESt.
@@ -137,6 +137,13 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
   bool-Input; **Ehegatten-Übertragung / mittelbar Zulageberechtigte** (§ 10a Abs 3, § 79 S 2, § 86
   Abs 1 S 2 Hs 2, § 85 Abs 2), **ausländische Alterssicherung** (§ 10a Abs 6, § 86 Abs 5),
   **Landwirte** (§ 86 Abs 3), **§ 86 Abs 2 Entgelt-Sonderfälle** = Nicht-Gegenstand/Nachträge.
+- **§ 23 Abs. 3 S. 7 Verlustverrechnung (privater Veräußerungs-Verlusttopf)** — Verluste nur mit
+  § 23-Gewinnen DESSELBEN Jahres = **benannter Nachtrag, FORMALISIERBAR** (p20_6-Topf-Trennungs-
+  Präzedenz); S. 8 (Vor-/Rücktrag nach § 10d-Maßgabe) = Nicht-Gegenstand/Mehrjahres-State.
+- **§ 23 Tatbestands-Fiktionen** (Abs 1 S 2 Entnahme/Betriebsaufgabe, S 4 PersGes-Anteile, S 5
+  Einlage/verdeckte Einlage; Abs 3 S 2/3 „tritt an die Stelle"-Werte) — definieren WAS als
+  Anschaffung/Veräußerung zählt, nicht WIE gerechnet wird → als Geltungsbedingung
+  `anschaffung_veraeusserung_originaerer_erwerb` an p23_veraeusserungsgewinn benannt, ausgeklammert.
 
 ## Startmarke (auditierbar)
 AN-Kern-Blöcke (Mantel 5 + N-WK 7 + N-DHF 1 + Vorsorge 2 + Haushaltsnahe 1 + Familie-Kern 2 +
@@ -158,7 +165,18 @@ die Tarif-Mechanismen-Gruppe (§32b/§34/§10d/§24a) auf 4/4 geschlossen. Charg
 36/40 ≈ 90 % (Foerderungs-Gruppe geoeffnet 1/4; §21-Abs2-Nachtrag schliesst benannte
 Vermietungs-Luecke). Charge 11 Riester (§10a SA-Abzug + Guenstigerpruefung, §§83-86 Zulage:
 Grund/Kinder/Berufseinsteiger + Mindesteigenbeitrag 4% + Kuerzung; 5 Regeln, Andockung §31/§34)
-verified_bedingt → **37/40 ≈ 92,5 %** (Foerderungs-Gruppe 2/4).
+verified_bedingt → 37/40 ≈ 92,5 % (Foerderungs-Gruppe 2/4). Charge 12 (§23 Veraeusserungsgewinn
++ 1.000-Freigrenze, §22 Nr3 sonstige Leistungen 256-Freigrenze, §101 Mobilitaetspraemie 14%;
+FW §10e/f/g = begruendeter Nicht-Gegenstand Altfall) verified_bedingt → **40/40 = 100 %**.
+
+## 🏁 PROGRAMM-MEILENSTEIN: AN-naher Nenner vollstaendig (40/40)
+
+Alle 40 AN-nahen Regelungsbereiche sind **formalisiert (verified_bedingt) ODER als
+Nicht-Gegenstand begruendet benannt**. Der AN-Kern (~100 %) war schon nach Charge 5 dicht;
+Chargen 4-12 haben die uebrigen Einkunftsarten, Tarif-Mechanismen und Foerdertatbestaende
+geschlossen. Startmarke 22/40 ≈ 55 % → 40/40. Naechste Ebene (jenseits dieses Nenners):
+benannte Nachtraege (z.B. §23 Abs3 S7 Verlusttopf, §21 Abs2 Prognosekorridor, Riester-
+Hinzurechnung) + die bewusst ausgeklammerten Grosskomplexe (Selbstaendige/EUER, Ausland/DBA).
 
 **AN-Kern: die 🟡-Lücken (Kind, Sonderausgaben, agB) sind mit Charge 5 auf 4/4 geschlossen -
 der AN-Kern ist damit auf echte ~100 %.** Judge-Nachzug erledigt (2026-07-13, neuer Judge
