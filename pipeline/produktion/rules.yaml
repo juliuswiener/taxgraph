@@ -2244,3 +2244,112 @@ regeln:
   - {aufwendungen: 15000, kv_pv_beitraege: 0, andere_einkuenfte_bezuege: 2000}
   - {aufwendungen: 15000, kv_pv_beitraege: 1500, andere_einkuenfte_bezuege: 0}
   - {aufwendungen: 15000, kv_pv_beitraege: 0, andere_einkuenfte_bezuege: 500}
+# Charge-5 Paket C (Instructor-Freigabe 2026-07-13, reports/review/2026-07-13-charge5-paketC-p10nr5-p10abs1a.md).
+- rule_id: p10_1_5_kinderbetreuung
+  norm: § 10 Abs. 1 Nr. 5 EStG (Kinderbetreuungskosten, 80 % / 4.800-Euro-Deckel)
+  quellen:
+  - typ: gesetz
+    label: § 10 Abs. 1 Nr. 5 S. 1 EStG (80 % der Aufwendungen, hoechstens 4.800 je Kind)
+    datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: 80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind
+    auszug: '80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung eines zum Haushalt des Steuerpflichtigen gehörenden Kindes im Sinne des § 32 Absatz 1, welches das 14. Lebensjahr noch nicht vollendet hat'
+  geltungsbedingungen:
+  - bedingung: achtzig_prozent_deckel_4800_je_kind
+    deckt_ab: 80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind
+    quelle: § 10 Abs. 1 Nr. 5 S. 1 EStG
+    beschreibung: 'Abzug = min(0,80 x aufwendungen, 4.800). Der 4.800-Deckel gilt JE KIND; die Regel rechnet je Kind, Aggregation ueber mehrere Kinder in der § 2-Integration. Altersgrenze (< 14 bzw. behindert) und Haushaltszugehoerigkeit sind Anwendbarkeit (§ 2-Integration).'
+  rundung: []
+  signature:
+    scope: Kinderbetreuung
+    inputs:
+      aufwendungen: money
+    output: kinderbetreuung_abzug
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: 80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind
+    herkunft: synthetisch
+    rechenweg: 'Aufwendungen 3.000. 0,80 x 3.000 = 2.400 < 4.800 -> 2.400,00.'
+    inputs: {aufwendungen: 3000}
+    expected: 2400.0
+  - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: 80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Deckel-Grenze: Aufwendungen 6.000. 0,80 x 6.000 = 4.800 = Deckel -> 4.800,00.'
+    inputs: {aufwendungen: 6000}
+    expected: 4800.0
+  - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: 80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Deckelung: Aufwendungen 8.000. 0,80 x 8.000 = 6.400 > 4.800 -> 4.800,00.'
+    inputs: {aufwendungen: 8000}
+    expected: 4800.0
+  - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: 80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: 0,80 x 0 = 0 -> 0,00.'
+    inputs: {aufwendungen: 0}
+    expected: 0.0
+  raster:
+  - {aufwendungen: 3000}
+  - {aufwendungen: 6000}
+  - {aufwendungen: 8000}
+  - {aufwendungen: 0}
+- rule_id: p10_1a_realsplitting
+  norm: § 10 Abs. 1a Nr. 1 EStG (Realsplitting, Unterhalt Ex-Ehegatte, 13.805-Euro-Deckel)
+  quellen:
+  - typ: gesetz
+    label: § 10 Abs. 1a Nr. 1 S. 1 EStG (Unterhalt bis 13.805 Euro)
+    datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: bis zu 13 805 Euro im Kalenderjahr
+    auszug: 'Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung des Empfängers beantragt, bis zu 13 805 Euro im Kalenderjahr.'
+  - typ: gesetz
+    label: § 10 Abs. 1a Nr. 1 S. 2 EStG (Erhoehung um KV/PV-Beitraege)
+    datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3
+    auszug: 'Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder dauernd g'
+  geltungsbedingungen:
+  - bedingung: deckel_13805_plus_kv_pv
+    deckt_ab: bis zu 13 805 Euro im Kalenderjahr
+    quelle: § 10 Abs. 1a Nr. 1 S. 1-2 EStG
+    beschreibung: 'Abzug = min(unterhaltsleistungen, 13.805 + kv_pv_beitraege). Der 13.805-Hoechstbetrag ist Norm-Konstante (Wortlaut), erhoeht um KV/PV-Beitraege fuer den Ex-Ehegatten (S. 2).'
+  - bedingung: antrag_mit_zustimmung
+    deckt_ab: wenn der Geber dies mit Zustimmung des Empfängers beantragt
+    quelle: § 10 Abs. 1a Nr. 1 S. 1 EStG
+    beschreibung: 'Anwendbarkeit (nicht output-variierend): Antrag des Gebers + Zustimmung des Empfaengers; der Empfaenger versteuert korrespondierend (§ 22 Nr. 1a). Auswahl in der § 2-Integration.'
+  rundung: []
+  signature:
+    scope: Realsplitting
+    inputs:
+      unterhaltsleistungen: money
+      kv_pv_beitraege: money
+    output: realsplitting_abzug
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: bis zu 13 805 Euro im Kalenderjahr
+    herkunft: synthetisch
+    rechenweg: 'Unterhalt 10.000, kein KV/PV. Deckel 13.805. min(10.000; 13.805) = 10.000,00.'
+    inputs: {unterhaltsleistungen: 10000, kv_pv_beitraege: 0}
+    expected: 10000.0
+  - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: bis zu 13 805 Euro im Kalenderjahr
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Deckelung: Unterhalt 15.000 > 13.805 -> 13.805,00.'
+    inputs: {unterhaltsleistungen: 15000, kv_pv_beitraege: 0}
+    expected: 13805.0
+  - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER KV/PV-Erhoehung: Unterhalt 15.000, KV/PV 2.000. Deckel 13.805 + 2.000 = 15.805. min(15.000; 15.805) = 15.000,00.'
+    inputs: {unterhaltsleistungen: 15000, kv_pv_beitraege: 2000}
+    expected: 15000.0
+  - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: bis zu 13 805 Euro im Kalenderjahr
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER hohe Deckelung: Unterhalt 20.000, kein KV/PV -> 13.805,00.'
+    inputs: {unterhaltsleistungen: 20000, kv_pv_beitraege: 0}
+    expected: 13805.0
+  raster:
+  - {unterhaltsleistungen: 10000, kv_pv_beitraege: 0}
+  - {unterhaltsleistungen: 15000, kv_pv_beitraege: 0}
+  - {unterhaltsleistungen: 15000, kv_pv_beitraege: 2000}
+  - {unterhaltsleistungen: 20000, kv_pv_beitraege: 0}
