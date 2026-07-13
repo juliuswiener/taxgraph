@@ -206,3 +206,33 @@ def test_abweichung_betrifft_wird_bevorzugt():
     an = IR._anker("abweichung", {"betrifft": "ergebnis",
                                   "aussage": "irgendein driftender Wortlaut"})
     assert an == ["betrifft", "ergebnis"]
+
+
+# -- Detector-dedup-per-key ---------------------------------------------------
+
+def test_dedup_items_widerspruch_wird_offen():
+    """Doppel-Vorbelegung desselben Items (gleicher _key) mit widerspruechlicher Triage
+    -> ein Item, konservativ 'offen', Vorbelegungs-Felder entfernt, Texte zusammengefuehrt."""
+    items = [
+        {"art": "annahme", "anker": ["x"], "text": "a", "triage": "nicht_material", "konvention": "konv:y"},
+        {"art": "annahme", "anker": ["x"], "text": "b", "triage": "bedingung_neu", "bedingung": "z"},
+    ]
+    out = IR._dedup_items(items)
+    assert len(out) == 1
+    assert out[0]["triage"] == "offen"
+    assert "konvention" not in out[0] and "bedingung" not in out[0]
+    assert "a" in out[0]["text"] and "b" in out[0]["text"]
+
+
+def test_dedup_items_verschiedene_keys_bleiben():
+    items = [{"art": "annahme", "anker": ["x"], "text": "a", "triage": "offen"},
+             {"art": "annahme", "anker": ["y"], "text": "b", "triage": "offen"}]
+    assert len(IR._dedup_items(items)) == 2
+
+
+def test_dedup_items_gleiche_triage_merged_text():
+    items = [{"art": "norm_teil", "anker": ["p"], "text": "t1", "triage": "nicht_material_backlog"},
+             {"art": "norm_teil", "anker": ["p"], "text": "t2", "triage": "nicht_material_backlog"}]
+    out = IR._dedup_items(items)
+    assert len(out) == 1 and "t1" in out[0]["text"] and "t2" in out[0]["text"]
+    assert out[0]["triage"] == "nicht_material_backlog"  # kein Konflikt -> bleibt

@@ -383,8 +383,14 @@ def _select_rules(rules: list[dict], only_arg: str) -> list[dict]:
     """--only akzeptiert eine rule_id oder mehrere kommagetrennt. Mehrere in EINEM Lauf =
     kumulativer --cost-cap ueber den Aufruf (schliesst die Pro-Aufruf-Cap-Nuance der
     Einzel-Aufruf-Serien). Reihenfolge = Manifest-Reihenfolge (nicht Argument-Reihenfolge),
-    damit die Kosten-Akkumulation deterministisch ist."""
+    damit die Kosten-Akkumulation deterministisch ist. Unbekannte rule_id = Fehler (N2): sonst
+    liefe bei einem Tippfehler in der Kommaliste die betroffene Regel STILL nicht."""
     wanted = {x.strip() for x in only_arg.split(",") if x.strip()}
+    vorhanden = {r["rule_id"] for r in rules}
+    unbekannt = wanted - vorhanden
+    if unbekannt:
+        raise SystemExit(f"unbekannte rule_id(s) in --only: {', '.join(sorted(unbekannt))} "
+                         f"(Tippfehler? {len(vorhanden)} Regeln im Manifest)")
     return [r for r in rules if r["rule_id"] in wanted]
 
 

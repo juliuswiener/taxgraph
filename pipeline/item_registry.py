@@ -299,6 +299,30 @@ def save(reg: dict) -> str:
 
 # -- Triage-Werkzeug ----------------------------------------------------------
 
+def _dedup_items(items: list[dict]) -> list[dict]:
+    """Detector-dedup-per-key: dasselbe Registry-Item (gleicher _key art+anker) darf im
+    Triage-Entwurf nur EINMAL erscheinen. Doppel-Vorbelegung (Judge emittiert denselben
+    Anker zweimal) fuehrte sonst zu widerspruechlicher Triage + last-write-collapse beim
+    aufnehmen (idx per _key). Merge-Regel: gleiche Triage -> ein Item, Texte zusammengefuehrt;
+    WIDERSPRUECHLICHE Triage -> konservativ 'offen' (Adjudikation entscheidet, nie stiller
+    Fehlgriff). Reihenfolge = erstes Auftreten."""
+    merged: dict[str, dict] = {}
+    for it in items:
+        k = _key(it["art"], it["anker"])
+        if k not in merged:
+            merged[k] = dict(it)
+            continue
+        cur = merged[k]
+        if cur.get("triage") != it.get("triage"):
+            cur["triage"] = "offen"
+            for f in ("bedingung", "konvention", "vorschlag"):
+                cur.pop(f, None)
+        t2 = it.get("text", "")
+        if t2 and t2 not in cur.get("text", ""):
+            cur["text"] = (cur.get("text", "") + " | " + t2).strip(" |")
+    return list(merged.values())
+
+
 def discover_draft(rule_id: str) -> dict:
     """Erzeugt aus dem letzten Produktions-Verdikt einen Triage-Entwurf: alle
     noch nicht registrierten Items mit `triage: offen`. Julius setzt die Triage,
@@ -356,6 +380,7 @@ def discover_draft(rule_id: str) -> dict:
         if n.get("klasse"):
             e["klasse"] = n["klasse"]
         items.append(e)
+    items = _dedup_items(items)
     return {"rule_id": rule_id, "hinweis": "triage je Item setzen: bedingung_neu | "
             "grenzfall | nicht_material | nicht_echt; bei bedingung_neu die "
             "bedingung-ID eintragen. Dann: python pipeline/item_registry.py aufnehmen <datei>",

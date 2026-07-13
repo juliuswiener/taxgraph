@@ -279,7 +279,11 @@ def test_only_multi_selektion():
     assert [r["rule_id"] for r in _select_rules(rules, "a,c")] == ["a", "c"]
     assert [r["rule_id"] for r in _select_rules(rules, "c, a")] == ["a", "c"]  # Manifest-Reihenfolge
     assert [r["rule_id"] for r in _select_rules(rules, "b , c")] == ["b", "c"]  # Whitespace
-    assert _select_rules(rules, "x") == []  # unbekannt -> leer (Aufrufer wirft "keine Regel")
+    # N2: unbekannte rule_id -> Fehler (nicht still ignorieren, sonst Tippfehler = stiller Skip)
+    with pytest.raises(SystemExit):
+        _select_rules(rules, "x")
+    with pytest.raises(SystemExit):
+        _select_rules(rules, "a,tippfehler")  # gemischt: eine gueltig, eine falsch
 
 
 def test_budget_abbruch_kein_checkpoint():
