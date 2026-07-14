@@ -411,3 +411,88 @@ scope FestzusetzendeEstZusammen:
   # § 2 Abs. 6: festzusetzende Einkommensteuer. Andockpunkt: § 35a.
   definition festzusetzende_est equals tarifliche_est
 ```
+
+## Verallgemeinerte Veranlagung (§ 2 Abs. 3 bis 6, alle Andockpunkte)
+
+Die Stufenfolge des Arbeitnehmerfalls, aber generisch: jede Andockstelle ist eine
+`money`-Eingabe, die das Ergebnis der jeweils eigenen, bereits verifizierten Regel
+traegt (Summe der Einkuenfte aus allen Einkunftsarten, die Abzuege des § 24a/§ 24b,
+Sonderausgaben, aussergewoehnliche Belastungen, § 32-Freibetraege, die
+Ermaessigungen und Hinzurechnungen des § 2 Abs. 6). Der Scope selbst rechnet nur die
+Stufenarithmetik des § 2 EStG, woertlich aus `sources/.../estg_p2_2026-07-14.txt`.
+
+Bewusst ausserhalb (§ 2 Abs. 5b): abgeltend nach § 32d Abs. 1 / § 43 Abs. 5
+besteuerte Kapitalertraege sind NICHT in die Summe der Einkuenfte einzubeziehen; ihre
+Steuer erscheint erst in Abs. 6, soweit sie nach § 32d Abs. 3/4 veranlagt wird. Der
+Tarif ist hier der Grundtarif (Einzelveranlagung); § 32b (Progressionsvorbehalt) und
+§ 34 (Fuenftel/ermaessigter Satz) treten als modifizierte Tarifgroesse an die Stelle
+des Grundtarif-Aufrufs (eigene Regeln p32b/p34, dort als Tarif-Andockung formalisiert).
+
+```catala
+declaration scope FestzusetzendeEstGesamt:
+  # § 2 Abs. 3 Satz 1: Summe der Einkuenfte (tarifliche Einkunftsarten; negative
+  # Einkuenfte zulaessig). Jede Groesse ist das Ergebnis der eigenen Regel.
+  input einkuenfte_nichtselbststaendig content money   # § 19 (p09/p04, § 9a)
+  input einkuenfte_kapitalvermoegen content money      # § 20 tariflich (Guenstiger), NICHT Abgeltung
+  input einkuenfte_vermietung content money            # § 21 (p21)
+  input einkuenfte_sonstige content money              # § 22/§ 23 (nach Verlusttopf p23_3)
+  input einkuenfte_gewinn content money                # § 13/§ 15/§ 18 (ausserhalb MVP, Slot)
+  # § 2 Abs. 3: Abzuege zum Gesamtbetrag der Einkuenfte
+  input altersentlastungsbetrag content money          # § 24a (p24a)
+  input entlastungsbetrag_alleinerziehende content money  # § 24b (p24b)
+  # § 2 Abs. 4: Abzuege zum Einkommen
+  input sonderausgaben content money                   # § 10/§ 10a/§ 10b/§ 10c + § 10d Verlustabzug
+  input aussergewoehnliche_belastungen content money   # § 33/§ 33a/§ 33b
+  # § 2 Abs. 5 Satz 1: Abzuege zum zu versteuernden Einkommen
+  input freibetraege_kinder content money              # § 32 Abs. 6 (p32_6)
+  input sonstige_abzuege_vom_einkommen content money   # § 2 Abs. 5 Satz 1 (Rest-Slot)
+  # § 2 Abs. 6: Ermaessigungen und Hinzurechnungen zur festzusetzenden ESt
+  input anzurechnende_auslaendische_steuern content money  # § 34c (Abs. 6 Satz 1)
+  input steuerermaessigungen content money             # § 35a/§ 35c/§ 34g/§ 35 (Abs. 6 Satz 1)
+  input steuer_kapital_gesondert content money         # § 32d Abs. 3/4 (Abs. 6 Satz 1, hinzuzurechnen)
+  input hinzurechnung_kindergeld content money         # § 31 Satz 4 (Familienleistungsausgleich)
+  input hinzurechnung_zulage content money             # § 10a Abs. 2 (Abs. 6 Satz 2)
+  input veranlagungszeitraum content Veranlagungszeitraum
+  output summe_der_einkuenfte content money            # § 2 Abs. 3 Satz 1
+  output gesamtbetrag_der_einkuenfte content money     # § 2 Abs. 3
+  output einkommen content money                       # § 2 Abs. 4
+  output zu_versteuerndes_einkommen content money      # § 2 Abs. 5
+  output tarifliche_est content money                  # § 2 Abs. 5, § 32a
+  output festzusetzende_est content money              # § 2 Abs. 6
+
+scope FestzusetzendeEstGesamt:
+  # § 2 Abs. 3 Satz 1: Summe der Einkuenfte aus allen Einkunftsarten.
+  definition summe_der_einkuenfte equals
+    einkuenfte_nichtselbststaendig + einkuenfte_kapitalvermoegen
+    + einkuenfte_vermietung + einkuenfte_sonstige + einkuenfte_gewinn
+
+  # § 2 Abs. 3: Gesamtbetrag der Einkuenfte = SdE minus Altersentlastungsbetrag
+  # (§ 24a) minus Entlastungsbetrag fuer Alleinerziehende (§ 24b).
+  definition gesamtbetrag_der_einkuenfte equals
+    summe_der_einkuenfte - altersentlastungsbetrag
+    - entlastungsbetrag_alleinerziehende
+
+  # § 2 Abs. 4: Einkommen = GdE minus Sonderausgaben minus aussergewoehnliche
+  # Belastungen ("vermindert um", keine Untergrenze).
+  definition einkommen equals
+    gesamtbetrag_der_einkuenfte - sonderausgaben - aussergewoehnliche_belastungen
+
+  # § 2 Abs. 5 Satz 1: zu versteuerndes Einkommen = Einkommen minus § 32-Abs-6-
+  # Freibetraege minus sonstige vom Einkommen abzuziehende Betraege.
+  definition zu_versteuerndes_einkommen equals
+    einkommen - freibetraege_kinder - sonstige_abzuege_vom_einkommen
+
+  # § 2 Abs. 5 i.V.m. § 32a: tarifliche Einkommensteuer (Grundtarif). Andockpunkt
+  # § 32b/§ 34: modifizierte Tarifgroesse tritt an die Stelle dieses Aufrufs.
+  definition tarifliche_est equals
+    (output of Grundtarif with {
+       -- zu_versteuerndes_einkommen: zu_versteuerndes_einkommen
+       -- veranlagungszeitraum: veranlagungszeitraum
+     }).tarifliche_steuer
+
+  # § 2 Abs. 6 Satz 1-2: festzusetzende Einkommensteuer.
+  definition festzusetzende_est equals
+    tarifliche_est
+    - anzurechnende_auslaendische_steuern - steuerermaessigungen
+    + steuer_kapital_gesondert + hinzurechnung_kindergeld + hinzurechnung_zulage
+```

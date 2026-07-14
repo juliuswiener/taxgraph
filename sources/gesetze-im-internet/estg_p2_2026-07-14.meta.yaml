@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p2/2026-07-14"
+  norm: "§ 2 EStG (Umfang der Besteuerung, Begriffsbestimmungen)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__2.html"
+  abrufdatum: "2026-07-14"
+  datei: "estg_p2_2026-07-14.txt"
+  sha256: "7fc8d2beefb061772ec0aa31b4d804a5a014eb09f4b5d1e744280c6c77dbb810"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["§2-Integration"]

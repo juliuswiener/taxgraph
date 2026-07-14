@@ -1,0 +1,229 @@
+# Tests verallgemeinerte Veranlagung - § 2 Abs. 3 bis 6 (alle Andockpunkte)
+
+> Using Einkommensteuertarif
+
+Prueft die Stufenarithmetik des `FestzusetzendeEstGesamt`-Scopes: Summe der
+Einkuenfte aus mehreren Einkunftsarten, die Abzuege des § 2 Abs. 3/4/5 und die
+Ermaessigungen/Hinzurechnungen des § 2 Abs. 6. Jede Andockstelle ist eine
+`money`-Eingabe (das Ergebnis der jeweils eigenen, bereits verifizierten Regel).
+
+Die Erwartungswerte der tariflichen ESt sind an denselben zvE-Punkten verankert,
+die die Arbeitnehmerfall-Tests bereits gegen die GETTSIM-Tarif-Oracle pinnen
+(zvE 58734 -> 13747, 28734 -> 3862, 57500 -> 13279, 13734 -> 211; VZ 2026). Damit
+testet dieses File ausschliesslich die § 2-Stufenarithmetik, nicht den Tarif.
+
+## Reduktion auf den Arbeitnehmerfall (nur § 19)
+
+```catala
+#[test]
+declaration scope TestGesamtReduktion:
+  internal r content Einkommensteuertarif.FestzusetzendeEstGesamt
+  output sde content money
+  output gde content money
+  output eink content money
+  output zve content money
+  output tarif content money
+  output fest content money
+
+scope TestGesamtReduktion:
+  # Nur § 19: einkuenfte 58770 (= brutto 60000 - § 9a-Pauschbetrag 1230),
+  # Sonderausgaben-Pauschbetrag 36. Muss dem Arbeitnehmerfall entsprechen.
+  definition r equals output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+    -- einkuenfte_nichtselbststaendig: $58,770.00
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: $0.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $0.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $36.00
+    -- aussergewoehnliche_belastungen: $0.00
+    -- freibetraege_kinder: $0.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $0.00
+    -- steuer_kapital_gesondert: $0.00
+    -- hinzurechnung_kindergeld: $0.00
+    -- hinzurechnung_zulage: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition sde equals r.summe_der_einkuenfte
+  definition gde equals r.gesamtbetrag_der_einkuenfte
+  definition eink equals r.einkommen
+  definition zve equals r.zu_versteuerndes_einkommen
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  assertion sde = $58,770.00
+  assertion gde = $58,770.00
+  assertion eink = $58,734.00
+  assertion zve = $58,734.00
+  assertion tarif = $13,747.00
+  assertion fest = $13,747.00
+```
+
+## Mehrere Einkunftsarten (§ 2 Abs. 3 Satz 1)
+
+```catala
+#[test]
+declaration scope TestGesamtMehrereArten:
+  internal r content Einkommensteuertarif.FestzusetzendeEstGesamt
+  output sde content money
+  output zve content money
+  output fest content money
+
+scope TestGesamtMehrereArten:
+  # § 19 20000 + § 21 Vermietung 8770 = SdE 28770; - Sonderausgaben 36
+  # -> zvE 28734 -> tarifliche/festzusetzende 3862.
+  definition r equals output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+    -- einkuenfte_nichtselbststaendig: $20,000.00
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: $8,770.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $0.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $36.00
+    -- aussergewoehnliche_belastungen: $0.00
+    -- freibetraege_kinder: $0.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $0.00
+    -- steuer_kapital_gesondert: $0.00
+    -- hinzurechnung_kindergeld: $0.00
+    -- hinzurechnung_zulage: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition sde equals r.summe_der_einkuenfte
+  definition zve equals r.zu_versteuerndes_einkommen
+  definition fest equals r.festzusetzende_est
+  assertion sde = $28,770.00
+  assertion zve = $28,734.00
+  assertion fest = $3,862.00
+```
+
+## Abzuege (§ 2 Abs. 3/4) und Steuerermaessigung (§ 2 Abs. 6)
+
+```catala
+#[test]
+declaration scope TestGesamtAbzuegeErmaessigung:
+  internal r content Einkommensteuertarif.FestzusetzendeEstGesamt
+  output gde content money
+  output eink content money
+  output zve content money
+  output tarif content money
+  output fest content money
+
+scope TestGesamtAbzuegeErmaessigung:
+  # § 19 62000; - Altersentlastungsbetrag 2000 -> GdE 60000; - Sonderausgaben 2000
+  # - agB 500 -> Einkommen 57500 -> zvE 57500 -> tarifliche 13279;
+  # - Steuerermaessigung (§ 35a) 279 -> festzusetzende 13000.
+  definition r equals output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+    -- einkuenfte_nichtselbststaendig: $62,000.00
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: $0.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $2,000.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $2,000.00
+    -- aussergewoehnliche_belastungen: $500.00
+    -- freibetraege_kinder: $0.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $279.00
+    -- steuer_kapital_gesondert: $0.00
+    -- hinzurechnung_kindergeld: $0.00
+    -- hinzurechnung_zulage: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition gde equals r.gesamtbetrag_der_einkuenfte
+  definition eink equals r.einkommen
+  definition zve equals r.zu_versteuerndes_einkommen
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  assertion gde = $60,000.00
+  assertion eink = $57,500.00
+  assertion zve = $57,500.00
+  assertion tarif = $13,279.00
+  assertion fest = $13,000.00
+```
+
+## Kinderfreibetrag (§ 2 Abs. 5) und Hinzurechnungen (§ 2 Abs. 6)
+
+```catala
+#[test]
+declaration scope TestGesamtFreibetragHinzurechnung:
+  internal r content Einkommensteuertarif.FestzusetzendeEstGesamt
+  output zve content money
+  output tarif content money
+  output fest content money
+
+scope TestGesamtFreibetragHinzurechnung:
+  # § 19 20000; - Kinderfreibetrag 6266 -> zvE 13734 -> tarifliche 211;
+  # + Kindergeld-Hinzurechnung (§ 31 Satz 4) 3000 + gesonderte KAP-Steuer
+  # (§ 32d Abs. 3/4) 500 -> festzusetzende 3711. (Hinzurechnungsbetraege
+  # synthetisch, testen die Abs-6-Arithmetik, keine realen Kindergeld-Werte.)
+  definition r equals output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+    -- einkuenfte_nichtselbststaendig: $20,000.00
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: $0.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $0.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $0.00
+    -- aussergewoehnliche_belastungen: $0.00
+    -- freibetraege_kinder: $6,266.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $0.00
+    -- steuer_kapital_gesondert: $500.00
+    -- hinzurechnung_kindergeld: $3,000.00
+    -- hinzurechnung_zulage: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition zve equals r.zu_versteuerndes_einkommen
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  assertion zve = $13,734.00
+  assertion tarif = $211.00
+  assertion fest = $3,711.00
+```
+
+## Verlustausgleich zwischen Einkunftsarten (§ 2 Abs. 3, negativer Saldo)
+
+```catala
+#[test]
+declaration scope TestGesamtVerlustausgleich:
+  internal r content Einkommensteuertarif.FestzusetzendeEstGesamt
+  output sde content money
+  output zve content money
+  output tarif content money
+  output fest content money
+
+scope TestGesamtVerlustausgleich:
+  # § 19 1000 + § 21 Vermietung -5000 -> SdE -4000 (horizontaler Verlustausgleich
+  # zwischen Einkunftsarten, § 2 Abs. 3); negatives zvE -> tarifliche/festzusetzende 0.
+  definition r equals output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+    -- einkuenfte_nichtselbststaendig: $1,000.00
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: -$5,000.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $0.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $0.00
+    -- aussergewoehnliche_belastungen: $0.00
+    -- freibetraege_kinder: $0.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $0.00
+    -- steuer_kapital_gesondert: $0.00
+    -- hinzurechnung_kindergeld: $0.00
+    -- hinzurechnung_zulage: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition sde equals r.summe_der_einkuenfte
+  definition zve equals r.zu_versteuerndes_einkommen
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  assertion sde = -$4,000.00
+  assertion zve = -$4,000.00
+  assertion tarif = $0.00
+  assertion fest = $0.00
+```
