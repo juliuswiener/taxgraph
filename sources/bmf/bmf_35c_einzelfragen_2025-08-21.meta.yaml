@@ -1,0 +1,17 @@
+dokument:
+  norm_uri: "bmf/2025-08-21/IV-C-1-S-2296-c"
+  norm: "BMF-Schreiben Einzelfragen zu § 35c EStG, Neufassung v. 21.08.2025 (ersetzt BMF v. 14.01.2021)"
+  fassung: "21.08.2025"
+  quelle_url: "https://www.bundesfinanzministerium.de/Content/DE/Downloads/BMF_Schreiben/Steuerarten/Einkommensteuer/2025-08-21-einzelfragen-energetische-massnahmen.pdf?__blob=publicationFile&v=2"
+  abrufdatum: "2026-07-14"
+  datei: "bmf_35c_einzelfragen_2025-08-21.txt"
+  pdf_datei: "bmf_35c_einzelfragen_2025-08-21.pdf"
+  sha256: "e6c99fdeb593e43c1e79b9514376c3c5943e2f8896930b5476c0d9a62f0845df"
+  pdf_sha256: "239caae8434826163540a7323ea6617f926d08e1af16d383dd382010643e63d7"
+  authority: verwaltung
+  redistributable: true
+  hinweis: "PDF via pdftotext -layout extrahiert, Direkt-Download vom BMF hat funktioniert. ACHTUNG PDF-Zeilenumbrueche/Silbentrennung (z.B. 'Aufwen-dungen', 'Jahres-hoechstbetraegen') - auszuege nur mit grep-verifizierten Fragmenten."
+  erwartete_anker:
+    - "nicht auf drei Jahre zu verteilen"
+    - "im Jahr des Abschlusses der energetischen Maßnahme (siehe Rn. 80) zu berücksichtigen"
+  verwendet_in: ["Charge 14 (§35c Energieberater: VZ-Zuordnung Abschlussjahr + Deckel-Interaktion, Rn. 53-56)"]

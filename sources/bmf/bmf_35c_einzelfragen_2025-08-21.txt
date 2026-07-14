@@ -1,0 +1,1433 @@
+Bundesministerium der Finanzen, 11016 Berlin
+                                                                         Wilhelmstraße 97
+Nur per E-Mail                                                           10117 Berlin
+                                                                         Tel. +49 30 18 682-0
+Oberste Finanzbehörden
+                                                                         poststelle@bmf.bund.de
+der Länder
+                                                                         www.bundesfinanzministerium.de
+                                                                         21. August 2025
+
+
+
+
+Betreff: Förderung energetischer Maßnahmen an zu eigenen Wohnzwecken genutzten
+Gebäuden;
+Einzelfragen zu § 35c EStG, Neufassung des BMF-Schreibens vom 14. Januar 2021
+Anlagen: 1
+GZ: IV C 1 - S 2296-c/00004/018/050
+DOK: COO.7005.100.2.12790138
+Seite 1 von 33
+
+
+
+
+Abkürzungen
+
+In diesem Schreiben werden die folgenden Abkürzungen verwendet:
+
+AO                = Abgabenordnung
+BAFA              = Bundesamt für Wirtschaft und Ausfuhrkontrolle
+BGB               = Bürgerliches Gesetzbuch
+BEG EM            = Bundesförderung für effiziente Gebäude – Einzelmaßnahmen
+BewG              = Bewertungsgesetz
+BFH               = Bundesfinanzhof
+BStBl             = Bundessteuerblatt
+ESanMV            = Energetische Sanierungsmaßnahmen-Verordnung
+EStG              = Einkommensteuergesetz
+EStR              = Einkommensteuer-Richtlinien
+GEG               = Gebäudeenergiegesetz
+KfW               = Kreditanstalt für Wiederaufbau
+Rn.               = Randnummer
+WEG               = Wohnungseigentumsgesetz
+Seite 2 von 33
+
+Inhaltsverzeichnis
+
+1. Begünstigtes Objekt ............................................................................................................................ 3
+2. Anspruchsberechtigte Person .............................................................................................................. 4
+   a) Bürgerlich-rechtlicher Eigentümer ................................................................................................. 4
+   b) Wirtschaftlicher Eigentümer ........................................................................................................... 4
+3. Nutzung zu eigenen Wohnzwecken .................................................................................................... 5
+   a) Grundfall ......................................................................................................................................... 5
+   b) Gemischte Nutzung eines im Übrigen zu eigenen Wohnzwecken genutzten Objekts ................... 5
+   c) Unentgeltliche Überlassung von Teilen eines im Übrigen zu eigenen Wohnzwecken genutzten
+   Objekts ................................................................................................................................................ 6
+   d) Beginn der erstmaligen Nutzung zu eigenen Wohnzwecken ......................................................... 7
+   e) Beendigung der Nutzung zu eigenen Wohnzwecken ..................................................................... 7
+4. Alter des Objekts ................................................................................................................................. 8
+5. Beschränkung der Steuerermäßigung durch die tarifliche Einkommensteuer .................................... 9
+6. Minderung des (Gesamt-)Höchstbetrages bei überhöhter Steuerermäßigung ................................... 10
+7. Objektförderung ................................................................................................................................ 10
+8. Steuerliche Förderung mehrerer Objekte .......................................................................................... 10
+9. Miteigentum an einem begünstigten Objekt ..................................................................................... 11
+10. Miteigentum bei Zwei- oder Mehrfamilienhäusern (mehrere begünstigte Objekte) ....................... 12
+11. Auszug eines Ehegatten .................................................................................................................. 13
+12. Vorweggenommene Erbfolge und Erbfall ...................................................................................... 13
+13. Unterschiedliche Nutzung einzelner Gebäudeteile ......................................................................... 14
+14. Wohnungseigentümergemeinschaft ................................................................................................ 15
+15. Förderfähige Aufwendungen........................................................................................................... 15
+   a) Begriff und Umfang einer energetischen Maßnahme ................................................................... 15
+   b) Fachgerechte Durchführung und Fachunternehmen ..................................................................... 16
+   c) Energieberater ............................................................................................................................... 16
+   d) Umfeldmaßnahmen und separat erworbene Materialien .............................................................. 18
+   e) Nicht förderfähige Maßnahmen .................................................................................................... 19
+16. Ausschluss der Förderung und Verhältnis zu anderen Tatbeständen .............................................. 20
+    Seite 3 von 33
+
+    17. Nachweis der energetischen Maßnahme ......................................................................................... 21
+    18. Rechnung und Zahlung ................................................................................................................... 22
+    19. Antragstellung und Verfahren ......................................................................................................... 22
+    Anlage ................................................................................................................................................... 24
+
+
+    Nach Erörterungen mit den obersten Finanzbehörden der Länder wird das BMF-Schreiben vom
+    14. Januar 2021 (BStBl I S. 103) zur Anwendung von § 35c EStG und der Verordnung zur
+    Bestimmung von Mindestanforderungen für energetische Maßnahmen bei zu eigenen
+    Wohnzwecken genutzten Gebäuden nach § 35c des Einkommensteuergesetzes (Energetische
+    Sanierungsmaßnahmen-Verordnung – ESanMV) ersetzt und wie folgt neu gefasst.
+
+    1. Begünstigtes Objekt
+1   Die Steuerermäßigung nach § 35c EStG betrifft energetische Maßnahmen an einem in der
+    Europäischen Union oder dem Europäischen Wirtschaftsraum belegenen und zu eigenen
+    Wohnzwecken genutzten (vgl. Rn. 11 ff.) eigenen Gebäude (vgl. Rn. 5 ff. und 33 ff.). Vom Begriff
+    des „Gebäudes“ sind Einfamilienhäuser, rechtlich nicht getrennte Wohnungen (vgl. Rn. 4) im
+    Zwei- oder Mehrfamilienhaus und die Wohnung i. S. d. WEG umfasst (begünstigte Objekte).
+    Vermietete Objekte sind nicht begünstigt (siehe aber Rn. 16).
+
+2   Gefördert werden auch energetische Maßnahmen an Zubehörräumen eines begünstigten
+    Objekts wie z. B. Kellerräume, Abstellräume, Bodenräume, Trockenräume, Heizungsräume und
+    Garagen, wenn die energetische Maßnahme zusammen mit der energetischen Maßnahme des
+    begünstigten Objekts erfolgt, z. B. Dämmung der Kellerdecke.
+
+3   Wird im Zusammenhang mit der energetischen Sanierung eines zu eigenen Wohnzwecken
+    genutzten eigenen Gebäudes die Wohnfläche erweitert, können auch die an der Erweiterung
+    durchgeführten energetischen Maßnahmen der steuerlichen Förderung nach § 35c EStG
+    unterfallen (z. B. durch eine Gaube, eine Dachgeschossaufstockung oder einen Anbau).
+
+4   Eine Wohnung i. S. d. Rn. 1 ist gemäß § 181 Absatz 9 BewG die Zusammenfassung einer Mehrheit
+    von Räumen, die in ihrer Gesamtheit so beschaffen sein muss, dass die Führung eines
+    selbständigen Haushalts möglich ist. Die Zusammenfassung einer Mehrheit von Räumen muss
+    eine von anderen Wohnungen oder Räumen, insbesondere Wohnräumen, baulich getrennte, in
+    sich abgeschlossene Wohneinheit bilden und einen selbständigen Zugang haben. Außerdem ist
+    es erforderlich, dass die für die Führung eines selbständigen Haushalts notwendigen
+    Nebenräume (Küche, Bad oder Dusche, Toilette) vorhanden sind. Außerhalb der Wohnung
+    belegene Räume werden dabei nicht berücksichtigt. Auf die Art des Gebäudes, in dem sich die
+    Wohnung befindet, kommt es nicht an.
+    Seite 4 von 33
+
+    2. Anspruchsberechtigte Person
+5   Anspruchsberechtigt ist grundsätzlich der bürgerlich-rechtliche Eigentümer. Übt eine andere
+    Person als der bürgerlich-rechtliche Eigentümer die tatsächliche Herrschaft über das begünstigte
+    Objekt dergestalt aus, dass sie den bürgerlich-rechtlichen Eigentümer für die gewöhnliche
+    Nutzungsdauer von der Einwirkung auf das begünstigte Objekt ausschließen kann (wirtschaft-
+    licher Eigentümer, § 39 Absatz 2 Nummer 1 Satz 1 AO), so ist diese die anspruchsberechtigte
+    Person. Anspruchsberechtigt ist auch, wer durch Übergang von Nutzen und Lasten wirtschaft-
+    licher Eigentümer eines erworbenen begünstigten Objekts ist und lediglich mangels Grundbuch-
+    eintragung noch nicht als bürgerlich-rechtlicher Eigentümer des begünstigten Objekts gilt (§ 873
+    i. V. m. § 925 BGB).
+
+    a) Bürgerlich-rechtlicher Eigentümer
+6   Bürgerlich-rechtlicher Eigentümer ist, wer als Eigentümer am Grundstück oder an der Wohnung
+    (Sondereigentum) in Verbindung mit dem Miteigentumsanteil an dem gemeinschaftlichen
+    Eigentum im Grundbuch eingetragen ist.
+
+7   Bürgerlich-rechtliches Eigentum am Gebäude hat auch der Erbbauberechtigte und diejenige
+    Person, die das Gebäude auf einem Grundstück hergestellt hat, an dem ihr ein Nutzungsrecht
+    nach den §§ 287 oder 291 des Zivilgesetzbuches DDR vor dem Wirksamwerden des Beitritts
+    verliehen worden ist.
+
+    b) Wirtschaftlicher Eigentümer
+8   Wirtschaftliches Eigentum wird durch dinglich (z. B. Nießbrauch) oder schuldrechtlich
+    begründete Nutzungsrechte (z. B. Miete) in der Regel nicht vermittelt (BFH-Urteil vom 24. Juni
+    2004 - III R 50/01, BStBl 2005 II S. 80). Die dinglich oder schuldrechtlich nutzungsberechtigte
+    Person kann weder wie ein Eigentümer mit der Sache nach Belieben verfahren noch den
+    Eigentümer wirtschaftlich ausschließen.
+
+9   Anspruchsberechtigt ist auch, wer auf einem fremden Grundstück mit Zustimmung des Eigen-
+    tümers auf eigene Rechnung eine Wohnung errichtet hat (BFH-Urteil vom 5. Juli 2018
+    - VI R 67/15, BStBl II S. 798) und gemäß den im Voraus getroffenen und tatsächlich durchge-
+    führten Vereinbarungen die wirtschaftliche Verfügungsmacht innehat, weil die Wohnung nach
+    voraussichtlicher Dauer des Nutzungsverhältnisses bei normalem, der gewählten Gestaltung
+    entsprechenden Verlauf wirtschaftlich verbraucht ist. Voraussetzung ist, dass die nutzungsbe-
+    rechtigte Person das uneingeschränkte Nutzungsrecht erlangt und frei darüber verfügen kann
+    oder bei Beendigung einen Anspruch auf Entschädigung hat. Gleiches gilt, wenn der nutzungs-
+    berechtigten Person für den Fall der Nutzungsbeendigung gegenüber dem Grundstückseigen-
+    tümer ein Anspruch auf Ersatz des vollen Verkehrswertes der Wohnung zusteht. Ein solcher
+    Anspruch kann sich aus dem Vertrag oder Gesetz ergeben.
+     Seite 5 von 33
+
+10   Der Dauerwohnberechtigte i. S. d. §§ 31 ff. WEG ist nur dann als wirtschaftlicher Eigentümer der
+     Wohnung anzusehen, wenn seine Rechte und Pflichten bei wirtschaftlicher Betrachtungsweise
+     den Rechten und Pflichten eines Eigentümers der Wohnung entsprechen und wenn er aufgrund
+     des Dauerwohnrechtsvertrags bei Beendigung des Dauerwohnrechts eine angemessene
+     Entschädigung erhält (BFH-Urteil vom 11. September 1964 - VI 56/63 U, BStBl 1965 III S. 8 und
+     vom 22. Oktober 1985 – IX R 48/82, BStBl 1986 II S. 258).
+
+     3. Nutzung zu eigenen Wohnzwecken
+     a) Grundfall
+11   Ein Objekt wird zu eigenen Wohnzwecken genutzt, wenn es zumindest zeitweise vom Eigen-
+     tümer tatsächlich genutzt wird. Daher sind auch Ferienwohnungen und Objekte doppelter
+     Haushaltsführung von der Förderung umfasst. Ausreichend ist, dass das Objekt im Zusammen-
+     hang mit der energetischen Maßnahme zu eigenen Wohnzwecken nutzbar gemacht wird.
+
+12   Im Bereithalten eines tatsächlich leerstehenden Objekts liegt in der Regel keine Nutzung zu
+     eigenen Wohnzwecken. Ein Leerstand vor Beginn der Nutzung zu eigenen Wohnzwecken ist
+     jedoch unschädlich, wenn er mit der beabsichtigten Nutzung des begünstigten Objekts zu
+     eigenen Wohnzwecken zusammenhängt. Ein Zusammenhang ist regelmäßig gegeben, wenn die
+     energetischen Maßnahmen unmittelbar vor Beginn der Nutzung zu eigenen Wohnzwecken
+     erfolgen (z. B. zwischen dem Erwerb und dem Einzug). Dies gilt auch für umfangreiche
+     Sanierungsvorhaben über mehrere Jahre, wenn der Leerstand zwischen dem Beginn der
+     energetischen Maßnahme und dem Einzug durch die Gesamtbaumaßnahme bedingt ist.
+
+13   Ein Objekt wird zu eigenen Wohnzwecken durch die anspruchsberechtigte Person genutzt, wenn
+     diese das Objekt allein, mit ihren Familienangehörigen oder gemeinsam mit Dritten bewohnt.
+     Ein Objekt wird auch dann zu eigenen Wohnzwecken genutzt, wenn es an ein Kind unentgeltlich
+     überlassen wird, für das die anspruchsberechtigte Person einen Anspruch auf Kindergeld hat
+     oder die Voraussetzungen für die Gewährung der Freibeträge für Kinder nach § 32 EStG erfüllt.
+     Die unentgeltliche Überlassung des gesamten Objekts an andere – auch unterhaltsberechtigte –
+     Angehörige oder fremde Dritte stellt keine Nutzung zu eigenen Wohnzwecken dar.
+
+     b) Gemischte Nutzung eines im Übrigen zu eigenen Wohnzwecken genutzten Objekts
+14   Werden Teile eines Objekts nicht zu eigenen Wohnzwecken genutzt (z. B. ein häusliches
+     Arbeitszimmer, das ausschließlich oder nahezu ausschließlich für betriebliche oder berufliche
+     Zwecke genutzt wird, andere betrieblich/beruflich genutzte oder vermietete Räume), ist dies für
+     die Gewährung der Steuerermäßigung nach § 35c EStG dem Grunde nach unschädlich. Die
+     Aufwendungen für die energetischen Maßnahmen sind jedoch um den Teil der Aufwendungen
+     zu kürzen, der auf den nicht zu eigenen Wohnzwecken genutzten Teil des Objekts entfällt. Für
+     die Kürzung ist es unerheblich, ob die Aufwendungen für das häusliche Arbeitszimmer in
+     tatsächlicher Höhe oder gemäß § 4 Absatz 5 Satz 1 Nummer 6b i. V. m. § 9 Absatz 5 EStG mit der
+     Jahrespauschale von 1.260 Euro berücksichtigt werden.
+
+15   Aufwendungen, die eindeutig und klar abgrenzbar ausschließlich auf einen Teil des Objekts
+     entfallen, sind unmittelbar diesem Teil zuzuordnen. Im Übrigen sind die Aufwendungen für
+     energetische Maßnahmen in der Regel nach dem Verhältnis der Nutzfläche der eigenen
+     Seite 6 von 33
+
+     Wohnzwecken dienenden Räume zur gesamten Nutzfläche des Objekts aufzuteilen. Der auf ein
+     häusliches Arbeitszimmer entfallende Anteil der Aufwendungen bestimmt sich nach dem
+     Verhältnis der Nutzfläche des häuslichen Arbeitszimmers zur gesamten Nutzfläche der eigenen
+     Wohnzwecken dienenden Räume einschließlich des Arbeitszimmers. Das gilt auch für ein im
+     Keller belegenes häusliches Arbeitszimmer. Der (Gesamt-)Höchstbetrag der Steuerermäßigung
+     von 40.000 Euro (vgl. Rn. 28) mindert sich hierdurch nicht.
+
+            Beispiel 1
+            A und B lassen die Dachflächen ihres zu eigenen Wohnzwecken genutzten Einfamilien-
+            hauses dämmen. Das Einfamilienhaus hat eine Gesamtfläche von 150 m². Im Haus
+            befindet sich ein 15 m² großes Arbeitszimmer, das von A und B beruflich für ihre
+            nichtselbständige Tätigkeit genutzt wird. Die Voraussetzungen für den Vollabzug der
+            Aufwendungen für das Arbeitszimmer nach § 9 Absatz 5 i. V. m. § 4 Absatz 5 Satz 1
+            Nummer 6b EStG als Werbungskosten sind erfüllt. A und B werden zusammen zur
+            Einkommensteuer veranlagt. Die Aufwendungen für die energetische Maßnahme der
+            Dachdämmung sind um den auf das Arbeitszimmer entfallenden Teil (10 %) zu kürzen
+            (vgl. Rn. 14). Dieser Teil der Aufwendungen ist nach den allgemeinen Grundsätzen für
+            den Werbungskostenabzug bei den Einkünften aus nichtselbständiger Arbeit gemäß § 19
+            i. V. m. § 9 EStG als Bestandteil der abziehbaren Aufwendungen für das häusliche
+            Arbeitszimmer zu berücksichtigen. Für die übrigen 90 % der Aufwendungen können A
+            und B die Steuerermäßigung nach § 35c EStG beantragen. Eine Kürzung des (Gesamt-)
+            Höchstbetrages der Steuerermäßigung von 40.000 Euro erfolgt nicht.
+
+16   Werden Teile eines im Übrigen zu eigenen Wohnzwecken genutzten Objekts vorübergehend
+     vermietet und übersteigen die Einnahmen hieraus nicht 520 Euro im Veranlagungszeitraum,
+     bedarf es aus Vereinfachungsgründen keiner Aufteilung und Kürzung der Aufwendungen für die
+     energetischen Maßnahmen, wenn nach R 21.2 Absatz 1 EStR 2012 im Einverständnis mit der
+     steuerpflichtigen Person von der Besteuerung der Einkünfte abgesehen wird.
+
+17   Reine Stromerzeuger wie Photovoltaikanlagen sind nicht förderfähig, siehe Anlage 6 zu § 1
+     ESanMV. Wird auf dem Dach eines zu eigenen Wohnzwecken genutzten Gebäudes eine
+     Photovoltaikanlage errichtet und werden mit dieser Anlage aufgrund des Überschreitens der
+     Grenzen des § 3 Nr. 72 EStG gewerbliche Einkünfte gemäß § 15 EStG erzielt, bleibt das Gebäude
+     jedoch ein begünstigtes Objekt i. S. d. § 35c EStG. Werden im Zuge einer solchen Installation
+     Aufwendungen für eine als energetische Maßnahme geförderte Dachsanierung getätigt, handelt
+     es sich regelmäßig um gemischt veranlasste Aufwendungen, für die eine Aufteilung mangels
+     geeignetem Aufteilungsmaßstab nicht möglich ist. Die Aufwendungen für die Dachsanierung
+     sind vollumfänglich nach § 35c EStG begünstigt. Ein (anteiliger) Abzug der Aufwendungen für
+     die Dachsanierung als Betriebsausgabe bei den gewerblichen Einkünften kommt nicht in
+     Betracht.
+
+     c) Unentgeltliche Überlassung von Teilen eines im Übrigen zu eigenen Wohnzwecken
+     genutzten Objekts
+18   Die Aufwendungen für die energetischen Maßnahmen sind nicht zu kürzen, wenn Teile eines im
+     Übrigen zu eigenen Wohnzwecken genutzten Objekts durch die steuerpflichtige Person
+     Seite 7 von 33
+
+     unentgeltlich zu Wohnzwecken überlassen werden. Eine unentgeltliche Überlassung zu
+     Wohnzwecken liegt auch vor, wenn an einem Teil des im Übrigen zu eigenen Wohnzwecken
+     genutzten Objekts ein obligatorisches oder dingliches Zuwendungs- oder Vermächtniswohn-
+     recht zugunsten einer dritten Person besteht.
+
+19   Wird hingegen ein Teil des im Übrigen zu eigenen Wohnzwecken genutzten Objekts aufgrund
+     eines vorbehaltenen obligatorischen oder dinglichen Wohnrechts durch eine dritte Person
+     genutzt, handelt es sich nicht um eine unentgeltliche Überlassung durch die steuerpflichtige
+     Person. In diesem Fall sind die Aufwendungen für die energetische Maßnahme um die Aufwen-
+     dungen zu kürzen, die auf den wohnrechtsbelasteten Teil des Objekts entfallen. Eine Kürzung des
+     (Gesamt-)Höchstbetrages der Steuerermäßigung von 40.000 Euro erfolgt nicht.
+
+     d) Beginn der erstmaligen Nutzung zu eigenen Wohnzwecken
+20   Die steuerpflichtige Person kann nur die Aufwendungen für energetische Maßnahmen geltend
+     machen, die ab dem Tag der erstmaligen Nutzung zu eigenen Wohnzwecken (vgl. Rn. 13)
+     entstanden sind. Der Begriff „Nutzung zu eigenen Wohnzwecken“ ist nicht in jedem Fall mit
+     „tatsächlichem Bewohnen“ gleichzusetzen. Beginn der erstmaligen Nutzung zu eigenen Wohn-
+     zwecken ist in der Regel der Tag des Einzugs. Beabsichtigt die steuerpflichtige Person umzuzie-
+     hen und hat sie für diesen Zweck ein Objekt erworben und sind in diesem Fall Aufwendungen
+     für energetische Maßnahmen bereits vor dem Tag des Einzugs entstanden, so gilt der Beginn der
+     energetischen Maßnahmen bereits als Tag der erstmaligen Nutzung zu eigenen Wohnzwecken,
+     sofern das Objekt während der Durchführung der energetischen Maßnahmen nicht noch ver-
+     mietet ist, sondern leer steht (vgl. Rn. 12).
+
+     War die steuerpflichtige Person bisher Mieter oder nutzungsberechtigte Person des Objekts, ist
+     Tag der erstmaligen Nutzung zu eigenen Wohnzwecken der Zeitpunkt, an dem das wirtschaft-
+     liche Eigentum auf sie übergeht (vgl. Rn. 5).
+
+            Beispiel 2
+            A erwirbt im August 2022 ein über 20 Jahre altes leerstehendes Einfamilienhaus und lässt
+            dieses im Anschluss grundlegend renovieren. Zu den Renovierungskosten gehören auch
+            nach § 35c EStG begünstigte Aufwendungen für energetische Maßnahmen. Die Renovie-
+            rungsarbeiten werden am 15. Dezember 2022 (Tag der Rechnungsstellung) abgeschlossen
+            und noch in 2022 per Banküberweisung bezahlt. A zieht am 2. Januar 2023 in das Ein-
+            familienhaus ein und nutzt es auch in 2024 ausschließlich zu eigenen Wohnzwecken.
+            Für die im Dezember 2022 abgeschlossene energetische Maßnahme kann A die Steuerer-
+            mäßigung nach § 35c EStG beginnend ab dem Veranlagungszeitraum 2022 beanspruchen.
+            Im Hinblick darauf, dass A unmittelbar nach Beendigung der Renovierungsarbeiten in
+            das Einfamilienhaus eingezogen ist, ist der Renovierungszeitraum der erstmaligen
+            Nutzung zu eigenen Wohnzwecken zuzurechnen.
+
+     e) Beendigung der Nutzung zu eigenen Wohnzwecken
+21   Die Anspruchsvoraussetzungen
+
+        •   Nutzung zu eigenen Wohnzwecken (vgl. Rn. 11 bis 13) und
+     Seite 8 von 33
+
+        •   Eigentum (vgl. Rn. 5 ff.) der steuerpflichtigen Person am Objekt (vgl. Rn. 1) gemäß § 35c
+            Absatz 1 Satz 1 EStG
+
+     müssen in jedem Veranlagungszeitraum des Förderzeitraumes vorliegen. Gibt die steuerpflichti-
+     ge Person die Nutzung des Objekts zu eigenen Wohnzwecken auf, z. B. durch Auszug, Vermie-
+     tung oder Veräußerung, kann sie letztmalig im Veranlagungszeitraum der Aufgabe der Nutzung
+     zu eigenen Wohnzwecken die Steuerermäßigung nach § 35c EStG geltend machen. Dies gilt auch,
+     wenn das Objekt nach Beendigung der Nutzung zu eigenen Wohnzwecken leer steht.
+
+     4. Alter des Objekts
+22   Das Objekt muss gemäß § 35c Absatz 1 Satz 2 EStG bei Durchführung der energetischen Maßnah-
+     me älter als zehn Jahre sein. Maßgebend für die Bestimmung des Zehn-Jahreszeitraumes sind der
+     Beginn der Herstellung des Gebäudes (Rn. 23) und der Beginn der energetischen Maßnahme
+     (Rn. 25). Die Frist ist taggenau zu berechnen.
+
+23   Als Beginn der Herstellung gilt bei Objekten, für die eine Baugenehmigung erforderlich ist, der
+     Tag, an dem der erstmalige Bauantrag gestellt wurde; bei baugenehmigungsfreien Objekten, für
+     die Bauunterlagen einzureichen sind, der Tag, an dem die Bauunterlagen eingereicht wurden.
+     Das gilt auch, wenn eine Wohnung erst durch nachträgliche Baumaßnahmen in einem bereits
+     bestehenden Gebäude hergestellt wird.
+
+24   Ist bei vor 2010 errichteten Objekten der Tag der erstmaligen Bauantragstellung nicht bekannt,
+     genügt es, wenn in der Einkommensteuer- oder Feststellungserklärung das Herstellungsjahr
+     angegeben wird. In diesem Fall gilt als Tag der erstmaligen Bauantragstellung der erste Tag im
+     Kalenderjahr des Herstellungsjahres.
+
+            Beispiel 3
+            A bewohnt ein eigenes Einfamilienhaus, das mehrfach den Eigentümer gewechselt hat.
+            Das Datum der erstmaligen Bauantragstellung ist A nicht bekannt. Aus dem Kaufvertrag
+            weiß A, dass das Gebäude 1991 errichtet wurde. Da dem A das Datum der erstmaligen
+            Bauantragstellung nicht bekannt ist, ist es ausreichend, wenn A in der Einkommen-
+            steuererklärung den Herstellungsbeginn mit 1991 angibt. Als Tag der erstmaligen
+            Bauantragstellung gilt in diesem Fall der 1. Januar 1991.
+
+25   Als Beginn der energetischen Maßnahme gilt bei Maßnahmen, für die eine Baugenehmigung
+     erforderlich ist, der Tag, an dem der Bauantrag gestellt wurde. Bei baugenehmigungsfreien
+     Maßnahmen, für die Bauunterlagen einzureichen sind, ist es der Tag, an dem die Bauunterlagen
+     eingereicht wurden. Für energetische Maßnahmen, für die weder eine Baugenehmigung noch
+     eine Kenntnisgabe bei der zuständigen Behörde nach dem Bauordnungsrecht erforderlich ist, gilt
+     als Beginn der energetischen Maßnahme der Zeitpunkt des Beginns der Bauausführung. Dies gilt
+     auch dann, wenn eine Anzeige- und Genehmigungspflicht für die energetische Maßnahme nach
+     anderen Vorschriften besteht. Planungs- und Beratungsleistungen sowie der Abschluss von
+     Liefer- und Leistungsverträgen gelten nicht als Beginn der energetischen Maßnahme.
+     Seite 9 von 33
+
+
+
+            Beispiel 4
+            In einem seit 1997 zu eigenen Wohnzwecken genutzten eigenen Einfamilienhaus lässt A
+            die bestehende Ölheizung durch eine effiziente Erdwärmesondenanlage mit einer
+            Nennleistung von 13,5 kW ersetzen. Die Planungsarbeiten durch das beauftragte
+            Fachunternehmen erfolgten im Herbst 2019. Die für die Erdbohrung erforderlichen
+            (landesspezifischen) Anzeigen und Genehmigungen nach den (landesspezifischen)
+            Regelungen des Wasserrechts, Bergrechts oder Lagerstättenrechts wurden Ende 2019
+            getätigt/eingeholt. Die Bohrarbeiten, Entsorgung der alten und Installation der neuen
+            Heizungsanlage wurden im März 2020 vorgenommen.
+            Es ist auf den Zeitpunkt des Beginns der Bauausführung abzustellen. Da die energetische
+            Maßnahme „Erneuerung der Heizungsanlage“ erst im März 2020 begonnen und
+            durchgeführt wurde, handelt es sich um eine nach § 35c EStG begünstigte Maßnahme.
+            Unmaßgeblich ist, wann die (landesspezifischen) Anzeigen getätigt oder die für die
+            (landesspezifischen) Genehmigungen erforderlichen Anträge gestellt wurden, die nicht
+            das Baugesetzbuch und das Bauordnungsrecht betreffen.
+
+     5. Beschränkung der Steuerermäßigung durch die tarifliche Einkommensteuer
+26   Die Steuerermäßigung nach § 35c EStG ist nur im Veranlagungszeitraum des Abschlusses der
+     energetischen Maßnahmen (vgl. Rn. 80) und in den beiden folgenden Veranlagungszeiträumen
+     möglich. Übersteigt der für die energetische Maßnahme ermittelte Steuerermäßigungsbetrag die
+     tarifliche Einkommensteuer (vermindert um die sonstigen Steuerermäßigungen) der steuer-
+     pflichtigen Person (sog. Anrechnungsüberhang), so kann dieser Anrechnungsüberhang weder in
+     anderen Veranlagungszeiträumen steuermindernd berücksichtigt noch innerhalb des drei-
+     jährigen Förderzeitraumes auf einen der drei Veranlagungszeiträume vor- bzw. zurückgetragen
+     werden. Der Anrechnungsüberhang mindert aber auch nicht den (Gesamt-)Höchstbetrag der
+     Steuerermäßigung.
+
+            Beispiel 5
+            A hat das 1973 errichtete und von ihm zu eigenen Wohnzwecken genutzte eigene
+            Einfamilienhaus in 2020 umfassend energetisch saniert. Einen Energieberater hat A nicht
+            hinzugezogen. Für die Aufwendungen von insgesamt 130.000 Euro nimmt A im
+            Veranlagungszeitraum des Abschlusses der energetischen Maßnahme in 2020 und in den
+            beiden folgenden Veranlagungszeiträumen die steuerliche Förderung in Anspruch, wobei
+            A die Steuerermäßigung von 7 % (9.100 Euro) im Veranlagungszeitraum 2020 nicht voll
+            ausschöpfen kann. Denn die tarifliche Einkommensteuer, vermindert um die sonstigen
+            Steuerermäßigungen (hier: 0 Euro), beträgt im Veranlagungszeitraum 2020 6.000 Euro
+            und in den Veranlagungszeiträumen 2021 und 2022 jeweils 9.500 Euro.
+            Den entstehenden Anrechnungsüberhang im Veranlagungszeitraum 2020 (3.100 Euro)
+            kann A weder in einem anderen Veranlagungszeitraum innerhalb des Förderzeitraumes
+            noch in einem Veranlagungszeitraum außerhalb des Förderzeitraumes steuermindernd
+            berücksichtigen lassen.
+     Seite 10 von 33
+
+     6. Minderung des (Gesamt-)Höchstbetrages bei überhöhter Steuerermäßigung
+27   Wurde die Steuerermäßigung materiell-rechtlich überhöht gewährt und ist der entsprechende
+     Einkommensteuerbescheid verfahrensrechtlich nicht mehr änderbar, mindert die berücksichtig-
+     te Steuerermäßigung in voller Höhe den (Gesamt-)Höchstbetrag, der noch für Folgejahre zur
+     Verfügung steht. Die Korrektur der überhöht berücksichtigten Steuerermäßigung erfolgt erst in
+     dem Jahr , in dem der (Gesamt-)Höchstbetrag durch die tatsächlich gewährte Steuerermäßigung
+     aufgebraucht ist.
+
+     7. Objektförderung
+28   Die Förderung ist personen- und objektbezogen. Der (Gesamt-)Höchstbetrag der Steuerermäßi-
+     gung von 40.000 Euro gemäß § 35c Absatz 1 Satz 5 EStG kann von jeder steuerpflichtigen Person
+     (unter Berücksichtigung der Rn. 33) für jedes begünstigte Objekt insgesamt nur einmal in
+     Anspruch genommen werden.
+
+29   Objektidentität liegt vor, wenn an einer rechtlich nicht getrennten Wohnung das Wohnungs-
+     eigentum begründet wird. Die bereits nach § 35c EStG in Anspruch genommene Steuerermäßi-
+     gung für die rechtlich nicht getrennte Wohnung mindert den (Gesamt-)Höchstbetrag der
+     Steuerermäßigung für die Eigentumswohnung.
+
+30   Wird das begünstigte Objekt entgeltlich oder unentgeltlich auf eine andere Person übertragen,
+     kann die – die Immobilie ebenfalls zu eigenen Wohnzwecken nutzende – andere Person für ihre
+     eigenen energetischen Aufwendungen die steuerliche Förderung gemäß § 35c EStG ebenfalls bis
+     zu einem (Gesamt-)Höchstbetrag von 40.000 Euro in Anspruch nehmen.
+
+31   Die Jahreshöchstbeträge des § 35c Absatz 1 Satz 1 EStG sind wie der (Gesamt-)Höchstbetrag des
+     § 35c Absatz 1 Satz 5 EStG objekt- und nicht maßnahmenbezogen.
+
+            Beispiel 6
+            Im Jahr 2020 zahlt A für energetische Maßnahmen 200.000 Euro und im Jahr 2021
+            nochmals 20.000 Euro. Nimmt A für die Maßnahmen des Jahres 2020 die
+            Steuerermäßigung des § 35c EStG in Anspruch, erhält er für die Jahre 2020, 2021 und 2022
+            die Jahreshöchstbeträge der Steuerermäßigung von 14.000 Euro, 14.000 Euro und
+            12.000 Euro. Eine Berücksichtigung der Maßnahmen des Jahres 2021 in den Jahren 2021
+            (14.000 Euro + 1.400 Euro = 15.400 Euro) und 2022 (12.000 Euro + 1.400 Euro =
+            13.400 Euro) scheidet aufgrund des Erreichens der Jahreshöchstbeträge durch die
+            Maßnahmen des Jahres 2020 aus.
+
+     8. Steuerliche Förderung mehrerer Objekte
+32   Der (Gesamt-)Höchstbetrag der Steuerermäßigung von 40.000 Euro je Objekt kann zeitgleich
+     oder nacheinander für mehrere begünstigte Objekte in Anspruch genommen werden. Im Falle
+     einer zeitgleichen Förderung von mehreren begünstigten Objekten muss zusätzlich die in
+     Anspruch genommene Steuerermäßigung je Objekt ermittelt werden. Hat sich die Steuerer-
+     mäßigung nach § 35c EStG deshalb nicht in voller Höhe ausgewirkt, weil die tarifliche Ein-
+     kommensteuer (vermindert um die sonstigen Steuerermäßigungen) der steuerpflichtigen Person
+     niedriger war (sog. Anrechnungsüberhang vgl. Rn. 26), ist die den einzelnen begünstigten
+     Seite 11 von 33
+
+     Objekten zuzurechnende Steuerermäßigung nach § 35c EStG nach dem Verhältnis der
+     förderfähigen Aufwendungen je Objekt zu der Summe der insgesamt förderfähigen
+     Aufwendungen aller Objekte zu ermitteln.
+
+            Beispiel 7
+            A bewohnt mit seiner Familie ein in 1980 errichtetes eigenes Einfamilienhaus in der Stadt
+            S. An einigen Wochenenden nutzt die Familie ein ebenfalls A gehörendes 20 Jahre altes
+            Ferienhaus außerhalb der Stadt ausschließlich zu eigenen Wohnzwecken. An beiden
+            Objekten lässt A folgende energetische Maßnahmen im Jahr 2020 durchführen:
+
+            Einfamilienhaus
+            Dämmung der Dachflächen                                      26.000 Euro
+            Dämmung der Außenwände                                       58.000 Euro
+            Gesamt                                                       84.000 Euro
+
+            Ferienhaus
+            Erneuerung der Fenster und Außentüren                        13.000 Euro
+            Dämmung der Geschossdecke                                    7.000 Euro
+            Gesamt                                                       20.000 Euro
+
+            Für beide Objekte kann A die steuerliche Förderung in Anspruch nehmen. Für beide
+            Objekte steht ein eigener (Gesamt-)Höchstbetrag der Steuerermäßigung von 40.000 Euro
+            zur Verfügung. Im Jahr 2020 beträgt der Jahreshöchstbetrag der Steuerermäßigung für
+            die energetischen Maßnahmen am Einfamilienhaus 7 % von 84.000 Euro = 5.880 Euro
+            sowie 7 % von 20.000 Euro = 1.400 Euro für das Ferienhaus. Die Steuerbelastung (= tarifli-
+            che Einkommensteuer vermindert um die sonstigen Steuerermäßigungen) von A beläuft
+            sich ohne die Berücksichtigung der energetischen Maßnahmen im Veranlagungszeit-
+            raum 2020 auf 6.673 Euro. A kann die für den Veranlagungszeitraum 2020 ermittelten
+            Beträge der Steuerermäßigung von 7.280 Euro (5.880 Euro + 1.400 Euro) nur mit
+            6.673 Euro ausschöpfen. Eine Übertragung des nicht ausgeschöpften Betrages von
+            607 Euro auf andere Veranlagungszeiträume ist nicht möglich (vgl. Rn. 26).
+            Nach dem Verhältnis der Aufwendungen für das Ferienhaus zu den insgesamt
+            förderfähigen Aufwendungen (20.000 Euro von 104.000 Euro) entfallen 19,23 % der
+            gewährten Steuerermäßigung nach § 35c EStG = 1.283 Euro auf das Ferienhaus und
+            80,77 % der gewährten Steuerermäßigung nach § 35c EStG = 5.390 Euro auf das
+            Einfamilienhaus.
+
+     9. Miteigentum an einem begünstigten Objekt
+33   Steht das Eigentum an einem begünstigten Objekt mehreren Personen zu (Miteigentum), kann
+     der (Gesamt-)Höchstbetrag der Steuerermäßigung von 40.000 Euro für das Objekt gemäß § 35c
+     Absatz 6 EStG insgesamt nur einmal in Anspruch genommen werden (vgl. Rn. 28). Die auf die
+     energetische Maßnahme entfallenden Aufwendungen sowie der (Gesamt-)Höchstbetrag der
+     Steuerermäßigung sind den Miteigentümern nach dem Verhältnis ihrer Miteigentumsanteile
+     zuzurechnen. Bei Ehegatten oder Lebenspartnern, die zusammenveranlagt werden, ist eine
+     Seite 12 von 33
+
+     Aufteilung der Aufwendungen sowie des (Gesamt-)Höchstbetrages der Steuerermäßigung nach
+     dem Verhältnis ihrer Miteigentumsanteile nicht erforderlich.
+
+34   Wird das begünstigte Objekt nicht von allen Miteigentümern zu eigenen Wohnzwecken genutzt,
+     sind für die steuerliche Förderung nur die Aufwendungen zu berücksichtigen, die auf den/die
+     Miteigentümer, der/die das Objekt zu eigenen Wohnzwecken nutzt/nutzen, nach dem Verhältnis
+     seines Miteigentumsanteils/ihrer Miteigentumsanteile entfallen.
+
+     10. Miteigentum bei Zwei- oder Mehrfamilienhäusern (mehrere begünstigte Objekte)
+35   Besteht ein im Miteigentum mehrerer Personen befindliches Gebäude aus mehreren, rechtlich
+     nicht nach dem Wohnungseigentumsgesetz getrennten Wohnungen und nutzt jeder Miteigen-
+     tümer eine Wohnung alleine zu eigenen Wohnzwecken, steht jedem Miteigentümer für die von
+     ihm zu eigenen Wohnzwecken genutzte Wohnung als Objekt des § 35c EStG jeweils ein eigener
+     (Gesamt-)Höchstbetrag der Steuerermäßigung von 40.000 Euro zu, soweit der Wert der zu
+     eigenen Wohnzwecken genutzten Wohnung den Wert des Miteigentumsanteils nicht übersteigt.
+     Der Wert einer Wohnung entspricht in der Regel dem Wert des Miteigentumsanteils, wenn der
+     Nutzflächenanteil der Wohnung am Gesamtgebäude dem Miteigentumsanteil entspricht. Weicht
+     der Anteil der Nutzfläche vom Miteigentumsanteil ab, spricht eine widerlegbare Vermutung
+     dafür, dass der Wert der Wohnung dem Miteigentumsanteil entspricht, wenn keine Ausgleichs-
+     zahlung vereinbart ist. Satz 1 gilt nicht, wenn die Miteigentümer die Wohnungen in
+     gemeinschaftlicher Haushaltsführung nutzen.
+
+            Beispiel 8
+            A ist gemeinsam mit B Miteigentümer eines 20 Jahre alten Zweifamilienhauses
+            (Miteigentumsanteile je 50 %) mit zwei gleich großen Wohnungen, von denen A und B
+            jeweils eine Wohnung zu eigenen Wohnzwecken nutzen. Im Jahr 2020 lassen sie
+            gemeinsam das Dach mit Dämmung neu decken, die Kosten von 50.000 Euro tragen A
+            und B jeweils hälftig. A lässt zudem im Jahr 2020 in der von ihm genutzten Wohnung die
+            Fenster austauschen (Kosten: 20.000 Euro).
+            Sowohl A als auch B haben Anspruch auf die Steuerermäßigung nach § 35c EStG für die
+            von ihnen getragenen Aufwendungen von jeweils 25.000 Euro (1/2 von 50.000 Euro) für
+            die energetische Maßnahme der Dachsanierung. A kann zudem die Steuerermäßigung
+            nach § 35c EStG für die Aufwendungen der Erneuerung der Fenster von 20.000 Euro
+            beanspruchen. Für beide Wohnungen kann der (Gesamt-)Höchstbetrag der Steuerer-
+            mäßigung von 40.000 Euro beansprucht werden.
+     Seite 13 von 33
+
+     11. Auszug eines Ehegatten
+36   Erwirbt ein Ehegatte oder Lebenspartner nach dem Lebenspartnerschaftsgesetz (im Folgenden:
+     Ehegatte) infolge einer Scheidung einen Miteigentumsanteil vom anderen Ehegatten entgeltlich
+     hinzu, kann der auf den veräußernden Ehegatten entfallende Anteil der Steuerermäßigung nach
+     § 35c EStG nicht fortgeführt werden. Der erwerbende Ehegatte kann aber die auf seinen
+     ursprünglichen Miteigentumsanteil entfallende Steuerermäßigung innerhalb des dreijährigen
+     Abzugszeitraums weiter in Anspruch nehmen, wenn er die Voraussetzungen für die Nutzung zu
+     eigenen Wohnzwecken (vgl. Rn. 11 ff.) für das Objekt weiter erfüllt. Der veräußernde Ehegatte
+     kann die Steuerermäßigung nach § 35c EStG für seinen bisherigen Miteigentumsanteil letztmalig
+     im Veranlagungszeitraum der Aufgabe der Nutzung zu eigenen Wohnzwecken geltend machen
+     (vgl. Rn. 21).
+
+37   Entsprechendes gilt, wenn ein Miteigentümer aus dem Objekt auszieht und seinen
+     Miteigentumsanteil an den verbleibenden Miteigentümer veräußert.
+
+     12. Vorweggenommene Erbfolge und Erbfall
+38   Überträgt eine anspruchsberechtigte steuerpflichtige Person ihr Alleineigentum oder ihren
+     Miteigentumsanteil an einem bislang zu eigenen Wohnzwecken genutzten Objekt innerhalb des
+     dreijährigen Abzugszeitraums unentgeltlich auf eine andere Person, kann die andere Person die
+     Steuerermäßigung gemäß § 35c EStG nicht fortführen, da sie keine Aufwendungen i. S. d. § 35c
+     EStG getragen hat.
+
+39   Wird ein Miteigentümer im Fall des Todes eines anderen Miteigentümers zum Alleineigentümer
+     (Gesamtrechtsnachfolge), kann der überlebende Miteigentümer die bisher auf den anderen
+     Miteigentümer entfallende Steuerermäßigung innerhalb des dreijährigen Abzugszeitraums
+     fortführen. Voraussetzung ist, dass die Miteigentümer das Objekt gemeinsam bewohnt haben
+     und der überlebende Miteigentümer das Objekt nunmehr im Alleineigentum zu eigenen Wohn-
+     zwecken (vgl. Rn. 11 ff.) nutzt.
+
+40   Entsprechendes gilt für den durch Gesamtrechtsnachfolge infolge Erbfalls erwerbenden (Allein-)
+     Eigentümer eines Objekts, für die der Erblasser eine Steuerermäßigung nach § 35c EStG bean-
+     sprucht hat, wenn der erwerbende (Allein-)Eigentümer das Objekt zu eigenen Wohnzwecken
+     (vgl. Rn. 11 ff.) nutzt.
+     Seite 14 von 33
+
+     13. Unterschiedliche Nutzung einzelner Gebäudeteile
+41   Die Steuerermäßigung kann auch für Gebäudeteile, die selbständige unbewegliche Wirtschafts-
+     güter sind, gewährt werden (§ 35c Absatz 5 EStG). Wird ein Gebäude vom Eigentümer unter-
+     schiedlich genutzt, z. B. zu eigenen und zu fremden Wohnzwecken, kann für die zu eigenen
+     Wohnzwecken genutzte Wohnung der volle (Gesamt-)Höchstbetrag der Steuerermäßigung von
+     40.000 Euro in Anspruch genommen werden. Es sind nur die Aufwendungen berücksichtigungs-
+     fähig, die entweder anteilig oder direkt der zu eigenen Wohnzwecken genutzten Wohnung
+     zugeordnet werden können. Zu den anteilig zu berücksichtigenden Aufwendungen gehören
+     beispielsweise die Erneuerung der Heizung oder die energetische Sanierung der Außenfassade.
+
+            Beispiel 9
+            A ist Eigentümer eines Gebäudes in F-Stadt. Die 80 m² große Wohnung im Obergeschoss
+            bewohnt A selbst. Im Erdgeschoss betreibt A eine kleine Buchhandlung mit 85 m².
+            Die Wohnung im Obergeschoss ist über eine kleine von außen angebaute Treppe
+            erreichbar. Im Jahr 2020 lässt A sämtliche Fenster (8 Fenster) sowie die Haustür im
+            Obergeschoss und im Erdgeschoss das Schaufenster sowie die Ladentür austauschen.
+            Außerdem werden die Außenwände und die Dachflächen gedämmt. Sämtliche ener-
+            getische Maßnahmen wurden von einem Energieberater planerisch begleitet und
+            beaufsichtigt. Für die energetischen Maßnahmen sind folgende Aufwendungen
+            angefallen:
+
+            Fenster und Haustür im Obergeschoss                          17.400 Euro
+            Schaufenster und Ladentür                                    12.400 Euro
+            Dämmung Außenwände und Dachflächen                           43.000 Euro
+            Kosten Energieberater                                         2.500 Euro
+
+            Die Aufwendungen für die Fenster im Obergeschoss und die Haustür (17.400 Euro) sind
+            der von A zu eigenen Wohnzwecken genutzten Wohnung direkt zuzuordnen und
+            können in vollem Umfang für die Steuerermäßigung nach § 35c EStG berücksichtigt
+            werden. Die übrigen Aufwendungen – mit Ausnahme der Aufwendungen für die
+            Schaufenster und die Ladentür (12.400 Euro) – von 45.500 Euro (43.000 Euro + 2.500 Euro)
+            sind auf die zu eigenen Wohnzwecken genutzte Wohnung und den gewerblich genutzten
+            Teil des Gebäudes aufzuteilen. Das Gebäude hat eine gesamte Nutzfläche von 165 m²
+            (Obergeschoss 80 m² und Erdgeschoss 85 m²). Im Verhältnis zur gesamten Nutzfläche des
+            Gebäudes beträgt der Anteil der zu eigenen Wohnzwecken genutzten Wohnung 48,48 %,
+            sodass A für die Aufwendungen für die Außendämmung und für den Energieberater
+            anteilig mit jeweils 48,48 % (Außendämmung 20.846 Euro und Energieberater 1.212 Euro)
+            die Steuerermäßigung gemäß § 35c EStG in Anspruch nehmen kann. Die Aufwendungen
+            für den Energieberater wirken sich mit 50 % (606 Euro) steuerermäßigend aus
+            (vgl. Rn. 56). Der (Gesamt-)Höchstbetrag der Steuerermäßigung von 40.000 Euro kann für
+            die zu eigenen Wohnzwecken genutzte Wohnung in voller Höhe beansprucht werden
+            (§ 35c Absatz 5 EStG).
+     Seite 15 von 33
+
+     14. Wohnungseigentümergemeinschaft
+42   Bei energetischen Maßnahmen an einem Objekt in Eigentumsgemeinschaft können zu eigenen
+     Wohnzwecken nutzende Eigentümer die ihr Sondereigentum betreffenden Aufwendungen
+     geltend machen (§ 35c Absatz 5 EStG). Aufwendungen für energetische Maßnahmen, die das
+     gemeinschaftliche Eigentum betreffen, sind entsprechend dem Miteigentumsanteil zu berück-
+     sichtigen. Zur Bescheinigung des Fachunternehmens bei Vorliegen einer Wohnungseigentümer-
+     gemeinschaft siehe Rn. 20 bis 23 des BMF-Schreibens vom 23. Dezember 2024 (BStBl 2025 I S. 39).
+
+     15. Förderfähige Aufwendungen
+     a) Begriff und Umfang einer energetischen Maßnahme
+43   Die energetische Maßnahme kann eine oder mehrere energetische Einzelmaßnahmen i. S. d.
+     § 35c Absatz 1 Satz 3 Nummer 1 bis 8 EStG umfassen. Eine Einzelmaßnahme kann auch schritt-
+     weise durch mehrere – voneinander getrennt zu beurteilende – energetische Maßnahmen aus-
+     geführt werden (z. B. im Jahr 2021 Austausch von Fenstern im Erdgeschoss und im Jahr 2022
+     Austausch von Fenstern im Obergeschoss).
+
+44   Förderfähig sind die Aufwendungen, die der steuerpflichtigen Person unmittelbar durch die
+     fachgerechte Durchführung der energetischen Maßnahme entstehen (vgl. Rn. 48 ff.).
+     Darunter fallen Aufwendungen für das Material sowie den fachgerechten Einbau bzw. die
+     fachgerechte Installation, die Inbetriebnahme von Anlagen und die fachgerechte Verarbeitung
+     durch das jeweilige Fachunternehmen einschließlich notwendiger Umfeldmaßnahmen (vgl.
+     Rn.60) sowie die Kosten für die Beratungs-, Planungs- und Baubegleitungsleistungen durch den
+     Energieberater (vgl. Rn. 56). Berücksichtigt werden die Aufwendungen einschließlich Umsatz-
+     steuer.
+
+45   Eine nicht abschließende Liste förderfähiger und nicht-förderfähiger Maßnahmen ist diesem
+     BMF-Schreiben als Anlage beigefügt. Die Angaben der Liste orientieren sich an den förderfähigen
+     Maßnahmen der BEG EM.
+
+46   Sofern zeitgleich mit der energetischen Maßnahme weitere, nicht förderfähige Maßnahmen
+     durchgeführt werden, sind die den Einzelleistungen nicht direkt zurechenbaren Kosten
+     (Gemeinkosten), z. B. Rüstarbeiten, anhand eines nachvollziehbaren Schlüssels anteilig auf die
+     förderfähigen und nicht förderfähigen Maßnahmen aufzuteilen. In Anspruch genommene
+     Rabatte (auch Skonto) und gegebenenfalls vorgenommene Abzüge (z. B. wegen einer Minderung
+     des Rechnungsbetrages) reduzieren entsprechend anteilig die förderfähigen Aufwendungen.
+
+47   Die Aufwendungen für die energetische Maßnahme sind auch dann gemäß § 35c EStG förder-
+     fähig, wenn die Mindestanforderungen gemäß § 1 ESanMV bereits vor der energetischen Maß-
+     nahme vorlagen. Aufwendungen für den Austausch einer Heizungsanlage sind auch dann för-
+     derfähig, wenn der Betrieb der Altanlage nicht mehr erlaubt ist (§ 72 GEG). Bei Hybridheizungen
+     (bivalente Heizungsanlagen gemäß Anlage 6.5 zu § 1 ESanMV) ist der auf erneuerbare Energien
+     basierende Anlagenteil förderfähig (z. B. eine Solarthermie-Anlage auf dem Dach, die als sog.
+     „Beistellgerät“ zum Ölkessel hinzugeschaltet wird), sofern die Aufwendungen für den auf
+     erneuerbaren Energien basierenden Anlagenteil separat ausgewiesen sind.
+     Seite 16 von 33
+
+     b) Fachgerechte Durchführung und Fachunternehmen
+48   Von einer fachgerechten Durchführung ist auszugehen, wenn die energetische Maßnahme von
+     einem Fachunternehmen gemäß § 2 Absatz 1 ESanMV vorgenommen wurde. Die fachgerechte
+     Durchführung ist auch in den Fällen zu bejahen, in denen ein angestellter Meister der genannten
+     Gewerke mit der Durchführung der energetischen Maßnahme betraut war.
+
+49   Eigenleistungen der steuerpflichtigen Person sind nicht förderfähig. Demgegenüber sind Auf-
+     wendungen für energetische Maßnahmen förderfähig, die die steuerpflichtige Person von ihrem
+     eigenen Fachunternehmen, das in den in § 2 Absatz 1 ESanMV aufgeführten Gewerken tätig ist,
+     durchführen lässt.
+
+50   Der fachgerechten Durchführung steht nicht entgegen, dass das Fachunternehmen ein nicht in
+     den in § 2 Absatz 1 ESanMV aufgeführten Gewerken tätiges Unternehmen mit der Durchführung
+     einzelner Arbeiten unterbeauftragt, z. B. weil dieses Unternehmen über spezielle Fertigkeiten
+     oder Kenntnisse in einem bestimmten Bereich verfügt. Dies gilt auch dann, wenn das unterbe-
+     auftragte Unternehmen in einem nach der Handwerksordnung nicht zulassungspflichtigen
+     Bereich tätig ist (z. B. Einblasdämmung). Die Bescheinigung hat das Fachunternehmen auszu-
+     stellen. Es bestätigt damit, dass für die Arbeiten des unterbeauftragten Unternehmens die in der
+     ESanMV aufgeführten Mindestanforderungen eingehalten sind.
+
+51   Die fachgerechte Durchführung liegt ferner auch dann vor, wenn ein Baumarkt oder General-
+     unternehmer als Vertragspartner der steuerpflichtigen Person das Fachunternehmen mit der
+     Ausführung der energetischen Maßnahmen beauftragt hat. Die Bescheinigung ist durch das von
+     dem Baumarkt oder dem Generalvertreter beauftragte Fachunternehmen oder eine Person mit
+     Ausstellungsberechtigung nach § 88 GEG auszustellen, siehe Rn. 24 des BMF-Schreibens vom
+     23. Dezember 2024 (BStBl 2025 I S. 39).
+
+52   Unternehmen, welche lose Dämmstoffe maschinell verarbeiten (Einblasdämmstoffe) und vom
+     Hersteller dieser Dämmstoffe zu deren Verarbeitung qualifiziert und zertifiziert werden, gelten
+     als Fachunternehmen i. S. d. § 2 Absatz 1 Nummer 5 ESanMV („Wärme-, Kälte- und Schallisolie-
+     rungsarbeiten“) und sind zur Ausstellung einer Bescheinigung i. S. d. § 35c Absatz 1 Satz 7 EStG
+     berechtigt.
+
+     c) Energieberater
+53   Die Beauftragung eines Energieberaters mit der planerischen Begleitung oder Beaufsichtigung
+     der energetischen Maßnahmen ist keine zwingende Voraussetzung für die Gewährung der
+     Steuerermäßigung nach § 35c EStG.
+
+54   Die Kosten für einen Energieberater, der von der steuerpflichtigen Person oder mit deren
+     Zustimmung vom Fachunternehmen mit der planerischen Begleitung oder Beaufsichtigung der
+     energetischen Maßnahmen beauftragt wurde, sind im Rahmen des § 35c EStG begünstigt. Hierzu
+     zählen auch die Kosten der zur Bestandsaufnahme oder zur Qualitätssicherung durchgeführten
+     Infrarot-Thermografie-Aufnahmen und Luftdichtheitsmessungen. Umfassen die Kosten für den
+     Energieberater mehrere energetische Maßnahmen, ist eine Aufteilung der Kosten auf die
+     Seite 17 von 33
+
+     einzelnen Maßnahmen nicht erforderlich. Jedoch können die Kosten nur einmal
+     steuerermäßigend berücksichtigt werden.
+
+55   Als Energieberater i. S. d. § 35c Absatz 1 Satz 4 EStG gelten
+
+         •   die vom BAFA als fachlich qualifiziert zum Förderprogramm „Energieberatung für
+             Wohngebäude“ zugelassenen Energieberater und
+         •   die Energieberater und Energieeffizienz-Experten der Energieeffizienz-Expertenliste für
+             Förderprogramme des Bundes (www.energie-effizienz-experten.de).
+
+      Personen, die ausschließlich eine Ausstellungsberechtigung nach § 88 GEG besitzen, fallen
+      nicht darunter.
+
+56   Die Kosten für den Energieberater sind gemäß § 35c Absatz 1 Satz 4 EStG mit 50 % der Aufwen-
+     dungen im Jahr des Abschlusses der energetischen Maßnahme (siehe Rn. 80) zu berücksichtigen
+     und nicht auf drei Jahre zu verteilen. Die Kosten für den Energieberater und die Kosten für die
+     Erteilung der Bescheinigung nach § 35c Absatz 1 Satz 7 EStG sind jeweils – wie die Aufwendun-
+     gen für die energetische Maßnahme selbst – vom (Gesamt-)Höchstbetrag und den Jahres-
+     höchstbeträgen der Steuerermäßigung umfasst.
+
+             Beispiel 10
+             Aufwendungen für energetische Maßnahmen in 2020             215.000 Euro
+             Kosten für den Energieberater in 2020                       3.000 Euro
+
+             Steuerermäßigung im Veranlagungszeitraum 2020
+             Kosten für den Energieberater                               1.500 Euro (50 %)
+             Energetische Maßnahme                                       15.050 Euro (7 %), maximal
+                                                                         14.000 Euro (Jahreshöchst-
+                                                                         betrag inklusive Energie-
+                                                                         beraterkosten)
+
+             Steuerermäßigung im Veranlagungszeitraum 2021
+             Energetische Maßnahme                                       15.050 Euro (7 %), maximal
+                                                                         14.000 Euro (Jahreshöchst-
+                                                                         betrag)
+
+             Steuerermäßigung im Veranlagungszeitraum 2022
+             Energetische Maßnahme                                       12.900 Euro (6 %), maximal
+                                                                         12.000 Euro (Jahreshöchst-
+                                                                         betrag)
+
+             Steuerermäßigung insgesamt                                  40.000 Euro
+
+57   Ist für die Energieberaterkosten bereits ein öffentlicher Zuschuss gewährt worden, scheidet eine
+     Förderung über § 35c EStG aus.
+     Seite 18 von 33
+
+58   Werden an einem nicht nur zu eigenen Wohnzwecken genutzten Gebäude energetische Maß-
+     nahmen durchgeführt (vgl. Rn. 41), die ein Energieberater begleitet hat, sind die Energieberater-
+     kosten anteilig nach dem Verhältnis der Nutzfläche der zu eigenen Wohnzwecken dienenden
+     Räume zur gesamten Nutzfläche des Gebäudes zu berücksichtigen, es sei denn, die Aufwendun-
+     gen für die die energetische Maßnahme und damit die Energieberaterkosten sind ausschließlich
+     den zu eigenen Wohnzwecken dienenden Räumen zuzuordnen (z. B. Fensteraustausch aus-
+     schließlich in den zu eigenen Wohnzwecken genutzten Räumlichkeiten).
+
+59   Eine Berücksichtigung der Kosten für den Energieberater ist nur möglich, wenn mindestens eine
+     energetische Maßnahme i. S. d. steuerlich oder außersteuerlich geltenden Förderprogramme
+     durchgeführt wurde. Unerheblich ist, ob für die energetische Maßnahme eine steuerliche Förde-
+     rung oder eine andere öffentliche Förderung in Anspruch genommen wird.
+
+     d) Umfeldmaßnahmen und separat erworbene Materialien
+60   Unter Umfeldmaßnahmen sind Arbeiten und Investitionen zu verstehen, die unmittelbar zur
+     Vorbereitung und Umsetzung sowie für die Ausführung und Funktionstüchtigkeit einer
+     förderfähigen Maßnahme notwendig sind und/oder deren Energieeffizienz erhöhen bzw.
+     absichern. Hierfür kann die steuerpflichtige Person das die energetische Maßnahme ausführende
+     Fachunternehmen oder ein anderes Unternehmen beauftragen. Als Umfeldmaßnahmen
+     (vgl. Anlage) sind insbesondere anzusehen:
+
+        •   Baustelleneinrichtung wie Bautafel, Schilder, Absperrung von Verkehrsflächen,
+            Baustellensicherung,
+        •   Rüstarbeiten wie Gerüst, Schutzbahnen, Fußgängerschutztunnel, Bauaufzüge
+        •   Baustoffuntersuchungen,
+        •   bautechnische Voruntersuchungen beispielsweise zum Aufbau der Gebäudehülle,
+        •   Deinstallation, Ausbau und Entsorgung von Altanlagen,
+        •   Entsorgung von Komponenten, Bauteilen oder Bauteilschichten, Baustoffen, Baumaterial
+            etc. (inklusive Schadstoffe und Sonderabfälle),
+        •   Wiederherstellungsarbeiten, sofern diese im Zusammenhang mit den energetischen
+            Maßnahmen stehen, inklusive der Wiederherstellung von Oberflächen in Innenräumen,
+            z. B. Decken-, Wand- und Bodenbeläge, Tapeten, Fliesen, Teppich, Parkett oder
+            Malerarbeiten,
+        •   die zusätzlichen Kosten einer Wohnungseigentümergemeinschaft-Verwaltung für die
+            Beschlussfassung einer energetischen Sanierung.
+
+61   Nicht als Umfeldmaßnahmen förderfähig sind:
+
+        •   vorbereitende Maßnahmen zur Herrichtung oder Erschließung des Grundstücks,
+        •   Maßnahmen an den Außenanlagen und Freiflächen,
+        •   vorbereitende Maßnahmen zur Errichtung oder zum Betrieb einer nicht förderfähigen
+            Anlage, z. B. einer mit fossilen Energieträgern betriebenen Heizungsanlage,
+        •   Baunebenkosten, die sich auf nicht geförderte Maßnahmen oder Anlagen beziehen.
+     Seite 19 von 33
+
+62   Aufwendungen für Umfeldmaßnahmen, die nicht durch das Fachunternehmen ausgeführt
+     werden, sind nur förderfähig, wenn sie in der Bescheinigung des Fachunternehmens gesondert
+     ausgewiesen sind, z. B. Estricharbeiten nach einem Heizungstausch. Die Höhe der auszuweisen-
+     den Aufwendungen entspricht der vom Auftraggeber mitgeteilten Höhe und muss vom Fach-
+     unternehmen und der Person mit Ausstellungsberechtigung nach § 88 GEG nicht überprüft
+     werden.
+
+63   Auch bei Umfeldmaßnahmen ist es notwendig, dass eine Rechnung vorliegt und der Rechnungs-
+     betrag auf das Konto des Fachunternehmens (bei nicht durch das Fachunternehmen ausgeführ-
+     ten Umfeldmaßnahmen: des Leistungserbringers) gezahlt wurde.
+
+64   Erwirbt die steuerpflichtige Person das Material für die energetische Maßnahme separat, können
+     die Aufwendungen dafür nur dann als förderfähige Aufwendungen berücksichtigt werden, wenn
+     diese in der Bescheinigung des ausführenden Fachunternehmens gesondert ausgewiesen sind.
+     Die Höhe der auszuweisenden Aufwendungen entspricht der vom Auftraggeber mitgeteilten
+     Höhe der Aufwendungen und muss vom Fachunternehmen und der ausstellungsberechtigten
+     Person nicht überprüft werden. Die auf Eigenleistungen (vgl. Rn. 49) der steuerpflichtigen Person
+     entfallenden Materialkosten sind nicht förderfähig.
+
+     e) Nicht förderfähige Maßnahmen
+65   Nicht berücksichtigungsfähig sind u. a. die Aufwendungen für die Beschaffung von Finanzie-
+     rungsmitteln, Fremdfinanzierungsaufwendungen, Aufwendungen für Behörden- und
+     Verwaltungsleistungen, Aufwendungen für einen Umzug oder ein Ausweichquartier während
+     der Bauarbeiten, laufende Lizenzgebühren für die Verwendung eines Nachhaltigkeitszertifikats,
+     Kosten für Architekturwettbewerbe sowie Anschaffungskosten für Werkzeuge, Geräte,
+     Büromaterialien und Software für Fachplanung und Baubegleitung. Auf die in Rn. 45 genannte
+     Anlage wird verwiesen.
+
+66   Übernimmt ein Energielieferant im Rahmen eines Vertrages die Versorgung einer Liegenschaft
+     mit der benötigten Energie (Kälte, Wärme, Strom, Druckluft oder andere Formen von Energie),
+     spricht man von Energie-Contracting. Die aus dem Abschluss eines Energie-Contracting (z. B.
+     Wärmeliefer-Contracting) entstehenden Kosten sind nicht förderfähig. Da der Contracting-
+     Nehmer nicht selbst die energetische Maßnahme tätigt und nicht Eigentümer der eingebauten
+     Anlagen wird, liegen die Voraussetzungen für die Inanspruchnahme des § 35c EStG bereits dem
+     Grunde nach nicht vor.
+     Seite 20 von 33
+
+     16. Ausschluss der Förderung und Verhältnis zu anderen Tatbeständen
+67   Die Steuerermäßigung nach § 35c EStG ist ausgeschlossen, soweit die Aufwendungen für die
+     energetische Maßnahme bereits als Betriebsausgaben, Werbungskosten, Sonderausgaben oder
+     außergewöhnliche Belastung berücksichtigt worden sind.
+
+            Beispiel 11
+            Die steuerpflichtige Person A macht Aufwendungen von 23.000 Euro für die energetische
+            Maßnahme einer ihr gehörenden Eigentumswohnung in ihrer Einkommensteuererklä-
+            rung als Werbungskosten geltend. A nutzt diese Eigentumswohnung zu eigenen Wohn-
+            zwecken an ihrem Arbeitsort (Ort der ersten Tätigkeitsstätte) im Rahmen einer doppelten
+            Haushaltsführung. Zudem stellt sie für dieselben Aufwendungen einen Antrag auf
+            Steuerermäßigung nach § 35c EStG.
+            Erklärungsgemäß werden die Aufwendungen für die energetische Maßnahme im Rah-
+            men des monatlichen Höchstbetrages von 1.000 Euro (12.000 Euro pro Jahr) als Wer-
+            bungskosten bei der doppelten Haushaltsführung (§ 9 Absatz 1 Satz 3 Nummer 5 Satz 4
+            EStG) berücksichtigt mit der Folge, dass die Aufwendungen für die energetische Maßnah-
+            me für eine Steuerermäßigung nach § 35c EStG nur noch anteilig mit 11.000 Euro berück-
+            sichtigt werden können.
+
+68   Für den Teil der Aufwendungen, der durch den Ansatz der zumutbaren Belastung nach § 33
+     Absatz 3 EStG oder wegen der Gegenrechnung von Pflegegeld oder Pflegetagegeld nicht als
+     außergewöhnliche Belastung berücksichtigt wird, kann die steuerpflichtige Person die
+     Steuerermäßigung nach § 35c EStG in Anspruch nehmen.
+
+69   Beansprucht eine steuerpflichtige Person für eine energetische Maßnahme eine steuerliche
+     Förderung nach § 92a Absatz 1 Satz 1 Nummer 3 EStG (Eigenheimrenten-Förderung), ist eine
+     Steuerermäßigung nach § 35c EStG nur für die über die Eigenheimrenten-Förderung
+     hinausgehenden Aufwendungen möglich.
+
+70   Die Steuerermäßigung nach § 35c EStG ist vollständig ausgeschlossen, wenn für dieselbe
+     energetische Maßnahme einschließlich der Kosten für den Energieberater
+
+        •   eine Steuerbegünstigung nach § 10f EStG für zu eigenen Wohnzwecken genutzte
+            Baudenkmale und Gebäude in Sanierungsgebieten und städtebaulichen
+            Entwicklungsbereichen,
+        •   eine Steuerermäßigung nach § 35a EStG bei Aufwendungen für haushaltsnahe
+            Beschäftigungsverhältnisse, haushaltsnahe Dienstleistungen und Handwerkerleistungen
+            oder
+        •   ein zinsverbilligtes Darlehen oder steuerfreie Zuschüsse
+     Seite 21 von 33
+
+     beansprucht werden. Dies gilt auch für sämtliche Umfeldmaßnahmen i. S. d. Rn. 60.
+     Entscheidend ist, ob für die jeweilige energetische Maßnahme an sich (z. B. Erneuerung der
+     Heizungsanlage, Wärmedämmung von Wandflächen, Wärmedämmung von Dachflächen) eine
+     öffentliche Förderung, z. B. durch die KfW, erfolgt ist. Nicht entscheidend ist hierbei, ob sich alle
+     Aufwendungen der jeweiligen energetischen Maßnahme auch tatsächlich im Rahmen der
+     öffentlichen Förderung ausgewirkt haben. Unschädlich ist, wenn die steuerpflichtige Person
+     ausschließlich für die Energieberatung Zuschüsse erhalten hat. In diesem Fall kann für die
+     Kosten der Energieberatung keine Steuerermäßigung nach § 35c EStG beansprucht werden.
+     Wird auf Grund dieser Energieberatung eine energetische Maßnahme durchgeführt und eine
+     andere öffentliche Förderung nicht in Anspruch genommen, kann hierfür die Steuerermäßigung
+     nach § 35c EStG beansprucht werden.
+
+71   Der Ausschluss der Förderung nach § 35c EStG betrifft den gesamten Begünstigungszeitraum.
+     Das heißt, liegen für die energetische Maßnahme sowohl die Voraussetzungen nach § 10f EStG,
+     § 35a EStG, § 35c EStG als auch für die zuwendungsrechtliche Förderung (Darlehen/Zuschüsse)
+     vor, ist die steuerpflichtige Person für die jeweilige energetische Maßnahme an die einmal
+     getroffene Entscheidung für den gesamten Förderzeitraum gebunden. Ein Wechsel zwischen den
+     Fördertatbeständen ist nicht möglich. Die steuerpflichtige Person kann z. B. nicht für den
+     Austausch von Fenstern in einem zu eigenen Wohnzwecken genutzten denkmalgeschützten
+     Einfamilienhaus für den Veranlagungszeitraum 2020 den Abzug der Aufwendungen unter
+     Vorlage der Bescheinigung der Denkmalschutzbehörde nach § 10f EStG und für den Veran-
+     lagungszeitraum 2021 die Steuerermäßigung nach § 35c EStG unter Vorlage der Bescheinigung
+     des Fachunternehmens beanspruchen. Gleiches gilt, wenn im Veranlagungszeitraum 2020
+     zunächst die Steuerermäßigung gemäß § 35c EStG gewährt wird und im folgenden Veranla-
+     gungszeitraum 2021 anstelle der Steuerermäßigung gemäß § 35c EStG die Steuerbegünstigung
+     für zu eigenen Wohnzwecken genutzte Baudenkmale und Gebäude in Sanierungsgebieten und
+     städtebaulichen Entwicklungsbereichen gemäß § 10f EStG für dieselbe Maßnahme beantragt
+     wird.
+
+72   Die Gewährung der Steuerermäßigung nach § 35c EStG ist nicht ausgeschlossen, wenn für das
+     Objekt gleichzeitig Baukindergeld gezahlt wird.
+
+     17. Nachweis der energetischen Maßnahme
+73   Energetische Maßnahmen i. S. d. § 35c Absatz 1 Satz 3 EStG sind durch eine vom Fachunter-
+     nehmen (vgl. Rn. 48 ff.) nach amtlich vorgeschriebenem Muster erstellte Bescheinigung nach-
+     zuweisen. Die Bescheinigung kann auch von einer Person mit Ausstellungsberechtigung nach
+     § 88 GEG erstellt werden. Die Bescheinigung ist dem Finanzamt vorzulegen. Mit einzureichen
+     sind Anlagen, die Ausführungen in der Bescheinigung ersetzen oder ergänzen. Einzelheiten sind
+     durch die nachstehenden BMF-Schreiben geregelt.
+
+        •   Maßnahmenbeginn 2020: BMF-Schreiben vom 31. März 2020 (BStBl I S. 484),
+        •   Maßnahmenbeginn 2021 oder 2022: BMF-Schreiben vom 15. Oktober 2021 (BStBl I
+            S. 2026),
+        •   Maßnahmenbeginn 2023 oder 2024: BMF-Schreiben vom 26. Januar 2023 (BStBl I S. 218),
+            zuletzt geändert durch BMF-Schreiben vom 6. Februar 2024 (BStBl I S. 237),
+     Seite 22 von 33
+
+        •   Maßnahmenbeginn 2025: BMF-Schreiben vom 23. Dezember 2024 (BStBl 2025 I S. 39).
+
+74   Einer Bescheinigung in deutscher Sprache gleichzustellen ist eine von einem vereidigten
+     Übersetzer übersetzte Fassung auf Grundlage des amtlichen Musters. Die Kosten für die
+     Übersetzung sind nicht förderfähig.
+
+     18. Rechnung und Zahlung
+75   Die Steuerermäßigung ist davon abhängig, dass die steuerpflichtige Person für die Aufwendun-
+     gen der energetischen Maßnahme eine Rechnung des Leistungserbringers in deutscher Sprache
+     erhalten hat und die Zahlung auf das Konto des Leistungserbringers erfolgt ist (§ 35c Absatz 4
+     Nummer 2 EStG). Der Leistungserbringer ist in der Regel das die energetische Maßnahme aus-
+     führende Fachunternehmen, bei der Beauftragung des Fachunternehmens durch einen Bau-
+     markt oder Generalunternehmer ist es der Vertragspartner der steuerpflichtigen Person. Lässt die
+     steuerpflichtige Person die energetische Maßnahme von ihrem eigenen Einzelunternehmen als
+     Fachunternehmen durchführen (vgl. Rn. 49), tritt an die Stelle der Rechnung die Dokumentation
+     der Entnahmen. Es ist ausreichend, wenn die steuerpflichtige Person die Rechnungen und den
+     Zahlungsnachweis auf Verlangen des Finanzamtes vorlegt.
+
+76   Die Zahlung auf das Konto des Fachunternehmens erfolgt in der Regel durch Überweisung.
+     Beträge, die im Wege des Online-Bankings überwiesen wurden, können in Verbindung mit dem
+     Kontoauszug, der die Abbuchung ausweist, anerkannt werden. Das gilt auch bei Übergabe eines
+     Verrechnungsschecks, Bezahlung mit einer Bankkarte oder Teilnahme am elektronischen
+     Lastschriftverfahren. Beträge, die unter Verwendung einer Kreditkarte oder eines Online-
+     Bezahldienstes gezahlt werden, können in Verbindung mit einem entsprechenden Nachweis der
+     Abbuchung ebenfalls anerkannt werden. Barzahlungen, Baranzahlungen oder Barteilzahlungen
+     können nicht anerkannt werden. Das gilt selbst dann, wenn die Barzahlung von dem Fachunter-
+     nehmen ordnungsgemäß gebucht worden ist und die steuerpflichtige Person einen Nachweis
+     über die ordnungsgemäße Buchung erhalten hat oder wenn eine Barzahlung durch eine später
+     veranlasste Zahlung auf das Konto des Erbringers der Leistung ersetzt wird.
+
+77   Einer Rechnung in deutscher Sprache gleichzustellen ist eine Rechnung in ausländischer
+     Sprache, die von einem vereidigten Übersetzer übersetzt worden ist. Die Kosten für die
+     Übersetzung sind nicht förderfähig.
+
+78   Die Inanspruchnahme der Steuerermäßigung durch die steuerpflichtige Person ist auch möglich,
+     wenn die Aufwendungen für die energetischen Maßnahmen, für die die steuerpflichtige Person
+     eine Rechnung erhalten hat, von dem Konto einer dritten Person bezahlt worden sind.
+
+79   Die vorgenannten Ausführungen gelten für die Aufwendungen der steuerpflichtigen Person für
+     die Inanspruchnahme eines Energieberaters entsprechend.
+
+     19. Antragstellung und Verfahren
+80   Die Steuerermäßigung ist erstmalig in dem Veranlagungszeitraum zu gewähren, in dem die
+     energetische Maßnahme abgeschlossen wurde. Voraussetzung ist, dass mit der Durchführung der
+     energetischen Maßnahme nach dem 31. Dezember 2019 begonnen wurde und diese vor dem
+     1. Januar 2030 abgeschlossen ist. Die energetische (Einzel-)Maßnahme ist dann abgeschlossen,
+     Seite 23 von 33
+
+     wenn die Leistung tatsächlich erbracht (vollständig durchgeführt) ist, die steuerpflichtige Person
+     eine Rechnung (Schlussrechnung) erhalten und den Rechnungsbetrag vollständig auf das Konto
+     des Leistungserbringers eingezahlt hat. Die Vereinbarung einer Ratenzahlung genügt nicht (siehe
+     BFH-Urteil vom 13. August 2024 - IX R 31/23, BStBl II S. 869). Die Erledigung unwesentlicher
+     Restarbeiten, die für die tatsächliche Reduzierung von Emissionen nicht hinderlich sind, ist
+     unschädlich. Auch soweit bei einer mehrteiligen Maßnahme für einzelne Teilleistungen Teil-
+     rechnungen erstellt und diese von der steuerpflichtigen Person beglichen wurden, wird die
+     Steuerermäßigung abweichend vom Abflussprinzip gemäß § 11 Absatz 2 Satz 1 EStG erst ab dem
+     Veranlagungszeitraum des Abschlusses der energetischen Maßnahme gewährt.
+
+81   Der Antrag auf die Steuerermäßigung nach § 35c EStG kann bis zur Unanfechtbarkeit des
+     betreffenden Einkommensteuerbescheides gestellt werden bzw. solange eine Änderung nach den
+     Vorschriften der AO (z. B. § 164 Absatz 2 AO) oder des EStG möglich ist.
+
+82   Um für die Aufwendungen die Steuerermäßigung für energetische Maßnahmen gemäß § 35c
+     EStG bereits im laufenden Kalenderjahr beim monatlichen Lohnsteuerabzug mit berücksichtigen
+     zu können, kann beim zuständigen Finanzamt ein Freibetrag als Elektronisches Lohnsteuerab-
+     zugsmerkmal nach § 39a Absatz 1 Satz 1 Nummer 5 Buchstabe c EStG in Höhe des Vierfachen der
+     jährlichen Ermäßigung beantragt werden.
+
+83   Voraussetzung für die Steuerermäßigung nach § 35c EStG ist, dass die jeweilige energetische
+     Maßnahme die Mindestanforderungen gemäß der jeweiligen Anlage zur ESanMV erfüllt.
+     Davon ist auszugehen, wenn die steuerpflichtige Person eine Bescheinigung des Fachunterneh-
+     mens oder eine Bescheinigung einer Person mit Ausstellungsberechtigung nach § 88 GEG
+     vorlegt, aus der sich ergibt, dass die energetische Maßnahme die Mindestanforderungen erfüllt.
+
+84   Steht das Eigentum am begünstigten Objekt mehreren Personen zu, können die der Steuerer-
+     mäßigung zugrundeliegenden Aufwendungen gemäß § 35c Absatz 6 Satz 2 EStG gesondert und
+     einheitlich festgestellt werden. Eine gesonderte und einheitliche Feststellung ist nicht erforder-
+     lich, wenn die Aufwendungen für die Steuerermäßigung einfach zu ermitteln sind und die Auf-
+     teilung auf die Miteigentümer feststeht (sog. Fälle von geringer Bedeutung), z. B. bei Ehegatten.
+
+
+
+     Das BMF-Schreiben wird im BStBl Teil I veröffentlicht.
+
+
+
+     Im Auftrag
+
+     Rochow
+     Dieses Dokument wurde elektronisch erstellt und ist ohne Unterschrift gültig.
+Seite 24 von 33
+
+Anlage
+Die Durchführung energetischer Maßnahmen beschränkt sich in der Regel nicht auf die in § 35c
+EStG konkret genannten Sanierungsmaßnahmen, sondern geht mit vorbereitenden Arbeiten
+und Umfeldmaßnahmen einher. So kann die Dämmung einer Außenwand über die Anbringung
+des Dämmmaterials hinaus die Entfernung von Außenputz und die Verlegung von Regenrohren
+erfordern. Diese Maßnahmen können von der Steuerermäßigung des § 35c EStG umfasst sein,
+soweit sie im Zusammenhang mit einer den technischen Mindestanforderungen der ESanMV
+genügenden energetischen Maßnahme stehen. Demgegenüber wäre beispielweise die Verlegung
+von Regenrohren nicht isoliert förderfähig. Zur Abgrenzung wird nachstehende Orientierungs-
+hilfe bereitgestellt. Die Liste ist nicht abschließend, aber unter Berücksichtigung der Grundsätze
+des vorgenannten BMF-Schreibens auszulegen.
+
+1. Wärmedämmung von Außenwänden
+Folgende Maßnahmen sind im Zusammenhang mit einer den technischen
+Mindestanforderungen der Anlage 1 zu § 1 der ESanMV genügenden energetischen Maßnahme
+in der Regel förderfähig:
+•   Abbrucharbeiten wie Abklopfen des alten Putzes, Abbruch von nicht thermisch getrennten
+    Balkonen oder Treppenhäusern inklusive dann notwendiger Neuerrichtung oder
+    Asbestbeseitigung
+•   Erdaushub bei Dämmung von erdberührten Außenflächen inklusive Sicherungsmaßnahmen
+•   notwendige Bauwerkstrockenlegung
+•   Erhöhung/Verlängerung des Dachüberstandes
+•   Bohrungen für Kerndämmungen
+•   Ein- bzw. Anbringen der Wärmedämmung, auch in Gebäudetrennfugen
+•   Einbringen von Kerndämmung und Einblasdämmung
+•   Maßnahmen zur Wärmebrückenreduktion wie thermische Ertüchtigung bestehender
+    Balkone/Loggien inklusive nachträgliche Verglasung von unbeheizten Loggien, Dämmung
+    von Heizkörpernischen und Sanierung kritischer Wärmebrücken im Raum
+•   Einbau neuer bzw. Erneuerung der Fensterbänke
+•   Einbau fassadenintegrierter Lüftungsgeräte, Lüftungselemente (z. B.
+    Außenwandluftdurchlässe) und Luftleitungen in und an der Fassade
+•   Dämmung und Ertüchtigung von vorhandenen Rollladenkästen
+•   Maler- und Putzarbeiten inklusive Stuckarbeiten, Fassadenverkleidung, z. B. Klinker (nur
+    außen)
+•   Ersatz, Erneuerung und Erweiterung von Außenwänden
+•   Einbau von Dämmsteinen
+•   Erneuerung von Ausfachungen bei Fachwerkaußenwänden
+•   Maßnahmen zum Schutz vor Wetter- bzw. Klimaextremen (z. B. Sturm-, Hagel- und
+    Schlagregenschutz)
+•   mineralische Brandriegel zur Brandabschottung innerhalb von
+    Wärmedämmverbundsystemen
+•   Maßnahmen zur Schalldämmung
+•   Austausch von Glasbausteinen durch Mauerwerk
+•   Erneuerung der Briefkasten- und Klingelanlage
+Seite 25 von 33
+
+•   Erneuerung Windfang, Vordachkonstruktionen, Geländer und Eingangsstufen
+•   Verlegung der Regenrohre, Spenglerarbeiten
+•   Erhalt und Neuanlage von Fassadenbegrünung
+•   Erhalt und Neuanlage von Nistplätzen für Gebäudebrüter, z. B. durch Einbau von
+    Nistkästen/Niststeinen in die Fassade oder in die Wärmedämmung sowie besondere
+    Konstruktionen in Traufkästen; weitere Informationen unter www.bund-hannover.de
+    „Artenschutz an Gebäuden“ und www.bund-dueren.de „Artenschutz“
+
+2. Wärmedämmung von Dachflächen
+Folgende Maßnahmen sind im Zusammenhang mit einer den technischen
+Mindestanforderungen der Anlage 2 zu § 1 der ESanMV genügenden energetischen Maßnahme
+in der Regel förderfähig:
+•   Abbrucharbeiten wie alte Dämmung, Dacheindeckung, Dachpappe, Schweißbahnen oder
+    Asbest
+•   Erneuerung der Dachlattung
+•   Einbau von Unterspannbahn, Luftdichtheitsschicht und Dampfsperre
+•   Ein- bzw. Aufbringen der Wärmedämmung
+•   Einbringen von Kerndämmung und Einblasdämmung
+•   Aufdopplung und Verstärkung der Sparren bei Zwischensparrendämmung
+•   Ersatz, Erneuerung und Erweiterung des Dachstuhls oder von Teilen eines Dachstuhls
+•   Dämmung/Erneuerung/Erstellung von Dachgauben
+•   Dachausstiege im unbeheizten Bereich auch ohne Anforderung an den U-Wert, sofern diese
+    für die Durchführung von Arbeiten auf dem Dach erforderlich sind (z. B. Einbau von
+    Schornsteinfeger- und Schornsteinfegerinnen-Ausstiegsluken im mitgedämmten
+    Dachspitz/in unbeheizten Dachräumen)
+•   Verkleidung der Dämmung (z. B. Gipskartonplatten), auch Maler- und Tapezierarbeiten
+    (siehe die Ausführungen zu Umfeldmaßnahmen)
+•   Maßnahmen zur Wärmebrückenreduktion
+•   Maßnahmen zur Schalldämmung
+•   Austausch von Dachziegeln inklusive Versiegelung, Abdichtungsarbeiten am Dach, inklusive
+    Dachdurchgangsziegel (z. B. Lüftungs- oder Antennenziegel) und Schneefanggitter
+•   Neueindeckung des Daches oder Dachabschluss bei Flachdach mittels Dachpappe,
+    Schweißbahn etc.
+•   Maßnahmen zum Schutz vor Wetter- bzw. Klimaextremen (z. B. Sturm-, Hagel- und
+    Schlagregenschutz)
+•   Erhalt und Neuanlage von Dachbegrünungen
+•   Erneuerung/Einbau von Oberlichtern, Lichtkuppeln
+•   Änderung des Dachüberstands
+•   Erneuerung der Dachrinnen, Fallrohre, Einlaufbleche, Spenglerarbeiten
+•   notwendige Arbeiten an Antennen, Satellitenschüsseln, Elektrik, Blitzableiter
+Seite 26 von 33
+
+•   Schornsteinkopf neu einfassen, z. B. Kaminabdeckung, Kaminverkleidung
+•   Erhalt und Neuanlage von Nistplätzen für Gebäudebrüter, z. B. durch Einbau von
+    Nistkästen/Niststeinen in besondere Konstruktionen in Traufkästen, Dachschrägen oder im
+    Giebelbereich; weitere Informationen unter www.bund-hannover.de „Artenschutz an
+    Gebäuden“ und www.bund-dueren.de „Artenschutz“
+
+3. Wärmedämmung von Geschossdecken
+Folgende Maßnahmen sind im Zusammenhang mit einer den technischen
+Mindestanforderungen der Anlage 3 zu § 1 der ESanMV genügenden energetischen Maßnahme
+in der Regel förderfähig:
+•   notwendige Abbrucharbeiten
+•   Bauwerkstrockenlegung
+•   Ein- bzw. Anbringen der Wärmedämmung, auch in Gebäudetrennfugen
+•   Einbringen von Kerndämmung und Einblasdämmung
+•   Maßnahmen zur Wärmebrückenreduktion
+•   Ersatz, Erneuerung und Erweiterung von Bauteilen, soweit diese einen Teil der thermischen
+    Gebäudehülle darstellen und Bestandteil des geförderten Vorhabens sind
+•   notwendige Folgearbeiten an angrenzenden Bauteilen
+•   notwendige Maler- und Putzarbeiten (siehe die Ausführungen zu Umfeldmaßnahmen)
+•   Wiederherstellung der Begehbarkeit des neu gedämmten Bodens; Estrich,
+    Trittschalldämmung, Bodenbelag (sofern Kellerdecke „von oben“ gedämmt wird)
+•   Maßnahmen zur Schalldämmung
+•   notwendige Arbeiten an den Versorgungsleitungen, z. B. Verlegung von Elektroanschlüssen
+•   Erneuerung von energetisch relevanten Türen oder wärmedämmenden Bodentreppen, z. B.
+    zum Keller oder Dachboden, sowie von wärmedämmenden Bodenklappen zum unbeheizten
+    Dachboden
+
+4. Erneuerung der Fenster und Außentüren
+Folgende Maßnahmen sind im Zusammenhang mit einer den technischen
+Mindestanforderungen der Anlage 4 zu § 1 der ESanMV genügenden energetischen Maßnahme
+in der Regel förderfähig:
+•   Austausch, Ertüchtigung (Neuverglasung, Überarbeitung der Rahmen, Herstellung von
+    Gang- und Schließbarkeit sowie Verbesserung der Fugendichtheit und der
+    Schlagregendichtheit) und Einbau neuer Fenster, Fenstertüren und Außentüren bzw. deren
+    erstmaliger Einbau
+•   Einbau von Fensterlüftern und Außenwandluftdurchlässen sowie von in der Fensterbank
+    integrierten Geräten
+•   Austausch von Glasbausteinen durch neue Fenster
+•   Maßnahmen zur Wärmebrückenreduktion, auch Dämmung von Heizkörpernischen,
+    Sanierung kritischer Wärmebrücken im Raum
+•   Maßnahmen zur Schalldämmung
+•   Abdichtung der Fugen
+•   Einbau neuer bzw. Erneuerung der Fensterbänke
+•   Einbau neuer bzw. Dämmung und Ertüchtigung von vorhandenen Rollladenkästen
+Seite 27 von 33
+
+•   Fliegengitter, sofern diese fest eingebaut sind
+•   Erneuerung des Heizkörpers bei Einbau größerer Fenster und daraus geringerer
+    Brüstungshöhen
+•   notwendige Putz- und Malerarbeiten im Fensterbereich (gegebenenfalls anteilig)
+•   Erneuerung Hauseingangstüren sowie anderer Außentüren innerhalb der thermischen
+    Gebäudehülle, z. B. Erneuerung von Wohnungseingangstüren zum unbeheizten
+    Treppenhaus, Türen zum unbeheizten Keller oder Dachboden, Bodenklappen zum
+    unbeheizten Dachboden
+•   Maßnahmen zur Ab- und Durchsturzsicherung, wie z. B. absturzsichernde Verglasung (DIN
+    18008-4, ehemals TRAV) und Fensterstangen zur Absturzsicherung
+•   notwendige Elektroarbeiten für elektrisch betriebene Fenster und Türen, Anschlüsse an
+    Einbruchsicherungen
+•   einbruchhemmende Haus- und Wohnungseingangstüren der Widerstandsklasse RC2 nach
+    DIN EN 1627 oder besser (auch ohne Nachweis über die Berücksichtigung der Festigkeit und
+    Ausführung der umgebenden Wände)
+•   einbruchhemmende Fenster, Fenstertüren und -rahmen sowie Außentüren der
+    Widerstandsklasse RC2 nach DIN EN 1627 oder besser, auch ohne Einhaltung der
+    sicherheitstechnischen Anforderungen an die umgebenden Wandbauteile
+•   Pilzkopfverriegelungen, drehgehemmter Fenstergriff, Sicherheitsverglasung,
+    selbstverriegelnde Mehrfachverriegelung, Sicherheitsrosette, verdeckt liegender
+    Profilzylinder oder Sicherheitsprofilzylinder, Bandseitensicherung etc.
+•   Nachrüstsysteme wie Beschläge und Schlösser nach DIN 18104 Teil 1 oder 2,
+    Mehrfachverriegelungssysteme mit Sperrbügelfunktion nach DIN 18251, Klasse 3 oder besser
+    sowie Einsteckschlösser nach DIN 18251, Klasse 4 oder besser
+•   Neuverglasung, Entsorgung der Altverglasung
+•   Überarbeitung der Rahmen und Flügel mit gegebenenfalls erforderlichem Aus- und Einbau
+•   Herstellung von Gang- und Schließbarkeit
+•   Erneuerung bzw. Einbau von Dichtungen, z. B. Falzdichtung, Lippendichtung
+•   Dämmung der Einbaufuge
+•   Herstellung eines luftdichten Anschlusses innen
+•   Herstellung eines schlagregendichten Anschlusses außen
+•   Maßnahmen zum Schutz vor Wetter- bzw. Klimaextremen (z. B. Sturm-, Hagel- und
+    Schlagregenschutz sowie Bauelemente an Fenstern und Türen zum Schutz bei
+    Überschwemmungen durch Flüsse oder Starkregen)
+•   Runderneuerung von Kastenfenstern aus Holz
+•   erstmaliger Einbau bzw. Erneuerung von Rollläden und anderen außenliegenden bzw.
+    zwischen den Scheiben liegenden Sonnenschutzvorrichtungen sowie
+    Sonnenschutzvorrichtungen im Scheibenzwischenraum, wenn die Fenster die jeweiligen
+    Anforderungen an den U-Wert erfüllen (bei Installation von Sonnenschutzvorrichtungen an
+    Fenstern, die erneuert werden, bestehen keine Anforderungen bezüglich der Nachweispflicht
+    des sommerlichen Wärmeschutzes)
+•   Systeme zur optimierten Tageslichtversorgung z. B. über Lichtlenksysteme oder
+    strahlungsabhängige Steuerung
+Seite 28 von 33
+
+Zum Mindestfeuchteschutz siehe Anlage 4 der ESanMV. Ist der U-Wert der Außenwand
+und/oder des Daches kleiner als der U-Wert der neu eingebauten Fenster, sind Maßnahmen zur
+Einhaltung des Mindestfeuchteschutzes zwingend umzusetzen.
+
+4a. Sommerlicher Wärmeschutz
+Von der Steuerermäßigung umfasst ist der Ersatz oder erstmalige Einbau von außenliegenden
+Sonnenschutzeinrichtungen mit optimierter Tageslichtversorgung zum Beispiel über
+Lichtlenksysteme oder strahlungsabhängige Steuerung. Dabei sind die Vorgaben der DIN 4108-2:
+2013-02 durch Sonnenschutzvorrichtungen nach deren Tabelle 7 Zeilen 3.1 bis 3.3 (unabhängig
+von der Art des Antriebs) zum sommerlichen Wärmeschutz einzuhalten.
+
+Außenliegende Sonnenschutzvorrichtungen gemäß DIN 4108 2 Tabelle 7 Zeile 3.1 bis 3.3 sind:
+
+•   Fensterläden und Rollläden
+•   Jalousien und Raffstores
+•   Markisen, die parallel zu Fenstern in der thermischen Gebäudehülle verlaufen
+
+Zwischen den Scheiben liegende Sonnenschutzvorrichtungen sind als Erneuerung der Fenster
+förderfähig.
+
+Folgende Sonnenschutzvorrichtungen sind nicht förderfähig:
+•   alle Arten „innenliegender“ Sonnenschutzvorrichtungen wie innenliegende Rollos, Jalousien,
+    drehbare Lamellen, Raffstores, Plissees
+•   außenliegende Sonnenschutzvorrichtungen gemäß DIN 4108-2, Tabelle 7, Zeile 3.4.
+         • alle Maßnahmen zum sommerlichen Wärmeschutz, die nicht parallel zu Fenstern in
+            der thermischen Gebäudehülle verlaufen
+         • Vordächer, auch nicht als Sonnenschutzvorrichtung
+         • Markisen, die nicht parallel zu Fenstern in der thermischen Gebäudehülle verlaufen
+         • freistehende Lamellen(dächer)
+         • Pergolen
+
+5. Erneuerung oder Einbau einer Lüftungsanlage
+Folgende Maßnahmen sind im Zusammenhang mit einer den technischen
+Mindestanforderungen der Anlage 5 zu § 1 der ESanMV genügenden energetischen Maßnahme
+in der Regel förderfähig:
+•   alle Maßnahmen, die unmittelbar für die Ausführung und Funktionstüchtigkeit erforderlich
+    sind
+•   Inbetriebnahme, Einregulierung und Einweisung der Anlagenbetreibenden
+•   Leistungen wie Inspektionen, Wartungen und Garantieverlängerungen der geförderten
+    Anlage bis zum Ablauf des zweiten Kalenderjahrs nach Einreichen des
+    Verwendungsnachweises, sofern deren Kosten bereits im Voraus beglichen wurden und per
+    Rechnung nachgewiesen werden können
+•   unmittelbar mit der Anlagentechnik verbundene elektrische Infrastruktur (Arbeiten und
+    Materialien)
+Seite 29 von 33
+
+•   Herstellung bzw. Verkleinerung/Vergrößerung/Verschluss notwendiger Wand- und
+    Deckendurchbrüche für Installationen und Einbringe-/Revisionsöffnungen für energetisch
+    relevante Anlagen, inklusive Dämmmaßnahmen
+•   Einbau der raumlufttechnischen Anlage, gegebenenfalls müssen Anforderungen an die
+    Luftdichtheit der Gebäudehülle erfüllt werden
+•   Wand- und Durchbrucharbeiten
+•   Luftdurchlässe und Luftleitungen
+•   Maßnahmen für Außenluft- und Fortluftelemente
+•   Elektroanschlüsse
+•   Verkleidungen
+•   notwendige Maler- und Putzarbeiten (siehe die Ausführungen zu Umfeldmaßnahmen),
+    gegebenenfalls anteilig
+•   bauliche Maßnahmen am Raum für Lüftungszentrale, soweit vorhanden
+•   Maßnahmen zur Schalldämmung
+•   Einbau/Errichtung eines Erdwärmetauschers
+•   Einbau von Solar-Luftkollektoren
+•   Luftdichtheitsmessung, Messung des Leckluftvolumenstroms
+•   Einbau eines Heizregisters
+•   ergänzend zu einer förderfähigen Erstinstallation oder Erneuerung einer Lüftungsanlage
+    können Brauchwasserwärmepumpen, die Ab- oder Fortluft als Wärmequelle erschließen,
+    mitgefördert werden
+•   bedarfsgeregelte zentrale Abluftsysteme (feuchte-, kohlendioxid- oder mischgasgeführt)
+•   zentrale, dezentrale oder raumweise Anlagen mit Wärmeübertrager
+•   Kompaktgeräte mit Luft-/Luft-Wärmeübertrager und mit Abluftwärmepumpe
+•   Kompaktgeräte ohne Luft-/Luft-Wärmeübertrager und mit Abluftwärmepumpe
+
+6. Erneuerung der Heizungsanlage
+Folgende Maßnahmen sind im Zusammenhang mit einer den technischen
+Mindestanforderungen der Anlage 6 zu § 1 der ESanMV genügenden energetischen Maßnahme
+in der Regel förderfähig:
+•   Inbetriebnahme, Einregulierung und Einweisung der Anlagenbetreibenden
+•   Maßnahmen zur Optimierung der förderfähigen Heizung, bspw. die Einstellung der
+    Heizkurve
+•   notwendige fachtechnische Arbeiten und Materialien, z. B. Transport, Aufständerung,
+    Unterkonstruktion, Fundament, Einhausung
+•   Leistungen wie Inspektionen, Wartungen und Garantieverlängerungen der geförderten
+    Anlage bis zum Ablauf des zweiten Kalenderjahrs nach Einreichen des
+    Verwendungsnachweises, sofern deren Kosten bereits im Voraus beglichen wurden und per
+    Rechnung nachgewiesen werden können
+•   unmittelbar mit der Anlagentechnik verbundene elektrische Infrastruktur (Arbeiten und
+    Materialien)
+•   Herstellung bzw. Verkleinerung/Vergrößerung/Verschluss notwendiger Wand- und
+    Deckendurchbrüche für Installationen und Einbringe-/Revisionsöffnungen für energetisch
+    relevante Anlagen, inklusive Dämmmaßnahmen
+Seite 30 von 33
+
+•   solarthermische Anlagen, Anschluss an das Warmwasser- und/oder Heizsystem, inklusive
+    Solarspeicher und Steigleitungen
+•   photovoltaisch-thermische Kollektoren (PVT-Anlagen, Hybridkollektoren zur Wärme- und
+    Stromerzeugung), wenn und soweit sie als Wärmeerzeuger (Solarthermie) oder als
+    Wärmequelle für Wärmepumpen eingesetzt werden. Aufgrund des Förderausschlusses für
+    reine Stromerzeuger sind die Kosten für PVT-Anlagen anhand eines geeigneten Maßstabs auf
+    die Funktion als Wärme- und Stromerzeuger aufzuteilen. Aus Vereinfachungsgründen kann
+    dabei die Funktion als Stromerzeuger mit 1.500 Euro je kWp installierter PV-Leistung
+    angesetzt und von den Kosten abgezogen werden. Abzuziehen sind zudem Kosten für
+    Stromspeicher.
+•   Biomasseheizungen für die thermische Nutzung ab mindestens 5 kW Nennwärmeleistung
+    sowie sekundäre Bauteile zur Brennwertnutzung und zur Partikelabscheidung
+    (elektrostatische Abscheider, filternde Abscheider wie z. B. Gewebefilter und keramische
+    Filter, Abscheider als Abgaswäscher)
+•   Brennstoffaustragung, -förderung und -zufuhr von Biomasseheizungen (Saugsysteme,
+    Förderschneckensysteme, Federblattrührwerke, Schubbodenaustragungen)
+•   Installation, Anbindung und Inbetriebnahme elektrisch angetriebener Wärmepumpen
+        • Erdsondenbohrungen (auch Probebohrungen) inklusive verschuldensunabhängige
+             Versicherung
+        • Erdflächenkollektoren
+        • Grabenkollektoren
+        • Erdwärmekörbe
+        • Energiepfähle
+        • Brunnenbohrungen
+        • Energiezäune, Massivabsorber
+        • unterirdische Eis-, Erd- und Wasserspeicher
+        • solarthermische Kollektoren (alle Bauarten), PVT-Anlagen als Wärmequelle für
+             Wärmepumpen (s. o.), Luft-Wärmeübertrager zur Abwärmenutzung von PV-Anlagen
+             (inklusive Unterkonstruktionen)
+        • Luft-Sole-Wärmeübertrager
+        • Abwasserwärmetauscher (z. B. Kanalnetz, Kläranlagen, Grauwasser)
+        • Bei bivalenten Wärmepumpen-Hybridheizungskompaktgeräten die eine die
+             technischen Mindestanforderungen der ESanMV erfüllende Wärmepumpe und einen
+             nicht förderfähigen zweiten Wärmeerzeuger (bspw. Gas-Brennwertheizung) in einem
+             Gerät kombinieren, sind nur die anteiligen Kosten der Wärmepumpe förderfähig.
+             Diese werden pauschal mit 65 % der Gesamtkosten als förderfähig berücksichtigt.
+             Diese pauschale Regelung bezieht sich nur auf Kompaktgeräte, bei denen sowohl
+             Wärmepumpe als auch der zweite Wärmeerzeuger herstellerseitig in einem Gerät
+             verbaut werden.
+•   Anschluss an ein Wärmenetz:
+        • für den Anschluss oder die Erneuerung des Anschlusses notwendige Maßnahmen
+             und Komponenten (insb. Rohrleitungen und Übergabestation) ausschließlich auf
+             dem Grundstück des anzuschließenden Gebäudes
+Seite 31 von 33
+
+       • Umsetzung von investiven Maßnahmen außerhalb des Grundstücks ist nicht
+         förderfähig (bspw. Stichleitung vom Verteilnetz außerhalb des Grundstücks bis zur
+         Grundstücksgrenze)
+•   Wärmespeicher
+       • alle Arten von Warmwasser-Speichern (Heizwasser-, Trinkwarmwasser,- und
+         Kombispeicher, Speicher mit integriertem Heizstab etc.)
+       • Dämmung bestehender Wärmespeicher
+       • Eisspeicher und sonstige Latentwärmespeicher, die den Phasen-Übergang eines
+         Mediums nutzen
+       • Wärmespeicherung in Beton, Zeolith oder sonstigen anderen Medien
+       • Erdwärmespeicher
+       • Tiefen-Aquifer- oder Hohlraum-Wärmespeicher
+•   Warmwasserbereitung
+       • Umstellung einer dezentralen Warmwasserbereitung auf eine zentrale,
+         heizungsintegrierte Warmwasserbereitung (inklusive Einsatz
+         wassersparender/energiesparender Maßnahmen, Abwasser-Wärmerückgewinnung
+         etc.) zur Wiederherstellung der Funktionsfähigkeit
+       • Abwasser-Wärmerückgewinnung
+       • Einbau hocheffizienter Warmwasser-Wärmepumpen
+       • Frischwasser- und Wohnungsstationen
+       • Kalkschutz- und Wasserenthärtungsanlagen und sonstige Anlagen und
+         Komponenten zur Aufbereitung von Trinkwasser
+       • hocheffiziente Zirkulationspumpen
+       • elektronisch geregelte Durchlauferhitzer
+       • Wärmemengenzähler
+•   Wärmeverteilung und Wärmeübergabe
+       • zum Anschluss des Wärmerzeugers erforderliche Leitungen und Komponenten bis
+         hin zur Wärmeverteilung (Heizkreisverteiler)
+       • hydraulischer Abgleich des Zentralheizungssystems
+       • Flächenheizungen (Decken-, Fußboden- und Wandheizungen) inklusive
+         Trittschalldämmung und Estrich, Putzarbeiten, Bodenbeläge, Wandverkleidung
+         (keine Sanitäreinrichtungen)
+       • Maßnahmen zur Schalldämmung
+       • Niedertemperatur-Heizkörper/Heizleisten in jeglicher Bauausführung (z. B. auch
+         Gebläsekonvektoren), die eine Reduzierung der Vorlauftemperatur ermöglichen
+         (Vorlauftemperatur ≤ 55 °C)
+       • Einbau oder Austausch voreinstellbarer/automatisierter Thermostatventilen, Einbau
+         oder Austausch von Strangdifferenzdruckreglern
+       • Einbau einer hocheffizienten Umwälzpumpe und/oder einer hocheffizienten
+         Zirkulationspumpe. Pumpen müssen die zum Zeitpunkt des Einbaus geltenden
+         Anforderungen der Ökodesign-Richtlinie an den Energieeffizienzindex einhalten
+       • in Einrohrsystemen: Maßnahmen zur Volumenstromregelung
+       • Umbau von Einrohr- in Zweirohrsysteme
+       • Umstellung von Einzel- bzw. Etagenheizung auf zentrale Heizung
+Seite 32 von 33
+
+       •    Wärmedämmung von Rohrleitungen und sonstigen wärmeverlustbehafteten
+            technischen Komponenten
+       • Anlagen und Komponenten zur Aufbereitung von Heizungswasser (Entgasung,
+            Entsalzung, Enthärtung, Kalkschutz etc.)
+       • Wärmeübergabestationen und Rohrnetz bei Erstanschluss an ein Gebäude- und
+            Wärmenetz sowie Erneuerung bei bestehendem Anschluss
+       • Anschlusskosten für den Anschluss an ein Wärmenetz, soweit nicht eigenständig
+            gefördert
+       • Installationskosten inklusive einmaliger Anschlussgebühren bei Anschluss an ein
+            Wärmenetz, soweit nicht eigenständig gefördert
+•   Heiz-, Technik- und Speicherraum
+       • Errichtung, Sanierung oder Umgestaltung eines Heiz- bzw. Technikraums, sofern
+            dies für den Betrieb des geförderten Wärmerzeugers oder Gebäudenetzes erforderlich
+            ist
+       • Bunker und Lagerräume für Biomassepellets bzw. -hackschnitzel
+       • Silos
+       • Speicher für grünen oder blauen Wasserstoff
+•   Abgassysteme und Schornsteine
+       • Neuerrichtung, Erneuerung und/oder Anpassung bestehender Abgassysteme und
+            Schornsteine in direktem Zusammenhang mit dem beantragten Wärmeerzeuger
+       • Erstellung von Steigsträngen inklusive Verkleidung
+•   Demontagearbeiten
+       • Entsorgung eines alten Öl- oder Gastanks
+       • Ausbau alter Wärmeerzeuger einschließlich Entsorgung (inklusive Schadstoffe und
+            Sonderabfälle)
+Folgende Anlagen sind nicht förderfähig:
+•   Wärmeerzeuger auf Basis des Energieträgers Öl (z. B. Öl-Brennwertkessel, Öl-Öfen,
+    ölbetriebene Kraft-Wärme-Kopplungs-Anlagen) sowie für deren Betrieb notwendige
+    Anlagenteile wie z. B. Öltanks, Abgassysteme
+•   Kohle-Kessel, Kohle-Öfen sowie für deren Betrieb notwendige Anlagenteile wie z. B.
+    Abgassysteme
+•   Wärmeerzeuger auf Basis des Energieträgers Gas, z. B. Gas-Brennwertkessel, Gas-
+    Wärmepumpen, gasbetriebene Kraft-Wärme-Kopplungs-Anlagen, Gasstrahler, Gas-
+    Warmlufterzeuger, die zugehörigen Umfeldmaßnahmen sowie für deren Betrieb notwendige
+    Anlagenteile wie z. B. Gastanks, Anschluss an ein Gasnetz, Abgassysteme, Schornsteine. Dies
+    betrifft Anlagen, die mit dem Einsatz von fossilem, von fossil erzeugtem und von biogenem
+    Gas betrieben werden. Unberührt bleiben Brennstoffzellen gemäß Anlage 6.4 zu § 1 ESanMV
+    und der Anschluss an ein Wärmenetz gemäß Anlage 6.7 zu § 1 ESanMV.
+•   handbeschickte Biomasse-Einzelöfen (z. B. Scheitholzkamin-Öfen, Kachel-Öfen) sowie
+    luftgeführte Pelletöfen
+•   Mietheizungen
+•   Niedertemperaturkessel
+•   Übergangsheizungen im Rahmen eines späteren Wärme- oder Gebäudenetzanschlusses
+•   Wärmepumpen, die als Wärmequelle Luft aus thermisch konditionierten Zonen nutzen
+Seite 33 von 33
+
+•   Heizungstechnik, die überwiegend für nicht GEG-relevante Prozesse genutzt wird (z. B. auch
+    Anlagentechnik zur Beheizung von Schwimmbadbecken)
+•   Elektro-Direktheizungen (Elektro-Speicherheizungen, Nachtstromspeicherheizungen,
+    Elektro-Heizstrahler, Infrarot-Heizungen etc.)
+Ferner sind Anlagen nicht förderfähig, die ausschließlich der Stromerzeugung dienen:
+•   Photovoltaik-Anlagen
+•   Windkraftanlagen
+•   Stromspeicher
+•   Wechselrichter
+
+7. Einbau von digitalen Systemen zur energetischen Betriebs- und Verbrauchsoptimierung
+Die förderfähigen Maßnahmen sind der abschließenden Anlage 7 zu § 1 der ESanMV zu
+entnehmen.
+
+8. Optimierung bestehender Heizungsanlagen, sofern diese älter als zwei Jahre sind
+Die förderfähigen Maßnahmen zur Verbesserung der Anlageneffizienz sind der abschließenden
+Anlage 8 zu § 1 der ESanMV zu entnehmen.
+Nicht umfasst ist der Einbau beziehungsweise Austausch von Wärme- oder Stromerzeugern.
+Die förderfähigen Maßnahmen zur Emissionsminderung von Biomasseheizungen gemäß den
+technischen Mindestanforderungen der Anlage 8 zu § 1 der ESanMV umfassen insbesondere:
+•   Einbau elektrostatischer Staubabscheidung
+•   katalytische Nachverbrennung
+•   Systeme vollautomatischer Verbrennungsregelung
+•   Staubemissionsmessungen vor und nach der Umsetzung der Maßnahme
+

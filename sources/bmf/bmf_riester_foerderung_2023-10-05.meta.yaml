@@ -1,0 +1,17 @@
+dokument:
+  norm_uri: "bmf/2023-10-05/IV-C-3-S-2015-22-10001-001"
+  norm: "BMF-Schreiben Steuerliche Foerderung der privaten Altersvorsorge v. 05.10.2023 (BStBl I 2023, 1726)"
+  fassung: "05.10.2023"
+  quelle_url: "https://www.bvl-verband.de/fileadmin/user_upload/2023-10-05-stl-foerderung-private-altersvorsorge.pdf"
+  abrufdatum: "2026-07-14"
+  datei: "bmf_riester_foerderung_2023-10-05.txt"
+  pdf_datei: "bmf_riester_foerderung_2023-10-05.pdf"
+  sha256: "fa57d2ee7ebcebf355a3f8a2611d3e1f988c487606405772b5712341b8660e16"
+  pdf_sha256: "e458cc7f16ef318d179b849de064f260553d46c9d53c11b1f3982fd3c82f8eb3"
+  authority: verwaltung
+  redistributable: true
+  hinweis: "PDF via pdftotext -layout extrahiert. BVL-Spiegel; bundesfinanzministerium.de gegen automatisierten Abruf gesperrt. Amtliche HTML-Fassung: esth.bundesfinanzministerium.de ESt-Handbuch 2024 Anhang 1a. ACHTUNG PDF-Zeilenumbrueche/Silbentrennung - auszuege nur mit grep-verifizierten Fragmenten."
+  erwartete_anker:
+    - "Erfolgt aufgrund der Günstigerprüfung ein Sonderausgabenabzug"
+    - "Erhöhungsbetrag nach § 84 Satz 2 EStG bleibt"
+  verwendet_in: ["Charge 14 (Riester-Hinzurechnung voll-vs-bereinigt, Rn. 103 + 106)"]
