@@ -1,0 +1,169 @@
+{
+  "bedingungen": [
+    "netto_ist_9b_bereinigt",
+    "bewegliches_abnutzbares_anlagevermoegen_selbstaendig_nutzbar",
+    "verzeichnis_ab_250_gefuehrt"
+  ],
+  "candidate_id": "p6_2_gwg_sofortabzug",
+  "catala_a": "declaration scope GwgSofortabzug:\n  input anschaffungskosten_netto content money\n  output sofortabzug content money\n\nscope GwgSofortabzug:\n  definition sofortabzug equals\n    if anschaffungskosten_netto <= $800.00\n    then anschaffungskosten_netto\n    else $0.00",
+  "catala_a_sha256": "ab23dc3bac1b1d29f1e75b53e3147baa047cda6747f76f8a486763ca2a3734cf",
+  "catala_b": "declaration scope GwgSofortabzug:\n  input anschaffungskosten_netto content money\n  output sofortabzug content money\n\nscope GwgSofortabzug:\n  definition sofortabzug equals\n    if anschaffungskosten_netto <= $800.00 then anschaffungskosten_netto else $0.00",
+  "catala_b_sha256": "b0be9901a807177858ac97ecc42b5c28dab2edef9938fa291bc87d5519c24192",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'sofortabzug'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 1,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        3,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "cb93f72b50ad",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "netto_ist_9b_bereinigt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vermindert um einen darin enthaltenen Vorsteuerbetrag (§ 9b Absatz 1)",
+        "referenz": "§ 6 Abs. 2 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "oder der nach Absatz 1 Nummer 5 bis 6 an deren Stelle tretende Wert",
+        "referenz": "§ 6 Abs. 2 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Anschaffungskosten werden als netto (ohne Vorsteuer) interpretiert.",
+        "bedingung_id": "netto_ist_9b_bereinigt",
+        "betrifft": "anschaffungskosten_netto",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-14T16:32:27+00:00"
+  },
+  "module_name": "GwgSofortabzug",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

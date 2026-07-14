@@ -1,0 +1,31 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p6_2a_sammelposten_aufloesung
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - sammelposten_bestand
+  - interpretation
+  formulierungen:
+  - Der Sammelposten wird als Betrag verstanden, der über 5 Jahre gleichmäßig aufzulösen
+    ist.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Die Division durch 5.0 erfolgt ohne explizite Rundungsvorgabe.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 2a s. 2 estg
+  formulierungen:
+  - im Wirtschaftsjahr der Bildung und den folgenden vier Wirtschaftsjahren | mit
+    jeweils einem Fünftel gewinnmindernd aufzulösen
+  triage: nicht_material

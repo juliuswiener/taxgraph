@@ -1,0 +1,14 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p4_3_gewinn
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 4 abs. 3 s. 1 estg
+  formulierungen:
+  - können als Gewinn den Überschuss der Betriebseinnahmen über die Betriebsausgaben
+    ansetzen
+  triage: nicht_material

@@ -19,12 +19,14 @@ plus die ESt-seitige GewSt-Anrechnung (§ 35).
 
 ## Landkarte (14 Zeilen)
 
+**Stand 2026-07-14: Charge 15 (Zeilen 1–4) ✅ verified_bedingt** — p4_3_gewinn, p6_2_gwg_sofortabzug, p6_2a_sammelposten_zufuehrung/_aufloesung (Pipeline, $0,1797) + p11_zufluss_abfluss (Handregel). 4/14 Zeilen.
+
 | # | Bereich | Norm | Freeze | Charge (Plan) |
 |---|---|---|---|---|
-| 1 | Grundmechanik BE − BA | § 4 Abs. 3 | estg_p4_2026-07-14 ✓ | 15 |
-| 2 | Zufluss/Abfluss + wiederkehrende Zahlungen "kurze Zeit" | § 11 | estg_p11_2026-07-14 ✓ | 15 |
-| 3 | GWG-Sofortabzug (800 € netto) | § 6 Abs. 2 | estg_p6_2026-07-14 ✓ | 15 |
-| 4 | Sammelposten (250–1 000 €, 1/5 p. a.) | § 6 Abs. 2a | estg_p6_2026-07-14 ✓ | 15 |
+| 1 | Grundmechanik BE − BA | § 4 Abs. 3 | estg_p4_2026-07-14 ✓ | 15 ✅ |
+| 2 | Zufluss/Abfluss + wiederkehrende Zahlungen "kurze Zeit" | § 11 | estg_p11_2026-07-14 ✓ | 15 ✅ (Handregel) |
+| 3 | GWG-Sofortabzug (800 € netto) | § 6 Abs. 2 | estg_p6_2026-07-14 ✓ | 15 ✅ |
+| 4 | Sammelposten (250–1 000 €, 1/5 p. a.) | § 6 Abs. 2a | estg_p6_2026-07-14 ✓ | 15 ✅ |
 | 5 | Nicht abziehbare BA quantitativ: Geschenke 50 €, Bewirtung 70 %, Arbeitszimmer/Jahrespauschale 1 260 €, Tagespauschale 6c | § 4 Abs. 5 Nr. 1/2/6b/6c | p4 + p04_abs5 ✓ | 16 |
 | 6 | Privat/Betrieb-Abgrenzung | § 12 | estg_p12_2026-07-14 ✓ | 16 (Geltungsbed.) |
 | 7 | Lineare AfA bewegliche WG | § 7 Abs. 1 | p7-Freeze nachziehen | 17 |

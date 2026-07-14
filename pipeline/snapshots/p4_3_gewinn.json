@@ -1,0 +1,162 @@
+{
+  "bedingungen": [
+    "nicht_buchfuehrungspflichtig_und_keine_buecher",
+    "durchlaufende_posten_ausgeschieden"
+  ],
+  "candidate_id": "p4_3_gewinn",
+  "catala_a": "declaration scope EuerGewinn:\n  input betriebseinnahmen content money\n  input betriebsausgaben content money\n  output gewinn content money\n\nscope EuerGewinn:\n  definition gewinn equals betriebseinnahmen - betriebsausgaben",
+  "catala_a_sha256": "eeb58222473e838eedfc5f22b536081984047e27f81d329710d9ec1ed5c9d77c",
+  "catala_b": "declaration scope EuerGewinn:\n  input betriebseinnahmen content money\n  input betriebsausgaben content money\n  output gewinn content money\n\nscope EuerGewinn:\n  definition gewinn equals betriebseinnahmen - betriebsausgaben",
+  "catala_b_sha256": "eeb58222473e838eedfc5f22b536081984047e27f81d329710d9ec1ed5c9d77c",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'gewinn'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 4 abs. 3 s. 1 estg"
+            ],
+            "text": "können als Gewinn den Überschuss der Betriebseinnahmen über die Betriebsausgaben ansetzen"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "9ae5365cbabb",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "nicht_buchfuehrungspflichtig_und_keine_buecher",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "können als Gewinn den Überschuss der Betriebseinnahmen über die Betriebsausgaben ansetzen",
+        "referenz": "§ 4 Abs. 3 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-14T16:32:13+00:00"
+  },
+  "module_name": "EuerGewinn",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

@@ -1,0 +1,25 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p6_2_gwg_sofortabzug
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungskosten_netto
+  - einheit
+  formulierungen:
+  - Anschaffungskosten werden als netto (ohne Vorsteuer) interpretiert.
+  triage: bedingung_neu
+  bedingung: netto_ist_9b_bereinigt
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 2 s. 1 estg
+  formulierungen:
+  - vermindert um einen darin enthaltenen Vorsteuerbetrag (§ 9b Absatz 1) | oder der
+    nach Absatz 1 Nummer 5 bis 6 an deren Stelle tretende Wert
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: netto_ist_9b_bereinigt

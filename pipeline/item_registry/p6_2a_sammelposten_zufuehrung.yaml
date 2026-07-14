@@ -1,0 +1,60 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p6_2a_sammelposten_zufuehrung
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der sammelposten wird nur bei ueberschreiten von 250 euro gebildet, nicht bei
+    gleichheit.
+  formulierungen:
+  - 'Der Sammelposten wird nur bei Überschreiten von 250 Euro gebildet, nicht bei
+    Gleichheit. nicht_echt (Instructor 2026-07-14): Wortlaut ''250 Euro, aber nicht
+    1 000 Euro uebersteigen'' verlangt echtes Ueberschreiten; 250,00 uebersteigt 250
+    NICHT -> nicht faehig. Kodierung netto > 250 wortlautkonform. Clerk-Seed 250,00->0
+    beweist. Mistral-Ueber-Flag Typ 3 (Boundary-Richtung).'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der sammelposten wird bei 1.000 euro inklusive gebildet, nicht nur unter 1.000
+    euro.
+  formulierungen:
+  - 'Der Sammelposten wird bei 1.000 Euro inklusive gebildet, nicht nur unter 1.000
+    Euro. nicht_echt (Instructor 2026-07-14): Wortlaut ''nicht 1 000 Euro uebersteigen'';
+    1000,00 uebersteigt 1000 NICHT -> faehig. Kodierung netto <= 1000 wortlautkonform.
+    Clerk-Seed 1000,00->1000,00 beweist. Mistral-Ueber-Flag Typ 3 (Boundary-Richtung).'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungskosten_netto
+  - einheit
+  formulierungen:
+  - Annahme, dass anschaffungskosten_netto bereits Netto-Werte ohne Vorsteuer sind.
+    | Nettobetrag wird als bereits vorsteuerbereinigt angenommen.
+  triage: bedingung_neu
+  bedingung: netto_ist_9b_bereinigt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anschaffungskosten_netto
+  - interpretation
+  formulierungen:
+  - Annahme, dass der Wert für das einzelne Wirtschaftsgut direkt anschaffungskosten_netto
+    entspricht. | Anschaffungskosten gelten als Einzelwirtschaftsgut-Kosten. | Wert
+    nach Absatz 1 Nr. 5-6 wird als äquivalent zu anschaffungskosten_netto behandelt.
+    | Anschaffungskosten beziehen sich auf ein einzelnes Wirtschaftsgut.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 2a s. 1 estg
+  formulierungen:
+  - vermindert um einen darin enthaltenen Vorsteuerbetrag (§ 9b Absatz 1) | oder der
+    nach Absatz 1 Nummer 5 bis 6 an deren Stelle tretende Wert
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: netto_ist_9b_bereinigt

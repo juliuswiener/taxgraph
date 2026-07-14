@@ -1,0 +1,375 @@
+{
+  "bedingungen": [
+    "netto_ist_9b_bereinigt",
+    "wahlrecht_einheitlich_pro_wj"
+  ],
+  "candidate_id": "p6_2a_sammelposten_zufuehrung",
+  "catala_a": "declaration scope SammelpostenZufuehrung:\n  input anschaffungskosten_netto content money\n  output zufuehrung content money\n\nscope SammelpostenZufuehrung:\n  definition zufuehrung equals\n    if (anschaffungskosten_netto > $250.00 and\n        anschaffungskosten_netto <= $1,000.00)\n    then anschaffungskosten_netto\n    else $0.00",
+  "catala_a_sha256": "265ab939cfe55e4b23ad831713ea5900b36cf69f8e15591d2ba188871e8aa283",
+  "catala_b": "declaration scope SammelpostenZufuehrung:\n  input anschaffungskosten_netto content money\n  output zufuehrung content money\n\nscope SammelpostenZufuehrung:\n  definition zufuehrung equals\n    if anschaffungskosten_netto > $250.00 and anschaffungskosten_netto <= $1,000.00\n    then anschaffungskosten_netto\n    else $0.00",
+  "catala_b_sha256": "086907a2731e32118856f2712026fc8c83ad358973d9331ed8054a5b8699d97f",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'zufuehrung'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Der Sammelposten wird nur bei Überschreiten von 250 Euro gebildet, nicht bei Gleichheit.",
+      "Der Sammelposten wird bei 1.000 Euro inklusive gebildet, nicht nur unter 1.000 Euro."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 9,
+        "annahmen": 6,
+        "norm_teile": 2
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Ausgabe ist 0 bei Nicht-Erfüllung der Bedingung, Norm sieht keine solche Regelung vor."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "anschaffungskosten_netto"
+            ],
+            "text": "Norm bezieht sich auf Brutto-Kosten vermindert um Vorsteuer, Formalisierung nutzt Netto-Kosten direkt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Ergebnis ist 0 statt undefiniert bei Nicht-Zuführung."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "anschaffungskosten_netto"
+            ],
+            "text": "Vorsteuerabzug und Ersatzwerte (§ 9b Abs. 1, Abs. 1 Nr. 5-6) fehlen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Ausgabe ist 0 statt Leerwert bei Nicht-Zuführung."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "anschaffungskosten_netto"
+            ],
+            "text": "Vorsteuerabzug (§ 9b Abs. 1) fehlt in Bedingung."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der Sammelposten wird nur bei Überschreiten von 250 Euro gebildet, nicht bei Gleichheit."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der Sammelposten wird bei 1.000 Euro inklusive gebildet, nicht nur unter 1.000 Euro."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "anschaffungskosten_netto"
+            ],
+            "text": "Vorsteuerbetrag wird nicht von den Anschaffungskosten abgezogen."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_netto",
+              "einheit"
+            ],
+            "text": "Annahme, dass anschaffungskosten_netto bereits Netto-Werte ohne Vorsteuer sind."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_netto",
+              "interpretation"
+            ],
+            "text": "Annahme, dass der Wert für das einzelne Wirtschaftsgut direkt anschaffungskosten_netto entspricht."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_netto",
+              "einheit"
+            ],
+            "text": "Nettobetrag wird als bereits vorsteuerbereinigt angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_netto",
+              "interpretation"
+            ],
+            "text": "Anschaffungskosten gelten als Einzelwirtschaftsgut-Kosten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_netto",
+              "interpretation"
+            ],
+            "text": "Wert nach Absatz 1 Nr. 5-6 wird als äquivalent zu anschaffungskosten_netto behandelt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_netto",
+              "interpretation"
+            ],
+            "text": "Anschaffungskosten beziehen sich auf ein einzelnes Wirtschaftsgut."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "oder der nach Absatz 1 Nummer 5 bis 6 an deren Stelle tretende Wert",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 6 abs. 2a s. 1 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Ausgabe ist 0 bei Nicht-Erfüllung der Bedingung, Norm sieht keine solche Regelung vor.",
+            "eingeschmolzen": "Ausgabe ist 0 statt Leerwert bei Nicht-Erfüllung der Bedingung.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Vorsteuerabzug (§ 9b Abs. 1) fehlt in Bedingung.",
+            "eingeschmolzen": "Vorsteuerabzug (§ 9b Abs. 1) fehlt in der Bedingung.",
+            "key": [
+              "betrifft",
+              "anschaffungskosten_netto"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Annahme, dass der Wert für das einzelne Wirtschaftsgut direkt anschaffungskosten_netto entspricht.",
+            "eingeschmolzen": "Wert nach Abs. 1 Nr. 5-6 wird als anschaffungskosten_netto gelesen.",
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_netto",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Annahme, dass anschaffungskosten_netto bereits Netto-Werte ohne Vorsteuer sind.",
+            "eingeschmolzen": "Anschaffungskosten werden als netto (ohne Vorsteuer) angenommen.",
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_netto",
+              "einheit"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        6,
+        4,
+        2,
+        1,
+        4
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "61c48203c07e",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "netto_ist_9b_bereinigt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vermindert um einen darin enthaltenen Vorsteuerbetrag (§ 9b Absatz 1)",
+        "referenz": "§ 6 Abs. 2a S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "oder der nach Absatz 1 Nummer 5 bis 6 an deren Stelle tretende Wert",
+        "referenz": "§ 6 Abs. 2a S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Annahme, dass anschaffungskosten_netto bereits Netto-Werte ohne Vorsteuer sind.",
+        "bedingung_id": "netto_ist_9b_bereinigt",
+        "betrifft": "anschaffungskosten_netto",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Annahme, dass der Wert für das einzelne Wirtschaftsgut direkt anschaffungskosten_netto entspricht.",
+        "bedingung_id": "netto_ist_9b_bereinigt",
+        "betrifft": "anschaffungskosten_netto",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Nettobetrag wird als bereits vorsteuerbereinigt angenommen.",
+        "bedingung_id": "netto_ist_9b_bereinigt",
+        "betrifft": "anschaffungskosten_netto",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Anschaffungskosten gelten als Einzelwirtschaftsgut-Kosten.",
+        "bedingung_id": null,
+        "betrifft": "anschaffungskosten_netto",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Wert nach Absatz 1 Nr. 5-6 wird als äquivalent zu anschaffungskosten_netto behandelt.",
+        "bedingung_id": null,
+        "betrifft": "anschaffungskosten_netto",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Anschaffungskosten beziehen sich auf ein einzelnes Wirtschaftsgut.",
+        "bedingung_id": null,
+        "betrifft": "anschaffungskosten_netto",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-14T16:33:06+00:00"
+  },
+  "module_name": "SammelpostenZufuehrung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

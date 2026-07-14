@@ -1,0 +1,109 @@
+# § 11 EStG — Zufluss/Abfluss-Zuordnung (Zurechnungsjahr)
+
+> Module Zuflussabfluss
+
+Charge 15 (EÜR-Kern, 2026-07-14). Handgeschriebene Regel (wie `Solzg`, `P35cJahresdeckel`):
+das Zurechnungsjahr einer Zahlung ist eine Jahres-Zuordnung (`integer`), keine
+money-Rechnung — sie passt nicht durch die money-hardcodierte Doppelformalisierungs-
+Pipeline (run.py output_type, clerk-Harness `output v content money`), gehoert als
+Handregel + eigene clerk-Seeds.
+
+Zitatanker § 11 Abs. 1 S. 2 (`gelten als in diesem Kalenderjahr bezogen`,
+`sources/gesetze-im-internet/estg_p11_2026-07-14.txt`): "Einnahmen sind innerhalb des
+Kalenderjahres bezogen, in dem sie dem Steuerpflichtigen zugeflossen sind." (S. 1) —
+"Regelmäßig wiederkehrende Einnahmen, die … kurze Zeit vor Beginn oder … nach
+Beendigung des Kalenderjahres, zu dem sie wirtschaftlich gehören, zugeflossen sind,
+gelten als in diesem Kalenderjahr bezogen." (S. 2). Abs. 2 S. 1/2 spiegeln das fuer
+Ausgaben (Abfluss).
+
+**"kurze Zeit" ist NICHT im Norm-Wortlaut** — die 10-Tage-Regel ist H 11 EStH /
+Rechtsprechung. Deshalb ist `innerhalb_kurze_zeit_fenster` ein **bool-Input
+(Geltungsbedingung)**, nicht aus Tagen gerechnet: der Wortlaut (die Wenn-Struktur +
+gilt-als-Fiktion) wird formalisiert, die Schwellen-Ermittlung bleibt ausserhalb.
+
+Nicht hier: Abs. 2 S. 3 (Vorauszahlung Nutzungsueberlassung > 5 J → gleichmaessige
+Verteilung) — eigene Mehrjahres-Mechanik, benannter Nachtrag.
+
+```catala
+declaration scope ZuflussAbflussJahr:
+  input zahlungsjahr content integer
+  input wirtschaftliches_jahr content integer
+  input regelmaessig_wiederkehrend content boolean
+  # H 11 (nicht Norm-Wortlaut): "kurze Zeit" um den Jahreswechsel. bool-Input, nicht gerechnet.
+  input innerhalb_kurze_zeit_fenster content boolean
+  output zurechnungsjahr content integer
+
+scope ZuflussAbflussJahr:
+  definition zurechnungsjahr equals
+    # Abs. 1 S. 2 / Abs. 2 S. 2: regelmaessig wiederkehrend UND kurze Zeit -> wirtschaftliches
+    # Jahr (gilt-als-Fiktion). Sonst Abs. 1 S. 1 / Abs. 2 S. 1: Jahr des Zu-/Abflusses.
+    if regelmaessig_wiederkehrend and innerhalb_kurze_zeit_fenster
+    then wirtschaftliches_jahr
+    else zahlungsjahr
+```
+
+## Seeds (Instructor-Auflage: 4 Logik-Seeds als clerk-Tests)
+
+```catala
+#[test]
+declaration scope TestWiederkehrendImFenster:
+  # Beide Bedingungen erfuellt -> wirtschaftliches Jahr (gilt-als-Fiktion greift).
+  internal r content ZuflussAbflussJahr
+  output j content integer
+scope TestWiederkehrendImFenster:
+  definition r equals output of ZuflussAbflussJahr with {
+    -- zahlungsjahr: 2025
+    -- wirtschaftliches_jahr: 2024
+    -- regelmaessig_wiederkehrend: true
+    -- innerhalb_kurze_zeit_fenster: true }
+  definition j equals r.zurechnungsjahr
+  assertion j = 2024
+```
+
+```catala
+#[test]
+declaration scope TestWiederkehrendAusserhalbFenster:
+  # Wiederkehrend, aber nicht "kurze Zeit" -> Zahlungsjahr (Fiktion greift nicht).
+  internal r content ZuflussAbflussJahr
+  output j content integer
+scope TestWiederkehrendAusserhalbFenster:
+  definition r equals output of ZuflussAbflussJahr with {
+    -- zahlungsjahr: 2025
+    -- wirtschaftliches_jahr: 2024
+    -- regelmaessig_wiederkehrend: true
+    -- innerhalb_kurze_zeit_fenster: false }
+  definition j equals r.zurechnungsjahr
+  assertion j = 2025
+```
+
+```catala
+#[test]
+declaration scope TestNichtWiederkehrendImFenster:
+  # Nicht wiederkehrend (auch wenn im Fenster) -> Zahlungsjahr. Beides noetig.
+  internal r content ZuflussAbflussJahr
+  output j content integer
+scope TestNichtWiederkehrendImFenster:
+  definition r equals output of ZuflussAbflussJahr with {
+    -- zahlungsjahr: 2025
+    -- wirtschaftliches_jahr: 2024
+    -- regelmaessig_wiederkehrend: false
+    -- innerhalb_kurze_zeit_fenster: true }
+  definition j equals r.zurechnungsjahr
+  assertion j = 2025
+```
+
+```catala
+#[test]
+declaration scope TestNormalfall:
+  # Weder wiederkehrend noch im Fenster -> Zahlungsjahr = wirtschaftliches Jahr.
+  internal r content ZuflussAbflussJahr
+  output j content integer
+scope TestNormalfall:
+  definition r equals output of ZuflussAbflussJahr with {
+    -- zahlungsjahr: 2026
+    -- wirtschaftliches_jahr: 2026
+    -- regelmaessig_wiederkehrend: false
+    -- innerhalb_kurze_zeit_fenster: false }
+  definition j equals r.zurechnungsjahr
+  assertion j = 2026
+```
