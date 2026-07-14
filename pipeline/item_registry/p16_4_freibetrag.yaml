@@ -1,0 +1,47 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p16_4_freibetrag
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - veraeusserungsgewinn
+  - einheit
+  formulierungen:
+  - Veräußerungsgewinn wird in Euro interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - veraeusserungsgewinn
+  - rundung
+  formulierungen:
+  - Keine Rundung der Beträge (45.000/136.000 Euro) vorgesehen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - veraeusserungsgewinn
+  - geltungsvoraussetzung
+  formulierungen:
+  - Antragstellung wird als erfüllt vorausgesetzt.
+  triage: bedingung_neu
+  bedingung: auf_antrag
+- art: norm_teil
+  anker:
+  - ref
+  - § 16 abs. 4 s. 1 estg
+  formulierungen:
+  - auf Antrag zur Einkommensteuer nur herangezogen, soweit er 45 000 Euro übersteigt
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: auf_antrag
+- art: norm_teil
+  anker:
+  - ref
+  - § 16 abs. 4 s. 3 estg
+  formulierungen:
+  - Er ermäßigt sich um den Betrag, um den der Veräußerungsgewinn 136 000 Euro übersteigt
+  triage: nicht_material

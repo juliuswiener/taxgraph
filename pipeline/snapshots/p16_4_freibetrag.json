@@ -1,0 +1,220 @@
+{
+  "bedingungen": [
+    "alter_55_oder_berufsunfaehig",
+    "freibetrag_einmal_im_leben",
+    "auf_antrag"
+  ],
+  "candidate_id": "p16_4_freibetrag",
+  "catala_a": "declaration scope BetriebsFreibetrag:\n  input veraeusserungsgewinn content money\n  internal roher_freibetrag content money\n  internal abschmelzung content money\n  output freibetrag content money\n\nscope BetriebsFreibetrag:\n  definition abschmelzung equals\n    if veraeusserungsgewinn > $136,000.00\n    then veraeusserungsgewinn - $136,000.00\n    else $0.00\n\n  definition roher_freibetrag equals\n    if $45,000.00 > abschmelzung\n    then $45,000.00 - abschmelzung\n    else $0.00\n\n  definition freibetrag equals\n    if veraeusserungsgewinn > $0.00\n    then roher_freibetrag\n    else $0.00",
+  "catala_a_sha256": "f86f23cc9d49fd73cfad72ff16613b606c6de4783ea28ff19b1489312953ed7e",
+  "catala_b": "declaration scope BetriebsFreibetrag:\n  input veraeusserungsgewinn content money\n  internal abschmelzung content money\n  output freibetrag content money\n\nscope BetriebsFreibetrag:\n  definition abschmelzung equals\n    if veraeusserungsgewinn > $136,000.00\n    then veraeusserungsgewinn - $136,000.00\n    else $0.00\n  definition freibetrag equals\n    if $45,000.00 > abschmelzung\n    then $45,000.00 - abschmelzung\n    else $0.00",
+  "catala_b_sha256": "84a66ea01ebbc93edc538f18207f6eb4442cb5d32772120af1fcdc23b0778e20",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'freibetrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 3,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "veraeusserungsgewinn",
+              "rundung"
+            ],
+            "text": "Keine Rundung der Beträge (45.000/136.000 Euro) vorgesehen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "veraeusserungsgewinn",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Antragstellung wird als erfüllt vorausgesetzt."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Freibetrag wird auf 0 gesetzt, wenn Veräußerungsgewinn ≤ 0, obwohl Norm dies nicht vorsieht.",
+            "eingeschmolzen": "Freibetrag wird auf 0 gesetzt wenn Veräußerungsgewinn ≤ 0, obwohl Norm dies nicht vorsieht.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Keine Rundung der Beträge (45.000/136.000 Euro) vorgesehen.",
+            "eingeschmolzen": "Keine Rundung der Beträge (45.000 und 136.000 Euro) vorgenommen.",
+            "key": [
+              "betrifft_kat",
+              "veraeusserungsgewinn",
+              "rundung"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        5,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "069f56696f5c",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "auf_antrag",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "auf Antrag zur Einkommensteuer nur herangezogen, soweit er 45 000 Euro übersteigt",
+        "referenz": "§ 16 Abs. 4 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Er ermäßigt sich um den Betrag, um den der Veräußerungsgewinn 136 000 Euro übersteigt",
+        "referenz": "§ 16 Abs. 4 S. 3 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Veräußerungsgewinn wird in Euro interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "veraeusserungsgewinn",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Keine Rundung der Beträge (45.000/136.000 Euro) vorgesehen.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "veraeusserungsgewinn",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Antragstellung wird als erfüllt vorausgesetzt.",
+        "bedingung_id": "auf_antrag",
+        "betrifft": "veraeusserungsgewinn",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-14T17:38:51+00:00"
+  },
+  "module_name": "BetriebsFreibetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

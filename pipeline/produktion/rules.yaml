@@ -4666,3 +4666,190 @@ regeln:
     deckt_ab: bis zu insgesamt 40 Prozent
     quelle: § 7g Abs. 5 EStG (WtChancenG)
     beschreibung: Satz 40% gilt fuer Anschaffung ab 2024 (WtChancenG); vor 2024 = 20% (params-Kohorte, Anschaffungsjahr-versioniert).
+
+# --- Charge 19 (EÜR-Abschluss, Zeilen 13-14): §35 GewSt-Anrechnung + §16 Freibetrag ---
+- rule_id: p35_1_gewst_anrechnung
+  norm: § 35 Abs. 1 EStG (GewSt-Anrechnung, 4x Messbetrag min Höchstbetrag min gezahlte GewSt)
+  hinweis: 'hoechstbetrag = geminderte_tarifliche_steuer * (gewerbliche_einkuenfte / summe_positive_einkuenfte) [S2-Formel]. anrechnung = min(gewerbesteuer_messbetrag * 4, hoechstbetrag, tatsaechlich_zu_zahlende_gewst) [drei Deckel: S1 Nr1 Vierfache, S2 Höchstbetrag, S5 gezahlte GewSt]. ANDOCKUNG (kein Selbst-Tarif): geminderte_tarifliche_steuer + Einkünfte-Summen aus §2-Integration; Messbetrag + gezahlte GewSt = Sachverhalt (GewStG Nicht-Gegenstand). Klasse-5: money * decimal-Anteil (gewerbliche/summe), Cent-Schnitt ZULETZT, Anteil NICHT vorrunden. *4 = money*int (exakt).'
+  quellen:
+  - typ: gesetz
+    label: § 35 Abs. 1 S. 1 Nr. 1 EStG (Vierfache des Messbetrags)
+    datei: sources/gesetze-im-internet/estg_p35_2026-07-14.txt
+    zitatanker: das Vierfache des jeweils
+    auszug: um das Vierfache des jeweils für den dem Veranlagungszeitraum entsprechenden Erhebungszeitraum nach § 14 des Gewerbesteuergesetzes
+  - typ: gesetz
+    label: § 35 Abs. 1 S. 2 EStG (Ermäßigungshöchstbetrag-Formel)
+    datei: sources/gesetze-im-internet/estg_p35_2026-07-14.txt
+    zitatanker: Summe der positiven gewerblichen Einkünfte
+    auszug: Summe der positiven gewerblichen Einkünfte • geminderte tarifliche Steuer. Summe aller positiven Einkünfte
+  - typ: gesetz
+    label: § 35 Abs. 1 S. 5 EStG (Deckel auf gezahlte GewSt)
+    datei: sources/gesetze-im-internet/estg_p35_2026-07-14.txt
+    zitatanker: tatsächlich zu zahlende Gewerbesteuer
+    auszug: Der Abzug des Steuerermäßigungsbetrags ist auf die tatsächlich zu zahlende Gewerbesteuer beschränkt
+  signature:
+    scope: GewstAnrechnung
+    inputs:
+      gewerbesteuer_messbetrag: money
+      geminderte_tarifliche_steuer: money
+      gewerbliche_einkuenfte: money
+      summe_positive_einkuenfte: money
+      tatsaechlich_zu_zahlende_gewst: money
+    output: anrechnung
+  raster:
+  - gewerbesteuer_messbetrag: 1000
+    geminderte_tarifliche_steuer: 20000
+    gewerbliche_einkuenfte: 40000
+    summe_positive_einkuenfte: 40000
+    tatsaechlich_zu_zahlende_gewst: 4200
+  - gewerbesteuer_messbetrag: 1000
+    geminderte_tarifliche_steuer: 3000
+    gewerbliche_einkuenfte: 40000
+    summe_positive_einkuenfte: 40000
+    tatsaechlich_zu_zahlende_gewst: 4200
+  - gewerbesteuer_messbetrag: 1000
+    geminderte_tarifliche_steuer: 20000
+    gewerbliche_einkuenfte: 40000
+    summe_positive_einkuenfte: 40000
+    tatsaechlich_zu_zahlende_gewst: 3500
+  - gewerbesteuer_messbetrag: 1000
+    geminderte_tarifliche_steuer: 20000
+    gewerbliche_einkuenfte: 20000
+    summe_positive_einkuenfte: 40000
+    tatsaechlich_zu_zahlende_gewst: 4200
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p35_2026-07-14.txt
+    zitatanker: das Vierfache des jeweils
+    herkunft: synthetisch
+    rechenweg: '4x-bindend: hoechst=20000*(40000/40000)=20000; min(1000*4=4000, 20000, 4200)=4000,00.'
+    inputs:
+      gewerbesteuer_messbetrag: 1000
+      geminderte_tarifliche_steuer: 20000
+      gewerbliche_einkuenfte: 40000
+      summe_positive_einkuenfte: 40000
+      tatsaechlich_zu_zahlende_gewst: 4200
+    expected: 4000.0
+  - quelle: sources/gesetze-im-internet/estg_p35_2026-07-14.txt
+    zitatanker: Summe der positiven gewerblichen Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'Höchstbetrag-bindend: hoechst=3000*1=3000; min(4000, 3000, 4200)=3000,00.'
+    inputs:
+      gewerbesteuer_messbetrag: 1000
+      geminderte_tarifliche_steuer: 3000
+      gewerbliche_einkuenfte: 40000
+      summe_positive_einkuenfte: 40000
+      tatsaechlich_zu_zahlende_gewst: 4200
+    expected: 3000.0
+  - quelle: sources/gesetze-im-internet/estg_p35_2026-07-14.txt
+    zitatanker: tatsächlich zu zahlende Gewerbesteuer
+    herkunft: synthetisch
+    rechenweg: 'gezahlte-GewSt-bindend: min(4000, 20000, 3500)=3500,00.'
+    inputs:
+      gewerbesteuer_messbetrag: 1000
+      geminderte_tarifliche_steuer: 20000
+      gewerbliche_einkuenfte: 40000
+      summe_positive_einkuenfte: 40000
+      tatsaechlich_zu_zahlende_gewst: 3500
+    expected: 3500.0
+  - quelle: sources/gesetze-im-internet/estg_p35_2026-07-14.txt
+    zitatanker: Summe der positiven gewerblichen Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'Anteil 50%: hoechst=20000*(20000/40000)=10000; min(4000, 10000, 4200)=4000,00.'
+    inputs:
+      gewerbesteuer_messbetrag: 1000
+      geminderte_tarifliche_steuer: 20000
+      gewerbliche_einkuenfte: 20000
+      summe_positive_einkuenfte: 40000
+      tatsaechlich_zu_zahlende_gewst: 4200
+    expected: 4000.0
+  geltungsbedingungen:
+  - bedingung: gewerbliche_einkuenfte_p15
+    deckt_ab: bei Einkünften aus gewerblichen Unternehmen im Sinne des § 15
+    quelle: § 35 Abs. 1 S. 1 Nr. 1 EStG
+    beschreibung: Nur gewerbliche Einkünfte (§15) sind anrechnungsfähig.
+  - bedingung: andockung_tarif_summen_p2
+    deckt_ab: geminderte tarifliche Steuer
+    quelle: § 35 Abs. 1 S. 2 EStG
+    beschreibung: geminderte_tarifliche_steuer + Einkünfte-Summen = §2-Integrations-Inputs (Andockung, kein Selbst-Tarif).
+  - bedingung: messbetrag_gewst_sachverhalt
+    deckt_ab: Gewerbesteuermessbetrags
+    quelle: § 35 Abs. 1 S. 1 EStG
+    beschreibung: Messbetrag + tatsächlich zu zahlende GewSt = Sachverhalts-Inputs (GewStG = Nicht-Gegenstand).
+  - bedingung: summe_positive_einkuenfte_positiv
+    deckt_ab: Summe aller positiven Einkünfte
+    quelle: § 35 Abs. 1 S. 2 EStG
+    beschreibung: 'Division definiert: Summe aller positiven Einkünfte > 0.'
+- rule_id: p16_4_freibetrag
+  norm: § 16 Abs. 4 EStG (Betriebsveräußerungs-Freibetrag 45k, Abschmelzung 136k)
+  hinweis: 'freibetrag = max(0, 45000 - max(0, veraeusserungsgewinn - 136000)). 45000 = Freibetrag (S1), 136000 = Abschmelz-Schwelle (S3 ''ermäßigt sich um den Betrag, um den ... 136 000 Euro übersteigt'') - beide NORM-KONSTANTEN in der Regel. §24a-Abschmelz-Muster: voll ab veraeusserungsgewinn > 181000 (136k+45k). Der steuerpflichtige Rest (gewinn - freibetrag) geht in die §34-Verzahnung (Integration). Cent-genau.'
+  quellen:
+  - typ: gesetz
+    label: § 16 Abs. 4 S. 1 EStG (Freibetrag 45 000 Euro)
+    datei: sources/gesetze-im-internet/estg_p16_2026-07-14.txt
+    zitatanker: 45 000 Euro übersteigt
+    auszug: so wird der Veräußerungsgewinn auf Antrag zur Einkommensteuer nur herangezogen, soweit er 45 000 Euro übersteigt
+  - typ: gesetz
+    label: § 16 Abs. 4 S. 3 EStG (Abschmelzung ab 136 000 Euro)
+    datei: sources/gesetze-im-internet/estg_p16_2026-07-14.txt
+    zitatanker: 136 000 Euro übersteigt
+    auszug: Er ermäßigt sich um den Betrag, um den der Veräußerungsgewinn 136 000 Euro übersteigt
+  signature:
+    scope: BetriebsFreibetrag
+    inputs:
+      veraeusserungsgewinn: money
+    output: freibetrag
+  raster:
+  - veraeusserungsgewinn: 100000
+  - veraeusserungsgewinn: 136000
+  - veraeusserungsgewinn: 150000
+  - veraeusserungsgewinn: 181000
+  - veraeusserungsgewinn: 200000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p16_2026-07-14.txt
+    zitatanker: 45 000 Euro übersteigt
+    herkunft: synthetisch
+    rechenweg: 'Unter 136k: max(0, 45000-max(0,100000-136000)=45000-0)=45.000,00 (voller Freibetrag).'
+    inputs:
+      veraeusserungsgewinn: 100000
+    expected: 45000.0
+  - quelle: sources/gesetze-im-internet/estg_p16_2026-07-14.txt
+    zitatanker: 136 000 Euro übersteigt
+    herkunft: synthetisch
+    rechenweg: 'Boundary 136k: max(0,45000-max(0,0))=45.000,00.'
+    inputs:
+      veraeusserungsgewinn: 136000
+    expected: 45000.0
+  - quelle: sources/gesetze-im-internet/estg_p16_2026-07-14.txt
+    zitatanker: 136 000 Euro übersteigt
+    herkunft: synthetisch
+    rechenweg: 'Abschmelzung: 45000-(150000-136000)=45000-14000=31.000,00.'
+    inputs:
+      veraeusserungsgewinn: 150000
+    expected: 31000.0
+  - quelle: sources/gesetze-im-internet/estg_p16_2026-07-14.txt
+    zitatanker: 136 000 Euro übersteigt
+    herkunft: synthetisch
+    rechenweg: 'Voll abgeschmolzen: 45000-(181000-136000)=45000-45000=0,00.'
+    inputs:
+      veraeusserungsgewinn: 181000
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p16_2026-07-14.txt
+    zitatanker: 136 000 Euro übersteigt
+    herkunft: synthetisch
+    rechenweg: 'Darueber: max(0, 45000-64000)=0,00.'
+    inputs:
+      veraeusserungsgewinn: 200000
+    expected: 0.0
+  geltungsbedingungen:
+  - bedingung: alter_55_oder_berufsunfaehig
+    deckt_ab: das 55. Lebensjahr vollendet
+    quelle: § 16 Abs. 4 S. 1 EStG
+    beschreibung: Steuerpflichtiger hat 55. LJ vollendet ODER ist dauernd berufsunfähig (Voraussetzung).
+  - bedingung: freibetrag_einmal_im_leben
+    deckt_ab: nur einmal zu gewähren
+    quelle: § 16 Abs. 4 S. 2 EStG
+    beschreibung: Einmaligkeit (S2 'nur einmal zu gewähren') = bool-Voraussetzung; State-Tracking = Nicht-Gegenstand (Berufseinsteiger-Präzedenz).
+  - bedingung: auf_antrag
+    deckt_ab: auf Antrag
+    quelle: § 16 Abs. 4 S. 1 EStG
+    beschreibung: Freibetrag nur auf Antrag.

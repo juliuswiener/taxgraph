@@ -1,0 +1,50 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p35_1_gewst_anrechnung
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewerbesteuer_messbetrag
+  - interpretation
+  formulierungen:
+  - Der Messbetrag wird als direkt für den Veranlagungszeitraum gültig angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewerbliche_einkuenfte
+  - interpretation
+  formulierungen:
+  - Gewerbliche Einkünfte werden als Summe positiver Werte interpretiert. | Die gewerblichen
+    Einkünfte werden als Summe der positiven gewerblichen Einkünfte gelesen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - summe_positive_einkuenfte
+  - interpretation
+  formulierungen:
+  - Summe aller positiven Einkünfte wird als Divisor verwendet.
+  triage: bedingung_neu
+  bedingung: summe_positive_einkuenfte_positiv
+- art: norm_teil
+  anker:
+  - ref
+  - § 35 abs. 1 s. 1 nr. 1 estg
+  formulierungen:
+  - Vierfache des jeweils für den dem Veranlagungszeitraum entsprechenden Erhebungszeitraum
+    nach § 14 des Gewerbesteuergesetzes
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: messbetrag_gewst_sachverhalt
+- art: norm_teil
+  anker:
+  - ref
+  - § 35 abs. 1 s. 5 estg
+  formulierungen:
+  - Der Abzug des Steuerermäßigungsbetrags ist auf die tatsächlich zu zahlende Gewerbesteuer
+    beschränkt
+  triage: nicht_material

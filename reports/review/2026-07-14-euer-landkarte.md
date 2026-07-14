@@ -19,7 +19,7 @@ plus die ESt-seitige GewSt-Anrechnung (§ 35).
 
 ## Landkarte (14 Zeilen)
 
-**Stand 2026-07-14: Chargen 15-18 (Zeilen 1–12) ✅ verified_bedingt** — p4_3_gewinn, p6_2_gwg_sofortabzug, p6_2a_sammelposten_zufuehrung/_aufloesung (Pipeline, $0,1797) + p11_zufluss_abfluss (Handregel). 4/14 Zeilen.
+**Stand 2026-07-14: Chargen 15-19 (Zeilen 1–14) — EÜR-PROGRAMM KOMPLETT 14/14 ✅ verified_bedingt** — p4_3_gewinn, p6_2_gwg_sofortabzug, p6_2a_sammelposten_zufuehrung/_aufloesung (Pipeline, $0,1797) + p11_zufluss_abfluss (Handregel). 4/14 Zeilen.
 
 | # | Bereich | Norm | Freeze | Charge (Plan) |
 |---|---|---|---|---|
@@ -35,8 +35,8 @@ plus die ESt-seitige GewSt-Anrechnung (§ 35).
 | 10 | Investitionsabzugsbetrag (50 %, Deckel) + Sonder-AfA | § 7g | estg_p7g_2026-07-14 ✓ | 18 ✅ |
 | 11 | Einkunftsart Gewerbe (Anlage G) | § 15 Abs. 1/2 | estg_p15_2026-07-14 ✓ | 18 ✅ (Geltungsbed.) |
 | 12 | Einkunftsart selbständige Arbeit (Anlage S) | § 18 | estg_p18_2026-07-14 ✓ | 18 ✅ (Geltungsbed.) |
-| 13 | GewSt-Anrechnung (Vierfache des Messbetrags, Deckel) | § 35 | estg_p35_2026-07-14 ✓ | 19 |
-| 14 | Betriebsveräußerung/-aufgabe (Freibetrag, Zusammenspiel § 34) | § 16 | Freeze nachziehen | 19 |
+| 13 | GewSt-Anrechnung (Vierfache des Messbetrags, Deckel) | § 35 | estg_p35_2026-07-14 ✓ | 19 ✅ |
+| 14 | Betriebsveräußerung/-aufgabe (Freibetrag, Zusammenspiel § 34) | § 16 | estg_p16_2026-07-14 ✓ | 19 ✅ |
 
 **Benannte Nachträge ab Start** (nicht stillschweigend): § 4 Abs. 4a Schuldzinsen/Überentnahmen
 (komplex, eigener Schnitt); § 11 "kurze Zeit" = 10-Tage-Regel ist **H 11 EStH/Rechtsprechung,

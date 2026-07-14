@@ -1,0 +1,236 @@
+{
+  "bedingungen": [
+    "gewerbliche_einkuenfte_p15",
+    "andockung_tarif_summen_p2",
+    "messbetrag_gewst_sachverhalt",
+    "summe_positive_einkuenfte_positiv"
+  ],
+  "candidate_id": "p35_1_gewst_anrechnung",
+  "catala_a": "declaration scope GewstAnrechnung:\n  input gewerbesteuer_messbetrag content money\n  input geminderte_tarifliche_steuer content money\n  input gewerbliche_einkuenfte content money\n  input summe_positive_einkuenfte content money\n  input tatsaechlich_zu_zahlende_gewst content money\n  internal hoechstbetrag content money\n  internal vierfacher_messbetrag content money\n  output anrechnung content money\n\nscope GewstAnrechnung:\n  definition vierfacher_messbetrag equals\n    gewerbesteuer_messbetrag * 4.0\n\n  definition hoechstbetrag equals\n    geminderte_tarifliche_steuer *\n      (gewerbliche_einkuenfte / summe_positive_einkuenfte)\n\n  definition anrechnung equals\n    let nach_s1 equals\n      if vierfacher_messbetrag < hoechstbetrag\n      then vierfacher_messbetrag\n      else hoechstbetrag\n    in\n    if nach_s1 < tatsaechlich_zu_zahlende_gewst\n    then nach_s1\n    else tatsaechlich_zu_zahlende_gewst",
+  "catala_a_sha256": "99af5be3282494e4fa6f337c7d0d1a712213993a274eed03a4810a03e412e2d0",
+  "catala_b": "declaration scope GewstAnrechnung:\n  input gewerbesteuer_messbetrag content money\n  input geminderte_tarifliche_steuer content money\n  input gewerbliche_einkuenfte content money\n  input summe_positive_einkuenfte content money\n  input tatsaechlich_zu_zahlende_gewst content money\n  internal vierfacher_messbetrag content money\n  internal hoechstbetrag content money\n  output anrechnung content money\n\nscope GewstAnrechnung:\n  definition vierfacher_messbetrag equals gewerbesteuer_messbetrag * (decimal of 4)\n  definition hoechstbetrag equals\n    if summe_positive_einkuenfte > $0.00\n    then geminderte_tarifliche_steuer * (gewerbliche_einkuenfte / summe_positive_einkuenfte)\n    else $0.00\n  definition anrechnung equals\n    let roh equals\n      if vierfacher_messbetrag <= hoechstbetrag and vierfacher_messbetrag <= tatsaechlich_zu_zahlende_gewst\n      then vierfacher_messbetrag\n      else (if hoechstbetrag <= tatsaechlich_zu_zahlende_gewst then hoechstbetrag else tatsaechlich_zu_zahlende_gewst)\n    in (Decimal.truncate of (roh / $1.00)) * $1.00",
+  "catala_b_sha256": "46d392c55159887d3103e55c17df94c9536e2c99d517a5291488a49253e78620",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'anrechnung'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 4,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "gewerbliche_einkuenfte",
+              "interpretation"
+            ],
+            "text": "Gewerbliche Einkünfte werden als Summe positiver Werte interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "summe_positive_einkuenfte",
+              "interpretation"
+            ],
+            "text": "Summe aller positiven Einkünfte wird als Divisor verwendet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "gewerbliche_einkuenfte",
+              "interpretation"
+            ],
+            "text": "Die gewerblichen Einkünfte werden als Summe der positiven gewerblichen Einkünfte gelesen."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Der Messbetrag wird als direkt für den Veranlagungszeitraum gültig angenommen.",
+            "eingeschmolzen": "Der Messbetrag wird als direkt für den Erhebungszeitraum gültig angenommen.",
+            "key": [
+              "betrifft_kat",
+              "gewerbesteuer_messbetrag",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Gewerbliche Einkünfte werden als Summe positiver Werte interpretiert.",
+            "eingeschmolzen": "Gewerbliche Einkünfte werden als positive Werte interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "gewerbliche_einkuenfte",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        5,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "ad7781d24a3f",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "messbetrag_gewst_sachverhalt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Vierfache des jeweils für den dem Veranlagungszeitraum entsprechenden Erhebungszeitraum nach § 14 des Gewerbesteuergesetzes",
+        "referenz": "§ 35 Abs. 1 S. 1 Nr. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Der Abzug des Steuerermäßigungsbetrags ist auf die tatsächlich zu zahlende Gewerbesteuer beschränkt",
+        "referenz": "§ 35 Abs. 1 S. 5 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Der Messbetrag wird als direkt für den Veranlagungszeitraum gültig angenommen.",
+        "bedingung_id": "konv:vz_bezug_der_regel",
+        "betrifft": "gewerbesteuer_messbetrag",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Gewerbliche Einkünfte werden als Summe positiver Werte interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "gewerbliche_einkuenfte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Summe aller positiven Einkünfte wird als Divisor verwendet.",
+        "bedingung_id": "summe_positive_einkuenfte_positiv",
+        "betrifft": "summe_positive_einkuenfte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die gewerblichen Einkünfte werden als Summe der positiven gewerblichen Einkünfte gelesen.",
+        "bedingung_id": null,
+        "betrifft": "gewerbliche_einkuenfte",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-14T17:38:24+00:00"
+  },
+  "module_name": "GewstAnrechnung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}
