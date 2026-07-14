@@ -54,3 +54,16 @@ Wegzugsbesteuerung § 6 AStG = anderes Gesetz, Nicht-Gegenstand.
    (oder vorgezogen, falls EÜR blockiert — Freezes liegen schon).
 2. Phase 3b: Nicht-Gegenstand-Disposition wie empfohlen in die Landkarte, Interface
    dokumentiert. Kein Abkommens-Text wird formalisiert ohne separates Julius-Wort.
+
+## Phase 3a ABGESCHLOSSEN (Charge 20, 2026-07-14)
+
+✅ **p34c_1_anrechnung_hoechstbetrag** (6 Bed.) + **p34c_2_abzug_statt_anrechnung** (3 Bed.)
+verified_bedingt. Stufe B $0,1694. anrechnung = min(gezahlte ausl. Steuer, deutsche_est ×
+(ausl.Eink/zvE)); Deckel-Grenzfall clerk-bewiesen (10000 > 8000 → 8000). §34d-Katalog als
+Geltungsbedingung an p34c_1. 2 abweichung (algebraische Identität est×(ausl/zvE) =
+Durchschnittssatz-Anwendung) → nicht_echt (Instructor, 3. Beleg äquivalente-Umformung nach
+C13/C16). Per-country + KapESt-§32d-Ausnahme deklariert. Phase 3b (Abkommens-Texte) bleibt
+begründeter Nicht-Gegenstand mit Interface (dba_methode/dba_staat).
+
+**Damit ist das gesamte "alles machen"-Programm (Phase 1 AN-nah 40/40 + Phase 2 EÜR 14/14 +
+Phase 3a DBA-Anrechnung) durch.** commit-Kette bis f564c32 (EÜR) + C20.

@@ -1,0 +1,400 @@
+{
+  "bedingungen": [
+    "per_country_ein_staat",
+    "keine_kapitalertraege_p32d",
+    "andockung_est_zve_p2",
+    "steuer_festgesetzt_gezahlt_gekuerzt",
+    "auslaendische_einkuenfte_p34d_katalog",
+    "zve_positiv"
+  ],
+  "candidate_id": "p34c_1_anrechnung_hoechstbetrag",
+  "catala_a": "declaration scope AnrechnungHoechstbetrag:\n  input gezahlte_auslaendische_steuer content money\n  input deutsche_est_inkl_ausl content money\n  input zu_versteuerndes_einkommen content money\n  input auslaendische_einkuenfte_staat content money\n  internal durchschnittssatz content decimal\n  internal hoechstbetrag content money\n  output anrechnung content money\n\nscope AnrechnungHoechstbetrag:\n  definition durchschnittssatz equals\n    auslaendische_einkuenfte_staat / zu_versteuerndes_einkommen\n\n  definition hoechstbetrag equals\n    deutsche_est_inkl_ausl * durchschnittssatz\n\n  label basis\n  definition anrechnung equals\n    if gezahlte_auslaendische_steuer <= hoechstbetrag\n    then gezahlte_auslaendische_steuer\n    else hoechstbetrag\n\n  exception basis\n  definition anrechnung under condition\n    auslaendische_einkuenfte_staat <= $0.00 or\n    zu_versteuerndes_einkommen <= $0.00\n  consequence equals $0.00",
+  "catala_a_sha256": "1e8e7ea223f2f7bc838a1230d5e8b673c3f98b043214172852a4ffdedc7b59ed",
+  "catala_b": "declaration scope AnrechnungHoechstbetrag:\n  input gezahlte_auslaendische_steuer content money\n  input deutsche_est_inkl_ausl content money\n  input zu_versteuerndes_einkommen content money\n  input auslaendische_einkuenfte_staat content money\n  internal hoechstbetrag content money\n  output anrechnung content money\n\nscope AnrechnungHoechstbetrag:\n  definition hoechstbetrag equals\n    deutsche_est_inkl_ausl * (auslaendische_einkuenfte_staat / zu_versteuerndes_einkommen)\n  definition anrechnung equals\n    if gezahlte_auslaendische_steuer < hoechstbetrag then gezahlte_auslaendische_steuer\n    else hoechstbetrag",
+  "catala_b_sha256": "5bf210c7d49e678198799e3d71ef7f7e9ef84018aa58f889d1f59b5767bd17fb",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'anrechnung'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Durchschnittssatz wird als Quotient aus ausländischen Einkünften und zu versteuerndem Einkommen berechnet, nicht als Steuersatz.",
+      "Höchstbetrag wird als Produkt aus deutscher ESt inkl. ausländischer Einkünfte und Durchschnittssatz berechnet, nicht als Anwendung des Steuersatzes."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 3,
+        "annahmen": 8,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Keine Ausnahme für Kapitalerträge (§ 32d Abs. 1 und 3-6) berücksichtigt."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "auslaendische_einkuenfte_staat",
+              "interpretation"
+            ],
+            "text": "Ausländische Einkünfte werden als Bruttobetrag (nicht Netto nach Abzug von Steuern) interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "zu_versteuerndes_einkommen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Zu versteuerndes Einkommen wird als positiv angenommen (Ausnahme bei <= 0)."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "auslaendische_einkuenfte_staat",
+              "interpretation"
+            ],
+            "text": "Ausländische Einkünfte werden als Betrag (nicht als Steuersatzbasis) interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "zu_versteuerndes_einkommen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Zu versteuerndes Einkommen > 0 wird für die Durchschnittssatzberechnung vorausgesetzt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "auslaendische_einkuenfte_staat",
+              "interpretation"
+            ],
+            "text": "Ausländische Einkünfte werden als Bruttowert (ohne Kürzung um Ermäßigungsansprüche) interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "gezahlte_auslaendische_steuer",
+              "interpretation"
+            ],
+            "text": "Gezahlte ausländische Steuer wird als Bruttowert (ohne Abzug von Ermäßigungsansprüchen) angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "auslaendische_einkuenfte_staat",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Ausländische Einkünfte > 0 und zu versteuerndes Einkommen > 0 wird als Regelfall vorausgesetzt."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 34c abs. 1 s. 1 estg"
+            ],
+            "text": "gezahlte und um einen entstandenen Ermäßigungsanspruch gekürzte ausländische Steuer"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Deutsche ESt inkl. ausländischer Einkünfte wird als Gesamtsteuerbetrag vor Anrechnung verstanden.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"deutsche_est_inkl_ausl\", \"interpretation\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Ausländische Einkünfte werden als Betrag (nicht als Steuersatzbasis) interpretiert.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"auslaendische_einkuenfte_staat\", \"interpretation\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Höchstbetrag wird als Produkt aus deutscher ESt inkl. ausländischer Einkünfte und Durchschnittssatz berechnet, nicht als Anwendung des Steuersatzes.",
+            "eingeschmolzen": "Höchstbetrag wird als Produkt aus deutscher ESt inkl. ausländischer Einkünfte und Durchschnittssatz berechnet, nicht als anwendbarer Steuersatz.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Durchschnittssatz wird als Quotient aus ausländischen Einkünften und zu versteuerndem Einkommen berechnet, nicht als Steuersatz.",
+            "eingeschmolzen": "Durchschnittssatz wird als Quotient aus ausländischen Einkünften und zu versteuerndem Einkommen berechnet, nicht nach §§ 32a, 32b, 34, 34a, 34b.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Höchstbetrag wird als Produkt aus deutscher ESt inkl. ausländischer Einkünfte und Durchschnittssatz berechnet, nicht als Anwendung des Steuersatzes.",
+            "eingeschmolzen": "Höchstbetrag wird als Produkt aus deutscher ESt inkl. ausländischer Einkünfte und Durchschnittssatz berechnet, nicht als Anwendung des Durchschnittssteuersatzes",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Höchstbetrag wird als Produkt aus deutscher ESt inkl. ausländischer Einkünfte und Durchschnittssatz berechnet, nicht als Anwendung des Steuersatzes.",
+            "eingeschmolzen": "Höchstbetrag wird als Produkt aus deutscher ESt inkl. ausländischer Einkünfte und Durchschnittssatz berechnet, nicht als anwendbarer Steuersatz.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Deutsche ESt inkl. ausländischer Einkünfte wird als Gesamtsteuerbetrag vor Anrechnung verstanden.",
+            "eingeschmolzen": "Deutsche ESt inkl. ausländischer Einkünfte wird als absoluter Betrag (nicht als Steuersatz) gelesen.",
+            "key": [
+              "betrifft_kat",
+              "deutsche_est_inkl_ausl",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Deutsche ESt inkl. ausländischer Einkünfte wird als Gesamtsteuerbetrag vor Anrechnung verstanden.",
+            "eingeschmolzen": "Deutsche ESt inkl. ausländischer Einkünfte wird als bereits berechneter Gesamtbetrag angenommen.",
+            "key": [
+              "betrifft_kat",
+              "deutsche_est_inkl_ausl",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Deutsche ESt inkl. ausländischer Einkünfte wird als Gesamtsteuerbetrag vor Anrechnung verstanden.",
+            "eingeschmolzen": "Deutsche ESt inkl. ausländischer Einkünfte wird als absoluter Betrag (nicht als Steuersatz) gelesen.",
+            "key": [
+              "betrifft_kat",
+              "deutsche_est_inkl_ausl",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "das gilt nicht für Einkünfte aus Kapitalvermögen, auf die § 32d Absatz 1 und 3 bis 6 anzuwenden ist",
+            "eingeschmolzen": "auf die Einkünfte aus diesem Staat entfällt; das gilt nicht für Einkünfte aus Kapitalvermögen, auf die § 32d Absatz 1 und 3 bis 6 anzuwenden ist",
+            "key": [
+              "ref",
+              "§ 34c abs. 1 s. 1 estg"
+            ]
+          },
+          {
+            "cluster": "der sich bei der Veranlagung des zu versteuernden Einkommens, einschließlich der ausländischen Einkünfte, nach den §§ 32a, 32b, 34, 34a und 34b ergebende durchs",
+            "eingeschmolzen": "dass der sich bei der Veranlagung des zu versteuernden Einkommens, einschließlich der ausländischen Einkünfte, nach den §§ 32a, 32b, 34, 34a und 34b ergebende d",
+            "key": [
+              "ref",
+              "§ 34c abs. 1 s. 2 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        7,
+        2,
+        5,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "2cbfa62be6fa",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "keine_kapitalertraege_p32d",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "das gilt nicht für Einkünfte aus Kapitalvermögen, auf die § 32d Absatz 1 und 3 bis 6 anzuwenden ist",
+        "referenz": "§ 34c Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "andockung_est_zve_p2",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "der sich bei der Veranlagung des zu versteuernden Einkommens, einschließlich der ausländischen Einkünfte, nach den §§ 32a, 32b, 34, 34a und 34b ergebende durchschnittliche Steuersatz",
+        "referenz": "§ 34c Abs. 1 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "steuer_festgesetzt_gezahlt_gekuerzt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "gezahlte und um einen entstandenen Ermäßigungsanspruch gekürzte ausländische Steuer",
+        "referenz": "§ 34c Abs. 1 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Ausländische Einkünfte werden als Bruttobetrag (nicht Netto nach Abzug von Steuern) interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "auslaendische_einkuenfte_staat",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Deutsche ESt inkl. ausländischer Einkünfte wird als Gesamtsteuerbetrag vor Anrechnung verstanden.",
+        "bedingung_id": "andockung_est_zve_p2",
+        "betrifft": "deutsche_est_inkl_ausl",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Zu versteuerndes Einkommen wird als positiv angenommen (Ausnahme bei <= 0).",
+        "bedingung_id": "zve_positiv",
+        "betrifft": "zu_versteuerndes_einkommen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Ausländische Einkünfte werden als Betrag (nicht als Steuersatzbasis) interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "auslaendische_einkuenfte_staat",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Zu versteuerndes Einkommen > 0 wird für die Durchschnittssatzberechnung vorausgesetzt.",
+        "bedingung_id": "zve_positiv",
+        "betrifft": "zu_versteuerndes_einkommen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Ausländische Einkünfte werden als Bruttowert (ohne Kürzung um Ermäßigungsansprüche) interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "auslaendische_einkuenfte_staat",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Gezahlte ausländische Steuer wird als Bruttowert (ohne Abzug von Ermäßigungsansprüchen) angenommen.",
+        "bedingung_id": "steuer_festgesetzt_gezahlt_gekuerzt",
+        "betrifft": "gezahlte_auslaendische_steuer",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Ausländische Einkünfte > 0 und zu versteuerndes Einkommen > 0 wird als Regelfall vorausgesetzt.",
+        "bedingung_id": "zve_positiv",
+        "betrifft": "auslaendische_einkuenfte_staat",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-14T17:50:03+00:00"
+  },
+  "module_name": "AnrechnungHoechstbetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

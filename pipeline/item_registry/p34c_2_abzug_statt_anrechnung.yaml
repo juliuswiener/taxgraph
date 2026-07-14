@@ -1,0 +1,17 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p34c_2_abzug_statt_anrechnung
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 34c abs. 2 estg
+  formulierungen:
+  - Statt der Anrechnung (Absatz 1) ist die ausländische Steuer auf Antrag bei der
+    Ermittlung der Einkünfte abzuziehen | soweit sie auf ausländische Einkünfte entfällt,
+    die nicht steuerfrei sind
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: antrag_abzug_statt_anrechnung

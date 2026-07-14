@@ -1,0 +1,106 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p34c_1_anrechnung_hoechstbetrag
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - durchschnittssatz wird als quotient aus auslaendischen einkuenften und zu versteuerndem
+    einkommen berechnet, nicht als steuersatz.
+  formulierungen:
+  - 'Durchschnittssatz wird als Quotient aus ausländischen Einkünften und zu versteuerndem
+    Einkommen berechnet, nicht als Steuersatz. nicht_echt (Instructor 2026-07-14):
+    algebraische Identitaet est*(ausl/zve) = (est/zve)*ausl = Durchschnittssatz-Anwendung
+    (S2). ausl/zve ist der ANTEIL, der Durchschnittssatz est/zve steckt distributiv
+    drin. Ergebnis identisch, clerk-Seeds (8000-Deckel, 5000-Anteil, 3000, 0) beweisen.
+    Ueber-Flag Typ 1/2 aequivalente-Umformung (wie C13 §34-Quotient, C16 Bewirtung-Komplement).'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - hoechstbetrag wird als produkt aus deutscher est inkl. auslaendischer einkuenfte
+    und durchschnittssatz berechnet, nicht als anwendung des steuersatzes.
+  formulierungen:
+  - 'Höchstbetrag wird als Produkt aus deutscher ESt inkl. ausländischer Einkünfte
+    und Durchschnittssatz berechnet, nicht als Anwendung des Steuersatzes. nicht_echt
+    (Instructor 2026-07-14): algebraische Identitaet est*(ausl/zve) = (est/zve)*ausl
+    = Durchschnittssatz-Anwendung (S2). ausl/zve ist der ANTEIL, der Durchschnittssatz
+    est/zve steckt distributiv drin. Ergebnis identisch, clerk-Seeds (8000-Deckel,
+    5000-Anteil, 3000, 0) beweisen. Ueber-Flag Typ 1/2 aequivalente-Umformung (wie
+    C13 §34-Quotient, C16 Bewirtung-Komplement).'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - auslaendische_einkuenfte_staat
+  - interpretation
+  formulierungen:
+  - Ausländische Einkünfte werden als Bruttobetrag (nicht Netto nach Abzug von Steuern)
+    interpretiert. | Ausländische Einkünfte werden als Betrag (nicht als Steuersatzbasis)
+    interpretiert. | Ausländische Einkünfte werden als Bruttowert (ohne Kürzung um
+    Ermäßigungsansprüche) interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - deutsche_est_inkl_ausl
+  - interpretation
+  formulierungen:
+  - Deutsche ESt inkl. ausländischer Einkünfte wird als Gesamtsteuerbetrag vor Anrechnung
+    verstanden.
+  triage: bedingung_neu
+  bedingung: andockung_est_zve_p2
+- art: annahme
+  anker:
+  - betrifft_kat
+  - zu_versteuerndes_einkommen
+  - geltungsvoraussetzung
+  formulierungen:
+  - Zu versteuerndes Einkommen wird als positiv angenommen (Ausnahme bei <= 0). |
+    Zu versteuerndes Einkommen > 0 wird für die Durchschnittssatzberechnung vorausgesetzt.
+  triage: bedingung_neu
+  bedingung: zve_positiv
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gezahlte_auslaendische_steuer
+  - interpretation
+  formulierungen:
+  - Gezahlte ausländische Steuer wird als Bruttowert (ohne Abzug von Ermäßigungsansprüchen)
+    angenommen.
+  triage: bedingung_neu
+  bedingung: steuer_festgesetzt_gezahlt_gekuerzt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - auslaendische_einkuenfte_staat
+  - geltungsvoraussetzung
+  formulierungen:
+  - Ausländische Einkünfte > 0 und zu versteuerndes Einkommen > 0 wird als Regelfall
+    vorausgesetzt.
+  triage: bedingung_neu
+  bedingung: zve_positiv
+- art: norm_teil
+  anker:
+  - ref
+  - § 34c abs. 1 s. 1 estg
+  formulierungen:
+  - das gilt nicht für Einkünfte aus Kapitalvermögen, auf die § 32d Absatz 1 und 3
+    bis 6 anzuwenden ist | gezahlte und um einen entstandenen Ermäßigungsanspruch
+    gekürzte ausländische Steuer
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: keine_kapitalertraege_p32d
+- art: norm_teil
+  anker:
+  - ref
+  - § 34c abs. 1 s. 2 estg
+  formulierungen:
+  - der sich bei der Veranlagung des zu versteuernden Einkommens, einschließlich der
+    ausländischen Einkünfte, nach den §§ 32a, 32b, 34, 34a und 34b ergebende durchschnittliche
+    Steuersatz
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: andockung_est_zve_p2

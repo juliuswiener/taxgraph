@@ -4853,3 +4853,163 @@ regeln:
     deckt_ab: auf Antrag
     quelle: § 16 Abs. 4 S. 1 EStG
     beschreibung: Freibetrag nur auf Antrag.
+
+# --- Charge 20 (DBA-3a, finale Charge): §34c Anrechnung-Höchstbetrag + Abzug ---
+- rule_id: p34c_1_anrechnung_hoechstbetrag
+  norm: § 34c Abs. 1 EStG (Anrechnung ausländischer Steuer, Höchstbetrag)
+  hinweis: 'hoechstbetrag = deutsche_est_inkl_ausl * (auslaendische_einkuenfte_staat / zu_versteuerndes_einkommen) [= durchschnittlicher Steuersatz S2 auf die ausl. Einkünfte, §34-Abs3-Muster]. anrechnung = min(gezahlte_auslaendische_steuer, hoechstbetrag). ANDOCKUNG (kein Selbst-Tarif): deutsche_est_inkl_ausl + zu_versteuerndes_einkommen aus §2-Integration (Veranlagung inkl. ausl. Einkünfte nach §§32a/32b/34/34a/34b). PER-COUNTRY: nur EIN Staat je Aufruf (Mehr-Staaten = Integration). Klasse-5: money * decimal-Anteil (ausl/zve), Cent-Schnitt ZULETZT, Anteil nicht vorrunden.'
+  quellen:
+  - typ: gesetz
+    label: § 34c Abs. 1 S. 1 EStG (Anrechnung, per-country, KapESt-Ausnahme)
+    datei: sources/gesetze-im-internet/estg_p34c_2026-07-14.txt
+    zitatanker: auf die deutsche Einkommensteuer anzurechnen
+    auszug: gezahlte und um einen entstandenen Ermäßigungsanspruch gekürzte ausländische Steuer auf die deutsche Einkommensteuer anzurechnen, die auf die Einkünfte aus diesem Staat entfällt; das gilt nicht für Einkünfte aus Kapitalvermögen, auf die § 32d Absatz 1 und 3 bis 6 anzuwenden ist
+  - typ: gesetz
+    label: § 34c Abs. 1 S. 2 EStG (Durchschnittssatz-Höchstbetrag)
+    datei: sources/gesetze-im-internet/estg_p34c_2026-07-14.txt
+    zitatanker: durchschnittliche Steuersatz auf die ausländischen Einkünfte
+    auszug: entfallende deutsche Einkommensteuer ist in der Weise zu ermitteln, dass der sich bei der Veranlagung des zu versteuernden Einkommens, einschließlich der ausländischen Einkünfte, nach den §§ 32a, 32b, 34, 34a und 34b ergebende durchschnittliche Steuersatz auf die ausländischen Einkünfte anzuwenden ist.
+  signature:
+    scope: AnrechnungHoechstbetrag
+    inputs:
+      gezahlte_auslaendische_steuer: money
+      deutsche_est_inkl_ausl: money
+      zu_versteuerndes_einkommen: money
+      auslaendische_einkuenfte_staat: money
+    output: anrechnung
+  raster:
+  - gezahlte_auslaendische_steuer: 3000
+    deutsche_est_inkl_ausl: 20000
+    zu_versteuerndes_einkommen: 100000
+    auslaendische_einkuenfte_staat: 40000
+  - gezahlte_auslaendische_steuer: 10000
+    deutsche_est_inkl_ausl: 20000
+    zu_versteuerndes_einkommen: 100000
+    auslaendische_einkuenfte_staat: 40000
+  - gezahlte_auslaendische_steuer: 3000
+    deutsche_est_inkl_ausl: 20000
+    zu_versteuerndes_einkommen: 100000
+    auslaendische_einkuenfte_staat: 0
+  - gezahlte_auslaendische_steuer: 5000
+    deutsche_est_inkl_ausl: 30000
+    zu_versteuerndes_einkommen: 60000
+    auslaendische_einkuenfte_staat: 30000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p34c_2026-07-14.txt
+    zitatanker: auf die deutsche Einkommensteuer anzurechnen
+    herkunft: synthetisch
+    rechenweg: 'Voll anrechenbar: hoechst=20000*(40000/100000)=8000; min(3000, 8000)=3000,00.'
+    inputs:
+      gezahlte_auslaendische_steuer: 3000
+      deutsche_est_inkl_ausl: 20000
+      zu_versteuerndes_einkommen: 100000
+      auslaendische_einkuenfte_staat: 40000
+    expected: 3000.0
+  - quelle: sources/gesetze-im-internet/estg_p34c_2026-07-14.txt
+    zitatanker: durchschnittliche Steuersatz auf die ausländischen Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'DECKEL: ausl. Steuer 10000 > Höchstbetrag 8000 -> min(10000, 8000)=8000,00.'
+    inputs:
+      gezahlte_auslaendische_steuer: 10000
+      deutsche_est_inkl_ausl: 20000
+      zu_versteuerndes_einkommen: 100000
+      auslaendische_einkuenfte_staat: 40000
+    expected: 8000.0
+  - quelle: sources/gesetze-im-internet/estg_p34c_2026-07-14.txt
+    zitatanker: durchschnittliche Steuersatz auf die ausländischen Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'Keine ausl. Einkünfte: hoechst=0 -> min(3000, 0)=0,00.'
+    inputs:
+      gezahlte_auslaendische_steuer: 3000
+      deutsche_est_inkl_ausl: 20000
+      zu_versteuerndes_einkommen: 100000
+      auslaendische_einkuenfte_staat: 0
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p34c_2026-07-14.txt
+    zitatanker: durchschnittliche Steuersatz auf die ausländischen Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'Anteil 50%: hoechst=30000*(30000/60000)=15000; min(5000, 15000)=5000,00.'
+    inputs:
+      gezahlte_auslaendische_steuer: 5000
+      deutsche_est_inkl_ausl: 30000
+      zu_versteuerndes_einkommen: 60000
+      auslaendische_einkuenfte_staat: 30000
+    expected: 5000.0
+  geltungsbedingungen:
+  - bedingung: per_country_ein_staat
+    deckt_ab: die auf die Einkünfte aus diesem Staat entfällt
+    quelle: § 34c Abs. 1 S. 1 EStG
+    beschreibung: Regel rechnet EINEN Staat (per-country limitation). Mehr-Staaten-Schleife = §2-Integration.
+  - bedingung: keine_kapitalertraege_p32d
+    deckt_ab: das gilt nicht für Einkünfte aus Kapitalvermögen, auf die § 32d
+    quelle: § 34c Abs. 1 S. 1 Hs. 2 EStG
+    beschreibung: 'KapESt-Ausnahme: §32d-Kapitalerträge sind NICHT über §34c anzurechnen (eigener Mechanismus).'
+  - bedingung: andockung_est_zve_p2
+    deckt_ab: bei der Veranlagung des zu versteuernden Einkommens
+    quelle: § 34c Abs. 1 S. 2 EStG
+    beschreibung: deutsche_est_inkl_ausl + zvE = §2-Integrations-Inputs (Andockung, kein Selbst-Tarif).
+  - bedingung: steuer_festgesetzt_gezahlt_gekuerzt
+    deckt_ab: gezahlte und um einen entstandenen Ermäßigungsanspruch gekürzte ausländische Steuer
+    quelle: § 34c Abs. 1 S. 1 EStG
+    beschreibung: Input = festgesetzte + gezahlte + um Ermäßigungsanspruch gekürzte ausl. Steuer.
+  - bedingung: auslaendische_einkuenfte_p34d_katalog
+    deckt_ab: Einkünfte aus diesem Staat
+    quelle: § 34d EStG
+    beschreibung: auslaendische_einkuenfte_staat ist eine §34d-Katalog-Einkunft (§34d-Geltungsbedingungs-Paket).
+  - bedingung: zve_positiv
+    deckt_ab: des zu versteuernden Einkommens
+    quelle: § 34c Abs. 1 S. 2 EStG
+    beschreibung: 'Division definiert: zvE > 0.'
+- rule_id: p34c_2_abzug_statt_anrechnung
+  norm: § 34c Abs. 2 EStG (Abzug ausländischer Steuer statt Anrechnung)
+  hinweis: abzug = auslaendische_steuer_auf_ausl_einkuenfte. Statt der Anrechnung (Abs1) wird die ausl. Steuer auf Antrag bei der Ermittlung der Einkünfte abgezogen, soweit sie auf ausl. (nicht steuerfreie) Einkünfte entfällt. Der Abzugsbetrag = die auf ausl. Einkünfte entfallende ausl. Steuer (Input bereits so bemessen); das Wahlrecht (Abzug STATT Anrechnung) ist Geltungsbedingung, schliesst Regel 1 aus. Cent-genau.
+  quellen:
+  - typ: gesetz
+    label: § 34c Abs. 2 EStG (Abzug statt Anrechnung, Wahlrecht)
+    datei: sources/gesetze-im-internet/estg_p34c_2026-07-14.txt
+    zitatanker: bei der Ermittlung der Einkünfte abzuziehen
+    auszug: Statt der Anrechnung (Absatz 1) ist die ausländische Steuer auf Antrag bei der Ermittlung der Einkünfte abzuziehen, soweit sie auf ausländische Einkünfte entfällt, die nicht steuerfrei sind.
+  signature:
+    scope: AbzugAuslaendischeSteuer
+    inputs:
+      auslaendische_steuer_auf_ausl_einkuenfte: money
+    output: abzug
+  raster:
+  - auslaendische_steuer_auf_ausl_einkuenfte: 5000
+  - auslaendische_steuer_auf_ausl_einkuenfte: 0
+  - auslaendische_steuer_auf_ausl_einkuenfte: 1234.56
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p34c_2026-07-14.txt
+    zitatanker: bei der Ermittlung der Einkünfte abzuziehen
+    herkunft: synthetisch
+    rechenweg: 'Abzug = ausl. Steuer: 5.000,00.'
+    inputs:
+      auslaendische_steuer_auf_ausl_einkuenfte: 5000
+    expected: 5000.0
+  - quelle: sources/gesetze-im-internet/estg_p34c_2026-07-14.txt
+    zitatanker: bei der Ermittlung der Einkünfte abzuziehen
+    herkunft: synthetisch
+    rechenweg: 'Null: 0,00.'
+    inputs:
+      auslaendische_steuer_auf_ausl_einkuenfte: 0
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p34c_2026-07-14.txt
+    zitatanker: bei der Ermittlung der Einkünfte abzuziehen
+    herkunft: synthetisch
+    rechenweg: 'Cent-Betrag: 1.234,56.'
+    inputs:
+      auslaendische_steuer_auf_ausl_einkuenfte: 1234.56
+    expected: 1234.56
+  geltungsbedingungen:
+  - bedingung: antrag_abzug_statt_anrechnung
+    deckt_ab: Statt der Anrechnung
+    quelle: § 34c Abs. 2 EStG
+    beschreibung: 'Wahlrecht: Abzug STATT Anrechnung, auf Antrag - schliesst Regel 1 (p34c_1) wechselseitig aus.'
+  - bedingung: nur_nicht_steuerfreie_ausl_einkuenfte
+    deckt_ab: die nicht steuerfrei sind
+    quelle: § 34c Abs. 2 EStG
+    beschreibung: Nur ausl. Steuer auf NICHT steuerfreie ausl. Einkünfte.
+  - bedingung: steuer_soweit_auf_ausl_einkuenfte
+    deckt_ab: soweit sie auf ausländische Einkünfte entfällt
+    quelle: § 34c Abs. 2 EStG
+    beschreibung: Input = der auf ausl. Einkünfte entfallende Teil der ausl. Steuer (bereits so bemessen).

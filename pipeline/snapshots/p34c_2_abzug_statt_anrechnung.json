@@ -1,0 +1,162 @@
+{
+  "bedingungen": [
+    "antrag_abzug_statt_anrechnung",
+    "nur_nicht_steuerfreie_ausl_einkuenfte",
+    "steuer_soweit_auf_ausl_einkuenfte"
+  ],
+  "candidate_id": "p34c_2_abzug_statt_anrechnung",
+  "catala_a": "declaration scope AbzugAuslaendischeSteuer:\n  input auslaendische_steuer_auf_ausl_einkuenfte content money\n  output abzug content money\n\nscope AbzugAuslaendischeSteuer:\n  definition abzug equals auslaendische_steuer_auf_ausl_einkuenfte",
+  "catala_a_sha256": "2d7e1a01769f67c3f8b8d1f5884541c7176898e060dcf1e728367aac3de4d492",
+  "catala_b": "declaration scope AbzugAuslaendischeSteuer:\n  input auslaendische_steuer_auf_ausl_einkuenfte content money\n  output abzug content money\nscope AbzugAuslaendischeSteuer:\n  label grundregel\n  definition abzug equals $0.00\n  exception grundregel\n  definition abzug under condition auslaendische_steuer_auf_ausl_einkuenfte > $0.00 consequence equals auslaendische_steuer_auf_ausl_einkuenfte",
+  "catala_b_sha256": "8d6d29e12db9a0d8529d6af98eab1fbc2f8aea9812db3a8ae4f97a8d3ee2967a",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'abzug'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "db41c6c12c46",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "antrag_abzug_statt_anrechnung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Statt der Anrechnung (Absatz 1) ist die ausländische Steuer auf Antrag bei der Ermittlung der Einkünfte abzuziehen",
+        "referenz": "§ 34c Abs. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "nur_nicht_steuerfreie_ausl_einkuenfte",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "soweit sie auf ausländische Einkünfte entfällt, die nicht steuerfrei sind",
+        "referenz": "§ 34c Abs. 2 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-14T17:50:26+00:00"
+  },
+  "module_name": "AbzugAuslaendischeSteuer",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}
