@@ -135,18 +135,29 @@ Alle drei Regeln: **jedes deterministische Gate grün** — syntax/typecheck A+B
 `praezisions_lint`, **`equivalence` (A≡B auf dem Raster)**, `roundtrip`, `scope_gap`,
 `geltungsbereich`, `grenzfall`, `defekt`, **`clerk` (Seeds oben)**. Keine offenen Gates.
 
-| Regel | Kosten | Gates | Status | offene Discovery-Items |
+| Regel | Kosten | Gates | Status | Discovery-Items |
 |---|---|---|---|---|
-| `p23_3_verlusttopf` | $0,0508 | alle grün | **verified_bedingt** (3 Bed.) | 0 — 4 Items triagiert (2 nicht_material, 2 bedingung_neu) |
-| `p32d_1_kirchensteuer` | $0,0973 | alle grün | discovery_triage (3 Bed.) | 5 `offen` → Instructor |
-| `p34_3_ermaessigter_durchschnittssatz` | $0,2311 | alle grün | discovery_triage (6 Bed.) | 10 `offen` (inkl. 3 `abweichung`) → Instructor |
+| `p23_3_verlusttopf` | $0,0508 | alle grün | **verified_bedingt** (3 Bed.) | 4 triagiert (2 nicht_material, 2 bedingung_neu) |
+| `p32d_1_kirchensteuer` | $0,0973 | alle grün | **verified_bedingt** (3 Bed.) | 8 triagiert (5 nicht_material/backlog + 3 Detektor-Whitelist) |
+| `p34_3_ermaessigter_durchschnittssatz` | $0,2311 | alle grün | **verified_bedingt** (6 Bed.) | 16 triagiert (inkl. 3 abweichung → nicht_echt) |
 
-`p23_3` ist voll triagiert (nur Whitelist-Buckets, Dev-Delegation seit Charge 10) →
-`verified_bedingt`. Bei `p32d`/`p34` sind die vom Detektor gemappten Whitelist-Items aufgenommen;
-die `offen`-Items bleiben für die Instructor-Adjudikation (Registry-Ratsche: nur Julius' Triage
-kippt ein Verdikt; `abweichung`/`grenzfall`/`nicht_echt` nie durch Dev).
+Alle drei **`verified_bedingt`, keine offenen Gates.** `p23_3` war reine Whitelist (Dev-Delegation
+seit Charge 10). Bei `p32d`/`p34` wurden die `offen`-Items — insbesondere die 3 `abweichung` bei
+§ 34 — erst nach unabhängiger Zweitmeinung adjudiziert (s. u.).
 
-### Adjudikations-Vorlage (Instructor)
+### Zweitmeinung (unabhängiges Modell, Instructor-Anweisung 2026-07-14)
+
+Entscheidungsregel Julius: „lass ein anderes Modell drüberschauen; stimmt Claudes Einschätzung
+mit ihm überein → grün." Gewählt: **`openai/gpt-5.5`** (Provider `openai` gepinnt, `allow_fallbacks`
+false, temp 0) — eine vierte Modellfamilie, weder Claude (Analyse) noch mistral (Detektor, der die
+Flags setzte) noch die Formalisierer A/B. Neutraler Prompt (Norm + generierter Catala + Roh-Flags,
+**ohne** Vorurteil). Rohdaten: `pipeline/item_registry/discovery/charge13/adjudikation-gpt-5.5-crosscheck.json`.
+
+**Ergebnis: volle Übereinstimmung.** gpt-5.5 = `alle_fehlalarm` (§ 34) / `alle_nicht_material`
+(§ 32d) — identisch zu meiner Einschätzung, Item für Item, mit derselben Begründung. Daher gemäß
+Julius' Regel grün gezogen.
+
+### Adjudikations-Grundlage (bestätigt durch beide Modelle)
 
 **`p32d_1_kirchensteuer` — 5 `offen`, keine `abweichung`.** Alle fünf sind normkonforme
 Restatements der Formel-Zuordnung (e = § 20-Einkünfte, q = anrechenbare ausl. Steuer, k =
@@ -169,8 +180,9 @@ Die 3 Abweichungen sind das dokumentierte mistral-Über-Flag-Muster (reife Desig
    × tarifliche ESt; der Judge verwechselt. **Kandidat nicht_echt.**
 
 `equivalence` (A≡B) und `clerk` (Wächter 5-Mio-Cap 840.000,00 und 14-%-Boden 7.000,00) sind grün —
-starke Gegenbelege zu allen drei. Entscheidung liegt bei Julius; Drafts unter
-`pipeline/item_registry/discovery/charge13/` zum direkten Editieren.
+starke Gegenbelege zu allen drei. Durch die unabhängige gpt-5.5-Zweitmeinung bestätigt (s. o.) und
+gemäß Julius' Entscheidungsregel als `nicht_echt` triagiert. Drafts + Roh-Verdikt unter
+`pipeline/item_registry/discovery/charge13/`.
 
 ## Kosten
 

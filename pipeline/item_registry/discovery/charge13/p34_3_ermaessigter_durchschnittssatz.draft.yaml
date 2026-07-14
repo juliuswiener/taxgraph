@@ -11,7 +11,7 @@ items:
   text: Der ermäßigte Steuersatz wird auf die Bemessungsgrundlage (cap) angewendet,
     nicht auf den Teil der außerordentlichen Einkünfte.
   bedingung: ''
-  triage: offen
+  triage: nicht_echt
 - art: abweichung
   anker:
   - abweichung_text
@@ -20,7 +20,7 @@ items:
   text: Die Berechnung des Durchschnittssatzes als Quotient aus est_gesamt_zzgl_progression
     und bemessungsgrundlage_durchschnitt ist nicht normkonform.
   bedingung: ''
-  triage: offen
+  triage: nicht_echt
 - art: abweichung
   anker:
   - abweichung_text
@@ -29,7 +29,7 @@ items:
   text: Die Berechnung des ermäßigten Steuersatzes fehlt die Multiplikation mit der
     tariflichen Einkommensteuer.
   bedingung: ''
-  triage: offen
+  triage: nicht_echt
 - art: annahme
   anker:
   - betrifft_kat
@@ -38,7 +38,7 @@ items:
   text: ao_einkuenfte wird als Bruttowert interpretiert. | Die außerordentlichen Einkünfte
     werden als Bruttowert angenommen.
   bedingung: ''
-  triage: offen
+  triage: nicht_material
 - art: annahme
   anker:
   - betrifft_kat
@@ -58,7 +58,7 @@ items:
     Einkommen. | Die Bemessungsgrundlage wird als zu versteuerndes Einkommen zzgl.
     Progressionsvorbehalt angenommen. | bemessungsgrundlage_durchschnitt wird als
     Divisor für den Durchschnittssatz genutzt.
-  triage: offen
+  triage: nicht_material
 - art: annahme
   anker:
   - betrifft_kat
@@ -68,7 +68,7 @@ items:
     | Die 5-Mio.-Cap-Regelung wird ohne Prüfung der Alters- oder Berufsunfähigkeitsbedingung
     angewendet.
   bedingung: ''
-  triage: offen
+  triage: nicht_material
 - art: annahme
   anker:
   - betrifft_kat
@@ -103,7 +103,7 @@ items:
   - interpretation
   text: Der ermäßigte Satz wird als 56% des Durchschnittssatzes (mind. 14%) interpretiert.
   bedingung: ''
-  triage: offen
+  triage: nicht_material
 - art: annahme
   anker:
   - betrifft_kat
@@ -111,7 +111,7 @@ items:
   - sonstige
   text: Die 5-Mio.-Euro-Grenze wird als harte Cap-Grenze umgesetzt.
   bedingung: ''
-  triage: offen
+  triage: nicht_material
 - art: norm_teil
   anker:
   - ref
@@ -130,7 +130,7 @@ items:
     tarifliche Einkommensteuer nach dem gesamten zu versteuernden Einkommen zuzüglich
     der dem Progressionsvorbehalt unterliegenden | mindestens jedoch 14 Prozent
   klasse: wirkt_hinein
-  triage: offen
+  triage: nicht_material_backlog
 - art: norm_teil
   anker:
   - ref
@@ -149,5 +149,4 @@ items:
     versteuernden Einkommen zuzüglich der dem Progressionsvorbehalt unterliegenden
     Einkünfte zu bemessen wäre | mindestens jedoch 14 Prozent
   klasse: wirkt_hinein
-  triage: offen
-
+  triage: nicht_material_backlog

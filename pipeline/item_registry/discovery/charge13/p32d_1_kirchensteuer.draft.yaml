@@ -10,7 +10,7 @@ items:
   - interpretation
   text: Einkünfte werden als 'e' (nach § 20) interpretiert.
   bedingung: ''
-  triage: offen
+  triage: nicht_material
 - art: annahme
   anker:
   - betrifft_kat
@@ -18,7 +18,7 @@ items:
   - interpretation
   text: Ausländische Steuer wird als 'q' (Absatz 5) interpretiert.
   bedingung: ''
-  triage: offen
+  triage: nicht_material
 - art: annahme
   anker:
   - betrifft_kat
@@ -26,7 +26,7 @@ items:
   - interpretation
   text: Kirchensteuersatz wird als 'k' (Religionsgesellschaft) interpretiert.
   bedingung: ''
-  triage: offen
+  triage: nicht_material
 - art: annahme
   anker:
   - betrifft_kat
@@ -34,7 +34,7 @@ items:
   - sonstige
   text: Formel wird als (e – 4q) / (4 + k) umgesetzt.
   bedingung: ''
-  triage: offen
+  triage: nicht_material
 - art: norm_teil
   anker:
   - ref
@@ -42,7 +42,7 @@ items:
   text: Die Einkommensteuer beträgt damit e – 4 q 4 + k.
   bedingung: ''
   klasse: wirkt_hinein
-  triage: offen
+  triage: nicht_material_backlog
 - art: norm_teil
   anker:
   - ref
@@ -72,4 +72,3 @@ items:
   bedingung: ''
   klasse: unabhaengig
   triage: nicht_material_backlog
-

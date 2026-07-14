@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p32d_1_kirchensteuer
-version: 1
+version: 2
 items:
 - art: norm_teil
   anker:
@@ -33,3 +33,43 @@ items:
     Kirchensteuer erhebende Religionsgesel
   triage: nicht_material_backlog
   klasse: unabhaengig
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kapitaleinkuenfte
+  - interpretation
+  formulierungen:
+  - Einkünfte werden als 'e' (nach § 20) interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anrechenbare_auslaendische_steuer
+  - interpretation
+  formulierungen:
+  - Ausländische Steuer wird als 'q' (Absatz 5) interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kirchensteuersatz
+  - interpretation
+  formulierungen:
+  - Kirchensteuersatz wird als 'k' (Religionsgesellschaft) interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - sonstige
+  formulierungen:
+  - Formel wird als (e – 4q) / (4 + k) umgesetzt.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 32d abs. 1 s. 4
+  formulierungen:
+  - Die Einkommensteuer beträgt damit e – 4 q 4 + k.
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein

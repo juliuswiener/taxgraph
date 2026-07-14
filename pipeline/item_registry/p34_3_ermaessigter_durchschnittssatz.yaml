@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p34_3_ermaessigter_durchschnittssatz
-version: 1
+version: 2
 items:
 - art: annahme
   anker:
@@ -58,3 +58,96 @@ items:
   triage: bedingung_neu
   klasse: wirkt_hinein
   bedingung: persoenliche_voraussetzung_erfuellt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der ermaessigte steuersatz wird auf die bemessungsgrundlage (cap) angewendet,
+    nicht auf den teil der ausserordentlichen einkuenfte.
+  formulierungen:
+  - Der ermäßigte Steuersatz wird auf die Bemessungsgrundlage (cap) angewendet, nicht
+    auf den Teil der außerordentlichen Einkünfte.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die berechnung des durchschnittssatzes als quotient aus est_gesamt_zzgl_progression
+    und bemessungsgrundlage_durchschnitt ist nicht normkonform.
+  formulierungen:
+  - Die Berechnung des Durchschnittssatzes als Quotient aus est_gesamt_zzgl_progression
+    und bemessungsgrundlage_durchschnitt ist nicht normkonform.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die berechnung des ermaessigten steuersatzes fehlt die multiplikation mit der
+    tariflichen einkommensteuer.
+  formulierungen:
+  - Die Berechnung des ermäßigten Steuersatzes fehlt die Multiplikation mit der tariflichen
+    Einkommensteuer.
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ao_einkuenfte
+  - einheit
+  formulierungen:
+  - ao_einkuenfte wird als Bruttowert interpretiert. | Die außerordentlichen Einkünfte
+    werden als Bruttowert angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - bemessungsgrundlage_durchschnitt
+  - interpretation
+  formulierungen:
+  - bemessungsgrundlage_durchschnitt entspricht dem gesamten zu versteuernden Einkommen.
+    | Die Bemessungsgrundlage wird als zu versteuerndes Einkommen zzgl. Progressionsvorbehalt
+    angenommen. | bemessungsgrundlage_durchschnitt wird als Divisor für den Durchschnittssatz
+    genutzt.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ao_einkuenfte
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die 5-Mio.-Euro-Grenze wird als absolute Obergrenze für ao_einkuenfte angenommen.
+    | Die 5-Mio.-Cap-Regelung wird ohne Prüfung der Alters- oder Berufsunfähigkeitsbedingung
+    angewendet.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - interpretation
+  formulierungen:
+  - Der ermäßigte Satz wird als 56% des Durchschnittssatzes (mind. 14%) interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ao_einkuenfte
+  - sonstige
+  formulierungen:
+  - Die 5-Mio.-Euro-Grenze wird als harte Cap-Grenze umgesetzt.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 34 abs. 3 s. 2 estg
+  formulierungen:
+  - 56 Prozent des durchschnittlichen Steuersatzes, der sich ergäbe, wenn die tarifliche
+    Einkommensteuer nach dem gesamten zu versteuernden Einkommen zuzüglich der dem
+    Progressionsvorbehalt unterliegenden | mindestens jedoch 14 Prozent
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 34 abs. 3 s. 2
+  formulierungen:
+  - der sich ergäbe, wenn die tarifliche Einkommensteuer nach dem gesamten zu versteuernden
+    Einkommen zuzüglich der dem Progressionsvorbehalt unterliegenden Einkünfte zu
+    bemessen wäre | mindestens jedoch 14 Prozent
+  triage: nicht_material_backlog
+  klasse: wirkt_hinein
