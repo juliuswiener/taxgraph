@@ -45,6 +45,8 @@ scope TestGesamtReduktion:
     -- steuer_kapital_gesondert: $0.00
     -- hinzurechnung_kindergeld: $0.00
     -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: false
+    -- tarifliche_est_modifiziert: $0.00
     -- veranlagungszeitraum: VZ2026 }
   definition sde equals r.summe_der_einkuenfte
   definition gde equals r.gesamtbetrag_der_einkuenfte
@@ -90,6 +92,8 @@ scope TestGesamtMehrereArten:
     -- steuer_kapital_gesondert: $0.00
     -- hinzurechnung_kindergeld: $0.00
     -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: false
+    -- tarifliche_est_modifiziert: $0.00
     -- veranlagungszeitraum: VZ2026 }
   definition sde equals r.summe_der_einkuenfte
   definition zve equals r.zu_versteuerndes_einkommen
@@ -132,6 +136,8 @@ scope TestGesamtAbzuegeErmaessigung:
     -- steuer_kapital_gesondert: $0.00
     -- hinzurechnung_kindergeld: $0.00
     -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: false
+    -- tarifliche_est_modifiziert: $0.00
     -- veranlagungszeitraum: VZ2026 }
   definition gde equals r.gesamtbetrag_der_einkuenfte
   definition eink equals r.einkommen
@@ -177,6 +183,8 @@ scope TestGesamtFreibetragHinzurechnung:
     -- steuer_kapital_gesondert: $500.00
     -- hinzurechnung_kindergeld: $3,000.00
     -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: false
+    -- tarifliche_est_modifiziert: $0.00
     -- veranlagungszeitraum: VZ2026 }
   definition zve equals r.zu_versteuerndes_einkommen
   definition tarif equals r.tarifliche_est
@@ -217,6 +225,8 @@ scope TestGesamtVerlustausgleich:
     -- steuer_kapital_gesondert: $0.00
     -- hinzurechnung_kindergeld: $0.00
     -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: false
+    -- tarifliche_est_modifiziert: $0.00
     -- veranlagungszeitraum: VZ2026 }
   definition sde equals r.summe_der_einkuenfte
   definition zve equals r.zu_versteuerndes_einkommen

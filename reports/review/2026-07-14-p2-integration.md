@@ -47,17 +47,33 @@ Die Tarif-Erwartungswerte sind an denselben zvE-Punkten verankert, die die
 Arbeitnehmerfall-Tests bereits gegen die GETTSIM-Oracle pinnen — dieses File testet also
 **nur die § 2-Stufenarithmetik**, nicht den Tarif. Golden 57/57 und Sources 69/69 unverändert grün.
 
-## Bewusste Grenzen (Increment 1) und nächste Schritte
+## Increment 2-4 (2026-07-14, im selben Zug) — vollzogen
 
-- **Zusammenveranlagung** analog (`Splittingtarif` statt `Grundtarif`) — nächstes Increment.
-- **§ 32b (Progressionsvorbehalt) / § 34 (Fünftel, ermäßigter Satz)** modifizieren die
-  Tarifgröße; die Regeln p32b/p34_fuenftel/p34_3 liefern die modifizierte tarifliche ESt.
-  Sie treten unter ihrer Geltungsbedingung an die Stelle des `Grundtarif`-Aufrufs — als
-  Tarif-Andockung im Scope zu verdrahten (noch als Andockpunkt-Kommentar markiert).
+- **Increment 2 — Zusammenveranlagung.** Neuer Scope `FestzusetzendeEstGesamtZusammen`
+  (§ 26b: Einkünfte zusammengerechnet, Ehegatten als ein Steuerpflichtiger), strukturgleich
+  zur Einzelveranlagung mit `Splittingtarif` (§ 32a Abs. 5). Verankert an den Splitting-zvE-
+  Punkten der Arbeitnehmerfall-Tests (zvE 97 468 → 20 212, 78 698 → 14 008).
+- **Increment 3 — § 32b/§ 34-Tarif-Andockung.** `tarifliche_est` per **Default-Logic-Ausnahme**:
+  Grundfall § 32a (bzw. Splitting), unter `tarif_modifiziert` (Progressionsvorbehalt § 32b,
+  Fünftel/ermäßigter Satz § 34) tritt die von p32b/p34 gelieferte tarifliche ESt an seine
+  Stelle. Idiomatisches Catala (zwei sich ausschließende `under condition`-Zweige), kein
+  Sonderpfad. Test: modifizierter Tarif ersetzt den Grundtarif, Abs-6-Arithmetik wirkt weiter
+  auf den modifizierten Betrag.
+- **Increment 4 — End-to-end-Kette echter Regel-Outputs.** Ein clerk-Test kettet drei reale
+  Module: § 9 Entfernungspauschale (30 km, 220 Tage, VZ 2026 → 2 508 € WK) → § 19/§ 9a-
+  Einkünfte (Brutto 31 278 − 2 508 → 28 770) → `FestzusetzendeEstGesamt` (zvE 28 734 →
+  festzusetzende 3 862). Beweist die Integration gegen einen echten Gesamtfall, nicht nur
+  vorberechnete Slot-Werte. **35/35 Scope-Tests grün.**
+
+## Verbleibende bewusste Grenzen
+
 - **§ 2 Abs. 6 Exoten** (§ 32c-Unterschiedsbetrag, § 34c Abs. 5, Forstschäden-Zuschlag)
-  bewusst als 0-Slots ausgelassen — AN-fern.
-- **End-to-end-Golden/Harness**, die echte Regel-Outputs durch den Gesamt-Scope kettet
-  (statt vorberechneter Slot-Werte) — schließt die Integration gegen einen Gesamtfall.
+  bleiben 0-Slots — AN-fern.
+- **Python-Golden über den Gesamt-Scope** (statt clerk-Kette): der golden/runner.py-Zweig
+  für einen Gesamtfall ist noch offen; die clerk-End-to-end-Kette deckt den Beweis bereits ab.
+- **§ 32b/§ 34 als echte Verzahnung in der Integration** (die Bedingung + der modifizierte
+  Wert aus p32b/p34 automatisch bestimmt) — der Andock-Mechanismus steht, die automatische
+  Fallunterscheidung in einem Gesamt-Runner ist der nächste Schritt.
 
-Increment 1 ist die tragende Stufenfolge; die Restpunkte sind Andockungen an bereits
-formalisierte Regeln, keine neue Steuermechanik.
+Die tragende § 2-Stufenfolge steht damit für Einzel- und Zusammenveranlagung inklusive
+Tarif-Modifikation; die Restpunkte sind Runner-Verdrahtung, keine neue Steuermechanik.

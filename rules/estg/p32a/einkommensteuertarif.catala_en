@@ -452,6 +452,11 @@ declaration scope FestzusetzendeEstGesamt:
   input steuer_kapital_gesondert content money         # § 32d Abs. 3/4 (Abs. 6 Satz 1, hinzuzurechnen)
   input hinzurechnung_kindergeld content money         # § 31 Satz 4 (Familienleistungsausgleich)
   input hinzurechnung_zulage content money             # § 10a Abs. 2 (Abs. 6 Satz 2)
+  # § 32b (Progressionsvorbehalt) / § 34 (Fuenftel, ermaessigter Satz): tritt der
+  # besondere/modifizierte Tarif an die Stelle des Grundtarifs, liefert die
+  # jeweilige Regel (p32b/p34) die tarifliche ESt und tarif_modifiziert ist wahr.
+  input tarif_modifiziert content boolean              # § 32b/§ 34: Grundtarif ersetzt?
+  input tarifliche_est_modifiziert content money       # modifizierte Tarifgroesse (p32b/p34)
   input veranlagungszeitraum content Veranlagungszeitraum
   output summe_der_einkuenfte content money            # § 2 Abs. 3 Satz 1
   output gesamtbetrag_der_einkuenfte content money     # § 2 Abs. 3
@@ -482,15 +487,89 @@ scope FestzusetzendeEstGesamt:
   definition zu_versteuerndes_einkommen equals
     einkommen - freibetraege_kinder - sonstige_abzuege_vom_einkommen
 
-  # § 2 Abs. 5 i.V.m. § 32a: tarifliche Einkommensteuer (Grundtarif). Andockpunkt
-  # § 32b/§ 34: modifizierte Tarifgroesse tritt an die Stelle dieses Aufrufs.
-  definition tarifliche_est equals
+  # § 2 Abs. 5 i.V.m. § 32a: tarifliche Einkommensteuer. Grundfall Grundtarif;
+  # unter § 32b/§ 34 tritt die modifizierte Tarifgroesse an seine Stelle.
+  definition tarifliche_est under condition (not tarif_modifiziert) consequence equals
     (output of Grundtarif with {
        -- zu_versteuerndes_einkommen: zu_versteuerndes_einkommen
        -- veranlagungszeitraum: veranlagungszeitraum
      }).tarifliche_steuer
+  definition tarifliche_est under condition tarif_modifiziert consequence equals
+    tarifliche_est_modifiziert
 
   # § 2 Abs. 6 Satz 1-2: festzusetzende Einkommensteuer.
+  definition festzusetzende_est equals
+    tarifliche_est
+    - anzurechnende_auslaendische_steuern - steuerermaessigungen
+    + steuer_kapital_gesondert + hinzurechnung_kindergeld + hinzurechnung_zulage
+```
+
+## Verallgemeinerte Zusammenveranlagung (§ 2 Abs. 3 bis 6, § 26b, § 32a Abs. 5)
+
+Nach § 26b werden die Einkuenfte der Ehegatten zusammengerechnet und die Ehegatten
+gemeinsam als ein Steuerpflichtiger behandelt. Der Scope ist daher strukturgleich zur
+Einzelveranlagung, nimmt aber die bereits zusammengerechneten Gesamtgroessen entgegen
+(die Verdopplung der Pauschbetraege nach § 9a/§ 10c ist in den Eingabewerten der
+Einzelregeln bereits enthalten) und wendet den Splittingtarif (§ 32a Abs. 5) an.
+
+```catala
+declaration scope FestzusetzendeEstGesamtZusammen:
+  input einkuenfte_nichtselbststaendig content money   # § 19 beider Ehegatten
+  input einkuenfte_kapitalvermoegen content money      # § 20 tariflich (Guenstiger)
+  input einkuenfte_vermietung content money            # § 21
+  input einkuenfte_sonstige content money              # § 22/§ 23
+  input einkuenfte_gewinn content money                # § 13/§ 15/§ 18 (Slot)
+  input altersentlastungsbetrag content money          # § 24a (je Ehegatte, summiert)
+  input entlastungsbetrag_alleinerziehende content money  # § 24b (bei Zusammenveranlagung i.d.R. 0)
+  input sonderausgaben content money                   # § 10..§ 10d (Pauschbetrag verdoppelt)
+  input aussergewoehnliche_belastungen content money   # § 33/§ 33a/§ 33b
+  input freibetraege_kinder content money              # § 32 Abs. 6 (volle Freibetraege)
+  input sonstige_abzuege_vom_einkommen content money
+  input anzurechnende_auslaendische_steuern content money
+  input steuerermaessigungen content money
+  input steuer_kapital_gesondert content money         # § 32d Abs. 3/4
+  input hinzurechnung_kindergeld content money         # § 31 Satz 4
+  input hinzurechnung_zulage content money             # § 10a Abs. 2
+  input tarif_modifiziert content boolean              # § 32b/§ 34
+  input tarifliche_est_modifiziert content money
+  input veranlagungszeitraum content Veranlagungszeitraum
+  output summe_der_einkuenfte content money
+  output gesamtbetrag_der_einkuenfte content money
+  output einkommen content money
+  output zu_versteuerndes_einkommen content money      # gemeinsames zvE
+  output tarifliche_est content money
+  output festzusetzende_est content money
+
+scope FestzusetzendeEstGesamtZusammen:
+  # § 2 Abs. 3 Satz 1 i.V.m. § 26b: zusammengerechnete Summe der Einkuenfte.
+  definition summe_der_einkuenfte equals
+    einkuenfte_nichtselbststaendig + einkuenfte_kapitalvermoegen
+    + einkuenfte_vermietung + einkuenfte_sonstige + einkuenfte_gewinn
+
+  # § 2 Abs. 3
+  definition gesamtbetrag_der_einkuenfte equals
+    summe_der_einkuenfte - altersentlastungsbetrag
+    - entlastungsbetrag_alleinerziehende
+
+  # § 2 Abs. 4
+  definition einkommen equals
+    gesamtbetrag_der_einkuenfte - sonderausgaben - aussergewoehnliche_belastungen
+
+  # § 2 Abs. 5 Satz 1: gemeinsames zu versteuerndes Einkommen.
+  definition zu_versteuerndes_einkommen equals
+    einkommen - freibetraege_kinder - sonstige_abzuege_vom_einkommen
+
+  # § 2 Abs. 5, § 32a Abs. 5: Splittingtarif. Grundfall; unter § 32b/§ 34 tritt
+  # die modifizierte Tarifgroesse an seine Stelle.
+  definition tarifliche_est under condition (not tarif_modifiziert) consequence equals
+    (output of Splittingtarif with {
+       -- zu_versteuerndes_einkommen_gemeinsam: zu_versteuerndes_einkommen
+       -- veranlagungszeitraum: veranlagungszeitraum
+     }).tarifliche_steuer
+  definition tarifliche_est under condition tarif_modifiziert consequence equals
+    tarifliche_est_modifiziert
+
+  # § 2 Abs. 6 Satz 1-2.
   definition festzusetzende_est equals
     tarifliche_est
     - anzurechnende_auslaendische_steuern - steuerermaessigungen

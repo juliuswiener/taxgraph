@@ -1,0 +1,188 @@
+# Tests verallgemeinerte Veranlagung - Zusammenveranlagung, Tarif-Andockung, End-to-end
+
+> Using Einkommensteuertarif
+> Using Entfernungspauschale
+
+Ergaenzt `tests_veranlagung_gesamt.catala_en` um (1) die Zusammenveranlagung
+(Splittingtarif), (2) die § 32b/§ 34-Tarif-Andockung (modifizierte Tarifgroesse tritt
+an die Stelle des Grundtarifs) und (3) eine End-to-end-Kette echter Regel-Outputs
+(Entfernungspauschale -> § 19-Einkuenfte -> § 2-Stufenfolge).
+
+## Zusammenveranlagung (§ 26b, Splittingtarif)
+
+Verankert an den Splitting-zvE-Punkten der Arbeitnehmerfall-Tests (zvE 97468 -> 20212,
+78698 -> 14008; VZ 2026).
+
+```catala
+#[test]
+declaration scope TestGesamtZusammen:
+  internal r1 content Einkommensteuertarif.FestzusetzendeEstGesamtZusammen
+  internal r2 content Einkommensteuertarif.FestzusetzendeEstGesamtZusammen
+  output zve1 content money
+  output fest1 content money
+  output fest2 content money
+
+scope TestGesamtZusammen:
+  # Zusammengerechnete § 19-Einkuenfte 97540 (58770 + 38770), verdoppelter
+  # SA-Pauschbetrag 72 -> zvE 97468 -> Splitting 20212.
+  definition r1 equals output of Einkommensteuertarif.FestzusetzendeEstGesamtZusammen with {
+    -- einkuenfte_nichtselbststaendig: $97,540.00
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: $0.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $0.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $72.00
+    -- aussergewoehnliche_belastungen: $0.00
+    -- freibetraege_kinder: $0.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $0.00
+    -- steuer_kapital_gesondert: $0.00
+    -- hinzurechnung_kindergeld: $0.00
+    -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: false
+    -- tarifliche_est_modifiziert: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition zve1 equals r1.zu_versteuerndes_einkommen
+  definition fest1 equals r1.festzusetzende_est
+  assertion zve1 = $97,468.00
+  assertion fest1 = $20,212.00
+
+  # Alleinverdiener: § 19 78770, SA-Pauschbetrag 72 -> zvE 78698 -> Splitting 14008.
+  definition r2 equals output of Einkommensteuertarif.FestzusetzendeEstGesamtZusammen with {
+    -- einkuenfte_nichtselbststaendig: $78,770.00
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: $0.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $0.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $72.00
+    -- aussergewoehnliche_belastungen: $0.00
+    -- freibetraege_kinder: $0.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $0.00
+    -- steuer_kapital_gesondert: $0.00
+    -- hinzurechnung_kindergeld: $0.00
+    -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: false
+    -- tarifliche_est_modifiziert: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition fest2 equals r2.festzusetzende_est
+  assertion fest2 = $14,008.00
+```
+
+## § 32b/§ 34-Tarif-Andockung (modifizierte Tarifgroesse)
+
+Ist `tarif_modifiziert` wahr, tritt die von der jeweiligen Regel (p32b Progressions-
+vorbehalt, p34 Fuenftel/ermaessigter Satz) gelieferte tarifliche ESt an die Stelle des
+Grundtarifs. Der modifizierte Wert ist hier synthetisch (5000); getestet wird die
+Andockung, nicht der Wert (p32b/p34 sind eigenstaendig verifiziert).
+
+```catala
+#[test]
+declaration scope TestGesamtTarifModifiziert:
+  internal r content Einkommensteuertarif.FestzusetzendeEstGesamt
+  output zve content money
+  output tarif content money
+  output fest content money
+
+scope TestGesamtTarifModifiziert:
+  # zvE 58734 (Grundtarif waere 13747); tarif_modifiziert -> tarifliche ESt = 5000;
+  # Steuerermaessigung 200 wirkt in Abs 6 auf den modifizierten Betrag -> fest 4800.
+  definition r equals output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+    -- einkuenfte_nichtselbststaendig: $58,770.00
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: $0.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $0.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $36.00
+    -- aussergewoehnliche_belastungen: $0.00
+    -- freibetraege_kinder: $0.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $200.00
+    -- steuer_kapital_gesondert: $0.00
+    -- hinzurechnung_kindergeld: $0.00
+    -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: true
+    -- tarifliche_est_modifiziert: $5,000.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition zve equals r.zu_versteuerndes_einkommen
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  assertion zve = $58,734.00
+  assertion tarif = $5,000.00
+  assertion fest = $4,800.00
+```
+
+## End-to-end: Entfernungspauschale -> § 19 -> § 2-Stufenfolge
+
+Echte Regel-Outputs durch die Kette: § 9 Entfernungspauschale liefert die
+Werbungskosten, § 9a/§ 19 die Einkuenfte, die § 2-Stufenfolge die festzusetzende ESt.
+
+```catala
+#[test]
+declaration scope TestEndeZuEnde:
+  internal ep content Entfernungspauschale.Berechnung
+  internal n content Einkommensteuertarif.EinkuenfteNichtselbststaendig
+  internal g content Einkommensteuertarif.FestzusetzendeEstGesamt
+  output pausch content money
+  output einkuenfte content money
+  output zve content money
+  output fest content money
+
+scope TestEndeZuEnde:
+  # § 9: 30 km, 220 Arbeitstage, VZ 2026 (Flat 0,38 ab km 1), eigenes Kfz (kein
+  # 4500-Deckel) -> 30 * 0,38 * 220 = 2508,00 Werbungskosten.
+  definition ep equals output of Entfernungspauschale.Berechnung with {
+    -- entfernung_km_roh: 30.0
+    -- arbeitstage: 220
+    -- eigenes_oder_ueberlassenes_kfz: true
+    -- oepnv_kosten_jahr: $0.00
+    -- satz_bis_20_km: $0.38
+    -- satz_ab_21_km: $0.38
+    -- staffelgrenze_km: 20
+    -- hoechstbetrag: $4,500.00 }
+  definition pausch equals ep.abziehbarer_betrag
+
+  # § 19/§ 9a: Brutto 31278, WK 2508 (> Pauschbetrag) -> Einkuenfte 28770.
+  definition n equals output of Einkommensteuertarif.EinkuenfteNichtselbststaendig with {
+    -- bruttoarbeitslohn: $31,278.00
+    -- werbungskosten: ep.abziehbarer_betrag
+    -- veranlagungszeitraum: VZ2026 }
+  definition einkuenfte equals n.einkuenfte
+
+  # § 2: Einkuenfte 28770 - SA-Pauschbetrag 36 -> zvE 28734 -> festzusetzende 3862.
+  definition g equals output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+    -- einkuenfte_nichtselbststaendig: n.einkuenfte
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: $0.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $0.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $36.00
+    -- aussergewoehnliche_belastungen: $0.00
+    -- freibetraege_kinder: $0.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $0.00
+    -- steuer_kapital_gesondert: $0.00
+    -- hinzurechnung_kindergeld: $0.00
+    -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: false
+    -- tarifliche_est_modifiziert: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition zve equals g.zu_versteuerndes_einkommen
+  definition fest equals g.festzusetzende_est
+  assertion pausch = $2,508.00
+  assertion einkuenfte = $28,770.00
+  assertion zve = $28,734.00
+  assertion fest = $3,862.00
+```
