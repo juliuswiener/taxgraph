@@ -59,3 +59,35 @@ shas in .meta.yaml); nachzuziehen: § 7 Abs. 1 (voller § 7), § 16.
 
 **Budget-Rahmen:** ~$1–2 über 5 Chargen (multi-quellige Kalibrierung ~$0,15/Regel).
 Cap je Charge durch Instructor-Freigabe, --cost-cap Pflicht.
+
+---
+
+## 🏁 PHASE-2-ABSCHLUSSVERMERK (Instructor, 2026-07-14)
+
+**EÜR-Programm KOMPLETT: 14/14 Zeilen an einem Tag (Chargen 15–19), Gesamtkosten ~$0,63
+— ein Drittel der unteren Schätzung.** Jede Zeile verified_bedingt (12 Pipeline-Regeln,
+1 Handregel §11, 3 Geltungsbedingungs-Pakete §12/§15/§18) oder begründeter
+Nicht-Gegenstand. Jede Charge doppelt verifiziert (dev-Lauf + unabhängiger
+Instructor-Nachlauf: Regate, pytest, clerk -W, Snapshots, eigene Wortlaut-Greps und
+Seed-Nachrechnung). Alle Regeln fresh-checkout-reproduzierbar (Snapshots 64, verify 0).
+
+**Substanz-Fänge der Reviews** (je vor dem $-Lauf): § 6 Nr. 5 S. 2 fortgeführte AK
+(Einlage-Deckel wäre mit Roh-AK falsch gewesen) · 200k-Konstanten-Schmuggel im
+IAB-Input (Konstanten-Doktrin) · Jahressumme-je-Empfänger bei Geschenken.
+
+**Neue dauerhafte Lehren:** (1) auszug-Leitlinie gilt auch für den JUDGE —
+Klasse-1-Kontext-Hunger auf Judge-Seite (C18-200k-Fall), Fix = Quelle widen, nie
+Triage-Umgehung; C19 lief mit proaktiv-prominenten Quellen auf 0 abweichungen.
+(2) Pipeline hardcodet money-OUTPUT → money-fremde Regeln als Handregel (§11);
+int/bool-INPUTS sind erprobt (Kurzform-Konvention). (3) Anker-Verifikation gegen
+quellen._normalize, nie raw grep -F (NBSP-Falle §35). (4) budget_abbruch-Gate im
+Ernstfall bewährt (C18-Re-Run, konservative Schätzung > Cap → sauberer Stopp).
+
+**Benannte Nachträge Phase 2:** § 4 Abs. 4a Überentnahmen · § 11 Vorauszahlungs-
+Verteilung (> 5 J) · § 7g Hinzurechnung/Rückgängigmachung (State) · Sonder-AfA
+20 %-Kohorte (vor 2024) · § 15 Abs. 3 Abfärbung · Übergangsgewinn EÜR↔BV ·
+Anlage-EÜR-Feldmapping (ELSTER, nach Hersteller-ID).
+
+**Nächster Schritt: Charge 20 = DBA-3a** (§ 34c Anrechnung/Abzug + § 34d-Paket,
+Scoping-Report 2026-07-14-dba-scoping.md, Freezes liegen) — danach ist auch Phase 3
+im beschlossenen Umfang (Abkommens-Texte = Nicht-Gegenstand mit Interface) komplett.
