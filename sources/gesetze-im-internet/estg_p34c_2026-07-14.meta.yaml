@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p34c/2026-07-14"
+  norm: "EStG § 34c"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__34c.html"
+  abrufdatum: "2026-07-14"
+  datei: "estg_p34c_2026-07-14.txt"
+  sha256: "a2b4163d059c9e78be9edaf12d1f8a786739ebf18ecdc9051fd33caea0945c15"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["DBA-Programm Phase 3a"]
