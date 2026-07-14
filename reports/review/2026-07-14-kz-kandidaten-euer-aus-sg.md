@@ -88,3 +88,21 @@ fabriziert):**
 Sonder-AfA/§34c-Abzug). AUS-Abs1 + S/G-Basis-Gewinn sind die zwei Rest-Felder — entweder (a) via
 ELSTER-Beispiel-XML (EUER_2025_ok.xml / ein AUS-Beispiel) den Gewinn/Anrechnungs-E-Nr ablesen
 (deterministisch, $0), ODER (b) beim Testversand/checkESt (Phase 4) auflösen. Dein Wort.
+
+## W1 ABGESCHLOSSEN (Paket 3, 2026-07-14) — AUS-Abs1 aufgelöst, kein Residual
+
+**Instructor-Auflösung des AUS-Abs1-„Residuums":** es gab keins — ich suchte ein §34c-Abs1-OUTPUT-
+Feld, das nicht existiert. Die ANRECHNUNG ist **Bescheid-Größe** (das Amt rechnet, analog tarifliche
+ESt — NICHT deklariert). Deklariert werden die **INPUTS** unserer Regel `p34c_1`:
+- ausländische Einkünfte je Staat → aus_2025 Z. 7 Vordruck-Kz **107/127/147** (DREI Staaten-Spalten
+  = exakt unsere per-country-Regel + Mehr-Staaten-§2-Integration)
+- anzurechnende ausländische Steuern → Z. 12 Kz **109/129/149**
+- §34c-Abs2-Abzug → Z. 10 Kz **113/133/153** (= E0600920)
+Regel-Output `anrechnung` = Bescheid-Größe, kein Deklarations-Kz (dokumentiert, analog tarifliche ESt).
+
+**S/G:** N/A bestätigt (Einkunftsart-Qualifikation §15/§18 = Geltungsbedingung, kein Rechenwert;
+EÜR-Gewinn E6007202 einmal deklariert).
+
+**W1 KOMPLETT:** feldmapping.stub.yaml **10 mapped / 3 stub**, validate grün. Alle formalisierten
+Selbständigen-Regel-Deklarationsgrößen (EÜR C15-19 + AUS §34c C20) auf amtliche Kz abgebildet.
+Offene E-Nr-Cross-Checks (AUS Vordruck-Kz → E10-E-Nr) = Phase-4/Testversand.

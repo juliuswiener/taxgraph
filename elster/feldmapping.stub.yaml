@@ -117,3 +117,25 @@ mapping:
     veranlagungszeitraum: 2025
     status: "mapped"
     quelle: "E77-2025.xsd (Übertrag in Anlage S/G)"
+  # --- W1 Paket 3 (2026-07-14): AUS §34c Abs1 INPUT-Kz (Anrechnung = Bescheid-Größe, kein Output-Kz) ---
+  # Instructor-Auflösung: §34c-Abs1-ANRECHNUNG rechnet das Amt (Bescheid-Größe, analog tarifliche ESt,
+  # NICHT deklariert). Deklariert werden die INPUTS unserer Regel p34c_1. aus_2025 hat DREI Staaten-
+  # Spalten (Kz 107/127/147 etc.) = genau unsere per-country-Regel + Mehr-Staaten-§2-Integration.
+  - regel_output: "p34c_1_anrechnung_hoechstbetrag.AnrechnungHoechstbetrag.auslaendische_einkuenfte_staat"
+    elster_feld_id: "AUS-Z7-107"
+    elster_feld_name: "Anlage AUS Z. 7 ausländische Einkünfte je Staat (Vordruck-Kz 107/127/147, drei Staaten-Spalten)"
+    anlage: "Anlage AUS"
+    typ: "euro"
+    pflicht: false
+    veranlagungszeitraum: 2025
+    status: "mapped"
+    quelle: "aus_2025 Z. 7 Vordruck-Kz 107/127/147 (E-Nr-Cross-Check Phase 4)"
+  - regel_output: "p34c_1_anrechnung_hoechstbetrag.AnrechnungHoechstbetrag.gezahlte_auslaendische_steuer"
+    elster_feld_id: "AUS-Z12-109"
+    elster_feld_name: "Anlage AUS Z. 12 anzurechnende ausländische Steuern je Staat (Vordruck-Kz 109/129/149)"
+    anlage: "Anlage AUS"
+    typ: "euro"
+    pflicht: false
+    veranlagungszeitraum: 2025
+    status: "mapped"
+    quelle: "aus_2025 Z. 12 Vordruck-Kz 109/129/149 (E-Nr-Cross-Check Phase 4)"
