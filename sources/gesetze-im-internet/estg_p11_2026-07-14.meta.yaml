@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p11/2026-07-14"
+  norm: "EStG § 11"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__11.html"
+  abrufdatum: "2026-07-14"
+  datei: "estg_p11_2026-07-14.txt"
+  sha256: "06c3e503fd634390d1c8b093a0c56a48ad74ae8bbfc6d2bdd518c6807ad497b6"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["EUeR-Programm"]

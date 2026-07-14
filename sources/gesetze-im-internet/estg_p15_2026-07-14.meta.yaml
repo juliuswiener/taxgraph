@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p15/2026-07-14"
+  norm: "EStG § 15"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__15.html"
+  abrufdatum: "2026-07-14"
+  datei: "estg_p15_2026-07-14.txt"
+  sha256: "71cd27b70465377c2c8581064f5eeb85c95e62cef84664eb67ba22d5ca85ef4a"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["EUeR-Programm"]
