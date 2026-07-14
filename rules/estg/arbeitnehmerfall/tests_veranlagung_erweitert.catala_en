@@ -2,6 +2,7 @@
 
 > Using Einkommensteuertarif
 > Using Entfernungspauschale
+> Using Solzg
 
 Ergaenzt `tests_veranlagung_gesamt.catala_en` um (1) die Zusammenveranlagung
 (Splittingtarif), (2) die § 32b/§ 34-Tarif-Andockung (modifizierte Tarifgroesse tritt
@@ -185,4 +186,84 @@ scope TestEndeZuEnde:
   assertion einkuenfte = $28,770.00
   assertion zve = $28,734.00
   assertion fest = $3,862.00
+```
+
+## Gesamtsteuerbelastung: § 2-Stufenfolge -> festzusetzende ESt -> Solidaritaetszuschlag
+
+Die Komposition ESt + SolZ als Whole-Program-Kette (§ 2-Stufenfolge -> Modul Solzg).
+Bemessungsgrundlage des SolZ ist die festzusetzende Einkommensteuer (§ 3 Abs. 1 SolzG).
+Hier per Tarif-Override auf 40 000 gesetzt, um oberhalb der Freigrenze (§ 3 Abs. 3:
+20 350 Euro Einzel) den vollen Satz zu treffen; zum Kontrast ein Fall unter der Freigrenze.
+
+```catala
+#[test]
+declaration scope TestGesamtMitSolz:
+  internal g content Einkommensteuertarif.FestzusetzendeEstGesamt
+  internal s content Solzg.Solidaritaetszuschlag
+  internal g0 content Einkommensteuertarif.FestzusetzendeEstGesamt
+  internal s0 content Solzg.Solidaritaetszuschlag
+  output fest content money
+  output solz content money
+  output gesamt content money
+  output solz0 content money
+
+scope TestGesamtMitSolz:
+  # festzusetzende ESt 40000 (via Tarif-Override), Einzel -> § 4 SolzG voller Satz
+  # 5,5 % = 2200,00 -> Gesamtbelastung 42200.
+  definition g equals output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+    -- einkuenfte_nichtselbststaendig: $0.00
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: $0.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $0.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $0.00
+    -- aussergewoehnliche_belastungen: $0.00
+    -- freibetraege_kinder: $0.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $0.00
+    -- steuer_kapital_gesondert: $0.00
+    -- hinzurechnung_kindergeld: $0.00
+    -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: true
+    -- tarifliche_est_modifiziert: $40,000.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition fest equals g.festzusetzende_est
+  definition s equals output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: g.festzusetzende_est
+    -- splitting: false }
+  definition solz equals s.solidaritaetszuschlag
+  definition gesamt equals fest + solz
+  assertion fest = $40,000.00
+  assertion solz = $2,200.00
+  assertion gesamt = $42,200.00
+
+  # Kontrast: festzusetzende ESt 13747 < Freigrenze 20350 -> kein SolZ.
+  definition g0 equals output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+    -- einkuenfte_nichtselbststaendig: $58,770.00
+    -- einkuenfte_kapitalvermoegen: $0.00
+    -- einkuenfte_vermietung: $0.00
+    -- einkuenfte_sonstige: $0.00
+    -- einkuenfte_gewinn: $0.00
+    -- altersentlastungsbetrag: $0.00
+    -- entlastungsbetrag_alleinerziehende: $0.00
+    -- sonderausgaben: $36.00
+    -- aussergewoehnliche_belastungen: $0.00
+    -- freibetraege_kinder: $0.00
+    -- sonstige_abzuege_vom_einkommen: $0.00
+    -- anzurechnende_auslaendische_steuern: $0.00
+    -- steuerermaessigungen: $0.00
+    -- steuer_kapital_gesondert: $0.00
+    -- hinzurechnung_kindergeld: $0.00
+    -- hinzurechnung_zulage: $0.00
+    -- tarif_modifiziert: false
+    -- tarifliche_est_modifiziert: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition s0 equals output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: g0.festzusetzende_est
+    -- splitting: false }
+  definition solz0 equals s0.solidaritaetszuschlag
+  assertion solz0 = $0.00
 ```
