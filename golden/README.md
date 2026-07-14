@@ -7,7 +7,9 @@ Release bei rotem Korpus.
 
 ## Stand v1
 
-57 Faelle: § 32a-Tarif und Arbeitnehmerfall end-to-end (Grund- und Splittingtarif, VZ 2024/2025/2026),
+60 Faelle: § 32a-Tarif und Arbeitnehmerfall end-to-end (Grund- und Splittingtarif, VZ 2024/2025/2026),
+die verallgemeinerte § 2-Veranlagung (Gesamtfall: mehrere Einkunftsarten, Abzuege, Ermaessigungen,
+Einzel- und Zusammenveranlagung),
 inklusive der gesetzlichen Randwerte (Grundfreibetrag, Zonengrenzen) und des
 BMF-Rechner-Spot-Check-Falls (gemeinsames zvE 23 634, VZ 2024, erwartet 8 Euro).
 Das Fallschema ist bereits generisch fuer spaetere Feldwert-Erwartungen angelegt

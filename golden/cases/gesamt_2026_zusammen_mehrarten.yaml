@@ -1,0 +1,19 @@
+id: gesamt_2026_zusammen_mehrarten
+beschreibung: "Gesamtfall Zusammenveranlagung: zusammengerechnete § 19-Einkuenfte 97540, verdoppelter SA-Pauschbetrag 72 -> gemeinsames zvE 97468 -> Splitting 20212, VZ 2026"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2026
+  veranlagung: zusammen
+  einkuenfte_nichtselbststaendig: 97540
+  sonderausgaben: 72
+
+erwartung:
+  festzusetzende_est: 20212
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 bis 6 EStG i.V.m. § 26b, § 32a Abs. 5 EStG (Splittingtarif VZ 2026)"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"

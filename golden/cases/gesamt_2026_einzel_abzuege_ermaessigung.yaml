@@ -1,0 +1,22 @@
+id: gesamt_2026_einzel_abzuege_ermaessigung
+beschreibung: "Gesamtfall Einzel: § 19 62000, § 24a 2000, SA 2000, agB 500 -> zvE 57500 -> tarifl 13279, § 35a-Ermaessigung 279 -> festzusetzende 13000, VZ 2026"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2026
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 62000
+  altersentlastungsbetrag: 2000
+  sonderausgaben: 2000
+  aussergewoehnliche_belastungen: 500
+  steuerermaessigungen: 279
+
+erwartung:
+  festzusetzende_est: 13000
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 bis 6 EStG (Stufenfolge inkl. § 24a, Sonderausgaben, agB, § 35a-Ermaessigung)"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"

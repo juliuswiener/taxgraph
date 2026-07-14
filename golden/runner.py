@@ -100,9 +100,44 @@ def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text.translate(_UMLAUT).lower()).strip()
 
 
+def catala_gesamt(s: dict) -> int:
+    """Verallgemeinerte § 2-Veranlagung: alle Andockstellen als money-Eingaben."""
+    year = s["veranlagungszeitraum"]
+    def m(k):
+        return Money(f"{int(s.get(k, 0))}.00")
+    scope = (E.festzusetzende_est_gesamt_zusammen if s.get("veranlagung") == "zusammen"
+             else E.festzusetzende_est_gesamt)
+    cls = (E.FestzusetzendeEstGesamtZusammenIn if s.get("veranlagung") == "zusammen"
+           else E.FestzusetzendeEstGesamtIn)
+    out = scope(cls(
+        einkuenfte_nichtselbststaendig_in=m("einkuenfte_nichtselbststaendig"),
+        einkuenfte_kapitalvermoegen_in=m("einkuenfte_kapitalvermoegen"),
+        einkuenfte_vermietung_in=m("einkuenfte_vermietung"),
+        einkuenfte_sonstige_in=m("einkuenfte_sonstige"),
+        einkuenfte_gewinn_in=m("einkuenfte_gewinn"),
+        altersentlastungsbetrag_in=m("altersentlastungsbetrag"),
+        entlastungsbetrag_alleinerziehende_in=m("entlastungsbetrag_alleinerziehende"),
+        sonderausgaben_in=m("sonderausgaben"),
+        aussergewoehnliche_belastungen_in=m("aussergewoehnliche_belastungen"),
+        freibetraege_kinder_in=m("freibetraege_kinder"),
+        sonstige_abzuege_vom_einkommen_in=m("sonstige_abzuege_vom_einkommen"),
+        anzurechnende_auslaendische_steuern_in=m("anzurechnende_auslaendische_steuern"),
+        steuerermaessigungen_in=m("steuerermaessigungen"),
+        steuer_kapital_gesondert_in=m("steuer_kapital_gesondert"),
+        hinzurechnung_kindergeld_in=m("hinzurechnung_kindergeld"),
+        hinzurechnung_zulage_in=m("hinzurechnung_zulage"),
+        tarif_modifiziert_in=Bool(s.get("tarif_modifiziert", False)),
+        tarifliche_est_modifiziert_in=m("tarifliche_est_modifiziert"),
+        veranlagungszeitraum_in=VZ_ENUM[year]))
+    return int(out.festzusetzende_est) // 100
+
+
 def catala_est(sachverhalt: dict) -> int:
     year = sachverhalt["veranlagungszeitraum"]
     veranlagung = sachverhalt.get("veranlagung")
+    # Verallgemeinerte § 2-Veranlagung (Gesamtfall).
+    if sachverhalt.get("gesamtfall"):
+        return catala_gesamt(sachverhalt)
     # Entfernungspauschale (§ 9): abziehbarer Betrag.
     if "entfernung_km_roh" in sachverhalt:
         return catala_entfernungspauschale(sachverhalt)
@@ -145,7 +180,8 @@ def main() -> int:
         s = c["sachverhalt"]
         erw = c["erwartung"]
         exp = erw.get("tarifliche_est",
-                      erw.get("abziehbarer_betrag", erw.get("abzug_gesamt")))
+                      erw.get("festzusetzende_est",
+                              erw.get("abziehbarer_betrag", erw.get("abzug_gesamt"))))
         q = c["quelle"]
 
         # 1. citation-anchor gate

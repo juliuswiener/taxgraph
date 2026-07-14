@@ -1,0 +1,20 @@
+id: gesamt_2026_einzel_mehrarten
+beschreibung: "Gesamtfall Einzel, § 19 40000 + § 21 Vermietung 18770, SA-Pauschbetrag 36 -> zvE 58734, VZ 2026"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2026
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 40000
+  einkuenfte_vermietung: 18770
+  sonderausgaben: 36
+
+erwartung:
+  festzusetzende_est: 13747
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 bis 6 EStG (Stufenfolge), § 32a Abs. 1 EStG (Grundtarif VZ 2026)"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"

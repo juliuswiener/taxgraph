@@ -69,8 +69,9 @@ Arbeitnehmerfall-Tests bereits gegen die GETTSIM-Oracle pinnen — dieses File t
 
 - **§ 2 Abs. 6 Exoten** (§ 32c-Unterschiedsbetrag, § 34c Abs. 5, Forstschäden-Zuschlag)
   bleiben 0-Slots — AN-fern.
-- **Python-Golden über den Gesamt-Scope** (statt clerk-Kette): der golden/runner.py-Zweig
-  für einen Gesamtfall ist noch offen; die clerk-End-to-end-Kette deckt den Beweis bereits ab.
+- ~~Python-Golden über den Gesamt-Scope~~ **✅ erledigt:** golden/runner.py hat einen
+  `gesamtfall`-Zweig (Einzel + Zusammen), 3 neue Golden-Fälle (mehrere Einkunftsarten,
+  Abzüge+Ermäßigung, Zusammenveranlagung), Zitatanker gegen § 2 Abs. 6. **Golden 60/60.**
 - **§ 32b/§ 34 als echte Verzahnung in der Integration** (die Bedingung + der modifizierte
   Wert aus p32b/p34 automatisch bestimmt) — der Andock-Mechanismus steht, die automatische
   Fallunterscheidung in einem Gesamt-Runner ist der nächste Schritt.
