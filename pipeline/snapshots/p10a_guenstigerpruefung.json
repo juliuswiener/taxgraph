@@ -1,0 +1,275 @@
+{
+  "bedingungen": [
+    "guenstigerpruefung_von_amts_wegen"
+  ],
+  "candidate_id": "p10a_guenstigerpruefung",
+  "catala_a": "declaration scope GuenstigerpruefungRiester:\n  input est_ohne_sonderausgabenabzug content money\n  input est_mit_sonderausgabenabzug content money\n  input zulageanspruch_guenstigerpruefung content money\n  output zusaetzliche_steuerermaessigung content money\n\nscope GuenstigerpruefungRiester:\n  definition zusaetzliche_steuerermaessigung equals\n    let sa_vorteil equals\n      est_ohne_sonderausgabenabzug - est_mit_sonderausgabenabzug\n    in\n    if sa_vorteil > zulageanspruch_guenstigerpruefung\n    then sa_vorteil - zulageanspruch_guenstigerpruefung\n    else $0.00",
+  "catala_a_sha256": "a472905a4a8f0deb1088f2259cd4dee91b53612f801fb56c95470bd8f659df09",
+  "catala_b": "declaration scope GuenstigerpruefungRiester:\n  input est_ohne_sonderausgabenabzug content money\n  input est_mit_sonderausgabenabzug content money\n  input zulageanspruch_guenstigerpruefung content money\n  output zusaetzliche_steuerermaessigung content money\n\nscope GuenstigerpruefungRiester:\n  definition zusaetzliche_steuerermaessigung equals\n    let sa_vorteil equals est_ohne_sonderausgabenabzug - est_mit_sonderausgabenabzug in\n    let ueberschuss equals sa_vorteil - zulageanspruch_guenstigerpruefung in\n    if ueberschuss > $0.00 then ueberschuss else $0.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'zusaetzliche_steuerermaessigung'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Die Ausgabe berechnet die Differenz statt die Erhöhung der tariflichen Einkommensteuer um den Zulageanspruch."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 3,
+        "annahmen": 3,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Ausgabe ist 0, wenn der Sonderausgabenabzug nicht günstiger ist, statt dass dieser ausscheidet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt 0 zurück, wenn der Sonderausgabenabzug nicht günstiger ist, statt ihn auszuscheiden."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "est_ohne_sonderausgabenabzug",
+              "interpretation"
+            ],
+            "text": "Wird als tarifliche Einkommensteuer ohne Sonderausgabenabzug interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "est_mit_sonderausgabenabzug",
+              "interpretation"
+            ],
+            "text": "Wird als tarifliche Einkommensteuer mit Sonderausgabenabzug interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "zulageanspruch_guenstigerpruefung",
+              "interpretation"
+            ],
+            "text": "Wird als Anspruch auf Zulage nach Abschnitt XI interpretiert."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "erhöht sich die unter Berücksichtigung des Sonderausgabenabzugs ermittelte tarifliche Einkommensteuer um den Anspruch au",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 10a abs. 2 s. 1\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Ausgabe berechnet die Differenz statt die Erhöhung der tariflichen Einkommensteuer um den Zulageanspruch.",
+            "eingeschmolzen": "Die Formalisierung berechnet eine Differenz, nicht die Erhöhung der tariflichen Einkommensteuer um den Zulageanspruch.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Ausgabe berechnet die Differenz statt die Erhöhung der tariflichen Einkommensteuer um den Zulageanspruch.",
+            "eingeschmolzen": "Die Ausgabe berechnet die Differenz statt die tarifliche Einkommensteuer zu erhöhen.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Ausgabe ist 0, wenn der Sonderausgabenabzug nicht günstiger ist, statt dass dieser ausscheidet.",
+            "eingeschmolzen": "Die Ausgabe ist 0, wenn der Sonderausgabenabzug nicht günstiger ist, statt den Abzug ausfallen zu lassen.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "In den anderen Fällen scheidet der Sonderausgabenabzug aus",
+            "eingeschmolzen": "In den anderen Fällen scheidet der Sonderausgabenabzug aus.",
+            "key": [
+              "ref",
+              "§ 10a abs. 2 s. 2"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        5,
+        4,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "fd58c8b40b39",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "erhöht sich die unter Berücksichtigung des Sonderausgabenabzugs ermittelte tarifliche Einkommensteuer um den Anspruch auf Zulage",
+        "referenz": "§ 10a Abs. 2 S. 1"
+      },
+      {
+        "abgedeckt_von": "guenstigerpruefung_von_amts_wegen",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "In den anderen Fällen scheidet der Sonderausgabenabzug aus",
+        "referenz": "§ 10a Abs. 2 S. 2"
+      },
+      {
+        "abgedeckt_von": "guenstigerpruefung_von_amts_wegen",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "stellt das Finanzamt die über den Zulageanspruch nach Abschnitt XI hinausgehende Steuerermäßigung gesondert fest",
+        "referenz": "§ 10a Abs. 4 S. 1"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Wird als tarifliche Einkommensteuer ohne Sonderausgabenabzug interpretiert.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "est_ohne_sonderausgabenabzug",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Wird als tarifliche Einkommensteuer mit Sonderausgabenabzug interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "est_mit_sonderausgabenabzug",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Wird als Anspruch auf Zulage nach Abschnitt XI interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "zulageanspruch_guenstigerpruefung",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-13T21:33:03+00:00"
+  },
+  "module_name": "GuenstigerpruefungRiester",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

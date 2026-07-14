@@ -1,0 +1,198 @@
+{
+  "bedingungen": [
+    "verlustvortrag_bestand_festgestellt"
+  ],
+  "candidate_id": "p10d_2_verlustvortrag_abzug",
+  "catala_a": "declaration scope VerlustvortragAbzug:\n  input gesamtbetrag_einkuenfte content money\n  input verlustvortrag_bestand content money\n  input zusammenveranlagung content boolean\n  output verlustabzug content money\n\nscope VerlustvortragAbzug:\n  definition verlustabzug equals\n    let sockel equals\n      if zusammenveranlagung then $2,000,000.00 else $1,000,000.00\n    in\n    let ueberstieg equals\n      if gesamtbetrag_einkuenfte > sockel\n      then gesamtbetrag_einkuenfte - sockel\n      else $0.00\n    in\n    let hoechstbetrag equals\n      sockel + ueberstieg * 0.70\n    in\n    if verlustvortrag_bestand < hoechstbetrag\n    then verlustvortrag_bestand\n    else hoechstbetrag",
+  "catala_a_sha256": "68a13ab6143c978990a2781549f464c34591e0c207e3422d5f4ae616cc8b5566",
+  "catala_b": "declaration scope VerlustvortragAbzug:\n  input gesamtbetrag_einkuenfte content money\n  input verlustvortrag_bestand content money\n  input zusammenveranlagung content boolean\n  internal sockel content money\n  internal uebersteigender_betrag content money\n  internal abzugsbetrag_oberhalb content money\n  internal maximaler_abzug content money\n  output verlustabzug content money\n\nscope VerlustvortragAbzug:\n  definition sockel equals\n    if zusammenveranlagung then $2,000,000.00 else $1,000,000.00\n  definition uebersteigender_betrag equals\n    if gesamtbetrag_einkuenfte > sockel then gesamtbetrag_einkuenfte - sockel else $0.00\n  definition abzugsbetrag_oberhalb equals uebersteigender_betrag * 0.70\n  definition maximaler_abzug equals sockel + abzugsbetrag_oberhalb\n  definition verlustabzug equals\n    (Decimal.truncate of ((if verlustvortrag_bestand < maximaler_abzug then verlustvortrag_bestand else maximaler_abzug) / $1.00)) * $1.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'verlustabzug'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Der Sockelbetrag wird bei Zusammenveranlagung verdoppelt, was die Norm nicht vorsieht."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 2,
+        "annahmen": 3,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Der Verlustvortragsbestand ist nicht ausgeglichene negative Einkünfte.",
+            "eingeschmolzen": "Der Verlustvortragsbestand gilt als nicht ausgeglichene negative Einkünfte.",
+            "key": [
+              "betrifft_kat",
+              "verlustvortrag_bestand",
+              "geltungsvoraussetzung"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        8,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "a4c65096d292",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt",
+        "referenz": "§ 10d Abs. 2 S. 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "darüber hinaus bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte",
+        "referenz": "§ 10d Abs. 2 S. 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "vorrangig vor Sonderausgaben, außergewöhnlichen Belastungen und sonstigen Abzugsbeträgen",
+        "referenz": "§ 10d Abs. 2 S. 2"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Zusammenveranlagung verdoppelt den Sockelbetrag auf 2 Mio. Euro.",
+        "bedingung_id": null,
+        "betrifft": "zusammenveranlagung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der Gesamtbetrag der Einkünfte wird als Bruttobetrag interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "gesamtbetrag_einkuenfte",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Der Verlustvortragsbestand ist nicht ausgeglichene negative Einkünfte.",
+        "bedingung_id": "verlustvortrag_bestand_festgestellt",
+        "betrifft": "verlustvortrag_bestand",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-13T20:41:25+00:00"
+  },
+  "module_name": "Verlustvortrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

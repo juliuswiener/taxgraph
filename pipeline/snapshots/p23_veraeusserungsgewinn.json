@@ -1,0 +1,145 @@
+{
+  "bedingungen": [
+    "veraeusserung_innerhalb_frist",
+    "nicht_ausschliesslich_eigene_wohnzwecke",
+    "kein_gegenstand_taeglichen_gebrauchs",
+    "anschaffung_veraeusserung_originaerer_erwerb"
+  ],
+  "candidate_id": "p23_veraeusserungsgewinn",
+  "catala_a": "declaration scope VeraeusserungsGewinn:\n  input veraeusserungspreis content money\n  input anschaffungs_herstellungskosten content money\n  input werbungskosten content money\n  output veraeusserungsgewinn content money\n\nscope VeraeusserungsGewinn:\n  definition veraeusserungsgewinn equals\n    veraeusserungspreis - anschaffungs_herstellungskosten - werbungskosten",
+  "catala_a_sha256": "ca7fe2d77eb402321123400578037bca90ffc5dc11a01a40e5405d28fabb9e92",
+  "catala_b": "declaration scope VeraeusserungsGewinn:\n  input veraeusserungspreis content money\n  input anschaffungs_herstellungskosten content money\n  input werbungskosten content money\n  output veraeusserungsgewinn content money\n\nscope VeraeusserungsGewinn:\n  definition veraeusserungsgewinn equals veraeusserungspreis - anschaffungs_herstellungskosten - werbungskosten",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'veraeusserungsgewinn'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 0 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 0
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        0,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "77e57401f030",
+    "parse_error": false,
+    "scope_gap": [],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-13T22:03:42+00:00"
+  },
+  "module_name": "VeraeusserungsGewinn",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

@@ -1,0 +1,250 @@
+{
+  "bedingungen": [
+    "basis_kv_pv_ist_basisabsicherung"
+  ],
+  "candidate_id": "p10_1_3_3a_kv_pv",
+  "catala_a": "declaration scope KrankenPflegeVorsorge:\n  input basis_kv_pv content money\n  input weitere_vorsorgeaufwendungen content money\n  input mit_anspruch_auf_zuschuss content boolean\n  output abziehbare_kv_pv_vorsorge content money\n\nscope KrankenPflegeVorsorge:\n  definition abziehbare_kv_pv_vorsorge equals\n    let hoechstbetrag equals\n      if mit_anspruch_auf_zuschuss then $1,900.00 else $2,800.00\n    in\n    let beruecksichtigt_ohne_durchbruch equals\n      if basis_kv_pv + weitere_vorsorgeaufwendungen > hoechstbetrag\n      then hoechstbetrag\n      else basis_kv_pv + weitere_vorsorgeaufwendungen\n    in\n    if basis_kv_pv > beruecksichtigt_ohne_durchbruch\n    then basis_kv_pv\n    else beruecksichtigt_ohne_durchbruch",
+  "catala_a_sha256": "f848ba4d753f9bcc7c5c82f26bcfd40a5c816aec47c05bac8fc64432c1ac10d2",
+  "catala_b": "declaration scope KrankenPflegeVorsorge:\n  input basis_kv_pv content money\n  input weitere_vorsorgeaufwendungen content money\n  input mit_anspruch_auf_zuschuss content boolean\n  internal hoechstbetrag content money\n  internal gesamt_vorsorge content money\n  internal beruecksichtigt_saetze_1_3 content money\n  output abziehbare_kv_pv_vorsorge content money\n\nscope KrankenPflegeVorsorge:\n  definition hoechstbetrag equals\n    if mit_anspruch_auf_zuschuss then $1,900.00 else $2,800.00\n  definition gesamt_vorsorge equals\n    basis_kv_pv + weitere_vorsorgeaufwendungen\n  definition beruecksichtigt_saetze_1_3 equals\n    if gesamt_vorsorge > hoechstbetrag then hoechstbetrag else gesamt_vorsorge\n  definition abziehbare_kv_pv_vorsorge equals\n    if basis_kv_pv > beruecksichtigt_saetze_1_3\n    then basis_kv_pv\n    else beruecksichtigt_saetze_1_3",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'abziehbare_kv_pv_vorsorge'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Die Formalisierung gibt bei basis_kv_pv > beruecksichtigt_ohne_durchbruch den vollen basis_kv_pv-Betrag zurück, ohne den Höchstbetrag zu begrenzen."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 2,
+        "annahmen": 3,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt bei basis_kv_pv > beruecksichtigt_ohne_durchbruch den vollen basis_kv_pv-Betrag zurück, ohne den"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt im Durchbruch-Fall die vollen basis_kv_pv zurück, die Norm begrenzt den Abzug auf den Höchstbetr"
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "mit_anspruch_auf_zuschuss",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung setzt den Höchstbetrag von 1.900 Euro nur bei mit_anspruch_auf_zuschuss = true, obwohl der Normtext w"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "mit_anspruch_auf_zuschuss",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung setzt den reduzierten Höchstbetrag von 1.900 Euro für alle Steuerpflichtigen mit Anspruch auf Zuschus"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "mit_anspruch_auf_zuschuss",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung setzt den Höchstbetrag von 1.900 Euro allein aufgrund des Inputs 'mit_anspruch_auf_zuschuss' fest, oh"
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 10 abs. 4 satz 4"
+            ],
+            "text": "sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne des Absatzes 1 Nummer 3a scheidet aus"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Formalisierung gibt bei basis_kv_pv > beruecksichtigt_ohne_durchbruch den vollen basis_kv_pv-Betrag zurück, ohne den Höchstbetrag zu begrenzen.",
+            "eingeschmolzen": "Die Formalisierung gibt bei basis_kv_pv > beruecksichtigt_ohne_durchbruch den vollen basis_kv_pv-Betrag aus, ohne den Höchstbetrag von 2.800/1.900 Euro zu beach",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung gibt im Durchbruch-Fall die vollen basis_kv_pv zurück, die Norm begrenzt den Abzug auf den Höchstbetrag.",
+            "eingeschmolzen": "Die Formalisierung gibt im Basis-Durchbruch-Fall die vollen basis_kv_pv zurück, obwohl die Norm nur den Abzug der tatsächlichen Aufwendungen nach Abs. 1 Nr. 3 e",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung setzt den reduzierten Höchstbetrag von 1.900 Euro für alle Steuerpflichtigen mit Anspruch auf Zuschuss an.",
+            "eingeschmolzen": "Die Formalisierung setzt den reduzierten Höchstbetrag von 1.900 Euro voraus, sobald ein Anspruch auf Zuschuss besteht, ohne die gesetzliche Einschränkung 'ganz ",
+            "key": [
+              "betrifft_kat",
+              "mit_anspruch_auf_zuschuss",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        2,
+        3,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "eb32423b3763",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne des Absatzes 1 Nummer 3a scheidet aus",
+        "referenz": "§ 10 Abs. 4 Satz 4"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung setzt den Höchstbetrag von 1.900 Euro nur bei mit_anspruch_auf_zuschuss = true, obwohl der Normtext weitere Alternativen nennt.",
+        "bedingung_id": null,
+        "betrifft": "mit_anspruch_auf_zuschuss",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung setzt den reduzierten Höchstbetrag von 1.900 Euro für alle Steuerpflichtigen mit Anspruch auf Zuschuss an.",
+        "bedingung_id": null,
+        "betrifft": "mit_anspruch_auf_zuschuss",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung setzt den Höchstbetrag von 1.900 Euro allein aufgrund des Inputs 'mit_anspruch_auf_zuschuss' fest, ohne die weiteren gesetzlichen Alternativen zu prüfen.",
+        "bedingung_id": null,
+        "betrifft": "mit_anspruch_auf_zuschuss",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-11T13:20:50+00:00"
+  },
+  "module_name": "KrankenPflegeVorsorge",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

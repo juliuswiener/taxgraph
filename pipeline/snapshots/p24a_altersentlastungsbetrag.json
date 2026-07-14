@@ -1,0 +1,196 @@
+{
+  "bedingungen": [
+    "prozentsatz_hoechstbetrag_aus_kohortentabelle",
+    "bemessung_netto_nach_ausschluessen",
+    "alter_64_vor_bezugsjahr_vollendet"
+  ],
+  "candidate_id": "p24a_altersentlastungsbetrag",
+  "catala_a": "declaration scope Altersentlastungsbetrag:\n  input arbeitslohn content money\n  input positive_andere_einkuenfte content money\n  input prozentsatz content decimal\n  input hoechstbetrag content money\n  output altersentlastungsbetrag content money\n\nscope Altersentlastungsbetrag:\n  definition altersentlastungsbetrag equals\n    let bemessungsgrundlage equals arbeitslohn + positive_andere_einkuenfte in\n    let roh_betrag equals (prozentsatz / 100.0) * bemessungsgrundlage in\n    if roh_betrag > hoechstbetrag then hoechstbetrag else roh_betrag",
+  "catala_a_sha256": "939a81486d5b13f975bb16a81bcd7b899d5714d5274013426705ce72bdbf89b2",
+  "catala_b": "declaration scope Altersentlastungsbetrag:\n  input arbeitslohn content money\n  input positive_andere_einkuenfte content money\n  input prozentsatz content decimal\n  input hoechstbetrag content money\n  output altersentlastungsbetrag content money\n\nscope Altersentlastungsbetrag:\n  definition altersentlastungsbetrag equals\n    let bemessungsgrundlage equals arbeitslohn + positive_andere_einkuenfte in\n    let anteil equals bemessungsgrundlage * (prozentsatz / 100.0) in\n    if anteil > hoechstbetrag then hoechstbetrag else anteil",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'altersentlastungsbetrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 0 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 1,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "prozentsatz",
+              "einheit"
+            ],
+            "text": "Der Prozentsatz wird als Dezimalzahl interpretiert und durch 100 geteilt, obwohl die Norm einen Prozentwert vorgibt."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 24a satz 1"
+            ],
+            "text": "im Kalenderjahr"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 24a satz 5"
+            ],
+            "text": "der nachstehenden Tabelle zu entnehmen"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        2,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "856001fc53d1",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "im Kalenderjahr",
+        "referenz": "§ 24a Satz 1"
+      },
+      {
+        "abgedeckt_von": "prozentsatz_hoechstbetrag_aus_kohortentabelle",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "der nachstehenden Tabelle zu entnehmen",
+        "referenz": "§ 24a Satz 5"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Der Prozentsatz wird als Dezimalzahl interpretiert und durch 100 geteilt, obwohl die Norm einen Prozentwert vorgibt.",
+        "bedingung_id": null,
+        "betrifft": "prozentsatz",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-13T00:02:19+00:00"
+  },
+  "module_name": "Altersentlastungsbetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

@@ -1,0 +1,191 @@
+{
+  "bedingungen": [
+    "kinder_sind_zu_beruecksichtigen",
+    "kind_zu_beiden_ehegatten",
+    "keine_uebertragung_oder_sonderfaelle"
+  ],
+  "candidate_id": "p32_6_kinderfreibetraege",
+  "catala_a": "declaration scope Kinderfreibetraege:\n  input anzahl_kinder content integer\n  input zusammenveranlagung content boolean\n  output kinderfreibetraege_gesamt content money\n\nscope Kinderfreibetraege:\n  definition kinderfreibetraege_gesamt equals\n    let kinderfreibetrag equals $3,414.00 in\n    let bea_freibetrag equals $1,464.00 in\n    let freibetrag_je_kind equals kinderfreibetrag + bea_freibetrag in\n    let faktor equals if zusammenveranlagung then 2.0 else 1.0 in\n    (freibetrag_je_kind * faktor) * (decimal of anzahl_kinder)",
+  "catala_a_sha256": "3330ce7de519b6b017ca36dd009f4d2404f08c566c6993b98b6a9a3368536784",
+  "catala_b": "declaration scope Kinderfreibetraege:\n  input anzahl_kinder content integer\n  input zusammenveranlagung content boolean\n  output kinderfreibetraege_gesamt content money\n\nscope Kinderfreibetraege:\n  definition kinderfreibetraege_gesamt equals\n    let freibetrag_pro_kind equals\n      if zusammenveranlagung then ($3,414.00 + $1,464.00) * 2.0\n      else $3,414.00 + $1,464.00\n    in freibetrag_pro_kind * (decimal of anzahl_kinder)",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'kinderfreibetraege_gesamt'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 2,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass 'anzahl_kinder' die Anzahl der zu berücksichtigenden Kinder ist."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Formalisierung multipliziert den Verdopplungsfaktor mit der Kinderzahl, die Norm verdoppelt nur die Beträge pro Kind.",
+            "eingeschmolzen": "Die Formalisierung multipliziert den Verdopplungsfaktor mit der Kinderzahl, die Norm verdoppelt die Beträge nur bei gemeinsamem Kind.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung nimmt an, dass 'anzahl_kinder' die Anzahl der zu berücksichtigenden Kinder ist.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass 'anzahl_kinder' die Zahl der zu berücksichtigenden Kinder ist.",
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        3,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "247e12a4eb15",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "kind_zu_beiden_ehegatten",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn das Kind zu beiden Ehegatten in einem Kindschaftsverhältnis steht",
+        "referenz": "Satz 2"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass bei Zusammenveranlagung das Kind zu beiden Ehegatten in einem Kindschaftsverhältnis steht.",
+        "bedingung_id": "kind_zu_beiden_ehegatten",
+        "betrifft": "zusammenveranlagung",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass 'anzahl_kinder' die Anzahl der zu berücksichtigenden Kinder ist.",
+        "bedingung_id": "kinder_sind_zu_beruecksichtigen",
+        "betrifft": "anzahl_kinder",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-11T12:45:13+00:00"
+  },
+  "module_name": "Kinderfreibetraege",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

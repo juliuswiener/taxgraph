@@ -1,0 +1,521 @@
+{
+  "bedingungen": [
+    "alleinstehend_im_sinne_des_absatzes_3",
+    "kinder_mit_freibetrag_oder_kindergeld_im_haushalt",
+    "monate_ohne_voraussetzung_sind_volle_kalendermonate"
+  ],
+  "candidate_id": "p24b_entlastungsbetrag",
+  "catala_a": "declaration scope Entlastungsbetrag:\n  input alleinstehend content boolean\n  input anzahl_kinder content integer\n  input monate_ohne_voraussetzung content integer\n  output entlastungsbetrag content money\n\nscope Entlastungsbetrag:\n  definition entlastungsbetrag equals\n    if not alleinstehend then $0.00\n    else if anzahl_kinder <= 0 then $0.00\n    else\n      let betrag_vor_kuerzung equals\n        $4,260.00 + $240.00 * (decimal of (anzahl_kinder - 1))\n      in\n      let kuerzung equals\n        betrag_vor_kuerzung * (decimal of monate_ohne_voraussetzung / 12.0)\n      in\n      betrag_vor_kuerzung - kuerzung",
+  "catala_a_sha256": "0598d5becfd5900ec6c9f37e9becd551e51639d9efc09504c5fba8c4e40d4ebd",
+  "catala_b": "declaration scope Entlastungsbetrag:\n  input alleinstehend content boolean\n  input anzahl_kinder content integer\n  input monate_ohne_voraussetzung content integer\n  output entlastungsbetrag content money\n\nscope Entlastungsbetrag:\n  definition entlastungsbetrag equals\n    if not alleinstehend then $0.00\n    else if anzahl_kinder <= 0 then $0.00\n    else\n      let basisbetrag equals $4,260.00 + $240.00 * (decimal of (anzahl_kinder - 1)) in\n      basisbetrag * ((decimal of (12 - monate_ohne_voraussetzung)) / 12.0)",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'entlastungsbetrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 4 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 7,
+        "annahmen": 13,
+        "norm_teile": 5
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung berechnet den Entlastungsbetrag als 0, wenn anzahl_kinder <= 0 ist, obwohl die Norm diesen Fall nicht"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "monate_ohne_voraussetzung"
+            ],
+            "text": "Die Formalisierung subtrahiert eine Kürzung vom vollen Betrag, während die Norm den Betrag um ein Zwölftel pro Monat erm"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung berechnet den Entlastungsbetrag als Null, wenn die Eingabe 'alleinstehend' falsch ist, obwohl die Nor"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung subtrahiert die Kürzung vom vollen Betrag, während die Norm eine Ermäßigung 'um ein Zwölftel' pro Mon"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung berechnet den Entlastungsbetrag als Null, wenn anzahl_kinder <= 0, während die Norm diesen Fall nicht"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "monate_ohne_voraussetzung"
+            ],
+            "text": "Die Formalisierung multipliziert den ungekürzten Betrag mit (monate_ohne_voraussetzung / 12.0), die Norm schreibt eine E"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung kürzt den Entlastungsbetrag um einen proportionalen Anteil, während die Norm eine Ermäßigung um ein Z"
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "monate_ohne_voraussetzung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung behandelt monate_ohne_voraussetzung als Anzahl der Monate, in denen die Voraussetzungen nicht vorlage"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass anzahl_kinder die Gesamtzahl der zum Haushalt gehörenden Kinder im Sinne des Absatzes "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "alleinstehend",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass die Eigenschaft 'alleinstehend' bereits gemäß § 24b Abs. 3 EStG geprüft und festge"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung behandelt anzahl_kinder als reine Anzahl, während die Norm die Zugehörigkeit zum Haushalt und den Ans"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_ohne_voraussetzung",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung verwendet eine kontinuierliche Division durch 12.0, während die Norm eine monatsgenaue Ermäßigung um "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "alleinstehend",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung verwendet einen booleschen Wert für alleinstehend, während die Norm komplexe Voraussetzungen wie Spli"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "alleinstehend",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass 'alleinstehend' eine boolesche Eigenschaft ist, die direkt als Eingabe vorliegt, ohne "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass die Anzahl der Kinder eine ganze Zahl ist, die die komplexen Voraussetzungen des § 24b"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_ohne_voraussetzung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass 'monate_ohne_voraussetzung' eine ganze Zahl ist, die die monatsweise Prüfung der Vorau"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Die Formalisierung enthält keine explizite Rundungsvorschrift für das Ergebnis der Kürzungsberechnung, obwohl Geldbeträg"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "alleinstehend",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass 'alleinstehend' eine boolesche Eigenschaft ist, die alle Voraussetzungen des Absatzes "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_ohne_voraussetzung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass 'monate_ohne_voraussetzung' die Anzahl der vollen Kalendermonate ohne Voraussetzungen "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_ohne_voraussetzung",
+              "rundung"
+            ],
+            "text": "Die Formalisierung verwendet eine Gleitkommadivision für die Kürzung, ohne eine Rundungsregel für das Ergebnis zu spezif"
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 24b abs. 1 satz 2"
+            ],
+            "text": "Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden Steuerpflichtigen gemel"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 24b abs. 1 satz 1"
+            ],
+            "text": "wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz 6 oder Kindergeld zuste"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 24b abs. 1 s. 1"
+            ],
+            "text": "wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz 6 oder Kindergeld zuste"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 24b abs. 1 s. 2"
+            ],
+            "text": "Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden Steuerpflichtigen gemel"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden Steuerpflichtigen gemel",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 24b abs. 1 satz 2\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Formalisierung berechnet den Entlastungsbetrag als 0, wenn anzahl_kinder <= 0 ist, obwohl die Norm diesen Fall nicht explizit regelt.",
+            "eingeschmolzen": "Die Formalisierung berechnet den Entlastungsbetrag als 0, wenn anzahl_kinder <= 0 ist, obwohl die Norm für 0 Kinder keinen Anspruch vorsieht, aber nicht explizi",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung berechnet den Entlastungsbetrag als 0, wenn anzahl_kinder <= 0 ist, obwohl die Norm diesen Fall nicht explizit regelt.",
+            "eingeschmolzen": "Die Formalisierung berechnet den Entlastungsbetrag als Null, wenn 'anzahl_kinder' null oder negativ ist, obwohl die Norm diesen Fall nicht explizit regelt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung berechnet den Entlastungsbetrag als 0, wenn anzahl_kinder <= 0 ist, obwohl die Norm diesen Fall nicht explizit regelt.",
+            "eingeschmolzen": "Die Formalisierung berechnet den Entlastungsbetrag als Null, wenn nicht alleinstehend, während die Norm diesen Fall nicht explizit regelt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung nimmt an, dass anzahl_kinder die Gesamtzahl der zum Haushalt gehörenden Kinder im Sinne des Absatzes 1 ist.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass 'anzahl_kinder' die Anzahl der zum Haushalt gehörenden Kinder im Sinne des Absatzes 1 ist.",
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung behandelt monate_ohne_voraussetzung als Anzahl der Monate, in denen die Voraussetzungen nicht vorlagen, und wendet eine proportionale Kürzung",
+            "eingeschmolzen": "Die Formalisierung behandelt 'monate_ohne_voraussetzung' als Anzahl der Monate, in denen die Voraussetzungen nicht vorlagen, und nicht als Anzahl der vollen Kal",
+            "key": [
+              "betrifft_kat",
+              "monate_ohne_voraussetzung",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        6,
+        5,
+        8,
+        5,
+        1
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "10b0223a0cbc",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden Steuerpflichtigen gemeldet ist.",
+        "referenz": "§ 24b Abs. 1 Satz 2"
+      },
+      {
+        "abgedeckt_von": "alleinstehend_im_sinne_des_absatzes_3",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige, die nicht die Voraussetzungen für die Anwendung des Splitting-Verfahrens (§ 26 Absatz 1) erfüllen oder verwitwet sind und keine Haushaltsgemeinschaft mit einer anderen volljährigen Person bilden, es sei denn, für diese steht ihnen ein Freibetrag nach § 32 Absatz 6 oder Kindergeld zu.",
+        "referenz": "§ 24b Abs. 3"
+      },
+      {
+        "abgedeckt_von": "kinder_mit_freibetrag_oder_kindergeld_im_haushalt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz 6 oder Kindergeld zusteht",
+        "referenz": "§ 24b Abs. 1 Satz 1"
+      },
+      {
+        "abgedeckt_von": "kinder_mit_freibetrag_oder_kindergeld_im_haushalt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn zu ihrem Haushalt mindestens ein Kind gehört, für das ihnen ein Freibetrag nach § 32 Absatz 6 oder Kindergeld zusteht",
+        "referenz": "§ 24b Abs. 1 S. 1"
+      },
+      {
+        "abgedeckt_von": "kinder_mit_freibetrag_oder_kindergeld_im_haushalt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Die Zugehörigkeit zum Haushalt ist anzunehmen, wenn das Kind in der Wohnung des allein stehenden Steuerpflichtigen gemeldet ist.",
+        "referenz": "§ 24b Abs. 1 S. 2"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung behandelt monate_ohne_voraussetzung als Anzahl der Monate, in denen die Voraussetzungen nicht vorlagen, und wendet eine proportionale Kürzung an.",
+        "bedingung_id": "monate_ohne_voraussetzung_sind_volle_kalendermonate",
+        "betrifft": "monate_ohne_voraussetzung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass anzahl_kinder die Gesamtzahl der zum Haushalt gehörenden Kinder im Sinne des Absatzes 1 ist.",
+        "bedingung_id": "kinder_mit_freibetrag_oder_kindergeld_im_haushalt",
+        "betrifft": "anzahl_kinder",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass die Eigenschaft 'alleinstehend' bereits gemäß § 24b Abs. 3 EStG geprüft und festgestellt wurde.",
+        "bedingung_id": "alleinstehend_im_sinne_des_absatzes_3",
+        "betrifft": "alleinstehend",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Formalisierung behandelt anzahl_kinder als reine Anzahl, während die Norm die Zugehörigkeit zum Haushalt und den Anspruch auf Freibetrag/Kindergeld voraussetzt.",
+        "bedingung_id": "kinder_mit_freibetrag_oder_kindergeld_im_haushalt",
+        "betrifft": "anzahl_kinder",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung verwendet eine kontinuierliche Division durch 12.0, während die Norm eine monatsgenaue Ermäßigung um je ein Zwölftel vorschreibt.",
+        "bedingung_id": "konv:ganzzahl_monate",
+        "betrifft": "monate_ohne_voraussetzung",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung verwendet einen booleschen Wert für alleinstehend, während die Norm komplexe Voraussetzungen wie Splitting-Verfahren und Haushaltsgemeinschaft definiert.",
+        "bedingung_id": "alleinstehend_im_sinne_des_absatzes_3",
+        "betrifft": "alleinstehend",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass 'alleinstehend' eine boolesche Eigenschaft ist, die direkt als Eingabe vorliegt, ohne die komplexen Voraussetzungen des § 24b Abs. 3 EStG zu prüfen.",
+        "bedingung_id": "alleinstehend_im_sinne_des_absatzes_3",
+        "betrifft": "alleinstehend",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass die Anzahl der Kinder eine ganze Zahl ist, die die komplexen Voraussetzungen des § 24b Abs. 1 EStG (Haushaltszugehörigkeit, Anspruch auf Freibetrag/Kindergeld) bereits vollständig abbildet.",
+        "bedingung_id": "kinder_mit_freibetrag_oder_kindergeld_im_haushalt",
+        "betrifft": "anzahl_kinder",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass 'monate_ohne_voraussetzung' eine ganze Zahl ist, die die monatsweise Prüfung der Voraussetzungen nach § 24b Abs. 4 EStG bereits korrekt aggregiert.",
+        "bedingung_id": "monate_ohne_voraussetzung_sind_volle_kalendermonate",
+        "betrifft": "monate_ohne_voraussetzung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung enthält keine explizite Rundungsvorschrift für das Ergebnis der Kürzungsberechnung, obwohl Geldbeträge im Steuerrecht üblicherweise auf volle Euro gerundet werden.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass 'alleinstehend' eine boolesche Eigenschaft ist, die alle Voraussetzungen des Absatzes 3 aggregiert.",
+        "bedingung_id": "alleinstehend_im_sinne_des_absatzes_3",
+        "betrifft": "alleinstehend",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass 'monate_ohne_voraussetzung' die Anzahl der vollen Kalendermonate ohne Voraussetzungen des Absatzes 1 ist.",
+        "bedingung_id": "monate_ohne_voraussetzung_sind_volle_kalendermonate",
+        "betrifft": "monate_ohne_voraussetzung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung verwendet eine Gleitkommadivision für die Kürzung, ohne eine Rundungsregel für das Ergebnis zu spezifizieren.",
+        "bedingung_id": null,
+        "betrifft": "monate_ohne_voraussetzung",
+        "kategorie": "rundung"
+      }
+    ],
+    "timestamp": "2026-07-11T10:44:54+00:00"
+  },
+  "module_name": "Entlastungsbetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

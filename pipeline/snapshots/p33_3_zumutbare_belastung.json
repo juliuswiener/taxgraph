@@ -1,0 +1,539 @@
+{
+  "bedingungen": [
+    "kinder_sind_anspruchskinder",
+    "splitting_ist_veranlagungsergebnis"
+  ],
+  "candidate_id": "p33_3_zumutbare_belastung",
+  "catala_a": "declaration scope ZumutbareBelastung:\n  input gesamtbetrag_der_einkuenfte content money\n  input anzahl_kinder content integer\n  input splitting content boolean\n  output zumutbare_belastung content money\n\nscope ZumutbareBelastung:\n  definition zumutbare_belastung equals\n    let grenze1 equals $15,340.00 in\n    let grenze2 equals $51,130.00 in\n    let satz1 equals\n      if anzahl_kinder >= 3 then 0.01\n      else if anzahl_kinder >= 1 then 0.02\n      else if splitting then 0.04\n      else 0.05\n    in\n    let satz2 equals\n      if anzahl_kinder >= 3 then 0.01\n      else if anzahl_kinder >= 1 then 0.03\n      else if splitting then 0.05\n      else 0.06\n    in\n    let satz3 equals\n      if anzahl_kinder >= 3 then 0.02\n      else if anzahl_kinder >= 1 then 0.04\n      else if splitting then 0.06\n      else 0.07\n    in\n    if gesamtbetrag_der_einkuenfte <= grenze1 then\n      gesamtbetrag_der_einkuenfte * satz1\n    else if gesamtbetrag_der_einkuenfte <= grenze2 then\n      grenze1 * satz1\n      + (gesamtbetrag_der_einkuenfte - grenze1) * satz2\n    else\n      grenze1 * satz1\n      + (grenze2 - grenze1) * satz2\n      + (gesamtbetrag_der_einkuenfte - grenze2) * satz3",
+  "catala_a_sha256": "6315e14d06c558988f2f24a73d9b9807080a69d41ff90ea9f2437593cec5faf1",
+  "catala_b": "declaration scope ZumutbareBelastung:\n  input gesamtbetrag_der_einkuenfte content money\n  input anzahl_kinder content integer\n  input splitting content boolean\n  internal prozentsatz_stufe_1 content decimal\n  internal prozentsatz_stufe_2 content decimal\n  internal prozentsatz_stufe_3 content decimal\n  internal anteil_1 content money\n  internal anteil_2 content money\n  internal anteil_3 content money\n  output zumutbare_belastung content money\n\nscope ZumutbareBelastung:\n  definition prozentsatz_stufe_1 equals\n    if anzahl_kinder >= 3 then 0.01\n    else (if anzahl_kinder >= 1 then 0.02\n    else (if splitting then 0.04 else 0.05))\n\n  definition prozentsatz_stufe_2 equals\n    if anzahl_kinder >= 3 then 0.01\n    else (if anzahl_kinder >= 1 then 0.03\n    else (if splitting then 0.05 else 0.06))\n\n  definition prozentsatz_stufe_3 equals\n    if anzahl_kinder >= 3 then 0.02\n    else (if anzahl_kinder >= 1 then 0.04\n    else (if splitting then 0.06 else 0.07))\n\n  definition anteil_1 equals\n    (if gesamtbetrag_der_einkuenfte <= $15,340.00 then gesamtbetrag_der_einkuenfte else $15,340.00) * prozentsatz_stufe_1\n\n  definition anteil_2 equals\n    if gesamtbetrag_der_einkuenfte > $15,340.00 then\n      (if gesamtbetrag_der_einkuenfte <= $51,130.00 then gesamtbetrag_der_einkuenfte - $15,340.00 else $35,790.00) * prozentsatz_stufe_2\n    else $0.00\n\n  definition anteil_3 equals\n    if gesamtbetrag_der_einkuenfte > $51,130.00 then\n      (gesamtbetrag_der_einkuenfte - $51,130.00) * prozentsatz_stufe_3\n    else $0.00\n\n  definition zumutbare_belastung equals anteil_1 + anteil_2 + anteil_3",
+  "gates": [
+    {
+      "detail": "erster Versuch",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "erster Versuch",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'zumutbare_belastung'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 8 wirkt_hinein (blockierend ist geltungsbereich), 3 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "6 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 9,
+        "norm_teile": 11
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "gesamtbetrag_der_einkuenfte",
+              "interpretation"
+            ],
+            "text": "Der Gesamtbetrag der Einkünfte ist der steuerrechtlich definierte Gesamtbetrag der Einkünfte."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ],
+            "text": "Die Anzahl der Kinder wird gemäß § 33 Abs. 3 Satz 2 EStG bestimmt."
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft_kat",
+              "splitting",
+              "interpretation"
+            ],
+            "text": "Der boolesche Wert gibt an, ob die Einkommensteuer nach dem Splitting-Verfahren berechnet wird."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ],
+            "text": "Die Anzahl der Kinder wird als die nach § 33 Abs. 3 Satz 2 EStG definierte Kinderzahl interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Die Berechnung multipliziert Geldbeträge mit Prozentsätzen, ohne dass die Norm eine Rundungsregel vorschreibt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ],
+            "text": "Die Anzahl der Kinder wird als die Anzahl der Kinder interpretiert, für die ein Anspruch auf Freibetrag oder Kindergeld "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Die Multiplikation von Geldbeträgen mit Prozentsätzen erfolgt ohne explizite Rundungsregel."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "splitting",
+              "interpretation"
+            ],
+            "text": "Der boolesche Eingabewert 'splitting' wird als hinreichend für die Unterscheidung zwischen der Steuerberechnung nach §32"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Das Ergebnis wird ohne Rundung als exakter Geldbetrag berechnet, obwohl die Norm keine Rundungsregel vorgibt."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 33 abs. 1 estg"
+            ],
+            "text": "so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die dem Steuerpflichtigen z"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 33 abs. 3 satz 2 estg"
+            ],
+            "text": "Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kinder"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 33 abs. 3 satz 1 nr. 1b estg"
+            ],
+            "text": "bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer ... nach § 32a Absatz 5 oder 6 (Splittin"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 33 abs. 3 satz 2"
+            ],
+            "text": "Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kinder"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 33 abs. 3 satz 1 nr. 1 b)"
+            ],
+            "text": "nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 33 abs. 3 satz 1 nr. 1"
+            ],
+            "text": "bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer a) nach § 32a Absatz 1, b) nach § 32a Ab"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 33 abs. 3 satz 1"
+            ],
+            "text": "bis 15 340 EUR, über 15 340 EUR bis 51 130 EUR, über 51 130 EUR"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 33 abs. 3 satz 1 tabelle"
+            ],
+            "text": "5 | 6 | 7, 4 | 5 | 6, 2 | 3 | 4, 1 | 1 | 2 Prozent des Gesamtbetrags der Einkünfte"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 33 abs. 1"
+            ],
+            "text": "so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die dem Steuerpflichtigen z"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 33 abs. 3 satz 1"
+            ],
+            "text": "nach § 32a Absatz 1"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 33 abs. 3 satz 1"
+            ],
+            "text": "nach § 32a Absatz 5 oder 6 (Splitting-Verfahren)"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kinder",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 33 abs. 3 satz 2 estg\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 33 abs. 3 satz 1 nr. 1 b)\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "nach § 32a Absatz 5 oder 6 (Splitting-Verfahren)",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 33 abs. 3 satz 1\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Der boolesche Wert gibt an, ob die Einkommensteuer nach dem Splitting-Verfahren berechnet wird.",
+            "eingeschmolzen": "Der Boolean-Wert gibt an, ob die Einkommensteuer nach dem Splitting-Verfahren (§ 32a Abs. 5 oder 6 EStG) berechnet wird.",
+            "key": [
+              "betrifft_kat",
+              "splitting",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Der boolesche Wert gibt an, ob die Einkommensteuer nach dem Splitting-Verfahren berechnet wird.",
+            "eingeschmolzen": "Der boolesche Wert 'splitting' gibt an, ob die Einkommensteuer nach dem Splitting-Verfahren berechnet wird.",
+            "key": [
+              "betrifft_kat",
+              "splitting",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Berechnung multipliziert Geldbeträge mit Prozentsätzen, ohne dass die Norm eine Rundungsregel vorschreibt.",
+            "eingeschmolzen": "Die Berechnung multipliziert Geldbeträge mit Prozentsätzen ohne explizite Rundungsregel, obwohl die Norm keine Rundung vorschreibt.",
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ]
+          },
+          {
+            "cluster": "Die Anzahl der Kinder wird gemäß § 33 Abs. 3 Satz 2 EStG bestimmt.",
+            "eingeschmolzen": "Die Eingabe 'anzahl_kinder' wird als korrekte Anzahl der Kinder gemäß der gesetzlichen Definition in §33 Abs. 3 Satz 2 EStG vorausgesetzt.",
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Anzahl der Kinder wird als die nach § 33 Abs. 3 Satz 2 EStG definierte Kinderzahl interpretiert.",
+            "eingeschmolzen": "Die Anzahl der Kinder wird als die nach § 33 Abs. 3 Satz 2 EStG definierte Kinderzahl angenommen.",
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Der boolesche Wert gibt an, ob die Einkommensteuer nach dem Splitting-Verfahren berechnet wird.",
+            "eingeschmolzen": "Der Boolean gibt an, ob die Einkommensteuer nach dem Splitting-Verfahren (§ 32a Abs. 5 oder 6) berechnet wird.",
+            "key": [
+              "betrifft_kat",
+              "splitting",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt",
+            "eingeschmolzen": "der Teil der Aufwendungen, der die dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen wird",
+            "key": [
+              "ref",
+              "§ 33 abs. 1"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        6,
+        4,
+        5,
+        2,
+        3
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "24ec26f4e19e",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen wird.",
+        "referenz": "§ 33 Abs. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "kinder_sind_anspruchskinder",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld hat.",
+        "referenz": "§ 33 Abs. 3 Satz 2 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer ... nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist",
+        "referenz": "§ 33 Abs. 3 Satz 1 Nr. 1b EStG"
+      },
+      {
+        "abgedeckt_von": "kinder_sind_anspruchskinder",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Als Kinder des Steuerpflichtigen zählen die, für die er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld hat.",
+        "referenz": "§ 33 Abs. 3 Satz 2"
+      },
+      {
+        "abgedeckt_von": "splitting_ist_veranlagungsergebnis",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist",
+        "referenz": "§ 33 Abs. 3 Satz 1 Nr. 1 b)"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bei Steuerpflichtigen, die keine Kinder haben und bei denen die Einkommensteuer a) nach § 32a Absatz 1, b) nach § 32a Absatz 5 oder 6 (Splitting-Verfahren) zu berechnen ist",
+        "referenz": "§ 33 Abs. 3 Satz 1 Nr. 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bis 15 340 EUR, über 15 340 EUR bis 51 130 EUR, über 51 130 EUR",
+        "referenz": "§ 33 Abs. 3 Satz 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "5 | 6 | 7, 4 | 5 | 6, 2 | 3 | 4, 1 | 1 | 2 Prozent des Gesamtbetrags der Einkünfte",
+        "referenz": "§ 33 Abs. 3 Satz 1 Tabelle"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "so wird auf Antrag die Einkommensteuer dadurch ermäßigt, dass der Teil der Aufwendungen, der die dem Steuerpflichtigen zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen wird.",
+        "referenz": "§ 33 Abs. 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "nach § 32a Absatz 1",
+        "referenz": "§ 33 Abs. 3 Satz 1"
+      },
+      {
+        "abgedeckt_von": "splitting_ist_veranlagungsergebnis",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "nach § 32a Absatz 5 oder 6 (Splitting-Verfahren)",
+        "referenz": "§ 33 Abs. 3 Satz 1"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Der Gesamtbetrag der Einkünfte ist der steuerrechtlich definierte Gesamtbetrag der Einkünfte.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "gesamtbetrag_der_einkuenfte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Anzahl der Kinder wird gemäß § 33 Abs. 3 Satz 2 EStG bestimmt.",
+        "bedingung_id": "kinder_sind_anspruchskinder",
+        "betrifft": "anzahl_kinder",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der boolesche Wert gibt an, ob die Einkommensteuer nach dem Splitting-Verfahren berechnet wird.",
+        "bedingung_id": "splitting_ist_veranlagungsergebnis",
+        "betrifft": "splitting",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Anzahl der Kinder wird als die nach § 33 Abs. 3 Satz 2 EStG definierte Kinderzahl interpretiert.",
+        "bedingung_id": "kinder_sind_anspruchskinder",
+        "betrifft": "anzahl_kinder",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Berechnung multipliziert Geldbeträge mit Prozentsätzen, ohne dass die Norm eine Rundungsregel vorschreibt.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die Anzahl der Kinder wird als die Anzahl der Kinder interpretiert, für die ein Anspruch auf Freibetrag oder Kindergeld besteht.",
+        "bedingung_id": "kinder_sind_anspruchskinder",
+        "betrifft": "anzahl_kinder",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Multiplikation von Geldbeträgen mit Prozentsätzen erfolgt ohne explizite Rundungsregel.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Der boolesche Eingabewert 'splitting' wird als hinreichend für die Unterscheidung zwischen der Steuerberechnung nach §32a Abs. 1 und §32a Abs. 5/6 EStG angenommen.",
+        "bedingung_id": "splitting_ist_veranlagungsergebnis",
+        "betrifft": "splitting",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Das Ergebnis wird ohne Rundung als exakter Geldbetrag berechnet, obwohl die Norm keine Rundungsregel vorgibt.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      }
+    ],
+    "timestamp": "2026-07-11T00:25:39+00:00"
+  },
+  "module_name": "ZumutbareBelastung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

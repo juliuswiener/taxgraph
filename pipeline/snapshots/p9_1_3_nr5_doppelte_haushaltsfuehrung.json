@@ -1,0 +1,481 @@
+{
+  "bedingungen": [
+    "beruflich_veranlasste_doppelte_haushaltsfuehrung",
+    "eigener_hausstand_ausserhalb_des_taetigkeitsorts",
+    "finanzielle_beteiligung_an_lebensfuehrungskosten",
+    "keine_verpflichtende_dienst_oder_werkswohnung"
+  ],
+  "candidate_id": "p9_1_3_nr5_doppelte_haushaltsfuehrung",
+  "catala_a": "declaration scope DoppelteHaushaltsfuehrung:\n  input unterkunftskosten_monat content money\n  input monate content integer\n  input im_inland content boolean\n  internal hoechstbetrag_monat content money\n  output abziehbare_unterkunftskosten content money\n\nscope DoppelteHaushaltsfuehrung:\n  definition hoechstbetrag_monat equals\n    if im_inland then $1,000.00\n    else $2,000.00\n\n  definition abziehbare_unterkunftskosten equals\n    (if unterkunftskosten_monat > hoechstbetrag_monat\n     then hoechstbetrag_monat\n     else unterkunftskosten_monat)\n    * (decimal of monate)",
+  "catala_a_sha256": "c29f35bb0ea68f7a1d3b0d66c23ccf212dfbef417d7815c69d1fc52e2da0a2b7",
+  "catala_b": "declaration scope DoppelteHaushaltsfuehrung:\n  input unterkunftskosten_monat content money\n  input monate content integer\n  input im_inland content boolean\n  output abziehbare_unterkunftskosten content money\n\nscope DoppelteHaushaltsfuehrung:\n  definition abziehbare_unterkunftskosten equals\n    let hoechstbetrag equals\n      if im_inland then $1,000.00 else $2,000.00\n    in\n    let abziehbare_monat equals\n      if unterkunftskosten_monat <= hoechstbetrag then unterkunftskosten_monat else hoechstbetrag\n    in\n    abziehbare_monat * monate",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'abziehbare_unterkunftskosten'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 6 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 2,
+        "annahmen": 8,
+        "norm_teile": 9
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die abziehbaren Unterkunftskosten werden auch dann auf 2.000 Euro begrenzt, wenn die Ausnahme für Dienst- oder Werkswohn"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung deckelt ausländische Unterkunftskosten immer auf 2.000 Euro, obwohl die Norm unter bestimmten Vorauss"
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisation setzt voraus, dass die Höchstgrenze von 2.000 Euro im Ausland stets gilt und die Ausnahme für Dienst- "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate",
+              "interpretation"
+            ],
+            "text": "Die Formalisation legt die monatliche Höchstgrenze so aus, dass der Gesamtbetrag durch Multiplikation mit der Anzahl der"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "im_inland",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass die Voraussetzungen für die Ausnahme von der 2.000-Euro-Grenze (Dienst- oder Werks"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung interpretiert die monatliche Höchstgrenze so, dass sie für jeden Monat einzeln gilt und die Beträge ü"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "unterkunftskosten_monat",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung unterstellt, dass der Steuerpflichtige stets die tatsächlichen Aufwendungen in voller Höhe bis zur Hö"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "unterkunftskosten_monat",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass die monatlichen Unterkunftskosten über alle Monate konstant sind, obwohl die Norm kein"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate",
+              "zeitbezug"
+            ],
+            "text": "Die Norm nennt nur eine monatliche Höchstgrenze; die Formalisierung berechnet den Gesamtabzug durch Multiplikation mit d"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass die Unterkunft für eine ganzzahlige Anzahl von Monaten genutzt wurde."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "satz 1"
+            ],
+            "text": "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entste"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "satz 2"
+            ],
+            "text": "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte e"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "satz 4"
+            ],
+            "text": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend "
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "satz 6"
+            ],
+            "text": "Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen K"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "satz 7"
+            ],
+            "text": "Nummer 4 Satz 3 bis 5 ist entsprechend anzuwenden."
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "satz 8"
+            ],
+            "text": "Aufwendungen für Familienheimfahrten mit einem dem Steuerpflichtigen im Rahmen einer Einkunftsart überlassenen Kraftfahr"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 4, 2. halbsatz"
+            ],
+            "text": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend "
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Formalisation legt die monatliche Höchstgrenze so aus, dass der Gesamtbetrag durch Multiplikation mit der Anzahl der",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"monate\", \"interpretation\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entste",
+          "schluessel": "[\"norm_teile\", \"ref\", \"satz 1\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte e",
+          "schluessel": "[\"norm_teile\", \"ref\", \"satz 2\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend ",
+          "schluessel": "[\"norm_teile\", \"ref\", \"satz 4, 2. halbsatz\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die abziehbaren Unterkunftskosten werden auch dann auf 2.000 Euro begrenzt, wenn die Ausnahme für Dienst- oder Werkswohnungen nach Satz 4 Halbsatz 2 greift.",
+            "eingeschmolzen": "Die Formalisierung begrenzt die Unterkunftskosten im Ausland stets auf 2.000 Euro, auch wenn die gesetzliche Ausnahme für Dienst- oder Werkswohnungen greift, wa",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die abziehbaren Unterkunftskosten werden auch dann auf 2.000 Euro begrenzt, wenn die Ausnahme für Dienst- oder Werkswohnungen nach Satz 4 Halbsatz 2 greift.",
+            "eingeschmolzen": "Die Formalisierung wendet die Höchstgrenze von 2.000 Euro auch dann an, wenn die Ausnahme für Dienst- oder Werkswohnungen im Ausland greift.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung setzt voraus, dass die Voraussetzungen für die Ausnahme von der 2.000-Euro-Grenze (Dienst- oder Werkswohnung) nicht erfüllt sind.",
+            "eingeschmolzen": "Die Formalisierung unterstellt, dass die Voraussetzungen für die Ausnahme von der 2.000-Euro-Grenze nicht erfüllt sind.",
+            "key": [
+              "betrifft_kat",
+              "im_inland",
+              "geltungsvoraussetzung"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen",
+            "eingeschmolzen": "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen.",
+            "key": [
+              "ref",
+              "satz 1"
+            ]
+          },
+          {
+            "cluster": "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen",
+            "eingeschmolzen": "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen.",
+            "key": [
+              "ref",
+              "satz 1"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        11,
+        3,
+        2,
+        1,
+        2
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "4542fc4f3edc",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen",
+        "referenz": "Satz 1"
+      },
+      {
+        "abgedeckt_von": "eigener_hausstand_ausserhalb_des_taetigkeitsorts",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält und auch am Ort der ersten Tätigkeitsstätte wohnt.",
+        "referenz": "Satz 2"
+      },
+      {
+        "abgedeckt_von": "finanzielle_beteiligung_an_lebensfuehrungskosten",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Das Vorliegen eines eigenen Hausstandes setzt das Innehaben einer Wohnung sowie eine finanzielle Beteiligung an den Kosten der Lebensführung voraus.",
+        "referenz": "Satz 3"
+      },
+      {
+        "abgedeckt_von": "keine_verpflichtende_dienst_oder_werkswohnung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss oder deren Kosten für Zwecke des Mietzuschusses nach § 54 des Bundesbesoldungsgesetzes als notwendig anerkannt worden sind.",
+        "referenz": "Satz 4"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Aufwendungen für die Wege vom Ort der ersten Tätigkeitsstätte zum Ort des eigenen Hausstandes und zurück (Familienheimfahrt) können jeweils nur für eine Familienheimfahrt wöchentlich abgezogen werden.",
+        "referenz": "Satz 5"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Zur Abgeltung der Aufwendungen für eine Familienheimfahrt ist eine Entfernungspauschale von 0,38 Euro für jeden vollen Kilometer der Entfernung zwischen dem Ort des eigenen Hausstandes und dem Ort der ersten Tätigkeitsstätte anzusetzen.",
+        "referenz": "Satz 6"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Nummer 4 Satz 3 bis 5 ist entsprechend anzuwenden.",
+        "referenz": "Satz 7"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Aufwendungen für Familienheimfahrten mit einem dem Steuerpflichtigen im Rahmen einer Einkunftsart überlassenen Kraftfahrzeug werden nicht berücksichtigt.",
+        "referenz": "Satz 8"
+      },
+      {
+        "abgedeckt_von": "keine_verpflichtende_dienst_oder_werkswohnung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss oder deren Kosten für Zwecke des Mietzuschusses nach § 54 des Bundesbesoldungsgesetzes als notwendig anerkannt worden sind.",
+        "referenz": "Satz 4, 2. Halbsatz"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisation setzt voraus, dass die Höchstgrenze von 2.000 Euro im Ausland stets gilt und die Ausnahme für Dienst- oder Werkswohnungen nicht eintritt.",
+        "bedingung_id": "keine_verpflichtende_dienst_oder_werkswohnung",
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Formalisation legt die monatliche Höchstgrenze so aus, dass der Gesamtbetrag durch Multiplikation mit der Anzahl der Monate zu berechnen ist.",
+        "bedingung_id": null,
+        "betrifft": "monate",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass die Voraussetzungen für die Ausnahme von der 2.000-Euro-Grenze (Dienst- oder Werkswohnung) nicht erfüllt sind.",
+        "bedingung_id": "keine_verpflichtende_dienst_oder_werkswohnung",
+        "betrifft": "im_inland",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Formalisierung interpretiert die monatliche Höchstgrenze so, dass sie für jeden Monat einzeln gilt und die Beträge über die Anzahl der Monate aufsummiert werden.",
+        "bedingung_id": null,
+        "betrifft": "monate",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung unterstellt, dass der Steuerpflichtige stets die tatsächlichen Aufwendungen in voller Höhe bis zur Höchstgrenze geltend macht, obwohl die Norm ein Wahlrecht einräumt.",
+        "bedingung_id": null,
+        "betrifft": "unterkunftskosten_monat",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass die monatlichen Unterkunftskosten über alle Monate konstant sind, obwohl die Norm keine solche Konstanz voraussetzt.",
+        "bedingung_id": null,
+        "betrifft": "unterkunftskosten_monat",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Norm nennt nur eine monatliche Höchstgrenze; die Formalisierung berechnet den Gesamtabzug durch Multiplikation mit der Monatsanzahl.",
+        "bedingung_id": null,
+        "betrifft": "monate",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass die Unterkunft für eine ganzzahlige Anzahl von Monaten genutzt wurde.",
+        "bedingung_id": "konv:ganzzahl_monate",
+        "betrifft": "monate",
+        "kategorie": "zeitbezug"
+      }
+    ],
+    "timestamp": "2026-07-10T22:14:46+00:00"
+  },
+  "module_name": "DoppelteHaushaltsfuehrung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

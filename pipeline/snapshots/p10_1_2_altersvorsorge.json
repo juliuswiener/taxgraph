@@ -1,0 +1,193 @@
+{
+  "bedingungen": [
+    "beitraege_enthalten_ag_anteil",
+    "hoechstbeitrag_ist_parameter",
+    "voller_abzug_100_prozent"
+  ],
+  "candidate_id": "p10_1_2_altersvorsorge",
+  "catala_a": "declaration scope Altersvorsorge:\n  input gesamtbeitraege_inkl_ag content money\n  input ag_anteil_steuerfrei content money\n  input hoechstbeitrag_knappschaft content money\n  internal hoechstbeitrag_gerundet content money\n  internal hoechstbeitrag_gekuerzt content money\n  output abziehbare_altersvorsorge content money\n\nscope Altersvorsorge:\n  definition hoechstbeitrag_gerundet equals\n    let roh equals hoechstbeitrag_knappschaft / $1.00 in\n    let aufgerundet equals roh - (Decimal.truncate of roh) in\n    if aufgerundet > 0.0\n    then (Decimal.truncate of roh + 1.0) * $1.00\n    else (Decimal.truncate of roh) * $1.00\n\n  definition hoechstbeitrag_gekuerzt equals\n    if hoechstbeitrag_gerundet > ag_anteil_steuerfrei\n    then hoechstbeitrag_gerundet - ag_anteil_steuerfrei\n    else $0.00\n\n  definition abziehbare_altersvorsorge equals\n    if gesamtbeitraege_inkl_ag - ag_anteil_steuerfrei > hoechstbeitrag_gekuerzt\n    then hoechstbeitrag_gekuerzt\n    else (if gesamtbeitraege_inkl_ag > ag_anteil_steuerfrei\n          then gesamtbeitraege_inkl_ag - ag_anteil_steuerfrei\n          else $0.00)",
+  "catala_a_sha256": "d1281ba14013c115b39cae7308b0fb415f772f9b05f7a961cbcd6e03e5723af6",
+  "catala_b": "declaration scope Altersvorsorge:\n  input gesamtbeitraege_inkl_ag content money\n  input ag_anteil_steuerfrei content money\n  input hoechstbeitrag_knappschaft content money\n  output abziehbare_altersvorsorge content money\n\nscope Altersvorsorge:\n  definition abziehbare_altersvorsorge equals\n    let roh_hoechst equals hoechstbeitrag_knappschaft / $1.00 in\n    let ganzzahl_anteil equals Decimal.truncate of roh_hoechst in\n    let aufgerundet equals\n      if roh_hoechst = ganzzahl_anteil then ganzzahl_anteil\n      else ganzzahl_anteil + 1.0\n    in\n    let hoechstbetrag_gerundet equals aufgerundet * $1.00 in\n    let gedeckelt equals\n      if gesamtbeitraege_inkl_ag > hoechstbetrag_gerundet then hoechstbetrag_gerundet\n      else gesamtbeitraege_inkl_ag\n    in gedeckelt - ag_anteil_steuerfrei",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 Rundungsop(s) durch § 10 Abs. 3 Satz 1 EStG ('aufgerundet auf einen vollen Betrag in E') gedeckt",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'abziehbare_altersvorsorge'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 1,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 10 abs. 3 satz 5"
+            ],
+            "text": "vermindert um den nach § 3 Nummer 62 steuerfreien Arbeitgeberanteil zur gesetzlichen Rentenversicherung"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Formalisierung kürzt den Höchstbeitrag um den steuerfreien Arbeitgeberanteil, bevor sie ihn mit dem um den Arbeitgeberanteil gekürzten Gesamtbeitrag verglei",
+            "eingeschmolzen": "Die Formalisierung kürzt den Höchstbeitrag um den steuerfreien Arbeitgeberanteil, bevor sie ihn mit dem um den Arbeitgeberanteil verminderten Gesamtbeitrag verg",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung rundet den Höchstbeitrag kaufmännisch auf ganze Euro auf, während die Norm 'aufgerundet auf einen vollen Betrag in Euro' verlangt.",
+            "eingeschmolzen": "Die Formalisierung rundet den Höchstbeitrag kaufmännisch auf ganze Euro auf, das Gesetz schreibt lediglich 'aufgerundet auf einen vollen Betrag in Euro' vor.",
+            "key": [
+              "betrifft_kat",
+              "hoechstbeitrag_knappschaft",
+              "rundung"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung rundet den Höchstbeitrag kaufmännisch auf ganze Euro auf, während die Norm 'aufgerundet auf einen vollen Betrag in Euro' verlangt.",
+            "eingeschmolzen": "Die Formalisierung rundet den Höchstbeitrag kaufmännisch auf ganze Euro auf, während die Norm nur 'aufgerundet auf einen vollen Betrag in Euro' verlangt.",
+            "key": [
+              "betrifft_kat",
+              "hoechstbeitrag_knappschaft",
+              "rundung"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        2,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "9a8bb3ca0ec4",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "beitraege_enthalten_ag_anteil",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vermindert um den nach § 3 Nummer 62 steuerfreien Arbeitgeberanteil zur gesetzlichen Rentenversicherung",
+        "referenz": "§ 10 Abs. 3 Satz 5"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung rundet den Höchstbeitrag kaufmännisch auf ganze Euro auf, während die Norm 'aufgerundet auf einen vollen Betrag in Euro' verlangt.",
+        "bedingung_id": null,
+        "betrifft": "hoechstbeitrag_knappschaft",
+        "kategorie": "rundung"
+      }
+    ],
+    "timestamp": "2026-07-11T12:51:14+00:00"
+  },
+  "module_name": "Altersvorsorge",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

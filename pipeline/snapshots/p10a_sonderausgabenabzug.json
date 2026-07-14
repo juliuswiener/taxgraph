@@ -1,0 +1,247 @@
+{
+  "bedingungen": [
+    "unmittelbar_zulageberechtigt_p79s1"
+  ],
+  "candidate_id": "p10a_sonderausgabenabzug",
+  "catala_a": "declaration scope SonderausgabenabzugRiester:\n  input altersvorsorgebeitraege content money\n  input zulage_anspruch content money\n  output sonderausgabenabzug content money\n\nscope SonderausgabenabzugRiester:\n  definition sonderausgabenabzug equals\n    if altersvorsorgebeitraege + zulage_anspruch > $2,100.00\n    then $2,100.00\n    else altersvorsorgebeitraege + zulage_anspruch",
+  "catala_a_sha256": "4c11e367084df233c52e934e44505f185268f624b8a1de494efb239012e95c89",
+  "catala_b": "declaration scope SonderausgabenabzugRiester:\n  input altersvorsorgebeitraege content money\n  input zulage_anspruch content money\n  output sonderausgabenabzug content money\n\nscope SonderausgabenabzugRiester:\n  definition sonderausgabenabzug equals\n    if altersvorsorgebeitraege + zulage_anspruch > $2,100.00 then $2,100.00\n    else altersvorsorgebeitraege + zulage_anspruch",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'sonderausgabenabzug'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 4,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "altersvorsorgebeitraege",
+              "interpretation"
+            ],
+            "text": "Altersvorsorgebeiträge werden als Geldbetrag ohne weitere Bedingungen interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "zulage_anspruch",
+              "interpretation"
+            ],
+            "text": "Zulageanspruch wird als Geldbetrag ohne weitere Bedingungen interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ],
+            "text": "Der Höchstbetrag wird als 2.100,00 Euro in Geld interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ],
+            "text": "Der Höchstbetrag wird als exakt 2100 Euro ohne Rundung angenommen."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 10a abs. 1 s. 1 estg"
+            ],
+            "text": "jährlich bis zu 2 100 Euro als Sonderausgaben abziehen"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Altersvorsorgebeiträge (§ 82) zuzüglich der dafür nach Abschnitt XI zustehenden Zulage",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 10a abs. 1 s. 1 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        2,
+        4,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "c42bdeedfec1",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "unmittelbar_zulageberechtigt_p79s1",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "In der inländischen gesetzlichen Rentenversicherung Pflichtversicherte können",
+        "referenz": "§ 10a Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "unmittelbar_zulageberechtigt_p79s1",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Altersvorsorgebeiträge (§ 82) zuzüglich der dafür nach Abschnitt XI zustehenden Zulage",
+        "referenz": "§ 10a Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "jährlich bis zu 2 100 Euro als Sonderausgaben abziehen",
+        "referenz": "§ 10a Abs. 1 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Altersvorsorgebeiträge werden als Geldbetrag ohne weitere Bedingungen interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "altersvorsorgebeitraege",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Zulageanspruch wird als Geldbetrag ohne weitere Bedingungen interpretiert.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "zulage_anspruch",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der Höchstbetrag wird als 2.100,00 Euro in Geld interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "ergebnis",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Der Höchstbetrag wird als exakt 2100 Euro ohne Rundung angenommen.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "ergebnis",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-13T21:31:36+00:00"
+  },
+  "module_name": "SonderausgabenabzugRiester",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

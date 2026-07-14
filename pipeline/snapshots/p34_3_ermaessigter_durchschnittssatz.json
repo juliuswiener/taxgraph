@@ -1,0 +1,486 @@
+{
+  "bedingungen": [
+    "antrag_gestellt",
+    "persoenliche_voraussetzung_erfuellt",
+    "ao_einkuenfte_abs2_nr1",
+    "einmal_im_leben",
+    "tarifwerte_sind_p2_ergebnis",
+    "bemessungsgrundlage_positiv"
+  ],
+  "candidate_id": "p34_3_ermaessigter_durchschnittssatz",
+  "catala_a": "declaration scope ErmaessigterDurchschnittssatz:\n  input ao_einkuenfte content money\n  input est_gesamt_zzgl_progression content money\n  input bemessungsgrundlage_durchschnitt content money\n  output est_ao content money\n\nscope ErmaessigterDurchschnittssatz:\n  definition est_ao equals\n    let cap equals $5,000,000.00 in\n    let ao_gekappt equals\n      if ao_einkuenfte > cap then cap else ao_einkuenfte\n    in\n    let durchschnittssatz equals\n      est_gesamt_zzgl_progression / bemessungsgrundlage_durchschnitt\n    in\n    let ermaessigter_satz equals\n      let kandidat equals 0.56 * durchschnittssatz in\n      if kandidat > 0.14 then kandidat else 0.14\n    in\n    ao_gekappt * ermaessigter_satz",
+  "catala_a_sha256": "1a61a331909aecc2d7094549e09c279a8c19a5fa90de50a10aabefe55dba67e9",
+  "catala_b": "declaration scope ErmaessigterDurchschnittssatz:\n  input ao_einkuenfte content money\n  input est_gesamt_zzgl_progression content money\n  input bemessungsgrundlage_durchschnitt content money\n  internal durchschnittssatz content decimal\n  internal ermaessigter_satz content decimal\n  internal begrenzte_ao_einkuenfte content money\n  internal est_ao_raw content money\n  output est_ao content money\n\nscope ErmaessigterDurchschnittssatz:\n  definition durchschnittssatz equals est_gesamt_zzgl_progression / bemessungsgrundlage_durchschnitt\n  definition ermaessigter_satz equals\n    if 0.56 * durchschnittssatz > 0.14 then 0.56 * durchschnittssatz else 0.14\n  definition begrenzte_ao_einkuenfte equals\n    if ao_einkuenfte > $5,000,000.00 then $5,000,000.00 else ao_einkuenfte\n  definition est_ao_raw equals ermaessigter_satz * begrenzte_ao_einkuenfte\n  definition est_ao equals (Decimal.truncate of (est_ao_raw / $0.01)) * $0.01",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'est_ao'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Der durchschnittliche Steuersatz wird als Quotient aus est_gesamt_zzgl_progression und bemessungsgrundlage_durchschnitt berechnet, nicht als tarifliche Einkommensteuer."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 7,
+        "annahmen": 10,
+        "norm_teile": 3
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Fehlende Bedingung: Steuerpflichtiger muss 55. Lebensjahr vollendet haben oder dauernd berufsunfähig sein."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Fehlende Prüfung, ob außerordentliche Einkünfte im Sinne des Absatzes 2 Nummer 1 vorliegen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Berechnung der Steuer fehlt die Multiplikation mit dem ermäßigten Satz auf die gekappten außerordentlichen Einkünfte"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der ermäßigte Steuersatz wird auf ao_gekappt angewendet, nicht auf den Teil der außerordentlichen Einkünfte."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "bemessungsgrundlage_durchschnitt"
+            ],
+            "text": "Der durchschnittliche Steuersatz wird als Quotient aus est_gesamt_zzgl_progression und bemessungsgrundlage_durchschnitt "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Steuer wird auf ao_gekappt (gecappt bei 5 Mio.) angewendet, nicht auf den Teil der ao_einkuenfte, der 5 Mio. nicht ü"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "bemessungsgrundlage_durchschnitt"
+            ],
+            "text": "Bemessungsgrundlage wird nicht als zu versteuerndes Einkommen zzgl. Progressionsvorbehalt definiert."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft_kat",
+              "ao_einkuenfte",
+              "interpretation"
+            ],
+            "text": "ao_einkuenfte wird als Betrag der außerordentlichen Einkünfte interpretiert."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "bemessungsgrundlage_durchschnitt",
+              "interpretation"
+            ],
+            "text": "bemessungsgrundlage_durchschnitt wird als Bemessungsgrundlage für den durchschnittlichen Steuersatz angenommen."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "ao_einkuenfte",
+              "einheit"
+            ],
+            "text": "ao_einkuenfte wird in Euro angenommen."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "est_gesamt_zzgl_progression",
+              "einheit"
+            ],
+            "text": "est_gesamt_zzgl_progression wird als Geldbetrag in Euro angenommen."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "bemessungsgrundlage_durchschnitt",
+              "einheit"
+            ],
+            "text": "bemessungsgrundlage_durchschnitt wird als Geldbetrag in Euro angenommen."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "bemessungsgrundlage_durchschnitt",
+              "interpretation"
+            ],
+            "text": "bemessungsgrundlage_durchschnitt wird als zu versteuerndes Einkommen zzgl. Progressionsvorbehaltseinkünfte angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ao_einkuenfte",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Voraussetzungen (Alter 55+ oder Berufsunfähigkeit) gelten als erfüllt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ao_einkuenfte",
+              "interpretation"
+            ],
+            "text": "Ao_einkuenfte werden als außerordentliche Einkünfte i.S.d. Absatzes 2 Nr. 1 interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "rundung"
+            ],
+            "text": "Keine Rundung des ermäßigten Steuersatzes oder der Steuer wird angenommen."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 34 abs. 3 s. 1"
+            ],
+            "text": "Sind in dem zu versteuernden Einkommen außerordentliche Einkünfte im Sinne des Absatzes 2 Nummer 1 enthalten"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Der durchschnittliche Steuersatz wird als Quotient aus est_gesamt_zzgl_progression und bemessungsgrundlage_durchschnitt berechnet, nicht als tarifliche Einkomme",
+            "eingeschmolzen": "Der durchschnittssatz wird als Quotient aus est_gesamt_zzgl_progression und bemessungsgrundlage_durchschnitt berechnet, nicht als tarifliche Einkommensteuer get",
+            "key": [
+              "betrifft",
+              "bemessungsgrundlage_durchschnitt"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "ao_einkuenfte wird als Betrag der außerordentlichen Einkünfte interpretiert.",
+            "eingeschmolzen": "ao_einkuenfte wird als Bruttobetrag der außerordentlichen Einkünfte interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "ao_einkuenfte",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "est_gesamt_zzgl_progression wird als tarifliche Einkommensteuer nach dem gesamten zu versteuernden Einkommen zzgl. Progressionsvorbehalt gelesen.",
+            "eingeschmolzen": "est_gesamt_zzgl_progression wird als tarifliche Einkommensteuer auf das gesamte zu versteuernde Einkommen zzgl. Progressionsvorbehalt verstanden.",
+            "key": [
+              "betrifft_kat",
+              "est_gesamt_zzgl_progression",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "est_gesamt_zzgl_progression wird als Geldbetrag in Euro angenommen.",
+            "eingeschmolzen": "est_gesamt_zzgl_progression wird in Euro angenommen.",
+            "key": [
+              "betrifft_kat",
+              "est_gesamt_zzgl_progression",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "bemessungsgrundlage_durchschnitt wird als Geldbetrag in Euro angenommen.",
+            "eingeschmolzen": "bemessungsgrundlage_durchschnitt wird in Euro angenommen.",
+            "key": [
+              "betrifft_kat",
+              "bemessungsgrundlage_durchschnitt",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "ao_einkuenfte wird als Betrag der außerordentlichen Einkünfte interpretiert.",
+            "eingeschmolzen": "ao_einkuenfte wird als Bruttobetrag der außerordentlichen Einkünfte interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "ao_einkuenfte",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "est_gesamt_zzgl_progression wird als tarifliche Einkommensteuer nach dem gesamten zu versteuernden Einkommen zzgl. Progressionsvorbehalt gelesen.",
+            "eingeschmolzen": "est_gesamt_zzgl_progression wird als tarifliche Einkommensteuer auf das gesamte zu versteuernde Einkommen zzgl. Progressionsvorbehalt gelesen.",
+            "key": [
+              "betrifft_kat",
+              "est_gesamt_zzgl_progression",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "est_gesamt_zzgl_progression wird als tarifliche Einkommensteuer nach dem gesamten zu versteuernden Einkommen zzgl. Progressionsvorbehalt gelesen.",
+            "eingeschmolzen": "est_gesamt_zzgl_progression wird als tarifliche Einkommensteuer auf das gesamte zu versteuernde Einkommen zzgl. Progressionsvorbehaltseinkünfte gelesen.",
+            "key": [
+              "betrifft_kat",
+              "est_gesamt_zzgl_progression",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "est_gesamt_zzgl_progression wird als tarifliche Einkommensteuer nach dem gesamten zu versteuernden Einkommen zzgl. Progressionsvorbehalt gelesen.",
+            "eingeschmolzen": "est_gesamt_zzgl_progression wird als tarifliche Einkommensteuer nach gesamtem zu versteuerndem Einkommen zzgl. Progressionsvorbehalt gelesen.",
+            "key": [
+              "betrifft_kat",
+              "est_gesamt_zzgl_progression",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "bemessungsgrundlage_durchschnitt wird als zu versteuerndes Einkommen zzgl. Progressionsvorbehaltseinkünfte angenommen.",
+            "eingeschmolzen": "bemessungsgrundlage_durchschnitt wird als zu versteuerndes Einkommen zzgl. Progressionsvorbehalt angenommen.",
+            "key": [
+              "betrifft_kat",
+              "bemessungsgrundlage_durchschnitt",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "ao_einkuenfte wird in Euro angenommen.",
+            "eingeschmolzen": "Ao_einkuenfte werden als Bruttowert (ohne Abzüge) angenommen.",
+            "key": [
+              "betrifft_kat",
+              "ao_einkuenfte",
+              "einheit"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        11,
+        1,
+        2,
+        3,
+        3
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "a7d9ff102ae7",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "persoenliche_voraussetzung_erfuellt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn der Steuerpflichtige das 55. Lebensjahr vollendet hat oder wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig ist",
+        "referenz": "§ 34 Abs. 3 S. 1"
+      },
+      {
+        "abgedeckt_von": "ao_einkuenfte_abs2_nr1",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Sind in dem zu versteuernden Einkommen außerordentliche Einkünfte im Sinne des Absatzes 2 Nummer 1 enthalten",
+        "referenz": "§ 34 Abs. 3 S. 1"
+      },
+      {
+        "abgedeckt_von": "tarifwerte_sind_p2_ergebnis",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "der sich ergäbe, wenn die tarifliche Einkommensteuer nach dem gesamten zu versteuernden Einkommen zuzüglich der dem Progressionsvorbehalt unterliegenden Einkünfte zu bemessen wäre",
+        "referenz": "§ 34 Abs. 3 S. 2"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "ao_einkuenfte wird als Betrag der außerordentlichen Einkünfte interpretiert.",
+        "bedingung_id": "ao_einkuenfte_abs2_nr1",
+        "betrifft": "ao_einkuenfte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "est_gesamt_zzgl_progression wird als tarifliche Einkommensteuer nach dem gesamten zu versteuernden Einkommen zzgl. Progressionsvorbehalt gelesen.",
+        "bedingung_id": "tarifwerte_sind_p2_ergebnis",
+        "betrifft": "est_gesamt_zzgl_progression",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "bemessungsgrundlage_durchschnitt wird als Bemessungsgrundlage für den durchschnittlichen Steuersatz angenommen.",
+        "bedingung_id": "tarifwerte_sind_p2_ergebnis",
+        "betrifft": "bemessungsgrundlage_durchschnitt",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "ao_einkuenfte wird in Euro angenommen.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "ao_einkuenfte",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "est_gesamt_zzgl_progression wird als Geldbetrag in Euro angenommen.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "est_gesamt_zzgl_progression",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "bemessungsgrundlage_durchschnitt wird als Geldbetrag in Euro angenommen.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "bemessungsgrundlage_durchschnitt",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "bemessungsgrundlage_durchschnitt wird als zu versteuerndes Einkommen zzgl. Progressionsvorbehaltseinkünfte angenommen.",
+        "bedingung_id": "tarifwerte_sind_p2_ergebnis",
+        "betrifft": "bemessungsgrundlage_durchschnitt",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Voraussetzungen (Alter 55+ oder Berufsunfähigkeit) gelten als erfüllt.",
+        "bedingung_id": "persoenliche_voraussetzung_erfuellt",
+        "betrifft": "ao_einkuenfte",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Ao_einkuenfte werden als außerordentliche Einkünfte i.S.d. Absatzes 2 Nr. 1 interpretiert.",
+        "bedingung_id": "ao_einkuenfte_abs2_nr1",
+        "betrifft": "ao_einkuenfte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Keine Rundung des ermäßigten Steuersatzes oder der Steuer wird angenommen.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "est_ao",
+        "kategorie": "rundung"
+      }
+    ],
+    "timestamp": "2026-07-14T14:57:32+00:00"
+  },
+  "module_name": "ErmaessigterDurchschnittssatz",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

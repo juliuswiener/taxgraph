@@ -1,0 +1,295 @@
+{
+  "bedingungen": [
+    "objekt_aelter_zehn_jahre",
+    "ausschliesslich_eigene_wohnzwecke",
+    "kein_doppelabzug_ba_wk_sa_agb",
+    "keine_10f_35a_oeffentliche_foerderung",
+    "rechnung_und_zahlung_aufs_konto",
+    "fachunternehmen_bescheinigung",
+    "objekt_hoechstbetrag_40k_nicht_ausgeschoepft"
+  ],
+  "candidate_id": "p35c_sanierung_ermaessigung",
+  "catala_a": "declaration scope SanierungErmaessigung:\n  input sanierungsaufwendungen content money\n  input ist_uebernaechstes_foerderjahr content boolean\n  output sanierung_ermaessigung content money\n\nscope SanierungErmaessigung:\n  definition sanierung_ermaessigung equals\n    let satz equals\n      if ist_uebernaechstes_foerderjahr then 0.06 else 0.07\n    in\n    let hoechstbetrag equals\n      if ist_uebernaechstes_foerderjahr then $12,000.00 else $14,000.00\n    in\n    let roh equals sanierungsaufwendungen * satz in\n    if roh > hoechstbetrag then hoechstbetrag else roh",
+  "catala_a_sha256": "e5c5568c57e268b88905aac94ce066940aacc010a0e64be1c672488c36c188c7",
+  "catala_b": "declaration scope SanierungErmaessigung:\n  input sanierungsaufwendungen content money\n  input ist_uebernaechstes_foerderjahr content boolean\n  output sanierung_ermaessigung content money\n\nscope SanierungErmaessigung:\n  definition sanierung_ermaessigung equals\n    let prozentsatz equals\n      if ist_uebernaechstes_foerderjahr then 0.06 else 0.07\n    in\n    let hoechstbetrag equals\n      if ist_uebernaechstes_foerderjahr then $12,000.00 else $14,000.00\n    in\n    if prozentsatz * sanierungsaufwendungen > hoechstbetrag then hoechstbetrag\n    else prozentsatz * sanierungsaufwendungen",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'sanierung_ermaessigung'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 5 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 3,
+        "norm_teile": 6
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "sanierungsaufwendungen",
+              "einheit"
+            ],
+            "text": "Aufwendungen werden als Bruttowerte interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ist_uebernaechstes_foerderjahr",
+              "zeitbezug"
+            ],
+            "text": "Das übernächste Förderjahr wird als drittes Kalenderjahr nach Maßnahmeabschluss verstanden."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "sanierungsaufwendungen",
+              "einheit"
+            ],
+            "text": "Aufwendungen werden als Bruttobetrag interpretiert."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 35c abs. 1 s. 1 estg"
+            ],
+            "text": "Für energetische Maßnahmen an einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum belegenen zu eigenen"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 35c abs. 1 s. 1 estg"
+            ],
+            "text": "für das begünstigte Objekt"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 35c abs. 1 s. 1 estg"
+            ],
+            "text": "für ein in der EU/EWR belegenes, zu eigenen Wohnzwecken genutztes eigenes Gebäude"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "im Kalenderjahr des Abschlusses der energetischen Maßnahme und im nächsten Kalenderjahr um je 7 Prozent",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 35c abs. 1 s. 1 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "im Kalenderjahr des Abschlusses der energetischen Maßnahme und im nächsten Kalenderjahr um je 7 Prozent",
+            "eingeschmolzen": "im Kalenderjahr des Abschlusses der energetischen Maßnahme und im nächsten Kalenderjahr",
+            "key": [
+              "ref",
+              "§ 35c abs. 1 s. 1 estg"
+            ]
+          },
+          {
+            "cluster": "im Kalenderjahr des Abschlusses der energetischen Maßnahme und im nächsten Kalenderjahr um je 7 Prozent",
+            "eingeschmolzen": "im Kalenderjahr des Abschlusses der energetischen Maßnahme und im nächsten Kalenderjahr",
+            "key": [
+              "ref",
+              "§ 35c abs. 1 s. 1 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        5,
+        3,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "dcd318ecc6ec",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Für energetische Maßnahmen an einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum belegenen zu eigenen Wohnzwecken genutzten eigenen Gebäude (begünstigtes Objekt)",
+        "referenz": "§ 35c Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "auf Antrag",
+        "referenz": "§ 35c Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vermindert um die sonstigen Steuerermäßigungen",
+        "referenz": "§ 35c Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "im Kalenderjahr des Abschlusses der energetischen Maßnahme und im nächsten Kalenderjahr um je 7 Prozent",
+        "referenz": "§ 35c Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "für das begünstigte Objekt",
+        "referenz": "§ 35c Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "für ein in der EU/EWR belegenes, zu eigenen Wohnzwecken genutztes eigenes Gebäude",
+        "referenz": "§ 35c Abs. 1 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Aufwendungen werden als Bruttowerte interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "sanierungsaufwendungen",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Das übernächste Förderjahr wird als drittes Kalenderjahr nach Maßnahmeabschluss verstanden.",
+        "bedingung_id": null,
+        "betrifft": "ist_uebernaechstes_foerderjahr",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Aufwendungen werden als Bruttobetrag interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "sanierungsaufwendungen",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-13T21:04:38+00:00"
+  },
+  "module_name": "SanierungErmaessigung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

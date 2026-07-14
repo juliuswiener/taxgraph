@@ -1,0 +1,389 @@
+{
+  "bedingungen": [
+    "gdb_stufenfunktion_von_mindestens",
+    "hilflos_blind_taubblind_override"
+  ],
+  "candidate_id": "p33b_behinderten_pauschbetrag",
+  "catala_a": "declaration scope BehindertenPauschbetrag:\n  input grad_der_behinderung content integer\n  input ist_hilflos_blind_taubblind content boolean\n  output behinderten_pauschbetrag content money\n\nscope BehindertenPauschbetrag:\n  label grundregel\n  definition behinderten_pauschbetrag equals\n    if grad_der_behinderung >= 100 then $2,840.00\n    else if grad_der_behinderung >= 90 then $2,460.00\n    else if grad_der_behinderung >= 80 then $2,120.00\n    else if grad_der_behinderung >= 70 then $1,780.00\n    else if grad_der_behinderung >= 60 then $1,440.00\n    else if grad_der_behinderung >= 50 then $1,140.00\n    else if grad_der_behinderung >= 40 then $860.00\n    else if grad_der_behinderung >= 30 then $620.00\n    else if grad_der_behinderung >= 20 then $384.00\n    else $0.00\n\n  exception grundregel\n  definition behinderten_pauschbetrag under condition\n    ist_hilflos_blind_taubblind\n  consequence equals $7,400.00",
+  "catala_a_sha256": "0a36185dc69e32dcc1a7fa93c07788e0821fe0b5ebf30378b22cfe9ee5bc5a95",
+  "catala_b": "declaration scope BehindertenPauschbetrag:\n  input grad_der_behinderung content integer\n  input ist_hilflos_blind_taubblind content boolean\n  output behinderten_pauschbetrag content money\n\nscope BehindertenPauschbetrag:\n  label grundregel\n  definition behinderten_pauschbetrag equals\n    if grad_der_behinderung >= 100 then $2,840.00\n    else if grad_der_behinderung >= 90 then $2,460.00\n    else if grad_der_behinderung >= 80 then $2,120.00\n    else if grad_der_behinderung >= 70 then $1,780.00\n    else if grad_der_behinderung >= 60 then $1,440.00\n    else if grad_der_behinderung >= 50 then $1,140.00\n    else if grad_der_behinderung >= 40 then $860.00\n    else if grad_der_behinderung >= 30 then $620.00\n    else if grad_der_behinderung >= 20 then $384.00\n    else $0.00\n  exception grundregel\n  definition behinderten_pauschbetrag under condition ist_hilflos_blind_taubblind consequence equals $7,400.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'behinderten_pauschbetrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 11,
+        "annahmen": 6,
+        "norm_teile": 2
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Staffelung beginnt bei Grad 20 mit 384 Euro, die Norm beginnt bei 20 mit 384 Euro."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt für Grad 30 620 Euro, die Norm gibt 30 620 Euro."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt für Grad 40 860 Euro, die Norm gibt 40 860 Euro."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt für Grad 50 1.140 Euro, die Norm gibt 50 1 140 Euro."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt für Grad 60 1.440 Euro, die Norm gibt 60 1 440 Euro."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt für Grad 70 1.780 Euro, die Norm gibt 70 1 780 Euro."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt für Grad 80 2.120 Euro, die Norm gibt 80 2 120 Euro."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt für Grad 90 2.460 Euro, die Norm gibt 90 2 460 Euro."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt für Grad 100 2.840 Euro, die Norm gibt 100 2 840 Euro."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt für GdB 20 bis 100 die Beträge aus Satz 2 zurück, aber die Norm enthält keine explizite Regel fü"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gibt für einen GdB unter 20 einen Pauschbetrag von 0 Euro zurück, die Norm enthält keine solche Regel"
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "grad_der_behinderung",
+              "interpretation"
+            ],
+            "text": "Die Norm staffelt nach festen GdB-Werten, die Formalisierung verwendet Schwellenwerte mit 'größer gleich'."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "grad_der_behinderung",
+              "rundung"
+            ],
+            "text": "Die Formalisierung gibt für GdB unter 20 null Euro, die Norm enthält keine Aussage zu GdB unter 20."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "grad_der_behinderung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass der GdB als ganzzahliger Wert vorliegt und stufenweise ab 20 gilt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "grad_der_behinderung",
+              "rundung"
+            ],
+            "text": "Die Formalisierung rundet die Beträge auf zwei Dezimalstellen, die Norm gibt sie als ganze Euro an."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "grad_der_behinderung",
+              "sonstige"
+            ],
+            "text": "Die Formalisierung nimmt an, dass für GdB unter 20 ein Pauschbetrag von 0 Euro gilt."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "grad_der_behinderung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung behandelt die GdB-Staffel als Mindestgrenzen (>=), die Norm listet nur GdB-Werte und Beträge ohne exp"
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 33b abs. 3 s. 3"
+            ],
+            "text": "in diesem Fall kann der Pauschbetrag nach Satz 2 nicht zusätzlich in Anspruch genommen werden"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 33b abs. 3 s. 3 estg"
+            ],
+            "text": "in diesem Fall kann der Pauschbetrag nach Satz 2 nicht zusätzlich in Anspruch genommen werden"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Formalisierung gibt für GdB 20 bis 100 die Beträge aus Satz 2 zurück, aber die Norm enthält keine explizite Regel für GdB unter 20.",
+            "eingeschmolzen": "Die Formalisierung gibt für einen GdB unter 20 einen Pauschbetrag von 0 Euro zurück, die Norm enthält keine Staffelung unter 20.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung nimmt an, dass der GdB als ganzzahliger Wert vorliegt und stufenweise ab 20 gilt.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass der GdB als ganzzahliger Wert vorliegt und mit Schwellenwerten verglichen werden kann.",
+            "key": [
+              "betrifft_kat",
+              "grad_der_behinderung",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung behandelt die GdB-Staffel als Mindestgrenzen (>=), die Norm listet nur GdB-Werte und Beträge ohne expliziten Vergleichsoperator.",
+            "eingeschmolzen": "Die Formalisierung behandelt die GdB-Staffel als Mindestgrenzen (>=), die Norm listet nur feste GdB-Werte ohne expliziten Vergleichsoperator.",
+            "key": [
+              "betrifft_kat",
+              "grad_der_behinderung",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        12,
+        3,
+        2,
+        1,
+        1
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "925de762a62b",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "hilflos_blind_taubblind_override",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "in diesem Fall kann der Pauschbetrag nach Satz 2 nicht zusätzlich in Anspruch genommen werden",
+        "referenz": "§ 33b Abs. 3 S. 3"
+      },
+      {
+        "abgedeckt_von": "hilflos_blind_taubblind_override",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "in diesem Fall kann der Pauschbetrag nach Satz 2 nicht zusätzlich in Anspruch genommen werden",
+        "referenz": "§ 33b Abs. 3 S. 3 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Norm staffelt nach festen GdB-Werten, die Formalisierung verwendet Schwellenwerte mit 'größer gleich'.",
+        "bedingung_id": "gdb_stufenfunktion_von_mindestens",
+        "betrifft": "grad_der_behinderung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung gibt für GdB unter 20 null Euro, die Norm enthält keine Aussage zu GdB unter 20.",
+        "bedingung_id": "gdb_stufenfunktion_von_mindestens",
+        "betrifft": "grad_der_behinderung",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass der GdB als ganzzahliger Wert vorliegt und stufenweise ab 20 gilt.",
+        "bedingung_id": "gdb_stufenfunktion_von_mindestens",
+        "betrifft": "grad_der_behinderung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung rundet die Beträge auf zwei Dezimalstellen, die Norm gibt sie als ganze Euro an.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "grad_der_behinderung",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass für GdB unter 20 ein Pauschbetrag von 0 Euro gilt.",
+        "bedingung_id": "gdb_stufenfunktion_von_mindestens",
+        "betrifft": "grad_der_behinderung",
+        "kategorie": "sonstige"
+      },
+      {
+        "annahme": "Die Formalisierung behandelt die GdB-Staffel als Mindestgrenzen (>=), die Norm listet nur GdB-Werte und Beträge ohne expliziten Vergleichsoperator.",
+        "bedingung_id": "gdb_stufenfunktion_von_mindestens",
+        "betrifft": "grad_der_behinderung",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-12T23:44:26+00:00"
+  },
+  "module_name": "BehindertenPauschbetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

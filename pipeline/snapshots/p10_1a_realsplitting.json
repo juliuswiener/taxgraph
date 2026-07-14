@@ -1,0 +1,377 @@
+{
+  "bedingungen": [
+    "deckel_13805_plus_kv_pv",
+    "antrag_mit_zustimmung",
+    "empfaenger_geschieden_getrennt_unbeschraenkt"
+  ],
+  "candidate_id": "p10_1a_realsplitting",
+  "catala_a": "declaration scope Realsplitting:\n  input unterhaltsleistungen content money\n  input kv_pv_beitraege content money\n  output realsplitting_abzug content money\n\nscope Realsplitting:\n  definition realsplitting_abzug equals\n    let hoechstbetrag equals $13,805.00 + kv_pv_beitraege in\n    if unterhaltsleistungen > hoechstbetrag then hoechstbetrag\n    else unterhaltsleistungen",
+  "catala_a_sha256": "b85dee669bae25d7424652f9f163bab97277835a67e4c94847b7a991ef9b9138",
+  "catala_b": "declaration scope Realsplitting:\n  input unterhaltsleistungen content money\n  input kv_pv_beitraege content money\n  output realsplitting_abzug content money\n\nscope Realsplitting:\n  definition realsplitting_abzug equals\n    if unterhaltsleistungen > $13,805.00 + kv_pv_beitraege\n    then $13,805.00 + kv_pv_beitraege\n    else unterhaltsleistungen",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'realsplitting_abzug'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 8,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "kv_pv_beitraege",
+              "zeitbezug"
+            ],
+            "text": "Annahme, dass kv_pv_beitraege den jeweiligen Veranlagungszeitraum betreffen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ],
+            "text": "Annahme, dass der Höchstbetrag in Euro angegeben ist."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "zeitbezug"
+            ],
+            "text": "Annahme, dass der Veranlagungszeitraum ein Kalenderjahr ist."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "kv_pv_beitraege",
+              "zeitbezug"
+            ],
+            "text": "Annahme, dass KV/PV-Beiträge dem Veranlagungszeitraum entsprechen."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 10 abs. 1a nr. 1 s. 1 estg"
+            ],
+            "text": "an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Annahme, dass kv_pv_beitraege die Beiträge nach § 10 Abs. 1 Nr. 3 sind.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"kv_pv_beitraege\", \"interpretation\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Annahme, dass der Geber unbeschränkt einkommensteuerpflichtig ist.",
+            "eingeschmolzen": "Annahme, dass der Empfänger unbeschränkt einkommensteuerpflichtig ist.",
+            "key": [
+              "betrifft_kat",
+              "unterhaltsleistungen",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Annahme, dass der Empfänger geschieden oder dauernd getrennt lebend ist.",
+            "eingeschmolzen": "Annahme, dass der Ehegatte geschieden oder dauernd getrennt lebend ist.",
+            "key": [
+              "betrifft_kat",
+              "unterhaltsleistungen",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Annahme, dass der Geber unbeschränkt einkommensteuerpflichtig ist.",
+            "eingeschmolzen": "Annahme, dass der Empfänger unbeschränkt einkommensteuerpflichtig ist.",
+            "key": [
+              "betrifft_kat",
+              "unterhaltsleistungen",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Annahme, dass der Empfänger geschieden oder dauernd getrennt lebend ist.",
+            "eingeschmolzen": "Annahme, dass der Ehegatte geschieden oder dauernd getrennt lebend ist.",
+            "key": [
+              "betrifft_kat",
+              "unterhaltsleistungen",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Annahme, dass kv_pv_beitraege die Beiträge nach § 10 Abs. 1 Nr. 3 sind.",
+            "eingeschmolzen": "Annahme, dass KV/PV-Beiträge nach § 10 Abs. 1 Nr. 3 EStG sind.",
+            "key": [
+              "betrifft_kat",
+              "kv_pv_beitraege",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Annahme, dass der Geber unbeschränkt einkommensteuerpflichtig ist.",
+            "eingeschmolzen": "Annahme, dass der Empfänger unbeschränkt einkommensteuerpflichtig ist.",
+            "key": [
+              "betrifft_kat",
+              "unterhaltsleistungen",
+              "geltungsvoraussetzung"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung de",
+            "eingeschmolzen": "wenn der Geber dies mit Zustimmung des Empfängers beantragt",
+            "key": [
+              "ref",
+              "§ 10 abs. 1a nr. 1 s. 1 estg"
+            ]
+          },
+          {
+            "cluster": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d",
+            "eingeschmolzen": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d",
+            "key": [
+              "ref",
+              "§ 10 abs. 1a nr. 1 s. 2 estg"
+            ]
+          },
+          {
+            "cluster": "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung de",
+            "eingeschmolzen": "wenn der Geber dies mit Zustimmung des Empfängers beantragt",
+            "key": [
+              "ref",
+              "§ 10 abs. 1a nr. 1 s. 1 estg"
+            ]
+          },
+          {
+            "cluster": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d",
+            "eingeschmolzen": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d",
+            "key": [
+              "ref",
+              "§ 10 abs. 1a nr. 1 s. 2 estg"
+            ]
+          },
+          {
+            "cluster": "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung de",
+            "eingeschmolzen": "wenn der Geber dies mit Zustimmung des Empfängers beantragt",
+            "key": [
+              "ref",
+              "§ 10 abs. 1a nr. 1 s. 1 estg"
+            ]
+          },
+          {
+            "cluster": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d",
+            "eingeschmolzen": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder d",
+            "key": [
+              "ref",
+              "§ 10 abs. 1a nr. 1 s. 2 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        7,
+        3,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "635ceb142188",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "antrag_mit_zustimmung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung des Empfängers beantragt",
+        "referenz": "§ 10 Abs. 1a Nr. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "deckel_13805_plus_kv_pv",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder dauernd getrennt lebenden Ehegatten",
+        "referenz": "§ 10 Abs. 1a Nr. 1 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten",
+        "referenz": "§ 10 Abs. 1a Nr. 1 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Annahme, dass der Geber unbeschränkt einkommensteuerpflichtig ist.",
+        "bedingung_id": null,
+        "betrifft": "unterhaltsleistungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Annahme, dass der Empfänger geschieden oder dauernd getrennt lebend ist.",
+        "bedingung_id": null,
+        "betrifft": "unterhaltsleistungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Annahme, dass der Geber die Zustimmung des Empfängers hat.",
+        "bedingung_id": "antrag_mit_zustimmung",
+        "betrifft": "unterhaltsleistungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Annahme, dass kv_pv_beitraege die Beiträge nach § 10 Abs. 1 Nr. 3 sind.",
+        "bedingung_id": "deckel_13805_plus_kv_pv",
+        "betrifft": "kv_pv_beitraege",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Annahme, dass kv_pv_beitraege den jeweiligen Veranlagungszeitraum betreffen.",
+        "bedingung_id": "konv:vz_bezug_der_regel",
+        "betrifft": "kv_pv_beitraege",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Annahme, dass der Höchstbetrag in Euro angegeben ist.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "ergebnis",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Annahme, dass der Veranlagungszeitraum ein Kalenderjahr ist.",
+        "bedingung_id": "konv:vz_bezug_der_regel",
+        "betrifft": "ergebnis",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Annahme, dass KV/PV-Beiträge dem Veranlagungszeitraum entsprechen.",
+        "bedingung_id": "konv:vz_bezug_der_regel",
+        "betrifft": "kv_pv_beitraege",
+        "kategorie": "zeitbezug"
+      }
+    ],
+    "timestamp": "2026-07-13T20:08:42+00:00"
+  },
+  "module_name": "Realsplitting",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

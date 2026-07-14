@@ -1,0 +1,538 @@
+{
+  "bedingungen": [
+    "erstausbildung_nach_legaldefinition"
+  ],
+  "candidate_id": "p9_6_erstausbildung_abgrenzung",
+  "catala_a": "declaration scope Erstausbildung:\n  input erstausbildung_abgeschlossen content boolean\n  input im_dienstverhaeltnis content boolean\n  input aufwendungen content money\n  output abziehbare_werbungskosten content money\n\nscope Erstausbildung:\n  definition abziehbare_werbungskosten equals\n    if (erstausbildung_abgeschlossen or im_dienstverhaeltnis) then\n      aufwendungen\n    else\n      $0.00",
+  "catala_a_sha256": "704343eb9e998d877a98c50181c6d282ea1a6f35f0c78d75e22cf345ee47fe21",
+  "catala_b": "declaration scope Erstausbildung:\n  input erstausbildung_abgeschlossen content boolean\n  input im_dienstverhaeltnis content boolean\n  input aufwendungen content money\n  output abziehbare_werbungskosten content money\nscope Erstausbildung:\n  definition abziehbare_werbungskosten equals\n    if erstausbildung_abgeschlossen or im_dienstverhaeltnis then aufwendungen\n    else $0.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'abziehbare_werbungskosten'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 8 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "7 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 9,
+        "norm_teile": 9
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "erstausbildung_abgeschlossen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe 'erstausbildung_abgeschlossen' wird als zutreffende rechtliche Feststellung einer abgeschlossenen Erstausbil"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "im_dienstverhaeltnis",
+              "interpretation"
+            ],
+            "text": "Die Eingabe 'im_dienstverhaeltnis' wird als zutreffende Feststellung interpretiert, dass die Ausbildung im Dienstverhält"
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe 'aufwendungen' wird als Aufwendungen für die eigene Berufsausbildung oder das Studium des Steuerpflichtigen "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "erstausbildung_abgeschlossen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe 'erstausbildung_abgeschlossen' wird als bereits gemäß § 9 Abs. 6 Sätze 2-5 EStG geprüft vorausgesetzt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "im_dienstverhaeltnis",
+              "interpretation"
+            ],
+            "text": "Die Eingabe 'im_dienstverhaeltnis' wird als zutreffende Prüfung des Dienstverhältnisses vorausgesetzt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "erstausbildung_abgeschlossen",
+              "interpretation"
+            ],
+            "text": "The boolean input 'erstausbildung_abgeschlossen' is assumed to already reflect the legal definition of a completed first"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "erstausbildung_abgeschlossen",
+              "interpretation"
+            ],
+            "text": "The input 'erstausbildung_abgeschlossen' is assumed to correctly indicate a prior completed Erstausbildung."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "im_dienstverhaeltnis",
+              "interpretation"
+            ],
+            "text": "The input 'im_dienstverhaeltnis' is assumed to correctly indicate that the education occurs within a service relationshi"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "interpretation"
+            ],
+            "text": "The input 'aufwendungen' is assumed to be the taxpayer's expenses for their own vocational training or studies."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 1"
+            ],
+            "text": "Aufwendungen des Steuerpflichtigen für seine Berufsausbildung oder für sein Studium"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 2"
+            ],
+            "text": "Eine Berufsausbildung als Erstausbildung nach Satz 1 liegt vor, wenn eine geordnete Ausbildung mit einer Mindestdauer vo"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 3"
+            ],
+            "text": "Eine geordnete Ausbildung liegt vor, wenn sie auf der Grundlage von Rechts- oder Verwaltungsvorschriften oder internen V"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 4"
+            ],
+            "text": "Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen, gilt die Ausbildung mit der tatsächlichen planmäßig"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 5"
+            ],
+            "text": "Eine Berufsausbildung als Erstausbildung hat auch abgeschlossen, wer die Abschlussprüfung einer durch Rechts- oder Verwa"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 2"
+            ],
+            "text": "geordnete Ausbildung mit einer Mindestdauer von 12 Monaten"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 3"
+            ],
+            "text": "auf der Grundlage von Rechts- oder Verwaltungsvorschriften"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 4"
+            ],
+            "text": "Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 5"
+            ],
+            "text": "wer die Abschlussprüfung einer durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausbildung mit einer Mindestd"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Eine Berufsausbildung als Erstausbildung nach Satz 1 liegt vor, wenn eine geordnete Ausbildung mit einer Mindestdauer vo",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 9 abs. 6 satz 2\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Eine geordnete Ausbildung liegt vor, wenn sie auf der Grundlage von Rechts- oder Verwaltungsvorschriften oder internen V",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 9 abs. 6 satz 3\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Die Eingabe 'aufwendungen' wird als Aufwendungen für die eigene Berufsausbildung oder das Studium des Steuerpflichtigen interpretiert.",
+            "eingeschmolzen": "Die Eingabe 'aufwendungen' wird als bereits auf Berufsausbildung oder Studium bezogene Aufwendungen vorausgesetzt.",
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Eingabe 'aufwendungen' wird als Aufwendungen für die eigene Berufsausbildung oder das Studium des Steuerpflichtigen interpretiert.",
+            "eingeschmolzen": "Die Eingabe 'aufwendungen' wird als Aufwendungen des Steuerpflichtigen für seine eigene Berufsausbildung oder sein Studium interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Eingabe 'erstausbildung_abgeschlossen' wird als zutreffende rechtliche Feststellung einer abgeschlossenen Erstausbildung vorausgesetzt.",
+            "eingeschmolzen": "Die Eingabe 'erstausbildung_abgeschlossen' wird als Nachweis einer zuvor abgeschlossenen Erstausbildung interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "erstausbildung_abgeschlossen",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Eingabe 'im_dienstverhaeltnis' wird als zutreffende Feststellung interpretiert, dass die Ausbildung im Dienstverhältnis stattfindet.",
+            "eingeschmolzen": "Die Eingabe 'im_dienstverhaeltnis' wird als Indikator dafür interpretiert, dass die Ausbildung im Rahmen eines Dienstverhältnisses stattfindet.",
+            "key": [
+              "betrifft_kat",
+              "im_dienstverhaeltnis",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Eine Berufsausbildung als Erstausbildung nach Satz 1 liegt vor, wenn eine geordnete Ausbildung mit einer Mindestdauer von 12 Monaten bei vollzeitiger Ausbildung",
+            "eingeschmolzen": "Mindestdauer von 12 Monaten bei vollzeitiger Ausbildung und mit einer Abschlussprüfung",
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 2"
+            ]
+          },
+          {
+            "cluster": "Eine geordnete Ausbildung liegt vor, wenn sie auf der Grundlage von Rechts- oder Verwaltungsvorschriften oder internen Vorschriften eines Bildungsträgers durchg",
+            "eingeschmolzen": "auf der Grundlage von Rechts- oder Verwaltungsvorschriften oder internen Vorschriften eines Bildungsträgers",
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 3"
+            ]
+          },
+          {
+            "cluster": "Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen, gilt die Ausbildung mit der tatsächlichen planmäßigen Beendigung als abgeschlossen.",
+            "eingeschmolzen": "gilt die Ausbildung mit der tatsächlichen planmäßigen Beendigung als abgeschlossen",
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 4"
+            ]
+          },
+          {
+            "cluster": "Eine Berufsausbildung als Erstausbildung hat auch abgeschlossen, wer die Abschlussprüfung einer durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausb",
+            "eingeschmolzen": "ohne dass er zuvor die entsprechende Berufsausbildung durchlaufen hat",
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 5"
+            ]
+          },
+          {
+            "cluster": "Eine Berufsausbildung als Erstausbildung nach Satz 1 liegt vor, wenn eine geordnete Ausbildung mit einer Mindestdauer von 12 Monaten bei vollzeitiger Ausbildung",
+            "eingeschmolzen": "geordnete Ausbildung mit einer Mindestdauer von 12 Monaten bei vollzeitiger Ausbildung und mit einer Abschlussprüfung",
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 2"
+            ]
+          },
+          {
+            "cluster": "Eine geordnete Ausbildung liegt vor, wenn sie auf der Grundlage von Rechts- oder Verwaltungsvorschriften oder internen Vorschriften eines Bildungsträgers durchg",
+            "eingeschmolzen": "auf der Grundlage von Rechts- oder Verwaltungsvorschriften oder internen Vorschriften eines Bildungsträgers",
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 3"
+            ]
+          },
+          {
+            "cluster": "Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen, gilt die Ausbildung mit der tatsächlichen planmäßigen Beendigung als abgeschlossen.",
+            "eingeschmolzen": "gilt die Ausbildung mit der tatsächlichen planmäßigen Beendigung als abgeschlossen",
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 4"
+            ]
+          },
+          {
+            "cluster": "Eine Berufsausbildung als Erstausbildung hat auch abgeschlossen, wer die Abschlussprüfung einer durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausb",
+            "eingeschmolzen": "ohne dass er zuvor die entsprechende Berufsausbildung durchlaufen hat",
+            "key": [
+              "ref",
+              "§ 9 abs. 6 satz 5"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        8,
+        2,
+        1,
+        3,
+        4
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "aebe87309242",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Aufwendungen des Steuerpflichtigen für seine Berufsausbildung oder für sein Studium",
+        "referenz": "§ 9 Abs. 6 Satz 1"
+      },
+      {
+        "abgedeckt_von": "erstausbildung_nach_legaldefinition",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Eine Berufsausbildung als Erstausbildung nach Satz 1 liegt vor, wenn eine geordnete Ausbildung mit einer Mindestdauer von 12 Monaten bei vollzeitiger Ausbildung und mit einer Abschlussprüfung durchgeführt wird.",
+        "referenz": "§ 9 Abs. 6 Satz 2"
+      },
+      {
+        "abgedeckt_von": "erstausbildung_nach_legaldefinition",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Eine geordnete Ausbildung liegt vor, wenn sie auf der Grundlage von Rechts- oder Verwaltungsvorschriften oder internen Vorschriften eines Bildungsträgers durchgeführt wird.",
+        "referenz": "§ 9 Abs. 6 Satz 3"
+      },
+      {
+        "abgedeckt_von": "erstausbildung_nach_legaldefinition",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen, gilt die Ausbildung mit der tatsächlichen planmäßigen Beendigung als abgeschlossen.",
+        "referenz": "§ 9 Abs. 6 Satz 4"
+      },
+      {
+        "abgedeckt_von": "erstausbildung_nach_legaldefinition",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Eine Berufsausbildung als Erstausbildung hat auch abgeschlossen, wer die Abschlussprüfung einer durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausbildung mit einer Mindestdauer von 12 Monaten bestanden hat, ohne dass er zuvor die entsprechende Berufsausbildung durchlaufen hat.",
+        "referenz": "§ 9 Abs. 6 Satz 5"
+      },
+      {
+        "abgedeckt_von": "erstausbildung_nach_legaldefinition",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "geordnete Ausbildung mit einer Mindestdauer von 12 Monaten",
+        "referenz": "Satz 2"
+      },
+      {
+        "abgedeckt_von": "erstausbildung_nach_legaldefinition",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "auf der Grundlage von Rechts- oder Verwaltungsvorschriften",
+        "referenz": "Satz 3"
+      },
+      {
+        "abgedeckt_von": "erstausbildung_nach_legaldefinition",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Ist eine Abschlussprüfung nach dem Ausbildungsplan nicht vorgesehen",
+        "referenz": "Satz 4"
+      },
+      {
+        "abgedeckt_von": "erstausbildung_nach_legaldefinition",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wer die Abschlussprüfung einer durch Rechts- oder Verwaltungsvorschriften geregelten Berufsausbildung mit einer Mindestdauer von 12 Monaten bestanden hat",
+        "referenz": "Satz 5"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Eingabe 'erstausbildung_abgeschlossen' wird als zutreffende rechtliche Feststellung einer abgeschlossenen Erstausbildung vorausgesetzt.",
+        "bedingung_id": "erstausbildung_nach_legaldefinition",
+        "betrifft": "erstausbildung_abgeschlossen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe 'im_dienstverhaeltnis' wird als zutreffende Feststellung interpretiert, dass die Ausbildung im Dienstverhältnis stattfindet.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "im_dienstverhaeltnis",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe 'aufwendungen' wird als Aufwendungen für die eigene Berufsausbildung oder das Studium des Steuerpflichtigen interpretiert.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "aufwendungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe 'erstausbildung_abgeschlossen' wird als bereits gemäß § 9 Abs. 6 Sätze 2-5 EStG geprüft vorausgesetzt.",
+        "bedingung_id": "erstausbildung_nach_legaldefinition",
+        "betrifft": "erstausbildung_abgeschlossen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe 'im_dienstverhaeltnis' wird als zutreffende Prüfung des Dienstverhältnisses vorausgesetzt.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "im_dienstverhaeltnis",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "The boolean input 'erstausbildung_abgeschlossen' is assumed to already reflect the legal definition of a completed first education as per §9 Abs. 6 Sätze 2-5.",
+        "bedingung_id": "erstausbildung_nach_legaldefinition",
+        "betrifft": "erstausbildung_abgeschlossen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "The input 'erstausbildung_abgeschlossen' is assumed to correctly indicate a prior completed Erstausbildung.",
+        "bedingung_id": "erstausbildung_nach_legaldefinition",
+        "betrifft": "erstausbildung_abgeschlossen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "The input 'im_dienstverhaeltnis' is assumed to correctly indicate that the education occurs within a service relationship.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "im_dienstverhaeltnis",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "The input 'aufwendungen' is assumed to be the taxpayer's expenses for their own vocational training or studies.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "aufwendungen",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-10T22:01:40+00:00"
+  },
+  "module_name": "Berufsausbildung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

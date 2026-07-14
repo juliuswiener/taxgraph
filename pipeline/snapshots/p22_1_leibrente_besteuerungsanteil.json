@@ -1,0 +1,152 @@
+{
+  "bedingungen": [
+    "besteuerungsanteil_aus_kohortentabelle",
+    "rentenfreibetrag_fixierung_ist_folgejahr_state"
+  ],
+  "candidate_id": "p22_1_leibrente_besteuerungsanteil",
+  "catala_a": "declaration scope LeibrenteBesteuerungsanteil:\n  input jahresrente content money\n  input besteuerungsanteil_prozent content decimal\n  output steuerpflichtiger_rentenanteil content money\n\nscope LeibrenteBesteuerungsanteil:\n  definition steuerpflichtiger_rentenanteil equals\n    (besteuerungsanteil_prozent / 100.0) * jahresrente",
+  "catala_a_sha256": "ccdcaa73e7d12629e8ce2bec3255dd631c4b6500ad4701bfa703bbeee0165389",
+  "catala_b": "declaration scope LeibrenteBesteuerungsanteil:\n  input jahresrente content money\n  input besteuerungsanteil_prozent content decimal\n  output steuerpflichtiger_rentenanteil content money\n\nscope LeibrenteBesteuerungsanteil:\n  definition steuerpflichtiger_rentenanteil equals\n    jahresrente * (besteuerungsanteil_prozent / 100.0)",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'steuerpflichtiger_rentenanteil'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "5f1189565532",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "besteuerungsanteil_aus_kohortentabelle",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "nach dem Jahr des Rentenbeginns und dem in diesem Jahr maßgebenden Prozentsatz aus der nachstehenden Tabelle zu entnehmen",
+        "referenz": "§ 22 Nr. 1 S. 2-3 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-13T20:10:38+00:00"
+  },
+  "module_name": "LeibrenteBesteuerungsanteil",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

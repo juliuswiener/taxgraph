@@ -118,17 +118,36 @@ def judge_gates(verdict: dict, cand: dict) -> tuple[dict, list]:
 
 
 def regate(rules: list[dict]) -> int:
-    """Deterministische Gates aus gespeicherten Quellen neu rechnen. Keine Modelle."""
+    """Deterministische Gates aus gespeicherten Quellen neu rechnen. Keine Modelle.
+
+    Report-Quelle je Regel: der Live-Report in runs/ (kanonisch), oder - auf einem
+    frischen Checkout ohne runs/ - der committete Snapshot (snapshot.resolve_report,
+    Instructor-Vorrangregel: live schlaegt Snapshot mit Warnung). So regatet ein
+    Fresh Clone das Verdikt aus den Snapshots statt an "kein Report" zu scheitern
+    (runs/-Blocker-Fix). Ein manipulierter Snapshot failt hart -> Rueckgabe 1, nie
+    stiller PASS.
+    """
+    import snapshot as SNAP
     changed = 0
+    integritaet_fehler = 0
     for rule in rules:
-        path = os.path.join(OUT_ROOT, rule["rule_id"], "report.json")
-        if not os.path.exists(path):
-            print(f"  {rule['rule_id']}: kein Report - erst einen echten Lauf fahren")
+        rid = rule["rule_id"]
+        try:
+            rep, quelle, path, warn = SNAP.resolve_report(rid)
+        except SNAP.SnapshotIntegrityError as e:
+            print(f"  {rid}: SNAPSHOT-INTEGRITAET VERLETZT -> kein Verdikt. {e}")
+            integritaet_fehler += 1
             continue
-        rep = json.load(open(path, encoding="utf-8"))
+        if rep is None:
+            print(f"  {rid}: kein Report/Snapshot - erst einen echten Lauf fahren")
+            continue
+        if warn:
+            print(f"  {rid}: HINWEIS {warn}")
+        if quelle == "snapshot":
+            print(f"  {rid}: (aus Snapshot rekonstruiert)")
         src, mod = rep.get("catala_a"), rep.get("module_name")
         if not src:
-            print(f"  {rule['rule_id']}: kein catala_a gespeichert, uebersprungen")
+            print(f"  {rid}: kein catala_a gespeichert, uebersprungen")
             continue
         cand = build_candidate(rule)
         fresh = {"syntax_a": G.syntax_gate(src, mod),
@@ -165,11 +184,17 @@ def regate(rules: list[dict]) -> int:
         rep["annahmen_mapping"] = [G._normalize_annahme(a) for a in
                                    (rep.get("judge_verdict") or {}).get("stille_zusatzannahmen", [])]
         rep["regated"] = True
+        # Ziel ist immer der Live-Pfad: auf einem frischen Checkout materialisiert das
+        # den runs/-Report aus dem Snapshot (Verzeichnis ggf. neu anlegen).
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         json.dump(rep, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
         bed = f" unter {len(rep['bedingungen'])} Bedingung(en)" if rep["bedingungen"] else ""
-        print(f"  {rule['rule_id']}: {rep['queue_status']}{bed} "
+        print(f"  {rid}: {rep['queue_status']}{bed} "
               f"(offene Gates: {', '.join(rep['failed_gates']) or 'keine'})")
     print(f"\n{changed} Gate-Ergebnis(se) geaendert, keine Modellkosten.")
+    if integritaet_fehler:
+        print(f"{integritaet_fehler} Snapshot(s) mit verletzter Integritaet - FAIL.")
+        return 1
     return 0
 
 

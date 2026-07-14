@@ -1,0 +1,292 @@
+{
+  "bedingungen": [
+    "tarifwerte_sind_p32a_ergebnis",
+    "kindergeld_ist_anspruchsbetrag",
+    "zusammenveranlagte_eltern",
+    "keine_kindergeld_sonderfaelle"
+  ],
+  "candidate_id": "p31_familienleistungsausgleich",
+  "catala_a": "declaration scope Familienleistungsausgleich:\n  input est_ohne_freibetraege content money\n  input est_mit_freibetraegen content money\n  input kindergeld content money\n  internal freibetraege_guenstiger content boolean\n  output est_nach_familienausgleich content money\n\nscope Familienleistungsausgleich:\n  definition freibetraege_guenstiger equals\n    est_mit_freibetraegen + kindergeld < est_ohne_freibetraege\n\n  label grundregel\n  definition est_nach_familienausgleich equals\n    est_ohne_freibetraege\n\n  exception grundregel\n  definition est_nach_familienausgleich under condition\n    freibetraege_guenstiger\n  consequence equals\n    est_mit_freibetraegen + kindergeld",
+  "catala_a_sha256": "2736d6bdcd69aa23b49f512802c8b3a49e13b87507043fda6e554761fdbcd93d",
+  "catala_b": "declaration scope Familienleistungsausgleich:\n  input est_ohne_freibetraege content money\n  input est_mit_freibetraegen content money\n  input kindergeld content money\n  output est_nach_familienausgleich content money\n\nscope Familienleistungsausgleich:\n  definition est_nach_familienausgleich equals\n    if est_ohne_freibetraege <= est_mit_freibetraegen + kindergeld then est_ohne_freibetraege\n    else est_mit_freibetraegen + kindergeld",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'est_nach_familienausgleich'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 2,
+        "annahmen": 3,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung vergleicht und addiert Geldbeträge direkt, während die Norm eine Erhöhung der tariflichen Einkommenst"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung addiert das Kindergeld zur tariflichen Einkommensteuer, während die Norm die Steuer um den Kindergeld"
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 31 estg"
+            ],
+            "text": "Bewirkt der Anspruch auf Kindergeld für den gesamten Veranlagungszeitraum die nach Satz 1 gebotene steuerliche Freistell"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Formalisierung addiert das Kindergeld zur tariflichen Einkommensteuer, während die Norm die Steuer um den Kindergeldanspruch erhöht.",
+            "eingeschmolzen": "Die Formalisierung addiert das Kindergeld zur tariflichen Einkommensteuer, während die Norm die tarifliche Einkommensteuer um den Kindergeldanspruch erhöht.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung behandelt est_mit_freibetraegen als die unter Abzug der Freibeträge ermittelte tarifliche Einkommensteuer.",
+            "eingeschmolzen": "Die Formalisierung behandelt 'est_mit_freibetraegen' als die unter Abzug der Freibeträge ermittelte tarifliche Einkommensteuer.",
+            "key": [
+              "betrifft_kat",
+              "est_mit_freibetraegen",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung behandelt est_ohne_freibetraege als die tarifliche Einkommensteuer ohne Abzug der Freibeträge.",
+            "eingeschmolzen": "Die Formalisierung behandelt 'est_ohne_freibetraege' als die tarifliche Einkommensteuer ohne Abzug der Freibeträge.",
+            "key": [
+              "betrifft_kat",
+              "est_ohne_freibetraege",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung behandelt kindergeld als den Anspruch auf Kindergeld für den gesamten Veranlagungszeitraum.",
+            "eingeschmolzen": "Die Formalisierung behandelt 'kindergeld' als den Anspruch auf Kindergeld für den gesamten Veranlagungszeitraum.",
+            "key": [
+              "betrifft_kat",
+              "kindergeld",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung behandelt est_mit_freibetraegen als die unter Abzug der Freibeträge ermittelte tarifliche Einkommensteuer.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass est_mit_freibetraegen die tarifliche Einkommensteuer nach Abzug der Freibeträge ist.",
+            "key": [
+              "betrifft_kat",
+              "est_mit_freibetraegen",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung behandelt est_ohne_freibetraege als die tarifliche Einkommensteuer ohne Abzug der Freibeträge.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass est_ohne_freibetraege die tarifliche Einkommensteuer ohne Abzug der Freibeträge ist.",
+            "key": [
+              "betrifft_kat",
+              "est_ohne_freibetraege",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung behandelt kindergeld als den Anspruch auf Kindergeld für den gesamten Veranlagungszeitraum.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass kindergeld den Anspruch auf Kindergeld für den gesamten Veranlagungszeitraum darstellt.",
+            "key": [
+              "betrifft_kat",
+              "kindergeld",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Die steuerliche Freistellung eines Einkommensbetrags in Höhe des Existenzminimums eines Kindes [...] wird im gesamten Veranlagungszeitraum entweder durch die Fr",
+            "eingeschmolzen": "Die steuerliche Freistellung ... wird ... entweder durch die Freibeträge ... oder durch Kindergeld ... bewirkt.",
+            "key": [
+              "ref",
+              "§ 31 satz 1 estg"
+            ]
+          },
+          {
+            "cluster": "Die steuerliche Freistellung eines Einkommensbetrags in Höhe des Existenzminimums eines Kindes [...] wird im gesamten Veranlagungszeitraum entweder durch die Fr",
+            "eingeschmolzen": "Die steuerliche Freistellung eines Einkommensbetrags in Höhe des Existenzminimums eines Kindes einschließlich der Bedarfe für Betreuung und Erziehung oder Ausbi",
+            "key": [
+              "ref",
+              "§ 31 satz 1 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        7,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "c31fee163c9d",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Die steuerliche Freistellung eines Einkommensbetrags in Höhe des Existenzminimums eines Kindes [...] wird im gesamten Veranlagungszeitraum entweder durch die Freibeträge nach § 32 Absatz 6 oder durch Kindergeld nach Abschnitt X bewirkt.",
+        "referenz": "§ 31 Satz 1 EStG"
+      },
+      {
+        "abgedeckt_von": "kindergeld_ist_anspruchsbetrag",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Bewirkt der Anspruch auf Kindergeld für den gesamten Veranlagungszeitraum die nach Satz 1 gebotene steuerliche Freistellung nicht vollständig",
+        "referenz": "§ 31 EStG"
+      },
+      {
+        "abgedeckt_von": "zusammenveranlagte_eltern",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bei nicht zusammenveranlagten Eltern wird der Kindergeldanspruch im Umfang des Kinderfreibetrags angesetzt",
+        "referenz": "§ 31 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung behandelt est_mit_freibetraegen als die unter Abzug der Freibeträge ermittelte tarifliche Einkommensteuer.",
+        "bedingung_id": "tarifwerte_sind_p32a_ergebnis",
+        "betrifft": "est_mit_freibetraegen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung behandelt est_ohne_freibetraege als die tarifliche Einkommensteuer ohne Abzug der Freibeträge.",
+        "bedingung_id": "tarifwerte_sind_p32a_ergebnis",
+        "betrifft": "est_ohne_freibetraege",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung behandelt kindergeld als den Anspruch auf Kindergeld für den gesamten Veranlagungszeitraum.",
+        "bedingung_id": "kindergeld_ist_anspruchsbetrag",
+        "betrifft": "kindergeld",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-11T12:57:41+00:00"
+  },
+  "module_name": "Familienleistungsausgleich",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

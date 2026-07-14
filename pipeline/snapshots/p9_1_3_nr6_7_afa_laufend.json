@@ -1,0 +1,504 @@
+{
+  "bedingungen": [
+    "gwg_sofortabzug_gewaehlt",
+    "zeitraum_laufend",
+    "anschaffungskosten_sind_massgebliche_ak",
+    "grenzwert_und_abzugsbetrag_fallen_zusammen"
+  ],
+  "candidate_id": "p9_1_3_nr6_7_afa_laufend",
+  "catala_a": "declaration scope ArbeitsmittelUndAfaLaufend:\n  input anschaffungskosten content money\n  input nutzungsdauer_jahre content integer\n  input anschaffungsmonat content integer\n  input jahre_seit_anschaffung content integer\n  output abziehbar content money\n\nscope ArbeitsmittelUndAfaLaufend:\n  definition abziehbar equals\n    if anschaffungskosten <= $800.00\n    then anschaffungskosten\n    else\n      let jahresbetrag equals\n        anschaffungskosten / (decimal of nutzungsdauer_jahre)\n      in\n      let volle_monate_vor_anschaffung equals\n        decimal of (anschaffungsmonat - 1)\n      in\n      let kuerzung equals\n        jahresbetrag * (volle_monate_vor_anschaffung / 12.0)\n      in\n      if jahre_seit_anschaffung = 0\n      then jahresbetrag - kuerzung\n      else jahresbetrag",
+  "catala_a_sha256": "4b5b8fc686344c65014edc73247cebf0801dd99b5969ec43e724e986ce03f6ef",
+  "catala_b": "declaration scope ArbeitsmittelUndAfaLaufend:\n  input anschaffungskosten content money\n  input nutzungsdauer_jahre content integer\n  input anschaffungsmonat content integer\n  input jahre_seit_anschaffung content integer\n  output abziehbar content money\n\nscope ArbeitsmittelUndAfaLaufend:\n  definition abziehbar equals\n    if anschaffungskosten <= $800.00 then\n      if jahre_seit_anschaffung = 0 then anschaffungskosten else $0.00\n    else\n      let jahresbetrag equals anschaffungskosten / (decimal of nutzungsdauer_jahre) in\n      if jahre_seit_anschaffung = 0 then\n        jahresbetrag * ((decimal of (13 - anschaffungsmonat)) / 12.0)\n      else\n        jahresbetrag",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "../rules/ArbeitsmittelUndAfaLaufend.catala_en:19.9-72: 19 │         (anschaffungskosten / (decimal of nutzungsdauer_jahre)) * $1.00 / $1.00 * $1.00 ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ Arbeitsm",
+      "name": "typecheck_a_first",
+      "status": "FAIL"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'abziehbar'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 3,
+        "annahmen": 15,
+        "norm_teile": 4
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung wendet die 800-Euro-Grenze auf die gesamten Anschaffungskosten an, während § 6 Abs. 2 EStG auf den We"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung wendet den 800-Euro-Sofortabzug auf die gesamten Anschaffungskosten an, während die Norm ihn nur für "
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass die Anschaffungskosten den Wert des einzelnen Wirtschaftsguts im Sinne des § 6 Abs. 2 "
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "anschaffungsmonat",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzes für die Nutzung zur Verfügung steht und nur volle Mon"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "jahre_seit_anschaffung",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung nimmt an, dass die Abschreibung im Anschaffungsjahr dem Wert 0 für jahre_seit_anschaffung entspricht "
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung behandelt die Anschaffungskosten als Nettobetrag ohne Umsatzsteuer, was die Norm nicht explizit festl"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "nutzungsdauer_jahre",
+              "rundung"
+            ],
+            "text": "Die Formalisierung setzt eine ganzzahlige betriebsgewöhnliche Nutzungsdauer in Jahren voraus, die Norm enthält keine Run"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anschaffungsmonat",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzes für die AfA zählt, die Norm spricht von vollen Monate"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "jahre_seit_anschaffung",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung nimmt an, dass jahre_seit_anschaffung=0 das Anschaffungsjahr bezeichnet, ohne Berücksichtigung unterj"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "nutzungsdauer_jahre",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass die Nutzungsdauer in vollen Jahren angegeben wird und der betriebsgewöhnlichen Nutzung"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anschaffungsmonat",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzzahl von 1 bis 12 vorliegt und der Monat der Anschaffung"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "jahre_seit_anschaffung",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung nimmt an, dass 'jahre_seit_anschaffung' die Anzahl voller Kalenderjahre nach dem Jahr der Anschaffung"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Die Formalisierung enthält keine Rundungsvorschrift für das Ergebnis der Division oder der Kürzungsberechnung."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "nutzungsdauer_jahre",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass die betriebsgewöhnliche Nutzungsdauer in ganzen Jahren angegeben und als Divisor v"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten",
+              "einheit"
+            ],
+            "text": "Die Formalisierung nimmt an, dass die Anschaffungskosten brutto und nicht netto zu verstehen sind."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anschaffungsmonat",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung interpretiert den Anschaffungsmonat als numerischen Wert von 1 bis 12."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "jahre_seit_anschaffung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung interpretiert jahre_seit_anschaffung als ganzzahlige Anzahl vollendeter Jahre seit der Anschaffung."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 7 abs. 1 s. 1 estg"
+            ],
+            "text": "der Teil der Anschaffungs- oder Herstellungskosten abzusetzen, der bei gleichmäßiger Verteilung dieser Kosten auf die Ge"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 9 abs. 1 s. 3 nr. 6/7 estg"
+            ],
+            "text": "Aufwendungen für Arbeitsmittel"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 7 abs. 1 s. 1 estg"
+            ],
+            "text": "deren Verwendung oder Nutzung durch den Steuerpflichtigen zur Erzielung von Einkünften sich erfahrungsgemäß auf einen Ze"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Formalisierung nimmt an, dass 'jahre_seit_anschaffung' die Anzahl voller Kalenderjahre nach dem Jahr der Anschaffung",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"jahre_seit_anschaffung\", \"zeitbezug\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Formalisierung gibt im ersten Jahr den vollen Jahresbetrag abzüglich Kürzung zurück, während § 7 Abs. 1 S. 4 EStG den Absetzungsbetrag nach Satz 1 um ein Zw",
+            "eingeschmolzen": "Die Formalisierung gibt im ersten Jahr den vollen Jahresbetrag abzüglich Kürzung zurück, die Norm verlangt eine monatsgenaue Kürzung des Absetzungsbetrags um je",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung gibt im ersten Jahr den vollen Jahresbetrag abzüglich Kürzung zurück, während § 7 Abs. 1 S. 4 EStG den Absetzungsbetrag nach Satz 1 um ein Zw",
+            "eingeschmolzen": "Die Formalisierung gibt im ersten Jahr den vollen Jahresbetrag abzüglich Kürzung zurück, die Norm verlangt eine Kürzung um je ein Zwölftel pro vollem Monat vor ",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung gibt im ersten Jahr den vollen Jahresbetrag abzüglich Kürzung zurück, während § 7 Abs. 1 S. 4 EStG den Absetzungsbetrag nach Satz 1 um ein Zw",
+            "eingeschmolzen": "Die Formalisierung gibt im ersten Jahr den vollen Jahresbetrag abzüglich Kürzung zurück, die Norm verlangt eine monatsgenaue Kürzung des Absetzungsbetrags um je",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung gibt im ersten Jahr den vollen Jahresbetrag abzüglich Kürzung zurück, während § 7 Abs. 1 S. 4 EStG den Absetzungsbetrag nach Satz 1 um ein Zw",
+            "eingeschmolzen": "Die Formalisierung gibt im ersten Jahr den vollen Jahresbetrag abzüglich Kürzung zurück, die Norm verlangt jedoch eine monatsgenaue Kürzung des Absetzungsbetrag",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzes für die Nutzung zur Verfügung steht und nur volle Monate vor der Anschaffung kürzend wirken.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzes zählt und die Kürzung nur für volle Monate vor der Anschaffung erfolgt.",
+            "key": [
+              "betrifft_kat",
+              "anschaffungsmonat",
+              "zeitbezug"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung nimmt an, dass die Nutzungsdauer in vollen Jahren angegeben wird und der betriebsgewöhnlichen Nutzungsdauer entspricht.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass die betriebsgewöhnliche Nutzungsdauer in vollen Jahren angegeben wird.",
+            "key": [
+              "betrifft_kat",
+              "nutzungsdauer_jahre",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        7,
+        5,
+        4,
+        2,
+        4
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "ea46abf35a09",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "zeitraum_laufend",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "der Teil der Anschaffungs- oder Herstellungskosten abzusetzen, der bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung auf ein Jahr entfällt",
+        "referenz": "§ 7 Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer des Wirtschaftsguts.",
+        "referenz": "§ 7 Abs. 1 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Aufwendungen für Arbeitsmittel",
+        "referenz": "§ 9 Abs. 1 S. 3 Nr. 6/7 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "deren Verwendung oder Nutzung durch den Steuerpflichtigen zur Erzielung von Einkünften sich erfahrungsgemäß auf einen Zeitraum von mehr als einem Jahr erstreckt",
+        "referenz": "§ 7 Abs. 1 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung nimmt an, dass die Anschaffungskosten den Wert des einzelnen Wirtschaftsguts im Sinne des § 6 Abs. 2 EStG darstellen.",
+        "bedingung_id": "gwg_sofortabzug_gewaehlt",
+        "betrifft": "anschaffungskosten",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzes für die Nutzung zur Verfügung steht und nur volle Monate vor der Anschaffung kürzend wirken.",
+        "bedingung_id": "konv:ganzzahl_monate",
+        "betrifft": "anschaffungsmonat",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass die Abschreibung im Anschaffungsjahr dem Wert 0 für jahre_seit_anschaffung entspricht und in den Folgejahren der ungekürzte Jahresbetrag gilt.",
+        "bedingung_id": "zeitraum_laufend",
+        "betrifft": "jahre_seit_anschaffung",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung behandelt die Anschaffungskosten als Nettobetrag ohne Umsatzsteuer, was die Norm nicht explizit festlegt.",
+        "bedingung_id": null,
+        "betrifft": "anschaffungskosten",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung setzt eine ganzzahlige betriebsgewöhnliche Nutzungsdauer in Jahren voraus, die Norm enthält keine Rundungsregel.",
+        "bedingung_id": null,
+        "betrifft": "nutzungsdauer_jahre",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzes für die AfA zählt, die Norm spricht von vollen Monaten vor der Anschaffung.",
+        "bedingung_id": "konv:ganzzahl_monate",
+        "betrifft": "anschaffungsmonat",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass jahre_seit_anschaffung=0 das Anschaffungsjahr bezeichnet, ohne Berücksichtigung unterjähriger Anschaffungszeitpunkte.",
+        "bedingung_id": null,
+        "betrifft": "jahre_seit_anschaffung",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass die Nutzungsdauer in vollen Jahren angegeben wird und der betriebsgewöhnlichen Nutzungsdauer entspricht.",
+        "bedingung_id": null,
+        "betrifft": "nutzungsdauer_jahre",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass der Anschaffungsmonat als Ganzzahl von 1 bis 12 vorliegt und der Monat der Anschaffung selbst nicht als voller Monat zählt.",
+        "bedingung_id": "konv:ganzzahl_monate",
+        "betrifft": "anschaffungsmonat",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass 'jahre_seit_anschaffung' die Anzahl voller Kalenderjahre nach dem Jahr der Anschaffung angibt.",
+        "bedingung_id": null,
+        "betrifft": "jahre_seit_anschaffung",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung enthält keine Rundungsvorschrift für das Ergebnis der Division oder der Kürzungsberechnung.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass die betriebsgewöhnliche Nutzungsdauer in ganzen Jahren angegeben und als Divisor verwendet werden kann.",
+        "bedingung_id": null,
+        "betrifft": "nutzungsdauer_jahre",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass die Anschaffungskosten brutto und nicht netto zu verstehen sind.",
+        "bedingung_id": null,
+        "betrifft": "anschaffungskosten",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Die Formalisierung interpretiert den Anschaffungsmonat als numerischen Wert von 1 bis 12.",
+        "bedingung_id": "konv:ganzzahl_monate",
+        "betrifft": "anschaffungsmonat",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung interpretiert jahre_seit_anschaffung als ganzzahlige Anzahl vollendeter Jahre seit der Anschaffung.",
+        "bedingung_id": null,
+        "betrifft": "jahre_seit_anschaffung",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-11T11:43:03+00:00"
+  },
+  "module_name": "ArbeitsmittelUndAfaLaufend",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

@@ -52,6 +52,15 @@ params-check:
 sources-check:
 	python3 scripts/verify_sources.py
 
+## Snapshot the deterministic verdict of every verified rule (runs/-Blocker-Fix).
+## Commit pipeline/snapshots/ so a fresh clone can --regate without model costs.
+snapshot:
+	python3 pipeline/snapshot.py write --all
+
+## Verify sha256(catala_a) of every committed snapshot (fast, no clerk). Nonzero on tamper.
+snapshot-verify:
+	python3 pipeline/snapshot.py verify --all
+
 ## Run the golden corpus against the Catala formalisation (value + citation anchor).
 golden: build-python
 	. $(VENV312); python golden/runner.py

@@ -1,0 +1,372 @@
+{
+  "bedingungen": [
+    "hoechstbetrag_gilt_je_person"
+  ],
+  "candidate_id": "p10_1_7_berufsausbildung",
+  "catala_a": "declaration scope Berufsausbildung:\n  input aufwendungen content money\n  output abziehbare_sonderausgaben content money\n\nscope Berufsausbildung:\n  definition abziehbare_sonderausgaben equals\n    if aufwendungen > $6,000.00 then $6,000.00\n    else aufwendungen",
+  "catala_a_sha256": "68553fb25a82d327183ca5b3df431958c9d92e54b86354f1c27c87504783700f",
+  "catala_b": "declaration scope Berufsausbildung:\n  input aufwendungen content money\n  output abziehbare_sonderausgaben content money\n\nscope Berufsausbildung:\n  definition abziehbare_sonderausgaben equals\n    if aufwendungen <= $6,000.00 then aufwendungen else $6,000.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'abziehbare_sonderausgaben'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 0 wirkt_hinein (blockierend ist geltungsbereich), 6 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 6,
+        "norm_teile": 6
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe 'aufwendungen' entspricht den Aufwendungen im Sinne des § 10 Abs. 1 Nr. 7 EStG."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "zeitbezug"
+            ],
+            "text": "Die Eingabe bezieht sich auf ein Kalenderjahr."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe wird als Aufwendungen für die eigene Berufsausbildung verstanden, ohne dass dies geprüft wird."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe wird als bereits nach § 4 Abs. 5 und § 9 EStG ermittelte Aufwendungen behandelt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird vorausgesetzt, dass die Ehegattenregelung des Satzes 2 nicht anwendbar ist oder bereits eingerechnet wurde."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "zeitbezug"
+            ],
+            "text": "Die Eingabe wird als die Aufwendungen eines Kalenderjahres behandelt, ohne dass ein Zeitraum geprüft wird."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "satz 2"
+            ],
+            "text": "Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt Satz 1 für jeden Ehegatten."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "satz 3"
+            ],
+            "text": "Zu den Aufwendungen im Sinne des Satzes 1 gehören auch Aufwendungen für eine auswärtige Unterbringung."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "satz 4"
+            ],
+            "text": "§ 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz 8 und Absatz 4a sind bei"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 10 abs. 1 nr. 7 satz 2"
+            ],
+            "text": "Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt Satz 1 für jeden Ehegatten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 10 abs. 1 nr. 7 satz 3"
+            ],
+            "text": "Zu den Aufwendungen im Sinne des Satzes 1 gehören auch Aufwendungen für eine auswärtige Unterbringung."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 10 abs. 1 nr. 7 satz 4"
+            ],
+            "text": "§ 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz 8 und Absatz 4a sind bei"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Eingabe bezieht sich auf ein Kalenderjahr.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"aufwendungen\", \"zeitbezug\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Eingabe wird als bereits nach § 4 Abs. 5 und § 9 EStG ermittelte Aufwendungen behandelt.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"aufwendungen\", \"interpretation\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Eingabe wird als die Aufwendungen eines Kalenderjahres behandelt, ohne dass ein Zeitraum geprüft wird.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"aufwendungen\", \"zeitbezug\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "§ 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz 8 und Absatz 4a sind bei",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 10 abs. 1 nr. 7 satz 4\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Die Eingabe wird als bereits nach § 4 Abs. 5 und § 9 EStG ermittelte Aufwendungen behandelt.",
+            "eingeschmolzen": "Die Eingabe 'aufwendungen' wird als bereits nach § 10 Abs. 1 Nr. 7 Sätze 3 und 4 EStG ermittelte Summe der Aufwendungen interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Eingabe bezieht sich auf ein Kalenderjahr.",
+            "eingeschmolzen": "Es wird angenommen, dass sich die Eingabe auf ein Kalenderjahr bezieht.",
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "zeitbezug"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        5,
+        7,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "b34e2c5ea01b",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "hoechstbetrag_gilt_je_person",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt Satz 1 für jeden Ehegatten.",
+        "referenz": "Satz 2"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Zu den Aufwendungen im Sinne des Satzes 1 gehören auch Aufwendungen für eine auswärtige Unterbringung.",
+        "referenz": "Satz 3"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "§ 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz 8 und Absatz 4a sind bei der Ermittlung der Aufwendungen anzuwenden.",
+        "referenz": "Satz 4"
+      },
+      {
+        "abgedeckt_von": "hoechstbetrag_gilt_je_person",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Bei Ehegatten, die die Voraussetzungen des § 26 Absatz 1 Satz 1 erfüllen, gilt Satz 1 für jeden Ehegatten.",
+        "referenz": "§ 10 Abs. 1 Nr. 7 Satz 2"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Zu den Aufwendungen im Sinne des Satzes 1 gehören auch Aufwendungen für eine auswärtige Unterbringung.",
+        "referenz": "§ 10 Abs. 1 Nr. 7 Satz 3"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "§ 4 Absatz 5 Satz 1 Nummer 6b und 6c sowie § 9 Absatz 1 Satz 3 Nummer 4 und 5, Absatz 2, 4 Satz 8 und Absatz 4a sind bei der Ermittlung der Aufwendungen anzuwenden.",
+        "referenz": "§ 10 Abs. 1 Nr. 7 Satz 4"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Eingabe 'aufwendungen' entspricht den Aufwendungen im Sinne des § 10 Abs. 1 Nr. 7 EStG.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "aufwendungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe bezieht sich auf ein Kalenderjahr.",
+        "bedingung_id": "konv:vz_bezug_der_regel",
+        "betrifft": "aufwendungen",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Eingabe wird als Aufwendungen für die eigene Berufsausbildung verstanden, ohne dass dies geprüft wird.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "aufwendungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe wird als bereits nach § 4 Abs. 5 und § 9 EStG ermittelte Aufwendungen behandelt.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "aufwendungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Es wird vorausgesetzt, dass die Ehegattenregelung des Satzes 2 nicht anwendbar ist oder bereits eingerechnet wurde.",
+        "bedingung_id": "hoechstbetrag_gilt_je_person",
+        "betrifft": "aufwendungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Eingabe wird als die Aufwendungen eines Kalenderjahres behandelt, ohne dass ein Zeitraum geprüft wird.",
+        "bedingung_id": "konv:vz_bezug_der_regel",
+        "betrifft": "aufwendungen",
+        "kategorie": "zeitbezug"
+      }
+    ],
+    "timestamp": "2026-07-10T21:54:13+00:00"
+  },
+  "module_name": "Berufsausbildungsaufwendungen",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

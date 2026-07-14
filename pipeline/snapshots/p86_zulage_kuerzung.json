@@ -1,0 +1,246 @@
+{
+  "bedingungen": [
+    "mindesteigenbeitrag_positiv"
+  ],
+  "candidate_id": "p86_zulage_kuerzung",
+  "catala_a": "declaration scope ZulageKuerzung:\n  input zulage_anspruch content money\n  input altersvorsorgebeitraege content money\n  input mindesteigenbeitrag content money\n  output gewaehrte_zulage content money\n\nscope ZulageKuerzung:\n  definition gewaehrte_zulage equals\n    let quote equals altersvorsorgebeitraege / mindesteigenbeitrag in\n    let gekappte_quote equals if quote > 1.0 then 1.0 else quote in\n    zulage_anspruch * gekappte_quote",
+  "catala_a_sha256": "1514c23f78933c3e4f2244dc4d557c7f7602265c75dff69727039284d2e7334e",
+  "catala_b": "declaration scope ZulageKuerzung:\n  input zulage_anspruch content money\n  input altersvorsorgebeitraege content money\n  input mindesteigenbeitrag content money\n  output gewaehrte_zulage content money\n\nscope ZulageKuerzung:\n  definition gewaehrte_zulage equals\n    zulage_anspruch *\n      (if altersvorsorgebeitraege / mindesteigenbeitrag > 1.0\n       then 1.0\n       else altersvorsorgebeitraege / mindesteigenbeitrag)",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'gewaehrte_zulage'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 0 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 6,
+        "norm_teile": 0
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "altersvorsorgebeitraege",
+              "einheit"
+            ],
+            "text": "Altersvorsorgebeiträge werden als Geldbetrag interpretiert."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "mindesteigenbeitrag",
+              "einheit"
+            ],
+            "text": "Mindesteigenbeitrag wird als Geldbetrag interpretiert."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "zulage_anspruch",
+              "einheit"
+            ],
+            "text": "Zulageanspruch wird als Geldbetrag interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "altersvorsorgebeitraege",
+              "rundung"
+            ],
+            "text": "Division wird ohne explizite Rundungsvorschrift durchgeführt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "mindesteigenbeitrag",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Mindesteigenbeitrag wird als nicht null angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "rundung"
+            ],
+            "text": "Keine Rundung der Quote oder des Ergebnisses vorgesehen."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Division wird ohne explizite Rundungsvorschrift durchgeführt.",
+            "eingeschmolzen": "Division der Beiträge wird ohne Rundung durchgeführt.",
+            "key": [
+              "betrifft_kat",
+              "altersvorsorgebeitraege",
+              "rundung"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        4,
+        1,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "6eff223c893d",
+    "parse_error": false,
+    "scope_gap": [],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Altersvorsorgebeiträge werden als Geldbetrag interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "altersvorsorgebeitraege",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Mindesteigenbeitrag wird als Geldbetrag interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "mindesteigenbeitrag",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Zulageanspruch wird als Geldbetrag interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "zulage_anspruch",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Division wird ohne explizite Rundungsvorschrift durchgeführt.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "altersvorsorgebeitraege",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Mindesteigenbeitrag wird als nicht null angenommen.",
+        "bedingung_id": "mindesteigenbeitrag_positiv",
+        "betrifft": "mindesteigenbeitrag",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Keine Rundung der Quote oder des Ergebnisses vorgesehen.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "gewaehrte_zulage",
+        "kategorie": "rundung"
+      }
+    ],
+    "timestamp": "2026-07-13T21:31:00+00:00"
+  },
+  "module_name": "ZulageKuerzung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

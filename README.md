@@ -33,6 +33,25 @@ make tests   # alle Clerk-Scope-Tests (12 gruen)
 make s02     # Differentialtest Catala vs GETTSIM, erzeugt reports/s02-divergenzen.md
 ```
 
+### Verifizierte Regeln reproduzieren (frischer Clone)
+
+Die Pipeline-Laeufe unter `pipeline/runs/` sind gitignored — ein frischer Clone
+hat sie nicht. Das deterministische Verdikt jeder **verifizierten** Regel liegt
+stattdessen als committeter Snapshot unter `pipeline/snapshots/<rule_id>.json`
+(Catala A/B, Judge-Verdikt, Gates, `sha256(catala_a)` als Integritaets-Waechter).
+Ein frischer Clone regatet daraus ohne Modellkosten:
+
+```bash
+make snapshot-verify   # sha256-Integritaet aller Snapshots (schnell, kein clerk)
+python pipeline/produktion/run.py --regate   # rekonstruiert das Verdikt aus Snapshots
+```
+
+Ein Live-Report in `runs/` schlaegt den Snapshot (in-flight vor Archiv); der
+Snapshot ist kanonisch nur, wenn kein Live-Report existiert. Ein manipulierter
+Snapshot (catala_a geaendert, Hash nicht) failt hart — nie stiller PASS
+(`tests/test_snapshot.py`). Snapshots nach einer Abnahme nachziehen:
+`python pipeline/snapshot.py write --all`.
+
 ## Repo-Layout
 
 ```

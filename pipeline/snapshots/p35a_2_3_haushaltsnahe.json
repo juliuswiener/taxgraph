@@ -1,0 +1,1285 @@
+{
+  "bedingungen": [
+    "rechnung_und_unbare_zahlung",
+    "haushalt_in_eu_ewr",
+    "keine_beruecksichtigung_als_wk_sa_agb",
+    "handwerker_keine_oeffentliche_foerderung",
+    "handwerkerbetrag_enthaelt_nur_arbeitskosten",
+    "dienstleistungsbetrag_enthaelt_nur_arbeitskosten",
+    "kein_gemeinsamer_haushalt_zweier_alleinstehender",
+    "antrag_gestellt",
+    "minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4",
+    "dienstleistungen_sind_keine_handwerkerleistungen",
+    "keine_pflege_oder_heimkosten",
+    "handwerker_nur_renovierung_erhaltung_modernisierung"
+  ],
+  "candidate_id": "p35a_2_3_haushaltsnahe",
+  "catala_a": "declaration scope Haushaltsnahe:\n  input minijob_aufwendungen content money\n  input haushaltsnahe_dienstleistungen content money\n  input handwerker_arbeitskosten content money\n  internal ermaessigung_abs1 content money\n  internal ermaessigung_abs2 content money\n  internal ermaessigung_abs3 content money\n  output steuerermaessigung content money\n\nscope Haushaltsnahe:\n  definition ermaessigung_abs1 equals\n    if minijob_aufwendungen * 0.20 > $510.00\n    then $510.00\n    else minijob_aufwendungen * 0.20\n\n  definition ermaessigung_abs2 equals\n    if haushaltsnahe_dienstleistungen * 0.20 > $4,000.00\n    then $4,000.00\n    else haushaltsnahe_dienstleistungen * 0.20\n\n  definition ermaessigung_abs3 equals\n    if handwerker_arbeitskosten * 0.20 > $1,200.00\n    then $1,200.00\n    else handwerker_arbeitskosten * 0.20\n\n  definition steuerermaessigung equals\n    ermaessigung_abs1 + ermaessigung_abs2 + ermaessigung_abs3",
+  "catala_a_sha256": "7d084e5a77c438b8dc4e7530940bd179d64e9dae15336fddb67b03ec52c4ebf6",
+  "catala_b": "declaration scope Haushaltsnahe:\n  input minijob_aufwendungen content money\n  input haushaltsnahe_dienstleistungen content money\n  input handwerker_arbeitskosten content money\n  internal ermaessigung_abs1 content money\n  internal ermaessigung_abs2 content money\n  internal ermaessigung_abs3 content money\n  output steuerermaessigung content money\n\nscope Haushaltsnahe:\n  definition ermaessigung_abs1 equals if minijob_aufwendungen * 0.20 > $510.00 then $510.00 else minijob_aufwendungen * 0.20\n  definition ermaessigung_abs2 equals if haushaltsnahe_dienstleistungen * 0.20 > $4,000.00 then $4,000.00 else haushaltsnahe_dienstleistungen * 0.20\n  definition ermaessigung_abs3 equals if handwerker_arbeitskosten * 0.20 > $1,200.00 then $1,200.00 else handwerker_arbeitskosten * 0.20\n  definition steuerermaessigung equals ermaessigung_abs1 + ermaessigung_abs2 + ermaessigung_abs3",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'steuerermaessigung'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 12 wirkt_hinein (blockierend ist geltungsbereich), 4 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "8 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Die Formaliserung wendet 20% auf den gesamten Betrag an, obwohl nach § 35a Abs. 5 Satz 2 nur Arbeitskosten abziehbar sind."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 3,
+        "annahmen": 40,
+        "norm_teile": 16
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Steuerermäßigung wird nicht auf die tarifliche Einkommensteuer abzüglich sonstiger Ermäßigungen begrenzt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Steuerermäßigung wird ohne Berücksichtigung der tariflichen Einkommensteuer und sonstiger Steuerermäßigungen berechn"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "haushaltsnahe_dienstleistungen"
+            ],
+            "text": "Die Formaliserung wendet 20% auf den gesamten Betrag an, obwohl nach § 35a Abs. 5 Satz 2 nur Arbeitskosten abziehbar sin"
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "minijob_aufwendungen",
+              "interpretation"
+            ],
+            "text": "Die minijob_aufwendungen stammen aus einem haushaltsnahen geringfügigen Beschäftigungsverhältnis."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "minijob_aufwendungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Aufwendungen sind keine Betriebsausgaben oder Werbungskosten und nicht als Sonderausgaben oder außergewöhnliche Bela"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "minijob_aufwendungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Der Steuerpflichtige hat einen Antrag auf Steuerermäßigung gestellt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "interpretation"
+            ],
+            "text": "Die haushaltsnahen Dienstleistungen sind keine Handwerkerleistungen und werden im Haushalt erbracht."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Der Steuerpflichtige hat eine Rechnung erhalten und die Zahlung auf das Konto des Leistungserbringers geleistet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "interpretation"
+            ],
+            "text": "Die haushaltsnahen Dienstleistungen umfassen ausschließlich Arbeitskosten."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "interpretation"
+            ],
+            "text": "Die Handwerkerleistungen sind für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen und nicht öffentlich gefördert"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Der Steuerpflichtige hat eine Rechnung erhalten und die Zahlung auf das Konto des Leistungserbringers geleistet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "interpretation"
+            ],
+            "text": "Die handwerker_arbeitskosten umfassen ausschließlich Arbeitskosten."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Dienstleistung wird in einem Haushalt in der EU oder dem EWR erbracht."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "minijob_aufwendungen",
+              "interpretation"
+            ],
+            "text": "Die minijob_aufwendungen werden als Aufwendungen für eine geringfügige Beschäftigung im Sinne des §8a SGB IV behandelt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "minijob_aufwendungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die minijob_aufwendungen erfüllen die Voraussetzungen der Absätze 4 und 5 (keine Betriebsausgaben, EU/EWR-Haushalt)."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "interpretation"
+            ],
+            "text": "Die haushaltsnahe_dienstleistungen werden als Arbeitskosten für haushaltsnahe Dienstleistungen im Sinne des Absatzes 2 b"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die haushaltsnahe_dienstleistungen erfüllen die Voraussetzungen der Absätze 4 und 5 (keine Betriebsausgaben, EU/EWR-Haus"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die handwerker_arbeitskosten sind nicht für öffentlich geförderte Maßnahmen und erfüllen die Voraussetzungen der Absätze"
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird ein Antrag auf Steuerermäßigung gestellt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Der Steuerpflichtige lebt nicht mit einem anderen Alleinstehenden in einem Haushalt zusammen, so dass die Höchstbeträge "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "minijob_aufwendungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Aufwendungen stammen aus einer geringfügigen Beschäftigung im Sinne des § 8a SGB IV."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe umfasst ausschließlich Arbeitskosten im Sinne des § 35a Abs. 5 Satz 2 EStG."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe betrifft nur haushaltsnahe Dienstleistungen oder Beschäftigungsverhältnisse, die nicht unter § 35a Abs. 3 ES"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "interpretation"
+            ],
+            "text": "Die Eingabe umfasst ausschließlich Arbeitskosten für Handwerkerleistungen im Sinne des § 35a Abs. 3 EStG."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Handwerkerleistungen sind nicht öffentlich gefördert im Sinne des § 35a Abs. 3 Satz 2 EStG."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Aufwendungen sind nicht als Betriebsausgaben, Werbungskosten oder Sonderausgaben berücksichtigt worden."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Leistungen werden im Haushalt des Steuerpflichtigen in der EU oder dem EWR erbracht."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Höchstbeträge werden nicht mit einer weiteren alleinstehenden Person im selben Haushalt geteilt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe umfasst nur die begünstigten Kosten für Pflege- und Betreuungsleistungen sowie Heimunterbringung, soweit sie"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass die Aufwendungen keine Betriebsausgaben oder Werbungskosten sind und nicht anderweitig berücksi"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass die Aufwendungen keine Betriebsausgaben oder Werbungskosten sind und nicht anderweitig berücksi"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe wird als ausschließlich Arbeitskosten interpretiert, obwohl die Norm dies nicht für den gesamten Betrag vors"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass eine Rechnung vorliegt und die Zahlung auf das Konto des Leistungserbringers erfolgt ist."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass eine Rechnung vorliegt und die Zahlung auf das Konto des Leistungserbringers erfolgt ist."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass keine zwei Alleinstehenden im Haushalt zusammenleben und die Höchstbeträge nur einmal gelten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "minijob_aufwendungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass das Beschäftigungsverhältnis im Haushalt in der EU oder dem EWR ausgeübt wird."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass die Handwerkerleistung im Haushalt in der EU oder dem EWR erbracht wird."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "minijob_aufwendungen",
+              "interpretation"
+            ],
+            "text": "Die Eingabe wird als Aufwendungen für ein haushaltsnahes Minijob nach §8a SGB IV interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "interpretation"
+            ],
+            "text": "Die Eingabe wird als Aufwendungen für nicht öffentlich geförderte Handwerkerleistungen interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass die tarifliche Einkommensteuer nach anderen Ermäßigungen die Summe der Einzelermäßigungen nicht"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Die 20%-Berechnung der Aufwendungen erfolgt ohne gesetzliche Rundungsvorschrift, es wird standardmäßig gerundet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "minijob_aufwendungen",
+              "zeitbezug"
+            ],
+            "text": "Es wird angenommen, dass die Aufwendungen im jeweiligen Veranlagungsjahr angefallen sind."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "interpretation"
+            ],
+            "text": "Es wird angenommen, dass sich die Aufwendungen der drei Kategorien nicht überschneiden."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 35a abs. 4 satz 1"
+            ],
+            "text": "wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in der Europäischen Union ode"
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 35a abs. 1"
+            ],
+            "text": "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 35a abs. 1"
+            ],
+            "text": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen"
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 35a abs. 2 satz 1"
+            ],
+            "text": "andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme von haushaltsna"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 35a abs. 2 satz 2"
+            ],
+            "text": "für die Inanspruchnahme von Pflege- und Betreuungsleistungen sowie für Aufwendungen, die einem Steuerpflichtigen wegen d"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 35a abs. 3 satz 1"
+            ],
+            "text": "Handwerkerleistungen für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 35a abs. 4 satz 2"
+            ],
+            "text": "das Heim oder der Ort der dauernden Pflege in der Europäischen Union oder dem Europäischen Wirtschaftsraum liegt"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 35a abs. 2 satz 1"
+            ],
+            "text": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 35a abs. 3 satz 1"
+            ],
+            "text": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 35a abs. 4"
+            ],
+            "text": "wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in der Europäischen Union ode"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "abweichung",
+          "gueltige_stimmen": 3,
+          "item": "Die Formaliserung wendet 20% auf den gesamten Betrag an, obwohl nach § 35a Abs. 5 Satz 2 nur Arbeitskosten abziehbar sin",
+          "schluessel": "[\"abweichungen\", \"betrifft\", \"haushaltsnahe_dienstleistungen\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die haushaltsnahen Dienstleistungen sind keine Handwerkerleistungen und werden im Haushalt erbracht.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"haushaltsnahe_dienstleistungen\", \"interpretation\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die handwerker_arbeitskosten umfassen ausschließlich Arbeitskosten.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"handwerker_arbeitskosten\", \"interpretation\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Der Steuerpflichtige lebt nicht mit einem anderen Alleinstehenden in einem Haushalt zusammen, so dass die Höchstbeträge ",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"ergebnis\", \"geltungsvoraussetzung\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Eingabe umfasst ausschließlich Arbeitskosten im Sinne des § 35a Abs. 5 Satz 2 EStG.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"haushaltsnahe_dienstleistungen\", \"interpretation\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Handwerkerleistungen sind nicht öffentlich gefördert im Sinne des § 35a Abs. 3 Satz 2 EStG.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"handwerker_arbeitskosten\", \"geltungsvoraussetzung\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Eingabe wird als ausschließlich Arbeitskosten interpretiert, obwohl die Norm dies nicht für den gesamten Betrag vors",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"haushaltsnahe_dienstleistungen\", \"interpretation\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Eingabe wird als Aufwendungen für nicht öffentlich geförderte Handwerkerleistungen interpretiert.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"handwerker_arbeitskosten\", \"interpretation\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Der Abzug von der tariflichen Einkommensteuer nach den Absätzen 2 und 3 gilt nur für Arbeitskosten.",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 35a abs. 5 satz 2\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge nach den Absätzen 1 bis 3 insgesamt j",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 35a abs. 5 satz 4\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme von haushaltsna",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 35a abs. 2 satz 1\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "das Heim oder der Ort der dauernden Pflege in der Europäischen Union oder dem Europäischen Wirtschaftsraum liegt",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 35a abs. 4 satz 2\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 35a abs. 2 satz 1\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 35a abs. 3 satz 1\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Steuerermäßigung wird nicht auf die tarifliche Einkommensteuer abzüglich sonstiger Ermäßigungen begrenzt.",
+            "eingeschmolzen": "Die Steuerermäßigung ist nicht auf die tarifliche Einkommensteuer nach Abzug sonstiger Steuerermäßigungen begrenzt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Handwerkerleistungen sind für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen und nicht öffentlich gefördert.",
+            "eingeschmolzen": "Die handwerker_arbeitskosten werden als Arbeitskosten für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen behandelt.",
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Es wird ein Antrag auf Steuerermäßigung gestellt.",
+            "eingeschmolzen": "Der Steuerpflichtige hat einen Antrag auf Steuerermäßigung gestellt.",
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Die Aufwendungen sind keine Betriebsausgaben oder Werbungskosten und nicht als Sonderausgaben oder außergewöhnliche Belastungen berücksichtigt.",
+            "eingeschmolzen": "Es wird angenommen, dass die Aufwendungen keine Betriebsausgaben oder Werbungskosten sind und nicht anderweitig berücksichtigt wurden.",
+            "key": [
+              "betrifft_kat",
+              "minijob_aufwendungen",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Die Handwerkerleistungen sind nicht öffentlich gefördert im Sinne des § 35a Abs. 3 Satz 2 EStG.",
+            "eingeschmolzen": "Es wird angenommen, dass die Handwerkerleistungen nicht öffentlich gefördert sind und keine zinsverbilligten Darlehen vorliegen.",
+            "key": [
+              "betrifft_kat",
+              "handwerker_arbeitskosten",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Es wird ein Antrag auf Steuerermäßigung gestellt.",
+            "eingeschmolzen": "Es wird angenommen, dass ein Antrag auf Steuerermäßigung gestellt wurde.",
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Die Dienstleistung wird in einem Haushalt in der EU oder dem EWR erbracht.",
+            "eingeschmolzen": "Es wird angenommen, dass die Dienstleistung im Haushalt in der EU oder dem EWR erbracht wird.",
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Die Eingabe umfasst ausschließlich Arbeitskosten im Sinne des § 35a Abs. 5 Satz 2 EStG.",
+            "eingeschmolzen": "Die Eingabe umfasst nur die Arbeitskosten der Dienstleistungen gemäß §35a Abs. 5 Satz 2.",
+            "key": [
+              "betrifft_kat",
+              "haushaltsnahe_dienstleistungen",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum liege",
+            "eingeschmolzen": "in einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum liegenden Haushalt des Steuerpflichtigen",
+            "key": [
+              "ref",
+              "§ 35a abs. 4 satz 1"
+            ]
+          },
+          {
+            "cluster": "Voraussetzung ... ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfol",
+            "eingeschmolzen": "der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist",
+            "key": [
+              "ref",
+              "§ 35a abs. 5 satz 3"
+            ]
+          },
+          {
+            "cluster": "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch",
+            "eingeschmolzen": "handelt es sich um eine geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch",
+            "key": [
+              "ref",
+              "§ 35a abs. 1"
+            ]
+          },
+          {
+            "cluster": "andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme von haushaltsnahen Dienstleistungen",
+            "eingeschmolzen": "andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme von haushaltsnahen Dienstleistungen, die nicht Dienstle",
+            "key": [
+              "ref",
+              "§ 35a abs. 2 satz 1"
+            ]
+          },
+          {
+            "cluster": "für die Inanspruchnahme von Pflege- und Betreuungsleistungen sowie für Aufwendungen, die einem Steuerpflichtigen wegen der Unterbringung in einem Heim oder zur ",
+            "eingeschmolzen": "Die Steuerermäßigung kann auch in Anspruch genommen werden für die Inanspruchnahme von Pflege- und Betreuungsleistungen sowie für Aufwendungen, die einem Steuer",
+            "key": [
+              "ref",
+              "§ 35a abs. 2 satz 2"
+            ]
+          },
+          {
+            "cluster": "wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum liege",
+            "eingeschmolzen": "wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum liege",
+            "key": [
+              "ref",
+              "§ 35a abs. 4 satz 1"
+            ]
+          },
+          {
+            "cluster": "Voraussetzung ... ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfol",
+            "eingeschmolzen": "Voraussetzung für die Inanspruchnahme der Steuerermäßigungen nach den Absätzen 2 und 3 ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalte",
+            "key": [
+              "ref",
+              "§ 35a abs. 5 satz 3"
+            ]
+          },
+          {
+            "cluster": "auf Antrag",
+            "eingeschmolzen": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag",
+            "key": [
+              "ref",
+              "§ 35a abs. 1"
+            ]
+          },
+          {
+            "cluster": "für die Inanspruchnahme von Pflege- und Betreuungsleistungen sowie für Aufwendungen, die einem Steuerpflichtigen wegen der Unterbringung in einem Heim oder zur ",
+            "eingeschmolzen": "Die Steuerermäßigung kann auch in Anspruch genommen werden für die Inanspruchnahme von Pflege- und Betreuungsleistungen sowie für Aufwendungen, die einem Steuer",
+            "key": [
+              "ref",
+              "§ 35a abs. 2 satz 2"
+            ]
+          },
+          {
+            "cluster": "wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum liege",
+            "eingeschmolzen": "Die Steuerermäßigung nach den Absätzen 1 bis 3 kann nur in Anspruch genommen werden, wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerle",
+            "key": [
+              "ref",
+              "§ 35a abs. 4 satz 1"
+            ]
+          },
+          {
+            "cluster": "das Heim oder der Ort der dauernden Pflege in der Europäischen Union oder dem Europäischen Wirtschaftsraum liegt",
+            "eingeschmolzen": "In den Fällen des Absatzes 2 Satz 2 zweiter Halbsatz ist Voraussetzung, dass das Heim oder der Ort der dauernden Pflege in der Europäischen Union oder dem Europ",
+            "key": [
+              "ref",
+              "§ 35a abs. 4 satz 2"
+            ]
+          },
+          {
+            "cluster": "soweit die Aufwendungen nicht Betriebsausgaben oder Werbungskosten darstellen und soweit sie nicht als Sonderausgaben oder außergewöhnliche Belastungen berücksi",
+            "eingeschmolzen": "Die Steuerermäßigungen nach den Absätzen 1 bis 3 können nur in Anspruch genommen werden, soweit die Aufwendungen nicht Betriebsausgaben oder Werbungskosten dars",
+            "key": [
+              "ref",
+              "§ 35a abs. 5 satz 1"
+            ]
+          },
+          {
+            "cluster": "Voraussetzung ... ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfol",
+            "eingeschmolzen": "Voraussetzung für die Inanspruchnahme der Steuerermäßigungen nach den Absätzen 2 und 3 ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalte",
+            "key": [
+              "ref",
+              "§ 35a abs. 5 satz 3"
+            ]
+          },
+          {
+            "cluster": "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch",
+            "eingeschmolzen": "bei denen es sich um eine geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch handelt",
+            "key": [
+              "ref",
+              "§ 35a abs. 1"
+            ]
+          },
+          {
+            "cluster": "andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme von haushaltsnahen Dienstleistungen",
+            "eingeschmolzen": "andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme von haushaltsnahen Dienstleistungen, die nicht Dienstle",
+            "key": [
+              "ref",
+              "§ 35a abs. 2 satz 1"
+            ]
+          },
+          {
+            "cluster": "Handwerkerleistungen für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen",
+            "eingeschmolzen": "Für die Inanspruchnahme von Handwerkerleistungen für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen",
+            "key": [
+              "ref",
+              "§ 35a abs. 3 satz 1"
+            ]
+          },
+          {
+            "cluster": "Voraussetzung ... ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfol",
+            "eingeschmolzen": "dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist",
+            "key": [
+              "ref",
+              "§ 35a abs. 5 satz 3"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        18,
+        13,
+        9,
+        12,
+        7
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "648343f1ce43",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "keine_beruecksichtigung_als_wk_sa_agb",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "soweit die Aufwendungen nicht Betriebsausgaben oder Werbungskosten darstellen und soweit sie nicht als Sonderausgaben oder außergewöhnliche Belastungen berücksichtigt worden sind",
+        "referenz": "§ 35a Abs. 5 Satz 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Der Abzug von der tariflichen Einkommensteuer nach den Absätzen 2 und 3 gilt nur für Arbeitskosten.",
+        "referenz": "§ 35a Abs. 5 Satz 2"
+      },
+      {
+        "abgedeckt_von": "rechnung_und_unbare_zahlung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Voraussetzung ... ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist.",
+        "referenz": "§ 35a Abs. 5 Satz 3"
+      },
+      {
+        "abgedeckt_von": "kein_gemeinsamer_haushalt_zweier_alleinstehender",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge nach den Absätzen 1 bis 3 insgesamt jeweils nur einmal in Anspruch nehmen.",
+        "referenz": "§ 35a Abs. 5 Satz 4"
+      },
+      {
+        "abgedeckt_von": "haushalt_in_eu_ewr",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum liegenden Haushalt ... ausgeübt oder erbracht wird",
+        "referenz": "§ 35a Abs. 4 Satz 1"
+      },
+      {
+        "abgedeckt_von": "handwerker_keine_oeffentliche_foerderung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Dies gilt nicht für öffentlich geförderte Maßnahmen, für die zinsverbilligte Darlehen oder steuerfreie Zuschüsse in Anspruch genommen werden.",
+        "referenz": "§ 35a Abs. 3 Satz 2"
+      },
+      {
+        "abgedeckt_von": "antrag_gestellt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "auf Antrag",
+        "referenz": "§ 35a Abs. 1"
+      },
+      {
+        "abgedeckt_von": "minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch",
+        "referenz": "§ 35a Abs. 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen",
+        "referenz": "§ 35a Abs. 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "andere als in Absatz 1 aufgeführte haushaltsnahe Beschäftigungsverhältnisse oder für die Inanspruchnahme von haushaltsnahen Dienstleistungen",
+        "referenz": "§ 35a Abs. 2 Satz 1"
+      },
+      {
+        "abgedeckt_von": "keine_pflege_oder_heimkosten",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "für die Inanspruchnahme von Pflege- und Betreuungsleistungen sowie für Aufwendungen, die einem Steuerpflichtigen wegen der Unterbringung in einem Heim oder zur dauernden Pflege erwachsen",
+        "referenz": "§ 35a Abs. 2 Satz 2"
+      },
+      {
+        "abgedeckt_von": "handwerker_nur_renovierung_erhaltung_modernisierung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Handwerkerleistungen für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen",
+        "referenz": "§ 35a Abs. 3 Satz 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "das Heim oder der Ort der dauernden Pflege in der Europäischen Union oder dem Europäischen Wirtschaftsraum liegt",
+        "referenz": "§ 35a Abs. 4 Satz 2"
+      },
+      {
+        "abgedeckt_von": "antrag_gestellt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag",
+        "referenz": "§ 35a Abs. 2 Satz 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag",
+        "referenz": "§ 35a Abs. 3 Satz 1"
+      },
+      {
+        "abgedeckt_von": "haushalt_in_eu_ewr",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn das Beschäftigungsverhältnis, die Dienstleistung oder die Handwerkerleistung in einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum liegenden Haushalt des Steuerpflichtigen … ausgeübt oder erbracht wird",
+        "referenz": "§ 35a Abs. 4"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die minijob_aufwendungen stammen aus einem haushaltsnahen geringfügigen Beschäftigungsverhältnis.",
+        "bedingung_id": "minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4",
+        "betrifft": "minijob_aufwendungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Aufwendungen sind keine Betriebsausgaben oder Werbungskosten und nicht als Sonderausgaben oder außergewöhnliche Belastungen berücksichtigt.",
+        "bedingung_id": "keine_beruecksichtigung_als_wk_sa_agb",
+        "betrifft": "minijob_aufwendungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Der Steuerpflichtige hat einen Antrag auf Steuerermäßigung gestellt.",
+        "bedingung_id": "antrag_gestellt",
+        "betrifft": "minijob_aufwendungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die haushaltsnahen Dienstleistungen sind keine Handwerkerleistungen und werden im Haushalt erbracht.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der Steuerpflichtige hat eine Rechnung erhalten und die Zahlung auf das Konto des Leistungserbringers geleistet.",
+        "bedingung_id": "rechnung_und_unbare_zahlung",
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die haushaltsnahen Dienstleistungen umfassen ausschließlich Arbeitskosten.",
+        "bedingung_id": "dienstleistungsbetrag_enthaelt_nur_arbeitskosten",
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Handwerkerleistungen sind für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen und nicht öffentlich gefördert.",
+        "bedingung_id": null,
+        "betrifft": "handwerker_arbeitskosten",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der Steuerpflichtige hat eine Rechnung erhalten und die Zahlung auf das Konto des Leistungserbringers geleistet.",
+        "bedingung_id": "rechnung_und_unbare_zahlung",
+        "betrifft": "handwerker_arbeitskosten",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die handwerker_arbeitskosten umfassen ausschließlich Arbeitskosten.",
+        "bedingung_id": "handwerkerbetrag_enthaelt_nur_arbeitskosten",
+        "betrifft": "handwerker_arbeitskosten",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Dienstleistung wird in einem Haushalt in der EU oder dem EWR erbracht.",
+        "bedingung_id": "haushalt_in_eu_ewr",
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die minijob_aufwendungen werden als Aufwendungen für eine geringfügige Beschäftigung im Sinne des §8a SGB IV behandelt.",
+        "bedingung_id": "minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4",
+        "betrifft": "minijob_aufwendungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die minijob_aufwendungen erfüllen die Voraussetzungen der Absätze 4 und 5 (keine Betriebsausgaben, EU/EWR-Haushalt).",
+        "bedingung_id": null,
+        "betrifft": "minijob_aufwendungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die haushaltsnahe_dienstleistungen werden als Arbeitskosten für haushaltsnahe Dienstleistungen im Sinne des Absatzes 2 behandelt.",
+        "bedingung_id": "dienstleistungsbetrag_enthaelt_nur_arbeitskosten",
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die haushaltsnahe_dienstleistungen erfüllen die Voraussetzungen der Absätze 4 und 5 (keine Betriebsausgaben, EU/EWR-Haushalt).",
+        "bedingung_id": null,
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die handwerker_arbeitskosten sind nicht für öffentlich geförderte Maßnahmen und erfüllen die Voraussetzungen der Absätze 4 und 5.",
+        "bedingung_id": null,
+        "betrifft": "handwerker_arbeitskosten",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Es wird ein Antrag auf Steuerermäßigung gestellt.",
+        "bedingung_id": "antrag_gestellt",
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Der Steuerpflichtige lebt nicht mit einem anderen Alleinstehenden in einem Haushalt zusammen, so dass die Höchstbeträge nur einmal in Anspruch genommen werden.",
+        "bedingung_id": "kein_gemeinsamer_haushalt_zweier_alleinstehender",
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Aufwendungen stammen aus einer geringfügigen Beschäftigung im Sinne des § 8a SGB IV.",
+        "bedingung_id": "minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4",
+        "betrifft": "minijob_aufwendungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Eingabe umfasst ausschließlich Arbeitskosten im Sinne des § 35a Abs. 5 Satz 2 EStG.",
+        "bedingung_id": null,
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe betrifft nur haushaltsnahe Dienstleistungen oder Beschäftigungsverhältnisse, die nicht unter § 35a Abs. 3 EStG fallen.",
+        "bedingung_id": "dienstleistungen_sind_keine_handwerkerleistungen",
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe umfasst ausschließlich Arbeitskosten für Handwerkerleistungen im Sinne des § 35a Abs. 3 EStG.",
+        "bedingung_id": "handwerkerbetrag_enthaelt_nur_arbeitskosten",
+        "betrifft": "handwerker_arbeitskosten",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Handwerkerleistungen sind nicht öffentlich gefördert im Sinne des § 35a Abs. 3 Satz 2 EStG.",
+        "bedingung_id": "handwerker_keine_oeffentliche_foerderung",
+        "betrifft": "handwerker_arbeitskosten",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Aufwendungen sind nicht als Betriebsausgaben, Werbungskosten oder Sonderausgaben berücksichtigt worden.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Leistungen werden im Haushalt des Steuerpflichtigen in der EU oder dem EWR erbracht.",
+        "bedingung_id": "haushalt_in_eu_ewr",
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Höchstbeträge werden nicht mit einer weiteren alleinstehenden Person im selben Haushalt geteilt.",
+        "bedingung_id": "kein_gemeinsamer_haushalt_zweier_alleinstehender",
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Eingabe umfasst nur die begünstigten Kosten für Pflege- und Betreuungsleistungen sowie Heimunterbringung, soweit sie mit haushaltsnahen Dienstleistungen vergleichbar sind.",
+        "bedingung_id": null,
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Es wird angenommen, dass die Aufwendungen keine Betriebsausgaben oder Werbungskosten sind und nicht anderweitig berücksichtigt wurden.",
+        "bedingung_id": "keine_beruecksichtigung_als_wk_sa_agb",
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Es wird angenommen, dass die Aufwendungen keine Betriebsausgaben oder Werbungskosten sind und nicht anderweitig berücksichtigt wurden.",
+        "bedingung_id": "keine_beruecksichtigung_als_wk_sa_agb",
+        "betrifft": "handwerker_arbeitskosten",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Eingabe wird als ausschließlich Arbeitskosten interpretiert, obwohl die Norm dies nicht für den gesamten Betrag vorschreibt.",
+        "bedingung_id": null,
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Es wird angenommen, dass eine Rechnung vorliegt und die Zahlung auf das Konto des Leistungserbringers erfolgt ist.",
+        "bedingung_id": "rechnung_und_unbare_zahlung",
+        "betrifft": "haushaltsnahe_dienstleistungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Es wird angenommen, dass eine Rechnung vorliegt und die Zahlung auf das Konto des Leistungserbringers erfolgt ist.",
+        "bedingung_id": "rechnung_und_unbare_zahlung",
+        "betrifft": "handwerker_arbeitskosten",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Es wird angenommen, dass keine zwei Alleinstehenden im Haushalt zusammenleben und die Höchstbeträge nur einmal gelten.",
+        "bedingung_id": "kein_gemeinsamer_haushalt_zweier_alleinstehender",
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Es wird angenommen, dass das Beschäftigungsverhältnis im Haushalt in der EU oder dem EWR ausgeübt wird.",
+        "bedingung_id": "haushalt_in_eu_ewr",
+        "betrifft": "minijob_aufwendungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Es wird angenommen, dass die Handwerkerleistung im Haushalt in der EU oder dem EWR erbracht wird.",
+        "bedingung_id": "haushalt_in_eu_ewr",
+        "betrifft": "handwerker_arbeitskosten",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Eingabe wird als Aufwendungen für ein haushaltsnahes Minijob nach §8a SGB IV interpretiert.",
+        "bedingung_id": "minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4",
+        "betrifft": "minijob_aufwendungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe wird als Aufwendungen für nicht öffentlich geförderte Handwerkerleistungen interpretiert.",
+        "bedingung_id": "handwerker_keine_oeffentliche_foerderung",
+        "betrifft": "handwerker_arbeitskosten",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Es wird angenommen, dass die tarifliche Einkommensteuer nach anderen Ermäßigungen die Summe der Einzelermäßigungen nicht unterschreitet.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die 20%-Berechnung der Aufwendungen erfolgt ohne gesetzliche Rundungsvorschrift, es wird standardmäßig gerundet.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Es wird angenommen, dass die Aufwendungen im jeweiligen Veranlagungsjahr angefallen sind.",
+        "bedingung_id": null,
+        "betrifft": "minijob_aufwendungen",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Es wird angenommen, dass sich die Aufwendungen der drei Kategorien nicht überschneiden.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "ergebnis",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-10T22:40:37+00:00"
+  },
+  "module_name": "Haushaltsnahe",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

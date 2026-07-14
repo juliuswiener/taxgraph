@@ -1,0 +1,165 @@
+{
+  "bedingungen": [
+    "gde_ist_p2_ergebnis",
+    "nur_zwanzig_prozent_gde_deckel"
+  ],
+  "candidate_id": "p10b_spenden",
+  "catala_a": "declaration scope SpendenAbzug:\n  input zuwendungen content money\n  input gesamtbetrag_der_einkuenfte content money\n  output spenden_abzug content money\n\nscope SpendenAbzug:\n  definition spenden_abzug equals\n    if zuwendungen > gesamtbetrag_der_einkuenfte * 0.20\n    then gesamtbetrag_der_einkuenfte * 0.20\n    else zuwendungen",
+  "catala_a_sha256": "e352aeeb64cadad3d728161642d4b1e0c62a390c3608bc55b1ed8f10e944fcdd",
+  "catala_b": "declaration scope SpendenAbzug:\n  input zuwendungen content money\n  input gesamtbetrag_der_einkuenfte content money\n  output spenden_abzug content money\n\nscope SpendenAbzug:\n  definition spenden_abzug equals\n    if zuwendungen > gesamtbetrag_der_einkuenfte * 0.20 then gesamtbetrag_der_einkuenfte * 0.20\n    else zuwendungen",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'spenden_abzug'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 0 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 2,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        3,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "06947568c96d",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "zur Förderung steuerbegünstigter Zwecke im Sinne der §§ 52 bis 54 der Abgabenordnung",
+        "referenz": "§ 10b Abs. 1 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Zuwendungen umfassen Spenden und Mitgliedsbeiträge.",
+        "bedingung_id": null,
+        "betrifft": "zuwendungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Gesamtbetrag der Einkünfte wird als Bruttowert interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "gesamtbetrag_der_einkuenfte",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-13T20:05:03+00:00"
+  },
+  "module_name": "SpendenAbzug",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

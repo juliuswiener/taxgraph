@@ -1,0 +1,163 @@
+{
+  "bedingungen": [
+    "lohnsteuer_ist_anrechenbar",
+    "keine_weiteren_anrechnungsbetraege",
+    "ein_dienstverhaeltnis"
+  ],
+  "candidate_id": "p36_2_anrechnung",
+  "catala_a": "declaration scope Anrechnung:\n  input festzusetzende_est content money\n  input lohnsteuer content money\n  input vorauszahlungen content money\n  internal lohnsteuer_aufgerundet content money\n  internal angerechnete_betraege content money\n  output abschlusszahlung content money\n\nscope Anrechnung:\n  definition lohnsteuer_aufgerundet equals\n    let cent_anteil equals lohnsteuer - (Decimal.truncate of (lohnsteuer / $1.00)) * $1.00 in\n    if cent_anteil > $0.00\n    then (Decimal.truncate of (lohnsteuer / $1.00)) * $1.00 + $1.00\n    else (Decimal.truncate of (lohnsteuer / $1.00)) * $1.00\n\n  definition angerechnete_betraege equals\n    vorauszahlungen + lohnsteuer_aufgerundet\n\n  definition abschlusszahlung equals\n    festzusetzende_est - angerechnete_betraege",
+  "catala_a_sha256": "d40bb115f71f9208b7d21a8b74b9b9c36d54894ad31715e3daebcad64ebdbfe8",
+  "catala_b": "declaration scope Anrechnung:\n  input festzusetzende_est content money\n  input lohnsteuer content money\n  input vorauszahlungen content money\n  output abschlusszahlung content money\n  internal aufgerundete_lohnsteuer content money\n\nscope Anrechnung:\n  definition aufgerundete_lohnsteuer equals\n    let roh equals lohnsteuer / $1.00 in\n    let gekuerzt equals Decimal.truncate of roh in\n    if gekuerzt = roh then gekuerzt * $1.00 else (gekuerzt + 1.0) * $1.00\n  definition abschlusszahlung equals\n    festzusetzende_est - (vorauszahlungen + aufgerundete_lohnsteuer)",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 Rundungsop(s) durch § 36 Abs. 3 Satz 1 EStG ('auf volle Euro aufzurunden') gedeckt",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'abschlusszahlung'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 1,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        4,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "872fdad4c364",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "lohnsteuer_ist_anrechenbar",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "die durch Steuerabzug erhobene Einkommensteuer, soweit sie entfällt auf a) die bei der Veranlagung erfassten Einkünfte oder b) die nach § 3 Nummer 40 dieses Gesetzes [...] bei der Ermittlung des Einkommens außer Ansatz bleibenden Bezüge",
+        "referenz": "§ 36 Abs. 2 Nr. 2"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "und keine Erstattung beantragt oder durchgeführt worden ist",
+        "referenz": "§ 36 Abs. 2 Nr. 2"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung rundet die Lohnsteuer kaufmännisch auf volle Euro auf, während die Norm eine Aufrundung vorschreibt.",
+        "bedingung_id": null,
+        "betrifft": "lohnsteuer",
+        "kategorie": "rundung"
+      }
+    ],
+    "timestamp": "2026-07-11T12:08:00+00:00"
+  },
+  "module_name": "Anrechnung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

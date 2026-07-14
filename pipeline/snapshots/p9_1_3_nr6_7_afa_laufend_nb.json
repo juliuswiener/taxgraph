@@ -1,0 +1,504 @@
+{
+  "bedingungen": [
+    "gwg_sofortabzug_gewaehlt",
+    "zeitraum_laufend"
+  ],
+  "candidate_id": "p9_1_3_nr6_7_afa_laufend_nb",
+  "catala_a": "declaration scope ArbeitsmittelUndAfaLaufendNettoBrutto:\n  input anschaffungskosten_netto content money\n  input anschaffungskosten_brutto content money\n  input nutzungsdauer_jahre content integer\n  input anschaffungsmonat content integer\n  input jahre_seit_anschaffung content integer\n  internal ist_gwg content boolean\n  internal jahres_afa content money\n  internal monate_ab_anschaffung content decimal\n  output abziehbar content money\n\nscope ArbeitsmittelUndAfaLaufendNettoBrutto:\n  definition ist_gwg equals\n    anschaffungskosten_netto <= $800.00\n\n  definition jahres_afa equals\n    anschaffungskosten_brutto / (decimal of nutzungsdauer_jahre)\n\n  definition monate_ab_anschaffung equals\n    decimal of (13 - anschaffungsmonat)\n\n  definition abziehbar equals\n    if ist_gwg then\n      (if jahre_seit_anschaffung = 0 then anschaffungskosten_brutto else $0.00)\n    else\n      (if jahre_seit_anschaffung = 0 then\n        jahres_afa * (monate_ab_anschaffung / 12.0)\n      else\n        (if jahre_seit_anschaffung >= 1 and jahre_seit_anschaffung <= nutzungsdauer_jahre - 1 then\n          jahres_afa\n        else\n          $0.00))",
+  "catala_a_sha256": "2c159cd0099914eb3f2d13e335466138859041c7bd73d8da959fadd37b81e84a",
+  "catala_b": "declaration scope ArbeitsmittelUndAfaLaufendNettoBrutto:\n  input anschaffungskosten_netto content money\n  input anschaffungskosten_brutto content money\n  input nutzungsdauer_jahre content integer\n  input anschaffungsmonat content integer\n  input jahre_seit_anschaffung content integer\n  internal ist_gwg content boolean\n  internal jahres_afa content money\n  output abziehbar content money\n\nscope ArbeitsmittelUndAfaLaufendNettoBrutto:\n  definition ist_gwg equals anschaffungskosten_netto <= $800.00\n  definition jahres_afa equals anschaffungskosten_brutto * (1.0 / (decimal of nutzungsdauer_jahre))\n  definition abziehbar equals\n    if ist_gwg then\n      (if jahre_seit_anschaffung = 0 then anschaffungskosten_brutto else $0.00)\n    else\n      (if jahre_seit_anschaffung = 0 then\n        jahres_afa * ((decimal of (13 - anschaffungsmonat)) / 12.0)\n      else\n        (if jahre_seit_anschaffung >= nutzungsdauer_jahre then $0.00\n         else jahres_afa))",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'abziehbar'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 6 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "7 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "GWG-Prüfung verwendet netto-Kosten, aber Abzug erfolgt mit brutto-Kosten.",
+      "Pro-rata-AfA im Anschaffungsjahr nutzt brutto-Kosten statt netto-Kosten.",
+      "AfA-Betrag berechnet sich aus brutto-Kosten, nicht netto-Kosten.",
+      "Berechnung nutzt brutto-Kosten statt netto-Kosten.",
+      "Berechnung geht von 13 - anschaffungsmonat aus, nicht von tatsächlichen Monaten.",
+      "GWG-Abzug verwendet Bruttowert statt Nettowert.",
+      "Jahres-AfA berechnet sich aus Bruttowert, nicht Nettowert."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 8,
+        "annahmen": 6,
+        "norm_teile": 7
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "GWG-Prüfung verwendet netto-Kosten, aber Abzug erfolgt mit brutto-Kosten."
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Pro-rata-AfA im Anschaffungsjahr nutzt brutto-Kosten statt netto-Kosten."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "AfA-Betrag berechnet sich aus brutto-Kosten, nicht netto-Kosten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "?"
+            ],
+            "text": "Berechnung nutzt brutto-Kosten statt netto-Kosten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "?"
+            ],
+            "text": "Keine Berücksichtigung der Vorsteuer nach § 9b Abs. 1."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "?"
+            ],
+            "text": "Berechnung geht von 13 - anschaffungsmonat aus, nicht von tatsächlichen Monaten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "GWG-Abzug verwendet Bruttowert statt Nettowert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "?"
+            ],
+            "text": "Jahres-AfA berechnet sich aus Bruttowert, nicht Nettowert."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_brutto",
+              "einheit"
+            ],
+            "text": "AfA und GWG-Abzug basieren auf brutto-Kosten."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_brutto",
+              "einheit"
+            ],
+            "text": "AfA-Berechnung verwendet brutto-Kosten als Basis."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "jahre_seit_anschaffung",
+              "zeitbezug"
+            ],
+            "text": "Jahre seit Anschaffung werden als ganze Jahre gezählt."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 9 abs. 1 s. 3 nr. 6/7 estg"
+            ],
+            "text": "Aufwendungen für Arbeitsmittel"
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 6 abs. 2 s. 1 estg"
+            ],
+            "text": "vermindert um einen darin enthaltenen Vorsteuerbetrag (§ 9b Absatz 1), oder der nach Absatz 1 Nummer 5 bis 6 an deren St"
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 7 abs. 1 s. 1-2 estg"
+            ],
+            "text": "Bei Wirtschaftsgütern, deren Verwendung oder Nutzung durch den Steuerpflichtigen zur Erzielung von Einkünften sich erfah"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 9b abs. 1 estg"
+            ],
+            "text": "vermindert um einen darin enthaltenen Vorsteuerbetrag"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Im Jahr der Anschaffung oder Herstellung des Wirtschaftsguts vermindert sich für dieses Jahr der Absetzungsbetrag nach S",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 7 abs. 1 s. 4 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "GWG-Prüfung verwendet netto-Kosten, aber Abzug erfolgt mit brutto-Kosten.",
+            "eingeschmolzen": "GWG-Prüfung verwendet netto-Kosten, aber Abzug verwendet brutto-Kosten.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "GWG-Prüfung verwendet netto-Kosten, aber Abzug erfolgt mit brutto-Kosten.",
+            "eingeschmolzen": "GWG-Prüfung nutzt Netto-Kosten, AfA nutzt Brutto-Kosten.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Pro-rata-AfA im Anschaffungsjahr nutzt brutto-Kosten statt netto-Kosten.",
+            "eingeschmolzen": "AfA im Anschaffungsjahr wird mit Brutto-Kosten berechnet, nicht Netto.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "AfA-Betrag berechnet sich aus brutto-Kosten, nicht netto-Kosten.",
+            "eingeschmolzen": "AfA für Folgejahre nutzt Brutto-Kosten statt Netto-Kosten.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Pro-rata-AfA im Anschaffungsjahr nutzt brutto-Kosten statt netto-Kosten.",
+            "eingeschmolzen": "AfA im Anschaffungsjahr nutzt Bruttowert statt Nettowert.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Anschaffungsmonat wird als 1-12 interpretiert.",
+            "eingeschmolzen": "Anschaffungsmonat wird als Kalendermonat (1-12) interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "anschaffungsmonat",
+              "zeitbezug"
+            ]
+          },
+          {
+            "cluster": "AfA-Berechnung verwendet brutto-Kosten als Basis.",
+            "eingeschmolzen": "AfA-Berechnung erfolgt auf Basis der Brutto-Kosten.",
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_brutto",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Anschaffungsmonat wird als 1-12 interpretiert.",
+            "eingeschmolzen": "Anschaffungsmonat wird als Kalendermonat (1-12) interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "anschaffungsmonat",
+              "zeitbezug"
+            ]
+          },
+          {
+            "cluster": "GWG-Grenze von 800 € bezieht sich auf netto-Kosten.",
+            "eingeschmolzen": "GWG-Grenze von 800 € bezieht sich auf Nettowert.",
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_netto",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Anschaffungsmonat wird als 1-12 interpretiert.",
+            "eingeschmolzen": "Anschaffungsmonat wird als Kalendermonat (1-12) interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "anschaffungsmonat",
+              "zeitbezug"
+            ]
+          },
+          {
+            "cluster": "Nutzungsdauer wird als betriebsgewöhnlich angenommen.",
+            "eingeschmolzen": "Nutzungsdauer gilt als betriebsgewöhnlich.",
+            "key": [
+              "betrifft_kat",
+              "nutzungsdauer_jahre",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "AfA-Berechnung verwendet brutto-Kosten als Basis.",
+            "eingeschmolzen": "AfA-Berechnung erfolgt auf Basis der brutto-Kosten.",
+            "key": [
+              "betrifft_kat",
+              "anschaffungskosten_brutto",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Anschaffungsmonat wird als 1-12 interpretiert.",
+            "eingeschmolzen": "Anschaffungsmonat wird als Kalendermonat (1-12) interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "anschaffungsmonat",
+              "zeitbezug"
+            ]
+          },
+          {
+            "cluster": "Nutzungsdauer wird als betriebsgewöhnlich angenommen.",
+            "eingeschmolzen": "Nutzungsdauer wird als betriebsgewöhnliche Nutzungsdauer angenommen.",
+            "key": [
+              "betrifft_kat",
+              "nutzungsdauer_jahre",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        13,
+        5,
+        1,
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "59801aa155b3",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Aufwendungen für Arbeitsmittel",
+        "referenz": "§ 9 Abs. 1 S. 3 Nr. 6/7 EStG"
+      },
+      {
+        "abgedeckt_von": "gwg_sofortabzug_gewaehlt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vermindert um einen darin enthaltenen Vorsteuerbetrag (§ 9b Absatz 1), oder der nach Absatz 1 Nummer 5 bis 6 an deren Stelle tretende Wert für das einzelne Wirtschaftsgut 800 Euro nicht übersteigen",
+        "referenz": "§ 6 Abs. 2 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "zeitraum_laufend",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Bei Wirtschaftsgütern, deren Verwendung oder Nutzung durch den Steuerpflichtigen zur Erzielung von Einkünften sich erfahrungsgemäß auf einen Zeitraum von mehr als einem Jahr erstreckt, ist jeweils für ein Jahr der Teil der Anschaffungs- oder Herstellungskosten abzusetzen, der bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung auf ein Jahr entfällt",
+        "referenz": "§ 7 Abs. 1 S. 1-2 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer des Wirtschaftsguts.",
+        "referenz": "§ 7 Abs. 1 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Im Jahr der Anschaffung oder Herstellung des Wirtschaftsguts vermindert sich für dieses Jahr der Absetzungsbetrag nach Satz 1 um jeweils ein Zwölftel für jeden vollen Monat, der dem Monat der Anschaffung oder Herstellung vorangeht",
+        "referenz": "§ 7 Abs. 1 S. 4 EStG"
+      },
+      {
+        "abgedeckt_von": "gwg_sofortabzug_gewaehlt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Arbeitsmittel, die höchstens 800 € (ohne Umsatzsteuer)",
+        "referenz": "Anleitung Anlage N 2025"
+      },
+      {
+        "abgedeckt_von": "gwg_sofortabzug_gewaehlt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vermindert um einen darin enthaltenen Vorsteuerbetrag",
+        "referenz": "§ 9b Abs. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "GWG-Grenze von 800 € bezieht sich auf netto-Kosten.",
+        "bedingung_id": "gwg_sofortabzug_gewaehlt",
+        "betrifft": "anschaffungskosten_netto",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "AfA und GWG-Abzug basieren auf brutto-Kosten.",
+        "bedingung_id": null,
+        "betrifft": "anschaffungskosten_brutto",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Anschaffungsmonat wird als 1-12 interpretiert.",
+        "bedingung_id": "konv:ganzzahl_monate",
+        "betrifft": "anschaffungsmonat",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Nutzungsdauer wird als betriebsgewöhnlich angenommen.",
+        "bedingung_id": null,
+        "betrifft": "nutzungsdauer_jahre",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "AfA-Berechnung verwendet brutto-Kosten als Basis.",
+        "bedingung_id": "gwg_sofortabzug_gewaehlt",
+        "betrifft": "anschaffungskosten_brutto",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Jahre seit Anschaffung werden als ganze Jahre gezählt.",
+        "bedingung_id": null,
+        "betrifft": "jahre_seit_anschaffung",
+        "kategorie": "zeitbezug"
+      }
+    ],
+    "timestamp": "2026-07-13T20:04:50+00:00"
+  },
+  "module_name": "ArbeitsmittelUndAfaLaufendNettoBrutto",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

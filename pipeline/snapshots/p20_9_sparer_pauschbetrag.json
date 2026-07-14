@@ -1,0 +1,218 @@
+{
+  "bedingungen": [
+    "sparer_pb_1000_2000_konstante"
+  ],
+  "candidate_id": "p20_9_sparer_pauschbetrag",
+  "catala_a": "declaration scope SparerPauschbetrag:\n  input kapitalertraege content money\n  input zusammenveranlagung content boolean\n  internal pauschbetrag content money\n  output einkuenfte_nach_sparer_pb content money\n\nscope SparerPauschbetrag:\n  definition pauschbetrag equals\n    if zusammenveranlagung then $2,000.00 else $1,000.00\n\n  definition einkuenfte_nach_sparer_pb equals\n    if kapitalertraege > pauschbetrag then kapitalertraege - pauschbetrag\n    else $0.00",
+  "catala_a_sha256": "be6008c7bc4c1ccd85377571d391f949613279b7b9bfab1dff0823a8d09d8b4c",
+  "catala_b": "declaration scope SparerPauschbetrag:\n  input kapitalertraege content money\n  input zusammenveranlagung content boolean\n  output einkuenfte_nach_sparer_pb content money\n\nscope SparerPauschbetrag:\n  definition einkuenfte_nach_sparer_pb equals\n    let pauschbetrag equals\n      if zusammenveranlagung then $2,000.00 else $1,000.00\n    in\n      if kapitalertraege > pauschbetrag then kapitalertraege - pauschbetrag else $0.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'einkuenfte_nach_sparer_pb'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Der Sparer-Pauschbetrag wird nur abgezogen, wenn Kapitalerträge darüber liegen."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 3,
+        "annahmen": 0,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Negative Kapitalerträge werden auf 0 gesetzt statt beizubehalten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Negative Kapitalerträge werden auf 0 begrenzt, Norm sieht keinen Abzug unter Null vor."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der Sparer-Pauschbetrag wird nur abgezogen, wenn Kapitalerträge darüber liegen."
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 20 abs. 9 satz 1"
+            ],
+            "text": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 20 abs. 9 satz 1 estg"
+            ],
+            "text": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 20 abs. 9 satz 1\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 20 abs. 9 satz 1 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        2,
+        2,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "6aabc60501f4",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "sparer_pb_1000_2000_konstante",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen",
+        "referenz": "§ 20 Abs. 9 Satz 1"
+      },
+      {
+        "abgedeckt_von": "sparer_pb_1000_2000_konstante",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "der Abzug der tatsächlichen Werbungskosten ist ausgeschlossen",
+        "referenz": "§ 20 Abs. 9 Satz 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-13T20:09:35+00:00"
+  },
+  "module_name": "SparerPauschbetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

@@ -1,0 +1,266 @@
+{
+  "bedingungen": [
+    "achtzig_prozent_deckel_4800_je_kind",
+    "kind_unter_14_haushaltszugehoerig"
+  ],
+  "candidate_id": "p10_1_5_kinderbetreuung",
+  "catala_a": "declaration scope Kinderbetreuung:\n  input aufwendungen content money\n  output kinderbetreuung_abzug content money\n\nscope Kinderbetreuung:\n  definition kinderbetreuung_abzug equals\n    if aufwendungen * 0.80 > $4,800.00\n    then $4,800.00\n    else aufwendungen * 0.80",
+  "catala_a_sha256": "ed323dcce57766abdaf8d9b70b517185b4b0938b9781d94ab84a81aebd13dea5",
+  "catala_b": "declaration scope Kinderbetreuung:\n  input aufwendungen content money\n  output kinderbetreuung_abzug content money\n\nscope Kinderbetreuung:\n  definition kinderbetreuung_abzug equals\n    if aufwendungen * 0.80 > $4,800.00 then $4,800.00 else aufwendungen * 0.80",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'kinderbetreuung_abzug'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 5,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ],
+            "text": "Der Abzug wird in Euro berechnet."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ],
+            "text": "Der Höchstbetrag von 4.800 Euro gilt pro Kind."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "einheit"
+            ],
+            "text": "Aufwendungen sind in Euro angegeben."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 10 abs. 1 nr. 5 s. 1 estg"
+            ],
+            "text": "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Das Kind gehört zum Haushalt und ist unter 14 Jahre alt.",
+            "eingeschmolzen": "Das Kind gehört zum Haushalt und ist unter 14 Jahren.",
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Aufwendungen beziehen sich nur auf Dienstleistungen zur Kinderbetreuung.",
+            "eingeschmolzen": "Aufwendungen beziehen sich nur auf Dienstleistungen zur Betreuung.",
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Das Kind gehört zum Haushalt und ist unter 14 Jahre alt.",
+            "eingeschmolzen": "Kind gehört zum Haushalt und ist unter 14 Jahren.",
+            "key": [
+              "betrifft_kat",
+              "aufwendungen",
+              "geltungsvoraussetzung"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        6,
+        1,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "c3830133fad7",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "achtzig_prozent_deckel_4800_je_kind",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind",
+        "referenz": "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "für Dienstleistungen zur Betreuung eines zum Haushalt des Steuerpflichtigen gehörenden Kindes im Sinne des § 32 Absatz 1",
+        "referenz": "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "welches das 14. Lebensjahr noch nicht vollendet hat",
+        "referenz": "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Aufwendungen beziehen sich nur auf Dienstleistungen zur Kinderbetreuung.",
+        "bedingung_id": null,
+        "betrifft": "aufwendungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Das Kind gehört zum Haushalt und ist unter 14 Jahre alt.",
+        "bedingung_id": null,
+        "betrifft": "aufwendungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Der Abzug wird in Euro berechnet.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "ergebnis",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Der Höchstbetrag von 4.800 Euro gilt pro Kind.",
+        "bedingung_id": "achtzig_prozent_deckel_4800_je_kind",
+        "betrifft": "ergebnis",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Aufwendungen sind in Euro angegeben.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "aufwendungen",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-13T20:07:46+00:00"
+  },
+  "module_name": "Kinderbetreuung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

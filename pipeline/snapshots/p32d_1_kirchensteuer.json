@@ -1,0 +1,477 @@
+{
+  "bedingungen": [
+    "kirchensteuerpflicht_besteht",
+    "keine_guenstigerpruefung_beantragt",
+    "kapitaleinkuenfte_nicht_negativ"
+  ],
+  "candidate_id": "p32d_1_kirchensteuer",
+  "catala_a": "declaration scope KapitalAbgeltungKirchensteuer:\n  input kapitaleinkuenfte content money\n  input anrechenbare_auslaendische_steuer content money\n  input kirchensteuersatz content decimal\n  output kapital_steuer content money\n\nscope KapitalAbgeltungKirchensteuer:\n  definition kapital_steuer equals\n    let zaehler equals kapitaleinkuenfte - (anrechenbare_auslaendische_steuer * 4.0) in\n    let nenner equals 4.0 + kirchensteuersatz in\n    zaehler / nenner",
+  "catala_a_sha256": "c74a16ee7c707425150f30a385a2cb4d1fe54d7def16f8a0ee63308737d69fb6",
+  "catala_b": "declaration scope KapitalAbgeltungKirchensteuer:\n  input kapitaleinkuenfte content money\n  input anrechenbare_auslaendische_steuer content money\n  input kirchensteuersatz content decimal\n  output kapital_steuer content money\n\nscope KapitalAbgeltungKirchensteuer:\n  definition kapital_steuer equals\n    (Decimal.truncate of ((kapitaleinkuenfte - anrechenbare_auslaendische_steuer * 4.0) / $1.00 / (4.0 + kirchensteuersatz))) * $1.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'kapital_steuer'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 6 wirkt_hinein (blockierend ist geltungsbereich), 4 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Formel weicht ab: Norm verwendet e - 4q / (4 + k), Formalisierung (e - 4q) / (4 + k)."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 6,
+        "norm_teile": 10
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "kapitaleinkuenfte",
+              "interpretation"
+            ],
+            "text": "Einkünfte werden als brutto (ohne Abzug) interpretiert."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "anrechenbare_auslaendische_steuer",
+              "interpretation"
+            ],
+            "text": "Ausländische Steuer wird als direkt anrechenbarer Betrag gelesen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "kirchensteuersatz",
+              "einheit"
+            ],
+            "text": "Kirchensteuersatz wird als Dezimalzahl (nicht Prozent) angenommen."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "kapitaleinkuenfte",
+              "interpretation"
+            ],
+            "text": "Wird als 'e' (Einkünfte nach § 20) interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "kirchensteuersatz",
+              "interpretation"
+            ],
+            "text": "Wird als 'k' (Kirchensteuersatz) interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "sonstige"
+            ],
+            "text": "Formel wird als (e – 4q) / (4 + k) umgesetzt."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 4 estg"
+            ],
+            "text": "Die Einkommensteuer beträgt damit e – 4 q 4 + k."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 5 estg"
+            ],
+            "text": "Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte, „q“ die nach Maßgabe des Absatzes 5 anrechenbar"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 4"
+            ],
+            "text": "Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 4"
+            ],
+            "text": "„q“ die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 4"
+            ],
+            "text": "„k“ der für die Kirchensteuer erhebende Religionsgesellschaft geltende Kirchensteuersatz"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 4"
+            ],
+            "text": "Die Einkommensteuer beträgt damit e – 4 q 4 + k."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 5"
+            ],
+            "text": "Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte, „q“ die nach Maßgabe des Absatzes 5 anrechenbar"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 4 estg"
+            ],
+            "text": "Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 4 estg"
+            ],
+            "text": "„q“ die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 4 estg"
+            ],
+            "text": "„k“ der für die Kirchensteuer erhebende Religionsgesellschaft (Religionsgemeinschaft) geltende Kirchensteuersatz"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Ausländische Steuer wird als direkt anrechenbarer Betrag gelesen.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"anrechenbare_auslaendische_steuer\", \"interpretation\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Die Einkommensteuer beträgt damit e – 4 q 4 + k.",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 32d abs. 1 s. 4\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Formel weicht ab: Norm verwendet e - 4q / (4 + k), Formalisierung (e - 4q) / (4 + k).",
+            "eingeschmolzen": "Formel verwendet 4.0 statt 4q (q fehlt im Zähler).",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Formel weicht ab: Norm verwendet e - 4q / (4 + k), Formalisierung (e - 4q) / (4 + k).",
+            "eingeschmolzen": "Formel verwendet Division statt Subtraktion wie im Normtext (e – 4q / 4 + k).",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Formel weicht ab: Norm verwendet e - 4q / (4 + k), Formalisierung (e - 4q) / (4 + k).",
+            "eingeschmolzen": "Formel verwendet Division statt Subtraktion wie im Normtext (e – 4q / 4 + k).",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Formel weicht ab: Norm verwendet e - 4q / (4 + k), Formalisierung (e - 4q) / (4 + k).",
+            "eingeschmolzen": "Formel weicht ab: Norm verwendet e – 4q / (4 + k), Formalisierung berechnet (e - 4q) / (4 + k).",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Ausländische Steuer wird als direkt anrechenbarer Betrag gelesen.",
+            "eingeschmolzen": "Wird als 'q' (anrechenbare ausländische Steuer) interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "anrechenbare_auslaendische_steuer",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Ausländische Steuer wird als direkt anrechenbarer Betrag gelesen.",
+            "eingeschmolzen": "Wird als 'q' (anrechenbare ausländische Steuer) interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "anrechenbare_auslaendische_steuer",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte, „q“ die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer und „k“ der für di",
+            "eingeschmolzen": "Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte, „q“ die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer und „k“ der für di",
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 5 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        3,
+        6,
+        3,
+        2,
+        3
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "a168a85a5431",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "kirchensteuerpflicht_besteht",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Die Einkommensteuer beträgt damit e – 4 q 4 + k.",
+        "referenz": "§ 32d Abs. 1 S. 4 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte, „q“ die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer und „k“ der für die Kirchensteuer erhebende Religionsgesellschaft (Religionsgemeinschaft) geltende Kirchensteuersatz.",
+        "referenz": "§ 32d Abs. 1 S. 5 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte",
+        "referenz": "§ 32d Abs. 1 S. 4"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "„q“ die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer",
+        "referenz": "§ 32d Abs. 1 S. 4"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "„k“ der für die Kirchensteuer erhebende Religionsgesellschaft geltende Kirchensteuersatz",
+        "referenz": "§ 32d Abs. 1 S. 4"
+      },
+      {
+        "abgedeckt_von": "kirchensteuerpflicht_besteht",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Die Einkommensteuer beträgt damit e – 4 q 4 + k.",
+        "referenz": "§ 32d Abs. 1 S. 4"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte, „q“ die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer und „k“ der für die Kirchensteuer erhebende Religionsgesellschaft geltende Kirchensteuersatz.",
+        "referenz": "§ 32d Abs. 1 S. 5"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte",
+        "referenz": "§ 32d Abs. 1 S. 4 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "„q“ die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer",
+        "referenz": "§ 32d Abs. 1 S. 4 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "„k“ der für die Kirchensteuer erhebende Religionsgesellschaft (Religionsgemeinschaft) geltende Kirchensteuersatz",
+        "referenz": "§ 32d Abs. 1 S. 4 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Einkünfte werden als brutto (ohne Abzug) interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "kapitaleinkuenfte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Ausländische Steuer wird als direkt anrechenbarer Betrag gelesen.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "anrechenbare_auslaendische_steuer",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Kirchensteuersatz wird als Dezimalzahl (nicht Prozent) angenommen.",
+        "bedingung_id": null,
+        "betrifft": "kirchensteuersatz",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Wird als 'e' (Einkünfte nach § 20) interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "kapitaleinkuenfte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Wird als 'k' (Kirchensteuersatz) interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "kirchensteuersatz",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Formel wird als (e – 4q) / (4 + k) umgesetzt.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "sonstige"
+      }
+    ],
+    "timestamp": "2026-07-14T14:56:24+00:00"
+  },
+  "module_name": "KapitalAbgeltungKirchensteuer",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

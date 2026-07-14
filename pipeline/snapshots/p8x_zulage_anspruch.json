@@ -1,0 +1,470 @@
+{
+  "bedingungen": [
+    "unmittelbar_zulageberechtigt_p79s1",
+    "berufseinsteiger_erstmalig",
+    "kindergeld_festgesetzt_nicht_zurueckgefordert"
+  ],
+  "candidate_id": "p8x_zulage_anspruch",
+  "catala_a": "declaration scope ZulageAnspruch:\n  input anzahl_kinder_geboren_vor_2008 content decimal\n  input anzahl_kinder_geboren_ab_2008 content decimal\n  input ist_berufseinsteiger_erstjahr content boolean\n  output zulage_anspruch content money\n\nscope ZulageAnspruch:\n  definition zulage_anspruch equals\n    $175.00\n    + (if ist_berufseinsteiger_erstjahr then $200.00 else $0.00)\n    + anzahl_kinder_geboren_vor_2008 * $185.00\n    + anzahl_kinder_geboren_ab_2008 * $300.00",
+  "catala_a_sha256": "aeb4d5b5c5c188764a3a5eeaf3806efd6128b235c5c70157b45a747170812b40",
+  "catala_b": "declaration scope ZulageAnspruch:\n  input anzahl_kinder_geboren_vor_2008 content decimal\n  input anzahl_kinder_geboren_ab_2008 content decimal\n  input ist_berufseinsteiger_erstjahr content boolean\n  output zulage_anspruch content money\n\nscope ZulageAnspruch:\n  definition zulage_anspruch equals\n    $175.00\n    + (if ist_berufseinsteiger_erstjahr then $200.00 else $0.00)\n    + ($185.00 * anzahl_kinder_geboren_vor_2008)\n    + ($300.00 * anzahl_kinder_geboren_ab_2008)",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'zulage_anspruch'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Die Berufseinsteigerzulage wird ohne Prüfung des Alters zu Beginn des Beitragsjahres gewährt.",
+      "Die Berufseinsteiger-Zulage wird nicht auf das erste Beitragsjahr beschränkt."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 9,
+        "annahmen": 6,
+        "norm_teile": 5
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Grundzulage wird als 175.00 statt 175 Euro formalisiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Berufseinsteiger-Zulage wird als 200.00 statt 200 Euro formalisiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Kinderzulage für Kinder vor 2008 wird als 185.00 statt 185 Euro formalisiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Kinderzulage für Kinder ab 2008 wird als 300.00 statt 300 Euro formalisiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ist_berufseinsteiger_erstjahr"
+            ],
+            "text": "Die Berufseinsteigerzulage wird ohne Prüfung des Alters zu Beginn des Beitragsjahres gewährt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Grundzulage wird ohne Bedingung an alle Zulageberechtigten gewährt, nicht nur ab Beitragsjahr 2018."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ist_berufseinsteiger_erstjahr"
+            ],
+            "text": "Die Berufseinsteiger-Zulage wird nicht auf das erste Beitragsjahr beschränkt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "anzahl_kinder_geboren_vor_2008"
+            ],
+            "text": "Kindergeld-Festsetzung als Voraussetzung für Kinderzulage fehlt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "anzahl_kinder_geboren_ab_2008"
+            ],
+            "text": "Kindergeld-Festsetzung als Voraussetzung für Kinderzulage fehlt."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft_kat",
+              "ist_berufseinsteiger_erstjahr",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Berufseinsteiger-Zulage gilt nur im ersten Beitragsjahr."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder_geboren_vor_2008",
+              "einheit"
+            ],
+            "text": "Die Anzahl der Kinder wird als Dezimalzahl interpretiert."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder_geboren_ab_2008",
+              "einheit"
+            ],
+            "text": "Die Anzahl der Kinder wird als Dezimalzahl interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ist_berufseinsteiger_erstjahr",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass der Zulageberechtigte die Voraussetzungen nach § 79 Satz 1 erfüllt."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder_geboren_vor_2008",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Annahme, dass Kindergeld für diese Kinder festgesetzt ist."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder_geboren_ab_2008",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Annahme, dass Kindergeld für diese Kinder festgesetzt ist."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 84 s. 1 estg"
+            ],
+            "text": "ab dem Beitragsjahr 2018 jährlich 175 Euro"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 84 s. 2 estg"
+            ],
+            "text": "erhöht sich die Grundzulage nach Satz 1 um einmalig 200 Euro"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 85 abs. 1 s. 2 estg"
+            ],
+            "text": "Für ein nach dem 31. Dezember 2007 geborenes Kind"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "die zu Beginn des Beitragsjahres (§ 88) das 25. Lebensjahr noch nicht vollendet haben",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 84 s. 2 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Grundzulage wird als 175.00 statt 175 Euro formalisiert.",
+            "eingeschmolzen": "Die Grundzulage wird als 175 Euro festgesetzt, ohne Berücksichtigung des Beitragsjahres.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Anzahl der Kinder wird als Dezimalzahl interpretiert.",
+            "eingeschmolzen": "Die Anzahl der Kinder wird als Dezimalzahl interpretiert, obwohl die Norm keine Teilkinder vorsieht.",
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder_geboren_vor_2008",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Die Anzahl der Kinder wird als Dezimalzahl interpretiert.",
+            "eingeschmolzen": "Die Anzahl der Kinder wird als Dezimalzahl interpretiert, obwohl die Norm keine Teilkinder vorsieht.",
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder_geboren_ab_2008",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Die Berufseinsteiger-Zulage gilt nur im ersten Beitragsjahr.",
+            "eingeschmolzen": "Annahme, dass Berufseinsteiger im ersten Beitragsjahr sind.",
+            "key": [
+              "betrifft_kat",
+              "ist_berufseinsteiger_erstjahr",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Die Berufseinsteiger-Zulage gilt nur im ersten Beitragsjahr.",
+            "eingeschmolzen": "Annahme, dass Berufseinsteiger im ersten Beitragsjahr sind.",
+            "key": [
+              "betrifft_kat",
+              "ist_berufseinsteiger_erstjahr",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Die Anzahl der Kinder wird als Dezimalzahl interpretiert.",
+            "eingeschmolzen": "Annahme, dass die Anzahl der Kinder als Dezimalzahl gegeben ist.",
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder_geboren_vor_2008",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Die Anzahl der Kinder wird als Dezimalzahl interpretiert.",
+            "eingeschmolzen": "Annahme, dass die Anzahl der Kinder als Dezimalzahl gegeben ist.",
+            "key": [
+              "betrifft_kat",
+              "anzahl_kinder_geboren_ab_2008",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Die Berufseinsteiger-Zulage gilt nur im ersten Beitragsjahr.",
+            "eingeschmolzen": "Annahme, dass Berufseinsteiger im ersten Beitragsjahr sind.",
+            "key": [
+              "betrifft_kat",
+              "ist_berufseinsteiger_erstjahr",
+              "geltungsvoraussetzung"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "die zu Beginn des Beitragsjahres (§ 88) das 25. Lebensjahr noch nicht vollendet haben",
+            "eingeschmolzen": "zu Beginn des Beitragsjahres (§ 88) das 25. Lebensjahr noch nicht vollendet haben",
+            "key": [
+              "ref",
+              "§ 84 s. 2 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        9,
+        3,
+        2,
+        6,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "56dbdf0bd0fd",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "berufseinsteiger_erstmalig",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "die zu Beginn des Beitragsjahres (§ 88) das 25. Lebensjahr noch nicht vollendet haben",
+        "referenz": "§ 84 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "kindergeld_festgesetzt_nicht_zurueckgefordert",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "für das gegenüber dem Zulageberechtigten Kindergeld festgesetzt wird",
+        "referenz": "§ 85 Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "ab dem Beitragsjahr 2018 jährlich 175 Euro",
+        "referenz": "§ 84 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "berufseinsteiger_erstmalig",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "erhöht sich die Grundzulage nach Satz 1 um einmalig 200 Euro",
+        "referenz": "§ 84 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Für ein nach dem 31. Dezember 2007 geborenes Kind",
+        "referenz": "§ 85 Abs. 1 S. 2 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Berufseinsteiger-Zulage gilt nur im ersten Beitragsjahr.",
+        "bedingung_id": "berufseinsteiger_erstmalig",
+        "betrifft": "ist_berufseinsteiger_erstjahr",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Anzahl der Kinder wird als Dezimalzahl interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "anzahl_kinder_geboren_vor_2008",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Die Anzahl der Kinder wird als Dezimalzahl interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "anzahl_kinder_geboren_ab_2008",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Es wird angenommen, dass der Zulageberechtigte die Voraussetzungen nach § 79 Satz 1 erfüllt.",
+        "bedingung_id": "unmittelbar_zulageberechtigt_p79s1",
+        "betrifft": "ist_berufseinsteiger_erstjahr",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Annahme, dass Kindergeld für diese Kinder festgesetzt ist.",
+        "bedingung_id": "kindergeld_festgesetzt_nicht_zurueckgefordert",
+        "betrifft": "anzahl_kinder_geboren_vor_2008",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Annahme, dass Kindergeld für diese Kinder festgesetzt ist.",
+        "bedingung_id": "kindergeld_festgesetzt_nicht_zurueckgefordert",
+        "betrifft": "anzahl_kinder_geboren_ab_2008",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-13T21:27:50+00:00"
+  },
+  "module_name": "ZulageAnspruch",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

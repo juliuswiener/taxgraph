@@ -1,0 +1,188 @@
+{
+  "bedingungen": [
+    "afa_satz_aus_fertigstellungskategorie"
+  ],
+  "candidate_id": "p7_4_gebaeude_afa",
+  "catala_a": "declaration scope GebaeudeAfa:\n  input gebaeude_ak content money\n  input afa_satz_prozent content decimal\n  output gebaeude_afa content money\n\nscope GebaeudeAfa:\n  definition gebaeude_afa equals\n    (afa_satz_prozent / 100.0) * gebaeude_ak",
+  "catala_a_sha256": "dff20aca45102d2467ba25e21296dd21df18ec1277287c0707ecc2986e7457ad",
+  "catala_b": "declaration scope GebaeudeAfa:\n  input gebaeude_ak content money\n  input afa_satz_prozent content decimal\n  output gebaeude_afa content money\n\nscope GebaeudeAfa:\n  definition gebaeude_afa equals\n    let roh equals (afa_satz_prozent / 100.0) * gebaeude_ak in\n    (Decimal.truncate of (roh / $0.01)) * $0.01",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'gebaeude_afa'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 4
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "nach dem 31. Dezember 2022 fertiggestellt worden sind, jährlich 3 Prozent",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 7 abs. 4 s. 1 nr. 2 estg\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "vor dem 1. Januar 2023 und nach dem 31. Dezember 1924 fertiggestellt worden sind, jährlich 2 Prozent",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 7 abs. 4 s. 1 nr. 2 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        4,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "da06896755fd",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "bei Gebäuden, soweit sie die Voraussetzungen der Nummer 1 nicht erfüllen",
+        "referenz": "§ 7 Abs. 4 S. 1 Nr. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "afa_satz_aus_fertigstellungskategorie",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "nach dem 31. Dezember 2022 fertiggestellt worden sind, jährlich 3 Prozent",
+        "referenz": "§ 7 Abs. 4 S. 1 Nr. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "afa_satz_aus_fertigstellungskategorie",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vor dem 1. Januar 2023 und nach dem 31. Dezember 1924 fertiggestellt worden sind, jährlich 2 Prozent",
+        "referenz": "§ 7 Abs. 4 S. 1 Nr. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "afa_satz_aus_fertigstellungskategorie",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vor dem 1. Januar 1925 fertiggestellt worden sind, jährlich 2,5 Prozent der Anschaffungs- oder Herstellungskosten",
+        "referenz": "§ 7 Abs. 4 S. 1 Nr. 2 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-13T20:25:03+00:00"
+  },
+  "module_name": "GebaeudeAfa",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

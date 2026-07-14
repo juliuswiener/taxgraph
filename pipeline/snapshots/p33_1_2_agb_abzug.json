@@ -1,0 +1,314 @@
+{
+  "bedingungen": [
+    "agb_ist_zwangslaeufig",
+    "agb_notwendig_und_angemessen",
+    "keine_ausgeschlossenen_aufwendungen",
+    "keine_behinderungsbedingten_fahrtkosten",
+    "zumutbare_belastung_ist_p33_3_ergebnis"
+  ],
+  "candidate_id": "p33_1_2_agb_abzug",
+  "catala_a": "declaration scope AgbAbzug:\n  input aussergewoehnliche_belastungen content money\n  input zumutbare_belastung content money\n  output abzug_agb content money\n\nscope AgbAbzug:\n  definition abzug_agb equals\n    if aussergewoehnliche_belastungen > zumutbare_belastung\n    then aussergewoehnliche_belastungen - zumutbare_belastung\n    else $0.00",
+  "catala_a_sha256": "b64650b14ce0dc12e374b74acdf02f37448547beea4bbe92905c10824003e468",
+  "catala_b": "declaration scope AgbAbzug:\n  input aussergewoehnliche_belastungen content money\n  input zumutbare_belastung content money\n  output abzug_agb content money\n\nscope AgbAbzug:\n  definition abzug_agb equals\n    if aussergewoehnliche_belastungen > zumutbare_belastung\n    then aussergewoehnliche_belastungen - zumutbare_belastung\n    else $0.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'abzug_agb'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 4,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "aussergewoehnliche_belastungen",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung behandelt den Eingangswert als bereits festgestellte außergewöhnliche Belastungen, ohne die gesetzlic"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Die Formalisierung gibt den Abzugsbetrag auf zwei Dezimalstellen gerundet aus, obwohl die Norm keine Rundungsregel vorsc"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "aussergewoehnliche_belastungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass die Aufwendungen zwangsläufig und größer als bei der Vergleichsgruppe sind, ohne d"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "aussergewoehnliche_belastungen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass ein Antrag auf Steuerermäßigung gestellt wurde, ohne diesen Umstand abzubilden."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 33 abs. 1"
+            ],
+            "text": "Erwachsen einem Steuerpflichtigen zwangsläufig größere Aufwendungen als der überwiegenden Mehrzahl der Steuerpflichtigen"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "auf Antrag",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 33 abs. 1\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung behandelt den Eingangswert als bereits festgestellte außergewöhnliche Belastungen, ohne die gesetzlichen Voraussetzungen der Zwangsläufigkeit",
+            "eingeschmolzen": "Die Formalisierung behandelt den Eingangswert als bereits festgestellte außergewöhnliche Belastungen, ohne die gesetzlichen Voraussetzungen der Zwangsläufigkeit",
+            "key": [
+              "betrifft_kat",
+              "aussergewoehnliche_belastungen",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung behandelt den Eingangswert als bereits festgestellte außergewöhnliche Belastungen, ohne die gesetzlichen Voraussetzungen der Zwangsläufigkeit",
+            "eingeschmolzen": "Die Formalisierung behandelt den Eingabewert als bereits festgestellte außergewöhnliche Belastungen, ohne die gesetzlichen Definitionsmerkmale der Zwangsläufigk",
+            "key": [
+              "betrifft_kat",
+              "aussergewoehnliche_belastungen",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "auf Antrag",
+            "eingeschmolzen": "so wird auf Antrag die Einkommensteuer dadurch ermäßigt",
+            "key": [
+              "ref",
+              "§ 33 abs. 1"
+            ]
+          },
+          {
+            "cluster": "vom Gesamtbetrag der Einkünfte abgezogen",
+            "eingeschmolzen": "vom Gesamtbetrag der Einkünfte abgezogen wird",
+            "key": [
+              "ref",
+              "§ 33 abs. 1"
+            ]
+          },
+          {
+            "cluster": "auf Antrag",
+            "eingeschmolzen": "so wird auf Antrag die Einkommensteuer dadurch ermäßigt",
+            "key": [
+              "ref",
+              "§ 33 abs. 1"
+            ]
+          },
+          {
+            "cluster": "vom Gesamtbetrag der Einkünfte abgezogen",
+            "eingeschmolzen": "vom Gesamtbetrag der Einkünfte abgezogen wird",
+            "key": [
+              "ref",
+              "§ 33 abs. 1"
+            ]
+          },
+          {
+            "cluster": "auf Antrag",
+            "eingeschmolzen": "so wird auf Antrag die Einkommensteuer dadurch ermäßigt",
+            "key": [
+              "ref",
+              "§ 33 abs. 1"
+            ]
+          },
+          {
+            "cluster": "vom Gesamtbetrag der Einkünfte abgezogen",
+            "eingeschmolzen": "vom Gesamtbetrag der Einkünfte abgezogen wird",
+            "key": [
+              "ref",
+              "§ 33 abs. 1"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        2,
+        3,
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "5037bec29e91",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "auf Antrag",
+        "referenz": "§ 33 Abs. 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vom Gesamtbetrag der Einkünfte abgezogen",
+        "referenz": "§ 33 Abs. 1"
+      },
+      {
+        "abgedeckt_von": "agb_ist_zwangslaeufig",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Erwachsen einem Steuerpflichtigen zwangsläufig größere Aufwendungen als der überwiegenden Mehrzahl der Steuerpflichtigen gleicher Einkommensverhältnisse, gleicher Vermögensverhältnisse und gleichen Familienstands (außergewöhnliche Belastung)",
+        "referenz": "§ 33 Abs. 1"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung behandelt den Eingangswert als bereits festgestellte außergewöhnliche Belastungen, ohne die gesetzlichen Voraussetzungen der Zwangsläufigkeit und des Vergleichsmaßstabs zu prüfen.",
+        "bedingung_id": "agb_ist_zwangslaeufig",
+        "betrifft": "aussergewoehnliche_belastungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung gibt den Abzugsbetrag auf zwei Dezimalstellen gerundet aus, obwohl die Norm keine Rundungsregel vorschreibt.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass die Aufwendungen zwangsläufig und größer als bei der Vergleichsgruppe sind, ohne dies zu modellieren.",
+        "bedingung_id": "agb_ist_zwangslaeufig",
+        "betrifft": "aussergewoehnliche_belastungen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass ein Antrag auf Steuerermäßigung gestellt wurde, ohne diesen Umstand abzubilden.",
+        "bedingung_id": null,
+        "betrifft": "aussergewoehnliche_belastungen",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-11T12:44:40+00:00"
+  },
+  "module_name": "AgbAbzug",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

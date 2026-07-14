@@ -1,0 +1,151 @@
+{
+  "bedingungen": [
+    "einkuenfte_ueberschuss_einnahmen_ueber_wk"
+  ],
+  "candidate_id": "p21_vermietung_einkuenfte",
+  "catala_a": "declaration scope VermietungEinkuenfte:\n  input einnahmen content money\n  input gebaeude_afa content money\n  input schuldzinsen content money\n  input erhaltungsaufwand content money\n  input sonstige_werbungskosten content money\n  output vermietung_einkuenfte content money\n\nscope VermietungEinkuenfte:\n  definition vermietung_einkuenfte equals\n    einnahmen - (gebaeude_afa + schuldzinsen + erhaltungsaufwand + sonstige_werbungskosten)",
+  "catala_a_sha256": "1c81bbb1a6fb7c313cb32926c379a5f6a0e24361014157b35a7b213d831991a8",
+  "catala_b": "declaration scope VermietungEinkuenfte:\n  input einnahmen content money\n  input gebaeude_afa content money\n  input schuldzinsen content money\n  input erhaltungsaufwand content money\n  input sonstige_werbungskosten content money\n  output vermietung_einkuenfte content money\n\nscope VermietungEinkuenfte:\n  definition vermietung_einkuenfte equals\n    einnahmen - (gebaeude_afa + schuldzinsen + erhaltungsaufwand + sonstige_werbungskosten)",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'vermietung_einkuenfte'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 0 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "7bebffc11cc3",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen",
+        "referenz": "§ 21 Abs. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-13T20:23:56+00:00"
+  },
+  "module_name": "VermietungEinkuenfte",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

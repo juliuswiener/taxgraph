@@ -1,0 +1,231 @@
+{
+  "bedingungen": [
+    "zeitraum_vollstaendig_nach_48_monate",
+    "unterkunft_im_inland",
+    "erste_taetigkeitsstaette_liegt_nicht_am_ort",
+    "kosten_bei_alleiniger_nutzung",
+    "keine_unterbrechung_mit_neubeginn"
+  ],
+  "candidate_id": "p9_1_3_nr5a_uebernachtung_nach_48",
+  "catala_a": "declaration scope UebernachtungskostenNach48:\n  input uebernachtungskosten_monat content money\n  input monate content integer\n  input monate_bisher_am_ort content integer\n  output abziehbare_uebernachtungskosten content money\n\nscope UebernachtungskostenNach48:\n  definition abziehbare_uebernachtungskosten equals\n    (if uebernachtungskosten_monat > $1,000.00 then $1,000.00\n     else uebernachtungskosten_monat)\n    * (decimal of monate)",
+  "catala_a_sha256": "bd88a8344f2225e60d50ce0eb506dfe02d6215c844c16a208c5872cf6d127195",
+  "catala_b": "declaration scope UebernachtungskostenNach48:\n  input uebernachtungskosten_monat content money\n  input monate content integer\n  input monate_bisher_am_ort content integer\n  output abziehbare_uebernachtungskosten content money\n\nscope UebernachtungskostenNach48:\n  definition abziehbare_uebernachtungskosten equals\n    (if uebernachtungskosten_monat > $1,000.00 then $1,000.00 else uebernachtungskosten_monat)\n    * (decimal of monate)",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'abziehbare_uebernachtungskosten'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 4,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung multipliziert die gekappten Kosten mit der Anzahl der Monate, die Norm spricht nur von einem monatlic"
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_bisher_am_ort",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisation ignoriert die Eingabe monate_bisher_am_ort, obwohl die Norm eine zeitliche Bedingung enthalten könnte."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate",
+              "interpretation"
+            ],
+            "text": "Die Formalisation multipliziert den gekappten Monatsbetrag mit der Anzahl der Monate, was die Norm nicht explizit vorsch"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate",
+              "interpretation"
+            ],
+            "text": "Die Variable 'monate' wird als Multiplikator für die monatlichen Kosten verwendet, obwohl die Norm nur einen monatlichen"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_bisher_am_ort",
+              "sonstige"
+            ],
+            "text": "Der Input 'monate_bisher_am_ort' wird in der Formalisierung überhaupt nicht verwendet."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 9 abs. 1 s. 3 nr. 5a satz 4"
+            ],
+            "text": "höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        3,
+        3,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "f5047f3bc072",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "unterkunft_im_inland",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland",
+        "referenz": "§ 9 Abs. 1 S. 3 Nr. 5a Satz 4"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisation ignoriert die Eingabe monate_bisher_am_ort, obwohl die Norm eine zeitliche Bedingung enthalten könnte.",
+        "bedingung_id": "zeitraum_vollstaendig_nach_48_monate",
+        "betrifft": "monate_bisher_am_ort",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Formalisation multipliziert den gekappten Monatsbetrag mit der Anzahl der Monate, was die Norm nicht explizit vorschreibt.",
+        "bedingung_id": null,
+        "betrifft": "monate",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Variable 'monate' wird als Multiplikator für die monatlichen Kosten verwendet, obwohl die Norm nur einen monatlichen Höchstbetrag definiert.",
+        "bedingung_id": null,
+        "betrifft": "monate",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der Input 'monate_bisher_am_ort' wird in der Formalisierung überhaupt nicht verwendet.",
+        "bedingung_id": null,
+        "betrifft": "monate_bisher_am_ort",
+        "kategorie": "sonstige"
+      }
+    ],
+    "timestamp": "2026-07-11T11:30:09+00:00"
+  },
+  "module_name": "UebernachtungskostenKappung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

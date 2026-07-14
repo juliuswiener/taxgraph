@@ -1,0 +1,296 @@
+{
+  "bedingungen": [
+    "aktienverlust_nur_gegen_aktiengewinn",
+    "verlustvortrag_ist_10d_grenze"
+  ],
+  "candidate_id": "p20_6_verlustverrechnung",
+  "catala_a": "declaration scope Verlustverrechnung:\n  input gewinn_aktien content money\n  input verlust_aktien content money\n  input gewinn_sonstige content money\n  input verlust_sonstige content money\n  internal saldo_aktien content money\n  internal saldo_sonstige content money\n  output verrechnete_kapitaleinkuenfte content money\n\nscope Verlustverrechnung:\n  definition saldo_aktien equals\n    if gewinn_aktien - verlust_aktien < $0.00\n    then $0.00\n    else gewinn_aktien - verlust_aktien\n\n  definition saldo_sonstige equals\n    if gewinn_sonstige - verlust_sonstige < $0.00\n    then $0.00\n    else gewinn_sonstige - verlust_sonstige\n\n  definition verrechnete_kapitaleinkuenfte equals\n    saldo_aktien + saldo_sonstige",
+  "catala_a_sha256": "f0941223e3c4d574a8f897fb33abeb943e35bd0fa2d31acf1aa1616bd90f86e7",
+  "catala_b": "declaration scope Verlustverrechnung:\n  input gewinn_aktien content money\n  input verlust_aktien content money\n  input gewinn_sonstige content money\n  input verlust_sonstige content money\n  internal saldo_aktien content money\n  internal saldo_sonstige content money\n  output verrechnete_kapitaleinkuenfte content money\n\nscope Verlustverrechnung:\n  definition saldo_aktien equals\n    if gewinn_aktien - verlust_aktien < $0.00 then $0.00\n    else gewinn_aktien - verlust_aktien\n  definition saldo_sonstige equals\n    if gewinn_sonstige - verlust_sonstige < $0.00 then $0.00\n    else gewinn_sonstige - verlust_sonstige\n  definition verrechnete_kapitaleinkuenfte equals\n    saldo_aktien + saldo_sonstige",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'verrechnete_kapitaleinkuenfte'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Verluste aus Aktien werden nicht mit anderen Kapitalerträgen verrechnet, sondern nur untereinander.",
+      "Verluste aus sonstigem Kapitalvermögen werden nicht mit Aktiengewinnen verrechnet.",
+      "Verluste aus Kapitalvermögen dürfen nicht mit anderen Einkunftsarten ausgeglichen werden.",
+      "Keine Beschränkung auf § 20 Abs. 2 Satz 1 Nr. 1 Satz 1 (Aktiengewinne)."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 4,
+        "annahmen": 4,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Verluste aus Kapitalvermögen dürfen nicht mit anderen Einkunftsarten ausgeglichen werden."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Keine Beschränkung auf § 20 Abs. 2 Satz 1 Nr. 1 Satz 1 (Aktiengewinne)."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "gewinn_aktien",
+              "interpretation"
+            ],
+            "text": "Gewinne aus Aktien gelten als Kapitalerträge nach § 20 Abs. 2 Satz 1 Nr. 1 Satz 1."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "verlust_aktien",
+              "interpretation"
+            ],
+            "text": "Verluste aus Aktien gelten als Kapitalverluste."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "gewinn_sonstige",
+              "interpretation"
+            ],
+            "text": "Sonstige Gewinne gelten als Kapitalerträge."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "verlust_sonstige",
+              "interpretation"
+            ],
+            "text": "Sonstige Verluste gelten als Kapitalverluste."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 20 abs. 6 s. 1 estg"
+            ],
+            "text": "sie dürfen auch nicht nach § 10d abgezogen werden"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Verluste aus Aktien werden nicht mit anderen Kapitalerträgen verrechnet, sondern nur untereinander.",
+            "eingeschmolzen": "Verluste aus Aktien werden nicht mit anderen Kapitalerträgen verrechnet.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Verluste aus sonstigem Kapitalvermögen werden nicht mit Aktiengewinnen verrechnet.",
+            "eingeschmolzen": "Verluste aus sonstigem Kapitalvermögen werden nicht berücksichtigt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden; sie dürfen auch nicht nach § 10d abgezogen werden.",
+            "eingeschmolzen": "Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden",
+            "key": [
+              "ref",
+              "§ 20 abs. 6 s. 1 estg"
+            ]
+          },
+          {
+            "cluster": "Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden; sie dürfen auch nicht nach § 10d abgezogen werden.",
+            "eingeschmolzen": "Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden",
+            "key": [
+              "ref",
+              "§ 20 abs. 6 s. 1 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        5,
+        6,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "0aa67d2f9a2f",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Verluste aus Kapitalvermögen dürfen nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden; sie dürfen auch nicht nach § 10d abgezogen werden.",
+        "referenz": "§ 20 Abs. 6 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "aktienverlust_nur_gegen_aktiengewinn",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "die aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen im Sinne des Absatzes 2 Satz 1 Nummer 1 Satz 1",
+        "referenz": "§ 20 Abs. 6 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "sie dürfen auch nicht nach § 10d abgezogen werden",
+        "referenz": "§ 20 Abs. 6 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Gewinne aus Aktien gelten als Kapitalerträge nach § 20 Abs. 2 Satz 1 Nr. 1 Satz 1.",
+        "bedingung_id": null,
+        "betrifft": "gewinn_aktien",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Verluste aus Aktien gelten als Kapitalverluste.",
+        "bedingung_id": null,
+        "betrifft": "verlust_aktien",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Sonstige Gewinne gelten als Kapitalerträge.",
+        "bedingung_id": null,
+        "betrifft": "gewinn_sonstige",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Sonstige Verluste gelten als Kapitalverluste.",
+        "bedingung_id": null,
+        "betrifft": "verlust_sonstige",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-13T20:09:17+00:00"
+  },
+  "module_name": "Verlustverrechnung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

@@ -1,0 +1,237 @@
+{
+  "bedingungen": [
+    "pflegegrad_staffel"
+  ],
+  "candidate_id": "p33b_pflege_pauschbetrag",
+  "catala_a": "declaration scope PflegePauschbetrag:\n  input pflegegrad content integer\n  input ist_hilflos content boolean\n  output pflege_pauschbetrag content money\n\nscope PflegePauschbetrag:\n  definition pflege_pauschbetrag equals\n    if ist_hilflos then $1,800.00\n    else (\n      if pflegegrad = 2 then $600.00\n      else (\n        if pflegegrad = 3 then $1,100.00\n        else (\n          if pflegegrad = 4 or pflegegrad = 5 then $1,800.00\n          else $0.00\n        )\n      )\n    )",
+  "catala_a_sha256": "b6a0e5109f5e4e788ad7434532a92b7e9e796a7e5cb550fa44c789fdd09a95af",
+  "catala_b": "declaration scope PflegePauschbetrag:\n  input pflegegrad content integer\n  input ist_hilflos content boolean\n  output pflege_pauschbetrag content money\n\nscope PflegePauschbetrag:\n  definition pflege_pauschbetrag equals\n    if ist_hilflos then $1,800.00\n    else (if pflegegrad = 2 then $600.00\n          else (if pflegegrad = 3 then $1,100.00\n                else (if pflegegrad = 4 or pflegegrad = 5 then $1,800.00\n                      else $0.00)))",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 6 raster point(s) for 'pflege_pauschbetrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 4 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "6 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Die Formalisierung gewährt den Pauschbetrag bei Hilflosigkeit unabhängig vom Pflegegrad, die Norm nur bei Pflegegrad 4 oder 5."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 1,
+        "norm_teile": 4
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 3"
+            ],
+            "text": "bei Pflegegrad 3 1 100 Euro"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 3"
+            ],
+            "text": "bei Pflegegrad 4 oder 5 1 800 Euro"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Formalisierung gewährt den Pauschbetrag bei Hilflosigkeit unabhängig vom Pflegegrad, die Norm nur bei Pflegegrad 4 oder 5.",
+            "eingeschmolzen": "Die Formalisierung gewährt den Pauschbetrag von 1.800 Euro bei Hilflosigkeit unabhängig vom Pflegegrad, während die Norm dies nur zusätzlich zu Pflegegrad 4 ode",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung nimmt an, dass bei nicht erfüllten Bedingungen ein Pauschbetrag von 0 Euro ausgegeben wird.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass bei nicht erfüllten Bedingungen ein Pauschbetrag von 0 Euro ausgegeben wird, was die Norm nicht explizit regelt.",
+            "key": [
+              "betrifft_kat",
+              "pflegegrad",
+              "sonstige"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "bei Pflegegrad 2 600 Euro",
+            "eingeschmolzen": "1. bei Pflegegrad 2 600 Euro, 2. bei Pflegegrad 3 1 100 Euro, 3. bei Pflegegrad 4 oder 5 1 800 Euro.",
+            "key": [
+              "ref",
+              "satz 3"
+            ]
+          },
+          {
+            "cluster": "wenn die gepflegte Person hilflos im Sinne des § 33b Absatz 3 Satz 4 ist",
+            "eingeschmolzen": "Ein Pflege-Pauschbetrag nach Satz 3 Nummer 3 wird auch gewährt, wenn die gepflegte Person hilflos im Sinne des § 33b Absatz 3 Satz 4 ist.",
+            "key": [
+              "ref",
+              "satz 4"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        6,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "b234161a9e7f",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "pflegegrad_staffel",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bei Pflegegrad 2 600 Euro",
+        "referenz": "Satz 3"
+      },
+      {
+        "abgedeckt_von": "pflegegrad_staffel",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bei Pflegegrad 3 1 100 Euro",
+        "referenz": "Satz 3"
+      },
+      {
+        "abgedeckt_von": "pflegegrad_staffel",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bei Pflegegrad 4 oder 5 1 800 Euro",
+        "referenz": "Satz 3"
+      },
+      {
+        "abgedeckt_von": "pflegegrad_staffel",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn die gepflegte Person hilflos im Sinne des § 33b Absatz 3 Satz 4 ist",
+        "referenz": "Satz 4"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung nimmt an, dass bei nicht erfüllten Bedingungen ein Pauschbetrag von 0 Euro ausgegeben wird.",
+        "bedingung_id": "pflegegrad_staffel",
+        "betrifft": "pflegegrad",
+        "kategorie": "sonstige"
+      }
+    ],
+    "timestamp": "2026-07-12T23:54:36+00:00"
+  },
+  "module_name": "PflegePauschbetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

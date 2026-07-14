@@ -1,0 +1,288 @@
+{
+  "bedingungen": [
+    "entfernung_ab_21_km",
+    "ep_ueber_arbeitnehmer_pauschbetrag"
+  ],
+  "candidate_id": "p101_mobilitaetspraemie",
+  "catala_a": "declaration scope Mobilitaetspraemie:\n  input entfernungspauschale_ab_21km content money\n  input zu_versteuerndes_einkommen content money\n  input grundfreibetrag content money\n  output mobilitaetspraemie content money\n\nscope Mobilitaetspraemie:\n  definition mobilitaetspraemie equals\n    let unterschreitung equals\n      if grundfreibetrag > zu_versteuerndes_einkommen\n      then grundfreibetrag - zu_versteuerndes_einkommen\n      else $0.00\n    in\n    let bemessungsgrundlage equals\n      if entfernungspauschale_ab_21km < unterschreitung\n      then entfernungspauschale_ab_21km\n      else unterschreitung\n    in\n    bemessungsgrundlage * 0.14",
+  "catala_a_sha256": "3a6285019125e1beff2d9adf111d8f20bd472a149a2ad4f10b5c481ffe98a160",
+  "catala_b": "declaration scope Mobilitaetspraemie:\n  input entfernungspauschale_ab_21km content money\n  input zu_versteuerndes_einkommen content money\n  input grundfreibetrag content money\n  internal unterschreitung content money\n  internal bemessungsgrundlage content money\n  output mobilitaetspraemie content money\n\nscope Mobilitaetspraemie:\n  definition unterschreitung equals\n    if grundfreibetrag - zu_versteuerndes_einkommen > $0.00\n    then grundfreibetrag - zu_versteuerndes_einkommen\n    else $0.00\n  definition bemessungsgrundlage equals\n    if entfernungspauschale_ab_21km <= unterschreitung\n    then entfernungspauschale_ab_21km\n    else unterschreitung\n  definition mobilitaetspraemie equals bemessungsgrundlage * 0.14",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'mobilitaetspraemie'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 3,
+        "annahmen": 6,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Mobilitätsprämie wird auf 14% der Bemessungsgrundlage begrenzt, nicht auf die Unterschreitung des Grundfreibetrags."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "?"
+            ],
+            "text": "Die Bemessungsgrundlage wird fälschlich als Minimum von entfernungspauschale_ab_21km und unterschreitung berechnet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Mobilitätsprämie wird auf 14% der Bemessungsgrundlage berechnet, nicht auf 14% der Entfernungspauschale ab 21km."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "entfernungspauschale_ab_21km",
+              "interpretation"
+            ],
+            "text": "Die Entfernungspauschale ab 21 km wird als Bemessungsgrundlage interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "zu_versteuerndes_einkommen",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass das zu versteuernde Einkommen den Grundfreibetrag unterschreiten kann."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "grundfreibetrag",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Der Grundfreibetrag wird als positiver Wert vorausgesetzt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "grundfreibetrag",
+              "interpretation"
+            ],
+            "text": "Der Grundfreibetrag wird als fester Geldbetrag interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "zu_versteuerndes_einkommen",
+              "interpretation"
+            ],
+            "text": "Das zu versteuernde Einkommen wird als Geldbetrag ohne weitere Anpassungen verwendet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "entfernungspauschale_ab_21km",
+              "einheit"
+            ],
+            "text": "Die Entfernungspauschale ab 21km wird als Geldbetrag angenommen."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Bemessungsgrundlage wird fälschlich als Minimum von entfernungspauschale_ab_21km und unterschreitung berechnet.",
+            "eingeschmolzen": "Die Bemessungsgrundlage wird als Minimum aus Entfernungspauschale und Unterschreitung definiert.",
+            "key": [
+              "betrifft",
+              "?"
+            ]
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        5,
+        2,
+        4,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "6d843c6ef647",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "begrenzt auf den Betrag, um den das zu versteuernde Einkommen den Grundfreibetrag im Sinne des § 32a Absatz 1 Satz 2 Nummer 1 unterschreitet",
+        "referenz": "§ 101 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Die Mobilitätsprämie beträgt 14 Prozent dieser Bemessungsgrundlage.",
+        "referenz": "§ 101 S. 4 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Entfernungspauschale ab 21 km wird als Bemessungsgrundlage interpretiert.",
+        "bedingung_id": "entfernung_ab_21_km",
+        "betrifft": "entfernungspauschale_ab_21km",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Es wird angenommen, dass das zu versteuernde Einkommen den Grundfreibetrag unterschreiten kann.",
+        "bedingung_id": null,
+        "betrifft": "zu_versteuerndes_einkommen",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Der Grundfreibetrag wird als positiver Wert vorausgesetzt.",
+        "bedingung_id": "konv:nichtnegative_betraege",
+        "betrifft": "grundfreibetrag",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Der Grundfreibetrag wird als fester Geldbetrag interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "grundfreibetrag",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Das zu versteuernde Einkommen wird als Geldbetrag ohne weitere Anpassungen verwendet.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "zu_versteuerndes_einkommen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Entfernungspauschale ab 21km wird als Geldbetrag angenommen.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "entfernungspauschale_ab_21km",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-13T22:05:56+00:00"
+  },
+  "module_name": "Mobilitaetspraemie",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

@@ -1,0 +1,385 @@
+{
+  "bedingungen": [
+    "zeitraum_vollstaendig_vor_48_monate",
+    "erste_taetigkeitsstaette_liegt_nicht_am_ort",
+    "kosten_bei_alleiniger_nutzung",
+    "keine_unterbrechung_mit_neubeginn"
+  ],
+  "candidate_id": "p9_1_3_nr5a_uebernachtung_vor_48",
+  "catala_a": "declaration scope UebernachtungskostenVor48:\n  input uebernachtungskosten_monat content money\n  input monate content integer\n  input monate_bisher_am_ort content integer\n  output abziehbare_uebernachtungskosten content money\n\nscope UebernachtungskostenVor48:\n  definition abziehbare_uebernachtungskosten equals\n    uebernachtungskosten_monat * (decimal of monate)",
+  "catala_a_sha256": "c8d15826960d4ac211fb972e6e8dd8366f2f9d633a2ab87f6ca8c12c319c58ba",
+  "catala_b": "declaration scope UebernachtungskostenVor48:\n  input uebernachtungskosten_monat content money\n  input monate content integer\n  input monate_bisher_am_ort content integer\n  output abziehbare_uebernachtungskosten content money\n\nscope UebernachtungskostenVor48:\n  label grundregel\n  definition abziehbare_uebernachtungskosten equals uebernachtungskosten_monat * (decimal of monate)",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 2 raster point(s) for 'abziehbare_uebernachtungskosten'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 5,
+        "annahmen": 8,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung multipliziert monatliche Kosten mit Monaten, die Norm spricht von tatsächlichen Aufwendungen für pers"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "monate_bisher_am_ort"
+            ],
+            "text": "Der Input monate_bisher_am_ort wird in der Berechnung nicht verwendet, obwohl die Norm eine 48-Monats-Grenze impliziert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "uebernachtungskosten_monat"
+            ],
+            "text": "Die Norm definiert Übernachtungskosten als tatsächliche Aufwendungen, die Formalisierung nimmt einen monatlichen Pauscha"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "monate"
+            ],
+            "text": "Die Norm enthält keine monatsweise Betrachtung, die Formalisierung verwendet Monate als Multiplikator."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "monate_bisher_am_ort"
+            ],
+            "text": "Die Norm enthält keine Bedingung zur Dauer des Aufenthalts am Ort, die Formalisierung hat einen ungenutzten Input dafür."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "uebernachtungskosten_monat",
+              "einheit"
+            ],
+            "text": "Die Formalisierung nimmt an, dass die Kosten als monatlicher Pauschalbetrag vorliegen, nicht als tatsächliche Einzelaufw"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "monate",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung nimmt an, dass der Abzugszeitraum in ganzen Monaten bemessen wird."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung unterstellt, dass die abziehbare Dauer in vollen Monaten bemessen wird."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_bisher_am_ort",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass die bisherige Aufenthaltsdauer am Ort für die Berechnung relevant ist."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "uebernachtungskosten_monat",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung interpretiert die tatsächlichen Aufwendungen als monatlichen Pauschalbetrag."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate",
+              "zeitbezug"
+            ],
+            "text": "Die Formalisierung unterstellt eine monatsweise Abrechnung, die Norm nennt keine Periode."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_bisher_am_ort",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisierung setzt eine Dauer am Ort voraus, die Norm enthält keine solche Voraussetzung."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_bisher_am_ort",
+              "sonstige"
+            ],
+            "text": "Die Formalisierung verwendet den Input monate_bisher_am_ort, obwohl die Norm keine zeitliche Begrenzung am Ort erwähnt."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "satz 1"
+            ],
+            "text": "notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen an einer Tätigkeitsstätte, die "
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung nimmt an, dass die Kosten als monatlicher Pauschalbetrag vorliegen, nicht als tatsächliche Einzelaufwendungen.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass die Übernachtungskosten als monatlicher Pauschalbetrag vorliegen, nicht als tatsächliche Einzelaufwendungen.",
+            "key": [
+              "betrifft_kat",
+              "uebernachtungskosten_monat",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung interpretiert die tatsächlichen Aufwendungen als monatlichen Pauschalbetrag.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass die tatsächlichen Aufwendungen als monatlicher Pauschalbetrag vorliegen.",
+            "key": [
+              "betrifft_kat",
+              "uebernachtungskosten_monat",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung nimmt an, dass der Abzugszeitraum in ganzen Monaten bemessen wird.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass die Dauer der Übernachtungstätigkeit in ganzen Monaten bemessen wird.",
+            "key": [
+              "betrifft_kat",
+              "monate",
+              "zeitbezug"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Übernachtungskosten sind die tatsächlichen Aufwendungen für die persönliche Inanspruchnahme einer Unterkunft zur Übernachtung",
+            "eingeschmolzen": "Übernachtungskosten sind die tatsächlichen Aufwendungen für die persönliche Inanspruchnahme einer Unterkunft zur Übernachtung.",
+            "key": [
+              "ref",
+              "satz 2"
+            ]
+          },
+          {
+            "cluster": "Soweit höhere Übernachtungskosten anfallen, weil der Arbeitnehmer eine Unterkunft gemeinsam mit Personen nutzt, die in keinem Dienstverhältnis zum selben Arbeit",
+            "eingeschmolzen": "Soweit höhere Übernachtungskosten anfallen, weil der Arbeitnehmer eine Unterkunft gemeinsam mit Personen nutzt, die in keinem Dienstverhältnis zum selben Arbeit",
+            "key": [
+              "ref",
+              "satz 3"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        7,
+        2,
+        6,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "0394f48eb82c",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen an einer Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist",
+        "referenz": "Satz 1"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Übernachtungskosten sind die tatsächlichen Aufwendungen für die persönliche Inanspruchnahme einer Unterkunft zur Übernachtung",
+        "referenz": "Satz 2"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Soweit höhere Übernachtungskosten anfallen, weil der Arbeitnehmer eine Unterkunft gemeinsam mit Personen nutzt, die in keinem Dienstverhältnis zum selben Arbeitgeber stehen, sind nur diejenigen Aufwendungen anzusetzen, die bei alleiniger Nutzung durch den Arbeitnehmer angefallen wären",
+        "referenz": "Satz 3"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung nimmt an, dass die Kosten als monatlicher Pauschalbetrag vorliegen, nicht als tatsächliche Einzelaufwendungen.",
+        "bedingung_id": null,
+        "betrifft": "uebernachtungskosten_monat",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass der Abzugszeitraum in ganzen Monaten bemessen wird.",
+        "bedingung_id": "konv:ganzzahl_monate",
+        "betrifft": "monate",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung unterstellt, dass die abziehbare Dauer in vollen Monaten bemessen wird.",
+        "bedingung_id": "konv:ganzzahl_monate",
+        "betrifft": "monate",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass die bisherige Aufenthaltsdauer am Ort für die Berechnung relevant ist.",
+        "bedingung_id": null,
+        "betrifft": "monate_bisher_am_ort",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Formalisierung interpretiert die tatsächlichen Aufwendungen als monatlichen Pauschalbetrag.",
+        "bedingung_id": null,
+        "betrifft": "uebernachtungskosten_monat",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung unterstellt eine monatsweise Abrechnung, die Norm nennt keine Periode.",
+        "bedingung_id": null,
+        "betrifft": "monate",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Formalisierung setzt eine Dauer am Ort voraus, die Norm enthält keine solche Voraussetzung.",
+        "bedingung_id": null,
+        "betrifft": "monate_bisher_am_ort",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Formalisierung verwendet den Input monate_bisher_am_ort, obwohl die Norm keine zeitliche Begrenzung am Ort erwähnt.",
+        "bedingung_id": null,
+        "betrifft": "monate_bisher_am_ort",
+        "kategorie": "sonstige"
+      }
+    ],
+    "timestamp": "2026-07-11T11:24:13+00:00"
+  },
+  "module_name": "UebernachtungskostenVor48",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

@@ -1,0 +1,532 @@
+{
+  "bedingungen": [
+    "vorjahres_einnahmen_beitragspflichtig"
+  ],
+  "candidate_id": "p86_mindesteigenbeitrag",
+  "catala_a": "declaration scope Mindesteigenbeitrag:\n  input vorjahres_einnahmen content money\n  input zulage_anspruch content money\n  output mindesteigenbeitrag content money\n\nscope Mindesteigenbeitrag:\n  definition mindesteigenbeitrag equals\n    let vier_prozent equals vorjahres_einnahmen * 0.04 in\n    let gedeckelt equals\n      if vier_prozent > $2,100.00 then $2,100.00 else vier_prozent\n    in\n    let nach_zulage equals\n      if gedeckelt > zulage_anspruch then gedeckelt - zulage_anspruch\n      else $0.00\n    in\n    if $60.00 > nach_zulage then $60.00 else nach_zulage",
+  "catala_a_sha256": "d5ef328a3777877d7ba6e015958d664151d8dd667f919cbf65e425941d3868a7",
+  "catala_b": "declaration scope Mindesteigenbeitrag:\n  input vorjahres_einnahmen content money\n  input zulage_anspruch content money\n  internal vier_prozent_betrag content money\n  internal gedeckelt content money\n  internal nach_zulage_abzug content money\n  output mindesteigenbeitrag content money\n\nscope Mindesteigenbeitrag:\n  definition vier_prozent_betrag equals 0.04 * vorjahres_einnahmen\n  definition gedeckelt equals if vier_prozent_betrag <= $2,100.00 then vier_prozent_betrag else $2,100.00\n  definition nach_zulage_abzug equals gedeckelt - zulage_anspruch\n  definition mindesteigenbeitrag equals if nach_zulage_abzug >= $60.00 then nach_zulage_abzug else $60.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'mindesteigenbeitrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 5 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Sockelbetrag (60€) wird nicht als Mindestwert berücksichtigt, wenn er höher als der berechnete Mindesteigenbeitrag ist.",
+      "Berechnung verwendet 4% der Vorjahres-Einnahmen, nicht der Vorjahres-Summe.",
+      "Sockelbetrag wird nicht explizit als Mindesteigenbeitrag gesetzt, falls er höher als nach_zulage ist."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 4,
+        "annahmen": 12,
+        "norm_teile": 5
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Berechnung verwendet 4% der Vorjahres-Einnahmen, nicht der Vorjahres-Summe."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Sockelbetrag von 60 Euro wird nicht explizit als jährliche Zahlung ab 2005 umgesetzt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Sockelbetrag wird nicht explizit als Mindesteigenbeitrag gesetzt, falls er höher als nach_zulage ist."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "vorjahres_einnahmen",
+              "interpretation"
+            ],
+            "text": "Vorjahres-Einnahmen werden als Vorjahres-Summe interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "zulage_anspruch",
+              "interpretation"
+            ],
+            "text": "Zulage-Anspruch wird als Summe der Zulagen nach §§ 84 und 85 interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ],
+            "text": "Höchstbetrag wird als 2100€ (brutto) angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ],
+            "text": "Sockelbetrag von 60 wird als 60.00 Euro angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "zulage_anspruch",
+              "interpretation"
+            ],
+            "text": "Zulage-Anspruch wird als positiver Geldbetrag angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ],
+            "text": "Mindestbeitrag wird in Euro berechnet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Keine Rundung der 4%-Berechnung oder Endergebnisse."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "vorjahres_einnahmen",
+              "einheit"
+            ],
+            "text": "Vorjahres-Einnahmen werden als Bruttobetrag interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "zulage_anspruch",
+              "interpretation"
+            ],
+            "text": "Zulage wird als direkter Abzug vom gedeckelten Betrag behandelt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Sockelbetrag gilt ab 2005 als fest vorgegeben."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "zulage_anspruch",
+              "interpretation"
+            ],
+            "text": "Zulage_anspruch wird als Betrag nach §§ 84 und 85 EStG gelesen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Annahme, dass der Sockelbetrag ab 2005 immer 60 Euro beträgt."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 86 abs. 1 s. 5 estg"
+            ],
+            "text": "Ist der Sockelbetrag höher als der Mindesteigenbeitrag nach Satz 2, so ist der Sockelbetrag als Mindesteigenbeitrag zu l"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 86 abs. 1 s. 2 estg"
+            ],
+            "text": "4 Prozent der Summe der in dem dem Kalenderjahr vorangegangenen Kalenderjahr"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 86 abs. 1 s. 2 estg"
+            ],
+            "text": "jedoch nicht mehr als der in § 10a Absatz 1 Satz 1 genannte Höchstbetrag, vermindert um die Zulage nach den §§ 84 und 85"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 86 abs. 1 s. 4-5 estg"
+            ],
+            "text": "Ist der Sockelbetrag höher als der Mindesteigenbeitrag nach Satz 2, so ist der Sockelbetrag als Mindesteigenbeitrag zu l"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "4 Prozent der Summe der in dem dem Kalenderjahr vorangegangenen Kalenderjahr",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 86 abs. 1 s. 2 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Sockelbetrag (60€) wird nicht als Mindestwert berücksichtigt, wenn er höher als der berechnete Mindesteigenbeitrag ist.",
+            "eingeschmolzen": "Sockelbetrag von 60 Euro wird nicht als Mindesteigenbeitrag berücksichtigt, wenn er höher ist.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Sockelbetrag (60€) wird nicht als Mindestwert berücksichtigt, wenn er höher als der berechnete Mindesteigenbeitrag ist.",
+            "eingeschmolzen": "Sockelbetrag von 60 Euro wird nicht als Mindesteigenbeitrag berücksichtigt, wenn höher als berechneter Wert.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Berechnung verwendet 4% der Vorjahres-Einnahmen, nicht der Vorjahres-Summe.",
+            "eingeschmolzen": "Berechnung verwendet 4% der Vorjahres-Einnahmen ohne explizite Jahresangabe.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Sockelbetrag (60€) wird nicht als Mindestwert berücksichtigt, wenn er höher als der berechnete Mindesteigenbeitrag ist.",
+            "eingeschmolzen": "Sockelbetrag (60 Euro) wird nicht als Mindesteigenbeitrag berücksichtigt, wenn höher als berechneter Wert.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Berechnung verwendet 4% der Vorjahres-Einnahmen, nicht der Vorjahres-Summe.",
+            "eingeschmolzen": "Berechnung verwendet 4% der Vorjahres-Einnahmen ohne explizite Jahresangabe.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Sockelbetrag (60€) wird nicht als Mindestwert berücksichtigt, wenn er höher als der berechnete Mindesteigenbeitrag ist.",
+            "eingeschmolzen": "Sockelbetrag von 60 Euro wird nicht als Mindestwert berücksichtigt, wenn nach_zulage höher ist.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Vorjahres-Einnahmen werden als Vorjahres-Summe interpretiert.",
+            "eingeschmolzen": "Vorjahres-Summe wird als vorjahres_einnahmen interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "vorjahres_einnahmen",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Zulage-Anspruch wird als Summe der Zulagen nach §§ 84 und 85 interpretiert.",
+            "eingeschmolzen": "Zulage nach §§ 84 und 85 wird als zulage_anspruch interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "zulage_anspruch",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Höchstbetrag wird als 2100€ (brutto) angenommen.",
+            "eingeschmolzen": "Höchstbetrag von 2100 wird als 2100.00 Euro angenommen.",
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Vorjahres-Einnahmen werden als Vorjahres-Summe interpretiert.",
+            "eingeschmolzen": "Vorjahres-Einnahmen werden als Bruttoeinnahmen interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "vorjahres_einnahmen",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "jedoch nicht mehr als der in § 10a Absatz 1 Satz 1 genannte Höchstbetrag, vermindert um die Zulage nach den §§ 84 und 85",
+            "eingeschmolzen": "nicht mehr als der in § 10a Absatz 1 Satz 1 genannte Höchstbetrag, vermindert um die Zulage nach den §§ 84 und 85",
+            "key": [
+              "ref",
+              "§ 86 abs. 1 s. 2 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        9,
+        2,
+        3,
+        4,
+        3
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "2ac25671fe33",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Als Sockelbetrag sind ab dem Jahr 2005 jährlich 60 Euro zu leisten.",
+        "referenz": "§ 86 Abs. 1 S. 4-5 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Ist der Sockelbetrag höher als der Mindesteigenbeitrag nach Satz 2, so ist der Sockelbetrag als Mindesteigenbeitrag zu leisten.",
+        "referenz": "§ 86 Abs. 1 S. 5 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "4 Prozent der Summe der in dem dem Kalenderjahr vorangegangenen Kalenderjahr",
+        "referenz": "§ 86 Abs. 1 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "jedoch nicht mehr als der in § 10a Absatz 1 Satz 1 genannte Höchstbetrag, vermindert um die Zulage nach den §§ 84 und 85",
+        "referenz": "§ 86 Abs. 1 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Ist der Sockelbetrag höher als der Mindesteigenbeitrag nach Satz 2, so ist der Sockelbetrag als Mindesteigenbeitrag zu leisten.",
+        "referenz": "§ 86 Abs. 1 S. 4-5 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Vorjahres-Einnahmen werden als Vorjahres-Summe interpretiert.",
+        "bedingung_id": "vorjahres_einnahmen_beitragspflichtig",
+        "betrifft": "vorjahres_einnahmen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Zulage-Anspruch wird als Summe der Zulagen nach §§ 84 und 85 interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "zulage_anspruch",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Höchstbetrag wird als 2100€ (brutto) angenommen.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "ergebnis",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Sockelbetrag von 60 wird als 60.00 Euro angenommen.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "ergebnis",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Zulage-Anspruch wird als positiver Geldbetrag angenommen.",
+        "bedingung_id": "konv:nichtnegative_betraege",
+        "betrifft": "zulage_anspruch",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Mindestbeitrag wird in Euro berechnet.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "ergebnis",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Keine Rundung der 4%-Berechnung oder Endergebnisse.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Vorjahres-Einnahmen werden als Bruttobetrag interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "vorjahres_einnahmen",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Zulage wird als direkter Abzug vom gedeckelten Betrag behandelt.",
+        "bedingung_id": null,
+        "betrifft": "zulage_anspruch",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Sockelbetrag gilt ab 2005 als fest vorgegeben.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Zulage_anspruch wird als Betrag nach §§ 84 und 85 EStG gelesen.",
+        "bedingung_id": null,
+        "betrifft": "zulage_anspruch",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Annahme, dass der Sockelbetrag ab 2005 immer 60 Euro beträgt.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-13T21:30:05+00:00"
+  },
+  "module_name": "Mindesteigenbeitrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

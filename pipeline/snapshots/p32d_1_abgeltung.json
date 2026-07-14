@@ -1,0 +1,353 @@
+{
+  "bedingungen": [
+    "tarifwerte_sind_p2_ergebnis",
+    "guenstigerpruefung_beantragt",
+    "keine_kirchensteuer_auf_kapitalertraege"
+  ],
+  "candidate_id": "p32d_1_abgeltung",
+  "catala_a": "declaration scope KapitalAbgeltung:\n  input kapitaleinkuenfte content money\n  input est_regulaer_mit_kap content money\n  input est_regulaer_ohne_kap content money\n  internal abgeltung content money\n  internal guenstiger_delta content money\n  output kapital_steuer content money\n\nscope KapitalAbgeltung:\n  definition abgeltung equals\n    kapitaleinkuenfte * 0.25\n\n  definition guenstiger_delta equals\n    est_regulaer_mit_kap - est_regulaer_ohne_kap\n\n  label grundregel\n  definition kapital_steuer equals abgeltung\n\n  exception grundregel\n  definition kapital_steuer under condition\n    guenstiger_delta < abgeltung\n  consequence equals guenstiger_delta",
+  "catala_a_sha256": "d819c0eba3485daa5c37c3430adeed99e64355903009b38e540860b22ecbc666",
+  "catala_b": "declaration scope KapitalAbgeltung:\n  input kapitaleinkuenfte content money\n  input est_regulaer_mit_kap content money\n  input est_regulaer_ohne_kap content money\n  internal abgeltung content money\n  internal guenstiger_delta content money\n  output kapital_steuer content money\n\nscope KapitalAbgeltung:\n  definition abgeltung equals kapitaleinkuenfte * 0.25\n  definition guenstiger_delta equals est_regulaer_mit_kap - est_regulaer_ohne_kap\n  label grundregel\n  definition kapital_steuer equals abgeltung\n  exception grundregel\n  definition kapital_steuer under condition guenstiger_delta < abgeltung consequence equals guenstiger_delta",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'kapital_steuer'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Die Steuer wird nicht nur bei Antrag, sondern immer dann angepasst, wenn guenstiger_delta < abgeltung."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 4,
+        "annahmen": 5,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Steuer wird nicht nur bei Antrag, sondern immer dann angepasst, wenn guenstiger_delta < abgeltung."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Günstigerprüfung wird automatisch durchgeführt, nicht nur auf Antrag."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Steuer wird nicht auf 25% der Kapitaleinkünfte festgesetzt, wenn die Günstigerprüfung greift."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Günstigerprüfung bezieht sich nur auf § 32d Abs. 1, nicht auf Abs. 3 und 4."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "kapitaleinkuenfte",
+              "interpretation"
+            ],
+            "text": "Kapitaleinkünfte umfassen alle Einkünfte aus Kapitalvermögen außer § 20 Abs. 8."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "kapitaleinkuenfte",
+              "interpretation"
+            ],
+            "text": "Kapitaleinkünfte umfassen nur solche, die nicht unter § 20 Abs. 8 fallen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "kapitaleinkuenfte",
+              "interpretation"
+            ],
+            "text": "Kapitaleinkünfte werden als nicht unter § 20 Abs. 8 fallend angenommen."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Günstigerprüfung wird automatisch durchgeführt, nicht nur auf Antrag.",
+            "eingeschmolzen": "Die Günstigerprüfung wird automatisch angewendet, nicht nur auf Antrag.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Steuer wird nicht nur bei Antrag, sondern immer dann angepasst, wenn guenstiger_delta < abgeltung.",
+            "eingeschmolzen": "Die Steuer wird nicht auf Antrag, sondern automatisch bei Günstigerprüfung angepasst.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Steuer wird nicht nur bei Antrag, sondern immer dann angepasst, wenn guenstiger_delta < abgeltung.",
+            "eingeschmolzen": "Die Steuer wird nicht auf Antrag, sondern automatisch bei Günstigerprüfung angepasst.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Günstigerprüfung bezieht sich nur auf § 32d Abs. 1, nicht auf Abs. 3 und 4.",
+            "eingeschmolzen": "Die Günstigerprüfung bezieht sich nicht auf § 20 Abs. 8, sondern auf alle Kapitaleinkünfte.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Günstigerprüfung wird automatisch durchgeführt, nicht nur auf Antrag.",
+            "eingeschmolzen": "Die Günstigerprüfung wird automatisch angewendet, nicht nur auf Antrag.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "est_regulaer_mit_kap ist die tarifliche Einkommensteuer inkl. Kapitaleinkünfte.",
+            "eingeschmolzen": "est_regulaer_mit_kap ist die tarifliche Einkommensteuer inklusive Kapitaleinkünfte.",
+            "key": [
+              "betrifft_kat",
+              "est_regulaer_mit_kap",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "est_regulaer_mit_kap ist die tarifliche Einkommensteuer inkl. Kapitaleinkünfte.",
+            "eingeschmolzen": "est_regulaer_mit_kap wird als tarifliche Einkommensteuer mit Kapitaleinkünften interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "est_regulaer_mit_kap",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "est_regulaer_ohne_kap ist die tarifliche Einkommensteuer ohne Kapitaleinkünfte.",
+            "eingeschmolzen": "est_regulaer_ohne_kap wird als tarifliche Einkommensteuer ohne Kapitaleinkünfte interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "est_regulaer_ohne_kap",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "est_regulaer_ohne_kap ist die tarifliche Einkommensteuer ohne Kapitaleinkünfte.",
+            "eingeschmolzen": "est_regulaer_ohne_kap ist die tarifliche Einkommensteuer exkl. Kapitaleinkünfte.",
+            "key": [
+              "betrifft_kat",
+              "est_regulaer_ohne_kap",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Auf Antrag des Steuerpflichtigen werden anstelle der Anwendung der Absätze 1, 3 und 4 die nach § 20 ermittelten Kapitaleinkünfte den Einkünften im Sinne des § 2",
+            "eingeschmolzen": "Auf Antrag des Steuerpflichtigen",
+            "key": [
+              "ref",
+              "§ 32d abs. 6 s. 1 estg"
+            ]
+          },
+          {
+            "cluster": "Die Einkommensteuer für Einkünfte aus Kapitalvermögen, die nicht unter § 20 Absatz 8 fallen, beträgt 25 Prozent.",
+            "eingeschmolzen": "die nicht unter § 20 Absatz 8 fallen",
+            "key": [
+              "ref",
+              "§ 32d abs. 1 s. 1 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        7,
+        1,
+        2,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "4684514c2fac",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "guenstigerpruefung_beantragt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Auf Antrag des Steuerpflichtigen werden anstelle der Anwendung der Absätze 1, 3 und 4 die nach § 20 ermittelten Kapitaleinkünfte den Einkünften im Sinne des § 2 hinzugerechnet und der tariflichen Einkommensteuer unterworfen",
+        "referenz": "§ 32d Abs. 6 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Die Einkommensteuer für Einkünfte aus Kapitalvermögen, die nicht unter § 20 Absatz 8 fallen, beträgt 25 Prozent.",
+        "referenz": "§ 32d Abs. 1 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Kapitaleinkünfte umfassen alle Einkünfte aus Kapitalvermögen außer § 20 Abs. 8.",
+        "bedingung_id": null,
+        "betrifft": "kapitaleinkuenfte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "est_regulaer_mit_kap ist die tarifliche Einkommensteuer inkl. Kapitaleinkünfte.",
+        "bedingung_id": "tarifwerte_sind_p2_ergebnis",
+        "betrifft": "est_regulaer_mit_kap",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "est_regulaer_ohne_kap ist die tarifliche Einkommensteuer ohne Kapitaleinkünfte.",
+        "bedingung_id": "tarifwerte_sind_p2_ergebnis",
+        "betrifft": "est_regulaer_ohne_kap",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Kapitaleinkünfte umfassen nur solche, die nicht unter § 20 Abs. 8 fallen.",
+        "bedingung_id": null,
+        "betrifft": "kapitaleinkuenfte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Kapitaleinkünfte werden als nicht unter § 20 Abs. 8 fallend angenommen.",
+        "bedingung_id": null,
+        "betrifft": "kapitaleinkuenfte",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-13T20:10:30+00:00"
+  },
+  "module_name": "KapitalAbgeltung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

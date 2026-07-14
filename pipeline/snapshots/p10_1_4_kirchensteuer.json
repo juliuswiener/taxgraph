@@ -1,0 +1,163 @@
+{
+  "bedingungen": [
+    "keine_zuschlagsteuer_kappung",
+    "kein_erstattungsueberhang"
+  ],
+  "candidate_id": "p10_1_4_kirchensteuer",
+  "catala_a": "declaration scope Kirchensteuerabzug:\n  input gezahlte_kirchensteuer content money\n  input erstattete_kirchensteuer content money\n  internal erstattungsueberhang content money\n  output abziehbare_kirchensteuer content money\n\nscope Kirchensteuerabzug:\n  definition erstattungsueberhang equals\n    if erstattete_kirchensteuer > gezahlte_kirchensteuer\n    then erstattete_kirchensteuer - gezahlte_kirchensteuer\n    else $0.00\n\n  definition abziehbare_kirchensteuer equals\n    if gezahlte_kirchensteuer > erstattete_kirchensteuer\n    then gezahlte_kirchensteuer - erstattete_kirchensteuer\n    else $0.00",
+  "catala_a_sha256": "cc2c492862dfddfecddc15f32d25e3a769955a9847e9d22373c18a09c71d81d1",
+  "catala_b": "declaration scope Kirchensteuerabzug:\n  input gezahlte_kirchensteuer content money\n  input erstattete_kirchensteuer content money\n  internal erstattungsuberhang content money\n  output abziehbare_kirchensteuer content money\n\nscope Kirchensteuerabzug:\n  definition erstattungsuberhang equals\n    if erstattete_kirchensteuer > gezahlte_kirchensteuer\n    then erstattete_kirchensteuer - gezahlte_kirchensteuer\n    else $0.00\n  label grundregel\n  definition abziehbare_kirchensteuer equals gezahlte_kirchensteuer - erstattete_kirchensteuer\n  exception grundregel\n  definition abziehbare_kirchensteuer under condition erstattete_kirchensteuer > gezahlte_kirchensteuer consequence equals $0.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'abziehbare_kirchensteuer'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 0 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 1,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "mit anderen im Rahmen der jeweiligen Nummer anzusetzenden Aufwendungen zu verrechnen",
+            "eingeschmolzen": "ist der Erstattungsüberhang mit anderen im Rahmen der jeweiligen Nummer anzusetzenden Aufwendungen zu verrechnen",
+            "key": [
+              "ref",
+              "§ 10 abs. 4b satz 2 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        3,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "be6ba1e53716",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "mit anderen im Rahmen der jeweiligen Nummer anzusetzenden Aufwendungen zu verrechnen",
+        "referenz": "§ 10 Abs. 4b Satz 2 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung interpretiert die Verrechnung des Erstattungsüberhangs als einfache Saldierung innerhalb der Kirchensteuer selbst.",
+        "bedingung_id": "kein_erstattungsueberhang",
+        "betrifft": "ergebnis",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-11T13:09:40+00:00"
+  },
+  "module_name": "Kirchensteuerabzug",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

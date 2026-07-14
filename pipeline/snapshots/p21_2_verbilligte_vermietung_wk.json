@@ -1,0 +1,277 @@
+{
+  "bedingungen": [
+    "entgelt_quote_ausserhalb_prognosekorridor",
+    "wohnung_zu_wohnzwecken_ueberlassen",
+    "auf_dauer_angelegte_wohnungsvermietung"
+  ],
+  "candidate_id": "p21_2_verbilligte_vermietung_wk",
+  "catala_a": "declaration scope VerbilligteVermietungWk:\n  input werbungskosten content money\n  input entgelt_quote_prozent content decimal\n  output abziehbare_werbungskosten content money\n\nscope VerbilligteVermietungWk:\n  definition abziehbare_werbungskosten equals\n    if entgelt_quote_prozent >= 66.0\n    then werbungskosten\n    else werbungskosten * (entgelt_quote_prozent / 100.0)",
+  "catala_a_sha256": "d11ed4494a5ffce7bf397b5da15b52a41a33d9e56fb638f018e8e755dd0a0e45",
+  "catala_b": "declaration scope VerbilligteVermietungWk:\n  input werbungskosten content money\n  input entgelt_quote_prozent content decimal\n  output abziehbare_werbungskosten content money\n  internal rohbetrag content money\n\nscope VerbilligteVermietungWk:\n  definition rohbetrag equals\n    if entgelt_quote_prozent >= 66.0 then werbungskosten\n    else (entgelt_quote_prozent / 100.0) * werbungskosten\n  definition abziehbare_werbungskosten equals\n    (Decimal.truncate of (rohbetrag / $1.00)) * $1.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'abziehbare_werbungskosten'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 4,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "entgelt_quote_prozent",
+              "interpretation"
+            ],
+            "text": "50%-Grenze wird ignoriert, nur 66%-Schwelle berücksichtigt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "entgelt_quote_prozent",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Dauerhafte Vermietung wird als immer erfüllt angenommen."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "entgelt_quote_prozent",
+              "interpretation"
+            ],
+            "text": "Entgeltquote wird als Prozentsatz der ortsüblichen Marktmiete interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "entgelt_quote_prozent",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Dauerhafte Wohnungsvermietung wird vorausgesetzt."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 21 abs. 2 s. 2"
+            ],
+            "text": "Beträgt das Entgelt [...] mindestens 66 Prozent [...] als entgeltlich."
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Fehlende Aufteilung bei <50% Entgeltquote (nur 66%-Schwelle implementiert).",
+            "eingeschmolzen": "Fehlende Aufteilung bei <50% Entgeltquote nicht umgesetzt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Fehlende Aufteilung bei <50% Entgeltquote (nur 66%-Schwelle implementiert).",
+            "eingeschmolzen": "Fehlende Aufteilung bei <50% Entgeltquote nicht umgesetzt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Entgeltquote wird als Prozentsatz der ortsüblichen Marktmiete interpretiert.",
+            "eingeschmolzen": "Entgeltquote wird als Prozentsatz der ortsüblichen Miete interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "entgelt_quote_prozent",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Beträgt das Entgelt [...] weniger als 50 Prozent [...] aufzuteilen.",
+            "eingeschmolzen": "Beträgt das Entgelt für die Überlassung einer Wohnung zu Wohnzwecken weniger als 50 Prozent der ortsüblichen Marktmiete, so ist die Nutzungsüberlassung in einen",
+            "key": [
+              "ref",
+              "§ 21 abs. 2 s. 1"
+            ]
+          },
+          {
+            "cluster": "Beträgt das Entgelt [...] weniger als 50 Prozent [...] aufzuteilen.",
+            "eingeschmolzen": "Beträgt das Entgelt für die Überlassung einer Wohnung zu Wohnzwecken weniger als 50 Prozent der ortsüblichen Marktmiete, so ist die Nutzungsüberlassung in einen",
+            "key": [
+              "ref",
+              "§ 21 abs. 2 s. 1"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        5,
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "980e03f52d4e",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "entgelt_quote_ausserhalb_prognosekorridor",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Beträgt das Entgelt [...] weniger als 50 Prozent [...] aufzuteilen.",
+        "referenz": "§ 21 Abs. 2 S. 1"
+      },
+      {
+        "abgedeckt_von": "auf_dauer_angelegte_wohnungsvermietung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Beträgt das Entgelt [...] mindestens 66 Prozent [...] als entgeltlich.",
+        "referenz": "§ 21 Abs. 2 S. 2"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "50%-Grenze wird ignoriert, nur 66%-Schwelle berücksichtigt.",
+        "bedingung_id": "entgelt_quote_ausserhalb_prognosekorridor",
+        "betrifft": "entgelt_quote_prozent",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Dauerhafte Vermietung wird als immer erfüllt angenommen.",
+        "bedingung_id": "auf_dauer_angelegte_wohnungsvermietung",
+        "betrifft": "entgelt_quote_prozent",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Entgeltquote wird als Prozentsatz der ortsüblichen Marktmiete interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "entgelt_quote_prozent",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Dauerhafte Wohnungsvermietung wird vorausgesetzt.",
+        "bedingung_id": "auf_dauer_angelegte_wohnungsvermietung",
+        "betrifft": "entgelt_quote_prozent",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-13T21:05:56+00:00"
+  },
+  "module_name": "VerbilligteVermietungWk",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

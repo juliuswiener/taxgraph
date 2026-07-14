@@ -1,0 +1,164 @@
+{
+  "bedingungen": [
+    "gesamtgewinn_nicht_negativ"
+  ],
+  "candidate_id": "p23_freigrenze",
+  "catala_a": "declaration scope VeraeusserungFreigrenze:\n  input gesamtgewinn content money\n  output steuerpflichtiger_gewinn content money\n\nscope VeraeusserungFreigrenze:\n  definition steuerpflichtiger_gewinn equals\n    if gesamtgewinn < $1,000.00 then $0.00\n    else gesamtgewinn",
+  "catala_a_sha256": "a91e177c7913f58c32380068588cc59a9936994fdbad29ceb204ead6368e3564",
+  "catala_b": "declaration scope VeraeusserungFreigrenze:\n  input gesamtgewinn content money\n  output steuerpflichtiger_gewinn content money\n\nscope VeraeusserungFreigrenze:\n  definition steuerpflichtiger_gewinn equals\n    if gesamtgewinn >= $1,000.00 then gesamtgewinn else $0.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'steuerpflichtiger_gewinn'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 2,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        3,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "e06fa611200f",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Gewinne bleiben steuerfrei, wenn der aus den privaten Veräußerungsgeschäften erzielte Gesamtgewinn im Kalenderjahr weniger als 1 000 Euro betragen hat.",
+        "referenz": "§ 23 Abs. 3 S. 5 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Gewinn wird in Euro angenommen.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "gesamtgewinn",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Steuerpflichtiger Gewinn wird auf zwei Dezimalstellen gerundet.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      }
+    ],
+    "timestamp": "2026-07-13T22:04:01+00:00"
+  },
+  "module_name": "VeraeusserungFreigrenze",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

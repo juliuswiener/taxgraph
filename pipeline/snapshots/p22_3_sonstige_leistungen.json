@@ -1,0 +1,331 @@
+{
+  "bedingungen": [
+    "leistung_subsidiaer",
+    "einkuenfte_nicht_negativ"
+  ],
+  "candidate_id": "p22_3_sonstige_leistungen",
+  "catala_a": "declaration scope SonstigeLeistungen:\n  input einnahmen content money\n  input werbungskosten content money\n  output steuerpflichtige_einkuenfte content money\n\nscope SonstigeLeistungen:\n  definition steuerpflichtige_einkuenfte equals\n    let einkuenfte equals\n      if einnahmen > werbungskosten then einnahmen - werbungskosten\n      else $0.00\n    in\n    if einkuenfte >= $256.00 then einkuenfte else $0.00",
+  "catala_a_sha256": "62ace40566471ae50f99bc3b6d73f75a5b1f82fdbed0b42f0bfe5ee82054f59d",
+  "catala_b": "declaration scope SonstigeLeistungen:\n  input einnahmen content money\n  input werbungskosten content money\n  internal einkuenfte content money\n  output steuerpflichtige_einkuenfte content money\n\nscope SonstigeLeistungen:\n  definition einkuenfte equals einnahmen - werbungskosten\n  definition steuerpflichtige_einkuenfte equals\n    if einkuenfte < $256.00 then $0.00 else einkuenfte",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'steuerpflichtige_einkuenfte'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Freigrenze von 256 Euro wird als absolute Grenze (>=) statt als Untergrenze (<) geprüft."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 2,
+        "annahmen": 8,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "einnahmen",
+              "einheit"
+            ],
+            "text": "Einnahmen werden als Bruttobetrag interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "werbungskosten",
+              "einheit"
+            ],
+            "text": "Werbungskosten werden als Bruttobetrag interpretiert."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Beträge werden auf zwei Dezimalstellen gerundet."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "zeitbezug"
+            ],
+            "text": "Die 256-Euro-Grenze bezieht sich auf das Kalenderjahr."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "einnahmen",
+              "einheit"
+            ],
+            "text": "Einnahmen werden als Bruttowert (ohne Abzug) interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "einnahmen",
+              "zeitbezug"
+            ],
+            "text": "Einnahmen beziehen sich auf das gesamte Kalenderjahr."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "werbungskosten",
+              "interpretation"
+            ],
+            "text": "Werbungskosten werden als abzugsfähig von den Einnahmen angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "interpretation"
+            ],
+            "text": "Steuerpflichtige Einkünfte werden als Nettobetrag nach Abzug der Werbungskosten berechnet."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Freigrenze von 256 Euro wird als absolute Grenze (>=) statt als Untergrenze (<) geprüft.",
+            "eingeschmolzen": "Freigrenze von 256 Euro wird als absolute Grenze (nicht als Betrag im Kalenderjahr) umgesetzt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Steuerpflichtige Einkünfte werden auf 0 gesetzt, wenn unter 256 Euro, nicht nur Steuerfreiheit festgestellt.",
+            "eingeschmolzen": "Steuerpflichtige Einkünfte werden auf 0 gesetzt, wenn unter 256 Euro, statt nur Steuerpflicht zu verneinen.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Steuerpflichtige Einkünfte werden auf 0 gesetzt, wenn unter 256 Euro, nicht nur Steuerfreiheit festgestellt.",
+            "eingeschmolzen": "Steuerpflichtige Einkünfte werden auf 0 gesetzt, wenn unter 256 Euro, statt die Einkünfte selbst nicht steuerpflichtig zu sein.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Beträge werden auf zwei Dezimalstellen gerundet.",
+            "eingeschmolzen": "Beträge werden auf zwei Dezimalstellen (Cent) gerundet.",
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ]
+          },
+          {
+            "cluster": "Einnahmen beziehen sich auf das gesamte Kalenderjahr.",
+            "eingeschmolzen": "Einnahmen beziehen sich auf ein Kalenderjahr.",
+            "key": [
+              "betrifft_kat",
+              "einnahmen",
+              "zeitbezug"
+            ]
+          },
+          {
+            "cluster": "Beträge werden auf zwei Dezimalstellen gerundet.",
+            "eingeschmolzen": "Geldbeträge werden auf zwei Dezimalstellen (Cent) gerundet.",
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        7,
+        3,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "9ff0680bd128",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn sie weniger als 256 Euro im Kalenderjahr betragen haben",
+        "referenz": "§ 22 Nr. 3 S. 2 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Einnahmen werden als Bruttobetrag interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "einnahmen",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Werbungskosten werden als Bruttobetrag interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "werbungskosten",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Beträge werden auf zwei Dezimalstellen gerundet.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die 256-Euro-Grenze bezieht sich auf das Kalenderjahr.",
+        "bedingung_id": "konv:vz_bezug_der_regel",
+        "betrifft": "ergebnis",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Einnahmen werden als Bruttowert (ohne Abzug) interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "einnahmen",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Einnahmen beziehen sich auf das gesamte Kalenderjahr.",
+        "bedingung_id": "konv:vz_bezug_der_regel",
+        "betrifft": "einnahmen",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Werbungskosten werden als abzugsfähig von den Einnahmen angenommen.",
+        "bedingung_id": null,
+        "betrifft": "werbungskosten",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Steuerpflichtige Einkünfte werden als Nettobetrag nach Abzug der Werbungskosten berechnet.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-13T22:04:48+00:00"
+  },
+  "module_name": "SonstigeLeistungen",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

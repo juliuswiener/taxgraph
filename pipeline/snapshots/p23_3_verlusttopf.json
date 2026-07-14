@@ -1,0 +1,216 @@
+{
+  "bedingungen": [
+    "verlust_nur_gleichjaehriger_pvg_gewinn",
+    "kein_ausgleich_mit_anderen_einkunftsarten",
+    "kein_verlustvor_ruecktrag_s8"
+  ],
+  "candidate_id": "p23_3_verlusttopf",
+  "catala_a": "declaration scope PvgVerlusttopf:\n  input gewinn_pvg content money\n  input verlust_pvg content money\n  output anzusetzende_einkuenfte content money\n\nscope PvgVerlusttopf:\n  definition anzusetzende_einkuenfte equals\n    if gewinn_pvg > verlust_pvg\n    then gewinn_pvg - verlust_pvg\n    else $0.00",
+  "catala_a_sha256": "df43f50455c1eee9fd2a74b0a6fdc12b5095208bc835947f9796e6cffdb7d209",
+  "catala_b": "declaration scope PvgVerlusttopf:\n  input gewinn_pvg content money\n  input verlust_pvg content money\n  output anzusetzende_einkuenfte content money\n\nscope PvgVerlusttopf:\n  definition anzusetzende_einkuenfte equals\n    if gewinn_pvg > verlust_pvg then gewinn_pvg - verlust_pvg else $0.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'anzusetzende_einkuenfte'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 3,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "gewinn_pvg",
+              "interpretation"
+            ],
+            "text": "Gewinn wird als positiver Betrag aus privaten Veräußerungsgeschäften interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "verlust_pvg",
+              "interpretation"
+            ],
+            "text": "Verlust wird als negativer Betrag aus privaten Veräußerungsgeschäften interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird angenommen, dass keine anderen Einkünfte außer PVG vorliegen."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Verlust wird als negativer Betrag aus privaten Veräußerungsgeschäften interpretiert.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"verlust_pvg\", \"interpretation\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "Verluste dürfen nicht nach § 10d abgezogen werden.",
+            "eingeschmolzen": "sie dürfen nicht nach § 10d abgezogen werden",
+            "key": [
+              "ref",
+              "§ 23 abs. 3 s. 7 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        5,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "1a08eedba2e4",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "kein_ausgleich_mit_anderen_einkunftsarten",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Verluste dürfen nicht nach § 10d abgezogen werden.",
+        "referenz": "§ 23 Abs. 3 S. 7 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Gewinn wird als positiver Betrag aus privaten Veräußerungsgeschäften interpretiert.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "gewinn_pvg",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Verlust wird als negativer Betrag aus privaten Veräußerungsgeschäften interpretiert.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "verlust_pvg",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Es wird angenommen, dass keine anderen Einkünfte außer PVG vorliegen.",
+        "bedingung_id": "kein_ausgleich_mit_anderen_einkunftsarten",
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-14T14:54:22+00:00"
+  },
+  "module_name": "PvgVerlusttopf",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

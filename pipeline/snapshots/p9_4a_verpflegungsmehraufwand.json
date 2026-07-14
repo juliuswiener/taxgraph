@@ -1,0 +1,856 @@
+{
+  "bedingungen": [
+    "auswaertige_berufliche_taetigkeit",
+    "uebernachtung_oder_eintaegig_ueber_acht_stunden",
+    "taetigkeit_im_inland",
+    "keine_mahlzeitengestellung",
+    "keine_unterbrechung_mit_neubeginn",
+    "keine_steuerfreien_verpflegungserstattungen"
+  ],
+  "candidate_id": "p9_4a_verpflegungsmehraufwand",
+  "catala_a": "declaration scope Verpflegungsmehraufwand:\n  input abwesenheit_stunden content integer\n  input mit_uebernachtung content boolean\n  input an_oder_abreisetag content boolean\n  input monate_am_ort content integer\n  output verpflegungspauschale content money\n\nscope Verpflegungsmehraufwand:\n  definition verpflegungspauschale equals\n    if monate_am_ort > 3 then $0.00\n    else\n      if abwesenheit_stunden >= 24 then $28.00\n      else\n        if an_oder_abreisetag and mit_uebernachtung then $14.00\n        else\n          if (not mit_uebernachtung) and abwesenheit_stunden > 8 then $14.00\n          else $0.00",
+  "catala_a_sha256": "79e42c4723d7926c610cf725d038310b5ba822785b4607486f41451c0fda0635",
+  "catala_b": "declaration scope Verpflegungsmehraufwand:\n  input abwesenheit_stunden content integer\n  input mit_uebernachtung content boolean\n  input an_oder_abreisetag content boolean\n  input monate_am_ort content integer\n  output verpflegungspauschale content money\n\nscope Verpflegungsmehraufwand:\n  label grundregel\n  definition verpflegungspauschale equals\n    if abwesenheit_stunden >= 24 then $28.00\n    else (if an_oder_abreisetag and mit_uebernachtung then $14.00\n    else (if not mit_uebernachtung and abwesenheit_stunden > 8 then $14.00\n    else $0.00))\n  exception grundregel\n  definition verpflegungspauschale under condition monate_am_ort > 3 consequence equals $0.00",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'verpflegungspauschale'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 10 wirkt_hinein (blockierend ist geltungsbereich), 4 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    },
+    {
+      "detail": "7 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Die Formalisierung verlangt eine Übernachtung am An- oder Abreisetag selbst, die Norm lässt auch eine Übernachtung an einem angrenzenden Tag genügen.",
+      "Die Formalisierung gewährt 28 Euro bei 24 oder mehr Stunden Abwesenheit, die Norm verlangt genau 24 Stunden Abwesenheit an einem Kalendertag.",
+      "Die Formalisierung setzt für den An- und Abreisetag eine Übernachtung am selben Tag voraus, die Norm erlaubt auch Übernachtung an angrenzenden Tagen.",
+      "Die 14-Euro-Regel für An-/Abreisetag erfordert fälschlich eine Übernachtung am selben Tag, nicht an angrenzenden Tagen.",
+      "Die Ausgabe der Verpflegungspauschale erfolgt in Dollar statt in Euro.",
+      "Die Bedingung für den An- oder Abreisetag verlangt eine Übernachtung am selben Tag, die Norm erlaubt aber auch Übernachtung an einem anschließenden oder vorhergehenden Tag.",
+      "Die Formalisierung gewährt 14 Euro für jeden Tag mit mehr als 8 Stunden Abwesenheit ohne Übernachtung, aber die Norm beschränkt dies bei tagesübergreifender Abwesenheit auf den Tag mit dem überwiegenden Anteil."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 10,
+        "annahmen": 17,
+        "norm_teile": 14
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung gewährt 14 Euro bei über 8 Stunden Abwesenheit ohne Übernachtung, aber nicht die Sonderregel für den "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "mit_uebernachtung"
+            ],
+            "text": "Die Formalisierung verlangt eine Übernachtung am An- oder Abreisetag selbst, die Norm lässt auch eine Übernachtung an ei"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "abwesenheit_stunden"
+            ],
+            "text": "Die Formalisierung gewährt 28 Euro bei 24 oder mehr Stunden Abwesenheit, die Norm verlangt genau 24 Stunden Abwesenheit "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "mit_uebernachtung"
+            ],
+            "text": "Die Formalisierung setzt für den An- und Abreisetag eine Übernachtung am selben Tag voraus, die Norm erlaubt auch Überna"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die 14-Euro-Regel für An-/Abreisetag erfordert fälschlich eine Übernachtung am selben Tag, nicht an angrenzenden Tagen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Bei mehrtägiger Abwesenheit ohne Übernachtung wird die 14-Euro-Pauschale nicht korrekt dem überwiegenden Abwesenheitstag"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "monate_am_ort"
+            ],
+            "text": "Die Dreimonatsfrist wird ohne Berücksichtigung einer mindestens vierwöchigen Unterbrechung, die einen Neubeginn auslöst,"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Ausgabe der Verpflegungspauschale erfolgt in Dollar statt in Euro."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "an_oder_abreisetag"
+            ],
+            "text": "Die Bedingung für den An- oder Abreisetag verlangt eine Übernachtung am selben Tag, die Norm erlaubt aber auch Übernacht"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "abwesenheit_stunden"
+            ],
+            "text": "Die Formalisierung gewährt 14 Euro für jeden Tag mit mehr als 8 Stunden Abwesenheit ohne Übernachtung, aber die Norm bes"
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "abwesenheit_stunden",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass die Stundenanzahl die Abwesenheit von Wohnung und erster Tätigkeitsstätte bereits "
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "mit_uebernachtung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung interpretiert die Übernachtungsangabe als auf den jeweiligen Tag bezogen, ohne die Möglichkeit einer "
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_am_ort",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass die Monatsangabe die Unterbrechungsregel von vier Wochen bereits berücksichtigt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisierung geht davon aus, dass der Arbeitnehmer eine erste Tätigkeitsstätte hat."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "abwesenheit_stunden",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass die eingegebene Abwesenheit in Stunden 24 nicht übersteigt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "mit_uebernachtung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass 'mit_uebernachtung' nur Übernachtung am selben Tag bedeutet, nicht an angrenzenden Tag"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_am_ort",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass 'monate_am_ort' die Dauer ohne Unterbrechungen nach Satz 7 angibt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "abwesenheit_stunden",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass bei tagesübergreifender Tätigkeit ohne Übernachtung die Eingabe für den Tag mit dem üb"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_am_ort",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass eine längerfristige Tätigkeit an derselben Tätigkeitsstätte vorliegt, ohne dies zu"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "abwesenheit_stunden",
+              "interpretation"
+            ],
+            "text": "Die Stundenangabe wird als exakte Abwesenheitsdauer an einem Kalendertag interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_am_ort",
+              "interpretation"
+            ],
+            "text": "Die Monatsangabe wird als ununterbrochene Dauer am selben Ort ohne Berücksichtigung von Unterbrechungen interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass eine auswärtige berufliche Tätigkeit vorliegt, ohne dies zu prüfen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_am_ort",
+              "interpretation"
+            ],
+            "text": "Die Eingabe monate_am_ort wird als bereits um Unterbrechungen von mindestens vier Wochen bereinigte Dauer interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "abwesenheit_stunden",
+              "interpretation"
+            ],
+            "text": "Die Eingabe abwesenheit_stunden wird als die für den Tag maßgebliche Stundenzahl nach der Mehrheitsregel bei tagesübergr"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "mit_uebernachtung",
+              "interpretation"
+            ],
+            "text": "Die Eingabe mit_uebernachtung wird so interpretiert, dass sie auch Übernachtungen an angrenzenden Tagen umfasst, wie von"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "mit_uebernachtung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung interpretiert 'mit_uebernachtung' so, dass eine Übernachtung am An-/Abreisetag oder einem angrenzende"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_am_ort",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung interpretiert 'monate_am_ort' als die Anzahl der Monate einer längerfristigen Tätigkeit, ohne die Län"
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 3 nr. 3 halbsatz 2"
+            ],
+            "text": "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtun"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "satz 8"
+            ],
+            "text": "Wird dem Arbeitnehmer anlässlich oder während einer Tätigkeit außerhalb seiner ersten Tätigkeitsstätte vom Arbeitgeber o"
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "satz 2"
+            ],
+            "text": "außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig (auswärtige berufliche Tätigkeit)"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 8"
+            ],
+            "text": "für Frühstück um 20 Prozent, für Mittag- und Abendessen um jeweils 40 Prozent"
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "satz 10"
+            ],
+            "text": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag nach Satz 8."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "satz 1"
+            ],
+            "text": "Mehraufwendungen des Arbeitnehmers für die Verpflegung sind nur nach Maßgabe der folgenden Sätze als Werbungskosten abzi"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 3 nr. 3 satz 2"
+            ],
+            "text": "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtun"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 9 abs. 4a"
+            ],
+            "text": "Verpflegungsmehraufwand, Dreimonatsfrist"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 6"
+            ],
+            "text": "Der Abzug der Verpflegungspauschalen ist auf die ersten drei Monate einer längerfristigen beruflichen Tätigkeit an derse"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "satz 8 nummer 1 und 2"
+            ],
+            "text": "für Frühstück um 20 Prozent, für Mittag- und Abendessen um jeweils 40 Prozent"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "abweichung",
+          "gueltige_stimmen": 3,
+          "item": "Die Formalisierung verlangt eine Übernachtung am An- oder Abreisetag selbst, die Norm lässt auch eine Übernachtung an ei",
+          "schluessel": "[\"abweichungen\", \"betrifft\", \"mit_uebernachtung\"]"
+        },
+        {
+          "art": "abweichung",
+          "gueltige_stimmen": 3,
+          "item": "Die Formalisierung gewährt 28 Euro bei 24 oder mehr Stunden Abwesenheit, die Norm verlangt genau 24 Stunden Abwesenheit ",
+          "schluessel": "[\"abweichungen\", \"betrifft\", \"abwesenheit_stunden\"]"
+        },
+        {
+          "art": "abweichung",
+          "gueltige_stimmen": 3,
+          "item": "Die Formalisierung setzt für den An- und Abreisetag eine Übernachtung am selben Tag voraus, die Norm erlaubt auch Überna",
+          "schluessel": "[\"abweichungen\", \"betrifft\", \"mit_uebernachtung\"]"
+        },
+        {
+          "art": "abweichung",
+          "gueltige_stimmen": 3,
+          "item": "Bei mehrtägiger Abwesenheit ohne Übernachtung wird die 14-Euro-Pauschale nicht korrekt dem überwiegenden Abwesenheitstag",
+          "schluessel": "[\"abweichungen\", \"betrifft\", \"ergebnis\"]"
+        },
+        {
+          "art": "abweichung",
+          "gueltige_stimmen": 3,
+          "item": "Die Ausgabe der Verpflegungspauschale erfolgt in Dollar statt in Euro.",
+          "schluessel": "[\"abweichungen\", \"betrifft\", \"ergebnis\"]"
+        },
+        {
+          "art": "abweichung",
+          "gueltige_stimmen": 3,
+          "item": "Die Formalisierung gewährt 14 Euro für jeden Tag mit mehr als 8 Stunden Abwesenheit ohne Übernachtung, aber die Norm bes",
+          "schluessel": "[\"abweichungen\", \"betrifft\", \"abwesenheit_stunden\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Formalisierung interpretiert die Übernachtungsangabe als auf den jeweiligen Tag bezogen, ohne die Möglichkeit einer ",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"mit_uebernachtung\", \"interpretation\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Formalisierung nimmt an, dass die eingegebene Abwesenheit in Stunden 24 nicht übersteigt.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"abwesenheit_stunden\", \"interpretation\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Stundenangabe wird als exakte Abwesenheitsdauer an einem Kalendertag interpretiert.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"abwesenheit_stunden\", \"interpretation\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Formalisierung interpretiert 'monate_am_ort' als die Anzahl der Monate einer längerfristigen Tätigkeit, ohne die Län",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"monate_am_ort\", \"interpretation\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtun",
+          "schluessel": "[\"norm_teile\", \"ref\", \"satz 3 nr. 3 halbsatz 2\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug insoweit ausgeschlossen.",
+          "schluessel": "[\"norm_teile\", \"ref\", \"satz 11\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtun",
+          "schluessel": "[\"norm_teile\", \"ref\", \"satz 3 nr. 3 satz 2\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Verpflegungsmehraufwand, Dreimonatsfrist",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 9 abs. 4a\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Formalisierung gewährt 14 Euro bei über 8 Stunden Abwesenheit ohne Übernachtung, aber nicht die Sonderregel für den Fall, dass die Tätigkeit an zwei Tagen o",
+            "eingeschmolzen": "Die Formalisierung bildet die Sonderregelung für eine über zwei Kalendertage ohne Übernachtung andauernde Tätigkeit nicht ab, bei der die Pauschale nur für den ",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung interpretiert die Übernachtungsangabe als auf den jeweiligen Tag bezogen, ohne die Möglichkeit einer Übernachtung an angrenzenden Tagen zu be",
+            "eingeschmolzen": "Die Übernachtungsangabe wird als Übernachtung am selben Tag interpretiert, nicht an angrenzenden Tagen.",
+            "key": [
+              "betrifft_kat",
+              "mit_uebernachtung",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung setzt voraus, dass eine auswärtige berufliche Tätigkeit vorliegt, ohne dies zu prüfen.",
+            "eingeschmolzen": "Die Formalisierung setzt voraus, dass eine auswärtige berufliche Tätigkeit im Sinne des Satzes 2 vorliegt.",
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Die Stundenangabe wird als exakte Abwesenheitsdauer an einem Kalendertag interpretiert.",
+            "eingeschmolzen": "Die Formalisierung interpretiert 'abwesenheit_stunden' als die Abwesenheitsdauer an einem einzelnen Kalendertag.",
+            "key": [
+              "betrifft_kat",
+              "abwesenheit_stunden",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig (auswärtige berufliche Tätigkeit)",
+            "eingeschmolzen": "Wird der Arbeitnehmer außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig (auswärtige berufliche Tätigkeit), ist zur Abgeltung der ihm tatsächl",
+            "key": [
+              "ref",
+              "satz 2"
+            ]
+          },
+          {
+            "cluster": "Wird dem Arbeitnehmer anlässlich oder während einer Tätigkeit außerhalb seiner ersten Tätigkeitsstätte vom Arbeitgeber oder auf dessen Veranlassung von einem Dr",
+            "eingeschmolzen": "Wird dem Arbeitnehmer anlässlich oder während einer Tätigkeit außerhalb seiner ersten Tätigkeitsstätte vom Arbeitgeber oder auf dessen Veranlassung von einem Dr",
+            "key": [
+              "ref",
+              "satz 8"
+            ]
+          },
+          {
+            "cluster": "außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig (auswärtige berufliche Tätigkeit)",
+            "eingeschmolzen": "Wird der Arbeitnehmer außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig (auswärtige berufliche Tätigkeit), ist zur Abgeltung der ihm tatsächl",
+            "key": [
+              "ref",
+              "satz 2"
+            ]
+          },
+          {
+            "cluster": "Wird dem Arbeitnehmer anlässlich oder während einer Tätigkeit außerhalb seiner ersten Tätigkeitsstätte vom Arbeitgeber oder auf dessen Veranlassung von einem Dr",
+            "eingeschmolzen": "sind die nach den Sätzen 3 und 5 ermittelten Verpflegungspauschalen zu kürzen",
+            "key": [
+              "ref",
+              "satz 8"
+            ]
+          },
+          {
+            "cluster": "außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig (auswärtige berufliche Tätigkeit)",
+            "eingeschmolzen": "Wird der Arbeitnehmer außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig (auswärtige berufliche Tätigkeit), ist zur Abgeltung der ihm tatsächl",
+            "key": [
+              "ref",
+              "satz 2"
+            ]
+          },
+          {
+            "cluster": "Wird dem Arbeitnehmer anlässlich oder während einer Tätigkeit außerhalb seiner ersten Tätigkeitsstätte vom Arbeitgeber oder auf dessen Veranlassung von einem Dr",
+            "eingeschmolzen": "Wird dem Arbeitnehmer anlässlich oder während einer Tätigkeit außerhalb seiner ersten Tätigkeitsstätte vom Arbeitgeber oder auf dessen Veranlassung von einem Dr",
+            "key": [
+              "ref",
+              "satz 8"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        12,
+        10,
+        9,
+        8,
+        2
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "65c6e76cde6f",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "uebernachtung_oder_eintaegig_ueber_acht_stunden",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtung, werden 14 Euro für den Kalendertag gewährt, an dem der Arbeitnehmer den überwiegenden Teil der insgesamt mehr als 8 Stunden abwesend ist.",
+        "referenz": "Satz 3 Nr. 3 Halbsatz 2"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Hat der Arbeitnehmer keine erste Tätigkeitsstätte, gelten die Sätze 2 und 3 entsprechend.",
+        "referenz": "Satz 4"
+      },
+      {
+        "abgedeckt_von": "taetigkeit_im_inland",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Bei einer Tätigkeit im Ausland treten an die Stelle der Pauschbeträge nach Satz 3 länderweise unterschiedliche Pauschbeträge.",
+        "referenz": "Satz 5"
+      },
+      {
+        "abgedeckt_von": "keine_unterbrechung_mit_neubeginn",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn, wenn sie mindestens vier Wochen dauert.",
+        "referenz": "Satz 7"
+      },
+      {
+        "abgedeckt_von": "keine_mahlzeitengestellung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Wird dem Arbeitnehmer anlässlich oder während einer Tätigkeit außerhalb seiner ersten Tätigkeitsstätte vom Arbeitgeber oder auf dessen Veranlassung von einem Dritten eine Mahlzeit zur Verfügung gestellt, sind die nach den Sätzen 3 und 5 ermittelten Verpflegungspauschalen zu kürzen:",
+        "referenz": "Satz 8"
+      },
+      {
+        "abgedeckt_von": "keine_steuerfreien_verpflegungserstattungen",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug insoweit ausgeschlossen.",
+        "referenz": "Satz 11"
+      },
+      {
+        "abgedeckt_von": "auswaertige_berufliche_taetigkeit",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig (auswärtige berufliche Tätigkeit)",
+        "referenz": "Satz 2"
+      },
+      {
+        "abgedeckt_von": "keine_mahlzeitengestellung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "für Frühstück um 20 Prozent, für Mittag- und Abendessen um jeweils 40 Prozent",
+        "referenz": "Satz 8"
+      },
+      {
+        "abgedeckt_von": "keine_mahlzeitengestellung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag nach Satz 8.",
+        "referenz": "Satz 10"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Mehraufwendungen des Arbeitnehmers für die Verpflegung sind nur nach Maßgabe der folgenden Sätze als Werbungskosten abziehbar.",
+        "referenz": "Satz 1"
+      },
+      {
+        "abgedeckt_von": "uebernachtung_oder_eintaegig_ueber_acht_stunden",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "beginnt die auswärtige berufliche Tätigkeit an einem Kalendertag und endet am nachfolgenden Kalendertag ohne Übernachtung, werden 14 Euro für den Kalendertag gewährt, an dem der Arbeitnehmer den überwiegenden Teil der insgesamt mehr als 8 Stunden abwesend ist.",
+        "referenz": "Satz 3 Nr. 3 Satz 2"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Verpflegungsmehraufwand, Dreimonatsfrist",
+        "referenz": "§ 9 Abs. 4a"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Der Abzug der Verpflegungspauschalen ist auf die ersten drei Monate einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte beschränkt.",
+        "referenz": "Satz 6"
+      },
+      {
+        "abgedeckt_von": "keine_mahlzeitengestellung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "für Frühstück um 20 Prozent, für Mittag- und Abendessen um jeweils 40 Prozent",
+        "referenz": "Satz 8 Nummer 1 und 2"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass die Stundenanzahl die Abwesenheit von Wohnung und erster Tätigkeitsstätte bereits beinhaltet.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "abwesenheit_stunden",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung interpretiert die Übernachtungsangabe als auf den jeweiligen Tag bezogen, ohne die Möglichkeit einer Übernachtung an angrenzenden Tagen zu berücksichtigen.",
+        "bedingung_id": null,
+        "betrifft": "mit_uebernachtung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass die Monatsangabe die Unterbrechungsregel von vier Wochen bereits berücksichtigt.",
+        "bedingung_id": "keine_unterbrechung_mit_neubeginn",
+        "betrifft": "monate_am_ort",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung geht davon aus, dass der Arbeitnehmer eine erste Tätigkeitsstätte hat.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass die eingegebene Abwesenheit in Stunden 24 nicht übersteigt.",
+        "bedingung_id": null,
+        "betrifft": "abwesenheit_stunden",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass 'mit_uebernachtung' nur Übernachtung am selben Tag bedeutet, nicht an angrenzenden Tagen.",
+        "bedingung_id": null,
+        "betrifft": "mit_uebernachtung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass 'monate_am_ort' die Dauer ohne Unterbrechungen nach Satz 7 angibt.",
+        "bedingung_id": "keine_unterbrechung_mit_neubeginn",
+        "betrifft": "monate_am_ort",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass bei tagesübergreifender Tätigkeit ohne Übernachtung die Eingabe für den Tag mit dem überwiegenden Teil der Abwesenheit erfolgt.",
+        "bedingung_id": "uebernachtung_oder_eintaegig_ueber_acht_stunden",
+        "betrifft": "abwesenheit_stunden",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass eine längerfristige Tätigkeit an derselben Tätigkeitsstätte vorliegt, ohne dies zu prüfen.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "monate_am_ort",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Stundenangabe wird als exakte Abwesenheitsdauer an einem Kalendertag interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "abwesenheit_stunden",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Monatsangabe wird als ununterbrochene Dauer am selben Ort ohne Berücksichtigung von Unterbrechungen interpretiert.",
+        "bedingung_id": "keine_unterbrechung_mit_neubeginn",
+        "betrifft": "monate_am_ort",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass eine auswärtige berufliche Tätigkeit vorliegt, ohne dies zu prüfen.",
+        "bedingung_id": "auswaertige_berufliche_taetigkeit",
+        "betrifft": "ergebnis",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Die Eingabe monate_am_ort wird als bereits um Unterbrechungen von mindestens vier Wochen bereinigte Dauer interpretiert.",
+        "bedingung_id": "keine_unterbrechung_mit_neubeginn",
+        "betrifft": "monate_am_ort",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe abwesenheit_stunden wird als die für den Tag maßgebliche Stundenzahl nach der Mehrheitsregel bei tagesübergreifender Abwesenheit interpretiert.",
+        "bedingung_id": "uebernachtung_oder_eintaegig_ueber_acht_stunden",
+        "betrifft": "abwesenheit_stunden",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Eingabe mit_uebernachtung wird so interpretiert, dass sie auch Übernachtungen an angrenzenden Tagen umfasst, wie von der Norm für An- und Abreisetage gefordert.",
+        "bedingung_id": null,
+        "betrifft": "mit_uebernachtung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung interpretiert 'mit_uebernachtung' so, dass eine Übernachtung am An-/Abreisetag oder einem angrenzenden Tag stattfindet.",
+        "bedingung_id": null,
+        "betrifft": "mit_uebernachtung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung interpretiert 'monate_am_ort' als die Anzahl der Monate einer längerfristigen Tätigkeit, ohne die Längerfristigkeit eigenständig zu prüfen.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "monate_am_ort",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-10T23:02:54+00:00"
+  },
+  "module_name": "Verpflegungsmehraufwand",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}

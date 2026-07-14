@@ -1,0 +1,342 @@
+{
+  "bedingungen": [
+    "tarifwert_ist_p32a_ergebnis",
+    "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag"
+  ],
+  "candidate_id": "p32b_progressionsvorbehalt",
+  "catala_a": "declaration scope Progressionsvorbehalt:\n  input zu_versteuerndes_einkommen content money\n  input progressionseinkuenfte content money\n  input est_auf_erhoehte_bemessung content money\n  internal erhoehte_bemessung content money\n  internal besonderer_steuersatz content decimal\n  output festzusetzende_est_mit_progression content money\n\nscope Progressionsvorbehalt:\n  definition erhoehte_bemessung equals\n    zu_versteuerndes_einkommen + progressionseinkuenfte\n\n  definition besonderer_steuersatz equals\n    if erhoehte_bemessung = $0.00\n    then 0.0\n    else est_auf_erhoehte_bemessung / erhoehte_bemessung\n\n  definition festzusetzende_est_mit_progression equals\n    besonderer_steuersatz * zu_versteuerndes_einkommen",
+  "catala_a_sha256": "d99b99e7ff3f14629b10379b74611fd9d639f8218ef25fdac0277ba3628ba223",
+  "catala_b": "declaration scope Progressionsvorbehalt:\n  input zu_versteuerndes_einkommen content money\n  input progressionseinkuenfte content money\n  input est_auf_erhoehte_bemessung content money\n  internal erhoehte_bemessung content money\n  internal besonderer_steuersatz content decimal\n  output festzusetzende_est_mit_progression content money\n\nscope Progressionsvorbehalt:\n  definition erhoehte_bemessung equals zu_versteuerndes_einkommen + progressionseinkuenfte\n  definition besonderer_steuersatz equals est_auf_erhoehte_bemessung / erhoehte_bemessung\n  definition festzusetzende_est_mit_progression equals besonderer_steuersatz * zu_versteuerndes_einkommen",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'festzusetzende_est_mit_progression'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 4 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 2,
+        "annahmen": 4,
+        "norm_teile": 5
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung berechnet die festzusetzende Einkommensteuer direkt, während die Norm nur die Anwendung eines besonde"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung multipliziert den besonderen Steuersatz mit dem zu versteuernden Einkommen, während die Norm die Anwe"
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "est_auf_erhoehte_bemessung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung setzt voraus, dass est_auf_erhoehte_bemessung die tarifliche Einkommensteuer auf das erhöhte Einkomme"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Die Formalisierung enthält keine Rundungsvorschrift für den besonderen Steuersatz oder das Ergebnis."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "est_auf_erhoehte_bemessung",
+              "interpretation"
+            ],
+            "text": "Die Formalisierung nimmt an, dass est_auf_erhoehte_bemessung die fiktive Steuer auf das vermehrte Einkommen ist."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 32b abs. 1 s. 1 estg"
+            ],
+            "text": "so ist auf das nach § 32a Absatz 1 zu versteuernde Einkommen ein besonderer Steuersatz anzuwenden"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32b abs. 2 s. 1 nr. 1 estg"
+            ],
+            "text": "das nach § 32a Absatz 1 zu versteuernde Einkommen vermehrt oder vermindert wird um"
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 32b abs. 2 s. 1 nr. 1 estg"
+            ],
+            "text": "die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1)"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32b abs. 2 s. 1 nr. 1 estg"
+            ],
+            "text": "soweit er nicht bei der Ermittlung der Einkünfte aus nichtselbständiger Arbeit abziehbar ist"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 32b abs. 2 s. 1 nr. 1"
+            ],
+            "text": "nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1), soweit er nicht bei der Ermittlung der Einkünfte aus n"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Formalisierung multipliziert den besonderen Steuersatz mit dem zu versteuernden Einkommen, während die Norm die Anwendung des Steuersatzes auf das Einkommen",
+            "eingeschmolzen": "Die Formalisierung multipliziert den besonderen Steuersatz mit dem zu versteuernden Einkommen, während die Norm einen besonderen Steuersatz auf das zu versteuer",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Formalisierung setzt voraus, dass est_auf_erhoehte_bemessung die tarifliche Einkommensteuer auf das erhöhte Einkommen ist.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass est_auf_erhoehte_bemessung die Einkommensteuer auf das vermehrte Einkommen nach § 32a Abs. 1 ist.",
+            "key": [
+              "betrifft_kat",
+              "est_auf_erhoehte_bemessung",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Formalisierung setzt voraus, dass est_auf_erhoehte_bemessung die tarifliche Einkommensteuer auf das erhöhte Einkommen ist.",
+            "eingeschmolzen": "Die Formalisierung nimmt an, dass est_auf_erhoehte_bemessung die Einkommensteuer auf das vermehrte Einkommen nach § 32a Abs. 1 EStG ist.",
+            "key": [
+              "betrifft_kat",
+              "est_auf_erhoehte_bemessung",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1)",
+            "eingeschmolzen": "vermehrt oder vermindert wird um 1. im Fall des Absatzes 1 Nummer 1 die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags",
+            "key": [
+              "ref",
+              "§ 32b abs. 2 s. 1 nr. 1 estg"
+            ]
+          },
+          {
+            "cluster": "die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1)",
+            "eingeschmolzen": "nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1), soweit er nicht bei der Ermittlung der Einkünfte aus nichtselbständiger Arbeit abziehbar ist",
+            "key": [
+              "ref",
+              "§ 32b abs. 2 s. 1 nr. 1 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        8,
+        2,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "64a8ff7d9cd3",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "so ist auf das nach § 32a Absatz 1 zu versteuernde Einkommen ein besonderer Steuersatz anzuwenden",
+        "referenz": "§ 32b Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "das nach § 32a Absatz 1 zu versteuernde Einkommen vermehrt oder vermindert wird um",
+        "referenz": "§ 32b Abs. 2 S. 1 Nr. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "die Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1)",
+        "referenz": "§ 32b Abs. 2 S. 1 Nr. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "soweit er nicht bei der Ermittlung der Einkünfte aus nichtselbständiger Arbeit abziehbar ist",
+        "referenz": "§ 32b Abs. 2 S. 1 Nr. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "nach Abzug des Arbeitnehmer-Pauschbetrags (§ 9a Satz 1 Nummer 1), soweit er nicht bei der Ermittlung der Einkünfte aus nichtselbständiger Arbeit abziehbar ist",
+        "referenz": "§ 32b Abs. 2 S. 1 Nr. 1"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Formalisierung nimmt an, dass progressionseinkuenfte bereits um den Arbeitnehmer-Pauschbetrag gemindert sind.",
+        "bedingung_id": "progressionseinkuenfte_sind_netto_nach_an_pauschbetrag",
+        "betrifft": "progressionseinkuenfte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung setzt voraus, dass est_auf_erhoehte_bemessung die tarifliche Einkommensteuer auf das erhöhte Einkommen ist.",
+        "bedingung_id": "tarifwert_ist_p32a_ergebnis",
+        "betrifft": "est_auf_erhoehte_bemessung",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Formalisierung enthält keine Rundungsvorschrift für den besonderen Steuersatz oder das Ergebnis.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die Formalisierung nimmt an, dass est_auf_erhoehte_bemessung die fiktive Steuer auf das vermehrte Einkommen ist.",
+        "bedingung_id": "tarifwert_ist_p32a_ergebnis",
+        "betrifft": "est_auf_erhoehte_bemessung",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-12T23:16:59+00:00"
+  },
+  "module_name": "Progressionsvorbehalt",
+  "queue_status": "verified_bedingt",
+  "schema_version": 1
+}
