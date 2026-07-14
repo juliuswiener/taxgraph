@@ -4953,9 +4953,9 @@ regeln:
     quelle: § 34c Abs. 1 S. 1 EStG
     beschreibung: Input = festgesetzte + gezahlte + um Ermäßigungsanspruch gekürzte ausl. Steuer.
   - bedingung: auslaendische_einkuenfte_p34d_katalog
-    deckt_ab: Einkünfte aus diesem Staat
+    deckt_ab: Ausländische Einkünfte im Sinne des § 34c Absatz 1 bis 5 sind
     quelle: § 34d EStG
-    beschreibung: auslaendische_einkuenfte_staat ist eine §34d-Katalog-Einkunft (§34d-Geltungsbedingungs-Paket).
+    beschreibung: auslaendische_einkuenfte_staat ist eine §34d-Katalog-Einkunft (§34d Nr. 1 ff., §34d-Geltungsbedingungs-Paket).
   - bedingung: zve_positiv
     deckt_ab: des zu versteuernden Einkommens
     quelle: § 34c Abs. 1 S. 2 EStG
