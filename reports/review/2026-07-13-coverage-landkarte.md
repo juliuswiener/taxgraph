@@ -123,16 +123,17 @@ Legende: ✅ formalisiert · 🟡 teilformalisiert (Kern da, Rest offen) · 🟠
 - **§ 35c 40 000-€-Objekt-Höchstbetrag (Abs. 1 S. 5)** — Lebensdauer-Deckel über alle Maßnahmen +
   3 VZ, kumulativ = § 2-/State-Territorium (§ 10d-Abs4-Präzedenz); als Geltungsbedingung
   `objekt_hoechstbetrag_40k_nicht_ausgeschoepft` deklariert (Charge 10), aber pro-VZ nicht gerechnet.
-- **§ 35c Energieberater-Deckel-Interaktion** — ob die 50-%-Energieberater-Ermäßigung gegen die
-  Jahresdeckel 14k/12k und den 40k-Objektdeckel zählt, ist wortlaut-offen (BMF) → benannter Nachtrag.
-  Ebenso die VZ-Zuordnung der 50 % (Integration).
+- **§ 35c Energieberater-Deckel-Interaktion** — ✅ **erledigt Charge 14 (BMF Rn 56, verwaltung):**
+  die 50 % zählen gegen den gemeinsamen 14k/12k-Jahresdeckel (Kombination `P35cJahresdeckel`,
+  `rules/estg/p35c/energetische_massnahmen.catala_en`, 5 clerk-Seeds) UND den 40k-Objektdeckel; VZ =
+  Abschlussjahr, nicht gedrittelt. 40k-Objekt bleibt Mehrjahres-State (BMF-gedeckt, s. o.).
 - **§ 21 Abs. 2 Korridor 50–< 66 % (Totalüberschussprognose)** — die Aufteilungsentscheidung im
   Zwischenband hängt an der BMF-Prognose, kein Norm-Wortlaut → benannter Nachtrag; Regel deckt
   quote < 50 (anteilig) und quote ≥ 66 (voll).
-- **Riester § 10a Abs. 2 Hinzurechnung voll vs. bereinigt** — ob die Hinzurechnung des Zulage­anspruchs
-  zur tariflichen ESt den vollen Anspruch (inkl. § 84-S 2-Erhöhung 200 €) oder den bereinigten Wert
-  nimmt, ist wortlaut-offen (Abs 1 S 5 bereinigt nur die Günstigerprüfung selbst) → benannter Nachtrag
-  (BMF), NICHT stillschweigend in der Integration entschieden.
+- **Riester § 10a Abs. 2 Hinzurechnung voll vs. bereinigt** — ✅ **erledigt Charge 14 (BMF Rn 106,
+  verwaltung):** die Hinzurechnung nimmt den **bereinigten** Zulageanspruch (ohne § 84-S 2-Erhöhung
+  200 €); bestätigt das bereinigte Design (`p10a_guenstigerpruefung`), Festlegung an der § 2-Integration
+  (Abs 6 `hinzurechnung_zulage`). Keine neue Regel.
 - **Riester Berufseinsteiger-Einmaligkeit** (§ 84 S 2/3) = Einmal-im-Leben-State (40k-Präzedenz),
   bool-Input; **Ehegatten-Übertragung / mittelbar Zulageberechtigte** (§ 10a Abs 3, § 79 S 2, § 86
   Abs 1 S 2 Hs 2, § 85 Abs 2), **ausländische Alterssicherung** (§ 10a Abs 6, § 86 Abs 5),

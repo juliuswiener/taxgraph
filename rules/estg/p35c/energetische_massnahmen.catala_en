@@ -1,0 +1,124 @@
+# § 35c Abs. 1 EStG — energetische Massnahmen: gemeinsamer Jahreshoechstbetrag
+
+> Module Energetische_massnahmen
+
+Charge 14 (BMF-Nachtrag, 2026-07-14). Handgeschriebene Kombinations-Ebene fuer die
+beiden verifizierten Teilregeln `p35c_sanierung_ermaessigung` (energetische Massnahme,
+7 %/6 %, eigener 14 000/12 000-Deckel) und `p35c_energieberater_ermaessigung` (BAFA-
+Energieberater, 50 %, bisher ungedeckelt).
+
+Zitatanker BMF v. 21.08.2025 (Einzelfragen § 35c, Rn. 56, `sources/bmf/
+bmf_35c_einzelfragen_2025-08-21.txt`, typ verwaltung — nachrangig, konkretisiert den
+offenen Wortlaut): Die Energieberater-Kosten "sind jeweils – wie die Aufwendungen fuer die
+energetische Massnahme selbst – vom (Gesamt-)Hoechstbetrag und den Jahreshoechstbetraegen
+der Steuerermaessigung umfasst." Und (VZ): "im Jahr des Abschlusses der energetischen
+Massnahme (siehe Rn. 80) zu beruecksichtigen … und nicht auf drei Jahre zu verteilen."
+
+Folge: die 50 % Energieberater zaehlen gemeinsam mit der Massnahme-Ermaessigung gegen den
+JAHRES-Hoechstbetrag (14 000, im uebernaechsten Foerderjahr 12 000). Der Deckel ist
+regeluebergreifend — er gehoert hier an die Integration, nicht in eine Teilregel (Andockung
+wie § 31/§ 35a: die Teilregeln bleiben rein und liefern ihre Ermaessigung als Eingabe).
+
+Der 40 000-EUR-Objekt-(Lebensdauer-)Deckel spannt alle Massnahmen ueber alle Foerderjahre
+und ist Mehrjahres-State (§ 2/VZ, analog § 10d Abs. 4) — hier NICHT gerechnet, bleibt
+benannter Nachtrag, jetzt BMF-gedeckt (Rn. 56 bestaetigt: Energieberater zaehlt auch gegen
+40 000).
+
+```catala
+declaration scope P35cJahresdeckel:
+  # Eingaben = Ausgaben der beiden bereits verifizierten Teilregeln (Andockung, kein
+  # Selbst-Rechnen): jede Teilregel liefert ihre eigene Ermaessigung. sanierung_ermaessigung
+  # ist bereits intern auf 14 000/12 000 gedeckelt; die Kombination unten subsumiert das
+  # (min(min(s,H)+e, H) = min(s+e, H)).
+  input sanierung_ermaessigung content money
+  input energieberater_ermaessigung content money
+  input ist_uebernaechstes_foerderjahr content boolean
+  output p35c_gesamt content money
+
+scope P35cJahresdeckel:
+  definition p35c_gesamt equals
+    let jahreshoechstbetrag equals
+      if ist_uebernaechstes_foerderjahr then $12,000.00 else $14,000.00
+    in
+    let summe equals sanierung_ermaessigung + energieberater_ermaessigung in
+    if summe > jahreshoechstbetrag then jahreshoechstbetrag else summe
+```
+
+## Grenzfall-Seeds (Instructor-Auflage 2026-07-14)
+
+```catala
+#[test]
+declaration scope TestDoppelDeckelWaechter:
+  # (a) Sanierung schon am Deckel (Rohbetrag > 14k -> intern auf 14000 gekappt),
+  #     Energieberater > 0 -> Summe darf 14000 nicht ueberschreiten.
+  internal r content P35cJahresdeckel
+  output g content money
+scope TestDoppelDeckelWaechter:
+  definition r equals output of P35cJahresdeckel with {
+    -- sanierung_ermaessigung: $14,000.00
+    -- energieberater_ermaessigung: $500.00
+    -- ist_uebernaechstes_foerderjahr: false }
+  definition g equals r.p35c_gesamt
+  assertion g = $14,000.00
+```
+
+```catala
+#[test]
+declaration scope TestSummeReisstDeckel:
+  # (b) DER BMF-Fall: einzeln je unter 14k, Summe darueber -> auf 14000 gedeckelt.
+  internal r content P35cJahresdeckel
+  output g content money
+scope TestSummeReisstDeckel:
+  definition r equals output of P35cJahresdeckel with {
+    -- sanierung_ermaessigung: $13,500.00
+    -- energieberater_ermaessigung: $1,000.00
+    -- ist_uebernaechstes_foerderjahr: false }
+  definition g equals r.p35c_gesamt
+  assertion g = $14,000.00
+```
+
+```catala
+#[test]
+declaration scope TestUnterDeckel:
+  # (c) Summe unter dem Deckel -> ungekuerzt durchgereicht.
+  internal r content P35cJahresdeckel
+  output g content money
+scope TestUnterDeckel:
+  definition r equals output of P35cJahresdeckel with {
+    -- sanierung_ermaessigung: $10,000.00
+    -- energieberater_ermaessigung: $1,000.00
+    -- ist_uebernaechstes_foerderjahr: false }
+  definition g equals r.p35c_gesamt
+  assertion g = $11,000.00
+```
+
+```catala
+#[test]
+declaration scope TestUebernaechstesJahr12k:
+  # (d) Uebernaechstes Foerderjahr: Deckel 12000, Summe darueber -> 12000.
+  internal r content P35cJahresdeckel
+  output g content money
+scope TestUebernaechstesJahr12k:
+  definition r equals output of P35cJahresdeckel with {
+    -- sanierung_ermaessigung: $11,000.00
+    -- energieberater_ermaessigung: $2,000.00
+    -- ist_uebernaechstes_foerderjahr: true }
+  definition g equals r.p35c_gesamt
+  assertion g = $12,000.00
+```
+
+```catala
+#[test]
+declaration scope TestRegressionOhneEnergieberater:
+  # (e) Ohne Energieberater (eb = 0) MUSS der Gesamtbetrag der Sanierung allein
+  #     entsprechen - die Kombination darf den Bestandsfall nicht veraendern.
+  internal r content P35cJahresdeckel
+  output g content money
+scope TestRegressionOhneEnergieberater:
+  definition r equals output of P35cJahresdeckel with {
+    -- sanierung_ermaessigung: $10,000.00
+    -- energieberater_ermaessigung: $0.00
+    -- ist_uebernaechstes_foerderjahr: false }
+  definition g equals r.p35c_gesamt
+  assertion g = $10,000.00
+```

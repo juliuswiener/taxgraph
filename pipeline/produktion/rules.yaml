@@ -2939,7 +2939,7 @@ regeln:
   - sanierungsaufwendungen: 0
     ist_uebernaechstes_foerderjahr: false
 - rule_id: p35c_energieberater_ermaessigung
-  hinweis: 'energieberater_ermaessigung = (50 / 100) * energieberater_aufwendungen. 50 ist ein PROZENTWERT -> /100 in decimal, Cent-Schnitt zuletzt. Sondersatz "abweichend von Satz 1" (Abs1 S4) - gilt NUR fuer BAFA-zugelassene Energieberater-Kosten, NICHT fuer sonstige Sanierungsaufwendungen. BENANNTER NACHTRAG (wortlaut-offen, BMF): (a) in welchem der Foerderjahre die 50 % wirken (VZ-Zuordnung = § 2-Integration, wie Regel-1-Jahreswahl); (b) ob die 50 % gegen die Jahresdeckel 14k/12k und den 40k-Objektdeckel zaehlen.'
+  hinweis: 'energieberater_ermaessigung = (50 / 100) * energieberater_aufwendungen. 50 ist ein PROZENTWERT -> /100 in decimal, Cent-Schnitt zuletzt. Sondersatz "abweichend von Satz 1" (Abs1 S4) - gilt NUR fuer BAFA-zugelassene Energieberater-Kosten, NICHT fuer sonstige Sanierungsaufwendungen. BMF Rn 56 (verwaltung, Freeze 2026-07-14): (a) die 50 % wirken IM ABSCHLUSSJAHR der energetischen Massnahme, NICHT auf drei Jahre gedrittelt; (b) die 50 % zaehlen gegen den gemeinsamen 14k/12k-Jahreshoechstbetrag (Kombination rules/estg/p35c/energetische_massnahmen.catala_en, Scope P35cJahresdeckel) UND den 40k-Objektdeckel (Mehrjahres-State). Nachtrag erledigt.'
   norm: § 35c Abs. 1 S. 4 EStG (Energieberater-Sondersatz 50 %)
   quellen:
   - typ: gesetz
@@ -2955,7 +2955,7 @@ regeln:
   - bedingung: objekt_hoechstbetrag_40k_nicht_ausgeschoepft
     deckt_ab: je begünstigtes Objekt beträgt der Höchstbetrag der Steuerermäßigung 40 000 Euro
     quelle: § 35c Abs. 1 S. 5 EStG
-    beschreibung: Objekt-Lebensdauer-Deckel 40.000 EUR (§ 2/VZ-State, analog § 10d Abs4). Ob die Energieberater-50 % gegen diesen Deckel zaehlen = benannter Nachtrag (wortlaut-offen).
+    beschreibung: 'Objekt-Lebensdauer-Deckel 40.000 EUR (§ 2/VZ-State, analog § 10d Abs4). BMF Rn 56 (Freeze 2026-07-14): die Energieberater-50 % zaehlen gegen diesen Deckel (Mehrjahres-State, hier vorausgesetzt).'
   rundung: []
   signature:
     scope: EnergieberaterErmaessigung
@@ -3380,7 +3380,7 @@ regeln:
   - altersvorsorgebeitraege: 0
     zulage_anspruch: 0
 - rule_id: p10a_guenstigerpruefung
-  hinweis: 'zusaetzliche_steuerermaessigung = max(0, (est_ohne_sonderausgabenabzug - est_mit_sonderausgabenabzug) - zulageanspruch_guenstigerpruefung). BEIDE ESt-Werte sind INPUTS (Tarif-Andockung § 31/§ 34-Muster) - KEIN Selbst-Tarif. Wenn SA-Vorteil > Zulageanspruch: Differenz gewaehrt (SA guenstiger, § 10a Abs2 S1); sonst 0 (nur Zulage, Abs2 S2). Die Hinzurechnung des Zulageanspruchs zur tariflichen ESt = § 2-Integration. zulageanspruch_guenstigerpruefung = Zulage OHNE § 84-S2-Erhoehung (§ 10a Abs1 S5, kommt bereinigt als Input). NACHTRAG (wortlaut-offen, BMF): ob die HINZURECHNUNG Abs2 voll (inkl 200) oder bereinigt erfolgt - nicht in dieser Regel entschieden.'
+  hinweis: 'zusaetzliche_steuerermaessigung = max(0, (est_ohne_sonderausgabenabzug - est_mit_sonderausgabenabzug) - zulageanspruch_guenstigerpruefung). BEIDE ESt-Werte sind INPUTS (Tarif-Andockung § 31/§ 34-Muster) - KEIN Selbst-Tarif. Wenn SA-Vorteil > Zulageanspruch: Differenz gewaehrt (SA guenstiger, § 10a Abs2 S1); sonst 0 (nur Zulage, Abs2 S2). Die Hinzurechnung des Zulageanspruchs zur tariflichen ESt = § 2-Integration. zulageanspruch_guenstigerpruefung = Zulage OHNE § 84-S2-Erhoehung (§ 10a Abs1 S5, kommt bereinigt als Input). BMF Rn 106 (verwaltung, Freeze 2026-07-14): die HINZURECHNUNG Abs2 erfolgt BEREINIGT (ohne § 84-S2-200-Euro-Erhoehungsbetrag) - bestaetigt dieses bereinigte Design; Festlegung an der § 2-Integration (Abs 6 hinzurechnung_zulage). Nachtrag erledigt.'
   norm: § 10a Abs. 2 + Abs. 4 S. 1 EStG (Guenstigerpruefung, hinausgehende Steuerermaessigung)
   quellen:
   - typ: gesetz
