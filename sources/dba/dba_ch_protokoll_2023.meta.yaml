@@ -1,0 +1,24 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/ch/protokoll-2023-08-21/gesetz-2025"
+  norm: "Gesetz zu dem Protokoll v. 21.08.2023 zur Aenderung des DBA Deutschland-Schweiz (BGBl 2025 II Nr. 275); in Kraft 27.11.2025 (Bekanntmachung BGBl 2025 II Nr. 309), Aenderungen ueberwiegend anwendbar ab 01.01.2026"
+  fassung: "BGBl 2025 II Nr. 275 (Regelungstext inkl. Protokoll-Wortlaut)"
+  quelle_url: "https://www.recht.bund.de/bgbl/2/2025/275/regelungstext.pdf?__blob=publicationFile&v=3"
+  abrufdatum: "2026-07-14"
+  datei: "dba_ch_protokoll_2023.txt"
+  pdf_datei: "dba_ch_protokoll_2023.pdf"
+  sha256: "3242a71821088201a9ee99467fea9cc1a8acee960fd5fdb68f8da78b0efd3555"
+  pdf_sha256: "300322a2df7bf32d6901685d69caee44ba4064aa889c8baf9783b505230546f2"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "ZWEITE CH-Quelle (Overlay auf dba_ch_konsolidiert_2010): Protokoll aendert
+    Art. 2/3/4/5/6/7(neu gefasst)/9(neu gefasst)/10/11/12/19/23(+Abs3 PPT)/24/26 und HEBT
+    Art. 14 AUF (selbstaendige Arbeit -> Art. 7-Regime). Art.-24-Aenderung: Abs1 Nr1
+    Buchst. b (Schachteldividenden 10 %, Missbrauchs-Ausnahmen) neu, Buchst. c aufgehoben,
+    d->c. FUER VZ 2026 gilt die GEAENDERTE Fassung -> CH-Katalog ankert unveraenderte
+    Artikel in der 2010-Konsolidierung, geaenderte Artikel HIER. Einspaltig, nur
+    Silbentrennung; pdftotext ohne -layout; Anker voll-Laenge via _normalize."
+  erwartete_anker:
+    - "Artikel 24 des Abkommens wird wie folgt geändert"
+    - "Artikel 14 des Abkommens wird aufgehoben"
+  verwendet_in: ["W4 DBA-Katalog CH (Overlay-Quelle fuer VZ-2026-Stand)"]
