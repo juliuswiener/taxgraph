@@ -1,0 +1,15 @@
+# Eingefrorener amtlicher Vordruck (BMF-Bekanntgabe). Provenance-Archiv.
+dokument:
+  titel: "Anlage EÜR 2025 — BMF-Vordruckmuster-Paket (Vordruck + Anleitung + Sonder-/Ergänzungsrechnungen PersGes)"
+  quelle_url: "https://www.bundesfinanzministerium.de/Content/DE/Downloads/BMF_Schreiben/Steuerarten/Einkommensteuer/2025-08-29-anlage-EUER-2025.pdf?__blob=publicationFile&v=3"
+  abrufdatum: "2026-07-14"
+  datei: "euer_2025.txt"
+  pdf_datei: "euer_2025.pdf"
+  sha256: "7ce122ebb2c74161db7aab6ae5f6461b622219dd5e5cf2a27400de82daaed2fb"
+  pdf_sha256: "b69b5cf0a982d28cbce20644e67677a36be0bc494bed4fae2310dc08230a1599"
+  authority: amtlicher_vordruck
+  redistributable: true
+  hinweis: "BMF-Schreiben v. 29.08.2025 (IV C 6 - S 2142/00023/010/001), Direkt-Download BMF. Enthaelt AUCH Anleitung (Version 1.9.1.1) und die Sonder-/Ergaenzungsrechnungs-Vordrucke fuer PersGes (W3-relevant). PDF via pdftotext -layout; Anker nur _normalize-verifiziert."
+  erwartete_anker: ['Anlage EÜR', 'Betriebseinnahmen']
+  verwendet_in:
+    - "W1 Feldmapping Anlage EÜR (elster/)"

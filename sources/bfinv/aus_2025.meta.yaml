@@ -1,0 +1,15 @@
+# Eingefrorener amtlicher Vordruck (Mirror-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage AUS 2025 — Ausländische Einkünfte und Steuern"
+  quelle_url: "https://www.steuern.de/fileadmin/user_upload/Steuerformulare_2025/steuerformulare_2025.zip (Mirror; FMS-Original id=034010_25 session-gesperrt)"
+  abrufdatum: "2026-07-14"
+  datei: "aus_2025.txt"
+  pdf_datei: "aus_2025.pdf"
+  sha256: "02492a088f9f890b902f84d25cc7d31512b1f2144ed62cdc80e2de3e62f1f224"
+  pdf_sha256: "08afa443f01ebffd4a005533f4e503767dcb6a358be0c88ae8f3e98e9d0de66b"
+  authority: amtlicher_vordruck
+  redistributable: true
+  hinweis: "steuern.de-Formularsatz-ZIP (von Julius benannter Mirror). ZIP enthaelt weitere 2025-Vordrucke (KAP/R/V/SO/Mobilitaetspraemie/FW) im Scratchpad - bei Bedarf nachfrieren. Anlage S/G existieren 2025 NICHT als Papier-PDF (E-Pflicht §25 Abs4 EStG/§60 EStDV) -> deren Feldmapping via ERiC-XSD als primaere Quelle."
+  erwartete_anker: ['Ausländische Einkünfte', 'Anrechnung und Abzug ausländischer Steuern']
+  verwendet_in:
+    - "W1 Feldmapping Anlage AUS (elster/)"
