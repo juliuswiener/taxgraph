@@ -1,18 +1,14 @@
 {
   "bedingungen": [
-    "nicht_buchfuehrungspflichtig_und_keine_buecher",
-    "durchlaufende_posten_ausgeschieden",
-    "keine_lebensfuehrungskosten_p12_nr1",
-    "keine_repraesentation_gemischt_p12_nr1s2",
-    "keine_personensteuern_p12_nr3",
-    "einkunftsart_gewerbe_p15_abs2",
-    "einkunftsart_selbstaendige_arbeit_p18_abs1"
+    "betrieb_unter_gewinngrenze_vorjahr",
+    "betriebliche_nutzung_mindestens_90_prozent",
+    "sonder_afa_satz_40_kohorte_ab2024"
   ],
-  "candidate_id": "p4_3_gewinn",
-  "catala_a": "declaration scope EuerGewinn:\n  input betriebseinnahmen content money\n  input betriebsausgaben content money\n  output gewinn content money\n\nscope EuerGewinn:\n  definition gewinn equals betriebseinnahmen - betriebsausgaben",
-  "catala_a_sha256": "eeb58222473e838eedfc5f22b536081984047e27f81d329710d9ec1ed5c9d77c",
-  "catala_b": "declaration scope EuerGewinn:\n  input betriebseinnahmen content money\n  input betriebsausgaben content money\n  output gewinn content money\n\nscope EuerGewinn:\n  definition gewinn equals betriebseinnahmen - betriebsausgaben",
-  "catala_b_sha256": "eeb58222473e838eedfc5f22b536081984047e27f81d329710d9ec1ed5c9d77c",
+  "candidate_id": "p7g_5_sonder_afa",
+  "catala_a": "declaration scope SonderAfa:\n  input anschaffungskosten content money\n  output sonder_afa_gesamt content money\n\nscope SonderAfa:\n  definition sonder_afa_gesamt equals anschaffungskosten * 0.40",
+  "catala_a_sha256": "ba6f3a91cd7f08d74f6059dc84d1df6ae6deafd1684be7783b3f0e13713d0ad5",
+  "catala_b": "declaration scope SonderAfa:\n  input anschaffungskosten content money\n  output sonder_afa_gesamt content money\n\nscope SonderAfa:\n  definition sonder_afa_gesamt equals anschaffungskosten * 0.40",
+  "catala_b_sha256": "ba6f3a91cd7f08d74f6059dc84d1df6ae6deafd1684be7783b3f0e13713d0ad5",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -65,7 +61,7 @@
       "status": "PASS"
     },
     {
-      "detail": "A == B on 3 raster point(s) for 'gewinn'",
+      "detail": "A == B on 3 raster point(s) for 'sonder_afa_gesamt'",
       "name": "equivalence",
       "status": "PASS"
     },
@@ -80,7 +76,7 @@
       "status": "PASS"
     },
     {
-      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
       "name": "geltungsbereich",
       "status": "PASS"
     },
@@ -121,16 +117,7 @@
       "inventar_streuung": {
         "abweichungen": [],
         "annahmen": [],
-        "norm_teile": [
-          {
-            "in_laeufen": 1,
-            "key": [
-              "ref",
-              "§ 4 abs. 3 s. 1 estg"
-            ],
-            "text": "können als Gewinn den Überschuss der Betriebseinnahmen über die Betriebsausgaben ansetzen"
-          }
-        ]
+        "norm_teile": []
       },
       "inventar_ungueltig": 0,
       "item_splits": [],
@@ -138,7 +125,16 @@
       "merge_log": {
         "abweichungen": [],
         "annahmen": [],
-        "norm_teile": []
+        "norm_teile": [
+          {
+            "cluster": "bis zu insgesamt 40 Prozent der Anschaffungs- oder Herstellungskosten",
+            "eingeschmolzen": "Sonderabschreibungen bis zu insgesamt 40 Prozent der Anschaffungs- oder Herstellungskosten in Anspruch genommen werden",
+            "key": [
+              "ref",
+              "§ 7g abs. 5 estg"
+            ]
+          }
+        ]
       },
       "saettigungskurve": [
         1,
@@ -146,22 +142,22 @@
       ]
     },
     "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
-    "lauf_id": "9ae5365cbabb",
+    "lauf_id": "7ca90ae951dd",
     "parse_error": false,
     "scope_gap": [
       {
-        "abgedeckt_von": "nicht_buchfuehrungspflichtig_und_keine_buecher",
+        "abgedeckt_von": "sonder_afa_satz_40_kohorte_ab2024",
         "begruendung": "",
         "grenzfall": false,
         "klasse": "wirkt_hinein",
-        "norm_teil": "können als Gewinn den Überschuss der Betriebseinnahmen über die Betriebsausgaben ansetzen",
-        "referenz": "§ 4 Abs. 3 S. 1 EStG"
+        "norm_teil": "bis zu insgesamt 40 Prozent der Anschaffungs- oder Herstellungskosten",
+        "referenz": "§ 7g Abs. 5 EStG"
       }
     ],
     "stille_zusatzannahmen": [],
-    "timestamp": "2026-07-14T16:32:13+00:00"
+    "timestamp": "2026-07-14T17:18:58+00:00"
   },
-  "module_name": "EuerGewinn",
+  "module_name": "SonderAfa",
   "queue_status": "verified_bedingt",
   "schema_version": 2
 }

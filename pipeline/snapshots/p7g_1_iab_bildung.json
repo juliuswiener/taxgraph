@@ -1,0 +1,249 @@
+{
+  "bedingungen": [
+    "gewinn_hoechstens_200k",
+    "bisherige_iab_summe_ist_3wj_bestand",
+    "kuenftige_investitionsabsicht_bewegliches_av"
+  ],
+  "candidate_id": "p7g_1_iab_bildung",
+  "catala_a": "declaration scope IabBildung:\n  input voraussichtliche_ak content money\n  input bisherige_iab_summe_3wj content money\n  output iab content money\n\nscope IabBildung:\n  definition iab equals\n    let hoechstbetrag_50_prozent equals voraussichtliche_ak * 0.50 in\n    let rest_deckel equals\n      if $200,000.00 > bisherige_iab_summe_3wj\n      then $200,000.00 - bisherige_iab_summe_3wj\n      else $0.00\n    in\n    if hoechstbetrag_50_prozent < rest_deckel\n    then hoechstbetrag_50_prozent\n    else rest_deckel",
+  "catala_a_sha256": "c5bd2a4b5c70bc6fcb50c4cf2be177a1e430f0712d64025e16e1e3df16d9787c",
+  "catala_b": "declaration scope IabBildung:\n  input voraussichtliche_ak content money\n  input bisherige_iab_summe_3wj content money\n  output iab content money\n\nscope IabBildung:\n  definition iab equals\n    let halbe_ak equals voraussichtliche_ak * 0.50 in\n    let restdeckel equals $200,000.00 - bisherige_iab_summe_3wj in\n    let max_rest equals if restdeckel > $0.00 then restdeckel else $0.00 in\n    if halbe_ak <= max_rest then halbe_ak else max_rest",
+  "catala_b_sha256": "ad3fc6c4250316c2e9395e10e142455ff890ac6eef335cd31385d8f5a2cce33c",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'iab'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 4,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "voraussichtliche_ak",
+              "interpretation"
+            ],
+            "text": "Voraussichtliche Anschaffungs- oder Herstellungskosten werden als Geldbetrag interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "bisherige_iab_summe_3wj",
+              "interpretation"
+            ],
+            "text": "Die Summe der bisherigen IAB wird als Geldbetrag interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "bisherige_iab_summe_3wj",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Die bisherige IAB-Summe bezieht sich auf die letzten drei Wirtschaftsjahre."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ],
+            "text": "Der Investitionsabzugsbetrag wird in Geld (Euro) berechnet."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 7g abs. 1 s. 1 estg"
+            ],
+            "text": "bis zu 50 Prozent der voraussichtlichen Anschaffungs- oder Herstellungskosten gewinnmindernd abziehen"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "bis zu 50 Prozent der voraussichtlichen Anschaffungs- oder Herstellungskosten gewinnmindernd abziehen",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 7g abs. 1 s. 1 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "Summe der Beträge, die im Wirtschaftsjahr des Abzugs und in den drei vorangegangenen Wirtschaftsjahren nach Satz 1 insgesamt abgezogen und nicht nach Absatz 2 h",
+            "eingeschmolzen": "Summe der Beträge, die im Wirtschaftsjahr des Abzugs und in den drei vorangegangenen Wirtschaftsjahren nach Satz 1 insgesamt abgezogen und nicht nach Absatz 2 h",
+            "key": [
+              "ref",
+              "§ 7g abs. 1 s. 2 nr. 2 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        6,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "d87074008ebc",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bis zu 50 Prozent der voraussichtlichen Anschaffungs- oder Herstellungskosten gewinnmindernd abziehen",
+        "referenz": "§ 7g Abs. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "bisherige_iab_summe_ist_3wj_bestand",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Summe der Beträge, die im Wirtschaftsjahr des Abzugs und in den drei vorangegangenen Wirtschaftsjahren nach Satz 1 insgesamt abgezogen und nicht nach Absatz 2 hinzugerechnet oder nach den Absätzen 3 oder 4 rückgängig gemacht wurden, darf je Betrieb 200 000 Euro nicht übersteigen",
+        "referenz": "§ 7g Abs. 1 S. 2 Nr. 2 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Voraussichtliche Anschaffungs- oder Herstellungskosten werden als Geldbetrag interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "voraussichtliche_ak",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Summe der bisherigen IAB wird als Geldbetrag interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "bisherige_iab_summe_3wj",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die bisherige IAB-Summe bezieht sich auf die letzten drei Wirtschaftsjahre.",
+        "bedingung_id": "bisherige_iab_summe_ist_3wj_bestand",
+        "betrifft": "bisherige_iab_summe_3wj",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Der Investitionsabzugsbetrag wird in Geld (Euro) berechnet.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "ergebnis",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-14T17:24:30+00:00"
+  },
+  "module_name": "Investitionsabzugsbetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

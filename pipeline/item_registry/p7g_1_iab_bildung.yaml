@@ -1,0 +1,58 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p7g_1_iab_bildung
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - voraussichtliche_ak
+  - interpretation
+  formulierungen:
+  - Voraussichtliche Anschaffungs- oder Herstellungskosten werden als Geldbetrag interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - bisherige_iab_summe_3wj
+  - interpretation
+  formulierungen:
+  - Die Summe der bisherigen IAB wird als Geldbetrag interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - bisherige_iab_summe_3wj
+  - geltungsvoraussetzung
+  formulierungen:
+  - Die bisherige IAB-Summe bezieht sich auf die letzten drei Wirtschaftsjahre.
+  triage: bedingung_neu
+  bedingung: bisherige_iab_summe_ist_3wj_bestand
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - einheit
+  formulierungen:
+  - Der Investitionsabzugsbetrag wird in Geld (Euro) berechnet.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 7g abs. 1 s. 1 estg
+  formulierungen:
+  - bis zu 50 Prozent der voraussichtlichen Anschaffungs- oder Herstellungskosten
+    gewinnmindernd abziehen
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 7g abs. 1 s. 2 nr. 2 estg
+  formulierungen:
+  - Summe der Beträge, die im Wirtschaftsjahr des Abzugs und in den drei vorangegangenen
+    Wirtschaftsjahren nach Satz 1 insgesamt abgezogen und nicht nach Absatz 2 hinzugerechnet
+    oder nach den Absätzen 3 o
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: bisherige_iab_summe_ist_3wj_bestand

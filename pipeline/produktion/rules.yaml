@@ -4038,6 +4038,14 @@ regeln:
     deckt_ab: die Steuern vom Einkommen und sonstige Personensteuern
     quelle: § 12 Nr. 3 EStG
     beschreibung: Personensteuern (ESt + sonstige) sind keine BA (§12 Nr3) - im BA-Input nicht enthalten.
+  - bedingung: einkunftsart_gewerbe_p15_abs2
+    deckt_ab: selbständige nachhaltige Betätigung, die mit der Absicht, Gewinn zu erzielen, unternommen wird und sich als Beteiligung am allgemeinen wirtschaftlichen Verkehr darstellt
+    quelle: § 15 Abs. 2 EStG
+    beschreibung: '§15/§18-Einkunftsart-Paket (Charge 18, Zeilen 11-12): EÜR-Gewinn ist Einkünfte aus Gewerbebetrieb (§15 Abs2: selbständig+nachhaltig+Gewinnabsicht+Verkehrsteilnahme) ODER aus selbständiger Arbeit (§18). Abfärbung §15 Abs3 = benannter Nachtrag, NICHT formalisiert (PersGes/Struktur).'
+  - bedingung: einkunftsart_selbstaendige_arbeit_p18_abs1
+    deckt_ab: Einkünfte aus selbständiger Arbeit sind
+    quelle: § 18 Abs. 1 Nr. 1 EStG
+    beschreibung: Alternativ zu §15 Gewerbe - freiberufliche/selbständige Taetigkeit (§18 Abs1 Nr1). Beide Einkunftsarten nutzen dieselbe EÜR-Grundmechanik (§4 Abs3).
 - rule_id: p6_2_gwg_sofortabzug
   norm: § 6 Abs. 2 EStG (GWG-Sofortabzug, 800 Euro netto)
   hinweis: 'sofortabzug = wenn anschaffungskosten_netto <= 800 dann anschaffungskosten_netto sonst 0. 800 ist NETTO-Grenze (Vorsteuer §9b bereits heraus, kommt bereinigt als Input). ''nicht übersteigen'' = <= (bei genau 800,00: Sofortabzug JA). Bewegliches abnutzbares AV + selbständige Nutzbarkeit = Geltungsbedingung, nicht gerechnet. Cent-genau.'
@@ -4528,3 +4536,133 @@ regeln:
     deckt_ab: innerhalb der letzten drei Jahre vor dem Zeitpunkt der Zuführung aus dem Privatvermögen angeschafft
     quelle: § 6 Abs. 1 Nr. 5 S. 1 Buchst. a EStG
     beschreibung: Nur Fall a (3-Jahres-Frist aus PV). Faelle b (§17-Anteile) und c (§20-WG) = eigene Nachtraege.
+
+# --- Charge 18 (EÜR Zeilen 10-12): §7g IAB-Bildung + Sonder-AfA ---
+- rule_id: p7g_1_iab_bildung
+  norm: § 7g Abs. 1 EStG (Investitionsabzugsbetrag, 50% + Summen-Deckel 200k)
+  hinweis: 'iab = min(voraussichtliche_ak * 50 / 100, max(0, 200000 - bisherige_iab_summe_3wj)). 50% = *50/100 (money*int/int). 200000 = fester Summen-Deckel §7g Abs1 S2 Nr2 (NORM-KONSTANTE, NIE Input - der Aufrufer darf den Deckel nicht verstellen). bisherige_iab_summe_3wj = Bestands-Faktum: Summe der IAB des laufenden + der drei vorangegangenen Wirtschaftsjahre (Sachverhalts-Input wie verlustvortrag_bestand, §10d-Präzedenz). max(0,...) verhindert negativen Rest-Deckel. Cent-genau.'
+  quellen:
+  - typ: gesetz
+    label: § 7g Abs. 1 S. 1 EStG (IAB bis 50% voraussichtliche AK)
+    datei: sources/gesetze-im-internet/estg_p7g_2026-07-14.txt
+    zitatanker: bis zu 50 Prozent der voraussichtlichen
+    auszug: bis zu 50 Prozent der voraussichtlichen Anschaffungs- oder Herstellungskosten gewinnmindernd abziehen (Investitionsabzugsbeträge)
+  - typ: gesetz
+    label: § 7g Abs. 1 S. 2 Nr. 2 EStG (Summen-Deckel 200 000 Euro je Betrieb, 3-Jahres-Fenster)
+    datei: sources/gesetze-im-internet/estg_p7g_2026-07-14.txt
+    zitatanker: 200 000 Euro nicht übersteigen
+    auszug: Summe der Beträge, die im Wirtschaftsjahr des Abzugs und in den drei vorangegangenen Wirtschaftsjahren nach Satz 1 insgesamt abgezogen und nicht nach Absatz 2 hinzugerechnet oder nach den Absätzen 3 oder 4 rückgängig gemacht wurden, darf je Betrieb 200 000 Euro nicht übersteigen
+  signature:
+    scope: IabBildung
+    inputs:
+      voraussichtliche_ak: money
+      bisherige_iab_summe_3wj: money
+    output: iab
+  raster:
+  - voraussichtliche_ak: 100000
+    bisherige_iab_summe_3wj: 180000
+  - voraussichtliche_ak: 100000
+    bisherige_iab_summe_3wj: 200000
+  - voraussichtliche_ak: 100000
+    bisherige_iab_summe_3wj: 0
+  - voraussichtliche_ak: 500000
+    bisherige_iab_summe_3wj: 0
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p7g_2026-07-14.txt
+    zitatanker: bis zu 50 Prozent der voraussichtlichen
+    herkunft: synthetisch
+    rechenweg: 'Deckel-Griff: min(100.000*50/100=50.000, max(0,200.000-180.000)=20.000) = 20.000,00.'
+    inputs:
+      voraussichtliche_ak: 100000
+      bisherige_iab_summe_3wj: 180000
+    expected: 20000.0
+  - quelle: sources/gesetze-im-internet/estg_p7g_2026-07-14.txt
+    zitatanker: bis zu 50 Prozent der voraussichtlichen
+    herkunft: synthetisch
+    rechenweg: 'Deckel ausgeschoepft: min(50.000, max(0,200.000-200.000)=0) = 0,00.'
+    inputs:
+      voraussichtliche_ak: 100000
+      bisherige_iab_summe_3wj: 200000
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p7g_2026-07-14.txt
+    zitatanker: bis zu 50 Prozent der voraussichtlichen
+    herkunft: synthetisch
+    rechenweg: 'Frei: min(50.000, 200.000) = 50.000,00 (50%).'
+    inputs:
+      voraussichtliche_ak: 100000
+      bisherige_iab_summe_3wj: 0
+    expected: 50000.0
+  - quelle: sources/gesetze-im-internet/estg_p7g_2026-07-14.txt
+    zitatanker: bis zu 50 Prozent der voraussichtlichen
+    herkunft: synthetisch
+    rechenweg: 'Deckel bindend: min(500.000*50/100=250.000, 200.000) = 200.000,00.'
+    inputs:
+      voraussichtliche_ak: 500000
+      bisherige_iab_summe_3wj: 0
+    expected: 200000.0
+  geltungsbedingungen:
+  - bedingung: gewinn_hoechstens_200k
+    deckt_ab: 200 000 Euro nicht überschreitet
+    quelle: § 7g Abs. 1 S. 2 Nr. 1 EStG
+    beschreibung: Gewinn (ohne IAB) des Betriebs im Abzugsjahr <= 200.000 EUR (Voraussetzung, Sachverhalt/Bestand).
+  - bedingung: bisherige_iab_summe_ist_3wj_bestand
+    deckt_ab: Summe der Beträge, die im Wirtschaftsjahr des Abzugs und in den drei vorangegangenen Wirtschaftsjahren
+    quelle: § 7g Abs. 1 S. 2 Nr. 2 EStG
+    beschreibung: Input bisherige_iab_summe_3wj = Summe der IAB laufendes + 3 vorangegangene WJ (Bestands-Faktum, §10d-Muster); der 200k-Deckel selbst ist Norm-Konstante in der Regel.
+  - bedingung: kuenftige_investitionsabsicht_bewegliches_av
+    deckt_ab: für die künftige Anschaffung oder Herstellung
+    quelle: § 7g Abs. 1 S. 1 EStG
+    beschreibung: Kuenftige Anschaffung/Herstellung eines abnutzbaren beweglichen WG des AV (begünstigt).
+- rule_id: p7g_5_sonder_afa
+  norm: § 7g Abs. 5 EStG (Sonderabschreibung 40% Gesamt-Höchstbetrag)
+  hinweis: sonder_afa_gesamt = anschaffungskosten * 40 / 100. 40 = NORM-KONSTANTE (§7g Abs5, geltende Fassung WtChancenG ab Anschaffung 2024; 20% vor 2024 = params-Kohorte, NICHT Input - Konstanten-Doktrin). 40% = *40/100 (money*int/int, Cent-Schnitt zuletzt). Das ist der GESAMT-Höchstbetrag ueber 5 Jahre; die Verteilung (WJ + 4 folgende) ist State/Nachtrag.
+  quellen:
+  - typ: gesetz
+    label: § 7g Abs. 5 EStG (Sonder-AfA bis 40% der AK)
+    datei: sources/gesetze-im-internet/estg_p7g_2026-07-14.txt
+    zitatanker: bis zu insgesamt 40 Prozent
+    auszug: Sonderabschreibungen bis zu insgesamt 40 Prozent der Anschaffungs- oder Herstellungskosten in Anspruch genommen werden
+  signature:
+    scope: SonderAfa
+    inputs:
+      anschaffungskosten: money
+    output: sonder_afa_gesamt
+  raster:
+  - anschaffungskosten: 10000
+  - anschaffungskosten: 5000
+  - anschaffungskosten: 12345
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p7g_2026-07-14.txt
+    zitatanker: bis zu insgesamt 40 Prozent
+    herkunft: synthetisch
+    rechenweg: '40%: 10.000*40/100 = 4.000,00.'
+    inputs:
+      anschaffungskosten: 10000
+    expected: 4000.0
+  - quelle: sources/gesetze-im-internet/estg_p7g_2026-07-14.txt
+    zitatanker: bis zu insgesamt 40 Prozent
+    herkunft: synthetisch
+    rechenweg: '40%: 5.000*40/100 = 2.000,00.'
+    inputs:
+      anschaffungskosten: 5000
+    expected: 2000.0
+  - quelle: sources/gesetze-im-internet/estg_p7g_2026-07-14.txt
+    zitatanker: bis zu insgesamt 40 Prozent
+    herkunft: synthetisch
+    rechenweg: 'Cent-Wächter: 12.345*40/100 = 4.938,00.'
+    inputs:
+      anschaffungskosten: 12345
+    expected: 4938.0
+  geltungsbedingungen:
+  - bedingung: betrieb_unter_gewinngrenze_vorjahr
+    deckt_ab: die Gewinngrenze des Absatzes 1 Satz 2 Nummer 1 nicht
+    quelle: § 7g Abs. 6 Nr. 1 EStG
+    beschreibung: Betrieb im WJ vor Anschaffung unter der 200k-Gewinngrenze (Abs6 Nr1 Voraussetzung Sonder-AfA).
+  - bedingung: betriebliche_nutzung_mindestens_90_prozent
+    deckt_ab: im Jahr der Anschaffung oder Herstellung und im darauf folgenden Wirtschaftsjahr
+    quelle: § 7g Abs. 6 Nr. 2 EStG
+    beschreibung: WG (fast) ausschliesslich betrieblich genutzt (Abs6 Nr2).
+  - bedingung: sonder_afa_satz_40_kohorte_ab2024
+    deckt_ab: bis zu insgesamt 40 Prozent
+    quelle: § 7g Abs. 5 EStG (WtChancenG)
+    beschreibung: Satz 40% gilt fuer Anschaffung ab 2024 (WtChancenG); vor 2024 = 20% (params-Kohorte, Anschaffungsjahr-versioniert).

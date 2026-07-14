@@ -1,0 +1,15 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p7g_5_sonder_afa
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 7g abs. 5 estg
+  formulierungen:
+  - bis zu insgesamt 40 Prozent der Anschaffungs- oder Herstellungskosten
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: sonder_afa_satz_40_kohorte_ab2024
