@@ -1,0 +1,22 @@
+# Eingefrorener Staatsvertrags-Text (neue Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/ch/1971-08-11/konsolidiert-2010"
+  norm: "DBA Deutschland-Schweiz v. 11.08.1971 i.d.F. Aenderungsprotokoll v. 27.10.2010 (BMF konsolidierte, nicht amtliche Fassung)"
+  fassung: "konsolidiert bis Protokoll 2010"
+  quelle_url: "https://www.bundesfinanzministerium.de/Content/DE/Standardartikel/Themen/Steuern/Internationales_Steuerrecht/Staatenbezogene_Informationen/Laender_A_Z/Schweiz/1972-09-09-Schweiz-DBA-Konsolidierte-Fassung.pdf?__blob=publicationFile&v=2"
+  abrufdatum: "2026-07-14"
+  datei: "dba_ch_konsolidiert_2010.txt"
+  pdf_datei: "dba_ch_konsolidiert_2010.pdf"
+  sha256: "6eda1e99fa53aaf8f945520b7bc603bfb84a7bb019c31c6723dc17ed3e6de2af"
+  pdf_sha256: "efafecbdcf4b0a706a16e6ca1f25b85d6b9749276e857f7c5ae75d5c2dc14c67"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "BMF-Konsolidierung ('nicht amtliche Fassung' - fuer amtliche Zitate BGBl-Fundstellen).
+    ACHTUNG: neues Aenderungsprotokoll ratifiziert 27.11.2025 (BGBl 2025 II Nr. 275) ist in
+    dieser Konsolidierung NOCH NICHT enthalten - vor Katalog-Nutzung pruefen, ob betroffene
+    Artikel geaendert (Bekanntmachung 2025-12-23 auf BMF-Seite; fedlex SR 0.672.913.62 als
+    Gegencheck). Methodenartikel = Art. 24. PDF via pdftotext -layout, Anker nur _normalize."
+  erwartete_anker:
+    - "Anrechnung ausländischer Steuern"
+    - "Artikel 24"
+  verwendet_in: ["W4 DBA-Katalog CH (Geltungsbedingungs-Katalog, Methoden-Zuordnung)"]

@@ -1,0 +1,17 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/at/2000-08-24/neufassung-2024"
+  norm: "DBA Deutschland-Oesterreich v. 24.08.2000, Neufassung v. 05.11.2024 (BGBl 2024 II Nr. 483; inkl. Protokolle 2010 + 2023), anzuwenden ab 01.01.2024"
+  fassung: "Neufassung 2024 (amtliche Bekanntmachung)"
+  quelle_url: "https://www.bundesfinanzministerium.de/Content/DE/Standardartikel/Themen/Steuern/Internationales_Steuerrecht/Staatenbezogene_Informationen/Laender_A_Z/Oesterreich/2024-11-28-Oesterreich-Abkommen-DBA-Bekanntmachung.pdf?__blob=publicationFile&v=2"
+  abrufdatum: "2026-07-14"
+  datei: "dba_at_neufassung_2024.txt"
+  pdf_datei: "dba_at_neufassung_2024.pdf"
+  sha256: "4d8e766dd4370f73085094e0337f69ecd9b51fc1c74e1d2fe69e7efd061c499e"
+  pdf_sha256: "efd57b2b35832a3e4cd33430485e07e09ff1de15d64a37b114b61e6db77a042a"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "Amtliche Neufassungs-Bekanntmachung (BGBl). Methodenartikel = Art. 23. PDF via pdftotext -layout, Anker nur _normalize."
+  erwartete_anker:
+    - "Bei einer in der Bundesrepublik Deutschland ansässigen Person wird die Steuer wie folgt festgesetzt"
+  verwendet_in: ["W4 DBA-Katalog AT (Geltungsbedingungs-Katalog, Methoden-Zuordnung)"]

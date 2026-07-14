@@ -1,0 +1,17 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/us/1989-08-29/neufassung-2008"
+  norm: "DBA Deutschland-USA v. 29.08.1989, Neufassung v. 04.06.2008 (BGBl 2008 II S. 611; inkl. Protokoll v. 01.06.2006), Abzugsteuern ab 01.01.2007 / uebrige ab 01.01.2008"
+  fassung: "Neufassung 2008 (amtliche Bekanntmachung)"
+  quelle_url: "https://www.bundesfinanzministerium.de/Content/DE/Standardartikel/Themen/Steuern/Internationales_Steuerrecht/Staatenbezogene_Informationen/Laender_A_Z/Verein_Staaten/2008-06-23-USA-Abkommen-DBA-Bekanntmachung.pdf?__blob=publicationFile&v=1"
+  abrufdatum: "2026-07-14"
+  datei: "dba_us_neufassung_2008.txt"
+  pdf_datei: "dba_us_neufassung_2008.pdf"
+  sha256: "20ce7d897b2183a1ef752f0eac338496af5f0e4bd9ab31f299c7c8683bdd8505"
+  pdf_sha256: "c712844fbd49d928461286efcca93ac57da6ead9def96d0efea940d3ad2333fd"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "Amtliche Neufassungs-Bekanntmachung (BGBl); Berichtigung (BMF-Seite) bei Zitat-Zweifel gegenpruefen. Methodenartikel = Art. 23. PDF via pdftotext -layout, Anker nur _normalize."
+  erwartete_anker:
+    - "wird die Steuer wie folgt festgesetzt"
+  verwendet_in: ["W4 DBA-Katalog US (Geltungsbedingungs-Katalog, Methoden-Zuordnung)"]
