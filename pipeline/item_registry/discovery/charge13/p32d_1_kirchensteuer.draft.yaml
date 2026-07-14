@@ -1,0 +1,75 @@
+rule_id: p32d_1_kirchensteuer
+hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt;
+  bei bedingung_neu die bedingung-ID eintragen. Dann: python pipeline/item_registry.py
+  aufnehmen <datei>'
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kapitaleinkuenfte
+  - interpretation
+  text: Einkünfte werden als 'e' (nach § 20) interpretiert.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anrechenbare_auslaendische_steuer
+  - interpretation
+  text: Ausländische Steuer wird als 'q' (Absatz 5) interpretiert.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kirchensteuersatz
+  - interpretation
+  text: Kirchensteuersatz wird als 'k' (Religionsgesellschaft) interpretiert.
+  bedingung: ''
+  triage: offen
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - sonstige
+  text: Formel wird als (e – 4q) / (4 + k) umgesetzt.
+  bedingung: ''
+  triage: offen
+- art: norm_teil
+  anker:
+  - ref
+  - § 32d abs. 1 s. 4
+  text: Die Einkommensteuer beträgt damit e – 4 q 4 + k.
+  bedingung: ''
+  klasse: wirkt_hinein
+  triage: offen
+- art: norm_teil
+  anker:
+  - ref
+  - § 32d abs. 1 s. 5
+  text: Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte, „q“
+    die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer und „k“ der für
+    die Kirchensteuer erhebende Religionsgesel
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - § 32d abs. 1 s. 4 estg
+  text: Die Einkommensteuer beträgt damit e – 4 q 4 + k.
+  bedingung: kirchensteuerpflicht_besteht
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 32d abs. 1 s. 5 estg
+  text: Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte, „q“
+    die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer und „k“ der für
+    die Kirchensteuer erhebende Religionsgesel
+  bedingung: ''
+  klasse: unabhaengig
+  triage: nicht_material_backlog
+

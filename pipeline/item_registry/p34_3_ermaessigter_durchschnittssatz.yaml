@@ -1,0 +1,60 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p34_3_ermaessigter_durchschnittssatz
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_gesamt_zzgl_progression
+  - interpretation
+  formulierungen:
+  - est_gesamt_zzgl_progression wird als tarifliche Einkommensteuer nach § 34 Abs.
+    3 S. 2 EStG verstanden.
+  triage: bedingung_neu
+  bedingung: tarifwerte_sind_p2_ergebnis
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_gesamt_zzgl_progression
+  - einheit
+  formulierungen:
+  - Est_gesamt_zzgl_progression wird als Bruttowert in Euro angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - bemessungsgrundlage_durchschnitt
+  - einheit
+  formulierungen:
+  - Bemessungsgrundlage_durchschnitt wird als Bruttowert in Euro angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ao_einkuenfte
+  - rundung
+  formulierungen:
+  - Keine Rundung der 5-Mio.-Grenze oder der Prozentsätze wird vorgenommen.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 34 abs. 3 s. 1 estg
+  formulierungen:
+  - wenn der Steuerpflichtige das 55. Lebensjahr vollendet hat oder wenn er im sozialversicherungsrechtlichen
+    Sinne dauernd berufsunfähig ist
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: persoenliche_voraussetzung_erfuellt
+- art: norm_teil
+  anker:
+  - ref
+  - § 34 abs. 3 s. 1
+  formulierungen:
+  - wenn der Steuerpflichtige das 55. Lebensjahr vollendet hat oder wenn er im sozialversicherungsrechtlichen
+    Sinne dauernd berufsunfähig ist
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: persoenliche_voraussetzung_erfuellt

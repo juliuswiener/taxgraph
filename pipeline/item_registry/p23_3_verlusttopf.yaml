@@ -1,0 +1,41 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p23_3_verlusttopf
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewinn_pvg
+  - interpretation
+  formulierungen:
+  - Gewinn wird als positiver Betrag aus privaten Veräußerungsgeschäften interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verlust_pvg
+  - interpretation
+  formulierungen:
+  - Verlust wird als negativer Betrag aus privaten Veräußerungsgeschäften interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  formulierungen:
+  - Annahme, dass § 10d EStG nicht anwendbar ist.
+  triage: bedingung_neu
+  bedingung: kein_ausgleich_mit_anderen_einkunftsarten
+- art: norm_teil
+  anker:
+  - ref
+  - § 23 abs. 3 s. 7 estg
+  formulierungen:
+  - Verluste dürfen nur bis zur Höhe des Gewinns [...] ausgeglichen werden | sie dürfen
+    nicht nach § 10d abgezogen werden
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: verlust_nur_gleichjaehriger_pvg_gewinn

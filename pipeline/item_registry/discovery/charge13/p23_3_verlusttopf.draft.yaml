@@ -1,0 +1,43 @@
+rule_id: p23_3_verlusttopf
+hinweis: 'triage je Item setzen: bedingung_neu | grenzfall | nicht_material | nicht_echt;
+  bei bedingung_neu die bedingung-ID eintragen. Dann: python pipeline/item_registry.py
+  aufnehmen <datei>'
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewinn_pvg
+  - interpretation
+  text: Gewinn wird als positiver Betrag aus privaten Veräußerungsgeschäften interpretiert.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:nichtnegative_betraege
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verlust_pvg
+  - interpretation
+  text: Verlust wird als negativer Betrag aus privaten Veräußerungsgeschäften interpretiert.
+  bedingung: ''
+  triage: nicht_material
+  konvention: konv:input_nur_etikettiertes
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - geltungsvoraussetzung
+  text: Annahme, dass § 10d EStG nicht anwendbar ist.
+  bedingung: kein_ausgleich_mit_anderen_einkunftsarten
+  triage: bedingung_neu
+  vorschlag: detektor
+- art: norm_teil
+  anker:
+  - ref
+  - § 23 abs. 3 s. 7 estg
+  text: Verluste dürfen nur bis zur Höhe des Gewinns [...] ausgeglichen werden | sie
+    dürfen nicht nach § 10d abgezogen werden
+  bedingung: verlust_nur_gleichjaehriger_pvg_gewinn
+  klasse: wirkt_hinein
+  triage: bedingung_neu
+  vorschlag: detektor
+
