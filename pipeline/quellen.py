@@ -48,7 +48,7 @@ _TYP_HINWEIS = {
                        "Sie ist bindend und geht einer abweichenden Lesart des "
                        "Wortlauts vor."),
     "verwaltung": ("Verwaltungsauffassung (BMF/EStH). Konkretisiert den "
-                   "Gesetzestext."),
+                   "Gesetzestext, geht dem Gesetzeswortlaut aber NICHT vor."),
 }
 
 
