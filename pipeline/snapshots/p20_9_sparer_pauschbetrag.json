@@ -6,6 +6,7 @@
   "catala_a": "declaration scope SparerPauschbetrag:\n  input kapitalertraege content money\n  input zusammenveranlagung content boolean\n  internal pauschbetrag content money\n  output einkuenfte_nach_sparer_pb content money\n\nscope SparerPauschbetrag:\n  definition pauschbetrag equals\n    if zusammenveranlagung then $2,000.00 else $1,000.00\n\n  definition einkuenfte_nach_sparer_pb equals\n    if kapitalertraege > pauschbetrag then kapitalertraege - pauschbetrag\n    else $0.00",
   "catala_a_sha256": "be6008c7bc4c1ccd85377571d391f949613279b7b9bfab1dff0823a8d09d8b4c",
   "catala_b": "declaration scope SparerPauschbetrag:\n  input kapitalertraege content money\n  input zusammenveranlagung content boolean\n  output einkuenfte_nach_sparer_pb content money\n\nscope SparerPauschbetrag:\n  definition einkuenfte_nach_sparer_pb equals\n    let pauschbetrag equals\n      if zusammenveranlagung then $2,000.00 else $1,000.00\n    in\n      if kapitalertraege > pauschbetrag then kapitalertraege - pauschbetrag else $0.00",
+  "catala_b_sha256": "a5c3bfecce89832a31a2dac5930a19c7ab1c06adfcce7d6e6e77d24e389728fd",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -214,5 +215,5 @@
   },
   "module_name": "SparerPauschbetrag",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

@@ -8,6 +8,7 @@
   "catala_a": "declaration scope Altersentlastungsbetrag:\n  input arbeitslohn content money\n  input positive_andere_einkuenfte content money\n  input prozentsatz content decimal\n  input hoechstbetrag content money\n  output altersentlastungsbetrag content money\n\nscope Altersentlastungsbetrag:\n  definition altersentlastungsbetrag equals\n    let bemessungsgrundlage equals arbeitslohn + positive_andere_einkuenfte in\n    let roh_betrag equals (prozentsatz / 100.0) * bemessungsgrundlage in\n    if roh_betrag > hoechstbetrag then hoechstbetrag else roh_betrag",
   "catala_a_sha256": "939a81486d5b13f975bb16a81bcd7b899d5714d5274013426705ce72bdbf89b2",
   "catala_b": "declaration scope Altersentlastungsbetrag:\n  input arbeitslohn content money\n  input positive_andere_einkuenfte content money\n  input prozentsatz content decimal\n  input hoechstbetrag content money\n  output altersentlastungsbetrag content money\n\nscope Altersentlastungsbetrag:\n  definition altersentlastungsbetrag equals\n    let bemessungsgrundlage equals arbeitslohn + positive_andere_einkuenfte in\n    let anteil equals bemessungsgrundlage * (prozentsatz / 100.0) in\n    if anteil > hoechstbetrag then hoechstbetrag else anteil",
+  "catala_b_sha256": "9b3788ce7a1d9d1d1d2497de1672f8d9e2b09cbf9267eeb7123a754118c2e8c2",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -192,5 +193,5 @@
   },
   "module_name": "Altersentlastungsbetrag",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

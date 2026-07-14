@@ -8,6 +8,7 @@
   "catala_a": "declaration scope VerbilligteVermietungWk:\n  input werbungskosten content money\n  input entgelt_quote_prozent content decimal\n  output abziehbare_werbungskosten content money\n\nscope VerbilligteVermietungWk:\n  definition abziehbare_werbungskosten equals\n    if entgelt_quote_prozent >= 66.0\n    then werbungskosten\n    else werbungskosten * (entgelt_quote_prozent / 100.0)",
   "catala_a_sha256": "d11ed4494a5ffce7bf397b5da15b52a41a33d9e56fb638f018e8e755dd0a0e45",
   "catala_b": "declaration scope VerbilligteVermietungWk:\n  input werbungskosten content money\n  input entgelt_quote_prozent content decimal\n  output abziehbare_werbungskosten content money\n  internal rohbetrag content money\n\nscope VerbilligteVermietungWk:\n  definition rohbetrag equals\n    if entgelt_quote_prozent >= 66.0 then werbungskosten\n    else (entgelt_quote_prozent / 100.0) * werbungskosten\n  definition abziehbare_werbungskosten equals\n    (Decimal.truncate of (rohbetrag / $1.00)) * $1.00",
+  "catala_b_sha256": "660132e74b6992afd8821aa821eb56a186e6b01353ebe92118086f4903c82207",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -273,5 +274,5 @@
   },
   "module_name": "VerbilligteVermietungWk",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

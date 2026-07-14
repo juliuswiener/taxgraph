@@ -7,6 +7,7 @@
   "catala_a": "declaration scope EnergieberaterErmaessigung:\n  input energieberater_aufwendungen content money\n  output energieberater_ermaessigung content money\n\nscope EnergieberaterErmaessigung:\n  definition energieberater_ermaessigung equals\n    energieberater_aufwendungen * 0.50",
   "catala_a_sha256": "1ad172fb158c6c3acf3886dc0aea4ca4316fd6b624f696f1c29f88559bb68cb4",
   "catala_b": "declaration scope EnergieberaterErmaessigung:\n  input energieberater_aufwendungen content money\n  output energieberater_ermaessigung content money\n\nscope EnergieberaterErmaessigung:\n  definition energieberater_ermaessigung equals energieberater_aufwendungen * 0.50",
+  "catala_b_sha256": "4526318a2e79c11cda50f08fcd344ff406b04ee5ddeaa632b8b6bec9205c783b",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -148,5 +149,5 @@
   },
   "module_name": "EnergieberaterErmaessigung",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

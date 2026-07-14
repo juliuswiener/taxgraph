@@ -6,6 +6,7 @@
   "catala_a": "declaration scope VermietungEinkuenfte:\n  input einnahmen content money\n  input gebaeude_afa content money\n  input schuldzinsen content money\n  input erhaltungsaufwand content money\n  input sonstige_werbungskosten content money\n  output vermietung_einkuenfte content money\n\nscope VermietungEinkuenfte:\n  definition vermietung_einkuenfte equals\n    einnahmen - (gebaeude_afa + schuldzinsen + erhaltungsaufwand + sonstige_werbungskosten)",
   "catala_a_sha256": "1c81bbb1a6fb7c313cb32926c379a5f6a0e24361014157b35a7b213d831991a8",
   "catala_b": "declaration scope VermietungEinkuenfte:\n  input einnahmen content money\n  input gebaeude_afa content money\n  input schuldzinsen content money\n  input erhaltungsaufwand content money\n  input sonstige_werbungskosten content money\n  output vermietung_einkuenfte content money\n\nscope VermietungEinkuenfte:\n  definition vermietung_einkuenfte equals\n    einnahmen - (gebaeude_afa + schuldzinsen + erhaltungsaufwand + sonstige_werbungskosten)",
+  "catala_b_sha256": "1c81bbb1a6fb7c313cb32926c379a5f6a0e24361014157b35a7b213d831991a8",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -147,5 +148,5 @@
   },
   "module_name": "VermietungEinkuenfte",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

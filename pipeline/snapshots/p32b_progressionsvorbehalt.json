@@ -7,6 +7,7 @@
   "catala_a": "declaration scope Progressionsvorbehalt:\n  input zu_versteuerndes_einkommen content money\n  input progressionseinkuenfte content money\n  input est_auf_erhoehte_bemessung content money\n  internal erhoehte_bemessung content money\n  internal besonderer_steuersatz content decimal\n  output festzusetzende_est_mit_progression content money\n\nscope Progressionsvorbehalt:\n  definition erhoehte_bemessung equals\n    zu_versteuerndes_einkommen + progressionseinkuenfte\n\n  definition besonderer_steuersatz equals\n    if erhoehte_bemessung = $0.00\n    then 0.0\n    else est_auf_erhoehte_bemessung / erhoehte_bemessung\n\n  definition festzusetzende_est_mit_progression equals\n    besonderer_steuersatz * zu_versteuerndes_einkommen",
   "catala_a_sha256": "d99b99e7ff3f14629b10379b74611fd9d639f8218ef25fdac0277ba3628ba223",
   "catala_b": "declaration scope Progressionsvorbehalt:\n  input zu_versteuerndes_einkommen content money\n  input progressionseinkuenfte content money\n  input est_auf_erhoehte_bemessung content money\n  internal erhoehte_bemessung content money\n  internal besonderer_steuersatz content decimal\n  output festzusetzende_est_mit_progression content money\n\nscope Progressionsvorbehalt:\n  definition erhoehte_bemessung equals zu_versteuerndes_einkommen + progressionseinkuenfte\n  definition besonderer_steuersatz equals est_auf_erhoehte_bemessung / erhoehte_bemessung\n  definition festzusetzende_est_mit_progression equals besonderer_steuersatz * zu_versteuerndes_einkommen",
+  "catala_b_sha256": "274f3f81166d608ab3cd7b8ee29ce0a9a37359d34eeabab051ccdc37d7da40f1",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -338,5 +339,5 @@
   },
   "module_name": "Progressionsvorbehalt",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

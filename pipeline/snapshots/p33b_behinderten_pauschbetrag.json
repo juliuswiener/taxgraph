@@ -7,6 +7,7 @@
   "catala_a": "declaration scope BehindertenPauschbetrag:\n  input grad_der_behinderung content integer\n  input ist_hilflos_blind_taubblind content boolean\n  output behinderten_pauschbetrag content money\n\nscope BehindertenPauschbetrag:\n  label grundregel\n  definition behinderten_pauschbetrag equals\n    if grad_der_behinderung >= 100 then $2,840.00\n    else if grad_der_behinderung >= 90 then $2,460.00\n    else if grad_der_behinderung >= 80 then $2,120.00\n    else if grad_der_behinderung >= 70 then $1,780.00\n    else if grad_der_behinderung >= 60 then $1,440.00\n    else if grad_der_behinderung >= 50 then $1,140.00\n    else if grad_der_behinderung >= 40 then $860.00\n    else if grad_der_behinderung >= 30 then $620.00\n    else if grad_der_behinderung >= 20 then $384.00\n    else $0.00\n\n  exception grundregel\n  definition behinderten_pauschbetrag under condition\n    ist_hilflos_blind_taubblind\n  consequence equals $7,400.00",
   "catala_a_sha256": "0a36185dc69e32dcc1a7fa93c07788e0821fe0b5ebf30378b22cfe9ee5bc5a95",
   "catala_b": "declaration scope BehindertenPauschbetrag:\n  input grad_der_behinderung content integer\n  input ist_hilflos_blind_taubblind content boolean\n  output behinderten_pauschbetrag content money\n\nscope BehindertenPauschbetrag:\n  label grundregel\n  definition behinderten_pauschbetrag equals\n    if grad_der_behinderung >= 100 then $2,840.00\n    else if grad_der_behinderung >= 90 then $2,460.00\n    else if grad_der_behinderung >= 80 then $2,120.00\n    else if grad_der_behinderung >= 70 then $1,780.00\n    else if grad_der_behinderung >= 60 then $1,440.00\n    else if grad_der_behinderung >= 50 then $1,140.00\n    else if grad_der_behinderung >= 40 then $860.00\n    else if grad_der_behinderung >= 30 then $620.00\n    else if grad_der_behinderung >= 20 then $384.00\n    else $0.00\n  exception grundregel\n  definition behinderten_pauschbetrag under condition ist_hilflos_blind_taubblind consequence equals $7,400.00",
+  "catala_b_sha256": "851dd869f4b8272ef78daa4a3243a02e6a35d8aeb855201173ec5f8e6a24835a",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -385,5 +386,5 @@
   },
   "module_name": "BehindertenPauschbetrag",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

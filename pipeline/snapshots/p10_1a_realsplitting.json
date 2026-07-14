@@ -8,6 +8,7 @@
   "catala_a": "declaration scope Realsplitting:\n  input unterhaltsleistungen content money\n  input kv_pv_beitraege content money\n  output realsplitting_abzug content money\n\nscope Realsplitting:\n  definition realsplitting_abzug equals\n    let hoechstbetrag equals $13,805.00 + kv_pv_beitraege in\n    if unterhaltsleistungen > hoechstbetrag then hoechstbetrag\n    else unterhaltsleistungen",
   "catala_a_sha256": "b85dee669bae25d7424652f9f163bab97277835a67e4c94847b7a991ef9b9138",
   "catala_b": "declaration scope Realsplitting:\n  input unterhaltsleistungen content money\n  input kv_pv_beitraege content money\n  output realsplitting_abzug content money\n\nscope Realsplitting:\n  definition realsplitting_abzug equals\n    if unterhaltsleistungen > $13,805.00 + kv_pv_beitraege\n    then $13,805.00 + kv_pv_beitraege\n    else unterhaltsleistungen",
+  "catala_b_sha256": "907e5f9382afe4ef1b2c825ead789417a446202c2be1186f70bd52359f0e8f00",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -373,5 +374,5 @@
   },
   "module_name": "Realsplitting",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

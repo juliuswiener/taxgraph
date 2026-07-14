@@ -6,6 +6,7 @@
   "catala_a": "declaration scope GebaeudeAfa:\n  input gebaeude_ak content money\n  input afa_satz_prozent content decimal\n  output gebaeude_afa content money\n\nscope GebaeudeAfa:\n  definition gebaeude_afa equals\n    (afa_satz_prozent / 100.0) * gebaeude_ak",
   "catala_a_sha256": "dff20aca45102d2467ba25e21296dd21df18ec1277287c0707ecc2986e7457ad",
   "catala_b": "declaration scope GebaeudeAfa:\n  input gebaeude_ak content money\n  input afa_satz_prozent content decimal\n  output gebaeude_afa content money\n\nscope GebaeudeAfa:\n  definition gebaeude_afa equals\n    let roh equals (afa_satz_prozent / 100.0) * gebaeude_ak in\n    (Decimal.truncate of (roh / $0.01)) * $0.01",
+  "catala_b_sha256": "c2e09b3d0ac38897bfbbe39a473d20ce4063e8a0c374ec50c348227e792057e3",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -184,5 +185,5 @@
   },
   "module_name": "GebaeudeAfa",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

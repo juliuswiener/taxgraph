@@ -6,6 +6,7 @@
   "catala_a": "declaration scope Ausbildungsfreibetrag:\n  input hat_anspruch content boolean\n  output ausbildungsfreibetrag content money\n\nscope Ausbildungsfreibetrag:\n  definition ausbildungsfreibetrag equals\n    if hat_anspruch then $1,200.00 else $0.00",
   "catala_a_sha256": "6fc55f104ac1c9ccc60960c81fdac001174f90020a6be9b19f985d08a78fca32",
   "catala_b": "declaration scope Ausbildungsfreibetrag:\n  input hat_anspruch content boolean\n  output ausbildungsfreibetrag content money\n\nscope Ausbildungsfreibetrag:\n  definition ausbildungsfreibetrag equals\n    if hat_anspruch then $1,200.00 else $0.00",
+  "catala_b_sha256": "6fc55f104ac1c9ccc60960c81fdac001174f90020a6be9b19f985d08a78fca32",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -270,5 +271,5 @@
   },
   "module_name": "Ausbildungsfreibetrag",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

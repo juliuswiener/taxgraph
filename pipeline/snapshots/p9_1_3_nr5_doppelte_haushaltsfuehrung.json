@@ -9,6 +9,7 @@
   "catala_a": "declaration scope DoppelteHaushaltsfuehrung:\n  input unterkunftskosten_monat content money\n  input monate content integer\n  input im_inland content boolean\n  internal hoechstbetrag_monat content money\n  output abziehbare_unterkunftskosten content money\n\nscope DoppelteHaushaltsfuehrung:\n  definition hoechstbetrag_monat equals\n    if im_inland then $1,000.00\n    else $2,000.00\n\n  definition abziehbare_unterkunftskosten equals\n    (if unterkunftskosten_monat > hoechstbetrag_monat\n     then hoechstbetrag_monat\n     else unterkunftskosten_monat)\n    * (decimal of monate)",
   "catala_a_sha256": "c29f35bb0ea68f7a1d3b0d66c23ccf212dfbef417d7815c69d1fc52e2da0a2b7",
   "catala_b": "declaration scope DoppelteHaushaltsfuehrung:\n  input unterkunftskosten_monat content money\n  input monate content integer\n  input im_inland content boolean\n  output abziehbare_unterkunftskosten content money\n\nscope DoppelteHaushaltsfuehrung:\n  definition abziehbare_unterkunftskosten equals\n    let hoechstbetrag equals\n      if im_inland then $1,000.00 else $2,000.00\n    in\n    let abziehbare_monat equals\n      if unterkunftskosten_monat <= hoechstbetrag then unterkunftskosten_monat else hoechstbetrag\n    in\n    abziehbare_monat * monate",
+  "catala_b_sha256": "03588b0260e1da8efb4564a68c30ba4acd93c222f9cbc064d22b7b69e2a50d02",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -477,5 +478,5 @@
   },
   "module_name": "DoppelteHaushaltsfuehrung",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

@@ -61,10 +61,12 @@ def _live(runs, rep):
 
 def test_build_snapshot_nur_deterministische_felder(dirs):
     snap = SNAP.build_snapshot(_report())
-    assert set(snap) == set(SNAP.SNAP_FIELDS) | {"schema_version", "catala_a_sha256"}
+    assert set(snap) == set(SNAP.SNAP_FIELDS) | {
+        "schema_version", "catala_a_sha256", "catala_b_sha256"}
     # Kosten/Provenance sind bewusst NICHT drin (reproduzierbar, kein Auditlog).
     assert "total_cost_usd" not in snap and "provenance" not in snap
     assert len(snap["catala_a_sha256"]) == 64
+    assert len(snap["catala_b_sha256"]) == 64
 
 
 def test_write_und_load_round_trip(dirs):
@@ -103,6 +105,18 @@ def test_korrupter_catala_a_failt_hart(dirs):
     json.dump(snap, open(sp, "w", encoding="utf-8"))
     with pytest.raises(SNAP.SnapshotIntegrityError):
         SNAP.load_snapshot("k")
+
+
+def test_korrupter_catala_b_failt_hart(dirs):
+    """catala_b ist ebenfalls gehasht (pfad-unabhaengige Integritaet, nicht nur
+    transitiv ueber equivalence). b-Tamper -> hart FAIL."""
+    SNAP.write_snapshot("kb", _report(rid="kb"))
+    sp = SNAP.snapshot_path("kb")
+    snap = json.load(open(sp, encoding="utf-8"))
+    snap["catala_b"] = "```catala\nBOESE_B\n```"
+    json.dump(snap, open(sp, "w", encoding="utf-8"))
+    with pytest.raises(SNAP.SnapshotIntegrityError):
+        SNAP.load_snapshot("kb")
 
 
 def test_korrupter_hash_failt_hart(dirs):

@@ -9,6 +9,7 @@
   "catala_a": "declaration scope ArbeitsmittelUndAfaLaufend:\n  input anschaffungskosten content money\n  input nutzungsdauer_jahre content integer\n  input anschaffungsmonat content integer\n  input jahre_seit_anschaffung content integer\n  output abziehbar content money\n\nscope ArbeitsmittelUndAfaLaufend:\n  definition abziehbar equals\n    if anschaffungskosten <= $800.00\n    then anschaffungskosten\n    else\n      let jahresbetrag equals\n        anschaffungskosten / (decimal of nutzungsdauer_jahre)\n      in\n      let volle_monate_vor_anschaffung equals\n        decimal of (anschaffungsmonat - 1)\n      in\n      let kuerzung equals\n        jahresbetrag * (volle_monate_vor_anschaffung / 12.0)\n      in\n      if jahre_seit_anschaffung = 0\n      then jahresbetrag - kuerzung\n      else jahresbetrag",
   "catala_a_sha256": "4b5b8fc686344c65014edc73247cebf0801dd99b5969ec43e724e986ce03f6ef",
   "catala_b": "declaration scope ArbeitsmittelUndAfaLaufend:\n  input anschaffungskosten content money\n  input nutzungsdauer_jahre content integer\n  input anschaffungsmonat content integer\n  input jahre_seit_anschaffung content integer\n  output abziehbar content money\n\nscope ArbeitsmittelUndAfaLaufend:\n  definition abziehbar equals\n    if anschaffungskosten <= $800.00 then\n      if jahre_seit_anschaffung = 0 then anschaffungskosten else $0.00\n    else\n      let jahresbetrag equals anschaffungskosten / (decimal of nutzungsdauer_jahre) in\n      if jahre_seit_anschaffung = 0 then\n        jahresbetrag * ((decimal of (13 - anschaffungsmonat)) / 12.0)\n      else\n        jahresbetrag",
+  "catala_b_sha256": "5668aa1cde2c2636e624d4ff7b7aae3be77e00b0f203ff14ef2a15cb8d75d330",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -500,5 +501,5 @@
   },
   "module_name": "ArbeitsmittelUndAfaLaufend",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

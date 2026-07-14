@@ -6,6 +6,7 @@
   "catala_a": "declaration scope SonderausgabenabzugRiester:\n  input altersvorsorgebeitraege content money\n  input zulage_anspruch content money\n  output sonderausgabenabzug content money\n\nscope SonderausgabenabzugRiester:\n  definition sonderausgabenabzug equals\n    if altersvorsorgebeitraege + zulage_anspruch > $2,100.00\n    then $2,100.00\n    else altersvorsorgebeitraege + zulage_anspruch",
   "catala_a_sha256": "4c11e367084df233c52e934e44505f185268f624b8a1de494efb239012e95c89",
   "catala_b": "declaration scope SonderausgabenabzugRiester:\n  input altersvorsorgebeitraege content money\n  input zulage_anspruch content money\n  output sonderausgabenabzug content money\n\nscope SonderausgabenabzugRiester:\n  definition sonderausgabenabzug equals\n    if altersvorsorgebeitraege + zulage_anspruch > $2,100.00 then $2,100.00\n    else altersvorsorgebeitraege + zulage_anspruch",
+  "catala_b_sha256": "1aab8417a44e363d98a5251a9ae661bdc555f29ffe06d4bb68855111da8c3c30",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -243,5 +244,5 @@
   },
   "module_name": "SonderausgabenabzugRiester",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

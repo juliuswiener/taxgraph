@@ -7,6 +7,7 @@
   "catala_a": "declaration scope Kinderbetreuung:\n  input aufwendungen content money\n  output kinderbetreuung_abzug content money\n\nscope Kinderbetreuung:\n  definition kinderbetreuung_abzug equals\n    if aufwendungen * 0.80 > $4,800.00\n    then $4,800.00\n    else aufwendungen * 0.80",
   "catala_a_sha256": "ed323dcce57766abdaf8d9b70b517185b4b0938b9781d94ab84a81aebd13dea5",
   "catala_b": "declaration scope Kinderbetreuung:\n  input aufwendungen content money\n  output kinderbetreuung_abzug content money\n\nscope Kinderbetreuung:\n  definition kinderbetreuung_abzug equals\n    if aufwendungen * 0.80 > $4,800.00 then $4,800.00 else aufwendungen * 0.80",
+  "catala_b_sha256": "d14c2d5d699bb74faa555fdca5ad814b99b904216ec19d1acdd76ed7f3cf800b",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -262,5 +263,5 @@
   },
   "module_name": "Kinderbetreuung",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

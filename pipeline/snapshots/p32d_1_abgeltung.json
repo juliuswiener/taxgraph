@@ -8,6 +8,7 @@
   "catala_a": "declaration scope KapitalAbgeltung:\n  input kapitaleinkuenfte content money\n  input est_regulaer_mit_kap content money\n  input est_regulaer_ohne_kap content money\n  internal abgeltung content money\n  internal guenstiger_delta content money\n  output kapital_steuer content money\n\nscope KapitalAbgeltung:\n  definition abgeltung equals\n    kapitaleinkuenfte * 0.25\n\n  definition guenstiger_delta equals\n    est_regulaer_mit_kap - est_regulaer_ohne_kap\n\n  label grundregel\n  definition kapital_steuer equals abgeltung\n\n  exception grundregel\n  definition kapital_steuer under condition\n    guenstiger_delta < abgeltung\n  consequence equals guenstiger_delta",
   "catala_a_sha256": "d819c0eba3485daa5c37c3430adeed99e64355903009b38e540860b22ecbc666",
   "catala_b": "declaration scope KapitalAbgeltung:\n  input kapitaleinkuenfte content money\n  input est_regulaer_mit_kap content money\n  input est_regulaer_ohne_kap content money\n  internal abgeltung content money\n  internal guenstiger_delta content money\n  output kapital_steuer content money\n\nscope KapitalAbgeltung:\n  definition abgeltung equals kapitaleinkuenfte * 0.25\n  definition guenstiger_delta equals est_regulaer_mit_kap - est_regulaer_ohne_kap\n  label grundregel\n  definition kapital_steuer equals abgeltung\n  exception grundregel\n  definition kapital_steuer under condition guenstiger_delta < abgeltung consequence equals guenstiger_delta",
+  "catala_b_sha256": "1d0c979d2a8310854eb1db5851b488758b48c80665a3a88a8a0dddfe897507e1",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -349,5 +350,5 @@
   },
   "module_name": "KapitalAbgeltung",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

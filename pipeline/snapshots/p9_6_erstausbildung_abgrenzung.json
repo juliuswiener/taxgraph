@@ -6,6 +6,7 @@
   "catala_a": "declaration scope Erstausbildung:\n  input erstausbildung_abgeschlossen content boolean\n  input im_dienstverhaeltnis content boolean\n  input aufwendungen content money\n  output abziehbare_werbungskosten content money\n\nscope Erstausbildung:\n  definition abziehbare_werbungskosten equals\n    if (erstausbildung_abgeschlossen or im_dienstverhaeltnis) then\n      aufwendungen\n    else\n      $0.00",
   "catala_a_sha256": "704343eb9e998d877a98c50181c6d282ea1a6f35f0c78d75e22cf345ee47fe21",
   "catala_b": "declaration scope Erstausbildung:\n  input erstausbildung_abgeschlossen content boolean\n  input im_dienstverhaeltnis content boolean\n  input aufwendungen content money\n  output abziehbare_werbungskosten content money\nscope Erstausbildung:\n  definition abziehbare_werbungskosten equals\n    if erstausbildung_abgeschlossen or im_dienstverhaeltnis then aufwendungen\n    else $0.00",
+  "catala_b_sha256": "af8530f374c8d31b9fa7cbf7f6638abae400ec40544159cede69da90fa54bae3",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -534,5 +535,5 @@
   },
   "module_name": "Berufsausbildung",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

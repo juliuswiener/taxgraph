@@ -9,6 +9,7 @@
   "catala_a": "declaration scope Familienleistungsausgleich:\n  input est_ohne_freibetraege content money\n  input est_mit_freibetraegen content money\n  input kindergeld content money\n  internal freibetraege_guenstiger content boolean\n  output est_nach_familienausgleich content money\n\nscope Familienleistungsausgleich:\n  definition freibetraege_guenstiger equals\n    est_mit_freibetraegen + kindergeld < est_ohne_freibetraege\n\n  label grundregel\n  definition est_nach_familienausgleich equals\n    est_ohne_freibetraege\n\n  exception grundregel\n  definition est_nach_familienausgleich under condition\n    freibetraege_guenstiger\n  consequence equals\n    est_mit_freibetraegen + kindergeld",
   "catala_a_sha256": "2736d6bdcd69aa23b49f512802c8b3a49e13b87507043fda6e554761fdbcd93d",
   "catala_b": "declaration scope Familienleistungsausgleich:\n  input est_ohne_freibetraege content money\n  input est_mit_freibetraegen content money\n  input kindergeld content money\n  output est_nach_familienausgleich content money\n\nscope Familienleistungsausgleich:\n  definition est_nach_familienausgleich equals\n    if est_ohne_freibetraege <= est_mit_freibetraegen + kindergeld then est_ohne_freibetraege\n    else est_mit_freibetraegen + kindergeld",
+  "catala_b_sha256": "47b8dc363e7bc5baa52dd85de770e2fbe1beb9e3292e721f7ca194f21014cf48",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -288,5 +289,5 @@
   },
   "module_name": "Familienleistungsausgleich",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

@@ -8,6 +8,7 @@
   "catala_a": "declaration scope Anrechnung:\n  input festzusetzende_est content money\n  input lohnsteuer content money\n  input vorauszahlungen content money\n  internal lohnsteuer_aufgerundet content money\n  internal angerechnete_betraege content money\n  output abschlusszahlung content money\n\nscope Anrechnung:\n  definition lohnsteuer_aufgerundet equals\n    let cent_anteil equals lohnsteuer - (Decimal.truncate of (lohnsteuer / $1.00)) * $1.00 in\n    if cent_anteil > $0.00\n    then (Decimal.truncate of (lohnsteuer / $1.00)) * $1.00 + $1.00\n    else (Decimal.truncate of (lohnsteuer / $1.00)) * $1.00\n\n  definition angerechnete_betraege equals\n    vorauszahlungen + lohnsteuer_aufgerundet\n\n  definition abschlusszahlung equals\n    festzusetzende_est - angerechnete_betraege",
   "catala_a_sha256": "d40bb115f71f9208b7d21a8b74b9b9c36d54894ad31715e3daebcad64ebdbfe8",
   "catala_b": "declaration scope Anrechnung:\n  input festzusetzende_est content money\n  input lohnsteuer content money\n  input vorauszahlungen content money\n  output abschlusszahlung content money\n  internal aufgerundete_lohnsteuer content money\n\nscope Anrechnung:\n  definition aufgerundete_lohnsteuer equals\n    let roh equals lohnsteuer / $1.00 in\n    let gekuerzt equals Decimal.truncate of roh in\n    if gekuerzt = roh then gekuerzt * $1.00 else (gekuerzt + 1.0) * $1.00\n  definition abschlusszahlung equals\n    festzusetzende_est - (vorauszahlungen + aufgerundete_lohnsteuer)",
+  "catala_b_sha256": "0ff105c133d04a40d0478179bf1e57cc5eb9fe359cb54a5cf4ca90dd05bad919",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -159,5 +160,5 @@
   },
   "module_name": "Anrechnung",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

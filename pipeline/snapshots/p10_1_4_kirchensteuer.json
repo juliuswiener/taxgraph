@@ -7,6 +7,7 @@
   "catala_a": "declaration scope Kirchensteuerabzug:\n  input gezahlte_kirchensteuer content money\n  input erstattete_kirchensteuer content money\n  internal erstattungsueberhang content money\n  output abziehbare_kirchensteuer content money\n\nscope Kirchensteuerabzug:\n  definition erstattungsueberhang equals\n    if erstattete_kirchensteuer > gezahlte_kirchensteuer\n    then erstattete_kirchensteuer - gezahlte_kirchensteuer\n    else $0.00\n\n  definition abziehbare_kirchensteuer equals\n    if gezahlte_kirchensteuer > erstattete_kirchensteuer\n    then gezahlte_kirchensteuer - erstattete_kirchensteuer\n    else $0.00",
   "catala_a_sha256": "cc2c492862dfddfecddc15f32d25e3a769955a9847e9d22373c18a09c71d81d1",
   "catala_b": "declaration scope Kirchensteuerabzug:\n  input gezahlte_kirchensteuer content money\n  input erstattete_kirchensteuer content money\n  internal erstattungsuberhang content money\n  output abziehbare_kirchensteuer content money\n\nscope Kirchensteuerabzug:\n  definition erstattungsuberhang equals\n    if erstattete_kirchensteuer > gezahlte_kirchensteuer\n    then erstattete_kirchensteuer - gezahlte_kirchensteuer\n    else $0.00\n  label grundregel\n  definition abziehbare_kirchensteuer equals gezahlte_kirchensteuer - erstattete_kirchensteuer\n  exception grundregel\n  definition abziehbare_kirchensteuer under condition erstattete_kirchensteuer > gezahlte_kirchensteuer consequence equals $0.00",
+  "catala_b_sha256": "2ab3af420256acaf53b9ea614d16aac7986626ea5233f26bb79aa10e97455c76",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -159,5 +160,5 @@
   },
   "module_name": "Kirchensteuerabzug",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

@@ -17,6 +17,7 @@
   "catala_a": "declaration scope Haushaltsnahe:\n  input minijob_aufwendungen content money\n  input haushaltsnahe_dienstleistungen content money\n  input handwerker_arbeitskosten content money\n  internal ermaessigung_abs1 content money\n  internal ermaessigung_abs2 content money\n  internal ermaessigung_abs3 content money\n  output steuerermaessigung content money\n\nscope Haushaltsnahe:\n  definition ermaessigung_abs1 equals\n    if minijob_aufwendungen * 0.20 > $510.00\n    then $510.00\n    else minijob_aufwendungen * 0.20\n\n  definition ermaessigung_abs2 equals\n    if haushaltsnahe_dienstleistungen * 0.20 > $4,000.00\n    then $4,000.00\n    else haushaltsnahe_dienstleistungen * 0.20\n\n  definition ermaessigung_abs3 equals\n    if handwerker_arbeitskosten * 0.20 > $1,200.00\n    then $1,200.00\n    else handwerker_arbeitskosten * 0.20\n\n  definition steuerermaessigung equals\n    ermaessigung_abs1 + ermaessigung_abs2 + ermaessigung_abs3",
   "catala_a_sha256": "7d084e5a77c438b8dc4e7530940bd179d64e9dae15336fddb67b03ec52c4ebf6",
   "catala_b": "declaration scope Haushaltsnahe:\n  input minijob_aufwendungen content money\n  input haushaltsnahe_dienstleistungen content money\n  input handwerker_arbeitskosten content money\n  internal ermaessigung_abs1 content money\n  internal ermaessigung_abs2 content money\n  internal ermaessigung_abs3 content money\n  output steuerermaessigung content money\n\nscope Haushaltsnahe:\n  definition ermaessigung_abs1 equals if minijob_aufwendungen * 0.20 > $510.00 then $510.00 else minijob_aufwendungen * 0.20\n  definition ermaessigung_abs2 equals if haushaltsnahe_dienstleistungen * 0.20 > $4,000.00 then $4,000.00 else haushaltsnahe_dienstleistungen * 0.20\n  definition ermaessigung_abs3 equals if handwerker_arbeitskosten * 0.20 > $1,200.00 then $1,200.00 else handwerker_arbeitskosten * 0.20\n  definition steuerermaessigung equals ermaessigung_abs1 + ermaessigung_abs2 + ermaessigung_abs3",
+  "catala_b_sha256": "a5143caf7c6288e61b220d0ed1487e9a2ce403929e5cc6873f981c254e54fcd9",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -1281,5 +1282,5 @@
   },
   "module_name": "Haushaltsnahe",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

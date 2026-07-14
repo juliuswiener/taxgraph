@@ -11,6 +11,7 @@
   "catala_a": "declaration scope Verpflegungsmehraufwand:\n  input abwesenheit_stunden content integer\n  input mit_uebernachtung content boolean\n  input an_oder_abreisetag content boolean\n  input monate_am_ort content integer\n  output verpflegungspauschale content money\n\nscope Verpflegungsmehraufwand:\n  definition verpflegungspauschale equals\n    if monate_am_ort > 3 then $0.00\n    else\n      if abwesenheit_stunden >= 24 then $28.00\n      else\n        if an_oder_abreisetag and mit_uebernachtung then $14.00\n        else\n          if (not mit_uebernachtung) and abwesenheit_stunden > 8 then $14.00\n          else $0.00",
   "catala_a_sha256": "79e42c4723d7926c610cf725d038310b5ba822785b4607486f41451c0fda0635",
   "catala_b": "declaration scope Verpflegungsmehraufwand:\n  input abwesenheit_stunden content integer\n  input mit_uebernachtung content boolean\n  input an_oder_abreisetag content boolean\n  input monate_am_ort content integer\n  output verpflegungspauschale content money\n\nscope Verpflegungsmehraufwand:\n  label grundregel\n  definition verpflegungspauschale equals\n    if abwesenheit_stunden >= 24 then $28.00\n    else (if an_oder_abreisetag and mit_uebernachtung then $14.00\n    else (if not mit_uebernachtung and abwesenheit_stunden > 8 then $14.00\n    else $0.00))\n  exception grundregel\n  definition verpflegungspauschale under condition monate_am_ort > 3 consequence equals $0.00",
+  "catala_b_sha256": "6e55bd17ee74505346ea62ea541c3faa90c13fd2699b6c8f62900e55e9ddabae",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -852,5 +853,5 @@
   },
   "module_name": "Verpflegungsmehraufwand",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

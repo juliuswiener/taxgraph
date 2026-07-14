@@ -7,6 +7,7 @@
   "catala_a": "declaration scope ArbeitsmittelUndAfaLaufendNettoBrutto:\n  input anschaffungskosten_netto content money\n  input anschaffungskosten_brutto content money\n  input nutzungsdauer_jahre content integer\n  input anschaffungsmonat content integer\n  input jahre_seit_anschaffung content integer\n  internal ist_gwg content boolean\n  internal jahres_afa content money\n  internal monate_ab_anschaffung content decimal\n  output abziehbar content money\n\nscope ArbeitsmittelUndAfaLaufendNettoBrutto:\n  definition ist_gwg equals\n    anschaffungskosten_netto <= $800.00\n\n  definition jahres_afa equals\n    anschaffungskosten_brutto / (decimal of nutzungsdauer_jahre)\n\n  definition monate_ab_anschaffung equals\n    decimal of (13 - anschaffungsmonat)\n\n  definition abziehbar equals\n    if ist_gwg then\n      (if jahre_seit_anschaffung = 0 then anschaffungskosten_brutto else $0.00)\n    else\n      (if jahre_seit_anschaffung = 0 then\n        jahres_afa * (monate_ab_anschaffung / 12.0)\n      else\n        (if jahre_seit_anschaffung >= 1 and jahre_seit_anschaffung <= nutzungsdauer_jahre - 1 then\n          jahres_afa\n        else\n          $0.00))",
   "catala_a_sha256": "2c159cd0099914eb3f2d13e335466138859041c7bd73d8da959fadd37b81e84a",
   "catala_b": "declaration scope ArbeitsmittelUndAfaLaufendNettoBrutto:\n  input anschaffungskosten_netto content money\n  input anschaffungskosten_brutto content money\n  input nutzungsdauer_jahre content integer\n  input anschaffungsmonat content integer\n  input jahre_seit_anschaffung content integer\n  internal ist_gwg content boolean\n  internal jahres_afa content money\n  output abziehbar content money\n\nscope ArbeitsmittelUndAfaLaufendNettoBrutto:\n  definition ist_gwg equals anschaffungskosten_netto <= $800.00\n  definition jahres_afa equals anschaffungskosten_brutto * (1.0 / (decimal of nutzungsdauer_jahre))\n  definition abziehbar equals\n    if ist_gwg then\n      (if jahre_seit_anschaffung = 0 then anschaffungskosten_brutto else $0.00)\n    else\n      (if jahre_seit_anschaffung = 0 then\n        jahres_afa * ((decimal of (13 - anschaffungsmonat)) / 12.0)\n      else\n        (if jahre_seit_anschaffung >= nutzungsdauer_jahre then $0.00\n         else jahres_afa))",
+  "catala_b_sha256": "5e59f5784b37b483b5f36ff7d2deddcd081c44d635a7489306c49494e460d056",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -500,5 +501,5 @@
   },
   "module_name": "ArbeitsmittelUndAfaLaufendNettoBrutto",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

@@ -7,6 +7,7 @@
   "catala_a": "declaration scope LeibrenteBesteuerungsanteil:\n  input jahresrente content money\n  input besteuerungsanteil_prozent content decimal\n  output steuerpflichtiger_rentenanteil content money\n\nscope LeibrenteBesteuerungsanteil:\n  definition steuerpflichtiger_rentenanteil equals\n    (besteuerungsanteil_prozent / 100.0) * jahresrente",
   "catala_a_sha256": "ccdcaa73e7d12629e8ce2bec3255dd631c4b6500ad4701bfa703bbeee0165389",
   "catala_b": "declaration scope LeibrenteBesteuerungsanteil:\n  input jahresrente content money\n  input besteuerungsanteil_prozent content decimal\n  output steuerpflichtiger_rentenanteil content money\n\nscope LeibrenteBesteuerungsanteil:\n  definition steuerpflichtiger_rentenanteil equals\n    jahresrente * (besteuerungsanteil_prozent / 100.0)",
+  "catala_b_sha256": "d06f27bf50da65f9a88dfa3755dbc9d5044566d803c0395165f2822d3d7cafeb",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -148,5 +149,5 @@
   },
   "module_name": "LeibrenteBesteuerungsanteil",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

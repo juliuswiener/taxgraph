@@ -7,6 +7,7 @@
   "catala_a": "declaration scope SpendenAbzug:\n  input zuwendungen content money\n  input gesamtbetrag_der_einkuenfte content money\n  output spenden_abzug content money\n\nscope SpendenAbzug:\n  definition spenden_abzug equals\n    if zuwendungen > gesamtbetrag_der_einkuenfte * 0.20\n    then gesamtbetrag_der_einkuenfte * 0.20\n    else zuwendungen",
   "catala_a_sha256": "e352aeeb64cadad3d728161642d4b1e0c62a390c3608bc55b1ed8f10e944fcdd",
   "catala_b": "declaration scope SpendenAbzug:\n  input zuwendungen content money\n  input gesamtbetrag_der_einkuenfte content money\n  output spenden_abzug content money\n\nscope SpendenAbzug:\n  definition spenden_abzug equals\n    if zuwendungen > gesamtbetrag_der_einkuenfte * 0.20 then gesamtbetrag_der_einkuenfte * 0.20\n    else zuwendungen",
+  "catala_b_sha256": "9feb1f87362001cc342c4d2340086e814108bef1f7ae4947389e8aff015b58cc",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -161,5 +162,5 @@
   },
   "module_name": "SpendenAbzug",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

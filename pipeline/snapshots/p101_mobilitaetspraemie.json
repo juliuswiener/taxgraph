@@ -7,6 +7,7 @@
   "catala_a": "declaration scope Mobilitaetspraemie:\n  input entfernungspauschale_ab_21km content money\n  input zu_versteuerndes_einkommen content money\n  input grundfreibetrag content money\n  output mobilitaetspraemie content money\n\nscope Mobilitaetspraemie:\n  definition mobilitaetspraemie equals\n    let unterschreitung equals\n      if grundfreibetrag > zu_versteuerndes_einkommen\n      then grundfreibetrag - zu_versteuerndes_einkommen\n      else $0.00\n    in\n    let bemessungsgrundlage equals\n      if entfernungspauschale_ab_21km < unterschreitung\n      then entfernungspauschale_ab_21km\n      else unterschreitung\n    in\n    bemessungsgrundlage * 0.14",
   "catala_a_sha256": "3a6285019125e1beff2d9adf111d8f20bd472a149a2ad4f10b5c481ffe98a160",
   "catala_b": "declaration scope Mobilitaetspraemie:\n  input entfernungspauschale_ab_21km content money\n  input zu_versteuerndes_einkommen content money\n  input grundfreibetrag content money\n  internal unterschreitung content money\n  internal bemessungsgrundlage content money\n  output mobilitaetspraemie content money\n\nscope Mobilitaetspraemie:\n  definition unterschreitung equals\n    if grundfreibetrag - zu_versteuerndes_einkommen > $0.00\n    then grundfreibetrag - zu_versteuerndes_einkommen\n    else $0.00\n  definition bemessungsgrundlage equals\n    if entfernungspauschale_ab_21km <= unterschreitung\n    then entfernungspauschale_ab_21km\n    else unterschreitung\n  definition mobilitaetspraemie equals bemessungsgrundlage * 0.14",
+  "catala_b_sha256": "11681d549760b35e09308d68ed7e604a07c2b26d9b6176a8d102cd5dc2e79951",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -284,5 +285,5 @@
   },
   "module_name": "Mobilitaetspraemie",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

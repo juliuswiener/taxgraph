@@ -10,6 +10,7 @@
   "catala_a": "declaration scope UebernachtungskostenNach48:\n  input uebernachtungskosten_monat content money\n  input monate content integer\n  input monate_bisher_am_ort content integer\n  output abziehbare_uebernachtungskosten content money\n\nscope UebernachtungskostenNach48:\n  definition abziehbare_uebernachtungskosten equals\n    (if uebernachtungskosten_monat > $1,000.00 then $1,000.00\n     else uebernachtungskosten_monat)\n    * (decimal of monate)",
   "catala_a_sha256": "bd88a8344f2225e60d50ce0eb506dfe02d6215c844c16a208c5872cf6d127195",
   "catala_b": "declaration scope UebernachtungskostenNach48:\n  input uebernachtungskosten_monat content money\n  input monate content integer\n  input monate_bisher_am_ort content integer\n  output abziehbare_uebernachtungskosten content money\n\nscope UebernachtungskostenNach48:\n  definition abziehbare_uebernachtungskosten equals\n    (if uebernachtungskosten_monat > $1,000.00 then $1,000.00 else uebernachtungskosten_monat)\n    * (decimal of monate)",
+  "catala_b_sha256": "9a24b50c0f8614f2681428a816a5670c2186178751da2fde3037ca061c2997c1",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -227,5 +228,5 @@
   },
   "module_name": "UebernachtungskostenKappung",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

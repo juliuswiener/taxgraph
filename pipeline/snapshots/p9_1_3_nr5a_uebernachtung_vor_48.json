@@ -9,6 +9,7 @@
   "catala_a": "declaration scope UebernachtungskostenVor48:\n  input uebernachtungskosten_monat content money\n  input monate content integer\n  input monate_bisher_am_ort content integer\n  output abziehbare_uebernachtungskosten content money\n\nscope UebernachtungskostenVor48:\n  definition abziehbare_uebernachtungskosten equals\n    uebernachtungskosten_monat * (decimal of monate)",
   "catala_a_sha256": "c8d15826960d4ac211fb972e6e8dd8366f2f9d633a2ab87f6ca8c12c319c58ba",
   "catala_b": "declaration scope UebernachtungskostenVor48:\n  input uebernachtungskosten_monat content money\n  input monate content integer\n  input monate_bisher_am_ort content integer\n  output abziehbare_uebernachtungskosten content money\n\nscope UebernachtungskostenVor48:\n  label grundregel\n  definition abziehbare_uebernachtungskosten equals uebernachtungskosten_monat * (decimal of monate)",
+  "catala_b_sha256": "eecc7e94fa5ae37cf00309d62e57f4a48513daf89016a5436705232fa1e8f22c",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -381,5 +382,5 @@
   },
   "module_name": "UebernachtungskostenVor48",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

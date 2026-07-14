@@ -8,6 +8,7 @@
   "catala_a": "declaration scope PvgVerlusttopf:\n  input gewinn_pvg content money\n  input verlust_pvg content money\n  output anzusetzende_einkuenfte content money\n\nscope PvgVerlusttopf:\n  definition anzusetzende_einkuenfte equals\n    if gewinn_pvg > verlust_pvg\n    then gewinn_pvg - verlust_pvg\n    else $0.00",
   "catala_a_sha256": "df43f50455c1eee9fd2a74b0a6fdc12b5095208bc835947f9796e6cffdb7d209",
   "catala_b": "declaration scope PvgVerlusttopf:\n  input gewinn_pvg content money\n  input verlust_pvg content money\n  output anzusetzende_einkuenfte content money\n\nscope PvgVerlusttopf:\n  definition anzusetzende_einkuenfte equals\n    if gewinn_pvg > verlust_pvg then gewinn_pvg - verlust_pvg else $0.00",
+  "catala_b_sha256": "8d714d1139e699eceb67af39d2abf6728fb616a6c1ebba6b677e59b054df3ffc",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -212,5 +213,5 @@
   },
   "module_name": "PvgVerlusttopf",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

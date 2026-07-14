@@ -8,6 +8,7 @@
   "catala_a": "declaration scope ZulageAnspruch:\n  input anzahl_kinder_geboren_vor_2008 content decimal\n  input anzahl_kinder_geboren_ab_2008 content decimal\n  input ist_berufseinsteiger_erstjahr content boolean\n  output zulage_anspruch content money\n\nscope ZulageAnspruch:\n  definition zulage_anspruch equals\n    $175.00\n    + (if ist_berufseinsteiger_erstjahr then $200.00 else $0.00)\n    + anzahl_kinder_geboren_vor_2008 * $185.00\n    + anzahl_kinder_geboren_ab_2008 * $300.00",
   "catala_a_sha256": "aeb4d5b5c5c188764a3a5eeaf3806efd6128b235c5c70157b45a747170812b40",
   "catala_b": "declaration scope ZulageAnspruch:\n  input anzahl_kinder_geboren_vor_2008 content decimal\n  input anzahl_kinder_geboren_ab_2008 content decimal\n  input ist_berufseinsteiger_erstjahr content boolean\n  output zulage_anspruch content money\n\nscope ZulageAnspruch:\n  definition zulage_anspruch equals\n    $175.00\n    + (if ist_berufseinsteiger_erstjahr then $200.00 else $0.00)\n    + ($185.00 * anzahl_kinder_geboren_vor_2008)\n    + ($300.00 * anzahl_kinder_geboren_ab_2008)",
+  "catala_b_sha256": "3d88b597055bd4880960bde16c896b401c9ca0d231dc5f570ea5172e41dae199",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -466,5 +467,5 @@
   },
   "module_name": "ZulageAnspruch",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

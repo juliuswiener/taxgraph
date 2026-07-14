@@ -11,6 +11,7 @@
   "catala_a": "declaration scope ErmaessigterDurchschnittssatz:\n  input ao_einkuenfte content money\n  input est_gesamt_zzgl_progression content money\n  input bemessungsgrundlage_durchschnitt content money\n  output est_ao content money\n\nscope ErmaessigterDurchschnittssatz:\n  definition est_ao equals\n    let cap equals $5,000,000.00 in\n    let ao_gekappt equals\n      if ao_einkuenfte > cap then cap else ao_einkuenfte\n    in\n    let durchschnittssatz equals\n      est_gesamt_zzgl_progression / bemessungsgrundlage_durchschnitt\n    in\n    let ermaessigter_satz equals\n      let kandidat equals 0.56 * durchschnittssatz in\n      if kandidat > 0.14 then kandidat else 0.14\n    in\n    ao_gekappt * ermaessigter_satz",
   "catala_a_sha256": "1a61a331909aecc2d7094549e09c279a8c19a5fa90de50a10aabefe55dba67e9",
   "catala_b": "declaration scope ErmaessigterDurchschnittssatz:\n  input ao_einkuenfte content money\n  input est_gesamt_zzgl_progression content money\n  input bemessungsgrundlage_durchschnitt content money\n  internal durchschnittssatz content decimal\n  internal ermaessigter_satz content decimal\n  internal begrenzte_ao_einkuenfte content money\n  internal est_ao_raw content money\n  output est_ao content money\n\nscope ErmaessigterDurchschnittssatz:\n  definition durchschnittssatz equals est_gesamt_zzgl_progression / bemessungsgrundlage_durchschnitt\n  definition ermaessigter_satz equals\n    if 0.56 * durchschnittssatz > 0.14 then 0.56 * durchschnittssatz else 0.14\n  definition begrenzte_ao_einkuenfte equals\n    if ao_einkuenfte > $5,000,000.00 then $5,000,000.00 else ao_einkuenfte\n  definition est_ao_raw equals ermaessigter_satz * begrenzte_ao_einkuenfte\n  definition est_ao equals (Decimal.truncate of (est_ao_raw / $0.01)) * $0.01",
+  "catala_b_sha256": "e0459166affad4c50b6c2b56d225aaedf2abcf0b8e632cb1c13ec1d7eda9c6bb",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -482,5 +483,5 @@
   },
   "module_name": "ErmaessigterDurchschnittssatz",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

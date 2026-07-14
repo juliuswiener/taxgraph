@@ -9,6 +9,7 @@
   "catala_a": "declaration scope VeraeusserungsGewinn:\n  input veraeusserungspreis content money\n  input anschaffungs_herstellungskosten content money\n  input werbungskosten content money\n  output veraeusserungsgewinn content money\n\nscope VeraeusserungsGewinn:\n  definition veraeusserungsgewinn equals\n    veraeusserungspreis - anschaffungs_herstellungskosten - werbungskosten",
   "catala_a_sha256": "ca7fe2d77eb402321123400578037bca90ffc5dc11a01a40e5405d28fabb9e92",
   "catala_b": "declaration scope VeraeusserungsGewinn:\n  input veraeusserungspreis content money\n  input anschaffungs_herstellungskosten content money\n  input werbungskosten content money\n  output veraeusserungsgewinn content money\n\nscope VeraeusserungsGewinn:\n  definition veraeusserungsgewinn equals veraeusserungspreis - anschaffungs_herstellungskosten - werbungskosten",
+  "catala_b_sha256": "931a110a77f56b62bb1de535bcd766b52ca30dcd3fc04e4847c728836b9fe329",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -141,5 +142,5 @@
   },
   "module_name": "VeraeusserungsGewinn",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

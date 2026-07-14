@@ -8,6 +8,7 @@
   "catala_a": "declaration scope Kinderfreibetraege:\n  input anzahl_kinder content integer\n  input zusammenveranlagung content boolean\n  output kinderfreibetraege_gesamt content money\n\nscope Kinderfreibetraege:\n  definition kinderfreibetraege_gesamt equals\n    let kinderfreibetrag equals $3,414.00 in\n    let bea_freibetrag equals $1,464.00 in\n    let freibetrag_je_kind equals kinderfreibetrag + bea_freibetrag in\n    let faktor equals if zusammenveranlagung then 2.0 else 1.0 in\n    (freibetrag_je_kind * faktor) * (decimal of anzahl_kinder)",
   "catala_a_sha256": "3330ce7de519b6b017ca36dd009f4d2404f08c566c6993b98b6a9a3368536784",
   "catala_b": "declaration scope Kinderfreibetraege:\n  input anzahl_kinder content integer\n  input zusammenveranlagung content boolean\n  output kinderfreibetraege_gesamt content money\n\nscope Kinderfreibetraege:\n  definition kinderfreibetraege_gesamt equals\n    let freibetrag_pro_kind equals\n      if zusammenveranlagung then ($3,414.00 + $1,464.00) * 2.0\n      else $3,414.00 + $1,464.00\n    in freibetrag_pro_kind * (decimal of anzahl_kinder)",
+  "catala_b_sha256": "fd6fc53eb9fadeaba7af40509fda8a0c789ad3ded478207f3ce2910740cd66b5",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -187,5 +188,5 @@
   },
   "module_name": "Kinderfreibetraege",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

@@ -8,6 +8,7 @@
   "catala_a": "declaration scope Unterhaltsabzug:\n  input aufwendungen content money\n  input kv_pv_beitraege content money\n  input andere_einkuenfte_bezuege content money\n  internal grundfreibetrag content money\n  internal anrechnungsbetrag content money\n  internal hoechstbetrag content money\n  output unterhalt_abzug content money\n\nscope Unterhaltsabzug:\n  definition grundfreibetrag equals $12,348.00\n\n  definition anrechnungsbetrag equals\n    if andere_einkuenfte_bezuege > $624.00\n    then andere_einkuenfte_bezuege - $624.00\n    else $0.00\n\n  definition hoechstbetrag equals\n    let rohbetrag equals grundfreibetrag + kv_pv_beitraege - anrechnungsbetrag in\n    if rohbetrag > $0.00 then rohbetrag else $0.00\n\n  definition unterhalt_abzug equals\n    if aufwendungen > hoechstbetrag then hoechstbetrag else aufwendungen",
   "catala_a_sha256": "d250bc9231ea9f965933a5ed32629df3771421854dd0110bb644ab9015938e4f",
   "catala_b": "declaration scope Unterhaltsabzug:\n  input aufwendungen content money\n  input kv_pv_beitraege content money\n  input andere_einkuenfte_bezuege content money\n  internal grundfreibetrag content money\n  internal freigrenze content money\n  internal anrechnungsbetrag content money\n  internal hoechstbetrag content money\n  internal hoechstbetrag_nicht_negativ content money\n  output unterhalt_abzug content money\n\nscope Unterhaltsabzug:\n  definition grundfreibetrag equals $12,348.00\n  definition freigrenze equals $624.00\n  definition anrechnungsbetrag equals\n    if andere_einkuenfte_bezuege > freigrenze then andere_einkuenfte_bezuege - freigrenze else $0.00\n  definition hoechstbetrag equals grundfreibetrag + kv_pv_beitraege - anrechnungsbetrag\n  definition hoechstbetrag_nicht_negativ equals\n    if hoechstbetrag > $0.00 then hoechstbetrag else $0.00\n  definition unterhalt_abzug equals\n    if aufwendungen < hoechstbetrag_nicht_negativ then aufwendungen else hoechstbetrag_nicht_negativ",
+  "catala_b_sha256": "4bcfd9bb504ed5719edd68587db51d393bfa1a17d260603936e019f01303c1ba",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -698,5 +699,5 @@
   },
   "module_name": "Unterhaltsabzug",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

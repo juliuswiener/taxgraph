@@ -6,6 +6,7 @@
   "catala_a": "declaration scope ZulageKuerzung:\n  input zulage_anspruch content money\n  input altersvorsorgebeitraege content money\n  input mindesteigenbeitrag content money\n  output gewaehrte_zulage content money\n\nscope ZulageKuerzung:\n  definition gewaehrte_zulage equals\n    let quote equals altersvorsorgebeitraege / mindesteigenbeitrag in\n    let gekappte_quote equals if quote > 1.0 then 1.0 else quote in\n    zulage_anspruch * gekappte_quote",
   "catala_a_sha256": "1514c23f78933c3e4f2244dc4d557c7f7602265c75dff69727039284d2e7334e",
   "catala_b": "declaration scope ZulageKuerzung:\n  input zulage_anspruch content money\n  input altersvorsorgebeitraege content money\n  input mindesteigenbeitrag content money\n  output gewaehrte_zulage content money\n\nscope ZulageKuerzung:\n  definition gewaehrte_zulage equals\n    zulage_anspruch *\n      (if altersvorsorgebeitraege / mindesteigenbeitrag > 1.0\n       then 1.0\n       else altersvorsorgebeitraege / mindesteigenbeitrag)",
+  "catala_b_sha256": "a4e59918deb6160e51bed6de6019bc71c7bc1999dce6fc6ab834c4eb30e46392",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -242,5 +243,5 @@
   },
   "module_name": "ZulageKuerzung",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

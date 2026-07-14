@@ -6,6 +6,7 @@
   "catala_a": "declaration scope VeraeusserungFreigrenze:\n  input gesamtgewinn content money\n  output steuerpflichtiger_gewinn content money\n\nscope VeraeusserungFreigrenze:\n  definition steuerpflichtiger_gewinn equals\n    if gesamtgewinn < $1,000.00 then $0.00\n    else gesamtgewinn",
   "catala_a_sha256": "a91e177c7913f58c32380068588cc59a9936994fdbad29ceb204ead6368e3564",
   "catala_b": "declaration scope VeraeusserungFreigrenze:\n  input gesamtgewinn content money\n  output steuerpflichtiger_gewinn content money\n\nscope VeraeusserungFreigrenze:\n  definition steuerpflichtiger_gewinn equals\n    if gesamtgewinn >= $1,000.00 then gesamtgewinn else $0.00",
+  "catala_b_sha256": "f457790ead462fcd6e713fae6275e0411928d120ca20b4ec4f3985ea38c48de5",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -160,5 +161,5 @@
   },
   "module_name": "VeraeusserungFreigrenze",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

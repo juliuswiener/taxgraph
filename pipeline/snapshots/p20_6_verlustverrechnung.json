@@ -7,6 +7,7 @@
   "catala_a": "declaration scope Verlustverrechnung:\n  input gewinn_aktien content money\n  input verlust_aktien content money\n  input gewinn_sonstige content money\n  input verlust_sonstige content money\n  internal saldo_aktien content money\n  internal saldo_sonstige content money\n  output verrechnete_kapitaleinkuenfte content money\n\nscope Verlustverrechnung:\n  definition saldo_aktien equals\n    if gewinn_aktien - verlust_aktien < $0.00\n    then $0.00\n    else gewinn_aktien - verlust_aktien\n\n  definition saldo_sonstige equals\n    if gewinn_sonstige - verlust_sonstige < $0.00\n    then $0.00\n    else gewinn_sonstige - verlust_sonstige\n\n  definition verrechnete_kapitaleinkuenfte equals\n    saldo_aktien + saldo_sonstige",
   "catala_a_sha256": "f0941223e3c4d574a8f897fb33abeb943e35bd0fa2d31acf1aa1616bd90f86e7",
   "catala_b": "declaration scope Verlustverrechnung:\n  input gewinn_aktien content money\n  input verlust_aktien content money\n  input gewinn_sonstige content money\n  input verlust_sonstige content money\n  internal saldo_aktien content money\n  internal saldo_sonstige content money\n  output verrechnete_kapitaleinkuenfte content money\n\nscope Verlustverrechnung:\n  definition saldo_aktien equals\n    if gewinn_aktien - verlust_aktien < $0.00 then $0.00\n    else gewinn_aktien - verlust_aktien\n  definition saldo_sonstige equals\n    if gewinn_sonstige - verlust_sonstige < $0.00 then $0.00\n    else gewinn_sonstige - verlust_sonstige\n  definition verrechnete_kapitaleinkuenfte equals\n    saldo_aktien + saldo_sonstige",
+  "catala_b_sha256": "b7f0a9ded9d2d8fa97de3b03ce1a31b74fd5f8c28f384e564976888886becb3d",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -292,5 +293,5 @@
   },
   "module_name": "Verlustverrechnung",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

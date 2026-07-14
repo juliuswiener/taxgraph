@@ -7,6 +7,7 @@
   "catala_a": "declaration scope SonstigeLeistungen:\n  input einnahmen content money\n  input werbungskosten content money\n  output steuerpflichtige_einkuenfte content money\n\nscope SonstigeLeistungen:\n  definition steuerpflichtige_einkuenfte equals\n    let einkuenfte equals\n      if einnahmen > werbungskosten then einnahmen - werbungskosten\n      else $0.00\n    in\n    if einkuenfte >= $256.00 then einkuenfte else $0.00",
   "catala_a_sha256": "62ace40566471ae50f99bc3b6d73f75a5b1f82fdbed0b42f0bfe5ee82054f59d",
   "catala_b": "declaration scope SonstigeLeistungen:\n  input einnahmen content money\n  input werbungskosten content money\n  internal einkuenfte content money\n  output steuerpflichtige_einkuenfte content money\n\nscope SonstigeLeistungen:\n  definition einkuenfte equals einnahmen - werbungskosten\n  definition steuerpflichtige_einkuenfte equals\n    if einkuenfte < $256.00 then $0.00 else einkuenfte",
+  "catala_b_sha256": "d5edd4eacab0b4e38b4b422d675c3a0767267f9a8057c45cbed9c0b924602cf3",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -327,5 +328,5 @@
   },
   "module_name": "SonstigeLeistungen",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

@@ -40,7 +40,7 @@ ROOT = os.path.dirname(HERE)
 OUT_ROOT = os.path.join(HERE, "runs", "produktion")
 SNAP_DIR = os.path.join(HERE, "snapshots")
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2   # v2: sha256 ueber catala_a UND catala_b (pfad-unabhaengige Integritaet)
 # Nur diese Felder aus dem Report wandern in den Snapshot (deterministisch pruefbar).
 # KEINE Kosten/Provenance/Timestamps - der Snapshot ist reproduzierbar, nicht auditlog.
 SNAP_FIELDS = ("candidate_id", "queue_status", "module_name",
@@ -73,7 +73,10 @@ def build_snapshot(rep: dict) -> dict:
     snap = {"schema_version": SCHEMA_VERSION}
     for f in SNAP_FIELDS:
         snap[f] = rep.get(f)
+    # Beide Catala-Quellen gehasht: die Integritaet ist damit pfad-unabhaengig, nicht
+    # auf die Annahme angewiesen, dass der Regate-Pfad equivalence aus a+b recomputet.
     snap["catala_a_sha256"] = _sha(rep.get("catala_a") or "")
+    snap["catala_b_sha256"] = _sha(rep.get("catala_b") or "")
     return snap
 
 
@@ -105,12 +108,13 @@ def load_snapshot(rid: str) -> dict:
     if not os.path.exists(sp):
         raise FileNotFoundError(sp)
     snap = json.load(open(sp, encoding="utf-8"))
-    ist = _sha(snap.get("catala_a") or "")
-    soll = snap.get("catala_a_sha256")
-    if ist != soll:
-        raise SnapshotIntegrityError(
-            f"{rid}: catala_a-sha256 stimmt nicht (Datei {soll!r}, berechnet {ist!r}) "
-            f"- Snapshot manipuliert/korrumpiert. KEIN Verdikt aus diesem Snapshot.")
+    for feld, hashfeld in (("catala_a", "catala_a_sha256"), ("catala_b", "catala_b_sha256")):
+        ist = _sha(snap.get(feld) or "")
+        soll = snap.get(hashfeld)
+        if ist != soll:
+            raise SnapshotIntegrityError(
+                f"{rid}: {feld}-sha256 stimmt nicht (Datei {soll!r}, berechnet {ist!r}) "
+                f"- Snapshot manipuliert/korrumpiert. KEIN Verdikt aus diesem Snapshot.")
     rep = {f: snap.get(f) for f in SNAP_FIELDS}
     rep["aus_snapshot"] = True
     return rep

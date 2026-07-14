@@ -6,6 +6,7 @@
   "catala_a": "declaration scope HinterbliebenenPauschbetrag:\n  input hat_hinterbliebenenbezuege content boolean\n  output hinterbliebenen_pauschbetrag content money\n\nscope HinterbliebenenPauschbetrag:\n  definition hinterbliebenen_pauschbetrag equals\n    if hat_hinterbliebenenbezuege then $370.00 else $0.00",
   "catala_a_sha256": "4ca20add87ff366e7a7aa8a8b29830fe89dea14880da17689f2fec66ff4defc4",
   "catala_b": "declaration scope HinterbliebenenPauschbetrag:\n  input hat_hinterbliebenenbezuege content boolean\n  output hinterbliebenen_pauschbetrag content money\n\nscope HinterbliebenenPauschbetrag:\n  definition hinterbliebenen_pauschbetrag equals\n    if hat_hinterbliebenenbezuege then $370.00 else $0.00",
+  "catala_b_sha256": "4ca20add87ff366e7a7aa8a8b29830fe89dea14880da17689f2fec66ff4defc4",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -162,5 +163,5 @@
   },
   "module_name": "HinterbliebenenPauschbetrag",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

@@ -6,6 +6,7 @@
   "catala_a": "declaration scope Mindesteigenbeitrag:\n  input vorjahres_einnahmen content money\n  input zulage_anspruch content money\n  output mindesteigenbeitrag content money\n\nscope Mindesteigenbeitrag:\n  definition mindesteigenbeitrag equals\n    let vier_prozent equals vorjahres_einnahmen * 0.04 in\n    let gedeckelt equals\n      if vier_prozent > $2,100.00 then $2,100.00 else vier_prozent\n    in\n    let nach_zulage equals\n      if gedeckelt > zulage_anspruch then gedeckelt - zulage_anspruch\n      else $0.00\n    in\n    if $60.00 > nach_zulage then $60.00 else nach_zulage",
   "catala_a_sha256": "d5ef328a3777877d7ba6e015958d664151d8dd667f919cbf65e425941d3868a7",
   "catala_b": "declaration scope Mindesteigenbeitrag:\n  input vorjahres_einnahmen content money\n  input zulage_anspruch content money\n  internal vier_prozent_betrag content money\n  internal gedeckelt content money\n  internal nach_zulage_abzug content money\n  output mindesteigenbeitrag content money\n\nscope Mindesteigenbeitrag:\n  definition vier_prozent_betrag equals 0.04 * vorjahres_einnahmen\n  definition gedeckelt equals if vier_prozent_betrag <= $2,100.00 then vier_prozent_betrag else $2,100.00\n  definition nach_zulage_abzug equals gedeckelt - zulage_anspruch\n  definition mindesteigenbeitrag equals if nach_zulage_abzug >= $60.00 then nach_zulage_abzug else $60.00",
+  "catala_b_sha256": "49ed7666ca49cd89f243bab40974561927d3484a55e57939127edd765583fa8b",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -528,5 +529,5 @@
   },
   "module_name": "Mindesteigenbeitrag",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

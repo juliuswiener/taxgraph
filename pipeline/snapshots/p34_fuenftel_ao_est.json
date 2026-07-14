@@ -7,6 +7,7 @@
   "catala_a": "declaration scope FuenftelAoEst:\n  input est_verbleibendes_zve content money\n  input est_verbleibendes_zve_plus_fuenftel_ao content money\n  output est_ao content money\n\nscope FuenftelAoEst:\n  definition est_ao equals\n    (est_verbleibendes_zve_plus_fuenftel_ao - est_verbleibendes_zve) * 5.0",
   "catala_a_sha256": "1d41bd7d829013f3affd12bbb98e2b23a384ce617abed4965e6de491ee9ce152",
   "catala_b": "declaration scope FuenftelAoEst:\n  input est_verbleibendes_zve content money\n  input est_verbleibendes_zve_plus_fuenftel_ao content money\n  output est_ao content money\n\nscope FuenftelAoEst:\n  definition est_ao equals 5.0 * (est_verbleibendes_zve_plus_fuenftel_ao - est_verbleibendes_zve)",
+  "catala_b_sha256": "740681aea9b6a039e30e2479a8159646869cf389cc93eda650b449afcd80b6e2",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -169,5 +170,5 @@
   },
   "module_name": "FuenftelAoEst",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

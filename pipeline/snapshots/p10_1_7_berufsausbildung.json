@@ -6,6 +6,7 @@
   "catala_a": "declaration scope Berufsausbildung:\n  input aufwendungen content money\n  output abziehbare_sonderausgaben content money\n\nscope Berufsausbildung:\n  definition abziehbare_sonderausgaben equals\n    if aufwendungen > $6,000.00 then $6,000.00\n    else aufwendungen",
   "catala_a_sha256": "68553fb25a82d327183ca5b3df431958c9d92e54b86354f1c27c87504783700f",
   "catala_b": "declaration scope Berufsausbildung:\n  input aufwendungen content money\n  output abziehbare_sonderausgaben content money\n\nscope Berufsausbildung:\n  definition abziehbare_sonderausgaben equals\n    if aufwendungen <= $6,000.00 then aufwendungen else $6,000.00",
+  "catala_b_sha256": "5c935e7f02240a73287ed920b0fa261119a3ca00dca380c9a57e9e5ff4e83f8a",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -368,5 +369,5 @@
   },
   "module_name": "Berufsausbildungsaufwendungen",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

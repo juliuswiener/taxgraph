@@ -12,6 +12,7 @@
   "catala_a": "declaration scope SanierungErmaessigung:\n  input sanierungsaufwendungen content money\n  input ist_uebernaechstes_foerderjahr content boolean\n  output sanierung_ermaessigung content money\n\nscope SanierungErmaessigung:\n  definition sanierung_ermaessigung equals\n    let satz equals\n      if ist_uebernaechstes_foerderjahr then 0.06 else 0.07\n    in\n    let hoechstbetrag equals\n      if ist_uebernaechstes_foerderjahr then $12,000.00 else $14,000.00\n    in\n    let roh equals sanierungsaufwendungen * satz in\n    if roh > hoechstbetrag then hoechstbetrag else roh",
   "catala_a_sha256": "e5c5568c57e268b88905aac94ce066940aacc010a0e64be1c672488c36c188c7",
   "catala_b": "declaration scope SanierungErmaessigung:\n  input sanierungsaufwendungen content money\n  input ist_uebernaechstes_foerderjahr content boolean\n  output sanierung_ermaessigung content money\n\nscope SanierungErmaessigung:\n  definition sanierung_ermaessigung equals\n    let prozentsatz equals\n      if ist_uebernaechstes_foerderjahr then 0.06 else 0.07\n    in\n    let hoechstbetrag equals\n      if ist_uebernaechstes_foerderjahr then $12,000.00 else $14,000.00\n    in\n    if prozentsatz * sanierungsaufwendungen > hoechstbetrag then hoechstbetrag\n    else prozentsatz * sanierungsaufwendungen",
+  "catala_b_sha256": "71ffccaccbc2db3293ed90b789215c027cb2b9bb1da57ab4960035a45a675802",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -291,5 +292,5 @@
   },
   "module_name": "SanierungErmaessigung",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

@@ -8,6 +8,7 @@
   "catala_a": "declaration scope KapitalAbgeltungKirchensteuer:\n  input kapitaleinkuenfte content money\n  input anrechenbare_auslaendische_steuer content money\n  input kirchensteuersatz content decimal\n  output kapital_steuer content money\n\nscope KapitalAbgeltungKirchensteuer:\n  definition kapital_steuer equals\n    let zaehler equals kapitaleinkuenfte - (anrechenbare_auslaendische_steuer * 4.0) in\n    let nenner equals 4.0 + kirchensteuersatz in\n    zaehler / nenner",
   "catala_a_sha256": "c74a16ee7c707425150f30a385a2cb4d1fe54d7def16f8a0ee63308737d69fb6",
   "catala_b": "declaration scope KapitalAbgeltungKirchensteuer:\n  input kapitaleinkuenfte content money\n  input anrechenbare_auslaendische_steuer content money\n  input kirchensteuersatz content decimal\n  output kapital_steuer content money\n\nscope KapitalAbgeltungKirchensteuer:\n  definition kapital_steuer equals\n    (Decimal.truncate of ((kapitaleinkuenfte - anrechenbare_auslaendische_steuer * 4.0) / $1.00 / (4.0 + kirchensteuersatz))) * $1.00",
+  "catala_b_sha256": "6fc12535b7782b26bb6e4f18c5ebf11ae86f8306c87fb3a813905fb2f86e91bb",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -473,5 +474,5 @@
   },
   "module_name": "KapitalAbgeltungKirchensteuer",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }

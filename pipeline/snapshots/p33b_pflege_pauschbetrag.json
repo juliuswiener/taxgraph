@@ -6,6 +6,7 @@
   "catala_a": "declaration scope PflegePauschbetrag:\n  input pflegegrad content integer\n  input ist_hilflos content boolean\n  output pflege_pauschbetrag content money\n\nscope PflegePauschbetrag:\n  definition pflege_pauschbetrag equals\n    if ist_hilflos then $1,800.00\n    else (\n      if pflegegrad = 2 then $600.00\n      else (\n        if pflegegrad = 3 then $1,100.00\n        else (\n          if pflegegrad = 4 or pflegegrad = 5 then $1,800.00\n          else $0.00\n        )\n      )\n    )",
   "catala_a_sha256": "b6a0e5109f5e4e788ad7434532a92b7e9e796a7e5cb550fa44c789fdd09a95af",
   "catala_b": "declaration scope PflegePauschbetrag:\n  input pflegegrad content integer\n  input ist_hilflos content boolean\n  output pflege_pauschbetrag content money\n\nscope PflegePauschbetrag:\n  definition pflege_pauschbetrag equals\n    if ist_hilflos then $1,800.00\n    else (if pflegegrad = 2 then $600.00\n          else (if pflegegrad = 3 then $1,100.00\n                else (if pflegegrad = 4 or pflegegrad = 5 then $1,800.00\n                      else $0.00)))",
+  "catala_b_sha256": "d2bec6673f1dc631d9405314971b4cecbbbba12d62b53ab3e2ad48a409bb5e42",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -233,5 +234,5 @@
   },
   "module_name": "PflegePauschbetrag",
   "queue_status": "verified_bedingt",
-  "schema_version": 1
+  "schema_version": 2
 }
