@@ -1,0 +1,16 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p6_1_5_einlage
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 1 nr. 5 s. 1 estg
+  formulierungen:
+  - mit dem Teilwert für den Zeitpunkt der Zuführung anzusetzen | höchstens mit den
+    Anschaffungs- oder Herstellungskosten anzusetzen | wenn das zugeführte Wirtschaftsgut
+    a) innerhalb der letzten drei Jahre vor dem Zeitpunkt der Zuführung aus dem Privatvermögen
+    angeschafft oder hergestellt worden ist
+  triage: nicht_material

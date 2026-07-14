@@ -4318,3 +4318,213 @@ regeln:
     deckt_ab: deren Höhe und betriebliche Veranlassung nachgewiesen sind
     quelle: § 4 Abs. 5 S. 1 Nr. 2 EStG
     beschreibung: Hoehe + betriebliche Veranlassung nachgewiesen (S. 1 Nachweispflicht).
+
+# --- Charge 17 (EÜR Zeilen 7-9): §7 Abs1 AfA + §6 Abs1 Nr4 Kfz-1% + Nr5 Einlage ---
+- rule_id: p7_1_lineare_afa
+  norm: § 7 Abs. 1 EStG (lineare AfA + Zwölftelung Anschaffungsjahr)
+  hinweis: afa_betrag = anschaffungs_herstellungskosten / nutzungsdauer_jahre * anzurechnende_monate / 12. Rechenreihenfolge money/int (AK/ND) -> * int (Monate) -> / int (12); KEINE decimal-1/12 (Integer-Divisions-Falle). anzurechnende_monate = 12 in vollen Jahren, im Anschaffungsjahr 12 minus die vollen Monate VOR dem Anschaffungsmonat (Zwölftelung S4). Cent-Schnitt ZULETZT (Klasse-5-Praezision).
+  quellen:
+  - typ: gesetz
+    label: § 7 Abs. 1 S. 1 EStG (lineare AfA in gleichen Jahresbeträgen)
+    datei: sources/gesetze-im-internet/estg_p7_2026-07-14.txt
+    zitatanker: in gleichen Jahresbeträgen
+    auszug: der bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung auf ein Jahr entfällt (Absetzung für Abnutzung in gleichen Jahresbeträgen)
+  signature:
+    scope: LineareAfa
+    inputs:
+      anschaffungs_herstellungskosten: money
+      nutzungsdauer_jahre: int
+      anzurechnende_monate: int
+    output: afa_betrag
+  raster:
+  - anschaffungs_herstellungskosten: 10000
+    nutzungsdauer_jahre: 10
+    anzurechnende_monate: 12
+  - anschaffungs_herstellungskosten: 10000
+    nutzungsdauer_jahre: 10
+    anzurechnende_monate: 6
+  - anschaffungs_herstellungskosten: 10000
+    nutzungsdauer_jahre: 10
+    anzurechnende_monate: 1
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-14.txt
+    zitatanker: in gleichen Jahresbeträgen
+    herkunft: synthetisch
+    rechenweg: 'Volljahr: 10.000/10 = 1.000,00 x 12/12 = 1.000,00.'
+    inputs:
+      anschaffungs_herstellungskosten: 10000
+      nutzungsdauer_jahre: 10
+      anzurechnende_monate: 12
+    expected: 1000.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-14.txt
+    zitatanker: in gleichen Jahresbeträgen
+    herkunft: synthetisch
+    rechenweg: 'Zwölftelung Halbjahr: 1.000 x 6/12 = 500,00.'
+    inputs:
+      anschaffungs_herstellungskosten: 10000
+      nutzungsdauer_jahre: 10
+      anzurechnende_monate: 6
+    expected: 500.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-14.txt
+    zitatanker: in gleichen Jahresbeträgen
+    herkunft: synthetisch
+    rechenweg: '1 Monat, Cent-Schnitt: 1.000 x 1/12 = 1000/12 = 83,333 -> 83,33.'
+    inputs:
+      anschaffungs_herstellungskosten: 10000
+      nutzungsdauer_jahre: 10
+      anzurechnende_monate: 1
+    expected: 83.33
+  geltungsbedingungen:
+  - bedingung: abnutzbares_wg_ueber_ein_jahr
+    deckt_ab: sich erfahrungsgemäß auf einen Zeitraum von mehr als einem Jahr erstreckt
+    quelle: § 7 Abs. 1 S. 1 EStG
+    beschreibung: Abnutzbares WG mit Nutzungsdauer > 1 Jahr (S. 1).
+  - bedingung: lineare_methode_keine_leistungs_afa
+    deckt_ab: in gleichen Jahresbeträgen
+    quelle: § 7 Abs. 1 S. 1 EStG
+    beschreibung: Lineare AfA; Leistungs-AfA (Abs. 1 S. 6) und degressive AfA (Abs. 2) = eigene Nachträge.
+  - bedingung: zwoelftelung_volle_monate
+    deckt_ab: um jeweils ein Zwölftel für jeden vollen Monat, der dem Monat der Anschaffung oder Herstellung vorangeht
+    quelle: § 7 Abs. 1 EStG (Monatsregel)
+    beschreibung: anzurechnende_monate = 12 minus vorangehende VOLLE Monate (Sachverhalt/Kalender).
+- rule_id: p6_1_4_kfz_nutzungswert
+  norm: § 6 Abs. 1 Nr. 4 S. 2 EStG (Kfz-Privatnutzung 1 %, E-Bruchteile)
+  hinweis: nutzungswert_monat = bruttolistenpreis / 100 / bruchteils_teiler. 1% = /100 (Prozent-Encoding, KEIN decimal 0,01), dann / Teiler (1=voll, 2=halb, 4=viertel bei E/Hybrid). money/int/int, Cent-Schnitt zuletzt. bruchteils_teiler ist Sachverhalts-Input (Stufen-Zuordnung upstream aus dem E-Bedingungs-Katalog, wie §11-fenster). BLP = inl. Listenpreis Erstzulassung + Sonderausstattung inkl. USt, auf volle 100 abgerundet (H-Konvention, Geltungsbedingung). Monatswert.
+  quellen:
+  - typ: gesetz
+    label: § 6 Abs. 1 Nr. 4 S. 2 EStG (1% des Listenpreises je Monat)
+    datei: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: 1 Prozent des inländischen Listenpreises
+    auszug: mit 1 Prozent des inländischen Listenpreises im Zeitpunkt der Erstzulassung zuzüglich der Kosten für Sonderausstattung einschließlich Umsatzsteuer anzusetzen
+  signature:
+    scope: KfzNutzungswert
+    inputs:
+      bruttolistenpreis: money
+      bruchteils_teiler: int
+    output: nutzungswert_monat
+  raster:
+  - bruttolistenpreis: 50000
+    bruchteils_teiler: 1
+  - bruttolistenpreis: 50000
+    bruchteils_teiler: 2
+  - bruttolistenpreis: 50000
+    bruchteils_teiler: 4
+  - bruttolistenpreis: 40000
+    bruchteils_teiler: 1
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: 1 Prozent des inländischen Listenpreises
+    herkunft: synthetisch
+    rechenweg: 'Voll (Teiler 1): 50.000 / 100 / 1 = 500,00 je Monat.'
+    inputs:
+      bruttolistenpreis: 50000
+      bruchteils_teiler: 1
+    expected: 500.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: 1 Prozent des inländischen Listenpreises
+    herkunft: synthetisch
+    rechenweg: 'Halb (Teiler 2, E/Hybrid): 50.000 / 100 / 2 = 250,00.'
+    inputs:
+      bruttolistenpreis: 50000
+      bruchteils_teiler: 2
+    expected: 250.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: 1 Prozent des inländischen Listenpreises
+    herkunft: synthetisch
+    rechenweg: 'Viertel (Teiler 4, E kein CO2 + BLP<=100k): 50.000 / 100 / 4 = 125,00.'
+    inputs:
+      bruttolistenpreis: 50000
+      bruchteils_teiler: 4
+    expected: 125.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: 1 Prozent des inländischen Listenpreises
+    herkunft: synthetisch
+    rechenweg: 'Voll: 40.000 / 100 / 1 = 400,00.'
+    inputs:
+      bruttolistenpreis: 40000
+      bruchteils_teiler: 1
+    expected: 400.0
+  geltungsbedingungen:
+  - bedingung: kfz_ueber_50_prozent_betrieblich
+    deckt_ab: das zu mehr als 50 Prozent betrieblich genutzt wird
+    quelle: § 6 Abs. 1 Nr. 4 S. 2 EStG
+    beschreibung: Kfz zu mehr als 50% betrieblich genutzt (S. 2 Voraussetzung 1%-Pauschale).
+  - bedingung: keine_fahrtenbuchmethode
+    deckt_ab: Die private Nutzung kann abweichend von Satz 2
+    quelle: § 6 Abs. 1 Nr. 4 S. 3 EStG
+    beschreibung: Pauschale-Fall; Fahrtenbuchmethode (S. 3 'abweichend von Satz 2', tatsächliche Aufwendungen) = Wahlrecht-Alternative, hier nicht gewählt.
+  - bedingung: blp_auf_volle_100_abgerundet
+    deckt_ab: inländischen Listenpreises im Zeitpunkt der Erstzulassung
+    quelle: § 6 Abs. 1 Nr. 4 S. 2 EStG / H 6.12 (Verwaltung)
+    beschreibung: BLP auf volle 100 EUR abgerundet - H-Konvention (kein Norm-Wortlaut, verwaltung); Input bereits gerundet.
+  - bedingung: bruchteils_teiler_aus_e_katalog
+    deckt_ab: nur zur Hälfte anzusetzen
+    quelle: § 6 Abs. 1 Nr. 4 S. 2 Nr. 1-5 EStG
+    beschreibung: bruchteils_teiler (1|2|4) = Ergebnis des E/Hybrid-Bedingungs-Katalogs (Anschaffungs-Zeitfenster + CO2 + Reichweite + BLP-Cap 100k); Katalog-Auswertung upstream, teiler ist der Input.
+- rule_id: p6_1_5_einlage
+  norm: § 6 Abs. 1 Nr. 5 EStG (Einlage-Bewertung, Teilwert höchstens fortgeführte AK)
+  hinweis: einlagewert = wenn innerhalb_drei_jahre_aus_pv dann min(teilwert, fortgefuehrte_anschaffungskosten) sonst teilwert. Einlage mit dem Teilwert (Schaetzwert-Input, nicht gerechnet); jedoch HOECHSTENS die fortgefuehrte AK (bereits um S2-Zwischen-AfA gekuerzt), WENN das WG innerhalb 3 Jahre aus dem Privatvermoegen kam. min-Deckel. Cent-genau.
+  quellen:
+  - typ: gesetz
+    label: § 6 Abs. 1 Nr. 5 S. 1 EStG (Einlage Teilwert, Deckel AK)
+    datei: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: höchstens mit den Anschaffungs- oder Herstellungskosten
+    auszug: Einlagen sind mit dem Teilwert für den Zeitpunkt der Zuführung anzusetzen; sie sind jedoch höchstens mit den Anschaffungs- oder Herstellungskosten anzusetzen, wenn das zugeführte Wirtschaftsgut a) innerhalb der letzten drei Jahre vor dem Zeitpunkt der Zuführung aus dem Privatvermögen angeschafft oder hergestellt worden ist
+  signature:
+    scope: EinlageDeckel
+    inputs:
+      teilwert: money
+      fortgefuehrte_anschaffungskosten: money
+      innerhalb_drei_jahre_aus_pv: bool
+    output: einlagewert
+  raster:
+  - teilwert: 8000
+    fortgefuehrte_anschaffungskosten: 10000
+    innerhalb_drei_jahre_aus_pv: true
+  - teilwert: 12000
+    fortgefuehrte_anschaffungskosten: 10000
+    innerhalb_drei_jahre_aus_pv: true
+  - teilwert: 12000
+    fortgefuehrte_anschaffungskosten: 10000
+    innerhalb_drei_jahre_aus_pv: false
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: höchstens mit den Anschaffungs- oder Herstellungskosten
+    herkunft: synthetisch
+    rechenweg: 'Teilwert < fortgef. AK: min(8.000, 10.000) = 8.000,00 (Deckel greift nicht).'
+    inputs:
+      teilwert: 8000
+      fortgefuehrte_anschaffungskosten: 10000
+      innerhalb_drei_jahre_aus_pv: true
+    expected: 8000.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: höchstens mit den Anschaffungs- oder Herstellungskosten
+    herkunft: synthetisch
+    rechenweg: 'Deckel greift: min(12.000, 10.000) = 10.000,00.'
+    inputs:
+      teilwert: 12000
+      fortgefuehrte_anschaffungskosten: 10000
+      innerhalb_drei_jahre_aus_pv: true
+    expected: 10000.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: höchstens mit den Anschaffungs- oder Herstellungskosten
+    herkunft: synthetisch
+    rechenweg: 'Kein Deckel (nicht innerhalb 3 J): Teilwert 12.000,00.'
+    inputs:
+      teilwert: 12000
+      fortgefuehrte_anschaffungskosten: 10000
+      innerhalb_drei_jahre_aus_pv: false
+    expected: 12000.0
+  geltungsbedingungen:
+  - bedingung: teilwert_ist_schaetzwert_input
+    deckt_ab: mit dem Teilwert für den Zeitpunkt der Zuführung
+    quelle: § 6 Abs. 1 Nr. 5 S. 1 EStG
+    beschreibung: Teilwert = Schaetzwert (kein Rechenwortlaut), kommt vorab bewertet als Input.
+  - bedingung: ak_um_zwischen_afa_gekuerzt_s2
+    deckt_ab: sind die Anschaffungs- oder Herstellungskosten um Absetzungen für Abnutzung zu kürzen, die auf den Zeitraum zwischen der Anschaffung oder Herstellung des Wirtschaftsguts und der Einlage entfallen
+    quelle: § 6 Abs. 1 Nr. 5 S. 2 EStG
+    beschreibung: Bei abnutzbarem WG ist die AK-Deckelgroesse die FORTGEFUEHRTE AK (AK minus zwischenzeitliche AfA, S. 2). Der Input fortgefuehrte_anschaffungskosten ist bereits so gekuerzt (Kuerzung = Integrations-/Sachverhaltsebene).
+  - bedingung: nur_fall_a_drei_jahre
+    deckt_ab: innerhalb der letzten drei Jahre vor dem Zeitpunkt der Zuführung aus dem Privatvermögen angeschafft
+    quelle: § 6 Abs. 1 Nr. 5 S. 1 Buchst. a EStG
+    beschreibung: Nur Fall a (3-Jahres-Frist aus PV). Faelle b (§17-Anteile) und c (§20-WG) = eigene Nachtraege.

@@ -1,0 +1,31 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p7_1_lineare_afa
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - anzurechnende_monate
+  - zeitbezug
+  formulierungen:
+  - Anzurechnende Monate werden als Bruchteil eines Jahres (12 Monate) interpretiert.
+  triage: bedingung_neu
+  bedingung: zwoelftelung_volle_monate
+- art: annahme
+  anker:
+  - betrifft_kat
+  - nutzungsdauer_jahre
+  - einheit
+  formulierungen:
+  - Nutzungsdauer wird in ganzen Jahren angenommen, ohne Berücksichtigung von Teiljahren.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 abs. 1 s. 1 estg
+  formulierungen:
+  - bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung
+    oder Nutzung auf ein Jahr entfällt
+  triage: nicht_material

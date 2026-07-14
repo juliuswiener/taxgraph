@@ -1,0 +1,38 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p6_1_4_kfz_nutzungswert
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - bruttolistenpreis
+  - einheit
+  formulierungen:
+  - Annahme, dass bruttolistenpreis bereits Sonderausstattung und Umsatzsteuer enthält.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - bruttolistenpreis
+  - interpretation
+  formulierungen:
+  - Annahme, dass bruttolistenpreis der inländische Listenpreis ist.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - bruchteils_teiler
+  - interpretation
+  formulierungen:
+  - Annahme, dass bruchteils_teiler die Monatsanzahl repräsentiert.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 1 nr. 4 s. 2 estg
+  formulierungen:
+  - 1 Prozent des inländischen Listenpreises im Zeitpunkt der Erstzulassung | zuzüglich
+    der Kosten für Sonderausstattung einschließlich Umsatzsteuer
+  triage: nicht_material

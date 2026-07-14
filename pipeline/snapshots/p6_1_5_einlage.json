@@ -1,0 +1,218 @@
+{
+  "bedingungen": [
+    "teilwert_ist_schaetzwert_input",
+    "ak_um_zwischen_afa_gekuerzt_s2",
+    "nur_fall_a_drei_jahre"
+  ],
+  "candidate_id": "p6_1_5_einlage",
+  "catala_a": "declaration scope EinlageDeckel:\n  input teilwert content money\n  input fortgefuehrte_anschaffungskosten content money\n  input innerhalb_drei_jahre_aus_pv content boolean\n  output einlagewert content money\n\nscope EinlageDeckel:\n  label grundregel\n  definition einlagewert equals teilwert\n\n  exception grundregel\n  definition einlagewert under condition innerhalb_drei_jahre_aus_pv consequence equals\n    if teilwert <= fortgefuehrte_anschaffungskosten\n    then teilwert\n    else fortgefuehrte_anschaffungskosten",
+  "catala_a_sha256": "b7b4dae6dfdf801d38fe8e93d42cb5e24350e16627a99573473e844f1efc637c",
+  "catala_b": "declaration scope EinlageDeckel:\n  input teilwert content money\n  input fortgefuehrte_anschaffungskosten content money\n  input innerhalb_drei_jahre_aus_pv content boolean\n  output einlagewert content money\n\nscope EinlageDeckel:\n  label grundregel\n  definition einlagewert equals teilwert\n  exception grundregel\n  definition einlagewert under condition innerhalb_drei_jahre_aus_pv consequence equals\n    if teilwert <= fortgefuehrte_anschaffungskosten then teilwert\n    else fortgefuehrte_anschaffungskosten",
+  "catala_b_sha256": "f6b77441f1e1656db2014f2db30aecadda5b1c962d29e257ac3590fae7adc73c",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'einlagewert'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 0,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 6 abs. 1 nr. 5 s. 1 estg"
+            ],
+            "text": "mit dem Teilwert für den Zeitpunkt der Zuführung anzusetzen"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 6 abs. 1 nr. 5 s. 1 estg"
+            ],
+            "text": "höchstens mit den Anschaffungs- oder Herstellungskosten anzusetzen"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "abweichung",
+          "gueltige_stimmen": 3,
+          "item": "Die Deckelung greift nur bei Überschreiten der Anschaffungskosten, nicht bei Gleichheit.",
+          "schluessel": "[\"abweichungen\", \"betrifft\", \"ergebnis\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "höchstens mit den Anschaffungs- oder Herstellungskosten anzusetzen",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 6 abs. 1 nr. 5 s. 1 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Deckelung greift nur bei Überschreiten der Anschaffungskosten, nicht bei Gleichheit.",
+            "eingeschmolzen": "Die Deckelung greift nur bei Überschreitung der AK/HK, nicht bei Gleichheit.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "wenn das zugeführte Wirtschaftsgut a) innerhalb der letzten drei Jahre vor dem Zeitpunkt der Zuführung aus dem Privatvermögen angeschafft oder hergestellt worde",
+            "eingeschmolzen": "aus dem Privatvermögen angeschafft oder hergestellt worden ist",
+            "key": [
+              "ref",
+              "§ 6 abs. 1 nr. 5 s. 1 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        4,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "feedd9341b8c",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "teilwert_ist_schaetzwert_input",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "mit dem Teilwert für den Zeitpunkt der Zuführung anzusetzen",
+        "referenz": "§ 6 Abs. 1 Nr. 5 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "höchstens mit den Anschaffungs- oder Herstellungskosten anzusetzen",
+        "referenz": "§ 6 Abs. 1 Nr. 5 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "nur_fall_a_drei_jahre",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn das zugeführte Wirtschaftsgut a) innerhalb der letzten drei Jahre vor dem Zeitpunkt der Zuführung aus dem Privatvermögen angeschafft oder hergestellt worden ist",
+        "referenz": "§ 6 Abs. 1 Nr. 5 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-14T17:08:21+00:00"
+  },
+  "module_name": "EinlageDeckel",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

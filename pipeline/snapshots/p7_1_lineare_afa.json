@@ -1,0 +1,167 @@
+{
+  "bedingungen": [
+    "abnutzbares_wg_ueber_ein_jahr",
+    "lineare_methode_keine_leistungs_afa",
+    "zwoelftelung_volle_monate"
+  ],
+  "candidate_id": "p7_1_lineare_afa",
+  "catala_a": "declaration scope LineareAfa:\n  input anschaffungs_herstellungskosten content money\n  input nutzungsdauer_jahre content integer\n  input anzurechnende_monate content integer\n  output afa_betrag content money\n\nscope LineareAfa:\n  definition afa_betrag equals\n    anschaffungs_herstellungskosten\n    * (decimal of 1 / (decimal of nutzungsdauer_jahre))\n    * (decimal of anzurechnende_monate / 12.0)",
+  "catala_a_sha256": "ab4d8f168c8b42537a1e41131cc1c9c379020c9ddac7968b1cd7dc6ece4aa454",
+  "catala_b": "declaration scope LineareAfa:\n  input anschaffungs_herstellungskosten content money\n  input nutzungsdauer_jahre content integer\n  input anzurechnende_monate content integer\n  output afa_betrag content money\n\nscope LineareAfa:\n  definition afa_betrag equals\n    let pro_jahr equals anschaffungs_herstellungskosten / ((decimal of nutzungsdauer_jahre) * $1.00) in\n    let roh equals pro_jahr * (decimal of anzurechnende_monate) / 12.0 in\n    (Decimal.truncate of (roh * 100.0)) * $0.01",
+  "catala_b_sha256": "28d1870b6d212f68b25a19a8a2e8817e78a2a987426e1c441c0c4dc93754fc7f",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'afa_betrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 2,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        3,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "417661754e1f",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung auf ein Jahr entfällt",
+        "referenz": "§ 7 Abs. 1 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Anzurechnende Monate werden als Bruchteil eines Jahres (12 Monate) interpretiert.",
+        "bedingung_id": "zwoelftelung_volle_monate",
+        "betrifft": "anzurechnende_monate",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Nutzungsdauer wird in ganzen Jahren angenommen, ohne Berücksichtigung von Teiljahren.",
+        "bedingung_id": null,
+        "betrifft": "nutzungsdauer_jahre",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-14T17:07:24+00:00"
+  },
+  "module_name": "LineareAfa",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

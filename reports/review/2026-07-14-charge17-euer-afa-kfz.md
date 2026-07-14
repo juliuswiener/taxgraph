@@ -119,3 +119,23 @@ ist die 1 %-Pauschale (S. 2) = Regel 2 oben.
 3. **BLP-Rundung** (volle 100 €) als Geltungsbedingung (H-Konvention) statt Rechenschritt — bestätigen.
 4. **Einlage-Signatur** mit `innerhalb_drei_jahre_aus_pv`-bool + `min`-Deckel — bestätigen.
 5. Cap-Wort Stufe B: 3 Regeln (§6/§7, teils 1-quellig) → Vorschlag `--cost-cap 0.30`.
+
+## Stufe-B-Ergebnis + Korrekturen (2026-07-14)
+
+**Instructor-Korrektur (§ 6 Abs. 1 Nr. 5 S. 2, Sweep-Nachtrag):** der Einlage-Deckel ist die
+**fortgeführte AK** (AK − zwischenzeitliche AfA), nicht die rohe AK. Fundstelle S7-analog:
+"sind die Anschaffungs- oder Herstellungskosten um Absetzungen für Abnutzung zu kürzen, die auf
+den Zeitraum zwischen der Anschaffung … und der Einlage entfallen". Angewandt: Input
+`fortgefuehrte_anschaffungskosten` + Geltungsbedingung `ak_um_zwischen_afa_gekuerzt_s2`.
+
+**int-Input-Probe (read-only, $0):** integer-INPUTS sind bewiesen — Manifest-Konvention ist die
+Kurzform `int`/`bool` (24× int, 18× bool im Bestand); `gates.py:_lit` rendert `int` via
+`str(int(value))`. Kein decimal-Fallback nötig. Signaturen nutzen `int` (teiler, monate, ND).
+Encoding: § 7 `AK/ND × Monate/12` (money/int × int/int, keine decimal-1/12-Falle);
+Kfz `BLP/100/Teiler` (Prozent-/100-Encoding, money/int/int) — beide Cent-Schnitt zuletzt.
+
+**Lauf:** $0,1446 (Cap 0,30), wall 116s. Alle 3 **verified_bedingt**, jedes deterministische Gate
+grün (equivalence, clerk inkl. Zwölftelung 83,33 / Teiler 1|2|4 / Einlage-min-cap). KEINE
+abweichung — alle Discoveries Whitelist (annahme/norm_teil → nicht_material / bedingung_neu).
+Notiz: Judge-annahme "bruchteils_teiler = Monatsanzahl" ist Fehlinterpretation, aber harmlos
+(clerk-Seeds Teiler 1/2/4 disproven), nicht_material triagiert.

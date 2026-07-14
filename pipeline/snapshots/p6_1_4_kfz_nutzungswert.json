@@ -1,0 +1,211 @@
+{
+  "bedingungen": [
+    "kfz_ueber_50_prozent_betrieblich",
+    "keine_fahrtenbuchmethode",
+    "blp_auf_volle_100_abgerundet",
+    "bruchteils_teiler_aus_e_katalog"
+  ],
+  "candidate_id": "p6_1_4_kfz_nutzungswert",
+  "catala_a": "declaration scope KfzNutzungswert:\n  input bruttolistenpreis content money\n  input bruchteils_teiler content integer\n  output nutzungswert_monat content money\n\nscope KfzNutzungswert:\n  definition nutzungswert_monat equals\n    bruttolistenpreis / 100.0 / (decimal of bruchteils_teiler)",
+  "catala_a_sha256": "66f59172c5dd1d00319c2c96e711acffa8da5755287d77649698091489b3eb55",
+  "catala_b": "declaration scope KfzNutzungswert:\n  input bruttolistenpreis content money\n  input bruchteils_teiler content integer\n  output nutzungswert_monat content money\n\nscope KfzNutzungswert:\n  definition nutzungswert_monat equals\n    bruttolistenpreis / (decimal of 100) / (decimal of bruchteils_teiler)",
+  "catala_b_sha256": "14fd9eb901341668c3a0e23e2d3dbd22a5146efe1ad4f3917debf6ac2e1636ab",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'nutzungswert_monat'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 3,
+        "annahmen": 3,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "bruchteils_teiler",
+              "interpretation"
+            ],
+            "text": "Annahme, dass bruchteils_teiler die Monatsanzahl repräsentiert."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Annahme, dass bruttolistenpreis bereits Sonderausstattung und Umsatzsteuer enthält.",
+            "eingeschmolzen": "Annahme, dass bruttolistenpreis bereits alle Kosten inkl. Sonderausstattung und Umsatzsteuer enthält.",
+            "key": [
+              "betrifft_kat",
+              "bruttolistenpreis",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Annahme, dass bruttolistenpreis der inländische Listenpreis ist.",
+            "eingeschmolzen": "Annahme, dass bruttolistenpreis dem inländischen Listenpreis entspricht.",
+            "key": [
+              "betrifft_kat",
+              "bruttolistenpreis",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        8,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "8a25a6399982",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "1 Prozent des inländischen Listenpreises im Zeitpunkt der Erstzulassung",
+        "referenz": "§ 6 Abs. 1 Nr. 4 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "zuzüglich der Kosten für Sonderausstattung einschließlich Umsatzsteuer",
+        "referenz": "§ 6 Abs. 1 Nr. 4 S. 2 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Annahme, dass bruttolistenpreis bereits Sonderausstattung und Umsatzsteuer enthält.",
+        "bedingung_id": null,
+        "betrifft": "bruttolistenpreis",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Annahme, dass bruttolistenpreis der inländische Listenpreis ist.",
+        "bedingung_id": null,
+        "betrifft": "bruttolistenpreis",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Annahme, dass bruchteils_teiler die Monatsanzahl repräsentiert.",
+        "bedingung_id": null,
+        "betrifft": "bruchteils_teiler",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-14T17:07:57+00:00"
+  },
+  "module_name": "KfzNutzungswert",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}
