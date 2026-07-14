@@ -5013,3 +5013,240 @@ regeln:
     deckt_ab: soweit sie auf ausländische Einkünfte entfällt
     quelle: § 34c Abs. 2 EStG
     beschreibung: Input = der auf ausl. Einkünfte entfallende Teil der ausl. Steuer (bereits so bemessen).
+
+# --- Charge 21 (Bilanz-Kern B1/B4/B5) ---
+- rule_id: p4_1_bv_vergleich
+  norm: § 4 Abs. 1 S. 1 EStG (Betriebsvermögensvergleich)
+  hinweis: gewinn = betriebsvermoegen_ende - betriebsvermoegen_anfang + entnahmen - einlagen. Reiner Unterschiedsbetrag zzgl. Entnahmen abzgl. Einlagen (§4 Abs1 S1), kann NEGATIV sein (Verlust, keine Kappung). BV-Werte = Sachverhalts-Inputs (Maßgeblichkeit §5 = eigene Bedingung). Cent-genau.
+  quellen:
+  - typ: gesetz
+    label: § 4 Abs. 1 S. 1 EStG (BV-Vergleich)
+    datei: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: Gewinn ist der Unterschiedsbetrag zwischen dem Betriebsvermögen
+    auszug: Gewinn ist der Unterschiedsbetrag zwischen dem Betriebsvermögen am Schluss des Wirtschaftsjahres und dem Betriebsvermögen am Schluss des vorangegangenen Wirtschaftsjahres, vermehrt um den Wert der Entnahmen und vermindert um den Wert der Einlagen
+  signature:
+    scope: BvVergleich
+    inputs:
+      betriebsvermoegen_ende: money
+      betriebsvermoegen_anfang: money
+      entnahmen: money
+      einlagen: money
+    output: gewinn
+  raster:
+  - betriebsvermoegen_ende: 150000
+    betriebsvermoegen_anfang: 100000
+    entnahmen: 30000
+    einlagen: 10000
+  - betriebsvermoegen_ende: 90000
+    betriebsvermoegen_anfang: 100000
+    entnahmen: 0
+    einlagen: 0
+  - betriebsvermoegen_ende: 100000
+    betriebsvermoegen_anfang: 100000
+    entnahmen: 20000
+    einlagen: 20000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: Gewinn ist der Unterschiedsbetrag zwischen dem Betriebsvermögen
+    herkunft: synthetisch
+    rechenweg: 150.000-100.000+30.000-10.000=70.000,00.
+    inputs:
+      betriebsvermoegen_ende: 150000
+      betriebsvermoegen_anfang: 100000
+      entnahmen: 30000
+      einlagen: 10000
+    expected: 70000.0
+  - quelle: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: Gewinn ist der Unterschiedsbetrag zwischen dem Betriebsvermögen
+    herkunft: synthetisch
+    rechenweg: 'Verlust: 90.000-100.000=-10.000,00.'
+    inputs:
+      betriebsvermoegen_ende: 90000
+      betriebsvermoegen_anfang: 100000
+      entnahmen: 0
+      einlagen: 0
+    expected: -10000.0
+  - quelle: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: Gewinn ist der Unterschiedsbetrag zwischen dem Betriebsvermögen
+    herkunft: synthetisch
+    rechenweg: Entn=Einl -> 0,00.
+    inputs:
+      betriebsvermoegen_ende: 100000
+      betriebsvermoegen_anfang: 100000
+      entnahmen: 20000
+      einlagen: 20000
+    expected: 0.0
+  geltungsbedingungen:
+  - bedingung: bv_werte_sachverhalt_massgeblichkeit_p5
+    deckt_ab: Unterschiedsbetrag zwischen dem Betriebsvermögen
+    quelle: § 4 Abs. 1 S. 1 EStG
+    beschreibung: BV = Sachverhalts-Inputs; Maßgeblichkeit §5 = eigene Bedingung (Charge 23).
+  - bedingung: entnahmen_einlagen_legaldefiniert_p4abs1
+    deckt_ab: vermehrt um den Wert der Entnahmen und vermindert um den Wert der Einlagen
+    quelle: § 4 Abs. 1 S. 2/4 EStG
+    beschreibung: Entnahmen/Einlagen (Legaldef S. 2/4) bereits bewertet.
+- rule_id: p6_1_1_bewertung_av
+  norm: § 6 Abs. 1 Nr. 1 S. 1-2 EStG (Bewertung AV, Teilwert-Wahlrecht)
+  hinweis: ansatz = wenn (dauernde_wertminderung UND teilwertabschreibung_gewaehlt) dann min(fortgefuehrte_ak, teilwert) sonst fortgefuehrte_ak. Teilwertabschreibung = WAHLRECHT (S2 'so KANN dieser angesetzt werden'). min sichert Teilwert nur wenn niedriger. Teilwert=Schaetzwert-Input, dauernde_wertminderung=Prognose-bool. Cent-genau.
+  quellen:
+  - typ: gesetz
+    label: § 6 Abs. 1 Nr. 1 S. 1 EStG (AK/HK vermindert um AfA)
+    datei: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: vermindert um die Absetzungen für Abnutzung
+    auszug: sind mit den Anschaffungs- oder Herstellungskosten oder dem an deren Stelle tretenden Wert, vermindert um die Absetzungen für Abnutzung
+  - typ: gesetz
+    label: § 6 Abs. 1 Nr. 1 S. 2 EStG (Teilwert-Wahlrecht)
+    datei: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: so kann dieser angesetzt werden
+    auszug: Ist der Teilwert auf Grund einer voraussichtlich dauernden Wertminderung niedriger, so kann dieser angesetzt werden
+  signature:
+    scope: BewertungAv
+    inputs:
+      fortgefuehrte_ak: money
+      teilwert: money
+      dauernde_wertminderung: bool
+      teilwertabschreibung_gewaehlt: bool
+    output: ansatz
+  raster:
+  - fortgefuehrte_ak: 10000
+    teilwert: 8000
+    dauernde_wertminderung: true
+    teilwertabschreibung_gewaehlt: true
+  - fortgefuehrte_ak: 10000
+    teilwert: 8000
+    dauernde_wertminderung: true
+    teilwertabschreibung_gewaehlt: false
+  - fortgefuehrte_ak: 10000
+    teilwert: 8000
+    dauernde_wertminderung: false
+    teilwertabschreibung_gewaehlt: true
+  - fortgefuehrte_ak: 10000
+    teilwert: 10000
+    dauernde_wertminderung: true
+    teilwertabschreibung_gewaehlt: true
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: so kann dieser angesetzt werden
+    herkunft: synthetisch
+    rechenweg: 'Abschreibung dauernd+gewaehlt: min(10000,8000)=8.000,00.'
+    inputs:
+      fortgefuehrte_ak: 10000
+      teilwert: 8000
+      dauernde_wertminderung: true
+      teilwertabschreibung_gewaehlt: true
+    expected: 8000.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: so kann dieser angesetzt werden
+    herkunft: synthetisch
+    rechenweg: Wahlrecht NICHT ausgeuebt -> 10.000,00.
+    inputs:
+      fortgefuehrte_ak: 10000
+      teilwert: 8000
+      dauernde_wertminderung: true
+      teilwertabschreibung_gewaehlt: false
+    expected: 10000.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: so kann dieser angesetzt werden
+    herkunft: synthetisch
+    rechenweg: Keine dauernde WM -> 10.000,00.
+    inputs:
+      fortgefuehrte_ak: 10000
+      teilwert: 8000
+      dauernde_wertminderung: false
+      teilwertabschreibung_gewaehlt: true
+    expected: 10000.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: so kann dieser angesetzt werden
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL TW=fAK: min(10000,10000)=10.000,00.'
+    inputs:
+      fortgefuehrte_ak: 10000
+      teilwert: 10000
+      dauernde_wertminderung: true
+      teilwertabschreibung_gewaehlt: true
+    expected: 10000.0
+  geltungsbedingungen:
+  - bedingung: teilwert_ist_schaetzwert_input
+    deckt_ab: an deren Stelle tretenden Wert
+    quelle: § 6 Abs. 1 Nr. 1 S. 3 EStG
+    beschreibung: Teilwert=Schaetzwert (C17-Praezedenz), Input.
+  - bedingung: dauerhaftigkeit_prognose_bool
+    deckt_ab: voraussichtlich dauernden Wertminderung
+    quelle: § 6 Abs. 1 Nr. 1 S. 2 EStG
+    beschreibung: '''voraussichtlich dauernd'' = Prognose-bool, nicht gerechnet.'
+  - bedingung: abnutzbares_av_afa_fortgefuehrt
+    deckt_ab: vermindert um die Absetzungen für Abnutzung
+    quelle: § 6 Abs. 1 Nr. 1 S. 1 EStG
+    beschreibung: fortgefuehrte_ak = AK/HK um AfA gekuerzt (S1).
+- rule_id: p6_1_1_wertaufholung
+  norm: § 6 Abs. 1 Nr. 1 S. 4 EStG (Wertaufholung/Zuschreibungsgebot)
+  hinweis: 'ansatz = wenn niedrigerer_teilwert_nachgewiesen dann min(fortgefuehrte_ak, teilwert) sonst fortgefuehrte_ak. ZUSCHREIBUNGS-GEBOT (S4 ''es sei denn, der Steuerpflichtige weist nach''): Default=Wertaufholung auf fortgefuehrte AK; nur bei NACHWEIS bleibt Teilwert. Beweislast-Umkehr=bool. Cent-genau.'
+  quellen:
+  - typ: gesetz
+    label: § 6 Abs. 1 Nr. 1 S. 1 EStG (AK/HK vermindert um AfA)
+    datei: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: vermindert um die Absetzungen für Abnutzung
+    auszug: sind mit den Anschaffungs- oder Herstellungskosten oder dem an deren Stelle tretenden Wert, vermindert um die Absetzungen für Abnutzung
+  - typ: gesetz
+    label: § 6 Abs. 1 Nr. 1 S. 4 EStG (Zuschreibungsgebot)
+    datei: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: es sei denn, der Steuerpflichtige weist nach
+    auszug: sind in den folgenden Wirtschaftsjahren gemäß Satz 1 anzusetzen, es sei denn, der Steuerpflichtige weist nach, dass ein niedrigerer Teilwert nach Satz 2 angesetzt werden kann
+  signature:
+    scope: Wertaufholung
+    inputs:
+      fortgefuehrte_ak: money
+      teilwert: money
+      niedrigerer_teilwert_nachgewiesen: bool
+    output: ansatz
+  raster:
+  - fortgefuehrte_ak: 10000
+    teilwert: 8000
+    niedrigerer_teilwert_nachgewiesen: true
+  - fortgefuehrte_ak: 10000
+    teilwert: 8000
+    niedrigerer_teilwert_nachgewiesen: false
+  - fortgefuehrte_ak: 10000
+    teilwert: 10000
+    niedrigerer_teilwert_nachgewiesen: true
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: es sei denn, der Steuerpflichtige weist nach
+    herkunft: synthetisch
+    rechenweg: 'Nachweis -> Teilwert bleibt: min(10000,8000)=8.000,00.'
+    inputs:
+      fortgefuehrte_ak: 10000
+      teilwert: 8000
+      niedrigerer_teilwert_nachgewiesen: true
+    expected: 8000.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: es sei denn, der Steuerpflichtige weist nach
+    herkunft: synthetisch
+    rechenweg: KEIN Nachweis -> Zuschreibung 10.000,00.
+    inputs:
+      fortgefuehrte_ak: 10000
+      teilwert: 8000
+      niedrigerer_teilwert_nachgewiesen: false
+    expected: 10000.0
+  - quelle: sources/gesetze-im-internet/estg_p6_2026-07-14.txt
+    zitatanker: es sei denn, der Steuerpflichtige weist nach
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL TW=fAK: 10.000,00.'
+    inputs:
+      fortgefuehrte_ak: 10000
+      teilwert: 10000
+      niedrigerer_teilwert_nachgewiesen: true
+    expected: 10000.0
+  geltungsbedingungen:
+  - bedingung: wg_bereits_vorjahr_av
+    deckt_ab: in den folgenden Wirtschaftsjahren gemäß Satz 1 anzusetzen
+    quelle: § 6 Abs. 1 Nr. 1 S. 4 EStG
+    beschreibung: WG bereits im Vorjahr AV.
+  - bedingung: nachweis_beweislast_steuerpflichtiger
+    deckt_ab: es sei denn, der Steuerpflichtige weist nach
+    quelle: § 6 Abs. 1 Nr. 1 S. 4 EStG
+    beschreibung: 'Beweislast-Umkehr: Nachweis noetig, sonst Zuschreibung (bool).'
+  - bedingung: teilwert_ist_schaetzwert_input
+    deckt_ab: an deren Stelle tretenden Wert
+    quelle: § 6 Abs. 1 Nr. 1 S. 3 EStG
+    beschreibung: Teilwert=Schaetzwert-Input (C17).

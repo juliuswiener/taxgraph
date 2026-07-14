@@ -16,11 +16,11 @@ Maßgeblichkeit), Konzern/Umwandlung (UmwStG), KSt-Spezifika, E-Bilanz-Taxonomie
 
 | # | Bereich | Norm | Freeze | Typ |
 |---|---|---|---|---|
-| B1 | Grundmechanik BV-Vergleich (BV-Ende − BV-Anfang + Entnahmen − Einlagen) | § 4 Abs. 1 S. 1 | p4 ✓ | Regel (Formel ist Wortlaut) |
+| B1 | Grundmechanik BV-Vergleich (BV-Ende − BV-Anfang + Entnahmen − Einlagen) | § 4 Abs. 1 S. 1 | p4 ✓ | ✅ p4_1_bv_vergleich (C21) |
 | B2 | Maßgeblichkeit + steuerliche Wahlrechte | § 5 Abs. 1 | p5 ✓ | Geltungsbedingungs-Paket |
 | B3 | Ansatzverbote/-gebote (immaterielle §5 Abs 2, Drohverlust Abs 4a, RAP Abs 5) | § 5 Abs. 2–5 | p5 ✓ | Bedingungen + kleine Regeln (RAP zeitanteilig) |
-| B4 | Bewertung Anlagevermögen (AK/HK, fortgeführte AK, Teilwert-Abschreibung "dauernde Wertminderung") | § 6 Abs. 1 Nr. 1/2 | p6 ✓ | Regel (min-Mechanik) + Bedingungen |
-| B5 | Wertaufholungsgebot (Zuschreibung bis fortgeführte AK) | § 6 Abs. 1 Nr. 1 S. 4 | p6 ✓ | Regel |
+| B4 | Bewertung Anlagevermögen (AK/HK, fortgeführte AK, Teilwert-Abschreibung "dauernde Wertminderung") | § 6 Abs. 1 Nr. 1/2 | p6 ✓ | ✅ p6_1_1_bewertung_av (C21) |
+| B5 | Wertaufholungsgebot (Zuschreibung bis fortgeführte AK) | § 6 Abs. 1 Nr. 1 S. 4 | p6 ✓ | ✅ p6_1_1_wertaufholung (C21) |
 | B6 | Verbindlichkeiten/Rückstellungen-Bewertung (Abzinsung 5,5 %, Nr. 3/3a) | § 6 Abs. 1 Nr. 3/3a | p6 ✓ | Regel (Abzinsungs-Mechanik) |
 | B7 | Pensionsrückstellungen (Teilwert-Verfahren, 6 % Rechnungszins) | § 6a | p6a ✓ | Teilregel (6 %-Zins + Höchstbetrags-Mechanik; versicherungsmathematik = Input) |
 | B8 | Übergangsgewinn EÜR ↔ BV-Vergleich | R 4.6 EStR (verwaltung) | fehlt | Nachtrag (verwaltung-Quelle nötig) |

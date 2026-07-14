@@ -1,0 +1,144 @@
+{
+  "bedingungen": [
+    "bv_werte_sachverhalt_massgeblichkeit_p5",
+    "entnahmen_einlagen_legaldefiniert_p4abs1"
+  ],
+  "candidate_id": "p4_1_bv_vergleich",
+  "catala_a": "declaration scope BvVergleich:\n  input betriebsvermoegen_ende content money\n  input betriebsvermoegen_anfang content money\n  input entnahmen content money\n  input einlagen content money\n  output gewinn content money\n\nscope BvVergleich:\n  definition gewinn equals\n    betriebsvermoegen_ende - betriebsvermoegen_anfang + entnahmen - einlagen",
+  "catala_a_sha256": "18a836e49108c140925364207083d18b0fb62557fc31d051001fac4f62449dba",
+  "catala_b": "declaration scope BvVergleich:\n  input betriebsvermoegen_ende content money\n  input betriebsvermoegen_anfang content money\n  input entnahmen content money\n  input einlagen content money\n  output gewinn content money\n\nscope BvVergleich:\n  definition gewinn equals\n    betriebsvermoegen_ende - betriebsvermoegen_anfang + entnahmen - einlagen",
+  "catala_b_sha256": "18a836e49108c140925364207083d18b0fb62557fc31d051001fac4f62449dba",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'gewinn'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 0 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 0
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        0,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "208b9c226559",
+    "parse_error": false,
+    "scope_gap": [],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-14T19:39:04+00:00"
+  },
+  "module_name": "BvVergleich",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

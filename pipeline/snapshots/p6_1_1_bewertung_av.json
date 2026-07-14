@@ -1,0 +1,173 @@
+{
+  "bedingungen": [
+    "teilwert_ist_schaetzwert_input",
+    "dauerhaftigkeit_prognose_bool",
+    "abnutzbares_av_afa_fortgefuehrt"
+  ],
+  "candidate_id": "p6_1_1_bewertung_av",
+  "catala_a": "declaration scope BewertungAv:\n  input fortgefuehrte_ak content money\n  input teilwert content money\n  input dauernde_wertminderung content boolean\n  input teilwertabschreibung_gewaehlt content boolean\n  output ansatz content money\n\nscope BewertungAv:\n  definition ansatz equals\n    if (dauernde_wertminderung and teilwertabschreibung_gewaehlt and teilwert < fortgefuehrte_ak)\n    then teilwert\n    else fortgefuehrte_ak",
+  "catala_a_sha256": "0cd15dd2c443b86d5e83b86d2678bc9c0e5767d75aeba9e858797cefd30ddb37",
+  "catala_b": "declaration scope BewertungAv:\n  input fortgefuehrte_ak content money\n  input teilwert content money\n  input dauernde_wertminderung content boolean\n  input teilwertabschreibung_gewaehlt content boolean\n  output ansatz content money\n\nscope BewertungAv:\n  definition ansatz equals\n    if dauernde_wertminderung and teilwertabschreibung_gewaehlt then\n      if teilwert < fortgefuehrte_ak then teilwert else fortgefuehrte_ak\n    else fortgefuehrte_ak",
+  "catala_b_sha256": "9ff7c24225a5fd27cdc15195725433f0405aa4392f593802b8885c992bd91969",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'ansatz'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 3,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        4,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "8d9ebf401db0",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "abnutzbares_av_afa_fortgefuehrt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vermindert um die Absetzungen für Abnutzung",
+        "referenz": "§ 6 Abs. 1 Nr. 1 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Voraussetzung für Teilwertansatz ist eine dauernde Wertminderung.",
+        "bedingung_id": "dauerhaftigkeit_prognose_bool",
+        "betrifft": "dauernde_wertminderung",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Wahlrecht zum Ansatz des Teilwerts wird als boolean angenommen.",
+        "bedingung_id": null,
+        "betrifft": "teilwertabschreibung_gewaehlt",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Teilwert muss niedriger als fortgeführte AK sein für Ansatz.",
+        "bedingung_id": null,
+        "betrifft": "teilwert",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-14T19:39:30+00:00"
+  },
+  "module_name": "BewertungAv",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

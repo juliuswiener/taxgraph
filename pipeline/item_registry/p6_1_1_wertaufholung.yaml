@@ -1,0 +1,22 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p6_1_1_wertaufholung
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 1 nr. 1 s. 1 estg
+  formulierungen:
+  - vermindert um die Absetzungen für Abnutzung
+  triage: nicht_material_backlog
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 1 nr. 1 s. 4 estg
+  formulierungen:
+  - sind in den folgenden Wirtschaftsjahren gemäß Satz 1 anzusetzen
+  triage: nicht_material_backlog
+  klasse: unabhaengig

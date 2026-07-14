@@ -1,0 +1,40 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p6_1_1_bewertung_av
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - dauernde_wertminderung
+  - geltungsvoraussetzung
+  formulierungen:
+  - Voraussetzung für Teilwertansatz ist eine dauernde Wertminderung.
+  triage: bedingung_neu
+  bedingung: dauerhaftigkeit_prognose_bool
+- art: annahme
+  anker:
+  - betrifft_kat
+  - teilwertabschreibung_gewaehlt
+  - geltungsvoraussetzung
+  formulierungen:
+  - Wahlrecht zum Ansatz des Teilwerts wird als boolean angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - teilwert
+  - interpretation
+  formulierungen:
+  - Teilwert muss niedriger als fortgeführte AK sein für Ansatz.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 1 nr. 1 s. 1 estg
+  formulierungen:
+  - vermindert um die Absetzungen für Abnutzung
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: abnutzbares_av_afa_fortgefuehrt

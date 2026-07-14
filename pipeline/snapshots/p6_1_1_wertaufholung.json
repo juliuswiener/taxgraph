@@ -1,0 +1,179 @@
+{
+  "bedingungen": [
+    "wg_bereits_vorjahr_av",
+    "nachweis_beweislast_steuerpflichtiger",
+    "teilwert_ist_schaetzwert_input"
+  ],
+  "candidate_id": "p6_1_1_wertaufholung",
+  "catala_a": "declaration scope Wertaufholung:\n  input fortgefuehrte_ak content money\n  input teilwert content money\n  input niedrigerer_teilwert_nachgewiesen content boolean\n  output ansatz content money\n\nscope Wertaufholung:\n  label grundregel\n  definition ansatz equals fortgefuehrte_ak\n\n  exception grundregel\n  definition ansatz under condition\n    niedrigerer_teilwert_nachgewiesen and (teilwert < fortgefuehrte_ak)\n  consequence equals teilwert",
+  "catala_a_sha256": "ee4f220920fd256787e5724bc1ec052fe9e3af3cae20dbe2bee553615f27328f",
+  "catala_b": "declaration scope Wertaufholung:\n  input fortgefuehrte_ak content money\n  input teilwert content money\n  input niedrigerer_teilwert_nachgewiesen content boolean\n  output ansatz content money\n\nscope Wertaufholung:\n  label grundregel\n  definition ansatz equals fortgefuehrte_ak\n  exception grundregel\n  definition ansatz under condition niedrigerer_teilwert_nachgewiesen consequence equals\n    if fortgefuehrte_ak <= teilwert then fortgefuehrte_ak else teilwert",
+  "catala_b_sha256": "56a392af31530b3d1a45792cd540fcf86bb15b742c5a27b6b5a6bab0b6c915e4",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'ansatz'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 0 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "vermindert um die Absetzungen für Abnutzung",
+            "eingeschmolzen": "mit den Anschaffungs- oder Herstellungskosten oder dem an deren Stelle tretenden Wert, vermindert um die Absetzungen für Abnutzung",
+            "key": [
+              "ref",
+              "§ 6 abs. 1 nr. 1 s. 1 estg"
+            ]
+          },
+          {
+            "cluster": "sind in den folgenden Wirtschaftsjahren gemäß Satz 1 anzusetzen",
+            "eingeschmolzen": "sind in den folgenden Wirtschaftsjahren gemäß Satz 1 anzusetzen, es sei denn, der Steuerpflichtige weist nach, dass ein niedrigerer Teilwert nach Satz 2 angeset",
+            "key": [
+              "ref",
+              "§ 6 abs. 1 nr. 1 s. 4 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "1a2d8066b004",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "vermindert um die Absetzungen für Abnutzung",
+        "referenz": "§ 6 Abs. 1 Nr. 1 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "sind in den folgenden Wirtschaftsjahren gemäß Satz 1 anzusetzen",
+        "referenz": "§ 6 Abs. 1 Nr. 1 S. 4 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-14T19:40:01+00:00"
+  },
+  "module_name": "Wertaufholung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}
