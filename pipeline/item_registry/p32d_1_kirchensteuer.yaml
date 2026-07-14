@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p32d_1_kirchensteuer
-version: 2
+version: 3
 items:
 - art: norm_teil
   anker:
@@ -73,3 +73,23 @@ items:
   - Die Einkommensteuer beträgt damit e – 4 q 4 + k.
   triage: nicht_material_backlog
   klasse: wirkt_hinein
+- art: abweichung
+  anker:
+  - abweichung_text
+  - 'formel weicht ab: norm verwendet e - 4q / (4 + k), formalisierung (e - 4q) /
+    (4 + k).'
+  formulierungen:
+  - 'Formel weicht ab: Norm verwendet e - 4q / (4 + k), Formalisierung (e - 4q) /
+    (4 + k). nicht_echt (Instructor 2026-07-14): Bruchstrich-Verlust im Text-Export
+    (gesetze-im-internet rendert Zaehler ''e - 4q'' ueber Nenner ''4 + k''; Flattext
+    verliert den Strich). Norm-Intent eindeutig (e-4q)/(4+k), S5-Legende bestaetigt.
+    Divisions-Seed 4090/0/0,09 -> 4090/4,09 = 1000,00 beweist Bruch-Semantik.'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kirchensteuersatz
+  - einheit
+  formulierungen:
+  - Kirchensteuersatz wird als Dezimalzahl (nicht Prozent) angenommen.
+  triage: nicht_material

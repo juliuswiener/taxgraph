@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p34_3_ermaessigter_durchschnittssatz
-version: 2
+version: 3
 items:
 - art: annahme
   anker:
@@ -151,3 +151,34 @@ items:
     bemessen wäre | mindestens jedoch 14 Prozent
   triage: nicht_material_backlog
   klasse: wirkt_hinein
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der durchschnittliche steuersatz wird als quotient aus est_gesamt_zzgl_progression
+    und bemessungsgrundlage_durchschnitt berechnet, nicht als tarifliche einkommensteuer.
+  formulierungen:
+  - 'Der durchschnittliche Steuersatz wird als Quotient aus est_gesamt_zzgl_progression
+    und bemessungsgrundlage_durchschnitt berechnet, nicht als tarifliche Einkommensteuer.
+    nicht_echt (Instructor 2026-07-14): woertlich umformuliertes Duplikat des committeten
+    Erst-Items (''die berechnung des durchschnittssatzes als quotient aus est_gesamt_zzgl_progression
+    und bemessungsgrundlage_durchschnitt ist nicht normkonform'', bereits nicht_echt).
+    Semantik identisch; Durchschnittssatz = Steuer/Bemessungsgrundlage ist die Definition,
+    Andockung nimmt est als p32a-Input.'
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ao_einkuenfte
+  - interpretation
+  formulierungen:
+  - ao_einkuenfte wird als Betrag der außerordentlichen Einkünfte interpretiert. |
+    Ao_einkuenfte werden als außerordentliche Einkünfte i.S.d. Absatzes 2 Nr. 1 interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_ao
+  - rundung
+  formulierungen:
+  - Keine Rundung des ermäßigten Steuersatzes oder der Steuer wird angenommen.
+  triage: nicht_material
