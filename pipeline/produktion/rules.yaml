@@ -3740,3 +3740,213 @@ regeln:
   - entfernungspauschale_ab_21km: 0
     zu_versteuerndes_einkommen: 10000
     grundfreibetrag: 12096
+
+# ===========================================================================
+# Charge 13 - Nachtrags-Sammelcharge (Stufe A, 2026-07-14).
+# Zuschnitt-Report: reports/review/2026-07-14-charge13-nachtraege.md
+# Schliesst die benannten Rechen-Nachtraege des Vollabdeckungs-Programms
+# (§ 23 Abs 3 S 7 Verlusttopf, § 32d KiSt-Formel, § 34 Abs 3 56-%-Satz).
+# § 21 Abs 2 Prognosekorridor 50-<66 % bleibt Nicht-Gegenstand (kein Wortlaut,
+# BMF-Totalueberschussprognose) - bereits als Bedingung an p21_2 benannt.
+# ===========================================================================
+
+- rule_id: p23_3_verlusttopf
+  hinweis: 'Topf-Trennung wie § 20 Abs 6 (p20_6-Praezedenz): gewinn_pvg und verlust_pvg sind beide NICHT-NEGATIVE Summen (verlust_pvg als positiver Betrag). Rechenkern: anzusetzende_einkuenfte = max(0 Euro; gewinn_pvg - verlust_pvg). Ein Netto-Verlust wird NICHT durchgereicht (S7 Hs1: Verluste nur bis zur Hoehe des gleichjaehrigen PVG-Gewinns; S7 Hs2: kein § 10d-Abzug). Der quarantaenisierte Rest (S8 Vor-/Ruecktrag) ist NICHT Gegenstand. Keine Division, keine Rundung.'
+  norm: § 23 Abs. 3 S. 7 EStG (privater Veraeusserungs-Verlusttopf, gleichjaehrig)
+  quellen:
+  - typ: gesetz
+    label: § 23 Abs. 3 S. 7 EStG (Verlustausgleich nur bis Gewinnhoehe desselben Jahres)
+    datei: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Verluste dürfen nur bis zur Höhe des Gewinns
+    auszug: 'Verluste dürfen nur bis zur Höhe des Gewinns, den der Steuerpflichtige im gleichen Kalenderjahr aus privaten Veräußerungsgeschäften erzielt hat, ausgeglichen werden; sie dürfen nicht nach § 10d abgezogen werden.'
+  geltungsbedingungen:
+  - bedingung: verlust_nur_gleichjaehriger_pvg_gewinn
+    deckt_ab: nur bis zur Höhe des Gewinns
+    quelle: § 23 Abs. 3 S. 7 Hs. 1 EStG
+    beschreibung: 'Kernmechanik: PVG-Verluste werden nur mit PVG-Gewinnen DESSELBEN Kalenderjahres verrechnet. gewinn_pvg / verlust_pvg sind die Jahressummen der positiven bzw. negativen § 23-Ergebnisse (die § 2-Integration bildet sie).'
+  - bedingung: kein_ausgleich_mit_anderen_einkunftsarten
+    deckt_ab: sie dürfen nicht nach § 10d abgezogen werden
+    quelle: § 23 Abs. 3 S. 7 Hs. 2 EStG
+    beschreibung: 'Ein PVG-Netto-Verlust mindert NICHT andere Einkuenfte (kein § 10d-Abzug, keine Verrechnung mit anderen Einkunftsarten) - Ausdruck des max(0)-Bodens: ein Netto-Verlust geht mit 0 in den GdE ein.'
+  - bedingung: kein_verlustvor_ruecktrag_s8
+    deckt_ab: mindern jedoch nach Maßgabe des § 10d die Einkünfte
+    quelle: § 23 Abs. 3 S. 8 EStG
+    beschreibung: 'S8 (Vor-/Ruecktrag des quarantaenisierten PVG-Verlusts nach § 10d-Massgabe in andere VZ, nur gegen kuenftige/vergangene PVG-Gewinne) ist Mehrjahres-State (§ 2-Integration + § 10d Abs4), hier ausgeklammert - wie § 10d Abs1 Ruecktrag Nicht-Gegenstand.'
+  rundung: []
+  signature:
+    scope: PvgVerlusttopf
+    inputs:
+      gewinn_pvg: money
+      verlust_pvg: money
+    output: anzusetzende_einkuenfte
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Verluste dürfen nur bis zur Höhe des Gewinns
+    herkunft: synthetisch
+    rechenweg: 'Gewinn 2.000, Verlust 500: max(0; 2.000-500) = 1.500,00.'
+    inputs: {gewinn_pvg: 2000, verlust_pvg: 500}
+    expected: 1500.0
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Verluste dürfen nur bis zur Höhe des Gewinns
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Netto-Verlust quarantaenisiert: Gewinn 500, Verlust 800 -> max(0; -300) = 0,00 (der 300er-Verlust geht NICHT in den GdE).'
+    inputs: {gewinn_pvg: 500, verlust_pvg: 800}
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Verluste dürfen nur bis zur Höhe des Gewinns
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER exakter Ausgleich: Gewinn 1.000, Verlust 1.000 -> max(0; 0) = 0,00.'
+    inputs: {gewinn_pvg: 1000, verlust_pvg: 1000}
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p23_2026-07-13.txt
+    zitatanker: Verluste dürfen nur bis zur Höhe des Gewinns
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: kein PVG -> max(0; 0) = 0,00.'
+    inputs: {gewinn_pvg: 0, verlust_pvg: 0}
+    expected: 0.0
+  raster:
+  - {gewinn_pvg: 2000, verlust_pvg: 500}
+  - {gewinn_pvg: 500, verlust_pvg: 800}
+  - {gewinn_pvg: 1000, verlust_pvg: 1000}
+  - {gewinn_pvg: 0, verlust_pvg: 0}
+
+- rule_id: p32d_1_kirchensteuer
+  hinweis: 'KiSt-ermaessigte Abgeltung (§ 32d Abs 1 S 3-5), NICHT der glatte 25-%-Satz (das ist p32d_1_abgeltung). Rechenkern: kapital_steuer = (kapitaleinkuenfte - 4 * anrechenbare_auslaendische_steuer) / (4 + kirchensteuersatz). kirchensteuersatz ist bereits ein Dezimalsatz (0,09 bzw. 0,08 - Landessatz), NICHT durch 100 teilen. Die beiden 4er sind exakte Strukturkonstanten (NICHT /100). Cent-Schnitt zuletzt.'
+  norm: § 32d Abs. 1 S. 3-5 EStG (KiSt-ermaessigte Abgeltungsteuer, Formel e-4q durch 4+k)
+  quellen:
+  - typ: gesetz
+    label: § 32d Abs. 1 S. 4 EStG (Formel e-4q durch 4+k)
+    datei: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: e – 4 q
+    auszug: 'Im Fall der Kirchensteuerpflicht ermäßigt sich die Steuer nach den Sätzen 1 und 2 um 25 Prozent der auf die Kapitalerträge entfallenden Kirchensteuer. 4 Die Einkommensteuer beträgt damit e – 4 q 4 + k . 5 Dabei sind „e“ die nach den Vorschriften des § 20 ermittelten Einkünfte, „q“ die nach Maßgabe des Absatzes 5 anrechenbare ausländische Steuer und „k“ der für die Kirchensteuer erhebende Religionsgesellschaft (Religionsgemeinschaft) geltende Kirchensteuersatz.'
+  geltungsbedingungen:
+  - bedingung: kirchensteuerpflicht_besteht
+    deckt_ab: Im Fall der Kirchensteuerpflicht
+    quelle: § 32d Abs. 1 S. 3 EStG
+    beschreibung: 'Die Formel (e-4q)/(4+k) gilt NUR bei Kirchensteuerpflicht des Steuerpflichtigen. Ohne KiSt-Pflicht gilt der glatte 25-%-Satz (p32d_1_abgeltung). Komplementaer zu dessen Bedingung keine_kirchensteuer_auf_kapitalertraege.'
+  - bedingung: keine_guenstigerpruefung_beantragt
+    deckt_ab: beträgt 25 Prozent
+    quelle: § 32d Abs. 1 i.V.m. Abs. 6 EStG
+    beschreibung: 'Die Abgeltung (Abs 1) gilt, solange nicht die Guenstigerpruefung (Abs 6) beantragt ist (p32d_1_abgeltung-Praezedenz). Wird sie beantragt, unterliegen die Kapitaleinkuenfte dem tariflichen Verfahren.'
+  - bedingung: kapitaleinkuenfte_nicht_negativ
+    deckt_ab: die nach den Vorschriften des § 20 ermittelten Einkünfte
+    quelle: § 32d Abs. 1 S. 5 EStG i.V.m. § 20 Abs. 6
+    beschreibung: 'e (= § 20-Einkuenfte) wird als nicht-negativ angenommen; negative Kapitaleinkuenfte laufen in den § 20-Abs6-Verlusttopf (p20_6), nicht in die Abgeltung.'
+  rundung: []
+  signature:
+    scope: KapitalAbgeltungKirchensteuer
+    inputs:
+      kapitaleinkuenfte: money
+      anrechenbare_auslaendische_steuer: money
+      kirchensteuersatz: decimal
+    output: kapital_steuer
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: e – 4 q
+    herkunft: synthetisch
+    rechenweg: 'k=9 %: e=4.090, q=0 -> (4.090 - 0) / 4,09 = 1.000,00.'
+    inputs: {kapitaleinkuenfte: 4090, anrechenbare_auslaendische_steuer: 0, kirchensteuersatz: 0.09}
+    expected: 1000.0
+  - quelle: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: e – 4 q
+    herkunft: synthetisch
+    rechenweg: 'k=9 %: e=8.180, q=0 -> 8.180 / 4,09 = 2.000,00.'
+    inputs: {kapitaleinkuenfte: 8180, anrechenbare_auslaendische_steuer: 0, kirchensteuersatz: 0.09}
+    expected: 2000.0
+  - quelle: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: e – 4 q
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER anrechenbare ausl. Steuer q: e=4.490, q=100, k=9 % -> (4.490 - 400) / 4,09 = 4.090 / 4,09 = 1.000,00.'
+    inputs: {kapitaleinkuenfte: 4490, anrechenbare_auslaendische_steuer: 100, kirchensteuersatz: 0.09}
+    expected: 1000.0
+  - quelle: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: e – 4 q
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Landessatz k=8 %: e=4.080, q=0 -> 4.080 / 4,08 = 1.000,00.'
+    inputs: {kapitaleinkuenfte: 4080, anrechenbare_auslaendische_steuer: 0, kirchensteuersatz: 0.08}
+    expected: 1000.0
+  - quelle: sources/gesetze-im-internet/estg_p32d_2026-07-13.txt
+    zitatanker: e – 4 q
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: e=0 -> (0-0)/4,09 = 0,00.'
+    inputs: {kapitaleinkuenfte: 0, anrechenbare_auslaendische_steuer: 0, kirchensteuersatz: 0.09}
+    expected: 0.0
+  raster:
+  - {kapitaleinkuenfte: 4090, anrechenbare_auslaendische_steuer: 0, kirchensteuersatz: 0.09}
+  - {kapitaleinkuenfte: 8180, anrechenbare_auslaendische_steuer: 0, kirchensteuersatz: 0.09}
+  - {kapitaleinkuenfte: 4490, anrechenbare_auslaendische_steuer: 100, kirchensteuersatz: 0.09}
+  - {kapitaleinkuenfte: 4080, anrechenbare_auslaendische_steuer: 0, kirchensteuersatz: 0.08}
+  - {kapitaleinkuenfte: 0, anrechenbare_auslaendische_steuer: 0, kirchensteuersatz: 0.09}
+
+- rule_id: p34_3_ermaessigter_durchschnittssatz
+  hinweis: 'Andockung wie § 34 Abs 1 / § 32d (Tarifwerte sind INPUTS, KEIN Selbst-Tarif): est_gesamt_zzgl_progression ist das p32a-Tarifergebnis auf bemessungsgrundlage_durchschnitt (= gesamtes zvE inkl. der ao-Einkuenfte, zuzueglich Progressionseinkuenfte). Rechenkern: durchschnittssatz = est_gesamt_zzgl_progression / bemessungsgrundlage_durchschnitt (money/money = decimal); ermaessigter_satz = max(0,56 * durchschnittssatz; 0,14); est_ao = ermaessigter_satz * min(ao_einkuenfte; 5.000.000 Euro). 0,56 und 0,14 sind exakte Konstanten (NICHT /100 - Prozentwert bereits als Dezimal). Cap 5 Mio als min. Cent-Schnitt zuletzt.'
+  norm: § 34 Abs. 3 EStG (ermaessigter Durchschnittssatz 56 %, ao-Einkuenfte bis 5 Mio)
+  quellen:
+  - typ: gesetz
+    label: § 34 Abs. 3 S. 1-2 EStG (56 % des Durchschnittssatzes, mind. 14 %, 5-Mio-Cap)
+    datei: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: 56 Prozent des durchschnittlichen Steuersatzes
+    auszug: 'Sind in dem zu versteuernden Einkommen außerordentliche Einkünfte im Sinne des Absatzes 2 Nummer 1 enthalten, so kann auf Antrag abweichend von Absatz 1 die auf den Teil dieser außerordentlichen Einkünfte, der den Betrag von insgesamt 5 Millionen Euro nicht übersteigt, entfallende Einkommensteuer nach einem ermäßigten Steuersatz bemessen werden, wenn der Steuerpflichtige das 55. Lebensjahr vollendet hat oder wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig ist. 2 Der ermäßigte Steuersatz beträgt 56 Prozent des durchschnittlichen Steuersatzes, der sich ergäbe, wenn die tarifliche Einkommensteuer nach dem gesamten zu versteuernden Einkommen zuzüglich der dem Progressionsvorbehalt unterliegenden Einkünfte zu bemessen wäre, mindestens jedoch 14 Prozent.'
+  geltungsbedingungen:
+  - bedingung: antrag_gestellt
+    deckt_ab: so kann auf Antrag
+    quelle: § 34 Abs. 3 S. 1 EStG
+    beschreibung: 'Der ermaessigte Durchschnittssatz greift NUR auf Antrag (p32d/p35a-antrag-Praezedenz). Ohne Antrag: regulaerer Tarif bzw. Fuenftelregelung.'
+  - bedingung: persoenliche_voraussetzung_erfuellt
+    deckt_ab: das 55. Lebensjahr vollendet hat oder wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig ist
+    quelle: § 34 Abs. 3 S. 1 EStG
+    beschreibung: 'Anwendbarkeit setzt voraus: 55. Lebensjahr vollendet ODER dauernd berufsunfaehig (sozialversicherungsrechtlich). Bool-Applikabilitaet, variiert den Betrag nicht.'
+  - bedingung: ao_einkuenfte_abs2_nr1
+    deckt_ab: außerordentliche Einkünfte im Sinne des Absatzes 2 Nummer 1
+    quelle: § 34 Abs. 3 S. 1 i.V.m. Abs. 2 Nr. 1 EStG
+    beschreibung: 'Nur ao-Einkuenfte nach Abs 2 Nr 1 (Betriebs-/Anteilsveraeusserungsgewinne). Nr 2-4 (Abfindungen, Nachzahlungen, mehrjaehrige Verguetungen) laufen ueber die Fuenftelregelung (p34_fuenftel_ao_est), NICHT hier.'
+  - bedingung: einmal_im_leben
+    deckt_ab: nur einmal im Leben
+    quelle: § 34 Abs. 3 S. 4 EStG
+    beschreibung: 'Der ermaessigte Satz kann nur EINMAL im Leben in Anspruch genommen werden (Einmaligkeits-State, wie Riester-Berufseinsteiger/§ 35c-40k - bool-Input aus der Integration, hier vorausgesetzt).'
+  - bedingung: tarifwerte_sind_p2_ergebnis
+    deckt_ab: wenn die tarifliche Einkommensteuer nach dem gesamten zu versteuernden Einkommen
+    quelle: § 34 Abs. 3 S. 2 i.V.m. § 2, § 32a EStG
+    beschreibung: 'est_gesamt_zzgl_progression und bemessungsgrundlage_durchschnitt sind p32a-Tarifergebnis bzw. dessen Bemessungsgroesse (gesamtes zvE inkl. ao zzgl. Progressionseinkuenfte), aus der § 2-Integration. Andockung wie § 34 Abs 1 / § 31 - kein Selbst-Tarif.'
+  - bedingung: bemessungsgrundlage_positiv
+    deckt_ab: des durchschnittlichen Steuersatzes
+    quelle: § 34 Abs. 3 S. 2 EStG
+    beschreibung: 'bemessungsgrundlage_durchschnitt > 0 (Nenner der Durchschnittssatz-Division). Bei ao-Antrag konstruktiv erfuellt (positive ao-Einkuenfte enthalten).'
+  rundung: []
+  signature:
+    scope: ErmaessigterDurchschnittssatz
+    inputs:
+      ao_einkuenfte: money
+      est_gesamt_zzgl_progression: money
+      bemessungsgrundlage_durchschnitt: money
+    output: est_ao
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: 56 Prozent des durchschnittlichen Steuersatzes
+    herkunft: synthetisch
+    rechenweg: 'Durchschnittssatz 60.000/200.000 = 0,30; ermaessigt 0,56 x 0,30 = 0,168; ao 100.000 (< 5 Mio) -> 0,168 x 100.000 = 16.800,00.'
+    inputs: {ao_einkuenfte: 100000, est_gesamt_zzgl_progression: 60000, bemessungsgrundlage_durchschnitt: 200000}
+    expected: 16800.0
+  - quelle: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: 56 Prozent des durchschnittlichen Steuersatzes
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER 14-%-Boden: Durchschnitt 20.000/100.000 = 0,20; 0,56 x 0,20 = 0,112 < 0,14 -> Boden 0,14; ao 50.000 -> 0,14 x 50.000 = 7.000,00.'
+    inputs: {ao_einkuenfte: 50000, est_gesamt_zzgl_progression: 20000, bemessungsgrundlage_durchschnitt: 100000}
+    expected: 7000.0
+  - quelle: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: 56 Prozent des durchschnittlichen Steuersatzes
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER 5-Mio-Cap: Durchschnitt 0,30 -> 0,168; ao 6.000.000 -> min(6.000.000; 5.000.000) = 5.000.000; 0,168 x 5.000.000 = 840.000,00.'
+    inputs: {ao_einkuenfte: 6000000, est_gesamt_zzgl_progression: 60000, bemessungsgrundlage_durchschnitt: 200000}
+    expected: 840000.0
+  - quelle: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: 56 Prozent des durchschnittlichen Steuersatzes
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: ao 0 -> 0,168 x 0 = 0,00.'
+    inputs: {ao_einkuenfte: 0, est_gesamt_zzgl_progression: 60000, bemessungsgrundlage_durchschnitt: 200000}
+    expected: 0.0
+  raster:
+  - {ao_einkuenfte: 100000, est_gesamt_zzgl_progression: 60000, bemessungsgrundlage_durchschnitt: 200000}
+  - {ao_einkuenfte: 50000, est_gesamt_zzgl_progression: 20000, bemessungsgrundlage_durchschnitt: 100000}
+  - {ao_einkuenfte: 6000000, est_gesamt_zzgl_progression: 60000, bemessungsgrundlage_durchschnitt: 200000}
+  - {ao_einkuenfte: 0, est_gesamt_zzgl_progression: 60000, bemessungsgrundlage_durchschnitt: 200000}
