@@ -42,3 +42,50 @@ mapping:
     veranlagungszeitraum: "alle"
     status: "stub"
     quelle: "pending Zugang"
+
+  # --- W1 (2026-07-14): Selbständige-Anlagen EÜR/AUS, STARK-Kandidaten (Vordruck ⋂ XSD verbatim) ---
+  - regel_output: "p6_2_gwg_sofortabzug.GwgSofortabzug.sofortabzug"
+    elster_feld_id: "E6002301"
+    elster_feld_name: "Aufwendungen für geringwertige Wirtschaftsgüter nach § 6 Abs. 2 EStG"
+    anlage: "Anlage EÜR"
+    typ: "euro"
+    pflicht: false
+    veranlagungszeitraum: 2025
+    status: "mapped"
+    quelle: "E77-2025.xsd + euer_2025 Z. 36 (Form-Kz 132)"
+  - regel_output: "p6_2a_sammelposten_aufloesung.SammelpostenAufloesung.jahresaufloesung"
+    elster_feld_id: "E6003302"
+    elster_feld_name: "Auflösung Sammelposten nach § 6 Abs. 2a EStG"
+    anlage: "Anlage EÜR"
+    typ: "euro"
+    pflicht: false
+    veranlagungszeitraum: 2025
+    status: "mapped"
+    quelle: "E77-2025.xsd + euer_2025"
+  - regel_output: "p7g_1_iab_bildung.IabBildung.iab"
+    elster_feld_id: "E6004804"
+    elster_feld_name: "abzüglich Investitionsabzugsbeträge nach § 7g Abs. 1 EStG"
+    anlage: "Anlage EÜR"
+    typ: "euro"
+    pflicht: false
+    veranlagungszeitraum: 2025
+    status: "mapped"
+    quelle: "E77-2025.xsd + euer_2025"
+  - regel_output: "p7g_5_sonder_afa.SonderAfa.sonder_afa_gesamt"
+    elster_feld_id: "E6002201"
+    elster_feld_name: "Sonderabschreibungen nach § 7b EStG und § 7g Abs. 5 und 6 EStG"
+    anlage: "Anlage EÜR"
+    typ: "euro"
+    pflicht: false
+    veranlagungszeitraum: 2025
+    status: "mapped"
+    quelle: "E77-2025.xsd + euer_2025 Z. 35 (Sammelfeld §7b+§7g)"
+  - regel_output: "p34c_2_abzug_statt_anrechnung.AbzugAuslaendischeSteuer.abzug"
+    elster_feld_id: "E0600920"
+    elster_feld_name: "abgezogene ausländische Steuern nach § 34c Abs. 2 EStG"
+    anlage: "Anlage AUS"
+    typ: "euro"
+    pflicht: false
+    veranlagungszeitraum: 2025
+    status: "mapped"
+    quelle: "E10-2025.html (AUS-Sektion)"

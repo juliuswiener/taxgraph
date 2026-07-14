@@ -27,7 +27,8 @@ def load_yaml_fh(fh):
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 REQUIRED = ("regel_output", "elster_feld_id", "anlage", "typ", "pflicht", "status")
-ANLAGEN = {"Mantelbogen", "Anlage N", "Anlage Vorsorgeaufwand", "Anlage Kind"}
+ANLAGEN = {"Mantelbogen", "Anlage N", "Anlage Vorsorgeaufwand", "Anlage Kind",
+           "Anlage EÜR", "Anlage AUS", "Anlage S", "Anlage G"}
 TYPEN = {"euro", "integer", "bool", "string", "prozent"}
 STATUS = {"stub", "mapped", "verified"}
 REGEL_OUTPUT_RE = re.compile(r"^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+){1,2}$")

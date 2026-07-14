@@ -32,15 +32,26 @@ _DOC = re.compile(
     re.S)
 
 
-def _find_schema() -> str | None:
-    if os.environ.get("EST_SCHEMA_HTML"):
+# Datenart -> Schema-Datei. E10 = ESt-Erklaerung (gerendertes HTML mit Sektions-Ankern,
+# Anlagen N/AUS/S/G etc.); E77 = Anlage EUER (eigene ELSTER-Datenart, nur rohe XSD - KEIN
+# gerendertes HTML). Fuer E77 fehlt der Sektions-Anker (0 _ANCHOR-Treffer, s.
+# reports/review/.../feldmapping-*euer*.md), die Sektion bleibt leer: die Vordruck-Zeilen-
+# ordnung ist Primaer-Disambiguator (Einzelformular, keine cross-Anlage-Label-Kollision).
+_SCHEMA_DATEI = {"e10": "E10-2025.html", "e77": "E77-2025.xsd"}
+
+
+def _find_schema(datenart: str = "e10") -> str | None:
+    if datenart == "e10" and os.environ.get("EST_SCHEMA_HTML"):
         p = os.path.expanduser(os.environ["EST_SCHEMA_HTML"])
         return p if os.path.exists(p) else None
+    name = _SCHEMA_DATEI.get(datenart)
+    if not name:
+        return None
     roots = [os.environ.get("ERIC_DIR", ""), os.path.expanduser("~/02_Software/eric")]
     for r in roots:
         if not r:
             continue
-        hits = sorted(glob.glob(os.path.join(os.path.expanduser(r), "**", "E10-2025.html"),
+        hits = sorted(glob.glob(os.path.join(os.path.expanduser(r), "**", name),
                                 recursive=True))
         if hits:
             return hits[0]
@@ -66,10 +77,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--suche", help="Substring im Label (case-insensitive)")
     ap.add_argument("--sektion", help="Substring im Sektions-Pfad")
-    ap.add_argument("--schema", help="Pfad zu E10-<vz>.html (sonst $EST_SCHEMA_HTML / Default)")
+    ap.add_argument("--schema", help="Pfad zur Schemadatei (sonst $EST_SCHEMA_HTML / Default)")
+    ap.add_argument("--datenart", choices=("e10", "e77"), default="e10",
+                    help="e10 = ESt-Erklaerung (Anlagen N/AUS/S/G), e77 = Anlage EUER (eigene "
+                         "Datenart, rohe XSD, Sektion leer = Vordruck-primaer)")
     args = ap.parse_args()
 
-    path = args.schema or _find_schema()
+    path = args.schema or _find_schema(args.datenart)
     if not path:
         print("[kz] E10-2025.html nicht gefunden — $EST_SCHEMA_HTML setzen oder ERiC-Schemadok "
               "unter ~/02_Software/eric entpacken.")
