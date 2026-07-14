@@ -73,7 +73,7 @@ mapping:
     quelle: "E77-2025.xsd + euer_2025"
   - regel_output: "p7g_5_sonder_afa.SonderAfa.sonder_afa_gesamt"
     elster_feld_id: "E6002201"
-    elster_feld_name: "Sonderabschreibungen nach § 7b EStG und § 7g Abs. 5 und 6 EStG"
+    elster_feld_name: "Sonderabschreibungen § 7b + § 7g Abs. 5/6 EStG (SAMMELFELD — Regel deckt nur §7g-Anteil)"
     anlage: "Anlage EÜR"
     typ: "euro"
     pflicht: false
@@ -89,3 +89,31 @@ mapping:
     veranlagungszeitraum: 2025
     status: "mapped"
     quelle: "E10-2025.html (AUS-Sektion)"
+  # --- W1 Paket 2 (2026-07-14): EÜR-Summen-/Gewinn-Felder (Zeilen-Cross-Check euer_2025 ⋂ E77, STARK) ---
+  - regel_output: "p4_3_gewinn.EuerGewinn.betriebseinnahmen"
+    elster_feld_id: "E6005501"
+    elster_feld_name: "Summe der Betriebseinnahmen (Übertrag Zeile 23→76)"
+    anlage: "Anlage EÜR"
+    typ: "euro"
+    pflicht: true
+    veranlagungszeitraum: 2025
+    status: "mapped"
+    quelle: "E77-2025.xsd + euer_2025 Z. 76"
+  - regel_output: "p4_3_gewinn.EuerGewinn.betriebsausgaben"
+    elster_feld_id: "E6005601"
+    elster_feld_name: "abzüglich Summe der Betriebsausgaben (Übertrag Zeile 75→77)"
+    anlage: "Anlage EÜR"
+    typ: "euro"
+    pflicht: true
+    veranlagungszeitraum: 2025
+    status: "mapped"
+    quelle: "E77-2025.xsd + euer_2025 Z. 77"
+  - regel_output: "p4_3_gewinn.EuerGewinn.gewinn"
+    elster_feld_id: "E6007202"
+    elster_feld_name: "Steuerpflichtiger Gewinn/Verlust"
+    anlage: "Anlage EÜR"
+    typ: "euro"
+    pflicht: true
+    veranlagungszeitraum: 2025
+    status: "mapped"
+    quelle: "E77-2025.xsd (Übertrag in Anlage S/G)"

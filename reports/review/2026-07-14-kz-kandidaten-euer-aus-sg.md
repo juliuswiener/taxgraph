@@ -61,3 +61,30 @@ C18), daher Mapping = die Gewinn-Übertragsfelder.
 3. **S/G Gewinn-Übertragsfelder** (E10-XSD).
 4. Feldmapping-YAML: die STARK-Kandidaten als `status: mapped` gesetzt (elster/feldmapping.stub.yaml),
    Rest `stub`. validate_mapping grün.
+
+## W1 Paket 2 (2026-07-14) — Summen-Felder + ehrlicher Rest-Befund
+
+**Nachgezogen (STARK, Zeilen-Cross-Check euer_2025 ⋂ E77):**
+- p4_3_gewinn.betriebseinnahmen → **E6005501** „Summe der Betriebseinnahmen" (Z. 76)
+- p4_3_gewinn.betriebsausgaben → **E6005601** „abzüglich Summe der Betriebsausgaben" (Z. 77)
+- p4_3_gewinn.gewinn → **E6007202** „Steuerpflichtiger Gewinn/Verlust"
+- Sonder-AfA E6002201 im Mapping als **SAMMELFELD §7b+§7g** gekennzeichnet (Instructor-Auflage —
+  unsere Regel `p7g_5_sonder_afa` deckt nur den §7g-Anteil; §7b ist Nicht-Gegenstand).
+
+feldmapping.stub.yaml: **8 mapped, 3 stub, validate grün.**
+
+**Ehrlicher Rest-Befund (LABEL-Suche UNZUREICHEND, struktureller Cross-Check nötig — NICHT
+fabriziert):**
+1. **AUS § 34c Abs. 1 Anrechnung**: kein sauberer Label-Treffer in E10 (die „anzurechnende
+   ausländische Steuer"-Kz sind §15-AStG/§50d-Kontexte, nicht die §34c-Abs1-Grundanrechnung).
+   Braucht den aus_2025-Vordruck-Zeile → E10-Kz-Strukturabgleich (die §34c-Abs2-Abzugsseite
+   E0600920 ist STARK; die Abs1-Anrechnungsseite hängt am Zeilen-Layout). → MITTEL/offen.
+2. **Anlage S/G Gewinn-Übertrag**: die Basis-Gewinn-Übertragsfelder (EÜR-Gewinn → Anlage S/G
+   Einkunftsart-Zeile) sind label-resistent (E10 „Gew"-Sektion trägt §34a/Veräußerungs-Kz, nicht
+   den Basis-Gewinn). Ohne Papier-Vordruck (E-Pflicht) braucht das den E10-XSD-Element-Baum-Walk
+   ODER den ELSTER-Beispiel-XML-Abgleich (EUER_2025_ok.xml → welche E-Nr trägt den Gewinn). → offen.
+
+**Empfehlung:** die 8 STARK-mapped decken den EÜR-Rechenkern (BE/BA/Gewinn/GWG/Sammelposten/IAB/
+Sonder-AfA/§34c-Abzug). AUS-Abs1 + S/G-Basis-Gewinn sind die zwei Rest-Felder — entweder (a) via
+ELSTER-Beispiel-XML (EUER_2025_ok.xml / ein AUS-Beispiel) den Gewinn/Anrechnungs-E-Nr ablesen
+(deterministisch, $0), ODER (b) beim Testversand/checkESt (Phase 4) auflösen. Dein Wort.
