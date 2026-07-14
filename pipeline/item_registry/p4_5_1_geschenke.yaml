@@ -1,0 +1,16 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p4_5_1_geschenke
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 4 abs. 5 s. 1 nr. 1 estg
+  formulierungen:
+  - Anschaffungs- oder Herstellungskosten der dem Empfänger im Wirtschaftsjahr zugewendeten
+    Gegenstände
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: geschenke_summe_je_empfaenger_wj

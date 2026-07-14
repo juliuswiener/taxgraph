@@ -1,16 +1,13 @@
 {
   "bedingungen": [
-    "nicht_buchfuehrungspflichtig_und_keine_buecher",
-    "durchlaufende_posten_ausgeschieden",
-    "keine_lebensfuehrungskosten_p12_nr1",
-    "keine_repraesentation_gemischt_p12_nr1s2",
-    "keine_personensteuern_p12_nr3"
+    "empfaenger_nicht_arbeitnehmer",
+    "geschenke_summe_je_empfaenger_wj"
   ],
-  "candidate_id": "p4_3_gewinn",
-  "catala_a": "declaration scope EuerGewinn:\n  input betriebseinnahmen content money\n  input betriebsausgaben content money\n  output gewinn content money\n\nscope EuerGewinn:\n  definition gewinn equals betriebseinnahmen - betriebsausgaben",
-  "catala_a_sha256": "eeb58222473e838eedfc5f22b536081984047e27f81d329710d9ec1ed5c9d77c",
-  "catala_b": "declaration scope EuerGewinn:\n  input betriebseinnahmen content money\n  input betriebsausgaben content money\n  output gewinn content money\n\nscope EuerGewinn:\n  definition gewinn equals betriebseinnahmen - betriebsausgaben",
-  "catala_b_sha256": "eeb58222473e838eedfc5f22b536081984047e27f81d329710d9ec1ed5c9d77c",
+  "candidate_id": "p4_5_1_geschenke",
+  "catala_a": "declaration scope GeschenkeFreigrenze:\n  input geschenke_summe_je_empfaenger_wj content money\n  output abziehbar content money\n\nscope GeschenkeFreigrenze:\n  definition abziehbar equals\n    if geschenke_summe_je_empfaenger_wj <= $50.00\n    then geschenke_summe_je_empfaenger_wj\n    else $0.00",
+  "catala_a_sha256": "5251a85c3198c0985f9d13a0c4386e56a7175b234288ee6da8013b90a1e1bf6a",
+  "catala_b": "declaration scope GeschenkeFreigrenze:\n  input geschenke_summe_je_empfaenger_wj content money\n  output abziehbar content money\n\nscope GeschenkeFreigrenze:\n  definition abziehbar equals\n    if geschenke_summe_je_empfaenger_wj <= $50.00 then geschenke_summe_je_empfaenger_wj\n    else $0.00",
+  "catala_b_sha256": "952b4783f1fa1a1ade30df1b2060f3fe327f471d387cc7c9a461046dcefa3095",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -63,7 +60,7 @@
       "status": "PASS"
     },
     {
-      "detail": "A == B on 3 raster point(s) for 'gewinn'",
+      "detail": "A == B on 4 raster point(s) for 'abziehbar'",
       "name": "equivalence",
       "status": "PASS"
     },
@@ -78,7 +75,7 @@
       "status": "PASS"
     },
     {
-      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
       "name": "geltungsbereich",
       "status": "PASS"
     },
@@ -98,7 +95,7 @@
       "status": "PASS"
     },
     {
-      "detail": "3 seed test(s) passed, anchors verified",
+      "detail": "4 seed test(s) passed, anchors verified",
       "name": "clerk",
       "status": "PASS"
     }
@@ -119,24 +116,39 @@
       "inventar_streuung": {
         "abweichungen": [],
         "annahmen": [],
-        "norm_teile": [
-          {
-            "in_laeufen": 1,
-            "key": [
-              "ref",
-              "§ 4 abs. 3 s. 1 estg"
-            ],
-            "text": "können als Gewinn den Überschuss der Betriebseinnahmen über die Betriebsausgaben ansetzen"
-          }
-        ]
+        "norm_teile": []
       },
       "inventar_ungueltig": 0,
-      "item_splits": [],
-      "items_ohne_mehrheit": [],
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 0,
+          "item": "Anschaffungs- oder Herstellungskosten der dem Empfänger im Wirtschaftsjahr zugewendeten Gegenstände",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 4 abs. 5 s. 1 nr. 1 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 0,
+          "item": "Anschaffungs- oder Herstellungskosten der dem Empfänger im Wirtschaftsjahr zugewendeten Gegenstände",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 4 abs. 5 s. 1 nr. 1 estg\"]",
+          "ungueltige_versuche": 6
+        }
+      ],
       "merge_log": {
         "abweichungen": [],
         "annahmen": [],
-        "norm_teile": []
+        "norm_teile": [
+          {
+            "cluster": "Anschaffungs- oder Herstellungskosten der dem Empfänger im Wirtschaftsjahr zugewendeten Gegenstände",
+            "eingeschmolzen": "Anschaffungs- oder Herstellungskosten der dem Empfänger im Wirtschaftsjahr zugewendeten Gegenstände insgesamt 50 Euro nicht übersteigen",
+            "key": [
+              "ref",
+              "§ 4 abs. 5 s. 1 nr. 1 estg"
+            ]
+          }
+        ]
       },
       "saettigungskurve": [
         1,
@@ -144,22 +156,22 @@
       ]
     },
     "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
-    "lauf_id": "9ae5365cbabb",
+    "lauf_id": "86da2beaea1b",
     "parse_error": false,
     "scope_gap": [
       {
-        "abgedeckt_von": "nicht_buchfuehrungspflichtig_und_keine_buecher",
+        "abgedeckt_von": "none",
         "begruendung": "",
         "grenzfall": false,
         "klasse": "wirkt_hinein",
-        "norm_teil": "können als Gewinn den Überschuss der Betriebseinnahmen über die Betriebsausgaben ansetzen",
-        "referenz": "§ 4 Abs. 3 S. 1 EStG"
+        "norm_teil": "Anschaffungs- oder Herstellungskosten der dem Empfänger im Wirtschaftsjahr zugewendeten Gegenstände",
+        "referenz": "§ 4 Abs. 5 S. 1 Nr. 1 EStG"
       }
     ],
     "stille_zusatzannahmen": [],
-    "timestamp": "2026-07-14T16:32:13+00:00"
+    "timestamp": "2026-07-14T16:49:29+00:00"
   },
-  "module_name": "EuerGewinn",
+  "module_name": "GeschenkeFreigrenze",
   "queue_status": "verified_bedingt",
   "schema_version": 2
 }

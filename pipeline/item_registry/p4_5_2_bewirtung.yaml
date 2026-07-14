@@ -1,0 +1,26 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p4_5_2_bewirtung
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - 70% der angemessenen aufwendungen werden abgezogen, nicht der uebersteigende betrag.
+  formulierungen:
+  - '70% der angemessenen Aufwendungen werden abgezogen, nicht der übersteigende Betrag.
+    nicht_echt (Instructor 2026-07-14): Komplement-Identitaet. Wortlaut ''soweit sie
+    70 Prozent der Aufwendungen uebersteigen [= nicht abziehbar]'' definiert den NICHT-abziehbaren
+    Teil (0,30 x angemessen); abziehbar = angemessen - 0,30 x angemessen = 0,70 x
+    angemessen. Kodierung 0,70 x angemessen algebraisch identisch. Clerk-Seeds 1000->700,
+    333,33->233,33 beweisen. Ueber-Flag-Typ-1-Variante (aequivalente Umformung).'
+  triage: nicht_echt
+- art: norm_teil
+  anker:
+  - ref
+  - § 4 abs. 5 s. 1 nr. 2 estg
+  formulierungen:
+  - soweit sie 70 Prozent der Aufwendungen übersteigen | deren Höhe und betriebliche
+    Veranlassung nachgewiesen sind
+  triage: nicht_material

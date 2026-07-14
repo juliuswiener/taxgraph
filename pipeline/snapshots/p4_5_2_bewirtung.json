@@ -1,16 +1,14 @@
 {
   "bedingungen": [
-    "nicht_buchfuehrungspflichtig_und_keine_buecher",
-    "durchlaufende_posten_ausgeschieden",
-    "keine_lebensfuehrungskosten_p12_nr1",
-    "keine_repraesentation_gemischt_p12_nr1s2",
-    "keine_personensteuern_p12_nr3"
+    "geschaeftlicher_anlass",
+    "angemessenheit_verkehrsauffassung",
+    "hoehe_und_veranlassung_nachgewiesen"
   ],
-  "candidate_id": "p4_3_gewinn",
-  "catala_a": "declaration scope EuerGewinn:\n  input betriebseinnahmen content money\n  input betriebsausgaben content money\n  output gewinn content money\n\nscope EuerGewinn:\n  definition gewinn equals betriebseinnahmen - betriebsausgaben",
-  "catala_a_sha256": "eeb58222473e838eedfc5f22b536081984047e27f81d329710d9ec1ed5c9d77c",
-  "catala_b": "declaration scope EuerGewinn:\n  input betriebseinnahmen content money\n  input betriebsausgaben content money\n  output gewinn content money\n\nscope EuerGewinn:\n  definition gewinn equals betriebseinnahmen - betriebsausgaben",
-  "catala_b_sha256": "eeb58222473e838eedfc5f22b536081984047e27f81d329710d9ec1ed5c9d77c",
+  "candidate_id": "p4_5_2_bewirtung",
+  "catala_a": "declaration scope Bewirtung70:\n  input angemessene_bewirtungsaufwendungen content money\n  output abziehbar content money\n\nscope Bewirtung70:\n  definition abziehbar equals angemessene_bewirtungsaufwendungen * 0.70",
+  "catala_a_sha256": "db72c9bbc0b75e1102dac2faab18fe09dd7bcb6c6866e3b9c7cfd127f033906e",
+  "catala_b": "declaration scope Bewirtung70:\n  input angemessene_bewirtungsaufwendungen content money\n  output abziehbar content money\n\nscope Bewirtung70:\n  definition abziehbar equals 0.70 * angemessene_bewirtungsaufwendungen",
+  "catala_b_sha256": "0872af40173e26173ca2528f99f91c8db5cb79437b14e416a062a112d7be5528",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -63,7 +61,7 @@
       "status": "PASS"
     },
     {
-      "detail": "A == B on 3 raster point(s) for 'gewinn'",
+      "detail": "A == B on 3 raster point(s) for 'abziehbar'",
       "name": "equivalence",
       "status": "PASS"
     },
@@ -73,7 +71,7 @@
       "status": "PASS"
     },
     {
-      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
       "name": "scope_gap",
       "status": "PASS"
     },
@@ -104,31 +102,41 @@
     }
   ],
   "judge_verdict": {
-    "abweichungen": [],
-    "faithful": true,
+    "abweichungen": [
+      "70% der angemessenen Aufwendungen werden abgezogen, nicht der übersteigende Betrag."
+    ],
+    "faithful": false,
     "grenzfaelle": [],
     "judge_instability": {
       "cluster": {
-        "abweichungen": 0,
+        "abweichungen": 2,
         "annahmen": 0,
-        "norm_teile": 1
+        "norm_teile": 2
       },
       "gesaettigt": true,
       "grenzfaelle": [],
-      "inventar_laeufe": 2,
+      "inventar_laeufe": 3,
       "inventar_streuung": {
-        "abweichungen": [],
-        "annahmen": [],
-        "norm_teile": [
+        "abweichungen": [
           {
             "in_laeufen": 1,
             "key": [
-              "ref",
-              "§ 4 abs. 3 s. 1 estg"
+              "betrifft",
+              "ergebnis"
             ],
-            "text": "können als Gewinn den Überschuss der Betriebseinnahmen über die Betriebsausgaben ansetzen"
+            "text": "Die Formalisierung berechnet 70% der angemessenen Aufwendungen, die Norm begrenzt den Abzug auf 70%."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "70% der angemessenen Aufwendungen werden abgezogen, nicht der übersteigende Betrag."
           }
-        ]
+        ],
+        "annahmen": [],
+        "norm_teile": []
       },
       "inventar_ungueltig": 0,
       "item_splits": [],
@@ -139,27 +147,36 @@
         "norm_teile": []
       },
       "saettigungskurve": [
+        3,
         1,
         0
       ]
     },
     "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
-    "lauf_id": "9ae5365cbabb",
+    "lauf_id": "eb8b0cf74602",
     "parse_error": false,
     "scope_gap": [
       {
-        "abgedeckt_von": "nicht_buchfuehrungspflichtig_und_keine_buecher",
+        "abgedeckt_von": "none",
         "begruendung": "",
         "grenzfall": false,
         "klasse": "wirkt_hinein",
-        "norm_teil": "können als Gewinn den Überschuss der Betriebseinnahmen über die Betriebsausgaben ansetzen",
-        "referenz": "§ 4 Abs. 3 S. 1 EStG"
+        "norm_teil": "soweit sie 70 Prozent der Aufwendungen übersteigen",
+        "referenz": "§ 4 Abs. 5 S. 1 Nr. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "hoehe_und_veranlassung_nachgewiesen",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "deren Höhe und betriebliche Veranlassung nachgewiesen sind",
+        "referenz": "§ 4 Abs. 5 S. 1 Nr. 2 EStG"
       }
     ],
     "stille_zusatzannahmen": [],
-    "timestamp": "2026-07-14T16:32:13+00:00"
+    "timestamp": "2026-07-14T16:49:51+00:00"
   },
-  "module_name": "EuerGewinn",
+  "module_name": "Bewirtung70",
   "queue_status": "verified_bedingt",
   "schema_version": 2
 }

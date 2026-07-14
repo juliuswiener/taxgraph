@@ -4026,6 +4026,18 @@ regeln:
     deckt_ab: im Namen und für Rechnung eines anderen vereinnahmt und verausgabt werden
     quelle: § 4 Abs. 3 S. 2 EStG
     beschreibung: Durchlaufende Posten (S. 2) sind aus BE/BA ausgeschieden - Inputs bereits bereinigt.
+  - bedingung: keine_lebensfuehrungskosten_p12_nr1
+    deckt_ab: die für den Haushalt des Steuerpflichtigen und für den Unterhalt seiner Familienangehörigen aufgewendeten Beträge
+    quelle: § 12 Nr. 1 S. 1 EStG
+    beschreibung: '§12-Bedingungs-Paket (Charge 16, Zeile 6): der BA-Input schliesst Lebensfuehrungs-/Haushaltskosten (§12 Nr1 S1) aus - keine BA.'
+  - bedingung: keine_repraesentation_gemischt_p12_nr1s2
+    deckt_ab: Aufwendungen für die Lebensführung, die die wirtschaftliche oder gesellschaftliche Stellung des Steuerpflichtigen mit sich bringt
+    quelle: § 12 Nr. 1 S. 2 EStG
+    beschreibung: Gemischte Repraesentationsaufwendungen (§12 Nr1 S2) sind aus dem BA-Input ausgeschieden.
+  - bedingung: keine_personensteuern_p12_nr3
+    deckt_ab: die Steuern vom Einkommen und sonstige Personensteuern
+    quelle: § 12 Nr. 3 EStG
+    beschreibung: Personensteuern (ESt + sonstige) sind keine BA (§12 Nr3) - im BA-Input nicht enthalten.
 - rule_id: p6_2_gwg_sofortabzug
   norm: § 6 Abs. 2 EStG (GWG-Sofortabzug, 800 Euro netto)
   hinweis: 'sofortabzug = wenn anschaffungskosten_netto <= 800 dann anschaffungskosten_netto sonst 0. 800 ist NETTO-Grenze (Vorsteuer §9b bereits heraus, kommt bereinigt als Input). ''nicht übersteigen'' = <= (bei genau 800,00: Sofortabzug JA). Bewegliches abnutzbares AV + selbständige Nutzbarkeit = Geltungsbedingung, nicht gerechnet. Cent-genau.'
@@ -4193,3 +4205,116 @@ regeln:
     deckt_ab: Scheidet ein Wirtschaftsgut im Sinne des Satzes 1 aus dem Betriebsvermögen aus, wird der Sammelposten nicht vermindert
     quelle: § 6 Abs. 2a S. 3 EStG
     beschreibung: Abgang eines WG mindert den Sammelposten NICHT (S. 3) - der Bestand läuft die vollen 5 Jahre.
+
+# --- Charge 16 (EÜR Abs5): §4 Abs5 Nr1 Geschenke + Nr2 Bewirtung ---
+- rule_id: p4_5_1_geschenke
+  norm: § 4 Abs. 5 S. 1 Nr. 1 EStG (Geschenke, Freigrenze 50 Euro)
+  hinweis: 'abziehbar = wenn geschenke_summe_je_empfaenger_wj <= 50 dann geschenke_summe_je_empfaenger_wj sonst 0. FREIGRENZE (nicht Freibetrag, §23-Muster): ''insgesamt 50 Euro nicht übersteigen'' = <= 50 (bei genau 50,00: voll abziehbar); > 50 -> GANZER Betrag nicht abziehbar (KEIN betrag-50). Input ist die JAHRESSUMME JE EMPFÄNGER (Wortlaut ''dem Empfänger im Wirtschaftsjahr ... insgesamt''), nicht das Einzel-Geschenk. Cent-genau.'
+  quellen:
+  - typ: gesetz
+    label: § 4 Abs. 5 S. 1 Nr. 1 EStG (Geschenke-Freigrenze 50)
+    datei: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: 50 Euro nicht übersteigen
+    auszug: Satz 1 gilt nicht, wenn die Anschaffungs- oder Herstellungskosten der dem Empfänger im Wirtschaftsjahr zugewendeten Gegenstände insgesamt 50 Euro nicht übersteigen
+  signature:
+    scope: GeschenkeFreigrenze
+    inputs:
+      geschenke_summe_je_empfaenger_wj: money
+    output: abziehbar
+  raster:
+  - geschenke_summe_je_empfaenger_wj: 50
+  - geschenke_summe_je_empfaenger_wj: 50.01
+  - geschenke_summe_je_empfaenger_wj: 35
+  - geschenke_summe_je_empfaenger_wj: 100
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: 50 Euro nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: 'Freigrenze <=50: Summe 50,00 -> voll abziehbar 50,00.'
+    inputs:
+      geschenke_summe_je_empfaenger_wj: 50
+    expected: 50.0
+  - quelle: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: 50 Euro nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: 'Freigrenze reisst: 50,01 > 50 -> GANZ nicht abziehbar, 0.'
+    inputs:
+      geschenke_summe_je_empfaenger_wj: 50.01
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: 50 Euro nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: 'Innerhalb: 35,00 -> 35,00.'
+    inputs:
+      geschenke_summe_je_empfaenger_wj: 35
+    expected: 35.0
+  - quelle: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: 50 Euro nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: 'Darueber: 100,00 -> 0 (ganzer Betrag).'
+    inputs:
+      geschenke_summe_je_empfaenger_wj: 100
+    expected: 0.0
+  geltungsbedingungen:
+  - bedingung: empfaenger_nicht_arbeitnehmer
+    deckt_ab: Geschenke an Personen, die nicht Arbeitnehmer des Steuerpflichtigen sind
+    quelle: § 4 Abs. 5 S. 1 Nr. 1 EStG
+    beschreibung: Empfaenger ist kein Arbeitnehmer des Steuerpflichtigen (S. 1).
+  - bedingung: geschenke_summe_je_empfaenger_wj
+    deckt_ab: dem Empfänger im Wirtschaftsjahr zugewendeten Gegenstände insgesamt
+    quelle: § 4 Abs. 5 S. 1 Nr. 1 EStG
+    beschreibung: Input = Jahressumme ALLER Geschenke JE EMPFAENGER im Wirtschaftsjahr (Wortlaut 'insgesamt'), nicht das Einzel-Geschenk. Aggregation je Empfaenger = Integration/Anlage.
+- rule_id: p4_5_2_bewirtung
+  norm: § 4 Abs. 5 S. 1 Nr. 2 EStG (Bewirtung, 70 Prozent abziehbar)
+  hinweis: abziehbar = 0,70 * angemessene_bewirtungsaufwendungen. Nur der Teil, der 70% der ANGEMESSENEN Aufwendungen UEBERsteigt, ist nicht abziehbar -> abziehbar = 70% des angemessenen Betrags. 0,70 als decimal. KEINE deklarierte Rundung (der Wortlaut nennt keine); Cent-Schnitt zuletzt ist Pipeline-Konvention (konv). 'angemessen' = allgemeine Verkehrsauffassung -> Input ist der bereits als angemessen bewertete Betrag, nicht gerechnet.
+  quellen:
+  - typ: gesetz
+    label: § 4 Abs. 5 S. 1 Nr. 2 EStG (Bewirtung 70%)
+    datei: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: 70 Prozent der Aufwendungen übersteigen
+    auszug: Aufwendungen für die Bewirtung von Personen aus geschäftlichem Anlass, soweit sie 70 Prozent der Aufwendungen übersteigen, die nach der allgemeinen Verkehrsauffassung als angemessen anzusehen und deren Höhe und betriebliche Veranlassung nachgewiesen sind.
+  signature:
+    scope: Bewirtung70
+    inputs:
+      angemessene_bewirtungsaufwendungen: money
+    output: abziehbar
+  raster:
+  - angemessene_bewirtungsaufwendungen: 1000
+  - angemessene_bewirtungsaufwendungen: 100
+  - angemessene_bewirtungsaufwendungen: 333.33
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: 70 Prozent der Aufwendungen übersteigen
+    herkunft: synthetisch
+    rechenweg: 0,70 x 1.000 = 700,00.
+    inputs:
+      angemessene_bewirtungsaufwendungen: 1000
+    expected: 700.0
+  - quelle: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: 70 Prozent der Aufwendungen übersteigen
+    herkunft: synthetisch
+    rechenweg: 0,70 x 100 = 70,00.
+    inputs:
+      angemessene_bewirtungsaufwendungen: 100
+    expected: 70.0
+  - quelle: sources/gesetze-im-internet/estg_p4_2026-07-14.txt
+    zitatanker: 70 Prozent der Aufwendungen übersteigen
+    herkunft: synthetisch
+    rechenweg: 'Cent-Schnitt-Waechter: 0,70 x 333,33 = 233,331 -> 233,33.'
+    inputs:
+      angemessene_bewirtungsaufwendungen: 333.33
+    expected: 233.33
+  rundung: []
+  geltungsbedingungen:
+  - bedingung: geschaeftlicher_anlass
+    deckt_ab: Bewirtung von Personen aus geschäftlichem Anlass
+    quelle: § 4 Abs. 5 S. 1 Nr. 2 EStG
+    beschreibung: Bewirtung aus geschaeftlichem Anlass (nicht allgemein betrieblich = 100% andere Regel).
+  - bedingung: angemessenheit_verkehrsauffassung
+    deckt_ab: nach der allgemeinen Verkehrsauffassung als angemessen anzusehen
+    quelle: § 4 Abs. 5 S. 1 Nr. 2 EStG
+    beschreibung: '''angemessen'' = allgemeine Verkehrsauffassung (Sachverhalts-/Ermessensfrage). Input ist der bereits als angemessen bewertete Betrag; unangemessener Teil ist vorab ausgeschieden.'
+  - bedingung: hoehe_und_veranlassung_nachgewiesen
+    deckt_ab: deren Höhe und betriebliche Veranlassung nachgewiesen sind
+    quelle: § 4 Abs. 5 S. 1 Nr. 2 EStG
+    beschreibung: Hoehe + betriebliche Veranlassung nachgewiesen (S. 1 Nachweispflicht).
