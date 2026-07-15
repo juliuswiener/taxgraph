@@ -1,0 +1,239 @@
+# Fall-Familie 3 — DBA-Freistellung mit Progressionsvorbehalt, E2E-Kette
+
+> Module Familie3_dba_freistellung
+> Using Einkommensteuertarif
+
+Handgeschriebenes Integrations-Golden (Charge 26, 2026-07-15). Kettet bereits
+verifizierte Bausteine zu einem End-to-end-Fall: inlaendische Einkuenfte -> § 2
+Stufenfolge (`Einkommensteuertarif.FestzusetzendeEstGesamt`) -> zu versteuerndes
+Einkommen (zvE) -> ausserhalb Deutschlands bezogene, nach einem DBA freigestellte
+Einkuenfte (Progressionseinkuenfte, § 32b Abs. 1 S. 1 Nr. 3 EStG) -> besonderer
+Steuersatz nach § 32b -> modifizierter Tarif -> festzusetzende ESt. Reine
+Verdrahtung bereits verifizierter Regeln; keine neue Norm-Auslegung fuer die
+§ 2- und § 32a-Bausteine. Kein Solidaritaetszuschlag (optional, hier nicht
+modelliert).
+
+Ein Rechenschritt (§ 32b Progressionsvorbehalt) existiert bereits als
+verifizierte Pipeline-Regel (`p32b_progressionsvorbehalt`,
+`pipeline/snapshots/p32b_progressionsvorbehalt.json`), ist dort aber nicht Teil
+von `pipeline/produktion/rules.yaml` und daher nicht als Catala-Modul aufrufbar.
+Er wird hier wortgleich zu seiner verifizierten `catala_a`-Fassung inline
+re-implementiert (kein neuer Formalisierungs-Schritt, siehe Kommentar bei der
+Kette).
+
+## § 32b Abs. 1 Satz 1, Abs. 2 Satz 1 EStG: Progressionsvorbehalt
+
+    (1) 1 Hat ein zeitweise oder während des gesamten Veranlagungszeitraums
+    unbeschränkt Steuerpflichtiger ... 3. Einkünfte, die nach einem Abkommen zur
+    Vermeidung der Doppelbesteuerung steuerfrei sind, ... bezogen, so ist auf das
+    nach § 32a Absatz 1 zu versteuernde Einkommen ein besonderer Steuersatz
+    anzuwenden.
+
+    (2) 1 Der besondere Steuersatz nach Absatz 1 ist der Steuersatz, der sich
+    ergibt, wenn bei der Berechnung der Einkommensteuer das nach § 32a Absatz 1
+    zu versteuernde Einkommen vermehrt oder vermindert wird um ... 2. im Fall des
+    Absatzes 1 Nummer 2 bis 5 die dort bezeichneten Einkünfte ...
+
+Wortlaut eingefroren in `sources/gesetze-im-internet/estg_p32b_2026-07-13.txt`.
+Entspricht wortgleich der verifizierten Regel `p32b_progressionsvorbehalt`
+(`pipeline/snapshots/p32b_progressionsvorbehalt.json`, `catala_a`):
+`erhoehte_bemessung = zu_versteuerndes_einkommen + progressionseinkuenfte`;
+`besonderer_steuersatz = est_auf_erhoehte_bemessung / erhoehte_bemessung` (bzw.
+`0.0`, falls `erhoehte_bemessung = $0.00`); `festzusetzende_est_mit_progression
+= besonderer_steuersatz * zu_versteuerndes_einkommen`. `est_auf_erhoehte_bemessung`
+ist hier das Ergebnis einer zweiten Anwendung von `Einkommensteuertarif.Grundtarif`
+auf die erhoehte Bemessungsgrundlage (Andockpunkt der Regel: `tarifwert_ist_p32a_ergebnis`).
+
+## Andockpunkt: modifizierter Tarif
+
+`Einkommensteuertarif.FestzusetzendeEstGesamt` sieht mit `tarif_modifiziert: true`
+und `tarifliche_est_modifiziert` genau den Andockpunkt vor, an dem § 32b (oder
+§ 34) an die Stelle des Grundtarifs tritt (`rules/estg/p32a/einkommensteuertarif.catala_en`,
+Zeile ~490-498): `tarifliche_est under condition tarif_modifiziert consequence
+equals tarifliche_est_modifiziert`. Die festzusetzende ESt der Kette laeuft
+daher ein zweites Mal durch `FestzusetzendeEstGesamt`, diesmal mit
+`tarifliche_est_modifiziert` = Ergebnis von § 32b.
+
+## Die Kette
+
+```catala
+declaration scope DbaFreistellungKette:
+  input inlaendische_einkuenfte content money
+  input sonderausgaben content money
+  input progressionseinkuenfte content money
+  input veranlagungszeitraum content Einkommensteuertarif.Veranlagungszeitraum
+  internal zve_lauf content Einkommensteuertarif.FestzusetzendeEstGesamt
+  internal erhoehte_bemessung content money
+  internal grundtarif_erhoeht content Einkommensteuertarif.Grundtarif
+  internal besonderer_steuersatz content decimal
+  internal festzusetzende_est_mit_progression content money
+  internal est_lauf content Einkommensteuertarif.FestzusetzendeEstGesamt
+  output zve content money
+  output tarif_ohne_progression content money
+  output est_auf_erhoehte_bemessung content money
+  output progressions_est content money
+  output festzusetzende_est content money
+
+scope DbaFreistellungKette:
+  # § 2 Abs. 1-5 EStG: inlaendische Einkuenfte -> zu versteuerndes Einkommen.
+  # Andockpunkt einkuenfte_gewinn (wie Familie 1); alle uebrigen Einkunftsarten
+  # und Abzuege auf null, da hier nicht Gegenstand der Kette. Erste
+  # Tarif-Auswertung (tarif_modifiziert: false): Grundtarif auf das
+  # inlaendische zvE allein - Referenzwert und Pin.
+  definition zve_lauf equals
+    output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+      -- einkuenfte_nichtselbststaendig: $0.00
+      -- einkuenfte_kapitalvermoegen: $0.00
+      -- einkuenfte_vermietung: $0.00
+      -- einkuenfte_sonstige: $0.00
+      -- einkuenfte_gewinn: inlaendische_einkuenfte
+      -- altersentlastungsbetrag: $0.00
+      -- entlastungsbetrag_alleinerziehende: $0.00
+      -- sonderausgaben: sonderausgaben
+      -- aussergewoehnliche_belastungen: $0.00
+      -- freibetraege_kinder: $0.00
+      -- sonstige_abzuege_vom_einkommen: $0.00
+      -- anzurechnende_auslaendische_steuern: $0.00
+      -- steuerermaessigungen: $0.00
+      -- steuer_kapital_gesondert: $0.00
+      -- hinzurechnung_kindergeld: $0.00
+      -- hinzurechnung_zulage: $0.00
+      -- tarif_modifiziert: false
+      -- tarifliche_est_modifiziert: $0.00
+      -- veranlagungszeitraum: veranlagungszeitraum }
+
+  definition zve equals zve_lauf.zu_versteuerndes_einkommen
+  definition tarif_ohne_progression equals zve_lauf.tarifliche_est
+
+  # § 32b Abs. 2 S. 1 Nr. 2 EStG: erhoehte Bemessungsgrundlage = zvE plus die
+  # nach DBA freigestellten (auslaendischen) Progressionseinkuenfte.
+  definition erhoehte_bemessung equals zve + progressionseinkuenfte
+
+  # Zweite Tarif-Auswertung: § 32a-Grundtarif auf die erhoehte Bemessungsgrundlage.
+  definition grundtarif_erhoeht equals
+    output of Einkommensteuertarif.Grundtarif with {
+      -- zu_versteuerndes_einkommen: erhoehte_bemessung
+      -- veranlagungszeitraum: veranlagungszeitraum }
+
+  definition est_auf_erhoehte_bemessung equals grundtarif_erhoeht.tarifliche_steuer
+
+  # § 32b Abs. 1 S. 1, Abs. 2 S. 1 EStG (entspricht p32b_progressionsvorbehalt,
+  # catala_a wortgleich inline nachgebaut, siehe oben).
+  definition besonderer_steuersatz equals
+    if erhoehte_bemessung = $0.00
+    then 0.0
+    else est_auf_erhoehte_bemessung / erhoehte_bemessung
+
+  definition festzusetzende_est_mit_progression equals
+    besonderer_steuersatz * zve
+
+  definition progressions_est equals festzusetzende_est_mit_progression
+
+  # § 2 Abs. 6, Andockpunkt modifizierter Tarif: tarif_modifiziert = true,
+  # tarifliche_est_modifiziert = Ergebnis von § 32b. Uebrige Ermaessigungen/
+  # Hinzurechnungen auf null (nicht Gegenstand dieser Kette).
+  definition est_lauf equals
+    output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+      -- einkuenfte_nichtselbststaendig: $0.00
+      -- einkuenfte_kapitalvermoegen: $0.00
+      -- einkuenfte_vermietung: $0.00
+      -- einkuenfte_sonstige: $0.00
+      -- einkuenfte_gewinn: inlaendische_einkuenfte
+      -- altersentlastungsbetrag: $0.00
+      -- entlastungsbetrag_alleinerziehende: $0.00
+      -- sonderausgaben: sonderausgaben
+      -- aussergewoehnliche_belastungen: $0.00
+      -- freibetraege_kinder: $0.00
+      -- sonstige_abzuege_vom_einkommen: $0.00
+      -- anzurechnende_auslaendische_steuern: $0.00
+      -- steuerermaessigungen: $0.00
+      -- steuer_kapital_gesondert: $0.00
+      -- hinzurechnung_kindergeld: $0.00
+      -- hinzurechnung_zulage: $0.00
+      -- tarif_modifiziert: true
+      -- tarifliche_est_modifiziert: festzusetzende_est_mit_progression
+      -- veranlagungszeitraum: veranlagungszeitraum }
+
+  definition festzusetzende_est equals est_lauf.festzusetzende_est
+```
+
+## Testfaelle
+
+Erwartungswerte handgerechnet, `besonderer_steuersatz` exakt (Bruch, keine
+Rundung bei `money / money`), Rundung nur beim einzigen `money`-erzeugenden
+Schritt `besonderer_steuersatz * zve` (Cent-genau, "round half away from zero"
+gemaess Catala-Laufzeit `catala_runtime.ml:o_mult_mon_rat`/`round`). Die
+zvE- und Tarif-Zwischenwerte sind an bereits verifizierte § 32a-Pins verankert:
+zvE 28734 -> 3862 und zvE 58734 -> 13747
+(`rules/estg/arbeitnehmerfall/tests_veranlagung_gesamt.catala_en`,
+`rules/estg/arbeitnehmerfall/tests_festzusetzende_est.catala_en`).
+
+```catala
+#[test]
+declaration scope TestProgressionHebtSatz:
+  # Progression hebt den Satz merklich: inlaendisches zvE 28734 (Grundtarif
+  # 3862, Pin), auslaendische DBA-freigestellte Progressionseinkuenfte 30000
+  # -> erhoehte Bemessung 58734 -> Grundtarif darauf 13747 (Pin). Besonderer
+  # Satz = 13747 / 58734 = 13747/58734 (exakter Bruch, money/money rundet
+  # nicht). festzusetzende_est_mit_progression = zve * Satz:
+  # 2873400 Cent * 1374700 / 5873400 = 6583438300/9789 Cent = 672534,30381...
+  # Cent -> round half away from zero -> 672534 Cent = 6725,34 EUR. Deutlich
+  # ueber dem Grundtarif-Wert 3862 ohne Progression (Satz-Anhebung durch
+  # Progressionsvorbehalt).
+  internal r content DbaFreistellungKette
+  output zve content money
+  output tarif_ohne content money
+  output erhoeht content money
+  output progr content money
+  output fest content money
+
+scope TestProgressionHebtSatz:
+  definition r equals output of DbaFreistellungKette with {
+    -- inlaendische_einkuenfte: $28,734.00
+    -- sonderausgaben: $0.00
+    -- progressionseinkuenfte: $30,000.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition zve equals r.zve
+  definition tarif_ohne equals r.tarif_ohne_progression
+  definition erhoeht equals r.est_auf_erhoehte_bemessung
+  definition progr equals r.progressions_est
+  definition fest equals r.festzusetzende_est
+  assertion zve = $28,734.00
+  assertion tarif_ohne = $3,862.00
+  assertion erhoeht = $13,747.00
+  assertion progr = $6,725.34
+  assertion fest = $6,725.34
+```
+
+```catala
+#[test]
+declaration scope TestProgressionsGrenzfall:
+  # Grenzfall/Regressionsschutz: progressionseinkuenfte = 0 -> erhoehte
+  # Bemessung = zvE selbst -> est_auf_erhoehte_bemessung = Grundtarif(zvE) =
+  # tarif_ohne_progression (dieselbe Zahl, 3862, Pin fuer zvE 28734). Besonderer
+  # Satz = 3862/28734 (exakter Bruch); festzusetzende_est_mit_progression =
+  # zve * (3862/28734 Cent-Bruch) = 2873400 * 3862 / 28734 = 386200 Cent exakt
+  # (Bruch kuerzt sich glatt, da 2873400 / 28734 = 100 ganzzahlig) = 3862,00 EUR
+  # -> identisch mit dem Grundtarif ohne Progression. Kein Progressionseffekt,
+  # wenn keine Progressionseinkuenfte vorliegen.
+  internal r content DbaFreistellungKette
+  output tarif_ohne content money
+  output erhoeht content money
+  output progr content money
+  output fest content money
+
+scope TestProgressionsGrenzfall:
+  definition r equals output of DbaFreistellungKette with {
+    -- inlaendische_einkuenfte: $28,734.00
+    -- sonderausgaben: $0.00
+    -- progressionseinkuenfte: $0.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition tarif_ohne equals r.tarif_ohne_progression
+  definition erhoeht equals r.est_auf_erhoehte_bemessung
+  definition progr equals r.progressions_est
+  definition fest equals r.festzusetzende_est
+  assertion tarif_ohne = $3,862.00
+  assertion erhoeht = $3,862.00
+  assertion progr = $3,862.00
+  assertion fest = $3,862.00
+```
