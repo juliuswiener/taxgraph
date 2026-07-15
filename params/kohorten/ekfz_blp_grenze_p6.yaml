@@ -31,18 +31,21 @@ kohorten:
     bis: "2023-12-31"
     quelle_freeze: sources/bgbl/wtchanceng_2024_art3_estg.txt
     anker_wert: "60.000 Euro"
-    anker_fenster: "nach dem 31. Dezember 2023 angeschafft"
+    # Fenster-Obergrenze = KOMPLEMENT-Schluss aus dem 70k-Anwendungssatz: da die 70k
+    # "erstmals ... nach dem 31.12.2023 angeschafft" gelten, gilt die 60k fuer Kfz
+    # bis einschl. 31.12.2023. Der 60k-Wert selbst ist positiv zitiert (anker_wert).
+    anker_fenster: "§ 6 Absatz 1 Nummer 4 Satz 2 Nummer 3 und Satz 3 Nummer 3 in der Fassung des Artikels 3 des Gesetzes vom 27. März 2024 (BGBl. 2024 I Nr. 108 ) ist erstmals für Kraftfahrzeuge anzuwenden, die nach dem 31. Dezember 2023 angeschafft werden"
   wtchanceng_2024:
     bruttolistenpreis_grenze: 70000
     ab: "2024-01-01"
     bis: "2025-06-30"
     quelle_freeze: sources/bgbl/wtchanceng_2024_art3_estg.txt
     anker_wert: "70.000 Euro"
-    anker_fenster: "nach dem 31. Dezember 2023 angeschafft"
+    anker_fenster: "§ 6 Absatz 1 Nummer 4 Satz 2 Nummer 3 und Satz 3 Nummer 3 in der Fassung des Artikels 3 des Gesetzes vom 27. März 2024 (BGBl. 2024 I Nr. 108 ) ist erstmals für Kraftfahrzeuge anzuwenden, die nach dem 31. Dezember 2023 angeschafft werden"
   stinvsofortpg_2025:
     bruttolistenpreis_grenze: 100000
     ab: "2025-07-01"
     bis: null
     quelle_freeze: sources/bgbl/stinvsofortpg_2025.txt
     anker_wert: "100 000 Euro"
-    anker_fenster: "nach dem 30. Juni"
+    anker_fenster: "§ 6 Absatz 1 Nummer 4 Satz 2 Nummer 3 und Satz 3 Nummer 3 in der Fassung des Artikels 1 des Gesetzes vom 14. Juli 2025 (BGBl. 2025 I Nr. 161) ist erstmals für Kraftfahrzeuge anzuwenden, die nach dem 30. Juni 2025 angeschafft werden"
