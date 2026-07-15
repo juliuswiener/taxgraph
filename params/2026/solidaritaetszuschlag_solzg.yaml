@@ -1,0 +1,44 @@
+# Solidaritaetszuschlag: Freigrenzen + Saetze nach § 3 Abs. 3, § 4 SolzG 1995.
+# Veranlagungszeitraum 2026. Freigrenze 20.350 Euro (Einzel) bzw. 40.700 Euro
+# (Splitting) (SteFeG). Gegengeprueft mit GETTSIM 1.2.1 (Prueinstanz). Freigrenze
+# deckungsgleich mit der im Regelwerk (solzg_solidaritaetszuschlag) gebundenen Fassung.
+#
+# Nur die Freigrenze driftet per VZ; Zuschlagssatz (5,5 %) und Milderungssatz
+# (11,9 %) sind fassungskonstant.
+#
+# Gueltigkeit/Fassungsstand: § 3 Abs. 3 SolzG 1995 i.d.F. Art. 4 G. v. 30.12.2024
+# BGBl. 2024 Nr. 449 (SteFeG, ab VZ 2026). Keine weitere Aenderung im Fenster bekannt.
+
+parameter: solidaritaetszuschlag
+veranlagungszeitraum: 2026
+authority: gesetz
+redistributable: true
+gueltig_ab: "2026-01-01"
+
+freigrenze_einzel:
+  wert: 20350
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: SolzG 1995, paragraph: "3", absatz: "3", nummer: "2"}
+  datenquelle: "§ 3 Abs. 3 Nr. 2 SolzG 1995 i.d.F. Art. 4 G. v. 30.12.2024 BGBl. 2024 Nr. 449 (SteFeG); Wert bestaetigt durch GETTSIM 1.2.1 (germany/solidaritätszuschlag/solidaritätszuschlag.yaml, Eintrag 2026-01-01) als Prueinstanz; Stand 2026-07-15"
+
+freigrenze_zusammenveranlagung:
+  wert: 40700
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: SolzG 1995, paragraph: "3", absatz: "3", nummer: "1"}
+  datenquelle: "§ 3 Abs. 3 Nr. 1 SolzG 1995 i.V.m. § 32a Abs. 5/6 EStG (Splitting = doppelte Freigrenze); Stand 2026-07-15"
+
+zuschlagssatz:
+  wert: 5.5
+  einheit: prozent
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: SolzG 1995, paragraph: "4", satz: "1"}
+  datenquelle: "§ 4 S. 1 SolzG 1995 (5,5 %); fassungskonstant; Stand 2026-07-15"
+
+milderungssatz:
+  wert: 11.9
+  einheit: prozent
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: SolzG 1995, paragraph: "4", satz: "2"}
+  datenquelle: "§ 4 S. 2 SolzG 1995 (Milderungszone, 11,9 % des Unterschiedsbetrages); fassungskonstant; Stand 2026-07-15"

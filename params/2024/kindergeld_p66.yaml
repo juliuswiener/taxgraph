@@ -1,0 +1,25 @@
+# Kindergeld (Monatsbetrag je Kind) nach § 66 Abs. 1 EStG.
+# Veranlagungszeitraum 2024. Einheitlich 250 Euro je Kind und Monat (seit VZ 2023).
+# Gegengeprueft mit GETTSIM 1.2.1 (Prueinstanz).
+#
+# Hinweis: Kindergeld ist im Regelwerk INPUT der Guenstigerpruefung
+# (p31_familienleistungsausgleich), keine im auszug gebundene Konstante. Diese
+# Datei stellt den kanonischen Jahreswert fuer die Integrationsschicht bereit.
+#
+# Gueltigkeit/Fassungsstand: § 66 Abs. 1 EStG i.d.F. Art. 6 G. v. 08.12.2022
+# BGBl. I S. 2230 (Inflationsausgleichsgesetz; 250 Euro ab 2023, gilt 2024 fort).
+# Anstehende Aenderung: ab VZ 2025 255 Euro, ab VZ 2026 259 Euro (SteFeG,
+# BGBl. 2024 Nr. 449) -> params/2025, params/2026.
+
+parameter: kindergeld
+veranlagungszeitraum: 2024
+authority: gesetz
+redistributable: true
+gueltig_ab: "2024-01-01"
+
+kindergeld_monatlich_je_kind:
+  wert: 250
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "66", absatz: "1", satz: "1"}
+  datenquelle: "§ 66 Abs. 1 S. 1 EStG i.d.F. Art. 6 G. v. 08.12.2022 BGBl. I S. 2230 (250 Euro ab VZ 2023); Wert bestaetigt durch GETTSIM 1.2.1 (germany/kindergeld/kindergeld.yaml, satz, Eintrag 2023-01-01) als Prueinstanz; Stand 2026-07-15"

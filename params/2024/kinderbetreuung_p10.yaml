@@ -1,0 +1,32 @@
+# Kinderbetreuungskosten-Abzug § 10 Abs. 1 Nr. 5 EStG.
+# Veranlagungszeitraum 2024. ACHTUNG STRUKTUR-DRIFT (nicht nur Jahreswert):
+# VZ 2024 gilt die ALTE Fassung -> zwei Drittel (2/3) der Aufwendungen, hoechstens
+# 4.000 Euro je Kind. Ab VZ 2025 80 % / 4.800 Euro (JStG 2024). Das Regelwerk
+# (p10_1_5_kinderbetreuung) bindet derzeit die 80-%-/4.800-Fassung -> fuer VZ 2024
+# braucht M5 eine eigene Regel-Version (Satz + Deckel), nicht nur einen params-Tausch.
+# Gegengeprueft mit GETTSIM 1.2.1 (Prueinstanz).
+#
+# Gueltigkeit/Fassungsstand: § 10 Abs. 1 Nr. 5 EStG in der bis VZ 2024 geltenden
+# Fassung (Grundfassung Art. 1 G. v. 01.11.2011 BGBl. I S. 2131). Anstehende
+# Aenderung: JStG 2024 (Art. 4 G. v. 05.12.2024 BGBl. 2024 I Nr. 387), ab VZ 2025
+# 80 % / 4.800 Euro -> params/2025.
+
+parameter: kinderbetreuung
+veranlagungszeitraum: 2024
+authority: gesetz
+redistributable: true
+gueltig_ab: "2024-01-01"
+
+abzugssatz:
+  wert: 0.666667   # = zwei Drittel (2/3); M5: exakt rational 2/3 verwenden, nicht die gerundete Dezimalzahl
+  einheit: faktor
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "10", absatz: "1", nummer: "5"}
+  datenquelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG (Fassung bis VZ 2024: zwei Drittel der Aufwendungen); Wert bestaetigt durch GETTSIM 1.2.1 (germany/einkommensteuer/abzüge/sonderausgaben.yaml, anteil, Eintrag 2012-01-01) als Prueinstanz; Stand 2026-07-15"
+
+hoechstbetrag_je_kind:
+  wert: 4000
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "10", absatz: "1", nummer: "5"}
+  datenquelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG (Fassung bis VZ 2024: hoechstens 4.000 Euro je Kind); Wert bestaetigt durch GETTSIM 1.2.1 (germany/einkommensteuer/abzüge/sonderausgaben.yaml, maximum, Eintrag 2012-01-01) als Prueinstanz; Stand 2026-07-15"

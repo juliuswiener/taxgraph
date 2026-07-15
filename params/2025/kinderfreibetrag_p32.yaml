@@ -1,0 +1,27 @@
+# Kinderfreibetrag + BEA-Freibetrag nach § 32 Abs. 6 EStG (je Elternteil).
+# Veranlagungszeitraum 2025. Saechlicher Kinderfreibetrag 3.336 Euro durch das
+# Steuerfortentwicklungsgesetz (SteFeG). Gegengeprueft mit GETTSIM 1.2.1.
+#
+# Gueltigkeit/Fassungsstand: § 32 Abs. 6 EStG i.d.F. Art. 1 G. v. 30.12.2024
+# BGBl. 2024 Nr. 449 (SteFeG). BEA-Freibetrag (1.464) seit VZ 2021 unveraendert.
+# Anstehende Aenderung: ab VZ 2026 KFB 3.414 (Art. 2 SteFeG) -> params/2026.
+
+parameter: kinderfreibetrag
+veranlagungszeitraum: 2025
+authority: gesetz
+redistributable: true
+gueltig_ab: "2025-01-01"
+
+kinderfreibetrag_je_elternteil:
+  wert: 3336
+  einheit: euro
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: EStG, paragraph: "32", absatz: "6", satz: "1"}
+  datenquelle: "§ 32 Abs. 6 S. 1 EStG i.d.F. Art. 1 G. v. 30.12.2024 BGBl. 2024 Nr. 449 (SteFeG, saechliches Existenzminimum); Wert bestaetigt durch GETTSIM 1.2.1 (germany/einkommensteuer/kinderfreibetrag.yaml, Eintrag 2025-01-01) als Prueinstanz; Stand 2026-07-15"
+
+bea_freibetrag_je_elternteil:
+  wert: 1464
+  einheit: euro
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: EStG, paragraph: "32", absatz: "6", satz: "1"}
+  datenquelle: "§ 32 Abs. 6 S. 1 EStG (Betreuungs-, Erziehungs- oder Ausbildungsbedarf); seit VZ 2021 unveraendert 1.464 Euro je Elternteil; Stand 2026-07-15"

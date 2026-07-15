@@ -1,0 +1,39 @@
+# Hoechstbetrag abziehbarer Altersvorsorgeaufwendungen § 10 Abs. 3 EStG.
+# Veranlagungszeitraum 2026. Hoechstbetrag = knappschaftliche Beitragsbemessungs-
+# grenze x knappschaftlicher Beitragssatz, aufgerundet auf vollen Euro
+# (§ 10 Abs. 3 S. 4 EStG). INPUT der Regel p10_1_2_altersvorsorge; diese Datei
+# liefert den kanonischen Jahreswert samt Ableitung fuer die Integrationsschicht.
+#
+# Ableitung VZ 2026: 124.800 (BBG-knappschaftl.) x 24,7 % = 30.825,60 ->
+# aufgerundet 30.826 Euro. Gegengeprueft mit GETTSIM 1.2.1 (Prueinstanz).
+#
+# Gueltigkeit/Fassungsstand: § 10 Abs. 3 EStG (voller Abzug ab VZ 2023). BBG per
+# Sozialversicherungs-RechengroessenVO 2026; Beitragssatz 24,7 % konstant.
+# Keine weitere Aenderung im Fenster bekannt.
+
+parameter: vorsorge_hoechstbetrag
+veranlagungszeitraum: 2026
+authority: gesetz
+redistributable: true
+gueltig_ab: "2026-01-01"
+
+bemessungsgrenze_knappschaft_jaehrlich:
+  wert: 124800
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: "SGB VI", paragraph: "159", anlage: "2"}
+  datenquelle: "Knappschaftliche Beitragsbemessungsgrenze (jaehrlich, West) nach Sozialversicherungsrechengroessen-Verordnung 2026 v. 24.11.2025 BGBl. 2025 I Nr. 278; bestaetigt durch GETTSIM 1.2.1 (germany/sozialversicherung/rente/beitrag/beitragsbemessungsgrenze.yaml, Eintrag 2026-01-01) als Prueinstanz; Stand 2026-07-15"
+
+beitragssatz_knappschaft:
+  wert: 24.7
+  einheit: prozent
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: "SGB VI", paragraph: "158"}
+  datenquelle: "Beitragssatz knappschaftliche Rentenversicherung 24,7 % nach Beitragssatzverordnung 2018 v. 18.12.2017; seit 2018 konstant; bestaetigt durch GETTSIM 1.2.1 (germany/sozialversicherung/rente/beitrag/beitragssatz.yaml, Eintrag 2018-01-01) als Prueinstanz; Stand 2026-07-15"
+
+hoechstbeitrag:
+  wert: 30826
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "10", absatz: "3", satz: "4"}
+  datenquelle: "§ 10 Abs. 3 S. 4 EStG (Hoechstbeitrag knappschaftliche RV, aufgerundet auf vollen Euro): 124.800 x 24,7 % = 30.825,60 -> 30.826; Ableitung dokumentiert, Faktoren GETTSIM-1.2.1-gegengeprueft; Stand 2026-07-15"

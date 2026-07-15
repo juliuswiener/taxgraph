@@ -1,0 +1,30 @@
+# Unterhaltsabzug § 33a Abs. 1 EStG: Hoechstbetrag + Anrechnungsfreibetrag.
+# Veranlagungszeitraum 2024. Der Hoechstbetrag ist per Gesetz an den Grundfreibetrag
+# (§ 32a Abs. 1 S. 2 Nr. 1 EStG) gekoppelt; VZ 2024 = 11.784 Euro (identisch mit
+# params/2024/einkommensteuertarif_p32a.yaml -> grundfreibetrag, dort die
+# primaere Quelle). Anrechnungsfreibetrag eigener Einkuenfte/Bezuege 624 Euro.
+#
+# Gueltigkeit/Fassungsstand: Hoechstbetrag = GFB i.d.F. Art. 1 G. v. 05.12.2024
+# BGBl. 2024 I Nr. 386 (Endfassung VZ 2024). Anrechnungsfreibetrag 624 Euro
+# fassungskonstant (§ 33a Abs. 1 S. 5 EStG). Anstehende Aenderung: Hoechstbetrag
+# folgt dem GFB (VZ 2025 = 12.096, VZ 2026 = 12.348).
+
+parameter: unterhalt_hoechstbetrag
+veranlagungszeitraum: 2024
+authority: gesetz
+redistributable: true
+gueltig_ab: "2024-01-01"
+
+hoechstbetrag:
+  wert: 11784
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "33a", absatz: "1", satz: "1"}
+  datenquelle: "§ 33a Abs. 1 S. 1 EStG (Hoechstbetrag = Grundfreibetrag nach § 32a Abs. 1 S. 2 Nr. 1); VZ-2024-GFB 11.784 Euro aus BGBl. 2024 I Nr. 386, deckungsgleich mit params/2024/einkommensteuertarif_p32a.yaml; Stand 2026-07-15"
+
+anrechnungsfreibetrag_eigene_einkuenfte:
+  wert: 624
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "33a", absatz: "1", satz: "5"}
+  datenquelle: "§ 33a Abs. 1 S. 5 EStG (anrechnungsfreier Betrag eigener Einkuenfte und Bezuege); fassungskonstant 624 Euro; Stand 2026-07-15"

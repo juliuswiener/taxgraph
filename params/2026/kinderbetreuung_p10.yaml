@@ -1,0 +1,29 @@
+# Kinderbetreuungskosten-Abzug § 10 Abs. 1 Nr. 5 EStG.
+# Veranlagungszeitraum 2026. 80 % der Aufwendungen, hoechstens 4.800 Euro je Kind
+# (JStG-2024-Fassung, unveraendert ggue. VZ 2025). Deckungsgleich mit der im
+# Regelwerk (p10_1_5_kinderbetreuung) gebundenen Fassung. Gegengeprueft mit
+# GETTSIM 1.2.1 (Prueinstanz).
+#
+# Gueltigkeit/Fassungsstand: § 10 Abs. 1 Nr. 5 EStG i.d.F. JStG 2024, Art. 4
+# G. v. 05.12.2024 BGBl. 2024 I Nr. 387 (ab VZ 2025, gilt 2026 fort). Keine weitere
+# Aenderung im Fenster bekannt.
+
+parameter: kinderbetreuung
+veranlagungszeitraum: 2026
+authority: gesetz
+redistributable: true
+gueltig_ab: "2026-01-01"
+
+abzugssatz:
+  wert: 0.8
+  einheit: faktor
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "10", absatz: "1", nummer: "5"}
+  datenquelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG i.d.F. JStG 2024 (Art. 4 G. v. 05.12.2024 BGBl. 2024 I Nr. 387): 80 % der Aufwendungen; Wert bestaetigt durch GETTSIM 1.2.1 (germany/einkommensteuer/abzüge/sonderausgaben.yaml, anteil, Eintrag 2025-01-01) als Prueinstanz; Stand 2026-07-15"
+
+hoechstbetrag_je_kind:
+  wert: 4800
+  einheit: euro
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "10", absatz: "1", nummer: "5"}
+  datenquelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG i.d.F. JStG 2024 (Art. 4 G. v. 05.12.2024 BGBl. 2024 I Nr. 387): hoechstens 4.800 Euro je Kind; Wert bestaetigt durch GETTSIM 1.2.1 (germany/einkommensteuer/abzüge/sonderausgaben.yaml, maximum, Eintrag 2025-01-01) als Prueinstanz; Stand 2026-07-15"

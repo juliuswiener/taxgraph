@@ -1,0 +1,42 @@
+# Hoechstbetrag abziehbarer Altersvorsorgeaufwendungen § 10 Abs. 3 EStG.
+# Veranlagungszeitraum 2024. Der Hoechstbetrag ist an den Hoechstbeitrag zur
+# knappschaftlichen Rentenversicherung gekoppelt (§ 10 Abs. 3 S. 4 EStG):
+# knappschaftliche Beitragsbemessungsgrenze x knappschaftlicher Beitragssatz,
+# aufgerundet auf einen vollen Betrag in Euro. Er ist im Regelwerk INPUT der Regel
+# p10_1_2_altersvorsorge (nicht gebunden); diese Datei liefert den kanonischen
+# Jahreswert samt dokumentierter Ableitung fuer die Integrationsschicht.
+#
+# Ableitung VZ 2024: 111.600 (BBG-knappschaftl.) x 24,7 % = 27.565,20 ->
+# aufgerundet 27.566 Euro. Gegengeprueft mit GETTSIM 1.2.1 (Prueinstanz).
+#
+# Gueltigkeit/Fassungsstand: § 10 Abs. 3 EStG i.d.F. ab VZ 2023 (voller Abzug,
+# G. v. 20.12.2022 BGBl. I S. 2294). BBG jaehrlich per Sozialversicherungs-
+# RechengroessenVO; Beitragssatz 24,7 % konstant seit 2018. Anstehende Aenderung:
+# BBG steigt jaehrlich -> VZ 2025 29.344, VZ 2026 30.826 (params/2025, params/2026).
+
+parameter: vorsorge_hoechstbetrag
+veranlagungszeitraum: 2024
+authority: gesetz
+redistributable: true
+gueltig_ab: "2024-01-01"
+
+bemessungsgrenze_knappschaft_jaehrlich:
+  wert: 111600
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: "SGB VI", paragraph: "159", anlage: "2"}
+  datenquelle: "Knappschaftliche Beitragsbemessungsgrenze (jaehrlich, West) nach Sozialversicherungsrechengroessen-Verordnung 2024 v. 24.11.2023 BGBl. 2023 I Nr. 322; bestaetigt durch GETTSIM 1.2.1 (germany/sozialversicherung/rente/beitrag/beitragsbemessungsgrenze.yaml, Eintrag 2024-01-01) als Prueinstanz; Stand 2026-07-15"
+
+beitragssatz_knappschaft:
+  wert: 24.7
+  einheit: prozent
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: "SGB VI", paragraph: "158"}
+  datenquelle: "Beitragssatz knappschaftliche Rentenversicherung 24,7 % nach Beitragssatzverordnung 2018 v. 18.12.2017; seit 2018 konstant; bestaetigt durch GETTSIM 1.2.1 (germany/sozialversicherung/rente/beitrag/beitragssatz.yaml, Eintrag 2018-01-01) als Prueinstanz; Stand 2026-07-15"
+
+hoechstbeitrag:
+  wert: 27566
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "10", absatz: "3", satz: "4"}
+  datenquelle: "§ 10 Abs. 3 S. 4 EStG (Hoechstbeitrag knappschaftliche RV, aufgerundet auf vollen Euro): 111.600 x 24,7 % = 27.565,20 -> 27.566; Ableitung dokumentiert, Faktoren GETTSIM-1.2.1-gegengeprueft; Stand 2026-07-15"
