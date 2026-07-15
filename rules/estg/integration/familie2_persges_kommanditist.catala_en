@@ -1,0 +1,300 @@
+# Fall-Familie 2 — PersGes-Kommanditist, E2E-Kette
+
+> Module Familie2_persges_kommanditist
+> Using Einkommensteuertarif
+> Using Solzg
+
+Handgeschriebenes Integrations-Golden (2026-07-15). Kettet die bereits verifizierten
+PersGes-Bausteine (Charge 24) zu einem End-to-end-Fall: Mitunternehmer-Einkuenfte
+(§ 15 Abs. 1 Nr. 2 EStG, Gewinnanteil + drei Sondervergütungs-Kategorien) und die
+§-15a-Verlustbegrenzung (ausgleichsfähiger Verlust) -> Anlage G
+(`einkuenfte_gewinn`-Andockung der § 2-Stufenfolge) -> tarifliche ESt (§ 32a,
+`Einkommensteuertarif.FestzusetzendeEstGesamt`) -> festzusetzende ESt ->
+Solidaritaetszuschlag (`Solzg.Solidaritaetszuschlag`). Reine Verdrahtung bereits
+verifizierter Regeln; keine neue Norm-Auslegung.
+
+Beide Rechenschritte (Mitunternehmer-Einkuenfte, ausgleichsfähiger Verlust)
+existieren bereits als verifizierte Pipeline-Regeln
+(`p15_1_2_mitunternehmer_einkuenfte`, `p15a_1_ausgleichsfaehiger_verlust`,
+`pipeline/snapshots/`, `queue_status: verified_bedingt`), sind dort aber nicht Teil
+von `pipeline/produktion/rules.yaml` und daher nicht als Catala-Modul aufrufbar.
+Sie werden hier wortgleich zu ihrer verifizierten `catala_a`-Fassung inline
+re-implementiert (kein neuer Formalisierungs-Schritt, siehe Kommentare je Regel).
+
+## § 15 Abs. 1 Nr. 2 Satz 1 EStG: Mitunternehmer-Einkuenfte
+
+    die Gewinnanteile der Gesellschafter einer Offenen Handelsgesellschaft, einer
+    Kommanditgesellschaft und einer anderen Gesellschaft, bei der der
+    Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen ist,
+    und die Vergütungen, die der Gesellschafter von der Gesellschaft für seine
+    Tätigkeit im Dienst der Gesellschaft oder für die Hingabe von Darlehen oder
+    für die Überlassung von Wirtschaftsgütern bezogen hat.
+
+Wortlaut eingefroren in `sources/gesetze-im-internet/estg_p15_2026-07-14.txt`.
+Entspricht wortgleich der verifizierten Regel `p15_1_2_mitunternehmer_einkuenfte`
+(`pipeline/snapshots/p15_1_2_mitunternehmer_einkuenfte.json`, `catala_a`:
+`einkuenfte_mitunternehmer equals gewinnanteil + verguetung_taetigkeit +
+verguetung_darlehen + verguetung_ueberlassung`). Additive Zusammenrechnung aus
+Gesamthand-Gewinnanteil und den drei benannten Sondervergütungs-Kategorien; kann
+negativ sein, wenn der Gesamthand-Verlustanteil ueberwiegt.
+
+## § 15a Abs. 1 Satz 1 EStG: ausgleichsfaehiger Verlust
+
+    Der einem Kommanditisten zuzurechnende Anteil am Verlust der
+    Kommanditgesellschaft darf weder mit anderen Einkünften aus Gewerbebetrieb
+    noch mit Einkünften aus anderen Einkunftsarten ausgeglichen werden, soweit
+    ein negatives Kapitalkonto des Kommanditisten entsteht oder sich erhöht.
+
+Wortlaut eingefroren in `sources/gesetze-im-internet/estg_p15a_2026-07-14.txt`.
+Entspricht wortgleich der verifizierten Regel `p15a_1_ausgleichsfaehiger_verlust`
+(`pipeline/snapshots/p15a_1_ausgleichsfaehiger_verlust.json`, `catala_a`):
+`ausgleichsfaehiger_verlust = min(verlustanteil; max(kapitalkonto; 0))` — Floor+Cap-
+Encoding deckt beide Wortlaut-Zweige („entsteht" = Kapitalkonto >= 0 wird < 0,
+„erhöht sich" = Kapitalkonto schon < 0) durch `max(kapitalkonto; 0)`; „soweit" ist
+graduell, daher `min` statt bool. Nur der ausgleichsfähige Teil mindert die
+laufenden Einkuenfte (§ 2); der verrechenbare Rest (`verlustanteil -
+ausgleichsfaehiger_verlust`) wird nach § 15a Abs. 2 Satz 1 nur mit künftigen
+Gewinnen derselben Beteiligung verrechnet — hier NICHT in die Kette einbezogen
+(Andockpunkt/Nachtrag, kein Bestandteil der Jahres-§-2-Stufenfolge).
+
+## Die Kette
+
+```catala
+declaration scope KommanditistKette:
+  input gewinnanteil content money
+  input verlustanteil content money
+  input verguetung_taetigkeit content money
+  input verguetung_darlehen content money
+  input verguetung_ueberlassung content money
+  input kapitalkonto content money
+  input sonderausgaben content money
+  input veranlagungszeitraum content Einkommensteuertarif.Veranlagungszeitraum
+  internal tarif_lauf content Einkommensteuertarif.FestzusetzendeEstGesamt
+  internal soli_lauf content Solzg.Solidaritaetszuschlag
+  output einkuenfte_mitunternehmer content money
+  output ausgleichsfaehiger_verlust content money
+  output einkuenfte_gewinn content money
+  output tarifliche_est content money
+  output festzusetzende_est content money
+  output soli content money
+
+scope KommanditistKette:
+  # § 15 Abs. 1 Nr. 2 Satz 1 EStG (entspricht p15_1_2_mitunternehmer_einkuenfte):
+  # Gesamthand-Gewinnanteil + drei Sondervergütungs-Kategorien. Der
+  # Gesamthand-Verlustanteil (verlustanteil) ist NICHT Teil dieser Summe — er
+  # wird separat ueber § 15a gefuehrt (nur die ausgleichsfähige Tranche wirkt).
+  definition einkuenfte_mitunternehmer equals
+    gewinnanteil + verguetung_taetigkeit + verguetung_darlehen
+    + verguetung_ueberlassung
+
+  # § 15a Abs. 1 Satz 1 EStG (entspricht p15a_1_ausgleichsfaehiger_verlust):
+  # ausgleichsfähig nur bis zur Hoehe des positiven Kapitalkontos.
+  definition ausgleichsfaehiger_verlust equals
+    let positives_kapitalkonto equals
+      if kapitalkonto > $0.00 then kapitalkonto else $0.00
+    in
+    if verlustanteil < positives_kapitalkonto
+    then verlustanteil
+    else positives_kapitalkonto
+
+  # Anlage G -> § 2-Stufenfolge, Andockpunkt einkuenfte_gewinn: die
+  # Sondervergütungen bleiben trotz Gesamthand-Verlust Gewinneinkunft; nur die
+  # ausgleichsfähige Verlusttranche mindert die laufenden Einkuenfte.
+  definition einkuenfte_gewinn equals
+    einkuenfte_mitunternehmer - ausgleichsfaehiger_verlust
+
+  definition tarif_lauf equals
+    output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+      -- einkuenfte_nichtselbststaendig: $0.00
+      -- einkuenfte_kapitalvermoegen: $0.00
+      -- einkuenfte_vermietung: $0.00
+      -- einkuenfte_sonstige: $0.00
+      -- einkuenfte_gewinn: einkuenfte_gewinn
+      -- altersentlastungsbetrag: $0.00
+      -- entlastungsbetrag_alleinerziehende: $0.00
+      -- sonderausgaben: sonderausgaben
+      -- aussergewoehnliche_belastungen: $0.00
+      -- freibetraege_kinder: $0.00
+      -- sonstige_abzuege_vom_einkommen: $0.00
+      -- anzurechnende_auslaendische_steuern: $0.00
+      -- steuerermaessigungen: $0.00
+      -- steuer_kapital_gesondert: $0.00
+      -- hinzurechnung_kindergeld: $0.00
+      -- hinzurechnung_zulage: $0.00
+      -- tarif_modifiziert: false
+      -- tarifliche_est_modifiziert: $0.00
+      -- veranlagungszeitraum: veranlagungszeitraum }
+
+  definition tarifliche_est equals tarif_lauf.tarifliche_est
+  definition festzusetzende_est equals tarif_lauf.festzusetzende_est
+
+  # § 3, § 4 SolzG: Bemessungsgrundlage ist die festzusetzende ESt.
+  definition soli_lauf equals
+    output of Solzg.Solidaritaetszuschlag with {
+      -- bemessungsgrundlage: festzusetzende_est
+      -- splitting: false }
+
+  definition soli equals soli_lauf.solidaritaetszuschlag
+```
+
+## Testfaelle
+
+Alle Erwartungswerte handgerechnet (Rechenweg im Kommentar je Fall). Die
+tarifliche-ESt-Zwischenwerte sind an bereits verifizierte § 32a-Pins verankert:
+zvE 58734 -> 13747, zvE 13734 -> 211
+(`rules/estg/arbeitnehmerfall/tests_festzusetzende_est.catala_en`, Faelle r1 und
+r3; `golden/cases/gesamt_2026_einzel_mehrarten.yaml`).
+
+```catala
+#[test]
+declaration scope TestReinerGewinnKommanditist:
+  # (A) Reiner Gewinn-Kommanditist, kein Verlustjahr. Gewinnanteil 40000 +
+  # Verguetung Taetigkeit 18770 (Darlehen/Ueberlassung 0) -> einkuenfte_mitunt.
+  # 58770. verlustanteil 0 -> ausgleichsfaehiger_verlust = min(0, max(0,0)) = 0
+  # (kapitalkonto irrelevant, hier 0). einkuenfte_gewinn = 58770 - 0 = 58770 ->
+  # SA-Pauschbetrag 36 -> zvE 58734 -> tarifliche ESt 13747 (Pin). Keine
+  # Steuerermaessigung -> festzusetzende ESt 13747. SolZ-BMG 13747 <
+  # Freigrenze 20350 -> SolZ 0.
+  internal r content KommanditistKette
+  output mitunt content money
+  output ausgl content money
+  output gewinn content money
+  output tarif content money
+  output fest content money
+  output solz content money
+
+scope TestReinerGewinnKommanditist:
+  definition r equals output of KommanditistKette with {
+    -- gewinnanteil: $40,000.00
+    -- verlustanteil: $0.00
+    -- verguetung_taetigkeit: $18,770.00
+    -- verguetung_darlehen: $0.00
+    -- verguetung_ueberlassung: $0.00
+    -- kapitalkonto: $0.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition mitunt equals r.einkuenfte_mitunternehmer
+  definition ausgl equals r.ausgleichsfaehiger_verlust
+  definition gewinn equals r.einkuenfte_gewinn
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion mitunt = $58,770.00
+  assertion ausgl = $0.00
+  assertion gewinn = $58,770.00
+  assertion tarif = $13,747.00
+  assertion fest = $13,747.00
+  assertion solz = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestP15aBegrenzungGreift:
+  # (B) § 15a-Begrenzung greift: Verlustjahr, verlustanteil 30000, kapitalkonto
+  # 10000 (positiv) -> ausgleichsfaehiger_verlust = min(30000, max(10000,0)) =
+  # min(30000,10000) = 10000 (Rest 20000 verrechenbar, nach § 15a Abs. 2
+  # vorgetragen, NICHT hier abgezogen). gewinnanteil 0 (Verlustjahr, kein
+  # Gesamthand-Gewinnanteil), Verguetung Taetigkeit 68770 (Darlehen/Ueberlassung
+  # 0) -> einkuenfte_mitunternehmer = 0 + 68770 = 68770. einkuenfte_gewinn =
+  # 68770 - 10000 = 58770 (identischer Betrag wie Fall A) -> SA-Pauschbetrag 36
+  # -> zvE 58734 -> tarifliche ESt 13747 (Pin). festzusetzende ESt 13747.
+  # SolZ-BMG 13747 < Freigrenze 20350 -> SolZ 0.
+  internal r content KommanditistKette
+  output mitunt content money
+  output ausgl content money
+  output gewinn content money
+  output tarif content money
+  output fest content money
+  output solz content money
+
+scope TestP15aBegrenzungGreift:
+  definition r equals output of KommanditistKette with {
+    -- gewinnanteil: $0.00
+    -- verlustanteil: $30,000.00
+    -- verguetung_taetigkeit: $68,770.00
+    -- verguetung_darlehen: $0.00
+    -- verguetung_ueberlassung: $0.00
+    -- kapitalkonto: $10,000.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition mitunt equals r.einkuenfte_mitunternehmer
+  definition ausgl equals r.ausgleichsfaehiger_verlust
+  definition gewinn equals r.einkuenfte_gewinn
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion mitunt = $68,770.00
+  assertion ausgl = $10,000.00
+  assertion gewinn = $58,770.00
+  assertion tarif = $13,747.00
+  assertion fest = $13,747.00
+  assertion solz = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestP15aWaechterKapitalkontoNull:
+  # WAECHTER kapitalkonto = 0: verlustanteil 30000, kapitalkonto 0 ->
+  # positives_kapitalkonto = max(0,0) = 0 -> ausgleichsfaehiger_verlust =
+  # min(30000, 0) = 0 (nichts ausgleichsfähig, ganzer Verlust verrechenbar/
+  # vorgetragen). Einkuenfte hier bewusst klein gewaehlt (unter dem
+  # Grundfreibetrag), da nur die § 15a-Grenzwert-Mechanik geprueft wird, nicht
+  # ein weiterer Tarif-Pin.
+  internal r content KommanditistKette
+  output ausgl content money
+  output gewinn content money
+
+scope TestP15aWaechterKapitalkontoNull:
+  definition r equals output of KommanditistKette with {
+    -- gewinnanteil: $1,000.00
+    -- verlustanteil: $30,000.00
+    -- verguetung_taetigkeit: $0.00
+    -- verguetung_darlehen: $0.00
+    -- verguetung_ueberlassung: $0.00
+    -- kapitalkonto: $0.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition ausgl equals r.ausgleichsfaehiger_verlust
+  definition gewinn equals r.einkuenfte_gewinn
+  assertion ausgl = $0.00
+  assertion gewinn = $1,000.00
+```
+
+```catala
+#[test]
+declaration scope TestNegativesKapitalkontoWaechter:
+  # (C) Waechter negatives Kapitalkonto („erhöht sich"): verlustanteil 5000,
+  # kapitalkonto -3000 (bereits negativ) -> positives_kapitalkonto =
+  # max(-3000,0) = 0 -> ausgleichsfaehiger_verlust = min(5000, 0) = 0 (nichts
+  # ausgleichsfähig). gewinnanteil 13770 (reiner Gewinnanteil, kein weiterer
+  # Sondervergütungsteil) -> einkuenfte_mitunternehmer = 13770. einkuenfte_gewinn
+  # = 13770 - 0 = 13770 -> SA-Pauschbetrag 36 -> zvE 13734 -> tarifliche ESt 211
+  # (Pin). festzusetzende ESt 211. SolZ-BMG 211 < Freigrenze 20350 -> SolZ 0.
+  internal r content KommanditistKette
+  output ausgl content money
+  output gewinn content money
+  output tarif content money
+  output fest content money
+  output solz content money
+
+scope TestNegativesKapitalkontoWaechter:
+  definition r equals output of KommanditistKette with {
+    -- gewinnanteil: $13,770.00
+    -- verlustanteil: $5,000.00
+    -- verguetung_taetigkeit: $0.00
+    -- verguetung_darlehen: $0.00
+    -- verguetung_ueberlassung: $0.00
+    -- kapitalkonto: -$3,000.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition ausgl equals r.ausgleichsfaehiger_verlust
+  definition gewinn equals r.einkuenfte_gewinn
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion ausgl = $0.00
+  assertion gewinn = $13,770.00
+  assertion tarif = $211.00
+  assertion fest = $211.00
+  assertion solz = $0.00
+```

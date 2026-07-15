@@ -1,0 +1,312 @@
+# Fall-Familie 4 — DBA-Anrechnung, E2E-Kette
+
+> Module Familie4_dba_anrechnung
+> Using Einkommensteuertarif
+> Using Solzg
+
+Handgeschriebenes Integrations-Golden (Charge 26, 2026-07-15). Kettet die bereits
+verifizierten Bausteine zu einem End-to-end-Fall: Einkuenfte inkl. auslaendischer
+(im § 34d-Katalog, Anrechnungsmethode) -> § 2-Stufenfolge -> tarifliche ESt
+(§ 32a, `Einkommensteuertarif.FestzusetzendeEstGesamt`) -> § 34c Abs. 1 Anrechnung
+der gezahlten auslaendischen Steuer bis zum Hoechstbetrag -> festzusetzende ESt ->
+Solidaritaetszuschlag (`Solzg.Solidaritaetszuschlag`). Reine Verdrahtung bereits
+verifizierter Regeln; keine neue Norm-Auslegung.
+
+Ein Rechenschritt (Hoechstbetrags-Anrechnung) existiert bereits als verifizierte
+Pipeline-Regel (`p34c_1_anrechnung_hoechstbetrag`, `pipeline/snapshots/`), ist dort
+aber nicht Teil von `pipeline/produktion/rules.yaml` und daher nicht als Catala-
+Modul aufrufbar. Sie wird hier wortgleich zu ihrer verifizierten `catala_a`-Fassung
+inline re-implementiert (kein neuer Formalisierungs-Schritt, siehe Kommentar).
+
+## § 34c Abs. 1 EStG: Anrechnung auslaendischer Steuer, Hoechstbetrag
+
+    (1) 1 Bei unbeschränkt Steuerpflichtigen, die mit ausländischen Einkünften in
+    dem Staat, aus dem die Einkünfte stammen, zu einer der deutschen
+    Einkommensteuer entsprechenden Steuer herangezogen werden, ist die
+    festgesetzte und gezahlte und um einen entstandenen Ermäßigungsanspruch
+    gekürzte ausländische Steuer auf die deutsche Einkommensteuer anzurechnen,
+    die auf die Einkünfte aus diesem Staat entfällt; das gilt nicht für
+    Einkünfte aus Kapitalvermögen, auf die § 32d Absatz 1 und 3 bis 6
+    anzuwenden ist. 2 Die auf die ausländischen Einkünfte nach Satz 1 erster
+    Halbsatz entfallende deutsche Einkommensteuer ist in der Weise zu
+    ermitteln, dass der sich bei der Veranlagung des zu versteuernden
+    Einkommens, einschließlich der ausländischen Einkünfte, nach den §§ 32a,
+    32b, 34, 34a und 34b ergebende durchschnittliche Steuersatz auf die
+    ausländischen Einkünfte anzuwenden ist.
+
+Wortlaut eingefroren in `sources/gesetze-im-internet/estg_p34c_2026-07-14.txt`.
+Entspricht wortgleich der verifizierten Regel `p34c_1_anrechnung_hoechstbetrag`
+(`pipeline/snapshots/p34c_1_anrechnung_hoechstbetrag.json`, `catala_a`):
+Durchschnittssatz = auslaendische Einkuenfte aus dem Staat / zu versteuerndes
+Einkommen; Hoechstbetrag = deutsche ESt (inkl. auslaendischer Einkuenfte) mal
+Durchschnittssatz; Anrechnung = der kleinere Betrag aus gezahlter auslaendischer
+Steuer und Hoechstbetrag (Ausnahme: auslaendische Einkuenfte <= 0 oder zu
+versteuerndes Einkommen <= 0 -> Anrechnung 0). `deutsche_est_inkl_ausl` ist hier
+die tarifliche ESt aus Schritt 1 der Kette (auf das gesamte zvE inkl.
+auslaendischer Einkuenfte); `zu_versteuerndes_einkommen` ebenfalls aus Schritt 1.
+Bedingungslage (`queue_status: verified_bedingt`, `bedingungen` im Snapshot): ein
+DBA-Staat (`per_country_ein_staat`), keine Kapitalertraege nach § 32d
+(`keine_kapitalertraege_p32d`), Andockung an die § 2-zvE-Stufenfolge
+(`andockung_est_zve_p2`), Steuer bereits festgesetzt/gezahlt/gekuerzt
+(`steuer_festgesetzt_gezahlt_gekuerzt`), Einkuenfte-Katalog des § 34d
+(`auslaendische_einkuenfte_p34d_katalog`), zvE positiv (`zve_positiv`).
+
+## Hoechstbetrags-Anrechnung (Inline-Nachbau von `p34c_1_anrechnung_hoechstbetrag`)
+
+```catala
+# ≙ p34c_1_anrechnung_hoechstbetrag (catala_a, wortgleich uebernommen).
+declaration scope AnrechnungHoechstbetrag:
+  input gezahlte_auslaendische_steuer content money
+  input deutsche_est_inkl_ausl content money
+  input zu_versteuerndes_einkommen content money
+  input auslaendische_einkuenfte_staat content money
+  internal durchschnittssatz content decimal
+  internal hoechstbetrag content money
+  output anrechnung content money
+
+scope AnrechnungHoechstbetrag:
+  definition durchschnittssatz equals
+    auslaendische_einkuenfte_staat / zu_versteuerndes_einkommen
+
+  definition hoechstbetrag equals
+    deutsche_est_inkl_ausl * durchschnittssatz
+
+  label basis
+  definition anrechnung equals
+    if gezahlte_auslaendische_steuer <= hoechstbetrag
+    then gezahlte_auslaendische_steuer
+    else hoechstbetrag
+
+  exception basis
+  definition anrechnung under condition
+    auslaendische_einkuenfte_staat <= $0.00 or
+    zu_versteuerndes_einkommen <= $0.00
+  consequence equals $0.00
+```
+
+## Die Kette
+
+```catala
+declaration scope DbaAnrechnungKette:
+  input einkuenfte_gesamt content money
+  input auslaendische_einkuenfte_staat content money
+  input gezahlte_auslaendische_steuer content money
+  input sonderausgaben content money
+  input veranlagungszeitraum content Einkommensteuertarif.Veranlagungszeitraum
+  internal tarif_inkl_ausl content Einkommensteuertarif.FestzusetzendeEstGesamt
+  internal hoechstbetrag_lauf content AnrechnungHoechstbetrag
+  internal tarif_nach_anrechnung content Einkommensteuertarif.FestzusetzendeEstGesamt
+  internal soli_lauf content Solzg.Solidaritaetszuschlag
+  output zu_versteuerndes_einkommen content money
+  output deutsche_est_inkl_ausl content money
+  output anrechnung content money
+  output festzusetzende_est content money
+  output soli content money
+
+scope DbaAnrechnungKette:
+  # § 2-Stufenfolge, Andockpunkt einkuenfte_gewinn: Einkuenfte inkl. der
+  # auslaendischen Einkuenfte aus dem DBA-Staat (Anrechnungsmethode, kein
+  # Progressionsvorbehalt/keine Freistellung). Erster Aufruf ohne § 34c-
+  # Anrechnung (anzurechnende_auslaendische_steuern = 0), um die tarifliche ESt
+  # auf das gesamte zvE fuer den Hoechstbetrag (§ 34c Abs. 1 Satz 2) zu ermitteln.
+  definition tarif_inkl_ausl equals
+    output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+      -- einkuenfte_nichtselbststaendig: $0.00
+      -- einkuenfte_kapitalvermoegen: $0.00
+      -- einkuenfte_vermietung: $0.00
+      -- einkuenfte_sonstige: $0.00
+      -- einkuenfte_gewinn: einkuenfte_gesamt
+      -- altersentlastungsbetrag: $0.00
+      -- entlastungsbetrag_alleinerziehende: $0.00
+      -- sonderausgaben: sonderausgaben
+      -- aussergewoehnliche_belastungen: $0.00
+      -- freibetraege_kinder: $0.00
+      -- sonstige_abzuege_vom_einkommen: $0.00
+      -- anzurechnende_auslaendische_steuern: $0.00
+      -- steuerermaessigungen: $0.00
+      -- steuer_kapital_gesondert: $0.00
+      -- hinzurechnung_kindergeld: $0.00
+      -- hinzurechnung_zulage: $0.00
+      -- tarif_modifiziert: false
+      -- tarifliche_est_modifiziert: $0.00
+      -- veranlagungszeitraum: veranlagungszeitraum }
+
+  definition zu_versteuerndes_einkommen equals
+    tarif_inkl_ausl.zu_versteuerndes_einkommen
+
+  definition deutsche_est_inkl_ausl equals tarif_inkl_ausl.tarifliche_est
+
+  # § 34c Abs. 1 (entspricht p34c_1_anrechnung_hoechstbetrag): Hoechstbetrags-
+  # Anrechnung der gezahlten auslaendischen Steuer.
+  definition hoechstbetrag_lauf equals
+    output of AnrechnungHoechstbetrag with {
+      -- gezahlte_auslaendische_steuer: gezahlte_auslaendische_steuer
+      -- deutsche_est_inkl_ausl: deutsche_est_inkl_ausl
+      -- zu_versteuerndes_einkommen: zu_versteuerndes_einkommen
+      -- auslaendische_einkuenfte_staat: auslaendische_einkuenfte_staat }
+
+  definition anrechnung equals hoechstbetrag_lauf.anrechnung
+
+  # § 2 Abs. 6 Satz 1 (Andockpunkt anzurechnende_auslaendische_steuern): zweiter
+  # Aufruf mit der § 34c-Anrechnung -> festzusetzende ESt.
+  definition tarif_nach_anrechnung equals
+    output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+      -- einkuenfte_nichtselbststaendig: $0.00
+      -- einkuenfte_kapitalvermoegen: $0.00
+      -- einkuenfte_vermietung: $0.00
+      -- einkuenfte_sonstige: $0.00
+      -- einkuenfte_gewinn: einkuenfte_gesamt
+      -- altersentlastungsbetrag: $0.00
+      -- entlastungsbetrag_alleinerziehende: $0.00
+      -- sonderausgaben: sonderausgaben
+      -- aussergewoehnliche_belastungen: $0.00
+      -- freibetraege_kinder: $0.00
+      -- sonstige_abzuege_vom_einkommen: $0.00
+      -- anzurechnende_auslaendische_steuern: anrechnung
+      -- steuerermaessigungen: $0.00
+      -- steuer_kapital_gesondert: $0.00
+      -- hinzurechnung_kindergeld: $0.00
+      -- hinzurechnung_zulage: $0.00
+      -- tarif_modifiziert: false
+      -- tarifliche_est_modifiziert: $0.00
+      -- veranlagungszeitraum: veranlagungszeitraum }
+
+  definition festzusetzende_est equals tarif_nach_anrechnung.festzusetzende_est
+
+  # § 3, § 4 SolzG: Bemessungsgrundlage ist die festzusetzende ESt.
+  definition soli_lauf equals
+    output of Solzg.Solidaritaetszuschlag with {
+      -- bemessungsgrundlage: festzusetzende_est
+      -- splitting: false }
+
+  definition soli equals soli_lauf.solidaritaetszuschlag
+```
+
+## Testfaelle
+
+Alle Erwartungswerte handgerechnet (Rechenweg im Kommentar je Fall). Die
+tarifliche-ESt-Zwischenwerte sind an bereits verifizierte § 32a-Pins verankert:
+zvE 58734 -> 13747, zvE 100000 -> 30864
+(`golden/cases/g32a_2026_single_100000.yaml`,
+`rules/estg/p32a/tests_einkommensteuertarif.catala_en`, `t_100000`), zvE 28734 ->
+3862 (`rules/estg/arbeitnehmerfall/tests_festzusetzende_est.catala_en`). Die
+Einkuenfte-/Sonderausgaben-Eingaben, die diese zvE erzeugen, sind wortgleich aus
+`familie1_euer_unternehmer.catala_en` bzw. dem Arbeitnehmerfall (60000/30000 brutto
+- 1230 § 9a-Pauschbetrag) uebernommen.
+
+```catala
+#[test]
+declaration scope TestHoechstbetragBindet:
+  # (A) Hoechstbetrag bindet (gezahlte auslaendische Steuer > Hoechstbetrag).
+  # Einkuenfte 58770, SA-Pauschbetrag 36 -> zvE 58734 -> deutsche_est_inkl_ausl
+  # 13747 (Pin, wie familie1 Basisfall). Auslaendische Einkuenfte 20000 aus
+  # einem DBA-Staat -> Durchschnittssatz = 20000 / 58734. Hoechstbetrag = 13747
+  # x (20000 / 58734) -- exakte Catala-decimal-Rechnung, s. Pin unten. Gezahlte
+  # auslaendische Steuer 6000 > Hoechstbetrag -> Anrechnung = Hoechstbetrag
+  # (durch den Hoechstbetrag gedeckelt, nicht durch die gezahlte Steuer).
+  # Hoechstbetrag = 13747 x (20000 / 58734) = 4681,10460... EUR (exakte
+  # Catala-decimal-Rechnung: erst Division 20000/58734 als decimal, dann
+  # Multiplikation mit 13747, Rundung auf Cent bei der money-Multiplikation)
+  # -> $4.681,10 (per clerk-Probe verifiziert). Festzusetzende ESt = 13747 -
+  # 4681,10 = 9065,90. SolZ-BMG < Freigrenze 20350 -> 0.
+  internal r content DbaAnrechnungKette
+  output zve content money
+  output tarif content money
+  output anr content money
+  output fest content money
+  output solz content money
+
+scope TestHoechstbetragBindet:
+  definition r equals output of DbaAnrechnungKette with {
+    -- einkuenfte_gesamt: $58,770.00
+    -- auslaendische_einkuenfte_staat: $20,000.00
+    -- gezahlte_auslaendische_steuer: $6,000.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition zve equals r.zu_versteuerndes_einkommen
+  definition tarif equals r.deutsche_est_inkl_ausl
+  definition anr equals r.anrechnung
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion zve = $58,734.00
+  assertion tarif = $13,747.00
+  assertion anr = $4,681.10
+  assertion fest = $9,065.90
+  assertion solz = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestGezahlteSteuerBindet:
+  # (B) Gezahlte Steuer bindet (gezahlte auslaendische Steuer < Hoechstbetrag).
+  # Einkuenfte 100036, SA-Pauschbetrag 36 -> zvE 100000 -> deutsche_est_inkl_ausl
+  # 30864 (Pin, wie familie1 Solifall). Auslaendische Einkuenfte 20000 ->
+  # Durchschnittssatz = 20000 / 100000 = 0,2 exakt -> Hoechstbetrag =
+  # 30864 x 0,2 = 6172,80 (exakt, keine Rundung noetig). Gezahlte auslaendische
+  # Steuer 3000 < 6172,80 -> Anrechnung = 3000 (gebunden durch die gezahlte
+  # Steuer, nicht durch den Hoechstbetrag). Festzusetzende ESt = 30864 - 3000 =
+  # 27864. SolZ: BMG 27864 > Freigrenze 20350 -> Regelbetrag 5,5 % x 27864 =
+  # 1532,52; Milderung 11,9 % x (27864 - 20350) = 11,9 % x 7514 = 894,166 ->
+  # Milderung < Regelbetrag -> SolZ = 894,166, Cent-Schnitt -> 894,16.
+  internal r content DbaAnrechnungKette
+  output zve content money
+  output tarif content money
+  output anr content money
+  output fest content money
+  output solz content money
+
+scope TestGezahlteSteuerBindet:
+  definition r equals output of DbaAnrechnungKette with {
+    -- einkuenfte_gesamt: $100,036.00
+    -- auslaendische_einkuenfte_staat: $20,000.00
+    -- gezahlte_auslaendische_steuer: $3,000.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition zve equals r.zu_versteuerndes_einkommen
+  definition tarif equals r.deutsche_est_inkl_ausl
+  definition anr equals r.anrechnung
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion zve = $100,000.00
+  assertion tarif = $30,864.00
+  assertion anr = $3,000.00
+  assertion fest = $27,864.00
+  assertion solz = $894.16
+```
+
+```catala
+#[test]
+declaration scope TestQuoteEins:
+  # (C) Auslaendische Einkuenfte = gesamtes zvE -> Quote 1 -> Hoechstbetrag =
+  # volle deutsche ESt. Einkuenfte 28770 (brutto 30000 - 1230 § 9a-Pauschbetrag,
+  # wie Arbeitnehmerfall), SA-Pauschbetrag 36 -> zvE 28734 -> deutsche_est_inkl_
+  # ausl 3862 (Pin). Auslaendische Einkuenfte = 28734 = gesamtes zvE ->
+  # Durchschnittssatz = 28734 / 28734 = 1 -> Hoechstbetrag = 3862 x 1 = 3862
+  # (exakt). Gezahlte auslaendische Steuer 5000 > 3862 -> Anrechnung = 3862
+  # (die volle deutsche ESt, gedeckelt durch den Hoechstbetrag bei Quote 1).
+  # Festzusetzende ESt = 3862 - 3862 = 0. SolZ-BMG 0 < Freigrenze -> 0.
+  internal r content DbaAnrechnungKette
+  output zve content money
+  output tarif content money
+  output anr content money
+  output fest content money
+  output solz content money
+
+scope TestQuoteEins:
+  definition r equals output of DbaAnrechnungKette with {
+    -- einkuenfte_gesamt: $28,770.00
+    -- auslaendische_einkuenfte_staat: $28,734.00
+    -- gezahlte_auslaendische_steuer: $5,000.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition zve equals r.zu_versteuerndes_einkommen
+  definition tarif equals r.deutsche_est_inkl_ausl
+  definition anr equals r.anrechnung
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion zve = $28,734.00
+  assertion tarif = $3,862.00
+  assertion anr = $3,862.00
+  assertion fest = $0.00
+  assertion solz = $0.00
+```
