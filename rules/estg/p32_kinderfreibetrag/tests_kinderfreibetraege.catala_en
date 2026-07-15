@@ -1,0 +1,65 @@
+# Tests § 32 Abs. 6 EStG - Kinderfreibetrag + BEA-Freibetrag
+
+> Using Kinderfreibetraege
+
+Erwartungswerte synthetisch, gegen den Gesetzeswortlaut je VZ gerechnet. Freibetrag
+je Kind = Kinderfreibetrag (VZ-abhaengig) + BEA (1.464 konstant); bei
+Zusammenveranlagung verdoppelt. VZ-2026-Faelle uebernehmen die alten Pipeline-Seeds
+(catala_a-Aequivalenz), VZ 2024/2025 belegen die Drift des saechlichen KFB.
+
+```catala
+#[test]
+declaration scope TestKfbVz2026:
+  output einfach content money        # 1 Kind, einzel: 3.414 + 1.464 = 4.878
+  output splitting content money        # 1 Kind, ZV: 4.878 x 2 = 9.756
+  output zwei_kinder content money      # 2 Kinder, ZV: 2 x 9.756 = 19.512
+  output null_kinder content money      # 0 Kinder -> 0
+
+scope TestKfbVz2026:
+  definition einfach equals (output of Kinderfreibetraege.Kinderfreibetraege with {
+    -- anzahl_kinder: 1 -- zusammenveranlagung: false -- veranlagungszeitraum: 2026 }).kinderfreibetraege_gesamt
+  assertion einfach = $4878.00
+  definition splitting equals (output of Kinderfreibetraege.Kinderfreibetraege with {
+    -- anzahl_kinder: 1 -- zusammenveranlagung: true -- veranlagungszeitraum: 2026 }).kinderfreibetraege_gesamt
+  assertion splitting = $9756.00
+  definition zwei_kinder equals (output of Kinderfreibetraege.Kinderfreibetraege with {
+    -- anzahl_kinder: 2 -- zusammenveranlagung: true -- veranlagungszeitraum: 2026 }).kinderfreibetraege_gesamt
+  assertion zwei_kinder = $19512.00
+  definition null_kinder equals (output of Kinderfreibetraege.Kinderfreibetraege with {
+    -- anzahl_kinder: 0 -- zusammenveranlagung: false -- veranlagungszeitraum: 2026 }).kinderfreibetraege_gesamt
+  assertion null_kinder = $0.00
+```
+
+VZ 2024: saechlicher KFB 3.306 -> je Kind 3.306 + 1.464 = 4.770.
+
+```catala
+#[test]
+declaration scope TestKfbVz2024:
+  output einfach content money        # 1 Kind, einzel: 4.770
+  output splitting content money        # 1 Kind, ZV: 9.540
+
+scope TestKfbVz2024:
+  definition einfach equals (output of Kinderfreibetraege.Kinderfreibetraege with {
+    -- anzahl_kinder: 1 -- zusammenveranlagung: false -- veranlagungszeitraum: 2024 }).kinderfreibetraege_gesamt
+  assertion einfach = $4770.00
+  definition splitting equals (output of Kinderfreibetraege.Kinderfreibetraege with {
+    -- anzahl_kinder: 1 -- zusammenveranlagung: true -- veranlagungszeitraum: 2024 }).kinderfreibetraege_gesamt
+  assertion splitting = $9540.00
+```
+
+VZ 2025: saechlicher KFB 3.336 -> je Kind 3.336 + 1.464 = 4.800.
+
+```catala
+#[test]
+declaration scope TestKfbVz2025:
+  output einfach content money        # 1 Kind, einzel: 4.800
+  output splitting content money        # 1 Kind, ZV: 9.600
+
+scope TestKfbVz2025:
+  definition einfach equals (output of Kinderfreibetraege.Kinderfreibetraege with {
+    -- anzahl_kinder: 1 -- zusammenveranlagung: false -- veranlagungszeitraum: 2025 }).kinderfreibetraege_gesamt
+  assertion einfach = $4800.00
+  definition splitting equals (output of Kinderfreibetraege.Kinderfreibetraege with {
+    -- anzahl_kinder: 1 -- zusammenveranlagung: true -- veranlagungszeitraum: 2025 }).kinderfreibetraege_gesamt
+  assertion splitting = $9600.00
+```

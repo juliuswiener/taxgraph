@@ -1,0 +1,81 @@
+# § 32 Abs. 6 EStG - Kinderfreibetrag + BEA-Freibetrag (Veranlagungsfall)
+
+> Module Kinderfreibetraege
+
+Handschrift-Migration 2026-07-15 (M5-Stufe-3, int-VZ). Zuvor lief die Regel
+`p32_6_kinderfreibetraege` durch die Doppelformalisierungs-Pipeline (VZ 2026
+hartkodiert). Fuer Multi-VZ (2024-2026) driftet der saechliche Kinderfreibetrag
+per Veranlagungszeitraum; die Pipeline-Fassung war VZ-blind. Rechenkern
+unveraendert uebernommen (VZ-2026-Pfad reproduziert die alte catala_a exakt),
+nur der Kinderfreibetrag ist per VZ aufgeschluesselt. Konvention wie Solzg:
+Veranlagungszeitraum als Jahr-int (Catala 1.2.0 exportiert moduluebergreifende
+Enum-Typen nicht ins OCaml-Backend). Status im Manifest: `handgeschrieben`
+(aus den Pipeline-Gates raus wie Solzg/§ 32a; Registry + Geltungsbedingungen
+gelten weiter).
+
+Quellenmodell: authority = `gesetz`, redistributable = `true`. Grundlage ist
+§ 32 Abs. 6 EStG; Wortlaut in `sources/gesetze-im-internet/estg_p32_2026-07-11.txt`.
+Werte-Provenance je VZ in `params/<vz>/kinderfreibetrag_p32.yaml` (BGBl +
+GETTSIM-1.2.1-Gegenprobe).
+
+## Datentyp
+
+`anzahl_kinder` = nach § 32 Abs. 1-5 zu beruecksichtigende Kinder (Anspruch,
+aus der § 2-Integration). `zusammenveranlagung` steuert die Verdopplung nach
+Satz 2.
+
+```catala
+declaration scope Kinderfreibetraege:
+  input anzahl_kinder content integer
+  input zusammenveranlagung content boolean
+  # Veranlagungszeitraum als Jahr-int (2024/2025/2026): der saechliche
+  # Kinderfreibetrag driftet per VZ, der BEA-Freibetrag nicht. INT statt Enum
+  # (Catala-1.2.0-Grenze, s.o.).
+  input veranlagungszeitraum content integer
+  # Saechlicher Kinderfreibetrag je Elternteil nach Satz 1, VZ-abhaengig
+  internal kinderfreibetrag content money
+  output kinderfreibetraege_gesamt content money
+```
+
+## § 32 Abs. 6 Satz 1: saechlicher Kinderfreibetrag (VZ-Drift)
+
+    Bei der Veranlagung zur Einkommensteuer wird fuer jedes zu beruecksichtigende
+    Kind des Steuerpflichtigen ein Freibetrag von 3 414 Euro fuer das saechliche
+    Existenzminimum des Kindes (Kinderfreibetrag) sowie ein Freibetrag von 1 464
+    Euro fuer den Betreuungs- und Erziehungs- oder Ausbildungsbedarf des Kindes
+    vom Einkommen abgezogen.
+
+Der saechliche Kinderfreibetrag driftet per VZ (Gesetz zur steuerlichen
+Freistellung des Existenzminimums 2024 / SteFeG): VZ 2024 = 3.306, VZ 2025 =
+3.336, VZ 2026 = 3.414 (Wortlaut oben). Der BEA-Freibetrag (1.464 je Elternteil)
+ist seit VZ 2021 unveraendert. Die Bounds-Assertion bricht deterministisch fuer
+VZ ausserhalb 2024-2026 (Zeitschwellen-nie-still), damit kein VZ still die
+2026er-Werte erbt.
+
+```catala
+scope Kinderfreibetraege:
+  assertion veranlagungszeitraum >= 2024 and veranlagungszeitraum <= 2026
+
+  definition kinderfreibetrag equals
+    if veranlagungszeitraum = 2024 then $3,306.00
+    else if veranlagungszeitraum = 2025 then $3,336.00
+    else $3,414.00
+```
+
+## § 32 Abs. 6 Satz 2: Verdopplung bei Zusammenveranlagung
+
+    Bei Ehegatten, die nach den §§ 26, 26b zusammen zur Einkommensteuer veranlagt
+    werden, verdoppeln sich die Betraege nach Satz 1, wenn das Kind zu beiden
+    Ehegatten in einem Kindschaftsverhaeltnis steht.
+
+Freibetrag je Kind = Kinderfreibetrag + BEA-Freibetrag; bei Zusammenveranlagung
+verdoppelt (MVP-Annahme: Kind zu beiden Ehegatten). Gesamt = je Kind x Anzahl.
+
+```catala
+scope Kinderfreibetraege:
+  definition kinderfreibetraege_gesamt equals
+    let bea_freibetrag equals $1,464.00 in
+    let freibetrag_je_kind equals kinderfreibetrag + bea_freibetrag in
+    let faktor equals if zusammenveranlagung then 2.0 else 1.0 in
+    (freibetrag_je_kind * faktor) * (decimal of anzahl_kinder)
+```

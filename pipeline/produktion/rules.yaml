@@ -1382,6 +1382,8 @@ regeln:
   - p33_1_2_agb_abzug
 - rule_id: p32_6_kinderfreibetraege
   norm: § 32 Abs. 6 EStG
+  status: handgeschrieben
+  migration: 'M5-Stufe-3 2026-07-15: aus der Pipeline (VZ-2026-hartkodiert) zur VZ-faehigen Handregel unter rules/estg/p32_kinderfreibetrag/ migriert (int-VZ-Dispatch saechl. KFB 3.306/3.336/3.414 fuer 2024/2025/2026, BEA 1.464 konstant, Bounds-Assertion 2024-2026). VZ-2026-Pfad reproduziert die alte catala_a exakt (Aequivalenz). Pipeline-Snapshot entfernt (aus den Pipeline-Gates raus wie Solzg); Registry + Geltungsbedingungen gelten weiter. Signatur unten = Sachverhalts-Inputs; veranlagungszeitraum ist Infra-Dimension (Jahr-int, s. Modul-Prosa).'
   quellen:
   - typ: gesetz
     label: § 32 Abs. 6 EStG (Kinderfreibetrag + BEA-Freibetrag)
@@ -2201,6 +2203,8 @@ regeln:
 - rule_id: p33a_unterhalt
   hinweis: 'Der Hoechstbetrag basiert auf dem Grundfreibetrag nach § 32a Absatz 1 Satz 2 Nummer 1 - eine VZ-versionierte Norm-Konstante (VZ 2026 = 12.348 Euro, params/2026, dieselbe Quelle wie der Tarif), KEIN Input. Rechenkern: hoechstbetrag = $12,348.00 + kv_pv_beitraege - (wenn andere_einkuenfte_bezuege > $624.00 dann andere_einkuenfte_bezuege - $624.00 sonst $0.00); unterhalt_abzug = min(aufwendungen, wenn hoechstbetrag > $0.00 dann hoechstbetrag sonst $0.00). andere_einkuenfte_bezuege kommt bereits als Summe/netto (Eink. + Bezuege der unterhaltenen Person) herein.'
   norm: § 33a Abs. 1 EStG (Unterhaltsabzug, gedeckelt auf Grundfreibetrag)
+  status: handgeschrieben
+  migration: 'M5-Stufe-3 2026-07-15: aus der Pipeline (Grundfreibetrag VZ 2026 = 12.348 hartkodiert) zur VZ-faehigen Handregel unter rules/estg/p33a_unterhalt/ migriert (int-VZ-Dispatch GFB 11.784/12.096/12.348 fuer 2024/2025/2026, Schonbetrag 624 konstant, Bounds-Assertion 2024-2026). VZ-2026-Pfad reproduziert die alte catala_a exakt (Aequivalenz). Der GFB bleibt Norm-Konstante (aus Jahr-int gefuettert, kein frei setzbarer Input). Pipeline-Snapshot entfernt (aus den Pipeline-Gates raus wie Solzg); Registry + Geltungsbedingungen gelten weiter.'
   quellen:
   - typ: gesetz
     label: § 33a Abs. 1 S. 1 EStG (Unterhaltsabzug bis Grundfreibetrag)

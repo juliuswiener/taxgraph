@@ -1,0 +1,59 @@
+# Tests § 33a Abs. 1 EStG - Unterhaltsabzug
+
+> Using Unterhaltsabzug
+
+Erwartungswerte synthetisch, gegen den Gesetzeswortlaut je VZ gerechnet.
+unterhalt_abzug = min(aufwendungen, max(0, GFB + kv_pv - max(0, andere - 624))).
+VZ-2026-Faelle uebernehmen die alten Pipeline-Seeds (catala_a-Aequivalenz), VZ
+2024/2025 belegen die Drift des Grundfreibetrags in der Deckelung.
+
+```catala
+#[test]
+declaration scope TestUnterhaltVz2026:
+  output standard content money       # Aufw. 10.000 < Hoechst 12.348 -> 10.000
+  output deckelung content money        # Aufw. 15.000 > Hoechst 12.348 -> 12.348
+  output anrechnung content money       # eigene Eink. 2.000: Hoechst 12.348-1.376=10.972
+  output kv_pv content money            # KV/PV 1.500: Hoechst 12.348+1.500=13.848
+  output unter_schonbetrag content money # eigene Eink. 500 < 624 -> keine Minderung
+
+scope TestUnterhaltVz2026:
+  definition standard equals (output of Unterhaltsabzug.Unterhaltsabzug with {
+    -- aufwendungen: $10000.00 -- kv_pv_beitraege: $0.00
+    -- andere_einkuenfte_bezuege: $0.00 -- veranlagungszeitraum: 2026 }).unterhalt_abzug
+  assertion standard = $10000.00
+  definition deckelung equals (output of Unterhaltsabzug.Unterhaltsabzug with {
+    -- aufwendungen: $15000.00 -- kv_pv_beitraege: $0.00
+    -- andere_einkuenfte_bezuege: $0.00 -- veranlagungszeitraum: 2026 }).unterhalt_abzug
+  assertion deckelung = $12348.00
+  definition anrechnung equals (output of Unterhaltsabzug.Unterhaltsabzug with {
+    -- aufwendungen: $15000.00 -- kv_pv_beitraege: $0.00
+    -- andere_einkuenfte_bezuege: $2000.00 -- veranlagungszeitraum: 2026 }).unterhalt_abzug
+  assertion anrechnung = $10972.00
+  definition kv_pv equals (output of Unterhaltsabzug.Unterhaltsabzug with {
+    -- aufwendungen: $15000.00 -- kv_pv_beitraege: $1500.00
+    -- andere_einkuenfte_bezuege: $0.00 -- veranlagungszeitraum: 2026 }).unterhalt_abzug
+  assertion kv_pv = $13848.00
+  definition unter_schonbetrag equals (output of Unterhaltsabzug.Unterhaltsabzug with {
+    -- aufwendungen: $15000.00 -- kv_pv_beitraege: $0.00
+    -- andere_einkuenfte_bezuege: $500.00 -- veranlagungszeitraum: 2026 }).unterhalt_abzug
+  assertion unter_schonbetrag = $12348.00
+```
+
+VZ 2024: GFB 11.784 -> Deckelung bei 11.784. VZ 2025: GFB 12.096 -> 12.096.
+
+```catala
+#[test]
+declaration scope TestUnterhaltVzDrift:
+  output deckelung_2024 content money   # Aufw. 15.000 > GFB 11.784 -> 11.784
+  output deckelung_2025 content money   # Aufw. 15.000 > GFB 12.096 -> 12.096
+
+scope TestUnterhaltVzDrift:
+  definition deckelung_2024 equals (output of Unterhaltsabzug.Unterhaltsabzug with {
+    -- aufwendungen: $15000.00 -- kv_pv_beitraege: $0.00
+    -- andere_einkuenfte_bezuege: $0.00 -- veranlagungszeitraum: 2024 }).unterhalt_abzug
+  assertion deckelung_2024 = $11784.00
+  definition deckelung_2025 equals (output of Unterhaltsabzug.Unterhaltsabzug with {
+    -- aufwendungen: $15000.00 -- kv_pv_beitraege: $0.00
+    -- andere_einkuenfte_bezuege: $0.00 -- veranlagungszeitraum: 2025 }).unterhalt_abzug
+  assertion deckelung_2025 = $12096.00
+```

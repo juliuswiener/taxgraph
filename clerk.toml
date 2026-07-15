@@ -5,6 +5,8 @@ include_dirs = [
   "rules/estg/p32a",
   "rules/estg/p04_arbeitszimmer_homeoffice",
   "rules/estg/p09_entfernungspauschale",
+  "rules/estg/p32_kinderfreibetrag",
+  "rules/estg/p33a_unterhalt",
   "rules/estg/solzg",
   "rules/estg/arbeitnehmerfall",
   "rules/estg/integration",

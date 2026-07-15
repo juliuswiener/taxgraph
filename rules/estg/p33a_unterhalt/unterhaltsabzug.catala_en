@@ -1,0 +1,100 @@
+# § 33a Abs. 1 EStG - Unterhaltsabzug (gedeckelt auf Grundfreibetrag)
+
+> Module Unterhaltsabzug
+
+Handschrift-Migration 2026-07-15 (M5-Stufe-3, int-VZ). Zuvor lief die Regel
+`p33a_unterhalt` durch die Doppelformalisierungs-Pipeline (Grundfreibetrag VZ 2026
+= 12.348 hartkodiert). Der Hoechstbetrag ist per Gesetz an den Grundfreibetrag
+nach § 32a Abs. 1 S. 2 Nr. 1 gekoppelt und driftet damit per VZ. Rechenkern
+unveraendert uebernommen (VZ-2026-Pfad reproduziert die alte catala_a exakt), nur
+der Grundfreibetrag ist per VZ aufgeschluesselt. Veranlagungszeitraum als Jahr-int
+(Catala-1.2.0-Grenze: moduluebergreifende Enum-Typen nicht ins OCaml-Backend).
+Status im Manifest: `handgeschrieben` (aus den Pipeline-Gates raus wie Solzg;
+Registry + Geltungsbedingungen gelten weiter).
+
+Der Grundfreibetrag bleibt eine VZ-versionierte Norm-Konstante, KEINE
+Signatur-Eingabe (Doktrin: nur Sachverhalts-Inputs in die Signatur; der Aufrufer
+darf eine Norm-Konstante nicht verstellen). Die VZ-Aufschluesselung fuettert sie
+aus dem Jahr-int, nicht aus einem frei setzbaren Betrag.
+
+Quellenmodell: authority = `gesetz`, redistributable = `true`. Grundlage ist
+§ 33a Abs. 1 EStG; Wortlaut in `sources/gesetze-im-internet/estg_p33a_2026-07-13.txt`.
+Werte-Provenance je VZ in `params/<vz>/unterhalt_hoechstbetrag_p33a.yaml` (GFB aus
+`einkommensteuertarif_p32a.yaml`, dort die primaere Quelle).
+
+## Datentyp
+
+`aufwendungen` = Unterhaltsaufwendungen, `kv_pv_beitraege` = fuer die unterhaltene
+Person aufgewandte KV/PV-Beitraege (S. 2), `andere_einkuenfte_bezuege` = Summe der
+eigenen Einkuenfte UND Bezuege der unterhaltenen Person (S. 5, bereits als Netto/
+Summe aus der § 2-Integration).
+
+```catala
+declaration scope Unterhaltsabzug:
+  input aufwendungen content money
+  input kv_pv_beitraege content money
+  input andere_einkuenfte_bezuege content money
+  # Veranlagungszeitraum als Jahr-int (2024/2025/2026): der Grundfreibetrag driftet
+  # per VZ. INT statt Enum (Catala-1.2.0-Grenze, s.o.).
+  input veranlagungszeitraum content integer
+  # Grundfreibetrag nach § 32a Abs. 1 S. 2 Nr. 1, VZ-abhaengig (Norm-Konstante)
+  internal grundfreibetrag content money
+  internal anrechnungsbetrag content money
+  internal hoechstbetrag content money
+  output unterhalt_abzug content money
+```
+
+## § 33a Abs. 1 S. 1: Hoechstbetrag = Grundfreibetrag (VZ-Drift)
+
+    ... dass die Aufwendungen bis zur Hoehe des Grundfreibetrags nach § 32a
+    Absatz 1 Satz 2 Nummer 1 im Kalenderjahr vom Gesamtbetrag der Einkuenfte
+    abgezogen werden.
+
+Der Grundfreibetrag driftet per VZ (Freistellungsgesetz 2024 / SteFeG): VZ 2024 =
+11.784, VZ 2025 = 12.096, VZ 2026 = 12.348. Deckungsgleich mit dem Tarif-GFB
+(params/<vz>/einkommensteuertarif_p32a.yaml). Bounds-Assertion bricht
+deterministisch fuer VZ ausserhalb 2024-2026 (Zeitschwellen-nie-still).
+
+```catala
+scope Unterhaltsabzug:
+  assertion veranlagungszeitraum >= 2024 and veranlagungszeitraum <= 2026
+
+  definition grundfreibetrag equals
+    if veranlagungszeitraum = 2024 then $11,784.00
+    else if veranlagungszeitraum = 2025 then $12,096.00
+    else $12,348.00
+```
+
+## § 33a Abs. 1 S. 5: Anrechnung eigener Einkuenfte ueber 624 Euro
+
+    ... so vermindert sich die Summe ... um den Betrag, um den diese Einkuenfte
+    und Bezuege den Betrag von 624 Euro im Kalenderjahr uebersteigen.
+
+Der Schonbetrag 624 Euro ist fassungskonstant (keine VZ-Drift). Minderung nur,
+SOWEIT die eigenen Einkuenfte + Bezuege den Schonbetrag uebersteigen.
+
+```catala
+scope Unterhaltsabzug:
+  definition anrechnungsbetrag equals
+    if andere_einkuenfte_bezuege > $624.00
+    then andere_einkuenfte_bezuege - $624.00
+    else $0.00
+```
+
+## § 33a Abs. 1 S. 2 + Deckelung: Hoechstbetrag und Abzug
+
+    Der Hoechstbetrag nach Satz 1 erhoeht sich um den Betrag der ... nach § 10
+    Absatz 1 Nummer 3 ... aufgewandten Beitraege ...
+
+Hoechstbetrag = Grundfreibetrag + KV/PV-Beitraege - Anrechnungsbetrag (nicht unter
+0). Abzug = min(Aufwendungen, Hoechstbetrag).
+
+```catala
+scope Unterhaltsabzug:
+  definition hoechstbetrag equals
+    let rohbetrag equals grundfreibetrag + kv_pv_beitraege - anrechnungsbetrag in
+    if rohbetrag > $0.00 then rohbetrag else $0.00
+
+  definition unterhalt_abzug equals
+    if aufwendungen > hoechstbetrag then hoechstbetrag else aufwendungen
+```
