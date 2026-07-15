@@ -274,3 +274,68 @@ scope TestGewstZahlungBindetAnrechnung:
   assertion anr = $3,000.00
   assertion fest = $10,747.00
 ```
+
+## VZ-Goldens F1b 2024/2025 (M5): SolZ-Drift materialisiert in der Kette
+
+Klon des Solifalls TestSoliUeberFreigrenze mit unveraenderten Sachverhalts-Inputs,
+NUR veranlagungszeitraum variiert. Erwartungswerte unabhaengig (dev-2-Ketten +
+golden/generate_cases.py::tarif, BMF-Corpus). Tarif driftet (§32a-params), SolZ
+driftet (Freigrenze). NEGATIVTEST: die SolZ-Zeile weicht vom frueheren 2026-Pin ab
+(2024: 622,72 statt 358,54; 2025: 373,42 statt 325,82) - Beleg, dass die Enum->int-
+Call-Site-Bruecke die VZ-Freigrenze (2024=18.130, 2025=19.950) zieht, nicht die
+2026er (20.350).
+
+```catala
+#[test]
+declaration scope TestF1bVz2024:
+  # zvE 100000 -> tarif 31363 (VZ2024). anrechnung min(8000; 31363; 8400)=8000.
+  # fest 31363-8000=23363. SolZ: FG 18130. min(5,5%x23363=1284,965;
+  # 11,9%x(23363-18130)=11,9%x5233=622,727) -> Cent-Schnitt 622,72.
+  internal r content EuerUnternehmerKette
+  output tarif content money
+  output fest content money
+  output solz content money
+
+scope TestF1bVz2024:
+  definition r equals output of EuerUnternehmerKette with {
+    -- betriebseinnahmen: $150,000.00
+    -- betriebsausgaben: $49,964.00
+    -- gewerbesteuer_messbetrag: $2,000.00
+    -- tatsaechlich_zu_zahlende_gewst: $8,400.00
+    -- summe_positive_einkuenfte: $100,036.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2024 }
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion tarif = $31,363.00
+  assertion fest = $23,363.00
+  assertion solz = $622.72
+```
+
+```catala
+#[test]
+declaration scope TestF1bVz2025:
+  # zvE 100000 -> tarif 31088 (VZ2025). fest 31088-8000=23088. SolZ: FG 19950.
+  # min(5,5%x23088=1269,84; 11,9%x(23088-19950)=11,9%x3138=373,422) -> 373,42.
+  internal r content EuerUnternehmerKette
+  output tarif content money
+  output fest content money
+  output solz content money
+
+scope TestF1bVz2025:
+  definition r equals output of EuerUnternehmerKette with {
+    -- betriebseinnahmen: $150,000.00
+    -- betriebsausgaben: $49,964.00
+    -- gewerbesteuer_messbetrag: $2,000.00
+    -- tatsaechlich_zu_zahlende_gewst: $8,400.00
+    -- summe_positive_einkuenfte: $100,036.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2025 }
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion tarif = $31,088.00
+  assertion fest = $23,088.00
+  assertion solz = $373.42
+```

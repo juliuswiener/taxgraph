@@ -318,3 +318,71 @@ scope TestQuoteEins:
   assertion fest = $0.00
   assertion solz = $0.00
 ```
+
+## VZ-Goldens F4b 2024/2025 (M5): SolZ-Drift materialisiert in der Kette
+
+Klon von TestGezahlteSteuerBindet mit unveraenderten Sachverhalts-Inputs, NUR
+veranlagungszeitraum variiert. Erwartungswerte unabhaengig (dev-2-Ketten +
+golden/generate_cases.py::tarif, BMF-Corpus). tarif + SolZ driften; Durchschnitts-
+satz 0,2 und Anrechnungs-Bindung (gezahlt 3000) VZ-stabil. NEGATIVTEST: SolZ weicht
+vom frueheren 2026-Pin ab (2024: 1.217,72 statt 953,54; 2025: 968,42 statt 920,82) -
+Beleg der Enum->int-Call-Site-Bruecke (VZ-Freigrenze statt 2026er 20.350).
+
+```catala
+#[test]
+declaration scope TestF4bVz2024:
+  # zvE 100000 -> deutsche ESt 31363 (VZ2024). Durchschnittssatz 0,2 -> Hoechst-
+  # betrag 6272,60; gezahlt 3000 < Hoechstbetrag -> anrechnung 3000. fest 31363-
+  # 3000=28363. SolZ: FG 18130. min(5,5%x28363=1559,965; 11,9%x(28363-18130)=
+  # 11,9%x10233=1217,727) -> Cent-Schnitt 1217,72.
+  internal r content DbaAnrechnungKette
+  output tarif content money
+  output anr content money
+  output fest content money
+  output solz content money
+
+scope TestF4bVz2024:
+  definition r equals output of DbaAnrechnungKette with {
+    -- einkuenfte_gesamt: $100,036.00
+    -- auslaendische_einkuenfte_staat: $20,000.00
+    -- gezahlte_auslaendische_steuer: $3,000.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2024 }
+  definition tarif equals r.deutsche_est_inkl_ausl
+  definition anr equals r.anrechnung
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion tarif = $31,363.00
+  assertion anr = $3,000.00
+  assertion fest = $28,363.00
+  assertion solz = $1,217.72
+```
+
+```catala
+#[test]
+declaration scope TestF4bVz2025:
+  # zvE 100000 -> deutsche ESt 31088 (VZ2025). anrechnung 3000. fest 28088.
+  # SolZ: FG 19950. min(5,5%x28088=1544,84; 11,9%x(28088-19950)=11,9%x8138=
+  # 968,422) -> 968,42.
+  internal r content DbaAnrechnungKette
+  output tarif content money
+  output anr content money
+  output fest content money
+  output solz content money
+
+scope TestF4bVz2025:
+  definition r equals output of DbaAnrechnungKette with {
+    -- einkuenfte_gesamt: $100,036.00
+    -- auslaendische_einkuenfte_staat: $20,000.00
+    -- gezahlte_auslaendische_steuer: $3,000.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2025 }
+  definition tarif equals r.deutsche_est_inkl_ausl
+  definition anr equals r.anrechnung
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion tarif = $31,088.00
+  assertion anr = $3,000.00
+  assertion fest = $28,088.00
+  assertion solz = $968.42
+```
