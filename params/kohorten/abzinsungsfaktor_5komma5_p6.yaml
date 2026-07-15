@@ -1,0 +1,65 @@
+# § 6 Abs. 1 Nr. 3a Buchst. e EStG - Rueckstellungs-Abzinsungsfaktoren (5,5 %).
+# Restlaufzeit in ganzen Jahren -> Barwertfaktor. NICHT vz-versioniert (mathematische
+# Konstante). Deterministisch abgeleitet: faktor(n) = 1/1,055^n, kaufmaennisch 3 Dezimalen.
+# Regeneriert via params/generate_abzinsungsfaktor.py; getestet tests/test_abzinsungsfaktor.py.
+# GUELTIGKEIT (4. Corona-StHG): gilt NUR Rueckstellungen (Nr. 3a e). Verbindlichkeiten-Abzinsung
+# (Nr. 3 a. F., BMF v. 26.05.2005) obsolet ab WJ-Ende > 31.12.2022.
+parameter: abzinsungsfaktor_rueckstellung_5komma5
+authority: gesetz
+redistributable: true
+rechtsquelle: {gesetz: EStG, paragraph: '6', absatz: '1', nummer: '3a', buchstabe: 'e'}
+datenquelle: 'Deterministische Ableitung 1/1,055^n aus der Norm-Konstante 5,5 % (sources/gesetze-im-internet/estg_p6_2026-07-14.txt); Stuetzwerte gegen BMF v. 26.05.2005 (BStBl I S. 699, Tabelle 2): RLZ 1->0,948 / 10->0,585 / 19->0,362.'
+einheit: {faktor: faktor}
+
+# Schluessel = Restlaufzeit am Bilanzstichtag in ganzen Jahren.
+kohorten:
+  1: {faktor: 0.948}
+  2: {faktor: 0.898}
+  3: {faktor: 0.852}
+  4: {faktor: 0.807}
+  5: {faktor: 0.765}
+  6: {faktor: 0.725}
+  7: {faktor: 0.687}
+  8: {faktor: 0.652}
+  9: {faktor: 0.618}
+  10: {faktor: 0.585}
+  11: {faktor: 0.555}
+  12: {faktor: 0.526}
+  13: {faktor: 0.499}
+  14: {faktor: 0.473}
+  15: {faktor: 0.448}
+  16: {faktor: 0.425}
+  17: {faktor: 0.402}
+  18: {faktor: 0.381}
+  19: {faktor: 0.362}
+  20: {faktor: 0.343}
+  21: {faktor: 0.325}
+  22: {faktor: 0.308}
+  23: {faktor: 0.292}
+  24: {faktor: 0.277}
+  25: {faktor: 0.262}
+  26: {faktor: 0.249}
+  27: {faktor: 0.236}
+  28: {faktor: 0.223}
+  29: {faktor: 0.212}
+  30: {faktor: 0.201}
+  31: {faktor: 0.190}
+  32: {faktor: 0.180}
+  33: {faktor: 0.171}
+  34: {faktor: 0.162}
+  35: {faktor: 0.154}
+  36: {faktor: 0.146}
+  37: {faktor: 0.138}
+  38: {faktor: 0.131}
+  39: {faktor: 0.124}
+  40: {faktor: 0.117}
+  41: {faktor: 0.111}
+  42: {faktor: 0.106}
+  43: {faktor: 0.100}
+  44: {faktor: 0.095}
+  45: {faktor: 0.090}
+  46: {faktor: 0.085}
+  47: {faktor: 0.081}
+  48: {faktor: 0.077}
+  49: {faktor: 0.073}
+  50: {faktor: 0.069}
