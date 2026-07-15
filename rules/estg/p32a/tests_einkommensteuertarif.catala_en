@@ -113,3 +113,25 @@ scope TestSplitting2026:
     -- zu_versteuerndes_einkommen_gemeinsam: $120000.00 -- veranlagungszeitraum: VZ2026 }).tarifliche_steuer
   assertion s_120000 = $28466.00
 ```
+
+## Veranlagungszeitraum-Enum -> Jahr-int (Bruecke fuer separate Module)
+
+Beweist die zentrale Enum->int-Uebersetzung, die die Integrations-Ketten fuer den
+Solzg-Aufruf nutzen (int-VZ-Konvention). Einzige VZ-Quelle je Kette bleibt der
+Enum-Input; der int wird hieraus abgeleitet.
+
+```catala
+#[test]
+declaration scope TestVeranlagungszeitraumJahr:
+  output j2024 content integer
+  output j2025 content integer
+  output j2026 content integer
+
+scope TestVeranlagungszeitraumJahr:
+  definition j2024 equals (output of P32a.VeranlagungszeitraumJahr with { -- vz: VZ2024 }).jahr
+  assertion j2024 = 2024
+  definition j2025 equals (output of P32a.VeranlagungszeitraumJahr with { -- vz: VZ2025 }).jahr
+  assertion j2025 = 2025
+  definition j2026 equals (output of P32a.VeranlagungszeitraumJahr with { -- vz: VZ2026 }).jahr
+  assertion j2026 = 2026
+```

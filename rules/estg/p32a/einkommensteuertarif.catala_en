@@ -43,6 +43,31 @@ declaration structure Tarifparameter:
   data zone5_abzug content decimal
 ```
 
+## Veranlagungszeitraum als Jahr-int (Bruecke fuer separate Module)
+
+Module ausserhalb dieses Tarif-Moduls koennen `Veranlagungszeitraum` nicht per
+`match` in ein Jahr uebersetzen (Catala-1.2.0-Grenze, s. Anmerkung zur
+Modulstruktur unten): der `match` auf den importierten Enum braeche deren
+OCaml-Build. Solzg und die int-VZ-Handregeln (Kinderfreibetrag, Unterhalt)
+arbeiten daher mit dem Jahr als `integer`. Dieser co-lozierte Scope uebersetzt
+den Enum EINMAL zentral (der `match` liegt im definierenden Modul, also legal);
+Aufrufer reichen den Enum nur durch (pass-through ist erlaubt) und erhalten den
+int. So gibt es genau EINE VZ-Quelle je Kette (der Enum-Input), aus der der int
+abgeleitet wird - kein zweiter, unabhaengig setzbarer VZ-Wert, der driften koennte.
+
+```catala
+declaration scope VeranlagungszeitraumJahr:
+  input vz content Veranlagungszeitraum
+  output jahr content integer
+
+scope VeranlagungszeitraumJahr:
+  definition jahr equals
+    match vz with pattern
+    -- VZ2024: 2024
+    -- VZ2025: 2025
+    -- VZ2026: 2026
+```
+
 ## Parameter-Layer
 
 Werte je Veranlagungszeitraum. Quellen siehe

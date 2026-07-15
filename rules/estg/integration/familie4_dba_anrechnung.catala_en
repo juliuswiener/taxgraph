@@ -97,6 +97,7 @@ declaration scope DbaAnrechnungKette:
   internal hoechstbetrag_lauf content AnrechnungHoechstbetrag
   internal tarif_nach_anrechnung content Einkommensteuertarif.FestzusetzendeEstGesamt
   internal soli_lauf content Solzg.Solidaritaetszuschlag
+  internal vz_jahr content integer
   output zu_versteuerndes_einkommen content money
   output deutsche_est_inkl_ausl content money
   output anrechnung content money
@@ -173,12 +174,18 @@ scope DbaAnrechnungKette:
 
   definition festzusetzende_est equals tarif_nach_anrechnung.festzusetzende_est
 
+  # Enum-VZ -> Jahr-int fuer Solzg (int-VZ-Konvention). Einzige VZ-Quelle bleibt
+  # der Enum-Input; der int wird zentral abgeleitet (kein Drift-Vektor Tarif/SolZ).
+  definition vz_jahr equals
+    (output of Einkommensteuertarif.VeranlagungszeitraumJahr with {
+      -- vz: veranlagungszeitraum }).jahr
+
   # § 3, § 4 SolzG: Bemessungsgrundlage ist die festzusetzende ESt.
   definition soli_lauf equals
     output of Solzg.Solidaritaetszuschlag with {
       -- bemessungsgrundlage: festzusetzende_est
       -- splitting: false
-      -- veranlagungszeitraum: 2026 }
+      -- veranlagungszeitraum: vz_jahr }
 
   definition soli equals soli_lauf.solidaritaetszuschlag
 ```
