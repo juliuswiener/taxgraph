@@ -1,0 +1,49 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10_1_5_kinderbetreuung_vz2024
+version: 3
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - verwendet zwei drittel statt 80 prozent.
+  formulierungen:
+  - 'nicht_echt (Altfassungs-Aenderungsbefehl-Artefakt; Adjudikation Instructor 2026-07-15,
+    Muster C24-P2/C25-R1). jstg2024-Freeze belegt: (1) Aenderungsbefehl traegt alt=zwei
+    Drittel/4.000 woertlich als die ersetzten Angaben, (2) § 52 Abs. 1 neu ''erstmals
+    fuer den Veranlagungszeitraum 2025 anzuwenden'', (3) Art. 56 Abs. 7 ''Artikel
+    4 ... treten am 1. Januar 2025 in Kraft'' -> VZ 2024 = Altwerte. Die Regel formalisiert
+    exakt die VZ-2024-Altfassung (2/3, 4.000); der Judge misst faelschlich gegen die
+    Neuwerte 80%/4.800 der einzigen Quelle (Aenderungsbefehl). Code korrekt: equivalence+clerk+praezisions_lint
+    PASS.'
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - verwendet 4.000 euro statt 4.800 euro als obergrenze.
+  formulierungen:
+  - 'nicht_echt (Altfassungs-Aenderungsbefehl-Artefakt; Adjudikation Instructor 2026-07-15,
+    Muster C24-P2/C25-R1). jstg2024-Freeze belegt: (1) Aenderungsbefehl traegt alt=zwei
+    Drittel/4.000 woertlich als die ersetzten Angaben, (2) § 52 Abs. 1 neu ''erstmals
+    fuer den Veranlagungszeitraum 2025 anzuwenden'', (3) Art. 56 Abs. 7 ''Artikel
+    4 ... treten am 1. Januar 2025 in Kraft'' -> VZ 2024 = Altwerte. Die Regel formalisiert
+    exakt die VZ-2024-Altfassung (2/3, 4.000); der Judge misst faelschlich gegen die
+    Neuwerte 80%/4.800 der einzigen Quelle (Aenderungsbefehl). Code korrekt: equivalence+clerk+praezisions_lint
+    PASS.'
+  triage: nicht_echt
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 abs. 1 nr. 5 estg
+  formulierungen:
+  - 'nicht_echt (Altfassungs-Aenderungsbefehl-Artefakt; Adjudikation Instructor 2026-07-15,
+    Muster C24-P2/C25-R1). jstg2024-Freeze belegt: (1) Aenderungsbefehl traegt alt=zwei
+    Drittel/4.000 woertlich als die ersetzten Angaben, (2) § 52 Abs. 1 neu ''erstmals
+    fuer den Veranlagungszeitraum 2025 anzuwenden'', (3) Art. 56 Abs. 7 ''Artikel
+    4 ... treten am 1. Januar 2025 in Kraft'' -> VZ 2024 = Altwerte. Die Regel formalisiert
+    exakt die VZ-2024-Altfassung (2/3, 4.000); der Judge misst faelschlich gegen die
+    Neuwerte 80%/4.800 der einzigen Quelle (Aenderungsbefehl). Code korrekt: equivalence+clerk+praezisions_lint
+    PASS.'
+  triage: nicht_echt
+  klasse: wirkt_hinein

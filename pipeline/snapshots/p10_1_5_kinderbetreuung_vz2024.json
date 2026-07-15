@@ -1,0 +1,197 @@
+{
+  "bedingungen": [
+    "nur_veranlagungszeitraum_2024",
+    "zwei_drittel_deckel_4000_je_kind"
+  ],
+  "candidate_id": "p10_1_5_kinderbetreuung_vz2024",
+  "catala_a": "declaration scope KinderbetreuungVz2024:\n  input aufwendungen content money\n  output kinderbetreuung_abzug content money\n\nscope KinderbetreuungVz2024:\n  definition kinderbetreuung_abzug equals\n    let zwei_drittel equals (aufwendungen * 2) / 3 in\n    if zwei_drittel > $4,000.00 then $4,000.00 else zwei_drittel",
+  "catala_a_sha256": "f4f2fe77871aca185dd03ea0f77cd0bcba2b35c18458b46c61ee73726fd267c4",
+  "catala_b": "declaration scope KinderbetreuungVz2024:\n  input aufwendungen content money\n  output kinderbetreuung_abzug content money\n\nscope KinderbetreuungVz2024:\n  definition kinderbetreuung_abzug equals\n    let zwei_drittel equals aufwendungen * (2.0 / 3.0) in\n    if zwei_drittel > $4,000.00 then $4,000.00 else zwei_drittel",
+  "catala_b_sha256": "218ef871f9ad19d880ce878d05152e8d3e9aa1ac77bd2cc46eda4dc6925c3008",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'kinderbetreuung_abzug'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Verwendet zwei Drittel statt 80 Prozent.",
+      "Verwendet 4.000 Euro statt 4.800 Euro als Obergrenze."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 2,
+        "annahmen": 0,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 10 abs. 1 nr. 5 estg"
+            ],
+            "text": "„zwei Drittel“ durch die Angabe „80 Prozent“ ersetzt"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 10 abs. 1 nr. 5 estg"
+            ],
+            "text": "„4.000 Euro“ durch die Angabe „4.800 Euro“ ersetzt"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "„zwei Drittel“ durch die Angabe „80 Prozent“ ersetzt",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 10 abs. 1 nr. 5 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Verwendet 4.000 Euro statt 4.800 Euro als Obergrenze.",
+            "eingeschmolzen": "Verwendet 4.000 Euro statt 4.800 Euro.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        4,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "f0cb1996f4f4",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "„zwei Drittel“ durch die Angabe „80 Prozent“ ersetzt",
+        "referenz": "§ 10 Abs. 1 Nr. 5 EStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "„4.000 Euro“ durch die Angabe „4.800 Euro“ ersetzt",
+        "referenz": "§ 10 Abs. 1 Nr. 5 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-15T16:36:52+00:00"
+  },
+  "module_name": "KinderbetreuungVz2024",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

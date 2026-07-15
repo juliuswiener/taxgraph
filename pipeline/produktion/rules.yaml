@@ -2311,6 +2311,8 @@ regeln:
     andere_einkuenfte_bezuege: 500
 - rule_id: p10_1_5_kinderbetreuung
   norm: § 10 Abs. 1 Nr. 5 EStG (Kinderbetreuungskosten, 80 % / 4.800-Euro-Deckel)
+  gueltig_ab_vz: 2025
+  gueltig_hinweis: 'Diese Fassung (80 %/4.800) gilt ab VZ 2025 (JStG 2024, Art. 4, § 52 Abs. 1). VZ 2024 = eigene Regel p10_1_5_kinderbetreuung_vz2024 (zwei Drittel / 4.000).'
   quellen:
   - typ: gesetz
     label: § 10 Abs. 1 Nr. 5 S. 1 EStG (80 % der Aufwendungen, hoechstens 4.800 je Kind)
@@ -2366,6 +2368,66 @@ regeln:
   - aufwendungen: 6000
   - aufwendungen: 8000
   - aufwendungen: 0
+- rule_id: p10_1_5_kinderbetreuung_vz2024
+  norm: § 10 Abs. 1 Nr. 5 EStG i.d.F. bis VZ 2024 (Kinderbetreuung, zwei Drittel / 4.000-Euro-Deckel)
+  hinweis: 'VZ-2024-Altfassung des § 10 Abs. 1 Nr. 5. Das JStG 2024 (Art. 4, wirksam ab VZ 2025) ersetzte "zwei Drittel" -> "80 Prozent" und "4.000 Euro" -> "4.800 Euro"; die HIER zu formalisierende Fassung ist die VOR-Aenderung (VZ 2024): zwei Drittel der Aufwendungen, hoechstens 4.000 Euro je Kind. Rechenkern: kinderbetreuung_abzug = min(aufwendungen * 2 / 3, $4,000.00). PRAEZISION: "zwei Drittel" als * 2 / 3 encodieren (erst money * 2, dann / 3), NICHT als Dezimal-Naeherung 0,6667 (Klasse-5-Vermeidung); Cent-Rundung zuletzt (money-Standard). Der 4.000-Deckel gilt JE KIND (Regel rechnet je Kind, Aggregation in der § 2-Integration). Einziger Sachverhalts-Input aufwendungen (money); die beiden Betraege sind Norm-Konstanten, KEINE Inputs. KEINE VZ-Variable und KEINE Jahres-Konstante im Code materialisieren - die VZ-Bindung traegt das Manifest (Geltungsbedingung). Die Anwendbarkeit (Kind < 14, Haushaltszugehoerigkeit) ist mit der Bestandsregel p10_1_5_kinderbetreuung identisch und wird dort / in der § 2-Integration gefuehrt (diese Regel traegt nur die VZ-2024-Wert-Drift).'
+  quellen:
+  - typ: gesetz
+    label: § 10 Abs. 1 Nr. 5 EStG, VZ-2024-Altfassung (JStG-2024-Aenderungsbefehl belegt die Vor-Werte zwei Drittel / 4.000 Euro)
+    datei: sources/bgbl/jstg2024_estg_aenderungen.txt
+    zitatanker: In Absatz 1 Nummer 5 werden die Wörter „zwei Drittel" durch die Angabe „80 Prozent" ersetzt und wird die Angabe „4.000 Euro" durch die Angabe „4.800 Euro" ersetzt
+    auszug: In Absatz 1 Nummer 5 werden die Wörter „zwei Drittel" durch die Angabe „80 Prozent" ersetzt und wird die Angabe „4.000 Euro" durch die Angabe „4.800 Euro" ersetzt
+  geltungsbedingungen:
+  - bedingung: nur_veranlagungszeitraum_2024
+    deckt_ab: In Absatz 1 Nummer 5 werden die Wörter „zwei Drittel" durch die Angabe „80 Prozent" ersetzt
+    quelle: Art. 4 JStG 2024 (BGBl. 2024 I Nr. 387), § 52 Abs. 1 EStG
+    beschreibung: 'Diese Fassung gilt NUR fuer VZ 2024. Art. 4 JStG 2024 (80 %/4.800) tritt am 1.1.2025 in Kraft (§ 52 Abs. 1: erstmals VZ 2025); ab VZ 2025 gilt p10_1_5_kinderbetreuung. VZ-Auswahl in der Multi-VZ-Integration.'
+  - bedingung: zwei_drittel_deckel_4000_je_kind
+    deckt_ab: wird die Angabe „4.000 Euro"
+    quelle: § 10 Abs. 1 Nr. 5 S. 1 EStG i.d.F. bis VZ 2024
+    beschreibung: Abzug = min(2/3 x aufwendungen, 4.000). Der 4.000-Deckel gilt JE KIND; die Regel rechnet je Kind, Aggregation ueber mehrere Kinder in der § 2-Integration.
+  rundung: []
+  signature:
+    scope: KinderbetreuungVz2024
+    inputs:
+      aufwendungen: money
+    output: kinderbetreuung_abzug
+  test_seed:
+  - quelle: sources/bgbl/jstg2024_estg_aenderungen.txt
+    zitatanker: die Angabe „4.000 Euro"
+    herkunft: synthetisch
+    rechenweg: Aufwendungen 3.000. 2/3 x 3.000 = 2.000 < 4.000 -> 2.000,00.
+    inputs:
+      aufwendungen: 3000
+    expected: 2000.0
+  - quelle: sources/bgbl/jstg2024_estg_aenderungen.txt
+    zitatanker: die Angabe „4.000 Euro"
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Deckel-Grenze: Aufwendungen 6.000. 2/3 x 6.000 = 4.000 = Deckel -> 4.000,00.'
+    inputs:
+      aufwendungen: 6000
+    expected: 4000.0
+  - quelle: sources/bgbl/jstg2024_estg_aenderungen.txt
+    zitatanker: die Angabe „4.000 Euro"
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Deckelung: Aufwendungen 9.000. 2/3 x 9.000 = 6.000 > 4.000 -> 4.000,00.'
+    inputs:
+      aufwendungen: 9000
+    expected: 4000.0
+  - quelle: sources/bgbl/jstg2024_estg_aenderungen.txt
+    zitatanker: zwei Drittel
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER Null: 2/3 x 0 = 0 -> 0,00.'
+    inputs:
+      aufwendungen: 0
+    expected: 0.0
+  raster:
+  - aufwendungen: 3000
+  - aufwendungen: 6000
+  - aufwendungen: 9000
+  - aufwendungen: 0
+  exclude_rule_ids:
+  - p10_1_5_kinderbetreuung_vz2024
 - rule_id: p10_1a_realsplitting
   norm: § 10 Abs. 1a Nr. 1 EStG (Realsplitting, Unterhalt Ex-Ehegatte, 13.805-Euro-Deckel)
   quellen:
