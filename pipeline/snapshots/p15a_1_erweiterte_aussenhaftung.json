@@ -1,0 +1,399 @@
+{
+  "bedingungen": [
+    "erweitert_p2_subsumtion",
+    "haftung_171_hgb_abs1",
+    "einlage_differenz_haftungsbetrag",
+    "s3_handelsregister_eingetragen",
+    "s3_haftung_nachgewiesen",
+    "s3_keine_haftungsbefreiung"
+  ],
+  "candidate_id": "p15a_1_erweiterte_aussenhaftung",
+  "catala_a": "declaration scope ErweiterteAussenhaftung:\n  input verlustanteil content money\n  input kapitalkonto content money\n  input eingetragene_einlage content money\n  input geleistete_einlage content money\n  output ausgleichsfaehiger_verlust_erweitert content money\n\nscope ErweiterteAussenhaftung:\n  definition ausgleichsfaehiger_verlust_erweitert equals\n    let haftungsbetrag equals\n      if eingetragene_einlage > geleistete_einlage\n      then eingetragene_einlage - geleistete_einlage\n      else $0.00\n    in\n    let positives_kapitalkonto equals\n      if kapitalkonto > $0.00\n      then kapitalkonto\n      else $0.00\n    in\n    let obergrenze equals positives_kapitalkonto + haftungsbetrag in\n    if verlustanteil < obergrenze\n    then verlustanteil\n    else obergrenze",
+  "catala_a_sha256": "66ffcda3c4097b4e13a28f25080672220cb7b260663ab7ee205ed7af1fdddf04",
+  "catala_b": "declaration scope ErweiterteAussenhaftung:\n  input verlustanteil content money\n  input kapitalkonto content money\n  input eingetragene_einlage content money\n  input geleistete_einlage content money\n  internal haftungsbetrag content money\n  internal kapitalkonto_positiv content money\n  internal summe content money\n  output ausgleichsfaehiger_verlust_erweitert content money\n\nscope ErweiterteAussenhaftung:\n  definition haftungsbetrag equals\n    if eingetragene_einlage > geleistete_einlage\n    then eingetragene_einlage - geleistete_einlage\n    else $0.00\n\n  definition kapitalkonto_positiv equals\n    if kapitalkonto > $0.00\n    then kapitalkonto\n    else $0.00\n\n  definition summe equals kapitalkonto_positiv + haftungsbetrag\n\n  definition ausgleichsfaehiger_verlust_erweitert equals\n    if verlustanteil > summe\n    then summe\n    else verlustanteil",
+  "catala_b_sha256": "9e165a8c8a858916508042452116c4c37a0a7adb64580eeb62d53d014692c0d1",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'ausgleichsfaehiger_verlust_erweitert'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Der Ausgleich ist auf Verluste begrenzt, die ein negatives Kapitalkonto verursachen oder erhöhen.",
+      "Nur negatives Kapitalkonto wird berücksichtigt, nicht positives.",
+      "Der ausgleichsfähige Verlust wird auf die Obergrenze (haftungsbetrag + positives Kapitalkonto) begrenzt, nicht auf den Betrag, um den die eingetragene Einlage die geleistete übersteigt.",
+      "Die Bedingung 'soweit durch den Verlust ein negatives Kapitalkonto entsteht oder sich erhöht' fehlt in der Formalisierung.",
+      "Der Ausgleich wird auf positives Kapitalkonto plus Haftungsbetrag begrenzt, nicht auf negatives Kapitalkonto."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 8,
+        "annahmen": 7,
+        "norm_teile": 2
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der Ausgleich ist auf Verluste begrenzt, die ein negatives Kapitalkonto verursachen oder erhöhen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "kapitalkonto"
+            ],
+            "text": "Nur negatives Kapitalkonto wird berücksichtigt, nicht positives."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der ausgleichsfähige Verlust wird auf die Obergrenze (haftungsbetrag + positives Kapitalkonto) begrenzt, nicht auf den B"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Bedingung 'soweit durch den Verlust ein negatives Kapitalkonto entsteht oder sich erhöht' fehlt in der Formalisierun"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der Haftungsbetrag wird nur berechnet, wenn die eingetragene Einlage die geleistete übersteigt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Das Kapitalkonto wird auf positive Werte beschränkt."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der Haftungsbetrag wird nur bei positiver Differenz (eingetragene > geleistete Einlage) berücksichtigt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der Ausgleich wird auf positives Kapitalkonto plus Haftungsbetrag begrenzt, nicht auf negatives Kapitalkonto."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "kapitalkonto",
+              "interpretation"
+            ],
+            "text": "Positives Kapitalkonto wird als nicht relevant für die Haftungsberechnung angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "verlustanteil",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Der Verlustanteil wird als bereits feststehend und nicht weiter zu prüfend angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "kapitalkonto",
+              "interpretation"
+            ],
+            "text": "Das Kapitalkonto wird als positiv oder null interpretiert, wenn es negativ ist."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "verlustanteil",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird vorausgesetzt, dass der Kommanditist am Bilanzstichtag haftet."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "kapitalkonto",
+              "interpretation"
+            ],
+            "text": "Negatives Kapitalkonto wird als 0 behandelt."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "verlustanteil",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Der Verlustanteil wird nur bis zur Obergrenze berücksichtigt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "verlustanteil",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Es wird vorausgesetzt, dass der Verlustanteil einen negativen Kapitalkontostand verursacht oder erhöht."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Der ausgleichsfähige Verlust wird auf die Obergrenze (haftungsbetrag + positives Kapitalkonto) begrenzt, nicht auf den Betrag, um den die eingetragene Einlage d",
+            "eingeschmolzen": "Der ausgleichsfähige Verlust wird auf die Obergrenze (haftungsbetrag + positives Kapitalkonto) begrenzt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Der Ausgleich ist auf Verluste begrenzt, die ein negatives Kapitalkonto verursachen oder erhöhen.",
+            "eingeschmolzen": "Der Ausgleich wird auf positives Kapitalkonto begrenzt, nicht auf negatives.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Der Haftungsbetrag wird nur bei positiver Differenz (eingetragene > geleistete Einlage) berücksichtigt.",
+            "eingeschmolzen": "Der Haftungsbetrag wird nur bei positiver Differenz zwischen eingetragener und geleisteter Einlage berücksichtigt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Negatives Kapitalkonto wird als 0 behandelt.",
+            "eingeschmolzen": "Negatives Kapitalkonto wird auf null gesetzt.",
+            "key": [
+              "betrifft_kat",
+              "kapitalkonto",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Negatives Kapitalkonto wird als 0 behandelt.",
+            "eingeschmolzen": "Negatives Kapitalkonto wird als nicht ausgleichsfähig interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "kapitalkonto",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Der Verlustanteil wird nur bis zur Obergrenze berücksichtigt.",
+            "eingeschmolzen": "Es wird angenommen, dass der Verlustanteil nur bis zur Obergrenze ausgeglichen wird.",
+            "key": [
+              "betrifft_kat",
+              "verlustanteil",
+              "geltungsvoraussetzung"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        6,
+        4,
+        4,
+        2,
+        1
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "54dc3871cc1e",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "soweit durch den Verlust ein negatives Kapitalkonto entsteht oder sich erhöht",
+        "referenz": "§ 15a Abs. 1 S. 2 EStG"
+      },
+      {
+        "abgedeckt_von": "haftung_171_hgb_abs1",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Haftet der Kommanditist am Bilanzstichtag den Gläubigern der Gesellschaft auf Grund des § 171 Absatz 1 des Handelsgesetzbuchs",
+        "referenz": "§ 15a Abs. 1 S. 2 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Positives Kapitalkonto wird als nicht relevant für die Haftungsberechnung angenommen.",
+        "bedingung_id": null,
+        "betrifft": "kapitalkonto",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der Verlustanteil wird als bereits feststehend und nicht weiter zu prüfend angenommen.",
+        "bedingung_id": "konv:input_nur_etikettiertes",
+        "betrifft": "verlustanteil",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Das Kapitalkonto wird als positiv oder null interpretiert, wenn es negativ ist.",
+        "bedingung_id": null,
+        "betrifft": "kapitalkonto",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Es wird vorausgesetzt, dass der Kommanditist am Bilanzstichtag haftet.",
+        "bedingung_id": "haftung_171_hgb_abs1",
+        "betrifft": "verlustanteil",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Negatives Kapitalkonto wird als 0 behandelt.",
+        "bedingung_id": null,
+        "betrifft": "kapitalkonto",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der Verlustanteil wird nur bis zur Obergrenze berücksichtigt.",
+        "bedingung_id": null,
+        "betrifft": "verlustanteil",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Es wird vorausgesetzt, dass der Verlustanteil einen negativen Kapitalkontostand verursacht oder erhöht.",
+        "bedingung_id": null,
+        "betrifft": "verlustanteil",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-15T13:49:10+00:00"
+  },
+  "module_name": "ErweiterteAussenhaftung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

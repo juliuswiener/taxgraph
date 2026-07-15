@@ -1113,3 +1113,129 @@ entscheidungen:
     text: Der ausgleichsfähige Verlust wird auf positives Kapitalkonto begrenzt, nicht auf negatives/erhöhtes negatives Kapitalkonto.
   entschieden_via: instructor-adjudikation-c24-p2-msg1934
   timestamp: '2026-07-15T13:14:42.127021+00:00'
+- rule_id: p15a_1_erweiterte_aussenhaftung
+  schluessel: '["abweichung", "abweichung_text", "der ausgleich ist auf verluste begrenzt, die ein negatives kapitalkonto verursachen oder erhoehen."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  begruendung: 'Judge-False-Positive (aequivalente-Umformung, Ueber-Flag Belege 7-11, nach C24-P2 5+6). Instructor-Adjudikation 4620d012 msg 1989. Fall-Trichotomie (kombinierte Form gegen S2-allein gelesen): (i) verlust<=max(KK,0) -> voll via S1, kein neg. KK, Formel gibt verlust; (ii) max(KK,0)<verlust<=max(KK,0)+haftung -> ueberschiessender Teil erzeugt neg. KK = exakt S2-Fall ''soweit ... entsteht oder sich erhoeht'', gedeckt bis haftungsbetrag; (iii) darueber verrechenbar. Die angeblich fehlende soweit-Bedingung ist in Zweig (ii) ENTHALTEN. Obergrenze=positives_KK+haftungsbetrag = min(verlust, max(KK,0)+max(0,eingetragene-geleistete)). Waechter: (5000,KK0,e8000,g5000)->3000, (15000,KK-3000,...)->3000, (15000,10000,e5000,g5000)->10000=P2. Subsumtion dokumentiert (Auflage 1a).'
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - der ausgleich ist auf verluste begrenzt, die ein negatives kapitalkonto verursachen oder erhoehen.
+    text: Der Ausgleich ist auf Verluste begrenzt, die ein negatives Kapitalkonto verursachen oder erhöhen.
+  entschieden_via: instructor-adjudikation-c25-r1-msg1989
+  timestamp: '2026-07-15T13:55:36.591586+00:00'
+- rule_id: p15a_1_erweiterte_aussenhaftung
+  schluessel: '["abweichung", "abweichung_text", "nur negatives kapitalkonto wird beruecksichtigt, nicht positives."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  begruendung: 'Judge-False-Positive (aequivalente-Umformung, Ueber-Flag Belege 7-11, nach C24-P2 5+6). Instructor-Adjudikation 4620d012 msg 1989. Fall-Trichotomie (kombinierte Form gegen S2-allein gelesen): (i) verlust<=max(KK,0) -> voll via S1, kein neg. KK, Formel gibt verlust; (ii) max(KK,0)<verlust<=max(KK,0)+haftung -> ueberschiessender Teil erzeugt neg. KK = exakt S2-Fall ''soweit ... entsteht oder sich erhoeht'', gedeckt bis haftungsbetrag; (iii) darueber verrechenbar. Die angeblich fehlende soweit-Bedingung ist in Zweig (ii) ENTHALTEN. Obergrenze=positives_KK+haftungsbetrag = min(verlust, max(KK,0)+max(0,eingetragene-geleistete)). Waechter: (5000,KK0,e8000,g5000)->3000, (15000,KK-3000,...)->3000, (15000,10000,e5000,g5000)->10000=P2. Subsumtion dokumentiert (Auflage 1a).'
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - nur negatives kapitalkonto wird beruecksichtigt, nicht positives.
+    text: Nur negatives Kapitalkonto wird berücksichtigt, nicht positives.
+  entschieden_via: instructor-adjudikation-c25-r1-msg1989
+  timestamp: '2026-07-15T13:55:36.591586+00:00'
+- rule_id: p15a_1_erweiterte_aussenhaftung
+  schluessel: '["abweichung", "abweichung_text", "der ausgleichsfaehige verlust wird auf die obergrenze (haftungsbetrag + positives kapitalkonto) begrenzt, nicht auf den betrag, um den die eingetragene einlage die geleistete uebersteigt."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  begruendung: 'Judge-False-Positive (aequivalente-Umformung, Ueber-Flag Belege 7-11, nach C24-P2 5+6). Instructor-Adjudikation 4620d012 msg 1989. Fall-Trichotomie (kombinierte Form gegen S2-allein gelesen): (i) verlust<=max(KK,0) -> voll via S1, kein neg. KK, Formel gibt verlust; (ii) max(KK,0)<verlust<=max(KK,0)+haftung -> ueberschiessender Teil erzeugt neg. KK = exakt S2-Fall ''soweit ... entsteht oder sich erhoeht'', gedeckt bis haftungsbetrag; (iii) darueber verrechenbar. Die angeblich fehlende soweit-Bedingung ist in Zweig (ii) ENTHALTEN. Obergrenze=positives_KK+haftungsbetrag = min(verlust, max(KK,0)+max(0,eingetragene-geleistete)). Waechter: (5000,KK0,e8000,g5000)->3000, (15000,KK-3000,...)->3000, (15000,10000,e5000,g5000)->10000=P2. Subsumtion dokumentiert (Auflage 1a).'
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - der ausgleichsfaehige verlust wird auf die obergrenze (haftungsbetrag + positives kapitalkonto) begrenzt, nicht auf den betrag, um den die eingetragene einlage die geleistete uebersteigt.
+    text: Der ausgleichsfähige Verlust wird auf die Obergrenze (haftungsbetrag + positives Kapitalkonto) begrenzt, nicht auf den Betrag, um den die eingetragene Einlage die geleistete übersteigt.
+  entschieden_via: instructor-adjudikation-c25-r1-msg1989
+  timestamp: '2026-07-15T13:55:36.591586+00:00'
+- rule_id: p15a_1_erweiterte_aussenhaftung
+  schluessel: '["abweichung", "abweichung_text", "die bedingung ''soweit durch den verlust ein negatives kapitalkonto entsteht oder sich erhoeht'' fehlt in der formalisierung."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  begruendung: 'Judge-False-Positive (aequivalente-Umformung, Ueber-Flag Belege 7-11, nach C24-P2 5+6). Instructor-Adjudikation 4620d012 msg 1989. Fall-Trichotomie (kombinierte Form gegen S2-allein gelesen): (i) verlust<=max(KK,0) -> voll via S1, kein neg. KK, Formel gibt verlust; (ii) max(KK,0)<verlust<=max(KK,0)+haftung -> ueberschiessender Teil erzeugt neg. KK = exakt S2-Fall ''soweit ... entsteht oder sich erhoeht'', gedeckt bis haftungsbetrag; (iii) darueber verrechenbar. Die angeblich fehlende soweit-Bedingung ist in Zweig (ii) ENTHALTEN. Obergrenze=positives_KK+haftungsbetrag = min(verlust, max(KK,0)+max(0,eingetragene-geleistete)). Waechter: (5000,KK0,e8000,g5000)->3000, (15000,KK-3000,...)->3000, (15000,10000,e5000,g5000)->10000=P2. Subsumtion dokumentiert (Auflage 1a).'
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - die bedingung 'soweit durch den verlust ein negatives kapitalkonto entsteht oder sich erhoeht' fehlt in der formalisierung.
+    text: Die Bedingung 'soweit durch den Verlust ein negatives Kapitalkonto entsteht oder sich erhöht' fehlt in der Formalisierung.
+  entschieden_via: instructor-adjudikation-c25-r1-msg1989
+  timestamp: '2026-07-15T13:55:36.591586+00:00'
+- rule_id: p15a_1_erweiterte_aussenhaftung
+  schluessel: '["abweichung", "abweichung_text", "der ausgleich wird auf positives kapitalkonto plus haftungsbetrag begrenzt, nicht auf negatives kapitalkonto."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  begruendung: 'Judge-False-Positive (aequivalente-Umformung, Ueber-Flag Belege 7-11, nach C24-P2 5+6). Instructor-Adjudikation 4620d012 msg 1989. Fall-Trichotomie (kombinierte Form gegen S2-allein gelesen): (i) verlust<=max(KK,0) -> voll via S1, kein neg. KK, Formel gibt verlust; (ii) max(KK,0)<verlust<=max(KK,0)+haftung -> ueberschiessender Teil erzeugt neg. KK = exakt S2-Fall ''soweit ... entsteht oder sich erhoeht'', gedeckt bis haftungsbetrag; (iii) darueber verrechenbar. Die angeblich fehlende soweit-Bedingung ist in Zweig (ii) ENTHALTEN. Obergrenze=positives_KK+haftungsbetrag = min(verlust, max(KK,0)+max(0,eingetragene-geleistete)). Waechter: (5000,KK0,e8000,g5000)->3000, (15000,KK-3000,...)->3000, (15000,10000,e5000,g5000)->10000=P2. Subsumtion dokumentiert (Auflage 1a).'
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - der ausgleich wird auf positives kapitalkonto plus haftungsbetrag begrenzt, nicht auf negatives kapitalkonto.
+    text: Der Ausgleich wird auf positives Kapitalkonto plus Haftungsbetrag begrenzt, nicht auf negatives Kapitalkonto.
+  entschieden_via: instructor-adjudikation-c25-r1-msg1989
+  timestamp: '2026-07-15T13:55:36.591586+00:00'
+- rule_id: estr_4_6_uebergangsgewinn_verteilung
+  schluessel: '["abweichung", "abweichung_text", "die verteilung erfolgt nicht nur auf 1-3 jahre, sondern auf beliebige verteilungsjahre."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  begruendung: 'Judge-False-Positive. Instructor-Adjudikation 4620d012 msg 1993. (1) 1-3-Jahre-Restriktion ist Geltungsbedingung verteilung_auf_antrag_1_bis_3_jahre (Applicability), nicht in-code-Guard = etabliertes Design (Kfz-Teiler-1|2|4-Praezedenz). (2) Zaehlweise: R-4.6-Wortlaut ''auf das Jahr des Uebergangs UND das folgende Jahr'' = 2 GESAMT-Jahre -> /2; ''und die beiden folgenden'' = 3 -> /3. Gesamt-Jahre-Modell trifft die Division exakt; Judge las Folgejahre-Zahl (Fehllesung). Seeds (3000/3->1000, 3000/2->1500, 3000/1->3000).'
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - die verteilung erfolgt nicht nur auf 1-3 jahre, sondern auf beliebige verteilungsjahre.
+    text: Die Verteilung erfolgt nicht nur auf 1-3 Jahre, sondern auf beliebige verteilungsjahre.
+  entschieden_via: instructor-adjudikation-c25-r2-msg1993
+  timestamp: '2026-07-15T13:59:22.968166+00:00'
+- rule_id: estr_4_6_uebergangsgewinn_verteilung
+  schluessel: '["abweichung", "abweichung_text", "verteilung nur auf 1 oder 2 folgejahre, nicht auf 1 oder 2 jahre inkl. uebergangsjahr."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  begruendung: 'Judge-False-Positive. Instructor-Adjudikation 4620d012 msg 1993. (1) 1-3-Jahre-Restriktion ist Geltungsbedingung verteilung_auf_antrag_1_bis_3_jahre (Applicability), nicht in-code-Guard = etabliertes Design (Kfz-Teiler-1|2|4-Praezedenz). (2) Zaehlweise: R-4.6-Wortlaut ''auf das Jahr des Uebergangs UND das folgende Jahr'' = 2 GESAMT-Jahre -> /2; ''und die beiden folgenden'' = 3 -> /3. Gesamt-Jahre-Modell trifft die Division exakt; Judge las Folgejahre-Zahl (Fehllesung). Seeds (3000/3->1000, 3000/2->1500, 3000/1->3000).'
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - verteilung nur auf 1 oder 2 folgejahre, nicht auf 1 oder 2 jahre inkl. uebergangsjahr.
+    text: Verteilung nur auf 1 oder 2 Folgejahre, nicht auf 1 oder 2 Jahre inkl. Übergangsjahr.
+  entschieden_via: instructor-adjudikation-c25-r2-msg1993
+  timestamp: '2026-07-15T13:59:22.968166+00:00'

@@ -1,0 +1,363 @@
+{
+  "bedingungen": [
+    "verteilung_auf_antrag_1_bis_3_jahre",
+    "gleichmaessige_verteilung",
+    "uebergangsgewinn_saldo_input",
+    "uebergangsgewinn_positiv",
+    "veraeusserung_rest_letzter_gewinn"
+  ],
+  "candidate_id": "estr_4_6_uebergangsgewinn_verteilung",
+  "catala_a": "declaration scope UebergangsgewinnVerteilung:\n  input uebergangsgewinn content money\n  input verteilungsjahre content integer\n  output jahresbetrag content money\n\nscope UebergangsgewinnVerteilung:\n  definition jahresbetrag equals\n    if uebergangsgewinn <= $0.00 then uebergangsgewinn\n    else uebergangsgewinn * (decimal of 1 / (decimal of verteilungsjahre))",
+  "catala_a_sha256": "5b2b99867dbf13c3d09e307479d7459f7308861b5084ba60356c8f630ad53e1f",
+  "catala_b": "declaration scope UebergangsgewinnVerteilung:\n  input uebergangsgewinn content money\n  input verteilungsjahre content integer\n  output jahresbetrag content money\n\nscope UebergangsgewinnVerteilung:\n  definition jahresbetrag equals\n    if uebergangsgewinn > $0.00 then\n      uebergangsgewinn * (1.0 / (decimal of verteilungsjahre))\n    else $0.00",
+  "catala_b_sha256": "5b7ab47929ab4dce476ab1e007a576d64a65afd33902cfa123f3c8b9476589d1",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'jahresbetrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Die Verteilung erfolgt nicht nur auf 1-3 Jahre, sondern auf beliebige verteilungsjahre.",
+      "Verteilung nur auf 1 oder 2 Folgejahre, nicht auf 1 oder 2 Jahre inkl. Übergangsjahr."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 4,
+        "annahmen": 7,
+        "norm_teile": 1
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Negative Übergangsgewinne werden nicht gleichmäßig verteilt."
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Verteilung erfolgt nicht nur auf 1-3 Jahre, sondern auf beliebige verteilungsjahre."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Negativer Übergangsgewinn wird nicht verteilt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Verteilung nur auf 1 oder 2 Folgejahre, nicht auf 1 oder 2 Jahre inkl. Übergangsjahr."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "verteilungsjahre",
+              "geltungsvoraussetzung"
+            ],
+            "text": "verteilungsjahre ist positiv und entweder 2 oder 3."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "uebergangsgewinn",
+              "interpretation"
+            ],
+            "text": "Negative Werte gelten als nicht zu verteilender Übergangsgewinn."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "verteilungsjahre",
+              "interpretation"
+            ],
+            "text": "Anzahl der Verteilungsjahre ist 1 oder 2."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "uebergangsgewinn",
+              "interpretation"
+            ],
+            "text": "Negativer Übergangsgewinn wird nicht verteilt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "uebergangsgewinn",
+              "interpretation"
+            ],
+            "text": "Negativer Wert wird als nicht verteilbar angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "rundung"
+            ],
+            "text": "Keine Rundung der Jahresbeträge vorgeschrieben."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "uebergangsgewinn",
+              "einheit"
+            ],
+            "text": "uebergangsgewinn ist in Euro angegeben."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Verteilung erfolgt nicht nur auf 1-3 Jahre, sondern auf beliebige verteilungsjahre.",
+            "eingeschmolzen": "Verteilung nur auf 1 oder 2 Jahre, nicht auf 1-3 Jahre.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Verteilung erfolgt nicht nur auf 1-3 Jahre, sondern auf beliebige verteilungsjahre.",
+            "eingeschmolzen": "Verteilung nur auf 1 oder 2 Jahre, nicht auf 1-3 Jahre.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Negative Übergangsgewinne werden nicht gleichmäßig verteilt.",
+            "eingeschmolzen": "Negative Übergangsgewinne werden nicht verteilt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Negativer Übergangsgewinn wird nicht verteilt.",
+            "eingeschmolzen": "Negativer Übergangsgewinn wird nicht gleichmäßig verteilt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "verteilungsjahre ist positiv und entweder 2 oder 3.",
+            "eingeschmolzen": "verteilungsjahre ist positiv und beträgt 1, 2 oder 3.",
+            "key": [
+              "betrifft_kat",
+              "verteilungsjahre",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Anzahl der Verteilungsjahre ist 1 oder 2.",
+            "eingeschmolzen": "Anzahl der Verteilungsjahre wird als 1 oder 2 interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "verteilungsjahre",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Negativer Übergangsgewinn wird nicht verteilt.",
+            "eingeschmolzen": "Negativer Übergangsgewinn wird als Sonderfall behandelt.",
+            "key": [
+              "betrifft_kat",
+              "uebergangsgewinn",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        5,
+        3,
+        2,
+        1,
+        1
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "e7be58c8ab95",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "verteilung_auf_antrag_1_bis_3_jahre",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "gleichmäßig entweder auf das Jahr des Übergangs und das folgende Jahr oder auf das Jahr des Übergangs und die beiden folgenden Jahre verteilt werden",
+        "referenz": "R 4.6 S. 2 EStR"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "verteilungsjahre ist positiv und entweder 2 oder 3.",
+        "bedingung_id": "verteilung_auf_antrag_1_bis_3_jahre",
+        "betrifft": "verteilungsjahre",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Negative Werte gelten als nicht zu verteilender Übergangsgewinn.",
+        "bedingung_id": "uebergangsgewinn_positiv",
+        "betrifft": "uebergangsgewinn",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Anzahl der Verteilungsjahre ist 1 oder 2.",
+        "bedingung_id": null,
+        "betrifft": "verteilungsjahre",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Negativer Übergangsgewinn wird nicht verteilt.",
+        "bedingung_id": "uebergangsgewinn_positiv",
+        "betrifft": "uebergangsgewinn",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Negativer Wert wird als nicht verteilbar angenommen.",
+        "bedingung_id": "uebergangsgewinn_positiv",
+        "betrifft": "uebergangsgewinn",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Keine Rundung der Jahresbeträge vorgeschrieben.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "jahresbetrag",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "uebergangsgewinn ist in Euro angegeben.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "uebergangsgewinn",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-15T13:52:57+00:00"
+  },
+  "module_name": "UebergangsgewinnVerteilung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

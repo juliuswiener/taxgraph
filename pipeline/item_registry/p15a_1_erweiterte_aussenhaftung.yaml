@@ -1,0 +1,83 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p15a_1_erweiterte_aussenhaftung
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der ausgleich ist auf verluste begrenzt, die ein negatives kapitalkonto verursachen
+    oder erhoehen.
+  formulierungen:
+  - Der Ausgleich ist auf Verluste begrenzt, die ein negatives Kapitalkonto verursachen
+    oder erhöhen.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - nur negatives kapitalkonto wird beruecksichtigt, nicht positives.
+  formulierungen:
+  - Nur negatives Kapitalkonto wird berücksichtigt, nicht positives.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der ausgleichsfaehige verlust wird auf die obergrenze (haftungsbetrag + positives
+    kapitalkonto) begrenzt, nicht auf den betrag, um den die eingetragene einlage
+    die geleistete uebersteigt.
+  formulierungen:
+  - Der ausgleichsfähige Verlust wird auf die Obergrenze (haftungsbetrag + positives
+    Kapitalkonto) begrenzt, nicht auf den Betrag, um den die eingetragene Einlage
+    die geleistete übersteigt.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die bedingung 'soweit durch den verlust ein negatives kapitalkonto entsteht oder
+    sich erhoeht' fehlt in der formalisierung.
+  formulierungen:
+  - Die Bedingung 'soweit durch den Verlust ein negatives Kapitalkonto entsteht oder
+    sich erhöht' fehlt in der Formalisierung.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der ausgleich wird auf positives kapitalkonto plus haftungsbetrag begrenzt, nicht
+    auf negatives kapitalkonto.
+  formulierungen:
+  - Der Ausgleich wird auf positives Kapitalkonto plus Haftungsbetrag begrenzt, nicht
+    auf negatives Kapitalkonto.
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kapitalkonto
+  - interpretation
+  formulierungen:
+  - Positives Kapitalkonto wird als nicht relevant für die Haftungsberechnung angenommen.
+    | Das Kapitalkonto wird als positiv oder null interpretiert, wenn es negativ ist.
+    | Negatives Kapitalkonto wird als 0 behandelt.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verlustanteil
+  - geltungsvoraussetzung
+  formulierungen:
+  - Der Verlustanteil wird als bereits feststehend und nicht weiter zu prüfend angenommen.
+    | Es wird vorausgesetzt, dass der Kommanditist am Bilanzstichtag haftet. | Der
+    Verlustanteil wird nur bis zur Obergrenze berücksichtigt. | Es wird vorausgesetzt,
+    dass der Verlustanteil einen negativen Kapitalkontostand verursacht oder erhöht.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 15a abs. 1 s. 2 estg
+  formulierungen:
+  - soweit durch den Verlust ein negatives Kapitalkonto entsteht oder sich erhöht
+    | Haftet der Kommanditist am Bilanzstichtag den Gläubigern der Gesellschaft auf
+    Grund des § 171 Absatz 1 des Handelsgesetzbuchs
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: erweitert_p2_subsumtion

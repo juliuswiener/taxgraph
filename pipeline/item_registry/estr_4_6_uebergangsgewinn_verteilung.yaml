@@ -1,0 +1,74 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: estr_4_6_uebergangsgewinn_verteilung
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die verteilung erfolgt nicht nur auf 1-3 jahre, sondern auf beliebige verteilungsjahre.
+  formulierungen:
+  - Die Verteilung erfolgt nicht nur auf 1-3 Jahre, sondern auf beliebige verteilungsjahre.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - verteilung nur auf 1 oder 2 folgejahre, nicht auf 1 oder 2 jahre inkl. uebergangsjahr.
+  formulierungen:
+  - Verteilung nur auf 1 oder 2 Folgejahre, nicht auf 1 oder 2 Jahre inkl. Übergangsjahr.
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verteilungsjahre
+  - geltungsvoraussetzung
+  formulierungen:
+  - verteilungsjahre ist positiv und entweder 2 oder 3.
+  triage: bedingung_neu
+  bedingung: verteilung_auf_antrag_1_bis_3_jahre
+- art: annahme
+  anker:
+  - betrifft_kat
+  - uebergangsgewinn
+  - interpretation
+  formulierungen:
+  - Negative Werte gelten als nicht zu verteilender Übergangsgewinn. | Negativer Übergangsgewinn
+    wird nicht verteilt. | Negativer Wert wird als nicht verteilbar angenommen.
+  triage: bedingung_neu
+  bedingung: uebergangsgewinn_positiv
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verteilungsjahre
+  - interpretation
+  formulierungen:
+  - Anzahl der Verteilungsjahre ist 1 oder 2.
+  triage: bedingung_neu
+  bedingung: verteilung_auf_antrag_1_bis_3_jahre
+- art: annahme
+  anker:
+  - betrifft_kat
+  - jahresbetrag
+  - rundung
+  formulierungen:
+  - Keine Rundung der Jahresbeträge vorgeschrieben.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - uebergangsgewinn
+  - einheit
+  formulierungen:
+  - uebergangsgewinn ist in Euro angegeben.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - r 4.6 s. 2 estr
+  formulierungen:
+  - gleichmäßig entweder auf das Jahr des Übergangs und das folgende Jahr oder auf
+    das Jahr des Übergangs und die beiden folgenden Jahre verteilt werden
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: verteilung_auf_antrag_1_bis_3_jahre
