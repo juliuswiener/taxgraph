@@ -72,6 +72,15 @@ scope TestSolzgSplitting:
 Nur die Freigrenze driftet; der Milderungssatz 11,9 % bleibt. Je VZ die Boundary:
 Freigrenze exakt -> 0; ein Euro darueber -> 11,9 % x 1 = 0,119, Cent-Schnitt -> 0,11.
 
+Der Scope traegt eine Bounds-Assertion `veranlagungszeitraum >= 2024 and <= 2026`
+(gegen stille 2026er-Drift, Zeitschwellen-nie-still). Ein Negativtest, der die
+Verletzung als DAUERHAFT gruener Test belegt, ist in clerk nicht ausdrueckbar:
+das Test-Framework kennt kein xfail/expect-raise, ein VZ ausserhalb 2024-2026
+bricht mit `Assertion failed` und faerbt die Suite rot. Der Bruch wurde EINMALIG
+empirisch verifiziert (temporaerer Scope VZ 2027 ->
+`solzg.catala_en: Assertion failed: 2,027 <= 2,026`, danach entfernt). Die
+in-range-Faelle unten (2024/2025 + 2026 oben) belegen den gruenen Pfad.
+
 ```catala
 #[test]
 declaration scope TestSolzgVz2024:

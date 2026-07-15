@@ -40,7 +40,7 @@ declaration scope Solidaritaetszuschlag:
   # true = Fall des § 32a Abs. 5/6 EStG (Splitting), sonst false
   input splitting content boolean
   # Veranlagungszeitraum als Jahr-int (2024/2025/2026): die Freigrenze driftet per VZ
-  # (Milderungssaetze nicht). INT statt Enum, weil Catala 1.2.0 modanuebergreifende
+  # (Milderungssaetze nicht). INT statt Enum, weil Catala 1.2.0 moduluebergreifende
   # Enum-Typen nicht ins OCaml-Backend exportiert (ein match auf Einkommensteuertarif.
   # Veranlagungszeitraum in diesem separaten Modul bricht den clerk-OCaml-Build).
   input veranlagungszeitraum content integer
@@ -73,8 +73,15 @@ SteFeG): VZ 2024 = 18.130 (Splitting 36.260), VZ 2025 = 19.950 (39.900), VZ 2026
 20.350 (40.700). Werte-Provenance je VZ in `params/<vz>/solidaritaetszuschlag_solzg.yaml`
 (BGBl + GETTSIM-Gegenprobe). Zuschlags-/Milderungssatz (5,5 % / 11,9 %) unveraendert.
 
+Der else-Zweig deckt VZ 2026. Damit kein VZ ausserhalb 2024-2026 still die
+2026er-Freigrenze erbt (Zeitschwellen-nie-still, Julius-Direktive), bricht die
+Assertion deterministisch: kommen 2027er-Werte, MUSS der if-else erweitert werden,
+sonst schlaegt der Aufruf fehl statt falsch weiterzurechnen.
+
 ```catala
 scope Solidaritaetszuschlag:
+  assertion veranlagungszeitraum >= 2024 and veranlagungszeitraum <= 2026
+
   definition freigrenze equals
     if veranlagungszeitraum = 2024 then (if splitting then 36260.0 else 18130.0)
     else if veranlagungszeitraum = 2025 then (if splitting then 39900.0 else 19950.0)
