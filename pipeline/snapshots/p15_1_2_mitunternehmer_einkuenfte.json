@@ -1,0 +1,154 @@
+{
+  "bedingungen": [
+    "mitunternehmerstellung",
+    "sonderverguetungen_drei_kategorien",
+    "gewinnanteil_gesonderte_feststellung_input"
+  ],
+  "candidate_id": "p15_1_2_mitunternehmer_einkuenfte",
+  "catala_a": "declaration scope MitunternehmerEinkuenfte:\n  input gewinnanteil content money\n  input verguetung_taetigkeit content money\n  input verguetung_darlehen content money\n  input verguetung_ueberlassung content money\n  output einkuenfte_mitunternehmer content money\n\nscope MitunternehmerEinkuenfte:\n  definition einkuenfte_mitunternehmer equals\n    gewinnanteil\n    + verguetung_taetigkeit\n    + verguetung_darlehen\n    + verguetung_ueberlassung",
+  "catala_a_sha256": "598768bc1518ad8c38999f098f4f92965c3787700ab51fa1eae344a396b1bd44",
+  "catala_b": "declaration scope MitunternehmerEinkuenfte:\n  input gewinnanteil content money\n  input verguetung_taetigkeit content money\n  input verguetung_darlehen content money\n  input verguetung_ueberlassung content money\n  output einkuenfte_mitunternehmer content money\n\nscope MitunternehmerEinkuenfte:\n  definition einkuenfte_mitunternehmer equals gewinnanteil + verguetung_taetigkeit + verguetung_darlehen + verguetung_ueberlassung",
+  "catala_b_sha256": "95b603566b4399db03ebf92927ed2f4305701a2e934a18b4e1bbb50c3ff672ea",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'einkuenfte_mitunternehmer'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "fac5f2d75cc8",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "mitunternehmerstellung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bei der der Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen ist",
+        "referenz": "§ 15 Abs. 1 Nr. 2 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-15T13:07:20+00:00"
+  },
+  "module_name": "MitunternehmerEinkuenfte",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

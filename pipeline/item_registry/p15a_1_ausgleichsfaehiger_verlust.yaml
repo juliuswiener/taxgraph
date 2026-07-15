@@ -1,0 +1,42 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p15a_1_ausgleichsfaehiger_verlust
+version: 2
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kapitalkonto
+  - interpretation
+  formulierungen:
+  - Ein negatives Kapitalkonto wird als 0.00 behandelt.
+  triage: bedingung_neu
+  bedingung: boundary_entsteht_oder_erhoeht
+- art: norm_teil
+  anker:
+  - ref
+  - § 15a abs. 1 s. 1 estg
+  formulierungen:
+  - soweit ein negatives Kapitalkonto des Kommanditisten entsteht oder sich erhöht
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: boundary_entsteht_oder_erhoeht
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der verlust wird nur bis zur hoehe des positiven kapitalkontos beruecksichtigt,
+    nicht bei entstehung oder erhoehung eines negativen kontos.
+  formulierungen:
+  - Der Verlust wird nur bis zur Höhe des positiven Kapitalkontos berücksichtigt,
+    nicht bei Entstehung oder Erhöhung eines negativen Kontos.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der ausgleichsfaehige verlust wird auf positives kapitalkonto begrenzt, nicht
+    auf negatives/erhoehtes negatives kapitalkonto.
+  formulierungen:
+  - Der ausgleichsfähige Verlust wird auf positives Kapitalkonto begrenzt, nicht auf
+    negatives/erhöhtes negatives Kapitalkonto.
+  triage: nicht_echt

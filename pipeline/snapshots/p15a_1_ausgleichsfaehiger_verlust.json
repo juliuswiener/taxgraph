@@ -1,0 +1,210 @@
+{
+  "bedingungen": [
+    "kapitalkonto_steuerlich_input",
+    "kommanditist_haftungsbeschraenkt",
+    "boundary_entsteht_oder_erhoeht"
+  ],
+  "candidate_id": "p15a_1_ausgleichsfaehiger_verlust",
+  "catala_a": "declaration scope AusgleichsfaehigerVerlust:\n  input verlustanteil content money\n  input kapitalkonto content money\n  output ausgleichsfaehiger_verlust content money\n\nscope AusgleichsfaehigerVerlust:\n  definition ausgleichsfaehiger_verlust equals\n    let positives_kapitalkonto equals\n      if kapitalkonto > $0.00 then kapitalkonto else $0.00\n    in\n    if verlustanteil < positives_kapitalkonto\n    then verlustanteil\n    else positives_kapitalkonto",
+  "catala_a_sha256": "1cedc7a3014e61e4f17ad4d827cbdac474b7a036ea1ea432705f1cecbc88f493",
+  "catala_b": "declaration scope AusgleichsfaehigerVerlust:\n  input verlustanteil content money\n  input kapitalkonto content money\n  output ausgleichsfaehiger_verlust content money\n\nscope AusgleichsfaehigerVerlust:\n  definition ausgleichsfaehiger_verlust equals\n    let max_kk equals if kapitalkonto > $0.00 then kapitalkonto else $0.00 in\n    if verlustanteil > max_kk then max_kk else verlustanteil",
+  "catala_b_sha256": "827221facfa0faa79eaae153ab34ef7371a951cdf288f20a8b0939ea05700484",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'ausgleichsfaehiger_verlust'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Der Verlust wird nur bis zur Höhe des positiven Kapitalkontos berücksichtigt, nicht bei Entstehung oder Erhöhung eines negativen Kontos.",
+      "Der ausgleichsfähige Verlust wird auf positives Kapitalkonto begrenzt, nicht auf negatives/erhöhtes negatives Kapitalkonto."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 2,
+        "annahmen": 1,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der Verlust wird nur bis zur Höhe des positiven Kapitalkontos berücksichtigt, nicht bei Entstehung oder Erhöhung eines n"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der ausgleichsfähige Verlust wird auf positives Kapitalkonto begrenzt, nicht auf negatives/erhöhtes negatives Kapitalkon"
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Der Verlust wird nur bis zur Höhe des positiven Kapitalkontos berücksichtigt, nicht bei Entstehung oder Erhöhung eines negativen Kontos.",
+            "eingeschmolzen": "Der Verlust wird nur bis zur Höhe des positiven Kapitalkontos berücksichtigt.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Ein negatives Kapitalkonto wird als 0.00 behandelt.",
+            "eingeschmolzen": "Negatives Kapitalkonto wird als 0 interpretiert, um positives Kapitalkonto zu berechnen.",
+            "key": [
+              "betrifft_kat",
+              "kapitalkonto",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Ein negatives Kapitalkonto wird als 0.00 behandelt.",
+            "eingeschmolzen": "Ein negatives Kapitalkonto wird als 0 behandelt.",
+            "key": [
+              "betrifft_kat",
+              "kapitalkonto",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        3,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "671a796e367f",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "boundary_entsteht_oder_erhoeht",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "soweit ein negatives Kapitalkonto des Kommanditisten entsteht oder sich erhöht",
+        "referenz": "§ 15a Abs. 1 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Ein negatives Kapitalkonto wird als 0.00 behandelt.",
+        "bedingung_id": "boundary_entsteht_oder_erhoeht",
+        "betrifft": "kapitalkonto",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-15T13:08:23+00:00"
+  },
+  "module_name": "AusgleichsfaehigerVerlust",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

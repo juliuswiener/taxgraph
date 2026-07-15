@@ -1,0 +1,17 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p15a_1_verrechenbarer_verlust
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 15a abs. 2 s. 1 estg
+  formulierungen:
+  - Soweit der Verlust nach den Absätzen 1 und 1a nicht ausgeglichen oder abgezogen
+    werden darf | mindert er die Gewinne, die dem Kommanditisten in späteren Wirtschaftsjahren
+    aus seiner Beteiligung an der Kommanditgesellschaft zuzurechnen sind
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: ausgleichsfaehiger_verlust_andockung_p2

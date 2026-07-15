@@ -5591,3 +5591,213 @@ regeln:
     deckt_ab: darf höchstens mit dem Teilwert der Pensionsverpflichtung angesetzt werden
     quelle: § 6a Abs. 4 S. 1 EStG
     beschreibung: Nur der Teilwert-Deckel (Abs. 4 S. 1) formalisiert; Zuführungs-/Nachhol-Feinregeln Abs. 4 S. 2 ff. + Voraussetzungen Abs. 1/2 = benannte Nachträge.
+- rule_id: p15_1_2_mitunternehmer_einkuenfte
+  norm: '§ 15 Abs. 1 Nr. 2 S. 1 EStG (Mitunternehmer-Einkuenfte: Gewinnanteil + Sondervergütungen)'
+  hinweis: einkuenfte_mitunternehmer = gewinnanteil + verguetung_taetigkeit + verguetung_darlehen + verguetung_ueberlassung. Additive Zusammenrechnung des Gesamthand-Gewinnanteils und der DREI im Wortlaut einzeln benannten Sondervergütungs-Kategorien (Tätigkeit im Dienst der Gesellschaft / Hingabe von Darlehen / Überlassung von Wirtschaftsgütern). Kann NEGATIV sein (Verlustanteil überwiegt; die Sondervergütung bleibt trotzdem Gewinneinkunft). Reine Summe, keine Kappung. Cent-genau.
+  quellen:
+  - typ: gesetz
+    label: § 15 Abs. 1 Nr. 2 S. 1 EStG (Gewinnanteil + drei Sondervergütungen)
+    datei: sources/gesetze-im-internet/estg_p15_2026-07-14.txt
+    zitatanker: die Vergütungen, die der Gesellschafter von der Gesellschaft für seine Tätigkeit im Dienst der Gesellschaft oder für die Hingabe von Darlehen oder für die Überlassung von Wirtschaftsgütern bezogen hat
+    auszug: die Gewinnanteile der Gesellschafter einer Offenen Handelsgesellschaft, einer Kommanditgesellschaft und einer anderen Gesellschaft, bei der der Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen ist, und die Vergütungen, die der Gesellschafter von der Gesellschaft für seine Tätigkeit im Dienst der Gesellschaft oder für die Hingabe von Darlehen oder für die Überlassung von Wirtschaftsgütern bezogen hat
+  signature:
+    scope: MitunternehmerEinkuenfte
+    inputs:
+      gewinnanteil: money
+      verguetung_taetigkeit: money
+      verguetung_darlehen: money
+      verguetung_ueberlassung: money
+    output: einkuenfte_mitunternehmer
+  raster:
+  - gewinnanteil: 10000
+    verguetung_taetigkeit: 5000
+    verguetung_darlehen: 2000
+    verguetung_ueberlassung: 3000
+  - gewinnanteil: -8000
+    verguetung_taetigkeit: 5000
+    verguetung_darlehen: 0
+    verguetung_ueberlassung: 0
+  - gewinnanteil: 10000
+    verguetung_taetigkeit: 0
+    verguetung_darlehen: 0
+    verguetung_ueberlassung: 0
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p15_2026-07-14.txt
+    zitatanker: die Vergütungen, die der Gesellschafter von der Gesellschaft für seine Tätigkeit im Dienst der Gesellschaft oder für die Hingabe von Darlehen oder für die Überlassung von Wirtschaftsgütern bezogen hat
+    herkunft: synthetisch
+    rechenweg: 10.000 + 5.000 + 2.000 + 3.000 = 20.000,00 (Gewinnanteil + drei Sondervergütungen).
+    inputs:
+      gewinnanteil: 10000
+      verguetung_taetigkeit: 5000
+      verguetung_darlehen: 2000
+      verguetung_ueberlassung: 3000
+    expected: 20000.0
+  - quelle: sources/gesetze-im-internet/estg_p15_2026-07-14.txt
+    zitatanker: die Vergütungen, die der Gesellschafter von der Gesellschaft für seine Tätigkeit im Dienst der Gesellschaft oder für die Hingabe von Darlehen oder für die Überlassung von Wirtschaftsgütern bezogen hat
+    herkunft: synthetisch
+    rechenweg: 'VERLUSTANTEIL: -8.000 + 5.000 = -3.000,00 (Sondervergütung trotz Gesamthand-Verlust, negativ moeglich).'
+    inputs:
+      gewinnanteil: -8000
+      verguetung_taetigkeit: 5000
+      verguetung_darlehen: 0
+      verguetung_ueberlassung: 0
+    expected: -3000.0
+  - quelle: sources/gesetze-im-internet/estg_p15_2026-07-14.txt
+    zitatanker: die Vergütungen, die der Gesellschafter von der Gesellschaft für seine Tätigkeit im Dienst der Gesellschaft oder für die Hingabe von Darlehen oder für die Überlassung von Wirtschaftsgütern bezogen hat
+    herkunft: synthetisch
+    rechenweg: 'nur Gewinnanteil: 10.000,00.'
+    inputs:
+      gewinnanteil: 10000
+      verguetung_taetigkeit: 0
+      verguetung_darlehen: 0
+      verguetung_ueberlassung: 0
+    expected: 10000.0
+  geltungsbedingungen:
+  - bedingung: mitunternehmerstellung
+    deckt_ab: bei der der Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen ist
+    quelle: § 15 Abs. 1 Nr. 2 S. 1 EStG
+    beschreibung: 'Voraussetzung: Gesellschafter ist als Unternehmer (Mitunternehmer) anzusehen (Sachverhalt; OHG/KG/andere Gesellschaft).'
+  - bedingung: sonderverguetungen_drei_kategorien
+    deckt_ab: für seine Tätigkeit im Dienst der Gesellschaft oder für die Hingabe von Darlehen oder für die Überlassung von Wirtschaftsgütern
+    quelle: § 15 Abs. 1 Nr. 2 S. 1 EStG
+    beschreibung: 'Die drei im Wortlaut einzeln benannten Sondervergütungs-Kategorien: (a) Tätigkeit im Dienst der Gesellschaft, (b) Hingabe von Darlehen, (c) Überlassung von Wirtschaftsgütern. Andere Zahlungen sind keine Sondervergütung i.S.d. Nr. 2.'
+  - bedingung: gewinnanteil_gesonderte_feststellung_input
+    deckt_ab: die Gewinnanteile der Gesellschafter einer Offenen Handelsgesellschaft, einer Kommanditgesellschaft
+    quelle: § 15 Abs. 1 Nr. 2 S. 1 EStG
+    beschreibung: Der Gesamthand-Gewinnanteil kommt aus der gesonderten und einheitlichen Feststellung als Input, wird hier nicht selbst ermittelt.
+- rule_id: p15a_1_ausgleichsfaehiger_verlust
+  norm: § 15a Abs. 1 S. 1 EStG (ausgleichsfähiger Verlust = Kapitalkonto-Grenze)
+  hinweis: 'ausgleichsfaehiger_verlust = min(verlustanteil, max(kapitalkonto, 0)). Der Verlustanteil ist nur ausgleichsfähig, SOWEIT dadurch kein negatives Kapitalkonto entsteht oder sich erhöht - also nur bis zur Höhe des POSITIVEN Kapitalkontos. max(kapitalkonto, 0) floort ein bereits negatives Kapitalkonto auf 0 (dann nichts ausgleichsfähig); min kappt auf das positive Kapitalkonto. BOUNDARY (Klasse-2): die Doppel-Bedingung ''entsteht ODER sich erhöht'' ist KEIN Split, sondern das Floor+Cap-Encoding selbst (''entsteht'' = KK>=0 wird <0; ''erhöht sich'' = KK schon <0). ''soweit'' = graduell -> min, kein bool. kapitalkonto ist signiert (kann negativ hereinkommen). verlustanteil = positiver Betrag des Verlustanteils. Cent-genau. max darf als max-Operator ODER als ''wenn kapitalkonto > 0 dann kapitalkonto sonst 0'' formalisiert werden.'
+  quellen:
+  - typ: gesetz
+    label: § 15a Abs. 1 S. 1 EStG (Verlustausgleich nur bis Kapitalkonto)
+    datei: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: darf weder mit anderen Einkünften aus Gewerbebetrieb noch mit Einkünften aus anderen Einkunftsarten ausgeglichen werden, soweit ein negatives Kapitalkonto des Kommanditisten entsteht oder sich erhöht
+    auszug: Der einem Kommanditisten zuzurechnende Anteil am Verlust der Kommanditgesellschaft darf weder mit anderen Einkünften aus Gewerbebetrieb noch mit Einkünften aus anderen Einkunftsarten ausgeglichen werden, soweit ein negatives Kapitalkonto des Kommanditisten entsteht oder sich erhöht
+  signature:
+    scope: AusgleichsfaehigerVerlust
+    inputs:
+      verlustanteil: money
+      kapitalkonto: money
+    output: ausgleichsfaehiger_verlust
+  raster:
+  - verlustanteil: 6000
+    kapitalkonto: 10000
+  - verlustanteil: 15000
+    kapitalkonto: 10000
+  - verlustanteil: 5000
+    kapitalkonto: 0
+  - verlustanteil: 4000
+    kapitalkonto: -3000
+  - verlustanteil: 10000
+    kapitalkonto: 10000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: darf weder mit anderen Einkünften aus Gewerbebetrieb noch mit Einkünften aus anderen Einkunftsarten ausgeglichen werden, soweit ein negatives Kapitalkonto des Kommanditisten entsteht oder sich erhöht
+    herkunft: synthetisch
+    rechenweg: 'voll ausgleichsfähig: min(6.000; max(10.000;0))=6.000,00 (KK bleibt +4.000).'
+    inputs:
+      verlustanteil: 6000
+      kapitalkonto: 10000
+    expected: 6000.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: darf weder mit anderen Einkünften aus Gewerbebetrieb noch mit Einkünften aus anderen Einkunftsarten ausgeglichen werden, soweit ein negatives Kapitalkonto des Kommanditisten entsteht oder sich erhöht
+    herkunft: synthetisch
+    rechenweg: 'bis KK: min(15.000; max(10.000;0))=10.000,00 (5.000 macht KK negativ -> verrechenbar).'
+    inputs:
+      verlustanteil: 15000
+      kapitalkonto: 10000
+    expected: 10000.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: darf weder mit anderen Einkünften aus Gewerbebetrieb noch mit Einkünften aus anderen Einkunftsarten ausgeglichen werden, soweit ein negatives Kapitalkonto des Kommanditisten entsteht oder sich erhöht
+    herkunft: synthetisch
+    rechenweg: 'WÄCHTER KK=0: min(5.000; max(0;0)=0)=0,00 (nichts ausgleichsfähig).'
+    inputs:
+      verlustanteil: 5000
+      kapitalkonto: 0
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: darf weder mit anderen Einkünften aus Gewerbebetrieb noch mit Einkünften aus anderen Einkunftsarten ausgeglichen werden, soweit ein negatives Kapitalkonto des Kommanditisten entsteht oder sich erhöht
+    herkunft: synthetisch
+    rechenweg: 'WÄCHTER neg. KK ''erhöht sich'': min(4.000; max(-3.000;0)=0)=0,00.'
+    inputs:
+      verlustanteil: 4000
+      kapitalkonto: -3000
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: darf weder mit anderen Einkünften aus Gewerbebetrieb noch mit Einkünften aus anderen Einkunftsarten ausgeglichen werden, soweit ein negatives Kapitalkonto des Kommanditisten entsteht oder sich erhöht
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL exakt KK: min(10.000; max(10.000;0))=10.000,00 (alles ausgleichsfähig, KK->0).'
+    inputs:
+      verlustanteil: 10000
+      kapitalkonto: 10000
+    expected: 10000.0
+  geltungsbedingungen:
+  - bedingung: kapitalkonto_steuerlich_input
+    deckt_ab: ein negatives Kapitalkonto des Kommanditisten
+    quelle: § 15a Abs. 1 S. 1 EStG
+    beschreibung: Das steuerliche Kapitalkonto (vor Verlust) kommt aus der gesonderten Feststellung als signierter Input (kann bereits negativ sein).
+  - bedingung: kommanditist_haftungsbeschraenkt
+    deckt_ab: Der einem Kommanditisten zuzurechnende Anteil am Verlust der Kommanditgesellschaft
+    quelle: § 15a Abs. 1 S. 1 EStG
+    beschreibung: Gilt für Kommanditisten (bzw. vergleichbar Haftungsbeschränkte, Abs. 5 = Nachtrag). Erweiterte Außenhaftung § 171 Abs. 1 HGB (Abs. 1 S. 2/3) = Nachtrag.
+  - bedingung: boundary_entsteht_oder_erhoeht
+    deckt_ab: entsteht oder sich erhöht
+    quelle: § 15a Abs. 1 S. 1 EStG
+    beschreibung: 'Das Floor+Cap-Encoding max(kapitalkonto,0) deckt beide Wortlaut-Zweige: ''entsteht'' (KK>=0 wird <0) und ''erhöht sich'' (KK schon <0). ''soweit'' = graduell (min), kein Split.'
+- rule_id: p15a_1_verrechenbarer_verlust
+  norm: § 15a Abs. 1/2 EStG (verrechenbarer Verlust = nicht ausgleichsfähiger Rest)
+  hinweis: verrechenbarer_verlust = verlustanteil - ausgleichsfaehiger_verlust. Der Teil des Verlustanteils, der nach § 15a Abs. 1 NICHT ausgeglichen werden darf (Rest über dem Kapitalkonto), ist verrechenbarer Verlust - er mindert nur künftige Gewinne DERSELBEN Beteiligung (Abs. 2 S. 1). ausgleichsfaehiger_verlust kommt aus Regel p15a_1_ausgleichsfaehiger_verlust herein (Andockung P2->P3, keine Neuberechnung der min/max-Mechanik). Ergebnis >= 0 (ausgleichsfähig <= verlustanteil). Cent-genau.
+  quellen:
+  - typ: gesetz
+    label: § 15a Abs. 2 S. 1 EStG (verrechenbarer Verlust = nicht ausgleichsfähiger Rest)
+    datei: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: mindert er die Gewinne, die dem Kommanditisten in späteren Wirtschaftsjahren aus seiner Beteiligung an der Kommanditgesellschaft zuzurechnen sind
+    auszug: Soweit der Verlust nach den Absätzen 1 und 1a nicht ausgeglichen oder abgezogen werden darf, mindert er die Gewinne, die dem Kommanditisten in späteren Wirtschaftsjahren aus seiner Beteiligung an der Kommanditgesellschaft zuzurechnen sind
+  signature:
+    scope: VerrechenbarerVerlust
+    inputs:
+      verlustanteil: money
+      ausgleichsfaehiger_verlust: money
+    output: verrechenbarer_verlust
+  raster:
+  - verlustanteil: 15000
+    ausgleichsfaehiger_verlust: 10000
+  - verlustanteil: 5000
+    ausgleichsfaehiger_verlust: 0
+  - verlustanteil: 6000
+    ausgleichsfaehiger_verlust: 6000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: mindert er die Gewinne, die dem Kommanditisten in späteren Wirtschaftsjahren aus seiner Beteiligung an der Kommanditgesellschaft zuzurechnen sind
+    herkunft: synthetisch
+    rechenweg: 'verrechenbar: 15.000 - 10.000 = 5.000,00.'
+    inputs:
+      verlustanteil: 15000
+      ausgleichsfaehiger_verlust: 10000
+    expected: 5000.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: mindert er die Gewinne, die dem Kommanditisten in späteren Wirtschaftsjahren aus seiner Beteiligung an der Kommanditgesellschaft zuzurechnen sind
+    herkunft: synthetisch
+    rechenweg: 'KK=0: 5.000 - 0 = 5.000,00 (ganzer Verlust verrechenbar).'
+    inputs:
+      verlustanteil: 5000
+      ausgleichsfaehiger_verlust: 0
+    expected: 5000.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: mindert er die Gewinne, die dem Kommanditisten in späteren Wirtschaftsjahren aus seiner Beteiligung an der Kommanditgesellschaft zuzurechnen sind
+    herkunft: synthetisch
+    rechenweg: 'voll ausgeglichen: 6.000 - 6.000 = 0,00 (nichts verrechenbar).'
+    inputs:
+      verlustanteil: 6000
+      ausgleichsfaehiger_verlust: 6000
+    expected: 0.0
+  geltungsbedingungen:
+  - bedingung: verrechenbar_nur_kuenftige_gewinne_abs2
+    deckt_ab: mindert er die Gewinne, die dem Kommanditisten in späteren Wirtschaftsjahren aus seiner Beteiligung an der Kommanditgesellschaft zuzurechnen sind
+    quelle: § 15a Abs. 2 S. 1 EStG
+    beschreibung: Der verrechenbare Verlust mindert nur künftige Gewinne DERSELBEN Beteiligung an der KG (Abs. 2). Der mehrjährige Vortrag/die Verrechnung selbst = benannter Nachtrag; hier nur die Jahres-Betragsermittlung.
+  - bedingung: ausgleichsfaehiger_verlust_andockung_p2
+    deckt_ab: Soweit der Verlust nach den Absätzen 1 und 1a nicht ausgeglichen oder abgezogen werden darf
+    quelle: § 15a Abs. 2 S. 1 EStG
+    beschreibung: Der ausgleichsfähige Verlust kommt aus p15a_1_ausgleichsfaehiger_verlust (Abs. 1) herein (Andockung), keine Doppel-min/max-Logik; der Rest ist verrechenbar.

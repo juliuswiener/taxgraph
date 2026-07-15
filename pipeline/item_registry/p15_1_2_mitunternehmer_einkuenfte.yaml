@@ -1,0 +1,16 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p15_1_2_mitunternehmer_einkuenfte
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 15 abs. 1 nr. 2 s. 1 estg
+  formulierungen:
+  - bei der der Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen
+    ist
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: mitunternehmerstellung

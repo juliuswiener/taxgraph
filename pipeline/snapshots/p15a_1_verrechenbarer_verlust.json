@@ -1,0 +1,168 @@
+{
+  "bedingungen": [
+    "verrechenbar_nur_kuenftige_gewinne_abs2",
+    "ausgleichsfaehiger_verlust_andockung_p2"
+  ],
+  "candidate_id": "p15a_1_verrechenbarer_verlust",
+  "catala_a": "declaration scope VerrechenbarerVerlust:\n  input verlustanteil content money\n  input ausgleichsfaehiger_verlust content money\n  output verrechenbarer_verlust content money\n\nscope VerrechenbarerVerlust:\n  definition verrechenbarer_verlust equals\n    verlustanteil - ausgleichsfaehiger_verlust",
+  "catala_a_sha256": "d86a8ca8ccba0c47f8896b684e7d80cb6f67068803ac7a6a3bf104bdc3d82d10",
+  "catala_b": "declaration scope VerrechenbarerVerlust:\n  input verlustanteil content money\n  input ausgleichsfaehiger_verlust content money\n  output verrechenbarer_verlust content money\n\nscope VerrechenbarerVerlust:\n  definition verrechenbarer_verlust equals verlustanteil - ausgleichsfaehiger_verlust",
+  "catala_b_sha256": "a63458a4ec0f31a776d1f7d43b44f86fb95e73f14304388cc1f3d89ed3c48197",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'verrechenbarer_verlust'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "mindert er die Gewinne, die dem Kommanditisten in späteren Wirtschaftsjahren aus seiner Beteiligung an der Kommanditgese",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 15a abs. 2 s. 1 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "a861a5bbe179",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "ausgleichsfaehiger_verlust_andockung_p2",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Soweit der Verlust nach den Absätzen 1 und 1a nicht ausgeglichen oder abgezogen werden darf",
+        "referenz": "§ 15a Abs. 2 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "verrechenbar_nur_kuenftige_gewinne_abs2",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "mindert er die Gewinne, die dem Kommanditisten in späteren Wirtschaftsjahren aus seiner Beteiligung an der Kommanditgesellschaft zuzurechnen sind",
+        "referenz": "§ 15a Abs. 2 S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-15T13:09:02+00:00"
+  },
+  "module_name": "VerrechenbarerVerlust",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}
