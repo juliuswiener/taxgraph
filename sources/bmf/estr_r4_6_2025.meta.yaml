@@ -1,0 +1,21 @@
+dokument:
+  norm_uri: "estr/r4.6/2012"
+  norm: "EStR R 4.6 Wechsel der Gewinnermittlungsart (EStR 2012, EStH-Stand)"
+  fassung: "EStR 2012 (Handbuch-Fassung; Uebergangsgewinn-Verteilung 1-3 Jahre)"
+  quelle_url: "http://www.einkommenssteuerrichtlinien.de/EStR-4-6-Wechsel-der-Gewinnermittlungsart.html"
+  abrufdatum: "2026-07-15"
+  datei: "estr_r4_6_2025.txt"
+  sha256: "12547438079789f629940e654a8beafd3183c9e6abb2d79754153eb35060b0d1"
+  authority: verwaltung
+  redistributable: true
+  hinweis: "MIRROR-Quelle: amtliches EStH (esth.bundesfinanzministerium.de) ist Radware-bot-gesperrt
+    (curl UND WebFetch); Mirror einkommenssteuerrichtlinien.de traegt den EStR-2012-Text. Bei
+    Zitat-Zweifel amtliche Fassung im Browser gegenpruefen (Julius-Weg). Silbentrennung im
+    Mirror-Text (z.B. 'Ab- rechnungen') - Anker nur hyphen-freie Fragmente, voll-Laenge via
+    _normalize. Deckt B8 Uebergangsgewinn: Zu-/Abrechnungen + Verteilungs-Wahlrecht (1-3 Jahre,
+    Antrag) + Veraeusserungs-Klausel + Abs2 Rueckwechsel (keine Verteilung)."
+  erwartete_anker:
+    - "auf das Jahr des Übergangs und das folgende Jahr oder auf das Jahr des Übergangs und die beiden folgenden Jahre"
+    - "im ersten Jahr nach dem Übergang zur Gewinnermittlung nach § 4 Abs. 3 EStG vorzunehmen"
+    - "erhöhen die noch nicht berücksichtigten Beträge den laufenden Gewinn des letzten Wirtschaftsjahr"
+  verwendet_in: ["W2 B8 Uebergangsgewinn EUeR<->BV (Nachtrag, Charge 25/26)"]
