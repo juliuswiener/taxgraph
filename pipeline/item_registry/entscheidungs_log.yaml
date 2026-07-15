@@ -1239,3 +1239,57 @@ entscheidungen:
     text: Verteilung nur auf 1 oder 2 Folgejahre, nicht auf 1 oder 2 Jahre inkl. Übergangsjahr.
   entschieden_via: instructor-adjudikation-c25-r2-msg1993
   timestamp: '2026-07-15T13:59:22.968166+00:00'
+- rule_id: p5_5_passiver_rap
+  schluessel: '["abweichung", "abweichung_text", "der passive rap wird als anteilige einnahme berechnet, nicht als betrag fuer eine bestimmte zeit nach dem stichtag."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  begruendung: 'Judge-False-Positive. Instructor-Adjudikation 4620d012 msg 2013. SPIEGEL-Fall zu p5_5_aktiver_rap (C23): identischer Rechenkern (if monate_nach=0 then 0 else betrag*(monate_nach/monate_gesamt)), identische Konventions-Lage. Monatsgranularitaet = Berechnungs-Konvention zum Wortlaut ''bestimmte Zeit''; Proportionalisierung IST die Zeitanteiligkeits-Semantik von ''soweit sie Ertrag fuer eine bestimmte Zeit nach diesem Tag darstellen'' (105-Zeichen-Anker Instructor-gegengegrept). Applicability-als-Bedingung (rap_nur_bei_zeitbezug) etabliert. Judge-Klassifikations-Instabilitaet: DERSELBE Inhalt beim aktiver RAP als annahme, hier als abweichung (Judge-Memo-Fussnote).'
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - der passive rap wird als anteilige einnahme berechnet, nicht als betrag fuer eine bestimmte zeit nach dem stichtag.
+    text: Der passive RAP wird als anteilige Einnahme berechnet, nicht als Betrag für eine bestimmte Zeit nach dem Stichtag.
+  entschieden_via: instructor-adjudikation-c27-a1-msg2013
+  timestamp: '2026-07-15T14:52:11.062296+00:00'
+- rule_id: p5_5_passiver_rap
+  schluessel: '["abweichung", "abweichung_text", "die gesamtmonate werden als basis fuer die anteilige berechnung verwendet, obwohl die norm keine proportionalisierung vorsieht."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  begruendung: 'Judge-False-Positive. Instructor-Adjudikation 4620d012 msg 2013. SPIEGEL-Fall zu p5_5_aktiver_rap (C23): identischer Rechenkern (if monate_nach=0 then 0 else betrag*(monate_nach/monate_gesamt)), identische Konventions-Lage. Monatsgranularitaet = Berechnungs-Konvention zum Wortlaut ''bestimmte Zeit''; Proportionalisierung IST die Zeitanteiligkeits-Semantik von ''soweit sie Ertrag fuer eine bestimmte Zeit nach diesem Tag darstellen'' (105-Zeichen-Anker Instructor-gegengegrept). Applicability-als-Bedingung (rap_nur_bei_zeitbezug) etabliert. Judge-Klassifikations-Instabilitaet: DERSELBE Inhalt beim aktiver RAP als annahme, hier als abweichung (Judge-Memo-Fussnote).'
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - die gesamtmonate werden als basis fuer die anteilige berechnung verwendet, obwohl die norm keine proportionalisierung vorsieht.
+    text: Die Gesamtmonate werden als Basis für die anteilige Berechnung verwendet, obwohl die Norm keine Proportionalisierung vorsieht.
+  entschieden_via: instructor-adjudikation-c27-a1-msg2013
+  timestamp: '2026-07-15T14:52:11.062296+00:00'
+- rule_id: p5_5_passiver_rap
+  schluessel: '["abweichung", "abweichung_text", "norm verlangt ansatz nur fuer bestimmte zeit nach stichtag, formalisierung prueft nicht."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  begruendung: 'Judge-False-Positive. Instructor-Adjudikation 4620d012 msg 2013. SPIEGEL-Fall zu p5_5_aktiver_rap (C23): identischer Rechenkern (if monate_nach=0 then 0 else betrag*(monate_nach/monate_gesamt)), identische Konventions-Lage. Monatsgranularitaet = Berechnungs-Konvention zum Wortlaut ''bestimmte Zeit''; Proportionalisierung IST die Zeitanteiligkeits-Semantik von ''soweit sie Ertrag fuer eine bestimmte Zeit nach diesem Tag darstellen'' (105-Zeichen-Anker Instructor-gegengegrept). Applicability-als-Bedingung (rap_nur_bei_zeitbezug) etabliert. Judge-Klassifikations-Instabilitaet: DERSELBE Inhalt beim aktiver RAP als annahme, hier als abweichung (Judge-Memo-Fussnote).'
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - norm verlangt ansatz nur fuer bestimmte zeit nach stichtag, formalisierung prueft nicht.
+    text: Norm verlangt Ansatz nur für bestimmte Zeit nach Stichtag, Formalisierung prüft nicht.
+  entschieden_via: instructor-adjudikation-c27-a1-msg2013
+  timestamp: '2026-07-15T14:52:11.062296+00:00'

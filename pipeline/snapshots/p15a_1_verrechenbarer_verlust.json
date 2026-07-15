@@ -1,7 +1,8 @@
 {
   "bedingungen": [
     "verrechenbar_nur_kuenftige_gewinne_abs2",
-    "ausgleichsfaehiger_verlust_andockung_p2"
+    "ausgleichsfaehiger_verlust_andockung_p2",
+    "nachtraegliche_einlage_keine_wiederherstellung"
   ],
   "candidate_id": "p15a_1_verrechenbarer_verlust",
   "catala_a": "declaration scope VerrechenbarerVerlust:\n  input verlustanteil content money\n  input ausgleichsfaehiger_verlust content money\n  output verrechenbarer_verlust content money\n\nscope VerrechenbarerVerlust:\n  definition verrechenbarer_verlust equals\n    verlustanteil - ausgleichsfaehiger_verlust",

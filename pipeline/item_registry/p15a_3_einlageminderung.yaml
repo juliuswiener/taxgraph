@@ -1,0 +1,28 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p15a_3_einlageminderung
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 15a abs. 3 s. 1
+  formulierungen:
+  - soweit ein negatives Kapitalkonto des Kommanditisten durch Entnahmen entsteht
+    oder sich erhöht (Einlageminderung) | soweit nicht auf Grund der Entnahmen eine
+    nach Absatz 1 Satz 2 zu berücksichtigende Haftung besteht oder entsteht | ist
+    dem Kommanditisten der Betrag der Einlageminderung als Gewinn zuzurechnen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: einlageminderung_durch_entnahmen
+- art: norm_teil
+  anker:
+  - ref
+  - § 15a abs. 3 s. 2
+  formulierungen:
+  - Der nach Satz 1 zuzurechnende Betrag darf den Betrag der Anteile am Verlust der
+    Kommanditgesellschaft nicht übersteigen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: deckel_11j_ausgleichsfaehig

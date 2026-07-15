@@ -4674,6 +4674,10 @@ regeln:
     deckt_ab: nur zur Hälfte anzusetzen
     quelle: § 6 Abs. 1 Nr. 4 S. 2 Nr. 1-5 EStG
     beschreibung: bruchteils_teiler (1|2|4) = Ergebnis des E/Hybrid-Bedingungs-Katalogs (Anschaffungs-Zeitfenster + CO2 + Reichweite + BLP-Cap 100k); Katalog-Auswertung upstream, teiler ist der Input.
+  - bedingung: e_kfz_bruttolistenpreis_100k_grenze
+    deckt_ab: der Bruttolistenpreis des Kraftfahrzeugs nicht mehr als 100 000 Euro beträgt
+    quelle: § 6 Abs. 1 Nr. 4 S. 2 EStG
+    beschreibung: 'C27-A5: der Viertel-/Hälfte-Ansatz für E-Kfz setzt Bruttolistenpreis <= 100 000 Euro voraus (aktuelle Fassung, Wachstumschancengesetz). GÜLTIGKEIT: historische Schwellen 60k/70k/80k je Anschaffungsjahr = eigene Kohorten (Multi-VZ-B2, Alt-Freezes) = Nachtrag.'
 - rule_id: p6_1_5_einlage
   norm: § 6 Abs. 1 Nr. 5 EStG (Einlage-Bewertung, Teilwert höchstens fortgeführte AK)
   hinweis: einlagewert = wenn innerhalb_drei_jahre_aus_pv dann min(teilwert, fortgefuehrte_anschaffungskosten) sonst teilwert. Einlage mit dem Teilwert (Schaetzwert-Input, nicht gerechnet); jedoch HOECHSTENS die fortgefuehrte AK (bereits um S2-Zwischen-AfA gekuerzt), WENN das WG innerhalb 3 Jahre aus dem Privatvermoegen kam. min-Deckel. Cent-genau.
@@ -5749,6 +5753,10 @@ regeln:
     deckt_ab: entsteht oder sich erhöht
     quelle: § 15a Abs. 1 S. 1 EStG
     beschreibung: 'Das Floor+Cap-Encoding max(kapitalkonto,0) deckt beide Wortlaut-Zweige: ''entsteht'' (KK>=0 wird <0) und ''erhöht sich'' (KK schon <0). ''soweit'' = graduell (min), kein Split.'
+  - bedingung: andere_unternehmer_abs5_sinngemaess
+    deckt_ab: gelten sinngemäß für andere Unternehmer, soweit deren Haftung der eines Kommanditisten vergleichbar ist
+    quelle: § 15a Abs. 5 EStG
+    beschreibung: 'C27-A3: § 15a gilt sinngemäß für andere haftungsbeschränkte Unternehmer (stille Ges., GbR, ausl. PersGes, Mitreeder, Abs. 5) — Applicability-Erweiterung, die Mechanik bleibt identisch = benannter Nachtrag.'
 - rule_id: p15a_1_verrechenbarer_verlust
   norm: § 15a Abs. 1/2 EStG (verrechenbarer Verlust = nicht ausgleichsfähiger Rest)
   hinweis: verrechenbarer_verlust = verlustanteil - ausgleichsfaehiger_verlust. Der Teil des Verlustanteils, der nach § 15a Abs. 1 NICHT ausgeglichen werden darf (Rest über dem Kapitalkonto), ist verrechenbarer Verlust - er mindert nur künftige Gewinne DERSELBEN Beteiligung (Abs. 2 S. 1). ausgleichsfaehiger_verlust kommt aus Regel p15a_1_ausgleichsfaehiger_verlust herein (Andockung P2->P3, keine Neuberechnung der min/max-Mechanik). Ergebnis >= 0 (ausgleichsfähig <= verlustanteil). Cent-genau.
@@ -5805,6 +5813,10 @@ regeln:
     deckt_ab: Soweit der Verlust nach den Absätzen 1 und 1a nicht ausgeglichen oder abgezogen werden darf
     quelle: § 15a Abs. 2 S. 1 EStG
     beschreibung: Der ausgleichsfähige Verlust kommt aus p15a_1_ausgleichsfaehiger_verlust (Abs. 1) herein (Andockung), keine Doppel-min/max-Logik; der Rest ist verrechenbar.
+  - bedingung: nachtraegliche_einlage_keine_wiederherstellung
+    deckt_ab: Nachträgliche Einlagen führen weder zu einer nachträglichen Ausgleichs- oder Abzugsfähigkeit
+    quelle: § 15a Abs. 1a S. 1 EStG
+    beschreibung: 'C27-A3: nachträgliche Einlagen stellen die Ausgleichs-/Abzugsfähigkeit eines vorhandenen verrechenbaren Verlusts NICHT wieder her (Abs. 1a) = benannter Nachtrag, kein money-Effekt auf diese Jahres-Betragsermittlung.'
 - rule_id: p5_5_aktiver_rap
   norm: § 5 Abs. 5 S. 1 Nr. 1 EStG (aktiver Rechnungsabgrenzungsposten, Zeitanteiligkeit)
   hinweis: 'aktiver_rap = ausgabe * monate_nach_stichtag / monate_gesamt. Der auf die Zeit NACH dem Abschlussstichtag entfallende, abzugrenzende Teil einer Ausgabe vor dem Stichtag (Aufwand fuer eine bestimmte Zeit danach). KLASSE-5-Vermeidung: Division durch monate_gesamt ZULETZT (/12-Lehre), Cent-Schnitt am Ende, KEINE vorgerundete Monatsrate. Monate als int-Inputs (ganzzahlige Perioden). MONATSGRANULARITAET ist eine KONVENTION (Wortlaut sagt ''bestimmte Zeit'', nicht ''Monat''); Tagesgenauigkeit = benannter Nachtrag. Boundary: monate_nach_stichtag = 0 -> 0 (kein RAP). Keine Norm-Konstante im Code.'
@@ -6104,3 +6116,160 @@ regeln:
     deckt_ab: erhöhen die noch nicht berücksichtigten Beträge den laufenden Gewinn des letzten Wirtschaftsjahres
     quelle: R 4.6 S. 3 EStR
     beschreibung: Veräußerung/Aufgabe vor Ablauf des Verteilungszeitraums -> nicht berücksichtigter Rest erhöht den laufenden Gewinn des letzten WJ (Sofortversteuerung) = benannter Nachtrag; hier nur die Jahres-Ratenermittlung.
+- rule_id: p5_5_passiver_rap
+  norm: § 5 Abs. 5 S. 1 Nr. 2 EStG (passiver Rechnungsabgrenzungsposten, Zeitanteiligkeit)
+  hinweis: 'passiver_rap = einnahme * monate_nach_stichtag / monate_gesamt. SPIEGEL-Regel zu p5_5_aktiver_rap (C23), Passivseite: Einnahme VOR dem Abschlussstichtag, die Ertrag für eine bestimmte Zeit NACH dem Stichtag ist, wird zeitanteilig als passiver RAP abgegrenzt. KLASSE-5-Vermeidung: Division durch monate_gesamt ZULETZT (/12-Lehre), Cent-Schnitt am Ende, keine vorgerundete Monatsrate. Monate als int-Inputs. MONATSGRANULARITAET = KONVENTION (Wortlaut ''bestimmte Zeit'', nicht ''Monat''); Tagesgenauigkeit = Nachtrag. Boundary: monate_nach_stichtag = 0 -> 0. Keine Norm-Konstante im Code.'
+  quellen:
+  - typ: gesetz
+    label: § 5 Abs. 5 S. 1 Nr. 2 EStG (passiver RAP, Ertrags-Zeitbezug)
+    datei: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Einnahmen vor dem Abschlussstichtag, soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen
+    auszug: Als Rechnungsabgrenzungsposten sind nur anzusetzen 1. auf der Aktivseite Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen; 2. auf der Passivseite Einnahmen vor dem Abschlussstichtag, soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen
+  signature:
+    scope: PassiverRap
+    inputs:
+      einnahme: money
+      monate_nach_stichtag: int
+      monate_gesamt: int
+    output: passiver_rap
+  raster:
+  - einnahme: 1200
+    monate_nach_stichtag: 9
+    monate_gesamt: 12
+  - einnahme: 2400
+    monate_nach_stichtag: 6
+    monate_gesamt: 24
+  - einnahme: 1200
+    monate_nach_stichtag: 0
+    monate_gesamt: 12
+  - einnahme: 1200
+    monate_nach_stichtag: 12
+    monate_gesamt: 12
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Einnahmen vor dem Abschlussstichtag, soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen
+    herkunft: synthetisch
+    rechenweg: 'Miete im Voraus 1.10.: 3 M lfd Ertrag, 9 M pRAP. 1.200 * 9 / 12 = 900,00 (Division zuletzt).'
+    inputs:
+      einnahme: 1200
+      monate_nach_stichtag: 9
+      monate_gesamt: 12
+    expected: 900.0
+  - quelle: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Einnahmen vor dem Abschlussstichtag, soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen
+    herkunft: synthetisch
+    rechenweg: 2.400 * 6 / 24 = 600,00.
+    inputs:
+      einnahme: 2400
+      monate_nach_stichtag: 6
+      monate_gesamt: 24
+    expected: 600.0
+  - quelle: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Einnahmen vor dem Abschlussstichtag, soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen
+    herkunft: synthetisch
+    rechenweg: 'WÄCHTER nichts nach Stichtag: 1.200 * 0 / 12 = 0,00 (kein pRAP).'
+    inputs:
+      einnahme: 1200
+      monate_nach_stichtag: 0
+      monate_gesamt: 12
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Einnahmen vor dem Abschlussstichtag, soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL alles nach Stichtag: 1.200 * 12 / 12 = 1.200,00.'
+    inputs:
+      einnahme: 1200
+      monate_nach_stichtag: 12
+      monate_gesamt: 12
+    expected: 1200.0
+  geltungsbedingungen:
+  - bedingung: einnahme_vor_stichtag
+    deckt_ab: Einnahmen vor dem Abschlussstichtag
+    quelle: § 5 Abs. 5 S. 1 Nr. 2 EStG
+    beschreibung: Die Einnahme fällt VOR dem Abschlussstichtag an (Sachverhalt).
+  - bedingung: ertrag_bestimmte_zeit_danach
+    deckt_ab: Ertrag für eine bestimmte Zeit nach diesem Tag
+    quelle: § 5 Abs. 5 S. 1 Nr. 2 EStG
+    beschreibung: Die Einnahme ist Ertrag für eine BESTIMMTE (abgrenzbare) Zeit nach dem Stichtag; unbestimmte Zeit -> kein RAP.
+  - bedingung: rap_nur_bei_zeitbezug
+    deckt_ab: Als Rechnungsabgrenzungsposten sind nur anzusetzen
+    quelle: § 5 Abs. 5 S. 1 EStG
+    beschreibung: RAP nur bei Zeitbezug (abschliessende Aufzaehlung, Ansatzvoraussetzung).
+  - bedingung: nur_passivseite_einnahme
+    deckt_ab: auf der Passivseite Einnahmen vor dem Abschlussstichtag
+    quelle: § 5 Abs. 5 S. 1 Nr. 2 EStG
+    beschreibung: 'Passivseite: Einnahme->Ertrag (passiver RAP). Aktivseite Ausgabe->Aufwand (Nr. 1, aktiver RAP = p5_5_aktiver_rap C23).'
+  - bedingung: zeitanteilig_monate_konvention
+    deckt_ab: für eine bestimmte Zeit nach diesem Tag
+    quelle: § 5 Abs. 5 S. 1 Nr. 2 EStG
+    beschreibung: 'KONVENTION (wie aktiver RAP C23): Zeitanteiligkeit in GANZEN MONATEN; Wortlaut ''bestimmte Zeit'', Monatsgranularitaet ist Berechnungs-Konvention, Tagesgenauigkeit = Nachtrag.'
+- rule_id: p15a_3_einlageminderung
+  norm: § 15a Abs. 3 EStG (Einlageminderung-Gewinnhinzurechnung, 11-Jahres-Deckel)
+  hinweis: gewinnhinzurechnung = min(einlageminderung, ausgleichsfaehige_verluste_11j_fenster). Wird das negative Kapitalkonto durch Entnahmen erhöht (Einlageminderung), ist der Betrag als Gewinn hinzuzurechnen (Abs. 3 S. 1), GEDECKELT (S. 2) auf die im Wirtschaftsjahr der Einlageminderung UND in den zehn vorangegangenen Wirtschaftsjahren ausgleichs-/abzugsfähig gewesenen Verlustanteile (11-Jahres-Fenster). Das 11-Jahres-Aggregat kommt als Sachverhalts-/State-Input herein; die mehrjährige Verfolgung selbst = benannter Nachtrag (§10d-Muster). Cent-genau, keine Norm-Konstante im Code.
+  quellen:
+  - typ: gesetz
+    label: § 15a Abs. 3 S. 1/2 EStG (Einlageminderung + 11-J-Deckel)
+    datei: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: ist dem Kommanditisten der Betrag der Einlageminderung als Gewinn zuzurechnen
+    auszug: Soweit ein negatives Kapitalkonto des Kommanditisten durch Entnahmen entsteht oder sich erhöht (Einlageminderung) und soweit nicht auf Grund der Entnahmen eine nach Absatz 1 Satz 2 zu berücksichtigende Haftung besteht oder entsteht, ist dem Kommanditisten der Betrag der Einlageminderung als Gewinn zuzurechnen. 2 Der nach Satz 1 zuzurechnende Betrag darf den Betrag der Anteile am Verlust der Kommanditgesellschaft nicht übersteigen, der im Wirtschaftsjahr der Einlageminderung und in den zehn vorangegangenen Wirtschaftsjahren ausgleichs- oder abzugsfähig gewesen ist
+  signature:
+    scope: Einlageminderung
+    inputs:
+      einlageminderung: money
+      ausgleichsfaehige_verluste_11j_fenster: money
+    output: gewinnhinzurechnung
+  raster:
+  - einlageminderung: 5000
+    ausgleichsfaehige_verluste_11j_fenster: 8000
+  - einlageminderung: 10000
+    ausgleichsfaehige_verluste_11j_fenster: 6000
+  - einlageminderung: 0
+    ausgleichsfaehige_verluste_11j_fenster: 8000
+  - einlageminderung: 6000
+    ausgleichsfaehige_verluste_11j_fenster: 6000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: ist dem Kommanditisten der Betrag der Einlageminderung als Gewinn zuzurechnen
+    herkunft: synthetisch
+    rechenweg: 'Einlageminderung bindet: min(5.000; 8.000) = 5.000,00 (voll als Gewinn zugerechnet).'
+    inputs:
+      einlageminderung: 5000
+      ausgleichsfaehige_verluste_11j_fenster: 8000
+    expected: 5000.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: ist dem Kommanditisten der Betrag der Einlageminderung als Gewinn zuzurechnen
+    herkunft: synthetisch
+    rechenweg: '11-J-Deckel bindet: min(10.000; 6.000) = 6.000,00 (nur bis ausgleichsfähig gewesene Verluste).'
+    inputs:
+      einlageminderung: 10000
+      ausgleichsfaehige_verluste_11j_fenster: 6000
+    expected: 6000.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: ist dem Kommanditisten der Betrag der Einlageminderung als Gewinn zuzurechnen
+    herkunft: synthetisch
+    rechenweg: 'keine Einlageminderung: min(0; 8.000) = 0,00.'
+    inputs:
+      einlageminderung: 0
+      ausgleichsfaehige_verluste_11j_fenster: 8000
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: ist dem Kommanditisten der Betrag der Einlageminderung als Gewinn zuzurechnen
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL gleich: min(6.000; 6.000) = 6.000,00.'
+    inputs:
+      einlageminderung: 6000
+      ausgleichsfaehige_verluste_11j_fenster: 6000
+    expected: 6000.0
+  geltungsbedingungen:
+  - bedingung: einlageminderung_durch_entnahmen
+    deckt_ab: durch Entnahmen entsteht oder sich erhöht
+    quelle: § 15a Abs. 3 S. 1 EStG
+    beschreibung: Einlageminderung = das negative Kapitalkonto entsteht/erhöht sich durch ENTNAHMEN (nicht durch Verlust).
+  - bedingung: deckel_11j_ausgleichsfaehig
+    deckt_ab: im Wirtschaftsjahr der Einlageminderung und in den zehn vorangegangenen Wirtschaftsjahren ausgleichs- oder abzugsfähig gewesen ist
+    quelle: § 15a Abs. 3 S. 2 EStG
+    beschreibung: 'Deckel (S. 2): der hinzuzurechnende Betrag darf die im WJ der Einlageminderung + 10 vorangegangenen WJ (11-Jahres-Fenster) ausgleichs-/abzugsfähig gewesenen Verlustanteile nicht übersteigen. Das Aggregat = Input; die mehrjährige State-Verfolgung = Nachtrag.'
+  - bedingung: keine_haftung_abs1_s2
+    deckt_ab: soweit nicht auf Grund der Entnahmen eine nach Absatz 1 Satz 2 zu berücksichtigende Haftung besteht oder entsteht
+    quelle: § 15a Abs. 3 S. 1 EStG
+    beschreibung: 'Abgrenzung (S. 1): keine Hinzurechnung, soweit die Entnahmen eine erweiterte Außenhaftung (§ 171 HGB, Abs. 1 S. 2) begründen = eigene Prüfung/Nachtrag.'

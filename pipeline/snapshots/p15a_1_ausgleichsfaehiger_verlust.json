@@ -2,7 +2,8 @@
   "bedingungen": [
     "kapitalkonto_steuerlich_input",
     "kommanditist_haftungsbeschraenkt",
-    "boundary_entsteht_oder_erhoeht"
+    "boundary_entsteht_oder_erhoeht",
+    "andere_unternehmer_abs5_sinngemaess"
   ],
   "candidate_id": "p15a_1_ausgleichsfaehiger_verlust",
   "catala_a": "declaration scope AusgleichsfaehigerVerlust:\n  input verlustanteil content money\n  input kapitalkonto content money\n  output ausgleichsfaehiger_verlust content money\n\nscope AusgleichsfaehigerVerlust:\n  definition ausgleichsfaehiger_verlust equals\n    let positives_kapitalkonto equals\n      if kapitalkonto > $0.00 then kapitalkonto else $0.00\n    in\n    if verlustanteil < positives_kapitalkonto\n    then verlustanteil\n    else positives_kapitalkonto",

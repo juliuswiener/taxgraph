@@ -3,7 +3,8 @@
     "kfz_ueber_50_prozent_betrieblich",
     "keine_fahrtenbuchmethode",
     "blp_auf_volle_100_abgerundet",
-    "bruchteils_teiler_aus_e_katalog"
+    "bruchteils_teiler_aus_e_katalog",
+    "e_kfz_bruttolistenpreis_100k_grenze"
   ],
   "candidate_id": "p6_1_4_kfz_nutzungswert",
   "catala_a": "declaration scope KfzNutzungswert:\n  input bruttolistenpreis content money\n  input bruchteils_teiler content integer\n  output nutzungswert_monat content money\n\nscope KfzNutzungswert:\n  definition nutzungswert_monat equals\n    bruttolistenpreis / 100.0 / (decimal of bruchteils_teiler)",

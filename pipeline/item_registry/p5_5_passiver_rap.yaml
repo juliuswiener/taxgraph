@@ -1,0 +1,115 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p5_5_passiver_rap
+version: 1
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - der passive rap wird als anteilige einnahme berechnet, nicht als betrag fuer eine
+    bestimmte zeit nach dem stichtag.
+  formulierungen:
+  - Der passive RAP wird als anteilige Einnahme berechnet, nicht als Betrag für eine
+    bestimmte Zeit nach dem Stichtag.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die gesamtmonate werden als basis fuer die anteilige berechnung verwendet, obwohl
+    die norm keine proportionalisierung vorsieht.
+  formulierungen:
+  - Die Gesamtmonate werden als Basis für die anteilige Berechnung verwendet, obwohl
+    die Norm keine Proportionalisierung vorsieht.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - norm verlangt ansatz nur fuer bestimmte zeit nach stichtag, formalisierung prueft
+    nicht.
+  formulierungen:
+  - Norm verlangt Ansatz nur für bestimmte Zeit nach Stichtag, Formalisierung prüft
+    nicht.
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_nach_stichtag
+  - zeitbezug
+  formulierungen:
+  - Die Zeit nach dem Stichtag wird in Monaten gemessen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_gesamt
+  - zeitbezug
+  formulierungen:
+  - Die Gesamtzeit wird in Monaten gemessen.
+  triage: bedingung_neu
+  bedingung: zeitanteilig_monate_konvention
+- art: annahme
+  anker:
+  - betrifft_kat
+  - einnahme
+  - einheit
+  formulierungen:
+  - Die Einnahme wird als Bruttobetrag interpretiert.
+  triage: bedingung_neu
+  bedingung: zeitanteilig_monate_konvention
+- art: annahme
+  anker:
+  - betrifft_kat
+  - passiver_rap
+  - rundung
+  formulierungen:
+  - Der Betrag wird auf zwei Dezimalstellen gerundet. | Die Berechnung erfolgt mit
+    Dezimaldivision ohne explizite Rundungsvorschrift.
+  triage: bedingung_neu
+  bedingung: zeitanteilig_monate_konvention
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Der passive RAP wird auf zwei Dezimalstellen gerundet.
+  triage: bedingung_neu
+  bedingung: zeitanteilig_monate_konvention
+- art: annahme
+  anker:
+  - betrifft_kat
+  - einnahme
+  - interpretation
+  formulierungen:
+  - Die Einnahme wird als linear aufteilbar angenommen. | Annahme, dass einnahme der
+    volle Ertrag vor dem Stichtag ist.
+  triage: bedingung_neu
+  bedingung: zeitanteilig_monate_konvention
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_nach_stichtag
+  - geltungsvoraussetzung
+  formulierungen:
+  - Annahme, dass monate_nach_stichtag > 0 die bestimmte Zeit nach Stichtag abbildet.
+  triage: bedingung_neu
+  bedingung: ertrag_bestimmte_zeit_danach
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_gesamt
+  - einheit
+  formulierungen:
+  - Annahme, dass monate_gesamt die Gesamtzeit des Ertrags in Monaten angibt.
+  triage: bedingung_neu
+  bedingung: zeitanteilig_monate_konvention
+- art: norm_teil
+  anker:
+  - ref
+  - § 5 abs. 5 s. 1 nr. 2 estg
+  formulierungen:
+  - soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: ertrag_bestimmte_zeit_danach

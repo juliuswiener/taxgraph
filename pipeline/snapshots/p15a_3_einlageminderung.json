@@ -1,0 +1,197 @@
+{
+  "bedingungen": [
+    "einlageminderung_durch_entnahmen",
+    "deckel_11j_ausgleichsfaehig",
+    "keine_haftung_abs1_s2"
+  ],
+  "candidate_id": "p15a_3_einlageminderung",
+  "catala_a": "declaration scope Einlageminderung:\n  input einlageminderung content money\n  input ausgleichsfaehige_verluste_11j_fenster content money\n  output gewinnhinzurechnung content money\n\nscope Einlageminderung:\n  definition gewinnhinzurechnung equals\n    if einlageminderung < ausgleichsfaehige_verluste_11j_fenster\n    then einlageminderung\n    else ausgleichsfaehige_verluste_11j_fenster",
+  "catala_a_sha256": "4cdf8350d710efe8814d8ee965b03f512442f451c58616a40fe41ecd749842f0",
+  "catala_b": "declaration scope Einlageminderung:\n  input einlageminderung content money\n  input ausgleichsfaehige_verluste_11j_fenster content money\n  output gewinnhinzurechnung content money\n\nscope Einlageminderung:\n  definition gewinnhinzurechnung equals\n    if einlageminderung <= ausgleichsfaehige_verluste_11j_fenster then einlageminderung\n    else ausgleichsfaehige_verluste_11j_fenster",
+  "catala_b_sha256": "82799a1a3410d66be025d1799dd645d2c9e005e0d5e46b4d54e433e288d7549b",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'gewinnhinzurechnung'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 4 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 4
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 15a abs. 3 s. 1"
+            ],
+            "text": "ist dem Kommanditisten der Betrag der Einlageminderung als Gewinn zuzurechnen"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "Der nach Satz 1 zuzurechnende Betrag darf den Betrag der Anteile am Verlust der Kommanditgesellschaft nicht übersteigen",
+            "eingeschmolzen": "Der nach Satz 1 zuzurechnende Betrag darf den Betrag der Anteile am Verlust der Kommanditgesellschaft nicht übersteigen, der im Wirtschaftsjahr der Einlageminde",
+            "key": [
+              "ref",
+              "§ 15a abs. 3 s. 2"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        3,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "c42e1be62137",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "einlageminderung_durch_entnahmen",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "soweit ein negatives Kapitalkonto des Kommanditisten durch Entnahmen entsteht oder sich erhöht (Einlageminderung)",
+        "referenz": "§ 15a Abs. 3 S. 1"
+      },
+      {
+        "abgedeckt_von": "keine_haftung_abs1_s2",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "soweit nicht auf Grund der Entnahmen eine nach Absatz 1 Satz 2 zu berücksichtigende Haftung besteht oder entsteht",
+        "referenz": "§ 15a Abs. 3 S. 1"
+      },
+      {
+        "abgedeckt_von": "deckel_11j_ausgleichsfaehig",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Der nach Satz 1 zuzurechnende Betrag darf den Betrag der Anteile am Verlust der Kommanditgesellschaft nicht übersteigen",
+        "referenz": "§ 15a Abs. 3 S. 2"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "ist dem Kommanditisten der Betrag der Einlageminderung als Gewinn zuzurechnen",
+        "referenz": "§ 15a Abs. 3 S. 1"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-15T14:44:26+00:00"
+  },
+  "module_name": "Einlageminderung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

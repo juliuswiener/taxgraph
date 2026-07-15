@@ -1,0 +1,413 @@
+{
+  "bedingungen": [
+    "einnahme_vor_stichtag",
+    "ertrag_bestimmte_zeit_danach",
+    "rap_nur_bei_zeitbezug",
+    "nur_passivseite_einnahme",
+    "zeitanteilig_monate_konvention"
+  ],
+  "candidate_id": "p5_5_passiver_rap",
+  "catala_a": "declaration scope PassiverRap:\n  input einnahme content money\n  input monate_nach_stichtag content integer\n  input monate_gesamt content integer\n  output passiver_rap content money\n\nscope PassiverRap:\n  definition passiver_rap equals\n    if monate_nach_stichtag = 0 then $0.00\n    else\n      einnahme * (decimal of monate_nach_stichtag / decimal of monate_gesamt)",
+  "catala_a_sha256": "b0a7b02ffa7ff52a1e3d07354a992f9487344863b1c7ff72d2e1e71931a83dc7",
+  "catala_b": "declaration scope PassiverRap:\n  input einnahme content money\n  input monate_nach_stichtag content integer\n  input monate_gesamt content integer\n  output passiver_rap content money\n\nscope PassiverRap:\n  definition passiver_rap equals\n    if monate_gesamt = 0 then $0.00\n    else einnahme * ((decimal of monate_nach_stichtag) / (decimal of monate_gesamt))",
+  "catala_b_sha256": "9e2dbb6170f60c0f2409bd7ae43c5d685547ce03570f422e4f735ff7ca12d932",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'passiver_rap'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Der passive RAP wird als anteilige Einnahme berechnet, nicht als Betrag für eine bestimmte Zeit nach dem Stichtag.",
+      "Die Gesamtmonate werden als Basis für die anteilige Berechnung verwendet, obwohl die Norm keine Proportionalisierung vorsieht.",
+      "Norm verlangt Ansatz nur für bestimmte Zeit nach Stichtag, Formalisierung prüft nicht."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 5,
+        "annahmen": 10,
+        "norm_teile": 1
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der passive RAP wird als anteilige Einnahme berechnet, nicht als Betrag für eine bestimmte Zeit nach dem Stichtag."
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "monate_nach_stichtag"
+            ],
+            "text": "Die Bedingung 'soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen' fehlt."
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "monate_gesamt"
+            ],
+            "text": "Die Gesamtmonate werden als Basis für die anteilige Berechnung verwendet, obwohl die Norm keine Proportionalisierung vor"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Passiver RAP wird als anteilige Einnahme berechnet, Norm verlangt nur Ansatz als Posten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Norm verlangt Ansatz nur für bestimmte Zeit nach Stichtag, Formalisierung prüft nicht."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft_kat",
+              "monate_gesamt",
+              "zeitbezug"
+            ],
+            "text": "Die Gesamtzeit wird in Monaten gemessen."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "einnahme",
+              "einheit"
+            ],
+            "text": "Die Einnahme wird als Bruttobetrag interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "rundung"
+            ],
+            "text": "Der Betrag wird auf zwei Dezimalstellen gerundet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Der passive RAP wird auf zwei Dezimalstellen gerundet."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "einnahme",
+              "interpretation"
+            ],
+            "text": "Die Einnahme wird als linear aufteilbar angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_nach_stichtag",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Annahme, dass monate_nach_stichtag > 0 die bestimmte Zeit nach Stichtag abbildet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "monate_gesamt",
+              "einheit"
+            ],
+            "text": "Annahme, dass monate_gesamt die Gesamtzeit des Ertrags in Monaten angibt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "einnahme",
+              "interpretation"
+            ],
+            "text": "Annahme, dass einnahme der volle Ertrag vor dem Stichtag ist."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "rundung"
+            ],
+            "text": "Die Berechnung erfolgt mit Dezimaldivision ohne explizite Rundungsvorschrift."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "abweichung",
+          "gueltige_stimmen": 3,
+          "item": "Der passive RAP wird als anteilige Einnahme berechnet, nicht als Betrag für eine bestimmte Zeit nach dem Stichtag.",
+          "schluessel": "[\"abweichungen\", \"betrifft\", \"ergebnis\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Die Gesamtzeit wird in Monaten gemessen.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"monate_gesamt\", \"zeitbezug\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Die Gesamtmonate werden als Basis für die anteilige Berechnung verwendet, obwohl die Norm keine Proportionalisierung vorsieht.",
+            "eingeschmolzen": "Die Gesamtmonate werden als Basis für die anteilige Berechnung verwendet, obwohl die Norm keine Proportionalität vorsieht.",
+            "key": [
+              "betrifft",
+              "monate_gesamt"
+            ]
+          },
+          {
+            "cluster": "Die Gesamtmonate werden als Basis für die anteilige Berechnung verwendet, obwohl die Norm keine Proportionalisierung vorsieht.",
+            "eingeschmolzen": "Die Gesamtmonate werden als Basis für die anteilige Berechnung verwendet, obwohl die Norm keine solche Aufteilung vorsieht.",
+            "key": [
+              "betrifft",
+              "monate_gesamt"
+            ]
+          },
+          {
+            "cluster": "Die Gesamtmonate werden als Basis für die anteilige Berechnung verwendet, obwohl die Norm keine Proportionalisierung vorsieht.",
+            "eingeschmolzen": "Die Gesamtmonate werden als Basis für die anteilige Berechnung verwendet, obwohl die Norm keine Pro-rata-Temporis-Regel vorsieht.",
+            "key": [
+              "betrifft",
+              "monate_gesamt"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Die Zeit nach dem Stichtag wird in Monaten gemessen.",
+            "eingeschmolzen": "Annahme, dass monate_nach_stichtag die genaue Zeitdauer nach Stichtag in Monaten ist.",
+            "key": [
+              "betrifft_kat",
+              "monate_nach_stichtag",
+              "zeitbezug"
+            ]
+          },
+          {
+            "cluster": "Die Einnahme wird als linear aufteilbar angenommen.",
+            "eingeschmolzen": "Die Einnahme wird als linear über die Zeit verteilbar angenommen.",
+            "key": [
+              "betrifft_kat",
+              "einnahme",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen",
+            "eingeschmolzen": "auf der Passivseite Einnahmen vor dem Abschlussstichtag, soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen",
+            "key": [
+              "ref",
+              "§ 5 abs. 5 s. 1 nr. 2 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        8,
+        1,
+        1,
+        5,
+        1
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "98babc97ff42",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "ertrag_bestimmte_zeit_danach",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "soweit sie Ertrag für eine bestimmte Zeit nach diesem Tag darstellen",
+        "referenz": "§ 5 Abs. 5 S. 1 Nr. 2 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Die Zeit nach dem Stichtag wird in Monaten gemessen.",
+        "bedingung_id": "konv:ganzzahl_monate",
+        "betrifft": "monate_nach_stichtag",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Gesamtzeit wird in Monaten gemessen.",
+        "bedingung_id": "zeitanteilig_monate_konvention",
+        "betrifft": "monate_gesamt",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Einnahme wird als Bruttobetrag interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "einnahme",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Der Betrag wird auf zwei Dezimalstellen gerundet.",
+        "bedingung_id": null,
+        "betrifft": "passiver_rap",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Der passive RAP wird auf zwei Dezimalstellen gerundet.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die Einnahme wird als linear aufteilbar angenommen.",
+        "bedingung_id": null,
+        "betrifft": "einnahme",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Annahme, dass monate_nach_stichtag > 0 die bestimmte Zeit nach Stichtag abbildet.",
+        "bedingung_id": "ertrag_bestimmte_zeit_danach",
+        "betrifft": "monate_nach_stichtag",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Annahme, dass monate_gesamt die Gesamtzeit des Ertrags in Monaten angibt.",
+        "bedingung_id": null,
+        "betrifft": "monate_gesamt",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Annahme, dass einnahme der volle Ertrag vor dem Stichtag ist.",
+        "bedingung_id": "einnahme_vor_stichtag",
+        "betrifft": "einnahme",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Berechnung erfolgt mit Dezimaldivision ohne explizite Rundungsvorschrift.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "passiver_rap",
+        "kategorie": "rundung"
+      }
+    ],
+    "timestamp": "2026-07-15T14:43:43+00:00"
+  },
+  "module_name": "PassiverRap",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}
