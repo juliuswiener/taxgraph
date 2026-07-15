@@ -1,0 +1,22 @@
+id: gesamt_2024_einzel_kinder
+beschreibung: "Gesamtfall Einzel mit 1 Kind, VZ 2024: § 19 40000 + § 21 18770, SA 36 -> einkommen 58734; KFB+BEA 4770 (3306+1464, params/2024) -> zvE 53964; § 31 S. 4 Kindergeld-Hinzurechnung 250x12=3000 (params/2024). festzusetzende = tarif(53964,2024)=12325 + 3000 = 15325."
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2024
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 40000
+  einkuenfte_vermietung: 18770
+  sonderausgaben: 36
+  freibetraege_kinder: 4770
+  kinder_ganzjaehrig: 1
+
+erwartung:
+  festzusetzende_est: 15325
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 5/6 EStG (Stufenfolge), § 32 Abs. 6 (KFB+BEA, params/2024/kinderfreibetrag_p32), § 31 S. 4 i.V.m. § 66 (Kindergeld-Hinzurechnung, params/2024/kindergeld_p66), § 32a Abs. 1 (Grundtarif VZ 2024)"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"

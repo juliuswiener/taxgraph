@@ -86,6 +86,23 @@ def catala_entfernungspauschale(s: dict) -> int:
         hoechstbetrag_in=Money(f"{int(r['hoechstbetrag_ohne_kfz'])}.00")))
     return int(out.abziehbarer_betrag) // 100
 
+
+def _kindergeld(year: int) -> int:
+    """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "kindergeld_p66.yaml"), encoding="utf-8"))
+    return p["kindergeld_monatlich_je_kind"]["wert"]
+
+
+def _vorsorge_hb(year: int) -> int:
+    """Vorsorge-Hoechstbetrag aus params/<vz> (§ 10 Abs. 3): 27566/29344/30826. Cap-
+    Eingabe von p10_1_2_altersvorsorge; dieser Scope ist noch NICHT in catala_gesamt
+    verdrahtet - der Accessor liegt bereit fuer den kuenftigen Anschluss (dev-2-Befund)."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "vorsorge_hoechstbetrag_p10.yaml"), encoding="utf-8"))
+    return p["hoechstbeitrag"]["wert"]
+
+
 VZ_ENUM = {
     2024: E.Veranlagungszeitraum(E.Veranlagungszeitraum.Code.VZ2024, None),
     2025: E.Veranlagungszeitraum(E.Veranlagungszeitraum.Code.VZ2025, None),
@@ -105,6 +122,12 @@ def catala_gesamt(s: dict) -> int:
     year = s["veranlagungszeitraum"]
     def m(k):
         return Money(f"{int(s.get(k, 0))}.00")
+    # § 31 S. 4 Hinzurechnung: ist `kinder_ganzjaehrig` gesetzt, wird der Jahres-
+    # Kindergeld-Betrag aus params/<vz> abgeleitet (Monatswert x 12 x Kinder),
+    # sonst gilt der direkte sachverhalt-Wert. So ist die Groesse params-geankert.
+    hinzu_kg = int(s.get("hinzurechnung_kindergeld", 0))
+    if s.get("kinder_ganzjaehrig"):
+        hinzu_kg = _kindergeld(year) * 12 * int(s["kinder_ganzjaehrig"])
     scope = (E.festzusetzende_est_gesamt_zusammen if s.get("veranlagung") == "zusammen"
              else E.festzusetzende_est_gesamt)
     cls = (E.FestzusetzendeEstGesamtZusammenIn if s.get("veranlagung") == "zusammen"
@@ -124,7 +147,7 @@ def catala_gesamt(s: dict) -> int:
         anzurechnende_auslaendische_steuern_in=m("anzurechnende_auslaendische_steuern"),
         steuerermaessigungen_in=m("steuerermaessigungen"),
         steuer_kapital_gesondert_in=m("steuer_kapital_gesondert"),
-        hinzurechnung_kindergeld_in=m("hinzurechnung_kindergeld"),
+        hinzurechnung_kindergeld_in=Money(f"{hinzu_kg}.00"),
         hinzurechnung_zulage_in=m("hinzurechnung_zulage"),
         tarif_modifiziert_in=Bool(s.get("tarif_modifiziert", False)),
         tarifliche_est_modifiziert_in=m("tarifliche_est_modifiziert"),
