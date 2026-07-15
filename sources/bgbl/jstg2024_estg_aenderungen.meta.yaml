@@ -1,0 +1,19 @@
+# Eingefrorenes Aenderungsgesetz (Quellen-Klasse gesetz/Aenderungsbefehl). Provenance-Archiv.
+dokument:
+  norm_uri: "bgbl/2024-I-387/jstg2024/estg"
+  norm: "Jahressteuergesetz 2024 v. 02.12.2024 (BGBl. 2024 I Nr. 387), EStG-Aenderungen (u.a. § 10 Abs 1 Nr 5 Kinderbetreuung)"
+  fassung: "BGBl 2024 I Nr. 387"
+  quelle_url: "https://www.buzer.de/4_JStG_2024.htm"
+  abrufdatum: "2026-07-15"
+  datei: "jstg2024_estg_aenderungen.txt"
+  sha256: "d4a9bd1df378f2d4f0c5e560696a6b0c2747f88d511c9c202b6d4e424d0a774f"
+  authority: gesetz
+  redistributable: true
+  hinweis: "buzer.de-Mirror des BGBl-Aenderungstextes. Belegt die VZ-2024-ALTFASSUNG von
+    § 10 Abs 1 Nr 5 (Aenderungsbefehl: 'zwei Drittel' -> '80 Prozent', '4.000 Euro' ->
+    '4.800 Euro'; wirksam ab VZ 2025) => Altfassung VZ 2024 = zwei Drittel / 4.000 Euro,
+    sonst wortgleich. Grundlage fuer Regel-Version p10_1_5_kinderbetreuung_vz2024 (M5
+    Stufe 4). Gemischte Anfuehrungszeichen wie wtchanceng-Freeze - Anker exakt."
+  erwartete_anker:
+    - "In Absatz 1 Nummer 5 werden die Wörter „zwei Drittel\" durch die Angabe „80 Prozent\" ersetzt und wird die Angabe „4.000 Euro\" durch die Angabe „4.800 Euro\" ersetzt"
+  verwendet_in: ["M5 Stufe 4 (p10_1_5-VZ-2024-Version)", "Multi-VZ M3-Provenance Kinderbetreuung"]
