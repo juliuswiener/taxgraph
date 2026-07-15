@@ -1,0 +1,55 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p5_5_aktiver_rap
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_nach_stichtag
+  - zeitbezug
+  formulierungen:
+  - Annahme, dass monate_nach_stichtag die bestimmte Zeit nach dem Stichtag repräsentiert.
+    | Die Monate nach dem Stichtag werden als Zeitraum für den Aufwand angenommen.
+  triage: bedingung_neu
+  bedingung: aufwand_bestimmte_zeit_danach
+- art: annahme
+  anker:
+  - betrifft_kat
+  - monate_gesamt
+  - zeitbezug
+  formulierungen:
+  - Annahme, dass monate_gesamt die Gesamtzeit des Aufwands abbildet. | Die Gesamtmonate
+    werden als Bezugszeitraum für die Verteilung angenommen.
+  triage: bedingung_neu
+  bedingung: zeitanteilig_monate_konvention
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ausgabe
+  - interpretation
+  formulierungen:
+  - Annahme, dass ausgabe Aufwand für eine bestimmte Zeit nach dem Stichtag darstellt.
+  triage: bedingung_neu
+  bedingung: aufwand_bestimmte_zeit_danach
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - Annahme, dass die Division und Multiplikation ohne spezifische Rundungsvorschrift
+    erfolgt. | Annahme einer linearen Verteilung ohne explizite Rundungsvorgabe.
+  triage: bedingung_neu
+  bedingung: zeitanteilig_monate_konvention
+- art: norm_teil
+  anker:
+  - ref
+  - § 5 abs. 5 s. 1 nr. 1 estg
+  formulierungen:
+  - auf der Aktivseite Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für
+    eine bestimmte Zeit nach diesem Tag darstellen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: ausgabe_vor_stichtag

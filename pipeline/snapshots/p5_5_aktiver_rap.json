@@ -1,0 +1,309 @@
+{
+  "bedingungen": [
+    "ausgabe_vor_stichtag",
+    "aufwand_bestimmte_zeit_danach",
+    "rap_nur_bei_zeitbezug",
+    "nur_aktivseite_ausgabe",
+    "zeitanteilig_monate_konvention"
+  ],
+  "candidate_id": "p5_5_aktiver_rap",
+  "catala_a": "declaration scope AktiverRap:\n  input ausgabe content money\n  input monate_nach_stichtag content integer\n  input monate_gesamt content integer\n  output aktiver_rap content money\n\nscope AktiverRap:\n  definition aktiver_rap equals\n    if monate_nach_stichtag = 0 then $0.00\n    else\n      ausgabe * (decimal of monate_nach_stichtag / decimal of monate_gesamt)",
+  "catala_a_sha256": "121841aa757768f20961600a120721db61dab207951ad5a61239081702f9e224",
+  "catala_b": "declaration scope AktiverRap:\n  input ausgabe content money\n  input monate_nach_stichtag content integer\n  input monate_gesamt content integer\n  output aktiver_rap content money\n\nscope AktiverRap:\n  definition aktiver_rap equals\n    ((ausgabe / $1.00) * (decimal of monate_nach_stichtag) / (decimal of monate_gesamt)) * $1.00",
+  "catala_b_sha256": "9b4f0b5b63b0850967f54f80272c38f7f45b50d43494a87bcc0ba8c31fd6caa9",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'aktiver_rap'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 7,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 4,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "monate_nach_stichtag",
+              "zeitbezug"
+            ],
+            "text": "Annahme, dass monate_nach_stichtag die bestimmte Zeit nach dem Stichtag repräsentiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "monate_gesamt",
+              "zeitbezug"
+            ],
+            "text": "Annahme, dass monate_gesamt die Gesamtzeit des Aufwands abbildet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Annahme, dass die Division und Multiplikation ohne spezifische Rundungsvorschrift erfolgt."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "monate_gesamt",
+              "zeitbezug"
+            ],
+            "text": "Die Gesamtmonate werden als Bezugszeitraum für die Verteilung angenommen."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "monate_nach_stichtag",
+              "zeitbezug"
+            ],
+            "text": "Die Monate nach dem Stichtag werden als Zeitraum für den Aufwand angenommen."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ],
+            "text": "Annahme einer linearen Verteilung ohne explizite Rundungsvorgabe."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "auf der Aktivseite Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darste",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 5 abs. 5 s. 1 nr. 1 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Annahme, dass ausgabe Aufwand für eine bestimmte Zeit nach dem Stichtag darstellt.",
+            "eingeschmolzen": "Die Ausgabe wird als Aufwand für eine bestimmte Zeit interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "ausgabe",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Die Monate nach dem Stichtag werden als Zeitraum für den Aufwand angenommen.",
+            "eingeschmolzen": "Die Monate nach dem Stichtag werden als bestimmter Zeitraum interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "monate_nach_stichtag",
+              "zeitbezug"
+            ]
+          },
+          {
+            "cluster": "Annahme, dass ausgabe Aufwand für eine bestimmte Zeit nach dem Stichtag darstellt.",
+            "eingeschmolzen": "Die Ausgabe wird als Aufwand für eine bestimmte Zeit nach dem Stichtag gelesen.",
+            "key": [
+              "betrifft_kat",
+              "ausgabe",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Annahme einer linearen Verteilung ohne explizite Rundungsvorgabe.",
+            "eingeschmolzen": "Die Berechnung erfolgt mit Dezimaldivision ohne explizite Rundungsvorgabe.",
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "rundung"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "auf der Aktivseite Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen",
+            "eingeschmolzen": "soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen",
+            "key": [
+              "ref",
+              "§ 5 abs. 5 s. 1 nr. 1 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        5,
+        2,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "9f7c885be2ed",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "ausgabe_vor_stichtag",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "auf der Aktivseite Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen",
+        "referenz": "§ 5 Abs. 5 S. 1 Nr. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Annahme, dass monate_nach_stichtag die bestimmte Zeit nach dem Stichtag repräsentiert.",
+        "bedingung_id": "aufwand_bestimmte_zeit_danach",
+        "betrifft": "monate_nach_stichtag",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Annahme, dass monate_gesamt die Gesamtzeit des Aufwands abbildet.",
+        "bedingung_id": null,
+        "betrifft": "monate_gesamt",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Annahme, dass ausgabe Aufwand für eine bestimmte Zeit nach dem Stichtag darstellt.",
+        "bedingung_id": "aufwand_bestimmte_zeit_danach",
+        "betrifft": "ausgabe",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Annahme, dass die Division und Multiplikation ohne spezifische Rundungsvorschrift erfolgt.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Die Gesamtmonate werden als Bezugszeitraum für die Verteilung angenommen.",
+        "bedingung_id": null,
+        "betrifft": "monate_gesamt",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Die Monate nach dem Stichtag werden als Zeitraum für den Aufwand angenommen.",
+        "bedingung_id": "aufwand_bestimmte_zeit_danach",
+        "betrifft": "monate_nach_stichtag",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Annahme einer linearen Verteilung ohne explizite Rundungsvorgabe.",
+        "bedingung_id": null,
+        "betrifft": "ergebnis",
+        "kategorie": "rundung"
+      }
+    ],
+    "timestamp": "2026-07-15T13:29:04+00:00"
+  },
+  "module_name": "AktiverRap",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

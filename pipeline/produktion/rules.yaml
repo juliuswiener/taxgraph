@@ -5801,3 +5801,102 @@ regeln:
     deckt_ab: Soweit der Verlust nach den Absätzen 1 und 1a nicht ausgeglichen oder abgezogen werden darf
     quelle: § 15a Abs. 2 S. 1 EStG
     beschreibung: Der ausgleichsfähige Verlust kommt aus p15a_1_ausgleichsfaehiger_verlust (Abs. 1) herein (Andockung), keine Doppel-min/max-Logik; der Rest ist verrechenbar.
+- rule_id: p5_5_aktiver_rap
+  norm: § 5 Abs. 5 S. 1 Nr. 1 EStG (aktiver Rechnungsabgrenzungsposten, Zeitanteiligkeit)
+  hinweis: 'aktiver_rap = ausgabe * monate_nach_stichtag / monate_gesamt. Der auf die Zeit NACH dem Abschlussstichtag entfallende, abzugrenzende Teil einer Ausgabe vor dem Stichtag (Aufwand fuer eine bestimmte Zeit danach). KLASSE-5-Vermeidung: Division durch monate_gesamt ZULETZT (/12-Lehre), Cent-Schnitt am Ende, KEINE vorgerundete Monatsrate. Monate als int-Inputs (ganzzahlige Perioden). MONATSGRANULARITAET ist eine KONVENTION (Wortlaut sagt ''bestimmte Zeit'', nicht ''Monat''); Tagesgenauigkeit = benannter Nachtrag. Boundary: monate_nach_stichtag = 0 -> 0 (kein RAP). Keine Norm-Konstante im Code.'
+  quellen:
+  - typ: gesetz
+    label: § 5 Abs. 5 S. 1 Nr. 1 EStG (aktiver RAP, Zeitbezug)
+    datei: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen
+    auszug: Als Rechnungsabgrenzungsposten sind nur anzusetzen 1. auf der Aktivseite Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen
+  signature:
+    scope: AktiverRap
+    inputs:
+      ausgabe: money
+      monate_nach_stichtag: int
+      monate_gesamt: int
+    output: aktiver_rap
+  raster:
+  - ausgabe: 1200
+    monate_nach_stichtag: 9
+    monate_gesamt: 12
+  - ausgabe: 1200
+    monate_nach_stichtag: 3
+    monate_gesamt: 12
+  - ausgabe: 2400
+    monate_nach_stichtag: 6
+    monate_gesamt: 24
+  - ausgabe: 1200
+    monate_nach_stichtag: 0
+    monate_gesamt: 12
+  - ausgabe: 1200
+    monate_nach_stichtag: 12
+    monate_gesamt: 12
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen
+    herkunft: synthetisch
+    rechenweg: 'Versicherung 1.10.: 3 M laufend, 9 M RAP. 1.200 * 9 / 12 = 900,00 (Division zuletzt).'
+    inputs:
+      ausgabe: 1200
+      monate_nach_stichtag: 9
+      monate_gesamt: 12
+    expected: 900.0
+  - quelle: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen
+    herkunft: synthetisch
+    rechenweg: 1.200 * 3 / 12 = 300,00.
+    inputs:
+      ausgabe: 1200
+      monate_nach_stichtag: 3
+      monate_gesamt: 12
+    expected: 300.0
+  - quelle: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen
+    herkunft: synthetisch
+    rechenweg: 2.400 * 6 / 24 = 600,00.
+    inputs:
+      ausgabe: 2400
+      monate_nach_stichtag: 6
+      monate_gesamt: 24
+    expected: 600.0
+  - quelle: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen
+    herkunft: synthetisch
+    rechenweg: 'WÄCHTER nichts nach Stichtag: 1.200 * 0 / 12 = 0,00 (kein RAP).'
+    inputs:
+      ausgabe: 1200
+      monate_nach_stichtag: 0
+      monate_gesamt: 12
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
+    zitatanker: Ausgaben vor dem Abschlussstichtag, soweit sie Aufwand für eine bestimmte Zeit nach diesem Tag darstellen
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL alles nach Stichtag: 1.200 * 12 / 12 = 1.200,00 (ganze Ausgabe RAP).'
+    inputs:
+      ausgabe: 1200
+      monate_nach_stichtag: 12
+      monate_gesamt: 12
+    expected: 1200.0
+  geltungsbedingungen:
+  - bedingung: ausgabe_vor_stichtag
+    deckt_ab: Ausgaben vor dem Abschlussstichtag
+    quelle: § 5 Abs. 5 S. 1 Nr. 1 EStG
+    beschreibung: Die Ausgabe faellt VOR dem Abschlussstichtag an (Sachverhalt).
+  - bedingung: aufwand_bestimmte_zeit_danach
+    deckt_ab: Aufwand für eine bestimmte Zeit nach diesem Tag
+    quelle: § 5 Abs. 5 S. 1 Nr. 1 EStG
+    beschreibung: Die Ausgabe ist Aufwand fuer eine BESTIMMTE (abgrenzbare) Zeit nach dem Stichtag; unbestimmte Zeit -> kein RAP.
+  - bedingung: rap_nur_bei_zeitbezug
+    deckt_ab: Als Rechnungsabgrenzungsposten sind nur anzusetzen
+    quelle: § 5 Abs. 5 S. 1 EStG
+    beschreibung: 'B3-Paket: RAP sind NUR bei Zeitbezug anzusetzen (abschliessende Aufzaehlung, Ansatzvoraussetzung).'
+  - bedingung: nur_aktivseite_ausgabe
+    deckt_ab: auf der Aktivseite Ausgaben vor dem Abschlussstichtag
+    quelle: § 5 Abs. 5 S. 1 Nr. 1 EStG
+    beschreibung: 'Aktivseite: Ausgabe->Aufwand (aktiver RAP). Passivseite Einnahme->Ertrag (Nr. 2, passiver RAP) = Nachtrag.'
+  - bedingung: zeitanteilig_monate_konvention
+    deckt_ab: für eine bestimmte Zeit nach diesem Tag
+    quelle: § 5 Abs. 5 S. 1 Nr. 1 EStG
+    beschreibung: 'KONVENTION (Instructor-Auflage C23): die Zeitanteiligkeit wird in GANZEN MONATEN (monate_nach_stichtag/monate_gesamt) gerechnet. Der Wortlaut sagt ''bestimmte Zeit'', nicht ''Monat'' - Monatsgranularitaet ist Berechnungs-Konvention, Tagesgenauigkeit = benannter Nachtrag.'
