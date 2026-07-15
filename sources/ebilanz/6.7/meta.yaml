@@ -1,0 +1,56 @@
+# Eingefrorene E-Bilanz-Taxonomie 6.7 (amtlich vorgeschriebener Datensatz § 5b EStG).
+# Beschaffung durch Instructor 2026-07-15; Autorisierung: Julius direkt im Chat
+# ("alles nacheinander", 2026-07-15, auf Entscheidungsliste mit E-Bilanz-Paket/
+# XBRL-Taxonomie). Beschaffungs-SPEC: dev-2-Report
+# reports/review/2026-07-15-ebilanz-taxonomie-versionen-wj.md (e63f1b1).
+dokument:
+  norm_uri: "ebilanz/taxonomie-6.7"
+  norm: "E-Bilanz-Taxonomie 6.7 (XBRL, Stand 01.04.2023) - GCD-Modul + Kerntaxonomie de-gaap-ci"
+  fassung: "6.7 vom 01.04.2023"
+  bmf_schreiben: "09.06.2023, IV C 6-S 2133-b/22/10002:002"
+  gueltig_wj: "WJ 2024 (o. 2024/25) VERPFLICHTEND; WJ 2023 optional nicht-beanstandet"
+  gueltig_ab_wj_beginn_nach: "2023-12-31"
+  quelle_url: "https://www.esteuer.de/download/taxonomie_20230619/"
+  abrufdatum: "2026-07-15"
+  authority: gesetz  # amtlich vorgeschriebener Datensatz nach § 5b Abs. 1 EStG i.V.m. BMF-Schreiben
+  redistributable: true
+  hinweis: "Amtliche Quelle esteuer.de (BMF-Referenzseite E-Bilanz). Version folgt dem
+    WIRTSCHAFTSJAHR, nicht dem VZ (dev-2-Befund, trianguliert BMF/DATEV/Haufe/Otto Schmidt).
+    Verbindlich ist allein das XBRL-Paket; Excel-Visualisierungen = unverbindliches
+    Arbeitswerkzeug fuer die Mussfeld-Lesung. Grosse Binaries (ZIP/XLSX/PDF) sind
+    gitignored und liegen nur lokal - sha256 hier fixiert. Committet sind die
+    XBRL-Kerndateien unter xbrl/ (de-gaap-ci: Haupt-XSD, shell-fiscal, reference-fiscal
+    [traegt Mussfeld-Flags, 514x 'Mussfeld'], label-fiscal-de, 4 presentation-Linkbases
+    Bilanz/GuV/steuerl. Gewinnermittlung [auch PersGes]; de-gcd: XSD, shell, reference-fiscal)."
+  artefakte_binaer_lokal:  # gitignored, nur lokal; Integritaet via sha256
+    german-gaap-taxonomy-v6.7-2023-04-01.zip:
+      sha256: "ad0768cb42aab2fc48d0971120591d37815d335a0ea6949f60819dca3a40df05"
+      rolle: "XBRL-Gesamtpaket (amtlich verbindlich); Quelle der committeten xbrl/-Dateien"
+    de-gaap-ci-2023-04-01-shell-fiscal.zip:
+      sha256: "0ca69e123a30fc8df177022bc5a1f69567852d3b7c0bc1e75a72afb0b7bbc4cc"
+      rolle: "Excel-Visualisierung Kerntaxonomie (gezippt; enthaelt die beiden XLSX)"
+    de-gaap-ci-2023-04-01-shell-fiscal.xlsx:
+      sha256: "acfd17801c18bc4b82eff920c9c7d8b085e24082336dd60cbabe854b1a02fcb6"
+      rolle: "Excel-Vis Kerntaxonomie (Mussfeld-Spalten, Lesewerkzeug dev-2)"
+    de-gaap-ci-2023-04-01-shell-fiscal-microbilg.xlsx:
+      sha256: "987c3f9bc71f9f4d985848376ffbe392ceb0592ee05f849feaaf9948c07cbf6f"
+      rolle: "Excel-Vis MicroBilG-Sicht (Kleinstkapitalges., Rand-Scope)"
+    de-gcd-2023-04-01-shell.xlsx:
+      sha256: "1255d84e9942c13ce91a37781b4aa704c638141c78347f415dbee0e45c6ae7d4"
+      rolle: "Excel-Vis GCD-Stammdatenmodul"
+    "Änderungsnachweis_Tax_6.7.pdf":
+      sha256: "a27e54d1a0e947ed7249590533832a941b8048a79c02a8be86505bd5198bc418"
+      rolle: "Aenderungsnachweis 6.7 vs 6.6 (Element-Wanderungen, Gueltigkeits-Direktive)"
+  artefakte_committet:  # xbrl/-Kerndateien, aus dem Gesamtpaket entpackt
+    xbrl/de-gaap-ci-2023-04-01.xsd: "0ac9d8115211579a37c29e10b2df6d09e696e9b3b6f8d298a0487c045a0b70e6"
+    xbrl/de-gaap-ci-2023-04-01-shell-fiscal.xsd: "12ba98da278c90c0044a0c939d41e772cd8f9f9f71230d9715bfbab70e7dc1f7"
+    xbrl/de-gaap-ci-2023-04-01-reference-fiscal.xml: "6e873122f3321840dde5acfe9488fecf526e05503b1ef1e0fa4abbd85530536d"
+    xbrl/de-gaap-ci-2023-04-01-label-fiscal-de.xml: "1b3705654388a65b6729efe7a02a0e77e8c250f7ebaf8555b61f01d41cd175ea"
+    xbrl/de-gaap-ci-2023-04-01-presentation-balanceSheet.xml: "0c07b04489e1fdfb943ca30c50fa1b52e4dddcbeac26dd717643b7a556af2de5"
+    xbrl/de-gaap-ci-2023-04-01-presentation-incomeStatement.xml: "4b036b215314c333e923b8b566fc746ba9fbaeb44145fc827734c2f16a976d82"
+    xbrl/de-gaap-ci-2023-04-01-presentation-determinationOfTaxableIncome.xml: "4322ada5ce8fe4eb19f1871a862542da6e1ec43293e0d9063ef2a2bac7e3eb10"
+    xbrl/de-gaap-ci-2023-04-01-presentation-determinationOfTaxableIncomeBusinessPartnership.xml: "bfffda11dff916d4d6684b2fd27bff2da3800df856ec907c893b5cba4a302390"
+    xbrl/de-gcd-2023-04-01.xsd: "3dd5787767a28428a8952bec7a1184155fd29b21423a5e8c26f8553bd5dd7ba3"
+    xbrl/de-gcd-2023-04-01-shell.xsd: "4e523c7bd81dbb55c5e3613d80ec92aa9eae0146b8cbb5e3d7c81cba2c22b8dc"
+    xbrl/de-gcd-2023-04-01-reference-fiscal.xml: "01fec3720e354477df3114a1d5d36bc088064191ade9f6f95d95877448a24ae2"
+  verwendet_in: ["Paket 2 E-Bilanz: Muss-Feld-Katalog WJ 2024 + Muss∩W2-Mapping (dev-2), Extraktor (dev-1)"]

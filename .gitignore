@@ -24,3 +24,6 @@ openrouter.env
 # Pipeline run artifacts (logs may contain prompts/costs; keep out of git)
 pipeline/runs/
 sources/**/*.pdf
+# E-Bilanz-Taxonomie: grosse Binaries lokal, sha256 in meta.yaml (analog PDF-Politik)
+sources/ebilanz/**/*.zip
+sources/ebilanz/**/*.xlsx

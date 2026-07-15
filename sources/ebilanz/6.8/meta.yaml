@@ -1,0 +1,60 @@
+# Eingefrorene E-Bilanz-Taxonomie 6.8 (amtlich vorgeschriebener Datensatz § 5b EStG).
+# Beschaffung durch Instructor 2026-07-15; Autorisierung: Julius direkt im Chat
+# ("alles nacheinander", 2026-07-15, auf Entscheidungsliste mit E-Bilanz-Paket/
+# XBRL-Taxonomie). Beschaffungs-SPEC: dev-2-Report
+# reports/review/2026-07-15-ebilanz-taxonomie-versionen-wj.md (e63f1b1).
+dokument:
+  norm_uri: "ebilanz/taxonomie-6.8"
+  norm: "E-Bilanz-Taxonomie 6.8 (XBRL, Stand 01.04.2024) - GCD-Modul + Kerntaxonomie de-gaap-ci"
+  fassung: "6.8 vom 01.04.2024"
+  bmf_schreiben: "27.05.2024, IV C 6-S 2133-b/24/10001:002, BStBl I S. 928"
+  gueltig_wj: "WJ 2025 (o. 2025/26) VERPFLICHTEND; WJ 2024 optional nicht-beanstandet"
+  gueltig_ab_wj_beginn_nach: "2024-12-31"
+  quelle_url: "https://www.esteuer.de/download/taxonomie_20240610/"
+  abrufdatum: "2026-07-15"
+  authority: gesetz  # amtlich vorgeschriebener Datensatz nach § 5b Abs. 1 EStG i.V.m. BMF-Schreiben
+  redistributable: true
+  hinweis: "Amtliche Quelle esteuer.de (BMF-Referenzseite E-Bilanz). Version folgt dem
+    WIRTSCHAFTSJAHR, nicht dem VZ (dev-2-Befund, trianguliert BMF/DATEV/Haufe/Otto Schmidt).
+    Verbindlich ist allein das XBRL-Paket; Excel-Visualisierungen = unverbindliches
+    Arbeitswerkzeug fuer die Mussfeld-Lesung. Grosse Binaries (ZIP/XLSX/PDF) sind
+    gitignored und liegen nur lokal - sha256 hier fixiert. Committet sind die
+    XBRL-Kerndateien unter xbrl/ (de-gaap-ci: Haupt-XSD, shell-fiscal, reference-fiscal
+    [traegt Mussfeld-Flags, 525x 'Mussfeld'], label-fiscal-de, 4 presentation-Linkbases
+    Bilanz/GuV/steuerl. Gewinnermittlung [auch PersGes]; de-gcd: XSD, shell, reference-fiscal).
+    Kontennachweis-UEBERMITTLUNGSPFLICHT (JStG 2024): rechtlich ab WJ 2025, taxonomisch
+    erst in 6.9 umgesetzt (Nichtbeanstandungsregelung fuer 6.8-Uebermittlungen) -
+    fuer den 6.8-Muss-Feld-Katalog als dokumentierte Luecke fuehren, nicht als Feld
+    (dev-2 Teil A; bei Kartierung praezisieren)."
+  artefakte_binaer_lokal:  # gitignored, nur lokal; Integritaet via sha256
+    german-gaap-taxonomy-v6.8-2024-04-01-xbrl.zip:
+      sha256: "1283dec2d45bce76d3194bb035bdf432ab477d688fc342bb5c17d16ec02285d7"
+      rolle: "XBRL-Gesamtpaket (amtlich verbindlich); Quelle der committeten xbrl/-Dateien"
+    de-gaap-ci-2024-04-01-shell-fiscal.zip:
+      sha256: "f850864b6527f4e09d740584cb6138b41da089969ba0a402570792efccaab318"
+      rolle: "Excel-Visualisierung Kerntaxonomie (gezippt; enthaelt die beiden XLSX)"
+    de-gaap-ci-2024-04-01-shell-fiscal.xlsx:
+      sha256: "32bc59928487dd8f229a8eebfff3f284f209ba8b8beb8939667e523ec1e401e2"
+      rolle: "Excel-Vis Kerntaxonomie (Mussfeld-Spalten, Lesewerkzeug dev-2)"
+    de-gaap-ci-2024-04-01-shell-fiscal-microbilg.xlsx:
+      sha256: "c7b85ecbb27444ba671f8fdfac41f867ae6eb1b145a49f4c3bd73b6a6a7bcb9d"
+      rolle: "Excel-Vis MicroBilG-Sicht (Kleinstkapitalges., Rand-Scope)"
+    de-gcd-2024-04-01-shell.xlsx:
+      sha256: "47117e4b1e7ad5ddc301de1fdd347546bee537d6631efad9af8ba765a93ef97d"
+      rolle: "Excel-Vis GCD-Stammdatenmodul"
+    "Änderungsnachweis_Tax_6.8.pdf":
+      sha256: "0130eb51b1bfaa8f9dcbcc6c2ac9093f2f7386b2147f972cd9e5641425ddaf8a"
+      rolle: "Aenderungsnachweis 6.8 vs 6.7 (Element-Wanderungen, Gueltigkeits-Direktive)"
+  artefakte_committet:  # xbrl/-Kerndateien, aus dem Gesamtpaket entpackt
+    xbrl/de-gaap-ci-2024-04-01.xsd: "b6522a242a7aa593c4548762460055c01588e57d3ae5ef202789db64561f8174"
+    xbrl/de-gaap-ci-2024-04-01-shell-fiscal.xsd: "35d940588f22a99445c6f9b66d224f40245034ac039103275b8bff520ad8ff05"
+    xbrl/de-gaap-ci-2024-04-01-reference-fiscal.xml: "fa95dc44540bcc35bb28dce0bf7be19f293a997350c2c55eb455e6d940144311"
+    xbrl/de-gaap-ci-2024-04-01-label-fiscal-de.xml: "71dd2ae06cafc341729a61772566e74d5e86d5417f7a77fab791827da8e074c4"
+    xbrl/de-gaap-ci-2024-04-01-presentation-balanceSheet.xml: "d0338d8dbbd0a7265d6c4285ce8dc5019b28d4e392015c178f464915b0ee9118"
+    xbrl/de-gaap-ci-2024-04-01-presentation-incomeStatement.xml: "69513bf2b6e3395899ec4b49a4860d13899c59b899301102d06a059eaf55c320"
+    xbrl/de-gaap-ci-2024-04-01-presentation-determinationOfTaxableIncome.xml: "378f057748dc62ff291992bb73954ee49db9f95485b587d4d6d4740020a8c079"
+    xbrl/de-gaap-ci-2024-04-01-presentation-determinationOfTaxableIncomeBusinessPartnership.xml: "b83db0c50f0a67ae09db424e4b9052fa8258a938497cf6a9cd6b95b6d2113d0d"
+    xbrl/de-gcd-2024-04-01.xsd: "9c205e93c9ec2ef15e4bf85b5ed75e50eb25f50da05e49c951beaa3f9f10409b"
+    xbrl/de-gcd-2024-04-01-shell.xsd: "1bd0a28011ebb88ff7109f065b1bf71025a85c72c8c686a54763defa42bc4aa9"
+    xbrl/de-gcd-2024-04-01-reference-fiscal.xml: "df38ceb2993de773e7fa3cd10f2b95ad2018b4a4c70c8dbef10a421eafdd5c4c"
+  verwendet_in: ["Paket 2 E-Bilanz: Muss-Feld-Katalog WJ 2025 + Muss∩W2-Mapping (dev-2), Extraktor (dev-1)"]
