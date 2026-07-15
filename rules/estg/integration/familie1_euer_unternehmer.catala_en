@@ -1,0 +1,267 @@
+# Fall-Familie 1 — Einzel-EÜR-Unternehmer, E2E-Kette
+
+> Module Familie1_euer_unternehmer
+> Using Einkommensteuertarif
+> Using Solzg
+
+Handgeschriebenes Integrations-Golden (Charge 25, 2026-07-15). Kettet die bereits
+verifizierten Bausteine zu einem End-to-end-Fall: EÜR-Gewinn (§ 4 Abs. 3 EStG) ->
+Anlage G (`einkuenfte_gewinn`-Andockung der § 2-Stufenfolge) -> tarifliche ESt
+(§ 32a, `Einkommensteuertarif.FestzusetzendeEstGesamt`) -> § 35-GewSt-Anrechnung ->
+festzusetzende ESt -> Solidaritaetszuschlag (`Solzg.Solidaritaetszuschlag`). Reine
+Verdrahtung bereits verifizierter Regeln; keine neue Norm-Auslegung.
+
+Zwei Rechenschritte (Gewinnermittlung, § 35-Anrechnung) existieren bereits als
+verifizierte Pipeline-Regeln (`p4_3_gewinn`, `p35_1_gewst_anrechnung`,
+`pipeline/snapshots/`), sind dort aber nicht Teil von `pipeline/produktion/rules.yaml`
+und daher nicht als Catala-Modul aufrufbar. Sie werden hier wortgleich zu ihrer
+verifizierten `catala_a`-Fassung inline re-implementiert (kein neuer Formalisierungs-
+Schritt, siehe Kommentare je Regel).
+
+## § 4 Abs. 3 EStG: EÜR-Gewinn
+
+    (3) 1 Steuerpflichtige, die nicht auf Grund gesetzlicher Vorschriften
+    verpflichtet sind, Bücher zu führen und regelmäßig Abschlüsse zu machen, und
+    die auch keine Bücher führen und keine Abschlüsse machen, können als Gewinn
+    den Überschuss der Betriebseinnahmen über die Betriebsausgaben ansetzen.
+
+Wortlaut eingefroren in `sources/gesetze-im-internet/estg_p4_2026-07-14.txt`.
+Entspricht wortgleich der verifizierten Regel `p4_3_gewinn`
+(`pipeline/snapshots/p4_3_gewinn.json`, `catala_a`: `gewinn equals
+betriebseinnahmen - betriebsausgaben`).
+
+## § 35 Abs. 1 EStG: GewSt-Anrechnung
+
+    (1) 1 Die tarifliche Einkommensteuer, vermindert um die sonstigen
+    Steuerermäßigungen ..., ermäßigt sich, soweit sie anteilig auf im zu
+    versteuernden Einkommen enthaltene gewerbliche Einkünfte entfällt
+    (Ermäßigungshöchstbetrag), 1. bei Einkünften aus gewerblichen Unternehmen
+    ... um das Vierfache des jeweils für den dem Veranlagungszeitraum
+    entsprechenden Erhebungszeitraum nach § 14 des Gewerbesteuergesetzes für das
+    Unternehmen festgesetzten Steuermessbetrags (Gewerbesteuer-Messbetrag) ...
+    2 Der Ermäßigungshöchstbetrag ist wie folgt zu ermitteln: Summe der
+    positiven gewerblichen Einkünfte / Summe aller positiven Einkünfte •
+    geminderte tarifliche Steuer. ... 5 Der Abzug des Steuerermäßigungsbetrags
+    ist auf die tatsächlich zu zahlende Gewerbesteuer beschränkt.
+
+Wortlaut eingefroren in `sources/gesetze-im-internet/estg_p35_2026-07-14.txt`.
+Entspricht wortgleich der verifizierten Regel `p35_1_gewst_anrechnung`
+(`pipeline/snapshots/p35_1_gewst_anrechnung.json`, `catala_a`): Vierfacher
+Messbetrag und Ermaessigungshoechstbetrag (Quote der gewerblichen Einkuenfte an
+der Summe aller positiven Einkuenfte, mal geminderte tarifliche Steuer), der
+Abzug gedeckelt auf die tatsaechlich zu zahlende Gewerbesteuer — der kleinere
+der drei Betraege gilt. `geminderte_tarifliche_steuer` ist hier `tarifliche_est`
+aus Schritt 2 der Kette; `gewerbliche_einkuenfte` ist hier `gewinn` (Andockpunkt:
+bei reinem Gewerbebetrieb ohne weitere Einkunftsarten sind die gewerblichen
+Einkuenfte = Gesamtgewinn, `summe_positive_einkuenfte` als eigene Eingabe).
+
+## Die Kette
+
+```catala
+declaration scope EuerUnternehmerKette:
+  input betriebseinnahmen content money
+  input betriebsausgaben content money
+  input gewerbesteuer_messbetrag content money
+  input tatsaechlich_zu_zahlende_gewst content money
+  input summe_positive_einkuenfte content money
+  input sonderausgaben content money
+  input veranlagungszeitraum content Einkommensteuertarif.Veranlagungszeitraum
+  internal tarif_vor_anrechnung content Einkommensteuertarif.FestzusetzendeEstGesamt
+  internal tarif_nach_anrechnung content Einkommensteuertarif.FestzusetzendeEstGesamt
+  internal soli_lauf content Solzg.Solidaritaetszuschlag
+  output gewinn content money
+  output tarifliche_est content money
+  output anrechnung content money
+  output festzusetzende_est content money
+  output soli content money
+
+scope EuerUnternehmerKette:
+  # § 4 Abs. 3 Satz 1 EStG (entspricht p4_3_gewinn): EÜR-Gewinn.
+  definition gewinn equals betriebseinnahmen - betriebsausgaben
+
+  # Anlage G -> § 2-Stufenfolge, Andockpunkt einkuenfte_gewinn. Erster Aufruf
+  # ohne § 35-Anrechnung (steuerermaessigungen = 0), um die tarifliche ESt fuer
+  # den Ermaessigungshoechstbetrag zu ermitteln.
+  definition tarif_vor_anrechnung equals
+    output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+      -- einkuenfte_nichtselbststaendig: $0.00
+      -- einkuenfte_kapitalvermoegen: $0.00
+      -- einkuenfte_vermietung: $0.00
+      -- einkuenfte_sonstige: $0.00
+      -- einkuenfte_gewinn: gewinn
+      -- altersentlastungsbetrag: $0.00
+      -- entlastungsbetrag_alleinerziehende: $0.00
+      -- sonderausgaben: sonderausgaben
+      -- aussergewoehnliche_belastungen: $0.00
+      -- freibetraege_kinder: $0.00
+      -- sonstige_abzuege_vom_einkommen: $0.00
+      -- anzurechnende_auslaendische_steuern: $0.00
+      -- steuerermaessigungen: $0.00
+      -- steuer_kapital_gesondert: $0.00
+      -- hinzurechnung_kindergeld: $0.00
+      -- hinzurechnung_zulage: $0.00
+      -- tarif_modifiziert: false
+      -- tarifliche_est_modifiziert: $0.00
+      -- veranlagungszeitraum: veranlagungszeitraum }
+
+  definition tarifliche_est equals tarif_vor_anrechnung.tarifliche_est
+
+  # § 35 Abs. 1 EStG (entspricht p35_1_gewst_anrechnung): kleinerer Betrag aus
+  # Vierfachem des Messbetrags, Ermaessigungshoechstbetrag (Quote) und
+  # tatsaechlich zu zahlender Gewerbesteuer.
+  definition anrechnung equals
+    let vierfacher_messbetrag equals gewerbesteuer_messbetrag * 4.0 in
+    let hoechstbetrag equals
+      tarifliche_est * (gewinn / summe_positive_einkuenfte)
+    in
+    let kleinerer_der_ersten_beiden equals
+      if vierfacher_messbetrag <= hoechstbetrag
+      then vierfacher_messbetrag else hoechstbetrag
+    in
+    if kleinerer_der_ersten_beiden <= tatsaechlich_zu_zahlende_gewst
+    then kleinerer_der_ersten_beiden else tatsaechlich_zu_zahlende_gewst
+
+  # § 2 Abs. 6: zweiter Aufruf mit steuerermaessigungen = anrechnung ->
+  # festzusetzende ESt nach § 35-Anrechnung.
+  definition tarif_nach_anrechnung equals
+    output of Einkommensteuertarif.FestzusetzendeEstGesamt with {
+      -- einkuenfte_nichtselbststaendig: $0.00
+      -- einkuenfte_kapitalvermoegen: $0.00
+      -- einkuenfte_vermietung: $0.00
+      -- einkuenfte_sonstige: $0.00
+      -- einkuenfte_gewinn: gewinn
+      -- altersentlastungsbetrag: $0.00
+      -- entlastungsbetrag_alleinerziehende: $0.00
+      -- sonderausgaben: sonderausgaben
+      -- aussergewoehnliche_belastungen: $0.00
+      -- freibetraege_kinder: $0.00
+      -- sonstige_abzuege_vom_einkommen: $0.00
+      -- anzurechnende_auslaendische_steuern: $0.00
+      -- steuerermaessigungen: anrechnung
+      -- steuer_kapital_gesondert: $0.00
+      -- hinzurechnung_kindergeld: $0.00
+      -- hinzurechnung_zulage: $0.00
+      -- tarif_modifiziert: false
+      -- tarifliche_est_modifiziert: $0.00
+      -- veranlagungszeitraum: veranlagungszeitraum }
+
+  definition festzusetzende_est equals tarif_nach_anrechnung.festzusetzende_est
+
+  # § 3, § 4 SolzG: Bemessungsgrundlage ist die festzusetzende ESt.
+  definition soli_lauf equals
+    output of Solzg.Solidaritaetszuschlag with {
+      -- bemessungsgrundlage: festzusetzende_est
+      -- splitting: false }
+
+  definition soli equals soli_lauf.solidaritaetszuschlag
+```
+
+## Testfaelle
+
+Alle Erwartungswerte handgerechnet (Rechenweg im Kommentar je Fall). Die
+tarifliche-ESt-Zwischenwerte sind an bereits verifizierte § 32a-Pins verankert:
+zvE 58734 -> 13747 (`rules/estg/arbeitnehmerfall/tests_festzusetzende_est.catala_en`,
+Fall r1) und zvE 100000 -> 30864 (`golden/cases/g32a_2026_single_100000.yaml`,
+`rules/estg/p32a/tests_einkommensteuertarif.catala_en`, `t_100000`).
+
+```catala
+#[test]
+declaration scope TestBasisfall:
+  # Basisfall (Instructor-Vorgabe): BE 100000, BA 41230 -> Gewinn 58770, SA-
+  # Pauschbetrag 36 -> zvE 58734 -> tarifliche ESt 13747 (Pin). Messbetrag 2000
+  # -> 4x = 8000; reiner Gewerbebetrieb (summe_positive_einkuenfte = Gewinn) ->
+  # Quote 1 -> Hoechstbetrag = 13747. Tatsaechlich gezahlte GewSt 8400 (Hebesatz
+  # 420 % auf Messbetrag 2000). Anrechnung = min(8000, 13747, 8400) = 8000.
+  # Festzusetzende ESt = 13747 - 8000 = 5747. SolZ-BMG 5747 < Freigrenze 20350
+  # -> SolZ 0.
+  internal r content EuerUnternehmerKette
+  output gewinn content money
+  output tarif content money
+  output anr content money
+  output fest content money
+  output solz content money
+
+scope TestBasisfall:
+  definition r equals output of EuerUnternehmerKette with {
+    -- betriebseinnahmen: $100,000.00
+    -- betriebsausgaben: $41,230.00
+    -- gewerbesteuer_messbetrag: $2,000.00
+    -- tatsaechlich_zu_zahlende_gewst: $8,400.00
+    -- summe_positive_einkuenfte: $58,770.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition gewinn equals r.gewinn
+  definition tarif equals r.tarifliche_est
+  definition anr equals r.anrechnung
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion gewinn = $58,770.00
+  assertion tarif = $13,747.00
+  assertion anr = $8,000.00
+  assertion fest = $5,747.00
+  assertion solz = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestSoliUeberFreigrenze:
+  # (a) Soli-Nichtzero-Fall, echter Tarif-Pin: BE 150000, BA 49964 -> Gewinn
+  # 100036, SA-Pauschbetrag 36 -> zvE 100000 -> tarifliche ESt 30864 (Pin).
+  # Messbetrag 2000 -> 4x = 8000; Quote 1 -> Hoechstbetrag = 30864. GewSt 8400
+  # -> Anrechnung = min(8000, 30864, 8400) = 8000. Festzusetzende ESt = 30864 -
+  # 8000 = 22864. SolZ: BMG 22864 > Freigrenze 20350 ->
+  # Regelbetrag 5,5 % x 22864 = 1257,52; Milderung 11,9 % x (22864 - 20350) =
+  # 11,9 % x 2514 = 299,166 -> Milderung < Regelbetrag -> SolZ = 299,166,
+  # Cent-Schnitt -> 299,16.
+  internal r content EuerUnternehmerKette
+  output gewinn content money
+  output tarif content money
+  output fest content money
+  output solz content money
+
+scope TestSoliUeberFreigrenze:
+  definition r equals output of EuerUnternehmerKette with {
+    -- betriebseinnahmen: $150,000.00
+    -- betriebsausgaben: $49,964.00
+    -- gewerbesteuer_messbetrag: $2,000.00
+    -- tatsaechlich_zu_zahlende_gewst: $8,400.00
+    -- summe_positive_einkuenfte: $100,036.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition gewinn equals r.gewinn
+  definition tarif equals r.tarifliche_est
+  definition fest equals r.festzusetzende_est
+  definition solz equals r.soli
+  assertion gewinn = $100,036.00
+  assertion tarif = $30,864.00
+  assertion fest = $22,864.00
+  assertion solz = $299.16
+```
+
+```catala
+#[test]
+declaration scope TestGewstZahlungBindetAnrechnung:
+  # (b) § 35-Grenzfall: tatsaechlich_zu_zahlende_gewst ist der bindende
+  # min-Ast. Gleicher Gewinn/Tarif wie TestBasisfall (58770 -> 13747), aber
+  # tatsaechlich gezahlte GewSt nur 3000 (< 4x Messbetrag 8000 und < Hoechst-
+  # betrag 13747) -> Anrechnung = min(8000, 13747, 3000) = 3000 (gebunden durch
+  # die gezahlte GewSt, nicht durch Messbetrag oder Hoechstbetrag). Fest-
+  # zusetzende ESt = 13747 - 3000 = 10747. SolZ-BMG 10747 < Freigrenze -> 0.
+  internal r content EuerUnternehmerKette
+  output anr content money
+  output fest content money
+
+scope TestGewstZahlungBindetAnrechnung:
+  definition r equals output of EuerUnternehmerKette with {
+    -- betriebseinnahmen: $100,000.00
+    -- betriebsausgaben: $41,230.00
+    -- gewerbesteuer_messbetrag: $2,000.00
+    -- tatsaechlich_zu_zahlende_gewst: $3,000.00
+    -- summe_positive_einkuenfte: $58,770.00
+    -- sonderausgaben: $36.00
+    -- veranlagungszeitraum: VZ2026 }
+  definition anr equals r.anrechnung
+  definition fest equals r.festzusetzende_est
+  assertion anr = $3,000.00
+  assertion fest = $10,747.00
+```
