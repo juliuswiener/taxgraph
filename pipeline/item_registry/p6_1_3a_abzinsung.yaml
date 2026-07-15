@@ -1,0 +1,19 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p6_1_3a_abzinsung
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 abs. 1 nr. 3a buchst. e estg
+  formulierungen:
+  - Rückstellungen für Verpflichtungen sind mit einem Zinssatz von 5,5 Prozent abzuzinsen
+    | ausgenommen von der Abzinsung sind Rückstellungen für Verpflichtungen, deren
+    Laufzeit am Bilanzstichtag weniger als zwölf Monate beträgt | und Rückstellungen
+    für Verpflichtungen, die verzinslich sind oder auf einer Anzahlung oder Vorausleistung
+    beruhen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: faktor_nach_zinssatz_5_5_prozent

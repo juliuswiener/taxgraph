@@ -1,0 +1,161 @@
+{
+  "bedingungen": [
+    "teilwert_6prozent_versicherungsmathematik_input",
+    "nur_hoechstbetrags_cap_abs4_s1"
+  ],
+  "candidate_id": "p6a_pension_hoechstbetrag",
+  "catala_a": "declaration scope PensionHoechstbetrag:\n  input bilanzieller_ansatz content money\n  input teilwert_pensionsverpflichtung content money\n  output pensionsrueckstellung content money\n\nscope PensionHoechstbetrag:\n  definition pensionsrueckstellung equals\n    if bilanzieller_ansatz <= teilwert_pensionsverpflichtung\n    then bilanzieller_ansatz\n    else teilwert_pensionsverpflichtung",
+  "catala_a_sha256": "d02cf3387ff266c162b36977b3d3cfe32504ace58d93ab46362d4889861c9f1b",
+  "catala_b": "declaration scope PensionHoechstbetrag:\n  input bilanzieller_ansatz content money\n  input teilwert_pensionsverpflichtung content money\n  output pensionsrueckstellung content money\n\nscope PensionHoechstbetrag:\n  definition pensionsrueckstellung equals\n    if bilanzieller_ansatz <= teilwert_pensionsverpflichtung then bilanzieller_ansatz\n    else teilwert_pensionsverpflichtung",
+  "catala_b_sha256": "307636648c91929b16b60db8fd6d00bd072aabb494743c32fcd21345eadc1192",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'pensionsrueckstellung'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "996848580f69",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "nur_hoechstbetrags_cap_abs4_s1",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Eine Pensionsrückstellung darf höchstens mit dem Teilwert der Pensionsverpflichtung angesetzt werden",
+        "referenz": "§ 6a Abs. 4 S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "teilwert_6prozent_versicherungsmathematik_input",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Bei der Berechnung des Teilwerts der Pensionsverpflichtung sind ein Rechnungszinsfuß von 6 Prozent und die anerkannten Regeln der Versicherungsmathematik anzuwenden",
+        "referenz": "§ 6a Abs. 3 S. 3 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-14T20:04:18+00:00"
+  },
+  "module_name": "PensionHoechstbetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

@@ -1,0 +1,25 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p6a_pension_hoechstbetrag
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 6a abs. 4 s. 1 estg
+  formulierungen:
+  - Eine Pensionsrückstellung darf höchstens mit dem Teilwert der Pensionsverpflichtung
+    angesetzt werden
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: nur_hoechstbetrags_cap_abs4_s1
+- art: norm_teil
+  anker:
+  - ref
+  - § 6a abs. 3 s. 3 estg
+  formulierungen:
+  - Bei der Berechnung des Teilwerts der Pensionsverpflichtung sind ein Rechnungszinsfuß
+    von 6 Prozent und die anerkannten Regeln der Versicherungsmathematik anzuwenden
+  triage: nicht_material_backlog
+  klasse: unabhaengig
