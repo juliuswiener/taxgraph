@@ -1,0 +1,22 @@
+# Eingefrorenes Aenderungsgesetz (Quellen-Klasse gesetz/Aenderungsbefehl). Provenance-Archiv.
+dokument:
+  norm_uri: "bgbl/2024-I-108/wachstumschancengesetz/art3"
+  norm: "Wachstumschancengesetz v. 27.03.2024 (BGBl. 2024 I Nr. 108), Art. 3 - Aenderung des EStG (u.a. degressive AfA 2024-Fenster, Sonder-AfA 20->40 %)"
+  fassung: "BGBl 2024 I Nr. 108"
+  quelle_url: "https://www.buzer.de/gesetz/16376/a309883.htm"
+  abrufdatum: "2026-07-15"
+  datei: "wtchanceng_2024_art3_estg.txt"
+  sha256: "32b9e80b83113b0f9079da2c97c8d9cbe6588e836fda5236c95b5b8c20d1e5e6"
+  authority: gesetz
+  redistributable: true
+  hinweis: "buzer.de-Mirror des BGBl-Aenderungstextes (amtliche BGBl-PDF via recht.bund.de bei
+    Zitat-Zweifel). Deckt: (1) degressive AfA 2024-FENSTER = Anschaffung nach 31.03.2024 und
+    vor 01.01.2025, hoechstens ZWEIFACHE des linearen Satzes, max 20 % (NICHT 2,5x/25 % - das
+    war das Corona-Fenster 2020-2022); (2) Sonder-AfA §7g Abs 5: Angabe 20 Prozent durch
+    40 Prozent ersetzt (=> ALTFASSUNG vor 2024 = 20 %, sonst wortgleich); (3) §52-Anwendungs-
+    regeln. Anfuehrungszeichen im Text gemischt („...\") - Anker exakt uebernehmen."
+  erwartete_anker:
+    - "das Zweifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes betragen und 20 Prozent nicht übersteigen"
+    - "nach dem 31. März 2024 und vor dem 1. Januar 2025"
+    - "In § 7g Absatz 5 wird die Angabe „20 Prozent\" durch die Angabe „40 Prozent\" ersetzt"
+  verwendet_in: ["C27-B1 Sonder-AfA-20%-Kohorte", "C28/M4 degressive AfA 2024-Fenster", "Multi-VZ M3"]
