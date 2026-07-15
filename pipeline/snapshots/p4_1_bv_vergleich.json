@@ -1,7 +1,8 @@
 {
   "bedingungen": [
-    "bv_werte_sachverhalt_massgeblichkeit_p5",
-    "entnahmen_einlagen_legaldefiniert_p4abs1"
+    "bv_werte_sachverhalt",
+    "entnahmen_einlagen_legaldefiniert_p4abs1",
+    "massgeblichkeit_handelsbilanz_gob"
   ],
   "candidate_id": "p4_1_bv_vergleich",
   "catala_a": "declaration scope BvVergleich:\n  input betriebsvermoegen_ende content money\n  input betriebsvermoegen_anfang content money\n  input entnahmen content money\n  input einlagen content money\n  output gewinn content money\n\nscope BvVergleich:\n  definition gewinn equals\n    betriebsvermoegen_ende - betriebsvermoegen_anfang + entnahmen - einlagen",

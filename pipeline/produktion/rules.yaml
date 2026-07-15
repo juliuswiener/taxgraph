@@ -5274,14 +5274,18 @@ regeln:
       einlagen: 20000
     expected: 0.0
   geltungsbedingungen:
-  - bedingung: bv_werte_sachverhalt_massgeblichkeit_p5
+  - bedingung: bv_werte_sachverhalt
     deckt_ab: Unterschiedsbetrag zwischen dem Betriebsvermögen
     quelle: § 4 Abs. 1 S. 1 EStG
-    beschreibung: BV = Sachverhalts-Inputs; Maßgeblichkeit §5 = eigene Bedingung (Charge 23).
+    beschreibung: BV-Ende/-Anfang = Sachverhalts-Inputs (bereits bewertet). Die Maßgeblichkeit der Handelsbilanz ist eine EIGENE Bedingung (massgeblichkeit_handelsbilanz_gob), nicht diese.
   - bedingung: entnahmen_einlagen_legaldefiniert_p4abs1
     deckt_ab: vermehrt um den Wert der Entnahmen und vermindert um den Wert der Einlagen
     quelle: § 4 Abs. 1 S. 2/4 EStG
     beschreibung: Entnahmen/Einlagen (Legaldef S. 2/4) bereits bewertet.
+  - bedingung: massgeblichkeit_handelsbilanz_gob
+    deckt_ab: das nach den handelsrechtlichen Grundsätzen ordnungsmäßiger Buchführung auszuweisen ist
+    quelle: § 5 Abs. 1 S. 1 EStG
+    beschreibung: 'B2-Paket (Charge 23/25): das Steuerbilanz-Betriebsvermögen ist das nach handelsrechtlichen GoB auszuweisende (Maßgeblichkeit, § 5 Abs. 1 S. 1, Freeze estg_p5_2026-07-14). Durchbrechung ''es sei denn'' (steuerliches Wahlrecht/Vorschrift) = Nachtrag.'
 - rule_id: p6_1_1_bewertung_av
   norm: § 6 Abs. 1 Nr. 1 S. 1-2 EStG (Bewertung AV, Teilwert-Wahlrecht)
   hinweis: ansatz = wenn (dauernde_wertminderung UND teilwertabschreibung_gewaehlt) dann min(fortgefuehrte_ak, teilwert) sonst fortgefuehrte_ak. Teilwertabschreibung = WAHLRECHT (S2 'so KANN dieser angesetzt werden'). min sichert Teilwert nur wenn niedriger. Teilwert=Schaetzwert-Input, dauernde_wertminderung=Prognose-bool. Cent-genau.
