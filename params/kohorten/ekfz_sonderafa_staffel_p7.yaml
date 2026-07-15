@@ -1,0 +1,19 @@
+# § 7 Abs. 2a EStG - E-Kfz-Sonderabschreibung Staffel (Jahr nach Anschaffung -> % der Anschaffungskosten).
+# Feste Staffel (kein Restbuchwert), Summe 100 %. Elektrofahrzeuge nach § 9 Abs. 2 KraftStG,
+# Anschaffung nach 30.6.2025 und vor 1.1.2028 (Investitionssofortprogramm). NICHT vz-versioniert.
+# GUELTIGKEIT: neu ab InvestitionssofortprogrammG (verkuendet 18.7.2025); im p7-Freeze 2026-07-11.
+parameter: ekfz_sonderafa_staffel
+authority: gesetz
+redistributable: true
+rechtsquelle: {gesetz: EStG, paragraph: '7', absatz: '2a', satz: '1'}
+datenquelle: 'sources/gesetze-im-internet/estg_p7_2026-07-11.txt (§ 7 Abs. 2a S. 1: 75/10/5/5/3/2 % der Anschaffungskosten). Stand 2026-07-15.'
+einheit: {prozent_jahr: prozent}
+
+# Schluessel = Jahr nach Anschaffung (0 = Jahr der Anschaffung).
+staffel:
+  0: {prozent_jahr: 75.0}
+  1: {prozent_jahr: 10.0}
+  2: {prozent_jahr: 5.0}
+  3: {prozent_jahr: 5.0}
+  4: {prozent_jahr: 3.0}
+  5: {prozent_jahr: 2.0}

@@ -1,0 +1,206 @@
+{
+  "bedingungen": [
+    "wahlrecht_statt_linear",
+    "bemessung_vom_restbuchwert",
+    "anschaffungsfenster_kohorte",
+    "bewegliches_anlagevermoegen"
+  ],
+  "candidate_id": "p7_2_degressive_afa",
+  "catala_a": "declaration scope DegressiveAfa:\n  input restbuchwert content money\n  input nutzungsdauer content integer\n  input faktor_max content decimal\n  input prozent_cap content decimal\n  output jahres_afa content money\n\nscope DegressiveAfa:\n  definition jahres_afa equals\n    let linear_prozent equals\n      decimal of 100 / (decimal of nutzungsdauer)\n    in\n    let degressive_prozent equals\n      let kandidat equals faktor_max * linear_prozent in\n      if kandidat > prozent_cap then prozent_cap else kandidat\n    in\n    restbuchwert * (degressive_prozent / 100.0)",
+  "catala_a_sha256": "ab4e9fafdcbf852561bc1ec8d2ab346c59b16de6747afb7cd77d425dac0db300",
+  "catala_b": "declaration scope DegressiveAfa:\n  input restbuchwert content money\n  input nutzungsdauer content integer\n  input faktor_max content decimal\n  input prozent_cap content decimal\n  output jahres_afa content money\n\nscope DegressiveAfa:\n  definition jahres_afa equals\n    let linear_prozent equals 100.0 / (decimal of nutzungsdauer) in\n    let degressive_roh equals faktor_max * linear_prozent in\n    let degressive_prozent equals\n      if degressive_roh > prozent_cap then prozent_cap else degressive_roh\n    in\n    restbuchwert * (degressive_prozent / 100.0)",
+  "catala_b_sha256": "2440259845ec67fccd629a4c13df99a35e62b3f4d4d9f71dd41c9078d2956540",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'jahres_afa'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 5 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 3,
+        "norm_teile": 5
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        8,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "b99c020c0ada",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "anschaffungsfenster_kohorte",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "nach dem 30. Juni 2025 und vor dem 1. Januar 2028 angeschafft oder hergestellt worden sind",
+        "referenz": "§ 7 Abs. 2 S. 1/2 EStG"
+      },
+      {
+        "abgedeckt_von": "anschaffungsfenster_kohorte",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "das Dreifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes",
+        "referenz": "§ 7 Abs. 2 S. 1/2 EStG"
+      },
+      {
+        "abgedeckt_von": "anschaffungsfenster_kohorte",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "30 Prozent nicht übersteigen",
+        "referenz": "§ 7 Abs. 2 S. 1/2 EStG"
+      },
+      {
+        "abgedeckt_von": "anschaffungsfenster_kohorte",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Zweifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes",
+        "referenz": "Wachstumschancengesetz Art3"
+      },
+      {
+        "abgedeckt_von": "anschaffungsfenster_kohorte",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "20 Prozent nicht übersteigen",
+        "referenz": "Wachstumschancengesetz Art3"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Faktor_max wird als Multiplikator für den linearen Prozentsatz interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "faktor_max",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Prozent_cap wird als maximale Obergrenze für den degressiven Prozentsatz interpretiert.",
+        "bedingung_id": "anschaffungsfenster_kohorte",
+        "betrifft": "prozent_cap",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Nutzungsdauer wird in Jahren angenommen.",
+        "bedingung_id": null,
+        "betrifft": "nutzungsdauer",
+        "kategorie": "einheit"
+      }
+    ],
+    "timestamp": "2026-07-15T15:17:04+00:00"
+  },
+  "module_name": "DegressiveAfa",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

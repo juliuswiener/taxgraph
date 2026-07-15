@@ -1,0 +1,19 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p7_2a_ekfz_75
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 abs. 2a s. 1 estg
+  formulierungen:
+  - Bei Elektrofahrzeugen nach § 9 Absatz 2 des Kraftfahrzeugsteuergesetzes, die zum
+    Anlagevermögen gehören | nach dem 30. Juni 2025 und vor dem 1. Januar 2028 angeschafft
+    worden sind | im Jahr der Anschaffung 75 Prozent, im ersten darauf folgenden Jahr
+    zehn Prozent, im zweiten und dritten darauf folgenden Jahr jeweils fünf Prozent,
+    im vierten darauf folgenden Jahr drei Prozent und i
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: ekfz_kraftstg_9abs2

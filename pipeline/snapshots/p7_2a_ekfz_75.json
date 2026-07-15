@@ -1,0 +1,178 @@
+{
+  "bedingungen": [
+    "ekfz_kraftstg_9abs2",
+    "anschaffungsfenster_booster",
+    "staffel_75_10_5_5_3_2_kohorte",
+    "nur_wenn_voraussetzungen_s2"
+  ],
+  "candidate_id": "p7_2a_ekfz_75",
+  "catala_a": "declaration scope EkfzSonderafa:\n  input anschaffungskosten content money\n  input prozent_jahr content decimal\n  output jahres_afa content money\n\nscope EkfzSonderafa:\n  definition jahres_afa equals\n    anschaffungskosten * (prozent_jahr / 100.0)",
+  "catala_a_sha256": "663a47a64dd622e79fefb02fd1b673e4ae22785c8d4ab092ef8210c8c6cd1ce0",
+  "catala_b": "declaration scope EkfzSonderafa:\n  input anschaffungskosten content money\n  input prozent_jahr content decimal\n  output jahres_afa content money\n\nscope EkfzSonderafa:\n  definition jahres_afa equals (Decimal.truncate of ((anschaffungskosten * (prozent_jahr / 100.0)) / $0.01)) * $0.01",
+  "catala_b_sha256": "be51d722ff0eb12949707b79102a6142e4b5ebdc2b466737cd715867ae2e6cf8",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'jahres_afa'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Bei Elektrofahrzeugen nach § 9 Absatz 2 des Kraftfahrzeugsteuergesetzes, die zum Anlagevermögen gehören",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 7 abs. 2a s. 1 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        3,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "6fb647f07afc",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "ekfz_kraftstg_9abs2",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Bei Elektrofahrzeugen nach § 9 Absatz 2 des Kraftfahrzeugsteuergesetzes, die zum Anlagevermögen gehören",
+        "referenz": "§ 7 Abs. 2a S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "anschaffungsfenster_booster",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "nach dem 30. Juni 2025 und vor dem 1. Januar 2028 angeschafft worden sind",
+        "referenz": "§ 7 Abs. 2a S. 1 EStG"
+      },
+      {
+        "abgedeckt_von": "staffel_75_10_5_5_3_2_kohorte",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "im Jahr der Anschaffung 75 Prozent, im ersten darauf folgenden Jahr zehn Prozent, im zweiten und dritten darauf folgenden Jahr jeweils fünf Prozent, im vierten darauf folgenden Jahr drei Prozent und im fünften darauf folgenden Jahr zwei Prozent",
+        "referenz": "§ 7 Abs. 2a S. 1 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-15T15:17:49+00:00"
+  },
+  "module_name": "EkfzSonderafa",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

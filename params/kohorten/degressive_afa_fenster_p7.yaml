@@ -1,0 +1,20 @@
+# § 7 Abs. 2 EStG - degressive-AfA Anschaffungsfenster-Kohorten (Fenster -> faktor_max, prozent_cap).
+# NICHT vz-versioniert im Datei-Sinn: der Faktor haengt am ANSCHAFFUNGSFENSTER (nicht am VZ);
+# ein WG behaelt sein Fenster ueber die Nutzungsdauer. faktor_max = Vielfaches des linearen Satzes,
+# prozent_cap = absolute Obergrenze in Prozent. Norm-Konstanten aus dem jeweiligen Freeze.
+# GUELTIGKEIT je Fenster (Julius-Direktive): Corona-Fenster 2020-2022 (2,5x/25 %) = AUSSERHALB VZ >= 2024,
+# nicht enthalten. 2024er = Wachstumschancengesetz (BGBl 2024 I Nr. 108). Booster = Investitionssofort-
+# programmG (verkuendet 18.7.2025), im p7-Freeze 2026-07-11.
+parameter: degressive_afa_fenster
+authority: gesetz
+redistributable: true
+rechtsquelle: {gesetz: EStG, paragraph: '7', absatz: '2'}
+datenquelle: 'Booster (30.6.2025-1.1.2028) 3x/30 % aus sources/gesetze-im-internet/estg_p7_2026-07-11.txt (§ 7 Abs. 2 S. 2); 2024er (31.3.2024-1.1.2025) 2x/20 % aus sources/bgbl/wtchanceng_2024_art3_estg.txt (Aenderungsbefehl). Stand 2026-07-15.'
+einheit: {faktor_max: faktor, prozent_cap: prozent}
+
+# Schluessel = Anschaffungsfenster-Kennung.
+fenster:
+  # Wachstumschancengesetz: Anschaffung nach 31.3.2024 und vor 1.1.2025.
+  wtchanceng_2024: {faktor_max: 2.0, prozent_cap: 20.0, ab: "2024-04-01", bis: "2024-12-31"}
+  # Investitionssofortprogramm (Booster): Anschaffung nach 30.6.2025 und vor 1.1.2028.
+  booster_2025: {faktor_max: 3.0, prozent_cap: 30.0, ab: "2025-07-01", bis: "2027-12-31"}

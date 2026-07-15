@@ -1,0 +1,54 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p7_2_degressive_afa
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - faktor_max
+  - interpretation
+  formulierungen:
+  - Faktor_max wird als Multiplikator für den linearen Prozentsatz interpretiert.
+  triage: bedingung_neu
+  bedingung: anschaffungsfenster_kohorte
+- art: annahme
+  anker:
+  - betrifft_kat
+  - prozent_cap
+  - interpretation
+  formulierungen:
+  - Prozent_cap wird als maximale Obergrenze für den degressiven Prozentsatz interpretiert.
+  triage: bedingung_neu
+  bedingung: anschaffungsfenster_kohorte
+- art: annahme
+  anker:
+  - betrifft_kat
+  - nutzungsdauer
+  - einheit
+  formulierungen:
+  - Nutzungsdauer wird in Jahren angenommen.
+  triage: bedingung_neu
+  bedingung: bemessung_vom_restbuchwert
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 abs. 2 s. 1/2 estg
+  formulierungen:
+  - nach dem 30. Juni 2025 und vor dem 1. Januar 2028 angeschafft oder hergestellt
+    worden sind | das Dreifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen
+    in Betracht kommenden Prozentsatzes | 30 Prozent nicht übersteigen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: anschaffungsfenster_kohorte
+- art: norm_teil
+  anker:
+  - ref
+  - wachstumschancengesetz art3
+  formulierungen:
+  - Zweifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht
+    kommenden Prozentsatzes | 20 Prozent nicht übersteigen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: anschaffungsfenster_kohorte

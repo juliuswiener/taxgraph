@@ -6273,3 +6273,164 @@ regeln:
     deckt_ab: soweit nicht auf Grund der Entnahmen eine nach Absatz 1 Satz 2 zu berücksichtigende Haftung besteht oder entsteht
     quelle: § 15a Abs. 3 S. 1 EStG
     beschreibung: 'Abgrenzung (S. 1): keine Hinzurechnung, soweit die Entnahmen eine erweiterte Außenhaftung (§ 171 HGB, Abs. 1 S. 2) begründen = eigene Prüfung/Nachtrag.'
+- rule_id: p7_2_degressive_afa
+  norm: § 7 Abs. 2 EStG (degressive AfA, fallende Jahresbeträge, Fenster-Kohorten)
+  hinweis: 'jahres_afa = restbuchwert * min(faktor_max * (100 / nutzungsdauer), prozent_cap) / 100. Degressive AfA in fallenden Jahresbeträgen (Wahlrecht ''statt'' linearer AfA). linear_prozent = 100 / nutzungsdauer WIRD IN DER REGEL gerechnet (nutzungsdauer = int-Input, kein linear_prozent-Schmuggel zum Caller; C17-ND-Präzedenz). degressive_prozent = min(faktor_max * linear_prozent, prozent_cap). faktor_max (2 oder 3) und prozent_cap (20 oder 30) kommen aus der Anschaffungsfenster-Kohorte (params) als Inputs (Konstanten-Doktrin). KLASSE-5: /100-Encoding, Cent-Schnitt ZULETZT (money * decimal). restbuchwert = Buchwert zu Jahresbeginn (State-Input, Mehrjahres-Fortschreibung + §7 Abs3 Wechsel = Nachtrag). Keine Norm-Konstante im Code.'
+  quellen:
+  - typ: gesetz
+    label: § 7 Abs. 2 S. 1/2 EStG (Booster 3×/30%, Restwert-degressiv)
+    datei: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: das Dreifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes betragen und 30 Prozent nicht übersteigen
+    auszug: Bei beweglichen Wirtschaftsgütern des Anlagevermögens, die nach dem 30. Juni 2025 und vor dem 1. Januar 2028 angeschafft oder hergestellt worden sind, kann der Steuerpflichtige statt der Absetzung für Abnutzung in gleichen Jahresbeträgen die Absetzung für Abnutzung in fallenden Jahresbeträgen bemessen. 2 Die Absetzung für Abnutzung in fallenden Jahresbeträgen kann nach einem unveränderlichen Prozentsatz vom jeweiligen Buchwert (Restwert) vorgenommen werden; der dabei anzuwendende Prozentsatz darf höchstens das Dreifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes betragen und 30 Prozent nicht übersteigen
+  - typ: gesetz
+    label: Wachstumschancengesetz Art3 (2024er-Fenster 2×/20%)
+    datei: sources/bgbl/wtchanceng_2024_art3_estg.txt
+    zitatanker: Zweifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes betragen und 20 Prozent nicht übersteigen
+    auszug: Zweifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes betragen und 20 Prozent nicht übersteigen
+  signature:
+    scope: DegressiveAfa
+    inputs:
+      restbuchwert: money
+      nutzungsdauer: int
+      faktor_max: decimal
+      prozent_cap: decimal
+    output: jahres_afa
+  raster:
+  - restbuchwert: 10000
+    nutzungsdauer: 10
+    faktor_max: 3
+    prozent_cap: 30
+  - restbuchwert: 10000
+    nutzungsdauer: 10
+    faktor_max: 2
+    prozent_cap: 20
+  - restbuchwert: 10000
+    nutzungsdauer: 5
+    faktor_max: 3
+    prozent_cap: 30
+  - restbuchwert: 10000
+    nutzungsdauer: 20
+    faktor_max: 3
+    prozent_cap: 30
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: das Dreifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes betragen und 30 Prozent nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: 'Booster ND 10: linear 100/10=10; min(3*10=30, 30)=30; 10000*30/100=3.000,00.'
+    inputs:
+      restbuchwert: 10000
+      nutzungsdauer: 10
+      faktor_max: 3
+      prozent_cap: 30
+    expected: 3000.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: das Dreifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes betragen und 30 Prozent nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: '2024er ND 10: linear 10; min(2*10=20, 20)=20; 10000*20/100=2.000,00.'
+    inputs:
+      restbuchwert: 10000
+      nutzungsdauer: 10
+      faktor_max: 2
+      prozent_cap: 20
+    expected: 2000.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: das Dreifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes betragen und 30 Prozent nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: 'CAP-GRENZFALL Booster ND 5: linear 20; min(3*20=60, 30)=30 (Cap bindet); 10000*30/100=3.000,00.'
+    inputs:
+      restbuchwert: 10000
+      nutzungsdauer: 5
+      faktor_max: 3
+      prozent_cap: 30
+    expected: 3000.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: das Dreifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes betragen und 30 Prozent nicht übersteigen
+    herkunft: synthetisch
+    rechenweg: 'Booster ND 20: linear 5; min(3*5=15, 30)=15 (Faktor bindet); 10000*15/100=1.500,00.'
+    inputs:
+      restbuchwert: 10000
+      nutzungsdauer: 20
+      faktor_max: 3
+      prozent_cap: 30
+    expected: 1500.0
+  geltungsbedingungen:
+  - bedingung: wahlrecht_statt_linear
+    deckt_ab: kann der Steuerpflichtige statt der Absetzung für Abnutzung in gleichen Jahresbeträgen
+    quelle: § 7 Abs. 2 S. 1 EStG
+    beschreibung: 'Wahlrecht: degressive AfA STATT linearer (bool; nur bei Ausübung).'
+  - bedingung: bemessung_vom_restbuchwert
+    deckt_ab: unveränderlichen Prozentsatz vom jeweiligen Buchwert (Restwert)
+    quelle: § 7 Abs. 2 S. 2 EStG
+    beschreibung: Bemessung vom Restbuchwert (declining balance); restbuchwert = State-Input, Mehrjahres-Fortschreibung + §7 Abs3 Wechsel degressiv->linear = Nachtrag.
+  - bedingung: anschaffungsfenster_kohorte
+    deckt_ab: nach dem 30. Juni 2025 und vor dem 1. Januar 2028 angeschafft oder hergestellt worden sind
+    quelle: § 7 Abs. 2 S. 1 EStG / Wachstumschancengesetz
+    beschreibung: 'faktor_max/prozent_cap je Anschaffungsfenster (params/kohorten): 2024er (31.3.2024-1.1.2025) = 2/20 (bgbl-Freeze); Booster (30.6.2025-1.1.2028) = 3/30 (p7-Freeze). Corona-Fenster 2020-22 (2,5×/25%) außerhalb VZ>=2024.'
+  - bedingung: bewegliches_anlagevermoegen
+    deckt_ab: Bei beweglichen Wirtschaftsgütern des Anlagevermögens
+    quelle: § 7 Abs. 2 S. 1 EStG
+    beschreibung: nur bewegliche WG des Anlagevermögens.
+- rule_id: p7_2a_ekfz_75
+  norm: § 7 Abs. 2a EStG (E-Kfz-Sonderabschreibung, feste %-Staffel)
+  hinweis: 'jahres_afa = anschaffungskosten * prozent_jahr / 100. Für Elektrofahrzeuge (§ 9 Abs. 2 KraftStG) im Anlagevermögen, Anschaffung 30.6.2025-1.1.2028, abweichend von Abs. 1/2: FESTE Beträge in Prozent der Anschaffungskosten (NICHT Restbuchwert). prozent_jahr aus der Jahr-nach-Anschaffung-Staffel-Kohorte (params): Jahr 0=75, +1=10, +2=5, +3=5, +4=3, +5=2 (Summe 100%). KLASSE-5: /100-Encoding, Cent-Schnitt zuletzt. Keine Norm-Konstante im Code (Staffel-Wert = Input).'
+  quellen:
+  - typ: gesetz
+    label: § 7 Abs. 2a S. 1 EStG (E-Kfz-Staffel 75/10/5/5/3/2)
+    datei: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: 75 Prozent, im ersten darauf folgenden Jahr zehn Prozent, im zweiten und dritten darauf folgenden Jahr jeweils fünf Prozent
+    auszug: 'Bei Elektrofahrzeugen nach § 9 Absatz 2 des Kraftfahrzeugsteuergesetzes, die zum Anlagevermögen gehören und nach dem 30. Juni 2025 und vor dem 1. Januar 2028 angeschafft worden sind, können abweichend von Absatz 1 oder 2 als Absetzung für Abnutzung die folgenden Beträge in Prozent der Anschaffungskosten abgezogen werden: im Jahr der Anschaffung 75 Prozent, im ersten darauf folgenden Jahr zehn Prozent, im zweiten und dritten darauf folgenden Jahr jeweils fünf Prozent, im vierten darauf folgenden Jahr drei Prozent und im fünften darauf folgenden Jahr zwei Prozent'
+  signature:
+    scope: EkfzSonderafa
+    inputs:
+      anschaffungskosten: money
+      prozent_jahr: decimal
+    output: jahres_afa
+  raster:
+  - anschaffungskosten: 60000
+    prozent_jahr: 75
+  - anschaffungskosten: 60000
+    prozent_jahr: 10
+  - anschaffungskosten: 60000
+    prozent_jahr: 2
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: 75 Prozent, im ersten darauf folgenden Jahr zehn Prozent, im zweiten und dritten darauf folgenden Jahr jeweils fünf Prozent
+    herkunft: synthetisch
+    rechenweg: 'E-Kfz Anschaffungsjahr: 60000 * 75 / 100 = 45.000,00.'
+    inputs:
+      anschaffungskosten: 60000
+      prozent_jahr: 75
+    expected: 45000.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: 75 Prozent, im ersten darauf folgenden Jahr zehn Prozent, im zweiten und dritten darauf folgenden Jahr jeweils fünf Prozent
+    herkunft: synthetisch
+    rechenweg: '1. Folgejahr: 60000 * 10 / 100 = 6.000,00.'
+    inputs:
+      anschaffungskosten: 60000
+      prozent_jahr: 10
+    expected: 6000.0
+  - quelle: sources/gesetze-im-internet/estg_p7_2026-07-11.txt
+    zitatanker: 75 Prozent, im ersten darauf folgenden Jahr zehn Prozent, im zweiten und dritten darauf folgenden Jahr jeweils fünf Prozent
+    herkunft: synthetisch
+    rechenweg: '5. Folgejahr: 60000 * 2 / 100 = 1.200,00 (Summe 75+10+5+5+3+2=100%).'
+    inputs:
+      anschaffungskosten: 60000
+      prozent_jahr: 2
+    expected: 1200.0
+  geltungsbedingungen:
+  - bedingung: ekfz_kraftstg_9abs2
+    deckt_ab: Bei Elektrofahrzeugen nach § 9 Absatz 2 des Kraftfahrzeugsteuergesetzes
+    quelle: § 7 Abs. 2a S. 1 EStG
+    beschreibung: nur Elektrofahrzeuge i.S.d. § 9 Abs. 2 KraftStG im Anlagevermögen.
+  - bedingung: anschaffungsfenster_booster
+    deckt_ab: nach dem 30. Juni 2025 und vor dem 1. Januar 2028 angeschafft
+    quelle: § 7 Abs. 2a S. 1 EStG
+    beschreibung: Anschaffung 30.6.2025-1.1.2028 (Investitionssofortprogramm).
+  - bedingung: staffel_75_10_5_5_3_2_kohorte
+    deckt_ab: in Prozent der Anschaffungskosten abgezogen werden
+    quelle: § 7 Abs. 2a S. 1 EStG
+    beschreibung: 'feste %-Staffel der AK je Jahr-nach-Anschaffung (params/kohorten): {0:75,1:10,2:5,3:5,4:3,5:2}; prozent_jahr = Input aus der Kohorte.'
+  - bedingung: nur_wenn_voraussetzungen_s2
+    deckt_ab: Satz 1 kann nur angewendet werden, wenn der Steuerpflichtige
+    quelle: § 7 Abs. 2a S. 2 EStG
+    beschreibung: S. 2 Anwendbarkeits-Voraussetzungen (Steuerpflichtiger-Bedingungen) = Applicability, Feinprüfung = Nachtrag.
