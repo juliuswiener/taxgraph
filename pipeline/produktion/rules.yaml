@@ -1040,9 +1040,13 @@ regeln:
     quelle: § 35a Abs. 5 Satz 4 EStG
     beschreibung: Leben zwei Alleinstehende zusammen, stehen die Hoechstbetraege insgesamt nur einmal zu. Der Scope rechnet fuer einen Haushalt.
   - bedingung: antrag_gestellt
-    deckt_ab: auf Antrag
+    deckt_ab:
+    - auf Antrag um 20 Prozent, höchstens 510 Euro
+    - auf Antrag um 20 Prozent, höchstens 4 000 Euro
+    - auf Antrag um 20 Prozent der Aufwendungen des Steuerpflichtigen
+    datei: sources/gesetze-im-internet/estg_p35a_2026-07-09.txt
     quelle: § 35a Abs. 1, 2 und 3 EStG
-    beschreibung: Die Ermaessigung wird nur auf Antrag gewaehrt. Ohne Antrag gaebe der Scope dennoch einen Betrag aus.
+    beschreibung: Die Ermaessigung wird nur auf Antrag gewaehrt (je Absatz eigener Satz - D1-Multi-Fragment, diskriminierend statt mehrdeutigem "auf Antrag"). Ohne Antrag gaebe der Scope dennoch einen Betrag aus.
   - bedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4
     deckt_ab: bei denen es sich um eine geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch handelt
     quelle: § 35a Abs. 1 EStG
@@ -4303,22 +4307,27 @@ regeln:
     beschreibung: Durchlaufende Posten (S. 2) sind aus BE/BA ausgeschieden - Inputs bereits bereinigt.
   - bedingung: keine_lebensfuehrungskosten_p12_nr1
     deckt_ab: die für den Haushalt des Steuerpflichtigen und für den Unterhalt seiner Familienangehörigen aufgewendeten Beträge
+    datei: sources/gesetze-im-internet/estg_p12_2026-07-14.txt
     quelle: § 12 Nr. 1 S. 1 EStG
     beschreibung: '§12-Bedingungs-Paket (Charge 16, Zeile 6): der BA-Input schliesst Lebensfuehrungs-/Haushaltskosten (§12 Nr1 S1) aus - keine BA.'
   - bedingung: keine_repraesentation_gemischt_p12_nr1s2
     deckt_ab: Aufwendungen für die Lebensführung, die die wirtschaftliche oder gesellschaftliche Stellung des Steuerpflichtigen mit sich bringt
+    datei: sources/gesetze-im-internet/estg_p12_2026-07-14.txt
     quelle: § 12 Nr. 1 S. 2 EStG
     beschreibung: Gemischte Repraesentationsaufwendungen (§12 Nr1 S2) sind aus dem BA-Input ausgeschieden.
   - bedingung: keine_personensteuern_p12_nr3
     deckt_ab: die Steuern vom Einkommen und sonstige Personensteuern
+    datei: sources/gesetze-im-internet/estg_p12_2026-07-14.txt
     quelle: § 12 Nr. 3 EStG
     beschreibung: Personensteuern (ESt + sonstige) sind keine BA (§12 Nr3) - im BA-Input nicht enthalten.
   - bedingung: einkunftsart_gewerbe_p15_abs2
     deckt_ab: selbständige nachhaltige Betätigung, die mit der Absicht, Gewinn zu erzielen, unternommen wird und sich als Beteiligung am allgemeinen wirtschaftlichen Verkehr darstellt
+    datei: sources/gesetze-im-internet/estg_p15_2026-07-14.txt
     quelle: § 15 Abs. 2 EStG
     beschreibung: '§15/§18-Einkunftsart-Paket (Charge 18, Zeilen 11-12): EÜR-Gewinn ist Einkünfte aus Gewerbebetrieb (§15 Abs2: selbständig+nachhaltig+Gewinnabsicht+Verkehrsteilnahme) ODER aus selbständiger Arbeit (§18). Abfärbung §15 Abs3 = benannter Nachtrag, NICHT formalisiert (PersGes/Struktur).'
   - bedingung: einkunftsart_selbstaendige_arbeit_p18_abs1
     deckt_ab: Einkünfte aus selbständiger Arbeit sind
+    datei: sources/gesetze-im-internet/estg_p18_2026-07-14.txt
     quelle: § 18 Abs. 1 Nr. 1 EStG
     beschreibung: Alternativ zu §15 Gewerbe - freiberufliche/selbständige Taetigkeit (§18 Abs1 Nr1). Beide Einkunftsarten nutzen dieselbe EÜR-Grundmechanik (§4 Abs3).
 - rule_id: p6_2_gwg_sofortabzug
@@ -5043,7 +5052,7 @@ regeln:
     quelle: § 35 Abs. 1 S. 2 EStG
     beschreibung: geminderte_tarifliche_steuer + Einkünfte-Summen = §2-Integrations-Inputs (Andockung, kein Selbst-Tarif).
   - bedingung: messbetrag_gewst_sachverhalt
-    deckt_ab: Gewerbesteuermessbetrags
+    deckt_ab: Steuermessbetrags (Gewerbesteuer-Messbetrag)
     quelle: § 35 Abs. 1 S. 1 EStG
     beschreibung: Messbetrag + tatsächlich zu zahlende GewSt = Sachverhalts-Inputs (GewStG = Nicht-Gegenstand).
   - bedingung: summe_positive_einkuenfte_positiv
@@ -5223,6 +5232,7 @@ regeln:
     beschreibung: Input = festgesetzte + gezahlte + um Ermäßigungsanspruch gekürzte ausl. Steuer.
   - bedingung: auslaendische_einkuenfte_p34d_katalog
     deckt_ab: Ausländische Einkünfte im Sinne des § 34c Absatz 1 bis 5 sind
+    datei: sources/gesetze-im-internet/estg_p34d_2026-07-14.txt
     quelle: § 34d EStG
     beschreibung: auslaendische_einkuenfte_staat ist eine §34d-Katalog-Einkunft (§34d Nr. 1 ff., §34d-Geltungsbedingungs-Paket).
   - bedingung: zve_positiv
@@ -5354,6 +5364,7 @@ regeln:
     beschreibung: Entnahmen/Einlagen (Legaldef S. 2/4) bereits bewertet.
   - bedingung: massgeblichkeit_handelsbilanz_gob
     deckt_ab: das nach den handelsrechtlichen Grundsätzen ordnungsmäßiger Buchführung auszuweisen ist
+    datei: sources/gesetze-im-internet/estg_p5_2026-07-14.txt
     quelle: § 5 Abs. 1 S. 1 EStG
     beschreibung: 'B2-Paket (Charge 23/25): das Steuerbilanz-Betriebsvermögen ist das nach handelsrechtlichen GoB auszuweisende (Maßgeblichkeit, § 5 Abs. 1 S. 1, Freeze estg_p5_2026-07-14). Durchbrechung ''es sei denn'' (steuerliches Wahlrecht/Vorschrift) = Nachtrag.'
 - rule_id: p6_1_1_bewertung_av

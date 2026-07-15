@@ -108,4 +108,89 @@ def build_norm_text(rule: dict, root: str) -> tuple[str, list[dict]]:
         meta.append({k: q[k] for k in ("typ", "label", "datei", "ecli", "zitatanker")
                      if k in q})
 
+    # D0: jedes deckt_ab-Fragment der Geltungsbedingungen muss woertlich im Freeze
+    # stehen (Vorbedingung 3, analog zitatanker/auszug). Erste Verletzung = Abbruch.
+    viol = deckt_ab_freeze_verletzungen(rule, root)
+    if viol:
+        rid, bid, frag, dateien = viol[0]
+        raise QuellenFehler(
+            f"{rid}: deckt_ab-Fragment der Geltungsbedingung {bid!r} steht nicht "
+            f"woertlich in {dateien}: {frag[:80]!r}")
+
     return "\n\n".join(bloecke), meta
+
+
+# -- deckt_ab-Freeze-Gate (D0) + Multi-Fragment/per-datei (D1) + Diskriminanz (D4) -
+
+
+def _regel_dateien(rule: dict) -> list[str]:
+    """Default-Quelldateien einer Regel (Union ihrer `quellen`), gegen die ein
+    deckt_ab-Fragment geprueft wird, wenn die Bedingung keinen `datei`-Zeiger traegt.
+    Dedupliziert (Reihenfolge erhalten): mehrere `quellen`-Eintraege koennen auf
+    dieselbe Datei zeigen - sonst zaehlte die Diskriminanz denselben Treffer mehrfach."""
+    return list(dict.fromkeys(q["datei"] for q in quellen_of(rule) if q.get("datei")))
+
+
+def deckt_ab_fragmente(bedingung: dict) -> list[str]:
+    """D1: `deckt_ab` ist String (1 Fragment) ODER Liste (Multi-Fragment). Eine
+    Bedingung kann mehrere Norm-Teile ueber mehrere Absaetze abdecken."""
+    d = bedingung.get("deckt_ab", "")
+    frags = d if isinstance(d, list) else [d]
+    return [f for f in frags if f]
+
+
+def _bedingung_dateien(bedingung: dict, regel_dateien: list[str]) -> list[str]:
+    """D1: expliziter `datei`-Zeiger der Bedingung (Cross-Source-Override) ODER
+    Default = Quelldateien der Regel."""
+    datei = bedingung.get("datei")
+    return [datei] if datei else regel_dateien
+
+
+def _norm_datei_cache(root: str, cache: dict, rel: str) -> str | None:
+    if rel not in cache:
+        p = os.path.join(root, rel)
+        cache[rel] = _normalize(open(p, encoding="utf-8").read()) if os.path.exists(p) else None
+    return cache[rel]
+
+
+def deckt_ab_freeze_verletzungen(rule: dict, root: str, cache: dict | None = None
+                                 ) -> list[tuple]:
+    """D0: liefert (rule_id, bedingung, fragment, dateien) je deckt_ab-Fragment, das
+    - nach _normalize - in KEINER seiner aufgeloesten Freeze-Dateien vorkommt. Leer =
+    alle Anker freeze-gedeckt."""
+    cache = {} if cache is None else cache
+    regel_dateien = _regel_dateien(rule)
+    out = []
+    for b in rule.get("geltungsbedingungen") or []:
+        dateien = _bedingung_dateien(b, regel_dateien)
+        for frag in deckt_ab_fragmente(b):
+            nf = _normalize(frag)
+            if not any((t := _norm_datei_cache(root, cache, dt)) and nf in t
+                       for dt in dateien):
+                out.append((rule["rule_id"], b.get("bedingung"), frag, dateien))
+    return out
+
+
+def deckt_ab_diskriminanz(rule: dict, root: str, min_len: int = 25,
+                          cache: dict | None = None) -> list[tuple]:
+    """D4 (INFO, nicht blockierend): kurze UND nicht-eindeutige deckt_ab-Fragmente.
+    Geflaggt wird nur, wenn ein Fragment kuerzer als `min_len` Zeichen ist UND seine
+    Treffer-Zahl in den aufgeloesten Freezes != 1 ist (reine Laenge wuerde kurze,
+    aber eindeutige Anker unnoetig flaggen). Ein `schwach_ok: true` an der Bedingung
+    ist ein bewusster Waiver und unterdrueckt die Meldung."""
+    cache = {} if cache is None else cache
+    regel_dateien = _regel_dateien(rule)
+    out = []
+    for b in rule.get("geltungsbedingungen") or []:
+        if b.get("schwach_ok"):
+            continue
+        dateien = _bedingung_dateien(b, regel_dateien)
+        for frag in deckt_ab_fragmente(b):
+            if len(frag) >= min_len:
+                continue
+            nf = _normalize(frag)
+            treffer = sum((t := _norm_datei_cache(root, cache, dt)) and t.count(nf) or 0
+                          for dt in dateien)
+            if treffer != 1:
+                out.append((rule["rule_id"], b.get("bedingung"), frag, len(frag), treffer))
+    return out
