@@ -1,0 +1,24 @@
+# Eingefrorenes Aenderungsgesetz (AMTLICHER BGBl-Text). Provenance-Archiv.
+dokument:
+  norm_uri: "bgbl/2025-I-161/stinvsofortpg"
+  norm: "Gesetz fuer ein steuerliches Investitionssofortprogramm (Investitionsbooster), BGBl. 2025 I Nr. 161, verkuendet 18.07.2025"
+  fassung: "BGBl 2025 I Nr. 161 (Regelungstext, amtlich)"
+  quelle_url: "https://www.recht.bund.de/bgbl/1/2025/161/regelungstext.pdf?__blob=publicationFile&v=3"
+  abrufdatum: "2026-07-15"
+  datei: "stinvsofortpg_2025.txt"
+  pdf_datei: "stinvsofortpg_2025.pdf"
+  sha256: "c805107768a3299532639ab58336de0e61c762a5f5db0554572919902563d813"
+  pdf_sha256: "6619f4329037f236591bdc985f77cc44a287388712626cd031608fae67757cc3"
+  authority: gesetz
+  redistributable: true
+  hinweis: "AMTLICHE Quelle (recht.bund.de, kein Mirror noetig). Deckt: (1) B2-Kohorte Kfz-BLP
+    70 000 -> 100 000 Euro (§6 Abs1 Nr4 S2 Nr3 + S3 Nr3), Anschaffung nach 30.06.2025;
+    Altfaelle behalten 70k (Anschaffungszeitpunkt-Kohorte, KEINE VZ-Schwelle - dev-2-Dossier
+    2026-07-15); (2) degressive AfA Booster 3x/30 % (Neufassung §7 Abs2 S1/2) + E-Kfz Abs2a;
+    (3) KSt-Senkungs-Teil ausserhalb EStG-Scope. Anfuehrungszeichen typografisch („...“) -
+    Anker exakt. BLP-Kohorten-Kette komplett: 60k (bis Anschaffung 31.12.2023) -> 70k
+    (WtChancenG, sources/bgbl/wtchanceng_2024_art3_estg) -> 100k (dieses Gesetz)."
+  erwartete_anker:
+    - "Nummer 4 Satz 2 Nummer 3 und Satz 3 Nummer 3 wird jeweils die Angabe „70 000 Euro“ durch die Angabe „100 000 Euro“ ersetzt"
+    - "nach dem 30. Juni 2025"
+  verwendet_in: ["B2 Kfz-BLP-Kohorten-params (60k/70k/100k)", "C28-Provenance degressive AfA/E-Kfz (amtliche Zweitquelle)"]

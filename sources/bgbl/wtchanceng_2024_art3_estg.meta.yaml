@@ -6,7 +6,7 @@ dokument:
   quelle_url: "https://www.buzer.de/gesetz/16376/a309883.htm"
   abrufdatum: "2026-07-15"
   datei: "wtchanceng_2024_art3_estg.txt"
-  sha256: "32b9e80b83113b0f9079da2c97c8d9cbe6588e836fda5236c95b5b8c20d1e5e6"
+  sha256: "ce81b3667adcd66719c6fdf2328d6d300d196b2c2a77a97639c1235470a93677"
   authority: gesetz
   redistributable: true
   hinweis: "buzer.de-Mirror des BGBl-Aenderungstextes (amtliche BGBl-PDF via recht.bund.de bei
@@ -19,4 +19,8 @@ dokument:
     - "das Zweifache des bei der Absetzung für Abnutzung in gleichen Jahresbeträgen in Betracht kommenden Prozentsatzes betragen und 20 Prozent nicht übersteigen"
     - "nach dem 31. März 2024 und vor dem 1. Januar 2025"
     - "In § 7g Absatz 5 wird die Angabe „20 Prozent\" durch die Angabe „40 Prozent\" ersetzt"
-  verwendet_in: ["C27-B1 Sonder-AfA-20%-Kohorte", "C28/M4 degressive AfA 2024-Fenster", "Multi-VZ M3"]
+    - "In Nummer 4 Satz 2 Nummer 3 und Satz 3 Nummer 3 wird jeweils die Angabe „60.000 Euro\" durch die Angabe „70.000 Euro\" ersetzt"
+  verwendet_in: ["C27-B1 Sonder-AfA-20%-Kohorte", "C28/M4 degressive AfA 2024-Fenster", "Multi-VZ M3", "B2 Kfz-BLP-Kohorte 60k->70k (Anschaffung ab 01.01.2024)"]
+  # Neu-Extraktion 2026-07-15 (Fenster-Fix): Erst-Extraktion begann hinter der Nr-1-BLP-Aenderung
+  # (60.000->70.000 mit PUNKT-Notation) - Instructor-Lehre: Extraktions-Fenster gegen ALLE
+  # Ziel-Aenderungen verifizieren, nicht nur die zuerst gesuchte.
