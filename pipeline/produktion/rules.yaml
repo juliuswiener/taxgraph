@@ -4681,7 +4681,7 @@ regeln:
   - bedingung: e_kfz_bruttolistenpreis_100k_grenze
     deckt_ab: der Bruttolistenpreis des Kraftfahrzeugs nicht mehr als 100 000 Euro beträgt
     quelle: § 6 Abs. 1 Nr. 4 S. 2 EStG
-    beschreibung: 'C27-A5: der Viertel-/Hälfte-Ansatz für E-Kfz setzt Bruttolistenpreis <= 100 000 Euro voraus (aktuelle Fassung, Wachstumschancengesetz). GÜLTIGKEIT: historische Schwellen 60k/70k/80k je Anschaffungsjahr = eigene Kohorten (Multi-VZ-B2, Alt-Freezes) = Nachtrag.'
+    beschreibung: 'C27-A5: der Viertel-/Hälfte-Ansatz für E-Kfz setzt Bruttolistenpreis <= 100 000 Euro voraus (aktuelle Fassung, Investitionssofortprogramm 2025, BGBl. 2025 I Nr. 161). GÜLTIGKEIT: Anschaffungszeitpunkt-Kohorten der BLP-Grenze - 60k (Anschaffung bis 31.12.2023) / 70k (WachstumschancenG, BGBl. 2024 I Nr. 108, Anschaffung nach 31.12.2023) / 100k (Investitionssofortprogramm, Anschaffung nach 30.06.2025), freeze-verankert in params/kohorten/ekfz_blp_grenze_p6.yaml. KORREKTUR M5: zuvor fehlerhaft als 60k/70k/80k + 100k=Wachstumschancengesetz dokumentiert - 80k hat keine Quellenbasis, die 100k stammt aus dem Investitionssofortprogramm (WachstumschancenG war die 70k-Stufe).'
 - rule_id: p6_1_5_einlage
   norm: § 6 Abs. 1 Nr. 5 EStG (Einlage-Bewertung, Teilwert höchstens fortgeführte AK)
   hinweis: einlagewert = wenn innerhalb_drei_jahre_aus_pv dann min(teilwert, fortgefuehrte_anschaffungskosten) sonst teilwert. Einlage mit dem Teilwert (Schaetzwert-Input, nicht gerechnet); jedoch HOECHSTENS die fortgefuehrte AK (bereits um S2-Zwischen-AfA gekuerzt), WENN das WG innerhalb 3 Jahre aus dem Privatvermoegen kam. min-Deckel. Cent-genau.

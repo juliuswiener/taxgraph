@@ -29,3 +29,23 @@ def test_ekfz_staffel_werte_und_summe():
     assert [s[j]["prozent_jahr"] for j in range(6)] == [75.0, 10.0, 5.0, 5.0, 3.0, 2.0]
     # Summe der Staffel = 100 % (voll abgeschrieben nach 6 Jahren).
     assert sum(s[j]["prozent_jahr"] for j in range(6)) == 100.0
+
+
+def test_ekfz_blp_grenze_kohorten():
+    k = _load("ekfz_blp_grenze_p6.yaml")["kohorten"]
+    # Freeze-verankerte Grenz-Werte je Anschaffungszeitpunkt-Kohorte.
+    assert k["vor_wtchanceng"]["bruttolistenpreis_grenze"] == 60000
+    assert k["wtchanceng_2024"]["bruttolistenpreis_grenze"] == 70000
+    assert k["stinvsofortpg_2025"]["bruttolistenpreis_grenze"] == 100000
+    # Monoton steigend (jede Kohorte hebt die Grenze an, kein 80k dazwischen).
+    werte = [k["vor_wtchanceng"]["bruttolistenpreis_grenze"],
+             k["wtchanceng_2024"]["bruttolistenpreis_grenze"],
+             k["stinvsofortpg_2025"]["bruttolistenpreis_grenze"]]
+    assert werte == sorted(werte) and len(set(werte)) == 3
+    # Fenster schliessen luecken-/ueberlappungsfrei an: bis(70k) = Tag vor ab(100k).
+    assert k["wtchanceng_2024"]["ab"] == "2024-01-01"
+    assert k["wtchanceng_2024"]["bis"] == "2025-06-30"
+    assert k["stinvsofortpg_2025"]["ab"] == "2025-07-01"
+    # 60k-Kohorte: untere Grenze offen (Einfuehrung liegt vor beiden Freezes).
+    assert k["vor_wtchanceng"]["ab"] is None
+    assert k["vor_wtchanceng"]["bis"] == "2023-12-31"

@@ -1,0 +1,48 @@
+# § 6 Abs. 1 Nr. 4 Satz 2 Nr. 3 / Satz 3 Nr. 3 EStG - BLP-Grenze fuer den E-Kfz-
+# Viertel-/Halb-Ansatz, Anschaffungszeitpunkt-Kohorten (Kohorte -> bruttolistenpreis_grenze).
+# NICHT vz-versioniert: die Grenze haengt am ANSCHAFFUNGSZEITPUNKT des Kfz, nicht am VZ; ein
+# Kfz behaelt seine Kohorte ueber die Nutzungsdauer (§ 52 Abs. 12 Anwendungs-Saetze). Werte +
+# Fenster ausschliesslich aus den BGBl-Freezes (nicht aus Sekundaerquellen; dev-2-Auflage B2).
+#
+# GUELTIGKEIT je Kohorte (Julius-Direktive):
+#  - 60.000: Vor-Fassung (Kfz-Anschaffung bis 31.12.2023). Wert aus dem wtchanceng-
+#    Aenderungsbefehl ("die Angabe 60.000 Euro durch ... 70.000 Euro ersetzt" = die ersetzte
+#    Vor-Angabe). Der eigene Einfuehrungs-Zeitpunkt der 60k liegt VOR beiden Freezes; die
+#    untere Fenstergrenze ist aus diesen Freezes NICHT ableitbar -> ab: null (offen).
+#  - 70.000: WachstumschancenG, Art. 3 (BGBl. 2024 I Nr. 108, v. 27.03.2024). § 52 Abs. 12:
+#    erstmals fuer Kfz, die nach dem 31.12.2023 angeschafft werden -> ab 2024-01-01. Obere
+#    Grenze = Beginn der Folge-Kohorte (Anschaffung bis 30.06.2025).
+#  - 100.000: InvestitionssofortprogrammG, Art. 1 (BGBl. 2025 I Nr. 161, v. 14.07.2025). § 52
+#    Abs. 12: erstmals fuer Kfz, die nach dem 30.06.2025 angeschafft werden -> ab 2025-07-01.
+#    Aktuelle Fassung (im estg_p6-Freeze 2026-07-14 gebunden, p6_1_4_kfz_nutzungswert).
+parameter: ekfz_blp_grenze
+authority: gesetz
+redistributable: true
+rechtsquelle: {gesetz: EStG, paragraph: '6', absatz: '1', nummer: '4', satz: '2', teil: 'Nr. 3 / Satz 3 Nr. 3'}
+datenquelle: 'Anschaffungszeitpunkt-Kohorten der BLP-Grenze fuer den E-Kfz-Viertel-/Halb-Ansatz. 60k/70k aus sources/bgbl/wtchanceng_2024_art3_estg.txt (Aenderungsbefehl + § 52 Abs. 12), 100k aus sources/bgbl/stinvsofortpg_2025.txt (Aenderungsbefehl + § 52 Abs. 12). Stand 2026-07-15.'
+einheit: {bruttolistenpreis_grenze: euro}
+
+# Schluessel = Anschaffungszeitpunkt-Kohorte. ab/bis = Anschaffungsdatum-Fenster (inklusiv,
+# null = offen). anker_wert = wortgleiche Wert-Angabe im Freeze; anker_fenster = § 52-Anwendungs-Satz.
+kohorten:
+  vor_wtchanceng:
+    bruttolistenpreis_grenze: 60000
+    ab: null
+    bis: "2023-12-31"
+    quelle_freeze: sources/bgbl/wtchanceng_2024_art3_estg.txt
+    anker_wert: "60.000 Euro"
+    anker_fenster: "nach dem 31. Dezember 2023 angeschafft"
+  wtchanceng_2024:
+    bruttolistenpreis_grenze: 70000
+    ab: "2024-01-01"
+    bis: "2025-06-30"
+    quelle_freeze: sources/bgbl/wtchanceng_2024_art3_estg.txt
+    anker_wert: "70.000 Euro"
+    anker_fenster: "nach dem 31. Dezember 2023 angeschafft"
+  stinvsofortpg_2025:
+    bruttolistenpreis_grenze: 100000
+    ab: "2025-07-01"
+    bis: null
+    quelle_freeze: sources/bgbl/stinvsofortpg_2025.txt
+    anker_wert: "100 000 Euro"
+    anker_fenster: "nach dem 30. Juni"
