@@ -1,0 +1,20 @@
+id: gesamt_2025_vorsorge_unter
+beschreibung: "Gesamtfall Einzel, VZ 2025, Altersvorsorge UNTER Deckel: § 19 60000; Vorsorge-Beitraege 12000 inkl. AG < HB 29344 -> kein Cap, min = 12000, minus steuerfreier AG-Anteil 2000 = abziehbar 10000; Sonderausgaben 10000 -> einkommen 50000 = zvE; tarif(50000,2025) = festzusetzende 10691. Gleicher abzug wie VZ 2024 (unter Cap), Ergebnis nur ueber den Tarif verschieden."
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 60000
+  vorsorge_gesamtbeitraege_inkl_ag: 12000
+  vorsorge_ag_anteil_steuerfrei: 2000
+
+erwartung:
+  festzusetzende_est: 10691
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG (Altersvorsorge unter Höchstbeitrag, params/2025), § 2 Abs. 4 (Sonderausgaben mindern das Einkommen), § 32a Abs. 1 (Grundtarif VZ 2025)"
+  datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"

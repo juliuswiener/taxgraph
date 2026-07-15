@@ -95,12 +95,25 @@ def _kindergeld(year: int) -> int:
 
 
 def _vorsorge_hb(year: int) -> int:
-    """Vorsorge-Hoechstbetrag aus params/<vz> (§ 10 Abs. 3): 27566/29344/30826. Cap-
-    Eingabe von p10_1_2_altersvorsorge; dieser Scope ist noch NICHT in catala_gesamt
-    verdrahtet - der Accessor liegt bereit fuer den kuenftigen Anschluss (dev-2-Befund)."""
+    """Vorsorge-Hoechstbetrag aus params/<vz> (§ 10 Abs. 3): 27566/29344/30826.
+    Deckel-Eingabe von p10_1_2_altersvorsorge; ueber _vorsorge_abzug in den
+    Sonderausgaben-Pfad von catala_gesamt verdrahtet."""
     p = load_yaml_fh(open(os.path.join(
         ROOT, "params", str(year), "vorsorge_hoechstbetrag_p10.yaml"), encoding="utf-8"))
     return p["hoechstbeitrag"]["wert"]
+
+
+def _vorsorge_abzug(s: dict, year: int) -> int:
+    """§ 10 Abs. 1 Nr. 2, Abs. 3: abziehbare Altersvorsorge (p10_1_2, MVP 100 %-
+    Ansatz). Die Gesamtbeitraege (inkl. AG-Anteil) werden auf den Hoechstbeitrag zur
+    knappschaftl. RV aus params/<vz> gedeckelt, dann um den steuerfreien AG-Anteil
+    gekuerzt - Kuerzung NACH dem Cap (Instructor-Semantik msg 1197). Nur aktiv, wenn
+    ein Vorsorge-Beitrag gesetzt ist; sonst 0 (Rueckwaertskompatibilitaet)."""
+    beitraege = int(s.get("vorsorge_gesamtbeitraege_inkl_ag", 0))
+    if not beitraege:
+        return 0
+    ag = int(s.get("vorsorge_ag_anteil_steuerfrei", 0))
+    return max(0, min(beitraege, _vorsorge_hb(year)) - ag)
 
 
 VZ_ENUM = {
@@ -128,6 +141,10 @@ def catala_gesamt(s: dict) -> int:
     hinzu_kg = int(s.get("hinzurechnung_kindergeld", 0))
     if s.get("kinder_ganzjaehrig"):
         hinzu_kg = _kindergeld(year) * 12 * int(s["kinder_ganzjaehrig"])
+    # § 10 Sonderausgaben: die abziehbare Altersvorsorge (p10_1_2, auf den params-HB
+    # gedeckelt) wird zum sonderausgaben-Wert addiert. Ohne Vorsorge-Input bleibt
+    # sonderausgaben unveraendert - die 62 Bestandsfaelle rechnen wie bisher.
+    sonder = int(s.get("sonderausgaben", 0)) + _vorsorge_abzug(s, year)
     scope = (E.festzusetzende_est_gesamt_zusammen if s.get("veranlagung") == "zusammen"
              else E.festzusetzende_est_gesamt)
     cls = (E.FestzusetzendeEstGesamtZusammenIn if s.get("veranlagung") == "zusammen"
@@ -140,7 +157,7 @@ def catala_gesamt(s: dict) -> int:
         einkuenfte_gewinn_in=m("einkuenfte_gewinn"),
         altersentlastungsbetrag_in=m("altersentlastungsbetrag"),
         entlastungsbetrag_alleinerziehende_in=m("entlastungsbetrag_alleinerziehende"),
-        sonderausgaben_in=m("sonderausgaben"),
+        sonderausgaben_in=Money(f"{sonder}.00"),
         aussergewoehnliche_belastungen_in=m("aussergewoehnliche_belastungen"),
         freibetraege_kinder_in=m("freibetraege_kinder"),
         sonstige_abzuege_vom_einkommen_in=m("sonstige_abzuege_vom_einkommen"),
