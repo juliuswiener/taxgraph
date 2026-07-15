@@ -39,6 +39,11 @@ declaration scope Solidaritaetszuschlag:
   input bemessungsgrundlage content money
   # true = Fall des § 32a Abs. 5/6 EStG (Splitting), sonst false
   input splitting content boolean
+  # Veranlagungszeitraum als Jahr-int (2024/2025/2026): die Freigrenze driftet per VZ
+  # (Milderungssaetze nicht). INT statt Enum, weil Catala 1.2.0 modanuebergreifende
+  # Enum-Typen nicht ins OCaml-Backend exportiert (ein match auf Einkommensteuertarif.
+  # Veranlagungszeitraum in diesem separaten Modul bricht den clerk-OCaml-Build).
+  input veranlagungszeitraum content integer
   # Freigrenze nach § 3 Abs. 3 Satz 1, in Euro (decimal)
   internal freigrenze content decimal
   # Bemessungsgrundlage in Euro als decimal - Ausgangspunkt der Prozentrechnung
@@ -63,10 +68,17 @@ Eine Freigrenze (kein Freibetrag): wird sie nicht ueberschritten, faellt kein
 Zuschlag an; wird sie ueberschritten, greift § 4 auf der vollen
 Bemessungsgrundlage (nicht nur auf dem uebersteigenden Teil).
 
+Die Freigrenze driftet per Veranlagungszeitraum (Inflationsausgleichsgesetz /
+SteFeG): VZ 2024 = 18.130 (Splitting 36.260), VZ 2025 = 19.950 (39.900), VZ 2026 =
+20.350 (40.700). Werte-Provenance je VZ in `params/<vz>/solidaritaetszuschlag_solzg.yaml`
+(BGBl + GETTSIM-Gegenprobe). Zuschlags-/Milderungssatz (5,5 % / 11,9 %) unveraendert.
+
 ```catala
 scope Solidaritaetszuschlag:
   definition freigrenze equals
-    if splitting then 40700.0 else 20350.0
+    if veranlagungszeitraum = 2024 then (if splitting then 36260.0 else 18130.0)
+    else if veranlagungszeitraum = 2025 then (if splitting then 39900.0 else 19950.0)
+    else (if splitting then 40700.0 else 20350.0)
 
   definition bemessungsgrundlage_dec equals bemessungsgrundlage / $1.00
 ```

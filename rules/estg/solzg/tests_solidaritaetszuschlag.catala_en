@@ -20,29 +20,29 @@ declaration scope TestSolzgEinzel:
 scope TestSolzgEinzel:
   # BMG 20.350 = Freigrenze (nicht splitting), uebersteigt nicht -> 0.
   definition t_freigrenze equals (output of Solzg.Solidaritaetszuschlag with {
-    -- bemessungsgrundlage: $20350.00 -- splitting: false }).solidaritaetszuschlag
+    -- bemessungsgrundlage: $20350.00 -- splitting: false -- veranlagungszeitraum: 2026 }).solidaritaetszuschlag
   assertion t_freigrenze = $0.00
 
   # BMG 20.351: Milderung 11,9 % x (20.351 - 20.350) = 0,119; Cent-Schnitt -> 0,11.
   definition t_erster_cent equals (output of Solzg.Solidaritaetszuschlag with {
-    -- bemessungsgrundlage: $20351.00 -- splitting: false }).solidaritaetszuschlag
+    -- bemessungsgrundlage: $20351.00 -- splitting: false -- veranlagungszeitraum: 2026 }).solidaritaetszuschlag
   assertion t_erster_cent = $0.11
 
   # BMG 25.000: min(5,5 % x 25.000 = 1.375; 11,9 % x 4.650 = 553,35) = 553,35.
   definition t_milderungszone equals (output of Solzg.Solidaritaetszuschlag with {
-    -- bemessungsgrundlage: $25000.00 -- splitting: false }).solidaritaetszuschlag
+    -- bemessungsgrundlage: $25000.00 -- splitting: false -- veranlagungszeitraum: 2026 }).solidaritaetszuschlag
   assertion t_milderungszone = $553.35
 
   # BMG 37.838 (nahe Zonenende): milderung 11,9 % x 17.488 = 2.081,072;
   # regel 5,5 % x 37.838 = 2.081,09; min = milderung -> Cent-Schnitt 2.081,07.
   definition t_zonengrenze equals (output of Solzg.Solidaritaetszuschlag with {
-    -- bemessungsgrundlage: $37838.00 -- splitting: false }).solidaritaetszuschlag
+    -- bemessungsgrundlage: $37838.00 -- splitting: false -- veranlagungszeitraum: 2026 }).solidaritaetszuschlag
   assertion t_zonengrenze = $2081.07
 
   # BMG 45.000 (ueber der Zone): min(5,5 % x 45.000 = 2.475; 11,9 % x 24.650 =
   # 2.933,35) = 2.475,00 (volle 5,5 %).
   definition t_volle_55 equals (output of Solzg.Solidaritaetszuschlag with {
-    -- bemessungsgrundlage: $45000.00 -- splitting: false }).solidaritaetszuschlag
+    -- bemessungsgrundlage: $45000.00 -- splitting: false -- veranlagungszeitraum: 2026 }).solidaritaetszuschlag
   assertion t_volle_55 = $2475.00
 ```
 
@@ -57,12 +57,63 @@ declaration scope TestSolzgSplitting:
 scope TestSolzgSplitting:
   # Splitting-Freigrenze: BMG 40.700 uebersteigt nicht -> 0.
   definition s_freigrenze equals (output of Solzg.Solidaritaetszuschlag with {
-    -- bemessungsgrundlage: $40700.00 -- splitting: true }).solidaritaetszuschlag
+    -- bemessungsgrundlage: $40700.00 -- splitting: true -- veranlagungszeitraum: 2026 }).solidaritaetszuschlag
   assertion s_freigrenze = $0.00
 
   # BMG 60.000 splitting: min(5,5 % x 60.000 = 3.300; 11,9 % x (60.000-40.700) =
   # 11,9 % x 19.300 = 2.296,70) = 2.296,70 (Milderung mit Splitting-Freigrenze).
   definition s_milderung equals (output of Solzg.Solidaritaetszuschlag with {
-    -- bemessungsgrundlage: $60000.00 -- splitting: true }).solidaritaetszuschlag
+    -- bemessungsgrundlage: $60000.00 -- splitting: true -- veranlagungszeitraum: 2026 }).solidaritaetszuschlag
   assertion s_milderung = $2296.70
+```
+
+## VZ-Drift der Freigrenze (M5-Stufe-2): VZ 2024/2025
+
+Nur die Freigrenze driftet; der Milderungssatz 11,9 % bleibt. Je VZ die Boundary:
+Freigrenze exakt -> 0; ein Euro darueber -> 11,9 % x 1 = 0,119, Cent-Schnitt -> 0,11.
+
+```catala
+#[test]
+declaration scope TestSolzgVz2024:
+  output e_grenze content money    # VZ2024 einzel Freigrenze 18.130 -> 0
+  output e_cent content money        # 18.131 -> 0,11
+  output sp_grenze content money      # VZ2024 splitting 36.260 -> 0
+  output sp_cent content money         # 36.261 -> 0,11
+
+scope TestSolzgVz2024:
+  definition e_grenze equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $18130.00 -- splitting: false -- veranlagungszeitraum: 2024 }).solidaritaetszuschlag
+  assertion e_grenze = $0.00
+  definition e_cent equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $18131.00 -- splitting: false -- veranlagungszeitraum: 2024 }).solidaritaetszuschlag
+  assertion e_cent = $0.11
+  definition sp_grenze equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $36260.00 -- splitting: true -- veranlagungszeitraum: 2024 }).solidaritaetszuschlag
+  assertion sp_grenze = $0.00
+  definition sp_cent equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $36261.00 -- splitting: true -- veranlagungszeitraum: 2024 }).solidaritaetszuschlag
+  assertion sp_cent = $0.11
+```
+
+```catala
+#[test]
+declaration scope TestSolzgVz2025:
+  output e_grenze content money    # VZ2025 einzel Freigrenze 19.950 -> 0
+  output e_cent content money        # 19.951 -> 0,11
+  output sp_grenze content money      # VZ2025 splitting 39.900 -> 0
+  output sp_cent content money         # 39.901 -> 0,11
+
+scope TestSolzgVz2025:
+  definition e_grenze equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $19950.00 -- splitting: false -- veranlagungszeitraum: 2025 }).solidaritaetszuschlag
+  assertion e_grenze = $0.00
+  definition e_cent equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $19951.00 -- splitting: false -- veranlagungszeitraum: 2025 }).solidaritaetszuschlag
+  assertion e_cent = $0.11
+  definition sp_grenze equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $39900.00 -- splitting: true -- veranlagungszeitraum: 2025 }).solidaritaetszuschlag
+  assertion sp_grenze = $0.00
+  definition sp_cent equals (output of Solzg.Solidaritaetszuschlag with {
+    -- bemessungsgrundlage: $39901.00 -- splitting: true -- veranlagungszeitraum: 2025 }).solidaritaetszuschlag
+  assertion sp_cent = $0.11
 ```

@@ -233,7 +233,8 @@ scope TestGesamtMitSolz:
   definition fest equals g.festzusetzende_est
   definition s equals output of Solzg.Solidaritaetszuschlag with {
     -- bemessungsgrundlage: g.festzusetzende_est
-    -- splitting: false }
+    -- splitting: false
+    -- veranlagungszeitraum: 2026 }
   definition solz equals s.solidaritaetszuschlag
   definition gesamt equals fest + solz
   assertion fest = $40,000.00
@@ -263,7 +264,8 @@ scope TestGesamtMitSolz:
     -- veranlagungszeitraum: VZ2026 }
   definition s0 equals output of Solzg.Solidaritaetszuschlag with {
     -- bemessungsgrundlage: g0.festzusetzende_est
-    -- splitting: false }
+    -- splitting: false
+    -- veranlagungszeitraum: 2026 }
   definition solz0 equals s0.solidaritaetszuschlag
   assertion solz0 = $0.00
 ```

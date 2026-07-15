@@ -177,7 +177,8 @@ scope DbaAnrechnungKette:
   definition soli_lauf equals
     output of Solzg.Solidaritaetszuschlag with {
       -- bemessungsgrundlage: festzusetzende_est
-      -- splitting: false }
+      -- splitting: false
+      -- veranlagungszeitraum: 2026 }
 
   definition soli equals soli_lauf.solidaritaetszuschlag
 ```
