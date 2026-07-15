@@ -63,3 +63,33 @@ ENTSTEHT oder sich ERHÖHT") — Boundary-Encoding-Kandidat, Grenzfall-Seeds an 
 ## Reihenfolge Gesamt (nach W1-Feldmapping): W2-C21 → W2-C22 → W3-C24 → W2-C23 → W3-C25.
 W4 (DBA CH/AT/US) läuft parallel als Beschaffungs-/Katalog-Arbeit (kein Kaskaden-Lauf,
 Geltungsbedingungs-Kataloge). Budget-Rahmen alles zusammen ~$1–1,5.
+
+---
+
+## 🏁 PROGRAMM-ABSCHLUSSVERMERK (Instructor, 2026-07-15)
+
+**Alle vier Workstreams des Julius-Auftrags "mach elster feld mapping und alle
+großkomplexe" sind komplett** (Commits bis 3812d0c, Instructor-abgenommen):
+
+- **W1 Feldmapping** ✅ — Anlage EÜR als eigene ELSTER-Datenart E77 erschlossen (1169 Kz),
+  alle EÜR-Regel-Outputs + AUS-§34c-Inputs gemappt (per-country-Spalten 107/127/147 +
+  109/129/149), S/G sauber als N/A begründet (Einkunftsart-Qualifikation, kein Rechenwert).
+- **W2 Bilanzierung 8/8** ✅ — BV-Vergleich, Teilwert-min, Wertaufholung, 5,5 %-Abzinsung,
+  §6a-Höchstbetrag, Maßgeblichkeits-/Ansatz-Pakete, aktiver RAP, R-4.6-Übergangsgewinn
+  (erste verwaltungs-basierte Pipeline-Regel).
+- **W3 PersGes 6/6** ✅ — Mitunternehmer-Zurechnung, §15a-Kapitalkonto-Mechanik
+  (Floor+Cap), Vortrags-Betrag, erweiterte Außenhaftung (§171-HGB-Tranche).
+- **W4 DBA-Kataloge AT/US/CH** ✅ — Methoden-Zuordnung je Einkunftsart-Artikel ans
+  C20-Interface; CH als Overlay 2010-Konsolidierung + Protokoll 2023 (VZ-2026-Stand).
+
+**Endstand Regelwerk: 81 Regeln, 77 Snapshots (fresh-clone-regatebar), pytest 144,
+clerk 45/45, golden 60/60.** Stufe-B-Kosten C22–C25: $0,52; W1/W4/Stufe-A/Fixes: $0.
+
+**Substanz-Fänge der Reviews:** F-B2 (versprochene Maßgeblichkeits-Bedingung existierte
+nicht — C20-§34d-Klasse, plus neue Memory-Regel) · negativer Übergangsgewinn nicht durch
+die Verteilung (H 4.6) · Zwölf-Monats-/KK=0-Grenzfälle · budget_abbruch griff zweimal
+korrekt. Judge-Über-Flag "äquivalente Umformung" jetzt mit 11 Belegen — jedes Mal von
+der Ratsche neutralisiert, nie durchgerutscht.
+
+**Offen danach:** Unternehmer-E2E-Integration (nächstes Programm, Agent-Fanout
+freigegeben) · C27 Rest-Nachträge · Hersteller-ID-Wecker · E-Bilanz-Taxonomie.
