@@ -1,0 +1,19 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p8c_verlustuntergang
+version: 1
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 8c abs. 1 satz 1 kstg
+  formulierungen:
+  - innerhalb von fünf Jahren | mittelbar oder unmittelbar mehr als 50 Prozent des
+    gezeichneten Kapitals, der Mitgliedschaftsrechte, der Beteiligungsrechte oder
+    der Stimmrechte | an einen Erwerber oder diesem nahe stehende Personen übertragen
+    | oder liegt ein vergleichbarer Sachverhalt vor | bis zum schädlichen Beteiligungserwerb
+    nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste)
+  triage: bedingung_neu
+  klasse: unabhaengig
+  bedingung: schaedlicher_erwerb_untergang_vollstaendig

@@ -3979,3 +3979,27 @@ entscheidungen:
     klasse: unabhaengig
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-n3-bruecke
   timestamp: '2026-07-16T16:23:10.200271+00:00'
+- rule_id: p8c_verlustuntergang
+  schluessel: '["norm_teil", "ref", "§ 8c abs. 1 satz 1 kstg"]'
+  triage: bedingung_neu
+  bedingung: schaedlicher_erwerb_untergang_vollstaendig
+  weitere_bedingungen:
+  - schaedlicher_erwerb_ueber_50_prozent_bool_vorfrage
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8c abs. 1 satz 1 kstg
+    text: innerhalb von fünf Jahren | mittelbar oder unmittelbar mehr als 50 Prozent
+      des gezeichneten Kapitals, der Mitgliedschaftsrechte, der Beteiligungsrechte
+      oder der Stimmrechte | an einen Erwerber oder diesem nahe stehende Personen
+      übertragen | oder liegt ein vergleichbarer Sachverhalt vor | bis zum schädlichen
+      Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht
+      genutzte Verluste)
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n4-satz1
+  timestamp: '2026-07-16T16:28:54.022483+00:00'

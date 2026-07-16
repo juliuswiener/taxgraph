@@ -1,0 +1,205 @@
+{
+  "bedingungen": [
+    "schaedlicher_erwerb_untergang_vollstaendig",
+    "schaedlicher_erwerb_ueber_50_prozent_bool_vorfrage",
+    "stille_reserven_teilerhalt_nachtrag",
+    "sanierungsklausel_abs1a_nachtrag"
+  ],
+  "candidate_id": "p8c_verlustuntergang",
+  "catala_a": "declaration scope VerlustuntergangKoerperschaft:\n  input verlustvortrag_bestand content money\n  input schaedlicher_erwerb content boolean\n  output verlustbestand_nach_8c content money\n\nscope VerlustuntergangKoerperschaft:\n  definition verlustbestand_nach_8c equals\n    if schaedlicher_erwerb then $0.00 else verlustvortrag_bestand",
+  "catala_a_sha256": "0b2c0a97d1df605e914fa4b7355d3668d532321d2627867d2dec231dc9eb3151",
+  "catala_b": "declaration scope VerlustuntergangKoerperschaft:\n  input verlustvortrag_bestand content money\n  input schaedlicher_erwerb content boolean\n  output verlustbestand_nach_8c content money\n\nscope VerlustuntergangKoerperschaft:\n  definition verlustbestand_nach_8c equals\n    if schaedlicher_erwerb then $0.00 else verlustvortrag_bestand",
+  "catala_b_sha256": "0b2c0a97d1df605e914fa4b7355d3668d532321d2627867d2dec231dc9eb3151",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'verlustbestand_nach_8c'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 3 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 5
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 8c abs. 1 satz 1 kstg"
+            ],
+            "text": "oder liegt ein vergleichbarer Sachverhalt vor"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "an einen Erwerber oder diesem nahe stehende Personen übertragen",
+            "eingeschmolzen": "an einen Erwerber oder diesem nahe stehende Personen übertragen oder liegt ein vergleichbarer Sachverhalt vor",
+            "key": [
+              "ref",
+              "§ 8c abs. 1 satz 1 kstg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        5,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "927a78508c00",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "innerhalb von fünf Jahren",
+        "referenz": "§ 8c Abs. 1 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "schaedlicher_erwerb_ueber_50_prozent_bool_vorfrage",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "mittelbar oder unmittelbar mehr als 50 Prozent des gezeichneten Kapitals, der Mitgliedschaftsrechte, der Beteiligungsrechte oder der Stimmrechte",
+        "referenz": "§ 8c Abs. 1 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "schaedlicher_erwerb_ueber_50_prozent_bool_vorfrage",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "an einen Erwerber oder diesem nahe stehende Personen übertragen",
+        "referenz": "§ 8c Abs. 1 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "oder liegt ein vergleichbarer Sachverhalt vor",
+        "referenz": "§ 8c Abs. 1 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "schaedlicher_erwerb_untergang_vollstaendig",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bis zum schädlichen Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste)",
+        "referenz": "§ 8c Abs. 1 Satz 1 KStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-16T16:26:49+00:00"
+  },
+  "module_name": "VerlustuntergangKoerperschaft",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

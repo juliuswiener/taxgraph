@@ -7790,3 +7790,82 @@ regeln:
     quelle: § 8a Abs. 3 KStG
     datei: sources/gesetze-im-internet/kstg_p8a_2026-07-16.txt
     beschreibung: '§ 8a Abs. 3 (Gesellschafter-Fremdfinanzierung: der Escape lit c des § 4h Abs. 2 EStG ist nur anwendbar, wenn Vergütungen an zu >= 25 % beteiligte Gesellschafter <= 10 % der Nettozinsaufwendungen sind) und Abs. 2 (weggefallen) = benannter Nachtrag, hier nicht modelliert (betrifft die Escape-Vorfrage aus N2, nicht die EBITDA-Basis).'
+
+- rule_id: p8c_verlustuntergang
+  norm: § 8c Abs. 1 KStG (Verlustuntergang bei schädlichem Beteiligungserwerb > 50 %)
+  hinweis: 'EXAKTE FORMEL - EINE unbedingte Definition (Fallunterscheidung als totale if-then-else, KEINE catala-exception): (1) verlustbestand_nach_8c = if schaedlicher_erwerb then 0 else verlustvortrag_bestand. Das ist die vollstaendige Regel. § 8c Abs. 1 Satz 1: werden innerhalb von fuenf Jahren mehr als 50 % des gezeichneten Kapitals/der Stimmrechte an einen Erwerber uebertragen (schaedlicher Beteiligungserwerb), sind die bis dahin nicht genutzten Verluste VOLLSTAENDIG nicht mehr abziehbar -> verlustbestand_nach_8c = 0. Kein schaedlicher Erwerb -> Bestand unveraendert. schaedlicher_erwerb = bool-INPUT (Sachverhalts-Vorfrage: > 50-%-Schwelle in 5 Jahren, mittelbar/unmittelbar, Erwerber oder nahestehende Personen/Erwerbergruppe; die Konzernklausel Satz 4 = Vorfrage). verlustvortrag_bestand = money-Input (>= 0), der zum Erwerbszeitpunkt vorhandene nicht genutzte Verlust. WIRKPUNKT: verlustbestand_nach_8c wirkt VOR dem § 10d-Abzug (K5) auf den Verlustbestand (N6-Verdrahtung). NACHTRAEGE (nicht kodiert, benannt): (a) Stille-Reserven-Klausel Satz 5 - der Verlust bleibt abziehbar, SOWEIT er die stillen Reserven nicht uebersteigt (Teilerhalt); Stufe A ist ALLES-ODER-NICHTS (0 oder voll), der Teilerhalt via stille Reserven ist Nachtrag (braucht stille_reserven-Input). (b) Sanierungsklausel Abs. 1a - ein Sanierungserwerb ist unbeachtlich (dann schaedlicher_erwerb bereits als false qualifiziert). (c) Konzernklausel Satz 4 (100-%-Beteiligung) + § 3a-EStG-Sanierungsertrag Abs. 2 = Nachtrag. VERBOT: KEINE stille-Reserven-Teilrechnung, KEINE Quoten-Staffelung (die alte 25-50-%-Quotal-Stufe ist seit 2019 rueckwirkend gestrichen - nur noch > 50 % binaer). FORMALISIERUNG: EINE unbedingte Definition (if-then-else total), KEINE bedingten exceptions.'
+  quellen:
+  - typ: gesetz
+    label: § 8c Abs. 1 Satz 1 KStG (schädlicher Beteiligungserwerb > 50 % — Verluste vollständig nicht mehr abziehbar)
+    datei: sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt
+    zitatanker: (schädlicher Beteiligungserwerb), sind bis zum schädlichen Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste) vollständig nicht mehr abziehbar
+    auszug: Werden innerhalb von fünf Jahren mittelbar oder unmittelbar mehr als 50 Prozent des gezeichneten Kapitals, der Mitgliedschaftsrechte, der Beteiligungsrechte oder der Stimmrechte an einer Körperschaft an einen Erwerber oder diesem nahe stehende Personen übertragen oder liegt ein vergleichbarer Sachverhalt vor (schädlicher Beteiligungserwerb), sind bis zum schädlichen Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste) vollständig nicht mehr abziehbar.
+  signature:
+    scope: VerlustuntergangKoerperschaft
+    inputs:
+      verlustvortrag_bestand: money
+      schaedlicher_erwerb: bool
+    output: verlustbestand_nach_8c
+  raster:
+  - verlustvortrag_bestand: 5000000
+    schaedlicher_erwerb: true
+  - verlustvortrag_bestand: 5000000
+    schaedlicher_erwerb: false
+  - verlustvortrag_bestand: 100000
+    schaedlicher_erwerb: true
+  - verlustvortrag_bestand: 0
+    schaedlicher_erwerb: false
+  test_seed:
+  - quelle: sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt
+    zitatanker: (schädlicher Beteiligungserwerb), sind bis zum schädlichen Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste) vollständig nicht mehr abziehbar
+    herkunft: synthetisch
+    rechenweg: 'Schädlicher Erwerb (> 50 %): Verlust vollständig nicht mehr abziehbar -> verlustbestand_nach_8c = 0,00 (Bestand 5.000.000 geht unter).'
+    inputs:
+      verlustvortrag_bestand: 5000000
+      schaedlicher_erwerb: true
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt
+    zitatanker: (schädlicher Beteiligungserwerb), sind bis zum schädlichen Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste) vollständig nicht mehr abziehbar
+    herkunft: synthetisch
+    rechenweg: 'Kein schädlicher Erwerb: Bestand unverändert -> verlustbestand_nach_8c = 5.000.000,00.'
+    inputs:
+      verlustvortrag_bestand: 5000000
+      schaedlicher_erwerb: false
+    expected: 5000000.0
+  - quelle: sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt
+    zitatanker: (schädlicher Beteiligungserwerb), sind bis zum schädlichen Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste) vollständig nicht mehr abziehbar
+    herkunft: synthetisch
+    rechenweg: 'Schädlicher Erwerb, kleiner Bestand: 100.000 geht ebenso vollständig unter -> 0,00 (Alles-oder-nichts).'
+    inputs:
+      verlustvortrag_bestand: 100000
+      schaedlicher_erwerb: true
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt
+    zitatanker: (schädlicher Beteiligungserwerb), sind bis zum schädlichen Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste) vollständig nicht mehr abziehbar
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL kein Bestand, kein Erwerb: 0,00.'
+    inputs:
+      verlustvortrag_bestand: 0
+      schaedlicher_erwerb: false
+    expected: 0.0
+  geltungsbedingungen:
+  - bedingung: schaedlicher_erwerb_untergang_vollstaendig
+    deckt_ab: (schädlicher Beteiligungserwerb), sind bis zum schädlichen Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste) vollständig nicht mehr abziehbar
+    quelle: § 8c Abs. 1 Satz 1 KStG
+    datei: sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt
+    beschreibung: 'Bei schädlichem Beteiligungserwerb gehen die nicht genutzten Verluste VOLLSTAENDIG unter (verlustbestand_nach_8c = 0). Alles-oder-nichts; kein Teilerhalt in Stufe A.'
+  - bedingung: schaedlicher_erwerb_ueber_50_prozent_bool_vorfrage
+    deckt_ab: mehr als 50 Prozent des gezeichneten Kapitals
+    quelle: § 8c Abs. 1 Satz 1 KStG
+    datei: sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt
+    beschreibung: 'schaedlicher_erwerb = bool-Input: > 50 % des gezeichneten Kapitals/der Stimmrechte innerhalb von 5 Jahren an einen Erwerber/nahestehende Personen/Erwerbergruppe (mittelbar/unmittelbar). Die Schwellen-Qualifikation (inkl. Konzernklausel Satz 4, 100-%-Beteiligung) ist Sachverhalts-Vorfrage, nicht modelliert. Die alte quotale 25-50-%-Stufe ist seit 2019 gestrichen.'
+  - bedingung: stille_reserven_teilerhalt_nachtrag
+    deckt_ab: kann abweichend von Satz 1 abgezogen werden, soweit er die gesamten zum Zeitpunkt des schädlichen Beteiligungserwerbs vorhandenen im Inland steuerpflichtigen stillen Reserven
+    quelle: § 8c Abs. 1 Satz 5 KStG
+    datei: sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt
+    beschreibung: 'Stille-Reserven-Klausel (Satz 5): der Verlust bleibt abziehbar, SOWEIT er die im Inland steuerpflichtigen stillen Reserven nicht uebersteigt (Teilerhalt). Benannter Nachtrag - Stufe A ist alles-oder-nichts; der Teilerhalt braucht einen stille_reserven-Input und ist nicht modelliert.'
+  - bedingung: sanierungsklausel_abs1a_nachtrag
+    deckt_ab: ist ein Beteiligungserwerb zum Zweck der Sanierung des Geschäftsbetriebs der Körperschaft unbeachtlich
+    quelle: § 8c Abs. 1a KStG
+    datei: sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt
+    beschreibung: 'Sanierungsklausel (Abs. 1a): ein Beteiligungserwerb zum Zweck der Sanierung ist unbeachtlich (kein Untergang). Benannter Nachtrag - im Modell schlaegt sich das in der Vorfrage nieder (ein Sanierungserwerb ist als schaedlicher_erwerb = false qualifiziert); die Sanierungs-Tatbestandspruefung (Lohnsummen, Betriebsvermoegenszufuehrung) ist nicht modelliert.'
