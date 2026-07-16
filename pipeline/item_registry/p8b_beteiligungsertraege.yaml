@@ -1,0 +1,169 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p8b_beteiligungsertraege
+version: 23
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - 5% nichtabziehbare ausgaben werden vom bruttoertrag abgezogen, nicht als nicht
+    abziehbar behandelt.
+  formulierungen:
+  - 5% nichtabziehbare Ausgaben werden vom Bruttoertrag abgezogen, nicht als nicht
+    abziehbar behandelt.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - veraeusserungsgewinne werden immer steuerfrei gestellt, unabhaengig von beteiligungsquote.
+  formulierungen:
+  - Veräußerungsgewinne werden immer steuerfrei gestellt, unabhängig von Beteiligungsquote.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - ausseransatz_netto subtrahiert 5% pauschal, norm verlangt nur nichtabzug dieser
+    5% als betriebsausgaben.
+  formulierungen:
+  - Ausseransatz_netto subtrahiert 5% pauschal, Norm verlangt nur Nichtabzug dieser
+    5% als Betriebsausgaben.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - veraeusserungsgewinn wird immer steuerfrei gestellt, norm verlangt nur bei bestimmten
+    anteilsarten.
+  formulierungen:
+  - Veräußerungsgewinn wird immer steuerfrei gestellt, Norm verlangt nur bei bestimmten
+    Anteilsarten.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - 5%-pauschale wird vom bruttobetrag (steuerfrei_dividende + veraeusserungsgewinn)
+    abgezogen, nicht nur von dividenden.
+  formulierungen:
+  - 5%-Pauschale wird vom Bruttobetrag (steuerfrei_dividende + veraeusserungsgewinn)
+    abgezogen, nicht nur von Dividenden.
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - beteiligungs_prozent
+  - interpretation
+  formulierungen:
+  - Bezieht sich auf unmittelbare Beteiligung zu Kalenderjahresbeginn.
+  - Beteiligungsprozent bezieht sich auf Grund-/Stammkapital zu Jahresbeginn.
+  - Beteiligung wird als Prozentsatz des Grund-/Stammkapitals interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - dividende_bezuege
+  - einheit
+  formulierungen:
+  - Bezüge umfassen nur §20 Abs.1 Nr.1,2,9,10a EStG.
+  - Dividendenbezüge gelten als Bruttobetrag vor Abzug der 5%-Pauschale.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - veraeusserungsgewinn
+  - interpretation
+  formulierungen:
+  - Veräußerungsgewinne beziehen sich auf Anteile nach §8b Abs.2 Satz 1 KStG.
+  - Veräußerungsgewinn stammt aus Anteilsveräußerung nach §8b Abs.2 Satz 1 KStG.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ausseransatz_netto
+  - rundung
+  formulierungen:
+  - 5% werden exakt ohne Rundung berechnet.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - dividende_bezuege
+  - interpretation
+  formulierungen:
+  - Dividendenbezüge entsprechen §20 Abs.1 Nr.1,2,9,10a EStG.
+  - Dividenden umfassen nur Bezüge nach §20 Abs.1 Nr.1,2,9,10a EStG.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - beteiligungs_prozent
+  - einheit
+  formulierungen:
+  - Beteiligungsprozent ist als ganzzahliger Prozentsatz angegeben.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - beteiligungs_prozent
+  - zeitbezug
+  formulierungen:
+  - Beteiligungsquote wird zu Beginn des Kalenderjahres geprüft.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - veraeusserungsgewinn
+  - geltungsvoraussetzung
+  formulierungen:
+  - Veräußerungsgewinn stammt aus Anteilsverkauf an Körperschaft/Organgesellschaft.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - beteiligungs_prozent
+  - geltungsvoraussetzung
+  formulierungen:
+  - Beteiligung wird als Prozentsatz des Grund-/Stammkapitals interpretiert.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 8b abs. 1 satz 1 kstg
+  formulierungen:
+  - Bezüge im Sinne des § 20 Abs. 1 Nr. 1, 2, 9 und 10 Buchstabe a des Einkommensteuergesetzes
+    bleiben bei der Ermittlung des Einkommens außer Ansatz.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: dividende_bezuege_ausser_ansatz_abs1
+- art: norm_teil
+  anker:
+  - ref
+  - § 8b abs. 2 satz 1 kstg
+  formulierungen:
+  - Gewinne aus der Veräußerung eines Anteils an einer Körperschaft oder Personenvereinigung,
+    deren Leistungen beim Empfänger zu Einnahmen im Sinne des § 20 Abs. 1 Nr. 1, 2,
+    9 und 10 Buchstabe a des Einko
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: veraeusserung_ausser_ansatz_5_prozent
+- art: norm_teil
+  anker:
+  - ref
+  - § 8b abs. 3 satz 1 / abs. 5 satz 1 kstg
+  formulierungen:
+  - Von den Bezügen im Sinne des Absatzes 1, die bei der Ermittlung des Einkommens
+    außer Ansatz bleiben, gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgaben
+    abgezogen werden dürfen.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: fuenf_prozent_pauschale_nichtabzug
+- art: norm_teil
+  anker:
+  - ref
+  - § 8b abs. 4 satz 1 kstg
+  formulierungen:
+  - Bezüge im Sinne des Absatzes 1 sind abweichend von Absatz 1 Satz 1 bei der Ermittlung
+    des Einkommens zu berücksichtigen, wenn die Beteiligung zu Beginn des Kalenderjahres
+    unmittelbar weniger als 10 Pr
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: streubesitz_unter_10_prozent

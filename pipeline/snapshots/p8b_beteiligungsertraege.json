@@ -1,0 +1,566 @@
+{
+  "bedingungen": [
+    "dividende_bezuege_ausser_ansatz_abs1",
+    "streubesitz_unter_10_prozent",
+    "veraeusserung_ausser_ansatz_5_prozent",
+    "fuenf_prozent_pauschale_nichtabzug"
+  ],
+  "candidate_id": "p8b_beteiligungsertraege",
+  "catala_a": "declaration scope BeteiligungsertraegeAusserAnsatz:\n  input dividende_bezuege content money\n  input beteiligung_prozent content integer\n  input veraeusserungsgewinn content money\n  internal steuerfrei_dividende content money\n  internal ausser_ansatz content money\n  internal nichtabzug_pauschale content money\n  output ausseransatz_netto content money\n\nscope BeteiligungsertraegeAusserAnsatz:\n  definition steuerfrei_dividende equals\n    if decimal of beteiligung_prozent >= 10.0\n    then dividende_bezuege\n    else $0.00\n\n  definition ausser_ansatz equals\n    steuerfrei_dividende + veraeusserungsgewinn\n\n  definition nichtabzug_pauschale equals\n    ausser_ansatz * (5.0 / 100.0)\n\n  definition ausseransatz_netto equals\n    ausser_ansatz - nichtabzug_pauschale",
+  "catala_a_sha256": "8d276c70c099326379a41ebca0927c989fd91715beef1d33885b2600220c1e86",
+  "catala_b": "declaration scope BeteiligungsertraegeAusserAnsatz:\n  input dividende_bezuege content money\n  input beteiligung_prozent content integer\n  input veraeusserungsgewinn content money\n  internal steuerfrei_dividende content money\n  internal ausser_ansatz content money\n  internal nichtabzug_pauschale content money\n  output ausseransatz_netto content money\n\nscope BeteiligungsertraegeAusserAnsatz:\n  definition steuerfrei_dividende equals\n    if beteiligung_prozent < 10 then $0.00 else dividende_bezuege\n  definition ausser_ansatz equals\n    steuerfrei_dividende + veraeusserungsgewinn\n  definition nichtabzug_pauschale equals\n    ausser_ansatz * (5.0 / 100.0)\n  definition ausseransatz_netto equals\n    ausser_ansatz - nichtabzug_pauschale",
+  "catala_b_sha256": "c88f8f8aa348705d0b1ecab4e9a73d676e1f10becda3be461a48593554a8e1f7",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'ausseransatz_netto'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 4 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "5% nichtabziehbare Ausgaben werden vom Bruttoertrag abgezogen, nicht als nicht abziehbar behandelt.",
+      "Veräußerungsgewinne werden immer steuerfrei gestellt, unabhängig von Beteiligungsquote.",
+      "Ausseransatz_netto subtrahiert 5% pauschal, Norm verlangt nur Nichtabzug dieser 5% als Betriebsausgaben.",
+      "Veräußerungsgewinn wird immer steuerfrei gestellt, Norm verlangt nur bei bestimmten Anteilsarten.",
+      "5%-Pauschale wird vom Bruttobetrag (steuerfrei_dividende + veraeusserungsgewinn) abgezogen, nicht nur von Dividenden."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 6,
+        "annahmen": 14,
+        "norm_teile": 4
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "5% nichtabziehbare Ausgaben werden vom Bruttoertrag abgezogen, nicht als nicht abziehbar behandelt."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "veraeusserungsgewinn"
+            ],
+            "text": "Veräußerungsgewinne werden immer steuerfrei gestellt, unabhängig von Beteiligungsquote."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Ausseransatz_netto subtrahiert 5% pauschal, Norm verlangt nur Nichtabzug dieser 5% als Betriebsausgaben."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "veraeusserungsgewinn"
+            ],
+            "text": "Veräußerungsgewinn wird immer steuerfrei gestellt, Norm verlangt nur bei bestimmten Anteilsarten."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "5%-Pauschale wird vom Bruttobetrag (steuerfrei_dividende + veraeusserungsgewinn) abgezogen, nicht nur von Dividenden."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Ausseransatz_netto subtrahiert 5% Pauschale, Norm verlangt nur 5% als nicht abziehbare Ausgaben."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "interpretation"
+            ],
+            "text": "Bezieht sich auf unmittelbare Beteiligung zu Kalenderjahresbeginn."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "dividende_bezuege",
+              "einheit"
+            ],
+            "text": "Bezüge umfassen nur §20 Abs.1 Nr.1,2,9,10a EStG."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "veraeusserungsgewinn",
+              "interpretation"
+            ],
+            "text": "Veräußerungsgewinne beziehen sich auf Anteile nach §8b Abs.2 Satz 1 KStG."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "rundung"
+            ],
+            "text": "5% werden exakt ohne Rundung berechnet."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "interpretation"
+            ],
+            "text": "Beteiligungsprozent bezieht sich auf Grund-/Stammkapital zu Jahresbeginn."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "dividende_bezuege",
+              "interpretation"
+            ],
+            "text": "Dividendenbezüge entsprechen §20 Abs.1 Nr.1,2,9,10a EStG."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "veraeusserungsgewinn",
+              "interpretation"
+            ],
+            "text": "Veräußerungsgewinn stammt aus Anteilsveräußerung nach §8b Abs.2 Satz 1 KStG."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "einheit"
+            ],
+            "text": "Beteiligungsprozent ist als ganzzahliger Prozentsatz angegeben."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "interpretation"
+            ],
+            "text": "Beteiligung wird als Prozentsatz des Grund-/Stammkapitals interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "zeitbezug"
+            ],
+            "text": "Beteiligungsquote wird zu Beginn des Kalenderjahres geprüft."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "dividende_bezuege",
+              "einheit"
+            ],
+            "text": "Dividendenbezüge gelten als Bruttobetrag vor Abzug der 5%-Pauschale."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "veraeusserungsgewinn",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Veräußerungsgewinn stammt aus Anteilsverkauf an Körperschaft/Organgesellschaft."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Beteiligung wird als Prozentsatz des Grund-/Stammkapitals interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "dividende_bezuege",
+              "interpretation"
+            ],
+            "text": "Dividenden umfassen nur Bezüge nach §20 Abs.1 Nr.1,2,9,10a EStG."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Dividenden umfassen nur Bezüge nach §20 Abs.1 Nr.1,2,9,10a EStG.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"dividende_bezuege\", \"interpretation\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Veräußerungsgewinne werden immer steuerfrei gestellt, unabhängig von Beteiligungsquote.",
+            "eingeschmolzen": "Veräußerungsgewinn wird immer steuerfrei gestellt, auch bei <10% Beteiligung.",
+            "key": [
+              "betrifft",
+              "veraeusserungsgewinn"
+            ]
+          },
+          {
+            "cluster": "Veräußerungsgewinn wird immer steuerfrei gestellt, Norm verlangt nur bei bestimmten Anteilsarten.",
+            "eingeschmolzen": "Veräußerungsgewinn wird immer steuerfrei gestellt, Norm verlangt nur bei bestimmten Anteilsveräußerungen.",
+            "key": [
+              "betrifft",
+              "veraeusserungsgewinn"
+            ]
+          },
+          {
+            "cluster": "5%-Pauschale wird vom Bruttobetrag (steuerfrei_dividende + veraeusserungsgewinn) abgezogen, nicht nur von Dividenden.",
+            "eingeschmolzen": "5%-Pauschale wird vom Bruttobetrag (Dividenden + Veräußerungsgewinn) abgezogen, nicht nur von Dividenden.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Veräußerungsgewinne werden immer steuerfrei gestellt, unabhängig von Beteiligungsquote.",
+            "eingeschmolzen": "Veräußerungsgewinn wird immer steuerfrei gestellt, auch bei <10% Beteiligung.",
+            "key": [
+              "betrifft",
+              "veraeusserungsgewinn"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Dividendenbezüge entsprechen §20 Abs.1 Nr.1,2,9,10a EStG.",
+            "eingeschmolzen": "Dividendenbezüge entsprechen Bezügen i.S.d. § 20 Abs. 1 Nr. 1, 2, 9, 10a EStG.",
+            "key": [
+              "betrifft_kat",
+              "dividende_bezuege",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Veräußerungsgewinn stammt aus Anteilsveräußerung nach §8b Abs.2 Satz 1 KStG.",
+            "eingeschmolzen": "Veräußerungsgewinn stammt aus Anteilsveräußerung i.S.d. § 8b Abs. 2 Satz 1 KStG.",
+            "key": [
+              "betrifft_kat",
+              "veraeusserungsgewinn",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Veräußerungsgewinne beziehen sich auf Anteile nach §8b Abs.2 Satz 1 KStG.",
+            "eingeschmolzen": "Veräußerungsgewinn bezieht sich auf Anteile nach §8b Abs.2 Satz 1 KStG.",
+            "key": [
+              "betrifft_kat",
+              "veraeusserungsgewinn",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Gewinne aus der Veräußerung eines Anteils an einer Körperschaft oder Personenvereinigung, deren Leistungen beim Empfänger zu Einnahmen im Sinne des § 20 Abs. 1 ",
+            "eingeschmolzen": "Gewinne aus der Veräußerung eines Anteils an einer Körperschaft oder Personenvereinigung [...] bleiben außer Ansatz.",
+            "key": [
+              "ref",
+              "§ 8b abs. 2 satz 1 kstg"
+            ]
+          },
+          {
+            "cluster": "Von den Bezügen im Sinne des Absatzes 1, die bei der Ermittlung des Einkommens außer Ansatz bleiben, gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgab",
+            "eingeschmolzen": "Von den Bezügen im Sinne des Absatzes 1 [...] gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgaben abgezogen werden dürfen.",
+            "key": [
+              "ref",
+              "§ 8b abs. 3 satz 1 / abs. 5 satz 1 kstg"
+            ]
+          },
+          {
+            "cluster": "Bezüge im Sinne des Absatzes 1 sind abweichend von Absatz 1 Satz 1 bei der Ermittlung des Einkommens zu berücksichtigen, wenn die Beteiligung zu Beginn des Kale",
+            "eingeschmolzen": "Bezüge im Sinne des Absatzes 1 sind [...] zu berücksichtigen, wenn die Beteiligung [...] weniger als 10 Prozent [...] betragen hat",
+            "key": [
+              "ref",
+              "§ 8b abs. 4 satz 1 kstg"
+            ]
+          },
+          {
+            "cluster": "Gewinne aus der Veräußerung eines Anteils an einer Körperschaft oder Personenvereinigung, deren Leistungen beim Empfänger zu Einnahmen im Sinne des § 20 Abs. 1 ",
+            "eingeschmolzen": "Gewinne aus der Veräußerung eines Anteils an einer Körperschaft [...] bleiben bei der Ermittlung des Einkommens außer Ansatz.",
+            "key": [
+              "ref",
+              "§ 8b abs. 2 satz 1 kstg"
+            ]
+          },
+          {
+            "cluster": "Von den Bezügen im Sinne des Absatzes 1, die bei der Ermittlung des Einkommens außer Ansatz bleiben, gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgab",
+            "eingeschmolzen": "Von den Bezügen im Sinne des Absatzes 1 [...] gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgaben abgezogen werden dürfen.",
+            "key": [
+              "ref",
+              "§ 8b abs. 3 satz 1 / abs. 5 satz 1 kstg"
+            ]
+          },
+          {
+            "cluster": "Bezüge im Sinne des Absatzes 1 sind abweichend von Absatz 1 Satz 1 bei der Ermittlung des Einkommens zu berücksichtigen, wenn die Beteiligung zu Beginn des Kale",
+            "eingeschmolzen": "Bezüge im Sinne des Absatzes 1 sind [...] zu berücksichtigen, wenn die Beteiligung [...] weniger als 10 Prozent [...] betragen hat",
+            "key": [
+              "ref",
+              "§ 8b abs. 4 satz 1 kstg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        10,
+        6,
+        5,
+        1,
+        2
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "4a4a7a8d2484",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Bezüge im Sinne des § 20 Abs. 1 Nr. 1, 2, 9 und 10 Buchstabe a des Einkommensteuergesetzes bleiben bei der Ermittlung des Einkommens außer Ansatz.",
+        "referenz": "§ 8b Abs. 1 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "veraeusserung_ausser_ansatz_5_prozent",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Gewinne aus der Veräußerung eines Anteils an einer Körperschaft oder Personenvereinigung, deren Leistungen beim Empfänger zu Einnahmen im Sinne des § 20 Abs. 1 Nr. 1, 2, 9 und 10 Buchstabe a des Einkommensteuergesetzes gehören, oder an einer Organgesellschaft im Sinne des § 14 oder § 17 bleiben außer Ansatz.",
+        "referenz": "§ 8b Abs. 2 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "fuenf_prozent_pauschale_nichtabzug",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Von den Bezügen im Sinne des Absatzes 1, die bei der Ermittlung des Einkommens außer Ansatz bleiben, gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgaben abgezogen werden dürfen.",
+        "referenz": "§ 8b Abs. 3 Satz 1 / Abs. 5 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "streubesitz_unter_10_prozent",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Bezüge im Sinne des Absatzes 1 sind abweichend von Absatz 1 Satz 1 bei der Ermittlung des Einkommens zu berücksichtigen, wenn die Beteiligung zu Beginn des Kalenderjahres unmittelbar weniger als 10 Prozent des Grund- oder Stammkapitals betragen hat",
+        "referenz": "§ 8b Abs. 4 Satz 1 KStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Bezieht sich auf unmittelbare Beteiligung zu Kalenderjahresbeginn.",
+        "bedingung_id": "streubesitz_unter_10_prozent",
+        "betrifft": "beteiligungs_prozent",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Bezüge umfassen nur §20 Abs.1 Nr.1,2,9,10a EStG.",
+        "bedingung_id": null,
+        "betrifft": "dividende_bezuege",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Veräußerungsgewinne beziehen sich auf Anteile nach §8b Abs.2 Satz 1 KStG.",
+        "bedingung_id": "veraeusserung_ausser_ansatz_5_prozent",
+        "betrifft": "veraeusserungsgewinn",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "5% werden exakt ohne Rundung berechnet.",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "ausseransatz_netto",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Beteiligungsprozent bezieht sich auf Grund-/Stammkapital zu Jahresbeginn.",
+        "bedingung_id": "streubesitz_unter_10_prozent",
+        "betrifft": "beteiligungs_prozent",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Dividendenbezüge entsprechen §20 Abs.1 Nr.1,2,9,10a EStG.",
+        "bedingung_id": null,
+        "betrifft": "dividende_bezuege",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Veräußerungsgewinn stammt aus Anteilsveräußerung nach §8b Abs.2 Satz 1 KStG.",
+        "bedingung_id": "veraeusserung_ausser_ansatz_5_prozent",
+        "betrifft": "veraeusserungsgewinn",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Beteiligungsprozent ist als ganzzahliger Prozentsatz angegeben.",
+        "bedingung_id": null,
+        "betrifft": "beteiligungs_prozent",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Beteiligung wird als Prozentsatz des Grund-/Stammkapitals interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "beteiligungs_prozent",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Beteiligungsquote wird zu Beginn des Kalenderjahres geprüft.",
+        "bedingung_id": "streubesitz_unter_10_prozent",
+        "betrifft": "beteiligungs_prozent",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Dividendenbezüge gelten als Bruttobetrag vor Abzug der 5%-Pauschale.",
+        "bedingung_id": null,
+        "betrifft": "dividende_bezuege",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Veräußerungsgewinn stammt aus Anteilsverkauf an Körperschaft/Organgesellschaft.",
+        "bedingung_id": "veraeusserung_ausser_ansatz_5_prozent",
+        "betrifft": "veraeusserungsgewinn",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Beteiligung wird als Prozentsatz des Grund-/Stammkapitals interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "beteiligungs_prozent",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Dividenden umfassen nur Bezüge nach §20 Abs.1 Nr.1,2,9,10a EStG.",
+        "bedingung_id": null,
+        "betrifft": "dividende_bezuege",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-16T14:33:07+00:00"
+  },
+  "module_name": "BeteiligungsertraegeAusserAnsatz",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

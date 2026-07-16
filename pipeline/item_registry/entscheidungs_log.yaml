@@ -2887,3 +2887,451 @@ entscheidungen:
     klasse: wirkt_hinein
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-k1-doppelverneinung
   timestamp: '2026-07-16T14:15:39.312052+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["abweichung", "abweichung_text", "5% nichtabziehbare ausgaben werden
+    vom bruttoertrag abgezogen, nicht als nicht abziehbar behandelt."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - 5% nichtabziehbare ausgaben werden vom bruttoertrag abgezogen, nicht als nicht
+      abziehbar behandelt.
+    text: 5% nichtabziehbare Ausgaben werden vom Bruttoertrag abgezogen, nicht als
+      nicht abziehbar behandelt.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:18.847603+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["abweichung", "abweichung_text", "veraeusserungsgewinne werden immer
+    steuerfrei gestellt, unabhaengig von beteiligungsquote."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - veraeusserungsgewinne werden immer steuerfrei gestellt, unabhaengig von beteiligungsquote.
+    text: Veräußerungsgewinne werden immer steuerfrei gestellt, unabhängig von Beteiligungsquote.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:19.439587+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["abweichung", "abweichung_text", "ausseransatz_netto subtrahiert 5%
+    pauschal, norm verlangt nur nichtabzug dieser 5% als betriebsausgaben."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - ausseransatz_netto subtrahiert 5% pauschal, norm verlangt nur nichtabzug dieser
+      5% als betriebsausgaben.
+    text: Ausseransatz_netto subtrahiert 5% pauschal, Norm verlangt nur Nichtabzug
+      dieser 5% als Betriebsausgaben.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:20.029416+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["abweichung", "abweichung_text", "veraeusserungsgewinn wird immer
+    steuerfrei gestellt, norm verlangt nur bei bestimmten anteilsarten."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - veraeusserungsgewinn wird immer steuerfrei gestellt, norm verlangt nur bei bestimmten
+      anteilsarten.
+    text: Veräußerungsgewinn wird immer steuerfrei gestellt, Norm verlangt nur bei
+      bestimmten Anteilsarten.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:20.620988+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["abweichung", "abweichung_text", "5%-pauschale wird vom bruttobetrag
+    (steuerfrei_dividende + veraeusserungsgewinn) abgezogen, nicht nur von dividenden."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - 5%-pauschale wird vom bruttobetrag (steuerfrei_dividende + veraeusserungsgewinn)
+      abgezogen, nicht nur von dividenden.
+    text: 5%-Pauschale wird vom Bruttobetrag (steuerfrei_dividende + veraeusserungsgewinn)
+      abgezogen, nicht nur von Dividenden.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:21.205140+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "beteiligungs_prozent", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - beteiligungs_prozent
+    - interpretation
+    text: Bezieht sich auf unmittelbare Beteiligung zu Kalenderjahresbeginn.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:21.801803+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "dividende_bezuege", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - dividende_bezuege
+    - einheit
+    text: Bezüge umfassen nur §20 Abs.1 Nr.1,2,9,10a EStG.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:22.401165+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "veraeusserungsgewinn", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - veraeusserungsgewinn
+    - interpretation
+    text: Veräußerungsgewinne beziehen sich auf Anteile nach §8b Abs.2 Satz 1 KStG.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:22.995739+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "ausseransatz_netto", "rundung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - ausseransatz_netto
+    - rundung
+    text: 5% werden exakt ohne Rundung berechnet.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:23.593108+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "beteiligungs_prozent", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - beteiligungs_prozent
+    - interpretation
+    text: Beteiligungsprozent bezieht sich auf Grund-/Stammkapital zu Jahresbeginn.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:24.197995+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "dividende_bezuege", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - dividende_bezuege
+    - interpretation
+    text: Dividendenbezüge entsprechen §20 Abs.1 Nr.1,2,9,10a EStG.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:24.805185+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "veraeusserungsgewinn", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - veraeusserungsgewinn
+    - interpretation
+    text: Veräußerungsgewinn stammt aus Anteilsveräußerung nach §8b Abs.2 Satz 1 KStG.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:25.445033+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "beteiligungs_prozent", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - beteiligungs_prozent
+    - einheit
+    text: Beteiligungsprozent ist als ganzzahliger Prozentsatz angegeben.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:26.057457+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "beteiligungs_prozent", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - beteiligungs_prozent
+    - interpretation
+    text: Beteiligung wird als Prozentsatz des Grund-/Stammkapitals interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:26.671054+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "beteiligungs_prozent", "zeitbezug"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - beteiligungs_prozent
+    - zeitbezug
+    text: Beteiligungsquote wird zu Beginn des Kalenderjahres geprüft.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:27.285177+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "dividende_bezuege", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - dividende_bezuege
+    - einheit
+    text: Dividendenbezüge gelten als Bruttobetrag vor Abzug der 5%-Pauschale.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:27.897458+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "veraeusserungsgewinn", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - veraeusserungsgewinn
+    - geltungsvoraussetzung
+    text: Veräußerungsgewinn stammt aus Anteilsverkauf an Körperschaft/Organgesellschaft.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:28.527340+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "beteiligungs_prozent", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - beteiligungs_prozent
+    - geltungsvoraussetzung
+    text: Beteiligung wird als Prozentsatz des Grund-/Stammkapitals interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:29.145098+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["annahme", "betrifft_kat", "dividende_bezuege", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - dividende_bezuege
+    - interpretation
+    text: Dividenden umfassen nur Bezüge nach §20 Abs.1 Nr.1,2,9,10a EStG.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:29.758196+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["norm_teil", "ref", "§ 8b abs. 1 satz 1 kstg"]'
+  triage: bedingung_neu
+  bedingung: dividende_bezuege_ausser_ansatz_abs1
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8b abs. 1 satz 1 kstg
+    text: Bezüge im Sinne des § 20 Abs. 1 Nr. 1, 2, 9 und 10 Buchstabe a des Einkommensteuergesetzes
+      bleiben bei der Ermittlung des Einkommens außer Ansatz.
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:30.377731+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["norm_teil", "ref", "§ 8b abs. 2 satz 1 kstg"]'
+  triage: bedingung_neu
+  bedingung: veraeusserung_ausser_ansatz_5_prozent
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8b abs. 2 satz 1 kstg
+    text: Gewinne aus der Veräußerung eines Anteils an einer Körperschaft oder Personenvereinigung,
+      deren Leistungen beim Empfänger zu Einnahmen im Sinne des § 20 Abs. 1 Nr. 1,
+      2, 9 und 10 Buchstabe a des Einko
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:30.998645+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["norm_teil", "ref", "§ 8b abs. 3 satz 1 / abs. 5 satz 1 kstg"]'
+  triage: bedingung_neu
+  bedingung: fuenf_prozent_pauschale_nichtabzug
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8b abs. 3 satz 1 / abs. 5 satz 1 kstg
+    text: Von den Bezügen im Sinne des Absatzes 1, die bei der Ermittlung des Einkommens
+      außer Ansatz bleiben, gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgaben
+      abgezogen werden dürfen.
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:31.617383+00:00'
+- rule_id: p8b_beteiligungsertraege
+  schluessel: '["norm_teil", "ref", "§ 8b abs. 4 satz 1 kstg"]'
+  triage: bedingung_neu
+  bedingung: streubesitz_unter_10_prozent
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8b abs. 4 satz 1 kstg
+    text: Bezüge im Sinne des Absatzes 1 sind abweichend von Absatz 1 Satz 1 bei der
+      Ermittlung des Einkommens zu berücksichtigen, wenn die Beteiligung zu Beginn
+      des Kalenderjahres unmittelbar weniger als 10 Pr
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
+  timestamp: '2026-07-16T14:38:32.240788+00:00'

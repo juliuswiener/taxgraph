@@ -7028,3 +7028,103 @@ regeln:
     deckt_ab: Verdeckte Einlagen erhöhen das Einkommen nicht
     quelle: § 8 Abs. 3 Satz 3 KStG
     beschreibung: 'verdeckte_einlage = INPUT-Betrag (Sachverhalt). Verdeckte Einlagen erhoehen das Einkommen nicht -> als Betrag abgezogen. Abs. 3 Saetze 4-6 (Korrespondenzprinzip) = Nachtrag.'
+- rule_id: p8b_beteiligungsertraege
+  norm: § 8b Abs. 1-5 KStG (Beteiligungserträge außer Ansatz, 5 %-Pauschale, Streubesitz-Ausnahme)
+  hinweis: 'steuerfrei_dividende = wenn beteiligung_prozent >= 10 dann dividende_bezuege sonst 0. ausser_ansatz = steuerfrei_dividende + veraeusserungsgewinn. nichtabzug_pauschale = (steuerfrei_dividende + veraeusserungsgewinn) * 5 / 100. ausseransatz_netto = ausser_ansatz - nichtabzug_pauschale. Das ist der Betrag, um den § 8b das Einkommen (§ 8 Abs. 1) NETTO mindert (Kuerzung in der Nenner-B-Kette). WICHTIG: der 95-%-Effekt entsteht AUSSCHLIESSLICH durch die Absatz-Kombination (Abs. 1 S. 1 / Abs. 2 S. 1 = 100 % ausser Ansatz MINUS Abs. 5 S. 1 / Abs. 3 S. 1 = 5 % nichtabziehbar) - NIEMALS als Konstante 0,95 kodieren. KLASSE-5: 5 % = 5/100 = 1/20 EXAKT (nicht 0,05 vorrunden); Division durch 100 in decimal, Cent-Schnitt ZULETZT. STREUBESITZ (Abs. 4 S. 1): Beteiligung zu Beginn des Kalenderjahres unmittelbar < 10 % -> Dividende ist steuerPFLICHTIG (steuerfrei_dividende = 0), UND die 5-%-Pauschale des Abs. 5 wird auf Streubesitz NICHT angewandt (Abs. 4 S. 7) - beides faellt durch steuerfrei_dividende=0 automatisch weg. Veraeusserungsgewinn (Abs. 2) kennt KEINE Streubesitz-Ausnahme -> immer 95 % frei. NEGATIVE Betraege/Gewinnminderungen (Abs. 3 S. 3 ff.), Organschaft, Wertaufholung = Nachtrag; dividende_bezuege/veraeusserungsgewinn sind Netto-Sachverhalts-Inputs (>= 0).'
+  quellen:
+  - typ: gesetz
+    label: § 8b Abs. 1 Satz 1 KStG (Bezüge außer Ansatz)
+    datei: sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt
+    zitatanker: bleiben bei der Ermittlung des Einkommens außer Ansatz
+    auszug: Bezüge im Sinne des § 20 Abs. 1 Nr. 1, 2, 9 und 10 Buchstabe a des Einkommensteuergesetzes bleiben bei der Ermittlung des Einkommens außer Ansatz.
+  - typ: gesetz
+    label: § 8b Abs. 2 Satz 1 KStG (Veräußerungsgewinne außer Ansatz)
+    datei: sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt
+    zitatanker: Gewinne aus der Veräußerung eines Anteils an einer Körperschaft
+    auszug: Bei der Ermittlung des Einkommens bleiben Gewinne aus der Veräußerung eines Anteils an einer Körperschaft oder Personenvereinigung, deren Leistungen beim Empfänger zu Einnahmen im Sinne des § 20 Abs. 1 Nr. 1, 2, 9 und 10 Buchstabe a des Einkommensteuergesetzes gehören, oder an einer Organgesellschaft im Sinne des § 14 oder § 17 außer Ansatz.
+  - typ: gesetz
+    label: § 8b Abs. 3 Satz 1 / Abs. 5 Satz 1 KStG (5 % nichtabziehbare Ausgaben)
+    datei: sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt
+    zitatanker: gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgaben abgezogen werden dürfen
+    auszug: Von den Bezügen im Sinne des Absatzes 1, die bei der Ermittlung des Einkommens außer Ansatz bleiben, gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgaben abgezogen werden dürfen.
+  - typ: gesetz
+    label: § 8b Abs. 4 Satz 1 KStG (Streubesitz < 10 % steuerpflichtig)
+    datei: sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt
+    zitatanker: wenn die Beteiligung zu Beginn des Kalenderjahres unmittelbar weniger als 10 Prozent des Grund- oder Stammkapitals betragen hat
+    auszug: Bezüge im Sinne des Absatzes 1 sind abweichend von Absatz 1 Satz 1 bei der Ermittlung des Einkommens zu berücksichtigen, wenn die Beteiligung zu Beginn des Kalenderjahres unmittelbar weniger als 10 Prozent des Grund- oder Stammkapitals betragen hat
+  signature:
+    scope: BeteiligungsertraegeAusserAnsatz
+    inputs:
+      dividende_bezuege: money
+      beteiligung_prozent: int
+      veraeusserungsgewinn: money
+    output: ausseransatz_netto
+  raster:
+  - dividende_bezuege: 100000
+    beteiligung_prozent: 25
+    veraeusserungsgewinn: 0
+  - dividende_bezuege: 100000
+    beteiligung_prozent: 5
+    veraeusserungsgewinn: 0
+  - dividende_bezuege: 0
+    beteiligung_prozent: 0
+    veraeusserungsgewinn: 200000
+  - dividende_bezuege: 100000
+    beteiligung_prozent: 25
+    veraeusserungsgewinn: 200000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt
+    zitatanker: bleiben bei der Ermittlung des Einkommens außer Ansatz
+    herkunft: synthetisch
+    rechenweg: 'Schachtel-Dividende 25 % (>= 10 %): ausser_ansatz = 100.000; nichtabzug = 100.000 * 5/100 = 5.000; netto = 100.000 - 5.000 = 95.000,00 (95 % via Abs. 1 minus Abs. 5, NICHT 0,95-Konstante).'
+    inputs:
+      dividende_bezuege: 100000
+      beteiligung_prozent: 25
+      veraeusserungsgewinn: 0
+    expected: 95000.0
+  - quelle: sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt
+    zitatanker: wenn die Beteiligung zu Beginn des Kalenderjahres unmittelbar weniger als 10 Prozent des Grund- oder Stammkapitals betragen hat
+    herkunft: synthetisch
+    rechenweg: 'STREUBESITZ 5 % (< 10 %, Abs. 4): steuerfrei_dividende = 0 -> Dividende voll steuerpflichtig, keine 5-%-Pauschale (Abs. 4 S. 7). ausseransatz_netto = 0 + 0 - 0 = 0,00.'
+    inputs:
+      dividende_bezuege: 100000
+      beteiligung_prozent: 5
+      veraeusserungsgewinn: 0
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt
+    zitatanker: Gewinne aus der Veräußerung eines Anteils an einer Körperschaft
+    herkunft: synthetisch
+    rechenweg: 'Veräußerungsgewinn 200.000 (Abs. 2, KEINE Streubesitz-Ausnahme): ausser_ansatz = 200.000; nichtabzug = 200.000 * 5/100 = 10.000; netto = 190.000,00.'
+    inputs:
+      dividende_bezuege: 0
+      beteiligung_prozent: 0
+      veraeusserungsgewinn: 200000
+    expected: 190000.0
+  - quelle: sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt
+    zitatanker: gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgaben abgezogen werden dürfen
+    herkunft: synthetisch
+    rechenweg: 'Kombi Schachtel-Div 100.000 + Veräußerung 200.000: ausser_ansatz = 300.000; nichtabzug = 300.000 * 5/100 = 15.000; netto = 285.000,00.'
+    inputs:
+      dividende_bezuege: 100000
+      beteiligung_prozent: 25
+      veraeusserungsgewinn: 200000
+    expected: 285000.0
+  geltungsbedingungen:
+  - bedingung: dividende_bezuege_ausser_ansatz_abs1
+    deckt_ab: bleiben bei der Ermittlung des Einkommens außer Ansatz
+    quelle: § 8b Abs. 1 Satz 1 KStG
+    datei: sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt
+    beschreibung: 'Kern-Scope: Bezuege i.S.d. § 20 Abs. 1 Nr. 1/2/9/10a EStG (Dividenden) bleiben bei der Einkommensermittlung ausser Ansatz (100 %, Abs. 1 S. 1) - materialisiert als steuerfrei_dividende (vor 5-%-Pauschale und vor Streubesitz-Ausnahme). Abs. 1 S. 2-6 (Korrespondenz, DBA-Freistellung, Dividendenscheine) = Nachtrag.'
+  - bedingung: streubesitz_unter_10_prozent
+    deckt_ab: wenn die Beteiligung zu Beginn des Kalenderjahres unmittelbar weniger als 10 Prozent des Grund- oder Stammkapitals betragen hat
+    quelle: § 8b Abs. 4 Satz 1 KStG
+    datei: sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt
+    beschreibung: 'STREUBESITZ ist BEDINGUNG, kein Betrag: Beteiligung zu Beginn des Kalenderjahres unmittelbar < 10 % -> Dividende (Abs. 1) NICHT ausser Ansatz, sondern voll steuerpflichtig; zugleich keine 5-%-Pauschale (Abs. 4 S. 7). beteiligung_prozent >= 10 -> Schachtel (95 % frei). Materialisiert als Geltungsbedingung mit Verzweigung, nicht als Konstante. Mittelbare Beteiligung / Mitunternehmer-Zurechnung (Abs. 4 S. 4-5) = Nachtrag.'
+  - bedingung: veraeusserung_ausser_ansatz_5_prozent
+    deckt_ab: Gewinne aus der Veräußerung eines Anteils an einer Körperschaft
+    quelle: § 8b Abs. 2 Satz 1 i.V.m. Abs. 3 Satz 1 KStG
+    beschreibung: 'Veraeusserungsgewinn (Abs. 2) bleibt ausser Ansatz, 5 % gelten als nichtabziehbar (Abs. 3 S. 1) -> netto 95 % frei; KEINE Streubesitz-Ausnahme fuer Veraeusserungsgewinne. Gewinnminderungen/Teilwert (Abs. 3 S. 3 ff.) = Nachtrag.'
+  - bedingung: fuenf_prozent_pauschale_nichtabzug
+    deckt_ab: gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgaben abgezogen werden dürfen
+    quelle: § 8b Abs. 5 Satz 1 / Abs. 3 Satz 1 KStG
+    beschreibung: '5 % der ausser Ansatz bleibenden Bezuege/Gewinne gelten pauschal als nichtabziehbare Betriebsausgaben (= faktische Minderung der Steuerbefreiung auf 95 %). 5/100 EXAKT. Der 95-%-Netto-Effekt ist NUR die Kombination 100 % (Abs. 1/2) minus 5 % (Abs. 5/3), nie eine eigene Konstante.'
