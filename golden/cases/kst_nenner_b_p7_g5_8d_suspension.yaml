@@ -1,0 +1,22 @@
+id: kst_nenner_b_p7_g5_8d_suspension
+beschreibung: "Paket 7 / § 8d-Suspension des § 8c: gewinn_estg 6.000.000, verlustvortrag_bestand 5.000.000, schaedlicher_erwerb=true, antrag_8d=true, fortfuehrungs_voraussetzungen=true -> Verlust bleibt erhalten (fortfuehrungsgebunden) -> § 10d-Abzug = min(5.000.000, 1.000.000 + 70 % x 5.000.000 = 4.500.000) = 4.500.000. zvE 1.500.000; KSt 225.000, SolZ 12.375, GewSt 840.000 (GewSt verlust-UNABHAENGIG); Nenner B = 1.077.375,00. Gegenueber G4 (kein Antrag): Δ zvE 4.500.000."
+
+sachverhalt:
+  koerperschaft: true
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+  gewinn_estg: 6000000
+  verlustvortrag_bestand: 5000000
+  schaedlicher_erwerb: true
+  antrag_8d: true
+  fortfuehrungs_voraussetzungen: true
+
+erwartung:
+  nenner_b_cent: 107737500
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 8d Abs. 1 S. 1 KStG (Suspension auf Antrag) -> § 10d greift wieder"
+  datei: "sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt"
+  zitatanker: "§ 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung"

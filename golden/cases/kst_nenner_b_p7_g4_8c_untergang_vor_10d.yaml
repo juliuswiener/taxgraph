@@ -1,0 +1,20 @@
+id: kst_nenner_b_p7_g4_8c_untergang_vor_10d
+beschreibung: "Paket 7 / § 8c-Verlustuntergang VOR § 10d: gewinn_estg 6.000.000, verlustvortrag_bestand 5.000.000, schaedlicher_erwerb=true -> verlustbestand nach § 8c/§ 8d = 0 -> § 10d-Abzug = 0. zvE 6.000.000; KSt 900.000, SolZ 49.500, GewSt 840.000; Nenner B = 1.789.500,00. Kontrast zu G5 (identischer Sachverhalt, aber § 8d-Antrag rettet den Verlust) — belegt die Reihenfolge § 8c/§ 8d VOR § 10d."
+
+sachverhalt:
+  koerperschaft: true
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+  gewinn_estg: 6000000
+  verlustvortrag_bestand: 5000000
+  schaedlicher_erwerb: true
+
+erwartung:
+  nenner_b_cent: 178950000
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 8c Abs. 1 S. 1 KStG (Untergang > 50 %) wirkt VOR § 10d — voller zvE"
+  datei: "sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt"
+  zitatanker: "(schädlicher Beteiligungserwerb), sind bis zum schädlichen Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste) vollständig nicht mehr abziehbar"

@@ -1,0 +1,22 @@
+id: kst_nenner_b_p7_g6_gating_grenzfall
+beschreibung: "Paket 7 / GATING-Grenzfall (§ 8d-Vorbedingung schaedlicher Erwerb): gewinn_estg 6.000.000, verlustvortrag_bestand 5.000.000, schaedlicher_erwerb=FALSE, antrag_8d=true, fortfuehrungs_voraussetzungen=true. Ohne schaedlichen Erwerb ist § 8c gegenstandslos (nach § 8c = voller Bestand) und die § 8d-Suspension feuert NICHT (suspension_greift setzt schaedlicher_erwerb voraus) -> KEIN Doppel-Erhalt. § 10d-Abzug 4.500.000 -> zvE 1.500.000; Nenner B = 1.077.375,00. PFAD-KONTRAST zu G5: IDENTISCHER Nenner-B-Wert, aber verschiedene Route (G5 via Suspension, G6 via Nicht-Untergang) — gewollt, belegt die Gating-Logik."
+
+sachverhalt:
+  koerperschaft: true
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+  gewinn_estg: 6000000
+  verlustvortrag_bestand: 5000000
+  schaedlicher_erwerb: false
+  antrag_8d: true
+  fortfuehrungs_voraussetzungen: true
+
+erwartung:
+  nenner_b_cent: 107737500
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 8d Abs. 1 S. 1 KStG (Suspension nur NACH schaedlichem Erwerb) — Gating, kein Doppel-Erhalt"
+  datei: "sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt"
+  zitatanker: "§ 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung"

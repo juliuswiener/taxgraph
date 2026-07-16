@@ -1,0 +1,21 @@
+id: kst_nenner_b_p7_g3_deckel_nicht_bindend
+beschreibung: "Paket 7 / § 4h-Mechanismus aktiv, aber 30-%-Deckel NICHT bindend: gewinn_estg 20.000.000, Zinsaufwand 3.000.000 (Nettozins = 3 Mio -> Mechanismus). ebitda_basis 23.000.000, Deckel 6.900.000 > Zinssaldo 3.000.000 -> voller Abzug, KEIN Add-back. zvE 20.000.000; KSt 3.000.000, SolZ 165.000, GewSt 2.800.000; Nenner B = 5.965.000,00. Kontrast zu G2: gleicher Nettozins, aber hohe EBITDA-Basis -> Deckel bindet nicht."
+
+sachverhalt:
+  koerperschaft: true
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+  gewinn_estg: 20000000
+  zinsaufwand: 3000000
+  zinsertrag: 0
+  abschreibungen: 0
+
+erwartung:
+  nenner_b_cent: 596500000
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 4h Abs. 1 S. 1/2 EStG (verrechenbares EBITDA bindet nicht) — kein Add-back"
+  datei: "sources/gesetze-im-internet/estg_p4h_2026-07-16.txt"
+  zitatanker: "sind abziehbar in Höhe des Zinsertrags, darüber hinaus nur bis zur Höhe des verrechenbaren EBITDA"

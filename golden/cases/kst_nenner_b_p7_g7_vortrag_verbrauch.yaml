@@ -1,0 +1,23 @@
+id: kst_nenner_b_p7_g7_vortrag_verbrauch
+beschreibung: "Paket 7 / § 4h-Bestand-Muster (Zins- + EBITDA-Vortrag) mit KORRIGIERTER Add-back-Formel: gewinn_estg 2.000.000, Zinsaufwand 3.200.000, Zinsertrag 100.000 (Nettozins 3,1 Mio >= 3 Mio -> Mechanismus), zins_vortrag_bestand 200.000, ebitda_vortrag_bestand 300.000. ebitda_basis 5.100.000, verr. EBITDA 1.530.000; zinsaufwand_eff 3.400.000 (Zinsvortrag NUR im Abzugstest), Deckel 1.830.000; abziehbar_kern = 100.000 + 1.830.000 = 1.930.000. ADD-BACK = gebuchter Zinsaufwand 3.200.000 - 1.930.000 = 1.270.000 (UNGEKLEMMT, gebuchter Aufwand NICHT zinsaufwand_eff — N6-Korrektur-Ruling Instructor 2026-07-16: der unverbrauchte Zinsvortrag war nie im gewinn_estg abgezogen, Δ 200.000 zum naiven Weg). Slot 3.270.000 = zvE; KSt 490.500, SolZ 26.977,50, GewSt 457.800; Nenner B = 975.277,50."
+
+sachverhalt:
+  koerperschaft: true
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+  gewinn_estg: 2000000
+  zinsaufwand: 3200000
+  zinsertrag: 100000
+  zins_vortrag_bestand: 200000
+  ebitda_vortrag_bestand: 300000
+  abschreibungen: 0
+
+erwartung:
+  nenner_b_cent: 97527750
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 4h Abs. 1 S. 4/6 EStG (EBITDA-/Zinsvortrag, Bestand-Muster) — korrigierter Add-back"
+  datei: "sources/gesetze-im-internet/estg_p4h_2026-07-16.txt"
+  zitatanker: "sind bis zur Höhe der EBITDA-Vorträge aus vorangegangenen Wirtschaftsjahren abziehbar"

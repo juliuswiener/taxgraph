@@ -1,0 +1,21 @@
+id: kst_nenner_b_p7_g1_freigrenze_unter
+beschreibung: "Paket 7 / § 4h-Freigrenze UNTERSCHRITTEN (Fallbeil-Unterkante): KapGes VZ 2026, gewinn_estg 5.000.000, Zinsaufwand 2.999.999 (Nettozins < 3 Mio) -> § 4h Abs. 1 NICHT anwendbar (Freigrenze = alles-oder-nichts), KEIN Add-back. zvE 5.000.000; KSt 750.000, SolZ 41.250, GewSt 700.000; Nenner B = 1.491.250,00. Gegenstueck zu G2 (1 EUR mehr Zins kippt in den Mechanismus)."
+
+sachverhalt:
+  koerperschaft: true
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+  gewinn_estg: 5000000
+  zinsaufwand: 2999999
+  zinsertrag: 0
+  abschreibungen: 0
+
+erwartung:
+  nenner_b_cent: 149125000
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 4h Abs. 2 S. 1 lit. a EStG (Freigrenze 3 Mio) — § 4h aus, Nenner B ohne Add-back"
+  datei: "sources/gesetze-im-internet/estg_p4h_2026-07-16.txt"
+  zitatanker: "die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen"

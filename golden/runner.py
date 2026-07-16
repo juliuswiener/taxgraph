@@ -196,14 +196,68 @@ def _kst_8b_netto_cent(s: dict) -> int:
     return ausser - ausser * 5 // 100
 
 
-def _kst_einkommen_vor_spenden_cent(s: dict) -> int:
+def _kst_massgebliches_einkommen_cent(s: dict) -> int:
     """§ 8 Abs.1-Slot + vGA (Abs.3 S.2) - verd. Einlage (Abs.3 S.3), - § 8b-netto,
-    + § 10-Addback (Nr.2/3). Zugleich GewSt-Slot (§ 7 GewStG) UND § 9-Abs.2-S.1-
-    Hoechstbetragsbasis (Einkommen VOR Spenden + VOR Verlust). CENT."""
+    + § 10-Addback (Nr.2/3). = maßgebliches Einkommen § 8a Abs.1 S.2 (PRE-§ 4h/§ 9/§ 10d):
+    Basis fuer die § 4h-EBITDA-Herleitung (N3) UND fuer den § 4h-Add-back. CENT."""
     slot = (int(s.get("gewinn_estg", 0)) + int(s.get("verdeckte_gewinnausschuettung", 0))
             - int(s.get("verdeckte_einlage", 0))) * 100
     addback = (int(s.get("personensteuern", 0)) + int(s.get("geldstrafen", 0))) * 100
     return slot - _kst_8b_netto_cent(s) + addback
+
+
+def _kst_nichtabziehbare_zinsen_cent(s: dict) -> int:
+    """§ 4h/§ 8a Zinsschranke-Add-back (N1-N3). ebitda_basis = maßgebliches Einkommen +
+    Zinsaufwand + AfA - Zinsertrag (§ 8a: Einkommen statt Gewinn). Deckel = 30 % ebitda_basis
+    + EBITDA-Vortrag; zinsaufwand_eff = Zinsaufwand + Zinsvortrag (nur Abzugstest). N2-Ausnahme:
+    Freigrenze nettozins < 3 Mio ODER Konzern-lit-b ODER Escape-lit-c -> voller Abzug.
+    ADD-BACK = gebuchter Zinsaufwand - abziehbar_final, UNGEKLEMMT (Vortrags-Verbrauch senkt
+    das Einkommen, § 4h Abs.1 S.6; der Zinsvortrag war nie im gewinn_estg abgezogen -> NICHT
+    im Add-back-Grundbetrag). CENT.
+
+    S.-7-LATENZ (benannter Nachtrag, Backlog): greift eine Abs.-2-Ausnahme (Freigrenze/
+    Konzern/Escape), gibt dieser Zweig zinsaufwand_eff INKL. Zinsvortrag frei -> bei
+    zins_vortrag_bestand > 0 waere der Add-back negativ (Einkommen sinkt um den Vortrag),
+    was § 4h Abs.1 S.7 ("Absatz 2 findet keine Anwendung, soweit Zinsaufwendungen aufgrund
+    eines Zinsvortrags erhoeht wurden") anteilig ausschliesst. KEIN Golden kombiniert Ausnahme
+    UND Zinsvortrag > 0 (S.-7-Anteiligkeit nicht modelliert, N2-Bedingung
+    freigrenze_zinsvortrag_anteiligkeit_s7_nachtrag). Ein echter Tripwire braucht
+    Negativ-zvE-Handling -> Backlog, hier NICHT gebaut."""
+    zinsauf = int(s.get("zinsaufwand", 0)) * 100
+    zinsert = int(s.get("zinsertrag", 0)) * 100
+    afa = int(s.get("abschreibungen", 0)) * 100
+    zvortrag = int(s.get("zins_vortrag_bestand", 0)) * 100
+    evortrag = int(s.get("ebitda_vortrag_bestand", 0)) * 100
+    ebitda_basis = _kst_massgebliches_einkommen_cent(s) + zinsauf + afa - zinsert
+    verr_ebitda = ebitda_basis * 30 // 100
+    zinsauf_eff = zinsauf + zvortrag
+    deckel = verr_ebitda + evortrag
+    abziehbar_kern = zinsert + min(zinsauf_eff - zinsert, deckel)
+    nettozins = zinsauf - zinsert
+    ausnahme = (nettozins < 3000000 * 100
+                or bool(s.get("keine_konzern_oder_nahestehende_b"))
+                or bool(s.get("eigenkapital_escape_c")))
+    abziehbar_final = zinsauf_eff if ausnahme else abziehbar_kern
+    return zinsauf - abziehbar_final
+
+
+def _kst_verlustbestand_nach_8c_8d_cent(s: dict) -> int:
+    """§ 8c (N4) / § 8d (N5) auf den Verlustbestand VOR § 10d. Schaedlicher Erwerb -> 0;
+    § 8d-Suspension (schaedlich UND Antrag UND Fortfuehrungs-Voraussetzungen) -> voller
+    Bestand erhalten (fortfuehrungsgebunden). CENT."""
+    bestand = int(s.get("verlustvortrag_bestand", 0)) * 100
+    schaedlich = bool(s.get("schaedlicher_erwerb"))
+    nach_8c = 0 if schaedlich else bestand
+    suspension = (schaedlich and bool(s.get("antrag_8d"))
+                  and bool(s.get("fortfuehrungs_voraussetzungen")))
+    return bestand if suspension else nach_8c
+
+
+def _kst_einkommen_vor_spenden_cent(s: dict) -> int:
+    """einkommen_vor_spenden = maßgebliches Einkommen + § 4h-Add-back (nichtabziehbare
+    Zinsen erhoehen das Einkommen, N6). Zugleich GewSt-Slot (§ 7 GewStG) UND § 9-Abs.2-S.1-
+    Hoechstbetragsbasis. CENT. (Ohne § 4h-Inputs = maßgebliches Einkommen unveraendert.)"""
+    return _kst_massgebliches_einkommen_cent(s) + _kst_nichtabziehbare_zinsen_cent(s)
 
 
 def _kst_spendenabzug_cent(s: dict) -> int:
@@ -223,7 +277,7 @@ def _kst_zve_cent(s: dict) -> int:
     gde = evs - _kst_spendenabzug_cent(s)
     sockel = 1000000 * 100
     hoechst = sockel + max(0, gde - sockel) * 70 // 100
-    verlust = min(int(s.get("verlustvortrag_bestand", 0)) * 100, hoechst)
+    verlust = min(_kst_verlustbestand_nach_8c_8d_cent(s), hoechst)
     return max(0, gde - verlust)
 
 
