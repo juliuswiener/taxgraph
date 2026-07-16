@@ -4003,3 +4003,81 @@ entscheidungen:
     klasse: unabhaengig
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-n4-satz1
   timestamp: '2026-07-16T16:28:54.022483+00:00'
+- rule_id: p8d_fortfuehrungsgebundener_verlust
+  schluessel: '["annahme", "betrifft_kat", "fortfuehrungs_voraussetzungen", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - fortfuehrungs_voraussetzungen
+    - interpretation
+    text: Fortführungsvoraussetzungen umfassen den ausschließlichen gleichen Geschäftsbetrieb
+      seit Gründung oder drittem Veranlagungszeitraum. | Die Voraussetzungen des §
+      8d Abs. 1 Satz 1 werden als boolean abstrahiert.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n5-suspension
+  timestamp: '2026-07-16T16:35:00.211244+00:00'
+- rule_id: p8d_fortfuehrungsgebundener_verlust
+  schluessel: '["annahme", "betrifft_kat", "verlustvortrag_bestand", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: konv:betraege_in_euro
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - verlustvortrag_bestand
+    - interpretation
+    text: Der Verlustvortrag wird als Geldbetrag ohne weitere Differenzierung modelliert.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n5-suspension
+  timestamp: '2026-07-16T16:35:00.930688+00:00'
+- rule_id: p8d_fortfuehrungsgebundener_verlust
+  schluessel: '["norm_teil", "ref", "§ 8d abs. 1 satz 1 kstg"]'
+  triage: bedingung_neu
+  bedingung: suspension_des_8c_auf_antrag
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8d abs. 1 satz 1 kstg
+    text: wenn die Körperschaft seit ihrer Gründung oder zumindest seit dem Beginn
+      des dritten Veranlagungszeitraums, der dem Veranlagungszeitraum nach Satz 5
+      vorausgeht, ausschließlich denselben Geschäftsbetri
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n5-suspension
+  timestamp: '2026-07-16T16:35:01.646564+00:00'
+- rule_id: p8d_fortfuehrungsgebundener_verlust
+  schluessel: '["norm_teil", "ref", "§ 8d abs. 1 satz 6 kstg"]'
+  triage: bedingung_neu
+  bedingung: fortfuehrungsgebundener_verlustvortrag_kennzeichnung
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8d abs. 1 satz 6 kstg
+    text: Der Verlustvortrag, der zum Schluss des Veranlagungszeitraums verbleibt,
+      in den der schädliche Beteiligungserwerb fällt, wird zum fortführungsgebundenen
+      Verlust (fortführungsgebundener Verlustvortrag)
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n5-suspension
+  timestamp: '2026-07-16T16:35:02.361984+00:00'

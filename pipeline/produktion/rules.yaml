@@ -7869,3 +7869,130 @@ regeln:
     quelle: § 8c Abs. 1a KStG
     datei: sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt
     beschreibung: 'Sanierungsklausel (Abs. 1a): ein Beteiligungserwerb zum Zweck der Sanierung ist unbeachtlich (kein Untergang). Benannter Nachtrag - im Modell schlaegt sich das in der Vorfrage nieder (ein Sanierungserwerb ist als schaedlicher_erwerb = false qualifiziert); die Sanierungs-Tatbestandspruefung (Lohnsummen, Betriebsvermoegenszufuehrung) ist nicht modelliert.'
+
+- rule_id: p8d_fortfuehrungsgebundener_verlust
+  norm: § 8d Abs. 1 KStG (fortführungsgebundener Verlustvortrag — Suspension des § 8c auf Antrag)
+  hinweis: 'EXAKTE FORMEL - ZWEI unbedingte Definitionen (die zweite ein totales if-then-else, KEINE catala-exception): (1) suspension_greift = schaedlicher_erwerb and antrag_8d and fortfuehrungs_voraussetzungen [bool] ; (2) verlustbestand_nach_8d = if suspension_greift then verlustvortrag_bestand else verlustbestand_nach_8c. Das ist die vollstaendige Regel. § 8d Abs. 1 Satz 1: § 8c ist nach einem schaedlichen Beteiligungserwerb AUF ANTRAG NICHT anzuwenden, wenn die Koerperschaft seit ihrer Gruendung (oder seit Beginn des dritten dem Erwerbs-VZ vorausgehenden VZ) ausschliesslich denselben Geschaeftsbetrieb unterhaelt und kein Ereignis iSd Abs. 2 stattfand. Greift die Suspension, wird der § 8c-Untergang aufgehoben und der volle Verlust bleibt erhalten (= verlustvortrag_bestand, wird zum fortfuehrungsgebundenen Verlustvortrag, § 8d Abs. 1 Satz 6). Sonst gilt das § 8c-Ergebnis (verlustbestand_nach_8c aus N4). suspension_greift setzt schaedlicher_erwerb VORAUS (§ 8d wirkt nur NACH einem schaedlichen Erwerb; ohne schaedlichen Erwerb ist verlustbestand_nach_8c ohnehin = voller Bestand). antrag_8d = bool-Input (Antrag in der Steuererklaerung des Erwerbs-VZ, Satz 5); fortfuehrungs_voraussetzungen = bool-Input (seit Gruendung/3 VZ derselbe Geschaeftsbetrieb, kein Abs.-2-Ereignis; qualitative Gesamtbetrachtung = Sachverhalts-Vorfrage). verlustvortrag_bestand + verlustbestand_nach_8c = money-Inputs. WIRKPUNKT: verlustbestand_nach_8d wirkt VOR dem § 10d-Abzug (K5, N6). NACHTRAEGE (benannt, nicht kodiert): (a) fortfuehrungsgebunden-KENNZEICHNUNG + Mehrjahres-Feststellung/Tracking (Satz 6-8, § 10d Abs. 4) - Stufe A liefert nur den erhaltenen Betrag, KEIN separater Rechenpfad; (b) Untergang des fortfuehrungsgebundenen Verlusts bei Einstellung/Ereignis Abs. 2 (dann erneut 0) - eigener Nachtrag; (c) Vorrang-Reihenfolge Satz 8 (fortfuehrungsgebundener vor regulaerem § 10d-Verlust) = N6-Verdrahtungs-Vermerk. VERBOT: KEINE Abs.-2-Untergangs-Logik, KEINE Mehrjahres-Fortschreibung. FORMALISIERUNG: zwei unbedingte Definitionen, KEINE bedingten exceptions.'
+  quellen:
+  - typ: gesetz
+    label: § 8d Abs. 1 Satz 1 KStG (§ 8c auf Antrag nicht anzuwenden — selber Geschäftsbetrieb)
+    datei: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    zitatanker: § 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung
+    auszug: § 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung oder zumindest seit dem Beginn des dritten Veranlagungszeitraums, der dem Veranlagungszeitraum nach Satz 5 vorausgeht, ausschließlich denselben Geschäftsbetrieb unterhält
+  - typ: gesetz
+    label: § 8d Abs. 1 Satz 6 KStG (verbleibender Verlust wird fortführungsgebundener Verlustvortrag)
+    datei: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    zitatanker: wird zum fortführungsgebundenen Verlust (fortführungsgebundener Verlustvortrag)
+    auszug: Der Verlustvortrag, der zum Schluss des Veranlagungszeitraums verbleibt, in den der schädliche Beteiligungserwerb fällt, wird zum fortführungsgebundenen Verlust (fortführungsgebundener Verlustvortrag).
+  signature:
+    scope: FortfuehrungsgebundenerVerlust
+    inputs:
+      verlustvortrag_bestand: money
+      verlustbestand_nach_8c: money
+      schaedlicher_erwerb: bool
+      antrag_8d: bool
+      fortfuehrungs_voraussetzungen: bool
+    output: verlustbestand_nach_8d
+  raster:
+  - verlustvortrag_bestand: 5000000
+    verlustbestand_nach_8c: 0
+    schaedlicher_erwerb: true
+    antrag_8d: true
+    fortfuehrungs_voraussetzungen: true
+  - verlustvortrag_bestand: 5000000
+    verlustbestand_nach_8c: 0
+    schaedlicher_erwerb: true
+    antrag_8d: false
+    fortfuehrungs_voraussetzungen: true
+  - verlustvortrag_bestand: 5000000
+    verlustbestand_nach_8c: 0
+    schaedlicher_erwerb: true
+    antrag_8d: true
+    fortfuehrungs_voraussetzungen: false
+  - verlustvortrag_bestand: 3000000
+    verlustbestand_nach_8c: 3000000
+    schaedlicher_erwerb: false
+    antrag_8d: false
+    fortfuehrungs_voraussetzungen: false
+  - verlustvortrag_bestand: 3000000
+    verlustbestand_nach_8c: 3000000
+    schaedlicher_erwerb: false
+    antrag_8d: true
+    fortfuehrungs_voraussetzungen: true
+  test_seed:
+  - quelle: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    zitatanker: § 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung
+    herkunft: synthetisch
+    rechenweg: 'SUSPENSION greift (schädlich + Antrag + Voraussetzungen): § 8c ausgesetzt -> Verlust bleibt voll erhalten -> verlustbestand_nach_8d = verlustvortrag_bestand = 5.000.000,00 (fortführungsgebunden).'
+    inputs:
+      verlustvortrag_bestand: 5000000
+      verlustbestand_nach_8c: 0
+      schaedlicher_erwerb: true
+      antrag_8d: true
+      fortfuehrungs_voraussetzungen: true
+    expected: 5000000.0
+  - quelle: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    zitatanker: § 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung
+    herkunft: synthetisch
+    rechenweg: 'Schädlich, KEIN Antrag: keine Suspension -> § 8c-Ergebnis (N4) gilt -> verlustbestand_nach_8d = verlustbestand_nach_8c = 0,00.'
+    inputs:
+      verlustvortrag_bestand: 5000000
+      verlustbestand_nach_8c: 0
+      schaedlicher_erwerb: true
+      antrag_8d: false
+      fortfuehrungs_voraussetzungen: true
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    zitatanker: wird zum fortführungsgebundenen Verlust (fortführungsgebundener Verlustvortrag)
+    herkunft: synthetisch
+    rechenweg: 'Schädlich, Antrag aber Voraussetzungen FEHLEN (nicht seit Gründung derselbe Betrieb): keine Suspension -> verlustbestand_nach_8d = verlustbestand_nach_8c = 0,00.'
+    inputs:
+      verlustvortrag_bestand: 5000000
+      verlustbestand_nach_8c: 0
+      schaedlicher_erwerb: true
+      antrag_8d: true
+      fortfuehrungs_voraussetzungen: false
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    zitatanker: § 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung
+    herkunft: synthetisch
+    rechenweg: 'Kein schädlicher Erwerb: § 8d gegenstandslos -> verlustbestand_nach_8d = verlustbestand_nach_8c = 3.000.000,00 (voller Bestand, N4 unverändert).'
+    inputs:
+      verlustvortrag_bestand: 3000000
+      verlustbestand_nach_8c: 3000000
+      schaedlicher_erwerb: false
+      antrag_8d: false
+      fortfuehrungs_voraussetzungen: false
+    expected: 3000000.0
+  - quelle: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    zitatanker: § 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung
+    herkunft: synthetisch
+    rechenweg: 'GATING-GRENZFALL: kein schädlicher Erwerb, aber Antrag+Voraussetzungen true -> suspension_greift=false (schaedlicher_erwerb ist Vorbedingung) -> verlustbestand_nach_8d = verlustbestand_nach_8c = 3.000.000,00 (kein Doppel-Erhalt).'
+    inputs:
+      verlustvortrag_bestand: 3000000
+      verlustbestand_nach_8c: 3000000
+      schaedlicher_erwerb: false
+      antrag_8d: true
+      fortfuehrungs_voraussetzungen: true
+    expected: 3000000.0
+  geltungsbedingungen:
+  - bedingung: suspension_des_8c_auf_antrag
+    deckt_ab: § 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung
+    quelle: § 8d Abs. 1 Satz 1 KStG
+    datei: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    beschreibung: 'Auf Antrag wird § 8c nach einem schädlichen Beteiligungserwerb NICHT angewandt, wenn die Körperschaft seit Gründung (oder 3 VZ) ausschliesslich denselben Geschäftsbetrieb unterhält -> der Verlust bleibt erhalten (verlustbestand_nach_8d = verlustvortrag_bestand). Setzt schaedlicher_erwerb voraus.'
+  - bedingung: antrag_und_fortfuehrung_bool_vorfrage
+    deckt_ab: § 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung
+    quelle: § 8d Abs. 1 Satz 1/5 KStG
+    datei: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    beschreibung: 'antrag_8d (Antrag in der Steuererklärung des Erwerbs-VZ, Satz 5) und fortfuehrungs_voraussetzungen (seit Gründung/3 VZ derselbe Geschäftsbetrieb, kein Abs.-2-Ereignis; qualitative Gesamtbetrachtung Satz 3/4) sind bool-Inputs = Sachverhalts-Vorfrage, nicht modelliert.'
+  - bedingung: fortfuehrungsgebundener_verlustvortrag_kennzeichnung
+    deckt_ab: wird zum fortführungsgebundenen Verlust (fortführungsgebundener Verlustvortrag)
+    quelle: § 8d Abs. 1 Satz 6 KStG
+    datei: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    beschreibung: 'Der erhaltene Verlust wird zum fortführungsgebundenen Verlustvortrag (Satz 6). Stufe A liefert nur den erhaltenen Betrag; die Kennzeichnung/gesonderte Feststellung (Satz 7) und der Vorrang vor dem regulären § 10d-Verlust (Satz 8) = N6-Verdrahtungs-Vermerk bzw. Nachtrag, kein eigener Rechenpfad.'
+  - bedingung: untergang_bei_einstellung_abs2_nachtrag
+    deckt_ab: Wird der Geschäftsbetrieb im Sinne des Absatzes 1 eingestellt, geht der nach Absatz 1 zuletzt festgestellte fortführungsgebundene Verlustvortrag unter
+    quelle: § 8d Abs. 2 KStG
+    datei: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
+    beschreibung: 'Abs. 2: wird der Geschäftsbetrieb eingestellt (oder ruhend gestellt, Zweckänderung, zusätzlicher Betrieb, Mitunternehmerschaft, Organträger, Übertragung unter gemeinem Wert), geht der fortführungsgebundene Verlustvortrag unter (§ 8c Abs. 1 S. 5-8 stille Reserven entsprechend). Benannter Nachtrag, hier nicht modelliert (setzt Mehrjahres-Tracking voraus).'

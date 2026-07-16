@@ -1,0 +1,246 @@
+{
+  "bedingungen": [
+    "suspension_des_8c_auf_antrag",
+    "antrag_und_fortfuehrung_bool_vorfrage",
+    "fortfuehrungsgebundener_verlustvortrag_kennzeichnung",
+    "untergang_bei_einstellung_abs2_nachtrag"
+  ],
+  "candidate_id": "p8d_fortfuehrungsgebundener_verlust",
+  "catala_a": "declaration scope FortfuehrungsgebundenerVerlust:\n  input verlustvortrag_bestand content money\n  input verlustbestand_nach_8c content money\n  input schaedlicher_erwerb content boolean\n  input antrag_8d content boolean\n  input fortfuehrungs_voraussetzungen content boolean\n  internal suspension_greift content boolean\n  output verlustbestand_nach_8d content money\n\nscope FortfuehrungsgebundenerVerlust:\n  definition suspension_greift equals\n    schaedlicher_erwerb and antrag_8d and fortfuehrungs_voraussetzungen\n  definition verlustbestand_nach_8d equals\n    if suspension_greift then verlustvortrag_bestand\n    else verlustbestand_nach_8c",
+  "catala_a_sha256": "3a04ca6a1f0be31c17ed6fb6c3d45fff4e9cfc10452d23215d86ae970a0848be",
+  "catala_b": "declaration scope FortfuehrungsgebundenerVerlust:\n  input verlustvortrag_bestand content money\n  input verlustbestand_nach_8c content money\n  input schaedlicher_erwerb content boolean\n  input antrag_8d content boolean\n  input fortfuehrungs_voraussetzungen content boolean\n  internal suspension_greift content boolean\n  output verlustbestand_nach_8d content money\n\nscope FortfuehrungsgebundenerVerlust:\n  definition suspension_greift equals schaedlicher_erwerb and antrag_8d and fortfuehrungs_voraussetzungen\n  definition verlustbestand_nach_8d equals if suspension_greift then verlustvortrag_bestand else verlustbestand_nach_8c",
+  "catala_b_sha256": "a9ce94d7dceb68dc4aa8e2cecc23cba62127af2826abe2432dfc2c9373793ed8",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'verlustbestand_nach_8d'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 3,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "fortfuehrungs_voraussetzungen",
+              "interpretation"
+            ],
+            "text": "Fortführungsvoraussetzungen umfassen den ausschließlichen gleichen Geschäftsbetrieb seit Gründung oder drittem Veranlagu"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "fortfuehrungs_voraussetzungen",
+              "interpretation"
+            ],
+            "text": "Die Voraussetzungen des § 8d Abs. 1 Satz 1 werden als boolean abstrahiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "verlustvortrag_bestand",
+              "interpretation"
+            ],
+            "text": "Der Verlustvortrag wird als Geldbetrag ohne weitere Differenzierung modelliert."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Der Verlustvortrag wird als Geldbetrag ohne weitere Differenzierung modelliert.",
+            "eingeschmolzen": "Der Verlustvortrag wird als Geldbetrag ohne zeitliche Zuordnung modelliert.",
+            "key": [
+              "betrifft_kat",
+              "verlustvortrag_bestand",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "wenn die Körperschaft seit ihrer Gründung oder zumindest seit dem Beginn des dritten Veranlagungszeitraums, der dem Veranlagungszeitraum nach Satz 5 vorausgeht,",
+            "eingeschmolzen": "die Körperschaft seit ihrer Gründung oder zumindest seit dem Beginn des dritten Veranlagungszeitraums, der dem Veranlagungszeitraum nach Satz 5 vorausgeht, auss",
+            "key": [
+              "ref",
+              "§ 8d abs. 1 satz 1 kstg"
+            ]
+          },
+          {
+            "cluster": "wenn die Körperschaft seit ihrer Gründung oder zumindest seit dem Beginn des dritten Veranlagungszeitraums, der dem Veranlagungszeitraum nach Satz 5 vorausgeht,",
+            "eingeschmolzen": "die Körperschaft seit ihrer Gründung oder zumindest seit dem Beginn des dritten Veranlagungszeitraums, der dem Veranlagungszeitraum nach Satz 5 vorausgeht, auss",
+            "key": [
+              "ref",
+              "§ 8d abs. 1 satz 1 kstg"
+            ]
+          },
+          {
+            "cluster": "Der Verlustvortrag, der zum Schluss des Veranlagungszeitraums verbleibt, in den der schädliche Beteiligungserwerb fällt, wird zum fortführungsgebundenen Verlust",
+            "eingeschmolzen": "Der Verlustvortrag, der zum Schluss des Veranlagungszeitraums verbleibt, in den der schädliche Beteiligungserwerb fällt",
+            "key": [
+              "ref",
+              "§ 8d abs. 1 satz 6 kstg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        3,
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "7701e1f99870",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "suspension_des_8c_auf_antrag",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn die Körperschaft seit ihrer Gründung oder zumindest seit dem Beginn des dritten Veranlagungszeitraums, der dem Veranlagungszeitraum nach Satz 5 vorausgeht, ausschließlich denselben Geschäftsbetrieb unterhält",
+        "referenz": "§ 8d Abs. 1 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "fortfuehrungsgebundener_verlustvortrag_kennzeichnung",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Der Verlustvortrag, der zum Schluss des Veranlagungszeitraums verbleibt, in den der schädliche Beteiligungserwerb fällt, wird zum fortführungsgebundenen Verlust (fortführungsgebundener Verlustvortrag).",
+        "referenz": "§ 8d Abs. 1 Satz 6 KStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Fortführungsvoraussetzungen umfassen den ausschließlichen gleichen Geschäftsbetrieb seit Gründung oder drittem Veranlagungszeitraum.",
+        "bedingung_id": "suspension_des_8c_auf_antrag",
+        "betrifft": "fortfuehrungs_voraussetzungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Die Voraussetzungen des § 8d Abs. 1 Satz 1 werden als boolean abstrahiert.",
+        "bedingung_id": "antrag_und_fortfuehrung_bool_vorfrage",
+        "betrifft": "fortfuehrungs_voraussetzungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der Verlustvortrag wird als Geldbetrag ohne weitere Differenzierung modelliert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "verlustvortrag_bestand",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-16T16:32:38+00:00"
+  },
+  "module_name": "FortfuehrungsgebundenerVerlust",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}
