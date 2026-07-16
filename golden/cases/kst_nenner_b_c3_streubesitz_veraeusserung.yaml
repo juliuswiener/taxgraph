@@ -1,0 +1,21 @@
+id: kst_nenner_b_c3_streubesitz_veraeusserung
+beschreibung: "Nenner B VZ 2026 Streubesitz (5% < 10%, § 8b Abs.4): Dividende 100.000 VOLL steuerpflichtig (steuerfrei=0, keine 5%-Pauschale); Veräußerungsgewinn 200.000 (Abs.2, KEINE Streubesitz-Schranke) 95% frei -> §8b-netto 190.000; einkommen 500.000 - 190.000 = 310.000 = zvE; KSt 46.500, SolZ 2.557,50, GewSt 43.400; Nenner B = 92.457,50."
+
+sachverhalt:
+  koerperschaft: true
+  gewinn_estg: 500000
+  dividende_bezuege: 100000
+  beteiligung_prozent: 5
+  veraeusserungsgewinn: 200000
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+
+erwartung:
+  nenner_b_cent: 9245750
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 8b Abs.4 KStG (Streubesitz < 10% steuerpflichtig) + Abs.2 Veräußerung (Nenner B)"
+  datei: "sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt"
+  zitatanker: "wenn die Beteiligung zu Beginn des Kalenderjahres unmittelbar weniger als 10 Prozent des Grund- oder Stammkapitals betragen hat"

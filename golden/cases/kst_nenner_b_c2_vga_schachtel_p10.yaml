@@ -1,0 +1,23 @@
+id: kst_nenner_b_c2_vga_schachtel_p10
+beschreibung: "Nenner B VZ 2025 mit vGA/Einlage + Schachteldividende + Personensteuer: Slot 800.000 + vGA 50.000 - Einlage 30.000 = 820.000; - §8b-netto (Schachtel 25%>=10%: 100.000*0,95=95.000) + §10-Addback 30.000 = einkommen_vor_spenden 765.000 = zvE; KSt 114.750, SolZ 6.311,25, GewSt 107.100; Nenner B = 228.161,25."
+
+sachverhalt:
+  koerperschaft: true
+  gewinn_estg: 800000
+  verdeckte_gewinnausschuettung: 50000
+  verdeckte_einlage: 20000
+  dividende_bezuege: 100000
+  beteiligung_prozent: 25
+  personensteuern: 30000
+  veranlagungszeitraum: 2025
+  gewst_hebesatz: 400
+
+erwartung:
+  nenner_b_cent: 22816125
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 8b Abs.1/5 KStG (Schachtel 95%) i.V.m. § 8 Abs.3 / § 10 / § 23 (Nenner B)"
+  datei: "sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt"
+  zitatanker: "bleiben bei der Ermittlung des Einkommens außer Ansatz"

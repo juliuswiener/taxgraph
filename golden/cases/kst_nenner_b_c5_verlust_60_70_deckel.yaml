@@ -1,0 +1,19 @@
+id: kst_nenner_b_c5_verlust_60_70_deckel
+beschreibung: "PFLICHT 60/70-KONTRAST-GOLDEN: § 10d-Deckel bindet. GdE 6.000.000, Verlustbestand 5.000.000. Mit 70% (§ 10d EStG, KSt-Verweis § 8 Abs.1): Höchstbetrag = 1.000.000 + 70%*(6.000.000-1.000.000) = 4.500.000; Verlustabzug 4.500.000 -> zvE 1.500.000; KSt 225.000; Nenner B = 107.737.500 ct = 1.077.375,00. KONTROLLWERT mit 60% (§ 10a GewStG, HIER NICHT): Höchstbetrag = 4.000.000; zvE 2.000.000; KSt 300.000; nenner_b = 115.650.000 ct = 1.156.500,00. GewSt (840.000) bewegt sich im Kontrast NICHT (Slot = einkommen_vor_spenden 6.000.000, verlust-unabhängig). 70 != 60 empirisch verankert."
+
+sachverhalt:
+  koerperschaft: true
+  gewinn_estg: 6000000
+  verlustvortrag_bestand: 5000000
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+
+erwartung:
+  nenner_b_cent: 107737500
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 10d Abs.2 EStG (70%) via § 8 Abs.1 KStG — 60/70-Kontrast (60% ergäbe 1.156.500,00)"
+  datei: "sources/gesetze-im-internet/estg_p10d_2026-07-13.txt"
+  zitatanker: "bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte"

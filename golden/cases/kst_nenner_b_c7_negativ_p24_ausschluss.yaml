@@ -1,0 +1,18 @@
+id: kst_nenner_b_c7_negativ_p24_ausschluss
+beschreibung: "NEGATIV-GOLDEN § 24-Freibetrag-Ausschluss: kleine KapGes, Einkommen 10.000. § 24 S.1 gewährt Körperschaften 5.000-Freibetrag, ABER S.2 Nr.1 schließt Kapitalgesellschaften AUS (deren Leistungen = § 20 Abs.1 Nr.1 EStG). Daher zvE = 10.000 (NICHT 10.000-5.000=5.000!); KSt 1.500 (NICHT 750), SolZ 82,50, GewSt 1.400; Nenner B = 2.982,50. Ein still angewandter Freibetrag würde KSt auf 750 senken = Testbruch."
+
+sachverhalt:
+  koerperschaft: true
+  gewinn_estg: 10000
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+
+erwartung:
+  nenner_b_cent: 298250
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 24 Satz 2 Nr.1 KStG (Freibetrags-Ausschluss für Kapitalgesellschaften)"
+  datei: "sources/gesetze-im-internet/kstg_p24_2026-07-16.txt"
+  zitatanker: "deren Leistungen bei den Empfängern zu den Einnahmen im Sinne des § 20 Abs. 1 Nr. 1 oder 2 des Einkommensteuergesetzes gehören"

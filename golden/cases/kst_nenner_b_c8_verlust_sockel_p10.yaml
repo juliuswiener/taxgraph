@@ -1,0 +1,21 @@
+id: kst_nenner_b_c8_verlust_sockel_p10
+beschreibung: "Nenner B VZ 2026 §10d-Sockel bindet nicht + §10-Addback: Gewinn 900.000 + Personensteuer 40.000 + Geldstrafe 10.000 (§10-Addback) = einkommen_vor_spenden 950.000 = GdE < 1.000.000 -> Verlustabzug = min(700.000, 1.000.000-Sockel) = 700.000 (Sockel unbeschränkt, 70%-Staffel greift nicht); zvE 250.000; KSt 37.500, SolZ 2.062,50; GewSt-Slot 950.000 -> GewSt 133.000; Nenner B = 172.562,50."
+
+sachverhalt:
+  koerperschaft: true
+  gewinn_estg: 900000
+  personensteuern: 40000
+  geldstrafen: 10000
+  verlustvortrag_bestand: 700000
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+
+erwartung:
+  nenner_b_cent: 17256250
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 10 Nr.2 KStG (Add-back) + § 10d-Sockel (bindet nicht) — Nenner B"
+  datei: "sources/gesetze-im-internet/kstg_p10_2026-07-16.txt"
+  zitatanker: "die Steuern vom Einkommen und sonstige Personensteuern"

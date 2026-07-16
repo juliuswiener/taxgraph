@@ -179,6 +179,72 @@ def catala_gewst(s: dict) -> int:
     return _gewst_messbetrag_cent(s)
 
 
+# --- KStG Nenner B (Kapitalgesellschaft, Paket 5, K1-K5 + § 23 + SolZ + GewSt) -----
+# Alle Zwischengroessen in CENT (Klasse-5, Cent-Schnitt zuletzt, // = floor). Kette:
+# einkommen_slot (§ 8 Abs.1/3) - § 8b-netto + § 10-Addback = einkommen_vor_spenden
+# -> - § 9-Spenden = GdE (§ 10d-Basis) -> - § 10d-Verlust (70%) = zvE (§ 24-FB=0)
+# -> KSt 15 % (§ 23) + SolZ 5,5 % + GewSt (Slot = einkommen_vor_spenden).
+
+def _kst_8b_netto_cent(s: dict) -> int:
+    """§ 8b: Bezuege (Abs.1) + Veraeusserung (Abs.2) 100 % ausser Ansatz MINUS 5 %
+    Pauschale (Abs.5/3) = 95 % netto. Streubesitz < 10 % (Abs.4): Dividende voll
+    steuerpflichtig (steuerfrei=0, Pauschale faellt mit). 95 % NIE als Konstante. CENT."""
+    div = int(s.get("dividende_bezuege", 0)) * 100
+    steuerfrei = div if int(s.get("beteiligung_prozent", 0)) >= 10 else 0
+    veraeuss = int(s.get("veraeusserungsgewinn", 0)) * 100
+    ausser = steuerfrei + veraeuss
+    return ausser - ausser * 5 // 100
+
+
+def _kst_einkommen_vor_spenden_cent(s: dict) -> int:
+    """§ 8 Abs.1-Slot + vGA (Abs.3 S.2) - verd. Einlage (Abs.3 S.3), - § 8b-netto,
+    + § 10-Addback (Nr.2/3). Zugleich GewSt-Slot (§ 7 GewStG) UND § 9-Abs.2-S.1-
+    Hoechstbetragsbasis (Einkommen VOR Spenden + VOR Verlust). CENT."""
+    slot = (int(s.get("gewinn_estg", 0)) + int(s.get("verdeckte_gewinnausschuettung", 0))
+            - int(s.get("verdeckte_einlage", 0))) * 100
+    addback = (int(s.get("personensteuern", 0)) + int(s.get("geldstrafen", 0))) * 100
+    return slot - _kst_8b_netto_cent(s) + addback
+
+
+def _kst_spendenabzug_cent(s: dict) -> int:
+    """§ 9 Abs.1 Nr.2: min(Zuwendungen, max(20 % Einkommen, 4 Promille (Umsatz+Loehne))).
+    20/100 und 4/1000 exakt. Basis = einkommen_vor_spenden (Abs.2 S.1). CENT."""
+    evs = _kst_einkommen_vor_spenden_cent(s)
+    grenze_a = evs * 20 // 100
+    grenze_b = (int(s.get("umsaetze", 0)) + int(s.get("loehne_gehaelter", 0))) * 100 * 4 // 1000
+    return min(int(s.get("zuwendungen", 0)) * 100, max(grenze_a, grenze_b))
+
+
+def _kst_zve_cent(s: dict) -> int:
+    """§ 9-Spenden -> § 10d-Verlust (Sockel 1 Mio + 70 %, KapGes ohne Splitting) -> zvE.
+    § 10d-Basis (GdE) = Einkommen NACH Spenden (R 7.1 KStR). § 24-Freibetrag = 0
+    (KapGes-Ausschluss § 24 S.2 Nr.1). CENT."""
+    evs = _kst_einkommen_vor_spenden_cent(s)
+    gde = evs - _kst_spendenabzug_cent(s)
+    sockel = 1000000 * 100
+    hoechst = sockel + max(0, gde - sockel) * 70 // 100
+    verlust = min(int(s.get("verlustvortrag_bestand", 0)) * 100, hoechst)
+    return max(0, gde - verlust)
+
+
+def _kst_gewst_cent(s: dict) -> int:
+    """GewSt KapGes: Gewerbeertrag = einkommen_vor_spenden (mit § 8b/§ 10, OHNE § 9/§ 10d;
+    § 8/§ 9 GewStG-Anpassungen = 0, § 10a-Vortrag = 0). KEIN 24.500-Freibetrag (nur
+    natuerl. Person/PersG, § 11). floor auf 100 Euro, Messzahl 3,5 %, x Hebesatz. CENT.
+    (§ 8 Nr.9 / § 9 Nr.5 GewStG-Spendenkorrektur = benannter Nachtrag, nicht modelliert.)"""
+    ge_euro = _kst_einkommen_vor_spenden_cent(s) // 100
+    abger = (ge_euro // 100) * 100 if ge_euro > 0 else 0
+    messbetrag_cent = abger * 35 // 10
+    return messbetrag_cent * int(s["gewst_hebesatz"]) // 100
+
+
+def catala_kst_nenner_b(s: dict) -> int:
+    """Nenner B (KapGes) in CENT: KSt (§ 23, 15 % des zvE) + SolZ (5,5 %) + GewSt."""
+    kst = _kst_zve_cent(s) * 15 // 100
+    solz = kst * 55 // 1000
+    return kst + solz + _kst_gewst_cent(s)
+
+
 VZ_ENUM = {
     2024: E.Veranlagungszeitraum(E.Veranlagungszeitraum.Code.VZ2024, None),
     2025: E.Veranlagungszeitraum(E.Veranlagungszeitraum.Code.VZ2025, None),
@@ -244,6 +310,9 @@ def catala_est(sachverhalt: dict) -> int:
     # GewSt-Kette (§§ 6-11/35): Steuermessbetrag oder § 35-Anrechnung, in CENT.
     if sachverhalt.get("gewerbesteuer"):
         return catala_gewst(sachverhalt)
+    # KStG Nenner B (Kapitalgesellschaft): KSt + SolZ + GewSt, in CENT.
+    if sachverhalt.get("koerperschaft"):
+        return catala_kst_nenner_b(sachverhalt)
     # Entfernungspauschale (§ 9): abziehbarer Betrag.
     if "entfernung_km_roh" in sachverhalt:
         return catala_entfernungspauschale(sachverhalt)
@@ -288,7 +357,8 @@ def main() -> int:
         exp = erw.get("tarifliche_est",
                       erw.get("festzusetzende_est",
                               erw.get("abziehbarer_betrag",
-                                      erw.get("abzug_gesamt", erw.get("gewst_cent")))))
+                                      erw.get("abzug_gesamt",
+                                              erw.get("gewst_cent", erw.get("nenner_b_cent"))))))
         q = c["quelle"]
 
         # 1. citation-anchor gate

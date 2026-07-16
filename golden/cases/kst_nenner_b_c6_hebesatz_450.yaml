@@ -1,0 +1,18 @@
+id: kst_nenner_b_c6_hebesatz_450
+beschreibung: "Nenner B VZ 2024 Hebesatz-Streuung 450%: Gewinn 1.000.000 -> zvE 1.000.000; KSt 150.000, SolZ 8.250; GewSt = Messbetrag 35.000 * 450% = 157.500 (vs 140.000 bei 400%); Nenner B = 315.750,00."
+
+sachverhalt:
+  koerperschaft: true
+  gewinn_estg: 1000000
+  veranlagungszeitraum: 2024
+  gewst_hebesatz: 450
+
+erwartung:
+  nenner_b_cent: 31575000
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 23 KStG + GewSt Hebesatz 450% (Streuung)"
+  datei: "sources/gesetze-im-internet/kstg_p23_2026-07-16.txt"
+  zitatanker: "Veranlagungszeiträume bis 2027 15 Prozent"

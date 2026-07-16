@@ -1,0 +1,18 @@
+id: kst_nenner_b_c1_basis
+beschreibung: "Nenner B KapGes Basisfall VZ 2026: Gewinn 1.000.000, keine Korrekturen -> zvE 1.000.000; KSt 15% = 150.000, SolZ 5,5% = 8.250, GewSt (Hebesatz 400%, kein 24.500-FB) = 140.000; Nenner B = 298.250,00."
+
+sachverhalt:
+  koerperschaft: true
+  gewinn_estg: 1000000
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+
+erwartung:
+  nenner_b_cent: 29825000
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 23 Abs.1 Nr.1 KStG (15% KSt) + SolZ + GewSt (KapGes-Basiskette)"
+  datei: "sources/gesetze-im-internet/kstg_p23_2026-07-16.txt"
+  zitatanker: "Veranlagungszeiträume bis 2027 15 Prozent"

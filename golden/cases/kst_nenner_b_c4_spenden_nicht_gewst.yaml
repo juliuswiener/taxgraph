@@ -1,0 +1,21 @@
+id: kst_nenner_b_c4_spenden_nicht_gewst
+beschreibung: "PFLICHT-LEHR-GOLDEN: Spenden mindern zvE/KSt, NICHT den Gewerbeertrag. Einkommen_vor_spenden 2.000.000; §9-Höchstbetrag = max(20% von 2.000.000=400.000; 4 Promille von (500.000+300.000)=3.200) = 400.000; Spendenabzug = min(300.000, 400.000) = 300.000 -> zvE 1.700.000; KSt 255.000, SolZ 14.025. ABER GewSt-Slot = einkommen_vor_spenden 2.000.000 (NICHT 1.700.000!) -> GewSt 280.000. BEWUSSTE DIVERGENZ zum Vollrecht: § 9 Nr. 5 GewStG (Spendenkürzung im Gewerbeertrag) = benannter Nachtrag, hier NICHT modelliert; ebenso § 8 Nr. 9 GewStG. Nenner B = 549.025,00."
+
+sachverhalt:
+  koerperschaft: true
+  gewinn_estg: 2000000
+  zuwendungen: 300000
+  umsaetze: 500000
+  loehne_gehaelter: 300000
+  veranlagungszeitraum: 2026
+  gewst_hebesatz: 400
+
+erwartung:
+  nenner_b_cent: 54902500
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 9 Abs.1 Nr.2 KStG (Spenden-Höchstbetrag) — mindert zvE, nicht Gewerbeertrag (§ 9 Nr.5 GewStG Nachtrag)"
+  datei: "sources/gesetze-im-internet/kstg_p9_2026-07-16.txt"
+  zitatanker: "bis zur Höhe von insgesamt a) 20 Prozent des Einkommens oder b) 4 Promille der Summe der gesamten Umsätze und der im Kalenderjahr aufgewendeten Löhne und Gehälter"
