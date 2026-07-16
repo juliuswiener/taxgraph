@@ -75,18 +75,28 @@ ausländisches Besteuerungsrecht), **kein Rechenkern**.
 reine DE-Besteuerung (kein Auslands-Besteuerungsrecht, `dba_methode` n/a). Für den Katalog als
 Freistellungs-nahe Zuordnung geführt; Sonderfall benannt.
 
-## ⚠ Progressionsvorbehalt — Anker-Lücke (Auflage 3, MELDUNG)
+## ⚠ Progressionsvorbehalt — Anker-Lücke (Auflage 3; Herkunft korrigiert n. Instructor-Nachlauf)
 
 Das Zusatzabkommen 2015 ersetzt in Art. 20 Abs. 1 a **nur Satz 1** (Freistellung). Der
-**Progressionsvorbehalt-Satz** des Methodenartikels steht unverändert im **Grundtext 1959**
-(Art. 20 Abs. 1 a Satz 2 f.), also im **OCR-Freeze ohne Strom-Beweis** — und ist **nicht** unter den
-drei bild-verifizierten Passagen (Titel S. 398 / Art. 13 Abs. 5 S. 407 / Art. 20-Anfang S. 409).
-**Ich ankere ihn daher NICHT.** Zwei saubere Optionen:
-1. **Bevorzugt:** Progressionsvorbehalt läuft ohnehin über `p32b_progressionsvorbehalt` (§ 32b Abs. 1
-   Nr. 3 EStG) — die Rechenwirkung ist DE-seitig materialisiert, ein verbatim-FR-Anker ist für die
-   Methoden-Zuordnung (`freistellung` → § 32b) nicht zwingend. Katalog steht ohne diesen Anker.
-2. Falls ein verbatim-DBA-Anker gewünscht ist: **Instructor-Bild-Verifikation** von Art. 20 Abs. 1 a
-   S. 2 gegen `bgbl2_1961_ii_18.pdf` (S. 409), dann Nachtrag. **Bitte um Entscheid.**
+**Progressionsvorbehalt-Satz** ist im Freeze-Bestand **derzeit amtlich NICHT belegbar** (nicht bloß
+unbequem) — ein verbatim-Anker ist **unmöglich**, nicht optional:
+
+- **Genealogie (korrigiert).** Der bildverifizierte **1961er-Druck** (`bgbl2_1961_ii_18.pdf`, S. 409)
+  zeigt Art. 20 Abs. 1 **OHNE Buchstaben-Struktur** — er beginnt „(1) Dieses Abkommen beschränkt nicht
+  das Recht des Vertragstaates …". Die heute geltende **a/c/d-Struktur inkl. Progressionsvorbehalt in
+  Abs. 1 Buchst. a Satz 2** stammt **NICHT** aus dem Grundtext 1959, sondern aus dem
+  **Revisionsprotokoll 09.06.1969** (BGBl 1970 II S. 717), fortgeschrieben durch **ZusAbk 1989**
+  (BGBl 1990 II S. 770) und **ZusAbk 2001** (BGBl 2002 II S. 2370). Die frühere Report-Zeile
+  „unverändert im Grundtext 1959" war **genealogisch falsch** und ist hiermit berichtigt.
+- **Fassungsloch.** Rev-Prot 1969 + ZusAbk 1989 + ZusAbk 2001 sind **allesamt NICHT gefreezt**. Der
+  Prog-Satz kann daher an KEINEM vorhandenen Freeze verbatim gepinnt werden — weder am OCR-1959 (falsche
+  Fassung, kein Buchst. a Satz 2) noch am ZusAbk 2015 (ändert nur Satz 1).
+
+**Entscheid (Instructor-Nachlauf msg 2089): OPTION 1 angenommen** — Progressionsvorbehalt bleibt
+**ungepinnt**. Er läuft ohnehin über `p32b_progressionsvorbehalt` (§ 32b Abs. 1 Nr. 3 EStG, DE-seitig
+materialisiert); die Methoden-Zuordnung `freistellung → § 32b` braucht keinen verbatim-DBA-Anker. Ein
+künftiger verbatim-Anker setzt einen **Freeze des Rev-Prot 1969** (bzw. der ZusAbk 1989/2001) voraus —
+Backlog, nicht Teil dieses Katalogs.
 
 ## Andockung + Nachträge
 
