@@ -20,8 +20,9 @@ dokument:
     Arbeitswerkzeug fuer die Mussfeld-Lesung. Grosse Binaries (ZIP/XLSX/PDF) sind
     gitignored und liegen nur lokal - sha256 hier fixiert. Committet sind die
     XBRL-Kerndateien unter xbrl/ (de-gaap-ci: Haupt-XSD, shell-fiscal, reference-fiscal
-    [traegt Mussfeld-Flags, 514x 'Mussfeld'], label-fiscal-de, 4 presentation-Linkbases
-    Bilanz/GuV/steuerl. Gewinnermittlung [auch PersGes]; de-gcd: XSD, shell, reference-fiscal)."
+    [traegt Mussfeld-Flags, 514x 'Mussfeld' eng / 697 weit], label-fiscal-de, allgemeine
+    label-de [dev-1-Nachtrag Paket 2], 4 presentation-Linkbases Bilanz/GuV/steuerl.
+    Gewinnermittlung [auch PersGes]; de-gcd: XSD, shell, reference-fiscal)."
   artefakte_binaer_lokal:  # gitignored, nur lokal; Integritaet via sha256
     german-gaap-taxonomy-v6.7-2023-04-01.zip:
       sha256: "ad0768cb42aab2fc48d0971120591d37815d335a0ea6949f60819dca3a40df05"
@@ -46,6 +47,7 @@ dokument:
     xbrl/de-gaap-ci-2023-04-01-shell-fiscal.xsd: "12ba98da278c90c0044a0c939d41e772cd8f9f9f71230d9715bfbab70e7dc1f7"
     xbrl/de-gaap-ci-2023-04-01-reference-fiscal.xml: "6e873122f3321840dde5acfe9488fecf526e05503b1ef1e0fa4abbd85530536d"
     xbrl/de-gaap-ci-2023-04-01-label-fiscal-de.xml: "1b3705654388a65b6729efe7a02a0e77e8c250f7ebaf8555b61f01d41cd175ea"
+    xbrl/de-gaap-ci-2023-04-01-label-de.xml: "6d5c5598120773cb8a378562a33bc84c9379d555efe210aa45f24aef8ec4d2c4"  # allgemeine Label-Linkbase (dev-1-Nachtrag Paket 2, aus lokalem Gesamt-ZIP entpackt)
     xbrl/de-gaap-ci-2023-04-01-presentation-balanceSheet.xml: "0c07b04489e1fdfb943ca30c50fa1b52e4dddcbeac26dd717643b7a556af2de5"
     xbrl/de-gaap-ci-2023-04-01-presentation-incomeStatement.xml: "4b036b215314c333e923b8b566fc746ba9fbaeb44145fc827734c2f16a976d82"
     xbrl/de-gaap-ci-2023-04-01-presentation-determinationOfTaxableIncome.xml: "4322ada5ce8fe4eb19f1871a862542da6e1ec43293e0d9063ef2a2bac7e3eb10"

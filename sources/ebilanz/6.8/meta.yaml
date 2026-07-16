@@ -20,8 +20,9 @@ dokument:
     Arbeitswerkzeug fuer die Mussfeld-Lesung. Grosse Binaries (ZIP/XLSX/PDF) sind
     gitignored und liegen nur lokal - sha256 hier fixiert. Committet sind die
     XBRL-Kerndateien unter xbrl/ (de-gaap-ci: Haupt-XSD, shell-fiscal, reference-fiscal
-    [traegt Mussfeld-Flags, 525x 'Mussfeld'], label-fiscal-de, 4 presentation-Linkbases
-    Bilanz/GuV/steuerl. Gewinnermittlung [auch PersGes]; de-gcd: XSD, shell, reference-fiscal).
+    [traegt Mussfeld-Flags, 525x 'Mussfeld' eng / 708 weit], label-fiscal-de, allgemeine
+    label-de [dev-1-Nachtrag Paket 2], 4 presentation-Linkbases Bilanz/GuV/steuerl.
+    Gewinnermittlung [auch PersGes]; de-gcd: XSD, shell, reference-fiscal).
     Kontennachweis-UEBERMITTLUNGSPFLICHT (JStG 2024): rechtlich ab WJ 2025, taxonomisch
     erst in 6.9 umgesetzt (Nichtbeanstandungsregelung fuer 6.8-Uebermittlungen) -
     fuer den 6.8-Muss-Feld-Katalog als dokumentierte Luecke fuehren, nicht als Feld
@@ -50,6 +51,7 @@ dokument:
     xbrl/de-gaap-ci-2024-04-01-shell-fiscal.xsd: "35d940588f22a99445c6f9b66d224f40245034ac039103275b8bff520ad8ff05"
     xbrl/de-gaap-ci-2024-04-01-reference-fiscal.xml: "fa95dc44540bcc35bb28dce0bf7be19f293a997350c2c55eb455e6d940144311"
     xbrl/de-gaap-ci-2024-04-01-label-fiscal-de.xml: "71dd2ae06cafc341729a61772566e74d5e86d5417f7a77fab791827da8e074c4"
+    xbrl/de-gaap-ci-2024-04-01-label-de.xml: "f0b82442fd29345de8186d70ac63c392a24060e0962cbc694f8500ffb2e0df45"  # allgemeine Label-Linkbase (dev-1-Nachtrag Paket 2, aus lokalem Gesamt-ZIP entpackt)
     xbrl/de-gaap-ci-2024-04-01-presentation-balanceSheet.xml: "d0338d8dbbd0a7265d6c4285ce8dc5019b28d4e392015c178f464915b0ee9118"
     xbrl/de-gaap-ci-2024-04-01-presentation-incomeStatement.xml: "69513bf2b6e3395899ec4b49a4860d13899c59b899301102d06a059eaf55c320"
     xbrl/de-gaap-ci-2024-04-01-presentation-determinationOfTaxableIncome.xml: "378f057748dc62ff291992bb73954ee49db9f95485b587d4d6d4740020a8c079"
