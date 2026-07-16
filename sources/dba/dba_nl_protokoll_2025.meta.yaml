@@ -1,0 +1,28 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/nl/protokoll-2025-04-14/gesetz-2025"
+  norm: "Gesetz v. 20.10.2025 zu dem Protokoll v. 14.04.2025 zur Aenderung des DBA Deutschland-Niederlande v. 12.04.2012 i.d.F. 2016/2021 (BGBl 2025 II Nr. 270); in Kraft 31.12.2025 (Ratifikationsaustausch 28.11.2025, Bekanntmachung v. 10.12.2025, BGBl 2025 II Nr. 307), anwendbar ab 01.01.2026"
+  fassung: "BGBl 2025 II Nr. 270 (Regelungstext inkl. Protokoll-Wortlaut, zweisprachig DE/NL)"
+  quelle_url: "https://www.recht.bund.de/bgbl/2/2025/270/regelungstext.pdf?__blob=publicationFile"
+  abrufdatum: "2026-07-16"
+  datei: "dba_nl_protokoll_2025.txt"
+  pdf_datei: "dba_nl_protokoll_2025.pdf"
+  sha256: "88eebe257601cd1ca5fdf2200ad0166fcd99b14dfe8ba82cefca66f9652a5859"
+  pdf_sha256: "e14a2cc64a213749836f583241994e8c012f8fcde937aa1867aab7f99cf00686"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "ZWEITE NL-Quelle (VZ-2026-OVERLAY auf die noch zu freezende Fassung 2012 i.d.F.
+    Protokolle 2016+2021 - direkte Parallele zum CH-2025-Protokoll-Muster): Anwendungsregel
+    Art. VII Abs. 2 = in Kraft am letzten Tag des Folgemonats nach Ratifikationsaustausch
+    (28.11.2025 -> 31.12.2025), anzuwenden ab 01.01. des Folgejahres = VZ 2026. VZ 2024/2025
+    rechnen nach der 2021er-Fassung OHNE dieses Protokoll. Fuegt u.a. Art. 14 Abs. 1a ein
+    (34-Tage-Bagatell 'an weniger als 35 Arbeitstagen im Kalenderjahr' - NL hatte vorher KEINE
+    Bagatellregel) + Anpassungen oeff. Dienst/REIT/OGA. ACHTUNG Anker: Text ist ZWEISPRACHIG
+    (deutsche und niederlaendische Spalten interleaved nach pdftotext ohne -layout) - Anker nur
+    aus deutschen Passagen ziehen und Eindeutigkeit gegen NL-Spalten-Fragmente testen.
+    Konsolidierte Neubekanntmachung 11.05.2026 (Sekundaerangabe dev-1) beim Katalog-Bau primaer
+    verifizieren. dev-1-Recherche e0915d5, Instructor-BGBl-Verifikation 2026-07-16."
+  erwartete_anker:
+    - "an weniger als 35 Arbeitstagen im Kalenderjahr ganz oder teilweise im erstgenannten"
+    - "Dieses Änderungsprotokoll tritt am letzten Tag des Monats"
+  verwendet_in: ["Paket 3 DBA-Katalog NL (VZ-2026-Overlay; VZ 2024/25 = Fassung 2021)"]

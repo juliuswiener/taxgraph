@@ -1,0 +1,27 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/lu/protokoll-2023-07-06/gesetz-2023"
+  norm: "Gesetz v. 08.12.2023 zu dem Protokoll v. 06.07.2023 zur Aenderung des DBA Deutschland-Luxemburg v. 23.04.2012 (BGBl 2023 II Nr. 334); in Kraft 29.12.2023 (Bekanntmachung v. 19.03.2024, BGBl 2024 II Nr. 147), anwendbar ab 01.01.2024 (uebrige Steuern: Zeitraeume ab 01.01.2024)"
+  fassung: "BGBl 2023 II Nr. 334 (Regelungstext inkl. Protokoll-Wortlaut)"
+  quelle_url: "https://www.recht.bund.de/bgbl/2/2023/334/regelungstext.pdf?__blob=publicationFile"
+  abrufdatum: "2026-07-16"
+  datei: "dba_lu_protokoll_2023.txt"
+  pdf_datei: "dba_lu_protokoll_2023.pdf"
+  sha256: "e79891a54b42da1d5a9c01fccd1acaddba2e291a4c77a56ce505114a6fcc1f07"
+  pdf_sha256: "cc21270f98adea6651b108a3b29c645fec17b244b0602a48485483f1038fd398"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "ZWEITE LU-Quelle (Overlay auf das noch zu freezende Grundabkommen 2012, BGBl 2012 II
+    S. 1402): Protokoll fuegt u.a. Art. 14 Abs. 1a ein (34-Tage-Bagatell, Wortlaut 'weniger als
+    35 Arbeitstagen im Kalenderjahr', haelt Besteuerung beim Taetigkeitsstaat; analog oeff.
+    Dienst Art. 18) und aendert Art. 22 Abs. 1 (Methodenartikel: Buchst. a neu gefasst, neuer
+    Buchst. e eingefuegt, alt-e wird f) + Abs. 2. Einfassig fuer VZ 2024-2026 (kein VZ-Split;
+    Anwendung ab 01.01.2024 durchgehend). Vorlaeufer der Bagatell-Regel: 19-Tage-
+    Verstaendigungsvereinbarung 26.05.2011 (BStBl 2011 I S. 576), seit Protokoll rechtssicher
+    im Abkommen. Konsultationsvereinbarung zur 34-Tage-Auslegung: BMF 11.01.2024 (BStBl 2024
+    I S. 201). Deutschsprachiger Vertragstext (einspaltig, pdftotext ohne -layout); Anker
+    voll-Laenge via _normalize. dev-1-Recherche e0915d5, Instructor-BGBl-Verifikation 2026-07-16."
+  erwartete_anker:
+    - "Nach Artikel 22 Absatz 1 Buchstabe d des Abkommens wird folgender Buchstabe e eingefügt"
+    - "weniger als 35 Arbeitstagen im Kalenderjahr jeweils ganz oder teilweise im erstgenannten Staat"
+  verwendet_in: ["Paket 3 DBA-Katalog LU (Overlay-Quelle fuer die effektive VZ-2024-26-Fassung)"]
