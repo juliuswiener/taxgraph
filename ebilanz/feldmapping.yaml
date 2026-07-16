@@ -1,0 +1,127 @@
+# E-Bilanz-Feldmapping: produktive Regel-Outputs -> de-gaap-ci-Taxonomie-Positionen
+# (Paket 8, taxgraph-dev-2, 2026-07-16). Deterministisch, LLM-frei, additiv.
+#
+# Jede Zeile: welche produktive Regel (rule_id + signature.output) welche
+# E-Bilanz-Position (taxonomie_konzept, de-gaap-ci-Name) speist. kategorie +
+# Existenz sind gegen ebilanz/katalog_6.7.json + katalog_6.8.json geprueft
+# (BEIDE Versionen kategorie-gleich; Gate tests/test_ebilanz_feldmapping.py).
+#
+# HARTE REGEL (Instructor msg 2129): keine geratenen Zuordnungen. Unsichere
+# Mappings status: unklar mit Begruendung. Lieber wenige sichere als viele
+# geratene. status: sicher = Regel-Output speist die Position direkt/als
+# verifizierte Komponente; status: unklar = Position existiert + kategorie
+# stimmt, aber der Wert-Bezug Regel-Output -> Position ist NICHT 1:1 (dokumentiert).
+#
+# wj_versionen: 6.7 = WJ 2024, 6.8 = WJ 2025 (Taxonomie-Version folgt dem WJ,
+# dev-2-Befund P2). Alle gelisteten Konzepte existieren in beiden.
+
+version: 1
+stand: "2026-07-16"
+taxonomie: de-gaap-ci
+katalog_quelle: ["ebilanz/katalog_6.7.json", "ebilanz/katalog_6.8.json"]
+herkunft_cluster: "W2-Muss-Andock-Cluster (P2-Report 2026-07-15-ebilanz-mussfeld-katalog.md, katalog.py W2_CLUSTER), auf 6.7/6.8 concept-verifiziert"
+
+mappings:
+
+  # --- SICHER: W2-Bilanzpositionen, Regel-Output speist die Position ---------
+
+  - rule_id: p4_1_bv_vergleich
+    output: gewinn
+    taxonomie_konzept: bs.eqLiab.equity.netIncome.taxBalanceGenerally
+    kategorie: Summenmussfeld
+    wj_versionen: ["6.7", "6.8"]
+    status: sicher
+    norm: "§ 4 Abs. 1 S. 1 EStG"
+    bezug: "steuerbilanzieller Gewinn (BV-Vergleich) -> Steuerbilanz-Ergebnisposition (Eigenkapital, steuerlicher Gewinn)"
+
+  - rule_id: p6_1_1_bewertung_av
+    output: ansatz
+    taxonomie_konzept: bs.ass.fixAss
+    kategorie: Summenmussfeld
+    wj_versionen: ["6.7", "6.8"]
+    status: sicher
+    norm: "§ 6 Abs. 1 Nr. 1 EStG"
+    bezug: "bewerteter Anlagevermoegen-Ansatz (fortgefuehrte AK/Teilwert) -> Anlagevermoegen"
+    hinweis: "Regel liefert den Ansatz EINES WG; bs.ass.fixAss ist das Summenmussfeld (Aggregat) - der Output ist eine Komponente, nicht die Gesamtsumme."
+
+  - rule_id: p6_1_3a_abzinsung
+    output: abgezinster_wert
+    taxonomie_konzept: bs.eqLiab.accruals.other
+    kategorie: "Mussfeld, Kontennachweis erwünscht"
+    wj_versionen: ["6.7", "6.8"]
+    status: sicher
+    norm: "§ 6 Abs. 1 Nr. 3a EStG"
+    bezug: "abgezinster Rueckstellungswert (sonstige, nicht-Pensions-Rueckstellung) -> sonstige Rueckstellungen"
+
+  - rule_id: p6a_pension_hoechstbetrag
+    output: pensionsrueckstellung
+    taxonomie_konzept: bs.eqLiab.accruals.pensions
+    kategorie: Summenmussfeld
+    wj_versionen: ["6.7", "6.8"]
+    status: sicher
+    norm: "§ 6a EStG"
+    bezug: "Pensionsrueckstellung (Teilwert/Hoechstbetrag) -> Rueckstellungen fuer Pensionen"
+    hinweis: "Aggregat-Position; der Sub-Split .direct/.externalFunds/.shareholder ist sachverhalts-getrieben, nicht aus dieser Regel ableitbar."
+
+  - rule_id: p5_5_aktiver_rap
+    output: aktiver_rap
+    taxonomie_konzept: bs.ass.prepaidExp
+    kategorie: Mussfeld
+    wj_versionen: ["6.7", "6.8"]
+    status: sicher
+    norm: "§ 5 Abs. 5 S. 1 Nr. 1 EStG"
+    bezug: "aktiver Rechnungsabgrenzungsposten (zeitanteilige Ausgabe) -> Rechnungsabgrenzungsposten (Aktiva)"
+
+  # --- UNKLAR: Konzept existiert + kategorie stimmt, aber Wert-Bezug nicht 1:1 -
+
+  - rule_id: p11_steuermessbetrag
+    output: steuermessbetrag
+    taxonomie_konzept: is.netIncome.tax.gewst
+    kategorie: Mussfeld
+    wj_versionen: ["6.7", "6.8"]
+    status: unklar
+    norm: "§ 11 GewStG / GuV-Position Steuern vom Einkommen und Ertrag (Gewerbesteuer)"
+    begruendung: >-
+      Der Regel-Output ist der Steuermessbetrag (Bemessungsgroesse), NICHT der
+      GewSt-Aufwand. Die E-Bilanz-Position is.netIncome.tax.gewst erwartet den
+      GewSt-BETRAG = Messbetrag x Hebesatz - diese Multiplikation ist kein
+      einzelner Regel-Output (heute Runner-Ebene, golden/runner._gewst_*).
+      Zusaetzlich: bilanzieller Steueraufwand (Buchgroesse) != festgesetzte
+      Steuer (Steuerrueckstellung/Periodisierung). Erst mit einer GewSt-Betrags-
+      Regel + Buch-/Steuer-Abgrenzung sicher mappbar.
+
+  - rule_id: p23_koerperschaftsteuer_satz
+    output: koerperschaftsteuer
+    taxonomie_konzept: is.netIncome.tax
+    kategorie: Summenmussfeld
+    wj_versionen: ["6.7", "6.8"]
+    status: unklar
+    norm: "§ 23 KStG / GuV-Position Steuern vom Einkommen und Ertrag"
+    begruendung: >-
+      (a) Kein KSt-spezifisches GuV-Konzept in der Taxonomie - nur das Aggregat
+      is.netIncome.tax (Summenmussfeld, umfasst KSt + GewSt + SolZ), plus das
+      GewSt-Detail is.netIncome.tax.gewst. Eine 1:1-Zuordnung KSt-Betrag ->
+      Aggregat waere falsch (Aggregat ist mehr als KSt). (b) festgesetzte KSt !=
+      bilanzieller Steueraufwand (Steuerrueckstellung/latente Steuern). Nicht
+      ohne Aufteilungs-/Abgrenzungslogik mappbar.
+
+  - rule_id: null
+    output: null
+    taxonomie_konzept: bs.eqLiab.equity.netIncome.taxBalanceGenerally.transferDiffTaxAccounts
+    kategorie: Mussfeld
+    wj_versionen: ["6.7", "6.8"]
+    status: unklar
+    norm: "§ 5 Abs. 1 EStG (Massgeblichkeit) / steuerlicher Ausgleichsposten"
+    begruendung: >-
+      Ueberleitungswert / steuerlicher Ausgleichsposten (HandelsBil->SteuerBil).
+      Erzeuger waere die Massgeblichkeits-/Ueberleitungsrechnung (hbst.transfer-
+      Tupeltabelle, 20 xsd / 19 reference-fiscal), die NICHT als produktive Regel
+      formalisiert ist (kein rule_id 'b2_massgeblichkeit' in der Registry). In-
+      Scope-Mussfeld ohne heutigen Regel-Erzeuger - als offene Position gefuehrt.
+
+# Nicht gemappt (bewusst, kein Rate-Zwang):
+# - GewSt-Ketten-Zwischengroessen p7_gewerbeertrag/p8_1_hinzurechnung/
+#   p9_kuerzungen_ez2025: Steuerberechnungs-Zwischenwerte, KEINE E-Bilanz-
+#   Bilanz-/GuV-Positionen (E-Bilanz = handels-/steuerbilanzielle Rechnungslegung,
+#   nicht die GewSt-Messbetragskette). Out of scope, nicht erzwungen.
+# - hbst.transfer.* Tupeltabelle: kein Einzelkonzept-Muss, keine Einzelregel.
