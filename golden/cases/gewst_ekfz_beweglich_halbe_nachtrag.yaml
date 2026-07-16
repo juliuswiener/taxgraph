@@ -1,0 +1,38 @@
+id: gewst_ekfz_beweglich_halbe_nachtrag
+beschreibung: >-
+  NEGATIVTEST / Stufe-A-Cut-Tripwire § 8 Nr. 1 Buchst. d GewSt (E-Kfz-Quote).
+  Sachverhalt: gewst_miet_beweglich 3.000.000 = Leasingraten NUR fuer qualifizierte
+  Elektro-/Hybridfahrzeuge (§ 8 Nr. 1 d Satz 2). Rechtlich richtig waere die HALBIERUNG
+  der Satz-1-Hinzurechnung ("nur zur Haelfte vorzunehmen" -> 1/10 statt 1/5): Summe
+  3.000.000/10 = 300.000; (300.000-200.000)/4 = 25.000; Gewerbeertrag 500.000+25.000
+  = 525.000; (525.000-24.500)*3,5% = 17.517,50 = 1.751.750 ct. Die PRODUKTIVE Regel
+  p8_1_hinzurechnung bildet die E-Kfz-Halbierung NICHT ab (Stufe-A-Zuschnitt: hinweis
+  "E-/Hybrid-/Fahrrad-Halbierung von Buchst. d (1/10 statt 1/5) = benannter Nachtrag,
+  hier Standardfall"). Daher pinnt die Erwartung den 1/5-STANDARDPFAD: Summe
+  3.000.000/5 = 600.000; (600.000-200.000)/4 = 100.000 Hinzurechnung; Gewerbeertrag
+  500.000+100.000 = 600.000; (600.000-24.500)*3,5% = 20.142,50 = 2.014.250 ct.
+  TRIPWIRE: sobald die E-Kfz-Halbierung modelliert wird, produziert der Runner
+  1.751.750 != gepinnte 2.014.250 -> Fall wird ROT und erzwingt die Erwartungs-
+  Anpassung (Delta Messbetrag 2.625,00 EUR). Bis dahin dokumentiert der Fall den Cut.
+  Micro-Drift (nicht ausgerechnet, nur vermerkt): Hybrid-Eignung setzt Reichweite
+  >= 80 km voraus (§ 8 Nr. 1 d Satz 2 bb); § 36 Abs. 4 Satz 2 laesst fuer Vertraege
+  VOR 1.1.2025 statt 80 km bereits 60 km genuegen (Vertragsabschluss-Kohorte, KEINE
+  EZ-Schwelle) — VZ 2026 hier => 80-km-Fassung. NACHTRAG-VERMERK: an der Regel p8_1
+  wird NICHTS geaendert (Instructor-Auflage); dieser Fall ist reiner Dokumentations-
+  /Tripwire-Golden fuer den zurueckgestellten E-Kfz-Zuschnitt.
+
+sachverhalt:
+  gewerbesteuer: true
+  veranlagungszeitraum: 2026
+  gewinn_gewerbebetrieb: 500000
+  gewst_miet_beweglich: 3000000
+
+erwartung:
+  gewst_cent: 2014250
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 8 Nr. 1 Buchst. d GewStG (Satz 1: 1/5; Satz 2 E-Kfz-Halbierung = Nachtrag), EZ 2026"
+  datei: "sources/gesetze-im-internet/gewstg_p8_2026-07-16.txt"
+  zitatanker: "einem Fünftel der Miet- und Pachtzinsen (einschließlich Leasingraten) für die Benutzung von beweglichen Wirtschaftsgütern des Anlagevermögens"
