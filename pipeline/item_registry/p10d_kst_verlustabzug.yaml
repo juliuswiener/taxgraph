@@ -1,0 +1,77 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10d_kst_verlustabzug
+version: 10
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gesamtbetrag_einkuenfte
+  - einheit
+  formulierungen:
+  - Gesamtbetrag der Einkünfte wird in Euro angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verlustvortrag_bestand
+  - einheit
+  formulierungen:
+  - Verlustvortragsbestand wird in Euro angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - rundung
+  formulierungen:
+  - 70 % des übersteigenden Betrags werden auf Cent genau berechnet.
+  - Rundung auf Cent-Genauigkeit wird vorgenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verlustvortrag_bestand
+  - interpretation
+  formulierungen:
+  - Verlustvortragsbestand gilt als nicht ausgeglichene negative Einkünfte.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - verlustabzug
+  - einheit
+  formulierungen:
+  - Verlustabzug wird in Euro berechnet.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gesamtbetrag_einkuenfte
+  - interpretation
+  formulierungen:
+  - Gesamtbetrag bezieht sich auf den Gesamtbetrag der Einkünfte vor Abzügen.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 10d abs. 2 s. 1 estg
+  formulierungen:
+  - vorrangig vor Sonderausgaben, außergewöhnlichen Belastungen und sonstigen Abzugsbeträgen
+    abzuziehen
+  - nicht ausgeglichene negative Einkünfte, die nicht nach Absatz 1 abgezogen worden
+    sind
+  triage: bedingung_neu
+  klasse: unabhaengig
+  bedingung: verlustvortrag_bestand_festgestellt
+- art: norm_teil
+  anker:
+  - ref
+  - § 8 abs. 1 satz 1 kstg
+  formulierungen:
+  - Was als Einkommen gilt und wie das Einkommen zu ermitteln ist, bestimmt sich nach
+    den Vorschriften des Einkommensteuergesetzes
+  triage: bedingung_neu
+  klasse: unabhaengig
+  bedingung: rechtsform_kapitalgesellschaft_kein_splitting

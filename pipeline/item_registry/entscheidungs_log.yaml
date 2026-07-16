@@ -3431,3 +3431,193 @@ entscheidungen:
     klasse: wirkt_hinein
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-k4-triage
   timestamp: '2026-07-16T14:52:59.981403+00:00'
+- rule_id: p10d_kst_verlustabzug
+  schluessel: '["annahme", "betrifft_kat", "gesamtbetrag_einkuenfte", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gesamtbetrag_einkuenfte
+    - einheit
+    text: Gesamtbetrag der Einkünfte wird in Euro angenommen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
+  timestamp: '2026-07-16T15:00:01.299822+00:00'
+- rule_id: p10d_kst_verlustabzug
+  schluessel: '["annahme", "betrifft_kat", "verlustvortrag_bestand", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - verlustvortrag_bestand
+    - einheit
+    text: Verlustvortragsbestand wird in Euro angenommen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
+  timestamp: '2026-07-16T15:00:01.961778+00:00'
+- rule_id: p10d_kst_verlustabzug
+  schluessel: '["annahme", "betrifft_kat", "ergebnis", "rundung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - ergebnis
+    - rundung
+    text: 70 % des übersteigenden Betrags werden auf Cent genau berechnet.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
+  timestamp: '2026-07-16T15:00:02.612605+00:00'
+- rule_id: p10d_kst_verlustabzug
+  schluessel: '["annahme", "betrifft_kat", "ergebnis", "rundung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - ergebnis
+    - rundung
+    text: Rundung auf Cent-Genauigkeit wird vorgenommen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
+  timestamp: '2026-07-16T15:00:03.262704+00:00'
+- rule_id: p10d_kst_verlustabzug
+  schluessel: '["annahme", "betrifft_kat", "verlustvortrag_bestand", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - verlustvortrag_bestand
+    - interpretation
+    text: Verlustvortragsbestand gilt als nicht ausgeglichene negative Einkünfte.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
+  timestamp: '2026-07-16T15:00:03.920578+00:00'
+- rule_id: p10d_kst_verlustabzug
+  schluessel: '["annahme", "betrifft_kat", "verlustabzug", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - verlustabzug
+    - einheit
+    text: Verlustabzug wird in Euro berechnet.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
+  timestamp: '2026-07-16T15:00:04.585270+00:00'
+- rule_id: p10d_kst_verlustabzug
+  schluessel: '["annahme", "betrifft_kat", "gesamtbetrag_einkuenfte", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gesamtbetrag_einkuenfte
+    - interpretation
+    text: Gesamtbetrag bezieht sich auf den Gesamtbetrag der Einkünfte vor Abzügen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
+  timestamp: '2026-07-16T15:00:05.247455+00:00'
+- rule_id: p10d_kst_verlustabzug
+  schluessel: '["norm_teil", "ref", "§ 10d abs. 2 s. 1 estg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 10d abs. 2 s. 1 estg
+    text: vorrangig vor Sonderausgaben, außergewöhnlichen Belastungen und sonstigen
+      Abzugsbeträgen abzuziehen
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
+  timestamp: '2026-07-16T15:00:05.920467+00:00'
+- rule_id: p10d_kst_verlustabzug
+  schluessel: '["norm_teil", "ref", "§ 8 abs. 1 satz 1 kstg"]'
+  triage: bedingung_neu
+  bedingung: rechtsform_kapitalgesellschaft_kein_splitting
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8 abs. 1 satz 1 kstg
+    text: Was als Einkommen gilt und wie das Einkommen zu ermitteln ist, bestimmt
+      sich nach den Vorschriften des Einkommensteuergesetzes
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
+  timestamp: '2026-07-16T15:00:06.579610+00:00'
+- rule_id: p10d_kst_verlustabzug
+  schluessel: '["norm_teil", "ref", "§ 10d abs. 2 s. 1 estg"]'
+  triage: bedingung_neu
+  bedingung: verlustvortrag_bestand_festgestellt
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 10d abs. 2 s. 1 estg
+    text: nicht ausgeglichene negative Einkünfte, die nicht nach Absatz 1 abgezogen
+      worden sind
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
+  timestamp: '2026-07-16T15:00:07.260657+00:00'

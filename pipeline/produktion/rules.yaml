@@ -7282,3 +7282,82 @@ regeln:
     quelle: § 1 Abs. 1 Nr. 1 i.V.m. § 10 KStG
     datei: sources/gesetze-im-internet/kstg_p10_2026-07-16.txt
     beschreibung: 'rechtsform = Kapitalgesellschaft (§ 1 Abs. 1 Nr. 1); Hinzurechnung nichtabziehbarer Aufwendungen im KSt-Einkommen. Abgrenzung gegen PersGes-Kern (C24).'
+
+- rule_id: p10d_kst_verlustabzug
+  norm: § 8 Abs. 1 KStG i.V.m. § 10d Abs. 2 EStG (Verlustvortrag Kapitalgesellschaft, 1-Mio-Sockel + 70 %)
+  hinweis: 'verlustabzug = min(verlustvortrag_bestand, 1000000 + (70 / 100) * max(0, gesamtbetrag_einkuenfte - 1000000)). Die Koerperschaftsteuer bemisst sich nach dem Einkommen, das sich nach den Vorschriften des EStG bestimmt (§ 8 Abs. 1 KStG) -> der Verlustvortrag laeuft ueber § 10d Abs. 2 EStG. Kapitalgesellschaft kennt KEINE Zusammenveranlagung -> Sockel FIX 1.000.000 (nicht 2.000.000). 70 ist ein PROZENTWERT -> Division durch 100 in decimal rechnen, Cent-Schnitt ZULETZT. verlustvortrag_bestand = zum Schluss des Vorjahres gesondert festgestellter verbleibender Verlustvortrag (State-Input, >= 0), Mehrjahres-Fortschreibung (§ 10d Abs. 4) NICHT hier. WICHTIG 60/70: hier 70 % wie § 10d EStG (KSt-Verweis ueber § 8 Abs. 1), NICHT 60 % wie § 10a GewStG - die 60/70-Trennung ist spiegelbildlich zum GewSt-Korpus im Golden zu verankern (bei GdE 5 Mio / Bestand 5 Mio ergibt 70 % -> 3.800.000, 60 % ergaebe 3.400.000). Verlustruecktrag (§ 10d Abs. 1), § 8c/§ 8d (Verlustuntergang bei Anteilseignerwechsel) = Nachtrag. FORMALISIERUNG: EINE unbedingte Definition (min/max), KEINE bedingten exceptions.'
+  quellen:
+  - typ: gesetz
+    label: § 10d Abs. 2 S. 1 EStG (Verlustvortrag, 1-Mio-Sockel + 70 %)
+    datei: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    auszug: Nicht ausgeglichene negative Einkünfte, die nicht nach Absatz 1 abgezogen worden sind, sind in den folgenden Veranlagungszeiträumen bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt, darüber hinaus bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte vorrangig vor Sonderausgaben, außergewöhnlichen Belastungen und sonstigen Abzugsbeträgen abzuziehen (Verlustvortrag).
+  - typ: gesetz
+    label: § 8 Abs. 1 Satz 1 KStG (Einkommen nach EStG-Vorschriften — § 10d anwendbar)
+    datei: sources/gesetze-im-internet/kstg_p8_2026-07-16.txt
+    zitatanker: bestimmt sich nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes
+    auszug: Was als Einkommen gilt und wie das Einkommen zu ermitteln ist, bestimmt sich nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes.
+  signature:
+    scope: VerlustabzugKoerperschaft
+    inputs:
+      gesamtbetrag_einkuenfte: money
+      verlustvortrag_bestand: money
+    output: verlustabzug
+  raster:
+  - gesamtbetrag_einkuenfte: 900000
+    verlustvortrag_bestand: 700000
+  - gesamtbetrag_einkuenfte: 5000000
+    verlustvortrag_bestand: 5000000
+  - gesamtbetrag_einkuenfte: 5000000
+    verlustvortrag_bestand: 2000000
+  - gesamtbetrag_einkuenfte: 5000000
+    verlustvortrag_bestand: 0
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'Sockel bindet nicht: GdE 900.000 < 1 Mio -> cap = 1.000.000. min(700.000, 1.000.000) = 700.000,00 (voller Bestand).'
+    inputs:
+      gesamtbetrag_einkuenfte: 900000
+      verlustvortrag_bestand: 700000
+    expected: 700000.0
+  - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: '70-%-DECKEL bindet (60/70-Kontrast!): cap = 1.000.000 + 0,70 x (5.000.000 - 1.000.000) = 1.000.000 + 2.800.000 = 3.800.000. min(5 Mio, 3,8 Mio) = 3.800.000,00. Mit 60 % (§ 10a GewStG) waeren es 3.400.000 - hier NICHT.'
+    inputs:
+      gesamtbetrag_einkuenfte: 5000000
+      verlustvortrag_bestand: 5000000
+    expected: 3800000.0
+  - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'Bestand kappt: cap = 3.800.000, aber Bestand nur 2.000.000. min(2.000.000, 3.800.000) = 2.000.000,00.'
+    inputs:
+      gesamtbetrag_einkuenfte: 5000000
+      verlustvortrag_bestand: 2000000
+    expected: 2000000.0
+  - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL kein Vortrag: min(0, 3.800.000) = 0,00.'
+    inputs:
+      gesamtbetrag_einkuenfte: 5000000
+      verlustvortrag_bestand: 0
+    expected: 0.0
+  geltungsbedingungen:
+  - bedingung: verlustvortrag_bestand_festgestellt
+    deckt_ab: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    quelle: § 10d Abs. 2 i.V.m. Abs. 4 EStG
+    datei: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    beschreibung: 'verlustvortrag_bestand = der zum Schluss des Vorjahres gesondert festgestellte verbleibende Verlustvortrag (Abs. 4), State-Input aus der VZ-Integration; die Fortschreibung selbst ist NICHT Gegenstand. Bestand >= 0. Verlustruecktrag (Abs. 1) = Nicht-Gegenstand (fremder VZ).'
+  - bedingung: sockel_1mio_plus_70prozent
+    deckt_ab: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
+    quelle: § 10d Abs. 2 Satz 1 EStG
+    datei: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    beschreibung: 'Hoechstbetrag = 1.000.000 unbeschraenkt + 70 % (= 70/100 exakt) des 1 Mio uebersteigenden Gesamtbetrags der Einkuenfte; Abzug = min(Bestand, Hoechstbetrag). 70 % wie § 10d EStG, NICHT 60 % wie § 10a GewStG. GUELTIGKEITS-FENSTER (Gueltigkeits-Direktive): die 70-%-Quote gilt fuer VZ 2024-2027 (WtChancenG v. 27.03.2024, i.V.m. § 52 EStG); ab VZ 2028 Rueckfall auf 60 % = benannter Nachtrag. Im Bau-Scope VZ 2024-2026 einfassig konstant 70 %; die 2028-Schwelle ist NICHT still, sondern hier ausgewiesen und bei einem kuenftigen VZ-2028-Schnitt neu zu formalisieren.'
+  - bedingung: rechtsform_kapitalgesellschaft_kein_splitting
+    deckt_ab: bestimmt sich nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes
+    quelle: § 1 Abs. 1 Nr. 1 i.V.m. § 8 Abs. 1 KStG
+    datei: sources/gesetze-im-internet/kstg_p8_2026-07-16.txt
+    beschreibung: 'rechtsform = Kapitalgesellschaft (§ 1 Abs. 1 Nr. 1): kennt KEINE Zusammenveranlagung/Splitting -> Sockel FIX 1.000.000 (nicht 2 Mio wie bei zusammenveranlagten natuerlichen Personen). § 8 Abs. 1 KStG traegt den § 10d-EStG-Verweis. Abgrenzung gegen PersGes-Kern (C24).'
