@@ -1,0 +1,16 @@
+id: p35c_amtlich_a2_200k_cap14k
+beschreibung: "AMTLICHES BEISPIEL (BMF § 35c-Einzelfragen 2025-08-21, Bsp. 6): 200.000 € Aufwand, Abschluss-/Folgejahr (7 %). min(7 % x 200.000 = 14.000, Jahreshöchstbetrag 14.000) = 14.000 € (Cap bindet exakt) -> sanierung_ermaessigung_cent = 1.400.000. Amtlicher Jahreshöchstbetrag."
+
+sachverhalt:
+  sanierungsaufwendungen: 200000
+  ist_uebernaechstes_foerderjahr: false
+
+erwartung:
+  sanierung_ermaessigung_cent: 1400000
+
+quelle:
+  authority: verwaltung
+  redistributable: true
+  fundstelle: "§ 35c Abs. 1 EStG / BMF-Schreiben 2025-08-21 (Jahreshöchstbetrag 14.000 € Jahr 1/2)"
+  datei: "sources/bmf/bmf_35c_einzelfragen_2025-08-21.txt"
+  zitatanker: "die Jahreshöchstbeträge der Steuerermäßigung von 14.000 Euro, 14.000 Euro und 12.000 Euro"

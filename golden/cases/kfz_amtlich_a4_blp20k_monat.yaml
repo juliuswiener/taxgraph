@@ -1,0 +1,16 @@
+id: kfz_amtlich_a4_blp20k_monat
+beschreibung: "AMTLICHES BEISPIEL (EÜR-Anleitung 2025, 1 %-Regel): Bruttolistenpreis 20.000 €, voller Nutzungswert (Teiler 1). Regel-Output ist der MONATSwert: 20.000 / 100 / 1 = 200 € je Monat -> nutzungswert_monat_cent = 20.000. HINWEIS: das amtliche Beispiel nennt den JAHRESwert 2.400 € = 200 x 12 Kalendermonate; die Regel liefert den Monatswert by design (x12 = amtlicher Jahreswert)."
+
+sachverhalt:
+  bruttolistenpreis: 20000
+  bruchteils_teiler: 1
+
+erwartung:
+  nutzungswert_monat_cent: 20000
+
+quelle:
+  authority: verwaltung
+  redistributable: true
+  fundstelle: "§ 6 Abs. 1 Nr. 4 S. 2 EStG / EÜR-Anleitung 2025 (1 %-Regel, 20.000 € x 12 x 1% = 2.400 € Jahr)"
+  datei: "sources/bfinv/euer_2025.txt"
+  zitatanker: "20.000 € x 12 x 1% = 2.400 €"

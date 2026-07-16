@@ -1,0 +1,16 @@
+id: p35c_amtlich_a1_130k_7prozent
+beschreibung: "AMTLICHES BEISPIEL (BMF § 35c-Einzelfragen 2025-08-21, Bsp. 5): energetische Sanierung 130.000 € Aufwand, Abschluss-/Folgejahr (7 %, kein übernächstes Förderjahr). min(7 % x 130.000, 14.000) = 9.100 € -> sanierung_ermaessigung_cent = 910.000. Amtlicher Wert (drittes Bein = BMF selbst; == dev-2-Hand == meine Rechnung)."
+
+sachverhalt:
+  sanierungsaufwendungen: 130000
+  ist_uebernaechstes_foerderjahr: false
+
+erwartung:
+  sanierung_ermaessigung_cent: 910000
+
+quelle:
+  authority: verwaltung
+  redistributable: true
+  fundstelle: "§ 35c Abs. 1 EStG / BMF-Schreiben 2025-08-21 (7 %, 9.100 € bei 130.000 € Aufwand)"
+  datei: "sources/bmf/bmf_35c_einzelfragen_2025-08-21.txt"
+  zitatanker: "Steuerermäßigung von 7 % (9.100 Euro) im Veranlagungszeitraum 2020"

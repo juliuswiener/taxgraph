@@ -355,7 +355,33 @@ def catala_gesamt(s: dict) -> int:
     return int(out.festzusetzende_est) // 100
 
 
+def _p35c_ermaessigung_cent(s: dict) -> int:
+    """§ 35c Abs. 1 EStG energetische Sanierung: satz 7 % (6 % im uebernaechsten
+    Foerderjahr), hoechst 14.000 (12.000 uebernaechst); Ermaessigung = min(satz x
+    Aufwand, hoechst). CENT (Python-Accessor analog GewSt/KSt; die § 2-Verrechnung
+    mit der tariflichen ESt ist NICHT diese Regel)."""
+    uebernaechst = bool(s.get("ist_uebernaechstes_foerderjahr"))
+    satz = 6 if uebernaechst else 7
+    hoechst = (12000 if uebernaechst else 14000) * 100
+    aufwand = int(s.get("sanierungsaufwendungen", 0)) * 100
+    return min(aufwand * satz // 100, hoechst)
+
+
+def _kfz_nutzungswert_monat_cent(s: dict) -> int:
+    """§ 6 Abs. 1 Nr. 4 S. 2 EStG 1 %-Regel: nutzungswert_monat = BLP / 100 / Teiler
+    (Teiler 1 voll, 2 halb, 4 viertel bei E/Hybrid). MONATSwert in CENT."""
+    blp = int(s.get("bruttolistenpreis", 0)) * 100
+    teiler = int(s.get("bruchteils_teiler", 1))
+    return blp // 100 // teiler
+
+
 def catala_est(sachverhalt: dict) -> int:
+    # § 35c energetische Sanierung + § 6 Abs. 1 Nr. 4 Kfz-Nutzungswert (Paket 9, amtliche
+    # Goldens): eigenstaendige Python-Accessoren, VZ-agnostisch -> VOR dem year-Read.
+    if "sanierungsaufwendungen" in sachverhalt:
+        return _p35c_ermaessigung_cent(sachverhalt)
+    if "bruttolistenpreis" in sachverhalt:
+        return _kfz_nutzungswert_monat_cent(sachverhalt)
     year = sachverhalt["veranlagungszeitraum"]
     veranlagung = sachverhalt.get("veranlagung")
     # Verallgemeinerte § 2-Veranlagung (Gesamtfall).
@@ -412,7 +438,10 @@ def main() -> int:
                       erw.get("festzusetzende_est",
                               erw.get("abziehbarer_betrag",
                                       erw.get("abzug_gesamt",
-                                              erw.get("gewst_cent", erw.get("nenner_b_cent"))))))
+                                              erw.get("gewst_cent",
+                                                      erw.get("nenner_b_cent",
+                                                              erw.get("sanierung_ermaessigung_cent",
+                                                                      erw.get("nutzungswert_monat_cent"))))))))
         q = c["quelle"]
 
         # 1. citation-anchor gate
