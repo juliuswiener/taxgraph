@@ -7,6 +7,13 @@ CH/NL). Zwei Quell-Stücke: unveränderte Artikel ankern in `dba_lu_abkommen_201
 (BGBl 2012 II S. 1402), die vom **Protokoll 2023** (BGBl 2023 II Nr. 334) GEÄNDERTEN Artikel
 ankern in `dba_lu_protokoll_2023`. Je Katalog-Zeile ist die Quelle ausgewiesen.
 
+**Gültigkeits-Nachanker (Auflage 5, 2026-07-16):** Die Anwendbarkeit des Protokolls 06.07.2023 **ab
+01.01.2024** ist jetzt zusätzlich **amtlich am `bmf_stand_dba_2026` bestätigt** (bisher nur über die
+BGBl-Fundstelle des Protokoll-Freezes belegt): DBA-Fundstellen-Tabelle, Anker `Luxemburg 23.04.2012`
++ Protokoll-Zeile `06.07.2023 2023 334 2024 899 2024 147 2024 906 01.01.2024` (beide voll-Länge im
+W1-Skript verifiziert). LU trägt **kein** BEPS-MLI-Anwendungsgesetz und steht dort nur in der
+DBA-Fundstellen-Liste (kein MLI-Split — bestätigt die einfassige VZ-2024–2026-Führung).
+
 Methodenartikel **Art. 22 Abs. 1** (Deutschland als Ansässigkeitsstaat). Alle Anker VOLL-Länge
 via `gates._normalize` verifiziert (Skript-Ausgabe: alle `OK`). Andockung wie AT/US/CH an das
 `dba_methode`/`dba_staat`-Interface (Charge 20): **Freistellung → § 32b** (`p32b_progressions

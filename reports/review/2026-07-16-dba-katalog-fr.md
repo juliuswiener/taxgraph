@@ -104,6 +104,14 @@ Andockung: (`dba_staat = FR`, Einkunftsart) → `dba_methode` → `p32b` / `p34c
 `dba_staat = FR`), Grenzgänger-Sonderfall separat. Geltungsbedingungs-Paket `dba_methode_fr_katalog`,
 kein Rechenkern.
 
+**Gültigkeits-Nachanker (Auflage 5, 2026-07-16):** Die MLI-Randnotiz „ab VZ 2025" ist jetzt **amtlich am
+`bmf_stand_dba_2026` verankerbar** (bisher nur Recherche-Beleg): I.2-Tabelle „Abkommen, auf die das
+BEPS-MLI-Anwendungsgesetz anzuwenden ist", Anker `Frankreich 2024 205 2025 5 01.01.2025`
+(Anwendungsgesetz BGBl 2024 I Nr. 205, `Das Gesetz zur Anwendung des Mehrseitigen Übereinkommens vom
+24. November 2016 und zu weiteren`). Beide voll-Länge im W1-Skript
+`2026-07-16-dba-katalog-estr-anker-verify.py` verifiziert. Weiterhin **keine Methoden-Änderung**, nur
+Missbrauchs-Vorbehalt.
+
 **Nachträge / Nicht-Gegenstand:** BEPS-MLI-Overlay ab VZ 2025 (Missbrauchsklauseln/PPT — Randnotiz,
 keine Methoden-Änderung); Grenzgänger-Grenzzone/45-Tage/Städteliste; Fiskalausgleich Art. 13a
 (1,5 %) + Art. 13c (Rentenfiskalausgleich, zwischen-staatlich); Vorrang Art. 14 öff. Kassen;
