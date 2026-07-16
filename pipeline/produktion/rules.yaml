@@ -6946,3 +6946,85 @@ regeln:
     deckt_ab: Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent
     quelle: § 11 Abs. 2 GewStG
     beschreibung: 'Steuermesszahl 3,5 % (= 0,035) auf den um Abrundung + Freibetrag geminderten Gewerbeertrag. Hausgewerbe-Ermaessigung 56 % (Abs. 3) = Nachtrag.'
+- rule_id: p8_1_einkommen_koerperschaft
+  norm: § 8 Abs. 1 i.V.m. Abs. 3 Satz 2/3 KStG (Einkommensermittlung Kapitalgesellschaft, Slot + vGA + verdeckte Einlagen)
+  hinweis: 'einkommen = gewinn_estg + verdeckte_gewinnausschuettung - verdeckte_einlage. § 8 Abs. 1: was als Einkommen gilt/wie es zu ermitteln ist, bestimmt sich nach den Vorschriften des EStG UND dieses Gesetzes -> SLOT-Regel wie § 7 GewStG: gewinn_estg = der nach EStG-Vorschriften ermittelte Gewinn ist INPUT (nicht hier gerechnet). § 8 Abs. 3 Satz 2: verdeckte Gewinnausschuettungen (vGA) mindern das Einkommen NICHT -> als Betrag wieder HINZURECHNEN (+). Satz 3: verdeckte Einlagen erhoehen das Einkommen NICHT -> als Betrag ABZIEHEN (-). BEIDE sind reine SACHVERHALTS-/INPUT-Betraege (vorab bewertet), KEINE Bewertungslogik hier (Fremdvergleich/Angemessenheit ist Sachverhalt). money + money - money, EXAKT, keine Rundung. NEGATIVES Einkommen ZULAESSIG (Verlust -> § 10d, KEIN Boden bei 0). § 8b (Beteiligungsertraege), § 9 (Spenden), § 10 (nichtabziehbar), § 10d (Verlust) = eigene nachgelagerte Regeln, NICHT hier. rechtsform = Kapitalgesellschaft (Geltungsbedingung § 1 Abs. 1 Nr. 1); Betriebe gewerblicher Art / oeffentl.-rechtl. Rundfunk (Abs. 1 Saetze 2-3) = Nachtrag. FORMALISIERUNG: EINE unbedingte Definition (einkommen equals gewinn_estg + verdeckte_gewinnausschuettung - verdeckte_einlage), KEINE bedingten exceptions / Fallunterscheidungen auf > 0 - vGA und verdeckte Einlage sind vorzeichenbehaftete Summanden, die IMMER (auch bei Betrag 0) addiert bzw. subtrahiert werden.'
+  quellen:
+  - typ: gesetz
+    label: § 8 Abs. 1 Satz 1 KStG (Einkommen bestimmt sich nach EStG + KStG)
+    datei: sources/gesetze-im-internet/kstg_p8_2026-07-16.txt
+    zitatanker: bestimmt sich nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes
+    auszug: Was als Einkommen gilt und wie das Einkommen zu ermitteln ist, bestimmt sich nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes.
+  - typ: gesetz
+    label: § 8 Abs. 3 Satz 2 KStG (vGA mindern das Einkommen nicht)
+    datei: sources/gesetze-im-internet/kstg_p8_2026-07-16.txt
+    zitatanker: mindern das Einkommen nicht
+    auszug: Auch verdeckte Gewinnausschüttungen sowie Ausschüttungen jeder Art auf Genussrechte, mit denen das Recht auf Beteiligung am Gewinn und am Liquidationserlös der Kapitalgesellschaft verbunden ist, mindern das Einkommen nicht.
+  - typ: gesetz
+    label: § 8 Abs. 3 Satz 3 KStG (verdeckte Einlagen erhöhen das Einkommen nicht)
+    datei: sources/gesetze-im-internet/kstg_p8_2026-07-16.txt
+    zitatanker: Verdeckte Einlagen erhöhen das Einkommen nicht
+    auszug: Verdeckte Einlagen erhöhen das Einkommen nicht.
+  signature:
+    scope: EinkommenKoerperschaft
+    inputs:
+      gewinn_estg: money
+      verdeckte_gewinnausschuettung: money
+      verdeckte_einlage: money
+    output: einkommen
+  raster:
+  - gewinn_estg: 500000
+    verdeckte_gewinnausschuettung: 0
+    verdeckte_einlage: 0
+  - gewinn_estg: 500000
+    verdeckte_gewinnausschuettung: 80000
+    verdeckte_einlage: 30000
+  - gewinn_estg: 20000
+    verdeckte_gewinnausschuettung: 0
+    verdeckte_einlage: 50000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/kstg_p8_2026-07-16.txt
+    zitatanker: bestimmt sich nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes
+    herkunft: synthetisch
+    rechenweg: 'Reiner Slot ohne Korrekturen: einkommen = 500.000 + 0 - 0 = 500.000,00 (nach EStG ermittelter Gewinn, § 8 Abs. 1).'
+    inputs:
+      gewinn_estg: 500000
+      verdeckte_gewinnausschuettung: 0
+      verdeckte_einlage: 0
+    expected: 500000.0
+  - quelle: sources/gesetze-im-internet/kstg_p8_2026-07-16.txt
+    zitatanker: mindern das Einkommen nicht
+    herkunft: synthetisch
+    rechenweg: 'vGA + verdeckte Einlage: 500.000 + 80.000 (vGA, Abs. 3 S. 2 hinzu) - 30.000 (verd. Einlage, Abs. 3 S. 3 ab) = 550.000,00.'
+    inputs:
+      gewinn_estg: 500000
+      verdeckte_gewinnausschuettung: 80000
+      verdeckte_einlage: 30000
+    expected: 550000.0
+  - quelle: sources/gesetze-im-internet/kstg_p8_2026-07-16.txt
+    zitatanker: Verdeckte Einlagen erhöhen das Einkommen nicht
+    herkunft: synthetisch
+    rechenweg: 'NEGATIV: 20.000 + 0 - 50.000 = -30.000,00 (verdeckte Einlage uebersteigt Gewinn -> negatives Einkommen, § 10d-Andock, KEIN Boden bei 0).'
+    inputs:
+      gewinn_estg: 20000
+      verdeckte_gewinnausschuettung: 0
+      verdeckte_einlage: 50000
+    expected: -30000.0
+  geltungsbedingungen:
+  - bedingung: rechtsform_kapitalgesellschaft
+    deckt_ab: bestimmt sich nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes
+    quelle: § 1 Abs. 1 Nr. 1 i.V.m. § 8 Abs. 1 KStG
+    datei: sources/gesetze-im-internet/kstg_p8_2026-07-16.txt
+    beschreibung: 'rechtsform = Kapitalgesellschaft (§ 1 Abs. 1 Nr. 1: AG/KGaA/GmbH/SE, Geschaeftsleitung oder Sitz im Inland). HART abgegrenzt gegen den PersGes-Kern (Charge 24, § 15/§ 15a EStG) - keine Regel darf fuer beide Rechtsformen gleichzeitig feuern. Diese Regel ist der Nenner-B-Einstieg (KapGes); Nenner A (natuerl. Person/PersG) laeuft ueber § 15/W2.'
+  - bedingung: einkommen_slot_nach_estg
+    deckt_ab: bestimmt sich nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes
+    quelle: § 8 Abs. 1 KStG
+    beschreibung: 'gewinn_estg = der nach den EStG-Vorschriften (+ KStG-Spezifika) ermittelte Gewinn ist INPUT aus der Bilanz-/§-15-Integration; diese Regel rechnet ihn NICHT selbst, sondern uebernimmt ihn als Slot (Analogie § 7 GewStG).'
+  - bedingung: vga_mindert_einkommen_nicht
+    deckt_ab: mindern das Einkommen nicht
+    quelle: § 8 Abs. 3 Satz 2 KStG
+    beschreibung: 'verdeckte_gewinnausschuettung = INPUT-Betrag (Sachverhalt, vorab bewertet). vGA mindern das Einkommen nicht -> als Betrag hinzugerechnet. KEINE Bewertungs-/Angemessenheitslogik hier.'
+  - bedingung: verdeckte_einlage_erhoeht_einkommen_nicht
+    deckt_ab: Verdeckte Einlagen erhöhen das Einkommen nicht
+    quelle: § 8 Abs. 3 Satz 3 KStG
+    beschreibung: 'verdeckte_einlage = INPUT-Betrag (Sachverhalt). Verdeckte Einlagen erhoehen das Einkommen nicht -> als Betrag abgezogen. Abs. 3 Saetze 4-6 (Korrespondenzprinzip) = Nachtrag.'

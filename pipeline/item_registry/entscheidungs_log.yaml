@@ -2726,3 +2726,164 @@ entscheidungen:
     klasse: wirkt_hinein
   entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
   timestamp: '2026-07-16T10:15:30.390328+00:00'
+- rule_id: p8_1_einkommen_koerperschaft
+  schluessel: '["abweichung", "abweichung_text", "vga mindern das einkommen nicht,
+    werden aber hier addiert."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - vga mindern das einkommen nicht, werden aber hier addiert.
+    text: vGA mindern das Einkommen nicht, werden aber hier addiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k1-doppelverneinung
+  timestamp: '2026-07-16T14:15:35.182874+00:00'
+- rule_id: p8_1_einkommen_koerperschaft
+  schluessel: '["abweichung", "abweichung_text", "verdeckte_gewinnausschuettung wird
+    addiert, obwohl sie das einkommen nicht mindern darf."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - verdeckte_gewinnausschuettung wird addiert, obwohl sie das einkommen nicht mindern
+      darf.
+    text: verdeckte_gewinnausschuettung wird addiert, obwohl sie das Einkommen nicht
+      mindern darf.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k1-doppelverneinung
+  timestamp: '2026-07-16T14:15:35.775305+00:00'
+- rule_id: p8_1_einkommen_koerperschaft
+  schluessel: '["abweichung", "abweichung_text", "verdeckte_einlage wird subtrahiert,
+    obwohl sie das einkommen nicht erhoehen darf."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - verdeckte_einlage wird subtrahiert, obwohl sie das einkommen nicht erhoehen
+      darf.
+    text: verdeckte_einlage wird subtrahiert, obwohl sie das Einkommen nicht erhöhen
+      darf.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k1-doppelverneinung
+  timestamp: '2026-07-16T14:15:36.359918+00:00'
+- rule_id: p8_1_einkommen_koerperschaft
+  schluessel: '["abweichung", "abweichung_text", "verdeckte gewinnausschuettungen
+    erhoehen das einkommen, obwohl sie es nach § 8 abs. 3 satz 2 kstg nicht mindern
+    duerfen."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - verdeckte gewinnausschuettungen erhoehen das einkommen, obwohl sie es nach §
+      8 abs. 3 satz 2 kstg nicht mindern duerfen.
+    text: verdeckte Gewinnausschüttungen erhöhen das Einkommen, obwohl sie es nach
+      § 8 Abs. 3 Satz 2 KStG nicht mindern dürfen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k1-doppelverneinung
+  timestamp: '2026-07-16T14:15:36.945691+00:00'
+- rule_id: p8_1_einkommen_koerperschaft
+  schluessel: '["abweichung", "abweichung_text", "verdeckte einlagen mindern das einkommen,
+    obwohl sie es nach § 8 abs. 3 satz 3 kstg nicht erhoehen duerfen."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - verdeckte einlagen mindern das einkommen, obwohl sie es nach § 8 abs. 3 satz
+      3 kstg nicht erhoehen duerfen.
+    text: verdeckte Einlagen mindern das Einkommen, obwohl sie es nach § 8 Abs. 3
+      Satz 3 KStG nicht erhöhen dürfen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k1-doppelverneinung
+  timestamp: '2026-07-16T14:15:37.525661+00:00'
+- rule_id: p8_1_einkommen_koerperschaft
+  schluessel: '["norm_teil", "ref", "§ 8 abs. 1 satz 1 kstg"]'
+  triage: bedingung_neu
+  bedingung: einkommen_slot_nach_estg
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8 abs. 1 satz 1 kstg
+    text: Was als Einkommen gilt und wie das Einkommen zu ermitteln ist, bestimmt
+      sich nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes.
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k1-doppelverneinung
+  timestamp: '2026-07-16T14:15:38.116411+00:00'
+- rule_id: p8_1_einkommen_koerperschaft
+  schluessel: '["norm_teil", "ref", "§ 8 abs. 3 satz 2 kstg"]'
+  triage: bedingung_neu
+  bedingung: vga_mindert_einkommen_nicht
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8 abs. 3 satz 2 kstg
+    text: Auch verdeckte Gewinnausschüttungen sowie Ausschüttungen jeder Art auf Genussrechte,
+      mit denen das Recht auf Beteiligung am Gewinn und am Liquidationserlös der Kapitalgesellschaft
+      verbunden ist, minde
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k1-doppelverneinung
+  timestamp: '2026-07-16T14:15:38.708799+00:00'
+- rule_id: p8_1_einkommen_koerperschaft
+  schluessel: '["norm_teil", "ref", "§ 8 abs. 3 satz 3 kstg"]'
+  triage: bedingung_neu
+  bedingung: verdeckte_einlage_erhoeht_einkommen_nicht
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8 abs. 3 satz 3 kstg
+    text: Verdeckte Einlagen erhöhen das Einkommen nicht.
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k1-doppelverneinung
+  timestamp: '2026-07-16T14:15:39.312052+00:00'

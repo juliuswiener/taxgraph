@@ -1,0 +1,209 @@
+{
+  "bedingungen": [
+    "rechtsform_kapitalgesellschaft",
+    "einkommen_slot_nach_estg",
+    "vga_mindert_einkommen_nicht",
+    "verdeckte_einlage_erhoeht_einkommen_nicht"
+  ],
+  "candidate_id": "p8_1_einkommen_koerperschaft",
+  "catala_a": "declaration scope EinkommenKoerperschaft:\n  input gewinn_estg content money\n  input verdeckte_gewinnausschuettung content money\n  input verdeckte_einlage content money\n  output einkommen content money\n\nscope EinkommenKoerperschaft:\n  definition einkommen equals\n    gewinn_estg + verdeckte_gewinnausschuettung - verdeckte_einlage",
+  "catala_a_sha256": "7966e7fca0033fba51046f1f75932ae3035a8044edd42a1dda616c6620c6db3a",
+  "catala_b": "declaration scope EinkommenKoerperschaft:\n  input gewinn_estg content money\n  input verdeckte_gewinnausschuettung content money\n  input verdeckte_einlage content money\n  output einkommen content money\n\nscope EinkommenKoerperschaft:\n  definition einkommen equals gewinn_estg + verdeckte_gewinnausschuettung - verdeckte_einlage",
+  "catala_b_sha256": "9518d32bba401f796a2cb72ac9cfa9511ba3d5f46d75fc9f9f80b687b11a5ddf",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'einkommen'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "verdeckte Gewinnausschüttungen erhöhen das Einkommen, obwohl sie es nach § 8 Abs. 3 Satz 2 KStG nicht mindern dürfen.",
+      "verdeckte Einlagen mindern das Einkommen, obwohl sie es nach § 8 Abs. 3 Satz 3 KStG nicht erhöhen dürfen."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 2,
+        "annahmen": 0,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 8 abs. 3 satz 2 kstg"
+            ],
+            "text": "Auch verdeckte Gewinnausschüttungen sowie Ausschüttungen jeder Art auf Genussrechte, mit denen das Recht auf Beteiligung"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 8 abs. 3 satz 3 kstg"
+            ],
+            "text": "Verdeckte Einlagen erhöhen das Einkommen nicht."
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "verdeckte Gewinnausschüttungen erhöhen das Einkommen, obwohl sie es nach § 8 Abs. 3 Satz 2 KStG nicht mindern dürfen.",
+            "eingeschmolzen": "verdeckte Gewinnausschüttungen erhöhen das Einkommen, statt es nicht zu mindern.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "verdeckte Einlagen mindern das Einkommen, obwohl sie es nach § 8 Abs. 3 Satz 3 KStG nicht erhöhen dürfen.",
+            "eingeschmolzen": "verdeckte Einlagen mindern das Einkommen, statt es nicht zu erhöhen.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        3,
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "969029aa542c",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "einkommen_slot_nach_estg",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Was als Einkommen gilt und wie das Einkommen zu ermitteln ist, bestimmt sich nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes.",
+        "referenz": "§ 8 Abs. 1 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "vga_mindert_einkommen_nicht",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Auch verdeckte Gewinnausschüttungen sowie Ausschüttungen jeder Art auf Genussrechte, mit denen das Recht auf Beteiligung am Gewinn und am Liquidationserlös der Kapitalgesellschaft verbunden ist, mindern das Einkommen nicht.",
+        "referenz": "§ 8 Abs. 3 Satz 2 KStG"
+      },
+      {
+        "abgedeckt_von": "verdeckte_einlage_erhoeht_einkommen_nicht",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Verdeckte Einlagen erhöhen das Einkommen nicht.",
+        "referenz": "§ 8 Abs. 3 Satz 3 KStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-16T14:22:25+00:00"
+  },
+  "module_name": "EinkommenKoerperschaft",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

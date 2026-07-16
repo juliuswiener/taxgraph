@@ -1,0 +1,77 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p8_1_einkommen_koerperschaft
+version: 8
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - vga mindern das einkommen nicht, werden aber hier addiert.
+  formulierungen:
+  - vGA mindern das Einkommen nicht, werden aber hier addiert.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - verdeckte_gewinnausschuettung wird addiert, obwohl sie das einkommen nicht mindern
+    darf.
+  formulierungen:
+  - verdeckte_gewinnausschuettung wird addiert, obwohl sie das Einkommen nicht mindern
+    darf.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - verdeckte_einlage wird subtrahiert, obwohl sie das einkommen nicht erhoehen darf.
+  formulierungen:
+  - verdeckte_einlage wird subtrahiert, obwohl sie das Einkommen nicht erhöhen darf.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - verdeckte gewinnausschuettungen erhoehen das einkommen, obwohl sie es nach § 8
+    abs. 3 satz 2 kstg nicht mindern duerfen.
+  formulierungen:
+  - verdeckte Gewinnausschüttungen erhöhen das Einkommen, obwohl sie es nach § 8 Abs.
+    3 Satz 2 KStG nicht mindern dürfen.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - verdeckte einlagen mindern das einkommen, obwohl sie es nach § 8 abs. 3 satz 3
+    kstg nicht erhoehen duerfen.
+  formulierungen:
+  - verdeckte Einlagen mindern das Einkommen, obwohl sie es nach § 8 Abs. 3 Satz 3
+    KStG nicht erhöhen dürfen.
+  triage: nicht_echt
+- art: norm_teil
+  anker:
+  - ref
+  - § 8 abs. 1 satz 1 kstg
+  formulierungen:
+  - Was als Einkommen gilt und wie das Einkommen zu ermitteln ist, bestimmt sich nach
+    den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes.
+  triage: bedingung_neu
+  klasse: unabhaengig
+  bedingung: einkommen_slot_nach_estg
+- art: norm_teil
+  anker:
+  - ref
+  - § 8 abs. 3 satz 2 kstg
+  formulierungen:
+  - Auch verdeckte Gewinnausschüttungen sowie Ausschüttungen jeder Art auf Genussrechte,
+    mit denen das Recht auf Beteiligung am Gewinn und am Liquidationserlös der Kapitalgesellschaft
+    verbunden ist, minde
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: vga_mindert_einkommen_nicht
+- art: norm_teil
+  anker:
+  - ref
+  - § 8 abs. 3 satz 3 kstg
+  formulierungen:
+  - Verdeckte Einlagen erhöhen das Einkommen nicht.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: verdeckte_einlage_erhoeht_einkommen_nicht
