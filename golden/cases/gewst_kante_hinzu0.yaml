@@ -1,0 +1,19 @@
+id: gewst_kante_hinzu0
+beschreibung: "KANTE § 8 Nr.1: Summe der Finanzierungsanteile 140.000 (a 120.000 + f 80.000/4=20.000) < 200.000 Freibetrag -> Hinzurechnung 0 (Freibetrag als Schwelle nach oben, floored). Gewerbeertrag 400.000; § 11 = 13.142,50."
+
+sachverhalt:
+  gewerbesteuer: true
+  veranlagungszeitraum: 2026
+  gewinn_gewerbebetrieb: 400000
+  gewst_entgelte_schulden: 120000
+  gewst_rechte: 80000
+
+erwartung:
+  gewst_cent: 1314250
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 8 Nr.1 GewStG (200k-Freibetrag als Schwelle)"
+  datei: "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt"
+  zitatanker: "Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent"

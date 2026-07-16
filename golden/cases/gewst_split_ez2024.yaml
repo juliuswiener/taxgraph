@@ -1,0 +1,20 @@
+id: gewst_split_ez2024
+beschreibung: "§ 9-VZ-Split EZ 2024 (Altfassung): Gewinn 300.000 + § 8 25.000 (Summe 300.000: a 150.000 + e 300.000/2; (300k-200k)/4) - § 9 EZ2024 Einheitswert 400.000*1,2%=4.800 = Gewerbeertrag 320.200; § 11 = 10.349,50. Δ zu EZ2025 = +147 (Fassungswechsel JStG 2024, § 36 Abs.4b)."
+
+sachverhalt:
+  gewerbesteuer: true
+  veranlagungszeitraum: 2024
+  gewinn_gewerbebetrieb: 300000
+  gewst_entgelte_schulden: 150000
+  gewst_miet_unbeweglich: 300000
+  gewst_einheitswert: 400000
+
+erwartung:
+  gewst_cent: 1034950
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 9 Nr.1 S.1 GewStG a.F. (EZ 2024, 1,2 % Einheitswert)"
+  datei: "sources/bgbl/gewstg_p9_altfassung_ez2024.txt"
+  zitatanker: "1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden"

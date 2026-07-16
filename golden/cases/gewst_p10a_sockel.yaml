@@ -1,0 +1,18 @@
+id: gewst_p10a_sockel
+beschreibung: "§ 10a Gewerbeverlust (Sockel bindet nicht): massgeb. Gewerbeertrag 900.000 < 1 Mio, Fehlbetrag-Bestand 700.000 -> Kapazitaet 1.000.000, Abzug 700.000, verbleib. Gewerbeertrag 200.000; § 11 (200.000-24.500)*3,5% = 6.142,50."
+
+sachverhalt:
+  gewerbesteuer: true
+  veranlagungszeitraum: 2026
+  gewinn_gewerbebetrieb: 900000
+  fehlbetrag_bestand: 700000
+
+erwartung:
+  gewst_cent: 614250
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 10a S.1 GewStG (1-Mio-Sockel)"
+  datei: "sources/gesetze-im-internet/gewstg_p10a_2026-07-16.txt"
+  zitatanker: "bis zu 60 Prozent"

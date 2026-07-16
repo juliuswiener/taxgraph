@@ -1,0 +1,17 @@
+id: gewst_kante_mb0
+beschreibung: "KANTE § 11: Gewerbeertrag 20.000 < Freibetrag 24.500 -> Bemessung 0 (hoechstens abgerundeter Gewerbeertrag) -> Steuermessbetrag 0."
+
+sachverhalt:
+  gewerbesteuer: true
+  veranlagungszeitraum: 2026
+  gewinn_gewerbebetrieb: 20000
+
+erwartung:
+  gewst_cent: 0
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 11 Abs.1 S.3 Nr.1 GewStG (Freibetrag 24.500)"
+  datei: "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt"
+  zitatanker: "Freibetrag in Höhe von 24 500 Euro"

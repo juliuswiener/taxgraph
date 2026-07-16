@@ -1,0 +1,20 @@
+id: gewst_split_ez2025
+beschreibung: "§ 9-VZ-Split EZ 2025 (Neufassung JStG 2024): identischer Fall wie EZ2024, aber § 9 = tatsaechliche Grundsteuer-BA 9.000 (statt 1,2 % Einheitswert 4.800) = Gewerbeertrag 316.000; § 11 = 10.202,50. NEGATIVTEST: naiver EZ2024-Klon ohne Fassungswechsel waere still falsch (Δ Messbetrag -147)."
+
+sachverhalt:
+  gewerbesteuer: true
+  veranlagungszeitraum: 2025
+  gewinn_gewerbebetrieb: 300000
+  gewst_entgelte_schulden: 150000
+  gewst_miet_unbeweglich: 300000
+  gewst_grundsteuer: 9000
+
+erwartung:
+  gewst_cent: 1020250
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 9 Nr.1 S.1 GewStG n.F. (EZ 2025, tatsaechliche Grundsteuer)"
+  datei: "sources/gesetze-im-internet/gewstg_p9_2026-07-16.txt"
+  zitatanker: "die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer"

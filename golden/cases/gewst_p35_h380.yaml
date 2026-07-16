@@ -1,0 +1,24 @@
+id: gewst_p35_h380
+beschreibung: "§ 35 EStG GewSt-Anrechnung, Basiskette (Messbetrag 20.247,50), Hebesatz 380 %: 4x MB = 80.990,00 vs gezahlte GewSt 20.247,50*380% = 76.940,50 -> Deckel 2 (tatsaechlich zu zahlende GewSt) bindet = 76.940,50."
+
+sachverhalt:
+  gewerbesteuer: true
+  veranlagungszeitraum: 2026
+  gewinn_gewerbebetrieb: 500000
+  gewst_entgelte_schulden: 300000
+  gewst_miet_beweglich: 200000
+  gewst_miet_unbeweglich: 600000
+  gewst_rechte: 80000
+  gewst_grundsteuer: 12000
+  gewst_hebesatz: 380
+  gewst_output: p35_anrechnung
+
+erwartung:
+  gewst_cent: 7694050
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 35 Abs.1 S.1/S.5 EStG (4x Messbetrag, Deckel gezahlte GewSt)"
+  datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
+  zitatanker: "tatsächlich zu zahlende Gewerbesteuer"

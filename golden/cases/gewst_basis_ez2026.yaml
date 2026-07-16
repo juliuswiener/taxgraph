@@ -1,0 +1,22 @@
+id: gewst_basis_ez2026
+beschreibung: "GewSt-Basiskette Einzelunt. EZ 2026: Gewinn 500.000 + § 8 Nr.1 115.000 (Summe 660.000: a 300.000 + d 200.000/5 + e 600.000/2 + f 80.000/4; (660k-200k)/4) - § 9 Grundsteuer 12.000 = Gewerbeertrag 603.000; § 11 (603.000-24.500)*3,5% = Steuermessbetrag 20.247,50."
+
+sachverhalt:
+  gewerbesteuer: true
+  veranlagungszeitraum: 2026
+  gewinn_gewerbebetrieb: 500000
+  gewst_entgelte_schulden: 300000
+  gewst_miet_beweglich: 200000
+  gewst_miet_unbeweglich: 600000
+  gewst_rechte: 80000
+  gewst_grundsteuer: 12000
+
+erwartung:
+  gewst_cent: 2024750
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 7/§ 8 Nr.1/§ 9 Nr.1/§ 11 GewStG (Basiskette EZ 2026)"
+  datei: "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt"
+  zitatanker: "Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent"

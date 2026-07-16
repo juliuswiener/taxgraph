@@ -1,0 +1,18 @@
+id: gewst_p10a_deckel60
+beschreibung: "§ 10a Mindestbesteuerung (Deckel bindet, 60 %): massgeb. Gewerbeertrag 5 Mio, Fehlbetrag-Bestand 5 Mio -> Kapazitaet 1 Mio + 60%*(4 Mio) = 3,4 Mio (NICHT 3,8 Mio wie 70 % § 10d!), Abzug 3,4 Mio, verbleib. 1,6 Mio; § 11 = 55.142,50. Rest-Fehlbetrag 1,6 Mio vortragsfaehig."
+
+sachverhalt:
+  gewerbesteuer: true
+  veranlagungszeitraum: 2026
+  gewinn_gewerbebetrieb: 5000000
+  fehlbetrag_bestand: 5000000
+
+erwartung:
+  gewst_cent: 5514250
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 10a S.2 GewStG (60 %, NICHT 70 %)"
+  datei: "sources/gesetze-im-internet/gewstg_p10a_2026-07-16.txt"
+  zitatanker: "bis zu 60 Prozent"

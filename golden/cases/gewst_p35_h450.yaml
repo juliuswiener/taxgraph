@@ -1,0 +1,24 @@
+id: gewst_p35_h450
+beschreibung: "§ 35 EStG GewSt-Anrechnung, Basiskette, Hebesatz 450 %: 4x MB = 80.990,00 vs gezahlte GewSt 20.247,50*450% = 91.113,75 -> Deckel 1 (4x Messbetrag) bindet = 80.990,00 (Definitivbelastung oberhalb ~400 %)."
+
+sachverhalt:
+  gewerbesteuer: true
+  veranlagungszeitraum: 2026
+  gewinn_gewerbebetrieb: 500000
+  gewst_entgelte_schulden: 300000
+  gewst_miet_beweglich: 200000
+  gewst_miet_unbeweglich: 600000
+  gewst_rechte: 80000
+  gewst_grundsteuer: 12000
+  gewst_hebesatz: 450
+  gewst_output: p35_anrechnung
+
+erwartung:
+  gewst_cent: 8099000
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 35 Abs.1 S.1 Nr.1 EStG (Vierfache Messbetrag)"
+  datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
+  zitatanker: "das Vierfache des jeweils für den dem Veranlagungszeitraum entsprechenden Erhebungszeitraum nach § 14 des Gewerbesteuergesetzes"

@@ -116,6 +116,69 @@ def _vorsorge_abzug(s: dict, year: int) -> int:
     return max(0, min(beitraege, _vorsorge_hb(year)) - ag)
 
 
+# -- GewSt-Kette (Paket 4, §§ 6-11/35) - Python-Andockung analog _vorsorge_abzug.
+# Macht den GewSt-Steuermessbetrag (p11) + § 35-Anrechnung (p35_1) produktiv, ohne
+# p35_1 strukturell zu beruehren. Rechnung in ganzen CENT (exakt); die catala-Regeln
+# p7/p8/p9_*/p10a/p11 sind separat via clerk/snapshot verifiziert. Erwartungen =
+# dev-2-Hand-Ketten (reports/review/2026-07-16-gewst-ketten-golden.md), unabhaengige
+# Zweitrechnung.
+
+def _gewst_hinzurechnung_p8(s: dict) -> int:
+    """§ 8 Nr. 1: Viertel der um 200.000 geminderten Summe der Finanzierungsanteile
+    (a/b/c 100 %, d 1/5, e 1/2, f 1/4). Ganze Euro."""
+    summe = (int(s.get("gewst_entgelte_schulden", 0))
+             + int(s.get("gewst_renten", 0))
+             + int(s.get("gewst_stille", 0))
+             + int(s.get("gewst_miet_beweglich", 0)) // 5
+             + int(s.get("gewst_miet_unbeweglich", 0)) // 2
+             + int(s.get("gewst_rechte", 0)) // 4)
+    return max(0, summe - 200000) // 4
+
+
+def _gewst_kuerzung_p9(s: dict, year: int) -> int:
+    """§ 9 Nr. 1 S. 1 (VZ-Split: EZ 2024 = 1,2 % Einheitswert; EZ 2025+ =
+    tatsaechliche Grundsteuer) + Nr. 2 Gewinnanteile + Nr. 2a Schachtel. Ganze Euro."""
+    if year <= 2024:
+        grund = int(s.get("gewst_einheitswert", 0)) * 12 // 1000  # 1,2 %
+    else:
+        grund = int(s.get("gewst_grundsteuer", 0))
+    return (grund + int(s.get("gewst_gewinnanteile_mitunternehmer", 0))
+            + int(s.get("gewst_schachteldividenden", 0)))
+
+
+def _gewst_messbetrag_cent(s: dict) -> int:
+    """§ 7 -> § 10a -> § 11: Steuermessbetrag in CENT. Gewerbeertrag = Gewinn +
+    § 8 - § 9; optional § 10a-Verlustabzug (1-Mio-Sockel + 60 %); dann abrunden auf
+    volle 100 Euro, Freibetrag 24.500 (natuerl. Person/PersG), Messzahl 3,5 %."""
+    year = int(s["veranlagungszeitraum"])
+    ge = (int(s.get("gewinn_gewerbebetrieb", 0)) + _gewst_hinzurechnung_p8(s)
+          - _gewst_kuerzung_p9(s, year))
+    fehlbetrag = int(s.get("fehlbetrag_bestand", 0))
+    if fehlbetrag:
+        kapazitaet = 1000000 + max(0, ge - 1000000) * 60 // 100
+        ge -= min(fehlbetrag, kapazitaet)
+    abgerundet = (ge // 100) * 100 if ge > 0 else 0
+    nach_fb = max(0, abgerundet - 24500)
+    return nach_fb * 35 // 10   # * 3,5 % in Cent (nach_fb Vielfaches von 100 -> exakt)
+
+
+def _gewst_p35_anrechnung_cent(s: dict) -> int:
+    """§ 35 EStG (p35_1): min(4x Messbetrag, tatsaechlich zu zahlende GewSt =
+    Messbetrag x Hebesatz). Deckel 3 (Ermaessigungshoechstbetrag) = ESt-Kontext,
+    ausserhalb der reinen GewSt-Kette (dev-2). Hebesatz in Prozent. CENT."""
+    mb = _gewst_messbetrag_cent(s)
+    vierfach = mb * 4
+    gewst = mb * int(s["gewst_hebesatz"]) // 100
+    return min(vierfach, gewst)
+
+
+def catala_gewst(s: dict) -> int:
+    """Dispatch der GewSt-Kette: Steuermessbetrag ODER § 35-Anrechnung, in CENT."""
+    if s.get("gewst_output") == "p35_anrechnung":
+        return _gewst_p35_anrechnung_cent(s)
+    return _gewst_messbetrag_cent(s)
+
+
 VZ_ENUM = {
     2024: E.Veranlagungszeitraum(E.Veranlagungszeitraum.Code.VZ2024, None),
     2025: E.Veranlagungszeitraum(E.Veranlagungszeitraum.Code.VZ2025, None),
@@ -178,6 +241,9 @@ def catala_est(sachverhalt: dict) -> int:
     # Verallgemeinerte § 2-Veranlagung (Gesamtfall).
     if sachverhalt.get("gesamtfall"):
         return catala_gesamt(sachverhalt)
+    # GewSt-Kette (§§ 6-11/35): Steuermessbetrag oder § 35-Anrechnung, in CENT.
+    if sachverhalt.get("gewerbesteuer"):
+        return catala_gewst(sachverhalt)
     # Entfernungspauschale (§ 9): abziehbarer Betrag.
     if "entfernung_km_roh" in sachverhalt:
         return catala_entfernungspauschale(sachverhalt)
@@ -221,7 +287,8 @@ def main() -> int:
         erw = c["erwartung"]
         exp = erw.get("tarifliche_est",
                       erw.get("festzusetzende_est",
-                              erw.get("abziehbarer_betrag", erw.get("abzug_gesamt"))))
+                              erw.get("abziehbarer_betrag",
+                                      erw.get("abzug_gesamt", erw.get("gewst_cent")))))
         q = c["quelle"]
 
         # 1. citation-anchor gate
