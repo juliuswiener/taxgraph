@@ -1,0 +1,179 @@
+{
+  "bedingungen": [
+    "hoechstbetrag_20prozent_oder_4promille",
+    "einkommen_vor_spenden_und_verlustabzug",
+    "rechtsform_kapitalgesellschaft",
+    "zuwendungen_steuerbeguenstigte_zwecke"
+  ],
+  "candidate_id": "p9_spenden_hoechstbetrag",
+  "catala_a": "declaration scope SpendenHoechstbetrag:\n  input zuwendungen content money\n  input einkommen_vor_spenden content money\n  input umsaetze content money\n  input loehne_gehaelter content money\n  output spendenabzug content money\n\nscope SpendenHoechstbetrag:\n  definition spendenabzug equals\n    let hoechstbetrag_einkommen equals\n      einkommen_vor_spenden * (20.0 / 100.0)\n    in\n    let hoechstbetrag_umsatz equals\n      (umsaetze + loehne_gehaelter) * (4.0 / 1000.0)\n    in\n    let hoechstbetrag equals\n      if hoechstbetrag_einkommen >= hoechstbetrag_umsatz\n      then hoechstbetrag_einkommen\n      else hoechstbetrag_umsatz\n    in\n    if zuwendungen <= hoechstbetrag\n    then zuwendungen\n    else hoechstbetrag",
+  "catala_a_sha256": "6cded8e6918c2f03e5851c59a36a4260cf25b57d59f8988b03c8b38b388ef121",
+  "catala_b": "declaration scope SpendenHoechstbetrag:\n  input zuwendungen content money\n  input einkommen_vor_spenden content money\n  input umsaetze content money\n  input loehne_gehaelter content money\n  internal hoechstbetrag_a content money\n  internal hoechstbetrag_b content money\n  internal hoechstbetrag content money\n  output spendenabzug content money\n\nscope SpendenHoechstbetrag:\n  definition hoechstbetrag_a equals einkommen_vor_spenden * ((decimal of 20) / 100.0)\n  definition hoechstbetrag_b equals (umsaetze + loehne_gehaelter) * ((decimal of 4) / 1000.0)\n  definition hoechstbetrag equals if hoechstbetrag_a > hoechstbetrag_b then hoechstbetrag_a else hoechstbetrag_b\n  definition spendenabzug equals if zuwendungen < hoechstbetrag then zuwendungen else hoechstbetrag",
+  "catala_b_sha256": "45c4b72700ef25b2b3f0e5725aa5d8093a3bebd2bad078011ee39d49a23a7dc9",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'spendenabzug'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 1,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 9 abs. 1 nr. 2 kstg"
+            ],
+            "text": "vorbehaltlich des § 8 Absatz 3 Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke im Si"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        3,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "a20d409bcc8c",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "einkommen_vor_spenden_und_verlustabzug",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Als Einkommen im Sinne dieser Vorschrift gilt das Einkommen vor Abzug der in Absatz 1 Nr. 2 bezeichneten Zuwendungen und vor dem Verlustabzug nach § 10d des Einkommensteuergesetzes.",
+        "referenz": "§ 9 Abs. 2 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "vorbehaltlich des § 8 Absatz 3 Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke im Sinne der §§ 52 bis 54 der Abgabenordnung",
+        "referenz": "§ 9 Abs. 1 Nr. 2 KStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Einkommen wird als das vor Spendenabzug und Verlustabzug verstanden.",
+        "bedingung_id": "einkommen_vor_spenden_und_verlustabzug",
+        "betrifft": "einkommen_vor_spenden",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-16T14:41:36+00:00"
+  },
+  "module_name": "SpendenHoechstbetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

@@ -3335,3 +3335,61 @@ entscheidungen:
     klasse: wirkt_hinein
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-k2-netto-formulierung
   timestamp: '2026-07-16T14:38:32.240788+00:00'
+- rule_id: p9_spenden_hoechstbetrag
+  schluessel: '["annahme", "betrifft_kat", "einkommen_vor_spenden", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - einkommen_vor_spenden
+    - interpretation
+    text: Einkommen wird als das vor Spendenabzug und Verlustabzug verstanden.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k3-triage
+  timestamp: '2026-07-16T14:46:03.966283+00:00'
+- rule_id: p9_spenden_hoechstbetrag
+  schluessel: '["norm_teil", "ref", "§ 9 abs. 2 satz 1 kstg"]'
+  triage: bedingung_neu
+  bedingung: einkommen_vor_spenden_und_verlustabzug
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 9 abs. 2 satz 1 kstg
+    text: Als Einkommen im Sinne dieser Vorschrift gilt das Einkommen vor Abzug der
+      in Absatz 1 Nr. 2 bezeichneten Zuwendungen und vor dem Verlustabzug nach § 10d
+      des Einkommensteuergesetzes.
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k3-triage
+  timestamp: '2026-07-16T14:46:04.588848+00:00'
+- rule_id: p9_spenden_hoechstbetrag
+  schluessel: '["norm_teil", "ref", "§ 9 abs. 1 nr. 2 kstg"]'
+  triage: bedingung_neu
+  bedingung: zuwendungen_steuerbeguenstigte_zwecke
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 9 abs. 1 nr. 2 kstg
+    text: vorbehaltlich des § 8 Absatz 3 Zuwendungen (Spenden und Mitgliedsbeiträge)
+      zur Förderung steuerbegünstigter Zwecke im Sinne der §§ 52 bis 54 der Abgabenordnung
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k3-triage
+  timestamp: '2026-07-16T14:46:05.210929+00:00'

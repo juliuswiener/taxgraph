@@ -7128,3 +7128,89 @@ regeln:
     deckt_ab: gelten 5 Prozent als Ausgaben, die nicht als Betriebsausgaben abgezogen werden dürfen
     quelle: § 8b Abs. 5 Satz 1 / Abs. 3 Satz 1 KStG
     beschreibung: '5 % der ausser Ansatz bleibenden Bezuege/Gewinne gelten pauschal als nichtabziehbare Betriebsausgaben (= faktische Minderung der Steuerbefreiung auf 95 %). 5/100 EXAKT. Der 95-%-Netto-Effekt ist NUR die Kombination 100 % (Abs. 1/2) minus 5 % (Abs. 5/3), nie eine eigene Konstante.'
+- rule_id: p9_spenden_hoechstbetrag
+  norm: § 9 Abs. 1 Nr. 2 i.V.m. Abs. 2 Satz 1 KStG (Spendenabzug, Höchstbetrag 20 % Einkommen / 4 ‰ Umsätze+Löhne)
+  hinweis: 'hoechstbetrag = max(einkommen_vor_spenden * 20 / 100, (umsaetze + loehne_gehaelter) * 4 / 1000). spendenabzug = min(zuwendungen, hoechstbetrag). Das "oder" in Nr. 2 (a) 20 % ODER b) 4 Promille) bedeutet den HOEHEREN der beiden Hoechstbetraege -> max. KLASSE-5: 20 % = 20/100 = 1/5 EXAKT, 4 Promille = 4/1000 = 1/250 EXAKT (NICHT 0,2 / 0,004 vorrunden); Division durch 100 bzw. 1000 in decimal, Cent-Schnitt ZULETZT. einkommen_vor_spenden = "Einkommen im Sinne dieser Vorschrift" (Abs. 2 S. 1): das Einkommen VOR Abzug der Zuwendungen nach Abs. 1 Nr. 2 UND vor dem Verlustabzug nach § 10d EStG -> INPUT (nicht hier gerechnet). VORTRAG ueberschiessender Zuwendungen (Nr. 2 S. 9 i.V.m. § 10d Abs. 4 EStG) = Nachtrag, NICHT hier. Nr. 1 (KGaA-Gewinnanteil an persoenlich haftende Gesellschafter), Sachzuwendungen/Wertermittlung (Abs. 2 S. 2-3), Mitgliedsbeitrags-Ausschluesse (Nr. 2 S. 7-8) = Nachtrag. FORMALISIERUNG: EINE unbedingte Definition mit min/max (spendenabzug equals ... min ... max ...), KEINE bedingten exceptions/Fallunterscheidungen.'
+  quellen:
+  - typ: gesetz
+    label: § 9 Abs. 1 Nr. 2 KStG (Höchstbetrag 20 % Einkommen / 4 ‰ Umsätze+Löhne)
+    datei: sources/gesetze-im-internet/kstg_p9_2026-07-16.txt
+    zitatanker: bis zur Höhe von insgesamt a) 20 Prozent des Einkommens oder b) 4 Promille der Summe der gesamten Umsätze und der im Kalenderjahr aufgewendeten Löhne und Gehälter
+    auszug: 'vorbehaltlich des § 8 Absatz 3 Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke im Sinne der §§ 52 bis 54 der Abgabenordnung bis zur Höhe von insgesamt a) 20 Prozent des Einkommens oder b) 4 Promille der Summe der gesamten Umsätze und der im Kalenderjahr aufgewendeten Löhne und Gehälter.'
+  - typ: gesetz
+    label: § 9 Abs. 2 Satz 1 KStG (Einkommen vor Spenden und vor Verlustabzug)
+    datei: sources/gesetze-im-internet/kstg_p9_2026-07-16.txt
+    zitatanker: Als Einkommen im Sinne dieser Vorschrift gilt das Einkommen vor Abzug der in Absatz 1 Nr. 2 bezeichneten Zuwendungen und vor dem Verlustabzug nach § 10d
+    auszug: Als Einkommen im Sinne dieser Vorschrift gilt das Einkommen vor Abzug der in Absatz 1 Nr. 2 bezeichneten Zuwendungen und vor dem Verlustabzug nach § 10d des Einkommensteuergesetzes.
+  signature:
+    scope: SpendenHoechstbetrag
+    inputs:
+      zuwendungen: money
+      einkommen_vor_spenden: money
+      umsaetze: money
+      loehne_gehaelter: money
+    output: spendenabzug
+  raster:
+  - zuwendungen: 300000
+    einkommen_vor_spenden: 1000000
+    umsaetze: 500000
+    loehne_gehaelter: 300000
+  - zuwendungen: 300000
+    einkommen_vor_spenden: 100000
+    umsaetze: 50000000
+    loehne_gehaelter: 10000000
+  - zuwendungen: 50000
+    einkommen_vor_spenden: 1000000
+    umsaetze: 500000
+    loehne_gehaelter: 300000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/kstg_p9_2026-07-16.txt
+    zitatanker: bis zur Höhe von insgesamt a) 20 Prozent des Einkommens oder b) 4 Promille der Summe der gesamten Umsätze und der im Kalenderjahr aufgewendeten Löhne und Gehälter
+    herkunft: synthetisch
+    rechenweg: '20-%-Grenze bindet: hoechst = max(1.000.000 * 20/100 = 200.000; (500.000+300.000) * 4/1000 = 3.200) = 200.000. min(300.000, 200.000) = 200.000,00.'
+    inputs:
+      zuwendungen: 300000
+      einkommen_vor_spenden: 1000000
+      umsaetze: 500000
+      loehne_gehaelter: 300000
+    expected: 200000.0
+  - quelle: sources/gesetze-im-internet/kstg_p9_2026-07-16.txt
+    zitatanker: bis zur Höhe von insgesamt a) 20 Prozent des Einkommens oder b) 4 Promille der Summe der gesamten Umsätze und der im Kalenderjahr aufgewendeten Löhne und Gehälter
+    herkunft: synthetisch
+    rechenweg: '4-Promille-Grenze bindet (hoher Umsatz, niedriges Einkommen): hoechst = max(100.000 * 20/100 = 20.000; (50.000.000+10.000.000) * 4/1000 = 240.000) = 240.000. min(300.000, 240.000) = 240.000,00.'
+    inputs:
+      zuwendungen: 300000
+      einkommen_vor_spenden: 100000
+      umsaetze: 50000000
+      loehne_gehaelter: 10000000
+    expected: 240000.0
+  - quelle: sources/gesetze-im-internet/kstg_p9_2026-07-16.txt
+    zitatanker: Als Einkommen im Sinne dieser Vorschrift gilt das Einkommen vor Abzug der in Absatz 1 Nr. 2 bezeichneten Zuwendungen und vor dem Verlustabzug nach § 10d
+    herkunft: synthetisch
+    rechenweg: 'Zuwendungen unter Hoechstbetrag: hoechst = max(200.000; 3.200) = 200.000. min(50.000, 200.000) = 50.000,00 (voller Spendenabzug).'
+    inputs:
+      zuwendungen: 50000
+      einkommen_vor_spenden: 1000000
+      umsaetze: 500000
+      loehne_gehaelter: 300000
+    expected: 50000.0
+  geltungsbedingungen:
+  - bedingung: hoechstbetrag_20prozent_oder_4promille
+    deckt_ab: bis zur Höhe von insgesamt a) 20 Prozent des Einkommens oder b) 4 Promille der Summe der gesamten Umsätze und der im Kalenderjahr aufgewendeten Löhne und Gehälter
+    quelle: § 9 Abs. 1 Nr. 2 KStG
+    datei: sources/gesetze-im-internet/kstg_p9_2026-07-16.txt
+    beschreibung: 'Hoechstbetrag = der HOEHERE aus 20 % des Einkommens (Buchst. a) und 4 Promille der Summe aus Umsaetzen + Loehnen/Gehaeltern (Buchst. b); "oder" = max. Spendenabzug = min(Zuwendungen, Hoechstbetrag). 20/100 und 4/1000 EXAKT.'
+  - bedingung: einkommen_vor_spenden_und_verlustabzug
+    deckt_ab: Als Einkommen im Sinne dieser Vorschrift gilt das Einkommen vor Abzug der in Absatz 1 Nr. 2 bezeichneten Zuwendungen und vor dem Verlustabzug nach § 10d
+    quelle: § 9 Abs. 2 Satz 1 KStG
+    beschreibung: 'einkommen_vor_spenden = das "Einkommen im Sinne dieser Vorschrift" (Abs. 2 S. 1): Einkommen VOR Spendenabzug (Nr. 2) UND vor Verlustabzug § 10d EStG -> Bemessungsbasis fuer die 20-%-Grenze, kommt als INPUT aus der § 8-Kette (nicht hier gerechnet).'
+  - bedingung: rechtsform_kapitalgesellschaft
+    deckt_ab: bis zur Höhe von insgesamt a) 20 Prozent des Einkommens oder b) 4 Promille der Summe der gesamten Umsätze und der im Kalenderjahr aufgewendeten Löhne und Gehälter
+    quelle: § 1 Abs. 1 Nr. 1 i.V.m. § 9 KStG
+    datei: sources/gesetze-im-internet/kstg_p9_2026-07-16.txt
+    beschreibung: 'rechtsform = Kapitalgesellschaft (§ 1 Abs. 1 Nr. 1); Spendenabzug der KapGes. Abgrenzung gegen PersGes-Kern (C24, § 15 EStG) - keine Doppel-Feuerung. Nr. 1 (KGaA-Gewinnanteil) betrifft nur KGaA, hier Standard-KapGes.'
+  - bedingung: zuwendungen_steuerbeguenstigte_zwecke
+    deckt_ab: vorbehaltlich des § 8 Absatz 3 Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke im Sinne der §§ 52 bis 54 der Abgabenordnung
+    quelle: § 9 Abs. 1 Nr. 2 KStG
+    datei: sources/gesetze-im-internet/kstg_p9_2026-07-16.txt
+    beschreibung: 'Input-Qualifikation: zuwendungen sind NUR die abziehbaren Zuwendungen (Spenden/Mitgliedsbeitraege) zur Foerderung steuerbeguenstigter Zwecke i.S.d. §§ 52-54 AO, an qualifizierte Empfaenger (Nr. 2 S. 2-6: jur. Person oeff. Rechts / § 5 Abs. 1 Nr. 9 steuerbefreite Koerperschaft / EU-/EWR-Empfaenger + Amtshilfe). ZUGLEICH: "vorbehaltlich des § 8 Absatz 3" = vGA-Vorrang - eine als vGA zu wertende Zuwendung ist KEINE abziehbare Spende (mindert das Einkommen nicht, § 8 Abs. 3 S. 2). Beides Sachverhalts-Vorfrage: der Input-Betrag ist bereits der qualifizierte, nicht-vGA Zuwendungsbetrag. Mitgliedsbeitrags-Ausschluesse (Nr. 2 S. 7-8: Sport/Freizeit/Heimat) = Nachtrag.'
