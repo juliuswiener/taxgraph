@@ -31,7 +31,10 @@ N4  § 8c: schaedlicher_erwerb (bool-Input, > 50 % in 5 Jahren) → verlustbesta
 N5  § 8d: antrag_8d (bool) + fortfuehrungs_voraussetzungen (bool) → § 8c-Suspension,
     Bestand wird fortführungsgebunden (Kennzeichnung, kein eigener Rechenpfad Stufe A)
 N6  Verdrahtung + Goldens: § 8c/§ 8d wirken auf verlustbestand VOR K5-§ 10d-Abzug;
-    § 4h-Ergebnis mindert den § 8-Abs.-1-Slot-Gewinn (K1-Input-Seite).
+    § 4h-Add-back ERHÖHT den § 8-Abs.-1-Slot-Gewinn: Baseline gewinn_estg hat Zinsen
+    VOLL abgezogen, der nichtabziehbare Teil wird hinzugerechnet (slot_eff =
+    gewinn_estg + nichtabziehbare_zinsen). [Korrigiert n. dev-1-Rückfrage — die
+    frühere Formulierung "mindert den Slot-Gewinn" war ein Vorzeichen-Lapsus.]
     Pflicht-Goldens: Freigrenzen-Kante (2.999.999 vs. 3.000.000 → Alles-oder-nichts),
     30 %-Deckel bindend/nicht bindend, § 8c-Untergang vor § 10d, § 8d-Suspension.
 ```
