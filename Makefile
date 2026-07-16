@@ -93,6 +93,12 @@ docstore-ingest:
 elster-check:
 	. $(VENV312); python elster/validate_mapping.py
 
+## ERiC Offline-CI-Gate (VZ 2025): E10_2025-XSD-Struktur + checkESt (ERIC_VALIDIERE,
+## offline, kein Versand, keine Datei-Credentials). Hersteller-ID nur aus $ELSTER_HERSTELLER_ID
+## falls exportiert; ohne sie laeuft das Gate ueber die dokumentierte GESPERRT-Grenze durch.
+eric-gate:
+	ERIC_DIR=$${ERIC_DIR:-$$HOME/02_Software/eric} python3 elster/eric_gate.py
+
 clean:
 	$(OPAM_ENV); clerk clean || true
 	rm -rf _build _target oracle/gettsim/_catala
