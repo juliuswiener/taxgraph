@@ -1,0 +1,19 @@
+# Eingefrorener Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/es/2011-02-03/gesetz-2012"
+  norm: "Gesetz v. 16.01.2012 zu dem Abkommen v. 03.02.2011 zwischen der Bundesrepublik Deutschland und dem Koenigreich Spanien zur Vermeidung der Doppelbesteuerung (BGBl 2012 II S. 18); in Kraft 18.07.2012, anwendbar ab 01.01.2013"
+  fassung: "BGBl 2012 II Nr. 2 S. 18 ff. (Gesetz + Abkommen + Protokoll, zweisprachig DE/ES)"
+  quelle_url: "(BMF Staatenbezogene Informationen Spanien, Scraper-Korpus 168_TaxGraph: dba_pdfs/2012-01-20-Spanien-Abkommen-DBA-Gesetz.pdf)"
+  abrufdatum: "2026-07-16"
+  datei: "dba_es_abkommen_2011.txt"
+  pdf_datei: "dba_es_abkommen_2011.pdf"
+  sha256: "b6fe8dd6ff917661200859c1bc1c127c9aa7aca360462ab8d9cf720fbab22ae3"
+  pdf_sha256: "7e0155652e1a9474d10b4892f59663951b7e809035a1c1ad7cccd30ef4dc9c27"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "GRUNDABKOMMEN ES, einzige bilaterale Fassung im Fenster. GUELTIGKEIT: ab VZ 2025 gilt das BEPS-MLI-Overlay (bmf_stand_dba_2026 Abschnitt I.2, BEPS-MLI-Anwendungsgesetz BGBl 2024 I Nr. 205) - Missbrauchs-/PPT-Klauseln, nach FR-Muster KEINE Methoden-Aenderung, aber Katalog braucht MLI-Randnotiz VZ-Split 2024 vs. 2025/26. Layer-Provenance: Wortabstaende als U+0007 (BEL) kodiert, deterministisch durch Leerzeichen ersetzt (BEL-Fix, Beweis siehe dba_lu_abkommen_2012). ACHTUNG zweisprachig DE/ES interleaved bis Absatz-Ebene - Anker NUR aus zusammenhaengenden deutschen Bloecken. Methodenartikel Art. 22 (Abs. 1 Spanien, Abs. 2 Deutschland)."
+  erwartete_anker:
+    - "Gesetz zu dem Abkommen vom 3. Februar 2011 zwischen der Bundesrepublik Deutschland und dem Königreich Spanien"
+    - "Bei einer in der Bundesrepublik Deutschland ansässigen Person wird die Steuer wie folgt festgesetzt:"
+    - "der Empfänger sich im anderen Staat insgesamt nicht länger als 183 Tage innerhalb eines Zeitraums von zwölf Monaten, der während des betreffenden Steuerjahres beginnt oder endet, aufh"
+  verwendet_in: ["Paket 6 W1 DBA-Katalog ES (Grundtext; MLI-Overlay ab VZ 2025)"]

@@ -1,0 +1,19 @@
+# Eingefrorener Text (Quellen-Klasse verwaltung). Provenance-Archiv.
+dokument:
+  norm_uri: "bmf/stand-dba/2026-01-07"
+  norm: "BMF-Schreiben v. 07.01.2026: Stand der Doppelbesteuerungsabkommen und anderer Abkommen im Steuerbereich sowie der Abkommensverhandlungen am 1. Januar 2026 (IV B 2 - S 1301/01499/005/004) inkl. Tabellen-Anlage"
+  fassung: "Stand 01.01.2026"
+  quelle_url: "https://www.bundesfinanzministerium.de/Content/DE/Downloads/BMF_Schreiben/Internationales_Steuerrecht/Allgemeine_Informationen/2026-01-07-stand-DBA-1-januar-2026.pdf?__blob=publicationFile&v=3"
+  abrufdatum: "2026-07-16"
+  datei: "bmf_stand_dba_2026.txt"
+  pdf_datei: "bmf_stand_dba_2026.pdf"
+  sha256: "fb01ce7c5903423537677491380d54313d3b6d5e6df23ca4b43115e3ae2d77f1"
+  pdf_sha256: "c83ff59f43ec10d85bcbdaad6d2f953db2e1262b78c1c1b4b2efbe46c5d65ab9"
+  authority: verwaltung
+  redistributable: true
+  hinweis: "ZENTRALER Fassungs-/MLI-Beleg fuer alle DBA-Kataloge. Abschnitt I.2: BEPS-MLI anwendbar ab 01.01.2025 fuer FR/GR/HR/MT/SK/ES/HU, ab 01.01.2026 fuer CZ/JP (TR benannt, aber KEIN Anwendungsgesetz = im Fenster VZ 2024-2026 unwirksam). Belarus-DBA vollstaendig ausgesetzt ab 01.01.2025; Russland nicht-kooperativ ab 2024. Bestaetigt amtlich die LU-Fassungskette (Protokoll 2023 anwendbar ab 01.01.2024). Revisionsprotokolle paraphiert u.a. Belgien; neue Verhandlungen FR + IT -> Fassungs-Watch. pdftotext -layout (Tabellen zeilentreu). Blob-URL umgeht Radware (direkter Download 2026-07-16, Julius-Freigabe Paket 6 W1). JAEHRLICH durch neues Stand-Schreiben ersetzen."
+  erwartete_anker:
+    - "2. Abkommen, auf die das Gesetz zum BEPS-MLI 2 anzuwenden ist (BEPS-MLI-Anwendungsgesetz)"
+    - "ist mit Wirkung zum 1. Januar 2025 vollständig ausgesetzt"
+    - "nach Abschluss eines nachfolgenden Anwendungsgesetzgebungsverfahrens und entsprechender"
+  verwendet_in: ["Paket 6 DBA-Vollausbau (MLI-/Fassungs-Beleg alle Staaten)", "Fassungs-Watch Betriebs-Modus"]

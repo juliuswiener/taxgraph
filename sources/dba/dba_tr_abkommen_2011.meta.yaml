@@ -1,0 +1,19 @@
+# Eingefrorener Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/tr/2011-09-19/gesetz-2012"
+  norm: "Gesetz v. 24.05.2012 zu dem Abkommen v. 19.09.2011 zwischen der Bundesrepublik Deutschland und der Republik Tuerkei zur Vermeidung der Doppelbesteuerung (BGBl 2012 II S. 526); rueckwirkend anwendbar ab 01.01.2011"
+  fassung: "BGBl 2012 II Nr. 17 S. 526 ff. (Gesetz + Abkommen + Protokoll, zweisprachig DE/EN)"
+  quelle_url: "(BMF Staatenbezogene Informationen Tuerkei, Scraper-Korpus 168_TaxGraph: dba_pdfs/2012-05-30-Tuerkei-Abkommen-DBA-Gesetz.pdf)"
+  abrufdatum: "2026-07-16"
+  datei: "dba_tr_abkommen_2011.txt"
+  pdf_datei: "dba_tr_abkommen_2011.pdf"
+  sha256: "982129164be1a3907796df386862abecf690c982c23542628467540b28674dcd"
+  pdf_sha256: "c33273a0bf5e2ba7148e0fb1303740dab7fa90a37897b100f538c97bbd8a6eb8"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "GRUNDABKOMMEN TR, einfassig VZ 2024-2026. MLI: TR ist von DE benannt, aber OHNE Anwendungsgesetz (bmf_stand_dba_2026 Abschnitt I.2 fuehrt TR NICHT) -> im Fenster unwirksam, Fassungs-Watch. Layer-Provenance: BEL-Fix wie ES (U+0007 -> Leerzeichen). ACHTUNG zweisprachig DE/EN interleaved - Anker NUR aus deutschen Bloecken. Methodenartikel Art. 22 (Abs. 1 Tuerkei, Abs. 2 Deutschland). Besonderheit W1-Sichtung: Renten-/Diaspora-Verstaendigung 2014 = Zweitbeleg-Kandidat beim Katalog-Bau."
+  erwartete_anker:
+    - "Gesetz zu dem Abkommen vom 19. September 2011 zwischen der Bundesrepublik Deutschland und der Republik Türkei"
+    - "Von der Bemessungsgrundlage der deutschen Steuer werden die Einkünfte aus der Türkei ausgenommen, die nach diesem Abkommen in der Türkei besteuert werden können"
+    - "die Person sich zur Ausübung ihrer Tätigkeit während eines zusammenhängenden Zeitraums von zwölf Monaten insgesamt 183 Tage oder länger im anderen Staat aufhält"
+  verwendet_in: ["Paket 6 W1 DBA-Katalog TR (Grundtext, einfassig)"]
