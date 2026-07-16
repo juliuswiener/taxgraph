@@ -4081,3 +4081,22 @@ entscheidungen:
     klasse: unabhaengig
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-n5-suspension
   timestamp: '2026-07-16T16:35:02.361984+00:00'
+- rule_id: p4h_ausnahmen_freigrenze
+  schluessel: '["norm_teil", "ref", "§ 4h abs. 1 satz 7 estg"]'
+  triage: bedingung_neu
+  bedingung: freigrenze_zinsvortrag_anteiligkeit_s7_nachtrag
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 4h abs. 1 satz 7 estg
+    klasse: wirkt_hinein
+    text: Absatz 2 findet keine Anwendung, soweit Zinsaufwendungen aufgrund eines
+      Zinsvortrags erhöht wurden.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n2-zuschnitt
+  timestamp: '2026-07-16T16:45:13.105086+00:00'

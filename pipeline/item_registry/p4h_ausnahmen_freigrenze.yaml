@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p4h_ausnahmen_freigrenze
-version: 6
+version: 7
 items:
 - art: annahme
   anker:
@@ -57,3 +57,13 @@ items:
   triage: bedingung_neu
   klasse: wirkt_hinein
   bedingung: ausnahme_c_eigenkapital_escape
+- art: norm_teil
+  anker:
+  - ref
+  - § 4h abs. 1 satz 7 estg
+  formulierungen:
+  - Absatz 2 findet keine Anwendung, soweit Zinsaufwendungen aufgrund eines Zinsvortrags
+    erhöht wurden.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: freigrenze_zinsvortrag_anteiligkeit_s7_nachtrag

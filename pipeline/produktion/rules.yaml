@@ -7683,6 +7683,11 @@ regeln:
     quelle: § 4h Abs. 1 Satz 1 EStG (via N1)
     datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
     beschreibung: 'abziehbar_kern = Ergebnis der Charge N1 (§ 4h Abs. 1 Zinsschranke-Kern) als Input. Greift keine Ausnahme des Abs. 2, gilt abziehbar_final = abziehbar_kern; die Kern-Berechnung selbst ist N1 (nicht hier).'
+  - bedingung: freigrenze_zinsvortrag_anteiligkeit_s7_nachtrag
+    deckt_ab: Absatz 2 findet keine Anwendung, soweit Zinsaufwendungen aufgrund eines Zinsvortrags erhöht wurden
+    quelle: § 4h Abs. 1 Satz 7 EStG
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: '§ 4h Abs. 1 Satz 7: die Ausnahmen des Abs. 2 (Freigrenze < 3 Mio, Konzern lit b, Escape lit c) finden KEINE Anwendung, SOWEIT die Zinsaufwendungen aufgrund eines Zinsvortrags erhoeht wurden (Anteiligkeit). Benannter Nachtrag - die anteilige S.-7-Rechnung ist nicht modelliert. Die Freigrenzen-Pruefung nutzt nettozins = zinsaufwand - zinsertrag (gebuchter Jahresaufwand OHNE Zinsvortrag), was korrekt ist, solange Ausnahme und zins_vortrag_bestand > 0 nicht kombiniert werden; im Golden-Scope (N6) ist diese Kombination ausgeschlossen.'
 
 - rule_id: p8a_massgebliches_einkommen
   norm: § 8a Abs. 1 KStG i.V.m. § 4h Abs. 1 Satz 2 EStG (Zinsschranke-Brücke — maßgebliches Einkommen statt Gewinn, EBITDA-Basis der Körperschaft)

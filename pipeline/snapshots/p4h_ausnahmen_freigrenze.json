@@ -3,7 +3,8 @@
     "freigrenze_3mio_alles_oder_nichts",
     "ausnahme_b_keine_nahestehende_person",
     "ausnahme_c_eigenkapital_escape",
-    "kern_abziehbar_aus_n1"
+    "kern_abziehbar_aus_n1",
+    "freigrenze_zinsvortrag_anteiligkeit_s7_nachtrag"
   ],
   "candidate_id": "p4h_ausnahmen_freigrenze",
   "catala_a": "declaration scope ZinsschrankeAusnahmen:\n  input nettozinsaufwand content money\n  input zinsaufwand content money\n  input abziehbar_kern content money\n  input keine_konzern_oder_nahestehende_b content boolean\n  input eigenkapital_escape_c content boolean\n  output abziehbare_zinsaufwendungen_final content money\n\nscope ZinsschrankeAusnahmen:\n  definition abziehbare_zinsaufwendungen_final equals\n    if (nettozinsaufwand < $3,000,000.00)\n      or keine_konzern_oder_nahestehende_b\n      or eigenkapital_escape_c\n    then zinsaufwand\n    else abziehbar_kern",
@@ -77,7 +78,7 @@
       "status": "PASS"
     },
     {
-      "detail": "3 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "detail": "4 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
       "name": "geltungsbereich",
       "status": "PASS"
     },
