@@ -1,0 +1,27 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/fr/zusatzabkommen-2015-03-31/gesetz-2015"
+  norm: "Gesetz v. 20.11.2015 zu dem Zusatzabkommen v. 31.03.2015 zum DBA Deutschland-Frankreich v. 21.07.1959 (BGBl 2015 II S. 1332); in Kraft 24.12.2015 (Bekanntmachung BGBl 2016 II S. 227), anwendbar ab VZ 2016"
+  fassung: "BGBl 2015 II S. 1332 (Regelungstext inkl. Zusatzabkommen-Wortlaut)"
+  quelle_url: "(BMF Staatenbezogene Informationen Frankreich, PDF von Julius bereitgestellt 2026-07-16: 2015-11-26-Frankreich-Abkommen-DBA-Zusatzabkommen-Gestz.pdf; BMF-Seite Radware-geblockt fuer direkten Abruf)"
+  abrufdatum: "2026-07-16"
+  datei: "dba_fr_zusabk_2015.txt"
+  pdf_datei: "dba_fr_zusabk_2015.pdf"
+  sha256: "ac32ec796c3ebfb1d5fea76532438771c1bf9dbcf0f3e4502e116a50ad1ac02a"
+  pdf_sha256: "c2b687e5c7dccea7a90ddf36fa6ada79dda47b0871059aa5b90f58f0ee128d45"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "ZWEITE FR-Quelle (Overlay auf das Grundabkommen 1959, BGBl 1961 II S. 397 -
+    Grundtext-Freeze ausstehend, 1961er-BGBl ist reiner Bildscan -> OCR-Route): letztes
+    Zusatzabkommen der Kette 1969/1989/2001/2015, einfassig fuer VZ 2024-2026 (anwendbar
+    seit VZ 2016; danach nur BEPS-MLI-Overlay ab 2025, Missbrauchsklauseln, Randnotiz).
+    Traegt u.a. Art.-13-Abs.-5-Grenzgaenger-Anpassungen, neuen Art. 13a (Grenzgaenger-
+    fiskalausgleich 1,5 %) und Art. 13c (Rentenfiskalausgleich). CAVEAT dev-1-Recherche
+    e0915d5: DBA-FR nutzt eigene, nicht-OECD-konforme Artikelnummerierung - Katalog-Anker
+    NUR am gefreezten Text pinnen, nicht aus Sekundaerquellen. Born-digital, sauberer
+    Text-Layer (0 Lang-Woerter-Artefakte). BFH VI R 52/20 (sources/bfh/) = Zweitbeleg
+    Grenzgaenger-Sonderfall. pdftotext ohne -layout."
+  erwartete_anker:
+    - "Artikel 13 a"
+    - "Fiskalausgleichs"
+  verwendet_in: ["Paket 3 DBA-Katalog FR (Overlay-Quelle; Grundtext 1959 separat)"]

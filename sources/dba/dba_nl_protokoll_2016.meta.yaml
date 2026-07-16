@@ -1,0 +1,21 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/nl/protokoll-2016-01-11/gesetz-2016"
+  norm: "Gesetz v. 06.07.2016 zu dem Protokoll v. 11.01.2016 zur Aenderung des DBA Deutschland-Niederlande v. 12.04.2012 (BGBl 2016 II S. 866); in Kraft 31.12.2016 (Bekanntmachung BGBl 2016 II S. 1352), anwendbar ab 01.01.2017"
+  fassung: "BGBl 2016 II S. 866 (Regelungstext inkl. Protokoll-Wortlaut, zweisprachig DE/NL)"
+  quelle_url: "(BMF Staatenbezogene Informationen Niederlande, PDF von Julius bereitgestellt 2026-07-16: 2016-07-13-Niederlande-Abkommen-DBA-Protokoll-....pdf; BMF-Seite Radware-geblockt fuer direkten Abruf)"
+  abrufdatum: "2026-07-16"
+  datei: "dba_nl_protokoll_2016.txt"
+  pdf_datei: "dba_nl_protokoll_2016.pdf"
+  sha256: "c42639a3412cebd65c2a7ea75df2c21caa595001c09503f4cb5505383dc8d1ae"
+  pdf_sha256: "158ea0ece0fcc0ae431fb420b6438f90c56fe1d508d132ba662523c1a33a611e"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "ERSTES NL-Aenderungsprotokoll (Teil der effektiven Fassung fuer VZ 2024/2025:
+    Abkommen 2012 i.d.F. Protokolle 2016 + 2021). Aendert v.a. Protokoll-Ziffern zum
+    Abkommen (u.a. Xterritoriale Anwendung/Aufhebungen). Grundtext-2012-Freeze ausstehend
+    (BGBl-2012-Text-Layer defekt -> OCR-Route). Born-digital, sauberer Text-Layer.
+    ACHTUNG zweisprachig DE/NL - Anker nur aus deutschen Passagen. pdftotext ohne -layout."
+  erwartete_anker:
+    - "Protokolls zum Abkommen wird aufgehoben"
+  verwendet_in: ["Paket 3 DBA-Katalog NL (Fassungs-Baustein VZ 2024/2025)"]

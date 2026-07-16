@@ -1,0 +1,20 @@
+# Eingefrorene Inkrafttretens-Bekanntmachung (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/nl/protokoll-2021-03-24/bekanntmachung-2022"
+  norm: "Bekanntmachung v. 04.08.2022 ueber das Inkrafttreten des Protokolls v. 24.03.2021 zur Aenderung des DBA Deutschland-Niederlande (BGBl 2022 II, ausg. 24.08.2022)"
+  fassung: "BGBl 2022 II (Bekanntmachung)"
+  quelle_url: "(BMF Staatenbezogene Informationen Niederlande, PDF von Julius bereitgestellt 2026-07-16: 2022-08-24-Niederlande-Abkommen-DBA-Bekanntmachung.pdf)"
+  abrufdatum: "2026-07-16"
+  datei: "dba_nl_bekanntmachung_2022.txt"
+  pdf_datei: "dba_nl_bekanntmachung_2022.pdf"
+  sha256: "eaf39fee654ce68e3a9ff6d8c2f2341af15826870d26305ff5c8bd6aff0e5f2a"
+  pdf_sha256: "6f1f385ccf2ec4b254541285ab9962b5e0736be5cb41d0da86eba30f5c67ed0b"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "Inkrafttretens-Beleg fuer das ZWEITE NL-Aenderungsprotokoll (24.03.2021,
+    Gesetz BGBl 2021 II S. 735 - Protokoll-Text-Freeze ausstehend, BGBl-2021-Scan-Layer
+    defekt -> OCR-Route). Belegt die Anwendbarkeit der 2021er-Fassung ab 01.01.2023 =
+    die fuer VZ 2024/2025 geltende NL-Fassung (dev-1-Recherche e0915d5, Tabelle 3.1)."
+  erwartete_anker:
+    - "zu dem Protokoll vom"
+  verwendet_in: ["Paket 3 DBA-Katalog NL (Inkrafttretens-Beleg 2021er Fassung)"]
