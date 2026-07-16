@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p4h_zinsschranke_kern
-version: 1
+version: 5
 items:
 - art: annahme
   anker:

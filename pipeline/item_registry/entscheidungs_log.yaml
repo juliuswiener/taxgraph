@@ -3677,3 +3677,79 @@ entscheidungen:
     klasse: unabhaengig
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-k6-p23-scope
   timestamp: '2026-07-16T15:08:58.805002+00:00'
+- rule_id: p4h_zinsschranke_kern
+  schluessel: '["annahme", "betrifft_kat", "ebitda_basis", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - ebitda_basis
+    - interpretation
+    text: ebitda_basis ist bereits um Zinsaufwendungen, Abschreibungen und Zinserträge
+      angepasst.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n1-zuschnitt
+  timestamp: '2026-07-16T16:03:13.018134+00:00'
+- rule_id: p4h_zinsschranke_kern
+  schluessel: '["annahme", "betrifft_kat", "abziehbare_zinsaufwendungen", "sonstige"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - abziehbare_zinsaufwendungen
+    - sonstige
+    text: Negative Beträge werden auf 0.00 gesetzt. | Negative Werte werden auf 0.00
+      begrenzt.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n1-zuschnitt
+  timestamp: '2026-07-16T16:03:13.683642+00:00'
+- rule_id: p4h_zinsschranke_kern
+  schluessel: '["norm_teil", "ref", "§ 4h abs. 1 satz 5"]'
+  triage: bedingung_neu
+  bedingung: nichtabziehbar_wird_zinsvortrag
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 4h abs. 1 satz 5
+    klasse: wirkt_hinein
+    text: Danach verbleibende nicht abziehbare Zinsaufwendungen sind in die folgenden
+      Wirtschaftsjahre vorzutragen (Zinsvortrag).
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n1-zuschnitt
+  timestamp: '2026-07-16T16:03:14.351122+00:00'
+- rule_id: p4h_zinsschranke_kern
+  schluessel: '["norm_teil", "ref", "§ 4h abs. 1 satz 6"]'
+  triage: bedingung_neu
+  bedingung: zins_vortrag_bestand_state_input
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 4h abs. 1 satz 6
+    klasse: wirkt_hinein
+    text: Sie erhöhen die Zinsaufwendungen dieser Wirtschaftsjahre, nicht aber den
+      maßgeblichen Gewinn.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n1-zuschnitt
+  timestamp: '2026-07-16T16:03:15.018683+00:00'
