@@ -1,0 +1,59 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p4h_ausnahmen_freigrenze
+version: 6
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - nettozinsaufwand
+  - einheit
+  formulierungen:
+  - Nettozinsaufwand wird in Euro angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - keine_konzern_oder_nahestehende_b
+  - interpretation
+  formulierungen:
+  - Boolean kombiniert lit. a und b der Norm.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - eigenkapital_escape_c
+  - interpretation
+  formulierungen:
+  - Boolean steht für lit. c (Eigenkapitalvergleich).
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 4h abs. 2 satz 1 lit. a estg
+  formulierungen:
+  - die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: freigrenze_3mio_alles_oder_nichts
+- art: norm_teil
+  anker:
+  - ref
+  - § 4h abs. 2 satz 1 lit. b estg
+  formulierungen:
+  - der Steuerpflichtige keiner Person im Sinne des § 1 Absatz 2 des Außensteuergesetzes
+    nahesteht und über keine Betriebsstätte außerhalb des Staates verfügt
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: ausnahme_b_keine_nahestehende_person
+- art: norm_teil
+  anker:
+  - ref
+  - § 4h abs. 2 satz 1 lit. c estg
+  formulierungen:
+  - der Betrieb zu einem Konzern gehört und seine Eigenkapitalquote am Schluss des
+    vorangegangenen Abschlussstichtages gleich hoch oder höher ist als die des Konzerns
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: ausnahme_c_eigenkapital_escape

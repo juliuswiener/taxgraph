@@ -1,0 +1,199 @@
+{
+  "bedingungen": [
+    "freigrenze_3mio_alles_oder_nichts",
+    "ausnahme_b_keine_nahestehende_person",
+    "ausnahme_c_eigenkapital_escape",
+    "kern_abziehbar_aus_n1"
+  ],
+  "candidate_id": "p4h_ausnahmen_freigrenze",
+  "catala_a": "declaration scope ZinsschrankeAusnahmen:\n  input nettozinsaufwand content money\n  input zinsaufwand content money\n  input abziehbar_kern content money\n  input keine_konzern_oder_nahestehende_b content boolean\n  input eigenkapital_escape_c content boolean\n  output abziehbare_zinsaufwendungen_final content money\n\nscope ZinsschrankeAusnahmen:\n  definition abziehbare_zinsaufwendungen_final equals\n    if (nettozinsaufwand < $3,000,000.00)\n      or keine_konzern_oder_nahestehende_b\n      or eigenkapital_escape_c\n    then zinsaufwand\n    else abziehbar_kern",
+  "catala_a_sha256": "4459c915e3d74497a1609e8d305e74a4adf95c372b3f48f4a8543618a05d2e43",
+  "catala_b": "declaration scope ZinsschrankeAusnahmen:\n  input nettozinsaufwand content money\n  input zinsaufwand content money\n  input abziehbar_kern content money\n  input keine_konzern_oder_nahestehende_b content boolean\n  input eigenkapital_escape_c content boolean\n  internal freigrenze_greift content boolean\n  internal ausnahme_greift content boolean\n  output abziehbare_zinsaufwendungen_final content money\n\nscope ZinsschrankeAusnahmen:\n  definition freigrenze_greift equals nettozinsaufwand < $3,000,000.00\n  definition ausnahme_greift equals freigrenze_greift or keine_konzern_oder_nahestehende_b or eigenkapital_escape_c\n  definition abziehbare_zinsaufwendungen_final equals if ausnahme_greift then zinsaufwand else abziehbar_kern",
+  "catala_b_sha256": "e0ce458f3e561c96ef610c296da8bcfe0ce339239cfe75633a255ef46a86cf4d",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "../rules/ZinsschrankeAusnahmen.catala_en:15.14-31: 15 │   definition freigrenze_greift equals ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ ZinsschrankeAusnahmen",
+      "name": "typecheck_a_first",
+      "status": "FAIL"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 5 raster point(s) for 'abziehbare_zinsaufwendungen_final'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 3,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Ausgabe ist zinsaufwand statt nettozinsaufwand bei Bedingungserfüllung.",
+            "eingeschmolzen": "Ausgabe ist zinsaufwand statt nettozinsaufwand oder abziehbar_kern bei Bedingungserfüllung.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        7,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "13e0d5789996",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "freigrenze_3mio_alles_oder_nichts",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen",
+        "referenz": "§ 4h Abs. 2 Satz 1 lit. a EStG"
+      },
+      {
+        "abgedeckt_von": "ausnahme_b_keine_nahestehende_person",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "der Steuerpflichtige keiner Person im Sinne des § 1 Absatz 2 des Außensteuergesetzes nahesteht und über keine Betriebsstätte außerhalb des Staates verfügt",
+        "referenz": "§ 4h Abs. 2 Satz 1 lit. b EStG"
+      },
+      {
+        "abgedeckt_von": "ausnahme_c_eigenkapital_escape",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "der Betrieb zu einem Konzern gehört und seine Eigenkapitalquote am Schluss des vorangegangenen Abschlussstichtages gleich hoch oder höher ist als die des Konzerns",
+        "referenz": "§ 4h Abs. 2 Satz 1 lit. c EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Nettozinsaufwand wird in Euro angenommen.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "nettozinsaufwand",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Boolean kombiniert lit. a und b der Norm.",
+        "bedingung_id": null,
+        "betrifft": "keine_konzern_oder_nahestehende_b",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Boolean steht für lit. c (Eigenkapitalvergleich).",
+        "bedingung_id": "ausnahme_c_eigenkapital_escape",
+        "betrifft": "eigenkapital_escape_c",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-16T16:00:09+00:00"
+  },
+  "module_name": "ZinsschrankeAusnahmen",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

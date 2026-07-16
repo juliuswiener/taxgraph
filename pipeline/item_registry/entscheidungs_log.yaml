@@ -3753,3 +3753,114 @@ entscheidungen:
       maßgeblichen Gewinn.
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-n1-zuschnitt
   timestamp: '2026-07-16T16:03:15.018683+00:00'
+- rule_id: p4h_ausnahmen_freigrenze
+  schluessel: '["annahme", "betrifft_kat", "nettozinsaufwand", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: konv:betraege_in_euro
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - nettozinsaufwand
+    - einheit
+    text: Nettozinsaufwand wird in Euro angenommen.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n2-zuschnitt
+  timestamp: '2026-07-16T16:07:43.997831+00:00'
+- rule_id: p4h_ausnahmen_freigrenze
+  schluessel: '["annahme", "betrifft_kat", "keine_konzern_oder_nahestehende_b", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - keine_konzern_oder_nahestehende_b
+    - interpretation
+    text: Boolean kombiniert lit. a und b der Norm.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n2-zuschnitt
+  timestamp: '2026-07-16T16:07:44.665734+00:00'
+- rule_id: p4h_ausnahmen_freigrenze
+  schluessel: '["annahme", "betrifft_kat", "eigenkapital_escape_c", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - eigenkapital_escape_c
+    - interpretation
+    text: Boolean steht für lit. c (Eigenkapitalvergleich).
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n2-zuschnitt
+  timestamp: '2026-07-16T16:07:45.334007+00:00'
+- rule_id: p4h_ausnahmen_freigrenze
+  schluessel: '["norm_teil", "ref", "§ 4h abs. 2 satz 1 lit. a estg"]'
+  triage: bedingung_neu
+  bedingung: freigrenze_3mio_alles_oder_nichts
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 4h abs. 2 satz 1 lit. a estg
+    klasse: wirkt_hinein
+    text: die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n2-zuschnitt
+  timestamp: '2026-07-16T16:07:45.997139+00:00'
+- rule_id: p4h_ausnahmen_freigrenze
+  schluessel: '["norm_teil", "ref", "§ 4h abs. 2 satz 1 lit. b estg"]'
+  triage: bedingung_neu
+  bedingung: ausnahme_b_keine_nahestehende_person
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 4h abs. 2 satz 1 lit. b estg
+    klasse: wirkt_hinein
+    text: der Steuerpflichtige keiner Person im Sinne des § 1 Absatz 2 des Außensteuergesetzes
+      nahesteht und über keine Betriebsstätte außerhalb des Staates verfügt
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n2-zuschnitt
+  timestamp: '2026-07-16T16:07:46.673680+00:00'
+- rule_id: p4h_ausnahmen_freigrenze
+  schluessel: '["norm_teil", "ref", "§ 4h abs. 2 satz 1 lit. c estg"]'
+  triage: bedingung_neu
+  bedingung: ausnahme_c_eigenkapital_escape
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 4h abs. 2 satz 1 lit. c estg
+    klasse: wirkt_hinein
+    text: der Betrieb zu einem Konzern gehört und seine Eigenkapitalquote am Schluss
+      des vorangegangenen Abschlussstichtages gleich hoch oder höher ist als die des
+      Konzerns
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n2-zuschnitt
+  timestamp: '2026-07-16T16:07:47.355542+00:00'

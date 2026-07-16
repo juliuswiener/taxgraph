@@ -7551,3 +7551,135 @@ regeln:
     quelle: § 4h Abs. 2 EStG
     datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
     beschreibung: 'N1 modelliert den Kern-Mechanismus unter der Annahme, dass Abs. 1 Satz 1 anwendbar ist. Die Ausnahmen des Abs. 2 (a Freigrenze Nettozinsaufwand < 3 Mio, b keine schaedliche Konzern-/Nahestehenden-Zugehoerigkeit, c Escape-Eigenkapitalvergleich) = eigene Charge N2 (Geltungsbedingungen + Freigrenze, Alles-oder-nichts).'
+
+- rule_id: p4h_ausnahmen_freigrenze
+  norm: § 4h Abs. 2 EStG (Zinsschranke-Ausnahmen — Freigrenze 3 Mio EUR, Konzern-/Nahestehenden-Ausnahme, Escape-Eigenkapitalvergleich)
+  hinweis: 'EXAKTE FORMEL - GENAU DREI unbedingte Definitionen, in dieser Reihenfolge, KEINE catala-exceptions: (1) freigrenze_greift = nettozinsaufwand < 3.000.000 [bool] ; (2) ausnahme_greift = freigrenze_greift or keine_konzern_oder_nahestehende_b or eigenkapital_escape_c [bool] ; (3) abziehbare_zinsaufwendungen_final = if ausnahme_greift then zinsaufwand else abziehbar_kern. Das ist die vollstaendige Regel - NICHTS hinzufuegen. § 4h Abs. 2 Satz 1: Absatz 1 Satz 1 ist NICHT anzuwenden, wenn a) die Nettozinsaufwendungen weniger als drei Millionen Euro betragen (Freigrenze), b) der Betrieb keiner Person iSd § 1 Abs. 2 AStG nahesteht und keine Auslands-Betriebsstaette hat, ODER c) Escape-Eigenkapitalvergleich (EK-Quote >= Konzern). a/b/c sind ALTERNATIV -> logisches ODER; greift eine, ist der volle Zinsaufwand abziehbar. ZU (1) FREIGRENZE, NICHT FREIBETRAG - KRITISCH: Schwelle exakt "weniger als drei Millionen Euro" => strikt nettozinsaufwand < 3.000.000. Bei nettozinsaufwand >= 3.000.000 unterliegt der GESAMTE Nettozinsaufwand dem § 4h-Mechanismus (abziehbar_final = abziehbar_kern aus N1). Es wird NIEMALS ein Betrag von 3.000.000 vom Nettozinsaufwand abgezogen - das waere ein Freibetrag und ist VERBOTEN. ALLES-ODER-NICHTS an der 3-Mio-Schwelle: nettozinsaufwand 2.999.999 -> Ausnahme greift -> voller Abzug (= zinsaufwand); nettozinsaufwand 3.000.000 -> keine Ausnahme -> Mechanismus greift voll (= abziehbar_kern), NICHT abziehbar_kern zzgl. 3.000.000. ZU (2) keine_konzern_oder_nahestehende_b (lit b) und eigenkapital_escape_c (lit c) sind bool-INPUTS = Sachverhalts-Vorfrage; KEINE Konzern-Bilanz-, IFRS- oder EK-Quoten-Logik hier (§ 8a KStG modifiziert lit c fuer KapGes = N3; Abs. 2 Saetze 2-16 EK-Ermittlung/IFRS/Zuschlag = Nachtrag). ZU (3) zinsaufwand = voller Zinsaufwand des Jahres (bei Ausnahme voll abziehbar); abziehbar_kern = Ergebnis aus N1 (§ 4h Abs. 1). Die if-then-else in (3) ist EINE totale Definition (beide Zweige belegt), KEINE catala-exception under condition. FORMALISIERUNG: drei unbedingte Definitionen, KEINE bedingten exceptions.'
+  quellen:
+  - typ: gesetz
+    label: § 4h Abs. 2 Satz 1 lit. a EStG (Freigrenze — Nettozinsaufwendungen < 3 Mio EUR)
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen
+    auszug: Absatz 1 Satz 1 ist nicht anzuwenden, wenn a) die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen
+  - typ: gesetz
+    label: § 4h Abs. 2 Satz 1 lit. b EStG (keine nahestehende Person / keine Auslands-Betriebsstätte)
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: keiner Person im Sinne des § 1 Absatz 2
+    auszug: der Steuerpflichtige keiner Person im Sinne des § 1 Absatz 2 (gegebenenfalls in Verbindung mit § 1 Absatz 1 Satz 2) des Außensteuergesetzes nahesteht und über keine Betriebsstätte außerhalb des Staates verfügt
+  - typ: gesetz
+    label: § 4h Abs. 2 Satz 1 lit. c EStG (Escape — Eigenkapitalvergleich)
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: gleich hoch oder höher ist als die des Konzerns (Eigenkapitalvergleich)
+    auszug: der Betrieb zu einem Konzern gehört und seine Eigenkapitalquote am Schluss des vorangegangenen Abschlussstichtages gleich hoch oder höher ist als die des Konzerns (Eigenkapitalvergleich)
+  signature:
+    scope: ZinsschrankeAusnahmen
+    inputs:
+      nettozinsaufwand: money
+      zinsaufwand: money
+      abziehbar_kern: money
+      keine_konzern_oder_nahestehende_b: bool
+      eigenkapital_escape_c: bool
+    output: abziehbare_zinsaufwendungen_final
+  raster:
+  - nettozinsaufwand: 2999999
+    zinsaufwand: 3200000
+    abziehbar_kern: 2000000
+    keine_konzern_oder_nahestehende_b: false
+    eigenkapital_escape_c: false
+  - nettozinsaufwand: 3000000
+    zinsaufwand: 3200000
+    abziehbar_kern: 2000000
+    keine_konzern_oder_nahestehende_b: false
+    eigenkapital_escape_c: false
+  - nettozinsaufwand: 5000000
+    zinsaufwand: 6000000
+    abziehbar_kern: 1000000
+    keine_konzern_oder_nahestehende_b: true
+    eigenkapital_escape_c: false
+  - nettozinsaufwand: 5000000
+    zinsaufwand: 6000000
+    abziehbar_kern: 1000000
+    keine_konzern_oder_nahestehende_b: false
+    eigenkapital_escape_c: true
+  - nettozinsaufwand: 5000000
+    zinsaufwand: 6000000
+    abziehbar_kern: 1000000
+    keine_konzern_oder_nahestehende_b: false
+    eigenkapital_escape_c: false
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen
+    herkunft: synthetisch
+    rechenweg: 'FREIGRENZE-KANTE UNTER (Alles-oder-nichts): nettozinsaufwand 2.999.999 < 3.000.000 -> freigrenze_greift=true -> ausnahme_greift=true -> abziehbar_final = zinsaufwand = 3.200.000,00 (voller Abzug, § 4h aus).'
+    inputs:
+      nettozinsaufwand: 2999999
+      zinsaufwand: 3200000
+      abziehbar_kern: 2000000
+      keine_konzern_oder_nahestehende_b: false
+      eigenkapital_escape_c: false
+    expected: 3200000.0
+  - quelle: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen
+    herkunft: synthetisch
+    rechenweg: 'FREIGRENZE-KANTE AUF (Alles-oder-nichts, KEIN Freibetrag): nettozinsaufwand 3.000.000 NICHT < 3.000.000 -> freigrenze_greift=false, keine weitere Ausnahme -> abziehbar_final = abziehbar_kern = 2.000.000,00. NICHT 2.000.000 + 3.000.000 und NICHT zinsaufwand - der GESAMTE Nettozinsaufwand unterliegt dem Mechanismus.'
+    inputs:
+      nettozinsaufwand: 3000000
+      zinsaufwand: 3200000
+      abziehbar_kern: 2000000
+      keine_konzern_oder_nahestehende_b: false
+      eigenkapital_escape_c: false
+    expected: 2000000.0
+  - quelle: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: keiner Person im Sinne des § 1 Absatz 2
+    herkunft: synthetisch
+    rechenweg: 'AUSNAHME lit b (trotz Nettozinsaufwand 5 Mio > 3 Mio): keine_konzern_oder_nahestehende_b=true -> ausnahme_greift=true -> abziehbar_final = zinsaufwand = 6.000.000,00 (voller Abzug).'
+    inputs:
+      nettozinsaufwand: 5000000
+      zinsaufwand: 6000000
+      abziehbar_kern: 1000000
+      keine_konzern_oder_nahestehende_b: true
+      eigenkapital_escape_c: false
+    expected: 6000000.0
+  - quelle: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: gleich hoch oder höher ist als die des Konzerns (Eigenkapitalvergleich)
+    herkunft: synthetisch
+    rechenweg: 'AUSNAHME lit c Escape (Nettozinsaufwand 5 Mio > 3 Mio, aber EK-Vergleich bestanden): eigenkapital_escape_c=true -> ausnahme_greift=true -> abziehbar_final = zinsaufwand = 6.000.000,00.'
+    inputs:
+      nettozinsaufwand: 5000000
+      zinsaufwand: 6000000
+      abziehbar_kern: 1000000
+      keine_konzern_oder_nahestehende_b: false
+      eigenkapital_escape_c: true
+    expected: 6000000.0
+  - quelle: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen
+    herkunft: synthetisch
+    rechenweg: 'KEINE AUSNAHME -> Mechanismus greift: nettozinsaufwand 5 Mio >= 3 Mio, b=false, c=false -> ausnahme_greift=false -> abziehbar_final = abziehbar_kern = 1.000.000,00 (N1-Ergebnis).'
+    inputs:
+      nettozinsaufwand: 5000000
+      zinsaufwand: 6000000
+      abziehbar_kern: 1000000
+      keine_konzern_oder_nahestehende_b: false
+      eigenkapital_escape_c: false
+    expected: 1000000.0
+  geltungsbedingungen:
+  - bedingung: freigrenze_3mio_alles_oder_nichts
+    deckt_ab: die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen
+    quelle: § 4h Abs. 2 Satz 1 lit. a EStG
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'FREIGRENZE (nicht Freibetrag): nettozinsaufwand < 3.000.000 schaltet § 4h Abs. 1 komplett aus (voller Abzug). Strikt "<" ("weniger als"). Alles-oder-nichts: bei Erreichen/Ueberschreiten der 3 Mio unterliegt der GESAMTE Nettozinsaufwand dem Mechanismus (abziehbar_kern), es wird kein 3-Mio-Freibetrag abgezogen. Kante 2.999.999 (voll) vs. 3.000.000 (Mechanismus).'
+  - bedingung: ausnahme_b_keine_nahestehende_person
+    deckt_ab: keiner Person im Sinne des § 1 Absatz 2
+    quelle: § 4h Abs. 2 Satz 1 lit. b EStG
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'lit b als bool-Input keine_konzern_oder_nahestehende_b: der Betrieb steht keiner Person iSd § 1 Abs. 2 AStG nahe und hat keine Auslands-Betriebsstaette -> Ausnahme. Qualifikation = Sachverhalts-Vorfrage, keine Nahestehenden-/Betriebsstaetten-Pruefung modelliert.'
+  - bedingung: ausnahme_c_eigenkapital_escape
+    deckt_ab: gleich hoch oder höher ist als die des Konzerns (Eigenkapitalvergleich)
+    quelle: § 4h Abs. 2 Satz 1 lit. c EStG
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'lit c als bool-Input eigenkapital_escape_c: Escape-Klausel, EK-Quote des Betriebs >= EK-Quote des Konzerns (2-Prozentpunkte-Toleranz). Als Vorfrage-bool; die EK-Quoten-/IFRS-/Ueberleitungs-Ermittlung (Abs. 2 S. 2-16) + § 8a-KStG-Modifikation (N3) = Nachtrag.'
+  - bedingung: kern_abziehbar_aus_n1
+    deckt_ab: sind abziehbar in Höhe des Zinsertrags, darüber hinaus nur bis zur Höhe des verrechenbaren EBITDA
+    quelle: § 4h Abs. 1 Satz 1 EStG (via N1)
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'abziehbar_kern = Ergebnis der Charge N1 (§ 4h Abs. 1 Zinsschranke-Kern) als Input. Greift keine Ausnahme des Abs. 2, gilt abziehbar_final = abziehbar_kern; die Kern-Berechnung selbst ist N1 (nicht hier).'
