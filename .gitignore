@@ -28,3 +28,9 @@ sources/**/*.pdf
 sources/ebilanz/**/*.zip
 sources/ebilanz/**/*.xlsx
 oracle/gettsim/golden_crosscheck_result.json
+
+# DBA-Rohkorpus: amtliche BMF-PDFs nur lokal (225M, reproduzierbar via corpus/scrape_dba.py)
+corpus/dba_pdfs/
+# Urheberrechtlich geschuetzt (NWB-Redaktionstexte, Kommentar-Literatur) — NIE committen/pushen
+corpus/dba_text_nwb/
+corpus/kommentare/
