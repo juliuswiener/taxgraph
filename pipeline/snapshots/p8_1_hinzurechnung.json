@@ -1,0 +1,626 @@
+{
+  "bedingungen": [
+    "viertel_der_summe_a_bis_f",
+    "freibetrag_200000_uebersteigt",
+    "buchst_a_entgelte_schulden",
+    "buchst_b_renten_dauernde_lasten",
+    "buchst_c_gewinnanteile_stille",
+    "buchst_d_fuenftel_beweglich",
+    "buchst_e_haelfte_unbeweglich",
+    "buchst_f_viertel_rechte"
+  ],
+  "candidate_id": "p8_1_hinzurechnung",
+  "catala_a": "declaration scope HinzurechnungFinanzierung:\n  input entgelte_schulden content money\n  input renten_dauernde_lasten content money\n  input gewinnanteile_stille content money\n  input miet_pacht_beweglich content money\n  input miet_pacht_unbeweglich content money\n  input aufwendungen_rechte content money\n  internal rohe_summe content money\n  internal ueber_freibetrag content money\n  output hinzurechnungsbetrag content money\n\nscope HinzurechnungFinanzierung:\n  definition rohe_summe equals\n    entgelte_schulden\n    + renten_dauernde_lasten\n    + gewinnanteile_stille\n    + (miet_pacht_beweglich / $1.00 / 5.0) * $1.00\n    + (miet_pacht_unbeweglich / $1.00 / 2.0) * $1.00\n    + (aufwendungen_rechte / $1.00 / 4.0) * $1.00\n\n  definition ueber_freibetrag equals\n    if rohe_summe > $200,000.00\n    then rohe_summe - $200,000.00\n    else $0.00\n\n  definition hinzurechnungsbetrag equals\n    (ueber_freibetrag / $1.00 / 4.0) * $1.00",
+  "catala_a_sha256": "8c2a7cf3797eff016d9a3be60564493609bf516098939d67055841a406d7d7f1",
+  "catala_b": "declaration scope HinzurechnungFinanzierung:\n  input entgelte_schulden content money\n  input renten_dauernde_lasten content money\n  input gewinnanteile_stille content money\n  input miet_pacht_beweglich content money\n  input miet_pacht_unbeweglich content money\n  input aufwendungen_rechte content money\n  internal anteil_beweglich content money\n  internal anteil_unbeweglich content money\n  internal anteil_rechte content money\n  internal summe content money\n  internal uebersteigend content money\n  output hinzurechnungsbetrag content money\n\nscope HinzurechnungFinanzierung:\n  definition anteil_beweglich equals miet_pacht_beweglich / 5\n  definition anteil_unbeweglich equals miet_pacht_unbeweglich / 2\n  definition anteil_rechte equals aufwendungen_rechte / 4\n  definition summe equals entgelte_schulden + renten_dauernde_lasten + gewinnanteile_stille + anteil_beweglich + anteil_unbeweglich + anteil_rechte\n  definition uebersteigend equals if summe > $200,000.00 then summe - $200,000.00 else $0.00\n  definition hinzurechnungsbetrag equals uebersteigend / 4",
+  "catala_b_sha256": "317099334660ffd075955503d87721dc5cb9dc3ceef67e3c58bc553416ccd807",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'hinzurechnungsbetrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Wird mit 1/5 statt 1/4 gewichtet.",
+      "Wird mit 1/2 statt 1/4 gewichtet.",
+      "Freibetrag wird vor der Viertelung abgezogen, Norm sieht Viertelung der Summe vor.",
+      "Hinzurechnungsbetrag ist ein Viertel der Summe a-f, nicht ein Viertel des über 200.000 € liegenden Betrags.",
+      "Wird mit 1/5 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.",
+      "Wird mit 1/2 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.",
+      "Hinzurechnungsbetrag berechnet sich aus einem Viertel der Summe a-f, nicht aus einem Viertel des übersteigenden Betrags.",
+      "Wird mit 1/5 gewichtet, Norm verlangt 1/4 der Summe aller Posten.",
+      "Wird mit 1/2 gewichtet, Norm verlangt 1/4 der Summe aller Posten.",
+      "Wird mit 1/4 gewichtet, Norm verlangt 1/4 der Summe aller Posten."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 12,
+        "annahmen": 12,
+        "norm_teile": 3
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "miet_pacht_beweglich"
+            ],
+            "text": "Wird mit 1/5 statt 1/4 gewichtet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "miet_pacht_unbeweglich"
+            ],
+            "text": "Wird mit 1/2 statt 1/4 gewichtet."
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "aufwendungen_rechte"
+            ],
+            "text": "Wird mit 1/4 gewichtet, Norm sieht 1/4 der Summe vor."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Freibetrag wird vor der Viertelung abgezogen, Norm sieht Viertelung der Summe vor."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Hinzurechnungsbetrag ist ein Viertel der Summe a-f, nicht ein Viertel des über 200.000 € liegenden Betrags."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "miet_pacht_beweglich"
+            ],
+            "text": "Wird mit 1/5 gewichtet, Norm sieht 1/4 der Gesamtsumme vor."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "miet_pacht_unbeweglich"
+            ],
+            "text": "Wird mit 1/2 gewichtet, Norm sieht 1/4 der Gesamtsumme vor."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Hinzurechnungsbetrag berechnet sich aus einem Viertel der Summe a-f, nicht aus einem Viertel des übersteigenden Betrags."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "miet_pacht_beweglich"
+            ],
+            "text": "Wird mit 1/5 gewichtet, Norm verlangt 1/4 der Summe aller Posten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "miet_pacht_unbeweglich"
+            ],
+            "text": "Wird mit 1/2 gewichtet, Norm verlangt 1/4 der Summe aller Posten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "aufwendungen_rechte"
+            ],
+            "text": "Wird mit 1/4 gewichtet, Norm verlangt 1/4 der Summe aller Posten."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Freibetrag wird erst nach Summierung aller Posten abgezogen, nicht pro Posten."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "entgelte_schulden",
+              "interpretation"
+            ],
+            "text": "Wird als Teil der Summe a-f interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "renten_dauernde_lasten",
+              "interpretation"
+            ],
+            "text": "Wird als Teil der Summe a-f interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "gewinnanteile_stille",
+              "interpretation"
+            ],
+            "text": "Wird als Teil der Summe a-f interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "miet_pacht_beweglich",
+              "interpretation"
+            ],
+            "text": "Wird als Teil der Summe a-f interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "miet_pacht_unbeweglich",
+              "interpretation"
+            ],
+            "text": "Wird als Teil der Summe a-f interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "aufwendungen_rechte",
+              "interpretation"
+            ],
+            "text": "Wird als Teil der Summe a-f interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "ergebnis",
+              "einheit"
+            ],
+            "text": "Freibetrag von 200.000 wird in Euro angenommen."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "entgelte_schulden",
+              "einheit"
+            ],
+            "text": "Wird als Bruttobetrag ohne weitere Anpassungen interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "interpretation"
+            ],
+            "text": "Summe a-f wird als rohe_summe vor Freibetragsabzug verstanden."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "entgelte_schulden",
+              "einheit"
+            ],
+            "text": "Wird als Bruttowert ohne Abzüge angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "interpretation"
+            ],
+            "text": "Summe a-f wird als Rohsumme vor Freibetrag interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Freibetrag von 200.000 wird als fest vorgegeben angenommen."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 8 nr. 1 gewstg"
+            ],
+            "text": "200.000-Freibetrag"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 8 nr. 1 gewstg"
+            ],
+            "text": "soweit sie bei der Ermittlung des Gewinns abgesetzt worden sind"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Wird als Teil der Summe a-f interpretiert.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"entgelte_schulden\", \"interpretation\"]"
+        },
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Summe a-f wird als Rohsumme vor Freibetrag interpretiert.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"?\", \"interpretation\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "soweit sie bei der Ermittlung des Gewinns abgesetzt worden sind",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 8 nr. 1 gewstg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Wird mit 1/4 gewichtet, Norm sieht 1/4 der Summe vor.",
+            "eingeschmolzen": "Wird mit 1/4 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.",
+            "key": [
+              "betrifft",
+              "aufwendungen_rechte"
+            ]
+          },
+          {
+            "cluster": "Hinzurechnungsbetrag ist ein Viertel der Summe a-f, nicht ein Viertel des über 200.000 € liegenden Betrags.",
+            "eingeschmolzen": "Hinzurechnungsbetrag ist ein Viertel der Summe a-f, nicht nur der über 200.000 € liegenden Beträge.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Wird mit 1/5 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.",
+            "eingeschmolzen": "Wird mit 1/5 gewichtet, Norm sieht 1/4 der Summe vor.",
+            "key": [
+              "betrifft",
+              "miet_pacht_beweglich"
+            ]
+          },
+          {
+            "cluster": "Wird mit 1/2 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.",
+            "eingeschmolzen": "Wird mit 1/2 gewichtet, Norm sieht 1/4 der Summe vor.",
+            "key": [
+              "betrifft",
+              "miet_pacht_unbeweglich"
+            ]
+          },
+          {
+            "cluster": "Wird mit 1/5 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.",
+            "eingeschmolzen": "Wird mit 1/5 gewichtet, Norm sieht 1/4 der Summe vor.",
+            "key": [
+              "betrifft",
+              "miet_pacht_beweglich"
+            ]
+          },
+          {
+            "cluster": "Wird mit 1/2 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.",
+            "eingeschmolzen": "Wird mit 1/2 gewichtet, Norm sieht 1/4 der Summe vor.",
+            "key": [
+              "betrifft",
+              "miet_pacht_unbeweglich"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Wird als Bruttobetrag ohne weitere Anpassungen interpretiert.",
+            "eingeschmolzen": "Wird als Bruttowert ohne weitere Anpassungen interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "entgelte_schulden",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Summe a-f wird als rohe_summe vor Freibetragsabzug verstanden.",
+            "eingeschmolzen": "Summe der Eingaben wird als Rohsumme vor Freibetragsabzug verstanden.",
+            "key": [
+              "betrifft_kat",
+              "?",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Wird als Teil der Summe a-f interpretiert.",
+            "eingeschmolzen": "Wird als Teil der Summe a-f interpretiert, obwohl Norm nur a) explizit nennt.",
+            "key": [
+              "betrifft_kat",
+              "entgelte_schulden",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Wird als Teil der Summe a-f interpretiert.",
+            "eingeschmolzen": "Wird als Teil der Summe a-f interpretiert, obwohl Norm nur a) explizit nennt.",
+            "key": [
+              "betrifft_kat",
+              "renten_dauernde_lasten",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Wird als Teil der Summe a-f interpretiert.",
+            "eingeschmolzen": "Wird als Teil der Summe a-f interpretiert, obwohl Norm nur a) explizit nennt.",
+            "key": [
+              "betrifft_kat",
+              "gewinnanteile_stille",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Wird als Teil der Summe a-f interpretiert.",
+            "eingeschmolzen": "Wird als Teil der Summe a-f interpretiert, obwohl Norm nur a) explizit nennt.",
+            "key": [
+              "betrifft_kat",
+              "miet_pacht_beweglich",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Wird als Teil der Summe a-f interpretiert.",
+            "eingeschmolzen": "Wird als Teil der Summe a-f interpretiert, obwohl Norm nur a) explizit nennt.",
+            "key": [
+              "betrifft_kat",
+              "miet_pacht_unbeweglich",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Wird als Teil der Summe a-f interpretiert.",
+            "eingeschmolzen": "Wird als Teil der Summe a-f interpretiert, obwohl Norm nur a) explizit nennt.",
+            "key": [
+              "betrifft_kat",
+              "aufwendungen_rechte",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        13,
+        5,
+        2,
+        3,
+        4
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "e9d7b22ece6e",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "viertel_der_summe_a_bis_f",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Ein Viertel der Summe aus a) Entgelten für Schulden",
+        "referenz": "§ 8 Nr. 1 GewStG"
+      },
+      {
+        "abgedeckt_von": "freibetrag_200000_uebersteigt",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "200.000-Freibetrag",
+        "referenz": "§ 8 Nr. 1 GewStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "soweit sie bei der Ermittlung des Gewinns abgesetzt worden sind",
+        "referenz": "§ 8 Nr. 1 GewStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Wird als Teil der Summe a-f interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "entgelte_schulden",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Wird als Teil der Summe a-f interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "renten_dauernde_lasten",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Wird als Teil der Summe a-f interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "gewinnanteile_stille",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Wird als Teil der Summe a-f interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "miet_pacht_beweglich",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Wird als Teil der Summe a-f interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "miet_pacht_unbeweglich",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Wird als Teil der Summe a-f interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "aufwendungen_rechte",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Freibetrag von 200.000 wird in Euro angenommen.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "ergebnis",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Wird als Bruttobetrag ohne weitere Anpassungen interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "entgelte_schulden",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Summe a-f wird als rohe_summe vor Freibetragsabzug verstanden.",
+        "bedingung_id": null,
+        "betrifft": "rohe_summe",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Wird als Bruttowert ohne Abzüge angenommen.",
+        "bedingung_id": null,
+        "betrifft": "entgelte_schulden",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Summe a-f wird als Rohsumme vor Freibetrag interpretiert.",
+        "bedingung_id": "viertel_der_summe_a_bis_f",
+        "betrifft": "rohe_summe",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Freibetrag von 200.000 wird als fest vorgegeben angenommen.",
+        "bedingung_id": "freibetrag_200000_uebersteigt",
+        "betrifft": "ueber_freibetrag",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-16T09:43:14+00:00"
+  },
+  "module_name": "HinzurechnungFinanzierung",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

@@ -1,0 +1,177 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p8_1_hinzurechnung
+version: 25
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - wird mit 1/5 statt 1/4 gewichtet.
+  formulierungen:
+  - Wird mit 1/5 statt 1/4 gewichtet.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - wird mit 1/2 statt 1/4 gewichtet.
+  formulierungen:
+  - Wird mit 1/2 statt 1/4 gewichtet.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - freibetrag wird vor der viertelung abgezogen, norm sieht viertelung der summe
+    vor.
+  formulierungen:
+  - Freibetrag wird vor der Viertelung abgezogen, Norm sieht Viertelung der Summe
+    vor.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - hinzurechnungsbetrag ist ein viertel der summe a-f, nicht ein viertel des ueber
+    200.000 € liegenden betrags.
+  formulierungen:
+  - Hinzurechnungsbetrag ist ein Viertel der Summe a-f, nicht ein Viertel des über
+    200.000 € liegenden Betrags.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - wird mit 1/5 gewichtet, norm sieht 1/4 der gesamtsumme vor.
+  formulierungen:
+  - Wird mit 1/5 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - wird mit 1/2 gewichtet, norm sieht 1/4 der gesamtsumme vor.
+  formulierungen:
+  - Wird mit 1/2 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - hinzurechnungsbetrag berechnet sich aus einem viertel der summe a-f, nicht aus
+    einem viertel des uebersteigenden betrags.
+  formulierungen:
+  - Hinzurechnungsbetrag berechnet sich aus einem Viertel der Summe a-f, nicht aus
+    einem Viertel des übersteigenden Betrags.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - wird mit 1/5 gewichtet, norm verlangt 1/4 der summe aller posten.
+  formulierungen:
+  - Wird mit 1/5 gewichtet, Norm verlangt 1/4 der Summe aller Posten.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - wird mit 1/2 gewichtet, norm verlangt 1/4 der summe aller posten.
+  formulierungen:
+  - Wird mit 1/2 gewichtet, Norm verlangt 1/4 der Summe aller Posten.
+  triage: nicht_echt
+- art: abweichung
+  anker:
+  - abweichung_text
+  - wird mit 1/4 gewichtet, norm verlangt 1/4 der summe aller posten.
+  formulierungen:
+  - Wird mit 1/4 gewichtet, Norm verlangt 1/4 der Summe aller Posten.
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - entgelte_schulden
+  - interpretation
+  formulierungen:
+  - Wird als Teil der Summe a-f interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - renten_dauernde_lasten
+  - interpretation
+  formulierungen:
+  - Wird als Teil der Summe a-f interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewinnanteile_stille
+  - interpretation
+  formulierungen:
+  - Wird als Teil der Summe a-f interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - miet_pacht_beweglich
+  - interpretation
+  formulierungen:
+  - Wird als Teil der Summe a-f interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - miet_pacht_unbeweglich
+  - interpretation
+  formulierungen:
+  - Wird als Teil der Summe a-f interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - aufwendungen_rechte
+  - interpretation
+  formulierungen:
+  - Wird als Teil der Summe a-f interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ergebnis
+  - einheit
+  formulierungen:
+  - Freibetrag von 200.000 wird in Euro angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - entgelte_schulden
+  - einheit
+  formulierungen:
+  - Wird als Bruttobetrag ohne weitere Anpassungen interpretiert.
+  - Wird als Bruttowert ohne Abzüge angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - rohe_summe
+  - interpretation
+  formulierungen:
+  - Summe a-f wird als rohe_summe vor Freibetragsabzug verstanden.
+  - Summe a-f wird als Rohsumme vor Freibetrag interpretiert.
+  triage: bedingung_neu
+  bedingung: viertel_der_summe_a_bis_f
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ueber_freibetrag
+  - geltungsvoraussetzung
+  formulierungen:
+  - Freibetrag von 200.000 wird als fest vorgegeben angenommen.
+  triage: bedingung_neu
+  bedingung: freibetrag_200000_uebersteigt
+- art: norm_teil
+  anker:
+  - ref
+  - § 8 nr. 1 gewstg
+  formulierungen:
+  - Ein Viertel der Summe aus a) Entgelten für Schulden
+  - 200.000-Freibetrag
+  - soweit sie bei der Ermittlung des Gewinns abgesetzt worden sind
+  triage: nicht_material
+  klasse: unabhaengig
+  bedingung: freibetrag_200000_uebersteigt

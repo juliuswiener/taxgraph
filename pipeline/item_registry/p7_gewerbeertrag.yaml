@@ -1,0 +1,69 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p7_gewerbeertrag
+version: 8
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewinn_gewerbebetrieb
+  - interpretation
+  formulierungen:
+  - Gewinn wird als bereits nach EStG/KStG ermittelter Wert angenommen.
+  triage: bedingung_neu
+  bedingung: gewinn_nach_estg_kstg
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewinn_gewerbebetrieb
+  - zeitbezug
+  formulierungen:
+  - Gewinn bezieht sich auf den dem Erhebungszeitraum entsprechenden Veranlagungszeitraum.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - hinzurechnungen_p8
+  - interpretation
+  formulierungen:
+  - Hinzurechnungen entsprechen den Beträgen aus § 8 GewStG.
+  triage: bedingung_neu
+  bedingung: vermehrung_verminderung_p8_p9
+- art: annahme
+  anker:
+  - betrifft_kat
+  - kuerzungen_p9
+  - interpretation
+  formulierungen:
+  - Kürzungen entsprechen den Beträgen aus § 9 GewStG.
+  triage: bedingung_neu
+  bedingung: vermehrung_verminderung_p8_p9
+- art: norm_teil
+  anker:
+  - ref
+  - § 7 satz 1 gewstg
+  formulierungen:
+  - Gewerbeertrag ist der nach den Vorschriften des Einkommensteuergesetzes oder des
+    Körperschaftsteuergesetzes zu ermittelnde Gewinn aus dem Gewerbebetrieb
+  - vermehrt und vermindert um die in den §§ 8 und 9 bezeichneten Beträge
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: vermehrung_verminderung_p8_p9
+- art: norm_teil
+  anker:
+  - ref
+  - § 14 gewstg
+  formulierungen:
+  - Erhebungszeitraum
+  triage: nicht_material
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 6 gewstg
+  formulierungen:
+  - Besteuerungsgrundlage für die Gewerbesteuer ist der Gewerbeertrag
+  triage: bedingung_neu
+  klasse: unabhaengig
+  bedingung: besteuerungsgrundlage_gewerbeertrag_p6

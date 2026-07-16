@@ -1,0 +1,240 @@
+{
+  "bedingungen": [
+    "besteuerungsgrundlage_gewerbeertrag_p6",
+    "gewinn_nach_estg_kstg",
+    "vermehrung_verminderung_p8_p9"
+  ],
+  "candidate_id": "p7_gewerbeertrag",
+  "catala_a": "declaration scope Gewerbeertrag:\n  input gewinn_gewerbebetrieb content money\n  input hinzurechnungen_p8 content money\n  input kuerzungen_p9 content money\n  output gewerbeertrag content money\n\nscope Gewerbeertrag:\n  definition gewerbeertrag equals\n    gewinn_gewerbebetrieb + hinzurechnungen_p8 - kuerzungen_p9",
+  "catala_a_sha256": "dc7361db3799db87d37fa449dff1577cfbe9ceebdee85d77ab6a71f5622d6c59",
+  "catala_b": "declaration scope Gewerbeertrag:\n  input gewinn_gewerbebetrieb content money\n  input hinzurechnungen_p8 content money\n  input kuerzungen_p9 content money\n  output gewerbeertrag content money\n\nscope Gewerbeertrag:\n  definition gewerbeertrag equals gewinn_gewerbebetrieb + hinzurechnungen_p8 - kuerzungen_p9",
+  "catala_b_sha256": "8b95537f3b7cef871f5c67ac032304baea37b94b45d7e50ac354f21c20db56eb",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'gewerbeertrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 4,
+        "norm_teile": 4
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Gewinn wird als bereits nach EStG/KStG ermittelter Wert angenommen.",
+            "eingeschmolzen": "Gewinn wird als bereits nach EStG/KStG ermittelter Gewinn verstanden.",
+            "key": [
+              "betrifft_kat",
+              "gewinn_gewerbebetrieb",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Hinzurechnungen entsprechen den Beträgen aus § 8 GewStG.",
+            "eingeschmolzen": "Hinzurechnungen entsprechen den Beträgen nach § 8 GewStG.",
+            "key": [
+              "betrifft_kat",
+              "hinzurechnungen_p8",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Kürzungen entsprechen den Beträgen aus § 9 GewStG.",
+            "eingeschmolzen": "Kürzungen entsprechen den Beträgen nach § 9 GewStG.",
+            "key": [
+              "betrifft_kat",
+              "kuerzungen_p9",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Erhebungszeitraum",
+            "eingeschmolzen": "dem Erhebungszeitraum",
+            "key": [
+              "ref",
+              "§ 14 gewstg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        8,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "b5e066fe0398",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "gewinn_nach_estg_kstg",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Gewerbeertrag ist der nach den Vorschriften des Einkommensteuergesetzes oder des Körperschaftsteuergesetzes zu ermittelnde Gewinn aus dem Gewerbebetrieb",
+        "referenz": "§ 7 Satz 1 GewStG"
+      },
+      {
+        "abgedeckt_von": "vermehrung_verminderung_p8_p9",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "vermehrt und vermindert um die in den §§ 8 und 9 bezeichneten Beträge",
+        "referenz": "§ 7 Satz 1 GewStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Erhebungszeitraum",
+        "referenz": "§ 14 GewStG"
+      },
+      {
+        "abgedeckt_von": "besteuerungsgrundlage_gewerbeertrag_p6",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Besteuerungsgrundlage für die Gewerbesteuer ist der Gewerbeertrag",
+        "referenz": "§ 6 GewStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Gewinn wird als bereits nach EStG/KStG ermittelter Wert angenommen.",
+        "bedingung_id": "gewinn_nach_estg_kstg",
+        "betrifft": "gewinn_gewerbebetrieb",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Gewinn bezieht sich auf den dem Erhebungszeitraum entsprechenden Veranlagungszeitraum.",
+        "bedingung_id": "konv:vz_bezug_der_regel",
+        "betrifft": "gewinn_gewerbebetrieb",
+        "kategorie": "zeitbezug"
+      },
+      {
+        "annahme": "Hinzurechnungen entsprechen den Beträgen aus § 8 GewStG.",
+        "bedingung_id": "vermehrung_verminderung_p8_p9",
+        "betrifft": "hinzurechnungen_p8",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Kürzungen entsprechen den Beträgen aus § 9 GewStG.",
+        "bedingung_id": "vermehrung_verminderung_p8_p9",
+        "betrifft": "kuerzungen_p9",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-16T09:40:29+00:00"
+  },
+  "module_name": "Gewerbeertrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

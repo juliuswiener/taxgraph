@@ -1562,3 +1562,628 @@ entscheidungen:
       Code korrekt: equivalence+clerk+praezisions_lint PASS.'
   entschieden_via: adjudikation-instructor-2026-07-15-stufe4
   timestamp: '2026-07-15T16:59:04.496296+00:00'
+- rule_id: p7_gewerbeertrag
+  schluessel: '["annahme", "betrifft_kat", "gewinn_gewerbebetrieb", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: gewinn_nach_estg_kstg
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewinn_gewerbebetrieb
+    - interpretation
+    text: Gewinn wird als bereits nach EStG/KStG ermittelter Wert angenommen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g1
+  timestamp: '2026-07-16T09:55:49.060485+00:00'
+- rule_id: p7_gewerbeertrag
+  schluessel: '["annahme", "betrifft_kat", "gewinn_gewerbebetrieb", "zeitbezug"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewinn_gewerbebetrieb
+    - zeitbezug
+    text: Gewinn bezieht sich auf den dem Erhebungszeitraum entsprechenden Veranlagungszeitraum.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g1
+  timestamp: '2026-07-16T09:55:49.512294+00:00'
+- rule_id: p7_gewerbeertrag
+  schluessel: '["annahme", "betrifft_kat", "hinzurechnungen_p8", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: vermehrung_verminderung_p8_p9
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - hinzurechnungen_p8
+    - interpretation
+    text: Hinzurechnungen entsprechen den Beträgen aus § 8 GewStG.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g1
+  timestamp: '2026-07-16T09:55:49.965845+00:00'
+- rule_id: p7_gewerbeertrag
+  schluessel: '["annahme", "betrifft_kat", "kuerzungen_p9", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: vermehrung_verminderung_p8_p9
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - kuerzungen_p9
+    - interpretation
+    text: Kürzungen entsprechen den Beträgen aus § 9 GewStG.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g1
+  timestamp: '2026-07-16T09:55:50.416968+00:00'
+- rule_id: p7_gewerbeertrag
+  schluessel: '["norm_teil", "ref", "§ 7 satz 1 gewstg"]'
+  triage: bedingung_neu
+  bedingung: gewinn_nach_estg_kstg
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 7 satz 1 gewstg
+    text: Gewerbeertrag ist der nach den Vorschriften des Einkommensteuergesetzes
+      oder des Körperschaftsteuergesetzes zu ermittelnde Gewinn aus dem Gewerbebetrieb
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g1
+  timestamp: '2026-07-16T09:55:50.870245+00:00'
+- rule_id: p7_gewerbeertrag
+  schluessel: '["norm_teil", "ref", "§ 7 satz 1 gewstg"]'
+  triage: bedingung_neu
+  bedingung: vermehrung_verminderung_p8_p9
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 7 satz 1 gewstg
+    text: vermehrt und vermindert um die in den §§ 8 und 9 bezeichneten Beträge
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g1
+  timestamp: '2026-07-16T09:55:51.329658+00:00'
+- rule_id: p7_gewerbeertrag
+  schluessel: '["norm_teil", "ref", "§ 14 gewstg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 14 gewstg
+    text: Erhebungszeitraum
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g1
+  timestamp: '2026-07-16T09:55:51.786055+00:00'
+- rule_id: p7_gewerbeertrag
+  schluessel: '["norm_teil", "ref", "§ 6 gewstg"]'
+  triage: bedingung_neu
+  bedingung: besteuerungsgrundlage_gewerbeertrag_p6
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 6 gewstg
+    text: Besteuerungsgrundlage für die Gewerbesteuer ist der Gewerbeertrag
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g1
+  timestamp: '2026-07-16T09:55:52.245514+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["abweichung", "abweichung_text", "wird mit 1/5 statt 1/4 gewichtet."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - wird mit 1/5 statt 1/4 gewichtet.
+    text: Wird mit 1/5 statt 1/4 gewichtet.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:52.708815+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["abweichung", "abweichung_text", "wird mit 1/2 statt 1/4 gewichtet."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - wird mit 1/2 statt 1/4 gewichtet.
+    text: Wird mit 1/2 statt 1/4 gewichtet.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:53.163877+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["abweichung", "abweichung_text", "freibetrag wird vor der viertelung
+    abgezogen, norm sieht viertelung der summe vor."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - freibetrag wird vor der viertelung abgezogen, norm sieht viertelung der summe
+      vor.
+    text: Freibetrag wird vor der Viertelung abgezogen, Norm sieht Viertelung der
+      Summe vor.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:53.628568+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["abweichung", "abweichung_text", "hinzurechnungsbetrag ist ein viertel
+    der summe a-f, nicht ein viertel des ueber 200.000 € liegenden betrags."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - hinzurechnungsbetrag ist ein viertel der summe a-f, nicht ein viertel des ueber
+      200.000 € liegenden betrags.
+    text: Hinzurechnungsbetrag ist ein Viertel der Summe a-f, nicht ein Viertel des
+      über 200.000 € liegenden Betrags.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:54.090637+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["abweichung", "abweichung_text", "wird mit 1/5 gewichtet, norm sieht
+    1/4 der gesamtsumme vor."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - wird mit 1/5 gewichtet, norm sieht 1/4 der gesamtsumme vor.
+    text: Wird mit 1/5 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:54.559432+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["abweichung", "abweichung_text", "wird mit 1/2 gewichtet, norm sieht
+    1/4 der gesamtsumme vor."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - wird mit 1/2 gewichtet, norm sieht 1/4 der gesamtsumme vor.
+    text: Wird mit 1/2 gewichtet, Norm sieht 1/4 der Gesamtsumme vor.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:55.028153+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["abweichung", "abweichung_text", "hinzurechnungsbetrag berechnet sich
+    aus einem viertel der summe a-f, nicht aus einem viertel des uebersteigenden betrags."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - hinzurechnungsbetrag berechnet sich aus einem viertel der summe a-f, nicht aus
+      einem viertel des uebersteigenden betrags.
+    text: Hinzurechnungsbetrag berechnet sich aus einem Viertel der Summe a-f, nicht
+      aus einem Viertel des übersteigenden Betrags.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:55.509285+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["abweichung", "abweichung_text", "wird mit 1/5 gewichtet, norm verlangt
+    1/4 der summe aller posten."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - wird mit 1/5 gewichtet, norm verlangt 1/4 der summe aller posten.
+    text: Wird mit 1/5 gewichtet, Norm verlangt 1/4 der Summe aller Posten.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:55.982972+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["abweichung", "abweichung_text", "wird mit 1/2 gewichtet, norm verlangt
+    1/4 der summe aller posten."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - wird mit 1/2 gewichtet, norm verlangt 1/4 der summe aller posten.
+    text: Wird mit 1/2 gewichtet, Norm verlangt 1/4 der Summe aller Posten.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:56.459127+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["abweichung", "abweichung_text", "wird mit 1/4 gewichtet, norm verlangt
+    1/4 der summe aller posten."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - wird mit 1/4 gewichtet, norm verlangt 1/4 der summe aller posten.
+    text: Wird mit 1/4 gewichtet, Norm verlangt 1/4 der Summe aller Posten.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:56.937948+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "entgelte_schulden", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - entgelte_schulden
+    - interpretation
+    text: Wird als Teil der Summe a-f interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:57.425238+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "renten_dauernde_lasten", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - renten_dauernde_lasten
+    - interpretation
+    text: Wird als Teil der Summe a-f interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:57.917032+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "gewinnanteile_stille", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewinnanteile_stille
+    - interpretation
+    text: Wird als Teil der Summe a-f interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:58.393312+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "miet_pacht_beweglich", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - miet_pacht_beweglich
+    - interpretation
+    text: Wird als Teil der Summe a-f interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:58.883662+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "miet_pacht_unbeweglich", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - miet_pacht_unbeweglich
+    - interpretation
+    text: Wird als Teil der Summe a-f interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:59.380704+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "aufwendungen_rechte", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - aufwendungen_rechte
+    - interpretation
+    text: Wird als Teil der Summe a-f interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:55:59.871191+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "ergebnis", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - ergebnis
+    - einheit
+    text: Freibetrag von 200.000 wird in Euro angenommen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:56:00.364665+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "entgelte_schulden", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - entgelte_schulden
+    - einheit
+    text: Wird als Bruttobetrag ohne weitere Anpassungen interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:56:00.869264+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "rohe_summe", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - rohe_summe
+    - interpretation
+    text: Summe a-f wird als rohe_summe vor Freibetragsabzug verstanden.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:56:01.369231+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "entgelte_schulden", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - entgelte_schulden
+    - einheit
+    text: Wird als Bruttowert ohne Abzüge angenommen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:56:01.873049+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "rohe_summe", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: viertel_der_summe_a_bis_f
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - rohe_summe
+    - interpretation
+    text: Summe a-f wird als Rohsumme vor Freibetrag interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:56:02.384383+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["annahme", "betrifft_kat", "ueber_freibetrag", "geltungsvoraussetzung"]'
+  triage: bedingung_neu
+  bedingung: freibetrag_200000_uebersteigt
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - ueber_freibetrag
+    - geltungsvoraussetzung
+    text: Freibetrag von 200.000 wird als fest vorgegeben angenommen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:56:02.898243+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["norm_teil", "ref", "§ 8 nr. 1 gewstg"]'
+  triage: bedingung_neu
+  bedingung: viertel_der_summe_a_bis_f
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8 nr. 1 gewstg
+    text: Ein Viertel der Summe aus a) Entgelten für Schulden
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:56:03.409009+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["norm_teil", "ref", "§ 8 nr. 1 gewstg"]'
+  triage: bedingung_neu
+  bedingung: freibetrag_200000_uebersteigt
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8 nr. 1 gewstg
+    text: 200.000-Freibetrag
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:56:03.914620+00:00'
+- rule_id: p8_1_hinzurechnung
+  schluessel: '["norm_teil", "ref", "§ 8 nr. 1 gewstg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8 nr. 1 gewstg
+    text: soweit sie bei der Ermittlung des Gewinns abgesetzt worden sind
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
+  timestamp: '2026-07-16T09:56:04.423260+00:00'

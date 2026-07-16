@@ -6511,3 +6511,202 @@ regeln:
     deckt_ab: Satz 1 kann nur angewendet werden, wenn der Steuerpflichtige
     quelle: § 7 Abs. 2a S. 2 EStG
     beschreibung: S. 2 Anwendbarkeits-Voraussetzungen (Steuerpflichtiger-Bedingungen) = Applicability, Feinprüfung = Nachtrag.
+- rule_id: p7_gewerbeertrag
+  norm: § 7 Satz 1 i.V.m. § 6 GewStG (Gewerbeertrag = Besteuerungsgrundlage)
+  hinweis: 'gewerbeertrag = gewinn_gewerbebetrieb + hinzurechnungen_p8 - kuerzungen_p9. § 6: Besteuerungsgrundlage der Gewerbesteuer IST der Gewerbeertrag (Identitaet, output dieser Regel). Slot-/Andock-Regel ohne eigenen Rechenkern jenseits der Summe: gewinn_gewerbebetrieb = der nach EStG ermittelte Gewinn aus Gewerbebetrieb (KSt-Nenner zurueckgestellt = Paket-4-Entscheidung A; §15/W2, bereits formalisiert); hinzurechnungen_p8 = Ergebnis § 8 (p8_1_hinzurechnung); kuerzungen_p9 = Ergebnis § 9. Negativer Gewerbeertrag ZULAESSIG (Gewerbeverlust -> § 10a, KEIN Boden bei 0). money + money - money, keine Rundung, exakt. § 7 Saetze 2-8 (Veraeusserungsgewinn, § 5a, Organschaft, § 8b KStG, AStG) = Nicht-Gegenstand/Nachtrag.'
+  quellen:
+  - typ: gesetz
+    label: § 7 Satz 1 GewStG (Gewerbeertrag = Gewinn ± §§ 8/9)
+    datei: sources/gesetze-im-internet/gewstg_p7_2026-07-16.txt
+    zitatanker: vermehrt und vermindert um die in den §§ 8 und 9 bezeichneten Beträge
+    auszug: Gewerbeertrag ist der nach den Vorschriften des Einkommensteuergesetzes oder des Körperschaftsteuergesetzes zu ermittelnde Gewinn aus dem Gewerbebetrieb, der bei der Ermittlung des Einkommens für den dem Erhebungszeitraum (§ 14) entsprechenden Veranlagungszeitraum zu berücksichtigen ist, vermehrt und vermindert um die in den §§ 8 und 9 bezeichneten Beträge.
+  - typ: gesetz
+    label: § 6 GewStG (Besteuerungsgrundlage = Gewerbeertrag)
+    datei: sources/gesetze-im-internet/gewstg_p6_2026-07-16.txt
+    zitatanker: Besteuerungsgrundlage für die Gewerbesteuer ist der Gewerbeertrag
+    auszug: Besteuerungsgrundlage für die Gewerbesteuer ist der Gewerbeertrag.
+  signature:
+    scope: Gewerbeertrag
+    inputs:
+      gewinn_gewerbebetrieb: money
+      hinzurechnungen_p8: money
+      kuerzungen_p9: money
+    output: gewerbeertrag
+  raster:
+  - gewinn_gewerbebetrieb: 100000
+    hinzurechnungen_p8: 20000
+    kuerzungen_p9: 5000
+  - gewinn_gewerbebetrieb: 50000
+    hinzurechnungen_p8: 0
+    kuerzungen_p9: 0
+  - gewinn_gewerbebetrieb: 10000
+    hinzurechnungen_p8: 5000
+    kuerzungen_p9: 30000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/gewstg_p7_2026-07-16.txt
+    zitatanker: vermehrt und vermindert um die in den §§ 8 und 9 bezeichneten Beträge
+    herkunft: synthetisch
+    rechenweg: 'Gewerbeertrag = 100.000 + 20.000 - 5.000 = 115.000,00 (Gewinn + § 8 - § 9).'
+    inputs:
+      gewinn_gewerbebetrieb: 100000
+      hinzurechnungen_p8: 20000
+      kuerzungen_p9: 5000
+    expected: 115000.0
+  - quelle: sources/gesetze-im-internet/gewstg_p6_2026-07-16.txt
+    zitatanker: Besteuerungsgrundlage für die Gewerbesteuer ist der Gewerbeertrag
+    herkunft: synthetisch
+    rechenweg: 'Ohne Hinzurechnung/Kuerzung: Gewerbeertrag = Gewinn = 50.000,00 (§ 6 Besteuerungsgrundlage).'
+    inputs:
+      gewinn_gewerbebetrieb: 50000
+      hinzurechnungen_p8: 0
+      kuerzungen_p9: 0
+    expected: 50000.0
+  - quelle: sources/gesetze-im-internet/gewstg_p7_2026-07-16.txt
+    zitatanker: vermehrt und vermindert um die in den §§ 8 und 9 bezeichneten Beträge
+    herkunft: synthetisch
+    rechenweg: 'NEGATIV: 10.000 + 5.000 - 30.000 = -15.000,00 (Gewerbeverlust, § 10a-Andock, KEIN Boden bei 0).'
+    inputs:
+      gewinn_gewerbebetrieb: 10000
+      hinzurechnungen_p8: 5000
+      kuerzungen_p9: 30000
+    expected: -15000.0
+  geltungsbedingungen:
+  - bedingung: besteuerungsgrundlage_gewerbeertrag_p6
+    deckt_ab: Besteuerungsgrundlage für die Gewerbesteuer ist der Gewerbeertrag
+    quelle: § 6 GewStG
+    datei: sources/gesetze-im-internet/gewstg_p6_2026-07-16.txt
+    beschreibung: § 6 - die Besteuerungsgrundlage der Gewerbesteuer IST der Gewerbeertrag (= output). Identitaet, kein eigener Rechenschritt.
+  - bedingung: gewinn_nach_estg_kstg
+    deckt_ab: der nach den Vorschriften des Einkommensteuergesetzes oder des Körperschaftsteuergesetzes zu ermittelnde Gewinn aus dem Gewerbebetrieb
+    quelle: § 7 Satz 1 GewStG
+    beschreibung: 'Ausgangsgroesse gewinn_gewerbebetrieb = der nach EStG ODER KStG ermittelte Gewinn. KSt-Nenner-Entscheidung A (Paket 4): hier der EStG-/§15-/W2-Gewinn (natuerliche Person/PersG); KStG-Pfad zurueckgestellt (eigenes Paket). Input aus der §-2-Integration, nicht selbst gerechnet.'
+  - bedingung: vermehrung_verminderung_p8_p9
+    deckt_ab: vermehrt und vermindert um die in den §§ 8 und 9 bezeichneten Beträge
+    quelle: § 7 Satz 1 GewStG
+    beschreibung: 'Gewerbeertrag = Gewinn + Hinzurechnungen (§ 8, hinzurechnungen_p8) - Kuerzungen (§ 9, kuerzungen_p9); beide money-Input aus den eigenen Regeln (p8_1_hinzurechnung / § 9).'
+- rule_id: p8_1_hinzurechnung
+  norm: § 8 Nr. 1 GewStG (Hinzurechnung Finanzierungsanteile, 200.000-Freibetrag, Viertel)
+  hinweis: 'summe = entgelte_schulden + renten_dauernde_lasten + gewinnanteile_stille + (miet_pacht_beweglich / 5) + (miet_pacht_unbeweglich / 2) + (aufwendungen_rechte / 4). hinzurechnungsbetrag = max(0, summe - 200000) / 4. KLASSE-5: die Quoten sind EXAKTE Brueche - ein Fuenftel = /5, die Haelfte = /2, ein Viertel = /4 (NICHT 0,2 / 0,5 / 0,25); die End-Quote ein Viertel = /4. REIHENFOLGE zwingend: erst je-Buchstabe-Quote + Summe, DANN Freibetrag 200.000 abziehen, DANN Viertel (nicht: erst Viertel, dann Freibetrag). money/int bzw. money*decimal, Cent-Schnitt ZULETZT, keine Quote vorrunden. a/b/c = volle Betraege (100%); Freibetrag greift nur bei positiver Summe (max(0, summe - 200000)). GRENZFALL: Summe genau 200.000 -> nichts uebersteigt -> 0. E-/Hybrid-/Fahrrad-Halbierung von Buchst. d (1/10 statt 1/5) + KSA-Ausnahme (§ 25 KSVG) = benannter Nachtrag, hier Standardfall.'
+  quellen:
+  - typ: gesetz
+    label: § 8 Nr. 1 GewStG (Viertel der Summe a-f, 200.000-Freibetrag)
+    datei: sources/gesetze-im-internet/gewstg_p8_2026-07-16.txt
+    zitatanker: soweit die Summe den Betrag von 200 000 Euro übersteigt
+    auszug: 'Dem Gewinn aus Gewerbebetrieb (§ 7) werden folgende Beträge wieder hinzugerechnet, soweit sie bei der Ermittlung des Gewinns abgesetzt worden sind: 1. Ein Viertel der Summe aus a) Entgelten für Schulden'
+  signature:
+    scope: HinzurechnungFinanzierung
+    inputs:
+      entgelte_schulden: money
+      renten_dauernde_lasten: money
+      gewinnanteile_stille: money
+      miet_pacht_beweglich: money
+      miet_pacht_unbeweglich: money
+      aufwendungen_rechte: money
+    output: hinzurechnungsbetrag
+  raster:
+  - entgelte_schulden: 300000
+    renten_dauernde_lasten: 0
+    gewinnanteile_stille: 0
+    miet_pacht_beweglich: 0
+    miet_pacht_unbeweglich: 0
+    aufwendungen_rechte: 0
+  - entgelte_schulden: 150000
+    renten_dauernde_lasten: 0
+    gewinnanteile_stille: 0
+    miet_pacht_beweglich: 0
+    miet_pacht_unbeweglich: 0
+    aufwendungen_rechte: 0
+  - entgelte_schulden: 100000
+    renten_dauernde_lasten: 50000
+    gewinnanteile_stille: 0
+    miet_pacht_beweglich: 500000
+    miet_pacht_unbeweglich: 200000
+    aufwendungen_rechte: 40000
+  - entgelte_schulden: 200000
+    renten_dauernde_lasten: 0
+    gewinnanteile_stille: 0
+    miet_pacht_beweglich: 0
+    miet_pacht_unbeweglich: 0
+    aufwendungen_rechte: 0
+  test_seed:
+  - quelle: sources/gesetze-im-internet/gewstg_p8_2026-07-16.txt
+    zitatanker: soweit die Summe den Betrag von 200 000 Euro übersteigt
+    herkunft: synthetisch
+    rechenweg: 'Nur Schulden 300.000 (Buchst. a, 100%): Summe 300.000. max(0, 300.000 - 200.000) / 4 = 100.000 / 4 = 25.000,00.'
+    inputs:
+      entgelte_schulden: 300000
+      renten_dauernde_lasten: 0
+      gewinnanteile_stille: 0
+      miet_pacht_beweglich: 0
+      miet_pacht_unbeweglich: 0
+      aufwendungen_rechte: 0
+    expected: 25000.0
+  - quelle: sources/gesetze-im-internet/gewstg_p8_2026-07-16.txt
+    zitatanker: soweit die Summe den Betrag von 200 000 Euro übersteigt
+    herkunft: synthetisch
+    rechenweg: 'Summe 150.000 < Freibetrag 200.000: max(0, 150.000 - 200.000) = 0 -> Hinzurechnung 0,00.'
+    inputs:
+      entgelte_schulden: 150000
+      renten_dauernde_lasten: 0
+      gewinnanteile_stille: 0
+      miet_pacht_beweglich: 0
+      miet_pacht_unbeweglich: 0
+      aufwendungen_rechte: 0
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/gewstg_p8_2026-07-16.txt
+    zitatanker: einem Fünftel der Miet- und Pachtzinsen
+    herkunft: synthetisch
+    rechenweg: 'Gemischt: Schulden 100.000 + Renten 50.000 + beweglich 500.000/5=100.000 + unbeweglich 200.000/2=100.000 + Rechte 40.000/4=10.000 = Summe 360.000. max(0, 360.000 - 200.000) / 4 = 160.000 / 4 = 40.000,00.'
+    inputs:
+      entgelte_schulden: 100000
+      renten_dauernde_lasten: 50000
+      gewinnanteile_stille: 0
+      miet_pacht_beweglich: 500000
+      miet_pacht_unbeweglich: 200000
+      aufwendungen_rechte: 40000
+    expected: 40000.0
+  - quelle: sources/gesetze-im-internet/gewstg_p8_2026-07-16.txt
+    zitatanker: soweit die Summe den Betrag von 200 000 Euro übersteigt
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL Summe genau 200.000: max(0, 200.000 - 200.000) = 0 -> Hinzurechnung 0,00 (soweit UEBERsteigt, nicht erreicht).'
+    inputs:
+      entgelte_schulden: 200000
+      renten_dauernde_lasten: 0
+      gewinnanteile_stille: 0
+      miet_pacht_beweglich: 0
+      miet_pacht_unbeweglich: 0
+      aufwendungen_rechte: 0
+    expected: 0.0
+  geltungsbedingungen:
+  - bedingung: viertel_der_summe_a_bis_f
+    deckt_ab: Ein Viertel der Summe aus
+    quelle: § 8 Nr. 1 GewStG
+    beschreibung: 'Endquote: ein Viertel (= /4) der Summe der Finanzierungsanteile a-f, angewandt NACH dem Freibetrag.'
+  - bedingung: freibetrag_200000_uebersteigt
+    deckt_ab: soweit die Summe den Betrag von 200 000 Euro übersteigt
+    quelle: § 8 Nr. 1 GewStG
+    beschreibung: 'Freibetrag 200.000: nur der die 200.000 uebersteigende Teil der Summe geht in die Viertel-Quote (max(0, summe - 200000)). GRENZE: genau 200.000 -> nichts uebersteigt -> 0.'
+  - bedingung: buchst_a_entgelte_schulden
+    deckt_ab: Entgelten für Schulden
+    quelle: § 8 Nr. 1 Buchst. a GewStG
+    beschreibung: 'Buchst. a: Entgelte fuer Schulden voll (100%) in die Summe.'
+  - bedingung: buchst_b_renten_dauernde_lasten
+    deckt_ab: Renten und dauernden Lasten
+    quelle: § 8 Nr. 1 Buchst. b GewStG
+    beschreibung: 'Buchst. b: Renten und dauernde Lasten voll (100%). Pensionszahlungen aus Arbeitgeber-Versorgungszusage ausgenommen = Nachtrag.'
+  - bedingung: buchst_c_gewinnanteile_stille
+    deckt_ab: Gewinnanteilen des stillen Gesellschafters
+    quelle: § 8 Nr. 1 Buchst. c GewStG
+    beschreibung: 'Buchst. c: Gewinnanteile des stillen Gesellschafters voll (100%).'
+  - bedingung: buchst_d_fuenftel_beweglich
+    deckt_ab: einem Fünftel der Miet- und Pachtzinsen
+    quelle: § 8 Nr. 1 Buchst. d GewStG
+    beschreibung: 'Buchst. d: ein Fuenftel (= /5) der Miet-/Pachtzinsen fuer bewegliche WG. E-/Hybrid-/Fahrrad-Halbierung (1/10) = benannter Nachtrag, hier Standardfall 1/5.'
+  - bedingung: buchst_e_haelfte_unbeweglich
+    deckt_ab: der Hälfte der Miet- und Pachtzinsen
+    quelle: § 8 Nr. 1 Buchst. e GewStG
+    beschreibung: 'Buchst. e: die Haelfte (= /2) der Miet-/Pachtzinsen fuer unbewegliche WG.'
+  - bedingung: buchst_f_viertel_rechte
+    deckt_ab: einem Viertel der Aufwendungen für die zeitlich befristete Überlassung von Rechten
+    quelle: § 8 Nr. 1 Buchst. f GewStG
+    beschreibung: 'Buchst. f: ein Viertel (= /4) der Aufwendungen fuer zeitlich befristete Rechteueberlassung (Konzessionen/Lizenzen).'
