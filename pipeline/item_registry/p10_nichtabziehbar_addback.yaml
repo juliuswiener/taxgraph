@@ -1,0 +1,26 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10_nichtabziehbar_addback
+version: 2
+items:
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 nr. 2 kstg
+  formulierungen:
+  - die Umsatzsteuer für Umsätze, die Entnahmen oder verdeckte Gewinnausschüttungen
+    sind, und die Vorsteuerbeträge auf Aufwendungen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: personensteuern_nichtabziehbar
+- art: norm_teil
+  anker:
+  - ref
+  - § 10 nr. 3 kstg
+  formulierungen:
+  - sonstige Rechtsfolgen vermögensrechtlicher Art, bei denen der Strafcharakter überwiegt,
+    und Leistungen zur Erfüllung von Auflagen oder Weisungen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: geldstrafen_nichtabziehbar

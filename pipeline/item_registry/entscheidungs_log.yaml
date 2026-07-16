@@ -3393,3 +3393,41 @@ entscheidungen:
     klasse: unabhaengig
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-k3-triage
   timestamp: '2026-07-16T14:46:05.210929+00:00'
+- rule_id: p10_nichtabziehbar_addback
+  schluessel: '["norm_teil", "ref", "§ 10 nr. 2 kstg"]'
+  triage: bedingung_neu
+  bedingung: personensteuern_nichtabziehbar
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 10 nr. 2 kstg
+    text: die Umsatzsteuer für Umsätze, die Entnahmen oder verdeckte Gewinnausschüttungen
+      sind, und die Vorsteuerbeträge auf Aufwendungen
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k4-triage
+  timestamp: '2026-07-16T14:52:59.330982+00:00'
+- rule_id: p10_nichtabziehbar_addback
+  schluessel: '["norm_teil", "ref", "§ 10 nr. 3 kstg"]'
+  triage: bedingung_neu
+  bedingung: geldstrafen_nichtabziehbar
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 10 nr. 3 kstg
+    text: sonstige Rechtsfolgen vermögensrechtlicher Art, bei denen der Strafcharakter
+      überwiegt, und Leistungen zur Erfüllung von Auflagen oder Weisungen
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k4-triage
+  timestamp: '2026-07-16T14:52:59.981403+00:00'

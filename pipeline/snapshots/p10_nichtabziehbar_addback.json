@@ -1,0 +1,179 @@
+{
+  "bedingungen": [
+    "personensteuern_nichtabziehbar",
+    "geldstrafen_nichtabziehbar",
+    "rechtsform_kapitalgesellschaft"
+  ],
+  "candidate_id": "p10_nichtabziehbar_addback",
+  "catala_a": "declaration scope NichtabziehbareAufwendungen:\n  input personensteuern content money\n  input geldstrafen content money\n  output nichtabziehbare_aufwendungen content money\n\nscope NichtabziehbareAufwendungen:\n  definition nichtabziehbare_aufwendungen equals personensteuern + geldstrafen",
+  "catala_a_sha256": "8048817c3e677a104ee0db1ef551688301ac727f4f90e8996fff39d37c7a2b80",
+  "catala_b": "declaration scope NichtabziehbareAufwendungen:\n  input personensteuern content money\n  input geldstrafen content money\n  output nichtabziehbare_aufwendungen content money\n\nscope NichtabziehbareAufwendungen:\n  definition nichtabziehbare_aufwendungen equals personensteuern + geldstrafen",
+  "catala_b_sha256": "8048817c3e677a104ee0db1ef551688301ac727f4f90e8996fff39d37c7a2b80",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'nichtabziehbare_aufwendungen'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": true,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 0,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "die Umsatzsteuer für Umsätze, die Entnahmen oder verdeckte Gewinnausschüttungen sind, und die Vorsteuerbeträge auf Aufwendungen",
+            "eingeschmolzen": "die Steuern vom Einkommen und sonstige Personensteuern sowie die Umsatzsteuer für Umsätze, die Entnahmen oder verdeckte Gewinnausschüttungen sind, und die Vorst",
+            "key": [
+              "ref",
+              "§ 10 nr. 2 kstg"
+            ]
+          },
+          {
+            "cluster": "sonstige Rechtsfolgen vermögensrechtlicher Art, bei denen der Strafcharakter überwiegt, und Leistungen zur Erfüllung von Auflagen oder Weisungen",
+            "eingeschmolzen": "in einem Strafverfahren festgesetzte Geldstrafen, sonstige Rechtsfolgen vermögensrechtlicher Art, bei denen der Strafcharakter überwiegt, und Leistungen zur Erf",
+            "key": [
+              "ref",
+              "§ 10 nr. 3 kstg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "d22b951be38e",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "personensteuern_nichtabziehbar",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "die Umsatzsteuer für Umsätze, die Entnahmen oder verdeckte Gewinnausschüttungen sind, und die Vorsteuerbeträge auf Aufwendungen",
+        "referenz": "§ 10 Nr. 2 KStG"
+      },
+      {
+        "abgedeckt_von": "geldstrafen_nichtabziehbar",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "sonstige Rechtsfolgen vermögensrechtlicher Art, bei denen der Strafcharakter überwiegt, und Leistungen zur Erfüllung von Auflagen oder Weisungen",
+        "referenz": "§ 10 Nr. 3 KStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-16T14:50:44+00:00"
+  },
+  "module_name": "NichtabziehbareAufwendungen",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}
