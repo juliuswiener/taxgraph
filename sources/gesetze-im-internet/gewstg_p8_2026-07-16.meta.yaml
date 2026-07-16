@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "gewstg/p8/2026-07-16"
+  norm: "GewStG § 8"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/gewstg/__8.html"
+  abrufdatum: "2026-07-16"
+  datei: "gewstg_p8_2026-07-16.txt"
+  sha256: "302e59c43aa007677b4c03e720bdab3bdbce517a0b218f6b57d920d23b217b1a"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 4 GewStG Charge G2"]

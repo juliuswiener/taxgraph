@@ -1,0 +1,19 @@
+dokument:
+  norm_uri: "bfh/2024-08-01/VI-R-52-20"
+  norm: "BFH, Urteil v. 01.08.2024 - VI R 52/20 (Besteuerung von Abfindungen nach dem DBA-Frankreich 1959/2001 - Grenzgaengerregelung Art. 13 Abs. 5)"
+  fassung: "01.08.2024, ECLI:DE:BFH:2024:U.010824.VIR52.20.0"
+  quelle_url: "(PDF von Julius bereitgestellt 2026-07-16, Downloads/BFH-Urteil-VI-R-52-20.pdf; amtlich: bundesfinanzhof.de Entscheidungen online)"
+  abrufdatum: "2026-07-16"
+  datei: "bfh_vi_r_52-20_2024-08-01.txt"
+  pdf_datei: "bfh_vi_r_52-20_2024-08-01.pdf"
+  sha256: "20b0b2f39d3afccbf8c7212d0c9dce01b3414b43fdbe4c5b0cc9f0e0335912b0"
+  pdf_sha256: "e24e742a6e2abd16827b1c68df2c682acb63b0195bb24b89caa1d1ca97925124"
+  authority: rechtsprechung
+  redistributable: true
+  hinweis: "pdftotext-Extraktion (born-digital, sauberer Text-Layer). Traegt die FR-Katalog-
+    Sonderfaelle: Verhaeltnis Art. 13 Abs. 1 (Taetigkeitsort-Prinzip, auch fuer Abfindungen)
+    zu Art. 13 Abs. 5 (Grenzgaengerregelung -> Besteuerung NUR im Ansaessigkeitsstaat);
+    Abgrenzung nach Zeitraeumen der Grenzgaengereigenschaft. Fuer Paket-3-FR-Katalog:
+    Grenzgaenger-Bedingung ist kein Rechenkern, aber Geltungsbedingung mit diesem Urteil
+    als Zweitbeleg neben dem Abkommenstext."
+  verwendet_in: ["Paket 3 DBA-Katalog FR (Grenzgaenger-Sonderfall Art. 13 Abs. 5, Zweitbeleg)"]

@@ -1,0 +1,41 @@
+Quelle: https://www.buzer.de/9_JStG_2024.htm
+Abgerufen: 2026-07-16
+Norm: JStG 2024 Art. 9 - Aenderung des GewStG (u.a. § 9 Nr. 1 S. 1 Neufassung)
+Fassung: BGBl 2024 I Nr. 387, Art. 9 (buzer-Mirror; amtliche BGBl-PDF via recht.bund.de bei Zitat-Zweifel)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+Das Gewerbesteuergesetz in der Fassung der Bekanntmachung vom 15. Oktober 2002 (BGBl. I S. 4167 ), das zuletzt durch Artikel 19 des Gesetzes vom 27. März 2024 (BGBl. 2024 I Nr. 108 ) geändert worden ist, wird wie folgt geändert:
+1. In § 3 Nummer 2 werden die Wörter „die Niedersächsische Gesellschaft für öffentliche Finanzierungen mit beschränkter Haftung," gestrichen.
+2. In § 7 werden die Sätze 8 und 9 durch folgenden Satz ersetzt:
+„Einkünfte, die in einer ausländischen Betriebsstätte anfallen und nach den §§ 7 bis 13 des Außensteuergesetzes steuerpflichtig wären, falls diese Betriebsstätte eine ausländische Gesellschaft im Sinne dieser Vorschriften wäre, gelten als in einer inländischen Betriebsstätte erzielt."
+3. § 9 Nummer 1 Satz 1 wird wie folgt gefasst:
+„die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer für zum Betriebsvermögen des Unternehmers gehörenden Grundbesitz."
+4. In § 14a Satz 1 werden die Wörter „durch Datenfernübertragung" durch die Wörter „über die amtlich bestimmte Schnittstelle elektronisch" ersetzt.
+5. § 29 Absatz 1 wird wie folgt geändert:
+a) In Nummer 1 wird die Angabe „Nummer 2" durch die Wörter „Nummern 2 und 3" ersetzt.
+b) In Nummer 2 wird der Punkt am Ende durch ein Semikolon ersetzt:
+c) Folgende Nummer 3 wird angefügt:
+„3. bei Betrieben, die ausschließlich Energiespeicheranlagen im Sinne des § 3 Nummer 15d des Energiewirtschaftsgesetzes betreiben, zu einem Zehntel das in Nummer 1 bezeichnete Verhältnis und zu neun Zehnteln das Verhältnis, in dem die Summe der installierten Leistung in allen Betriebsstätten ( § 28 ) zur installierten Leistung in den einzelnen Betriebsstätten steht."
+6. In § 31 Absatz 3 werden die Wörter „des § 3 Nr. 5, 6, 8, 9, 12, 13, 15, 17, 21, 26, 27, 28 und 29" durch die Wörter „einer Befreiung von der Gewerbesteuer" ersetzt.
+7. § 36 wird wie folgt geändert:
+a) Absatz 3 Satz 4 wird wie folgt gefasst:
+„ § 7 Satz 8 in der Fassung des Artikels 9 des Gesetzes vom 2. Dezember 2024 (BGBl. 2024 I Nr. 387 ) ist auch für Erhebungszeiträume vor 2024 anzuwenden."
+b) Dem Absatz 4b wird folgender Satz vorangestellt:
+„ § 9 Nummer 1 Satz 1 in der Fassung des Artikels 9 des Gesetzes vom 2. Dezember 2024 (BGBl. 2024 I Nr. 387 ) ist erstmals für den Erhebungszeitraum 2025 anzuwenden."
+c) Nach Absatz 5b wird folgender Absatz 5c eingefügt:
+„(5c) § 29 Absatz 1 Nummer 3 und § 31 Absatz 3 in der jeweiligen Fassung des Artikels 9 des Gesetzes vom 2. Dezember 2024 (BGBl. 2024 I Nr. 387 ) sind erstmals für den Erhebungszeitraum 2025 anzuwenden."
+Artikel 8 ← → Artikel 10
+Inhaltsverzeichnis | Ausdrucken/PDF | nach oben Zitierungen von Artikel 9 JStG 2024 Sie sehen die Vorschriften, die auf Artikel 9 JStG 2024 verweisen. Die Liste ist unterteilt nach Zitaten in
+JStG 2024 selbst ,
+Ermächtigungsgrundlagen ,
+anderen geltenden Titeln ,
+Änderungsvorschriften und in
+aufgehobenen Titeln . Zitat in folgenden Normen
+Gewerbesteuergesetz (GewStG) neugefasst durch B. v. 15.10.2002 BGBl. I S. 4167; zuletzt geändert durch Artikel 8 G. v. 29.06.2026 BGBl. 2026 I Nr. 197 § 36 GewStG Zeitlicher Anwendungsbereich (vom 03.07.2026) ... für den Erhebungszeitraum 2017 anzuwenden. § 7 Satz 8 in der Fassung des Artikels 9 des Gesetzes vom 2. Dezember 2024 (BGBl. 2024 I Nr. 387 ) ist auch für Erhebungszeiträume vor 2024 anzuwenden. (3a) § 7b Absatz 2 ... 2023 anzuwenden. (4) § 9 Nummer 1 Satz 1 in der Fassung des Artikels 9 des Gesetzes vom 2. Dezember 2024 (BGBl. 2024 I Nr. 387 ) ist erstmals für den Erhebungszeitraum 2025 anzuwenden. § 8 Nummer 1 ... (5d) § 29 Absatz 1 Nummer 3 und § 31 Absatz 3 in der jeweiligen Fassung des Artikels 9 des Gesetzes vom 2. Dezember 2024 (BGBl. 2024 I Nr. 387 ) sind erstmals für den Erhebungszeitraum 2025 anzuwenden. (6) § 35c Absatz 1 ... Inhaltsverzeichnis | Ausdrucken/PDF | nach oben Zitate in Änderungsvorschriften
+Gesetz für dringliche Änderungen im Finanzmarkt- und Steuerbereich G. v. 28.02.2025 BGBl. 2025 I Nr. 69; zuletzt geändert durch Artikel 59 G. v. 04.02.2026 BGBl. 2026 I Nr. 33 Artikel 4 FiMauStRÄndG Änderung des Gewerbesteuergesetzes ... in der Fassung der Bekanntmachung vom 15. Oktober 2002 (BGBl. I S. 4167), das zuletzt durch Artikel 9 des Gesetzes vom 2. Dezember 2024 (BGBl. 2024 I Nr. 387 ) geändert worden ist, wird wie folgt geändert: 1. In § 3 Nummer 2 werden ... Link zu dieser Seite : https://www.buzer.de/9_JStG_2024.htm Inhaltsverzeichnis | Ausdrucken/PDF | nach oben Anzeige
+Für Ihr Blog oder Forum - Gesetze verknüpfen
+Für Ihre Internetseite -
+Ticker aktuellste Gesetzesänderungen

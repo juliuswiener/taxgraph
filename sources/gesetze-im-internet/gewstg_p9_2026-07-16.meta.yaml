@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "gewstg/p9/2026-07-16"
+  norm: "GewStG § 9"
+  fassung: "geltende Fassung 2026 (= JStG-2024-Fassung, erstmals EZ 2025 - Altfassung EZ 2024 separat)"
+  quelle_url: "https://www.gesetze-im-internet.de/gewstg/__9.html"
+  abrufdatum: "2026-07-16"
+  datei: "gewstg_p9_2026-07-16.txt"
+  sha256: "1ade00c5503abbe2d08ac0dbb38164afa5b8a00ae1ded21ed3054fe35c1a27ca"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 4 GewStG Charge G3b"]

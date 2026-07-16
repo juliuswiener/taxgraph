@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "gewstg/p9/altfassung/ez2024"
+  norm: "GewStG § 9 Nr. 1 S. 1 ALTFASSUNG (gueltig bis EZ 2024): 1,2 % Einheitswert"
+  fassung: "buzer-Synopse a.F./n.F. zu Art. 9 JStG 2024 (Fassungswechsel 06.12.2024; Anwendung n.F. erstmals EZ 2025 per § 36 Abs. 4b)"
+  quelle_url: "https://www.buzer.de/gesetz/1202/al208667-0.htm"
+  abrufdatum: "2026-07-16"
+  datei: "gewstg_p9_altfassung_ez2024.txt"
+  sha256: "53adae90c83af7960cab069ae1f45ea90a4d49ab3e0703bc45bc18523db331b5"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 4 GewStG Charge G3a (EZ-2024-Altfassung)"]

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "gewstg/p7/2026-07-16"
+  norm: "GewStG § 7"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/gewstg/__7.html"
+  abrufdatum: "2026-07-16"
+  datei: "gewstg_p7_2026-07-16.txt"
+  sha256: "72796b58e843b8e075795bd6bf2e3b8283e66c7620ed6fafe1db9065493c7b22"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 4 GewStG Charge G1"]

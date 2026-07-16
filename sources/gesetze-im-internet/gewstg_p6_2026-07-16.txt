@@ -1,0 +1,15 @@
+Quelle: https://www.gesetze-im-internet.de/gewstg/__6.html
+Abgerufen: 2026-07-16
+Norm: GewStG § 6
+Fassung: geltende Fassung 2026
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+Besteuerungsgrundlage für die Gewerbesteuer ist der Gewerbeertrag.
+zum Seitenanfang
+Impressum
+Datenschutz
+Barrierefreiheitserklärung
+Feedback-Formular

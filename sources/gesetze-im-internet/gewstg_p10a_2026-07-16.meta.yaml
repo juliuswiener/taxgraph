@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "gewstg/p10a/2026-07-16"
+  norm: "GewStG § 10a"
+  fassung: "geltende Fassung 2026 (60 Prozent - WtChancenG-70-Prozent gilt NUR § 10d EStG)"
+  quelle_url: "https://www.gesetze-im-internet.de/gewstg/__10a.html"
+  abrufdatum: "2026-07-16"
+  datei: "gewstg_p10a_2026-07-16.txt"
+  sha256: "19ea5ba1c2da69f844e6e4bccb70f3e874e1e1babffd620d450327021ad8c2ac"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 4 GewStG Charge G4"]

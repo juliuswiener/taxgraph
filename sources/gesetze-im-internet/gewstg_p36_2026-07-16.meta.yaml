@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "gewstg/p36/2026-07-16"
+  norm: "GewStG § 36 (zeitlicher Anwendungsbereich)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/gewstg/__36.html"
+  abrufdatum: "2026-07-16"
+  datei: "gewstg_p36_2026-07-16.txt"
+  sha256: "c5567e6b6ac476049424e483308f7ae793dd428f008c4e02a9aa229f0a40ee53"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 4 GewStG Chargen G3a/G3b (VZ-Split-Anker)"]

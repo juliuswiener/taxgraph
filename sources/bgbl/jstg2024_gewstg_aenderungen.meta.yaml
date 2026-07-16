@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "jstg2024/gewstg/aenderungen"
+  norm: "JStG 2024 Art. 9 - Aenderung des GewStG (u.a. § 9 Nr. 1 S. 1 Neufassung)"
+  fassung: "BGBl 2024 I Nr. 387, Art. 9 (buzer-Mirror; amtliche BGBl-PDF via recht.bund.de bei Zitat-Zweifel)"
+  quelle_url: "https://www.buzer.de/9_JStG_2024.htm"
+  abrufdatum: "2026-07-16"
+  datei: "jstg2024_gewstg_aenderungen.txt"
+  sha256: "1d41457c83fdd1915194d96aed14cce81991ea5ba0405302040cf5395a770de6"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 4 GewStG Charge G3b (Neufassungs-Beleg)"]
