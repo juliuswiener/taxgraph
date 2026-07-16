@@ -39,6 +39,12 @@ build-python:
 s02: build-python
 	. $(VENV312); python oracle/gettsim/harness.py
 
+## Golden-Korpus x GETTSIM Cross-Check (Paket 9). Regenerates
+## reports/review/2026-07-16-gettsim-crosscheck.md + runs the gate.
+gettsim-crosscheck: build-python
+	. $(VENV312); python oracle/gettsim/golden_crosscheck.py
+	. $(VENV312); python -m pytest tests/test_gettsim_crosscheck.py -q
+
 ## Phase-1 deliverable: Arbeitnehmerfall end-to-end (Bruttolohn -> festzusetzende ESt)
 ## differential vs GETTSIM. Regenerates reports/p1-arbeitnehmerfall.md.
 p1: build-python

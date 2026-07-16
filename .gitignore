@@ -27,3 +27,4 @@ sources/**/*.pdf
 # E-Bilanz-Taxonomie: grosse Binaries lokal, sha256 in meta.yaml (analog PDF-Politik)
 sources/ebilanz/**/*.zip
 sources/ebilanz/**/*.xlsx
+oracle/gettsim/golden_crosscheck_result.json
