@@ -7683,3 +7683,110 @@ regeln:
     quelle: § 4h Abs. 1 Satz 1 EStG (via N1)
     datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
     beschreibung: 'abziehbar_kern = Ergebnis der Charge N1 (§ 4h Abs. 1 Zinsschranke-Kern) als Input. Greift keine Ausnahme des Abs. 2, gilt abziehbar_final = abziehbar_kern; die Kern-Berechnung selbst ist N1 (nicht hier).'
+
+- rule_id: p8a_massgebliches_einkommen
+  norm: § 8a Abs. 1 KStG i.V.m. § 4h Abs. 1 Satz 2 EStG (Zinsschranke-Brücke — maßgebliches Einkommen statt Gewinn, EBITDA-Basis der Körperschaft)
+  hinweis: 'EXAKTE FORMEL - EINE unbedingte Definition, KEINE exceptions: (1) ebitda_basis = massgebliches_einkommen + zinsaufwand + abschreibungen - zinsertrag. Das ist die vollstaendige Regel - NICHTS hinzufuegen. § 8a-BRUECKE: § 4h Abs. 1 Satz 2 EStG (verrechenbares EBITDA = 30 % der um Zinsaufwendungen und AfA erhoehten, um Zinsertraege verminderten Bemessungsgrundlage) ist fuer Koerperschaften mit der Maßgabe anzuwenden, dass ANSTELLE des maßgeblichen GEWINNS das maßgebliche EINKOMMEN tritt (§ 8a Abs. 1 Satz 1). massgebliches_einkommen (§ 8a Abs. 1 Satz 2) = das nach EStG und KStG ermittelte Einkommen MIT AUSNAHME der §§ 4h und 10d EStG und des § 9 Abs. 1 Nr. 2 KStG -> das entspricht dem einkommen_vor_spenden der K-Kette (nach § 8b/§ 10, VOR § 9-Spenden, VOR § 10d-Verlustabzug, VOR § 4h). Es kommt als INPUT (hier NICHT neu gerechnet). Diese Regel liefert NUR die EBITDA-Basis (die um Zinsen/AfA bereinigte Groesse als Bemessungsgrundlage); die 30-%-Multiplikation und der Abzugstest sind N1 (§ 4h Abs. 1) - HIER NICHT mit 30 % multiplizieren. abschreibungen = die nach § 6 Abs. 2/2a und § 7 EStG abgesetzten Betraege (AfA/GWG/Sammelposten), als Input. VERBOT: massgebliches_einkommen NICHT nochmals um § 9-Spenden, § 10d-Verlust oder § 4h mindern (diese Ausnahme steckt bereits im Input); zinsaufwand/abschreibungen werden ADDIERT (Hinzurechnung), zinsertrag SUBTRAHIERT. § 8a Abs. 3 (Gesellschafter-Fremdfinanzierung, 10-%-Rueckgriffsgrenze fuer den Escape lit c) und Abs. 2 (weggefallen) = benannter Nachtrag. FORMALISIERUNG: EINE unbedingte Definition, KEINE bedingten exceptions.'
+  quellen:
+  - typ: gesetz
+    label: § 8a Abs. 1 Satz 1 KStG (EBITDA — maßgebliches Einkommen statt Gewinn)
+    datei: sources/gesetze-im-internet/kstg_p8a_2026-07-16.txt
+    zitatanker: anstelle des maßgeblichen Gewinns das maßgebliche Einkommen tritt
+    auszug: § 4h Abs. 1 Satz 2 des Einkommensteuergesetzes ist mit der Maßgabe anzuwenden, dass anstelle des maßgeblichen Gewinns das maßgebliche Einkommen tritt.
+  - typ: gesetz
+    label: § 8a Abs. 1 Satz 2 KStG (Definition maßgebliches Einkommen — ohne §§ 4h/10d EStG, § 9 Abs. 1 Nr. 2 KStG)
+    datei: sources/gesetze-im-internet/kstg_p8a_2026-07-16.txt
+    zitatanker: Maßgebliches Einkommen ist das nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes ermittelte Einkommen mit Ausnahme der §§ 4h und 10d des Einkommensteuergesetzes und des § 9 Abs. 1 Nr. 2 dieses Gesetzes
+    auszug: Maßgebliches Einkommen ist das nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes ermittelte Einkommen mit Ausnahme der §§ 4h und 10d des Einkommensteuergesetzes und des § 9 Abs. 1 Nr. 2 dieses Gesetzes.
+  - typ: gesetz
+    label: § 4h Abs. 1 Satz 2 EStG (EBITDA-Bemessungsgrundlage — um Zinsaufwand/AfA erhöht, um Zinsertrag vermindert)
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: verrechenbare EBITDA ist 30 Prozent des
+    auszug: Das verrechenbare EBITDA ist 30 Prozent des um die Zinsaufwendungen und um die nach § 6 Absatz 2 Satz 1 abzuziehenden, nach § 6 Absatz 2a Satz 2 gewinnmindernd aufzulösenden und nach § 7 abgesetzten Beträge erhöhten und um die Zinserträge verminderten maßgeblichen Gewinns.
+  signature:
+    scope: MassgeblichesEinkommenBruecke
+    inputs:
+      massgebliches_einkommen: money
+      zinsaufwand: money
+      abschreibungen: money
+      zinsertrag: money
+    output: ebitda_basis
+  raster:
+  - massgebliches_einkommen: 1000000
+    zinsaufwand: 500000
+    abschreibungen: 300000
+    zinsertrag: 100000
+  - massgebliches_einkommen: 2000000
+    zinsaufwand: 200000
+    abschreibungen: 100000
+    zinsertrag: 400000
+  - massgebliches_einkommen: 500000
+    zinsaufwand: 1000000
+    abschreibungen: 0
+    zinsertrag: 200000
+  - massgebliches_einkommen: 0
+    zinsaufwand: 300000
+    abschreibungen: 50000
+    zinsertrag: 20000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/kstg_p8a_2026-07-16.txt
+    zitatanker: anstelle des maßgeblichen Gewinns das maßgebliche Einkommen tritt
+    herkunft: synthetisch
+    rechenweg: 'Basisfall: ebitda_basis = massgebliches_einkommen 1.000.000 + zinsaufwand 500.000 + abschreibungen 300.000 - zinsertrag 100.000 = 1.700.000,00.'
+    inputs:
+      massgebliches_einkommen: 1000000
+      zinsaufwand: 500000
+      abschreibungen: 300000
+      zinsertrag: 100000
+    expected: 1700000.0
+  - quelle: sources/gesetze-im-internet/kstg_p8a_2026-07-16.txt
+    zitatanker: Maßgebliches Einkommen ist das nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes ermittelte Einkommen mit Ausnahme der §§ 4h und 10d des Einkommensteuergesetzes und des § 9 Abs. 1 Nr. 2 dieses Gesetzes
+    herkunft: synthetisch
+    rechenweg: 'Hoher Zinsertrag (Subtraktion dominant): 2.000.000 + 200.000 + 100.000 - 400.000 = 1.900.000,00.'
+    inputs:
+      massgebliches_einkommen: 2000000
+      zinsaufwand: 200000
+      abschreibungen: 100000
+      zinsertrag: 400000
+    expected: 1900000.0
+  - quelle: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: verrechenbare EBITDA ist 30 Prozent des
+    herkunft: synthetisch
+    rechenweg: 'Null-AfA: 500.000 + 1.000.000 + 0 - 200.000 = 1.300.000,00.'
+    inputs:
+      massgebliches_einkommen: 500000
+      zinsaufwand: 1000000
+      abschreibungen: 0
+      zinsertrag: 200000
+    expected: 1300000.0
+  - quelle: sources/gesetze-im-internet/kstg_p8a_2026-07-16.txt
+    zitatanker: anstelle des maßgeblichen Gewinns das maßgebliche Einkommen tritt
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL Einkommen 0: 0 + 300.000 + 50.000 - 20.000 = 330.000,00 (Basis rein aus Hinzurechnungen).'
+    inputs:
+      massgebliches_einkommen: 0
+      zinsaufwand: 300000
+      abschreibungen: 50000
+      zinsertrag: 20000
+    expected: 330000.0
+  geltungsbedingungen:
+  - bedingung: einkommen_statt_gewinn
+    deckt_ab: anstelle des maßgeblichen Gewinns das maßgebliche Einkommen tritt
+    quelle: § 8a Abs. 1 Satz 1 KStG
+    datei: sources/gesetze-im-internet/kstg_p8a_2026-07-16.txt
+    beschreibung: 'Fuer Koerperschaften tritt in § 4h Abs. 1 Satz 2 EStG das maßgebliche EINKOMMEN an die Stelle des maßgeblichen Gewinns. Die EBITDA-Basis wird daher aus dem Einkommen (nicht dem Gewinn) hergeleitet.'
+  - bedingung: massgebliches_einkommen_ohne_4h_10d_und_spenden
+    deckt_ab: Maßgebliches Einkommen ist das nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes ermittelte Einkommen mit Ausnahme der §§ 4h und 10d des Einkommensteuergesetzes und des § 9 Abs. 1 Nr. 2 dieses Gesetzes
+    quelle: § 8a Abs. 1 Satz 2 KStG
+    datei: sources/gesetze-im-internet/kstg_p8a_2026-07-16.txt
+    beschreibung: 'massgebliches_einkommen = nach EStG/KStG ermitteltes Einkommen OHNE §§ 4h und 10d EStG und OHNE § 9 Abs. 1 Nr. 2 KStG (Spenden) = einkommen_vor_spenden der K-Kette (nach § 8b/§ 10, vor § 9/§ 10d/§ 4h). State-Input; die Ausnahmen sind bereits beruecksichtigt und duerfen hier nicht erneut abgezogen werden.'
+  - bedingung: ebitda_bemessungsgrundlage_hinzurechnung
+    deckt_ab: verrechenbare EBITDA ist 30 Prozent des um die Zinsaufwendungen und um die nach § 6 Absatz 2 Satz 1 abzuziehenden, nach § 6 Absatz 2a Satz 2 gewinnmindernd aufzulösenden und nach § 7 abgesetzten Beträge erhöhten und um die Zinserträge verminderten maßgeblichen Gewinns
+    quelle: § 4h Abs. 1 Satz 2 EStG (via § 8a KStG)
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'ebitda_basis = massgebliches_einkommen + Zinsaufwendungen + AfA/GWG/Sammelposten (§ 6 Abs. 2/2a, § 7) - Zinsertraege. Nur die Bemessungsgrundlage; die 30-%-Multiplikation und der Abzugstest sind N1 (§ 4h Abs. 1). abschreibungen als Input (Herleitung der AfA nicht Gegenstand).'
+  - bedingung: gesellschafter_fremdfinanzierung_abs3_nachtrag
+    deckt_ab: § 4h Absatz 2 Satz 1 Buchstabe c des Einkommensteuergesetzes ist nur anzuwenden, wenn die Vergütungen für Fremdkapital
+    quelle: § 8a Abs. 3 KStG
+    datei: sources/gesetze-im-internet/kstg_p8a_2026-07-16.txt
+    beschreibung: '§ 8a Abs. 3 (Gesellschafter-Fremdfinanzierung: der Escape lit c des § 4h Abs. 2 EStG ist nur anwendbar, wenn Vergütungen an zu >= 25 % beteiligte Gesellschafter <= 10 % der Nettozinsaufwendungen sind) und Abs. 2 (weggefallen) = benannter Nachtrag, hier nicht modelliert (betrifft die Escape-Vorfrage aus N2, nicht die EBITDA-Basis).'

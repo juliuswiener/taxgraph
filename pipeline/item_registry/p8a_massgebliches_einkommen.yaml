@@ -1,0 +1,62 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p8a_massgebliches_einkommen
+version: 6
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - ebitda-basis wird mit massgeblichem einkommen statt gewinn berechnet.
+  formulierungen:
+  - EBITDA-Basis wird mit maßgeblichem Einkommen statt Gewinn berechnet.
+  triage: nicht_echt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - abschreibungen
+  - interpretation
+  formulierungen:
+  - Abschreibungen werden als § 6 Abs. 2 Satz 1, § 6 Abs. 2a Satz 2, § 7 EStG interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - massgebliches_einkommen
+  - interpretation
+  formulierungen:
+  - Maßgebliches Einkommen ist ohne §§ 4h, 10d EStG und § 9 Abs. 1 Nr. 2 KStG. | Maßgebliches
+    Einkommen wird als Basis für EBITDA-Berechnung verwendet.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 8a abs. 1 satz 1 kstg
+  formulierungen:
+  - § 4h Abs. 1 Satz 2 des Einkommensteuergesetzes ist mit der Maßgabe anzuwenden,
+    dass anstelle des maßgeblichen Gewinns das maßgebliche Einkommen tritt.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: einkommen_statt_gewinn
+- art: norm_teil
+  anker:
+  - ref
+  - § 8a abs. 1 satz 2 kstg
+  formulierungen:
+  - 'Maßgebliches Einkommen ist das nach den Vorschriften des Einkommensteuergesetzes
+    und dieses Gesetzes ermittelte Einkommen mit Ausnahme der §§ 4h und 10d des Einkommensteuergesetzes
+    und des § 9 Abs. 1 '
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: massgebliches_einkommen_ohne_4h_10d_und_spenden
+- art: norm_teil
+  anker:
+  - ref
+  - § 4h abs. 1 satz 2 estg
+  formulierungen:
+  - Das verrechenbare EBITDA ist 30 Prozent des um die Zinsaufwendungen und um die
+    nach § 6 Absatz 2 Satz 1 abzuziehenden, nach § 6 Absatz 2a Satz 2 gewinnmindernd
+    aufzulösenden und nach § 7 abgesetzten B
+  triage: bedingung_neu
+  klasse: unabhaengig
+  bedingung: ebitda_bemessungsgrundlage_hinzurechnung

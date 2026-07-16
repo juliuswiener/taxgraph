@@ -3864,3 +3864,118 @@ entscheidungen:
       Konzerns
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-n2-zuschnitt
   timestamp: '2026-07-16T16:07:47.355542+00:00'
+- rule_id: p8a_massgebliches_einkommen
+  schluessel: '["abweichung", "abweichung_text", "ebitda-basis wird mit massgeblichem
+    einkommen statt gewinn berechnet."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - ebitda-basis wird mit massgeblichem einkommen statt gewinn berechnet.
+    text: EBITDA-Basis wird mit maßgeblichem Einkommen statt Gewinn berechnet.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n3-bruecke
+  timestamp: '2026-07-16T16:23:06.768526+00:00'
+- rule_id: p8a_massgebliches_einkommen
+  schluessel: '["annahme", "betrifft_kat", "abschreibungen", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - abschreibungen
+    - interpretation
+    text: Abschreibungen werden als § 6 Abs. 2 Satz 1, § 6 Abs. 2a Satz 2, § 7 EStG
+      interpretiert.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n3-bruecke
+  timestamp: '2026-07-16T16:23:07.447003+00:00'
+- rule_id: p8a_massgebliches_einkommen
+  schluessel: '["annahme", "betrifft_kat", "massgebliches_einkommen", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - massgebliches_einkommen
+    - interpretation
+    text: Maßgebliches Einkommen ist ohne §§ 4h, 10d EStG und § 9 Abs. 1 Nr. 2 KStG.
+      | Maßgebliches Einkommen wird als Basis für EBITDA-Berechnung verwendet.
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n3-bruecke
+  timestamp: '2026-07-16T16:23:08.128932+00:00'
+- rule_id: p8a_massgebliches_einkommen
+  schluessel: '["norm_teil", "ref", "§ 8a abs. 1 satz 1 kstg"]'
+  triage: bedingung_neu
+  bedingung: einkommen_statt_gewinn
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8a abs. 1 satz 1 kstg
+    text: § 4h Abs. 1 Satz 2 des Einkommensteuergesetzes ist mit der Maßgabe anzuwenden,
+      dass anstelle des maßgeblichen Gewinns das maßgebliche Einkommen tritt.
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n3-bruecke
+  timestamp: '2026-07-16T16:23:08.814164+00:00'
+- rule_id: p8a_massgebliches_einkommen
+  schluessel: '["norm_teil", "ref", "§ 8a abs. 1 satz 2 kstg"]'
+  triage: bedingung_neu
+  bedingung: massgebliches_einkommen_ohne_4h_10d_und_spenden
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 8a abs. 1 satz 2 kstg
+    text: 'Maßgebliches Einkommen ist das nach den Vorschriften des Einkommensteuergesetzes
+      und dieses Gesetzes ermittelte Einkommen mit Ausnahme der §§ 4h und 10d des
+      Einkommensteuergesetzes und des § 9 Abs. 1 '
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n3-bruecke
+  timestamp: '2026-07-16T16:23:09.503299+00:00'
+- rule_id: p8a_massgebliches_einkommen
+  schluessel: '["norm_teil", "ref", "§ 4h abs. 1 satz 2 estg"]'
+  triage: bedingung_neu
+  bedingung: ebitda_bemessungsgrundlage_hinzurechnung
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 4h abs. 1 satz 2 estg
+    text: Das verrechenbare EBITDA ist 30 Prozent des um die Zinsaufwendungen und
+      um die nach § 6 Absatz 2 Satz 1 abzuziehenden, nach § 6 Absatz 2a Satz 2 gewinnmindernd
+      aufzulösenden und nach § 7 abgesetzten B
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-n3-bruecke
+  timestamp: '2026-07-16T16:23:10.200271+00:00'

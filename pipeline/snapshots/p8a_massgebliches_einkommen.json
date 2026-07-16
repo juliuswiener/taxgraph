@@ -1,0 +1,278 @@
+{
+  "bedingungen": [
+    "einkommen_statt_gewinn",
+    "massgebliches_einkommen_ohne_4h_10d_und_spenden",
+    "ebitda_bemessungsgrundlage_hinzurechnung",
+    "gesellschafter_fremdfinanzierung_abs3_nachtrag"
+  ],
+  "candidate_id": "p8a_massgebliches_einkommen",
+  "catala_a": "declaration scope MassgeblichesEinkommenBruecke:\n  input massgebliches_einkommen content money\n  input zinsaufwand content money\n  input abschreibungen content money\n  input zinsertrag content money\n  output ebitda_basis content money\n\nscope MassgeblichesEinkommenBruecke:\n  definition ebitda_basis equals\n    massgebliches_einkommen + zinsaufwand + abschreibungen - zinsertrag",
+  "catala_a_sha256": "13500371ed4b6ddb11dfe92d1885f2e223f7297f27377a83b3299c7dde9eee0c",
+  "catala_b": "declaration scope MassgeblichesEinkommenBruecke:\n  input massgebliches_einkommen content money\n  input zinsaufwand content money\n  input abschreibungen content money\n  input zinsertrag content money\n  output ebitda_basis content money\n\nscope MassgeblichesEinkommenBruecke:\n  definition ebitda_basis equals massgebliches_einkommen + zinsaufwand + abschreibungen - zinsertrag",
+  "catala_b_sha256": "83737e1324d8ddd6d06508f7eb97fce7d0049861f96e532b44fb648ebefbbde6",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'ebitda_basis'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "EBITDA-Basis wird mit maßgeblichem Einkommen statt Gewinn berechnet."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 2,
+        "annahmen": 3,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "abschreibungen"
+            ],
+            "text": "Abschreibungen werden pauschal addiert, nicht differenziert nach § 6 Abs. 2/2a/7 EStG."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "massgebliches_einkommen",
+              "interpretation"
+            ],
+            "text": "Maßgebliches Einkommen ist ohne §§ 4h, 10d EStG und § 9 Abs. 1 Nr. 2 KStG."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "massgebliches_einkommen",
+              "interpretation"
+            ],
+            "text": "Maßgebliches Einkommen wird als Basis für EBITDA-Berechnung verwendet."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Maßgebliches Einkommen ist das nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes ermittelte Einkomme",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 8a abs. 1 satz 2 kstg\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Das verrechenbare EBITDA ist 30 Prozent des um die Zinsaufwendungen und um die nach § 6 Absatz 2 Satz 1 abzuziehenden, n",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 4h abs. 1 satz 2 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Abschreibungen werden als § 6 Abs. 2 Satz 1, § 6 Abs. 2a Satz 2, § 7 EStG interpretiert.",
+            "eingeschmolzen": "Abschreibungen entsprechen den nach § 6 Abs. 2/2a/7 EStG relevanten Beträgen.",
+            "key": [
+              "betrifft_kat",
+              "abschreibungen",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Abschreibungen werden als § 6 Abs. 2 Satz 1, § 6 Abs. 2a Satz 2, § 7 EStG interpretiert.",
+            "eingeschmolzen": "Abschreibungen umfassen § 6 Abs. 2 Satz 1, § 6 Abs. 2a Satz 2 und § 7 EStG.",
+            "key": [
+              "betrifft_kat",
+              "abschreibungen",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "§ 4h Abs. 1 Satz 2 des Einkommensteuergesetzes ist mit der Maßgabe anzuwenden, dass anstelle des maßgeblichen Gewinns das maßgebliche Einkommen tritt.",
+            "eingeschmolzen": "anstelle des maßgeblichen Gewinns das maßgebliche Einkommen tritt",
+            "key": [
+              "ref",
+              "§ 8a abs. 1 satz 1 kstg"
+            ]
+          },
+          {
+            "cluster": "Maßgebliches Einkommen ist das nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes ermittelte Einkommen mit Ausnahme der §§ 4h und 10d des Ein",
+            "eingeschmolzen": "Maßgebliches Einkommen ist das nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes ermittelte Einkommen mit Ausnahme der §§ 4h und 10d des Ein",
+            "key": [
+              "ref",
+              "§ 8a abs. 1 satz 2 kstg"
+            ]
+          },
+          {
+            "cluster": "Das verrechenbare EBITDA ist 30 Prozent des um die Zinsaufwendungen und um die nach § 6 Absatz 2 Satz 1 abzuziehenden, nach § 6 Absatz 2a Satz 2 gewinnmindernd ",
+            "eingeschmolzen": "Das verrechenbare EBITDA ist 30 Prozent des um die Zinsaufwendungen und um die nach § 6 Absatz 2 Satz 1 abzuziehenden, nach § 6 Absatz 2a Satz 2 gewinnmindernd ",
+            "key": [
+              "ref",
+              "§ 4h abs. 1 satz 2 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        6,
+        2,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "48972c76254e",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "einkommen_statt_gewinn",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "§ 4h Abs. 1 Satz 2 des Einkommensteuergesetzes ist mit der Maßgabe anzuwenden, dass anstelle des maßgeblichen Gewinns das maßgebliche Einkommen tritt.",
+        "referenz": "§ 8a Abs. 1 Satz 1 KStG"
+      },
+      {
+        "abgedeckt_von": "massgebliches_einkommen_ohne_4h_10d_und_spenden",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Maßgebliches Einkommen ist das nach den Vorschriften des Einkommensteuergesetzes und dieses Gesetzes ermittelte Einkommen mit Ausnahme der §§ 4h und 10d des Einkommensteuergesetzes und des § 9 Abs. 1 Nr. 2 dieses Gesetzes.",
+        "referenz": "§ 8a Abs. 1 Satz 2 KStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Das verrechenbare EBITDA ist 30 Prozent des um die Zinsaufwendungen und um die nach § 6 Absatz 2 Satz 1 abzuziehenden, nach § 6 Absatz 2a Satz 2 gewinnmindernd aufzulösenden und nach § 7 abgesetzten Beträge erhöhten und um die Zinserträge verminderten maßgeblichen Gewinns.",
+        "referenz": "§ 4h Abs. 1 Satz 2 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Abschreibungen werden als § 6 Abs. 2 Satz 1, § 6 Abs. 2a Satz 2, § 7 EStG interpretiert.",
+        "bedingung_id": "ebitda_bemessungsgrundlage_hinzurechnung",
+        "betrifft": "abschreibungen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Maßgebliches Einkommen ist ohne §§ 4h, 10d EStG und § 9 Abs. 1 Nr. 2 KStG.",
+        "bedingung_id": "massgebliches_einkommen_ohne_4h_10d_und_spenden",
+        "betrifft": "massgebliches_einkommen",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Maßgebliches Einkommen wird als Basis für EBITDA-Berechnung verwendet.",
+        "bedingung_id": "einkommen_statt_gewinn",
+        "betrifft": "massgebliches_einkommen",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-16T16:19:30+00:00"
+  },
+  "module_name": "MassgeblichesEinkommenBruecke",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}
