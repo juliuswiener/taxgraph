@@ -1,0 +1,15 @@
+Quelle: https://www.gesetze-im-internet.de/kstg_1977/__7.html
+Abgerufen: 2026-07-16
+Norm: § 7 KStG (Grundlagen der Besteuerung)
+Fassung: geltende Fassung 2026
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+(1) Die Körperschaftsteuer bemisst sich nach dem zu versteuernden Einkommen. (2) Zu versteuerndes Einkommen ist das Einkommen im Sinne des § 8 Abs. 1, vermindert um die Freibeträge der §§ 24 und 25. (3) 1 Die Körperschaftsteuer ist eine Jahressteuer. 2 Die Grundlagen für ihre Festsetzung sind jeweils für ein Kalenderjahr zu ermitteln. 3 Besteht die unbeschränkte oder beschränkte Steuerpflicht nicht während eines ganzen Kalenderjahrs, so tritt an die Stelle des Kalenderjahrs der Zeitraum der jeweiligen Steuerpflicht. (4) 1 Bei Steuerpflichtigen, die verpflichtet sind, Bücher nach den Vorschriften des Handelsgesetzbuchs zu führen, ist der Gewinn nach dem Wirtschaftsjahr zu ermitteln, für das sie regelmäßig Abschlüsse machen. 2 Weicht bei diesen Steuerpflichtigen das Wirtschaftsjahr, für das sie regelmäßig Abschlüsse machen, vom Kalenderjahr ab, so gilt der Gewinn aus Gewerbebetrieb als in dem Kalenderjahr bezogen, in dem das Wirtschaftsjahr endet. 3 Die Umstellung des Wirtschaftsjahrs auf einen vom Kalenderjahr abweichenden Zeitraum ist steuerlich nur wirksam, wenn sie im Einvernehmen mit dem Finanzamt vorgenommen wird.
+zum Seitenanfang
+Impressum
+Datenschutz
+Barrierefreiheitserklärung
+Feedback-Formular

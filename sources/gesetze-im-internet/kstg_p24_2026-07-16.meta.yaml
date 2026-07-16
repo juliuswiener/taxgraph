@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kstg/p24/2026-07-16"
+  norm: "§ 24 KStG (Freibetrag für bestimmte Körperschaften)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/kstg_1977/__24.html"
+  abrufdatum: "2026-07-16"
+  datei: "kstg_p24_2026-07-16.txt"
+  sha256: "5c23f0db669ee218109915bf7491473186d89e3a16d939a97bcb0a241dc44399"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 5 KStG Nenner B (Stufe A)"]

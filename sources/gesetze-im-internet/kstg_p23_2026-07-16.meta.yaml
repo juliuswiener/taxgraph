@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kstg/p23/2026-07-16"
+  norm: "§ 23 KStG (Steuersatz)"
+  fassung: "geltende Fassung 2026 inkl. StInvSofortPG-Staffel (VZ 2024-2026 konstant 15 %, Senkung erst ab VZ 2028)"
+  quelle_url: "https://www.gesetze-im-internet.de/kstg_1977/__23.html"
+  abrufdatum: "2026-07-16"
+  datei: "kstg_p23_2026-07-16.txt"
+  sha256: "dc410906b419d8a504af27d42d3a3b25932edca2cde8634a56b6f87f2afaae08"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 5 KStG Nenner B (Stufe A)"]

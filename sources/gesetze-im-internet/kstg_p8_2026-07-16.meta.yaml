@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kstg/p8/2026-07-16"
+  norm: "§ 8 KStG (Ermittlung des Einkommens)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/kstg_1977/__8.html"
+  abrufdatum: "2026-07-16"
+  datei: "kstg_p8_2026-07-16.txt"
+  sha256: "df9938be431977a3fb237b1fc001e345ca1312663ede9580dda5729207fe2db6"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 5 KStG Nenner B (Stufe A)"]

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kstg/p1/2026-07-16"
+  norm: "§ 1 KStG (Unbeschränkte Steuerpflicht)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/kstg_1977/__1.html"
+  abrufdatum: "2026-07-16"
+  datei: "kstg_p1_2026-07-16.txt"
+  sha256: "d0a594a74199eb49c9ef0532678058f8f5f8ccb45a4a74c2a775b7daaf06dae3"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 5 KStG Nenner B (Stufe A)"]

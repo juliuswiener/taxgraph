@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kstg/p9/2026-07-16"
+  norm: "§ 9 KStG (Abziehbare Aufwendungen)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/kstg_1977/__9.html"
+  abrufdatum: "2026-07-16"
+  datei: "kstg_p9_2026-07-16.txt"
+  sha256: "bb7fee6c1aa3c18ef9cb741b087b821c35ea62e40638c4f1a3a18fe0c216cd38"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 5 KStG Nenner B (Stufe A)"]

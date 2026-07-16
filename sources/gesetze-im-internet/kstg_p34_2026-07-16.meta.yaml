@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kstg/p34/2026-07-16"
+  norm: "§ 34 KStG (Schlussvorschriften / Anwendungsvorschrift)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/kstg_1977/__34.html"
+  abrufdatum: "2026-07-16"
+  datei: "kstg_p34_2026-07-16.txt"
+  sha256: "9e0693decd556dc26c3dbb60c93b2c37db2806624c838b3a3e9bed5919734fd0"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Paket 5 KStG Nenner B (Stufe A, VZ-Anwendungsbeweis)"]
