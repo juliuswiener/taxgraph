@@ -1,0 +1,20 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/nl/protokoll-2021-03-24/gesetz-2021"
+  norm: "Gesetz v. 27.07.2021 zu dem Protokoll v. 24.03.2021 zur Aenderung des Abkommens v. 12.04.2012 zwischen der Bundesrepublik Deutschland und dem Koenigreich der Niederlande (BGBl 2021 II S. 735); in Kraft 31.07.2022, anwendbar ab 01.01.2023 (Bekanntmachung: dba_nl_bekanntmachung_2022)"
+  fassung: "BGBl 2021 II Nr. 16 S. 735-741 (Gesetz + Protokoll-Wortlaut, zweisprachig DE/NL)"
+  quelle_url: "https://media.offenegesetze.de/bgbl2/2021/bgbl2_2021_16.pdf (amtl. Faksimile; PDF-Seiten 7-13)"
+  abrufdatum: "2026-07-16"
+  datei: "dba_nl_protokoll_2021.txt"
+  pdf_datei: "bgbl2_2021_ii_16.pdf"
+  sha256: "4406f1aa9c85834dce49d1616c03a282a93ebbc8eb59a753dd85fa0e69eca556"
+  pdf_sha256: "fe54a9b3222779eb7ee3e6999bf921ab9d44e7cd6e6ef667c88e57a93e07d749"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "ZWEITES NL-Aenderungsprotokoll (Teil der effektiven Fassung fuer VZ 2024/2025: Abkommen 2012 i.d.F. Protokolle 2016 + 2021). U.a. neue 15.000-Euro-Grenze Ruhegehalts-Quellenbesteuerung (Art. 17) und Art.-22-Ergaenzung. Text-Layer dieser BGBl-Ausgabe ist sauber (normale Leerzeichen, kein BEL-Defekt). Zweisprachig DE/NL interleaved - Anker nur aus deutschen Bloecken."
+  erwartete_anker:
+    - "Gesetz zu dem Protokoll vom 24. März 2021 zur Änderung des Abkommens vom 12. April 2012"
+    - "Nach Artikel 22 Absatz 2 Buchstabe d des Abkommens wird folgender Buchstabe e angefügt"
+    - "15 000 Euro übersteigt"
+    - "Für das Königreich der Niederlande"
+  verwendet_in: ["Paket 3 DBA-Katalog NL (Fassungs-Baustein VZ 2024/2025)"]

@@ -1,0 +1,21 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/nl/2012-04-12/gesetz-2012"
+  norm: "Gesetz v. 20.11.2012 zu dem Abkommen v. 12.04.2012 zwischen der Bundesrepublik Deutschland und dem Koenigreich der Niederlande zur Vermeidung der Doppelbesteuerung (BGBl 2012 II S. 1414); Abkommen in Kraft 01.12.2015, anwendbar ab 01.01.2016"
+  fassung: "BGBl 2012 II Nr. 38 S. 1414-1461 (Gesetz + Abkommen + Protokoll, zweisprachig DE/NL)"
+  quelle_url: "https://media.offenegesetze.de/bgbl2/2012/bgbl2_2012_38.pdf (amtl. Faksimile; PDF-Seiten 14-61)"
+  abrufdatum: "2026-07-16"
+  datei: "dba_nl_abkommen_2012.txt"
+  pdf_datei: "bgbl2_2012_ii_38.pdf"
+  sha256: "07dd89277be29ff2a6b6c32d1f3dd181403b52a02d6e1ac495031b6a9c59b994"
+  pdf_sha256: "3eab3b55d3dd66d71127830b842e793fca38b62f217dcdda92aa258913412abc"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "GRUNDABKOMMEN NL. Gueltigkeit: fuer VZ 2024/2025 gilt dieses Abkommen i.d.F. Protokolle 2016 (dba_nl_protokoll_2016) + 2021 (dba_nl_protokoll_2021); ab VZ 2026 zusaetzlich Protokoll 14.04.2025 (dba_nl_protokoll_2025) als Overlay analog CH. ACHTUNG zweisprachig DE/NL, interleaved bis auf Absatz-/Buchstaben-Ebene (a) deutsch, a) niederlaendisch, ...) - Anker NUR aus zusammenhaengenden deutschen Bloecken. Layer-Provenance: Wortabstaende als U+0007 (BEL) kodiert, deterministisch durch Leerzeichen ersetzt; BEL-Beweis siehe dba_lu_abkommen_2012 (gleiche BGBl-Ausgabe, gleicher Layer-Typ)."
+  erwartete_anker:
+    - "Gesetz zu dem Abkommen vom 12. April 2012 zwischen der Bundesrepublik Deutschland und dem Königreich der Niederlande"
+    - "der Empfänger sich im anderen Staat insgesamt nicht länger als 183 Tage innerhalb eines Zeitraums von 12 Monaten, der während des betreffenden Steuerjahres beginnt oder endet, aufhält"
+    - "Vermeidung der Doppelbesteuerung"
+    - "Bei einer in der Bundesrepublik Deutschland ansässi"
+    - "Für das Königreich der Niederlande"
+  verwendet_in: ["Paket 3 DBA-Katalog NL (Grundtext; Fassungs-Baustein VZ 2024/2025 + VZ-2026-Overlay)"]

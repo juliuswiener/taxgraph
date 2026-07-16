@@ -1,0 +1,21 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/lu/2012-04-23/gesetz-2012"
+  norm: "Gesetz v. 05.10.2012 zu dem Abkommen v. 23.04.2012 zwischen der Bundesrepublik Deutschland und dem Grossherzogtum Luxemburg zur Vermeidung der Doppelbesteuerung (BGBl 2012 II S. 1402); Abkommen in Kraft 30.09.2013, anwendbar ab 01.01.2014"
+  fassung: "BGBl 2012 II Nr. 38 S. 1402-1413 (Gesetz + Abkommen + Unterschriften + Protokoll)"
+  quelle_url: "https://media.offenegesetze.de/bgbl2/2012/bgbl2_2012_38.pdf (amtl. Faksimile; PDF-Seiten 2-13)"
+  abrufdatum: "2026-07-16"
+  datei: "dba_lu_abkommen_2012.txt"
+  pdf_datei: "bgbl2_2012_ii_38.pdf"
+  sha256: "c538aab7a93e4f76f17407ed2bcfa83a8d2b99104678d7b6af9e47921b83b39e"
+  pdf_sha256: "3eab3b55d3dd66d71127830b842e793fca38b62f217dcdda92aa258913412abc"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "GRUNDABKOMMEN LU (deutsche Urschrift, 'in zwei Urschriften in deutscher Sprache'). Gueltigkeit: fuer VZ 2024-2026 gilt dieses Abkommen i.d.F. Aenderungsprotokoll v. 06.07.2023 (dba_lu_protokoll_2023, u.a. 34-Tage-Bagatellgrenze) - Katalog braucht BEIDE Freezes. Layer-Provenance: PDF-Text-Layer kodiert Wortabstaende als U+0007 (BEL); deterministisch durch Leerzeichen ersetzt. Beweis: tesseract-deu-Gegenprobe S. 1403 - Wortmengen identisch (604/604 Woerter, 271/271 unique), Zeichen-Multiset-Diff nur OCR-Glyphen-Artefakte. Zweispaltiger Satz, Lesereihenfolge blockweise, Kopfzeilen im Stream versetzt - Anker nie ueber Spalten-/Seitengrenze."
+  erwartete_anker:
+    - "Gesetz zu dem Abkommen vom 23. April 2012 zwischen der Bundesrepublik Deutschland und dem Großherzogtum Luxemburg"
+    - "der Empfänger sich im anderen Staat insgesamt nicht länger als 183 Tage innerhalb eines Zeitraums von zwölf Monaten, der während des betreffenden Kalenderjahres beginnt oder endet, aufhält"
+    - "Artikel 22 Vermeidung der Doppelbesteuerung im Wohnsitzstaat"
+    - "Von der Bemessungsgrundlage der deutschen Steuer werden die Ei"
+    - "Geschehen zu Berlin am 23. April 2012, in zwei Urschriften in deutscher Sprache"
+  verwendet_in: ["Paket 3 DBA-Katalog LU (Grundtext; Fassungs-Baustein VZ 2024-2026 mit dba_lu_protokoll_2023)"]

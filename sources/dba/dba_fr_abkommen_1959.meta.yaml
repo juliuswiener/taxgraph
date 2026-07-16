@@ -1,0 +1,21 @@
+# Eingefrorener Staatsvertrags-Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/fr/1959-07-21/gesetz-1961"
+  norm: "Gesetz v. 14.04.1961 zu dem Abkommen v. 21.07.1959 zwischen der Bundesrepublik Deutschland und der Franzoesischen Republik zur Vermeidung der Doppelbesteuerungen (BGBl 1961 II S. 397) einschl. Zusatzprotokoll und Notenwechsel"
+  fassung: "BGBl 1961 II Nr. 18 S. 397-419 (Gesetz + Abkommen + Zusatzprotokoll + Notenwechsel, DE/FR)"
+  quelle_url: "(BGBl-Archiv bgbl261s0397, PDF von Julius bereitgestellt 2026-07-16: bgbl_Bundesgesetzblatt Teil II_1961_Nr. 18 vom 22.04.1961_bgbl261s0397.pdf)"
+  abrufdatum: "2026-07-16"
+  datei: "dba_fr_abkommen_1959.txt"
+  pdf_datei: "bgbl2_1961_ii_18.pdf"
+  sha256: "d78353d90250c1068b99589aaf72c3840b459c9658010d4b4c35bfc87c3ede80"
+  pdf_sha256: "39c4c853f24bc12b2f8f0063418eb4dffda88fa7fd1cce7ea842678f5d1a7147"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "HISTORISCHER GRUNDTEXT FR. REINER BILDSCAN ohne Text-Layer; Text = tesseract-5-OCR (deu, 300 dpi, pdftoppm). KEIN Buchstabenstrom-Beweis moeglich. 3 Kern-Anker manuell gegen das PDF-Bild verifiziert (S. 398 Titel, S. 407 Art. 13 Abs. 5 Grenzgaenger, S. 409 Art. 20). OCR-Fehler im uebrigen Text MOEGLICH (beobachtet: '}' statt ')', dotless-i) - VOR jeder weiteren Anker-Nutzung Passage gegen PDF-Bild pruefen. Eigene, nicht-OECD-konforme Artikelnummerierung (Art. 13 Arbeit, Art. 20 Methoden). Gueltigkeit: aktuell anwendbar i.d.F. Zusatzabkommen 26.11.2015 (dba_fr_zusabk_2015, + MLI-Randnotiz ab 2025) - Katalog-Anker an den Fassungs-Freezes pinnen, dieser Freeze = Provenance-Grundlage. Grenzgaenger-Zweitbelege: BFH VI R 52/20 (bfh_vi_r_52-20_2024-08-01), BMF-Vereinbarung Grenzgebiet Art. 13 Abs. 5."
+  erwartete_anker:
+    - "zur Vermeidung der Doppelbesteuerungen und über gegenseitige Amts- und Rechtshilfe auf dem Gebiete der Steuern vom Einkommen und vom Vermögen sowie der Gewerbesteuern und der Grundsteuern"
+    - "die im Grenzgebiet eines der Vertragstaaten wohnen und im Grenzgebiet des anderen Staates"
+    - "über Grenzgänger vom 10. Juli 1950 maßgebend"
+    - "Dieses Abkommen beschränkt nicht das Recht des Vertragstaates, in dem eine Person ansässig ist"
+    - "Zusatzprotokoll"
+  verwendet_in: ["Paket 3 DBA-Katalog FR (Grundtext-Provenance; Fassung via dba_fr_zusabk_2015)"]
