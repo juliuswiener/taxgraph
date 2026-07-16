@@ -12,8 +12,8 @@ dokument:
   authority: staatsvertrag
   redistributable: true
   hinweis: "Inkrafttretens-Beleg fuer das ZWEITE NL-Aenderungsprotokoll (24.03.2021,
-    Gesetz BGBl 2021 II S. 735 - Protokoll-Text-Freeze ausstehend, BGBl-2021-Scan-Layer
-    defekt -> OCR-Route). Belegt die Anwendbarkeit der 2021er-Fassung ab 01.01.2023 =
+    Gesetz BGBl 2021 II S. 735 - Protokoll-Text-Freeze: dba_nl_protokoll_2021).
+    Belegt die Anwendbarkeit der 2021er-Fassung ab 01.01.2023 =
     die fuer VZ 2024/2025 geltende NL-Fassung (dev-1-Recherche e0915d5, Tabelle 3.1)."
   erwartete_anker:
     - "zu dem Protokoll vom"

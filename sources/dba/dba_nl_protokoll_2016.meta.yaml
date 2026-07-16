@@ -13,8 +13,8 @@ dokument:
   redistributable: true
   hinweis: "ERSTES NL-Aenderungsprotokoll (Teil der effektiven Fassung fuer VZ 2024/2025:
     Abkommen 2012 i.d.F. Protokolle 2016 + 2021). Aendert v.a. Protokoll-Ziffern zum
-    Abkommen (u.a. Xterritoriale Anwendung/Aufhebungen). Grundtext-2012-Freeze ausstehend
-    (BGBl-2012-Text-Layer defekt -> OCR-Route). Born-digital, sauberer Text-Layer.
+    Abkommen (u.a. Xterritoriale Anwendung/Aufhebungen). Grundtext-2012-Freeze:
+    dba_nl_abkommen_2012. Born-digital, sauberer Text-Layer.
     ACHTUNG zweisprachig DE/NL - Anker nur aus deutschen Passagen. pdftotext ohne -layout."
   erwartete_anker:
     - "Protokolls zum Abkommen wird aufgehoben"
