@@ -7361,3 +7361,62 @@ regeln:
     quelle: § 1 Abs. 1 Nr. 1 i.V.m. § 8 Abs. 1 KStG
     datei: sources/gesetze-im-internet/kstg_p8_2026-07-16.txt
     beschreibung: 'rechtsform = Kapitalgesellschaft (§ 1 Abs. 1 Nr. 1): kennt KEINE Zusammenveranlagung/Splitting -> Sockel FIX 1.000.000 (nicht 2 Mio wie bei zusammenveranlagten natuerlichen Personen). § 8 Abs. 1 KStG traegt den § 10d-EStG-Verweis. Abgrenzung gegen PersGes-Kern (C24).'
+
+- rule_id: p23_koerperschaftsteuer_satz
+  norm: § 23 Abs. 1 Nr. 1 KStG (Körperschaftsteuer-Satz 15 % des zvE, VZ 2024-2026)
+  hinweis: 'koerperschaftsteuer = zu_versteuerndes_einkommen * 15 / 100. § 23 Abs. 1 Nr. 1: "Veranlagungszeiträume bis 2027 15 Prozent" -> im Scope VZ 2024-2026 KONSTANT 15 %. 15 % = 15/100 = 3/20 EXAKT (nicht 0,15 vorrunden); Division durch 100 in decimal, Cent-Schnitt ZULETZT. BOUNDS-ASSERTION PFLICHT: der Catala-Code MUSS die Zeile "assertion veranlagungszeitraum >= 2024 and veranlagungszeitraum <= 2026" enthalten (int-VZ-Muster). OHNE diese Assertion bleibt der veranlagungszeitraum-Input UNBENUTZT und die 15-%-Definition gilt faelschlich fuer ALLE VZ (auch 2028+, wo 14 % gaelten) - das ist ein Fehler. Die Assertion schneidet die Regel auf VZ 2024-2026 zu, wo 15 % konstant korrekt ist. WICHTIG (toter-Code-Verbot): die Staffel 14/13/12/11/10 % (VZ 2028-2032+, StInvSofortPG) ist NICHT zu kodieren und NICHT als toter Code / VZ-Fallunterscheidung zu materialisieren - sie belegt nur die Aktualitaet des Freezes; im Scope 15 % konstant, KEINE Staffel-Logik, KEINE Jahres-exceptions. zvE = das dem Satz zugrunde liegende zu versteuernde Einkommen (§ 7 Abs. 2: Einkommen § 8 Abs. 1 vermindert um Freibetraege §§ 24/25; fuer KapGes ist der § 24-Freibetrag = 0, Ausschluss § 24 S. 2 Nr. 1 -> zvE = Einkommen) - kommt als INPUT aus der Nenner-B-Kette (nicht hier gerechnet). Abs. 2 (§ 51 Abs. 3 EStG-Ermaechtigung) = Nachtrag. FORMALISIERUNG: EINE unbedingte Definition + Bounds-Assertion, KEINE Staffel-/Jahres-exceptions.'
+  quellen:
+  - typ: gesetz
+    label: § 23 Abs. 1 Nr. 1 KStG (15 Prozent, Veranlagungszeiträume bis 2027)
+    datei: sources/gesetze-im-internet/kstg_p23_2026-07-16.txt
+    zitatanker: Veranlagungszeiträume bis 2027 15 Prozent
+    auszug: Die Körperschaftsteuer beträgt für 1. Veranlagungszeiträume bis 2027 15 Prozent, 2. den Veranlagungszeitraum 2028 14 Prozent
+  signature:
+    scope: KoerperschaftsteuerSatz
+    inputs:
+      zu_versteuerndes_einkommen: money
+      veranlagungszeitraum: int
+    output: koerperschaftsteuer
+  raster:
+  - zu_versteuerndes_einkommen: 603000
+    veranlagungszeitraum: 2026
+  - zu_versteuerndes_einkommen: 1000000
+    veranlagungszeitraum: 2024
+  - zu_versteuerndes_einkommen: 0
+    veranlagungszeitraum: 2025
+  test_seed:
+  - quelle: sources/gesetze-im-internet/kstg_p23_2026-07-16.txt
+    zitatanker: Veranlagungszeiträume bis 2027 15 Prozent
+    herkunft: synthetisch
+    rechenweg: 'VZ 2026 (<= 2027 -> 15 %): koerperschaftsteuer = 603.000 * 15/100 = 90.450,00.'
+    inputs:
+      zu_versteuerndes_einkommen: 603000
+      veranlagungszeitraum: 2026
+    expected: 90450.0
+  - quelle: sources/gesetze-im-internet/kstg_p23_2026-07-16.txt
+    zitatanker: Veranlagungszeiträume bis 2027 15 Prozent
+    herkunft: synthetisch
+    rechenweg: 'VZ 2024 (15 % konstant): 1.000.000 * 15/100 = 150.000,00.'
+    inputs:
+      zu_versteuerndes_einkommen: 1000000
+      veranlagungszeitraum: 2024
+    expected: 150000.0
+  - quelle: sources/gesetze-im-internet/kstg_p23_2026-07-16.txt
+    zitatanker: Veranlagungszeiträume bis 2027 15 Prozent
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL zvE 0: 0 * 15/100 = 0,00.'
+    inputs:
+      zu_versteuerndes_einkommen: 0
+      veranlagungszeitraum: 2025
+    expected: 0.0
+  geltungsbedingungen:
+  - bedingung: satz_15_prozent_vz_bis_2027
+    deckt_ab: Veranlagungszeiträume bis 2027 15 Prozent
+    quelle: § 23 Abs. 1 Nr. 1 KStG
+    datei: sources/gesetze-im-internet/kstg_p23_2026-07-16.txt
+    beschreibung: 'KSt-Satz 15 % (= 15/100) fuer Veranlagungszeitraeume bis 2027; im Scope VZ 2024-2026 konstant. Bounds-Assertion veranlagungszeitraum in [2024, 2026]. GUELTIGKEITS-VERMERK (Gueltigkeits-Direktive): 15 % gilt fuer VZ <= 2027; die StInvSofortPG-Staffel 14/13/12/11/10 % ab VZ 2028 (= benannter Nachtrag) ist NICHT kodiert und darf NIE als stille Fortschreibung ueber 2026 hinaus angenommen werden - ein kuenftiger VZ-2028-Schnitt erfordert Bounds-Erweiterung + Staffel-Formalisierung.'
+  - bedingung: rechtsform_kapitalgesellschaft
+    deckt_ab: Veranlagungszeiträume bis 2027 15 Prozent
+    quelle: § 1 Abs. 1 Nr. 1 i.V.m. § 23 KStG
+    datei: sources/gesetze-im-internet/kstg_p23_2026-07-16.txt
+    beschreibung: 'rechtsform = Kapitalgesellschaft (§ 1 Abs. 1 Nr. 1); der KSt-Satz 15 % trifft das zvE der KapGes. Abgrenzung gegen PersGes-Kern (C24, § 15 EStG - dort ESt-Tarif § 32a, nicht 15 %).'

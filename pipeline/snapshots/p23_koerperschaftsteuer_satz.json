@@ -1,0 +1,233 @@
+{
+  "bedingungen": [
+    "satz_15_prozent_vz_bis_2027",
+    "rechtsform_kapitalgesellschaft"
+  ],
+  "candidate_id": "p23_koerperschaftsteuer_satz",
+  "catala_a": "declaration scope KoerperschaftsteuerSatz:\n  input zu_versteuerndes_einkommen content money\n  input veranlagungszeitraum content integer\n  output koerperschaftsteuer content money\n\nscope KoerperschaftsteuerSatz:\n  assertion veranlagungszeitraum >= 2024 and veranlagungszeitraum <= 2026\n  definition koerperschaftsteuer equals\n    zu_versteuerndes_einkommen * (15.0 / 100.0)",
+  "catala_a_sha256": "bcdc7ad56a43b6389231902e9d467fd5aa986984bc6b8d2caedac147ac6c685f",
+  "catala_b": "declaration scope KoerperschaftsteuerSatz:\n  input zu_versteuerndes_einkommen content money\n  input veranlagungszeitraum content integer\n  output koerperschaftsteuer content money\n\nscope KoerperschaftsteuerSatz:\n  assertion veranlagungszeitraum >= 2024 and veranlagungszeitraum <= 2026\n  definition koerperschaftsteuer equals zu_versteuerndes_einkommen * (15.0 / 100.0)",
+  "catala_b_sha256": "424ddc54c00b0f8fd70ed9903fc798f5fa2e8599f13b57ca696a21446f720cca",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'koerperschaftsteuer'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 0 wirkt_hinein (blockierend ist geltungsbereich), 1 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Eingeschränkt auf 2024–2026, Norm gilt bis 2027."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 3,
+        "annahmen": 1,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Fehlende 14% für 2028 in der Berechnung."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Formalisierung fehlt den Steuersatz für 2028 (14%)."
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Eingeschränkt auf 2024–2026, Norm gilt bis 2027.",
+            "eingeschmolzen": "Die Formalisierung beschränkt den Zeitraum auf 2024-2026, die Norm erlaubt bis 2027.",
+            "key": [
+              "betrifft",
+              "veranlagungszeitraum"
+            ]
+          },
+          {
+            "cluster": "Eingeschränkt auf 2024–2026, Norm gilt bis 2027.",
+            "eingeschmolzen": "Die Formalisierung beschränkt den Zeitraum auf 2024–2026, die Norm erlaubt bis 2027.",
+            "key": [
+              "betrifft",
+              "veranlagungszeitraum"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Annahme, dass nur 2024–2026 relevant sind.",
+            "eingeschmolzen": "Es wird angenommen, dass der Veranlagungszeitraum zwischen 2024 und 2026 liegt.",
+            "key": [
+              "betrifft_kat",
+              "veranlagungszeitraum",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Annahme, dass nur 2024–2026 relevant sind.",
+            "eingeschmolzen": "Es wird angenommen, dass der Veranlagungszeitraum zwischen 2024 und 2026 liegt.",
+            "key": [
+              "betrifft_kat",
+              "veranlagungszeitraum",
+              "geltungsvoraussetzung"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Veranlagungszeitraum 2028 14 Prozent",
+            "eingeschmolzen": "für den Veranlagungszeitraum 2028 14 Prozent",
+            "key": [
+              "ref",
+              "§ 23 abs. 1 nr. 1 kstg"
+            ]
+          },
+          {
+            "cluster": "Veranlagungszeitraum 2028 14 Prozent",
+            "eingeschmolzen": "für den Veranlagungszeitraum 2028 14 Prozent",
+            "key": [
+              "ref",
+              "§ 23 abs. 1 nr. 1 kstg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        4,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "3982c08b224e",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "Veranlagungszeitraum 2028 14 Prozent",
+        "referenz": "§ 23 Abs. 1 Nr. 1 KStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Annahme, dass nur 2024–2026 relevant sind.",
+        "bedingung_id": "satz_15_prozent_vz_bis_2027",
+        "betrifft": "veranlagungszeitraum",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-16T15:06:32+00:00"
+  },
+  "module_name": "KoerperschaftsteuerSatz",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

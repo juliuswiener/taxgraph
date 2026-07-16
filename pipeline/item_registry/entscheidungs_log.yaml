@@ -3621,3 +3621,59 @@ entscheidungen:
     klasse: unabhaengig
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-k5-scope
   timestamp: '2026-07-16T15:00:07.260657+00:00'
+- rule_id: p23_koerperschaftsteuer_satz
+  schluessel: '["abweichung", "abweichung_text", "eingeschraenkt auf 2024–2026, norm
+    gilt bis 2027."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - eingeschraenkt auf 2024–2026, norm gilt bis 2027.
+    text: Eingeschränkt auf 2024–2026, Norm gilt bis 2027.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k6-p23-scope
+  timestamp: '2026-07-16T15:08:57.473325+00:00'
+- rule_id: p23_koerperschaftsteuer_satz
+  schluessel: '["annahme", "betrifft_kat", "veranlagungszeitraum", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - veranlagungszeitraum
+    - geltungsvoraussetzung
+    text: Annahme, dass nur 2024–2026 relevant sind.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k6-p23-scope
+  timestamp: '2026-07-16T15:08:58.134963+00:00'
+- rule_id: p23_koerperschaftsteuer_satz
+  schluessel: '["norm_teil", "ref", "§ 23 abs. 1 nr. 1 kstg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 23 abs. 1 nr. 1 kstg
+    text: Veranlagungszeitraum 2028 14 Prozent
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-kstg-k6-p23-scope
+  timestamp: '2026-07-16T15:08:58.805002+00:00'
