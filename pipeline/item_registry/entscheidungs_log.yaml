@@ -2187,3 +2187,542 @@ entscheidungen:
     klasse: unabhaengig
   entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g2-quote-verschachtelung
   timestamp: '2026-07-16T09:56:04.423260+00:00'
+- rule_id: p9_1_kuerzung_grundbesitz_ez2024
+  schluessel: '["annahme", "betrifft_kat", "einheitswert_grundbesitz", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - einheitswert_grundbesitz
+    - interpretation
+    text: Der Einheitswert bezieht sich nur auf nicht grundsteuerbefreiten Grundbesitz.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g3a
+  timestamp: '2026-07-16T10:04:51.399564+00:00'
+- rule_id: p9_1_kuerzung_grundbesitz_ez2024
+  schluessel: '["annahme", "betrifft_kat", "einheitswert_grundbesitz", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: kuerzung_1_2_prozent_einheitswert
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - einheitswert_grundbesitz
+    - interpretation
+    text: Der Einheitswert bezieht sich auf zum Betriebsvermögen gehörenden Grundbesitz.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g3a
+  timestamp: '2026-07-16T10:04:51.885033+00:00'
+- rule_id: p9_1_kuerzung_grundbesitz_ez2024
+  schluessel: '["norm_teil", "ref", "§ 9 nr. 1 satz 1 gewstg a.f."]'
+  triage: bedingung_neu
+  bedingung: kuerzung_1_2_prozent_einheitswert
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 9 nr. 1 satz 1 gewstg a.f.
+    text: 1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers
+      gehörenden und nicht von der Grundsteuer befreiten Grundbesitzes
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g3a
+  timestamp: '2026-07-16T10:04:52.371803+00:00'
+- rule_id: p9_kuerzungen_ez2025
+  schluessel: '["abweichung", "abweichung_text", "die kuerzung ist eine summe, nicht
+    eine kuerzung der summe aus gewinn und hinzurechnungen."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - die kuerzung ist eine summe, nicht eine kuerzung der summe aus gewinn und hinzurechnungen.
+    text: Die Kürzung ist eine Summe, nicht eine Kürzung der Summe aus Gewinn und
+      Hinzurechnungen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g3b
+  timestamp: '2026-07-16T10:15:17.758661+00:00'
+- rule_id: p9_kuerzungen_ez2025
+  schluessel: '["norm_teil", "ref", "§ 9 nr. 1 s. 1 gewstg n.f."]'
+  triage: bedingung_neu
+  bedingung: kuerzung_grundsteuer_ez2025
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 9 nr. 1 s. 1 gewstg n.f.
+    text: Die Summe des Gewinns und der Hinzurechnungen wird gekürzt um 1. die im
+      Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer für zum Betriebsvermögen
+      des Unternehmers gehörenden Grundbesitz.
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g3b
+  timestamp: '2026-07-16T10:15:18.260916+00:00'
+- rule_id: p9_kuerzungen_ez2025
+  schluessel: '["norm_teil", "ref", "§ 9 nr. 2 gewstg"]'
+  triage: bedingung_neu
+  bedingung: kuerzung_schachteldividenden_15prozent
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 9 nr. 2 gewstg
+    text: die Gewinne aus Anteilen an einer nicht steuerbefreiten inländischen Kapitalgesellschaft
+      im Sinne des § 2 Abs. 2, einer Kredit- oder Versicherungsanstalt des öffentlichen
+      Rechts, einer Genossenschafte
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g3b
+  timestamp: '2026-07-16T10:15:18.767319+00:00'
+- rule_id: p9_kuerzungen_ez2025
+  schluessel: '["norm_teil", "ref", "§ 9 nr. 2a gewstg"]'
+  triage: bedingung_neu
+  bedingung: kuerzung_schachteldividenden_15prozent
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 9 nr. 2a gewstg
+    text: wenn die Beteiligung zu Beginn des Erhebungszeitraums mindestens 15 Prozent
+      des Grund- oder Stammkapitals beträgt
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g3b
+  timestamp: '2026-07-16T10:15:19.283332+00:00'
+- rule_id: p10a_gewerbeverlust
+  schluessel: '["annahme", "betrifft_kat", "massgebender_gewerbeertrag", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - massgebender_gewerbeertrag
+    - einheit
+    text: Der massgebende Gewerbeertrag wird als Bruttowert interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g4
+  timestamp: '2026-07-16T10:15:19.791327+00:00'
+- rule_id: p10a_gewerbeverlust
+  schluessel: '["annahme", "betrifft_kat", "fehlbetrag_bestand", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: fehlbetrag_bestand_festgestellt
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - fehlbetrag_bestand
+    - interpretation
+    text: Der fehlbetrag_bestand wird als kumulierter nicht berücksichtigter Fehlbetrag
+      verstanden.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g4
+  timestamp: '2026-07-16T10:15:20.304834+00:00'
+- rule_id: p10a_gewerbeverlust
+  schluessel: '["annahme", "betrifft_kat", "fehlbetrag_bestand", "geltungsvoraussetzung"]'
+  triage: bedingung_neu
+  bedingung: fehlbetrag_bestand_festgestellt
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - fehlbetrag_bestand
+    - geltungsvoraussetzung
+    text: Fehlbeträge gelten als bereits nach §§ 7-10 ermittelt und nicht berücksichtigt.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g4
+  timestamp: '2026-07-16T10:15:20.819644+00:00'
+- rule_id: p10a_gewerbeverlust
+  schluessel: '["annahme", "betrifft_kat", "fehlbetrag_bestand", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: fehlbetrag_bestand_festgestellt
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - fehlbetrag_bestand
+    - interpretation
+    text: Der fehlbetrag_bestand wird als Summe aller nicht berücksichtigten Fehlbeträge
+      interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g4
+  timestamp: '2026-07-16T10:15:21.345088+00:00'
+- rule_id: p10a_gewerbeverlust
+  schluessel: '["annahme", "betrifft_kat", "massgebender_gewerbeertrag", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - massgebender_gewerbeertrag
+    - einheit
+    text: Der massgebender_gewerbeertrag wird als Bruttowert ohne vorherige Kürzungen
+      angenommen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g4
+  timestamp: '2026-07-16T10:15:21.862712+00:00'
+- rule_id: p10a_gewerbeverlust
+  schluessel: '["annahme", "betrifft_kat", "massgebender_gewerbeertrag", "rundung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - massgebender_gewerbeertrag
+    - rundung
+    text: Der Überhang wird ohne Rundung berechnet (exakte 60 %).
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g4
+  timestamp: '2026-07-16T10:15:22.383618+00:00'
+- rule_id: p10a_gewerbeverlust
+  schluessel: '["norm_teil", "ref", "§ 10a s. 1 gewstg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 10a s. 1 gewstg
+    text: soweit die Fehlbeträge nicht bei der Ermittlung des Gewerbeertrags für die
+      vorangegangenen Erhebungszeiträume berücksichtigt worden sind
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g4
+  timestamp: '2026-07-16T10:15:22.912904+00:00'
+- rule_id: p10a_gewerbeverlust
+  schluessel: '["norm_teil", "ref", "§ 10a s. 2 gewstg"]'
+  triage: bedingung_neu
+  bedingung: staffel_60_prozent
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 10a s. 2 gewstg
+    text: Der 1 Million Euro übersteigende maßgebende Gewerbeertrag ist bis zu 60
+      Prozent um nach Satz 1 nicht berücksichtigte Fehlbeträge der vorangegangenen
+      Erhebungszeiträume zu kürzen.
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g4
+  timestamp: '2026-07-16T10:15:23.442817+00:00'
+- rule_id: p10a_gewerbeverlust
+  schluessel: '["norm_teil", "ref", "§ 10a s. 1 gewstg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 10a s. 1 gewstg
+    text: die sich bei der Ermittlung des maßgebenden Gewerbeertrags für die vorangegangenen
+      Erhebungszeiträume nach den Vorschriften der §§ 7 bis 10 ergeben haben
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g4
+  timestamp: '2026-07-16T10:15:23.978015+00:00'
+- rule_id: p10a_gewerbeverlust
+  schluessel: '["norm_teil", "ref", "§ 10a s. 1 gewstg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 10a s. 1 gewstg
+    text: soweit die Fehlbeträge nicht bei der Ermittlung des Gewerbeertrags für die
+      vorangegangenen Erhebungszeiträume berücksichtigt worden sind
+    klasse: unabhaengig
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g4
+  timestamp: '2026-07-16T10:15:24.506309+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["annahme", "betrifft_kat", "gewerbeertrag", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewerbeertrag
+    - geltungsvoraussetzung
+    text: Freibetrag wird immer angewendet, obwohl er nur für bestimmte Steuerpflichtige
+      gilt.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:25.035206+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["annahme", "betrifft_kat", "gewerbeertrag", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewerbeertrag
+    - einheit
+    text: Gewerbeertrag wird als Geldbetrag in Euro interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:25.557014+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["annahme", "betrifft_kat", "gewerbeertrag", "rundung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewerbeertrag
+    - rundung
+    text: Abrundung erfolgt durch Truncation nach Division durch 100.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:26.083273+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["annahme", "betrifft_kat", "gewerbeertrag", "rundung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewerbeertrag
+    - rundung
+    text: Abrundung auf volle 100 Euro wird als Decimal.truncate umgesetzt.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:26.620379+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["annahme", "betrifft_kat", "gewerbeertrag", "geltungsvoraussetzung"]'
+  triage: bedingung_neu
+  bedingung: freibetrag_24500_natperson_persges
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewerbeertrag
+    - geltungsvoraussetzung
+    text: Freibetrag von 24.500 Euro wird nur für natürliche Personen und Personengesellschaften
+      angenommen.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:27.157602+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["annahme", "betrifft_kat", "gewerbeertrag", "einheit"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewerbeertrag
+    - einheit
+    text: Geldbeträge werden in Euro interpretiert.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:27.689984+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["annahme", "betrifft_kat", "gewerbeertrag", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewerbeertrag
+    - geltungsvoraussetzung
+    text: Freibetrag gilt für alle Gewerbeerträge, nicht nur für natürliche Personen/Personengesellschaften.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:28.232635+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["annahme", "betrifft_kat", "gewerbeertrag", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: true
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - gewerbeertrag
+    - geltungsvoraussetzung
+    text: Freibetrag wird immer angewendet, ohne Prüfung der Rechtsform.
+    klasse: null
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:28.775911+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["norm_teil", "ref", "§ 11 abs. 1 s. 3 nr. 1 gewstg"]'
+  triage: bedingung_neu
+  bedingung: freibetrag_24500_natperson_persges
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 11 abs. 1 s. 3 nr. 1 gewstg
+    text: bei natürlichen Personen sowie bei Personengesellschaften um einen Freibetrag
+      in Höhe von 24 500 Euro
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:29.305382+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["norm_teil", "ref", "§ 11 abs. 1 s. 3 gewstg"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 11 abs. 1 s. 3 gewstg
+    text: Der Gewerbeertrag ist auf volle 100 Euro nach unten abzurunden
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:29.846296+00:00'
+- rule_id: p11_steuermessbetrag
+  schluessel: '["norm_teil", "ref", "§ 11 abs. 2 gewstg"]'
+  triage: bedingung_neu
+  bedingung: steuermesszahl_3_5_prozent
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 11 abs. 2 gewstg
+    text: Die Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent.
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-16-gewstg-g5
+  timestamp: '2026-07-16T10:15:30.390328+00:00'

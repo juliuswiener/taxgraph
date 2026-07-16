@@ -1,0 +1,66 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p10a_gewerbeverlust
+version: 10
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - massgebender_gewerbeertrag
+  - einheit
+  formulierungen:
+  - Der massgebende Gewerbeertrag wird als Bruttowert interpretiert.
+  - Der massgebender_gewerbeertrag wird als Bruttowert ohne vorherige Kürzungen angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - fehlbetrag_bestand
+  - interpretation
+  formulierungen:
+  - Der fehlbetrag_bestand wird als kumulierter nicht berücksichtigter Fehlbetrag
+    verstanden.
+  - Der fehlbetrag_bestand wird als Summe aller nicht berücksichtigten Fehlbeträge
+    interpretiert.
+  triage: bedingung_neu
+  bedingung: fehlbetrag_bestand_festgestellt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - fehlbetrag_bestand
+  - geltungsvoraussetzung
+  formulierungen:
+  - Fehlbeträge gelten als bereits nach §§ 7-10 ermittelt und nicht berücksichtigt.
+  triage: bedingung_neu
+  bedingung: fehlbetrag_bestand_festgestellt
+- art: annahme
+  anker:
+  - betrifft_kat
+  - massgebender_gewerbeertrag
+  - rundung
+  formulierungen:
+  - Der Überhang wird ohne Rundung berechnet (exakte 60 %).
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 10a s. 1 gewstg
+  formulierungen:
+  - soweit die Fehlbeträge nicht bei der Ermittlung des Gewerbeertrags für die vorangegangenen
+    Erhebungszeiträume berücksichtigt worden sind
+  - die sich bei der Ermittlung des maßgebenden Gewerbeertrags für die vorangegangenen
+    Erhebungszeiträume nach den Vorschriften der §§ 7 bis 10 ergeben haben
+  triage: nicht_material
+  klasse: unabhaengig
+- art: norm_teil
+  anker:
+  - ref
+  - § 10a s. 2 gewstg
+  formulierungen:
+  - Der 1 Million Euro übersteigende maßgebende Gewerbeertrag ist bis zu 60 Prozent
+    um nach Satz 1 nicht berücksichtigte Fehlbeträge der vorangegangenen Erhebungszeiträume
+    zu kürzen.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: staffel_60_prozent

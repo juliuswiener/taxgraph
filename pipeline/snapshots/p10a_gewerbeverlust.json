@@ -1,0 +1,447 @@
+{
+  "bedingungen": [
+    "sockel_1_mio_unbeschraenkt",
+    "staffel_60_prozent",
+    "fehlbetrag_bestand_festgestellt"
+  ],
+  "candidate_id": "p10a_gewerbeverlust",
+  "catala_a": "declaration scope GewerbeverlustAbzug:\n  input massgebender_gewerbeertrag content money\n  input fehlbetrag_bestand content money\n  output gewerbeverlust_abzug content money\n\nscope GewerbeverlustAbzug:\n  definition gewerbeverlust_abzug equals\n    let sockel equals $1,000,000.00 in\n    let ueberhang equals\n      if massgebender_gewerbeertrag > sockel\n      then massgebender_gewerbeertrag - sockel\n      else $0.00\n    in\n    let hoechstbetrag equals\n      sockel + ueberhang * 0.60\n    in\n    if fehlbetrag_bestand < hoechstbetrag\n    then fehlbetrag_bestand\n    else hoechstbetrag",
+  "catala_a_sha256": "d040e884499cc0e184b8a526c6037c25552b491f0ceede4e09fb89419c4bf611",
+  "catala_b": "declaration scope GewerbeverlustAbzug:\n  input massgebender_gewerbeertrag content money\n  input fehlbetrag_bestand content money\n  internal sockelbetrag content money\n  internal uebersteigender_ertrag content money\n  internal abzugsfaehiger_betrag content money\n  output gewerbeverlust_abzug content money\n\nscope GewerbeverlustAbzug:\n  definition sockelbetrag equals $1,000,000.00\n  definition uebersteigender_ertrag equals\n    if massgebender_gewerbeertrag > sockelbetrag\n    then massgebender_gewerbeertrag - sockelbetrag\n    else $0.00\n  definition abzugsfaehiger_betrag equals\n    sockelbetrag + (uebersteigender_ertrag * 0.60)\n  definition gewerbeverlust_abzug equals\n    if abzugsfaehiger_betrag > fehlbetrag_bestand\n    then fehlbetrag_bestand\n    else abzugsfaehiger_betrag",
+  "catala_b_sha256": "bfd589b5b1197cc52e677598fe036bfc4cc4ce9451a4e72e6418a50798de2339",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'gewerbeverlust_abzug'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 2 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 6,
+        "annahmen": 6,
+        "norm_teile": 4
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der Abzug ist auf den Sockel plus 60 % des Überhangs begrenzt, nicht auf die Fehlbeträge selbst."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "fehlbetrag_bestand"
+            ],
+            "text": "Der fehlbetrag_bestand wird nicht auf vorangegangene Erhebungszeiträume beschränkt."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "fehlbetrag_bestand"
+            ],
+            "text": "Fehlbeträge werden nicht nach vorangegangenen Erhebungszeiträumen differenziert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "fehlbetrag_bestand"
+            ],
+            "text": "Der Fehlbetragsbestand wird nicht auf nicht berücksichtigte Fehlbeträge beschränkt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Der Abzug wird auf den Höchstbetrag (Sockel + 60 % Überhang) begrenzt, nicht wie im Gesetz beschrieben gestuft angewende"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "fehlbetrag_bestand"
+            ],
+            "text": "Der fehlbetrag_bestand wird pauschal berücksichtigt, nicht nur soweit er in vorangegangenen Erhebungszeiträumen nicht be"
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "massgebender_gewerbeertrag",
+              "einheit"
+            ],
+            "text": "Der massgebende Gewerbeertrag wird als Bruttowert interpretiert."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "fehlbetrag_bestand",
+              "interpretation"
+            ],
+            "text": "Der fehlbetrag_bestand wird als kumulierter nicht berücksichtigter Fehlbetrag verstanden."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "fehlbetrag_bestand",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Fehlbeträge gelten als bereits nach §§ 7-10 ermittelt und nicht berücksichtigt."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "fehlbetrag_bestand",
+              "interpretation"
+            ],
+            "text": "Der fehlbetrag_bestand wird als Summe aller nicht berücksichtigten Fehlbeträge interpretiert."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "massgebender_gewerbeertrag",
+              "einheit"
+            ],
+            "text": "Der massgebender_gewerbeertrag wird als Bruttowert ohne vorherige Kürzungen angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "massgebender_gewerbeertrag",
+              "rundung"
+            ],
+            "text": "Der Überhang wird ohne Rundung berechnet (exakte 60 %)."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 4,
+            "key": [
+              "ref",
+              "§ 10a s. 2 gewstg"
+            ],
+            "text": "Der 1 Million Euro übersteigende maßgebende Gewerbeertrag ist bis zu 60 Prozent um nach Satz 1 nicht berücksichtigte Feh"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 10a s. 1 gewstg"
+            ],
+            "text": "die sich bei der Ermittlung des maßgebenden Gewerbeertrags für die vorangegangenen Erhebungszeiträume nach den Vorschrif"
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 10a s. 1 gewstg"
+            ],
+            "text": "soweit die Fehlbeträge nicht bei der Ermittlung des Gewerbeertrags für die vorangegangenen Erhebungszeiträume berücksich"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Der fehlbetrag_bestand wird als Summe aller nicht berücksichtigten Fehlbeträge interpretiert.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"fehlbetrag_bestand\", \"interpretation\"]"
+        },
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "soweit die Fehlbeträge nicht bei der Ermittlung des Gewerbeertrags für die vorangegangenen Erhebungszeiträume berücksich",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 10a s. 1 gewstg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Der Abzug ist auf den Sockel plus 60 % des Überhangs begrenzt, nicht auf die Fehlbeträge selbst.",
+            "eingeschmolzen": "Der Abzug wird auf den Sockel plus 60 % des Überhangs begrenzt, nicht auf die Fehlbeträge selbst.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Der Abzug ist auf den Sockel plus 60 % des Überhangs begrenzt, nicht auf die Fehlbeträge selbst.",
+            "eingeschmolzen": "Der Abzug wird auf den Sockel + 60 % des Überhangs begrenzt, nicht auf die Fehlbeträge selbst.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Der massgebende Gewerbeertrag wird als Bruttowert interpretiert.",
+            "eingeschmolzen": "Der Gewerbeertrag wird als Bruttowert ohne vorherige Kürzungen angenommen.",
+            "key": [
+              "betrifft_kat",
+              "massgebender_gewerbeertrag",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Der fehlbetrag_bestand wird als kumulierter nicht berücksichtigter Fehlbetrag verstanden.",
+            "eingeschmolzen": "Der Bestand wird als kumulierter, nicht berücksichtigter Fehlbetrag interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "fehlbetrag_bestand",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Der massgebender_gewerbeertrag wird als Bruttowert ohne vorherige Kürzungen angenommen.",
+            "eingeschmolzen": "Der massgebende_gewerbeertrag wird als Bruttowert ohne vorherige Kürzungen angenommen.",
+            "key": [
+              "betrifft_kat",
+              "massgebender_gewerbeertrag",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Der fehlbetrag_bestand wird als kumulierter nicht berücksichtigter Fehlbetrag verstanden.",
+            "eingeschmolzen": "Der fehlbetrag_bestand wird als kumulierter, noch nicht berücksichtigter Fehlbetrag interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "fehlbetrag_bestand",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "Der 1 Million Euro übersteigende maßgebende Gewerbeertrag ist bis zu 60 Prozent um nach Satz 1 nicht berücksichtigte Fehlbeträge der vorangegangenen Erhebungsze",
+            "eingeschmolzen": "um nach Satz 1 nicht berücksichtigte Fehlbeträge der vorangegangenen Erhebungszeiträume zu kürzen",
+            "key": [
+              "ref",
+              "§ 10a s. 2 gewstg"
+            ]
+          },
+          {
+            "cluster": "soweit die Fehlbeträge nicht bei der Ermittlung des Gewerbeertrags für die vorangegangenen Erhebungszeiträume berücksichtigt worden sind",
+            "eingeschmolzen": "um die Fehlbeträge gekürzt, die sich bei der Ermittlung des maßgebenden Gewerbeertrags für die vorangegangenen Erhebungszeiträume nach den Vorschriften der §§ 7",
+            "key": [
+              "ref",
+              "§ 10a s. 1 gewstg"
+            ]
+          },
+          {
+            "cluster": "Der 1 Million Euro übersteigende maßgebende Gewerbeertrag ist bis zu 60 Prozent um nach Satz 1 nicht berücksichtigte Fehlbeträge der vorangegangenen Erhebungsze",
+            "eingeschmolzen": "Der 1 Million Euro übersteigende maßgebende Gewerbeertrag ist bis zu 60 Prozent um nach Satz 1 nicht berücksichtigte Fehlbeträge der vorangegangenen Erhebungsze",
+            "key": [
+              "ref",
+              "§ 10a s. 2 gewstg"
+            ]
+          },
+          {
+            "cluster": "Der 1 Million Euro übersteigende maßgebende Gewerbeertrag ist bis zu 60 Prozent um nach Satz 1 nicht berücksichtigte Fehlbeträge der vorangegangenen Erhebungsze",
+            "eingeschmolzen": "Der 1 Million Euro übersteigende maßgebende Gewerbeertrag ist bis zu 60 Prozent um nach Satz 1 nicht berücksichtigte Fehlbeträge [...] zu kürzen",
+            "key": [
+              "ref",
+              "§ 10a s. 2 gewstg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        6,
+        3,
+        3,
+        1,
+        3
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "183f76fca197",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "soweit die Fehlbeträge nicht bei der Ermittlung des Gewerbeertrags für die vorangegangenen Erhebungszeiträume berücksichtigt worden sind",
+        "referenz": "§ 10a S. 1 GewStG"
+      },
+      {
+        "abgedeckt_von": "staffel_60_prozent",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Der 1 Million Euro übersteigende maßgebende Gewerbeertrag ist bis zu 60 Prozent um nach Satz 1 nicht berücksichtigte Fehlbeträge der vorangegangenen Erhebungszeiträume zu kürzen.",
+        "referenz": "§ 10a S. 2 GewStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "die sich bei der Ermittlung des maßgebenden Gewerbeertrags für die vorangegangenen Erhebungszeiträume nach den Vorschriften der §§ 7 bis 10 ergeben haben",
+        "referenz": "§ 10a S. 1 GewStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "unabhaengig",
+        "norm_teil": "soweit die Fehlbeträge nicht bei der Ermittlung des Gewerbeertrags für die vorangegangenen Erhebungszeiträume berücksichtigt worden sind",
+        "referenz": "§ 10a S. 1 GewStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Der massgebende Gewerbeertrag wird als Bruttowert interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "massgebender_gewerbeertrag",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Der fehlbetrag_bestand wird als kumulierter nicht berücksichtigter Fehlbetrag verstanden.",
+        "bedingung_id": "fehlbetrag_bestand_festgestellt",
+        "betrifft": "fehlbetrag_bestand",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Fehlbeträge gelten als bereits nach §§ 7-10 ermittelt und nicht berücksichtigt.",
+        "bedingung_id": "fehlbetrag_bestand_festgestellt",
+        "betrifft": "fehlbetrag_bestand",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Der fehlbetrag_bestand wird als Summe aller nicht berücksichtigten Fehlbeträge interpretiert.",
+        "bedingung_id": "fehlbetrag_bestand_festgestellt",
+        "betrifft": "fehlbetrag_bestand",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der massgebender_gewerbeertrag wird als Bruttowert ohne vorherige Kürzungen angenommen.",
+        "bedingung_id": null,
+        "betrifft": "massgebender_gewerbeertrag",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Der Überhang wird ohne Rundung berechnet (exakte 60 %).",
+        "bedingung_id": "konv:keine_zusaetzliche_rundung",
+        "betrifft": "massgebender_gewerbeertrag",
+        "kategorie": "rundung"
+      }
+    ],
+    "timestamp": "2026-07-16T10:10:30+00:00"
+  },
+  "module_name": "GewerbeverlustAbzug",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

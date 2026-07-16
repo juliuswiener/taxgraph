@@ -1,0 +1,65 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p11_steuermessbetrag
+version: 11
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewerbeertrag
+  - geltungsvoraussetzung
+  formulierungen:
+  - Freibetrag wird immer angewendet, obwohl er nur für bestimmte Steuerpflichtige
+    gilt.
+  - Freibetrag von 24.500 Euro wird nur für natürliche Personen und Personengesellschaften
+    angenommen.
+  - Freibetrag gilt für alle Gewerbeerträge, nicht nur für natürliche Personen/Personengesellschaften.
+  - Freibetrag wird immer angewendet, ohne Prüfung der Rechtsform.
+  triage: nicht_material
+  bedingung: freibetrag_24500_natperson_persges
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewerbeertrag
+  - einheit
+  formulierungen:
+  - Gewerbeertrag wird als Geldbetrag in Euro interpretiert.
+  - Geldbeträge werden in Euro interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - gewerbeertrag
+  - rundung
+  formulierungen:
+  - Abrundung erfolgt durch Truncation nach Division durch 100.
+  - Abrundung auf volle 100 Euro wird als Decimal.truncate umgesetzt.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 11 abs. 1 s. 3 nr. 1 gewstg
+  formulierungen:
+  - bei natürlichen Personen sowie bei Personengesellschaften um einen Freibetrag
+    in Höhe von 24 500 Euro
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: freibetrag_24500_natperson_persges
+- art: norm_teil
+  anker:
+  - ref
+  - § 11 abs. 1 s. 3 gewstg
+  formulierungen:
+  - Der Gewerbeertrag ist auf volle 100 Euro nach unten abzurunden
+  triage: nicht_material
+  klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 11 abs. 2 gewstg
+  formulierungen:
+  - Die Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: steuermesszahl_3_5_prozent

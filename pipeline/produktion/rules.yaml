@@ -6710,3 +6710,239 @@ regeln:
     deckt_ab: einem Viertel der Aufwendungen für die zeitlich befristete Überlassung von Rechten
     quelle: § 8 Nr. 1 Buchst. f GewStG
     beschreibung: 'Buchst. f: ein Viertel (= /4) der Aufwendungen fuer zeitlich befristete Rechteueberlassung (Konzessionen/Lizenzen).'
+- rule_id: p9_1_kuerzung_grundbesitz_ez2024
+  norm: § 9 Nr. 1 Satz 1 GewStG i.d.F. bis EZ 2024 (einfache Grundbesitzkuerzung, 1,2 % Einheitswert)
+  hinweis: 'kuerzung_grundbesitz = einheitswert_grundbesitz * 0,012 (= 1,2 Prozent). ALTFASSUNG bis EZ 2024; JStG 2024 fasst Satz 1 ab EZ 2025 neu (tatsaechliche Grundsteuer) -> eigene Regel G3b. 1,2 % = 0,012 EXAKT (terminierend), money*decimal, Cent-Schnitt zuletzt. Der 140-%-Ansatz des Einheitswerts (§ 121a BewG) ist benannter Nachtrag (einheitswert_grundbesitz traegt bereits den massgeblichen Wert). NUR Satz 1 (einfache Kuerzung); erweiterte Kuerzung Satz 2-3 = G3b/Nachtrag. HINWEIS Synopse-Freeze: die Quelle traegt alte UND neue Fassung nebeneinander (buzer-Synopse) -> der Judge misst PLANBAR gegen die Neufassung (faithful=False erwartbar, Altfassungs-Aenderungsbefehl-Muster); Code bildet die EZ-2024-Altfassung ab.'
+  quellen:
+  - typ: gesetz
+    label: § 9 Nr. 1 Satz 1 GewStG a.F. (bis EZ 2024, 1,2 % Einheitswert)
+    datei: sources/bgbl/gewstg_p9_altfassung_ez2024.txt
+    zitatanker: 1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden
+    auszug: 1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden und nicht von der Grundsteuer befreiten Grundbesitzes
+  signature:
+    scope: KuerzungGrundbesitzEz2024
+    inputs:
+      einheitswert_grundbesitz: money
+    output: kuerzung_grundbesitz
+  raster:
+  - einheitswert_grundbesitz: 100000
+  - einheitswert_grundbesitz: 0
+  - einheitswert_grundbesitz: 500000
+  test_seed:
+  - quelle: sources/bgbl/gewstg_p9_altfassung_ez2024.txt
+    zitatanker: 1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden
+    herkunft: synthetisch
+    rechenweg: 'EZ 2024: 100.000 * 1,2 % = 100.000 * 0,012 = 1.200,00.'
+    inputs:
+      einheitswert_grundbesitz: 100000
+    expected: 1200.0
+  - quelle: sources/bgbl/gewstg_p9_altfassung_ez2024.txt
+    zitatanker: 1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden
+    herkunft: synthetisch
+    rechenweg: 'Kein Grundbesitz: 0 * 0,012 = 0,00.'
+    inputs:
+      einheitswert_grundbesitz: 0
+    expected: 0.0
+  - quelle: sources/bgbl/gewstg_p9_altfassung_ez2024.txt
+    zitatanker: 1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden
+    herkunft: synthetisch
+    rechenweg: '500.000 * 0,012 = 6.000,00.'
+    inputs:
+      einheitswert_grundbesitz: 500000
+    expected: 6000.0
+  geltungsbedingungen:
+  - bedingung: kuerzung_1_2_prozent_einheitswert
+    deckt_ab: 1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden
+    quelle: § 9 Nr. 1 Satz 1 GewStG a.F.
+    beschreibung: 'EZ-2024-Altfassung: Kuerzung = 1,2 % (= 0,012) des Einheitswerts des Betriebsgrundbesitzes. Ab EZ 2025 ersetzt durch tatsaechliche Grundsteuer (JStG 2024, G3b). 140-%-Ansatz (§ 121a BewG) = Nachtrag.'
+- rule_id: p9_kuerzungen_ez2025
+  norm: § 9 Nr. 1 S. 1 (n.F.) + Nr. 2 + Nr. 2a GewStG (Kuerzungen ab EZ 2025)
+  hinweis: 'kuerzung_gesamt = grundsteuer_betriebsausgabe + gewinnanteile_mitunternehmer + schachteldividenden. NEUFASSUNG ab EZ 2025 (JStG 2024): Nr. 1 S. 1 = die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer (kein 1,2-%-Einheitswert mehr - das ist G3a/EZ 2024). Nr. 2 = Gewinnanteile aus Mitunternehmerschaft (soweit im Gewinn angesetzt). Nr. 2a = Schachteldividenden inlaendische Kapitalges. (Beteiligung >= 15 % zu Beginn EZ). money-Summe, keine Rundung, exakt. Nr. 1 S. 3 erweiterte Kuerzung (20-%-Unschaedlichkeit Grundstuecksunternehmen) = ALTERNATIVE auf Antrag, benannter Nachtrag. Schachtel-Schwelle 15 % + Aufwands-Minderung Nr. 2a S. 3 = Nachtrag.'
+  quellen:
+  - typ: gesetz
+    label: § 9 Nr. 1 S. 1 GewStG n.F. (ab EZ 2025, tatsaechliche Grundsteuer)
+    datei: sources/gesetze-im-internet/gewstg_p9_2026-07-16.txt
+    zitatanker: die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer
+    auszug: Die Summe des Gewinns und der Hinzurechnungen wird gekürzt um 1. die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer für zum Betriebsvermögen des Unternehmers gehörenden Grundbesitz.
+  - typ: gesetz
+    label: § 9 Nr. 2 GewStG (Gewinnanteile Mitunternehmerschaft) + Nr. 2a (Schachtel >= 15 %)
+    datei: sources/gesetze-im-internet/gewstg_p9_2026-07-16.txt
+    zitatanker: die Gewinne aus Anteilen an einer nicht steuerbefreiten inländischen Kapitalgesellschaft
+    auszug: die Gewinne aus Anteilen an einer nicht steuerbefreiten inländischen Kapitalgesellschaft im Sinne des § 2 Abs. 2, einer Kredit- oder Versicherungsanstalt des öffentlichen Rechts, einer Genossenschaften oder einer Unternehmensbeteiligungsgesellschaft im Sinne des § 3 Nr. 23, wenn die Beteiligung zu Beginn des Erhebungszeitraums mindestens 15 Prozent des Grund- oder Stammkapitals beträgt
+  signature:
+    scope: KuerzungenEz2025
+    inputs:
+      grundsteuer_betriebsausgabe: money
+      gewinnanteile_mitunternehmer: money
+      schachteldividenden: money
+    output: kuerzung_gesamt
+  raster:
+  - grundsteuer_betriebsausgabe: 9000
+    gewinnanteile_mitunternehmer: 20000
+    schachteldividenden: 5000
+  - grundsteuer_betriebsausgabe: 0
+    gewinnanteile_mitunternehmer: 0
+    schachteldividenden: 0
+  - grundsteuer_betriebsausgabe: 9000
+    gewinnanteile_mitunternehmer: 0
+    schachteldividenden: 0
+  test_seed:
+  - quelle: sources/gesetze-im-internet/gewstg_p9_2026-07-16.txt
+    zitatanker: die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer
+    herkunft: synthetisch
+    rechenweg: 'EZ 2025: Grundsteuer 9.000 + Gewinnanteile 20.000 + Schachtel 5.000 = 34.000,00.'
+    inputs:
+      grundsteuer_betriebsausgabe: 9000
+      gewinnanteile_mitunternehmer: 20000
+      schachteldividenden: 5000
+    expected: 34000.0
+  - quelle: sources/gesetze-im-internet/gewstg_p9_2026-07-16.txt
+    zitatanker: die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer
+    herkunft: synthetisch
+    rechenweg: 'Kein Kuerzungstatbestand: 0,00 (Kante).'
+    inputs:
+      grundsteuer_betriebsausgabe: 0
+      gewinnanteile_mitunternehmer: 0
+      schachteldividenden: 0
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/gewstg_p9_2026-07-16.txt
+    zitatanker: die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer
+    herkunft: synthetisch
+    rechenweg: 'Nur Grundsteuer 9.000 (EZ-2025-Pendant zum G3a-Split; vgl. G3a 400.000*1,2%=4.800 -> Delta 4.200): 9.000,00.'
+    inputs:
+      grundsteuer_betriebsausgabe: 9000
+      gewinnanteile_mitunternehmer: 0
+      schachteldividenden: 0
+    expected: 9000.0
+  geltungsbedingungen:
+  - bedingung: kuerzung_grundsteuer_ez2025
+    deckt_ab: die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer
+    quelle: § 9 Nr. 1 S. 1 GewStG n.F.
+    beschreibung: 'Nr. 1 S. 1 ab EZ 2025 (JStG 2024): Kuerzung = tatsaechlich als Betriebsausgabe erfasste Grundsteuer (ersetzt 1,2-%-Einheitswert der Altfassung G3a). Nr. 1 S. 3 20-%-erweiterte Kuerzung = Nachtrag.'
+  - bedingung: kuerzung_gewinnanteile_mitunternehmer
+    deckt_ab: die Anteile am Gewinn einer in- oder ausländischen offenen Handelsgesellschaft
+    quelle: § 9 Nr. 2 GewStG
+    beschreibung: 'Nr. 2: Kuerzung um Gewinnanteile aus Mitunternehmerschaft, soweit bei Gewinnermittlung angesetzt (vermeidet Doppelerfassung im GewSt-Verbund).'
+  - bedingung: kuerzung_schachteldividenden_15prozent
+    deckt_ab: die Gewinne aus Anteilen an einer nicht steuerbefreiten inländischen Kapitalgesellschaft
+    quelle: § 9 Nr. 2a GewStG
+    beschreibung: 'Nr. 2a: Kuerzung um Schachteldividenden bei Beteiligung >= 15 % zu Beginn EZ. Schwelle 15 % + Aufwands-Minderung S. 3 = Nachtrag.'
+- rule_id: p10a_gewerbeverlust
+  norm: § 10a S. 1-2 GewStG (Gewerbeverlust, 1-Mio-Sockel + 60 %)
+  hinweis: 'gewerbeverlust_abzug = min(fehlbetrag_bestand, 1000000 + (60 / 100) * max(0, massgebender_gewerbeertrag - 1000000)). Mindestbesteuerung wie § 10d Abs. 2 EStG (p10d_2), ABER: (a) 60 PROZENT statt 70 - die WtChancenG-Anhebung auf 70 gilt NUR EStG/KStG, NICHT die Gewerbesteuer (§ 10a unveraendert); (b) KEIN Zusammenveranlagungs-Sockel (2 Mio) - GewSt ist betriebsbezogen, immer 1-Mio-Sockel. 60 = PROZENTWERT -> /100 in decimal, Cent-Schnitt zuletzt. fehlbetrag_bestand = zum Schluss des Vorjahres gesondert festgestellter vortragsfaehiger Fehlbetrag (S. 6-7) = State-Input; die EZ-Fortschreibung selbst gehoert NICHT in diese Regel (Backlog-Grenze, wie p10d_2). Mitunternehmer-Zurechnung S. 4-5, § 8c/8d KStG S. 9-12 = Nachtrag. Bestand >= 0.'
+  quellen:
+  - typ: gesetz
+    label: § 10a S. 1-2 GewStG (1-Mio-Sockel + 60 %)
+    datei: sources/gesetze-im-internet/gewstg_p10a_2026-07-16.txt
+    zitatanker: bis zu 60 Prozent
+    auszug: Der maßgebende Gewerbeertrag wird bis zu einem Betrag in Höhe von 1 Million Euro um die Fehlbeträge gekürzt, die sich bei der Ermittlung des maßgebenden Gewerbeertrags für die vorangegangenen Erhebungszeiträume nach den Vorschriften der §§ 7 bis 10 ergeben haben, soweit die Fehlbeträge nicht bei der Ermittlung des Gewerbeertrags für die vorangegangenen Erhebungszeiträume berücksichtigt worden sind. 2 Der 1 Million Euro übersteigende maßgebende Gewerbeertrag ist bis zu 60 Prozent um nach Satz 1 nicht berücksichtigte Fehlbeträge der vorangegangenen Erhebungszeiträume zu kürzen.
+  signature:
+    scope: GewerbeverlustAbzug
+    inputs:
+      massgebender_gewerbeertrag: money
+      fehlbetrag_bestand: money
+    output: gewerbeverlust_abzug
+  raster:
+  - massgebender_gewerbeertrag: 500000
+    fehlbetrag_bestand: 800000
+  - massgebender_gewerbeertrag: 3000000
+    fehlbetrag_bestand: 5000000
+  - massgebender_gewerbeertrag: 500000
+    fehlbetrag_bestand: 0
+  test_seed:
+  - quelle: sources/gesetze-im-internet/gewstg_p10a_2026-07-16.txt
+    zitatanker: bis zu einem Betrag in Höhe von 1 Million Euro um die Fehlbeträge gekürzt
+    herkunft: synthetisch
+    rechenweg: 'GE 500.000 < Sockel 1 Mio: cap = 1.000.000. min(800.000, 1.000.000) = 800.000,00 (voller Bestand).'
+    inputs:
+      massgebender_gewerbeertrag: 500000
+      fehlbetrag_bestand: 800000
+    expected: 800000.0
+  - quelle: sources/gesetze-im-internet/gewstg_p10a_2026-07-16.txt
+    zitatanker: bis zu 60 Prozent
+    herkunft: synthetisch
+    rechenweg: '60-%-STAFFEL: cap = 1 Mio + 0,60 x (3 Mio - 1 Mio) = 1.000.000 + 1.200.000 = 2.200.000. min(5 Mio, 2,2 Mio) = 2.200.000,00 (60 %, NICHT 70 % wie § 10d -> waere 2.400.000).'
+    inputs:
+      massgebender_gewerbeertrag: 3000000
+      fehlbetrag_bestand: 5000000
+    expected: 2200000.0
+  - quelle: sources/gesetze-im-internet/gewstg_p10a_2026-07-16.txt
+    zitatanker: bis zu einem Betrag in Höhe von 1 Million Euro um die Fehlbeträge gekürzt
+    herkunft: synthetisch
+    rechenweg: 'Kein Fehlbetrag-Bestand: min(0, ...) = 0,00 (Kante).'
+    inputs:
+      massgebender_gewerbeertrag: 500000
+      fehlbetrag_bestand: 0
+    expected: 0.0
+  geltungsbedingungen:
+  - bedingung: sockel_1_mio_unbeschraenkt
+    deckt_ab: bis zu einem Betrag in Höhe von 1 Million Euro um die Fehlbeträge gekürzt
+    quelle: § 10a S. 1 GewStG
+    beschreibung: 'S. 1: bis 1 Mio Gewerbeertrag unbeschraenkte Fehlbetrag-Kuerzung. Kein Splitting-Sockel (betriebsbezogen).'
+  - bedingung: staffel_60_prozent
+    deckt_ab: bis zu 60 Prozent
+    quelle: § 10a S. 2 GewStG
+    beschreibung: 'S. 2: der 1 Mio uebersteigende Gewerbeertrag nur zu 60 % um Fehlbetraege kuerzbar. 60 %, NICHT 70 % - WtChancenG-Anhebung gilt nur § 10d EStG/KStG, § 10a unveraendert.'
+  - bedingung: fehlbetrag_bestand_festgestellt
+    deckt_ab: Der maßgebende Gewerbeertrag wird bis zu einem Betrag
+    quelle: § 10a S. 6-7 GewStG
+    beschreibung: 'fehlbetrag_bestand = gesondert festgestellter vortragsfaehiger Fehlbetrag zum Schluss des Vorjahres (S. 6-7) = State-Input; EZ-Fortschreibung nicht Gegenstand dieser Regel (Backlog-Grenze, wie p10d_2). Mitunternehmer-Zurechnung S. 4-5 / § 8c-8d KStG = Nachtrag.'
+- rule_id: p11_steuermessbetrag
+  norm: § 11 Abs. 1 S. 3 Nr. 1 + Abs. 2 GewStG (Steuermessbetrag, Freibetrag 24.500 + 3,5 %)
+  hinweis: 'abgerundet = gewerbeertrag auf volle 100 Euro nach unten (Abrundung). nach_freibetrag = max(0, abgerundet - 24500). steuermessbetrag = nach_freibetrag * (35 / 1000) (= 3,5 %). Reihenfolge zwingend: erst abrunden auf 100, DANN Freibetrag 24.500 (natuerliche Person/PersG), DANN Steuermesszahl 3,5 %. 3,5 % = 0,035 EXAKT; money*decimal, Cent-Schnitt zuletzt. Freibetrag hoechstens bis zum abgerundeten Gewerbeertrag (max(0, ...)). 5.000-Freibetrag (§ 2 Abs. 3 / juristische Person oeff. Rechts) + Hausgewerbe-Ermaessigung 56 % (Abs. 3) = benannter Nachtrag.'
+  quellen:
+  - typ: gesetz
+    label: § 11 Abs. 1 S. 3 Nr. 1 + Abs. 2 GewStG (Abrundung 100, Freibetrag 24.500, Messzahl 3,5 %)
+    datei: sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt
+    zitatanker: Freibetrag in Höhe von 24 500 Euro
+    auszug: Der Gewerbeertrag ist auf volle 100 Euro nach unten abzurunden und 1. bei natürlichen Personen sowie bei Personengesellschaften um einen Freibetrag in Höhe von 24 500 Euro
+  - typ: gesetz
+    label: § 11 Abs. 2 GewStG (Steuermesszahl 3,5 %)
+    datei: sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt
+    zitatanker: Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent
+    auszug: Die Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent.
+  signature:
+    scope: Steuermessbetrag
+    inputs:
+      gewerbeertrag: money
+    output: steuermessbetrag
+  raster:
+  - gewerbeertrag: 603000
+  - gewerbeertrag: 24500
+  - gewerbeertrag: 100050
+  - gewerbeertrag: 0
+  test_seed:
+  - quelle: sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt
+    zitatanker: Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent
+    herkunft: synthetisch
+    rechenweg: 'GE 603.000 (schon volle 100): -24.500 = 578.500; * 3,5 % = 578.500 * 0,035 = 20.247,50 (Basis-Messbetrag).'
+    inputs:
+      gewerbeertrag: 603000
+    expected: 20247.5
+  - quelle: sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt
+    zitatanker: Freibetrag in Höhe von 24 500 Euro
+    herkunft: synthetisch
+    rechenweg: 'GE 24.500 = Freibetrag: max(0, 24.500 - 24.500) = 0; * 3,5 % = 0,00 (Kante, Freibetrag deckt alles).'
+    inputs:
+      gewerbeertrag: 24500
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt
+    zitatanker: auf volle 100 Euro nach unten abzurunden
+    herkunft: synthetisch
+    rechenweg: 'ABRUNDUNG: 100.050 -> volle 100 nach unten = 100.000; -24.500 = 75.500; * 0,035 = 2.642,50.'
+    inputs:
+      gewerbeertrag: 100050
+    expected: 2642.5
+  rundung:
+  - deckt_ab: auf volle 100 Euro nach unten abzurunden
+    zitatanker: auf volle 100 Euro nach unten abzurunden
+    quelle: § 11 Abs. 1 S. 3 GewStG
+  geltungsbedingungen:
+  - bedingung: freibetrag_24500_natperson_persges
+    deckt_ab: Freibetrag in Höhe von 24 500 Euro
+    quelle: § 11 Abs. 1 S. 3 Nr. 1 GewStG
+    beschreibung: 'Freibetrag 24.500 fuer natuerliche Personen + Personengesellschaften (nicht Kapitalges.), hoechstens bis zum abgerundeten Gewerbeertrag. 5.000-Freibetrag (§ 2 Abs. 3 u.a.) = Nachtrag.'
+  - bedingung: steuermesszahl_3_5_prozent
+    deckt_ab: Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent
+    quelle: § 11 Abs. 2 GewStG
+    beschreibung: 'Steuermesszahl 3,5 % (= 0,035) auf den um Abrundung + Freibetrag geminderten Gewerbeertrag. Hausgewerbe-Ermaessigung 56 % (Abs. 3) = Nachtrag.'

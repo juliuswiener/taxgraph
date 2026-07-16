@@ -1,0 +1,190 @@
+{
+  "bedingungen": [
+    "kuerzung_grundsteuer_ez2025",
+    "kuerzung_gewinnanteile_mitunternehmer",
+    "kuerzung_schachteldividenden_15prozent"
+  ],
+  "candidate_id": "p9_kuerzungen_ez2025",
+  "catala_a": "declaration scope KuerzungenEz2025:\n  input grundsteuer_betriebsausgabe content money\n  input gewinnanteile_mitunternehmer content money\n  input schachteldividenden content money\n  output kuerzung_gesamt content money\n\nscope KuerzungenEz2025:\n  definition kuerzung_gesamt equals\n    grundsteuer_betriebsausgabe\n    + gewinnanteile_mitunternehmer\n    + schachteldividenden",
+  "catala_a_sha256": "08977ae6a25aba73cb26465cd4f7f5d5e856cd1771be82fc8035ab6ad195ffc8",
+  "catala_b": "declaration scope KuerzungenEz2025:\n  input grundsteuer_betriebsausgabe content money\n  input gewinnanteile_mitunternehmer content money\n  input schachteldividenden content money\n  output kuerzung_gesamt content money\n\nscope KuerzungenEz2025:\n  definition kuerzung_gesamt equals grundsteuer_betriebsausgabe + gewinnanteile_mitunternehmer + schachteldividenden",
+  "catala_b_sha256": "96f5149bc3fe9141be0e09300b58b671633adb020edca60083b3c00897bc43e4",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'kuerzung_gesamt'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Die Kürzung ist eine Summe, nicht eine Kürzung der Summe aus Gewinn und Hinzurechnungen."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 0,
+        "norm_teile": 3
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 2,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Kürzung ist eine Summe, nicht eine Kürzung der Summe aus Gewinn und Hinzurechnungen."
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "die Gewinne aus Anteilen an einer nicht steuerbefreiten inländischen Kapitalgesellschaft im Sinne des § 2 Abs. 2, einer Kredit- oder Versicherungsanstalt des öf",
+            "eingeschmolzen": "die Gewinne aus Anteilen an einer nicht steuerbefreiten inländischen Kapitalgesellschaft im Sinne des § 2 Abs. 2, einer Kredit- oder Versicherungsanstalt des öf",
+            "key": [
+              "ref",
+              "§ 9 nr. 2 gewstg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        4,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "53d37850973c",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "kuerzung_grundsteuer_ez2025",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Die Summe des Gewinns und der Hinzurechnungen wird gekürzt um 1. die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer für zum Betriebsvermögen des Unternehmers gehörenden Grundbesitz.",
+        "referenz": "§ 9 Nr. 1 S. 1 GewStG n.F."
+      },
+      {
+        "abgedeckt_von": "kuerzung_schachteldividenden_15prozent",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "die Gewinne aus Anteilen an einer nicht steuerbefreiten inländischen Kapitalgesellschaft im Sinne des § 2 Abs. 2, einer Kredit- oder Versicherungsanstalt des öffentlichen Rechts, einer Genossenschaften oder einer Unternehmensbeteiligungsgesellschaft im Sinne des § 3 Nr. 23",
+        "referenz": "§ 9 Nr. 2 GewStG"
+      },
+      {
+        "abgedeckt_von": "kuerzung_schachteldividenden_15prozent",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "wenn die Beteiligung zu Beginn des Erhebungszeitraums mindestens 15 Prozent des Grund- oder Stammkapitals beträgt",
+        "referenz": "§ 9 Nr. 2a GewStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-16T10:09:19+00:00"
+  },
+  "module_name": "KuerzungenEz2025",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

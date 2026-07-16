@@ -1,0 +1,26 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p9_1_kuerzung_grundbesitz_ez2024
+version: 3
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - einheitswert_grundbesitz
+  - interpretation
+  formulierungen:
+  - Der Einheitswert bezieht sich nur auf nicht grundsteuerbefreiten Grundbesitz.
+  - Der Einheitswert bezieht sich auf zum Betriebsvermögen gehörenden Grundbesitz.
+  triage: bedingung_neu
+  bedingung: kuerzung_1_2_prozent_einheitswert
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 nr. 1 satz 1 gewstg a.f.
+  formulierungen:
+  - 1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden
+    und nicht von der Grundsteuer befreiten Grundbesitzes
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kuerzung_1_2_prozent_einheitswert

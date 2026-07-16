@@ -1,0 +1,450 @@
+{
+  "bedingungen": [
+    "freibetrag_24500_natperson_persges",
+    "steuermesszahl_3_5_prozent"
+  ],
+  "candidate_id": "p11_steuermessbetrag",
+  "catala_a": "declaration scope Steuermessbetrag:\n  input gewerbeertrag content money\n  internal abgerundet content money\n  internal nach_freibetrag content money\n  output steuermessbetrag content money\n\nscope Steuermessbetrag:\n  definition abgerundet equals\n    (Decimal.truncate of (gewerbeertrag / $100.00)) * $100.00\n\n  definition nach_freibetrag equals\n    if abgerundet > $24,500.00 then abgerundet - $24,500.00 else $0.00\n\n  definition steuermessbetrag equals\n    nach_freibetrag * 0.035",
+  "catala_a_sha256": "d9ba997e6e2861558994f2d037b8d28b792e22c7868cf051ab9f74731e99c89f",
+  "catala_b": "declaration scope Steuermessbetrag:\n  input gewerbeertrag content money\n  internal abgerundet content money\n  internal nach_freibetrag content money\n  output steuermessbetrag content money\n\nscope Steuermessbetrag:\n  definition abgerundet equals (Decimal.truncate of (gewerbeertrag / $100.00)) * $100.00\n  definition nach_freibetrag equals if abgerundet > $24,500.00 then abgerundet - $24,500.00 else $0.00\n  definition steuermessbetrag equals nach_freibetrag * 0.035",
+  "catala_b_sha256": "affeca689b99f64ec0a3b3db396fc17d76cdf67170fc19ee599bfc3002b4e3fc",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 Rundungsop(s) durch § 11 Abs. 1 S. 3 GewStG ('auf volle 100 Euro nach unten abzurunden') gedeckt",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'steuermessbetrag'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 3 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 6,
+        "annahmen": 8,
+        "norm_teile": 3
+      },
+      "gesaettigt": false,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Freibetrag wird nur bei natürlichen Personen und Personengesellschaften gewährt, nicht generell."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "gewerbeertrag"
+            ],
+            "text": "Abrundung auf volle 100 Euro ist im Code als Truncation implementiert, nicht als Abrundung."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Steuermessbetrag wird ohne Rundung auf volle Euro berechnet."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "gewerbeertrag"
+            ],
+            "text": "Abrundung auf volle 100 Euro fehlt im Ergebnis, obwohl im internen Schritt vorhanden."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Abrundung erfolgt auf volle 100 Euro, nicht auf volle 100,00 Euro."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "gewerbeertrag"
+            ],
+            "text": "Abrundung auf volle 100 Euro erfolgt durch Division und Trunkierung statt mathematischer Abrundung."
+          }
+        ],
+        "annahmen": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Freibetrag wird immer angewendet, obwohl er nur für bestimmte Steuerpflichtige gilt."
+          },
+          {
+            "in_laeufen": 4,
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "einheit"
+            ],
+            "text": "Gewerbeertrag wird als Geldbetrag in Euro interpretiert."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "rundung"
+            ],
+            "text": "Abrundung erfolgt durch Truncation nach Division durch 100."
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "rundung"
+            ],
+            "text": "Abrundung auf volle 100 Euro wird als Decimal.truncate umgesetzt."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Freibetrag von 24.500 Euro wird nur für natürliche Personen und Personengesellschaften angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "einheit"
+            ],
+            "text": "Geldbeträge werden in Euro interpretiert."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Freibetrag gilt für alle Gewerbeerträge, nicht nur für natürliche Personen/Personengesellschaften."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "geltungsvoraussetzung"
+            ],
+            "text": "Freibetrag wird immer angewendet, ohne Prüfung der Rechtsform."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 11 abs. 1 s. 3 gewstg"
+            ],
+            "text": "Der Gewerbeertrag ist auf volle 100 Euro nach unten abzurunden"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Freibetrag wird nur bei natürlichen Personen und Personengesellschaften gewährt, nicht generell.",
+            "eingeschmolzen": "Der Freibetrag wird nur bei natürlichen Personen und Personengesellschaften angewendet, nicht generell.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Die Abrundung erfolgt auf volle 100 Euro, nicht auf volle 100,00 Euro.",
+            "eingeschmolzen": "Die Abrundung erfolgt auf volle 100 Euro, nicht durch Trunkierung der Division.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Freibetrag wird nur bei natürlichen Personen und Personengesellschaften gewährt, nicht generell.",
+            "eingeschmolzen": "Der Freibetrag wird nur für natürliche Personen und Personengesellschaften gewährt, nicht pauschal.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [
+          {
+            "cluster": "Abrundung auf volle 100 Euro wird als Decimal.truncate umgesetzt.",
+            "eingeschmolzen": "Abrundung auf volle 100,00 Euro wird als Decimal.truncate implementiert.",
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "rundung"
+            ]
+          },
+          {
+            "cluster": "Freibetrag wird immer angewendet, obwohl er nur für bestimmte Steuerpflichtige gilt.",
+            "eingeschmolzen": "Der Freibetrag von 24.500 Euro wird immer angewendet.",
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Gewerbeertrag wird als Geldbetrag in Euro interpretiert.",
+            "eingeschmolzen": "Der Gewerbeertrag wird in Euro angenommen.",
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Gewerbeertrag wird als Geldbetrag in Euro interpretiert.",
+            "eingeschmolzen": "Gewerbeertrag wird in Euro angenommen.",
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "einheit"
+            ]
+          },
+          {
+            "cluster": "Abrundung auf volle 100 Euro wird als Decimal.truncate umgesetzt.",
+            "eingeschmolzen": "Abrundung auf 100 Euro wird durch Trunkierung umgesetzt.",
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "rundung"
+            ]
+          },
+          {
+            "cluster": "Abrundung erfolgt durch Truncation nach Division durch 100.",
+            "eingeschmolzen": "Abrundung wird als Trunkierung der Division durch 100 umgesetzt.",
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "rundung"
+            ]
+          },
+          {
+            "cluster": "Gewerbeertrag wird als Geldbetrag in Euro interpretiert.",
+            "eingeschmolzen": "Gewerbeertrag wird in Euro angenommen.",
+            "key": [
+              "betrifft_kat",
+              "gewerbeertrag",
+              "einheit"
+            ]
+          }
+        ],
+        "norm_teile": [
+          {
+            "cluster": "bei natürlichen Personen sowie bei Personengesellschaften um einen Freibetrag in Höhe von 24 500 Euro",
+            "eingeschmolzen": "um einen Freibetrag in Höhe von 24 500 Euro",
+            "key": [
+              "ref",
+              "§ 11 abs. 1 s. 3 nr. 1 gewstg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        8,
+        5,
+        1,
+        2,
+        1
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "7ab97d6b4770",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "freibetrag_24500_natperson_persges",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "bei natürlichen Personen sowie bei Personengesellschaften um einen Freibetrag in Höhe von 24 500 Euro",
+        "referenz": "§ 11 Abs. 1 S. 3 Nr. 1 GewStG"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Der Gewerbeertrag ist auf volle 100 Euro nach unten abzurunden",
+        "referenz": "§ 11 Abs. 1 S. 3 GewStG"
+      },
+      {
+        "abgedeckt_von": "steuermesszahl_3_5_prozent",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Die Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent.",
+        "referenz": "§ 11 Abs. 2 GewStG"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Freibetrag wird immer angewendet, obwohl er nur für bestimmte Steuerpflichtige gilt.",
+        "bedingung_id": null,
+        "betrifft": "gewerbeertrag",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Gewerbeertrag wird als Geldbetrag in Euro interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "gewerbeertrag",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Abrundung erfolgt durch Truncation nach Division durch 100.",
+        "bedingung_id": null,
+        "betrifft": "gewerbeertrag",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Abrundung auf volle 100 Euro wird als Decimal.truncate umgesetzt.",
+        "bedingung_id": null,
+        "betrifft": "gewerbeertrag",
+        "kategorie": "rundung"
+      },
+      {
+        "annahme": "Freibetrag von 24.500 Euro wird nur für natürliche Personen und Personengesellschaften angenommen.",
+        "bedingung_id": "freibetrag_24500_natperson_persges",
+        "betrifft": "gewerbeertrag",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Geldbeträge werden in Euro interpretiert.",
+        "bedingung_id": "konv:betraege_in_euro",
+        "betrifft": "gewerbeertrag",
+        "kategorie": "einheit"
+      },
+      {
+        "annahme": "Freibetrag gilt für alle Gewerbeerträge, nicht nur für natürliche Personen/Personengesellschaften.",
+        "bedingung_id": null,
+        "betrifft": "gewerbeertrag",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Freibetrag wird immer angewendet, ohne Prüfung der Rechtsform.",
+        "bedingung_id": null,
+        "betrifft": "gewerbeertrag",
+        "kategorie": "geltungsvoraussetzung"
+      }
+    ],
+    "timestamp": "2026-07-16T10:12:08+00:00"
+  },
+  "module_name": "Steuermessbetrag",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

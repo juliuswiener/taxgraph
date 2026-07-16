@@ -1,0 +1,201 @@
+{
+  "bedingungen": [
+    "kuerzung_1_2_prozent_einheitswert"
+  ],
+  "candidate_id": "p9_1_kuerzung_grundbesitz_ez2024",
+  "catala_a": "declaration scope KuerzungGrundbesitzEz2024:\n  input einheitswert_grundbesitz content money\n  output kuerzung_grundbesitz content money\n\nscope KuerzungGrundbesitzEz2024:\n  definition kuerzung_grundbesitz equals\n    einheitswert_grundbesitz * 0.012",
+  "catala_a_sha256": "efb9129a38b3e3aa81061ae00f234e99e431a15258c83054644867b8f2deb615",
+  "catala_b": "declaration scope KuerzungGrundbesitzEz2024:\n  input einheitswert_grundbesitz content money\n  output kuerzung_grundbesitz content money\n\nscope KuerzungGrundbesitzEz2024:\n  definition kuerzung_grundbesitz equals einheitswert_grundbesitz * 0.012",
+  "catala_b_sha256": "4a8704261d2ed71a7bcdcbecaeb8d287e68d9dda80c11949f7aa35cfa36a5017",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'kuerzung_grundbesitz'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 1 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 2,
+        "norm_teile": 1
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "ref",
+              "§ 9 nr. 1 satz 1 gewstg a.f."
+            ],
+            "text": "1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden und nicht von der Grundsteuer befreit"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "annahme",
+          "gueltige_stimmen": 3,
+          "item": "Der Einheitswert bezieht sich nur auf nicht grundsteuerbefreiten Grundbesitz.",
+          "schluessel": "[\"annahmen\", \"betrifft_kat\", \"einheitswert_grundbesitz\", \"interpretation\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Der Einheitswert bezieht sich nur auf nicht grundsteuerbefreiten Grundbesitz.",
+            "eingeschmolzen": "Der Einheitswert bezieht sich auf nicht grundsteuerbefreiten Grundbesitz.",
+            "key": [
+              "betrifft_kat",
+              "einheitswert_grundbesitz",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Der Einheitswert bezieht sich auf zum Betriebsvermögen gehörenden Grundbesitz.",
+            "eingeschmolzen": "Der Einheitswert gehört zum Betriebsvermögen des Unternehmers.",
+            "key": [
+              "betrifft_kat",
+              "einheitswert_grundbesitz",
+              "interpretation"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        2,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "8dc3577c3950",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "kuerzung_1_2_prozent_einheitswert",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden und nicht von der Grundsteuer befreiten Grundbesitzes",
+        "referenz": "§ 9 Nr. 1 Satz 1 GewStG a.F."
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Der Einheitswert bezieht sich nur auf nicht grundsteuerbefreiten Grundbesitz.",
+        "bedingung_id": null,
+        "betrifft": "einheitswert_grundbesitz",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Der Einheitswert bezieht sich auf zum Betriebsvermögen gehörenden Grundbesitz.",
+        "bedingung_id": "kuerzung_1_2_prozent_einheitswert",
+        "betrifft": "einheitswert_grundbesitz",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-16T10:02:24+00:00"
+  },
+  "module_name": "KuerzungGrundbesitzEz2024",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

@@ -1,0 +1,45 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p9_kuerzungen_ez2025
+version: 4
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die kuerzung ist eine summe, nicht eine kuerzung der summe aus gewinn und hinzurechnungen.
+  formulierungen:
+  - Die Kürzung ist eine Summe, nicht eine Kürzung der Summe aus Gewinn und Hinzurechnungen.
+  triage: nicht_echt
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 nr. 1 s. 1 gewstg n.f.
+  formulierungen:
+  - Die Summe des Gewinns und der Hinzurechnungen wird gekürzt um 1. die im Erhebungszeitraum
+    als Betriebsausgabe erfasste Grundsteuer für zum Betriebsvermögen des Unternehmers
+    gehörenden Grundbesitz.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kuerzung_grundsteuer_ez2025
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 nr. 2 gewstg
+  formulierungen:
+  - die Gewinne aus Anteilen an einer nicht steuerbefreiten inländischen Kapitalgesellschaft
+    im Sinne des § 2 Abs. 2, einer Kredit- oder Versicherungsanstalt des öffentlichen
+    Rechts, einer Genossenschafte
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kuerzung_schachteldividenden_15prozent
+- art: norm_teil
+  anker:
+  - ref
+  - § 9 nr. 2a gewstg
+  formulierungen:
+  - wenn die Beteiligung zu Beginn des Erhebungszeitraums mindestens 15 Prozent des
+    Grund- oder Stammkapitals beträgt
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kuerzung_schachteldividenden_15prozent
