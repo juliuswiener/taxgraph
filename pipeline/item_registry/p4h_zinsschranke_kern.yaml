@@ -1,0 +1,42 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p4h_zinsschranke_kern
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - ebitda_basis
+  - interpretation
+  formulierungen:
+  - ebitda_basis ist bereits um Zinsaufwendungen, Abschreibungen und Zinserträge angepasst.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - abziehbare_zinsaufwendungen
+  - sonstige
+  formulierungen:
+  - Negative Beträge werden auf 0.00 gesetzt. | Negative Werte werden auf 0.00 begrenzt.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 4h abs. 1 satz 5
+  formulierungen:
+  - Danach verbleibende nicht abziehbare Zinsaufwendungen sind in die folgenden Wirtschaftsjahre
+    vorzutragen (Zinsvortrag).
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: nichtabziehbar_wird_zinsvortrag
+- art: norm_teil
+  anker:
+  - ref
+  - § 4h abs. 1 satz 6
+  formulierungen:
+  - Sie erhöhen die Zinsaufwendungen dieser Wirtschaftsjahre, nicht aber den maßgeblichen
+    Gewinn.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: zins_vortrag_bestand_state_input

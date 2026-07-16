@@ -7420,3 +7420,134 @@ regeln:
     quelle: § 1 Abs. 1 Nr. 1 i.V.m. § 23 KStG
     datei: sources/gesetze-im-internet/kstg_p23_2026-07-16.txt
     beschreibung: 'rechtsform = Kapitalgesellschaft (§ 1 Abs. 1 Nr. 1); der KSt-Satz 15 % trifft das zvE der KapGes. Abgrenzung gegen PersGes-Kern (C24, § 15 EStG - dort ESt-Tarif § 32a, nicht 15 %).'
+
+- rule_id: p4h_zinsschranke_kern
+  norm: § 4h Abs. 1 EStG (Zinsschranke — abziehbare Zinsaufwendungen, verrechenbares EBITDA 30 %, Zins-/EBITDA-Vortrag)
+  hinweis: 'EXAKTE FORMEL - GENAU FUENF unbedingte Definitionen, in dieser Reihenfolge, KEINE zusaetzlichen Terme, KEINE Jahres-/Fall-exceptions: (1) verrechenbares_ebitda = ebitda_basis * 30 / 100 ; (2) zinsaufwand_eff = zinsaufwand + zins_vortrag_bestand ; (3) deckel = verrechenbares_ebitda + ebitda_vortrag_bestand ; (4) zinssaldo_eff = zinsaufwand_eff - zinsertrag ; (5) abziehbare_zinsaufwendungen = zinsertrag + min(zinssaldo_eff, deckel). Das ist die vollstaendige Regel - NICHTS hinzufuegen. § 4h Abs. 1 Satz 1: Zinsaufwendungen abziehbar in Hoehe des Zinsertrags, darueber hinaus bis zur Hoehe des verrechenbaren EBITDA. 30 % = 30/100 (Catala-decimal 0.30 ist exakt), Cent-Schnitt zuletzt. ZU (1) - KRITISCH: ebitda_basis IST EIN FERTIG BERECHNETER INPUT, die vollstaendige Bemessungsgrundlage des verrechenbaren EBITDA (Satz 2). verrechenbares_ebitda = ebitda_basis * 30/100 DIREKT, sonst NICHTS. STRIKTES VERBOT: NIEMALS zinsaufwand, zinsertrag, zinsaufwand_eff, AfA, § 6/§ 7-Betraege oder einen Gewinn zu ebitda_basis addieren oder davon abziehen - die Basis enthaelt all diese Groessen bereits (der Satz-2-Wortlaut "erhoeht um die Zinsaufwendungen ... vermindert um die Zinsertraege" beschreibt, was IN ebitda_basis schon steckt, und ist KEINE hier auszufuehrende Rechnung). ebitda_basis erscheint AUSSCHLIESSLICH in Definition (1). (Fuer KapGes tritt gemaess § 8a das maßgebliche Einkommen an die Stelle des Gewinns = N3, ausserhalb dieser Regel.) ZU (2)/(3) BESTAND-MUSTER (analog p10d, State-Inputs >= 0): zins_vortrag_bestand (Satz 6) erhoeht NUR zinsaufwand_eff; ebitda_vortrag_bestand (Satz 4) erhoeht NUR deckel. AUFLAGE a KEIN DOPPELEFFEKT (Satz 6 Hs. 2 "nicht aber den maßgeblichen Gewinn"): der Zinsvortrag beeinflusst ebitda_basis / verrechenbares_ebitda NICHT. ZU (4) KEIN KLEMMEN: zinssaldo_eff = zinsaufwand_eff - zinsertrag DARF NEGATIV SEIN; VERBOTEN ist "if zinsaufwand_eff > zinsertrag then ... else 0" oder max(0, ...). Bei Zinsueberschuss (zinsertrag > zinsaufwand_eff) ist zinssaldo_eff negativ, min(zinssaldo_eff, deckel) = zinssaldo_eff, also abziehbar = zinsertrag + (zinsaufwand_eff - zinsertrag) = zinsaufwand_eff (voller Abzug). Klemmen bei 0 liefert faelschlich abziehbar > zinsaufwand_eff. Der nicht abziehbare Teil (= zinsaufwand_eff - abziehbare_zinsaufwendungen = neuer Zinsvortrag, Satz 5) wird NICHT hier ausgegeben, sondern von N6/Golden auf der K1-Slot-Seite hinzugerechnet (Add-back erhoeht den Gewinn). AUFLAGE b Verbrauchsreihenfolge Satz 4/5 (erst laufendes EBITDA, dann Vortrag) + Roll-Forward = benannter Nachtrag, NICHT kodieren. Abs. 2 Ausnahmen/Freigrenze < 3 Mio = eigene Charge N2. Abs. 3 Definitionen, Abs. 4 Feststellung, Abs. 5 Betriebsaufgabe, Abs. 6 Infrastruktur = Nachtrag. FORMALISIERUNG: fuenf unbedingte Definitionen (min ok), KEINE bedingten exceptions.'
+  quellen:
+  - typ: gesetz
+    label: § 4h Abs. 1 Satz 1 EStG (abziehbar in Höhe Zinsertrag + verrechenbares EBITDA)
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: sind abziehbar in Höhe des Zinsertrags, darüber hinaus nur bis zur Höhe des verrechenbaren EBITDA
+    auszug: Zinsaufwendungen eines Betriebs sind abziehbar in Höhe des Zinsertrags, darüber hinaus nur bis zur Höhe des verrechenbaren EBITDA.
+  - typ: gesetz
+    label: § 4h Abs. 1 Satz 2 EStG (verrechenbares EBITDA = 30 % des maßgeblichen Gewinns)
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: verrechenbare EBITDA ist 30 Prozent des
+    auszug: Das verrechenbare EBITDA ist 30 Prozent des um die Zinsaufwendungen und um die nach § 6 Absatz 2 Satz 1 abzuziehenden, nach § 6 Absatz 2a Satz 2 gewinnmindernd aufzulösenden und nach § 7 abgesetzten Beträge erhöhten und um die Zinserträge verminderten maßgeblichen Gewinns.
+  - typ: gesetz
+    label: § 4h Abs. 1 Satz 4 EStG (EBITDA-Vortrag erhöht den Abzugsdeckel)
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: sind bis zur Höhe der EBITDA-Vorträge aus vorangegangenen Wirtschaftsjahren abziehbar
+    auszug: Zinsaufwendungen, die nach Satz 1 nicht abgezogen werden können, sind bis zur Höhe der EBITDA-Vorträge aus vorangegangenen Wirtschaftsjahren abziehbar und mindern die EBITDA-Vorträge in ihrer zeitlichen Reihenfolge.
+  - typ: gesetz
+    label: § 4h Abs. 1 Satz 5/6 EStG (Zinsvortrag; erhöht Zinsaufwand, nicht den Gewinn)
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: Sie erhöhen die Zinsaufwendungen dieser Wirtschaftsjahre, nicht aber den maßgeblichen Gewinn
+    auszug: Danach verbleibende nicht abziehbare Zinsaufwendungen sind in die folgenden Wirtschaftsjahre vorzutragen (Zinsvortrag). 6 Sie erhöhen die Zinsaufwendungen dieser Wirtschaftsjahre, nicht aber den maßgeblichen Gewinn.
+  signature:
+    scope: ZinsschrankeKern
+    inputs:
+      zinsaufwand: money
+      zinsertrag: money
+      ebitda_basis: money
+      zins_vortrag_bestand: money
+      ebitda_vortrag_bestand: money
+    output: abziehbare_zinsaufwendungen
+  raster:
+  - zinsaufwand: 1000000
+    zinsertrag: 200000
+    ebitda_basis: 5000000
+    zins_vortrag_bestand: 0
+    ebitda_vortrag_bestand: 0
+  - zinsaufwand: 1000000
+    zinsertrag: 200000
+    ebitda_basis: 1000000
+    zins_vortrag_bestand: 0
+    ebitda_vortrag_bestand: 0
+  - zinsaufwand: 1000000
+    zinsertrag: 200000
+    ebitda_basis: 1000000
+    zins_vortrag_bestand: 100000
+    ebitda_vortrag_bestand: 50000
+  - zinsaufwand: 200000
+    zinsertrag: 500000
+    ebitda_basis: 1000000
+    zins_vortrag_bestand: 0
+    ebitda_vortrag_bestand: 0
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: sind abziehbar in Höhe des Zinsertrags, darüber hinaus nur bis zur Höhe des verrechenbaren EBITDA
+    herkunft: synthetisch
+    rechenweg: 'Deckel bindet NICHT, keine Vortraege: zinssaldo = 1.000.000 - 200.000 = 800.000; deckel = 5.000.000 * 30/100 = 1.500.000. abziehbar = 200.000 + min(800.000, 1.500.000) = 200.000 + 800.000 = 1.000.000,00 (voll abziehbar, kein Zinsvortrag).'
+    inputs:
+      zinsaufwand: 1000000
+      zinsertrag: 200000
+      ebitda_basis: 5000000
+      zins_vortrag_bestand: 0
+      ebitda_vortrag_bestand: 0
+    expected: 1000000.0
+  - quelle: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: verrechenbare EBITDA ist 30 Prozent des
+    herkunft: synthetisch
+    rechenweg: '30-%-DECKEL bindet: zinssaldo = 800.000; deckel = 1.000.000 * 30/100 = 300.000. abziehbar = 200.000 + min(800.000, 300.000) = 200.000 + 300.000 = 500.000,00. Nicht abziehbar = 500.000 -> neuer Zinsvortrag.'
+    inputs:
+      zinsaufwand: 1000000
+      zinsertrag: 200000
+      ebitda_basis: 1000000
+      zins_vortrag_bestand: 0
+      ebitda_vortrag_bestand: 0
+    expected: 500000.0
+  - quelle: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: Sie erhöhen die Zinsaufwendungen dieser Wirtschaftsjahre, nicht aber den maßgeblichen Gewinn
+    herkunft: synthetisch
+    rechenweg: 'BESTAND-MUSTER (Satz 4/6): zinsaufwand_eff = 1.000.000 + zins_vortrag_bestand 100.000 = 1.100.000; zinssaldo_eff = 1.100.000 - 200.000 = 900.000; deckel = 1.000.000 * 30/100 + ebitda_vortrag_bestand 50.000 = 300.000 + 50.000 = 350.000. abziehbar = 200.000 + min(900.000, 350.000) = 550.000,00. KEIN DOPPELEFFEKT: ebitda_basis bleibt 1.000.000 (NICHT 1.100.000), Zinsvortrag geht nur in zinsaufwand_eff.'
+    inputs:
+      zinsaufwand: 1000000
+      zinsertrag: 200000
+      ebitda_basis: 1000000
+      zins_vortrag_bestand: 100000
+      ebitda_vortrag_bestand: 50000
+    expected: 550000.0
+  - quelle: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    zitatanker: sind abziehbar in Höhe des Zinsertrags, darüber hinaus nur bis zur Höhe des verrechenbaren EBITDA
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL Zinsueberschuss (zinsertrag > zinsaufwand): zinssaldo = 200.000 - 500.000 = -300.000; deckel = 300.000. abziehbar = 500.000 + min(-300.000, 300.000) = 500.000 - 300.000 = 200.000,00 = voller Zinsaufwand (keine Beschraenkung, kein Zinsvortrag).'
+    inputs:
+      zinsaufwand: 200000
+      zinsertrag: 500000
+      ebitda_basis: 1000000
+      zins_vortrag_bestand: 0
+      ebitda_vortrag_bestand: 0
+    expected: 200000.0
+  geltungsbedingungen:
+  - bedingung: abzug_zinsertrag_plus_verrechenbares_ebitda
+    deckt_ab: sind abziehbar in Höhe des Zinsertrags, darüber hinaus nur bis zur Höhe des verrechenbaren EBITDA
+    quelle: § 4h Abs. 1 Satz 1 EStG
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'Kern-Mechanismus: Zinsaufwendungen abziehbar in Hoehe des Zinsertrags, darueber hinaus (= Nettozinsaufwendungen) nur bis zur Hoehe des verrechenbaren EBITDA (zzgl. EBITDA-Vortrag). abziehbar = zinsertrag + min(zinssaldo_eff, deckel).'
+  - bedingung: verrechenbares_ebitda_30_prozent_massgeblicher_gewinn
+    deckt_ab: verrechenbare EBITDA ist 30 Prozent des
+    quelle: § 4h Abs. 1 Satz 2 EStG
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'verrechenbares_ebitda = 30 % (= 30/100 exakt) der ebitda_basis. ebitda_basis (maßgeblicher Gewinn erhoeht um Zinsaufwendungen/§6/§7-AfA, vermindert um Zinsertraege) kommt als INPUT; die detaillierte Herleitung der Basis ist nicht Gegenstand (fuer KapGes: maßgebliches Einkommen statt Gewinn = N3).'
+  - bedingung: zins_vortrag_bestand_state_input
+    deckt_ab: Sie erhöhen die Zinsaufwendungen dieser Wirtschaftsjahre, nicht aber den maßgeblichen Gewinn
+    quelle: § 4h Abs. 1 Satz 5/6 EStG
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'zins_vortrag_bestand = zum Vorjahresschluss festgestellter Zinsvortrag (State-Input, >= 0). Satz 6: erhoeht die Zinsaufwendungen dieses Jahres (zinsaufwand_eff), NICHT aber den maßgeblichen Gewinn -> darf die 30-%-Bemessungsgrundlage ebitda_basis NICHT beeinflussen (kein Doppeleffekt). Fortschreibung/Roll-Forward des Zinsvortrags = benannter Nachtrag (Abs. 4 gesonderte Feststellung).'
+  - bedingung: ebitda_vortrag_bestand_deckelerhoehung
+    deckt_ab: sind bis zur Höhe der EBITDA-Vorträge aus vorangegangenen Wirtschaftsjahren abziehbar
+    quelle: § 4h Abs. 1 Satz 4 EStG
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'ebitda_vortrag_bestand = fortgetragenes verrechenbares EBITDA vorangegangener Wirtschaftsjahre (State-Input, >= 0). Satz 4: erhoeht den Abzugsdeckel (deckel = 30 % ebitda_basis + ebitda_vortrag_bestand). Verbrauchsreihenfolge (erst laufendes EBITDA, dann Vortrag) und Roll-Forward = benannter Nachtrag, im Jahres-Summen-Deckel implizit.'
+  - bedingung: nichtabziehbar_wird_zinsvortrag
+    deckt_ab: Danach verbleibende nicht abziehbare Zinsaufwendungen sind in die folgenden Wirtschaftsjahre vorzutragen (Zinsvortrag)
+    quelle: § 4h Abs. 1 Satz 5 EStG
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'Der nach dem Deckel nicht abziehbare Teil (= zinsaufwand_eff - abziehbare_zinsaufwendungen) wird zum Zinsvortrag der Folgejahre und ist auf der K1-Slot-Seite hinzuzurechnen (N6, Add-back erhoeht den Gewinn). Die Entstehung wird hier gerechnet; die Feststellung/Fortschreibung = Nachtrag.'
+  - bedingung: ausnahmen_abs2_freigrenze_separater_scope
+    deckt_ab: Absatz 1 Satz 1 ist nicht anzuwenden, wenn
+    quelle: § 4h Abs. 2 EStG
+    datei: sources/gesetze-im-internet/estg_p4h_2026-07-16.txt
+    beschreibung: 'N1 modelliert den Kern-Mechanismus unter der Annahme, dass Abs. 1 Satz 1 anwendbar ist. Die Ausnahmen des Abs. 2 (a Freigrenze Nettozinsaufwand < 3 Mio, b keine schaedliche Konzern-/Nahestehenden-Zugehoerigkeit, c Escape-Eigenkapitalvergleich) = eigene Charge N2 (Geltungsbedingungen + Freigrenze, Alles-oder-nichts).'

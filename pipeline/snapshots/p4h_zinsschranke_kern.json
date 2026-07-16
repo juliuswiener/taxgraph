@@ -1,0 +1,221 @@
+{
+  "bedingungen": [
+    "abzug_zinsertrag_plus_verrechenbares_ebitda",
+    "verrechenbares_ebitda_30_prozent_massgeblicher_gewinn",
+    "zins_vortrag_bestand_state_input",
+    "ebitda_vortrag_bestand_deckelerhoehung",
+    "nichtabziehbar_wird_zinsvortrag",
+    "ausnahmen_abs2_freigrenze_separater_scope"
+  ],
+  "candidate_id": "p4h_zinsschranke_kern",
+  "catala_a": "declaration scope ZinsschrankeKern:\n  input zinsaufwand content money\n  input zinsertrag content money\n  input ebitda_basis content money\n  input zins_vortrag_bestand content money\n  input ebitda_vortrag_bestand content money\n  internal gesamte_zinsaufwendungen content money\n  internal verrechenbares_ebitda content money\n  internal abziehbar_satz1 content money\n  internal nicht_abziehbar_nach_satz1 content money\n  internal abziehbar_ebitda_vortrag content money\n  output abziehbare_zinsaufwendungen content money\n\nscope ZinsschrankeKern:\n  # Satz 6: Zinsvortrag erhöht Zinsaufwendungen, nicht den maßgeblichen Gewinn\n  definition gesamte_zinsaufwendungen equals\n    zinsaufwand + zins_vortrag_bestand\n\n  # Satz 2: verrechenbares EBITDA = 30 % des maßgeblichen Gewinns\n  # (ebitda_basis ist bereits: Gewinn + Zinsaufwendungen + Abschreibungen - Zinserträge)\n  definition verrechenbares_ebitda equals\n    ebitda_basis * 0.30\n\n  # Satz 1: abziehbar bis Höhe Zinsertrag, darüber hinaus bis Höhe verrechenbares EBITDA\n  definition abziehbar_satz1 equals\n    let deckel equals\n      (if zinsertrag + verrechenbares_ebitda > gesamte_zinsaufwendungen\n       then gesamte_zinsaufwendungen\n       else zinsertrag + verrechenbares_ebitda)\n    in\n    if deckel < $0.00 then $0.00 else deckel\n\n  # Satz 4: verbleibend nicht abziehbar nach Satz 1\n  definition nicht_abziehbar_nach_satz1 equals\n    if gesamte_zinsaufwendungen > abziehbar_satz1\n    then gesamte_zinsaufwendungen - abziehbar_satz1\n    else $0.00\n\n  # Satz 4: zusätzlich abziehbar bis Höhe EBITDA-Vortrag\n  definition abziehbar_ebitda_vortrag equals\n    if nicht_abziehbar_nach_satz1 > ebitda_vortrag_bestand\n    then ebitda_vortrag_bestand\n    else nicht_abziehbar_nach_satz1\n\n  # Gesamtergebnis: Satz 1 + Satz 4\n  definition abziehbare_zinsaufwendungen equals\n    abziehbar_satz1 + abziehbar_ebitda_vortrag",
+  "catala_a_sha256": "8d1dfe86750ae02de3880d2cac2dd399fbea3d74118eaf4d9ee746d18383f47c",
+  "catala_b": "declaration scope ZinsschrankeKern:\n  input zinsaufwand content money\n  input zinsertrag content money\n  input ebitda_basis content money\n  input zins_vortrag_bestand content money\n  input ebitda_vortrag_bestand content money\n  output abziehbare_zinsaufwendungen content money\n  internal verrechenbares_ebitda content money\n  internal zinsaufwand_eff content money\n  internal deckel content money\n  internal zinssaldo_eff content money\n\nscope ZinsschrankeKern:\n  definition verrechenbares_ebitda equals ebitda_basis * 0.30\n  definition zinsaufwand_eff equals zinsaufwand + zins_vortrag_bestand\n  definition deckel equals verrechenbares_ebitda + ebitda_vortrag_bestand\n  definition zinssaldo_eff equals zinsaufwand_eff - zinsertrag\n  definition abziehbare_zinsaufwendungen equals\n    zinsertrag + (if zinssaldo_eff <= deckel then zinssaldo_eff else deckel)",
+  "catala_b_sha256": "d6b0b0afd9c068c070abcb3d7738cca5020a264b7a2522b01d47267a7c5a624b",
+  "gates": [
+    {
+      "detail": "erster Versuch",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "erster Versuch",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 4 raster point(s) for 'abziehbare_zinsaufwendungen'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "2 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "4 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 3,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "sonstige"
+            ],
+            "text": "Negative Beträge werden auf 0.00 gesetzt."
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "betrifft_kat",
+              "?",
+              "sonstige"
+            ],
+            "text": "Negative Werte werden auf 0.00 begrenzt."
+          }
+        ],
+        "norm_teile": []
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [
+          {
+            "cluster": "Zinsvortrag wird nicht in die Folgejahre vorgetragen.",
+            "eingeschmolzen": "Zinsvortrag wird nicht auf folgende Wirtschaftsjahre vorgetragen.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          },
+          {
+            "cluster": "Zinsvortrag wird nicht in die Folgejahre vorgetragen.",
+            "eingeschmolzen": "Zinsvortrag wird nicht in folgende Wirtschaftsjahre vorgetragen.",
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ]
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        5,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "1fd841bbc886",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "nichtabziehbar_wird_zinsvortrag",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Danach verbleibende nicht abziehbare Zinsaufwendungen sind in die folgenden Wirtschaftsjahre vorzutragen (Zinsvortrag).",
+        "referenz": "§ 4h Abs. 1 Satz 5"
+      },
+      {
+        "abgedeckt_von": "zins_vortrag_bestand_state_input",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Sie erhöhen die Zinsaufwendungen dieser Wirtschaftsjahre, nicht aber den maßgeblichen Gewinn.",
+        "referenz": "§ 4h Abs. 1 Satz 6"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "ebitda_basis ist bereits um Zinsaufwendungen, Abschreibungen und Zinserträge angepasst.",
+        "bedingung_id": "verrechenbares_ebitda_30_prozent_massgeblicher_gewinn",
+        "betrifft": "ebitda_basis",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Negative Beträge werden auf 0.00 gesetzt.",
+        "bedingung_id": null,
+        "betrifft": "abziehbare_zinsaufwendungen",
+        "kategorie": "sonstige"
+      },
+      {
+        "annahme": "Negative Werte werden auf 0.00 begrenzt.",
+        "bedingung_id": null,
+        "betrifft": "abziehbare_zinsaufwendungen",
+        "kategorie": "sonstige"
+      }
+    ],
+    "timestamp": "2026-07-16T15:49:22+00:00"
+  },
+  "module_name": "Zinsschranke",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}
