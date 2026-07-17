@@ -78,7 +78,9 @@ Vollständigkeit, Konvention und Exaktheit (EP 2156→215600, Nenner-B unveränd
 ## Gates
 
 `tests/test_bindungstabelle.py` · `test_store.py` · `test_unsicherheit.py` · `test_traverser.py` ·
-`test_est_mapping.py` · `test_paket_a_e2e.py` · `test_einheiten.py` — **80/80 grün**, NULL LLM. Jeder
-Zitatanker wird voll-Länge via `pipeline/gates._normalize` gegen die Quelldatei geprüft; die
-Einheiten-Konvention ist Map-Tamper-verifiziert. est_mapping deckt die 1:1-Kz der Scheiben 2-4 ab
-(Kapital §20, V+V-Mieteinnahmen, §35a/agB); §21-WK = dokumentierte Nicht-Deklaration (Anlage-V-Ruling).
+`test_est_mapping.py` · `test_paket_a_e2e.py` · `test_einheiten.py` · `test_deklarations_abdeckung.py`
+— **87/87 grün**, NULL LLM. Jeder Zitatanker wird voll-Länge via `pipeline/gates._normalize` gegen die
+Quelldatei geprüft; die Einheiten-Konvention ist Map-Tamper-verifiziert. est_mapping deckt die 1:1-Kz
+der Scheiben 2-4 ab (Kapital §20, V+V-Mieteinnahmen, §35a/agB); §21-WK = dokumentierte Nicht-Deklaration
+(Anlage-V-Ruling). Der Drift-Wächter `test_deklarations_abdeckung.py` kreuzprüft Bindungs-Kz ×
+est_mapping-Abdeckung (keine stille Über-/Unter-Deklaration, kein Phantom-Kz, feld_id global eindeutig).
