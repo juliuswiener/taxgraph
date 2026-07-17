@@ -30,8 +30,6 @@
 							<E0100002>X</E0100002>
 							<E0100003>X</E0100003>
 						</Art_Erkl>
-						<Belege>
-						</Belege>
 						<Allg>
 							<A>
 								<E0100401>05.05.1955</E0100401>
@@ -54,7 +52,7 @@
 								<E0101003>Floristin</E0101003>
 							</B>
 							<BV>
-								<E0102102>DE91100000000123456789</E0102102>
+								<E0102002>X</E0102002>
 							</BV>
 						</Allg>
 						<AN_Sp_Zul>
@@ -62,22 +60,6 @@
 							<E0109109>1</E0109109>
 						</AN_Sp_Zul>
 					</ESt1A>
-					<Kind>
-						<Ang_Kind>
-							<Allg>
-								<E0500406>07792563183</E0500406>
-								<E0500107>Susi</E0500107>
-								<E0500701>01.06.2011</E0500701>
-								<E0500702>300</E0500702>
-								<E0500706>Regensburg</E0500706>
-							</Allg>
-							<WS>
-								<Inl>
-									<E0500703>01.06-31.12</E0500703>
-								</Inl>
-							</WS>
-						</Ang_Kind>
-					</Kind>
 					<N>
 						<Person>PersonA</Person>
 						<ArbL>
@@ -96,7 +78,9 @@
 					     tests_entfernungspauschale "220 Tage x 20 km x 0,30 = 1320" - NICHT gegen VZ-2026-Seeds
 					     (0,38 EUR/km) abgleichen, sonst Phantom-Delta:
 									     aufgesucht an Tagen = 220 (E0203503 / Vordruck-Kz 110, Anlage-N-Mapping) -->
-									<E0203503>220</E0203503>
+									<E0203003>1</E0203003>
+										<E0203501>55555 Musterort, Musterstr. 1</E0203501>
+										<E0203503>220</E0203503>
 									<!-- einfache Entfernung km = 20 (E0203504 / Kz 111) -->
 									<E0203504>20</E0203504>
 								</Erste_Taetig>
@@ -125,7 +109,7 @@
 						<Unterfallart>10</Unterfallart>
 						<Vorgang>01</Vorgang>
 						<StNr>9181081508155</StNr>
-						<Zeitraum>2020</Zeitraum>
+						<Zeitraum>2025</Zeitraum>
 						<AbsName>Maier Hans</AbsName>
 						<AbsStr>Musterstr. 55</AbsStr>
 						<AbsPlz>55555</AbsPlz>
