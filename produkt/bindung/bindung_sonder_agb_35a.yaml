@@ -1,0 +1,256 @@
+# Bindungstabelle — Scheiben-Ausbau: Sonderausgaben/KiSt + agB §33 + §35a (Task #11).
+# Validiert gegen schema.json (kein neues Schema). Quelle Kz: 2026-07-12-kz-kandidaten-weitere-anlagen.
+# Signaturen/Bedingungen: pipeline/produktion/rules.yaml (signature/geltungsbedingungen).
+version: 1
+scheibe: "Sonderausgaben/KiSt (p10_1_4/p10_1_7) + agB §33 (p33_1_2) + §35a (p35a_2_3)"
+
+bindungen:
+  # ========================= Sonderausgaben — KiSt (p10_1_4_kirchensteuer) =========================
+  - feld_id: kist_gezahlt
+    quelle: {regel_id: p10_1_4_kirchensteuer, signatur_slot: gezahlte_kirchensteuer}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Kirchensteuer hast du dieses Jahr gezahlt?"
+    hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung oder deinem Steuerbescheid."
+    beispielwert: 60000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Vordruck-Form-Kz 103 (Anlage Sonderausgaben, 'gezahlt'); XSD-E-Nr per Flat-Grep nicht erreichbar (Spalten-Kontext), Sektions-Lookup-Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 4 EStG"
+      zitatanker: "gezahlte Kirchensteuer"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kist_erstattet
+    quelle: {regel_id: p10_1_4_kirchensteuer, signatur_slot: erstattete_kirchensteuer}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wurde dir dieses Jahr Kirchensteuer erstattet (zurückgezahlt)? Wenn ja, wie viel?"
+    hilfe_kurz: "Erstattete Kirchensteuer mindert, was du absetzen kannst. Wenn nichts, gib 0 ein."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Vordruck-Form-Kz 104 (Anlage Sonderausgaben, 'erstattet'); XSD-E-Nr Sektions-Lookup-Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 4b Satz 2 EStG"
+      zitatanker: "erstatteten Aufwendungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  # ========================= Sonderausgaben — Berufsausbildung (p10_1_7) =========================
+  - feld_id: berufsausbildung_aufwendungen
+    quelle: {regel_id: p10_1_7_berufsausbildung, signatur_slot: aufwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Was hast du dieses Jahr für deine eigene erste Berufsausbildung oder ein Erststudium bezahlt?"
+    hilfe_kurz: "Zum Beispiel Studiengebühren, Fachbücher, Fahrten. Bis 6.000 Euro im Jahr."
+    beispielwert: 200000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage Sonderausgaben, Aufwendungen eigene Berufsausbildung; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 7 EStG"
+      zitatanker: "bis zu 6 000 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  # ========================= agB §33 (p33_1_2_agb_abzug) =========================
+  - feld_id: agb_aufwendungen
+    quelle: {regel_id: p33_1_2_agb_abzug, signatur_slot: aussergewoehnliche_belastungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Hattest du dieses Jahr größere außergewöhnliche Ausgaben, die du zwangsläufig tragen musstest (zum Beispiel Krankheitskosten)? Wenn ja, wie viel insgesamt?"
+    hilfe_kurz: "Nach Abzug von Erstattungen (z. B. Krankenkasse). Ein zumutbarer Eigenanteil wird automatisch abgezogen."
+    beispielwert: 300000
+    herkunft_slots: null
+    elster_kz: E0104109
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33 Abs. 2 S. 1 EStG"
+      zitatanker: "den Umständen nach notwendig sind und einen angemessenen Betrag nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
+  - feld_id: agb_zwangslaeufig
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: agb_ist_zwangslaeufig}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Konntest du diese Ausgaben nicht vermeiden (aus rechtlichen, tatsächlichen oder sittlichen Gründen)?"
+    hilfe_kurz: "Zum Beispiel Krankheitskosten kannst du nicht einfach weglassen."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33 Abs. 2 S. 1 EStG"
+      zitatanker: "aus rechtlichen, tatsächlichen oder sittlichen Gründen nicht entziehen"
+      datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
+  - feld_id: agb_notwendig_angemessen
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: agb_notwendig_und_angemessen}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Waren die Ausgaben notwendig und der Höhe nach angemessen?"
+    hilfe_kurz: "Übermäßig teure oder unnötige Ausgaben zählen nicht."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33 Abs. 2 S. 1 EStG"
+      zitatanker: "den Umständen nach notwendig sind und einen angemessenen Betrag nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
+
+  # ========================= §35a Haushaltsnahe (p35a_2_3_haushaltsnahe) =========================
+  - feld_id: hh_minijob_aufwendungen
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: minijob_aufwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Hast du eine Haushaltshilfe auf Minijob-Basis beschäftigt? Wenn ja, was hast du ihr dieses Jahr gezahlt?"
+    hilfe_kurz: "Zum Beispiel eine Putzhilfe im Minijob. Wenn nicht, gib 0 ein."
+    beispielwert: 250000
+    herkunft_slots: null
+    elster_kz: E0161404
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 1 EStG"
+      zitatanker: "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_dienstleistungen
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: haushaltsnahe_dienstleistungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Was hast du dieses Jahr für haushaltsnahe Dienstleistungen bezahlt (nur der Arbeitslohn, ohne Material)?"
+    hilfe_kurz: "Zum Beispiel eine Reinigungsfirma oder Gartenpflege. Nur die Arbeitskosten, nicht das Material."
+    beispielwert: 100000
+    herkunft_slots: null
+    elster_kz: E0161504
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 2 EStG"
+      zitatanker: "gilt nur für Arbeitskosten"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_handwerker_arbeitskosten
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: handwerker_arbeitskosten}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Was hast du dieses Jahr für Handwerker im Haushalt an Arbeitskosten bezahlt (Renovierung, Reparatur, Modernisierung)?"
+    hilfe_kurz: "Nur die Arbeitskosten auf der Rechnung, nicht das Material."
+    beispielwert: 120000
+    herkunft_slots: null
+    elster_kz: E0161804
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 3 EStG"
+      zitatanker: "für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_rechnung_unbar
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: rechnung_und_unbare_zahlung}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du für diese Leistungen eine Rechnung bekommen und per Überweisung (nicht bar) bezahlt?"
+    hilfe_kurz: "Barzahlung wird nicht anerkannt — es muss aufs Konto der Firma gegangen sein."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 5 S. 3 EStG"
+      zitatanker: "die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_in_eu_ewr
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: haushalt_in_eu_ewr}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Liegt der Haushalt, in dem gearbeitet wurde, in der EU oder im Europäischen Wirtschaftsraum?"
+    hilfe_kurz: "In Deutschland ist das automatisch erfüllt."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 4 S. 1 EStG"
+      zitatanker: "Europäischen Union oder dem Europäischen Wirtschaftsraum"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_handwerker_keine_foerderung
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: handwerker_keine_oeffentliche_foerderung}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Wurden die Handwerkerleistungen NICHT öffentlich gefördert (zum Beispiel durch einen KfW-Zuschuss oder ein zinsverbilligtes Darlehen)?"
+    hilfe_kurz: "Öffentlich geförderte Maßnahmen zählen hier nicht mit."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 3 S. 2 EStG"
+      zitatanker: "nicht für öffentlich geförderte Maßnahmen"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+
+luecken:
+  # -- KiSt: beide Geltungsbedingungen sind MVP-Annahmen (kein Laien-Gate) --
+  - regel_id: p10_1_4_kirchensteuer
+    geltungsbedingung: keine_zuschlagsteuer_kappung
+    grund: "MVP-Annahme: KiSt ist nicht als Zuschlag zur Abgeltungsteuer gezahlt (AN ohne KapErtr); keine Laien-Abfrage in dieser Scheibe."
+  - regel_id: p10_1_4_kirchensteuer
+    geltungsbedingung: kein_erstattungsueberhang
+    grund: "Erstattungsüberhang (erstattet > gezahlt) wird nach § 10 Abs. 4b hinzugerechnet — außerhalb Scope, Null-Boden im Output; keine eigene Abfrage."
+  # -- Berufsausbildung --
+  - regel_id: p10_1_7_berufsausbildung
+    geltungsbedingung: hoechstbetrag_gilt_je_person
+    grund: "Modellierungs-Annahme: der 6.000-Euro-Höchstbetrag gilt je Person (Ehegatten-Verdopplung), keine Laien-Abfrage."
+  # -- agB: zumutbare Belastung ist berechnete Zwischengröße (p33_3), nicht deklariert --
+  - regel_id: p33_1_2_agb_abzug
+    signatur_slot: zumutbare_belastung
+    grund: "Berechnete Größe = Output von p33_3_zumutbare_belastung (aus Gesamtbetrag der Einkünfte/Kinder/Splitting); die Regel rechnet sie, keine Laien-Abfrage."
+  - regel_id: p33_1_2_agb_abzug
+    geltungsbedingung: keine_ausgeschlossenen_aufwendungen
+    grund: "Annahme: die Aufwendungen sind nicht schon als Werbungskosten/Betriebsausgaben/Sonderausgaben berücksichtigt (Dedup, andere Scheiben)."
+  - regel_id: p33_1_2_agb_abzug
+    geltungsbedingung: keine_behinderungsbedingten_fahrtkosten
+    grund: "Behinderungsbedingte Fahrtkostenpauschale ist ein eigener Sonderfall (§ 33 Abs. 2a), außerhalb dieser Scheibe."
+  - regel_id: p33_1_2_agb_abzug
+    geltungsbedingung: zumutbare_belastung_ist_p33_3_ergebnis
+    grund: "Modellierungs-Kopplung: die abgezogene zumutbare Belastung ist das p33_3-Ergebnis; keine eigene Abfrage."
+  # -- §35a: die übrigen 9 Geltungsbedingungen sind Qualifikationen/Annahmen (nicht die 3 Laien-Gates oben) --
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: keine_beruecksichtigung_als_wk_sa_agb
+    grund: "Annahme: die Beträge sind nicht schon als Betriebsausgaben/Werbungskosten berücksichtigt (Dedup)."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: handwerkerbetrag_enthaelt_nur_arbeitskosten
+    grund: "Die Abfrage hh_handwerker_arbeitskosten fragt bereits nur die Arbeitskosten (Fragetext + Hilfe); Annahme im Feld materialisiert."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: dienstleistungsbetrag_enthaelt_nur_arbeitskosten
+    grund: "Die Abfrage hh_dienstleistungen fragt bereits nur die Arbeitskosten; Annahme im Feld materialisiert."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: kein_gemeinsamer_haushalt_zweier_alleinstehender
+    grund: "Sonderfall gemeinsamer Haushalt zweier Alleinstehender (Höchstbeträge nur einmal) — außerhalb dieser Scheibe."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: antrag_gestellt
+    grund: "Der Abzug wird durch die Angabe in der Erklärung beantragt; die Eingabe der Beträge IST der Antrag, keine separate Abfrage."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4
+    grund: "Die Abfrage hh_minijob_aufwendungen setzt Minijob (§ 8a SGB IV) voraus (Fragetext nennt Minijob-Basis); Annahme im Feld."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: dienstleistungen_sind_keine_handwerkerleistungen
+    grund: "Abgrenzung Dienstleistungen ↔ Handwerker ist in den getrennten Feldern (hh_dienstleistungen vs hh_handwerker_arbeitskosten) materialisiert."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: keine_pflege_oder_heimkosten
+    grund: "Pflege-/Heimkosten sind ein eigener § 35a-Zweig (Abs. 2 S. 2) außerhalb dieser Erst-Scheibe."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: handwerker_nur_renovierung_erhaltung_modernisierung
+    grund: "Die Abfrage hh_handwerker_arbeitskosten nennt bereits Renovierung/Reparatur/Modernisierung (Fragetext); Annahme im Feld."
