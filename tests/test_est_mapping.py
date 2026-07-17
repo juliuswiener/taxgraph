@@ -4,7 +4,8 @@ Prüft die 5 Fall-Klassen + Round-Trip (1:1 exakt, Aggregation dokumentiert-gena
 Negation Doppel-Negation, Multiplikation Zähl), fail-closed (vorlaeufig -> unvollständig), das
 maschinenlesbare Nicht-Deklarierte (Auflage C) und den feldmapping-Konsistenz-Check (Auflage B).
 Ausbau Scheiben 2-4: 1:1-Kz Kapital §20 (E0121709 + Aktien-Subset E1900901/E1901301/E1901201), V+V §21
-Mieteinnahmen (E0700201), §35a/agB (E0161404/E0161504/E0161804/E0104109); Rentner/fam null-Kz = GAP.
+Mieteinnahmen (E0700201), §35a/agB (E0161404/E0161504/E0161804/E0104109); fam null-Kz = GAP,
+Rentner §33b 1:1 (Person-A-Kz, Freigabe msg 2719).
 Plus Negativtests.
 """
 from __future__ import annotations
@@ -227,18 +228,25 @@ def test_scheibe2_sonder_35a_agb_1zu1_roundtrip(bindung):
         assert rt["felder"][fid] == wert
 
 
-def test_scheibe4_rentner_null_kz_gap(bindung):
-    """Rentner-Scheibe: null-Kz-Felder maschinenlesbar mit Grund, NICHT still deklariert. Der p33b-
-    Pauschbetrag bleibt GAP (nicht_deklariert); die Renten-Verzweigungsfelder ohne bestätigte Art
-    sind fail-closed unvollständig (Klasse f)."""
-    snap, _ = ST.materialisiere(_store_mit({"rentner_jahresrente": 1800000,
-                                            "rentner_grad_der_behinderung": 50}))
+def test_scheibe4_rentner_p33b_1zu1_und_klasse_f(bindung):
+    """Rentner-Scheibe4: die 5 §33b-Behinderungs-/Pflege-Felder sind nach Instructor-Freigabe (msg 2719,
+    Sektions-Pfad-Beleg Person-A/E01097-Block) 1:1 auf ihre Kz gebunden; der p33b-Pauschbetrag selbst
+    (Regel-Output) hat kein Feld und erscheint nicht; die Renten-Verzweigung ohne bestätigte Art bleibt
+    fail-closed unvollständig (Klasse f)."""
+    snap, _ = ST.materialisiere(_store_mit({
+        "rentner_grad_der_behinderung": 50, "rentner_hilflos_blind_taubblind": True,
+        "rentner_hinterbliebenenbezuege": True, "rentner_pflegegrad": 3,
+        "rentner_gepflegter_hilflos": True, "rentner_jahresrente": 1800000}))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"] == {}                               # keine erfundene E-Nr
-    ndf = {x["feld_id"]: x["grund"] for x in r["nicht_deklariert"]}
-    assert ndf.get("rentner_grad_der_behinderung")             # p33b: GAP mit Grund
+    d = r["deklaration"]
+    assert d["E0109708"] == 50 and d["E0109706"] is True        # GdB + hilflos (Person A)
+    assert d["E0109704"] is True                                # Hinterbliebenen (eigen, nicht Kind-Transfer)
+    assert d["E0161606"] == 3 and d["E0161808"] is True         # Pflegegrad + Merkzeichen H
     uf = {x["feld_id"] for x in r["unvollstaendig"]}
-    assert "rentner_jahresrente" in uf                         # Klasse f ohne Art -> unvollständig, nicht deklariert
+    assert "rentner_jahresrente" in uf                          # Klasse f ohne Art -> unvollständig
+    rt = EM.zuruecklesen(r, bindung)                            # 1:1 exakt invertierbar
+    assert rt["felder"]["rentner_grad_der_behinderung"] == 50
+    assert rt["felder"]["rentner_gepflegter_hilflos"] is True
 
 
 def test_neg_scheibe3_verfaelschtes_1zu1_bricht_roundtrip(bindung):

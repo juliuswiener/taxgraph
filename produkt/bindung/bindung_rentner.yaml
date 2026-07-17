@@ -92,8 +92,8 @@ bindungen:
     hilfe_kurz: "Steht in deinem Feststellungsbescheid oder Schwerbehindertenausweis. Je höher der Grad, desto höher der Pauschbetrag."
     beispielwert: 50
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage Außergewöhnliche Belastungen / Mantelbogen, Grad der Behinderung; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz: E0109708
+    elster_kz_grund: "E0109708 [Ausw_Rentb_Besch], XSD-Label 'Grad der Behinderung' — stpfl. Person (Block 66196332, E01097); Vordruck Anlage Außergewöhnliche Belastungen agb_2025 erster GdB-Block (kurz-Kz 105). Sektions-Pfad-belegt (Hash-Gruppierung + Dok-Order + Vordruck-Header, Instructor msg 2719)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33b Abs. 3 S. 2 EStG"
@@ -108,8 +108,8 @@ bindungen:
     hilfe_kurz: "Mit einem dieser Merkzeichen bekommst du den höchsten Pauschbetrag, unabhängig vom Grad der Behinderung."
     beispielwert: false
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Merkzeichen H/Bl/TBl (Anlage Außergewöhnliche Belastungen); XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz: E0109706
+    elster_kz_grund: "E0109706 [Geh_Steh_Blind_Hilfl], XSD-Label 'blind / taubblind / ständig hilflos (Merkzeichen Bl, TBl und/oder H)' — stpfl. Person (Block 66196332, E01097); Vordruck agb_2025 kurz-Kz 103. NICHT E0505807 (=Person B/Ehegatte). Sektions-Pfad-belegt (Instructor msg 2719)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33b Abs. 3 S. 3 EStG"
@@ -126,8 +126,8 @@ bindungen:
     hilfe_kurz: "Wenn dir laufende Hinterbliebenenbezüge bewilligt sind, steht dir ein Pauschbetrag von 370 Euro zu."
     beispielwert: false
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage Außergewöhnliche Belastungen, Hinterbliebenen-Pauschbetrag; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz: E0109704
+    elster_kz_grund: "E0109704 [Hinterbl], XSD-Label 'Ich beantrage den Hinterbliebenen-Pauschbetrag' — Person-A-eigen; Vordruck agb_2025 Hinterbliebenen-Pauschbetrag. NICHT E0505805 (=Übertragung/Kind-Transfer §33b Abs.5). Sektions-Pfad-belegt (Instructor msg 2719)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33b Abs. 4 EStG"
@@ -145,8 +145,8 @@ bindungen:
     hilfe_kurz: "Den Pflege-Pauschbetrag gibt es, wenn du jemanden mit Pflegegrad 2 bis 5 ohne Bezahlung pflegst."
     beispielwert: 3
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage Außergewöhnliche Belastungen, Pflege-Pauschbetrag/Pflegegrad; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz: E0161606
+    elster_kz_grund: "E0161606 [Ang_pflegebeduerft_Pers], XSD-Label 'Für die pflegebedürftige Person wurde folgender Pflegegrad festgestellt' (§33b Abs.6, gepflegte Person); Vordruck agb_2025 Pflege-Pauschbetrag. 1 Instanz-Hash im Schema (single-MVP; mehrere Gepflegte = Repeated-GAP). Sektions-Pfad-belegt (Instructor msg 2719)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33b Abs. 6 S. 3 EStG"
@@ -161,8 +161,8 @@ bindungen:
     hilfe_kurz: "Bei einer hilflosen Person (Merkzeichen H) gilt der höchste Pflege-Pauschbetrag."
     beispielwert: false
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage Außergewöhnliche Belastungen, Merkzeichen H der gepflegten Person; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz: E0161808
+    elster_kz_grund: "E0161808 [Ang_pflegebeduerft_Pers], XSD-Label 'Für die pflegebedürftige Person wurde das Merkzeichen H festgestellt' (§33b Abs.6, selbe gepflegte-Person-Instanz wie E0161606); Vordruck agb_2025 Pflege-Pauschbetrag. Sektions-Pfad-belegt (Instructor msg 2719)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33b Abs. 6 S. 3 EStG"
