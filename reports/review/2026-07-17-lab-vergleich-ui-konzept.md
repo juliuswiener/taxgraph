@@ -59,6 +59,23 @@ lokal, kostet nichts). Order an dev-2 ist raus.
 | 7 | Dritte Ideen-Runde nachholen? | ja/nein | **Nein** — 6 Doppelfunde reichen, Kosten sparen (bereits verfügt) |
 
 Ein "Ja, Empfehlungen so umsetzen" von dir genügt; abweichende Einzelentscheide einfach per Nummer.
+für privat. einfacher input. hilfestellungen durch llm chat. Ki sperre fest. eric erst messen. protokoll und schnappschüsse. unsicherheit mit einbauen. ideenrunde nicht nachholen. 
+
+## ✅ JULIUS-ENTSCHEID 2026-07-17 (Wortlaut oben, im Dokument hinterlegt)
+
+| # | Entscheid | Konsequenz |
+|---|---|---|
+| 1 | **PRIVAT** (Selbst-Ersteller) — abweichend von Empfehlung Berater. „Einfacher Input, Hilfestellungen durch LLM-Chat" | Paket-B-Haut = Privat-Fragebogen (Nebel-Muster, einfache Sprache) + LLM-Chat als HILFE-Kanal (erklärt Fragen, extrahiert Vorschläge) — Chat schreibt nur `Vorlaeufig`-Patches, nie Werte |
+| 2 | KI-Sperre **fest ins Datenmodell** | `Vorlaeufig<T>`/`Bestaetigt<T>` als echter Typ; Herkunfts-Vektor als Payload; Meet über Input-Kegel |
+| 3 | **LIVE-Check** (Julius-Nachtrag nach Messung 7f36939: warm p95 76 ms) | ERiC-Prüfung läuft LIVE über persistenten warmen Daemon, ausgelöst bei Feld-/Abschnitts-Bestätigung (76 ms = unmerklich); nie Keystroke-Spam, nie Fork-per-Call; „in Prüfung"-Zustand nur als Übergangs-Flicker |
+| 4 | Store: **Protokoll + Schnappschüsse** (beides) | Event-Log + content-adressierte Snapshots; ERiC-Befund bindet an Snapshot-Hash |
+| 5 | (implizit bestätigt) | Paket A Kern zuerst; erster Baustein Bindungstabelle `bedingung_id → typisiertes Feld` |
+| 6 | Unsicherheits-Anzeige **MIT einbauen** | Sensitivitäts-/Intervall-Engine ([min,max]-Bescheid, Steuer-at-Risk) fest in Paket A; reine Engine-Reruns, NULL LLM |
+| 7 | Keine dritte Ideen-Runde | erledigt |
+
+Status: Produktentscheid Eingabe-Schicht = GEFALLEN. Zusammen mit aktiver Hersteller-ID ist
+Task #11 (Produktisierung E2E) vollständig entsperrt. Umsetzung als Paket A (Kern) / Paket B
+(Privat-Haut + LLM-Chat) an die devs nach Abschluss ihrer laufenden Aufträge.
 
 ---
 
