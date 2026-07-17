@@ -1,0 +1,18 @@
+id: vermieter_only_2025_einzel
+beschreibung: "Reiner Vermieter-Fall (Rentner/Vermieter ohne Job): § 21 Einkünfte aus Vermietung 30000 (= Einnahmen − Werbungskosten), keine anderen Einkünfte, Einzelveranlagung VZ 2025 -> Grundtarif. Prüft, dass catala_gesamt die § 21-Einkunftsart in die festzusetzende ESt summiert (die Einnahmen−WK-Überschussrechnung liefert der § 21-Accessor separat)."
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_vermietung: 30000
+
+erwartung:
+  festzusetzende_est: 4303
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG i.V.m. § 2 Abs. 2 Nr. 2, Abs. 3-6, § 32a Abs. 1 EStG (Grundtarif VZ 2025)"
+  datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+  zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
