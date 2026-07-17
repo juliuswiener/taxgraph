@@ -41,10 +41,12 @@ EP_FELDER = ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigene
 # an_gesamt MVP (reiner Arbeitnehmerfall). Die 4 Abwesenheits-Flags sind die Anwendbarkeits-
 # Voraussetzung (bestätigte Null je Einkunftsart); Invertierung der positiven Laienfrage macht die Haut.
 AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
-# Sperr-Felder (K2-Guard): ein aktiver Wert > 0 macht den MVP-Ring UNMÖGLICH (die Engine kann diese
-# Abzüge in Stufe 1 nicht rechnen) → Ring bleibt unavailable, NIE still auf 0 (kein Fake-Bescheid).
+# Sperr-Felder (K2-Guard): ein aktiver Wert > 0 macht den Ring UNMÖGLICH (die Engine kann diese
+# Werbungskosten mangels Catala-Modul nicht rechnen) → Ring bleibt unavailable, NIE still auf 0.
 GUARD_WERBUNGSKOSTEN = ("dhf_unterkunftskosten_monat", "vpf_abwesenheit_stunden", "am_anschaffungskosten")
-GUARD_SONDERAUSGABEN = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
+# Stufe 1a: die VOR-Felder (§ 10 Altersvorsorge) sind RING-FÄHIG — echte Rechnung via
+# _vorsorge_abzug über den Store-Einzelfeld-Zugriff (kein Guard mehr, aber Teil des Kegels).
+VOR_FELDER = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -69,7 +71,7 @@ SCHEIBEN = {
     # Arbeitnehmerfall (Bruttolohn + Entfernungspauschale, keine gesondert erfassten Sonderausgaben,
     # keine anderen Einkunftsarten). NICHT „fertig für Angestellte": VOR/dHf/… sperren via Guard.
     "an_gesamt": {
-        "felder": ("bruttoarbeitslohn", "veranlagung") + EP_FELDER + AN_GESAMT_FLAGS,
+        "felder": ("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER + AN_GESAMT_FLAGS,
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est",
         "teil_ringe": [],
@@ -145,10 +147,11 @@ def _scheibe_bindung(store: dict) -> dict:
     return {f: b[f] for f in felder}
 
 
-def _bescheid_fn(quantitaet: str, vz: int, bindung: dict):
+def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None):
     """bescheid_fn(feld_werte)->cent für eine ring-fähige Familie (Naht-Einheit CENT via
     intervall.bescheid_via_slots). None, wenn die Catala-Toolchain oder ein Accessor fehlt —
-    dann bleibt der Ring ehrlich leer, nie ein erfundener Betrag."""
+    dann bleibt der Ring ehrlich leer, nie ein erfundener Betrag. `felder` (materialisierter
+    Store-Snapshot) erlaubt den Zugriff auf Einzelfelder, die die Summen-Slots verdecken (VOR-AG)."""
     if quantitaet == "abziehbarer_betrag":          # § 9 Entfernungspauschale
         try:
             import runner  # noqa: F401
@@ -171,19 +174,34 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict):
         except Exception:
             return None
 
+        f = felder or {}
+
+        def _cent(fid):
+            v = f.get(fid, {}).get("wert")
+            return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+
         def slot_fn(slots: dict) -> int:
             wk = runner.catala_werbungskosten_n({
                 "veranlagungszeitraum": vz,
                 **{k: slots[k] for k in
                    ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
                    if k in slots}})
+            # § 10 Altersvorsorge (Stufe 1a): die VOR-Einzelfelder DIREKT aus dem Store greifen —
+            # der Summen-Slot gesamtbeitraege_inkl_ag würde den AG-Anteil verschmelzen und die
+            # Kürzung (nach dem Cap) unmöglich machen. gesamtbeitraege = AN + AG + außerhalb; der
+            # steuerfreie AG-Anteil getrennt. Naht-CENT -> EURO für _vorsorge_abzug.
+            gesamt = (_cent("vor_an_anteil_rv") + _cent("vor_ag_anteil_rv")
+                      + _cent("vor_rv_ausserhalb_lstb")) // 100
+            ag = _cent("vor_ag_anteil_rv") // 100
+            so = runner._vorsorge_abzug({"vorsorge_gesamtbeitraege_inkl_ag": gesamt,
+                                         "vorsorge_ag_anteil_steuerfrei": ag}, vz)
             return runner.catala_est({
                 "veranlagungszeitraum": vz,
                 "veranlagung": slots.get("veranlagung", "einzel"),
                 # bruttoarbeitslohn ist Naht-CENT (Bindung typ:cent) -> catala_est erwartet EURO.
                 "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,
                 "werbungskosten": wk,
-                "sonderausgaben": 0})    # MVP: VOR wird durch den Guard gesperrt, nie still verrechnet
+                "sonderausgaben": so})
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
@@ -198,25 +216,23 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     zustaende = [felder[f]["zustand"] for f in scheibe_felder if f in felder]
     if len(zustaende) < len(scheibe_felder) or ST.meet_zustand(zustaende) != "bestaetigt":
         return None
-    bf = _bescheid_fn(q, vz, bindung)
+    bf = _bescheid_fn(q, vz, bindung, felder)
     if bf is None:
         return None
     return bf({f: felder[f]["wert"] for f in scheibe_felder})
 
 
 def _an_gesamt_sperrgrund(felder: dict):
-    """K2-Guard für den MVP-Ring: nicht-ring-fähige Abzüge/Einkunftsarten sperren den Ring GANZ
-    (nie Fake-0). Ein VOR-/dHf-/Verpflegung-/AM-Feld mit Wert > 0 (vorläufig ODER bestätigt) sperrt,
-    weil Stufe 1 diese Abzüge nicht rechnet; ein Einkunftsart-Flag = false (Nutzer HAT die Art)
-    macht den vereinfachten §2-Ring unzulässig (dann catala_gesamt = Stufe 2)."""
+    """K2-Guard: nicht-ring-fähige Werbungskosten/Einkunftsarten sperren den Ring GANZ (nie Fake-0).
+    Ein dHf-/Verpflegung-/AM-Feld mit Wert > 0 (vorläufig ODER bestätigt) sperrt (kein Catala-Modul);
+    ein Einkunftsart-Flag = false (Nutzer HAT die Art) macht den §2-Ring unzulässig (catala_gesamt =
+    Stufe 2). VOR (§ 10) ist seit Stufe 1a ring-fähig — kein Guard mehr."""
     def _positiv(f):
         v = felder.get(f)
         w = v and v.get("wert")
         return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
     if any(_positiv(f) for f in GUARD_WERBUNGSKOSTEN):
         return "werbungskosten_nicht_ring_faehig"
-    if any(_positiv(f) for f in GUARD_SONDERAUSGABEN):
-        return "sonderausgaben_nicht_ring_faehig"
     if any(felder.get(f, {}).get("wert") is False for f in AN_GESAMT_FLAGS):
         return "einkunftsart_nicht_ring_faehig"
     return None
@@ -248,7 +264,7 @@ def _badge(herkunft: dict) -> str:
 def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: str, vz: int):
     """Frage-Reihenfolge-Gewichte aus dem verfügbaren Ring (Gesamt bevorzugt, sonst erster Teil)."""
     if cfg["gesamt_ring"]:
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
         if bf is not None:
             return {b["feld_id"]: b["spanne_cent"]
                     for b in IV.intervall(felder, bindung, bf, snapshot_id=sid)["beitraege"]}
@@ -303,14 +319,14 @@ def stand(fall_id: str) -> tuple[int, dict]:
     if gesperrt:
         engine = "gesperrt"          # nicht-ring-fähiger Abzug/Einkunftsart -> kein Ring (K2)
     elif cfg["gesamt_ring"]:
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
         if bf is not None:
             gesamt_iv = IV.intervall(felder, bindung, bf, snapshot_id=sid)["intervall"]
             engine = "catala"
     else:
         for name, q, tfelder in cfg["teil_ringe"]:
             tb = {f: bindung[f] for f in tfelder if f in bindung}
-            bf = _bescheid_fn(q, vz, tb)
+            bf = _bescheid_fn(q, vz, tb, felder)
             if bf is not None:
                 tiv = IV.intervall(felder, tb, bf, snapshot_id=sid)["intervall"]
                 teil.append({"familie": name, "quantitaet": q, "intervall": tiv})
@@ -383,7 +399,7 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
                          "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
         offen = [f for f in scheibe_felder
                  if f not in felder or felder[f]["zustand"] != "bestaetigt"]
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
         grund = "engine_unavailable" if (bf is None and not offen) else "input_kegel_nicht_bestaetigt"
         return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                      "grund": grund, "offen": sorted(offen), "trace": None}

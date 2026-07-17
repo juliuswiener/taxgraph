@@ -283,10 +283,12 @@ def test_durchstich_n_vor_gwg(base):
 
 
 # ---- Gesamtsteuer-Ring MVP (an_gesamt): erster echter §2-Bescheid, reiner Arbeitnehmerfall ----
+AN_GESAMT_VOR = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
 AN_GESAMT_KEGEL = [
     ("bruttoarbeitslohn", 4000000),   # 40000 € in Cent (Bindung typ:cent)
     ("veranlagung", "einzel"),
     ("ep_arbeitstage", 220), ("ep_entfernung_km", 30), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", True),
+    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),   # reiner Pendler: keine VOR
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
 ]
 
@@ -322,8 +324,8 @@ def test_an_gesamt_durchstich(base):
     st, fr = _req(base, "GET", "/fall/ag/fragen")
     _val("fragen", fr)
     ids = {q["feld_id"] for q in fr["fragen"]}
-    assert {"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
-            "kein_sonstige"} | set(EP_FELDER) == ids
+    assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
+             "kein_sonstige"} | set(EP_FELDER) | set(AN_GESAMT_VOR)) == ids
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
         assert st == 201
@@ -349,13 +351,20 @@ def test_an_gesamt_flag_guard(base):
     assert erg["grund"] == "einkunftsart_nicht_ring_faehig"
 
 
-def test_an_gesamt_vor_guard(base):
-    """K2: ein VOR-Feld > 0 im Store → Ring gesperrt trotz vollem EP-Kegel (kein 662900-Fake)."""
-    _an_gesamt_anlegen(base, "ag_vor")
-    _store_append("ag_vor", "vor_an_anteil_rv", 3500000)      # 35000 € Altersvorsorge
-    st, erg = _req(base, "GET", "/fall/ag_vor/ergebnis")
-    assert erg["zahl_cent"] is None, "VOR-Wert darf keinen Fake-Bescheid liefern"
-    assert erg["grund"] == "sonderausgaben_nicht_ring_faehig"
+def test_an_gesamt_vor_integration(base):
+    """Stufe 1a: VOR (§ 10) echt gerechnet. Bruttolohn 40000 + EP 2156 + VOR (AN 3500 / AG 3500,
+    Cent) → Sonderausgaben 3500 (nach Cap-vor-Kürzung) → festzusetzende_est 5570 = 557000 Cent
+    (Golden B). Der AG-Anteil wird über den Store-Einzelfeld-Zugriff getrennt behandelt."""
+    catala = _catala_da()
+    kegel = [(f, w) for f, w in AN_GESAMT_KEGEL if not f.startswith("vor_")]
+    kegel += [("vor_an_anteil_rv", 350000), ("vor_ag_anteil_rv", 350000), ("vor_rv_ausserhalb_lstb", 0)]
+    _an_gesamt_anlegen(base, "ag_vi", kegel)
+    st, erg = _req(base, "GET", "/fall/ag_vi/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 557000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
 
 
 def test_an_gesamt_dhf_guard_vorlaeufig(base):
