@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taxgraph/produkt/store/schema.json",
+  "title": "Sachverhalts-Store (UI-Kern, Task #11)",
+  "description": "Der EINE Wahrheits-Store eines Steuerfalls: append-only Event-Log + content-adressierte Snapshots. Jeder Wert trägt einen Zustand (Vorlaeufig/Bestaetigt) und einen Herkunfts-Vektor (Herkunft × Prüftiefe × Haftung). Julius-Entscheide #2/#4. LLM-frei im Kern; LLM schreibt nur vorlaeufige Events.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "veranlagungszeitraum", "events"],
+  "properties": {
+    "version": {"type": "integer", "minimum": 1},
+    "fall_id": {"type": "string", "description": "Stabiler Fall-Schlüssel (opak)."},
+    "veranlagungszeitraum": {"type": "integer", "minimum": 2000, "maximum": 2100},
+    "events": {"type": "array", "items": {"$ref": "#/$defs/event"},
+      "description": "Append-only. Reihenfolge = Schreibreihenfolge. Ein späteres Event kann ein früheres desselben feld_id via 'ersetzt' überschreiben (der Log bleibt vollständig)."},
+    "snapshots": {"type": "array", "items": {"$ref": "#/$defs/snapshot"},
+      "description": "Content-adressierte Materialisierungen eines Log-Präfixes. Optional; deterministisch aus den Events reproduzierbar."}
+  },
+  "$defs": {
+    "zustand": {
+      "enum": ["vorlaeufig", "bestaetigt"],
+      "description": "Der Wert-Typ. vorlaeufig ⊑ bestaetigt (Ordnung); Meet = der schwächere. Ein Aggregat ist nur bestaetigt, wenn ALLE Eingaben bestaetigt sind (fail-closed)."
+    },
+    "herkunft_vektor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["herkunft", "pruef_tiefe", "haftung"],
+      "description": "Vertrauen als Vektor (nicht Leiter). Meet läuft pro Achse getrennt.",
+      "properties": {
+        "herkunft": {"enum": ["laie", "llm_vorschlag", "beleg_import", "vorjahr", "berechnet", "orakel"],
+          "description": "Woher der Wert stammt."},
+        "pruef_tiefe": {"enum": ["ungeprueft", "plausibilisiert", "orakel_bestaetigt", "amtlich"],
+          "description": "Wie tief geprüft (aufsteigend). ungeprueft ⊑ plausibilisiert ⊑ orakel_bestaetigt ⊑ amtlich."},
+        "haftung": {"enum": ["nutzer", "berater", "system", "amt"],
+          "description": "Wer haftet (AO §150 Abs. 7 / §153 / §93c-Achse)."}
+      }
+    },
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Zwei-Signal-Bestätigung. signal_1 = Vorschlag (allein wirkungslos), signal_2 = menschliche/deterministische Bestätigung neben dem Beleg.",
+      "properties": {
+        "signal_1": {"type": ["string", "null"], "description": "event_id des Vorschlags (z.B. LLM), oder null."},
+        "signal_2": {"type": ["string", "null"], "description": "Bestätigungs-Beleg (z.B. 'klick@beleg:lstb_z23'); Pflicht bei zustand=bestaetigt."}
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "ts", "feld_id", "wert", "zustand", "herkunft", "schreiber"],
+      "properties": {
+        "event_id": {"type": "string", "pattern": "^[a-f0-9]{64}$",
+          "description": "sha256(canonical_json(event OHNE event_id)). Content-adressiert, vom Gate verifiziert."},
+        "ts": {"type": "string", "format": "date-time"},
+        "feld_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Bindet an die Bindungstabelle (produkt/bindung/). Gate prüft Existenz."},
+        "wert": {"type": ["number", "string", "boolean", "null"],
+          "description": "Der typisierte Wert (Typ/Einheit lt. Bindungstabelle; cent = Ganzzahl Cent)."},
+        "zustand": {"$ref": "#/$defs/zustand"},
+        "herkunft": {"$ref": "#/$defs/herkunft_vektor"},
+        "schreiber": {"type": "string",
+          "description": "Wer geschrieben hat, z.B. 'ui:laie', 'llm:chat', 'import:elster', 'engine'."},
+        "signal": {"$ref": "#/$defs/signal"},
+        "ersetzt": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$",
+          "description": "event_id des überschriebenen Events desselben feld_id, oder null."}
+      },
+      "allOf": [
+        {"if": {"properties": {"zustand": {"const": "bestaetigt"}}},
+         "then": {"required": ["signal"],
+                  "properties": {"signal": {"required": ["signal_2"],
+                    "properties": {"signal_2": {"type": "string", "minLength": 1}}}}}},
+        {"if": {"properties": {"herkunft": {"properties": {"herkunft": {"const": "llm_vorschlag"}}}}},
+         "then": {"properties": {"zustand": {"const": "vorlaeufig"}}}},
+        {"comment": "Auflage A: ein llm:-Schreiber muss sich ehrlich als llm_vorschlag/vorlaeufig deklarieren (kein Schlupfloch über eine gefälschte Herkunft).",
+         "if": {"required": ["schreiber"], "properties": {"schreiber": {"pattern": "^llm:"}}},
+         "then": {"required": ["herkunft", "zustand"],
+                  "properties": {
+                    "herkunft": {"properties": {"herkunft": {"const": "llm_vorschlag"}}},
+                    "zustand": {"const": "vorlaeufig"},
+                    "signal": {"properties": {"signal_2": {"type": "null"}}}}}}
+      ]
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_id", "ts", "bis_event", "felder"],
+      "properties": {
+        "snapshot_id": {"type": "string", "pattern": "^[a-f0-9]{64}$",
+          "description": "sha256(canonical_json(felder)). Content-Adresse des materialisierten Zustands."},
+        "ts": {"type": "string", "format": "date-time"},
+        "bis_event": {"type": "string", "pattern": "^[a-f0-9]{64}$",
+          "description": "event_id des letzten im Snapshot enthaltenen Events (der Log-Präfix)."},
+        "felder": {"type": "object",
+          "additionalProperties": {"$ref": "#/$defs/snapshot_feld"},
+          "description": "Materialisiert: feld_id -> aktueller Wert + Zustand + Herkunft."},
+        "eric_befund": {"$ref": "#/$defs/eric_befund"}
+      }
+    },
+    "snapshot_feld": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wert", "zustand", "herkunft"],
+      "properties": {
+        "wert": {"type": ["number", "string", "boolean", "null"]},
+        "zustand": {"$ref": "#/$defs/zustand"},
+        "herkunft": {"$ref": "#/$defs/herkunft_vektor"}
+      }
+    },
+    "eric_befund": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gebunden_an", "rc", "klasse", "gekappt_verdacht"],
+      "description": "ELSTER-Prüfergebnis, gebunden an DIESEN Snapshot-Hash (Julius #4).",
+      "properties": {
+        "gebunden_an": {"type": "string", "pattern": "^[a-f0-9]{64}$",
+          "description": "MUSS = snapshot_id dieses Snapshots sein (Gate prüft)."},
+        "rc": {"type": "integer"},
+        "klasse": {"enum": ["plausibel", "plausibilitaet_fehler", "io_gate_nicht_geprueft",
+                            "hersteller_id_gesperrt", "sonstig"],
+          "description": "checkest_gate.klassifiziere_rc; io_gate_nicht_geprueft ≠ grün (Falsch-Grün-Sperre)."},
+        "gekappt_verdacht": {"type": "boolean",
+          "description": "checkest_gate.gekappt_verdacht: Fehlerliste evtl. am Cap gekappt. klasse=plausibel MIT gekappt_verdacht=true darf downstream NIE als grün gelten (Trunkierungs-Sperre bis in den Store)."},
+        "fehler_anzahl": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
