@@ -29,24 +29,40 @@ import store as ST   # noqa: E402
 
 _EUR = re.compile(r"\d{1,3}(?:\.\d{3})*,\d{2}")
 
-# Beleg-Typen (Stufe 1 + 1b). marker = Kopf-Erkennung (im Text), hs_prefix = Präfix der Bindungs-
-# herkunft_slots, das ein Feld diesem Beleg-Typ zuordnet. LStB nutzt einen Positions-Anker (Nr. N),
-# Fließtext-Belege (Spende/Handwerker) einen Label-Anker ('… : Label'). LLM-frei.
+# Beleg-Typen (Stufe 1/1b/1c). hs_prefix = TYP-Tag im Bindungs-herkunft_slots (Provenienz + Typ-Scoping:
+# ein als Typ X erkanntes Dokument füllt NUR die Felder mit diesem Präfix — der Beleg-TYP disambiguiert,
+# nicht die Anker-Prosa). LStB nutzt Positions-Anker (Nr. N), Fließtext-Belege einen Label-Anker.
+# §35a-Absatz je Feld: in der Bindung über anker_ref.quelle (Abs.1 Minijob / Abs.2 Dienstleistung /
+# Abs.3 Handwerker) — dev-1s Ring wendet den richtigen Höchstbetrag an (Ring-Folgearbeit). LLM-frei.
 BELEG_TYPEN = {
-    "lstb":       {"marker": "lohnsteuerbescheinigung", "hs_prefix": "lohnsteuerbescheinigung"},
-    "spende":     {"marker": "zuwendungsbestätigung",   "hs_prefix": "zuwendungsbestätigung"},
-    "handwerker": {"marker": "handwerker",              "hs_prefix": "rechnung"},
+    "lstb":            {"hs_prefix": "lohnsteuerbescheinigung"},
+    "spende":          {"hs_prefix": "zuwendungsbestätigung"},
+    "handwerker":      {"hs_prefix": "handwerkerrechnung"},
+    "dienstleistung":  {"hs_prefix": "dienstleistungsrechnung"},
+    "minijob":         {"hs_prefix": "minijob-bescheinigung"},
 }
 
 
 def erkenne_beleg_typ(text: str):
-    """Beleg-Typ aus dem Kopf-/Inhalts-Marker (lstb/spende/handwerker) oder None. Reihenfolge: die
-    spezifischen Marker (LStB/Zuwendungsbestätigung) vor dem generischen Handwerker-Marker."""
+    """Beleg-Typ aus dem Kopf/Inhalt oder None. FAIL-CLOSED bei Handwerker/Dienstleistung-Mehrdeutigkeit:
+    § 35a Abs. 2 (Dienstleistung, max 4.000 €) und Abs. 3 (Handwerker, max 1.200 €) haben VERSCHIEDENE
+    Höchstbeträge — eine Fehlklassifikation ist ein falscher Bescheid. Ist der Typ nicht sicher (beide
+    oder keiner der Marker), wird NICHT geraten und NICHT still ein Feld gefüllt (K2): None → Mensch
+    entscheidet (die Haut fragt 'Handwerker- oder haushaltsnahe Dienstleistung?')."""
     t = text.lower()
-    for typ in ("lstb", "spende", "handwerker"):
-        if BELEG_TYPEN[typ]["marker"] in t:
-            return typ
-    return None
+    if "lohnsteuerbescheinigung" in t:
+        return "lstb"
+    if "zuwendungsbestätigung" in t or "geldzuwendung" in t:
+        return "spende"
+    if "minijob" in t or "haushaltsscheck" in t:
+        return "minijob"
+    hw = "handwerker" in t
+    dl = "dienstleistung" in t or "haushaltsnah" in t
+    if hw and not dl:
+        return "handwerker"
+    if dl and not hw:
+        return "dienstleistung"
+    return None                                     # mehrdeutig/unklar → K2: nicht raten
 
 
 def erkenne_lstb(text: str) -> bool:            # Rückwärts-kompatibel (Stufe 1)

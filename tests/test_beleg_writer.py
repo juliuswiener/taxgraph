@@ -36,6 +36,9 @@ MUSTER = _fix("muster_lstb_2025.txt")
 SPENDE = _fix("muster_zuwendungsbestaetigung_2025.txt")
 HANDWERKER = _fix("muster_handwerkerrechnung_2025.txt")
 HANDWERKER_OHNE_SPLIT = _fix("muster_handwerkerrechnung_ohne_split_2025.txt")
+MINIJOB = _fix("muster_minijob_bescheinigung_2025.txt")
+DIENSTLEISTUNG = _fix("muster_dienstleistungsrechnung_2025.txt")
+AMBIG = _fix("muster_rechnung_ambig_2025.txt")
 
 
 @pytest.fixture(scope="module")
@@ -82,6 +85,9 @@ def test_erkenne_beleg_typ():
     assert BW.erkenne_beleg_typ(SPENDE) == "spende"
     assert BW.erkenne_beleg_typ(HANDWERKER) == "handwerker"
     assert BW.erkenne_beleg_typ(HANDWERKER_OHNE_SPLIT) == "handwerker"   # erkannt, aber kein Arbeitskosten-Wert
+    assert BW.erkenne_beleg_typ(MINIJOB) == "minijob"
+    assert BW.erkenne_beleg_typ(DIENSTLEISTUNG) == "dienstleistung"
+    assert BW.erkenne_beleg_typ(AMBIG) is None                           # §35a Abs.2/3 mehrdeutig → K2: nicht raten
     assert BW.erkenne_beleg_typ("Kassenbon 5,00") is None
 
 
@@ -113,6 +119,36 @@ def test_schreibe_spende_vorlaeufig(bindung):
     assert ev["feld_id"] == "spenden_betrag" and ev["zustand"] == "vorlaeufig"
     assert ev["herkunft"]["herkunft"] == "beleg_import" and ev["schreiber"] == "import:beleg"
     assert ev["signal"]["signal_2"] is None and ev["signal"]["signal_1"]["typ"] == "beleg"
+
+
+# ---- Stufe 1c: Minijob (§35a Abs.1) + Dienstleistung (§35a Abs.2) + Typ-Scoping/Fail-closed ----
+
+def test_extrahiere_minijob_voll_kein_guard(bindung):
+    """Minijob (§35a Abs.1): volle Aufwendungen (reine Lohn-/Haushaltsscheck-Kosten, keine Material-Zeile)."""
+    k = {x["feld_id"]: x for x in BW.extrahiere(MINIJOB, bindung)}
+    assert k["hh_minijob_aufwendungen"]["wert"] == 250000        # 2.500,00
+    assert k["hh_minijob_aufwendungen"]["beleg_typ"] == "minijob"
+
+
+def test_extrahiere_dienstleistung_nur_arbeitskosten(bindung):
+    """Dienstleistung (§35a Abs.2): NUR Arbeitskosten (1.000), NICHT Material (200)/Gesamt (1.200)."""
+    k = {x["feld_id"]: x for x in BW.extrahiere(DIENSTLEISTUNG, bindung)}
+    assert k["hh_dienstleistungen"]["wert"] == 100000            # 1.000,00, Material-Guard greift
+    assert "hh_handwerker_arbeitskosten" not in k               # Typ-Scoping: NICHT das Handwerker-Feld
+
+
+def test_typ_scoping_handwerker_nicht_dienstleistung(bindung):
+    """Ein handwerker-Dokument füllt NUR hh_handwerker, nie hh_dienstleistungen (Typ-Scoping)."""
+    fids = {x["feld_id"] for x in BW.extrahiere(HANDWERKER, bindung)}
+    assert "hh_handwerker_arbeitskosten" in fids and "hh_dienstleistungen" not in fids
+
+
+def test_neg_ambig_rechnung_fail_closed(bindung):
+    """§35a Abs.2 (4.000€) vs Abs.3 (1.200€) mehrdeutig → NICHTS füllen (K2), Mensch entscheidet."""
+    kand = BW.extrahiere(AMBIG, bindung)
+    assert kand == []                                           # kein Feld geraten
+    fids = {x["feld_id"] for x in kand}
+    assert "hh_handwerker_arbeitskosten" not in fids and "hh_dienstleistungen" not in fids
 
 
 # ---- (b) fail-closed: Writer schreibt nur vorlaeufig --------------------------

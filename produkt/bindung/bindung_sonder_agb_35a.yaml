@@ -115,7 +115,7 @@ bindungen:
     fragetext_laie: "Hast du eine Haushaltshilfe auf Minijob-Basis beschäftigt? Wenn ja, was hast du ihr dieses Jahr gezahlt?"
     hilfe_kurz: "Zum Beispiel eine Putzhilfe im Minijob. Wenn nicht, gib 0 ein."
     beispielwert: 250000
-    herkunft_slots: null
+    herkunft_slots: ["Minijob-Bescheinigung: Aufwendungen"]
     elster_kz: E0161404
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
@@ -130,7 +130,7 @@ bindungen:
     fragetext_laie: "Was hast du dieses Jahr für haushaltsnahe Dienstleistungen bezahlt (nur der Arbeitslohn, ohne Material)?"
     hilfe_kurz: "Zum Beispiel eine Reinigungsfirma oder Gartenpflege. Nur die Arbeitskosten, nicht das Material."
     beispielwert: 100000
-    herkunft_slots: null
+    herkunft_slots: ["Dienstleistungsrechnung: Arbeitskosten"]
     elster_kz: E0161504
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
@@ -145,7 +145,7 @@ bindungen:
     fragetext_laie: "Was hast du dieses Jahr für Handwerker im Haushalt an Arbeitskosten bezahlt (Renovierung, Reparatur, Modernisierung)?"
     hilfe_kurz: "Nur die Arbeitskosten auf der Rechnung, nicht das Material."
     beispielwert: 120000
-    herkunft_slots: ["Rechnung: Arbeitskosten"]
+    herkunft_slots: ["Handwerkerrechnung: Arbeitskosten"]
     elster_kz: E0161804
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
