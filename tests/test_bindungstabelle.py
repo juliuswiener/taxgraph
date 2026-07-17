@@ -246,16 +246,11 @@ def test_neg_paragraph_im_fragetext(schema, daten):
 
 
 def test_neg_erfundene_kz(daten, e10_kz):
-    d = _erste_datei_daten(daten)
-    # ein Feld mit vorhandener Kz auf erfundene Kz setzen
-    for b in d["bindungen"]:
-        if b.get("elster_kz"):
-            b["elster_kz"] = "E9999999"
-            break
-    else:
-        pytest.skip("kein elster_kz-Feld in erster Datei")
-    bad = [b for b in d["bindungen"] if b.get("elster_kz") and b["elster_kz"] not in e10_kz]
-    assert bad, "erfundene Kz würde nicht auffallen"
+    # es MUSS echte elster_kz in der Scheibe geben (sonst prüft Gate c nichts)
+    echte = [b["elster_kz"] for d in daten.values() for b in d["bindungen"] if b.get("elster_kz")]
+    assert echte, "keine elster_kz in der Scheibe — Gate (c) hätte nichts zu prüfen"
+    # eine erfundene Kz ist NICHT im XSD -> Gate (c) würde sie rot färben (red-fähig)
+    assert "E9999999" not in e10_kz, "erfundene Kz würde in Gate (c) nicht auffallen"
 
 
 def test_neg_verfaelschter_anker(daten):
@@ -294,14 +289,19 @@ def test_neg_bereich_min_groesser_max(daten):
 
 
 def test_neg_gemischte_summanden(daten):
-    d = _erste_datei_daten(daten)
-    # finde einen summand-Slot, setze EIN Feld auf exakt -> Mischung
+    # Datei mit summand-Feldern über ALLE Scheiben suchen (nicht nur die erste)
+    d = None
+    for d0 in daten.values():
+        if any(b.get("slot_beitrag") == "summand" for b in d0["bindungen"]):
+            d = json.loads(json.dumps(d0))
+            break
+    if d is None:
+        pytest.skip("kein summand-Feld in der Scheibe")
+    # EIN summand-Feld auf exakt -> Mischung
     for b in d["bindungen"]:
         if b.get("slot_beitrag") == "summand":
             b["slot_beitrag"] = "exakt"
             break
-    else:
-        pytest.skip("kein summand-Feld")
     slots = {}
     for b in d["bindungen"]:
         if "signatur_slot" in b["quelle"]:

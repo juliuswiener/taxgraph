@@ -16,11 +16,21 @@ guenstiger_regeln:
       zitatanker: "Aufwendungen für die Benutzung öffentlicher Verkehrsmittel können angesetzt"
       datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
 
+  - regel_id: p31_familienleistungsausgleich
+    begruendung: >-
+      § 31 Günstigerprüfung: die tarifliche ESt ergibt sich aus dem GÜNSTIGEREN von Kindergeld-
+      Anspruch (tarifl. ESt ohne Kinderfreibeträge + Kindergeld) und Kinderfreibeträgen (§ 32 Abs. 6).
+      Beide Zweige hängen von den Kinderdaten und der Veranlagungsart ab; diese müssen erfragt werden,
+      kein Zweig wird anhand eines vorläufigen Siegers weggeschnitten.
+    zweig_felder: [fam_anzahl_kinder, kap_zusammenveranlagung]
+    anker_ref:
+      quelle: "§ 31 S. 1 EStG"
+      zitatanker: "entweder durch die Freibeträge nach § 32 Absatz 6 oder durch Kindergeld"
+      datei: "sources/gesetze-im-internet/estg_p31_2026-07-11.txt"
+
 # Regeln mit günstiger-Erwähnung in rules.yaml, die AUSSERHALB der aktuellen Scheibe N+VOR+GWG
 # liegen — benannt statt still vergessen (Gate-Sweep-Netz erzwingt das). Traverser-Ausbau-Nachtrag.
 ausnahmen:
-  - regel_id: p31_familienleistungsausgleich
-    grund: "§31 Kindergeld↔Freibeträge-Günstigerprüfung; außerhalb Scheibe N+VOR+GWG, Ausbau-Nachtrag."
   - regel_id: p32d_1_abgeltung
     grund: "§32d Abs.1 Abgeltung-/Günstigerprüfung KAP; außerhalb Scheibe, Ausbau-Nachtrag."
   - regel_id: p10a_guenstigerpruefung
