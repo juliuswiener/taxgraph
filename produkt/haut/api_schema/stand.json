@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "haut.stand response",
   "type": "object",
-  "required": ["fall_id", "snapshot_id", "engine", "felder", "relevanz", "intervall"],
+  "required": ["fall_id", "snapshot_id", "engine", "felder", "relevanz", "intervall", "teil_ringe"],
   "additionalProperties": false,
   "properties": {
     "fall_id": {"type": "string"},
     "snapshot_id": {"type": "string"},
-    "engine": {"type": "string", "enum": ["catala", "unavailable"]},
+    "engine": {"type": "string", "enum": ["catala", "catala_teilweise", "unavailable"]},
     "felder": {
       "type": "object",
       "additionalProperties": {
@@ -23,6 +23,19 @@
       }
     },
     "relevanz": {"type": "object"},
-    "intervall": {"type": ["object", "null"]}
+    "intervall": {"type": ["object", "null"]},
+    "teil_ringe": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["familie", "quantitaet", "intervall"],
+        "additionalProperties": false,
+        "properties": {
+          "familie": {"type": "string"},
+          "quantitaet": {"type": "string"},
+          "intervall": {"type": "object"}
+        }
+      }
+    }
   }
 }

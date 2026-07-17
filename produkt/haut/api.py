@@ -6,6 +6,12 @@ Funktion — kein Transport, kein Socket (den setzt server.py drum). So bleibt d
 
 Naht-Grenze (API.md): LESEN über traverser/intervall/est_mapping/bindung; SCHREIBEN
 ausschliesslich `store.append_event`. Keine Steuerlogik, keine zweite Wahrheit hier.
+
+Bescheid-Ehrlichkeit (K2): ein numerischer [min,max]-Ring erscheint NUR, wo ein exponierter
+golden-Accessor die Größe wirklich rechnet. Eine Scheibe mit Gesamt-Accessor (EP) trägt einen
+`intervall` (Scheiben-Bescheid); eine Multi-Regel-Scheibe ohne ehrlichen Gesamt-Accessor
+(N+VOR+GWG) trägt KEINEN Gesamt-Bescheid — nur ring-fähige Teilfamilien (EP-Abzug) als
+`teil_ringe`, der Rest ist ehrlich engine=unavailable. Kein erfundener Betrag.
 """
 from __future__ import annotations
 
@@ -30,10 +36,26 @@ import est_mapping as EM    # noqa: E402
 
 FAELLE = os.path.join(HERE, "faelle")
 
-# Eine Scheibe = die feld_id-Menge, auf die die (voll geladene) Bindungstabelle eingeschränkt wird.
-# Erste Scheibe: EP-Familie (Bindung + Engine + Goldens vollständig vorhanden).
+EP_FELDER = ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigenes_kfz")
+
+# Scheiben-Konfiguration.
+#   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
+#   felder_datei: bindung_*.yaml, aus der ALLE feld_ids der Scheibe gezogen werden.
+#   gesamt_ring : quantitaet-Key, wenn EIN Accessor die GANZE Scheibe als Bescheid bedient
+#                 (-> /stand.intervall + /ergebnis feste Zahl). None = kein ehrlicher Gesamt-Bescheid.
+#   teil_ringe  : [(name, quantitaet, felder)] ring-fähige Teilfamilien für Scheiben OHNE Gesamt-Ring
+#                 (ehrlicher Teil-Ring, ausdrücklich KEIN Scheiben-Bescheid).
 SCHEIBEN = {
-    "ep": ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigenes_kfz"),
+    "ep": {
+        "felder": EP_FELDER, "felder_datei": None,
+        "gesamt_ring": "abziehbarer_betrag",
+        "teil_ringe": [],
+    },
+    "n_vor_gwg": {
+        "felder": None, "felder_datei": "bindung_n_vor_gwg.yaml",
+        "gesamt_ring": None,      # Gesamtsteuer via catala_gesamt = eigenes Integrations-Paket
+        "teil_ringe": [("ep_werbungskosten", "abziehbarer_betrag", EP_FELDER)],
+    },
 }
 
 _FALL_RE = re.compile(r"[A-Za-z0-9_-]{1,64}")
@@ -75,13 +97,24 @@ def speichere_fall(fall_id: str, store: dict) -> None:
     os.replace(tmp.name, p)
 
 
-# ----------------------------------------------------------------- Naht-Adapter (Scheibe -> Engine)
+# ----------------------------------------------------------------- Scheibe -> Bindung/Engine
 
-def _scheibe_felder(store: dict) -> tuple:
+def _cfg(store: dict) -> dict:
     sch = store.get("scheibe")
     if sch not in SCHEIBEN:
         raise ApiError(400, f"unbekannte Scheibe {sch!r}")
     return SCHEIBEN[sch]
+
+
+def _datei_felder(dateiname: str) -> tuple:
+    import yaml
+    d = yaml.safe_load(open(os.path.join(PRODUKT, "bindung", dateiname), encoding="utf-8"))
+    return tuple(b["feld_id"] for b in d.get("bindungen", []))
+
+
+def _scheibe_felder(store: dict) -> tuple:
+    cfg = _cfg(store)
+    return cfg["felder"] if cfg["felder"] is not None else _datei_felder(cfg["felder_datei"])
 
 
 def _scheibe_bindung(store: dict) -> dict:
@@ -93,38 +126,41 @@ def _scheibe_bindung(store: dict) -> dict:
     return {f: b[f] for f in felder}
 
 
-def _bescheid_fn(store: dict, bindung: dict):
-    """bescheid_fn(feld_werte)->cent für die Scheibe, oder None wenn die Catala-Toolchain fehlt
-    (dann liefert die Haut ehrlich 'engine unavailable', nie einen erfundenen Wert)."""
-    if store.get("scheibe") != "ep":
+def _bescheid_fn(quantitaet: str, vz: int, bindung: dict):
+    """bescheid_fn(feld_werte)->cent für eine ring-fähige Familie (Naht-Einheit CENT via
+    intervall.bescheid_via_slots). None, wenn die Catala-Toolchain oder ein Accessor fehlt —
+    dann bleibt der Ring ehrlich leer, nie ein erfundener Betrag."""
+    if quantitaet == "abziehbarer_betrag":          # § 9 Entfernungspauschale
+        try:
+            import runner  # noqa: F401
+        except Exception:
+            return None
+
+        def slot_fn(slots: dict) -> int:
+            s = {"veranlagungszeitraum": int(vz),
+                 "arbeitstage": int(slots.get("arbeitstage", 0)),
+                 "entfernung_km_roh": int(slots.get("entfernung_km_roh", 0)),
+                 "oepnv_kosten_jahr": int(slots.get("oepnv_kosten_jahr", 0)),
+                 "eigenes_oder_ueberlassenes_kfz": bool(slots.get("eigenes_oder_ueberlassenes_kfz", False))}
+            return runner.catala_entfernungspauschale(s)
+
+        return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="abziehbarer_betrag")
+    return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
+
+
+def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder: tuple):
+    """Fail-closed: die festzusetzende Zahl NUR bei Scheiben-Gesamt-Accessor UND vollständig
+    bestätigtem Input-Kegel (Meet). Ohne Gesamt-Accessor gibt es KEINE Scheiben-Zahl (ehrlich)."""
+    q = cfg["gesamt_ring"]
+    if q is None:
         return None
-    try:
-        import runner  # noqa: F401  (triggert catala_runtime)
-    except Exception:
-        return None
-    vz = int(store["veranlagungszeitraum"])
-
-    def slot_fn(slots: dict) -> int:
-        s = {"veranlagungszeitraum": vz,
-             "arbeitstage": int(slots.get("arbeitstage", 0)),
-             "entfernung_km_roh": int(slots.get("entfernung_km_roh", 0)),
-             "oepnv_kosten_jahr": int(slots.get("oepnv_kosten_jahr", 0)),
-             "eigenes_oder_ueberlassenes_kfz": bool(slots.get("eigenes_oder_ueberlassenes_kfz", False))}
-        return runner.catala_entfernungspauschale(s)
-
-    # quantitaet = golden-Key der Engine-Ausgabe -> Nativ-Einheit (EP: euro) -> nach_cent (Naht=Cent).
-    return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="abziehbarer_betrag")
-
-
-def _feste_zahl(felder: dict, bindung: dict, bescheid_fn, scheibe_felder: tuple):
-    """Fail-closed: die festzusetzende Zahl NUR, wenn der Input-Kegel vollständig bestätigt ist
-    (Meet über die Zustände) UND die Engine verfügbar ist — sonst None (kein erfundener Wert)."""
     zustaende = [felder[f]["zustand"] for f in scheibe_felder if f in felder]
     if len(zustaende) < len(scheibe_felder) or ST.meet_zustand(zustaende) != "bestaetigt":
         return None
-    if bescheid_fn is None:
+    bf = _bescheid_fn(q, vz, bindung)
+    if bf is None:
         return None
-    return bescheid_fn({f: felder[f]["wert"] for f in scheibe_felder})
+    return bf({f: felder[f]["wert"] for f in scheibe_felder})
 
 
 # ----------------------------------------------------------------- Endpunkte (reine Logik)
@@ -150,15 +186,28 @@ def _badge(herkunft: dict) -> str:
     return "schimmernd" if herkunft.get("herkunft") == "llm_vorschlag" else "solide"
 
 
+def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: str, vz: int):
+    """Frage-Reihenfolge-Gewichte aus dem verfügbaren Ring (Gesamt bevorzugt, sonst erster Teil)."""
+    if cfg["gesamt_ring"]:
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung)
+        if bf is not None:
+            return {b["feld_id"]: b["spanne_cent"]
+                    for b in IV.intervall(felder, bindung, bf, snapshot_id=sid)["beitraege"]}
+    for _name, q, tfelder in cfg["teil_ringe"]:
+        tb = {f: bindung[f] for f in tfelder if f in bindung}
+        bf = _bescheid_fn(q, vz, tb)
+        if bf is not None:
+            return {b["feld_id"]: b["spanne_cent"]
+                    for b in IV.intervall(felder, tb, bf, snapshot_id=sid)["beitraege"]}
+    return None
+
+
 def fragen(fall_id: str) -> tuple[int, dict]:
     store = lade_fall(fall_id)
+    cfg = _cfg(store)
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
-    bescheid_fn = _bescheid_fn(store, bindung)
-    beitrag = None
-    if bescheid_fn is not None:
-        iv = IV.intervall(felder, bindung, bescheid_fn, snapshot_id=sid)
-        beitrag = {b["feld_id"]: b["spanne_cent"] for b in iv["beitraege"]}
+    beitrag = _gesamt_beitrag(store, cfg, bindung, felder, sid, int(store["veranlagungszeitraum"]))
     queue = TR.naechste_fragen(store, bindung, beitrag)
     out = []
     for fid in queue:
@@ -179,23 +228,34 @@ def fragen(fall_id: str) -> tuple[int, dict]:
 
 def stand(fall_id: str) -> tuple[int, dict]:
     store = lade_fall(fall_id)
+    cfg = _cfg(store)
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
     rel = TR.relevanz(store, bindung)
-    bescheid_fn = _bescheid_fn(store, bindung)
+    vz = int(store["veranlagungszeitraum"])
     felder_out = {
         fid: {"wert": v["wert"], "zustand": v["zustand"], "herkunft": v["herkunft"],
               "herkunft_badge": _badge(v["herkunft"])}
         for fid, v in felder.items()
     }
-    if bescheid_fn is None:
-        iv = None
-        engine = "unavailable"
+
+    gesamt_iv, engine, teil = None, "unavailable", []
+    if cfg["gesamt_ring"]:
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung)
+        if bf is not None:
+            gesamt_iv = IV.intervall(felder, bindung, bf, snapshot_id=sid)["intervall"]
+            engine = "catala"
     else:
-        iv = IV.intervall(felder, bindung, bescheid_fn, snapshot_id=sid)["intervall"]
-        engine = "catala"
+        for name, q, tfelder in cfg["teil_ringe"]:
+            tb = {f: bindung[f] for f in tfelder if f in bindung}
+            bf = _bescheid_fn(q, vz, tb)
+            if bf is not None:
+                tiv = IV.intervall(felder, tb, bf, snapshot_id=sid)["intervall"]
+                teil.append({"familie": name, "quantitaet": q, "intervall": tiv})
+        engine = "catala_teilweise" if teil else "unavailable"
+
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "engine": engine,
-                 "felder": felder_out, "relevanz": rel, "intervall": iv}
+                 "felder": felder_out, "relevanz": rel, "intervall": gesamt_iv, "teil_ringe": teil}
 
 
 _ERLAUBTE_ZUSTAENDE = {"vorlaeufig", "bestaetigt"}
@@ -241,15 +301,21 @@ def warum(fall_id: str, feld_id: str) -> tuple[int, dict]:
 
 def ergebnis(fall_id: str) -> tuple[int, dict]:
     store = lade_fall(fall_id)
+    cfg = _cfg(store)
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
     scheibe_felder = _scheibe_felder(store)
-    bescheid_fn = _bescheid_fn(store, bindung)
-    zahl = _feste_zahl(felder, bindung, bescheid_fn, scheibe_felder)
+    vz = int(store["veranlagungszeitraum"])
+    zahl = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder)
     if zahl is None:
+        if cfg["gesamt_ring"] is None:
+            # Multi-Regel-Scheibe ohne ehrlichen Gesamt-Accessor: bewusst KEINE Scheiben-Zahl.
+            return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
+                         "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
         offen = [f for f in scheibe_felder
                  if f not in felder or felder[f]["zustand"] != "bestaetigt"]
-        grund = "engine_unavailable" if (bescheid_fn is None and not offen) else "input_kegel_nicht_bestaetigt"
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung)
+        grund = "engine_unavailable" if (bf is None and not offen) else "input_kegel_nicht_bestaetigt"
         return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                      "grund": grund, "offen": sorted(offen), "trace": None}
     trace = TR.trace_ergebnis(store, bindung, snapshot_id=sid)
@@ -275,7 +341,7 @@ CHAT_501 = {
 }
 AMPEL_503 = {
     "fehler": "unavailable",
-    "grund": ("ELSTER-Ampel (warmer checkESt-Daemon) ist für die EP-Scheibe noch nicht verdrahtet "
-              "— ein gültiger ESt-Fall entsteht erst mit den Summen-Scheiben. Kein Fake-Grün."),
+    "grund": ("ELSTER-Ampel (warmer checkESt-Daemon) ist für diese Scheibe noch nicht verdrahtet "
+              "— ein gültiger ESt-Fall entsteht erst mit der Gesamtsteuer-Integration. Kein Fake-Grün."),
     "regel": "gekappt_verdacht=true ist nie grün (API.md-Garantie 5).",
 }

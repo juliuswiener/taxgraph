@@ -203,3 +203,77 @@ def test_durchstich_http(base):
     assert j["herkunft"]["herkunft"] == "laie"      # nach Bestätigung: laie-Beleg
     assert j["zustand"] == "bestaetigt" and j["signal"]["signal_2"]
     assert j["anker_ref"]["zitatanker"] == "jeden Arbeitstag"
+
+
+# VOR-Summanden (3 Laien-Felder -> EIN signatur_slot gesamtbeitraege_inkl_ag) + GWG-bool.
+VOR_FELDER = {"vor_an_anteil_rv": 3500000, "vor_ag_anteil_rv": 3500000, "vor_rv_ausserhalb_lstb": 0}
+VOR_KZ = {"E2000401", "E2000801", "E2000601"}
+
+
+def test_durchstich_n_vor_gwg(base):
+    """Option A: Multi-Regel-Scheibe als Interview+Deklaration+Trace. KEIN Gesamt-Bescheid
+    (ehrlich), EP behält seinen Teil-Ring, VOR-Summen-Konvention + GWG-bool durch die Haut."""
+    catala = _catala_da()
+    fid = "e2e-nvg"
+
+    st, b = _req(base, "POST", "/fall",
+                 {"scheibe": "n_vor_gwg", "veranlagungszeitraum": 2025, "fall_id": fid})
+    assert st == 201 and b["scheibe"] == "n_vor_gwg"
+
+    # 1) Interview-Queue enthält alle sechs Regel-Familien (askable Felder), laienverständlich
+    st, b = _req(base, "GET", f"/fall/{fid}/fragen")
+    assert st == 200
+    _val("fragen", b)
+    ids = {q["feld_id"] for q in b["fragen"]}
+    assert EP_FELDER <= ids                                   # N/EP
+    assert set(VOR_FELDER) <= ids                             # VOR (3 Summanden getrennt abgefragt)
+    assert {"gwg_netto_ohne_vorsteuer", "gwg_anschaffungskosten_netto"} <= ids   # GWG
+    assert any(q["feld_id"].startswith("dhf_") for q in b["fragen"])   # dHf
+    assert all("§" not in (q["fragetext_laie"] or "") for q in b["fragen"])
+
+    # 2) Repräsentative Bestätigung: EP (4) + VOR-Split (3) + GWG (bool + cent)
+    for fld, w in [("ep_arbeitstage", 220), ("ep_entfernung_km", 30),
+                   ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", True)]:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(fld, w))
+        assert st == 201
+    for fld, w in VOR_FELDER.items():
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(fld, w))
+        assert st == 201
+    for fld, w in [("gwg_netto_ohne_vorsteuer", True), ("gwg_anschaffungskosten_netto", 60000)]:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(fld, w))
+        assert st == 201
+
+    # 3) stand: KEIN Gesamt-Bescheid (K2), EP-Teil-Ring ehrlich getrennt
+    st, stand = _req(base, "GET", f"/fall/{fid}/stand")
+    assert st == 200
+    _val("stand", stand)
+    assert stand["intervall"] is None, "Multi-Regel-Scheibe darf keinen Gesamt-Bescheid erfinden"
+    if catala:
+        assert stand["engine"] == "catala_teilweise"
+        assert any(t["familie"] == "ep_werbungskosten" for t in stand["teil_ringe"])
+        ep_ring = next(t for t in stand["teil_ringe"] if t["familie"] == "ep_werbungskosten")
+        assert ep_ring["intervall"]["min_cent"] == ep_ring["intervall"]["max_cent"] == 215600
+    else:
+        assert stand["engine"] == "unavailable"
+        assert stand["teil_ringe"] == []
+
+    # 4) ergebnis: bewusst KEINE Scheiben-Zahl (kein ehrlicher Gesamt-Accessor)
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    assert st == 200
+    _val("ergebnis", erg)
+    assert erg["zahl_cent"] is None
+    assert erg["grund"] == "kein_scheiben_gesamtbescheid"
+
+    # 5) Deklaration via est_mapping: die drei getrennt erfragten VOR-Felder sind deklariert
+    st, dek = _req(base, "GET", f"/fall/{fid}/deklaration")
+    assert st == 200
+    kz = set(dek.get("deklaration", {}))
+    assert VOR_KZ <= kz, f"VOR-Summanden-Kz fehlen in der Deklaration: {kz}"
+    assert "E0203503" in kz                                   # ep_arbeitstage
+    assert dek["vollstaendig"] is True                        # alle erfassten Felder bestätigt
+
+    # 6) Trace bis anker_ref für ein VOR-Feld
+    st, w = _req(base, "GET", f"/fall/{fid}/feld/vor_an_anteil_rv/warum")
+    assert st == 200
+    _val("warum", w)
+    assert w["justification"]["signatur_slot"] == "gesamtbeitraege_inkl_ag"   # Summen-Slot

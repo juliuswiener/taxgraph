@@ -46,19 +46,25 @@ async function refresh() {
   }
 }
 
-function zeigeSpanne(stand) {
-  const el = document.getElementById("spanne");
-  if (stand.engine === "unavailable" || !stand.intervall) {
-    el.textContent = "Bescheid-Spanne: (Rechen-Engine nicht verfügbar)";
-    return;
-  }
-  const iv = stand.intervall;
+function spanneText(label, iv) {
   const lo = euro(iv.min_cent), hi = euro(iv.max_cent);
   const off = (iv.min_offen || iv.max_offen) ? " (noch offen)" : "";
-  el.textContent = (iv.min_cent === iv.max_cent)
-    ? `Bescheid: ${lo}`
-    : `Bescheid zwischen ${lo} und ${hi}${off}`;
-  // Ring: Anteil bestätigter Felder
+  return (iv.min_cent === iv.max_cent) ? `${label}: ${lo}` : `${label} ${lo}–${hi}${off}`;
+}
+
+function zeigeSpanne(stand) {
+  const el = document.getElementById("spanne");
+  if (stand.intervall) {
+    // Gesamt-Bescheid-Ring (Scheibe mit Gesamt-Accessor, z.B. EP allein)
+    el.textContent = spanneText("Bescheid", stand.intervall);
+  } else if (stand.teil_ringe && stand.teil_ringe.length) {
+    // Ehrliche Teil-Ringe: kein Gesamt-Bescheid, nur einzelne Abzugs-Familien
+    el.textContent = stand.teil_ringe.map(t => spanneText(t.familie, t.intervall)).join(" · ")
+      + " — noch kein Gesamt-Bescheid";
+  } else {
+    el.textContent = "Bescheid-Spanne: (Rechen-Engine nicht verfügbar)";
+  }
+  // Ring: Anteil bestätigter Felder (unabhängig vom Bescheid-Status)
   const felder = Object.values(stand.felder || {});
   const fest = felder.filter(f => f.zustand === "bestaetigt").length;
   const anteil = felder.length ? fest / felder.length : 0;
@@ -148,11 +154,14 @@ async function zeigeErgebnis() {
   document.getElementById("fertig").hidden = false;
   const el = document.getElementById("ergebnis");
   if (r.zahl_cent === null) {
-    el.textContent = r.grund === "engine_unavailable"
-      ? "Alle Angaben bestätigt — die Rechen-Engine ist hier nicht verfügbar."
-      : "Noch offen: " + (r.offen || []).join(", ");
+    if (r.grund === "kein_scheiben_gesamtbescheid")
+      el.textContent = "Alle Angaben erfasst — die Gesamtsteuer wird in einem späteren Schritt berechnet.";
+    else if (r.grund === "engine_unavailable")
+      el.textContent = "Alle Angaben bestätigt — die Rechen-Engine ist hier nicht verfügbar.";
+    else
+      el.textContent = "Noch offen: " + (r.offen || []).join(", ");
   } else {
-    el.textContent = "Deine Entfernungspauschale: " + euro(r.zahl_cent);
+    el.textContent = "Dein Ergebnis: " + euro(r.zahl_cent);
   }
 }
 
