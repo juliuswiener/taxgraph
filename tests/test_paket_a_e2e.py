@@ -65,7 +65,8 @@ def _catala_bescheid_fn(ep_bindung):
              "oepnv_kosten_jahr": int(slots.get("oepnv_kosten_jahr", 0)),   # cent==euro bei 0
              "eigenes_oder_ueberlassenes_kfz": bool(slots.get("eigenes_oder_ueberlassenes_kfz", False))}
         return runner.catala_entfernungspauschale(s)
-    return IV.bescheid_via_slots(ep_bindung, slot_fn)
+    # EP-Nativ-Einheit = EURO (abziehbarer_betrag); der Adapter normalisiert auf die Naht-Einheit CENT.
+    return IV.bescheid_via_slots(ep_bindung, slot_fn, quantitaet="abziehbarer_betrag")
 
 
 def _spanne(snapshot, ep_bindung, bescheid_fn):
@@ -121,8 +122,9 @@ def test_paket_a_end_to_end(ep_bindung):
     assert ST.meet_zustand(zustaende_nachher) == "bestaetigt"
     zahl = _feste_zahl(s, ep_bindung, bescheid_fn)
     assert zahl is not None and zahl == iv_b["min_cent"], "nach Bestätigung fehlt die feste Zahl"
-    # 220 Tage, 30 km (20x0,30 + 10x0,38), eigenes Kfz, VZ 2025 -> 2156 Euro Entfernungspauschale
-    assert zahl == 2156, f"EP-Bescheid unerwartet: {zahl}"
+    # 220 Tage, 30 km (20x0,30 + 10x0,38), eigenes Kfz, VZ 2025 -> 2156 Euro Entfernungspauschale;
+    # Naht-Einheit CENT (Euro-Nativ *100, verlustfrei): 215600 Cent = 2156,00 EUR.
+    assert zahl == 215600, f"EP-Bescheid unerwartet (Naht-Einheit Cent): {zahl}"
 
     # -- 7) Vorwärts-Trace bis anker_ref --
     tr = TR.trace_ergebnis(s, ep_bindung, snapshot_id=sid_b)

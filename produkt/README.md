@@ -33,7 +33,10 @@ store.append_event(store, feld_id=…, wert=…, zustand="vorlaeufig"|"bestaetig
 
 # 4. Aktueller Stand + Steuer-at-Risk-Band
 snapshot, sid = store.materialisiere(store)
-band = unsicherheit.intervall(snapshot, bindung, bescheid_fn)   # {intervall: {min_cent, max_cent, offene_achsen, nicht_fixierbar, ...}, beitraege: [{feld_id, spanne_cent, ...}]}
+#   bescheid_fn aus der Engine bauen — quantitaet = golden-Erwartungswert-Key; der Adapter
+#   normalisiert die Engine-Nativ-Ausgabe (euro ODER cent) auf die kanonische Naht-Einheit CENT:
+bescheid_fn = unsicherheit.bescheid_via_slots(bindung, slot_fn, quantitaet="abziehbarer_betrag")
+band = unsicherheit.intervall(snapshot, bindung, bescheid_fn)   # {intervall: {min_cent, max_cent, offene_achsen, nicht_fixierbar, ...}, beitraege: [{feld_id, spanne_cent, ...}]}  — alles in CENT
 
 # 5. Deklaration (fail-closed: nur zustand=bestaetigt fließt; ein vorlaeufig -> vollstaendig=False)
 dekl = est_mapping.deklariere(snapshot, bindung, snapshot_id=sid)  # {deklaration E-Nr->Wert, lossy, nicht_deklariert, unvollstaendig, vollstaendig}
@@ -61,8 +64,20 @@ Slots/Geltungsbedingungen (`luecken`) sind explizit; der Gate akzeptiert sie als
 nie als stilles Loch. Offen: §34 ao-Betrag (kein Regel-Slot → Task #12, dev-1-Zone), Multi-Objekt-§21,
 Per-Kind-Kz.
 
+## Einheiten-Konvention (kanonische Naht-Einheit CENT)
+
+Store-Inputs sind Cent (`bindung typ:cent`). Die Engine (`golden/runner.py`) liefert GEMISCHT — Euro
+(`int(...)//100`: EP, Arbeitszimmer, festzusetzende/tarifliche ESt, §34-Fünftel) oder Cent (GewSt,
+KStG-Nenner-B, §35c, Kfz). `unsicherheit.bescheid_via_slots(..., quantitaet=…)` normalisiert die
+Nativ-Ausgabe je Quantität (`NATIV_EINHEIT`, Schlüssel = golden-Erwartungswert-Key) verlustfrei auf
+CENT — so ist die ganze Naht in EINER Einheit und die Haut zeigt konsistent `euro()=cent/100`. Eine
+ungemappte Quantität wirft (kein stiller euro/cent-Default); `tests/test_einheiten.py` sichert Map-
+Vollständigkeit, Konvention und Exaktheit (EP 2156→215600, Nenner-B unverändert). ELSTER-Kz-Format
+(euro/cent je Feld) bleibt Submission-Layer-Sache.
+
 ## Gates
 
 `tests/test_bindungstabelle.py` · `test_store.py` · `test_unsicherheit.py` · `test_traverser.py` ·
-`test_est_mapping.py` · `test_paket_a_e2e.py` — **67/67 grün**, NULL LLM. Jeder Zitatanker wird
-voll-Länge via `pipeline/gates._normalize` gegen die Quelldatei geprüft (Tamper-verifiziert).
+`test_est_mapping.py` · `test_paket_a_e2e.py` · `test_einheiten.py` — **75/75 grün**, NULL LLM. Jeder
+Zitatanker wird voll-Länge via `pipeline/gates._normalize` gegen die Quelldatei geprüft; die
+Einheiten-Konvention ist Map-Tamper-verifiziert.

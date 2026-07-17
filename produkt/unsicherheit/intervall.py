@@ -1,8 +1,16 @@
 """Unsicherheits-Derivat — [min,max]-Bescheid-Intervall + Beitrag je Feld (Julius #6).
 
 Rein deterministisch, NULL LLM. Liest einen Store-Snapshot (materialisierte Felder), rechnet über
-eine INJIZIERTE reine Funktion `bescheid_fn(werte) -> steuer_cent` (in Produktion golger/runner.py
-catala_*, im Test eine reine Modellfunktion — die Kombinatorik hier ist engine-agnostisch).
+eine INJIZIERTE reine Funktion `bescheid_fn(werte) -> steuer_cent` (in Produktion golden/runner.py
+catala_* via `bescheid_via_slots`, im Test eine reine Modellfunktion — die Kombinatorik hier ist
+engine-agnostisch).
+
+EINHEITEN-KONVENTION (kanonische Naht-Einheit = CENT): die golden/runner.py-Accessoren liefern GEMISCHT
+— Euro (int(...)//100: EP, Arbeitszimmer, festzusetzende/tarifliche ESt, § 34-Fünftel) ODER Cent
+(GewSt, KStG-Nenner-B, § 35c, Kfz). `bescheid_via_slots` normalisiert die Nativ-Ausgabe je Quantität
+(NATIV_EINHEIT) verlustfrei auf CENT — so ist die gesamte Naht (Store-Inputs, iv.*_cent, beitraege) in
+EINER Einheit, und die Haut zeigt konsistent euro()=cent/100. Die Einheiten-Wahrheit ist der
+golden-Erwartungswert-Key (`*_cent` -> cent, sonst euro); das Gate (tests/test_einheiten.py) sichert es.
 
 Zwei Stufen (KONZEPT.md):
   1. One-at-a-time: Beitrag je unsicherer Achse (Frage-Reihenfolge). Ranking-Heuristik — kann
@@ -21,6 +29,31 @@ from itertools import product
 
 CAP_DEFAULT = 256
 NICHT_FIXIERBAR = "__nicht_fixierbar__"
+
+# Nativ-Einheit je Engine-Quantität (Schlüssel = golden-Erwartungswert-Key = Einheiten-Wahrheit).
+# VOLLSTÄNDIG halten: jeder in der Naht verdrahtete Accessor braucht einen Eintrag — ein ungemappter
+# wirft (kein stiller euro/cent-Default). Konvention (vom Gate assertet): `*_cent` -> cent, sonst euro.
+NATIV_EINHEIT = {
+    "abziehbarer_betrag": "euro",            # § 9 Entfernungspauschale (catala_entfernungspauschale)
+    "abzug_gesamt": "euro",                  # § 4/5 Arbeitszimmer/Homeoffice (catala_raumkosten)
+    "festzusetzende_est": "euro",            # § 2 festzusetzende ESt (catala_gesamt / AN-Endfall)
+    "tarifliche_est": "euro",                # § 32a Tarif / § 34-Fünftel (catala_est tariflich / catala_fuenftel)
+    "gewst_cent": "cent",                    # §§ 6-11/35 GewSt (catala_gewst)
+    "nenner_b_cent": "cent",                 # KStG Nenner B (catala_kst_nenner_b)
+    "sanierung_ermaessigung_cent": "cent",   # § 35c energetische Sanierung (catala_est sanierung)
+    "nutzungswert_monat_cent": "cent",       # § 6 Abs. 1 Nr. 4 Kfz-Nutzungswert (catala_est kfz)
+}
+
+
+def nach_cent(wert: int, quantitaet: str) -> int:
+    """Normalisiert eine Engine-Nativ-Ausgabe verlustfrei auf die kanonische Naht-Einheit CENT.
+    Euro-Accessoren liefern Ganzzahl-Euro (int(...)//100) -> *100 exakt; Cent-Accessoren unverändert.
+    Fail-closed: eine ungemappte Quantität wirft (NIE stiller euro/cent-Default)."""
+    einheit = NATIV_EINHEIT.get(quantitaet)
+    if einheit is None:
+        raise ValueError(f"Einheit unbelegt: {quantitaet!r} — NATIV_EINHEIT ergänzen "
+                         f"(kein stiller euro/cent-Default).")
+    return wert * 100 if einheit == "euro" else wert
 
 
 def _extremwerte(b: dict):
@@ -56,7 +89,8 @@ def _unsicher(feld_id: str, snapshot: dict) -> bool:
 def intervall(snapshot: dict, bindung: dict, bescheid_fn, *, cap: int = CAP_DEFAULT,
               snapshot_id: str | None = None) -> dict:
     """snapshot: {feld_id -> {wert, zustand, herkunft}}. bindung: {feld_id -> bindungs-Eintrag}.
-    bescheid_fn: {feld_id -> wert} -> steuer_cent (rein, deterministisch)."""
+    bescheid_fn: {feld_id -> wert} -> steuer in der kanonischen Naht-Einheit CENT (rein,
+    deterministisch; via bescheid_via_slots aus der Engine-Nativ-Ausgabe normalisiert)."""
     askable = {fid: b for fid, b in bindung.items() if b.get("askable")}
 
     fest, achse, offen, nicht_fix = {}, {}, [], []
@@ -136,10 +170,19 @@ def intervall(snapshot: dict, bindung: dict, bescheid_fn, *, cap: int = CAP_DEFA
 
 # ---------------------------------------------------------------- Engine-Adapter (Produktion)
 
-def bescheid_via_slots(bindung: dict, slot_fn):
+def bescheid_via_slots(bindung: dict, slot_fn, *, quantitaet: str):
     """Baut ein bescheid_fn(feld_werte) aus einer slot-basierten Engine-Funktion
-    (z.B. golden/runner.catala_*). Übersetzt feld_id -> signatur_slot über die Bindungstabelle und
-    addiert Summanden-Slots (Summen-Konvention). Reine Funktion, kein Zustand."""
+    (z.B. golden/runner.catala_*). Übersetzt feld_id -> signatur_slot über die Bindungstabelle,
+    addiert Summanden-Slots (Summen-Konvention) und NORMALISIERT die Engine-Nativ-Ausgabe auf die
+    kanonische Naht-Einheit CENT (nach_cent). Reine Funktion, kein Zustand.
+
+    quantitaet: der golden-Erwartungswert-Key der von slot_fn berechneten Größe (z.B.
+    'abziehbarer_betrag' für die EP, 'nenner_b_cent' für KStG-Nenner-B) — bestimmt die Nativ-Einheit
+    (NATIV_EINHEIT). Unbelegt -> ValueError (fail-closed, kein stiller Default)."""
+    if quantitaet not in NATIV_EINHEIT:                 # früh scheitern, nicht erst beim ersten Aufruf
+        raise ValueError(f"Einheit unbelegt: {quantitaet!r} — NATIV_EINHEIT ergänzen "
+                         f"(kein stiller euro/cent-Default).")
+
     def _fn(feld_werte: dict) -> int:
         slots: dict = {}
         for fid, wert in feld_werte.items():
@@ -151,5 +194,5 @@ def bescheid_via_slots(bindung: dict, slot_fn):
                 slots[slot] = slots.get(slot, 0) + wert
             else:
                 slots[slot] = wert
-        return slot_fn(slots)
+        return nach_cent(slot_fn(slots), quantitaet)
     return _fn

@@ -133,7 +133,9 @@ def test_deterministisch():
 def test_bescheid_via_slots_summanden():
     b = {"an": _b("cent", slot="gesamt", summand=True),
          "ag": _b("cent", slot="gesamt", summand=True)}
-    fn = IV.bescheid_via_slots(b, lambda slots: slots.get("gesamt", 0))
+    # cent-Quantität (nenner_b_cent) -> nach_cent = identity: hier unit-neutral, testet nur die
+    # Summanden-Aggregation (100+40).
+    fn = IV.bescheid_via_slots(b, lambda slots: slots.get("gesamt", 0), quantitaet="nenner_b_cent")
     assert fn({"an": 100, "ag": 40}) == 140      # Summanden addiert
 
 
