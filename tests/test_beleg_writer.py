@@ -26,7 +26,16 @@ import store as ST         # noqa: E402
 import traverser as TR     # noqa: E402
 
 TS = "2026-07-18T09:00:00+00:00"
-MUSTER = open(os.path.join(HERE, "fixtures", "muster_lstb_2025.txt"), encoding="utf-8").read()
+
+
+def _fix(name):
+    return open(os.path.join(HERE, "fixtures", name), encoding="utf-8").read()
+
+
+MUSTER = _fix("muster_lstb_2025.txt")
+SPENDE = _fix("muster_zuwendungsbestaetigung_2025.txt")
+HANDWERKER = _fix("muster_handwerkerrechnung_2025.txt")
+HANDWERKER_OHNE_SPLIT = _fix("muster_handwerkerrechnung_ohne_split_2025.txt")
 
 
 @pytest.fixture(scope="module")
@@ -62,8 +71,48 @@ def test_extrahiere_kandidaten(bindung):
     assert all(x["confidence"] == 1.0 for x in k.values())  # Textlayer-Default
 
 
-def test_kein_lstb_keine_extraktion(bindung):
-    assert BW.extrahiere("Rechnung Handwerker, Arbeitskosten 1.000,00", bindung) == []
+def test_kein_beleg_typ_keine_extraktion(bindung):
+    assert BW.extrahiere("Irgendein Kassenbon Supermarkt 12,34", bindung) == []
+
+
+# ---- Stufe 1b: Beleg-Typ-Erkennung + Spende + Handwerker + Material-Guard -----
+
+def test_erkenne_beleg_typ():
+    assert BW.erkenne_beleg_typ(MUSTER) == "lstb"
+    assert BW.erkenne_beleg_typ(SPENDE) == "spende"
+    assert BW.erkenne_beleg_typ(HANDWERKER) == "handwerker"
+    assert BW.erkenne_beleg_typ(HANDWERKER_OHNE_SPLIT) == "handwerker"   # erkannt, aber kein Arbeitskosten-Wert
+    assert BW.erkenne_beleg_typ("Kassenbon 5,00") is None
+
+
+def test_extrahiere_spende(bindung):
+    k = {x["feld_id"]: x for x in BW.extrahiere(SPENDE, bindung)}
+    assert k["spenden_betrag"]["wert"] == 30000                 # 300,00 EUR -> Cent
+    assert k["spenden_betrag"]["beleg_typ"] == "spende" and k["spenden_betrag"]["anker"] == "Betrag"
+
+
+def test_extrahiere_handwerker_nur_arbeitskosten(bindung):
+    """Nur der getrennt ausgewiesene Arbeitskosten-Anteil (1.200) — NICHT Material (800) / Gesamt (2.000)."""
+    k = {x["feld_id"]: x for x in BW.extrahiere(HANDWERKER, bindung)}
+    assert k["hh_handwerker_arbeitskosten"]["wert"] == 120000   # 1.200,00, nicht 800/2000
+    assert k["hh_handwerker_arbeitskosten"]["beleg_typ"] == "handwerker"
+
+
+def test_neg_handwerker_ohne_split_material_luecke(bindung):
+    """§35a-Missbrauchsschutz: Rechnung OHNE getrennte Arbeitskosten -> KEIN Wert (Lücke), nie Gesamt raten."""
+    fids = {x["feld_id"] for x in BW.extrahiere(HANDWERKER_OHNE_SPLIT, bindung)}
+    assert "hh_handwerker_arbeitskosten" not in fids            # keine Arbeitskosten-Zeile -> Lücke
+
+
+def test_schreibe_spende_vorlaeufig(bindung):
+    s = ST.leerer_store(2025, fall_id="spende-test")
+    kand = BW.extrahiere(SPENDE, bindung)
+    events = BW.schreibe_kandidaten(s, kand, beleg_ref="beleg:muster_zuwendung", ts=TS)
+    assert len(events) == 1
+    ev = events[0]
+    assert ev["feld_id"] == "spenden_betrag" and ev["zustand"] == "vorlaeufig"
+    assert ev["herkunft"]["herkunft"] == "beleg_import" and ev["schreiber"] == "import:beleg"
+    assert ev["signal"]["signal_2"] is None and ev["signal"]["signal_1"]["typ"] == "beleg"
 
 
 # ---- (b) fail-closed: Writer schreibt nur vorlaeufig --------------------------

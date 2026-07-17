@@ -145,7 +145,7 @@ bindungen:
     fragetext_laie: "Was hast du dieses Jahr für Handwerker im Haushalt an Arbeitskosten bezahlt (Renovierung, Reparatur, Modernisierung)?"
     hilfe_kurz: "Nur die Arbeitskosten auf der Rechnung, nicht das Material."
     beispielwert: 120000
-    herkunft_slots: null
+    herkunft_slots: ["Rechnung: Arbeitskosten"]
     elster_kz: E0161804
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
@@ -201,6 +201,23 @@ bindungen:
       zitatanker: "nicht für öffentlich geförderte Maßnahmen"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
 
+  # ===== Spende §10b (Beleg-Writer Stufe 1b: Zuwendungsbestätigung, herkunft_slots=Label-Anker) =====
+  - feld_id: spenden_betrag
+    quelle: {regel_id: p10b_spenden, signatur_slot: zuwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel hast du dieses Jahr an gemeinnützige Vereine, Stiftungen oder Kirchen gespendet (Geldspenden mit Spendenquittung)?"
+    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung (Spendenquittung). Nur Spenden an inländische Empfänger."
+    beispielwert: 30000
+    herkunft_slots: ["Zuwendungsbestätigung: Betrag"]
+    elster_kz: E0108405
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10b Abs. 1 S. 1 EStG"
+      zitatanker: "Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke"
+      datei: "sources/gesetze-im-internet/estg_p10b_2026-07-13.txt"
+
 luecken:
   # -- KiSt: beide Geltungsbedingungen sind MVP-Annahmen (kein Laien-Gate) --
   - regel_id: p10_1_4_kirchensteuer
@@ -220,6 +237,16 @@ luecken:
   - regel_id: p33_1_2_agb_abzug
     geltungsbedingung: keine_ausgeschlossenen_aufwendungen
     grund: "Annahme: die Aufwendungen sind nicht schon als Werbungskosten/Betriebsausgaben/Sonderausgaben berücksichtigt (Dedup, andere Scheiben)."
+  # -- Spende §10b: der Höchstbetrag-Deckel rechnet mit dem GdE, keine Laien-Abfrage --
+  - regel_id: p10b_spenden
+    signatur_slot: gesamtbetrag_der_einkuenfte
+    grund: "Berechnete §-2-Größe (Gesamtbetrag der Einkünfte) als Bemessung für den 20-%-Spenden-Höchstbetrag; die Regel/Integration liefert sie, kein Laien-Feld."
+  - regel_id: p10b_spenden
+    geltungsbedingung: gde_ist_p2_ergebnis
+    grund: "Kopplung: der Gesamtbetrag der Einkünfte ist das §-2-Ergebnis; keine eigene Abfrage."
+  - regel_id: p10b_spenden
+    geltungsbedingung: nur_zwanzig_prozent_gde_deckel
+    grund: "Der 20-%-GdE-Höchstbetrag (§ 10b Abs. 1 S. 1) ist Rechenlogik der Regel; keine Laien-Abfrage."
   - regel_id: p33_1_2_agb_abzug
     geltungsbedingung: keine_behinderungsbedingten_fahrtkosten
     grund: "Behinderungsbedingte Fahrtkostenpauschale ist ein eigener Sonderfall (§ 33 Abs. 2a), außerhalb dieser Scheibe."

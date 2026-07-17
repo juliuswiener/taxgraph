@@ -1,0 +1,13 @@
+Handwerkerrechnung 2025
+Muster-Handwerk GmbH (fiktiv), 00000 Musterstadt
+
+*** MUSTER — SYNTHETISCHER TESTBELEG, KEINE ECHTEN DATEN ***
+
+Leistung: Renovierung Badezimmer im Haushalt des Auftraggebers (fiktiv)
+
+Position                                    Betrag
+Arbeitskosten (Lohn + Anfahrt):           1.200,00 EUR
+Materialkosten:                             800,00 EUR
+Gesamtbetrag (brutto):                    2.000,00 EUR
+
+Zahlung per Überweisung auf das Konto der Firma. Fiktives Muster (nicht rechtsgültig).
