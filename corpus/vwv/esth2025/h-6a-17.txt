@@ -1,0 +1,25 @@
+Quelle: https://esth.bundesfinanzministerium.de/esth/2025/A-Einkommensteuergesetz/II-Einkommen-2-24b/3-Gewinn-4-7i/Paragraf-6a/h-6a-17.html
+Abrufdatum: 2026-07-17
+Werk: EStH 2025 (Einkommensteuer-Handbuch, BMF, amtlich)
+Fundstelle: H 6a(17) — Hinweise (Stichtagsprinzip, § 6a Pensionsrückstellung)
+Gültigkeits-Vermerk: H = EStH-2025-aktuell. VZ 2024-2026-relevant. Registry-Bezug: p6a_pension_hoechstbetrag.
+Golden-Kandidat: SCHWACH — "Mehrjährige Gehaltssteigerung" nennt Euro-Werte (3.000/3.150/3.250 €, +15/+10 € mtl.),
+illustriert aber nur das Stichtagsprinzip (WANN künftige Erhöhungen einzubeziehen sind), liefert KEINEN
+nachrechenbaren Teilwert-/Rückstellungs-Endbetrag (versicherungsmathematischer Barwert extern, 6-%-Zins).
+Einziger Euro-tragender §6a-Hinweis (Scan der 36 R/H-6a-Seiten: sonst 0 Euro-Beispiele).
+---
+Hinweise
+Mehrjährige Gehaltssteigerung
+Beispiel:
+Ein Arbeitnehmer hat eine Pensionszusage von 10 % des letzten vor Eintritt des Versorgungsfalls bezogenen Gehalts. Am 10.12.01 wird rechtsverbindlich vereinbart, dass sich das derzeitige Gehalt von 3.000 € mit Wirkung vom 01.04.02 auf 3.150 € und mit Wirkung vom 01.02.03 auf 3.250 € erhöht. Die dadurch vereinbarten Erhöhungen des Pensionsanspruchs von 15 € monatlich zum 01.04.02 und von 10 € monatlich zum 01.02.03 sind bereits bei der Rückstellungsberechnung zum 31.12.01 zu berücksichtigen.
+
+Steigerungen der Versorgungsansprüche
+Fest zugesagte prozentuale Rentenerhöhungen sind bei der Bewertung der Pensionsrückstellung zu berücksichtigen (>BFH vom 17.05.1995 – I R 105/94, BStBl II 1996 S. 423); Entsprechendes gilt für zugesagte prozentuale Steigerungen der Rentenanwartschaft (>BFH vom 25.10.1995 – I R 34/95, BStBl II 1996 S. 403).
+Mögliche künftige Anpassungen nach § 16 Abs. 1 Betriebsrentengesetz sind nicht rückstellungsfähig (>BFH vom 06.12.1995 – I R 14/95, BStBl II 1996 S. 406).
+
+Überversorgung
+Zur bilanzsteuerrechtlichen Berücksichtigung von überdurchschnittlich hohen Versorgungsanwartschaften (Überversorgung) >BMF vom 03.11.2004 (BStBl I S. 1045) und vom 13.12.2012 (BStBl I 2013 S. 35)
+Wird eine Versorgungszusage trotz dauerhaft reduzierter Aktivbezüge nicht ihrerseits vermindert, liegt eine Überversorgung vor, die zu einer Kürzung der Pensionsrückstellung nach § 6a führt (>BFH vom 27.03.2012 – I R 56/11, BStBl II S. 665).
+
+Wertpapiergebundene Pensionszusagen
+Pensionsrückstellungen können nur insoweit gebildet werden, als der Versorgungsanspruch auf die garantierte Mindestleistung entfällt. Zusätzliche Leistungen, die vom Wert bestimmter Wertpapiere (z. B. Fondsanteile, Aktien) zu einem festgelegten künftigen Zeitpunkt (z. B. Eintritt des Versorgungsfalles) abhängen, sind nicht zu berücksichtigen (>BMF vom 17.12.2002 – BStBl I S. 1397).

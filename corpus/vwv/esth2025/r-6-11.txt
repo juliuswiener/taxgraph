@@ -1,0 +1,20 @@
+Quelle: https://esth.bundesfinanzministerium.de/esth/2025/A-Einkommensteuergesetz/II-Einkommen-2-24b/3-Gewinn-4-7i/Paragraf-6/r-6-11.html
+Abrufdatum: 2026-07-17
+Werk: EStH 2025 (Einkommensteuer-Handbuch, BMF, amtlich)
+Fundstelle: R 6.11 — Bewertung von Rückstellungen
+Gültigkeits-Vermerk: R (Richtlinie) = EStR-2012-Stand; Struktur/Auslegung nutzen, KEINE R-Zahl als Konkretisierung (vgl. R-6.13-Altstand-Lehre). Kein VZ-2024-2026-Zahlkonflikt in dieser Seite (nur Übergangs-/Ansammlungs-Bruchteile: 9/10-1/9, 14/15-1/15 = BilMoG/vor-2005-Übergangsrücklagen, historisch).
+Golden-Kandidat: NEIN (Struktur/Auslegung, keine nachrechenbare Zahlen-Fallstudie mit Endbetrag).
+---
+Bewertung von Rückstellungen
+S 2137
+Gegenrechnung von Vorteilen
+
+11Die Gegenrechnung setzt voraus, dass am Bilanzstichtag nach den Umständen des jeweiligen Einzelfalles mehr Gründe für als gegen den Eintritt des Vorteils sprechen. 2Die Möglichkeit, dass künftig wirtschaftliche Vorteile eintreten könnten, genügt für die Gegenrechnung nicht. 3Bei Rückstellungen, die in einem vor dem 1.1.2005 endenden Wirtschaftsjahr gebildet wurden, kann für die Gewinnauswirkung, die sich in einem vor dem 1.1.2005 endenden Wirtschaftsjahr aus der erstmaligen Anwendung von Satz 1 ergibt, jeweils in Höhe von neun Zehnteln eine gewinnmindernde Rücklage gebildet werden, die in den folgenden neun Wirtschaftsjahren jeweils mit mindestens einem Neuntel gewinnerhöhend aufzulösen ist (Auflösungszeitraum); sonstige gewinnwirksame Änderungen der Bewertung der Rückstellung bleiben unberücksichtigt. 4Satz 3 ist nur anzuwenden, wenn die Gegenrechnung nicht auf einer vertraglichen Vereinbarung beruht. 5Scheidet eine Rückstellung, für die eine Rücklage nach Satz 3 gebildet wurde, während des Auflösungszeitraums aus dem Betriebsvermögen aus, ist auch die Rücklage zum Ende des Wirtschaftsjahres des Ausscheidens in vollem Umfang gewinnerhöhend aufzulösen.
+
+Ansammlung
+
+21In den Fällen, in denen der laufende Betrieb des Unternehmens im wirtschaftlichen Sinne ursächlich für die Entstehung der Verpflichtung ist, ist der Rückstellungsbetrag durch jährliche Zuführungsraten in den Wirtschaftsjahren anzusammeln. 2Dies ist insbesondere der Fall bei Verpflichtungen zur Erneuerung oder zum Abbruch von Betriebsanlagen. 3Verpflichtungen, die von Jahr zu Jahr nicht nur im wirtschaftlichen Sinne, sondern tatsächlich zunehmen, sind bezogen auf den am Bilanzstichtag tatsächlich entstandenen Verpflichtungsumfang zu bewerten. 4Dies ist beispielsweise der Fall bei Verpflichtungen zur Rekultivierung oder zum Auffüllen abgebauter Hohlräume. 5Die Summe der in früheren Wirtschaftsjahren angesammelten Rückstellungsraten ist am Bilanzstichtag auf das Preisniveau dieses Stichtages anzuheben. 6Der Aufstockungsbetrag ist der Rückstellung in einem Einmalbetrag zuzuführen; eine gleichmäßige Verteilung auf die einzelnen Jahre bis zur Erfüllung der Verbindlichkeit kommt insoweit nicht in Betracht.
+
+Niedrigerer handelsrechtlicher Wert
+
+31Mit Ausnahme der Pensionsrückstellungen darf die Höhe der Rückstellung in der Steuerbilanz den zulässigen Ansatz in der Handelsbilanz nicht überschreiten. 2Für den Gewinn, der sich aus der erstmaligen Anwendung des Gesetzes zur Modernisierung des Bilanzrechts (Bilanzrechtsmodernisierungsgesetz – BilMoG) vom 15.5.2009 (BGBl. I S. 1102) durch die Auflösung von Rückstellungen ergibt, die bereits in dem vor dem 1.1.2010 endenden Wirtschaftsjahr passiviert wurden, kann jeweils i. H. v. vierzehn Fünfzehntel eine gewinnmindernde Rücklage passiviert werden, die in den folgenden vierzehn Wirtschaftsjahren jeweils mit mindestens einem Fünfzehntel gewinnerhöhend aufzulösen ist (Auflösungszeitraum). 3Besteht eine Verpflichtung, für die eine Rücklage passiviert wurde, bereits vor Ablauf des maßgebenden Auflösungszeitraums nicht mehr, ist die insoweit verbleibende Rücklage zum Ende des Wirtschaftsjahres des Wegfalls der Verpflichtung in vollem Umfang gewinnerhöhend aufzulösen; Entsprechendes gilt, wenn sich der Verpflichtungsumfang innerhalb des Auflösungszeitraums verringert.

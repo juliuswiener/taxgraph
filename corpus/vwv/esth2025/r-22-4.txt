@@ -1,0 +1,32 @@
+Quelle: https://esth.bundesfinanzministerium.de/esth/2025/A-Einkommensteuergesetz/II-Einkommen-2-24b/8-Die-einzelnen-Einkunftsarten-13-24b/g-Sonstige-Einkuenfte-22-23/Paragraf-22/r-22-4.html
+Abrufdatum: 2026-07-17
+Werk: EStH 2025 (Einkommensteuer-Handbuch, BMF, amtlich)
+Fundstelle: R 22.4 — Besteuerung von Leibrenten i. S. d. § 22 Nr. 1 Satz 3 Buchst. a Doppelbuchst. bb EStG (Ertragsanteil)
+Gültigkeits-Vermerk: R (Richtlinie, EStR-2012-Stand) = Auslegung/Struktur, keine R-Zahl als Konkretisierung. Registry-Bezug: p22_1_leibrente_besteuerungsanteil (nutzt Besteuerungsanteil-Kohortentabelle §22 Nr.1 S.3 a aa; hier = Ertragsanteil bb, abgekürzte Leibrenten).
+Golden-Kandidat: NEIN — reine Auslegung (Erhöhung/Herabsetzung/abgekürzte Leibrente/Erwerbsminderung). Die eigentliche Ertragsanteil-Tabelle (Alter → %) steht im GESETZESTEXT § 22 Nr. 1 S. 3 a bb + § 55 Abs. 2 EStDV, NICHT in dieser R-Seite. Keine Euro-Beispiele.
+---
+Besteuerung von Leibrenten i. S. d. § 22 Nr. 1 Satz 3 Buchstabe a Doppelbuchstabe bb EStG
+
+Erhöhung der Rente
+1¹Bei einer Erhöhung der Rente ist, falls auch das Rentenrecht eine zusätzliche Werterhöhung erfährt, der Erhöhungsbetrag als selbständige Rente anzusehen, für die der Ertragsanteil vom Zeitpunkt der Erhöhung an gesondert zu ermitteln ist; dabei ist unerheblich, ob die Erhöhung von vornherein vereinbart war oder erst im Laufe des Rentenbezugs vereinbart wird. ²Ist eine Erhöhung der Rentenzahlung durch eine Überschussbeteiligung von vornherein im Rentenrecht vorgesehen, sind die der Überschussbeteiligung dienenden Erhöhungsbeträge Erträge dieses Rentenrechts; es tritt insoweit keine Werterhöhung des Rentenrechts ein. ³Eine neue Rente ist auch nicht anzunehmen, soweit die Erhöhung in zeitlichem Zusammenhang mit einer vorangegangenen Herabsetzung steht oder wenn die Rente lediglich den gestiegenen Lebenshaltungskosten angepasst wird (Wertsicherungsklausel).
+
+Herabsetzung der Rente
+2Wird die Rente herabgesetzt, sind die folgenden Fälle zu unterscheiden:
+1. Wird von vornherein eine spätere Herabsetzung vereinbart, ist zunächst der Ertragsanteil des Grundbetrags der Rente zu ermitteln (Betrag, auf den die Rente später ermäßigt wird). Diesen Ertragsanteil versteuert der Berechtigte während der gesamten Laufzeit; zusätzlich bis zur Herabsetzung den Ertragsanteil des über den Grundbetrag hinausgehenden Teils (abgekürzte Leibrente, § 55 Abs. 2 EStDV).
+2. Wird die Herabsetzung während des Rentenbezugs vereinbart und sofort wirksam, bleibt der Ertragsanteil unverändert.
+3. Wird die Herabsetzung während des Rentenbezugs mit späterer Wirksamkeit vereinbart, bleibt der Ertragsanteil bis zur Vereinbarung unverändert; ab dann gilt Nr. 1 entsprechend (zugrunde: zu Beginn des Rentenbezugs vollendetes Lebensjahr, ggf. beschränkte Laufzeit ab Rentenbeginn).
+
+Besonderheit bei der Ermittlung des Ertragsanteiles
+3Setzt der Beginn des Rentenbezugs die Vollendung eines bestimmten Lebensjahres voraus und wird die Rente schon vom Beginn des Monats an gewährt, in dem die Person das Lebensjahr vollendet, ist dieses Lebensjahr bei der Ermittlung des Ertragsanteiles (§ 22 Nr. 1 S. 3 a bb EStG) zugrunde zu legen.
+
+Abrundung der Laufzeit abgekürzter Leibrenten
+4Bemisst sich die beschränkte Laufzeit nicht auf volle Jahre, ist bei Anwendung der § 55 Abs. 2 EStDV-Tabelle die Laufzeit aus Vereinfachungsgründen auf volle Jahre abzurunden.
+
+Besonderheiten bei Renten wegen teilweiser/voller Erwerbsminderung
+5Regelmäßig abgekürzte Leibrenten; Laufzeit nach Vereinbarung/Gesetz. Ist kein Wegfall/Umwandlung bei bestimmtem Alter vorgesehen, ist grds. Vollendung des 65. Lebensjahres anzunehmen; bei schlüssiger Darlegung früheren Wegfalls/Umwandlung auf Antrag früherer Zeitpunkt (keine vorläufige Festsetzung nach § 165 AO nötig). Entfällt/umgewandelt vor 65: Laufzeit bis dahin maßgebend.
+
+Besonderheiten bei Witwen-/Witwerrenten
+6R 167 Abs. 8 und 9 EStR 2003 gilt bei Anwendung des § 22 Nr. 1 S. 3 a bb S. 2 EStG entsprechend.
+
+Begriff der Leibrente
+7R 22.3 gilt sinngemäß.

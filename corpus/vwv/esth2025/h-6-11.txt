@@ -1,0 +1,65 @@
+Quelle: https://esth.bundesfinanzministerium.de/esth/2025/A-Einkommensteuergesetz/II-Einkommen-2-24b/3-Gewinn-4-7i/Paragraf-6/h-6-11.html
+Abrufdatum: 2026-07-17
+Werk: EStH 2025 (Einkommensteuer-Handbuch, BMF, amtlich)
+Fundstelle: H 6.11 — Hinweise (Bewertung von Rückstellungen)
+Gültigkeits-Vermerk: H (Hinweise) = EStH-2025-aktuell. Abzinsungs-Grundsätze zu § 6 Abs. 1 Nr. 3a Buchst. e stehen NICHT hier, sondern im verwiesenen BMF 26.05.2005 (BStBl I S. 699), Anhang 9 V — separates Dokument (5,5-%-Abzinsung liegt im Gesetzeswortlaut, Registry-Regel p6_1_3a_abzinsung). VZ 2024-2026: 5,5-%-Satz unverändert.
+Golden-Kandidat: NEIN (nur Verweis-/BFH-Rechtsprechungs-Struktur, kein durchgerechnetes Zahlen-Beispiel mit Endbetrag).
+---
+Hinweise
+Abzinsung
+Anhang 9 V
+
+Grundsätze für die Abzinsung von Rückstellungen nach § 6 Abs. 1 Nr. 3a Buchst. e >BMF vom 26.05.2005 (BStBl I S. 699)
+
+Altersteilzeitverpflichtungen
+Zur Bewertung von Rückstellungen für Altersteilzeitverpflichtungen nach dem Altersteilzeitgesetz (AltTZG) >BMF vom 28.03.2007 (BStBl I S. 297) unter Berücksichtigung der Änderungen durch BMF vom 11.03.2008 (BStBl I S. 496) und vom 22.10.2018 (BStBl I S. 1112), letztmals abgedruckt im Anhang 7 II EStH 2020
+
+Ansammlung
+Bei Ansammlungsrückstellungen ist das Stichtagsprinzip zu beachten. Wird beispielweise das einer Beseitigungspflicht für Bauten auf fremdem Grund und Boden zugrunde liegende Rechtsverhältnis über das Vertragsende hinaus fortgesetzt (Änderung des bisherigen Vertrages oder Begründung eines neuen Rechtsverhältnisses), ist der verlängerte Nutzungszeitraum bei der Rückstellungsbewertung zu berücksichtigen (>BFH vom 02.07.2014 – I R 46/12, BStBl II S. 979).
+
+Arbeitsfreistellung
+Rückstellungen für Verpflichtungen zur Gewährung von Vergütungen für die Zeit der Arbeitsfreistellung vor Ausscheiden aus dem Dienstverhältnis und Jahreszusatzleistungen im Jahr des Eintritts des Versorgungsfalls >BMF vom 11.11.1999 (BStBl I S. 959), letztmals abgedruckt im Anhang 7 I EStH 2020
+
+Aufbewahrung von Geschäftsunterlagen
+Die Rückstellung ist i. H. d. voraussichtlichen Erfüllungsbetrags zu bilden. Hierbei ist zu berücksichtigen, welche Unterlagen tatsächlich aufbewahrungspflichtig sind und wie lange die Aufbewahrungspflicht für die einzelnen Unterlagen noch besteht. Für die Berechnung der Rückstellung sind nur diejenigen Unterlagen zu berücksichtigen, die zum betreffenden Bilanzstichtag entstanden sind (>BFH vom 18.01.2011 – X R 14/09, BStBl II S. 496).
+Eine Rückstellung für die Verpflichtung zur Aufbewahrung von Geschäftsunterlagen kann Finanzierungskosten (Zinsen) für die zur Aufbewahrung genutzten Räume auch dann enthalten, wenn die Anschaffung/Herstellung der Räume nicht unmittelbar (einzel)finanziert worden ist, sondern der Aufbewahrungspflichtige seine gesamten liquiden Eigen‑ und Fremdmittel in einen "Pool" gegeben und hieraus sämtliche Aufwendungen seines Geschäftsbetriebs finanziert hat (sog. Poolfinanzierung). Voraussetzung für die Berücksichtigung der Zinsen (als Teil der notwendigen Gemeinkosten) ist in diesem Fall, dass sie sich durch Kostenschlüsselung verursachungsgerecht der Anschaffung/Herstellung der Räume zuordnen lassen und dass sie angemessen sind (>BFH vom 11.10.2012 – I R 66/11, BStBl II 2013 S. 676).
+
+Deponien
+Zur Bewertung der Rückstellungen für Aufwendungen zur Stilllegung, Rekultivierung und Nachsorge von Deponien >BMF vom 25.07.2005 (BStBl I S. 826) und BFH vom 05.05.2011 – IV R 32/07 (BStBl II 2012 S. 98)
+
+Eiserne Verpachtung (Anhang 16 VII)
+Zur Gewinnermittlung bei der Verpachtung von Betrieben mit Substanzerhaltungspflicht des Pächters nach §§ 582a, 1048 BGB >BMF vom 21.02.2002 (BStBl I S. 262).
+
+Gratifikationen
+Bei der Rückstellung für die Verpflichtung zur Gewährung einer Gratifikation ist die Fluktuation mindernd zu berücksichtigen (>BFH vom 07.07.1983 – IV R 47/80, BStBl II S. 753).
+
+Jubiläumszuwendungen
+Zur Bewertung von Rückstellungen für Zuwendungen anlässlich eines Dienstjubiläums >BMF vom 08.12.2008 (BStBl I S. 1013) unter Berücksichtigung der Änderungen durch BMF vom 27.02.2020 (BStBl I S. 254) und BMF vom 02.05.2022 (BStBl I S. 631)
+
+Maßgeblichkeit der Handelsbilanz
+Der Handelsbilanzwert für eine Rückstellung bildet gegenüber einem höheren steuerrechtlichen Rückstellungswert die Obergrenze (>BFH vom 20.11.2019 – XI R 46/17, BStBl II 2020 S. 195). Der insoweit maßgebliche Handelsbilanzwert bestimmt sich nach den als GoB zu beurteilenden Bewertungsgrundsätzen des Handelsrechts (§§ 252 ff. HGB) und damit auch unter Berücksichtigung des Beibehaltungswahlrechts nach Artikel 67 Abs. 1 Satz 2 des Einführungsgesetzes zum HGB (>BFH vom 09.03.2023 – IV R 24/19, BStBl II S. 698).
+
+Nachbetreuung abgeschlossener Versicherungen
+Zur Bewertung von Rückstellungen für Verpflichtungen zur Nachbetreuung bereits abgeschlossener Versicherungen >BMF vom 20.11.2012 (BStBl I S. 1100)
+Ist der Stpfl. vertraglich zur Betreuung von Versicherungsverträgen verpflichtet und erbringt er tatsächlich auch entsprechende Nachbetreuungsleistungen, hat er Aufzeichnungen zu führen, die so konkret und spezifiziert sein müssen, dass eine angemessene Schätzung der Höhe der zu erwartenden Betreuungsaufwendungen sowie des Zeitraums bis zum Beginn der erstmaligen Durchführung von Betreuungsmaßnahmen (Abzinsungszeitraum) möglich ist. Kann er keine der Rechtsprechung entsprechenden Aufzeichnungen über den Umfang der Betreuungsleistungen vorlegen, muss sich die dann vorzunehmende Schätzung des Betreuungsaufwandes im Hinblick auf die den Stpfl. treffende Darlegungs‑ und Beweislast im unteren Rahmen bewegen (>BFH vom 12.12.2013 – X R 25/11, BStBl II 2014 S. 517).
+
+Rückabwicklung (>H 5.7 (1))
+
+Rückgriffsansprüche
+(Unbestrittene) Rückgriffsansprüche sind bei der Bewertung von Rückstellungen zu berücksichtigen, wenn sie nicht als eigenständige Forderung zu aktivieren sind und derart in einem unmittelbaren Zusammenhang mit der drohenden Inanspruchnahme stehen, dass sie dieser wenigstens teilweise spiegelbildlich entsprechen, sie in rechtlich verbindlicher Weise der Entstehung oder Erfüllung der Verbindlichkeit zwangsläufig nachfolgen und sie vollwertig sind (>BFH vom 17.02.1993 – X R 60/89, BStBl II S. 437 und vom 03.08.1993 – VIII R 37/92, BStBl II 1994 S. 444).
+
+Schadenrückstellungen der Versicherungswirtschaft (>BMF vom 20.10.2016, BStBl I S. 1145)
+
+Sparprämien
+Rückstellungen für die Leistung einer Sparprämie bei Ablauf eines Sparvertrags sind über die Laufzeit des Sparvertrages anzusammeln und abzuzinsen (>BFH vom 15.07.1998 – I R 24/96, BStBl II S. 728).
+
+Urlaubsverpflichtung
+Bei der Ermittlung der Höhe der rückständigen Urlaubsverpflichtung sind das Bruttoarbeitsentgelt, die Arbeitgeberanteile zur Sozialversicherung, das Urlaubsgeld und andere lohnabhängige Nebenkosten zu berücksichtigen. Nicht zu berücksichtigen sind jährlich vereinbarte Sondervergütungen (z. B. Weihnachtsgeld, Tantiemen oder Zuführungen zu Pensions‑ und Jubiläumsrückstellungen) sowie Gehaltssteigerungen nach dem Bilanzstichtag (>BFH vom 06.12.1995 – I R 14/95, BStBl II 1996 S. 406).
+
+Verbindlichkeiten mit steigenden Zinssätzen (>H 6.10)
+
+Verwendung von Wirtschaftsgütern
+Können Wirtschaftsgüter, z. B. Roh‑, Hilfs‑ und Betriebsstoffe oder unfertige Erzeugnisse, die bereits am Bilanzstichtag vorhanden waren, bei der Erfüllung von Sachleistungsverpflichtungen verwendet werden, sind sie mit ihren Buchwerten zu berücksichtigen (>BFH vom 26.06.1975 – IV R 59/73, BStBl II S. 700).
+
+Weihnachtsgeld
+In einer Rückstellung für zu zahlendes Weihnachtsgeld bei abweichendem Wj. kann nur der Teil der Vergütung berücksichtigt werden, der bei zeitproportionaler Aufteilung des Weihnachtsgeldes auf die Zeit vom Beginn des Kj. bis zum Bilanzstichtag entfällt (>BFH vom 26.06.1980 – IV R 35/74, BStBl II S. 506).

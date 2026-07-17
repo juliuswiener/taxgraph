@@ -1,0 +1,20 @@
+Quelle: https://esth.bundesfinanzministerium.de/esth/2025/A-Einkommensteuergesetz/V-Steuerermaessigungen-34c-35c/1-Steuerermaessigung-bei-ausl-Eink-34c-34d/Paragraf-34c/h-34c-5.html
+Abrufdatum: 2026-07-17
+Werk: EStH 2025 (Einkommensteuer-Handbuch, BMF, amtlich)
+Fundstelle: H 34c(5) — Hinweise (Anrechnung ausländischer Steuer, DBA-Vorrang § 34c Abs. 6)
+Gültigkeits-Vermerk: H = EStH-2025-aktuell. VZ-2024-2026-relevant. Kein Euro-Rechenbeispiel (der § 34c-
+Höchstbetrags-Rechenweg steht NICHT in EStH-H, sondern im BMF-Auslandssteuer-Schreiben). Registry-Bezug:
+p34c_1_anrechnung_hoechstbetrag, p34c_2_abzug_statt_anrechnung.
+BEFUND-BEZUG (Paket 10a Abschnitt A.1, §34c-Abs.6-DBA-Vorrang): Diese Seite belegt AMTLICH den DBA-Vorrang:
+"Die Höhe der anzurechnenden ausländischen Steuern (§ 34c Abs. 6 Satz 2) ergibt sich aus den jeweiligen
+DBA … nach den vereinbarten Quellensteuersätzen". Verweis Anhang 12 I = "Stand der DBA … zum 01.01.2025"
+(BMF vom 20.01.2025, BStBl I S. 291) — amtliche DBA-Stand-Liste, die die DBA-Methoden-Kataloge (AT/US/CH/
+FR/LU/NL/ES/TR) stützt. Stärkt den Prüfauftrag: §34c-Abs.6-DBA-Vorfrage in p34c_1/2 materialisieren.
+Golden-Kandidat: NEIN (Auslegung/DBA-Verweis).
+---
+Hinweise
+Abkommen (Anhang 12 I)
+Stand der DBA und anderer Abkommen im Steuerbereich zum 01.01.2025 >BMF vom 20.01.2025 (BStBl I S. 291)
+
+Anrechnung
+Die Höhe der anzurechnenden ausländischen Steuern (§ 34c Abs. 6 Satz 2) ergibt sich aus den jeweiligen DBA. Danach ist regelmäßig die in Übereinstimmung mit dem DBA erhobene und nicht zu erstattende ausländische Steuer anzurechnen. Bei Dividenden, Zinsen und Lizenzgebühren sind das hiernach die nach den vereinbarten Quellensteuersätzen erhobenen Quellensteuern, die der ausländische Staat als Quellenstaat auf diese Einkünfte erheben darf. Nur diese Steuern sind in Übereinstimmung mit dem jeweiligen DBA erhoben und nicht zu erstatten. Eine Anrechnung von ausländischer Steuer kommt auch dann nur i. H. d. abkommensrechtlich begrenzten Quellensteuer in Betracht, wenn eine darüber hinausgehende ausländische Steuer wegen Ablaufs der Erstattungsfrist im ausländischen Staat nicht mehr erstattet werden kann (>BFH vom 15.03.1995 – I R 98/94, BStBl II S. 580). Dies gilt nach der Neufassung des § 34c Abs. 1 Satz 1 auch für Nicht-DBA-Fälle.

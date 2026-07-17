@@ -1,0 +1,80 @@
+Quelle: https://esth.bundesfinanzministerium.de/esth/2025/A-Einkommensteuergesetz/II-Einkommen-2-24b/3-Gewinn-4-7i/Paragraf-6/h-6-13.html
+Abgerufen: 2026-07-17 (Chrome, Radware im Browser gelöst)
+Werk: Amtliches Einkommensteuer-Handbuch 2025 (EStH 2025), H 6.13 (Hinweise zu R 6.13 GWG/Sammelposten)
+
+--- Wortlaut (get_page_text, <main>) ---
+
+Hinweise
+Allgemeines
+Anhang 16 IX
+
+Zweifelsfragen zur bilanziellen Behandlung geringwertiger Wirtschaftsgüter und zum Sammelposten >BMF vom 30.09.2010 (BStBl I S. 755)
+
+Einlage
+
+Zur Einlage von geringwertigen Wirtschaftsgütern, für die die Bewertungsfreiheit bereits während der Zugehörigkeit zum Privatvermögen in Anspruch genommen wurde >H 6.12 (Geringwertiges Wirtschaftsgut)
+
+Private Mitbenutzung
+
+Hat ein Stpfl. die Anschaffungs‑ oder Herstellungskosten eines geringwertigen Wirtschaftsguts im Jahr der Anschaffung oder Herstellung in voller Höhe als Betriebsausgaben abgesetzt, muss er den Teil der Aufwendungen, der dem privaten Nutzungsanteil entspricht, während der Nutzungszeit des Wirtschaftsguts dem Gewinn jeweils in dem Umfang hinzurechnen, der der tatsächlichen Nutzung in jedem Wj. entspricht (>BFH vom 13.03.1964 – IV 158/61 S, BStBl III S. 455).
+
+Selbständige Bewertbarkeit bzw. Nutzungsfähigkeit
+
+Die selbständige Nutzungsfähigkeit verbundener oder gemeinsam genutzter Wirtschaftsgüter ist kein Kriterium bei der Beurteilung der selbständigen Bewertbarkeit. Ein selbständig bewertbares Wirtschaftsgut liegt vor, wenn es in seiner Einzelheit von Bedeutung und bei einer Veräußerung greifbar ist. Ob es auch selbständig genutzt werden kann, hängt neben dem Zweck, den zwei oder mehrere bewegliche Sachen gemeinsam zu erfüllen haben, vor allem vom Grad der Festigkeit einer eventuell vorgenommenen Verbindung (§ 93 BGB), dem Zeitraum, auf den eine eventuelle Verbindung oder die gemeinsame Nutzung angelegt sind, sowie dem äußeren Erscheinungsbild ab. Erscheinen die beweglichen Gegenstände danach für sich genommen unvollständig oder erhält ein Gegenstand ohne den oder die anderen gar ein negatives Gepräge, ist regelmäßig von einem einheitlichen Wirtschaftsgut auszugehen; Entsprechendes gilt für Sachen, die in einen unbeweglichen Gegenstand eingebaut werden (>BFH vom 05.09.2002 – III R 8/99, BStBl II S. 877).
+
+ABC der selbständig nutzungsfähigen Wirtschaftsgüter
+Ausstellungsgegenstände – einzelne Gegenstände, die zu einer Verkaufsausstellung (z. B. Sanitärausstellung) zusammengefasst sind, es sei denn, einzelne der zu der Ausstellung zusammengefassten Wirtschaftsgüter haben ihre selbständige Bewertbarkeit dadurch verloren, dass sie fest und auf längere Dauer mit anderen Gegenständen verbunden sind und nur in dieser technischen Verbundenheit ihren bestimmungsgemäßen Zweck erfüllen können, z. B. Badewanne und Armaturen >BFH vom 09.08.2001 – III R 30/00 (BStBl II S. 842)
+Bestecke in Gaststätten, Hotels, Kantinen >BFH vom 19.11.1953 – IV 360/53 U (BStBl III 1954 S. 18)
+Bibliothek eines Rechtsanwalts >BFH vom 17.05.1968 – VI R 196/67 (BStBl II S. 566)
+Bücher einer Leih‑ oder Fachbücherei >BFH vom 08.12.1967 – IV 80/63 (BStBl II 1968 S. 149)
+Einrichtungsgegenstände in Läden, Werkstätten, Büros, Hotels, Gaststätten u. ä. – auch als Erstausstattung und in einheitlichem Stil >BFH vom 29.07.1966 – IV R 138/66 (BStBl III 1967 S. 61)
+Fässer/Flaschen >BFH vom 01.07.1981 – I R 148/78 (BStBl II 1982 S. 246)
+Grundausstattung einer Kfz-Werkstatt mit Spezialwerkzeugen >BFH vom 17.05.1968 – VI R 19/68 (BStBl II S. 571)
+Instrumentarium eines Arztes, auch als Grundausstattung
+Kisten >BFH vom 01.07.1981 – I R 148/78 (BStBl II 1982 S. 246)
+Lampen als selbständige Wirtschaftsgüter (Steh‑, Tisch‑ und Hängelampen)
+Leergut >BFH vom 01.07.1981 – I R 148/78 (BStBl II 1982 S. 246)
+Anhang 9 IV
+Legehennen in eiererzeugenden Betrieben >BMF vom 08.12.2025 (BStBl I 2026 S. 2042)
+Möbel in Hotels und Gaststätten, auch als Erstausstattung >BFH vom 17.05.1968 – VI R 113/67 (BStBl II S. 566)
+Müllbehälter eines Müllabfuhrunternehmens, auch Systemmüllbehälter
+Musterbücher und ‑kollektionen im Tapeten‑ und Buchhandel >BFH vom 25.11.1965 – IV 299/63 U (BStBl III 1966 S. 86)
+Notfallkoffer eines Arztes und darin enthaltene Geräte wie Sauerstoffflasche, Beatmungsbeutel, Absauggerät >BFH vom 07.09.2000 – III R 71/97 (BStBl II 2001 S. 41)
+Paletten zum Transport und zur Lagerung von Waren >BFH vom 09.12.1977 – III R 94/76 (BStBl II 1978 S. 322 und vom 25.08.1989 – III R 125/84, BStBl II 1990 S. 82)
+Regale, die aus genormten Stahlregalteilen zusammengesetzt und nach ihrer betrieblichen Zweckbestimmung i. d. R. auf Dauer in dieser Zusammensetzung genutzt werden >BFH vom 26.07.1979 – IV R 170/74 (BStBl II 1980 S. 176) sowie Regale, die zu Schrankwänden zusammengesetzt sind >BFH vom 09.08.2001 – III R 43/98 (BStBl II 2002 S. 100)
+Ruhebänke als Werbeträger
+Schallplatten
+Schreibtischkombinationsteile, die nicht fest miteinander verbunden sind, wie z. B. Tisch, Rollcontainer, Computerbeistelltisch >BFH vom 21.07.1998 – III R 110/95 (BStBl II S. 789) sowie einzelne Elemente einer aus genormten Teilen zusammengesetzten und verschraubten Schreibtischkombination, es sei denn, das einzelne Element ist aus technischen Gründen (z. B. wegen fehlender Standfestigkeit) nicht selbständig nutzungsfähig >BFH vom 09.08.2001 – III R 43/98 (BStBl II 2002 S. 100)
+Schriftenminima in einem Druckereibetrieb >BFH vom 18.11.1975 – VIII R 9/73 (BStBl II 1976 S. 214)
+Spezialbeleuchtungsanlagen in einem Schaufenster >BFH vom 05.03.1974 – I R 160/72 (BStBl II S. 353)
+Spinnkannen einer Weberei >BFH vom 09.12.1977 – III R 94/76 (BStBl II 1978 S. 322)
+Straßenleuchten >BFH vom 28.03.1973 – I R 105/71 (BStBl II 1974 S. 2)
+Transportkästen in einer Weberei zum Transport von Garnen >BFH vom 17.05.1968 – VI R 232/67 (BStBl II S. 568)
+Trivialprogramme >R 5.5 Abs. 1
+Wäsche in Hotels >BFH vom 17.05.1968 – VI R 113/67 (BStBl II S. 566)
+ABC der nicht selbständig nutzungsfähigen Wirtschaftsgüter
+Beleuchtungsanlage als Lichtband zur Beleuchtung in Fabrikräumen und Werkhallen >BFH vom 05.10.1956 – I 133/56 U (BStBl III S. 376) oder zur Beleuchtung einzelner Stockwerke eines Wohnhauses >BFH vom 05.03.1974 – I R 160/72 (BStBl II S. 353)
+Bestuhlung in Kinos und Theatern >BFH vom 05.10.1966 – II 2/64 (BStBl III S. 686)
+Bohrer i. V. m. Werkzeugmaschinen >Maschinenwerkzeuge
+Drehbank mit als Antrieb eingebautem Elektromotor >BFH vom 14.12.1966 – VI 245/65 (BStBl III 1967 S. 247)
+Drehstähle i. V. m. mit Werkzeugmaschinen >Maschinenwerkzeuge
+EDV-Kabel nebst Zubehör zur Vernetzung einer EDV-Anlage: Kabel, die als Verlängerung der Verbindung der Peripheriegeräte mit der Zentraleinheit genutzt werden, sind zwar selbständig bewertungsfähig, nicht jedoch selbständig nutzungsfähig und somit keine geringwertigen Wirtschaftsgüter >BFH vom 25.11.1999 – III R 77/97 (BStBl II 2002 S. 233)
+Elektromotor zum Einzelantrieb einer Maschine, einer Drehbank oder eines Webstuhls >BFH vom 16.12.1958 – I 286/56 S (BStBl III 1959 S. 77)
+Ersatzteile für Maschinen usw. >BFH vom 17.05.1968 – VI R 232/67 (BStBl II S. 568)
+Formen >BFH vom 09.03.1967 – IV R 149/66 (BStBl III S. 283)
+Formplatten >BFH vom 30.03.1967 – IV 64/65 (BStBl III S. 302)
+Fräser i. V. m. Werkzeugmaschinen >Maschinenwerkzeuge
+Gerüst‑ und Schalungsteile sowie Schalungstafeln, die genormt und technisch aufeinander abgestimmt sind >BFH vom 29.07.1966 – VI 302/65 (BStBl III 1967 S. 151)
+Kühlkanäle >BFH vom 17.04.1985 – I R 144/82 (BStBl II 1988 S. 126)
+Leuchtstoffröhren >Beleuchtungsanlage
+Lichtbänder >Beleuchtungsanlage
+Lithographien >BFH vom 15.03.1991 – III R 57/86 (BStBl II S. 682)
+Maschinenwerkzeuge und ‑verschleißteile >BFH vom 06.10.1995 – III R 101/93 (BStBl II 1996 S. 166)
+Peripheriegeräte einer PC-Anlage; dies gilt nicht für so genannte Kombinations-Geräte und für externe Datenspeicher >BFH vom 19.02.2004 – VI R 135/01 (BStBl II S. 958)
+Pflanzen von Dauerkulturen >BFH vom 30.11.1978 – IV R 43/78 (BStBl II 1979 S. 281)
+Regalteile >BFH vom 20.11.1970 – VI R 288/68 (BStBl II 1971 S. 155); zu Regalen aus genormten Stahlregalteilen >Beispiele für selbständig nutzungsfähige Wirtschaftsgüter
+Sägeblätter in Diamantsägen und -gattern >BFH vom 19.10.1972 – IV R 102/68 (BStBl II 1973 S. 53)
+Stanzwerkzeuge i. V. m. Werkzeugmaschinen >Maschinenwerkzeuge
+Technische Sicherheitseinrichtung – TSE >BMF vom 21.08.2020 (BStBl I S. 1047)
+Webstuhlmotor >Elektromotor
+Werkzeuge >Maschinenwerkzeuge

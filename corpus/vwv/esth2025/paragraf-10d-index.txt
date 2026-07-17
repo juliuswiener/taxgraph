@@ -1,0 +1,25 @@
+Quelle: https://esth.bundesfinanzministerium.de/esth/2025/A-Einkommensteuergesetz/II-Einkommen-2-24b/5-Sonderausgaben-10-10g/Paragraf-10d/inhalt.html
+Abrufdatum: 2026-07-17
+Werk: EStH 2025 (Einkommensteuer-Handbuch, BMF, amtlich)
+Fundstelle: § 10d EStG — Verlustabzug (Gesetzestext-Abdruck EStH 2025 + R/H-Verweis)
+Gültigkeits-Vermerk: EStH-2025-Abdruck = aktuelle Fassung. WICHTIG (bestätigt Paket-10a-MITTEL-Fund p10d_2):
+Abs. 2 S. 1 zeigt "bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt, darüber hinaus
+bis zu 70 PROZENT" — d.h. der WachstumschancenG-Satz 70 % (VZ 2024-2027) ist im EStH-2025-Abdruck bereits
+enthalten. Registry p10d_2 muss für VZ 2024-2027 auf 70 % (statt pauschal 60 %) parametrisiert sein; ab
+VZ 2028 fällt der Satz auf 60 % zurück (M5-Multi-VZ-Architektur prüfen). Verlustrücktrag 1 Mio/2 Mio
+(Zusammenveranlagung) Abs. 1 unverändert. Registry-Bezug: p10d_2_verlustvortrag_abzug, p10d_kst_verlustabzug.
+Golden-Kandidat: NEIN im Gesetzestext selbst (kein durchgerechnetes Beispiel); r-10d (Richtlinie) trägt 9
+Euro-Werte (Sockelbeträge, kein "Beispiel"-Rechenweg) — als EStR-2012-Richtlinie nur Struktur, nicht Zahl.
+---
+S 2225
+§ 10d — Verlustabzug (Gesetzestext, EStH-2025-Abdruck)
+
+(1) ¹Negative Einkünfte, die bei der Ermittlung des Gesamtbetrags der Einkünfte nicht ausgeglichen werden, sind bis zu einem Betrag von 1.000.000 Euro, bei Ehegatten (Zusammenveranlagung §§ 26, 26b) bis zu 2.000.000 Euro vom Gesamtbetrag der Einkünfte des unmittelbar vorangegangenen VZ vorrangig vor Sonderausgaben, agB und sonstigen Abzugsbeträgen abzuziehen (Verlustrücktrag). ²Soweit nicht möglich, Abzug vom GdE des zweiten vorangegangenen VZ. ³GdE der Rücktrags-VZ um Begünstigungsbeträge § 34a Abs. 3 S. 1 gemindert. ⁴/⁵[Bescheid-Änderung, Festsetzungsfrist]. ⁶Auf Antrag insgesamt Verzicht auf Verlustrücktrag.
+
+(2) ¹Nicht ausgeglichene negative Einkünfte, die nicht nach Abs. 1 abgezogen wurden, sind in den folgenden VZ bis zu einem GdE von 1 Million Euro unbeschränkt, darüber hinaus bis zu 70 Prozent des 1 Million Euro übersteigenden GdE vorrangig vor SA/agB/sonstigen Abzugsbeträgen abzuziehen (Verlustvortrag). ²Bei Zusammenveranlagung tritt an die Stelle von 1 Million Euro ein Betrag von 2 Millionen Euro. ³Abzug nur, soweit Verluste nicht nach Abs. 1 abgezogen und in vorangegangenen VZ nicht nach S. 1/2 abgezogen werden konnten.
+
+(3) (weggefallen)
+
+(4) ¹Verbleibender Verlustvortrag am Schluss des VZ gesondert festzustellen. ²Verbleibender Verlustvortrag = nicht ausgeglichene negative Einkünfte − nach Abs. 1 abgezogene − nach Abs. 2 abziehbare + festgestellter verbleibender Verlustvortrag des Vorjahres. ³/⁴/⁵/⁶ [Zuständigkeit, Bindung an Steuerfestsetzung, §§ 171/175/351 AO, Feststellungsfrist].
+
+[Verweise: R 10d Richtlinie Verlustabzug (r-10d.html), H 10d Hinweise — beide qualitativ, kein durchgerechnetes Euro-Beispiel.]

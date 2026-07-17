@@ -1,0 +1,35 @@
+Quelle: https://esth.bundesfinanzministerium.de/esth/2025/A-Einkommensteuergesetz/II-Einkommen-2-24b/3-Gewinn-4-7i/Paragraf-6/r-6-13.html
+Abgerufen: 2026-07-17 (Chrome)
+Werk: EStH 2025 — R 6.13 EStR (Bewertungsfreiheit GWG / Sammelposten)
+ACHTUNG GÜLTIGKEIT: Richtlinien-Text = EStR 2012, Rechtsstand VOR 2018 — nennt noch
+150/410/1.000 Euro (heutige Gesetzeswerte: 250/800/1.000, § 6 Abs. 2/2a EStG).
+R-Zahlen NIE als Konkretisierung übernehmen; nur Struktur-/Auslegungsgehalt (selbständige
+Nutzungsfähigkeit, Sammelposten-Mechanik) verwertbar. Instructor-Fund 2026-07-17.
+
+--- Wortlaut (get_page_text, <main>) ---
+
+Bewertungsfreiheit für geringwertige Wirtschaftsgüter und Bildung eines Sammelpostens
+
+11Die Frage, ob ein Wirtschaftsgut des Anlagevermögens selbständig nutzungsfähig ist, stellt sich regelmäßig für solche Wirtschaftsgüter, die in einem Betrieb zusammen mit anderen Wirtschaftsgütern genutzt werden. 2Für die Entscheidung in dieser Frage ist maßgeblich auf die betriebliche Zweckbestimmung des Wirtschaftsgutes abzustellen. 3Hiernach ist ein Wirtschaftsgut des Anlagevermögens einer selbständigen Nutzung nicht fähig, wenn folgende Voraussetzungen kumulativ vorliegen:
+
+Das Wirtschaftsgut kann nach seiner betrieblichen Zweckbestimmung nur zusammen mit anderen Wirtschaftsgütern des Anlagevermögens genutzt werden,
+das Wirtschaftsgut ist mit den anderen Wirtschaftsgütern des Anlagevermögens in einen ausschließlichen betrieblichen Nutzungszusammenhang eingefügt, d. h., es tritt mit den in den Nutzungszusammenhang eingefügten anderen Wirtschaftsgütern des Anlagevermögens nach außen als einheitliches Ganzes in Erscheinung, wobei für die Bestimmung dieses Merkmals im Einzelfall die Festigkeit der Verbindung, ihre technische Gestaltung und ihre Dauer von Bedeutung sein können,
+das Wirtschaftsgut ist mit den anderen Wirtschaftsgütern des Anlagevermögens technisch abgestimmt.
+
+4Dagegen bleiben Wirtschaftsgüter, die zwar in einen betrieblichen Nutzungszusammenhang mit anderen Wirtschaftsgütern eingefügt und technisch aufeinander abgestimmt sind, dennoch selbständig nutzungsfähig, wenn sie nach ihrer betrieblichen Zweckbestimmung auch ohne die anderen Wirtschaftsgüter im Betrieb genutzt werden können (z. B. Müllbehälter eines Müllabfuhrunternehmens). 5Auch Wirtschaftsgüter, die nach ihrer betrieblichen Zweckbestimmung nur mit anderen Wirtschaftsgütern genutzt werden können, sind selbständig nutzungsfähig, wenn sie nicht in einen Nutzungszusammenhang eingefügt sind, so dass die zusammen nutzbaren Wirtschaftsgüter des Betriebs nach außen nicht als ein einheitliches Ganzes in Erscheinung treten (z. B. Bestecke, Trivialprogramme). 6Selbständig nutzungsfähig sind ferner Wirtschaftsgüter, die nach ihrer betrieblichen Zweckbestimmung nur zusammen mit anderen Wirtschaftsgütern genutzt werden können, technisch mit diesen Wirtschaftsgütern aber nicht abgestimmt sind (z. B. Paletten, Einrichtungsgegenstände).
+
+2Bei der Beurteilung der Frage, ob die Anschaffungs‑ oder Herstellungskosten für das einzelne Wirtschaftsgut 150 Euro, 410 Euro oder 1.000 Euro nicht übersteigen, ist,
+
+wenn von den Anschaffungs‑ oder Herstellungskosten des Wirtschaftsgutes ein Betrag nach § 6b oder § 6c EStG abgesetzt worden ist, von den nach § 6b Abs. 6 EStG maßgebenden
+wenn die Anschaffungs‑ oder Herstellungskosten nach § 7g Abs. 2 Satz 2 EStG Gewinn mindernd herabgesetzt wurden, von den geminderten
+wenn das Wirtschaftsgut mit einem erfolgsneutral behandelten Zuschuss aus öffentlichen oder privaten Mitteln nach R 6.5 angeschafft oder hergestellt worden ist, von den um den Zuschuss gekürzten
+und wenn von den Anschaffungs‑ oder Herstellungskosten des Wirtschaftsgutes ein Betrag nach R 6.6 abgesetzt worden ist, von den um diesen Betrag gekürzten
+
+Anschaffungs‑ oder Herstellungskosten auszugehen.
+3Stellt ein Stpfl. ein selbständig bewertungsfähiges und selbständig nutzungsfähiges Wirtschaftsgut aus erworbenen Wirtschaftsgütern her, muss die Sofortabschreibung gem. § 6 Abs. 2 EStG oder die Einstellung in den Sammelposten gem. § 6 Abs. 2 EStG in dem Wirtschaftsjahr erfolgen, in dem das Wirtschaftsgut fertig gestellt worden ist.
+
+41Wurden die Anschaffungs‑ oder Herstellungskosten eines Wirtschaftsguts gem. § 6 Abs. 2 oder Abs. 2a Satz 4 EStG im Jahr der Anschaffung oder Herstellung in voller Höhe als Betriebsausgaben abgesetzt, sind in späteren Wirtschaftsjahren nachträgliche Anschaffungs‑ oder Herstellungskosten im Jahr ihrer Entstehung ebenfalls in voller Höhe als Betriebsausgaben zu behandeln. 2Dies gilt unabhängig davon, ob sie zusammen mit den ursprünglichen Anschaffungs‑ oder Herstellungskosten den Betrag von 410 Euro bzw. im Falle der Bildung des Sammelpostens gem. § 6 Abs. 2 EStG von 150 Euro übersteigen.
+
+51Für jedes Wirtschaftsjahr, in dem vom einheitlich für alle Anlagegüter i. S. d. § 6 Abs. 2 EStG auszuübenden Antragsrecht zur Bildung eines Sammelpostens Gebrauch gemacht wurde, ist ein gesonderter Sammelposten zu bilden. 2Nachträgliche Anschaffungs‑ oder Herstellungskosten, die nicht im Wirtschaftsjahr der Anschaffung oder Herstellung angefallen sind, erhöhen den Sammelposten des Wirtschaftsjahres, in dem die nachträglichen Anschaffungs‑ oder Herstellungskosten anfallen. 3Macht der Stpfl. in diesem Wirtschaftsjahr vom Wahlrecht nach § 6 Abs. 2 EStG keinen Gebrauch, beschränkt sich der Sammelposten auf die nachträglichen Anschaffungs‑ oder Herstellungskosten der betroffenen Wirtschaftsgüter. 4Dies gilt unabhängig davon, ob die nachträglichen Anschaffungs‑ oder Herstellungskosten zusammen mit den ursprünglichen Anschaffungs‑ oder Herstellungskosten den Betrag von 1.000 Euro übersteigen.
+
+61Der Sammelposten i. S. d. § 6 Abs. 2a EStG ist kein Wirtschaftsgut, sondern eine Rechengröße und damit beispielsweise einer Teilwertabschreibung nicht zugänglich. 2Ein Sammelposten i. S. d. § 6 Abs. 2a EStG wird nicht dadurch vermindert, dass ein oder mehrere darin erfasste Wirtschaftsgüter durch Veräußerung oder Entnahme oder auf Grund höherer Gewalt (R 6.6 Abs. 2) aus dem Betriebsvermögen des Stpfl. ausscheiden. 3Dies gilt auch für Wirtschaftsgüter, die nach § 6 Abs. 3 EStG zusammen mit einem Teilbetrieb übertragen, nach § 6 Abs. 5 EStG in ein anderes Betriebsvermögen überführt oder übertragen oder nach den §§ 20, 24 UmwStG zusammen mit einem Teilbetrieb in eine Kapital‑ oder Personengesellschaft eingebracht werden.

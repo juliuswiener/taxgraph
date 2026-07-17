@@ -1,0 +1,63 @@
+Quelle: https://esth.bundesfinanzministerium.de/esth/2025/A-Einkommensteuergesetz/II-Einkommen-2-24b/3-Gewinn-4-7i/Paragraf-6a/inhalt.html
+Abrufdatum: 2026-07-17
+Werk: EStH 2025 (Einkommensteuer-Handbuch, BMF, amtlich)
+Fundstelle: § 6a EStG — Pensionsrückstellung (Gesetzestext-Abdruck + R/H-6a-Inhaltsverzeichnis)
+Gültigkeits-Vermerk: Gesetzestext-Abdruck EStH 2025 = aktuelle Fassung VZ 2024-2026. Registry-Bezug: p6a_pension_hoechstbetrag.
+WICHTIG (bestätigt Paket-10a-C7-Fund): Abs. 3 S. 1 = "Eine Pensionsrückstellung darf HÖCHSTENS MIT DEM
+TEILWERT der Pensionsverpflichtung ANGESETZT werden" (= absoluter Teilwert-Deckel, den die Registry-
+Regel min(ansatz,teilwert) abbildet). Abs. 4 S. 1 = "…höchstens UM DEN UNTERSCHIED zwischen dem Teilwert
+… am Schluss des Wj. und am Schluss des vorangegangenen Wj. ERHÖHT werden" (= jahresbezogene
+Zuführungsgrenze/Nachholverbot, ANDERE Mechanik). Der zitatanker der Regel gehört zu Abs. 3 S. 1,
+ist aber als Abs. 4 S. 1 deklariert → Anker-Fehlzuordnung (Instructor-Prüfauftrag).
+R-6a-TOC: R 6a(1)-(23) Richtlinien, H 6a zu (1),(3),(4),(7),(9),(10),(11),(12),(13),(14),(15),(17),(19),(20),(23).
+Golden-relevant (nachrechenbar): R/H 6a(10) Höhe der Pensionsrückstellung, R/H 6a(11), R/H 6a(20) Zuführung.
+---
+S 2176
+§ 6a — Pensionsrückstellung (Gesetzestext, EStH-2025-Abdruck)
+
+(1) Für eine Pensionsverpflichtung darf eine Rückstellung (Pensionsrückstellung) nur gebildet werden, wenn und soweit
+- der Pensionsberechtigte einen Rechtsanspruch auf einmalige oder laufende Pensionsleistungen hat,
+- die Pensionszusage keine Pensionsleistungen in Abhängigkeit von künftigen gewinnabhängigen Bezügen vorsieht und keinen [schädlichen] Vorbehalt enthält … [unschädlich nur bei billigem Ermessen nach allg. Rechtsgrundsätzen], und
+- die Pensionszusage schriftlich erteilt ist; eindeutige Angaben zu Art, Form, Voraussetzungen und Höhe.
+
+(2) Eine Pensionsrückstellung darf erstmals gebildet werden
+- vor Eintritt des Versorgungsfalls für das Wj. der Zusage, frühestens für das Wj., bis zu dessen Mitte der Berechtigte bei
+  – erstmals nach dem 31.12.2017 zugesagten Leistungen das 23. Lebensjahr,
+  – nach dem 31.12.2008 und vor dem 1.1.2018: 27. Lebensjahr,
+  – nach dem 31.12.2000 und vor dem 1.1.2009: 28. Lebensjahr,
+  – vor dem 1.1.2001: 30. Lebensjahr vollendet,
+  oder bei Entgeltumwandlung (§ 1 Abs. 2 BetrAVG) für das Wj. der Unverfallbarkeit;
+- nach Eintritt des Versorgungsfalls für das Wj. des Eintritts.
+
+(3) 1Eine Pensionsrückstellung darf höchstens mit dem Teilwert der Pensionsverpflichtung angesetzt werden. 2Als Teilwert gilt
+- vor Beendigung des Dienstverhältnisses: Barwert der künftigen Pensionsleistungen am Schluss des Wj. abzüglich des Barwerts betragsmäßig gleich bleibender Jahresbeträge (bei Entgeltumwandlung mind. Barwert der unverfallbaren künftigen Leistungen). [Jahresbeträge-Bemessung S. 2-6 …];
+- nach Beendigung des Dienstverhältnisses/nach Versorgungsfall: Barwert der künftigen Pensionsleistungen am Schluss des Wj.
+3Bei der Berechnung des Teilwerts sind ein Rechnungszinsfuß von 6 Prozent und die anerkannten Regeln der Versicherungsmathematik anzuwenden.
+
+(4) 1Eine Pensionsrückstellung darf in einem Wirtschaftsjahr höchstens um den Unterschied zwischen dem Teilwert der Pensionsverpflichtung am Schluss des Wirtschaftsjahres und am Schluss des vorangegangenen Wirtschaftsjahres erhöht werden. 2[biometrische Rechnungsgrundlagen → Verteilung auf mind. 3 Wj.] 3[Erstjahr: bis Teilwert, verteilbar auf Erstjahr + 2 folgende Wj.] 4[Barwert-Anstieg > 25 Prozent → Verteilung auf 3 Wj.] 5[Ende Dienstverhältnis/Versorgungsfall: stets bis Teilwert] 6Satz 2 gilt entsprechend.
+
+(5) Die Absätze 3 und 4 gelten entsprechend, wenn der Pensionsberechtigte zum Pensionsverpflichteten in einem anderen Rechtsverhältnis als einem Dienstverhältnis steht.
+
+--- R/H-6a-Inhaltsverzeichnis (EStH 2025) ---
+R 6a. Rückstellungen für Pensionsverpflichtungen
+R 6a(1) Zulässigkeit von Pensionsrückstellungen | H 6a(1)
+R 6a(2) Rechtsverbindliche Verpflichtung
+R 6a(3) Schädlicher Vorbehalt | H 6a(3)
+R 6a(4) Unschädlicher Vorbehalt | H 6a(4)
+R 6a(5)-(6) Vorbehalt (Sonderfälle)
+R 6a(7) Schriftform | H 6a(7)
+R 6a(8) Beherrschende Gesellschafter-Geschäftsführer von Kapitalgesellschaften
+R 6a(9) Ehegatten-Arbeitsverhältnisse | H 6a(9)
+R 6a(10) Höhe der Pensionsrückstellung | H 6a(10)   [GOLDEN-relevant]
+R 6a(11) [Teilwert] | H 6a(11)                       [GOLDEN-relevant]
+R 6a(12) Entgeltumwandlungen | H 6a(12)
+R 6a(13) Arbeitgeberwechsel | H 6a(13)
+R 6a(14) Berücksichtigung von Renten aus der gesetzlichen Rentenversicherung | H 6a(14)
+R 6a(15) Doppelfinanzierung | H 6a(15)
+R 6a(16) Handelsvertreter
+R 6a(17) Stichtagsprinzip | H 6a(17)
+R 6a(18) Inventurerleichterung
+R 6a(19) Ausscheiden eines Anwärters | H 6a(19)
+R 6a(20) Zuführung zur Pensionsrückstellung | H 6a(20)   [GOLDEN-relevant]
+R 6a(21)-(22) Auflösung der Pensionsrückstellung
+R 6a(23) Rückdeckungsversicherung | H 6a(23)
