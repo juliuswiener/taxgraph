@@ -5214,6 +5214,10 @@ regeln:
       auslaendische_einkuenfte_staat: 30000
     expected: 5000.0
   geltungsbedingungen:
+  - bedingung: kein_dba_mit_quellenstaat
+    deckt_ab: Die Absätze 1 bis 3 sind vorbehaltlich der Sätze 2 bis 6 nicht anzuwenden, wenn die Einkünfte aus einem ausländischen Staat stammen, mit dem ein Abkommen zur Vermeidung der Doppelbesteuerung besteht
+    quelle: § 34c Abs. 6 S. 1 EStG
+    beschreibung: 'DBA-Vorrang - der unilaterale § 34c Abs. 1-3 gilt nur, wenn KEIN DBA mit dem Quellenstaat besteht (Abs. 6 S. 1). Bei DBA mit Anrechnungsmethode gilt Abs. 1 S. 2-5 ENTSPRECHEND (Abs. 6 S. 2) - deshalb docken die DBA-Methoden-Kataloge (AT/US/CH/FR/LU/NL/ES/TR) ihre Anrechnungs-Faelle weiterhin an dieses p34c_1 an; Freistellungs-Faelle laufen ueber § 32b. Sachverhalts-Vorfrage der § 2-Integration.'
   - bedingung: per_country_ein_staat
     deckt_ab: die auf die Einkünfte aus diesem Staat entfällt
     quelle: § 34c Abs. 1 S. 1 EStG
@@ -5280,6 +5284,10 @@ regeln:
       auslaendische_steuer_auf_ausl_einkuenfte: 1234.56
     expected: 1234.56
   geltungsbedingungen:
+  - bedingung: kein_dba_mit_quellenstaat
+    deckt_ab: Die Absätze 1 bis 3 sind vorbehaltlich der Sätze 2 bis 6 nicht anzuwenden, wenn die Einkünfte aus einem ausländischen Staat stammen, mit dem ein Abkommen zur Vermeidung der Doppelbesteuerung besteht
+    quelle: § 34c Abs. 6 S. 1 EStG
+    beschreibung: 'DBA-Vorrang - auch der Abzug statt Anrechnung (§ 34c Abs. 2) ist Teil der von Abs. 6 S. 1 erfassten Absaetze 1 bis 3 und gilt nur bei KEINEM DBA mit dem Quellenstaat. Bei DBA mit Anrechnungsmethode gilt Abs. 1 S. 2-5 entsprechend (Abs. 6 S. 2). Sachverhalts-Vorfrage der § 2-Integration.'
   - bedingung: antrag_abzug_statt_anrechnung
     deckt_ab: Statt der Anrechnung
     quelle: § 34c Abs. 2 EStG

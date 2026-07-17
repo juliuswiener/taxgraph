@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p34c_1_anrechnung_hoechstbetrag
-version: 1
+version: 2
 items:
 - art: abweichung
   anker:
@@ -104,3 +104,14 @@ items:
   triage: bedingung_neu
   klasse: wirkt_hinein
   bedingung: andockung_est_zve_p2
+- art: norm_teil
+  anker:
+  - ref
+  - § 34c abs. 6 s. 1 estg
+  formulierungen:
+  - Die Absätze 1 bis 3 sind vorbehaltlich der Sätze 2 bis 6 nicht anzuwenden, wenn
+    die Einkünfte aus einem ausländischen Staat stammen, mit dem ein Abkommen zur
+    Vermeidung der Doppelbesteuerung besteht
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: kein_dba_mit_quellenstaat
