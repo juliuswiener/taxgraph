@@ -112,7 +112,8 @@ def _bescheid_fn(store: dict, bindung: dict):
              "eigenes_oder_ueberlassenes_kfz": bool(slots.get("eigenes_oder_ueberlassenes_kfz", False))}
         return runner.catala_entfernungspauschale(s)
 
-    return IV.bescheid_via_slots(bindung, slot_fn)
+    # quantitaet = golden-Key der Engine-Ausgabe -> Nativ-Einheit (EP: euro) -> nach_cent (Naht=Cent).
+    return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="abziehbarer_betrag")
 
 
 def _feste_zahl(felder: dict, bindung: dict, bescheid_fn, scheibe_felder: tuple):

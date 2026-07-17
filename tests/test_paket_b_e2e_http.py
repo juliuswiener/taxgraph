@@ -185,11 +185,12 @@ def test_durchstich_http(base):
         spanne_b = iv2["max_cent"] - iv2["min_cent"]
         assert spanne_b < spanne_a and spanne_b == 0
 
-    # 7) FAIL-CLOSED nachher: Kegel bestätigt -> echte Zahl (2156, wie im A-Test)
+    # 7) FAIL-CLOSED nachher: Kegel bestätigt -> echte Zahl (Naht-Einheit CENT: 215600 = 2156,00 €,
+    #    wie test_paket_a_e2e nach der Einheiten-Konvention ad4e22b)
     st, erg2 = _req(base, "GET", f"/fall/{fid}/ergebnis")
     _val("ergebnis", erg2)
     if catala:
-        assert erg2["zahl_cent"] == 2156
+        assert erg2["zahl_cent"] == 215600
         assert erg2["grund"] == "bestaetigt"
     else:
         assert erg2["zahl_cent"] is None and erg2["grund"] == "engine_unavailable"
