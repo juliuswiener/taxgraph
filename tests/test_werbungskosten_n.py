@@ -42,3 +42,34 @@ def test_roh_kein_9a_pauschbetrag():
     s = {"veranlagungszeitraum": 2025, "arbeitstage": 50, "entfernung_km_roh": 10,
          "oepnv_kosten_jahr": 0, "eigenes_oder_ueberlassenes_kfz": True}
     assert runner.catala_werbungskosten_n(s) == 150
+
+
+# ---- Stufe 1b: doppelte Haushaltsführung (dHf) ----
+
+def _dhf_registry_seed():
+    import yaml
+    doc = yaml.safe_load(open(os.path.join(ROOT, "pipeline", "produktion", "rules.yaml")))
+    return next(r for r in doc["regeln"]
+                if r["rule_id"] == "p9_1_3_nr5_doppelte_haushaltsfuehrung")["test_seed"]
+
+
+def test_dhf_konsistenz_runner_registry():
+    """KONSISTENZ-GATE runner↔registry: _dhf_abzug MUSS die Registry-Rechenwege (test_seed von
+    p9_1_3_nr5) cent-genau reproduzieren. Divergenz (runner-Formel läuft von der Registry-hinweis-
+    Formel weg) → ROT. Kopplung: bei Registry-Änderung diese Formel nachziehen."""
+    runner = _runner()
+    import yaml  # noqa: F401
+    for c in _dhf_registry_seed():
+        got = runner._dhf_abzug(c["inputs"], 2025)
+        exp = int(c["expected"])
+        assert got == exp, (f"runner↔registry-Divergenz: {c['inputs']} → runner {got} ≠ "
+                            f"registry {exp} ({c['rechenweg']})")
+
+
+def test_werbungskosten_n_mit_dhf():
+    runner = _runner()
+    # EP (2156) + dHf (Miete 1400 → gekappt 1000 × 12 = 12000) = 14156 EUR
+    s = {"veranlagungszeitraum": 2025, "arbeitstage": 220, "entfernung_km_roh": 30,
+         "oepnv_kosten_jahr": 0, "eigenes_oder_ueberlassenes_kfz": True,
+         "unterkunftskosten_monat": 1400, "monate": 12, "im_inland": True}
+    assert runner.catala_werbungskosten_n(s) == 2156 + 12000

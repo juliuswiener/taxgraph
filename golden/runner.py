@@ -92,16 +92,36 @@ def catala_werbungskosten_n(s: dict) -> int:
     Den Pauschbetrag-Guenstiger wendet der Tarif `festzusetzende_est_einzel` intern an
     (handverifiziert: ESt(WK 0)==ESt(WK 1230)); ein § 9a hier waere doppelter Abzug.
 
-    Stufe 1: nur die Entfernungspauschale hat ein Catala-Modul. dHf (§ 9 Abs. 1 Nr. 5),
-    Verpflegung (§ 9 Abs. 4a) und Arbeitsmittel (§ 9 Abs. 1 Nr. 6/7) haben (noch) keins ->
-    hier NICHT aggregiert; ihr Vorhandensein sperrt in der Haut den Stufe-1-Ring
-    (bestaetigte-Null-Guard, kein stiller 0-Verschluck). Erweiterungsstelle fuer Stufe 1b."""
+    Stufe 1b: Entfernungspauschale (Catala-Modul) + doppelte Haushaltsfuehrung (Python-Andockung
+    _dhf_abzug, Registry-Transkription p9_1_3_nr5). Verpflegung (§ 9 Abs. 4a) und Arbeitsmittel
+    (§ 9 Abs. 1 Nr. 6/7) noch nicht aggregiert -> ihr Vorhandensein sperrt in der Haut den Ring
+    (Guard, kein stiller 0-Verschluck). Alle EURO. Kein § 9a (der sitzt im Tarif)."""
     wk = 0
     if "entfernung_km_roh" in s:
         wk += catala_entfernungspauschale(s)
-    # Stufe 1b (nach deren Catala-Modul-Bau):
-    #   + catala_dhf(s) + catala_verpflegung(s) + catala_arbeitsmittel(s)
+    if "unterkunftskosten_monat" in s:
+        wk += _dhf_abzug(s, s["veranlagungszeitraum"])
+    # Stufe 1b-2 / eigenes Paket: + _verpflegung_abzug(s) (Tage-Zaehler offen) + Arbeitsmittel-AfA
     return wk
+
+
+def _dhf_params(year: int) -> dict:
+    """Kappungsgrenzen doppelte Haushaltsfuehrung aus params/<vz> (§ 9 Abs. 1 S. 3 Nr. 5)."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "dhf_p9_1_nr5.yaml"), encoding="utf-8"))
+    return {k: p[k]["wert"] for k in ("cap_monat_inland", "cap_monat_ausland")}
+
+
+def _dhf_abzug(s: dict, year: int) -> int:
+    """§ 9 Abs. 1 S. 3 Nr. 5 EStG — abziehbare Unterkunftskosten der doppelten Haushaltsfuehrung,
+    EURO. WOERTLICHE Transkription des Registry-Rechenwegs von p9_1_3_nr5_doppelte_haushaltsfuehrung
+    (hinweis): 'Monatsmiete 1.400 EUR wird auf 1.000 EUR gekappt; 1.000 x 12 = 12.000,00 EUR' /
+    'Kappung wirkt je Monat, nicht auf das Jahr: 1.000 x 6 = 6.000,00 EUR' / 'Auslandsunterkunft:
+    Kappung bei 2.000 EUR je Monat'. Grenzen aus params/<vz> (nie hardcoden). KOPPLUNG: bei
+    Aenderung der Registry-Regel p9_1_3_nr5 diese Formel nachziehen (Konsistenz-Gate haelt sie fest)."""
+    cap = _dhf_params(year)
+    grenze = cap["cap_monat_inland"] if s.get("im_inland", True) else cap["cap_monat_ausland"]
+    return min(int(s.get("unterkunftskosten_monat", 0)), grenze) * int(s.get("monate", 0))
 
 
 def _kindergeld(year: int) -> int:

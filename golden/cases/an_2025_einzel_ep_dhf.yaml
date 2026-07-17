@@ -1,0 +1,19 @@
+id: an_2025_einzel_ep_dhf
+beschreibung: "Arbeitnehmerfall Einzel VZ2025, Bruttolohn 40000, Werbungskosten 14156 (EP 2156 + doppelte Haushaltsführung 12000: Miete 1400 gekappt 1000×12) — Gesamtsteuer-Ring Stufe 1b G-AN-D"
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  bruttoarbeitslohn: 40000
+  werbungskosten: 14156
+  sonderausgaben: 0
+
+erwartung:
+  festzusetzende_est: 3143
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "Kette § 9 Abs. 1 S. 3 Nr. 5 (dHf, Cap 1000/Monat) + § 9a + § 32a EStG, VZ 2025"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"
