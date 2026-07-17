@@ -175,6 +175,10 @@ async function zeigeErgebnis() {
       "Du hast Sonderausgaben (z.B. Altersvorsorge) — der vereinfachte Bescheid gilt nur ohne gesondert erfasste Sonderausgaben (folgt).",
     einkunftsart_nicht_ring_faehig:
       "Du hast weitere Einkunftsarten — dafür ist die vollständige Berechnung nötig (folgt).",
+    dhf_tatbestand_offen:
+      "Zur doppelten Haushaltsführung fehlt noch eine Angabe (z.B. beruflicher Anlass, eigener Hausstand) — bitte vervollständigen.",
+    ausland_dhf_nicht_ring_faehig:
+      "Deine Zweitwohnung liegt im Ausland — dafür gelten andere Grenzen (folgt).",
   };
   if (r.zahl_cent === null) {
     if (r.grund in guardTexte)

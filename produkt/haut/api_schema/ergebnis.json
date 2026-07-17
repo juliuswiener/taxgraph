@@ -11,7 +11,8 @@
     "grund": {"type": "string",
               "enum": ["bestaetigt", "input_kegel_nicht_bestaetigt", "engine_unavailable",
                        "kein_scheiben_gesamtbescheid", "werbungskosten_nicht_ring_faehig",
-                       "sonderausgaben_nicht_ring_faehig", "einkunftsart_nicht_ring_faehig"]},
+                       "sonderausgaben_nicht_ring_faehig", "einkunftsart_nicht_ring_faehig",
+                       "dhf_tatbestand_offen", "ausland_dhf_nicht_ring_faehig"]},
     "offen": {"type": "array", "items": {"type": "string"}},
     "trace": {"type": ["object", "null"]}
   }

@@ -284,11 +284,18 @@ def test_durchstich_n_vor_gwg(base):
 
 # ---- Gesamtsteuer-Ring MVP (an_gesamt): erster echter §2-Bescheid, reiner Arbeitnehmerfall ----
 AN_GESAMT_VOR = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
+AN_GESAMT_DHF = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland",
+                 "dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
+                 "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
 AN_GESAMT_KEGEL = [
     ("bruttoarbeitslohn", 4000000),   # 40000 € in Cent (Bindung typ:cent)
     ("veranlagung", "einzel"),
     ("ep_arbeitstage", 220), ("ep_entfernung_km", 30), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", True),
     ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),   # reiner Pendler: keine VOR
+    # reiner Pendler: keine dHf (Kosten 0 -> dHf-Abzug 0, Bedingungen egal aber bestätigt)
+    ("dhf_unterkunftskosten_monat", 0), ("dhf_monate", 0), ("dhf_im_inland", True),
+    ("dhf_beruflich_veranlasst", True), ("dhf_eigener_hausstand", True),
+    ("dhf_finanzielle_beteiligung", True), ("dhf_keine_pflicht_dienstwohnung", True),
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
 ]
 
@@ -325,7 +332,7 @@ def test_an_gesamt_durchstich(base):
     _val("fragen", fr)
     ids = {q["feld_id"] for q in fr["fragen"]}
     assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
-             "kein_sonstige"} | set(EP_FELDER) | set(AN_GESAMT_VOR)) == ids
+             "kein_sonstige"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_DHF)) == ids
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
         assert st == 201
@@ -367,15 +374,55 @@ def test_an_gesamt_vor_integration(base):
         assert erg["zahl_cent"] is None
 
 
-def test_an_gesamt_dhf_guard_vorlaeufig(base):
-    """Auch ein VORLÄUFIGES dHf-Feld sperrt (Wert>0 vorläufig ODER bestätigt)."""
-    _an_gesamt_anlegen(base, "ag_dhf")
-    _store_append("ag_dhf", "dhf_unterkunftskosten_monat", 80000, zustand="vorlaeufig")
-    st, stand = _req(base, "GET", "/fall/ag_dhf/stand")
+def test_an_gesamt_am_guard_vorlaeufig(base):
+    """Arbeitsmittel (noch kein Modell) bleibt im Guard: ein vorläufiges am-Feld > 0 sperrt (kein Fake)."""
+    _an_gesamt_anlegen(base, "ag_am")
+    _store_append("ag_am", "am_anschaffungskosten", 60000, zustand="vorlaeufig")
+    st, stand = _req(base, "GET", "/fall/ag_am/stand")
     assert stand["engine"] == "gesperrt"
     assert stand["ring_gesperrt"] == "werbungskosten_nicht_ring_faehig"
-    st, erg = _req(base, "GET", "/fall/ag_dhf/ergebnis")
+    st, erg = _req(base, "GET", "/fall/ag_am/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "werbungskosten_nicht_ring_faehig"
+
+
+def _dhf_kegel(kosten, im_inland=True, weglassen=()):
+    """Voller an_gesamt-Kegel mit dHf-Kosten > 0 (Miete 1400 € = 140000 ct, 12 Monate); Bedingungen
+    bestätigt-true außer den in `weglassen` genannten (die bleiben offen)."""
+    kegel = [(f, w) for f, w in AN_GESAMT_KEGEL if not f.startswith("dhf_")]
+    kegel += [("dhf_unterkunftskosten_monat", kosten), ("dhf_monate", 12), ("dhf_im_inland", im_inland)]
+    for b in ("dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
+              "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung"):
+        if b not in weglassen:
+            kegel.append((b, True))
+    return kegel
+
+
+def test_an_gesamt_dhf_ring(base):
+    """Stufe 1b: dHf echt gerechnet. EP 2156 + dHf (1400 → gekappt 1000 × 12 = 12000) → WK 14156
+    → festzusetzende_est 3143 = 314300 Cent (Golden an_2025_einzel_ep_dhf)."""
+    catala = _catala_da()
+    _an_gesamt_anlegen(base, "ag_dhf", _dhf_kegel(140000))
+    st, erg = _req(base, "GET", "/fall/ag_dhf/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 314300 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_an_gesamt_dhf_tatbestand_offen(base):
+    """K2: dHf-Kosten > 0, aber eine Geltungsbedingung nie bestätigt → Ring gesperrt (kein Abzug
+    ohne Tatbestand, kein 3143-Fake)."""
+    _an_gesamt_anlegen(base, "ag_to", _dhf_kegel(140000, weglassen=("dhf_keine_pflicht_dienstwohnung",)))
+    st, erg = _req(base, "GET", "/fall/ag_to/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "dhf_tatbestand_offen"
+
+
+def test_an_gesamt_dhf_ausland(base):
+    """Ausland-dHf ist benannte Lücke MIT Guard: im_inland=false + Kosten > 0 → Ring gesperrt."""
+    _an_gesamt_anlegen(base, "ag_ausl", _dhf_kegel(140000, im_inland=False))
+    st, erg = _req(base, "GET", "/fall/ag_ausl/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "ausland_dhf_nicht_ring_faehig"
 
 
 def test_graph_uebersicht(base):

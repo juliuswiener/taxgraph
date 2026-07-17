@@ -42,11 +42,19 @@ EP_FELDER = ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigene
 # Voraussetzung (bestätigte Null je Einkunftsart); Invertierung der positiven Laienfrage macht die Haut.
 AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
 # Sperr-Felder (K2-Guard): ein aktiver Wert > 0 macht den Ring UNMÖGLICH (die Engine kann diese
-# Werbungskosten mangels Catala-Modul nicht rechnen) → Ring bleibt unavailable, NIE still auf 0.
-GUARD_WERBUNGSKOSTEN = ("dhf_unterkunftskosten_monat", "vpf_abwesenheit_stunden", "am_anschaffungskosten")
+# Werbungskosten mangels Modell nicht rechnen) → Ring bleibt unavailable, NIE still auf 0.
+# Stufe 1b: dHf ist RING-FÄHIG (raus); Verpflegung (Tage-Bindung offen) + Arbeitsmittel bleiben.
+GUARD_WERBUNGSKOSTEN = ("vpf_abwesenheit_stunden", "am_anschaffungskosten")
 # Stufe 1a: die VOR-Felder (§ 10 Altersvorsorge) sind RING-FÄHIG — echte Rechnung via
 # _vorsorge_abzug über den Store-Einzelfeld-Zugriff (kein Guard mehr, aber Teil des Kegels).
 VOR_FELDER = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
+# Stufe 1b — doppelte Haushaltsführung (§ 9 Abs. 1 S. 3 Nr. 5): 3 Ring-Inputs + 4 Tatbestands-
+# Bedingungen. dHf-Abzug greift NUR wenn alle 4 bestätigt-true UND Inland; Kosten > 0 mit offener
+# Bedingung → dhf_tatbestand_offen, mit Ausland → ausland_dhf_nicht_ring_faehig (kein Fake).
+DHF_KOSTEN = "dhf_unterkunftskosten_monat"
+DHF_RING = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland")
+DHF_BEDINGUNGEN = ("dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
+                   "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -71,7 +79,8 @@ SCHEIBEN = {
     # Arbeitnehmerfall (Bruttolohn + Entfernungspauschale, keine gesondert erfassten Sonderausgaben,
     # keine anderen Einkunftsarten). NICHT „fertig für Angestellte": VOR/dHf/… sperren via Guard.
     "an_gesamt": {
-        "felder": ("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER + AN_GESAMT_FLAGS,
+        "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER
+                   + DHF_RING + DHF_BEDINGUNGEN + AN_GESAMT_FLAGS),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est",
         "teil_ringe": [],
@@ -181,11 +190,19 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
 
         def slot_fn(slots: dict) -> int:
-            wk = runner.catala_werbungskosten_n({
-                "veranlagungszeitraum": vz,
-                **{k: slots[k] for k in
-                   ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
-                   if k in slots}})
+            wk_input = {"veranlagungszeitraum": vz,
+                        **{k: slots[k] for k in
+                           ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
+                           if k in slots}}
+            # doppelte Haushaltsführung (Stufe 1b): dHf-Abzug NUR bei erfülltem Tatbestand —
+            # Kosten > 0, Inland, alle 4 Geltungsbedingungen bestätigt-true. Sonst legitim 0
+            # (Bedingung bestätigt-false = kein dHf); offene Bedingung/Ausland sperrt der Guard.
+            if (_cent(DHF_KOSTEN) > 0 and f.get("dhf_im_inland", {}).get("wert") is True
+                    and all(f.get(b, {}).get("wert") is True for b in DHF_BEDINGUNGEN)):
+                wk_input["unterkunftskosten_monat"] = _cent(DHF_KOSTEN) // 100    # cent -> euro
+                wk_input["monate"] = _cent("dhf_monate")
+                wk_input["im_inland"] = True
+            wk = runner.catala_werbungskosten_n(wk_input)
             # § 10 Altersvorsorge (Stufe 1a): die VOR-Einzelfelder DIREKT aus dem Store greifen —
             # der Summen-Slot gesamtbeitraege_inkl_ag würde den AG-Anteil verschmelzen und die
             # Kürzung (nach dem Cap) unmöglich machen. gesamtbeitraege = AN + AG + außerhalb; der
@@ -233,6 +250,14 @@ def _an_gesamt_sperrgrund(felder: dict):
         return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
     if any(_positiv(f) for f in GUARD_WERBUNGSKOSTEN):
         return "werbungskosten_nicht_ring_faehig"
+    # dHf-Tatbestand: Kosten > 0, aber Auslandsunterkunft ODER eine der 4 Geltungsbedingungen offen
+    # (nicht bestätigt) → kein Ring (K2: kein dHf-Abzug ohne bestätigten Tatbestand). Eine Bedingung
+    # bestätigt-FALSE ist NICHT offen — dann greift dHf legitim nicht (Abzug 0), Ring bleibt gültig.
+    if _positiv(DHF_KOSTEN):
+        if felder.get("dhf_im_inland", {}).get("wert") is False:
+            return "ausland_dhf_nicht_ring_faehig"
+        if any((felder.get(b) or {}).get("zustand") != "bestaetigt" for b in DHF_BEDINGUNGEN):
+            return "dhf_tatbestand_offen"
     if any(felder.get(f, {}).get("wert") is False for f in AN_GESAMT_FLAGS):
         return "einkunftsart_nicht_ring_faehig"
     return None
