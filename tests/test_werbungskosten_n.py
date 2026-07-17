@@ -73,3 +73,30 @@ def test_werbungskosten_n_mit_dhf():
          "oepnv_kosten_jahr": 0, "eigenes_oder_ueberlassenes_kfz": True,
          "unterkunftskosten_monat": 1400, "monate": 12, "im_inland": True}
     assert runner.catala_werbungskosten_n(s) == 2156 + 12000
+
+
+# ---- Stufe 1b: Verpflegung (Engine-Vorarbeit; Haut/×Tage nach dev-2s Tage-Bindung) ----
+
+def test_verpflegung_konsistenz_runner_registry():
+    """KONSISTENZ-GATE runner↔registry: _verpflegung_pauschale (je Reise-Tag) reproduziert die
+    Registry-test_seeds von p9_4a. Divergenz runner↔registry → ROT. Kopplung wie dHf."""
+    runner = _runner()
+    import yaml
+    doc = yaml.safe_load(open(os.path.join(ROOT, "pipeline", "produktion", "rules.yaml")))
+    seed = next(r for r in doc["regeln"]
+                if r["rule_id"] == "p9_4a_verpflegungsmehraufwand")["test_seed"]
+    for c in seed:
+        got = runner._verpflegung_pauschale(c["inputs"], 2025)
+        assert got == int(c["expected"]), (f"runner↔registry-Divergenz: {c['inputs']} → runner "
+                                           f"{got} ≠ registry {c['expected']}")
+
+
+def test_verpflegung_staffel_zweige():
+    """Alle vier Staffel-Zweige (§ 9 Abs. 4a S. 3): An-/Abreise → 14, voller Tag (≥24 h) → 28,
+    eintägig > 8 h → 14, ≤ 8 h → 0."""
+    runner = _runner()
+    vp = lambda **kw: runner._verpflegung_pauschale(kw, 2025)
+    assert vp(an_oder_abreisetag=True, abwesenheit_stunden=8) == 14
+    assert vp(an_oder_abreisetag=False, abwesenheit_stunden=24) == 28
+    assert vp(an_oder_abreisetag=False, abwesenheit_stunden=10) == 14
+    assert vp(an_oder_abreisetag=False, abwesenheit_stunden=6) == 0

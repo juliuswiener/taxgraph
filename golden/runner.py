@@ -124,6 +124,30 @@ def _dhf_abzug(s: dict, year: int) -> int:
     return min(int(s.get("unterkunftskosten_monat", 0)), grenze) * int(s.get("monate", 0))
 
 
+def _verpflegung_params(year: int) -> dict:
+    """Verpflegungspauschalen (Inland) aus params/<vz> (§ 9 Abs. 4a S. 3 Nr. 1-3)."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "verpflegung_p9_4a.yaml"), encoding="utf-8"))
+    return {k: p[k]["wert"] for k in ("pauschale_24h", "pauschale_an_abreise", "pauschale_ab_8h")}
+
+
+def _verpflegung_pauschale(s: dict, year: int) -> int:
+    """§ 9 Abs. 4a S. 3 EStG — Verpflegungspauschale JE Reise-Tag, EURO. WOERTLICHE Transkription
+    der Registry-Staffel p9_4a_verpflegungsmehraufwand: An-/Abreisetag (Nr. 2) -> 14; sonst voller
+    Tag ab 24 h (Nr. 1) -> 28; eintaegig > 8 h (Nr. 3) -> 14; sonst 0. Saetze aus params/<vz>.
+    Der Jahres-WK-Abzug (_verpflegung_abzug) summiert diese Pauschale ueber die Tage je Kategorie
+    (Tage-Bindung dev-2). KOPPLUNG: bei Aenderung der Registry-Regel p9_4a diese Staffel nachziehen."""
+    p = _verpflegung_params(year)
+    if s.get("an_oder_abreisetag"):
+        return p["pauschale_an_abreise"]
+    stunden = int(s.get("abwesenheit_stunden", 0))
+    if stunden >= 24:
+        return p["pauschale_24h"]
+    if stunden > 8:
+        return p["pauschale_ab_8h"]
+    return 0
+
+
 def _kindergeld(year: int) -> int:
     """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
     p = load_yaml_fh(open(os.path.join(
