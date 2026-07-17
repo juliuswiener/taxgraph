@@ -1240,7 +1240,7 @@ regeln:
   - bedingung: lohnsteuer_ist_anrechenbar
     deckt_ab: die durch Steuerabzug erhobene Einkommensteuer
     quelle: § 36 Abs. 2 Satz 1 Nr. 2 EStG
-    beschreibung: LSt entfaellt auf veranlagte Einkuenfte, Bescheinigung (§ 45a) liegt vor. Input-Semantik.
+    beschreibung: LSt entfaellt auf veranlagte Einkuenfte, Bescheinigung (§ 45a) liegt vor. Input-Semantik. NACHTRAG Erstattungsausschluss - keine Anrechnung, soweit eine Erstattung der durch Steuerabzug erhobenen ESt beantragt oder durchgefuehrt worden ist (§ 36 Abs. 2 Nr. 2 letzter Halbsatz) = benannter Nachtrag, nicht modelliert.
   - bedingung: keine_weiteren_anrechnungsbetraege
     deckt_ab: die für den Veranlagungszeitraum entrichteten Einkommensteuer-Vorauszahlungen
     quelle: § 36 Abs. 2 Satz 1 EStG
@@ -1248,7 +1248,7 @@ regeln:
   - bedingung: ein_dienstverhaeltnis
     deckt_ab: auf volle Euro aufzurunden
     quelle: § 36 Abs. 3 Satz 2 EStG
-    beschreibung: lohnsteuer aus EINEM Dienstverhaeltnis; mehrere Abzugsbetraege sind vor Aufruf je einzeln aufzurunden und zu summieren (Abs. 3 rundet je Betrag einzeln).
+    beschreibung: lohnsteuer aus EINEM Dienstverhaeltnis; der 1-DV-Wert wird auf volle Euro aufgerundet (Abs. 3 S. 1). NACHTRAG Mehrfachfall - amtlich Abs. 3 S. 2 - bei mehreren Abzugsbetraegen DERSELBEN Abzugsteuer ist die SUMME der Betraege je einzelner Abzugsteuer aufzurunden (Summe-dann-Runden), NICHT je Betrag einzeln aufrunden-dann-summieren.
   rundung:
   - deckt_ab: auf volle Euro aufzurunden
     zitatanker: auf volle Euro aufzurunden
@@ -5616,11 +5616,11 @@ regeln:
     quelle: § 6 Abs. 1 Nr. 3a Buchst. e EStG
     beschreibung: 'Ausnahme-Zweig 3 von drei: auf Anzahlung/Vorausleistung beruhende Verpflichtungen -> keine Abzinsung. Teil des bool abzinsung_ausgenommen. Nur Buchst. e; Nr. 3 Verbindlichkeiten-Abzinsung ist ab 2023 abgeschafft (Nicht-Gegenstand).'
 - rule_id: p6a_pension_hoechstbetrag
-  norm: § 6a Abs. 4 S. 1 EStG (Pensionsrückstellung Höchstbetrag = Teilwert-Deckel)
-  hinweis: 'pensionsrueckstellung = min(bilanzieller_ansatz, teilwert_pensionsverpflichtung) - NICHTS SONST. Abs. 4 S. 1 ''darf höchstens mit dem Teilwert ... angesetzt werden'' = reiner Höchstbetrags-Deckel (min). teilwert_pensionsverpflichtung ist ein FERTIG berechneter Input (extern versicherungsmathematisch, Abs. 3). Im Catala-Code KEINE interne Zins-/Rechnungszinsfuß-Variable, KEINE 0.06-Konstante, KEINE Teilwert-Berechnung - der 6-%-Zinsfuß ist NICHT Teil der Rechnung, er steht ausschließlich in der Geltungsbedingung als Herkunft des Inputs (Konstanten-Doktrin: nicht Signatur, nicht Code). Cent-genau.'
+  norm: § 6a Abs. 3 S. 1 EStG (Pensionsrückstellung Höchstbetrag = Teilwert-Deckel)
+  hinweis: 'pensionsrueckstellung = min(bilanzieller_ansatz, teilwert_pensionsverpflichtung) - NICHTS SONST. Abs. 3 S. 1 ''darf höchstens mit dem Teilwert ... angesetzt werden'' = reiner Höchstbetrags-Deckel (min). Die jahresbezogene Zuführungsgrenze/Nachholverbot (Abs. 4 S. 1) ist NICHT modelliert = benannter Nachtrag. teilwert_pensionsverpflichtung ist ein FERTIG berechneter Input (extern versicherungsmathematisch, Abs. 3). Im Catala-Code KEINE interne Zins-/Rechnungszinsfuß-Variable, KEINE 0.06-Konstante, KEINE Teilwert-Berechnung - der 6-%-Zinsfuß ist NICHT Teil der Rechnung, er steht ausschließlich in der Geltungsbedingung als Herkunft des Inputs (Konstanten-Doktrin: nicht Signatur, nicht Code). Cent-genau.'
   quellen:
   - typ: gesetz
-    label: § 6a Abs. 4 S. 1 EStG (Höchstbetrag = Teilwert)
+    label: § 6a Abs. 3 S. 1 EStG (Höchstbetrag = Teilwert)
     datei: sources/gesetze-im-internet/estg_p6a_2026-07-14.txt
     zitatanker: darf höchstens mit dem Teilwert der Pensionsverpflichtung angesetzt werden
     auszug: Eine Pensionsrückstellung darf höchstens mit dem Teilwert der Pensionsverpflichtung angesetzt werden
@@ -5672,10 +5672,10 @@ regeln:
     deckt_ab: ein Rechnungszinsfuß von 6 Prozent und die anerkannten Regeln der Versicherungsmathematik
     quelle: § 6a Abs. 3 S. 3 EStG
     beschreibung: teilwert_pensionsverpflichtung = extern versicherungsmathematisch berechneter Teilwert (6-%-Rechnungszins, Abs. 3). Die 6 % = Norm-Konstante, im Teilwert-Input gebunden, NICHT Regel-Signatur (Konstanten-Doktrin).
-  - bedingung: nur_hoechstbetrags_cap_abs4_s1
+  - bedingung: nur_hoechstbetrags_cap_abs3_s1
     deckt_ab: darf höchstens mit dem Teilwert der Pensionsverpflichtung angesetzt werden
-    quelle: § 6a Abs. 4 S. 1 EStG
-    beschreibung: Nur der Teilwert-Deckel (Abs. 4 S. 1) formalisiert; Zuführungs-/Nachhol-Feinregeln Abs. 4 S. 2 ff. + Voraussetzungen Abs. 1/2 = benannte Nachträge.
+    quelle: § 6a Abs. 3 S. 1 EStG
+    beschreibung: Nur der Teilwert-Höchstbetrag (Abs. 3 S. 1) formalisiert; die jahresbezogene Zuführungsgrenze/Nachholverbot (Abs. 4 S. 1 - höchstens um den Unterschied Teilwert Wj minus Vorjahr erhöht) + Zuführungs-Feinregeln Abs. 4 S. 2 ff. + Voraussetzungen Abs. 1/2 = benannte Nachträge.
 - rule_id: p15_1_2_mitunternehmer_einkuenfte
   norm: '§ 15 Abs. 1 Nr. 2 S. 1 EStG (Mitunternehmer-Einkuenfte: Gewinnanteil + Sondervergütungen)'
   hinweis: einkuenfte_mitunternehmer = gewinnanteil + verguetung_taetigkeit + verguetung_darlehen + verguetung_ueberlassung. Additive Zusammenrechnung des Gesamthand-Gewinnanteils und der DREI im Wortlaut einzeln benannten Sondervergütungs-Kategorien (Tätigkeit im Dienst der Gesellschaft / Hingabe von Darlehen / Überlassung von Wirtschaftsgütern). Kann NEGATIV sein (Verlustanteil überwiegt; die Sondervergütung bleibt trotzdem Gewinneinkunft). Reine Summe, keine Kappung. Cent-genau.

@@ -4100,3 +4100,68 @@ entscheidungen:
       Zinsvortrags erhöht wurden.
   entschieden_via: adjudikation-instructor-2026-07-16-kstg-n2-zuschnitt
   timestamp: '2026-07-16T16:45:13.105086+00:00'
+- rule_id: p6a_pension_hoechstbetrag
+  schluessel: '["norm_teil", "ref", "§ 6a abs. 4 s. 1 estg"]'
+  triage: defekt_formalisierer
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 6a abs. 4 s. 1 estg
+    formulierung: Eine Pensionsrückstellung darf höchstens mit dem Teilwert der Pensionsverpflichtung
+      angesetzt werden
+    begruendung: 'Stufe-A-Attributions-Fehler (Instructor-Zuschnitt), NICHT Formalisierer/Judge:
+      Formel min(bilanzieller_ansatz,teilwert) war immer korrekt, nur das Absatz-Etikett
+      Abs. 4 S. 1 falsch - der Teilwert-Deckel ist Abs. 3 S. 1. Retire zugunsten des
+      korrekten Abs.-3-S.-1-Items. adjudikation-instructor-2026-07-17-p10c Block 1.'
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T13:28:03.686063+00:00'
+- rule_id: p6a_pension_hoechstbetrag
+  schluessel: '["norm_teil", "ref", "§ 6a abs. 3 s. 1 estg"]'
+  triage: bedingung_neu
+  bedingung: nur_hoechstbetrags_cap_abs3_s1
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 6a abs. 3 s. 1 estg
+    formulierung: Eine Pensionsrückstellung darf höchstens mit dem Teilwert der Pensionsverpflichtung
+      angesetzt werden
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T13:28:04.443403+00:00'
+- rule_id: p6a_pension_hoechstbetrag
+  schluessel: '["norm_teil", "ref", "§ 6a abs. 4 s. 1 estg"]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 6a abs. 4 s. 1 estg
+    formulierung: Eine Pensionsrückstellung darf höchstens mit dem Teilwert der Pensionsverpflichtung
+      angesetzt werden
+    begruendung: Stufe-A-Attributions-Fehler (Instructor-Zuschnitt), NICHT Formalisierer/Judge.
+      Am Abs. 4 S. 1 gibt es KEINEN echten Teilwert-Deckel-Befund - der Deckel ist
+      Abs. 3 S. 1 (neues Item). Retire als nicht_echt (kein echter Befund an Abs.4
+      S.1); defekt_formalisierer waere semantisch falsch (kein Formalisierer-Fehler)
+      + wuerde Verdikt flagged_for_review. adjudikation-instructor-2026-07-17-p10c
+      Block 1.
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T13:30:44.043394+00:00'

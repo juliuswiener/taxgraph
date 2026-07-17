@@ -270,7 +270,6 @@ p6_2a_sammelposten_zufuehrung	["abweichung", "abweichung_text", "der sammelposte
 p6_2a_sammelposten_zufuehrung	["annahme", "betrifft_kat", "anschaffungskosten_netto", "einheit"]
 p6_2a_sammelposten_zufuehrung	["annahme", "betrifft_kat", "anschaffungskosten_netto", "interpretation"]
 p6_2a_sammelposten_zufuehrung	["norm_teil", "ref", "§ 6 abs. 2a s. 1 estg"]
-p6a_pension_hoechstbetrag	["norm_teil", "ref", "§ 6a abs. 4 s. 1 estg"]
 p7_1_lineare_afa	["annahme", "betrifft_kat", "anzurechnende_monate", "zeitbezug"]
 p7_1_lineare_afa	["annahme", "betrifft_kat", "nutzungsdauer_jahre", "einheit"]
 p7_1_lineare_afa	["norm_teil", "ref", "§ 7 abs. 1 s. 1 estg"]
