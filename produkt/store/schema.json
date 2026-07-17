@@ -39,7 +39,7 @@
       "additionalProperties": false,
       "description": "Zwei-Signal-Bestätigung. signal_1 = Vorschlag (allein wirkungslos), signal_2 = menschliche/deterministische Bestätigung neben dem Beleg.",
       "properties": {
-        "signal_1": {"type": ["string", "null"], "description": "event_id des Vorschlags (z.B. LLM), oder null."},
+        "signal_1": {"type": ["string", "object", "null"], "description": "Vorschlag (allein wirkungslos): event_id des Vorschlags (z.B. LLM) als String, oder ein Herkunfts-Objekt beim Beleg-Import ({typ:'beleg', ref, confidence, roh_text}), oder null."},
         "signal_2": {"type": ["string", "null"], "description": "Bestätigungs-Beleg (z.B. 'klick@beleg:lstb_z23'); Pflicht bei zustand=bestaetigt."}
       }
     },
@@ -75,6 +75,13 @@
          "then": {"required": ["herkunft", "zustand"],
                   "properties": {
                     "herkunft": {"properties": {"herkunft": {"const": "llm_vorschlag"}}},
+                    "zustand": {"const": "vorlaeufig"},
+                    "signal": {"properties": {"signal_2": {"type": "null"}}}}}},
+        {"comment": "Auflage A (symmetrisch zum llm:-Guard): ein import:beleg-Schreiber (der Beleg-Upload-Writer) muss beleg_import/vorlaeufig, signal_2=null tragen — ein Beleg bestätigt nie direkt. SCHREIBER-scoped, NICHT herkunft-scoped: die herkunft beleg_import bleibt als Provenance auch nach menschlicher K3-Bestätigung erhalten (z.B. import:elster-Vorfüllung schreibt beleg_import+bestaetigt).",
+         "if": {"required": ["schreiber"], "properties": {"schreiber": {"pattern": "^import:beleg"}}},
+         "then": {"required": ["herkunft", "zustand"],
+                  "properties": {
+                    "herkunft": {"properties": {"herkunft": {"const": "beleg_import"}}},
                     "zustand": {"const": "vorlaeufig"},
                     "signal": {"properties": {"signal_2": {"type": "null"}}}}}}
       ]

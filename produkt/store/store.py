@@ -131,6 +131,15 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
                 "fail-closed (A): llm:-Schreiber muss herkunft=llm_vorschlag, zustand=vorlaeufig, "
                 "signal_2=null tragen — kein Bestätigen durch die KI.")
 
+    # Auflage A (Beleg-Writer, symmetrisch): ein import:beleg-Schreiber ist ein Vorschlag aus einem
+    # Beleg — er kann strukturell NIE direkt bestätigen; die Zwei-Signal-Bestätigung bleibt der Mensch.
+    if schreiber.startswith("import:beleg"):
+        if herkunft.get("herkunft") != "beleg_import" or zustand != "vorlaeufig" \
+                or signal.get("signal_2") is not None:
+            raise ValueError(
+                "fail-closed (A): import:beleg-Schreiber muss herkunft=beleg_import, zustand=vorlaeufig, "
+                "signal_2=null tragen — ein Beleg-Import bestätigt nie direkt.")
+
     # Typ-Zwang: bestaetigt braucht signal_2.
     if zustand == "bestaetigt" and not (signal.get("signal_2") or "").strip():
         raise ValueError("fail-closed: zustand=bestaetigt braucht ein signal_2 (Zwei-Signal).")

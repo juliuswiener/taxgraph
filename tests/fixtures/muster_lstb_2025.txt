@@ -1,0 +1,13 @@
+Ausdruck der elektronischen Lohnsteuerbescheinigung fuer 2025
+
+*** MUSTER — SYNTHETISCHER TESTBELEG, KEINE ECHTEN PERSONENDATEN ***
+Steuernummer: 000/0000/0000 (Muster)
+eTIN: MUSTER00000000000
+Arbeitgeber: Muster GmbH, 00000 Musterstadt
+Arbeitnehmer: Erika Mustermann (fiktiv)
+
+Nr. 3    Bruttoarbeitslohn einschliesslich Sachbezuege                45.000,00
+Nr. 22   Arbeitgeberanteil zur gesetzlichen Rentenversicherung         4.185,00
+Nr. 23   Arbeitnehmeranteil zur gesetzlichen Rentenversicherung        4.185,00
+
+Diese Bescheinigung ist ein fiktives Muster zu Testzwecken (nicht rechtsgueltig).
