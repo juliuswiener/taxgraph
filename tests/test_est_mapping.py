@@ -302,3 +302,37 @@ def test_neg_klasse_f_unbekannte_art_kein_kz(bindung):
     r = EM.deklariere(snap, bindung)
     assert not any(k.startswith("E1800") or k.startswith("E1801") for k in r["deklaration"])
     assert "rentner_jahresrente" in {x["feld_id"] for x in r["nicht_deklariert"]}
+
+
+# ---- Klasse g: Person-Multiplikation (Zusammenveranlagung, Front 2) -----------
+
+def test_klasse_g_person_b_instanz(bindung):
+    """_partner-Einkommensfelder -> person_b-Bucket (Kz wie Person A, Instanz B); IdNr B = distinktes
+    Mantelbogen-Kz in der Haupt-Deklaration."""
+    felder = {"bruttoarbeitslohn_partner": 3800000, "vor_an_anteil_rv_partner": 350000,
+              "vor_ag_anteil_rv_partner": 350000, "vor_rv_ausserhalb_lstb_partner": 0,
+              "person_b_idnr": "00000000000"}
+    snap, _ = ST.materialisiere(_store_mit(felder))
+    r = EM.deklariere(snap, bindung)
+    assert r["person_b"]["E0200201"] == 3800000                 # Bruttolohn Person B, Instanz B
+    assert r["person_b"]["E2000401"] == 350000 and r["person_b"]["E2000801"] == 350000
+    assert r["deklaration"]["E0100082"] == "00000000000"        # IdNr B = 1:1 in der Haupt-Deklaration
+    assert "E0200201" not in r["deklaration"]                   # Person-B-Lohn NICHT in Person-A-Deklaration
+
+
+def test_klasse_g_roundtrip(bindung):
+    felder = {"bruttoarbeitslohn_partner": 3800000, "vor_an_anteil_rv_partner": 350000}
+    snap, _ = ST.materialisiere(_store_mit(felder))
+    rt = EM.zuruecklesen(EM.deklariere(snap, bindung), bindung)
+    assert rt["felder"]["bruttoarbeitslohn_partner"] == 3800000
+    assert rt["felder"]["vor_an_anteil_rv_partner"] == 350000
+
+
+def test_klasse_g_fail_closed_partner_vorlaeufig(bindung):
+    """§26b-Splitting fail-closed: ein vorläufiges Person-B-Feld -> nicht in Instanz B, unvollständig."""
+    s = ST.leerer_store(2025, fall_id="partner-fc")
+    _b(s, "bruttoarbeitslohn_partner", 3800000, zustand="vorlaeufig")
+    snap, _ = ST.materialisiere(s)
+    r = EM.deklariere(snap, bindung)
+    assert "E0200201" not in r["person_b"]                      # vorläufig -> nicht deklariert
+    assert "bruttoarbeitslohn_partner" in {x["feld_id"] for x in r["unvollstaendig"]}

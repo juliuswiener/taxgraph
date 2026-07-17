@@ -55,6 +55,17 @@ VERZWEIGUNG = {
         "private_basisrente": "E1800501", "private_leibrente": "E1801701",
         "sonstige_leibrente": "E1803202"}},
 }
+# Klasse g — Person-Multiplikation (Zusammenveranlagung, Store-Modell A): die person-individuellen
+# _partner-Einkommensfelder gehen in die Anlage-N-INSTANZ B (person_b-Bucket) — DIESELBEN Kz wie Person A
+# (KEINE neuen Kz; E0220201/E2200401 existieren nicht, Person-B ist ein zweites Sub-Dokument). Globale
+# Felder bleiben in der Haupt-Deklaration (Person A). person_b_idnr trägt ein DISTINKTES Mantelbogen-Kz
+# (E0100082) und läuft daher als 1:1 in die Haupt-Deklaration, nicht in den person_b-Bucket.
+PARTNER_INSTANZ = {
+    "bruttoarbeitslohn_partner": "E0200201",
+    "vor_an_anteil_rv_partner": "E2000401",
+    "vor_ag_anteil_rv_partner": "E2000801",
+    "vor_rv_ausserhalb_lstb_partner": "E2000601",
+}
 
 
 def _aggregation_quellen() -> set:
@@ -73,6 +84,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
     deklaration: dict = {}
     dokumentiert: dict = {}
     kind_anlagen: list = []
+    person_b: dict = {}                 # Anlage-N-Instanz B (Zusammenveranlagung, Klasse g)
     nicht_deklariert: list = []
     unvollstaendig: list = []
     agg_akku = {ziel: [] for ziel in DOKUMENTIERT_AGGREGAT}
@@ -113,6 +125,8 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
                 else:
                     nicht_deklariert.append({"feld_id": feld_id,
                                              "grund": f"Renten-Art '{art['wert']}' ohne Kz-Zweig"})
+        elif feld_id in PARTNER_INSTANZ:                         # Klasse g (Person-Multiplikation, Instanz B)
+            person_b[PARTNER_INSTANZ[feld_id]] = wert
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)
             deklaration[b["elster_kz"]] = wert
         else:                                                     # Klasse c (nicht deklariert)
@@ -135,6 +149,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
         "basis_snapshot": snapshot_id,
         "deklaration": deklaration,
         "kind_anlagen": kind_anlagen,
+        "person_b": person_b,                    # Anlage-N-Instanz B (Zusammenveranlagung): E-Nr -> Wert (Kz wie Person A)
         "dokumentiert": dokumentiert,            # dokumentiert, NICHT deklariert: E-Nr -> {summe, quell_felder}
         "nicht_deklariert": nicht_deklariert,    # Auflage C: bewusst nicht deklariert (Grund)
         "unvollstaendig": unvollstaendig,        # Auflage C: welches Pflicht-Feld vorläufig
@@ -152,11 +167,16 @@ def zuruecklesen(result: dict, bindung: dict) -> dict:
     # Klasse f: alle Art-Zweig-Kz eines Wert-Felds zeigen zurück auf dasselbe Wert-Feld (der VALUE ist
     # invertierbar; die exakte Renten-Art ist nur gruppen-genau [aa/bb], nicht rekonstruierbar).
     e_nach_verzweigung = {kz: feld for feld, cfg in VERZWEIGUNG.items() for kz in cfg["kz"].values()}
+    b_nach_feld = {kz: feld for feld, kz in PARTNER_INSTANZ.items()}
     felder: dict = {}
     aggregat: dict = {}
     # dokumentierte Aggregate (dokumentiert, nicht deklariert): nur die Summe, KEINE Details
     for e_nr, info in result.get("dokumentiert", {}).items():
         aggregat[e_nr] = info["summe"]
+    # Person-B-Instanz (Zusammenveranlagung): Kz -> _partner-Feld (invertierbar, eigener Bucket)
+    for e_nr, wert in result.get("person_b", {}).items():
+        if e_nr in b_nach_feld:
+            felder[b_nach_feld[e_nr]] = wert
     for e_nr, wert in result["deklaration"].items():
         if e_nr in e_nach_negation:
             felder[e_nach_negation[e_nr]] = not bool(wert)

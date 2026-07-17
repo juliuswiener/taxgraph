@@ -114,3 +114,94 @@ bindungen:
       quelle: "§ 2 Abs. 1 S. 1 Nr. 7 EStG"
       zitatanker: "sonstige Einkünfte im Sinne des § 22"
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+
+  # ===== Zusammenveranlagung (§ 26b): person-INDIVIDUELLE _partner-Zwillinge (Store-Modell A) =====
+  # STRENG nur die steuerlich getrennten Person-B-Einkommensfelder (eigener § 9a-Pauschbetrag / eigene
+  # LStB je Ehegatte). Globale Felder (veranlagung/Kinder/agB/Spende/Abwesenheits-Flags) bleiben GETEILT.
+  # est_mapping-Klasse Person-Multiplikation: _partner -> Anlage-N-INSTANZ B (dieselben Kz wie Person A,
+  # person_b-Bucket), KEINE neuen Kz. EP_partner (Person-B-Pendler-WK) = dokumentierter Folge-Nachtrag.
+  - feld_id: bruttoarbeitslohn_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: bruttoarbeitslohn_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie hoch war der Bruttoarbeitslohn deines Ehe-/Lebenspartners dieses Jahr?"
+    hilfe_kurz: "Person-individuell, weil jeder Ehegatte einen EIGENEN Arbeitnehmer-Pauschbetrag hat; steht auf der Lohnsteuerbescheinigung des Partners (Nummer 3)."
+    beispielwert: 3800000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-N-Instanz B (Person-Multiplikation): derselbe Kz E0200201 wie Person A, zweites Sub-Dokument — kein distinktes Partner-Kz (E0220201 existiert nicht). herkunft_slots=null: die Beleg-Extraktion füllt nur Person A (ein LStB füllt nicht beide); Person-B-Beleg = person-scoped Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Gehälter, Löhne, Gratifikationen, Tantiemen und andere Bezüge und Vorteile für eine Beschäftigung"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+  - feld_id: vor_an_anteil_rv_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: vor_gesamtbeitraege_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie hoch war der Arbeitnehmeranteil zur Rentenversicherung deines Partners (Nummer 23 auf seiner Lohnsteuerbescheinigung)?"
+    hilfe_kurz: "Person-individuell: die Vorsorgeaufwendungen jedes Ehegatten stammen aus seiner eigenen Lohnsteuerbescheinigung."
+    beispielwert: 350000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-N/VOR-Instanz B (Person-Multiplikation): derselbe Kz E2000401 wie Person A, zweites Sub-Dokument."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vor_ag_anteil_rv_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: vor_gesamtbeitraege_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie hoch war der Arbeitgeberanteil zur Rentenversicherung deines Partners (Nummer 22 auf seiner Lohnsteuerbescheinigung)?"
+    hilfe_kurz: "Person-individuell aus der Lohnsteuerbescheinigung des Partners."
+    beispielwert: 350000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-N/VOR-Instanz B (Person-Multiplikation): derselbe Kz E2000801 wie Person A."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vor_rv_ausserhalb_lstb_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: vor_gesamtbeitraege_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Hat dein Partner weitere Rentenversicherungsbeiträge außerhalb der Lohnsteuerbescheinigung gezahlt (z. B. freiwillig)?"
+    hilfe_kurz: "Person-individuell; falls keine, trage 0 ein."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-N/VOR-Instanz B (Person-Multiplikation): derselbe Kz E2000601 wie Person A."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: person_b_idnr
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: text
+    einheit: null
+    askable: true
+    fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer deines Ehe-/Lebenspartners (11 Ziffern)?"
+    hilfe_kurz: "Bei gemeinsamer Erklärung braucht das Finanzamt die Identifikationsnummer beider Personen. Steht auf dem Steuerbescheid oder dem Schreiben des Bundeszentralamts."
+    beispielwert: "00000000000"
+    herkunft_slots: null
+    elster_kz: E0100082
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 26 Abs. 2 S. 2 EStG"
+      zitatanker: "Ehegatten werden zusammen veranlagt, wenn beide Ehegatten die Zusammenveranlagung wählen"
+      datei: "sources/gesetze-im-internet/estg_p26_2026-07-17.txt"
+    # p2_festzusetzung_zusammen = Pseudoregel-Scope (Catala-Andockung ohne rules/estg-Dir, wie
+    # p2_festzusetzung_einzel); beide_ehegatten_zusammen_veranlagt = Platzhalter-gb (§ 26 Abs. 2 S. 2).
+    # Der Gate validiert gb-Existenz für Pseudoregel-Scopes nicht; gesichert über Kz/Drift-Wächter.

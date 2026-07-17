@@ -54,13 +54,16 @@ def _verzweigung_ziel_kz() -> set:
 
 
 def _transform_quellen() -> set:
-    # Klasse f: Wert-Felder (VERZWEIGUNG-Keys) + die Art-Felder, die sie steuern.
+    # Klasse f: Wert-Felder (VERZWEIGUNG-Keys) + Art-Felder; Klasse g: die _partner-Felder.
     verzweigung = set(EM.VERZWEIGUNG) | {cfg["art_feld"] for cfg in EM.VERZWEIGUNG.values()}
-    return set(EM.NEGATION) | set(EM.MULTIPLIKATION) | EM._aggregation_quellen() | verzweigung
+    return (set(EM.NEGATION) | set(EM.MULTIPLIKATION) | EM._aggregation_quellen()
+            | verzweigung | set(EM.PARTNER_INSTANZ))
 
 
 def _erlaubte_kz(merged: dict) -> set:
-    """1:1-Kz aus der Bindung + Transform-Ziel-Kz (Negation + Verzweigung), die deklariert werden dürfen."""
+    """1:1-Kz aus der Bindung + Transform-Ziel-Kz (Negation + Verzweigung), die deklariert werden dürfen.
+    Die Person-B-Instanz-Kz (Klasse g) sind KEINE neuen Kz — sie sind identisch mit den Person-A-1:1-Kz
+    und erscheinen im person_b-Bucket, nicht in der Haupt-Deklaration (kein Kollisions-/Phantom-Fall)."""
     return ({b["elster_kz"] for b in merged.values() if b.get("elster_kz")}
             | set(EM.NEGATION.values()) | _verzweigung_ziel_kz())
 
@@ -105,6 +108,14 @@ def test_kein_phantom_kz_in_deklaration(merged):
     erlaubt = _erlaubte_kz(merged)
     phantome = [kz for kz in r["deklaration"] if kz not in erlaubt]
     assert not phantome, f"Phantom-Kz in deklaration ohne Bindungs-/Transform-Herkunft: {phantome}"
+
+
+def test_person_b_instanz_kz_sind_person_a_kz(merged):
+    """Klasse g: die Person-B-Instanz-Kz (person_b-Bucket) sind IDENTISCH mit Person-A-1:1-Kz — kein
+    neues/Phantom-Kz (Person B ist ein zweites Sub-Dokument mit denselben Kz)."""
+    a_kz = {b["elster_kz"] for b in merged.values() if b.get("elster_kz")}
+    fremd = set(EM.PARTNER_INSTANZ.values()) - a_kz
+    assert not fremd, f"Person-B-Instanz-Kz ohne Person-A-1:1-Entsprechung (Phantom): {fremd}"
 
 
 # ---- Assertion 4: est_mapping-Transform-Konfig konsistent --------------------
