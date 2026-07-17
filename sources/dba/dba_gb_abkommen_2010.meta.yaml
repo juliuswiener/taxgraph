@@ -1,0 +1,20 @@
+# Eingefrorener Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/gb/2010-03-30/gesetz-2010"
+  norm: "Gesetz v. 18.11.2010 zu dem Abkommen v. 30.03.2010 zwischen der Bundesrepublik Deutschland und dem Vereinigten Koenigreich Grossbritannien und Nordirland zur Vermeidung der Doppelbesteuerung (BGBl 2010 II S. 1333)"
+  fassung: "BGBl 2010 II Nr. 33 S. 1333 ff. (Gesetz + Abkommen + Protokoll, zweisprachig DE/EN)"
+  quelle_url: "(BMF Staatenbezogene Informationen GB, Scraper-Korpus corpus/dba_pdfs/2010-11-23-Grossbritannien-Abkommen-DBA-Gesetz.pdf)"
+  abrufdatum: "2026-07-17"
+  datei: "dba_gb_abkommen_2010.txt"
+  pdf_datei: "dba_gb_abkommen_2010.pdf"
+  sha256: "25648098c7b4d4f0f8782d3e5100c833dfc0e988b17811ae157983c45ce99bd7"
+  pdf_sha256: "a0583349f76690b9e8351b5f73825e0f2567eded20049dae9be80a53f15b3389"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "GRUNDABKOMMEN GB. GUELTIGKEIT: gilt im Fenster VZ 2024-2026 i.d.F. der Protokolle 17.03.2014 (BGBl 2015 II S. 1297: aendert Art. 7 AOA / Art. 18 Abs. 1 / Art. 30 - Methodenartikel Art. 23 UNBERUEHRT, nur in Art. 30 Abs. 2 referenziert) und 12.01.2021 (BGBl 2021 II S. 666: Titel/Praeambel-PPT, Art. 25 Abs. 4, Art. 26 Abs. 2, neu Art. 30A - Art. 23 UNBERUEHRT). MLI: GB NICHT in bmf_stand_dba_2026-I.2-Positivliste -> im Fenster kein MLI-Overlay (Abwesenheits-Beleg TR-Muster); Abkommens-Anpassung lief bilateral via 2021-Protokoll. ACHTUNG zweisprachig DE/EN interleaved - Anker NUR aus deutschen Bloecken. Methodenartikel Art. 23 Abs. 1 (deutsche Seite): a Freistellung + Schachtel 10 %, b Anrechnung Enum aa-dd, c Aktivitaetsklausel (Paragraf 8 Abs. 1 AStG), d Progressionsvorbehalt, e Switch-over/Rueckfall (Qualifikationskonflikt/Notifikation) - e als benannter Katalog-Randfall."
+  erwartete_anker:
+    - "Gesetz zu dem Abkommen vom 30. März 2010 zwischen der Bundesrepublik Deutschland und dem Vereinigten Königreich Großbritannien und Nordirland"
+    - "Von der Bemessungsgrundlage der deutschen Steuer werden die Einkünfte aus dem Vereinigten Königreich sowie die im Vereinigten Königreich gelegenen Vermögenswerte ausgenommen, die nach diesem Abkommen im Vereinigten Königreich tatsächlich besteuert werden und nicht unter Buchstabe b fallen"
+    - "wird unter Beachtung der Vorschriften des deutschen Steuerrechts über die Anrechnung ausländischer Steuern die Steuer des Vereinigten Königreichs angerechnet"
+    - "Deutschland behält aber das Recht, die nach den Bestimmungen dieses Abkommens von der deutschen Steuer ausgenommenen Einkünfte und Vermögenswerte bei der Festsetzung seines Steuersatzes zu berücksichtigen"
+  verwendet_in: ["Paket 6 W1 DBA-Katalog GB (Grundtext, Methodenartikel Art. 23)"]

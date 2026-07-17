@@ -1,0 +1,19 @@
+# Eingefrorener Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/gb/2021-01-12/gesetz-2021"
+  norm: "Gesetz v. 16.07.2021 zu dem Protokoll v. 12.01.2021 zur Aenderung des Abkommens v. 30.03.2010 (BGBl 2021 II S. 666)"
+  fassung: "BGBl 2021 II Nr. 15 (Aenderungsprotokoll, zweisprachig DE/EN); in Kraft laut Bekanntmachung BGBl 2022 II (03.03.2022)"
+  quelle_url: "(BMF Staatenbezogene Informationen GB, Scraper-Korpus corpus/dba_pdfs/2021-07-23-Grossbritannien-Abkommen-DBA-Aenderung-Gesetz.pdf)"
+  abrufdatum: "2026-07-17"
+  datei: "dba_gb_protokoll_2021.txt"
+  pdf_datei: "dba_gb_protokoll_2021.pdf"
+  sha256: "fcf104464c0fd3ef87f5a79ebb10ac25a8cd79993594d0177cb94cb477825f61"
+  pdf_sha256: "1ed0ae896ee2a7d7df6ebea47801270b3572b7ab9e52b1511c8aff054a336da7"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "AENDERUNGSPROTOKOLL 2021 zu GB-2010 (bilaterale BEPS-Anpassung statt MLI): neuer Titel + Praeambel (PPT-Zweck), Art. 25 Abs. 4, Art. 26 Abs. 2 S. 2, NEU Art. 30A (Anspruchsberechtigung/Principal-Purpose-Test). METHODENARTIKEL ART. 23 UNBERUEHRT -> Katalog ankert am 2010er-Freeze; PPT als Missbrauchs-Randnotiz im Katalog (Geltungsvoraussetzung der Abkommensvorteile, keine Methoden-Aenderung). Aenderungsbefehl-Doktrin wie 2014er."
+  erwartete_anker:
+    - "zu dem Protokoll vom 12. Januar 2021"
+    - "Nach Artikel 30 wird folgender Artikel 30A eingefügt"
+    - "Artikel 25 Absatz 4 wird aufgehoben und durch folgenden"
+  verwendet_in: ["Paket 6 W1 DBA-Katalog GB (Fassungskette; PPT-Randnotiz)"]

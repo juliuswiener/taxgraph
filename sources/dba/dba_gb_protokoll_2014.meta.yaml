@@ -1,0 +1,19 @@
+# Eingefrorener Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/gb/2014-03-17/gesetz-2015"
+  norm: "Gesetz v. 20.11.2015 zu dem Protokoll v. 17.03.2014 zur Aenderung des Abkommens v. 30.03.2010 (BGBl 2015 II S. 1297)"
+  fassung: "BGBl 2015 II Nr. 31 (Aenderungsprotokoll, zweisprachig DE/EN); in Kraft laut Bekanntmachung BGBl 2016 II (27.01.2016)"
+  quelle_url: "(BMF Staatenbezogene Informationen GB, Scraper-Korpus corpus/dba_pdfs/2015-11-26-Grossbritannien-Abkommen-DBA-Gesetz.pdf)"
+  abrufdatum: "2026-07-17"
+  datei: "dba_gb_protokoll_2014.txt"
+  pdf_datei: "dba_gb_protokoll_2014.pdf"
+  sha256: "9a77dc8aa29757419cce51676810192ddceed8d664d5518192a6fbb1c721600b"
+  pdf_sha256: "3552486727ca755b0135913e4ad4621bd94dffa64518cb5937293bf3c2a0e3ac"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "AENDERUNGSPROTOKOLL 2014 zu GB-2010: Art. I (Art. 7 neu, AOA-Betriebsstaetten), Art. II (Art. 18 Abs. 1 oeffentlicher Dienst), Art. III (Art. 30 Diplomaten - referenziert Art. 23 Abs. 1 Buchst. d, AENDERT ihn nicht). METHODENARTIKEL ART. 23 UNBERUEHRT -> Katalog ankert weiter am 2010er-Freeze. Aenderungsbefehl-Doktrin: Judge-Laeufe gegen dieses Dokument messen Neufassungen."
+  erwartete_anker:
+    - "zu dem Protokoll vom 17. März 2014"
+    - "Artikel 18 Absatz 1 wird aufgehoben und durch folgenden Absatz"
+    - "und Artikel 23 Absatz 1 Buchstabe d dieses Abkommens für die"
+  verwendet_in: ["Paket 6 W1 DBA-Katalog GB (Fassungskette; Art. 23 unberuehrt)"]
