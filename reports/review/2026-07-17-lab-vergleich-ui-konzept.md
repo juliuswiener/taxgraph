@@ -73,6 +73,10 @@ für privat. einfacher input. hilfestellungen durch llm chat. Ki sperre fest. er
 | 6 | Unsicherheits-Anzeige **MIT einbauen** | Sensitivitäts-/Intervall-Engine ([min,max]-Bescheid, Steuer-at-Risk) fest in Paket A; reine Engine-Reruns, NULL LLM |
 | 7 | Keine dritte Ideen-Runde | erledigt |
 
+**NACHTRAG 2026-07-17 (Julius „ok"):** Mobile-first BESTÄTIGT (Wegpunkt-Fluss primär,
+Desktop-Graph als Zusatzansicht) + Stack BESTÄTIGT: responsive Web-App, Python-Backend
+direkt auf dem produkt/-Kern, schlankes Frontend ohne Framework-Zoo. Paket B startet.
+
 Status: Produktentscheid Eingabe-Schicht = GEFALLEN. Zusammen mit aktiver Hersteller-ID ist
 Task #11 (Produktisierung E2E) vollständig entsperrt. Umsetzung als Paket A (Kern) / Paket B
 (Privat-Haut + LLM-Chat) an die devs nach Abschluss ihrer laufenden Aufträge.
