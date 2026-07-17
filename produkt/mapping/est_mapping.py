@@ -39,7 +39,15 @@ DOKUMENTIERT_AGGREGAT = {
 }
 # Klasse d — Negation: Store-Feld -> EfA-Kz (invertiert; Vordruck kodiert die schädliche Haushaltsgem.).
 NEGATION = {"fam_alleinstehend": "E0503701"}
-# Klasse e — Multiplikation: Zähl-Feld -> N Anlage-Kind-Instanzen (MVP: nur Anzahl; Per-Kind-Kz Nachtrag).
+# Klasse e — Multiplikation: Zähl-Feld -> N Anlage-Kind-Instanzen (MVP: nur die ANZAHL).
+# BENANNTE DEKLARATIONS-GAP (Instructor-Ruling 2026-07-18, Nachtrag B DEFER): der count-MVP ist
+# TARIF-KORREKT — Kinderfreibetrag (p32_6) + Kindergeld (p31) rechnen count × Betrag, KEINE Per-Kind-
+# Tarif-Inputs. Die Per-Kind-FORM-Kz für die ELSTER-Submission (je Anlage-Kind-Instanz: Identifikations-
+# nummer E0500406, Art des Kindschaftsverhältnisses E0500807/E0500808 je Elternteil, Zeitraum
+# E0500601/E0500805, Kindergeld-Anspruch E0500702) sind DEFERRED: sie brauchen ein Repeated-Instance-
+# Store-Modell (variable 1..N Kinder, keine flach-gecappte kind_1..N-Krücke) — gemeinsame Struktur-
+# Investition mit Multi-Objekt-§21 / Multi-Rente, erst wenn ein Fall sie TARIF-relevant braucht. Bis
+# dahin: bewusste Lücke, kein Vergessen.
 MULTIPLIKATION = ("fam_anzahl_kinder",)
 # Klasse f — Verzweigung: EIN Wert-Slot -> N-Kz je Enum-Wert eines Art-Felds. § 22-Renten: die Anlage-R-
 # Zeile (und damit das Kz) hängt an rentner_renten_art. aa-Basisversorgung (gesetzl/berufsst/basisrente)
