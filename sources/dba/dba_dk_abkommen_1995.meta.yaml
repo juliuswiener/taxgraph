@@ -1,0 +1,21 @@
+# Eingefrorener Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/dk/1995-11-22/gesetz-1996"
+  norm: "Gesetz v. 27.09.1996 zu dem Abkommen v. 22.11.1995 zwischen der Bundesrepublik Deutschland und dem Koenigreich Daenemark zur Vermeidung der Doppelbesteuerung (BGBl 1996 II S. 2565)"
+  fassung: "BGBl 1996 II S. 2565 ff. (Gesetz + Abkommen, zweisprachig DE/DK; hier: OCR der DEUTSCHEN Spalte)"
+  quelle_url: "(BMF Staatenbezogene Informationen DK, Scraper-Korpus corpus/dba_pdfs/1996-11-06-Daenemark-Abkommen-DBA-Gesetz.pdf)"
+  abrufdatum: "2026-07-17"
+  datei: "dba_dk_abkommen_1995.txt"
+  pdf_datei: "dba_dk_abkommen_1995.pdf"
+  sha256: "d32109e99a56b2b6ed8c61bbc57173799d62043117e8e1e78a71e56ec2865efa"
+  pdf_sha256: "fb635442337ea9c74f304c528a1c80014d366b1c28069b5d80a92eb0c0eba644"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "GRUNDABKOMMEN DK. LAYER-PROVENANCE: BGBl-Bildscan OHNE Text-Layer -> tesseract-deu-OCR (300 dpi) der per Spalten-Crop isolierten DEUTSCHEN Spalte (links 52 %); daenische Spalte NICHT im Freeze. OCR-FEHLER-CAVEAT (Kern-Anker S. 2580 BILDVERIFIZIERT, links-seite-16): OCR liest 'verstehenden' (Bild: 'vorstehenden') und 'ebenfalis' (Bild: 'ebenfalls') - diese Woerter NIE als Anker. ECHTER BGBl-DRUCKFEHLER (bildbestaetigt): 'Anrechung' in Art. 24 Abs. 1 Buchst. b - so im amtlichen Druck. GUELTIGKEIT: gilt im Fenster VZ 2024-2026 i.d.F. des Protokolls v. 01.10.2020 (BGBl 2021 II S. 1216): Art. 24 Abs. 1 Buchst. a SATZ 2 (Alt-Progressionsvorbehalt) AUFGEHOBEN, Buchst. c NEU GEFASST (Prog) - Katalog nimmt a-Freistellung/Schachtel/b-Enum von HIER, Prog-c aus dem 2021er-Freeze. MLI: DK NICHT in bmf_stand_dba_2026-I.2 (VORSICHT: 'Daenemark 22.11.1995' in I.3 = Erbschaftsteuer-Liste, nicht ESt-MLI) -> einfassig via Protokoll-Kette. Anker nur deutsche OCR-Spalte, Silbentrennungs-Hyphene im Anker exakt wie OCR."
+  erwartete_anker:
+    - "Bei einer in der Bundesrepublik Deutschland ansässigen Person wird die Steuer wie folgt festgesetzt:"
+    - "Soweit nicht Buchstabe b anzuwenden ist, werden von der Bemessungsgrundlage der deutschen Steuer die Einkünfte aus Dänemark sowie die in Dänemark gelegenen Vermögens- werte ausgenommen, die nach diesem Abkommen in Däne- mark besteuert werden können"
+    - "Die Bundesrepublik Deutsch- land behält aber das Recht, die so ausgenommenen Einkünfte und Vermögenswerte bei der Festsetzung des Steuersatzes zu berücksichtigen"
+    - "Kapital zu mindestens 10 vom Hundert unmittelbar der deut- schen Gesellschaft gehört"
+    - "Einkünfte, die in Dänemark nach den Artikeln 13 Absatz 1 Satz 2, 15 Absatz 4, 16, 17, 18 Absatz 4 und 23 besteuert werden können"
+  verwendet_in: ["Paket 6 W1 DBA-Katalog DK (Grundtext OCR; Prog-c aus Protokoll-2020-Freeze)"]

@@ -1,0 +1,20 @@
+# Eingefrorener Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/dk/2020-10-01/gesetz-2021"
+  norm: "Gesetz v. 25.05.2021 zu dem Protokoll v. 01.10.2020 zur Aenderung des Abkommens v. 22.11.1995 (BGBl 2021 II S. 1216)"
+  fassung: "BGBl 2021 II Nr. 11 (Aenderungsprotokoll, DE/DK; sauberer Text-Layer); in Kraft laut Bekanntmachung BGBl 2022 II (Inkrafttreten-Bek v. 24.02.2022)"
+  quelle_url: "(BMF Staatenbezogene Informationen DK, Scraper-Korpus corpus/dba_pdfs/2021-06-02-Daenemark-Abkommen-DBA-Gesetz.pdf)"
+  abrufdatum: "2026-07-17"
+  datei: "dba_dk_protokoll_2020.txt"
+  pdf_datei: "dba_dk_protokoll_2020.pdf"
+  sha256: "0a2d112ae605df5e193312dab382b0c66d1d253d4c131b67d03394ed504ed297"
+  pdf_sha256: "ee0963290965252e19440f282c911ecfa87ad30a9a8ec4554c2066beff3eb99f"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "AENDERUNGSPROTOKOLL 2020 zu DK-1995 (umfassende BEPS-Modernisierung statt MLI): Titel/Praeambel, Art. 1 alt aufgehoben, Art. 7 AOA, Art. 14 aufgehoben u.v.m. METHODENARTIKEL: Art. 24 Abs. 1 Buchst. a SATZ 2 AUFGEHOBEN und Buchst. c NEU: 'Die Bundesrepublik Deutschland behaelt das Recht, ...' (Progressionsvorbehalt) - DER Prog-Anker fuer den DK-Katalog liegt HIER (sauberer Layer), nicht im OCR-Grundtext. Aenderungsbefehl-Doktrin fuer Judge-Laeufe. Textfehler des Zustimmungsgesetzes durch Berichtigung v. 24.11.2021 korrigiert (dba_dk_berichtigung_2021)."
+  erwartete_anker:
+    - "zu dem Protokoll vom 1. Oktober 2020"
+    - "Artikel 24 Absatz 1 Buchstabe a Satz 2 wird aufgehoben."
+    - "Die Bundesrepublik Deutschland behält das Recht, die nach"
+    - "Steuersatzes zu berücksichtigen."
+  verwendet_in: ["Paket 6 W1 DBA-Katalog DK (Art.-24-Aenderung; Prog-c-Anker)"]

@@ -1,0 +1,18 @@
+# Eingefrorener Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/dk/2020-10-01/berichtigung-2021"
+  norm: "Berichtigung v. 24.11.2021 des Gesetzes zu dem Protokoll v. 01.10.2020 (BGBl 2021 II S. ...)"
+  fassung: "BGBl 2021 II Nr. 25 v. 10.12.2021 (Berichtigung)"
+  quelle_url: "(BMF Staatenbezogene Informationen DK, Scraper-Korpus corpus/dba_pdfs/2021-12-10-Daenemark-Abkommen-DBA-Gesetz-Berichtigung.pdf)"
+  abrufdatum: "2026-07-17"
+  datei: "dba_dk_berichtigung_2021.txt"
+  pdf_datei: "dba_dk_berichtigung_2021.pdf"
+  sha256: "a9b48b7b50f105a5a3eb86b2c001ffb2fe8bc514c130eff990ef8817cd11663a"
+  pdf_sha256: "05725dcf0588c52a7d89d87dcbc74ec60f77926ebcdde66f46fc0698fdf5ee9e"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "BERICHTIGUNG des Zustimmungsgesetzes zum 2020er-Protokoll: nur Wortlaut-Korrekturen im Gesetzes-/Titeltext (u.a. Art.-1-Einfuegungen 'vom'/'den'); Abkommens-Art. 24 UNBERUEHRT. Ketten-Beleg fuer die Fassungsgenauigkeit."
+  erwartete_anker:
+    - "Berichtigung"
+    - "zu dem Protokoll vom 1. Oktober 2020"
+  verwendet_in: ["Paket 6 W1 DBA-Katalog DK (Fassungskette)"]

@@ -1,0 +1,18 @@
+# Eingefrorener Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/dk/2020-10-01/bekanntmachung-2022"
+  norm: "Bekanntmachung ueber das Inkrafttreten des Protokolls v. 01.10.2020 (BGBl 2022 II)"
+  fassung: "BGBl 2022 II v. 24.02.2022 (Inkrafttretens-Bekanntmachung)"
+  quelle_url: "(BMF Staatenbezogene Informationen DK, Scraper-Korpus corpus/dba_pdfs/2022-02-24-Daenemark-Abkommen-DBA-Bekanntmachung.pdf)"
+  abrufdatum: "2026-07-17"
+  datei: "dba_dk_bekanntmachung_2022.txt"
+  pdf_datei: "dba_dk_bekanntmachung_2022.pdf"
+  sha256: "511d7913606a86e75d0e56a7322fa1d60c2e8c80ef31b3c782c695a1aaf8e2bd"
+  pdf_sha256: "329cfb5e796247463a0230ca52a6bf1cc93488debc4eb25d8caa372636ec5024"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "INKRAFTTRETENS-BELEG des 2020er-Protokolls -> die geaenderte Fassung (inkl. Art.-24-Aenderung) gilt fuer das gesamte Fenster VZ 2024-2026."
+  erwartete_anker:
+    - "über das Inkrafttreten des Protokolls"
+    - "in Kraft getreten ist."
+  verwendet_in: ["Paket 6 W1 DBA-Katalog DK (Inkrafttretens-Beleg)"]
