@@ -1,0 +1,14 @@
+id: g32a_2025_split_52150
+beschreibung: "Splitting gemeinsames zvE 52150 Euro VZ 2025 - amtl. EStH-2025 H 34.2 (Berechnungsbeispiel § 34 Abs. 1), §32a-Splitting-Zwischenwert, cent-verifiziert"
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: zusammen
+  zu_versteuerndes_einkommen: 52150
+erwartung:
+  tarifliche_est: 6430
+quelle:
+  authority: verwaltung
+  redistributable: true
+  fundstelle: "EStH 2025 H 34.2 (Berechnungsbeispiel zu § 34 Abs. 1, corpus/vwv/esth2025/h-34-2.txt); § 32a Abs. 5 i.V.m. Abs. 1, VZ 2025; catala_est-reproduziert (Paket 10c Block 7)"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "das Zweifache des Steuerbetrags"
