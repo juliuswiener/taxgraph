@@ -249,6 +249,21 @@ def test_scheibe4_rentner_p33b_1zu1_und_klasse_f(bindung):
     assert rt["felder"]["rentner_gepflegter_hilflos"] is True
 
 
+def test_ehegatte_behinderung_partner_1zu1(bindung):
+    """Ehegatte-Behinderung §33b Person B (Freigabe msg 2725): die _partner-Felder mappen 1:1 auf EIGENE
+    Person-B-Kz (E0505809/E0505807, E05058-Block) — Klasse 1, NICHT g (Person B hat eigene Kz, kein
+    Person-A-Reuse). Exakt invertierbar."""
+    snap, _ = ST.materialisiere(_store_mit({
+        "rentner_grad_der_behinderung_partner": 60,
+        "rentner_hilflos_blind_taubblind_partner": True}))
+    r = EM.deklariere(snap, bindung)
+    assert r["deklaration"]["E0505809"] == 60                   # GdB Partner (Person-B-eigener Kz)
+    assert r["deklaration"]["E0505807"] is True                 # hilflos/blind Partner
+    rt = EM.zuruecklesen(r, bindung)
+    assert rt["felder"]["rentner_grad_der_behinderung_partner"] == 60
+    assert rt["felder"]["rentner_hilflos_blind_taubblind_partner"] is True
+
+
 def test_neg_scheibe3_verfaelschtes_1zu1_bricht_roundtrip(bindung):
     """Manipuliertes 1:1-Kapital-Kz -> Round-Trip weicht ab (kein stiller Durchlauf)."""
     snap, _ = ST.materialisiere(_store_mit({"kap_kapitalertraege": 1000000}))

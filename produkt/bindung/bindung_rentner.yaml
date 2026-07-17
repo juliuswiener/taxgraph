@@ -169,6 +169,46 @@ bindungen:
       zitatanker: "Als Pflege-Pauschbetrag wird gewährt"
       datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
 
+  # ========== Ehegatte-Behinderung §33b (Partner-Zwillinge, NUR Zusammenveranlagung §26b) ==========
+  # Person-B-EIGENE distinkte Kz (E05058-Block, Hash m1740292092) — KEIN Person-A-Reuse. est_mapping 1:1
+  # (Klasse 1), NICHT g: Person B hat eigene Kz. K2-Guard produkt/konsistenz/partner_check: Partner-Feld
+  # gesetzt aber veranlagung!=zusammen -> Widerspruch (fail-closed). Hinterbliebenen-Partner = benannte GAP
+  # (kein E10-Kz, belegt), Pflege-Partner = N/A (gepflegte-Person-Block), Tarif-Integration = kein Ring
+  # diese Runde (wie Person A). Store-/Feldseite folgt Modell-A-flach (wie an_gesamt _partner).
+  - feld_id: rentner_grad_der_behinderung_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: grad_der_behinderung_partner}
+    typ: int
+    einheit: null
+    bereich: {min: 20, max: 100, grund: "GdB des Ehe-/Lebenspartners, amtlich 20..100; jeder Ehegatte hat einen eigenen Behinderten-Pauschbetrag (§ 33b personenbezogen)."}
+    askable: true
+    fragetext_laie: "Welchen Grad der Behinderung hat dein zusammen veranlagter Ehe-/Lebenspartner (eine Zahl zwischen 20 und 100)?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung: jeder Ehegatte hat einen eigenen Behinderten-Pauschbetrag nach seinem eigenen Grad der Behinderung."
+    beispielwert: 50
+    herkunft_slots: null
+    elster_kz: E0505809
+    elster_kz_grund: "E0505809 [Ausw_Rentb_Besch], XSD-Label 'Grad der Behinderung' — Ehegatte/Person B (Block m1740292092, E05058; NICHT Person A E0109708); Vordruck agb_2025 zweiter GdB-Block 'Ehefrau/Person B' (kurz-Kz 155). Sektions-Pfad-belegt (Hash + Dok-Order nach E01097 + Vordruck-Header, Instructor msg 2725)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 3 S. 2 EStG"
+      zitatanker: "Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  - feld_id: rentner_hilflos_blind_taubblind_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: ist_hilflos_blind_taubblind_partner}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Ist dein zusammen veranlagter Ehe-/Lebenspartner hilflos, blind oder taubblind (Merkzeichen H, Bl oder TBl)?"
+    hilfe_kurz: "Mit einem dieser Merkzeichen bekommt der Partner den höchsten Pauschbetrag, unabhängig vom Grad der Behinderung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0505807
+    elster_kz_grund: "E0505807 [Blind_Hilfl], XSD-Label 'blind / taubblind / ständig hilflos (Merkzeichen Bl, TBl und/oder H)' — Ehegatte/Person B (Block m1740292092, E05058; NICHT Person A E0109706); Vordruck agb_2025 kurz-Kz 153. Sektions-Pfad-belegt (Instructor msg 2725)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 3 S. 3 EStG"
+      zitatanker: "Blinde und Taubblinde erhalten einen Pauschbetrag von 7 400 Euro"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
   # ========================= Veräußerungsfreibetrag §16 Abs. 4 (p16_4) =========================
   - feld_id: rentner_veraeusserungsgewinn
     quelle: {regel_id: p16_4_freibetrag, signatur_slot: veraeusserungsgewinn}
