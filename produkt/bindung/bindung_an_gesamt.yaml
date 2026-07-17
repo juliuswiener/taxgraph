@@ -1,0 +1,46 @@
+# Bindungstabelle — Scheibe an_gesamt: Gesamtsteuer-Ring Arbeitnehmerfall (Task #11, Stufe 1).
+# Validiert gegen schema.json. Slots exakt gegen catala_est-Inputs (bruttoarbeitslohn/veranlagung),
+# Zuschnitt 19d1686. regel_id p2_festzusetzung_einzel = Catala-Scope-Andockung (kein rules/estg-Dir,
+# wie EP; Slot-Korrektheit über Abgleich mit dev-1s slot_fn). §19/§26 gefreezt 7248bae.
+# HINWEIS Kinderzahl: KEINE eigene Bindung hier — der Ring nutzt fam_anzahl_kinder aus Scheibe 3
+# (bindung_kap_vv_familie, Multiplikations-Feld); feld_id global eindeutig (Drift-Wächter Assertion 5).
+# Stufe 2. werbungskosten/sonderausgaben sind interne est-Modul-Inputs (EP-/VOR-Felder existieren).
+version: 1
+scheibe: "Gesamtsteuer-Ring Arbeitnehmer (p2_festzusetzung_einzel): bruttoarbeitslohn (§19) + veranlagung (§26)"
+
+bindungen:
+  # ========================= Bruttoarbeitslohn (§ 19) =========================
+  - feld_id: bruttoarbeitslohn
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: bruttoarbeitslohn}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie hoch war dein Bruttoarbeitslohn dieses Jahr? (steht auf der Lohnsteuerbescheinigung)"
+    hilfe_kurz: "Der Bruttoarbeitslohn einschließlich Sachbezüge steht unter Nummer 3 der Lohnsteuerbescheinigung."
+    beispielwert: 4000000
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 3"]
+    elster_kz: E0200201
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Gehälter, Löhne, Gratifikationen, Tantiemen und andere Bezüge und Vorteile für eine Beschäftigung"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  # ========================= Veranlagungsart (§ 26) =========================
+  - feld_id: veranlagung
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: veranlagung}
+    typ: enum
+    einheit: null
+    enum_werte: ["einzel", "zusammen"]
+    askable: true
+    fragetext_laie: "Gibst du die Erklärung allein oder gemeinsam mit Ehe-/Lebenspartner ab?"
+    hilfe_kurz: "Gemeinsam = Zusammenveranlagung (oft günstiger bei unterschiedlichen Einkommen); allein = Einzelveranlagung."
+    beispielwert: "einzel"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Veranlagungsart-Weiche (Mantelbogen); global, kein eigenes Betrags-Kz — die Wahl steuert den Tarif (Grund- vs. Splittingtarif), sie wird nicht als Betrag deklariert."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 26 Abs. 1 S. 1 EStG"
+      zitatanker: "Ehegatten können zwischen der Einzelveranlagung (§ 26a) und der Zusammenveranlagung (§ 26b) wählen"
+      datei: "sources/gesetze-im-internet/estg_p26_2026-07-17.txt"

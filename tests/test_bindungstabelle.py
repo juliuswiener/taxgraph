@@ -264,12 +264,26 @@ def test_neg_verfaelschter_anker(daten):
 
 
 def test_neg_unbelegter_slot(daten):
-    """Entfernt eine Bindung -> ihr Slot bleibt unabgedeckt -> Vollständigkeit MUSS brechen."""
-    d = _erste_datei_daten(daten)
+    """Entfernt eine Bindung eines RESOLVBAREN Slots -> Vollständigkeit MUSS brechen. Sucht über ALLE
+    Scheiben (nicht nur die alphabetisch erste). Catala-Scope-Andockungen OHNE rules/estg-Dir (z.B.
+    p2_festzusetzung_einzel) haben bauartbedingt keine required slots (askable leer) — dort greift der
+    Vollständigkeits-Gate nicht; sie sind über Kz-/Drift-Wächter abgesichert und werden hier
+    übersprungen, damit der Test genau die Regeln prüft, für die die Garantie gilt."""
     rules = _rules()
-    # nimm einen askable Slot-Binding raus (kein summand-Slot, damit genau er fehlt)
-    ziel = next(b for b in d["bindungen"]
-                if "signatur_slot" in b["quelle"] and b.get("slot_beitrag", "exakt") == "exakt")
+    treffer = None
+    for f in sorted(daten):
+        d = copy.deepcopy(daten[f])
+        for b in d["bindungen"]:
+            if "signatur_slot" not in b["quelle"] or b.get("slot_beitrag", "exakt") != "exakt":
+                continue
+            askable, _ = _rule_slots(b["quelle"]["regel_id"], rules)
+            if b["quelle"]["signatur_slot"] in askable:
+                treffer = (d, b)
+                break
+        if treffer:
+            break
+    assert treffer, "kein resolvbarer askable Slot-Binding gefunden (Test wäre wirkungslos)"
+    d, ziel = treffer
     rid, slot = ziel["quelle"]["regel_id"], ziel["quelle"]["signatur_slot"]
     d["bindungen"] = [b for b in d["bindungen"] if b is not ziel]
     askable, _ = _rule_slots(rid, rules)
@@ -279,13 +293,11 @@ def test_neg_unbelegter_slot(daten):
 
 
 def test_neg_bereich_min_groesser_max(daten):
-    d = _erste_datei_daten(daten)
-    ziel = next((b for b in d["bindungen"] if b.get("bereich")), None)
-    if ziel is None:
-        pytest.skip("kein bereich-Feld")
-    ziel["bereich"] = {"min": 100, "max": 0}
-    ok = ziel["bereich"]["min"] <= ziel["bereich"]["max"]
-    assert not ok, "bereich min>max würde nicht auffallen"
+    # über ALLE Scheiben suchen (die alphabetisch erste kann bereich-frei sein, z.B. an_gesamt)
+    ziel = next((b for d in daten.values() for b in d["bindungen"] if b.get("bereich")), None)
+    assert ziel is not None, "kein bereich-Feld in irgendeiner Scheibe — Negativtest wäre wirkungslos"
+    verdreht = {"min": 100, "max": 0}                 # lokal, keine Fixture-Mutation
+    assert not (verdreht["min"] <= verdreht["max"]), "bereich min>max würde nicht auffallen"
 
 
 def test_neg_gemischte_summanden(daten):
