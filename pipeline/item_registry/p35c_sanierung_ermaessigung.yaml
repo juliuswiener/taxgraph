@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p35c_sanierung_ermaessigung
-version: 1
+version: 2
 items:
 - art: annahme
   anker:
@@ -41,5 +41,7 @@ items:
     um je 7 Prozent
   - für das begünstigte Objekt
   - für ein in der EU/EWR belegenes, zu eigenen Wohnzwecken genutztes eigenes Gebäude
-  triage: nicht_material_backlog
-  klasse: unabhaengig
+  - zu eigenen Wohnzwecken genutzten eigenen Gebäude
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: eigenes_gebaeude

@@ -2,7 +2,7 @@
 # Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
 
 rule_id: p35c_energieberater_ermaessigung
-version: 1
+version: 2
 items:
 - art: norm_teil
   anker:
@@ -13,3 +13,12 @@ items:
     der Aufwendungen für den Energieberater.
   triage: nicht_material_backlog
   klasse: wirkt_hinein
+- art: norm_teil
+  anker:
+  - ref
+  - § 35c abs. 1 s. 1 estg
+  formulierungen:
+  - zu eigenen Wohnzwecken genutzten eigenen Gebäude
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: eigenes_gebaeude

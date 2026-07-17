@@ -4213,3 +4213,47 @@ entscheidungen:
       an p34c_1. adjudikation-instructor-2026-07-17-p10c Block 3.
   entschieden_via: adjudikation-instructor-2026-07-17-p10c
   timestamp: '2026-07-17T13:36:12.021576+00:00'
+- rule_id: p35c_sanierung_ermaessigung
+  schluessel: '["norm_teil", "ref", "§ 35c abs. 1 s. 1 estg"]'
+  triage: bedingung_neu
+  bedingung: eigenes_gebaeude
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 35c abs. 1 s. 1 estg
+    formulierung: zu eigenen Wohnzwecken genutzten eigenen Gebäude
+    klasse: wirkt_hinein
+    begruendung: Eigentuemer-Erfordernis § 35c Abs. 1 S. 1 materialisiert (Paket-10a-Fund
+      A.5). Anspruchsberechtigt nur der Eigentuemer des zu eigenen Wohnzwecken genutzten
+      Gebaeudes; Nicht-Eigentuemer mit Eigennutzung faellt raus. adjudikation-instructor-2026-07-17-p10c
+      Block 5.
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T13:40:53.605615+00:00'
+- rule_id: p35c_energieberater_ermaessigung
+  schluessel: '["norm_teil", "ref", "§ 35c abs. 1 s. 1 estg"]'
+  triage: bedingung_neu
+  bedingung: eigenes_gebaeude
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 35c abs. 1 s. 1 estg
+    formulierung: zu eigenen Wohnzwecken genutzten eigenen Gebäude
+    klasse: wirkt_hinein
+    begruendung: Eigentuemer-Erfordernis § 35c Abs. 1 S. 1 materialisiert (Paket-10a-Fund
+      A.5). Anspruchsberechtigt nur der Eigentuemer des zu eigenen Wohnzwecken genutzten
+      Gebaeudes; Nicht-Eigentuemer mit Eigennutzung faellt raus. adjudikation-instructor-2026-07-17-p10c
+      Block 5.
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T13:40:54.372327+00:00'

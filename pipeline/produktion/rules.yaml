@@ -3006,7 +3006,7 @@ regeln:
   - bedingung: verlustvortrag_bestand_festgestellt
     deckt_ab: Nicht ausgeglichene negative Einkünfte, die nicht nach Absatz 1 abgezogen worden sind
     quelle: § 10d Abs. 2 i.V.m. Abs. 4 EStG
-    beschreibung: verlustvortrag_bestand ist der zum Schluss des Vorjahres gesondert festgestellte verbleibende Verlustvortrag (Abs 4) - kommt als State-Input aus der § 2/VZ-Integration; die Fortschreibung selbst ist nicht Gegenstand dieser Regel. Bestand >= 0 vorausgesetzt. Verlustruecktrag (Abs 1) = Nicht-Gegenstand (fremder VZ-Bescheid, Verfahren/State).
+    beschreibung: verlustvortrag_bestand ist der zum Schluss des Vorjahres gesondert festgestellte verbleibende Verlustvortrag (Abs 4) - kommt als State-Input aus der § 2/VZ-Integration; die Fortschreibung selbst ist nicht Gegenstand dieser Regel. Bestand >= 0 vorausgesetzt. Verlustruecktrag (Abs 1) = Nicht-Gegenstand (fremder VZ-Bescheid, Verfahren/State). GUELTIGKEIT 70-Prozent-Staffel - WachstumschancenG (27.03.2024), gilt VZ 2024 bis 2027; ab VZ 2028 Rueckfall auf 60 Prozent (dann VZ-parametrisieren nach K5-Muster). Aktueller VZ-Scope 2024-2026 liegt komplett im 70-Prozent-Fenster; p10d_2 rechnet bereits 70 Prozent (kein 60-auf-70-Fix noetig). Amtl. Zweitbeleg corpus/vwv/esth2025/paragraf-10d-index.txt (EStH-2025-Abdruck zeigt 70 Prozent).
   rundung: []
   signature:
     scope: VerlustvortragAbzug
@@ -3087,6 +3087,10 @@ regeln:
     zitatanker: höchstens jedoch um je 14 000 Euro
     auszug: Für energetische Maßnahmen an einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum belegenen zu eigenen Wohnzwecken genutzten eigenen Gebäude (begünstigtes Objekt) ermäßigt sich auf Antrag die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, im Kalenderjahr des Abschlusses der energetischen Maßnahme und im nächsten Kalenderjahr um je 7 Prozent der Aufwendungen des Steuerpflichtigen, höchstens jedoch um je 14 000 Euro und im übernächsten Kalenderjahr um 6 Prozent der Aufwendungen des Steuerpflichtigen, höchstens jedoch um 12 000 Euro für das begünstigte Objekt.
   geltungsbedingungen:
+  - bedingung: eigenes_gebaeude
+    deckt_ab: zu eigenen Wohnzwecken genutzten eigenen Gebäude
+    quelle: § 35c Abs. 1 S. 1 EStG
+    beschreibung: 'Eigentuemer-Erfordernis - anspruchsberechtigt ist nur der Eigentuemer des Gebaeudes (Abs. 1 S. 1 eigenen Gebaeude, iVm Abs. 6 Wohnungseigentum). Ein Nicht-Eigentuemer mit blosser Eigennutzung (z.B. Mieter) faellt raus - eigenstaendiges Tatbestandsmerkmal neben der Eigennutzung (ausschliesslich_eigene_wohnzwecke). Sachverhalts-Vorfrage der §2-Integration.'
   - bedingung: objekt_aelter_zehn_jahre
     deckt_ab: bei der Durchführung der energetischen Maßnahme älter als zehn Jahre
     quelle: § 35c Abs. 1 S. 2 EStG
@@ -3184,6 +3188,10 @@ regeln:
     zitatanker: abweichend von Satz 1 um 50 Prozent der Aufwendungen für den Energieberater
     auszug: die tarifliche Einkommensteuer vermindert sich abweichend von Satz 1 um 50 Prozent der Aufwendungen für den Energieberater.
   geltungsbedingungen:
+  - bedingung: eigenes_gebaeude
+    deckt_ab: zu eigenen Wohnzwecken genutzten eigenen Gebäude
+    quelle: § 35c Abs. 1 S. 1 EStG
+    beschreibung: 'Eigentuemer-Erfordernis - anspruchsberechtigt ist nur der Eigentuemer des Gebaeudes (Abs. 1 S. 1 eigenen Gebaeude, iVm Abs. 6 Wohnungseigentum). Gilt auch fuer den Energieberater-Sondersatz (Abs. 1 S. 4) am selben beguenstigten Objekt. Nicht-Eigentuemer mit blosser Eigennutzung faellt raus. Sachverhalts-Vorfrage der §2-Integration.'
   - bedingung: energieberater_bafa_zugelassen_und_beauftragt
     deckt_ab: vom Bundesamt für Wirtschaft und Ausfuhrkontrolle (BAFA) als fachlich qualifiziert
     quelle: § 35c Abs. 1 S. 4 EStG
