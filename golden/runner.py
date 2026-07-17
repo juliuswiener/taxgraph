@@ -407,6 +407,9 @@ def catala_est(sachverhalt: dict) -> int:
             sonderausgaben_in=Money(f"{int(sachverhalt.get('sonderausgaben', 0))}.00"),
             veranlagungszeitraum_in=VZ_ENUM[year]))
         return int(out.festzusetzende_est) // 100
+    # § 34 Abs. 1 Fuenftelregelung (ausserordentliche Einkuenfte), Kernfall verbleibendes zvE >= 0.
+    if "ausserordentliche_einkuenfte" in sachverhalt:
+        return catala_fuenftel(sachverhalt)
     # Tariff-level case (zvE -> tarifliche ESt).
     m = Money(f"{int(sachverhalt['zu_versteuerndes_einkommen'])}.00")
     if veranlagung == "einzel":
@@ -418,6 +421,51 @@ def catala_est(sachverhalt: dict) -> int:
     else:
         raise ValueError(f"unknown veranlagung: {veranlagung}")
     return int(out.tarifliche_steuer) // 100
+
+
+def catala_fuenftel(s: dict) -> int:
+    """§ 34 Abs. 1 Fuenftelregelung (ausserordentliche Einkuenfte), Kernfall verbleibendes zvE >= 0.
+
+    ORCHESTRIERT bestehende Scopes (catala_gesamt-Muster, KEIN neuer Rechenpfad, keine Nachbildung
+    der Tariflogik): der § 32a-Tarif kommt aus dem Catala-Scope Einkommensteuertarif, der Faktor 5
+    ist die exakte Struktur-Konstante der Regel p34_fuenftel_ao_est (dort als est_ao = 5 x Differenz
+    verifiziert). Glue = Subtraktion (verbleibendes zvE), 1/5-Aufteilung und Summe.
+
+        verbleibendes_zve = zvE - ao
+        est1 = Tarif(verbleibendes_zve)
+        est2 = Tarif(verbleibendes_zve + ao/5)
+        est_ao = 5 * (est2 - est1)                 # p34_fuenftel_ao_est
+        tarifliche_est = est1 + est_ao
+
+    NEGATIVFALL § 34 Abs. 1 S. 3 (verbleibendes zvE negativ) ist NICHT modelliert — der Scope klammert
+    ihn aus (est_ao = 5 x est(zvE/5), dritter Tarif-Input). H 34.2 Bsp 2 (Erwartung 12.010) ist als
+    benannte Luecke geparkt -> Backlog Task #12 (Scope-Erweiterung, rules/estg).
+    """
+    year = s["veranlagungszeitraum"]
+    ver = s.get("veranlagung")
+    zve = int(s["zu_versteuerndes_einkommen"])
+    ao = int(s["ausserordentliche_einkuenfte"])
+    verbleibendes_zve = zve - ao
+    if verbleibendes_zve < 0:
+        raise ValueError("§ 34 Abs. 1 S. 3 (verbleibendes zvE negativ) nicht modelliert "
+                         "(s. Backlog Task #12).")
+
+    def _tarif_cent(x: int) -> int:
+        m = Money(f"{int(x)}.00")
+        if ver == "einzel":
+            out = E.grundtarif(E.GrundtarifIn(
+                zu_versteuerndes_einkommen_in=m, veranlagungszeitraum_in=VZ_ENUM[year]))
+        elif ver == "zusammen":
+            out = E.splittingtarif(E.SplittingtarifIn(
+                zu_versteuerndes_einkommen_gemeinsam_in=m, veranlagungszeitraum_in=VZ_ENUM[year]))
+        else:
+            raise ValueError(f"unknown veranlagung: {ver}")
+        return int(out.tarifliche_steuer)
+
+    est1 = _tarif_cent(verbleibendes_zve)
+    est2 = _tarif_cent(verbleibendes_zve + ao // 5)
+    est_ao = 5 * (est2 - est1)
+    return (est1 + est_ao) // 100
 
 
 def main() -> int:

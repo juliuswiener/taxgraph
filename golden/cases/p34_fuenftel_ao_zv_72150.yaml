@@ -1,0 +1,28 @@
+id: p34_fuenftel_ao_zv_72150
+beschreibung: >-
+  § 34 Abs. 1 Fünftelregelung, Zusammenveranlagung, zvE 72.150 Euro, außerordentliche Einkünfte
+  25.000 Euro -> tarifliche ESt 11.742 Euro (EStH 2025 H 34.2 Beispiel 1, e2e über § 32a-Splittingtarif
+  VZ 2025). Rechenweg: verbleibendes zvE 47.150 -> 5.102; +1/5 der ao (52.150) -> 6.430;
+  Unterschiedsbetrag 1.328 x Faktor 5 = 6.640; 5.102 + 6.640 = 11.742.
+
+# BENANNTE LÜCKE (Backlog Task #12): H 34.2 Beispiel 2 (§ 34 Abs. 1 S. 3, NEGATIVES verbleibendes zvE,
+# §-16-Veräußerungsgewinn) mit amtlicher Erwartung 12.010 ist NICHT als Golden gebaut — die Regel
+# p34_fuenftel_ao_est klammert den Abs.-1-S.-3-Sonderpfad (est_ao = 5 x est(zvE/5), dritter Tarif-Input)
+# ausdrücklich aus (deckt_ab vorhanden). Wird Golden, sobald der Sonderpfad als Catala-Scope modelliert
+# ist (rules/estg-Zone). Erwartung 12.010 liegt geparkt bereit.
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: zusammen
+  zu_versteuerndes_einkommen: 72150
+  ausserordentliche_einkuenfte: 25000
+
+erwartung:
+  tarifliche_est: 11742
+
+quelle:
+  authority: verwaltung
+  redistributable: true
+  fundstelle: "EStH 2025 H 34.2 Beispiel 1 (§ 34 Abs. 1 Fünftelregelung, Zusammenveranlagung); Zwischen-Steuerbeträge via § 32a-Splittingtarif VZ 2025 (corpus/vwv/esth2025/h-34-2.txt)"
+  datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  zitatanker: "beträgt das Fünffache des Unterschiedsbetrags"
