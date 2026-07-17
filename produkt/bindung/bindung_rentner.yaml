@@ -1,0 +1,254 @@
+# Bindungstabelle — Scheibe 4: Rentner-Familie (§22/§24a/§33b/§16 Abs. 4/§34) (Task #11).
+# Validiert gegen schema.json (kein neues Schema). Signaturen/Bedingungen: rules.yaml.
+# Kohorten-Parameter (besteuerungsanteil_prozent/prozentsatz) sind aus dem Jahr-Feld abgeleitet ->
+# Lücke; der Renten-Beginn-Jahr treibt die Kohortentabelle (askable). Pauschbeträge = Enum-Staffel,
+# askable grad/pflegegrad/Flags. E-Nr Rentner-Anlagen (R/Behinderung) -> XSD-Nachtrag -> null+grund.
+version: 1
+scheibe: "Rente §22 (p22_1) + Altersentlastung §24a (p24a) + Pauschbeträge §33b (Behinderten/Hinterbliebenen/Pflege) + Veräußerungsfreibetrag §16 Abs. 4 (p16_4) + Fünftel §34 (p34_fuenftel_ao_est, nur Lücken)"
+
+bindungen:
+  # ========================= Rente §22 Nr. 1 — Besteuerungsanteil (p22_1) =========================
+  - feld_id: rentner_jahresrente
+    quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, signatur_slot: jahresrente}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Rente hast du dieses Jahr insgesamt bekommen (der volle Jahresbetrag, bevor etwas abgezogen wird)?"
+    hilfe_kurz: "Der gesamte Jahresbetrag deiner Rente. Steht in der Mitteilung deines Rentenversicherungsträgers."
+    beispielwert: 1800000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage R (Renten), Jahresbetrag der Leibrente; XSD-E-Nr Sektions-Lookup-Nachtrag (Rentner-Anlagen noch nicht gemappt)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "Bemessungsgrundlage für den der Besteuerung unterliegenden Anteil ist der Jahresbetrag der Rente"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_renten_beginn_jahr
+    quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: besteuerungsanteil_aus_kohortentabelle}
+    typ: int
+    einheit: Jahr
+    bereich: {min: 1955, max: 2060, grund: "Renten-Beginn-Jahr; Kohorten-Besteuerung ab 2005 (AltEinkG), davor 50 %; untere/obere Grenze deckt realistische Rentenbeginne."}
+    askable: true
+    fragetext_laie: "Seit welchem Jahr bekommst du deine Rente?"
+    hilfe_kurz: "Das Jahr, in dem deine Rente zum ersten Mal gezahlt wurde. Danach richtet sich, welcher Anteil der Rente steuerpflichtig ist."
+    beispielwert: 2015
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage R, Rentenbeginn (Jahr des Rentenbeginns); Kohorten-Lookup-Schlüssel, XSD-E-Nr Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "maßgebenden Prozentsatz aus der nachstehenden Tabelle"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+
+  # ========================= Altersentlastungsbetrag §24a (p24a) =========================
+  - feld_id: rentner_alter_64_erfuellt
+    quelle: {regel_id: p24a_altersentlastungsbetrag, geltungsbedingung: alter_64_vor_bezugsjahr_vollendet}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hattest du vor Beginn dieses Jahres schon deinen 64. Geburtstag?"
+    hilfe_kurz: "Der Altersentlastungsbetrag steht dir zu, wenn du zu Beginn des Jahres bereits 64 Jahre alt warst."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Alters-Voraussetzung (Ja/Nein), ergibt sich aus dem Geburtsdatum im Mantelbogen; kein eigenes Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 24a S. 3 EStG"
+      zitatanker: "das 64. Lebensjahr vollendet hatte"
+      datei: "sources/gesetze-im-internet/estg_p24a_2026-07-13.txt"
+
+  # ========================= Behinderten-Pauschbetrag §33b Abs. 1-3 =========================
+  - feld_id: rentner_grad_der_behinderung
+    quelle: {regel_id: p33b_behinderten_pauschbetrag, signatur_slot: grad_der_behinderung}
+    typ: int
+    einheit: null
+    bereich: {min: 20, max: 100, grund: "Grad der Behinderung (GdB) amtlich 20..100 in 10er-Schritten; ab 20 wird ein Pauschbetrag gewährt."}
+    askable: true
+    fragetext_laie: "Welchen Grad der Behinderung hat dein Schwerbehindertenausweis (eine Zahl zwischen 20 und 100)?"
+    hilfe_kurz: "Steht in deinem Feststellungsbescheid oder Schwerbehindertenausweis. Je höher der Grad, desto höher der Pauschbetrag."
+    beispielwert: 50
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage Außergewöhnliche Belastungen / Mantelbogen, Grad der Behinderung; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 3 S. 2 EStG"
+      zitatanker: "Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  - feld_id: rentner_hilflos_blind_taubblind
+    quelle: {regel_id: p33b_behinderten_pauschbetrag, signatur_slot: ist_hilflos_blind_taubblind}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Bist du hilflos, blind oder taubblind (Merkzeichen H, Bl oder TBl im Ausweis)?"
+    hilfe_kurz: "Mit einem dieser Merkzeichen bekommst du den höchsten Pauschbetrag, unabhängig vom Grad der Behinderung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Merkzeichen H/Bl/TBl (Anlage Außergewöhnliche Belastungen); XSD-E-Nr Sektions-Lookup-Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 3 S. 3 EStG"
+      zitatanker: "Blinde und Taubblinde erhalten einen Pauschbetrag von 7 400 Euro"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  # ========================= Hinterbliebenen-Pauschbetrag §33b Abs. 4 =========================
+  - feld_id: rentner_hinterbliebenenbezuege
+    quelle: {regel_id: p33b_hinterbliebenen_pauschbetrag, signatur_slot: hat_hinterbliebenenbezuege}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Bekommst du Hinterbliebenenbezüge (z. B. Witwen-, Witwer- oder Waisenrente nach gesetzlichen Vorschriften)?"
+    hilfe_kurz: "Wenn dir laufende Hinterbliebenenbezüge bewilligt sind, steht dir ein Pauschbetrag von 370 Euro zu."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage Außergewöhnliche Belastungen, Hinterbliebenen-Pauschbetrag; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 4 EStG"
+      zitatanker: "einen Pauschbetrag von 370 Euro"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  # ========================= Pflege-Pauschbetrag §33b Abs. 6 =========================
+  - feld_id: rentner_pflegegrad
+    quelle: {regel_id: p33b_pflege_pauschbetrag, signatur_slot: pflegegrad}
+    typ: int
+    einheit: null
+    bereich: {min: 1, max: 5, grund: "Pflegegrade 1..5 (SGB XI); Pflege-Pauschbetrag wird ab Pflegegrad 2 gewährt (gestaffelt bis 5)."}
+    askable: true
+    fragetext_laie: "Welchen Pflegegrad hat die Person, die du zu Hause unentgeltlich pflegst (eine Zahl zwischen 1 und 5)?"
+    hilfe_kurz: "Den Pflege-Pauschbetrag gibt es, wenn du jemanden mit Pflegegrad 2 bis 5 ohne Bezahlung pflegst."
+    beispielwert: 3
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage Außergewöhnliche Belastungen, Pflege-Pauschbetrag/Pflegegrad; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 3 EStG"
+      zitatanker: "Als Pflege-Pauschbetrag wird gewährt"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  - feld_id: rentner_gepflegter_hilflos
+    quelle: {regel_id: p33b_pflege_pauschbetrag, signatur_slot: ist_hilflos}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Ist die von dir gepflegte Person hilflos (Merkzeichen H)?"
+    hilfe_kurz: "Bei einer hilflosen Person (Merkzeichen H) gilt der höchste Pflege-Pauschbetrag."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage Außergewöhnliche Belastungen, Merkzeichen H der gepflegten Person; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 3 EStG"
+      zitatanker: "Als Pflege-Pauschbetrag wird gewährt"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  # ========================= Veräußerungsfreibetrag §16 Abs. 4 (p16_4) =========================
+  - feld_id: rentner_veraeusserungsgewinn
+    quelle: {regel_id: p16_4_freibetrag, signatur_slot: veraeusserungsgewinn}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie hoch war dein Gewinn aus dem Verkauf oder der Aufgabe deines Betriebs?"
+    hilfe_kurz: "Der Gewinn aus der Betriebsveräußerung/-aufgabe. Bis 45.000 Euro bleibt auf Antrag steuerfrei (ab 136.000 Euro Gewinn schmilzt der Freibetrag ab)."
+    beispielwert: 15000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage G/S (Betriebsveräußerung), Veräußerungsgewinn; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 3 EStG"
+      zitatanker: "45 000 Euro übersteigt"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_alter_55_oder_berufsunfaehig
+    quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: alter_55_oder_berufsunfaehig}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Warst du beim Verkauf des Betriebs mindestens 55 Jahre alt — oder dauerhaft berufsunfähig?"
+    hilfe_kurz: "Der Freibetrag steht dir nur zu, wenn eine dieser Voraussetzungen erfüllt ist."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Persönliche Voraussetzung (Ja/Nein) zum Veräußerungsfreibetrag; kein eigenes Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 1 EStG"
+      zitatanker: "das 55. Lebensjahr vollendet"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_freibetrag_erstmalig
+    quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: freibetrag_einmal_im_leben}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du diesen Freibetrag für einen Betriebsverkauf noch nie zuvor in Anspruch genommen?"
+    hilfe_kurz: "Diesen Freibetrag gibt es nur einmal im Leben. Antworte mit Ja, wenn du ihn noch nie genutzt hast."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Einmaligkeits-Voraussetzung (Ja/Nein); lebenslange Einmal-Gewährung, kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 2 EStG"
+      zitatanker: "nur einmal zu gewähren"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+
+luecken:
+  # -- §22 Nr. 1 — Kohorten-Parameter + State-Annahme --
+  - regel_id: p22_1_leibrente_besteuerungsanteil
+    signatur_slot: besteuerungsanteil_prozent
+    grund: "Abgeleitet aus rentner_renten_beginn_jahr via Kohortentabelle (§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa); der Prozentsatz ist kein Laien-Feld, er ergibt sich aus dem Renten-Beginn-Jahr."
+  - regel_id: p22_1_leibrente_besteuerungsanteil
+    geltungsbedingung: rentenfreibetrag_fixierung_ist_folgejahr_state
+    grund: "Der steuerfreie Teil der Rente wird im Jahr NACH dem Rentenbeginn festgeschrieben (State/Kohorten-Konvention); Rechenlogik der Regel, keine eigene Abfrage."
+  # -- §24a — geteilte/berechnete Bemessung + Kohorten-Parameter --
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: arbeitslohn
+    grund: "Bemessungs-Input = Bruttoarbeitslohn (Anlage N), bereits in der N-Scheibe erfasst; für den Altersentlastungsbetrag keine eigene Abfrage, gespeist aus dem Gesamteinkommen."
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: positive_andere_einkuenfte
+    grund: "Abgeleitet = Summe der positiven anderen Einkünfte (die nicht aus nichtselbständiger Arbeit sind); rechnet die Regel aus den übrigen Einkünften, keine eigene Abfrage."
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: prozentsatz
+    grund: "Kohorten-Parameter (maßgebender Prozentsatz), abgeleitet aus dem Jahr nach Vollendung des 64. Lebensjahres via § 24a-Tabelle; kein Laien-Feld. (Höchstbetrag = params-Key, auto-exempt.)"
+  - regel_id: p24a_altersentlastungsbetrag
+    geltungsbedingung: prozentsatz_hoechstbetrag_aus_kohortentabelle
+    grund: "Prozentsatz und Höchstbetrag stammen aus der Kohortentabelle (§ 24a); Parameter-Lookup, keine Abfrage. Künftige Verfeinerung: Geburtsjahr-Feld als Kohorten-Schlüssel (analog rentner_renten_beginn_jahr)."
+  - regel_id: p24a_altersentlastungsbetrag
+    geltungsbedingung: bemessung_netto_nach_ausschluessen
+    grund: "Bemessung nach Ausschluss bestimmter Einkünfte (u. a. nicht solche aus nichtselbständiger Arbeit); Rechenlogik der Regel auf den bereits erfassten Einkünften, keine eigene Abfrage."
+  # -- §33b — Staffel-/Override-Rechenlogik (in den Feldern materialisiert) --
+  - regel_id: p33b_behinderten_pauschbetrag
+    geltungsbedingung: gdb_stufenfunktion_von_mindestens
+    grund: "Die Stufenfunktion (Pauschbetrag je GdB-Stufe) ist Rechenlogik der Regel; im Feld rentner_grad_der_behinderung materialisiert."
+  - regel_id: p33b_behinderten_pauschbetrag
+    geltungsbedingung: hilflos_blind_taubblind_override
+    grund: "Der Höchst-Pauschbetrag bei H/Bl/TBl überschreibt die GdB-Staffel; im Feld rentner_hilflos_blind_taubblind materialisiert."
+  - regel_id: p33b_hinterbliebenen_pauschbetrag
+    geltungsbedingung: hinterbliebenenbezuege_bewilligt
+    grund: "Voraussetzung 'laufende Hinterbliebenenbezüge bewilligt'; im Feld rentner_hinterbliebenenbezuege materialisiert."
+  - regel_id: p33b_pflege_pauschbetrag
+    geltungsbedingung: pflegegrad_staffel
+    grund: "Die Pflegegrad-Staffel (Betrag je Pflegegrad 2..5 bzw. hilflos) ist Rechenlogik der Regel; in den Feldern rentner_pflegegrad + rentner_gepflegter_hilflos materialisiert."
+  # -- §16 Abs. 4 — Antrag (Geltendmachung selbst) --
+  - regel_id: p16_4_freibetrag
+    geltungsbedingung: auf_antrag
+    grund: "Der Antrag ist die Geltendmachung selbst (Eintrag in der Anlage); kein eigenes Ja/Nein-Feld neben rentner_veraeusserungsgewinn."
+  # -- §34 Abs. 1 Fünftelregelung — berechnete Tarif-Inputs + §2-Integrations-Qualifikation --
+  - regel_id: p34_fuenftel_ao_est
+    signatur_slot: est_verbleibendes_zve
+    grund: "Berechnete Tarifgröße (ESt für das um die ao-Einkünfte verminderte zvE); Tarif-Andockung, kein Laien-Feld."
+  - regel_id: p34_fuenftel_ao_est
+    signatur_slot: est_verbleibendes_zve_plus_fuenftel_ao
+    grund: "Berechnete Tarifgröße (ESt für verbleibendes zvE zzgl. eines Fünftels der ao-Einkünfte); Tarif-Andockung, kein Laien-Feld."
+  - regel_id: p34_fuenftel_ao_est
+    geltungsbedingung: ao_einkuenfte_zusammengeballt
+    grund: "Ao-Qualifikation/Zusammenballung (§ 34 Abs. 2: Abfindung Nr. 2, mehrjährige Vergütung Nr. 4 usw.) erfolgt in der § 2-Integration; hier sind beide ESt-Vergleichswerte bereits Inputs. Der ao-Einkünfte-BETRAG hat keinen rules.yaml-Input-Slot (nur der golden-Accessor 'ausserordentliche_einkuenfte') -> askable ao-Feld braucht Integrations-Andock-Entscheid (offene Frage an Instructor)."
+  - regel_id: p34_fuenftel_ao_est
+    geltungsbedingung: verbleibendes_zve_nicht_negativ
+    grund: "Fallweiche zum Sonderpfad § 34 Abs. 1 S. 3 (negatives verbleibendes zvE); berechnet in der § 2-Integration, keine Abfrage."
