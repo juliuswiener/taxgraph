@@ -290,6 +290,8 @@ AN_GESAMT_DHF = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland",
 AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr",
                      "vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
                      "vor_rv_ausserhalb_lstb_partner")
+AN_GESAMT_VERPFLEGUNG = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig",
+                         "vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
 AN_GESAMT_KEGEL = [
     ("bruttoarbeitslohn", 4000000),   # 40000 € in Cent (Bindung typ:cent)
     ("veranlagung", "einzel"),
@@ -299,6 +301,8 @@ AN_GESAMT_KEGEL = [
     ("dhf_unterkunftskosten_monat", 0), ("dhf_monate", 0), ("dhf_im_inland", True),
     ("dhf_beruflich_veranlasst", True), ("dhf_eigener_hausstand", True),
     ("dhf_finanzielle_beteiligung", True), ("dhf_keine_pflicht_dienstwohnung", True),
+    # reiner Pendler: keine Verpflegung (alle Tage 0 → Verpflegungs-Abzug 0, Guard irrelevant)
+    ("tage_24h", 0), ("tage_an_abreise", 0), ("tage_ueber_8h_eintaegig", 0),
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
 ]
 
@@ -336,7 +340,7 @@ def test_an_gesamt_durchstich(base):
     ids = {q["feld_id"] for q in fr["fragen"]}
     assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
              "kein_sonstige"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_DHF)
-            | set(AN_GESAMT_PARTNER)) == ids
+            | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)) == ids
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
         assert st == 201
@@ -427,6 +431,39 @@ def test_an_gesamt_dhf_ausland(base):
     _an_gesamt_anlegen(base, "ag_ausl", _dhf_kegel(140000, im_inland=False))
     st, erg = _req(base, "GET", "/fall/ag_ausl/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "ausland_dhf_nicht_ring_faehig"
+
+
+def _verpflegung_kegel(monate=2, keine_mahlzeit=True, tage_24h=10):
+    """an_gesamt-Kegel mit Verpflegungs-Reisetagen. Guard-Felder werden nur gesetzt, wenn nicht None
+    (None simuliert den UNSET-Fall für den fail-closed-Test)."""
+    kegel = [(f, w) for f, w in AN_GESAMT_KEGEL if f != "tage_24h"]
+    kegel.append(("tage_24h", tage_24h))
+    if monate is not None:
+        kegel.append(("vpf_monate_am_ort", monate))
+    if keine_mahlzeit is not None:
+        kegel.append(("vpf_keine_mahlzeitengestellung", keine_mahlzeit))
+    return kegel
+
+
+def test_an_gesamt_verpflegung_ring(base):
+    """Stufe 1b: Verpflegung echt gerechnet. EP 2156 + Verpflegung 280 (10 volle Tage à 28) → WK 2436
+    → festzusetzende_est 6542 = 654200 Cent. Reduktion explizit safe (≤3 Monate, keine Mahlzeiten)."""
+    catala = _catala_da()
+    _an_gesamt_anlegen(base, "vpf", _verpflegung_kegel())
+    st, erg = _req(base, "GET", "/fall/vpf/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 654200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_an_gesamt_verpflegung_reduktion_unset(base):
+    """fail-closed-on-unset (Instructor-Härtung): Reisetage > 0, aber die Reduktions-Fragen
+    (3-Monats-Frist / Mahlzeitenkürzung) UNBEANTWORTET → Ring gesperrt, kein stiller Über-Abzug."""
+    _an_gesamt_anlegen(base, "vpu", _verpflegung_kegel(monate=None, keine_mahlzeit=None))
+    st, erg = _req(base, "GET", "/fall/vpu/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "verpflegung_reduktion_offen"
 
 
 def _zusammen_kegel(vor_a=0, ohne=()):

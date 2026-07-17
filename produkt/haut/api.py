@@ -43,8 +43,13 @@ EP_FELDER = ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigene
 AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
 # Sperr-Felder (K2-Guard): ein aktiver Wert > 0 macht den Ring UNMÖGLICH (die Engine kann diese
 # Werbungskosten mangels Modell nicht rechnen) → Ring bleibt unavailable, NIE still auf 0.
-# Stufe 1b: dHf ist RING-FÄHIG (raus); Verpflegung (Tage-Bindung offen) + Arbeitsmittel bleiben.
-GUARD_WERBUNGSKOSTEN = ("vpf_abwesenheit_stunden", "am_anschaffungskosten")
+# Stufe 1b: dHf + Verpflegung sind RING-FÄHIG (raus); nur Arbeitsmittel (kein Modell) bleibt hart im Guard.
+GUARD_WERBUNGSKOSTEN = ("am_anschaffungskosten",)
+# Verpflegung (§ 9 Abs. 4a): 3 Tage-Ring-Inputs + 2 Reduktions-Guard-Felder. FAIL-CLOSED-ON-UNSET:
+# bei Tagen > 0 ist der Ring nur fähig, wenn beide Guard-Felder EXPLIZIT sicher sind (monate ≤ 3
+# gesetzt UND keine_mahlzeitengestellung=true gesetzt); sonst (inkl. UNSET) verpflegung_reduktion_offen.
+VERPFLEGUNG_TAGE = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig")
+VERPFLEGUNG_GUARD = ("vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
 # Stufe 1a: die VOR-Felder (§ 10 Altersvorsorge) sind RING-FÄHIG — echte Rechnung via
 # _vorsorge_abzug über den Store-Einzelfeld-Zugriff (kein Guard mehr, aber Teil des Kegels).
 VOR_FELDER = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
@@ -86,12 +91,12 @@ SCHEIBEN = {
     # keine anderen Einkunftsarten). NICHT „fertig für Angestellte": VOR/dHf/… sperren via Guard.
     "an_gesamt": {
         "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER
-                   + DHF_RING + DHF_BEDINGUNGEN + AN_GESAMT_FLAGS
-                   + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER),
-        # Pflicht-Kegel = einzel-Basis; die Partner-Pflichtfelder prüft der Guard NUR bei zusammen
-        # (bei einzel sind sie irrelevant, dürfen offen bleiben).
+                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
+                   + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER),
+        # Pflicht-Kegel = einzel-Basis (inkl. Verpflegungs-TAGE; die Reduktions-Guard-Felder prüft
+        # der Guard nur bei Tagen > 0). Partner-Pflichtfelder prüft der Guard nur bei zusammen.
         "kegel": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER
-                  + DHF_RING + DHF_BEDINGUNGEN + AN_GESAMT_FLAGS),
+                  + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + AN_GESAMT_FLAGS),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est",
         "teil_ringe": [],
@@ -213,7 +218,16 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 wk_input["unterkunftskosten_monat"] = _cent(DHF_KOSTEN) // 100    # cent -> euro
                 wk_input["monate"] = _cent("dhf_monate")
                 wk_input["im_inland"] = True
-            wk = runner.catala_werbungskosten_n(wk_input)   # Person A: EP + dHf, roh (§9a im Scope)
+            # Verpflegung (Stufe 1b): Tage je Kategorie in den Roh-WK, NUR wenn Reduktion explizit
+            # safe (≤ 3 Monate + keine Mahlzeitengestellung); fail-closed bei UNSET (Guard sperrt
+            # den Ring dann sowieso, hier doppelt sicher gegen Über-Abzug). Tage sind Anzahl (kein cent).
+            _mon = f.get("vpf_monate_am_ort", {}).get("wert")
+            if (sum(_cent(t) for t in VERPFLEGUNG_TAGE) > 0
+                    and isinstance(_mon, int) and not isinstance(_mon, bool) and _mon <= 3
+                    and f.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True):
+                for t in VERPFLEGUNG_TAGE:
+                    wk_input[t] = _cent(t)
+            wk = runner.catala_werbungskosten_n(wk_input)   # Person A: EP + dHf + Verpflegung, roh
             # Zusammenveranlagung (§ 26b): Roh-Bruttolohn + Roh-WK pro Person -> catala_est_zusammen
             # (Pauschbetrag je Ehegatte + Splitting IM Scope). MVP: Person B ohne gesonderte WK (0),
             # ohne VOR (Partner-VOR sperrt der Guard). Person-B-WK/VOR = benannte Folge-Nachträge.
@@ -279,6 +293,15 @@ def _an_gesamt_sperrgrund(felder: dict):
             return "ausland_dhf_nicht_ring_faehig"
         if any((felder.get(b) or {}).get("zustand") != "bestaetigt" for b in DHF_BEDINGUNGEN):
             return "dhf_tatbestand_offen"
+    # Verpflegung: Tage > 0 → Ring nur fähig, wenn BEIDE Reduktions-Guard-Felder EXPLIZIT sicher
+    # sind (§ 9 Abs. 4a S. 6 3-Monats-Frist + S. 8 Mahlzeitenkürzung). FAIL-CLOSED bei UNSET: wer
+    # Reisetage einträgt, aber die Reduktions-Fragen nicht beantwortet, bekommt keinen Über-Abzug.
+    if sum((felder.get(t, {}).get("wert") or 0) for t in VERPFLEGUNG_TAGE) > 0:
+        mon = felder.get("vpf_monate_am_ort", {}).get("wert")
+        safe = (isinstance(mon, int) and not isinstance(mon, bool) and mon <= 3
+                and felder.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True)
+        if not safe:
+            return "verpflegung_reduktion_offen"
     # Zusammenveranlagung: der Splitting-Ring braucht den vollständigen Kegel BEIDER Personen.
     if felder.get("veranlagung", {}).get("wert") == "zusammen":
         if any((felder.get(pf) or {}).get("zustand") != "bestaetigt" for pf in AN_GESAMT_PARTNER):

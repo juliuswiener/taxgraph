@@ -183,6 +183,8 @@ async function zeigeErgebnis() {
       "Für die gemeinsame Erklärung fehlen noch Angaben zu deinem Partner (Bruttolohn, Identifikationsnummer).",
     partner_vor_offen:
       "Die gemeinsame Vorsorge-Berechnung folgt — der vereinfachte Splitting-Bescheid gilt vorerst ohne Vorsorgeaufwendungen.",
+    verpflegung_reduktion_offen:
+      "Verpflegungspauschale bei mehr als 3 Monaten am selben Ort oder gestellten Mahlzeiten reduziert — bitte gib an, ob das zutrifft (die Reduktion folgt).",
   };
   if (r.zahl_cent === null) {
     if (r.grund in guardTexte)
