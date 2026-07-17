@@ -55,6 +55,12 @@ DHF_KOSTEN = "dhf_unterkunftskosten_monat"
 DHF_RING = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland")
 DHF_BEDINGUNGEN = ("dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
                    "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
+# Front 2 — Zusammenveranlagung (§ 26b, Splitting). Partner-Pflichtfelder + Partner-VOR. Nur bei
+# veranlagung=zusammen relevant: der Ring rechnet dann catala_est_zusammen (§9a je Person + Splitting
+# im Scope). MVP: Person B ohne gesonderte WK (wk_b=0), ohne VOR (Partner-VOR sperrt via Guard).
+AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr")
+VOR_PARTNER_FELDER = ("vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
+                      "vor_rv_ausserhalb_lstb_partner")
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -80,7 +86,12 @@ SCHEIBEN = {
     # keine anderen Einkunftsarten). NICHT „fertig für Angestellte": VOR/dHf/… sperren via Guard.
     "an_gesamt": {
         "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER
-                   + DHF_RING + DHF_BEDINGUNGEN + AN_GESAMT_FLAGS),
+                   + DHF_RING + DHF_BEDINGUNGEN + AN_GESAMT_FLAGS
+                   + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER),
+        # Pflicht-Kegel = einzel-Basis; die Partner-Pflichtfelder prüft der Guard NUR bei zusammen
+        # (bei einzel sind sie irrelevant, dürfen offen bleiben).
+        "kegel": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER
+                  + DHF_RING + DHF_BEDINGUNGEN + AN_GESAMT_FLAGS),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est",
         "teil_ringe": [],
@@ -202,7 +213,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 wk_input["unterkunftskosten_monat"] = _cent(DHF_KOSTEN) // 100    # cent -> euro
                 wk_input["monate"] = _cent("dhf_monate")
                 wk_input["im_inland"] = True
-            wk = runner.catala_werbungskosten_n(wk_input)
+            wk = runner.catala_werbungskosten_n(wk_input)   # Person A: EP + dHf, roh (§9a im Scope)
+            # Zusammenveranlagung (§ 26b): Roh-Bruttolohn + Roh-WK pro Person -> catala_est_zusammen
+            # (Pauschbetrag je Ehegatte + Splitting IM Scope). MVP: Person B ohne gesonderte WK (0),
+            # ohne VOR (Partner-VOR sperrt der Guard). Person-B-WK/VOR = benannte Folge-Nachträge.
+            if f.get("veranlagung", {}).get("wert") == "zusammen":
+                return runner.catala_est_zusammen({
+                    "veranlagungszeitraum": vz,
+                    "bruttoarbeitslohn_a": int(slots.get("bruttoarbeitslohn", 0)) // 100,
+                    "bruttoarbeitslohn_b": _cent("bruttoarbeitslohn_partner") // 100,
+                    "werbungskosten_a": wk, "werbungskosten_b": 0,
+                    "sonderausgaben_gemeinsam": 0})
             # § 10 Altersvorsorge (Stufe 1a): die VOR-Einzelfelder DIREKT aus dem Store greifen —
             # der Summen-Slot gesamtbeitraege_inkl_ag würde den AG-Anteil verschmelzen und die
             # Kürzung (nach dem Cap) unmöglich machen. gesamtbeitraege = AN + AG + außerhalb; der
@@ -258,6 +279,12 @@ def _an_gesamt_sperrgrund(felder: dict):
             return "ausland_dhf_nicht_ring_faehig"
         if any((felder.get(b) or {}).get("zustand") != "bestaetigt" for b in DHF_BEDINGUNGEN):
             return "dhf_tatbestand_offen"
+    # Zusammenveranlagung: der Splitting-Ring braucht den vollständigen Kegel BEIDER Personen.
+    if felder.get("veranlagung", {}).get("wert") == "zusammen":
+        if any((felder.get(pf) or {}).get("zustand") != "bestaetigt" for pf in AN_GESAMT_PARTNER):
+            return "partner_kegel_offen"        # Person-B-Pflichtfeld offen → kein halber Bescheid
+        if any(_positiv(vf) for vf in VOR_FELDER + VOR_PARTNER_FELDER):
+            return "partner_vor_offen"           # MVP-zusammen ohne VOR; VOR-Feld (A/B) gesetzt sperrt
     if any(felder.get(f, {}).get("wert") is False for f in AN_GESAMT_FLAGS):
         return "einkunftsart_nicht_ring_faehig"
     return None
@@ -286,13 +313,21 @@ def _badge(herkunft: dict) -> str:
     return "schimmernd" if herkunft.get("herkunft") == "llm_vorschlag" else "solide"
 
 
+def _ring_bindung(cfg: dict, bindung: dict) -> dict:
+    """Bindung für die Spannen-/intervall-Rechnung: nur die Pflicht-Kegel-Felder. Sonst zögen die
+    (bei einzel ungesetzten) Partner-Felder als unbounded-ohne-Wert das Intervall auf nicht_fixierbar."""
+    kegel = cfg.get("kegel")
+    return {f: bindung[f] for f in kegel if f in bindung} if kegel else bindung
+
+
 def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: str, vz: int):
     """Frage-Reihenfolge-Gewichte aus dem verfügbaren Ring (Gesamt bevorzugt, sonst erster Teil)."""
     if cfg["gesamt_ring"]:
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
+        rb = _ring_bindung(cfg, bindung)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder)
         if bf is not None:
             return {b["feld_id"]: b["spanne_cent"]
-                    for b in IV.intervall(felder, bindung, bf, snapshot_id=sid)["beitraege"]}
+                    for b in IV.intervall(felder, rb, bf, snapshot_id=sid)["beitraege"]}
     for _name, q, tfelder in cfg["teil_ringe"]:
         tb = {f: bindung[f] for f in tfelder if f in bindung}
         bf = _bescheid_fn(q, vz, tb)
@@ -344,9 +379,10 @@ def stand(fall_id: str) -> tuple[int, dict]:
     if gesperrt:
         engine = "gesperrt"          # nicht-ring-fähiger Abzug/Einkunftsart -> kein Ring (K2)
     elif cfg["gesamt_ring"]:
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
+        rb = _ring_bindung(cfg, bindung)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder)
         if bf is not None:
-            gesamt_iv = IV.intervall(felder, bindung, bf, snapshot_id=sid)["intervall"]
+            gesamt_iv = IV.intervall(felder, rb, bf, snapshot_id=sid)["intervall"]
             engine = "catala"
     else:
         for name, q, tfelder in cfg["teil_ringe"]:
@@ -408,7 +444,9 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
     cfg = _cfg(store)
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
-    scheibe_felder = _scheibe_felder(store)
+    # Pflicht-Kegel: einzel-Basis (cfg["kegel"]); die Partner-Pflichtfelder gehören nur bei
+    # veranlagung=zusammen dazu und werden dort vom Guard geprüft.
+    scheibe_felder = cfg.get("kegel") or _scheibe_felder(store)
     vz = int(store["veranlagungszeitraum"])
     if cfg.get("guard"):
         # K2: ein nicht-ring-fähiger Abzug/Einkunftsart sperrt den Ring VOR jeder Zahl — nie Fake-Bescheid.

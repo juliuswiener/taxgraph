@@ -1,0 +1,21 @@
+id: an_2025_zusammen_pauschbetrag
+beschreibung: "Zusammenveranlagung VZ2025, beide 40000, WK je 500 (< Pauschbetrag 1230) — der § 9a-Pauschbetrag greift PRO Person IM Scope: identisch zu WK 0/0 → 13838, belegt kein §9a-Nachbau in der Haut — G-ZUS-C"
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: zusammen
+  bruttoarbeitslohn_a: 40000
+  bruttoarbeitslohn_b: 40000
+  werbungskosten_a: 500
+  werbungskosten_b: 500
+  sonderausgaben_gemeinsam: 0
+
+erwartung:
+  festzusetzende_est: 13838
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 9a Satz 1 Nr. 1a (Arbeitnehmer-Pauschbetrag 1230, je Ehegatte) i.V.m. § 26b/§ 32a Abs. 5 EStG, VZ 2025"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"

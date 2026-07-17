@@ -287,6 +287,9 @@ AN_GESAMT_VOR = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb
 AN_GESAMT_DHF = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland",
                  "dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
                  "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
+AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr",
+                     "vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
+                     "vor_rv_ausserhalb_lstb_partner")
 AN_GESAMT_KEGEL = [
     ("bruttoarbeitslohn", 4000000),   # 40000 € in Cent (Bindung typ:cent)
     ("veranlagung", "einzel"),
@@ -332,7 +335,8 @@ def test_an_gesamt_durchstich(base):
     _val("fragen", fr)
     ids = {q["feld_id"] for q in fr["fragen"]}
     assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
-             "kein_sonstige"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_DHF)) == ids
+             "kein_sonstige"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_DHF)
+            | set(AN_GESAMT_PARTNER)) == ids
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
         assert st == 201
@@ -423,6 +427,50 @@ def test_an_gesamt_dhf_ausland(base):
     _an_gesamt_anlegen(base, "ag_ausl", _dhf_kegel(140000, im_inland=False))
     st, erg = _req(base, "GET", "/fall/ag_ausl/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "ausland_dhf_nicht_ring_faehig"
+
+
+def _zusammen_kegel(vor_a=0, ohne=()):
+    """Zusammenveranlagung-Kegel: einzel-Basis mit veranlagung=zusammen, KEINE EP (WK_a=0),
+    beide 40000 → festzusetzende_est_zusammen 13838. + Partner-Pflichtfelder (außer `ohne`)."""
+    k = dict(AN_GESAMT_KEGEL)
+    k["veranlagung"] = "zusammen"
+    k["ep_arbeitstage"] = 0
+    k["ep_entfernung_km"] = 0
+    k["ep_eigenes_kfz"] = False
+    k["vor_an_anteil_rv"] = vor_a
+    kegel = list(k.items())
+    for f, w in [("bruttoarbeitslohn_partner", 4000000), ("person_b_idnr", "00000000000")]:
+        if f not in ohne:
+            kegel.append((f, w))
+    return kegel
+
+
+def test_an_gesamt_zusammen(base):
+    """Front 2: Splitting-Ring. Beide Bruttolohn 40000, keine WK/VOR → festzusetzende_est_zusammen
+    13838 = 1383800 Cent (Golden an_2025_zusammen_gleich). §9a je Person + Splitting IM Scope."""
+    catala = _catala_da()
+    _an_gesamt_anlegen(base, "zus", _zusammen_kegel())
+    st, erg = _req(base, "GET", "/fall/zus/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1383800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_an_gesamt_zusammen_partner_offen(base):
+    """K2: Person-B-Pflichtfeld (person_b_idnr) offen → kein halber Splitting-Bescheid."""
+    _an_gesamt_anlegen(base, "zpo", _zusammen_kegel(ohne=("person_b_idnr",)))
+    st, erg = _req(base, "GET", "/fall/zpo/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "partner_kegel_offen"
+
+
+def test_an_gesamt_zusammen_vor_guard(base):
+    """MVP-zusammen ohne VOR: ein VOR-Feld (A oder B) > 0 → Ring gesperrt (kein VOR-loser
+    Splitting-Bescheid, wenn VOR-Daten vorliegen)."""
+    _an_gesamt_anlegen(base, "zvg", _zusammen_kegel(vor_a=350000))
+    st, erg = _req(base, "GET", "/fall/zvg/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "partner_vor_offen"
 
 
 def test_graph_uebersicht(base):

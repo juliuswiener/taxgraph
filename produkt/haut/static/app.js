@@ -179,6 +179,10 @@ async function zeigeErgebnis() {
       "Zur doppelten Haushaltsführung fehlt noch eine Angabe (z.B. beruflicher Anlass, eigener Hausstand) — bitte vervollständigen.",
     ausland_dhf_nicht_ring_faehig:
       "Deine Zweitwohnung liegt im Ausland — dafür gelten andere Grenzen (folgt).",
+    partner_kegel_offen:
+      "Für die gemeinsame Erklärung fehlen noch Angaben zu deinem Partner (Bruttolohn, Identifikationsnummer).",
+    partner_vor_offen:
+      "Die gemeinsame Vorsorge-Berechnung folgt — der vereinfachte Splitting-Bescheid gilt vorerst ohne Vorsorgeaufwendungen.",
   };
   if (r.zahl_cent === null) {
     if (r.grund in guardTexte)

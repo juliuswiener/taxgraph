@@ -1,0 +1,21 @@
+id: an_2025_zusammen_gleich
+beschreibung: "Zusammenveranlagung VZ2025, beide Bruttolohn 40000, keine WK/Sonderausgaben — bei gleichem Einkommen Splitting = 2× Einzel (Kontrollfall), festzusetzende_est_zusammen — G-ZUS-A"
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: zusammen
+  bruttoarbeitslohn_a: 40000
+  bruttoarbeitslohn_b: 40000
+  werbungskosten_a: 0
+  werbungskosten_b: 0
+  sonderausgaben_gemeinsam: 0
+
+erwartung:
+  festzusetzende_est: 13838
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 26b i.V.m. § 32a Abs. 5 EStG (Splittingverfahren), VZ 2025; = 2× einzel(40000) bei gleichem Einkommen"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"

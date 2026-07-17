@@ -1,0 +1,21 @@
+id: an_2025_zusammen_splittingvorteil
+beschreibung: "Zusammenveranlagung VZ2025, Bruttolohn 60000 + 20000 (ungleich) — Splitting 13838 gegenüber einzel(60000)+einzel(20000)=15251: sichtbarer Splitting-Vorteil 1413 EUR — G-ZUS-B"
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: zusammen
+  bruttoarbeitslohn_a: 60000
+  bruttoarbeitslohn_b: 20000
+  werbungskosten_a: 0
+  werbungskosten_b: 0
+  sonderausgaben_gemeinsam: 0
+
+erwartung:
+  festzusetzende_est: 13838
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 26b i.V.m. § 32a Abs. 5 EStG (Splitting), VZ 2025; Progressionsvorteil bei ungleichem Einkommen (13838 < 15251 = Summe Einzelveranlagung)"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"

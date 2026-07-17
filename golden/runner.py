@@ -460,6 +460,9 @@ def catala_est(sachverhalt: dict) -> int:
     # Arbeitszimmer/Homeoffice (§ 4 Abs. 5 Nr. 6b/6c): abzug_gesamt.
     if "arbeitszimmer_vorhanden" in sachverhalt:
         return catala_raumkosten(sachverhalt)
+    # § 26b Zusammenveranlagung (Splitting): Bruttolohn BEIDER Ehegatten -> festzusetzende ESt.
+    if "bruttoarbeitslohn_a" in sachverhalt:
+        return catala_est_zusammen(sachverhalt)
     # End-to-end Arbeitnehmerfall (Bruttolohn -> festzusetzende ESt).
     if "bruttoarbeitslohn" in sachverhalt:
         out = E.festzusetzende_est_einzel(E.FestzusetzendeEstEinzelIn(
@@ -532,6 +535,23 @@ def catala_fuenftel(s: dict) -> int:
     est2 = _tarif_cent(verbleibendes_zve + ao // 5)
     est_ao = 5 * (est2 - est1)
     return (est1 + est_ao) // 100
+
+
+def catala_est_zusammen(s: dict) -> int:
+    """§ 26b Zusammenveranlagung (Splitting) — festzusetzende ESt, EURO. Roh-Bruttolohn + Roh-WK
+    PRO Person; der § 9a-Arbeitnehmer-Pauschbetrag (1230) je Ehegatte UND der Splittingtarif werden
+    vom Catala-Scope festzusetzende_est_zusammen INTERN gerechnet (handverifiziert: WK 500/500 ==
+    WK 0/0, Pauschbetrag greift; Splitting-Vorteil 60000+20000 -> 13838 vs 2x einzel 15251). Kein
+    § 9a-Nachbau in der Haut (Doktrin wie einzel/EP/dHf). MVP: Person B ohne gesonderte WK (wk_b=0)."""
+    year = s["veranlagungszeitraum"]
+    out = E.festzusetzende_est_zusammen(E.FestzusetzendeEstZusammenIn(
+        bruttoarbeitslohn_a_in=Money(f"{int(s.get('bruttoarbeitslohn_a', 0))}.00"),
+        bruttoarbeitslohn_b_in=Money(f"{int(s.get('bruttoarbeitslohn_b', 0))}.00"),
+        werbungskosten_a_in=Money(f"{int(s.get('werbungskosten_a', 0))}.00"),
+        werbungskosten_b_in=Money(f"{int(s.get('werbungskosten_b', 0))}.00"),
+        sonderausgaben_gemeinsam_in=Money(f"{int(s.get('sonderausgaben_gemeinsam', 0))}.00"),
+        veranlagungszeitraum_in=VZ_ENUM[year]))
+    return int(out.festzusetzende_est) // 100
 
 
 def main() -> int:
