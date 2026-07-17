@@ -164,6 +164,19 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
             + int(s.get("tage_ueber_8h_eintaegig", 0)) * p["pauschale_ab_8h"])
 
 
+def catala_vermietung_einkuenfte(s: dict) -> int:
+    """§ 21 Abs. 1 EStG — Einkünfte aus Vermietung und Verpachtung (Überschuss der Einnahmen über die
+    Werbungskosten, § 2 Abs. 2 Nr. 2), EURO. Weg A (Python-Andockung — kein callable Catala-Scope im
+    assemblierten pkg): einnahmen − (gebaeude_afa + schuldzinsen + erhaltungsaufwand +
+    sonstige_werbungskosten). NEGATIV möglich (Vermietungsverlust). WÖRTLICHE Transkription des
+    Registry-Rechenwegs p21_vermietung_einkuenfte. KOPPLUNG: bei Registry-Änderung nachziehen; das
+    Konsistenz-Gate hält runner↔registry fest. Die tarifliche Verrechnung macht catala_gesamt
+    (einkuenfte_vermietung-Input); dieser Accessor liefert nur die Überschuss-Größe."""
+    return (int(s.get("einnahmen", 0))
+            - (int(s.get("gebaeude_afa", 0)) + int(s.get("schuldzinsen", 0))
+               + int(s.get("erhaltungsaufwand", 0)) + int(s.get("sonstige_werbungskosten", 0))))
+
+
 def _kindergeld(year: int) -> int:
     """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
     p = load_yaml_fh(open(os.path.join(

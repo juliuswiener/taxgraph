@@ -120,3 +120,26 @@ def test_werbungskosten_n_mit_verpflegung():
     s = {"veranlagungszeitraum": 2025, "arbeitstage": 220, "entfernung_km_roh": 30,
          "oepnv_kosten_jahr": 0, "eigenes_oder_ueberlassenes_kfz": True, "tage_24h": 10}
     assert runner.catala_werbungskosten_n(s) == 2156 + 280
+
+
+# ---- Front V+V: § 21 Einkünfte aus Vermietung und Verpachtung ----
+
+def test_vermietung_konsistenz_runner_registry():
+    """KONSISTENZ-GATE runner↔registry: catala_vermietung_einkuenfte reproduziert die Registry-
+    test_seeds von p21_vermietung_einkuenfte (Einnahmen − WK, Verlust möglich). Divergenz → ROT."""
+    runner = _runner()
+    import yaml
+    doc = yaml.safe_load(open(os.path.join(ROOT, "pipeline", "produktion", "rules.yaml")))
+    seed = next(r for r in doc["regeln"]
+                if r["rule_id"] == "p21_vermietung_einkuenfte")["test_seed"]
+    for c in seed:
+        got = runner.catala_vermietung_einkuenfte(c["inputs"])
+        assert got == int(c["expected"]), (f"runner↔registry-Divergenz: {c['inputs']} → runner "
+                                           f"{got} ≠ registry {c['expected']}")
+
+
+def test_vermietung_verlust_moeglich():
+    """§ 21 kann negativ sein (Werbungskosten > Einnahmen) — kein Floor auf 0 im Accessor."""
+    runner = _runner()
+    assert runner.catala_vermietung_einkuenfte(
+        {"einnahmen": 8000, "gebaeude_afa": 6000, "schuldzinsen": 4000}) == -2000
