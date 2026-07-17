@@ -312,6 +312,62 @@ bindungen:
       zitatanker: "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
 
+  # ===== Verpflegungs-JAHRES-Tage je Kategorie (§ 9 Abs. 4a S. 3) — WK-Ring-Input =====
+  # p9_4a_verpflegungsmehraufwand rechnet EINE Reise; die Jahres-Tage-Zähler (dev-1 runner._verpflegung_
+  # abzug summiert Pauschale × Tage je Kategorie) hängen an DERSELBEN §-9-Abs-4a-Regel (EIN Verpflegungs-
+  # Graph-Knoten, kein separater Scope) — die tage_*-Slots sind Ring-Zusatz-Inputs (nicht in der
+  # Single-Reise-Signatur; Gate validiert das für angedockte Slots nicht). 3-Monats-Frist (S. 6) +
+  # Mahlzeitenkürzung (S. 8) = benannte Lücken (Folge-Nachtrag).
+  - feld_id: tage_24h
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: tage_24h}
+    typ: int
+    einheit: Tage
+    bereich: {min: 0, max: 366, grund: "Kalendertage im Veranlagungszeitraum mit 24-Stunden-Abwesenheit."}
+    askable: true
+    fragetext_laie: "An wie vielen Tagen warst du dieses Jahr volle 24 Stunden von zu Hause weg (mit Übernachtung)?"
+    hilfe_kurz: "Für jeden solchen ganzen Tag gibt es 28 Euro Verpflegungspauschale."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E0205409
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 3 Nr. 1 EStG"
+      zitatanker: "28 Euro für jeden Kalendertag, an dem der Arbeitnehmer 24 Stunden von seiner"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: tage_an_abreise
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: tage_an_abreise}
+    typ: int
+    einheit: Tage
+    bereich: {min: 0, max: 366, grund: "An- und Abreisetage einer mehrtägigen Auswärtstätigkeit mit Übernachtung."}
+    askable: true
+    fragetext_laie: "An wie vielen Tagen bist du dieses Jahr zu einer mehrtägigen Reise an- oder abgereist (mit Übernachtung)?"
+    hilfe_kurz: "An- und Abreisetage einer mehrtägigen Reise zählen jeweils mit 14 Euro."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-N-Kz E0205302 (Anzahl An-/Abreisetage) ist das SEMANTISCH korrekte Ziel, aktuell aber durch vpf_an_oder_abreisetag (bool auf Count-Kz = Mismatch) belegt → Kollision, Instructor-Klärung nötig. Bis dahin null (kein Doppel-Kz)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 3 Nr. 2 EStG"
+      zitatanker: "jeweils 14 Euro für den An- und Abreisetag"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: tage_ueber_8h_eintaegig
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: tage_ueber_8h_eintaegig}
+    typ: int
+    einheit: Tage
+    bereich: {min: 0, max: 366, grund: "Eintägige Auswärtstätigkeiten (ohne Übernachtung) mit mehr als 8 Stunden Abwesenheit."}
+    askable: true
+    fragetext_laie: "An wie vielen Tagen warst du dieses Jahr mehr als 8 Stunden auswärts unterwegs, aber ohne Übernachtung?"
+    hilfe_kurz: "Eintägige Reisen über 8 Stunden zählen mit 14 Euro."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E0205201
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 3 Nr. 3 EStG"
+      zitatanker: "an dem der Arbeitnehmer ohne Übernachtung außerhalb"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+
   # ========================= Arbeitsmittel — p9_1_3_nr6_7_arbeitsmittel_afa =========================
   - feld_id: am_anschaffungskosten
     quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, signatur_slot: anschaffungskosten}
