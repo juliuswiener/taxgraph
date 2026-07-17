@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage V (Einkuenfte aus Vermietung und Verpachtung) 2024 - amtlicher Vordruck"
+  quelle_url: "FMS-Export Julius (Formular-Management-System Bundesfinanzverwaltung), Archiv ~/02_Software/eric/vordrucke-archiv/Anlage_V_2024.pdf"
+  abrufdatum: "2026-07-17"
+  datei: "anlage_v_2024.txt"
+  pdf_datei: "anlage_v_2024.pdf"
+  sha256: "358dcdacfb3a88ada95db9fa8fadc74440b831a64f711ffb91a9b19f8bc5a85b"
+  pdf_sha256: "c2bfaf8fdb5f8cf7ca72b001b78eaaac032f237e5a7e49ca6d7e05af945c2e2e"
+  authority: amtlicher_vordruck
+  redistributable: true
+  erwartete_anker: ['Mieteinnahmen für Wohnungen (ohne Umlagen / ohne Umsatzsteuer)', 'Schuldzinsen (ohne Tilgungsbeträge)', 'Absetzung für Abnutzung für Gebäude (ohne Beträge in den Zeilen 36 bis 41)']
+  verwendet_in:
+    - "Bindungstabelle V+V-Kz-Cross-Check (vv_werbungskosten/vv_gebaeude_afa)"

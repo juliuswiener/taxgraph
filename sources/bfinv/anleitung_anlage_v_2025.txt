@@ -1,0 +1,547 @@
+Quelle: FMS-Export Julius, Archiv ~/02_Software/eric/vordrucke-archiv/080_Anleitung_Anlage_V_2025.pdf
+Abgerufen: 2026-07-17
+Titel: Anleitung zur Anlage V 2025 - amtliche Anleitung
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+Anleitung zur Anlage V                                                                                                     2025
+Allgemeines         Für Einkünfte aus Vermietung und Verpachtung ver­-             Räumen (Zeile 31 der Anlage V-Sonstige),
+                    wenden Sie bitte die folgenden Anlagen:                        Einkünfte aus unbebauten Grundstücken (z. B.
+                                                                                   Parkplatz), anderem unbeweglichen Vermögen
+                    Anlage V für Einkünfte aus                                     (z. B. Schiffe) und Sachinbegriffen (z. B. Ge­-
+                        einem vermieteten und / oder verpachteten be­-             schäftseinrichtung) sowie aus der Überlassung
+                        bauten Grundstück (z. B. Haus, Eigentumswoh­-              von Rechten, z. B. Erbbaurechte, Urheberrechte,
+                        nung),                                                     Kiesausbeuterechte (Zeile 32 bis 36 der Anlage V-​
+                        einem selbst genutzten eigenen Haus oder einer             Sonstige),
+                        selbst genutzten Eigentumswohnung, wenn Sie                vereinnahmte Prozess- und Verzugszinsen, die mit
+                        nur einzelne Räume vermieten und / oder verpach­-          der Vermietungs- oder Verpachtungstätigkeit zu­-
+                        ten sowie                                                  sammenhängen, z. B. wenn Sie einen Mietzah­-
+                        kurzfristiger Vermietung (z. B. über Internet-Platt­-      lungs- oder Schadenersatzanspruch gegen Ihren
+                        formen, Ferienwohnung).                                    Mieter erfolgreich eingeklagt haben oder Sie auf­-
+                    Wenn Sie Einkünfte aus weiteren bebauten Grundstü­-            grund des Verzugs von Mietzahlungen Zinsen er­-
+                    cken erzielt haben, dann müssen Sie für jedes Grund­-          halten haben (Zeile 37 der Anlage V-Sonstige)
+                    stück eine eigene Anlage V einreichen.                         und
+                                                                                   Einkünfte für die die ermäßigte Besteuerung nach
+                    Bei Einkünften aus der Vermietung und / oder Ver­-             § 34 Abs. 1 des Einkommensteuergesetzes (EStG)
+                    pachtung von Ferienwohnungen und / oder kurzfristi­-           anzuwenden ist (Zeile 38 der Anlage V-Sonstige).
+                    ger Vermietung reichen Sie bitte zusätzlich zur Anla­-
+                    ge V die Anlage V-FeWo ein.                            Erzielen Sie diese Einkünfte im Ausland, reichen Sie
+                                                                           bitte zusätzlich die Anlage AUS ein.
+                    Anlage V-Sonstige für                                  Für ausschließlich zu eigenen Wohnzwecken oder ei­-
+                        Einkünfte aus Beteiligungen, z. B. Grundstücks- genen betrieblichen / beruflichen Zwecken genutzte
+                        oder Erbengemeinschaften (Zeile 4 bis 29 und 39 Gebäude und Gebäudeteile ist keine Anlage V auszu­-
+                        der Anlage V-Sonstige),                            füllen.
+                        Einkünfte aus Untervermietung von gemieteten
+
+Zeile 6             Geben Sie bitte stets das Aktenzeichen laut Grund­- chen) an.
+                    steuermessbescheid (bisher Einheitswert-Aktenzei­-
+
+Zeile 7             Wurde das Vermietungsobjekt angeschafft, geben Sie          beauftragten Dritten hergestellt, geben Sie das Datum
+                    bitte das Datum des Notar- / Kaufvertrags und das           der Fertigstellung an.
+                    Datum des Eigentumsübergangs (Zeitpunkt des Über­-          Das Datum des Bauantrags / der Bauanzeige / der
+                    gangs von Besitz, Nutzen, Lasten und Gefahren) an.          Baubeginnsanzeige müssen Sie nur angeben, wenn
+                    Dies ist regelmäßig das Datum, ab welchem Sie das           Sie die degressive Abschreibung nach § 7 Abs. 5
+                    Vermietungsobjekt nutzen konnten.                           oder 5a EStG oder die Sonderabschreibung nach § 7b
+                    Wurde das Vermietungsobjekt durch Sie oder einen            EStG in Anspruch nehmen.
+
+Zeile 8             Falls Sie das Mietobjekt veräußert oder übertragen gleichstehenden Rechtsakts und das Datum des Ei­-
+                    haben, geben Sie hier bitte den Zeitpunkt des rechts­- gentumsübergangs (Zeitpunkt des Übergangs von Be­-
+                    wirksam abgeschlossenen obligatorischen Vertrags sitz, Nutzen, Lasten und Gefahren) an.
+                    (dies ist in der Regel der Notar- / Kaufvertrag) oder
+
+Zeile 9             Die Wirtschafts-Identifikationsnummer wird an wirt­-        genes 5-stelliges Unterscheidungsmerkmal ergänzt.
+Wirtschafts-​       schaftlich Tätige vergeben. Dies umfasst                    Ihnen wurde bereits eine Wirtschafts-Identifikations­-
+Identifikations­-       natürliche Personen, die wirtschaftlich tätig sind,     nummer vom Bundeszentralamt für Steuern (BZSt)
+nummer                  juristische Personen und                                mitgeteilt?
+                        Personenvereinigungen (Gesellschaften / Gemein­-        Dann tragen Sie hier bitte die für die Vermietung / Ver­-
+                        schaften).                                              pachtung vergebene Wirtschafts-Identifikationsnum­-
+                    Die Wirtschafts-Identifikationsnummer besteht aus den       mer ein.
+                    Buchstaben „DE“ und 9 Ziffern. Für jede wirtschaftli­-      Allgemeine Informationen zur Wirtschafts-Identifikati­-
+                    che Tätigkeit, jeden Betrieb sowie jede Betriebsstätte      onsnummer erhalten Sie auf der Internetseite des
+                    wird die Wirtschafts-Identifikationsnummer um ein ei­-      BZSt unter www.bzst.de/widnr.
+
+Zeile 10            Machen Sie hier bitte Angaben zur Nutzung Ihres Ob­- übermitteln Sie bitte zusätzlich zur Anlage V die Anla­-
+                    jekts. Handelt es sich hierbei um eine Ferienwohnung ge V-FeWo.
+                    oder haben Sie eine Wohnung kurzfristig vermietet,
+
+Zeile 11 und 12     Geben Sie hier bitte neben der Gesamtwohnfläche die Dritte überlassenen oder als Ferienwohnung genutz­-
+                    Flächen an, die auf eigengenutzten, unentgeltlich an ten Wohnraum entfallen.
+
+
+
+Anleitung zur Anlage V - September 2025
+                                                               -2-
+
+Zeile 13 bis 19   Mieteinnahmen tragen Sie hier bitte ein. Unterschei­-       die Wohn- / Nutzfläche an. Nicht zu den Wohnflächen
+Mieteinnahmen     den Sie dabei nach                                          gehören Zubehörräume, z. B. Keller, Dachböden,
+                     Mieteinnahmen für Wohnungen ohne Umlagen                 Schuppen und Garagen. Diese sind für die Berech­-
+                     (Zeile 13 bis 15),                                       nung der Wohnfläche nicht zu berücksichtigen. Raum­-
+                     Mieteinnahmen für andere Räume ohne Umlagen /            teile mit einer lichten Höhe zwischen ein und zwei Me­-
+                     Umsatzsteuer (Zeile 16 bis 18) und                       tern sowie die Fläche von Balkonen, Loggien und
+                     Einnahmen für an Angehörige (z. B. Eltern, Kinder,       Dachgärten können Sie bis zur Hälfte der jeweiligen
+                     Geschwister sowie weitere Personen i. S. d. § 15         Fläche ansetzen.
+                     der Abgabenordnung) vermietete Wohnungen                 Tragen Sie bitte die Umlagen, die Sie neben der
+                     ohne Umlagen / Umsatzsteuer (Zeile 19).                  Miete erhoben haben, in die Zeilen 20 bis 23 ein. Ver­-
+                  Ordnen Sie diese Einnahmen bitte den einzelnen              mieten Sie ein Objekt umsatzsteuerpflichtig, so tragen
+                  (Wohn-)Einheiten zu und geben Sie außerdem das              Sie bitte in Zeile 27 die vereinnahmte Umsatzsteuer
+                  Stockwerk, die Nummer der Wohnung / Einheit und             ein.
+
+Zeile 20 bis 24   Tragen Sie in Zeile 20 bitte die laufend vereinnahmten      nung von Ihren Mietern im Jahr 2025 an Sie geleistete
+Einnahmen aus     Umlagen immer in voller Höhe ein (z. B. die von             Nachzahlung oder die von Ihnen an Ihre Mieter ge­-
+umgelegten        Ihren Mietern monatlich an Sie gezahlten Nebenkos­-         zahlte Erstattung in Zeile 21 ein. Diese ergeben sich
+Neben- /          tenvorauszahlungen). Dies gilt auch dann, wenn die          regelmäßig aus der Nebenkostenabrechnung für das
+Betriebskosten    Mieter die von Ihnen geschuldete Zahlung bestimmter         Jahr 2024.
+(Umlagen)         Nebenkosten übernehmen.                                     Für die entsprechenden Angaben bei einer Vermietung
+                  Sie haben die laufend vereinnahmten Umlagen mit             an Angehörige nutzen Sie bitte die Zeilen 22 und 23.
+                  Ihren Mietern abgerechnet (z. B. durch eine Neben­-         Sie haben mit Ihren Mietern keine Neben- und / oder
+                  kostenabrechnung)?                                          Betriebskosten gesondert vereinbart?
+                  Dann tragen Sie bitte die sich auf Grund der Abrech­-       Dann tragen Sie bitte in Zeile 24 eine „1“ ein.
+
+Zeile 25 bis 28   Wenn Sie die Mietkaution beim Auszug von Mietern            ge Mieteinnahme. Tragen Sie diese bitte in Zeile 25
+Sonstige          nicht oder nicht vollständig zurückgezahlt haben, son­-     ein.
+Einnahmen         dern mit ausstehenden Mieten, abzurechnenden Ne­-           Einnahmen aus der Vermietung von Grundstücksteilen
+                  benkosten oder Beschädigungen durch die Mieter ver­-        für Mobilfunkantennen, Windkraftanlagen und WLAN-​
+                  rechnet haben, dann ist die Kaution eine steuerpflichti­-   Hotspots tragen Sie bitte in Zeile 26 ein.
+
+Zeile 29 bis 31   Geben Sie bitte die folgenden Zuschüsse in dem Jahr         schüsse, die Sie zur Finanzierung von Anschaffungs-
+und 89            an, in dem Sie diese erhalten haben:                        oder Herstellungskosten erhalten haben, müssen Sie
+Zuschüsse             Zuschüsse aus öffentlichen Mitteln zur Finanzie­-       in Zeile 89 eintragen.
+                      rung von Erhaltungsaufwendungen sowie                   Darüber hinaus müssen Sie diese Beträge von der Be­-
+                      Aufwendungszuschüsse (z. B. zur Minderung der           messungsgrundlage für die Abschreibungen abziehen.
+                      Zins- und Mietbelastungen)                              Guthabenzinsen aus Bausparverträgen gehören dann
+                  Tragen Sie diese bitte in die Zeilen 29 bis 31 ein. Zu­-    zu den Einnahmen aus Vermietung und Verpachtung,
+                  schüsse, die Sie als Gegenleistung für eine Mietpreis­-     wenn der Bausparvertrag in einem engen Zusammen­-
+                  bindung oder Nutzung durch einen bestimmten Perso­-         hang mit der Anschaffung, Herstellung oder Erhaltung
+                  nenkreis erhalten haben (z. B. Zuschüsse nach dem           dieses Gebäudes steht.
+                  Wohnraumförderungsgesetz), können Sie auf die               Bitte mindern Sie den Gesamtbetrag um den Anteil,
+                  Jahre des Bindungszeitraumes verteilen. Geben Sie           der auf Ihre eigengenutzte oder unentgeltlich an Dritte
+                  diese bitte in einer gesonderten Aufstellung an. Zu­-       überlassene Wohnungen entfällt.
+                                                                -3-
+
+                                                                                                                         Beispiel
+
+                                                                              Die Eheleute Muster vermieten eine 60 m² große Ei­-
+                                                                              gentumswohnung in Köln. Laut Mietvertrag beträgt
+                                                                              die monatliche Kaltmiete 900 € zuzüglich vereinbar­-
+                                                                              ter Neben- und Betriebskostenvorauszahlungen
+                                                                              (Umlagen) i. H. v. 150 €. Die Mieter zahlten die
+                                                                              Miete einschließlich der vereinbarten Umlagen im
+                                                                              Jahr 2025 jeweils pünktlich zum Monatsersten. Aus
+                                                                              der Nebenkostenabrechnung für das Jahr 2024
+                                                                              ergab sich für die Mieter ein Guthaben i. H. v. 200 €.
+                                                                              Dieses erstatteten die Eheleute Muster ihren Mie­-
+                                                                              tern im Juni 2025.
+                                                                              Die Einnahmen aus der Vermietung erklären die
+                                                                              Eheleute Muster in der Anlage V ihrer Einkommen­-
+                                                                              steuererklärung wie folgt:
+                                                                              Die Kaltmiete i. H. v. insgesamt 10.800 € (900 € x
+                                                                              12 Monate) tragen sie in die Zeilen 13 und 15 ein.
+                                                                              Die vereinnahmten Umlagen i. H. v. 1.800 € (150 € x
+                                                                              12 Monate) geben sie gesondert in Zeile 20 an. Die
+                                                                              Erstattung an die Mieter aus der Nebenkostenab­-
+                                                                              rechnung für das Jahr 2024 i. H. v. 200 € erklären
+                                                                              sie mit vorangestelltem Minuszeichen in Zeile 21.
+                                                                              Die Summe der Einnahmen i. H. v. 12.400 €
+                                                                              (10.800 € und 1.800 € abzüglich 200 €) tragen sie in
+                                                                              Zeile 32 ein.
+                                                                              Da den Eheleuten Muster noch keine Wirtschafts-​
+                                                                              Identifikationsnummer zugeteilt wurde, müssen sie
+                                                                              in Zeile 9 nichts eintragen.
+
+
+
+
+Sie haben Aufwendungen, die im Zusammenhang mit          Badrenovierung) in die Zeilen „durch direkte Zuord­-        Zeile 33 bis 84
+einer Wohnung oder einzelnen Räumen anfallen?            nung ermittelt“ ein. Können Sie die Aufwendungen           Werbungskosten
+Dann können Sie diese nur als Werbungskosten bei         nicht direkt zuordnen (z. B. bei einer Dachreparatur)
+den Einkünften aus Vermietung und Verpachtung gel­-      und haben Sie diese in anderer Weise den Wohnun­-
+tend machen, wenn Sie aus der Wohnung oder den           gen zugeordnet (z. B. nach dem errechneten Verhält­-
+Räumen entsprechende Einnahmen erzielen oder in          nis der Nutzflächen in Prozent), dann füllen Sie bitte
+Zukunft erzielen wollen.                                 die Zeilen „durch verhältnismäßige Zuordnung ermit­-
+Sie haben Aufwendungen, die im Zusammenhang mit          telt“ aus. Haben Sie die Aufwendungen zum ersten
+einer eigengenutzten oder unentgeltlich an Dritte        Mal verhältnismäßig aufgeteilt, dann erläutern Sie bitte
+überlassenen Wohnung anfallen?                           den Aufteilungsmaßstab sowie die Zuordnung in einer
+Dann können Sie diese Aufwendungen nicht als Wer­-       gesonderten Aufstellung.
+bungskosten geltend machen.                              Beträgt die vereinbarte und gezahlte Miete einschließ­-
+Sie haben Aufwendungen, die im Zusammenhang mit          lich gezahlter Umlagen für eine überlassene Wohnung
+Räumen anfallen, die Sie zu eigenen beruflichen          weniger als 50 % der ortsüblichen Marktmiete ein­-
+oder gewerblichen Zwecken nutzen?                        schließlich umlagefähiger Kosten (z. B. bei verbilligter
+Dann können Sie diese Aufwendungen nicht als Wer­-       Überlassung), können die auf diese Wohnung entfal­-
+bungskosten bei den Einkünften aus Vermietung und        lenden Aufwendungen nur anteilig als Werbungskos­-
+Verpachtung geltend machen. Sie können diese Auf­-       ten berücksichtigt werden. Im Falle der verbilligten
+wendungen nur als Werbungskosten oder Betriebs­-         Überlassung tragen Sie bitte die entsprechenden Auf­-
+ausgaben bei den Einnahmen abziehen, die Sie im          wendungen in die Zeilen 33 bis 84 stets in voller Höhe
+Zusammenhang mit der Nutzung dieser Räume erzie­-        ein. Hinsichtlich der vorzunehmenden Kürzung ver­-
+len.                                                     wenden Sie bitte ausschließlich die Eintragungsmög­-
+Sind die Aufwendungen nur teilweise Werbungskosten       lichkeiten in den Zeilen 87 und 88 und beachten Sie
+bei Ihren Einkünften aus Vermietung und Verpachtung,     die entsprechenden Erläuterungen hierzu.
+tragen Sie bitte den direkt zuordenbaren Anteil (z. B.
+                                                                -4-
+
+Zeile 33 bis 45     Abschreibung (Absetzung für Abnutzung – AfA –) ist         gaben dazu entnehmen Sie bitte den Erläuterungen zu
+Allgemeines zur     die Verteilung der Anschaffungs- und / oder der Her­-      den Zeilen 33 bis 41.
+Abschreibung        stellungskosten auf die Nutzungsdauer eines Gebäu­-        Informationen zur Abschreibung für Wirtschaftsgüter,
+                    des oder Wirtschaftsguts. Machen Sie erstmals Ab­-         die keine Gebäude sind, entnehmen Sie bitte den Er­-
+                    schreibungen für ein Gebäude geltend, reichen Sie          läuterungen zu den Zeilen 42 bis 45.
+                    bitte eine gesonderte Aufstellung ein. Detaillierte An­-
+
+Zeile 33 bis 41  Wird ein Gebäude vermietet, sind dessen Anschaf­-             rungen zu den Zeilen 55 bis 72.
+Abschreibung für fungs- oder Herstellungskosten über die AfA, erhöhte          Bei Herstellung eines Gebäudes reichen Sie bitte eine
+Gebäude          Absetzungen oder Sonderabschreibungen als Wer­-               gesonderte Aufstellung mit folgenden Angaben ein:
+                 bungskosten zum Abzug zugelassen. Der Grund und                   den gezahlten Rechnungsbetrag,
+                 Boden unterliegt keiner Abnutzung und ist damit nicht             das Rechnungsdatum,
+                 abschreibungsfähig. Deshalb ist es notwendig, dass                den Gegenstand der Leistung sowie
+                 Sie einen einheitlichen Kaufpreis in Anschaffungskos­-            das ausführende Unternehmen
+                 ten für den Grund und Boden und das Gebäude auftei­-          Haben Sie vor dem 1. Januar 1991 ein Gebäude im
+                 len, um die Bemessungsgrundlage für die AfA zu er­-           Beitrittsgebiet angeschafft oder hergestellt, so ist nur
+                 mitteln. Für eine sachgerechte Schätzung steht Ihnen          die Abschreibung nach § 7 Abs. 4 EStG zulässig.
+                 eine Arbeitshilfe auf der Internetseite des Bundesmi­-        Haben Sie ein Gebäude vor dem 1. Juli 1990 ange­-
+                 nisteriums der Finanzen zur Verfügung. Geben Sie              schafft oder hergestellt, so bemisst sich die Abschrei­-
+                 bitte unter www.bundesfinanzministerium.de den                bung nach den Wiederherstellungs- / Wiederbeschaf­-
+                 Suchbegriff „Kaufpreisaufteilung“ ein.                        fungskosten, höchstens nach dem Zeitwert zum 1. Juli
+                 Haben Sie beim Erwerb von Wohneigentum eine Er­-              1990.
+                 haltungsrücklage miterworben, so gehört diese nicht           Möchten Sie ein bisher selbstgenutztes Objekt vermie­-
+                 zur Bemessungsgrundlage für die Abschreibung. Zum             ten, führt diese Nutzungsänderung dazu, dass Sie die
+                 Werbungskostenabzug beachten Sie bitte die Erläute­-          Abschreibung erstmalig berechnen müssen.
+
+Zeile 33 bis 35     Die Abschreibung nach § 7 Abs. 4 EStG beträgt              dauer müssen Sie Ihrem Finanzamt nachweisen. Wei­-
+§ 7 Abs. 4 bis 5a       bei vor dem 1. Januar 1925 fertiggestellten Gebäu­-    tere Einzelheiten – insbesondere zum Nachweis einer
+EStG                    den jährlich 2,5 %,                                    kürzeren tatsächlichen Nutzungsdauer – entnehmen
+                        bei nach dem 31. Dezember 1924 und vor dem             Sie bitte dem Schreiben des Bundesministeriums der
+                        1. Januar 2023 fertiggestellten Gebäuden jähr­-        Finanzen vom 22. Februar 2023, Bundessteuerblatt
+                        lich 2 % und                                           (BStBl) I Seite 332.
+                        bei nach dem 31. Dezember 2022 fertiggestellten        Davon abweichend können Sie nach § 7 Abs. 5
+                        Gebäuden jährlich 3 %                                  oder 5a EStG bei einem Gebäude oder einer Eigen­-
+                    der Anschaffungs- oder Herstellungskosten des Ge­-         tumswohnung im Inland oder in einem EU- / EWR-​
+                    bäudes. Ist die tatsächliche Nutzungsdauer kürzer als      Staat, das / die Sie selbst hergestellt oder bis zum
+                    40, 50 oder 33 Jahre, können Sie in begründeten Aus­-      Ende des Jahres der Fertigstellung angeschafft
+                    nahmefällen entsprechend höhere Abschreibungen             haben, die folgenden Beträge als degressive (kontinu­-
+                    geltend machen. Eine kürzere tatsächliche Nutzungs­-       ierlich vermindernde) Abschreibung abziehen:
+
+                    Bei Bauantrag (im Herstellungsfall) oder bei rechtswirksamem Abschluss des obligatorischen Vertrags
+                                                           (im Anschaffungsfall)
+                    vor dem 1. Januar 1995                                                            8 Jahre je 5 %,
+                                                                                                      6 Jahre je 2,5 % und
+                                                                                                      36 Jahre je 1,25 %
+                    vor dem 1. Januar 1996,                                                           4 Jahre je 7 %,
+                    soweit das Objekt Wohnzwecken dient                                               6 Jahre je 5 %,
+                                                                                                      6 Jahre je 2 % und
+                                                                                                      24 Jahre je 1,25 %
+                    nach dem 31. Dezember 1995 und                                                    8 Jahre je 5 %,
+                    vor dem 1. Januar 2004,                                                           6 Jahre je 2,5 % und
+                    soweit das Objekt Wohnzwecken dient                                               36 Jahre je 1,25 %
+                    nach dem 31. Dezember 2003 und                                                    10 Jahre je 4 %,
+                    vor dem 1. Januar 2006,                                                           8 Jahre je 2,5 % und
+                    soweit das Objekt Wohnzwecken dient                                               32 Jahre je 1,25 %
+                                                  der Anschaffungs- oder Herstellungskosten
+                                                                -5-
+
+  Bei Baubeginnsanzeige (im Herstellungsfall) oder bei rechtswirksamem Abschluss des
+                 obligatorischen Vertrags (im Anschaffungsfall)
+nach dem 30. September 2023 und                                                je 5 %
+vor dem 1. Oktober 2029,
+soweit das Objekt Wohnzwecken dient
+                              vom jeweiligen Buchwert (Restwert)
+
+Bei dem Restwert handelt es sich um die Anschaffungs- oder Herstellungskosten abzüglich bereits in Anspruch
+                                        genommener Abschreibung.
+
+Zu der in die Zeilen 33 bis 35 einzutragenden Ab­-      unentgeltlich erworben, können Sie eine Abschreibung
+schreibung gehört auch die Restwert-Abschreibung        nach dem Prozentsatz ansetzen, der für die Rechts­-
+i. S. d. § 7b Abs. 1 Satz 2, § 7k Abs. 1 Satz 3 EStG,   vorgängerin oder den Rechtsvorgänger maßgebend
+§ 4 des Fördergebietsgesetzes sowie §§ 14a und 14d      sein würde, wenn sie oder er noch Eigentümerin oder
+des Berlinförderungsgesetzes.                           Eigentümer wäre.
+Haben Sie ein Gebäude oder eine Eigentumswohnung
+
+Sie haben neue Mietwohnungen angeschafft oder her­-     jahr erhalten haben.                                       Zeile 36 bis 38
+gestellt?                                               Tragen Sie diese bitte in der Checkliste „Angaben zur           § 7b EStG
+Dann können Sie unter bestimmten Voraussetzungen        Inanspruchnahme einer Sonderabschreibung nach
+zusätzlich zu der linearen Abschreibung nach § 7        § 7b EStG“ ein. Geben Sie die Checkliste mit Ihrer
+Abs. 4 EStG oder der degressiven Abschreibung nach      Einkommensteuererklärung ab. Die Checkliste können
+§ 7 Abs. 5a EStG (Zeile 33 bis 35) im Jahr der An­-     Sie dem Schreiben des Bundesministeriums der Fi­-
+schaffung oder Herstellung und in den folgenden 3       nanzen vom 21. Mai 2025, BStBl I Seite 1419 entneh­-
+Jahren Sonderabschreibungen bis zu 5 % jährlich         men.
+der Bemessungsgrundlage in Anspruch nehmen (§ 7b
+EStG).                                                  Baumaßnahmen mit Bauantrag oder Bauanzeige
+Begünstigt sind Baumaßnahmen, die aufgrund eines        nach dem 31. Dezember 2022 und vor dem 1. Okto­-
+    nach dem 31. August 2018 und vor dem 1. Januar      ber 2029:
+    2022 oder                                           Voraussetzung für die Inanspruchnahme ist, dass
+    nach dem 31. Dezember 2022 und vor dem 1. Ok­-         sich die Wohnung in einem Mitgliedsstaat der Eu­-
+    tober 2029                                             ropäischen Union befindet,
+gestellten Bauantrags oder einer in diesem Zeitraum        die Wohnung in einem Gebäude liegt, das die Kri­-
+getätigten Bauanzeige neue, bisher nicht vorhandene        terien eines „Effizienzhaus 40“ mit Nachhaltigkeits-​
+Wohnungen schaffen.                                        Klasse erfüllt und dies durch das „Qualitätssiegel
+                                                           Nachhaltiges Gebäude“ nachgewiesen wird,
+Baumaßnahmen mit Bauantrag oder Bauanzeige                 die Anschaffungs- oder Herstellungskosten dieser
+nach dem 31. August 2018 und vor dem 1. Januar             Wohnung maximal 5.200 € je Quadratmeter
+2022:                                                      Wohnfläche betragen und                                    Neu!
+Voraussetzung für die Inanspruchnahme ist, dass            die Wohnung im Jahr der Anschaffung oder Her­-
+   sich die Wohnung in einem Mitgliedsstaat der Eu­-       stellung und in den folgenden 9 Jahren entgeltlich
+   ropäischen Union befindet,                              zu Wohnzwecken vermietet wird.
+   die Anschaffungs- oder Herstellungskosten dieser Die Bemessungsgrundlage für die Sonderabschrei­-
+   Wohnung maximal 3.000 € je Quadratmeter bung darf maximal 4.000 € je Quadratmeter Wohnflä­-
+   Wohnfläche betragen und                              che betragen.
+   die Wohnung im Jahr der Anschaffung oder Her­- Die Voraussetzungen der De-minimis-Verordnung
+   stellung und in den folgenden 9 Jahren entgeltlich müssen nur dann eingehalten und nachgewiesen wer­-
+   zu Wohnzwecken vermietet wird.                       den, wenn die Sonderabschreibung im Rahmen einer
+Die Bemessungsgrundlage für die Sonderabschrei­- Gewinneinkunftsart beansprucht wird.
+bung darf maximal 2.000 € je Quadratmeter Wohnflä­- Tragen Sie diese bitte in der Checkliste „Angaben zur
+che betragen.                                           Inanspruchnahme einer Sonderabschreibung nach
+Die Sonderabschreibung nach § 7b EStG ist eine De-​ § 7b EStG“ ein. Geben Sie die Checkliste mit Ihrer
+minimis-Beihilfe. Ihr Finanzamt gewährt diese nur, Einkommensteuererklärung ab. Die Checkliste können
+wenn die Voraussetzungen der De-minimis-Verord­- Sie dem Schreiben des Bundesministeriums der Fi­-
+nung eingehalten werden. Geben Sie bitte an, in wel­- nanzen vom 21. Mai 2025, BStBl I Seite 1419 entneh­-
+cher Höhe Sie weitere De-minimis-Beihilfen in den bei­- men.
+den vorangegangenen sowie im laufenden Kalender­-
+                                                               -6-
+
+Zeile 39 bis 41     Für Maßnahmen i. S. d. § 177 des Baugesetzbuches          städtebaulichen Bedeutung erhalten bleiben soll. Vor­-
+§ 7h EStG           (BauGB), die an Gebäuden in einem förmlich festge­-       aussetzung ist, dass Sie sich zu deren Durchführung
+                    legten Sanierungsgebiet oder städtebaulichen Ent­-        neben bestimmten Modernisierungsmaßnahmen ge­-
+                    wicklungsbereich durchgeführt worden sind, können         genüber der Gemeinde verpflichtet haben.
+                    Sie eine erhöhte Abschreibung nach § 7h EStG bean­-       Hierfür benötigen Sie eine Bescheinigung der zustän­-
+                    tragen.                                                   digen Gemeindebehörde, dass Sie Baumaßnahmen in
+                    Dies gilt auch für Maßnahmen, die der Erhaltung, Er­-     dem genannten Sinne durchgeführt und Sie die Auf­-
+                    neuerung und funktionsgerechten Verwendung eines          wendungen hierfür selbst getragen haben.
+                    Gebäudes in einem solchen Gebiet dienen, das              Die Abschreibung nach § 7h EStG ersetzt die Ab­-
+                    wegen seiner geschichtlichen, künstlerischen oder         schreibung nach § 7 Abs. 4 bis 5a EStG wie folgt:
+
+                                   Bei Beginn der Modernisierungs- und Instandsetzungsarbeiten
+                    vor dem 1. Januar 2004                                    10 Jahre jeweils bis zu 10 %
+                    nach dem 31. Dezember 2003                                 8 Jahre jeweils bis zu 9 %, 4 Jahre jeweils bis zu 7 %
+                                                                              der Bemessungsgrundlage
+
+Zeile 39 bis 41     Sie haben Baumaßnahmen an einem Gebäude durch­-           genehmigung erforderlich ist, der Zeitpunkt, in dem
+§ 7i EStG           geführt, das nach den jeweiligen landesrechtlichen        der Bauantrag gestellt wird. Bei baugenehmigungsfrei­-
+                    Vorschriften ein Baudenkmal ist?                          en Bauvorhaben, für die Bauunterlagen einzureichen
+                    Die Baumaßnahmen waren nach Art und Umfang zur            sind, gilt als Beginn der Baumaßnahmen der Zeit­-
+                    Erhaltung des Gebäudes als Baudenkmal oder zu sei­-       punkt, in dem die Bauunterlagen eingereicht werden.
+                    ner sinnvollen Nutzung erforderlich und wurden in Ab­-    Sie können die Abschreibung nach § 7i EStG nur in
+                    stimmung mit der zuständigen Denkmalschutzbehörde         Anspruch nehmen, wenn Ihnen eine Bescheinigung
+                    durchgeführt?                                             der zuständigen Denkmalschutzbehörde vorliegt, die
+                    Dann können Sie für bestimmte Baumaßnahmen bei            die Erforderlichkeit der Aufwendungen nachweist und
+                    Baudenkmalen eine Abschreibung nach § 7i EStG gel­-       Sie diese Aufwendungen selbst getragen haben.
+                    tend machen.                                              Die Abschreibung nach § 7i EStG ersetzt die Abschrei­-
+                    Als Beginn gilt bei Baumaßnahmen, für die eine Bau­-      bung nach § 7 Abs. 4 bis 5a EStG wie folgt:
+
+                                                           Bei Beginn der Baumaßnahmen
+                    vor dem 1. Januar 2004                                    10 Jahre jeweils bis zu 10 %
+                    nach dem 31. Dezember 2003                                 8 Jahre jeweils bis zu 9 %, 4 Jahre jeweils bis zu 7 %
+                                                                              der Herstellungs- / Anschaffungskosten
+
+Zeile 42 bis 45     Sie müssen die Abschreibung für Wirtschaftsgüter, die     das nicht mehr als 800 € (ohne Umsatzsteuer) gekos­-
+Abschreibung für    keine Gebäude sind (z. B. Einbauküche), nach § 7          tet hat, im Jahr der Anschaffung voll absetzen. Tragen
+Wirtschaftsgüter,   Abs. 1 EStG anhand der betriebsgewöhnlichen Nut­-         Sie diese Kosten für das Wirtschaftsgut in die Zei­-
+die keine           zungsdauer ermitteln. Sie können ein Wirtschaftsgut,      len 80 bis 82 ein.
+Gebäude sind
+
+Zeile 46 bis 48     Zu den Schuldzinsen gehört auch ein Darlehensab­-         mehr als 5 % beträgt. Haben Sie keine Zinsfestschrei­-
+Schuldzinsen        geld (Damnum, Disagio) und zu zahlende Erbbauzin­-        bung vereinbart, müssen Sie dieses auf die Laufzeit
+                    sen. Sie können ein Damnum / Disagio im Zeitpunkt         des Darlehens verteilen. Haben Sie steuerfreie Zins­-
+                    der Zahlung abziehen, soweit es marktüblich ist. Ist es   zuschüsse Ihres Arbeitgebers erhalten, können Sie
+                    nicht marktüblich, so müssen Sie dieses auf die Dauer     nur den übersteigenden Teil der Schuldzinsen als
+                    des Zeitraums der Zinsfestschreibung gleichmäßig          Werbungskosten geltend machen. Tragen Sie öffentli­-
+                    verteilen. Sie können von einer Marktüblichkeit ausge­-   che Zuschüsse zur Zinsverbilligung in Zeile 29 ein.
+                    hen, wenn der Zeitraum der Zinsfestschreibung min­-       Geldbeschaffungskosten tragen Sie bitte in die Zei­-
+                    destens 5 Jahre und das Damnum / Disagio nicht            len 49 bis 51 ein.
+
+Zeile 55 bis 72     Sie können größere Aufwendungen für die Erhaltung         § 177 BauGB (§ 11a EStG),
+Erhaltungs-​        von Gebäuden auf 2 bis 5 Jahre gleichmäßig verteilen      für Maßnahmen, die der Erhaltung, Erneuerung
+aufwendungen        (§ 82b der Einkommensteuer-Durchführungsverord­-          und funktionsgerechten Verwendung eines Gebäu­-
+                    nung). Voraussetzung ist, dass die Grundfläche der        des dienen, das wegen seiner geschichtlichen,
+                    Räume des Gebäudes, die zu Wohnzwecken dienen,            künstlerischen oder städtebaulichen Bedeutung er­-
+                    mehr als die Hälfte der gesamten Nutzfläche beträgt.      halten bleiben soll, und zu deren Durchführung
+                    Unabhängig von der Art der Nutzung können Sie grö­-       sich die Eigentümerin oder der Eigentümer neben
+                    ßere Aufwendungen zur Erhaltung eines Gebäudes            bestimmten Modernisierungsmaßnahmen gegen­-
+                    ebenfalls auf 2 bis 5 Jahre gleichmäßig verteilen. Hier­- über der Gemeinde verpflichtet hat (§ 11a EStG)
+                    bei muss es sich um Aufwendungen handeln                  und / oder
+                        für Maßnahmen aufgrund eines Modernisierungs-         zur Erhaltung von Baudenkmalen (§ 11b EStG).
+                        und Instandsetzungsgebots der Gemeinden i. S. d. Erhaltungsaufwendungen, die auf innerhalb von 3 Jah‐
+                                                                 -7-
+
+ren nach Anschaffung des Gebäudes durchgeführten          dem Erwerb eines Gebäudes, um funktionsuntüchtige
+Baumaßnahmen beruhen, können als anschaffungs­-           Teile wiederherzustellen?
+nahe Herstellungskosten die Bemessungsgrundlage           Dann gehören diese Aufwendungen zu den Anschaf­-
+für die Abschreibung des Gebäudes erhöhen. Voraus­-       fungskosten, wenn die Teile für die Nutzung unerläss­-
+setzung dafür ist, dass die Erhaltungsaufwendungen        lich sind (z. B. bei einer defekten Heizung oder bei Un­-
+insgesamt mehr als 15 % (Rechnungsbetrag ohne             bewohnbarkeit aufgrund von Wasser- oder Brand­-
+Umsatzsteuer) der auf das Gebäude entfallenden An­-       schäden). Dies gilt auch für Aufwendungen für Bau­-
+schaffungskosten betragen. Hierzu gehören aber nicht      maßnahmen, die Ihnen im Zusammenhang mit einer
+die Kosten für Erweiterungen sowie jährlich üblicher­-    Nutzungsänderung entstanden sind. Diese rechnen
+weise anfallenden Erhaltungsaufwand (z. B. War­-          Sie bitte den Anschaffungskosten zu, soweit sie vor
+tungsaufwand).                                            der erstmaligen Nutzung entstanden sind (z. B.
+Sie hatten Aufwendungen für Baumaßnahmen, die die         Umbau einer Wohnung in ein Büro).
+Wohnung oder das Gebäude auf einen höheren Stan­-         Beiträge zur Erhaltungsrücklage der Gemeinschaft
+dard bringen?                                             der Wohnungseigentümer können Sie nicht bereits
+Dann stellen diese Aufwendungen Herstellungs- oder        zum Zeitpunkt der Abführung als Werbungskosten bei
+Anschaffungskosten dar. Sie können diese nicht als        den Einkünften aus Vermietung und Verpachtung ab­-
+Erhaltungsaufwendungen geltend machen. Für den            ziehen, sondern erst dann, wenn das Geld für Erhal­-
+Standard eines Wohngebäudes ist in diesem Zusam­-         tungsmaßnahmen ausgegeben wird.
+menhang vor allem die Ausstattung und Qualität der        Kopien der Nachweise sowie eine Einzelaufstellung
+Heizungs-, Sanitär- und Elektroinstallationen sowie       über die Erhaltungsaufwendungen reichen Sie bitte
+der Fenster ausschlaggebend.                              nur auf Aufforderung Ihres Finanzamtes ein.
+Sie hatten Aufwendungen für Baumaßnahmen nach
+
+Ihnen sind Neben- und / oder Betriebskosten entstan­- meinschaft)?                                                      Zeile 73 bis 75
+den, die Sie auf Ihre Mieter umgelegt haben?            Dann tragen Sie bitte hier die sich für Sie gegenüber               Umgelegte
+Dann tragen Sie diese bitte hier ein. Gleiches gilt für der Hausverwaltung ergebende Nachzahlung ein                            Kosten
+Erstattungen.                                           (ohne die Beiträge zur Erhaltungsrücklage – vgl. die
+Werden die Neben- und / oder Betriebskosten über Erläuterungen zu den Zeilen 55 bis 72). Gleiches gilt
+eine Hausverwaltung abgerechnet (z. B. Hausgeld-​ für eine Erstattung.
+endabrechnung bei einer Wohnungseigentümerge­-
+
+Ihnen sind Neben- und / oder Betriebskosten entstan­- Dann tragen Sie diese bitte hier ein.                             Zeile 76 bis 78
+den, die Sie nicht auf Ihre Mieter umgelegt haben?                                                                    Nicht umgelegte
+                                                                                                                                Kosten
+
+Hier können Sie weitere Kosten eintragen, die nicht       Wege der Abschreibung berücksichtigt werden kön­-            Zeile 80 bis 82
+den Aufwendungen in den Zeilen 33 bis 79 zugeordnet       nen, sowie die Vorsteuern aus Erhaltungsaufwendun­-         Sonstige Kosten
+werden können. Bei umsatzsteuerpflichtiger Vermie­-       gen, welche Sie auf bis zu 5 Jahre verteilen (Zeile 57
+tung tragen Sie hier bitte auch die Vorsteuern aus An­-   bis 60).
+schaffungs- und / oder Herstellungskosten ein, die im
+                                                              -8-
+
+                                                                                                                          Beispiel
+
+                                                                             Im Zusammenhang mit der vermieteten Eigentums­-
+                                                                             wohnung sind den Eheleuten Muster folgende Auf­-
+                                                                             wendungen entstanden:
+                                                                             Die lineare Abschreibung beträgt wie im Vorjahr
+                                                                             4.000 €. Außerdem sind ihnen 1.900 € Neben- und
+                                                                             Betriebskosten (Wasser, Müll usw.) entstanden, die
+                                                                             sie auf ihre Mieter umlegt haben. Für das Mietkonto
+                                                                             sind 120 € Kontoführungsgebühren angefallen.
+                                                                             Die Werbungskosten erklären die Eheleute Muster
+                                                                             in der Anlage V ihrer Einkommensteuererklärung
+                                                                             wie folgt:
+                                                                             Die Abschreibung i. H. v. 4.000 € tragen sie in die
+                                                                             Zeilen 33 und 35 ein. Die auf die Mieter umgelegten
+                                                                             Neben- und Betriebskosten i. H. v. 1.900 € geben
+                                                                             sie in den Zeilen 73 und 75 an. Da sie die Kontofüh­-
+                                                                             rungsgebühren i. H. v. 120 € nicht auf die Mieter
+                                                                             umlegen dürfen, erklären sie diese in den Zeilen 76
+                                                                             und 78. Die Summe der abzugsfähigen Werbungs­-
+                                                                             kosten i. H. v. 6.020 € (4.000 € und 1.900 € sowie
+                                                                             120 €) erfassen sie in Zeile 83.
+                                                                             Die Eheleute Muster ermitteln den Überschuss der
+                                                                             Einnahmen (Zeile 32: 12.400 €) über die Werbungs­-
+                                                                             kosten (Zeile 83: 6.020 €) und tragen das Ergebnis
+                                                                             i. H. v. 6.380 € in Zeile 85 ein.
+                                                                             Da die Eigentumswohnung den Eheleuten Muster
+                                                                             gemeinsam gehört, rechnen sie das Ergebnis bei­-
+                                                                             den jeweils hälftig zu. In Zeile 86 erklären sie für
+                                                                             Herrn Muster sowie für Frau Muster jeweils 3.190 €.
+
+
+
+Zeile 87 und 88   Beträgt die vereinbarte und gezahlte Miete einschließ­-    gesamte verbilligt vermietete Objekt eine Aufteilung er­-
+Verbilligte       lich gezahlter Umlagen für eine überlassene Wohnung        forderlich ist, tragen Sie bitte in Zeile 87 den Prozent­-
+Überlassung       weniger als 50 % der ortsüblichen Marktmiete ein­-         satz ein, um den die Werbungskosten zu kürzen sind.
+                  schließlich umlagefähiger Kosten (z. B. bei verbilligter   Wird nur ein Teil des Objekts verbilligt vermietet, neh­-
+                  Überlassung), müssen Sie die auf diese Wohnung ent­-       men Sie bitte eine betragsmäßige Kürzung der Wer­-
+                  fallenden Aufwendungen im Verhältnis der ortsübli­-        bungskosten in Zeile 88 vor.
+                  chen Marktmiete zur vereinbarten Miete aufteilen.          Die ortsübliche Miete ist grundsätzlich auf der Basis
+                  Sie müssen die Aufwendungen nicht aufteilen, wenn          des Mietspiegels zu bestimmen. Kann ein Mietspiegel
+                       das Entgelt mindestens 50 %, jedoch weniger als       nicht zu Grunde gelegt werden oder ist er nicht vor­-
+                       66 % der ortsüblichen Marktmiete einschließlich       handen, kann die ortsübliche Miete z. B.
+                       umlagefähiger Kosten beträgt und                          mit Hilfe eines mit Gründen versehenen Gutach­-
+                       im Zeitraum der Vermietung voraussichtlich kein           tens eines öffentlich bestellten und vereidigten
+                       Verlust erwirtschaftet wird (Überschussprognose           Sachverständigen i. S. d. § 558a Abs. 2 Nr. 3 des
+                       vgl. Randnummer 33 ff. des Schreibens des Bun­-           Bürgerlichen Gesetzbuchs (BGB),
+                       desministeriums der Finanzen vom 8. Oktober               durch die Auskunft aus einer Mietdatenbank i. S. d.
+                       2004, BStBl I Seite 933).                                 § 558a Abs. 2 Nr. 2 i. V. m. § 558e BGB oder
+                  Sie müssen die Aufwendungen ebenfalls nicht auftei­-           durch Zugrundelegung der Entgelte für zumindest
+                  len, wenn das Entgelt mindestens 66 % der ortsübli­-           drei vergleichbare Wohnungen i. S. d. § 558a
+                  chen Marktmiete einschließlich umlagefähiger Kosten            Abs. 2 Nr. 4 BGB
+                  beträgt.                                                   ermittelt werden. Jeder dieser Ermittlungswege ist
+                  Sofern nach den vorstehenden Ausführungen für das          gleichrangig.
+-9-
+
+                                                 Beispiel
+
+      Die Eheleute Muster besitzen eine weitere 60 m²
+      große Eigentumswohnung im selben Haus. Diese
+      vermieten sie verbilligt an die Eltern von Frau Mus­-
+      ter. Laut Mietvertrag beträgt die monatliche Kaltmie­-
+      te 270 € zuzüglich vereinbarter Neben- und Be­-
+      triebskostenvorauszahlungen (Umlagen) i. H. v.
+      150 €. Die Eltern von Frau Muster zahlten die Miete
+      einschließlich der vereinbarten Umlagen im Jahr
+      2025 jeweils pünktlich zum Monatsersten.
+      Die ortsübliche Marktmiete (ohne Umlagen) beträgt
+      15 € je Quadratmeter (60 m² x 15 € / m² = 900 €).
+      Die Einnahmen aus der Vermietung erklären die
+      Eheleute Muster in der Anlage V ihrer Einkommen­-
+      steuererklärung wie folgt:
+      Die Kaltmiete i. H. v. insgesamt 3.240 € (270 € x 12
+      Monate) tragen sie in Zeile 19 ein. Die vereinnahm­-
+      ten Umlagen i. H. v. 1.800 € (150 € x 12 Monate)
+      geben sie gesondert in Zeile 22 an. Die Summe der
+      Einnahmen i. H. v. 5.040 € (3.240 € zuzüglich
+      1.800 €) tragen sie in Zeile 32 ein.
+      Da den Eheleuten Muster noch keine Wirtschafts-​
+      Identifikationsnummer zugeteilt wurde, müssen sie
+      in Zeile 9 nichts eintragen.
+- 10 -
+
+                                                    Beispiel
+
+         Im Zusammenhang mit der verbilligt vermieteten
+         Eigentumswohnung sind den Eheleuten Muster fol­-
+         gende Aufwendungen entstanden:
+         Die lineare Abschreibung beträgt wie im Vorjahr
+         3.000 €. Außerdem sind ihnen 1.800 € Neben- und
+         Betriebskosten (Wasser, Müll usw.) entstanden, die
+         sie auf ihre Mieter umgelegt haben. Für das Miet­-
+         konto sind 120 € Kontoführungsgebühren angefal­-
+         len.
+         Die Werbungskosten erklären die Eheleute Muster
+         in der Anlage V ihrer Einkommensteuererklärung
+         wie folgt:
+         Die Abschreibung i. H. v. 3.000 € tragen sie in die
+         Zeilen 33 und 35 ein. Die auf die Mieter umgelegten
+         Neben- und Betriebskosten i. H. v. 1.800 € geben
+         sie in den Zeilen 73 und 75 an. Da sie die Kontofüh­-
+         rungsgebühren i. H. v. 120 € nicht auf die Mieter
+         umlegen dürfen, erklären sie diese in den Zeilen 76
+         und 78. Die Summe der abzugsfähigen Werbungs­-
+         kosten i. H. v. 4.920 € (3.000 € und 1.800 € sowie
+         120 €) erfassen sie in Zeile 83.
+         Die Eheleute Muster ermitteln den Überschuss der
+         Einnahmen (Zeile 32: 5.040 €) über die Werbungs­-
+         kosten (Zeile 83: 4.920 €) und tragen das Ergebnis
+         i. H. v. 120 € in Zeile 85 ein.
+         Da die Eigentumswohnung den Eheleuten Muster
+         gemeinsam gehört, rechnen sie das Ergebnis bei­-
+         den jeweils hälftig zu. In Zeile 86 erklären sie für
+         Herrn Muster sowie für Frau Muster jeweils 60 €.
+
+         Die vereinbarte und gezahlte Miete einschließlich
+         der gezahlten Umlagen für die an die Eltern von
+         Frau Muster vermietete Wohnung beträgt weniger
+         als 50 % der ortsüblichen Marktmiete einschließlich
+         umlagefähiger Kosten.
+
+         Berechnung:
+         900 € ortsübliche Marktmiete zuzüglich 150 € umla­-
+         gefähige Kosten = 1.050 €
+         270 € vereinbarte Miete zuzüglich 150 € umlagefähi­-
+         ge Kosten = 420 €
+
+         Die Eheleute Muster vermieten die Wohnung zu
+         40,00 % entgeltlich (420 € / 1.050 €) und zu
+         60,00 % unentgeltlich (prozentualer Kürzungsanteil).
+         Deshalb sind die auf diese Wohnung entfallenden
+         Werbungskosten im Verhältnis der ortsüblichen
+         Marktmiete zur vereinbarten Miete aufzuteilen. Den
+         prozentualen Kürzungsanteil i. H. v. 60,00 % tragen
+         die Eheleute Muster in Zeile 87 ein.
+         Das Finanzamt kürzt die Summe der Werbungskos­-
+         ten i. H. v. 4.920 € (Zeile 83) von Amts wegen um
+         60,00 % (2.952 €) und berücksichtigt folglich nur
+         1.968 € (4.920 € abzüglich 2.952 €) als abzugsfähi­-
+         gen Betrag. Die im Einkommensteuerbescheid für
+         dieses Objekt ausgewiesenen Einkünfte betragen
+         daher für Herrn Muster und für Frau Muster jeweils
+         1.536 € (zusammen 3.072 €).
+

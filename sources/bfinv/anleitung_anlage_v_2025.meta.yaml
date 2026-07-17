@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung zur Anlage V 2025 - amtliche Anleitung"
+  quelle_url: "FMS-Export Julius, Archiv ~/02_Software/eric/vordrucke-archiv/080_Anleitung_Anlage_V_2025.pdf"
+  abrufdatum: "2026-07-17"
+  datei: "anleitung_anlage_v_2025.txt"
+  pdf_datei: "anleitung_anlage_v_2025.pdf"
+  sha256: "4fd3e470c37f42b6aea332835b46c466251d97d1e524ac4f1785bd1aea1ec8bb"
+  pdf_sha256: "1d0edaecf310cc8b491ba32617cdd25318a13bb9668a89a655e575ca668d4b57"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Anlage V']
+  verwendet_in:
+    - "Bindungstabelle V+V (Auslegungs-Zweitbeleg, Zeilen-Konzepte VZ 2025)"

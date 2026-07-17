@@ -1,0 +1,311 @@
+Quelle: FMS-Export Julius (Formular-Management-System Bundesfinanzverwaltung), Archiv ~/02_Software/eric/vordrucke-archiv/Anlage_V_2024.pdf
+Abgerufen: 2026-07-17
+Titel: Anlage V (Einkuenfte aus Vermietung und Verpachtung) 2024 - amtlicher Vordruck
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                                                       2024
+                    Name / Gemeinschaft / Gesellschaft
+
+               1
+                                                                                                                                                 Anlage V
+                    Vorname                                                                                                                          zur Einkommensteuer-
+                                                                                                                                                     erklärung
+               2
+                                                                                                                                                     zur Feststellungserklärung
+                                                                                                                 lfd. Nr. der
+               3    Steuernummer                                                                                 Anlage                          Diese Anlage ist bei Zusammen-
+
+
+202400310201
+                                                                                                                                                 veranlagung von Ehegatten / Lebens-
+                    Einkünfte aus Vermietung/Verpachtung bebauter Grundstücke                                                                    partnern gemeinsam auszufüllen.
+
+
+                    Allgemeine Angaben                                                                                                                                              25
+
+                    Lage des Grundstücks / der Eigentumswohnung
+                    Straße, Hausnummer
+
+               4
+                    Postleitzahl                   Ort
+
+               5
+                              Aktenzeichen laut Grundsteuermessbescheid (ohne Sonderzeichen) – bisher Einheitswert-Aktenzeichen –
+
+               6      00
+                    Angeschafft am                                Fertig gestellt am                            Veräußert / Übertragen am
+
+               7                                                                                         53
+                    Wirtschafts-Identifikationsnummer
+
+               8    D E                                                     -
+                 Das in Zeile 4 bezeichnete Objekt wird ganz oder teilweise
+                 als Ferienwoh-             1 = Ja         kurzfristig                                    1 = Ja                an Angehörige zu Wohnzwe-                  1 = Ja
+               9 nung genutzt        61     2 = Nein       vermietet    63                                2 = Nein              cken vermietet                   62        2 = Nein
+                    – Bei Nutzung als Ferienwohnung oder bei kurzfristiger Vermietung ist zusätzlich die Anlage V-FeWo zu übermitteln. –
+
+               10   Gesamtwohnfläche (in m²)                                                                                                                     54
+
+               11        in Zeile 10 enthaltener eigengenutzter oder unentgeltlich an Dritte überlassener Wohnraum (in m²)                                       55
+
+               12        in Zeile 10 enthaltener als Ferienwohnung genutzter Wohnraum (in m²)                                                                    56
+                    Einnahmen
+                    (Bei ausländischen Einkünften: Anlage AUS beachten)
+                    Mieteinnahmen für Wohnungen (ohne Umlagen / ohne Umsatzsteuer)
+                    Bezeichnung der Wohneinheit (z. B. Stockwerk, Nummer der Wohnung)                                Wohnfläche (in m²)                       EUR
+
+               13                                                                                                                                                                   ,–
+                    Bezeichnung weiterer Wohneinheiten (z. B. Stockwerk, Nummer der Wohnung)                         Wohnfläche (in m²)
+
+               14                                                                                                                            +                                      ,–
+               15                                                                                                          Summe          01 =                                      ,–
+                    Einnahmen für andere Räume (ohne Umlagen / ohne Umsatzsteuer)
+                    Bezeichnung der Einheit (z. B. Stockwerk, Nummer der Einheit)                                    Nutzfläche (in m²)
+
+               16                                                                                                                                                                   ,–
+                    Bezeichnung weiterer Einheiten (z. B. Stockwerk, Nummer der Einheit)                             Nutzfläche (in m²)
+
+               17                                                                                                                            +                                      ,–
+               18                                                                                                          Summe          02 =                                      ,–
+                    Einnahmen für an Angehörige vermietete Wohnungen (ohne Umlagen / ohne Umsatzsteuer)
+                    Bezeichnung der Wohneinheit (z. B. Stockwerk, Nummer der Wohnung)                                Wohnfläche (in m²)
+
+               19                                                                                                                           03                                      ,–
+                    Einnahmen aus umgelegten Neben- / Betriebskosten (z. B. Wasser, Allgemeinstrom, Müllabfuhr, Zentralheizung)
+                                                                                                                                                              EUR
+
+               20   auf die Zeilen 15 und 18 entfallende laufende Neben- / Betriebskosten                                                   04                                      ,–
+                  auf die Zeilen 15 und 18 entfallende und im Jahr 2024 erhaltene Nachzahlungen / geleistete
+               21 Erstattungen (negativen Betrag mit vorangestelltem Minuszeichen eintragen)                                                11                                      ,–
+               22   auf Zeile 19 entfallende laufende Neben- / Betriebskosten                                                               05                                      ,–
+                    auf Zeile 19 entfallende und im Jahr 2024 erhaltene Nachzahlungen / geleistete Erstattungen
+               23   (negativen Betrag mit vorangestelltem Minuszeichen eintragen)                                                           12                                      ,–
+                                                                                                                                                                 13        1 = Ja
+               24   Neben- / Betriebskosten wurden nicht gesondert vereinbart.
+
+
+                             2024AnlV101NET                                                     - September 2024 -                                         2024AnlV101NET
+        Steuernummer, Name und Vorname, lfd. Nr. der Anlage
+                                                                                     -2-
+
+     Sonstige Einnahmen
+                                                                                                                                EUR
+   Vereinnahmte Mieten für frühere Jahre / verrechnete Mietkautionen / auf das Kalenderjahr
+25 entfallende Mietvorauszahlungen aus Baukostenzuschüssen                                                                06                ,–
+26   Einnahmen aus Vermietung von Garagen, Werbeflächen, Grund und Boden für Kioske usw.                                  07                ,–
+27   Vereinnahmte Umsatzsteuer                                                                                            09                ,–
+                                                                                                                                                 202400310202
+28   Vom Finanzamt erstattete und ggf. verrechnete Umsatzsteuer                                                           10                ,–
+                                                                                                                                EUR
+     Öffentliche Zuschüsse nach dem Wohnraumförderungsgesetz oder zu Erhaltungsaufwendungen,
+29   Aufwendungszuschüsse, Guthabenzinsen aus Bausparverträgen und sonstige Einnahmen                                                       ,–
+         davon entfallen auf eigengenutzte oder unentgeltlich an Dritte überlassene Wohnungen
+30       laut Zeile 11                                                                                                    −                 ,–
+31                                                                          Ergebnis der Zeilen 29 und 30             08 =                  ,–
+                                                                                                                                EUR
+
+32   Summe der Einnahmen aus den Zeilen 15, 18 bis 28 und 31                                                                                ,–
+     Werbungskosten
+     Bitte füllen Sie die Zeilen zu den verhältnismäßig zugeordneten Werbungskosten nur aus, wenn die Aufwendungen für das Ge-
+     bäude nur teilweise Werbungskosten sind (siehe Anleitung zu den Zeilen 33 bis 84).
+     Im Falle einer verbilligten Vermietung zu Wohnzwecken tragen Sie bitte die Aufwendungen in die Zeilen 33 bis 84 in voller Höhe
+     ein. Hinsichtlich der vorzunehmenden Kürzung der Werbungskosten nutzen Sie bitte ausschließlich die Zeilen 87 und 88 (siehe
+     Anleitung zu den Zeilen 33 bis 84 sowie 87 und 88).
+     Absetzung für Abnutzung für Gebäude (ohne Beträge in den Zeilen 36 bis 41)
+     durch direkte Zuordnung ermittelt
+                                                                                                                                EUR
+         1 = linear                                  1 = wie Vorjahr
+33       2 = degressiv                   %           2 = laut Erläuterung                                                                   ,–
+     durch verhältnismäßige Zuordnung ermittelt
+                                                                                                            abzugsfähi-
+                                                                               Gesamtbetrag in              ger Anteil
+                                                                               EUR, Ct                      (in %)
+         1 = linear                                  1 = wie Vorjahr
+34       2 = degressiv                   %           2 = laut Erläuterung                                                 +                 ,–
+35                                                                    Abzugsfähige Werbungskosten                     30 =                  ,–
+     Sonderabschreibung für Mietwohnungsneubau nach § 7b EStG
+     durch direkte Zuordnung ermittelt
+                                                                                                                                EUR
+         1 = wie Vorjahr
+36       2 = laut Erläuterung                                                                                                               ,–
+     durch verhältnismäßige Zuordnung ermittelt
+                                 Gesamtbetrag in EUR, Ct            abzugsfähiger Anteil (in %)
+         1 = wie Vorjahr
+37       2 = laut Erläuterung                                                                                             +                 ,–
+38                                                                      Abzugsfähige Werbungskosten                   70 =                  ,–
+     Erhöhte Absetzungen nach den §§ 7h, 7i EStG und / oder nach dem Schutzbaugesetz
+     durch direkte Zuordnung ermittelt
+                                                                                                                                EUR
+         1 = wie Vorjahr
+39       2 = laut Erläuterung                                                                                                               ,–
+     durch verhältnismäßige Zuordnung ermittelt
+                                 Gesamtbetrag in EUR, Ct            abzugsfähiger Anteil (in %)
+         1 = wie Vorjahr
+40       2 = laut Erläuterung                                                                                             +                 ,–
+41                                                                      Abzugsfähige Werbungskosten                   31 =                  ,–
+     Absetzung für Abnutzung für Wirtschaftsgüter, die keine Gebäude sind (z. B. bewegliche Wirtschaftsgüter)
+     durch direkte Zuordnung ermittelt
+                                 Einzelangaben (z. B. Bezeichnung, Anschaffungskosten und -datum, Nutzungsdauer)                EUR
+         1 = wie Vorjahr
+42       2 = laut Erläuterung                                                                                                               ,–
+     durch verhältnismäßige Zuordnung ermittelt
+                                 Einzelangaben (z. B. Bezeichnung, Anschaffungskosten und -datum, Nutzungsdauer)
+         1 = wie Vorjahr
+43       2 = laut Erläuterung
+                                 Gesamtbetrag in EUR, Ct            abzugsfähiger Anteil (in %)
+
+44                                                                                                                        +                 ,–
+45                                                                      Abzugsfähige Werbungskosten                   60 =                  ,–
+
+            2024AnlV102NET                                                                                                     2024AnlV102NET
+                       Steuernummer, Name und Vorname, lfd. Nr. der Anlage
+                                                                                                       -3-
+
+                    Schuldzinsen (ohne Tilgungsbeträge)
+                    durch direkte Zuordnung ermittelt
+                    Einzelangaben (z. B. Kreditinstitut)                                                                                           EUR
+
+               46                                                                                                                                              ,–
+                    durch verhältnismäßige Zuordnung ermittelt
+                    Einzelangaben (z. B. Kreditinstitut)                     Gesamtbetrag in EUR, Ct           abzugsfähiger Anteil (in %)
+
+               47                                                                                                                             +                ,–
+202400310203
+               48                                                                         Abzugsfähige Werbungskosten                      33 =                ,–
+                    Geldbeschaffungskosten (z. B. Schätz-, Notar-, Grundbuchgebühren)
+                    durch direkte Zuordnung ermittelt
+                    Einzelangaben                                                                                                                  EUR
+
+               49                                                                                                                                              ,–
+                    durch verhältnismäßige Zuordnung ermittelt
+                    Einzelangaben                                            Gesamtbetrag in EUR, Ct           abzugsfähiger Anteil (in %)
+
+               50                                                                                                                             +                ,–
+               51                                                                         Abzugsfähige Werbungskosten                      34 =                ,–
+                    Renten, dauernde Lasten
+                    durch direkte Zuordnung ermittelt
+                    Einzelangaben                                                                                                                  EUR
+
+               52                                                                                                                                              ,–
+                    durch verhältnismäßige Zuordnung ermittelt
+                    Einzelangaben                                            Gesamtbetrag in EUR, Ct           abzugsfähiger Anteil (in %)
+
+               53                                                                                                                             +                ,–
+               54                                                                         Abzugsfähige Werbungskosten                      35 =                ,–
+                    2024 voll abzuziehende Erhaltungsaufwendungen (einschließlich Entnahmen aus der Erhaltungsrücklage)
+                                                                                                                                                   EUR
+
+               55   durch direkte Zuordnung ermittelt                                                                                        36                ,–
+                    durch verhältnismäßige                              Gesamtbetrag in EUR, Ct              abzugsfähiger Anteil (in %)
+                    Zuordnung ermittelt
+               56                                                                                                                            37                ,–
+                    Auf bis zu 5 Jahre zu verteilende Erhaltungsaufwendungen (einschließlich Entnahmen aus der Erhaltungsrücklage)
+                    – §§ 11a, 11b EStG, § 82b EStDV –
+
+               57   Gesamtaufwand 2024 57                                                        ,– € davon 2024 abzuziehen                                 ,– €
+                                                                                                                                                   EUR
+
+               58   durch direkte Zuordnung ermittelt                                                                                                          ,–
+                                                                             Gesamtbetrag in EUR, Ct           abzugsfähiger Anteil (in %)
+                  durch verhältnismäßige Zuordnung er-
+               59 mittelt                                                                                                                     +                ,–
+               60                                                                         Abzugsfähige Werbungskosten                      38 =                ,–
+                    Zu berücksichtigender Anteil der Erhaltungsaufwendungen nach den §§ 11a, 11b EStG, § 82b EStDV
+                                                                                                                                                   EUR
+
+               61   aus 2020 durch direkte Zuordnung ermittelt                                                                                                 ,–
+                                                                             Gesamtbetrag in EUR, Ct           abzugsfähiger Anteil (in %)
+                    aus 2020 durch verhältnismäßige Zu-
+               62   ordnung ermittelt                                                                                                         +                ,–
+               63                                                                         Abzugsfähige Werbungskosten                      39 =                ,–
+               64   aus 2021 durch direkte Zuordnung ermittelt                                                                                                 ,–
+                                                                             Gesamtbetrag in EUR, Ct           abzugsfähiger Anteil (in %)
+                    aus 2021 durch verhältnismäßige Zu-
+               65   ordnung ermittelt                                                                                                         +                ,–
+               66                                                                         Abzugsfähige Werbungskosten                      40 =                ,–
+               67   aus 2022 durch direkte Zuordnung ermittelt                                                                                                 ,–
+                                                                             Gesamtbetrag in EUR, Ct           abzugsfähiger Anteil (in %)
+                    aus 2022 durch verhältnismäßige Zu-
+               68   ordnung ermittelt                                                                                                         +                ,–
+               69                                                                         Abzugsfähige Werbungskosten                      41 =                ,–
+                             2024AnlV103NET                                                                                                       2024AnlV103NET
+        Steuernummer, Name und Vorname, lfd. Nr. der Anlage
+                                                                                     -4-
+
+                                                                                                                                         EUR
+
+70   aus 2023 durch direkte Zuordnung ermittelt                                                                                                        ,–
+                                                          Gesamtbetrag in EUR, Ct            abzugsfähiger Anteil (in %)
+     aus 2023 durch verhältnismäßige Zu-
+71   ordnung ermittelt                                                                                                     +                           ,–
+72                                                                       Abzugsfähige Werbungskosten                   42 =                            ,–
+     Umgelegte Kosten (z. B. Grundsteuer, Straßenreinigung, Müllabfuhr, Wasserversorgung, Entwässerung, Hausbeleuchtung,
+
+                                                                                                                                                            202400310204
+     Heizung, Warmwasser, Schornsteinreinigung, Hausversicherungen, Hauswart, Treppenhausreinigung, Fahrstuhl)
+     durch direkte Zuordnung ermittelt
+     Einzelangaben                                                                                                                       EUR
+
+73                                                                                                                                                     ,–
+     durch verhältnismäßige Zuordnung ermittelt
+     Einzelangaben                                        Gesamtbetrag in EUR, Ct            abzugsfähiger Anteil (in %)
+
+74                                                                                                                         +                           ,–
+75                                                                       Abzugsfähige Werbungskosten                   52 =                            ,–
+     Nicht umgelegte Kosten (z. B. Verwaltungskosten, Bank- und Kontoführungsgebühren – ohne Erhaltungsrücklage –)
+     durch direkte Zuordnung ermittelt
+     Einzelangaben                                                                                                                       EUR
+
+76                                                                                                                                                     ,–
+     durch verhältnismäßige Zuordnung ermittelt
+     Einzelangaben                                        Gesamtbetrag in EUR, Ct            abzugsfähiger Anteil (in %)
+
+77                                                                                                                         +                           ,–
+78                                                                       Abzugsfähige Werbungskosten                   48 =                            ,–
+     Nur bei umsatzsteuerpflichtiger Vermietung:
+     an das Finanzamt gezahlte und ggf. verrechnete Umsatzsteuer
+                                                                                                                                         EUR
+
+79   durch direkte Zuordnung ermittelt                                                                                     58                          ,–
+     Sonstige Kosten
+     durch direkte Zuordnung ermittelt
+     Einzelangaben                                                                                                                       EUR
+
+80                                                                                                                                                     ,–
+     durch verhältnismäßige Zuordnung ermittelt
+     Einzelangaben                                        Gesamtbetrag in EUR, Ct            abzugsfähiger Anteil (in %)
+
+81                                                                                                                         +                           ,–
+82                                                                       Abzugsfähige Werbungskosten                   49 =                            ,–
+                                                                                                                                         EUR
+     Summe der Werbungskosten
+83   (Summe der Zeilen 35, 38, 41, 45, 48, 51, 54, 55, 56, 60, 63, 66, 69, 72, 75, 78, 79 und 82)                                                      ,–
+   Nur bei umsatzsteuerpflichtiger Vermietung: in den Werbungskosten laut Zeile 83 enthaltene
+84 abziehbare Vorsteuerbeträge                                                                                             59                          ,–
+     Ermittlung und Zuordnung der Einkünfte
+                                                              – Bitte füllen Sie die Zeilen 85 und 86 immer aus. –
+
+                                                                                                                                         EUR
+   Überschuss (Einnahmen laut Zeile 32 abzüglich Werbungskosten laut Zeile 83)
+85 – negativen Betrag mit vorangestelltem Minuszeichen eintragen –                                                                                     ,–
+                                                              Steuerpflichtige Person / Ehemann / Person A /
+                                                                        Gemeinschaft / Gesellschaft                               Ehefrau / Person B
+                                                                                EUR                                                      EUR
+
+86 Zurechnung des Betrags aus Zeile 85                   20                                           ,–                   21                          ,–
+     Verbilligte Vermietung zu Wohnzwecken (§ 21 Abs. 2 Satz 1 EStG)
+     – Bitte nehmen Sie die Eintragung zur Kürzung der Werbungskosten entweder in Zeile 87 oder in Zeile 88 vor. Aufgrund dieser Eintra-
+     gung kürzt Ihr Finanzamt die Werbungskosten entsprechend. –
+
+87   Kürzung der Werbungskosten wegen verbilligter Vermietung (in %)                                                                        50
+                                                                                                                                               EUR
+   Betragsmäßige Kürzung der Werbungskosten wegen verbilligter Vermietung eines Teils
+88 des Objekts                                                                                                                  51                     ,–
+     2024 vereinnahmte oder bewilligte Zuschüsse aus öffentlichen Mitteln zu den Anschaffungs- / Herstel-
+     lungskosten (laut gesonderter Aufstellung)
+                                                                               EUR                                                             EUR
+   Steuerpflichtige Person / Ehemann / Person A /
+89 Gemeinschaft / Gesellschaft                                                                 ,–                Ehefrau / Person B                    ,–
+            2024AnlV104NET                                                                                                            2024AnlV104NET
+
