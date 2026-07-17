@@ -10,6 +10,7 @@ bindungen:
     quelle: {regel_id: p09_entfernungspauschale, signatur_slot: arbeitstage}
     typ: int
     einheit: Tage
+    bereich: {min: 0, max: 366, grund: "Kalendertage im Veranlagungsjahr (Schaltjahr)"}
     askable: true
     fragetext_laie: "An wie vielen Tagen bist du dieses Jahr zur Arbeit gefahren?"
     hilfe_kurz: "Zähl nur die Tage, an denen du wirklich zu deiner Arbeitsstelle gefahren bist."
@@ -88,6 +89,7 @@ bindungen:
     quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, signatur_slot: monate}
     typ: int
     einheit: Monate
+    bereich: {min: 0, max: 12, grund: "Kalendermonate im Veranlagungszeitraum"}
     askable: true
     fragetext_laie: "Wie viele Monate hattest du diese Zweitwohnung dieses Jahr?"
     hilfe_kurz: "Volle Monate zählen. Die Höchstgrenze gilt pro Monat."
@@ -186,6 +188,7 @@ bindungen:
     quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: abwesenheit_stunden}
     typ: int
     einheit: Stunden
+    bereich: {min: 0, max: 24, grund: "Stunden je Kalendertag (Konvention stunden_je_kalendertag)"}
     askable: true
     fragetext_laie: "Wie lange warst du an einem Tag für die Arbeit unterwegs (in Stunden)?"
     hilfe_kurz: "Zeit weg von Wohnung und Arbeitsstelle. Ab 8 Stunden gibt es eine Pauschale."

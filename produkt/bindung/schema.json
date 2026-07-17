@@ -73,7 +73,14 @@
           "description": "Veranlagungszeiträume, für die die Bindung gilt, z.B. [2024, 2025, 2026]."},
         "anker_ref": {"$ref": "#/$defs/anker_ref"},
         "enum_werte": {"type": "array", "items": {"type": "string"}, "minItems": 1,
-          "description": "Zulässige Werte bei typ=enum."}
+          "description": "Zulässige Werte bei typ=enum."},
+        "bereich": {"type": "object", "additionalProperties": false, "required": ["min", "max"],
+          "description": "Optionale Wertebereichsgrenzen (nur cent/int) für das Unsicherheits-Derivat. Fehlt es, ist die Achse unbounded (offene Intervallseite).",
+          "properties": {
+            "min": {"type": "integer"},
+            "max": {"type": "integer"},
+            "grund": {"type": "string", "description": "Woher die Grenze stammt (Kalender-Logik, amtliche Grenze, physikalisch)."}
+          }}
       },
       "allOf": [
         {"if": {"properties": {"askable": {"const": true}}},

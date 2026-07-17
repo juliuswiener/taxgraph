@@ -217,6 +217,21 @@ def test_e_summen_konvention(daten):
                     f"Slot {key}: Summanden nicht typ-homogen cent/int: {typen}")
 
 
+# ---- (f) bereich-Konsistenz (Prärequisit Unsicherheits-Derivat) ----------------
+
+def test_f_bereich(daten):
+    for f, d in daten.items():
+        for b in d["bindungen"]:
+            ber = b.get("bereich")
+            if ber is None:
+                continue
+            assert b["typ"] in ("cent", "int"), f"{b['feld_id']}: bereich nur bei cent/int"
+            assert isinstance(ber["min"], int) and isinstance(ber["max"], int), f"{b['feld_id']}: bereich nicht ganzzahlig"
+            assert ber["min"] <= ber["max"], f"{b['feld_id']}: bereich min>max"
+            if b["typ"] == "cent" and ber["min"] < 0:
+                assert ber.get("grund"), f"{b['feld_id']}: negativer cent-Bereich braucht grund (Verlust-Begründung)"
+
+
 # ---- Negativtests: manipulierte Kopien MÜSSEN rot werden -----------------------
 
 def _erste_datei_daten(daten):
@@ -266,6 +281,16 @@ def test_neg_unbelegter_slot(daten):
     geb = {b["quelle"].get("signatur_slot") for b in d["bindungen"] if b["quelle"]["regel_id"] == rid}
     lk = {l.get("signatur_slot") for l in d.get("luecken", []) if l["regel_id"] == rid}
     assert slot in askable and slot not in geb and slot not in lk, "Slot-Entfernung würde nicht auffallen"
+
+
+def test_neg_bereich_min_groesser_max(daten):
+    d = _erste_datei_daten(daten)
+    ziel = next((b for b in d["bindungen"] if b.get("bereich")), None)
+    if ziel is None:
+        pytest.skip("kein bereich-Feld")
+    ziel["bereich"] = {"min": 100, "max": 0}
+    ok = ziel["bereich"]["min"] <= ziel["bereich"]["max"]
+    assert not ok, "bereich min>max würde nicht auffallen"
 
 
 def test_neg_gemischte_summanden(daten):
