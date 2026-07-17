@@ -24,7 +24,8 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 PRODUKT = os.path.dirname(HERE)
 ROOT = os.path.dirname(PRODUKT)
-for _sub in ("produkt/store", "produkt/traverser", "produkt/unsicherheit", "produkt/mapping", "golden"):
+for _sub in ("produkt/store", "produkt/traverser", "produkt/unsicherheit", "produkt/mapping",
+             "produkt/konsistenz", "golden"):
     _p = os.path.join(ROOT, _sub)
     if _p not in sys.path:
         sys.path.insert(0, _p)
@@ -33,6 +34,7 @@ import store as ST          # noqa: E402
 import traverser as TR      # noqa: E402
 import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
+import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche, dev-2)
 
 FAELLE = os.path.join(HERE, "faelle")
 
@@ -66,6 +68,9 @@ DHF_BEDINGUNGEN = ("dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
 AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr")
 VOR_PARTNER_FELDER = ("vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
                       "vor_rv_ausserhalb_lstb_partner")
+# Front V+V (§ 21): Überschuss-Rechnung Einnahmen − Werbungskosten (Scheibe 3, referenziert).
+VV_GESAMT_FELDER = ("vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen",
+                    "vv_erhaltungsaufwand", "vv_sonstige_wk")
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -101,6 +106,18 @@ SCHEIBEN = {
         "gesamt_ring": "festzusetzende_est",
         "teil_ringe": [],
         "guard": True,
+    },
+    # NAMED ARCHITEKTUR-SCHULD: derzeit ZWEI Ring-Pfade — an_gesamt=catala_est (Arbeitnehmer-only,
+    # § 9a im Scope), vv_gesamt=catala_gesamt (§ 21). End-Zustand ist EIN catala_gesamt-Ring, der
+    # ALLE Einkunftsarten summiert; die Konvergenz ist der §19+§21-kombiniert-Schritt (einkuenfte_ns-
+    # Andockung). Bis dahin bewusst getrennte, kleinste-testbare Scheiben. Front V+V, reiner §21-MVP.
+    "vv_gesamt": {
+        "felder": VV_GESAMT_FELDER + ("veranlagung",) + AN_GESAMT_FLAGS,
+        "felder_datei": None,
+        "gesamt_ring": "festzusetzende_est_gesamt",
+        "teil_ringe": [],
+        "guard": True,
+        "vv": True,     # aktiviert den flag_check-Widerspruchs-Guard
     },
 }
 
@@ -256,6 +273,32 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "sonderausgaben": so})
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
+    if quantitaet == "festzusetzende_est_gesamt":   # § 21 V+V via catala_gesamt (reiner §21-MVP)
+        try:
+            import runner  # noqa: F401
+        except Exception:
+            return None
+        f = felder or {}
+
+        def _c(fid):
+            v = f.get(fid, {}).get("wert")
+            return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+
+        def slot_fn(slots: dict) -> int:
+            # § 21 Überschuss (Einnahmen − Werbungskosten), Naht-CENT -> EURO. catala_gesamt macht
+            # den Verlust-Floor (negativ → est 0, K2) und den Tarif; MVP: keine anderen Einkunftsarten.
+            vv = runner.catala_vermietung_einkuenfte({
+                "einnahmen": _c("vv_einnahmen") // 100,
+                "gebaeude_afa": _c("vv_gebaeude_afa") // 100,
+                "schuldzinsen": _c("vv_schuldzinsen") // 100,
+                "erhaltungsaufwand": _c("vv_erhaltungsaufwand") // 100,
+                "sonstige_werbungskosten": _c("vv_sonstige_wk") // 100})
+            return runner.catala_est({
+                "gesamtfall": True, "veranlagungszeitraum": vz,
+                "veranlagung": slots.get("veranlagung", "einzel"),
+                "einkuenfte_vermietung": vv})
+        return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
+
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
 
 
@@ -274,7 +317,7 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     return bf({f: felder[f]["wert"] for f in scheibe_felder})
 
 
-def _an_gesamt_sperrgrund(felder: dict):
+def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None):
     """K2-Guard: nicht-ring-fähige Werbungskosten/Einkunftsarten sperren den Ring GANZ (nie Fake-0).
     Ein dHf-/Verpflegung-/AM-Feld mit Wert > 0 (vorläufig ODER bestätigt) sperrt (kein Catala-Modul);
     ein Einkunftsart-Flag = false (Nutzer HAT die Art) macht den §2-Ring unzulässig (catala_gesamt =
@@ -283,6 +326,16 @@ def _an_gesamt_sperrgrund(felder: dict):
         v = felder.get(f)
         w = v and v.get("wert")
         return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
+    if cfg and cfg.get("vv"):
+        # V+V-Ring (§ 21): Flag↔Einkunftsart-Widerspruch (kein_vuv=true + vv_einnahmen>0 bestätigt)
+        # surfacen — K2, keine still übergangene Einkunftsart (dev-2s flag_check).
+        if FC.flag_widersprueche(felder):
+            return "flag_konsistenz_offen"
+        # MVP nur § 21: eine ANDERE Einkunftsart bestätigt-vorhanden → nicht ring-fähig (Stufe 2).
+        if any(felder.get(fl, {}).get("wert") is False
+               for fl in ("kein_gewinn", "kein_kap", "kein_sonstige")):
+            return "einkunftsart_nicht_ring_faehig"
+        return None
     if any(_positiv(f) for f in GUARD_WERBUNGSKOSTEN):
         return "werbungskosten_nicht_ring_faehig"
     # dHf-Tatbestand: Kosten > 0, aber Auslandsunterkunft ODER eine der 4 Geltungsbedingungen offen
@@ -398,7 +451,7 @@ def stand(fall_id: str) -> tuple[int, dict]:
     }
 
     gesamt_iv, engine, teil = None, "unavailable", []
-    gesperrt = _an_gesamt_sperrgrund(felder) if cfg.get("guard") else None
+    gesperrt = _an_gesamt_sperrgrund(felder, cfg) if cfg.get("guard") else None
     if gesperrt:
         engine = "gesperrt"          # nicht-ring-fähiger Abzug/Einkunftsart -> kein Ring (K2)
     elif cfg["gesamt_ring"]:
@@ -473,7 +526,7 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
     vz = int(store["veranlagungszeitraum"])
     if cfg.get("guard"):
         # K2: ein nicht-ring-fähiger Abzug/Einkunftsart sperrt den Ring VOR jeder Zahl — nie Fake-Bescheid.
-        sperr = _an_gesamt_sperrgrund(felder)
+        sperr = _an_gesamt_sperrgrund(felder, cfg)
         if sperr:
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                          "grund": sperr, "offen": [], "trace": None}

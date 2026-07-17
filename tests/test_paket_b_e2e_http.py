@@ -510,6 +510,54 @@ def test_an_gesamt_zusammen_vor_guard(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "partner_vor_offen"
 
 
+def _vv_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False):
+    """vv_gesamt-Kegel (reiner § 21): Einnahmen/WK + veranlagung + Flags (kein_vuv=false = V+V vorhanden)."""
+    return [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa), ("vv_schuldzinsen", schuldzinsen),
+            ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("veranlagung", "einzel"),
+            ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", kein_vuv), ("kein_sonstige", True)]
+
+
+def _vv_anlegen(base, fid, kegel):
+    st, _ = _req(base, "POST", "/fall", {"scheibe": "vv_gesamt", "veranlagungszeitraum": 2025, "fall_id": fid})
+    assert st == 201
+    for feld, wert in kegel:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
+        assert st == 201
+
+
+def test_vv_gesamt_vermieter(base):
+    """Front V+V: reiner Vermieter-Fall. § 21-Einkünfte 30000 (Einnahmen − WK) → catala_gesamt →
+    festzusetzende_est 4303 = 430300 Cent (dev-2s vermieter_only-Golden)."""
+    catala = _catala_da()
+    _vv_anlegen(base, "vv", _vv_kegel(3000000))   # 30000 € in Cent
+    st, erg = _req(base, "GET", "/fall/vv/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 430300 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_vv_gesamt_verlust(base):
+    """K2: § 21-Verlust (WK > Einnahmen: 8000 − 6000 − 4000 = −2000) → festzusetzende_est 0,
+    NIE negativ (keine Negativsteuer)."""
+    catala = _catala_da()
+    _vv_anlegen(base, "vvl", _vv_kegel(800000, afa=600000, schuldzinsen=400000))
+    st, erg = _req(base, "GET", "/fall/vvl/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 0 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_vv_gesamt_flag_widerspruch(base):
+    """K2: kein_vuv=true (behauptet keine V+V) UND vv_einnahmen > 0 bestätigt → Widerspruch surfacen,
+    keine still übergangene Einkunftsart."""
+    _vv_anlegen(base, "vvw", _vv_kegel(3000000, kein_vuv=True))
+    st, erg = _req(base, "GET", "/fall/vvw/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "flag_konsistenz_offen"
+
+
 def test_graph_uebersicht(base):
     """Read-only Desktop-Graph: Knoten = Regeln der Scheibe mit Status, Kanten = Feld→Regel mit
     Zustand. Ein Traverser-Aufruf, kein Bescheid, kein Schreibpfad."""
