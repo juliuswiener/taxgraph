@@ -1,39 +1,94 @@
 # Ideation-Lab-Vergleich — UI-/Eingabe-Schicht (Instructor-Synthese)
 
-Instructor, 2026-07-17. Grundlage: zwei UNABHÄNGIGE Lab-Läufe mit identischem Seed, kein
-Austausch bis Abgabe (Julius-Weisung 2026-07-16). dev-1: `2026-07-17-ideation-lab-ui-konzept.md`
-(65a0217, Salvage 2 Runden, 27 Agents/576k Token). dev-2: Synthese via Bus (3 Runden komplett,
-28 Agents/81k Token). Drittbein (Instructor-Lauf) auf Julius-Wort verworfen (Fable zu teuer).
-Methodik wie Golden-Triangulation: unabhängige Konvergenz = stärkstes Signal.
+Instructor, 2026-07-17. Zwei UNABHÄNGIGE Ideen-Läufe mit identischer Aufgabenstellung, ohne
+Austausch (Julius-Weisung). dev-1: `2026-07-17-ideation-lab-ui-konzept.md` (65a0217).
+dev-2: Synthese via Bus. Was BEIDE unabhängig gefunden haben, ist belastbar (gleiches Prinzip
+wie unsere Golden-Triangulation).
 
-## Konvergenzen (beide unabhängig — belastbar)
+---
+
+## KURZFASSUNG IN KLARTEXT
+
+**Worum ging es:** Wie soll die Eingabe-Oberfläche aussehen, mit der jemand seinen Steuerfall
+in TaxGraph eingibt — mit optionaler KI-Hilfe, aber ohne dass die KI je selbst rechnet?
+
+**Was beide Läufe unabhängig sagen (die 6 sicheren Erkenntnisse):**
+
+1. **Wir müssen keinen Fragebogen erfinden — er steckt schon im System.** Unsere Regeln wissen
+   heute schon, WANN sie gelten (Geltungsbedingungen). Liest man das rückwärts, ergibt sich
+   automatisch: welche Fragen nötig sind, in welcher Reihenfolge, und warum. Dieselbe Struktur
+   vorwärts gelesen erklärt jeden Euro im Bescheid ("diese Zahl kommt aus diesem Paragraphen").
+   Fragebogen und Bescheid-Erklärung = ein und dasselbe Ding, zweimal benutzt.
+
+2. **KI-Werte werden technisch blockiert, nicht nur per Regel verboten.** Ein Wert, den die KI
+   vorgeschlagen hat und den noch kein Mensch bestätigt hat, KANN gar nicht in die Endsumme
+   fließen — das System weigert sich, eine Steuerzahl auszugeben, solange irgendwo ein
+   unbestätigter Wert drinhängt. Kein "bitte nicht", sondern "geht nicht".
+
+3. **Bestätigen heißt: zwei Signale.** KI schlägt vor (Signal 1, bewirkt allein NICHTS),
+   Mensch bestätigt mit Klick neben dem Beleg (Signal 2) — erst dann zählt der Wert.
+   Beide Läufe kamen unabhängig auf exakt dieses Bild.
+
+4. **Jeder Eingabewert bekommt einen Herkunftsnachweis** — genau wie jede Regel bei uns einen
+   Gesetzes-Anker hat: Woher kommt der Wert (selbst getippt / Beleg / Vorjahr / KI-Vorschlag)?
+   Wer hat ihn bestätigt? Damit ist der komplette Bescheid lückenlos rückverfolgbar: von der
+   Endsumme bis zum Beleg UND bis zum Gesetzestext.
+
+5. **ELSTER-Prüfung (ERiC) als eingebaute zweite Meinung** — läuft lokal mit, meldet "das würde
+   das Finanzamt so annehmen / nicht annehmen". Wichtig: abgeschnittene Prüfläufe dürfen nie
+   als "alles ok" durchgehen (unser bekanntes Falsches-Grün-Thema).
+
+6. **Die Arbeit teilt sich sauber in zwei Pakete** für die zwei Dev-Sessions: Paket A = der
+   Rechenkern-Unterbau (ohne jede KI, sofort testbar), Paket B = die Oberfläche + KI-Vorschläge.
+   Die beiden berühren sich nur über eine klar definierte Schnittstelle → kollisionsfrei.
+
+**Einziger Streitpunkt der beiden Läufe:** Ist die ELSTER-Prüfung schnell genug, um live beim
+Tippen mitzulaufen, oder muss sie im Hintergrund laufen? → Wird schlicht GEMESSEN (ERiC liegt
+lokal, kostet nichts). Order an dev-2 ist raus.
+
+**Was DU entscheiden musst (Empfehlung jeweils fett):**
+
+| # | Frage | Optionen | Empfehlung |
+|---|---|---|---|
+| 1 | Für wen bauen wir die erste Oberfläche? | Privatperson / **Steuerberater** / nur API | **Steuerberater zuerst** — unsere Stärke ist Nachweisbarkeit, das zahlt dort am meisten; Privat-Oberfläche später auf demselben Unterbau |
+| 2 | KI-Sperre fest ins Datenmodell einbauen (aufwendiger, garantiert) oder nur in der Oberfläche (schneller, umgehbar)? | Typ vs. Oberfläche | **Fest einbauen** |
+| 3 | ELSTER-Prüfung live oder Hintergrund? | live / async | **Erst messen** (läuft schon) |
+| 4 | Wie speichern wir Fälle: Änderungs-Protokoll, Schnappschüsse, oder beides? | — | Bei Paket-A-Design entscheiden, Tendenz: Protokoll + Schnappschüsse |
+| 5 | Womit anfangen? | Kern vs. Demo-Durchstich | **Paket A Kern zuerst**; erster Baustein = Tabelle "Bedingung → Eingabefeld" (fehlt heute, alles hängt daran) |
+| 6 | Extra-Feature "Steuer-Unsicherheits-Anzeige" (Bescheid als Spanne, die sich beim Bestätigen verengt) gleich mitbauen? | ja/nein | Kein Muss fürs MVP, aber Unterbau dafür gleich mitplanen (billig, keine KI) |
+| 7 | Dritte Ideen-Runde nachholen? | ja/nein | **Nein** — 6 Doppelfunde reichen, Kosten sparen (bereits verfügt) |
+
+Ein "Ja, Empfehlungen so umsetzen" von dir genügt; abweichende Einzelentscheide einfach per Nummer.
+
+---
+
+## Technischer Teil (Details zu oben, mit Board-Zuordnung)
+
+### Konvergenzen (beide unabhängig — belastbar)
 
 | # | Konzept | dev-1-Form | dev-2-Form |
 |---|---|---|---|
-| K1 | **EIN Regel-Graph, zwei Leserichtungen**: vorwärts = Beweis/Glass-Box-Bescheid, rückwärts = Interview/Fragebogen; Fragen BERECHNET aus Geltungsbedingungen, nie kuratiert | „Bidirektionale Trace-Maschine" (Keystone) | „Fragebogen = Lazy Evaluation des Regel-DAG" (P2) |
-| K2 | **Unbestätigter Wert mechanisch gesperrt** — „LLM darf nie eine Zahl SEIN" als erzwungene Struktur, nicht UI-Disziplin | `Vorlaeufig<T>`/`Bestaetigt<T>`-TYP, ERiC-Gate = Typ-Bedingung | Fail-closed Aggregation: Meet über Input-Kegel, Summe strukturell keine Zahl (P4) |
-| K3 | **Zwei-Signal-Bestätigung** — beide wählten unabhängig dieselbe Immunologie-Metapher (Kostimulation): LLM-Vorschlag = Signal 1 (inert), menschlicher Akt = Signal 2 | „Zwei-Signal-Membran", Narbe „erwogen und verworfen" | „Zwei-Signal-/T-Zell-Modell", entschieden_via-Audit |
-| K4 | **Provenance je Sachverhalts-Feld, strukturgleich zum Zitatanker** — „Warum diese Frage" und „Warum dieser Euro" = dasselbe rekursive Objekt | „Symmetrische Provenance / Herkunfts-Bilanz" (doppelte Buchführung) | „Vertrauen ist die Kante" (Justification-Objekt, N3) |
-| K5 | **ERiC als unabhängiges Orakel/Gate; Falsch-Grün = benannter Feind** | checkESt-Live-Badge + Typ-Gate | Drittes Orakel + fehler_max-Trunkierungs-Sperre |
-| K6 | **Kern/Haut-Schnitt = natürlicher Zwei-Dev-Schnitt**; Zielnutzer-Fork divergiert NUR die Haut, nie den Kern | Paket A Kern (LLM-frei) / Paket B Haut (LLM+Views) | AP-1 Substrat / AP-2 ERiC-Worker+Justification |
+| K1 | Ein Regel-Graph, zwei Leserichtungen: vorwärts = Beweis/Glass-Box-Bescheid, rückwärts = Interview; Fragen aus Geltungsbedingungen berechnet, nie kuratiert | „Bidirektionale Trace-Maschine" (Keystone) | „Fragebogen = Lazy Evaluation des Regel-DAG" |
+| K2 | Unbestätigter Wert mechanisch gesperrt | `Vorlaeufig<T>`/`Bestaetigt<T>`-TYP, ERiC-Gate = Typ-Bedingung | Fail-closed Aggregation: Meet über Input-Kegel, Summe strukturell keine Zahl |
+| K3 | Zwei-Signal-Bestätigung (beide unabhängig Immunologie-Metapher) | „Zwei-Signal-Membran", Narbe „erwogen und verworfen" | „Zwei-Signal-/T-Zell-Modell", entschieden_via-Audit |
+| K4 | Provenance je Feld, strukturgleich zum Zitatanker; „Warum diese Frage" = „Warum dieser Euro" | „Symmetrische Provenance / Herkunfts-Bilanz" | „Vertrauen ist die Kante" (Justification-Objekt) |
+| K5 | ERiC als unabhängiges Orakel; Falsch-Grün = benannter Feind | checkESt-Live-Badge + Typ-Gate | Drittes Orakel + fehler_max-Trunkierungs-Sperre |
+| K6 | Kern/Haut-Schnitt = Zwei-Dev-Schnitt; Zielnutzer-Fork ändert nur die Haut | Paket A Kern / Paket B Haut | AP-1 Substrat / AP-2 ERiC-Worker+Justification |
 
-## Widerspruch (einziger echter)
+### Widerspruch (einziger)
 
-**ERiC-Timing:** dev-1 behauptet checkESt „niedrige Latenz" → synchrones Live-Badge machbar;
-dev-2 (aus ERiC-Handbuch + erica-Quellstudie): Plugin-Laden = Kostentreiber, asynchron Pflicht,
-Feldzustand „in Prüfung". Beide Boards nennen selbst die Auflösung: **reale lokale ERiC-Latenz
-messen** (ERiC 44.2.4.0 liegt unter ~/02_Software/eric, EBV-1 offline) — billigster Aufklärer
-der teuersten Unsicherheit, $0, LLM-frei.
+ERiC-Timing: dev-1 „checkESt niedrige Latenz → synchron machbar" vs. dev-2 „Plugin-Laden teuer,
+asynchron Pflicht, Feldzustand ‚in Prüfung'". Auflösung: Latenz-Messung (Order an dev-2:
+Kaltstart vs. warme Instanz, Median+p95, ESt-Minimalfall + realistischer Fall).
 
-## Komplementär (nur je ein Board — Prüfkandidaten, kein Doppel-Beleg)
+### Komplementär (nur je ein Board — Prüfkandidaten, kein Doppel-Beleg)
 
-**Nur dev-1:** Sensitivitäts-Scheduler/Steuer-at-Risk (Bestätigungslast + Frage-Reihenfolge +
-Abgabe-Gate aus reinen Engine-Reruns, NULL LLM; production-proven-Referenzen OpenFisca/GETTSIM/
-Goal-Seek); schrumpfender Bescheid als [min,max]-Intervall; **Bindungstabelle
-`bedingung_id → typisiertes Feld` als heute fehlendes Artefakt + kritischer Pfad**;
-NEGATIV-Fund: § 357 AO/ELSTER nehmen KEIN maschinenlesbares Provenance-Bündel (Bündel =
-Audit-/Berater-Beleg, kein FA-Kanal); Vier-Ökosysteme-Beleg für Regel→Fragebogen
-(Docassemble/TurboTax/Publicodes/DMN).
+**Nur dev-1:** Sensitivitäts-Scheduler/Steuer-at-Risk (Bestätigungslast, Frage-Reihenfolge,
+Abgabe-Gate aus reinen Engine-Reruns, NULL LLM; Referenzen OpenFisca/GETTSIM/Goal-Seek);
+schrumpfender Bescheid als [min,max]-Intervall; Bindungstabelle `bedingung_id → typisiertes Feld`
+als heute fehlendes Artefakt + kritischer Pfad; NEGATIV-Fund: § 357 AO/ELSTER nehmen KEIN
+maschinenlesbares Provenance-Bündel (Bündel = Audit-/Berater-Beleg, kein FA-Kanal);
+Vier-Ökosysteme-Beleg Regel→Fragebogen (Docassemble/TurboTax/Publicodes/DMN).
 
 **Nur dev-2:** Vertrauen als VEKTOR Herkunft×Prüftiefe×Haftung statt Leiter (§ 93c/§ 150 Abs. 7/
 § 175b AO-Recherche; IFRS-13-Alternative); Store-Modell-Frage (Event-Log vs. content-adressierter
@@ -42,29 +97,10 @@ auto-versöhnt; ELSTER-Lampe nie grün vor Send); geierlein-Anti-Pattern (Eigen-
 zerstört Orakel-Unabhängigkeit); ERiC-Feldidentifikator-Falle (2 inkompatible Adress-Schemata →
 versioniertes Adress-Objekt + Round-Trip-Golden).
 
-Kombinierbar statt konkurrierend: K2-Mechanik = Typ als Enforcement (dev-1), Vertrauens-Vektor
-als Payload IM Typ (dev-2); Meet pro Achse läuft über dem Typ.
+Kombinierbar: Typ als Enforcement (dev-1) + Vertrauens-Vektor als Payload im Typ (dev-2);
+Meet pro Achse läuft über dem Typ.
 
-## Entscheidungsblock für Julius (konsolidiert, mit Empfehlung)
-
-1. **Erste Haut/Zielnutzer** (einziger Produkt-Fork; Kern identisch für alle drei):
-   Empfehlung **Berater-/Prosumer-Werkzeug zuerst** — spielt die Provenienz-/Audit-Stärke aus
-   (Herkunfts-Bilanz, Audit-Bündel), verträgt Hersteller-ID-Wartezeit, Selbst-Ersteller-Haut
-   später auf demselben Traverser.
-2. **Enforcement:** `Vorlaeufig<T>`-Typ echt einziehen (invasiv, aber Garantie) + Herkunfts-
-   Vektor als Typ-Payload. Empfehlung: JA.
-3. **ERiC-Betriebsmodus:** ERST Latenz-Messung (dev-2-Auftrag, $0), DANN synchron/asynchron
-   entscheiden. Empfehlung: Messung sofort als nächster 10er-Schritt.
-4. **Store-Modell** (Event-Log/Snapshot/dual): bei Paket-A-Design entscheiden; Tendenz Event-Log
-   + content-adressierte Snapshots (passt zur Registry-Ratsche).
-5. **Erster Bau-Scope:** Paket A Kern zuerst, Start = Bindungstabelle + Store-Schema (Substrat),
-   dann eine vertikale Scheibe end-to-end. Paket B erst nach Zielnutzer-Entscheid (1.).
-6. **Intervall/Steuer-at-Risk:** kein MVP-Blocker, aber Sensitivitäts-Engine als A-Baustein
-   einplanen (reine Reruns, billig, NULL LLM).
-7. **Kein Lab-Neulauf Runde 3** (dev-1-Rückfrage): Konvergenzlage K1–K6 ist belastbar,
-   Grenznutzen einer dritten Runde klein. Empfehlung: NEIN, Tokens sparen.
-
-## Kosten
-dev-1-Lab 576k Subagent-Token (27 Agents, Salvage), dev-2-Lab 81k (28 Agents, komplett),
-Instructor-Drittbein 462k VOR Abbruch (verworfen; Lehre in Memory: keine Labs in der
-Fable-Session). Kein externes Paid-LLM.
+### Kosten
+dev-1-Lab 576k Subagent-Token (27 Agents, Salvage 2 Runden), dev-2-Lab 81k (28 Agents, komplett),
+Instructor-Drittbein 462k vor Abbruch (verworfen; Lehre: keine Labs in der Fable-Session).
+Kein externes Paid-LLM.
