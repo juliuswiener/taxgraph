@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage R (Renten und andere Leistungen) 2025 - amtlicher Vordruck"
+  quelle_url: "FMS-Export Julius, Archiv ~/02_Software/eric/vordrucke-archiv/Anlage_R_2025.pdf"
+  abrufdatum: "2026-07-17"
+  datei: "anlage_r_2025.txt"
+  pdf_datei: "anlage_r_2025.pdf"
+  sha256: "a73a379923d53e1f504f67bdbf72f5e510e568302bfb8c6201e076e9602b8ad3"
+  pdf_sha256: "eee86a06054bd1c00d6ae301a562cfc8ccb5dc978f47ed08bb890e92909dbdf0"
+  authority: amtlicher_vordruck
+  redistributable: true
+  erwartete_anker: ['Beginn der Rente', 'Leibrenten / Leistungen aus gesetzlichen Rentenversicherungen']
+  verwendet_in:
+    - "Bindungstabelle Rentner-Scheibe Kz-Cross-Check (p22_1 renten_beginn_jahr/jahresrente)"

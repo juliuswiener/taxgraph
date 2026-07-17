@@ -1,0 +1,124 @@
+Quelle: FMS-Export Julius, Archiv ~/02_Software/eric/vordrucke-archiv/Anlage_R_2025.pdf
+Abgerufen: 2026-07-17
+Titel: Anlage R (Renten und andere Leistungen) 2025 - amtlicher Vordruck
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                            2025
+                    Name
+
+               1
+                                                                                                                   Anlage R
+                    Vorname                                                                                        Jeder Ehegatte / Lebenspartner mit
+                                                                                                                   Renten und Leistungen hat eine eigene
+               2                                                                                                   Anlage R abzugeben.
+
+                                                                                               lfd. Nr.             Daten für die mit      gekennzeichneten
+               3    Steuernummer                                                               der Anlage          Zeilen liegen im Regelfall vor und müssen
+
+
+
+202500312201
+                                                                                                                            nicht eingetragen werden.
+                                                                                                                          – Bitte Anleitung beachten. –
+
+                    Renten und andere Leistungen aus dem Inland                                                         Steuerpflichtige Person /
+                    – Ohne Leistungen aus Altersvorsorgeverträgen und aus der betrieblichen Altersversor-               Ehemann / Person A
+                    gung –
+                                                                                                                        Ehefrau / Person B
+
+                    Leibrenten / Leistungen aus gesetzlichen Rentenversicherungen, landwirtschaftlicher Alterskas-                                71 / 72
+                    se, berufsständischen Versorgungseinrichtungen, eigenen zertifizierten Basisrentenverträgen
+                                                                                           1. Rente                            2. Rente
+                                                                                              EUR                                  EUR
+                 Rentenbetrag
+               4 (einschließlich Einmalzahlung und Leistungen)          101                                 ,–   151                                   ,–
+               5    Rentenanpassungsbetrag (in Zeile 4 enthalten)       102                                 ,–   152                                   ,–
+               6    Beginn der Rente                                    103                                      153
+
+                    Vorhergehende Rente:
+               7        Beginn der Rente                                105                                      155
+
+               8        Ende der Rente                                  106                                      156
+                                                                                              EUR                                  EUR
+                 Nachzahlungen für mehrere vorangegangene
+               9 Jahre/ Kapitalauszahlung (in Zeile 4 enthalten)        111                                 ,–   161                                   ,–
+                  Öffnungsklausel
+                      Prozentsatz
+               10     (laut Bescheinigung Ihres Versorgungsträgers)     112                           %          162                        %
+                      die Rente erlischt / wird umgewandelt spätes-
+               11     tens am                                           113                                      163
+                                                                                              EUR                                  EUR
+
+               12       bei Einmalzahlung: Betrag                       114                                 ,–   164                                  ,–
+                    Leibrenten aus privaten Rentenversicherungen (auf Lebenszeit / mit zeitlich befristeter Laufzeit)
+                    (ohne Renten laut den Zeilen 4 bis 12)
+                                                                                           1. Rente                            2. Rente
+                                                                                              EUR                                  EUR
+
+               13   Rentenbetrag                                        131                                 ,–   181                                   ,–
+               14   Beginn der Rente                                    132                                      182
+                  Geburtsdatum einer anderen Person, von deren Le-
+                  benszeit die Laufzeit der Rente (auch) abhängt; bei
+                  Garantiezeitrenten das Geburtsdatum der verstorbe-
+               15 nen versicherten Person                               136                                      186
+
+               16   Die Rente erlischt mit dem Tod von
+                    Die Rente erlischt / wird umgewandelt spätestens
+               17   am                                                  133                                      183
+                                                                                              EUR                                  EUR
+                  Nachzahlungen für mehrere vorangegangene Jahre
+               18 (in Zeile 13 enthalten)                               134                                 ,–   184                                   ,–
+
+
+
+
+                           2025AnlR121NET                                     - September 2025 -                              2025AnlR121NET
+                                                                    -2-
+
+     Leibrenten aus sonstigen Verpflichtungsgründen (z. B. Renten aus Veräußerungsgeschäften)
+     (ohne Renten laut den Zeilen 4 bis 18)
+                                                                           1. Rente                               2. Rente
+                                                                              EUR                                     EUR
+
+19   Rentenbetrag                                            141                              ,–     191                      ,–
+20 Beginn der Rente                                          142                                     192
+   Geburtsdatum einer anderen Person, von deren Le-
+
+                                                                                                                                   202500312202
+   benszeit die Laufzeit der Rente (auch) abhängt; bei
+   Garantiezeitrenten das Geburtsdatum der verstorbe-
+21 nen versicherten Person                                   146                                     196
+
+22   Die Rente erlischt mit dem Tod von
+
+23   Die Rente erlischt / wird umgewandelt spätestens am     143                                     193
+                                                                              EUR                                     EUR
+   Nachzahlungen für mehrere vorangegangene Jahre (in
+24 Zeile 19 enthalten)                                144                                     ,–     194                      ,–
+     Werbungskosten
+     Die Eintragungen in den Zeilen 25 und 26 sind nur in der ersten Anlage R vorzunehmen.
+     Werbungskosten zu den Zeilen 4, 13 und 19 – ohne Werbungskosten laut Zeile 26 –
+     Art der Aufwendungen                                                                                               EUR
+
+25                                                                                                         800                ,–
+     Werbungskosten zu den Zeilen 9, 18 und Zeile 24
+     Art der Aufwendungen
+
+26                                                                                                         801                ,–
+     Ansässigkeit in Belgien (gemäß Artikel 4 des Doppelbesteuerungsabkommens mit Belgien)
+                                                                                                                      EUR
+
+27   Renteneinnahmen nach DBA Belgien (in Zeile 4 enthalten)                                         702                      ,–
+28   Werbungskosten zu Zeile 27 (in den Zeilen 25 und 26 enthalten)                                        807                ,–
+     Steuerstundungsmodelle
+     Einkünfte aus Gesellschaften / Gemeinschaften / ähnlichen Modellen i. S.d. § 15b EStG (laut gesonderter Aufstellung)
+                                                                                                                        EUR
+
+29                                                                                                                            ,–
+
+
+
+
+            2025AnlR122NET                                                                                       2025AnlR122NET
+

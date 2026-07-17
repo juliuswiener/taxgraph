@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage Kind 2025 - amtlicher Vordruck"
+  quelle_url: "FMS-Export Julius, Archiv ~/02_Software/eric/vordrucke-archiv/Anlage_Kind_2025.pdf"
+  abrufdatum: "2026-07-17"
+  datei: "anlage_kind_2025.txt"
+  pdf_datei: "anlage_kind_2025.pdf"
+  sha256: "ffcb88f0d6196d602ecf9bcab4e0d4a03287ac29fc98819aa9527152b363df31"
+  pdf_sha256: "ad0676b1b9352c2bab00c100e88f8a95288a7233239f658704a1fe3c15f9715a"
+  authority: amtlicher_vordruck
+  redistributable: true
+  erwartete_anker: ['Kindschaftsverhältnis', 'Anspruch auf Kindergeld']
+  verwendet_in:
+    - "Bindungstabelle Familie-Scheibe Kz-Cross-Check (p24b/p31/p32)"
