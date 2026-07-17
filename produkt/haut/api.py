@@ -416,6 +416,31 @@ def deklaration(fall_id: str) -> tuple[int, dict]:
     return 200, {"fall_id": fall_id, **result}
 
 
+def graph(fall_id: str) -> tuple[int, dict]:
+    """Read-only Abhängigkeits-Übersicht (Desktop): Knoten = Regeln der Scheibe mit ihrem
+    Relevanz-Status (aus traverser.relevanz), Kanten = Feld→Regel (welches Abfrage-Feld welche Regel
+    speist, mit Feld-Zustand). Reine Ableitung, EIN Traverser-Aufruf, kein Bescheid, kein Schreibpfad."""
+    store = lade_fall(fall_id)
+    bindung = _scheibe_bindung(store)
+    felder, sid = ST.materialisiere(store)
+    rel = TR.relevanz(store, bindung)
+    knoten = [{"regel_id": rid, "status": s["status"],
+               "gates_offen": s["gates_offen"], "annahmen_offen": s["annahmen_offen"]}
+              for rid, s in sorted(rel.items())]
+    kanten = []
+    for fid in sorted(bindung):
+        q = bindung[fid]["quelle"]
+        ev = felder.get(fid)
+        kanten.append({
+            "feld_id": fid,
+            "regel_id": q["regel_id"],
+            "rolle": "slot" if "signatur_slot" in q else "gate",
+            "zustand": ev["zustand"] if ev else "offen",
+            "fragetext_laie": bindung[fid].get("fragetext_laie"),
+        })
+    return 200, {"fall_id": fall_id, "snapshot_id": sid, "knoten": knoten, "kanten": kanten}
+
+
 # POST /chat und POST /elster-ampel: bewusst KEINE 200-Antwort in dieser Stufe.
 CHAT_501 = {
     "fehler": "not_implemented",

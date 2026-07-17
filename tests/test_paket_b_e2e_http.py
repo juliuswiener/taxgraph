@@ -376,3 +376,25 @@ def test_an_gesamt_dhf_guard_vorlaeufig(base):
     assert stand["ring_gesperrt"] == "werbungskosten_nicht_ring_faehig"
     st, erg = _req(base, "GET", "/fall/ag_dhf/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "werbungskosten_nicht_ring_faehig"
+
+
+def test_graph_uebersicht(base):
+    """Read-only Desktop-Graph: Knoten = Regeln der Scheibe mit Status, Kanten = Feld→Regel mit
+    Zustand. Ein Traverser-Aufruf, kein Bescheid, kein Schreibpfad."""
+    fid = "g1"
+    _req(base, "POST", "/fall", {"scheibe": "n_vor_gwg", "veranlagungszeitraum": 2025, "fall_id": fid})
+    st, g = _req(base, "GET", f"/fall/{fid}/graph")
+    assert st == 200
+    _val("graph", g)
+    rids = {k["regel_id"] for k in g["knoten"]}
+    assert "p09_entfernungspauschale" in rids
+    assert len(g["knoten"]) == 6          # EP + dHf + Verpflegung + Arbeitsmittel + VOR + GWG
+    # frischer Fall: alle Kanten offen; beide Rollen vertreten
+    assert all(k["zustand"] == "offen" for k in g["kanten"])
+    assert any(k["rolle"] == "slot" for k in g["kanten"])
+    assert any(k["rolle"] == "gate" for k in g["kanten"])
+    # nach Bestätigung eines Felds → dessen Kante bestätigt (Store spiegelt sich im Graph)
+    _req(base, "POST", f"/fall/{fid}/event", _laie("ep_arbeitstage", 220))
+    st, g2 = _req(base, "GET", f"/fall/{fid}/graph")
+    kante = next(k for k in g2["kanten"] if k["feld_id"] == "ep_arbeitstage")
+    assert kante["zustand"] == "bestaetigt"

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "haut.graph response",
+  "type": "object",
+  "required": ["fall_id", "snapshot_id", "knoten", "kanten"],
+  "additionalProperties": false,
+  "properties": {
+    "fall_id": {"type": "string"},
+    "snapshot_id": {"type": "string"},
+    "knoten": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["regel_id", "status", "gates_offen", "annahmen_offen"],
+        "additionalProperties": false,
+        "properties": {
+          "regel_id": {"type": "string"},
+          "status": {"type": "string", "enum": ["relevant", "ausgeschlossen", "unentschieden"]},
+          "gates_offen": {"type": "array", "items": {"type": "string"}},
+          "annahmen_offen": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "kanten": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feld_id", "regel_id", "rolle", "zustand", "fragetext_laie"],
+        "additionalProperties": false,
+        "properties": {
+          "feld_id": {"type": "string"},
+          "regel_id": {"type": "string"},
+          "rolle": {"type": "string", "enum": ["slot", "gate"]},
+          "zustand": {"type": "string", "enum": ["offen", "vorlaeufig", "bestaetigt"]},
+          "fragetext_laie": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}
