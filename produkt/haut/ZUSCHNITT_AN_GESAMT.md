@@ -83,3 +83,21 @@ Grundtarif VZ2025 → 6629. VOR-Formel (G-AN-B): `max(0, min(beitr, 29344) − A
 
 Nach Abnahme: Accessor `catala_werbungskosten_n` + Goldens (dev-1), Bindungs-Micro-Zeile (dev-2 via dir),
 dann Scheibe `an_gesamt` + e2e (voller bestätigter Kegel, echte festzusetzende_est).
+
+## MVP GEBAUT (2026-07-17) — Ruling: ohne VOR, mit VOR-Guard
+
+Scheibe `an_gesamt` (`gesamt_ring="festzusetzende_est"`): komposite slot_fn (EP → `catala_werbungskosten_n`,
+`bruttoarbeitslohn` Cent→Euro, `sonderausgaben=0`) → `catala_est`. e2e: voller Kegel → **662900 Cent
+(6629 €)**. K2-Guard test-belegt: VOR/dHf/Verpflegung/AM-Feld > 0 (vorläufig ODER bestätigt) → Ring
+gesperrt (`sonderausgaben_/werbungskosten_nicht_ring_faehig`), Einkunftsart-Flag = false →
+`einkunftsart_nicht_ring_faehig` — nie Fake-6629. Ehrliche Etikettierung: **technischer Durchstich,
+reiner Pendler ohne gesondert erfasste Sonderausgaben** — NICHT „fertig für Angestellte".
+
+## Stufe 1a — VOR-Integration (nächster Schritt)
+
+Der VOR-Guard wird durch die echte VOR-Rechnung ersetzt: die `an_gesamt`-slot_fn greift die drei
+VOR-Einzelfelder **direkt aus dem Store** (umgeht die `bescheid_via_slots`-Summierung, die den AG-Anteil
+zerstört): `vor_an_anteil_rv` + `vor_rv_ausserhalb_lstb` → `gesamtbeitraege_inkl_ag`, `vor_ag_anteil_rv` →
+`ag_anteil_steuerfrei` (getrennt) → `runner._vorsorge_abzug` → `sonderausgaben`. KEINE Bindungs-Doppelung
+(die slot_fn ist scheiben-spezifisch, die Einzelfelder liegen ohnehin im Store). Golden G-AN-B (5570 €)
+ist der Stufe-1a-Zielwert. Danach fällt der `GUARD_SONDERAUSGABEN`-Zweig weg (VOR ist dann ring-fähig).

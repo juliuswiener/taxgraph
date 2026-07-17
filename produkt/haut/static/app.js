@@ -54,6 +54,11 @@ function spanneText(label, iv) {
 
 function zeigeSpanne(stand) {
   const el = document.getElementById("spanne");
+  if (stand.ring_gesperrt) {
+    el.textContent = "Vereinfachter Bescheid hier nicht möglich — siehe Ergebnis unten.";
+    document.getElementById("ring").style.setProperty("--anteil", 0);
+    return;
+  }
   if (stand.intervall) {
     // Gesamt-Bescheid-Ring (Scheibe mit Gesamt-Accessor, z.B. EP allein)
     el.textContent = spanneText("Bescheid", stand.intervall);
@@ -101,6 +106,11 @@ function zeigeFrage(q) {
     for (const [t, v] of [["Ja", "true"], ["Nein", "false"]]) {
       const o = document.createElement("option"); o.value = v; o.textContent = t; input.appendChild(o);
     }
+  } else if (q.typ === "enum") {
+    input = document.createElement("select");
+    for (const v of (q.enum_werte || [])) {
+      const o = document.createElement("option"); o.value = v; o.textContent = v; input.appendChild(o);
+    }
   } else {
     input = document.createElement("input");
     input.type = "number";
@@ -115,7 +125,12 @@ function zeigeFrage(q) {
 
 function leseWert(q) {
   const el = document.getElementById("feld-input");
-  if (q.typ === "bool") return el.value === "true";
+  if (q.typ === "enum") return el.value;
+  if (q.typ === "bool") {
+    const ja = el.value === "true";
+    // Abwesenheits-Flags: positive Frage ("Hattest du X?"), gespeichert wird die Abwesenheit kein_X.
+    return q.feld_id.startsWith("kein_") ? !ja : ja;
+  }
   if (q.typ === "cent") return Math.round(parseFloat(el.value || "0") * 100);
   return parseInt(el.value || "0", 10);
 }
@@ -153,8 +168,18 @@ async function zeigeErgebnis() {
   const r = (await jget(`/fall/${FALL}/ergebnis`)).body;
   document.getElementById("fertig").hidden = false;
   const el = document.getElementById("ergebnis");
+  const guardTexte = {
+    werbungskosten_nicht_ring_faehig:
+      "Du hast weitere Werbungskosten (z.B. doppelte Haushaltsführung) — der vereinfachte Bescheid gilt nur für den reinen Pendlerfall.",
+    sonderausgaben_nicht_ring_faehig:
+      "Du hast Sonderausgaben (z.B. Altersvorsorge) — der vereinfachte Bescheid gilt nur ohne gesondert erfasste Sonderausgaben (folgt).",
+    einkunftsart_nicht_ring_faehig:
+      "Du hast weitere Einkunftsarten — dafür ist die vollständige Berechnung nötig (folgt).",
+  };
   if (r.zahl_cent === null) {
-    if (r.grund === "kein_scheiben_gesamtbescheid")
+    if (r.grund in guardTexte)
+      el.textContent = guardTexte[r.grund];
+    else if (r.grund === "kein_scheiben_gesamtbescheid")
       el.textContent = "Alle Angaben erfasst — die Gesamtsteuer wird in einem späteren Schritt berechnet.";
     else if (r.grund === "engine_unavailable")
       el.textContent = "Alle Angaben bestätigt — die Rechen-Engine ist hier nicht verfügbar.";

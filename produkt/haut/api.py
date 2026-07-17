@@ -38,6 +38,14 @@ FAELLE = os.path.join(HERE, "faelle")
 
 EP_FELDER = ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigenes_kfz")
 
+# an_gesamt MVP (reiner Arbeitnehmerfall). Die 4 Abwesenheits-Flags sind die Anwendbarkeits-
+# Voraussetzung (bestätigte Null je Einkunftsart); Invertierung der positiven Laienfrage macht die Haut.
+AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
+# Sperr-Felder (K2-Guard): ein aktiver Wert > 0 macht den MVP-Ring UNMÖGLICH (die Engine kann diese
+# Abzüge in Stufe 1 nicht rechnen) → Ring bleibt unavailable, NIE still auf 0 (kein Fake-Bescheid).
+GUARD_WERBUNGSKOSTEN = ("dhf_unterkunftskosten_monat", "vpf_abwesenheit_stunden", "am_anschaffungskosten")
+GUARD_SONDERAUSGABEN = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
+
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
 #   felder_datei: bindung_*.yaml, aus der ALLE feld_ids der Scheibe gezogen werden.
@@ -55,6 +63,17 @@ SCHEIBEN = {
         "felder": None, "felder_datei": "bindung_n_vor_gwg.yaml",
         "gesamt_ring": None,      # Gesamtsteuer via catala_gesamt = eigenes Integrations-Paket
         "teil_ringe": [("ep_werbungskosten", "abziehbarer_betrag", EP_FELDER)],
+        "guard": False,
+    },
+    # Gesamtsteuer-Ring MVP: technischer Durchstich — echte festzusetzende ESt (§2) für den REINEN
+    # Arbeitnehmerfall (Bruttolohn + Entfernungspauschale, keine gesondert erfassten Sonderausgaben,
+    # keine anderen Einkunftsarten). NICHT „fertig für Angestellte": VOR/dHf/… sperren via Guard.
+    "an_gesamt": {
+        "felder": ("bruttoarbeitslohn", "veranlagung") + EP_FELDER + AN_GESAMT_FLAGS,
+        "felder_datei": None,
+        "gesamt_ring": "festzusetzende_est",
+        "teil_ringe": [],
+        "guard": True,
     },
 }
 
@@ -145,6 +164,28 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict):
             return runner.catala_entfernungspauschale(s)
 
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="abziehbarer_betrag")
+
+    if quantitaet == "festzusetzende_est":          # § 2 Gesamtsteuer MVP (reiner AN-Fall)
+        try:
+            import runner  # noqa: F401
+        except Exception:
+            return None
+
+        def slot_fn(slots: dict) -> int:
+            wk = runner.catala_werbungskosten_n({
+                "veranlagungszeitraum": vz,
+                **{k: slots[k] for k in
+                   ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
+                   if k in slots}})
+            return runner.catala_est({
+                "veranlagungszeitraum": vz,
+                "veranlagung": slots.get("veranlagung", "einzel"),
+                # bruttoarbeitslohn ist Naht-CENT (Bindung typ:cent) -> catala_est erwartet EURO.
+                "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,
+                "werbungskosten": wk,
+                "sonderausgaben": 0})    # MVP: VOR wird durch den Guard gesperrt, nie still verrechnet
+        return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
+
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
 
 
@@ -161,6 +202,24 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     if bf is None:
         return None
     return bf({f: felder[f]["wert"] for f in scheibe_felder})
+
+
+def _an_gesamt_sperrgrund(felder: dict):
+    """K2-Guard für den MVP-Ring: nicht-ring-fähige Abzüge/Einkunftsarten sperren den Ring GANZ
+    (nie Fake-0). Ein VOR-/dHf-/Verpflegung-/AM-Feld mit Wert > 0 (vorläufig ODER bestätigt) sperrt,
+    weil Stufe 1 diese Abzüge nicht rechnet; ein Einkunftsart-Flag = false (Nutzer HAT die Art)
+    macht den vereinfachten §2-Ring unzulässig (dann catala_gesamt = Stufe 2)."""
+    def _positiv(f):
+        v = felder.get(f)
+        w = v and v.get("wert")
+        return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
+    if any(_positiv(f) for f in GUARD_WERBUNGSKOSTEN):
+        return "werbungskosten_nicht_ring_faehig"
+    if any(_positiv(f) for f in GUARD_SONDERAUSGABEN):
+        return "sonderausgaben_nicht_ring_faehig"
+    if any(felder.get(f, {}).get("wert") is False for f in AN_GESAMT_FLAGS):
+        return "einkunftsart_nicht_ring_faehig"
+    return None
 
 
 # ----------------------------------------------------------------- Endpunkte (reine Logik)
@@ -240,7 +299,10 @@ def stand(fall_id: str) -> tuple[int, dict]:
     }
 
     gesamt_iv, engine, teil = None, "unavailable", []
-    if cfg["gesamt_ring"]:
+    gesperrt = _an_gesamt_sperrgrund(felder) if cfg.get("guard") else None
+    if gesperrt:
+        engine = "gesperrt"          # nicht-ring-fähiger Abzug/Einkunftsart -> kein Ring (K2)
+    elif cfg["gesamt_ring"]:
         bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung)
         if bf is not None:
             gesamt_iv = IV.intervall(felder, bindung, bf, snapshot_id=sid)["intervall"]
@@ -255,7 +317,8 @@ def stand(fall_id: str) -> tuple[int, dict]:
         engine = "catala_teilweise" if teil else "unavailable"
 
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "engine": engine,
-                 "felder": felder_out, "relevanz": rel, "intervall": gesamt_iv, "teil_ringe": teil}
+                 "felder": felder_out, "relevanz": rel, "intervall": gesamt_iv,
+                 "teil_ringe": teil, "ring_gesperrt": gesperrt}
 
 
 _ERLAUBTE_ZUSTAENDE = {"vorlaeufig", "bestaetigt"}
@@ -306,6 +369,12 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
     felder, sid = ST.materialisiere(store)
     scheibe_felder = _scheibe_felder(store)
     vz = int(store["veranlagungszeitraum"])
+    if cfg.get("guard"):
+        # K2: ein nicht-ring-fähiger Abzug/Einkunftsart sperrt den Ring VOR jeder Zahl — nie Fake-Bescheid.
+        sperr = _an_gesamt_sperrgrund(felder)
+        if sperr:
+            return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
+                         "grund": sperr, "offen": [], "trace": None}
     zahl = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder)
     if zahl is None:
         if cfg["gesamt_ring"] is None:

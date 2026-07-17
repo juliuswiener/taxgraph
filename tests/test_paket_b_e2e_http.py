@@ -21,8 +21,11 @@ ROOT = os.path.dirname(HERE)
 for sub in ("produkt/haut", "golden"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
+sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
+
 import api as API        # noqa: E402
 import server as SRV     # noqa: E402
+import store as ST       # noqa: E402
 
 jsonschema = pytest.importorskip("jsonschema")
 
@@ -277,3 +280,90 @@ def test_durchstich_n_vor_gwg(base):
     assert st == 200
     _val("warum", w)
     assert w["justification"]["signatur_slot"] == "gesamtbeitraege_inkl_ag"   # Summen-Slot
+
+
+# ---- Gesamtsteuer-Ring MVP (an_gesamt): erster echter §2-Bescheid, reiner Arbeitnehmerfall ----
+AN_GESAMT_KEGEL = [
+    ("bruttoarbeitslohn", 4000000),   # 40000 € in Cent (Bindung typ:cent)
+    ("veranlagung", "einzel"),
+    ("ep_arbeitstage", 220), ("ep_entfernung_km", 30), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", True),
+    ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
+]
+
+
+def _an_gesamt_anlegen(base, fid, kegel=AN_GESAMT_KEGEL):
+    st, _ = _req(base, "POST", "/fall",
+                 {"scheibe": "an_gesamt", "veranlagungszeitraum": 2025, "fall_id": fid})
+    assert st == 201
+    for feld, wert in kegel:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
+        assert st == 201
+
+
+def _store_append(fid, feld_id, wert, zustand="bestaetigt"):
+    """Setzt ein Feld direkt im Fall-Store (simuliert Erfassung außerhalb des an_gesamt-Interviews) —
+    für den Guard-Negativtest. Gleicher Prozess/FAELLE wie der Server."""
+    s = API.lade_fall(fid)
+    herk = ({"herkunft": "llm_vorschlag"} if zustand == "vorlaeufig" else {"herkunft": "laie"})
+    herk.update({"pruef_tiefe": "ungeprueft", "haftung": "nutzer"})
+    schreiber = "llm:chat" if zustand == "vorlaeufig" else "ui:laie"
+    sig = {"signal_1": None, "signal_2": None if zustand == "vorlaeufig" else "ok"}
+    ST.append_event(s, feld_id=feld_id, wert=wert, zustand=zustand, herkunft=herk,
+                    schreiber=schreiber, signal=sig)
+    API.speichere_fall(fid, s)
+
+
+def test_an_gesamt_durchstich(base):
+    """MVP-Durchstich: voller bestätigter Kegel → echte festzusetzende_est 662900 (=6629 €)."""
+    catala = _catala_da()
+    st, b = _req(base, "POST", "/fall",
+                 {"scheibe": "an_gesamt", "veranlagungszeitraum": 2025, "fall_id": "ag"})
+    assert st == 201
+    st, fr = _req(base, "GET", "/fall/ag/fragen")
+    _val("fragen", fr)
+    ids = {q["feld_id"] for q in fr["fragen"]}
+    assert {"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
+            "kein_sonstige"} | set(EP_FELDER) == ids
+    for feld, wert in AN_GESAMT_KEGEL:
+        st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
+        assert st == 201
+    st, stand = _req(base, "GET", "/fall/ag/stand")
+    _val("stand", stand)
+    assert stand["ring_gesperrt"] is None
+    st, erg = _req(base, "GET", "/fall/ag/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert stand["engine"] == "catala"
+        assert stand["intervall"]["min_cent"] == stand["intervall"]["max_cent"] == 662900
+        assert erg["zahl_cent"] == 662900 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_an_gesamt_flag_guard(base):
+    """kein_kap=false (Nutzer HAT Kapitalerträge) → Ring unzulässig, kein Fake-Bescheid."""
+    kegel = [(f, (False if f == "kein_kap" else v)) for f, v in AN_GESAMT_KEGEL]
+    _an_gesamt_anlegen(base, "ag_kap", kegel)
+    st, erg = _req(base, "GET", "/fall/ag_kap/ergebnis")
+    assert erg["zahl_cent"] is None
+    assert erg["grund"] == "einkunftsart_nicht_ring_faehig"
+
+
+def test_an_gesamt_vor_guard(base):
+    """K2: ein VOR-Feld > 0 im Store → Ring gesperrt trotz vollem EP-Kegel (kein 662900-Fake)."""
+    _an_gesamt_anlegen(base, "ag_vor")
+    _store_append("ag_vor", "vor_an_anteil_rv", 3500000)      # 35000 € Altersvorsorge
+    st, erg = _req(base, "GET", "/fall/ag_vor/ergebnis")
+    assert erg["zahl_cent"] is None, "VOR-Wert darf keinen Fake-Bescheid liefern"
+    assert erg["grund"] == "sonderausgaben_nicht_ring_faehig"
+
+
+def test_an_gesamt_dhf_guard_vorlaeufig(base):
+    """Auch ein VORLÄUFIGES dHf-Feld sperrt (Wert>0 vorläufig ODER bestätigt)."""
+    _an_gesamt_anlegen(base, "ag_dhf")
+    _store_append("ag_dhf", "dhf_unterkunftskosten_monat", 80000, zustand="vorlaeufig")
+    st, stand = _req(base, "GET", "/fall/ag_dhf/stand")
+    assert stand["engine"] == "gesperrt"
+    assert stand["ring_gesperrt"] == "werbungskosten_nicht_ring_faehig"
+    st, erg = _req(base, "GET", "/fall/ag_dhf/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "werbungskosten_nicht_ring_faehig"
