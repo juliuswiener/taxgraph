@@ -1,0 +1,535 @@
+# Bindungstabelle — vertikale Erst-Scheibe (Task #11). Validiert gegen schema.json.
+# Zone produkt/ (LLM-frei, additiv). Quelle Kz: reports/review/2026-07-12-kz-kandidaten-*.md.
+# Signaturen/Bedingungen: pipeline/produktion/rules.yaml (signature/geltungsbedingungen).
+version: 1
+scheibe: "N (EP/Arbeitsmittel/dHf/Verpflegung) + VOR + GWG"
+
+bindungen:
+  # ========================= EP — p09_entfernungspauschale (Catala-Andockung) =========================
+  - feld_id: ep_arbeitstage
+    quelle: {regel_id: p09_entfernungspauschale, signatur_slot: arbeitstage}
+    typ: int
+    einheit: Tage
+    askable: true
+    fragetext_laie: "An wie vielen Tagen bist du dieses Jahr zur Arbeit gefahren?"
+    hilfe_kurz: "Zähl nur die Tage, an denen du wirklich zu deiner Arbeitsstelle gefahren bist."
+    beispielwert: 220
+    herkunft_slots: null
+    elster_kz: E0203503
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 4 EStG"
+      zitatanker: "jeden Arbeitstag"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
+  - feld_id: ep_entfernung_km
+    quelle: {regel_id: p09_entfernungspauschale, signatur_slot: entfernung_km_roh}
+    typ: int
+    einheit: km
+    askable: true
+    fragetext_laie: "Wie weit ist es von deiner Wohnung zur Arbeit (einfache Strecke in Kilometern)?"
+    hilfe_kurz: "Nur eine Richtung, nicht Hin- und Rückweg. Auf volle Kilometer abrunden."
+    beispielwert: 30
+    herkunft_slots: null
+    elster_kz: E0203504
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 4 EStG"
+      zitatanker: "0,30 Euro"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
+  - feld_id: ep_oepnv_kosten
+    quelle: {regel_id: p09_entfernungspauschale, signatur_slot: oepnv_kosten_jahr}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Was hast du dieses Jahr für Bus, Bahn und andere öffentliche Verkehrsmittel für den Weg zur Arbeit bezahlt?"
+    hilfe_kurz: "Zum Beispiel dein Jobticket oder Monatskarten. Wenn nichts, gib 0 ein."
+    beispielwert: 138000
+    herkunft_slots: null
+    elster_kz: E0203611
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 2 S. 2 EStG"
+      zitatanker: "0,30 Euro"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
+  - feld_id: ep_eigenes_kfz
+    quelle: {regel_id: p09_entfernungspauschale, signatur_slot: eigenes_oder_ueberlassenes_kfz}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Bist du mit einem eigenen Auto (oder einem dir überlassenen Auto) zur Arbeit gefahren?"
+    hilfe_kurz: "Wichtig für die Frage, ob dein Ticketpreis oder die Kilometerpauschale günstiger ist."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Steuerungs-Flag der ÖPNV-Günstigerprüfung, kein eigenes Deklarationsfeld im Vordruck."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 2 S. 2 EStG"
+      zitatanker: "0,30 Euro"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
+
+  # ========================= dHf — p9_1_3_nr5_doppelte_haushaltsfuehrung =========================
+  - feld_id: dhf_unterkunftskosten_monat
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, signatur_slot: unterkunftskosten_monat}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Was zahlst du im Monat für deine Zweitwohnung am Arbeitsort (Miete inklusive Nebenkosten)?"
+    hilfe_kurz: "Die Wohnung, die du zusätzlich zu deinem Zuhause am Arbeitsort hast."
+    beispielwert: 80000
+    herkunft_slots: null
+    elster_kz: E0207611
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 EStG"
+      zitatanker: "Aufwendungen für die Nutzung der Unterkunft"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+  - feld_id: dhf_monate
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, signatur_slot: monate}
+    typ: int
+    einheit: Monate
+    askable: true
+    fragetext_laie: "Wie viele Monate hattest du diese Zweitwohnung dieses Jahr?"
+    hilfe_kurz: "Volle Monate zählen. Die Höchstgrenze gilt pro Monat."
+    beispielwert: 12
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zeitraum-Bezug der Monats-Kappung; im Vordruck kein eigenes Monats-Feld (Kappung rechnet die Regel)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 EStG"
+      zitatanker: "höchstens 1 000 Euro im Monat"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+  - feld_id: dhf_im_inland
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, signatur_slot: im_inland}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Liegt deine Zweitwohnung in Deutschland?"
+    hilfe_kurz: "Bei einer Wohnung im Ausland gelten andere Grenzen."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Inland/Ausland-Fallunterscheidung der Regel; kein eigenes Ja/Nein-Deklarationsfeld (Ort ergibt sich aus Anschrift)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 EStG"
+      zitatanker: "höchstens 1 000 Euro im Monat"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+  - feld_id: dhf_beruflich_veranlasst
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: beruflich_veranlasste_doppelte_haushaltsfuehrung}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du die Zweitwohnung nur aus beruflichen Gründen (wegen deiner Arbeit)?"
+    hilfe_kurz: "Zum Beispiel weil dein Arbeitsort zu weit von deinem Zuhause weg ist."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 1 EStG"
+      zitatanker: "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+  - feld_id: dhf_eigener_hausstand
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: eigener_hausstand_ausserhalb_des_taetigkeitsorts}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du an deinem Hauptwohnort einen eigenen Haushalt, der außerhalb des Arbeitsorts liegt?"
+    hilfe_kurz: "Ein eigenes Zuhause, in dem du wohnst, wenn du nicht am Arbeitsort bist."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 2 EStG"
+      zitatanker: "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+  - feld_id: dhf_finanzielle_beteiligung
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: finanzielle_beteiligung_an_lebensfuehrungskosten}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Zahlst du an deinem Hauptwohnort selbst für Wohnen und Lebenshaltung mit?"
+    hilfe_kurz: "Zum Beispiel Miete, Nebenkosten oder Kosten fürs Essen."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 3 EStG"
+      zitatanker: "Das Vorliegen eines eigenen Hausstandes setzt das Innehaben einer Wohnung sowie eine finanzielle Beteiligung an den Kosten der Lebensführung voraus"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+  - feld_id: dhf_keine_pflicht_dienstwohnung
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: keine_verpflichtende_dienst_oder_werkswohnung}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Ist deine Zweitwohnung im Ausland eine Dienst- oder Werkswohnung, die du verpflichtend nutzen musst?"
+    hilfe_kurz: "Nur wichtig, wenn deine Zweitwohnung im Ausland liegt."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein) zur 2.000-Euro-Auslandsgrenze, kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 4 Halbsatz 2 EStG"
+      zitatanker: "die Grenze von 2 000 Euro bei einer Unterkunft im Ausland gilt nicht, wenn eine Dienst- oder Werkswohnung verpflichtend"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+
+  # ========================= Verpflegung — p9_4a_verpflegungsmehraufwand =========================
+  - feld_id: vpf_abwesenheit_stunden
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: abwesenheit_stunden}
+    typ: int
+    einheit: Stunden
+    askable: true
+    fragetext_laie: "Wie lange warst du an einem Tag für die Arbeit unterwegs (in Stunden)?"
+    hilfe_kurz: "Zeit weg von Wohnung und Arbeitsstelle. Ab 8 Stunden gibt es eine Pauschale."
+    beispielwert: 10
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Regel-Input ist die Stundenzahl je Reise; der Vordruck deklariert stattdessen Tage-Zahlen je Kategorie (E0205201 >8h / E0205409 24h). Modell-Umrechnung, keine 1:1-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a Satz 3 Nr. 3 EStG"
+      zitatanker: "mehr als 8 Stunden abwesend ist"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_mit_uebernachtung
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: mit_uebernachtung}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du bei der auswärtigen Tätigkeit auch auswärts übernachtet?"
+    hilfe_kurz: "Mit Übernachtung gelten andere Pauschalen als ohne."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Steuert die Pauschal-Kategorie; im Vordruck über die Tages-Kategorie-Felder abgebildet, kein eigenes Ja/Nein-Feld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a Satz 3 Nr. 2 EStG"
+      zitatanker: "An- und Abreisetag"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_an_oder_abreisetag
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: an_oder_abreisetag}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "War der Tag ein An- oder Abreisetag einer mehrtägigen Reise?"
+    hilfe_kurz: "Für An- und Abreisetage gibt es eine eigene Pauschale."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0205302
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a Satz 3 Nr. 2 EStG"
+      zitatanker: "An- und Abreisetag"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_monate_am_ort
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: monate_am_ort}
+    typ: int
+    einheit: Monate
+    askable: true
+    fragetext_laie: "Seit wie vielen Monaten arbeitest du schon an genau diesem auswärtigen Ort?"
+    hilfe_kurz: "Nach drei Monaten am selben Ort gibt es keine Verpflegungspauschale mehr."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Dreimonatsfrist-Input; im Vordruck kein eigenes Monats-Feld (Frist prüft die Regel)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a Satz 6 EStG"
+      zitatanker: "auf die ersten drei Monate"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_auswaertige_taetigkeit
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: auswaertige_berufliche_taetigkeit}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Warst du für die Arbeit außerhalb deiner Wohnung und deiner normalen Arbeitsstelle unterwegs?"
+    hilfe_kurz: "Zum Beispiel auf Dienstreise, Montage oder beim Kunden."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a Satz 2 EStG"
+      zitatanker: "Wird der Arbeitnehmer außerhalb seiner Wohnung und ersten Tätigkeitsstätte beruflich tätig"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_keine_mahlzeitengestellung
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: keine_mahlzeitengestellung}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hat dir dein Arbeitgeber oder jemand anderes auf der Reise Mahlzeiten bezahlt oder gestellt?"
+    hilfe_kurz: "Kostenlose oder verbilligte Mahlzeiten kürzen die Pauschale."
+    beispielwert: false
+    herkunft_slots: ["Anlage N: Kürzung Mahlzeitengestellung"]
+    elster_kz: E0205508
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a Satz 8 EStG"
+      zitatanker: "eine Mahlzeit zur Verfügung gestellt"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_keine_unterbrechung
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: keine_unterbrechung_mit_neubeginn}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du die Tätigkeit an diesem Ort für mindestens vier Wochen am Stück unterbrochen?"
+    hilfe_kurz: "Eine längere Pause setzt die Drei-Monats-Frist neu in Gang."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a Satz 7 EStG"
+      zitatanker: "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_keine_steuerfreien_erstattungen
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: keine_steuerfreien_verpflegungserstattungen}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du für die Verpflegung eine steuerfreie Erstattung bekommen?"
+    hilfe_kurz: "Steuerfreie Erstattungen mindern, was du absetzen kannst."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein); der Erstattungs-Betrag wird separat deklariert."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a Satz 11 EStG"
+      zitatanker: "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+
+  # ========================= Arbeitsmittel — p9_1_3_nr6_7_arbeitsmittel_afa =========================
+  - feld_id: am_anschaffungskosten
+    quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, signatur_slot: anschaffungskosten}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Was hat das Arbeitsmittel gekostet (zum Beispiel Laptop, Werkzeug, Fachbücher)?"
+    hilfe_kurz: "Der Kaufpreis. Bis 800 Euro kannst du alles sofort absetzen, darüber verteilt über die Jahre."
+    beispielwert: 60000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Arbeitsmittel-Betrag geht in die Anlage-N-Summe (E0204401 = Art; Betrags-Kz per Sequenz-Nachtrag); Konzept-Anker über § 6 Abs. 2."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "800 Euro nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+  - feld_id: am_gwg_sofortabzug_gewaehlt
+    quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, geltungsbedingung: gwg_sofortabzug_gewaehlt}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Möchtest du günstige Arbeitsmittel (bis 800 Euro) sofort komplett absetzen?"
+    hilfe_kurz: "Sofort-Abzug ist ein Wahlrecht. Alternative: über die Nutzungsjahre verteilen."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wahlrecht (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "in voller Höhe als Betriebsausgaben abgezogen"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+  - feld_id: am_massgebliche_ak
+    quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, geltungsbedingung: anschaffungskosten_sind_massgebliche_ak}
+    typ: bool
+    einheit: null
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Annahme: der eingegebene Preis ist der maßgebliche Anschaffungswert."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Interpretations-Annahme zur 800-Euro-Grenze, keine eigene Laien-Abfrage."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "800 Euro nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+
+  # ========================= VOR — p10_1_2_altersvorsorge (Summen-Konvention) =========================
+  - feld_id: vor_an_anteil_rv
+    quelle: {regel_id: p10_1_2_altersvorsorge, signatur_slot: gesamtbeitraege_inkl_ag}
+    typ: cent
+    slot_beitrag: summand
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel hast du selbst in die gesetzliche Rentenversicherung eingezahlt (dein Anteil vom Lohn)?"
+    hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung in Zeile 23."
+    beispielwert: 3500000
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 23 a/b"]
+    elster_kz: E2000401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vor_ag_anteil_rv
+    quelle: {regel_id: p10_1_2_altersvorsorge, signatur_slot: gesamtbeitraege_inkl_ag}
+    typ: cent
+    slot_beitrag: summand
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel hat dein Arbeitgeber steuerfrei zu deiner Rente dazugegeben?"
+    hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung in Zeile 22."
+    beispielwert: 3500000
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 22 a/b"]
+    elster_kz: E2000801
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vor_rv_ausserhalb_lstb
+    quelle: {regel_id: p10_1_2_altersvorsorge, signatur_slot: gesamtbeitraege_inkl_ag}
+    typ: cent
+    slot_beitrag: summand
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Hast du außerhalb vom Lohn noch selbst in eine gesetzliche Rente eingezahlt? Wenn ja, wie viel?"
+    hilfe_kurz: "Zum Beispiel freiwillige Beiträge, die nicht auf der Lohnsteuerbescheinigung stehen."
+    beispielwert: 0
+    herkunft_slots: ["außerhalb Lohnsteuerbescheinigung"]
+    elster_kz: E2000601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vor_beitraege_enthalten_ag
+    quelle: {regel_id: p10_1_2_altersvorsorge, geltungsbedingung: beitraege_enthalten_ag_anteil}
+    typ: bool
+    einheit: null
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Annahme: die Summe der Beiträge enthält den Arbeitgeber-Anteil (wird nach dem Höchstbetrag gekürzt)."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Input-Semantik-Annahme (gesamtbeitraege = AN + steuerfreier AG), keine eigene Abfrage."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vor_voller_abzug
+    quelle: {regel_id: p10_1_2_altersvorsorge, geltungsbedingung: voller_abzug_100_prozent}
+    typ: bool
+    einheit: null
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Annahme: die Beiträge werden seit 2023 zu 100 Prozent angesetzt (keine Übergangs-Treppe)."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Versionierter Parameter-Ansatz (100 %), keine eigene Abfrage."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  # ========================= GWG — p6_2_gwg_sofortabzug =========================
+  - feld_id: gwg_anschaffungskosten_netto
+    quelle: {regel_id: p6_2_gwg_sofortabzug, signatur_slot: anschaffungskosten_netto}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Was hat das Gerät oder Werkzeug gekostet (Preis ohne Mehrwertsteuer, wenn du sie zurückbekommst)?"
+    hilfe_kurz: "Bis 800 Euro netto kannst du es sofort komplett als Betriebsausgabe absetzen."
+    beispielwert: 60000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Betrag geht in Anlage-EÜR-Kz E6002301 (eigene Datenart EUER, nicht E10-2025)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "800 Euro nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+  - feld_id: gwg_netto_ohne_vorsteuer
+    quelle: {regel_id: p6_2_gwg_sofortabzug, geltungsbedingung: netto_ist_9b_bereinigt}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Ist der Preis, den du angibst, ohne Mehrwertsteuer (netto)?"
+    hilfe_kurz: "Wenn du die Mehrwertsteuer vom Finanzamt zurückbekommst, rechnest du netto."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Reine Geltungsbedingung ohne eigenes Deklarationsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "vermindert um einen darin enthaltenen Vorsteuerbetrag"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+  - feld_id: gwg_bewegliches_selbstaendig_nutzbar
+    quelle: {regel_id: p6_2_gwg_sofortabzug, geltungsbedingung: bewegliches_abnutzbares_anlagevermoegen_selbstaendig_nutzbar}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Kannst du das Gerät alleine benutzen (also ohne dass es fest zu einem anderen Gerät gehört)?"
+    hilfe_kurz: "Zum Beispiel ein Laptop ja, ein einzelner Drucker-Toner nein."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Qualifikations-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "die einer selbständigen Nutzung fähig sind"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+  - feld_id: gwg_verzeichnis_ab_250
+    quelle: {regel_id: p6_2_gwg_sofortabzug, geltungsbedingung: verzeichnis_ab_250_gefuehrt}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du Geräte über 250 Euro in einer Liste festgehalten (Anschaffungsdatum und Kosten)?"
+    hilfe_kurz: "Für Geräte über 250 Euro netto ist so eine Liste vorgeschrieben."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Dokumentationspflicht (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 4 EStG"
+      zitatanker: "in ein besonderes, laufend zu führendes Verzeichnis aufzunehmen"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+
+luecken:
+  # EP-Parameter satz_bis_20_km/satz_ab_21_km/staffelgrenze_km/hoechstbetrag: auto-exempt (Namen in params/<vz>/-Keys).
+  - regel_id: p10_1_2_altersvorsorge
+    signatur_slot: hoechstbeitrag_knappschaft
+    grund: "Parameter (params/<vz>/vorsorge_hoechstbetrag_p10.yaml, Value-Key 'hoechstbeitrag' — Input-Name weicht ab, daher explizite Lücke statt Auto-Exemption). Keine Laien-Abfrage."
+  - regel_id: p10_1_2_altersvorsorge
+    signatur_slot: ag_anteil_steuerfrei
+    grund: "Speist sich aus demselben Laien-Feld wie vor_ag_anteil_rv (LStB Nr. 22, E2000801); im UI einmalige Abfrage, intern auf beide Slots (gesamtbeitraege_inkl_ag als Summand + ag_anteil_steuerfrei exakt) verteilt."
+  - regel_id: p10_1_2_altersvorsorge
+    geltungsbedingung: hoechstbeitrag_ist_parameter
+    grund: "Deklariert den Höchstbeitrag-Parameter (params/<vz>/vorsorge_hoechstbetrag_p10.yaml); keine Laien-Abfrage, korrespondiert zum Parameter-Slot hoechstbeitrag_knappschaft."
+  - regel_id: p9_4a_verpflegungsmehraufwand
+    geltungsbedingung: taetigkeit_im_inland
+    grund: "Nur Inlandspauschalen modelliert; Ausland (BMF-Ländersätze) außerhalb dieser Scheibe."
+  - regel_id: p9_4a_verpflegungsmehraufwand
+    geltungsbedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
+    grund: "Wird durch die Kombination der Felder vpf_mit_uebernachtung + vpf_abwesenheit_stunden abgedeckt; keine eigene Abfrage (Mitternachtsregel rechnet die Regel)."
+  - regel_id: p9_1_3_nr6_7_arbeitsmittel_afa
+    signatur_slot: nutzungsdauer_jahre
+    grund: "AfA-Zweig (§ 7, Verteilung über die Nutzungsdauer > 800 Euro); Anker liegt im §7-AfA-Freeze, Bindung im AfA-Scheiben-Nachtrag."
+  - regel_id: p9_1_3_nr6_7_arbeitsmittel_afa
+    signatur_slot: anschaffungsmonat
+    grund: "AfA-Zweig (§ 7, zeitanteilige AfA im Anschaffungsjahr); Bindung im AfA-Scheiben-Nachtrag."
+  - regel_id: p9_1_3_nr6_7_arbeitsmittel_afa
+    signatur_slot: jahre_seit_anschaffung
+    grund: "AfA-Zweig (§ 7, laufende AfA in Folgejahren); Bindung im AfA-Scheiben-Nachtrag."

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taxgraph/produkt/bindung/schema.json",
+  "title": "Bindungstabelle (UI-Kern, Task #11)",
+  "description": "Bindet fachliche Regel-Slots (Signatur-Inputs / Geltungsbedingungen) an laienverständliche Abfrage-Felder und amtliche ELSTER-Kz. LLM-frei, deterministisch, source-verankert.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "scheibe", "bindungen"],
+  "properties": {
+    "version": {"type": "integer", "minimum": 1},
+    "scheibe": {"type": "string", "description": "Welche Regel-Familien diese Datei abdeckt."},
+    "bindungen": {"type": "array", "items": {"$ref": "#/$defs/bindung"}},
+    "luecken": {"type": "array", "items": {"$ref": "#/$defs/luecke"},
+      "description": "Benannte Lücken: Slot/Geltungsbedingung einer Scheiben-Regel OHNE Bindung, mit Grund. Der Gate akzeptiert sie als bewusste Nicht-Abdeckung."}
+  },
+  "$defs": {
+    "quelle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["regel_id"],
+      "properties": {
+        "regel_id": {"type": "string", "description": "rule_id aus rules.yaml ODER Catala-Scope (z.B. p09_entfernungspauschale, Andockung ohne rules.yaml-Eintrag)."},
+        "signatur_slot": {"type": "string", "description": "Name eines Catala-Input-Slots (Regel-Eingabe)."},
+        "geltungsbedingung": {"type": "string", "description": "bedingung-id aus rules.yaml geltungsbedingungen."}
+      },
+      "oneOf": [
+        {"required": ["signatur_slot"], "not": {"required": ["geltungsbedingung"]}},
+        {"required": ["geltungsbedingung"], "not": {"required": ["signatur_slot"]}}
+      ]
+    },
+    "anker_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quelle", "zitatanker"],
+      "properties": {
+        "quelle": {"type": "string", "description": "Norm-Fundstelle, z.B. '§ 9 Abs. 1 S. 3 Nr. 4 EStG'."},
+        "zitatanker": {"type": "string", "minLength": 3, "description": "Wörtlicher Gesetzes-/Quelltext-Ausschnitt (das 'warum' hinter dem Feld). Gate (d) prüft ihn voll-Länge via _normalize gegen die Quelldatei."},
+        "datei": {"type": "string", "description": "Optionaler expliziter Quelldatei-Pfad; sonst löst der Gate über regel_id -> rules.yaml norm_source (Pflicht bei Catala-Scope-Quellen wie EP)."}
+      }
+    },
+    "bindung": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["feld_id", "quelle", "typ", "askable", "hilfe_kurz", "beispielwert",
+                   "elster_kz", "vz_gueltigkeit", "anker_ref"],
+      "properties": {
+        "feld_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Eindeutiger stabiler Feld-Schlüssel (snake_case)."},
+        "quelle": {"$ref": "#/$defs/quelle"},
+        "typ": {"enum": ["cent", "int", "bool", "enum", "datum", "text"],
+          "description": "cent = Geldbetrag in Cent (Ganzzahl); int = Zähl-/Stückzahl; datum = ISO-8601."},
+        "slot_beitrag": {"enum": ["exakt", "summand"], "default": "exakt",
+          "description": "exakt = dieses Feld IST der Slot-Wert (1:1). summand = dieses Feld ist ein Summand; mehrere summand-Felder auf denselben signatur_slot addieren sich (nur typ cent/int, Typ-homogen; Gate prüft)."},
+        "einheit": {"type": ["string", "null"], "description": "z.B. 'km', 'Tage', 'EUR'; null bei bool/enum/datum."},
+        "askable": {"type": "boolean",
+          "description": "true = der Laie gibt es ein; false = abgeleitete/berechnete/Parameter-Größe (nie abfragen)."},
+        "fragetext_laie": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "not": {"pattern": "§|EStG|GewStG|KStG|Abs\\.|i\\.\\s?S\\.\\s?d\\.|Satz\\s?[0-9]|Aufwendungen i"}}
+          ],
+          "description": "Einfaches Deutsch, KEINE Paragraphen/Amtssprache im Fragetext (die hängen als anker_ref). Pflicht (nicht-null) wenn askable=true; null wenn askable=false."},
+        "hilfe_kurz": {"type": "string", "minLength": 3,
+          "description": "Kurzer Hilfetext (auch einfach gehalten)."},
+        "beispielwert": {"description": "Beispielwert passend zu typ (cent: Ganzzahl Cent; bool: true/false; ...)."},
+        "herkunft_slots": {"type": ["array", "null"], "items": {"type": "string"},
+          "description": "Provenance je Teilbetrag, z.B. ['Lohnsteuerbescheinigung Nr. 23'] (VOR-Musterfall)."},
+        "elster_kz": {"type": ["string", "null"], "pattern": "^E[0-9]{7}$",
+          "description": "Amtliche XSD-E-Nummer; null wenn (noch) nicht belegt — dann elster_kz_grund Pflicht."},
+        "elster_kz_grund": {"type": "string",
+          "description": "Grund, warum elster_kz null ist (benannte Lücke, kein Rate-Mapping)."},
+        "vz_gueltigkeit": {"type": "array", "items": {"type": "integer"}, "minItems": 1,
+          "description": "Veranlagungszeiträume, für die die Bindung gilt, z.B. [2024, 2025, 2026]."},
+        "anker_ref": {"$ref": "#/$defs/anker_ref"},
+        "enum_werte": {"type": "array", "items": {"type": "string"}, "minItems": 1,
+          "description": "Zulässige Werte bei typ=enum."}
+      },
+      "allOf": [
+        {"if": {"properties": {"askable": {"const": true}}},
+         "then": {"required": ["fragetext_laie"],
+                  "properties": {"fragetext_laie": {"type": "string", "minLength": 5}}}},
+        {"if": {"properties": {"elster_kz": {"type": "null"}}},
+         "then": {"required": ["elster_kz_grund"]}},
+        {"if": {"properties": {"typ": {"const": "enum"}}},
+         "then": {"required": ["enum_werte"]}}
+      ]
+    },
+    "luecke": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["regel_id", "grund"],
+      "properties": {
+        "regel_id": {"type": "string"},
+        "signatur_slot": {"type": "string"},
+        "geltungsbedingung": {"type": "string"},
+        "grund": {"type": "string", "minLength": 5}
+      },
+      "oneOf": [
+        {"required": ["signatur_slot"], "not": {"required": ["geltungsbedingung"]}},
+        {"required": ["geltungsbedingung"], "not": {"required": ["signatur_slot"]}}
+      ]
+    }
+  }
+}
