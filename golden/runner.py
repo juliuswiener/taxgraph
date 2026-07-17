@@ -87,6 +87,23 @@ def catala_entfernungspauschale(s: dict) -> int:
     return int(out.abziehbarer_betrag) // 100
 
 
+def catala_werbungskosten_n(s: dict) -> int:
+    """§ 9 Werbungskosten Anlage N — ROH-Summe in EURO, OHNE § 9a-Arbeitnehmer-Pauschbetrag.
+    Den Pauschbetrag-Guenstiger wendet der Tarif `festzusetzende_est_einzel` intern an
+    (handverifiziert: ESt(WK 0)==ESt(WK 1230)); ein § 9a hier waere doppelter Abzug.
+
+    Stufe 1: nur die Entfernungspauschale hat ein Catala-Modul. dHf (§ 9 Abs. 1 Nr. 5),
+    Verpflegung (§ 9 Abs. 4a) und Arbeitsmittel (§ 9 Abs. 1 Nr. 6/7) haben (noch) keins ->
+    hier NICHT aggregiert; ihr Vorhandensein sperrt in der Haut den Stufe-1-Ring
+    (bestaetigte-Null-Guard, kein stiller 0-Verschluck). Erweiterungsstelle fuer Stufe 1b."""
+    wk = 0
+    if "entfernung_km_roh" in s:
+        wk += catala_entfernungspauschale(s)
+    # Stufe 1b (nach deren Catala-Modul-Bau):
+    #   + catala_dhf(s) + catala_verpflegung(s) + catala_arbeitsmittel(s)
+    return wk
+
+
 def _kindergeld(year: int) -> int:
     """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
     p = load_yaml_fh(open(os.path.join(

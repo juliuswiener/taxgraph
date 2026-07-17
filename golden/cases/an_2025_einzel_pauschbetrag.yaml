@@ -1,0 +1,19 @@
+id: an_2025_einzel_pauschbetrag
+beschreibung: "Arbeitnehmerfall Einzel VZ2025, Bruttolohn 40000, Werbungskosten 0 — Arbeitnehmer-Pauschbetrag (§ 9a, 1230) greift IM Tarif; belegt, dass catala_werbungskosten_n roh liefern muss (kein Doppelabzug) — Gesamtsteuer-Ring MVP G-AN-C"
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  bruttoarbeitslohn: 40000
+  werbungskosten: 0
+  sonderausgaben: 0
+
+erwartung:
+  festzusetzende_est: 6919
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 9a Satz 1 Nr. 1a EStG (Arbeitnehmer-Pauschbetrag 1230, VZ 2025) im Tarif; § 32a Rundung"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"

@@ -1,0 +1,19 @@
+id: an_2025_einzel_ep_vor
+beschreibung: "Arbeitnehmerfall Einzel VZ2025, Bruttolohn 40000, Werbungskosten 2156 (EP), Sonderausgaben 3500 (Altersvorsorge § 10) — Gesamtsteuer-Ring MVP G-AN-B"
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  bruttoarbeitslohn: 40000
+  werbungskosten: 2156
+  sonderausgaben: 3500
+
+erwartung:
+  festzusetzende_est: 5570
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "Kette § 9a + § 10 Abs. 1 Nr. 2/Abs. 3 + § 10c + § 32a EStG, VZ 2025 (Vorsorge-Abzug 3500)"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"

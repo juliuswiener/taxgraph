@@ -1,0 +1,19 @@
+id: an_2025_einzel_ep
+beschreibung: "Arbeitnehmerfall Einzel VZ2025, Bruttolohn 40000, Werbungskosten 2156 (Entfernungspauschale), keine Sonderausgaben — Gesamtsteuer-Ring MVP G-AN-A"
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  bruttoarbeitslohn: 40000
+  werbungskosten: 2156
+  sonderausgaben: 0
+
+erwartung:
+  festzusetzende_est: 6629
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "Kette § 9a Satz 1 Nr. 1a + § 10c + § 32a EStG, VZ 2025 (WK 2156 > Pauschbetrag 1230)"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"
