@@ -1,0 +1,19 @@
+id: an_2025_einzel_ep_verpflegung
+beschreibung: "Arbeitnehmerfall Einzel VZ2025, Bruttolohn 40000, Werbungskosten 2436 (EP 2156 + Verpflegung 280: 10 volle Reisetage à 28 EUR) — Gesamtsteuer-Ring Stufe 1b Verpflegung, G-AN-V (Mehr-Tage)"
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  bruttoarbeitslohn: 40000
+  werbungskosten: 2436
+  sonderausgaben: 0
+
+erwartung:
+  festzusetzende_est: 6542
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "Kette § 9 Abs. 4a S. 3 Nr. 1 (Verpflegungspauschale 28/Tag) + § 9a + § 32a EStG, VZ 2025; 10 × 28 = 280"
+  datei: "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt"
+  zitatanker: "auf den naechsten vollen Euro-Betrag abzurunden"

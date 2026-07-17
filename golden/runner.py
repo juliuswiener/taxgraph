@@ -101,7 +101,9 @@ def catala_werbungskosten_n(s: dict) -> int:
         wk += catala_entfernungspauschale(s)
     if "unterkunftskosten_monat" in s:
         wk += _dhf_abzug(s, s["veranlagungszeitraum"])
-    # Stufe 1b-2 / eigenes Paket: + _verpflegung_abzug(s) (Tage-Zaehler offen) + Arbeitsmittel-AfA
+    if any(k in s for k in ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig")):
+        wk += _verpflegung_abzug(s, s["veranlagungszeitraum"])
+    # eigenes Paket: + Arbeitsmittel-AfA (mehrjährig)
     return wk
 
 
@@ -146,6 +148,20 @@ def _verpflegung_pauschale(s: dict, year: int) -> int:
     if stunden > 8:
         return p["pauschale_ab_8h"]
     return 0
+
+
+def _verpflegung_abzug(s: dict, year: int) -> int:
+    """§ 9 Abs. 4a S. 3 EStG — Jahres-Verpflegungspauschale, EURO = Summe der Tage je Kategorie mal
+    ihrer Pauschale (Registry-Transkription p9_4a, Sätze aus params/<vz>):
+        tage_24h × 28 (voller Tag) + tage_an_abreise × 14 + tage_ueber_8h_eintaegig × 14.
+    LÜCKE (bewusst, NICHT still — Haut-Guard/Annahme): die 3-Monats-Frist (S. 6, Pauschale nur die
+    ersten drei Monate je Einsatzort) und die Mahlzeitenkürzung (S. 8) sind REDUKTIONEN, hier NICHT
+    modelliert — ein voller Σ ohne sie überschätzt den Abzug. KOPPLUNG: bei Registry-Änderung p9_4a
+    diese Formel + _verpflegung_pauschale nachziehen."""
+    p = _verpflegung_params(year)
+    return (int(s.get("tage_24h", 0)) * p["pauschale_24h"]
+            + int(s.get("tage_an_abreise", 0)) * p["pauschale_an_abreise"]
+            + int(s.get("tage_ueber_8h_eintaegig", 0)) * p["pauschale_ab_8h"])
 
 
 def _kindergeld(year: int) -> int:

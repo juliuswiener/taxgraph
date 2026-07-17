@@ -100,3 +100,23 @@ def test_verpflegung_staffel_zweige():
     assert vp(an_oder_abreisetag=False, abwesenheit_stunden=24) == 28
     assert vp(an_oder_abreisetag=False, abwesenheit_stunden=10) == 14
     assert vp(an_oder_abreisetag=False, abwesenheit_stunden=6) == 0
+
+
+def test_verpflegung_abzug_summe():
+    """_verpflegung_abzug = Σ Tage × Pauschale (Jahres-Abzug): Einzel-Tag reproduziert die
+    Registry-Pauschale, Mehr-Tage summiert linear."""
+    runner = _runner()
+    va = lambda **kw: runner._verpflegung_abzug(kw, 2025)
+    assert va(tage_24h=1) == 28
+    assert va(tage_an_abreise=1) == 14
+    assert va(tage_ueber_8h_eintaegig=1) == 14
+    assert va(tage_24h=10) == 280
+    assert va(tage_24h=5, tage_an_abreise=2, tage_ueber_8h_eintaegig=3) == 5 * 28 + 2 * 14 + 3 * 14
+
+
+def test_werbungskosten_n_mit_verpflegung():
+    runner = _runner()
+    # EP (2156) + Verpflegung (tage_24h=10 → 280) = 2436 EUR
+    s = {"veranlagungszeitraum": 2025, "arbeitstage": 220, "entfernung_km_roh": 30,
+         "oepnv_kosten_jahr": 0, "eigenes_oder_ueberlassenes_kfz": True, "tage_24h": 10}
+    assert runner.catala_werbungskosten_n(s) == 2156 + 280
