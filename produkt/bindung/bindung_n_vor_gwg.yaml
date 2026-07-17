@@ -226,7 +226,8 @@ bindungen:
     hilfe_kurz: "Für An- und Abreisetage gibt es eine eigene Pauschale."
     beispielwert: false
     herkunft_slots: null
-    elster_kz: E0205302
+    elster_kz: null
+    elster_kz_grund: "Interne Ja/Nein-Voraussetzung der Einzelreisen-Regel (p9_4a-Slot an_oder_abreisetag), kein Betrags-/Count-Feld. Das ELSTER-Count-Kz E0205302 (Anzahl der An- und Abreisetage) gehört zu tage_an_abreise (int); der frühere bool-auf-E0205302-Eintrag war ein Typ-Mismatch (Instructor-Swap, b250fff-Follow)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 9 Abs. 4a Satz 3 Nr. 2 EStG"
@@ -344,8 +345,7 @@ bindungen:
     hilfe_kurz: "An- und Abreisetage einer mehrtägigen Reise zählen jeweils mit 14 Euro."
     beispielwert: 0
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage-N-Kz E0205302 (Anzahl An-/Abreisetage) ist das SEMANTISCH korrekte Ziel, aktuell aber durch vpf_an_oder_abreisetag (bool auf Count-Kz = Mismatch) belegt → Kollision, Instructor-Klärung nötig. Bis dahin null (kein Doppel-Kz)."
+    elster_kz: E0205302
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 9 Abs. 4a S. 3 Nr. 2 EStG"
