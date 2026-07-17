@@ -105,6 +105,28 @@ Sperre: rc-Klasse IMMER prüfen, nie „0 Fehler" allein als grün werten.
 3. **Vollausbau der Injektion:** ÖPNV-Insertion (E0203611), Anlage-EÜR-Datenart (E77) für GWG/§7g,
    restliche EP-Goldens; erst nach Gate-Härtung, sonst zählt man gegen einen gekappten Fehlerstrom.
 
+## Nachtrag: Prio 1 + 2 umgesetzt (2026-07-17, nach Instructor-Ruling)
+
+**Prio 1 — ERiC-Gate-Härtung** (Details: `reports/review/2026-07-17-eric-gate-haertung.md`): Cap auf
+1000 angehoben (`validieren.fehler_max/hinweise_max`, Bereich 1–1000; 10000 wäre WERT_UNGUELTIG),
+`klassifiziere_rc`, `eric_gate` Stufe C red-fähiger Trunkierungs-Guard. Verifiziert.
+
+**Prio 2 — Injektions-Vollausbau** (Harness P1 erweitert + neue P5):
+- **P1 jetzt 9 Goldens CLEAN** (statt 6): ÖPNV `oepnv_kosten_jahr → E0203611` per XSD-sequenz-korrekter
+  Insertion (rc=0), + ep_2024_rz12, + arbeitnehmer 2024/2025. Alle rc=0.
+- **P5 — EÜR-E77 (Datenart `EUER_2025`, `libcheckEUER_2025.so`): feasibility BESTÄTIGT** — amtliches
+  `EUER_2025_ok.xml` validiert rc=0. **Scope-Fund:** anders als der ESt1A-Kern prüft checkESt bei EÜR
+  **Arithmetik-Konsistenz** — Injektion in die Summe der Betriebseinnahmen (E6005501, Übertrag) ohne
+  Anpassung der Detailfelder → Regel **604030** „Summe der Betriebseinnahmen fehlerhaft übertragen".
+  Das **verfeinert die Kernaussage**: „Struktur/Format, nicht Magnitude" gilt für ESt1A-Deklarations-
+  Inputs; **EÜR fügt eine Rechen-/Übertrag-Prüfung hinzu**.
+  - Mapping-Erkenntnisse: (1) EÜR-Geldbeträge brauchen Format `N,NN` (2 Nachkommastellen, Komma) —
+    Integer wie im ESt1A gibt `zahlOhneDezimalTrenner`. (2) Summen/Übertrag nur konsistent mit den
+    Detailfeldern injizieren.
+  - **Golden-seitige Lücke (benannt):** kein EÜR-Input-Golden vorhanden (weder GWG/§6(2) noch
+    Gewinnermittlung); GWG-Kz E6002301 fehlt im Beispiel → Insertion an korrekter EÜR-XSD-Sequenz-
+    position ist der nächste Schritt (nicht fragil geraten).
+
 ## Reproduktion
 
 ```bash

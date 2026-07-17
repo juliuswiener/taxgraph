@@ -33,6 +33,7 @@ Commit ueber Instructor.
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
 import re
@@ -81,6 +82,23 @@ def _drop(xml: bytes, tag: str) -> bytes:
     return re.sub(rf"<{tag}>.*?</{tag}>".encode(), b"", xml, flags=re.S)
 
 
+# Insertions-Anker fuer Felder, die im Minimalfixture NICHT vorhanden sind (XSD-Sequenz beachten:
+# empirisch validierte Position, rc=0). E0203611 (ÖPNV-Aufwand) nach E0203504 (km).
+ANCHORS = {"E0203611": "E0203504"}
+
+
+def _apply(xml: bytes, tag: str, val, anchor: str | None = None) -> bytes:
+    """Feld setzen: existiert es -> ersetzen; sonst nach </anchor> einfuegen (XSD-Sequenz-Position)."""
+    pat = re.compile(rf"<{tag}>.*?</{tag}>".encode(), re.S)
+    if pat.search(xml):
+        return pat.sub(f"<{tag}>{val}</{tag}>".encode(), xml)
+    if anchor:
+        a = re.compile(rf"</{anchor}>".encode())
+        if a.search(xml):
+            return a.sub(f"</{anchor}><{tag}>{val}</{tag}>".encode(), xml, count=1)
+    raise KeyError(f"{tag} nicht setzbar (kein Feld, kein Anker {anchor})")
+
+
 def parse_fehler(antwort: str) -> list[dict]:
     """FehlerRegelpruefung-Liste aus der Ericantwort."""
     out = []
@@ -115,8 +133,7 @@ def map_ep(sv: dict) -> tuple[dict, list[str]]:
     if "entfernung_km_roh" in sv:
         m["E0203504"] = int(sv["entfernung_km_roh"])              # einfache Entfernung km (abger.)
     if sv.get("oepnv_kosten_jahr", 0):
-        notes.append("oepnv_kosten_jahr -> E0203611 (Aufwand ÖPNV) NICHT im Minimalfixture — "
-                     "Insertion in Erste_Taetig noetig; hier nicht injiziert (erwartbar)")
+        m["E0203611"] = int(sv["oepnv_kosten_jahr"])              # Aufwand ÖPNV (Insertion via ANCHOR)
     return m, notes
 
 
@@ -141,21 +158,23 @@ def map_arbeitnehmer(sv: dict) -> tuple[dict, list[str]]:
     return m, notes
 
 
-# Auswahl: 5–10 Goldens quer durch die vom Instructor genannten Gruppen.
+# Auswahl (Vollausbau Prio 2): mehr Familien quer durch EP/VOR/N.
 SELECTION = [
     ("EP", "ep_2024_staffel_30km", map_ep),
-    ("EP", "ep_2024_beispiel1_oepnv", map_ep),
+    ("EP", "ep_2024_beispiel1_oepnv", map_ep),        # ÖPNV: injiziert jetzt E0203611 (Insertion)
+    ("EP", "ep_2024_rz12_volle_km", map_ep),
     ("EP", "ep_2026_flach_30km", map_ep),
     ("VOR", "gesamt_2024_vorsorge_capped", map_vor),
     ("VOR", "gesamt_2026_vorsorge_capped", map_vor),
+    ("N", "arbeitnehmer_2024_einzel_50000", map_arbeitnehmer),
+    ("N", "arbeitnehmer_2025_einzel_80000", map_arbeitnehmer),
     ("N", "arbeitnehmer_2026_einzel_60000", map_arbeitnehmer),
 ]
 
 # Gruppen ohne ESt1A-Deklarationsprojektion im Minimalfixture — dokumentierter Struktur-Befund.
 GAPS = {
-    "GWG": ("p6_2 GwG-Sofortabzug ist Anlage-EÜR-Feld E6002301 (feldmapping status=mapped), NICHT "
-            "im ESt1A-Kern; kein ESt-seitiger Golden-Input-Fall. Deklarierbar nur via Anlage EÜR "
-            "(eigene Datenart E77). -> erwartbar."),
+    "GWG": ("p6_2 GwG-Sofortabzug ist Anlage-EÜR-Feld E6002301, NICHT im ESt1A-Kern. Datenart EUER "
+            "wird in P5 separat behandelt (verfuegbar); es fehlt aber ein EÜR-Input-Golden. -> erwartbar."),
     "§10d": ("§10d-Verlustvortrag ist gesondert FESTGESTELLTE Bescheid-Größe (analog tarifliche "
              "Steuer, vgl. feldmapping-Doktrin); Golden verlustvortrag_bestand liegt im KStG-"
              "Nenner-B-Kontext, nicht in der ESt-Deklaration. Kein Kz im Minimalfixture. -> erwartbar."),
@@ -194,7 +213,7 @@ def phase1() -> list[dict]:
         applied = {}
         for tag, val in kz.items():
             try:
-                xml = _set(xml, tag, val)
+                xml = _apply(xml, tag, val, ANCHORS.get(tag))
                 applied[tag] = val
             except KeyError as e:
                 notes.append(str(e))
@@ -324,6 +343,56 @@ def phase4(reps: int = 8) -> dict:
     return {"bytes": len(xml), "warm_median_ms": med, "n": reps}
 
 
+def _euer_beispiel() -> str | None:
+    """Amtliches EUER_2025_ok.xml aus der ERiC-Auslieferung (Datenart EUER_2025)."""
+    for root in (os.environ.get("ERIC_DIR", ""), os.path.expanduser("~/02_Software/eric")):
+        if not root:
+            continue
+        hits = glob.glob(os.path.join(os.path.expanduser(root), "**", "EUER_2025_ok.xml"),
+                         recursive=True)
+        if hits:
+            return hits[0]
+    return None
+
+
+def phase5() -> dict:
+    """EÜR-E77-Injektion (Prio-2-Vollausbau). Datenart EUER_2025 IST offline verfuegbar
+    (libcheckEUER_2025.so). Feasibility am amtlichen Beispiel + Injektion gemappter EÜR-Kz."""
+    print("\n=== P5  EÜR-E77-Injektion (Datenart EUER_2025) ===")
+    beispiel = _euer_beispiel()
+    if not beispiel:
+        print("  EUER_2025_ok.xml nicht gefunden -> benannte Lücke (ERiC-Auslieferung pruefen).")
+        return {"feasibility": False}
+    with open(beispiel, "rb") as f:
+        base, hid = CE._mit_hersteller_id(f.read())
+    rc0, ant0 = CE.validate(base, "EUER_2025")
+    print(f"  Feasibility: amtliches Beispiel -> rc={rc0} [{CE.klassifiziere_rc(rc0)}] "
+          f"{'(EÜR-Pipe funktioniert)' if rc0 == 0 else '(unerwartet!)'}")
+
+    # Injektion in die Summe der Betriebseinnahmen (E6005501, Übertrag), im Format des Beispiels
+    # (Geldbetrag 'N,NN'). Zeigt eine ARITHMETIK-Regel, die der ESt1A-Kern nicht hatte.
+    xml = _apply(base, "E6005501", "50000,00")
+    rc1, ant1 = CE.validate(xml, "EUER_2025")
+    fehler = parse_fehler(ant1)
+    print(f"  Injektion E6005501=50000,00 -> rc={rc1} [{CE.klassifiziere_rc(rc1)}], "
+          f"{len(fehler)} FehlerRegelpruefung:")
+    for f in fehler:
+        print(f"       {f['fehler_id']:16s} {f['text'][:90]}")
+    print("  SCOPE-FUND: checkESt prueft bei EÜR ARITHMETIK-Konsistenz (Übertrag-Reconciliation: "
+          "Summenfeld muss = Summe der Detailfelder) — Regel 604030. Verfeinert die A2-These "
+          "'nur Struktur/Format, nicht Magnitude': gilt fuer ESt1A-Inputs, EÜR fuegt Rechenpruefung hinzu.")
+    print("  MAPPING-Erkenntnisse: (1) EÜR-Geldbeträge Format 'N,NN' (2 Nachkommastellen, Komma) — "
+          "Integer wie im ESt1A gibt 'zahlOhneDezimalTrenner'. (2) Summen/Übertrag nur konsistent mit "
+          "Detailfeldern injizieren.")
+    print("  Golden-seitige LÜCKE (benannt): KEIN EÜR-Input-Golden (weder GWG/§6(2) noch "
+          "Gewinnermittlung). GWG-Kz E6002301 fehlt im Beispiel -> Insertion an korrekter EÜR-XSD-"
+          "Sequenzposition = naechster Schritt (nicht fragil geraten).")
+    return {"feasibility": rc0 == 0, "beispiel": os.path.basename(beispiel),
+            "arithmetik_regel": [f["fehler_id"] for f in fehler],
+            "scope_fund": "EÜR-Übertrag-Reconciliation (604030), Geldbetrag-Format N,NN",
+            "golden_luecke": "kein EÜR-Input-Golden (GWG/Gewinnermittlung)"}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", metavar="OUT")
@@ -338,6 +407,7 @@ def main() -> int:
     p2 = phase2()
     p3 = phase3()
     p4 = phase4()
+    p5 = phase5()
     CE.beende()
 
     # Engine-Fund-Kandidaten kommen NUR aus P1 (valides Golden -> unerwarteter Fehler). P2 mutiert
@@ -349,11 +419,13 @@ def main() -> int:
           f"{sum(1 for r in p1 if r.get('rc') is None)} Gruppen-Luecken (erwartbar).")
     print(f"  P2 Struktur-Regeln katalogisiert: "
           f"{sum(len(r['fehler']) for r in p2)} FehlerRegelpruefung ueber {len(p2)} Operatoren.")
+    print(f"  P5 EÜR-E77: Datenart EUER_2025 {'verfuegbar + Pipe grün' if p5.get('feasibility') else 'NICHT nutzbar'}, "
+          f"Golden-Lücke benannt.")
     print(f"  echter-engine-fund-Kandidaten aus P1 (manueller Review): {len(echte)}")
 
     if args.json:
         with open(args.json, "w") as f:
-            json.dump({"p1": p1, "p2": p2, "p3": p3, "p4": p4}, f, indent=2, ensure_ascii=False)
+            json.dump({"p1": p1, "p2": p2, "p3": p3, "p4": p4, "p5": p5}, f, indent=2, ensure_ascii=False)
         print(f"[fuzz] JSON -> {args.json}")
     return 0
 
