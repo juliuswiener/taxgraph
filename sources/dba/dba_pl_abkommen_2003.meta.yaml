@@ -1,0 +1,24 @@
+# Eingefrorener Text (Quellen-Klasse staatsvertrag). Provenance-Archiv.
+dokument:
+  norm_uri: "dba/pl/2003-05-14/gesetz-2004"
+  norm: "Gesetz zu dem Abkommen v. 14.05.2003 zwischen der Bundesrepublik Deutschland und der Republik Polen zur Vermeidung der Doppelbesteuerung (BGBl 2004 II Nr. 29 S. 1304)"
+  fassung: "BGBl 2004 II Nr. 29 (Gesetz + Abkommen, zweisprachig DE/PL; hier: OCR der DEUTSCHEN Spalte)"
+  quelle_url: "(BMF Staatenbezogene Informationen PL, Scraper-Korpus corpus/dba_pdfs/2004-04-29-Polen-Abkommen-DBA-Gesetz.pdf)"
+  abrufdatum: "2026-07-17"
+  datei: "dba_pl_abkommen_2003.txt"
+  pdf_datei: "dba_pl_abkommen_2003.pdf"
+  sha256: "223f48c6e064e3000cb75d84beeb91f25e48720eca7e9f4c6b6c7a9d592817be"
+  pdf_sha256: "1d98894a25f8a76b24bdaa4f876d96c10c7a5215e9803adc18fe9d4eb4fd0228"
+  authority: staatsvertrag
+  redistributable: true
+  hinweis: "GRUNDABKOMMEN PL, einzige bilaterale Fassung im Fenster (Korpus: nur 2015-Verstaendigungsvereinbarung, kein Aenderungsprotokoll). LAYER-PROVENANCE: BGBl-Bildscan -> Spalten-Crop-OCR (tesseract-deu 300dpi, linke 52 % = deutsche Spalte; DK-Route). OCR-ARTEFAKT-CAVEAT (Kern-Anker S. 1318/1319 BILDVERIFIZIERT, links-seite-15/16): Spalten-Bleed-Einzelzeichen ('a','b','C)','d','si','P') am Zeilenende + '$'/' $&' statt 'Paragraph-Zeichen' in der AStG-Passage (Bild zeigt korrektes Zeichen) - Anker meiden diese Stellen. GUELTIGKEIT: einfassig VZ 2024-2026; MLI: PL NICHT in bmf_stand_dba_2026-I.2-Positivliste -> kein MLI-Overlay (Abwesenheits-Beleg TR-Muster). Methodenartikel Art. 24 Abs. 1: a Freistellung (vorbehaltlich b) + Schachtel 10 % + WIRTSCHAFTSZONEN-RUECKAUSNAHME (Gesetz v. 20.10.1994, PL-Spezifikum!), b Anrechnung Enum aa/bb, c Aktivitaetsklausel (Paragraph 8 Abs. 1 Nr. 1-6 + Abs. 2 AStG), d Progressionsvorbehalt. Anker nur deutsche OCR-Spalte, Silbentrennungs-Hyphene exakt wie OCR."
+  erwartete_anker:
+    - "Methoden zur Vermeidung der Doppelbesteuerung"
+    - "werden vorbehaltlich des Buchstabens b die Einkünfte aus der Republik Polen sowie die in der Republik Polen gele- genen Vermögenswerte ausgenommen, die nach diesem Abkommen in der Republik Polen besteuert werden kön- nen"
+    - "deren Kapital zu mindestens 10 vom Hundert unmittel- bar der deutschen Gesellschaft gehört"
+    - "Anspruch auf die Steuervergünstigung nach dem Gesetz vom 20. Oktober 1994 über die besonderen Wirtschafts- zonen in der Republik Polen hat"
+    - "Beachtung der Vorschriften des deutschen Steuerrechts über die Anrechnung ausländischer Steuern die polnische Steuer angerechnet"
+    - "Einkünfte, die nach Artikel 11 Absatz 2, Artikel 12 Absatz 2, Artikel 13 Absatz 2, Artikel 15 Absatz 3, Arti- kel 16 Absatz 1 und Artikel 17 in der Republik Polen besteuert werden können"
+    - "Statt der Bestimmungen des Buchstabens a sind die"
+    - "nach diesem Abkommen von der deutschen Besteuerung ausgenommenen Einkünfte und Vermögenswerte bei der Festsetzung des Steuersatzes für andere Einkünfte und Vermögenswerte zu berücksichtigen"
+  verwendet_in: ["Paket 6 W1 DBA-Katalog PL (Grundtext OCR, einfassig)"]
