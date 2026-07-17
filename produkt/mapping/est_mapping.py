@@ -41,6 +41,20 @@ DOKUMENTIERT_AGGREGAT = {
 NEGATION = {"fam_alleinstehend": "E0503701"}
 # Klasse e — Multiplikation: Zähl-Feld -> N Anlage-Kind-Instanzen (MVP: nur Anzahl; Per-Kind-Kz Nachtrag).
 MULTIPLIKATION = ("fam_anzahl_kinder",)
+# Klasse f — Verzweigung: EIN Wert-Slot -> N-Kz je Enum-Wert eines Art-Felds. § 22-Renten: die Anlage-R-
+# Zeile (und damit das Kz) hängt an rentner_renten_art. aa-Basisversorgung (gesetzl/berufsst/basisrente)
+# -> Leibr_gesetzl; bb-Ertragsanteil private/sonstige -> Leibr_priv/Leibr_sonst. Nur DEKLARATION (Kz-Wahl);
+# die bb-STEUERBERECHNUNG (Ertragsanteil) ist der Registry-Nachtrag p22_1_ertragsanteil (dev-1).
+VERZWEIGUNG = {
+    "rentner_jahresrente": {"art_feld": "rentner_renten_art", "kz": {
+        "gesetzliche_rente": "E1800301", "berufsstaendische_versorgung": "E1800301",
+        "private_basisrente": "E1800301", "private_leibrente": "E1801601",
+        "sonstige_leibrente": "E1803102"}},
+    "rentner_renten_beginn_jahr": {"art_feld": "rentner_renten_art", "kz": {
+        "gesetzliche_rente": "E1800501", "berufsstaendische_versorgung": "E1800501",
+        "private_basisrente": "E1800501", "private_leibrente": "E1801701",
+        "sonstige_leibrente": "E1803202"}},
+}
 
 
 def _aggregation_quellen() -> set:
@@ -85,6 +99,20 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             for ziel, srcs in DOKUMENTIERT_AGGREGAT.items():
                 if feld_id in srcs:
                     agg_akku[ziel].append((feld_id, int(wert)))
+        elif feld_id in VERZWEIGUNG:                             # Klasse f (Art-Verzweigung: 1 Slot -> N-Kz)
+            cfg = VERZWEIGUNG[feld_id]
+            art = snapshot.get(cfg["art_feld"])
+            if art is None or art.get("zustand") != "bestaetigt":
+                # fail-closed: ohne bestätigte Art ist die Kz-Zuordnung offen -> nicht deklarieren
+                unvollstaendig.append({"feld_id": feld_id,
+                                       "grund": f"Renten-Art ({cfg['art_feld']}) unbestätigt — Kz-Zweig offen"})
+            else:
+                kz = cfg["kz"].get(art["wert"])
+                if kz:
+                    deklaration[kz] = wert
+                else:
+                    nicht_deklariert.append({"feld_id": feld_id,
+                                             "grund": f"Renten-Art '{art['wert']}' ohne Kz-Zweig"})
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)
             deklaration[b["elster_kz"]] = wert
         else:                                                     # Klasse c (nicht deklariert)
@@ -121,6 +149,9 @@ def zuruecklesen(result: dict, bindung: dict) -> dict:
     Detail-Felder — der Store bleibt ihre Wahrheit (Auflage A, kein stiller Detail-Verlust)."""
     e_nach_feld = {b["elster_kz"]: fid for fid, b in bindung.items() if b.get("elster_kz")}
     e_nach_negation = {ziel: fid for fid, ziel in NEGATION.items()}
+    # Klasse f: alle Art-Zweig-Kz eines Wert-Felds zeigen zurück auf dasselbe Wert-Feld (der VALUE ist
+    # invertierbar; die exakte Renten-Art ist nur gruppen-genau [aa/bb], nicht rekonstruierbar).
+    e_nach_verzweigung = {kz: feld for feld, cfg in VERZWEIGUNG.items() for kz in cfg["kz"].values()}
     felder: dict = {}
     aggregat: dict = {}
     # dokumentierte Aggregate (dokumentiert, nicht deklariert): nur die Summe, KEINE Details
@@ -129,6 +160,8 @@ def zuruecklesen(result: dict, bindung: dict) -> dict:
     for e_nr, wert in result["deklaration"].items():
         if e_nr in e_nach_negation:
             felder[e_nach_negation[e_nr]] = not bool(wert)
+        elif e_nr in e_nach_verzweigung:
+            felder[e_nach_verzweigung[e_nr]] = wert
         elif e_nr in e_nach_feld:
             felder[e_nach_feld[e_nr]] = wert
     return {"felder": felder, "aggregat": aggregat}

@@ -49,14 +49,20 @@ def _snapshot(merged: dict) -> dict:
             for fid, b in merged.items() if b.get("askable")}
 
 
+def _verzweigung_ziel_kz() -> set:
+    return {kz for cfg in EM.VERZWEIGUNG.values() for kz in cfg["kz"].values()}
+
+
 def _transform_quellen() -> set:
-    return set(EM.NEGATION) | set(EM.MULTIPLIKATION) | EM._aggregation_quellen()
+    # Klasse f: Wert-Felder (VERZWEIGUNG-Keys) + die Art-Felder, die sie steuern.
+    verzweigung = set(EM.VERZWEIGUNG) | {cfg["art_feld"] for cfg in EM.VERZWEIGUNG.values()}
+    return set(EM.NEGATION) | set(EM.MULTIPLIKATION) | EM._aggregation_quellen() | verzweigung
 
 
 def _erlaubte_kz(merged: dict) -> set:
-    """1:1-Kz aus der Bindung + Transform-Ziel-Kz, die in der deklaration erscheinen dürfen."""
+    """1:1-Kz aus der Bindung + Transform-Ziel-Kz (Negation + Verzweigung), die deklariert werden dürfen."""
     return ({b["elster_kz"] for b in merged.values() if b.get("elster_kz")}
-            | set(EM.NEGATION.values()))
+            | set(EM.NEGATION.values()) | _verzweigung_ziel_kz())
 
 
 # ---- Assertion 5: globale feld_id-Eindeutigkeit ------------------------------
@@ -112,7 +118,7 @@ def test_transform_konfig_konsistent(merged):
             kz_felder.setdefault(b["elster_kz"], []).append(fid)
     kollisionen = {kz: fs for kz, fs in kz_felder.items() if len(fs) > 1}
     assert not kollisionen, f"1:1-Kz-Kollision (mehrere Felder je Kz): {kollisionen}"
-    ziel_kz = set(EM.NEGATION.values()) | set(EM.DOKUMENTIERT_AGGREGAT)
+    ziel_kz = set(EM.NEGATION.values()) | set(EM.DOKUMENTIERT_AGGREGAT) | _verzweigung_ziel_kz()
     kollidiert = ziel_kz & set(kz_felder)
     assert not kollidiert, f"Transform-Ziel-Kz kollidiert mit 1:1-Kz: {kollidiert}"
 

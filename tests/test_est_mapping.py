@@ -228,14 +228,17 @@ def test_scheibe2_sonder_35a_agb_1zu1_roundtrip(bindung):
 
 
 def test_scheibe4_rentner_null_kz_gap(bindung):
-    """Rentner-Scheibe: alle elster_kz=null -> maschinenlesbare Deklarations-Lücke mit Grund, NICHT
-    stillschweigend deklariert (Anlage-R/Kind-Kz = Instructor-Freeze-Nachtrag)."""
+    """Rentner-Scheibe: null-Kz-Felder maschinenlesbar mit Grund, NICHT still deklariert. Der p33b-
+    Pauschbetrag bleibt GAP (nicht_deklariert); die Renten-Verzweigungsfelder ohne bestätigte Art
+    sind fail-closed unvollständig (Klasse f)."""
     snap, _ = ST.materialisiere(_store_mit({"rentner_jahresrente": 1800000,
                                             "rentner_grad_der_behinderung": 50}))
     r = EM.deklariere(snap, bindung)
     assert r["deklaration"] == {}                               # keine erfundene E-Nr
     ndf = {x["feld_id"]: x["grund"] for x in r["nicht_deklariert"]}
-    assert ndf.get("rentner_jahresrente") and ndf.get("rentner_grad_der_behinderung")  # Grund gesetzt
+    assert ndf.get("rentner_grad_der_behinderung")             # p33b: GAP mit Grund
+    uf = {x["feld_id"] for x in r["unvollstaendig"]}
+    assert "rentner_jahresrente" in uf                         # Klasse f ohne Art -> unvollständig, nicht deklariert
 
 
 def test_neg_scheibe3_verfaelschtes_1zu1_bricht_roundtrip(bindung):
@@ -246,3 +249,56 @@ def test_neg_scheibe3_verfaelschtes_1zu1_bricht_roundtrip(bindung):
     r2["deklaration"]["E0121709"] += 1
     rt = EM.zuruecklesen(r2, bindung)
     assert rt["felder"]["kap_kapitalertraege"] != 1000000
+
+
+# ---- Klasse f: Renten-Art-Verzweigung (Nachtrag A, 1 Wert-Slot -> N-Kz) -------
+
+def test_klasse_f_verzweigung_aa_basisversorgung(bindung):
+    """gesetzliche Rente (aa) -> Leibr_gesetzl-Kz E1800301 (Betrag) + E1800501 (Beginn)."""
+    snap, _ = ST.materialisiere(_store_mit({"rentner_renten_art": "gesetzliche_rente",
+                                            "rentner_jahresrente": 1800000, "rentner_renten_beginn_jahr": 2015}))
+    r = EM.deklariere(snap, bindung)
+    assert r["deklaration"]["E1800301"] == 1800000
+    assert r["deklaration"]["E1800501"] == 2015                # Jahr-Granularität (Datum = Submission-Layer)
+
+
+def test_klasse_f_verzweigung_private_und_sonstige(bindung):
+    """private Leibrente (bb) -> Leibr_priv E1801601/E1801701; sonstige -> Leibr_sonst E1803102/E1803202."""
+    r_priv = EM.deklariere(ST.materialisiere(_store_mit({"rentner_renten_art": "private_leibrente",
+        "rentner_jahresrente": 900000, "rentner_renten_beginn_jahr": 2018}))[0], bindung)
+    assert r_priv["deklaration"]["E1801601"] == 900000 and r_priv["deklaration"]["E1801701"] == 2018
+    r_sonst = EM.deklariere(ST.materialisiere(_store_mit({"rentner_renten_art": "sonstige_leibrente",
+        "rentner_jahresrente": 120000, "rentner_renten_beginn_jahr": 2020}))[0], bindung)
+    assert r_sonst["deklaration"]["E1803102"] == 120000 and r_sonst["deklaration"]["E1803202"] == 2020
+
+
+def test_klasse_f_fail_closed_ohne_bestaetigte_art(bindung):
+    """Wert bestätigt, Art VORLÄUFIG -> Kz-Zweig offen -> unvollständig, NICHT deklariert (fail-closed)."""
+    s = ST.leerer_store(2025, fall_id="verzw-failclosed")
+    _b(s, "rentner_jahresrente", 1800000)                       # bestätigt
+    _b(s, "rentner_renten_art", "gesetzliche_rente", zustand="vorlaeufig")   # Art nur vorläufig
+    snap, _ = ST.materialisiere(s)
+    r = EM.deklariere(snap, bindung)
+    assert not any(k.startswith("E1800") for k in r["deklaration"])   # kein Renten-Kz gesetzt
+    assert "rentner_jahresrente" in {x["feld_id"] for x in r["unvollstaendig"]}
+
+
+def test_klasse_f_roundtrip_value(bindung):
+    """Round-Trip: der Betrag ist über das Art-Zweig-Kz invertierbar (die exakte Art ist gruppen-genau)."""
+    snap, _ = ST.materialisiere(_store_mit({"rentner_renten_art": "private_leibrente",
+                                            "rentner_jahresrente": 900000, "rentner_renten_beginn_jahr": 2018}))
+    r = EM.deklariere(snap, bindung)
+    rt = EM.zuruecklesen(r, bindung)
+    assert rt["felder"]["rentner_jahresrente"] == 900000
+    assert rt["felder"]["rentner_renten_beginn_jahr"] == 2018
+
+
+def test_neg_klasse_f_unbekannte_art_kein_kz(bindung):
+    """Eine nicht gemappte Art -> KEIN Kz (nicht_deklariert), kein Default-Zweig."""
+    s = ST.leerer_store(2025, fall_id="verzw-unbekannt")
+    _b(s, "rentner_jahresrente", 1800000)
+    _b(s, "rentner_renten_art", "voellig_unbekannte_art")       # nicht in enum_werte/kz-map
+    snap, _ = ST.materialisiere(s)
+    r = EM.deklariere(snap, bindung)
+    assert not any(k.startswith("E1800") or k.startswith("E1801") for k in r["deklaration"])
+    assert "rentner_jahresrente" in {x["feld_id"] for x in r["nicht_deklariert"]}

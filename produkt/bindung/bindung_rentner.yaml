@@ -18,7 +18,7 @@ bindungen:
     beispielwert: 1800000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage R (Renten), Jahresbetrag der Leibrente; XSD-E-Nr Sektions-Lookup-Nachtrag (Rentner-Anlagen noch nicht gemappt)."
+    elster_kz_grund: "Kein festes 1:1-Kz: die Anlage-R-Zeile hängt an rentner_renten_art (Klasse-f-Verzweigung in est_mapping): gesetzl/berufsst/basisrente → E1800301, private Leibrente → E1801601, sonstige → E1803102."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
@@ -35,11 +35,28 @@ bindungen:
     beispielwert: 2015
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage R, Rentenbeginn (Jahr des Rentenbeginns); Kohorten-Lookup-Schlüssel, XSD-E-Nr Nachtrag."
+    elster_kz_grund: "Kein festes 1:1-Kz: Anlage-R-Zeile hängt an rentner_renten_art (Klasse-f-Verzweigung): gesetzl/berufsst/basisrente → E1800501, private Leibrente → E1801701, sonstige → E1803202. Jahr-Granularität; ERiC-Datum-Format = Submission-Layer."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
       zitatanker: "maßgebenden Prozentsatz aus der nachstehenden Tabelle"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_renten_art
+    quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: renten_art_basis_oder_ertragsanteil}
+    typ: enum
+    einheit: null
+    enum_werte: ["gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente", "private_leibrente", "sonstige_leibrente"]
+    askable: true
+    fragetext_laie: "Um welche Art von Rente geht es hauptsächlich?"
+    hilfe_kurz: "Gesetzliche Rente, Versorgungswerk (z. B. Ärzte/Anwälte) und Rürup-Basisrente werden nach dem Renten-Beginn-Jahr besteuert; eine private Rentenversicherung nach dem Ertragsanteil (Alter bei Renten-Beginn)."
+    beispielwert: "gesetzliche_rente"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche (steuert die Kz-Verzweigung Klasse f + den Rechenpfad aa/bb), kein eigenes Betragsfeld. Die bb-Steuerberechnung (Ertragsanteil, private/sonstige) ist der benannte Registry-Nachtrag p22_1_ertragsanteil (§ 22 Nr. 1 S. 3 a bb, dev-1); die aa-Werte rechnet p22_1 (Kohorte)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "aus den gesetzlichen Rentenversicherungen, der landwirtschaftlichen Alterskasse, den berufsständischen Versorgungseinrichtungen"
       datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
 
   # ========================= Altersentlastungsbetrag §24a (p24a) =========================
