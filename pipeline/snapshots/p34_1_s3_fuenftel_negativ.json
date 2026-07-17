@@ -1,0 +1,214 @@
+{
+  "bedingungen": [
+    "verbleibendes_zve_negativ_zve_positiv",
+    "fuenffaches_ein_fuenftel_zve"
+  ],
+  "candidate_id": "p34_1_s3_fuenftel_negativ",
+  "catala_a": "declaration scope FuenftelAoEstS3Negativ:\n  input est_ein_fuenftel_zve content money\n  output est_ao content money\n\nscope FuenftelAoEstS3Negativ:\n  definition est_ao equals est_ein_fuenftel_zve * 5.0",
+  "catala_a_sha256": "f38496b9bc251644641f0e5edeca2e275c1051d5750ad5d224d5132c320bd4d9",
+  "catala_b": "declaration scope FuenftelAoEstS3Negativ:\n  input est_ein_fuenftel_zve content money\n  output est_ao content money\n\nscope FuenftelAoEstS3Negativ:\n  definition est_ao equals est_ein_fuenftel_zve * 5.0",
+  "catala_b_sha256": "f38496b9bc251644641f0e5edeca2e275c1051d5750ad5d224d5132c320bd4d9",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 3 raster point(s) for 'est_ao'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 2 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "1 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "3 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [
+      "Die Berechnung multipliziert den Input mit 5, statt die Steuer auf ein Fünftel des zvE zu berechnen."
+    ],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 1,
+        "annahmen": 0,
+        "norm_teile": 2
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 3,
+      "inventar_streuung": {
+        "abweichungen": [
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft",
+              "ergebnis"
+            ],
+            "text": "Die Berechnung multipliziert den Input mit 5, statt die Steuer auf ein Fünftel des zvE zu berechnen."
+          }
+        ],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 34 abs. 1 s. 3 estg"
+            ],
+            "text": "so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommens"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [
+        {
+          "art": "norm_teil",
+          "gueltige_stimmen": 3,
+          "item": "Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde Einkommen positiv,",
+          "schluessel": "[\"norm_teile\", \"ref\", \"§ 34 abs. 1 s. 3 estg\"]"
+        }
+      ],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [],
+        "norm_teile": [
+          {
+            "cluster": "Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde Einkommen positiv,",
+            "eingeschmolzen": "Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde Einkommen positiv",
+            "key": [
+              "ref",
+              "§ 34 abs. 1 s. 3 estg"
+            ]
+          },
+          {
+            "cluster": "Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde Einkommen positiv,",
+            "eingeschmolzen": "Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde Einkommen positiv",
+            "key": [
+              "ref",
+              "§ 34 abs. 1 s. 3 estg"
+            ]
+          },
+          {
+            "cluster": "so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer.",
+            "eingeschmolzen": "so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer",
+            "key": [
+              "ref",
+              "§ 34 abs. 1 s. 3 estg"
+            ]
+          }
+        ]
+      },
+      "saettigungskurve": [
+        2,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "38f062e8b5c0",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "verbleibendes_zve_negativ_zve_positiv",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde Einkommen positiv,",
+        "referenz": "§ 34 Abs. 1 S. 3 EStG"
+      },
+      {
+        "abgedeckt_von": "fuenffaches_ein_fuenftel_zve",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer.",
+        "referenz": "§ 34 Abs. 1 S. 3 EStG"
+      }
+    ],
+    "stille_zusatzannahmen": [],
+    "timestamp": "2026-07-17T14:15:50+00:00"
+  },
+  "module_name": "FuenftelAoEstS3Negativ",
+  "queue_status": "verified_bedingt",
+  "schema_version": 2
+}

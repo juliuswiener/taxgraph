@@ -4424,3 +4424,68 @@ entscheidungen:
     klasse: wirkt_hinein
   entschieden_via: adjudikation-instructor-2026-07-17-p10c
   timestamp: '2026-07-17T14:01:08.344467+00:00'
+- rule_id: p34_1_s3_fuenftel_negativ
+  schluessel: '["abweichung", "abweichung_text", "die berechnung multipliziert den
+    input mit 5, statt die steuer auf ein fuenftel des zve zu berechnen."]'
+  triage: nicht_echt
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: abweichung
+    anker:
+    - abweichung_text
+    - die berechnung multipliziert den input mit 5, statt die steuer auf ein fuenftel
+      des zve zu berechnen.
+    text: Die Berechnung multipliziert den Input mit 5, statt die Steuer auf ein Fünftel
+      des zvE zu berechnen.
+    klasse: null
+    begruendung: 'Tarif-Andockungs-Artefakt: est_ein_fuenftel_zve IST per Input-Contract
+      die auf ein Fuenftel des zvE entfallende ESt (Tarif-Andockung, hinweis explizit);
+      der Judge misst die fehlende in-Code-Tarifrechnung, die per Architektur beim
+      Tarif-Scope (p32a) liegt. clerk PASS mit amtlichem Seed (2.402->12.010, EStH
+      H 34.2 Bsp 2). Schwester-Praezedenz: p34_fuenftel_ao_est traegt exakt dasselbe
+      nicht_echt-Artefakt (Differenz-x5-Lesart), verified_bedingt. adjudikation-instructor-2026-07-17-p10c-b8.'
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c-b8
+  timestamp: '2026-07-17T14:19:12.554601+00:00'
+- rule_id: p34_1_s3_fuenftel_negativ
+  schluessel: '["norm_teil", "ref", "§ 34 abs. 1 s. 3 estg"]'
+  triage: bedingung_neu
+  bedingung: verbleibendes_zve_negativ_zve_positiv
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 34 abs. 1 s. 3 estg
+    text: Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde
+      Einkommen positiv,
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c-b8
+  timestamp: '2026-07-17T14:19:13.355367+00:00'
+- rule_id: p34_1_s3_fuenftel_negativ
+  schluessel: '["norm_teil", "ref", "§ 34 abs. 1 s. 3 estg"]'
+  triage: bedingung_neu
+  bedingung: fuenffaches_ein_fuenftel_zve
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 34 abs. 1 s. 3 estg
+    text: so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu
+      versteuernden Einkommens entfallenden Einkommensteuer.
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c-b8
+  timestamp: '2026-07-17T14:19:14.148110+00:00'

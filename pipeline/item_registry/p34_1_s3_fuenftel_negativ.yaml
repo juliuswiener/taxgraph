@@ -1,0 +1,27 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p34_1_s3_fuenftel_negativ
+version: 3
+items:
+- art: abweichung
+  anker:
+  - abweichung_text
+  - die berechnung multipliziert den input mit 5, statt die steuer auf ein fuenftel
+    des zve zu berechnen.
+  formulierungen:
+  - Die Berechnung multipliziert den Input mit 5, statt die Steuer auf ein Fünftel
+    des zvE zu berechnen.
+  triage: nicht_echt
+- art: norm_teil
+  anker:
+  - ref
+  - § 34 abs. 1 s. 3 estg
+  formulierungen:
+  - Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde
+    Einkommen positiv,
+  - so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden
+    Einkommens entfallenden Einkommensteuer.
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: fuenffaches_ein_fuenftel_zve

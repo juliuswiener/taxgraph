@@ -2993,6 +2993,56 @@ regeln:
     est_verbleibendes_zve_plus_fuenftel_ao: 8000
   - est_verbleibendes_zve: 12000
     est_verbleibendes_zve_plus_fuenftel_ao: 13500
+- rule_id: p34_1_s3_fuenftel_negativ
+  hinweis: 'est_ao = 5 * est_ein_fuenftel_zve. est_ein_fuenftel_zve = die auf ein Fünftel des zu versteuernden Einkommens entfallende ESt (Tarif-Andockung § 31/§ 32b-Muster, INPUT - KEIN Selbst-Tarif, KEINE Tariffunktion in dieser Regel). Faktor 5 = exakte Struktur-Konstante (NICHT /100). SONDERPFAD § 34 Abs. 1 S. 3 - verbleibendes zvE (zvE minus ao-Einkuenfte) negativ UND zvE positiv; komplementaer zu p34_fuenftel_ao_est (S. 2, verbleibendes zvE >= 0), Dispatch in der § 2-Integration nach Vorzeichen. WICHTIG - im S.-3-Fall ist die TARIFLICHE ESt bereits das Fuenffache GESAMT (kein est_verbleibendes-Summand daneben, da verbleibendes zvE negativ -> Grundbetrag 0); die Integration setzt est_gesamt = est_ao ohne Addition. § 6b/§ 6c-Ausschluss (S. 4) = benannter Nachtrag.'
+  norm: § 34 Abs. 1 S. 3 EStG (Fuenftelregelung Sonderpfad - negatives verbleibendes zvE)
+  quellen:
+  - typ: gesetz
+    label: § 34 Abs. 1 S. 3 EStG (Sonderpfad negatives verbleibendes zvE)
+    datei: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer
+    auszug: Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde Einkommen positiv, so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer.
+  geltungsbedingungen:
+  - bedingung: verbleibendes_zve_negativ_zve_positiv
+    deckt_ab: Ist das verbleibende zu versteuernde Einkommen negativ und das zu versteuernde Einkommen positiv
+    quelle: § 34 Abs. 1 S. 3 EStG
+    beschreibung: 'Anwendungsfall S.3 - verbleibendes zvE (zvE minus ao) negativ UND zvE positiv. Komplementaer zu p34_fuenftel_ao_est (verbleibendes zvE >= 0); Dispatch nach Vorzeichen in der § 2-Integration.'
+  - bedingung: fuenffaches_ein_fuenftel_zve
+    deckt_ab: beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer
+    quelle: § 34 Abs. 1 S. 3 EStG
+    beschreibung: 'est_ao = 5 x der auf ein Fuenftel des zvE entfallenden ESt; est_ein_fuenftel_zve = Tarif(zvE/5) kommt als Input aus der Tarif-Andockung. Im S.3-Fall ist dies die tarifliche Gesamt-ESt (Grundbetrag 0).'
+  rundung: []
+  signature:
+    scope: FuenftelAoEstS3Negativ
+    inputs:
+      est_ein_fuenftel_zve: money
+    output: est_ao
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer
+    herkunft: amtlich
+    rechenweg: 'Amtlich EStH 2025 H 34.2 Bsp 2 (ZV, zvE 182.150, ao 225.000, verbleibendes -42.850): est(182.150/5=36.430) VZ2025 Splitting = 2.402; est_ao = 5 x 2.402 = 12.010,00.'
+    inputs:
+      est_ein_fuenftel_zve: 2402
+    expected: 12010.0
+  - quelle: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer
+    herkunft: synthetisch
+    rechenweg: 'est(zvE/5) = 3.000: est_ao = 5 x 3.000 = 15.000,00.'
+    inputs:
+      est_ein_fuenftel_zve: 3000
+    expected: 15000.0
+  - quelle: sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+    zitatanker: so beträgt die Einkommensteuer das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer
+    herkunft: synthetisch
+    rechenweg: 'WAECHTER kein Tarif (0): est_ao = 5 x 0 = 0,00.'
+    inputs:
+      est_ein_fuenftel_zve: 0
+    expected: 0.0
+  raster:
+  - est_ein_fuenftel_zve: 2402
+  - est_ein_fuenftel_zve: 3000
+  - est_ein_fuenftel_zve: 0
 - rule_id: p10d_2_verlustvortrag_abzug
   hinweis: sockel = wenn zusammenveranlagung dann 2000000 sonst 1000000 (Norm-Konstante nach Veranlagung). verlustabzug = min(verlustvortrag_bestand, sockel + (70 / 100) * max(0, gesamtbetrag_einkuenfte - sockel)). 70 ist ein PROZENTWERT -> Division durch 100 in decimal rechnen, Cent-Schnitt zuletzt. Bestand ist Input/State; Mehrjahres-Fortschreibung (Abs 4) gehoert NICHT in diese Regel.
   norm: § 10d Abs. 2 EStG (Verlustvortrag-Hoechstbetrag)

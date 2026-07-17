@@ -437,18 +437,15 @@ def catala_fuenftel(s: dict) -> int:
         est_ao = 5 * (est2 - est1)                 # p34_fuenftel_ao_est
         tarifliche_est = est1 + est_ao
 
-    NEGATIVFALL § 34 Abs. 1 S. 3 (verbleibendes zvE negativ) ist NICHT modelliert — der Scope klammert
-    ihn aus (est_ao = 5 x est(zvE/5), dritter Tarif-Input). H 34.2 Bsp 2 (Erwartung 12.010) ist als
-    benannte Luecke geparkt -> Backlog Task #12 (Scope-Erweiterung, rules/estg).
+    NEGATIVFALL § 34 Abs. 1 S. 3 (verbleibendes zvE negativ, zvE positiv) ist modelliert: est_ao =
+    5 x Tarif(zvE/5), tarifliche ESt = est_ao (Grundbetrag 0). Regel p34_1_s3_fuenftel_negativ
+    (Paket 10c Block 8). H 34.2 Bsp 2 (Erwartung 12.010) als Golden verankert.
     """
     year = s["veranlagungszeitraum"]
     ver = s.get("veranlagung")
     zve = int(s["zu_versteuerndes_einkommen"])
     ao = int(s["ausserordentliche_einkuenfte"])
     verbleibendes_zve = zve - ao
-    if verbleibendes_zve < 0:
-        raise ValueError("§ 34 Abs. 1 S. 3 (verbleibendes zvE negativ) nicht modelliert "
-                         "(s. Backlog Task #12).")
 
     def _tarif_cent(x: int) -> int:
         m = Money(f"{int(x)}.00")
@@ -461,6 +458,14 @@ def catala_fuenftel(s: dict) -> int:
         else:
             raise ValueError(f"unknown veranlagung: {ver}")
         return int(out.tarifliche_steuer)
+
+    # § 34 Abs. 1 S. 3: verbleibendes zvE negativ UND zvE positiv -> est_ao = 5 x Tarif(zvE/5);
+    # die tarifliche ESt IST das est_ao komplett (Grundbetrag 0, kein est1-Summand). Regel
+    # p34_1_s3_fuenftel_negativ (Sonderpfad-Schwester, faithful-Andockung-Artefakt nicht_echt).
+    if verbleibendes_zve < 0:
+        if zve <= 0:
+            raise ValueError("§ 34 Abs. 1 S. 3 setzt ein positives zvE voraus.")
+        return (5 * _tarif_cent(zve // 5)) // 100
 
     est1 = _tarif_cent(verbleibendes_zve)
     est2 = _tarif_cent(verbleibendes_zve + ao // 5)

@@ -1,0 +1,18 @@
+id: g34_1_s3_2025_zv_bsp2_negativ
+beschreibung: "§ 34 Abs. 1 S. 3 Sonderpfad (verbleibendes zvE negativ), ZV VZ2025, amtl. EStH 2025 H 34.2 Bsp 2"
+
+sachverhalt:
+  veranlagungszeitraum: 2025
+  veranlagung: zusammen
+  zu_versteuerndes_einkommen: 182150
+  ausserordentliche_einkuenfte: 225000
+
+erwartung:
+  tarifliche_est: 12010
+
+quelle:
+  authority: verwaltung
+  redistributable: true
+  fundstelle: "EStH 2025 H 34.2 (Berechnungsbeispiel 2 zu § 34 Abs. 1, corpus/vwv/esth2025/h-34-2.txt); § 34 Abs. 1 S. 3 EStG; verbleibendes zvE = 182.150 - 225.000 = -42.850 < 0 -> 5 x Tarif(36.430) VZ2025 Splitting = 5 x 2.402 = 12.010 (Paket 10c Block 8)"
+  datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  zitatanker: "das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer"
