@@ -4257,3 +4257,170 @@ entscheidungen:
       Block 5.
   entschieden_via: adjudikation-instructor-2026-07-17-p10c
   timestamp: '2026-07-17T13:40:54.372327+00:00'
+- rule_id: p15a_3_haftungsminderung
+  schluessel: '["annahme", "betrifft_kat", "haftungsminderung", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: nichtnegative_betraege
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - haftungsminderung
+    - interpretation
+    text: Haftungsminderung wird als positiver Geldbetrag interpretiert.
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T13:57:37.624036+00:00'
+- rule_id: p15a_3_haftungsminderung
+  schluessel: '["annahme", "betrifft_kat", "geleistete_haftungsbetraege", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: vermindert_um_geleistete_betraege
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - geleistete_haftungsbetraege
+    - interpretation
+    text: Geleistete Haftungsbeträge werden als von der Haftungsminderung abziehbar
+      angenommen.
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T13:57:38.404737+00:00'
+- rule_id: p15a_3_haftungsminderung
+  schluessel: '["annahme", "betrifft_kat", "deckel_verluste_abs1s2_11j", "interpretation"]'
+  triage: bedingung_neu
+  bedingung: deckel_11j_abs1s2_sinngemaess
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - deckel_verluste_abs1s2_11j
+    - interpretation
+    text: Der Deckel wird als Obergrenze für die Gewinnhinzurechnung angenommen.
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T13:57:39.176154+00:00'
+- rule_id: p15a_3_haftungsminderung
+  schluessel: '["annahme", "betrifft_kat", "haftungsminderung", "geltungsvoraussetzung"]'
+  triage: bedingung_neu
+  bedingung: haftungsminderung_abs1_s2
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - haftungsminderung
+    - geltungsvoraussetzung
+    text: Es wird vorausgesetzt, dass eine Haftungsminderung vorliegt.
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T13:57:39.950902+00:00'
+- rule_id: p15a_3_haftungsminderung
+  schluessel: '["annahme", "betrifft_kat", "deckel_verluste_abs1s2_11j", "geltungsvoraussetzung"]'
+  triage: bedingung_neu
+  bedingung: deckel_11j_abs1s2_sinngemaess
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - deckel_verluste_abs1s2_11j
+    - geltungsvoraussetzung
+    text: Es wird vorausgesetzt, dass Verluste nach Absatz 1 Satz 2 in den letzten
+      11 Jahren vorlagen.
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T13:57:40.742433+00:00'
+- rule_id: p15a_3_haftungsminderung
+  schluessel: '["norm_teil", "ref", "§ 15a abs. 3 s. 3 estg"]'
+  triage: bedingung_neu
+  bedingung: haftungsminderung_abs1_s2
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: false
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 15a abs. 3 s. 3 estg
+    text: Wird der Haftungsbetrag im Sinne des Absatzes 1 Satz 2 gemindert
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T14:01:05.898331+00:00'
+- rule_id: p15a_3_haftungsminderung
+  schluessel: '["norm_teil", "ref", "§ 15a abs. 3 s. 3 estg"]'
+  triage: bedingung_neu
+  bedingung: deckel_11j_abs1s2_sinngemaess
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 15a abs. 3 s. 3 estg
+    text: sind im Wirtschaftsjahr der Haftungsminderung und den zehn vorangegangenen
+      Wirtschaftsjahren Verluste nach Absatz 1 Satz 2 ausgleichs- oder abzugsfähig
+      gewesen
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T14:01:06.715639+00:00'
+- rule_id: p15a_3_haftungsminderung
+  schluessel: '["norm_teil", "ref", "§ 15a abs. 3 s. 3 estg"]'
+  triage: bedingung_neu
+  bedingung: deckel_11j_abs1s2_sinngemaess
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 15a abs. 3 s. 3 estg
+    text: Satz 2 gilt sinngemäß
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T14:01:07.533747+00:00'
+- rule_id: p15a_3_haftungsminderung
+  schluessel: '["norm_teil", "ref", "§ 15a abs. 3 s. 3 estg"]'
+  triage: bedingung_neu
+  bedingung: vermindert_um_geleistete_betraege
+  weitere_bedingungen: []
+  konvention: null
+  neue_bedingung: null
+  bedingung_deklariert: true
+  gemerged: true
+  item_snapshot:
+    art: norm_teil
+    anker:
+    - ref
+    - § 15a abs. 3 s. 3 estg
+    text: so ist dem Kommanditisten der Betrag der Haftungsminderung, vermindert um
+      auf Grund der Haftung tatsächlich geleistete Beträge, als Gewinn zuzurechnen
+    klasse: wirkt_hinein
+  entschieden_via: adjudikation-instructor-2026-07-17-p10c
+  timestamp: '2026-07-17T14:01:08.344467+00:00'

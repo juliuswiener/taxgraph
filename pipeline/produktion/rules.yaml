@@ -6296,6 +6296,85 @@ regeln:
     deckt_ab: für eine bestimmte Zeit nach diesem Tag
     quelle: § 5 Abs. 5 S. 1 Nr. 2 EStG
     beschreibung: 'KONVENTION (wie aktiver RAP C23): Zeitanteiligkeit in GANZEN MONATEN; Wortlaut ''bestimmte Zeit'', Monatsgranularitaet ist Berechnungs-Konvention, Tagesgenauigkeit = Nachtrag.'
+- rule_id: p15a_3_haftungsminderung
+  norm: § 15a Abs. 3 S. 3 EStG (Haftungsminderung-Gewinnhinzurechnung, 11-Jahres-Deckel)
+  hinweis: 'gewinnhinzurechnung = min(max(0, haftungsminderung - geleistete_haftungsbetraege), deckel_verluste_abs1s2_11j). Wird der Haftungsbetrag iSd Abs. 1 S. 2 (erweiterte Außenhaftung) gemindert (Haftungsminderung), ist der Minderungsbetrag - vermindert um auf Grund der Haftung tatsächlich geleistete Beträge - als Gewinn hinzuzurechnen (Abs. 3 S. 3), GEDECKELT (Satz 2 sinngemäß) auf die im Wirtschaftsjahr der Haftungsminderung UND in den zehn vorangegangenen Wirtschaftsjahren nach Abs. 1 S. 2 ausgleichs-/abzugsfähig gewesenen Verluste (11-Jahres-Fenster). haftungsminderung, geleistete_haftungsbetraege und das 11-J-Aggregat kommen als Sachverhalts-/State-Inputs herein. NACHTRAG Abs. 3 S. 4 - die Folgeverrechnung der zugerechneten Beträge (sie mindern die Gewinne im Wirtschaftsjahr der Zurechnung oder in späteren Wirtschaftsjahren) ist NICHT im Formel-Scope (nur S. 3) und ist ein benannter Nachtrag (Mehrjahres-State, §10d-Muster). NACHTRAG mehrjährige Verfolgung des 11-J-Fensters ebenfalls benannter Nachtrag. ABGRENZUNG - HAFTUNGsminderung (Haftsummen-Herabsetzung), NICHT Einlageminderung (Entnahme = p15a_3_einlageminderung); getrenntes Bezugs-Fenster (Abs. 1 S. 2- statt Abs. 1 S. 1-Verluste). Cent-genau, keine Norm-Konstante im Code.'
+  quellen:
+  - typ: gesetz
+    label: § 15a Abs. 3 S. 3 EStG (Haftungsminderung + 11-J-Deckel sinngemäß)
+    datei: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: ist dem Kommanditisten der Betrag der Haftungsminderung, vermindert um auf Grund der Haftung tatsächlich geleistete Beträge, als Gewinn zuzurechnen
+    auszug: Wird der Haftungsbetrag im Sinne des Absatzes 1 Satz 2 gemindert (Haftungsminderung) und sind im Wirtschaftsjahr der Haftungsminderung und den zehn vorangegangenen Wirtschaftsjahren Verluste nach Absatz 1 Satz 2 ausgleichs- oder abzugsfähig gewesen, so ist dem Kommanditisten der Betrag der Haftungsminderung, vermindert um auf Grund der Haftung tatsächlich geleistete Beträge, als Gewinn zuzurechnen; Satz 2 gilt sinngemäß.
+  signature:
+    scope: Haftungsminderung
+    inputs:
+      haftungsminderung: money
+      geleistete_haftungsbetraege: money
+      deckel_verluste_abs1s2_11j: money
+    output: gewinnhinzurechnung
+  raster:
+  - haftungsminderung: 100000
+    geleistete_haftungsbetraege: 20000
+    deckel_verluste_abs1s2_11j: 200000
+  - haftungsminderung: 300000
+    geleistete_haftungsbetraege: 0
+    deckel_verluste_abs1s2_11j: 150000
+  - haftungsminderung: 50000
+    geleistete_haftungsbetraege: 60000
+    deckel_verluste_abs1s2_11j: 100000
+  - haftungsminderung: 150000
+    geleistete_haftungsbetraege: 0
+    deckel_verluste_abs1s2_11j: 150000
+  test_seed:
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: ist dem Kommanditisten der Betrag der Haftungsminderung, vermindert um auf Grund der Haftung tatsächlich geleistete Beträge, als Gewinn zuzurechnen
+    herkunft: synthetisch
+    rechenweg: 'Deckel greift nicht: min(max(0, 100.000 - 20.000)=80.000; 200.000) = 80.000,00.'
+    inputs:
+      haftungsminderung: 100000
+      geleistete_haftungsbetraege: 20000
+      deckel_verluste_abs1s2_11j: 200000
+    expected: 80000.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: ist dem Kommanditisten der Betrag der Haftungsminderung, vermindert um auf Grund der Haftung tatsächlich geleistete Beträge, als Gewinn zuzurechnen
+    herkunft: synthetisch
+    rechenweg: 'Deckel kappt: min(max(0, 300.000 - 0)=300.000; 150.000) = 150.000,00.'
+    inputs:
+      haftungsminderung: 300000
+      geleistete_haftungsbetraege: 0
+      deckel_verluste_abs1s2_11j: 150000
+    expected: 150000.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: ist dem Kommanditisten der Betrag der Haftungsminderung, vermindert um auf Grund der Haftung tatsächlich geleistete Beträge, als Gewinn zuzurechnen
+    herkunft: synthetisch
+    rechenweg: 'Geleistete uebersteigen Minderung -> 0: min(max(0, 50.000 - 60.000)=0; 100.000) = 0,00.'
+    inputs:
+      haftungsminderung: 50000
+      geleistete_haftungsbetraege: 60000
+      deckel_verluste_abs1s2_11j: 100000
+    expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p15a_2026-07-14.txt
+    zitatanker: ist dem Kommanditisten der Betrag der Haftungsminderung, vermindert um auf Grund der Haftung tatsächlich geleistete Beträge, als Gewinn zuzurechnen
+    herkunft: synthetisch
+    rechenweg: 'GRENZFALL gleich: min(max(0, 150.000 - 0)=150.000; 150.000) = 150.000,00.'
+    inputs:
+      haftungsminderung: 150000
+      geleistete_haftungsbetraege: 0
+      deckel_verluste_abs1s2_11j: 150000
+    expected: 150000.0
+  geltungsbedingungen:
+  - bedingung: haftungsminderung_abs1_s2
+    deckt_ab: Wird der Haftungsbetrag im Sinne des Absatzes 1 Satz 2 gemindert
+    quelle: § 15a Abs. 3 S. 3 EStG
+    beschreibung: 'Ausloeser - Minderung des Haftungsbetrags iSd Abs. 1 S. 2 (erweiterte Außenhaftung, eingetragene minus geleistete Einlage). NICHT die Einlageminderung durch Entnahme (S. 1, p15a_3_einlageminderung).'
+  - bedingung: vermindert_um_geleistete_betraege
+    deckt_ab: vermindert um auf Grund der Haftung tatsächlich geleistete Beträge
+    quelle: § 15a Abs. 3 S. 3 EStG
+    beschreibung: 'Zurechnungsbetrag = Haftungsminderungsbetrag abzueglich der auf Grund der Haftung tatsaechlich geleisteten Betraege (Floor bei 0).'
+  - bedingung: deckel_11j_abs1s2_sinngemaess
+    deckt_ab: im Wirtschaftsjahr der Haftungsminderung und den zehn vorangegangenen Wirtschaftsjahren Verluste nach Absatz 1 Satz 2 ausgleichs- oder abzugsfähig gewesen
+    quelle: § 15a Abs. 3 S. 3 EStG
+    beschreibung: 'Deckel (Satz 2 sinngemaess) - Zurechnung hoechstens bis zu den im WJ der Haftungsminderung + 10 vorangeg. WJ nach Abs. 1 S. 2 ausgleichs-/abzugsfaehig gewesenen Verlusten (11-Jahres-Fenster, Abs.1-S.2-Verluste, NICHT Abs.1-S.1). 11-J-Aggregat als State-Input; mehrjaehrige Verfolgung + Abs. 3 S. 4 Folgeverrechnung = benannte Nachtraege.'
 - rule_id: p15a_3_einlageminderung
   norm: § 15a Abs. 3 EStG (Einlageminderung-Gewinnhinzurechnung, 11-Jahres-Deckel)
   hinweis: gewinnhinzurechnung = min(einlageminderung, ausgleichsfaehige_verluste_11j_fenster). Wird das negative Kapitalkonto durch Entnahmen erhöht (Einlageminderung), ist der Betrag als Gewinn hinzuzurechnen (Abs. 3 S. 1), GEDECKELT (S. 2) auf die im Wirtschaftsjahr der Einlageminderung UND in den zehn vorangegangenen Wirtschaftsjahren ausgleichs-/abzugsfähig gewesenen Verlustanteile (11-Jahres-Fenster). Das 11-Jahres-Aggregat kommt als Sachverhalts-/State-Input herein; die mehrjährige Verfolgung selbst = benannter Nachtrag (§10d-Muster). Cent-genau, keine Norm-Konstante im Code.

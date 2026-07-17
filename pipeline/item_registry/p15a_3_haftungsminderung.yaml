@@ -1,0 +1,65 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p15a_3_haftungsminderung
+version: 9
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haftungsminderung
+  - interpretation
+  formulierungen:
+  - Haftungsminderung wird als positiver Geldbetrag interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - geleistete_haftungsbetraege
+  - interpretation
+  formulierungen:
+  - Geleistete Haftungsbeträge werden als von der Haftungsminderung abziehbar angenommen.
+  triage: bedingung_neu
+  bedingung: vermindert_um_geleistete_betraege
+- art: annahme
+  anker:
+  - betrifft_kat
+  - deckel_verluste_abs1s2_11j
+  - interpretation
+  formulierungen:
+  - Der Deckel wird als Obergrenze für die Gewinnhinzurechnung angenommen.
+  triage: bedingung_neu
+  bedingung: deckel_11j_abs1s2_sinngemaess
+- art: annahme
+  anker:
+  - betrifft_kat
+  - haftungsminderung
+  - geltungsvoraussetzung
+  formulierungen:
+  - Es wird vorausgesetzt, dass eine Haftungsminderung vorliegt.
+  triage: bedingung_neu
+  bedingung: haftungsminderung_abs1_s2
+- art: annahme
+  anker:
+  - betrifft_kat
+  - deckel_verluste_abs1s2_11j
+  - geltungsvoraussetzung
+  formulierungen:
+  - Es wird vorausgesetzt, dass Verluste nach Absatz 1 Satz 2 in den letzten 11 Jahren
+    vorlagen.
+  triage: bedingung_neu
+  bedingung: deckel_11j_abs1s2_sinngemaess
+- art: norm_teil
+  anker:
+  - ref
+  - § 15a abs. 3 s. 3 estg
+  formulierungen:
+  - Wird der Haftungsbetrag im Sinne des Absatzes 1 Satz 2 gemindert
+  - sind im Wirtschaftsjahr der Haftungsminderung und den zehn vorangegangenen Wirtschaftsjahren
+    Verluste nach Absatz 1 Satz 2 ausgleichs- oder abzugsfähig gewesen
+  - Satz 2 gilt sinngemäß
+  - so ist dem Kommanditisten der Betrag der Haftungsminderung, vermindert um auf
+    Grund der Haftung tatsächlich geleistete Beträge, als Gewinn zuzurechnen
+  triage: bedingung_neu
+  klasse: wirkt_hinein
+  bedingung: vermindert_um_geleistete_betraege
