@@ -127,7 +127,7 @@ bindungen:
     beispielwert: 300000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, Gebäude-AfA — zeilen-spezifisch (mehrere AfA-Zeilen, E0703304 ist ein Vorjahres-Flag-Kontext); Anlage-V-Vordruck-Freeze abwarten, dann Zeilen-Cross-Check wie Anlage N."
+    elster_kz_grund: "Anlage-V-Cross-Check 2026-07-17: kein einzelner Gebäude-AfA-Summen-Kz — die AfA wird über Art-Flag (E0703302) + Detail-Betrag (E0703304 je Zuordnung Direkt/Verhaelt, § 7 Abs. 4/5/5a) deklariert; 1:1-Eintrag wäre semantisch schief. Bleibt Lücke."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 1 EStG"
@@ -143,7 +143,7 @@ bindungen:
     beispielwert: 200000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, Schuldzinsen — kein eigenes XSD-Feld-Label (zeilen-spezifisch); Anlage-V-Vordruck-Freeze abwarten, dann Zeilen-Cross-Check."
+    elster_kz_grund: "Anlage-V-Cross-Check 2026-07-17: die E10-Submission deklariert KEIN eigenes Schuldzinsen-Betrags-Kz — der Vordruck-Detailbetrag aggregiert in die WK-Summe (E0703838). Bleibt Lücke (Modell feiner als Submission)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 1 EStG"
@@ -159,7 +159,7 @@ bindungen:
     beispielwert: 100000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, Erhaltungsaufwand — kein eigenes XSD-Feld-Label (zeilen-spezifisch); Anlage-V-Vordruck-Freeze abwarten, dann Zeilen-Cross-Check."
+    elster_kz_grund: "Anlage-V-Cross-Check 2026-07-17: kein eigenes Erhaltungsaufwand-Betrags-Kz in der E10-Submission — aggregiert in die WK-Summe (E0703838). Bleibt Lücke."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 1 EStG"
@@ -175,7 +175,7 @@ bindungen:
     beispielwert: 50000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, sonstige Werbungskosten — zeilen-spezifisch; Anlage-V-Vordruck-Freeze abwarten, dann Zeilen-Cross-Check."
+    elster_kz_grund: "Anlage-V-Cross-Check 2026-07-17: kein eigenes Betrags-Kz — aggregiert in die WK-Summe (E0703838). Bleibt Lücke."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 1 EStG"
@@ -193,7 +193,7 @@ bindungen:
     beispielwert: 800000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, Summe WK — E0703838 (Abzugsfähige Werbungskosten) ist die Summen-Kz; unsere p21-Scheibe führt WK zeilen-aufgelöst, Summen-Kz an EIN Feld wäre schief. Anlage-V-Vordruck-Freeze abwarten, dann Zeilen-Cross-Check."
+    elster_kz_grund: "Anlage-V-Cross-Check 2026-07-17: unser Modell ist feiner als die Submission — die WK-Summe entsteht deterministisch in der est_mapping-Schicht aus den Detail-Slots (afa/schuldzinsen/erhaltung/sonstige). AGGREGATIONS-ZIEL-Kz = E0703838 (Abzugsfähige Werbungskosten), mit Zuordnungsart-Vorbehalt ([Einz]/[Sum]/[Direkt]/[Verhaelt], Mehrfachzeilen je Objekt). Kein Direkt-Eintrag."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 2 EStG"

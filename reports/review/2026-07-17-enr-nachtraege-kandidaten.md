@@ -66,4 +66,42 @@ kap_verlust_sonstige=**E1901201**, vv_einnahmen=**E0700201**. `elster_kz_grund` 
   kist_gezahlt/erstattet + berufsausbildung_aufwendungen (Spalten-Kontext / kein XSD-Label).
 
 Gates: 54/54 grün (inkl. Gate c über die 5 neuen Kz). Offener Folge-Posten: Anlage-V-Zeilen-Cross-Check
-für vv_werbungskosten + vv_gebaeude_afa (Freezes seit 94ded2a da) → separater Kandidaten-Nachtrag.
+für vv_werbungskosten + vv_gebaeude_afa (Freezes seit 94ded2a da) → separater Kandidaten-Nachtrag (s.u.).
+
+## NACHTRAG — Anlage-V-Zeilen-Cross-Check (vv_werbungskosten + vv_gebaeude_afa)
+
+**Quellen:** `sources/bfinv/anlage_v_2024.txt` (Vordruck) + `anleitung_anlage_v_2025.txt` (verwaltung) +
+E10-2025 (kz_extract). **Methode-Grenze (Vermerk):** die E10-2025 kodiert die VordruckZeilennummer je
+E-Nr NICHT als statisches XSD-Attribut (nur als Label-Platzhalter `$E….Vordruckzeile$`); die
+autoritative VordruckZeilennummer liegt in der ERiC-Laufzeit (FehlerRegelpruefung). Der Cross-Check hier
+stützt sich daher auf **Vordruck-Zeile (Form-Kz) ⋂ E10-Label ⋂ Anleitungs-Konzept** (STARK-Kriterium
+wie Anlage N), nicht auf ein Zeilennummer-Attribut.
+
+**KERN-BEFUND (strukturell, wichtig):** die Anlage-V-**Submission** (E10) deklariert die
+**Werbungskosten als SUMME** je Objekt („Abzugsfähige Werbungskosten") + AfA-Felder — aber **NICHT**
+Schuldzinsen / Erhaltungsaufwand / sonstige WK als **eigene Betrags-Kz**. Der Vordruck hat Detail-Zeilen
+(33–84), das Submission-Schema **aggregiert** sie in die WK-Summe. Unser p21-Zuschnitt (getrennte Slots
+gebaeude_afa / schuldzinsen / erhaltungsaufwand / sonstige_werbungskosten) ist damit **feiner als das
+E10-Submission** — ein Modell-vs-Submission-Mismatch (analog kap_gewinn_sonstige).
+
+| feld_id | Kandidat / Befund | E-Nr | Sektion | Vordruck (2024) | Konfidenz / Vermerk |
+|---|---|---|---|---|---|
+| vv_werbungskosten (p21_2 Summe) | „Abzugsfähige Werbungskosten" (Summen-Kz) | **E0703838** | Einz | Zeile 35, Form-Kz 30 | MITTEL — **Mehrfachzeilen** je Objekt × Zuordnungsart ([Einz]/[Sum]/[Direkt]/[Verhaelt]: E0703838/E0703406/E0703511/…). E0703838 = einfacher Einzel-Objekt-Fall (MVP). Bei 2024/2025-Zeilendrift regiert das XSD-Attribut (Laufzeit). |
+| vv_gebaeude_afa | „Absetzung für Abnutzung" (AfA-Art + AfA-Betrag) | E0703302 (Art) / E0703304 (Betrag „wie Vorjahr/lt. Erläuterung") | Direkt | Zeile 33–45 (Anleitung) | MITTEL/GAP — kein einzelner „Gebäude-AfA-Summe"-Kz; die AfA wird über **Art-Flag + Detail-Betrag** je Zuordnung (Direkt/Verhaelt) deklariert; Zuordnung hängt an Objekt-/AfA-Methoden-Struktur (§ 7 Abs. 4/5/5a). |
+| vv_schuldzinsen | — kein eigenes Submission-Kz | — | — | Vordruck-Detail-Zeile ~46 ff. | **GAP bestätigt** — geht in die WK-Summe (E0703838) ein, kein eigenes E-Nr. |
+| vv_erhaltungsaufwand | — kein eigenes Submission-Kz | — | — | Vordruck-Detail-Zeile | **GAP bestätigt** — in WK-Summe aggregiert. |
+| vv_sonstige_wk | — kein eigenes Submission-Kz | — | — | Vordruck-Detail | **GAP bestätigt** — in WK-Summe aggregiert. |
+
+**RULING (Instructor msg 2446) = ALLE DREI GAP** (konsistent zur kap_gewinn_sonstige-Linie —
+eingetragen wird nur, was 1:1 stimmt):
+1. vv_werbungskosten → **GAP**. Die WK-Summe entsteht deterministisch in der **est_mapping-Schicht**
+   aus den Detail-Slots; **Aggregations-Ziel-Kz E0703838** (Zuordnungsart-Vorbehalt) im GAP-Grund
+   dokumentiert — kein Direkt-Eintrag.
+2. vv_gebaeude_afa → **GAP** (AfA über Art-Flag E0703302 + Detail-Betrag E0703304, kein Summen-Kz).
+3. vv_schuldzinsen / vv_erhaltungsaufwand / vv_sonstige_wk → **GAP** (aggregiert in die WK-Summe
+   E0703838, kein eigenes Submission-Kz).
+
+**Umgesetzt:** die 5 GAP-Gründe in `bindung_kap_vv_familie.yaml` sind entsprechend geschärft (mit
+Datum + Aggregations-Ziel + Modell-vs-Submission-Begründung). Gate grün. Die Methode-Grenze
+(VordruckZeilennummer nur zur ERiC-Laufzeit) bleibt als Doktrin-Befund oben stehen. Damit ist der
+E-Nr-Baustein ehrlich abgeschlossen.
