@@ -40,6 +40,7 @@ ERiC-Pfad aus $ERIC_DIR (Default ~/02_Software/eric), nie hart im Code.
 from __future__ import annotations
 
 import os
+import re
 import sys
 import tempfile
 
@@ -77,32 +78,77 @@ def _stufe_a() -> bool:
 
 
 def _stufe_b() -> tuple[bool, str]:
-    """checkESt (ERIC_VALIDIERE, offline). Rueckgabe (gate_ok, verdikt)."""
+    """checkESt (ERIC_VALIDIERE, offline). Rueckgabe (gate_ok, verdikt). rc explizit klassifiziert
+    (Falsch-Gruen-Sperre): RC_IO_KEIN_TICKET (610301200) liefert 0 Fehler, ist aber NICHT geprueft."""
     with open(MINIMAL_XML, "rb") as f:
         xml, hid = CE._mit_hersteller_id(f.read())
     rc, antwort = CE.validate(xml, DATENART)
-    CE.beende()
+    klasse = CE.klassifiziere_rc(rc)
     print(f"[eric-gate] Stufe B  Hersteller-ID: "
           f"{hid if hid else 'NICHT gesetzt ($ELSTER_HERSTELLER_ID leer)'}")
-    print(f"[eric-gate] Stufe B  EricBearbeiteVorgang({DATENART}, ERIC_VALIDIERE) -> rc={rc}")
-    if rc == 0:
+    print(f"[eric-gate] Stufe B  EricBearbeiteVorgang({DATENART}, ERIC_VALIDIERE) -> rc={rc} "
+          f"[{klasse}]")
+    if rc == CE.RC_OK:
         return True, "PLAUSIBEL (rc==0, Hersteller-ID gesetzt)"
     if rc == HID_GESPERRT:
         return True, ("GESPERRT-Grenze (rc=610301202): Hersteller-ID Pflicht auch fuer "
                       "Validierung — Julius-Territorium, erwartete credential-freie Grenze")
+    if rc == CE.RC_IO_KEIN_TICKET:
+        return False, ("I/O-Gate (rc=610301200): short-circuit VOR der Plausibilitaet, 0 Fehler "
+                       "≠ fehlerfrei -> RED (NICHT als gruen werten)")
     kurz = (antwort[:300].replace("\n", " ") if antwort else "(keine Ericantwort)")
-    return False, f"UNERWARTETER rc={rc} -> RED. Ericantwort: {kurz}"
+    return False, f"UNERWARTETER rc={rc} [{klasse}] -> RED. Ericantwort: {kurz}"
+
+
+def _stufe_c() -> tuple[bool, str]:
+    """Trunkierungs-Haertung (Falsch-Gruen-Sperre gegen Fehler-Kappung). Ein Fixture mit >20
+    Fehlern MUSS mit angehobenem Cap >20 Fehler liefern; mit Default-Cap 20 genau 20 (Tamper).
+    RED-faehig: entfernt jemand die Cap-Anhebung in checkest_gate, faellt diese Stufe."""
+    with open(MINIMAL_XML, "rb") as f:
+        base, hid = CE._mit_hersteller_id(f.read())
+    if not hid:
+        # Ohne registrierte Hersteller-ID kurzschliesst jede Validierung am GESPERRT-Gate (0 Fehler)
+        # -> die Trunkierung ist nicht pruefbar. Wie Stufe-B-Grenze: uebersprungen, nicht RED.
+        print("[eric-gate] Stufe C  Trunkierung: uebersprungen ($ELSTER_HERSTELLER_ID leer — "
+              "Plausibilitaetspfad nicht erreichbar).")
+        return True, "uebersprungen (credential-frei, wie Stufe-B-Grenze)"
+    corrupt = re.sub(rb"<(E\d{7})>([^<]*)</\1>", rb"<\1>ZZ99XX</\1>", base)
+    eric = CE._load_and_init()          # Produktionspfad: hebt Cap auf CE.VALIDIERE_MELDUNGEN_MAX
+
+    def _cap(w):
+        for nm in (b"validieren.fehler_max", b"validieren.hinweise_max"):
+            eric.EricEinstellungSetzen(nm, str(w).encode())
+
+    # (1) PRODUKTIONSPFAD (ohne manuelles Setzen) MUSS >20 liefern -> beweist die Auto-Anhebung in
+    #     _load_and_init. Wird sie entfernt, faellt DIESE Stufe (echter Regressions-Guard).
+    _rc, ant_p = CE.validate(corrupt, DATENART)
+    n_prod = ant_p.count("<FehlerRegelpruefung>")
+    # (2) TAMPER: Cap zurueck auf 20 -> genau 20 (beweist, dass das Fixture >20 Fehler HAT und der
+    #     Default kappt). Danach wieder anheben, damit der Prozess-Zustand sauber bleibt.
+    _cap(20)
+    _rc, ant_d = CE.validate(corrupt, DATENART)
+    n_default = ant_d.count("<FehlerRegelpruefung>")
+    _cap(CE.VALIDIERE_MELDUNGEN_MAX)
+    ok = n_prod > 20 and n_default == 20
+    print(f"[eric-gate] Stufe C  Trunkierung: Produktionspfad -> {n_prod} Fehler (soll >20), "
+          f"Tamper Cap=20 -> {n_default} Fehler (soll 20)")
+    return ok, (f"Auto-Anhebung wirksam ({n_prod}>20), Default kappt ({n_default}=20)" if ok
+                else f"FAIL: Produktion={n_prod} (soll >20), Tamper-Default={n_default} (soll 20)")
 
 
 def run_gate() -> int:
     print(f"[eric-gate] ERiC-Offline-CI-Gate VZ {VZ} — ERIC_VALIDIERE, kein Versand, "
           f"keine Datei-Credentials.")
     a_ok = _stufe_a()
-    b_ok, verdikt = _stufe_b()
-    print(f"[eric-gate] Stufe B  Verdikt: {verdikt}")
-    gate_ok = a_ok and b_ok
+    b_ok, verdikt_b = _stufe_b()
+    print(f"[eric-gate] Stufe B  Verdikt: {verdikt_b}")
+    c_ok, verdikt_c = _stufe_c()
+    print(f"[eric-gate] Stufe C  Verdikt: {verdikt_c}")
+    CE.beende()
+    gate_ok = a_ok and b_ok and c_ok
     print(f"[eric-gate] GATE: {'GRUEN' if gate_ok else 'ROT'} "
-          f"(Stufe A {'ok' if a_ok else 'FAIL'}, Stufe B {'ok' if b_ok else 'FAIL'})")
+          f"(Stufe A {'ok' if a_ok else 'FAIL'}, Stufe B {'ok' if b_ok else 'FAIL'}, "
+          f"Stufe C {'ok' if c_ok else 'FAIL'})")
     return 0 if gate_ok else 1
 
 

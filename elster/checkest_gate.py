@@ -29,6 +29,35 @@ from smoke_test import find_eric_lib  # noqa: E402  (teilt die $ERIC_DIR-Aufloes
 
 ERIC_VALIDIERE = 1 << 1                 # nur pruefen, NICHT senden (ericapi bearbeitungsflags)
 
+# Falsch-Gruen-Sperre gegen Fehler-Kappung (P9-R3-Fund 2026-07-17): ERiC begrenzt die im
+# Rueckgabepuffer gemeldeten Fehler-/Hinweismeldungen per Default auf 20 ("Weitere Fehler-
+# meldungen werden abgeschnitten", Entwicklerhandbuch Kap. 4.1.2.1). Eine Erklaerung mit >20
+# Fehlern verliert Fehler 21+ STILL. Wir heben beide Caps auf das dokumentierte Maximum an.
+# Erlaubter Wertebereich lt. Handbuch: 1–1000 (10000 ist WERT_UNGUELTIG / rc=610001861).
+VALIDIERE_MELDUNGEN_MAX = 1000
+
+# ERiC-rc-Klassen (Falsch-Gruen-Sperre): "0 Fehler im Puffer" ist NUR gruen, wenn rc==0.
+RC_OK = 0
+RC_PLAUSIBILITAET = 610001002           # Plausibilitaetsfehler -> Fehlerliste im Rueckgabepuffer
+RC_IO_KEIN_TICKET = 610301200           # I/O-Gate (z.B. Nutzdatenticket) -> short-circuit VOR Plausi
+RC_HERSTELLER_GESPERRT = 610301202      # Test-Hersteller-ID gesperrt
+
+
+def klassifiziere_rc(rc: int) -> str:
+    """rc einer Validierung klassifizieren. Wichtig: RC_IO_KEIN_TICKET liefert 0 Fehler im
+    Puffer, ist aber NICHT geprueft (short-circuit vor der Plausibilitaet) — nie als gruen werten."""
+    return {RC_OK: "plausibel", RC_PLAUSIBILITAET: "plausibilitaet_fehler",
+            RC_IO_KEIN_TICKET: "io_gate_nicht_geprueft",
+            RC_HERSTELLER_GESPERRT: "hersteller_id_gesperrt"}.get(rc, "sonstig")
+
+
+def gekappt_verdacht(antwort: str) -> bool:
+    """Rest-Trunkierungs-Doktrin: erreicht die Fehlerzahl den (bereits angehobenen) Cap, KANN die
+    Liste weiter gekappt sein — dann nie als vollstaendig behandeln, sondern Fehler beheben und
+    RE-validieren (Fixpunkt bis rc==0)."""
+    return antwort.count("<FehlerRegelpruefung>") >= VALIDIERE_MELDUNGEN_MAX
+
+
 _STATE = {"eric": None, "lib_dir": None}
 
 
@@ -49,6 +78,8 @@ def _load_and_init():
     eric.EricRueckgabepufferInhalt.argtypes = [ctypes.c_void_p]
     eric.EricRueckgabepufferFreigeben.argtypes = [ctypes.c_void_p]
     eric.EricInitialisiere.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+    eric.EricEinstellungSetzen.restype = ctypes.c_int
+    eric.EricEinstellungSetzen.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
     eric.EricBearbeiteVorgang.restype = ctypes.c_int
     eric.EricBearbeiteVorgang.argtypes = [
         ctypes.c_char_p,   # datenpuffer (XML)
@@ -63,6 +94,14 @@ def _load_and_init():
     rc = eric.EricInitialisiere(lib_dir.encode(), log_dir.encode())
     if rc != 0:
         raise RuntimeError(f"EricInitialisiere fehlgeschlagen (rc={rc}).")
+    # Falsch-Gruen-Sperre: Fehler-/Hinweis-Cap auf das Handbuch-Maximum anheben, damit keine
+    # Fehler stillschweigend abgeschnitten werden (Default 20 -> VALIDIERE_MELDUNGEN_MAX).
+    for name in (b"validieren.fehler_max", b"validieren.hinweise_max"):
+        r = eric.EricEinstellungSetzen(name, str(VALIDIERE_MELDUNGEN_MAX).encode())
+        if r != 0:
+            raise RuntimeError(f"EricEinstellungSetzen({name.decode()}={VALIDIERE_MELDUNGEN_MAX}) "
+                               f"fehlgeschlagen (rc={r}) — Fehler-Cap NICHT angehoben, "
+                               f"Falsch-Gruen-Risiko. Abbruch statt stiller Kappung.")
     _STATE.update(eric=eric, lib_dir=lib_dir)
     return eric
 

@@ -260,41 +260,45 @@ def phase2() -> list[dict]:
     return catalog
 
 
-def phase3() -> dict:
-    print("\n=== P3  Trunkierungs-Sonde (Falsch-Grün-Sperre gegen Fehler-Kappung) ===")
-    base = _base()
-    # Viele unabhaengige PLAUSIBILITAETS-Fehler gleichzeitig stapeln. WICHTIG: NutzdatenTicket
-    # NICHT droppen — das ist ein I/O-Gate (rc=610301200), das VOR der Plausibilitaet
-    # kurzschliesst und 0 FehlerRegelpruefung liefert (verfaelscht die Zaehlung).
-    x = base
-    for tag in ["E0203003", "E0203501", "E0102002", "E0200201", "E1900601", "E0203503",
-                "E0203504"]:
-        x = _drop(x, tag)
-    x = x.replace(b"<Zeitraum>2025</Zeitraum>", b"<Zeitraum>2024</Zeitraum>")
-    rc, fehler = validate(x)
-    n_struktur = len(fehler)
-    print(f"  (a) 8 Struktur-Drops: rc={rc}, {n_struktur} FehlerRegelpruefung zurueck "
-          f"(alle -> keine Kappung bei {n_struktur}).")
+def _set_cap(wert: int) -> None:
+    """validieren.fehler_max/hinweise_max im laufenden Prozess setzen (fuer den Tamper-Beweis)."""
+    eric = CE._load_and_init()
+    for name in (b"validieren.fehler_max", b"validieren.hinweise_max"):
+        r = eric.EricEinstellungSetzen(name, str(wert).encode())
+        if r != 0:
+            sys.exit(f"ABBRUCH: EricEinstellungSetzen({name.decode()}={wert}) rc={r}")
 
-    # (b) Cap hart ausreizen: JEDEN numerischen E-Feld-Inhalt mit unzulaessigem Wert ueberschreiben
-    # -> ein Format-Fehler je Feld. Zeigt, ob ERiC bei vielen Fehlern kappt.
+
+def phase3() -> dict:
+    print("\n=== P3  Trunkierungs-Härtung + Tamper-Beweis (Falsch-Grün-Sperre) ===")
+    base = _base()
+    # Cap hart ausreizen: JEDEN numerischen E-Feld-Inhalt mit unzulaessigem Wert ueberschreiben
+    # -> ein Format-Fehler je numerischem Feld (String-Felder akzeptieren 'ZZ99XX', kein Fehler).
     corrupt = re.sub(rb"<(E\d{7})>([^<]*)</\1>", rb"<\1>ZZ99XX</\1>", base)
     n_felder = len(re.findall(rb"<E\d{7}>ZZ99XX</E\d{7}>", corrupt))
-    rc2, fehler2 = validate(corrupt)
-    n_cap = len(fehler2)
-    gekappt = n_felder > n_cap
-    print(f"  (b) {n_felder} Felder korrumpiert: rc={rc2}, {n_cap} FehlerRegelpruefung zurueck "
-          f"-> {'GEKAPPT' if gekappt else 'vollstaendig'}.")
-    if gekappt:
-        print(f"      *** TRUNKIERUNG BESTAETIGT: {n_felder} Fehler eingebaut, nur {n_cap} gemeldet. "
-              f"checkESt kappt die FehlerRegelpruefung-Liste bei {n_cap}. FALSCH-GRUEN-RISIKO: eine "
-              f"Erklaerung mit >{n_cap} Fehlern verliert Fehler {n_cap+1}+ STILL. ***")
-        print(f"      Mitigation (setting-unabhaengig): Fixpunkt-Revalidierung — gemeldete Fehler "
-              f"beheben, RE-validieren, wiederholen bis rc==0; NIE eine nicht-leere Fehlerliste als "
-              f"vollstaendig behandeln. Cap-Anhebung via EricEinstellungSetzen ist im Entwickler-"
-              f"handbuch ('Bedeutung der ERiC-Einstellungen') zu suchen (PDF nicht im Extract) — offen.")
-    return {"struktur_drops": n_struktur, "korrumpierte_felder": n_felder,
-            "gemeldete_fehler_cap": n_cap, "trunkierung_bestaetigt": gekappt}
+
+    # (a) Default-Kappung REPRODUZIEREN: Cap zurueck auf 20 -> genau 20 gemeldet (Trunkierung).
+    _set_cap(20)
+    _rc_d, fehler_default = validate(corrupt)
+    n_default = len(fehler_default)
+
+    # (b) Haertung: Cap auf Handbuch-Maximum -> vollstaendige Liste (>20), keine Trunkierung mehr.
+    _set_cap(CE.VALIDIERE_MELDUNGEN_MAX)
+    _rc_h, fehler_hart = validate(corrupt)
+    n_hart = len(fehler_hart)
+
+    print(f"  {n_felder} numerische Felder korrumpiert.")
+    print(f"  (a) Cap=20 (Default):                 {n_default} FehlerRegelpruefung gemeldet -> GEKAPPT.")
+    print(f"  (b) Cap={CE.VALIDIERE_MELDUNGEN_MAX} (Härtung, Handbuch-Max): {n_hart} gemeldet "
+          f"-> {'vollstaendig (Kappung aufgehoben)' if n_hart > n_default else 'UNVERAENDERT — Härtung wirkungslos!'}")
+    tamper_ok = n_default == 20 and n_hart > n_default
+    print(f"  TAMPER-BEWEIS: {'BESTANDEN' if tamper_ok else 'GESCHEITERT'} "
+          f"(Default kappt bei 20 UND Härtung liefert {n_hart}>{n_default}).")
+    print(f"  Doktrin zusaetzlich: rc-Klasse pruefen (checkest_gate.klassifiziere_rc) — "
+          f"RC_IO_KEIN_TICKET (610301200) liefert 0 Fehler, ist aber NICHT geprueft; nie als gruen "
+          f"werten. Fixpunkt-Revalidierung bis rc==0 bleibt Doktrin fuer den Fix-Loop.")
+    return {"korrumpierte_felder": n_felder, "cap_default": n_default,
+            "cap_haertung": n_hart, "tamper_beweis": tamper_ok}
 
 
 def phase4(reps: int = 8) -> dict:
