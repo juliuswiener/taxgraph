@@ -1,0 +1,35 @@
+# Verpflegungsmehraufwand § 9 Abs. 4a Satz 3 EStG — Inlandspauschalen, VZ 2026.
+# 28 Euro je vollen Kalendertag (24 h abwesend), 14 Euro je An-/Abreisetag mit Übernachtung,
+# 14 Euro je eintägigem Tag mit > 8 h Abwesenheit. Werte VZ-konstant seit 2020 (BGBl. I 2019 S. 2451).
+# Auslandspauschalen (Satz 5, länderweise BMF) NICHT modelliert — benannte Lücke.
+# Datenquelle: eingefrorene Gesetzesfassung sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt.
+
+parameter: verpflegung_p9_4a
+veranlagungszeitraum: 2026
+authority: gesetz
+redistributable: true
+gueltig_ab: "2026-01-01"
+
+pauschale_24h:
+  wert: 28
+  einheit: euro_je_tag
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "4a", satz: "3 Nr. 1"}
+  datenquelle: "§ 9 Abs. 4a S. 3 Nr. 1 EStG i.d.F. VZ 2026"
+  zitatanker: "28 Euro für jeden Kalendertag, an dem der Arbeitnehmer 24 Stunden von seiner"
+
+pauschale_an_abreise:
+  wert: 14
+  einheit: euro_je_tag
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "4a", satz: "3 Nr. 2"}
+  datenquelle: "§ 9 Abs. 4a S. 3 Nr. 2 EStG i.d.F. VZ 2026"
+  zitatanker: "jeweils 14 Euro für den An- und Abreisetag"
+
+pauschale_ab_8h:
+  wert: 14
+  einheit: euro_je_tag
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "4a", satz: "3 Nr. 3"}
+  datenquelle: "§ 9 Abs. 4a S. 3 Nr. 3 EStG i.d.F. VZ 2026"
+  zitatanker: "14 Euro für den Kalendertag, an dem der Arbeitnehmer ohne Übernachtung außerhalb"
