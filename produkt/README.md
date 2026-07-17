@@ -39,7 +39,7 @@ bescheid_fn = unsicherheit.bescheid_via_slots(bindung, slot_fn, quantitaet="abzi
 band = unsicherheit.intervall(snapshot, bindung, bescheid_fn)   # {intervall: {min_cent, max_cent, offene_achsen, nicht_fixierbar, ...}, beitraege: [{feld_id, spanne_cent, ...}]}  — alles in CENT
 
 # 5. Deklaration (fail-closed: nur zustand=bestaetigt fließt; ein vorlaeufig -> vollstaendig=False)
-dekl = est_mapping.deklariere(snapshot, bindung, snapshot_id=sid)  # {deklaration E-Nr->Wert, lossy, nicht_deklariert, unvollstaendig, vollstaendig}
+dekl = est_mapping.deklariere(snapshot, bindung, snapshot_id=sid)  # {deklaration E-Nr->Wert, dokumentiert (Σ nicht-deklariert), nicht_deklariert, unvollstaendig, vollstaendig}
 
 # 6. Nachvollziehbarkeit
 just  = traverser.justification(store, feld_id, bindung)     # Vorwärts-Trace: wert/zustand/herkunft/anker_ref/regel_id
@@ -78,6 +78,7 @@ Vollständigkeit, Konvention und Exaktheit (EP 2156→215600, Nenner-B unveränd
 ## Gates
 
 `tests/test_bindungstabelle.py` · `test_store.py` · `test_unsicherheit.py` · `test_traverser.py` ·
-`test_est_mapping.py` · `test_paket_a_e2e.py` · `test_einheiten.py` — **75/75 grün**, NULL LLM. Jeder
+`test_est_mapping.py` · `test_paket_a_e2e.py` · `test_einheiten.py` — **80/80 grün**, NULL LLM. Jeder
 Zitatanker wird voll-Länge via `pipeline/gates._normalize` gegen die Quelldatei geprüft; die
-Einheiten-Konvention ist Map-Tamper-verifiziert.
+Einheiten-Konvention ist Map-Tamper-verifiziert. est_mapping deckt die 1:1-Kz der Scheiben 2-4 ab
+(Kapital §20, V+V-Mieteinnahmen, §35a/agB); §21-WK = dokumentierte Nicht-Deklaration (Anlage-V-Ruling).

@@ -4,16 +4,18 @@
 (E-Nr -> Wert). Fünf Fall-Klassen (Instructor-abgenommen, produkt/mapping/KONZEPT.md):
 
   1  1:1            Feld -> bindung.elster_kz (direkt)
-  a  Aggregation    §21-WK Detail-Slots -> Summen-Kz (MVP Einzel-Objekt [Einz]; verlustbehaftet)
+  a  Aggregation    §21-WK Detail-Slots -> DOKUMENTIERTES Ziel-Kz (E0703838), Summe im dokumentiert-
+                    Bucket, NICHT deklariert (Anlage-V-Ruling: kein sauberes Einzel-Kz); verlustbehaftet
   b  Split          VOR-Summanden sind je 1:1 (eigene Kz); die Regel-Summe wird NICHT deklariert
   c  Berechnet      berechnete/steuernde Felder werden NICHT deklariert (maschinenlesbar gemeldet)
   d  Negation       fam_alleinstehend -> EfA-Feld invertiert
   e  Multiplikation anzahl_kinder -> N Anlage-Kind-Instanzen
 
 Fail-closed (K2-Invariante auf Deklarations-Ebene, Auflage 3): ein vorlaeufiges Pflicht-Feld macht die
-Deklaration UNVOLLSTÄNDIG (kein Versand). Auflage A: lossy-Klassen (Aggregation) werden EXPLIZIT
-ausgewiesen (aggregat-genau ≠ detail-genau). Auflage C: das NICHT-Deklarierte + die Unvollständigkeits-
-Gründe sind maschinenlesbar (fehlend ≠ leer).
+Deklaration UNVOLLSTÄNDIG (kein Versand). Auflage A: die dokumentierte Aggregation wird EXPLIZIT
+ausgewiesen (dokumentiert-Bucket: Summe + Quell-Felder, aggregat-genau ≠ detail-genau) und NICHT in die
+deklaration geschrieben. Auflage C: das NICHT-Deklarierte + die Unvollständigkeits-Gründe sind
+maschinenlesbar (fehlend ≠ leer).
 """
 from __future__ import annotations
 
@@ -26,9 +28,13 @@ ROOT = os.path.dirname(PRODUKT)
 FELDMAPPING = os.path.join(ROOT, "elster", "feldmapping.stub.yaml")   # Andock-Referenz (Auflage B)
 
 # --- Transform-Konfiguration (source-verankert via 2026-07-17-enr-nachtraege-kandidaten.md) ---
-# Klasse a — Aggregation: §21-WK Detail-Slots -> Summen-Kz (MVP Einzel-Objekt [Einz]).
-# Multi-Objekt / [Sum]/[Direkt]/[Verhaelt] = benannte Lücke (braucht anzahl_vermietungsobjekte).
-AGGREGATION = {
+# Klasse a — DOKUMENTIERTE Aggregation (dokumentiert, NICHT deklariert): die §21-WK-Detail-Slots
+# summieren auf ein Ziel-Kz, das die E10-Submission NICHT als sauberes Einzel-Kz führt (Anlage-V-Ruling
+# 2026-07-17: E0703838 braucht Zuordnungsart Direkt/Verhaelt + Mehrzeilen je Objekt). Die Summe wird
+# DOKUMENTIERT (Audit/Round-Trip), aber NICHT in die submittable deklaration geschrieben — konsistent
+# mit der Bindungstabelle (dort elster_kz=null+Grund für dieselben Felder). Multi-Objekt/Zuordnungsart
+# = benannte Lücke (braucht anzahl_vermietungsobjekte + Zuordnungs-Modell).
+DOKUMENTIERT_AGGREGAT = {
     "E0703838": ["vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand", "vv_sonstige_wk"],
 }
 # Klasse d — Negation: Store-Feld -> EfA-Kz (invertiert; Vordruck kodiert die schädliche Haushaltsgem.).
@@ -38,7 +44,7 @@ MULTIPLIKATION = ("fam_anzahl_kinder",)
 
 
 def _aggregation_quellen() -> set:
-    return {f for fs in AGGREGATION.values() for f in fs}
+    return {f for fs in DOKUMENTIERT_AGGREGAT.values() for f in fs}
 
 
 def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None) -> dict:
@@ -51,11 +57,11 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
 
     agg_quellen = _aggregation_quellen()
     deklaration: dict = {}
-    lossy: dict = {}
+    dokumentiert: dict = {}
     kind_anlagen: list = []
     nicht_deklariert: list = []
     unvollstaendig: list = []
-    agg_akku = {ziel: [] for ziel in AGGREGATION}
+    agg_akku = {ziel: [] for ziel in DOKUMENTIERT_AGGREGAT}
     getroffen = 0                       # wie viele Eingabe-Felder überhaupt in der Bindungstabelle sind
 
     for feld_id in sorted(snapshot):
@@ -75,8 +81,8 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             deklaration[NEGATION[feld_id]] = not bool(wert)
         elif feld_id in MULTIPLIKATION:                           # Klasse e
             kind_anlagen = [{"index": i + 1} for i in range(int(wert))]
-        elif feld_id in agg_quellen:                             # Klasse a (Quelle sammeln)
-            for ziel, srcs in AGGREGATION.items():
+        elif feld_id in agg_quellen:                             # Klasse a (dokumentierte Aggregation sammeln)
+            for ziel, srcs in DOKUMENTIERT_AGGREGAT.items():
                 if feld_id in srcs:
                     agg_akku[ziel].append((feld_id, int(wert)))
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)
@@ -91,17 +97,17 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
         raise ValueError("kein Eingabe-Feld in der Bindungstabelle gefunden — vermutlich falsche "
                          "Eingabe-Ebene/-Struktur; deklariere() liefert kein stilles Leer-Ergebnis.")
 
-    # Aggregation ausrechnen (Auflage A: lossy explizit ausweisen)
+    # Dokumentierte Aggregation ausrechnen (Auflage A: Summe + Quell-Felder explizit; NICHT deklariert)
     for ziel, akku in agg_akku.items():
         if akku:
-            deklaration[ziel] = sum(w for _, w in akku)
-            lossy[ziel] = sorted(f for f, _ in akku)
+            dokumentiert[ziel] = {"summe": sum(w for _, w in akku),
+                                  "quell_felder": sorted(f for f, _ in akku)}
 
     return {
         "basis_snapshot": snapshot_id,
         "deklaration": deklaration,
         "kind_anlagen": kind_anlagen,
-        "lossy": lossy,                          # Auflage A: E-Nr -> Quell-Felder (Summe ≠ Details)
+        "dokumentiert": dokumentiert,            # dokumentiert, NICHT deklariert: E-Nr -> {summe, quell_felder}
         "nicht_deklariert": nicht_deklariert,    # Auflage C: bewusst nicht deklariert (Grund)
         "unvollstaendig": unvollstaendig,        # Auflage C: welches Pflicht-Feld vorläufig
         "vollstaendig": not unvollstaendig,      # fail-closed
@@ -109,17 +115,19 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
 
 
 def zuruecklesen(result: dict, bindung: dict) -> dict:
-    """Round-Trip (Lab N3). 1:1/Negation invertierbar -> {felder: feld_id->wert}. Aggregation ist
-    VERLUSTBEHAFTET: nur die Summe je Ziel-Kz ist rekonstruierbar (-> {aggregat: E-Nr->Summe}), NIE die
+    """Round-Trip (Lab N3). 1:1/Negation invertierbar -> {felder: feld_id->wert}. Die dokumentierte
+    Aggregation ist VERLUSTBEHAFTET: nur die Summe je Ziel-Kz ist rekonstruierbar (-> {aggregat:
+    E-Nr->Summe}) und stammt aus dem dokumentiert-Bucket (NICHT aus der deklaration), NIE die
     Detail-Felder — der Store bleibt ihre Wahrheit (Auflage A, kein stiller Detail-Verlust)."""
     e_nach_feld = {b["elster_kz"]: fid for fid, b in bindung.items() if b.get("elster_kz")}
     e_nach_negation = {ziel: fid for fid, ziel in NEGATION.items()}
     felder: dict = {}
     aggregat: dict = {}
+    # dokumentierte Aggregate (dokumentiert, nicht deklariert): nur die Summe, KEINE Details
+    for e_nr, info in result.get("dokumentiert", {}).items():
+        aggregat[e_nr] = info["summe"]
     for e_nr, wert in result["deklaration"].items():
-        if e_nr in result["lossy"]:
-            aggregat[e_nr] = wert                      # nur Summe, KEINE Details
-        elif e_nr in e_nach_negation:
+        if e_nr in e_nach_negation:
             felder[e_nach_negation[e_nr]] = not bool(wert)
         elif e_nr in e_nach_feld:
             felder[e_nach_feld[e_nr]] = wert
