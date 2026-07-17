@@ -15,8 +15,7 @@ bindungen:
     hilfe_kurz: "Steht in deiner Steuerbescheinigung von Bank oder Broker. Die ersten 1.000 Euro sind steuerfrei."
     beispielwert: 300000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage KAP, Kapitalerträge; XSD-E-Nr im 2026-07-12-Katalog konzeptbelegt, Sektions-Lookup-Nachtrag."
+    elster_kz: E0121709
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 20 Abs. 9 S. 1 EStG"
@@ -46,11 +45,10 @@ bindungen:
     einheit: EUR
     askable: true
     fragetext_laie: "Wie hohe Gewinne aus dem Verkauf von Aktien hattest du dieses Jahr?"
-    hilfe_kurz: "Nur Aktiengewinne. Verluste aus Aktien werden extra verrechnet."
+    hilfe_kurz: "Nur Aktiengewinne. Im Vordruck als Teilmenge der gesamten Kapitalerträge deklariert (die in der Summen-Zeile enthaltenen Aktiengewinne)."
     beispielwert: 0
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage KAP Aktien-Topf; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz: E1900901
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 20 Abs. 6 S. 4 EStG"
@@ -65,8 +63,7 @@ bindungen:
     hilfe_kurz: "Aktienverluste können nur mit Aktiengewinnen verrechnet werden (eigener Topf)."
     beispielwert: 0
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage KAP Aktien-Verlust-Topf; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz: E1901301
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 20 Abs. 6 S. 4 EStG"
@@ -82,7 +79,7 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage KAP sonstiger Topf; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "MODELL-MISMATCH: unser p20_6-Zuschnitt trennt 4 Töpfe; der Vordruck deklariert die SUMME der Kapitalerträge (E0121709) + die darin enthaltenen Aktiengewinne (E1900901). Der sonstige Gewinn ist deriviert (Summe − Aktien), kein eigenes Deklarationsfeld."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 20 Abs. 6 S. 1 EStG"
@@ -97,8 +94,7 @@ bindungen:
     hilfe_kurz: "Sonstige Verluste werden in ihrem eigenen Topf verrechnet."
     beispielwert: 0
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage KAP sonstiger Verlust-Topf; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz: E1901201
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 20 Abs. 6 S. 1 EStG"
@@ -115,8 +111,7 @@ bindungen:
     hilfe_kurz: "Alles, was der Mieter dir gezahlt hat."
     beispielwert: 1200000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage V, Mieteinnahmen; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz: E0700201
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
@@ -132,7 +127,7 @@ bindungen:
     beispielwert: 300000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, Gebäude-AfA; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Anlage V, Gebäude-AfA — zeilen-spezifisch (mehrere AfA-Zeilen, E0703304 ist ein Vorjahres-Flag-Kontext); Anlage-V-Vordruck-Freeze abwarten, dann Zeilen-Cross-Check wie Anlage N."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 1 EStG"
@@ -148,7 +143,7 @@ bindungen:
     beispielwert: 200000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, Schuldzinsen; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Anlage V, Schuldzinsen — kein eigenes XSD-Feld-Label (zeilen-spezifisch); Anlage-V-Vordruck-Freeze abwarten, dann Zeilen-Cross-Check."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 1 EStG"
@@ -164,7 +159,7 @@ bindungen:
     beispielwert: 100000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, Erhaltungsaufwand; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Anlage V, Erhaltungsaufwand — kein eigenes XSD-Feld-Label (zeilen-spezifisch); Anlage-V-Vordruck-Freeze abwarten, dann Zeilen-Cross-Check."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 1 EStG"
@@ -180,7 +175,7 @@ bindungen:
     beispielwert: 50000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, sonstige Werbungskosten; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Anlage V, sonstige Werbungskosten — zeilen-spezifisch; Anlage-V-Vordruck-Freeze abwarten, dann Zeilen-Cross-Check."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 1 EStG"
@@ -198,7 +193,7 @@ bindungen:
     beispielwert: 800000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, Summe Werbungskosten; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Anlage V, Summe WK — E0703838 (Abzugsfähige Werbungskosten) ist die Summen-Kz; unsere p21-Scheibe führt WK zeilen-aufgelöst, Summen-Kz an EIN Feld wäre schief. Anlage-V-Vordruck-Freeze abwarten, dann Zeilen-Cross-Check."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 2 EStG"
@@ -265,7 +260,7 @@ bindungen:
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage Kind / Haushaltszugehörigkeit; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Vordruck kodiert die NEGATION (E0503701/E0503821 = schädliche Haushaltsgemeinschaft mit weiterer volljähriger Person); unser Slot 'alleinstehend' ist die Umkehrung → Übersetzung gehört in die est_mapping-Schicht, kein Direkt-Kz."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 24b Abs. 3 S. 1 EStG"
@@ -282,7 +277,7 @@ bindungen:
     beispielwert: 1
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage Kind (je Kind eine Anlage); XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Zahl = Anzahl der Kind-Anlagen (je Kind eine Anlage im E10), kein Einzel-Zähl-Kz; ergibt sich aus der Zahl der ausgefüllten Anlagen Kind."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 24b Abs. 1 S. 1 EStG"
@@ -299,7 +294,7 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage Kind, anteilige Monate; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Aus dem EfA-Zeitraum (E0503801 'im Zeitraum') abgeleitet; die Regel rechnet die vollen Kalendermonate ohne Voraussetzung, kein direkter Monats-Kz."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 24b Abs. 4 EStG"
@@ -315,7 +310,7 @@ bindungen:
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    elster_kz_grund: "Konzept-Mismatch: 'Anspruch auf Kindergeld' (E0500702) ist ein ANDERES Konzept als 'Kind im Haushalt' — der Kindergeld-Anspruch besteht auch ohne Haushaltszugehörigkeit; kein Direkt-Kz."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 24b Abs. 1 S. 1 EStG"

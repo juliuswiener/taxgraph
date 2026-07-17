@@ -16,7 +16,7 @@ bindungen:
     beispielwert: 60000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Vordruck-Form-Kz 103 (Anlage Sonderausgaben, 'gezahlt'); XSD-E-Nr per Flat-Grep nicht erreichbar (Spalten-Kontext), Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Vordruck-Form-Kz 103 ('gezahlt'): 'gezahlt'/'erstattet' ist Spalten-Kontext, NICHT Teil des XSD-Feld-Labels (Flat-Grep findet nur Lohnsteuer-KiSt/KapErtrag-KiSt); Vordruck-Zeilen↔XSD-Sequenz-Cross-Check nötig, kein Rate-Mapping."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 4 EStG"
@@ -32,7 +32,7 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Vordruck-Form-Kz 104 (Anlage Sonderausgaben, 'erstattet'); XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Vordruck-Form-Kz 104 ('erstattet'): Spalten-Kontext, nicht im XSD-Feld-Label; Vordruck-Zeilen-Cross-Check nötig (wie kist_gezahlt)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 4b Satz 2 EStG"
@@ -50,7 +50,7 @@ bindungen:
     beispielwert: 200000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage Sonderausgaben, Aufwendungen eigene Berufsausbildung; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Kein XSD-Feld-Label 'Aufwendungen für die eigene Berufsausbildung' (strukturbewusster Parse: kein Treffer); die disambiguierenden Vordruck-Wörter fehlen im Feld-Label → Vordruck-Zeilen-Cross-Check nötig."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 7 EStG"
