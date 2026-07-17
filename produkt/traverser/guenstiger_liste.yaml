@@ -1,0 +1,29 @@
+# Günstiger-Knoten-Liste (Traverser, Task #11). Source-verankert, additiv, LLM-frei.
+# Ein Günstiger-Knoten rechnet max/min zweier Zweige -> das Interview MUSS ALLE Zweig-Inputs
+# erfragen (naives Lazy schneidet fälschlich einen Zweig weg, Lab-Fund). zweig_felder = die
+# feld_id, die trotz vorläufigem "Sieger" nie weggeschnitten werden dürfen.
+version: 1
+
+guenstiger_regeln:
+  - regel_id: p09_entfernungspauschale
+    begruendung: >-
+      ÖPNV-Günstigerprüfung: der abziehbare Betrag ist der HÖHERE aus Entfernungspauschale
+      (aus Entfernung × Tagen) und den tatsächlichen ÖPNV-Aufwendungen. Beide Zweige müssen
+      erfragt werden, auch wenn einer vorläufig größer erscheint.
+    zweig_felder: [ep_entfernung_km, ep_oepnv_kosten]
+    anker_ref:
+      quelle: "§ 9 Abs. 2 S. 2 EStG"
+      zitatanker: "Aufwendungen für die Benutzung öffentlicher Verkehrsmittel können angesetzt"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
+
+# Regeln mit günstiger-Erwähnung in rules.yaml, die AUSSERHALB der aktuellen Scheibe N+VOR+GWG
+# liegen — benannt statt still vergessen (Gate-Sweep-Netz erzwingt das). Traverser-Ausbau-Nachtrag.
+ausnahmen:
+  - regel_id: p31_familienleistungsausgleich
+    grund: "§31 Kindergeld↔Freibeträge-Günstigerprüfung; außerhalb Scheibe N+VOR+GWG, Ausbau-Nachtrag."
+  - regel_id: p32d_1_abgeltung
+    grund: "§32d Abs.1 Abgeltung-/Günstigerprüfung KAP; außerhalb Scheibe, Ausbau-Nachtrag."
+  - regel_id: p10a_guenstigerpruefung
+    grund: "§10a Günstigerprüfung Riester; außerhalb Scheibe, Ausbau-Nachtrag."
+  - regel_id: p32d_1_kirchensteuer
+    grund: "§32d Kirchensteuer-Günstiger im KAP-Kontext; außerhalb Scheibe, Ausbau-Nachtrag."
