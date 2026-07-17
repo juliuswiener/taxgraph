@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p19/2026-07-17"
+  norm: "§ 19 EStG (Einkünfte aus nichtselbständiger Arbeit)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__19.html"
+  abrufdatum: "2026-07-17"
+  datei: "estg_p19_2026-07-17.txt"
+  sha256: "b08a8911046e0b04a208688c1020e417e0274a02085dd88bcf62a743a1c51258"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["Bindungstabelle an_gesamt (bruttoarbeitslohn-Anker)"]
