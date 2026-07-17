@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "haut.ergebnis response",
+  "type": "object",
+  "required": ["fall_id", "snapshot_id", "zahl_cent", "grund", "offen", "trace"],
+  "additionalProperties": false,
+  "properties": {
+    "fall_id": {"type": "string"},
+    "snapshot_id": {"type": "string"},
+    "zahl_cent": {"type": ["integer", "null"]},
+    "grund": {"type": "string",
+              "enum": ["bestaetigt", "input_kegel_nicht_bestaetigt", "engine_unavailable"]},
+    "offen": {"type": "array", "items": {"type": "string"}},
+    "trace": {"type": ["object", "null"]}
+  }
+}

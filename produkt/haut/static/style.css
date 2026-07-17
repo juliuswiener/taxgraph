@@ -1,0 +1,60 @@
+/* TaxGraph-Haut — Mobile-first, bewusst schlicht (erste Scheibe). Keine Politur. */
+* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: system-ui, -apple-system, sans-serif; line-height: 1.5;
+  color: #1a1a1a; background: #f4f5f7;
+}
+#app { max-width: 32rem; margin: 0 auto; padding: 1rem; padding-bottom: 3rem; }
+
+header { text-align: center; padding: 1.5rem 0 1rem; }
+#ring {
+  --anteil: 0; width: 6rem; height: 6rem; margin: 0 auto 0.75rem; border-radius: 50%;
+  background: conic-gradient(#2b7a4b calc(var(--anteil) * 360deg), #d7dde3 0deg);
+  transition: background 0.4s ease;
+}
+.spanne { font-size: 1.05rem; font-weight: 600; }
+
+.card {
+  background: #fff; border-radius: 0.75rem; padding: 1.25rem; margin: 1rem 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.frage { font-size: 1.25rem; font-weight: 600; margin: 0 0 0.5rem; }
+.hilfe { color: #555; font-size: 0.95rem; margin: 0 0 1rem; }
+
+.eingabe { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+.eingabe input, .eingabe select {
+  flex: 1; font-size: 1.1rem; padding: 0.75rem; min-height: 3rem;
+  border: 1px solid #b7c0cc; border-radius: 0.5rem;
+}
+.einheit { color: #555; }
+
+.btn-primary {
+  width: 100%; min-height: 3rem; font-size: 1.1rem; font-weight: 600;
+  color: #fff; background: #2b7a4b; border: none; border-radius: 0.5rem; cursor: pointer;
+}
+.btn-primary:active { background: #21603b; }
+.btn-link {
+  width: 100%; margin-top: 0.5rem; background: none; border: none; color: #2b6cb0;
+  font-size: 0.95rem; cursor: pointer; padding: 0.5rem;
+}
+.anker {
+  white-space: pre-wrap; background: #f0f2f5; border-left: 3px solid #2b6cb0;
+  padding: 0.75rem; margin-top: 0.75rem; font-size: 0.9rem; border-radius: 0.25rem;
+}
+
+.ergebnis { font-size: 1.3rem; font-weight: 700; color: #2b7a4b; }
+
+.belegt { margin-top: 1.5rem; }
+.belegt h3 { font-size: 0.9rem; color: #555; text-transform: uppercase; letter-spacing: 0.03em; }
+.belegt ul { list-style: none; padding: 0; margin: 0; }
+.belegt li { padding: 0.4rem 0; border-bottom: 1px solid #e2e6ea; font-size: 0.95rem; }
+
+.badge {
+  display: inline-block; min-width: 1.4rem; text-align: center; padding: 0.1rem 0.35rem;
+  border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; margin-right: 0.4rem;
+}
+.badge-solide { background: #d6efe0; color: #1c5c39; }         /* Beleg / selbst bestätigt */
+.badge-schimmernd {                                            /* KI-Vorschlag */
+  background: linear-gradient(110deg, #e7d9ff, #cfe4ff, #e7d9ff);
+  color: #4a2d84;
+}

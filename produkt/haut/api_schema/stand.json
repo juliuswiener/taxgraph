@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "haut.stand response",
+  "type": "object",
+  "required": ["fall_id", "snapshot_id", "engine", "felder", "relevanz", "intervall"],
+  "additionalProperties": false,
+  "properties": {
+    "fall_id": {"type": "string"},
+    "snapshot_id": {"type": "string"},
+    "engine": {"type": "string", "enum": ["catala", "unavailable"]},
+    "felder": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["wert", "zustand", "herkunft", "herkunft_badge"],
+        "additionalProperties": false,
+        "properties": {
+          "wert": {},
+          "zustand": {"type": "string", "enum": ["vorlaeufig", "bestaetigt"]},
+          "herkunft": {"type": "object"},
+          "herkunft_badge": {"type": "string", "enum": ["solide", "schimmernd"]}
+        }
+      }
+    },
+    "relevanz": {"type": "object"},
+    "intervall": {"type": ["object", "null"]}
+  }
+}

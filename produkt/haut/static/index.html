@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>TaxGraph — Steuer-Wegpunkte</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main id="app">
+    <header>
+      <div id="ring" aria-hidden="true"></div>
+      <div id="spanne" class="spanne">Spanne wird berechnet …</div>
+    </header>
+
+    <section id="wegpunkt" class="card" hidden>
+      <p id="frage" class="frage"></p>
+      <p id="hilfe" class="hilfe"></p>
+      <div id="eingabe" class="eingabe"></div>
+      <button id="bestaetigen" class="btn-primary" type="button">Bestätigen</button>
+      <button id="warum" class="btn-link" type="button">Warum wird das gefragt?</button>
+      <pre id="anker" class="anker" hidden></pre>
+    </section>
+
+    <section id="fertig" class="card" hidden>
+      <h2>Ergebnis</h2>
+      <p id="ergebnis" class="ergebnis"></p>
+    </section>
+
+    <section class="belegt">
+      <h3>Schon beantwortet</h3>
+      <ul id="belegt-liste"></ul>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

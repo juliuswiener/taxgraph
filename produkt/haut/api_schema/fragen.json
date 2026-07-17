@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "haut.fragen response",
+  "type": "object",
+  "required": ["fall_id", "snapshot_id", "fragen"],
+  "additionalProperties": false,
+  "properties": {
+    "fall_id": {"type": "string"},
+    "snapshot_id": {"type": "string"},
+    "fragen": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feld_id", "typ", "fragetext_laie", "hilfe_kurz", "einheit", "bereich",
+                     "enum_werte", "beispielwert", "anker_ref"],
+        "additionalProperties": false,
+        "properties": {
+          "feld_id": {"type": "string"},
+          "fragetext_laie": {"type": ["string", "null"]},
+          "hilfe_kurz": {"type": ["string", "null"]},
+          "typ": {"type": "string", "enum": ["cent", "int", "bool", "enum", "datum", "text"]},
+          "einheit": {"type": ["string", "null"]},
+          "bereich": {"type": ["object", "null"]},
+          "enum_werte": {"type": ["array", "null"]},
+          "beispielwert": {},
+          "anker_ref": {"type": ["object", "null"]}
+        }
+      }
+    }
+  }
+}

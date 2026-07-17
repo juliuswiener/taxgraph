@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "haut.warum response",
+  "type": "object",
+  "required": ["fall_id", "justification"],
+  "additionalProperties": false,
+  "properties": {
+    "fall_id": {"type": "string"},
+    "justification": {
+      "type": "object",
+      "required": ["feld_id", "wert", "zustand", "herkunft", "event_id", "signal",
+                   "regel_id", "signatur_slot", "geltungsbedingung", "anker_ref"],
+      "additionalProperties": false,
+      "properties": {
+        "feld_id": {"type": "string"},
+        "wert": {},
+        "zustand": {"type": "string", "enum": ["vorlaeufig", "bestaetigt"]},
+        "herkunft": {"type": "object"},
+        "event_id": {"type": "string", "minLength": 64},
+        "signal": {"type": ["object", "null"]},
+        "regel_id": {"type": ["string", "null"]},
+        "signatur_slot": {"type": ["string", "null"]},
+        "geltungsbedingung": {"type": ["string", "null"]},
+        "anker_ref": {"type": ["object", "null"]}
+      }
+    }
+  }
+}

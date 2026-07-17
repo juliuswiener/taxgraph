@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "haut.event response",
+  "type": "object",
+  "required": ["event_id", "feld_id", "zustand"],
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {"type": "string", "minLength": 64},
+    "feld_id": {"type": "string"},
+    "zustand": {"type": "string", "enum": ["vorlaeufig", "bestaetigt"]}
+  }
+}
