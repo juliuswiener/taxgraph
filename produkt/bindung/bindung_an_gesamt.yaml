@@ -194,7 +194,7 @@ bindungen:
     askable: true
     fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer deines Ehe-/Lebenspartners (11 Ziffern)?"
     hilfe_kurz: "Bei gemeinsamer Erklärung braucht das Finanzamt die Identifikationsnummer beider Personen. Steht auf dem Steuerbescheid oder dem Schreiben des Bundeszentralamts."
-    beispielwert: "00000000000"
+    beispielwert: "12345678901"
     herkunft_slots: null
     elster_kz: E0100082
     vz_gueltigkeit: [2024, 2025, 2026]

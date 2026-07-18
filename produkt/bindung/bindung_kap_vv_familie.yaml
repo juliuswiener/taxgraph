@@ -45,7 +45,7 @@ bindungen:
     einheit: EUR
     askable: true
     fragetext_laie: "Wie hohe Gewinne aus dem Verkauf von Aktien hattest du dieses Jahr?"
-    hilfe_kurz: "Nur Aktiengewinne. Im Vordruck als Teilmenge der gesamten Kapitalerträge deklariert (die in der Summen-Zeile enthaltenen Aktiengewinne)."
+    hilfe_kurz: "Nur die Gewinne aus verkauften Aktien (ein Teil deiner gesamten Kapitalerträge). Wichtig, weil Aktienverluste steuerlich nur mit Aktiengewinnen verrechnet werden dürfen."
     beispielwert: 0
     herkunft_slots: null
     elster_kz: E1900901
@@ -187,7 +187,7 @@ bindungen:
     quelle: {regel_id: p21_2_verbilligte_vermietung_wk, signatur_slot: werbungskosten}
     typ: cent
     einheit: EUR
-    askable: true
+    askable: false
     fragetext_laie: "Wie hoch waren deine gesamten Kosten für die vermietete Wohnung (Abschreibung, Zinsen, Reparaturen, Sonstiges zusammen)?"
     hilfe_kurz: "Bei verbilligter Vermietung an Angehörige können die Kosten anteilig gekürzt werden."
     beispielwert: 800000

@@ -55,7 +55,7 @@ bindungen:
     enum_werte: ["gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente", "private_leibrente", "sonstige_leibrente"]
     askable: true
     fragetext_laie: "Um welche Art von Rente geht es hauptsächlich?"
-    hilfe_kurz: "Gesetzliche Rente, Versorgungswerk (z. B. Ärzte/Anwälte) und Rürup-Basisrente werden nach dem Renten-Beginn-Jahr besteuert; eine private Rentenversicherung nach dem Ertragsanteil (Alter bei Renten-Beginn)."
+    hilfe_kurz: "Gesetzliche Rente, berufsständisches Versorgungswerk (z. B. für Ärzte oder Anwälte) und Rürup-Rente werden gleich besteuert (nach dem Jahr des Rentenbeginns). Eine private Rentenversicherung wird niedriger besteuert — dann zählt dein Alter bei Rentenbeginn."
     beispielwert: "gesetzliche_rente"
     herkunft_slots: null
     elster_kz: null

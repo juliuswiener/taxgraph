@@ -427,7 +427,7 @@ bindungen:
     askable: true
     fragetext_laie: "Wie viel hast du selbst in die gesetzliche Rentenversicherung eingezahlt (dein Anteil vom Lohn)?"
     hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung in Zeile 23."
-    beispielwert: 3500000
+    beispielwert: 372000
     herkunft_slots: ["Lohnsteuerbescheinigung Nr. 23 a/b"]
     elster_kz: E2000401
     vz_gueltigkeit: [2024, 2025, 2026]
@@ -443,7 +443,7 @@ bindungen:
     askable: true
     fragetext_laie: "Wie viel hat dein Arbeitgeber steuerfrei zu deiner Rente dazugegeben?"
     hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung in Zeile 22."
-    beispielwert: 3500000
+    beispielwert: 372000
     herkunft_slots: ["Lohnsteuerbescheinigung Nr. 22 a/b"]
     elster_kz: E2000801
     vz_gueltigkeit: [2024, 2025, 2026]
