@@ -24,6 +24,6 @@ target_dir = "_target"
 # SpendenAbzug (§ 10b) sind reine Teilregeln, vom Accessor aufgerufen und in p32a eingespeist.
 [[target]]
 name = "p32a-python"
-modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice", "Haushaltsnahe", "SpendenAbzug", "AgbAbzug", "Kirchensteuerabzug"]
+modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice", "Haushaltsnahe", "SpendenAbzug", "AgbAbzug", "Kirchensteuerabzug", "ZumutbareBelastung"]
 backends = ["python"]
 include_sources = true

@@ -1,0 +1,133 @@
+# § 33 Abs. 3 EStG — zumutbare Belastung (Staffeltabelle, Tranchen-Methode)
+
+> Module ZumutbareBelastung
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p33_3_zumutbare_belastung.json`
+(module ZumutbareBelastung, verified_bedingt, faithful=True, sha256
+`6315e14d06c558988f2f24a73d9b9807080a69d41ff90ea9f2437593cec5faf1`). Die scope-Logik unten ist
+BYTE-GLEICH aus `catala_a` (keine Änderung); nur Module-Header + §-Zitatanker + Grenzfall-Seeds ergänzt.
+Kein Pipeline-Re-Run.
+
+Zitatanker § 33 Abs. 3 EStG (`sources/gesetze-im-internet/estg_p33_abs3_2026-07-09.txt`, typ gesetz):
+Staffeltabelle mit Grenzen "über 15 340 EUR bis 51 130 EUR" und Prozentsätzen nach Familienstand
+(splitting) / Kinderzahl. TRANCHEN-Methode (post-2017-BFH, BFH VI R 75/14): jede Stufe wird NUR auf ihren
+Anteil des Gesamtbetrags der Einkünfte angewandt (nicht der höhere Satz auf den ganzen GdE). Ausgabe
+`zumutbare_belastung` ist EINGABE für module AgbAbzug (§ 33 Abs. 1); die Verkettung GdE → ZumutbareBelastung
+→ AgbAbzug → p32a aussergewoehnliche_belastungen ist Andockung (dev-1-Accessor/agB-Scheibe).
+
+```catala
+declaration scope ZumutbareBelastung:
+  input gesamtbetrag_der_einkuenfte content money
+  input anzahl_kinder content integer
+  input splitting content boolean
+  output zumutbare_belastung content money
+
+scope ZumutbareBelastung:
+  definition zumutbare_belastung equals
+    let grenze1 equals $15,340.00 in
+    let grenze2 equals $51,130.00 in
+    let satz1 equals
+      if anzahl_kinder >= 3 then 0.01
+      else if anzahl_kinder >= 1 then 0.02
+      else if splitting then 0.04
+      else 0.05
+    in
+    let satz2 equals
+      if anzahl_kinder >= 3 then 0.01
+      else if anzahl_kinder >= 1 then 0.03
+      else if splitting then 0.05
+      else 0.06
+    in
+    let satz3 equals
+      if anzahl_kinder >= 3 then 0.02
+      else if anzahl_kinder >= 1 then 0.04
+      else if splitting then 0.06
+      else 0.07
+    in
+    if gesamtbetrag_der_einkuenfte <= grenze1 then
+      gesamtbetrag_der_einkuenfte * satz1
+    else if gesamtbetrag_der_einkuenfte <= grenze2 then
+      grenze1 * satz1
+      + (gesamtbetrag_der_einkuenfte - grenze1) * satz2
+    else
+      grenze1 * satz1
+      + (grenze2 - grenze1) * satz2
+      + (gesamtbetrag_der_einkuenfte - grenze2) * satz3
+```
+
+## Grenzfall-Seeds (Tranchen-Grenzen + Satz-Verzweigung)
+
+```catala
+#[test]
+declaration scope TestSingleTranche1:
+  # Alleinstehend, GdE 10000 <= 15340 -> 1. Tranche, Satz 5 % -> 500.
+  internal r content ZumutbareBelastung
+  output g content money
+scope TestSingleTranche1:
+  definition r equals output of ZumutbareBelastung with {
+    -- gesamtbetrag_der_einkuenfte: $10,000.00
+    -- anzahl_kinder: 0
+    -- splitting: false }
+  definition g equals r.zumutbare_belastung
+  assertion g = $500.00
+```
+
+```catala
+#[test]
+declaration scope TestSingleTranche2:
+  # Alleinstehend, GdE 30000 -> 15340*5% + (30000-15340)*6% = 767 + 879,60 = 1646,60.
+  internal r content ZumutbareBelastung
+  output g content money
+scope TestSingleTranche2:
+  definition r equals output of ZumutbareBelastung with {
+    -- gesamtbetrag_der_einkuenfte: $30,000.00
+    -- anzahl_kinder: 0
+    -- splitting: false }
+  definition g equals r.zumutbare_belastung
+  assertion g = $1,646.60
+```
+
+```catala
+#[test]
+declaration scope TestSingleTranche3:
+  # Alleinstehend, GdE 60000 -> 767 + (51130-15340)*6% + (60000-51130)*7% = 767 + 2147,40 + 620,90 = 3535,30.
+  internal r content ZumutbareBelastung
+  output g content money
+scope TestSingleTranche3:
+  definition r equals output of ZumutbareBelastung with {
+    -- gesamtbetrag_der_einkuenfte: $60,000.00
+    -- anzahl_kinder: 0
+    -- splitting: false }
+  definition g equals r.zumutbare_belastung
+  assertion g = $3,535.30
+```
+
+```catala
+#[test]
+declaration scope TestDreiKinderTranche2:
+  # >= 3 Kinder, GdE 30000 -> 15340*1% + (30000-15340)*1% = 153,40 + 146,60 = 300.
+  internal r content ZumutbareBelastung
+  output g content money
+scope TestDreiKinderTranche2:
+  definition r equals output of ZumutbareBelastung with {
+    -- gesamtbetrag_der_einkuenfte: $30,000.00
+    -- anzahl_kinder: 3
+    -- splitting: false }
+  definition g equals r.zumutbare_belastung
+  assertion g = $300.00
+```
+
+```catala
+#[test]
+declaration scope TestSplittingTranche1:
+  # Splitting, keine Kinder, GdE 10000 <= 15340 -> Satz 4 % -> 400.
+  internal r content ZumutbareBelastung
+  output g content money
+scope TestSplittingTranche1:
+  definition r equals output of ZumutbareBelastung with {
+    -- gesamtbetrag_der_einkuenfte: $10,000.00
+    -- anzahl_kinder: 0
+    -- splitting: true }
+  definition g equals r.zumutbare_belastung
+  assertion g = $400.00
+```
