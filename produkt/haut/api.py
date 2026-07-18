@@ -464,11 +464,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
                 "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
                 "splitting": g["veranlagung"] == "zusammen"})
-            est_ohne = runner.catala_est(g)     # § 19 + § 21 + Abzüge, KEIN Kapital (est_regulaer_ohne_kap)
             # Kapital § 20/§ 32d: SINGLE-SOURCE (Instructor-Q1) — E0121709-Aggregat XOR Verlust-Töpfe;
             # Co-Okkurrenz sperrt der Guard (kapital_semantik_offen). Töpfe (§ 20 Abs. 6, per-Topf-Floor)
-            # → verrechnete; sonst das Aggregat. Dann Sparer-PB (§ 20 Abs. 9). Kapitaleinkünfte ≤ 0 ->
-            # reiner §19/§21-Bescheid (kein Kapital-Effekt).
+            # → verrechnete; sonst das Aggregat. Dann Sparer-PB (§ 20 Abs. 9). kapitaleinkuenfte ist UNABHÄNGIG
+            # vom § 31-Kinderfreibetrag (§ 2 Abs. 5b/Abs. 6) → EINMAL vorab, vor der § 31-Verzweigung.
             if any(_c(t) != 0 for t in KAP_TOEPFE):
                 verrechnete = runner.catala_kapital_verrechnung({
                     "gewinn_aktien": _c("kap_gewinn_aktien") // 100,
@@ -493,14 +492,33 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     verrechnete += _c(KAP_ERTRAEGE_PARTNER) // 100
             kapitaleinkuenfte = runner.catala_sparer_pb({
                 "veranlagungszeitraum": vz, "kapitalertraege": verrechnete, "zusammenveranlagung": zusammen})
-            if kapitaleinkuenfte <= 0:
-                return est_ohne
-            # Günstigerprüfung (§ 32d Abs. 6): reguläre est MIT Kapital im zvE (Grundtarif) vs Abgeltung.
-            est_mit = runner.catala_est(dict(g, einkuenfte_kapitalvermoegen=kapitaleinkuenfte))
-            kapital_steuer = runner.catala_kapital_steuer({
-                "veranlagungszeitraum": vz, "kapitaleinkuenfte": kapitaleinkuenfte,
-                "est_regulaer_mit_kap": est_mit, "est_regulaer_ohne_kap": est_ohne})
-            return est_ohne + kapital_steuer    # Günstiger -> est_mit; Abgeltung -> est_ohne + abgeltung
+
+            def _festzusetzende(freibetrag: int) -> int:
+                # Der volle festzusetzende ESt-Bescheid (§ 19+§21+alle Abzüge, PLUS § 20-Kapital-Günstiger § 32d
+                # Abs. 6) bei GEGEBENEM § 32-Abs.6-Kinderfreibetrag. Kapital-Günstiger: est_ohne_kap vs est_mit_kap
+                # (Grundtarif) → min(Abgeltung, Delta). freibetrag=0 → kein Kinderfreibetrag.
+                g2 = g if freibetrag == 0 else dict(g, freibetraege_kinder=freibetrag)
+                est_ohne = runner.catala_est(g2)     # KEIN Kapital (est_regulaer_ohne_kap)
+                if kapitaleinkuenfte <= 0:
+                    return est_ohne
+                est_mit = runner.catala_est(dict(g2, einkuenfte_kapitalvermoegen=kapitaleinkuenfte))
+                return est_ohne + runner.catala_kapital_steuer({
+                    "veranlagungszeitraum": vz, "kapitaleinkuenfte": kapitaleinkuenfte,
+                    "est_regulaer_mit_kap": est_mit, "est_regulaer_ohne_kap": est_ohne})
+
+            # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6): bei
+            # Kindern den vollen Bescheid EINMAL OHNE + einmal MIT Kinderfreibetrag rechnen; FL wählt das für den
+            # Steuerpflichtigen Günstigere (Kindergeld-besser → est_ohne_fb, Kindergeld bleibt; Freibetrag-besser
+            # → est_mit_fb + Kindergeld-Hinzurechnung § 31 S. 4). Der Kinderfreibetrag mindert das zvE (§ 2 Abs. 5),
+            # NICHT die GdE (§ 2 Abs. 3) → die §10b/§33-Deckel (auf gde) bleiben unberührt. Ohne Kinder kein § 31.
+            kinder = _c("fam_anzahl_kinder")
+            if kinder > 0:
+                return runner.catala_p31_familienleistung({
+                    "est_ohne_freibetraege": _festzusetzende(0),
+                    "est_mit_freibetraegen": _festzusetzende(
+                        kinder * runner._kinderfreibetrag(vz, g["veranlagung"])),
+                    "kindergeld": kinder * runner._kindergeld(vz) * 12})
+            return _festzusetzende(0)
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
     if quantitaet == "festzusetzende_est_rentner":   # § 22 Renten + § 33b via catala_gesamt

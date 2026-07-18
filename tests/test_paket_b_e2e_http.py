@@ -1043,6 +1043,40 @@ def test_gesamt_faltung_24a_kein_geburtsjahr_fail_safe(base):
         assert erg["zahl_cent"] is None
 
 
+def test_gesamt_faltung_31_kindergeld_besser(base):
+    """Weg (ii) Stage 2 §31 Familienleistungsausgleich — Zweig KINDERGELD besser (Regelfall Mitteleinkommen):
+    einzel Lohn 40000, 1 Kind → Kinderfreibetrag-Ersparnis (6919 − 5448 = 1471) < Kindergeld (3060) → Kindergeld
+    gewinnt → festzusetzende_est = est_ohne_Freibetrag 6919 = 691900 Cent (der Freibetrag wird NICHT angesetzt,
+    Kindergeld bleibt). Belegt: bei Kindern greift § 31, ändert den Bescheid aber NICHT wenn Kindergeld günstiger."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "f31k", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True))
+    _gesamt_abzuege(base, "f31k", kinder=1)
+    st, erg = _req(base, "GET", "/fall/f31k/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 691900 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_faltung_31_freibetrag_besser(base):
+    """Weg (ii) §31 — Zweig KINDERFREIBETRAG besser (Hocheinkommen): Zusammenveranlagung (Einverdiener) Lohn
+    150000, 1 Kind → Freibetrag 9600 (§32 Abs.6 verdoppelt), Ersparnis (40628 − 36596 = 4032) > Kindergeld 3060
+    → Freibetrag gewinnt → est_mit_Freibetrag 36596 + Kindergeld-Hinzurechnung (§31 S.4) 3060 = 39656 = 3965600
+    Cent. NON-VACUOUS Gegenzweig zu §31_kindergeld_besser (Instructor-K2: beide Günstiger-Ausgänge belegt)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "f31f", _gesamt_kegel(0, bruttolohn=15000000, kein_vuv=True,
+                                                veranlagung="zusammen", bruttolohn_partner=0,
+                                                person_b_idnr="12345678901"))
+    _gesamt_abzuege(base, "f31f", kinder=1)
+    st, erg = _req(base, "GET", "/fall/f31f/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 3965600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2025, alter=0,
                    gdb=0, hilflos=False, pflegegrad=0, gepflegter_hilflos=False, hinterbliebenen=False,
                    veranlagung="einzel", rentenfreibetrag=None, gdb_partner=0, hilflos_partner=False,

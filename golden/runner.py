@@ -476,6 +476,16 @@ def _kindergeld(year: int) -> int:
     return p["kindergeld_monatlich_je_kind"]["wert"]
 
 
+def _kinderfreibetrag(year: int, veranlagung) -> int:
+    """§ 32 Abs. 6 EStG Kinderfreibetrag JE KIND (sächliches Existenzminimum + BEA-Freibetrag je Elternteil),
+    EURO, aus params/<vz>. Einzelveranlagung = ein Elternteil-Anteil; Zusammenveranlagung = verdoppelt (Abs. 2).
+    Basis der § 31-Günstigerprüfung (Kinderfreibetrag-Wirkung vs. Kindergeld)."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "kinderfreibetrag_p32.yaml"), encoding="utf-8"))
+    je_elternteil = p["kinderfreibetrag_je_elternteil"]["wert"] + p["bea_freibetrag_je_elternteil"]["wert"]
+    return je_elternteil * (2 if veranlagung == "zusammen" else 1)
+
+
 def _vorsorge_hb(year: int) -> int:
     """Vorsorge-Hoechstbetrag aus params/<vz> (§ 10 Abs. 3): 27566/29344/30826.
     Deckel-Eingabe von p10_1_2_altersvorsorge; ueber _vorsorge_abzug in den
