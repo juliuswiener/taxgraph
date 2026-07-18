@@ -7,6 +7,8 @@ include_dirs = [
   "rules/estg/p09_entfernungspauschale",
   "rules/estg/p32_kinderfreibetrag",
   "rules/estg/p33a_unterhalt",
+  "rules/estg/p35a",
+  "rules/estg/p10b",
   "rules/estg/solzg",
   "rules/estg/arbeitnehmerfall",
   "rules/estg/integration",
@@ -14,10 +16,12 @@ include_dirs = [
 build_dir = "_build"
 target_dir = "_target"
 
-# Self-contained Python export of the § 32a tariff module, consumed by the
-# GETTSIM differential-test harness (oracle/gettsim/).
+# Self-contained Python export of the § 32a tariff module (+ Teilregeln), consumed by the
+# GETTSIM differential-test harness (nur Einkommensteuertarif) und den golden/produkt-Accessor
+# (via oracle/gettsim/assemble_catala.sh -> oracle/gettsim/_catala/pkg/). Haushaltsnahe (§ 35a) +
+# SpendenAbzug (§ 10b) sind reine Teilregeln, vom Accessor aufgerufen und in p32a eingespeist.
 [[target]]
 name = "p32a-python"
-modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice"]
+modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice", "Haushaltsnahe", "SpendenAbzug"]
 backends = ["python"]
 include_sources = true

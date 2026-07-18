@@ -670,15 +670,16 @@ def test_instanzen_gleiche_enumeration_wie_deklaration(bindung):
 
 
 def test_instanzen_gruppe_generisch_rente(bindung):
-    """Generischer gruppe-Parameter: funktioniert für rente (dev-1 #6). Trägt die getaggten Renten-Felder
-    je Instanz; rentner_renten_art ist SELEKTOR (nicht getaggt) -> NICHT in der Naht (dev-1 liest die Art
-    je Instanz separat via parse_instanz — #6-Andockung)."""
+    """Generischer gruppe-Parameter für rente (dev-1 #6): trägt die getaggten Renten-Felder je Instanz —
+    INKL. rentner_renten_art (jetzt instanz_gruppe:rente getaggt, #6-Prep), damit dev-1s Ring den
+    per-Rente-Ertragsanteil (aa/bb je Art) über DIESELBE Naht bekommt, ohne zweiten Lesepfad."""
     s = _store_mit({**_RENTE_1, **_RENTE_2})
     inst = EM.instanzen(s, bindung, "rente")
     assert [i["index"] for i in inst] == [1, 2]
     assert inst[0]["felder"]["rentner_jahresrente"]["wert"] == 2000000
+    assert inst[0]["felder"]["rentner_renten_art"]["wert"] == "gesetzliche_rente"    # Art je Rente (Rente 1, aa)
     assert inst[1]["felder"]["rentner_jahresrente"]["wert"] == 900000
-    assert "rentner_renten_art" not in inst[1]["felder"]             # Selektor nicht in der Gruppe (bekannt, #6-flag)
+    assert inst[1]["felder"]["rentner_renten_art"]["wert"] == "private_leibrente"     # Art je Rente (Rente 2, bb) — #6-ready
 
 
 def test_instanzen_leere_gruppe(bindung):
