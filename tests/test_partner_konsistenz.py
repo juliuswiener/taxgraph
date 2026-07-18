@@ -76,3 +76,30 @@ def test_neg_guard_feuert_wirklich():
     kaputt = _snap(rentner_grad_der_behinderung_partner=(50, "bestaetigt"), veranlagung=("einzel", "bestaetigt"))
     assert PC.partner_ohne_zusammen(ok) == [] and PC.partner_ohne_zusammen(kaputt), \
         "Guard muss den Partner-ohne-Zusammenveranlagung-Widerspruch fangen und die konsistente Lage durchlassen"
+
+
+# ---- §20 Kapital Person-B (Anlage-KAP-Instanz B) ----------------------------
+
+def test_kap_partner_einzel_widerspruch():
+    w = PC.partner_ohne_zusammen(_snap(kap_kapitalertraege_partner=(500000, "bestaetigt"),
+                                       veranlagung=("einzel", "bestaetigt")))
+    assert len(w) == 1 and w[0]["feld_id"] == "kap_kapitalertraege_partner"
+
+
+def test_kap_partner_zusammen_konsistent():
+    assert PC.partner_ohne_zusammen(_snap(kap_kapitalertraege_partner=(500000, "bestaetigt"),
+                                          kap_verlust_aktien_partner=(50000, "bestaetigt"),
+                                          veranlagung=("zusammen", "bestaetigt"))) == []
+
+
+# ---- §22 Rente Person-B (Anlage-R-Instanz B) --------------------------------
+
+def test_renten_partner_einzel_widerspruch():
+    w = PC.partner_ohne_zusammen(_snap(rentner_jahresrente_partner=(1800000, "bestaetigt"),
+                                       veranlagung=("einzel", "bestaetigt")))
+    assert len(w) == 1 and w[0]["feld_id"] == "rentner_jahresrente_partner"
+
+
+def test_renten_partner_zusammen_konsistent():
+    assert PC.partner_ohne_zusammen(_snap(rentner_jahresrente_partner=(1800000, "bestaetigt"),
+                                          veranlagung=("zusammen", "bestaetigt"))) == []

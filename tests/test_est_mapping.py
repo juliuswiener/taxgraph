@@ -358,6 +358,40 @@ def test_klasse_g_person_b_instanz(bindung):
     assert "E0200201" not in r["deklaration"]                   # Person-B-Lohn NICHT in Person-A-Deklaration
 
 
+def test_klasse_g_kapital_person_b(bindung):
+    """§20 Kapital Person-B: kap_*_partner -> person_b-Bucket mit DENSELBEN Person-A-Kz (Anlage-KAP-
+    Instanz B, kein distinktes Ehegatte-Kz — Schema-Recon 2026-07-18). Exakt invertierbar."""
+    felder = {"kap_kapitalertraege_partner": 500000, "kap_gewinn_aktien_partner": 200000,
+              "kap_verlust_aktien_partner": 50000, "kap_verlust_sonstige_partner": 30000}
+    snap, _ = ST.materialisiere(_store_mit(felder))
+    r = EM.deklariere(snap, bindung)
+    assert r["person_b"]["E0121709"] == 500000 and r["person_b"]["E1900901"] == 200000
+    assert r["person_b"]["E1901301"] == 50000 and r["person_b"]["E1901201"] == 30000
+    assert "E0121709" not in r["deklaration"]                   # Person-B-Kapital NICHT in Person-A-Deklaration
+    rt = EM.zuruecklesen(r, bindung)
+    assert rt["felder"]["kap_kapitalertraege_partner"] == 500000
+
+
+def test_klasse_gf_renten_verzweigung_person_b(bindung):
+    """§22 Rente Person-B: Klasse g×f — jahresrente_partner/beginn_partner verzweigen je
+    rentner_renten_art_partner in den person_b-Bucket (aa gesetzl → E1800301/E1800501, bb privat →
+    E1801601/E1801701), dieselben Person-A-Kz; ohne bestätigte Partner-Art fail-closed."""
+    # aa gesetzliche Rente Person B
+    snap, _ = ST.materialisiere(_store_mit({"rentner_renten_art_partner": "gesetzliche_rente",
+        "rentner_jahresrente_partner": 1800000, "rentner_renten_beginn_jahr_partner": 2015}))
+    r = EM.deklariere(snap, bindung)
+    assert r["person_b"]["E1800301"] == 1800000 and r["person_b"]["E1800501"] == 2015
+    assert "E1800301" not in r["deklaration"]                   # nicht in Person-A-Deklaration
+    # bb private Leibrente Person B
+    r2 = EM.deklariere(ST.materialisiere(_store_mit({"rentner_renten_art_partner": "private_leibrente",
+        "rentner_jahresrente_partner": 900000, "rentner_renten_beginn_jahr_partner": 2018}))[0], bindung)
+    assert r2["person_b"]["E1801601"] == 900000 and r2["person_b"]["E1801701"] == 2018
+    # ohne Partner-Art -> fail-closed unvollständig
+    r3 = EM.deklariere(ST.materialisiere(_store_mit({"rentner_jahresrente_partner": 1800000}))[0], bindung)
+    assert "rentner_jahresrente_partner" in {x["feld_id"] for x in r3["unvollstaendig"]}
+    assert not r3["person_b"]
+
+
 def test_klasse_g_roundtrip(bindung):
     felder = {"bruttoarbeitslohn_partner": 3800000, "vor_an_anteil_rv_partner": 350000}
     snap, _ = ST.materialisiere(_store_mit(felder))

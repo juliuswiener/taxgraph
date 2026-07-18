@@ -79,6 +79,25 @@ PARTNER_INSTANZ = {
     "vor_an_anteil_rv_partner": "E2000401",
     "vor_ag_anteil_rv_partner": "E2000801",
     "vor_rv_ausserhalb_lstb_partner": "E2000601",
+    # § 20 Kapital Person-B (Anlage-KAP-Instanz B): dieselben Person-A-Kz, kein distinktes Ehegatte-Kz
+    # (Schema-Recon 2026-07-18). Anlage KAP wird per Person gefüllt (eigener Sparer-Pauschbetrag).
+    "kap_kapitalertraege_partner": "E0121709",
+    "kap_gewinn_aktien_partner": "E1900901",
+    "kap_verlust_aktien_partner": "E1901301",
+    "kap_verlust_sonstige_partner": "E1901201",
+}
+# Klasse g×f — Renten-Verzweigung Person-B (§ 22, Anlage-R-Instanz B): wie VERZWEIGUNG (aa/bb-Kz je
+# renten_art), aber der Wert läuft in den person_b-Bucket (dieselben Person-A-Kz, kein Ehegatte-Kz).
+# Art-Weiche = rentner_renten_art_partner. fail-closed ohne bestätigte Partner-Art (wie Person A).
+PARTNER_VERZWEIGUNG = {
+    "rentner_jahresrente_partner": {"art_feld": "rentner_renten_art_partner", "kz": {
+        "gesetzliche_rente": "E1800301", "berufsstaendische_versorgung": "E1800301",
+        "private_basisrente": "E1800301", "private_leibrente": "E1801601",
+        "sonstige_leibrente": "E1803102"}},
+    "rentner_renten_beginn_jahr_partner": {"art_feld": "rentner_renten_art_partner", "kz": {
+        "gesetzliche_rente": "E1800501", "berufsstaendische_versorgung": "E1800501",
+        "private_basisrente": "E1800501", "private_leibrente": "E1801701",
+        "sonstige_leibrente": "E1803202"}},
 }
 
 
@@ -139,6 +158,19 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
                 else:
                     nicht_deklariert.append({"feld_id": feld_id,
                                              "grund": f"Renten-Art '{art['wert']}' ohne Kz-Zweig"})
+        elif feld_id in PARTNER_VERZWEIGUNG:                     # Klasse g×f (Renten-Verzweigung Person B -> person_b)
+            cfg = PARTNER_VERZWEIGUNG[feld_id]
+            art = snapshot.get(cfg["art_feld"])
+            if art is None or art.get("zustand") != "bestaetigt":
+                unvollstaendig.append({"feld_id": feld_id,
+                                       "grund": f"Partner-Renten-Art ({cfg['art_feld']}) unbestätigt — Kz-Zweig offen"})
+            else:
+                kz = cfg["kz"].get(art["wert"])
+                if kz:
+                    person_b[kz] = wert
+                else:
+                    nicht_deklariert.append({"feld_id": feld_id,
+                                             "grund": f"Partner-Renten-Art '{art['wert']}' ohne Kz-Zweig"})
         elif feld_id in PARTNER_INSTANZ:                         # Klasse g (Person-Multiplikation, Instanz B)
             person_b[PARTNER_INSTANZ[feld_id]] = wert
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)

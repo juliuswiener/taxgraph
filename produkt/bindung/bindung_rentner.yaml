@@ -101,6 +101,94 @@ bindungen:
       zitatanker: "der steuerfreie Teil der Rente"
       datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
 
+  # ===== §22 Rente Person-B (Zusammenveranlagung): Anlage-R-Instanz B, Klasse-g×f. Jeder Ehegatte hat
+  # EIGENEN Besteuerungsanteil (eigene Kohorte/eigenes Alter) + EIGENE Rentenfreibetrag-Fixierung. KEIN
+  # distinkter Ehegatte-Kz (Schema-Recon) → Reuse Person-A-Kz im person_b-Bucket (aa/bb je renten_art_partner,
+  # est_mapping PARTNER_VERZWEIGUNG). K2 partner_check: nur bei veranlagung==zusammen. Accessor je Person (dev-1). =====
+  - feld_id: rentner_renten_art_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_renten_art_weiche}
+    typ: enum
+    einheit: null
+    enum_werte: ["gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente", "private_leibrente", "sonstige_leibrente"]
+    askable: true
+    fragetext_laie: "Um welche Art von Rente geht es bei deinem zusammen veranlagten Ehe-/Lebenspartner hauptsächlich?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung: der Partner hat einen eigenen Besteuerungs-/Ertragsanteil je nach Rentenart (gesetzlich/Versorgungswerk/Rürup nach Beginn-Jahr, private Rente nach Alter bei Beginn)."
+    beispielwert: "gesetzliche_rente"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Partner-Art-Weiche (steuert die Klasse-g×f-Kz-Verzweigung von rentner_jahresrente_partner aa/bb im person_b-Bucket), kein eigenes Betragsfeld/Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "aus den gesetzlichen Rentenversicherungen, der landwirtschaftlichen Alterskasse, den berufsständischen Versorgungseinrichtungen"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_jahresrente_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: rentner_jahresrente_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Rente hat dein zusammen veranlagter Ehe-/Lebenspartner dieses Jahr insgesamt bekommen (voller Jahresbetrag)?"
+    hilfe_kurz: "Der gesamte Jahresbetrag der Rente des Partners, aus der Mitteilung seines Rentenversicherungsträgers."
+    beispielwert: 1800000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-R-Instanz B (Klasse g×f): aa/bb-Kz je rentner_renten_art_partner im person_b-Bucket (gesetzl/berufsst/basis → E1800301, priv → E1801601, sonst → E1803102), DIESELBEN Person-A-Kz — kein distinktes Ehegatte-Kz. Kz-Wahl in est_mapping."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "aus den gesetzlichen Rentenversicherungen, der landwirtschaftlichen Alterskasse, den berufsständischen Versorgungseinrichtungen"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_renten_beginn_jahr_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_besteuerungsanteil_aus_kohortentabelle}
+    typ: int
+    einheit: Jahr
+    bereich: {min: 1955, max: 2060, grund: "Renten-Beginn-Jahr des Partners (Kohorten-Besteuerung, eigene Kohorte je Ehegatte)."}
+    askable: true
+    fragetext_laie: "Seit welchem Jahr bekommt dein Ehe-/Lebenspartner seine Rente?"
+    hilfe_kurz: "Das Jahr des ersten Rentenbezugs des Partners; bestimmt seinen eigenen Besteuerungsanteil (gesetzliche Rente)."
+    beispielwert: 2015
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-R-Instanz B (Klasse g×f): aa → E1800501 / bb-priv → E1801701 / sonst → E1803202 im person_b-Bucket je rentner_renten_art_partner, DIESELBEN Person-A-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "maßgebenden Prozentsatz aus der nachstehenden Tabelle"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_alter_bei_rentenbeginn_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_ertragsanteil_alter}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 100, grund: "Bei Rentenbeginn vollendetes Lebensjahr des Partners; bb-Ertragsanteil-Lookup (private Leibrente)."}
+    askable: true
+    fragetext_laie: "Wie alt war dein Ehe-/Lebenspartner (vollendetes Lebensjahr), als seine private Rente zu laufen begann?"
+    hilfe_kurz: "Nur bei einer privaten Leibrente des Partners: der steuerpflichtige Ertragsanteil richtet sich nach seinem Alter bei Rentenbeginn."
+    beispielwert: 65
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein eigenes Kz: DERIVED aus Partner-Rentenbeginn − Geburtsdatum. bb-Lookup-Key der Ertragsanteil-Tabelle (params/kohorten/rente_ertragsanteil_p22.yaml) für Person B."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. bb EStG"
+      zitatanker: "Bei Beginn der Rente vollendetes Lebensjahr"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_rentenfreibetrag_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_rentenfreibetrag_fixierung_folgejahr}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Falls die gesetzliche Rente deines Partners NICHT in diesem Jahr zum ersten Mal gezahlt wurde: wie hoch ist sein steuerfreier Renten-Freibetrag laut letztem Bescheid (in Euro)?"
+    hilfe_kurz: "Ab dem zweiten Rentenjahr des Partners ist sein steuerfreier Teil in Euro festgeschrieben. Steht im Vorjahres-Bescheid. Im ersten Rentenjahr des Partners leer lassen."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein Anlage-R-Kz (Laienfeld für den fixierten Euro-Betrag des Partners, aa-Folgejahr). Der Accessor rechnet je Person exakt (jahresrente_partner − rentenfreibetrag_partner) statt %×aktuelle-Rente (K2 per Person)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa S. 4 EStG"
+      zitatanker: "der steuerfreie Teil der Rente"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+
   # ========================= Altersentlastungsbetrag §24a (p24a) =========================
   - feld_id: rentner_alter_64_erfuellt
     quelle: {regel_id: p24a_altersentlastungsbetrag, geltungsbedingung: alter_64_vor_bezugsjahr_vollendet}

@@ -16,6 +16,14 @@ from __future__ import annotations
 PARTNER_FELDER = (
     "rentner_grad_der_behinderung_partner",     # E0505809 (GdB Ehegatte)
     "rentner_hilflos_blind_taubblind_partner",  # E0505807 (hilflos/blind Ehegatte)
+    # § 20 Kapital Person-B (Anlage-KAP-Instanz B, Klasse g) — nur bei Zusammenveranlagung sinnvoll:
+    "kap_kapitalertraege_partner",
+    "kap_gewinn_aktien_partner",
+    "kap_verlust_aktien_partner",
+    "kap_verlust_sonstige_partner",
+    # § 22 Rente Person-B (Anlage-R-Instanz B, Klasse g×f) — der Renten-Betrag ist der Indikator (die
+    # int-Meta beginn/alter würden über _ist_gesetzt (>0) falsch-positiv, daher nur der Betrag):
+    "rentner_jahresrente_partner",
 )
 
 

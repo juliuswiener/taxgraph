@@ -101,6 +101,76 @@ bindungen:
       zitatanker: "nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
       datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
 
+  # ===== §20 Kapital Person-B (Zusammenveranlagung): Klasse-g-Zwillinge, Anlage-KAP-Instanz B =====
+  # Anlage KAP wird PER PERSON gefüllt (jeder Ehegatte eigener Sparer-Pauschbetrag § 20 Abs. 9 S. 3);
+  # KEIN distinkter Person-B-Kz (Schema-Recon 2026-07-18: E0121709/E19009xx = per-Person-Instanz, kein
+  # Ehegatte-Kz) → est_mapping Klasse g mappt _partner auf DENSELBEN Person-A-Kz im person_b-Bucket, kein
+  # neuer Kz. K2-Guard partner_check: nur bei veranlagung==zusammen. Accessor summiert A+B (dev-1-Nachtrag).
+  - feld_id: kap_kapitalertraege_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_kapitalertraege_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie hohe Kapitalerträge hatte dein zusammen veranlagter Ehe-/Lebenspartner dieses Jahr (Zinsen, Dividenden, Gewinne)?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung: jeder Ehegatte hat einen eigenen Sparer-Pauschbetrag (1.000 Euro), deshalb person-individuell aus der Steuerbescheinigung des Partners."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz E0121709 wie Person A, zweites Sub-Dokument — kein distinktes Partner-Kz (Schema-Recon: keine Ehegatte-Kapitalerträge-Kz). herkunft_slots=null (Beleg füllt nur Person A)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 9 S. 3 EStG"
+      zitatanker: "gemeinsamer Sparer-Pauschbetrag von 2 000 Euro"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_gewinn_aktien_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_gewinn_aktien_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie hohe Gewinne aus dem Verkauf von Aktien hatte dein Ehe-/Lebenspartner dieses Jahr?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell: Aktienverluste des Partners verrechnen sich nur mit seinen eigenen Aktiengewinnen."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz E1900901 wie Person A, kein distinktes Partner-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 4 EStG"
+      zitatanker: "aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_verlust_aktien_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_verlust_aktien_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie hohe Verluste aus dem Verkauf von Aktien hatte dein Ehe-/Lebenspartner dieses Jahr?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell (eigener Aktien-Verlusttopf des Partners)."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz E1901301 wie Person A, kein distinktes Partner-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 4 EStG"
+      zitatanker: "aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_verlust_sonstige_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_verlust_sonstige_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie hohe sonstige Kapitalverluste (außer Aktien) hatte dein Ehe-/Lebenspartner dieses Jahr?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell (eigener sonstiger Verlusttopf des Partners)."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz E1901201 wie Person A, kein distinktes Partner-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 1 EStG"
+      zitatanker: "nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+
   # ========================= V+V §21 — laufende Einkünfte (p21) =========================
   - feld_id: vv_einnahmen
     quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: einnahmen}
