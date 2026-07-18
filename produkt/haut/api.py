@@ -70,9 +70,14 @@ DHF_BEDINGUNGEN = ("dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
 AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr")
 VOR_PARTNER_FELDER = ("vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
                       "vor_rv_ausserhalb_lstb_partner")
-# Front V+V (§ 21): Überschuss-Rechnung Einnahmen − Werbungskosten (Scheibe 3, referenziert).
+# Front V+V (§ 21): Überschuss-Rechnung Einnahmen − Werbungskosten (Scheibe 3, referenziert). vv_entgelt_quote_
+# prozent (§ 21 Abs. 2) ist PFLICHT-Kegel (per Objekt): jeder Vermieter MUSS die Entgelt-Quote beantworten
+# (100 % wenn nicht verbilligt), sonst bliebe der verbilligt-Vermieter stumm bei voller WK = Unter-tax (K2).
 VV_GESAMT_FELDER = ("vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen",
-                    "vv_erhaltungsaufwand", "vv_sonstige_wk")
+                    "vv_erhaltungsaufwand", "vv_sonstige_wk", "vv_entgelt_quote_prozent")
+# § 21 Abs. 2 Tatbestand (Wohnzwecke + auf Dauer): OPTIONAL (nicht Pflicht-Kegel), per Objekt. Absent → Tatbestand
+# hält → Kürzung greift bei quote < 66 (fail-safe über-tax). Explizit False (gewerblich/nicht-dauer) → volle WK.
+VV_ABS2_TATBESTAND = ("vv_wohnzwecke", "vv_auf_dauer")
 # Front Kapital (§ 20 / § 32d): E0121709-Aggregat ODER die zwei Verlust-Töpfe (Aktien/sonstige) — MVP
 # SINGLE-SOURCE (Instructor-Entscheid Q1): beide gesetzt → kapital_semantik_offen (Vordruck-Semantik
 # additiv-vs-subset = benannter GAP, nicht geraten). kap_zusammenveranlagung verdoppelt den Sparer-PB.
@@ -165,9 +170,9 @@ SCHEIBEN = {
     # AN-only-MVP über catala_est). NAMED GAPS: § 10d Verlustvortrag; Kapital-Co-Okkurrenz E0121709+Töpfe
     # (kapital_semantik_offen); zusammen+§19 (Person-B); §22-Rente = weitere Summanden.
     "gesamt": {
-        "felder": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
+        "felder": (VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ("veranlagung", "bruttoarbeitslohn")
                    + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP
-                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE),  # Weg ii: Abzüge + §24a/§24b OPTIONAL (nicht Kegel)
+                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2-Tatbestand OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0).
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
@@ -380,12 +385,29 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             def _ci(k):
                 v = fi.get(k, {}).get("wert")
                 return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
-            return runner.catala_vermietung_einkuenfte({
+            def _bi(k):
+                return fi.get(k, {}).get("wert")
+            vv_voll = runner.catala_vermietung_einkuenfte({
                 "einnahmen": _ci("vv_einnahmen") // 100,
                 "gebaeude_afa": _ci("vv_gebaeude_afa") // 100,
                 "schuldzinsen": _ci("vv_schuldzinsen") // 100,
                 "erhaltungsaufwand": _ci("vv_erhaltungsaufwand") // 100,
                 "sonstige_werbungskosten": _ci("vv_sonstige_wk") // 100})
+            # § 21 Abs. 2: verbilligte Wohnraumvermietung (Entgelt < 66 % ortsüblich) → WK nur anteilig (× quote/
+            # 100), das erhöht die § 21-Einkünfte (mehr Steuer, K2-sichere Richtung). NUR bei Tatbestand Wohnzwecke
+            # + auf Dauer (§ 21 Abs. 2 S. 1); gewerblich/nicht-dauer (Feld = False) → volle WK. quote 100 (default)
+            # ≥ 66 → keine Kürzung. PER OBJEKT (jede Instanz eigene Quote/Tatbestand). Umgesetzt als Add-back der
+            # nicht abziehbaren WK auf den Voll-Überschuss (behält catala_vermietung_einkuenfte + dessen Konsistenz-
+            # Gate im Pfad). quote im Pflicht-Kegel → immer beantwortet (kein stiller Unter-Abzug).
+            quote = _ci("vv_entgelt_quote_prozent") or 100
+            tatbestand = (_bi("vv_wohnzwecke") is not False) and (_bi("vv_auf_dauer") is not False)
+            if tatbestand and 0 < quote < 66:
+                wk_voll = (_ci("vv_gebaeude_afa") + _ci("vv_schuldzinsen")
+                           + _ci("vv_erhaltungsaufwand") + _ci("vv_sonstige_wk")) // 100
+                wk_abziehbar = runner.catala_p21_2_verbilligt({
+                    "werbungskosten": wk_voll, "entgelt_quote_prozent": quote})
+                return vv_voll + (wk_voll - wk_abziehbar)   # nicht abziehbare WK zurück → höhere Einkünfte
+            return vv_voll
 
         def slot_fn(slots: dict) -> int:
             # § 21 Überschuss je Objekt, dann STUMPFE Σ über ALLE vv_objekt-Instanzen (Multi-Objekt, #5):
@@ -657,10 +679,12 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # Basis-Kegel, den _feste_zahl separat prüft (input_kegel_nicht_bestaetigt) — hier nur die Zusatzobjekte.
         gruppe = cfg.get("multi_objekt")
         if gruppe and store is not None and bindung is not None:
-            pflicht = frozenset(VV_GESAMT_FELDER)
+            pflicht = frozenset(VV_GESAMT_FELDER)   # 6 Pflicht-vv-Felder je Objekt (inkl. § 21-Abs.2-Entgelt-Quote)
             for inst in EM.instanzen(store, bindung, gruppe):
+                # Subset-Check (nicht ==): die optionalen §21-Abs.2-Tatbestand-Felder (wohnzwecke/auf_dauer, auch
+                # vv_objekt-getaggt) dürfen zusätzlich present sein → ALLE Pflicht-Felder present genügt.
                 if inst["index"] >= 2 and (
-                        set(inst["felder"]) != pflicht or inst["zustand"] != "bestaetigt"):
+                        not pflicht <= set(inst["felder"]) or inst["zustand"] != "bestaetigt"):
                     return "vv_instanz_offen"
         # § 22 aa Rentenfreibetrag-Fixierung (K2): ab dem 2. Jahr ist der Freibetrag in EURO fix; fehlt er
         # (aa-Folgejahr, renten_beginn < VZ, kein rentenfreibetrag) → fail-closed, kein %×erhöhte-Rente.

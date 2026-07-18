@@ -1,0 +1,25 @@
+id: gesamt_2025_einzel_21_verbilligt
+# dev-2 2026-07-18: catala_gesamt (golden-runner) ist FLACH — nimmt einkuenfte_vermietung pre-computed
+# (dev-1-Kontrakt msg 3042: die per-Objekt-WK-Kürzung lebt in seinem HAUT-Fold, NICHT im golden-runner;
+# der golden-runner hat keinen catala_p21_2-Dispatch). Dieser Golden verankert daher die § 2-Komposition/
+# den Tarif AUF der § 21-Abs.2-reduzierten Vermietungsgröße; die WK-Kürzungs-MATHEMATIK selbst
+# (10000 × 40/100 = 4000) ist in dev-1s catala_p21_2_verbilligt-Accessor-Unit-Test + Haut-e2e verifiziert.
+# festzusetzende_est doppelt hand-verifiziert (Engine catala_gesamt + unabhängiger § 32a-2025-Grundtarif).
+beschreibung: "Engine-Komposition § 21 Abs. 2 S. 1 verbilligte Vermietung (Tarif auf der WK-gekürzten Vermietungsgröße = der Under-Tax-Fix): § 19 40000 + verbilligt vermietete Wohnung. HERLEITUNG der Vermietungsgröße: Einnahmen 12000, Werbungskosten 10000, Entgelt-Quote 40 % < 50 % der ortsüblichen Marktmiete -> § 21 Abs. 2 S. 1 (aufzuteilen) -> WK nur anteilig abziehbar 10000 × 40/100 = 4000 -> § 21-Einkünfte = 12000 − 4000 = 8000 (statt 12000 − 10000 = 2000 bei voller WK). SdE 48000 -> zvE 47964 (§ 10c-PB 36) -> Grundtarif 9976 -> festzusetzende_est 9976. OHNE die § 21-Abs.2-WK-Kürzung wären die WK voll abgezogen worden -> § 21-Einkünfte 2000 -> est nur 7954 (unter-besteuert um 2022). Dieser Golden verankert den Tarif auf der reduzierten Größe; die Kürzungs-Rechnung selbst ist in dev-1s catala_p21_2-Accessor-Unit-Test verifiziert. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 40000
+  einkuenfte_vermietung: 8000
+
+erwartung:
+  festzusetzende_est: 9976
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 21 Abs. 2 S. 1 EStG (verbilligte Vermietung, WK-Aufteilung bei Entgelt < 50 % der ortsüblichen Marktmiete) i.V.m. § 2 Abs. 3 bis 6"
+  datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+  zitatanker: "weniger als 50 Prozent der ortsüblichen Marktmiete"

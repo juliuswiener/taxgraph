@@ -1,0 +1,22 @@
+id: gesamt_2025_einzel_21_verbilligt_multiobjekt
+# dev-2 2026-07-18: flacher Kompositions-Golden (catala_gesamt nimmt EIN einkuenfte_vermietung pre-computed).
+# Die PER-OBJEKT-Kürzung (nur Objekt B, nicht A) rechnet dev-1s HAUT-Fold via instanzen("vv_objekt") und
+# feedet die Σ; dieser Golden verankert den Tarif auf der fertigen Σ und kreuzprüft dev-1s Haut-e2e (Σ 46000).
+# Herleitung der Σ hand-verifiziert (Engine catala_gesamt + § 32a-2025-Grundtarif, beide 9288).
+beschreibung: "Engine-Komposition § 21 Abs. 2 MEHR-OBJEKT (per-Objekt-Kürzung, nur das verbilligte Objekt): zwei Vermietungsobjekte. Objekt A marktüblich (Entgelt-Quote ≥ 66 %): Einnahmen 40000 − volle WK 10000 = 30000 (ungekürzt). Objekt B verbilligt (Entgelt-Quote 50 %): Einnahmen 20000 − anteilige WK 8000 × 50/100 = 4000 = 16000 (gekürzt, § 21 Abs. 2). Σ § 21-Einkünfte = 30000 + 16000 = 46000 -> zvE 45964 (§ 10c-PB 36) -> Grundtarif 9288 -> festzusetzende_est 9288. Beweist: die WK-Kürzung greift OBJEKTWEISE — nur B wird gekürzt, A bleibt voll; die EINE globale Quote würde A falsch mitkürzen (das ist der instanz_gruppe:vv_objekt-Zweck). VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_vermietung: 46000
+
+erwartung:
+  festzusetzende_est: 9288
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 21 Abs. 2 EStG (verbilligte Vermietung, objektweise WK-Kürzung) i.V.m. § 2 Abs. 3 bis 6"
+  datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+  zitatanker: "weniger als 50 Prozent der ortsüblichen Marktmiete"

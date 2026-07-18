@@ -647,13 +647,15 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_gewinn_aktien=0, kap_verlust_aktien=0, kap_gewinn_sonstige=0, kap_verlust_sonstige=0,
              veranlagung="einzel", bruttolohn_partner=None, person_b_idnr=None,
              kap_ertraege_partner=0, kap_gewinn_aktien_partner=0, kap_verlust_aktien_partner=0,
-             kap_verlust_sonstige_partner=0):
+             kap_verlust_sonstige_partner=0, entgelt_quote=100):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
-    bruttolohn_partner/person_b_idnr (nur bei veranlagung=zusammen) = Person-B-§19-Kegel (#4)."""
+    bruttolohn_partner/person_b_idnr (nur bei veranlagung=zusammen) = Person-B-§19-Kegel (#4). entgelt_quote
+    (§ 21 Abs. 2, Pflicht-Kegel, %) = 100 (nicht verbilligt) default; < 66 → WK-Kürzung."""
     k = [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa), ("vv_schuldzinsen", schuldzinsen),
-         ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("veranlagung", veranlagung),
+         ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0),
+         ("vv_entgelt_quote_prozent", entgelt_quote), ("veranlagung", veranlagung),
          ("bruttoarbeitslohn", bruttolohn),
          ("ep_arbeitstage", ep_tage), ("ep_entfernung_km", ep_km),
          ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", ep_kfz),
@@ -756,12 +758,17 @@ def test_kombiniert_mit_pendel_wk(base):
         assert erg["zahl_cent"] is None
 
 
-def _vv_instanz_anlegen(base, fid, idx, einnahmen, afa=0, schuldzinsen=0, erhaltung=0, sonstige=0, weglassen=()):
-    """Postet die 5 vv-Felder EINER weiteren Objekt-Instanz (base__idx, idx>=2, Multi-Objekt-§21 #5).
-    weglassen = feld_ids, die NICHT gepostet werden (für den Unvollständig-K2-Test)."""
-    for feld, wert in [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa),
-                       ("vv_schuldzinsen", schuldzinsen), ("vv_erhaltungsaufwand", erhaltung),
-                       ("vv_sonstige_wk", sonstige)]:
+def _vv_instanz_anlegen(base, fid, idx, einnahmen, afa=0, schuldzinsen=0, erhaltung=0, sonstige=0,
+                        entgelt_quote=100, wohnzwecke=None, weglassen=()):
+    """Postet die 6 Pflicht-vv-Felder EINER weiteren Objekt-Instanz (base__idx, idx>=2, Multi-Objekt-§21 #5) inkl.
+    § 21-Abs.2-Entgelt-Quote (100=nicht verbilligt). wohnzwecke (bool, optional §21-Abs.2-Tatbestand) nur wenn
+    nicht None. weglassen = feld_ids, die NICHT gepostet werden (für den Unvollständig-K2-Test)."""
+    paare = [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa),
+             ("vv_schuldzinsen", schuldzinsen), ("vv_erhaltungsaufwand", erhaltung),
+             ("vv_sonstige_wk", sonstige), ("vv_entgelt_quote_prozent", entgelt_quote)]
+    if wohnzwecke is not None:
+        paare.append(("vv_wohnzwecke", wohnzwecke))
+    for feld, wert in paare:
         if feld in weglassen:
             continue
         st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(f"{feld}__{idx}", wert))
@@ -818,6 +825,71 @@ def test_gesamt_multi_objekt_schreibpfad_akzeptiert_instanz(base):
     assert st == 201                                   # vv_einnahmen ist instanz_gruppe:vv_objekt -> ok
     st, _ = _req(base, "POST", "/fall/mos/event", _laie("bruttoarbeitslohn__2", 1000000))
     assert st == 400                                   # bruttoarbeitslohn NICHT instanz-fähig -> abgewiesen
+
+
+def test_gesamt_p21_2_verbilligt_kuerzung(base):
+    """§ 21 Abs. 2 K2-KERN (behebt Unter-Besteuerung): verbilligte Vermietung Entgelt-Quote 50 % (< 66 %) → WK
+    nur anteilig (8000 × 0,5 = 4000 statt voll) → § 21-Einkünfte 16000 statt 12000 → HÖHERE Steuer. Job 40000 +
+    Vermietung (Einnahmen 20000, AfA 8000) @ quote 50 → festzusetzende_est 12410 = 1241000 Cent (vs. voll-WK 1095200)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "vk", _gesamt_kegel(2000000, afa=800000, bruttolohn=4000000, entgelt_quote=50))
+    st, erg = _req(base, "GET", "/fall/vk/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1241000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p21_2_voll_bei_100(base):
+    """§ 21 Abs. 2 Gegenzweig: Entgelt-Quote 100 % (≥ 66 %) → volle WK (keine Kürzung) → § 21-Einkünfte 12000 →
+    festzusetzende_est 10952 = 1095200 Cent. Belegt: der Regelfall (nicht verbilligt) bleibt unverändert."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "v100", _gesamt_kegel(2000000, afa=800000, bruttolohn=4000000, entgelt_quote=100))
+    st, erg = _req(base, "GET", "/fall/v100/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 1095200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p21_2_gewerblich_voll_wk(base):
+    """§ 21 Abs. 2 Tatbestands-Gate: Entgelt-Quote 50 %, ABER vv_wohnzwecke=false (gewerblich, keine
+    Wohnraumvermietung) → § 21 Abs. 2 greift NICHT → volle WK → festzusetzende_est 1095200 Cent (wie quote 100).
+    Belegt: die Kürzung ist Wohnzweck-/Dauer-spezifisch, nicht jede verbilligte Überlassung."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "vg", _gesamt_kegel(2000000, afa=800000, bruttolohn=4000000, entgelt_quote=50))
+    st, _ = _req(base, "POST", "/fall/vg/event", _laie("vv_wohnzwecke", False))
+    assert st == 201
+    st, erg = _req(base, "GET", "/fall/vg/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 1095200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p21_2_kegel_quote_fehlt(base):
+    """§ 21 Abs. 2 K2 Pflicht-Kegel: eine WEITERE Objekt-Instanz OHNE vv_entgelt_quote_prozent__2 → vv_instanz_offen
+    (kein stiller Bescheid bei voller WK — die Quote MUSS je Objekt beantwortet sein, sonst Unter-tax-Risiko)."""
+    _gesamt_anlegen(base, "vqf", _gesamt_kegel(3000000, bruttolohn=4000000))
+    _vv_instanz_anlegen(base, "vqf", 2, 2000000, afa=800000, weglassen=("vv_entgelt_quote_prozent",))
+    st, erg = _req(base, "GET", "/fall/vqf/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "vv_instanz_offen"
+
+
+def test_gesamt_p21_2_per_objekt(base):
+    """§ 21 Abs. 2 PER OBJEKT (Multi-Objekt): Objekt A markt-vermietet (Einnahmen 30000, quote 100 → voll, vv 30000)
+    + Objekt B verbilligt (Einnahmen 20000, AfA 8000, quote 50 → WK 4000, vv 16000) → NUR B gekürzt → § 21-Σ 46000
+    → festzusetzende_est 9288 = 928800 Cent. Belegt: die Kürzung trifft je Objekt seine eigene Quote, nicht global."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "vpo", _gesamt_kegel(3000000, bruttolohn=0, kein_vuv=False, entgelt_quote=100))
+    _vv_instanz_anlegen(base, "vpo", 2, 2000000, afa=800000, entgelt_quote=50)
+    st, erg = _req(base, "GET", "/fall/vpo/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 928800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
 
 
 def test_kombiniert_job_und_kapital(base):

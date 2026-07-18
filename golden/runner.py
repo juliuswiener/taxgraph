@@ -47,6 +47,7 @@ from pkg import Kirchensteuerabzug as KI  # noqa: E402  (§ 10 Abs. 1 Nr. 4 KiSt
 from pkg import Altersentlastungsbetrag as AE  # noqa: E402  (§ 24a, charge30)
 from pkg import Entlastungsbetrag as EB  # noqa: E402  (§ 24b Alleinerziehende, charge30)
 from pkg import Familienleistungsausgleich as FL  # noqa: E402  (§ 31 Günstigerprüfung, charge30)
+from pkg import VerbilligteVermietungWk as VV  # noqa: E402  (§ 21 Abs. 2 verbilligte Vermietung WK-Kürzung)
 from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
@@ -314,6 +315,19 @@ def catala_p31_familienleistung(s: dict) -> int:
         est_ohne_freibetraege_in=Money(f"{int(s.get('est_ohne_freibetraege', 0))}.00"),
         est_mit_freibetraegen_in=Money(f"{int(s.get('est_mit_freibetraegen', 0))}.00"),
         kindergeld_in=Money(f"{int(s.get('kindergeld', 0))}.00"))).est_nach_familienausgleich) // 100
+
+
+def catala_p21_2_verbilligt(s: dict) -> int:
+    """§ 21 Abs. 2 EStG — abziehbare Werbungskosten bei verbilligter Wohnraumvermietung, EURO (module
+    VerbilligteVermietungWk): entgelt_quote ≥ 66 % der ortsüblichen Marktmiete → volle WK; < 66 % → WK ×
+    (quote/100). Der 50–66-%-Totalüberschussprognose-Korridor wird konservativ anteilig gekürzt (SAFE-Richtung,
+    über- nie unterbesteuert; Voll-WK-bei-positiver-Prognose = benannter Nachtrag). entgelt_quote als PROZENT-
+    Decimal (50, das Modul vergleicht ≥ 66 und dividiert /100). Der Tatbestand (Wohnzwecke, auf Dauer) wird VOM
+    AUFRUFER gegated (nicht Scope-Input); werbungskosten = die JE OBJEKT summierten Detail-WK."""
+    r = VV.verbilligte_vermietung_wk(VV.VerbilligteVermietungWkIn(
+        werbungskosten_in=Money(f"{int(s.get('werbungskosten', 0))}.00"),
+        entgelt_quote_prozent_in=Decimal(str(int(s.get("entgelt_quote_prozent", 100))))))
+    return int(r.abziehbare_werbungskosten) // 100
 
 
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --
