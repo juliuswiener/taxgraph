@@ -756,6 +756,70 @@ def test_kombiniert_mit_pendel_wk(base):
         assert erg["zahl_cent"] is None
 
 
+def _vv_instanz_anlegen(base, fid, idx, einnahmen, afa=0, schuldzinsen=0, erhaltung=0, sonstige=0, weglassen=()):
+    """Postet die 5 vv-Felder EINER weiteren Objekt-Instanz (base__idx, idx>=2, Multi-Objekt-§21 #5).
+    weglassen = feld_ids, die NICHT gepostet werden (für den Unvollständig-K2-Test)."""
+    for feld, wert in [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa),
+                       ("vv_schuldzinsen", schuldzinsen), ("vv_erhaltungsaufwand", erhaltung),
+                       ("vv_sonstige_wk", sonstige)]:
+        if feld in weglassen:
+            continue
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(f"{feld}__{idx}", wert))
+        assert st == 201
+
+
+def test_gesamt_multi_objekt_zwei_gewinne(base):
+    """#5 Multi-Objekt § 21: zwei vermietete Objekte (Basis-Instanz 30000 + Objekt 2 = vv_einnahmen__2 20000),
+    einzel, kein Job → est_mapping.instanzen enumeriert BEIDE (index 1 = Basis, index 2 = __2), der Ring
+    summiert stumpf → § 21 Σ 50000 → festzusetzende_est 10678 = 1067800 Cent."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "mo2", _gesamt_kegel(3000000))   # Objekt 1 = Basis-Instanz 30000
+    _vv_instanz_anlegen(base, "mo2", 2, 2000000)           # Objekt 2 = __2 20000
+    st, erg = _req(base, "GET", "/fall/mo2/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1067800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_multi_objekt_verlustausgleich(base):
+    """#5 K2-KERN horizontaler Verlustausgleich INNERHALB § 21: Objekt 1 +30000, Objekt 2 Verlust
+    (8000−6000−7000 = −5000) → Σ 25000 (NICHT 30000 — der Objekt-2-Verlust mindert Objekt 1, catala_vermietung_
+    einkuenfte floort NICHT per Objekt) → festzusetzende_est 2917 = 291700 Cent, KLEINER als das Einzelobjekt
+    (4293). Belegt, dass die per-Objekt-Σ Verluste durchreicht statt sie per Objekt auf 0 zu floren."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "mov", _gesamt_kegel(3000000))
+    _vv_instanz_anlegen(base, "mov", 2, 800000, afa=600000, schuldzinsen=700000)
+    st, erg = _req(base, "GET", "/fall/mov/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 291700 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_multi_objekt_instanz_unvollstaendig(base):
+    """#5 K2 fail-closed: Objekt 2 unvollständig (nur vv_einnahmen__2, die 4 WK-Felder fehlen) → vv_instanz_offen,
+    NIE ein still zu niedriges §21-Σ (eine halbe Objekt-Instanz würde sonst mit WK=0 voll versteuert erscheinen).
+    Der per-Instanz-Guard verlangt alle 5 Basis-vv-Felder present + bestätigt je Zusatzobjekt."""
+    _gesamt_anlegen(base, "moi", _gesamt_kegel(3000000))
+    _vv_instanz_anlegen(base, "moi", 2, 2000000,
+                        weglassen=("vv_gebaeude_afa", "vv_schuldzinsen",
+                                   "vv_erhaltungsaufwand", "vv_sonstige_wk"))
+    st, erg = _req(base, "GET", "/fall/moi/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "vv_instanz_offen"
+
+
+def test_gesamt_multi_objekt_schreibpfad_akzeptiert_instanz(base):
+    """#5 Schreibpfad: der Event-Endpunkt akzeptiert base__n einer instanz-fähigen Basis (parse_instanz),
+    lehnt aber ein __n einer NICHT-instanz-fähigen Basis ab (400) — kein beliebiges Suffix-Schlupfloch."""
+    _gesamt_anlegen(base, "mos", _gesamt_kegel(3000000))
+    st, _ = _req(base, "POST", "/fall/mos/event", _laie("vv_einnahmen__2", 1500000))
+    assert st == 201                                   # vv_einnahmen ist instanz_gruppe:vv_objekt -> ok
+    st, _ = _req(base, "POST", "/fall/mos/event", _laie("bruttoarbeitslohn__2", 1000000))
+    assert st == 400                                   # bruttoarbeitslohn NICHT instanz-fähig -> abgewiesen
+
+
 def test_kombiniert_job_und_kapital(base):
     """Konvergenz § 19 + § 20: Job 60000 (§ 19-Einkünfte 58770) + Kapitalerträge 10000 → nach Sparer-PB
     9000; Günstigerprüfung § 32d Abs. 6: Grenzsteuer > 25 % → Abgeltung 2250 gewinnt → festzusetzende_est

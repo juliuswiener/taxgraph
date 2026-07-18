@@ -165,6 +165,7 @@ SCHEIBEN = {
         # (kein_gewinn §§13-18, kein_sonstige §22). §19/§21/§20 rechnet sie -> deren Flags NICHT hier.
         "fremd_arten": ("kein_gewinn", "kein_sonstige"),
         "partner_19": True,     # § 19-Einkünfte des Ehegatten in den Ring (Zusammenveranlagung, #4)
+        "multi_objekt": "vv_objekt",  # Multi-Objekt-§21-Σ (#5): der Ring summiert ALLE vv_objekt-Instanzen
     },
     # Rentner-Ring (§ 22 Leibrente + § 33b): eigene Scheibe (Feld-Ergonomie — Renten-Felder blähen den
     # AN/gesamt-Kegel nicht). Rechnet über DENSELBEN catala_gesamt-Kern (einkuenfte_sonstige = § 22-Renten-
@@ -252,11 +253,14 @@ def _scheibe_bindung(store: dict) -> dict:
     return {f: b[f] for f in felder}
 
 
-def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None):
+def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None,
+                 store: dict | None = None):
     """bescheid_fn(feld_werte)->cent für eine ring-fähige Familie (Naht-Einheit CENT via
     intervall.bescheid_via_slots). None, wenn die Catala-Toolchain oder ein Accessor fehlt —
     dann bleibt der Ring ehrlich leer, nie ein erfundener Betrag. `felder` (materialisierter
-    Store-Snapshot) erlaubt den Zugriff auf Einzelfelder, die die Summen-Slots verdecken (VOR-AG)."""
+    Store-Snapshot) erlaubt den Zugriff auf Einzelfelder, die die Summen-Slots verdecken (VOR-AG).
+    `store` (optional) erlaubt die Multi-Objekt-Instanz-Enumeration (est_mapping.instanzen, #5) — ohne
+    store rechnet der §21-Ring nur die Basis-Instanz (Alt-Aufrufer/Teil-Ringe)."""
     if quantitaet == "abziehbarer_betrag":          # § 9 Entfernungspauschale
         try:
             import runner  # noqa: F401
@@ -347,15 +351,31 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             v = f.get(fid, {}).get("wert")
             return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
 
+        def _vv_objekt(fi: dict) -> int:
+            # § 21 Überschuss EINES Objekts (Einnahmen − Werbungskosten), Naht-CENT -> EURO. KEIN per-
+            # Objekt-Floor (catala_vermietung_einkuenfte gibt Verluste durch → horizontaler Verlustausgleich
+            # innerhalb § 21; der Floor kommt erst im gesamt-Scope, § 2 Abs. 3). fi = das je-Instanz auf die
+            # Basis-feld_id normierte Feld-Dict (instanzen-Naht) ODER die felder-closure f (Basis-Fallback).
+            def _ci(k):
+                v = fi.get(k, {}).get("wert")
+                return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+            return runner.catala_vermietung_einkuenfte({
+                "einnahmen": _ci("vv_einnahmen") // 100,
+                "gebaeude_afa": _ci("vv_gebaeude_afa") // 100,
+                "schuldzinsen": _ci("vv_schuldzinsen") // 100,
+                "erhaltungsaufwand": _ci("vv_erhaltungsaufwand") // 100,
+                "sonstige_werbungskosten": _ci("vv_sonstige_wk") // 100})
+
         def slot_fn(slots: dict) -> int:
-            # § 21 Überschuss (Einnahmen − Werbungskosten), Naht-CENT -> EURO. catala_gesamt macht
-            # den Verlust-Floor (negativ → est 0, K2), die § 2-Abs.-3-Verrechnung und den Tarif.
-            vv = runner.catala_vermietung_einkuenfte({
-                "einnahmen": _c("vv_einnahmen") // 100,
-                "gebaeude_afa": _c("vv_gebaeude_afa") // 100,
-                "schuldzinsen": _c("vv_schuldzinsen") // 100,
-                "erhaltungsaufwand": _c("vv_erhaltungsaufwand") // 100,
-                "sonstige_werbungskosten": _c("vv_sonstige_wk") // 100})
+            # § 21 Überschuss je Objekt, dann STUMPFE Σ über ALLE vv_objekt-Instanzen (Multi-Objekt, #5):
+            # est_mapping.instanzen (dev-2s Ring-Naht, EINE Enumerations-Wahrheit — index==1 = Basis-vv-Felder,
+            # __n = weitere Objekte, je Instanz auf die Basis-feld_id normiert). Ohne store (Teil-Ring/Alt-
+            # Aufrufer) nur die Basis aus f. Unvollständige Instanzen fängt der Guard VOR diesem Aufruf ab.
+            if store is not None:
+                vv = sum(_vv_objekt(inst["felder"])
+                         for inst in EM.instanzen(store, bindung, "vv_objekt"))
+            else:
+                vv = _vv_objekt(f)
             g = {"gesamtfall": True, "veranlagungszeitraum": vz,
                  "veranlagung": slots.get("veranlagung", "einzel"),
                  "einkuenfte_vermietung": vv}
@@ -480,22 +500,25 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
 
 
-def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder: tuple):
+def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder: tuple,
+                store: dict | None = None):
     """Fail-closed: die festzusetzende Zahl NUR bei Scheiben-Gesamt-Accessor UND vollständig
-    bestätigtem Input-Kegel (Meet). Ohne Gesamt-Accessor gibt es KEINE Scheiben-Zahl (ehrlich)."""
+    bestätigtem Input-Kegel (Meet). Ohne Gesamt-Accessor gibt es KEINE Scheiben-Zahl (ehrlich).
+    `store` erlaubt dem §21-Ring die Multi-Objekt-Instanz-Σ (#5)."""
     q = cfg["gesamt_ring"]
     if q is None:
         return None
     zustaende = [felder[f]["zustand"] for f in scheibe_felder if f in felder]
     if len(zustaende) < len(scheibe_felder) or ST.meet_zustand(zustaende) != "bestaetigt":
         return None
-    bf = _bescheid_fn(q, vz, bindung, felder)
+    bf = _bescheid_fn(q, vz, bindung, felder, store)
     if bf is None:
         return None
     return bf({f: felder[f]["wert"] for f in scheibe_felder})
 
 
-def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None = None):
+def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None = None,
+                          store: dict | None = None, bindung: dict | None = None):
     """K2-Guard: nicht-ring-fähige Werbungskosten/Einkunftsarten sperren den Ring GANZ (nie Fake-0).
     Ein dHf-/Verpflegung-/AM-Feld mit Wert > 0 (vorläufig ODER bestätigt) sperrt (kein Catala-Modul);
     ein fremd_arten-Flag = false (Nutzer HAT eine NICHT von dieser Scheibe gerechnete Art) macht den
@@ -529,6 +552,17 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             if any((felder.get(pf) or {}).get("zustand") != "bestaetigt"
                    for pf in GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP):
                 return "partner_kegel_offen"
+        # Multi-Objekt § 21 (#5): jede WEITERE vv_objekt-Instanz (index ≥ 2) muss VOLLSTÄNDIG bestätigt sein —
+        # alle 5 Basis-vv-Felder present UND per-Instanz-meet == bestaetigt (instanzen-Naht). Sonst kein Σ (K2:
+        # eine halbe/vorläufige Objekt-Instanz erzeugte sonst ein still zu niedriges §21-Σ). Instanz 1 = der
+        # Basis-Kegel, den _feste_zahl separat prüft (input_kegel_nicht_bestaetigt) — hier nur die Zusatzobjekte.
+        gruppe = cfg.get("multi_objekt")
+        if gruppe and store is not None and bindung is not None:
+            pflicht = frozenset(VV_GESAMT_FELDER)
+            for inst in EM.instanzen(store, bindung, gruppe):
+                if inst["index"] >= 2 and (
+                        set(inst["felder"]) != pflicht or inst["zustand"] != "bestaetigt"):
+                    return "vv_instanz_offen"
         # § 22 aa Rentenfreibetrag-Fixierung (K2): ab dem 2. Jahr ist der Freibetrag in EURO fix; fehlt er
         # (aa-Folgejahr, renten_beginn < VZ, kein rentenfreibetrag) → fail-closed, kein %×erhöhte-Rente.
         if cfg.get("rentner"):
@@ -616,7 +650,7 @@ def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: st
     """Frage-Reihenfolge-Gewichte aus dem verfügbaren Ring (Gesamt bevorzugt, sonst erster Teil)."""
     if cfg["gesamt_ring"]:
         rb = _ring_bindung(cfg, bindung)
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store)
         if bf is not None:
             return {b["feld_id"]: b["spanne_cent"]
                     for b in IV.intervall(felder, rb, bf, snapshot_id=sid)["beitraege"]}
@@ -667,12 +701,12 @@ def stand(fall_id: str) -> tuple[int, dict]:
     }
 
     gesamt_iv, engine, teil = None, "unavailable", []
-    gesperrt = _an_gesamt_sperrgrund(felder, cfg, vz) if cfg.get("guard") else None
+    gesperrt = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung) if cfg.get("guard") else None
     if gesperrt:
         engine = "gesperrt"          # nicht-ring-fähiger Abzug/Einkunftsart -> kein Ring (K2)
     elif cfg["gesamt_ring"]:
         rb = _ring_bindung(cfg, bindung)
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store)
         if bf is not None:
             gesamt_iv = IV.intervall(felder, rb, bf, snapshot_id=sid)["intervall"]
             engine = "catala"
@@ -700,7 +734,14 @@ def event(fall_id: str, body: dict) -> tuple[int, dict]:
     bindung = _scheibe_bindung(store)
     fid = body.get("feld_id")
     if fid not in bindung:
-        raise ApiError(400, f"feld_id {fid!r} nicht in dieser Scheibe")
+        # Repeated-Instance (#5): base__n einer instanz-fähigen Basis-Bindung ist ein gültiges Instanz-Feld
+        # (Instanz 2..N eines Multi-Objekt-/Multi-Rente-Konsumenten). Die Instanz ist reine est_mapping-
+        # Konvention — der Store lernt sie nicht, aber der Schreibpfad muss sie durchlassen (parse_instanz =
+        # DIESELBE Enumerations-Wahrheit wie instanzen/deklariere, kein zweites Regex).
+        parsed = EM.parse_instanz(fid) if isinstance(fid, str) else None
+        basis = parsed[0] if parsed else None
+        if not (basis and bindung.get(basis, {}).get("instanz_gruppe")):
+            raise ApiError(400, f"feld_id {fid!r} nicht in dieser Scheibe")
     zustand = body.get("zustand")
     if zustand not in _ERLAUBTE_ZUSTAENDE:
         raise ApiError(400, f"zustand muss {_ERLAUBTE_ZUSTAENDE} sein")
@@ -742,11 +783,11 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
     vz = int(store["veranlagungszeitraum"])
     if cfg.get("guard"):
         # K2: ein nicht-ring-fähiger Abzug/Einkunftsart sperrt den Ring VOR jeder Zahl — nie Fake-Bescheid.
-        sperr = _an_gesamt_sperrgrund(felder, cfg, vz)
+        sperr = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung)
         if sperr:
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                          "grund": sperr, "offen": [], "trace": None}
-    zahl = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder)
+    zahl = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder, store)
     if zahl is None:
         if cfg["gesamt_ring"] is None:
             # Multi-Regel-Scheibe ohne ehrlichen Gesamt-Accessor: bewusst KEINE Scheiben-Zahl.
