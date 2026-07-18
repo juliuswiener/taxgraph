@@ -1015,6 +1015,75 @@ def test_rentner_partner_fixierung_offen(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "rentenfreibetrag_fixierung_offen"
 
 
+def _rente_instanz_anlegen(base, fid, idx, renten_art, jahresrente, beginn=2025, alter=0,
+                           rentenfreibetrag=None, weglassen=()):
+    """Postet die Felder EINER weiteren Rente-Instanz (base__idx, idx>=2, Multi-Rente-§22 #6). Kern = 4
+    Felder (renten_art/jahresrente/renten_beginn_jahr/alter_bei_rentenbeginn); rentenfreibetrag optional
+    (nur aa-Folgejahr). weglassen = Kern-feld_ids, die NICHT gepostet werden (Unvollständig-K2-Test)."""
+    paare = [("rentner_renten_art", renten_art), ("rentner_jahresrente", jahresrente),
+             ("rentner_renten_beginn_jahr", beginn), ("rentner_alter_bei_rentenbeginn", alter)]
+    if rentenfreibetrag is not None:
+        paare.append(("rentner_rentenfreibetrag", rentenfreibetrag))
+    for feld, wert in paare:
+        if feld in weglassen:
+            continue
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(f"{feld}__{idx}", wert))
+        assert st == 201
+
+
+def test_rentner_multi_rente_zwei_renten(base):
+    """#6 Multi-Rente § 22: zwei Renten der Person A — gesetzl. Erstjahr 20000 (aa, es 16598) + private
+    Leibrente 80000 @ Alter 65 (bb Ertragsanteil 18 %, es 14298) → est_mapping.instanzen("rente") summiert
+    JE RENTE den eigenen aa/bb-Anteil → einkuenfte_sonstige 30896 → festzusetzende_est 4549 = 454900 Cent
+    (Ref nur Rente 1 = 811). Belegt: der Ertragsanteil wird JE Rente-Art bestimmt, dann summiert."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "mr1", _rentner_kegel(jahresrente=2000000, beginn=2025))   # Rente 1 = Basis
+    _rente_instanz_anlegen(base, "mr1", 2, "private_leibrente", 8000000, alter=65)    # Rente 2 = __2
+    st, erg = _req(base, "GET", "/fall/mr1/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 454900 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_multi_rente_folgejahr_mit_freibetrag(base):
+    """#6 per-Instanz-Rentenfreibetrag: Rente 1 gesetzl. Erstjahr (es 16598) + Rente 2 gesetzl. aa-Folgejahr
+    (Beginn 2015, jahresrente 21000, rentenfreibetrag__2 6000 → (21000−6000)−102 = 14898) → Σ 31496 →
+    festzusetzende_est 4722 = 472200 Cent. Belegt: der fixierte Rentenfreibetrag wird JE Rente-Instanz gelesen."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "mr2", _rentner_kegel(jahresrente=2000000, beginn=2025))
+    _rente_instanz_anlegen(base, "mr2", 2, "gesetzliche_rente", 2100000, beginn=2015, rentenfreibetrag=600000)
+    st, erg = _req(base, "GET", "/fall/mr2/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 472200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_multi_rente_instanz_unvollstaendig(base):
+    """#6 K2 fail-closed: Rente 2 unvollständig (nur rentner_jahresrente__2, die 3 anderen Kern-Felder fehlen) →
+    rente_instanz_offen, NIE ein still zu niedriges §22-Σ. Der per-Instanz-Guard verlangt alle 4 Kern-Felder
+    (renten_art/jahresrente/beginn/alter) present + bestätigt je Zusatz-Rente (rentenfreibetrag bleibt optional)."""
+    _rentner_anlegen(base, "mr3", _rentner_kegel(jahresrente=2000000, beginn=2025))
+    _rente_instanz_anlegen(base, "mr3", 2, "gesetzliche_rente", 2000000,
+                           weglassen=("rentner_renten_art", "rentner_renten_beginn_jahr",
+                                      "rentner_alter_bei_rentenbeginn"))
+    st, erg = _req(base, "GET", "/fall/mr3/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "rente_instanz_offen"
+
+
+def test_rentner_multi_rente_fixierung_per_instanz(base):
+    """#6 K2-KERN per-Instanz-Fixierung: Rente 1 rechenbar (Erstjahr), aber Rente 2 = aa-Folgejahr (Beginn__2
+    2015 < VZ) OHNE fixierten Rentenfreibetrag__2 → rentenfreibetrag_fixierung_offen. Die aa-Folgejahr-ohne-RF-
+    Sperre greift JE Rente-Instanz (nicht nur die Basis-Rente) — kein %×erhöhte-Rente für die Zweit-Rente."""
+    _rentner_anlegen(base, "mr4", _rentner_kegel(jahresrente=2000000, beginn=2025))
+    _rente_instanz_anlegen(base, "mr4", 2, "gesetzliche_rente", 2100000, beginn=2015)   # kein rentenfreibetrag__2
+    st, erg = _req(base, "GET", "/fall/mr4/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "rentenfreibetrag_fixierung_offen"
+
+
 def _haushalt_kegel(bruttolohn=6000000, minijob=0, dienstleistung=0, handwerker=0, spende=0,
                     veranlagung="einzel", rechnung_unbar=None):
     """haushalt_gesamt-Kegel (§35a + §10b, #7): §19-Basis (Bruttolohn cent) + 3 §35a-Töpfe (cent) +

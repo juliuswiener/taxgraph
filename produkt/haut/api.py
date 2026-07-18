@@ -188,6 +188,7 @@ SCHEIBEN = {
         "guard": True,
         "gesamt_guard": True,
         "rentner": True,           # aktiviert die § 22-Rentenfreibetrag-Fixierungs-Prüfung (K2)
+        "multi_rente": "rente",    # Multi-Rente-§22-Σ (#6): der Ring summiert ALLE rente-Instanzen (aa/bb je Rente)
         "fremd_arten": ("kein_gewinn", "kein_kap", "kein_vuv"),
     },
     # Haushalt-Ring (§ 35a Haushaltsnahe + § 10b Spenden, charge29): §19-Basis (AN) + §35a-Steuerermäßigung
@@ -478,19 +479,35 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
         def _b(fid):
             return f.get(fid, {}).get("wert")
 
-        def slot_fn(slots: dict) -> int:
-            # § 22 Renten-Einkünfte → einkuenfte_sonstige. Naht-CENT → EURO (jahresrente/rentenfreibetrag);
-            # renten_beginn_jahr/alter sind int (kein cent). Die aa-Folgejahr-ohne-RF-Sperre fängt der Guard
-            # VOR diesem Aufruf (rentenfreibetrag_fixierung_offen); hier kommt nur der rechenbare Fall an.
-            rf = _b("rentner_rentenfreibetrag")
-            renten = runner.catala_renten_einkuenfte({
+        def _rente_instanz(fi: dict) -> int:
+            # § 22 Renten-Einkünfte EINER Rente (aa/bb je Instanz-Art) → einkuenfte_sonstige-Summand. Naht-CENT
+            # → EURO (jahresrente/rentenfreibetrag); renten_beginn_jahr/alter sind int (kein cent). fi = das je-
+            # Instanz auf die Basis-feld_id normierte Feld-Dict (instanzen-Naht) ODER die felder-closure f (Basis).
+            def _ci(k):
+                v = fi.get(k, {}).get("wert")
+                return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+            rf = fi.get("rentner_rentenfreibetrag", {}).get("wert")
+            return runner.catala_renten_einkuenfte({
                 "veranlagungszeitraum": vz,
-                "renten_art": _b("rentner_renten_art"),
-                "jahresrente": _c("rentner_jahresrente") // 100,
-                "renten_beginn_jahr": _c("rentner_renten_beginn_jahr"),
-                "alter_bei_rentenbeginn": _c("rentner_alter_bei_rentenbeginn"),
+                "renten_art": fi.get("rentner_renten_art", {}).get("wert"),
+                "jahresrente": _ci("rentner_jahresrente") // 100,
+                "renten_beginn_jahr": _ci("rentner_renten_beginn_jahr"),
+                "alter_bei_rentenbeginn": _ci("rentner_alter_bei_rentenbeginn"),
                 "rentenfreibetrag": (rf // 100 if isinstance(rf, (int, float))
                                      and not isinstance(rf, bool) else None)})
+
+        def slot_fn(slots: dict) -> int:
+            # § 22 Renten-Einkünfte → einkuenfte_sonstige, als STUMPFE Σ über ALLE rente-Instanzen der Person A
+            # (Multi-Rente, #6: gesetzl. + Betriebs- + Leibrente je eigene aa/bb-Behandlung, § 22-Anteil JE
+            # RENTE, dann summiert — DIESELBE instanzen-Naht wie Multi-Objekt-§21). index==1 = Basis-rentner_*-
+            # Felder, __n = weitere Renten. Ohne store (Alt-Aufrufer) nur die Basis. Die aa-Folgejahr-ohne-RF-
+            # Sperre fängt der Guard je Instanz VORHER (rentenfreibetrag_fixierung_offen); hier kommt nur der
+            # rechenbare Fall an. Unvollständige Renten-Instanz sperrt der Guard (rente_instanz_offen).
+            if store is not None:
+                renten = sum(_rente_instanz(inst["felder"])
+                             for inst in EM.instanzen(store, bindung, "rente"))
+            else:
+                renten = _rente_instanz(f)
             # Person B (§ 26b, #4b): die § 22-Rente des Ehegatten in DIESELBE einkuenfte_sonstige-Summe
             # (§9a-/Ertragsanteil JE PERSON, dann summiert). Die aa-Folgejahr-ohne-RF-Sperre für B fängt der
             # Guard vorab. Nur bei Zusammenveranlagung; Person-B ohne Rente → jahresrente 0 → renten 0.
@@ -631,9 +648,23 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             def _fixierung_offen(art, beginn, rf):
                 return (art in RENTNER_AA_ARTEN and isinstance(beginn, int) and vz is not None
                         and beginn < vz and not (isinstance(rf, (int, float)) and not isinstance(rf, bool)))
-            if _fixierung_offen(felder.get("rentner_renten_art", {}).get("wert"),
-                                felder.get("rentner_renten_beginn_jahr", {}).get("wert"),
-                                felder.get("rentner_rentenfreibetrag", {}).get("wert")):
+            # Multi-Rente (#6): Fixierung + Vollständigkeit JE Rente-Instanz der Person A (instanzen-Naht). Eine
+            # Zusatz-Rente (index≥2) braucht die 4 Kern-Felder present + per-Instanz-meet bestaetigt (rentenfrei-
+            # betrag optional = nur aa-Folgejahr) — sonst rente_instanz_offen (kein still zu niedriges §22-Σ, K2).
+            # index 1 = Basis-Kegel (prüft _feste_zahl). Ohne store → nur die Basis-Fixierung (Alt-Aufrufer).
+            if cfg.get("multi_rente") and store is not None and bindung is not None:
+                kern = frozenset(RENTNER_22)
+                for inst in EM.instanzen(store, bindung, cfg["multi_rente"]):
+                    fi = inst["felder"]
+                    if inst["index"] >= 2 and (not kern <= set(fi) or inst["zustand"] != "bestaetigt"):
+                        return "rente_instanz_offen"
+                    if _fixierung_offen(fi.get("rentner_renten_art", {}).get("wert"),
+                                        fi.get("rentner_renten_beginn_jahr", {}).get("wert"),
+                                        fi.get("rentner_rentenfreibetrag", {}).get("wert")):
+                        return "rentenfreibetrag_fixierung_offen"
+            elif _fixierung_offen(felder.get("rentner_renten_art", {}).get("wert"),
+                                  felder.get("rentner_renten_beginn_jahr", {}).get("wert"),
+                                  felder.get("rentner_rentenfreibetrag", {}).get("wert")):
                 return "rentenfreibetrag_fixierung_offen"
             # Person B (#4b): dieselbe aa-Folgejahr-Fixierungs-Sperre für die Ehegatten-Rente bei zusammen.
             if felder.get("veranlagung", {}).get("wert") == "zusammen" and _fixierung_offen(

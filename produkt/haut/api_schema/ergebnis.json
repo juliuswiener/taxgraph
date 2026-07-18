@@ -17,7 +17,7 @@
                        "verpflegung_reduktion_offen", "flag_konsistenz_offen",
                        "partner_konsistenz_offen", "kapital_semantik_offen",
                        "rentenfreibetrag_fixierung_offen", "vv_instanz_offen",
-                       "rechnung_unbar_offen"]},
+                       "rechnung_unbar_offen", "rente_instanz_offen"]},
     "offen": {"type": "array", "items": {"type": "string"}},
     "trace": {"type": ["object", "null"]}
   }
