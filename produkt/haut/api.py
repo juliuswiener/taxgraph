@@ -528,8 +528,10 @@ def fall_anlegen(body: dict) -> tuple[int, dict]:
 
 
 def _badge(herkunft: dict) -> str:
-    """Herkunfts-Abzeichen (UI-Lab Dim 1): solide=Beleg/laie, schimmernd=KI-Vorschlag."""
-    return "schimmernd" if herkunft.get("herkunft") == "llm_vorschlag" else "solide"
+    """Herkunfts-Kategorie je Wert (UI-Lab Dim 1, „Herkunft zum Anfassen"): die 6 Store-Herkünfte
+    direkt als anzeigbare Badge-Klasse (statt binär solide/schimmernd). Die Haut stylt jede Kategorie
+    (laie=selbst · beleg_import=Beleg · vorjahr/berechnet/orakel=abgeleitet · llm_vorschlag=KI-schimmernd)."""
+    return herkunft.get("herkunft", "laie")
 
 
 def _ring_bindung(cfg: dict, bindung: dict) -> dict:
@@ -736,4 +738,16 @@ AMPEL_503 = {
     "grund": ("ELSTER-Ampel (warmer checkESt-Daemon) ist für diese Scheibe noch nicht verdrahtet "
               "— ein gültiger ESt-Fall entsteht erst mit der Gesamtsteuer-Integration. Kein Fake-Grün."),
     "regel": "gekappt_verdacht=true ist nie grün (API.md-Garantie 5).",
+}
+# Arbeitsweg-Entfernung über Karten-Dienst (Julius-Feature): der eigentliche Geocoding+Routing-Aufruf ist
+# eine AUSGEHENDE Integration mit PII (Adressen verlassen das Gerät) → wartet auf Julius' Service-Wahl + Cap.
+# Bis dahin STUB (kein Live-Aufruf), analog CHAT_501. Die UI-Affordance (Adress-Eingabe) ist gebaut; der
+# Karten-km-Vorschlag kommt erst, wenn der Dienst verbunden ist — die manuelle km-Eingabe bleibt Fallback.
+ENTFERNUNG_501 = {
+    "fehler": "not_implemented",
+    "vertrag": ("Die Weg-Berechnung ruft einen Karten-Dienst (Geocoding+Routing) — eine ausgehende "
+                "Integration, die deine Adressen an einen externen Dienst sendet. Sie ist noch nicht "
+                "verbunden; bitte gib die Entfernung vorerst manuell ein (kürzeste Straßenverbindung, "
+                "§ 9 Abs. 1 S. 3 Nr. 4 EStG)."),
+    "stufe": "wartet auf Service-Wahl + Julius-Cap (PII/Datenschutz) — kein externer Karten-Aufruf in dieser Stufe.",
 }

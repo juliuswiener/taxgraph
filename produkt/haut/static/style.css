@@ -1,60 +1,96 @@
-/* TaxGraph-Haut — Mobile-first, bewusst schlicht (erste Scheibe). Keine Politur. */
-* { box-sizing: border-box; }
-body {
-  margin: 0; font-family: system-ui, -apple-system, sans-serif; line-height: 1.5;
-  color: #1a1a1a; background: #f4f5f7;
+/* TaxGraph Haut — dark-theme, mobile-first (Julius-Optik 2026-07-18). */
+:root{
+  --bg:#0f1220; --card:#1a1f36; --card2:#232a49; --ink:#eef1f8; --muted:#9aa3c4;
+  --solide:#3ddc97; --schimmernd:#c9a3ff; --akzent:#5b8cff; --warn:#ffb454; --line:#2c3457;
 }
-#app { max-width: 32rem; margin: 0 auto; padding: 1rem; padding-bottom: 3rem; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+#app{max-width:440px;margin:0 auto;padding:16px}
+.screen{animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+h1,h2,h3{margin:0}
 
-header { text-align: center; padding: 1.5rem 0 1rem; }
-#ring {
-  --anteil: 0; width: 6rem; height: 6rem; margin: 0 auto 0.75rem; border-radius: 50%;
-  background: conic-gradient(#2b7a4b calc(var(--anteil) * 360deg), #d7dde3 0deg);
-  transition: background 0.4s ease;
-}
-.spanne { font-size: 1.05rem; font-weight: 600; }
+/* Start — 2 Kacheln */
+.start-titel{font-size:22px;margin:12px 4px 18px}
+.kachel{display:block;width:100%;text-align:left;background:var(--card2);color:var(--ink);
+  border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;cursor:pointer;transition:border-color .15s}
+.kachel:hover,.kachel:focus{border-color:var(--akzent);outline:none}
+.k-ico{display:block;font-size:26px;margin-bottom:6px}
+.k-titel{display:block;font-weight:600;font-size:17px}
+.k-sub{display:block;color:var(--muted);font-size:13px;margin-top:4px}
+.start-fuss{color:var(--muted);font-size:13px;margin:16px 4px}
 
-.card {
-  background: #fff; border-radius: 0.75rem; padding: 1.25rem; margin: 1rem 0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-.frage { font-size: 1.25rem; font-weight: 600; margin: 0 0 0.5rem; }
-.hilfe { color: #555; font-size: 0.95rem; margin: 0 0 1rem; }
+/* Kopf: Ring (Dim 4) + Spanne */
+.kopf{display:flex;align-items:center;gap:14px;margin:6px 4px 18px}
+.ring{--anteil:0;--schrumpf:1;position:relative;width:66px;height:66px;border-radius:50%;flex:0 0 auto;
+  background:conic-gradient(var(--solide) calc(var(--anteil)*360deg), #2c3457 0);display:grid;place-items:center}
+.ring::after{content:"";position:absolute;width:calc(30px + var(--schrumpf)*18px);height:calc(30px + var(--schrumpf)*18px);
+  border-radius:50%;background:var(--card);transition:width .4s,height .4s}
+.ring-mitte{position:relative;z-index:1;font-size:12px;color:var(--muted)}
+.spanne{font-size:17px;font-weight:600}
+.spanne-hint{color:var(--muted);font-size:12px;margin-top:2px}
 
-.eingabe { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-.eingabe input, .eingabe select {
-  flex: 1; font-size: 1.1rem; padding: 0.75rem; min-height: 3rem;
-  border: 1px solid #b7c0cc; border-radius: 0.5rem;
-}
-.einheit { color: #555; }
+/* Wegpunkt-Karte */
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
+.frage{font-size:18px;font-weight:600;margin:2px 0 4px}
+.hilfe{color:var(--muted);font-size:14px;margin:0 0 14px}
+.eingabe{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.eingabe input,.eingabe select{flex:1;background:#12162a;border:1px solid var(--line);color:var(--ink);
+  border-radius:10px;padding:12px;font-size:16px}
+.einheit{color:var(--muted)}
 
-.btn-primary {
-  width: 100%; min-height: 3rem; font-size: 1.1rem; font-weight: 600;
-  color: #fff; background: #2b7a4b; border: none; border-radius: 0.5rem; cursor: pointer;
-}
-.btn-primary:active { background: #21603b; }
-.btn-link {
-  width: 100%; margin-top: 0.5rem; background: none; border: none; color: #2b6cb0;
-  font-size: 0.95rem; cursor: pointer; padding: 0.5rem;
-}
-.anker {
-  white-space: pre-wrap; background: #f0f2f5; border-left: 3px solid #2b6cb0;
-  padding: 0.75rem; margin-top: 0.75rem; font-size: 0.9rem; border-radius: 0.25rem;
-}
+/* Maps-Affordance (Arbeitsweg-km, Julius-Feature) — Vorschlag-Fluss, Backend ge-stubbt */
+.maps{background:#12162a;border:1px dashed var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.maps-titel{font-size:13px;color:var(--muted);margin-bottom:8px}
+.maps input{width:100%;background:#0f1220;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:10px;margin-bottom:8px;font-size:14px}
+.maps-berechnen{width:100%;background:var(--card2);color:var(--ink);border:1px solid var(--akzent);border-radius:8px;padding:10px;font-size:14px;font-weight:600;cursor:pointer}
+.maps-status{font-size:12px;color:var(--warn);margin-top:8px}
 
-.ergebnis { font-size: 1.3rem; font-weight: 700; color: #2b7a4b; }
+/* Aktionen: Bestätigen + Chat gleichberechtigt (Dim 5, always-on) */
+.aktionen{display:flex;gap:8px}
+.btn{flex:1;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:600;cursor:pointer}
+.btn-best{background:var(--akzent);color:#fff}
+.btn-chat{background:var(--card2);color:var(--ink);border:1px solid var(--line)}
+/* Hold-to-confirm (Dim 2) */
+.btn-hold{position:relative;overflow:hidden;background:var(--card2);color:var(--ink);border:1px solid var(--schimmernd);touch-action:none;user-select:none}
+.btn-hold .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--schimmernd);opacity:.3;transition:width .05s linear}
+.btn-hold .lbl{position:relative}
+.warum{background:none;border:0;color:var(--akzent);font-size:13px;margin-top:12px;padding:0;text-align:left;cursor:pointer}
+.anker{background:#12162a;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;
+  white-space:pre-wrap;font-size:13px;color:var(--muted)}
 
-.belegt { margin-top: 1.5rem; }
-.belegt h3 { font-size: 0.9rem; color: #555; text-transform: uppercase; letter-spacing: 0.03em; }
-.belegt ul { list-style: none; padding: 0; margin: 0; }
-.belegt li { padding: 0.4rem 0; border-bottom: 1px solid #e2e6ea; font-size: 0.95rem; }
+/* Belegt-Liste + per-Quelle-Badges (Dim 1) */
+.belegt h3{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:0 4px 10px;font-weight:600}
+.belegt-hint{text-transform:none;letter-spacing:0;font-weight:400}
+#belegt-liste{list-style:none;margin:0;padding:0}
+.zeile{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line)}
+.z-name{flex:1;font-size:14px}.z-wert{color:var(--muted);font-size:14px}
+.badge{font-size:12px;padding:3px 9px;border-radius:999px;font-weight:600;white-space:nowrap;cursor:pointer;border:1px solid transparent}
+.b-laie{background:#2c3457;color:var(--muted)}
+.b-beleg{background:rgba(61,220,151,.15);color:var(--solide);border-color:rgba(61,220,151,.4)}
+.b-abgel{background:rgba(91,140,255,.14);color:var(--akzent);border-color:rgba(91,140,255,.4)}
+.b-orakel{background:rgba(255,180,84,.14);color:var(--warn);border-color:rgba(255,180,84,.4)}
+.b-ki{background:rgba(201,163,255,.14);color:var(--schimmernd);border-color:rgba(201,163,255,.45);box-shadow:0 0 0 2px rgba(201,163,255,.2)}
+.badge-vorlaeufig{opacity:.7;border-style:dashed}
 
-.badge {
-  display: inline-block; min-width: 1.4rem; text-align: center; padding: 0.1rem 0.35rem;
-  border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; margin-right: 0.4rem;
-}
-.badge-solide { background: #d6efe0; color: #1c5c39; }         /* Beleg / selbst bestätigt */
-.badge-schimmernd {                                            /* KI-Vorschlag */
-  background: linear-gradient(110deg, #e7d9ff, #cfe4ff, #e7d9ff);
-  color: #4a2d84;
-}
+/* Ergebnis */
+.ergebnis{text-align:center;padding:14px 0}
+.erg-zahl{display:block;font-size:34px;font-weight:700;color:var(--solide)}
+.erg-label{display:block;color:var(--muted);margin-top:4px}
+.ergebnis-guard{background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.35);border-radius:12px;
+  padding:16px;color:var(--warn);font-size:15px;text-align:left}
+
+/* Overlays: Herkunft-Kette + Chat */
+.overlay{position:fixed;inset:0;background:rgba(6,8,18,.72);display:grid;place-items:end center;z-index:10}
+.overlay-card{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);
+  border-radius:18px 18px 0 0;padding:18px;animation:up .2s ease}
+@keyframes up{from{transform:translateY(20px);opacity:.6}to{transform:none;opacity:1}}
+.overlay-kopf{display:flex;justify-content:space-between;align-items:center;font-weight:600;margin-bottom:12px}
+.overlay-zu{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer}
+.kette .step{display:flex;gap:8px;padding:9px 0;font-size:14px;border-bottom:1px dashed var(--line)}
+.kette .step:last-child{border:0}.kette .dot{color:var(--schimmernd)}
+.chat-erklaer{font-size:15px}.chat-grenze{color:var(--schimmernd);font-weight:600}
+.chat-vertrag{color:var(--muted);font-size:13px;background:#12162a;border:1px solid var(--line);border-radius:10px;padding:12px}
+
+@media (min-width:520px){ #app{padding:24px} }

@@ -20,7 +20,8 @@
           "wert": {},
           "zustand": {"type": "string", "enum": ["vorlaeufig", "bestaetigt"]},
           "herkunft": {"type": "object"},
-          "herkunft_badge": {"type": "string", "enum": ["solide", "schimmernd"]}
+          "herkunft_badge": {"type": "string",
+            "enum": ["laie", "beleg_import", "vorjahr", "berechnet", "orakel", "llm_vorschlag"]}
         }
       }
     },

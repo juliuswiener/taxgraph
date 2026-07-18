@@ -77,7 +77,7 @@ def _llm(fld, w):
 def base(tmp_path, monkeypatch):
     # Fall-Daten in ein temporäres Verzeichnis (nie ins Repo, nie in den echten faelle/-Ordner)
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
-    srv = SRV.make_server(0)                      # port=0 -> freier Port
+    srv = SRV.make_server(0)                      # port=0 -> freier Port; SINGLE-THREADED (kein Request-Thread-Leak)
     assert srv.server_address[0] == "127.0.0.1", "Auflage B: Server muss an 127.0.0.1 binden"
     th = threading.Thread(target=srv.serve_forever, daemon=True)
     th.start()
@@ -85,7 +85,8 @@ def base(tmp_path, monkeypatch):
         yield f"http://{srv.server_address[0]}:{srv.server_address[1]}"
     finally:
         srv.shutdown()
-        th.join(timeout=2)
+        th.join(timeout=5)
+        srv.server_close()        # Socket sauber schließen (kein FD-Leak über viele e2e-Tests)
 
 
 def test_bindet_nur_localhost():
@@ -104,6 +105,35 @@ def test_chat_501(base):
     assert st == 501, f"chat muss 501 sein, war {st}"
     assert "vertrag" in b and "stufe" in b
     assert b.get("fehler") == "not_implemented"
+
+
+def test_entfernung_stub_501(base):
+    """Julius-Feature Maps-km: der Karten-Dienst-Aufruf ist ge-stubbt (ausgehende PII-Integration, wartet
+    auf Julius-Service+Cap) — POST /entfernung → 501, NIE ein Live-Aufruf/Fake-km."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "ent1"})
+    st, b = _req(base, "POST", "/fall/ent1/entfernung", {"von": "A-Str 1", "nach": "B-Weg 2"})
+    assert st == 501, f"entfernung muss ge-stubbt 501 sein, war {st}"
+    assert b.get("fehler") == "not_implemented" and "vertrag" in b and "stufe" in b
+
+
+def test_concurrent_ergebnis_kein_race(base):
+    """K2-Concurrency-Beweis: die Haut feuert /stand + /ergebnis PARALLEL (Browser serialisiert XHRs nicht)
+    und catala_runtime ist NICHT thread-safe (globaler max_decimals steuert die Money-Rundung). Der SINGLE-
+    THREADED Server serialisiert die Handler → N parallele /ergebnis liefern IDENTISCH den korrekten est
+    (kein Race-Wrong-Value). Mechanischer Beleg wie der Thread-Count-Beweis der Isolations-Härtung."""
+    import concurrent.futures
+    if not _catala_da():
+        pytest.skip("Catala-Toolchain nicht verfügbar")
+    # Reiner AN-Fall: Bruttolohn 40000 → § 19-Einkünfte 38770 → festzusetzende_est 6919 = 691900 Cent.
+    _gesamt_anlegen(base, "conc", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True))
+
+    def hol():
+        st, erg = _req(base, "GET", "/fall/conc/ergebnis")
+        return (erg["zahl_cent"], erg["grund"])
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
+        ergebnisse = {f.result() for f in [ex.submit(hol) for _ in range(24)]}
+    assert ergebnisse == {(691900, "bestaetigt")}, f"Concurrency-Race: uneinheitliche/falsche Ergebnisse {ergebnisse}"
 
 
 def test_fail_closed_llm_kann_nicht_bestaetigen(base):
@@ -158,8 +188,8 @@ def test_durchstich_http(base):
     st, stand_a = _req(base, "GET", f"/fall/{fid}/stand")
     assert st == 200
     _val("stand", stand_a)
-    assert stand_a["felder"]["ep_arbeitstage"]["herkunft_badge"] == "schimmernd"
-    assert stand_a["felder"]["ep_entfernung_km"]["herkunft_badge"] == "solide"
+    assert stand_a["felder"]["ep_arbeitstage"]["herkunft_badge"] == "llm_vorschlag"   # KI-Vorschlag
+    assert stand_a["felder"]["ep_entfernung_km"]["herkunft_badge"] == "laie"          # selbst bestätigt
     spanne_a = None
     if catala:
         iv = stand_a["intervall"]

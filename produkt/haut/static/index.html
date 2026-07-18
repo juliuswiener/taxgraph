@@ -8,29 +8,72 @@
 </head>
 <body>
   <main id="app">
-    <header>
-      <div id="ring" aria-hidden="true"></div>
-      <div id="spanne" class="spanne">Spanne wird berechnet …</div>
-    </header>
 
-    <section id="wegpunkt" class="card" hidden>
-      <p id="frage" class="frage"></p>
-      <p id="hilfe" class="hilfe"></p>
-      <div id="eingabe" class="eingabe"></div>
-      <button id="bestaetigen" class="btn-primary" type="button">Bestätigen</button>
-      <button id="warum" class="btn-link" type="button">Warum wird das gefragt?</button>
-      <pre id="anker" class="anker" hidden></pre>
+    <!-- P0: Start — 2 Kacheln (Scheiben-Wahl, scheibe nicht hardcoden) -->
+    <section id="start" class="screen">
+      <h1 class="start-titel">Was trifft auf dich zu?</h1>
+      <button class="kachel" type="button" data-scheibe="gesamt">
+        <span class="k-ico">💼</span>
+        <span class="k-titel">Arbeitnehmer, Vermieter oder Kapital</span>
+        <span class="k-sub">Lohn, Vermietung, Zinsen &amp; Aktien</span>
+      </button>
+      <button class="kachel" type="button" data-scheibe="rentner_gesamt">
+        <span class="k-ico">🌾</span>
+        <span class="k-titel">Rentner</span>
+        <span class="k-sub">Gesetzliche &amp; private Rente, Behinderung</span>
+      </button>
+      <p class="start-fuss">Beides ist ein vollständiger Rechenweg — der Rest folgt aus deinen Antworten.</p>
     </section>
 
-    <section id="fertig" class="card" hidden>
-      <h2>Ergebnis</h2>
-      <p id="ergebnis" class="ergebnis"></p>
-    </section>
+    <!-- Wegpunkt-Fluss -->
+    <div id="flow" hidden>
+      <header class="kopf">
+        <div id="ring" class="ring" aria-hidden="true"><span id="ring-mitte" class="ring-mitte"></span></div>
+        <div class="kopf-text">
+          <div id="spanne" class="spanne">Spanne wird berechnet …</div>
+          <div id="spanne-hint" class="spanne-hint"></div>
+        </div>
+      </header>
 
-    <section class="belegt">
-      <h3>Schon beantwortet</h3>
-      <ul id="belegt-liste"></ul>
-    </section>
+      <section id="wegpunkt" class="card screen" hidden>
+        <p id="frage" class="frage"></p>
+        <p id="hilfe" class="hilfe"></p>
+        <div id="eingabe" class="eingabe"></div>
+        <div class="aktionen">
+          <button id="bestaetigen" class="btn btn-best" type="button">Bestätigen</button>
+          <button id="chat" class="btn btn-chat" type="button">💬 Erklär mir</button>
+        </div>
+        <button id="warum" class="warum" type="button">Warum wird das gefragt? →</button>
+        <pre id="anker" class="anker" hidden></pre>
+      </section>
+
+      <section id="fertig" class="card screen" hidden>
+        <h2>Ergebnis</h2>
+        <p id="ergebnis" class="ergebnis"></p>
+      </section>
+
+      <section class="belegt">
+        <h3>Schon beantwortet <span class="belegt-hint">— tippe ein Abzeichen für die Herkunft</span></h3>
+        <ul id="belegt-liste"></ul>
+      </section>
+    </div>
+
+    <!-- Herkunft-Kette (Dim 1) — Overlay im Bestätigungsmoment -->
+    <div id="kette-overlay" class="overlay" hidden>
+      <div class="overlay-card">
+        <div class="overlay-kopf"><span id="kette-titel"></span><button id="kette-zu" class="overlay-zu" type="button">✕</button></div>
+        <div id="kette-body" class="kette"></div>
+      </div>
+    </div>
+
+    <!-- Chat-Erklär-Panel (Dim 5) — KI erklärt, setzt nie Werte -->
+    <div id="chat-overlay" class="overlay" hidden>
+      <div class="overlay-card">
+        <div class="overlay-kopf"><span>💬 KI-Berater</span><button id="chat-zu" class="overlay-zu" type="button">✕</button></div>
+        <div id="chat-body" class="chat-body"></div>
+      </div>
+    </div>
+
   </main>
   <script src="/static/app.js"></script>
 </body>

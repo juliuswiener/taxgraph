@@ -12,7 +12,7 @@ import json
 import os
 import re
 import sys
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
@@ -43,6 +43,8 @@ def _routes():
         ("GET", re.compile(rf"^/fall/{_ID}/graph$"), lambda m, b: api.graph(m["id"])),
         ("POST", re.compile(rf"^/fall/{_ID}/elster-ampel$"), lambda m, b: (503, api.AMPEL_503)),
         ("POST", re.compile(rf"^/fall/{_ID}/chat$"), lambda m, b: (501, api.CHAT_501)),
+        # Arbeitsweg-Entfernung über Karten-Dienst: STUB (kein Live-Aufruf ohne Julius-Service+Cap, PII).
+        ("POST", re.compile(rf"^/fall/{_ID}/entfernung$"), lambda m, b: (501, api.ENTFERNUNG_501)),
     ]
 
 
@@ -120,9 +122,16 @@ class Handler(BaseHTTPRequestHandler):
         self._dispatch("POST")
 
 
-def make_server(port: int = 8000) -> ThreadingHTTPServer:
-    """Bindet 127.0.0.1:port (port=0 -> freier Port, für Tests). Aufrufer ruft serve_forever()."""
-    return ThreadingHTTPServer((HOST, port), Handler)
+def make_server(port: int = 8000) -> HTTPServer:
+    """Bindet 127.0.0.1:port (port=0 -> freier Port, für Tests). Aufrufer ruft serve_forever().
+
+    SINGLE-THREADED (HTTPServer, NICHT ThreadingHTTPServer) — bewusst: catala_runtime ist NICHT
+    thread-safe (globaler `max_decimals`/`log`-State, catala_runtime.py, steuert die Money-Rundung).
+    Die Haut feuert /stand + /ergebnis parallel (Browser serialisiert XHRs nicht); mit echten Request-
+    Threads würden zwei catala-Berechnungen am Global racen → falsche Rundung → FALSCHER BESCHEID (K2).
+    Ein Handler je Zeit killt die Concurrency an der Quelle; für die 127.0.0.1-Einzelnutzer-App ist die
+    Serialisierungs-Latenz irrelevant. NICHT auf ThreadingHTTPServer zurückstellen ohne catala-Lock."""
+    return HTTPServer((HOST, port), Handler)
 
 
 def main(argv):
