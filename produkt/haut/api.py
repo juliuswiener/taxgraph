@@ -115,6 +115,11 @@ AGB_KIST = ("kist_gezahlt", "kist_erstattet")                                # �
 # Einkunfts-Kombi; die K2-Sperren (rechnung_unbar/erstattungsueberhang) fängt der Guard feld-präsenz-getrieben.
 GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
                   "agb_aufwendungen", "fam_anzahl_kinder") + AGB_KIST)
+# § 24a/§ 24b Freibeträge (Weg ii Stage 2), OPTIONAL im gesamt-Ring (absent → 0). geburtsjahr = §24a-Kohorten-
+# Schlüssel (gesamt-only); fam_alleinstehend = §24b-Abs.3-Flag (quelle p24b/alleinstehend, fragetext „ohne
+# anderen Erwachsenen im Haushalt" — IST die Abs.3-Bedingung, kein Extra-Feld nötig); fam_monate = §24b-Kürzung.
+# fam_anzahl_kinder steht schon in GESAMT_ABZUEGE (§33-zumutbar + §24b geteilt).
+GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_voraussetzung")
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -162,7 +167,7 @@ SCHEIBEN = {
     "gesamt": {
         "felder": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
                    + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP
-                   + GESAMT_ABZUEGE),   # Weg ii: Sonder-Abzüge OPTIONAL gefaltet (nicht im Pflicht-Kegel)
+                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE),  # Weg ii: Abzüge + §24a/§24b OPTIONAL (nicht Kegel)
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0).
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
@@ -417,16 +422,34 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "veranlagungszeitraum": vz,
                     "bruttoarbeitslohn": _c("bruttoarbeitslohn_partner") // 100, "werbungskosten": 0})
             g["einkuenfte_nichtselbststaendig"] = ns
+            # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
+            # Altersentlastungsbetrag (Bemessung NUR positive Nicht-Renten-Einkünfte, S.2: Arbeitslohn BRUTTO +
+            # max(0, V+V); Kohorten-Satz/-Deckel aus geburtsjahr + 65; Kapital = Stage-2-Nachtrag wie die §10b/§33-
+            # GdE) + § 24b Entlastungsbetrag Alleinerziehende (fam_alleinstehend IST das §24b-Abs.3-Flag — quelle
+            # p24b/alleinstehend, fragetext „ohne anderen Erwachsenen im Haushalt"; anzahl_kinder + monate). Absent
+            # → 0 (fail-safe). Beide fließen in den GdE-Zwilling (echte GdE post § 24a/§24b für die §10b/§33-
+            # Deckelung) UND in g (est).
+            alt24a = runner.catala_p24a_altersentlastung({
+                "geburtsjahr": _c("geburtsjahr"),
+                "arbeitslohn": _c("bruttoarbeitslohn") // 100, "positive_andere_einkuenfte": max(0, vv)})
+            ent24b = runner.catala_p24b_entlastung({
+                "alleinstehend": f.get("fam_alleinstehend", {}).get("wert") is True,
+                "anzahl_kinder": _c("fam_anzahl_kinder"),
+                "monate_ohne_voraussetzung": _c("fam_monate_ohne_voraussetzung")})
+            g["altersentlastungsbetrag"] = alt24a
+            g["entlastungsbetrag_alleinerziehende"] = ent24b
             # Sonder-Abzüge (Weg ii, Faltung): §35a → steuerermaessigungen, §10b + §10-KiSt → sonderausgaben,
             # §33-agB → aussergewoehnliche_belastungen — ADDITIV auf JEDE Einkunfts-Kombi (§19+§21+§20 zusammen
-            # MIT §35a/§10b/§33 in EINEM Bescheid). GdE (§2 Abs.3, ECHT = ns+vv, steht VOR den Abzügen fest §2
-            # Abs.3-vor-Abs.4 → kein Zirkel) = Basis der §10b-20%-Deckelung + §33-zumutbar-Staffel (Korrektheit
+            # MIT §35a/§10b/§33 in EINEM Bescheid). GdE (§2 Abs.3 = ns+vv − §24a − §24b, steht VOR den Abzügen fest
+            # §2 Abs.3-vor-Abs.4 → kein Zirkel) = Basis der §10b-20%-Deckelung + §33-zumutbar-Staffel (Korrektheit
             # vs. §19-only der Sonder-Scheiben). Absente Abzugs-Felder → 0 (fail-SAFE: über-, nie unterbesteuert).
             # rechnung_unbar=false nullt §35a Abs.2/3 (Minijob unberührt); fam_anzahl_kinder/splitting → zumutbar.
             # Kapital-in-GdE (§20 Günstiger tariflich) ist bewusst NICHT in der §10b/§33-GdE (Stage-1-Nachtrag;
             # Abgeltung ist ohnehin §2 Abs.5b-ausgeschlossen). Die K2-Sperren fängt der Guard vorher.
             gde = runner.catala_gesamt_gde({"veranlagungszeitraum": vz, "veranlagung": g["veranlagung"],
-                                            "einkuenfte_nichtselbststaendig": ns, "einkuenfte_vermietung": vv})
+                                            "einkuenfte_nichtselbststaendig": ns, "einkuenfte_vermietung": vv,
+                                            "altersentlastungsbetrag": alt24a,
+                                            "entlastungsbetrag_alleinerziehende": ent24b})
             abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
             g["steuerermaessigungen"] = runner.catala_p35a_haushaltsnahe({
                 "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,

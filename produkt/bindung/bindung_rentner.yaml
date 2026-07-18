@@ -449,7 +449,7 @@ luecken:
     grund: "Kohorten-Parameter (maßgebender Prozentsatz), abgeleitet aus dem Jahr nach Vollendung des 64. Lebensjahres via § 24a-Tabelle; kein Laien-Feld. (Höchstbetrag = params-Key, auto-exempt.)"
   - regel_id: p24a_altersentlastungsbetrag
     geltungsbedingung: prozentsatz_hoechstbetrag_aus_kohortentabelle
-    grund: "Prozentsatz und Höchstbetrag stammen aus der Kohortentabelle (§ 24a); Parameter-Lookup, keine Abfrage. Künftige Verfeinerung: Geburtsjahr-Feld als Kohorten-Schlüssel (analog rentner_renten_beginn_jahr)."
+    grund: "In rentner_gesamt liefert §24a strukturell 0 (kein Nicht-Renten-Einkommen; §22-Leibrente ist §24a-S.2-ausgeschlossen); Prozentsatz/Höchstbetrag = Kohortentabelle §24a, der Kohorten-Schlüssel (Feld geburtsjahr) ist in der gesamt-Bindung materialisiert (§24a gesamt-only)."
   - regel_id: p24a_altersentlastungsbetrag
     geltungsbedingung: bemessung_netto_nach_ausschluessen
     grund: "Bemessung nach Ausschluss bestimmter Einkünfte (u. a. nicht solche aus nichtselbständiger Arbeit); Rechenlogik der Regel auf den bereits erfassten Einkünften, keine eigene Abfrage."

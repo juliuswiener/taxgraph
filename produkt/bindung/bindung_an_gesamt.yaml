@@ -27,6 +27,29 @@ bindungen:
       zitatanker: "Gehälter, Löhne, Gratifikationen, Tantiemen und andere Bezüge und Vorteile für eine Beschäftigung"
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
 
+  # ========================= Altersentlastungsbetrag §24a — Kohorten-Schlüssel (Stage-2-Faltung) =========================
+  # §24a GESAMT-ONLY (Instructor Q2, §22-Leibrente §24a-S.2-ausgeschlossen). geburtsjahr -> dev-1s slot_fn
+  # leitet massgebendes_folgejahr = geburtsjahr + 65 ab -> Prozentsatz/Höchstbetrag-Lookup in
+  # params/kohorten/altersentlastungsbetrag_p24a.yaml. Optional (Feld-Präsenz, absent -> §24a 0).
+  - feld_id: geburtsjahr
+    quelle: {regel_id: p24a_altersentlastungsbetrag, geltungsbedingung: prozentsatz_hoechstbetrag_aus_kohortentabelle}
+    typ: int
+    einheit: null
+    bereich: {min: 1900, max: 2010, grund: "Geburtsjahr, plausibler Bereich für erwerbstätige/rentennahe Steuerpflichtige."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Jahr bist du geboren?"
+    hilfe_kurz: "Bestimmt Prozentsatz und Höchstbetrag des Altersentlastungsbetrags (Kohorte nach dem Jahr, das der Vollendung des 64. Lebensjahres folgt)."
+    beispielwert: 1958
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kohorten-Schlüssel für den maßgebenden Prozentsatz/Höchstbetrag (abgeleitet über die Tabelle); das vollständige Geburtsdatum steht im Mantelbogen (eigener Kz), dies ist kein eigenes Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 24a S. 5 EStG"
+      zitatanker: "maßgebende Prozentsatz und der Höchstbetrag"
+      datei: "sources/gesetze-im-internet/estg_p24a_2026-07-13.txt"
+
   # ========================= Veranlagungsart (§ 26) =========================
   - feld_id: veranlagung
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: veranlagung}
@@ -219,3 +242,21 @@ bindungen:
     # p2_festzusetzung_zusammen = Pseudoregel-Scope (Catala-Andockung ohne rules/estg-Dir, wie
     # p2_festzusetzung_einzel); beide_ehegatten_zusammen_veranlagt = Platzhalter-gb (§ 26 Abs. 2 S. 2).
     # Der Gate validiert gb-Existenz für Pseudoregel-Scopes nicht; gesichert über Kz/Drift-Wächter.
+
+luecken:
+  # -- §24a Altersentlastungsbetrag: Bemessungs-Inputs + Kohorten-Parameter (gesamt-Kontext, §24a gesamt-only) --
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: arbeitslohn
+    grund: "Bemessungs-Input = Bruttoarbeitslohn (§19, bereits im gesamt-Ring erfasst); §24a rechnet aus dem Gesamteinkommen, keine eigene Abfrage."
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: positive_andere_einkuenfte
+    grund: "Abgeleitet = Summe der positiven anderen Einkünfte (nicht aus nichtselbständiger Arbeit; §22-Leibrenten §24a-S.2-ausgeschlossen); dev-1s slot_fn leitet je Ring aus den Einkunftsarten ab, keine eigene Abfrage."
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: prozentsatz
+    grund: "Kohorten-Parameter (maßgebender Prozentsatz), abgeleitet über das Feld geburtsjahr -> §24a-Tabelle (params/kohorten/altersentlastungsbetrag_p24a.yaml); kein Laien-Feld. (Höchstbetrag = params-Key, auto-exempt.)"
+  - regel_id: p24a_altersentlastungsbetrag
+    geltungsbedingung: alter_64_vor_bezugsjahr_vollendet
+    grund: "Im gesamt-Ring aus dem Feld geburtsjahr abgeleitet (§24a greift ab dem Jahr, das der Vollendung des 64. Lebensjahres folgt: VZ >= geburtsjahr + 65); keine eigene Ja/Nein-Abfrage nötig."
+  - regel_id: p24a_altersentlastungsbetrag
+    geltungsbedingung: bemessung_netto_nach_ausschluessen
+    grund: "Bemessung nach Ausschluss bestimmter Einkünfte (u. a. §22-Leibrenten, §24a S.2); Rechenlogik der Regel auf den bereits erfassten Einkünften, keine eigene Abfrage."

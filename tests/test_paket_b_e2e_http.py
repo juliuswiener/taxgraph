@@ -888,15 +888,22 @@ def test_gesamt_zusammen_kapital_semantik_partner(base):
 
 
 def _gesamt_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechnung_unbar=None,
-                    spende=0, agb=0, kinder=0, kist_gezahlt=0, kist_erstattet=0):
-    """Postet die OPTIONALEN gefalteten Sonder-Abzugs-Felder (Weg ii) auf einen gesamt-Fall (cent, kinder=int).
-    hh_rechnung_unbar nur wenn nicht None. Nicht im Pflicht-Kegel — der Ring rechnet sie additiv."""
+                    spende=0, agb=0, kinder=0, kist_gezahlt=0, kist_erstattet=0,
+                    geburtsjahr=None, alleinerziehend=None, monate=0):
+    """Postet die OPTIONALEN gefalteten Sonder-Abzugs- + §24a/§24b-Freibetrag-Felder (Weg ii) auf einen gesamt-Fall
+    (cent; kinder/geburtsjahr/monate=int; alleinerziehend=bool). hh_rechnung_unbar/geburtsjahr/alleinerziehend nur
+    wenn nicht None. Nicht im Pflicht-Kegel — der Ring rechnet sie additiv."""
     paare = [("hh_minijob_aufwendungen", minijob), ("hh_dienstleistungen", dienstleistung),
              ("hh_handwerker_arbeitskosten", handwerker), ("spenden_betrag", spende),
              ("agb_aufwendungen", agb), ("fam_anzahl_kinder", kinder),
-             ("kist_gezahlt", kist_gezahlt), ("kist_erstattet", kist_erstattet)]
+             ("kist_gezahlt", kist_gezahlt), ("kist_erstattet", kist_erstattet),
+             ("fam_monate_ohne_voraussetzung", monate)]
     if rechnung_unbar is not None:
         paare.append(("hh_rechnung_unbar", rechnung_unbar))
+    if geburtsjahr is not None:
+        paare.append(("geburtsjahr", geburtsjahr))
+    if alleinerziehend is not None:
+        paare.append(("fam_alleinstehend", alleinerziehend))
     for feld, wert in paare:
         st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
         assert st == 201
@@ -988,6 +995,50 @@ def test_gesamt_faltung_agb_kinder_staffel(base):
     st, erg = _req(base, "GET", "/fall/fak/ergebnis")
     if catala:
         assert erg["zahl_cent"] == 1266600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_faltung_24a_24b_freibetraege(base):
+    """Weg (ii) Stage 2: §24a Altersentlastungsbetrag + §24b Entlastungsbetrag Alleinerziehende im gefalteten
+    Ring (§2 Abs.3 GdE-mindernd). Senior (geburtsjahr 1958 → Kohorte 2023 → 14 %/665; Bemessung Arbeitslohn 30000
+    + positive V+V 10000 → 14 %×40000=5600 gedeckelt auf 665) + alleinerziehend (1 Kind → §24b 4260). ns 28770 +
+    vv 10000 − 665 − 4260 → festzusetzende_est 5411 = 541100 Cent (Ref ohne Freibeträge 6919)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "f24", _gesamt_kegel(1000000, bruttolohn=3000000))   # §21 10000 + §19 30000
+    _gesamt_abzuege(base, "f24", geburtsjahr=1958, alleinerziehend=True, kinder=1)
+    st, erg = _req(base, "GET", "/fall/f24/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 541100 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_faltung_24b_alleinerziehend_gate(base):
+    """Weg (ii) §24b Abs.3-Flag: fam_alleinstehend=true (1 Kind) → §24b 4260 mindert die GdE →
+    festzusetzende_est 5609 = 560900 Cent (vs. ohne §24b = 6919). fam_alleinstehend IST die §24b-Abs.3-Bedingung
+    (fragetext „ohne anderen Erwachsenen im Haushalt")."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "f24b", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True))
+    _gesamt_abzuege(base, "f24b", alleinerziehend=True, kinder=1)
+    st, erg = _req(base, "GET", "/fall/f24b/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 560900 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_faltung_24a_kein_geburtsjahr_fail_safe(base):
+    """Weg (ii) §24a fail-safe: geburtsjahr NICHT erfasst → §24a 0 (kein Phantom-Freibetrag ohne Kohorte) →
+    festzusetzende_est = wie ohne Freibetrag = 6919 = 691900 Cent (reiner §19-Fall, kein alleinerziehend)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "f24n", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True))
+    _gesamt_abzuege(base, "f24n")   # kein geburtsjahr, kein alleinerziehend
+    st, erg = _req(base, "GET", "/fall/f24n/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 691900 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 
