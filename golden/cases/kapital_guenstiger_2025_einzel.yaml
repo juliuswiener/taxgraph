@@ -1,5 +1,5 @@
 id: kapital_guenstiger_2025_einzel
-beschreibung: "§ 32d Abs. 6 Günstigerprüfung: geringes Einkommen (§ 19 Einkünfte 12000) plus tariflich hinzugerechnete Kapitaleinkünfte 5000. Weil der tarifliche Zuwachs (902) niedriger ist als die 25-%-Abgeltung-Alternative (25 % auf 4000 = 1000), wählt der Accessor (dev-1) den Günstiger-Pfad: die Kapitaleinkünfte laufen als einkuenfte_kapitalvermoegen in den Grundtarif (statt gesonderter Abgeltung). Prüft, dass catala_gesamt die tariflich hinzugerechneten Kapitaleinkünfte korrekt in die festzusetzende ESt einbezieht (§ 32d Abs. 6 Günstigerprüfung)."
+beschreibung: "§ 32d Abs. 6 Günstigerprüfung: geringes Einkommen (§ 19-Einkünfte 12000, einkuenfte_nichtselbststaendig DIREKT auf Einkünfte-Ebene) plus die nach § 20 ermittelten (netto, nach Sparer-Pauschbetrag) Kapitaleinkünfte 5000, tariflich hinzugerechnet. Weil der tarifliche Zuwachs (902) niedriger ist als die 25-%-Abgeltung auf dieselben Kapitaleinkünfte (25 % × 5000 = 1250), wählt der Accessor (dev-1) den Günstiger-Pfad: die Kapitaleinkünfte laufen als einkuenfte_kapitalvermoegen in den Grundtarif statt gesonderter Abgeltung. Prüft, dass catala_gesamt die tariflich hinzugerechneten Kapitaleinkünfte korrekt in die festzusetzende ESt einbezieht (§ 32d Abs. 6 Günstigerprüfung)."
 
 sachverhalt:
   gesamtfall: true

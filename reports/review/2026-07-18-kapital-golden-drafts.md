@@ -59,6 +59,9 @@ catala_gesamt hat bereits die Slots `steuer_kapital_gesondert_in` + `einkuenfte_
   - `kapital_guenstiger_2025_einzel`: § 19 12000 + einkuenfte_kapitalvermoegen 5000 tariflich → **902**
     (§ 32d Abs. 6 Günstiger: tariflich 902 < Abgeltung-Alt 1000; Anker „…wenn dies zu einer niedrigeren
     Einkommensteuer … führt (Günstigerprüfung)").
+  - `kapital_abgeltung_2025_zusammen`: § 19 80000 + steuer_kapital_gesondert 2500 → **17118**
+    (Zusammenveranlagung/Splitting + GEMEINSAMER Sparer-PB 2000, § 20 Abs. 9 S. 2; deckt den 2000-Zweig).
+  → **golden-runner 117/117 grün** (3 Layer-I-Goldens: Abgeltung einzel/zusammen + Günstiger einzel).
 - **Layer II — Full-Pipeline (braucht dev-1s Accessor):** Sachverhalt setzt kap_kapitalertraege etc., der
   Accessor rechnet steuer_kapital_gesondert via p32d_1. Das sind die K1–K4-Drafts oben — Commit erst gegen
   den Accessor (sonst vakuöser 0-Pass für K1–K3, weil ohne Accessor die kap-Felder nicht in den Tarif fließen).

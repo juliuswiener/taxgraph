@@ -1,0 +1,19 @@
+id: kapital_abgeltung_2025_zusammen
+beschreibung: "§ 32d Abs. 1/3 Abgeltungsteuer bei Zusammenveranlagung: Ehepaar mit § 19-Einkünften 80000 (einkuenfte_nichtselbststaendig DIREKT auf Einkünfte-Ebene, NICHT Bruttolohn — Full-Pipeline wäre höherer Brutto nach § 9a je Person). Kapitalerträge mit gesonderter 25-%-Abgeltungsteuer 2500 (= 25 % auf 10000 = Kapitalerträge 12000 minus GEMEINSAMER Sparer-Pauschbetrag 2000, § 20 Abs. 9 S. 2). Prüft, dass catala_gesamt im Zusammenveranlagungs-Tarif (Splitting) die gesonderte Kapitalsteuer korrekt zur tariflichen ESt addiert (§ 32d Abs. 3 S. 2). Ergänzt den einzel-Fall um den 2000-Euro-Sparer-PB-Zweig + Splitting-Tarif. Testet die catala_gesamt-Integration accessor-unabhängig."
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: zusammen
+  einkuenfte_nichtselbststaendig: 80000
+  steuer_kapital_gesondert: 2500
+
+erwartung:
+  festzusetzende_est: 17118
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 32d Abs. 1 S. 1, Abs. 3 S. 2 EStG i.V.m. § 20 Abs. 9 S. 2, § 32a Abs. 5 EStG (Splitting VZ 2025)"
+  datei: "sources/gesetze-im-internet/estg_p32d_2026-07-13.txt"
+  zitatanker: "erhöht sich die tarifliche Einkommensteuer um den nach Absatz 1 ermittelten Betrag"
