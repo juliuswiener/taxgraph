@@ -50,6 +50,9 @@ bindungen:
   # Pseudoregel-Scope p2_einkunftsarten. Positive Frage in der Haut ("Hattest du X?"), Antwort "nein"
   # → die Haut speichert kein_X=true (bestätigte Null der Einkunftsart) — Invertierung liegt in der Haut
   # (dev-1), hier nur das bool-Feld. Kein Kz (Anwendbarkeits-Flag, kein Deklarationsfeld).
+  # beispielwert=false: Normalfall Privatnutzer 'Nein, hatte kein X' (Haut-Inversion !ja -> kein_X=true=abwesend,
+  # fail-closed-sicher). UI-PREFILL-Effekt hängt an dev-1s bool-select-Prefill (app.js liest beispielwert noch
+  # nicht, defaultet 'Ja') = dev-1 UI-Politur; beispielwert ist forward-ready (Instructor-Ruling 2026-07-18).
   - feld_id: kein_gewinn
     quelle: {regel_id: p2_einkunftsarten, geltungsbedingung: keine_gewinneinkuenfte}
     typ: bool
@@ -57,7 +60,7 @@ bindungen:
     askable: true
     fragetext_laie: "Hattest du dieses Jahr Einkünfte aus einem Gewerbe, aus Land-/Forstwirtschaft oder aus selbständiger/freiberuflicher Arbeit?"
     hilfe_kurz: "Wenn du nur Arbeitslohn beziehst, antworte mit Nein — dann liegen keine Gewinneinkünfte vor."
-    beispielwert: true
+    beispielwert: false
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Anwendbarkeits-Flag (Voraussetzung des reinen AN-Falls), kein Deklarationsfeld — es steuert nur, ob der vereinfachte Ring greift."
@@ -73,7 +76,7 @@ bindungen:
     askable: true
     fragetext_laie: "Hattest du dieses Jahr Kapitalerträge (Zinsen, Dividenden, Kursgewinne)?"
     hilfe_kurz: "Steht i. d. R. in der Steuerbescheinigung von Bank oder Broker. Nur Arbeitslohn → Nein."
-    beispielwert: true
+    beispielwert: false
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Anwendbarkeits-Flag (Voraussetzung des reinen AN-Falls), kein Deklarationsfeld."
@@ -89,7 +92,7 @@ bindungen:
     askable: true
     fragetext_laie: "Hattest du dieses Jahr Einnahmen aus Vermietung oder Verpachtung?"
     hilfe_kurz: "Zum Beispiel Miete für eine vermietete Wohnung. Nur Arbeitslohn → Nein."
-    beispielwert: true
+    beispielwert: false
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Anwendbarkeits-Flag (Voraussetzung des reinen AN-Falls), kein Deklarationsfeld."
@@ -105,7 +108,7 @@ bindungen:
     askable: true
     fragetext_laie: "Hattest du dieses Jahr sonstige Einkünfte (z. B. Renten, private Veräußerungsgeschäfte)?"
     hilfe_kurz: "Sonstige Einkünfte sind z. B. Renten oder Gewinne aus privaten Verkäufen. Nur Arbeitslohn → Nein."
-    beispielwert: true
+    beispielwert: false
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Anwendbarkeits-Flag (Voraussetzung des reinen AN-Falls), kein Deklarationsfeld."
@@ -144,7 +147,7 @@ bindungen:
     askable: true
     fragetext_laie: "Wie hoch war der Arbeitnehmeranteil zur Rentenversicherung deines Partners (Nummer 23 auf seiner Lohnsteuerbescheinigung)?"
     hilfe_kurz: "Person-individuell: die Vorsorgeaufwendungen jedes Ehegatten stammen aus seiner eigenen Lohnsteuerbescheinigung."
-    beispielwert: 350000
+    beispielwert: 372000
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Anlage-N/VOR-Instanz B (Person-Multiplikation): derselbe Kz E2000401 wie Person A, zweites Sub-Dokument."
@@ -161,7 +164,7 @@ bindungen:
     askable: true
     fragetext_laie: "Wie hoch war der Arbeitgeberanteil zur Rentenversicherung deines Partners (Nummer 22 auf seiner Lohnsteuerbescheinigung)?"
     hilfe_kurz: "Person-individuell aus der Lohnsteuerbescheinigung des Partners."
-    beispielwert: 350000
+    beispielwert: 372000
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Anlage-N/VOR-Instanz B (Person-Multiplikation): derselbe Kz E2000801 wie Person A."
