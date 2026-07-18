@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaxGraph Haut — UI-Politur Mockup (Julius-Steuerung)</title>
+<style>
+  :root{
+    --bg:#0f1220; --card:#1a1f36; --card2:#232a49; --ink:#eef1f8; --muted:#9aa3c4;
+    --solide:#3ddc97; --schimmernd:#c9a3ff; --schimmernd-glow:0 0 0 2px rgba(201,163,255,.35);
+    --akzent:#5b8cff; --warn:#ffb454; --line:#2c3457;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  h1{font-size:20px;margin:24px 20px 4px} .sub{color:var(--muted);margin:0 20px 18px;max-width:70ch}
+  .frames{display:flex;gap:22px;flex-wrap:wrap;padding:8px 20px 40px;align-items:flex-start}
+  .phone{width:300px;background:var(--card);border:1px solid var(--line);border-radius:26px;
+    padding:14px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  .phone h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:2px 4px 12px}
+  .screen{min-height:440px;display:flex;flex-direction:column}
+  /* Start — 2 Kacheln */
+  .kachel{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;cursor:pointer}
+  .kachel:hover{border-color:var(--akzent)} .kachel .k-titel{font-weight:600;font-size:16px}
+  .kachel .k-sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .kachel .k-ico{font-size:26px;margin-bottom:6px}
+  /* Ring — schrumpfende Bescheid-Spanne (Dim 4) */
+  .ring-wrap{display:flex;align-items:center;gap:14px;margin:2px 4px 16px}
+  .ring{--p:.62;width:64px;height:64px;border-radius:50%;flex:0 0 auto;
+    background:conic-gradient(var(--solide) calc(var(--p)*360deg), #2c3457 0);
+    display:grid;place-items:center}
+  .ring::after{content:"";width:46px;height:46px;border-radius:50%;background:var(--card)}
+  .ring-inner{position:absolute;font-size:11px;color:var(--muted)}
+  .spanne{font-size:13px}.spanne b{font-size:17px;color:var(--ink)}
+  .spanne .schrumpf{color:var(--muted);font-size:11px}
+  /* Wegpunkt-Karte */
+  .frage{font-size:17px;font-weight:600;margin:6px 4px 2px}
+  .hilfe{color:var(--muted);font-size:13px;margin:0 4px 12px}
+  .eingabe{display:flex;gap:8px;margin:0 4px 14px}
+  .eingabe input,.eingabe select{flex:1;background:#12162a;border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:11px 12px;font-size:15px}
+  .einheit{align-self:center;color:var(--muted)}
+  /* Bestätigen + Chat gleichberechtigt (Dim 5) */
+  .aktionen{display:flex;gap:8px;margin:0 4px}
+  .btn{flex:1;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:600;cursor:pointer}
+  .btn-best{background:var(--akzent);color:#fff}
+  .btn-chat{background:var(--card2);color:var(--ink);border:1px solid var(--line)}
+  .warum{background:none;border:0;color:var(--akzent);font-size:13px;margin:12px 4px 0;text-align:left;cursor:pointer}
+  /* Hold-to-confirm (Dim 2) */
+  .btn-hold{position:relative;overflow:hidden;background:var(--card2);border:1px solid var(--schimmernd);color:var(--ink)}
+  .btn-hold .fill{position:absolute;inset:0;background:var(--schimmernd);opacity:.28;width:66%}
+  .btn-hold .lbl{position:relative}
+  .geste-hint{color:var(--schimmernd);font-size:12px;margin:8px 4px 0}
+  /* Badges (Dim 1) — per-Quelle */
+  .belegt{margin-top:auto;border-top:1px solid var(--line);padding-top:12px}
+  .belegt h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 4px 8px}
+  .zeile{display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:13px}
+  .badge{font-size:11px;padding:2px 7px;border-radius:999px;font-weight:600;white-space:nowrap;cursor:pointer}
+  .b-beleg{background:rgba(61,220,151,.16);color:var(--solide);border:1px solid rgba(61,220,151,.4)}
+  .b-ki{background:rgba(201,163,255,.14);color:var(--schimmernd);border:1px solid rgba(201,163,255,.4);box-shadow:var(--schimmernd-glow)}
+  .b-laie{background:#2c3457;color:var(--muted)}
+  .zeile .val{color:var(--muted)}
+  /* Herkunft-Kette (Dim 1, im Bestätigungsmoment) */
+  .kette{background:#12162a;border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 4px}
+  .kette .step{display:flex;gap:8px;padding:6px 0;font-size:13px;border-bottom:1px dashed var(--line)}
+  .kette .step:last-child{border:0} .kette .dot{color:var(--schimmernd)}
+  .kette .p{color:var(--akzent)}
+  /* Ergebnis */
+  .ergebnis{text-align:center;margin:auto 0}
+  .ergebnis .z{font-size:34px;font-weight:700;color:var(--solide)}
+  .ergebnis .l{color:var(--muted);margin-top:6px}
+  .guard{background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.4);border-radius:12px;padding:14px;color:var(--warn);font-size:14px}
+  .legend{padding:0 20px 50px;max-width:80ch}
+  .legend h3{margin:22px 0 8px}
+  .legend li{margin:6px 0;color:var(--muted)} .legend b{color:var(--ink)}
+  .note{color:var(--schimmernd)}
+</style>
+</head>
+<body>
+  <h1>TaxGraph Haut — UI-Politur Mockup</h1>
+  <p class="sub">Mobile-first Wegpunkt-Fluss. Statische Skizze zum Optik-Steuern — echte Zahlen kommen im Bau vom Server (HTTP-API), keine Steuerlogik im Frontend. Die Farben/Gesten sind Vorschlag, nicht fix.</p>
+
+  <div class="frames">
+
+    <!-- 1. START — 2 Kacheln (P0) -->
+    <div class="phone"><h2>1 · Start (2 Kacheln)</h2><div class="screen">
+      <div class="frage" style="margin-bottom:14px">Was trifft auf dich zu?</div>
+      <div class="kachel"><div class="k-ico">💼</div><div class="k-titel">Arbeitnehmer, Vermieter oder Kapital</div><div class="k-sub">Lohn, Vermietung, Zinsen/Aktien → <code>gesamt</code></div></div>
+      <div class="kachel"><div class="k-ico">🌾</div><div class="k-titel">Rentner</div><div class="k-sub">Gesetzliche/private Rente, Behinderung → <code>rentner_gesamt</code></div></div>
+      <div class="warum">Warum nur zwei? Beides sind vollständige §2-Rechenwege — der Rest folgt aus deinen Antworten.</div>
+    </div></div>
+
+    <!-- 2. WEGPUNKT — Ring + Frage + Bestätigen|Chat + Badge (P0+Dim3/4/5) -->
+    <div class="phone"><h2>2 · Wegpunkt</h2><div class="screen">
+      <div class="ring-wrap">
+        <div class="ring" style="--p:.62"></div>
+        <div class="spanne"><b>1.480 – 2.240 €</b><br><span class="schrumpf">▼ schrumpft mit jeder Antwort · noch 3 offen</span></div>
+      </div>
+      <div class="frage">Wie viele Kilometer zur Arbeit (einfache Strecke)?</div>
+      <div class="hilfe">Die kürzeste Straßenverbindung zählt. Steht oft im Arbeitsvertrag.</div>
+      <div class="eingabe"><input value="30" inputmode="numeric"><span class="einheit">km</span></div>
+      <div class="aktionen">
+        <button class="btn btn-best">Bestätigen</button>
+        <button class="btn btn-chat">💬 Erklär mir</button>
+      </div>
+      <button class="warum">Warum wird das gefragt? →</button>
+      <div class="belegt"><h3>Schon beantwortet</h3>
+        <div class="zeile"><span class="badge b-beleg">✓ Beleg</span><span>Bruttolohn</span><span class="val">40.000 €</span></div>
+        <div class="zeile"><span class="badge b-ki">✦ KI</span><span>Arbeitstage</span><span class="val">220</span></div>
+        <div class="zeile"><span class="badge b-laie">selbst</span><span>Veranlagung</span><span class="val">einzeln</span></div>
+      </div>
+    </div></div>
+
+    <!-- 3. HERKUNFT-KETTE (Dim 1, Badge angetippt) -->
+    <div class="phone"><h2>3 · Herkunft antippen (Dim 1)</h2><div class="screen">
+      <div class="frage" style="margin-bottom:10px"><span class="badge b-ki">✦ KI</span> Arbeitstage: 220</div>
+      <div class="hilfe">So kam dieser Wert zustande — antippbar im Bestätigungsmoment, nicht versteckt:</div>
+      <div class="kette">
+        <div class="step"><span class="dot">◗</span> <b>Beleg</b>&nbsp;Lohnsteuerbescheinigung (PDF, hochgeladen)</div>
+        <div class="step"><span class="dot">◗</span> <b>Extraktion</b>&nbsp;OCR Zeile „Arbeitstage 220"</div>
+        <div class="step"><span class="dot">◗</span> <b>KI-Vorschlag</b>&nbsp;Konfidenz mittel → schimmerndes Abzeichen</div>
+        <div class="step"><span class="p">§</span> <b>Paragraph</b>&nbsp;§ 9 Abs. 1 S. 3 Nr. 4 EStG</div>
+      </div>
+      <div class="geste-hint" style="margin-top:14px">Wisch ↑ = „aus Gesetz übernehmen" · ↓ = vorläufig parken · ← = aus Beleg. Richtung wandert ins Audit-Log.</div>
+    </div></div>
+
+    <!-- 4. HOLD-TO-CONFIRM (Dim 2, KI-Konfidenz) -->
+    <div class="phone"><h2>4 · Bestätigen mit Unsicherheits-Gefühl (Dim 2)</h2><div class="screen">
+      <div class="frage">KI schlägt vor: <span class="badge b-ki">✦ KI</span></div>
+      <div class="hilfe">Homeoffice-Tage: <b>60</b> — mittlere KI-Konfidenz.</div>
+      <div class="eingabe"><input value="60" inputmode="numeric"><span class="einheit">Tage</span></div>
+      <div class="aktionen">
+        <button class="btn btn-hold"><span class="fill"></span><span class="lbl">Halten zum Bestätigen…</span></button>
+      </div>
+      <div class="geste-hint">Sicherer Beleg-Wert = ein Tipp. Mittlere KI = gedrückt halten (Ring füllt). Niedrige = Doppel-Bestätigung. Vertrauen körperlich statt als Prozentzahl. (Ein-Tipp: 30–40 % Versehen, Halten ≈ 0.)</div>
+      <div class="belegt"><h3>Grenze als Feature</h3>
+        <div class="zeile note">Die KI erklärt und schlägt vor — <b>du</b> bestätigst. Sie setzt nie selbst einen Wert (POST /chat → 501, fest).</div>
+      </div>
+    </div></div>
+
+    <!-- 5. ERGEBNIS + ehrlicher Guard -->
+    <div class="phone"><h2>5 · Ergebnis / ehrliche Sperre</h2><div class="screen">
+      <div class="ring-wrap"><div class="ring" style="--p:1"></div><div class="spanne"><b>Bescheid steht</b><br><span class="schrumpf">Spanne auf einen Punkt geschrumpft</span></div></div>
+      <div class="ergebnis"><div class="z">1.874 €</div><div class="l">festzusetzende Einkommensteuer 2025</div></div>
+      <div style="margin-top:22px" class="guard">
+        <b>Beispiel ehrliche Sperre:</b> „Deine Rente hat vor diesem Jahr begonnen — der Rentenfreibetrag ist als fester Euro-Betrag eingefroren. Bitte gib ihn aus dem letzten Bescheid an." <br><span style="color:var(--muted);font-size:12px">(nie ein erfundener Bescheid — K2)</span>
+      </div>
+    </div></div>
+
+  </div>
+
+  <div class="legend">
+    <h3>Die 5 Lab-Dimensionen → wo sie im Layout sitzen</h3>
+    <ul>
+      <li><b>1 Herkunft zum Anfassen</b> — per-Quelle-Badge (Beleg=solide grün / KI=schimmernd violett / selbst=grau) an jedem Feld; antippen → Kette Beleg→Extraktion→Vorschlag→§ (Screen 3). <span class="note">Braucht: _badge() reicher (per herkunft-Vektor {herkunft,pruef_tiefe,haftung} statt binär) + Beleg-Kante in justification() (dev-2s herkunft_slots).</span></li>
+      <li><b>2 Unsicherheits-Geste</b> — Hold-to-confirm bei KI-Konfidenz, ein-Tipp bei Beleg (Screen 4). Schwelle = Design (Lab: 85/60-Breakpoints).</li>
+      <li><b>3 Navigation</b> — ein Wegpunkt/Zeit mobil (Screen 2), Desktop-Graph als Zusatz (existiert). Kein Fake-Balken.</li>
+      <li><b>4 Bescheid-Ring</b> — Spanne [min…max] schrumpft sichtbar zum Punkt; außen wächst Erledigtes, innen schrumpft Möglichkeitsraum (Screen 2 → 5). Server liefert intervall.min/max_cent.</li>
+      <li><b>5 Chat als Berater</b> — „💬 Erklär mir" gleichgroß neben Bestätigen (Screen 2), situativ (ELSTER-Widerspruch, Vorjahres-Sprung). Erklärt + verlinkt §/Beleg, setzt NIE Werte (KI-Sperre POST/chat→501 fest).</li>
+    </ul>
+    <h3>Bau-Häppchen (Ein-Rutsch, Reihenfolge)</h3>
+    <ul>
+      <li><b>P0</b> Start-Screen 2 Kacheln (scheibe nicht mehr hardcoden) + bool-Prefill (beispielwert lesen). <span class="note">Macht den Rechen-Ring überhaupt erreichbar.</span></li>
+      <li><b>P1</b> Ring = schrumpfende Spanne (Dim 4) + per-Quelle-Badge & Herkunft-Kette (Dim 1, _badge+justification).</li>
+      <li><b>P2</b> Chat-Slot neben Bestätigen (Dim 5) + Hold-to-confirm (Dim 2).</li>
+      <li><b>P3</b> Gesten-Richtung ins Audit-Log, ELSTER-Fehler-Pädagogik — Backlog.</li>
+    </ul>
+    <p class="sub" style="margin-left:0">Offen für Julius: Farbwelt (dunkel/hell?), Badge-Symbole (✓/✦ ok?), Gesten-Grammatik lernen-vs-entdecken, Chat immer sichtbar vs. nur situativ. Nach Optik-Steuerung: Ein-Rutsch-Bau P0→P3.</p>
+  </div>
+</body>
+</html>
