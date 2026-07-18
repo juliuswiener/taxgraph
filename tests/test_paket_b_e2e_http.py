@@ -645,7 +645,9 @@ def test_an_gesamt_zusammen_vor_guard(base):
 def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0,
              ep_tage=0, ep_km=0, ep_kfz=False, kein_kap=True, kap_ertraege=0,
              kap_gewinn_aktien=0, kap_verlust_aktien=0, kap_gewinn_sonstige=0, kap_verlust_sonstige=0,
-             veranlagung="einzel", bruttolohn_partner=None, person_b_idnr=None):
+             veranlagung="einzel", bruttolohn_partner=None, person_b_idnr=None,
+             kap_ertraege_partner=0, kap_gewinn_aktien_partner=0, kap_verlust_aktien_partner=0,
+             kap_verlust_sonstige_partner=0):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
@@ -663,6 +665,11 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
     if person_b_idnr is not None:
         k.append(("person_b_idnr", person_b_idnr))
+    if veranlagung == "zusammen":                 # Person-B-Kapital-Kegel (bestätigte Null default, #4b)
+        k += [("kap_kapitalertraege_partner", kap_ertraege_partner),
+              ("kap_gewinn_aktien_partner", kap_gewinn_aktien_partner),
+              ("kap_verlust_aktien_partner", kap_verlust_aktien_partner),
+              ("kap_verlust_sonstige_partner", kap_verlust_sonstige_partner)]
     return k
 
 
@@ -785,12 +792,45 @@ def test_kapital_semantik_offen_co_okkurrenz(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "kapital_semantik_offen"
 
 
+def test_gesamt_zusammen_kapital_beide(base):
+    """#4b § 20-B: Ehepaar zusammen, A Bruttolohn 60000 (§ 19 58770) + B Bruttolohn 40000 (38770) → ns 97540;
+    A Kapital 8000 + B Kapital 6000 → roh 14000, gemeinsamer Sparer-PB ×2 → 12000. Günstiger § 32d Abs. 6:
+    Grenzsteuer > 25 % → Abgeltung 3000 (0,25×12000) < Differenz → est_ohne 20490 + 3000 = 23490 = 2349000 Cent.
+    Belegt: das Kapital BEIDER Ehegatten fließt single-source VOR den gemeinsamen Sparer-PB (nicht je Person)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "zbk", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True,
+                                       kein_kap=False, kap_ertraege=800000,
+                                       veranlagung="zusammen", bruttolohn_partner=4000000,
+                                       person_b_idnr="12345678901", kap_ertraege_partner=600000))
+    st, erg = _req(base, "GET", "/fall/zbk/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 2349000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_zusammen_kapital_semantik_partner(base):
+    """#4b K2 fail-closed: Person-B-Kapital doppelt beschrieben (Aggregat E0121709_partner UND Aktien-Topf_partner
+    beide > 0), zusammen → additiv-vs-subset ungeklärt → kapital_semantik_offen (spiegelt die Person-A-Sperre für
+    den Ehegatten, kein still verschlucktes Ehegatten-Aggregat)."""
+    _gesamt_anlegen(base, "zsp", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True,
+                                       kein_kap=False, kap_ertraege=800000,
+                                       veranlagung="zusammen", bruttolohn_partner=4000000,
+                                       person_b_idnr="12345678901",
+                                       kap_ertraege_partner=600000, kap_gewinn_aktien_partner=300000))
+    st, erg = _req(base, "GET", "/fall/zsp/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "kapital_semantik_offen"
+
+
 def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2025, alter=0,
                    gdb=0, hilflos=False, pflegegrad=0, gepflegter_hilflos=False, hinterbliebenen=False,
-                   veranlagung="einzel", rentenfreibetrag=None, gdb_partner=0, hilflos_partner=False):
+                   veranlagung="einzel", rentenfreibetrag=None, gdb_partner=0, hilflos_partner=False,
+                   renten_art_partner=None, jahresrente_partner=0, beginn_partner=2025,
+                   alter_partner=0, rentenfreibetrag_partner=None):
     """rentner_gesamt-Kegel: § 22 (renten_art/jahresrente Cent/beginn/alter) + § 33b-Block + Flags
     (kein_sonstige=False = Rente IST § 22-sonstige; kein_gewinn/kap/vuv=True). rentenfreibetrag (Cent) nur
-    aa-Folgejahr; Partner-Behinderung nur zusammen."""
+    aa-Folgejahr; Partner-Behinderung + Partner-Rente (renten_art_partner gesetzt) nur zusammen (#4b)."""
     k = [("rentner_renten_art", renten_art), ("rentner_jahresrente", jahresrente),
          ("rentner_renten_beginn_jahr", beginn), ("rentner_alter_bei_rentenbeginn", alter),
          ("rentner_grad_der_behinderung", gdb), ("rentner_hilflos_blind_taubblind", hilflos),
@@ -803,6 +843,13 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
         k.append(("rentner_grad_der_behinderung_partner", gdb_partner))
     if hilflos_partner:
         k.append(("rentner_hilflos_blind_taubblind_partner", hilflos_partner))
+    if renten_art_partner is not None:            # § 22-Rente Person B (#4b)
+        k += [("rentner_renten_art_partner", renten_art_partner),
+              ("rentner_jahresrente_partner", jahresrente_partner),
+              ("rentner_renten_beginn_jahr_partner", beginn_partner),
+              ("rentner_alter_bei_rentenbeginn_partner", alter_partner)]
+        if rentenfreibetrag_partner is not None:
+            k.append(("rentner_rentenfreibetrag_partner", rentenfreibetrag_partner))
     return k
 
 
@@ -875,6 +922,33 @@ def test_rentner_partner_behinderung_ohne_zusammen_gesperrt(base):
                                                 veranlagung="einzel", gdb_partner=60))
     st, erg = _req(base, "GET", "/fall/rp/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "partner_konsistenz_offen"
+
+
+def test_rentner_zusammen_beide_renten(base):
+    """#4b § 22-B: Rentner-Ehepaar zusammen, beide gesetzl. Rente Erstjahr 20000 @ 83,5 % → es je 16598,
+    Σ einkuenfte_sonstige 33196 (Ertragsanteil JE PERSON, dann summiert) → catala_est(zusammen, Splitting) →
+    festzusetzende_est 1622 = 162200 Cent. Belegt: die Ehegatten-Rente wird als weiterer § 22-Summand geführt."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rzb", _rentner_kegel(jahresrente=2000000, beginn=2025, veranlagung="zusammen",
+                                       renten_art_partner="gesetzliche_rente", jahresrente_partner=2000000,
+                                       beginn_partner=2025))
+    st, erg = _req(base, "GET", "/fall/rzb/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 162200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_partner_fixierung_offen(base):
+    """#4b K2 fail-closed: Ehegatten-Rente aa-Folgejahr (Rentenbeginn_partner 2015 < VZ) OHNE fixierten
+    Rentenfreibetrag_partner, zusammen → rentenfreibetrag_fixierung_offen (dieselbe %×erhöhte-Rente-Sperre
+    wie Person A, für den Ehegatten). Person A rechenbar (Erstjahr), der Ehegatte sperrt den Ring."""
+    _rentner_anlegen(base, "rpf", _rentner_kegel(jahresrente=2000000, beginn=2025, veranlagung="zusammen",
+                                       renten_art_partner="gesetzliche_rente", jahresrente_partner=2100000,
+                                       beginn_partner=2015))   # kein rentenfreibetrag_partner
+    st, erg = _req(base, "GET", "/fall/rpf/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "rentenfreibetrag_fixierung_offen"
 
 
 def test_graph_uebersicht(base):
