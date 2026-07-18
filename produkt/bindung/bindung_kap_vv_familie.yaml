@@ -183,6 +183,7 @@ bindungen:
 
   # ========================= V+V §21 — laufende Einkünfte (p21) =========================
   - feld_id: vv_einnahmen
+    instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: einnahmen}
     typ: cent
     einheit: EUR
@@ -199,6 +200,7 @@ bindungen:
       zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
       datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
   - feld_id: vv_gebaeude_afa
+    instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: gebaeude_afa}
     typ: cent
     einheit: EUR
@@ -216,6 +218,7 @@ bindungen:
       zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
       datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
   - feld_id: vv_schuldzinsen
+    instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: schuldzinsen}
     typ: cent
     einheit: EUR
@@ -233,6 +236,7 @@ bindungen:
       zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
       datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
   - feld_id: vv_erhaltungsaufwand
+    instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: erhaltungsaufwand}
     typ: cent
     einheit: EUR
@@ -250,6 +254,7 @@ bindungen:
       zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
       datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
   - feld_id: vv_sonstige_wk
+    instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: sonstige_werbungskosten}
     typ: cent
     einheit: EUR

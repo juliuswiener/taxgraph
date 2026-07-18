@@ -408,3 +408,74 @@ def test_klasse_g_fail_closed_partner_vorlaeufig(bindung):
     r = EM.deklariere(snap, bindung)
     assert "E0200201" not in r["person_b"]                      # vorläufig -> nicht deklariert
     assert "bruttoarbeitslohn_partner" in {x["feld_id"] for x in r["unvollstaendig"]}
+
+
+# ---- Klasse INSTANZ Konsument: Multi-Objekt §21 (reale Bindung, erster Instanz-Konsument) --------
+# Objekt A = Basis-feld_ids (Instanz 1, deklaration/dokumentiert wie bisher); Objekt B = __2-Suffix
+# (anlage_instanzen, E0700201-Reuse + E0703838-Aggregat je Objekt). Ring-Σ = dev-1-Nachtrag.
+_OBJ_A = {"vv_einnahmen": 1200000, "vv_gebaeude_afa": 300000, "vv_schuldzinsen": 200000,
+          "vv_erhaltungsaufwand": 100000, "vv_sonstige_wk": 50000}          # WK-Σ 650000, §21_A 550000
+_OBJ_B = {"vv_einnahmen__2": 900000, "vv_gebaeude_afa__2": 200000, "vv_schuldzinsen__2": 100000}  # WK-Σ 300000, §21_B 600000
+
+
+def test_multi_objekt_vv_zwei_objekte(bindung):
+    """Zwei Vermietungsobjekte: Objekt A in der Haupt-Deklaration (Instanz 1), Objekt B in
+    anlage_instanzen[vv_objekt] (Instanz 2) — je E0700201-Reuse + eigenes E0703838-WK-Aggregat."""
+    snap, _ = ST.materialisiere(_store_mit({**_OBJ_A, **_OBJ_B}))
+    r = EM.deklariere(snap, bindung)
+    # Objekt A (Instanz 1): unverändertes Verhalten
+    assert r["deklaration"]["E0700201"] == 1200000
+    assert r["dokumentiert"]["E0703838"]["summe"] == 650000
+    # Objekt B (Instanz 2): eigener Bucket, dieselbe Kz (Reuse)
+    inst = r["anlage_instanzen"]["vv_objekt"]
+    assert len(inst) == 1 and inst[0]["index"] == 2
+    assert inst[0]["felder"]["E0700201"] == 900000
+    assert inst[0]["dokumentiert"]["E0703838"]["summe"] == 300000
+    assert inst[0]["dokumentiert"]["E0703838"]["quell_felder"] == ["vv_gebaeude_afa__2", "vv_schuldzinsen__2"]
+    assert r["vollstaendig"] is True
+
+
+def test_multi_objekt_summe_datenvollstaendig_fuer_ring(bindung):
+    """Der Ring (dev-1) summiert § 21-Einkünfte je Objekt (Einnahmen − WK-Aggregat). Dieser Test belegt,
+    dass die Deklaration ALLE dafür nötigen Zahlen je Objekt trägt: Σ = (1200000−650000)+(900000−300000)."""
+    snap, _ = ST.materialisiere(_store_mit({**_OBJ_A, **_OBJ_B}))
+    r = EM.deklariere(snap, bindung)
+    obj_a = r["deklaration"]["E0700201"] - r["dokumentiert"]["E0703838"]["summe"]
+    inst = r["anlage_instanzen"]["vv_objekt"][0]
+    obj_b = inst["felder"]["E0700201"] - inst["dokumentiert"]["E0703838"]["summe"]
+    assert obj_a == 550000 and obj_b == 600000
+    assert obj_a + obj_b == 1150000                             # Σ § 21-Einkünfte über beide Objekte
+
+
+def test_multi_objekt_roundtrip(bindung):
+    """Round-Trip: base + base__2 exakt invertierbar (1:1); Aggregat je Objekt nur Summe (E0703838[__2])."""
+    snap, _ = ST.materialisiere(_store_mit({**_OBJ_A, **_OBJ_B}))
+    r = EM.deklariere(snap, bindung)
+    rt = EM.zuruecklesen(r, bindung)
+    assert rt["felder"]["vv_einnahmen"] == 1200000             # Objekt A
+    assert rt["felder"]["vv_einnahmen__2"] == 900000           # Objekt B
+    assert rt["aggregat"]["E0703838"] == 650000                # Objekt-A-Aggregat
+    assert rt["aggregat"]["E0703838__2"] == 300000             # Objekt-B-Aggregat je Instanz
+
+
+def test_multi_objekt_fail_closed_objekt_b_vorlaeufig(bindung):
+    """K2 je Objekt: Objekt-B-Einnahmen vorläufig -> Objekt B nicht im Bucket, Gesamt unvollständig
+    (kein halber Multi-Objekt-Bescheid)."""
+    s = _store_mit(_OBJ_A)
+    _b(s, "vv_einnahmen__2", 900000, zustand="vorlaeufig")
+    snap, _ = ST.materialisiere(s)
+    r = EM.deklariere(snap, bindung)
+    assert r["vollstaendig"] is False
+    assert "vv_einnahmen__2" in {x["feld_id"] for x in r["unvollstaendig"]}
+    assert r["anlage_instanzen"] == {}                         # vorläufiges Objekt B nicht deklariert
+
+
+def test_multi_objekt_partner_beide_vermieter(bindung):
+    """vv_*_partner-Landeplatz: Ehepaar, beide Vermieter = zwei Objekte auf der Instanz-Achse (Objekt B
+    = __2). Der Multi-Objekt-Kanal deckt den Person-B-V+V-Defer ab (kein eigener _partner-Pfad nötig)."""
+    snap, _ = ST.materialisiere(_store_mit({**_OBJ_A, **_OBJ_B}))
+    r = EM.deklariere(snap, bindung)
+    # beide Objekte tragen dieselbe Person-A-Kz E0700201 (Anlage V je Objekt), kein distinktes Ehegatte-Kz
+    alle_e0700201 = ([r["deklaration"]["E0700201"]]
+                     + [e["felder"]["E0700201"] for e in r["anlage_instanzen"]["vv_objekt"]])
+    assert alle_e0700201 == [1200000, 900000]

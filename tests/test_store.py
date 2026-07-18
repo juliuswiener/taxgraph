@@ -151,6 +151,29 @@ def test_A_llm_schreiber_gekoppelt():
                         schreiber="llm:chat", signal={"signal_1": None, "signal_2": "gefaelscht"}, ts=TS)
 
 
+def test_A_berechnet_schreiber_kann_nie_bestaetigen():
+    """defense-in-depth (Instructor-Follow 2026-07-18): ein berechnet:-Schreiber (z.B. berechnet:maps =
+    Karten-Entfernung) ist ein abgeleiteter VORSCHLAG — der Store erzwingt vorlaeufig+signal_2=null
+    STRUKTURELL, nicht nur der disziplinierte Endpunkt. Ein berechnet:+bestaetigt-Event fällt fail-closed."""
+    s = ST.leerer_store(2025)
+    with pytest.raises(ValueError, match="berechnet:"):
+        ST.append_event(s, feld_id="ep_entfernung_km", wert=30, zustand="bestaetigt",
+                        herkunft={"herkunft": "berechnet", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        schreiber="berechnet:maps",
+                        signal={"signal_1": {"typ": "maps"}, "signal_2": "erschlichen"}, ts=TS)
+
+
+def test_A_berechnet_schreiber_vorlaeufig_ok():
+    """Gegenprobe: der disziplinierte berechnet:maps-Write (vorlaeufig, herkunft=berechnet, signal_2=null)
+    geht durch — der Guard blockt nur das Bestätigen, nicht den legitimen Vorschlag (kein Über-Blocken)."""
+    s = ST.leerer_store(2025)
+    ev = ST.append_event(s, feld_id="ep_entfernung_km", wert=30, zustand="vorlaeufig",
+                         herkunft={"herkunft": "berechnet", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                         schreiber="berechnet:maps",
+                         signal={"signal_1": {"typ": "maps", "dienst": "openrouteservice"}, "signal_2": None}, ts=TS)
+    assert ev["zustand"] == "vorlaeufig" and ev["herkunft"]["herkunft"] == "berechnet"
+
+
 # ---- (B) Ein aktives Event je feld_id -----------------------------------------
 
 def test_B_zweites_event_ohne_ersetzt_faellt():

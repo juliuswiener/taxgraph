@@ -159,6 +159,18 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
                 "fail-closed (A): import:kontoauszug-Schreiber muss herkunft=kontoauszug, zustand=vorlaeufig, "
                 "signal_2=null tragen — eine Kontoauszug-Klassifikation bestätigt nie direkt.")
 
+    # Auflage A (Berechnet-Writer, symmetrisch): ein berechnet:-Schreiber (z.B. berechnet:maps = Entfernung
+    # aus dem Karten-Dienst) liefert einen aus PII/externem Dienst ABGELEITETEN Vorschlag — er bewegt keine
+    # Steuer-Zahl, bis der Mensch ihn bestätigt (K2, defense-in-depth: der Store erzwingt vorlaeufig
+    # STRUKTURELL, nicht nur der disziplinierte Endpunkt). SCHREIBER-scoped: ein engine-Schreiber mit
+    # herkunft=berechnet (fertiges Rechen-Ergebnis) ist NICHT betroffen — nur berechnet:*-Vorschläge.
+    if schreiber.startswith("berechnet:"):
+        if herkunft.get("herkunft") != "berechnet" or zustand != "vorlaeufig" \
+                or signal.get("signal_2") is not None:
+            raise ValueError(
+                "fail-closed (A): berechnet:-Schreiber muss herkunft=berechnet, zustand=vorlaeufig, "
+                "signal_2=null tragen — ein berechneter/abgeleiteter Vorschlag bestätigt nie direkt.")
+
     # Typ-Zwang: bestaetigt braucht signal_2.
     if zustand == "bestaetigt" and not (signal.get("signal_2") or "").strip():
         raise ValueError("fail-closed: zustand=bestaetigt braucht ein signal_2 (Zwei-Signal).")
