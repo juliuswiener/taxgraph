@@ -57,9 +57,19 @@ Instanz-Klasse/Drift) ist EINMAL gebaut.
 3. Dann Per-Kind (ELSTER-Form-Pflicht) + Multi-Rente inkrementell.
 UI (dev-1): „+ weiteres Objekt/Kind/Rente"-Wiederholung über der Instanz-Gruppe.
 
-## Offene Recon vor Bau (Bash/kz_extract)
-Je-Instanz-Kz je Anlage (V/Kind/R) via Hash/Vordruck-Beleg (Person-Instanz vs A/B-Block — wie Person-B-Recon:
-Income-Anlagen per-Instanz gleicher Kz). Erst dann die konkreten est_mapping-Instanz-Configs.
+## Kz-Instanz-Recon AUFGELÖST (kz_extract 2026-07-18) — alle drei = INSTANZ-REUSE
+Konklusiv (Hash/Vorkommen, nicht E-Präfix): ALLE drei Anlagen tragen je Instanz DENSELBEN Kz, KEIN
+distinkter Instanz-Kz (kein Objekt-2-/Kind-2-/Rente-2-Kz existiert). Multi-Instanz läuft über SEPARATE
+Anlage-Sub-Dokumente (wie Person-B den person_b-Bucket), nicht über distinkte Kz.
+- **Anlage V:** genau EINE Mieteinnahmen-Kz **E0700201** [Einz] (+ E0700401 „andere Räume") — keine
+  E07x0201-Objekt-Serie. WK-Aggregat E0703838 je Objekt. → Instanz-Reuse.
+- **Anlage R:** EINE Rentenbetrag-Kz je ART (**E1800301** gesetzl/aa, **E1801601** priv/bb, **E1803102**
+  sonst) [Einz], keine Rente-2-Serie. → Instanz-Reuse × ART (PARTNER_VERZWEIGUNG-Muster × Instanz).
+- **Anlage Kind:** EINE **E0500406** (IdNr) + **E0500807/808** (Art Kindschaftsverhältnis, je Elternteil) +
+  E0500601/805 (Zeitraum) je Kind, keine Kind-2-Serie. → Instanz-Reuse.
+→ **FOLGE: die est_mapping-INSTANZ-Klasse reused je Instanz die Person-A-Kz (kein neuer Kz, KEIN Anker-vorab
+für Instanz-Kz)** — exakt das Person-B-Muster auf der Instanz-Achse. Repeated-Instance ist damit VOLL
+build-ready; keine Kz-Recon mehr offen.
 
 ## Zur Abnahme
 (1) Instanz-Suffix A bestätigt (vs Container B)? (2) instanz_gruppe-Bindungs-Konstrukt OK? (3) Bau-Reihenfolge
