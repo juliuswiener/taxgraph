@@ -127,9 +127,11 @@ function zeigeFrage(q, stand) {
   $("hilfe").textContent = q.hilfe_kurz || "";
   $("anker").hidden = true;
 
-  // Gibt es schon einen vorläufigen KI-Vorschlag für dieses Feld? -> Hold-to-confirm (Dim 2).
+  // Gibt es schon einen vorläufigen Vorschlag für dieses Feld (KI / Karten-berechnet / Vorjahr)?
+  // -> Hold-to-confirm (Dim 2): der Nutzer bestätigt den Vorschlag bewusst (Zwei-Signal).
   const vorhanden = stand.felder && stand.felder[q.feld_id];
-  const kiVorschlag = vorhanden && vorhanden.zustand === "vorlaeufig" && vorhanden.herkunft_badge === "llm_vorschlag";
+  const kiVorschlag = vorhanden && vorhanden.zustand === "vorlaeufig"
+    && ["llm_vorschlag", "berechnet", "vorjahr"].includes(vorhanden.herkunft_badge);
 
   // Julius-Feature: Arbeitsweg-km über Karten-Dienst (Vorschlag-Fluss; Backend ge-stubbt, PII/Cap offen).
   const altMaps = document.getElementById("maps-affordanz"); if (altMaps) altMaps.remove();
@@ -213,13 +215,14 @@ function mapsAffordanz(q) {
     const von = wrap.querySelector("#maps-von").value.trim(), nach = wrap.querySelector("#maps-nach").value.trim();
     const st = wrap.querySelector("#maps-status");
     if (!von || !nach) { st.textContent = "Bitte beide Adressen angeben."; return; }
+    st.textContent = "Berechne …";
     const r = await jpost(`/fall/${FALL}/entfernung`, { von, nach });
     if (r.status === 200 && r.body && typeof r.body.km === "number") {
-      // Späterer Live-Fall: km als Vorschlag ins manuelle Feld (Nutzer bestätigt).
-      const inp = $("feld-input"); if (inp) inp.value = r.body.km;
-      st.textContent = `Vorschlag: ${r.body.km} km — bitte prüfen und bestätigen.`;
+      // Der km liegt jetzt als VORLÄUFIGER berechnet-Vorschlag im Store → Wegpunkt neu laden: er zeigt
+      // den Wert mit Herkunfts-Badge „berechnet" + Hold-to-confirm (Nutzer bestätigt bewusst, Zwei-Signal).
+      await refresh();
     } else {
-      st.textContent = (r.body && r.body.vertrag) ? r.body.vertrag : "Karten-Dienst noch nicht verbunden — bitte km manuell eingeben.";
+      st.textContent = (r.body && r.body.vertrag) ? r.body.vertrag : "Karten-Dienst nicht verbunden — bitte km manuell eingeben.";
     }
   });
 }
@@ -307,9 +310,25 @@ async function zeigeErgebnis() {
   }
 }
 
+// --- Vorjahr-Übernahme: Vorjahres-Fall → vorläufige Vorschläge (herkunft=vorjahr), Nutzer bestätigt ---
+async function vorjahrUebernehmen() {
+  const vf = $("vorjahr-fid").value.trim(), st = $("vorjahr-status");
+  if (!vf) { st.textContent = "Bitte die Vorjahres-Fall-ID angeben."; return; }
+  st.textContent = "Übernehme …";
+  const r = await jpost(`/fall/${FALL}/vorjahr`, { vorjahr_fall_id: vf });
+  if (r.status === 200) {
+    st.textContent = `${r.body.uebernommen} Feld(er) aus dem Vorjahr als Vorschlag übernommen — bitte im Fluss bestätigen.`;
+    await refresh();
+  } else {
+    st.textContent = "Übernahme fehlgeschlagen: " + ((r.body && r.body.fehler) || r.status);
+  }
+}
+
 // --- Verdrahtung ---
 document.querySelectorAll(".kachel").forEach(k => k.addEventListener("click", () => waehleScheibe(k.dataset.scheibe)));
 $("chat").addEventListener("click", oeffneChat);
 $("warum").addEventListener("click", zeigeWarum);
 $("kette-zu").addEventListener("click", () => $("kette-overlay").hidden = true);
 $("chat-zu").addEventListener("click", () => $("chat-overlay").hidden = true);
+$("vorjahr-toggle").addEventListener("click", () => { const p = $("vorjahr-panel"); p.hidden = !p.hidden; });
+$("vorjahr-go").addEventListener("click", vorjahrUebernehmen);

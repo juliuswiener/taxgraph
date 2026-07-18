@@ -25,7 +25,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PRODUKT = os.path.dirname(HERE)
 ROOT = os.path.dirname(PRODUKT)
 for _sub in ("produkt/store", "produkt/traverser", "produkt/unsicherheit", "produkt/mapping",
-             "produkt/konsistenz", "golden"):
+             "produkt/konsistenz", "produkt/import", "golden"):
     _p = os.path.join(ROOT, _sub)
     if _p not in sys.path:
         sys.path.insert(0, _p)
@@ -36,6 +36,7 @@ import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
 import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche, dev-2)
 import partner_check as PC  # noqa: E402  (Partner-Behinderungsfeld↔Zusammenveranlagung, dev-2)
+import vorjahr_writer as VW  # noqa: E402  (Vorjahres-Übernahme, dev-2 Store-Writer)
 
 FAELLE = os.path.join(HERE, "faelle")
 
@@ -756,15 +757,53 @@ def entfernung(fall_id: str, body: dict) -> tuple[int, dict]:
     das km-Feld, der Nutzer bestätigt/überschreibt (Zwei-Signal, § 9 kürzeste Straßenverbindung; eine
     längere ist bei regelmäßiger Nutzung zulässig). Kein Key / Netzfehler → 503-Fallback (manuell), nie
     Crash, nie still gesetzt. Der API-Key kommt nur aus $ORS_API_KEY (nie im Repo)."""
-    lade_fall(fall_id)                                   # 404, wenn der Fall nicht existiert
+    store = lade_fall(fall_id)                            # 404, wenn der Fall nicht existiert
     von = (body.get("von") or "").strip()
     nach = (body.get("nach") or "").strip()
     if not von or not nach:
         raise ApiError(400, "von und nach (Adressen) sind Pflicht")
+    bindung = _scheibe_bindung(store)
+    if "ep_entfernung_km" not in bindung:
+        raise ApiError(400, "diese Scheibe hat kein Arbeitsweg-km-Feld")
     try:
         import ors_client
         km = ors_client.entfernung_km(von, nach)
     except Exception:                                    # OrsNichtVerfuegbar / Import — sauberer Fallback
         return 503, ENTFERNUNG_FALLBACK
-    return 200, {"km": km, "quelle": "openrouteservice",
+    # PROVENIENZ (K2, „Herkunft je Wert"): der km-Wert kommt aus dem Karten-Dienst → als VORLÄUFIGES
+    # Event mit herkunft=berechnet ins Store (Badge zeigt „berechnet/maps", NICHT „selbst"). Der Nutzer
+    # bestätigt/überschreibt (Zwei-Signal). Ein aktives Event des Felds wird ersetzt (Nutzer hat „berechnen"
+    # geklickt = er will den Karten-Vorschlag). signal_1 trägt die Provenienz (KEINE Adressen — PII-sparsam).
+    aktiv_ev = ST._aktives(store).get("ep_entfernung_km")
+    try:
+        ev = ST.append_event(
+            store, feld_id="ep_entfernung_km", wert=km, zustand="vorlaeufig",
+            herkunft={"herkunft": "berechnet", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            schreiber="berechnet:maps",
+            signal={"signal_1": {"typ": "maps", "dienst": "openrouteservice"}, "signal_2": None},
+            ersetzt=(aktiv_ev["event_id"] if aktiv_ev else None))
+    except ValueError as e:
+        raise ApiError(422, str(e))
+    speichere_fall(fall_id, store)
+    return 200, {"km": km, "event_id": ev["event_id"], "herkunft": "berechnet",
                  "hinweis": "Vorschlag aus dem Karten-Dienst — bitte prüfen und bestätigen."}
+
+
+def vorjahr(fall_id: str, body: dict) -> tuple[int, dict]:
+    """Vorjahr-Übernahme (dev-2s vorjahr_writer): überträgt die vorjahr-flagged, im Vorjahres-Fall
+    BESTÄTIGTEN Felder als VORLÄUFIGE Vorschläge (herkunft=vorjahr) in den aktuellen Fall — der Nutzer
+    bestätigt/überschreibt (Zwei-Signal). Der Store-Guard ^import:vorjahr erzwingt vorläufig strukturell;
+    schon belegte Felder bleiben unangetastet (One-Active-Event)."""
+    store = lade_fall(fall_id)
+    bindung = _scheibe_bindung(store)
+    vj_id = body.get("vorjahr_fall_id")
+    if not vj_id or not _FALL_RE.fullmatch(str(vj_id)):
+        raise ApiError(400, "vorjahr_fall_id fehlt oder ungültig")
+    if vj_id == fall_id:
+        raise ApiError(400, "vorjahr_fall_id muss ein ANDERER (Vorjahres-)Fall sein")
+    vj_store = lade_fall(vj_id)                           # 404, wenn der Vorjahres-Fall fehlt
+    vj_felder, _ = ST.materialisiere(vj_store)
+    n = VW.uebernehme_vorjahr(store, vj_felder, bindung,
+                              vorjahr_vz=int(vj_store.get("veranlagungszeitraum", 0)))
+    speichere_fall(fall_id, store)
+    return 200, {"uebernommen": n, "vorjahr_fall_id": vj_id}

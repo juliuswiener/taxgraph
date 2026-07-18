@@ -124,16 +124,43 @@ def test_entfernung_leere_adressen_400(base):
     assert st == 400
 
 
-def test_entfernung_erfolg_vorschlag(base, monkeypatch):
-    """Erfolg (ORS-Client gemockt, KEIN Live-Aufruf): 2 Adressen → 200 mit km-VORSCHLAG. K2: nur ein
-    Vorschlag (hinweis „bitte bestätigen"), NICHT still ins Feld geschrieben — der Nutzer bestätigt in der Haut."""
+def test_entfernung_erfolg_provenance(base, monkeypatch):
+    """Erfolg (ORS-Client gemockt, KEIN Live-Aufruf): der km-Wert kommt als VORLÄUFIGES herkunft=berechnet-
+    Event ins Store (Badge „berechnet/maps", NICHT „selbst") → der Nutzer bestätigt (Zwei-Signal). K2:
+    Provenienz je Wert gewahrt, nichts still gesetzt."""
     import sys, os
     sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
     import ors_client
     monkeypatch.setattr(ors_client, "entfernung_km", lambda von, nach: 30)
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "ent3"})
     st, b = _req(base, "POST", "/fall/ent3/entfernung", {"von": "Musterstr 1, Berlin", "nach": "Beispielweg 2, Berlin"})
-    assert st == 200 and b["km"] == 30 and "hinweis" in b
+    assert st == 200 and b["km"] == 30 and b["herkunft"] == "berechnet"
+    st, stand = _req(base, "GET", "/fall/ent3/stand")
+    f = stand["felder"]["ep_entfernung_km"]
+    assert f["wert"] == 30 and f["zustand"] == "vorlaeufig" and f["herkunft_badge"] == "berechnet"
+
+
+def test_vorjahr_uebernahme(base):
+    """Vorjahr-Haut-Naht: ein bestätigter, vorjahr-flagged Wert im Vorjahres-Fall wird als VORLÄUFIGER
+    Vorschlag (herkunft=vorjahr) in den neuen Fall übertragen — der Nutzer bestätigt (Zwei-Signal)."""
+    # Vorjahres-Fall: bruttoarbeitslohn bestätigt (vorjahr:vorschlag).
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2024, "fall_id": "vj"})
+    st, _ = _req(base, "POST", "/fall/vj/event", _laie("bruttoarbeitslohn", 4000000))
+    assert st == 201
+    # Neuer Fall + Übernahme.
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "neu"})
+    st, b = _req(base, "POST", "/fall/neu/vorjahr", {"vorjahr_fall_id": "vj"})
+    assert st == 200 and b["uebernommen"] >= 1
+    st, stand = _req(base, "GET", "/fall/neu/stand")
+    f = stand["felder"]["bruttoarbeitslohn"]
+    assert f["wert"] == 4000000 and f["zustand"] == "vorlaeufig" and f["herkunft_badge"] == "vorjahr"
+
+
+def test_vorjahr_fehlender_fall_404(base):
+    """Übernahme aus einem nicht existierenden Vorjahres-Fall → 404 (kein stiller No-Op)."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "neu2"})
+    st, _ = _req(base, "POST", "/fall/neu2/vorjahr", {"vorjahr_fall_id": "gibtsnicht"})
+    assert st == 404
 
 
 def test_concurrent_ergebnis_kein_race(base):
