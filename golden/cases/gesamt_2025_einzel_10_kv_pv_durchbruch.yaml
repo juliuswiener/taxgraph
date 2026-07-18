@@ -1,0 +1,24 @@
+id: gesamt_2025_einzel_10_kv_pv_durchbruch
+# dev-2 2026-07-19: flacher Kompositions-Golden (§21-Muster) — catala_gesamt nimmt sonderausgaben pre-computed.
+# sonderausgaben=4000 = der KV/PV-Abzug (basis_kv_pv 4000 > HB 2800 -> § 10 Abs. 4 S. 4 Durchbruch -> voller
+# Basis-Abzug 4000). Die Abzugs-MATHEMATIK (KrankenPflegeVorsorge) ist in dev-1s catala_p10_kv_pv-Unit-Test +
+# den clerk-Seeds verifiziert (basis4000/weitere1000/ohne Zuschuss -> 4000 bestätigt); dieser Golden verankert
+# den Tarif auf der KV/PV-reduzierten zvE. est doppelt hand-verifiziert (Engine catala_gesamt + § 32a-2025).
+beschreibung: "Engine-Komposition § 10 Abs. 4 S. 4 KV/PV-Basis-Durchbruch: § 19 40000 + Basis-Kranken-/Pflegeversicherungsbeiträge 4000 (über dem Höchstbetrag 2800 ohne Zuschuss). § 10 Abs. 4 S. 4: übersteigen die Basis-Beiträge (Abs. 1 Nr. 3) den nach S. 1-3 abziehbaren Betrag, sind DIESE voll abzuziehen (Durchbruch), ein Abzug weiterer Vorsorge (Nr. 3a) scheidet aus -> abziehbare KV/PV = 4000 (NICHT auf 2800 gedeckelt) -> sonderausgaben 4000 -> zvE 36000 -> Grundtarif 6071 -> festzusetzende_est 6071. OHNE Durchbruch (Deckelung auf 2800) wäre der Abzug 1200 zu niedrig = Über-Besteuerung. Beweist: der Basis-Durchbruch greift (voller Basis-Abzug), der Tarif komponiert korrekt. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 40000
+  sonderausgaben: 4000
+
+erwartung:
+  festzusetzende_est: 6071
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 10 Abs. 4 S. 4 EStG (KV/PV-Basis-Durchbruch, Abs. 1 Nr. 3) i.V.m. § 2 Abs. 3 bis 6"
+  datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  zitatanker: "sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne des Absatzes 1 Nummer 3a scheidet aus"

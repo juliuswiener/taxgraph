@@ -1,0 +1,23 @@
+id: gesamt_2025_einzel_10_kv_pv_zuschuss
+# dev-2 2026-07-19: flacher Kompositions-Golden (§21-Muster) — sonderausgaben=2500 = KV/PV-Abzug pre-computed.
+# mit Zuschuss-Anspruch -> HB 1900; basis_kv_pv 2500 > 1900 -> § 10 Abs. 4 S. 4 Durchbruch -> voller Abzug 2500.
+# Abzugs-Mathematik in dev-1s catala_p10_kv_pv-Unit-Test verifiziert (basis2500/ohne weitere/mit Zuschuss -> 2500).
+# est doppelt hand-verifiziert (Engine catala_gesamt + § 32a-2025-Grundtarif auf zvE 37500).
+beschreibung: "Engine-Komposition § 10 Abs. 4 S. 2 KV/PV mit Zuschuss-Anspruch (reduzierter Höchstbetrag 1900) + Durchbruch: § 19 40000 + Basis-KV/PV 2500, Steuerpflichtiger mit Anspruch auf steuerfreien Arbeitgeber-Zuschuss/Beihilfe -> Höchstbetrag 1900 statt 2800. Basis 2500 > 1900 -> § 10 Abs. 4 S. 4 Durchbruch -> voller Basis-Abzug 2500 -> sonderausgaben 2500 -> zvE 37500 -> Grundtarif 6533 -> festzusetzende_est 6533. Beweist: der reduzierte 1900-Höchstbetrag (Zuschuss-Gruppe, § 10 Abs. 4 S. 2) und der Basis-Durchbruch komponieren korrekt; höhere est als der Durchbruch-ohne-Zuschuss-Fall (6071 bei nur 2800/4000), weil mit Zuschuss ein niedrigerer Basis-Betrag abziehbar ist. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 40000
+  sonderausgaben: 2500
+
+erwartung:
+  festzusetzende_est: 6533
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 10 Abs. 4 S. 2 EStG (reduzierter Höchstbetrag 1900 bei Zuschuss-Anspruch) i.V.m. Abs. 4 S. 4 + § 2 Abs. 3 bis 6"
+  datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  zitatanker: "Höchstbetrag beträgt 1 900 Euro bei Steuerpflichtigen"
