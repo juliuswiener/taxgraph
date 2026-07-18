@@ -114,12 +114,13 @@ def _aggregation_quellen() -> set:
     return {f for fs in DOKUMENTIERT_AGGREGAT.values() for f in fs}
 
 
-def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, bindung: dict,
+def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, snapshot: dict, bindung: dict,
                         anlage_instanzen: dict, unvollstaendig: list, nicht_deklariert: list) -> None:
     """Routet EIN Instanz-Feld (base__n) in den anlage_instanzen-Bucket seiner Gruppe (Instanz-Reuse der
     Basis-Kz). fail-closed je Instanz: ein vorlaeufiges Instanz-Feld -> unvollständig (nicht deklariert).
     Reuse der Basis-Mapping-Logik: 1:1 (elster_kz) -> instanz.felder[kz]; Aggregat-Quelle -> instanz.
-    dokumentiert[ziel] (Summe je Instanz, wie Klasse a je Objekt)."""
+    dokumentiert[ziel] (Summe je Instanz); Art-Verzweigung (Klasse f) -> Kz hängt an der INSTANZ-Art
+    art_feld__idx (Multi-Rente: jede Rente-Instanz hat eigene renten_art -> eigener aa/bb-Kz)."""
     b = bindung[basis]                                    # Aufrufer garantiert: basis instanz-fähig
     if sfeld.get("zustand") != "bestaetigt":
         unvollstaendig.append({"feld_id": feld_id,
@@ -135,6 +136,20 @@ def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, bindung
                 agg = inst["dokumentiert"].setdefault(ziel, {"summe": 0, "quell_felder": []})
                 agg["summe"] += int(wert)
                 agg["quell_felder"].append(feld_id)
+    elif basis in VERZWEIGUNG:                            # Klasse f je Instanz (Kz je INSTANZ-Art, Multi-Rente)
+        cfg = VERZWEIGUNG[basis]
+        art_feld_inst = f"{cfg['art_feld']}__{idx}"       # die Art DIESER Instanz (z.B. rentner_renten_art__2)
+        art = snapshot.get(art_feld_inst)
+        if art is None or art.get("zustand") != "bestaetigt":
+            unvollstaendig.append({"feld_id": feld_id,
+                                   "grund": f"Instanz-Art ({art_feld_inst}) unbestätigt — Kz-Zweig offen"})
+        else:
+            kz = cfg["kz"].get(art["wert"])
+            if kz:
+                inst["felder"][kz] = wert
+            else:
+                nicht_deklariert.append({"feld_id": feld_id,
+                                         "grund": f"Instanz-Art '{art['wert']}' ohne Kz-Zweig"})
     elif b.get("elster_kz"):                              # 1:1 je Instanz (Kz-Reuse der Basis)
         inst["felder"][b["elster_kz"]] = wert
     else:
@@ -168,7 +183,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
         basis = m_inst.group("base") if m_inst else None
         if basis is not None and bindung.get(basis, {}).get("instanz_gruppe"):
             getroffen += 1
-            _deklariere_instanz(basis, int(m_inst.group("idx")), feld_id, sfeld, bindung,
+            _deklariere_instanz(basis, int(m_inst.group("idx")), feld_id, sfeld, snapshot, bindung,
                                 anlage_instanzen, unvollstaendig, nicht_deklariert)
             continue
         b = bindung.get(feld_id)
@@ -243,13 +258,16 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
         eintraege = []
         for i in sorted(instanzen):
             inst = instanzen[i]
+            if not inst["felder"] and not inst["dokumentiert"]:
+                continue                                  # leere Instanz (alle Instanz-Felder fail-closed) -> nicht ausgeben
             eintrag = {"index": i, "felder": inst["felder"]}
             if inst["dokumentiert"]:
                 eintrag["dokumentiert"] = {ziel: {"summe": agg["summe"],
                                                   "quell_felder": sorted(agg["quell_felder"])}
                                            for ziel, agg in inst["dokumentiert"].items()}
             eintraege.append(eintrag)
-        anlage_instanzen_out[gruppe] = eintraege
+        if eintraege:                                     # leere Gruppe (alle Instanzen fail-closed) weglassen
+            anlage_instanzen_out[gruppe] = eintraege
 
     return {
         "basis_snapshot": snapshot_id,
@@ -287,13 +305,17 @@ def zuruecklesen(result: dict, bindung: dict) -> dict:
     for e_nr, wert in result.get("person_b", {}).items():
         if e_nr in b_nach_feld:
             felder[b_nach_feld[e_nr]] = wert
-    # Klasse INSTANZ (Instanz 2..N): base__idx -> Wert (1:1 invertierbar); Aggregat je Instanz nur Summe
+    # Klasse INSTANZ (Instanz 2..N): base__idx -> Wert (1:1 invertierbar); Aggregat je Instanz nur Summe.
+    # 1:1-Instanz über inst_kz_nach_feld; VERZWEIGUNG-Instanz (Multi-Rente, elster_kz=null) über die
+    # Art-Zweig-Kz (e_nach_verzweigung, Value invertierbar; die exakte Art ist gruppen-genau wie bei Basis).
     for instanzen in result.get("anlage_instanzen", {}).values():
         for inst in instanzen:
             idx = inst["index"]
             for kz, wert in inst.get("felder", {}).items():
                 if kz in inst_kz_nach_feld:
                     felder[f"{inst_kz_nach_feld[kz]}__{idx}"] = wert
+                elif kz in e_nach_verzweigung:
+                    felder[f"{e_nach_verzweigung[kz]}__{idx}"] = wert
             for ziel, agg in inst.get("dokumentiert", {}).items():
                 aggregat[f"{ziel}__{idx}"] = agg["summe"]
     for e_nr, wert in result["deklaration"].items():

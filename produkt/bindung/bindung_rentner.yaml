@@ -9,6 +9,7 @@ scheibe: "Rente §22 (p22_1) + Altersentlastung §24a (p24a) + Pauschbeträge §
 bindungen:
   # ========================= Rente §22 Nr. 1 — Besteuerungsanteil (p22_1) =========================
   - feld_id: rentner_jahresrente
+    instanz_gruppe: rente
     quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, signatur_slot: jahresrente}
     typ: cent
     einheit: EUR
@@ -26,6 +27,7 @@ bindungen:
       zitatanker: "Bemessungsgrundlage für den der Besteuerung unterliegenden Anteil ist der Jahresbetrag der Rente"
       datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
   - feld_id: rentner_renten_beginn_jahr
+    instanz_gruppe: rente
     quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: besteuerungsanteil_aus_kohortentabelle}
     typ: int
     einheit: Jahr

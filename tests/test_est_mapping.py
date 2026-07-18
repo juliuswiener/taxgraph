@@ -551,3 +551,68 @@ def test_per_kind_tarif_neutral_kein_ring_feld(bindung):
     b_idnr = bindung["kind_idnr"]
     assert b_idnr["instanz_gruppe"] == "kind" and b_idnr["elster_kz"] == "E0500406"
     assert "signatur_slot" not in b_idnr["quelle"]                        # Geltungsbedingung, kein Ring-Slot
+
+
+# ---- Klasse INSTANZ Konsument 3: Multi-Rente (Anlage R, VERZWEIGUNG × Instanz) --------
+# Jede Rente-Instanz hat EIGENE renten_art -> eigener aa/bb-Kz (VERZWEIGUNG je Instanz, Kern-Extension).
+# Rente 1 = Basis, Rente 2..N = __n; renten_art ist SELEKTOR (nicht instanz_gruppe-getaggt, je Instanz via
+# rentner_renten_art__idx gelesen). NICHT tarif-neutral: per-Rente-Ertragsanteil-Σ = dev-1-Ring-Nachtrag.
+_RENTE_1 = {"rentner_renten_art": "gesetzliche_rente", "rentner_jahresrente": 2000000,
+            "rentner_renten_beginn_jahr": 2025}                            # aa -> E1800301 / E1800501
+_RENTE_2 = {"rentner_renten_art__2": "private_leibrente", "rentner_jahresrente__2": 900000,
+            "rentner_renten_beginn_jahr__2": 2018}                         # bb -> E1801601 / E1801701
+
+
+def test_multi_rente_zwei_renten_verschiedene_art(bindung):
+    """Gesetzliche Rente (Rente 1, aa) + private Leibrente (Rente 2, bb): je eigener VERZWEIGUNG-Kz je
+    Instanz-Art. Rente 1 in der Haupt-Deklaration, Rente 2 in anlage_instanzen[rente]."""
+    snap, _ = ST.materialisiere(_store_mit({**_RENTE_1, **_RENTE_2}))
+    r = EM.deklariere(snap, bindung)
+    assert r["deklaration"]["E1800301"] == 2000000 and r["deklaration"]["E1800501"] == 2025   # Rente 1 aa
+    inst = r["anlage_instanzen"]["rente"]
+    assert len(inst) == 1 and inst[0]["index"] == 2
+    assert inst[0]["felder"]["E1801601"] == 900000 and inst[0]["felder"]["E1801701"] == 2018   # Rente 2 bb
+    assert "E1801601" not in r["deklaration"]                            # Rente-2-Kz NICHT in Person-A-Deklaration
+    assert r["vollstaendig"] is True
+
+
+def test_multi_rente_kz_reuse_gleiche_art(bindung):
+    """Zwei Renten DERSELBEN Art (beide gesetzlich) -> beide E1800301 (Reuse je Instanz, wie Multi-Objekt)."""
+    zwei_gesetzl = {**_RENTE_1, "rentner_renten_art__2": "gesetzliche_rente",
+                    "rentner_jahresrente__2": 1500000, "rentner_renten_beginn_jahr__2": 2020}
+    r = EM.deklariere(ST.materialisiere(_store_mit(zwei_gesetzl))[0], bindung)
+    assert r["deklaration"]["E1800301"] == 2000000                       # Rente 1
+    assert r["anlage_instanzen"]["rente"][0]["felder"]["E1800301"] == 1500000   # Rente 2, DIESELBE Kz
+
+
+def test_multi_rente_fail_closed_instanz_art_offen(bindung):
+    """fail-closed je Instanz (Auflage 3): Rente-2-Betrag bestätigt, aber die Instanz-Art vorläufig ->
+    Kz-Zweig offen -> unvollständig, KEIN Phantom-Kz, Rente 2 nicht im Bucket."""
+    s = _store_mit(_RENTE_1)
+    _b(s, "rentner_jahresrente__2", 900000)                              # bestätigt
+    _b(s, "rentner_renten_art__2", "private_leibrente", zustand="vorlaeufig")   # Art nur vorläufig
+    snap, _ = ST.materialisiere(s)
+    r = EM.deklariere(snap, bindung)
+    assert r["vollstaendig"] is False
+    assert "rentner_jahresrente__2" in {x["feld_id"] for x in r["unvollstaendig"]}
+    assert "rente" not in r["anlage_instanzen"]                          # leere Instanz gefiltert
+    assert "E1801601" not in r["deklaration"]                            # kein Phantom-Kz
+
+
+def test_multi_rente_roundtrip(bindung):
+    """Round-Trip: base + base__2 über die VERZWEIGUNG-Zweig-Kz invertierbar (Value; Art gruppen-genau)."""
+    snap, _ = ST.materialisiere(_store_mit({**_RENTE_1, **_RENTE_2}))
+    rt = EM.zuruecklesen(EM.deklariere(snap, bindung), bindung)
+    assert rt["felder"]["rentner_jahresrente"] == 2000000                # Rente 1
+    assert rt["felder"]["rentner_jahresrente__2"] == 900000              # Rente 2 (über E1801601)
+    assert rt["felder"]["rentner_renten_beginn_jahr__2"] == 2018         # über E1801701
+
+
+def test_multi_rente_instanz_kz_kein_phantom(bindung):
+    """Drift-Awareness (Auflage 4): die Instanz-VERZWEIGUNG-Kz sind Art-Zweig-Kz (erlaubte Menge), kein
+    neues/Phantom-Kz — instanz+art-bewusst."""
+    snap, _ = ST.materialisiere(_store_mit({**_RENTE_1, **_RENTE_2}))
+    r = EM.deklariere(snap, bindung)
+    verzweigung_kz = {kz for cfg in EM.VERZWEIGUNG.values() for kz in cfg["kz"].values()}
+    inst_kz = {kz for e in r["anlage_instanzen"]["rente"] for kz in e["felder"]}
+    assert inst_kz and inst_kz <= verzweigung_kz, f"Instanz-Renten-Kz ohne VERZWEIGUNG-Herkunft: {inst_kz - verzweigung_kz}"
