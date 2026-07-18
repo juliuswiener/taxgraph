@@ -1,0 +1,111 @@
+# § 22 Nr. 1 S. 3 a bb EStG - Ertragsanteil private Leibrente (Alter bei Rentenbeginn -> %).
+# NICHT vz-versioniert: der Ertragsanteil ist am Rentenbeginn (nach vollendetem Lebensjahr) fixiert
+# und gilt lebenslang. Aus dem Freeze geparst (Range-Tabelle 'X bis Y' zu Einzel-Alter-Keys expandiert)
+# + gegen Anker validiert (0->59, 64->19, 65->18, ab 97->1).
+parameter: rente_ertragsanteil_kohorten
+authority: gesetz
+redistributable: true
+rechtsquelle: {gesetz: EStG, paragraph: '22', nummer: '1', satz: '3', buchstabe: 'a bb'}
+datenquelle: 'sources/gesetze-im-internet/estg_p22_2026-07-13.txt (§ 22 Nr. 1 S. 3 a bb Ertragsanteil-Tabelle, Range zu Einzel-Alter expandiert)'
+einheit: {ertragsanteil_prozent: prozent}
+
+# Schluessel = bei Rentenbeginn vollendetes Lebensjahr des Rentenberechtigten.
+kohorten:
+  0: {ertragsanteil_prozent: 59.0}
+  1: {ertragsanteil_prozent: 59.0}
+  2: {ertragsanteil_prozent: 58.0}
+  3: {ertragsanteil_prozent: 58.0}
+  4: {ertragsanteil_prozent: 57.0}
+  5: {ertragsanteil_prozent: 57.0}
+  6: {ertragsanteil_prozent: 56.0}
+  7: {ertragsanteil_prozent: 56.0}
+  8: {ertragsanteil_prozent: 56.0}
+  9: {ertragsanteil_prozent: 55.0}
+  10: {ertragsanteil_prozent: 55.0}
+  11: {ertragsanteil_prozent: 54.0}
+  12: {ertragsanteil_prozent: 54.0}
+  13: {ertragsanteil_prozent: 53.0}
+  14: {ertragsanteil_prozent: 53.0}
+  15: {ertragsanteil_prozent: 52.0}
+  16: {ertragsanteil_prozent: 52.0}
+  17: {ertragsanteil_prozent: 51.0}
+  18: {ertragsanteil_prozent: 51.0}
+  19: {ertragsanteil_prozent: 50.0}
+  20: {ertragsanteil_prozent: 50.0}
+  21: {ertragsanteil_prozent: 49.0}
+  22: {ertragsanteil_prozent: 49.0}
+  23: {ertragsanteil_prozent: 48.0}
+  24: {ertragsanteil_prozent: 48.0}
+  25: {ertragsanteil_prozent: 47.0}
+  26: {ertragsanteil_prozent: 47.0}
+  27: {ertragsanteil_prozent: 46.0}
+  28: {ertragsanteil_prozent: 45.0}
+  29: {ertragsanteil_prozent: 45.0}
+  30: {ertragsanteil_prozent: 44.0}
+  31: {ertragsanteil_prozent: 44.0}
+  32: {ertragsanteil_prozent: 43.0}
+  33: {ertragsanteil_prozent: 42.0}
+  34: {ertragsanteil_prozent: 42.0}
+  35: {ertragsanteil_prozent: 41.0}
+  36: {ertragsanteil_prozent: 40.0}
+  37: {ertragsanteil_prozent: 40.0}
+  38: {ertragsanteil_prozent: 39.0}
+  39: {ertragsanteil_prozent: 38.0}
+  40: {ertragsanteil_prozent: 38.0}
+  41: {ertragsanteil_prozent: 37.0}
+  42: {ertragsanteil_prozent: 36.0}
+  43: {ertragsanteil_prozent: 35.0}
+  44: {ertragsanteil_prozent: 35.0}
+  45: {ertragsanteil_prozent: 34.0}
+  46: {ertragsanteil_prozent: 33.0}
+  47: {ertragsanteil_prozent: 33.0}
+  48: {ertragsanteil_prozent: 32.0}
+  49: {ertragsanteil_prozent: 31.0}
+  50: {ertragsanteil_prozent: 30.0}
+  51: {ertragsanteil_prozent: 29.0}
+  52: {ertragsanteil_prozent: 29.0}
+  53: {ertragsanteil_prozent: 28.0}
+  54: {ertragsanteil_prozent: 27.0}
+  55: {ertragsanteil_prozent: 26.0}
+  56: {ertragsanteil_prozent: 26.0}
+  57: {ertragsanteil_prozent: 25.0}
+  58: {ertragsanteil_prozent: 24.0}
+  59: {ertragsanteil_prozent: 23.0}
+  60: {ertragsanteil_prozent: 22.0}
+  61: {ertragsanteil_prozent: 22.0}
+  62: {ertragsanteil_prozent: 21.0}
+  63: {ertragsanteil_prozent: 20.0}
+  64: {ertragsanteil_prozent: 19.0}
+  65: {ertragsanteil_prozent: 18.0}
+  66: {ertragsanteil_prozent: 18.0}
+  67: {ertragsanteil_prozent: 17.0}
+  68: {ertragsanteil_prozent: 16.0}
+  69: {ertragsanteil_prozent: 15.0}
+  70: {ertragsanteil_prozent: 15.0}
+  71: {ertragsanteil_prozent: 14.0}
+  72: {ertragsanteil_prozent: 13.0}
+  73: {ertragsanteil_prozent: 13.0}
+  74: {ertragsanteil_prozent: 12.0}
+  75: {ertragsanteil_prozent: 11.0}
+  76: {ertragsanteil_prozent: 10.0}
+  77: {ertragsanteil_prozent: 10.0}
+  78: {ertragsanteil_prozent: 9.0}
+  79: {ertragsanteil_prozent: 9.0}
+  80: {ertragsanteil_prozent: 8.0}
+  81: {ertragsanteil_prozent: 7.0}
+  82: {ertragsanteil_prozent: 7.0}
+  83: {ertragsanteil_prozent: 6.0}
+  84: {ertragsanteil_prozent: 6.0}
+  85: {ertragsanteil_prozent: 5.0}
+  86: {ertragsanteil_prozent: 5.0}
+  87: {ertragsanteil_prozent: 5.0}
+  88: {ertragsanteil_prozent: 4.0}
+  89: {ertragsanteil_prozent: 4.0}
+  90: {ertragsanteil_prozent: 4.0}
+  91: {ertragsanteil_prozent: 4.0}
+  92: {ertragsanteil_prozent: 3.0}
+  93: {ertragsanteil_prozent: 3.0}
+  94: {ertragsanteil_prozent: 2.0}
+  95: {ertragsanteil_prozent: 2.0}
+  96: {ertragsanteil_prozent: 2.0}
+  97: {ertragsanteil_prozent: 1.0}

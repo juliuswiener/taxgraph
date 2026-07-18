@@ -63,6 +63,41 @@ bindungen:
       zitatanker: "aus den gesetzlichen Rentenversicherungen, der landwirtschaftlichen Alterskasse, den berufsständischen Versorgungseinrichtungen"
       datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
 
+  # ===== §22 bb-Ertragsanteil-Key (Alter) + aa-Rentenfreibetrag-Fixierung (K2, Instructor-Ruling 2026-07-18) =====
+  - feld_id: rentner_alter_bei_rentenbeginn
+    quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: ertragsanteil_alter_bei_rentenbeginn}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 100, grund: "Bei Rentenbeginn vollendetes Lebensjahr; die Ertragsanteil-Tabelle § 22 Nr. 1 S. 3 a bb schlüsselt nach diesem Alter (Werte 0..97, darüber gedeckelt auf 97)."}
+    askable: true
+    fragetext_laie: "Wie alt warst du (vollendetes Lebensjahr), als deine private Rente zu laufen begann?"
+    hilfe_kurz: "Nur bei einer privaten Leibrente: der steuerpflichtige Ertragsanteil richtet sich nach deinem Alter bei Rentenbeginn (z. B. mit 65 sind es 18 %)."
+    beispielwert: 65
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein eigenes Kz: das Alter wird aus dem Rentenbeginn (E1801701 'Beginn der Rente') minus Geburtsdatum (Mantelbogen) DERIVED (wie die Jahr↔Datum-Brücke). Lookup-Key der bb-Ertragsanteil-Tabelle params/kohorten/rente_ertragsanteil_p22.yaml, kein Deklarationsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. bb EStG"
+      zitatanker: "Bei Beginn der Rente vollendetes Lebensjahr"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_rentenfreibetrag
+    quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: rentenfreibetrag_fixierung_folgejahr}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Falls deine gesetzliche Rente NICHT in diesem Jahr zum ersten Mal gezahlt wurde: wie hoch ist dein steuerfreier Renten-Freibetrag laut deinem letzten Steuerbescheid (in Euro)?"
+    hilfe_kurz: "Ab dem zweiten Rentenjahr ist der steuerfreie Teil in Euro festgeschrieben (Rentenerhöhungen sind dann voll steuerpflichtig). Der Betrag steht in deinem Vorjahres-Bescheid. Im ersten Rentenjahr leer lassen."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein Anlage-R-Kz (das Finanzamt errechnet + fixiert den steuerfreien Teil, der Steuerpflichtige deklariert ihn nicht als Kz). Laienfeld für den fixierten Euro-Betrag aus dem Vorjahres-Bescheid; nur aa-Folgejahr. Der Accessor rechnet damit exakt (jahresrente − rentenfreibetrag) statt %×aktuelle-Rente (K2, sonst Untersteuerung der Rentenerhöhungen)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa S. 4 EStG"
+      zitatanker: "der steuerfreie Teil der Rente"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+
   # ========================= Altersentlastungsbetrag §24a (p24a) =========================
   - feld_id: rentner_alter_64_erfuellt
     quelle: {regel_id: p24a_altersentlastungsbetrag, geltungsbedingung: alter_64_vor_bezugsjahr_vollendet}

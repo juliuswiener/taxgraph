@@ -1,0 +1,17 @@
+# Renten-Werbungskosten-Pauschbetrag nach § 9a Satz 1 Nr. 3 EStG (Einnahmen i.S.d. § 22 Nr. 1, 1a, 5).
+# Veranlagungszeitraum 2024. Wert aus der eingefrorenen Gesetzesfassung (sources/). Der Pauschbetrag wird
+# von den Renten-Einnahmen abgezogen (steuerpflichtiger Rentenanteil - 102), sofern keine hoeheren
+# tatsaechlichen Werbungskosten nachgewiesen sind (hoehere Renten-WK = seltener GAP).
+
+parameter: renten_werbungskostenpauschbetrag_p9a
+veranlagungszeitraum: 2024
+authority: gesetz
+redistributable: true
+gueltig_ab: "2024-01-01"
+
+wert:
+  wert: 102
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: "EStG", paragraph: "9a", satz: "1", nummer: "3"}
+  datenquelle: "§ 9a Satz 1 Nr. 3 EStG, sources/gesetze-im-internet/estg_p9a_2026-07-09.txt (Anker 'von den Einnahmen im Sinne des § 22 Nummer 1, 1a und 5: ein Pauschbetrag von insgesamt 102 Euro'); Stand 2026-07-18"

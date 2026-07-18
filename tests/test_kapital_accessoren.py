@@ -6,7 +6,7 @@ Validiert dev-1s Kapital-Accessoren (golden/runner.py) gegen die hand-transkribi
 Kapital-Zuschnitt (K4=16174 brutto-basiert, reiner-Kapital=0 via Günstiger). EURO.
 
 Der golden-runner hat KEINEN deklarativen kap-Feld-Dispatch (catala_est→gesamtfall→catala_gesamt liest
-steuer_kapital_gesondert vorberechnet); die Full-Pipeline (kap_*→steuer) läuft über dev-1s vv_gesamt-Ring
+steuer_kapital_gesondert vorberechnet); die Full-Pipeline (kap_*→steuer) läuft über dev-1s gesamt-Ring
 (HTTP-e2e test_kombiniert_job_und_kapital). Dieser Gate spiegelt sie deterministisch auf Accessor-Ebene.
 """
 from __future__ import annotations
