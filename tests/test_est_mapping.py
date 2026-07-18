@@ -616,3 +616,20 @@ def test_multi_rente_instanz_kz_kein_phantom(bindung):
     verzweigung_kz = {kz for cfg in EM.VERZWEIGUNG.values() for kz in cfg["kz"].values()}
     inst_kz = {kz for e in r["anlage_instanzen"]["rente"] for kz in e["felder"]}
     assert inst_kz and inst_kz <= verzweigung_kz, f"Instanz-Renten-Kz ohne VERZWEIGUNG-Herkunft: {inst_kz - verzweigung_kz}"
+
+
+def test_multi_rente_alter_rentenfreibetrag_pro_instanz(bindung):
+    """Ring-Ready (Instructor-Follow): alter + rentenfreibetrag sind per-Rente (instanz_gruppe:rente) → im
+    Store/Snapshot je Instanz (dev-1s Ring liest per-Rente-Ertragsanteil aa/bb), aber KEIN eigener Kz
+    (Tarif-Inputs → nicht_deklariert, kein Phantom in anlage_instanzen)."""
+    felder = {**_RENTE_1, **_RENTE_2,
+              "rentner_alter_bei_rentenbeginn__2": 65, "rentner_rentenfreibetrag__2": 600000}
+    snap, _ = ST.materialisiere(_store_mit(felder))
+    assert snap["rentner_alter_bei_rentenbeginn__2"]["wert"] == 65        # per-Instanz im Snapshot (Ring liest sie)
+    assert snap["rentner_rentenfreibetrag__2"]["wert"] == 600000
+    r = EM.deklariere(snap, bindung)
+    inst = r["anlage_instanzen"]["rente"][0]
+    assert inst["felder"] == {"E1801601": 900000, "E1801701": 2018}      # nur Kz-Felder, alter/rentenfreibetrag KEIN Phantom
+    nd = {x["feld_id"] for x in r["nicht_deklariert"]}
+    assert "rentner_alter_bei_rentenbeginn__2" in nd and "rentner_rentenfreibetrag__2" in nd
+    assert r["vollstaendig"] is True

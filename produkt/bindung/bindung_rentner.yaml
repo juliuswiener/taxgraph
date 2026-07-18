@@ -73,6 +73,7 @@ bindungen:
 
   # ===== §22 bb-Ertragsanteil-Key (Alter) + aa-Rentenfreibetrag-Fixierung (K2, Instructor-Ruling 2026-07-18) =====
   - feld_id: rentner_alter_bei_rentenbeginn
+    instanz_gruppe: rente
     quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: ertragsanteil_alter_bei_rentenbeginn}
     typ: int
     einheit: null
@@ -91,6 +92,7 @@ bindungen:
       zitatanker: "Bei Beginn der Rente vollendetes Lebensjahr"
       datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
   - feld_id: rentner_rentenfreibetrag
+    instanz_gruppe: rente
     quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: rentenfreibetrag_fixierung_folgejahr}
     typ: cent
     einheit: EUR
