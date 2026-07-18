@@ -1,0 +1,19 @@
+id: rentner_ehegatte_behinderung_2025_zusammen
+beschreibung: "Rentner-Ehepaar § 22 + § 33b Ehegatte, Zusammenveranlagung: beide gesetzliche Rente Erstjahr (je einkuenfte_sonstige 14928, Summe 29856) + Behinderten-Pauschbetrag des Partners GdB 60 = 1440 (aussergewoehnliche_belastungen). Splittingtarif VZ 2025 → festzusetzende ESt 660. Der Fall, in dem der partner_check-Guard live durchlässt (Partner-Behinderung MIT Zusammenveranlagung = korrekt, kein Widerspruch)."
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: zusammen
+  einkuenfte_sonstige: 29856
+  aussergewoehnliche_belastungen: 1440
+
+erwartung:
+  festzusetzende_est: 660
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 33b Abs. 3 S. 2 (GdB 60 = 1440), Abs. 1 (Übertragung Ehegatte) i.V.m. § 22 Nr. 1, § 26b, § 32a Abs. 5 (Splitting) EStG, VZ 2025"
+  datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  zitatanker: "einen Pauschbetrag geltend machen"

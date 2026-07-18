@@ -1,0 +1,19 @@
+id: rentner_behinderung_2025_einzel
+beschreibung: "Rentner § 22 + § 33b: gesetzliche Rente Erstjahr (einkuenfte_sonstige 16598) UND Behinderten-Pauschbetrag bei GdB 50 = 1140 (2021er-Reform-Fassung) als außergewöhnliche Belastung. Einzelveranlagung VZ 2025 → festzusetzende ESt 568 (niedriger als ohne § 33b: 811). Prüft den § 33b-Abzug im § 2-Bescheid (aussergewoehnliche_belastungen)."
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_sonstige: 16598
+  aussergewoehnliche_belastungen: 1140
+
+erwartung:
+  festzusetzende_est: 568
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 33b Abs. 3 S. 2 EStG (Behinderten-Pauschbetrag GdB 50 = 1140, 2021er-Fassung) i.V.m. § 22 Nr. 1, § 2 Abs. 4, § 32a Abs. 1 EStG, VZ 2025"
+  datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  zitatanker: "einen Pauschbetrag geltend machen"

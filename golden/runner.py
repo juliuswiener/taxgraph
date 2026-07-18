@@ -241,6 +241,110 @@ def catala_kapital_steuer(s: dict) -> int:
     return min(abgeltung, delta)
 
 
+# -- Rente § 22 (Weg A — kein callable Catala-Scope). EURO. --------------------
+
+class RentenfreibetragFixierungOffen(Exception):
+    """§ 22 Nr. 1 S. 3 aa — aa-Folgejahr OHNE fixierten Rentenfreibetrag: fail-closed, kein Bescheid
+    (ab dem 2. Jahr ist der Freibetrag in EURO fix; %×erhoehte Jahresrente wuerde unterbesteuern, K2)."""
+
+
+AA_RENTEN_ARTEN = frozenset({"gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente"})
+BB_RENTEN_ARTEN = frozenset({"private_leibrente", "sonstige_leibrente"})
+
+
+def _rente_besteuerungsanteil(jahr: int) -> float:
+    """§ 22 Nr. 1 S. 3 aa — Besteuerungsanteil je Rentenbeginn-Kohorte (params/kohorten, VZ-agnostisch)."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", "kohorten", "rente_besteuerungsanteil_p22.yaml"), encoding="utf-8"))
+    return p["kohorten"][jahr]["besteuerungsanteil_prozent"]
+
+
+def _rente_ertragsanteil(alter: int) -> float:
+    """§ 22 Nr. 1 S. 3 a bb — Ertragsanteil je Alter bei Rentenbeginn (params/kohorten, VZ-agnostisch)."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", "kohorten", "rente_ertragsanteil_p22.yaml"), encoding="utf-8"))
+    return p["kohorten"][alter]["ertragsanteil_prozent"]
+
+
+def _renten_wk_pb(year: int) -> int:
+    """§ 9a S. 1 Nr. 3 EStG Werbungskosten-Pauschbetrag für Renten (102) aus params/<vz>."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "renten_werbungskostenpauschbetrag_p9a.yaml"), encoding="utf-8"))
+    return p["wert"]["wert"]
+
+
+def _renten_stpfl(jahresrente: int, prozent: float) -> int:
+    """§ 22 Nr. 1 S. 3 — steuerpflichtiger Anteil = (prozent/100) × jahresrente, EURO. WÖRTLICHE
+    Transkription p22_1_leibrente_besteuerungsanteil-Arithmetik (Division /100 in decimal, Cent-Schnitt
+    zuletzt). Integer-genau für Prozentwerte mit ≤ 1 Nachkommastelle (aa- und bb-Tabellen). KOPPLUNG:
+    Konsistenz-Gate bindet diese Multiplikation an die p22_1-test_seeds (prozent-agnostisch)."""
+    return jahresrente * round(prozent * 10) // 1000
+
+
+def catala_renten_einkuenfte(s: dict) -> int:
+    """§ 22 Nr. 1 EStG — steuerpflichtige Renten-Einkünfte, EURO → einkuenfte_sonstige (catala_gesamt).
+    4 Zweige (Instructor-Ruling, K2 Rentenfreibetrag-Fixierung):
+      bb (private_leibrente/sonstige_leibrente): jahresrente × Ertragsanteil%(alter) − WK-PB (exakt, alle Jahre).
+      aa Erstjahr (renten_beginn_jahr == VZ): jahresrente × Besteuerungsanteil%(Kohorte) − WK-PB.
+      aa Folgejahr MIT rentenfreibetrag: (jahresrente − rentenfreibetrag) − WK-PB (Freibetrag EUR-fix ab Jahr 2).
+      aa Folgejahr OHNE rentenfreibetrag: RentenfreibetragFixierungOffen (fail-closed, kein Rate-Bescheid).
+    Prozente aus params/kohorten (dev-2, VZ-agnostisch), WK-PB aus params/<vz>. sonstige renten_art = GAP."""
+    year = s["veranlagungszeitraum"]
+    art = s["renten_art"]
+    rente = int(s.get("jahresrente", 0))
+    wk_pb = _renten_wk_pb(year)
+    if art in BB_RENTEN_ARTEN:
+        stpfl = _renten_stpfl(rente, _rente_ertragsanteil(int(s["alter_bei_rentenbeginn"])))
+    elif art in AA_RENTEN_ARTEN:
+        beginn = int(s["renten_beginn_jahr"])
+        if beginn == year:
+            stpfl = _renten_stpfl(rente, _rente_besteuerungsanteil(beginn))
+        elif beginn < year and s.get("rentenfreibetrag") is not None:
+            stpfl = rente - int(s["rentenfreibetrag"])
+        else:
+            raise RentenfreibetragFixierungOffen(f"aa-Folgejahr {beginn}<{year} ohne fixierten Rentenfreibetrag")
+    else:
+        raise ValueError(f"renten_art {art!r} nicht ring-fähig (MVP: aa+bb; sonstige = GAP)")
+    return max(0, stpfl - wk_pb)
+
+
+# -- § 33b Pauschbeträge (Behinderung / Pflege / Hinterbliebene), Weg A, EURO. ---
+
+def _p33b_params(year: int) -> dict:
+    """§ 33b Pauschbetrag-Tabellen aus params/<vz> (2021er-Reform-Fassung)."""
+    return load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "behinderten_pauschbetrag_p33b.yaml"), encoding="utf-8"))
+
+
+def catala_behinderten_pb(s: dict) -> int:
+    """§ 33b Abs. 2/3 EStG — Behinderten-Pauschbetrag, EURO. WÖRTLICHE Transkription p33b_behinderten_
+    pauschbetrag: Blinde/Taubblinde/Hilflose → Höchstbetrag (Abs. 3 S. 3, ersetzt die Staffel); sonst GdB <
+    20 → 0; sonst GdB-Staffel (Abs. 3 S. 2, Tier-Floor gdb//10*10). Werte aus params/<vz>. Konsistenz-Gate."""
+    p = _p33b_params(s["veranlagungszeitraum"])
+    if s.get("ist_hilflos_blind_taubblind"):
+        return p["blind_hilflos_taubblind"]
+    gdb = int(s.get("grad_der_behinderung", 0))
+    if gdb < 20:
+        return 0
+    return p["gdb_staffel"][min(100, (gdb // 10) * 10)]
+
+
+def catala_pflege_pb(s: dict) -> int:
+    """§ 33b Abs. 6 EStG — Pflege-Pauschbetrag, EURO. WÖRTLICHE Transkription p33b_pflege_pauschbetrag:
+    ist_hilflos hat VORRANG (→ 1.800, unabhängig vom Pflegegrad); sonst Pflegegrad-Staffel (PG2 600, PG3
+    1.100, PG4/5 1.800, sonst 0). Werte aus params/<vz>. Konsistenz-Gate."""
+    p = _p33b_params(s["veranlagungszeitraum"])
+    if s.get("ist_hilflos"):
+        return p["pflege_hilflos"]
+    return p["pflege_staffel"].get(int(s.get("pflegegrad", 0)), 0)
+
+
+def catala_hinterbliebenen_pb(s: dict) -> int:
+    """§ 33b Abs. 4 EStG — Hinterbliebenen-Pauschbetrag (370), EURO. Wert aus params/<vz>. Konsistenz-Gate."""
+    p = _p33b_params(s["veranlagungszeitraum"])
+    return p["hinterbliebenen"] if s.get("hat_hinterbliebenenbezuege") else 0
+
+
 def _kindergeld(year: int) -> int:
     """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
     p = load_yaml_fh(open(os.path.join(

@@ -646,6 +646,98 @@ def test_kapital_semantik_offen_co_okkurrenz(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "kapital_semantik_offen"
 
 
+def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2025, alter=0,
+                   gdb=0, hilflos=False, pflegegrad=0, gepflegter_hilflos=False, hinterbliebenen=False,
+                   veranlagung="einzel", rentenfreibetrag=None, gdb_partner=0, hilflos_partner=False):
+    """rentner_gesamt-Kegel: § 22 (renten_art/jahresrente Cent/beginn/alter) + § 33b-Block + Flags
+    (kein_sonstige=False = Rente IST § 22-sonstige; kein_gewinn/kap/vuv=True). rentenfreibetrag (Cent) nur
+    aa-Folgejahr; Partner-Behinderung nur zusammen."""
+    k = [("rentner_renten_art", renten_art), ("rentner_jahresrente", jahresrente),
+         ("rentner_renten_beginn_jahr", beginn), ("rentner_alter_bei_rentenbeginn", alter),
+         ("rentner_grad_der_behinderung", gdb), ("rentner_hilflos_blind_taubblind", hilflos),
+         ("rentner_pflegegrad", pflegegrad), ("rentner_gepflegter_hilflos", gepflegter_hilflos),
+         ("rentner_hinterbliebenenbezuege", hinterbliebenen), ("veranlagung", veranlagung),
+         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False)]
+    if rentenfreibetrag is not None:
+        k.append(("rentner_rentenfreibetrag", rentenfreibetrag))
+    if gdb_partner:
+        k.append(("rentner_grad_der_behinderung_partner", gdb_partner))
+    if hilflos_partner:
+        k.append(("rentner_hilflos_blind_taubblind_partner", hilflos_partner))
+    return k
+
+
+def _rentner_anlegen(base, fid, kegel):
+    st, _ = _req(base, "POST", "/fall", {"scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025, "fall_id": fid})
+    assert st == 201
+    for feld, wert in kegel:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
+        assert st == 201
+
+
+def test_rentner_gesetzl_erstjahr(base):
+    """§ 22 gesetzl. Rente Erstjahr 20000 @ 83,5 % Kohorte → einkuenfte_sonstige 16598 →
+    festzusetzende_est 811 = 81100 Cent (dev-2 Kreuzprobe S1)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "r1", _rentner_kegel(jahresrente=2000000, beginn=2025))
+    st, erg = _req(base, "GET", "/fall/r1/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 81100 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_private_leibrente(base):
+    """§ 22 bb private Leibrente 80000 @ Alter 65 (Ertragsanteil 18 %) → es 14298 → 346 = 34600 Cent (S4)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "r4", _rentner_kegel(renten_art="private_leibrente", jahresrente=8000000, alter=65))
+    st, erg = _req(base, "GET", "/fall/r4/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 34600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_behinderung(base):
+    """§ 22 + § 33b: gesetzl. Rente Erstjahr (es 16598) + GdB 50 (Pauschbetrag 1140 agB) → 568 = 56800 Cent (S5)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "r5", _rentner_kegel(jahresrente=2000000, beginn=2025, gdb=50))
+    st, erg = _req(base, "GET", "/fall/r5/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 56800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_folgejahr_fixierung_offen(base):
+    """K2-KERN (S3): aa-Folgejahr (Rentenbeginn 2015 < VZ) OHNE fixierten Rentenfreibetrag → fail-closed
+    rentenfreibetrag_fixierung_offen (kein %×aktuelle-Rente, das würde Rentenerhöhungen unterbesteuern)."""
+    _rentner_anlegen(base, "r3", _rentner_kegel(jahresrente=2100000, beginn=2015))   # kein rentenfreibetrag
+    st, erg = _req(base, "GET", "/fall/r3/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "rentenfreibetrag_fixierung_offen"
+
+
+def test_rentner_folgejahr_mit_rentenfreibetrag(base):
+    """aa-Folgejahr MIT fixiertem Rentenfreibetrag 6000: (21000 − 6000) − 102 → es 14898 → 458 = 45800 Cent (S2)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "r2", _rentner_kegel(jahresrente=2100000, beginn=2015, rentenfreibetrag=600000))
+    st, erg = _req(base, "GET", "/fall/r2/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 45800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_partner_behinderung_ohne_zusammen_gesperrt(base):
+    """partner_check LIVE (K2): Partner-Behinderung (GdB 60) gesetzt, aber veranlagung=einzel → Widerspruch
+    partner_konsistenz_offen (ein Einzelveranlagter hat keinen mitzuveranlagenden Ehe-/Lebenspartner)."""
+    _rentner_anlegen(base, "rp", _rentner_kegel(jahresrente=2000000, beginn=2025,
+                                                veranlagung="einzel", gdb_partner=60))
+    st, erg = _req(base, "GET", "/fall/rp/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "partner_konsistenz_offen"
+
+
 def test_graph_uebersicht(base):
     """Read-only Desktop-Graph: Knoten = Regeln der Scheibe mit Status, Kanten = Feld→Regel mit
     Zustand. Ein Traverser-Aufruf, kein Bescheid, kein Schreibpfad."""

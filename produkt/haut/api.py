@@ -78,6 +78,18 @@ VV_GESAMT_FELDER = ("vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen",
 KAP_ERTRAEGE = "kap_kapitalertraege"
 KAP_TOEPFE = ("kap_gewinn_aktien", "kap_verlust_aktien", "kap_gewinn_sonstige", "kap_verlust_sonstige")
 KAP_FELDER = (KAP_ERTRAEGE,) + KAP_TOEPFE + ("kap_zusammenveranlagung",)
+# Front Rentner (§ 22 Leibrente + § 33b Pauschbeträge). § 22 → einkuenfte_sonstige (4-Zweig-Accessor,
+# aa Rentenfreibetrag-Fixierung), § 33b → aussergewoehnliche_belastungen (behinderten+pflege+hinterbliebenen
+# additiv). alter_bei_rentenbeginn ist DERIVED (immer da); rentenfreibetrag nur aa-Folgejahr (nicht im Kegel,
+# Guard erzwingt ihn). Partner-Behinderung nur bei Zusammenveranlagung (partner_check).
+RENTNER_AA_ARTEN = ("gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente")
+RENTNER_22 = ("rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr",
+              "rentner_alter_bei_rentenbeginn")
+RENTNER_33B = ("rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad",
+               "rentner_gepflegter_hilflos", "rentner_hinterbliebenenbezuege")
+RENTNER_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner")
+RENTNER_KEGEL = RENTNER_22 + RENTNER_33B + ("veranlagung",) + AN_GESAMT_FLAGS
+RENTNER_FELDER = RENTNER_KEGEL + ("rentner_rentenfreibetrag",) + RENTNER_PARTNER
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -130,6 +142,25 @@ SCHEIBEN = {
         "teil_ringe": [],
         "guard": True,
         "gesamt_guard": True,   # aktiviert flag_check- + Kapital-Semantik-Guards (Einkunftsart-Konsistenz)
+        # fremd_arten = Einkunftsarten, die DIESE Scheibe NICHT rechnet -> müssen abwesend bestätigt sein
+        # (kein_gewinn §§13-18, kein_sonstige §22). §19/§21/§20 rechnet sie -> deren Flags NICHT hier.
+        "fremd_arten": ("kein_gewinn", "kein_sonstige"),
+    },
+    # Rentner-Ring (§ 22 Leibrente + § 33b): eigene Scheibe (Feld-Ergonomie — Renten-Felder blähen den
+    # AN/gesamt-Kegel nicht). Rechnet über DENSELBEN catala_gesamt-Kern (einkuenfte_sonstige = § 22-Renten-
+    # Einkünfte, aussergewoehnliche_belastungen = § 33b). fremd_arten = {kein_gewinn, kein_kap, kein_vuv} —
+    # NICHT kein_sonstige (die Rente IST § 22-sonstige, kein_sonstige=False ist hier korrekt). § 24a=0 (Leib-
+    # renten nach § 24a S. 2 ausgeschlossen, Renten-only-MVP). partner_check LIVE (Ehegatte-Behinderung).
+    "rentner_gesamt": {
+        "felder": RENTNER_FELDER,
+        "kegel": RENTNER_KEGEL,     # rentenfreibetrag + Partner-Behinderung nur bedingt (Guard/Accessor)
+        "felder_datei": None,
+        "gesamt_ring": "festzusetzende_est_rentner",
+        "teil_ringe": [],
+        "guard": True,
+        "gesamt_guard": True,
+        "rentner": True,           # aktiviert die § 22-Rentenfreibetrag-Fixierungs-Prüfung (K2)
+        "fremd_arten": ("kein_gewinn", "kein_kap", "kein_vuv"),
     },
 }
 
@@ -348,6 +379,50 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             return est_ohne + kapital_steuer    # Günstiger -> est_mit; Abgeltung -> est_ohne + abgeltung
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
+    if quantitaet == "festzusetzende_est_rentner":   # § 22 Renten + § 33b via catala_gesamt
+        try:
+            import runner  # noqa: F401
+        except Exception:
+            return None
+        f = felder or {}
+
+        def _c(fid):
+            v = f.get(fid, {}).get("wert")
+            return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+
+        def _b(fid):
+            return f.get(fid, {}).get("wert")
+
+        def slot_fn(slots: dict) -> int:
+            # § 22 Renten-Einkünfte → einkuenfte_sonstige. Naht-CENT → EURO (jahresrente/rentenfreibetrag);
+            # renten_beginn_jahr/alter sind int (kein cent). Die aa-Folgejahr-ohne-RF-Sperre fängt der Guard
+            # VOR diesem Aufruf (rentenfreibetrag_fixierung_offen); hier kommt nur der rechenbare Fall an.
+            rf = _b("rentner_rentenfreibetrag")
+            renten = runner.catala_renten_einkuenfte({
+                "veranlagungszeitraum": vz,
+                "renten_art": _b("rentner_renten_art"),
+                "jahresrente": _c("rentner_jahresrente") // 100,
+                "renten_beginn_jahr": _c("rentner_renten_beginn_jahr"),
+                "alter_bei_rentenbeginn": _c("rentner_alter_bei_rentenbeginn"),
+                "rentenfreibetrag": (rf // 100 if isinstance(rf, (int, float))
+                                     and not isinstance(rf, bool) else None)})
+            # § 33b Behinderten- + Pflege- + Hinterbliebenen-Pauschbetrag (additiv) → aussergewoehnliche_belastungen.
+            ausserg = (runner.catala_behinderten_pb({
+                           "veranlagungszeitraum": vz, "grad_der_behinderung": _c("rentner_grad_der_behinderung"),
+                           "ist_hilflos_blind_taubblind": _b("rentner_hilflos_blind_taubblind") is True})
+                       + runner.catala_pflege_pb({
+                           "veranlagungszeitraum": vz, "pflegegrad": _c("rentner_pflegegrad"),
+                           "ist_hilflos": _b("rentner_gepflegter_hilflos") is True})
+                       + runner.catala_hinterbliebenen_pb({
+                           "veranlagungszeitraum": vz,
+                           "hat_hinterbliebenenbezuege": _b("rentner_hinterbliebenenbezuege") is True}))
+            return runner.catala_est({
+                "gesamtfall": True, "veranlagungszeitraum": vz,
+                "veranlagung": _b("veranlagung") or "einzel",
+                "einkuenfte_sonstige": renten,
+                "aussergewoehnliche_belastungen": ausserg})
+        return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
+
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
 
 
@@ -366,23 +441,23 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     return bf({f: felder[f]["wert"] for f in scheibe_felder})
 
 
-def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None):
+def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None = None):
     """K2-Guard: nicht-ring-fähige Werbungskosten/Einkunftsarten sperren den Ring GANZ (nie Fake-0).
     Ein dHf-/Verpflegung-/AM-Feld mit Wert > 0 (vorläufig ODER bestätigt) sperrt (kein Catala-Modul);
-    ein Einkunftsart-Flag = false (Nutzer HAT die Art) macht den §2-Ring unzulässig (catala_gesamt =
-    Stufe 2). VOR (§ 10) ist seit Stufe 1a ring-fähig — kein Guard mehr."""
+    ein fremd_arten-Flag = false (Nutzer HAT eine NICHT von dieser Scheibe gerechnete Art) macht den
+    §2-Ring unzulässig. VOR (§ 10) ist seit Stufe 1a ring-fähig — kein Guard mehr."""
     def _positiv(f):
         v = felder.get(f)
         w = v and v.get("wert")
         return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
     # Partner-Behinderungsfeld (§ 33b Person B) ohne Zusammenveranlagung: benannte Inkonsistenz
     # (dev-2s partner_check, Spiegel zu partner_kegel_offen). Universell VOR der Scheiben-Verzweigung —
-    # feuert, sobald eine Scheibe die rentner_*_partner-Felder führt (aktuell keine → inert, forward-ready).
+    # feuert live, sobald eine Scheibe (rentner_gesamt) die rentner_*_partner-Felder führt.
     if PC.partner_ohne_zusammen(felder):
         return "partner_konsistenz_offen"
     if cfg and cfg.get("gesamt_guard"):
-        # Gesamt-Ring (§ 19/§ 21/§ 20): Flag↔Einkunftsart-Widerspruch (kein_vuv/kein_kap=true + echtes
-        # Feld > 0 bestätigt) surfacen — K2, keine still übergangene Einkunftsart (dev-2s flag_check).
+        # Gesamt-Ring: Flag↔Einkunftsart-Widerspruch (kein_X=true + echtes Feld > 0 bestätigt) surfacen —
+        # K2, keine still übergangene Einkunftsart (dev-2s flag_check).
         if FC.flag_widersprueche(felder):
             return "flag_konsistenz_offen"
         # Kapital-Semantik (Instructor-Q1, fail-closed): E0121709-Aggregat UND Verlust-Töpfe beide gesetzt
@@ -390,10 +465,18 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None):
         # nur die Töpfe und verschluckte das Aggregat).
         if _positiv(KAP_ERTRAEGE) and any(_positiv(t) for t in KAP_TOEPFE):
             return "kapital_semantik_offen"
-        # § 20 Kapital IST jetzt ring-fähig (kein_kap raus). Nur noch nicht modellierte Arten (Gewinn §§13-18,
-        # sonstige § 22) sperren, wenn bestätigt-vorhanden (Stufe 2).
-        if any(felder.get(fl, {}).get("wert") is False
-               for fl in ("kein_gewinn", "kein_sonstige")):
+        # § 22 aa Rentenfreibetrag-Fixierung (K2): ab dem 2. Jahr ist der Freibetrag in EURO fix; fehlt er
+        # (aa-Folgejahr, renten_beginn < VZ, kein rentenfreibetrag) → fail-closed, kein %×erhöhte-Rente.
+        if cfg.get("rentner"):
+            art = felder.get("rentner_renten_art", {}).get("wert")
+            beginn = felder.get("rentner_renten_beginn_jahr", {}).get("wert")
+            rf = felder.get("rentner_rentenfreibetrag", {}).get("wert")
+            if (art in RENTNER_AA_ARTEN and isinstance(beginn, int) and vz is not None and beginn < vz
+                    and not (isinstance(rf, (int, float)) and not isinstance(rf, bool))):
+                return "rentenfreibetrag_fixierung_offen"
+        # fremd_arten = Arten, die DIESE Scheibe NICHT rechnet → bestätigt-false (Nutzer HAT die Art) sperrt
+        # (Stufe 2). Die von der Scheibe GERECHNETEN Arten stehen NICHT in fremd_arten (kein Fehl-Sperr).
+        if any(felder.get(fl, {}).get("wert") is False for fl in cfg.get("fremd_arten", ())):
             return "einkunftsart_nicht_ring_faehig"
         return None
     if any(_positiv(f) for f in GUARD_WERBUNGSKOSTEN):
@@ -511,7 +594,7 @@ def stand(fall_id: str) -> tuple[int, dict]:
     }
 
     gesamt_iv, engine, teil = None, "unavailable", []
-    gesperrt = _an_gesamt_sperrgrund(felder, cfg) if cfg.get("guard") else None
+    gesperrt = _an_gesamt_sperrgrund(felder, cfg, vz) if cfg.get("guard") else None
     if gesperrt:
         engine = "gesperrt"          # nicht-ring-fähiger Abzug/Einkunftsart -> kein Ring (K2)
     elif cfg["gesamt_ring"]:
@@ -586,7 +669,7 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
     vz = int(store["veranlagungszeitraum"])
     if cfg.get("guard"):
         # K2: ein nicht-ring-fähiger Abzug/Einkunftsart sperrt den Ring VOR jeder Zahl — nie Fake-Bescheid.
-        sperr = _an_gesamt_sperrgrund(felder, cfg)
+        sperr = _an_gesamt_sperrgrund(felder, cfg, vz)
         if sperr:
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                          "grund": sperr, "offen": [], "trace": None}
