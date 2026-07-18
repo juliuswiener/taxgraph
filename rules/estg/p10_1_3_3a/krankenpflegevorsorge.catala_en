@@ -1,0 +1,129 @@
+# § 10 Abs. 1 Nr. 3/3a i.V.m. Abs. 4 EStG — Kranken-/Pflege-Vorsorgeaufwendungen (Höchstbetrag 2800/1900 + Basis-Durchbruch)
+
+> Module KrankenPflegeVorsorge
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p10_1_3_3a_kv_pv.json`
+(module KrankenPflegeVorsorge, verified_bedingt, sha256 catala_a
+`f848ba4d753f9bcc7c5c82f26bcfd40a5c816aec47c05bac8fc64432c1ac10d2`). Die scope-Logik unten ist BYTE-GLEICH
+aus `catala_a` übernommen (keine Änderung); nur Module-Header + §-Zitatanker + Grenzfall-Seeds sind ergänzt.
+Kein Pipeline-Re-Run.
+
+**faithful=false ist ein JUDGE-MISREAD (getriaged, nicht_echt):** der Judge flaggte „gibt den vollen
+basis_kv_pv zurück, ohne den Höchstbetrag zu begrenzen" als Abweichung — aber genau das VERLANGT § 10 Abs. 4
+S. 4 (Basis-Durchbruch): übersteigen die Basis-KV/PV-Aufwendungen (Abs. 1 Nr. 3) die nach S. 1–3
+abziehbaren Beträge, sind DIESE (voll) abzuziehen und der Abzug der weiteren Aufwendungen (Nr. 3a) scheidet
+aus. Der Judge hat die korrekte Durchbruch-Norm als fehlende Deckelung fehlgelesen; im Pipeline-Lauf als
+nicht_echt adjudiziert (queue_status=verified_bedingt).
+
+**Der Basis-Durchbruch IST abgebildet:** `abziehbare = max(basis_kv_pv; min(basis_kv_pv + weitere; HB))`.
+Bei `basis_kv_pv > HB` liefert das die vollen Basis-Beiträge (Durchbruch) — K2-korrekt (ohne Durchbruch
+würde die Basis auf 2800/1900 gedeckelt = Abzug zu niedrig = ÜBER-Besteuerung des Steuerpflichtigen).
+
+Zitatanker § 10 EStG (`sources/gesetze-im-internet/estg_p10_2026-07-11.txt`, typ gesetz): Abs. 4 S. 1
+(Regel-HB) "insgesamt bis 2 800 Euro abgezogen werden"; Abs. 4 S. 2 (reduzierter HB) "Höchstbetrag beträgt
+1 900 Euro bei Steuerpflichtigen, die ganz oder teilweise ohne eigene Aufwendungen einen Anspruch auf
+vollständige oder teilweise Erstattung oder Übernahme von Krankheitskosten haben"; Abs. 4 S. 4
+(Basis-Durchbruch) "sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne des Absatzes 1
+Nummer 3a scheidet aus". `basis_kv_pv` = Basisabsicherung Abs. 1 Nr. 3; `weitere_vorsorgeaufwendungen` =
+Abs. 1 Nr. 3a; `mit_anspruch_auf_zuschuss` = Zugehörigkeit zur 1900-Gruppe (Beamte/Zuschuss-Empfänger,
+Eingabe). `basis_kv_pv_ist_basisabsicherung` = getriagte Geltungsbedingung (die Basis-Beiträge sind
+Basisabsicherung, im Feld materialisiert). Reine Teilregel.
+
+```catala
+declaration scope KrankenPflegeVorsorge:
+  input basis_kv_pv content money
+  input weitere_vorsorgeaufwendungen content money
+  input mit_anspruch_auf_zuschuss content boolean
+  output abziehbare_kv_pv_vorsorge content money
+
+scope KrankenPflegeVorsorge:
+  definition abziehbare_kv_pv_vorsorge equals
+    let hoechstbetrag equals
+      if mit_anspruch_auf_zuschuss then $1,900.00 else $2,800.00
+    in
+    let beruecksichtigt_ohne_durchbruch equals
+      if basis_kv_pv + weitere_vorsorgeaufwendungen > hoechstbetrag
+      then hoechstbetrag
+      else basis_kv_pv + weitere_vorsorgeaufwendungen
+    in
+    if basis_kv_pv > beruecksichtigt_ohne_durchbruch
+    then basis_kv_pv
+    else beruecksichtigt_ohne_durchbruch
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestNormalUnterHB:
+  # Basis 1000 + weitere 500 = 1500 <= HB 2800 (ohne Zuschuss) -> voll 1500.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestNormalUnterHB:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $1,000.00
+    -- weitere_vorsorgeaufwendungen: $500.00
+    -- mit_anspruch_auf_zuschuss: false }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $1,500.00
+```
+
+```catala
+#[test]
+declaration scope TestDeckel:
+  # Basis 2000 + weitere 1500 = 3500 > HB 2800, aber Basis 2000 <= 2800 -> auf HB 2800 gedeckelt.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestDeckel:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $2,000.00
+    -- weitere_vorsorgeaufwendungen: $1,500.00
+    -- mit_anspruch_auf_zuschuss: false }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $2,800.00
+```
+
+```catala
+#[test]
+declaration scope TestBasisDurchbruch:
+  # Basis 5000 > HB 2800 -> § 10 Abs. 4 S. 4: volle Basis 5000 abziehbar (Durchbruch), weitere scheiden aus.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestBasisDurchbruch:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $5,000.00
+    -- weitere_vorsorgeaufwendungen: $1,000.00
+    -- mit_anspruch_auf_zuschuss: false }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $5,000.00
+```
+
+```catala
+#[test]
+declaration scope TestMitZuschussUnterHB:
+  # Basis 1500 + weitere 200 = 1700 <= HB 1900 (mit Zuschuss) -> voll 1700.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestMitZuschussUnterHB:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $1,500.00
+    -- weitere_vorsorgeaufwendungen: $200.00
+    -- mit_anspruch_auf_zuschuss: true }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $1,700.00
+```
+
+```catala
+#[test]
+declaration scope TestDurchbruchMitZuschuss:
+  # Basis 2500 > HB 1900 (mit Zuschuss) -> Durchbruch: volle Basis 2500 abziehbar.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestDurchbruchMitZuschuss:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $2,500.00
+    -- weitere_vorsorgeaufwendungen: $0.00
+    -- mit_anspruch_auf_zuschuss: true }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $2,500.00
+```
