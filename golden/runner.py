@@ -44,6 +44,9 @@ from pkg import SpendenAbzug as SA  # noqa: E402  (§ 10b Abs. 1, charge29-Promo
 from pkg import ZumutbareBelastung as ZB  # noqa: E402  (§ 33 Abs. 3 zumutbare Belastung)
 from pkg import AgbAbzug as AG  # noqa: E402  (§ 33 Abs. 1 agB-Abzug)
 from pkg import Kirchensteuerabzug as KI  # noqa: E402  (§ 10 Abs. 1 Nr. 4 KiSt)
+from pkg import Altersentlastungsbetrag as AE  # noqa: E402  (§ 24a, charge30)
+from pkg import Entlastungsbetrag as EB  # noqa: E402  (§ 24b Alleinerziehende, charge30)
+from pkg import Familienleistungsausgleich as FL  # noqa: E402  (§ 31 Günstigerprüfung, charge30)
 from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
@@ -258,6 +261,59 @@ def catala_p10_kist(s: dict) -> int:
         gezahlte_kirchensteuer_in=Money(f"{int(s.get('gezahlte_kirchensteuer', 0))}.00"),
         erstattete_kirchensteuer_in=Money(f"{int(s.get('erstattete_kirchensteuer', 0))}.00")))
     return int(r.abziehbare_kirchensteuer) // 100
+
+
+def _altersentlastung_kohorte(folgejahr: int):
+    """§ 24a S. 5 Kohorten-Staffel (prozentsatz % + hoechstbetrag EURO) je maßgebendem Folgejahr (Jahr NACH der
+    Vollendung des 64. Lj), lebenslang fix. Außerhalb der Tabelle geklemmt: vor 2005 → Höchststaffel, ab 2058 → 0."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", "kohorten", "altersentlastungsbetrag_p24a.yaml"), encoding="utf-8"))
+    k = p["kohorten"]
+    j = min(max(folgejahr, min(k)), max(k))
+    return k[j]["prozentsatz"], k[j]["hoechstbetrag"]
+
+
+def catala_p24a_altersentlastung(s: dict) -> int:
+    """§ 24a EStG Altersentlastungsbetrag, EURO (module Altersentlastungsbetrag): min(prozentsatz × (Arbeitslohn
+    + positive Summe der übrigen Einkünfte); Höchstbetrag). prozentsatz/Höchstbetrag = Kohorten-Lookup nach dem
+    maßgebenden Folgejahr = geburtsjahr + 65 (Jahr nach Vollendung des 64. Lj), lebenslang fix. Leibrenten +
+    Versorgungsbezüge sind NICHT Bemessungsgrundlage (§ 24a S. 2) — der Aufrufer speist nur Arbeitslohn + positive
+    übrige Einkünfte. prozentsatz als PROZENT (13.2, das Modul teilt /100). Roh → p32a altersentlastungsbetrag
+    (§ 2 Abs. 3). geburtsjahr ≤ 0 (unbekannt/nicht erfasst) → Betrag 0 (fail-safe, kein Phantom-Abzug)."""
+    geburtsjahr = int(s.get("geburtsjahr", 0))
+    if geburtsjahr <= 0:
+        return 0
+    prozent, hoechst = _altersentlastung_kohorte(geburtsjahr + 65)
+    r = AE.altersentlastungsbetrag(AE.AltersentlastungsbetragIn(
+        arbeitslohn_in=Money(f"{int(s.get('arbeitslohn', 0))}.00"),
+        positive_andere_einkuenfte_in=Money(f"{int(s.get('positive_andere_einkuenfte', 0))}.00"),
+        prozentsatz_in=Decimal(str(prozent)),
+        hoechstbetrag_in=Money(f"{int(hoechst)}.00")))
+    return int(r.altersentlastungsbetrag) // 100
+
+
+def catala_p24b_entlastung(s: dict) -> int:
+    """§ 24b EStG Entlastungsbetrag für Alleinerziehende, EURO (module Entlastungsbetrag): Grundbetrag +
+    Erhöhung je weiterem Kind, anteilig um monate_ohne_voraussetzung gekürzt. Nur bei alleinstehend (§ 24b
+    Abs. 3) UND mind. 1 berücksichtigungsfähigem Kind. alleinstehend_in ist Catala-Bool (Python-bool bricht
+    not_). Roh → p32a entlastungsbetrag_alleinerziehende (§ 2 Abs. 3)."""
+    return int(EB.entlastungsbetrag(EB.EntlastungsbetragIn(
+        alleinstehend_in=Bool(bool(s.get("alleinstehend", False))),
+        anzahl_kinder_in=Integer(int(s.get("anzahl_kinder", 0))),
+        monate_ohne_voraussetzung_in=Integer(int(s.get("monate_ohne_voraussetzung", 0))))).entlastungsbetrag) // 100
+
+
+def catala_p31_familienleistung(s: dict) -> int:
+    """§ 31 EStG Familienleistungsausgleich (Günstigerprüfung), EURO (module Familienleistungsausgleich): das
+    Kind wird über Kindergeld ODER den Kinderfreibetrag (§ 32 Abs. 6) entlastet — je nachdem, was günstiger ist.
+    est_ohne_freibetraege (Tarif OHNE Freibetrag) + est_mit_freibetraegen (MIT) + kindergeld → est_nach_familien-
+    ausgleich: Freibetrag-Günstiger → est_mit + Hinzurechnung Kindergeld (§ 31 S. 4); sonst est_ohne (Kindergeld
+    bleibt). Der Aufrufer rechnet est_ohne/est_mit (zwei catala_gesamt-Läufe) + leitet kindergeld/freibetrag aus
+    params ab. Alle Eingaben EURO."""
+    return int(FL.familienleistungsausgleich(FL.FamilienleistungsausgleichIn(
+        est_ohne_freibetraege_in=Money(f"{int(s.get('est_ohne_freibetraege', 0))}.00"),
+        est_mit_freibetraegen_in=Money(f"{int(s.get('est_mit_freibetraegen', 0))}.00"),
+        kindergeld_in=Money(f"{int(s.get('kindergeld', 0))}.00"))).est_nach_familienausgleich) // 100
 
 
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --
