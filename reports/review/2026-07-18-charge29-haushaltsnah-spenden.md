@@ -1,124 +1,87 @@
-# Charge 29 — §35a Haushaltsnahe Leistungen + §10b Spendenabzug (Zuschnitt, Stufe A, 2026-07-18)
+# Charge 29 — §35a Haushaltsnahe + §10b Spenden: PROMOTION + WIRING (Stufe A, 2026-07-18)
 
-Aktiviert die heute **inerte** Deklarations-Bindung `bindung_sonder_agb_35a.yaml` (Pseudoregel-Scope,
-regel_id `p35a_2_3_haushaltsnahe` referenziert, aber **keine Regel gebaut**). Produkt-Anlass: dev-1s
-`haushalt_gesamt`-Kachel (§19-Basis + §35a + §10b) braucht die Rechenkerne live. **2 Regeln.**
-Quellen: `estg_p35a_2026-07-09` (§ 35a Abs. 1–5), `estg_p10b_2026-07-13` (§ 10b Abs. 1 S. 1 Nr. 1).
-Kein Stufe-B ohne Cap-Wort. Alle Anker VOLL-Länge via `_normalize` verifizieren (Skript-Ausgabe je Anker).
+**KORREKTUR nach Registry-Prüfung:** die 2 Regeln sind KEINE Neu-Formalisierung — sie existieren
+BEREITS als **verified_bedingt-Snapshots** (`pipeline/snapshots/p35a_2_3_haushaltsnahe.json` module
+`Haushaltsnahe`, `pipeline/snapshots/p10b_spenden.json` module `SpendenAbzug`), voll judge-durchlaufen,
+item_registry voll triagiert (offene Discoveries = 0). §35a/§10b sind **inert nur weil die verified_
+bedingt-Kandidaten nie in die Engine promoted/verdrahtet wurden** — nicht weil sie fehlen. Charge 29 =
+**Promotion (Snapshot → rules/estg live, p35c-Muster) + Wiring (Accessor + Scheibe)**. Kein Pipeline-
+Re-Run, keine Cap-Kosten.
 
-**DOKTRIN-BEGRÜNDUNG (warum Regel, nicht Haut-Accessor):** die Caps (20 % + min-Deckel 510/4000/1200;
-20 % GdE) sind STEUERLOGIK. p35c-Präzedenz: „die Teilregeln bleiben rein und liefern ihre Ermäßigung
-als Eingabe" an den tarif/festsetzung-scope (`input steuerermaessigungen` / `input sonderausgaben`).
-Cap-Rechnung im Python-Accessor = §10c-Pfad-Bruch-Klasse (stille Divergenz je Pfad). → reine Catala-
-Teilregeln, Caps als **params/<vz>** (nicht in-Regel-magic, nicht p35c-in-rule — §10c/§20/§32d-Muster).
+## Befund — die Regeln (verified_bedingt, geprüft)
 
-## Gültigkeit (Fassungs-Check, Direktive 2026-07-15)
+### Regel 1 `p35a_2_3_haushaltsnahe` (module `Haushaltsnahe`), queue_status verified_bedingt
+```
+input minijob_aufwendungen / haushaltsnahe_dienstleistungen / handwerker_arbeitskosten : money
+ermaessigung_abs1 = min(0.20·minijob;      $510)     # § 35a Abs. 1
+ermaessigung_abs2 = min(0.20·dienstleist.; $4000)    # § 35a Abs. 2
+ermaessigung_abs3 = min(0.20·handwerker;   $1200)    # § 35a Abs. 3
+steuerermaessigung = abs1 + abs2 + abs3              # 3 additive Töpfe, eigene Deckel
+```
+- **Caps IN-RULE** (nicht params) — akzeptiert wie p35c-Präzedenz. Gegen frozen `estg_p35a_2026-07-09`
+  verifiziert: 510/4000/1200 € + 20 % korrekt (Abs. 1/2/3). Fassungs-Check: stabil seit 2009, kein
+  Änderungsgesetz 2024–2026 → VZ-unabhängig; §35a-Cap-Watch geht an Task #12 (Fassungs-Watch), NICHT
+  params-Refactor (unbegründeter Re-Run).
+- **judge faithful=false = getriaged Artefakt:** einzige Abweichung „20 % auf Gesamtbetrag statt nur
+  Arbeitskosten" → Julius triagierte als Geltungsbedingung `*_enthaelt_nur_arbeitskosten` (Material
+  wird UPSTREAM am Sachverhalt ausgeschlossen; Felder heißen `*_arbeitskosten`, Fragetext „ohne
+  Material"). Kein Baufehler. Vgl. [[altfassung-aenderungsbefehl-judge-artefakt]]-Klasse.
+- **Geltungsbedingungen (verified_bedingt-Auflagen, Wiring erzwingt):** `rechnung_und_unbare_zahlung`
+  (Abs. 5 S. 3, NUR Abs. 2/3), `*_enthaelt_nur_arbeitskosten` (Abs. 5 S. 2), `haushalt_in_eu_ewr`
+  (Abs. 4), `keine_beruecksichtigung_als_wk_sa_agb` (Abs. 5 S. 1), `handwerker_keine_oeffentliche_
+  foerderung` (Abs. 3 S. 2), `kein_gemeinsamer_haushalt_zweier_alleinstehender` (Abs. 5 S. 4).
 
-- **§ 35a:** Quelle-Header „geltende Fassung 2026". Höchstbeträge 510/4000/1200 € + Satz 20 % **seit
-  2009 unverändert** (kein Änderungsgesetz 2024–2026, insb. Wachstumschancengesetz berührt § 35a-Caps
-  NICHT). → params identisch für VZ 2024/2025/2026.
-- **§ 10b Abs. 1:** 20 %-GdE-Quote (bzw. 4-‰-Alternative) **langfristig stabil**, keine VZ-Schwelle
-  2024–2026. → params identisch alle drei VZ.
+### Regel 2 `p10b_spenden` (module `SpendenAbzug`), queue_status verified_bedingt, abweichungen = []
+```
+input zuwendungen / gesamtbetrag_der_einkuenfte : money
+spenden_abzug = min(zuwendungen; 0.20·gesamtbetrag_der_einkuenfte)   # § 10b Abs. 1 S. 1 Nr. 1
+```
+- Gegen frozen `estg_p10b_2026-07-13` verifiziert: 20 % GdE (Alt. 1). Sauber, keine Abweichung.
+- **Geltungsbedingungen:** `gde_ist_p2_ergebnis` (Basis = Gesamtbetrag d. Einkünfte aus est-Rechnung,
+  VOR Sonderausgaben → keine Zirkularität — bestätigt dev-1s GdE-Naht), `nur_zwanzig_prozent_gde_deckel`
+  (4-‰-Umsatz-Alternative = Nachtrag).
 
-## Cap-/Sondersatz-Sweep (verbatim Freeze-Grep)
+## Promotions-/Wiring-Rezept (dev-1, p35c-Muster)
 
-| # | Fundstelle | Konstruktion | Konsequenz |
-|---|---|---|---|
-| S1 | § 35a Abs. 1 | **„um 20 Prozent, höchstens 510 Euro, der Aufwendungen"** (Minijob) | 20 % · min-Deckel 510; KEINE Unbar-Voraussetzung (S.3 nennt nur Abs. 2/3). |
-| S2 | § 35a Abs. 2 S. 1 | **„um 20 Prozent, höchstens 4 000 Euro, der Aufwendungen"** (haushaltsnahe Dienstl.) | 20 % · min-Deckel 4000; Unbar (S.3) + nur-Arbeitskosten (S.2). |
-| S3 | § 35a Abs. 3 S. 1 | **„um 20 Prozent der Aufwendungen … höchstens jedoch um 1 200 Euro"** (Handwerker) | 20 % · min-Deckel 1200; Unbar (S.3) + nur-Arbeitskosten (S.2). |
-| S4 | § 35a Abs. 5 S. 3 | **„Rechnung erhalten … Zahlung auf das Konto des Erbringers"** | Unbar-Voraussetzung NUR Abs. 2/3 → bool-Guard; verletzt → Abs2/3-Ermäßigung 0. |
-| S5 | § 35a Abs. 5 S. 2 | **„gilt nur für Arbeitskosten"** (Abs. 2 und 3) | Materialkosten raus → im Feld `*_arbeitskosten` gebunden (Sachverhalt). |
-| S6 | § 35a Abs. 1/2/3 | **„die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen"** | §35a-Betrag ≤ verfügbare ESt (nicht erstattungsfähig, Überhang verfällt) → **festsetzung-scope-Deckelung, NICHT Teilregel**. |
-| S7 | § 10b Abs. 1 S. 1 | **„bis zu 1. 20 Prozent des Gesamtbetrags der Einkünfte oder 2. 4 Promille …"** | 20 % · GdE (Alt. 1, privat); 4-‰-Alt. (Betrieb) = Nachtrag. |
+1. **Materialisieren** (Snapshot catala_a → live): `rules/estg/p35a/haushaltsnahe.catala_en` +
+   `rules/estg/p10b/spenden.catala_en` aus dem geprüften catala_a, je mit `test`-Scope (Seeds unten,
+   `assertion`-Form wie p35c `tests_*`). Module `Haushaltsnahe` / `SpendenAbzug`.
+2. **Integration-Punkt existiert:** `p32a/einkommensteuertarif.catala_en:476 input steuerermaessigungen
+   # § 35a/§ 35c/…` (Haushaltsnahe.steuerermaessigung dockt hier an) + `:469 input sonderausgaben
+   # § 10b` (SpendenAbzug.spenden_abzug in den Sonderausgaben-Topf). Kein neuer Scope-Input nötig.
+3. **Accessor** produkt/: `catala_p35a_haushaltsnahe` → Haushaltsnahe.steuerermaessigung;
+   `catala_p10b_spenden` → SpendenAbzug.spenden_abzug (GdE aus est_einzel).
+4. **Scheibe** `haushalt_gesamt` (§19-Basis + §35a + §10b), Auflagen:
+   - **rechnung_unbar = conditional-mandatory Kegel-Feld** wenn dienstleistung/handwerker > 0 (NICHT
+     Minijob); unbeantwortet → vorlaeufig; explizit false → Abs2/3-Ermäßigung 0 justiziert (Anker
+     Abs. 5 S. 3, folgbar), Minijob unberührt. [Q3 aus voriger Runde]
+   - **§35a-ESt-Deckelung (S6, „vermindert um sonstige Steuerermäßigungen", Überhang verfällt):** der
+     festsetzung-scope muss steuerermaessigungen so verrechnen, dass festzusetzende ESt nicht < 0
+     (§35a nicht erstattungsfähig). ⚠ VERIFY-AUFLAGE beim Wiring: prüfen ob der Tarif-Scope das schon
+     floored (min(ermäßigung; verfügbare ESt)); falls nicht → Guard. K2.
 
-## Regel 1 — § 35a Abs. 1–3: Haushaltsnahe Steuerermäßigung (`p35a_haushaltsnahe`)
+## Seeds (Materialisierungs-Tests)
 
-**⚠ regel_id-Korrektur:** die Bindung nennt `p35a_2_3_haushaltsnahe` — irreführend, weil die Regel
-**auch Abs. 1 (Minijob)** trägt (so auch der Quelle-Header: „die Signatur … braucht auch Abs. 1 …
-Abs. 5"). Empfehlung: Regel `p35a_haushaltsnahe` (Abs. 1–3), **Bindung-regel_id 1-Zeilen-Update** beim
-Wiring. — *Offen 1: bestätigen oder alten id behalten für Bindungs-Stabilität.*
+**Haushaltsnahe:** (minijob 2800,0,0)→510 · (0,0,handwerker 4500)→900 · (0,0,handwerker 10000)→1200 ·
+(0,dienstl 3000,0)→600 · (minijob 2800,0,handwerker 10000)→1710 · (0,0,0)→0.
+*(rechnung_unbar-Guard NICHT im Modul — Geltungsbedingung, Scheibe erzwingt; Modul rechnet Roh-Ermäßigung.)*
 
-**Anker (voll-Länge Stufe B):** je Absatz der Höchstbetrags-Satz aus S1/S2/S3 oben.
-
-- **Signatur** `HaushaltsnaheErmaessigung`: `minijob_aufwendungen: money` (Abs. 1),
-  `dienstleistung_arbeitskosten: money` (Abs. 2), `handwerker_arbeitskosten: money` (Abs. 3),
-  `rechnung_unbar: bool` (Abs. 5 S. 3, wirkt nur Abs. 2/3) → `steuerermaessigung: money`.
-- **Rechenkern (drei UNABHÄNGIGE Töpfe, eigener Deckel je Topf, dann Summe):**
-  - `e_minijob    = min(satz · minijob_aufwendungen; minijob_hoechstbetrag)`   *(Abs. 1, ohne Unbar)*
-  - `e_dienstl    = if rechnung_unbar then min(satz · dienstleistung_arbeitskosten; dienstleistung_hoechstbetrag) else 0`
-  - `e_handwerker = if rechnung_unbar then min(satz · handwerker_arbeitskosten; handwerker_hoechstbetrag) else 0`
-  - `steuerermaessigung = e_minijob + e_dienstl + e_handwerker`
-- **⚠ Klasse-2/Präzision:** `satz · money` (20 %), Cent-Schnitt am Topf-Ergebnis, Satz aus params
-  NICHT vorrunden. Die drei Deckel sind additiv (510 + 4000 + 1200 gleichzeitig möglich) — KEIN
-  Gesamt-Deckel (Wortlaut: getrennte Absätze).
-- **Caps aus params/<vz>** `steuerermaessigung_haushaltsnah_p35a.yaml`: `satz: 0.20`,
-  `minijob_hoechstbetrag: 510`, `dienstleistung_hoechstbetrag: 4000`, `handwerker_hoechstbetrag: 1200`
-  (je `datenquelle`-Anker § 35a Abs. 1/2/3 + Stand).
-- **Geltungsbedingungen:** `unbare_zahlung_abs5s3` (Rechnung + Konto-Zahlung, NUR Abs. 2/3),
-  `nur_arbeitskosten_abs5s2` (Material raus, im Feldnamen gebunden), `eu_ewr_haushalt_abs4`
-  (Leistung in EU/EWR-Haushalt, dokumentiert-bool), `keine_doppelberuecksichtigung_abs5s1` (nicht schon
-  BA/WK/SA/agB; § 10 Abs. 1 Nr. 5 ausgeschlossen — Abgrenzung, dokumentiert), `caps_als_params`,
-  `est_deckelung_im_festsetzung_scope` (S6: §35a ≤ verfügbare ESt = tarif-scope-Wiring, NICHT hier).
-- **Seeds (Grenzfälle):**
-  - (minijob 2800, 0, 0, unbar egal) → min(560;510) = **510** (Minijob-Deckel; Unbar irrelevant Abs.1)
-  - (0, 0, handwerker 4500, unbar true) → min(900;1200) = **900** (Handwerker unter Deckel)
-  - (0, 0, handwerker 10000, unbar true) → min(2000;1200) = **1200** (Handwerker-Deckel)
-  - **(0, 0, handwerker 5000, unbar FALSE) → 0** (Abs. 5 S. 3 verletzt → keine Ermäßigung)
-  - (0, dienstl 3000, 0, unbar true) → min(600;4000) = **600**
-  - (minijob 2800, 0, handwerker 10000, unbar true) → 510 + 1200 = **1710** (zwei Töpfe, additive Deckel)
-
-## Regel 2 — § 10b Abs. 1 S. 1 Nr. 1: Spendenabzug 20 % GdE (`p10b_spenden`)
-
-**Anker (voll-Länge Stufe B, 155 Zeichen):** „Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung
-steuerbegünstigter Zwecke im Sinne der §§ 52 bis 54 der Abgabenordnung können insgesamt bis zu 1. 20
-Prozent des Gesamtbetrags der Einkünfte … als Sonderausgaben abgezogen werden."
-
-- **Signatur** `Spendenabzug`: `zuwendungen: money`, `gesamtbetrag_der_einkuenfte: money` →
-  `spenden_abzug: money`.
-- **Rechenkern:** `spenden_abzug = min(zuwendungen; quote_gesamtbetrag · gesamtbetrag_der_einkuenfte)`
-  (Alt. 1, 20 % GdE).
-- **⚠ GdE als INPUT (Naht zu est_einzel):** Basis ist der **Gesamtbetrag der Einkünfte** (VOR
-  Sonderausgaben) — liegt in der est-Rechnung fest bevor § 10b als SA greift → keine Zirkularität.
-  dev-1 extrahiert `gesamtbetrag_der_einkuenfte` aus `est_einzel(§19)`, NICHT `summe_der_einkuenfte`.
-- **Caps aus params/<vz>** `spendenabzug_p10b.yaml`: `quote_gesamtbetrag: 0.20` (`datenquelle` § 10b
-  Abs. 1 S. 1 Nr. 1 + Stand). 4-‰-Alternative (Betrieb) = Nachtrag.
-- **Geltungsbedingungen:** `empfaenger_steuerbeguenstigt_abs1s2` (§§ 52–54 AO, jur. Person öff. Rechts /
-  § 5 Abs. 1 Nr. 9 KStG — dokumentiert-bool, Sachverhalt), `keine_ausgeschlossenen_mitgliedsbeitraege_abs1s8`
-  (Sport/Freizeit/Heimat raus — dokumentiert), `zuwendungsbestaetigung_abs4` (Spendenbescheinigung —
-  Sachverhalt), `quote_als_param`.
-- **Seeds:** (zuwendungen 15000, GdE 50000) → min(15000;10000) = **10000** (20 %-Deckel greift) ·
-  (5000, 50000) → **5000** (unter Deckel) · (10000, 50000) → **10000** (Grenzfall gleich) ·
-  (0, 50000) → **0**.
+**SpendenAbzug:** (zuw 15000, GdE 50000)→10000 · (5000,50000)→5000 · (10000,50000)→10000 · (0,50000)→0.
 
 ## Benannte Nachträge Charge 29
 
-- **§ 35a Abs. 2 S. 2** Pflege-/Betreuungs-/Heimkosten (eigener Tatbestand, teilt den 4000-Topf) = Nachtrag.
-- **§ 35a Abs. 4** EU/EWR-Haushalt-Detail + Heim-Ort (Abs. 2 S. 2 2. Hs.) = dokumentiert/Nachtrag.
-- **§ 35a Abs. 5 S. 4** haushaltsbezogener Höchstbetrag (zwei Alleinstehende in einem Haushalt →
-  Höchstbeträge nur einmal) = Nachtrag (Haushalts-Zusammensetzung).
-- **§ 35a Abs. 5 S. 1** Doppelberücksichtigungs-Abgrenzung (BA/WK/SA/agB; § 10 Abs. 1 Nr. 5) = dokumentiert.
-- **§ 10b Abs. 1 S. 1 Nr. 2** 4-‰-Umsatz/Lohn-Alternative (Betriebe) = Nachtrag.
-- **§ 10b Abs. 1 S. 9** Spendenvortrag (Überhang in Folge-VZ, § 10d-analog) = Multi-VZ-Nachtrag.
-- **§ 10b Abs. 1a** Vermögensstock-Stiftung (1 Mio / 2 Mio zusammen, 10-Jahr) = Nachtrag.
-- **§ 10b Abs. 2** Parteispenden (3 300 / 6 600 € + § 34g-Ermäßigung) = eigener Tatbestand, Nachtrag.
-- **§ 10b Abs. 3** Sachzuwendungen (gemeiner Wert / Buchwert), **Abs. 4** Vertrauensschutz/Haftung = Nachträge.
-- **§35a-ESt-Deckelung (S6)** = festsetzung-scope-Wiring (§35a ≤ verfügbare ESt, Überhang verfällt) —
-  dev-1-Auflage beim `haushalt_gesamt`-Wiring, NICHT Teilregel.
+§ 35a Abs. 2 S. 2 Pflege/Heim · Abs. 5 S. 4 haushaltsbezogener Höchstbetrag (zwei Alleinstehende) ·
+§ 10b Abs. 1 S. 1 Nr. 2 (4-‰-Betrieb) · Abs. 1 S. 9 Spendenvortrag · Abs. 1a Stiftung (1/2 Mio) ·
+Abs. 2 Parteispenden (3300/6600 + § 34g) · Abs. 3 Sachzuwendungen. Person-B (§35a/§10b bei zusammen,
+GdE = A+B) = Folge wie §19-B.
 
-## Offene Punkte für Julius/meine Review
+## Offene Punkte
 
-1. **regel_id** `p35a_haushaltsnahe` (Abs. 1–3 akkurat) vs. Bindungs-Altname `p35a_2_3_haushaltsnahe`
-   behalten (1-Zeilen-Bindungs-Update beim Wiring). Empfehlung: akkurater Name + Bindung nachziehen.
-2. **params/<vz>** für die Caps (§10c/§20-Muster) statt p35c-in-rule — bestätigen. Werte identisch
-   VZ 2024/2025/2026 (Fassungs-Check oben: keine Schwelle).
-3. **§35a-ESt-Deckelung** (S6, „vermindert um sonstige Steuerermäßigungen", Überhang verfällt) im
-   festsetzung-scope beim Wiring — bestätigen, dass der scope steuerermaessigungen bei 0 floored
-   (kein negativer Steuerbetrag, K2). Verify-Auflage ans Wiring.
-4. **hh_rechnung_unbar als conditional-mandatory Kegel-Feld** (nur wenn dienstleistung/handwerker > 0;
-   unbeantwortet → vorlaeufig; explizit false → Abs2/3-Ermäßigung 0 justiziert) — Scheibe-Auflage dev-1.
-5. **Kachel-Scope** `haushalt_gesamt` = nur §35a + §10b? Die Bindung `bindung_sonder_agb_35a` bündelt
-   auch agB § 33 (p33_1_2) + p10-SA/KiSt (p10_1_4/p10_1_7) — bleiben die eine SEPARATE spätere Kachel?
-   (dev-1-Rückfrage offen.)
-6. **Cap-Wort Stufe B:** 2 Regeln, enge auszüge (§ 35a Abs. 1–3+5, § 10b Abs. 1 S. 1 Nr. 1) →
-   Vorschlag `--cost-cap 0.25`.
+1. **Promotion blessed?** beide Snapshots verified_bedingt, offene Discoveries = 0, Caps quell-verifiziert
+   → ich segne die Promotion. (Reviewer-Rolle: finale Ratsche-Freigabe Julius, aber autonom-Mandat +
+   verified_bedingt-Zustand → dev-1 baut, ich verifiziere die Materialisierung 1:1 gegen catala_a.)
+2. **regel_id-Altname** `p35a_2_3_haushaltsnahe` bleibt (Snapshot/Bindung/item_registry konsistent) —
+   der Modul-Name `Haushaltsnahe` trägt die Semantik, kein Rename nötig (revidiert ggü. erster Fassung).
+3. **§35a-ESt-Deckelung** Verify-Auflage beim Wiring (Punkt 4 oben) — K2-kritisch.
+4. **Kachel-Scope** `haushalt_gesamt` = nur §35a+§10b; agB §33 (p33_1_2, auch Snapshot!) + KiSt
+   (p10_1_4, auch Snapshot!) = separate spätere Kachel (dev-1-Rückfrage offen).
