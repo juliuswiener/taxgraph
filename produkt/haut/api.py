@@ -114,23 +114,22 @@ SCHEIBEN = {
         "teil_ringe": [],
         "guard": True,
     },
-    # KONVERGENZ §19+§21+§20 (EIN catala_gesamt-Ring): dieselbe Scheibe rechnet reinen §21 (Bruttolohn =
+    # DER §-2-GESAMT-RING (EIN catala_gesamt-Ring): dieselbe Scheibe rechnet reinen §21 (Bruttolohn =
     # bestätigte Null), Job+Vermietung UND Kapital (§ 20/§ 32d, Günstigerprüfung über zwei gesamt-Läufe).
     # §19 → einkuenfte_nichtselbststaendig (§9a-bereinigt), §21 → einkuenfte_vermietung, §20 → Kapital-
     # Steuer (est_ohne + min(Abgeltung, Günstiger-delta)). §21-Verlust mindert §19-Lohn (Loss-Offset, K2),
-    # §10c einmal. NAMENS-SCHULD (Instructor-Q3 zugestanden): der Key "vv_gesamt" ist nach der §20/§19-
-    # Integration ein Fehlname — die Scheibe ist der allgemeine §-2-Gesamt-Ring. Rename auf gesamt/est_gesamt
-    # = eigener sauberer Commit (Test-/Referenz-Blast getrennt halten), hier bewusst NICHT gebündelt.
-    # NAMED GAPS: § 10d Verlustvortrag; Kapital-Co-Okkurrenz E0121709+Töpfe (kapital_semantik_offen);
-    # zusammen+§19 (Person-B); §22-Rente = weitere Summanden.
-    "vv_gesamt": {
+    # §10c einmal. Der frühere Name „vv_gesamt" war nach der §19/§20-Integration ein Fehlname — die
+    # Named-Architektur-Schuld ist mit dem Rename auf „gesamt" eingelöst (an_gesamt bleibt der schmale
+    # AN-only-MVP über catala_est). NAMED GAPS: § 10d Verlustvortrag; Kapital-Co-Okkurrenz E0121709+Töpfe
+    # (kapital_semantik_offen); zusammen+§19 (Person-B); §22-Rente = weitere Summanden.
+    "gesamt": {
         "felder": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
                    + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_gesamt",
         "teil_ringe": [],
         "guard": True,
-        "vv": True,     # aktiviert den flag_check-Widerspruchs-Guard
+        "gesamt_guard": True,   # aktiviert flag_check- + Kapital-Semantik-Guards (Einkunftsart-Konsistenz)
     },
 }
 
@@ -381,7 +380,7 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None):
     # feuert, sobald eine Scheibe die rentner_*_partner-Felder führt (aktuell keine → inert, forward-ready).
     if PC.partner_ohne_zusammen(felder):
         return "partner_konsistenz_offen"
-    if cfg and cfg.get("vv"):
+    if cfg and cfg.get("gesamt_guard"):
         # Gesamt-Ring (§ 19/§ 21/§ 20): Flag↔Einkunftsart-Widerspruch (kein_vuv/kein_kap=true + echtes
         # Feld > 0 bestätigt) surfacen — K2, keine still übergangene Einkunftsart (dev-2s flag_check).
         if FC.flag_widersprueche(felder):

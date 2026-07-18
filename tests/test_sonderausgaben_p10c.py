@@ -64,7 +64,7 @@ def test_gesamt_zieht_p10c_ab():
 
 def test_pfad_fidelitaet_einzel_gleich_gesamt():
     """K2-KERN: derselbe § 19-Lohn muss pfad-unabhaengig gleich besteuert werden. est_einzel-Pfad
-    (an_gesamt-Ring) und gesamt-Pfad (vv_gesamt/kombiniert-Ring, gespeist mit summe_der_einkuenfte)
+    (an_gesamt-Ring) und gesamt-Pfad (gesamt/kombiniert-Ring, gespeist mit summe_der_einkuenfte)
     liefern jetzt identische festzusetzende ESt — vor dem § 10c-Floor 11 EUR auseinander."""
     runner = _runner()
     from catala_runtime import Money
