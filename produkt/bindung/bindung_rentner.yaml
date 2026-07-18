@@ -41,10 +41,13 @@ bindungen:
       quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
       zitatanker: "maßgebenden Prozentsatz aus der nachstehenden Tabelle"
       datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
-  # renten_art_basis_oder_ertragsanteil = Platzhalter-gb bis der Registry-Nachtrag p22_1_ertragsanteil
-  # die bb-gb materialisiert (Task #12, dev-1); der Gate validiert gb-Existenz für Pseudoregel-Scopes
-  # nicht, die Abdeckung ist über die Kz-Verzweigung + den Drift-Wächter gesichert. Kein Umbau nötig,
-  # wenn die bb-gb real wird — dann hängt die Deklaration direkt dran.
+  # renten_art_basis_oder_ertragsanteil = gb-Weiche aa/bb. Die bb-Berechnung braucht KEINE eigene Regel
+  # (Instructor-Entscheid 2026-07-18): die Arithmetik (jahresrente x prozent/100) ist identisch zu
+  # p22_1_leibrente_besteuerungsanteil, nur die %-Quelle unterscheidet (Ertragsanteil-Params statt
+  # Besteuerungsanteil-Kohorten). Der Accessor gated die bb-Multiplikation gegen dieselben p22_1-test_seeds;
+  # die bb-Werte + Rechtsgrundlage liegen in params/kohorten/rente_ertragsanteil_p22.yaml (§ 22 Nr. 1 S. 3
+  # lit. a bb). Der Gate validiert gb-Existenz für Pseudoregel-Scopes nicht, die Abdeckung ist über die
+  # Kz-Verzweigung + den Drift-Wächter gesichert.
   - feld_id: rentner_renten_art
     quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: renten_art_basis_oder_ertragsanteil}
     typ: enum
@@ -56,7 +59,7 @@ bindungen:
     beispielwert: "gesetzliche_rente"
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Art-Weiche (steuert die Kz-Verzweigung Klasse f + den Rechenpfad aa/bb), kein eigenes Betragsfeld. Die bb-Steuerberechnung (Ertragsanteil, private/sonstige) ist der benannte Registry-Nachtrag p22_1_ertragsanteil (§ 22 Nr. 1 S. 3 a bb, dev-1); die aa-Werte rechnet p22_1 (Kohorte)."
+    elster_kz_grund: "Art-Weiche (steuert die Kz-Verzweigung Klasse f + den Rechenpfad aa/bb), kein eigenes Betragsfeld. bb (private/sonstige Leibrente) rechnet mit der p22_1-Arithmetik (jahresrente x prozent/100), Prozentsatz aus den Ertragsanteil-Params (§ 22 Nr. 1 S. 3 lit. a bb, params/kohorten/rente_ertragsanteil_p22.yaml) — KEINE eigene Regel (Instructor-Entscheid 2026-07-18); die aa-Werte rechnet p22_1 aus der Besteuerungsanteil-Kohorte."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
