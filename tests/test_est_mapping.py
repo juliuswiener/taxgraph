@@ -479,3 +479,75 @@ def test_multi_objekt_partner_beide_vermieter(bindung):
     alle_e0700201 = ([r["deklaration"]["E0700201"]]
                      + [e["felder"]["E0700201"] for e in r["anlage_instanzen"]["vv_objekt"]])
     assert alle_e0700201 == [1200000, 900000]
+
+
+# ---- Klasse INSTANZ Konsument 2: Per-Kind (Anlage Kind, ELSTER-Form, reines 1:1 je Instanz × A/B) --------
+# Zwei Achsen: Kind-Instanz (instanz_gruppe:kind, Kind 1=Basis / Kind 2..N=__n) × Elternteil A/B (zwei distinkte
+# Basis-Kz je Konzept: _a→E0500807/E0500601, _b→E0500808/E0500805). Tarif-/Ring-neutral (count-MVP bleibt).
+_KIND_1 = {"kind_idnr": "11111111111",
+           "kind_kindschaftsverhaeltnis_a": "leibliches Kind", "kind_kindschaftsverhaeltnis_b": "leibliches Kind",
+           "kind_kindschaftsverh_zeitraum_a": "01.01.2025 - 31.12.2025",
+           "kind_kindschaftsverh_zeitraum_b": "01.01.2025 - 31.12.2025"}
+_KIND_2 = {"kind_idnr__2": "22222222222",
+           "kind_kindschaftsverhaeltnis_a__2": "Pflegekind", "kind_kindschaftsverhaeltnis_b__2": "Pflegekind",
+           "kind_kindschaftsverh_zeitraum_a__2": "01.03.2025 - 31.12.2025",
+           "kind_kindschaftsverh_zeitraum_b__2": "01.03.2025 - 31.12.2025"}
+
+
+def test_per_kind_zwei_kinder(bindung):
+    """Zwei Kinder: Kind 1 in der Haupt-Deklaration (Instanz 1), Kind 2 in anlage_instanzen[kind] (Instanz 2)
+    — je 5 Anlage-Kind-Kz mit Reuse; Elternteil A/B sind zwei distinkte Basis-Kz je Konzept."""
+    snap, _ = ST.materialisiere(_store_mit({**_KIND_1, **_KIND_2}))
+    r = EM.deklariere(snap, bindung)
+    # Kind 1 (Basis): 5 Kz in der Haupt-Deklaration, A/B distinkt
+    assert r["deklaration"]["E0500406"] == "11111111111"                   # IdNr
+    assert r["deklaration"]["E0500807"] == "leibliches Kind"               # Kindschaftsverh. Elternteil A
+    assert r["deklaration"]["E0500808"] == "leibliches Kind"               # Elternteil B (distinktes Kz)
+    assert r["deklaration"]["E0500601"] == "01.01.2025 - 31.12.2025"       # Zeitraum A
+    assert r["deklaration"]["E0500805"] == "01.01.2025 - 31.12.2025"       # Zeitraum B
+    # Kind 2 (Instanz): eigener Bucket, dieselben Kz (Reuse je Kind)
+    inst = r["anlage_instanzen"]["kind"]
+    assert len(inst) == 1 and inst[0]["index"] == 2
+    assert inst[0]["felder"]["E0500406"] == "22222222222"
+    assert inst[0]["felder"]["E0500807"] == "Pflegekind" and inst[0]["felder"]["E0500808"] == "Pflegekind"
+    assert inst[0]["felder"]["E0500601"] == "01.03.2025 - 31.12.2025"
+    assert r["vollstaendig"] is True
+
+
+def test_per_kind_ab_zwei_distinkte_kz(bindung):
+    """Elternteil A/B tragen je Kind ZWEI distinkte Kz (E0500807/E0500808 Kindschaftsverh., E0500601/E0500805
+    Zeitraum) — Sektions-Pfad K_Verh_A/B (kein Reuse ÜBER die A/B-Achse, nur über die Kind-Achse)."""
+    snap, _ = ST.materialisiere(_store_mit(_KIND_1))
+    r = EM.deklariere(snap, bindung)
+    # A und B sind ZWEI distinkte Kz (nicht ein geteiltes) — beide getrennt in der Deklaration
+    assert "E0500807" in r["deklaration"] and "E0500808" in r["deklaration"] and "E0500807" != "E0500808"
+    assert "E0500601" in r["deklaration"] and "E0500805" in r["deklaration"]
+
+
+def test_per_kind_roundtrip(bindung):
+    """Round-Trip: base + base__2 exakt invertierbar (1:1 Text-Werte) über beide Kinder + A/B-Achse."""
+    snap, _ = ST.materialisiere(_store_mit({**_KIND_1, **_KIND_2}))
+    rt = EM.zuruecklesen(EM.deklariere(snap, bindung), bindung)
+    assert rt["felder"]["kind_idnr"] == "11111111111"                     # Kind 1
+    assert rt["felder"]["kind_idnr__2"] == "22222222222"                  # Kind 2
+    assert rt["felder"]["kind_kindschaftsverhaeltnis_a"] == "leibliches Kind"
+    assert rt["felder"]["kind_kindschaftsverhaeltnis_a__2"] == "Pflegekind"
+
+
+def test_per_kind_fail_closed_kind_2_vorlaeufig(bindung):
+    """K2 je Kind: ein vorläufiges Kind-2-Feld -> Kind 2 (dieses Feld) nicht im Bucket, Gesamt unvollständig."""
+    s = _store_mit(_KIND_1)
+    _b(s, "kind_idnr__2", "22222222222", zustand="vorlaeufig")
+    snap, _ = ST.materialisiere(s)
+    r = EM.deklariere(snap, bindung)
+    assert r["vollstaendig"] is False
+    assert "kind_idnr__2" in {x["feld_id"] for x in r["unvollstaendig"]}
+    assert "kind" not in r["anlage_instanzen"]                            # vorläufiges einziges Kind-2-Feld nicht deklariert
+
+
+def test_per_kind_tarif_neutral_kein_ring_feld(bindung):
+    """Per-Kind ist FORM-Vervollständigung: die count-MVP-Felder (fam_anzahl_kinder) bleiben unberührt;
+    die per-Kind-Felder haben KEINEN signatur_slot in eine Ring-Rechnung (nur Anlage-Kind-Kz-Deklaration)."""
+    b_idnr = bindung["kind_idnr"]
+    assert b_idnr["instanz_gruppe"] == "kind" and b_idnr["elster_kz"] == "E0500406"
+    assert "signatur_slot" not in b_idnr["quelle"]                        # Geltungsbedingung, kein Ring-Slot

@@ -433,6 +433,97 @@ bindungen:
       zitatanker: "für jedes zu berücksichtigende Kind des Steuerpflichtigen ein Freibetrag"
       datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
 
+  # ===== Anlage Kind — Per-Kind-Formfelder (Repeated-Instance-Konsument, instanz_gruppe:kind) =====
+  # Kind 1 = Basis-feld_id (0 Regression zum count-MVP-Tarif), Kind 2..N = __n-Instanz (Kz-Reuse je Kind).
+  # Zwei Achsen: Kind-Instanz (instanz_gruppe) × Elternteil A/B (zwei distinkte Basis-Kz je Konzept, K_Verh_A/B).
+  # TARIF-/RING-NEUTRAL: die count-MVP-Tarifrechnung (Kinderfreibetrag/Kindergeld = count×Betrag) bleibt; dies
+  # ist die Anlage-Kind-FORM-Vervollständigung (Submission). Kz adjudiziert + byte-offset-verifiziert (msg 2873).
+  - feld_id: kind_idnr
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer deines Kindes (11 Ziffern)?"
+    hilfe_kurz: "Die Identifikationsnummer des Kindes steht auf dem Schreiben des Bundeszentralamts für Steuern. Bei mehreren Kindern jeweils die des einzelnen Kindes."
+    beispielwert: "12345678901"
+    herkunft_slots: null
+    elster_kz: E0500406
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_kindschaftsverhaeltnis_a
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverhaeltnis_elternteil_a}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Verhältnis steht das Kind zu dir (z. B. leibliches Kind, Adoptivkind, Pflegekind)?"
+    hilfe_kurz: "Gib an, wie das Kind mit dir verwandt ist. 'Leiblich' heißt dein eigenes Kind."
+    beispielwert: "leibliches Kind"
+    herkunft_slots: null
+    elster_kz: E0500807
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 1 EStG"
+      zitatanker: "im ersten Grad mit dem Steuerpflichtigen verwandte Kinder"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_kindschaftsverhaeltnis_b
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverhaeltnis_elternteil_b}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Verhältnis steht das Kind zur zweiten Person (z. B. leibliches Kind, Adoptivkind, Pflegekind)?"
+    hilfe_kurz: "Bei gemeinsamer Erklärung: das Verhältnis des Kindes zur zweiten Person, etwa dem Ehe- oder Lebenspartner."
+    beispielwert: "leibliches Kind"
+    herkunft_slots: null
+    elster_kz: E0500808
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 1 EStG"
+      zitatanker: "im ersten Grad mit dem Steuerpflichtigen verwandte Kinder"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_kindschaftsverh_zeitraum_a
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverh_zeitraum_elternteil_a}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum dieses Jahr bestand das Verhältnis zwischen dir und dem Kind (von – bis)?"
+    hilfe_kurz: "Meist das ganze Jahr. Nur bei Geburt, Adoption oder Wegfall im Jahr den genauen Zeitraum angeben."
+    beispielwert: "01.01.2025 - 31.12.2025"
+    herkunft_slots: null
+    elster_kz: E0500601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 2 EStG"
+      zitatanker: "Besteht bei einem angenommenen Kind das Kindschaftsverhältnis zu den leiblichen Eltern weiter"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_kindschaftsverh_zeitraum_b
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverh_zeitraum_elternteil_b}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum dieses Jahr bestand das Verhältnis zwischen der zweiten Person und dem Kind (von – bis)?"
+    hilfe_kurz: "Bei gemeinsamer Erklärung: der Zeitraum für die zweite Person. Meist das ganze Jahr."
+    beispielwert: "01.01.2025 - 31.12.2025"
+    herkunft_slots: null
+    elster_kz: E0500805
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 2 EStG"
+      zitatanker: "Besteht bei einem angenommenen Kind das Kindschaftsverhältnis zu den leiblichen Eltern weiter"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+
 luecken:
   # -- §20 Annahmen --
   - regel_id: p20_9_sparer_pauschbetrag
