@@ -488,6 +488,7 @@ declaration scope FestzusetzendeEstGesamt:
   output einkommen content money                       # § 2 Abs. 4
   output zu_versteuerndes_einkommen content money      # § 2 Abs. 5
   output tarifliche_est content money                  # § 2 Abs. 5, § 32a
+  internal wirksame_ermaessigung content money         # § 35a/§ 35c/§ 34g: Ermäßigung gefloort (nicht erstattungsfähig)
   output festzusetzende_est content money              # § 2 Abs. 6
 
 scope FestzusetzendeEstGesamt:
@@ -522,10 +523,22 @@ scope FestzusetzendeEstGesamt:
   definition tarifliche_est under condition tarif_modifiziert consequence equals
     tarifliche_est_modifiziert
 
-  # § 2 Abs. 6 Satz 1-2: festzusetzende Einkommensteuer.
+  # § 2 Abs. 6 Satz 1-2: festzusetzende Einkommensteuer. § 35a/§ 35c/§ 34g sind NICHT
+  # erstattungsfähig — die Steuerermäßigung ist auf die verfügbare (tarifliche minus
+  # anzurechnende ausländische) Steuer gefloort; ein Anrechnungsüberhang verfällt, kein
+  # Negativ-Festsetzen (§ 35a Abs. 1-3: "ermäßigt sich die tarifliche Einkommensteuer").
+  definition wirksame_ermaessigung equals
+    let verfuegbare_steuer equals
+      if tarifliche_est - anzurechnende_auslaendische_steuern > $0.00
+      then tarifliche_est - anzurechnende_auslaendische_steuern
+      else $0.00
+    in
+    if steuerermaessigungen > verfuegbare_steuer
+    then verfuegbare_steuer
+    else steuerermaessigungen
   definition festzusetzende_est equals
     tarifliche_est
-    - anzurechnende_auslaendische_steuern - steuerermaessigungen
+    - anzurechnende_auslaendische_steuern - wirksame_ermaessigung
     + steuer_kapital_gesondert + hinzurechnung_kindergeld + hinzurechnung_zulage
 ```
 
@@ -563,6 +576,7 @@ declaration scope FestzusetzendeEstGesamtZusammen:
   output einkommen content money
   output zu_versteuerndes_einkommen content money      # gemeinsames zvE
   output tarifliche_est content money
+  internal wirksame_ermaessigung content money         # § 35a/§ 35c/§ 34g: Ermäßigung gefloort (nicht erstattungsfähig)
   output festzusetzende_est content money
 
 scope FestzusetzendeEstGesamtZusammen:
@@ -594,9 +608,19 @@ scope FestzusetzendeEstGesamtZusammen:
   definition tarifliche_est under condition tarif_modifiziert consequence equals
     tarifliche_est_modifiziert
 
-  # § 2 Abs. 6 Satz 1-2.
+  # § 2 Abs. 6 Satz 1-2. § 35a/§ 35c/§ 34g nicht erstattungsfähig -> Ermäßigung gefloort
+  # auf die verfügbare Steuer (kein Negativ-Festsetzen, Anrechnungsüberhang verfällt).
+  definition wirksame_ermaessigung equals
+    let verfuegbare_steuer equals
+      if tarifliche_est - anzurechnende_auslaendische_steuern > $0.00
+      then tarifliche_est - anzurechnende_auslaendische_steuern
+      else $0.00
+    in
+    if steuerermaessigungen > verfuegbare_steuer
+    then verfuegbare_steuer
+    else steuerermaessigungen
   definition festzusetzende_est equals
     tarifliche_est
-    - anzurechnende_auslaendische_steuern - steuerermaessigungen
+    - anzurechnende_auslaendische_steuern - wirksame_ermaessigung
     + steuer_kapital_gesondert + hinzurechnung_kindergeld + hinzurechnung_zulage
 ```

@@ -1,0 +1,19 @@
+id: gesamt_2026_einzel_ermaessigung_floor
+beschreibung: "Floor § 35a (nicht erstattungsfähig): § 19 20000 -> positive tarifliche ESt, aber steuerermaessigungen 50000 (weit über der Steuer) -> festzusetzende_est auf 0 gefloort, NICHT negativ (Anrechnungsüberhang verfällt). Ohne Floor ergäbe die ungefloorte Subtraktion einen negativen Bescheid. VZ 2026"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2026
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 20000
+  steuerermaessigungen: 50000
+
+erwartung:
+  festzusetzende_est: 0
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 35a Abs. 1-3 EStG (Steuerermäßigung nicht erstattungsfähig) i.V.m. § 2 Abs. 6 EStG"
+  datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  zitatanker: "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag"

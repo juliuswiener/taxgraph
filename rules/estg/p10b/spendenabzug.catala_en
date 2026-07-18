@@ -1,0 +1,72 @@
+# § 10b Abs. 1 EStG — Zuwendungen (Spenden): 20-%-Höchstbetrag des Gesamtbetrags der Einkünfte
+
+> Module SpendenAbzug
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p10b_spenden.json`
+(module SpendenAbzug, verified_bedingt, offene Discoveries = 0, sha256
+`e352aeeb64cadad3d728161642d4b1e0c62a390c3608bc55b1ed8f10e944fcdd`). Die scope-Logik unten ist
+BYTE-GLEICH aus `catala_a` übernommen (keine Änderung); nur der Module-Header + die Grenzfall-Seeds
+sind ergänzt. Kein Pipeline-Re-Run.
+
+Zitatanker § 10b Abs. 1 EStG (`sources/gesetze-im-internet/estg_p10b_2026-07-13.txt`, typ gesetz):
+Zuwendungen sind abziehbar bis "20 Prozent des Gesamtbetrags der Einkünfte". Der abziehbare Betrag
+speist als Sonderausgabe § 2 Abs. 4 (→ p32a input sonderausgaben); die Verrechnung ist Andockung
+(dev-1-Accessor / Integration), nicht Teil dieser reinen Teilregel. Der alternative 4-‰-Umsatz-Deckel
+und der Großspenden-Vortrag sind eigene, hier nicht materialisierte Nachträge.
+
+```catala
+declaration scope SpendenAbzug:
+  input zuwendungen content money
+  input gesamtbetrag_der_einkuenfte content money
+  output spenden_abzug content money
+
+scope SpendenAbzug:
+  definition spenden_abzug equals
+    if zuwendungen > gesamtbetrag_der_einkuenfte * 0.20
+    then gesamtbetrag_der_einkuenfte * 0.20
+    else zuwendungen
+```
+
+## Grenzfall-Seeds (Instructor-Auflage, charge29-Doc)
+
+```catala
+#[test]
+declaration scope TestSpendeUeberDeckel:
+  # Zuwendung 15000 > 20 % von 50000 (= 10000) -> auf 10000 gedeckelt.
+  internal r content SpendenAbzug
+  output g content money
+scope TestSpendeUeberDeckel:
+  definition r equals output of SpendenAbzug with {
+    -- zuwendungen: $15,000.00
+    -- gesamtbetrag_der_einkuenfte: $50,000.00 }
+  definition g equals r.spenden_abzug
+  assertion g = $10,000.00
+```
+
+```catala
+#[test]
+declaration scope TestSpendeUnterDeckel:
+  # Zuwendung 5000 <= 20 % von 50000 (= 10000) -> ungekürzt durchgereicht.
+  internal r content SpendenAbzug
+  output g content money
+scope TestSpendeUnterDeckel:
+  definition r equals output of SpendenAbzug with {
+    -- zuwendungen: $5,000.00
+    -- gesamtbetrag_der_einkuenfte: $50,000.00 }
+  definition g equals r.spenden_abzug
+  assertion g = $5,000.00
+```
+
+```catala
+#[test]
+declaration scope TestKeineSpende:
+  # Keine Zuwendung -> kein Abzug (Regression).
+  internal r content SpendenAbzug
+  output g content money
+scope TestKeineSpende:
+  definition r equals output of SpendenAbzug with {
+    -- zuwendungen: $0.00
+    -- gesamtbetrag_der_einkuenfte: $50,000.00 }
+  definition g equals r.spenden_abzug
+  assertion g = $0.00
+```
