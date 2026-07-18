@@ -29,17 +29,20 @@
 Kapital = 0 < 25%-Abgeltung) → kapital_steuer = 0. Für eine ECHTE 25%-Abgeltung (≠0) braucht es
 Anderseinkommen, das den Grenzsteuersatz über 25% hebt (→ Accessor-abhängig).
 
-| Draft | Sachverhalt (einzel VZ2025) | Zwischenwerte (hand) | festzusetzende_est | Accessor? |
-|---|---|---|---|---|
-| **K1** Sparer-PB absorbiert | kap_kapitalertraege 1000€ | nach_sparer_pb = max(0,1000−1000)=0 → abgeltung 0 | **0** | nein (voll hand) |
-| **K2** Günstiger greift | kap_kapitalertraege 5000€ | nach_sparer_pb=4000; abgeltung=1000; Günstiger: grundtarif(4000)=0 < 1000 → 0 | **0** | nein (beide grundtarif=0) |
-| **K3** Verlusttopf §20 Abs.6 | gewinn_aktien 5000 / verlust_aktien 2000 / gewinn_sonstige 1000 / verlust_sonstige 3000 | saldo_aktien=3000, saldo_sonstige=0 (Topf-Trennung!), verrechnet=3000; nach_sparer_pb=2000; abgeltung=500; Günstiger→0 | **0** | nein (voll hand) |
-| **K4** Reine Abgeltung | §19 bruttoarbeitslohn 60000 + kap_kapitalertraege 10000 | nach_sparer_pb=9000; abgeltung=**2250**; Günstiger-delta≈42%×9000≈3780 > 2250 → abgeltung gewinnt → kapital_steuer=2250 | **[§19-Grundtarif] + 2250** | JA (§19-Teil + Integration) |
+**Zielwerte = dev-1s FULL-Pipeline (brutto → §9a → Accessor → steuer), Instructor-fixiert (msg 2752):**
 
-K1–K3 sind voll hand-verifiziert (0, aber jeder testet einen anderen Zweig: Sparer-PB-Absorption,
-Günstiger-Vorrang, Verlusttopf-Trennung). K4 ist der einzige mit ≠0-Abgeltung; kapital_steuer=2250 steht
-fest, nur der §19-Grundtarif-Teil + die catala_gesamt-Integration (steuer_kapital_gesondert-Addition)
-brauchen den Accessor.
+| Draft | Sachverhalt (einzel VZ2025, BRUTTOLOHN-Ebene) | Zwischenwerte (dev-1 nachgerechnet) | festzusetzende_est | 
+|---|---|---|---|
+| **K1** Sparer-PB absorbiert | kap_kapitalertraege 1000€ | nach_sparer_pb=max(0,1000−1000)=0 → abgeltung 0 | **0** |
+| **K2** Günstiger greift | kap_kapitalertraege 5000€ | nach_sparer_pb=4000; abgeltung=1000; grundtarif(4000)=0 < 1000 → 0 | **0** |
+| **K3** Verlusttopf §20 Abs.6 | gewinn_aktien 5000 / verlust_aktien 2000 / gewinn_sonstige 1000 / verlust_sonstige 3000 | saldo_aktien=3000, saldo_sonstige=0 (Topf-Trennung!), verrechnet=3000; nach_sparer_pb=2000; abgeltung=500; Günstiger→0 | **0** |
+| **K4** Reine Abgeltung | **bruttoarbeitslohn 60000** + kap_kapitalertraege 10000 | §9a → einkünfte 58770; est_ohne=13924; nach_sparer_pb=9000; abgeltung=2250; delta=est_mit−est_ohne=3613 > 2250 → kapital_steuer=2250 → 13924+2250 | **16174** |
+
+K1–K3 = 0 (jeder testet einen anderen Zweig: Sparer-PB-Absorption, Günstiger-Vorrang, Verlusttopf-Trennung).
+K4 = **16174** (dev-1s brutto-basierter Zielwert, NICHT der Layer-I-Wert 16651 der einkünfte-direkt füttert).
+Diese Werte brauchen dev-1s Accessor (kap_*→steuer_kapital_gesondert); Commit erst gegen den finalen
+EURO-Accessor-Kontrakt (sonst vakuöser 0-Pass für K1–K3, weil ohne Accessor die kap-Felder nicht in den
+Tarif fließen).
 
 ## FINDING — Integration ist SCHON da; 2 Goldens JETZT fertig (kein Accessor nötig)
 
