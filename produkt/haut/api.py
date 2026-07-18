@@ -107,12 +107,16 @@ SCHEIBEN = {
         "teil_ringe": [],
         "guard": True,
     },
-    # NAMED ARCHITEKTUR-SCHULD: derzeit ZWEI Ring-Pfade — an_gesamt=catala_est (Arbeitnehmer-only,
-    # § 9a im Scope), vv_gesamt=catala_gesamt (§ 21). End-Zustand ist EIN catala_gesamt-Ring, der
-    # ALLE Einkunftsarten summiert; die Konvergenz ist der §19+§21-kombiniert-Schritt (einkuenfte_ns-
-    # Andockung). Bis dahin bewusst getrennte, kleinste-testbare Scheiben. Front V+V, reiner §21-MVP.
+    # KONVERGENZ §19+§21 (kombiniert): dieselbe Scheibe rechnet reinen §21 (Bruttolohn = bestätigte
+    # Null) UND Job+Vermietung. Der §19-Zweig hängt die einkuenfte_nichtselbststaendig (§9a-bereinigt,
+    # aus dem einzel-Tarif) als §-2-Abs.-3-Summand an catala_gesamt — der Gesamt-Scope verrechnet einen
+    # §21-Verlust mit dem §19-Lohn (Loss-Offset, K2) und zieht §10c EINMAL ab. Damit ist der an_gesamt-
+    # Pfad nur noch der Grenzfall „kein §21"; End-Zustand EIN catala_gesamt-Ring bleibt (Kapital/§22
+    # folgen als weitere Summanden). NAMED GAP: Verlustvortrag § 10d (nur laufendes Jahr modelliert);
+    # zusammen mit §19 (Person-B-Einkünfte) = Folge-Nachtrag (MVP einzel).
     "vv_gesamt": {
-        "felder": VV_GESAMT_FELDER + ("veranlagung",) + AN_GESAMT_FLAGS,
+        "felder": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
+                   + EP_FELDER + AN_GESAMT_FLAGS),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_gesamt",
         "teil_ringe": [],
@@ -286,17 +290,30 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
 
         def slot_fn(slots: dict) -> int:
             # § 21 Überschuss (Einnahmen − Werbungskosten), Naht-CENT -> EURO. catala_gesamt macht
-            # den Verlust-Floor (negativ → est 0, K2) und den Tarif; MVP: keine anderen Einkunftsarten.
+            # den Verlust-Floor (negativ → est 0, K2), die § 2-Abs.-3-Verrechnung und den Tarif.
             vv = runner.catala_vermietung_einkuenfte({
                 "einnahmen": _c("vv_einnahmen") // 100,
                 "gebaeude_afa": _c("vv_gebaeude_afa") // 100,
                 "schuldzinsen": _c("vv_schuldzinsen") // 100,
                 "erhaltungsaufwand": _c("vv_erhaltungsaufwand") // 100,
                 "sonstige_werbungskosten": _c("vv_sonstige_wk") // 100})
-            return runner.catala_est({
-                "gesamtfall": True, "veranlagungszeitraum": vz,
-                "veranlagung": slots.get("veranlagung", "einzel"),
-                "einkuenfte_vermietung": vv})
+            g = {"gesamtfall": True, "veranlagungszeitraum": vz,
+                 "veranlagung": slots.get("veranlagung", "einzel"),
+                 "einkuenfte_vermietung": vv}
+            # kombiniert §19+§21: Bruttolohn im Kegel -> §19-Einkünfte (§9a-bereinigt, § 2 Abs. 2 Nr. 2)
+            # als einkuenfte_nichtselbststaendig in die §-2-Summe; der §21-Verlust mindert dann den
+            # §19-Lohn (§ 2 Abs. 3). Bruttolohn 0 (reiner Vermieter) -> einkuenfte_ns 0, kein Effekt.
+            # §19-WK = Entfernungspauschale (roh, § 9a-Günstiger im einzel-Tarif); dHf/Verpflegung/AM
+            # sind hier NICHT modelliert (Folge-Nachtrag) — es gibt keine solchen Slots in der Scheibe.
+            ns_wk = runner.catala_werbungskosten_n({"veranlagungszeitraum": vz,
+                **{k: slots[k] for k in
+                   ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
+                   if k in slots}})
+            g["einkuenfte_nichtselbststaendig"] = runner.catala_einkuenfte_nichtselbststaendig({
+                "veranlagungszeitraum": vz,
+                "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,   # Naht-CENT -> EURO
+                "werbungskosten": ns_wk})
+            return runner.catala_est(g)
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)

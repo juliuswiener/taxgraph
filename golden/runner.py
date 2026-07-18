@@ -177,6 +177,21 @@ def catala_vermietung_einkuenfte(s: dict) -> int:
                + int(s.get("erhaltungsaufwand", 0)) + int(s.get("sonstige_werbungskosten", 0))))
 
 
+def catala_einkuenfte_nichtselbststaendig(s: dict) -> int:
+    """§ 19 i.V.m. § 2 Abs. 2 Nr. 2, § 9a S. 1 Nr. 1 EStG — Einkünfte aus nichtselbständiger Arbeit
+    (Bruttolohn − Werbungskosten, mindestens Arbeitnehmer-Pauschbetrag 1230), EURO. Liest die fertige
+    Größe summe_der_einkuenfte des einzel-Tarifs (§ 9a-Günstiger IM Scope) — KEIN § 9a-Doppelabzug.
+    Für die § 2-Abs.-3-Summierung im Gesamt-Scope (kombiniert §19+§21): dieser Wert geht als
+    einkuenfte_nichtselbststaendig in catala_gesamt. sonderausgaben=0 hier — der § 10c-Floor gilt EINMAL
+    auf Personen-Ebene und wird von catala_gesamt (_sonderausgaben_final) gebildet, nicht je Einkunftsart."""
+    out = E.festzusetzende_est_einzel(E.FestzusetzendeEstEinzelIn(
+        bruttoarbeitslohn_in=Money(f"{int(s.get('bruttoarbeitslohn', 0))}.00"),
+        werbungskosten_in=Money(f"{int(s.get('werbungskosten', 0))}.00"),
+        sonderausgaben_in=Money("0.00"),
+        veranlagungszeitraum_in=VZ_ENUM[s["veranlagungszeitraum"]]))
+    return int(out.summe_der_einkuenfte) // 100
+
+
 def _kindergeld(year: int) -> int:
     """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
     p = load_yaml_fh(open(os.path.join(
@@ -204,6 +219,24 @@ def _vorsorge_abzug(s: dict, year: int) -> int:
         return 0
     ag = int(s.get("vorsorge_ag_anteil_steuerfrei", 0))
     return max(0, min(beitraege, _vorsorge_hb(year)) - ag)
+
+
+def _sonderausgabenpauschbetrag(year: int) -> int:
+    """§ 10c Satz 1 EStG Sonderausgaben-Pauschbetrag (je Person, 36) aus params/<vz>."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "sonderausgabenpauschbetrag.yaml"), encoding="utf-8"))
+    return p["wert"]["wert"]
+
+
+def _sonderausgaben_final(actual_sa: int, year: int, veranlagung) -> int:
+    """§ 10c EStG Guenstigervergleich: mindestens der Sonderausgaben-Pauschbetrag (36 je Person,
+    bei Zusammenveranlagung verdoppelt, § 10c Satz 2) - Wert aus params/<vz> (nie hardcoden).
+    Der einzel/zusammen-Tarif buendelt § 10c intern (Engine-Groesse sonderausgaben_pauschbetrag);
+    der Gesamt-Scope nimmt die FINALEN Sonderausgaben (Vertrag: Aufrufer bildet den § 10c-Floor,
+    festzusetzende_est_gesamt.py subtrahiert nur). KOPPLUNG: das Konsistenz-Gate haelt diesen Wert
+    an der Engine-Groesse fest."""
+    pausch = _sonderausgabenpauschbetrag(year) * (2 if veranlagung == "zusammen" else 1)
+    return max(int(actual_sa), pausch)
 
 
 # -- GewSt-Kette (Paket 4, §§ 6-11/35) - Python-Andockung analog _vorsorge_abzug.
@@ -415,9 +448,13 @@ def catala_gesamt(s: dict) -> int:
     if s.get("kinder_ganzjaehrig"):
         hinzu_kg = _kindergeld(year) * 12 * int(s["kinder_ganzjaehrig"])
     # § 10 Sonderausgaben: die abziehbare Altersvorsorge (p10_1_2, auf den params-HB
-    # gedeckelt) wird zum sonderausgaben-Wert addiert. Ohne Vorsorge-Input bleibt
-    # sonderausgaben unveraendert - die 62 Bestandsfaelle rechnen wie bisher.
-    sonder = int(s.get("sonderausgaben", 0)) + _vorsorge_abzug(s, year)
+    # gedeckelt) wird zum sonderausgaben-Wert addiert. § 10c-Floor (Sonderausgaben-
+    # Pauschbetrag 36/72): der Gesamt-Scope buendelt § 10c NICHT selbst (anders als der
+    # einzel/zusammen-Tarif), also bildet der Aufrufer den Guenstigervergleich. Bindet nur,
+    # wenn die tatsaechlichen SA (inkl. Vorsorge) unter dem Pauschbetrag liegen - die
+    # Bestandsfaelle mit SA >= Pauschbetrag rechnen unveraendert.
+    sonder = _sonderausgaben_final(
+        int(s.get("sonderausgaben", 0)) + _vorsorge_abzug(s, year), year, s.get("veranlagung"))
     scope = (E.festzusetzende_est_gesamt_zusammen if s.get("veranlagung") == "zusammen"
              else E.festzusetzende_est_gesamt)
     cls = (E.FestzusetzendeEstGesamtZusammenIn if s.get("veranlagung") == "zusammen"

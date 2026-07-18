@@ -1,0 +1,19 @@
+id: kombiniert_job_vermietung_2025_einzel
+beschreibung: "Kombiniert § 19 + § 21: Arbeitnehmer MIT Vermietung. § 19-Einkünfte 38770 (Bruttolohn 40000 − § 9a-Arbeitnehmer-Pauschbetrag 1230) + § 21-Vermietung 18770, Einzelveranlagung VZ 2025. Prüft die § 2-Abs.-3-Summierung ZWEIER Einkunftsarten in EINEM Gesamt-Scope und den § 10c-Pauschbetrag (36) auf Personen-Ebene -> zvE 57504 -> festzusetzende ESt 13452. (Der einkuenfte_nichtselbststaendig-Wert ist die § 9a-bereinigte Größe, die der einzel-Tarif als summe_der_einkuenfte liefert.)"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 38770
+  einkuenfte_vermietung: 18770
+
+erwartung:
+  festzusetzende_est: 13452
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 2 Nr. 2, Abs. 3 (Summe der Einkünfte), § 10c Satz 1, § 32a Abs. 1 EStG i.V.m. § 19, § 21 EStG, VZ 2025"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "Summe der Einkünfte"

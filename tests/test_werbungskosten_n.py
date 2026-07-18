@@ -143,3 +143,42 @@ def test_vermietung_verlust_moeglich():
     runner = _runner()
     assert runner.catala_vermietung_einkuenfte(
         {"einnahmen": 8000, "gebaeude_afa": 6000, "schuldzinsen": 4000}) == -2000
+
+
+# ---- Kombiniert § 19 + § 21: Arbeitnehmer MIT Vermietung (Konvergenz-Schritt) ----
+
+def test_einkuenfte_ns_accessor():
+    """catala_einkuenfte_nichtselbststaendig = summe_der_einkuenfte des einzel-Tarifs: Bruttolohn
+    minus WK, mindestens § 9a-Pauschbetrag 1230. Bruttolohn 0 -> 0 (reiner Vermieter unberührt)."""
+    runner = _runner()
+    ns = lambda bl, wk=0: runner.catala_einkuenfte_nichtselbststaendig(
+        {"veranlagungszeitraum": 2025, "bruttoarbeitslohn": bl, "werbungskosten": wk})
+    assert ns(40000) == 38770          # 40000 − 1230 (§ 9a bindet, WK 0)
+    assert ns(40000, 2156) == 37844    # WK 2156 > 1230 -> tatsächliche WK
+    assert ns(40000, 500) == 38770     # WK 500 < 1230 -> § 9a-Floor
+    assert ns(0) == 0                  # kein Job -> keine § 19-Einkünfte
+
+
+def _gesamt(runner, ns, vv):
+    return runner.catala_est({"gesamtfall": True, "veranlagungszeitraum": 2025,
+                              "veranlagung": "einzel",
+                              "einkuenfte_nichtselbststaendig": ns, "einkuenfte_vermietung": vv})
+
+
+def test_kombiniert_loss_offset_mindert_lohn():
+    """K2-KERN: der § 21-Verlust mindert nach § 2 Abs. 3 den § 19-Lohn — die kombinierte ESt ist
+    KLEINER als die reine § 19-ESt (Verlust NICHT verschluckt). Übersteigt der Verlust das
+    Gesamteinkommen, floort die ESt auf 0 (K2: keine Negativsteuer)."""
+    runner = _runner()
+    nur_19 = _gesamt(runner, 38770, 0)
+    mit_verlust = _gesamt(runner, 38770, -5000)
+    assert mit_verlust < nur_19, (mit_verlust, nur_19)     # 5388 < 6919
+    assert mit_verlust == 5388 and nur_19 == 6919
+    assert _gesamt(runner, 38770, -50000) == 0             # Verlust > Einkommen -> Floor 0
+
+
+def test_kombiniert_gewinn_summiert():
+    """Positiver § 21 addiert sich zum § 19-Lohn (§ 2 Abs. 3): kombiniert > reine § 19-ESt."""
+    runner = _runner()
+    assert _gesamt(runner, 38770, 18770) == 13452
+    assert _gesamt(runner, 38770, 18770) > _gesamt(runner, 38770, 0)

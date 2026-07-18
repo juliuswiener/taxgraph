@@ -1,0 +1,19 @@
+id: kombiniert_job_vermietungsverlust_2025_einzel
+beschreibung: "Kombiniert § 19 + § 21-VERLUST (K2-Kern des Loss-Offsets): Arbeitnehmer mit § 19-Einkünften 38770 (Bruttolohn 40000 − § 9a 1230) UND einem Vermietungsverlust −5000 (Werbungskosten > Einnahmen). Nach § 2 Abs. 3 mindert der § 21-Verlust den § 19-Lohn: Summe der Einkünfte 33770 statt 38770 -> festzusetzende ESt 5388 statt 6919 (nur § 19). Belegt, dass der Verlust NICHT verschluckt wird und NICHT zu Negativsteuer führt (der Floor greift erst, wenn der Verlust das Gesamteinkommen übersteigt). Verlustvortrag § 10d (ins Folgejahr) = benannter MVP-GAP, hier nicht modelliert."
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 38770
+  einkuenfte_vermietung: -5000
+
+erwartung:
+  festzusetzende_est: 5388
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 (Summe der Einkünfte, horizontaler/vertikaler Verlustausgleich), § 10c Satz 1, § 32a Abs. 1 EStG i.V.m. § 19, § 21 Abs. 1 EStG, VZ 2025"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "Summe der Einkünfte"

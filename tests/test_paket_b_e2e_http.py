@@ -510,10 +510,16 @@ def test_an_gesamt_zusammen_vor_guard(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "partner_vor_offen"
 
 
-def _vv_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False):
-    """vv_gesamt-Kegel (reiner § 21): Einnahmen/WK + veranlagung + Flags (kein_vuv=false = V+V vorhanden)."""
+def _vv_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0,
+             ep_tage=0, ep_km=0, ep_kfz=False):
+    """vv_gesamt-Kegel: § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + Entfernungspauschale) für den
+    kombinierten Fall — Bruttolohn 0 = reiner Vermieter (bestätigte Null) — + veranlagung + Flags
+    (kein_vuv=false = V+V vorhanden)."""
     return [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa), ("vv_schuldzinsen", schuldzinsen),
             ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("veranlagung", "einzel"),
+            ("bruttoarbeitslohn", bruttolohn),
+            ("ep_arbeitstage", ep_tage), ("ep_entfernung_km", ep_km),
+            ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", ep_kfz),
             ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", kein_vuv), ("kein_sonstige", True)]
 
 
@@ -526,14 +532,15 @@ def _vv_anlegen(base, fid, kegel):
 
 
 def test_vv_gesamt_vermieter(base):
-    """Front V+V: reiner Vermieter-Fall. § 21-Einkünfte 30000 (Einnahmen − WK) → catala_gesamt →
-    festzusetzende_est 4303 = 430300 Cent (dev-2s vermieter_only-Golden)."""
+    """Front V+V: reiner Vermieter-Fall (Bruttolohn = bestätigte Null). § 21-Einkünfte 30000
+    (Einnahmen − WK) → catala_gesamt → festzusetzende_est 4293 = 429300 Cent (§ 10c-Pauschbetrag 36
+    abgezogen; vermieter_only-Golden)."""
     catala = _catala_da()
-    _vv_anlegen(base, "vv", _vv_kegel(3000000))   # 30000 € in Cent
+    _vv_anlegen(base, "vv", _vv_kegel(3000000))   # 30000 € in Cent, kein Job
     st, erg = _req(base, "GET", "/fall/vv/ergebnis")
     _val("ergebnis", erg)
     if catala:
-        assert erg["zahl_cent"] == 430300 and erg["grund"] == "bestaetigt"
+        assert erg["zahl_cent"] == 429300 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 
@@ -556,6 +563,47 @@ def test_vv_gesamt_flag_widerspruch(base):
     _vv_anlegen(base, "vvw", _vv_kegel(3000000, kein_vuv=True))
     st, erg = _req(base, "GET", "/fall/vvw/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "flag_konsistenz_offen"
+
+
+def test_kombiniert_job_und_vermietung(base):
+    """Konvergenz § 19 + § 21: Arbeitnehmer (Bruttolohn 40000, kein Pendel-WK → § 19-Einkünfte 38770)
+    MIT Vermietung 18770 → catala_gesamt summiert (§ 2 Abs. 3) → festzusetzende_est 13452 = 1345200 Cent."""
+    catala = _catala_da()
+    _vv_anlegen(base, "kjv", _vv_kegel(1877000, bruttolohn=4000000))   # vv 18770 €, Job 40000 € (Cent)
+    st, erg = _req(base, "GET", "/fall/kjv/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1345200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_kombiniert_verlust_mindert_lohn(base):
+    """K2-KERN: § 21-Verlust (8000 − 6000 − 7000 = −5000) mindert nach § 2 Abs. 3 den § 19-Lohn
+    (Einkünfte 38770) → festzusetzende_est 5388 = 538800 Cent, KLEINER als die reine § 19-ESt (6919).
+    Der Verlust wird verrechnet, NICHT verschluckt — und floort nicht auf Negativsteuer."""
+    catala = _catala_da()
+    _vv_anlegen(base, "kvl", _vv_kegel(800000, afa=600000, schuldzinsen=700000, bruttolohn=4000000))
+    st, erg = _req(base, "GET", "/fall/kvl/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 538800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_kombiniert_mit_pendel_wk(base):
+    """Kombiniert mit § 19-Werbungskosten: Job 40000 + Entfernungspauschale (220 Tage, 30 km, Kfz
+    = 2156 → § 19-Einkünfte 37844 statt 38770) + Vermietung 18770 → festzusetzende_est 13101 =
+    1310100 Cent, KLEINER als ohne Pendel-WK (13452). Belegt, dass die EP-Slots (ep_arbeitstage →
+    arbeitstage …) im vv_gesamt-Kegel korrekt in die § 19-WK durchgereicht werden."""
+    catala = _catala_da()
+    _vv_anlegen(base, "kpw", _vv_kegel(1877000, bruttolohn=4000000,
+                                       ep_tage=220, ep_km=30, ep_kfz=True))
+    st, erg = _req(base, "GET", "/fall/kpw/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 1310100 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
 
 
 def test_graph_uebersicht(base):
