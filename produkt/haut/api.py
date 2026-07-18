@@ -35,6 +35,7 @@ import traverser as TR      # noqa: E402
 import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
 import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche, dev-2)
+import partner_check as PC  # noqa: E402  (Partner-Behinderungsfeld↔Zusammenveranlagung, dev-2)
 
 FAELLE = os.path.join(HERE, "faelle")
 
@@ -343,6 +344,11 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None):
         v = felder.get(f)
         w = v and v.get("wert")
         return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
+    # Partner-Behinderungsfeld (§ 33b Person B) ohne Zusammenveranlagung: benannte Inkonsistenz
+    # (dev-2s partner_check, Spiegel zu partner_kegel_offen). Universell VOR der Scheiben-Verzweigung —
+    # feuert, sobald eine Scheibe die rentner_*_partner-Felder führt (aktuell keine → inert, forward-ready).
+    if PC.partner_ohne_zusammen(felder):
+        return "partner_konsistenz_offen"
     if cfg and cfg.get("vv"):
         # V+V-Ring (§ 21): Flag↔Einkunftsart-Widerspruch (kein_vuv=true + vv_einnahmen>0 bestätigt)
         # surfacen — K2, keine still übergangene Einkunftsart (dev-2s flag_check).
