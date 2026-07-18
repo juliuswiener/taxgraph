@@ -1,0 +1,19 @@
+id: kapital_abgeltung_2025_einzel
+beschreibung: "§ 32d Abs. 1/3 Abgeltungsteuer-Integration: Arbeitnehmer (§ 19 Einkünfte 60000) mit Kapitalerträgen, deren gesonderte 25-%-Abgeltungsteuer 2250 beträgt (= 25 % auf 9000 = Kapitalerträge 10000 minus Sparer-Pauschbetrag 1000, § 20 Abs. 9). Prüft, dass catala_gesamt die gesonderte Kapitalsteuer (steuer_kapital_gesondert) zur tariflichen ESt ADDIERT (§ 32d Abs. 3 S. 2). Die Günstigerprüfung greift NICHT (Grenzsteuersatz auf 9000 ~ 3651 > 2250 Abgeltung), also bleibt die 25-%-Abgeltung. Der gesonderte Steuerbetrag kommt aus dem § 32d-Accessor (dev-1); dieser Golden testet die catala_gesamt-Integration."
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 60000
+  steuer_kapital_gesondert: 2250
+
+erwartung:
+  festzusetzende_est: 16651
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 32d Abs. 1 S. 1, Abs. 3 S. 2 EStG i.V.m. § 20 Abs. 9, § 32a EStG (Grundtarif VZ 2025)"
+  datei: "sources/gesetze-im-internet/estg_p32d_2026-07-13.txt"
+  zitatanker: "erhöht sich die tarifliche Einkommensteuer um den nach Absatz 1 ermittelten Betrag"
