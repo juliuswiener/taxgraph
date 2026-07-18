@@ -887,6 +887,111 @@ def test_gesamt_zusammen_kapital_semantik_partner(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "kapital_semantik_offen"
 
 
+def _gesamt_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechnung_unbar=None,
+                    spende=0, agb=0, kinder=0, kist_gezahlt=0, kist_erstattet=0):
+    """Postet die OPTIONALEN gefalteten Sonder-Abzugs-Felder (Weg ii) auf einen gesamt-Fall (cent, kinder=int).
+    hh_rechnung_unbar nur wenn nicht None. Nicht im Pflicht-Kegel — der Ring rechnet sie additiv."""
+    paare = [("hh_minijob_aufwendungen", minijob), ("hh_dienstleistungen", dienstleistung),
+             ("hh_handwerker_arbeitskosten", handwerker), ("spenden_betrag", spende),
+             ("agb_aufwendungen", agb), ("fam_anzahl_kinder", kinder),
+             ("kist_gezahlt", kist_gezahlt), ("kist_erstattet", kist_erstattet)]
+    if rechnung_unbar is not None:
+        paare.append(("hh_rechnung_unbar", rechnung_unbar))
+    for feld, wert in paare:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
+        assert st == 201
+
+
+def test_gesamt_faltung_komposition(base):
+    """Weg (ii) KOMPOSITION (Julius-Entscheid): §19 (Lohn 60000) + §21 (Vermietung 20000) + §35a (Handwerker
+    10000, rechnung_unbar=true → 1200) + §10b (Spende 3000) + §33 (agB 5000, 0 Kinder → 150) in EINEM Bescheid.
+    GdE 78770 (ECHT = ns 58770 + vv 20000, NICHT §19-only) → festzusetzende_est 19648 = 1964800 Cent. Belegt:
+    die Sonder-Abzüge falten additiv auf die volle Einkunfts-Kombination — in den Standalone-Sonder-Scheiben unmöglich."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "fk", _gesamt_kegel(2000000, bruttolohn=6000000))   # §21 20000 + §19 60000
+    _gesamt_abzuege(base, "fk", handwerker=1000000, rechnung_unbar=True, spende=300000, agb=500000)
+    st, erg = _req(base, "GET", "/fall/fk/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1964800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_faltung_gde_echte_basis(base):
+    """Weg (ii) KORREKTHEITS-GEWINN: §19 (Lohn 40000 → 38770) + §21 (Vermietung 30000) → GdE 68770. Spende 15000
+    → §10b-Deckel auf die ECHTE GdE (20 % von 68770 = 13754), NICHT die §19-only-GdE (die nur 20 % von 38770 =
+    7754 zuließe) → festzusetzende_est 12515 = 1251500 Cent. Belegt den GdE-Basis-Fehler-Fix der Faltung."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "fg", _gesamt_kegel(3000000, bruttolohn=4000000))   # §21 30000 + §19 40000
+    _gesamt_abzuege(base, "fg", spende=1500000)
+    st, erg = _req(base, "GET", "/fall/fg/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1251500 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_faltung_rechnung_unbar_carry(base):
+    """Weg (ii) K2-Guard trägt mit: Handwerker > 0 im gefalteten gesamt-Ring OHNE hh_rechnung_unbar →
+    rechnung_unbar_offen (§35a Abs.5 S.3, feld-präsenz-getrieben statt scheiben-flag-gated)."""
+    _gesamt_anlegen(base, "fru", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True))
+    _gesamt_abzuege(base, "fru", handwerker=1000000)   # kein rechnung_unbar
+    st, erg = _req(base, "GET", "/fall/fru/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "rechnung_unbar_offen"
+
+
+def test_gesamt_faltung_erstattungsueberhang_carry(base):
+    """Weg (ii) K2-Guard trägt mit: KiSt erstattet > gezahlt im gefalteten gesamt-Ring → erstattungsueberhang_offen
+    (§10 Abs.4b, feld-präsenz-getrieben)."""
+    _gesamt_anlegen(base, "feu", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True))
+    _gesamt_abzuege(base, "feu", kist_gezahlt=20000, kist_erstattet=120000)
+    st, erg = _req(base, "GET", "/fall/feu/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "erstattungsueberhang_offen"
+
+
+def test_gesamt_faltung_35a_est_floor(base):
+    """Weg (ii) K2 §35a-ESt-Deckelung im gefalteten Ring: niedriges Einkommen (Lohn 14000, ESt ~93) + Handwerker
+    10000 (§35a 1200 > verfügbare ESt) → festzusetzende_est auf 0 gefloort (nicht negativ). p32a wirksame_
+    ermaessigung deckelt regel-seitig, auch im Fold. (Ersetzt die Standalone-haushalt-Floor-Coverage.)"""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "ff", _gesamt_kegel(0, bruttolohn=1400000, kein_vuv=True))
+    _gesamt_abzuege(base, "ff", handwerker=1000000, rechnung_unbar=True)
+    st, erg = _req(base, "GET", "/fall/ff/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 0 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_faltung_rechnung_unbar_false_nullt_abs23(base):
+    """Weg (ii) §35a Abs.5 S.3 im Fold: rechnung_unbar=false → Abs.2/3 (Handwerker) 0, NUR Minijob (510) zählt →
+    festzusetzende_est 13414 = 1341400 Cent (statt mit Beleg niedriger)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "frf", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True))
+    _gesamt_abzuege(base, "frf", minijob=280000, handwerker=1000000, rechnung_unbar=False)
+    st, erg = _req(base, "GET", "/fall/frf/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 1341400 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_faltung_agb_kinder_staffel(base):
+    """Weg (ii) §33 Abs.3 Staffelung im Fold: Lohn 60000 + agB 5000 + 2 Kinder → niedrigere zumutbare Belastung
+    → höherer agB-Abzug (3313) → festzusetzende_est 12666 = 1266600 Cent. fam_anzahl_kinder REGEL-seitig in die
+    zumutbar-Staffel. (Ersetzt die Standalone-agb-Kinder-Coverage.)"""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "fak", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True))
+    _gesamt_abzuege(base, "fak", agb=500000, kinder=2)
+    st, erg = _req(base, "GET", "/fall/fak/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 1266600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2025, alter=0,
                    gdb=0, hilflos=False, pflegegrad=0, gepflegter_hilflos=False, hinterbliebenen=False,
                    veranlagung="einzel", rentenfreibetrag=None, gdb_partner=0, hilflos_partner=False,

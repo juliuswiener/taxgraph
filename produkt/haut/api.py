@@ -105,20 +105,16 @@ GESAMT_PARTNER_19 = ("bruttoarbeitslohn_partner", "person_b_idnr")
 KAP_ERTRAEGE_PARTNER = "kap_kapitalertraege_partner"
 KAP_TOEPFE_PARTNER = ("kap_gewinn_aktien_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner")
 GESAMT_PARTNER_KAP = (KAP_ERTRAEGE_PARTNER,) + KAP_TOEPFE_PARTNER
-# Haushalt-Ring (§ 35a Haushaltsnahe + § 10b Spenden, charge29-Promotion). §19-Basis + 3 §35a-Töpfe (Roh-
-# Beträge, cent) + Spende (§10b, cent). hh_rechnung_unbar = conditional-mandatory (Abs. 5 S. 3, NUR bei
-# Dienstleistung/Handwerker > 0, NICHT Minijob) → NICHT im Pflicht-Kegel, der Guard erzwingt es bedingt.
+# § 35a-Töpfe (charge29): Abs. 2/3 (Dienstleistung/Handwerker) verlangen rechnung_unbar (Abs. 5 S. 3), Abs. 1
+# Minijob nicht. Bausteine der gefalteten Sonder-Abzüge (die Standalone-haushalt/agb-Scheiben sind deprecated).
 HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")   # Abs. 2/3 (rechnung_unbar-Pflicht)
 HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23              # + Abs. 1 Minijob
-HAUSHALT_KEGEL = (("bruttoarbeitslohn",) + HAUSHALT_35A + ("spenden_betrag", "veranlagung") + AN_GESAMT_FLAGS)
-HAUSHALT_FELDER = HAUSHALT_KEGEL + ("hh_rechnung_unbar",)
-# agB-Ring (§ 33 agB + § 10 KiSt, charge29/#8). §19-Basis + agB-Aufwendungen + fam_anzahl_kinder (für die
-# zumutbare-Belastung-Staffelung) + KiSt gezahlt/erstattet. splitting wird aus veranlagung abgeleitet (kein
-# eigenes Feld). ALLE im Pflicht-Kegel (bestätigte Null je nicht zutreffend). typ:int fam_anzahl_kinder (kein cent).
-AGB_KIST = ("kist_gezahlt", "kist_erstattet")
-AGB_KEGEL = (("bruttoarbeitslohn", "agb_aufwendungen", "fam_anzahl_kinder")
-             + AGB_KIST + ("veranlagung",) + AN_GESAMT_FLAGS)
-AGB_FELDER = AGB_KEGEL
+AGB_KIST = ("kist_gezahlt", "kist_erstattet")                                # § 10 KiSt gezahlt/erstattet
+# Gefaltete Sonder-Abzüge (Weg ii): §35a + §10b + §33 + §10-KiSt als OPTIONALE Felder im gesamt-Ring
+# (NICHT im Pflicht-Kegel — absent → Abzug 0, fail-SAFE). Der gesamt-slot_fn rechnet sie additiv auf JEDE
+# Einkunfts-Kombi; die K2-Sperren (rechnung_unbar/erstattungsueberhang) fängt der Guard feld-präsenz-getrieben.
+GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
+                  "agb_aufwendungen", "fam_anzahl_kinder") + AGB_KIST)
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -165,9 +161,10 @@ SCHEIBEN = {
     # (kapital_semantik_offen); zusammen+§19 (Person-B); §22-Rente = weitere Summanden.
     "gesamt": {
         "felder": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
-                   + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP),
-        # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder); der Guard erzwingt den Person-B-Kegel
-        # nur bei veranlagung=zusammen (sonst zögen die ungesetzten Partner-Felder das Intervall auf None).
+                   + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP
+                   + GESAMT_ABZUEGE),   # Weg ii: Sonder-Abzüge OPTIONAL gefaltet (nicht im Pflicht-Kegel)
+        # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
+        # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0).
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
                   + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
         "felder_datei": None,
@@ -198,40 +195,10 @@ SCHEIBEN = {
         "multi_rente": "rente",    # Multi-Rente-§22-Σ (#6): der Ring summiert ALLE rente-Instanzen (aa/bb je Rente)
         "fremd_arten": ("kein_gewinn", "kein_kap", "kein_vuv"),
     },
-    # Haushalt-Ring (§ 35a Haushaltsnahe + § 10b Spenden, charge29): §19-Basis (AN) + §35a-Steuerermäßigung
-    # (Roh → p32a steuerermaessigungen, dort auf verfügbare ESt gefloort) + §10b-Spendenabzug (Roh → p32a
-    # sonderausgaben, GdE = §19-Einkünfte). fremd_arten = ALLE 4 (reiner AN-Fall — kein Gewinn/Kap/V+V/§22).
-    # NAMED GAPS (charge29-Nachträge): Person-B (§35a/§10b bei zusammen, GdE=A+B); §35a Abs. 5 S. 4 (zwei
-    # Alleinstehende) / Abs. 2 S. 2 Pflege; §10b 4-‰-Umsatz-Deckel + Großspenden-Vortrag; §35a EU-EWR/keine-
-    # Förderung als MVP-Annahme (Deutschland-Fall, nicht in dieser Scheibe erfragt); agB §33 + KiSt = eigene Kachel.
-    "haushalt_gesamt": {
-        "felder": HAUSHALT_FELDER,
-        "kegel": HAUSHALT_KEGEL,   # hh_rechnung_unbar NICHT im Pflicht-Kegel (conditional-mandatory via Guard)
-        "felder_datei": None,
-        "gesamt_ring": "festzusetzende_est_haushalt",
-        "teil_ringe": [],
-        "guard": True,
-        "gesamt_guard": True,
-        "haushalt": True,          # aktiviert die § 35a-rechnung_unbar-conditional-mandatory-Prüfung (K2)
-        "fremd_arten": ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige"),
-    },
-    # agB-Ring (§ 33 außergewöhnliche Belastungen + § 10 KiSt, charge29/#8): §19-Basis + agB-Abzug (agB minus
-    # zumutbare Belastung § 33 Abs. 3, Staffelung NUR regel-seitig über fam_anzahl_kinder/splitting) → p32a
-    # aussergewoehnliche_belastungen + KiSt-Abzug (gezahlt − erstattet) → p32a sonderausgaben (additiv). splitting
-    # = veranlagung==zusammen (Einverdiener-Ehepaar korrekt; Dual-Verdiener Person-B = Nachtrag wie §35a/§10b).
-    # NAMED GAPS: KiSt-Erstattungsüberhang (§10 Abs.4b, Guard fail-closed); agB-Zwangsläufigkeit/Notwendigkeit als
-    # MVP-Annahme (nicht erfragt, Geltungsbedingung); Dual-Verdiener-Person-B.
-    "agb_gesamt": {
-        "felder": AGB_FELDER,
-        "kegel": AGB_KEGEL,
-        "felder_datei": None,
-        "gesamt_ring": "festzusetzende_est_agb",
-        "teil_ringe": [],
-        "guard": True,
-        "gesamt_guard": True,
-        "agb": True,               # aktiviert den § 10 Abs. 4b KiSt-Erstattungsüberhang-Guard (K2)
-        "fremd_arten": ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige"),
-    },
+    # DEPRECATED (Weg ii, Stage 1b): die Standalone-Scheiben haushalt_gesamt (§35a+§10b) + agb_gesamt (§33+§10-
+    # KiSt) sind ENTFERNT — ihre Abzüge sind in den EINEN gesamt-Ring gefaltet (GESAMT_ABZUEGE, additiv auf JEDE
+    # Einkunfts-Kombi, ECHTE GdE via catala_gesamt_gde). Die Accessoren (catala_p35a/p10b/p33/p10_kist/zumutbar)
+    # BLEIBEN — der gesamt-slot_fn ruft sie. Grund: sonst zwei GdE-Wahrheiten (Standalone §19-only vs Fold echt).
 }
 
 _FALL_RE = re.compile(r"[A-Za-z0-9_-]{1,64}")
@@ -450,7 +417,31 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "veranlagungszeitraum": vz,
                     "bruttoarbeitslohn": _c("bruttoarbeitslohn_partner") // 100, "werbungskosten": 0})
             g["einkuenfte_nichtselbststaendig"] = ns
-            est_ohne = runner.catala_est(g)     # § 19 + § 21, KEIN Kapital (est_regulaer_ohne_kap)
+            # Sonder-Abzüge (Weg ii, Faltung): §35a → steuerermaessigungen, §10b + §10-KiSt → sonderausgaben,
+            # §33-agB → aussergewoehnliche_belastungen — ADDITIV auf JEDE Einkunfts-Kombi (§19+§21+§20 zusammen
+            # MIT §35a/§10b/§33 in EINEM Bescheid). GdE (§2 Abs.3, ECHT = ns+vv, steht VOR den Abzügen fest §2
+            # Abs.3-vor-Abs.4 → kein Zirkel) = Basis der §10b-20%-Deckelung + §33-zumutbar-Staffel (Korrektheit
+            # vs. §19-only der Sonder-Scheiben). Absente Abzugs-Felder → 0 (fail-SAFE: über-, nie unterbesteuert).
+            # rechnung_unbar=false nullt §35a Abs.2/3 (Minijob unberührt); fam_anzahl_kinder/splitting → zumutbar.
+            # Kapital-in-GdE (§20 Günstiger tariflich) ist bewusst NICHT in der §10b/§33-GdE (Stage-1-Nachtrag;
+            # Abgeltung ist ohnehin §2 Abs.5b-ausgeschlossen). Die K2-Sperren fängt der Guard vorher.
+            gde = runner.catala_gesamt_gde({"veranlagungszeitraum": vz, "veranlagung": g["veranlagung"],
+                                            "einkuenfte_nichtselbststaendig": ns, "einkuenfte_vermietung": vv})
+            abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
+            g["steuerermaessigungen"] = runner.catala_p35a_haushaltsnahe({
+                "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
+                "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
+                "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
+            g["sonderausgaben"] = (runner.catala_p10b_spenden({
+                    "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": gde})
+                + runner.catala_p10_kist({
+                    "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
+                    "erstattete_kirchensteuer": _c("kist_erstattet") // 100}))
+            g["aussergewoehnliche_belastungen"] = runner.catala_p33_agb({
+                "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
+                "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
+                "splitting": g["veranlagung"] == "zusammen"})
+            est_ohne = runner.catala_est(g)     # § 19 + § 21 + Abzüge, KEIN Kapital (est_regulaer_ohne_kap)
             # Kapital § 20/§ 32d: SINGLE-SOURCE (Instructor-Q1) — E0121709-Aggregat XOR Verlust-Töpfe;
             # Co-Okkurrenz sperrt der Guard (kapital_semantik_offen). Töpfe (§ 20 Abs. 6, per-Topf-Floor)
             # → verrechnete; sonst das Aggregat. Dann Sparer-PB (§ 20 Abs. 9). Kapitaleinkünfte ≤ 0 ->
@@ -562,81 +553,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "aussergewoehnliche_belastungen": ausserg})
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
-    if quantitaet == "festzusetzende_est_haushalt":   # § 35a Haushaltsnahe + § 10b Spenden via catala_gesamt
-        try:
-            import runner  # noqa: F401
-        except Exception:
-            return None
-        f = felder or {}
-
-        def _c(fid):
-            v = f.get(fid, {}).get("wert")
-            return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
-
-        def slot_fn(slots: dict) -> int:
-            # § 19-Basis → einkuenfte_nichtselbststaendig (§9a-bereinigt). GdE (reiner AN-Fall, kein §24a/§24b)
-            # = diese §19-Einkünfte → Basis für den § 10b-20%-Deckel. Naht-CENT → EURO.
-            ns = runner.catala_einkuenfte_nichtselbststaendig({
-                "veranlagungszeitraum": vz,
-                "bruttoarbeitslohn": _c("bruttoarbeitslohn") // 100, "werbungskosten": 0})
-            # § 35a Roh-Ermäßigung (3 Töpfe, eigene Deckel). rechnung_unbar == false → Abs. 2/3 (Dienstleistung/
-            # Handwerker) justiziert 0 (Abs. 5 S. 3), Minijob (Abs. 1) unberührt; unbeantwortet fängt der Guard
-            # VORHER (rechnung_unbar_offen) — hier kommt nur der rechenbare Fall an (true ODER kein Abs2/3).
-            abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
-            p35a = runner.catala_p35a_haushaltsnahe({
-                "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
-                "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
-                "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
-            # § 10b Roh-Abzug: min(Zuwendungen; 20 % GdE). Speist die Sonderausgaben (additiv; catala_gesamt
-            # floort § 10c-Pauschbetrag via _sonderausgaben_final). § 35a Roh → steuerermaessigungen (p32a
-            # deckelt auf verfügbare ESt, wirksame_ermaessigung — kein Frontend-Clamp, kein Negativ-Bescheid).
-            p10b = runner.catala_p10b_spenden({
-                "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": ns})
-            return runner.catala_gesamt({
-                "veranlagungszeitraum": vz,
-                "veranlagung": slots.get("veranlagung", "einzel"),
-                "einkuenfte_nichtselbststaendig": ns,
-                "sonderausgaben": p10b,
-                "steuerermaessigungen": p35a})
-        return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
-
-    if quantitaet == "festzusetzende_est_agb":   # § 33 agB + § 10 KiSt via catala_gesamt
-        try:
-            import runner  # noqa: F401
-        except Exception:
-            return None
-        f = felder or {}
-
-        def _c(fid):
-            v = f.get(fid, {}).get("wert")
-            return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
-
-        def slot_fn(slots: dict) -> int:
-            # § 19-Basis → einkuenfte_nichtselbststaendig (§9a-bereinigt) = GdE (reiner AN-Fall, kein §24a/§24b).
-            # splitting aus veranlagung (Einverdiener-Ehepaar → Splittingtarif + Splitting-zumutbar-Staffel).
-            ns = runner.catala_einkuenfte_nichtselbststaendig({
-                "veranlagungszeitraum": vz,
-                "bruttoarbeitslohn": _c("bruttoarbeitslohn") // 100, "werbungskosten": 0})
-            splitting = f.get("veranlagung", {}).get("wert") == "zusammen"
-            # § 33 Abs. 1/3: agB-Abzug = agB-Aufwendungen − zumutbare Belastung (Staffelung REGEL-seitig über
-            # anzahl_kinder/splitting; NIE Frontend-Rechnung). fam_anzahl_kinder ist int (kein cent). Roh →
-            # aussergewoehnliche_belastungen (p32a § 2 Abs. 4). § 10 KiSt: gezahlt − erstattet → sonderausgaben
-            # (additiv; _sonderausgaben_final floort § 10c-Pauschbetrag). Erstattungsüberhang sperrt der Guard.
-            agb = runner.catala_p33_agb({
-                "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
-                "gesamtbetrag_der_einkuenfte": ns,
-                "anzahl_kinder": _c("fam_anzahl_kinder"), "splitting": splitting})
-            kist = runner.catala_p10_kist({
-                "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
-                "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
-            return runner.catala_gesamt({
-                "veranlagungszeitraum": vz,
-                "veranlagung": slots.get("veranlagung", "einzel"),
-                "einkuenfte_nichtselbststaendig": ns,
-                "aussergewoehnliche_belastungen": agb,
-                "sonderausgaben": kist})
-        return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
-
+    # festzusetzende_est_haushalt (§35a+§10b) + festzusetzende_est_agb (§33+§10-KiSt) ENTFERNT (Weg ii, Stage 1b):
+    # ihre Abzüge sind in den gesamt-Ring gefaltet (siehe festzusetzende_est_gesamt slot_fn — GESAMT_ABZUEGE).
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
 
 
@@ -737,18 +655,19 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # ODER Handwerker (Abs. 2/3) > 0 — Minijob (Abs. 1) verlangt keine unbare Zahlung. Unbeantwortet
         # (nicht bestätigt) → rechnung_unbar_offen (kein Abs2/3-Abzug ohne Beleg-/Überweisungsnachweis);
         # explizit false ist ANTWORT (Ring rechenbar, die slot_fn nullt Abs. 2/3), nur UNSET sperrt.
-        if cfg.get("haushalt") and (_positiv("hh_dienstleistungen") or _positiv("hh_handwerker_arbeitskosten")):
+        # Feld-präsenz-getrieben (gilt für JEDE gesamt_guard-Scheibe, die diese Felder führt — haushalt/agb UND
+        # der gefaltete gesamt-Ring, Weg ii). Scheiben ohne die Felder: _positiv/_num liefern absent→False/0.
+        if _positiv("hh_dienstleistungen") or _positiv("hh_handwerker_arbeitskosten"):
             if (felder.get("hh_rechnung_unbar") or {}).get("zustand") != "bestaetigt":
                 return "rechnung_unbar_offen"
         # § 10 Abs. 4b KiSt-Erstattungsüberhang (K2, #8): erstattete > gezahlte Kirchensteuer → fail-closed. Der
         # abziehbare Teil wäre 0, ABER die Überhang-Hinzurechnung zum GdE (§ 10 Abs. 4b S. 3) ist NICHT
         # materialisiert → ein stiller Abzug 0 würde unterbesteuern. Benannter Nachtrag → erstattungsueberhang_offen.
-        if cfg.get("agb"):
-            def _num(fid):
-                w = (felder.get(fid) or {}).get("wert")
-                return w if isinstance(w, (int, float)) and not isinstance(w, bool) else 0
-            if _num("kist_erstattet") > _num("kist_gezahlt"):
-                return "erstattungsueberhang_offen"
+        def _num(fid):
+            w = (felder.get(fid) or {}).get("wert")
+            return w if isinstance(w, (int, float)) and not isinstance(w, bool) else 0
+        if _num("kist_erstattet") > _num("kist_gezahlt"):
+            return "erstattungsueberhang_offen"
         # fremd_arten = Arten, die DIESE Scheibe NICHT rechnet → bestätigt-false (Nutzer HAT die Art) sperrt
         # (Stufe 2). Die von der Scheibe GERECHNETEN Arten stehen NICHT in fremd_arten (kein Fehl-Sperr).
         if any(felder.get(fl, {}).get("wert") is False for fl in cfg.get("fremd_arten", ())):

@@ -657,8 +657,9 @@ def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text.translate(_UMLAUT).lower()).strip()
 
 
-def catala_gesamt(s: dict) -> int:
-    """Verallgemeinerte § 2-Veranlagung: alle Andockstellen als money-Eingaben."""
+def _gesamt_out(s: dict):
+    """Baut den FestzusetzendeEstGesamt(-Zusammen)-Scope-Output aus dem Sachverhalt (EINE Wahrheit für
+    catala_gesamt UND den GdE-Zwilling catala_gesamt_gde). Reine Andockstellen-Money-Übersetzung."""
     year = s["veranlagungszeitraum"]
     def m(k):
         return Money(f"{int(s.get(k, 0))}.00")
@@ -700,7 +701,20 @@ def catala_gesamt(s: dict) -> int:
         tarif_modifiziert_in=Bool(s.get("tarif_modifiziert", False)),
         tarifliche_est_modifiziert_in=m("tarifliche_est_modifiziert"),
         veranlagungszeitraum_in=VZ_ENUM[year]))
-    return int(out.festzusetzende_est) // 100
+    return out
+
+
+def catala_gesamt(s: dict) -> int:
+    """Verallgemeinerte § 2-Veranlagung → festzusetzende Einkommensteuer, EURO."""
+    return int(_gesamt_out(s).festzusetzende_est) // 100
+
+
+def catala_gesamt_gde(s: dict) -> int:
+    """§ 2 Abs. 3 Gesamtbetrag der Einkünfte (ECHT: alle Einkunftsarten − § 24a/§ 24b), EURO — die Basis
+    für die § 10b-20%-Deckelung und die § 33-zumutbar-Staffel im gefalteten gesamt-Ring (statt der früheren
+    §19-only-GdE der Sonder-Scheiben). Steht VOR den Abzügen fest (§ 2 Abs. 3 vor Abs. 4) → keine Zirkularität.
+    Sonderausgaben/agB/Ermäßigungen im Sachverhalt beeinflussen den GdE NICHT (erst Einkommen/zvE)."""
+    return int(_gesamt_out(s).gesamtbetrag_der_einkuenfte) // 100
 
 
 def _p35c_ermaessigung_cent(s: dict) -> int:
