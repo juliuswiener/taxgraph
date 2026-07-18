@@ -1,0 +1,63 @@
+# § 24a EStG — Altersentlastungsbetrag (Prozentsatz × Bemessung, gedeckelt)
+
+> Module Altersentlastungsbetrag
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p24a_altersentlastungsbetrag.json`
+(module Altersentlastungsbetrag, verified_bedingt, faithful=false MIT abweichungen=[] — GETRIAGED-Artefakt,
+kein echter Defekt, s. Triage-Befund im Freeze). Die scope-Logik unten ist BYTE-GLEICH aus `catala_a`;
+nur Module-Header + §-Zitatanker + Grenzfall-Seeds ergänzt. Kein Pipeline-Re-Run.
+
+Zitatanker § 24a EStG (`sources/gesetze-im-internet/estg_p24a_2026-07-13.txt`, typ gesetz): der nach dem
+"Prozentsatz ermittelter Betrag des Arbeitslohns und der" positiven Einkünfte, bis zu einem Höchstbetrag im
+Kalenderjahr. `prozentsatz` + `hoechstbetrag` kommen aus der KOHORTENTABELLE (Jahr der Vollendung des 64.
+Lebensjahres) = getriagte Geltungsbedingung, hier EINGABE (Andockung, dev-1/Integration); die Bemessung
+(arbeitslohn + positive andere Einkünfte, nach Ausschlüssen) ebenso. Reine Teilregel.
+
+```catala
+declaration scope Altersentlastungsbetrag:
+  input arbeitslohn content money
+  input positive_andere_einkuenfte content money
+  input prozentsatz content decimal
+  input hoechstbetrag content money
+  output altersentlastungsbetrag content money
+
+scope Altersentlastungsbetrag:
+  definition altersentlastungsbetrag equals
+    let bemessungsgrundlage equals arbeitslohn + positive_andere_einkuenfte in
+    let roh_betrag equals (prozentsatz / 100.0) * bemessungsgrundlage in
+    if roh_betrag > hoechstbetrag then hoechstbetrag else roh_betrag
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestUnterHoechstbetrag:
+  # Bemessung 2000+1000=3000, Prozentsatz 20 % -> 600 < Höchstbetrag 760 -> 600.
+  internal r content Altersentlastungsbetrag
+  output g content money
+scope TestUnterHoechstbetrag:
+  definition r equals output of Altersentlastungsbetrag with {
+    -- arbeitslohn: $2,000.00
+    -- positive_andere_einkuenfte: $1,000.00
+    -- prozentsatz: 20.0
+    -- hoechstbetrag: $760.00 }
+  definition g equals r.altersentlastungsbetrag
+  assertion g = $600.00
+```
+
+```catala
+#[test]
+declaration scope TestAmHoechstbetrag:
+  # Bemessung 5000, Prozentsatz 20 % -> 1000 > Höchstbetrag 760 -> auf 760 gedeckelt.
+  internal r content Altersentlastungsbetrag
+  output g content money
+scope TestAmHoechstbetrag:
+  definition r equals output of Altersentlastungsbetrag with {
+    -- arbeitslohn: $5,000.00
+    -- positive_andere_einkuenfte: $0.00
+    -- prozentsatz: 20.0
+    -- hoechstbetrag: $760.00 }
+  definition g equals r.altersentlastungsbetrag
+  assertion g = $760.00
+```

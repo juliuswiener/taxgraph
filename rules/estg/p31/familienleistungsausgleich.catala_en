@@ -1,0 +1,69 @@
+# § 31 EStG — Familienleistungsausgleich: Günstigerprüfung Kinderfreibetrag vs Kindergeld
+
+> Module Familienleistungsausgleich
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p31_familienleistungsausgleich.json`
+(module Familienleistungsausgleich, verified_bedingt, faithful=True, sha256 `2736d6bd…`). Die scope-Logik
+unten ist BYTE-GLEICH aus `catala_a` (keine Änderung); nur Module-Header + §-Zitatanker + Grenzfall-Seeds
+ergänzt. Kein Pipeline-Re-Run.
+
+Zitatanker § 31 EStG (`sources/gesetze-im-internet/estg_p31_2026-07-11.txt`, typ gesetz): der § 32 Abs. 6-
+Freibetrag wird nur angesetzt, wenn er günstiger ist als die "steuerliche Freistellung eines Einkommens-
+betrags in Höhe des Existenzminimums" durch das Kindergeld; sonst bleibt es bei der ESt ohne Freibetrag
+(das Kindergeld deckt die Freistellung). Ist der Freibetrag günstiger, wird die ESt MIT Freibetrag angesetzt
+und das Kindergeld hinzugerechnet. Tarifwerte (est_ohne/est_mit) = p32a-Ergebnisse (Andockung, dev-1).
+
+```catala
+declaration scope Familienleistungsausgleich:
+  input est_ohne_freibetraege content money
+  input est_mit_freibetraegen content money
+  input kindergeld content money
+  internal freibetraege_guenstiger content boolean
+  output est_nach_familienausgleich content money
+
+scope Familienleistungsausgleich:
+  definition freibetraege_guenstiger equals
+    est_mit_freibetraegen + kindergeld < est_ohne_freibetraege
+
+  label grundregel
+  definition est_nach_familienausgleich equals
+    est_ohne_freibetraege
+
+  exception grundregel
+  definition est_nach_familienausgleich under condition
+    freibetraege_guenstiger
+  consequence equals
+    est_mit_freibetraegen + kindergeld
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestFreibetragGuenstiger:
+  # est_mit+kindergeld (2000+2000=4000) < est_ohne (5000) -> Freibetrag günstiger -> 4000.
+  internal r content Familienleistungsausgleich
+  output g content money
+scope TestFreibetragGuenstiger:
+  definition r equals output of Familienleistungsausgleich with {
+    -- est_ohne_freibetraege: $5,000.00
+    -- est_mit_freibetraegen: $2,000.00
+    -- kindergeld: $2,000.00 }
+  definition g equals r.est_nach_familienausgleich
+  assertion g = $4,000.00
+```
+
+```catala
+#[test]
+declaration scope TestKindergeldReicht:
+  # est_mit+kindergeld (2900+2000=4900) >= est_ohne (3000) -> nicht günstiger -> Grundregel est_ohne 3000.
+  internal r content Familienleistungsausgleich
+  output g content money
+scope TestKindergeldReicht:
+  definition r equals output of Familienleistungsausgleich with {
+    -- est_ohne_freibetraege: $3,000.00
+    -- est_mit_freibetraegen: $2,900.00
+    -- kindergeld: $2,000.00 }
+  definition g equals r.est_nach_familienausgleich
+  assertion g = $3,000.00
+```

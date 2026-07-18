@@ -1,0 +1,112 @@
+# § 24b EStG — Entlastungsbetrag für Alleinerziehende (Grundbetrag + Erhöhung je Kind, monatsanteilig)
+
+> Module Entlastungsbetrag
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p24b_entlastungsbetrag.json`
+(module Entlastungsbetrag, verified_bedingt, faithful=false MIT abweichungen=[] — GETRIAGED-Artefakt, kein
+echter Defekt, s. Triage-Befund im Freeze). Die scope-Logik unten ist BYTE-GLEICH aus `catala_a`; nur
+Module-Header + §-Zitatanker + Grenzfall-Seeds ergänzt. Kein Pipeline-Re-Run.
+
+Zitatanker § 24b EStG (`sources/gesetze-im-internet/estg_p24b_2026-07-09.txt`, typ gesetz): steht dem
+"allein stehenden Steuerpflichtigen ein Kind im Sinne" des Absatzes zu; Grundbetrag 4 260 EUR + 240 EUR je
+weiterem Kind, für jeden vollen Kalendermonat ohne Voraussetzung um ein Zwölftel gekürzt. `alleinstehend`
+(i.S.d. Abs. 3) + `monate_ohne_voraussetzung` (volle Kalendermonate) = getriagte Geltungsbedingungen, hier
+EINGABE. Reine Teilregel.
+
+```catala
+declaration scope Entlastungsbetrag:
+  input alleinstehend content boolean
+  input anzahl_kinder content integer
+  input monate_ohne_voraussetzung content integer
+  output entlastungsbetrag content money
+
+scope Entlastungsbetrag:
+  definition entlastungsbetrag equals
+    if not alleinstehend then $0.00
+    else if anzahl_kinder <= 0 then $0.00
+    else
+      let betrag_vor_kuerzung equals
+        $4,260.00 + $240.00 * (decimal of (anzahl_kinder - 1))
+      in
+      let kuerzung equals
+        betrag_vor_kuerzung * (decimal of monate_ohne_voraussetzung / 12.0)
+      in
+      betrag_vor_kuerzung - kuerzung
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestNichtAlleinstehend:
+  # Nicht alleinstehend -> 0 (kein Entlastungsbetrag).
+  internal r content Entlastungsbetrag
+  output g content money
+scope TestNichtAlleinstehend:
+  definition r equals output of Entlastungsbetrag with {
+    -- alleinstehend: false
+    -- anzahl_kinder: 1
+    -- monate_ohne_voraussetzung: 0 }
+  definition g equals r.entlastungsbetrag
+  assertion g = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestEinKindVoll:
+  # Alleinstehend, 1 Kind, 0 Monate ohne -> Grundbetrag 4260.
+  internal r content Entlastungsbetrag
+  output g content money
+scope TestEinKindVoll:
+  definition r equals output of Entlastungsbetrag with {
+    -- alleinstehend: true
+    -- anzahl_kinder: 1
+    -- monate_ohne_voraussetzung: 0 }
+  definition g equals r.entlastungsbetrag
+  assertion g = $4,260.00
+```
+
+```catala
+#[test]
+declaration scope TestZweiKinder:
+  # Alleinstehend, 2 Kinder -> 4260 + 240 = 4500.
+  internal r content Entlastungsbetrag
+  output g content money
+scope TestZweiKinder:
+  definition r equals output of Entlastungsbetrag with {
+    -- alleinstehend: true
+    -- anzahl_kinder: 2
+    -- monate_ohne_voraussetzung: 0 }
+  definition g equals r.entlastungsbetrag
+  assertion g = $4,500.00
+```
+
+```catala
+#[test]
+declaration scope TestKuerzungHalbesJahr:
+  # Alleinstehend, 1 Kind, 6 Monate ohne Voraussetzung -> 4260 - 4260*(6/12) = 2130.
+  internal r content Entlastungsbetrag
+  output g content money
+scope TestKuerzungHalbesJahr:
+  definition r equals output of Entlastungsbetrag with {
+    -- alleinstehend: true
+    -- anzahl_kinder: 1
+    -- monate_ohne_voraussetzung: 6 }
+  definition g equals r.entlastungsbetrag
+  assertion g = $2,130.00
+```
+
+```catala
+#[test]
+declaration scope TestKeinKind:
+  # Alleinstehend, aber kein Kind -> 0.
+  internal r content Entlastungsbetrag
+  output g content money
+scope TestKeinKind:
+  definition r equals output of Entlastungsbetrag with {
+    -- alleinstehend: true
+    -- anzahl_kinder: 0
+    -- monate_ohne_voraussetzung: 0 }
+  definition g equals r.entlastungsbetrag
+  assertion g = $0.00
+```
