@@ -633,3 +633,55 @@ def test_multi_rente_alter_rentenfreibetrag_pro_instanz(bindung):
     nd = {x["feld_id"] for x in r["nicht_deklariert"]}
     assert "rentner_alter_bei_rentenbeginn__2" in nd and "rentner_rentenfreibetrag__2" in nd
     assert r["vollstaendig"] is True
+
+
+# ---- Ring-Naht #5: instanzen(store, bindung, gruppe) — Instanz-Enumeration für dev-1s per-Instanz-Σ ----
+
+def test_instanzen_enumeriert_base_und_n(bindung):
+    """ALLE Instanzen (Basis index=1 + __n), felder auf Basis-feld_id normiert, inkl. zustand/herkunft."""
+    s = _store_mit({"vv_einnahmen": 1200000, "vv_einnahmen__2": 900000, "vv_gebaeude_afa__2": 200000})
+    inst = EM.instanzen(s, bindung, "vv_objekt")
+    assert [i["index"] for i in inst] == [1, 2]                       # Basis + __2, ALLE enumeriert
+    assert inst[0]["felder"]["vv_einnahmen"]["wert"] == 1200000       # Instanz 1 = Basis
+    assert inst[1]["felder"]["vv_einnahmen"]["wert"] == 900000        # __2 normiert auf Basis-Key
+    assert inst[1]["felder"]["vv_gebaeude_afa"]["wert"] == 200000
+    assert inst[0]["felder"]["vv_einnahmen"]["herkunft"]["herkunft"] == "laie"   # herkunft-Vektor sichtbar
+    assert all(i["zustand"] == "bestaetigt" for i in inst)
+
+
+def test_instanzen_zustand_meet_fail_closed(bindung):
+    """per-Instanz-zustand = meet: eine unvollständige Instanz -> vorlaeufig (dev-1s K2-Guard, kein Σ)."""
+    s = _store_mit({"vv_einnahmen": 1200000})
+    _b(s, "vv_einnahmen__2", 900000, zustand="vorlaeufig")            # Instanz 2 vorläufig
+    inst = EM.instanzen(s, bindung, "vv_objekt")
+    z = {i["index"]: i["zustand"] for i in inst}
+    assert z[1] == "bestaetigt" and z[2] == "vorlaeufig"
+
+
+def test_instanzen_gleiche_enumeration_wie_deklaration(bindung):
+    """EINE Enumerations-Wahrheit (parse_instanz): die instanzen()-__n-Indizes decken die anlage_instanzen-
+    Indizes der Deklaration; instanzen() liefert zusätzlich die Basis (index 1). Keine Regex-Drift."""
+    s = _store_mit({"vv_einnahmen": 1200000, "vv_einnahmen__2": 900000, "vv_einnahmen__3": 300000})
+    inst_idx = {i["index"] for i in EM.instanzen(s, bindung, "vv_objekt")}
+    dekl = EM.deklariere(ST.materialisiere(s)[0], bindung)
+    dekl_idx = {e["index"] for e in dekl["anlage_instanzen"]["vv_objekt"]}
+    assert inst_idx == {1, 2, 3} and dekl_idx == {2, 3}              # instanzen inkl. Basis, Deklaration nur __n
+    assert dekl_idx <= inst_idx                                       # dieselbe Enumeration
+
+
+def test_instanzen_gruppe_generisch_rente(bindung):
+    """Generischer gruppe-Parameter: funktioniert für rente (dev-1 #6). Trägt die getaggten Renten-Felder
+    je Instanz; rentner_renten_art ist SELEKTOR (nicht getaggt) -> NICHT in der Naht (dev-1 liest die Art
+    je Instanz separat via parse_instanz — #6-Andockung)."""
+    s = _store_mit({**_RENTE_1, **_RENTE_2})
+    inst = EM.instanzen(s, bindung, "rente")
+    assert [i["index"] for i in inst] == [1, 2]
+    assert inst[0]["felder"]["rentner_jahresrente"]["wert"] == 2000000
+    assert inst[1]["felder"]["rentner_jahresrente"]["wert"] == 900000
+    assert "rentner_renten_art" not in inst[1]["felder"]             # Selektor nicht in der Gruppe (bekannt, #6-flag)
+
+
+def test_instanzen_leere_gruppe(bindung):
+    """Keine Felder der Gruppe im Store -> leere Liste (kein Phantom)."""
+    s = _store_mit({"vv_einnahmen": 1200000})
+    assert EM.instanzen(s, bindung, "kind") == []

@@ -110,6 +110,15 @@ PARTNER_VERZWEIGUNG = {
 _INSTANZ_RE = re.compile(r"^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[1-9][0-9]*)$")
 
 
+def parse_instanz(feld_id: str):
+    """Die EINE Enumerations-Wahrheit für Repeated-Instance: `base__<n>` (n>=2) -> (base, n); eine Basis-
+    feld_id OHNE Suffix -> None (= Instanz 1). BEIDE Seiten — die Deklaration (deklariere) UND der Ring-
+    Instanz-Reader (instanzen) — rufen NUR diese Funktion (kein zweites Regex, keine Enumerations-Drift
+    zwischen Deklaration und Ring)."""
+    m = _INSTANZ_RE.match(feld_id)
+    return (m.group("base"), int(m.group("idx"))) if m else None
+
+
 def _aggregation_quellen() -> set:
     return {f for fs in DOKUMENTIERT_AGGREGAT.values() for f in fs}
 
@@ -179,11 +188,11 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
     for feld_id in sorted(snapshot):
         sfeld = snapshot[feld_id]
         # Klasse INSTANZ: base__n (n>=2) einer instanz-fähigen Basis -> anlage_instanzen (Reuse Basis-Kz).
-        m_inst = _INSTANZ_RE.match(feld_id)
-        basis = m_inst.group("base") if m_inst else None
+        parsed = parse_instanz(feld_id)                   # dieselbe Enumerations-Wahrheit wie der Ring-Reader
+        basis = parsed[0] if parsed else None
         if basis is not None and bindung.get(basis, {}).get("instanz_gruppe"):
             getroffen += 1
-            _deklariere_instanz(basis, int(m_inst.group("idx")), feld_id, sfeld, snapshot, bindung,
+            _deklariere_instanz(basis, parsed[1], feld_id, sfeld, snapshot, bindung,
                                 anlage_instanzen, unvollstaendig, nicht_deklariert)
             continue
         b = bindung.get(feld_id)
@@ -326,6 +335,39 @@ def zuruecklesen(result: dict, bindung: dict) -> dict:
         elif e_nr in e_nach_feld:
             felder[e_nach_feld[e_nr]] = wert
     return {"felder": felder, "aggregat": aggregat}
+
+
+def instanzen(store: dict, bindung: dict, gruppe: str) -> list:
+    """Ring-Naht (dev-2 -> dev-1, #5): enumeriert ALLE Instanzen einer instanz_gruppe aus dem Store und
+    liefert je Instanz das materialisierte Feld-Dict der Gruppe INKL. zustand + herkunft — für dev-1s
+    per-Instanz-Σ (Multi-Objekt einkuenfte_vermietung, Multi-Rente per-Rente-Ertragsanteil) + K2-Guard.
+
+    KONVENTION (explizit, damit dev-1 STUMPF summiert — jede Instanz genau einmal):
+    - liefert ALLE Instanzen: Instanz 1 = die Basis-feld_ids (OHNE Suffix, index==1) UND Instanz 2..N =
+      die __n-Felder. Kein Sonderfall für die Basis — sie ist die erste Listen-Position.
+    - Enumeration über `parse_instanz` (DIESELBE Wahrheit wie die Deklaration, kein zweites Regex).
+    - felder je Instanz sind auf die BASIS-feld_id normiert (`vv_einnahmen__2` -> Schlüssel "vv_einnahmen"),
+      damit dev-1 je Instanz denselben Schlüssel liest.
+    - der per-Instanz `zustand` ist der meet (bestaetigt NUR, wenn ALLE Instanz-Felder bestaetigt — sonst
+      vorlaeufig): fail-closed für dev-1s K2-Guard, damit eine unvollständige Instanz kein still-falsches Σ
+      erzeugt. Die per-Feld-zustand/herkunft bleiben in `felder` sichtbar.
+    Rückgabe: [{"index": i, "felder": {basis_feld_id: {wert, zustand, herkunft}}, "zustand": <meet>}], index-sortiert.
+    """
+    import store as _ST
+    felder, _ = _ST.materialisiere(store)
+    basis_felder = {fid for fid, b in bindung.items() if b.get("instanz_gruppe") == gruppe}
+    vorkommen: dict = {}
+    for fid, sfeld in felder.items():
+        parsed = parse_instanz(fid)
+        basis, idx = (parsed[0], parsed[1]) if parsed else (fid, 1)
+        if basis in basis_felder:
+            vorkommen.setdefault(idx, {})[basis] = sfeld
+    ausgabe = []
+    for idx in sorted(vorkommen):
+        inst_felder = vorkommen[idx]
+        zustand = _ST.meet_zustand([sf["zustand"] for sf in inst_felder.values()])
+        ausgabe.append({"index": idx, "felder": inst_felder, "zustand": zustand})
+    return ausgabe
 
 
 def konsistenz_feldmapping(bindung: dict, feldmapping_path: str = FELDMAPPING) -> list:
