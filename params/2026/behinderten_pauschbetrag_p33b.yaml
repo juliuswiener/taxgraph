@@ -1,0 +1,50 @@
+# § 33b EStG Pauschbeträge (Behinderung / Blind-Hilflos / Hinterbliebene / Pflege). VZ 2026.
+# GÜLTIGKEIT: die GdB-Staffel ist die 2021er-Fassung (Behinderten-Pauschbetragsgesetz v. 9.12.2020,
+# BGBl. I S. 2770 — verdoppelte Werte ab VZ 2021, z.B. GdB 50: alt 570 -> neu 1140); geltende Fassung 2026.
+parameter: behinderten_pauschbetrag_p33b
+veranlagungszeitraum: 2026
+authority: gesetz
+redistributable: true
+gueltig_ab: "2026-01-01"
+
+# Abs. 3 S. 2 — Behinderten-Pauschbetrag GdB-Staffel (mindestens X -> Betrag). Lookup-Tier gdb//10*10.
+gdb_staffel:
+  20: 384
+  30: 620
+  40: 860
+  50: 1140
+  60: 1440
+  70: 1780
+  80: 2120
+  90: 2460
+  100: 2840
+gdb_staffel_quelle:
+  rechtsquelle: {gesetz: EStG, paragraph: '33b', absatz: '3', satz: '2'}
+  zitatanker: "20 384 Euro, 30 620 Euro, 40 860 Euro, 50 1 140 Euro, 60 1 440 Euro, 70 1 780 Euro, 80 2 120 Euro, 90 2 460 Euro, 100 2 840 Euro"
+  datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+# Abs. 3 S. 3 — Blinde/Taubblinde/Hilflose: Höchstbetrag, ersetzt die GdB-Staffel.
+blind_hilflos_taubblind: 7400
+blind_hilflos_taubblind_quelle:
+  rechtsquelle: {gesetz: EStG, paragraph: '33b', absatz: '3', satz: '3'}
+  zitatanker: "Blinde und Taubblinde erhalten einen Pauschbetrag von 7 400 Euro"
+  datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+# Abs. 4 — Hinterbliebenen-Pauschbetrag.
+hinterbliebenen: 370
+hinterbliebenen_quelle:
+  rechtsquelle: {gesetz: EStG, paragraph: '33b', absatz: '4'}
+  zitatanker: "einen Pauschbetrag von 370 Euro"
+  datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+# Abs. 6 S. 3/4 — Pflege-Pauschbetrag-Staffel (Pflegegrad -> Betrag; hilflos = PG4/5-Wert 1800).
+pflege_staffel:
+  2: 600
+  3: 1100
+  4: 1800
+  5: 1800
+pflege_hilflos: 1800
+pflege_quelle:
+  rechtsquelle: {gesetz: EStG, paragraph: '33b', absatz: '6', satz: '3'}
+  zitatanker: "Als Pflege-Pauschbetrag wird gewährt: 1. bei Pflegegrad 2 600 Euro, 2. bei Pflegegrad 3 1 100 Euro, 3. bei Pflegegrad 4 oder 5 1 800 Euro"
+  datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
