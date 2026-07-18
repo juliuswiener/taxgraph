@@ -11,6 +11,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hohe Kapitalerträge hattest du dieses Jahr (Zinsen, Dividenden, Gewinne aus Verkäufen)?"
     hilfe_kurz: "Steht in deiner Steuerbescheinigung von Bank oder Broker. Die ersten 1.000 Euro sind steuerfrei."
     beispielwert: 300000
@@ -26,6 +27,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Gebt ihr als Ehepaar oder eingetragene Partnerschaft eine gemeinsame Steuererklärung ab?"
     hilfe_kurz: "Bei gemeinsamer Veranlagung verdoppelt sich der steuerfreie Betrag auf 2.000 Euro."
     beispielwert: false
@@ -44,6 +46,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hohe Gewinne aus dem Verkauf von Aktien hattest du dieses Jahr?"
     hilfe_kurz: "Nur die Gewinne aus verkauften Aktien (ein Teil deiner gesamten Kapitalerträge). Wichtig, weil Aktienverluste steuerlich nur mit Aktiengewinnen verrechnet werden dürfen."
     beispielwert: 0
@@ -59,6 +62,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hohe Verluste aus dem Verkauf von Aktien hattest du dieses Jahr?"
     hilfe_kurz: "Aktienverluste können nur mit Aktiengewinnen verrechnet werden (eigener Topf)."
     beispielwert: 0
@@ -74,6 +78,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hohe sonstige Kapitalgewinne (außer Aktien) hattest du dieses Jahr?"
     hilfe_kurz: "Zum Beispiel Gewinne aus Fonds oder Zertifikaten."
     beispielwert: 0
@@ -90,6 +95,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hohe sonstige Kapitalverluste (außer Aktien) hattest du dieses Jahr?"
     hilfe_kurz: "Sonstige Verluste werden in ihrem eigenen Topf verrechnet."
     beispielwert: 0
@@ -111,6 +117,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hohe Kapitalerträge hatte dein zusammen veranlagter Ehe-/Lebenspartner dieses Jahr (Zinsen, Dividenden, Gewinne)?"
     hilfe_kurz: "Nur bei Zusammenveranlagung: jeder Ehegatte hat einen eigenen Sparer-Pauschbetrag (1.000 Euro), deshalb person-individuell aus der Steuerbescheinigung des Partners."
     beispielwert: 0
@@ -127,6 +134,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hohe Gewinne aus dem Verkauf von Aktien hatte dein Ehe-/Lebenspartner dieses Jahr?"
     hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell: Aktienverluste des Partners verrechnen sich nur mit seinen eigenen Aktiengewinnen."
     beispielwert: 0
@@ -143,6 +151,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hohe Verluste aus dem Verkauf von Aktien hatte dein Ehe-/Lebenspartner dieses Jahr?"
     hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell (eigener Aktien-Verlusttopf des Partners)."
     beispielwert: 0
@@ -159,6 +168,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hohe sonstige Kapitalverluste (außer Aktien) hatte dein Ehe-/Lebenspartner dieses Jahr?"
     hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell (eigener sonstiger Verlusttopf des Partners)."
     beispielwert: 0
@@ -177,6 +187,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hohe Mieteinnahmen hattest du dieses Jahr (Kaltmiete plus umgelegte Nebenkosten)?"
     hilfe_kurz: "Alles, was der Mieter dir gezahlt hat."
     beispielwert: 1200000
@@ -192,6 +203,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hoch ist die jährliche Abschreibung (AfA) für das vermietete Gebäude?"
     hilfe_kurz: "Meist ein fester Prozentsatz der Anschaffungskosten des Gebäudes (ohne Grundstück)."
     beispielwert: 300000
@@ -208,6 +220,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie viele Zinsen hast du dieses Jahr für den Kredit auf die vermietete Immobilie gezahlt?"
     hilfe_kurz: "Nur die Zinsen, nicht die Tilgung."
     beispielwert: 200000
@@ -224,6 +237,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Was hast du dieses Jahr für Reparaturen und Instandhaltung der vermieteten Immobilie ausgegeben?"
     hilfe_kurz: "Zum Beispiel neue Heizung, Malerarbeiten, Reparaturen."
     beispielwert: 100000
@@ -240,6 +254,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Welche sonstigen Kosten hattest du dieses Jahr rund um die Vermietung (Hausgeld, Versicherung, Fahrten)?"
     hilfe_kurz: "Alle weiteren Ausgaben, die mit der Vermietung zusammenhängen."
     beispielwert: 50000
@@ -275,6 +290,7 @@ bindungen:
     einheit: "%"
     bereich: {min: 0, max: 100, grund: "Prozentsatz der ortsüblichen Marktmiete (Miete/Marktmiete), physikalisch 0..100"}
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie viel Prozent der ortsüblichen Miete verlangst du (falls du verbilligt vermietest, z. B. an Angehörige)?"
     hilfe_kurz: "Ab 66 % kannst du die Kosten voll absetzen, unter 50 % nur anteilig."
     beispielwert: 100
@@ -291,6 +307,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Wird die Wohnung zum Wohnen vermietet (nicht gewerblich)?"
     hilfe_kurz: "Die verbilligte-Vermietung-Regel gilt nur für Wohnungen zu Wohnzwecken."
     beispielwert: true
@@ -307,6 +324,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Vermietest du die Wohnung dauerhaft (nicht nur vorübergehend)?"
     hilfe_kurz: "Bei nur kurzzeitiger Vermietung gelten andere Regeln."
     beispielwert: true
@@ -325,6 +343,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Bist du alleinerziehend (du wohnst mit deinem Kind zusammen, aber ohne einen anderen Erwachsenen im Haushalt)?"
     hilfe_kurz: "Es darf keine andere erwachsene Person mit im Haushalt leben (außer eigene Kinder)."
     beispielwert: true
@@ -342,6 +361,7 @@ bindungen:
     einheit: Kinder
     bereich: {min: 0, max: 20, grund: "Anzahl berücksichtigungsfähiger Kinder; praktische Obergrenze"}
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Wie viele Kinder, für die du Kindergeld oder einen Kinderfreibetrag bekommst, leben in deinem Haushalt?"
     hilfe_kurz: "Nur Kinder, die zu deinem Haushalt gehören."
     beispielwert: 1
@@ -359,6 +379,7 @@ bindungen:
     einheit: Monate
     bereich: {min: 0, max: 12, grund: "Kalendermonate im Veranlagungszeitraum ohne Voraussetzung"}
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "In wie vielen Monaten dieses Jahr warst du NICHT alleinerziehend (z. B. weil ein Partner mit im Haushalt lebte)?"
     hilfe_kurz: "Für jeden vollen Monat ohne die Voraussetzungen wird der Entlastungsbetrag anteilig gekürzt."
     beispielwert: 0
@@ -375,6 +396,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Steht dir für die Kinder in deinem Haushalt Kindergeld oder ein Kinderfreibetrag zu?"
     hilfe_kurz: "Nur solche Kinder zählen für den Entlastungsbetrag."
     beispielwert: true
@@ -393,6 +415,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Sind deine Kinder steuerlich zu berücksichtigen (z. B. unter 18, oder in Ausbildung unter 25)?"
     hilfe_kurz: "Nur berücksichtigungsfähige Kinder bekommen einen Freibetrag."
     beispielwert: true

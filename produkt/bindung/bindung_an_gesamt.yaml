@@ -15,6 +15,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hoch war dein Bruttoarbeitslohn dieses Jahr? (steht auf der Lohnsteuerbescheinigung)"
     hilfe_kurz: "Der Bruttoarbeitslohn einschließlich Sachbezüge steht unter Nummer 3 der Lohnsteuerbescheinigung."
     beispielwert: 4000000
@@ -33,6 +34,7 @@ bindungen:
     einheit: null
     enum_werte: ["einzel", "zusammen"]
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Gibst du die Erklärung allein oder gemeinsam mit Ehe-/Lebenspartner ab?"
     hilfe_kurz: "Gemeinsam = Zusammenveranlagung (oft günstiger bei unterschiedlichen Einkommen); allein = Einzelveranlagung."
     beispielwert: "einzel"
@@ -58,6 +60,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Hattest du dieses Jahr Einkünfte aus einem Gewerbe, aus Land-/Forstwirtschaft oder aus selbständiger/freiberuflicher Arbeit?"
     hilfe_kurz: "Wenn du nur Arbeitslohn beziehst, antworte mit Nein — dann liegen keine Gewinneinkünfte vor."
     beispielwert: false
@@ -74,6 +77,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Hattest du dieses Jahr Kapitalerträge (Zinsen, Dividenden, Kursgewinne)?"
     hilfe_kurz: "Steht i. d. R. in der Steuerbescheinigung von Bank oder Broker. Nur Arbeitslohn → Nein."
     beispielwert: false
@@ -90,6 +94,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Hattest du dieses Jahr Einnahmen aus Vermietung oder Verpachtung?"
     hilfe_kurz: "Zum Beispiel Miete für eine vermietete Wohnung. Nur Arbeitslohn → Nein."
     beispielwert: false
@@ -106,6 +111,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Hattest du dieses Jahr sonstige Einkünfte (z. B. Renten, private Veräußerungsgeschäfte)?"
     hilfe_kurz: "Sonstige Einkünfte sind z. B. Renten oder Gewinne aus privaten Verkäufen. Nur Arbeitslohn → Nein."
     beispielwert: false
@@ -128,6 +134,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hoch war der Bruttoarbeitslohn deines Ehe-/Lebenspartners dieses Jahr?"
     hilfe_kurz: "Person-individuell, weil jeder Ehegatte einen EIGENEN Arbeitnehmer-Pauschbetrag hat; steht auf der Lohnsteuerbescheinigung des Partners (Nummer 3)."
     beispielwert: 3800000
@@ -145,6 +152,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hoch war der Arbeitnehmeranteil zur Rentenversicherung deines Partners (Nummer 23 auf seiner Lohnsteuerbescheinigung)?"
     hilfe_kurz: "Person-individuell: die Vorsorgeaufwendungen jedes Ehegatten stammen aus seiner eigenen Lohnsteuerbescheinigung."
     beispielwert: 372000
@@ -162,6 +170,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hoch war der Arbeitgeberanteil zur Rentenversicherung deines Partners (Nummer 22 auf seiner Lohnsteuerbescheinigung)?"
     hilfe_kurz: "Person-individuell aus der Lohnsteuerbescheinigung des Partners."
     beispielwert: 372000
@@ -179,6 +188,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Hat dein Partner weitere Rentenversicherungsbeiträge außerhalb der Lohnsteuerbescheinigung gezahlt (z. B. freiwillig)?"
     hilfe_kurz: "Person-individuell; falls keine, trage 0 ein."
     beispielwert: 0
@@ -195,6 +205,7 @@ bindungen:
     typ: text
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer deines Ehe-/Lebenspartners (11 Ziffern)?"
     hilfe_kurz: "Bei gemeinsamer Erklärung braucht das Finanzamt die Identifikationsnummer beider Personen. Steht auf dem Steuerbescheid oder dem Schreiben des Bundeszentralamts."
     beispielwert: "12345678901"

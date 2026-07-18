@@ -13,6 +13,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie viel Rente hast du dieses Jahr insgesamt bekommen (der volle Jahresbetrag, bevor etwas abgezogen wird)?"
     hilfe_kurz: "Der gesamte Jahresbetrag deiner Rente. Steht in der Mitteilung deines Rentenversicherungsträgers."
     beispielwert: 1800000
@@ -30,6 +31,7 @@ bindungen:
     einheit: Jahr
     bereich: {min: 1955, max: 2060, grund: "Renten-Beginn-Jahr; Kohorten-Besteuerung ab 2005 (AltEinkG), davor 50 %; untere/obere Grenze deckt realistische Rentenbeginne."}
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Seit welchem Jahr bekommst du deine Rente?"
     hilfe_kurz: "Das Jahr, in dem deine Rente zum ersten Mal gezahlt wurde. Danach richtet sich, welcher Anteil der Rente steuerpflichtig ist."
     beispielwert: 2015
@@ -54,6 +56,7 @@ bindungen:
     einheit: null
     enum_werte: ["gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente", "private_leibrente", "sonstige_leibrente"]
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Um welche Art von Rente geht es hauptsächlich?"
     hilfe_kurz: "Gesetzliche Rente, berufsständisches Versorgungswerk (z. B. für Ärzte oder Anwälte) und Rürup-Rente werden gleich besteuert (nach dem Jahr des Rentenbeginns). Eine private Rentenversicherung wird niedriger besteuert — dann zählt dein Alter bei Rentenbeginn."
     beispielwert: "gesetzliche_rente"
@@ -73,6 +76,7 @@ bindungen:
     einheit: null
     bereich: {min: 0, max: 100, grund: "Bei Rentenbeginn vollendetes Lebensjahr; die Ertragsanteil-Tabelle § 22 Nr. 1 S. 3 a bb schlüsselt nach diesem Alter (Werte 0..97, darüber gedeckelt auf 97)."}
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Wie alt warst du (vollendetes Lebensjahr), als deine private Rente zu laufen begann?"
     hilfe_kurz: "Nur bei einer privaten Leibrente: der steuerpflichtige Ertragsanteil richtet sich nach deinem Alter bei Rentenbeginn (z. B. mit 65 sind es 18 %)."
     beispielwert: 65
@@ -89,6 +93,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Falls deine gesetzliche Rente NICHT in diesem Jahr zum ersten Mal gezahlt wurde: wie hoch ist dein steuerfreier Renten-Freibetrag laut deinem letzten Steuerbescheid (in Euro)?"
     hilfe_kurz: "Ab dem zweiten Rentenjahr ist der steuerfreie Teil in Euro festgeschrieben (Rentenerhöhungen sind dann voll steuerpflichtig). Der Betrag steht in deinem Vorjahres-Bescheid. Im ersten Rentenjahr leer lassen."
     beispielwert: 0
@@ -111,6 +116,7 @@ bindungen:
     einheit: null
     enum_werte: ["gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente", "private_leibrente", "sonstige_leibrente"]
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Um welche Art von Rente geht es bei deinem zusammen veranlagten Ehe-/Lebenspartner hauptsächlich?"
     hilfe_kurz: "Nur bei Zusammenveranlagung: der Partner hat einen eigenen Besteuerungs-/Ertragsanteil je nach Rentenart (gesetzlich/Versorgungswerk/Rürup nach Beginn-Jahr, private Rente nach Alter bei Beginn)."
     beispielwert: "gesetzliche_rente"
@@ -127,6 +133,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie viel Rente hat dein zusammen veranlagter Ehe-/Lebenspartner dieses Jahr insgesamt bekommen (voller Jahresbetrag)?"
     hilfe_kurz: "Der gesamte Jahresbetrag der Rente des Partners, aus der Mitteilung seines Rentenversicherungsträgers."
     beispielwert: 1800000
@@ -144,6 +151,7 @@ bindungen:
     einheit: Jahr
     bereich: {min: 1955, max: 2060, grund: "Renten-Beginn-Jahr des Partners (Kohorten-Besteuerung, eigene Kohorte je Ehegatte)."}
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Seit welchem Jahr bekommt dein Ehe-/Lebenspartner seine Rente?"
     hilfe_kurz: "Das Jahr des ersten Rentenbezugs des Partners; bestimmt seinen eigenen Besteuerungsanteil (gesetzliche Rente)."
     beispielwert: 2015
@@ -161,6 +169,7 @@ bindungen:
     einheit: null
     bereich: {min: 0, max: 100, grund: "Bei Rentenbeginn vollendetes Lebensjahr des Partners; bb-Ertragsanteil-Lookup (private Leibrente)."}
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Wie alt war dein Ehe-/Lebenspartner (vollendetes Lebensjahr), als seine private Rente zu laufen begann?"
     hilfe_kurz: "Nur bei einer privaten Leibrente des Partners: der steuerpflichtige Ertragsanteil richtet sich nach seinem Alter bei Rentenbeginn."
     beispielwert: 65
@@ -177,6 +186,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Falls die gesetzliche Rente deines Partners NICHT in diesem Jahr zum ersten Mal gezahlt wurde: wie hoch ist sein steuerfreier Renten-Freibetrag laut letztem Bescheid (in Euro)?"
     hilfe_kurz: "Ab dem zweiten Rentenjahr des Partners ist sein steuerfreier Teil in Euro festgeschrieben. Steht im Vorjahres-Bescheid. Im ersten Rentenjahr des Partners leer lassen."
     beispielwert: 0
@@ -195,6 +205,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Hattest du vor Beginn dieses Jahres schon deinen 64. Geburtstag?"
     hilfe_kurz: "Der Altersentlastungsbetrag steht dir zu, wenn du zu Beginn des Jahres bereits 64 Jahre alt warst."
     beispielwert: true
@@ -214,6 +225,7 @@ bindungen:
     einheit: null
     bereich: {min: 20, max: 100, grund: "Grad der Behinderung (GdB) amtlich 20..100 in 10er-Schritten; ab 20 wird ein Pauschbetrag gewährt."}
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Welchen Grad der Behinderung hat dein Schwerbehindertenausweis (eine Zahl zwischen 20 und 100)?"
     hilfe_kurz: "Steht in deinem Feststellungsbescheid oder Schwerbehindertenausweis. Je höher der Grad, desto höher der Pauschbetrag."
     beispielwert: 50
@@ -230,6 +242,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Bist du hilflos, blind oder taubblind (Merkzeichen H, Bl oder TBl im Ausweis)?"
     hilfe_kurz: "Mit einem dieser Merkzeichen bekommst du den höchsten Pauschbetrag, unabhängig vom Grad der Behinderung."
     beispielwert: false
@@ -248,6 +261,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Bekommst du Hinterbliebenenbezüge (z. B. Witwen-, Witwer- oder Waisenrente nach gesetzlichen Vorschriften)?"
     hilfe_kurz: "Wenn dir laufende Hinterbliebenenbezüge bewilligt sind, steht dir ein Pauschbetrag von 370 Euro zu."
     beispielwert: false
@@ -267,6 +281,7 @@ bindungen:
     einheit: null
     bereich: {min: 1, max: 5, grund: "Pflegegrade 1..5 (SGB XI); Pflege-Pauschbetrag wird ab Pflegegrad 2 gewährt (gestaffelt bis 5)."}
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Welchen Pflegegrad hat die Person, die du zu Hause unentgeltlich pflegst (eine Zahl zwischen 1 und 5)?"
     hilfe_kurz: "Den Pflege-Pauschbetrag gibt es, wenn du jemanden mit Pflegegrad 2 bis 5 ohne Bezahlung pflegst."
     beispielwert: 3
@@ -283,6 +298,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Ist die von dir gepflegte Person hilflos (Merkzeichen H)?"
     hilfe_kurz: "Bei einer hilflosen Person (Merkzeichen H) gilt der höchste Pflege-Pauschbetrag."
     beispielwert: false
@@ -307,6 +323,7 @@ bindungen:
     einheit: null
     bereich: {min: 20, max: 100, grund: "GdB des Ehe-/Lebenspartners, amtlich 20..100; jeder Ehegatte hat einen eigenen Behinderten-Pauschbetrag (§ 33b personenbezogen)."}
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Welchen Grad der Behinderung hat dein zusammen veranlagter Ehe-/Lebenspartner (eine Zahl zwischen 20 und 100)?"
     hilfe_kurz: "Nur bei Zusammenveranlagung: jeder Ehegatte hat einen eigenen Behinderten-Pauschbetrag nach seinem eigenen Grad der Behinderung."
     beispielwert: 50
@@ -323,6 +340,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Ist dein zusammen veranlagter Ehe-/Lebenspartner hilflos, blind oder taubblind (Merkzeichen H, Bl oder TBl)?"
     hilfe_kurz: "Mit einem dieser Merkzeichen bekommt der Partner den höchsten Pauschbetrag, unabhängig vom Grad der Behinderung."
     beispielwert: false
@@ -341,6 +359,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie hoch war dein Gewinn aus dem Verkauf oder der Aufgabe deines Betriebs?"
     hilfe_kurz: "Der Gewinn aus der Betriebsveräußerung/-aufgabe. Bis 45.000 Euro bleibt auf Antrag steuerfrei (ab 136.000 Euro Gewinn schmilzt der Freibetrag ab)."
     beispielwert: 15000000
@@ -358,6 +377,7 @@ bindungen:
     einheit: null
     enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Aus welcher Art von Betrieb stammt der Veräußerungsgewinn?"
     hilfe_kurz: "Gewerbebetrieb / Mitunternehmeranteil (Anlage G), selbständige/freiberufliche Tätigkeit (Anlage S) oder Land- und Forstwirtschaft (Anlage L). Der Freibetrag nach § 16 Abs. 4 gilt für alle drei gleich; die Auswahl steuert nur, in welche Anlage der Gewinn eingetragen wird."
     beispielwert: "gewerbe"
@@ -374,6 +394,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Warst du beim Verkauf des Betriebs mindestens 55 Jahre alt — oder dauerhaft berufsunfähig?"
     hilfe_kurz: "Der Freibetrag steht dir nur zu, wenn eine dieser Voraussetzungen erfüllt ist."
     beispielwert: true
@@ -390,6 +411,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Hast du diesen Freibetrag für einen Betriebsverkauf noch nie zuvor in Anspruch genommen?"
     hilfe_kurz: "Diesen Freibetrag gibt es nur einmal im Leben. Antworte mit Ja, wenn du ihn noch nie genutzt hast."
     beispielwert: true

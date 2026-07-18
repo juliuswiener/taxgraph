@@ -11,6 +11,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie viel Kirchensteuer hast du dieses Jahr gezahlt?"
     hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung oder deinem Steuerbescheid."
     beispielwert: 60000
@@ -27,6 +28,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wurde dir dieses Jahr Kirchensteuer erstattet (zurückgezahlt)? Wenn ja, wie viel?"
     hilfe_kurz: "Erstattete Kirchensteuer mindert, was du absetzen kannst. Wenn nichts, gib 0 ein."
     beispielwert: 0
@@ -45,6 +47,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Was hast du dieses Jahr für deine eigene erste Berufsausbildung oder ein Erststudium bezahlt?"
     hilfe_kurz: "Zum Beispiel Studiengebühren, Fachbücher, Fahrten. Bis 6.000 Euro im Jahr."
     beispielwert: 200000
@@ -63,6 +66,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Hattest du dieses Jahr größere außergewöhnliche Ausgaben, die du zwangsläufig tragen musstest (zum Beispiel Krankheitskosten)? Wenn ja, wie viel insgesamt?"
     hilfe_kurz: "Nach Abzug von Erstattungen (z. B. Krankenkasse). Ein zumutbarer Eigenanteil wird automatisch abgezogen."
     beispielwert: 300000
@@ -78,6 +82,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Konntest du diese Ausgaben nicht vermeiden (aus rechtlichen, tatsächlichen oder sittlichen Gründen)?"
     hilfe_kurz: "Zum Beispiel Krankheitskosten kannst du nicht einfach weglassen."
     beispielwert: true
@@ -94,6 +99,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Waren die Ausgaben notwendig und der Höhe nach angemessen?"
     hilfe_kurz: "Übermäßig teure oder unnötige Ausgaben zählen nicht."
     beispielwert: true
@@ -112,6 +118,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Hast du eine Haushaltshilfe auf Minijob-Basis beschäftigt? Wenn ja, was hast du ihr dieses Jahr gezahlt?"
     hilfe_kurz: "Zum Beispiel eine Putzhilfe im Minijob. Wenn nicht, gib 0 ein."
     beispielwert: 250000
@@ -127,6 +134,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Was hast du dieses Jahr für haushaltsnahe Dienstleistungen bezahlt (nur der Arbeitslohn, ohne Material)?"
     hilfe_kurz: "Zum Beispiel eine Reinigungsfirma oder Gartenpflege. Nur die Arbeitskosten, nicht das Material."
     beispielwert: 100000
@@ -142,6 +150,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Was hast du dieses Jahr für Handwerker im Haushalt an Arbeitskosten bezahlt (Renovierung, Reparatur, Modernisierung)?"
     hilfe_kurz: "Nur die Arbeitskosten auf der Rechnung, nicht das Material."
     beispielwert: 120000
@@ -157,6 +166,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Hast du für diese Leistungen eine Rechnung bekommen und per Überweisung (nicht bar) bezahlt?"
     hilfe_kurz: "Barzahlung wird nicht anerkannt — es muss aufs Konto der Firma gegangen sein."
     beispielwert: true
@@ -173,6 +183,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Liegt der Haushalt, in dem gearbeitet wurde, in der EU oder im Europäischen Wirtschaftsraum?"
     hilfe_kurz: "In Deutschland ist das automatisch erfüllt."
     beispielwert: true
@@ -189,6 +200,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Wurden die Handwerkerleistungen NICHT öffentlich gefördert (zum Beispiel durch einen KfW-Zuschuss oder ein zinsverbilligtes Darlehen)?"
     hilfe_kurz: "Öffentlich geförderte Maßnahmen zählen hier nicht mit."
     beispielwert: true
@@ -207,6 +219,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie viel hast du dieses Jahr an gemeinnützige Vereine, Stiftungen oder Kirchen gespendet (Geldspenden mit Spendenquittung)?"
     hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung (Spendenquittung). Nur Spenden an inländische Empfänger."
     beispielwert: 30000

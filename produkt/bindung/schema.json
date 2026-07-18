@@ -65,6 +65,8 @@
         "beispielwert": {"description": "Beispielwert passend zu typ (cent: Ganzzahl Cent; bool: true/false; ...)."},
         "herkunft_slots": {"type": ["array", "null"], "items": {"type": "string"},
           "description": "Provenance je Teilbetrag, z.B. ['Lohnsteuerbescheinigung Nr. 23'] (VOR-Musterfall)."},
+        "vorjahr": {"enum": ["uebernehmbar", "vorschlag"],
+          "description": "Vorjahres-Übernahme-Flag (fail-closed-default: absent = NICHT übertragen). uebernehmbar = Stammdaten/kohorten-fix (direkter Vorschlag); vorschlag = jahres-spezifischer Betrag (Nutzer aktualisiert). Alle Übernahmen bleiben vorlaeufig (Zwei-Signal)."},
         "elster_kz": {"type": ["string", "null"], "pattern": "^E[0-9]{7}$",
           "description": "Amtliche XSD-E-Nummer; null wenn (noch) nicht belegt — dann elster_kz_grund Pflicht."},
         "elster_kz_grund": {"type": "string",

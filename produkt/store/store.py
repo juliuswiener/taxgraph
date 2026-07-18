@@ -140,6 +140,15 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
                 "fail-closed (A): import:beleg-Schreiber muss herkunft=beleg_import, zustand=vorlaeufig, "
                 "signal_2=null tragen — ein Beleg-Import bestätigt nie direkt.")
 
+    # Auflage A (Vorjahr-Writer, symmetrisch): eine Vorjahres-Übernahme ist ein Vorschlag aus dem Vorjahr —
+    # sie bewegt keine Steuer-Zahl, bis der Mensch sie im neuen VZ bestätigt/aktualisiert (K2, fail-closed).
+    if schreiber.startswith("import:vorjahr"):
+        if herkunft.get("herkunft") != "vorjahr" or zustand != "vorlaeufig" \
+                or signal.get("signal_2") is not None:
+            raise ValueError(
+                "fail-closed (A): import:vorjahr-Schreiber muss herkunft=vorjahr, zustand=vorlaeufig, "
+                "signal_2=null tragen — eine Vorjahres-Übernahme bestätigt nie direkt.")
+
     # Typ-Zwang: bestaetigt braucht signal_2.
     if zustand == "bestaetigt" and not (signal.get("signal_2") or "").strip():
         raise ValueError("fail-closed: zustand=bestaetigt braucht ein signal_2 (Zwei-Signal).")

@@ -12,6 +12,7 @@ bindungen:
     einheit: Tage
     bereich: {min: 0, max: 366, grund: "Kalendertage im Veranlagungsjahr (Schaltjahr)"}
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "An wie vielen Tagen bist du dieses Jahr zur Arbeit gefahren?"
     hilfe_kurz: "Zähl nur die Tage, an denen du wirklich zu deiner Arbeitsstelle gefahren bist."
     beispielwert: 220
@@ -27,6 +28,7 @@ bindungen:
     typ: int
     einheit: km
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Wie weit ist es von deiner Wohnung zur Arbeit (einfache Strecke in Kilometern)?"
     hilfe_kurz: "Nur eine Richtung, nicht Hin- und Rückweg. Auf volle Kilometer abrunden."
     beispielwert: 30
@@ -42,6 +44,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Was hast du dieses Jahr für Bus, Bahn und andere öffentliche Verkehrsmittel für den Weg zur Arbeit bezahlt?"
     hilfe_kurz: "Zum Beispiel dein Jobticket oder Monatskarten. Wenn nichts, gib 0 ein."
     beispielwert: 138000
@@ -57,6 +60,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Bist du mit einem eigenen Auto (oder einem dir überlassenen Auto) zur Arbeit gefahren?"
     hilfe_kurz: "Wichtig für die Frage, ob dein Ticketpreis oder die Kilometerpauschale günstiger ist."
     beispielwert: true
@@ -75,6 +79,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Was zahlst du im Monat für deine Zweitwohnung am Arbeitsort (Miete inklusive Nebenkosten)?"
     hilfe_kurz: "Die Wohnung, die du zusätzlich zu deinem Zuhause am Arbeitsort hast."
     beispielwert: 80000
@@ -91,6 +96,7 @@ bindungen:
     einheit: Monate
     bereich: {min: 0, max: 12, grund: "Kalendermonate im Veranlagungszeitraum"}
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie viele Monate hattest du diese Zweitwohnung dieses Jahr?"
     hilfe_kurz: "Volle Monate zählen. Die Höchstgrenze gilt pro Monat."
     beispielwert: 12
@@ -107,6 +113,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Liegt deine Zweitwohnung in Deutschland?"
     hilfe_kurz: "Bei einer Wohnung im Ausland gelten andere Grenzen."
     beispielwert: true
@@ -123,6 +130,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Hast du die Zweitwohnung nur aus beruflichen Gründen (wegen deiner Arbeit)?"
     hilfe_kurz: "Zum Beispiel weil dein Arbeitsort zu weit von deinem Zuhause weg ist."
     beispielwert: true
@@ -139,6 +147,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Hast du an deinem Hauptwohnort einen eigenen Haushalt, der außerhalb des Arbeitsorts liegt?"
     hilfe_kurz: "Ein eigenes Zuhause, in dem du wohnst, wenn du nicht am Arbeitsort bist."
     beispielwert: true
@@ -155,6 +164,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Zahlst du an deinem Hauptwohnort selbst für Wohnen und Lebenshaltung mit?"
     hilfe_kurz: "Zum Beispiel Miete, Nebenkosten oder Kosten fürs Essen."
     beispielwert: true
@@ -171,6 +181,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Ist deine Zweitwohnung im Ausland eine Dienst- oder Werkswohnung, die du verpflichtend nutzen musst?"
     hilfe_kurz: "Nur wichtig, wenn deine Zweitwohnung im Ausland liegt."
     beispielwert: false
@@ -190,6 +201,7 @@ bindungen:
     einheit: Stunden
     bereich: {min: 0, max: 24, grund: "Stunden je Kalendertag (Konvention stunden_je_kalendertag)"}
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie lange warst du an einem Tag für die Arbeit unterwegs (in Stunden)?"
     hilfe_kurz: "Zeit weg von Wohnung und Arbeitsstelle. Ab 8 Stunden gibt es eine Pauschale."
     beispielwert: 10
@@ -206,6 +218,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Hast du bei der auswärtigen Tätigkeit auch auswärts übernachtet?"
     hilfe_kurz: "Mit Übernachtung gelten andere Pauschalen als ohne."
     beispielwert: false
@@ -222,6 +235,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "War der Tag ein An- oder Abreisetag einer mehrtägigen Reise?"
     hilfe_kurz: "Für An- und Abreisetage gibt es eine eigene Pauschale."
     beispielwert: false
@@ -238,6 +252,7 @@ bindungen:
     typ: int
     einheit: Monate
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Seit wie vielen Monaten arbeitest du schon an genau diesem auswärtigen Ort?"
     hilfe_kurz: "Nach drei Monaten am selben Ort gibt es keine Verpflegungspauschale mehr."
     beispielwert: 1
@@ -254,6 +269,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Warst du für die Arbeit außerhalb deiner Wohnung und deiner normalen Arbeitsstelle unterwegs?"
     hilfe_kurz: "Zum Beispiel auf Dienstreise, Montage oder beim Kunden."
     beispielwert: true
@@ -270,6 +286,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Hat dir dein Arbeitgeber oder jemand anderes auf der Reise Mahlzeiten bezahlt oder gestellt?"
     hilfe_kurz: "Kostenlose oder verbilligte Mahlzeiten kürzen die Pauschale."
     beispielwert: false
@@ -285,6 +302,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Hast du die Tätigkeit an diesem Ort für mindestens vier Wochen am Stück unterbrochen?"
     hilfe_kurz: "Eine längere Pause setzt die Drei-Monats-Frist neu in Gang."
     beispielwert: false
@@ -301,6 +319,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Hast du für die Verpflegung eine steuerfreie Erstattung bekommen?"
     hilfe_kurz: "Steuerfreie Erstattungen mindern, was du absetzen kannst."
     beispielwert: false
@@ -325,6 +344,7 @@ bindungen:
     einheit: Tage
     bereich: {min: 0, max: 366, grund: "Kalendertage im Veranlagungszeitraum mit 24-Stunden-Abwesenheit."}
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "An wie vielen Tagen warst du dieses Jahr volle 24 Stunden von zu Hause weg (mit Übernachtung)?"
     hilfe_kurz: "Für jeden solchen ganzen Tag gibt es 28 Euro Verpflegungspauschale."
     beispielwert: 0
@@ -341,6 +361,7 @@ bindungen:
     einheit: Tage
     bereich: {min: 0, max: 366, grund: "An- und Abreisetage einer mehrtägigen Auswärtstätigkeit mit Übernachtung."}
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "An wie vielen Tagen bist du dieses Jahr zu einer mehrtägigen Reise an- oder abgereist (mit Übernachtung)?"
     hilfe_kurz: "An- und Abreisetage einer mehrtägigen Reise zählen jeweils mit 14 Euro."
     beispielwert: 0
@@ -357,6 +378,7 @@ bindungen:
     einheit: Tage
     bereich: {min: 0, max: 366, grund: "Eintägige Auswärtstätigkeiten (ohne Übernachtung) mit mehr als 8 Stunden Abwesenheit."}
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "An wie vielen Tagen warst du dieses Jahr mehr als 8 Stunden auswärts unterwegs, aber ohne Übernachtung?"
     hilfe_kurz: "Eintägige Reisen über 8 Stunden zählen mit 14 Euro."
     beispielwert: 0
@@ -374,6 +396,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Was hat das Arbeitsmittel gekostet (zum Beispiel Laptop, Werkzeug, Fachbücher)?"
     hilfe_kurz: "Der Kaufpreis. Bis 800 Euro kannst du alles sofort absetzen, darüber verteilt über die Jahre."
     beispielwert: 60000
@@ -390,6 +413,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Möchtest du günstige Arbeitsmittel (bis 800 Euro) sofort komplett absetzen?"
     hilfe_kurz: "Sofort-Abzug ist ein Wahlrecht. Alternative: über die Nutzungsjahre verteilen."
     beispielwert: true
@@ -425,6 +449,7 @@ bindungen:
     slot_beitrag: summand
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie viel hast du selbst in die gesetzliche Rentenversicherung eingezahlt (dein Anteil vom Lohn)?"
     hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung in Zeile 23."
     beispielwert: 372000
@@ -441,6 +466,7 @@ bindungen:
     slot_beitrag: summand
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Wie viel hat dein Arbeitgeber steuerfrei zu deiner Rente dazugegeben?"
     hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung in Zeile 22."
     beispielwert: 372000
@@ -457,6 +483,7 @@ bindungen:
     slot_beitrag: summand
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Hast du außerhalb vom Lohn noch selbst in eine gesetzliche Rente eingezahlt? Wenn ja, wie viel?"
     hilfe_kurz: "Zum Beispiel freiwillige Beiträge, die nicht auf der Lohnsteuerbescheinigung stehen."
     beispielwert: 0
@@ -506,6 +533,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    vorjahr: vorschlag
     fragetext_laie: "Was hat das Gerät oder Werkzeug gekostet (Preis ohne Mehrwertsteuer, wenn du sie zurückbekommst)?"
     hilfe_kurz: "Bis 800 Euro netto kannst du es sofort komplett als Betriebsausgabe absetzen."
     beispielwert: 60000
@@ -522,6 +550,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Ist der Preis, den du angibst, ohne Mehrwertsteuer (netto)?"
     hilfe_kurz: "Wenn du die Mehrwertsteuer vom Finanzamt zurückbekommst, rechnest du netto."
     beispielwert: true
@@ -538,6 +567,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Kannst du das Gerät alleine benutzen (also ohne dass es fest zu einem anderen Gerät gehört)?"
     hilfe_kurz: "Zum Beispiel ein Laptop ja, ein einzelner Drucker-Toner nein."
     beispielwert: true
@@ -554,6 +584,7 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    vorjahr: uebernehmbar
     fragetext_laie: "Hast du Geräte über 250 Euro in einer Liste festgehalten (Anschaffungsdatum und Kosten)?"
     hilfe_kurz: "Für Geräte über 250 Euro netto ist so eine Liste vorgeschrieben."
     beispielwert: true
