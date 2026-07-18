@@ -1,0 +1,15 @@
+# Abgeltungsteuersatz nach § 32d Abs. 1 S. 1 EStG (25 %). Veranlagungszeitraum 2026. Wert aus der
+# eingefrorenen Gesetzesfassung (sources/). GETTSIM ist Prueinstanz, nicht Rechtsquelle.
+
+parameter: abgeltungssatz
+veranlagungszeitraum: 2026
+authority: gesetz
+redistributable: true
+gueltig_ab: "2026-01-01"
+
+wert:
+  wert: 25
+  einheit: prozent
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: "EStG", paragraph: "32d", absatz: "1", satz: "1"}
+  datenquelle: "§ 32d Abs. 1 S. 1 EStG ('beträgt 25 Prozent'), sources/gesetze-im-internet/estg_p32d_2026-07-13.txt; Stand 2026-07-18"

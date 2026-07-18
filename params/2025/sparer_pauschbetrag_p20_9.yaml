@@ -1,0 +1,16 @@
+# Sparer-Pauschbetrag nach § 20 Abs. 9 EStG (je Person; bei Zusammenveranlagung verdoppelt, § 20
+# Abs. 9 S. 3). Veranlagungszeitraum 2025. Wert aus der eingefrorenen Gesetzesfassung (sources/),
+# gegengeprueft mit GETTSIM. GETTSIM ist Prueinstanz, nicht Rechtsquelle.
+
+parameter: sparer_pauschbetrag
+veranlagungszeitraum: 2025
+authority: gesetz
+redistributable: true
+gueltig_ab: "2025-01-01"
+
+wert:
+  wert: 1000
+  einheit: euro
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: "EStG", paragraph: "20", absatz: "9", satz: "1"}
+  datenquelle: "§ 20 Abs. 9 S. 1 EStG (einzeln 1.000, zusammen 2.000 nach S. 3), sources/gesetze-im-internet/estg_p20_2026-07-13.txt; Wert bestaetigt durch GETTSIM (germany/einkommensteuer/einkuenfte/aus_kapitalvermoegen/freibetraege.yaml, sparerpauschbetrag Eintrag 2023-01-01 value 1000, reference G. v. 20.12.2022 BGBl. I S. 2294) als Prueinstanz; Stand 2026-07-18"

@@ -511,16 +511,20 @@ def test_an_gesamt_zusammen_vor_guard(base):
 
 
 def _vv_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0,
-             ep_tage=0, ep_km=0, ep_kfz=False):
-    """vv_gesamt-Kegel: § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + Entfernungspauschale) für den
-    kombinierten Fall — Bruttolohn 0 = reiner Vermieter (bestätigte Null) — + veranlagung + Flags
-    (kein_vuv=false = V+V vorhanden)."""
+             ep_tage=0, ep_km=0, ep_kfz=False, kein_kap=True, kap_ertraege=0,
+             kap_gewinn_aktien=0, kap_verlust_aktien=0, kap_gewinn_sonstige=0, kap_verlust_sonstige=0):
+    """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
+    Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
+    (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital."""
     return [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa), ("vv_schuldzinsen", schuldzinsen),
             ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("veranlagung", "einzel"),
             ("bruttoarbeitslohn", bruttolohn),
             ("ep_arbeitstage", ep_tage), ("ep_entfernung_km", ep_km),
             ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", ep_kfz),
-            ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", kein_vuv), ("kein_sonstige", True)]
+            ("kap_kapitalertraege", kap_ertraege), ("kap_gewinn_aktien", kap_gewinn_aktien),
+            ("kap_verlust_aktien", kap_verlust_aktien), ("kap_gewinn_sonstige", kap_gewinn_sonstige),
+            ("kap_verlust_sonstige", kap_verlust_sonstige), ("kap_zusammenveranlagung", False),
+            ("kein_gewinn", True), ("kein_kap", kein_kap), ("kein_vuv", kein_vuv), ("kein_sonstige", True)]
 
 
 def _vv_anlegen(base, fid, kegel):
@@ -604,6 +608,42 @@ def test_kombiniert_mit_pendel_wk(base):
         assert erg["zahl_cent"] == 1310100 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
+
+
+def test_kombiniert_job_und_kapital(base):
+    """Konvergenz § 19 + § 20: Job 60000 (§ 19-Einkünfte 58770) + Kapitalerträge 10000 → nach Sparer-PB
+    9000; Günstigerprüfung § 32d Abs. 6: Grenzsteuer > 25 % → Abgeltung 2250 gewinnt → festzusetzende_est
+    est_ohne 13924 + 2250 = 16174 = 1617400 Cent (dev-2s K4-Zielwert, Brutto-Pipeline)."""
+    catala = _catala_da()
+    _vv_anlegen(base, "kjk", _vv_kegel(0, bruttolohn=6000000, kein_vuv=True,
+                                       kein_kap=False, kap_ertraege=1000000))
+    st, erg = _req(base, "GET", "/fall/kjk/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1617400 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_reines_kapital_guenstiger_null(base):
+    """K2/Günstiger: reiner Kapitalfall (kein anderes Einkommen), Erträge 5000 → nach Sparer-PB 4000;
+    Grundtarif auf 4000 = 0 < Abgeltung 1000 → Günstiger greift → festzusetzende_est 0."""
+    catala = _catala_da()
+    _vv_anlegen(base, "rkg", _vv_kegel(0, kein_vuv=True, kein_kap=False, kap_ertraege=500000))
+    st, erg = _req(base, "GET", "/fall/rkg/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 0 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_kapital_semantik_offen_co_okkurrenz(base):
+    """K2 fail-closed (Instructor-Q1): E0121709-Aggregat UND Aktien-Topf beide gesetzt → additiv-vs-subset
+    ungeklärt → kapital_semantik_offen (kein Rate-Bescheid, kein stilles Verschlucken des Aggregats)."""
+    _vv_anlegen(base, "kso", _vv_kegel(0, kein_vuv=True, kein_kap=False,
+                                       kap_ertraege=500000, kap_gewinn_aktien=300000))
+    st, erg = _req(base, "GET", "/fall/kso/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "kapital_semantik_offen"
 
 
 def test_graph_uebersicht(base):

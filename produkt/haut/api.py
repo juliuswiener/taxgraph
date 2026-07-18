@@ -72,6 +72,12 @@ VOR_PARTNER_FELDER = ("vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
 # Front V+V (§ 21): Überschuss-Rechnung Einnahmen − Werbungskosten (Scheibe 3, referenziert).
 VV_GESAMT_FELDER = ("vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen",
                     "vv_erhaltungsaufwand", "vv_sonstige_wk")
+# Front Kapital (§ 20 / § 32d): E0121709-Aggregat ODER die zwei Verlust-Töpfe (Aktien/sonstige) — MVP
+# SINGLE-SOURCE (Instructor-Entscheid Q1): beide gesetzt → kapital_semantik_offen (Vordruck-Semantik
+# additiv-vs-subset = benannter GAP, nicht geraten). kap_zusammenveranlagung verdoppelt den Sparer-PB.
+KAP_ERTRAEGE = "kap_kapitalertraege"
+KAP_TOEPFE = ("kap_gewinn_aktien", "kap_verlust_aktien", "kap_gewinn_sonstige", "kap_verlust_sonstige")
+KAP_FELDER = (KAP_ERTRAEGE,) + KAP_TOEPFE + ("kap_zusammenveranlagung",)
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -108,16 +114,18 @@ SCHEIBEN = {
         "teil_ringe": [],
         "guard": True,
     },
-    # KONVERGENZ §19+§21 (kombiniert): dieselbe Scheibe rechnet reinen §21 (Bruttolohn = bestätigte
-    # Null) UND Job+Vermietung. Der §19-Zweig hängt die einkuenfte_nichtselbststaendig (§9a-bereinigt,
-    # aus dem einzel-Tarif) als §-2-Abs.-3-Summand an catala_gesamt — der Gesamt-Scope verrechnet einen
-    # §21-Verlust mit dem §19-Lohn (Loss-Offset, K2) und zieht §10c EINMAL ab. Damit ist der an_gesamt-
-    # Pfad nur noch der Grenzfall „kein §21"; End-Zustand EIN catala_gesamt-Ring bleibt (Kapital/§22
-    # folgen als weitere Summanden). NAMED GAP: Verlustvortrag § 10d (nur laufendes Jahr modelliert);
-    # zusammen mit §19 (Person-B-Einkünfte) = Folge-Nachtrag (MVP einzel).
+    # KONVERGENZ §19+§21+§20 (EIN catala_gesamt-Ring): dieselbe Scheibe rechnet reinen §21 (Bruttolohn =
+    # bestätigte Null), Job+Vermietung UND Kapital (§ 20/§ 32d, Günstigerprüfung über zwei gesamt-Läufe).
+    # §19 → einkuenfte_nichtselbststaendig (§9a-bereinigt), §21 → einkuenfte_vermietung, §20 → Kapital-
+    # Steuer (est_ohne + min(Abgeltung, Günstiger-delta)). §21-Verlust mindert §19-Lohn (Loss-Offset, K2),
+    # §10c einmal. NAMENS-SCHULD (Instructor-Q3 zugestanden): der Key "vv_gesamt" ist nach der §20/§19-
+    # Integration ein Fehlname — die Scheibe ist der allgemeine §-2-Gesamt-Ring. Rename auf gesamt/est_gesamt
+    # = eigener sauberer Commit (Test-/Referenz-Blast getrennt halten), hier bewusst NICHT gebündelt.
+    # NAMED GAPS: § 10d Verlustvortrag; Kapital-Co-Okkurrenz E0121709+Töpfe (kapital_semantik_offen);
+    # zusammen+§19 (Person-B); §22-Rente = weitere Summanden.
     "vv_gesamt": {
         "felder": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
-                   + EP_FELDER + AN_GESAMT_FLAGS),
+                   + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_gesamt",
         "teil_ringe": [],
@@ -314,7 +322,31 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "veranlagungszeitraum": vz,
                 "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,   # Naht-CENT -> EURO
                 "werbungskosten": ns_wk})
-            return runner.catala_est(g)
+            est_ohne = runner.catala_est(g)     # § 19 + § 21, KEIN Kapital (est_regulaer_ohne_kap)
+            # Kapital § 20/§ 32d: SINGLE-SOURCE (Instructor-Q1) — E0121709-Aggregat XOR Verlust-Töpfe;
+            # Co-Okkurrenz sperrt der Guard (kapital_semantik_offen). Töpfe (§ 20 Abs. 6, per-Topf-Floor)
+            # → verrechnete; sonst das Aggregat. Dann Sparer-PB (§ 20 Abs. 9). Kapitaleinkünfte ≤ 0 ->
+            # reiner §19/§21-Bescheid (kein Kapital-Effekt).
+            if any(_c(t) != 0 for t in KAP_TOEPFE):
+                verrechnete = runner.catala_kapital_verrechnung({
+                    "gewinn_aktien": _c("kap_gewinn_aktien") // 100,
+                    "verlust_aktien": _c("kap_verlust_aktien") // 100,
+                    "gewinn_sonstige": _c("kap_gewinn_sonstige") // 100,
+                    "verlust_sonstige": _c("kap_verlust_sonstige") // 100})
+            else:
+                verrechnete = _c(KAP_ERTRAEGE) // 100
+            zusammen = (g["veranlagung"] == "zusammen"
+                        or f.get("kap_zusammenveranlagung", {}).get("wert") is True)
+            kapitaleinkuenfte = runner.catala_sparer_pb({
+                "veranlagungszeitraum": vz, "kapitalertraege": verrechnete, "zusammenveranlagung": zusammen})
+            if kapitaleinkuenfte <= 0:
+                return est_ohne
+            # Günstigerprüfung (§ 32d Abs. 6): reguläre est MIT Kapital im zvE (Grundtarif) vs Abgeltung.
+            est_mit = runner.catala_est(dict(g, einkuenfte_kapitalvermoegen=kapitaleinkuenfte))
+            kapital_steuer = runner.catala_kapital_steuer({
+                "veranlagungszeitraum": vz, "kapitaleinkuenfte": kapitaleinkuenfte,
+                "est_regulaer_mit_kap": est_mit, "est_regulaer_ohne_kap": est_ohne})
+            return est_ohne + kapital_steuer    # Günstiger -> est_mit; Abgeltung -> est_ohne + abgeltung
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
@@ -350,13 +382,19 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None):
     if PC.partner_ohne_zusammen(felder):
         return "partner_konsistenz_offen"
     if cfg and cfg.get("vv"):
-        # V+V-Ring (§ 21): Flag↔Einkunftsart-Widerspruch (kein_vuv=true + vv_einnahmen>0 bestätigt)
-        # surfacen — K2, keine still übergangene Einkunftsart (dev-2s flag_check).
+        # Gesamt-Ring (§ 19/§ 21/§ 20): Flag↔Einkunftsart-Widerspruch (kein_vuv/kein_kap=true + echtes
+        # Feld > 0 bestätigt) surfacen — K2, keine still übergangene Einkunftsart (dev-2s flag_check).
         if FC.flag_widersprueche(felder):
             return "flag_konsistenz_offen"
-        # MVP nur § 21: eine ANDERE Einkunftsart bestätigt-vorhanden → nicht ring-fähig (Stufe 2).
+        # Kapital-Semantik (Instructor-Q1, fail-closed): E0121709-Aggregat UND Verlust-Töpfe beide gesetzt
+        # → additiv-vs-subset ungeklärt (benannter GAP) → kein Rate-Bescheid (die slot_fn nähme sonst still
+        # nur die Töpfe und verschluckte das Aggregat).
+        if _positiv(KAP_ERTRAEGE) and any(_positiv(t) for t in KAP_TOEPFE):
+            return "kapital_semantik_offen"
+        # § 20 Kapital IST jetzt ring-fähig (kein_kap raus). Nur noch nicht modellierte Arten (Gewinn §§13-18,
+        # sonstige § 22) sperren, wenn bestätigt-vorhanden (Stufe 2).
         if any(felder.get(fl, {}).get("wert") is False
-               for fl in ("kein_gewinn", "kein_kap", "kein_sonstige")):
+               for fl in ("kein_gewinn", "kein_sonstige")):
             return "einkunftsart_nicht_ring_faehig"
         return None
     if any(_positiv(f) for f in GUARD_WERBUNGSKOSTEN):

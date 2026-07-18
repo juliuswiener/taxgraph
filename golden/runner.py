@@ -192,6 +192,55 @@ def catala_einkuenfte_nichtselbststaendig(s: dict) -> int:
     return int(out.summe_der_einkuenfte) // 100
 
 
+# -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --
+
+def _sparer_pauschbetrag(year: int) -> int:
+    """§ 20 Abs. 9 S. 1 EStG Sparer-Pauschbetrag (je Person, 1000) aus params/<vz>."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "sparer_pauschbetrag_p20_9.yaml"), encoding="utf-8"))
+    return p["wert"]["wert"]
+
+
+def _abgeltungssatz(year: int) -> int:
+    """§ 32d Abs. 1 S. 1 EStG Abgeltungsteuersatz in Prozent (25) aus params/<vz>."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "abgeltungssatz_p32d.yaml"), encoding="utf-8"))
+    return p["wert"]["wert"]
+
+
+def catala_sparer_pb(s: dict) -> int:
+    """§ 20 Abs. 9 EStG — Kapitalerträge nach Sparer-Pauschbetrag, EURO. WÖRTLICHE Transkription des
+    Registry-Rechenwegs p20_9_sparer_pauschbetrag: einkuenfte_nach_sparer_pb = max(0, kapitalertraege −
+    pausch); pausch = Sparer-Pauschbetrag (bei Zusammenveranlagung verdoppelt, § 20 Abs. 9 S. 3). Wert
+    aus params/<vz> (nie hardcoden). KOPPLUNG: bei Registry-Änderung p20_9 nachziehen; Konsistenz-Gate."""
+    year = s["veranlagungszeitraum"]
+    pausch = _sparer_pauschbetrag(year) * (2 if s.get("zusammenveranlagung") else 1)
+    return max(0, int(s.get("kapitalertraege", 0)) - pausch)
+
+
+def catala_kapital_verrechnung(s: dict) -> int:
+    """§ 20 Abs. 6 EStG — verrechnete Kapitaleinkünfte (zwei GETRENNTE Verlust-Töpfe, je Boden 0), EURO.
+    WÖRTLICHE Transkription p20_6_verlustverrechnung: saldo_aktien = max(0, gewinn_aktien − verlust_aktien);
+    saldo_sonstige = max(0, gewinn_sonstige − verlust_sonstige); verrechnete = saldo_aktien + saldo_sonstige.
+    KEINE topfübergreifende Verrechnung (Aktienverlust mindert nicht den sonstigen Gewinn). Verlustvortrag
+    § 10d = benannter GAP. KOPPLUNG: bei Registry-Änderung p20_6 nachziehen; Konsistenz-Gate."""
+    saldo_aktien = max(0, int(s.get("gewinn_aktien", 0)) - int(s.get("verlust_aktien", 0)))
+    saldo_sonstige = max(0, int(s.get("gewinn_sonstige", 0)) - int(s.get("verlust_sonstige", 0)))
+    return saldo_aktien + saldo_sonstige
+
+
+def catala_kapital_steuer(s: dict) -> int:
+    """§ 32d Abs. 1 EStG — Kapital-Steuer via Günstigerprüfung (Abs. 6), EURO. WÖRTLICHE Transkription
+    p32d_1_abgeltung: abgeltung = satz% × kapitaleinkuenfte; guenstiger_delta = est_regulaer_mit_kap −
+    est_regulaer_ohne_kap; kapital_steuer = min(abgeltung, guenstiger_delta). Die zwei est-Größen liefert
+    der AUFRUFER (§ 2-Integration, zwei catala_gesamt-Läufe mit/ohne Kapital im zvE) — hier NICHT gerechnet
+    (Registry-hinweis). Satz aus params/<vz>. KOPPLUNG: bei Registry-Änderung p32d_1 nachziehen; Konsistenz-Gate."""
+    kap = int(s.get("kapitaleinkuenfte", 0))
+    abgeltung = kap * _abgeltungssatz(s["veranlagungszeitraum"]) // 100
+    delta = int(s.get("est_regulaer_mit_kap", 0)) - int(s.get("est_regulaer_ohne_kap", 0))
+    return min(abgeltung, delta)
+
+
 def _kindergeld(year: int) -> int:
     """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
     p = load_yaml_fh(open(os.path.join(
