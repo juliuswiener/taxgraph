@@ -41,7 +41,10 @@ from pkg import Entfernungspauschale as EP  # noqa: E402
 from pkg import Arbeitszimmer_homeoffice as AZ  # noqa: E402
 from pkg import Haushaltsnahe as HN  # noqa: E402  (§ 35a Abs. 1-3, charge29-Promotion)
 from pkg import SpendenAbzug as SA  # noqa: E402  (§ 10b Abs. 1, charge29-Promotion)
-from catala_runtime import Money, Decimal, Bool  # noqa: E402
+from pkg import ZumutbareBelastung as ZB  # noqa: E402  (§ 33 Abs. 3 zumutbare Belastung)
+from pkg import AgbAbzug as AG  # noqa: E402  (§ 33 Abs. 1 agB-Abzug)
+from pkg import Kirchensteuerabzug as KI  # noqa: E402  (§ 10 Abs. 1 Nr. 4 KiSt)
+from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
 def _az_params(year: int) -> dict:
@@ -217,6 +220,44 @@ def catala_p10b_spenden(s: dict) -> int:
         zuwendungen_in=Money(f"{int(s.get('zuwendungen', 0))}.00"),
         gesamtbetrag_der_einkuenfte_in=Money(f"{int(s.get('gesamtbetrag_der_einkuenfte', 0))}.00")))
     return int(r.spenden_abzug) // 100
+
+
+def _zumutbar_money(s: dict):
+    """§ 33 Abs. 3 EStG zumutbare Belastung als Money (Tranchen-Methode post-2017-BFH, je Stufe nur auf ihren
+    GdE-Anteil; Sätze 1-7 % nach Kinderzahl/Splitting). NUR über die Regel — die Staffelung ist Steuerlogik,
+    NIE Frontend-Rechnung. anzahl_kinder ist Catala-Integer (Python-int bräche den >=-Vergleich im Scope)."""
+    return ZB.zumutbare_belastung(ZB.ZumutbareBelastungIn(
+        gesamtbetrag_der_einkuenfte_in=Money(f"{int(s.get('gesamtbetrag_der_einkuenfte', 0))}.00"),
+        anzahl_kinder_in=Integer(int(s.get("anzahl_kinder", 0))),
+        splitting_in=bool(s.get("splitting", False)))).zumutbare_belastung
+
+
+def catala_p33_zumutbar(s: dict) -> int:
+    """§ 33 Abs. 3 EStG zumutbare Belastung, EURO (module ZumutbareBelastung). Reine Exposition der Zwischen-
+    größe (Tests/Transparenz) — die agB-Verrechnung macht catala_p33_agb (Money-genau, EIN Rundungsschritt)."""
+    return int(_zumutbar_money(s)) // 100
+
+
+def catala_p33_agb(s: dict) -> int:
+    """§ 33 Abs. 1 EStG — abziehbare außergewöhnliche Belastung, EURO (module AgbAbzug): agB-Aufwendungen minus
+    zumutbare Belastung (§ 33 Abs. 3), min. 0. Kettet ZumutbareBelastung → AgbAbzug INTERN mit Money-Präzision
+    (der fraktionale Tranchen-zumutbar bleibt Money bis zum finalen abzug_agb → EIN Euro-Rundungsschritt). Roh-
+    Wert speist § 2 Abs. 4 aussergewoehnliche_belastungen (p32a). anzahl_kinder/splitting → zumutbar-Staffel."""
+    r = AG.agb_abzug(AG.AgbAbzugIn(
+        aussergewoehnliche_belastungen_in=Money(f"{int(s.get('aussergewoehnliche_belastungen', 0))}.00"),
+        zumutbare_belastung_in=_zumutbar_money(s)))
+    return int(r.abzug_agb) // 100
+
+
+def catala_p10_kist(s: dict) -> int:
+    """§ 10 Abs. 1 Nr. 4 EStG — abziehbare Kirchensteuer, EURO (module Kirchensteuerabzug): gezahlte minus
+    erstattete KiSt. Der Erstattungsüberhang (erstattet > gezahlt, § 10 Abs. 4b) ist ein NICHT materialisierter
+    Nachtrag (fehlt die GdE-Hinzurechnung) → die Scheibe sperrt diesen Fall fail-closed (erstattungsueberhang_
+    offen), dieser Accessor sieht nur den regulären Fall. Roh-Wert speist § 2 Abs. 4 sonderausgaben (additiv)."""
+    r = KI.kirchensteuerabzug(KI.KirchensteuerabzugIn(
+        gezahlte_kirchensteuer_in=Money(f"{int(s.get('gezahlte_kirchensteuer', 0))}.00"),
+        erstattete_kirchensteuer_in=Money(f"{int(s.get('erstattete_kirchensteuer', 0))}.00")))
+    return int(r.abziehbare_kirchensteuer) // 100
 
 
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --

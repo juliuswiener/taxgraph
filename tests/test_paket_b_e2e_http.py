@@ -1185,6 +1185,99 @@ def test_haushalt_spenden_deckel_20_prozent_gde(base):
         assert erg["zahl_cent"] is None
 
 
+def _agb_kegel(bruttolohn=6000000, agb=0, kinder=0, kist_gezahlt=0, kist_erstattet=0, veranlagung="einzel"):
+    """agb_gesamt-Kegel (§33 agB + §10 KiSt, #8): §19-Basis (cent) + agB-Aufwendungen (cent) + fam_anzahl_kinder
+    (int, für zumutbar-Staffelung) + KiSt gezahlt/erstattet (cent) + veranlagung (splitting-Ableitung) + Flags."""
+    return [("bruttoarbeitslohn", bruttolohn), ("agb_aufwendungen", agb),
+            ("fam_anzahl_kinder", kinder), ("kist_gezahlt", kist_gezahlt),
+            ("kist_erstattet", kist_erstattet), ("veranlagung", veranlagung),
+            ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True)]
+
+
+def _agb_anlegen(base, fid, kegel):
+    st, _ = _req(base, "POST", "/fall", {"scheibe": "agb_gesamt", "veranlagungszeitraum": 2025, "fall_id": fid})
+    assert st == 201
+    for feld, wert in kegel:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
+        assert st == 201
+
+
+def test_agb_voll_33_10kist(base):
+    """#8 § 33 agB + § 10 KiSt Vollfall: Bruttolohn 60000 (GdE 58770) + agB 5000 (− zumutbare Belastung 3449
+    bei 0 Kindern/einzel = Abzug 1550) + KiSt gezahlt 1200 − erstattet 200 = 1000 → festzusetzende_est 12966 =
+    1296600 Cent (Ref ohne agB/KiSt = 13924)."""
+    catala = _catala_da()
+    _agb_anlegen(base, "ag1", _agb_kegel(6000000, agb=500000, kist_gezahlt=120000, kist_erstattet=20000))
+    st, erg = _req(base, "GET", "/fall/ag1/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1296600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_agb_unter_zumutbar_kein_abzug(base):
+    """#8 K2 § 33 Abs. 3: agB 2000 UNTER der zumutbaren Belastung (3449 bei 0 Kindern) → agB-Abzug 0 (die
+    zumutbare Belastung wird regel-seitig abgezogen, kein Frontend-Clamp) → festzusetzende_est = wie ohne agB
+    = 13924 = 1392400 Cent."""
+    catala = _catala_da()
+    _agb_anlegen(base, "ag2", _agb_kegel(6000000, agb=200000))
+    st, erg = _req(base, "GET", "/fall/ag2/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 1392400 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_agb_kinder_staffelung(base):
+    """#8 § 33 Abs. 3 Staffelung: dieselbe agB 5000, aber 2 Kinder → niedrigere zumutbare Belastung (1686 statt
+    3449) → höherer agB-Abzug (3313) → festzusetzende_est 12666 = 1266600 Cent (kleiner als 0-Kinder 1296600).
+    Belegt: die Kinderzahl geht über fam_anzahl_kinder REGEL-seitig in die zumutbar-Staffel."""
+    catala = _catala_da()
+    _agb_anlegen(base, "ag3", _agb_kegel(6000000, agb=500000, kinder=2))
+    st, erg = _req(base, "GET", "/fall/ag3/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1266600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_agb_nur_kist(base):
+    """#8 § 10 KiSt-only: gezahlt 1200 − erstattet 200 = 1000 als Sonderausgabe (additiv, kein agB) →
+    festzusetzende_est 13554 = 1355400 Cent."""
+    catala = _catala_da()
+    _agb_anlegen(base, "ag4", _agb_kegel(6000000, kist_gezahlt=120000, kist_erstattet=20000))
+    st, erg = _req(base, "GET", "/fall/ag4/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 1355400 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_agb_erstattungsueberhang_offen(base):
+    """#8 K2 fail-closed (§ 10 Abs. 4b): erstattete KiSt (1200) > gezahlte (200) = Erstattungsüberhang →
+    erstattungsueberhang_offen. NICHT still abziehbar=0 (das unterbesteuert — die Überhang-Hinzurechnung zum
+    GdE ist nicht materialisiert). Fail-closed statt Rate-Bescheid."""
+    _agb_anlegen(base, "ag5", _agb_kegel(6000000, kist_gezahlt=20000, kist_erstattet=120000))
+    st, erg = _req(base, "GET", "/fall/ag5/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "erstattungsueberhang_offen"
+
+
+def test_agb_zusammen_einverdiener_splitting(base):
+    """#8 Zusammenveranlagung (Einverdiener-Ehepaar): veranlagung=zusammen → Splittingtarif + Splitting-zumutbar-
+    Staffel. agB 5000, GdE 58770 (Person A allein) → zumutbar(splitting) 2861, Abzug 2138 → festzusetzende_est
+    7640 = 764000 Cent (Splitting halbiert den Tarif). Dual-Verdiener-Person-B bleibt Nachtrag."""
+    catala = _catala_da()
+    _agb_anlegen(base, "ag6", _agb_kegel(6000000, agb=500000, veranlagung="zusammen"))
+    st, erg = _req(base, "GET", "/fall/ag6/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 764000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def test_graph_uebersicht(base):
     """Read-only Desktop-Graph: Knoten = Regeln der Scheibe mit Status, Kanten = Feld→Regel mit
     Zustand. Ein Traverser-Aufruf, kein Bescheid, kein Schreibpfad."""

@@ -112,6 +112,13 @@ HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")   # 
 HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23              # + Abs. 1 Minijob
 HAUSHALT_KEGEL = (("bruttoarbeitslohn",) + HAUSHALT_35A + ("spenden_betrag", "veranlagung") + AN_GESAMT_FLAGS)
 HAUSHALT_FELDER = HAUSHALT_KEGEL + ("hh_rechnung_unbar",)
+# agB-Ring (§ 33 agB + § 10 KiSt, charge29/#8). §19-Basis + agB-Aufwendungen + fam_anzahl_kinder (für die
+# zumutbare-Belastung-Staffelung) + KiSt gezahlt/erstattet. splitting wird aus veranlagung abgeleitet (kein
+# eigenes Feld). ALLE im Pflicht-Kegel (bestätigte Null je nicht zutreffend). typ:int fam_anzahl_kinder (kein cent).
+AGB_KIST = ("kist_gezahlt", "kist_erstattet")
+AGB_KEGEL = (("bruttoarbeitslohn", "agb_aufwendungen", "fam_anzahl_kinder")
+             + AGB_KIST + ("veranlagung",) + AN_GESAMT_FLAGS)
+AGB_FELDER = AGB_KEGEL
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -206,6 +213,23 @@ SCHEIBEN = {
         "guard": True,
         "gesamt_guard": True,
         "haushalt": True,          # aktiviert die § 35a-rechnung_unbar-conditional-mandatory-Prüfung (K2)
+        "fremd_arten": ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige"),
+    },
+    # agB-Ring (§ 33 außergewöhnliche Belastungen + § 10 KiSt, charge29/#8): §19-Basis + agB-Abzug (agB minus
+    # zumutbare Belastung § 33 Abs. 3, Staffelung NUR regel-seitig über fam_anzahl_kinder/splitting) → p32a
+    # aussergewoehnliche_belastungen + KiSt-Abzug (gezahlt − erstattet) → p32a sonderausgaben (additiv). splitting
+    # = veranlagung==zusammen (Einverdiener-Ehepaar korrekt; Dual-Verdiener Person-B = Nachtrag wie §35a/§10b).
+    # NAMED GAPS: KiSt-Erstattungsüberhang (§10 Abs.4b, Guard fail-closed); agB-Zwangsläufigkeit/Notwendigkeit als
+    # MVP-Annahme (nicht erfragt, Geltungsbedingung); Dual-Verdiener-Person-B.
+    "agb_gesamt": {
+        "felder": AGB_FELDER,
+        "kegel": AGB_KEGEL,
+        "felder_datei": None,
+        "gesamt_ring": "festzusetzende_est_agb",
+        "teil_ringe": [],
+        "guard": True,
+        "gesamt_guard": True,
+        "agb": True,               # aktiviert den § 10 Abs. 4b KiSt-Erstattungsüberhang-Guard (K2)
         "fremd_arten": ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige"),
     },
 }
@@ -576,6 +600,43 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "steuerermaessigungen": p35a})
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
+    if quantitaet == "festzusetzende_est_agb":   # § 33 agB + § 10 KiSt via catala_gesamt
+        try:
+            import runner  # noqa: F401
+        except Exception:
+            return None
+        f = felder or {}
+
+        def _c(fid):
+            v = f.get(fid, {}).get("wert")
+            return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+
+        def slot_fn(slots: dict) -> int:
+            # § 19-Basis → einkuenfte_nichtselbststaendig (§9a-bereinigt) = GdE (reiner AN-Fall, kein §24a/§24b).
+            # splitting aus veranlagung (Einverdiener-Ehepaar → Splittingtarif + Splitting-zumutbar-Staffel).
+            ns = runner.catala_einkuenfte_nichtselbststaendig({
+                "veranlagungszeitraum": vz,
+                "bruttoarbeitslohn": _c("bruttoarbeitslohn") // 100, "werbungskosten": 0})
+            splitting = f.get("veranlagung", {}).get("wert") == "zusammen"
+            # § 33 Abs. 1/3: agB-Abzug = agB-Aufwendungen − zumutbare Belastung (Staffelung REGEL-seitig über
+            # anzahl_kinder/splitting; NIE Frontend-Rechnung). fam_anzahl_kinder ist int (kein cent). Roh →
+            # aussergewoehnliche_belastungen (p32a § 2 Abs. 4). § 10 KiSt: gezahlt − erstattet → sonderausgaben
+            # (additiv; _sonderausgaben_final floort § 10c-Pauschbetrag). Erstattungsüberhang sperrt der Guard.
+            agb = runner.catala_p33_agb({
+                "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
+                "gesamtbetrag_der_einkuenfte": ns,
+                "anzahl_kinder": _c("fam_anzahl_kinder"), "splitting": splitting})
+            kist = runner.catala_p10_kist({
+                "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
+                "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
+            return runner.catala_gesamt({
+                "veranlagungszeitraum": vz,
+                "veranlagung": slots.get("veranlagung", "einzel"),
+                "einkuenfte_nichtselbststaendig": ns,
+                "aussergewoehnliche_belastungen": agb,
+                "sonderausgaben": kist})
+        return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
+
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
 
 
@@ -679,6 +740,15 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if cfg.get("haushalt") and (_positiv("hh_dienstleistungen") or _positiv("hh_handwerker_arbeitskosten")):
             if (felder.get("hh_rechnung_unbar") or {}).get("zustand") != "bestaetigt":
                 return "rechnung_unbar_offen"
+        # § 10 Abs. 4b KiSt-Erstattungsüberhang (K2, #8): erstattete > gezahlte Kirchensteuer → fail-closed. Der
+        # abziehbare Teil wäre 0, ABER die Überhang-Hinzurechnung zum GdE (§ 10 Abs. 4b S. 3) ist NICHT
+        # materialisiert → ein stiller Abzug 0 würde unterbesteuern. Benannter Nachtrag → erstattungsueberhang_offen.
+        if cfg.get("agb"):
+            def _num(fid):
+                w = (felder.get(fid) or {}).get("wert")
+                return w if isinstance(w, (int, float)) and not isinstance(w, bool) else 0
+            if _num("kist_erstattet") > _num("kist_gezahlt"):
+                return "erstattungsueberhang_offen"
         # fremd_arten = Arten, die DIESE Scheibe NICHT rechnet → bestätigt-false (Nutzer HAT die Art) sperrt
         # (Stufe 2). Die von der Scheibe GERECHNETEN Arten stehen NICHT in fremd_arten (kein Fehl-Sperr).
         if any(felder.get(fl, {}).get("wert") is False for fl in cfg.get("fremd_arten", ())):
