@@ -193,6 +193,31 @@ def test_kontoauszug_json_liste(base):
     assert st == 200 and b["uebernommen"] == 1
 
 
+def test_gesamt_zusammen_beide_verdiener(base):
+    """#4 Person-B-Ring: Ehepaar-beide-Verdiener (Zusammenveranlagung). A Bruttolohn 40000 (§19-Einkünfte
+    38770) + B Bruttolohn 30000 (28770) → kombiniert 67540 in catala_gesamt(zusammen) → Splitting +
+    doppelter § 10c → festzusetzende_est 10776 = 1077600 Cent (== catala_est_zusammen, handverifiziert)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "zv", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
+                                              veranlagung="zusammen", bruttolohn_partner=3000000,
+                                              person_b_idnr="12345678901"))
+    st, erg = _req(base, "GET", "/fall/zv/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1077600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_zusammen_partner_kegel_offen(base):
+    """K2: Zusammenveranlagung mit unvollständigem Person-B-Kegel (Bruttolohn_partner fehlt) → kein
+    halber Ehepaar-Bescheid (partner_kegel_offen)."""
+    _gesamt_anlegen(base, "zvo", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
+                                               veranlagung="zusammen", person_b_idnr="12345678901"))
+    st, erg = _req(base, "GET", "/fall/zvo/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "partner_kegel_offen"
+
+
 def test_concurrent_ergebnis_kein_race(base):
     """K2-Concurrency-Beweis: die Haut feuert /stand + /ergebnis PARALLEL (Browser serialisiert XHRs nicht)
     und catala_runtime ist NICHT thread-safe (globaler max_decimals steuert die Money-Rundung). Der SINGLE-
@@ -619,19 +644,26 @@ def test_an_gesamt_zusammen_vor_guard(base):
 
 def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0,
              ep_tage=0, ep_km=0, ep_kfz=False, kein_kap=True, kap_ertraege=0,
-             kap_gewinn_aktien=0, kap_verlust_aktien=0, kap_gewinn_sonstige=0, kap_verlust_sonstige=0):
+             kap_gewinn_aktien=0, kap_verlust_aktien=0, kap_gewinn_sonstige=0, kap_verlust_sonstige=0,
+             veranlagung="einzel", bruttolohn_partner=None, person_b_idnr=None):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
-    (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital."""
-    return [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa), ("vv_schuldzinsen", schuldzinsen),
-            ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("veranlagung", "einzel"),
-            ("bruttoarbeitslohn", bruttolohn),
-            ("ep_arbeitstage", ep_tage), ("ep_entfernung_km", ep_km),
-            ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", ep_kfz),
-            ("kap_kapitalertraege", kap_ertraege), ("kap_gewinn_aktien", kap_gewinn_aktien),
-            ("kap_verlust_aktien", kap_verlust_aktien), ("kap_gewinn_sonstige", kap_gewinn_sonstige),
-            ("kap_verlust_sonstige", kap_verlust_sonstige), ("kap_zusammenveranlagung", False),
-            ("kein_gewinn", True), ("kein_kap", kein_kap), ("kein_vuv", kein_vuv), ("kein_sonstige", True)]
+    (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
+    bruttolohn_partner/person_b_idnr (nur bei veranlagung=zusammen) = Person-B-§19-Kegel (#4)."""
+    k = [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa), ("vv_schuldzinsen", schuldzinsen),
+         ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("veranlagung", veranlagung),
+         ("bruttoarbeitslohn", bruttolohn),
+         ("ep_arbeitstage", ep_tage), ("ep_entfernung_km", ep_km),
+         ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", ep_kfz),
+         ("kap_kapitalertraege", kap_ertraege), ("kap_gewinn_aktien", kap_gewinn_aktien),
+         ("kap_verlust_aktien", kap_verlust_aktien), ("kap_gewinn_sonstige", kap_gewinn_sonstige),
+         ("kap_verlust_sonstige", kap_verlust_sonstige), ("kap_zusammenveranlagung", False),
+         ("kein_gewinn", True), ("kein_kap", kein_kap), ("kein_vuv", kein_vuv), ("kein_sonstige", True)]
+    if bruttolohn_partner is not None:
+        k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
+    if person_b_idnr is not None:
+        k.append(("person_b_idnr", person_b_idnr))
+    return k
 
 
 def _gesamt_anlegen(base, fid, kegel):

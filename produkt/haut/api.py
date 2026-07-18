@@ -91,6 +91,10 @@ RENTNER_33B = ("rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind"
 RENTNER_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner")
 RENTNER_KEGEL = RENTNER_22 + RENTNER_33B + ("veranlagung",) + AN_GESAMT_FLAGS
 RENTNER_FELDER = RENTNER_KEGEL + ("rentner_rentenfreibetrag",) + RENTNER_PARTNER
+# Person B (Zusammenveranlagung, dev-2s Person-B-Deklaration): die §19-Einkünfte des Ehegatten in den
+# Gesamt-Ring. Nur bei veranlagung=zusammen relevant → NICHT im Pflicht-Kegel (der Guard erzwingt den
+# Person-B-Kegel bei zusammen). Person-B-Kapital/§22 = getrennte Folge-Nachträge (#4-Fortsetzung).
+GESAMT_PARTNER_19 = ("bruttoarbeitslohn_partner", "person_b_idnr")
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -137,7 +141,11 @@ SCHEIBEN = {
     # (kapital_semantik_offen); zusammen+§19 (Person-B); §22-Rente = weitere Summanden.
     "gesamt": {
         "felder": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
-                   + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
+                   + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + GESAMT_PARTNER_19),
+        # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder); der Guard erzwingt den Person-B-Kegel
+        # nur bei veranlagung=zusammen (sonst zögen die ungesetzten Partner-Felder das Intervall auf None).
+        "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
+                  + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_gesamt",
         "teil_ringe": [],
@@ -146,6 +154,7 @@ SCHEIBEN = {
         # fremd_arten = Einkunftsarten, die DIESE Scheibe NICHT rechnet -> müssen abwesend bestätigt sein
         # (kein_gewinn §§13-18, kein_sonstige §22). §19/§21/§20 rechnet sie -> deren Flags NICHT hier.
         "fremd_arten": ("kein_gewinn", "kein_sonstige"),
+        "partner_19": True,     # § 19-Einkünfte des Ehegatten in den Ring (Zusammenveranlagung, #4)
     },
     # Rentner-Ring (§ 22 Leibrente + § 33b): eigene Scheibe (Feld-Ergonomie — Renten-Felder blähen den
     # AN/gesamt-Kegel nicht). Rechnet über DENSELBEN catala_gesamt-Kern (einkuenfte_sonstige = § 22-Renten-
@@ -349,10 +358,19 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 **{k: slots[k] for k in
                    ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
                    if k in slots}})
-            g["einkuenfte_nichtselbststaendig"] = runner.catala_einkuenfte_nichtselbststaendig({
+            ns = runner.catala_einkuenfte_nichtselbststaendig({
                 "veranlagungszeitraum": vz,
                 "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,   # Naht-CENT -> EURO
                 "werbungskosten": ns_wk})
+            # Person B (§ 26b Zusammenveranlagung, #4): die § 19-Einkünfte des Ehegatten (§9a-bereinigt JE
+            # PERSON) in DIESELBE einkuenfte_nichtselbststaendig-Summe — kein _a/_b-Split, der Gesamt-Scope
+            # rechnet Splitting + doppelten § 10c aus veranlagung=zusammen (handverifiziert: gesamt(zusammen,
+            # ns_A+ns_B) == catala_est_zusammen(brutto_A, brutto_B)). Person-B-WK MVP 0 (Folge-Nachtrag).
+            if g["veranlagung"] == "zusammen":
+                ns += runner.catala_einkuenfte_nichtselbststaendig({
+                    "veranlagungszeitraum": vz,
+                    "bruttoarbeitslohn": _c("bruttoarbeitslohn_partner") // 100, "werbungskosten": 0})
+            g["einkuenfte_nichtselbststaendig"] = ns
             est_ohne = runner.catala_est(g)     # § 19 + § 21, KEIN Kapital (est_regulaer_ohne_kap)
             # Kapital § 20/§ 32d: SINGLE-SOURCE (Instructor-Q1) — E0121709-Aggregat XOR Verlust-Töpfe;
             # Co-Okkurrenz sperrt der Guard (kapital_semantik_offen). Töpfe (§ 20 Abs. 6, per-Topf-Floor)
@@ -466,6 +484,11 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # nur die Töpfe und verschluckte das Aggregat).
         if _positiv(KAP_ERTRAEGE) and any(_positiv(t) for t in KAP_TOEPFE):
             return "kapital_semantik_offen"
+        # Person B (#4): bei Zusammenveranlagung braucht der Ring den vollständig BESTÄTIGTEN Person-B-
+        # Kegel (Bruttolohn + IdNr) — sonst kein halber Ehepaar-Bescheid (K2). Bei einzel irrelevant.
+        if cfg.get("partner_19") and felder.get("veranlagung", {}).get("wert") == "zusammen":
+            if any((felder.get(pf) or {}).get("zustand") != "bestaetigt" for pf in GESAMT_PARTNER_19):
+                return "partner_kegel_offen"
         # § 22 aa Rentenfreibetrag-Fixierung (K2): ab dem 2. Jahr ist der Freibetrag in EURO fix; fehlt er
         # (aa-Folgejahr, renten_beginn < VZ, kein rentenfreibetrag) → fail-closed, kein %×erhöhte-Rente.
         if cfg.get("rentner"):
