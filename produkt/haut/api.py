@@ -171,12 +171,13 @@ SCHEIBEN = {
     # (kapital_semantik_offen); zusammen+§19 (Person-B); §22-Rente = weitere Summanden.
     "gesamt": {
         "felder": (VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ("veranlagung", "bruttoarbeitslohn")
-                   + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP
+                   + EP_FELDER + VOR_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2-Tatbestand OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
-        # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0).
+        # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
+        # (§ 10 Altersvorsorge) im Kegel (mandatory wie an_gesamt) → kein stiller Über-tax durch fehlenden Abzug.
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
-                  + EP_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
+                  + EP_FELDER + VOR_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_gesamt",
         "teil_ringe": [],
@@ -460,6 +461,15 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "monate_ohne_voraussetzung": _c("fam_monate_ohne_voraussetzung")})
             g["altersentlastungsbetrag"] = alt24a
             g["entlastungsbetrag_alleinerziehende"] = ent24b
+            # § 10 Abs. 1 Nr. 2/Abs. 3 Altersvorsorge (Basisvorsorge RV): die 3 VOR-Felder DIREKT aus dem Store —
+            # gesamtbeitraege = AN + AG + außerhalb LStB, der steuerfreie AG-Anteil getrennt (Kürzung NACH dem
+            # knappschaft-Höchstbetrag-Cap). catala_gesamt ruft _vorsorge_abzug(s) SCHON intern (runner.py Z.759,
+            # addiert auf sonderausgaben nach _sonderausgaben_final) → hier nur die Slots setzen, kein Doppelzählen.
+            # Naht-CENT → EURO. Absent → 0 (im Pflicht-Kegel, also immer gefragt: kein stiller Über-tax). Person-B-
+            # VOR (vor_*_partner) + zusammen-VOR = Nachtrag wie an_gesamt (MVP Person-A-Altersvorsorge).
+            g["vorsorge_gesamtbeitraege_inkl_ag"] = (_c("vor_an_anteil_rv") + _c("vor_ag_anteil_rv")
+                                                     + _c("vor_rv_ausserhalb_lstb")) // 100
+            g["vorsorge_ag_anteil_steuerfrei"] = _c("vor_ag_anteil_rv") // 100
             # Sonder-Abzüge (Weg ii, Faltung): §35a → steuerermaessigungen, §10b + §10-KiSt → sonderausgaben,
             # §33-agB → aussergewoehnliche_belastungen — ADDITIV auf JEDE Einkunfts-Kombi (§19+§21+§20 zusammen
             # MIT §35a/§10b/§33 in EINEM Bescheid). GdE (§2 Abs.3 = ns+vv − §24a − §24b, steht VOR den Abzügen fest

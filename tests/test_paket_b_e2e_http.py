@@ -647,16 +647,19 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_gewinn_aktien=0, kap_verlust_aktien=0, kap_gewinn_sonstige=0, kap_verlust_sonstige=0,
              veranlagung="einzel", bruttolohn_partner=None, person_b_idnr=None,
              kap_ertraege_partner=0, kap_gewinn_aktien_partner=0, kap_verlust_aktien_partner=0,
-             kap_verlust_sonstige_partner=0, entgelt_quote=100):
+             kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
     bruttolohn_partner/person_b_idnr (nur bei veranlagung=zusammen) = Person-B-§19-Kegel (#4). entgelt_quote
-    (§ 21 Abs. 2, Pflicht-Kegel, %) = 100 (nicht verbilligt) default; < 66 → WK-Kürzung."""
+    (§ 21 Abs. 2, Pflicht-Kegel, %) = 100 (nicht verbilligt) default; < 66 → WK-Kürzung. vor_an/vor_ag/
+    vor_rv_ausserhalb (§ 10 Altersvorsorge, Pflicht-Kegel, cent) = 0 default (keine Vorsorge → kein Abzug)."""
     k = [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa), ("vv_schuldzinsen", schuldzinsen),
          ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0),
          ("vv_entgelt_quote_prozent", entgelt_quote), ("veranlagung", veranlagung),
          ("bruttoarbeitslohn", bruttolohn),
+         ("vor_an_anteil_rv", vor_an), ("vor_ag_anteil_rv", vor_ag),
+         ("vor_rv_ausserhalb_lstb", vor_rv_ausserhalb),
          ("ep_arbeitstage", ep_tage), ("ep_entfernung_km", ep_km),
          ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", ep_kfz),
          ("kap_kapitalertraege", kap_ertraege), ("kap_gewinn_aktien", kap_gewinn_aktien),
@@ -888,6 +891,23 @@ def test_gesamt_p21_2_per_objekt(base):
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 928800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_vorsorge_altersvorsorge_abzug(base):
+    """§ 10 Abs. 3 Altersvorsorge im gefalteten gesamt-Ring (behebt ÜBER-Besteuerung): gesamt-Nutzer mit RV-
+    Beiträgen (AN 3500 + AG 3500 = Gesamtbeiträge 7000, steuerfreier AG-Anteil 3500) → abziehbare Altersvorsorge
+    3500 (nach knappschaft-HB-Cap, Kürzung um AG-Anteil) → festzusetzende_est 5849 = 584900 Cent, NIEDRIGER als
+    ohne VOR (691900). Belegt: der gesamt-Ring gewährt jetzt den § 10-Altersvorsorge-Abzug (vorher verloren =
+    Nutzer überzahlte). VOR im Pflicht-Kegel → immer gefragt, kein stiller Über-tax."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "vor", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
+                                               vor_an=350000, vor_ag=350000))
+    st, erg = _req(base, "GET", "/fall/vor/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 584900 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 
