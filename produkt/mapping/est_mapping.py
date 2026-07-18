@@ -62,6 +62,12 @@ VERZWEIGUNG = {
         "gesetzliche_rente": "E1800501", "berufsstaendische_versorgung": "E1800501",
         "private_basisrente": "E1800501", "private_leibrente": "E1801701",
         "sonstige_leibrente": "E1803202"}},
+    # § 16 Abs. 4 Betriebsveräußerungsgewinn: der Deklarations-Kz hängt an der Betriebsart (Anlage). p16_4-
+    # Freibetrag ist anlage-agnostisch (rechnet), nur der Kz verzweigt. gewerbe/Mitunternehmeranteil -> Anlage G
+    # E0801301, selbstaendig § 18 -> Anlage S E0901201; land_forst § 14 = KEIN Kz (proven-absent -> GAP-Zweig,
+    # Klasse-f -> nicht_deklariert). E0804501 [Vor_FB]=Beteiligungsquoten-Anteil-Sub = Folge-Nachtrag.
+    "rentner_veraeusserungsgewinn": {"art_feld": "rentner_veraeusserungs_betriebsart", "kz": {
+        "gewerbe": "E0801301", "selbstaendig": "E0901201"}},
 }
 # Klasse g — Person-Multiplikation (Zusammenveranlagung, Store-Modell A): die person-individuellen
 # _partner-Einkommensfelder gehen in die Anlage-N-INSTANZ B (person_b-Bucket) — DIESELBEN Kz wie Person A

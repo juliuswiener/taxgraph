@@ -220,11 +220,28 @@ bindungen:
     beispielwert: 15000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage G/S (Betriebsveräußerung), Veräußerungsgewinn; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Klasse-f VERZWEIGUNG je rentner_veraeusserungs_betriebsart (kein fixes Feld-Kz; Kz-Wahl in est_mapping): gewerbe -> E0801301 [VAe_G_FB_Antr] 'Veräußerungsgewinn vor Abzug des Freibetrags nach § 16 Abs. 4 EStG' (Anlage G, Hash 592812681); selbstaendig -> E0901201 [VAe_G_FB_Antr] (Anlage S, Hash 163190041); land_forst -> KEIN Kz (proven-absent = benannte GAP). NICHT E0804501 [Vor_FB] (=Beteiligungsquoten-Anteil-Sub, Folge-Nachtrag)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 16 Abs. 4 S. 3 EStG"
       zitatanker: "45 000 Euro übersteigt"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_veraeusserungs_betriebsart
+    quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: veraeusserungs_betriebsart_weiche}
+    typ: enum
+    einheit: null
+    enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
+    askable: true
+    fragetext_laie: "Aus welcher Art von Betrieb stammt der Veräußerungsgewinn?"
+    hilfe_kurz: "Gewerbebetrieb / Mitunternehmeranteil (Anlage G), selbständige/freiberufliche Tätigkeit (Anlage S) oder Land- und Forstwirtschaft (Anlage L). Der Freibetrag nach § 16 Abs. 4 gilt für alle drei gleich; die Auswahl steuert nur, in welche Anlage der Gewinn eingetragen wird."
+    beispielwert: "gewerbe"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche (steuert die Klasse-f-Kz-Verzweigung des Veräußerungsgewinns nach Anlage G/S/L), kein eigenes Betragsfeld/Kz. § 16 Abs. 4 ist anlage-agnostisch; die Weiche wählt nur den Deklarations-Kz. land_forst = benannte GAP-Zweig (kein § 16-FB-Kz im Schema)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 1 S. 1 EStG"
+      zitatanker: "Gewinne, die erzielt werden bei der Veräußerung"
       datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
   - feld_id: rentner_alter_55_oder_berufsunfaehig
     quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: alter_55_oder_berufsunfaehig}
