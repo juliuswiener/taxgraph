@@ -39,6 +39,8 @@ sys.path.insert(0, _CAT)
 from pkg import Einkommensteuertarif as E  # noqa: E402  (Catala-generated)
 from pkg import Entfernungspauschale as EP  # noqa: E402
 from pkg import Arbeitszimmer_homeoffice as AZ  # noqa: E402
+from pkg import Haushaltsnahe as HN  # noqa: E402  (§ 35a Abs. 1-3, charge29-Promotion)
+from pkg import SpendenAbzug as SA  # noqa: E402  (§ 10b Abs. 1, charge29-Promotion)
 from catala_runtime import Money, Decimal, Bool  # noqa: E402
 
 
@@ -190,6 +192,31 @@ def catala_einkuenfte_nichtselbststaendig(s: dict) -> int:
         sonderausgaben_in=Money("0.00"),
         veranlagungszeitraum_in=VZ_ENUM[s["veranlagungszeitraum"]]))
     return int(out.summe_der_einkuenfte) // 100
+
+
+def catala_p35a_haushaltsnahe(s: dict) -> int:
+    """§ 35a Abs. 1-3 EStG — Steuerermäßigung für haushaltsnahe Beschäftigung/Dienstleistungen/Handwerker,
+    EURO (module Haushaltsnahe, charge29-Promotion). Drei getrennte 20-%-Töpfe mit eigenem Jahreshöchstbetrag
+    (Abs. 1 Minijob 510, Abs. 2 Dienstleistungen 4000, Abs. 3 Handwerker 1200), additiv summiert. Roh-Wert —
+    die NICHT-Erstattungs-Deckelung (§ 2 Abs. 6, min(Ermäßigung; verfügbare ESt)) macht p32a
+    (FestzusetzendeEstGesamt.wirksame_ermaessigung), NICHT dieser Accessor. rechnung_unbar/EU-EWR/keine-
+    Förderung sind Geltungsbedingungen, die die Scheibe erzwingt (das Modul rechnet die Roh-Ermäßigung)."""
+    r = HN.haushaltsnahe(HN.HaushaltsnaheIn(
+        minijob_aufwendungen_in=Money(f"{int(s.get('minijob_aufwendungen', 0))}.00"),
+        haushaltsnahe_dienstleistungen_in=Money(f"{int(s.get('haushaltsnahe_dienstleistungen', 0))}.00"),
+        handwerker_arbeitskosten_in=Money(f"{int(s.get('handwerker_arbeitskosten', 0))}.00")))
+    return int(r.steuerermaessigung) // 100
+
+
+def catala_p10b_spenden(s: dict) -> int:
+    """§ 10b Abs. 1 S. 1 EStG — abziehbare Zuwendungen (Spenden), EURO (module SpendenAbzug, charge29-
+    Promotion): min(zuwendungen; 20 % des Gesamtbetrags der Einkünfte). GdE = est_einzel-Ergebnis VOR
+    Sonderausgaben (keine Zirkularität). Roh-Wert speist als Sonderausgabe § 2 Abs. 4 (p32a
+    sonderausgaben-Input, additiv); die 4-‰-Umsatz-Alternative + Großspenden-Vortrag sind eigene Nachträge."""
+    r = SA.spenden_abzug(SA.SpendenAbzugIn(
+        zuwendungen_in=Money(f"{int(s.get('zuwendungen', 0))}.00"),
+        gesamtbetrag_der_einkuenfte_in=Money(f"{int(s.get('gesamtbetrag_der_einkuenfte', 0))}.00")))
+    return int(r.spenden_abzug) // 100
 
 
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --

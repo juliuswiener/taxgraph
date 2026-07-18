@@ -1015,6 +1015,107 @@ def test_rentner_partner_fixierung_offen(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "rentenfreibetrag_fixierung_offen"
 
 
+def _haushalt_kegel(bruttolohn=6000000, minijob=0, dienstleistung=0, handwerker=0, spende=0,
+                    veranlagung="einzel", rechnung_unbar=None):
+    """haushalt_gesamt-Kegel (§35a + §10b, #7): §19-Basis (Bruttolohn cent) + 3 §35a-Töpfe (cent) +
+    §10b-Spende (cent) + Flags (reiner AN-Fall, kein_*=True). hh_rechnung_unbar (bool) nur gesetzt, wenn
+    rechnung_unbar is not None (conditional-mandatory — der Guard verlangt es nur bei Dienstleistung/Handwerker>0)."""
+    k = [("bruttoarbeitslohn", bruttolohn), ("hh_minijob_aufwendungen", minijob),
+         ("hh_dienstleistungen", dienstleistung), ("hh_handwerker_arbeitskosten", handwerker),
+         ("spenden_betrag", spende), ("veranlagung", veranlagung),
+         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True)]
+    if rechnung_unbar is not None:
+        k.append(("hh_rechnung_unbar", rechnung_unbar))
+    return k
+
+
+def _haushalt_anlegen(base, fid, kegel):
+    st, _ = _req(base, "POST", "/fall", {"scheibe": "haushalt_gesamt", "veranlagungszeitraum": 2025, "fall_id": fid})
+    assert st == 201
+    for feld, wert in kegel:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
+        assert st == 201
+
+
+def test_haushalt_voll_35a_10b(base):
+    """#7 § 35a + § 10b Vollfall: Bruttolohn 60000 (§19-Einkünfte/GdE 58770) + § 35a Minijob 2800 (→510) +
+    Handwerker 10000 (→1200, rechnung_unbar=true) = Steuerermäßigung 1710 + § 10b Spende 3000 (≤20 % GdE →
+    voll) → festzusetzende_est 11086 = 1108600 Cent (Ref ohne §35a/§10b = 13924; §35a mindert die ESt direkt,
+    §10b als Sonderausgabe das zvE)."""
+    catala = _catala_da()
+    _haushalt_anlegen(base, "hh1", _haushalt_kegel(6000000, minijob=280000, handwerker=1000000,
+                                                   spende=300000, rechnung_unbar=True))
+    st, erg = _req(base, "GET", "/fall/hh1/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1108600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_haushalt_rechnung_unbar_false_nullt_abs23(base):
+    """#7 K2 (§35a Abs. 5 S. 3): rechnung_unbar EXPLIZIT false → Abs. 2/3 (Dienstleistung/Handwerker) justiziert
+    0, NUR Minijob (Abs. 1, 510) zählt → festzusetzende_est 13414 = 1341400 Cent (statt 1108600 mit Beleg). Der
+    Handwerker-Topf (1200) fällt weg, weil die unbare Zahlung nicht nachgewiesen ist — kein stiller Abzug."""
+    catala = _catala_da()
+    _haushalt_anlegen(base, "hh2", _haushalt_kegel(6000000, minijob=280000, handwerker=1000000,
+                                                   spende=0, rechnung_unbar=False))
+    st, erg = _req(base, "GET", "/fall/hh2/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 1341400 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_haushalt_rechnung_unbar_conditional_mandatory(base):
+    """#7 K2 conditional-mandatory (charge29): Handwerker > 0, aber hh_rechnung_unbar UNBEANTWORTET →
+    rechnung_unbar_offen (kein Abs2/3-Abzug ohne Beleg-/Überweisungsnachweis; unbeantwortet ≠ false)."""
+    _haushalt_anlegen(base, "hh3", _haushalt_kegel(6000000, handwerker=1000000, spende=0))  # rechnung_unbar unset
+    st, erg = _req(base, "GET", "/fall/hh3/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "rechnung_unbar_offen"
+
+
+def test_haushalt_minijob_ohne_rechnung_unbar(base):
+    """#7 conditional-mandatory-Grenze: NUR Minijob (Abs. 1, keine Dienstleistung/Handwerker) → hh_rechnung_unbar
+    NICHT verlangt (Minijob braucht keinen unbaren Nachweis) → Ring rechenbar ohne das Feld: § 35a 510 →
+    festzusetzende_est 13414 = 1341400 Cent."""
+    catala = _catala_da()
+    _haushalt_anlegen(base, "hh4", _haushalt_kegel(6000000, minijob=280000, spende=0))  # kein rechnung_unbar
+    st, erg = _req(base, "GET", "/fall/hh4/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1341400 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_haushalt_35a_est_deckelung_floor(base):
+    """#7 K2 §35a-ESt-Deckelung (§ 2 Abs. 6, nicht erstattungsfähig): niedriges Einkommen (Bruttolohn 14000 →
+    ESt ohne §35a nur 93) + Handwerker 10000 (§35a 1200 > verfügbare ESt) → festzusetzende_est auf 0 gefloort
+    (NICHT −1107). p32a wirksame_ermaessigung deckelt regel-seitig — kein Frontend-Clamp, kein Negativ-Bescheid."""
+    catala = _catala_da()
+    _haushalt_anlegen(base, "hh5", _haushalt_kegel(1400000, handwerker=1000000, spende=0, rechnung_unbar=True))
+    st, erg = _req(base, "GET", "/fall/hh5/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 0 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_haushalt_spenden_deckel_20_prozent_gde(base):
+    """#7 § 10b Abs. 1 20-%-GdE-Deckel: Spende 15000 > 20 % des GdE (58770 → 11754) → nur 11754 als
+    Sonderausgabe abziehbar (GdE = §19-Einkünfte aus est_einzel, keine Zirkularität) → festzusetzende_est
+    9648 = 964800 Cent."""
+    catala = _catala_da()
+    _haushalt_anlegen(base, "hh6", _haushalt_kegel(6000000, spende=1500000))
+    st, erg = _req(base, "GET", "/fall/hh6/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 964800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def test_graph_uebersicht(base):
     """Read-only Desktop-Graph: Knoten = Regeln der Scheibe mit Status, Kanten = Feld→Regel mit
     Zustand. Ein Traverser-Aufruf, kein Bescheid, kein Schreibpfad."""

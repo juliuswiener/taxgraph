@@ -105,6 +105,13 @@ GESAMT_PARTNER_19 = ("bruttoarbeitslohn_partner", "person_b_idnr")
 KAP_ERTRAEGE_PARTNER = "kap_kapitalertraege_partner"
 KAP_TOEPFE_PARTNER = ("kap_gewinn_aktien_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner")
 GESAMT_PARTNER_KAP = (KAP_ERTRAEGE_PARTNER,) + KAP_TOEPFE_PARTNER
+# Haushalt-Ring (§ 35a Haushaltsnahe + § 10b Spenden, charge29-Promotion). §19-Basis + 3 §35a-Töpfe (Roh-
+# Beträge, cent) + Spende (§10b, cent). hh_rechnung_unbar = conditional-mandatory (Abs. 5 S. 3, NUR bei
+# Dienstleistung/Handwerker > 0, NICHT Minijob) → NICHT im Pflicht-Kegel, der Guard erzwingt es bedingt.
+HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")   # Abs. 2/3 (rechnung_unbar-Pflicht)
+HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23              # + Abs. 1 Minijob
+HAUSHALT_KEGEL = (("bruttoarbeitslohn",) + HAUSHALT_35A + ("spenden_betrag", "veranlagung") + AN_GESAMT_FLAGS)
+HAUSHALT_FELDER = HAUSHALT_KEGEL + ("hh_rechnung_unbar",)
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -182,6 +189,23 @@ SCHEIBEN = {
         "gesamt_guard": True,
         "rentner": True,           # aktiviert die § 22-Rentenfreibetrag-Fixierungs-Prüfung (K2)
         "fremd_arten": ("kein_gewinn", "kein_kap", "kein_vuv"),
+    },
+    # Haushalt-Ring (§ 35a Haushaltsnahe + § 10b Spenden, charge29): §19-Basis (AN) + §35a-Steuerermäßigung
+    # (Roh → p32a steuerermaessigungen, dort auf verfügbare ESt gefloort) + §10b-Spendenabzug (Roh → p32a
+    # sonderausgaben, GdE = §19-Einkünfte). fremd_arten = ALLE 4 (reiner AN-Fall — kein Gewinn/Kap/V+V/§22).
+    # NAMED GAPS (charge29-Nachträge): Person-B (§35a/§10b bei zusammen, GdE=A+B); §35a Abs. 5 S. 4 (zwei
+    # Alleinstehende) / Abs. 2 S. 2 Pflege; §10b 4-‰-Umsatz-Deckel + Großspenden-Vortrag; §35a EU-EWR/keine-
+    # Förderung als MVP-Annahme (Deutschland-Fall, nicht in dieser Scheibe erfragt); agB §33 + KiSt = eigene Kachel.
+    "haushalt_gesamt": {
+        "felder": HAUSHALT_FELDER,
+        "kegel": HAUSHALT_KEGEL,   # hh_rechnung_unbar NICHT im Pflicht-Kegel (conditional-mandatory via Guard)
+        "felder_datei": None,
+        "gesamt_ring": "festzusetzende_est_haushalt",
+        "teil_ringe": [],
+        "guard": True,
+        "gesamt_guard": True,
+        "haushalt": True,          # aktiviert die § 35a-rechnung_unbar-conditional-mandatory-Prüfung (K2)
+        "fremd_arten": ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige"),
     },
 }
 
@@ -497,6 +521,44 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "aussergewoehnliche_belastungen": ausserg})
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
+    if quantitaet == "festzusetzende_est_haushalt":   # § 35a Haushaltsnahe + § 10b Spenden via catala_gesamt
+        try:
+            import runner  # noqa: F401
+        except Exception:
+            return None
+        f = felder or {}
+
+        def _c(fid):
+            v = f.get(fid, {}).get("wert")
+            return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+
+        def slot_fn(slots: dict) -> int:
+            # § 19-Basis → einkuenfte_nichtselbststaendig (§9a-bereinigt). GdE (reiner AN-Fall, kein §24a/§24b)
+            # = diese §19-Einkünfte → Basis für den § 10b-20%-Deckel. Naht-CENT → EURO.
+            ns = runner.catala_einkuenfte_nichtselbststaendig({
+                "veranlagungszeitraum": vz,
+                "bruttoarbeitslohn": _c("bruttoarbeitslohn") // 100, "werbungskosten": 0})
+            # § 35a Roh-Ermäßigung (3 Töpfe, eigene Deckel). rechnung_unbar == false → Abs. 2/3 (Dienstleistung/
+            # Handwerker) justiziert 0 (Abs. 5 S. 3), Minijob (Abs. 1) unberührt; unbeantwortet fängt der Guard
+            # VORHER (rechnung_unbar_offen) — hier kommt nur der rechenbare Fall an (true ODER kein Abs2/3).
+            abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
+            p35a = runner.catala_p35a_haushaltsnahe({
+                "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
+                "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
+                "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
+            # § 10b Roh-Abzug: min(Zuwendungen; 20 % GdE). Speist die Sonderausgaben (additiv; catala_gesamt
+            # floort § 10c-Pauschbetrag via _sonderausgaben_final). § 35a Roh → steuerermaessigungen (p32a
+            # deckelt auf verfügbare ESt, wirksame_ermaessigung — kein Frontend-Clamp, kein Negativ-Bescheid).
+            p10b = runner.catala_p10b_spenden({
+                "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": ns})
+            return runner.catala_gesamt({
+                "veranlagungszeitraum": vz,
+                "veranlagung": slots.get("veranlagung", "einzel"),
+                "einkuenfte_nichtselbststaendig": ns,
+                "sonderausgaben": p10b,
+                "steuerermaessigungen": p35a})
+        return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
+
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
 
 
@@ -579,6 +641,13 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                     felder.get("rentner_renten_beginn_jahr_partner", {}).get("wert"),
                     felder.get("rentner_rentenfreibetrag_partner", {}).get("wert")):
                 return "rentenfreibetrag_fixierung_offen"
+        # § 35a Abs. 5 S. 3 rechnung_unbar = CONDITIONAL-MANDATORY (K2, charge29): NUR wenn Dienstleistung
+        # ODER Handwerker (Abs. 2/3) > 0 — Minijob (Abs. 1) verlangt keine unbare Zahlung. Unbeantwortet
+        # (nicht bestätigt) → rechnung_unbar_offen (kein Abs2/3-Abzug ohne Beleg-/Überweisungsnachweis);
+        # explizit false ist ANTWORT (Ring rechenbar, die slot_fn nullt Abs. 2/3), nur UNSET sperrt.
+        if cfg.get("haushalt") and (_positiv("hh_dienstleistungen") or _positiv("hh_handwerker_arbeitskosten")):
+            if (felder.get("hh_rechnung_unbar") or {}).get("zustand") != "bestaetigt":
+                return "rechnung_unbar_offen"
         # fremd_arten = Arten, die DIESE Scheibe NICHT rechnet → bestätigt-false (Nutzer HAT die Art) sperrt
         # (Stufe 2). Die von der Scheibe GERECHNETEN Arten stehen NICHT in fremd_arten (kein Fehl-Sperr).
         if any(felder.get(fl, {}).get("wert") is False for fl in cfg.get("fremd_arten", ())):
