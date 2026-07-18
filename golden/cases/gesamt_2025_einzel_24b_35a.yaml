@@ -1,0 +1,20 @@
+id: gesamt_2025_einzel_24b_35a
+beschreibung: "Engine-Komposition §24b + §35a: Alleinerziehend § 19 45000, Entlastungsbetrag für Alleinerziehende 4500 (Grundbetrag 4260 + 240 je weiterem Kind, 2 Kinder) mindert die GdE auf 40500 -> zvE 40464 -> Grundtarif 7469; § 35a-Ermäßigung 800 (Handwerker 4000 × 20 %) auf verfügbare Steuer gefloort -> festzusetzende_est 6669. Beweist: § 24b (GdE-mindernd) + § 35a (tarifmindernd, Floor) komponiert. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 45000
+  entlastungsbetrag_alleinerziehende: 4500
+  steuerermaessigungen: 800
+
+erwartung:
+  festzusetzende_est: 6669
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 bis 6 EStG (Komposition § 24b-Entlastungsbetrag + § 35a-Ermäßigung mit Floor)"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"

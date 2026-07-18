@@ -1,0 +1,21 @@
+id: gesamt_2025_einzel_24a_agb_gde_zwilling
+beschreibung: "Engine-Komposition §24a-GdE-Zwilling: Senior § 19 35000 + § 21 15000 (SdE 50000), Altersentlastungsbetrag 665 (geburtsjahr 1958, Kohorte) mindert GdE auf 49335 -> § 33 agB 5000 minus zumutbare Belastung AUF DER GEMINDERTEN GdE (zumutbar 2806 statt 2846 ohne §24a) = 2193 -> Einkommen 47106 -> Grundtarif 9679. Beweist: §24a senkt GdE, das senkt die §33-zumutbar (GdE-Zwilling), höherer agB-Abzug. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 35000
+  einkuenfte_vermietung: 15000
+  altersentlastungsbetrag: 665
+  aussergewoehnliche_belastungen: 2193
+
+erwartung:
+  festzusetzende_est: 9679
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 bis 6 EStG (§ 24a GdE-Minderung wirkt auf § 33-zumutbare-Belastung, GdE-Zwilling)"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"

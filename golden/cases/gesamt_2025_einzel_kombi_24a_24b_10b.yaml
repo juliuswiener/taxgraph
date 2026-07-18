@@ -1,0 +1,21 @@
+id: gesamt_2025_einzel_kombi_24a_24b_10b
+beschreibung: "Engine-Komposition CHARGE30-KOMBI: § 19 40000 (SdE 40000) mit DREI charge30-Abzügen zugleich -> Altersentlastungsbetrag 646 (§24a, geburtsjahr 1959) + Entlastungsbetrag Alleinerziehende 4260 (§24b, 1 Kind) mindern GdE auf 35094 -> § 10b-Spende 3000 (unter 20%-Cap der GEMINDERTEN GdE) als Sonderausgabe -> zvE 32094 -> Grundtarif 4906 -> festzusetzende_est 4906. Beweist: §24a + §24b + §10b komponieren gemeinsam, §10b-Cap nutzt die post-Freibetrag-GdE. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 40000
+  altersentlastungsbetrag: 646
+  entlastungsbetrag_alleinerziehende: 4260
+  sonderausgaben: 3000
+
+erwartung:
+  festzusetzende_est: 4906
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 bis 6 EStG (charge30-Komposition § 24a + § 24b GdE-mindernd + § 10b-Sonderausgabe)"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"

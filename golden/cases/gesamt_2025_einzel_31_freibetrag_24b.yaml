@@ -1,0 +1,21 @@
+id: gesamt_2025_einzel_31_freibetrag_24b
+beschreibung: "Engine-Komposition §31-Familienleistungsausgleich (Freibetrag-Zweig) + §24b: Alleinerziehend § 19 45000, 2 Kinder ganzjährig. § 24b-Entlastungsbetrag 4500 mindert GdE auf 40500; § 32 Abs. 6-Freibeträge 9600 (KFB+BEA je Kind) mindern das zvE auf 30864 -> Grundtarif 4550; § 31 S. 4 Kindergeld-Hinzurechnung (params/2025, 2 Kinder ganzjährig) -> festzusetzende_est 10670. Beweist: der § 31-Freibetrag-Zweig (zvE-Minderung + Kindergeld-Hinzurechnung) komponiert mit § 24b im gefalteten Ring. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 45000
+  entlastungsbetrag_alleinerziehende: 4500
+  freibetraege_kinder: 9600
+  kinder_ganzjaehrig: 2
+
+erwartung:
+  festzusetzende_est: 10670
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 bis 6 EStG i.V.m. § 31/§ 32 Abs. 6 (Familienleistungsausgleich Freibetrag-Zweig) + § 24b"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"
