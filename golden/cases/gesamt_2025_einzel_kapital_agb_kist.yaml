@@ -1,0 +1,21 @@
+id: gesamt_2025_einzel_kapital_agb_kist
+beschreibung: "Engine-Komposition (§ 2 Abs. 3-6): § 19 50000 + § 20-Kapital 8000 (Günstigerprüfung -> tariflich im zvE, GdE 58000) MISCHT mit zwei Abzügen -> § 10 KiSt 1200 (gezahlt, keine Erstattung) als Sonderausgabe + § 33 agB 5000 minus zumutbare Belastung (Tranchen 58000, kinderlos) = 1604 -> Einkommen 55196 -> Grundtarif 12582; keine Ermäßigung -> festzusetzende_est 12582. Beweist: § 19+§ 20 + § 10-KiSt + § 33-agB komponiert. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 50000
+  einkuenfte_kapitalvermoegen: 8000
+  sonderausgaben: 1200
+  aussergewoehnliche_belastungen: 1604
+
+erwartung:
+  festzusetzende_est: 12582
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 bis 6 EStG (Komposition § 19/§ 20-Günstiger + § 10 Abs. 1 Nr. 4 KiSt + § 33 agB)"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"

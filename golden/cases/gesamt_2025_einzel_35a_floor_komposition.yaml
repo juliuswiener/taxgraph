@@ -1,0 +1,19 @@
+id: gesamt_2025_einzel_35a_floor_komposition
+beschreibung: "Engine-Komposition Floor (§ 2 Abs. 6, § 35a nicht erstattungsfähig): § 19 15000 -> zvE 14964 -> Grundtarif 478. § 35a-Ermäßigung als SUMME dreier Töpfe (Minijob 3000->510 + Dienstleistung 25000->4000-Cap + Handwerker 6000->1200 = 5710) übersteigt die verfügbare Steuer -> wirksame Ermäßigung auf 478 gefloort -> festzusetzende_est 0 (nicht negativ, Anrechnungsüberhang verfällt). Beweist: mehrere summierte § 35a-Ermäßigungen greifen den Floor korrekt. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 15000
+  steuerermaessigungen: 5710
+
+erwartung:
+  festzusetzende_est: 0
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 35a Abs. 1-3 EStG (Steuerermäßigung nicht erstattungsfähig) i.V.m. § 2 Abs. 6 EStG"
+  datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  zitatanker: "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag"

@@ -1,0 +1,20 @@
+id: gesamt_2025_zusammen_abzuege
+beschreibung: "Engine-Komposition zusammen (§ 2 Abs. 3-6, § 26b, § 32a Abs. 5): gemeinsame § 19 80000 (GdE 80000) MISCHT mit zwei Abzügen auf die GEMEINSAME GdE -> § 10b-Spende 20000 auf 20%-Cap der gemeinsamen GdE gedeckelt = 16000 (nicht je Person) als Sonderausgabe + § 33 agB 6000 minus zumutbare Belastung (Tranchen 80000, Splitting) = 1864 -> Einkommen 62136 -> Splittingtarif 9216 -> festzusetzende_est 9216. Beweist: Abzüge komponieren auf gemeinsame GdE, Splittingtarif. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: zusammen
+  einkuenfte_nichtselbststaendig: 80000
+  sonderausgaben: 16000
+  aussergewoehnliche_belastungen: 1864
+
+erwartung:
+  festzusetzende_est: 9216
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 bis 6 EStG i.V.m. § 26b/§ 32a Abs. 5 (Komposition § 10b-20%-Cap + § 33-zumutbar auf gemeinsame GdE)"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"

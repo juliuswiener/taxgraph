@@ -1,0 +1,21 @@
+id: gesamt_2025_einzel_mehrarten_35a_10b
+beschreibung: "Engine-Komposition (§ 2 Abs. 3-6): § 19 40000 + § 21-Vermietung 18770 (GdE 58770) MISCHT mit zwei Abzügen -> § 10b-Spende 5000 (unter 20%-Cap 11754) als Sonderausgabe -> zvE 53770 -> Grundtarif 12053; § 35a-Ermäßigung 1200 (Handwerker 6000 × 20 %) auf verfügbare Steuer gefloort -> festzusetzende_est 10853. Beweist: catala_gesamt komponiert 2 Einkunftsarten + 2 Abzüge korrekt. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 40000
+  einkuenfte_vermietung: 18770
+  sonderausgaben: 5000
+  steuerermaessigungen: 1200
+
+erwartung:
+  festzusetzende_est: 10853
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 2 Abs. 3 bis 6 EStG (Komposition § 19/§ 21 + § 10b-Sonderausgabe + § 35a-Ermäßigung mit Floor)"
+  datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  zitatanker: "ist die festzusetzende Einkommensteuer"
