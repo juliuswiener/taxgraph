@@ -527,6 +527,62 @@ bindungen:
       zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
 
+  # ========================= KV/PV — p10_1_3_3a_kv_pv (§ 10 Abs. 1 Nr. 3/3a i.V.m. Abs. 4) =========================
+  # feld_id == Modul-Slot 1:1 (Instructor-Adjudikation a): dev-1s Fold liest die feld_ids direkt als
+  # KrankenPflegeVorsorge-Inputs; KEIN Präfix (verhindert Read-Key-Drift). null-Kz-MVP (b). mit_anspruch
+  # in dev-1s Pflicht-Kegel (absent->false->HB2800 = Under-tax für Zuschuss-Empfänger).
+  - feld_id: basis_kv_pv
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: basis_kv_pv}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen für deine Basis-Krankenversicherung und die gesetzliche Pflegeversicherung gezahlt?"
+    hilfe_kurz: "Der Basistarif (gesetzlich oder privater Basisschutz), ohne Zusatz-/Komfortleistungen. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung."
+    beispielwert: 300000
+    herkunft_slots: ["Beitragsbescheinigung KV/PV: Basisbeitrag"]
+    elster_kz: null
+    elster_kz_grund: "Anlage-Vorsorgeaufwand-Kz (Sektions-Pfad-Adjudikation) = benannter Nachtrag; null-Kz-MVP, kein Kz-Rate."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 EStG"
+      zitatanker: "Krankenversicherungen, soweit diese zur Erlangung eines durch das Zwölfte Buch Sozialgesetzbuch bestimmten sozialhilfegleichen Versorgungsniveaus erforderlich sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: weitere_vorsorgeaufwendungen
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: weitere_vorsorgeaufwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Was hast du dieses Jahr für weitere Vorsorge gezahlt (private Zusatz-Krankenversicherung, Haftpflicht, Arbeitslosen-, Unfall- oder Risikolebensversicherung)?"
+    hilfe_kurz: "Alles über die Basis-Kranken-/Pflegeversicherung hinaus. Wird nur bis zum gemeinsamen Höchstbetrag (2.800 bzw. 1.900 Euro) berücksichtigt."
+    beispielwert: 80000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-Vorsorgeaufwand-Kz (Sektions-Pfad-Adjudikation) = benannter Nachtrag; null-Kz-MVP, kein Kz-Rate."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: mit_anspruch_auf_zuschuss
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: mit_anspruch_auf_zuschuss}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hast du Anspruch auf einen steuerfreien Zuschuss oder Beihilfe zu deiner Krankenversicherung (z. B. als Beamter, Betriebsrentner oder mit Arbeitgeber-Zuschuss)?"
+    hilfe_kurz: "Wenn ja, gilt ein niedrigerer Höchstbetrag (1.900 statt 2.800 Euro). Wichtig für die richtige Berechnung — bitte ehrlich beantworten."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein) für den 1900-Höchstbetrag (§ 10 Abs. 4 S. 2), kein Betragsfeld; Kz = benannter Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 4 S. 2 EStG"
+      zitatanker: "Anspruch auf vollständige oder teilweise Erstattung oder Übernahme von Krankheitskosten"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
   # ========================= GWG — p6_2_gwg_sofortabzug =========================
   - feld_id: gwg_anschaffungskosten_netto
     quelle: {regel_id: p6_2_gwg_sofortabzug, signatur_slot: anschaffungskosten_netto}
@@ -623,3 +679,7 @@ luecken:
   - regel_id: p9_1_3_nr6_7_arbeitsmittel_afa
     signatur_slot: jahre_seit_anschaffung
     grund: "AfA-Zweig (§ 7, laufende AfA in Folgejahren); Bindung im AfA-Scheiben-Nachtrag."
+  # -- KV/PV: die getriagte Geltungsbedingung ist im basis_kv_pv-Feld materialisiert --
+  - regel_id: p10_1_3_3a_kv_pv
+    geltungsbedingung: basis_kv_pv_ist_basisabsicherung
+    grund: "Annahme: die als basis_kv_pv eingegebenen Beiträge sind Basisabsicherung (§ 10 Abs. 1 Nr. 3, sozialhilfegleiches Versorgungsniveau); im Feld + Fragetext materialisiert, keine eigene Laien-Abfrage."
