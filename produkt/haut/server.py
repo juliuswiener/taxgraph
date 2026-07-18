@@ -43,8 +43,8 @@ def _routes():
         ("GET", re.compile(rf"^/fall/{_ID}/graph$"), lambda m, b: api.graph(m["id"])),
         ("POST", re.compile(rf"^/fall/{_ID}/elster-ampel$"), lambda m, b: (503, api.AMPEL_503)),
         ("POST", re.compile(rf"^/fall/{_ID}/chat$"), lambda m, b: (501, api.CHAT_501)),
-        # Arbeitsweg-Entfernung über Karten-Dienst: STUB (kein Live-Aufruf ohne Julius-Service+Cap, PII).
-        ("POST", re.compile(rf"^/fall/{_ID}/entfernung$"), lambda m, b: (501, api.ENTFERNUNG_501)),
+        # Arbeitsweg-Entfernung über Karten-Dienst (ORS): Vorschlag-Fluss; kein Key/Fehler → 503-Fallback.
+        ("POST", re.compile(rf"^/fall/{_ID}/entfernung$"), lambda m, b: api.entfernung(m["id"], b)),
     ]
 
 

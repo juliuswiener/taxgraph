@@ -743,11 +743,28 @@ AMPEL_503 = {
 # eine AUSGEHENDE Integration mit PII (Adressen verlassen das Gerät) → wartet auf Julius' Service-Wahl + Cap.
 # Bis dahin STUB (kein Live-Aufruf), analog CHAT_501. Die UI-Affordance (Adress-Eingabe) ist gebaut; der
 # Karten-km-Vorschlag kommt erst, wenn der Dienst verbunden ist — die manuelle km-Eingabe bleibt Fallback.
-ENTFERNUNG_501 = {
-    "fehler": "not_implemented",
-    "vertrag": ("Die Weg-Berechnung ruft einen Karten-Dienst (Geocoding+Routing) — eine ausgehende "
-                "Integration, die deine Adressen an einen externen Dienst sendet. Sie ist noch nicht "
-                "verbunden; bitte gib die Entfernung vorerst manuell ein (kürzeste Straßenverbindung, "
-                "§ 9 Abs. 1 S. 3 Nr. 4 EStG)."),
-    "stufe": "wartet auf Service-Wahl + Julius-Cap (PII/Datenschutz) — kein externer Karten-Aufruf in dieser Stufe.",
+ENTFERNUNG_FALLBACK = {
+    "fehler": "unavailable",
+    "vertrag": ("Der Karten-Dienst ist nicht verbunden (kein Schlüssel gesetzt oder Netz-/Antwort-Fehler) "
+                "— bitte gib die Entfernung manuell ein (kürzeste Straßenverbindung, § 9 Abs. 1 S. 3 Nr. 4 EStG)."),
 }
+
+
+def entfernung(fall_id: str, body: dict) -> tuple[int, dict]:
+    """Arbeitsweg-km über den Karten-Dienst (Julius-Feature). AUSGEHENDE PII-Integration: die Adressen
+    gehen an OpenRouteService (nur auf Nutzer-Klick). Das Ergebnis ist ein VORSCHLAG — die Haut prefillt
+    das km-Feld, der Nutzer bestätigt/überschreibt (Zwei-Signal, § 9 kürzeste Straßenverbindung; eine
+    längere ist bei regelmäßiger Nutzung zulässig). Kein Key / Netzfehler → 503-Fallback (manuell), nie
+    Crash, nie still gesetzt. Der API-Key kommt nur aus $ORS_API_KEY (nie im Repo)."""
+    lade_fall(fall_id)                                   # 404, wenn der Fall nicht existiert
+    von = (body.get("von") or "").strip()
+    nach = (body.get("nach") or "").strip()
+    if not von or not nach:
+        raise ApiError(400, "von und nach (Adressen) sind Pflicht")
+    try:
+        import ors_client
+        km = ors_client.entfernung_km(von, nach)
+    except Exception:                                    # OrsNichtVerfuegbar / Import — sauberer Fallback
+        return 503, ENTFERNUNG_FALLBACK
+    return 200, {"km": km, "quelle": "openrouteservice",
+                 "hinweis": "Vorschlag aus dem Karten-Dienst — bitte prüfen und bestätigen."}

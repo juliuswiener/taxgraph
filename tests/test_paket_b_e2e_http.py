@@ -107,13 +107,33 @@ def test_chat_501(base):
     assert b.get("fehler") == "not_implemented"
 
 
-def test_entfernung_stub_501(base):
-    """Julius-Feature Maps-km: der Karten-Dienst-Aufruf ist ge-stubbt (ausgehende PII-Integration, wartet
-    auf Julius-Service+Cap) — POST /entfernung → 501, NIE ein Live-Aufruf/Fake-km."""
+def test_entfernung_kein_key_fallback(base, monkeypatch):
+    """Julius-Feature Maps-km: OHNE $ORS_API_KEY (oder Netzfehler) → sauberer 503-Fallback auf manuelle
+    Eingabe, NIE Crash, NIE Fake-km. Kein Live-Aufruf (der Client wirft OrsNichtVerfuegbar ohne Key)."""
+    monkeypatch.delenv("ORS_API_KEY", raising=False)
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "ent1"})
-    st, b = _req(base, "POST", "/fall/ent1/entfernung", {"von": "A-Str 1", "nach": "B-Weg 2"})
-    assert st == 501, f"entfernung muss ge-stubbt 501 sein, war {st}"
-    assert b.get("fehler") == "not_implemented" and "vertrag" in b and "stufe" in b
+    st, b = _req(base, "POST", "/fall/ent1/entfernung", {"von": "A-Str 1, Berlin", "nach": "B-Weg 2, Berlin"})
+    assert st == 503, f"ohne Key muss der Fallback 503 sein, war {st}"
+    assert b.get("fehler") == "unavailable" and "vertrag" in b
+
+
+def test_entfernung_leere_adressen_400(base):
+    """Ohne beide Adressen → 400 (kein Aufruf)."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "ent2"})
+    st, _ = _req(base, "POST", "/fall/ent2/entfernung", {"von": "", "nach": "irgendwo"})
+    assert st == 400
+
+
+def test_entfernung_erfolg_vorschlag(base, monkeypatch):
+    """Erfolg (ORS-Client gemockt, KEIN Live-Aufruf): 2 Adressen → 200 mit km-VORSCHLAG. K2: nur ein
+    Vorschlag (hinweis „bitte bestätigen"), NICHT still ins Feld geschrieben — der Nutzer bestätigt in der Haut."""
+    import sys, os
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
+    import ors_client
+    monkeypatch.setattr(ors_client, "entfernung_km", lambda von, nach: 30)
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "ent3"})
+    st, b = _req(base, "POST", "/fall/ent3/entfernung", {"von": "Musterstr 1, Berlin", "nach": "Beispielweg 2, Berlin"})
+    assert st == 200 and b["km"] == 30 and "hinweis" in b
 
 
 def test_concurrent_ergebnis_kein_race(base):
