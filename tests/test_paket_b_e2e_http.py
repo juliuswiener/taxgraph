@@ -163,6 +163,36 @@ def test_vorjahr_fehlender_fall_404(base):
     assert st == 404
 
 
+def test_kontoauszug_csv_vorsorge_vorschlag(base):
+    """Kontoauszug-Upload (CSV, det-Pfad, KEIN LLM): eine Vorsorge-Ausgabe (Rürup) → deterministische
+    Kategorie → vor_rv_ausserhalb_lstb (§ 10, in der an_gesamt-Scheibe) als VORLÄUFIGER Vorschlag
+    (herkunft=kontoauszug) → Nutzer bestätigt. Einnahmen (betrag ≥ 0) werden ignoriert."""
+    _req(base, "POST", "/fall", {"scheibe": "an_gesamt", "veranlagungszeitraum": 2025, "fall_id": "ka"})
+    csv = ("datum;betrag;verwendungszweck\n"
+           "15.03.2025;-1200,00;Ruerup-Rente Jahresbeitrag Basisrente\n"
+           "01.03.2025;2500,00;Gehalt Arbeitgeber\n")
+    st, b = _req(base, "POST", "/fall/ka/kontoauszug", {"format": "csv", "inhalt": csv})
+    assert st == 200 and b["transaktionen"] == 2 and b["uebernommen"] == 1
+    st, stand = _req(base, "GET", "/fall/ka/stand")
+    f = stand["felder"]["vor_rv_ausserhalb_lstb"]
+    assert f["wert"] == 120000 and f["zustand"] == "vorlaeufig" and f["herkunft_badge"] == "kontoauszug"
+
+
+def test_kontoauszug_pdf_501(base):
+    """PDF hat keinen deterministischen Spalten-Parser → 501 mit Hinweis (CSV/JSON), nie Crash/Fake."""
+    _req(base, "POST", "/fall", {"scheibe": "an_gesamt", "veranlagungszeitraum": 2025, "fall_id": "kap"})
+    st, b = _req(base, "POST", "/fall/kap/kontoauszug", {"format": "pdf", "inhalt": "%PDF-1.4 ..."})
+    assert st == 501 and b.get("fehler") == "not_implemented" and "vertrag" in b
+
+
+def test_kontoauszug_json_liste(base):
+    """JSON-Auszug = vorstrukturierte Transaktionsliste → derselbe det-Pfad."""
+    _req(base, "POST", "/fall", {"scheibe": "an_gesamt", "veranlagungszeitraum": 2025, "fall_id": "kaj"})
+    tx = [{"datum": "2025-04-01", "betrag": -80000, "verwendungszweck": "Altersvorsorge Rürup"}]
+    st, b = _req(base, "POST", "/fall/kaj/kontoauszug", {"format": "json", "inhalt": tx})
+    assert st == 200 and b["uebernommen"] == 1
+
+
 def test_concurrent_ergebnis_kein_race(base):
     """K2-Concurrency-Beweis: die Haut feuert /stand + /ergebnis PARALLEL (Browser serialisiert XHRs nicht)
     und catala_runtime ist NICHT thread-safe (globaler max_decimals steuert die Money-Rundung). Der SINGLE-

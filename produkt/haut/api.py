@@ -807,3 +807,40 @@ def vorjahr(fall_id: str, body: dict) -> tuple[int, dict]:
                               vorjahr_vz=int(vj_store.get("veranlagungszeitraum", 0)))
     speichere_fall(fall_id, store)
     return 200, {"uebernommen": n, "vorjahr_fall_id": vj_id}
+
+
+KONTOAUSZUG_PDF_501 = {
+    "fehler": "not_implemented",
+    "vertrag": ("PDF-Kontoauszüge brauchen einen OCR/Layout-Parser (kein deterministischer Spalten-Parser "
+                "wie CSV) — bitte lade den Auszug als CSV oder JSON hoch. PDF-Import folgt als Nachtrag."),
+}
+
+
+def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
+    """Kontoauszug-Upload (dev-2s kontoauszug_writer): parst den Auszug und schreibt je AUSGABEN-Transaktion
+    mit eindeutiger deterministischer Kategorie + Ziel-Feld in DIESER Scheibe einen VORLÄUFIGEN Vorschlag
+    (herkunft=kontoauszug, Store-Guard ^import:kontoauszug erzwingt vorläufig). Der Nutzer bestätigt neben
+    dem Auszug (K2). DET-ONLY: der LLM-Klassifikator-Fallback bleibt dev-2/Julius-gated (llm_klassifikator=None
+    — nie ein LLM-Call in der Haut). IBAN/Kontonummern werden vom Writer maskiert (PII). Kein Überschreiben
+    aktiver Felder. § 35a-Kategorien greifen nur, wenn die Scheibe die Ziel-Felder führt (sonst 0 Vorschläge)."""
+    store = lade_fall(fall_id)
+    bindung = _scheibe_bindung(store)
+    fmt = (body.get("format") or "").strip().lower()
+    inhalt = body.get("inhalt")
+    import kontoauszug_writer as KW
+    if fmt == "csv":
+        tx = KW.parse_csv(inhalt if isinstance(inhalt, str) else "")
+    elif fmt == "json":
+        try:
+            tx = inhalt if isinstance(inhalt, list) else json.loads(inhalt or "[]")
+        except (ValueError, TypeError):
+            raise ApiError(400, "json-Inhalt nicht parsebar")
+        if not isinstance(tx, list):
+            raise ApiError(400, "json muss eine Liste von Transaktionen sein")
+    elif fmt == "pdf":
+        return 501, KONTOAUSZUG_PDF_501
+    else:
+        raise ApiError(400, "format muss csv, json oder pdf sein")
+    n = KW.uebernehme_kontoauszug(store, tx, bindung)   # llm_klassifikator=None → det-only, LLM gated
+    speichere_fall(fall_id, store)
+    return 200, {"uebernommen": n, "transaktionen": len(tx)}

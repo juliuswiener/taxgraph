@@ -73,11 +73,13 @@ function zeigeRing(stand) {
 const BADGE = {
   laie:          { kl: "b-laie",   sym: "✓", lab: "selbst" },
   beleg_import:  { kl: "b-beleg",  sym: "▤", lab: "Beleg" },
+  kontoauszug:   { kl: "b-beleg",  sym: "🏦", lab: "Kontoauszug" },
   vorjahr:       { kl: "b-abgel",  sym: "↻", lab: "Vorjahr" },
   berechnet:     { kl: "b-abgel",  sym: "∑", lab: "berechnet" },
   orakel:        { kl: "b-orakel", sym: "◆", lab: "amtlich" },
   llm_vorschlag: { kl: "b-ki",     sym: "✦", lab: "KI" },
 };
+const VORSCHLAG_QUELLEN = ["llm_vorschlag", "berechnet", "vorjahr", "kontoauszug"];
 function badgeInfo(k) { return BADGE[k] || BADGE.laie; }
 
 function zeigeBelegt(felder) {
@@ -131,7 +133,7 @@ function zeigeFrage(q, stand) {
   // -> Hold-to-confirm (Dim 2): der Nutzer bestätigt den Vorschlag bewusst (Zwei-Signal).
   const vorhanden = stand.felder && stand.felder[q.feld_id];
   const kiVorschlag = vorhanden && vorhanden.zustand === "vorlaeufig"
-    && ["llm_vorschlag", "berechnet", "vorjahr"].includes(vorhanden.herkunft_badge);
+    && VORSCHLAG_QUELLEN.includes(vorhanden.herkunft_badge);
 
   // Julius-Feature: Arbeitsweg-km über Karten-Dienst (Vorschlag-Fluss; Backend ge-stubbt, PII/Cap offen).
   const altMaps = document.getElementById("maps-affordanz"); if (altMaps) altMaps.remove();
@@ -324,6 +326,24 @@ async function vorjahrUebernehmen() {
   }
 }
 
+// --- Kontoauszug-Upload: CSV/JSON → Transaktion-Vorschläge (herkunft=kontoauszug), Nutzer bestätigt ---
+async function kontoauszugHochladen(datei) {
+  const st = $("konto-status");
+  if (!datei) return;
+  const name = (datei.name || "").toLowerCase();
+  const format = name.endsWith(".json") ? "json" : name.endsWith(".csv") ? "csv" : null;
+  if (!format) { st.textContent = "Bitte eine CSV- oder JSON-Datei wählen (PDF-Import folgt)."; return; }
+  st.textContent = "Lese Auszug …";
+  const inhalt = await datei.text();
+  const r = await jpost(`/fall/${FALL}/kontoauszug`, { format, inhalt });
+  if (r.status === 200) {
+    st.textContent = `${r.body.uebernommen} von ${r.body.transaktionen} Buchung(en) als Vorschlag erfasst — bitte im Fluss bestätigen.`;
+    await refresh();
+  } else {
+    st.textContent = "Upload fehlgeschlagen: " + ((r.body && (r.body.vertrag || r.body.fehler)) || r.status);
+  }
+}
+
 // --- Verdrahtung ---
 document.querySelectorAll(".kachel").forEach(k => k.addEventListener("click", () => waehleScheibe(k.dataset.scheibe)));
 $("chat").addEventListener("click", oeffneChat);
@@ -332,3 +352,5 @@ $("kette-zu").addEventListener("click", () => $("kette-overlay").hidden = true);
 $("chat-zu").addEventListener("click", () => $("chat-overlay").hidden = true);
 $("vorjahr-toggle").addEventListener("click", () => { const p = $("vorjahr-panel"); p.hidden = !p.hidden; });
 $("vorjahr-go").addEventListener("click", vorjahrUebernehmen);
+$("konto-toggle").addEventListener("click", () => { const p = $("konto-panel"); p.hidden = !p.hidden; });
+$("konto-file").addEventListener("change", (e) => kontoauszugHochladen(e.target.files[0]));

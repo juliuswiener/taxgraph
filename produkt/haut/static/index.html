@@ -42,6 +42,11 @@
           <button id="vorjahr-go" class="maps-berechnen" type="button">Übernehmen</button>
           <div id="vorjahr-status" class="maps-status"></div>
         </div>
+        <button id="konto-toggle" class="btn-link" type="button">🏦 Kontoauszug hochladen (CSV/JSON)</button>
+        <div id="konto-panel" class="vorjahr-panel" hidden>
+          <input id="konto-file" type="file" accept=".csv,.json,text/csv,application/json">
+          <div id="konto-status" class="maps-status">Ausgaben werden als Vorschläge erfasst — du bestätigst jede neben dem Auszug. IBAN/Kontonummern werden maskiert.</div>
+        </div>
       </div>
 
       <section id="wegpunkt" class="card screen" hidden>

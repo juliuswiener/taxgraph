@@ -47,6 +47,8 @@ def _routes():
         ("POST", re.compile(rf"^/fall/{_ID}/entfernung$"), lambda m, b: api.entfernung(m["id"], b)),
         # Vorjahr-Übernahme: Vorjahres-Fall → vorläufige Vorschläge (herkunft=vorjahr) im aktuellen Fall.
         ("POST", re.compile(rf"^/fall/{_ID}/vorjahr$"), lambda m, b: api.vorjahr(m["id"], b)),
+        # Kontoauszug-Upload (csv/json det, pdf→501): Transaktion-Vorschläge (herkunft=kontoauszug); LLM gated.
+        ("POST", re.compile(rf"^/fall/{_ID}/kontoauszug$"), lambda m, b: api.kontoauszug(m["id"], b)),
     ]
 
 
