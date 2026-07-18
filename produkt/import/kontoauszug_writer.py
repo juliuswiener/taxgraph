@@ -1,0 +1,179 @@
+"""Kontoauszug-Übernahme-Writer (import:kontoauszug — 4. Store-Writer). Deterministik-first, LLM-Fallback.
+
+Workaround statt PSD2: der Nutzer LÄDT einen Kontoauszug HOCH (CSV/CAMT.053/MT940 = strukturiert;
+PDF/Freitext = LLM). Transaktionen werden nach Steuer-Relevanz KLASSIFIZIERT und je relevanter Transaktion
+als VORLAEUFIGES Event über den einen Store-Schreibpfad (`store.append_event`, herkunft=kontoauszug,
+schreiber=import:kontoauszug) geschrieben. K2 = Chat-Berater-Grenze: die Klassifikation SCHLÄGT VOR, setzt
+NIE einen Wert (der Store-Guard erzwingt vorlaeufig+signal_2=null); der Mensch bestätigt neben dem Auszug.
+
+DETERMINISTIK-FIRST (Kosten $0 für den Großteil): strukturierte Formate parst ein deterministischer Parser,
+klare Verwendungszwecke klassifiziert eine Keyword-Heuristik. Das LLM (OpenRouterClient, injiziert) ist NUR
+Fallback für mehrdeutige Zwecke / unstrukturiertes PDF — es ist NICHT im deterministischen Pfad und wird in
+den Unit-Tests NIE aufgerufen (llm_klassifikator=None). Privacy: nur Buchungstext+Betrag+Datum an das LLM,
+IBAN/Kontonummern maskiert; lokal-first (faelle/), read-only.
+
+FAIL-CLOSED: eine Transaktion OHNE sichere Kategorie ODER ohne existierendes Zielfeld ⇒ KEIN Vorschlag
+(kein Rate-Wert). Nur EXPENSE-Transaktionen (betrag < 0, Ausgabe) werden für §35a/§10b/§10 klassifiziert.
+"""
+from __future__ import annotations
+
+import csv
+import io
+import os
+import re
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "store"))
+import store as ST   # noqa: E402
+
+# Kategorie -> Ziel-feld_id (NUR MVP-Kategorien mit EXISTIERENDEM Feld; Instructor-Ruling 2026-07-18).
+# Andere Kategorien = benannte GAP (kein Vorschlag ohne Zielfeld).
+KATEGORIE_FELD = {
+    "handwerker":    "hh_handwerker_arbeitskosten",   # § 35a Abs. 3
+    "dienstleistung": "hh_dienstleistungen",           # § 35a Abs. 2
+    "minijob":       "hh_minijob_aufwendungen",        # § 35a Abs. 1
+    "spende":        "spenden_betrag",                 # § 10b
+    "vorsorge":      "vor_rv_ausserhalb_lstb",         # § 10 (Vorsorge außerhalb LStB)
+}
+
+# Keyword-Heuristik: erste passende Kategorie gewinnt. Bewusst konservativ (nur eindeutige Zwecke) —
+# mehrdeutige Zeilen fallen durch (None) und gehen an das LLM (Fallback) bzw. bleiben unklassifiziert.
+_KEYWORDS = [
+    ("handwerker",    ("maler", "sanitär", "elektr", "dachdeck", "handwerk", "installat", "klempner",
+                       "heizung", "renovier", "modernisier")),
+    ("dienstleistung", ("reinigung", "putzhilfe", "gartenpfleg", "hausmeister", "gebäudereinig",
+                        "fensterputz", "winterdienst")),
+    ("minijob",       ("minijob", "haushaltshilfe", "minijob-zentrale")),
+    ("spende",        ("spende", "zuwendung", "hilfswerk", "stiftung", " e.v", "e. v.", "tierheim",
+                       "unicef", "rotes kreuz")),
+    ("vorsorge",      ("rentenversicherung", "rürup", "basisrente", "altersvorsorge", "rürup-rente")),
+]
+
+_IBAN = re.compile(r"\b([A-Z]{2}\d{2})[\sA-Z0-9]{10,30}\b")
+_KTO = re.compile(r"\b(\d{8,12})\b")
+
+
+def maskiere(text: str) -> str:
+    """IBAN/Kontonummern maskieren (Präfix + Rest verdeckt) — Privacy vor LLM/Speicherung."""
+    if not text:
+        return text
+    t = _IBAN.sub(lambda m: m.group(1) + "****", text)
+    t = _KTO.sub(lambda m: m.group(1)[:2] + "****", t)
+    return t
+
+
+def klassifiziere_det(verwendungszweck: str) -> str | None:
+    """Deterministische Keyword-Klassifikation. None = unklar (→ LLM-Fallback / kein Vorschlag)."""
+    z = (verwendungszweck or "").lower()
+    for kategorie, keys in _KEYWORDS:
+        if any(k in z for k in keys):
+            return kategorie
+    return None
+
+
+def parse_csv(text: str) -> list[dict]:
+    """Deterministischer CSV-Parser (Bank-Export). Erwartet Spalten datum/betrag/verwendungszweck
+    (case-insensitiv, gängige Alias-Namen). Betrag in Euro (Komma/Punkt) → Cent (signed). Kein LLM."""
+    out = []
+    reader = csv.DictReader(io.StringIO(text), delimiter=";")
+    if not reader.fieldnames:
+        return out
+    norm = {(f or "").strip().lower(): f for f in reader.fieldnames}
+    def col(*aliases):
+        for a in aliases:
+            if a in norm:
+                return norm[a]
+        return None
+    c_dat = col("datum", "buchungstag", "buchungsdatum", "date")
+    c_bet = col("betrag", "umsatz", "amount", "betrag (eur)")
+    c_zwk = col("verwendungszweck", "buchungstext", "zweck", "beschreibung", "description")
+    for row in reader:
+        if c_bet is None or not (row.get(c_bet) or "").strip():
+            continue
+        out.append({
+            "datum": (row.get(c_dat) or "").strip() if c_dat else "",
+            "betrag": _eur_cent_signed(row.get(c_bet, "")),
+            "verwendungszweck": (row.get(c_zwk) or "").strip() if c_zwk else "",
+        })
+    return out
+
+
+def _eur_cent_signed(s: str) -> int:
+    """'-480,00' / '-480.00' / '1.234,56' → signed Cent."""
+    s = (s or "").strip().replace("€", "").replace(" ", "")
+    neg = s.startswith("-")
+    s = s.lstrip("+-")
+    if "," in s and "." in s:            # 1.234,56 (deutsch)
+        s = s.replace(".", "").replace(",", ".")
+    elif "," in s:                        # 480,00
+        s = s.replace(",", ".")
+    try:
+        cent = int(round(float(s) * 100))
+    except ValueError:
+        return 0
+    return -cent if neg else cent
+
+
+# ---- LLM-Fallback-Schicht (nur für mehrdeutige Zwecke / PDF; OpenRouter-REUSE, kein neues Key-Handling) --
+# Prompt zwingt JSON-Kategorie aus der MVP-Menge; das LLM SCHLÄGT VOR (K2), der Store-Guard erzwingt
+# vorlaeufig. Modell-Slug = billig-schnell (Klassifikation ist simpel, kein Frontier) — Julius/Instructor
+# wählt den finalen Slug. Getestet über dry_run+Recorded-Fixture (kein Mock).
+_LLM_PROMPT = (
+    "Du klassifizierst EINE Bank-Transaktion nach deutscher Steuer-Relevanz. Antworte NUR mit JSON "
+    '{"kategorie": X} wobei X eines von: handwerker (§35a Handwerkerleistung), dienstleistung '
+    "(§35a haushaltsnahe Dienstleistung), minijob (§35a Minijob im Haushalt), spende (§10b Zuwendung), "
+    "vorsorge (§10 Altersvorsorge-Beitrag), oder null (keine dieser Kategorien / unklar). Kein Fließtext.")
+
+
+def _parse_llm_kategorie(text: str) -> str | None:
+    import json
+    try:
+        m = re.search(r"\{.*\}", text, re.S)
+        k = (json.loads(m.group(0)) if m else {}).get("kategorie")
+        return k if k in KATEGORIE_FELD else None
+    except (ValueError, AttributeError):
+        return None
+
+
+def llm_klassifikator_factory(client, role, *, fixture_id: str | None = None):
+    """Gibt einen Klassifikator(zweck, betrag) zurück, der EINEN OpenRouter-Call macht (dry_run→Fixture-
+    Replay). Der Aufrufer (api.py/dev-1) baut client+role; hier nur der Adapter. Nie im deterministischen Pfad."""
+    def klassifikator(zweck: str, betrag: int) -> str | None:
+        msgs = [{"role": "system", "content": _LLM_PROMPT},
+                {"role": "user", "content": f"Zweck: {zweck}\nBetrag: {betrag / 100:.2f} EUR"}]
+        comp = client.complete(role, msgs, fixture_id=fixture_id)
+        return _parse_llm_kategorie(comp.text)
+    return klassifikator
+
+
+def uebernehme_kontoauszug(store: dict, transaktionen: list[dict], bindung: dict, *,
+                           llm_klassifikator=None, ts: str | None = None) -> int:
+    """Je AUSGABEN-Transaktion (betrag < 0): Kategorie deterministisch, sonst LLM-Fallback (falls injiziert),
+    sonst kein Vorschlag. Kategorie mit existierendem Ziel-Feld → ein vorlaeufiges Event (Vorschlag). Gibt
+    die Anzahl geschriebener Vorschläge zurück. Kein Überschreiben aktiver Events; keine Aggregation (je
+    Transaktion ein eigenständiger Vorschlag — bei mehreren derselben Kategorie gewinnt der Store-One-Active-
+    Guard: nur die erste, weitere brauchen Nutzer-Merge = benannter Folge-Nachtrag Multi-Transaktion)."""
+    aktiv = set(ST._aktives(store))
+    n = 0
+    for tx in transaktionen:
+        betrag = int(tx.get("betrag", 0))
+        if betrag >= 0:                            # nur Ausgaben sind § 35a/§ 10b/§ 10-Kandidaten
+            continue
+        zweck = tx.get("verwendungszweck", "")
+        kategorie = klassifiziere_det(zweck)
+        if kategorie is None and llm_klassifikator is not None:
+            kategorie = llm_klassifikator(maskiere(zweck), betrag)   # LLM-Fallback (maskiert)
+        feld = KATEGORIE_FELD.get(kategorie or "")
+        if not feld or feld not in bindung or feld in aktiv:
+            continue                               # kein Zielfeld / schon belegt -> kein Vorschlag
+        sig1 = {"typ": "kontoauszug", "datum": tx.get("datum", ""), "betrag": betrag,
+                "verwendungszweck": maskiere(zweck), "kategorie": kategorie,
+                "quelle": "heuristik" if klassifiziere_det(zweck) else "llm"}
+        ST.append_event(store, feld_id=feld, wert=abs(betrag), zustand="vorlaeufig",
+                        herkunft={"herkunft": "kontoauszug", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        schreiber="import:kontoauszug",
+                        signal={"signal_1": sig1, "signal_2": None}, ts=ts)
+        aktiv.add(feld)
+        n += 1
+    return n

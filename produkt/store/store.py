@@ -149,6 +149,16 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
                 "fail-closed (A): import:vorjahr-Schreiber muss herkunft=vorjahr, zustand=vorlaeufig, "
                 "signal_2=null tragen — eine Vorjahres-Übernahme bestätigt nie direkt.")
 
+    # Auflage A (Kontoauszug-Writer, symmetrisch): eine Transaktions-Klassifikation (Heuristik oder LLM) ist
+    # ein VORSCHLAG — sie bewegt keine Steuer-Zahl, bis der Mensch die Transaktion neben dem Auszug bestätigt
+    # (K2, Chat-Berater-Grenze: das LLM schlägt vor, setzt NIE einen Wert).
+    if schreiber.startswith("import:kontoauszug"):
+        if herkunft.get("herkunft") != "kontoauszug" or zustand != "vorlaeufig" \
+                or signal.get("signal_2") is not None:
+            raise ValueError(
+                "fail-closed (A): import:kontoauszug-Schreiber muss herkunft=kontoauszug, zustand=vorlaeufig, "
+                "signal_2=null tragen — eine Kontoauszug-Klassifikation bestätigt nie direkt.")
+
     # Typ-Zwang: bestaetigt braucht signal_2.
     if zustand == "bestaetigt" and not (signal.get("signal_2") or "").strip():
         raise ValueError("fail-closed: zustand=bestaetigt braucht ein signal_2 (Zwei-Signal).")
