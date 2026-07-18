@@ -1,0 +1,108 @@
+# § 21 Abs. 2 EStG — verbilligte Vermietung (Werbungskosten-Kürzung, 66-%-Schwelle)
+
+> Module VerbilligteVermietungWk
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p21_2_verbilligte_vermietung_wk.json`
+(module VerbilligteVermietungWk, verified_bedingt, offene Discoveries = 0, faithful=false MIT
+abweichungen=[] — GETRIAGED-Artefakt: die einzige registrierte Abweichung ist der bewusst ausgeklammerte
+50-66-%-Prognosekorridor, kein echter Defekt; sha256 catala_a
+`d11ed4494a5ffce7bf397b5da15b52a41a33d9e56fb638f018e8e755dd0a0e45`). Die scope-Logik unten ist BYTE-GLEICH
+aus `catala_a` übernommen (keine Änderung); nur Module-Header + §-Zitatanker + Grenzfall-Seeds sind ergänzt.
+Kein Pipeline-Re-Run.
+
+Zitatanker § 21 Abs. 2 EStG (`sources/gesetze-im-internet/estg_p21_2026-07-13.txt`, typ gesetz):
+S. 2 (Voll-Ansatz ab 66 %) "Beträgt das Entgelt bei auf Dauer angelegter Wohnungsvermietung mindestens
+66 Prozent der ortsüblichen Miete, gilt die Wohnungsvermietung als entgeltlich"; S. 1 (anteilige
+Aufteilung) "Beträgt das Entgelt für die Überlassung einer Wohnung zu Wohnzwecken weniger als 50 Prozent
+der ortsüblichen Marktmiete, so ist die Nutzungsüberlassung in einen entgeltlichen und einen unentgeltlichen
+Teil aufzuteilen". Die Regel kürzt die Werbungskosten: ab 66 % voll abziehbar, sonst mit der Entgeltquote
+anteilig. `entgelt_quote_prozent` = Miete/ortsübliche-Marktmiete in Prozent (Eingabe). Der 50-66-%-
+Prognosekorridor (Totalüberschussprognose) ist als Geltungsbedingung `entgelt_quote_ausserhalb_prognosekorridor`
+bewusst ausgeklammert (konservativ-safe Sub-Nachtrag); `wohnung_zu_wohnzwecken_ueberlassen` +
+`auf_dauer_angelegte_wohnungsvermietung` sind getriagte Geltungsbedingungen (Eingabe-Gates). Reine Teilregel;
+die Kürzung wirkt PRO Vermietungsobjekt (Integration via instanz_gruppe vv_objekt, dev-1-Accessor).
+
+```catala
+declaration scope VerbilligteVermietungWk:
+  input werbungskosten content money
+  input entgelt_quote_prozent content decimal
+  output abziehbare_werbungskosten content money
+
+scope VerbilligteVermietungWk:
+  definition abziehbare_werbungskosten equals
+    if entgelt_quote_prozent >= 66.0
+    then werbungskosten
+    else werbungskosten * (entgelt_quote_prozent / 100.0)
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestQuoteVoll:
+  # Quote 100 % (>= 66) -> Werbungskosten voll abziehbar.
+  internal r content VerbilligteVermietungWk
+  output g content money
+scope TestQuoteVoll:
+  definition r equals output of VerbilligteVermietungWk with {
+    -- werbungskosten: $10,000.00
+    -- entgelt_quote_prozent: 100.0 }
+  definition g equals r.abziehbare_werbungskosten
+  assertion g = $10,000.00
+```
+
+```catala
+#[test]
+declaration scope TestQuoteGrenze66:
+  # Quote genau 66 % -> Schwelle >= 66 erfüllt -> voll abziehbar (kein Under-Tax an der Grenze).
+  internal r content VerbilligteVermietungWk
+  output g content money
+scope TestQuoteGrenze66:
+  definition r equals output of VerbilligteVermietungWk with {
+    -- werbungskosten: $10,000.00
+    -- entgelt_quote_prozent: 66.0 }
+  definition g equals r.abziehbare_werbungskosten
+  assertion g = $10,000.00
+```
+
+```catala
+#[test]
+declaration scope TestQuoteUnter66:
+  # Quote 60 % (< 66) -> WK * 60/100 = 6000 (anteilige Kürzung, das ist der Under-Tax-Fix).
+  internal r content VerbilligteVermietungWk
+  output g content money
+scope TestQuoteUnter66:
+  definition r equals output of VerbilligteVermietungWk with {
+    -- werbungskosten: $10,000.00
+    -- entgelt_quote_prozent: 60.0 }
+  definition g equals r.abziehbare_werbungskosten
+  assertion g = $6,000.00
+```
+
+```catala
+#[test]
+declaration scope TestQuoteHalb:
+  # Quote 50 % -> WK * 50/100 = 5000.
+  internal r content VerbilligteVermietungWk
+  output g content money
+scope TestQuoteHalb:
+  definition r equals output of VerbilligteVermietungWk with {
+    -- werbungskosten: $10,000.00
+    -- entgelt_quote_prozent: 50.0 }
+  definition g equals r.abziehbare_werbungskosten
+  assertion g = $5,000.00
+```
+
+```catala
+#[test]
+declaration scope TestQuoteNull:
+  # Quote 0 % (voll unentgeltlich) -> keine abziehbaren WK (Regression, kein Phantom-Abzug).
+  internal r content VerbilligteVermietungWk
+  output g content money
+scope TestQuoteNull:
+  definition r equals output of VerbilligteVermietungWk with {
+    -- werbungskosten: $10,000.00
+    -- entgelt_quote_prozent: 0.0 }
+  definition g equals r.abziehbare_werbungskosten
+  assertion g = $0.00
+```

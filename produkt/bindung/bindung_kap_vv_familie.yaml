@@ -290,6 +290,7 @@ bindungen:
       zitatanker: "weniger als 50 Prozent der ortsüblichen Marktmiete"
       datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
   - feld_id: vv_entgelt_quote_prozent
+    instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_2_verbilligte_vermietung_wk, signatur_slot: entgelt_quote_prozent}
     typ: int
     einheit: "%"
@@ -308,6 +309,7 @@ bindungen:
       zitatanker: "weniger als 50 Prozent der ortsüblichen Marktmiete"
       datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
   - feld_id: vv_wohnzwecke
+    instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_2_verbilligte_vermietung_wk, geltungsbedingung: wohnung_zu_wohnzwecken_ueberlassen}
     typ: bool
     einheit: null
@@ -325,6 +327,7 @@ bindungen:
       zitatanker: "Überlassung einer Wohnung zu Wohnzwecken"
       datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
   - feld_id: vv_auf_dauer
+    instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_2_verbilligte_vermietung_wk, geltungsbedingung: auf_dauer_angelegte_wohnungsvermietung}
     typ: bool
     einheit: null
