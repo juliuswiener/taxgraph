@@ -1,0 +1,72 @@
+# § 33 Abs. 1/3 EStG — außergewöhnliche Belastungen: Abzug über der zumutbaren Belastung
+
+> Module AgbAbzug
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p33_1_2_agb_abzug.json`
+(module AgbAbzug, verified_bedingt, sha256 `b64650b14ce0dc12e374b74acdf02f37448547beea4bbe92905c10824003e468`).
+Die scope-Logik unten ist BYTE-GLEICH aus `catala_a` (keine Änderung); nur Module-Header + §-Zitatanker
++ Grenzfall-Seeds ergänzt. Kein Pipeline-Re-Run.
+
+Zitatanker § 33 Abs. 1 EStG (`sources/gesetze-im-internet/estg_p33_2026-07-11.txt`, typ gesetz): der die
+"zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen"; unterhalb der
+zumutbaren Belastung kein Abzug (max(0; agB − zumutbar)). `zumutbare_belastung` ist EINGABE (Ergebnis der
+§ 33 Abs. 3-Staffelung, module ZumutbareBelastung / p33_3_zumutbare_belastung); die Verrechnung gegen den
+GdE (§ 2 Abs. 4 → p32a input aussergewoehnliche_belastungen) ist Andockung (dev-1-Accessor), nicht Teil
+dieser reinen Teilregel.
+
+```catala
+declaration scope AgbAbzug:
+  input aussergewoehnliche_belastungen content money
+  input zumutbare_belastung content money
+  output abzug_agb content money
+
+scope AgbAbzug:
+  definition abzug_agb equals
+    if aussergewoehnliche_belastungen > zumutbare_belastung
+    then aussergewoehnliche_belastungen - zumutbare_belastung
+    else $0.00
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestAgbUeberZumutbar:
+  # agB 5000 über zumutbarer Belastung 1408,70 -> Abzug 3591,30 (charge2-Seed).
+  internal r content AgbAbzug
+  output g content money
+scope TestAgbUeberZumutbar:
+  definition r equals output of AgbAbzug with {
+    -- aussergewoehnliche_belastungen: $5,000.00
+    -- zumutbare_belastung: $1,408.70 }
+  definition g equals r.abzug_agb
+  assertion g = $3,591.30
+```
+
+```catala
+#[test]
+declaration scope TestAgbUnterZumutbar:
+  # agB 1000 unter zumutbarer Belastung 1408,70 -> kein Abzug (0), nicht negativ.
+  internal r content AgbAbzug
+  output g content money
+scope TestAgbUnterZumutbar:
+  definition r equals output of AgbAbzug with {
+    -- aussergewoehnliche_belastungen: $1,000.00
+    -- zumutbare_belastung: $1,408.70 }
+  definition g equals r.abzug_agb
+  assertion g = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestAgbNull:
+  # Keine außergewöhnlichen Belastungen -> kein Abzug (Regression).
+  internal r content AgbAbzug
+  output g content money
+scope TestAgbNull:
+  definition r equals output of AgbAbzug with {
+    -- aussergewoehnliche_belastungen: $0.00
+    -- zumutbare_belastung: $0.00 }
+  definition g equals r.abzug_agb
+  assertion g = $0.00
+```

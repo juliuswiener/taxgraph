@@ -1,0 +1,82 @@
+# § 10 Abs. 1 Nr. 4 EStG — gezahlte Kirchensteuer (Sonderausgabe), abzüglich Erstattung
+
+> Module Kirchensteuerabzug
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p10_1_4_kirchensteuer.json`
+(module Kirchensteuerabzug, verified_bedingt, faithful=True, sha256
+`cc2c492862dfddfecddc15f32d25e3a769955a9847e9d22373c18a09c71d81d1`). Die scope-Logik unten ist
+BYTE-GLEICH aus `catala_a` (keine Änderung); nur Module-Header + §-Zitatanker + Grenzfall-Seeds ergänzt.
+Kein Pipeline-Re-Run.
+
+Zitatanker § 10 Abs. 1 Nr. 4 EStG (`sources/gesetze-im-internet/estg_p10_2026-07-11.txt`, typ gesetz):
+abziehbar ist die "gezahlte Kirchensteuer", vermindert um erstattete (max(0; gezahlt − erstattet)). Der
+abziehbare Betrag speist als Sonderausgabe § 2 Abs. 4 (→ p32a input sonderausgaben, additiv); die
+Verrechnung ist Andockung (dev-1-Accessor), nicht Teil dieser reinen Teilregel.
+
+⚠ Der intern berechnete `erstattungsueberhang` (§ 10 Abs. 4b EStG: übersteigt die Erstattung die Zahlung,
+wird der Überhang dem GdE HINZUGERECHNET) wird NICHT ausgegeben — die Hinzurechnung ist ein benannter
+Nachtrag (kein p32a-Slot dafür), siehe Freeze-Flag.
+
+```catala
+declaration scope Kirchensteuerabzug:
+  input gezahlte_kirchensteuer content money
+  input erstattete_kirchensteuer content money
+  internal erstattungsueberhang content money
+  output abziehbare_kirchensteuer content money
+
+scope Kirchensteuerabzug:
+  definition erstattungsueberhang equals
+    if erstattete_kirchensteuer > gezahlte_kirchensteuer
+    then erstattete_kirchensteuer - gezahlte_kirchensteuer
+    else $0.00
+
+  definition abziehbare_kirchensteuer equals
+    if gezahlte_kirchensteuer > erstattete_kirchensteuer
+    then gezahlte_kirchensteuer - erstattete_kirchensteuer
+    else $0.00
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestKiStAbzug:
+  # gezahlt 800, erstattet 200 -> abziehbar 600.
+  internal r content Kirchensteuerabzug
+  output g content money
+scope TestKiStAbzug:
+  definition r equals output of Kirchensteuerabzug with {
+    -- gezahlte_kirchensteuer: $800.00
+    -- erstattete_kirchensteuer: $200.00 }
+  definition g equals r.abziehbare_kirchensteuer
+  assertion g = $600.00
+```
+
+```catala
+#[test]
+declaration scope TestKiStUeberhang:
+  # Erstattung 800 > Zahlung 200 -> abziehbar 0 (der Überhang 600 = § 10 Abs. 4b-Hinzurechnung, hier NICHT
+  # ausgegeben = Nachtrag); der Abzug floort auf 0, nicht negativ.
+  internal r content Kirchensteuerabzug
+  output g content money
+scope TestKiStUeberhang:
+  definition r equals output of Kirchensteuerabzug with {
+    -- gezahlte_kirchensteuer: $200.00
+    -- erstattete_kirchensteuer: $800.00 }
+  definition g equals r.abziehbare_kirchensteuer
+  assertion g = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestKiStNull:
+  # Keine Kirchensteuer -> kein Abzug (Regression).
+  internal r content Kirchensteuerabzug
+  output g content money
+scope TestKiStNull:
+  definition r equals output of Kirchensteuerabzug with {
+    -- gezahlte_kirchensteuer: $0.00
+    -- erstattete_kirchensteuer: $0.00 }
+  definition g equals r.abziehbare_kirchensteuer
+  assertion g = $0.00
+```

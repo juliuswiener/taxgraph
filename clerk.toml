@@ -7,8 +7,10 @@ include_dirs = [
   "rules/estg/p09_entfernungspauschale",
   "rules/estg/p32_kinderfreibetrag",
   "rules/estg/p33a_unterhalt",
+  "rules/estg/p33",
   "rules/estg/p35a",
   "rules/estg/p10b",
+  "rules/estg/p10",
   "rules/estg/solzg",
   "rules/estg/arbeitnehmerfall",
   "rules/estg/integration",
@@ -22,6 +24,6 @@ target_dir = "_target"
 # SpendenAbzug (§ 10b) sind reine Teilregeln, vom Accessor aufgerufen und in p32a eingespeist.
 [[target]]
 name = "p32a-python"
-modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice", "Haushaltsnahe", "SpendenAbzug"]
+modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice", "Haushaltsnahe", "SpendenAbzug", "AgbAbzug", "Kirchensteuerabzug"]
 backends = ["python"]
 include_sources = true
