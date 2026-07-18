@@ -57,6 +57,9 @@ VERPFLEGUNG_GUARD = ("vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
 # Stufe 1a: die VOR-Felder (§ 10 Altersvorsorge) sind RING-FÄHIG — echte Rechnung via
 # _vorsorge_abzug über den Store-Einzelfeld-Zugriff (kein Guard mehr, aber Teil des Kegels).
 VOR_FELDER = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
+# § 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge (§10-Stufe 2): PFLICHT-Kegel (betrifft jeden; mit_anspruch absent→false→
+# HB 2800 statt 1900 = zu hoher Abzug = Unter-tax für Zuschuss-Nutzer → mandatory + explizit gefragt).
+KV_PV_FELDER = ("basis_kv_pv", "weitere_vorsorgeaufwendungen", "mit_anspruch_auf_zuschuss")
 # Stufe 1b — doppelte Haushaltsführung (§ 9 Abs. 1 S. 3 Nr. 5): 3 Ring-Inputs + 4 Tatbestands-
 # Bedingungen. dHf-Abzug greift NUR wenn alle 4 bestätigt-true UND Inland; Kosten > 0 mit offener
 # Bedingung → dhf_tatbestand_offen, mit Ausland → ausland_dhf_nicht_ring_faehig (kein Fake).
@@ -171,13 +174,14 @@ SCHEIBEN = {
     # (kapital_semantik_offen); zusammen+§19 (Person-B); §22-Rente = weitere Summanden.
     "gesamt": {
         "felder": (VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ("veranlagung", "bruttoarbeitslohn")
-                   + EP_FELDER + VOR_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP
+                   + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS
+                   + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2-Tatbestand OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
-        # (§ 10 Altersvorsorge) im Kegel (mandatory wie an_gesamt) → kein stiller Über-tax durch fehlenden Abzug.
+        # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
-                  + EP_FELDER + VOR_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
+                  + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_gesamt",
         "teil_ringe": [],
@@ -487,11 +491,19 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
                 "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
                 "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
+            # sonderausgaben = § 10b Spenden + § 10 KiSt + § 10 Abs.1 Nr.3/3a KV/PV-Vorsorge (§10-Stufe 2, additiv;
+            # KV/PV hat EIGENEN Abs.4-Höchstbetrag 1900/2800 + Basis-Durchbruch, getrennt von der Abs.3-Basisvorsorge
+            # die catala_gesamt intern via _vorsorge_abzug addiert). PLAIN Read-Keys (1:1 mit dev-2s Binding). Die 3
+            # KV/PV-Felder sind Pflicht-Kegel → immer beantwortet (kein stiller Über/Unter-tax; mit_anspruch steuert HB).
             g["sonderausgaben"] = (runner.catala_p10b_spenden({
                     "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": gde})
                 + runner.catala_p10_kist({
                     "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
-                    "erstattete_kirchensteuer": _c("kist_erstattet") // 100}))
+                    "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
+                + runner.catala_p10_kv_pv({
+                    "basis_kv_pv": _c("basis_kv_pv") // 100,
+                    "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen") // 100,
+                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True}))
             g["aussergewoehnliche_belastungen"] = runner.catala_p33_agb({
                 "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
                 "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),

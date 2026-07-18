@@ -48,6 +48,7 @@ from pkg import Altersentlastungsbetrag as AE  # noqa: E402  (§ 24a, charge30)
 from pkg import Entlastungsbetrag as EB  # noqa: E402  (§ 24b Alleinerziehende, charge30)
 from pkg import Familienleistungsausgleich as FL  # noqa: E402  (§ 31 Günstigerprüfung, charge30)
 from pkg import VerbilligteVermietungWk as VV  # noqa: E402  (§ 21 Abs. 2 verbilligte Vermietung WK-Kürzung)
+from pkg import KrankenPflegeVorsorge as KP  # noqa: E402  (§ 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge)
 from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
@@ -328,6 +329,22 @@ def catala_p21_2_verbilligt(s: dict) -> int:
         werbungskosten_in=Money(f"{int(s.get('werbungskosten', 0))}.00"),
         entgelt_quote_prozent_in=Decimal(str(int(s.get("entgelt_quote_prozent", 100))))))
     return int(r.abziehbare_werbungskosten) // 100
+
+
+def catala_p10_kv_pv(s: dict) -> int:
+    """§ 10 Abs. 1 Nr. 3/3a EStG — abziehbare Kranken-/Pflegeversicherungs-Vorsorge, EURO (module
+    KrankenPflegeVorsorge): Höchstbetrag 1900 (mit Anspruch auf Zuschuss/Beihilfe, z.B. Beamte/AN mit AG-Zuschuss)
+    / 2800 (ohne). abziehbar = max(basis_kv_pv; min(basis_kv_pv + weitere; HB)) — der § 10 Abs. 4 S. 4 BASIS-
+    DURCHBRUCH: die Basis-KV/PV (Existenzminimum) ist IMMER voll abziehbar, auch über dem Höchstbetrag; nur die
+    weiteren Vorsorgeaufwendungen (Haftpflicht etc.) werden gedeckelt. ⚠ basis_kv_pv + weitere GETRENNT (NICHT
+    vorsummieren — sonst würde die Basis auf den HB gedeckelt = Über-Besteuerung bei hohen Basis-Beiträgen).
+    Roh → sonderausgaben (§ 2 Abs. 4, additiv, EIGENER Abs.4-HB getrennt von Abs.3-Basisvorsorge). mit_anspruch_
+    auf_zuschuss ist Catala-Bool (Python-bool bricht not_)."""
+    r = KP.kranken_pflege_vorsorge(KP.KrankenPflegeVorsorgeIn(
+        basis_kv_pv_in=Money(f"{int(s.get('basis_kv_pv', 0))}.00"),
+        weitere_vorsorgeaufwendungen_in=Money(f"{int(s.get('weitere_vorsorgeaufwendungen', 0))}.00"),
+        mit_anspruch_auf_zuschuss_in=Bool(bool(s.get("mit_anspruch_auf_zuschuss", False)))))
+    return int(r.abziehbare_kv_pv_vorsorge) // 100
 
 
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --

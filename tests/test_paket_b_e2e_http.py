@@ -647,19 +647,23 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_gewinn_aktien=0, kap_verlust_aktien=0, kap_gewinn_sonstige=0, kap_verlust_sonstige=0,
              veranlagung="einzel", bruttolohn_partner=None, person_b_idnr=None,
              kap_ertraege_partner=0, kap_gewinn_aktien_partner=0, kap_verlust_aktien_partner=0,
-             kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0):
+             kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
+             basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
     bruttolohn_partner/person_b_idnr (nur bei veranlagung=zusammen) = Person-B-§19-Kegel (#4). entgelt_quote
     (§ 21 Abs. 2, Pflicht-Kegel, %) = 100 (nicht verbilligt) default; < 66 → WK-Kürzung. vor_an/vor_ag/
-    vor_rv_ausserhalb (§ 10 Altersvorsorge, Pflicht-Kegel, cent) = 0 default (keine Vorsorge → kein Abzug)."""
+    vor_rv_ausserhalb (§ 10 Altersvorsorge, Pflicht-Kegel, cent) = 0 default (keine Vorsorge → kein Abzug).
+    basis_kv_pv/weitere_kv_pv (§ 10 Abs. 1 Nr. 3/3a KV/PV, Pflicht-Kegel, CENT wie VOR!) = 0 default; 3200 € = 320000."""
     k = [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa), ("vv_schuldzinsen", schuldzinsen),
          ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0),
          ("vv_entgelt_quote_prozent", entgelt_quote), ("veranlagung", veranlagung),
          ("bruttoarbeitslohn", bruttolohn),
          ("vor_an_anteil_rv", vor_an), ("vor_ag_anteil_rv", vor_ag),
          ("vor_rv_ausserhalb_lstb", vor_rv_ausserhalb),
+         ("basis_kv_pv", basis_kv_pv), ("weitere_vorsorgeaufwendungen", weitere_kv_pv),
+         ("mit_anspruch_auf_zuschuss", mit_anspruch_zuschuss),
          ("ep_arbeitstage", ep_tage), ("ep_entfernung_km", ep_km),
          ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", ep_kfz),
          ("kap_kapitalertraege", kap_ertraege), ("kap_gewinn_aktien", kap_gewinn_aktien),
@@ -910,6 +914,47 @@ def test_gesamt_vorsorge_altersvorsorge_abzug(base):
         assert erg["zahl_cent"] == 584900 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
+
+
+def test_gesamt_kv_pv_durchbruch_abzug(base):
+    """§ 10 Abs. 1 Nr. 3/3a + Abs. 4 S. 4 KV/PV im gefalteten gesamt-Ring: Basis-KV/PV 3200 > Höchstbetrag 2800
+    (ohne Zuschuss) → § 10 Abs. 4 S. 4 Durchbruch: die Basisabsicherung ist STETS voll abziehbar (3200, nicht auf
+    2800 gedeckelt) → festzusetzende_est 12721 = 1272100 Cent, NIEDRIGER als ohne KV/PV (1392400). Belegt: der
+    gesamt-Ring gewährt den KV/PV-Abzug + der Durchbruch schlägt den Höchstbetrag (sonst Über-tax auf den 400 €
+    über HB). KV/PV im Pflicht-Kegel → immer gefragt, kein stiller Über-tax."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "kvd", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True, basis_kv_pv=320000))
+    st, erg = _req(base, "GET", "/fall/kvd/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1272100 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_kv_pv_hoechstbetrag_mit_zuschuss(base):
+    """§ 10 Abs. 4 KV/PV mit Zuschussanspruch: Höchstbetrag 1900 (statt 2800). Basis 1500 + weitere Vorsorge 800 =
+    2300, aber die Basis (1500) unterschreitet den HB → kein Durchbruch; abziehbar = min(2300, 1900) = 1900 →
+    festzusetzende_est 13211 = 1321100 Cent. Belegt: die weitere Vorsorge wird nur bis zum (mit-Zuschuss
+    reduzierten) HB angerechnet — Basis + weitere GETRENNT behandelt."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "kvz", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True,
+                                               basis_kv_pv=150000, weitere_kv_pv=80000, mit_anspruch_zuschuss=True))
+    st, erg = _req(base, "GET", "/fall/kvz/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1321100 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_kv_pv_kegel_fehlt(base):
+    """§ 10 KV/PV Pflicht-Kegel: basis_kv_pv nicht bestätigt → input_kegel_nicht_bestaetigt (kein stiller Bescheid
+    mit KV/PV-Abzug 0 — die KV/PV-Beiträge MÜSSEN beantwortet sein, sonst Über-tax-Risiko der Pflichtbeiträge)."""
+    kegel = [(f, w) for (f, w) in _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True) if f != "basis_kv_pv"]
+    _gesamt_anlegen(base, "kvk", kegel)
+    st, erg = _req(base, "GET", "/fall/kvk/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "input_kegel_nicht_bestaetigt"
 
 
 def test_kombiniert_job_und_kapital(base):
@@ -1376,7 +1421,7 @@ def test_graph_uebersicht(base):
     _val("graph", g)
     rids = {k["regel_id"] for k in g["knoten"]}
     assert "p09_entfernungspauschale" in rids
-    assert len(g["knoten"]) == 6          # EP + dHf + Verpflegung + Arbeitsmittel + VOR + GWG
+    assert len(g["knoten"]) == 7          # EP + dHf + Verpflegung + Arbeitsmittel + VOR + GWG + KV/PV
     # frischer Fall: alle Kanten offen; beide Rollen vertreten
     assert all(k["zustand"] == "offen" for k in g["kanten"])
     assert any(k["rolle"] == "slot" for k in g["kanten"])
