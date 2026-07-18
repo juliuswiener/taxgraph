@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import glob
 import os
+import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PRODUKT = os.path.dirname(HERE)
@@ -99,10 +100,46 @@ PARTNER_VERZWEIGUNG = {
         "private_basisrente": "E1800501", "private_leibrente": "E1801701",
         "sonstige_leibrente": "E1803202"}},
 }
+# Klasse INSTANZ — Repeated-Instance (Store-Modell A, Multi-Objekt/Multi-Rente/Per-Kind): ein wiederholbares
+# Anlage-Feld trägt für Instanz 2..N das Suffix __<n> am feld_id (Instanz 1 = die Basis-feld_id ohne Suffix,
+# unverändert deklariert). Das Suffix liegt vollständig in [a-z0-9_] → der Store-feld_id-Pattern
+# ^[a-z][a-z0-9_]*$ bleibt UNVERÄNDERT (bewusst kein '#' — '#' bräche das Store-Schema-Gate). Der Store lernt
+# die Instanz GAR NICHT; sie ist reine Konvention der Bindung (instanz_gruppe) + est_mapping. Je Instanz wird
+# DIESELBE Basis-Kz wiederverwendet (Instanz-Reuse, kein neuer Kz — analog Person-B/Klasse g auf der Instanz-
+# Achse; Kz-Instanz-Recon 2026-07-18: alle drei Anlagen V/R/Kind = Reuse, kein distinkter Instanz-Kz).
+_INSTANZ_RE = re.compile(r"^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[1-9][0-9]*)$")
 
 
 def _aggregation_quellen() -> set:
     return {f for fs in DOKUMENTIERT_AGGREGAT.values() for f in fs}
+
+
+def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, bindung: dict,
+                        anlage_instanzen: dict, unvollstaendig: list, nicht_deklariert: list) -> None:
+    """Routet EIN Instanz-Feld (base__n) in den anlage_instanzen-Bucket seiner Gruppe (Instanz-Reuse der
+    Basis-Kz). fail-closed je Instanz: ein vorlaeufiges Instanz-Feld -> unvollständig (nicht deklariert).
+    Reuse der Basis-Mapping-Logik: 1:1 (elster_kz) -> instanz.felder[kz]; Aggregat-Quelle -> instanz.
+    dokumentiert[ziel] (Summe je Instanz, wie Klasse a je Objekt)."""
+    b = bindung[basis]                                    # Aufrufer garantiert: basis instanz-fähig
+    if sfeld.get("zustand") != "bestaetigt":
+        unvollstaendig.append({"feld_id": feld_id,
+                               "grund": f"Instanz-Wert {sfeld.get('zustand')} — Pflicht-Bestätigung (Zwei-Signal) fehlt"})
+        return
+    gruppe = b["instanz_gruppe"]
+    wert = sfeld["wert"]
+    inst = anlage_instanzen.setdefault(gruppe, {}).setdefault(
+        idx, {"index": idx, "felder": {}, "dokumentiert": {}})
+    if basis in _aggregation_quellen():                   # Klasse a je Instanz (dokumentiert, nicht deklariert)
+        for ziel, srcs in DOKUMENTIERT_AGGREGAT.items():
+            if basis in srcs:
+                agg = inst["dokumentiert"].setdefault(ziel, {"summe": 0, "quell_felder": []})
+                agg["summe"] += int(wert)
+                agg["quell_felder"].append(feld_id)
+    elif b.get("elster_kz"):                              # 1:1 je Instanz (Kz-Reuse der Basis)
+        inst["felder"][b["elster_kz"]] = wert
+    else:
+        nicht_deklariert.append({"feld_id": feld_id,
+                                 "grund": f"Instanz-Basis '{basis}' ohne elster_kz/Aggregat-Ziel"})
 
 
 def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None) -> dict:
@@ -118,6 +155,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
     dokumentiert: dict = {}
     kind_anlagen: list = []
     person_b: dict = {}                 # Anlage-N-Instanz B (Zusammenveranlagung, Klasse g)
+    anlage_instanzen: dict = {}         # gruppe -> {idx -> {index, felder, dokumentiert}} (Klasse INSTANZ)
     nicht_deklariert: list = []
     unvollstaendig: list = []
     agg_akku = {ziel: [] for ziel in DOKUMENTIERT_AGGREGAT}
@@ -125,6 +163,14 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
 
     for feld_id in sorted(snapshot):
         sfeld = snapshot[feld_id]
+        # Klasse INSTANZ: base__n (n>=2) einer instanz-fähigen Basis -> anlage_instanzen (Reuse Basis-Kz).
+        m_inst = _INSTANZ_RE.match(feld_id)
+        basis = m_inst.group("base") if m_inst else None
+        if basis is not None and bindung.get(basis, {}).get("instanz_gruppe"):
+            getroffen += 1
+            _deklariere_instanz(basis, int(m_inst.group("idx")), feld_id, sfeld, bindung,
+                                anlage_instanzen, unvollstaendig, nicht_deklariert)
+            continue
         b = bindung.get(feld_id)
         if b is None:
             nicht_deklariert.append({"feld_id": feld_id, "grund": "nicht in der Bindungstabelle"})
@@ -191,11 +237,26 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             dokumentiert[ziel] = {"summe": sum(w for _, w in akku),
                                   "quell_felder": sorted(f for f, _ in akku)}
 
+    # Klasse INSTANZ: dict-of-dicts -> stabile, index-sortierte Liste je Gruppe (leere dokumentiert-Buckets weg)
+    anlage_instanzen_out: dict = {}
+    for gruppe, instanzen in anlage_instanzen.items():
+        eintraege = []
+        for i in sorted(instanzen):
+            inst = instanzen[i]
+            eintrag = {"index": i, "felder": inst["felder"]}
+            if inst["dokumentiert"]:
+                eintrag["dokumentiert"] = {ziel: {"summe": agg["summe"],
+                                                  "quell_felder": sorted(agg["quell_felder"])}
+                                           for ziel, agg in inst["dokumentiert"].items()}
+            eintraege.append(eintrag)
+        anlage_instanzen_out[gruppe] = eintraege
+
     return {
         "basis_snapshot": snapshot_id,
         "deklaration": deklaration,
         "kind_anlagen": kind_anlagen,
         "person_b": person_b,                    # Anlage-N-Instanz B (Zusammenveranlagung): E-Nr -> Wert (Kz wie Person A)
+        "anlage_instanzen": anlage_instanzen_out,  # Klasse INSTANZ: gruppe -> [{index, felder{kz->wert}, dokumentiert?}] (Instanz 2..N, Kz-Reuse)
         "dokumentiert": dokumentiert,            # dokumentiert, NICHT deklariert: E-Nr -> {summe, quell_felder}
         "nicht_deklariert": nicht_deklariert,    # Auflage C: bewusst nicht deklariert (Grund)
         "unvollstaendig": unvollstaendig,        # Auflage C: welches Pflicht-Feld vorläufig
@@ -214,6 +275,9 @@ def zuruecklesen(result: dict, bindung: dict) -> dict:
     # invertierbar; die exakte Renten-Art ist nur gruppen-genau [aa/bb], nicht rekonstruierbar).
     e_nach_verzweigung = {kz: feld for feld, cfg in VERZWEIGUNG.items() for kz in cfg["kz"].values()}
     b_nach_feld = {kz: feld for feld, kz in PARTNER_INSTANZ.items()}
+    # Klasse INSTANZ: Reuse-Kz -> Basis-feld_id (nur instanz-fähige Felder); Instanz-Suffix __idx angehängt.
+    inst_kz_nach_feld = {b["elster_kz"]: fid for fid, b in bindung.items()
+                         if b.get("elster_kz") and b.get("instanz_gruppe")}
     felder: dict = {}
     aggregat: dict = {}
     # dokumentierte Aggregate (dokumentiert, nicht deklariert): nur die Summe, KEINE Details
@@ -223,6 +287,15 @@ def zuruecklesen(result: dict, bindung: dict) -> dict:
     for e_nr, wert in result.get("person_b", {}).items():
         if e_nr in b_nach_feld:
             felder[b_nach_feld[e_nr]] = wert
+    # Klasse INSTANZ (Instanz 2..N): base__idx -> Wert (1:1 invertierbar); Aggregat je Instanz nur Summe
+    for instanzen in result.get("anlage_instanzen", {}).values():
+        for inst in instanzen:
+            idx = inst["index"]
+            for kz, wert in inst.get("felder", {}).items():
+                if kz in inst_kz_nach_feld:
+                    felder[f"{inst_kz_nach_feld[kz]}__{idx}"] = wert
+            for ziel, agg in inst.get("dokumentiert", {}).items():
+                aggregat[f"{ziel}__{idx}"] = agg["summe"]
     for e_nr, wert in result["deklaration"].items():
         if e_nr in e_nach_negation:
             felder[e_nach_negation[e_nr]] = not bool(wert)

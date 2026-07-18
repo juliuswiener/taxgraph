@@ -67,6 +67,8 @@
           "description": "Provenance je Teilbetrag, z.B. ['Lohnsteuerbescheinigung Nr. 23'] (VOR-Musterfall)."},
         "vorjahr": {"enum": ["uebernehmbar", "vorschlag"],
           "description": "Vorjahres-Übernahme-Flag (fail-closed-default: absent = NICHT übertragen). uebernehmbar = Stammdaten/kohorten-fix (direkter Vorschlag); vorschlag = jahres-spezifischer Betrag (Nutzer aktualisiert). Alle Übernahmen bleiben vorlaeufig (Zwei-Signal)."},
+        "instanz_gruppe": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Repeated-Instance (Store-Modell A): markiert das Feld als wiederholbar über mehrere Anlage-Instanzen (z.B. mehrere Vermietungsobjekte, mehrere Kinder). Instanz 1 = die Basis-feld_id (unverändert); weitere Instanzen tragen das Suffix __<n> (n≥2) am feld_id und mappen je Instanz auf DIESELBE elster_kz (Instanz-Reuse, kein neuer Kz — analog Person-B). Der Store bleibt unverändert (__<n> erfüllt das feld_id-Pattern ^[a-z][a-z0-9_]*$; kein '#')."},
         "elster_kz": {"type": ["string", "null"], "pattern": "^E[0-9]{7}$",
           "description": "Amtliche XSD-E-Nummer; null wenn (noch) nicht belegt — dann elster_kz_grund Pflicht."},
         "elster_kz_grund": {"type": "string",
