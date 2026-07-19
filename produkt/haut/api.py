@@ -73,6 +73,13 @@ DHF_BEDINGUNGEN = ("dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
 AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr")
 VOR_PARTNER_FELDER = ("vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
                       "vor_rv_ausserhalb_lstb_partner")
+# § 10 Person-B-Vorsorge (A.2, Zusammenveranlagung): KV/PV-Partner (§ 10 Abs. 1 Nr. 3/3a, eigener HB je Person) +
+# geburtsjahr_partner (§ 24a-B-Kohorte). vor_*_rv_partner (Basisvorsorge-B) stehen schon in VOR_PARTNER_FELDER.
+# OPTIONAL im gesamt-Ring (absent → 0, over-tax-safe), NICHT Pflicht-Kegel (Person-B-Vorsorge absent = Paar ohne
+# B-Vorsorge → kein stiller Under-tax). Ersetzt den A.1-partner_vorsorge_offen-Guard (Person B jetzt rechenbar).
+KV_PV_PARTNER_FELDER = ("basis_kv_pv_partner", "weitere_vorsorgeaufwendungen_partner",
+                        "mit_anspruch_auf_zuschuss_partner")
+VORSORGE_PARTNER_FELDER = VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER + ("geburtsjahr_partner",)
 # Front V+V (§ 21): Überschuss-Rechnung Einnahmen − Werbungskosten (Scheibe 3, referenziert). vv_entgelt_quote_
 # prozent (§ 21 Abs. 2) ist PFLICHT-Kegel (per Objekt): jeder Vermieter MUSS die Entgelt-Quote beantworten
 # (100 % wenn nicht verbilligt), sonst bliebe der verbilligt-Vermieter stumm bei voller WK = Unter-tax (K2).
@@ -175,8 +182,8 @@ SCHEIBEN = {
     "gesamt": {
         "felder": (VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ("veranlagung", "bruttoarbeitslohn")
                    + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS
-                   + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP
-                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2-Tatbestand OPTIONAL
+                   + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
+                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Person-B-Vorsorge (A.2) OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -469,11 +476,19 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             alt24a = runner.catala_p24a_altersentlastung({
                 "geburtsjahr": _c("geburtsjahr"),
                 "arbeitslohn": _c("bruttoarbeitslohn") // 100, "positive_andere_einkuenfte": max(0, vv)})
+            # § 24a PER PERSON (§ 24a S. 1 „der Steuerpflichtige", A.2): bei Zusammenveranlagung hat der Ehegatte
+            # eine EIGENE Kohorte (geburtsjahr_partner + 65) + eigene Bemessung (bruttoarbeitslohn_partner; positive
+            # andere Einkünfte-B = 0, da vv/Kapital im Ring nicht owner-getrennt = konservativ/over-tax-safe, mit
+            # dev-2 abgestimmt). Absent (geburtsjahr_partner ≤ 0) → 0 (fail-safe). Additiv zu Person A.
+            alt24a_b = runner.catala_p24a_altersentlastung({
+                "geburtsjahr": _c("geburtsjahr_partner"),
+                "arbeitslohn": _c("bruttoarbeitslohn_partner") // 100,
+                "positive_andere_einkuenfte": 0}) if g["veranlagung"] == "zusammen" else 0
             ent24b = runner.catala_p24b_entlastung({
                 "alleinstehend": f.get("fam_alleinstehend", {}).get("wert") is True,
                 "anzahl_kinder": _c("fam_anzahl_kinder"),
                 "monate_ohne_voraussetzung": _c("fam_monate_ohne_voraussetzung")})
-            g["altersentlastungsbetrag"] = alt24a
+            g["altersentlastungsbetrag"] = alt24a + alt24a_b
             g["entlastungsbetrag_alleinerziehende"] = ent24b
             # § 10 Abs. 1 Nr. 2/Abs. 3 Altersvorsorge (Basisvorsorge RV): die 3 VOR-Felder DIREKT aus dem Store —
             # gesamtbeitraege = AN + AG + außerhalb LStB, der steuerfreie AG-Anteil getrennt (Kürzung NACH dem
@@ -484,6 +499,14 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             g["vorsorge_gesamtbeitraege_inkl_ag"] = (_c("vor_an_anteil_rv") + _c("vor_ag_anteil_rv")
                                                      + _c("vor_rv_ausserhalb_lstb")) // 100
             g["vorsorge_ag_anteil_steuerfrei"] = _c("vor_ag_anteil_rv") // 100
+            # Person-B-Basisvorsorge (§ 10 Abs. 3, A.2): bei Zusammenveranlagung die vor_*_rv_partner ADDITIV in
+            # dieselben Summen-Slots (catala_gesamt/_vorsorge_abzug deckelt EINMAL, kürzt den AG-Anteil). ⚠ RESIDUAL
+            # (gemeldet): der Höchstbetrag (_vorsorge_hb) wird bei zusammen NICHT verdoppelt (§ 10 Abs. 3 S. 3) →
+            # nur Hoch-RV-Paare mit kombinierten Beiträgen > ~27566 € leicht unter-abgezogen (over-tax-safe, selten).
+            if g["veranlagung"] == "zusammen":
+                g["vorsorge_gesamtbeitraege_inkl_ag"] += (_c("vor_an_anteil_rv_partner")
+                    + _c("vor_ag_anteil_rv_partner") + _c("vor_rv_ausserhalb_lstb_partner")) // 100
+                g["vorsorge_ag_anteil_steuerfrei"] += _c("vor_ag_anteil_rv_partner") // 100
             # Sonder-Abzüge (Weg ii, Faltung): §35a → steuerermaessigungen, §10b + §10-KiSt → sonderausgaben,
             # §33-agB → aussergewoehnliche_belastungen — ADDITIV auf JEDE Einkunfts-Kombi (§19+§21+§20 zusammen
             # MIT §35a/§10b/§33 in EINEM Bescheid). GdE (§2 Abs.3 = ns+vv − §24a − §24b, steht VOR den Abzügen fest
@@ -494,7 +517,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # Abgeltung ist ohnehin §2 Abs.5b-ausgeschlossen). Die K2-Sperren fängt der Guard vorher.
             gde = runner.catala_gesamt_gde({"veranlagungszeitraum": vz, "veranlagung": g["veranlagung"],
                                             "einkuenfte_nichtselbststaendig": ns, "einkuenfte_vermietung": vv,
-                                            "altersentlastungsbetrag": alt24a,
+                                            "altersentlastungsbetrag": alt24a + alt24a_b,
                                             "entlastungsbetrag_alleinerziehende": ent24b})
             abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
             g["steuerermaessigungen"] = runner.catala_p35a_haushaltsnahe({
@@ -513,7 +536,14 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 + runner.catala_p10_kv_pv({
                     "basis_kv_pv": _c("basis_kv_pv") // 100,
                     "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen") // 100,
-                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True}))
+                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
+                # Person-B-KV/PV (§ 10 Abs. 4, A.2): eigener Höchstbetrag JE PERSON → separater Accessor-Aufruf,
+                # additiv (kein gemeinsamer Deckel, kein Doppelzählen — B liest die _partner-Read-Keys).
+                + (runner.catala_p10_kv_pv({
+                    "basis_kv_pv": _c("basis_kv_pv_partner") // 100,
+                    "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen_partner") // 100,
+                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
+                   if g["veranlagung"] == "zusammen" else 0))
             g["aussergewoehnliche_belastungen"] = runner.catala_p33_agb({
                 "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
                 "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
@@ -711,15 +741,9 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             if any((felder.get(pf) or {}).get("zustand") != "bestaetigt"
                    for pf in GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP):
                 return "partner_kegel_offen"
-        # § 10 Vorsorge Person B (A.1-Sofortkappe, K2): der gesamt-Ring liest VOR (§10 Abs.3) + KV/PV (§10 Abs.1
-        # Nr.3/3a) + §24a NUR für Person A (slot_fn Z.474-476/503-506/459-461). Bei Zusammenveranlagung fiele die
-        # Vorsorge des Ehegatten STILL weg → Bescheid falsch-hoch OHNE Signal (Über-tax verletzt K2). Bis die volle
-        # Person-B-Vorsorge (A.2, vor_*_partner/basis_kv_pv_partner/geburtsjahr_partner) gebaut ist: fail-closed,
-        # sobald eine Vorsorge-Position POSITIV ist. Spiegelt an_gesamts partner_vor_offen (Z.786). _positiv nullt
-        # bools → mit_anspruch_auf_zuschuss zählt nicht. § 24a-B-Restlücke (kein geburtsjahr_partner) bleibt benannt.
-        if (felder.get("veranlagung", {}).get("wert") == "zusammen"
-                and any(_positiv(vf) for vf in VOR_FELDER + KV_PV_FELDER)):
-            return "partner_vorsorge_offen"
+        # (A.2: der frühere partner_vorsorge_offen-Guard ist ENTFERNT — die Person-B-Vorsorge (VOR + KV/PV + § 24a)
+        # ist jetzt im gesamt-slot_fn additiv verdrahtet, ein zusammen-Bescheid rechnet beider Ehegatten-Vorsorge
+        # korrekt statt zu sperren. partner_vorsorge_offen bleibt im Schema-Enum als Alt-Grund erhalten, feuert nicht.)
         # Multi-Objekt § 21 (#5): jede WEITERE vv_objekt-Instanz (index ≥ 2) muss VOLLSTÄNDIG bestätigt sein —
         # alle 5 Basis-vv-Felder present UND per-Instanz-meet == bestaetigt (instanzen-Naht). Sonst kein Σ (K2:
         # eine halbe/vorläufige Objekt-Instanz erzeugte sonst ein still zu niedriges §21-Σ). Instanz 1 = der

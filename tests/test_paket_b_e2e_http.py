@@ -218,27 +218,64 @@ def test_gesamt_zusammen_partner_kegel_offen(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "partner_kegel_offen"
 
 
-def test_gesamt_zusammen_partner_vorsorge_offen_vor(base):
-    """A.1-Sofortkappe (K2): Zusammenveranlagung mit VOLLSTÄNDIGEM Person-B-Kegel, aber Person-A-VOR (§ 10 Abs. 3)
-    positiv → partner_vorsorge_offen. Der gesamt-Ring liest VOR NUR für Person A; ein Ehepaar-Bescheid ohne die
-    Vorsorge des Ehegatten wäre falsch-hoch OHNE Signal (stille Über-tax, verletzt K2). Fail-closed statt halber
-    Bescheid — bis die volle Person-B-Vorsorge (A.2) gebaut ist. Spiegelt an_gesamts partner_vor_offen."""
-    _gesamt_anlegen(base, "zpvv", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
-                                                veranlagung="zusammen", bruttolohn_partner=3000000,
-                                                person_b_idnr="12345678901", vor_an=350000, vor_ag=350000))
-    st, erg = _req(base, "GET", "/fall/zpvv/ergebnis")
-    assert erg["zahl_cent"] is None and erg["grund"] == "partner_vorsorge_offen"
+def test_gesamt_zusammen_person_b_vorsorge(base):
+    """A.2 Person-B-Vorsorge (K2, behebt die frühere A.1-Über-tax): Zusammenveranlagung, BEIDE Ehegatten mit
+    Vorsorge — A + B je Bruttolohn 40000, je VOR (AN 3500 + AG 3500) + je KV/PV (Basis 3200, § 10 Abs. 4 S. 4
+    Durchbruch). Der gesamt-Ring zieht jetzt BEIDER Vorsorge ab (VOR additiv in die Summen-Slots, KV/PV je eigener
+    Höchstbetrag) → festzusetzende_est 9798 = 979800 Cent, NIEDRIGER als nur-Person-A (1179000) und als der frühere
+    partner_vorsorge_offen-Block (kein Bescheid). Belegt: korrekter Ehepaar-Bescheid statt Sperre."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "pbv", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
+                                               veranlagung="zusammen", bruttolohn_partner=4000000,
+                                               person_b_idnr="12345678901", vor_an=350000, vor_ag=350000,
+                                               basis_kv_pv=320000))
+    for feld, wert in [("vor_an_anteil_rv_partner", 350000), ("vor_ag_anteil_rv_partner", 350000),
+                       ("basis_kv_pv_partner", 320000)]:
+        st, _ = _req(base, "POST", "/fall/pbv/event", _laie(feld, wert))
+        assert st == 201
+    st, erg = _req(base, "GET", "/fall/pbv/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 979800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
 
 
-def test_gesamt_zusammen_partner_vorsorge_offen_kv_pv(base):
-    """A.1-Sofortkappe (K2): dieselbe Sperre greift für KV/PV (§ 10 Abs. 1 Nr. 3/3a) — Person-A-basis_kv_pv positiv
-    bei Zusammenveranlagung → partner_vorsorge_offen (Person-B-KV/PV würde sonst still fallen). Belegt: die Kappe
-    deckt BEIDE Vorsorge-Familien (VOR + KV/PV), nicht nur VOR."""
-    _gesamt_anlegen(base, "zpkv", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
-                                                veranlagung="zusammen", bruttolohn_partner=3000000,
-                                                person_b_idnr="12345678901", basis_kv_pv=320000))
-    st, erg = _req(base, "GET", "/fall/zpkv/ergebnis")
-    assert erg["zahl_cent"] is None and erg["grund"] == "partner_vorsorge_offen"
+def test_gesamt_zusammen_person_b_vorsorge_null_wie_a_only(base):
+    """A.2 no-double-count / B-inert: Zusammenveranlagung mit NUR Person-A-Vorsorge (VOR 3500/3500 + KV/PV 3200),
+    Person-B-Vorsorge-Felder ABSENT → Person B trägt 0 bei → festzusetzende_est 11790 = 1179000 Cent (= exakt der
+    Person-A-only-Abzug, HÖHER als mit Person-B 979800). Belegt: absente Person-B-Felder addieren 0 — kein
+    Doppelzählen von Person A, keine Phantom-Person-B-Vorsorge."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "pbn", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
+                                               veranlagung="zusammen", bruttolohn_partner=4000000,
+                                               person_b_idnr="12345678901", vor_an=350000, vor_ag=350000,
+                                               basis_kv_pv=320000))
+    st, erg = _req(base, "GET", "/fall/pbn/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1179000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_zusammen_person_b_24a(base):
+    """A.2 § 24a-B (per Person): Zusammenveranlagung, Ehegatte 65+ (geburtsjahr_partner 1955) mit Bruttolohn 40000 →
+    eigener Altersentlastungsbetrag (760, eigene Kohorte, Bemessung Bruttolohn-B) additiv → festzusetzende_est
+    13598 = 1359800 Cent, NIEDRIGER als ohne § 24a-B (1383800). Belegt: § 24a wird pro Person mit eigener Kohorte
+    gewährt (§ 24a S. 1), nicht nur für Person A."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "pb24", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
+                                                veranlagung="zusammen", bruttolohn_partner=4000000,
+                                                person_b_idnr="12345678901"))
+    st, _ = _req(base, "POST", "/fall/pb24/event", _laie("geburtsjahr_partner", 1955))
+    assert st == 201
+    st, erg = _req(base, "GET", "/fall/pb24/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1359800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
 
 
 def test_gesamt_alleinerziehend_konsistenz_offen(base):
