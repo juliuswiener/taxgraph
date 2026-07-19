@@ -19,6 +19,7 @@ PARTNER_FELDER = (
     # § 20 Kapital Person-B (Anlage-KAP-Instanz B, Klasse g) — nur bei Zusammenveranlagung sinnvoll:
     "kap_kapitalertraege_partner",
     "kap_gewinn_aktien_partner",
+    "kap_gewinn_sonstige_partner",   # Register-B-K2-Fix 2026-07-19 (symmetrisch, vorher fehlend)
     "kap_verlust_aktien_partner",
     "kap_verlust_sonstige_partner",
     # § 22 Rente Person-B (Anlage-R-Instanz B, Klasse g×f) — der Renten-Betrag ist der Indikator (die

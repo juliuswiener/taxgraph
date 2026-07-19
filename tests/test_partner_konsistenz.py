@@ -105,6 +105,20 @@ def test_renten_partner_zusammen_konsistent():
                                           veranlagung=("zusammen", "bestaetigt"))) == []
 
 
+# ---- § 20 Abs. 2 sonstiger Kapital-GEWINN Person-B (Register-B-K2-Fix, symmetrisch) ----
+
+def test_kap_gewinn_sonstige_partner_einzel_widerspruch():
+    # Person-B sonstiger Kapitalgewinn gesetzt + einzel → Widerspruch (vorher hart 0 = stiller Under-tax)
+    w = PC.partner_ohne_zusammen(_snap(kap_gewinn_sonstige_partner=(400000, "bestaetigt"),
+                                       veranlagung=("einzel", "bestaetigt")))
+    assert len(w) == 1 and w[0]["feld_id"] == "kap_gewinn_sonstige_partner"
+
+
+def test_kap_gewinn_sonstige_partner_zusammen_konsistent():
+    assert PC.partner_ohne_zusammen(_snap(kap_gewinn_sonstige_partner=(400000, "bestaetigt"),
+                                          veranlagung=("zusammen", "bestaetigt"))) == []
+
+
 # ---- § 24b Alleinerziehend ↔ Zusammenveranlagung (inverse Richtung, TIER-6-D) ----
 
 def test_alleinerziehend_zusammen_widerspruch():

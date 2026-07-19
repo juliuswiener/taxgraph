@@ -735,6 +735,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_gewinn_aktien=0, kap_verlust_aktien=0, kap_gewinn_sonstige=0, kap_verlust_sonstige=0,
              veranlagung="einzel", bruttolohn_partner=None, person_b_idnr=None,
              kap_ertraege_partner=0, kap_gewinn_aktien_partner=0, kap_verlust_aktien_partner=0,
+             kap_gewinn_sonstige_partner=0,
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
              basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
@@ -765,6 +766,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
     if veranlagung == "zusammen":                 # Person-B-Kapital-Kegel (bestätigte Null default, #4b)
         k += [("kap_kapitalertraege_partner", kap_ertraege_partner),
               ("kap_gewinn_aktien_partner", kap_gewinn_aktien_partner),
+              ("kap_gewinn_sonstige_partner", kap_gewinn_sonstige_partner),
               ("kap_verlust_aktien_partner", kap_verlust_aktien_partner),
               ("kap_verlust_sonstige_partner", kap_verlust_sonstige_partner)]
     return k
@@ -1144,6 +1146,27 @@ def test_gesamt_zusammen_kapital_beide(base):
         assert erg["zahl_cent"] == 2349000 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
+
+
+def test_gesamt_zusammen_kapital_gewinn_sonstige_partner(base):
+    """Register-B-K2-Fix (2026-07-19): Person-B sonstiger Kapitalgewinn (§ 20 Abs. 2, eigener Topf) bei
+    Zusammenveranlagung wird JETZT erfasst — VORHER war er in api.py hart 0 = stiller Under-tax des
+    Ehegatten-Gewinns. Non-vacuous: die festzusetzende ESt MIT dem Person-B-sonstige-Gewinn ist HÖHER als
+    OHNE (der Gewinn erhöht die gemeinsamen Kapitaleinkünfte, nach dem gemeinsamen Sparer-PB besteuert)."""
+    catala = _catala_da()
+    if not catala:
+        pytest.skip("Catala-Toolchain nicht verfügbar")
+    _gesamt_anlegen(base, "zbgs_mit", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True, kein_kap=False,
+                    veranlagung="zusammen", bruttolohn_partner=4000000, person_b_idnr="12345678901",
+                    kap_gewinn_sonstige_partner=500000))
+    _, erg_mit = _req(base, "GET", "/fall/zbgs_mit/ergebnis")
+    _gesamt_anlegen(base, "zbgs_ohne", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True, kein_kap=False,
+                    veranlagung="zusammen", bruttolohn_partner=4000000, person_b_idnr="12345678901",
+                    kap_gewinn_sonstige_partner=0))
+    _, erg_ohne = _req(base, "GET", "/fall/zbgs_ohne/ergebnis")
+    assert erg_mit["grund"] == "bestaetigt" and erg_ohne["grund"] == "bestaetigt"
+    assert erg_mit["zahl_cent"] > erg_ohne["zahl_cent"], \
+        "Person-B sonstiger Kapitalgewinn muss die est erhöhen (Register-B-Fix: nicht mehr hart 0)"
 
 
 def test_gesamt_zusammen_kapital_semantik_partner(base):

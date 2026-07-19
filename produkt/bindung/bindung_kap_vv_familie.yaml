@@ -180,6 +180,26 @@ bindungen:
       quelle: "§ 20 Abs. 6 S. 1 EStG"
       zitatanker: "nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
       datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  # Register-B K2-Fix (2026-07-19): sonstiger Kapital-GEWINN Person-B — spiegelbildlich zu kap_gewinn_sonstige
+  # (Person A). VORHER hart 0 in api.py (stiller Under-tax, Ehegatte-Gewinn nie besteuert); jetzt symmetrisch
+  # deklariert -> dev-1s Fold liest den Read-Key, kein stiller Falschwert.
+  - feld_id: kap_gewinn_sonstige_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_gewinn_sonstige_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe sonstige Kapitalgewinne (außer Aktien) hatte dein Ehe-/Lebenspartner dieses Jahr?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell (z. B. Gewinne aus Fonds oder Zertifikaten des Partners)."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz wie Person A (kap_gewinn_sonstige, deriviert = Modell-Mismatch Summe−Aktien), kein distinktes Partner-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 1 EStG"
+      zitatanker: "nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
 
   # ========================= V+V §21 — laufende Einkünfte (p21) =========================
   - feld_id: vv_einnahmen

@@ -116,9 +116,11 @@ RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfr
 # Person-B-Kegel bei zusammen). Person-B-Kapital/§22 = getrennte Folge-Nachträge (#4-Fortsetzung).
 GESAMT_PARTNER_19 = ("bruttoarbeitslohn_partner", "person_b_idnr")
 # Person B (#4b): Kapital (§ 20) + Rente (§ 22) des Ehegatten in den jeweiligen zusammen-Ring. Single-
-# source wie Basis (Aggregat XOR Töpfe). kap_gewinn_sonstige_partner fehlt bewusst (Modell-Mismatch, wie Basis).
+# source wie Basis (Aggregat XOR Töpfe). kap_gewinn_sonstige_partner: Register-B-K2-Fix 2026-07-19 —
+# symmetrisch zu Person A deklariert (vorher hart 0 = stiller Under-tax des Ehegatten-Gewinns).
 KAP_ERTRAEGE_PARTNER = "kap_kapitalertraege_partner"
-KAP_TOEPFE_PARTNER = ("kap_gewinn_aktien_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner")
+KAP_TOEPFE_PARTNER = ("kap_gewinn_aktien_partner", "kap_gewinn_sonstige_partner",
+                      "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner")
 GESAMT_PARTNER_KAP = (KAP_ERTRAEGE_PARTNER,) + KAP_TOEPFE_PARTNER
 # § 35a-Töpfe (charge29): Abs. 2/3 (Dienstleistung/Handwerker) verlangen rechnung_unbar (Abs. 5 S. 3), Abs. 1
 # Minijob nicht. Bausteine der gefalteten Sonder-Abzüge (die Standalone-haushalt/agb-Scheiben sind deprecated).
@@ -575,7 +577,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     verrechnete += runner.catala_kapital_verrechnung({
                         "gewinn_aktien": _c("kap_gewinn_aktien_partner") // 100,
                         "verlust_aktien": _c("kap_verlust_aktien_partner") // 100,
-                        "gewinn_sonstige": 0,   # kap_gewinn_sonstige_partner nicht deklariert (Modell-Mismatch)
+                        "gewinn_sonstige": _c("kap_gewinn_sonstige_partner") // 100,  # Register-B-K2-Fix: symmetrisch statt hart 0
                         "verlust_sonstige": _c("kap_verlust_sonstige_partner") // 100})
                 else:
                     verrechnete += _c(KAP_ERTRAEGE_PARTNER) // 100
