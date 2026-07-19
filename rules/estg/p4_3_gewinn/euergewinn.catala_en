@@ -1,0 +1,84 @@
+# § 4 Abs. 3 EStG — Einnahmenüberschussrechnung (EÜR): Gewinn = Betriebseinnahmen − Betriebsausgaben
+
+> Module EuerGewinn
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p4_3_gewinn.json`
+(module EuerGewinn, scope EuerGewinn, verified_bedingt, faithful=true, sha256 catala_a
+`eeb58222473e838eedfc5f22b536081984047e27f81d329710d9ec1ed5c9d77c`). Die scope-Logik unten ist BYTE-GLEICH aus `catala_a` übernommen
+(keine Änderung); nur Module-Header + §-Zitatanker + Grenzfall-Seeds sind ergänzt. Kein Pipeline-Re-Run.
+
+Zitatanker § 4 Abs. 3 S. 1 EStG (`sources/gesetze-im-internet/estg_p4_2026-07-14.txt`, typ gesetz):
+„Überschuss der Betriebseinnahmen über die Betriebsausgaben". Nicht buchführungspflichtige Steuerpflichtige
+(§ 15 Abs. 2 Gewerbe / § 18 Abs. 1 selbständige Arbeit) können den Gewinn als Einnahmenüberschuss ansetzen;
+der Gewinn kann negativ sein (Verlustjahr). `betriebseinnahmen` = die Einnahmen, `betriebsausgaben` = das
+AGGREGAT der Betriebsausgaben (im Ring aus sonstige_betriebsausgaben + afa_jahresbetrag als Summanden
+zusammengesetzt, dev-1-Accessor). GWG-Sofortabzug (§ 6 Abs. 2, 2-III) ist eine spätere Ausgaben-Komponente.
+Reine Rechen-Teilregel; die § 2-Integration (Gewinn → einkuenfte_gewinn, additiv) ist dev-1-Accessor/Fold.
+
+```catala
+declaration scope EuerGewinn:
+  input betriebseinnahmen content money
+  input betriebsausgaben content money
+  output gewinn content money
+
+scope EuerGewinn:
+  definition gewinn equals betriebseinnahmen - betriebsausgaben
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestGewinn:
+  # Einnahmen 100000 − Ausgaben 40000 -> Gewinn 60000 (Normalfall).
+  internal r content EuerGewinn
+  output g content money
+scope TestGewinn:
+  definition r equals output of EuerGewinn with {
+    -- betriebseinnahmen: $100,000.00
+    -- betriebsausgaben: $40,000.00 }
+  definition g equals r.gewinn
+  assertion g = $60,000.00
+```
+
+```catala
+#[test]
+declaration scope TestNullGewinn:
+  # Einnahmen = Ausgaben -> Gewinn 0 (Break-even).
+  internal r content EuerGewinn
+  output g content money
+scope TestNullGewinn:
+  definition r equals output of EuerGewinn with {
+    -- betriebseinnahmen: $50,000.00
+    -- betriebsausgaben: $50,000.00 }
+  definition g equals r.gewinn
+  assertion g = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestVerlust:
+  # Ausgaben > Einnahmen -> negativer Gewinn (Verlustjahr, § 4 Abs. 3 lässt Verlust zu).
+  internal r content EuerGewinn
+  output g content money
+scope TestVerlust:
+  definition r equals output of EuerGewinn with {
+    -- betriebseinnahmen: $30,000.00
+    -- betriebsausgaben: $50,000.00 }
+  definition g equals r.gewinn
+  assertion g = -$20,000.00
+```
+
+```catala
+#[test]
+declaration scope TestKeinUmsatz:
+  # Einnahmen 0, nur Ausgaben (z. B. reines AfA-Jahr) -> negativer Gewinn (flag_check-Verlustjahr-Fall).
+  internal r content EuerGewinn
+  output g content money
+scope TestKeinUmsatz:
+  definition r equals output of EuerGewinn with {
+    -- betriebseinnahmen: $0.00
+    -- betriebsausgaben: $15,000.00 }
+  definition g equals r.gewinn
+  assertion g = -$15,000.00
+```

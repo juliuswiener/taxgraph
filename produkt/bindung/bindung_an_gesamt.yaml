@@ -190,6 +190,67 @@ bindungen:
       zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
 
+  # ===== EÜR-Komponenten §§ 13-18 (Stufe 2-I EÜR-Kern): Gewinn = Einnahmen − Ausgaben (§ 4 Abs. 3) =====
+  # Der laufende Gewinn wird komponentenweise ermittelt: betriebseinnahmen − (sonstige_betriebsausgaben +
+  # afa_jahresbetrag). regel p4_3_gewinn (EuerGewinn, materialisiert) rechnet einnahmen − ausgaben; die zwei
+  # Ausgaben-Felder speisen den EINEN betriebsausgaben-Slot als SUMMANDEN (slot_beitrag, dev-1-Accessor
+  # summiert). Der Gewinn fließt additiv in einkuenfte_gewinn (§ 2-Ring). EÜR nur gewerbe/selbständig
+  # (§ 15 Abs. 2 / § 18 Abs. 1, NICHT § 13-LuF → dev-1s luf_euer_offen-Guard). Kz=null VORERST (Anlage-EÜR-Kz
+  # = eigene Kz-Review-Runde, wie Anlage-G/S/L); der Gewinn-Kz läuft über gewinn_betriebsart (Klasse-f).
+  - feld_id: betriebseinnahmen
+    quelle: {regel_id: p4_3_gewinn, signatur_slot: betriebseinnahmen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch waren deine Betriebseinnahmen (Umsätze/Einnahmen aus dem Betrieb) dieses Jahr?"
+    hilfe_kurz: "Alle Einnahmen aus deiner gewerblichen oder selbständigen Tätigkeit (Einnahmenüberschussrechnung). Ohne Umsatzsteuer, falls du sie gesondert ausweist. Dieser EÜR-Weg (Einnahmen minus Ausgaben) setzt voraus, dass du NICHT buchführungspflichtig bist (§ 4 Abs. 3). Bist du bilanzierungs-/buchführungspflichtig, trage stattdessen deinen fertigen Bilanz-Gewinn direkt im Gewinn-Feld ein — nicht hier."
+    beispielwert: 8000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "EÜR-Komponente (§ 4 Abs. 3): Rechen-Input für den Gewinn, kein eigenes Deklarations-Kz — der Gewinn-Kz läuft über gewinn_betriebsart (Klasse-f, Anlage G/S). Die Anlage-EÜR-Zeilen-Kz sind eine eigene Kz-Review-Runde (null-Kz-MVP, wie der ganze §§ 13-18-Bogen)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 4 Abs. 3 S. 1 EStG"
+      zitatanker: "Überschuss der Betriebseinnahmen über die Betriebsausgaben"
+      datei: "sources/gesetze-im-internet/estg_p4_2026-07-14.txt"
+  - feld_id: sonstige_betriebsausgaben
+    quelle: {regel_id: p4_3_gewinn, signatur_slot: betriebsausgaben}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch waren deine Betriebsausgaben (ohne Abschreibungen) dieses Jahr?"
+    hilfe_kurz: "Alle durch den Betrieb veranlassten Ausgaben außer den Abschreibungen (die AfA erfasst das nächste Feld). Wareneinkauf, Miete, Personal, Fahrtkosten usw. NUR abzugsfähige Betriebsausgaben: OHNE Kosten der privaten Lebensführung/Repräsentation (§ 12 Nr. 1), OHNE Personensteuern wie die Einkommensteuer (§ 12 Nr. 3), OHNE durchlaufende Posten (§ 4 Abs. 3 S. 2)."
+    beispielwert: 3000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "EÜR-Ausgaben-Summand (§ 4 Abs. 3): speist zusammen mit afa_jahresbetrag den betriebsausgaben-Slot; kein eigenes Deklarations-Kz (null-Kz-MVP, Anlage-EÜR-Kz-Review folgt)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 4 Abs. 3 S. 1 EStG"
+      zitatanker: "Überschuss der Betriebseinnahmen über die Betriebsausgaben"
+      datei: "sources/gesetze-im-internet/estg_p4_2026-07-14.txt"
+  - feld_id: afa_jahresbetrag
+    quelle: {regel_id: p4_3_gewinn, signatur_slot: betriebsausgaben}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war die Abschreibung (AfA) auf dein Betriebsvermögen dieses Jahr?"
+    hilfe_kurz: "Der jährliche Abschreibungsbetrag für abnutzbare Wirtschaftsgüter deines Betriebs (z. B. Maschinen, Fahrzeuge, Geräte). Betriebs-AfA — NICHT die AfA einer vermieteten Immobilie (die läuft über die Anlage V)."
+    beispielwert: 500000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "EÜR-Ausgaben-Summand (§ 7 Abs. 1, als Betriebsausgabe im § 4 Abs. 3-Gewinn): Betriebs-AfA, speist den betriebsausgaben-Slot; kein eigenes Deklarations-Kz (null-Kz-MVP). Distinkt von vv_gebaeude_afa (§ 21 V+V)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 7 Abs. 1 S. 1 EStG"
+      zitatanker: "Absetzung für Abnutzung in gleichen Jahresbeträgen"
+      datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
+
   # ===== Zusammenveranlagung (§ 26b): person-INDIVIDUELLE _partner-Zwillinge (Store-Modell A) =====
   # STRENG nur die steuerlich getrennten Person-B-Einkommensfelder (eigener § 9a-Pauschbetrag / eigene
   # LStB je Ehegatte). Globale Felder (veranlagung/Kinder/agB/Spende/Abwesenheits-Flags) bleiben GETEILT.
@@ -375,3 +436,30 @@ luecken:
   - regel_id: p24a_altersentlastungsbetrag
     geltungsbedingung: bemessung_netto_nach_ausschluessen
     grund: "Bemessung nach Ausschluss bestimmter Einkünfte (u. a. §22-Leibrenten, §24a S.2); Rechenlogik der Regel auf den bereits erfassten Einkünften, keine eigene Abfrage."
+
+  # -- EÜR § 4 Abs. 3 (p4_3_gewinn, Stufe 2-II): Geltungsbedingungen des Gewinn-Kerns --
+  # Die vorberechneten net-Komponenten (betriebseinnahmen/-ausgaben) erfüllen die BE/BA-Reinheits-
+  # Bedingungen (§ 4 Abs. 3 S. 2 durchlaufende Posten, § 12 Nr. 1/3 nicht-abziehbar) definitorisch; die
+  # Einkunftsart-Weiche (§ 15 Abs. 2 / § 18 Abs. 1) läuft über gewinn_betriebsart (Klasse-f: gewerbe/
+  # selbständig; land_forst ausgeschlossen via dev-1s luf_euer_offen-Guard). Kein eigenes Laien-Feld.
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: nicht_buchfuehrungspflichtig_und_keine_buecher
+    grund: "§ 4 Abs. 3 S. 1 Voraussetzung (keine Buchführungspflicht + keine freiwilligen Bücher): Annahme des EÜR-MVP — wer die Einnahmenüberschussrechnung wählt, erfüllt sie. Die Bilanzierungs-Abgrenzung (§ 4 Abs. 1/§ 5) ist benannter Nachtrag."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: durchlaufende_posten_ausgeschieden
+    grund: "§ 4 Abs. 3 S. 2: die betriebseinnahmen/-ausgaben sind als net-Eingabe bereits um durchlaufende Posten bereinigt (definitorisch, kein eigenes Feld)."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: keine_lebensfuehrungskosten_p12_nr1
+    grund: "§ 12 Nr. 1 S. 1: die sonstige_betriebsausgaben-Eingabe ist betrieblich veranlasst (§ 4 Abs. 4); Lebensführungs-/Haushaltskosten sind ausgeschieden (net-Eingabe)."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: keine_repraesentation_gemischt_p12_nr1s2
+    grund: "§ 12 Nr. 1 S. 2: gemischte Repräsentationsaufwendungen sind aus der Betriebsausgaben-Eingabe ausgeschieden (net-Eingabe)."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: keine_personensteuern_p12_nr3
+    grund: "§ 12 Nr. 3: Personensteuern (Einkommensteuer u. Ä.) sind keine Betriebsausgabe und in der Eingabe nicht enthalten (net-Eingabe)."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: einkunftsart_gewerbe_p15_abs2
+    grund: "§ 15 Abs. 2 (Einkunftsart Gewerbe): über gewinn_betriebsart='gewerbe' (Klasse-f) abgebildet; der EÜR-Gewinn wird nur für gewerbe/selbständig gerechnet. § 15 Abs. 3 Abfärbung = benannter Nachtrag."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: einkunftsart_selbstaendige_arbeit_p18_abs1
+    grund: "§ 18 Abs. 1 (Einkunftsart selbständige Arbeit): über gewinn_betriebsart='selbstaendig' (Klasse-f); dieselbe EÜR-Grundmechanik. land_forst (§ 13) ausgeschlossen via luf_euer_offen-Guard (dev-1)."

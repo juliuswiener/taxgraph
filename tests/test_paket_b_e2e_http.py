@@ -737,7 +737,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_ertraege_partner=0, kap_gewinn_aktien_partner=0, kap_verlust_aktien_partner=0,
              kap_gewinn_sonstige_partner=0,
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
-             basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True):
+             basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True,
+             betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
@@ -764,6 +765,13 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
          ("kein_gewinn", kein_gewinn), ("kein_kap", kein_kap), ("kein_vuv", kein_vuv), ("kein_sonstige", True)]
     if gewinn:                                     # §§ 13-18 Stufe 1: einkuenfte_gewinn nur wenn > 0 (OPTIONAL, absent → 0)
         k.append(("einkuenfte_gewinn", gewinn))
+    for _fid, _w in (("betriebseinnahmen", betriebseinnahmen),           # § 4 Abs. 3 EÜR-Komponenten (2a, cent, optional)
+                     ("sonstige_betriebsausgaben", sonstige_betriebsausgaben),
+                     ("afa_jahresbetrag", afa_jahresbetrag)):
+        if _w:
+            k.append((_fid, _w))
+    if betriebsart is not None:                    # gewinn_betriebsart-Weiche (land_forst-Guard-Test)
+        k.append(("gewinn_betriebsart", betriebsart))
     if bruttolohn_partner is not None:
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
     if person_b_idnr is not None:
@@ -862,6 +870,61 @@ def test_gesamt_gewinn_flag_widerspruch(base):
     _gesamt_anlegen(base, "gwf", _gesamt_kegel(0, kein_vuv=True, gewinn=3000000, kein_gewinn=True))
     st, erg = _req(base, "GET", "/fall/gwf/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "flag_konsistenz_offen"
+
+
+def test_gesamt_euer_gewinn(base):
+    """§ 4 Abs. 3 EÜR (Stufe 2a) im gesamt-Ring: Gewinn KOMPONENTENWEISE statt vorberechnet — Betriebseinnahmen
+    100000 − (sonstige BA 30000 + AfA 20000) = Gewinn 50000 → catala_euer_gewinn → einkuenfte_gewinn 50000 →
+    festzusetzende_est 10678 = 1067800 Cent (identisch zum direkten Gewinn 50000 aus Stufe 1 — die EÜR ist nur ein
+    anderer Eingabepfad). kein_gewinn=False. Werte unabhängig gg. catala_euer_gewinn + catala_gesamt."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "eu1", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
+                    betriebseinnahmen=10000000, sonstige_betriebsausgaben=3000000, afa_jahresbetrag=2000000))
+    st, erg = _req(base, "GET", "/fall/eu1/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1067800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_euer_verlust_durchfluss(base):
+    """§ 4 Abs. 3 EÜR-VERLUST (§ 2 Abs. 3-Ausgleich, non-vacuous): Betriebseinnahmen 40000 − (sonstige BA 45000 +
+    AfA 10000) = Gewinn −15000 (Verlust) → catala_euer_gewinn gibt negativ durch → mindert den § 19-Lohn (Job
+    40000 → § 19-Einkünfte 38770): GdE 38770 − 15000 = 23770 → festzusetzende_est 2592 = 259200 Cent, NIEDRIGER
+    als ohne den Verlust (§ 19-only 40000 → 13452). Belegt: der EÜR-Verlust fließt in den §-2-Ausgleich (kein Floor
+    auf 0 auf Gewinn-Ebene, wie § 21)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "eu2", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, bruttolohn=4000000,
+                    betriebseinnahmen=4000000, sonstige_betriebsausgaben=4500000, afa_jahresbetrag=1000000))
+    st, erg = _req(base, "GET", "/fall/eu2/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 259200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_gewinn_quelle_offen(base):
+    """K2 fail-closed (Guard non-vacuous, 2a): direkter einkuenfte_gewinn (30000) UND EÜR-Komponente
+    (betriebseinnahmen 100000) BEIDE gesetzt → Doppelquelle, welcher laufende Gewinn gilt? → gewinn_quelle_offen
+    (kein Rate-Bescheid, _laufender_gewinn nähme sonst still die EÜR und verschluckte den Direktwert). Spiegel
+    kapital_semantik_offen."""
+    _gesamt_anlegen(base, "gqo", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
+                    gewinn=3000000, betriebseinnahmen=10000000))
+    st, erg = _req(base, "GET", "/fall/gqo/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "gewinn_quelle_offen"
+
+
+def test_gesamt_luf_euer_offen(base):
+    """K2 fail-closed (Guard non-vacuous, 2a Q4): gewinn_betriebsart=land_forst MIT EÜR-Komponente
+    (betriebseinnahmen 80000) UND ohne Direktwert → luf_euer_offen. § 13-LuF ist NICHT EÜR-materialisiert
+    (EuerGewinn-Bedingungen § 15 Abs. 2/§ 18 Abs. 1, nicht § 13; LuF hat § 13a Durchschnittssätze etc.) → NIE
+    silent 0. land_forst + DIREKTwert bliebe erlaubt (einkunftsart-agnostisch)."""
+    _gesamt_anlegen(base, "luf", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
+                    betriebseinnahmen=8000000, betriebsart="land_forst"))
+    st, erg = _req(base, "GET", "/fall/luf/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "luf_euer_offen"
 
 
 def test_kombiniert_job_und_vermietung(base):
@@ -1426,7 +1489,8 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    gdb=0, hilflos=False, pflegegrad=0, gepflegter_hilflos=False, hinterbliebenen=False,
                    veranlagung="einzel", rentenfreibetrag=None, gdb_partner=0, hilflos_partner=False,
                    renten_art_partner=None, jahresrente_partner=0, beginn_partner=2025,
-                   alter_partner=0, rentenfreibetrag_partner=None, gewinn=0, vg=0, kein_gewinn=True):
+                   alter_partner=0, rentenfreibetrag_partner=None, gewinn=0, vg=0, kein_gewinn=True,
+                   betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0):
     """rentner_gesamt-Kegel: § 22 (renten_art/jahresrente Cent/beginn/alter) + § 33b-Block + Flags
     (kein_sonstige=False = Rente IST § 22-sonstige; kein_kap/vuv=True). rentenfreibetrag (Cent) nur
     aa-Folgejahr; Partner-Behinderung + Partner-Rente (renten_art_partner gesetzt) nur zusammen (#4b).
@@ -1441,6 +1505,11 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
          ("kein_gewinn", kein_gewinn), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False)]
     if gewinn:                                     # § 15/§ 18 laufender Gewinn (2-I, optional)
         k.append(("einkuenfte_gewinn", gewinn))
+    for _fid, _w in (("betriebseinnahmen", betriebseinnahmen),           # § 4 Abs. 3 EÜR-Komponenten (2a Scope-A, cent, optional)
+                     ("sonstige_betriebsausgaben", sonstige_betriebsausgaben),
+                     ("afa_jahresbetrag", afa_jahresbetrag)):
+        if _w:
+            k.append((_fid, _w))
     if vg:                                          # § 16 Veräußerungsgewinn (2-I, optional)
         k.append(("rentner_veraeusserungsgewinn", vg))
     if rentenfreibetrag is not None:
@@ -1539,6 +1608,22 @@ def test_rentner_veraeusserung_flag_widerspruch(base):
     _rentner_anlegen(base, "rvw", _rentner_kegel(jahresrente=0, vg=15000000, kein_gewinn=True))
     st, erg = _req(base, "GET", "/fall/rvw/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "flag_konsistenz_offen"
+
+
+def test_rentner_euer_plus_veraeusserung(base):
+    """Scope-A (2a im Rentner-Ring) + Akkumulation: laufender § 15/§ 18-Gewinn KOMPONENTENWEISE via EÜR
+    (Betriebseinnahmen 80000 − sonstige BA 20000 − AfA 10000 = 50000) + § 16-Veräußerungsgewinn (vg 100000 →
+    netto 55000 nach § 16 Abs. 4-FB) → einkuenfte_gewinn 105000 → festzusetzende_est 33172 = 3317200 Cent. Belegt:
+    _laufender_gewinn (EÜR) greift auch im Rentner-Pfad UND summiert additiv mit dem §16-vg (§ 16 Abs. 1)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "reuv", _rentner_kegel(jahresrente=0, kein_gewinn=False, vg=10000000,
+                     betriebseinnahmen=8000000, sonstige_betriebsausgaben=2000000, afa_jahresbetrag=1000000))
+    st, erg = _req(base, "GET", "/fall/reuv/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 3317200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
 
 
 def test_rentner_private_leibrente(base):

@@ -51,6 +51,7 @@ from pkg import VerbilligteVermietungWk as VV  # noqa: E402  (§ 21 Abs. 2 verbi
 from pkg import KrankenPflegeVorsorge as KP  # noqa: E402  (§ 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge)
 from pkg import Berufsausbildungsaufwendungen as BA  # noqa: E402  (§ 10 Abs. 1 Nr. 7 Berufsausbildung, Tier-1)
 from pkg import BetriebsFreibetrag as BF  # noqa: E402  (§ 16 Abs. 4 Betriebsveräußerungs-Freibetrag, 2-I)
+from pkg import EuerGewinn as EG  # noqa: E402  (§ 4 Abs. 3 Einnahmenüberschussrechnung, 2-II)
 from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
@@ -370,6 +371,20 @@ def catala_p16_4_freibetrag(s: dict) -> int:
     r = BF.betriebs_freibetrag(BF.BetriebsFreibetragIn(
         veraeusserungsgewinn_in=Money(f"{int(s.get('rentner_veraeusserungsgewinn', 0))}.00")))
     return int(r.freibetrag) // 100
+
+
+def catala_euer_gewinn(s: dict) -> int:
+    """§ 4 Abs. 3 EStG — Gewinn aus Einnahmenüberschussrechnung, EURO (module EuerGewinn): gewinn =
+    betriebseinnahmen − betriebsausgaben. Kann NEGATIV sein (Verlustjahr — § 4 Abs. 3 lässt den Verlust zu,
+    der im § 2 Abs. 3-Ausgleich andere Einkünfte mindert). betriebsausgaben = AGGREGAT: der Aufrufer summiert
+    sonstige_betriebsausgaben + afa_jahresbetrag (+ GWG-Σ = Stufe-2b-Nachtrag) und übergibt die Summe. Accessor
+    nimmt EUROS (die //100-Umrechnung liegt im slot_fn — wie catala_p16_4_freibetrag/catala_p10_1_7). Die 7
+    EÜR-Geltungsbedingungen (§ 4 Abs. 3 Buchführung/durchlaufende Posten, § 12 Nr. 1/3, § 15 Abs. 2/§ 18 Abs. 1
+    Einkunftsart) sind Netz-Eingabe-Annahmen; die § 13-LuF-Grenze fängt der luf_euer_offen-Guard der Haut."""
+    r = EG.euer_gewinn(EG.EuerGewinnIn(
+        betriebseinnahmen_in=Money(f"{int(s.get('betriebseinnahmen', 0))}.00"),
+        betriebsausgaben_in=Money(f"{int(s.get('betriebsausgaben', 0))}.00")))
+    return int(r.gewinn) // 100
 
 
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --

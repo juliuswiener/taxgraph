@@ -114,7 +114,14 @@ RENTNER_22_PARTNER = ("rentner_renten_art_partner", "rentner_jahresrente_partner
 # (nach § 16 Abs. 4-Freibetrag, catala_p16_4_freibetrag) — beide summieren ADDITIV in einkuenfte_gewinn (§16 Abs.1
 # „gehören auch": Veräußerungs- + laufender Gewinn = dieselbe §2-Einkunftsart). rentner_veraeusserungs_betriebsart =
 # Kz-Weiche (Anlage G/S, Klasse-f), Ring liest sie nicht. Alle global gebunden (lade_bindung globt alle yamls).
-RENTNER_GEWINN = ("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")
+# § 4 Abs. 3 EÜR-Komponenten (Stufe 2a): der laufende Gewinn = betriebseinnahmen − (sonstige_betriebsausgaben +
+# afa_jahresbetrag) via catala_euer_gewinn (shared _laufender_gewinn). OPTIONAL — irgendeine present → EÜR-Pfad,
+# sonst der direkte einkuenfte_gewinn-Wert (Stufe 1). In gesamt.felder UND RENTNER_FELDER (Scope-A: EÜR auch im
+# Rentner-Pfad, ein Rentner mit laufendem § 15/§ 18-Betrieb). gewinn_betriebsart auch in RENTNER_FELDER = die
+# land_forst-Weiche für den luf_euer_offen-Guard (getrennt von rentner_veraeusserungs_betriebsart = § 16-vg-Kz).
+EUER_KOMPONENTEN = ("betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag")
+RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
+                   "gewinn_betriebsart") + EUER_KOMPONENTEN)
 RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
                   + RENTNER_PARTNER + RENTNER_22_PARTNER + RENTNER_GEWINN)
 # Person B (Zusammenveranlagung, dev-2s Person-B-Deklaration): die §19-Einkünfte des Ehegatten in den
@@ -148,7 +155,7 @@ GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_vora
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
 # Deklaration (Anlage G/S/L), der RING liest sie NICHT (wie veranlagung ein Enum-Feld ohne Rechen-Effekt).
 # In felder (askable, POST /event braucht fid∈bindung), symmetrisch zu dev-2s Bindung → kein Orphan-askable.
-GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart")
+GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -308,6 +315,25 @@ def _scheibe_bindung(store: dict) -> dict:
     if fehlend:
         raise ApiError(500, f"Bindungstabelle unvollständig für Scheibe: {fehlend}")
     return {f: b[f] for f in felder}
+
+
+def _laufender_gewinn(f: dict) -> int:
+    """§§ 13-18 laufender Gewinn (§ 15 Gewerbe / § 18 selbständig), EURO — die EINE Quelle für den laufenden
+    (Nicht-Veräußerungs-)Gewinn, geteilt von gesamt- und rentner-Ring (Scope A). § 4 Abs. 3 EÜR (Stufe 2a) wenn
+    IRGENDEINE EÜR-Komponente (betriebseinnahmen/sonstige_betriebsausgaben/afa_jahresbetrag) vorliegt: gewinn =
+    betriebseinnahmen − (sonstige_BA + AfA) via catala_euer_gewinn — KANN NEGATIV sein (Verlustjahr → § 2 Abs. 3-
+    Ausgleich mindert andere Einkünfte); sonst der direkte einkuenfte_gewinn-Wert (Stufe 1). Naht-CENT → EURO.
+    Sind BEIDE Quellen gesetzt (Direktwert + EÜR-Komponente) sperrt der gewinn_quelle_offen-Guard VORHER (Doppel-
+    quelle, kein stilles Bevorzugen); land_forst + EÜR sperrt luf_euer_offen (§ 13-LuF ist nicht EÜR-materialisiert)."""
+    import runner
+    def _c(fid):
+        v = f.get(fid, {}).get("wert")
+        return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+    if any(_c(k) for k in EUER_KOMPONENTEN):
+        return runner.catala_euer_gewinn({
+            "betriebseinnahmen": _c("betriebseinnahmen") // 100,
+            "betriebsausgaben": (_c("sonstige_betriebsausgaben") + _c("afa_jahresbetrag")) // 100})
+    return _c("einkuenfte_gewinn") // 100
 
 
 def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None,
@@ -485,12 +511,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "veranlagungszeitraum": vz,
                     "bruttoarbeitslohn": _c("bruttoarbeitslohn_partner") // 100, "werbungskosten": 0})
             g["einkuenfte_nichtselbststaendig"] = ns
-            # §§ 13-18 Gewinneinkünfte (Stufe 1): der vorberechnete Gewinn-Betrag DIREKT als
-            # einkuenfte_gewinn-Summand in die § 2-Summe (Engine-Slot einkuenfte_gewinn_in ist LIVE,
-            # runner.py _gesamt_out Z.798). Naht-CENT → EURO. OPTIONAL (absent → 0, over-tax-safe;
-            # Stufe 2 rechnet den Betrag komponentenweise via EÜR § 4 Abs. 3). Die Einkunftsart-
-            # Konsistenz (kein_gewinn=True bei Gewinn>0) fängt der flag_check-Guard vor diesem Aufruf.
-            g["einkuenfte_gewinn"] = _c("einkuenfte_gewinn") // 100
+            # §§ 13-18 Gewinneinkünfte (Stufe 1 + 2a): der laufende Gewinn als einkuenfte_gewinn-Summand in die
+            # § 2-Summe (Engine-Slot einkuenfte_gewinn_in LIVE, runner.py _gesamt_out). _laufender_gewinn wählt
+            # Stufe 2a (EÜR § 4 Abs. 3, betriebseinnahmen − BA komponentenweise) wenn eine EÜR-Komponente vorliegt,
+            # sonst den direkten Stufe-1-Betrag. OPTIONAL (absent → 0, over-tax-safe). Doppelquelle/land_forst +
+            # Einkunftsart-Konsistenz (kein_gewinn=True) fangen gewinn_quelle_offen/luf_euer_offen/flag_check vorher.
+            g["einkuenfte_gewinn"] = _laufender_gewinn(f)
             # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
             # Altersentlastungsbetrag (Bemessung NUR positive Nicht-Renten-Einkünfte, S.2: Arbeitslohn BRUTTO +
             # max(0, V+V); Kohorten-Satz/-Deckel aus geburtsjahr + 65; Kapital = Stage-2-Nachtrag wie die §10b/§33-
@@ -701,7 +727,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                        + runner.catala_hinterbliebenen_pb({
                            "veranlagungszeitraum": vz,
                            "hat_hinterbliebenenbezuege": _b("rentner_hinterbliebenenbezuege") is True}))
-            # §§ 13-18 Gewinn (2-I): laufender § 15/§ 18-Gewinn (direkter einkuenfte_gewinn-Betrag) + § 16-Ver-
+            # §§ 13-18 Gewinn (2-I + 2a): laufender § 15/§ 18-Gewinn (aus _laufender_gewinn — Stufe 2a EÜR ODER
+            # Stufe-1-Direktwert, Scope A geteilt mit dem gesamt-Ring) + § 16-Ver-
             # äußerungsgewinn NACH § 16 Abs. 4-Freibetrag. FB (roh) via catala_p16_4_freibetrag; der steuerbare Rest
             # ist bei 0 GEFLOORT (§ 16 Abs. 4 „soweit nicht übersteigt" — FB > vg erzeugt KEINEN Verlust, sonst
             # stiller Under-tax gegen die Rente). ADDITIV (§ 16 Abs. 1: Veräußerungs- + laufender Gewinn = dieselbe
@@ -715,7 +742,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "gesamtfall": True, "veranlagungszeitraum": vz,
                 "veranlagung": _b("veranlagung") or "einzel",
                 "einkuenfte_sonstige": renten,
-                "einkuenfte_gewinn": _c("einkuenfte_gewinn") // 100 + netto_vg,
+                "einkuenfte_gewinn": _laufender_gewinn(f) + netto_vg,
                 "aussergewoehnliche_belastungen": ausserg})
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
@@ -776,6 +803,19 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if (felder.get("veranlagung", {}).get("wert") == "zusammen"
                 and _positiv(KAP_ERTRAEGE_PARTNER) and any(_positiv(t) for t in KAP_TOEPFE_PARTNER)):
             return "kapital_semantik_offen"
+        # §§ 13-18 Gewinn-Quelle SINGLE-SOURCE (Stufe 2a, fail-closed): direkter einkuenfte_gewinn UND eine
+        # EÜR-Komponente (betriebseinnahmen/sonstige_BA/AfA) beide gesetzt → welcher laufende Gewinn gilt? Doppel-
+        # quelle → kein Rate-Bescheid (_laufender_gewinn nähme sonst still die EÜR und verschluckte den Direktwert).
+        # Spiegel kapital_semantik_offen. Entweder den Betrag DIREKT ODER komponentenweise, nicht beides.
+        if _positiv("einkuenfte_gewinn") and any(_positiv(k) for k in EUER_KOMPONENTEN):
+            return "gewinn_quelle_offen"
+        # § 13 Land-/Forstwirtschaft ist NICHT EÜR-materialisiert (EuerGewinn-Bedingungen § 15 Abs. 2/§ 18 Abs. 1,
+        # nicht § 13): gewinn_betriebsart=land_forst MIT EÜR-Komponente (und OHNE Direktwert) → luf_euer_offen,
+        # fail-closed (NIE silent 0 — die EÜR gilt für LuF steuerlich anders, § 13a Durchschnittssätze etc.).
+        # land_forst + Direktwert bleibt erlaubt (Stufe-1-Direktwert ist einkunftsart-agnostisch, keine EÜR-Rechnung).
+        if (felder.get("gewinn_betriebsart", {}).get("wert") == "land_forst"
+                and any(_positiv(k) for k in EUER_KOMPONENTEN) and not _positiv("einkuenfte_gewinn")):
+            return "luf_euer_offen"
         # Person B (#4): bei Zusammenveranlagung braucht der Ring den vollständig BESTÄTIGTEN Person-B-
         # Kegel (Bruttolohn + IdNr) — sonst kein halber Ehepaar-Bescheid (K2). Bei einzel irrelevant.
         if cfg.get("partner_19") and felder.get("veranlagung", {}).get("wert") == "zusammen":

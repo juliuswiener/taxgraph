@@ -16,7 +16,11 @@ FLAG_NEGIERT = {
     "kein_kap":      ["kap_kapitalertraege", "kap_gewinn_aktien"],          # § 2 Abs. 1 Nr. 5
     "kein_vuv":      ["vv_einnahmen"],                                       # § 2 Abs. 1 Nr. 6
     "kein_sonstige": ["rentner_jahresrente"],                               # § 2 Abs. 1 Nr. 7 (Renten)
-    "kein_gewinn":   ["einkuenfte_gewinn", "rentner_veraeusserungsgewinn"],  # § 2 Abs. 1 Nr. 1-3 (§§ 13-18 Stufe 1 + § 16-vg Stufe 2-I)
+    # § 2 Abs. 1 Nr. 1-3 (§§ 13-18): Stufe-1-Direktgewinn + § 16-vg (2-I) + EÜR-Komponenten (2-II). ALLE drei
+    # EÜR-Komponenten negieren kein_gewinn — auch ein Verlustjahr (einnahmen=0, aber afa/ausgaben>0) belegt
+    # einen existierenden Betrieb (Gewinneinkunft, hier negativ), darf nicht als "kein Gewinn" durchrutschen.
+    "kein_gewinn":   ["einkuenfte_gewinn", "rentner_veraeusserungsgewinn",
+                      "betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag"],
 }
 
 

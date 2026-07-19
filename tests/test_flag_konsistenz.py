@@ -73,6 +73,40 @@ def test_kein_gewinn_veraeusserungsgewinn_widerspruch():
     assert len(w) == 1 and w[0]["flag"] == "kein_gewinn" and w[0]["feld_id"] == "rentner_veraeusserungsgewinn"
 
 
+# ---- EÜR-Komponenten (§ 4 Abs. 3, Stufe 2-II): alle 3 negieren kein_gewinn ----
+
+def test_kein_gewinn_betriebseinnahmen_widerspruch():
+    # EÜR-Betrieb: kein_gewinn=true + betriebseinnahmen>0 → Widerspruch.
+    w = FC.flag_widersprueche(_snap(kein_gewinn=(True, "bestaetigt"),
+                                    betriebseinnahmen=(8000000, "bestaetigt")))
+    assert len(w) == 1 and w[0]["flag"] == "kein_gewinn" and w[0]["feld_id"] == "betriebseinnahmen"
+
+
+def test_kein_gewinn_verlustjahr_afa_widerspruch():
+    # Verlustjahr: einnahmen=0, aber afa>0 → Betrieb existiert → kein_gewinn=true widersprüchlich
+    # (Instructor-K2-Vollständigkeit: betriebseinnahmen-only ließe das durchrutschen). betriebseinnahmen=0
+    # ist kein Beleg (Wert 0), afa_jahresbetrag>0 triggert allein.
+    w = FC.flag_widersprueche(_snap(kein_gewinn=(True, "bestaetigt"),
+                                    betriebseinnahmen=(0, "bestaetigt"),
+                                    afa_jahresbetrag=(500000, "bestaetigt")))
+    assert len(w) == 1 and w[0]["feld_id"] == "afa_jahresbetrag"
+
+
+def test_kein_gewinn_sonstige_ba_widerspruch():
+    # Nur laufende Ausgaben (einnahmen/afa=0) → Betrieb existiert → Widerspruch.
+    w = FC.flag_widersprueche(_snap(kein_gewinn=(True, "bestaetigt"),
+                                    sonstige_betriebsausgaben=(3000000, "bestaetigt")))
+    assert len(w) == 1 and w[0]["feld_id"] == "sonstige_betriebsausgaben"
+
+
+def test_kein_gewinn_euer_konsistent():
+    # echter EÜR-Betrieb: Flag korrekt false → KEIN Widerspruch (der EÜR-Ring greift).
+    assert FC.flag_widersprueche(_snap(kein_gewinn=(False, "bestaetigt"),
+                                       betriebseinnahmen=(8000000, "bestaetigt"),
+                                       sonstige_betriebsausgaben=(3000000, "bestaetigt"),
+                                       afa_jahresbetrag=(500000, "bestaetigt"))) == []
+
+
 # ---- fail-closed-Feinheiten --------------------------------------------------
 
 def test_vorlaeufig_zaehlt_nicht():
