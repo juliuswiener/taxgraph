@@ -1,0 +1,113 @@
+# § 10d Abs. 2 EStG — Verlustvortrag-Höchstbetrag (Mindestbesteuerung 1 Mio / 2 Mio + 70 %)
+
+> Module Verlustvortrag
+
+Materialisierung des verifizierten (fix-geregateten) Snapshots `pipeline/snapshots/p10d_2_verlustvortrag_abzug.json`
+(module Verlustvortrag, scope VerlustvortragAbzug, verified_bedingt, sha256 catala_a `294cdd6a235d74e0d61cabd87dfe0ddc94a3bc66ede5d1d39d901fddc7e25ce7`).
+Die scope-Logik unten ist BYTE-GLEICH aus `catala_a` übernommen (keine Änderung); nur Module-Header +
+§-Zitatanker + Grenzfall-Seeds sind ergänzt.
+
+⚠ FIX 2026-07-19 (dev-2 Hand-Fix, instructor-source-adjudiziert, deterministic --regate): der Höchstbetrag ist
+auf den gesamtbetrag_einkuenfte GEKAPPT — `min(GdE, sockel + ueberstieg·0,70)` + Floor GdE≤0→0. § 10d Abs. 2 S. 1
+„bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro UNBESCHRÄNKT" = der GdE selbst ist die Grenze (nicht
+der Sockel pauschal); ein Bestand > GdE wird auf den GdE gekappt, der Rest wird vorgetragen (§ 10d Abs. 4). Der
+alte cap-lose Wert war ein latenter Defekt (0 est-Impact wegen § 32a-zvE≤0-Floor, aber gesetzwidrig).
+
+⚠ §-52-TEMPORAL: die 70 %-Staffel = Wachstumschancengesetz (27.03.2024), gilt VZ 2024-2027; ab VZ 2028 evtl.
+Rückfall auf 60 % (dann VZ-parametrisieren). MVP-Scope 2024-2026 liegt im 70 %-Fenster.
+
+Zitatanker § 10d Abs. 2 S. 1 EStG (`sources/gesetze-im-internet/estg_p10d_2026-07-13.txt`, typ gesetz):
+„bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt". S. 2 (Zusammenveranlagung): „tritt an
+die Stelle des Betrags von 1 Million Euro ein Betrag von 2 Millionen Euro". `verlustvortrag_bestand` = der zum
+Schluss des Vorjahres gesondert festgestellte verbleibende Verlustvortrag (§ 10d Abs. 4, State-Input); die
+Mehrjahres-Fortschreibung ist NICHT Gegenstand dieser Regel. Naht: GdE-Abzug vorrangig vor Sonderausgaben (dev-1-Ring).
+
+```catala
+declaration scope VerlustvortragAbzug:
+  input gesamtbetrag_einkuenfte content money
+  input verlustvortrag_bestand content money
+  input zusammenveranlagung content boolean
+  output verlustabzug content money
+
+scope VerlustvortragAbzug:
+  definition verlustabzug equals
+    if gesamtbetrag_einkuenfte <= $0.00 then $0.00
+    else
+      let sockel equals
+        if zusammenveranlagung then $2,000,000.00 else $1,000,000.00
+      in
+      let ueberstieg equals
+        if gesamtbetrag_einkuenfte > sockel
+        then gesamtbetrag_einkuenfte - sockel
+        else $0.00
+      in
+      let hoechstbetrag equals
+        let raw equals sockel + ueberstieg * 0.70 in
+        if gesamtbetrag_einkuenfte < raw then gesamtbetrag_einkuenfte else raw
+      in
+      if verlustvortrag_bestand < hoechstbetrag
+      then verlustvortrag_bestand
+      else hoechstbetrag
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestCapAufGdE:
+  # ⚠ CAP-BEWEIS (Defekt-Fänger): GdE 50000 < Sockel, Bestand 60000 > GdE -> auf GdE 50000 gekappt (NICHT 60000).
+  internal r content VerlustvortragAbzug
+  output g content money
+scope TestCapAufGdE:
+  definition r equals output of VerlustvortragAbzug with {
+    -- gesamtbetrag_einkuenfte: $50,000.00
+    -- verlustvortrag_bestand: $60,000.00
+    -- zusammenveranlagung: false }
+  definition g equals r.verlustabzug
+  assertion g = $50,000.00
+```
+
+```catala
+#[test]
+declaration scope TestFloorGdENull:
+  # GdE = 0 -> kein Abzug (Floor), auch bei Bestand > 0.
+  internal r content VerlustvortragAbzug
+  output g content money
+scope TestFloorGdENull:
+  definition r equals output of VerlustvortragAbzug with {
+    -- gesamtbetrag_einkuenfte: $0.00
+    -- verlustvortrag_bestand: $500,000.00
+    -- zusammenveranlagung: false }
+  definition g equals r.verlustabzug
+  assertion g = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestStaffel70Einzel:
+  # GdE 3 Mio > Sockel 1 Mio: cap = 1 Mio + 0,70*(3M-1M) = 2,4 Mio; min(5M, 2,4M) = 2,4 Mio (70%-Staffel bindet).
+  internal r content VerlustvortragAbzug
+  output g content money
+scope TestStaffel70Einzel:
+  definition r equals output of VerlustvortragAbzug with {
+    -- gesamtbetrag_einkuenfte: $3,000,000.00
+    -- verlustvortrag_bestand: $5,000,000.00
+    -- zusammenveranlagung: false }
+  definition g equals r.verlustabzug
+  assertion g = $2,400,000.00
+```
+
+```catala
+#[test]
+declaration scope TestZusammen2Mio:
+  # Zusammenveranlagung: Sockel 2 Mio; cap = 2M + 0,70*(3M-2M) = 2,7 Mio; min(5M, 2,7M) = 2,7 Mio.
+  internal r content VerlustvortragAbzug
+  output g content money
+scope TestZusammen2Mio:
+  definition r equals output of VerlustvortragAbzug with {
+    -- gesamtbetrag_einkuenfte: $3,000,000.00
+    -- verlustvortrag_bestand: $5,000,000.00
+    -- zusammenveranlagung: true }
+  definition g equals r.verlustabzug
+  assertion g = $2,700,000.00
+```

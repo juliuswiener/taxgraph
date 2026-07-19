@@ -52,6 +52,7 @@ from pkg import KrankenPflegeVorsorge as KP  # noqa: E402  (§ 10 Abs. 1 Nr. 3/3
 from pkg import Berufsausbildungsaufwendungen as BA  # noqa: E402  (§ 10 Abs. 1 Nr. 7 Berufsausbildung, Tier-1)
 from pkg import BetriebsFreibetrag as BF  # noqa: E402  (§ 16 Abs. 4 Betriebsveräußerungs-Freibetrag, 2-I)
 from pkg import EuerGewinn as EG  # noqa: E402  (§ 4 Abs. 3 Einnahmenüberschussrechnung, 2-II)
+from pkg import Verlustvortrag as VL  # noqa: E402  (§ 10d Abs. 2 Verlustvortrag-Abzug)
 from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
@@ -865,6 +866,22 @@ def catala_gesamt_gde(s: dict) -> int:
     §19-only-GdE der Sonder-Scheiben). Steht VOR den Abzügen fest (§ 2 Abs. 3 vor Abs. 4) → keine Zirkularität.
     Sonderausgaben/agB/Ermäßigungen im Sachverhalt beeinflussen den GdE NICHT (erst Einkommen/zvE)."""
     return int(_gesamt_out(s).gesamtbetrag_der_einkuenfte) // 100
+
+
+def catala_p10d_2(s: dict) -> int:
+    """§ 10d Abs. 2 EStG — Verlustvortrag-Abzug, EURO (module Verlustvortrag): verlustabzug = GdE ≤ 0 ? 0 :
+    min(verlustvortrag_bestand, min(GdE, sockel + max(0, GdE − sockel) × 0.70)); sockel = 1 Mio (einzel) / 2 Mio
+    (zusammen). Der min(GdE)-Cap (§ 10d Abs. 2 „bis zu einem GdE von 1 Mio unbeschränkt" = 100 % nur bis zur GdE-
+    Höhe, man kann nicht mehr abziehen als GdE) + der GdE ≤ 0-Floor sind in der GEFIXTEN Regel (sha 294cdd6a; die
+    alte cap-lose Version über-abzog für GdE < sockel = gesetzwidrig). Read-Keys: gesamtbetrag_einkuenfte (= der
+    GdE-Zwilling catala_gesamt_gde), verlustvortrag_bestand (Feststellungsbescheid), zusammenveranlagung. Accessor
+    nimmt EUROS (die //100-Umrechnung liegt im slot_fn). Der Abzug mindert den GdE (§ 2 Abs. 4-Vorstufe, § 10d
+    Abs. 2 „vorrangig vor Sonderausgaben, agB, sonstigen Abzugsbeträgen") → Naht via sonstige_abzuege_vom_einkommen."""
+    r = VL.verlustvortrag_abzug(VL.VerlustvortragAbzugIn(
+        gesamtbetrag_einkuenfte_in=Money(f"{int(s.get('gesamtbetrag_einkuenfte', 0))}.00"),
+        verlustvortrag_bestand_in=Money(f"{int(s.get('verlustvortrag_bestand', 0))}.00"),
+        zusammenveranlagung_in=Bool(bool(s.get('zusammenveranlagung', False)))))
+    return int(r.verlustabzug) // 100
 
 
 def catala_gesamt_tarifliche(s: dict) -> int:

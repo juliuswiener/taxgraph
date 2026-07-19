@@ -130,6 +130,11 @@ GWG_FELDER = ("gwg_anschaffungskosten_netto",)
 # NUR gesamt.felder (nicht rentner, nicht kegel). Kein gewst_messbetrag → kein § 35 (over-tax-safe opt-out);
 # Messbetrag ohne Hebesatz sperrt gewst_hebesatz_offen. Kz null-MVP.
 GESAMT_P35 = ("gewst_hebesatz", "gewst_messbetrag")
+# § 10d Abs. 2 Verlustvortrag (gesamt + rentner): verlustvortrag_bestand = der festgestellte verbleibende Verlust-
+# vortrag (Feststellungsbescheid, cent, opt-in). catala_p10d_2 mindert den GdE „vorrangig vor Sonderausgaben/agB/
+# sonstigen Abzugsbeträgen" (§ 10d Abs. 2) → Fold in sonstige_abzuege_vom_einkommen (linear, kein Floor → wertgleich).
+# gesamtbetrag_einkuenfte + zusammenveranlagung sind DERIVED (GdE-Zwilling + veranlagung) → kein Feld-Add. absent → 0.
+VERLUST_FELD = ("verlustvortrag_bestand",)
 RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
                    "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER)
 # § 35 GewSt-Anrechnung auch im Rentner-Ring (Rentner-mit-Gewerbe): gewst_hebesatz + gewst_messbetrag (schon
@@ -138,7 +143,7 @@ RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner
 # pre-existing Grenze, nicht § 35-spezifisch). Guard gewst_hebesatz_offen greift shared (gesamt_guard).
 RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
                   + RENTNER_PARTNER + RENTNER_22_PARTNER + RENTNER_GEWINN
-                  + ("gewst_hebesatz", "gewst_messbetrag"))
+                  + ("gewst_hebesatz", "gewst_messbetrag") + VERLUST_FELD)
 # Person B (Zusammenveranlagung, dev-2s Person-B-Deklaration): die §19-Einkünfte des Ehegatten in den
 # Gesamt-Ring. Nur bei veranlagung=zusammen relevant → NICHT im Pflicht-Kegel (der Guard erzwingt den
 # Person-B-Kegel bei zusammen). Person-B-Kapital/§22 = getrennte Folge-Nachträge (#4-Fortsetzung).
@@ -178,7 +183,7 @@ GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_vora
 # (rentner_veraeusserungsgewinn → veraeusserungsgewinn), eigener Cleanup. Routing bleibt Scheibe-fix (nicht
 # feld-getriggert) → EIN Fall = EINE Scheibe = EIN slot_fn, kein Doppel-Pfad.
 GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")
-GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35
+GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -680,6 +685,24 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             kapitaleinkuenfte = runner.catala_sparer_pb({
                 "veranlagungszeitraum": vz, "kapitalertraege": verrechnete, "zusammenveranlagung": zusammen})
 
+            # § 10d Abs. 2 Verlustvortrag (opt-in via verlustvortrag_bestand): der festgestellte verbleibende Verlust-
+            # vortrag mindert den GdE „VORRANGIG vor Sonderausgaben, agB, sonstigen Abzugsbeträgen" (§ 10d Abs. 2 S. 1)
+            # → Fold in sonstige_abzuege_vom_einkommen (§ 2 Abs. 5-Rest-Slot). Die zvE-Kette ist rein linear OHNE Floor
+            # (einkommensteuertarif:494-514) → die Reihenfolge ist wertgleich zu „vorrangig vor". Der Höchstbetrag
+            # (catala_p10d_2, min(GdE, Sockel+70%-Überstieg), gefixt sha 294cdd6a) braucht die VOLLE GdE (alle
+            # tariflichen Einkunftsarten INKL. §§ 13-18-Gewinn; § 32d-Kapital § 2 Abs. 5b-exkl.) — NICHT die §10b/§33-
+            # gde oben (die lässt einkuenfte_gewinn weg = pre-existing §10b/§33-Gap, separat gemeldet). absent → 0
+            # (over-tax-safe). Steht VOR dem § 35 (der § 35-Deckel-3 nutzt die post-§10d geminderte tarifliche ESt).
+            gde_p10d = runner.catala_gesamt_gde({
+                "veranlagungszeitraum": vz, "veranlagung": g["veranlagung"],
+                "einkuenfte_nichtselbststaendig": ns, "einkuenfte_vermietung": vv,
+                "einkuenfte_gewinn": g["einkuenfte_gewinn"],
+                "altersentlastungsbetrag": alt24a + alt24a_b,
+                "entlastungsbetrag_alleinerziehende": ent24b})
+            g["sonstige_abzuege_vom_einkommen"] = runner.catala_p10d_2({
+                "gesamtbetrag_einkuenfte": gde_p10d,
+                "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
+                "zusammenveranlagung": g["veranlagung"] == "zusammen"})
             # § 35 GewSt-Anrechnung (S1, opt-in via gewst_messbetrag): der GewSt-Steuermessbetrag (INPUT aus dem
             # GewSt-Messbescheid, enthält § 8-Hinzurechnung/§ 9-Kürzung schon) + Hebesatz → Anrechnung auf die
             # tarifliche ESt. Zähler des Ermäßigungshöchstbetrags (§ 35 Abs. 1 S. 2) = gewerbliche Einkünfte (S. 3
@@ -824,6 +847,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "einkuenfte_sonstige": renten,
                 "einkuenfte_gewinn": laufender_gewinn + netto_vg,
                 "aussergewoehnliche_belastungen": ausserg}
+            # § 10d Abs. 2 Verlustvortrag (Rentner-Ring): mindert die volle rentner-GdE (renten § 22 + einkuenfte_
+            # gewinn) „vorrangig vor …" (§ 10d Abs. 2 S. 1) → sonstige_abzuege_vom_einkommen, VOR dem § 35 (dessen
+            # Deckel-3 die post-§10d geminderte tarifliche ESt nutzt). catala_p10d_2-Höchstbetrag = min(GdE, …), absent
+            # → 0. Der GdE-Zwilling nimmt die rentner-Einkunftsarten (kein § 19/§ 21 hier), § 32d-Kapital gibt's nicht.
+            gde_p10d = runner.catala_gesamt_gde({
+                "veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
+                "einkuenfte_sonstige": renten, "einkuenfte_gewinn": rentner_g["einkuenfte_gewinn"]})
+            rentner_g["sonstige_abzuege_vom_einkommen"] = runner.catala_p10d_2({
+                "gesamtbetrag_einkuenfte": gde_p10d,
+                "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
+                "zusammenveranlagung": rentner_g["veranlagung"] == "zusammen"})
             # § 35 GewSt-Anrechnung (S1-Port in den Rentner-Ring, SINGLE-computation — kein § 31-Günstiger hier, die
             # rentner-Scheibe hat kein fam_anzahl_kinder). Zähler = laufender Gewerbe-Gewinn (NUR betriebsart=gewerbe,
             # § 16-vg-netto RAUS § 7 S. 2 GewStG). Nenner = renten (§ 22 IM Nenner — echt hier, anders als gesamt wo

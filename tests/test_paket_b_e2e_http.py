@@ -739,7 +739,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
              basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True,
              betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None, vg=0,
-             gewst_messbetrag=0, gewst_hebesatz=0):
+             gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
@@ -781,6 +781,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
         k.append(("gewst_messbetrag", gewst_messbetrag))
     if gewst_hebesatz:
         k.append(("gewst_hebesatz", gewst_hebesatz))
+    if verlustvortrag_bestand:                      # § 10d Abs. 2 Verlustvortrag (opt-in, cent)
+        k.append(("verlustvortrag_bestand", verlustvortrag_bestand))
     if bruttolohn_partner is not None:
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
     if person_b_idnr is not None:
@@ -1106,6 +1108,67 @@ def test_gesamt_p35_kapital_nicht_im_nenner(base):
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 2165200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p10d_verlustvortrag_partial(base):
+    """§ 10d Abs. 2 Verlustvortrag (est-wirksam): Gewinn 80000 (GdE 80000) + festgestellter Verlustvortrag 30000
+    (< GdE) → verlustabzug 30000 mindert den GdE VORRANGIG vor Sonderausgaben/agB (Fold in sonstige_abzuege_vom_
+    einkommen) → zvE 50000 → festzusetzende_est 10678 = 1067800 Cent, NIEDRIGER als ohne § 10d (Gewinn 80000 →
+    2267200). Belegt: der Verlustvortrag senkt die Steuer; Höchstbetrag min(GdE, 1 Mio) greift nicht (bestand < GdE)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "p10p", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=8000000,
+                    verlustvortrag_bestand=3000000))
+    st, erg = _req(base, "GET", "/fall/p10p/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1067800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p10d_min_gde_cap(base):
+    """§ 10d Abs. 2 min(GdE)-Cap (der gefixte p10d_2-Defekt): Gewinn 50000 (GdE 50000) + Verlustvortrag 60000
+    (> GdE) → verlustabzug auf GdE 50000 gedeckelt (§ 10d Abs. 2 „bis zu einem GdE von 1 Mio UNBESCHRÄNKT" = 100 %
+    nur bis GdE-Höhe, NICHT 60000) → zvE 0 → festzusetzende_est 0. Belegt: kein Über-Abzug über den GdE hinaus
+    (die alte cap-lose Regel hätte 60000 „abgezogen" = falscher Vortrags-Verbrauch)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "p10c", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=5000000,
+                    verlustvortrag_bestand=6000000))
+    st, erg = _req(base, "GET", "/fall/p10c/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 0 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p10d_mindestbesteuerung_70(base):
+    """§ 10d Abs. 2 Mindestbesteuerung (70 % über 1 Mio): Gewinn 1500000 (GdE 1500000) + Verlustvortrag 2000000 →
+    Höchstbetrag = 1 Mio unbeschränkt + 70 % × 500000 = 1350000 (min mit GdE 1.5 Mio → 1.35 Mio) → zvE 150000
+    (= 30 % Mindestbesteuerungs-Rest des Überstiegs) → festzusetzende_est 52072 = 5207200 Cent. Belegt: der Vortrag
+    kann den GdE über 1 Mio nur zu 70 % offsetten (§ 10d Abs. 2 S. 1)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "p10m", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=150000000,
+                    verlustvortrag_bestand=200000000))
+    st, erg = _req(base, "GET", "/fall/p10m/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 5207200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p10d_absent_unveraendert(base):
+    """§ 10d OPTIONAL (opt-out): kein verlustvortrag_bestand → kein Verlustabzug (sonstige_abzuege_vom_einkommen 0)
+    → festzusetzende_est = reiner Gewinn 50000 → 1067800 Cent (unverändert). Absent ist fail-safe (over-tax-safe)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "p10a", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=5000000))
+    st, erg = _req(base, "GET", "/fall/p10a/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1067800 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 
@@ -1674,7 +1737,7 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    renten_art_partner=None, jahresrente_partner=0, beginn_partner=2025,
                    alter_partner=0, rentenfreibetrag_partner=None, gewinn=0, vg=0, kein_gewinn=True,
                    betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0,
-                   betriebsart=None, gewst_messbetrag=0, gewst_hebesatz=0):
+                   betriebsart=None, gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0):
     """rentner_gesamt-Kegel: § 22 (renten_art/jahresrente Cent/beginn/alter) + § 33b-Block + Flags
     (kein_sonstige=False = Rente IST § 22-sonstige; kein_kap/vuv=True). rentenfreibetrag (Cent) nur
     aa-Folgejahr; Partner-Behinderung + Partner-Rente (renten_art_partner gesetzt) nur zusammen (#4b).
@@ -1700,6 +1763,8 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
         k.append(("gewst_messbetrag", gewst_messbetrag))
     if gewst_hebesatz:
         k.append(("gewst_hebesatz", gewst_hebesatz))
+    if verlustvortrag_bestand:                      # § 10d Abs. 2 Verlustvortrag im Rentner-Ring (opt-in, cent)
+        k.append(("verlustvortrag_bestand", verlustvortrag_bestand))
     if vg:                                          # § 16 Veräußerungsgewinn (2-I, optional)
         k.append(("rentner_veraeusserungsgewinn", vg))
     if rentenfreibetrag is not None:
@@ -1860,6 +1925,22 @@ def test_rentner_p35_selbstaendig_kein_credit(base):
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 1705000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_p10d_verlustvortrag(base):
+    """§ 10d Abs. 2 Verlustvortrag im RENTNER-Ring (lockt den rentner-§10d-Pfad — Symmetrie-Argument reicht nach
+    der Register-B/§22-Nenner-Lehre NICHT): Rentner mit § 22-Rente 40000 (→ einkuenfte_sonstige 33298) +
+    festgestellter Verlustvortrag 10000 → verlustabzug 10000 (< GdE 33298) mindert die rentner-GdE VORRANGIG →
+    sonstige_abzuege_vom_einkommen → zvE 23298 → festzusetzende_est 2469 = 246900 Cent, NIEDRIGER als ohne § 10d
+    (524800). Belegt: der Verlustvortrag-Fold greift auch im Rentner-Ring (voller rentner-GdE, est-wirksam)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rp10d", _rentner_kegel(jahresrente=4000000, beginn=2025, verlustvortrag_bestand=1000000))
+    st, erg = _req(base, "GET", "/fall/rp10d/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 246900 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 

@@ -3,10 +3,10 @@
     "verlustvortrag_bestand_festgestellt"
   ],
   "candidate_id": "p10d_2_verlustvortrag_abzug",
-  "catala_a": "declaration scope VerlustvortragAbzug:\n  input gesamtbetrag_einkuenfte content money\n  input verlustvortrag_bestand content money\n  input zusammenveranlagung content boolean\n  output verlustabzug content money\n\nscope VerlustvortragAbzug:\n  definition verlustabzug equals\n    let sockel equals\n      if zusammenveranlagung then $2,000,000.00 else $1,000,000.00\n    in\n    let ueberstieg equals\n      if gesamtbetrag_einkuenfte > sockel\n      then gesamtbetrag_einkuenfte - sockel\n      else $0.00\n    in\n    let hoechstbetrag equals\n      sockel + ueberstieg * 0.70\n    in\n    if verlustvortrag_bestand < hoechstbetrag\n    then verlustvortrag_bestand\n    else hoechstbetrag",
-  "catala_a_sha256": "68a13ab6143c978990a2781549f464c34591e0c207e3422d5f4ae616cc8b5566",
-  "catala_b": "declaration scope VerlustvortragAbzug:\n  input gesamtbetrag_einkuenfte content money\n  input verlustvortrag_bestand content money\n  input zusammenveranlagung content boolean\n  internal sockel content money\n  internal uebersteigender_betrag content money\n  internal abzugsbetrag_oberhalb content money\n  internal maximaler_abzug content money\n  output verlustabzug content money\n\nscope VerlustvortragAbzug:\n  definition sockel equals\n    if zusammenveranlagung then $2,000,000.00 else $1,000,000.00\n  definition uebersteigender_betrag equals\n    if gesamtbetrag_einkuenfte > sockel then gesamtbetrag_einkuenfte - sockel else $0.00\n  definition abzugsbetrag_oberhalb equals uebersteigender_betrag * 0.70\n  definition maximaler_abzug equals sockel + abzugsbetrag_oberhalb\n  definition verlustabzug equals\n    (Decimal.truncate of ((if verlustvortrag_bestand < maximaler_abzug then verlustvortrag_bestand else maximaler_abzug) / $1.00)) * $1.00",
-  "catala_b_sha256": "68fa219fbc7f07f2e2b8f82775f2e29632a860b01a944f2e36d20a23e8d620e1",
+  "catala_a": "declaration scope VerlustvortragAbzug:\n  input gesamtbetrag_einkuenfte content money\n  input verlustvortrag_bestand content money\n  input zusammenveranlagung content boolean\n  output verlustabzug content money\n\nscope VerlustvortragAbzug:\n  definition verlustabzug equals\n    if gesamtbetrag_einkuenfte <= $0.00 then $0.00\n    else\n      let sockel equals\n        if zusammenveranlagung then $2,000,000.00 else $1,000,000.00\n      in\n      let ueberstieg equals\n        if gesamtbetrag_einkuenfte > sockel\n        then gesamtbetrag_einkuenfte - sockel\n        else $0.00\n      in\n      let hoechstbetrag equals\n        let raw equals sockel + ueberstieg * 0.70 in\n        if gesamtbetrag_einkuenfte < raw then gesamtbetrag_einkuenfte else raw\n      in\n      if verlustvortrag_bestand < hoechstbetrag\n      then verlustvortrag_bestand\n      else hoechstbetrag",
+  "catala_a_sha256": "294cdd6a235d74e0d61cabd87dfe0ddc94a3bc66ede5d1d39d901fddc7e25ce7",
+  "catala_b": "declaration scope VerlustvortragAbzug:\n  input gesamtbetrag_einkuenfte content money\n  input verlustvortrag_bestand content money\n  input zusammenveranlagung content boolean\n  internal sockel content money\n  internal uebersteigender_betrag content money\n  internal abzugsbetrag_oberhalb content money\n  internal maximaler_abzug content money\n  output verlustabzug content money\n\nscope VerlustvortragAbzug:\n  definition sockel equals\n    if zusammenveranlagung then $2,000,000.00 else $1,000,000.00\n  definition uebersteigender_betrag equals\n    if gesamtbetrag_einkuenfte > sockel then gesamtbetrag_einkuenfte - sockel else $0.00\n  definition abzugsbetrag_oberhalb equals uebersteigender_betrag * 0.70\n  definition maximaler_abzug equals\n    let raw equals sockel + abzugsbetrag_oberhalb in\n    if gesamtbetrag_einkuenfte < raw then gesamtbetrag_einkuenfte else raw\n  definition verlustabzug equals\n    if gesamtbetrag_einkuenfte <= $0.00 then $0.00\n    else (Decimal.truncate of ((if verlustvortrag_bestand < maximaler_abzug then verlustvortrag_bestand else maximaler_abzug) / $1.00)) * $1.00",
+  "catala_b_sha256": "1cee7ed1f2b2d0466f7be048faf4ff04034ba27b54353ddd443f84802b59a081",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -59,7 +59,7 @@
       "status": "PASS"
     },
     {
-      "detail": "A == B on 5 raster point(s) for 'verlustabzug'",
+      "detail": "A == B on 6 raster point(s) for 'verlustabzug'",
       "name": "equivalence",
       "status": "PASS"
     },
@@ -94,7 +94,7 @@
       "status": "PASS"
     },
     {
-      "detail": "5 seed test(s) passed, anchors verified",
+      "detail": "6 seed test(s) passed, anchors verified",
       "name": "clerk",
       "status": "PASS"
     }

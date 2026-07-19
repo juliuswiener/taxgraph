@@ -3044,7 +3044,7 @@ regeln:
   - est_ein_fuenftel_zve: 3000
   - est_ein_fuenftel_zve: 0
 - rule_id: p10d_2_verlustvortrag_abzug
-  hinweis: sockel = wenn zusammenveranlagung dann 2000000 sonst 1000000 (Norm-Konstante nach Veranlagung). verlustabzug = min(verlustvortrag_bestand, sockel + (70 / 100) * max(0, gesamtbetrag_einkuenfte - sockel)). 70 ist ein PROZENTWERT -> Division durch 100 in decimal rechnen, Cent-Schnitt zuletzt. Bestand ist Input/State; Mehrjahres-Fortschreibung (Abs 4) gehoert NICHT in diese Regel.
+  hinweis: sockel = wenn zusammenveranlagung dann 2000000 sonst 1000000 (Norm-Konstante nach Veranlagung). verlustabzug = wenn gesamtbetrag_einkuenfte <= 0 dann 0, sonst min(verlustvortrag_bestand, min(gesamtbetrag_einkuenfte, sockel + (70 / 100) * max(0, gesamtbetrag_einkuenfte - sockel))). WICHTIG - der Hoechstbetrag ist auf den gesamtbetrag_einkuenfte GEKAPPT (min(GdE, ...)), NICHT der Sockel pauschal (§ 10d Abs. 2 'bis zu einem GdE ... UNBESCHRAENKT' meint der GdE selbst ist die Grenze) - ein Bestand groesser als der GdE wird auf den GdE gekappt, der Rest wird vorgetragen (Abs 4, nicht Gegenstand dieser Regel). 70 ist ein PROZENTWERT -> Division durch 100 in decimal rechnen, Cent-Schnitt zuletzt. Bestand ist Input/State; Mehrjahres-Fortschreibung (Abs 4) gehoert NICHT in diese Regel.
   norm: § 10d Abs. 2 EStG (Verlustvortrag-Hoechstbetrag)
   quellen:
   - typ: gesetz
@@ -3069,12 +3069,12 @@ regeln:
   - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
     zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
     herkunft: synthetisch
-    rechenweg: 'GdE 500.000 < Sockel 1 Mio (single): cap = 1.000.000. min(800.000, 1.000.000) = 800.000,00 (voller Bestand).'
+    rechenweg: 'GdE 500.000 < Sockel 1 Mio (single): cap = min(GdE 500.000, 1.000.000) = 500.000 (§ 10d Abs. 2: bis zum GdE UNBESCHRÄNKT, nicht 1 Mio pauschal). min(800.000, 500.000) = 500.000,00 (Bestand > GdE -> auf GdE gekappt, Rest vorgetragen §10d Abs.4). [Fix 2026-07-19: alt fälschlich 800.000, cap-Defekt.]'
     inputs:
       gesamtbetrag_einkuenfte: 500000
       verlustvortrag_bestand: 800000
       zusammenveranlagung: false
-    expected: 800000.0
+    expected: 500000.0
   - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
     zitatanker: bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte
     herkunft: synthetisch
@@ -3111,7 +3111,19 @@ regeln:
       verlustvortrag_bestand: 0
       zusammenveranlagung: false
     expected: 0.0
+  - quelle: sources/gesetze-im-internet/estg_p10d_2026-07-13.txt
+    zitatanker: bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt
+    herkunft: synthetisch
+    rechenweg: 'CAP-BEWEIS (Instructor-Pflicht-Seed 2026-07-19, Defekt-Fänger): GdE 50.000 < Sockel, cap = min(GdE 50.000, 1.000.000) = 50.000; min(Bestand 60.000, 50.000) = 50.000,00 — Bestand > GdE wird auf den GdE gekappt (NICHT 60.000; § 10d Abs. 2 „bis zu einem GdE … unbeschränkt", Überschuss vorgetragen § 10d Abs. 4). Alt-Bug (cap=1 Mio pauschal) gab fälschlich 60.000.'
+    inputs:
+      gesamtbetrag_einkuenfte: 50000
+      verlustvortrag_bestand: 60000
+      zusammenveranlagung: false
+    expected: 50000.0
   raster:
+  - gesamtbetrag_einkuenfte: 50000
+    verlustvortrag_bestand: 60000
+    zusammenveranlagung: false
   - gesamtbetrag_einkuenfte: 500000
     verlustvortrag_bestand: 800000
     zusammenveranlagung: false

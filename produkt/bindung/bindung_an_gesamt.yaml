@@ -292,6 +292,29 @@ bindungen:
       zitatanker: "von einem Steuermessbetrag auszugehen"
       datei: "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt"
 
+  # ===== § 10d Verlustvortrag (Mindestbesteuerung): GdE-Abzug vorrangig vor Sonderausgaben =====
+  # § 10d Abs. 2: der festgestellte Verlustvortrag (Abs. 4) mindert den GdE, begrenzt auf
+  # min(GdE, sockel + 70 %·(GdE−sockel)); sockel 1 Mio einzel / 2 Mio zusammen; Rest wird vorgetragen. regel
+  # p10d_2_verlustvortrag_abzug (materialisiert, fix-geregatet 294cdd6a — min(GdE)-Cap + Floor). dev-1s Ring
+  # zieht § 10d VORRANGIG vor Sonderausgaben/agB vom GdE ab (§ 2-Reihenfolge); greift in BEIDEN Ringen.
+  - feld_id: verlustvortrag_bestand
+    quelle: {regel_id: p10d_2_verlustvortrag_abzug, signatur_slot: verlustvortrag_bestand}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch ist dein festgestellter verbleibender Verlustvortrag zum 31.12. des Vorjahres?"
+    hilfe_kurz: "Aus deinem Verlustfeststellungs-Bescheid (§ 10d Abs. 4). Trag ihn ein, wenn du Verluste aus Vorjahren mit diesem Jahr verrechnen willst; ohne Eintrag entfällt der Verlustabzug."
+    beispielwert: 6000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "§ 10d-Verlustvortrag-Betrag = FA-festgestellter Wert (Verlustfeststellungs-Bescheid, Abs. 4); Kz-Kandidat E0190701 [Vortrag] ist nur der „Vortrag festgestellt“-FLAG, der Betrag ist FA-bekannt (wie gewst_messbetrag) → null-Kz-MVP."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10d Abs. 2 S. 1 EStG"
+      zitatanker: "bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt"
+      datei: "sources/gesetze-im-internet/estg_p10d_2026-07-13.txt"
+
   # ===== Zusammenveranlagung (§ 26b): person-INDIVIDUELLE _partner-Zwillinge (Store-Modell A) =====
   # STRENG nur die steuerlich getrennten Person-B-Einkommensfelder (eigener § 9a-Pauschbetrag / eigene
   # LStB je Ehegatte). Globale Felder (veranlagung/Kinder/agB/Spende/Abwesenheits-Flags) bleiben GETEILT.
@@ -504,3 +527,14 @@ luecken:
   - regel_id: p4_3_gewinn
     geltungsbedingung: einkunftsart_selbstaendige_arbeit_p18_abs1
     grund: "§ 18 Abs. 1 (Einkunftsart selbständige Arbeit): über gewinn_betriebsart='selbstaendig' (Klasse-f); dieselbe EÜR-Grundmechanik. land_forst (§ 13) ausgeschlossen via luf_euer_offen-Guard (dev-1)."
+
+  # -- § 10d Verlustvortrag (p10d_2): abgeleitete Slots + Festgestellt-GB --
+  - regel_id: p10d_2_verlustvortrag_abzug
+    signatur_slot: gesamtbetrag_einkuenfte
+    grund: "Abgeleitet = der Gesamtbetrag der Einkünfte (§ 2 Abs. 3), im Ring bereits berechnet (GdE-Zwilling); keine eigene Abfrage."
+  - regel_id: p10d_2_verlustvortrag_abzug
+    signatur_slot: zusammenveranlagung
+    grund: "Abgeleitet aus veranlagung=='zusammen' (§ 26b) → Sockel 2 Mio statt 1 Mio; keine eigene Abfrage (veranlagung ist schon gebunden)."
+  - regel_id: p10d_2_verlustvortrag_abzug
+    geltungsbedingung: verlustvortrag_bestand_festgestellt
+    grund: "verlustvortrag_bestand ist der zum Vorjahresschluss gesondert festgestellte verbleibende Verlustvortrag (§ 10d Abs. 4, State-Input); die Fortschreibung selbst ist nicht Gegenstand der Regel. deckt_ab „Nicht ausgeglichene negative Einkünfte, die nicht nach Absatz 1 abgezogen worden sind“ (§ 10d Abs. 2 S. 1)."
