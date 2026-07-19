@@ -738,7 +738,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_gewinn_sonstige_partner=0,
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
              basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True,
-             betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None):
+             betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None, vg=0):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
@@ -774,6 +774,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
         k.append(("gewinn_betriebsart", betriebsart))
     for _i, _netto in enumerate(gwg or [], start=1):   # § 6 Abs. 2 GWG-Assets (Liste netto-Cent): Instanz 1 = Basis, 2..N = __n
         k.append(("gwg_anschaffungskosten_netto" if _i == 1 else f"gwg_anschaffungskosten_netto__{_i}", _netto))
+    if vg:                                          # § 16 Veräußerungsgewinn im gesamt-Ring (Non-Rentner-§16-vg, REUSE-Feld)
+        k.append(("rentner_veraeusserungsgewinn", vg))
     if bruttolohn_partner is not None:
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
     if person_b_idnr is not None:
@@ -973,6 +975,46 @@ def test_gesamt_gwg_only_verlust(base):
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 641900 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+@pytest.mark.parametrize("vg_cent,erwartet_cent", [
+    (4000000,  0),        # vg 40000 → FB 45000 > vg → 0 (Cap, kein Phantom-Verlust)
+    (10000000, 1249500),  # vg 100000 → FB 45000 → netto 55000 → est 12495
+    (15000000, 3905200),  # vg 150000 → FB 31000 → netto 119000 → est 39052
+    (18100000, 6509200),  # vg 181000 → FB 0 → netto 181000 → est 65092
+])
+def test_gesamt_veraeusserungsgewinn(base, vg_cent, erwartet_cent):
+    """Non-Rentner-§16-vg im GESAMT-Ring (REUSE des generellen §16-vg-Felds rentner_veraeusserungsgewinn): ein
+    Nicht-Rentner (gesamt-Scheibe, kein Renten-Kontext) mit § 16-Betriebsveräußerungsgewinn → netto nach § 16 Abs. 4-
+    Freibetrag (identische Brackets wie rentner-2-I, da die § 2-Rechnung dieselbe ist) → einkuenfte_gewinn →
+    festzusetzende_est. ROUTING-UNABHÄNGIGKEIT: der Fall wird als „gesamt" angelegt → via gesamt-slot_fn gerechnet
+    (grund=bestaetigt), NICHT in die rentner-Scheibe misrouted (Routing ist Scheibe-fix, nicht vg-feld-getriggert).
+    KEIN DOPPEL-COUNT: der exakte Erwartungswert IST die Single-Count-Assertion — bei Doppelzählung (netto ×2) käme
+    ein ANDERER (höherer) Wert (z.B. vg 100000: einfach 1249500 vs doppelt 3527200), die Assertion würde brechen."""
+    catala = _catala_da()
+    fid = f"gvg{vg_cent}"
+    _gesamt_anlegen(base, fid, _gesamt_kegel(0, kein_vuv=True, vg=vg_cent, kein_gewinn=False))
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == erwartet_cent and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_veraeusserung_plus_laufender(base):
+    """§ 16 Abs. 1 Akkumulation im gesamt-Ring: laufender Gewinn (direkter einkuenfte_gewinn 30000) + § 16-Ver-
+    äußerungsgewinn (vg 100000 → netto 55000 nach FB) fließen ADDITIV in DIESELBE § 2-Einkunftsart →
+    einkuenfte_gewinn 85000 → festzusetzende_est 24772 = 2477200 Cent. Belegt: der gesamt-vg-Fold summiert mit dem
+    laufenden Gewinn (Assignment würde eins verschlucken) — Spiegel des rentner-2-I-Akkumulations-Locks."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "gvl", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=3000000, vg=10000000))
+    st, erg = _req(base, "GET", "/fall/gvl/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 2477200 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 

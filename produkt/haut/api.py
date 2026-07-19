@@ -160,7 +160,15 @@ GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_vora
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
 # Deklaration (Anlage G/S/L), der RING liest sie NICHT (wie veranlagung ein Enum-Feld ohne Rechen-Effekt).
 # In felder (askable, POST /event braucht fid∈bindung), symmetrisch zu dev-2s Bindung → kein Orphan-askable.
-GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER
+# § 16 Veräußerungsgewinn im gesamt-Ring (Non-Rentner-§16-vg): REUSE des generellen §16-vg-Felds
+# rentner_veraeusserungsgewinn (+ -betriebsart) — trotz „rentner_"-Namens ist es NICHT rentner-spezifisch (Kz
+# E0801301 Anlage G / E0901201 Anlage S, regel_id p16_4, flag_check deckt es seit 2-I). Global gebunden →
+# hier nur zusätzlich in gesamt.felder, Fold spiegelt den rentner-2-I-Fold (netto_vg = max(0, vg − §16-Abs.4-FB),
+# ADDITIV in einkuenfte_gewinn). NAMING-DEBT: „rentner_"-Präfix in gesamt irreführend → künftiger Rename
+# (rentner_veraeusserungsgewinn → veraeusserungsgewinn), eigener Cleanup. Routing bleibt Scheibe-fix (nicht
+# feld-getriggert) → EIN Fall = EINE Scheibe = EIN slot_fn, kein Doppel-Pfad.
+GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")
+GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -538,7 +546,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # Stufe 2a (EÜR § 4 Abs. 3, betriebseinnahmen − BA komponentenweise) wenn eine EÜR-Komponente vorliegt,
             # sonst den direkten Stufe-1-Betrag. OPTIONAL (absent → 0, over-tax-safe). Doppelquelle/land_forst +
             # Einkunftsart-Konsistenz (kein_gewinn=True) fangen gewinn_quelle_offen/luf_euer_offen/flag_check vorher.
-            g["einkuenfte_gewinn"] = _laufender_gewinn(f, store, bindung)
+            # § 16 Veräußerungsgewinn (Non-Rentner-§16-vg, REUSE des generellen §16-vg-Felds): netto nach § 16 Abs. 4-
+            # Freibetrag (catala_p16_4_freibetrag + rentner-2-I-Fold gespiegelt; der „rentner_"-Feldname ist NICHT
+            # rentner-spezifisch, Kz Anlage G/S). GEFLOORT bei 0 (FB > vg → kein Phantom-Verlust) + ADDITIV in
+            # einkuenfte_gewinn (§ 16 Abs. 1: Veräußerungs- + laufender Gewinn = dieselbe § 2-Einkunftsart). Absent → 0.
+            vg_euro = _c("rentner_veraeusserungsgewinn") // 100
+            netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}))
+            g["einkuenfte_gewinn"] = _laufender_gewinn(f, store, bindung) + netto_vg
             # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
             # Altersentlastungsbetrag (Bemessung NUR positive Nicht-Renten-Einkünfte, S.2: Arbeitslohn BRUTTO +
             # max(0, V+V); Kohorten-Satz/-Deckel aus geburtsjahr + 65; Kapital = Stage-2-Nachtrag wie die §10b/§33-
