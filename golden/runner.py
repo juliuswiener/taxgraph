@@ -50,6 +50,7 @@ from pkg import Familienleistungsausgleich as FL  # noqa: E402  (§ 31 Günstige
 from pkg import VerbilligteVermietungWk as VV  # noqa: E402  (§ 21 Abs. 2 verbilligte Vermietung WK-Kürzung)
 from pkg import KrankenPflegeVorsorge as KP  # noqa: E402  (§ 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge)
 from pkg import Berufsausbildungsaufwendungen as BA  # noqa: E402  (§ 10 Abs. 1 Nr. 7 Berufsausbildung, Tier-1)
+from pkg import BetriebsFreibetrag as BF  # noqa: E402  (§ 16 Abs. 4 Betriebsveräußerungs-Freibetrag, 2-I)
 from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
@@ -357,6 +358,18 @@ def catala_p10_1_7_berufsausbildung(s: dict) -> int:
     r = BA.berufsausbildung(BA.BerufsausbildungIn(
         aufwendungen_in=Money(f"{int(s.get('berufsausbildung_aufwendungen', 0))}.00")))
     return int(r.abziehbare_sonderausgaben) // 100
+
+
+def catala_p16_4_freibetrag(s: dict) -> int:
+    """§ 16 Abs. 4 EStG — Freibetrag für den Betriebsveräußerungs-/-aufgabegewinn, EURO (module BetriebsFreibetrag):
+    freibetrag = 45000 − max(0, veräußerungsgewinn − 136000), 0 bei gewinn ≤ 0 (voll abgeschmolzen ab 181000). ROHER
+    Freibetrag (ungecappt) — der Aufrufer floort den steuerbaren Rest bei 0 (max(0, vg − fb); § 16 Abs. 4 „soweit
+    nicht übersteigt", FB > vg erzeugt keinen Verlust). Read-Key rentner_veraeusserungsgewinn (feld_id 1:1
+    dev-2-Binding, NICHT bare veraeusserungsgewinn = § 8b-KStG-Kollision) → Modul-Slot veraeusserungsgewinn_in.
+    Alters-55/Behinderung-Gate (§ 16 Abs. 4 S. 1) + einmal-je-Leben (S. 2) = Backlog (MVP gewährt den FB stets)."""
+    r = BF.betriebs_freibetrag(BF.BetriebsFreibetragIn(
+        veraeusserungsgewinn_in=Money(f"{int(s.get('rentner_veraeusserungsgewinn', 0))}.00")))
+    return int(r.freibetrag) // 100
 
 
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --

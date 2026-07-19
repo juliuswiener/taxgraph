@@ -65,6 +65,14 @@ def test_kein_gewinn_wahre_abwesenheit():
     assert FC.flag_widersprueche(_snap(kein_gewinn=(True, "bestaetigt"))) == []
 
 
+def test_kein_gewinn_veraeusserungsgewinn_widerspruch():
+    # § 16-vg = Gewinneinkunft (§ 2 Abs. 1 Nr. 2): kein_gewinn=true + rentner_veraeusserungsgewinn>0
+    # -> Widerspruch (Stufe 2-I: der §16-vg fließt jetzt live in den Ring, darf nicht still übergangen werden).
+    w = FC.flag_widersprueche(_snap(kein_gewinn=(True, "bestaetigt"),
+                                    rentner_veraeusserungsgewinn=(15000000, "bestaetigt")))
+    assert len(w) == 1 and w[0]["flag"] == "kein_gewinn" and w[0]["feld_id"] == "rentner_veraeusserungsgewinn"
+
+
 # ---- fail-closed-Feinheiten --------------------------------------------------
 
 def test_vorlaeufig_zaehlt_nicht():

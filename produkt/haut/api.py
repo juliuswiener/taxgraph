@@ -109,8 +109,14 @@ RENTNER_KEGEL = RENTNER_22 + RENTNER_33B + ("veranlagung",) + AN_GESAMT_FLAGS
 # rentner_rentenfreibetrag_partner (aa-Folgejahr B). Nur bei zusammen relevant → nicht im Pflicht-Kegel.
 RENTNER_22_PARTNER = ("rentner_renten_art_partner", "rentner_jahresrente_partner",
                       "rentner_renten_beginn_jahr_partner", "rentner_alter_bei_rentenbeginn_partner")
+# §§ 13-18 Gewinn im Rentner-Ring (2-I), OPTIONAL (NICHT Pflicht-Kegel → absent → 0, over-tax-safe): einkuenfte_gewinn
+# = laufender §15/§18-Gewinn (direkter Betrag, wie gesamt-Ring) + rentner_veraeusserungsgewinn = §16-Veräußerungsgewinn
+# (nach § 16 Abs. 4-Freibetrag, catala_p16_4_freibetrag) — beide summieren ADDITIV in einkuenfte_gewinn (§16 Abs.1
+# „gehören auch": Veräußerungs- + laufender Gewinn = dieselbe §2-Einkunftsart). rentner_veraeusserungs_betriebsart =
+# Kz-Weiche (Anlage G/S, Klasse-f), Ring liest sie nicht. Alle global gebunden (lade_bindung globt alle yamls).
+RENTNER_GEWINN = ("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")
 RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
-                  + RENTNER_PARTNER + RENTNER_22_PARTNER)
+                  + RENTNER_PARTNER + RENTNER_22_PARTNER + RENTNER_GEWINN)
 # Person B (Zusammenveranlagung, dev-2s Person-B-Deklaration): die §19-Einkünfte des Ehegatten in den
 # Gesamt-Ring. Nur bei veranlagung=zusammen relevant → NICHT im Pflicht-Kegel (der Guard erzwingt den
 # Person-B-Kegel bei zusammen). Person-B-Kapital/§22 = getrennte Folge-Nachträge (#4-Fortsetzung).
@@ -212,9 +218,12 @@ SCHEIBEN = {
     },
     # Rentner-Ring (§ 22 Leibrente + § 33b): eigene Scheibe (Feld-Ergonomie — Renten-Felder blähen den
     # AN/gesamt-Kegel nicht). Rechnet über DENSELBEN catala_gesamt-Kern (einkuenfte_sonstige = § 22-Renten-
-    # Einkünfte, aussergewoehnliche_belastungen = § 33b). fremd_arten = {kein_gewinn, kein_kap, kein_vuv} —
-    # NICHT kein_sonstige (die Rente IST § 22-sonstige, kein_sonstige=False ist hier korrekt). § 24a=0 (Leib-
-    # renten nach § 24a S. 2 ausgeschlossen, Renten-only-MVP). partner_check LIVE (Ehegatte-Behinderung).
+    # Einkünfte, aussergewoehnliche_belastungen = § 33b). fremd_arten = {kein_kap, kein_vuv} — NICHT kein_sonstige
+    # (die Rente IST § 22-sonstige, kein_sonstige=False ist hier korrekt) und ab 2-I NICHT kein_gewinn (der Ring
+    # rechnet jetzt § 16-Veräußerungsgewinn + laufenden § 15/§ 18-Gewinn → RENTNER_GEWINN/slot_fn; kein_gewinn=False
+    # ist hier korrekt statt gesperrt, exakt wie in „gesamt" ab Stufe 1). Die Konsistenz (kein_gewinn=True + vg/
+    # gewinn > 0) fängt der flag_check-Guard (kein_gewinn → [einkuenfte_gewinn, rentner_veraeusserungsgewinn]).
+    # § 24a=0 (Leibrenten nach § 24a S. 2 ausgeschlossen, Renten-only-MVP). partner_check LIVE (Ehegatte-Behinderung).
     "rentner_gesamt": {
         "felder": RENTNER_FELDER,
         "kegel": RENTNER_KEGEL,     # rentenfreibetrag + Partner-Behinderung nur bedingt (Guard/Accessor)
@@ -225,7 +234,7 @@ SCHEIBEN = {
         "gesamt_guard": True,
         "rentner": True,           # aktiviert die § 22-Rentenfreibetrag-Fixierungs-Prüfung (K2)
         "multi_rente": "rente",    # Multi-Rente-§22-Σ (#6): der Ring summiert ALLE rente-Instanzen (aa/bb je Rente)
-        "fremd_arten": ("kein_gewinn", "kein_kap", "kein_vuv"),
+        "fremd_arten": ("kein_kap", "kein_vuv"),
     },
     # DEPRECATED (Weg ii, Stage 1b): die Standalone-Scheiben haushalt_gesamt (§35a+§10b) + agb_gesamt (§33+§10-
     # KiSt) sind ENTFERNT — ihre Abzüge sind in den EINEN gesamt-Ring gefaltet (GESAMT_ABZUEGE, additiv auf JEDE
@@ -692,10 +701,21 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                        + runner.catala_hinterbliebenen_pb({
                            "veranlagungszeitraum": vz,
                            "hat_hinterbliebenenbezuege": _b("rentner_hinterbliebenenbezuege") is True}))
+            # §§ 13-18 Gewinn (2-I): laufender § 15/§ 18-Gewinn (direkter einkuenfte_gewinn-Betrag) + § 16-Ver-
+            # äußerungsgewinn NACH § 16 Abs. 4-Freibetrag. FB (roh) via catala_p16_4_freibetrag; der steuerbare Rest
+            # ist bei 0 GEFLOORT (§ 16 Abs. 4 „soweit nicht übersteigt" — FB > vg erzeugt KEINEN Verlust, sonst
+            # stiller Under-tax gegen die Rente). ADDITIV (§ 16 Abs. 1: Veräußerungs- + laufender Gewinn = dieselbe
+            # § 2-Einkunftsart Gewerbebetrieb → EIN einkuenfte_gewinn-Summand). Absent → 0 (over-tax-safe). CENT→EURO.
+            # Naht-CENT → EURO: der Accessor nimmt EUROS (wie catala_p10_1_7_berufsausbildung — die //100-
+            # Umrechnung liegt im slot_fn, nicht im Accessor). vg_euro EINMAL, an Freibetrag + Subtraktion.
+            vg_euro = _c("rentner_veraeusserungsgewinn") // 100
+            netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag(
+                {"rentner_veraeusserungsgewinn": vg_euro}))
             return runner.catala_est({
                 "gesamtfall": True, "veranlagungszeitraum": vz,
                 "veranlagung": _b("veranlagung") or "einzel",
                 "einkuenfte_sonstige": renten,
+                "einkuenfte_gewinn": _c("einkuenfte_gewinn") // 100 + netto_vg,
                 "aussergewoehnliche_belastungen": ausserg})
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 

@@ -1,0 +1,109 @@
+# § 16 Abs. 4 EStG — Freibetrag für den Betriebsveräußerungs-/-aufgabegewinn (45 000, Abschmelzung ab 136 000)
+
+> Module BetriebsFreibetrag
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p16_4_freibetrag.json`
+(module BetriebsFreibetrag, scope BetriebsFreibetrag, verified_bedingt, faithful=true, sha256 catala_a
+`f86f23cc9d49fd73cfad72ff16613b606c6de4783ea28ff19b1489312953ed7e`). Die scope-Logik unten ist BYTE-GLEICH aus `catala_a` übernommen
+(keine Änderung); nur Module-Header + §-Zitatanker + Grenzfall-Seeds sind ergänzt. Kein Pipeline-Re-Run.
+
+Zitatanker § 16 Abs. 4 EStG (`sources/gesetze-im-internet/estg_p16_2026-07-14.txt`, typ gesetz):
+S. 1 „so wird der Veräußerungsgewinn auf Antrag zur Einkommensteuer nur herangezogen, soweit er 45 000 Euro
+übersteigt"; S. 3 „Er ermäßigt sich um den Betrag, um den der Veräußerungsgewinn 136 000 Euro übersteigt".
+Der Veräußerungs-/Aufgabegewinn (§ 16 Abs. 1-3) bleibt auf Antrag bis 45 000 Euro steuerfrei; der Freibetrag
+schmilzt oberhalb 136 000 Euro Gewinn linear ab (voll aufgezehrt ab 181 000). `veraeusserungsgewinn` = der
+vorberechnete Gewinn (Eingabe), `freibetrag` = der abgeschmolzene Freibetrag (0 bei Gewinn ≤ 0). Person-A-MVP:
+die persönlichen Voraussetzungen (55./berufsunfähig S. 1, Einmaligkeit S. 2, Antrag) sind Geltungsbedingungen
+der Bindung (bindung_rentner: rentner_alter_55_oder_berufsunfaehig / rentner_freibetrag_erstmalig), nicht Teil
+dieser Rechen-Teilregel. Der Abzug vom Gewinn (§ 2, floored) ist Integration (dev-1-Accessor/Fold).
+
+```catala
+declaration scope BetriebsFreibetrag:
+  input veraeusserungsgewinn content money
+  internal roher_freibetrag content money
+  internal abschmelzung content money
+  output freibetrag content money
+
+scope BetriebsFreibetrag:
+  definition abschmelzung equals
+    if veraeusserungsgewinn > $136,000.00
+    then veraeusserungsgewinn - $136,000.00
+    else $0.00
+
+  definition roher_freibetrag equals
+    if $45,000.00 > abschmelzung
+    then $45,000.00 - abschmelzung
+    else $0.00
+
+  definition freibetrag equals
+    if veraeusserungsgewinn > $0.00
+    then roher_freibetrag
+    else $0.00
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestKeinGewinn:
+  # Kein Veräußerungsgewinn (0) -> kein Freibetrag (Guard veraeusserungsgewinn > 0).
+  internal r content BetriebsFreibetrag
+  output g content money
+scope TestKeinGewinn:
+  definition r equals output of BetriebsFreibetrag with {
+    -- veraeusserungsgewinn: $0.00 }
+  definition g equals r.freibetrag
+  assertion g = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestUnterAbschmelzgrenze:
+  # Gewinn 45000 <= 136000 -> keine Abschmelzung -> voller Freibetrag 45000.
+  internal r content BetriebsFreibetrag
+  output g content money
+scope TestUnterAbschmelzgrenze:
+  definition r equals output of BetriebsFreibetrag with {
+    -- veraeusserungsgewinn: $45,000.00 }
+  definition g equals r.freibetrag
+  assertion g = $45,000.00
+```
+
+```catala
+#[test]
+declaration scope TestGrenzeAbschmelzung:
+  # Gewinn genau 136000 -> nicht > 136000 -> keine Abschmelzung -> voller Freibetrag 45000.
+  internal r content BetriebsFreibetrag
+  output g content money
+scope TestGrenzeAbschmelzung:
+  definition r equals output of BetriebsFreibetrag with {
+    -- veraeusserungsgewinn: $136,000.00 }
+  definition g equals r.freibetrag
+  assertion g = $45,000.00
+```
+
+```catala
+#[test]
+declaration scope TestTeilabschmelzung:
+  # Gewinn 160000 > 136000 -> Abschmelzung 24000 -> Freibetrag 45000-24000 = 21000.
+  internal r content BetriebsFreibetrag
+  output g content money
+scope TestTeilabschmelzung:
+  definition r equals output of BetriebsFreibetrag with {
+    -- veraeusserungsgewinn: $160,000.00 }
+  definition g equals r.freibetrag
+  assertion g = $21,000.00
+```
+
+```catala
+#[test]
+declaration scope TestVollabschmelzung:
+  # Gewinn 181000 -> Abschmelzung 45000 -> 45000 nicht > 45000 -> Freibetrag 0 (voll aufgezehrt).
+  internal r content BetriebsFreibetrag
+  output g content money
+scope TestVollabschmelzung:
+  definition r equals output of BetriebsFreibetrag with {
+    -- veraeusserungsgewinn: $181,000.00 }
+  definition g equals r.freibetrag
+  assertion g = $0.00
+```

@@ -16,7 +16,7 @@ FLAG_NEGIERT = {
     "kein_kap":      ["kap_kapitalertraege", "kap_gewinn_aktien"],          # § 2 Abs. 1 Nr. 5
     "kein_vuv":      ["vv_einnahmen"],                                       # § 2 Abs. 1 Nr. 6
     "kein_sonstige": ["rentner_jahresrente"],                               # § 2 Abs. 1 Nr. 7 (Renten)
-    "kein_gewinn":   ["einkuenfte_gewinn"],                                  # § 2 Abs. 1 Nr. 1-3 (§§ 13-18 Stufe 1)
+    "kein_gewinn":   ["einkuenfte_gewinn", "rentner_veraeusserungsgewinn"],  # § 2 Abs. 1 Nr. 1-3 (§§ 13-18 Stufe 1 + § 16-vg Stufe 2-I)
 }
 
 

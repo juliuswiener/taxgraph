@@ -1426,16 +1426,23 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    gdb=0, hilflos=False, pflegegrad=0, gepflegter_hilflos=False, hinterbliebenen=False,
                    veranlagung="einzel", rentenfreibetrag=None, gdb_partner=0, hilflos_partner=False,
                    renten_art_partner=None, jahresrente_partner=0, beginn_partner=2025,
-                   alter_partner=0, rentenfreibetrag_partner=None):
+                   alter_partner=0, rentenfreibetrag_partner=None, gewinn=0, vg=0, kein_gewinn=True):
     """rentner_gesamt-Kegel: § 22 (renten_art/jahresrente Cent/beginn/alter) + § 33b-Block + Flags
-    (kein_sonstige=False = Rente IST § 22-sonstige; kein_gewinn/kap/vuv=True). rentenfreibetrag (Cent) nur
-    aa-Folgejahr; Partner-Behinderung + Partner-Rente (renten_art_partner gesetzt) nur zusammen (#4b)."""
+    (kein_sonstige=False = Rente IST § 22-sonstige; kein_kap/vuv=True). rentenfreibetrag (Cent) nur
+    aa-Folgejahr; Partner-Behinderung + Partner-Rente (renten_art_partner gesetzt) nur zusammen (#4b).
+    gewinn (§ 15/§ 18 laufender Gewinn, einkuenfte_gewinn, OPTIONAL/CENT) + vg (§ 16-Veräußerungsgewinn,
+    rentner_veraeusserungsgewinn, OPTIONAL/CENT, 2-I) = 0 default → Feld absent (absent → 0, over-tax-safe); > 0
+    nur mit kein_gewinn=False (sonst flag_konsistenz_offen). kein_gewinn (§ 2 Abs. 1 Nr. 1-3) = True default."""
     k = [("rentner_renten_art", renten_art), ("rentner_jahresrente", jahresrente),
          ("rentner_renten_beginn_jahr", beginn), ("rentner_alter_bei_rentenbeginn", alter),
          ("rentner_grad_der_behinderung", gdb), ("rentner_hilflos_blind_taubblind", hilflos),
          ("rentner_pflegegrad", pflegegrad), ("rentner_gepflegter_hilflos", gepflegter_hilflos),
          ("rentner_hinterbliebenenbezuege", hinterbliebenen), ("veranlagung", veranlagung),
-         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False)]
+         ("kein_gewinn", kein_gewinn), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False)]
+    if gewinn:                                     # § 15/§ 18 laufender Gewinn (2-I, optional)
+        k.append(("einkuenfte_gewinn", gewinn))
+    if vg:                                          # § 16 Veräußerungsgewinn (2-I, optional)
+        k.append(("rentner_veraeusserungsgewinn", vg))
     if rentenfreibetrag is not None:
         k.append(("rentner_rentenfreibetrag", rentenfreibetrag))
     if gdb_partner:
@@ -1471,6 +1478,67 @@ def test_rentner_gesetzl_erstjahr(base):
         assert erg["zahl_cent"] == 81100 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
+
+
+@pytest.mark.parametrize("vg_cent,erwartet_cent", [
+    (4000000,  0),        # vg 40000 € → FB 45000 > vg → steuerbar 0 (Cap greift, KEIN Phantom-Verlust)
+    (10000000, 1249500),  # vg 100000 € → FB 45000 (voll, < 136000) → netto 55000 → est 12495
+    (15000000, 3905200),  # vg 150000 € → FB 31000 (Abschmelzung 14000) → netto 119000 → est 39052
+    (18100000, 6509200),  # vg 181000 € → FB 0 (voll abgeschmolzen) → netto 181000 → est 65092
+])
+def test_rentner_p16_4_veraeusserungsgewinn(base, vg_cent, erwartet_cent):
+    """§ 16 Abs. 4 Betriebsveräußerungs-Freibetrag (2-I) im Rentner-Ring: rentner_veraeusserungsgewinn (kein
+    laufender Gewinn, keine Rente) → catala_p16_4_freibetrag mindert VOR § 2 (netto = max(0, vg − FB), Cap bei 0)
+    → einkuenfte_gewinn → festzusetzende_est. kein_gewinn=False (es LIEGT Gewinn vor). Deckt die 3 § 16-Abs.4-
+    Brackets (voller FB / Abschmelzung / FB=0) + den Cap-Fall (FB > vg → 0). Werte unabhängig gg. catala_gesamt."""
+    catala = _catala_da()
+    fid = f"rvg{vg_cent}"
+    _rentner_anlegen(base, fid, _rentner_kegel(jahresrente=0, vg=vg_cent, kein_gewinn=False))
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == erwartet_cent and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_gewinn_plus_veraeusserung_additiv(base):
+    """K2-Akkumulations-Lock (Instructor-C): laufender § 15/§ 18-Gewinn (einkuenfte_gewinn 30000) + § 16-Ver-
+    äußerungsgewinn (vg 100000 → netto 55000 nach FB) fließen ADDITIV in DIESELBE § 2-Einkunftsart (§ 16 Abs. 1
+    „gehören auch") → einkuenfte_gewinn 85000 → festzusetzende_est 24772 = 2477200 Cent. Belegt: der Fold
+    überschreibt nicht (Assignment-Bug), er summiert — vg + laufender Gewinn beide erfasst."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rgva", _rentner_kegel(jahresrente=0, gewinn=3000000, vg=10000000, kein_gewinn=False))
+    st, erg = _req(base, "GET", "/fall/rgva/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 2477200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_rente_plus_veraeusserung(base):
+    """§ 22 Rente + § 16 Veräußerungsgewinn im selben Ring: gesetzl. Rente 20000 (→ einkuenfte_sonstige 16598)
+    + vg 100000 (→ netto 55000 nach § 16 Abs. 4-FB) → catala_gesamt summiert (§ 2 Abs. 3) → festzusetzende_est
+    19144 = 1914400 Cent. Belegt: der § 16-vg addiert sich zur Rente im vollen § 2-Ring (nicht ersetzt)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rrv", _rentner_kegel(jahresrente=2000000, beginn=2025, vg=10000000, kein_gewinn=False))
+    st, erg = _req(base, "GET", "/fall/rrv/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1914400 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_veraeusserung_flag_widerspruch(base):
+    """K2 (Guard non-vacuous, 2-I JOINT-D): kein_gewinn=true (behauptet keine Gewinneinkünfte) UND
+    rentner_veraeusserungsgewinn > 0 bestätigt → Widerspruch surfacen (flag_konsistenz_offen), keine still
+    übergangene § 16-Einkunftsart. Belegt den flag_check-Fix kein_gewinn → [..., rentner_veraeusserungsgewinn]
+    (dev-2) zusammen mit der fremd_arten-Removal (dev-1) — ohne beide entweder Sperre oder stille K2."""
+    _rentner_anlegen(base, "rvw", _rentner_kegel(jahresrente=0, vg=15000000, kein_gewinn=True))
+    st, erg = _req(base, "GET", "/fall/rvw/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "flag_konsistenz_offen"
 
 
 def test_rentner_private_leibrente(base):
