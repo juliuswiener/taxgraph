@@ -404,7 +404,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # ≥ 66 → keine Kürzung. PER OBJEKT (jede Instanz eigene Quote/Tatbestand). Umgesetzt als Add-back der
             # nicht abziehbaren WK auf den Voll-Überschuss (behält catala_vermietung_einkuenfte + dessen Konsistenz-
             # Gate im Pfad). quote im Pflicht-Kegel → immer beantwortet (kein stiller Unter-Abzug).
-            quote = _ci("vv_entgelt_quote_prozent") or 100
+            # C-Fix (K2, Under-tax): quote=0 = UNENTGELTLICHE Überlassung (keine Einkünfteerzielungsabsicht, § 21
+            # greift nicht) → dieses Objekt trägt seine Einnahmen OHNE WK-Abzug bei = kein WK-Verlust der die § 19
+            # senkt. Vorher kollabierte `_ci or 100` die 0 auf 100 → voller WK-Verlust = Under-tax. Robust ggü.
+            # Extrem-verbilligt (Mini-Miete, quote ganzzahlig auf 0 gerundet, einnahmen > 0): Einnahmen STATT hart 0
+            # (kein neuer Under-tax; bei einnahmen 0 = die reine unentgeltliche Überlassung → 0). absent (nur Alt-
+            # Aufrufer/Teil-Ring, im echten Ring nie: Pflicht-Kegel) → 100 (nicht verbilligt).
+            quote_raw = _bi("vv_entgelt_quote_prozent")
+            quote_present = isinstance(quote_raw, (int, float)) and not isinstance(quote_raw, bool)
+            if quote_present and quote_raw == 0:
+                return _ci("vv_einnahmen") // 100   # unentgeltlich → Einnahmen ohne WK, kein Verlust
+            quote = int(quote_raw) if quote_present else 100
             tatbestand = (_bi("vv_wohnzwecke") is not False) and (_bi("vv_auf_dauer") is not False)
             if tatbestand and 0 < quote < 66:
                 wk_voll = (_ci("vv_gebaeude_afa") + _ci("vv_schuldzinsen")
@@ -675,6 +685,12 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
     # feuert live, sobald eine Scheibe (rentner_gesamt) die rentner_*_partner-Felder führt.
     if PC.partner_ohne_zusammen(felder):
         return "partner_konsistenz_offen"
+    # § 24b Alleinerziehend ↔ Zusammenveranlagung (D-Fix, K2, Under-tax): fam_alleinstehend bestätigt True UND
+    # veranlagung=zusammen → Widerspruch (§ 24b Abs. 1/3 verlangt „allein stehend", nicht zusammenveranlagt). Der
+    # § 24b-Entlastungsbetrag würde sonst still gewährt = Unter-Besteuerung → fail-closed (dev-2s partner_check).
+    # Universell vor der Scheiben-Verzweigung — feuert für jede Scheibe mit fam_alleinstehend + veranlagung (gesamt).
+    if PC.alleinerziehend_mit_zusammen(felder):
+        return "alleinerziehend_konsistenz_offen"
     if cfg and cfg.get("gesamt_guard"):
         # Gesamt-Ring: Flag↔Einkunftsart-Widerspruch (kein_X=true + echtes Feld > 0 bestätigt) surfacen —
         # K2, keine still übergangene Einkunftsart (dev-2s flag_check).

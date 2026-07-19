@@ -241,6 +241,34 @@ def test_gesamt_zusammen_partner_vorsorge_offen_kv_pv(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "partner_vorsorge_offen"
 
 
+def test_gesamt_alleinerziehend_konsistenz_offen(base):
+    """§ 24b D-Fix (K2, Under-tax) Wiring: fam_alleinstehend=True BEI Zusammenveranlagung ist ein Widerspruch
+    (§ 24b Abs. 1/3 verlangt „allein stehend", nicht zusammenveranlagt) → alleinerziehend_konsistenz_offen. Der
+    § 24b-Entlastungsbetrag würde sonst still gewährt = Unter-Besteuerung. Fail-closed (dev-2s partner_check-Wiring)."""
+    _gesamt_anlegen(base, "azk", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
+                                               veranlagung="zusammen", bruttolohn_partner=3000000,
+                                               person_b_idnr="12345678901"))
+    st, _ = _req(base, "POST", "/fall/azk/event", _laie("fam_alleinstehend", True))
+    assert st == 201
+    st, erg = _req(base, "GET", "/fall/azk/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "alleinerziehend_konsistenz_offen"
+
+
+def test_gesamt_einzel_alleinstehend_kein_block(base):
+    """D-Fix Gegenprobe: fam_alleinstehend=True BEI Einzelveranlagung ist KORREKT (kein Widerspruch) → kein
+    Konsistenz-Block, regulärer Bescheid (§ 24b greift legitim, hier ohne Kinder = 0). festzusetzende_est 6919 =
+    691900 Cent (reiner Job 40000). Belegt: die Sperre trifft NUR den zusammen-Widerspruch, nicht die einzel-Seite."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "eas", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True))
+    st, _ = _req(base, "POST", "/fall/eas/event", _laie("fam_alleinstehend", True))
+    assert st == 201
+    st, erg = _req(base, "GET", "/fall/eas/ergebnis")
+    if catala:
+        assert erg["zahl_cent"] == 691900 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def test_concurrent_ergebnis_kein_race(base):
     """K2-Concurrency-Beweis: die Haut feuert /stand + /ergebnis PARALLEL (Browser serialisiert XHRs nicht)
     und catala_runtime ist NICHT thread-safe (globaler max_decimals steuert die Money-Rundung). Der SINGLE-
@@ -894,6 +922,21 @@ def test_gesamt_p21_2_gewerblich_voll_wk(base):
     st, erg = _req(base, "GET", "/fall/vg/ergebnis")
     if catala:
         assert erg["zahl_cent"] == 1095200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p21_2_unentgeltlich_quote_null(base):
+    """§ 21 Abs. 2 C-Fix (K2, Under-tax): Entgelt-Quote 0 % = UNENTGELTLICHE Überlassung (keine Einkünfteerzielungs-
+    absicht, § 21 greift nicht). Objekt Einnahmen 0 + WK (AfA) 5000 → Beitrag 0 (kein WK-Verlust der den § 19-Lohn
+    mindert) → festzusetzende_est 6919 = 691900 Cent (= reiner Job 40000). VORHER kollabierte `_ci or 100` die 0
+    auf 100 → voller −5000-WK-Verlust → est 538800 (Under-tax um 1531 €). Belegt: 0 % erzeugt keinen Scheinverlust."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "vq0", _gesamt_kegel(0, afa=500000, bruttolohn=4000000, entgelt_quote=0))
+    st, erg = _req(base, "GET", "/fall/vq0/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 691900 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 

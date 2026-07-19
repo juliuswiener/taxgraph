@@ -18,7 +18,8 @@
                        "partner_konsistenz_offen", "kapital_semantik_offen",
                        "rentenfreibetrag_fixierung_offen", "vv_instanz_offen",
                        "rechnung_unbar_offen", "rente_instanz_offen",
-                       "erstattungsueberhang_offen"]},
+                       "erstattungsueberhang_offen", "partner_vorsorge_offen",
+                       "alleinerziehend_konsistenz_offen"]},
     "offen": {"type": "array", "items": {"type": "string"}},
     "trace": {"type": ["object", "null"]}
   }
