@@ -1,0 +1,23 @@
+id: gesamt_2025_einzel_10_berufsausbildung_deckel
+# dev-2 2026-07-19: flacher Kompositions-Golden (§10b-Muster) — sonderausgaben=6000 = der Berufsausbildungs-
+# Abzug (aufwendungen 8000 > Höchstbetrag 6000 -> § 10 Abs. 1 Nr. 7 gedeckelt auf 6000). Die Deckelung
+# min(aufwendungen, 6000) ist in den clerk-Seeds + dev-1s Accessor-Unit verifiziert; dieser Golden verankert
+# den Tarif auf der reduzierten zvE. est doppelt hand-verifiziert (Engine catala_gesamt + § 32a-2025).
+beschreibung: "Engine-Komposition § 10 Abs. 1 Nr. 7 Berufsausbildung (Höchstbetrag-Deckelung): § 19 40000 + eigene Berufsausbildungsaufwendungen 8000. § 10 Abs. 1 Nr. 7: Aufwendungen für die eigene Berufsausbildung bis zu 6 000 Euro -> 8000 auf 6000 gedeckelt -> sonderausgaben 6000 -> zvE 34000 -> Grundtarif 5468 -> festzusetzende_est 5468. OHNE den Abzug wäre est 7309; der (gedeckelte) Berufsausbildungs-Abzug senkt die est um 1841. Beweist: der Höchstbetrag 6000 greift und der Tarif komponiert korrekt. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: einzel
+  einkuenfte_nichtselbststaendig: 40000
+  sonderausgaben: 6000
+
+erwartung:
+  festzusetzende_est: 5468
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 10 Abs. 1 Nr. 7 EStG (Berufsausbildung, Höchstbetrag 6 000) i.V.m. § 2 Abs. 3 bis 6"
+  datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  zitatanker: "bis zu 6 000 Euro im Kalenderjahr"

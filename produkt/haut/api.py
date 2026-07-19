@@ -125,11 +125,11 @@ GESAMT_PARTNER_KAP = (KAP_ERTRAEGE_PARTNER,) + KAP_TOEPFE_PARTNER
 HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")   # Abs. 2/3 (rechnung_unbar-Pflicht)
 HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23              # + Abs. 1 Minijob
 AGB_KIST = ("kist_gezahlt", "kist_erstattet")                                # § 10 KiSt gezahlt/erstattet
-# Gefaltete Sonder-Abzüge (Weg ii): §35a + §10b + §33 + §10-KiSt als OPTIONALE Felder im gesamt-Ring
-# (NICHT im Pflicht-Kegel — absent → Abzug 0, fail-SAFE). Der gesamt-slot_fn rechnet sie additiv auf JEDE
-# Einkunfts-Kombi; die K2-Sperren (rechnung_unbar/erstattungsueberhang) fängt der Guard feld-präsenz-getrieben.
+# Gefaltete Sonder-Abzüge (Weg ii): §35a + §10b + §33 + §10-KiSt + §10 Abs.1 Nr.7 Berufsausbildung als OPTIONALE
+# Felder im gesamt-Ring (NICHT im Pflicht-Kegel — absent → Abzug 0, fail-SAFE). Der gesamt-slot_fn rechnet sie
+# additiv auf JEDE Einkunfts-Kombi; die K2-Sperren (rechnung_unbar/erstattungsueberhang) fängt der Guard.
 GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
-                  "agb_aufwendungen", "fam_anzahl_kinder") + AGB_KIST)
+                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST)
 # § 24a/§ 24b Freibeträge (Weg ii Stage 2), OPTIONAL im gesamt-Ring (absent → 0). geburtsjahr = §24a-Kohorten-
 # Schlüssel (gesamt-only); fam_alleinstehend = §24b-Abs.3-Flag (quelle p24b/alleinstehend, fragetext „ohne
 # anderen Erwachsenen im Haushalt" — IST die Abs.3-Bedingung, kein Extra-Feld nötig); fam_monate = §24b-Kürzung.
@@ -543,7 +543,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "basis_kv_pv": _c("basis_kv_pv_partner") // 100,
                     "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen_partner") // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
-                   if g["veranlagung"] == "zusammen" else 0))
+                   if g["veranlagung"] == "zusammen" else 0)
+                # § 10 Abs. 1 Nr. 7 Aufwendungen eigene Berufsausbildung (Tier-1): min(aufwendungen, 6000), Person-A
+                # (Satz 2 je-Person Ehegatten = Nachtrag wie A.2). Additiv wie § 10b/KV-PV/KiSt (eigener Höchstbetrag,
+                # kein Doppelzählen — eigenes Feld berufsausbildung_aufwendungen). OPTIONAL: absent → 0 (over-tax-safe).
+                + runner.catala_p10_1_7_berufsausbildung({
+                    "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100}))
             g["aussergewoehnliche_belastungen"] = runner.catala_p33_agb({
                 "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
                 "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),

@@ -1060,6 +1060,38 @@ def test_gesamt_kv_pv_kegel_fehlt(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "input_kegel_nicht_bestaetigt"
 
 
+def test_gesamt_p10_1_7_berufsausbildung(base):
+    """§ 10 Abs. 1 Nr. 7 Berufsausbildung (Tier-1) im gesamt-Ring: reiner Job 40000 + Aufwendungen eigene
+    Berufsausbildung 8000 → Höchstbetrag-Cap 6000 (§ 10 Abs. 1 Nr. 7 S. 1) → sonderausgaben +6000 →
+    festzusetzende_est 5103 = 510300 Cent, NIEDRIGER als ohne (691900). Belegt: der Fold zieht die Berufsausbildung
+    additiv ab (wie § 10b/KV-PV/KiSt), gedeckelt bei 6000. berufsausbildung_aufwendungen ist typ:cent → 8000 € =
+    800000."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "ba8", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True))
+    st, _ = _req(base, "POST", "/fall/ba8/event", _laie("berufsausbildung_aufwendungen", 800000))
+    assert st == 201
+    st, erg = _req(base, "GET", "/fall/ba8/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 510300 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p10_1_7_absent_unveraendert(base):
+    """§ 10 Abs. 1 Nr. 7 OPTIONAL: berufsausbildung_aufwendungen absent → Abzug 0 (kein Phantom-Sonderausgabe) →
+    festzusetzende_est 6919 = 691900 Cent (= reiner Job 40000, unverändert). Belegt: absent ist fail-safe (over-tax),
+    kein stiller Abzug — nur wer die Aufwendungen beziffert, bekommt den Abzug."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "ba0", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True))
+    st, erg = _req(base, "GET", "/fall/ba0/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 691900 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def test_kombiniert_job_und_kapital(base):
     """Konvergenz § 19 + § 20: Job 60000 (§ 19-Einkünfte 58770) + Kapitalerträge 10000 → nach Sparer-PB
     9000; Günstigerprüfung § 32d Abs. 6: Grenzsteuer > 25 % → Abgeltung 2250 gewinnt → festzusetzende_est

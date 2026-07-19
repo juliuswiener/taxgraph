@@ -49,6 +49,7 @@ from pkg import Entlastungsbetrag as EB  # noqa: E402  (§ 24b Alleinerziehende,
 from pkg import Familienleistungsausgleich as FL  # noqa: E402  (§ 31 Günstigerprüfung, charge30)
 from pkg import VerbilligteVermietungWk as VV  # noqa: E402  (§ 21 Abs. 2 verbilligte Vermietung WK-Kürzung)
 from pkg import KrankenPflegeVorsorge as KP  # noqa: E402  (§ 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge)
+from pkg import Berufsausbildungsaufwendungen as BA  # noqa: E402  (§ 10 Abs. 1 Nr. 7 Berufsausbildung, Tier-1)
 from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
@@ -345,6 +346,17 @@ def catala_p10_kv_pv(s: dict) -> int:
         weitere_vorsorgeaufwendungen_in=Money(f"{int(s.get('weitere_vorsorgeaufwendungen', 0))}.00"),
         mit_anspruch_auf_zuschuss_in=Bool(bool(s.get("mit_anspruch_auf_zuschuss", False)))))
     return int(r.abziehbare_kv_pv_vorsorge) // 100
+
+
+def catala_p10_1_7_berufsausbildung(s: dict) -> int:
+    """§ 10 Abs. 1 Nr. 7 EStG — Aufwendungen für die eigene Berufsausbildung, EURO (module
+    Berufsausbildungsaufwendungen): abziehbare Sonderausgaben = min(aufwendungen, 6000) — Höchstbetrag je Person
+    (§ 10 Abs. 1 Nr. 7 S. 1). Roh → sonderausgaben (§ 2 Abs. 4, additiv, wie § 10b/KV-PV/KiSt Person-A). Read-Key
+    berufsausbildung_aufwendungen (feld_id 1:1 dev-2-Binding) → Modul-Slot aufwendungen. Satz 2 (je-Person
+    Ehegatten) = Person-B-Nachtrag wie A.2; Satz 3/4 (auswärtige Unterbringung / § 4/§ 9-Verweise) = Backlog."""
+    r = BA.berufsausbildung(BA.BerufsausbildungIn(
+        aufwendungen_in=Money(f"{int(s.get('berufsausbildung_aufwendungen', 0))}.00")))
+    return int(r.abziehbare_sonderausgaben) // 100
 
 
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --
