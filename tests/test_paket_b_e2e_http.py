@@ -1673,7 +1673,8 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    veranlagung="einzel", rentenfreibetrag=None, gdb_partner=0, hilflos_partner=False,
                    renten_art_partner=None, jahresrente_partner=0, beginn_partner=2025,
                    alter_partner=0, rentenfreibetrag_partner=None, gewinn=0, vg=0, kein_gewinn=True,
-                   betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0):
+                   betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0,
+                   betriebsart=None, gewst_messbetrag=0, gewst_hebesatz=0):
     """rentner_gesamt-Kegel: § 22 (renten_art/jahresrente Cent/beginn/alter) + § 33b-Block + Flags
     (kein_sonstige=False = Rente IST § 22-sonstige; kein_kap/vuv=True). rentenfreibetrag (Cent) nur
     aa-Folgejahr; Partner-Behinderung + Partner-Rente (renten_art_partner gesetzt) nur zusammen (#4b).
@@ -1693,6 +1694,12 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                      ("afa_jahresbetrag", afa_jahresbetrag)):
         if _w:
             k.append((_fid, _w))
+    if betriebsart is not None:                     # gewinn_betriebsart-Weiche (§ 35-Zähler-Gating gewerbe)
+        k.append(("gewinn_betriebsart", betriebsart))
+    if gewst_messbetrag:                            # § 35 GewSt-Anrechnung im Rentner-Ring (opt-in)
+        k.append(("gewst_messbetrag", gewst_messbetrag))
+    if gewst_hebesatz:
+        k.append(("gewst_hebesatz", gewst_hebesatz))
     if vg:                                          # § 16 Veräußerungsgewinn (2-I, optional)
         k.append(("rentner_veraeusserungsgewinn", vg))
     if rentenfreibetrag is not None:
@@ -1805,6 +1812,54 @@ def test_rentner_euer_plus_veraeusserung(base):
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 3317200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_p35_s22_im_nenner(base):
+    """§ 35 GewSt-Anrechnung im RENTNER-Ring + § 22-im-Nenner (K2, lockt die in S1 untestbare Formel): Rentner mit
+    § 22-Rente 20000 (→ einkuenfte_sonstige 16598) + laufendem Gewerbe-Gewinn 50000 + GewSt-Messbetrag 8000 €
+    Hebesatz 500 % → Ermäßigungshöchstbetrag (Deckel 3) bindet mit Ratio 50000/(16598+50000) → § 35 12800 →
+    festzusetzende_est 4250 = 425000 Cent. BEWEIS § 22 IM Nenner: ohne die Rente im Nenner (Ratio 1.0) wäre § 35
+    17050 → est 0 ≠ 425000 → Assertion bräche. Anders als der gesamt-Ring (sonstige=0) ist § 22 hier ECHT im Nenner."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rp35n", _rentner_kegel(jahresrente=2000000, beginn=2025, kein_gewinn=False,
+                     gewinn=5000000, betriebsart="gewerbe", gewst_messbetrag=800000, gewst_hebesatz=500))
+    st, erg = _req(base, "GET", "/fall/rp35n/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 425000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_p35_basis(base):
+    """§ 35 im Rentner-Ring, Deckel-1 (4×Messbetrag) bindet: Rentner-Rente 20000 + Gewerbe-Gewinn 50000 + MB 2000 €
+    Hebesatz 450 % → § 35 = min(4×2000=8000, 2000×450%=9000, Deckel-3) = 8000 → festzusetzende_est 9050 = 905000
+    Cent (= tarifliche ESt 17050 − § 35 8000). Belegt: der § 35-Fold greift auch im Rentner-Ring (single-computation,
+    kein § 31-Günstiger)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rp35b", _rentner_kegel(jahresrente=2000000, beginn=2025, kein_gewinn=False,
+                     gewinn=5000000, betriebsart="gewerbe", gewst_messbetrag=200000, gewst_hebesatz=450))
+    st, erg = _req(base, "GET", "/fall/rp35b/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 905000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_p35_selbstaendig_kein_credit(base):
+    """§ 35 gilt NUR Gewerbe (§ 15) — auch im Rentner-Ring: Rente 20000 + § 18-selbständiger Gewinn 50000 +
+    Messbetrag+Hebesatz → Zähler 0 (§ 18 nicht gewerbesteuerpflichtig) → § 35 0 → festzusetzende_est 17050 =
+    1705000 Cent (= ohne § 35). Belegt: kein § 35-Credit für Nicht-Gewerbe im Rentner-Ring (kein stiller Über-Credit)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rp35s", _rentner_kegel(jahresrente=2000000, beginn=2025, kein_gewinn=False,
+                     gewinn=5000000, betriebsart="selbstaendig", gewst_messbetrag=200000, gewst_hebesatz=450))
+    st, erg = _req(base, "GET", "/fall/rp35s/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1705000 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 

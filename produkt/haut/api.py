@@ -132,8 +132,13 @@ GWG_FELDER = ("gwg_anschaffungskosten_netto",)
 GESAMT_P35 = ("gewst_hebesatz", "gewst_messbetrag")
 RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
                    "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER)
+# § 35 GewSt-Anrechnung auch im Rentner-Ring (Rentner-mit-Gewerbe): gewst_hebesatz + gewst_messbetrag (schon
+# global gebunden, s. GESAMT_P35). Der Deckel-3-Nenner ist hier VOLLSTÄNDIG renten(§22) + einkuenfte_gewinn —
+# die rentner-Scheibe hat KEIN § 19/§ 21 (ein Rentner-mit-Minijob/Miete ist scheiben-strukturell nicht modellierbar,
+# pre-existing Grenze, nicht § 35-spezifisch). Guard gewst_hebesatz_offen greift shared (gesamt_guard).
 RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
-                  + RENTNER_PARTNER + RENTNER_22_PARTNER + RENTNER_GEWINN)
+                  + RENTNER_PARTNER + RENTNER_22_PARTNER + RENTNER_GEWINN
+                  + ("gewst_hebesatz", "gewst_messbetrag"))
 # Person B (Zusammenveranlagung, dev-2s Person-B-Deklaration): die §19-Einkünfte des Ehegatten in den
 # Gesamt-Ring. Nur bei veranlagung=zusammen relevant → NICHT im Pflicht-Kegel (der Guard erzwingt den
 # Person-B-Kegel bei zusammen). Person-B-Kapital/§22 = getrennte Folge-Nachträge (#4-Fortsetzung).
@@ -812,12 +817,30 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             vg_euro = _c("rentner_veraeusserungsgewinn") // 100
             netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag(
                 {"rentner_veraeusserungsgewinn": vg_euro}))
-            return runner.catala_est({
+            laufender_gewinn = _laufender_gewinn(f, store, bindung)   # § 15/§ 18 laufend (§ 35-Zähler, OHNE § 16-vg)
+            rentner_g = {
                 "gesamtfall": True, "veranlagungszeitraum": vz,
                 "veranlagung": _b("veranlagung") or "einzel",
                 "einkuenfte_sonstige": renten,
-                "einkuenfte_gewinn": _laufender_gewinn(f, store, bindung) + netto_vg,
-                "aussergewoehnliche_belastungen": ausserg})
+                "einkuenfte_gewinn": laufender_gewinn + netto_vg,
+                "aussergewoehnliche_belastungen": ausserg}
+            # § 35 GewSt-Anrechnung (S1-Port in den Rentner-Ring, SINGLE-computation — kein § 31-Günstiger hier, die
+            # rentner-Scheibe hat kein fam_anzahl_kinder). Zähler = laufender Gewerbe-Gewinn (NUR betriebsart=gewerbe,
+            # § 16-vg-netto RAUS § 7 S. 2 GewStG). Nenner = renten (§ 22 IM Nenner — echt hier, anders als gesamt wo
+            # sonstige=0) + einkuenfte_gewinn (VOLLSTÄNDIG: die rentner-Scheibe hat kein § 19/§ 21). tarifl == exakte
+            # rentner-tarifliche-ESt über den IDENTISCHEN rentner_g-Dict (kein Hand-Subset-Drift). min-3-Deckel (§ 35
+            # Abs. 1: 4×MB S. 1 / MB×Hebesatz S. 5 / Ermäßigungshöchstbetrag S. 2). Opt-in via gewst_messbetrag;
+            # gewst_hebesatz_offen-Guard (shared) fängt Messbetrag-ohne-Hebesatz. Kein Messbetrag → kein § 35.
+            p35_messbetrag = _c("gewst_messbetrag") // 100
+            p35_hebesatz = _c("gewst_hebesatz")
+            p35_zaehler = max(0, laufender_gewinn) if _b("gewinn_betriebsart") == "gewerbe" else 0
+            p35_nenner = max(0, renten) + max(0, rentner_g["einkuenfte_gewinn"])
+            if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
+                tarifliche = runner.catala_gesamt_tarifliche(rentner_g)
+                rentner_g["steuerermaessigungen"] = min(
+                    4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100,
+                    p35_zaehler * tarifliche // p35_nenner)
+            return runner.catala_est(rentner_g)
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
     # festzusetzende_est_haushalt (§35a+§10b) + festzusetzende_est_agb (§33+§10-KiSt) ENTFERNT (Weg ii, Stage 1b):
