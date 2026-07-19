@@ -20,7 +20,7 @@
                        "rechnung_unbar_offen", "rente_instanz_offen",
                        "erstattungsueberhang_offen", "partner_vorsorge_offen",
                        "alleinerziehend_konsistenz_offen", "gewinn_quelle_offen",
-                       "luf_euer_offen"]},
+                       "luf_euer_offen", "gewst_hebesatz_offen"]},
     "offen": {"type": "array", "items": {"type": "string"}},
     "trace": {"type": ["object", "null"]}
   }

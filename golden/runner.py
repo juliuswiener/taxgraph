@@ -867,6 +867,14 @@ def catala_gesamt_gde(s: dict) -> int:
     return int(_gesamt_out(s).gesamtbetrag_der_einkuenfte) // 100
 
 
+def catala_gesamt_tarifliche(s: dict) -> int:
+    """Die tarifliche ESt (§ 32a auf das zvE) des gesamt-Scopes, EURO — Output-Feld tarifliche_est des
+    FestzusetzendeEstGesamt(-Zusammen)-Scopes. UNABHÄNGIG von steuerermaessigungen (nur zvE-abhängig, empirisch
+    == catala_est(zvE) = §32a) → kein Zirkel bei der § 35-Anrechnung. Dient als „geminderte tarifliche Steuer"
+    (§ 35 Abs. 1 S. 4, MVP ohne DBA/§ 34c/§ 32d-ausländische Steuern) für den § 35 Abs. 1 S. 2-Ermäßigungshöchstbetrag."""
+    return int(_gesamt_out(s).tarifliche_est) // 100
+
+
 def _p35c_ermaessigung_cent(s: dict) -> int:
     """§ 35c Abs. 1 EStG energetische Sanierung: satz 7 % (6 % im uebernaechsten
     Foerderjahr), hoechst 14.000 (12.000 uebernaechst); Ermaessigung = min(satz x

@@ -251,6 +251,47 @@ bindungen:
       zitatanker: "Absetzung für Abnutzung in gleichen Jahresbeträgen"
       datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
 
+  # ===== GewSt § 35-Anrechnung S1 (Gewerbesteuer auf ESt): Messbetrag-Input-Pfad =====
+  # § 35 EStG: die tarifliche ESt ermäßigt sich um min(4× Messbetrag [„das Vierfache", geltende Fassung 2026 —
+  # NICHT 3,8×, angehoben VZ 2020], tatsächlich zu zahlende GewSt = Messbetrag × Hebesatz; Ermäßigungshöchstbetrag).
+  # S1 = Messbetrag-INPUT (vorberechnet aus dem GewSt-Bescheid, umgeht §7/§8/§9/§10a-Kette = S2). Nur gewerbe
+  # (§18/§13 nicht gewerbesteuerpflichtig; dev-1s Zähler-Gating). dev-1s slot_fn liest die feld_ids 1:1.
+  - feld_id: gewst_hebesatz
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_hebesatz}
+    typ: int
+    einheit: null
+    bereich: {min: 1, max: 999, grund: "Reine Sanity-Bound (Hebesatz-Prozentzahl > 0). KEIN gesetzlicher Mindesthebesatz-Anker — § 16 Abs. 4 S. 2 GewStG (200 %) ist source-pending (GewStG-§ 16-Quelle nicht lokal); übliche Hebesätze 200-900 % sind nur Hinweis, keine harte Grenze."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie hoch ist der Gewerbesteuer-Hebesatz deiner Gemeinde (in Prozent)?"
+    hilfe_kurz: "Steht auf deinem Gewerbesteuer-Bescheid oder bei der Gemeinde (übliche Werte 200-900 %, z. B. 450). Bestimmt die tatsächlich gezahlte Gewerbesteuer für die Anrechnung auf die Einkommensteuer (§ 35)."
+    beispielwert: 450
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "§ 35-Anrechnungs-Input (Anlage G, Kz-Kandidat E0801705 [Zu_zah_GSt_VZ] „Hebesatz in Prozent“) — null-Kz-MVP; exakte Kz (E0801705 vs E0802104 „sofern bekannt“ = VZ/Mitunternehmer-Disambiguierung) = eigene Kz-Review-Runde. Der Hebesatz ist ohnehin FA-bekannt (Gemeinde), unser Feld dient der § 35-Vorschau-Rechnung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35 Abs. 1 S. 1 EStG"
+      zitatanker: "tatsächlich zu zahlende Gewerbesteuer"
+      datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
+  - feld_id: gewst_messbetrag
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_messbetrag}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch ist dein Gewerbesteuer-Messbetrag?"
+    hilfe_kurz: "Aus deinem Gewerbesteuer-Messbescheid. Trag ihn ein, wenn du die Anrechnung der Gewerbesteuer auf die Einkommensteuer (§ 35) willst — das ist freiwillig; ohne Eintrag entfällt die Anrechnung."
+    beispielwert: 2024750
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "§ 35-Anrechnungs-Input, Steuermessbetrag (§ 11 GewStG); Anlage G, Kz-Kandidat E0801606 [Festzus_GMB_VZ] „Gewerbesteuer-Messbetrag“ — null-Kz-MVP, Disambiguierung (E0801606 vs E0802009) = eigene Kz-Review-Runde."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 11 Abs. 1 S. 1 GewStG"
+      zitatanker: "von einem Steuermessbetrag auszugehen"
+      datei: "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt"
+
   # ===== Zusammenveranlagung (§ 26b): person-INDIVIDUELLE _partner-Zwillinge (Store-Modell A) =====
   # STRENG nur die steuerlich getrennten Person-B-Einkommensfelder (eigener § 9a-Pauschbetrag / eigene
   # LStB je Ehegatte). Globale Felder (veranlagung/Kinder/agB/Spende/Abwesenheits-Flags) bleiben GETEILT.

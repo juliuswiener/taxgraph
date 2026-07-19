@@ -125,6 +125,11 @@ EUER_KOMPONENTEN = ("betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahre
 # _laufender_gewinn. In gesamt.felder UND RENTNER_FELDER. Feld war schon in n_vor_gwg gebunden (inert) → hier
 # reused (kein neuer regel_id-Knoten). Weitere Assets = gwg_anschaffungskosten_netto__2..N (instanzen-Naht).
 GWG_FELDER = ("gwg_anschaffungskosten_netto",)
+# § 35 GewSt-Anrechnung (S1, gesamt-Ring): gewst_messbetrag (GewSt-Steuermessbetrag aus dem Messbescheid, INPUT,
+# enthält § 8/§9 schon, cent, OPTIONAL/opt-in) + gewst_hebesatz (%, int) → Anrechnung auf die tarifliche ESt.
+# NUR gesamt.felder (nicht rentner, nicht kegel). Kein gewst_messbetrag → kein § 35 (over-tax-safe opt-out);
+# Messbetrag ohne Hebesatz sperrt gewst_hebesatz_offen. Kz null-MVP.
+GESAMT_P35 = ("gewst_hebesatz", "gewst_messbetrag")
 RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
                    "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER)
 RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
@@ -168,7 +173,7 @@ GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_vora
 # (rentner_veraeusserungsgewinn → veraeusserungsgewinn), eigener Cleanup. Routing bleibt Scheibe-fix (nicht
 # feld-getriggert) → EIN Fall = EINE Scheibe = EIN slot_fn, kein Doppel-Pfad.
 GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")
-GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG
+GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -552,7 +557,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # einkuenfte_gewinn (§ 16 Abs. 1: Veräußerungs- + laufender Gewinn = dieselbe § 2-Einkunftsart). Absent → 0.
             vg_euro = _c("rentner_veraeusserungsgewinn") // 100
             netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}))
-            g["einkuenfte_gewinn"] = _laufender_gewinn(f, store, bindung) + netto_vg
+            laufender_gewinn = _laufender_gewinn(f, store, bindung)   # § 15/§ 18 laufend (für § 35-Zähler, OHNE § 16-vg)
+            g["einkuenfte_gewinn"] = laufender_gewinn + netto_vg
             # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
             # Altersentlastungsbetrag (Bemessung NUR positive Nicht-Renten-Einkünfte, S.2: Arbeitslohn BRUTTO +
             # max(0, V+V); Kohorten-Satz/-Deckel aus geburtsjahr + 65; Kapital = Stage-2-Nachtrag wie die §10b/§33-
@@ -669,11 +675,43 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             kapitaleinkuenfte = runner.catala_sparer_pb({
                 "veranlagungszeitraum": vz, "kapitalertraege": verrechnete, "zusammenveranlagung": zusammen})
 
+            # § 35 GewSt-Anrechnung (S1, opt-in via gewst_messbetrag): der GewSt-Steuermessbetrag (INPUT aus dem
+            # GewSt-Messbescheid, enthält § 8-Hinzurechnung/§ 9-Kürzung schon) + Hebesatz → Anrechnung auf die
+            # tarifliche ESt. Zähler des Ermäßigungshöchstbetrags (§ 35 Abs. 1 S. 2) = gewerbliche Einkünfte (S. 3
+            # „der Gewerbesteuer unterliegenden Gewinne") = laufender § 15-Gewerbe-Gewinn — NUR betriebsart=gewerbe
+            # (§ 18-selbständig/§ 13-LuF nicht gewerbesteuerpflichtig), § 16-vg-netto RAUS (§ 7 S. 2 GewStG: Ver-
+            # äußerungsgewinn natürl. Person nicht im Gewerbeertrag). Nenner = Σ positive tarifliche Einkünfte
+            # (Kapital = § 32d-Abgeltung, § 2 Abs. 5b-separat, NICHT im tariflichen zvE → exkl.). Kein gewst_messbetrag
+            # → kein § 35 (opt-out, over-tax-safe). Der gewst_hebesatz_offen-Guard sperrt Messbetrag-ohne-Hebesatz.
+            p35_messbetrag = _c("gewst_messbetrag") // 100
+            p35_hebesatz = _c("gewst_hebesatz")
+            p35_zaehler = max(0, laufender_gewinn) if f.get("gewinn_betriebsart", {}).get("wert") == "gewerbe" else 0
+            # Nenner (§ 35 Abs. 1 S. 2 „Summe aller positiven Einkünfte") = Σ positive TARIFLICHE Einkunftsarten:
+            # § 19 (ns) + § 21 (vv) + § 22 (sonstige) + §§ 13-18 (gewinn, inkl. § 16-vg = § 2-Einkunft). Das
+            # § 32d-Abgeltung-Kapital ist NICHT einzubeziehen (§ 2 Abs. 5b EStG: „Kapitalerträge nach § 32d Absatz 1
+            # und § 43 Absatz 5 nicht einzubeziehen" — es ist nicht im tariflichen zvE, das tarifliche_est skaliert).
+            # einkuenfte_sonstige ist im gesamt-Ring stets 0 (§ 22 lebt in der rentner-Scheibe, die kein § 35 hat) —
+            # der Term dokumentiert die korrekte Formel + ist robust, falls § 22 je in den gesamt-Ring kommt.
+            p35_nenner = (max(0, ns) + max(0, vv) + max(0, g.get("einkuenfte_sonstige", 0))
+                          + max(0, g["einkuenfte_gewinn"]))
+
             def _festzusetzende(freibetrag: int) -> int:
                 # Der volle festzusetzende ESt-Bescheid (§ 19+§21+alle Abzüge, PLUS § 20-Kapital-Günstiger § 32d
                 # Abs. 6) bei GEGEBENEM § 32-Abs.6-Kinderfreibetrag. Kapital-Günstiger: est_ohne_kap vs est_mit_kap
                 # (Grundtarif) → min(Abgeltung, Delta). freibetrag=0 → kein Kinderfreibetrag.
                 g2 = g if freibetrag == 0 else dict(g, freibetraege_kinder=freibetrag)
+                # § 35 Abs. 1: min(4×Messbetrag [S. 1 „das Vierfache"], Messbetrag×Hebesatz [S. 5 „tatsächlich zu
+                # zahlende Gewerbesteuer"], Ermäßigungshöchstbetrag [S. 2: Zähler/Nenner × geminderte tarifliche
+                # Steuer]). ADDITIV in steuerermaessigungen DIESES Freibetrag-Zweigs — tarifliche_est ist freibetrag-
+                # abhängig (Kinderfreibetrag senkt zvE), daher Deckel-3 JE ZWEIG (global-einmal würde den Kinder-
+                # freibetrag-Zweig über-crediten = stille Under-tax). geminderte tarifliche Steuer (S. 4) = catala_
+                # gesamt_tarifliche (== § 32a(zvE), MVP ohne DBA/§ 34c/§ 32d-ausl.). ALL-3-DECKEL, ALL-OR-CORRECT.
+                if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
+                    tarifliche = runner.catala_gesamt_tarifliche(g2)
+                    p35 = min(4 * p35_messbetrag,
+                              p35_messbetrag * p35_hebesatz // 100,
+                              p35_zaehler * tarifliche // p35_nenner)
+                    g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35)
                 est_ohne = runner.catala_est(g2)     # KEIN Kapital (est_regulaer_ohne_kap)
                 if kapitaleinkuenfte <= 0:
                     return est_ohne
@@ -852,6 +890,12 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if (felder.get("gewinn_betriebsart", {}).get("wert") == "land_forst"
                 and any(_positiv(k) for k in EUER_KOMPONENTEN) and not _positiv("einkuenfte_gewinn")):
             return "luf_euer_offen"
+        # § 35 GewSt-Anrechnung (S1, fail-closed): der Steuermessbetrag ist da (opt-in), aber der Hebesatz fehlt →
+        # die Anrechnung min(4×MB, MB×Hebesatz, …) ist ohne Hebesatz nicht rechenbar. KEIN 4×MB-Default (der
+        # über-creditete bei Hebesatz < 400 % = Under-tax) → gewst_hebesatz_offen. Kein gewst_messbetrag = kein § 35
+        # (over-tax-safe opt-out, feuert NICHT). Feld-präsenz-getrieben; Scheiben ohne die Felder → _positiv=False.
+        if _positiv("gewst_messbetrag") and (felder.get("gewst_hebesatz") or {}).get("zustand") != "bestaetigt":
+            return "gewst_hebesatz_offen"
         # Person B (#4): bei Zusammenveranlagung braucht der Ring den vollständig BESTÄTIGTEN Person-B-
         # Kegel (Bruttolohn + IdNr) — sonst kein halber Ehepaar-Bescheid (K2). Bei einzel irrelevant.
         if cfg.get("partner_19") and felder.get("veranlagung", {}).get("wert") == "zusammen":

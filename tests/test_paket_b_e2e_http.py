@@ -738,7 +738,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_gewinn_sonstige_partner=0,
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
              basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True,
-             betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None, vg=0):
+             betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None, vg=0,
+             gewst_messbetrag=0, gewst_hebesatz=0):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
@@ -776,6 +777,10 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
         k.append(("gwg_anschaffungskosten_netto" if _i == 1 else f"gwg_anschaffungskosten_netto__{_i}", _netto))
     if vg:                                          # § 16 Veräußerungsgewinn im gesamt-Ring (Non-Rentner-§16-vg, REUSE-Feld)
         k.append(("rentner_veraeusserungsgewinn", vg))
+    if gewst_messbetrag:                            # § 35 GewSt-Anrechnung (S1, opt-in): Messbetrag (cent) + Hebesatz (%)
+        k.append(("gewst_messbetrag", gewst_messbetrag))
+    if gewst_hebesatz:
+        k.append(("gewst_hebesatz", gewst_hebesatz))
     if bruttolohn_partner is not None:
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
     if person_b_idnr is not None:
@@ -1015,6 +1020,92 @@ def test_gesamt_veraeusserung_plus_laufender(base):
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 2477200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+@pytest.mark.parametrize("gewinn,brutto,mb,hebesatz,erwartet,label", [
+    (5000000,       0, 200000, 450, 267800,  "deckel1-4xMB"),           # 4×MB=8000 < MB×450%=9000 < d3 → §35 8000
+    (10000000,      0, 300000, 300, 2207200, "deckel2-tatsGewSt"),      # MB×300%=9000 < 4×MB=12000 < d3 → §35 9000
+    (2000000, 8000000, 300000, 500, 2436900, "deckel3-hoechstbetrag"),  # Ermäßigungshöchstbetrag (Zähler/Nenner×tarifl) bindet
+])
+def test_gesamt_p35_deckel(base, gewinn, brutto, mb, hebesatz, erwartet, label):
+    """§ 35 GewSt-Anrechnung (S1) im gesamt-Ring: Gewerbe-Gewinn (betriebsart=gewerbe) + GewSt-Messbetrag (Input) +
+    Hebesatz → Anrechnung auf die tarifliche ESt = min der 3 Deckel (§ 35 Abs. 1): 4×Messbetrag (S. 1 „das
+    Vierfache"), Messbetrag×Hebesatz (S. 5 tatsächl. GewSt), Ermäßigungshöchstbetrag (S. 2, Zähler gewerbl. Eink./
+    Nenner alle pos. Eink. × geminderte tarifl. Steuer). Deckt alle 3 Deckel-Wechsel. Werte unabhängig gg. runner-
+    Kette + § 35-Hand-Rechnung; jeder Gesetzeswert (4× = § 35 Abs. 1 S. 1 „das Vierfache") source-verankert."""
+    catala = _catala_da()
+    fid = f"p35{label}"
+    _gesamt_anlegen(base, fid, _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=gewinn, bruttolohn=brutto,
+                    betriebsart="gewerbe", gewst_messbetrag=mb, gewst_hebesatz=hebesatz))
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == erwartet and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p35_selbstaendig_kein_credit(base):
+    """§ 35 gilt NUR für Gewerbebetrieb (§ 15): ein § 18-selbständiger Gewinn 50000 mit Messbetrag+Hebesatz →
+    Zähler „gewerbliche Einkünfte" = 0 (§ 18 nicht gewerbesteuerpflichtig) → § 35-Anrechnung 0 → festzusetzende_est
+    10678 = 1067800 Cent (= ohne § 35, wie reiner Gewinn 50000). Belegt: kein § 35-Credit für Nicht-Gewerbe (kein
+    stiller Über-Credit); der Messbetrag-Input allein triggert keine Anrechnung ohne gewerbe-Betriebsart."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "p35s", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=5000000,
+                    betriebsart="selbstaendig", gewst_messbetrag=200000, gewst_hebesatz=450))
+    st, erg = _req(base, "GET", "/fall/p35s/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1067800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p35_kinder_pro_zweig(base):
+    """K2 (per-Freibetrag-Zweig, ALL-OR-CORRECT): Gewerbe-Gewinn 30000 + Lohn 70000 + 1 Kind + Messbetrag 8000 €
+    Hebesatz 600 % → der Ermäßigungshöchstbetrag (Deckel 3) hängt an der tariflichen ESt, die im Kinderfreibetrag-
+    Zweig NIEDRIGER ist → § 35 muss JE § 31-Günstiger-Zweig mit DESSEN tarifl. ESt gerechnet werden (p35 9280 ohne
+    Freibetrag vs 8668 mit) → § 31 wählt → festzusetzende_est 21276 = 2127600 Cent. Belegt: global-einmaliges § 35
+    (mit dem höheren tarifl.-ESt-Wert) würde den Kinderfreibetrag-Zweig über-crediten = stille Under-tax."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "p35k", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=3000000, bruttolohn=7000000,
+                    betriebsart="gewerbe", gewst_messbetrag=800000, gewst_hebesatz=600))
+    _gesamt_abzuege(base, "p35k", kinder=1)
+    st, erg = _req(base, "GET", "/fall/p35k/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 2127600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_p35_hebesatz_offen(base):
+    """K2 fail-closed (Guard non-vacuous): GewSt-Messbetrag angegeben (§ 35-opt-in) ABER kein Hebesatz → die
+    Anrechnung min(4×MB, MB×Hebesatz, …) ist ohne Hebesatz nicht rechenbar → gewst_hebesatz_offen (KEIN 4×MB-
+    Default, der bei Hebesatz < 400 % über-creditete = Under-tax). Ohne Messbetrag feuert der Guard NICHT (opt-out)."""
+    _gesamt_anlegen(base, "p35h", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=5000000,
+                    betriebsart="gewerbe", gewst_messbetrag=200000))
+    st, erg = _req(base, "GET", "/fall/p35h/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "gewst_hebesatz_offen"
+
+
+def test_gesamt_p35_kapital_nicht_im_nenner(base):
+    """K2 (Nenner-Komposition, § 2 Abs. 5b): Gewerbe-Gewinn 100000 + Lohn 50000 + Abgeltung-Kapital 20000, MB 12000 €
+    Hebesatz 500 % → der § 35 Abs. 1 S. 2-Ermäßigungshöchstbetrag (Deckel 3) bindet. Das § 32d-Abgeltung-Kapital ist
+    NICHT im Nenner „Summe aller positiven Einkünfte" (§ 2 Abs. 5b: „Kapitalerträge nach § 32d Abs. 1 … nicht ein-
+    zubeziehen" — es ist nicht im tariflichen zvE, das die tarifliche ESt skaliert) → Ratio 100000/148770 → § 35
+    34654 → festzusetzende_est 21652 = 2165200 Cent. Belegt: das Kapital VERWÄSSERT die gewerbliche Ratio NICHT
+    (wäre es im Nenner: Ratio 100000/167770 → § 35 nur 30730 → est 25576 = ANDERER Wert → Assertion bräche)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "p35kap", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=10000000,
+                    bruttolohn=5000000, betriebsart="gewerbe", gewst_messbetrag=1200000, gewst_hebesatz=500,
+                    kein_kap=False, kap_ertraege=2000000))
+    st, erg = _req(base, "GET", "/fall/p35kap/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 2165200 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 
