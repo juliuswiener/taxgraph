@@ -1,0 +1,81 @@
+# § 10 Abs. 1 Nr. 7 EStG — Aufwendungen für die eigene Berufsausbildung (Sonderausgabe, Höchstbetrag 6 000)
+
+> Module Berufsausbildungsaufwendungen
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p10_1_7_berufsausbildung.json`
+(module Berufsausbildungsaufwendungen, scope Berufsausbildung, verified_bedingt, faithful=true, sha256
+catala_a `68553fb25a82d327183ca5b3df431958c9d92e54b86354f1c27c87504783700f`). Die scope-Logik unten ist
+BYTE-GLEICH aus `catala_a` übernommen (keine Änderung); nur Module-Header + §-Zitatanker + Grenzfall-Seeds
+sind ergänzt. Kein Pipeline-Re-Run.
+
+Zitatanker § 10 Abs. 1 Nr. 7 EStG (`sources/gesetze-im-internet/estg_p10_2026-07-11.txt`, typ gesetz):
+"Aufwendungen für die eigene Berufsausbildung bis zu 6 000 Euro im Kalenderjahr". Die eigenen
+Berufsausbildungskosten (Erststudium/-ausbildung) sind bis zum Höchstbetrag 6 000 Euro als Sonderausgabe
+abziehbar. `aufwendungen` = die getragenen Kosten (Eingabe). Person-A-MVP: § 10 Abs. 1 Nr. 7 S. 2
+(Ehegatten-Verdopplung) + S. 3 (auswärtige Unterbringung) = benannte Nachträge; `aufwendungen` ist
+pre-computed. Reine Teilregel; der Sonderausgaben-Abzug (§ 2) ist Integration (dev-1-Accessor).
+
+```catala
+declaration scope Berufsausbildung:
+  input aufwendungen content money
+  output abziehbare_sonderausgaben content money
+
+scope Berufsausbildung:
+  definition abziehbare_sonderausgaben equals
+    if aufwendungen > $6,000.00 then $6,000.00
+    else aufwendungen
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestUnterHoechstbetrag:
+  # Aufwendungen 4000 <= 6000 -> voll abziehbar 4000.
+  internal r content Berufsausbildung
+  output g content money
+scope TestUnterHoechstbetrag:
+  definition r equals output of Berufsausbildung with {
+    -- aufwendungen: $4,000.00 }
+  definition g equals r.abziehbare_sonderausgaben
+  assertion g = $4,000.00
+```
+
+```catala
+#[test]
+declaration scope TestGrenzeHoechstbetrag:
+  # Aufwendungen genau 6000 -> nicht > 6000 -> voll 6000.
+  internal r content Berufsausbildung
+  output g content money
+scope TestGrenzeHoechstbetrag:
+  definition r equals output of Berufsausbildung with {
+    -- aufwendungen: $6,000.00 }
+  definition g equals r.abziehbare_sonderausgaben
+  assertion g = $6,000.00
+```
+
+```catala
+#[test]
+declaration scope TestUeberHoechstbetrag:
+  # Aufwendungen 8000 > 6000 -> auf 6000 gedeckelt.
+  internal r content Berufsausbildung
+  output g content money
+scope TestUeberHoechstbetrag:
+  definition r equals output of Berufsausbildung with {
+    -- aufwendungen: $8,000.00 }
+  definition g equals r.abziehbare_sonderausgaben
+  assertion g = $6,000.00
+```
+
+```catala
+#[test]
+declaration scope TestNullAufwand:
+  # Keine Aufwendungen -> 0 (Regression, kein Phantom-Abzug).
+  internal r content Berufsausbildung
+  output g content money
+scope TestNullAufwand:
+  definition r equals output of Berufsausbildung with {
+    -- aufwendungen: $0.00 }
+  definition g equals r.abziehbare_sonderausgaben
+  assertion g = $0.00
+```
