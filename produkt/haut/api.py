@@ -141,8 +141,13 @@ VERLUST_FELD = ("verlustvortrag_bestand",)
 # gesamt UND rentner (Rentner-mit-Mitunternehmer). § 35-Abs.2-anteiliger-Messbetrag = eigene Folge-Naht (a2). Kz
 # null-MVP, alle optional (absent → 0). kein_gewinn-Negation für die 4 = dev-2 flag_check.
 MITU_FELDER = ("gewinnanteil", "verguetung_taetigkeit", "verguetung_darlehen", "verguetung_ueberlassung")
+# § 34 Abs. 3 ermäßigter Durchschnittssatz (Stufe-2a): 3 Flags steuern den Abs.1-vs-Abs.3-Chooser (dev-1-Naht).
+# antrag_ermaessigter_satz (S.1 „auf Antrag", opt-in — ohne → Abs.1-Default) + dauernd_berufsunfaehig (S.1 Alt. zu
+# Alter≥55, letzterer DERIVE aus geburtsjahr) + ermaessigung_einmal_genutzt (S.4 „einmal im Leben", FA-tracked Selbst-
+# Bestätigung). ao = REUSE rentner_veraeusserungsgewinn (§16-vg). Alle optional (absent → False → Abs.1). Kz null-MVP.
+ABS3_FELDER = ("antrag_ermaessigter_satz", "dauernd_berufsunfaehig", "ermaessigung_einmal_genutzt")
 RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
-                   "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + MITU_FELDER)
+                   "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + MITU_FELDER + ABS3_FELDER)
 # § 35 GewSt-Anrechnung auch im Rentner-Ring (Rentner-mit-Gewerbe): gewst_hebesatz + gewst_messbetrag (schon
 # global gebunden, s. GESAMT_P35). Der Deckel-3-Nenner ist hier VOLLSTÄNDIG renten(§22) + einkuenfte_gewinn —
 # die rentner-Scheibe hat KEIN § 19/§ 21 (ein Rentner-mit-Minijob/Miete ist scheiben-strukturell nicht modellierbar,
@@ -189,7 +194,7 @@ GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_vora
 # (rentner_veraeusserungsgewinn → veraeusserungsgewinn), eigener Cleanup. Routing bleibt Scheibe-fix (nicht
 # feld-getriggert) → EIN Fall = EINE Scheibe = EIN slot_fn, kein Doppel-Pfad.
 GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")
-GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD + MITU_FELDER
+GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD + MITU_FELDER + ABS3_FELDER
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -349,6 +354,18 @@ def _scheibe_bindung(store: dict) -> dict:
     if fehlend:
         raise ApiError(500, f"Bindungstabelle unvollständig für Scheibe: {fehlend}")
     return {f: b[f] for f in felder}
+
+
+def _abs3_eligible(f: dict, vz: int) -> bool:
+    """§ 34 Abs. 3 S. 1: (Alter ≥ 55 [DERIVE aus geburtsjahr] ODER dauernd berufsunfähig) UND § 34 Abs. 3 S. 4 nicht
+    schon einmal genutzt. SHARED zwischen Chooser (_festzusetzende) und Guard (_an_gesamt_sperrgrund) — bit-identisch,
+    sonst Guard/Chooser-Drift. antrag_ermaessigter_satz (S. 1 „auf Antrag") wird vom Aufrufer separat geprüft."""
+    gj = f.get("geburtsjahr", {}).get("wert")
+    gj = int(gj) if isinstance(gj, (int, float)) and not isinstance(gj, bool) else 0
+    alter_ge_55 = (vz - gj) >= 55 if gj > 0 else False
+    berufsunfaehig = f.get("dauernd_berufsunfaehig", {}).get("wert") is True
+    einmal_genutzt = f.get("ermaessigung_einmal_genutzt", {}).get("wert") is True
+    return (alter_ge_55 or berufsunfaehig) and not einmal_genutzt
 
 
 def _gwg_sofortabzug_summe(f: dict, store: dict | None, bindung: dict | None) -> int:
@@ -747,19 +764,33 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 # Abs. 6) bei GEGEBENEM § 32-Abs.6-Kinderfreibetrag. Kapital-Günstiger: est_ohne_kap vs est_mit_kap
                 # (Grundtarif) → min(Abgeltung, Delta). freibetrag=0 → kein Kinderfreibetrag.
                 g2 = g if freibetrag == 0 else dict(g, freibetraege_kinder=freibetrag)
-                # § 34 Abs. 1 Fünftelregelung: der § 16-Veräußerungsgewinn (netto_vg, außerordentlich § 34 Abs. 2 Nr. 1)
-                # wird geglättet statt voll progressiv besteuert (5×[Tarif(zvE_rest+ao/5)−Tarif(zvE_rest)], S.3-Negativ
-                # via catala_fuenftel). Engine-vorverdrahtet: tarif_modifiziert setzt tarifliche_est = tarifliche_est_
-                # modifiziert (einkommensteuertarif Z.483/518). PER §31-Zweig (zve2 je Zweig — Kinderfreibetrag senkt zvE
-                # → eigener Fünftel, wie §35 Deckel-3). Guard zve2>0 (catala_fuenftel raist bei zvE≤0). ao = netto_vg NUR
-                # (laufender §15/§18-Gewinn bleibt progressiv). §35-Deckel-3 liest catala_gesamt_tarifliche(g2) unten =
-                # post-Fünftel-tarifliche (automatisch, geminderte tarifliche Steuer § 35 Abs. 1 S. 4).
+                # § 34 CHOOSER (XOR — nie beide auf denselben vg): Abs. 1 Fünftel (Default, von Amts wegen) vs Abs. 3
+                # ermäßigter Durchschnittssatz (AUF ANTRAG, 55+/dauernd-berufsunfähig, einmal im Leben, ao ≤ 5 Mio). Der
+                # § 16-vg (netto_vg, außerordentlich § 34 Abs. 2 Nr. 1) wird geglättet statt voll progressiv. Engine-vor-
+                # verdrahtet: tarif_modifiziert setzt tarifliche_est = tarifliche_est_modifiziert (einkommensteuertarif
+                # Z.483/518). PER §31-Zweig (zve2 je Zweig — Kinderfreibetrag senkt zvE → eigener Tarif). Guard zve2>0.
+                # ao = netto_vg NUR (laufender §15/§18-Gewinn progressiv). §35-Deckel-3 liest die post-§34-tarifliche unten.
                 if netto_vg > 0:
                     zve2 = runner.catala_gesamt_zve(g2)
                     if zve2 > 0:
-                        g2 = dict(g2, tarif_modifiziert=True, tarifliche_est_modifiziert=runner.catala_fuenftel({
-                            "veranlagungszeitraum": vz, "veranlagung": g2["veranlagung"],
-                            "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg}))
+                        if f.get("antrag_ermaessigter_satz", {}).get("wert") is True \
+                                and _abs3_eligible(f, vz) and netto_vg <= 5_000_000:
+                            # § 34 Abs. 3: est = plain grundtarif(verbleibendes zvE = zvE−ao, S.3 „allgemeine Tarif-
+                            # vorschriften") + ermäßigter_satz × min(ao,5Mio). est_gesamt = grundtarif(VOLLES zvE) OHNE
+                            # §32b-Progressionszuschlag (nicht im Ring). catala_est nur-zvE → plain §32a, KEIN Fünftel.
+                            est_rest = runner.catala_est({"veranlagungszeitraum": vz, "veranlagung": g2["veranlagung"],
+                                                          "zu_versteuerndes_einkommen": max(0, zve2 - netto_vg)})
+                            est_ao = runner.catala_ermaessigter_durchschnittssatz({
+                                "ao_einkuenfte": netto_vg,
+                                "est_gesamt_zzgl_progression": runner.catala_gesamt_tarifliche(g2),
+                                "bemessungsgrundlage_durchschnitt": zve2})
+                            g2 = dict(g2, tarif_modifiziert=True, tarifliche_est_modifiziert=est_rest + est_ao)
+                        else:
+                            # § 34 Abs. 1 Fünftel (Default ODER Abs.3-Eligibility-fail-closed — nie Abs.3 erzwingen):
+                            # 5×[Tarif(zvE_rest+ao/5)−Tarif(zvE_rest)], S.3-Negativ via catala_fuenftel.
+                            g2 = dict(g2, tarif_modifiziert=True, tarifliche_est_modifiziert=runner.catala_fuenftel({
+                                "veranlagungszeitraum": vz, "veranlagung": g2["veranlagung"],
+                                "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg}))
                 # § 35 Abs. 1: min(4×Messbetrag [S. 1 „das Vierfache"], Messbetrag×Hebesatz [S. 5 „tatsächlich zu
                 # zahlende Gewerbesteuer"], Ermäßigungshöchstbetrag [S. 2: Zähler/Nenner × geminderte tarifliche
                 # Steuer]). ADDITIV in steuerermaessigungen DIESES Freibetrag-Zweigs — tarifliche_est ist freibetrag-
@@ -890,16 +921,28 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "gesamtbetrag_einkuenfte": gde_p10d,
                 "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
                 "zusammenveranlagung": rentner_g["veranlagung"] == "zusammen"})
-            # § 34 Abs. 1 Fünftel im Rentner-Ring (§ 16-vg = netto_vg außerordentlich): identisch zur gesamt-Naht,
-            # SINGLE-computation (kein §31). Guard zve2>0. ao = netto_vg (laufender Gewinn progressiv). Der §35-Block
-            # unten liest catala_gesamt_tarifliche(rentner_g) = post-Fünftel-tarifliche (automatisch).
+            # § 34 CHOOSER im Rentner-Ring (Abs. 1 Fünftel Default vs Abs. 3 ermäßigter Satz auf Antrag): identisch zur
+            # gesamt-Naht, SINGLE-computation (kein §31). Guard zve2>0. ao = netto_vg (laufender Gewinn progressiv). Der
+            # §35-Block unten liest catala_gesamt_tarifliche(rentner_g) = post-§34-tarifliche (automatisch).
             if netto_vg > 0:
                 zve2 = runner.catala_gesamt_zve(rentner_g)
                 if zve2 > 0:
-                    rentner_g["tarif_modifiziert"] = True
-                    rentner_g["tarifliche_est_modifiziert"] = runner.catala_fuenftel({
-                        "veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
-                        "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg})
+                    if f.get("antrag_ermaessigter_satz", {}).get("wert") is True \
+                            and _abs3_eligible(f, vz) and netto_vg <= 5_000_000:
+                        # § 34 Abs. 3: plain grundtarif(verbleibendes zvE, S.3) + ermäßigter_satz × min(ao,5Mio).
+                        est_rest = runner.catala_est({"veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
+                                                      "zu_versteuerndes_einkommen": max(0, zve2 - netto_vg)})
+                        est_ao = runner.catala_ermaessigter_durchschnittssatz({
+                            "ao_einkuenfte": netto_vg,
+                            "est_gesamt_zzgl_progression": runner.catala_gesamt_tarifliche(rentner_g),
+                            "bemessungsgrundlage_durchschnitt": zve2})
+                        rentner_g["tarif_modifiziert"] = True
+                        rentner_g["tarifliche_est_modifiziert"] = est_rest + est_ao
+                    else:
+                        rentner_g["tarif_modifiziert"] = True
+                        rentner_g["tarifliche_est_modifiziert"] = runner.catala_fuenftel({
+                            "veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
+                            "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg})
             # § 35 GewSt-Anrechnung (S1-Port in den Rentner-Ring, SINGLE-computation — kein § 31-Günstiger hier, die
             # rentner-Scheibe hat kein fam_anzahl_kinder). Zähler = laufender Gewerbe-Gewinn (NUR betriebsart=gewerbe,
             # § 16-vg-netto RAUS § 7 S. 2 GewStG). Nenner = renten (§ 22 IM Nenner — echt hier, anders als gesamt wo
@@ -962,6 +1005,14 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
     # Universell vor der Scheiben-Verzweigung — feuert für jede Scheibe mit fam_alleinstehend + veranlagung (gesamt).
     if PC.alleinerziehend_mit_zusammen(felder):
         return "alleinerziehend_konsistenz_offen"
+    # § 34 Abs. 3 >5Mio-Excess (Guard-A, fail-closed, beide Ringe): antrag_ermaessigter_satz ∧ eligible (55+/berufs-
+    # unfähig ∧ ¬einmal) ∧ VÄ-Gewinn > 5 Mio → der ermäßigte Satz gilt nur bis 5 Mio (§ 34 Abs. 3 S. 1); der Excess
+    # (Stufe-2b) ist unaufgelöst → fail-closed statt still auf Abs.1 fallen (das verweigerte den Abs.3-Benefit auf die
+    # ersten 5 Mio = Over-tax). ¬eligible → KEIN Guard (Abs.1-Fünftel auf ganzes ao, kein 5Mio-Cap). _abs3_eligible =
+    # bit-identisch zum Chooser. Schwelle auf raw VÄ-Gewinn = äquiv. netto_vg (§16-Abs.4-FB = 0 ab vg>181000 ≪ 5Mio).
+    if vz is not None and felder.get("antrag_ermaessigter_satz", {}).get("wert") is True and _abs3_eligible(felder, vz) \
+            and int(felder.get("rentner_veraeusserungsgewinn", {}).get("wert") or 0) // 100 > 5_000_000:
+        return "abs3_ueber_5mio_offen"
     if cfg and cfg.get("gesamt_guard"):
         # Gesamt-Ring: Flag↔Einkunftsart-Widerspruch (kein_X=true + echtes Feld > 0 bestätigt) surfacen —
         # K2, keine still übergangene Einkunftsart (dev-2s flag_check).

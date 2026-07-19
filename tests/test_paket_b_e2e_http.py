@@ -740,7 +740,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True,
              betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None, vg=0,
              gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
-             gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0):
+             gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
+             geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
@@ -788,6 +789,12 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
                      ("verguetung_darlehen", verg_darlehen), ("verguetung_ueberlassung", verg_ueberlassung)):
         if _mv:                                     # gewinnanteil kann NEGATIV (§15a-ausgleichsfähiger Verlustanteil)
             k.append((_mf, _mv))
+    for _af, _av in (("antrag_ermaessigter_satz", antrag_erm), ("dauernd_berufsunfaehig", berufsunfaehig),  # § 34 Abs. 3 Chooser-Flags
+                     ("ermaessigung_einmal_genutzt", einmal_genutzt)):
+        if _av:
+            k.append((_af, _av))
+    if geburtsjahr:                                  # § 34 Abs. 3 Alter≥55-DERIVE (auch § 24a)
+        k.append(("geburtsjahr", geburtsjahr))
     if bruttolohn_partner is not None:
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
     if person_b_idnr is not None:
@@ -1139,6 +1146,120 @@ def test_gesamt_fuenftel_per_kind(base):
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 10667200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_abs3_gewaehlt(base):
+    """§ 34 Abs. 3 GEWÄHLT (Chooser XOR Abs.1): § 16-vg 500000 (netto 500000, FB 0) + antrag_ermaessigter_satz +
+    geburtsjahr 1955 (Alter 70 ≥ 55, §24a korrekt) → ermäßigter Durchschnittssatz statt Abs.1-Fünftel. est = plain grundtarif(zvE−ao
+    ≈ 0) + min(ao,5Mio)×max(0.56×Durchschnittssatz; 0.14). Kein 5Mio-Überschuss (500000 < 5Mio)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "a3g", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=50000000,
+                    antrag_erm=True, geburtsjahr=1955))
+    st, erg = _req(base, "GET", "/fall/a3g/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 11520400 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_abs3_kein_antrag(base):
+    """§ 34 Chooser DEFAULT = Abs.1 (von Amts wegen): vg 500000 + dauernd_berufsunfaehig (eligible) ABER KEIN antrag →
+    Abs.1-Fünftel (nicht Abs.3). Belegt: Abs.3 ist opt-in (S.1 „auf Antrag"), ohne Antrag greift der Fünftel-Default."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "a3n", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=50000000, berufsunfaehig=True))
+    st, erg = _req(base, "GET", "/fall/a3n/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 15542000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_abs3_eligibility_fail(base):
+    """§ 34 Abs. 3 ELIGIBILITY-FAIL → fail-closed auf Abs.1 (NICHT Abs.3 erzwingen): vg 500000 + antrag ABER
+    WEDER 55+/geburtsjahr NOCH berufsunfähig → nicht Abs.3-berechtigt → Abs.1-Fünftel auf GANZES ao.
+    est == der kein-antrag-Fall (a3n). Belegt Guard-A-Logik: ¬eligible → Abs.1, kein false-block."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "a3f", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=50000000, antrag_erm=True))
+    st, erg = _req(base, "GET", "/fall/a3f/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 15542000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_abs3_einmal_genutzt(base):
+    """§ 34 Abs. 3 S. 4 EINMAL IM LEBEN verbraucht → fail-closed auf Abs.1: vg 500000 + antrag + berufsunfähig ABER
+    ermaessigung_einmal_genutzt=True → nicht mehr berechtigt → Abs.1-Fünftel. est == a3n (Abs.1)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "a3e", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=50000000,
+                    antrag_erm=True, berufsunfaehig=True, einmal_genutzt=True))
+    st, erg = _req(base, "GET", "/fall/a3e/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 15542000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_abs3_ueber_5mio_guard(base):
+    """§ 34 Abs. 3 >5Mio-GUARD (fail-closed, K2): vg 6000000 (netto 6Mio) + antrag + berufsunfähig (eligible) → der ermäßigte
+    Satz gilt nur bis 5 Mio (S.1); der Excess braucht Stufe-2b → abs3_ueber_5mio_offen (kein still-auf-Abs.1-fallen =
+    das verweigerte den Abs.3-Benefit auf die ersten 5Mio = Over-tax). zahl_cent None."""
+    _gesamt_anlegen(base, "a35m", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=600000000,
+                    antrag_erm=True, berufsunfaehig=True))
+    st, erg = _req(base, "GET", "/fall/a35m/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "abs3_ueber_5mio_offen"
+
+
+def test_gesamt_abs3_14prozent_minimum(base):
+    """§ 34 Abs. 3 S. 2 „mindestens 14 %"-FLOOR (Boundary): vg 100000 (netto 55000) + antrag + berufsunfähig → niedriger
+    Durchschnittssatz (0.56×Durchschnittssatz < 14 %) → ermäßigter Satz auf 14 % gefloort. est = grundtarif(zvE−ao≈0)
+    + 55000×0.14. ⚠ Hier ist Abs.3 (antrag) TEURER als der Abs.1-Fünftel-Default (der wäre 0, S.3) — der Chooser
+    folgt dem ANTRAG, nicht dem Günstiger (§34 Abs.3 „auf Antrag")."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "a314", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=10000000,
+                    antrag_erm=True, berufsunfaehig=True))
+    st, erg = _req(base, "GET", "/fall/a314/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 770000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_abs3(base):
+    """§ 34 Abs. 3 im RENTNER-Ring: Rentner mit § 16-vg 500000 + antrag + dauernd_berufsunfaehig (S.1-Alternative zu
+    55+) → ermäßigter Durchschnittssatz. Belegt: der Chooser wirkt in BEIDEN Ringen (Rentner-Betriebsveräußerung)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "ra3", _rentner_kegel(jahresrente=0, vg=50000000, kein_gewinn=False,
+                     antrag_erm=True, berufsunfaehig=True))
+    st, erg = _req(base, "GET", "/fall/ra3/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 11522100 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_abs3_est_rest_positiv(base):
+    """§ 34 Abs. 3 DEKOMPOSITIONS-SUMME (est_rest + est_ao BEIDE > 0, Instructor-Boundary): laufender Gewerbe-Gewinn
+    80000 + § 16-vg 300000 (netto 300000, FB 0) + antrag + berufsunfähig → einkuenfte_gewinn 380000, ao = netto_vg
+    300000. zvE ≈ 379964; verbleibendes zvE = 379964 − 300000 = 79964 > 0 → est_rest = plain grundtarif(79964) > 0
+    (S.3 allgemeiner Tarif auf den REST). est_ao = 300000 × max(0.56×Durchschnittssatz, 0.14). total = est_rest +
+    est_ao — testet die SUMME (nicht nur est_ao wie die pure-vg-Fälle mit est_rest≈0). laufender 80000 NICHT im ao
+    (nur die vg = außerordentlich)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "a3r", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=8000000,
+                    betriebsart="gewerbe", vg=30000000, antrag_erm=True, berufsunfaehig=True))
+    st, erg = _req(base, "GET", "/fall/a3r/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 8976200 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 
@@ -1905,7 +2026,8 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    alter_partner=0, rentenfreibetrag_partner=None, gewinn=0, vg=0, kein_gewinn=True,
                    betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0,
                    betriebsart=None, gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
-                   gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0):
+                   gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
+                   geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False):
     """rentner_gesamt-Kegel: § 22 (renten_art/jahresrente Cent/beginn/alter) + § 33b-Block + Flags
     (kein_sonstige=False = Rente IST § 22-sonstige; kein_kap/vuv=True). rentenfreibetrag (Cent) nur
     aa-Folgejahr; Partner-Behinderung + Partner-Rente (renten_art_partner gesetzt) nur zusammen (#4b).
@@ -1939,6 +2061,12 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                      ("verguetung_darlehen", verg_darlehen), ("verguetung_ueberlassung", verg_ueberlassung)):
         if _mv:
             k.append((_mf, _mv))
+    for _af, _av in (("antrag_ermaessigter_satz", antrag_erm), ("dauernd_berufsunfaehig", berufsunfaehig),  # § 34 Abs. 3 Chooser-Flags
+                     ("ermaessigung_einmal_genutzt", einmal_genutzt)):
+        if _av:
+            k.append((_af, _av))
+    if geburtsjahr:
+        k.append(("geburtsjahr", geburtsjahr))
     if rentenfreibetrag is not None:
         k.append(("rentner_rentenfreibetrag", rentenfreibetrag))
     if gdb_partner:

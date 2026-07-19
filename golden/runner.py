@@ -54,6 +54,7 @@ from pkg import BetriebsFreibetrag as BF  # noqa: E402  (§ 16 Abs. 4 Betriebsve
 from pkg import EuerGewinn as EG  # noqa: E402  (§ 4 Abs. 3 Einnahmenüberschussrechnung, 2-II)
 from pkg import Verlustvortrag as VL  # noqa: E402  (§ 10d Abs. 2 Verlustvortrag-Abzug)
 from pkg import MitunternehmerEinkuenfte as ME  # noqa: E402  (§ 15 Abs. 1 S. 1 Nr. 2 Mitunternehmer, #2-Front)
+from pkg import ErmaessigterDurchschnittssatz as ED  # noqa: E402  (§ 34 Abs. 3 ermäßigter Durchschnittssatz, Stufe-2a)
 from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
@@ -914,6 +915,20 @@ def catala_gesamt_zve(s: dict) -> int:
     FestzusetzendeEstGesamt(-Zusammen)-Scopes. Basis für die § 34 Abs. 1-Fünftelregelung (verbleibendes zvE = zvE − ao,
     ao = außerordentliche Einkünfte = § 16-vg-netto). Tarif-unabhängig (steht vor § 32a) → kein Zirkel mit tarif_modifiziert."""
     return int(_gesamt_out(s).zu_versteuerndes_einkommen) // 100
+
+
+def catala_ermaessigter_durchschnittssatz(s: dict) -> int:
+    """§ 34 Abs. 3 EStG — ermäßigter Durchschnittssatz auf den VÄ-Gewinn (≤ 5 Mio), EURO (module Ermaessigter-
+    Durchschnittssatz): est_ao = min(ao, 5Mio) × max(0.56 × Durchschnittssatz; 0.14). Durchschnittssatz =
+    est_gesamt_zzgl_progression / bemessungsgrundlage_durchschnitt (§ 34 Abs. 3 S. 2: tarifliche ESt aufs volle zvE zzgl.
+    Progressionsvorbehalt / volles zvE). Modul liefert NUR est_ao (den ≤5Mio-Teil); est_rest (verbleibendes zvE am
+    Normaltarif, S. 3) + der >5Mio-Excess (fail-closed abs3_ueber_5mio_offen, Stufe-2b) sind Ring-Naht. Accessor nimmt
+    EUROS (slot_fn //100). MVP: est_gesamt = grundtarif(zvE) OHNE § 32b-Progressionszuschlag (nicht im Ring)."""
+    r = ED.ermaessigter_durchschnittssatz(ED.ErmaessigterDurchschnittssatzIn(
+        ao_einkuenfte_in=Money(f"{int(s.get('ao_einkuenfte', 0))}.00"),
+        est_gesamt_zzgl_progression_in=Money(f"{int(s.get('est_gesamt_zzgl_progression', 0))}.00"),
+        bemessungsgrundlage_durchschnitt_in=Money(f"{int(s.get('bemessungsgrundlage_durchschnitt', 0))}.00")))
+    return int(r.est_ao) // 100
 
 
 def _p35c_ermaessigung_cent(s: dict) -> int:
