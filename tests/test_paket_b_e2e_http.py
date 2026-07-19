@@ -1941,6 +1941,32 @@ def test_gesamt_gewinn_24a_bemessung(base):
         assert erg["zahl_cent"] is None
 
 
+@pytest.mark.parametrize("geburtsjahr,erwartet_cent,label", [
+    (1958, 410500, "eligible-67"),         # Folgejahr 2023 ≤ VZ2025 → §24a 665 (14 %-Kohorte 2023), GdE 30000−665
+    (1960, 411600, "eligible-grenze"),     # Folgejahr 2025 == VZ2025 → §24a 627 (Kohorte 2025), eligible (Grenze)
+    (1961, 429300, "gated-grenze"),        # Folgejahr 2026 > VZ2025 → §24a 0 (Gate greift, noch nicht 64+ vor VZ-Beginn)
+    (1990, 429300, "gated-under64"),       # Folgejahr 2055 > VZ2025 → §24a 0 (35-Jähriger, Phantom-Zeroing = Under-tax-Fix)
+])
+def test_gesamt_p24a_64plus_gate(base, geburtsjahr, erwartet_cent, label):
+    """§ 24a S. 3 64+-GATE (Under-tax-Fix, non-vacuous): der Altersentlastungsbetrag wird erst gewährt, wenn das
+    64. Lj VOR Beginn des VZ vollendet ist (maßgebendes Folgejahr geburtsjahr+65 ≤ VZ). Reiner Gewinnfall 30000 +
+    geburtsjahr. eligible (1958/1960) → §24a gewährt (est niedriger); GATED (1961/1990) → §24a 0 → est 429300 (=
+    Gewinn 30000 ohne §24a). ⚠ EXAKTE GATE-GRENZE geb1960 (Folgejahr 2025==VZ, eligible, 411600) vs geb1961
+    (2026>VZ, gated, 429300) = 177 € Differenz = der § 24a-627-Effekt. Vor dem Fix bekam JEDES geburtsjahr §24a
+    (geb1990/alter35 → phantom 57 € = Under-tax). ⚠ Jan-1-Kante (born-1961-01-01 vollendet 64. Lj am 31.12.2024 →
+    eigentlich VZ2025-eligible) → geburtsjahr-only-Näherung denied = winzige Over-tax, K2-konservativ = akzeptiert."""
+    catala = _catala_da()
+    fid = f"p24g{geburtsjahr}"
+    _gesamt_anlegen(base, fid, _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=3000000,
+                    geburtsjahr=geburtsjahr))
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == erwartet_cent and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def test_gesamt_faltung_24a_24b_freibetraege(base):
     """Weg (ii) Stage 2: §24a Altersentlastungsbetrag + §24b Entlastungsbetrag Alleinerziehende im gefalteten
     Ring (§2 Abs.3 GdE-mindernd). Senior (geburtsjahr 1958 → Kohorte 2023 → 14 %/665; Bemessung Arbeitslohn 30000

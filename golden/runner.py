@@ -287,9 +287,13 @@ def catala_p24a_altersentlastung(s: dict) -> int:
     maßgebenden Folgejahr = geburtsjahr + 65 (Jahr nach Vollendung des 64. Lj), lebenslang fix. Leibrenten +
     Versorgungsbezüge sind NICHT Bemessungsgrundlage (§ 24a S. 2) — der Aufrufer speist nur Arbeitslohn + positive
     übrige Einkünfte. prozentsatz als PROZENT (13.2, das Modul teilt /100). Roh → p32a altersentlastungsbetrag
-    (§ 2 Abs. 3). geburtsjahr ≤ 0 (unbekannt/nicht erfasst) → Betrag 0 (fail-safe, kein Phantom-Abzug)."""
+    (§ 2 Abs. 3). geburtsjahr ≤ 0 (unbekannt/nicht erfasst) → Betrag 0 (fail-safe, kein Phantom-Abzug). § 24a S. 3
+    (64+-Gate): der Betrag wird erst gewährt, wenn das 64. Lebensjahr VOR Beginn des VZ vollendet ist = maßgebendes
+    Folgejahr (geburtsjahr + 65) ≤ VZ; geburtsjahr + 65 > VZ → noch nicht berechtigt → 0 (Jan-1-Tagesgenauigkeit =
+    geburtsjahr-only-Näherung, over-tax-safe: 1961-01-01-Geborene erst VZ2026 statt 2025). VZ absent → Gate inaktiv."""
+    vz = int(s.get("veranlagungszeitraum", 0))
     geburtsjahr = int(s.get("geburtsjahr", 0))
-    if geburtsjahr <= 0:
+    if geburtsjahr <= 0 or (vz > 0 and geburtsjahr + 65 > vz):
         return 0
     prozent, hoechst = _altersentlastung_kohorte(geburtsjahr + 65)
     r = AE.altersentlastungsbetrag(AE.AltersentlastungsbetragIn(

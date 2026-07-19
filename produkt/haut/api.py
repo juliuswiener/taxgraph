@@ -609,6 +609,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # → 0 (fail-safe). Beide fließen in den GdE-Zwilling (echte GdE post § 24a/§24b für die §10b/§33-
             # Deckelung) UND in g (est).
             alt24a = runner.catala_p24a_altersentlastung({
+                "veranlagungszeitraum": vz,   # § 24a S. 3 64+-Gate (geburtsjahr+65 ≤ VZ)
                 "geburtsjahr": _c("geburtsjahr"),
                 "arbeitslohn": _c("bruttoarbeitslohn") // 100,
                 "positive_andere_einkuenfte": max(0, vv + g["einkuenfte_gewinn"])})
@@ -617,6 +618,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # andere Einkünfte-B = 0, da vv/Kapital im Ring nicht owner-getrennt = konservativ/over-tax-safe, mit
             # dev-2 abgestimmt). Absent (geburtsjahr_partner ≤ 0) → 0 (fail-safe). Additiv zu Person A.
             alt24a_b = runner.catala_p24a_altersentlastung({
+                "veranlagungszeitraum": vz,   # § 24a S. 3 64+-Gate (Person B: geburtsjahr_partner+65 ≤ VZ)
                 "geburtsjahr": _c("geburtsjahr_partner"),
                 "arbeitslohn": _c("bruttoarbeitslohn_partner") // 100,
                 "positive_andere_einkuenfte": 0}) if g["veranlagung"] == "zusammen" else 0
