@@ -329,6 +329,63 @@ bindungen:
       zitatanker: "für die Überlassung von Wirtschaftsgütern"
       datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
 
+  # ===== § 34 Abs. 3 Ermäßigter Durchschnittssatz (Stufe-2a) — Eligibility/Antrags-Flags =====
+  # 3 bool-Flags, KEINE Modul-Inputs (regel p34_3_ermaessigter_durchschnittssatz nimmt ao/est_gesamt/bemessung).
+  # Sie steuern den Abs.1-vs-Abs.3-Chooser im Ring (dev-1-Naht): abs3_pfad = antrag_ermaessigter_satz ∧
+  # (Alter≥55 [DERIVE aus geburtsjahr] ∨ dauernd_berufsunfaehig) ∧ ¬ermaessigung_einmal_genutzt. Sonst
+  # Abs.1-Fünftel-Default (von Amts wegen). ao_einkuenfte = REUSE rentner_veraeusserungsgewinn (§16-vg).
+  # Alle Kz=null-MVP (Antrags-/Eligibility-Tatbestände, keine Betragsfelder). ⚠ Ring fail-closed auf ao>5Mio
+  # (Überschuss = Abs.1-Fünftel-Nachtrag Stufe-2b). NICHT in flag_check kein_gewinn (keine Einkunfts-Indikatoren).
+  - feld_id: antrag_ermaessigter_satz
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, geltungsbedingung: antrag_gestellt}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Möchtest du für deinen Veräußerungsgewinn den ermäßigten Steuersatz beantragen? (nur einmal im Leben möglich, ab 55 oder bei dauernder Berufsunfähigkeit)"
+    hilfe_kurz: "Alternative zur Fünftelregelung (§ 34 Abs. 1): 56 % deines durchschnittlichen Steuersatzes (mind. 14 %) auf bis zu 5 Mio Euro Veräußerungsgewinn. Nur EINMAL im Leben, nur ab dem 55. Lebensjahr oder bei dauernder Berufsunfähigkeit. Ohne Antrag gilt die Fünftelregelung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Antrags-Tatbestand (§ 34 Abs. 3 S. 1 „auf Antrag“), kein Betragsfeld; steuert Abs.1-vs-Abs.3-Chooser im Ring. Anlage-G-Antragszeile = eigene Kz-Review-Runde (null-Kz-MVP)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "so kann auf Antrag abweichend von Absatz 1 die auf den Teil dieser außerordentlichen Einkünfte, der den Betrag von insgesamt 5 Millionen Euro nicht übersteigt, entfallende Einkommensteuer nach einem ermäßigten Steuersatz bemessen werden"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  - feld_id: dauernd_berufsunfaehig
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, geltungsbedingung: persoenliche_voraussetzung_erfuellt}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Bist du im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig?"
+    hilfe_kurz: "Alternative zur Altersgrenze (55): wer dauernd berufsunfähig ist, kann den ermäßigten Satz (§ 34 Abs. 3) auch vor 55 beantragen. Nachweis über den Rentenversicherungsträger."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Eligibility-Alternative zu Alter≥55 (§ 34 Abs. 3 S. 1 „oder wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig ist“), kein Betragsfeld. null-Kz-MVP."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "oder wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig ist"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  - feld_id: ermaessigung_einmal_genutzt
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, geltungsbedingung: einmal_im_leben}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du den ermäßigten Steuersatz für Veräußerungsgewinne in einem früheren Jahr schon einmal in Anspruch genommen?"
+    hilfe_kurz: "Die Ermäßigung gibt es nur EINMAL im Leben (§ 34 Abs. 3 S. 4). Wenn du sie früher schon genutzt hast, ist ein erneuter Antrag ausgeschlossen — dann gilt die Fünftelregelung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Einmal-im-Leben-Sperre (§ 34 Abs. 3 S. 4), Selbst-Bestätigung (FA-tracked); kein Betragsfeld. Ein True SPERRT den Abs.3-Zweig (fail-closed → Abs.1). null-Kz-MVP."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 4 EStG"
+      zitatanker: "Die Ermäßigung nach den Sätzen 1 bis 3 kann der Steuerpflichtige nur einmal im Leben in Anspruch nehmen"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+
   # ===== GewSt § 35-Anrechnung S1 (Gewerbesteuer auf ESt): Messbetrag-Input-Pfad =====
   # § 35 EStG: die tarifliche ESt ermäßigt sich um min(4× Messbetrag [„das Vierfache", geltende Fassung 2026 —
   # NICHT 3,8×, angehoben VZ 2020], tatsächlich zu zahlende GewSt = Messbetrag × Hebesatz; Ermäßigungshöchstbetrag).
@@ -578,6 +635,27 @@ luecken:
   - regel_id: p24a_altersentlastungsbetrag
     geltungsbedingung: bemessung_netto_nach_ausschluessen
     grund: "Bemessung nach Ausschluss bestimmter Einkünfte (u. a. §22-Leibrenten, §24a S.2); Rechenlogik der Regel auf den bereits erfassten Einkünften, keine eigene Abfrage."
+
+  # -- § 34 Abs. 3 Ermäßigter Durchschnittssatz (p34_3, Stufe-2a): die 3 Modul-Inputs sind RING-DERIVED --
+  # (Antrag/Eligibility sind eigene Flag-Felder; die Bemessungs-Inputs berechnet die Ring-Naht, keine Abfrage).
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    signatur_slot: ao_einkuenfte
+    grund: "= rentner_veraeusserungsgewinn (§16-vg, bereits gebunden); die Ring-Naht reicht den netto-vg (nach §16 Abs.4-Freibetrag) durch, keine eigene Abfrage. Fail-closed auf ao > 5 Mio (Überschuss = §34 Abs.1-Fünftel, Stufe-2b)."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    signatur_slot: est_gesamt_zzgl_progression
+    grund: "Abgeleitet = tarifliche ESt auf das volle zvE (Ring-berechnet, catala_gesamt_tarifliche); §32b-Progressionsvorbehalt-Addend=0 solange kein §32b-Input ring-verdrahtet (grep-belegt 2026-07-19, system-weite Lücke base+Fünftel+Abs.3); kein Laien-Feld."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    signatur_slot: bemessungsgrundlage_durchschnitt
+    grund: "Abgeleitet = volles zvE zzgl Progressionsvorbehalt (Ring-berechnet, catala_gesamt_zve; §34 Abs.3 S.2 „gesamten zvE zzgl Progression“, NICHT 5Mio-gekappt); Progressions-Addend=0 (s. est_gesamt_zzgl_progression); kein Laien-Feld."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    geltungsbedingung: ao_einkuenfte_abs2_nr1
+    grund: "Definitorisch = die außerordentlichen Einkünfte sind Veräußerungsgewinne iSd §34 Abs.2 Nr.1 (§16-vg, rentner_veraeusserungsgewinn); die Ring-Naht speist genau diese als ao, keine eigene Abfrage."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    geltungsbedingung: tarifwerte_sind_p2_ergebnis
+    grund: "Kontrakt: est_gesamt_zzgl_progression + bemessungsgrundlage_durchschnitt sind Ergebnisse des §2-Tarifs (Ring-berechnet, catala_gesamt_tarifliche/_zve), keine Laien-Eingabe. Die Dekomposition boundary-reviewt der Instructor bei der Ring-Naht."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    geltungsbedingung: bemessungsgrundlage_positiv
+    grund: "Ring-Guard: bemessungsgrundlage_durchschnitt > 0 (Div-by-Zero-Schutz; ao>0 ⟹ zvE>0). Kein Laien-Feld; die Ring-Naht ruft das Modul nur bei positiver Basis."
 
   # -- EÜR § 4 Abs. 3 (p4_3_gewinn, Stufe 2-II): Geltungsbedingungen des Gewinn-Kerns --
   # Die vorberechneten net-Komponenten (betriebseinnahmen/-ausgaben) erfüllen die BE/BA-Reinheits-

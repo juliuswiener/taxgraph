@@ -1,0 +1,122 @@
+# § 34 Abs. 3 EStG — Ermäßigter Durchschnittssteuersatz (56 % / min. 14 % / ≤ 5 Mio, auf Antrag, 55+/berufsunfähig, einmal)
+
+> Module ErmaessigterDurchschnittssatz
+
+Materialisierung des Snapshots `pipeline/snapshots/p34_3_ermaessigter_durchschnittssatz.json` (module
+ErmaessigterDurchschnittssatz, sha256 catala_a `1a61a331909aecc2d7094549e09c279a8c19a5fa90de50a10aabefe55dba67e9`).
+Scope-Logik unten BYTE-GLEICH aus `catala_a` (keine Änderung); nur Header + §-Anker + Seeds ergänzt.
+
+⚠ PENDING Instructor-nicht_echt-ADJUDIKATION: der Snapshot ist faithful=FALSE = JUDGE-MISREAD (Judge las
+„durchschnittlicher STEUERSATZ" [Rate] als „tarifliche EINKOMMENSTEUER" [Betrag]; § 34 Abs. 3 S. 2 „56 % des
+durchschnittlichen Steuersatzes" IST der Quotient est/Basis). Materialisierung erst nach Instructor-Boundary-
+Review gegen estg_p34 Abs. 3 S. 2 (faithful≠Correctness beidseitig).
+
+⚠⚠ STUFE-2a-SCOPE (Instructor-Phasing, K2-fail-closed): dieses Modul rechnet est auf min(ao, 5 Mio) —
+KORREKT für ao ≤ 5 Mio. Für ao > 5 Mio besteuert der RING den Überschuss (ao − 5 Mio) NICHT hier, sondern
+per § 34 Abs. 1-Fünftel (Instructor-Rate-Ruling 2026-07-19: Überschuss bleibt ao iSd Abs. 2 Nr. 1, Abs. 1 „von
+Amts wegen"; Kirchhof/Seer § 34 Rn. 50). Die 3-Bucket-Stacking-Ordnung (Boundary b, verbleibendes-zvE-Basis)
+ist UNGELÖST → Stufe-2b-Nachtrag. Bis dahin RING FAIL-CLOSED auf ao > 5 Mio (hinweis „Überschuss > 5 Mio: Abs. 1-
+Fünftel-Nachtrag folgt, aktuell nicht berechnet — bitte manuell") statt still-falscher Zahl. § 34 Abs. 3 S. 5
+Multi-VÄ = Backlog (MVP: ein VÄ-Gewinn).
+
+Zitatanker § 34 Abs. 3 S. 2 EStG (`sources/gesetze-im-internet/estg_p34_2026-07-13.txt`, typ gesetz):
+„Der ermäßigte Steuersatz beträgt 56 Prozent des durchschnittlichen Steuersatzes, der sich ergäbe, wenn die
+tarifliche Einkommensteuer nach dem gesamten zu versteuernden Einkommen zuzüglich der dem Progressionsvorbehalt
+unterliegenden Einkünfte zu bemessen wäre, mindestens jedoch 14 Prozent". → durchschnittssatz =
+est_gesamt_zzgl_progression / bemessungsgrundlage_durchschnitt (VOLLES zvE, nicht 5Mio-gekappt); ermaessigter_satz
+= max(0,56·satz; 0,14); est_ao = min(ao, 5 Mio) · ermaessigter_satz. Cap-Anker § 34 Abs. 3 S. 1 „der den Betrag
+von insgesamt 5 Millionen Euro nicht übersteigt".
+
+⚠ FORWARD-COMPAT (§ 32b-Progressionsvorbehalt, Instructor-adjudiziert 2026-07-19): der Ring speist
+`bemessungsgrundlage_durchschnitt = zvE` und `est_gesamt_zzgl_progression = tarifliche ESt auf zvE`; der
+§ 32b-Progressionsvorbehalt-Addend ist AKTUELL 0. Das ist EXAKT, solange kein § 32b-Input ring-verdrahtet ist
+(grep-belegt 2026-07-19: kein Progressionseinkunfts-Feld, kein catala_p32b-Accessor im produktiven gesamt-Ring,
+DBA-Kataloge nicht als Einkommen ring-verdrahtet, Lohnersatz kein Feld → der Progressions-Fall ist nicht
+eingebbar, KEIN Under-tax). Die Lücke ist SYSTEM-WEIT (base-Tarif + § 34 Abs. 1-Fünftel + Abs. 3), NICHT
+Abs.3-spezifisch. Bei künftiger § 32b-Verdrahtung den Addend HIER UND in catala_fuenftel (§ 34 Abs. 1) nachziehen.
+
+```catala
+declaration scope ErmaessigterDurchschnittssatz:
+  input ao_einkuenfte content money
+  input est_gesamt_zzgl_progression content money
+  input bemessungsgrundlage_durchschnitt content money
+  output est_ao content money
+
+scope ErmaessigterDurchschnittssatz:
+  definition est_ao equals
+    let cap equals $5,000,000.00 in
+    let ao_gekappt equals
+      if ao_einkuenfte > cap then cap else ao_einkuenfte
+    in
+    let durchschnittssatz equals
+      est_gesamt_zzgl_progression / bemessungsgrundlage_durchschnitt
+    in
+    let ermaessigter_satz equals
+      let kandidat equals 0.56 * durchschnittssatz in
+      if kandidat > 0.14 then kandidat else 0.14
+    in
+    ao_gekappt * ermaessigter_satz
+```
+
+## Grenzfall-Seeds (ao ≤ 5 Mio + Cap-Mechanik-Doku)
+
+```catala
+#[test]
+declaration scope TestErmaessigterSatz:
+  # ao 1Mio, Durchschnittssatz 800k/2Mio=0,40 -> 0,56*0,40=0,224 (>0,14) -> est 1Mio*0,224 = 224000.
+  internal r content ErmaessigterDurchschnittssatz
+  output g content money
+scope TestErmaessigterSatz:
+  definition r equals output of ErmaessigterDurchschnittssatz with {
+    -- ao_einkuenfte: $1,000,000.00
+    -- est_gesamt_zzgl_progression: $800,000.00
+    -- bemessungsgrundlage_durchschnitt: $2,000,000.00 }
+  definition g equals r.est_ao
+  assertion g = $224,000.00
+```
+
+```catala
+#[test]
+declaration scope TestMin14Floor:
+  # Durchschnittssatz 200k/1Mio=0,20 -> 0,56*0,20=0,112 (<0,14) -> Floor 0,14; est 100k*0,14 = 14000.
+  internal r content ErmaessigterDurchschnittssatz
+  output g content money
+scope TestMin14Floor:
+  definition r equals output of ErmaessigterDurchschnittssatz with {
+    -- ao_einkuenfte: $100,000.00
+    -- est_gesamt_zzgl_progression: $200,000.00
+    -- bemessungsgrundlage_durchschnitt: $1,000,000.00 }
+  definition g equals r.est_ao
+  assertion g = $14,000.00
+```
+
+```catala
+#[test]
+declaration scope TestExakt5Mio:
+  # ao exakt 5Mio (NICHT >Cap) -> ao_gekappt 5Mio; satz 0,224 -> est 5Mio*0,224 = 1120000.
+  internal r content ErmaessigterDurchschnittssatz
+  output g content money
+scope TestExakt5Mio:
+  definition r equals output of ErmaessigterDurchschnittssatz with {
+    -- ao_einkuenfte: $5,000,000.00
+    -- est_gesamt_zzgl_progression: $800,000.00
+    -- bemessungsgrundlage_durchschnitt: $2,000,000.00 }
+  definition g equals r.est_ao
+  assertion g = $1,120,000.00
+```
+
+```catala
+#[test]
+declaration scope TestCapUeber5Mio:
+  # ⚠ MODUL-CAP-DOKU: ao 6Mio > Cap -> ao_gekappt 5Mio -> est 1120000 (nur ≤5Mio-Teil). Der RING besteuert
+  # den Überschuss 1Mio NICHT hier (Stufe-2a fail-closed, Abs.1-Fünftel-Nachtrag Stufe-2b).
+  internal r content ErmaessigterDurchschnittssatz
+  output g content money
+scope TestCapUeber5Mio:
+  definition r equals output of ErmaessigterDurchschnittssatz with {
+    -- ao_einkuenfte: $6,000,000.00
+    -- est_gesamt_zzgl_progression: $800,000.00
+    -- bemessungsgrundlage_durchschnitt: $2,000,000.00 }
+  definition g equals r.est_ao
+  assertion g = $1,120,000.00
+```
