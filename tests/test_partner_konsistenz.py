@@ -103,3 +103,43 @@ def test_renten_partner_einzel_widerspruch():
 def test_renten_partner_zusammen_konsistent():
     assert PC.partner_ohne_zusammen(_snap(rentner_jahresrente_partner=(1800000, "bestaetigt"),
                                           veranlagung=("zusammen", "bestaetigt"))) == []
+
+
+# ---- § 24b Alleinerziehend ↔ Zusammenveranlagung (inverse Richtung, TIER-6-D) ----
+
+def test_alleinerziehend_zusammen_widerspruch():
+    # zusammen + alleinstehend=True -> Widerspruch (§ 24b darf nicht still gewährt werden = under-tax)
+    w = PC.alleinerziehend_mit_zusammen(_snap(fam_alleinstehend=(True, "bestaetigt"),
+                                              veranlagung=("zusammen", "bestaetigt")))
+    assert len(w) == 1 and w[0]["feld_id"] == "fam_alleinstehend"
+
+
+def test_alleinerziehend_einzel_gewaehrt():
+    # einzel + alleinstehend=True -> KEIN Widerspruch, § 24b legitim (unverändert)
+    assert PC.alleinerziehend_mit_zusammen(_snap(fam_alleinstehend=(True, "bestaetigt"),
+                                                 veranlagung=("einzel", "bestaetigt"))) == []
+
+
+def test_zusammen_nicht_alleinstehend_konsistent():
+    # zusammen + alleinstehend=False -> kein Widerspruch (unverändert)
+    assert PC.alleinerziehend_mit_zusammen(_snap(fam_alleinstehend=(False, "bestaetigt"),
+                                                 veranlagung=("zusammen", "bestaetigt"))) == []
+
+
+def test_alleinerziehend_veranlagung_unbestaetigt_kein_widerspruch():
+    # veranlagung noch vorlaeufig -> Unvollständigkeit, nicht Widerspruch
+    assert PC.alleinerziehend_mit_zusammen(_snap(fam_alleinstehend=(True, "bestaetigt"),
+                                                 veranlagung=("zusammen", "vorlaeufig"))) == []
+
+
+def test_alleinerziehend_nur_vorlaeufig_zaehlt_nicht():
+    # fam_alleinstehend nur vorlaeufig -> kein belegter Wert -> kein Widerspruch
+    assert PC.alleinerziehend_mit_zusammen(_snap(fam_alleinstehend=(True, "vorlaeufig"),
+                                                 veranlagung=("zusammen", "bestaetigt"))) == []
+
+
+def test_neg_alleinerziehend_guard_feuert_wirklich():
+    ok = _snap(fam_alleinstehend=(True, "bestaetigt"), veranlagung=("einzel", "bestaetigt"))
+    kaputt = _snap(fam_alleinstehend=(True, "bestaetigt"), veranlagung=("zusammen", "bestaetigt"))
+    assert PC.alleinerziehend_mit_zusammen(ok) == [] and PC.alleinerziehend_mit_zusammen(kaputt), \
+        "Guard muss § 24b-Alleinerziehend+Zusammenveranlagung fangen und die einzel-Lage durchlassen"

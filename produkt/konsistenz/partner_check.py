@@ -61,3 +61,25 @@ def partner_ohne_zusammen(snapshot: dict) -> list:
                      f"veranlagung={veranlagung!r} — ein Partner-Behinderten-Pauschbetrag ist ohne "
                      f"gemeinsam veranlagten Ehe-/Lebenspartner ausgeschlossen (§ 33b)."})
     return widersprueche
+
+
+def alleinerziehend_mit_zusammen(snapshot: dict) -> list:
+    """{feld_id -> {wert, zustand, ...}} → Liste der § 24b-Alleinerziehend ↔ Veranlagung-Widersprüche.
+
+    INVERSE Richtung zu partner_ohne_zusammen: der Entlastungsbetrag für Alleinerziehende (§ 24b) setzt
+    voraus, dass der Steuerpflichtige NICHT die Voraussetzungen der Ehegatten-Zusammenveranlagung erfüllt
+    (§ 24b Abs. 1: „allein stehend", § 24b Abs. 3). Ist `fam_alleinstehend` bestätigt True UND `veranlagung`
+    bestätigt „zusammen", ist das ein WIDERSPRUCH — der § 24b-Abzug würde sonst still gewährt = Unter-
+    Besteuerung. Fail-closed: benannte Inkonsistenz statt stillem Abzug. Nur bestätigte Werte zählen
+    (vorlaeufig ist kein Beleg); ist die Veranlagung noch unbestätigt (None), liegt (noch) kein Widerspruch
+    vor (Unvollständigkeit, nicht Widerspruch)."""
+    veranlagung = _bestaetigt_wert(snapshot, "veranlagung")
+    alleinstehend = _bestaetigt_wert(snapshot, "fam_alleinstehend")
+    if veranlagung != "zusammen" or alleinstehend is not True:
+        return []                                   # nur zusammen + bestätigt-alleinstehend = Widerspruch
+    return [{
+        "feld_id": "fam_alleinstehend", "wert": True, "veranlagung": veranlagung,
+        "grund": "fam_alleinstehend=True setzt voraus, dass der Steuerpflichtige NICHT "
+                 "zusammenveranlagt ist (§ 24b Abs. 1/Abs. 3 — Entlastungsbetrag für Alleinerziehende), "
+                 "aber veranlagung='zusammen'. Der Entlastungsbetrag für Alleinerziehende widerspricht "
+                 "der Ehegatten-Zusammenveranlagung; er darf nicht still gewährt werden."}]
