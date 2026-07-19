@@ -747,6 +747,19 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 # Abs. 6) bei GEGEBENEM § 32-Abs.6-Kinderfreibetrag. Kapital-Günstiger: est_ohne_kap vs est_mit_kap
                 # (Grundtarif) → min(Abgeltung, Delta). freibetrag=0 → kein Kinderfreibetrag.
                 g2 = g if freibetrag == 0 else dict(g, freibetraege_kinder=freibetrag)
+                # § 34 Abs. 1 Fünftelregelung: der § 16-Veräußerungsgewinn (netto_vg, außerordentlich § 34 Abs. 2 Nr. 1)
+                # wird geglättet statt voll progressiv besteuert (5×[Tarif(zvE_rest+ao/5)−Tarif(zvE_rest)], S.3-Negativ
+                # via catala_fuenftel). Engine-vorverdrahtet: tarif_modifiziert setzt tarifliche_est = tarifliche_est_
+                # modifiziert (einkommensteuertarif Z.483/518). PER §31-Zweig (zve2 je Zweig — Kinderfreibetrag senkt zvE
+                # → eigener Fünftel, wie §35 Deckel-3). Guard zve2>0 (catala_fuenftel raist bei zvE≤0). ao = netto_vg NUR
+                # (laufender §15/§18-Gewinn bleibt progressiv). §35-Deckel-3 liest catala_gesamt_tarifliche(g2) unten =
+                # post-Fünftel-tarifliche (automatisch, geminderte tarifliche Steuer § 35 Abs. 1 S. 4).
+                if netto_vg > 0:
+                    zve2 = runner.catala_gesamt_zve(g2)
+                    if zve2 > 0:
+                        g2 = dict(g2, tarif_modifiziert=True, tarifliche_est_modifiziert=runner.catala_fuenftel({
+                            "veranlagungszeitraum": vz, "veranlagung": g2["veranlagung"],
+                            "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg}))
                 # § 35 Abs. 1: min(4×Messbetrag [S. 1 „das Vierfache"], Messbetrag×Hebesatz [S. 5 „tatsächlich zu
                 # zahlende Gewerbesteuer"], Ermäßigungshöchstbetrag [S. 2: Zähler/Nenner × geminderte tarifliche
                 # Steuer]). ADDITIV in steuerermaessigungen DIESES Freibetrag-Zweigs — tarifliche_est ist freibetrag-
@@ -877,6 +890,16 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "gesamtbetrag_einkuenfte": gde_p10d,
                 "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
                 "zusammenveranlagung": rentner_g["veranlagung"] == "zusammen"})
+            # § 34 Abs. 1 Fünftel im Rentner-Ring (§ 16-vg = netto_vg außerordentlich): identisch zur gesamt-Naht,
+            # SINGLE-computation (kein §31). Guard zve2>0. ao = netto_vg (laufender Gewinn progressiv). Der §35-Block
+            # unten liest catala_gesamt_tarifliche(rentner_g) = post-Fünftel-tarifliche (automatisch).
+            if netto_vg > 0:
+                zve2 = runner.catala_gesamt_zve(rentner_g)
+                if zve2 > 0:
+                    rentner_g["tarif_modifiziert"] = True
+                    rentner_g["tarifliche_est_modifiziert"] = runner.catala_fuenftel({
+                        "veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
+                        "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg})
             # § 35 GewSt-Anrechnung (S1-Port in den Rentner-Ring, SINGLE-computation — kein § 31-Günstiger hier, die
             # rentner-Scheibe hat kein fam_anzahl_kinder). Zähler = laufender Gewerbe-Gewinn (NUR betriebsart=gewerbe,
             # § 16-vg-netto RAUS § 7 S. 2 GewStG). Nenner = renten (§ 22 IM Nenner — echt hier, anders als gesamt wo

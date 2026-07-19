@@ -1049,10 +1049,12 @@ def test_gesamt_gwg_only_verlust(base):
 
 
 @pytest.mark.parametrize("vg_cent,erwartet_cent", [
-    (4000000,  0),        # vg 40000 → FB 45000 > vg → 0 (Cap, kein Phantom-Verlust)
-    (10000000, 1249500),  # vg 100000 → FB 45000 → netto 55000 → est 12495
-    (15000000, 3905200),  # vg 150000 → FB 31000 → netto 119000 → est 39052
-    (18100000, 6509200),  # vg 181000 → FB 0 → netto 181000 → est 65092
+    (4000000,  0),        # vg 40000 → FB 45000 > vg → netto_vg 0 → kein Fünftel (Guard netto_vg>0), kein Phantom-Verlust
+    # ⚠ § 34 Abs. 1 S. 3 (verbleibendes zvE negativ ∧ zvE positiv) → 5×Tarif(zvE/5): 5×Tarif(54964//5=10992); 10992 < GfB
+    # 12096 → Tarif 0 → 5×0 = 0. KEIN Under-tax-Bug — moderate Einmal-vg werden durch Fünftelung+Grundfreibetrag steuerfrei.
+    (10000000, 0),        # vg 100000 → netto 55000 → § 34 Abs. 1 S. 3 → 0 (war progressiv 12495 = Over-tax-Korrektur)
+    (15000000, 1304000),  # vg 150000 → netto 119000 → § 34 Abs. 1 S. 3 → 5×Tarif(23792)=13040 (war progressiv 39052)
+    (18100000, 3065000),  # vg 181000 → netto 181000 → § 34 Abs. 1 S. 3 → 5×Tarif(36192)=30650 (war progressiv 65092)
 ])
 def test_gesamt_veraeusserungsgewinn(base, vg_cent, erwartet_cent):
     """Non-Rentner-§16-vg im GESAMT-Ring (REUSE des generellen §16-vg-Felds rentner_veraeusserungsgewinn): ein
@@ -1076,14 +1078,67 @@ def test_gesamt_veraeusserungsgewinn(base, vg_cent, erwartet_cent):
 def test_gesamt_veraeusserung_plus_laufender(base):
     """§ 16 Abs. 1 Akkumulation im gesamt-Ring: laufender Gewinn (direkter einkuenfte_gewinn 30000) + § 16-Ver-
     äußerungsgewinn (vg 100000 → netto 55000 nach FB) fließen ADDITIV in DIESELBE § 2-Einkunftsart →
-    einkuenfte_gewinn 85000 → festzusetzende_est 24772 = 2477200 Cent. Belegt: der gesamt-vg-Fold summiert mit dem
-    laufenden Gewinn (Assignment würde eins verschlucken) — Spiegel des rentner-2-I-Akkumulations-Locks."""
+    einkuenfte_gewinn 85000. § 34 Abs. 1 S. 2 (ao=netto_vg 55000, verbleibendes zvE 29964>0): laufender 30000
+    progressiv, nur die vg geglättet → festzusetzende_est 2097800 Cent (war voll-progressiv 2477200). Belegt: der
+    gesamt-vg-Fold summiert mit dem laufenden Gewinn UND nur die vg kriegt Fünftel (Spiegel des rentner-Akkumulations-Locks)."""
     catala = _catala_da()
     _gesamt_anlegen(base, "gvl", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=3000000, vg=10000000))
     st, erg = _req(base, "GET", "/fall/gvl/ergebnis")
     _val("ergebnis", erg)
     if catala:
-        assert erg["zahl_cent"] == 2477200 and erg["grund"] == "bestaetigt"
+        assert erg["zahl_cent"] == 2097800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_fuenftel_zve_null_skip(base):
+    """§ 34 Abs. 1 GUARD (zve2≤0-Skip, non-vacuous): § 16-vg 200000 (netto 200000, FB 0) + § 10d-Verlustvortrag
+    200000 → § 10d mindert die GdE auf ~0 → zve2 ≤ 0 → Naht ÜBERSPRINGT den Fünftel (KEIN catala_fuenftel-Aufruf →
+    kein ValueError-Pfad; est 0 sowieso). Belegt: der zve2>0-Guard fängt den §34-Abs.1-S.3-Edge (verbleibendes<0 ∧
+    zvE≤0) sauber ab, statt zu crashen."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "f34z", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=20000000,
+                    verlustvortrag_bestand=20000000))
+    st, erg = _req(base, "GET", "/fall/f34z/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 0 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_fuenftel_p35_interaktion(base):
+    """§ 34 Abs. 1 × § 35 KOPPLUNG (differenziell): laufender Gewerbe-Gewinn 50000 (betriebsart gewerbe) + § 16-vg
+    200000 (netto 200000) + GewSt-Messbetrag 3000 / Hebesatz 400 % → der § 35-Ermäßigungshöchstbetrag (Deckel 3)
+    nutzt die POST-Fünftel-tarifliche ESt (catala_gesamt_tarifliche liest tarif_modifiziert=True). ao=netto_vg 200000
+    (laufender 50000 progressiv, im §35-Zähler). Belegt: die geminderte tarifliche Steuer (§ 35 Abs. 1 S. 4) ist die
+    Fünftel-tarifliche, nicht die progressive — saubere Naht-Reihenfolge (Fünftel VOR §35-Deckel-3)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "f34p", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=5000000,
+                    betriebsart="gewerbe", vg=20000000, gewst_messbetrag=300000, gewst_hebesatz=400))
+    st, erg = _req(base, "GET", "/fall/f34p/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 7964800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_fuenftel_per_kind(base):
+    """§ 34 Abs. 1 PER §31-ZWEIG (non-vacuous, Freibetrag-Zweig gewinnt): laufender Gewerbe-Gewinn 80000 + § 16-vg
+    200000 (netto 200000) + 2 Kinder → hohes Einkommen → § 31-Günstiger wählt den KINDERFREIBETRAG-Zweig (nicht
+    Kindergeld). Der § 31-Günstiger rechnet _festzusetzende ZWEIMAL (ohne/mit Kinderfreibetrag); JEDER Zweig kriegt
+    seinen EIGENEN Fünftel (zve2 sinkt mit dem Kinderfreibetrag → verbleibendes zvE/Fünftel je Zweig verschieden).
+    Belegt: die Fünftel-Injektion sitzt IN _festzusetzende (per-§31-Zweig), nicht global — sonst würde der
+    Kinderfreibetrag-Zweig den falschen (ohne-FB-) Fünftel nutzen = stille Fehlbesteuerung."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "f34k", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, gewinn=8000000,
+                    betriebsart="gewerbe", vg=20000000))
+    _gesamt_abzuege(base, "f34k", kinder=2)
+    st, erg = _req(base, "GET", "/fall/f34k/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 10667200 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 
@@ -1922,10 +1977,11 @@ def test_rentner_gesetzl_erstjahr(base):
 
 
 @pytest.mark.parametrize("vg_cent,erwartet_cent", [
-    (4000000,  0),        # vg 40000 € → FB 45000 > vg → steuerbar 0 (Cap greift, KEIN Phantom-Verlust)
-    (10000000, 1249500),  # vg 100000 € → FB 45000 (voll, < 136000) → netto 55000 → est 12495
-    (15000000, 3905200),  # vg 150000 € → FB 31000 (Abschmelzung 14000) → netto 119000 → est 39052
-    (18100000, 6509200),  # vg 181000 € → FB 0 (voll abgeschmolzen) → netto 181000 → est 65092
+    (4000000,  0),        # vg 40000 € → FB 45000 > vg → netto_vg 0 → kein Fünftel (Guard), KEIN Phantom-Verlust
+    # ⚠ § 34 Abs. 1 S. 3 (verbleibendes zvE −36<0 ∧ zvE>0) → 5×Tarif(54964//5=10992); 10992 < GfB 12096 → 0. KEIN Bug.
+    (10000000, 0),        # vg 100000 € → netto 55000 → § 34 Abs. 1 S. 3 → 0 (war progressiv 12495 = Over-tax-Korrektur)
+    (15000000, 1304000),  # vg 150000 € → netto 119000 → § 34 Abs. 1 S. 3 → 5×Tarif(23792)=13040 (war 39052)
+    (18100000, 3065000),  # vg 181000 € → netto 181000 → § 34 Abs. 1 S. 3 → 5×Tarif(36192)=30650 (war 65092)
 ])
 def test_rentner_p16_4_veraeusserungsgewinn(base, vg_cent, erwartet_cent):
     """§ 16 Abs. 4 Betriebsveräußerungs-Freibetrag (2-I) im Rentner-Ring: rentner_veraeusserungsgewinn (kein
@@ -1946,14 +2002,15 @@ def test_rentner_p16_4_veraeusserungsgewinn(base, vg_cent, erwartet_cent):
 def test_rentner_gewinn_plus_veraeusserung_additiv(base):
     """K2-Akkumulations-Lock (Instructor-C): laufender § 15/§ 18-Gewinn (einkuenfte_gewinn 30000) + § 16-Ver-
     äußerungsgewinn (vg 100000 → netto 55000 nach FB) fließen ADDITIV in DIESELBE § 2-Einkunftsart (§ 16 Abs. 1
-    „gehören auch") → einkuenfte_gewinn 85000 → festzusetzende_est 24772 = 2477200 Cent. Belegt: der Fold
-    überschreibt nicht (Assignment-Bug), er summiert — vg + laufender Gewinn beide erfasst."""
+    „gehören auch") → einkuenfte_gewinn 85000. § 34 Abs. 1 S. 2 (ao=netto_vg 55000, verbleibendes zvE 29964>0):
+    laufender 30000 progressiv, NUR die vg geglättet → festzusetzende_est 2097800 Cent (war voll-progressiv 2477200 =
+    Over-tax-Korrektur). Belegt: der Fold summiert (kein Assignment-Bug) UND nur die vg kriegt Fünftel."""
     catala = _catala_da()
     _rentner_anlegen(base, "rgva", _rentner_kegel(jahresrente=0, gewinn=3000000, vg=10000000, kein_gewinn=False))
     st, erg = _req(base, "GET", "/fall/rgva/ergebnis")
     _val("ergebnis", erg)
     if catala:
-        assert erg["zahl_cent"] == 2477200 and erg["grund"] == "bestaetigt"
+        assert erg["zahl_cent"] == 2097800 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 
@@ -1976,14 +2033,15 @@ def test_rentner_mitunternehmer(base):
 
 def test_rentner_rente_plus_veraeusserung(base):
     """§ 22 Rente + § 16 Veräußerungsgewinn im selben Ring: gesetzl. Rente 20000 (→ einkuenfte_sonstige 16598)
-    + vg 100000 (→ netto 55000 nach § 16 Abs. 4-FB) → catala_gesamt summiert (§ 2 Abs. 3) → festzusetzende_est
-    19144 = 1914400 Cent. Belegt: der § 16-vg addiert sich zur Rente im vollen § 2-Ring (nicht ersetzt)."""
+    + vg 100000 (→ netto 55000 nach § 16 Abs. 4-FB) → catala_gesamt summiert (§ 2 Abs. 3). § 34 Abs. 1 S. 2 (ao=netto_vg
+    55000, verbleibendes zvE 16562>0): Rente progressiv, nur die vg geglättet → festzusetzende_est 1486100 Cent (war
+    voll-progressiv 1914400). Belegt: der § 16-vg addiert sich zur Rente UND kriegt Fünftel (Rente bleibt progressiv)."""
     catala = _catala_da()
     _rentner_anlegen(base, "rrv", _rentner_kegel(jahresrente=2000000, beginn=2025, vg=10000000, kein_gewinn=False))
     st, erg = _req(base, "GET", "/fall/rrv/ergebnis")
     _val("ergebnis", erg)
     if catala:
-        assert erg["zahl_cent"] == 1914400 and erg["grund"] == "bestaetigt"
+        assert erg["zahl_cent"] == 1486100 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 
@@ -2001,15 +2059,16 @@ def test_rentner_veraeusserung_flag_widerspruch(base):
 def test_rentner_euer_plus_veraeusserung(base):
     """Scope-A (2a im Rentner-Ring) + Akkumulation: laufender § 15/§ 18-Gewinn KOMPONENTENWEISE via EÜR
     (Betriebseinnahmen 80000 − sonstige BA 20000 − AfA 10000 = 50000) + § 16-Veräußerungsgewinn (vg 100000 →
-    netto 55000 nach § 16 Abs. 4-FB) → einkuenfte_gewinn 105000 → festzusetzende_est 33172 = 3317200 Cent. Belegt:
-    _laufender_gewinn (EÜR) greift auch im Rentner-Pfad UND summiert additiv mit dem §16-vg (§ 16 Abs. 1)."""
+    netto 55000 nach § 16 Abs. 4-FB) → einkuenfte_gewinn 105000. § 34 Abs. 1 S. 2 (ao=netto_vg 55000, verbleibendes
+    zvE 49964>0): EÜR-Gewinn 50000 progressiv, nur die vg geglättet → festzusetzende_est 3124800 Cent (war voll-
+    progressiv 3317200). Belegt: _laufender_gewinn (EÜR) greift im Rentner-Pfad UND nur die vg kriegt Fünftel."""
     catala = _catala_da()
     _rentner_anlegen(base, "reuv", _rentner_kegel(jahresrente=0, kein_gewinn=False, vg=10000000,
                      betriebseinnahmen=8000000, sonstige_betriebsausgaben=2000000, afa_jahresbetrag=1000000))
     st, erg = _req(base, "GET", "/fall/reuv/ergebnis")
     _val("ergebnis", erg)
     if catala:
-        assert erg["zahl_cent"] == 3317200 and erg["grund"] == "bestaetigt"
+        assert erg["zahl_cent"] == 3124800 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 

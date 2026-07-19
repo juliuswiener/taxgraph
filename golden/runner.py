@@ -909,6 +909,13 @@ def catala_gesamt_tarifliche(s: dict) -> int:
     return int(_gesamt_out(s).tarifliche_est) // 100
 
 
+def catala_gesamt_zve(s: dict) -> int:
+    """§ 2 Abs. 5 zu versteuerndes Einkommen des gesamt-Scopes, EURO — Output-Feld zu_versteuerndes_einkommen des
+    FestzusetzendeEstGesamt(-Zusammen)-Scopes. Basis für die § 34 Abs. 1-Fünftelregelung (verbleibendes zvE = zvE − ao,
+    ao = außerordentliche Einkünfte = § 16-vg-netto). Tarif-unabhängig (steht vor § 32a) → kein Zirkel mit tarif_modifiziert."""
+    return int(_gesamt_out(s).zu_versteuerndes_einkommen) // 100
+
+
 def _p35c_ermaessigung_cent(s: dict) -> int:
     """§ 35c Abs. 1 EStG energetische Sanierung: satz 7 % (6 % im uebernaechsten
     Foerderjahr), hoechst 14.000 (12.000 uebernaechst); Ermaessigung = min(satz x
