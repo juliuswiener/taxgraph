@@ -1685,6 +1685,24 @@ def test_gesamt_gewinn_spende_deckel(base):
         assert erg["zahl_cent"] is None
 
 
+def test_gesamt_gewinn_24a_bemessung(base):
+    """K2-Sweep-Fix §24a: die Altersentlastungsbetrag-Bemessung (positive_andere_einkuenfte) enthält jetzt
+    einkuenfte_gewinn (§24a S.1: Arbeitslohn + positive Summe der Nicht-§19-Einkünfte; §§13-18-Gewinn NICHT in den
+    S.2-Ausnahmen = nur Versorgungsbez./Leibrenten). Senior (geburtsjahr 1958 → Kohorte 2023: 14 %/665) mit reinem
+    Gewinn 30000, KEIN Lohn/V+V → Bemessung 30000 → Altersentlastungsbetrag min(14%×30000, 665) = 665 (vorher
+    gewinn-los 0). GdE 30000 − 665 → festzusetzende_est 410500 Cent (4105, vorher über-taxt 4293). Über-tax-Fix,
+    gedeckelt auf den Kohorten-Höchstbetrag (kein Under-tax-Risiko)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "fg24a", _gesamt_kegel(0, kein_vuv=True, gewinn=3000000, kein_gewinn=False))
+    _gesamt_abzuege(base, "fg24a", geburtsjahr=1958)
+    st, erg = _req(base, "GET", "/fall/fg24a/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 410500 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def test_gesamt_faltung_24a_24b_freibetraege(base):
     """Weg (ii) Stage 2: §24a Altersentlastungsbetrag + §24b Entlastungsbetrag Alleinerziehende im gefalteten
     Ring (§2 Abs.3 GdE-mindernd). Senior (geburtsjahr 1958 → Kohorte 2023 → 14 %/665; Bemessung Arbeitslohn 30000

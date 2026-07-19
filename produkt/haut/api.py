@@ -570,15 +570,16 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             laufender_gewinn = _laufender_gewinn(f, store, bindung)   # § 15/§ 18 laufend (für § 35-Zähler, OHNE § 16-vg)
             g["einkuenfte_gewinn"] = laufender_gewinn + netto_vg
             # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
-            # Altersentlastungsbetrag (Bemessung NUR positive Nicht-Renten-Einkünfte, S.2: Arbeitslohn BRUTTO +
-            # max(0, V+V); Kohorten-Satz/-Deckel aus geburtsjahr + 65; Kapital = Stage-2-Nachtrag wie die §10b/§33-
-            # GdE) + § 24b Entlastungsbetrag Alleinerziehende (fam_alleinstehend IST das §24b-Abs.3-Flag — quelle
+            # Altersentlastungsbetrag (§24a S.1: Arbeitslohn BRUTTO + max(0, positive Summe der Nicht-§19-Einkünfte =
+            # V+V + §§13-18-Gewinn; Leibrenten/Versorgungsbez. raus S.2; Kohorten-Satz/-Deckel aus geburtsjahr + 65;
+            # §20-tarifl.-Kapital-Günstiger = seltener Nachtrag) + § 24b Entlastungsbetrag Alleinerziehende (fam_alleinstehend IST das §24b-Abs.3-Flag — quelle
             # p24b/alleinstehend, fragetext „ohne anderen Erwachsenen im Haushalt"; anzahl_kinder + monate). Absent
             # → 0 (fail-safe). Beide fließen in den GdE-Zwilling (echte GdE post § 24a/§24b für die §10b/§33-
             # Deckelung) UND in g (est).
             alt24a = runner.catala_p24a_altersentlastung({
                 "geburtsjahr": _c("geburtsjahr"),
-                "arbeitslohn": _c("bruttoarbeitslohn") // 100, "positive_andere_einkuenfte": max(0, vv)})
+                "arbeitslohn": _c("bruttoarbeitslohn") // 100,
+                "positive_andere_einkuenfte": max(0, vv + g["einkuenfte_gewinn"])})
             # § 24a PER PERSON (§ 24a S. 1 „der Steuerpflichtige", A.2): bei Zusammenveranlagung hat der Ehegatte
             # eine EIGENE Kohorte (geburtsjahr_partner + 65) + eigene Bemessung (bruttoarbeitslohn_partner; positive
             # andere Einkünfte-B = 0, da vv/Kapital im Ring nicht owner-getrennt = konservativ/over-tax-safe, mit
@@ -699,6 +700,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "veranlagungszeitraum": vz, "veranlagung": g["veranlagung"],
                 "einkuenfte_nichtselbststaendig": ns, "einkuenfte_vermietung": vv,
                 "einkuenfte_gewinn": g["einkuenfte_gewinn"],
+                "einkuenfte_sonstige": g.get("einkuenfte_sonstige", 0),   # K2-Sweep-Konsistenz: §22-Loch-Vorsorge (heute ≡0 im gesamt, kein künftiger §10d-Under-tax)
                 "altersentlastungsbetrag": alt24a + alt24a_b,
                 "entlastungsbetrag_alleinerziehende": ent24b})
             g["sonstige_abzuege_vom_einkommen"] = runner.catala_p10d_2({
