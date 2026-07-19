@@ -51,6 +51,17 @@ Null) — KEIN stiller Unter-Abzug. Das Register ordnet nach (Häufigkeit × Imp
 | Kontoauszug-PDF-Import (nur CSV/CAMT heute) | Feature (Beleg-Writer) | PDF-Auszug nicht parsbar | mittel (LLM-Fallback) | — |
 | Kontoauszug-LLM-Recorded-Fixture | Test-Gate (Julius-Cap) | 1 Live-Call zum Aufzeichnen offen | niedrig (Julius-Cap) | — |
 
+## TIER 6 — dev-1-Bughunt 2026-07-19 (nach §10-Vorsorge-Faltung, 4 neue Ring/Haut-Gaps)
+Von dev-1s Bughunt im gesamt-Ring gefunden. Richtungs-Tag = K2-Wirkung heute.
+| Gap | Norm | Richtung | Auswirkung / Häufigkeit | Aufwand | Owner / Status |
+|---|---|---|---|---|---|
+| **A** Person-B-Vorsorge nicht abgezogen bei Zusammenveranlagung (VOR §10 Abs.1 Nr.2 / KV-PV Nr.3/3a / §24a sind einzel-only im gesamt-Kegel) | § 10 Abs. 1 Nr. 2/3/3a, § 24a | **ÜBER-tax** (still, ungesperrt) | HÄUFIG (Ehepaar zusammen, beide mit Vorsorge → Person-B-Abzug fehlt) | A.1 niedrig (Guard-Sperre) · A.2 mittel (Person-B-Vorsorge-Kegel, Klasse g) | dev-1 baut A.1-Guard JETZT; voller Fix A.2 = eigene Front |
+| **B** Ehegatte-sonstige-Kapitalgewinn nicht erfassbar bei zusammen (runner-Accessor Z.533 hart 0) | § 20 Abs. 2 | **UNTER-tax** (Modell-Mismatch) | MITTEL (Ehepaar, Ehegatte-Veräußerungsgewinn) | mittel (Person-B-§20-Abs.2-Erfassung: dev-2-Binding + dev-1-runner) | offen |
+| **C** § 21-Verbilligt-Accessor: entgelt_quote=0-`or 100`-Falle + fehlende Einkünfteerzielungsabsicht | § 21 Abs. 2 / Abs. 1 | **UNTER-tax** (§21-Fix-DEFEKT) | quote=0 (voll unentgeltlich) → als 100 behandelt → WK voll statt 0; EEA nicht geprüft | niedrig (`or 100`→None-Check) + mittel (EEA-Gate) | dev-1-runner (Accessor-Defekt im §21-Fix) |
+| **D** § 24b bei veranlagung=zusammen + fam_alleinstehend=True ohne Konsistenz-Sperre | § 24b Abs. 1 | **UNTER-tax** (Widerspruch ungesperrt) | SELTEN (widersprüchliche Eingabe zusammen+alleinstehend) | niedrig (Konsistenz-Guard) | dev-2-Zone (produkt/konsistenz partner_check) |
+
+**Prio TIER 6:** C (§21-Fix-Defekt, echter UNTER-tax im gerade gebauten Fix) + D (billiger Konsistenz-Guard, meine Zone) zuerst; A.1-Guard läuft (dev-1); B = mittlere Front. A ist ÜBER-tax (fail-safe-Richtung, aber häufig → Guard sinnvoll), B/C/D sind UNTER-tax (schärfer).
+
 ## ⚠ K2-PRÜFAUFTRÄGE (die 2 unter-besteuert-RISIKO-Kandidaten)
 Die meisten Gaps sind fail-safe (über-besteuert/guard-gesperrt). ZWEI verdienen K2-Prüfung, ob heute still
 unter-besteuert wird:
@@ -58,6 +69,11 @@ unter-besteuert wird:
    fließen die WK ungekürzt? Falls ungekürzt → unter-besteuert. (verified Snapshot vorhanden → Promotion.)
 2. **§ 35a Abs. 5 S. 4** (zwei Alleinstehende, ein Haushalt): wird der Höchstbetrag geteilt oder doppelt
    gewährt? Falls doppelt → unter-besteuert. (kein Snapshot → prüfen/formalisieren.)
+
+**STATUS 2026-07-19 (beide GEKLÄRT):** (1) § 21 Abs. 2 = Under-Tax bestätigt + FIX materialisiert/committet
+(797fd60, WK-Kürzung greift) — ABER neuer Folge-Defekt TIER-6-C (entgelt_quote=0-`or 100`-Falle) offen.
+(2) § 35a Abs. 5 S. 4 = dokumentierter NICHT-Gap (Cross-Erklärungs-Koordination, im Einzel-Modell strukturell
+nicht erreichbar; Befund 2026-07-18-k2-35a-abs5-s4-befund.md). NEUE UNTER-tax-Kandidaten = TIER-6 B/C/D.
 
 ## EMPFEHLUNG (Reihenfolge)
 1. **Tier-1-Promotionen** (billig, verified): §10-Vorsorge (häufig) + GWG + Berufsausbildung + §21-verbilligt.
