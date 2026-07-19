@@ -157,12 +157,20 @@ def test_b_vollstaendigkeit(daten):
 
 @pytest.fixture(scope="module")
 def e10_kz():
+    """Gültige Kz-Menge = E10 (ESt-Erklärung, Anlagen N/AUS/S/G) + E77 (Anlage EÜR, eigene Datenart).
+    Die §§ 13-18-EÜR-Kz (E60xx: geringwertige WG E6002301, übrige Betriebsausgaben E6004901) liegen in
+    E77-2025.xsd, NICHT im E10-Schema — der EÜR-Zweig deklariert in die EUER-Datenart (Kz-Review 2026-07-19,
+    Gate-Erweiterung um die E77-Kz-Quelle). Ein erfundenes Kz ist in KEINEM der beiden -> Gate bleibt red-fähig."""
     sys.path.insert(0, os.path.join(ROOT, "elster"))
     import kz_extract as K
-    p = K._find_schema("e10")
-    if not p or not os.path.exists(p):
+    p10 = K._find_schema("e10")
+    if not p10 or not os.path.exists(p10):
         pytest.skip("E10-2025.html nicht gefunden (ERIC_DIR/EST_SCHEMA_HTML)")
-    return set(K.lade(p).keys())
+    kz = set(K.lade(p10).keys())
+    p77 = K._find_schema("e77")
+    if p77 and os.path.exists(p77):
+        kz |= set(K.lade(p77).keys())        # Anlage-EÜR-Kz (E60xx) — eigene Datenart, nicht in E10
+    return kz
 
 
 def test_c_elster_kz_existiert(daten, e10_kz):
@@ -170,7 +178,7 @@ def test_c_elster_kz_existiert(daten, e10_kz):
         for b in d["bindungen"]:
             kz = b.get("elster_kz")
             if kz:
-                assert kz in e10_kz, f"{b['feld_id']}: elster_kz {kz} nicht in E10-2025"
+                assert kz in e10_kz, f"{b['feld_id']}: elster_kz {kz} nicht in E10/E77-Schema"
 
 
 # ---- (d) Anker-Verifikation via _normalize ------------------------------------

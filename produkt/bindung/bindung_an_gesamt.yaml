@@ -225,8 +225,8 @@ bindungen:
     hilfe_kurz: "Alle durch den Betrieb veranlassten Ausgaben außer den Abschreibungen (die AfA erfasst das nächste Feld). Wareneinkauf, Miete, Personal, Fahrtkosten usw. NUR abzugsfähige Betriebsausgaben: OHNE Kosten der privaten Lebensführung/Repräsentation (§ 12 Nr. 1), OHNE Personensteuern wie die Einkommensteuer (§ 12 Nr. 3), OHNE durchlaufende Posten (§ 4 Abs. 3 S. 2)."
     beispielwert: 3000000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "EÜR-Ausgaben-Summand (§ 4 Abs. 3): speist zusammen mit afa_jahresbetrag den betriebsausgaben-Slot; kein eigenes Deklarations-Kz (null-Kz-MVP, Anlage-EÜR-Kz-Review folgt)."
+    elster_kz: E6004901
+    elster_kz_grund: "Anlage-EÜR Kz E6004901 „Übrige unbeschränkt abziehbare Betriebsausgaben“ (Datenart EUER/E77, E77-2025.xsd:2015). Speist zugleich den betriebsausgaben-Ring-Slot (slot_beitrag:summand) — Deklaration + Rechnung getrennt. Kz-Review 2026-07-19 (dev-2 kz_extract + Instructor-Verify)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 4 Abs. 3 S. 1 EStG"

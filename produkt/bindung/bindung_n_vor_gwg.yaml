@@ -595,8 +595,8 @@ bindungen:
     hilfe_kurz: "Bis 800 Euro netto kannst du es sofort komplett als Betriebsausgabe absetzen. Kostet es mehr als 800 Euro netto, schreib es stattdessen über die Abschreibung (AfA) ab — nicht hier. Jedes Wirtschaftsgut einzeln eintragen (die 800-Euro-Grenze gilt je Stück)."
     beispielwert: 60000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Betrag geht in Anlage-EÜR-Kz E6002301 (eigene Datenart EUER, nicht E10-2025)."
+    elster_kz: E6002301
+    elster_kz_grund: "Anlage-EÜR Kz E6002301 „Aufwendungen für geringwertige Wirtschaftsgüter nach § 6 Abs. 2 EStG“ (Datenart EUER/E77, E77-2025.xsd:1353; ERiC-Submission routet per Kz-Präfix E60xx). Instanz-Reuse je GWG-Asset (instanz_gruppe:gwg): Basis → deklaration, __n → anlage_instanzen. Kz-Review 2026-07-19 (dev-2 kz_extract + Instructor-Verify)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 6 Abs. 2 S. 1 EStG"
