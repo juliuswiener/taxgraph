@@ -1653,6 +1653,38 @@ def test_gesamt_faltung_agb_kinder_staffel(base):
         assert erg["zahl_cent"] is None
 
 
+def test_gesamt_gewinn_agb_gde_staffel(base):
+    """§33-K2-Fix: der §33-zumutbar-Staffel-GdE (gde-Zwilling api.py) enthält jetzt einkuenfte_gewinn (§2 Abs.3 SdE =
+    ALLE Arten). Reiner Gewinnfall (§§13-18 Gewinn 80000, KEIN §19/§21) + agB 10000, 0 Kinder → zumutbare Belastung
+    auf GdE 80000 (7 %-Staffel), NICHT auf die frühere gewinn-lose GdE 0 (die den vollen agB durchließ = Under-tax).
+    Belegt den geschlossenen §33-K2-Under-Tax (pre-existing seit §§13-18): festzusetzende_est STEIGT auf 2054600 Cent."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "fgab", _gesamt_kegel(0, kein_vuv=True, gewinn=8000000, kein_gewinn=False))
+    _gesamt_abzuege(base, "fgab", agb=1000000)
+    st, erg = _req(base, "GET", "/fall/fgab/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 2054600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_gewinn_spende_deckel(base):
+    """§33-K2-Fix (Kehrseite §10b): der §10b-20%-Spenden-Deckel nutzt jetzt den vollen gde-Zwilling inkl. gewinn.
+    Gewinn 80000 + Spende 10000 → Deckel 20 % × 80000 = 16000 ≥ 10000 → volle Spende abziehbar, NICHT die frühere
+    gewinn-lose GdE 0 (Deckel 0 → keine Spende = Over-tax). festzusetzende_est FÄLLT auf den korrekten Wert 1848800 Cent
+    (18488 vs. gewinn-allein 20546 — die volle Spende 10000 mindert das Einkommen)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "fgsp", _gesamt_kegel(0, kein_vuv=True, gewinn=8000000, kein_gewinn=False))
+    _gesamt_abzuege(base, "fgsp", spende=1000000)
+    st, erg = _req(base, "GET", "/fall/fgsp/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1848800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def test_gesamt_faltung_24a_24b_freibetraege(base):
     """Weg (ii) Stage 2: §24a Altersentlastungsbetrag + §24b Entlastungsbetrag Alleinerziehende im gefalteten
     Ring (§2 Abs.3 GdE-mindernd). Senior (geburtsjahr 1958 → Kohorte 2023 → 14 %/665; Bemessung Arbeitslohn 30000

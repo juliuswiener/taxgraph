@@ -612,14 +612,16 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 g["vorsorge_ag_anteil_steuerfrei"] += _c("vor_ag_anteil_rv_partner") // 100
             # Sonder-Abzüge (Weg ii, Faltung): §35a → steuerermaessigungen, §10b + §10-KiSt → sonderausgaben,
             # §33-agB → aussergewoehnliche_belastungen — ADDITIV auf JEDE Einkunfts-Kombi (§19+§21+§20 zusammen
-            # MIT §35a/§10b/§33 in EINEM Bescheid). GdE (§2 Abs.3 = ns+vv − §24a − §24b, steht VOR den Abzügen fest
+            # MIT §35a/§10b/§33 in EINEM Bescheid). GdE (§2 Abs.3 = ns+vv+gewinn+sonstige − §24a − §24b = ALLE tarifl. Arten, VOR den Abzügen fest
             # §2 Abs.3-vor-Abs.4 → kein Zirkel) = Basis der §10b-20%-Deckelung + §33-zumutbar-Staffel (Korrektheit
             # vs. §19-only der Sonder-Scheiben). Absente Abzugs-Felder → 0 (fail-SAFE: über-, nie unterbesteuert).
             # rechnung_unbar=false nullt §35a Abs.2/3 (Minijob unberührt); fam_anzahl_kinder/splitting → zumutbar.
-            # Kapital-in-GdE (§20 Günstiger tariflich) ist bewusst NICHT in der §10b/§33-GdE (Stage-1-Nachtrag;
-            # Abgeltung ist ohnehin §2 Abs.5b-ausgeschlossen). Die K2-Sperren fängt der Guard vorher.
+            # einkuenfte_gewinn (§§13-18) + einkuenfte_sonstige (§22) SIND jetzt in der §10b/§33-GdE (§33-K2-Fix:
+            # §2 Abs.3 SdE = alle tarifl. Arten). NUR §32d-Kapital bewusst RAUS (§2 Abs.5b Abgeltung). Guard fängt K2.
             gde = runner.catala_gesamt_gde({"veranlagungszeitraum": vz, "veranlagung": g["veranlagung"],
                                             "einkuenfte_nichtselbststaendig": ns, "einkuenfte_vermietung": vv,
+                                            "einkuenfte_gewinn": g["einkuenfte_gewinn"],
+                                            "einkuenfte_sonstige": g.get("einkuenfte_sonstige", 0),
                                             "altersentlastungsbetrag": alt24a + alt24a_b,
                                             "entlastungsbetrag_alleinerziehende": ent24b})
             abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
@@ -690,8 +692,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # → Fold in sonstige_abzuege_vom_einkommen (§ 2 Abs. 5-Rest-Slot). Die zvE-Kette ist rein linear OHNE Floor
             # (einkommensteuertarif:494-514) → die Reihenfolge ist wertgleich zu „vorrangig vor". Der Höchstbetrag
             # (catala_p10d_2, min(GdE, Sockel+70%-Überstieg), gefixt sha 294cdd6a) braucht die VOLLE GdE (alle
-            # tariflichen Einkunftsarten INKL. §§ 13-18-Gewinn; § 32d-Kapital § 2 Abs. 5b-exkl.) — NICHT die §10b/§33-
-            # gde oben (die lässt einkuenfte_gewinn weg = pre-existing §10b/§33-Gap, separat gemeldet). absent → 0
+            # tariflichen Einkunftsarten INKL. §§ 13-18-Gewinn; § 32d-Kapital § 2 Abs. 5b-exkl.) — jetzt IDENTISCH zur
+            # §10b/§33-gde oben (§33-K2-Fix: beide voll ns+vv+gewinn+sonstige; der frühere Gap ist geschlossen). absent → 0
             # (over-tax-safe). Steht VOR dem § 35 (der § 35-Deckel-3 nutzt die post-§10d geminderte tarifliche ESt).
             gde_p10d = runner.catala_gesamt_gde({
                 "veranlagungszeitraum": vz, "veranlagung": g["veranlagung"],
