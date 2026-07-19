@@ -21,9 +21,13 @@ FLAG_NEGIERT = {
     # oder nur GWG-Anschaffungen belegen einen existierenden Betrieb, dürfen nicht als "kein Gewinn" durchrutschen.
     # gwg_anschaffungskosten_netto ist die Instanz-1-Basis (instanz_gruppe:gwg) — präsent, sobald irgendein GWG
     # vorliegt (Instanz 2..N tragen das Suffix __n, Instanz 1 = Basis; jede GWG-Präsenz setzt die Basis).
+    # Mitunternehmer (§ 15 Abs. 1 Nr. 2): Gewinnanteil + 3 Sondervergütungen sind ebenfalls gewerbliche
+    # Einkünfte — jede Präsenz belegt einen Betrieb, negiert kein_gewinn (auch ein negativer Anteil = Verlustjahr).
     "kein_gewinn":   ["einkuenfte_gewinn", "rentner_veraeusserungsgewinn",
                       "betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag",
-                      "gwg_anschaffungskosten_netto"],
+                      "gwg_anschaffungskosten_netto",
+                      "gewinnanteil", "verguetung_taetigkeit", "verguetung_darlehen",
+                      "verguetung_ueberlassung"],
 }
 
 

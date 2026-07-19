@@ -53,6 +53,7 @@ from pkg import Berufsausbildungsaufwendungen as BA  # noqa: E402  (§ 10 Abs. 1
 from pkg import BetriebsFreibetrag as BF  # noqa: E402  (§ 16 Abs. 4 Betriebsveräußerungs-Freibetrag, 2-I)
 from pkg import EuerGewinn as EG  # noqa: E402  (§ 4 Abs. 3 Einnahmenüberschussrechnung, 2-II)
 from pkg import Verlustvortrag as VL  # noqa: E402  (§ 10d Abs. 2 Verlustvortrag-Abzug)
+from pkg import MitunternehmerEinkuenfte as ME  # noqa: E402  (§ 15 Abs. 1 S. 1 Nr. 2 Mitunternehmer, #2-Front)
 from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
@@ -386,6 +387,22 @@ def catala_euer_gewinn(s: dict) -> int:
         betriebseinnahmen_in=Money(f"{int(s.get('betriebseinnahmen', 0))}.00"),
         betriebsausgaben_in=Money(f"{int(s.get('betriebsausgaben', 0))}.00")))
     return int(r.gewinn) // 100
+
+
+def catala_mitunternehmer_einkuenfte(s: dict) -> int:
+    """§ 15 Abs. 1 S. 1 Nr. 2 EStG — Einkünfte als Mitunternehmer, EURO (module MitunternehmerEinkuenfte):
+    gewinnanteil + verguetung_taetigkeit + verguetung_darlehen + verguetung_ueberlassung (Gewinnanteil +
+    3 Sondervergütungen: Tätigkeit/Darlehen/Überlassung, reine Addition, § 15 Abs. 1 S. 1 Nr. 2 S. 1). gewinnanteil =
+    der § 15a-ausgleichsfähige Anteil (Feststellungsbescheid, § 15a Abs. 4) → KANN NEGATIV sein (Verlust-Anteil,
+    § 15 Abs. 3 S. 2), roh summiert — die § 15a-Verlustbeschränkung liegt IM Input (wie gewst_messbetrag/
+    verlustvortrag_bestand FA-festgestellt). Sondervergütungen ≥ 0 (Zuflüsse). Accessor nimmt EUROS (slot_fn //100,
+    p10_1_7/euer-Konvention). Naht → einkuenfte_gewinn (§ 15 gewerblich, Anlage G)."""
+    r = ME.mitunternehmer_einkuenfte(ME.MitunternehmerEinkuenfteIn(
+        gewinnanteil_in=Money(f"{int(s.get('gewinnanteil', 0))}.00"),
+        verguetung_taetigkeit_in=Money(f"{int(s.get('verguetung_taetigkeit', 0))}.00"),
+        verguetung_darlehen_in=Money(f"{int(s.get('verguetung_darlehen', 0))}.00"),
+        verguetung_ueberlassung_in=Money(f"{int(s.get('verguetung_ueberlassung', 0))}.00")))
+    return int(r.einkuenfte_mitunternehmer) // 100
 
 
 def catala_p6_2_gwg(s: dict) -> int:

@@ -135,8 +135,14 @@ GESAMT_P35 = ("gewst_hebesatz", "gewst_messbetrag")
 # sonstigen Abzugsbeträgen" (§ 10d Abs. 2) → Fold in sonstige_abzuege_vom_einkommen (linear, kein Floor → wertgleich).
 # gesamtbetrag_einkuenfte + zusammenveranlagung sind DERIVED (GdE-Zwilling + veranlagung) → kein Feld-Add. absent → 0.
 VERLUST_FELD = ("verlustvortrag_bestand",)
+# § 15 Abs. 1 S. 1 Nr. 2 Mitunternehmer (#2-Front): gewinnanteil (§ 15a-ausgleichsfähiger Anteil, KANN NEGATIV) +
+# 3 Sondervergütungen (Tätigkeit/Darlehen/Überlassung, ≥ 0) → catala_mitunternehmer_einkuenfte-Summe ADDITIV in
+# einkuenfte_gewinn (§ 15 gewerblich, Anlage G) via _laufender_gewinn (→ symmetrisch in §35-Zähler+Nenner). In
+# gesamt UND rentner (Rentner-mit-Mitunternehmer). § 35-Abs.2-anteiliger-Messbetrag = eigene Folge-Naht (a2). Kz
+# null-MVP, alle optional (absent → 0). kein_gewinn-Negation für die 4 = dev-2 flag_check.
+MITU_FELDER = ("gewinnanteil", "verguetung_taetigkeit", "verguetung_darlehen", "verguetung_ueberlassung")
 RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
-                   "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER)
+                   "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + MITU_FELDER)
 # § 35 GewSt-Anrechnung auch im Rentner-Ring (Rentner-mit-Gewerbe): gewst_hebesatz + gewst_messbetrag (schon
 # global gebunden, s. GESAMT_P35). Der Deckel-3-Nenner ist hier VOLLSTÄNDIG renten(§22) + einkuenfte_gewinn —
 # die rentner-Scheibe hat KEIN § 19/§ 21 (ein Rentner-mit-Minijob/Miete ist scheiben-strukturell nicht modellierbar,
@@ -183,7 +189,7 @@ GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_vora
 # (rentner_veraeusserungsgewinn → veraeusserungsgewinn), eigener Cleanup. Routing bleibt Scheibe-fix (nicht
 # feld-getriggert) → EIN Fall = EINE Scheibe = EIN slot_fn, kein Doppel-Pfad.
 GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")
-GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD
+GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD + MITU_FELDER
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -374,11 +380,20 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
         v = f.get(fid, {}).get("wert")
         return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
     gwg_summe = _gwg_sofortabzug_summe(f, store, bindung)
+    # § 15 Abs. 1 S. 1 Nr. 2 Mitunternehmer (#2): SEPARATER §15-gewerblicher Summand (Beteiligung an PersG, additiv
+    # zum eigenen Gewerbe/EÜR — KEIN gewinn_quelle_offen-Konflikt, eigene Felder). gewinnanteil = §15a-ausgleichs-
+    # fähiger Anteil (kann NEGATIV, roh summiert). Hier IN _laufender_gewinn → symmetrisch in §35-Zähler+Nenner.
+    mitu = runner.catala_mitunternehmer_einkuenfte({
+        "gewinnanteil": _c("gewinnanteil") // 100,
+        "verguetung_taetigkeit": _c("verguetung_taetigkeit") // 100,
+        "verguetung_darlehen": _c("verguetung_darlehen") // 100,
+        "verguetung_ueberlassung": _c("verguetung_ueberlassung") // 100,
+    }) if any(_c(k) for k in MITU_FELDER) else 0
     if any(_c(k) for k in EUER_KOMPONENTEN) or gwg_summe > 0:
         return runner.catala_euer_gewinn({
             "betriebseinnahmen": _c("betriebseinnahmen") // 100,
-            "betriebsausgaben": (_c("sonstige_betriebsausgaben") + _c("afa_jahresbetrag")) // 100 + gwg_summe})
-    return _c("einkuenfte_gewinn") // 100
+            "betriebsausgaben": (_c("sonstige_betriebsausgaben") + _c("afa_jahresbetrag")) // 100 + gwg_summe}) + mitu
+    return _c("einkuenfte_gewinn") // 100 + mitu
 
 
 def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None,

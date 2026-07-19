@@ -251,6 +251,84 @@ bindungen:
       zitatanker: "Absetzung für Abnutzung in gleichen Jahresbeträgen"
       datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
 
+  # ===== Mitunternehmer § 15 Abs. 1 S. 1 Nr. 2 (Gewinnanteil + 3 Sondervergütungen) =====
+  # regel p15_1_2_mitunternehmer (MitunternehmerEinkuenfte, materialisiert): einkuenfte_mitunternehmer =
+  # gewinnanteil + verguetung_taetigkeit + verguetung_darlehen + verguetung_ueberlassung. Der Output fließt
+  # additiv in einkuenfte_gewinn (betriebsart=gewerbe; § 15 = gewerblich, Anlage G — dev-1-Ring-Naht).
+  # ⚠ § 15a-ANNAHME (Mitigation A, instructor-adjudiziert): gewinnanteil = der AUSGLEICHSFÄHIGE Anteil nach
+  # § 15a (FA-festgestellt, Feststellungsbescheid) — die Verlust-Ausgleichsbeschränkung ist schon im Input,
+  # der nicht-ausgleichsfähige Kommanditist-Verlust (neg. Kapitalkonto) gehört NICHT hierher (§ 15a Abs. 2
+  # gesondert festgestellt/vorgetragen). FA-Input-Muster wie gewst_messbetrag. Kz=null VORERST (Anlage-G-
+  # Mitunternehmer-Kz = eigene Kz-Review-Runde). Alle 4 optional (absent → 0).
+  - feld_id: gewinnanteil
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: gewinnanteil}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch ist dein zugerechneter Gewinn- oder Verlustanteil als Mitunternehmer (OHG/KG/GbR)?"
+    hilfe_kurz: "Der ausgleichsfähige Gewinn-/Verlustanteil aus deinem Feststellungsbescheid (nach § 15a). Bei Kommanditist mit negativem Kapitalkonto: der nicht-ausgleichsfähige Verlust gehört NICHT hierher — er wird gesondert festgestellt/vorgetragen (§ 15a Abs. 2). Einen Verlust trägst du als negativen Betrag ein."
+    beispielwert: 4000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Mitunternehmer-Gewinnanteil (§ 15 Abs. 1 S. 1 Nr. 2) → Anlage G; die konkrete Anlage-G-Mitunternehmer-Zeile ist eine eigene Kz-Review-Runde (Instructor-Adjudikation) — null-Kz-MVP. Der Betrag ist FA-festgestellt (gesonderte + einheitliche Feststellung), wie gewst_messbetrag/verlustvortrag_bestand."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "die Gewinnanteile der Gesellschafter einer Offenen Handelsgesellschaft, einer Kommanditgesellschaft und einer anderen Gesellschaft, bei der der Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen ist"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_taetigkeit
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_taetigkeit}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hast du als Gesellschafter Vergütungen für deine Tätigkeit im Dienst der Gesellschaft bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2: was du von der Gesellschaft für deine Mitarbeit (Geschäftsführung, Dienstleistung) erhalten hast — steuerlich Teil deiner gewerblichen Einkünfte, nicht Arbeitslohn."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Sondervergütung Tätigkeit (§ 15 Abs. 1 S. 1 Nr. 2) → Anlage G Mitunternehmer-Zeile; null-Kz-MVP (eigene Kz-Review-Runde), Aggregat mit Gewinnanteil."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für seine Tätigkeit im Dienst der Gesellschaft"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_darlehen
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_darlehen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hast du der Gesellschaft ein Darlehen gegeben und dafür Zinsen bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2: Zinsen für die Hingabe von Darlehen an die Gesellschaft — steuerlich Teil deiner gewerblichen Einkünfte."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Sondervergütung Darlehen (§ 15 Abs. 1 S. 1 Nr. 2) → Anlage G Mitunternehmer-Zeile; null-Kz-MVP (eigene Kz-Review-Runde), Aggregat mit Gewinnanteil."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für die Hingabe von Darlehen"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_ueberlassung
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_ueberlassung}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hast du der Gesellschaft Wirtschaftsgüter überlassen (z. B. ein Grundstück vermietet) und dafür eine Vergütung bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2: Miete/Pacht für die Überlassung von Wirtschaftsgütern an die Gesellschaft — steuerlich Teil deiner gewerblichen Einkünfte, nicht Einkünfte aus Vermietung."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Sondervergütung Überlassung (§ 15 Abs. 1 S. 1 Nr. 2) → Anlage G Mitunternehmer-Zeile; null-Kz-MVP (eigene Kz-Review-Runde), Aggregat mit Gewinnanteil."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für die Überlassung von Wirtschaftsgütern"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+
   # ===== GewSt § 35-Anrechnung S1 (Gewerbesteuer auf ESt): Messbetrag-Input-Pfad =====
   # § 35 EStG: die tarifliche ESt ermäßigt sich um min(4× Messbetrag [„das Vierfache", geltende Fassung 2026 —
   # NICHT 3,8×, angehoben VZ 2020], tatsächlich zu zahlende GewSt = Messbetrag × Hebesatz; Ermäßigungshöchstbetrag).

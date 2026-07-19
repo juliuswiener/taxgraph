@@ -1,0 +1,108 @@
+# § 15 Abs. 1 S. 1 Nr. 2 EStG — Einkünfte aus Gewerbebetrieb als Mitunternehmer (Gewinnanteil + Sondervergütungen)
+
+> Module MitunternehmerEinkuenfte
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p15_1_2_mitunternehmer_einkuenfte.json`
+(module MitunternehmerEinkuenfte, verified_bedingt, faithful=true, sha256 catala_a `598768bc1518ad8c38999f098f4f92965c3787700ab51fa1eae344a396b1bd44`).
+Die scope-Logik unten ist BYTE-GLEICH aus `catala_a` übernommen (keine Änderung); nur Module-Header +
+§-Zitatanker + Grenzfall-Seeds sind ergänzt.
+
+⚠ §15a-ANNAHME (instructor-adjudiziert 2026-07-19, Mitigation A): `gewinnanteil` = der AUSGLEICHSFÄHIGE Anteil
+nach § 15a (FA-festgestellt aus dem Feststellungsbescheid, § 15a Abs. 4) — die Verlust-Ausgleichsbeschränkung
+ist SCHON im Input, die Formel summiert korrekt. Der nicht-ausgleichsfähige Kommanditist-Verlust (negatives
+Kapitalkonto, § 15a Abs. 1 S. 1) gehört NICHT in diesen Input; er wird gesondert festgestellt/vorgetragen
+(§ 15a Abs. 2). Die § 15a-Restriktions-Rechnung selbst ist NICHT modelliert = benannte Lücke (over-tax-safe,
+wenn der User unter-liefert; die Feld-Hilfe wehrt Über-Lieferung ab). FA-Input-Muster wie gewst_messbetrag /
+verlustvortrag_bestand. Ohne diese Annahme wäre die rohe Summe ein latenter Under-Tax (roher Verlust >
+Kapitalkonto in die GdE).
+
+Zitatanker § 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG (`sources/gesetze-im-internet/estg_p15_2026-07-14.txt`, typ gesetz):
+„die Gewinnanteile der Gesellschafter einer Offenen Handelsgesellschaft, einer Kommanditgesellschaft und einer
+anderen Gesellschaft, bei der der Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen ist,
+und die Vergütungen, die der Gesellschafter von der Gesellschaft für seine Tätigkeit im Dienst der Gesellschaft
+oder für die Hingabe von Darlehen oder für die Überlassung von Wirtschaftsgütern bezogen hat". → gewinnanteil +
+verguetung_taetigkeit + verguetung_darlehen + verguetung_ueberlassung. Naht: einkuenfte_mitunternehmer →
+einkuenfte_gewinn (betriebsart=gewerbe, § 15 = gewerblich, dev-1-Ring).
+
+```catala
+declaration scope MitunternehmerEinkuenfte:
+  input gewinnanteil content money
+  input verguetung_taetigkeit content money
+  input verguetung_darlehen content money
+  input verguetung_ueberlassung content money
+  output einkuenfte_mitunternehmer content money
+
+scope MitunternehmerEinkuenfte:
+  definition einkuenfte_mitunternehmer equals
+    gewinnanteil
+    + verguetung_taetigkeit
+    + verguetung_darlehen
+    + verguetung_ueberlassung
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestReinerGewinn:
+  # Reiner Gewinnanteil, keine Sondervergütungen -> 1:1 durch.
+  internal r content MitunternehmerEinkuenfte
+  output g content money
+scope TestReinerGewinn:
+  definition r equals output of MitunternehmerEinkuenfte with {
+    -- gewinnanteil: $50,000.00
+    -- verguetung_taetigkeit: $0.00
+    -- verguetung_darlehen: $0.00
+    -- verguetung_ueberlassung: $0.00 }
+  definition g equals r.einkuenfte_mitunternehmer
+  assertion g = $50,000.00
+```
+
+```catala
+#[test]
+declaration scope TestAlleSonderverguetungen:
+  # Gewinnanteil + alle 3 Sondervergütungen (Tätigkeit/Darlehen/Überlassung) additiv.
+  internal r content MitunternehmerEinkuenfte
+  output g content money
+scope TestAlleSonderverguetungen:
+  definition r equals output of MitunternehmerEinkuenfte with {
+    -- gewinnanteil: $10,000.00
+    -- verguetung_taetigkeit: $12,000.00
+    -- verguetung_darlehen: $3,000.00
+    -- verguetung_ueberlassung: $5,000.00 }
+  definition g equals r.einkuenfte_mitunternehmer
+  assertion g = $30,000.00
+```
+
+```catala
+#[test]
+declaration scope TestBoundaryNegativerAnteil:
+  # ⚠ §15a-BOUNDARY: negativer AUSGLEICHSFÄHIGER Anteil (-20000, nach §15a schon beschränkt) + Tätigkeit 12000
+  # -> -8000. Die Formel summiert korrekt; der nicht-ausgleichsfähige Verlust ist per Annahme NICHT im Input.
+  internal r content MitunternehmerEinkuenfte
+  output g content money
+scope TestBoundaryNegativerAnteil:
+  definition r equals output of MitunternehmerEinkuenfte with {
+    -- gewinnanteil: -$20,000.00
+    -- verguetung_taetigkeit: $12,000.00
+    -- verguetung_darlehen: $0.00
+    -- verguetung_ueberlassung: $0.00 }
+  definition g equals r.einkuenfte_mitunternehmer
+  assertion g = -$8,000.00
+```
+
+```catala
+#[test]
+declaration scope TestNull:
+  # Alles 0 -> 0.
+  internal r content MitunternehmerEinkuenfte
+  output g content money
+scope TestNull:
+  definition r equals output of MitunternehmerEinkuenfte with {
+    -- gewinnanteil: $0.00
+    -- verguetung_taetigkeit: $0.00
+    -- verguetung_darlehen: $0.00
+    -- verguetung_ueberlassung: $0.00 }
+  definition g equals r.einkuenfte_mitunternehmer
+  assertion g = $0.00
+```

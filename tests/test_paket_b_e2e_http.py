@@ -739,7 +739,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
              basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True,
              betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None, vg=0,
-             gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0):
+             gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
+             gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
@@ -783,6 +784,10 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
         k.append(("gewst_hebesatz", gewst_hebesatz))
     if verlustvortrag_bestand:                      # § 10d Abs. 2 Verlustvortrag (opt-in, cent)
         k.append(("verlustvortrag_bestand", verlustvortrag_bestand))
+    for _mf, _mv in (("gewinnanteil", gewinnanteil), ("verguetung_taetigkeit", verg_taetigkeit),  # § 15 Abs. 1 Nr. 2 Mitunternehmer (cent, opt.)
+                     ("verguetung_darlehen", verg_darlehen), ("verguetung_ueberlassung", verg_ueberlassung)):
+        if _mv:                                     # gewinnanteil kann NEGATIV (§15a-ausgleichsfähiger Verlustanteil)
+            k.append((_mf, _mv))
     if bruttolohn_partner is not None:
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
     if person_b_idnr is not None:
@@ -897,6 +902,63 @@ def test_gesamt_euer_gewinn(base):
         assert erg["zahl_cent"] == 1067800 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
+
+
+def test_gesamt_mitunternehmer_gewinnanteil(base):
+    """§ 15 Abs. 1 S. 1 Nr. 2 Mitunternehmer (#2): reiner Gewinnanteil 50000 (Beteiligung an PersG, betriebsart
+    gewerbe) → catala_mitunternehmer_einkuenfte → einkuenfte_gewinn 50000 → festzusetzende_est 1067800 Cent
+    (identisch zum direkten Gewinn/EÜR 50000 — Mitunternehmer ist nur eine weitere §15-Gewinnquelle). kein_gewinn=False."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "mu1", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
+                    betriebsart="gewerbe", gewinnanteil=5000000))
+    st, erg = _req(base, "GET", "/fall/mu1/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1067800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_mitunternehmer_sonderverguetungen(base):
+    """§ 15 Abs. 1 S. 1 Nr. 2 S. 1: Gewinnanteil 30000 + die 3 SONDERVERGÜTUNGEN (Tätigkeit 12000 + Darlehen 3000
+    + Überlassung 5000 = 20000) → einkuenfte_mitunternehmer 50000 → einkuenfte_gewinn 50000 → festzusetzende_est
+    1067800 Cent, IDENTISCH zum reinen Gewinnanteil 50000 (mu1) — belegt die additive 4-Summanden-Formel (Sonder-
+    vergütungen sind Teil der gewerblichen Einkünfte, § 15 Abs. 1 Nr. 2 S. 1)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "mu2", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, betriebsart="gewerbe",
+                    gewinnanteil=3000000, verg_taetigkeit=1200000, verg_darlehen=300000, verg_ueberlassung=500000))
+    st, erg = _req(base, "GET", "/fall/mu2/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1067800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_mitunternehmer_verlustanteil(base):
+    """§ 15 Abs. 3 S. 2 / § 15a-BOUNDARY (non-vacuous): NEGATIVER Gewinnanteil −20000 (§15a-ausgleichsfähiger
+    Verlust-Anteil, Feststellungsbescheid) + Tätigkeitsvergütung 12000 → einkuenfte_mitunternehmer −8000 → mindert
+    via § 2 Abs. 3-Ausgleich den § 19-Lohn (60000 → § 19-Einkünfte 58770): GdE 58770 − 8000 = 50770 → festzusetzende_
+    est 1095200 Cent, NIEDRIGER als ohne den Verlust-Anteil (der ausgleichsfähige −8000 senkt die GdE). Belegt: der
+    ausgleichsfähige Verlust-Mitunternehmeranteil fließt roh in den §-2-Ausgleich (§15a-Beschränkung liegt IM Input)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "mu3", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, bruttolohn=6000000,
+                    betriebsart="gewerbe", gewinnanteil=-2000000, verg_taetigkeit=1200000))
+    st, erg = _req(base, "GET", "/fall/mu3/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1095200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_mitunternehmer_flag_widerspruch(base):
+    """K2 (Guard non-vacuous, #2 JOINT): kein_gewinn=true (behauptet keine Gewinneinkünfte) UND gewinnanteil > 0
+    (Mitunternehmer-Beteiligung § 15 Nr. 2) → Widerspruch surfacen (flag_konsistenz_offen), keine still übergangene
+    §15-Einkunftsart. Belegt den flag_check-Fix FLAG_NEGIERT[kein_gewinn] += die 4 Mitunternehmer-Felder (dev-2)."""
+    _gesamt_anlegen(base, "muw", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=True, gewinnanteil=5000000))
+    st, erg = _req(base, "GET", "/fall/muw/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "flag_konsistenz_offen"
 
 
 def test_gesamt_euer_verlust_durchfluss(base):
@@ -1787,7 +1849,8 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    renten_art_partner=None, jahresrente_partner=0, beginn_partner=2025,
                    alter_partner=0, rentenfreibetrag_partner=None, gewinn=0, vg=0, kein_gewinn=True,
                    betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0,
-                   betriebsart=None, gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0):
+                   betriebsart=None, gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
+                   gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0):
     """rentner_gesamt-Kegel: § 22 (renten_art/jahresrente Cent/beginn/alter) + § 33b-Block + Flags
     (kein_sonstige=False = Rente IST § 22-sonstige; kein_kap/vuv=True). rentenfreibetrag (Cent) nur
     aa-Folgejahr; Partner-Behinderung + Partner-Rente (renten_art_partner gesetzt) nur zusammen (#4b).
@@ -1817,6 +1880,10 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
         k.append(("verlustvortrag_bestand", verlustvortrag_bestand))
     if vg:                                          # § 16 Veräußerungsgewinn (2-I, optional)
         k.append(("rentner_veraeusserungsgewinn", vg))
+    for _mf, _mv in (("gewinnanteil", gewinnanteil), ("verguetung_taetigkeit", verg_taetigkeit),  # § 15 Nr. 2 Mitunternehmer (cent, opt.)
+                     ("verguetung_darlehen", verg_darlehen), ("verguetung_ueberlassung", verg_ueberlassung)):
+        if _mv:
+            k.append((_mf, _mv))
     if rentenfreibetrag is not None:
         k.append(("rentner_rentenfreibetrag", rentenfreibetrag))
     if gdb_partner:
@@ -1887,6 +1954,22 @@ def test_rentner_gewinn_plus_veraeusserung_additiv(base):
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 2477200 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_mitunternehmer(base):
+    """§ 15 Abs. 1 S. 1 Nr. 2 Mitunternehmer im RENTNER-Ring (Rentner-mit-PersG-Beteiligung): gesetzl. Rente 20000
+    (→ einkuenfte_sonstige 16598) + Gewinnanteil 30000 (betriebsart gewerbe) → einkuenfte_mitunternehmer 30000 →
+    einkuenfte_gewinn 30000 → catala_gesamt summiert (§ 2 Abs. 3): GdE 46598 → festzusetzende_est 949200 Cent.
+    Belegt: die Mitunternehmer-Naht wirkt in BEIDEN Ringen (Rentner-mit-Mitunternehmer)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rmu", _rentner_kegel(jahresrente=2000000, beginn=2025, kein_gewinn=False,
+                     betriebsart="gewerbe", gewinnanteil=3000000))
+    st, erg = _req(base, "GET", "/fall/rmu/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 949200 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
 
