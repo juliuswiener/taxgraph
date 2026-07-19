@@ -1,0 +1,27 @@
+id: gesamt_2025_zusammen_person_b_vorsorge
+# dev-2 2026-07-19: flacher Kompositions-Golden (§21-Muster) — catala_gesamt-zusammen nimmt sonderausgaben
+# pre-computed. sonderausgaben=8000 = die KOMBINIERTE Person-A+B-Vorsorge (jeder Ehegatte KV/PV-Basis 4000 >
+# eigener HB 2800 -> § 10 Abs. 4 S. 4 Durchbruch -> je voller Basis-Abzug 4000; § 10 Abs. 4 S. 3: der
+# gemeinsame Höchstbetrag ist die Summe der jedem Ehegatten zustehenden HB, also hat Person B seine EIGENE
+# Vorsorge). Die per-Person-Vorsorge-Berechnung + no-double-count ist in dev-1s A.2-Fold-Test verifiziert
+# (A+B/A-only/keine non-vacuous); dieser Golden verankert den Splittingtarif auf der Vorsorge-reduzierten zvE.
+# est doppelt hand-verifiziert: zvE 72000 (SA 8000 > § 10c-PB-zusammen 72 -> SA voll), Splittingtarif =
+# 2 × Grundtarif(36000) = 2 × 6071 = 12142 (Engine catala_gesamt identisch).
+beschreibung: "Engine-Komposition A.2 Person-B-Vorsorge bei Zusammenveranlagung (§ 26b): beide Ehegatten § 19 (zusammen 80000). BEIDE haben eigene Vorsorge: Person A Basis-KV/PV 4000 + Person B Basis-KV/PV 4000, jeder über seinem eigenen Höchstbetrag 2800 -> § 10 Abs. 4 S. 4 Durchbruch je Person -> voller Basis-Abzug 4000 je Ehegatte -> sonderausgaben 8000 (§ 10 Abs. 4 S. 3: gemeinsamer HB = Summe je Ehegatte) -> zvE 72000 -> Splittingtarif 2 × Grundtarif(36000) = 12142 -> festzusetzende_est 12142. OHNE A.2 (nur Person-A-Vorsorge abgezogen, Person B still über-besteuert = der behobene A.1-Fehler) wäre sonderausgaben nur 4000 -> est 13378. Beweist: die Person-B-Vorsorge wird bei Zusammenveranlagung abgezogen (jeder Ehegatte eigene Vorsorge, § 10 Abs. 4 S. 3), senkt die est um 1236. VZ 2025"
+
+sachverhalt:
+  gesamtfall: true
+  veranlagungszeitraum: 2025
+  veranlagung: zusammen
+  einkuenfte_nichtselbststaendig: 80000
+  sonderausgaben: 8000
+
+erwartung:
+  festzusetzende_est: 12142
+
+quelle:
+  authority: gesetz
+  redistributable: true
+  fundstelle: "§ 10 Abs. 4 S. 3 EStG (gemeinsamer Höchstbetrag je Ehegatte bei Zusammenveranlagung) i.V.m. § 26b / § 32a Abs. 5 (Splitting) + § 2 Abs. 3 bis 6"
+  datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  zitatanker: "Bei zusammen veranlagten Ehegatten bestimmt sich der gemeinsame Höchstbetrag aus der Summe der jedem Ehegatten"
