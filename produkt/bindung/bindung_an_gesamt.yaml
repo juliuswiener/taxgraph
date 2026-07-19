@@ -223,6 +223,78 @@ bindungen:
       quelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG"
       zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # ===== KV/PV Person-B (§ 10 Abs. 1 Nr. 3/3a + Abs. 4) + §24a-B — A.2, feld_id==dev-1-Read-Key 1:1 =====
+  # Slot-Kontrakt mit dev-1 fixiert: er liest die feld_ids DIREKT als Person-B-Inputs (KrankenPflegeVorsorge
+  # bzw. §24a-Kohorte); kein Präfix-Mismatch. Klasse-g Person-Multiplikation, null-Kz (Reuse Person-A-Kz).
+  - feld_id: basis_kv_pv_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: basis_kv_pv_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr für seine Basis-Kranken- und die gesetzliche Pflegeversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell: die Kranken-/Pflege-Basisbeiträge deines Partners (aus seiner Beitragsbescheinigung), ohne Zusatzleistungen."
+    beispielwert: 300000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-Vorsorgeaufwand-Instanz B (Person-Multiplikation, Klasse g): Kz-Reuse Person A, zweites Sub-Dokument; Sektions-Pfad-Adjudikation = benannter Nachtrag, null-Kz-MVP."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 EStG"
+      zitatanker: "Krankenversicherungen, soweit diese zur Erlangung eines durch das Zwölfte Buch Sozialgesetzbuch bestimmten sozialhilfegleichen Versorgungsniveaus erforderlich sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: weitere_vorsorgeaufwendungen_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Was hat dein Partner dieses Jahr für weitere Vorsorge gezahlt (private Zusatz-Krankenversicherung, Haftpflicht, Arbeitslosen-, Unfall- oder Risikolebensversicherung)?"
+    hilfe_kurz: "Person-individuell; alles über die Basis-Kranken-/Pflegeversicherung hinaus. Wird bis zum gemeinsamen Höchstbetrag berücksichtigt."
+    beispielwert: 80000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-Vorsorgeaufwand-Instanz B (Person-Multiplikation, Klasse g): Kz-Reuse Person A; Sektions-Pfad-Adjudikation = benannter Nachtrag, null-Kz-MVP."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: mit_anspruch_auf_zuschuss_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: mit_anspruch_auf_zuschuss_partner}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner Anspruch auf einen steuerfreien Zuschuss oder Beihilfe zu seiner Krankenversicherung (z. B. als Beamter, Betriebsrentner oder mit Arbeitgeber-Zuschuss)?"
+    hilfe_kurz: "Person-individuell: wenn ja, gilt für ihn der niedrigere Höchstbetrag (1.900 statt 2.800 Euro). Wichtig für die richtige Berechnung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein) für den 1900-Höchstbetrag Person B (§ 10 Abs. 4 S. 2), kein Betragsfeld; Person-Multiplikation, Kz = benannter Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 4 S. 2 EStG"
+      zitatanker: "Anspruch auf vollständige oder teilweise Erstattung oder Übernahme von Krankheitskosten"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: geburtsjahr_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: geburtsjahr_partner}
+    typ: int
+    einheit: null
+    bereich: {min: 1900, max: 2010, grund: "Geburtsjahr Ehe-/Lebenspartner, plausibler Bereich für erwerbstätige/rentennahe Steuerpflichtige."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Jahr ist dein Ehe-/Lebenspartner geboren?"
+    hilfe_kurz: "Person-individuell: bestimmt Prozentsatz und Höchstbetrag des Altersentlastungsbetrags deines Partners (eigene Kohorte nach dem Jahr, das der Vollendung des 64. Lebensjahres folgt)."
+    beispielwert: 1958
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kohorten-Schlüssel Person B (abgeleitet über die Tabelle), kein eigenes Betragsfeld; Person-Multiplikation, vollständiges Geburtsdatum im Mantelbogen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 24a S. 5 EStG"
+      zitatanker: "maßgebende Prozentsatz und der Höchstbetrag"
+      datei: "sources/gesetze-im-internet/estg_p24a_2026-07-13.txt"
   - feld_id: person_b_idnr
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
     typ: text
