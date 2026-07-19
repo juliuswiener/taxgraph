@@ -59,8 +59,10 @@ Von dev-1s Bughunt im gesamt-Ring gefunden. Richtungs-Tag = K2-Wirkung heute.
 | **B** Ehegatte-sonstige-Kapitalgewinn nicht erfassbar bei zusammen (runner-Accessor Z.533 hart 0) | § 20 Abs. 2 | **UNTER-tax** (Modell-Mismatch) | MITTEL (Ehepaar, Ehegatte-Veräußerungsgewinn) | mittel (Person-B-§20-Abs.2-Erfassung: dev-2-Binding + dev-1-runner) | offen |
 | **C** § 21-Verbilligt-Accessor: entgelt_quote=0-`or 100`-Falle + fehlende Einkünfteerzielungsabsicht | § 21 Abs. 2 / Abs. 1 | **UNTER-tax** (§21-Fix-DEFEKT) | quote=0 (voll unentgeltlich) → als 100 behandelt → WK voll statt 0; EEA nicht geprüft | niedrig (`or 100`→None-Check) + mittel (EEA-Gate) | dev-1-runner (Accessor-Defekt im §21-Fix) |
 | **D** § 24b bei veranlagung=zusammen + fam_alleinstehend=True ohne Konsistenz-Sperre | § 24b Abs. 1 | **UNTER-tax** (Widerspruch ungesperrt) | SELTEN (widersprüchliche Eingabe zusammen+alleinstehend) | niedrig (Konsistenz-Guard) | dev-2-Zone (produkt/konsistenz partner_check) |
+| **E** § 10 Abs. 3 S. 3 RV-Höchstbetrag-Verdopplung bei zusammen (~27.566 → 55.132 €) nicht abgebildet (A+B-RV in EINEN Slot) | § 10 Abs. 3 S. 2 | **ÜBER-tax** (fail-safe) | SELTEN (Hoch-RV-Paare > 27.566 € gemeinsam) → leicht unter-abgezogen | mittel (per-Person-RV-HB) | runner.py-_vorsorge_abzug-Zone (dev-1), shared/golden-Impact = später |
 
-**Prio TIER 6:** C (§21-Fix-Defekt, echter UNTER-tax im gerade gebauten Fix) + D (billiger Konsistenz-Guard, meine Zone) zuerst; A.1-Guard läuft (dev-1); B = mittlere Front. A ist ÜBER-tax (fail-safe-Richtung, aber häufig → Guard sinnvoll), B/C/D sind UNTER-tax (schärfer).
+**STATUS TIER 6 (2026-07-19):** A GESCHLOSSEN (A.1-Guard + A.2 Person-B-Vorsorge live d4ceaa1). C+D GESCHLOSSEN (§21-quote0-Fix + §24b-Konsistenz-Sperre, committet addce7c). E = neuer A.2-Residual (über-tax, selten, später). B (§20-Abs.2-Ehegatte-Kapitalgewinn) = offen, mittlere Front.
+**Prio-Historie:** C+D zuerst (UNTER-tax) → erledigt; A.2 (über-tax häufig) → erledigt; E (über-tax selten) + B (unter-tax mittel) verbleibend.
 
 ## ⚠ K2-PRÜFAUFTRÄGE (die 2 unter-besteuert-RISIKO-Kandidaten)
 Die meisten Gaps sind fail-safe (über-besteuert/guard-gesperrt). ZWEI verdienen K2-Prüfung, ob heute still
