@@ -695,6 +695,15 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             if any((felder.get(pf) or {}).get("zustand") != "bestaetigt"
                    for pf in GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP):
                 return "partner_kegel_offen"
+        # § 10 Vorsorge Person B (A.1-Sofortkappe, K2): der gesamt-Ring liest VOR (§10 Abs.3) + KV/PV (§10 Abs.1
+        # Nr.3/3a) + §24a NUR für Person A (slot_fn Z.474-476/503-506/459-461). Bei Zusammenveranlagung fiele die
+        # Vorsorge des Ehegatten STILL weg → Bescheid falsch-hoch OHNE Signal (Über-tax verletzt K2). Bis die volle
+        # Person-B-Vorsorge (A.2, vor_*_partner/basis_kv_pv_partner/geburtsjahr_partner) gebaut ist: fail-closed,
+        # sobald eine Vorsorge-Position POSITIV ist. Spiegelt an_gesamts partner_vor_offen (Z.786). _positiv nullt
+        # bools → mit_anspruch_auf_zuschuss zählt nicht. § 24a-B-Restlücke (kein geburtsjahr_partner) bleibt benannt.
+        if (felder.get("veranlagung", {}).get("wert") == "zusammen"
+                and any(_positiv(vf) for vf in VOR_FELDER + KV_PV_FELDER)):
+            return "partner_vorsorge_offen"
         # Multi-Objekt § 21 (#5): jede WEITERE vv_objekt-Instanz (index ≥ 2) muss VOLLSTÄNDIG bestätigt sein —
         # alle 5 Basis-vv-Felder present UND per-Instanz-meet == bestaetigt (instanzen-Naht). Sonst kein Σ (K2:
         # eine halbe/vorläufige Objekt-Instanz erzeugte sonst ein still zu niedriges §21-Σ). Instanz 1 = der

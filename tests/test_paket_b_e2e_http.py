@@ -218,6 +218,29 @@ def test_gesamt_zusammen_partner_kegel_offen(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "partner_kegel_offen"
 
 
+def test_gesamt_zusammen_partner_vorsorge_offen_vor(base):
+    """A.1-Sofortkappe (K2): Zusammenveranlagung mit VOLLSTÄNDIGEM Person-B-Kegel, aber Person-A-VOR (§ 10 Abs. 3)
+    positiv → partner_vorsorge_offen. Der gesamt-Ring liest VOR NUR für Person A; ein Ehepaar-Bescheid ohne die
+    Vorsorge des Ehegatten wäre falsch-hoch OHNE Signal (stille Über-tax, verletzt K2). Fail-closed statt halber
+    Bescheid — bis die volle Person-B-Vorsorge (A.2) gebaut ist. Spiegelt an_gesamts partner_vor_offen."""
+    _gesamt_anlegen(base, "zpvv", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
+                                                veranlagung="zusammen", bruttolohn_partner=3000000,
+                                                person_b_idnr="12345678901", vor_an=350000, vor_ag=350000))
+    st, erg = _req(base, "GET", "/fall/zpvv/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "partner_vorsorge_offen"
+
+
+def test_gesamt_zusammen_partner_vorsorge_offen_kv_pv(base):
+    """A.1-Sofortkappe (K2): dieselbe Sperre greift für KV/PV (§ 10 Abs. 1 Nr. 3/3a) — Person-A-basis_kv_pv positiv
+    bei Zusammenveranlagung → partner_vorsorge_offen (Person-B-KV/PV würde sonst still fallen). Belegt: die Kappe
+    deckt BEIDE Vorsorge-Familien (VOR + KV/PV), nicht nur VOR."""
+    _gesamt_anlegen(base, "zpkv", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
+                                                veranlagung="zusammen", bruttolohn_partner=3000000,
+                                                person_b_idnr="12345678901", basis_kv_pv=320000))
+    st, erg = _req(base, "GET", "/fall/zpkv/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "partner_vorsorge_offen"
+
+
 def test_concurrent_ergebnis_kein_race(base):
     """K2-Concurrency-Beweis: die Haut feuert /stand + /ergebnis PARALLEL (Browser serialisiert XHRs nicht)
     und catala_runtime ist NICHT thread-safe (globaler max_decimals steuert die Money-Rundung). Der SINGLE-
