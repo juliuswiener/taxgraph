@@ -585,13 +585,14 @@ bindungen:
 
   # ========================= GWG — p6_2_gwg_sofortabzug =========================
   - feld_id: gwg_anschaffungskosten_netto
+    instanz_gruppe: gwg
     quelle: {regel_id: p6_2_gwg_sofortabzug, signatur_slot: anschaffungskosten_netto}
     typ: cent
     einheit: EUR
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Was hat das Gerät oder Werkzeug gekostet (Preis ohne Mehrwertsteuer, wenn du sie zurückbekommst)?"
-    hilfe_kurz: "Bis 800 Euro netto kannst du es sofort komplett als Betriebsausgabe absetzen."
+    hilfe_kurz: "Bis 800 Euro netto kannst du es sofort komplett als Betriebsausgabe absetzen. Kostet es mehr als 800 Euro netto, schreib es stattdessen über die Abschreibung (AfA) ab — nicht hier. Jedes Wirtschaftsgut einzeln eintragen (die 800-Euro-Grenze gilt je Stück)."
     beispielwert: 60000
     herkunft_slots: null
     elster_kz: null

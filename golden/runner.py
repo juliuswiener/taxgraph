@@ -387,6 +387,19 @@ def catala_euer_gewinn(s: dict) -> int:
     return int(r.gewinn) // 100
 
 
+def catala_p6_2_gwg(s: dict) -> int:
+    """§ 6 Abs. 2 EStG — Sofortabzug geringwertiger Wirtschaftsgüter (GWG) EINES Assets, EURO (module
+    GwgSofortabzug): sofortabzug = (anschaffungskosten_netto ≤ 800) ? netto : 0. PER ASSET (der Aufrufer Σ-t
+    über alle GWG-Instanzen, EM.instanzen(gwg)). > 800 netto → 0 (kein GWG, muss über AfA/afa_jahresbetrag).
+    Read-Key gwg_anschaffungskosten_netto (feld_id 1:1 dev-2-Binding, netto = § 9b-bereinigt = Deklarations-
+    Annahme). Accessor nimmt EUROS (die //100-Umrechnung liegt im slot_fn — wie catala_p16_4/euer_gewinn). LAZY
+    Modul-Import: erst bei erstem Aufruf (nach dev-2s p6_2-Promotion/-Export), damit runner.py auch vorher lädt."""
+    from pkg import GwgSofortabzug as GW  # noqa: E402  (lazy — § 6 Abs. 2 GWG-Sofortabzug, 2-III)
+    r = GW.gwg_sofortabzug(GW.GwgSofortabzugIn(
+        anschaffungskosten_netto_in=Money(f"{int(s.get('gwg_anschaffungskosten_netto', 0))}.00")))
+    return int(r.sofortabzug) // 100
+
+
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --
 
 def _sparer_pauschbetrag(year: int) -> int:

@@ -16,11 +16,14 @@ FLAG_NEGIERT = {
     "kein_kap":      ["kap_kapitalertraege", "kap_gewinn_aktien"],          # § 2 Abs. 1 Nr. 5
     "kein_vuv":      ["vv_einnahmen"],                                       # § 2 Abs. 1 Nr. 6
     "kein_sonstige": ["rentner_jahresrente"],                               # § 2 Abs. 1 Nr. 7 (Renten)
-    # § 2 Abs. 1 Nr. 1-3 (§§ 13-18): Stufe-1-Direktgewinn + § 16-vg (2-I) + EÜR-Komponenten (2-II). ALLE drei
-    # EÜR-Komponenten negieren kein_gewinn — auch ein Verlustjahr (einnahmen=0, aber afa/ausgaben>0) belegt
-    # einen existierenden Betrieb (Gewinneinkunft, hier negativ), darf nicht als "kein Gewinn" durchrutschen.
+    # § 2 Abs. 1 Nr. 1-3 (§§ 13-18): Stufe-1-Direktgewinn + § 16-vg (2-I) + EÜR-Komponenten (2-II) + GWG (2-III).
+    # ALLE Betriebs-Indikatoren negieren kein_gewinn — auch ein Verlustjahr (einnahmen=0, aber afa/ausgaben>0)
+    # oder nur GWG-Anschaffungen belegen einen existierenden Betrieb, dürfen nicht als "kein Gewinn" durchrutschen.
+    # gwg_anschaffungskosten_netto ist die Instanz-1-Basis (instanz_gruppe:gwg) — präsent, sobald irgendein GWG
+    # vorliegt (Instanz 2..N tragen das Suffix __n, Instanz 1 = Basis; jede GWG-Präsenz setzt die Basis).
     "kein_gewinn":   ["einkuenfte_gewinn", "rentner_veraeusserungsgewinn",
-                      "betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag"],
+                      "betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag",
+                      "gwg_anschaffungskosten_netto"],
 }
 
 

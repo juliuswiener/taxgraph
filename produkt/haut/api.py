@@ -120,8 +120,13 @@ RENTNER_22_PARTNER = ("rentner_renten_art_partner", "rentner_jahresrente_partner
 # Rentner-Pfad, ein Rentner mit laufendem § 15/§ 18-Betrieb). gewinn_betriebsart auch in RENTNER_FELDER = die
 # land_forst-Weiche für den luf_euer_offen-Guard (getrennt von rentner_veraeusserungs_betriebsart = § 16-vg-Kz).
 EUER_KOMPONENTEN = ("betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag")
+# § 6 Abs. 2 GWG-Sofortabzug (Stufe 2b): gwg_anschaffungskosten_netto = instanz_gruppe:gwg (mehrere Assets je
+# Fall, je ≤ 800 netto sofort abziehbar), STUMPFE Σ (catala_p6_2_gwg) in den EÜR-betriebsausgaben-Term von
+# _laufender_gewinn. In gesamt.felder UND RENTNER_FELDER. Feld war schon in n_vor_gwg gebunden (inert) → hier
+# reused (kein neuer regel_id-Knoten). Weitere Assets = gwg_anschaffungskosten_netto__2..N (instanzen-Naht).
+GWG_FELDER = ("gwg_anschaffungskosten_netto",)
 RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
-                   "gewinn_betriebsart") + EUER_KOMPONENTEN)
+                   "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER)
 RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
                   + RENTNER_PARTNER + RENTNER_22_PARTNER + RENTNER_GEWINN)
 # Person B (Zusammenveranlagung, dev-2s Person-B-Deklaration): die §19-Einkünfte des Ehegatten in den
@@ -155,7 +160,7 @@ GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_vora
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
 # Deklaration (Anlage G/S/L), der RING liest sie NICHT (wie veranlagung ein Enum-Feld ohne Rechen-Effekt).
 # In felder (askable, POST /event braucht fid∈bindung), symmetrisch zu dev-2s Bindung → kein Orphan-askable.
-GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN
+GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -317,22 +322,39 @@ def _scheibe_bindung(store: dict) -> dict:
     return {f: b[f] for f in felder}
 
 
-def _laufender_gewinn(f: dict) -> int:
+def _gwg_sofortabzug_summe(f: dict, store: dict | None, bindung: dict | None) -> int:
+    """§ 6 Abs. 2 GWG-Sofortabzug-Σ (EURO, Stufe 2b) — STUMPFE Σ über ALLE gwg-Instanzen: je Asset
+    catala_p6_2_gwg (≤ 800 netto → Sofortabzug, sonst 0 = kein GWG, gehört in die AfA). instanzen-Naht wie
+    Multi-Objekt-§21/Multi-Rente-§22 (EM.instanzen(gwg); Basis-Feld = Instanz 1). Ohne store (Alt-Aufrufer) nur
+    das Basis-gwg_anschaffungskosten_netto aus f. Naht-CENT → EURO (Accessor nimmt EURO). Ein > 800-„GWG" gibt 0
+    (over-tax-safe); der User-Hinweis (hilfe_kurz) lenkt auf die AfA."""
+    import runner
+    def _abzug(fi: dict) -> int:
+        v = fi.get("gwg_anschaffungskosten_netto", {}).get("wert")
+        netto = int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+        return runner.catala_p6_2_gwg({"gwg_anschaffungskosten_netto": netto // 100})
+    if store is not None and bindung is not None:
+        return sum(_abzug(inst["felder"]) for inst in EM.instanzen(store, bindung, "gwg"))
+    return _abzug(f)
+
+
+def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None = None) -> int:
     """§§ 13-18 laufender Gewinn (§ 15 Gewerbe / § 18 selbständig), EURO — die EINE Quelle für den laufenden
-    (Nicht-Veräußerungs-)Gewinn, geteilt von gesamt- und rentner-Ring (Scope A). § 4 Abs. 3 EÜR (Stufe 2a) wenn
-    IRGENDEINE EÜR-Komponente (betriebseinnahmen/sonstige_betriebsausgaben/afa_jahresbetrag) vorliegt: gewinn =
-    betriebseinnahmen − (sonstige_BA + AfA) via catala_euer_gewinn — KANN NEGATIV sein (Verlustjahr → § 2 Abs. 3-
-    Ausgleich mindert andere Einkünfte); sonst der direkte einkuenfte_gewinn-Wert (Stufe 1). Naht-CENT → EURO.
-    Sind BEIDE Quellen gesetzt (Direktwert + EÜR-Komponente) sperrt der gewinn_quelle_offen-Guard VORHER (Doppel-
-    quelle, kein stilles Bevorzugen); land_forst + EÜR sperrt luf_euer_offen (§ 13-LuF ist nicht EÜR-materialisiert)."""
+    (Nicht-Veräußerungs-)Gewinn, geteilt von gesamt- und rentner-Ring (Scope A). § 4 Abs. 3 EÜR (Stufe 2a/2b) wenn
+    IRGENDEINE EÜR-Komponente (betriebseinnahmen/sonstige_betriebsausgaben/afa_jahresbetrag) ODER ein GWG vorliegt:
+    gewinn = betriebseinnahmen − (sonstige_BA + AfA + GWG-Σ) via catala_euer_gewinn — KANN NEGATIV sein (Verlustjahr
+    → § 2 Abs. 3-Ausgleich mindert andere Einkünfte); sonst der direkte einkuenfte_gewinn-Wert (Stufe 1). Der
+    GWG-Sofortabzug (§ 6 Abs. 2, Stufe 2b) mindert als Betriebsausgabe den Gewinn (Σ über alle Assets). Naht-CENT
+    → EURO. BEIDE Quellen (Direktwert + EÜR) sperrt gewinn_quelle_offen VORHER; land_forst + EÜR sperrt luf_euer_offen."""
     import runner
     def _c(fid):
         v = f.get(fid, {}).get("wert")
         return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
-    if any(_c(k) for k in EUER_KOMPONENTEN):
+    gwg_summe = _gwg_sofortabzug_summe(f, store, bindung)
+    if any(_c(k) for k in EUER_KOMPONENTEN) or gwg_summe > 0:
         return runner.catala_euer_gewinn({
             "betriebseinnahmen": _c("betriebseinnahmen") // 100,
-            "betriebsausgaben": (_c("sonstige_betriebsausgaben") + _c("afa_jahresbetrag")) // 100})
+            "betriebsausgaben": (_c("sonstige_betriebsausgaben") + _c("afa_jahresbetrag")) // 100 + gwg_summe})
     return _c("einkuenfte_gewinn") // 100
 
 
@@ -516,7 +538,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # Stufe 2a (EÜR § 4 Abs. 3, betriebseinnahmen − BA komponentenweise) wenn eine EÜR-Komponente vorliegt,
             # sonst den direkten Stufe-1-Betrag. OPTIONAL (absent → 0, over-tax-safe). Doppelquelle/land_forst +
             # Einkunftsart-Konsistenz (kein_gewinn=True) fangen gewinn_quelle_offen/luf_euer_offen/flag_check vorher.
-            g["einkuenfte_gewinn"] = _laufender_gewinn(f)
+            g["einkuenfte_gewinn"] = _laufender_gewinn(f, store, bindung)
             # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
             # Altersentlastungsbetrag (Bemessung NUR positive Nicht-Renten-Einkünfte, S.2: Arbeitslohn BRUTTO +
             # max(0, V+V); Kohorten-Satz/-Deckel aus geburtsjahr + 65; Kapital = Stage-2-Nachtrag wie die §10b/§33-
@@ -742,7 +764,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "gesamtfall": True, "veranlagungszeitraum": vz,
                 "veranlagung": _b("veranlagung") or "einzel",
                 "einkuenfte_sonstige": renten,
-                "einkuenfte_gewinn": _laufender_gewinn(f) + netto_vg,
+                "einkuenfte_gewinn": _laufender_gewinn(f, store, bindung) + netto_vg,
                 "aussergewoehnliche_belastungen": ausserg})
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 

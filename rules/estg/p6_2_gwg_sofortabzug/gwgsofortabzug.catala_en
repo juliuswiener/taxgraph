@@ -1,0 +1,83 @@
+# § 6 Abs. 2 EStG — Geringwertige Wirtschaftsgüter (GWG): Sofortabzug bis 800 Euro netto
+
+> Module GwgSofortabzug
+
+Materialisierung des verifizierten Snapshots `pipeline/snapshots/p6_2_gwg_sofortabzug.json`
+(module GwgSofortabzug, scope GwgSofortabzug, verified_bedingt, faithful=true, sha256 catala_a
+`ab23dc3bac1b1d29f1e75b53e3147baa047cda6747f76f8a486763ca2a3734cf`). Die scope-Logik unten ist BYTE-GLEICH aus `catala_a` übernommen
+(keine Änderung); nur Module-Header + §-Zitatanker + Grenzfall-Seeds sind ergänzt. Kein Pipeline-Re-Run.
+
+Zitatanker § 6 Abs. 2 S. 1 EStG (`sources/gesetze-im-internet/estg_p6_2026-07-14.txt`, typ gesetz):
+„800 Euro nicht übersteigen". Anschaffungs-/Herstellungskosten abnutzbarer, beweglicher, selbständig
+nutzbarer Wirtschaftsgüter des Anlagevermögens bis 800 Euro (NETTO, § 9b-Vorsteuer heraus) können in voller
+Höhe sofort als Betriebsausgabe abgezogen werden; „nicht übersteigen" = <= (bei genau 800,00: Sofortabzug
+JA). `anschaffungskosten_netto` = die netto-Kosten JE Wirtschaftsgut (Eingabe, per-Asset). Über 800 Euro:
+kein Sofortabzug (Wert 0) → normale AfA (§ 7). Reine Rechen-Teilregel je Asset; der Ring summiert den
+Sofortabzug über alle GWG-Instanzen und speist ihn in den EÜR-betriebsausgaben-Term (dev-1-Accessor). § 6
+Abs. 2a Sammelposten (Pool 250-1000) ist ein separater, NICHT materialisierter Zweig (Backlog).
+
+```catala
+declaration scope GwgSofortabzug:
+  input anschaffungskosten_netto content money
+  output sofortabzug content money
+
+scope GwgSofortabzug:
+  definition sofortabzug equals
+    if anschaffungskosten_netto <= $800.00
+    then anschaffungskosten_netto
+    else $0.00
+```
+
+## Grenzfall-Seeds
+
+```catala
+#[test]
+declaration scope TestUnter800:
+  # netto 600 <= 800 -> voller Sofortabzug 600.
+  internal r content GwgSofortabzug
+  output g content money
+scope TestUnter800:
+  definition r equals output of GwgSofortabzug with {
+    -- anschaffungskosten_netto: $600.00 }
+  definition g equals r.sofortabzug
+  assertion g = $600.00
+```
+
+```catala
+#[test]
+declaration scope TestGrenze800:
+  # netto genau 800 -> nicht > 800 (<=) -> voller Sofortabzug 800.
+  internal r content GwgSofortabzug
+  output g content money
+scope TestGrenze800:
+  definition r equals output of GwgSofortabzug with {
+    -- anschaffungskosten_netto: $800.00 }
+  definition g equals r.sofortabzug
+  assertion g = $800.00
+```
+
+```catala
+#[test]
+declaration scope TestUeber800:
+  # netto 801 > 800 -> kein Sofortabzug (0) -> AfA-Pfad.
+  internal r content GwgSofortabzug
+  output g content money
+scope TestUeber800:
+  definition r equals output of GwgSofortabzug with {
+    -- anschaffungskosten_netto: $801.00 }
+  definition g equals r.sofortabzug
+  assertion g = $0.00
+```
+
+```catala
+#[test]
+declaration scope TestDeutlichUeber:
+  # netto 1000 > 800 -> 0 (Regression, kein Teil-Sofortabzug).
+  internal r content GwgSofortabzug
+  output g content money
+scope TestDeutlichUeber:
+  definition r equals output of GwgSofortabzug with {
+    -- anschaffungskosten_netto: $1,000.00 }
+  definition g equals r.sofortabzug
+  assertion g = $0.00
+```

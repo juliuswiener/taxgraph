@@ -107,6 +107,14 @@ def test_kein_gewinn_euer_konsistent():
                                        afa_jahresbetrag=(500000, "bestaetigt"))) == []
 
 
+def test_kein_gewinn_gwg_widerspruch():
+    # GWG = Betriebsvermögen (§ 6 Abs. 2): kein_gewinn=true + gwg_anschaffungskosten_netto>0 → Widerspruch (2-III).
+    # Nur GWG-Anschaffungen (kein sonstiger Gewinn-Indikator) belegen schon einen Betrieb.
+    w = FC.flag_widersprueche(_snap(kein_gewinn=(True, "bestaetigt"),
+                                    gwg_anschaffungskosten_netto=(60000, "bestaetigt")))
+    assert len(w) == 1 and w[0]["flag"] == "kein_gewinn" and w[0]["feld_id"] == "gwg_anschaffungskosten_netto"
+
+
 # ---- fail-closed-Feinheiten --------------------------------------------------
 
 def test_vorlaeufig_zaehlt_nicht():

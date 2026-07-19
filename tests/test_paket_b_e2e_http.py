@@ -738,7 +738,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_gewinn_sonstige_partner=0,
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
              basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True,
-             betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None):
+             betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
@@ -772,6 +772,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
             k.append((_fid, _w))
     if betriebsart is not None:                    # gewinn_betriebsart-Weiche (land_forst-Guard-Test)
         k.append(("gewinn_betriebsart", betriebsart))
+    for _i, _netto in enumerate(gwg or [], start=1):   # § 6 Abs. 2 GWG-Assets (Liste netto-Cent): Instanz 1 = Basis, 2..N = __n
+        k.append(("gwg_anschaffungskosten_netto" if _i == 1 else f"gwg_anschaffungskosten_netto__{_i}", _netto))
     if bruttolohn_partner is not None:
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
     if person_b_idnr is not None:
@@ -925,6 +927,54 @@ def test_gesamt_luf_euer_offen(base):
                     betriebseinnahmen=8000000, betriebsart="land_forst"))
     st, erg = _req(base, "GET", "/fall/luf/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "luf_euer_offen"
+
+
+def test_gesamt_gwg_multi(base):
+    """§ 6 Abs. 2 GWG-Sofortabzug (Stufe 2b) im EÜR: DREI GWG-Assets à 400/600/800 € (alle ≤ 800, je sofort
+    abziehbar) → Σ 1800 als Betriebsausgabe. Betriebseinnahmen 50000 − (sonstige BA 10000 + AfA 5000 + GWG-Σ 1800)
+    = Gewinn 33200 → festzusetzende_est 5220 = 522000 Cent. Belegt: der Ring summiert die GWG-Instanzen (EM.instanzen
+    ,gwg — Basis + __2 + __3) stumpf in den betriebsausgaben-Term."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "gwm", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, betriebseinnahmen=5000000,
+                    sonstige_betriebsausgaben=1000000, afa_jahresbetrag=500000, gwg=[40000, 60000, 80000]))
+    st, erg = _req(base, "GET", "/fall/gwm/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 522000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_gwg_ueber_800_ausgeschlossen(base):
+    """§ 6 Abs. 2 PER-ASSET-Deckelung (non-vacuous): zwei „GWG" 400 € (≤ 800 → 400 abziehbar) + 1000 € (> 800 →
+    0, KEIN GWG — muss über AfA). Σ-Sofortabzug = 400 (nicht 1400). Betriebseinnahmen 50000 − 400 = Gewinn 49600 →
+    festzusetzende_est 10537 = 1053700 Cent. Belegt: der ≤ 800-Schwellwert greift JE ASSET (kein Zusammenzählen zu
+    1400 dann Deckelung; genau der B-Over-Tax-Trap den Option A vermeidet)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "gw8", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
+                    betriebseinnahmen=5000000, gwg=[40000, 100000]))
+    st, erg = _req(base, "GET", "/fall/gw8/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1053700 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_gwg_only_verlust(base):
+    """§ 6 Abs. 2 GWG als EÜR-present-Trigger + Verlust-Durchfluss: KEINE Betriebseinnahmen, nur zwei GWG à 800
+    (Σ 1600) → Gewinn 0 − 1600 = −1600 (Anlaufverlust). Der GWG-Sofortabzug allein triggert den EÜR-Pfad (nicht nur
+    betriebseinnahmen) → mindert den § 19-Lohn (Job 40000 → § 19 38770): GdE 37170 → festzusetzende_est 6419 =
+    641900 Cent, NIEDRIGER als § 19-only. Belegt: GWG-only zählt zum EÜR-Trigger, Verlust fließt in § 2 Abs. 3."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "gwl", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, bruttolohn=4000000,
+                    gwg=[80000, 80000]))
+    st, erg = _req(base, "GET", "/fall/gwl/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 641900 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
 
 
 def test_kombiniert_job_und_vermietung(base):
