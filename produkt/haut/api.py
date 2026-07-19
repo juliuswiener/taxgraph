@@ -147,7 +147,10 @@ MITU_FELDER = ("gewinnanteil", "verguetung_taetigkeit", "verguetung_darlehen", "
 # Bestätigung). ao = REUSE rentner_veraeusserungsgewinn (§16-vg). Alle optional (absent → False → Abs.1). Kz null-MVP.
 ABS3_FELDER = ("antrag_ermaessigter_satz", "dauernd_berufsunfaehig", "ermaessigung_einmal_genutzt")
 RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
-                   "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + MITU_FELDER + ABS3_FELDER)
+                   "gewinn_betriebsart", "geburtsjahr") + EUER_KOMPONENTEN + GWG_FELDER + MITU_FELDER + ABS3_FELDER)
+# ⚠ geburtsjahr in RENTNER_GEWINN (b): behebt (i) § 24a-rentner-Kohorte/64+-Gate + (ii) den § 34-Abs.3-rentner-AGE-Pfad
+# (_abs3_eligible las f["geburtsjahr"] → im rentner-Ring 0 → alter≥55=False → abs3-via-Alter fiel auf Abs.1 = Over-tax).
+# global-glob gebunden (bindung_an_gesamt), optional (absent → 0 → kein § 24a, over-tax-safe).
 # § 35 GewSt-Anrechnung auch im Rentner-Ring (Rentner-mit-Gewerbe): gewst_hebesatz + gewst_messbetrag (schon
 # global gebunden, s. GESAMT_P35). Der Deckel-3-Nenner ist hier VOLLSTÄNDIG renten(§22) + einkuenfte_gewinn —
 # die rentner-Scheibe hat KEIN § 19/§ 21 (ein Rentner-mit-Minijob/Miete ist scheiben-strukturell nicht modellierbar,
@@ -906,11 +909,19 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag(
                 {"rentner_veraeusserungsgewinn": vg_euro}))
             laufender_gewinn = _laufender_gewinn(f, store, bindung)   # § 15/§ 18 laufend (§ 35-Zähler, OHNE § 16-vg)
+            # § 24a Altersentlastungsbetrag im Rentner-Ring (b): Bemessung = positive Nicht-§19-Einkünfte = §§13-18-Gewinn
+            # (laufender + § 16-vg-netto); LEIBRENTE § 22 Nr. 1 (renten) + Versorgungsbezüge § 19 Abs. 2 sind KEINE Bemessung
+            # (§ 24a S. 2-Ausschlüsse). Kein § 19-Mini-Job-Arbeitslohn im rentner-Ring (MVP-Lücke, over-tax-safe → 0). MIT
+            # dem 64+-Gate (§ 24a S. 3, geerbt vom Accessor via veranlagungszeitraum). Pure Leibrente (kein Gewinn) → 0.
+            alt24a_r = runner.catala_p24a_altersentlastung({
+                "veranlagungszeitraum": vz, "geburtsjahr": _c("geburtsjahr"), "arbeitslohn": 0,
+                "positive_andere_einkuenfte": max(0, laufender_gewinn + netto_vg)})
             rentner_g = {
                 "gesamtfall": True, "veranlagungszeitraum": vz,
                 "veranlagung": _b("veranlagung") or "einzel",
                 "einkuenfte_sonstige": renten,
                 "einkuenfte_gewinn": laufender_gewinn + netto_vg,
+                "altersentlastungsbetrag": alt24a_r,
                 "aussergewoehnliche_belastungen": ausserg}
             # § 10d Abs. 2 Verlustvortrag (Rentner-Ring): mindert die volle rentner-GdE (renten § 22 + einkuenfte_
             # gewinn) „vorrangig vor …" (§ 10d Abs. 2 S. 1) → sonstige_abzuege_vom_einkommen, VOR dem § 35 (dessen
@@ -918,7 +929,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # → 0. Der GdE-Zwilling nimmt die rentner-Einkunftsarten (kein § 19/§ 21 hier), § 32d-Kapital gibt's nicht.
             gde_p10d = runner.catala_gesamt_gde({
                 "veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
-                "einkuenfte_sonstige": renten, "einkuenfte_gewinn": rentner_g["einkuenfte_gewinn"]})
+                "einkuenfte_sonstige": renten, "einkuenfte_gewinn": rentner_g["einkuenfte_gewinn"],
+                "altersentlastungsbetrag": alt24a_r})
             rentner_g["sonstige_abzuege_vom_einkommen"] = runner.catala_p10d_2({
                 "gesamtbetrag_einkuenfte": gde_p10d,
                 "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,

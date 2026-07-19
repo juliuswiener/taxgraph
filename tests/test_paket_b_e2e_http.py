@@ -1246,6 +1246,86 @@ def test_rentner_abs3(base):
         assert erg["zahl_cent"] is None
 
 
+def test_rentner_abs3_age(base):
+    """§ 34 Abs. 3 rentner-AGE-Pfad (b, REGRESSION für cb8d084-Latent-Bug): Rentner geb1955 (Alter 70 ≥ 55 via
+    geburtsjahr, NICHT berufsunfähig) + § 16-vg 500000 + antrag → Abs.3. VOR RENTNER_GEWINN+=geburtsjahr las
+    _abs3_eligible im rentner-Ring geburtsjahr=0 → alter≥55=False → fiel auf Abs.1 = Over-tax. Jetzt: geburtsjahr
+    gelesen → Abs.3 via Alter. (geb1955 ist zugleich §24a-eligible Kohorte 2020 → §24a auf die vg-Bemessung.)"""
+    catala = _catala_da()
+    _rentner_anlegen(base, "ra3a", _rentner_kegel(jahresrente=0, vg=50000000, kein_gewinn=False,
+                     antrag_erm=True, geburtsjahr=1955))
+    st, erg = _req(base, "GET", "/fall/ra3a/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 11520400 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_abs3_age_fail(base):
+    """§ 34 Abs. 3 rentner-AGE-FAIL → Abs.1 (b): Rentner geb1980 (Alter 45 < 55) + vg 500000 + antrag ∧ ¬berufsunfähig
+    → NICHT Abs.3-berechtigt → Abs.1-Fünftel. (geb1980 Kohorte 2045 > VZ2025 → §24a 0 auch.) Belegt: der age-Pfad
+    weist korrekt ab (nicht jeder Rentner ist 55+; junger Erbe/Betriebsübernehmer)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "ra3af", _rentner_kegel(jahresrente=0, vg=50000000, kein_gewinn=False,
+                     antrag_erm=True, geburtsjahr=1980))
+    st, erg = _req(base, "GET", "/fall/ra3af/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 15542000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_p24a_gewinn(base):
+    """§ 24a rentner-ANWENDUNG (b, over-tax-Fix): Rentner geb1958 (eligible) + laufender Gewinn 30000 (§§13-18, KEINE
+    Rente) → § 24a auf die Gewinn-Bemessung 30000 (positive Nicht-§19-Eink.) → est niedriger als ohne § 24a. VOR (b)
+    kriegte der Rentner-mit-Gewerbe KEINE Altersentlastung = Over-tax."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rp24g", _rentner_kegel(jahresrente=0, gewinn=3000000, kein_gewinn=False, geburtsjahr=1958))
+    st, erg = _req(base, "GET", "/fall/rp24g/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 410500 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_p24a_pure_leibrente(base):
+    """§ 24a S. 2 rentner-AUSSCHLUSS (b, non-vacuous): Rentner geb1958 (eligible) + PURE gesetzl. Leibrente 20000
+    (KEIN Gewinn) → § 24a-Bemessung = 0 (Leibrente § 22 Nr. 1 ist NICHT Bemessung, S. 2) → § 24a 0 → est UNVERÄNDERT
+    zum reinen Renten-Fall. Belegt: die Leibrente fließt NICHT in die § 24a-Bemessung (sonst falscher Altersentlastungs-
+    Abzug = Under-tax)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rp24l", _rentner_kegel(jahresrente=2000000, beginn=2025, geburtsjahr=1958))
+    st, erg = _req(base, "GET", "/fall/rp24l/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 81100 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+@pytest.mark.parametrize("geburtsjahr,erwartet_cent,label", [
+    (1958, 410500, "eligible"),      # Folgejahr 2023 ≤ VZ2025 → §24a auf Gewinn 30000
+    (1960, 411600, "eligible-grenze"),  # Folgejahr 2025 == VZ2025 → §24a (Kohorte 2025)
+    (1961, 429300, "gated-grenze"),  # Folgejahr 2026 > VZ2025 → §24a 0 (erbt 64+-Gate von (a))
+    (1990, 429300, "gated-under64"), # Folgejahr 2055 > VZ2025 → §24a 0
+])
+def test_rentner_p24a_64plus_gate(base, geburtsjahr, erwartet_cent, label):
+    """§ 24a 64+-Gate ERBT im Rentner-Ring (b): Rentner + Gewinn 30000 + geburtsjahr → §24a nur eligible (Folgejahr
+    ≤ VZ). Spiegel des gesamt-Gate-Goldens VZ2025: geb1960 (2025==VZ, eligible) vs geb1961 (2026>VZ, gated 0)."""
+    catala = _catala_da()
+    fid = f"rp24g{geburtsjahr}"
+    _rentner_anlegen(base, fid, _rentner_kegel(jahresrente=0, gewinn=3000000, kein_gewinn=False, geburtsjahr=geburtsjahr))
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == erwartet_cent and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def test_gesamt_abs3_est_rest_positiv(base):
     """§ 34 Abs. 3 DEKOMPOSITIONS-SUMME (est_rest + est_ao BEIDE > 0, Instructor-Boundary): laufender Gewerbe-Gewinn
     80000 + § 16-vg 300000 (netto 300000, FB 0) + antrag + berufsunfähig → einkuenfte_gewinn 380000, ao = netto_vg
