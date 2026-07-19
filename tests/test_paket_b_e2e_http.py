@@ -737,14 +737,17 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_ertraege_partner=0, kap_gewinn_aktien_partner=0, kap_verlust_aktien_partner=0,
              kap_gewinn_sonstige_partner=0,
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
-             basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False):
+             basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
     bruttolohn_partner/person_b_idnr (nur bei veranlagung=zusammen) = Person-B-§19-Kegel (#4). entgelt_quote
     (§ 21 Abs. 2, Pflicht-Kegel, %) = 100 (nicht verbilligt) default; < 66 → WK-Kürzung. vor_an/vor_ag/
     vor_rv_ausserhalb (§ 10 Altersvorsorge, Pflicht-Kegel, cent) = 0 default (keine Vorsorge → kein Abzug).
-    basis_kv_pv/weitere_kv_pv (§ 10 Abs. 1 Nr. 3/3a KV/PV, Pflicht-Kegel, CENT wie VOR!) = 0 default; 3200 € = 320000."""
+    basis_kv_pv/weitere_kv_pv (§ 10 Abs. 1 Nr. 3/3a KV/PV, Pflicht-Kegel, CENT wie VOR!) = 0 default; 3200 € = 320000.
+    gewinn (§§ 13-18 Gewinneinkünfte, Stufe 1, einkuenfte_gewinn, OPTIONAL/CENT) = 0 default → Feld absent (absent → 0,
+    over-tax-safe); > 0 nur mit kein_gewinn=False (sonst flag_konsistenz_offen). kein_gewinn (§ 2 Abs. 1 Nr. 1-3
+    Abwesenheits-Flag) = True default (keine Gewinneinkünfte); für einen echten Gewinnfall auf False setzen."""
     k = [("vv_einnahmen", einnahmen), ("vv_gebaeude_afa", afa), ("vv_schuldzinsen", schuldzinsen),
          ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0),
          ("vv_entgelt_quote_prozent", entgelt_quote), ("veranlagung", veranlagung),
@@ -758,7 +761,9 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
          ("kap_kapitalertraege", kap_ertraege), ("kap_gewinn_aktien", kap_gewinn_aktien),
          ("kap_verlust_aktien", kap_verlust_aktien), ("kap_gewinn_sonstige", kap_gewinn_sonstige),
          ("kap_verlust_sonstige", kap_verlust_sonstige), ("kap_zusammenveranlagung", False),
-         ("kein_gewinn", True), ("kein_kap", kein_kap), ("kein_vuv", kein_vuv), ("kein_sonstige", True)]
+         ("kein_gewinn", kein_gewinn), ("kein_kap", kein_kap), ("kein_vuv", kein_vuv), ("kein_sonstige", True)]
+    if gewinn:                                     # §§ 13-18 Stufe 1: einkuenfte_gewinn nur wenn > 0 (OPTIONAL, absent → 0)
+        k.append(("einkuenfte_gewinn", gewinn))
     if bruttolohn_partner is not None:
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
     if person_b_idnr is not None:
@@ -811,6 +816,51 @@ def test_gesamt_flag_widerspruch(base):
     keine still übergangene Einkunftsart."""
     _gesamt_anlegen(base, "vvw", _gesamt_kegel(3000000, kein_vuv=True))
     st, erg = _req(base, "GET", "/fall/vvw/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "flag_konsistenz_offen"
+
+
+@pytest.mark.parametrize("gewinn_cent,erwartet_cent", [
+    (3000000, 429300),    # Gewinn 30000 € → est 4293 (identisch zum reinen Vermieter 30000: plain § 2-Summand)
+    (5000000, 1067800),   # Gewinn 50000 € → est 10678
+    (8000000, 2267200),   # Gewinn 80000 € → est 22672
+])
+def test_gesamt_gewinn_only(base, gewinn_cent, erwartet_cent):
+    """§§ 13-18 Gewinneinkünfte (Stufe 1) im gesamt-Ring: der vorberechnete Gewinn-Betrag fließt als
+    einkuenfte_gewinn-Summand in die § 2-Summe (kein Job, keine V+V) → festzusetzende_est. kein_gewinn=False
+    (es LIEGT Gewinn vor). Belegt: der Ring besteuert §§ 13-18-Gewinn (vorher stiller 0 — der Slot wurde nie
+    gesetzt). Werte unabhängig gegen catala_gesamt verifiziert."""
+    catala = _catala_da()
+    fid = f"gew{gewinn_cent}"
+    _gesamt_anlegen(base, fid, _gesamt_kegel(0, kein_vuv=True, gewinn=gewinn_cent, kein_gewinn=False))
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == erwartet_cent and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_gewinn_und_job(base):
+    """Konvergenz § 19 + §§ 13-18: Arbeitnehmer (Bruttolohn 40000 → § 19-Einkünfte 38770) MIT Gewinn 30000 →
+    catala_gesamt summiert (§ 2 Abs. 3, GdE 68770) → festzusetzende_est 17956 = 1795600 Cent. Belegt: der
+    Gewinn ADDIERT sich zum Lohn (nicht ersetzt/verschluckt)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "gwj", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
+                                               gewinn=3000000, kein_gewinn=False))
+    st, erg = _req(base, "GET", "/fall/gwj/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1795600 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_gesamt_gewinn_flag_widerspruch(base):
+    """K2 (Guard non-vacuous): kein_gewinn=true (behauptet keine Gewinneinkünfte) UND einkuenfte_gewinn > 0
+    bestätigt → Widerspruch surfacen (flag_konsistenz_offen), keine still übergangene Einkunftsart. Spiegel zu
+    test_gesamt_flag_widerspruch (V+V); belegt den flag_check-Fix kein_gewinn → [einkuenfte_gewinn]."""
+    _gesamt_anlegen(base, "gwf", _gesamt_kegel(0, kein_vuv=True, gewinn=3000000, kein_gewinn=True))
+    st, erg = _req(base, "GET", "/fall/gwf/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "flag_konsistenz_offen"
 
 

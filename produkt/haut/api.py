@@ -137,6 +137,12 @@ GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
 # anderen Erwachsenen im Haushalt" — IST die Abs.3-Bedingung, kein Extra-Feld nötig); fam_monate = §24b-Kürzung.
 # fam_anzahl_kinder steht schon in GESAMT_ABZUEGE (§33-zumutbar + §24b geteilt).
 GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_voraussetzung")
+# §§ 13-18 Gewinneinkünfte (Stufe 1), OPTIONAL im gesamt-Ring (NICHT Pflicht-Kegel → absent → 0, over-tax-safe).
+# einkuenfte_gewinn (CENT) = der vorberechnete Gewinn-Betrag → einkuenfte_gewinn-Slot der slot_fn (§ 2-Summand).
+# gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
+# Deklaration (Anlage G/S/L), der RING liest sie NICHT (wie veranlagung ein Enum-Feld ohne Rechen-Effekt).
+# In felder (askable, POST /event braucht fid∈bindung), symmetrisch zu dev-2s Bindung → kein Orphan-askable.
+GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart")
 
 # Scheiben-Konfiguration.
 #   felder      : feste feld_id-Menge (None -> aus felder_datei laden).
@@ -185,7 +191,7 @@ SCHEIBEN = {
         "felder": (VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ("veranlagung", "bruttoarbeitslohn")
                    + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
-                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Person-B-Vorsorge (A.2) OPTIONAL
+                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Person-B-Vorsorge (A.2) + §§13-18-Gewinn (Stufe 1) OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -197,8 +203,10 @@ SCHEIBEN = {
         "guard": True,
         "gesamt_guard": True,   # aktiviert flag_check- + Kapital-Semantik-Guards (Einkunftsart-Konsistenz)
         # fremd_arten = Einkunftsarten, die DIESE Scheibe NICHT rechnet -> müssen abwesend bestätigt sein
-        # (kein_gewinn §§13-18, kein_sonstige §22). §19/§21/§20 rechnet sie -> deren Flags NICHT hier.
-        "fremd_arten": ("kein_gewinn", "kein_sonstige"),
+        # (kein_sonstige §22). §19/§21/§20 UND §§13-18-Gewinn (Stufe 1, einkuenfte_gewinn-Slot) rechnet sie
+        # -> deren Flags NICHT hier. kein_gewinn ist ab Stufe 1 KEINE fremd_art mehr; der flag_check-Guard
+        # (kein_gewinn → [einkuenfte_gewinn]) fängt den Konsistenz-Widerspruch (kein_gewinn=True ∧ Gewinn>0).
+        "fremd_arten": ("kein_sonstige",),
         "partner_19": True,     # § 19-Einkünfte des Ehegatten in den Ring (Zusammenveranlagung, #4)
         "multi_objekt": "vv_objekt",  # Multi-Objekt-§21-Σ (#5): der Ring summiert ALLE vv_objekt-Instanzen
     },
@@ -468,6 +476,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "veranlagungszeitraum": vz,
                     "bruttoarbeitslohn": _c("bruttoarbeitslohn_partner") // 100, "werbungskosten": 0})
             g["einkuenfte_nichtselbststaendig"] = ns
+            # §§ 13-18 Gewinneinkünfte (Stufe 1): der vorberechnete Gewinn-Betrag DIREKT als
+            # einkuenfte_gewinn-Summand in die § 2-Summe (Engine-Slot einkuenfte_gewinn_in ist LIVE,
+            # runner.py _gesamt_out Z.798). Naht-CENT → EURO. OPTIONAL (absent → 0, over-tax-safe;
+            # Stufe 2 rechnet den Betrag komponentenweise via EÜR § 4 Abs. 3). Die Einkunftsart-
+            # Konsistenz (kein_gewinn=True bei Gewinn>0) fängt der flag_check-Guard vor diesem Aufruf.
+            g["einkuenfte_gewinn"] = _c("einkuenfte_gewinn") // 100
             # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
             # Altersentlastungsbetrag (Bemessung NUR positive Nicht-Renten-Einkünfte, S.2: Arbeitslohn BRUTTO +
             # max(0, V+V); Kohorten-Satz/-Deckel aus geburtsjahr + 65; Kapital = Stage-2-Nachtrag wie die §10b/§33-

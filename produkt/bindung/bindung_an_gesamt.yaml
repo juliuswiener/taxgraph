@@ -147,6 +147,49 @@ bindungen:
       zitatanker: "sonstige Einkünfte im Sinne des § 22"
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
 
+  # ===== Gewinneinkünfte §§ 13-18 (Stufe 1): vorberechneter § 2-Gewinn + Betriebsart-Weiche =====
+  # Der bereits ermittelte Gewinn (EÜR § 4 Abs. 3 / Betriebsvermögensvergleich) fließt DIREKT als
+  # einkuenfte_gewinn-Summand in die § 2-Stufenfolge (Engine-Slot LIVE, p32a Z.464/559; dev-1s slot_fn
+  # liest die feld_id 1:1 als CENT→EURO). Optional (absent → 0, over-tax-safe). gewinn_betriebsart =
+  # Klasse-f-Weiche (Anlage G/S/L), spiegelt § 16 rentner_veraeusserungs_betriebsart (dieselben Enum-Werte).
+  # Kz=null VORERST: die Anlage-G/S/L-Kz-Zuordnung ist eine eigene Kz-Review-Runde (Instructor-Adjudikation);
+  # sie blockiert die BERECHNUNG nicht (der Ring rechnet nur aus dem Betrag, die Weiche steuert nur den Kz).
+  - feld_id: einkuenfte_gewinn
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: einkuenfte_gewinn}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war dein Gewinn aus Gewerbebetrieb, Land-/Forstwirtschaft oder selbständiger/freiberuflicher Arbeit dieses Jahr?"
+    hilfe_kurz: "Der bereits ermittelte Gewinn (Einnahmen minus Betriebsausgaben, z. B. aus deiner Einnahmenüberschussrechnung). Einen Verlust trägst du als negativen Betrag ein."
+    beispielwert: 3000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse-f VERZWEIGUNG je gewinn_betriebsart (kein fixes Feld-Kz; Kz-Wahl in est_mapping): gewerbe -> Anlage G, selbstaendig -> Anlage S, land_forst -> Anlage L. Die konkreten Anlage-G/S/L-Kz sind eine eigene Kz-Review-Runde (Instructor-Adjudikation) — null-Kz-MVP; die Berechnung (einkuenfte_gewinn-Slot in der § 2-Summe) hängt nicht am Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 2 S. 1 Nr. 1 EStG"
+      zitatanker: "bei Land- und Forstwirtschaft, Gewerbebetrieb und selbständiger Arbeit der Gewinn"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  - feld_id: gewinn_betriebsart
+    quelle: {regel_id: p2_festzusetzung_einzel, geltungsbedingung: gewinn_betriebsart_weiche}
+    typ: enum
+    einheit: null
+    enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Aus welcher Art von Tätigkeit stammt dieser Gewinn?"
+    hilfe_kurz: "Gewerbebetrieb (Anlage G), selbständige/freiberufliche Tätigkeit (Anlage S) oder Land- und Forstwirtschaft (Anlage L). Die Auswahl steuert nur, in welche Anlage der Gewinn eingetragen wird; die Steuer ist für alle drei gleich."
+    beispielwert: "gewerbe"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche (steuert die Klasse-f-Kz-Verzweigung des Gewinns nach Anlage G/S/L), kein eigenes Betragsfeld/Kz. § 2-Gewinn ist anlage-agnostisch (der Ring rechnet gleich); die Weiche wählt nur den Deklarations-Kz. Die konkreten Anlage-Kz = eigene Kz-Review-Runde (null-Kz-MVP), gleiche Enum-Werte wie § 16 rentner_veraeusserungs_betriebsart."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 1-3 EStG"
+      zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+
   # ===== Zusammenveranlagung (§ 26b): person-INDIVIDUELLE _partner-Zwillinge (Store-Modell A) =====
   # STRENG nur die steuerlich getrennten Person-B-Einkommensfelder (eigener § 9a-Pauschbetrag / eigene
   # LStB je Ehegatte). Globale Felder (veranlagung/Kinder/agB/Spende/Abwesenheits-Flags) bleiben GETEILT.

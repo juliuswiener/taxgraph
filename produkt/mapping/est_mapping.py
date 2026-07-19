@@ -69,6 +69,13 @@ VERZWEIGUNG = {
     # Klasse-f -> nicht_deklariert). E0804501 [Vor_FB]=Beteiligungsquoten-Anteil-Sub = Folge-Nachtrag.
     "rentner_veraeusserungsgewinn": {"art_feld": "rentner_veraeusserungs_betriebsart", "kz": {
         "gewerbe": "E0801301", "selbstaendig": "E0901201"}},
+    # §§ 13-18 Gewinneinkünfte (Stufe 1, p2_festzusetzung_einzel): der vorberechnete Gewinn verzweigt nach
+    # gewinn_betriebsart in Anlage G/S/L. Kz=null VORERST — die konkreten Anlage-G/S/L-Kz sind eine eigene
+    # Kz-Review-Runde (Instructor-Adjudikation). Leeres kz-dict => jede bestätigte Betriebsart landet
+    # fail-closed in nicht_deklariert ("ohne Kz-Zweig"); der Gewinn-BETRAG rechnet ungehindert im Ring
+    # (einkuenfte_gewinn-Slot der § 2-Summe, dev-1). Struktur spiegelt § 16; die Kz-Review füllt später
+    # kz{gewerbe -> Anlage G, selbstaendig -> Anlage S, land_forst -> Anlage L}.
+    "einkuenfte_gewinn": {"art_feld": "gewinn_betriebsart", "kz": {}},
 }
 # Klasse g — Person-Multiplikation (Zusammenveranlagung, Store-Modell A): die person-individuellen
 # _partner-Einkommensfelder gehen in die Anlage-N-INSTANZ B (person_b-Bucket) — DIESELBEN Kz wie Person A
@@ -220,14 +227,14 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             if art is None or art.get("zustand") != "bestaetigt":
                 # fail-closed: ohne bestätigte Art ist die Kz-Zuordnung offen -> nicht deklarieren
                 unvollstaendig.append({"feld_id": feld_id,
-                                       "grund": f"Renten-Art ({cfg['art_feld']}) unbestätigt — Kz-Zweig offen"})
+                                       "grund": f"Art ({cfg['art_feld']}) unbestätigt — Kz-Zweig offen"})
             else:
                 kz = cfg["kz"].get(art["wert"])
                 if kz:
                     deklaration[kz] = wert
                 else:
                     nicht_deklariert.append({"feld_id": feld_id,
-                                             "grund": f"Renten-Art '{art['wert']}' ohne Kz-Zweig"})
+                                             "grund": f"Art '{art['wert']}' ({cfg['art_feld']}) ohne Kz-Zweig"})
         elif feld_id in PARTNER_VERZWEIGUNG:                     # Klasse g×f (Renten-Verzweigung Person B -> person_b)
             cfg = PARTNER_VERZWEIGUNG[feld_id]
             art = snapshot.get(cfg["art_feld"])

@@ -46,6 +46,25 @@ def test_kein_kap_und_sonstige_widerspruch():
     assert flags == {"kein_kap", "kein_sonstige"}
 
 
+# ---- §§ 13-18 Gewinneinkünfte (Stufe 1): kein_gewinn ↔ einkuenfte_gewinn (vorher leer, jetzt scharf) ----
+
+def test_kein_gewinn_widerspruch():
+    # kein_gewinn=true behauptet keine Gewinneinkünfte, aber ein Gewinn ist belegt -> Widerspruch
+    w = FC.flag_widersprueche(_snap(kein_gewinn=(True, "bestaetigt"), einkuenfte_gewinn=(3000000, "bestaetigt")))
+    assert len(w) == 1 and w[0]["flag"] == "kein_gewinn" and w[0]["feld_id"] == "einkuenfte_gewinn"
+
+
+def test_kein_gewinn_konsistent_echter_gewinn():
+    # echter Gewinn-Fall: Flag korrekt false -> KEIN Widerspruch (der einkuenfte_gewinn-Slot greift)
+    assert FC.flag_widersprueche(_snap(kein_gewinn=(False, "bestaetigt"),
+                                       einkuenfte_gewinn=(3000000, "bestaetigt"))) == []
+
+
+def test_kein_gewinn_wahre_abwesenheit():
+    # Flag true, kein Gewinn belegt -> KEIN Widerspruch (reiner-AN-Fall)
+    assert FC.flag_widersprueche(_snap(kein_gewinn=(True, "bestaetigt"))) == []
+
+
 # ---- fail-closed-Feinheiten --------------------------------------------------
 
 def test_vorlaeufig_zaehlt_nicht():
