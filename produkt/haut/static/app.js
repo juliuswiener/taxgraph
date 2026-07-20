@@ -318,8 +318,11 @@ async function oeffneChat() {
 }
 
 async function chatSenden() {
+  const sendBtn = $("chat-send");
+  if (sendBtn.disabled) return;   // Doppel-Submit-Schutz
   const t = $("chat-text"); const freitext = (t && t.value || "").trim();
   if (!freitext) return;
+  sendBtn.disabled = true;
   const body = $("chat-body");
   body.innerHTML = `<p class="chat-erklaer">Die KI liest deine Beschreibung …</p>`;
   const r = await jpost(`/fall/${FALL}/chat`, { text: freitext });
@@ -337,12 +340,14 @@ async function chatSenden() {
   } else {
     body.textContent = "Der KI-Kanal antwortete unerwartet (" + r.status + ").";
   }
+  sendBtn.disabled = false;
 }
 
 async function zeigeWarum() {
   if (!AKTUELL) return;
-  const r = await jget(`/fall/${FALL}/feld/${AKTUELL.feld_id}/warum`);
   const el = $("anker");
+  if (!el.hidden) { el.hidden = true; return; }   // Toggle zu — bereits offen
+  const r = await jget(`/fall/${FALL}/feld/${AKTUELL.feld_id}/warum`);
   if (r.status === 404) {
     el.textContent = AKTUELL.anker_ref ? `${AKTUELL.anker_ref.quelle}\n„${AKTUELL.anker_ref.zitatanker}"` : "(kein Anker)";
   } else {
@@ -374,6 +379,7 @@ const GUARD = {
 async function zeigeErgebnis() {
   const r = (await jget(`/fall/${FALL}/ergebnis`)).body;
   $("fertig").hidden = false;
+  $("fertig").focus({ preventScroll: true });   // Screen-Reader: Wechsel zum Ergebnis-Screen, konsistent zu #wegpunkt
   const el = $("ergebnis");
   if (r.zahl_cent === null) {
     el.className = "ergebnis ergebnis-guard";
@@ -389,8 +395,11 @@ async function zeigeErgebnis() {
 
 // --- Vorjahr-Übernahme: Vorjahres-Fall → vorläufige Vorschläge (herkunft=vorjahr), Nutzer bestätigt ---
 async function vorjahrUebernehmen() {
+  const btn = $("vorjahr-go");
+  if (btn.disabled) return;   // Doppel-Submit-Schutz
   const vf = $("vorjahr-fid").value.trim(), st = $("vorjahr-status");
   if (!vf) { st.textContent = "Bitte die Vorjahres-Fall-ID angeben."; return; }
+  btn.disabled = true;
   st.textContent = "Übernehme …";
   const r = await jpost(`/fall/${FALL}/vorjahr`, { vorjahr_fall_id: vf });
   if (r.status === 200) {
@@ -399,16 +408,18 @@ async function vorjahrUebernehmen() {
   } else {
     st.textContent = "Übernahme fehlgeschlagen: " + ((r.body && r.body.fehler) || r.status);
   }
+  btn.disabled = false;
 }
 
 // --- Kontoauszug-Upload: CSV/JSON/PDF → Transaktion-Vorschläge (herkunft=kontoauszug), Nutzer bestätigt ---
 async function kontoauszugHochladen(datei) {
-  const st = $("konto-status");
-  if (!datei) return;
+  const input = $("konto-file"), st = $("konto-status");
+  if (!datei || input.disabled) return;   // Doppel-Submit-Schutz
   const name = (datei.name || "").toLowerCase();
   const format = name.endsWith(".json") ? "json" : name.endsWith(".csv") ? "csv"
                : name.endsWith(".pdf") ? "pdf" : null;
   if (!format) { st.textContent = "Bitte eine CSV-, JSON- oder PDF-Datei wählen."; return; }
+  input.disabled = true;
   st.textContent = "Lese Auszug …";
   const inhalt = format === "pdf" ? await _dateiAlsBase64(datei) : await datei.text();
   const r = await jpost(`/fall/${FALL}/kontoauszug`, { format, inhalt });
@@ -419,6 +430,7 @@ async function kontoauszugHochladen(datei) {
   } else {
     st.textContent = "Upload fehlgeschlagen: " + ((r.body && (r.body.vertrag || r.body.fehler)) || r.status);
   }
+  input.disabled = false;
 }
 
 // --- Verdrahtung ---
