@@ -20,8 +20,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PRODUKT = os.path.dirname(HERE)
 ROOT = os.path.dirname(PRODUKT)
 sys.path.insert(0, os.path.join(PRODUKT, "traverser"))
+sys.path.insert(0, HERE)
 
 from traverser import lade_bindung  # noqa: E402
+import est_mapping  # noqa: E402
 
 XS = "{http://www.w3.org/2001/XMLSchema}"
 MAX_DEPTH = 80  # Backstop; im echten E10-Schema nie erreicht (max. Pfadtiefe 8, Design §4)
@@ -244,6 +246,36 @@ def pruefe_bindung(bindung: dict, schema_pfade: dict[int, str | None] | None = N
     }
 
 
+# ---------------------------------------------------------------- Verzweigungs-Kz-Ernte (Task #13)
+# Klasse d/f/g×f (NEGATION/VERZWEIGUNG/PARTNER_VERZWEIGUNG, est_mapping.py) tragen ihr Ziel-Kz NUR als
+# Python-String-Literal in den Transform-Tabellen — nie als `elster_kz:` in bindung yaml (dort steht
+# elster_kz: null + Prosa-Grund). lade_bindung() sieht diese Kz daher NIE (blinder Fleck, Task #11-Audit).
+# Ernte sie hier zu synthetischen bindung-Einträgen (feld_id klar als "verzweigung:"/"negation:"/
+# "aggregation:"-präfigiert markiert, keine Kollision mit echten feld_ids) und hängt sie in main() an
+# lade_bindung() an, BEVOR pruefe_bindung läuft — vz_gueltigkeit wird vom zugehörigen Wert-Feld in
+# bindung yaml übernommen (nie geraten).
+
+def ernte_est_mapping_kz(bindung: dict) -> dict:
+    synth: dict[str, dict] = {}
+
+    def _vz(wert_feld: str) -> list:
+        return bindung[wert_feld]["vz_gueltigkeit"]
+
+    for wert_feld, kz in est_mapping.NEGATION.items():
+        synth[f"negation:{wert_feld}"] = {"elster_kz": kz, "vz_gueltigkeit": _vz(wert_feld)}
+
+    for tabelle in (est_mapping.VERZWEIGUNG, est_mapping.PARTNER_VERZWEIGUNG):
+        for wert_feld, cfg in tabelle.items():
+            vz = _vz(wert_feld)
+            for art_wert, kz in cfg["kz"].items():
+                synth[f"verzweigung:{wert_feld}:{art_wert}"] = {"elster_kz": kz, "vz_gueltigkeit": vz}
+
+    for kz, quell_felder in est_mapping.DOKUMENTIERT_AGGREGAT.items():
+        synth[f"aggregation:{kz}"] = {"elster_kz": kz, "vz_gueltigkeit": _vz(quell_felder[0])}
+
+    return synth
+
+
 def _print_summary(ergebnis: dict) -> None:
     n = len(ergebnis["felder"])
     schlecht = {fid: f for fid, f in ergebnis["felder"].items() if f["status"] != STATUS_OK}
@@ -256,6 +288,7 @@ def _print_summary(ergebnis: dict) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     bindung = lade_bindung()
+    bindung = {**bindung, **ernte_est_mapping_kz(bindung)}
     ergebnis = pruefe_bindung(bindung)
     _print_summary(ergebnis)
     return ergebnis["exit_code"]

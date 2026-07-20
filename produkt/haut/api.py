@@ -192,7 +192,7 @@ GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_vora
 # In felder (askable, POST /event braucht fid∈bindung), symmetrisch zu dev-2s Bindung → kein Orphan-askable.
 # § 16 Veräußerungsgewinn im gesamt-Ring (Non-Rentner-§16-vg): REUSE des generellen §16-vg-Felds
 # rentner_veraeusserungsgewinn (+ -betriebsart) — trotz „rentner_"-Namens ist es NICHT rentner-spezifisch (Kz
-# E0801301 Anlage G / E0901201 Anlage S, regel_id p16_4, flag_check deckt es seit 2-I). Global gebunden →
+# E0801301 Anlage G / E0804501 Anlage S / E0901201 Anlage L, regel_id p16_4, flag_check deckt es seit 2-I). Global gebunden →
 # hier nur zusätzlich in gesamt.felder, Fold spiegelt den rentner-2-I-Fold (netto_vg = max(0, vg − §16-Abs.4-FB),
 # ADDITIV in einkuenfte_gewinn). NAMING-DEBT: „rentner_"-Präfix in gesamt irreführend → künftiger Rename
 # (rentner_veraeusserungsgewinn → veraeusserungsgewinn), eigener Cleanup. Routing bleibt Scheibe-fix (nicht

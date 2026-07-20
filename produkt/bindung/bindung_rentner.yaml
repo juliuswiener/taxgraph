@@ -370,7 +370,7 @@ bindungen:
     beispielwert: 15000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Klasse-f VERZWEIGUNG je rentner_veraeusserungs_betriebsart (kein fixes Feld-Kz; Kz-Wahl in est_mapping): gewerbe -> E0801301 [VAe_G_FB_Antr] 'Veräußerungsgewinn vor Abzug des Freibetrags nach § 16 Abs. 4 EStG' (Anlage G, Hash 592812681); selbstaendig -> E0901201 [VAe_G_FB_Antr] (Anlage S, Hash 163190041); land_forst -> KEIN Kz (proven-absent = benannte GAP). NICHT E0804501 [Vor_FB] (=Beteiligungsquoten-Anteil-Sub, Folge-Nachtrag)."
+    elster_kz_grund: "Klasse-f VERZWEIGUNG je rentner_veraeusserungs_betriebsart (kein fixes Feld-Kz; Kz-Wahl in est_mapping), alle drei Anlagen per XSD-Walk verifiziert: gewerbe -> E0801301 [VAe_G_FB_Antr] 'Veräußerungsgewinn vor Abzug des Freibetrags nach § 16 Abs. 4 EStG' (Anlage G); selbstaendig -> E0804501 [Vor_FB] (Anlage S, echte S-Zeile, NICHT Beteiligungsquoten-Anteil-Sub); land_forst -> E0901201 [VAe_G_FB_Antr] (Anlage L)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 16 Abs. 4 S. 3 EStG"
@@ -388,7 +388,7 @@ bindungen:
     beispielwert: "gewerbe"
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Art-Weiche (steuert die Klasse-f-Kz-Verzweigung des Veräußerungsgewinns nach Anlage G/S/L), kein eigenes Betragsfeld/Kz. § 16 Abs. 4 ist anlage-agnostisch; die Weiche wählt nur den Deklarations-Kz. land_forst = benannte GAP-Zweig (kein § 16-FB-Kz im Schema)."
+    elster_kz_grund: "Art-Weiche (steuert die Klasse-f-Kz-Verzweigung des Veräußerungsgewinns nach Anlage G/S/L), kein eigenes Betragsfeld/Kz. § 16 Abs. 4 ist anlage-agnostisch; die Weiche wählt nur den Deklarations-Kz. Alle drei Zweige (gewerbe/selbstaendig/land_forst) sind auf reale Kz verdrahtet."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 16 Abs. 1 S. 1 EStG"

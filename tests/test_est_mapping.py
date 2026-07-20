@@ -329,18 +329,15 @@ def test_neg_klasse_f_unbekannte_art_kein_kz(bindung):
 
 
 def test_klasse_f_veraeusserung_betriebsart(bindung):
-    """§ 16 Abs. 4 Betriebsveräußerungsgewinn: Klasse-f-Verzweigung je Betriebsart — gewerbe→E0801301
-    (Anlage G), selbstaendig→E0901201 (Anlage S); land_forst = benannte GAP (kein § 16-FB-Kz im Schema)
-    → fail-closed nicht_deklariert, kein Default-Zweig."""
+    """§ 16 Abs. 4 Betriebsveräußerungsgewinn: Klasse-f-Verzweigung deckt alle drei Betriebsarten/Anlagen
+    ab — gewerbe→E0801301 (Anlage G), selbstaendig→E0804501 (Anlage S), land_forst→E0901201 (Anlage L)."""
     def dekl(art):
         snap, _ = ST.materialisiere(_store_mit({"rentner_veraeusserungsgewinn": 15000000,
                                                 "rentner_veraeusserungs_betriebsart": art}))
         return EM.deklariere(snap, bindung)
     assert dekl("gewerbe")["deklaration"]["E0801301"] == 15000000
-    assert dekl("selbstaendig")["deklaration"]["E0901201"] == 15000000
-    r_lf = dekl("land_forst")
-    assert "E0801301" not in r_lf["deklaration"] and "E0901201" not in r_lf["deklaration"]  # GAP-Zweig
-    assert "rentner_veraeusserungsgewinn" in {x["feld_id"] for x in r_lf["nicht_deklariert"]}
+    assert dekl("selbstaendig")["deklaration"]["E0804501"] == 15000000
+    assert dekl("land_forst")["deklaration"]["E0901201"] == 15000000
 
 
 # ---- Klasse g: Person-Multiplikation (Zusammenveranlagung, Front 2) -----------

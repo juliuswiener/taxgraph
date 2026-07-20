@@ -65,11 +65,11 @@ VERZWEIGUNG = {
         "private_basisrente": "E1800501", "private_leibrente": "E1801701",
         "sonstige_leibrente": "E1803202"}},
     # § 16 Abs. 4 Betriebsveräußerungsgewinn: der Deklarations-Kz hängt an der Betriebsart (Anlage). p16_4-
-    # Freibetrag ist anlage-agnostisch (rechnet), nur der Kz verzweigt. gewerbe/Mitunternehmeranteil -> Anlage G
-    # E0801301, selbstaendig § 18 -> Anlage S E0901201; land_forst § 14 = KEIN Kz (proven-absent -> GAP-Zweig,
-    # Klasse-f -> nicht_deklariert). E0804501 [Vor_FB]=Beteiligungsquoten-Anteil-Sub = Folge-Nachtrag.
+    # Freibetrag ist anlage-agnostisch (rechnet), nur der Kz verzweigt zwischen allen drei Anlagen
+    # (per XSD-Walk verifiziert): gewerbe/Mitunternehmeranteil -> Anlage G E0801301; selbstaendig § 18 ->
+    # Anlage S E0804501 [Vor_FB]; land_forst § 14 -> Anlage L E0901201 [VAe_G_FB_Antr].
     "rentner_veraeusserungsgewinn": {"art_feld": "rentner_veraeusserungs_betriebsart", "kz": {
-        "gewerbe": "E0801301", "selbstaendig": "E0901201"}},
+        "gewerbe": "E0801301", "selbstaendig": "E0804501", "land_forst": "E0901201"}},
     # §§ 13-18 Gewinneinkünfte (Stufe 1, p2_festzusetzung_einzel): der vorberechnete Gewinn verzweigt nach
     # gewinn_betriebsart in Anlage G/S/L. Kz=null VORERST — die konkreten Anlage-G/S/L-Kz sind eine eigene
     # Kz-Review-Runde (Instructor-Adjudikation). Leeres kz-dict => jede bestätigte Betriebsart landet

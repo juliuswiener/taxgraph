@@ -247,6 +247,66 @@ def test_real_bindung_gwg_e77_routing_gegen_echtes_schema_2025():
         assert f["jahre"][2025]["status"] == X.STATUS_OK, f"{fid}: {f['jahre'][2025]}"
 
 
+# ---------------------------------------------------------------- Task #13: Verzweigungs-Kz-Ernte
+# (Klasse d/f/g×f — NEGATION/VERZWEIGUNG/PARTNER_VERZWEIGUNG in est_mapping.py, Coverage-Audit Task #11:
+# diese Ziel-Kz waren zuvor NIE Teil der Iteration, weil sie nur als Python-Literal existieren, nie als
+# `elster_kz:` in bindung yaml.)
+
+def test_ernte_est_mapping_kz_negation_und_verzweigung_mit_echtem_vz():
+    """Schema-unabhängig: Ernte liest reale bindung yaml (vz_gueltigkeit) + reale est_mapping-Tabellen."""
+    bindung = T.lade_bindung()
+    synth = X.ernte_est_mapping_kz(bindung)
+
+    assert synth["negation:fam_alleinstehend"] == {
+        "elster_kz": "E0503701", "vz_gueltigkeit": bindung["fam_alleinstehend"]["vz_gueltigkeit"]}
+    assert synth["verzweigung:rentner_jahresrente:sonstige_leibrente"] == {
+        "elster_kz": "E1803102", "vz_gueltigkeit": bindung["rentner_jahresrente"]["vz_gueltigkeit"]}
+    # einkuenfte_gewinn hat ein LEERES kz-dict (Kz-Review noch offen) -> bewusst KEINE Synth-Einträge
+    assert not any(fid.startswith("verzweigung:einkuenfte_gewinn:") for fid in synth)
+
+
+@requires_real_schema
+def test_real_verzweigung_kz_geerntet_und_gegen_echtes_schema_ok():
+    """Task #13: ein geernteter Klasse-f-Ziel-Kz (rentner_jahresrente, unstrittiger Zweig) MUSS durch den
+    vollen Report-Treiber laufen und OK sein — nicht nur walk() (non-vacuous, wie H2)."""
+    bindung = T.lade_bindung()
+    synth = X.ernte_est_mapping_kz(bindung)
+    feld_id = "verzweigung:rentner_jahresrente:gesetzliche_rente"
+    assert feld_id in synth
+
+    ergebnis = X.pruefe_bindung({feld_id: synth[feld_id]}, schema_pfade={2025: _SCHEMA_2025})
+
+    assert ergebnis["felder"][feld_id]["status"] == X.STATUS_OK
+    assert ergebnis["felder"][feld_id]["jahre"][2025]["pfade"] == [
+        "E10/R/Leibr_gesetzl/Einz/E1800301"]
+    assert ergebnis["exit_code"] == 0
+
+
+@requires_real_schema
+def test_real_verzweigung_veraeusserungsgewinn_alle_drei_anlagen_kz_korrekt():
+    """Task #15-Regression: alle drei Betriebsart-Zweige zeigen auf die korrekte Anlage — 'selbstaendig'
+    MUSS auf E0804501 (Anlage S) zeigen (nicht E0901201/Anlage L); 'land_forst' MUSS auf E0901201
+    (Anlage L) zeigen. Läuft gegen den vollen Report-Treiber (wie H2), nicht nur walk()."""
+    bindung = T.lade_bindung()
+    synth = X.ernte_est_mapping_kz(bindung)
+    erwartet = {
+        "verzweigung:rentner_veraeusserungsgewinn:gewerbe": (
+            "E0801301", "E10/G/VAe_G_v_FB/Betr_TBetr_MUAnt/VAe_G_FB_Antr/E0801301"),
+        "verzweigung:rentner_veraeusserungsgewinn:selbstaendig": ("E0804501", "E10/S/VAe_Gew/Vor_FB/E0804501"),
+        "verzweigung:rentner_veraeusserungsgewinn:land_forst": (
+            "E0901201", "E10/L/VAe_G_v_FB/VAe_G_FB_Antr/E0901201"),
+    }
+    for feld_id, (kz, pfad) in erwartet.items():
+        assert feld_id in synth
+        assert synth[feld_id]["elster_kz"] == kz
+
+        ergebnis = X.pruefe_bindung({feld_id: synth[feld_id]}, schema_pfade={2025: _SCHEMA_2025})
+
+        assert ergebnis["felder"][feld_id]["status"] == X.STATUS_OK
+        assert ergebnis["felder"][feld_id]["jahre"][2025]["pfade"] == [pfad]
+        assert ergebnis["exit_code"] == 0
+
+
 @requires_real_schema
 def test_real_bindung_rentner_gegen_echtes_schema_2025():
     """Die gefreezten rentner-Kz aus bindung_rentner.yaml müssen alle eindeutig OK sein (VZ2025)."""
