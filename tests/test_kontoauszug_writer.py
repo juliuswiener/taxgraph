@@ -227,6 +227,91 @@ def test_lies_kontoauszug_pdf_scan_ocr(tmp_path):
     assert max(conf_map.values()) > 0.6                # mindestens eine Zeile solide erkannt
 
 
+# ---- parse_pdf_zeilen: Zeilen-Regex, Schwelle-Gate, Saldo-/Summenzeilen-Schutz (kein Mock) ----
+
+def test_parse_pdf_zeilen_textlayer():
+    text = ("12.03.2025 Malermeister Schmidt Renovierung -480,00\n"
+            "15.03.2025 Spende Rotes Kreuz e.V. -200,00\n"
+            "31.03.2025 Gehalt Arbeitgeber 2.500,00\n")
+    tx, verworfen = KW.parse_pdf_zeilen(text, {})
+    assert len(tx) == 3 and verworfen == 0
+    assert tx[0]["datum"] == "12.03.2025" and tx[0]["betrag"] == -48000
+    assert "Malermeister" in tx[0]["verwendungszweck"]
+    assert tx[1]["betrag"] == -20000
+    assert tx[2]["betrag"] == 250000                     # Einnahme positiv, kein Vorzeichen im Text
+
+
+def test_parse_pdf_zeilen_schwelle_gate():
+    text = ("12.03.2025 Malermeister Schmidt Renovierung -480,00\n"
+            "15.03.2025 Spende Rotes Kreuz e.V. -200,00\n")
+    conf_map = {0: 0.9, 1: 0.4}                          # Zeile 1 (Index 1) unsicher
+    tx, verworfen = KW.parse_pdf_zeilen(text, conf_map)
+    assert len(tx) == 1 and verworfen == 1
+    assert tx[0]["betrag"] == -48000                     # nur die sichere Zeile übernommen
+
+
+def test_parse_pdf_zeilen_textlayer_kein_gate():
+    text = "12.03.2025 Malermeister Schmidt Renovierung -480,00\n"
+    tx, verworfen = KW.parse_pdf_zeilen(text, {})
+    assert len(tx) == 1 and verworfen == 0               # leere conf_map -> Schwelle nie aktiv
+
+
+def test_parse_pdf_zeilen_saldo_spalte_und_summenzeile_konservativ():
+    """Realistisches Layout: Anfangssaldo + Transaktion mit Saldo-Spalte (2 Beträge) + normale
+    Transaktion + Endsaldo. Beweist: kein Phantom aus Saldo-Zeilen, Saldo wird NIE als Transaktions-
+    betrag übernommen (Mehrdeutigkeit -> Lücke statt Rate-Wert)."""
+    text = ("01.03.2025 Anfangssaldo 5.000,00\n"
+            "12.03.2025 Miete Vermieter GmbH -800,00 4.200,00\n"
+            "20.03.2025 Malermeister Schmidt -350,00\n"
+            "31.03.2025 Endsaldo 3.850,00\n")
+    tx, verworfen = KW.parse_pdf_zeilen(text, {})
+    assert len(tx) == 1 and verworfen == 1
+    assert tx[0]["betrag"] == -35000 and tx[0]["datum"] == "20.03.2025"
+    assert all(b["betrag"] not in (-80000, 420000) for b in tx)
+
+
+def test_parse_pdf_zeilen_keine_falsche_multibetrag_verwerfung():
+    """Rechnungsnummer/Mengenangabe ohne Komma-Dezimalform darf nicht als zweiter Betrag zählen."""
+    text = ("12.03.2025 Rechnung Nr 2025-0042 Handwerker -150,00\n"
+            "15.03.2025 3 Raten Ratenzahlung -150,00\n")
+    tx, verworfen = KW.parse_pdf_zeilen(text, {})
+    assert len(tx) == 2 and verworfen == 0
+    assert tx[0]["betrag"] == -15000 and tx[1]["betrag"] == -15000
+
+
+def test_parse_pdf_zeilen_keyword_kollision_keine_stille_verwerfung():
+    """"Übertrag"/"summe" als Wortfragment in echten Zwecken darf die Transaktion nicht schlucken."""
+    text = ("15.03.2025 Dauerauftrag Übertrag Tagesgeldkonto -500,00\n"
+            "20.03.2025 Zahlung Rechnungssumme Malerarbeiten -300,00\n")
+    tx, verworfen = KW.parse_pdf_zeilen(text, {})
+    assert len(tx) == 2 and verworfen == 0
+    assert tx[0]["betrag"] == -50000 and "Übertrag" in tx[0]["verwendungszweck"]
+    assert tx[1]["betrag"] == -30000
+
+
+def test_parse_pdf_zeilen_saldo_keyword_mit_negativbetrag_sichtbare_luecke():
+    """Saldo-Keyword-Zeile MIT negativem Betrag verschwindet nicht spurlos, sondern zählt als Lücke."""
+    text = "12.03.2025 Anpassung Saldo Korrektur -75,00\n"
+    tx, verworfen = KW.parse_pdf_zeilen(text, {})
+    assert len(tx) == 0 and verworfen == 1
+
+
+def test_parse_pdf_zeilen_compound_saldo_varianten():
+    """Compound-Saldo-Varianten (Präfix vor "saldo") dürfen nicht als Phantom-Vorschlag durchgehen."""
+    text = "31.03.2025 Tagessaldo -1.234,56\n"
+    tx, verworfen = KW.parse_pdf_zeilen(text, {})
+    assert len(tx) == 0 and verworfen == 1               # negativer Betrag -> sichtbare Lücke, kein Vorschlag
+
+
+def test_parse_pdf_zeilen_saldo_praefix_ohne_wortende_keine_kollision():
+    """"saldo" als Wortanfang OHNE Wortende danach (z.B. Firmenname) triggert das Keyword NICHT —
+    nur ein Suffix-Treffer (Präfix+"saldo" am Wortende) zählt als Saldo-Zeile."""
+    text = "12.03.2025 Zahlung Saldotronic GmbH Beratung -220,00\n"
+    tx, verworfen = KW.parse_pdf_zeilen(text, {})
+    assert len(tx) == 1 and verworfen == 0
+    assert tx[0]["betrag"] == -22000
+
+
 # ---- Store-Guard fail-closed -------------------------------------------------
 
 def test_guard_kontoauszug_kann_nie_bestaetigen():

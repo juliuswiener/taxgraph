@@ -181,11 +181,11 @@ def test_kontoauszug_csv_vorsorge_vorschlag(base):
     assert f["wert"] == 120000 and f["zustand"] == "vorlaeufig" and f["herkunft_badge"] == "kontoauszug"
 
 
-def test_kontoauszug_pdf_501(base):
-    """PDF hat keinen deterministischen Spalten-Parser → 501 mit Hinweis (CSV/JSON), nie Crash/Fake."""
+def test_kontoauszug_pdf_ungueltiges_base64_400(base):
+    """PDF-Inhalt muss base64-kodiert sein (roher PDF-Text ist es nicht) → 400, nie Crash/Fake."""
     _req(base, "POST", "/fall", {"scheibe": "an_gesamt", "veranlagungszeitraum": 2025, "fall_id": "kap"})
     st, b = _req(base, "POST", "/fall/kap/kontoauszug", {"format": "pdf", "inhalt": "%PDF-1.4 ..."})
-    assert st == 501 and b.get("fehler") == "not_implemented" and "vertrag" in b
+    assert st == 400
 
 
 def test_kontoauszug_json_liste(base):

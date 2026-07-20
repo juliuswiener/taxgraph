@@ -117,6 +117,68 @@ def _eur_cent_signed(s: str) -> int:
     return -cent if neg else cent
 
 
+_DATUM_ZEILE_RE = re.compile(r'^(\d{2}\.\d{2}\.\d{4})\s+(.*)$')
+_BETRAG_TOKEN_RE = re.compile(r'[+-]?\d{1,3}(?:\.\d{3})*,\d{2}')
+# Suffix-Match auf "saldo"/"kontostand" (kein Wortübergang VOR dem Keyword nötig) fängt Compound-
+# Varianten wie "Tagessaldo"/"Gesamtsaldo"/"Kontokorrentsaldo"/"Anfangssaldo"/"Endsaldo" alle;
+# "zwischensumme" bleibt Vollwort (killt "Rechnungssumme"/"Ratensumme"/"Bausparsumme"); "summe"/
+# "übertrag" ganz raus (zu breit / treffen echte Umbuchungen wie "Dauerauftrag Übertrag ...").
+_SALDO_KEYWORD_RE = re.compile(r'(kontostand|saldo)\b|\bzwischensumme\b', re.IGNORECASE)
+
+
+def parse_pdf_zeilen(text: str, conf_map: dict, schwelle: float = 0.6) -> tuple[list[dict], int]:
+    """Deterministischer PDF-Zeilen-Parser (Textlayer ODER OCR-Text aus lies_kontoauszug_pdf()).
+    Summen-/Saldozeilen (Keyword) werden übersprungen (keine Transaktion, kein Zähler). Zeilen mit
+    Datum DD.MM.YYYY vorn: genau 1 Betrags-Token im Rest + conf>=schwelle -> Vorschlag; 0 Beträge ->
+    ignoriert (kein Betrag im Text); >1 Beträge (z.B. Saldo-Spalte) ODER conf<schwelle -> VERWORFEN
+    (Lücke gezählt, NICHT geraten — K2 Under-tax > Over-tax).
+
+    Bekannte Grenzen: (1) mehrdeutige Multi-Betrag-Zeilen (Saldo-Spalten-Layout) -> Lücke, bewusst kein
+    Spalten-Raten (ein plausibel aussehender Falschwert ist schlechter als eine Lücke, die den Nutzer
+    zur korrekten Handeingabe zwingt). Betrags-Extraktion aus Saldo-Layouts = Folge-Nachtrag sobald
+    echte Bank-Samples vorliegen (Julius-Cap). (2) ein Komma-Dezimalwert im Zweck, der kein zweiter
+    Betrag ist (z.B. Zinssatz "Sollzinsen 3,50% -45,00"), zählt als Multi-Betrag-Token und landet
+    ebenfalls als sichtbare Lücke im Zähler — niedrige Prio, safe-by-omission, nicht extra gefixt."""
+    transaktionen = []
+    n_verworfen = 0
+    for i, zeile in enumerate(text.splitlines()):
+        z = zeile.strip()
+        if not z:
+            continue
+        if _SALDO_KEYWORD_RE.search(z):
+            # Zeile trägt ein Saldo-/Summen-Keyword. Reine Saldo-/Summenzeile (kein negativer Betrag)
+            # -> stumm übersprungen (harmlos). Trägt sie TROTZDEM einen negativen Betrag, könnte es eine
+            # echte Ausgabe sein, deren Zweck zufällig das Keyword enthält -> NICHT spurlos verschwinden,
+            # sondern als sichtbare/auditierbare Lücke zählen (Transparenz-Regel dev-3).
+            if any(b.startswith("-") for b in _BETRAG_TOKEN_RE.findall(z)):
+                n_verworfen += 1
+            continue
+        m = _DATUM_ZEILE_RE.match(z)
+        if not m:
+            continue                                    # kein Datum vorn -> ignoriert
+        rest = m.group(2)
+        betraege = _BETRAG_TOKEN_RE.findall(rest)
+        if not betraege:
+            continue                                    # kein Betrag erkennbar -> ignoriert
+        if len(betraege) > 1:
+            n_verworfen += 1                             # mehrdeutig (z.B. Saldo-Spalte) -> NICHT raten
+            continue
+        conf = conf_map.get(i, 1.0)
+        if conf < schwelle:
+            n_verworfen += 1                             # unsicher (OCR) -> NICHT raten
+            continue
+        betrag_str = betraege[0]
+        zweck = rest.replace(betrag_str, "", 1)
+        zweck = re.sub(r'\s*(?:EUR|€)\s*$', '', zweck, flags=re.I)
+        zweck = re.sub(r'\s+', ' ', zweck).strip()
+        transaktionen.append({
+            "datum": m.group(1),
+            "betrag": _eur_cent_signed(betrag_str),
+            "verwendungszweck": zweck,
+        })
+    return transaktionen, n_verworfen
+
+
 # ---- PDF-Extraktion (Textlayer zuerst, Bild-Scan -> tesseract-deu-OCR; kein externer Dienst/API-Key) ------
 # Reine Text-Extraktion -- speist NUR den bestehenden Transaktions-/Klassifikations-Pfad (parse_csv-Form),
 # baut KEINE neue Klassifikation.

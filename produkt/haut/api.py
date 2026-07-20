@@ -15,6 +15,7 @@ golden-Accessor die Größe wirklich rechnet. Eine Scheibe mit Gesamt-Accessor (
 """
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
@@ -1513,13 +1514,6 @@ def vorjahr(fall_id: str, body: dict) -> tuple[int, dict]:
     return 200, {"uebernommen": n, "vorjahr_fall_id": vj_id}
 
 
-KONTOAUSZUG_PDF_501 = {
-    "fehler": "not_implemented",
-    "vertrag": ("PDF-Kontoauszüge brauchen einen OCR/Layout-Parser (kein deterministischer Spalten-Parser "
-                "wie CSV) — bitte lade den Auszug als CSV oder JSON hoch. PDF-Import folgt als Nachtrag."),
-}
-
-
 def _kontoauszug_llm_klassifikator():
     """Baut den Kontoauszug-LLM-Fallback-Klassifikator (dev-2s kontoauszug_writer.llm_klassifikator_factory,
     llm_client-MODUL als `client` — hat `.complete`, kein Klassen-Bau nötig). Cap-gated wie /chat: JEDER Aufruf
@@ -1552,6 +1546,7 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
     fmt = (body.get("format") or "").strip().lower()
     inhalt = body.get("inhalt")
     import kontoauszug_writer as KW
+    n_verworfen = 0
     if fmt == "csv":
         tx = KW.parse_csv(inhalt if isinstance(inhalt, str) else "")
     elif fmt == "json":
@@ -1562,14 +1557,34 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
         if not isinstance(tx, list):
             raise ApiError(400, "json muss eine Liste von Transaktionen sein")
     elif fmt == "pdf":
-        return 501, KONTOAUSZUG_PDF_501
+        # PDF kommt als base64 im JSON-Body (server.py macht NUR json.loads, kein Multipart) — auf
+        # Disk entpackt, weil der OCR/Layout-Pfad (wie beleg_writer.lies_beleg_text) pfad-basiert ist,
+        # nicht bytes-basiert. tmp-Datei trägt den ROHEN Bank-Auszug (PII/IBAN vor Writer-Maskierung)
+        # → finally: os.unlink, UNBEDINGT auch bei Exception im OCR/Parse-Pfad (kein Disk-Leck).
+        if not isinstance(inhalt, str) or not inhalt.strip():
+            raise ApiError(400, "pdf-Inhalt fehlt (erwartet: base64-kodierte PDF-Bytes in `inhalt`)")
+        try:
+            pdf_bytes = base64.b64decode(inhalt, validate=True)
+        except ValueError:              # binascii.Error ist eine ValueError-Unterklasse (verifiziert)
+            raise ApiError(400, "pdf-Inhalt nicht gültig base64-kodiert")
+        fd, pfad = tempfile.mkstemp(suffix=".pdf")
+        try:
+            with os.fdopen(fd, "wb") as fh:
+                fh.write(pdf_bytes)
+            text, conf_map = KW.lies_kontoauszug_pdf(pfad)
+            tx, n_verworfen = KW.parse_pdf_zeilen(text, conf_map)
+        finally:
+            os.unlink(pfad)
     else:
         raise ApiError(400, "format muss csv, json oder pdf sein")
     # katalog GLOBAL (dev-2-Kontrakt): Enforcement decoupled vom per-Scheibe-Targeting.
     n = KW.uebernehme_kontoauszug(store, tx, bindung, llm_klassifikator=_kontoauszug_llm_klassifikator(),
                                   katalog=ST.lade_katalog(TR.lade_bindung()))
     speichere_fall(fall_id, store)
-    return 200, {"uebernommen": n, "transaktionen": len(tx)}
+    out = {"uebernommen": n, "transaktionen": len(tx), "verworfen": n_verworfen}
+    if n_verworfen > 0:
+        out["hinweis"] = f"{n_verworfen} Zeile(n) unsicher erkannt (Confidence < 60%) — bitte manuell prüfen/nachtragen."
+    return 200, out
 
 
 def _chat_prompt(freitext: str, katalog: list[dict]) -> list[dict]:
