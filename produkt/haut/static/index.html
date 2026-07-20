@@ -9,6 +9,8 @@
 <body>
   <main id="app">
 
+    <div id="netz-banner" class="netz-banner" role="alert" hidden></div>
+
     <!-- P0: Start — 2 Kacheln (Scheiben-Wahl, scheibe nicht hardcoden) -->
     <section id="start" class="screen">
       <h1 class="start-titel">Was trifft auf dich zu?</h1>
@@ -49,8 +51,8 @@
         </div>
       </div>
 
-      <section id="wegpunkt" class="card screen" hidden>
-        <p id="frage" class="frage"></p>
+      <section id="wegpunkt" class="card screen" tabindex="-1" hidden>
+        <p id="frage" class="frage" aria-live="polite"></p>
         <p id="hilfe" class="hilfe"></p>
         <div id="eingabe" class="eingabe"></div>
         <div class="aktionen">

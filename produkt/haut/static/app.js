@@ -7,10 +7,32 @@ let AKTUELL = null;   // aktuelle Frage (aus /fragen)
 let STAND = null;     // letzter /stand
 let SPANNE0 = null;   // Referenz-Spanne (für den Schrumpf-Anteil)
 
-async function jget(url) { const r = await fetch(url); return { status: r.status, body: await r.json() }; }
+const NETZ_FEHLER_TEXT = "Netzwerkfehler — bitte Verbindung prüfen und erneut versuchen.";
+function zeigeNetzFehler(msg) { const b = document.getElementById("netz-banner"); b.textContent = msg; b.hidden = false; }
+function versteckeNetzFehler() { const b = document.getElementById("netz-banner"); b.hidden = true; }
+function okStatus(s) { return s >= 200 && s < 300; }
+
+async function jget(url) {
+  try {
+    const r = await fetch(url);
+    const body = await r.json();
+    versteckeNetzFehler();
+    return { status: r.status, body };
+  } catch (e) {
+    zeigeNetzFehler(NETZ_FEHLER_TEXT);
+    return { status: 0, body: { fehler: NETZ_FEHLER_TEXT } };
+  }
+}
 async function jpost(url, obj) {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj || {}) });
-  return { status: r.status, body: await r.json() };
+  try {
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj || {}) });
+    const body = await r.json();
+    versteckeNetzFehler();
+    return { status: r.status, body };
+  } catch (e) {
+    zeigeNetzFehler(NETZ_FEHLER_TEXT);
+    return { status: 0, body: { fehler: NETZ_FEHLER_TEXT } };
+  }
 }
 function euro(cent) {
   if (cent === null || cent === undefined) return "—";
@@ -30,9 +52,17 @@ function _dateiAlsBase64(datei) {
 
 // --- P0: Scheiben-Wahl (2 Kacheln) — scheibe NICHT hardcoden ---
 async function waehleScheibe(scheibe) {
+  const kacheln = document.querySelectorAll(".kachel");
+  if (kacheln[0] && kacheln[0].disabled) return;   // Doppel-Submit-Schutz
+  kacheln.forEach(k => k.disabled = true);
   const fid = "demo-" + Date.now();
   const a = await jpost("/fall", { scheibe, veranlagungszeitraum: 2025, fall_id: fid });
-  if (a.status >= 400) { alert("Konnte nicht starten: " + (a.body.fehler || a.status)); return; }
+  if (!okStatus(a.status)) {
+    zeigeNetzFehler("Konnte nicht starten: " + (a.body.fehler || a.status));
+    kacheln.forEach(k => k.disabled = false);
+    return;
+  }
+  kacheln.forEach(k => k.disabled = false);
   FALL = a.body.fall_id;
   SPANNE0 = null;
   $("start").hidden = true;
@@ -138,6 +168,7 @@ function zeigeFrage(q, stand) {
   $("frage").textContent = q.fragetext_laie || q.feld_id;
   $("hilfe").textContent = q.hilfe_kurz || "";
   $("anker").hidden = true;
+  $("wegpunkt").focus({ preventScroll: true });   // Screen-Reader: Wegpunkt-Wechsel per Fokus + aria-live auf #frage ansagen
 
   // Gibt es schon einen vorläufigen Vorschlag für dieses Feld (KI / Karten-berechnet / Vorjahr)?
   // -> Hold-to-confirm (Dim 2): der Nutzer bestätigt den Vorschlag bewusst (Zwei-Signal).
@@ -250,6 +281,11 @@ function leseWert(q) {
 // --- Bestätigen: Zwei-Signal über den EINZIGEN Schreibpfad. kiFeld gesetzt -> ersetzt das vorläufige KI-Event. ---
 async function bestaetigen(kiFeld) {
   if (!AKTUELL) return;
+  const btn = $("bestaetigen");
+  if (btn.disabled) return;   // Doppel-Submit-Schutz
+  btn.disabled = true;
+  const altLabel = kiFeld ? null : btn.textContent;
+  if (!kiFeld) btn.textContent = "Wird gespeichert …";
   const wert = leseWert(AKTUELL);
   const ev = {
     feld_id: AKTUELL.feld_id, wert, zustand: "bestaetigt",
@@ -263,7 +299,13 @@ async function bestaetigen(kiFeld) {
     if (j.event_id) { ev.ersetzt = j.event_id; ev.signal.signal_1 = j.event_id; }
   }
   const r = await jpost(`/fall/${FALL}/event`, ev);
-  if (r.status >= 400) { alert("Abgewiesen: " + (r.body.fehler || r.status)); return; }
+  if (!okStatus(r.status)) {
+    zeigeNetzFehler("Abgewiesen: " + (r.body.fehler || r.status));
+    btn.disabled = false;
+    if (!kiFeld) btn.textContent = altLabel;
+    return;
+  }
+  btn.disabled = false;   // refresh() klont den Button (rüsteBestaetigen) — Attribut sonst dauerhaft übernommen
   await refresh();
 }
 

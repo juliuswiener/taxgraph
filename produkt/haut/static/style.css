@@ -1,7 +1,7 @@
 /* TaxGraph Haut — dark-theme, mobile-first (Julius-Optik 2026-07-18). */
 :root{
   --bg:#0f1220; --card:#1a1f36; --card2:#232a49; --ink:#eef1f8; --muted:#9aa3c4;
-  --solide:#3ddc97; --schimmernd:#c9a3ff; --akzent:#5b8cff; --warn:#ffb454; --line:#2c3457;
+  --solide:#3ddc97; --schimmernd:#c9a3ff; --akzent:#5b8cff; --warn:#ffb454; --line:#2c3457; --fehler:#ff6b6b;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
@@ -135,3 +135,10 @@ h1,h2,h3{margin:0}
 @media (prefers-reduced-motion:reduce){
   *,.screen,.overlay-card,.ring::after,.btn-hold .fill{animation:none !important;transition:none !important}
 }
+
+/* ============================================================================
+   Lade-/Fehlerzustände (2026-07-21, ui) — Netzwerkfehler & Doppel-Submit-Schutz.
+   ========================================================================== */
+.netz-banner{background:rgba(255,107,107,.14);color:var(--fehler);border:1px solid rgba(255,107,107,.4);
+  border-radius:12px;padding:12px 14px;margin:0 0 14px;font-size:14px}
+.kachel:disabled,.btn:disabled{opacity:.55;cursor:not-allowed}
