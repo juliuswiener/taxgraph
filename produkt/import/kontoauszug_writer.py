@@ -189,15 +189,70 @@ def _fix_bel(text: str) -> str:
     return text.replace("\x07", " ")
 
 
+def _textlayer_ist_plausibel(seiten_text: str) -> bool:
+    """Eine Seite gilt als plausibel textlayer-erfasst ab einer Mindest-Zeichendichte. Konservativ (K2:
+    lieber unnötige Extra-OCR als eine still verpasste Bild-Seite) — killt sowohl leere Scan-Seiten
+    (0 Zeichen) als auch Garbage-Reste (z.B. eine eingebettete Seitenzahl/Fußzeile als einziges echtes
+    Textobjekt auf einer sonst gescannten Seite). Schwellwert ist reine Technik-Heuristik, kein
+    Gesetzeswert.
+    BACKLOG (non-blocking, dev-3-Review 2026-07-20): ein gescannter Kontoauszug mit einer echten
+    Kopfzeile/Fußzeile ≥20 Zeichen (z.B. Bankname+Adresse) könnte hier fälschlich als "plausibel"
+    durchgehen, obwohl der Tabelleninhalt selbst reines Bild ist -> stille OCR-Lücke. Braucht echte
+    Scan-Samples zur Kalibrierung (Julius-Cap), siehe [[pdf-teil-textlayer-luecke]]."""
+    return len(seiten_text.strip()) >= 20
+
+
 def lies_kontoauszug_pdf(pfad: str) -> tuple[str, dict]:
     """PDF-Kontoauszug -> (text, confidence_map je Zeilenindex). Textlayer zuerst (pdftotext -layout,
     exakt, Confidence implizit 1.0 — Präzedenz beleg_writer.lies_beleg_text); BEL-Fix vor dem Leer-Check.
-    Kein Text danach -> echter Bild-Scan -> tesseract-deu (lokal, kein externer Dienst, kein API-Key)."""
+    Kein Text überhaupt -> echter Voll-Bild-Scan -> tesseract-deu (lokal, kein externer Dienst/API-Key).
+    Teil-Textlayer (z.B. Seite 1 Textlayer + Seite 2 Scan): pdftotext trennt Seiten mit \\x0c (ein
+    Trailing-\\x0c auch nach der letzten Seite, daher [:-1]) — jede implausible Seite wird EINZELN
+    nach-OCR't, plausible Seiten behalten ihren Textlayer (kein unnötiges Voll-Rastern)."""
     text = subprocess.run(["pdftotext", "-layout", pfad, "-"], capture_output=True, text=True).stdout
     text = _fix_bel(text)
-    if text.strip():
+    if not text.strip():
+        return _ocr_tesseract_zeilen(pfad)
+
+    seiten = text.split("\x0c")[:-1]
+    if all(_textlayer_ist_plausibel(s) for s in seiten):
         return text, {}
-    return _ocr_tesseract_zeilen(pfad)
+
+    text_teile = []
+    conf_map: dict = {}
+    zeilen_offset = 0
+    for seiten_nr, seiten_text in enumerate(seiten, start=1):    # pdftoppm/tesseract sind 1-indiziert
+        if _textlayer_ist_plausibel(seiten_text):
+            teil_text = seiten_text
+        else:
+            teil_text, ocr_conf = _ocr_tesseract_seite(pfad, seiten_nr)
+            for i, c in ocr_conf.items():
+                conf_map[zeilen_offset + i] = c
+        # rstrip VOR Zählen+Append: ein Textlayer-Segment endet meist schon auf "\n" — würde das
+        # UNGEKÜRZT mit "\n".join() verbunden, entstünde an der Seitengrenze ein zusätzliches Leerzeichen
+        # (Doppel-"\n"), das den Zeilenindex ALLER folgenden Zeilen um 1 verschiebt -> conf_map zeigt
+        # dann auf die falsche (leere) Zeile, die echte (evtl. unsichere) OCR-Zeile fällt auf den
+        # conf_map.get(i,1.0)-Fallback = STILLE Voll-Konfidenz (unterläuft K2 conf<0.6->Lücke).
+        teil_text = teil_text.rstrip("\n")
+        text_teile.append(teil_text)
+        zeilen_offset += teil_text.count("\n") + 1
+    return "\n".join(text_teile), conf_map
+
+
+def _ocr_tesseract_seite(pfad: str, seiten_nr: int) -> tuple[str, dict]:
+    """Wie _ocr_tesseract_zeilen, aber NUR eine Seite (1-indiziert) rastern+OCR'n — für den
+    Teil-Textlayer-Fall (der Rest der Seiten hat schon einen brauchbaren Textlayer)."""
+    with tempfile.TemporaryDirectory() as td:
+        praefix = os.path.join(td, "seite")
+        subprocess.run(["pdftoppm", "-png", "-r", "200", "-f", str(seiten_nr), "-l", str(seiten_nr),
+                        pfad, praefix], capture_output=True)
+        png = sorted(os.listdir(td))[0]
+        tsv = subprocess.run(["tesseract", os.path.join(td, png), "stdout", "-l", "deu", "tsv"],
+                             capture_output=True, text=True).stdout
+        zeilen = _tsv_zu_zeilen(tsv)
+    text = "\n".join(z for z, _ in zeilen)
+    conf_map = {i: c for i, (_, c) in enumerate(zeilen)}
+    return text, conf_map
 
 
 def _ocr_tesseract_zeilen(pfad: str) -> tuple[str, dict]:

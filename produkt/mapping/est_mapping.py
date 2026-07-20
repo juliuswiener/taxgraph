@@ -41,14 +41,15 @@ DOKUMENTIERT_AGGREGAT = {
 # Klasse d — Negation: Store-Feld -> EfA-Kz (invertiert; Vordruck kodiert die schädliche Haushaltsgem.).
 NEGATION = {"fam_alleinstehend": "E0503701"}
 # Klasse e — Multiplikation: Zähl-Feld -> N Anlage-Kind-Instanzen (MVP: nur die ANZAHL).
-# BENANNTE DEKLARATIONS-GAP (Instructor-Ruling 2026-07-18, Nachtrag B DEFER): der count-MVP ist
-# TARIF-KORREKT — Kinderfreibetrag (p32_6) + Kindergeld (p31) rechnen count × Betrag, KEINE Per-Kind-
-# Tarif-Inputs. Die Per-Kind-FORM-Kz für die ELSTER-Submission (je Anlage-Kind-Instanz: Identifikations-
-# nummer E0500406, Art des Kindschaftsverhältnisses E0500807/E0500808 je Elternteil, Zeitraum
-# E0500601/E0500805, Kindergeld-Anspruch E0500702) sind DEFERRED: sie brauchen ein Repeated-Instance-
-# Store-Modell (variable 1..N Kinder, keine flach-gecappte kind_1..N-Krücke) — gemeinsame Struktur-
-# Investition mit Multi-Objekt-§21 / Multi-Rente, erst wenn ein Fall sie TARIF-relevant braucht. Bis
-# dahin: bewusste Lücke, kein Vergessen.
+# Der count-MVP ist TARIF-KORREKT — Kinderfreibetrag (p32_6) + Kindergeld (p31) rechnen count × Betrag,
+# KEINE Per-Kind-Tarif-Inputs. Die Per-Kind-FORM-Kz für die ELSTER-Submission SIND (Stand 2026-07-20)
+# 5/6 gebunden — instanz_gruppe:kind, Klasse INSTANZ (s.u.): Identifikationsnummer E0500406, Art des
+# Kindschaftsverhältnisses E0500807/E0500808 je Elternteil, Zeitraum E0500601/E0500805 (bindung_kap_vv_
+# familie.yaml, getestet test_est_mapping.py inkl. Instanz-2-Roundtrip). NUR Kindergeld-Anspruch E0500702
+# bleibt offen — NICHT weil ein Repeated-Instance-Store-Modell fehlt (das existiert längst), sondern (a)
+# Werte-Kodierung nicht amtlich verifizierbar (ERiC-Beispiel-XMLs 2021-2025 zeigen konstant Platzhalter
+# "2448", keine erkennbare Semantik) und (b) bereits 2026-07-18 explizit abgelehnt (reports/review/
+# 2026-07-18-anlage-kind-kz-kandidaten.md: "≠Haushaltszugehörigkeit"). Bewusste Lücke, kein Vergessen.
 MULTIPLIKATION = ("fam_anzahl_kinder",)
 # Klasse f — Verzweigung: EIN Wert-Slot -> N-Kz je Enum-Wert eines Art-Felds. § 22-Renten: die Anlage-R-
 # Zeile (und damit das Kz) hängt an rentner_renten_art. aa-Basisversorgung (gesetzl/berufsst/basisrente)

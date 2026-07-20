@@ -9,6 +9,8 @@ den Zustand (keine Auto-Bestätigung); (d) unlesbar/nicht gefunden → benannte 
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
 import sys
 
 import pytest
@@ -39,6 +41,70 @@ HANDWERKER_OHNE_SPLIT = _fix("muster_handwerkerrechnung_ohne_split_2025.txt")
 MINIJOB = _fix("muster_minijob_bescheinigung_2025.txt")
 DIENSTLEISTUNG = _fix("muster_dienstleistungsrechnung_2025.txt")
 AMBIG = _fix("muster_rechnung_ambig_2025.txt")
+
+
+# ---- PDF-Fixture-Helfer (kein committetes Binary — on-the-fly, reproduzierbar; kopiert aus
+# test_kontoauszug_writer.py, geteiltes Muster) --------------------------------------------------
+
+def _write_text_pdf(zeilen: list, pfad: str) -> None:
+    """Minimales ECHTES PDF mit Textlayer (roher Content-Stream, keine Lib nötig)."""
+    content = "BT /F1 11 Tf 50 750 Td 14 TL\n"
+    for zeile in zeilen:
+        esc = zeile.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+        content += f"({esc}) Tj T*\n"
+    content += "ET"
+    content_bytes = content.encode("latin-1")
+    objs = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> "
+        b"/MediaBox [0 0 612 792] /Contents 5 0 R >>",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        b"<< /Length %d >>\nstream\n" % len(content_bytes) + content_bytes + b"\nendstream",
+    ]
+    out = b"%PDF-1.4\n"
+    offsets = [0]
+    for i, o in enumerate(objs, start=1):
+        offsets.append(len(out))
+        out += f"{i} 0 obj\n".encode() + o + b"\nendobj\n"
+    xref_off = len(out)
+    out += f"xref\n0 {len(objs) + 1}\n0000000000 65535 f \n".encode()
+    for off in offsets[1:]:
+        out += f"{off:010d} 00000 n \n".encode()
+    out += f"trailer\n<< /Size {len(objs) + 1} /Root 1 0 R >>\nstartxref\n{xref_off}\n%%EOF".encode()
+    with open(pfad, "wb") as f:
+        f.write(out)
+
+
+def _write_scan_pdf(zeilen: list, pfad: str) -> None:
+    """Bild-PDF OHNE Textlayer (PIL rendert Zeilen auf ein PNG, img2pdf verpackt)."""
+    from PIL import Image, ImageDraw, ImageFont
+    img = Image.new("RGB", (1000, 80 + 40 * len(zeilen)), "white")
+    d = ImageDraw.Draw(img)
+    font = ImageFont.truetype("/usr/share/fonts/TTF/DejaVuSans.ttf", 22)
+    for i, zeile in enumerate(zeilen):
+        d.text((20, 20 + 40 * i), zeile, fill="black", font=font)
+    png_pfad = pfad + ".png"
+    img.save(png_pfad)
+    subprocess.run(["img2pdf", png_pfad, "-o", pfad], check=True)
+
+
+def _write_multiseiten_pdf(text_zeilen: list, scan_zeilen: list, pfad: str) -> None:
+    """Seite 1 = Textlayer, Seite 2 = Bild-Scan, via pdfunite zusammengefügt (Teil-Textlayer-Fixture,
+    kein echtes Sample nötig)."""
+    p1, p2 = pfad + ".seite1.pdf", pfad + ".seite2.pdf"
+    _write_text_pdf(text_zeilen, p1)
+    _write_scan_pdf(scan_zeilen, p2)
+    subprocess.run(["pdfunite", p1, p2, pfad], check=True)
+
+
+try:
+    import PIL  # noqa: F401
+    _PIL_OK = True
+except ImportError:
+    _PIL_OK = False
+_SCAN_FIXTURE_OK = _PIL_OK and shutil.which("img2pdf") is not None
+_MULTISEITEN_FIXTURE_OK = _SCAN_FIXTURE_OK and shutil.which("pdfunite") is not None
 
 
 @pytest.fixture(scope="module")
@@ -242,3 +308,44 @@ def test_signal1_objekt_schema_gueltig(store_schema):
           "signal": {"signal_1": {"typ": "beleg", "ref": "beleg:x#lstb_nr=3", "confidence": 1.0},
                      "signal_2": None}, "ersetzt": None}
     assert not _fehler(store_schema, ev), "signal_1-Objekt sollte gültig sein"
+
+
+# ---- lies_beleg_text: Textlayer-vs-Scan-Detektion + Teil-Textlayer (kein Mock) -----------------
+
+def test_lies_beleg_text_textlayer(tmp_path):
+    """Digitaler Beleg (echter Textlayer) -> pdftotext reicht, kein OCR, confidence_map leer."""
+    pfad = str(tmp_path / "textlayer.pdf")
+    _write_text_pdf(["Lohnsteuerbescheinigung 2025", "Nr. 3 45.000,00"], pfad)
+    text, conf_map = BW.lies_beleg_text(pfad)
+    assert "Lohnsteuerbescheinigung" in text
+    assert conf_map == {}
+
+
+@pytest.mark.skipif(not _MULTISEITEN_FIXTURE_OK, reason="Pillow/img2pdf/pdfunite für Multi-Seiten-Fixture nicht verfügbar")
+def test_lies_beleg_text_teil_textlayer_seite2_wird_nachocrt(tmp_path):
+    """Seite 1 Textlayer + Seite 2 Bild-Scan (kein OCR ohne Fix) -> beide Seiten im Ergebnis,
+    conf_map trägt NUR für die nach-OCR'te Seite-2-Zeile einen Eintrag."""
+    pfad = str(tmp_path / "teil_textlayer.pdf")
+    _write_multiseiten_pdf(["Lohnsteuerbescheinigung 2025", "Nr. 3 45.000,00"],
+                           ["Nr. 22 4.185,00"], pfad)
+    text, conf_map = BW.lies_beleg_text(pfad)
+    assert "Lohnsteuerbescheinigung" in text
+    assert "22" in text                                   # Seite 2 sonst spurlos verloren
+    assert conf_map
+    assert all(0.0 <= c <= 1.0 for c in conf_map.values())
+
+
+@pytest.mark.skipif(not _MULTISEITEN_FIXTURE_OK, reason="Pillow/img2pdf/pdfunite für Multi-Seiten-Fixture nicht verfügbar")
+def test_lies_beleg_text_teil_textlayer_conf_index_alignment(tmp_path, monkeypatch):
+    """dev-3-Fund (geteilter Bug mit kontoauszug_writer): Seitengrenze darf den conf_map-Index NICHT
+    verschieben (Doppel-"\\n" beim Join wäre ein Offset-Bug) — eine niedrig-konfidente OCR-Zeile muss
+    unter ihrem ECHTEN Index in text.splitlines() landen. _ocr_tesseract_seite ist deterministisch
+    monkeypatched (Index-Arithmetik ist der Prüfgegenstand, nicht der OCR-Call)."""
+    pfad = str(tmp_path / "conf_align.pdf")
+    _write_multiseiten_pdf(["Lohnsteuerbescheinigung 2025", "Nr. 3 45.000,00"],
+                           ["Platzhalter-Scan-Seite"], pfad)
+    monkeypatch.setattr(BW, "_ocr_tesseract_seite", lambda pfad, seiten_nr: ("Nr. 22 4.185,00", {0: 0.4}))
+    text, conf_map = BW.lies_beleg_text(pfad)
+    zeilen = text.splitlines()
+    ocr_idx = zeilen.index("Nr. 22 4.185,00")
+    assert conf_map.get(ocr_idx) == 0.4                  # exakt ausgerichtet, kein Offset-Fehler

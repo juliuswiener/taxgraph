@@ -18,10 +18,13 @@ Lücke (nie Material/Gesamt als Arbeitskosten raten). Dienstleistungen/Minijob, 
 """
 from __future__ import annotations
 
+import csv
+import io
 import os
 import re
 import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "store"))
@@ -167,12 +170,92 @@ def schreibe_kandidaten(store: dict, kandidaten: list, *, beleg_ref: str, bindun
     return events
 
 
-def lies_beleg_text(pfad: str) -> str:
+def _textlayer_ist_plausibel(seiten_text: str) -> bool:
+    """Wie kontoauszug_writer._textlayer_ist_plausibel (geteiltes Muster, gleicher Schwellwert):
+    Mindest-Zeichendichte, konservativ (K2: lieber unnötige Extra-OCR als eine still verpasste
+    Bild-Seite).
+    BACKLOG (non-blocking, dev-3-Review 2026-07-20): eine gescannte Seite mit echter Kopf-/Fußzeile
+    ≥20 Zeichen könnte fälschlich "plausibel" durchgehen, obwohl der eigentliche Belegtext Bild ist ->
+    stille OCR-Lücke. Braucht echte Scan-Samples (Julius-Cap), siehe [[pdf-teil-textlayer-luecke]]."""
+    return len(seiten_text.strip()) >= 20
+
+
+def lies_beleg_text(pfad: str) -> tuple[str, dict]:
     """Realbetrieb (nicht im Gate): Textlayer zuerst (pdftotext), sonst tesseract-deu (lokal, kein
-    externer Dienst). Reine I/O-Schale um extrahiere(); die deterministische Kernlogik ist textbasiert."""
+    externer Dienst). Reine I/O-Schale um extrahiere(); die deterministische Kernlogik ist textbasiert.
+    Teil-Textlayer (mehrseitiger Beleg, z.B. Seite 1 Textlayer + Seite 2 Scan): jede implausible Seite
+    wird EINZELN nach-OCR't (kein unnötiges Voll-Rastern) — geteiltes Muster mit
+    kontoauszug_writer.lies_kontoauszug_pdf. Rückgabe (text, confidence_map je Zeilenindex; leer bei
+    reinem Textlayer/.txt)."""
     if pfad.lower().endswith((".txt",)):
-        return open(pfad, encoding="utf-8").read()
+        return open(pfad, encoding="utf-8").read(), {}
     txt = subprocess.run(["pdftotext", "-layout", pfad, "-"], capture_output=True, text=True).stdout
-    if txt.strip():
-        return txt
-    return subprocess.run(["tesseract", pfad, "-", "-l", "deu"], capture_output=True, text=True).stdout
+    if not txt.strip():
+        return subprocess.run(["tesseract", pfad, "-", "-l", "deu"], capture_output=True, text=True).stdout, {}
+
+    seiten = txt.split("\x0c")[:-1]
+    if all(_textlayer_ist_plausibel(s) for s in seiten):
+        return txt, {}
+
+    text_teile = []
+    conf_map: dict = {}
+    zeilen_offset = 0
+    for seiten_nr, seiten_text in enumerate(seiten, start=1):    # pdftoppm/tesseract sind 1-indiziert
+        if _textlayer_ist_plausibel(seiten_text):
+            teil_text = seiten_text
+        else:
+            teil_text, ocr_conf = _ocr_tesseract_seite(pfad, seiten_nr)
+            for i, c in ocr_conf.items():
+                conf_map[zeilen_offset + i] = c
+        # rstrip VOR Zählen+Append (geteilter Bug-Fix mit kontoauszug_writer.lies_kontoauszug_pdf):
+        # ein Textlayer-Segment endet meist schon auf "\n" — ungekürzt mit "\n".join() verbunden
+        # entstünde an der Seitengrenze ein Doppel-"\n", das den Zeilenindex aller folgenden Zeilen
+        # um 1 verschiebt -> conf_map zeigt auf die falsche Zeile.
+        teil_text = teil_text.rstrip("\n")
+        text_teile.append(teil_text)
+        zeilen_offset += teil_text.count("\n") + 1
+    return "\n".join(text_teile), conf_map
+
+
+def _ocr_tesseract_seite(pfad: str, seiten_nr: int) -> tuple[str, dict]:
+    """Ein-Seiten-tesseract-OCR (1-indiziert) für den Teil-Textlayer-Fall — analog
+    kontoauszug_writer._ocr_tesseract_seite (geteiltes Muster, eigene Kopie: kein Cross-Modul-Import
+    zwischen den zwei Writern)."""
+    with tempfile.TemporaryDirectory() as td:
+        praefix = os.path.join(td, "seite")
+        subprocess.run(["pdftoppm", "-png", "-r", "200", "-f", str(seiten_nr), "-l", str(seiten_nr),
+                        pfad, praefix], capture_output=True)
+        png = sorted(os.listdir(td))[0]
+        tsv = subprocess.run(["tesseract", os.path.join(td, png), "stdout", "-l", "deu", "tsv"],
+                             capture_output=True, text=True).stdout
+        zeilen = _tsv_zu_zeilen(tsv)
+    text = "\n".join(z for z, _ in zeilen)
+    conf_map = {i: c for i, (_, c) in enumerate(zeilen)}
+    return text, conf_map
+
+
+def _tsv_zu_zeilen(tsv: str) -> list[tuple[str, float]]:
+    """tesseract --tsv-Ausgabe -> [(zeilentext, confidence 0..1)], gruppiert nach (block,par,line) —
+    identische Logik zu kontoauszug_writer._tsv_zu_zeilen (geteiltes Muster, eigene Kopie)."""
+    reader = csv.DictReader(io.StringIO(tsv), delimiter="\t")
+    gruppen: dict[tuple, list] = {}
+    reihenfolge = []
+    for row in reader:
+        if row.get("level") != "5":            # nur Wort-Zeilen (level 5 = word)
+            continue
+        key = (row["block_num"], row["par_num"], row["line_num"])
+        if key not in gruppen:
+            gruppen[key] = []
+            reihenfolge.append(key)
+        try:
+            conf = float(row["conf"])
+        except (TypeError, ValueError):
+            conf = -1.0
+        gruppen[key].append((row["text"], conf))
+    out = []
+    for key in reihenfolge:
+        woerter = gruppen[key]
+        zeilentext = " ".join(w for w, _ in woerter if w.strip())
+        confs = [c / 100.0 for _, c in woerter if c >= 0]
+        out.append((zeilentext, min(confs) if confs else 0.0))
+    return out

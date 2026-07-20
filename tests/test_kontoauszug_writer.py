@@ -75,12 +75,23 @@ def _write_scan_pdf(zeilen: list, pfad: str) -> None:
     subprocess.run(["img2pdf", png_pfad, "-o", pfad], check=True)
 
 
+def _write_multiseiten_pdf(text_zeilen: list, scan_zeilen: list, pfad: str) -> None:
+    """Seite 1 = Textlayer (_write_text_pdf), Seite 2 = Bild-Scan (_write_scan_pdf), via pdfunite
+    zusammengefügt (poppler-utils, schon Dependency von pdftotext/pdftoppm — kein neues Tool) — für den
+    Teil-Textlayer-Pfad (kein echtes Bank-Sample nötig)."""
+    p1, p2 = pfad + ".seite1.pdf", pfad + ".seite2.pdf"
+    _write_text_pdf(text_zeilen, p1)
+    _write_scan_pdf(scan_zeilen, p2)
+    subprocess.run(["pdfunite", p1, p2, pfad], check=True)
+
+
 try:
     import PIL  # noqa: F401
     _PIL_OK = True
 except ImportError:
     _PIL_OK = False
 _SCAN_FIXTURE_OK = _PIL_OK and shutil.which("img2pdf") is not None
+_MULTISEITEN_FIXTURE_OK = _SCAN_FIXTURE_OK and shutil.which("pdfunite") is not None
 
 
 @pytest.fixture(scope="module")
@@ -225,6 +236,44 @@ def test_lies_kontoauszug_pdf_scan_ocr(tmp_path):
     assert conf_map                                   # OCR-Pfad liefert Confidence je Zeilenindex
     assert all(0.0 <= c <= 1.0 for c in conf_map.values())
     assert max(conf_map.values()) > 0.6                # mindestens eine Zeile solide erkannt
+
+
+@pytest.mark.skipif(not _MULTISEITEN_FIXTURE_OK, reason="Pillow/img2pdf/pdfunite für Multi-Seiten-Fixture nicht verfügbar")
+def test_lies_kontoauszug_pdf_teil_textlayer_seite2_wird_nachocrt(tmp_path):
+    """Seite 1 Textlayer + Seite 2 Bild-Scan (kein OCR ohne Fix) -> beide Transaktionen im Ergebnis,
+    conf_map trägt NUR für die nach-OCR'te Seite-2-Zeile einen Eintrag (Seite-1-Zeilen bleiben implizit
+    Confidence 1.0, kein unnötiges Voll-Rastern)."""
+    text_zeilen = ["12.03.2025 Malermeister Schmidt Renovierung -480,00"]
+    scan_zeilen = ["20.03.2025 Spende Rotes Kreuz -200,00"]
+    pfad = str(tmp_path / "teil_textlayer.pdf")
+    _write_multiseiten_pdf(text_zeilen, scan_zeilen, pfad)
+    text, conf_map = KW.lies_kontoauszug_pdf(pfad)
+    assert "Malermeister" in text
+    assert "Spende" in text and "Rotes" in text          # Seite 2 sonst spurlos verloren
+    assert conf_map                                       # OCR-Confidence für die nach-OCR'te Seite
+    assert all(0.0 <= c <= 1.0 for c in conf_map.values())
+
+
+@pytest.mark.skipif(not _MULTISEITEN_FIXTURE_OK, reason="Pillow/img2pdf/pdfunite für Multi-Seiten-Fixture nicht verfügbar")
+def test_lies_kontoauszug_pdf_teil_textlayer_conf_index_alignment(tmp_path, monkeypatch):
+    """dev-3-Fund: Seitengrenze darf den conf_map-Index NICHT verschieben (Doppel-"\\n" beim Join wäre
+    ein Offset-Bug) — eine niedrig-konfidente OCR-Zeile muss unter ihrem ECHTEN Index in text.splitlines()
+    landen, sonst fällt parse_pdf_zeilen's conf_map.get(i,1.0)-Fallback auf stille Voll-Konfidenz zurück
+    und die Zeile wird NICHT verworfen (K2-Bruch). _ocr_tesseract_seite ist deterministisch
+    monkeypatched (echte tesseract-Confidence für ein sauberes Synthetic-Bild ist unzuverlässig <0.6 zu
+    erzwingen — die Index-Arithmetik selbst ist der Prüfgegenstand, nicht der OCR-Call)."""
+    pfad = str(tmp_path / "conf_align.pdf")
+    _write_multiseiten_pdf(["12.03.2025 Malermeister Schmidt Renovierung -480,00"],
+                           ["Platzhalter-Scan-Seite"], pfad)
+    monkeypatch.setattr(KW, "_ocr_tesseract_seite",
+                        lambda pfad, seiten_nr: ("20.03.2025 Spende Rotes Kreuz -200,00", {0: 0.4}))
+    text, conf_map = KW.lies_kontoauszug_pdf(pfad)
+    zeilen = text.splitlines()
+    ocr_idx = zeilen.index("20.03.2025 Spende Rotes Kreuz -200,00")
+    assert conf_map.get(ocr_idx) == 0.4                  # exakt ausgerichtet, kein Offset-Fehler
+    tx, verworfen = KW.parse_pdf_zeilen(text, conf_map)
+    assert not any("Spende" in t["verwendungszweck"] for t in tx)   # <0.6 -> verworfen, nicht 1.0-Fallback
+    assert verworfen == 1
 
 
 # ---- parse_pdf_zeilen: Zeilen-Regex, Schwelle-Gate, Saldo-/Summenzeilen-Schutz (kein Mock) ----
