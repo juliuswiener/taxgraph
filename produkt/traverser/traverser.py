@@ -7,6 +7,7 @@ wird ausschließlich über `store.append_event` (API.md).
 """
 from __future__ import annotations
 
+import functools
 import glob
 import json
 import os
@@ -23,8 +24,11 @@ def _yaml():
     return yaml
 
 
+@functools.lru_cache(maxsize=1)
 def lade_bindung() -> dict:
-    """feld_id -> Bindungs-Eintrag (über alle bindung_*.yaml)."""
+    """feld_id -> Bindungs-Eintrag (über alle bindung_*.yaml). Pro Prozess gecacht (statischer
+    Repo-Content, ändert sich nie zur Laufzeit) — war ungecacht ~161ms/Call, Hotpath in JEDEM
+    api.py-Handler."""
     yaml = _yaml()
     out = {}
     for f in glob.glob(os.path.join(PRODUKT, "bindung", "bindung_*.yaml")):
