@@ -12,10 +12,11 @@ Inkonsistenz". Rein deterministisch (nur bestätigte Werte zählen, kein Rate-We
 """
 from __future__ import annotations
 
-# Partner-Behinderungsfelder, die eine Zusammenveranlagung voraussetzen (§ 33b Person B, E05058-Block).
+# Partner-Behinderungsfelder, die eine Zusammenveranlagung voraussetzen (§ 33b Person B, Instanz-Reuse
+# derselben E0109708/E0109706-Kz wie Person A, kein eigenes Kz — XSD-Kz-Section-Sweep Cluster C).
 PARTNER_FELDER = (
-    "rentner_grad_der_behinderung_partner",     # E0505809 (GdB Ehegatte)
-    "rentner_hilflos_blind_taubblind_partner",  # E0505807 (hilflos/blind Ehegatte)
+    "rentner_grad_der_behinderung_partner",     # E0109708 (GdB, Instanz-Reuse)
+    "rentner_hilflos_blind_taubblind_partner",  # E0109706 (hilflos/blind, Instanz-Reuse)
     # § 20 Kapital Person-B (Anlage-KAP-Instanz B, Klasse g) — nur bei Zusammenveranlagung sinnvoll:
     "kap_kapitalertraege_partner",
     "kap_gewinn_aktien_partner",

@@ -90,10 +90,15 @@ PARTNER_INSTANZ = {
     "vor_rv_ausserhalb_lstb_partner": "E2000601",
     # § 20 Kapital Person-B (Anlage-KAP-Instanz B): dieselben Person-A-Kz, kein distinktes Ehegatte-Kz
     # (Schema-Recon 2026-07-18). Anlage KAP wird per Person gefüllt (eigener Sparer-Pauschbetrag).
-    "kap_kapitalertraege_partner": "E0121709",
+    "kap_kapitalertraege_partner": "E1900701",
     "kap_gewinn_aktien_partner": "E1900901",
     "kap_verlust_aktien_partner": "E1901301",
     "kap_verlust_sonstige_partner": "E1901201",
+    # § 33b Abs. 3/5 Behinderten-Pauschbetrag Person-B: AgB_67907_CType.Beh hat maxOccurs=2,
+    # indiziert über Person A/B (E10-2025.xsd Z.9622-9639) — Person B nutzt bei zweiter
+    # Block-Instanz DIESELBEN Kz wie Person A, kein eigenes Ehegatte-Kz.
+    "rentner_grad_der_behinderung_partner": "E0109708",
+    "rentner_hilflos_blind_taubblind_partner": "E0109706",
 }
 # Klasse g×f — Renten-Verzweigung Person-B (§ 22, Anlage-R-Instanz B): wie VERZWEIGUNG (aa/bb-Kz je
 # renten_art), aber der Wert läuft in den person_b-Bucket (dieselben Person-A-Kz, kein Ehegatte-Kz).

@@ -26,7 +26,7 @@ Deklaration bindet an den `snapshot_id` (reproduzierbar).
 
 | # | Klasse | Beispiel | Transform | Round-Trip |
 |---|---|---|---|---|
-| 1 | **1:1** | kap_kapitalertraege→E0121709, vv_einnahmen→E0700201, VOR-Summanden→E2000401/801/601 | Wert direkt an `elster_kz` (aus Bindungstabelle) | **exakt** (Wert == zurückgelesen) |
+| 1 | **1:1** | kap_kapitalertraege→E1900701, vv_einnahmen→E0700201, VOR-Summanden→E2000401/801/601 | Wert direkt an `elster_kz` (aus Bindungstabelle) | **exakt** (Wert == zurückgelesen) |
 | a | **Aggregation** (§21-WK) | {vv_gebaeude_afa, vv_schuldzinsen, vv_erhaltungsaufwand, vv_sonstige_wk} | SUMME → E0703838, **Zuordnungsart-Fallunterscheidung** ([Einz]/[Sum]/[Direkt]/[Verhaelt]) | **verlustbehaftet**: Round-Trip auf AGGREGAT-Ebene (Σ Detail-Slots == E0703838); Details bleiben Store-Wahrheit |
 | b | **Split** (VOR) | gesamtbeitraege_inkl_ag (Regel-Slot) ↔ 3 Deklarations-Kz | die Regel aggregiert die Summanden; die Deklaration deklariert die 3 Summanden EINZELN (E2000401/801/601) — kein Deklarieren der Summe | **exakt** je Summand |
 | c | **Berechnete Größe** | zumutbare_belastung, entgelt_quote_prozent | **NICHT deklariert** (das FA rechnet sie); im est_mapping ausgeschlossen | keiner (nicht in der Deklaration) |

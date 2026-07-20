@@ -17,7 +17,7 @@ bindungen:
     hilfe_kurz: "Steht in deiner Steuerbescheinigung von Bank oder Broker. Die ersten 1.000 Euro sind steuerfrei."
     beispielwert: 300000
     herkunft_slots: null
-    elster_kz: E0121709
+    elster_kz: E1900701
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 20 Abs. 9 S. 1 EStG"
@@ -85,7 +85,7 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "MODELL-MISMATCH: unser p20_6-Zuschnitt trennt 4 Töpfe; der Vordruck deklariert die SUMME der Kapitalerträge (E0121709) + die darin enthaltenen Aktiengewinne (E1900901). Der sonstige Gewinn ist deriviert (Summe − Aktien), kein eigenes Deklarationsfeld."
+    elster_kz_grund: "MODELL-MISMATCH: unser p20_6-Zuschnitt trennt 4 Töpfe; der Vordruck deklariert die SUMME der Kapitalerträge (E1900701) + die darin enthaltenen Aktiengewinne (E1900901). Der sonstige Gewinn ist deriviert (Summe − Aktien), kein eigenes Deklarationsfeld."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 20 Abs. 6 S. 1 EStG"
@@ -110,7 +110,7 @@ bindungen:
 
   # ===== §20 Kapital Person-B (Zusammenveranlagung): Klasse-g-Zwillinge, Anlage-KAP-Instanz B =====
   # Anlage KAP wird PER PERSON gefüllt (jeder Ehegatte eigener Sparer-Pauschbetrag § 20 Abs. 9 S. 3);
-  # KEIN distinkter Person-B-Kz (Schema-Recon 2026-07-18: E0121709/E19009xx = per-Person-Instanz, kein
+  # KEIN distinkter Person-B-Kz (Schema-Recon 2026-07-18: E1900701/E19009xx = per-Person-Instanz, kein
   # Ehegatte-Kz) → est_mapping Klasse g mappt _partner auf DENSELBEN Person-A-Kz im person_b-Bucket, kein
   # neuer Kz. K2-Guard partner_check: nur bei veranlagung==zusammen. Accessor summiert A+B (dev-1-Nachtrag).
   - feld_id: kap_kapitalertraege_partner
@@ -125,7 +125,7 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz E0121709 wie Person A, zweites Sub-Dokument — kein distinktes Partner-Kz (Schema-Recon: keine Ehegatte-Kapitalerträge-Kz). herkunft_slots=null (Beleg füllt nur Person A)."
+    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz E1900701 wie Person A, zweites Sub-Dokument — kein distinktes Partner-Kz (Schema-Recon: keine Ehegatte-Kapitalerträge-Kz). herkunft_slots=null (Beleg füllt nur Person A)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 20 Abs. 9 S. 3 EStG"

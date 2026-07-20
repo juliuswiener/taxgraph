@@ -3,8 +3,8 @@
 Prüft die 5 Fall-Klassen + Round-Trip (1:1 exakt, Aggregation dokumentiert-genau/nicht-deklariert,
 Negation Doppel-Negation, Multiplikation Zähl), fail-closed (vorlaeufig -> unvollständig), das
 maschinenlesbare Nicht-Deklarierte (Auflage C) und den feldmapping-Konsistenz-Check (Auflage B).
-Ausbau Scheiben 2-4: 1:1-Kz Kapital §20 (E0121709 + Aktien-Subset E1900901/E1901301/E1901201), V+V §21
-Mieteinnahmen (E0700201), §35a/agB (E0161404/E0161504/E0161804/E0104109); fam null-Kz = GAP,
+Ausbau Scheiben 2-4: 1:1-Kz Kapital §20 (E1900701 + Aktien-Subset E1900901/E1901301/E1901201), V+V §21
+Mieteinnahmen (E0700201), §35a/agB (E0104109/E0107208/E0111215/E0161804); fam null-Kz = GAP,
 Rentner §33b 1:1 (Person-A-Kz, Freigabe msg 2719).
 Plus Negativtests.
 """
@@ -46,7 +46,7 @@ def _b(s, feld_id, wert, zustand="bestaetigt"):
 
 def _voller_store():
     s = ST.leerer_store(2025, fall_id="e2e-map")
-    _b(s, "kap_kapitalertraege", 300000)                    # Klasse 1 -> E0121709
+    _b(s, "kap_kapitalertraege", 300000)                    # Klasse 1 -> E1900701
     _b(s, "vor_an_anteil_rv", 3500000)                      # Klasse b (1:1) -> E2000401
     _b(s, "vor_ag_anteil_rv", 1000000)                      # -> E2000801
     _b(s, "vor_rv_ausserhalb_lstb", 0)                      # -> E2000601
@@ -65,7 +65,7 @@ def _voller_store():
 def test_klasse_1_und_split_1zu1(bindung):
     snap, sid = ST.materialisiere(_voller_store())
     r = EM.deklariere(snap, bindung, snapshot_id=sid)
-    assert r["deklaration"]["E0121709"] == 300000                 # 1:1
+    assert r["deklaration"]["E1900701"] == 300000                 # 1:1
     assert r["deklaration"]["E2000401"] == 3500000                # VOR-Summand einzeln
     assert r["deklaration"]["E2000801"] == 1000000
     assert r["deklaration"]["E2000601"] == 0
@@ -194,7 +194,7 @@ def test_scheibe3_kapital_und_vv_1zu1_roundtrip(bindung):
               "kap_verlust_aktien": 20000, "kap_verlust_sonstige": 15000, "vv_einnahmen": 1200000}
     snap, sid = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung, snapshot_id=sid)
-    assert r["deklaration"]["E0121709"] == 1000000
+    assert r["deklaration"]["E1900701"] == 1000000
     assert r["deklaration"]["E1900901"] == 300000
     assert r["deklaration"]["E1901301"] == 20000
     assert r["deklaration"]["E1901201"] == 15000
@@ -205,13 +205,13 @@ def test_scheibe3_kapital_und_vv_1zu1_roundtrip(bindung):
 
 
 def test_aktien_subset_semantik_beide_deklariert(bindung):
-    """E1900901 (Aktiengewinn) ist Teilmenge von E0121709 (Kapitalerträge) — beide werden EINZELN
+    """E1900901 (Aktiengewinn) ist Teilmenge von E1900701 (Kapitalerträge) — beide werden EINZELN
     deklariert (Vordruck-Memo für die Verlustverrechnung); est_mapping mappt jedes 1:1, die
     Subset-Beziehung ist Validierungs- (nicht Transform-)Sache."""
     snap, _ = ST.materialisiere(_store_mit({"kap_kapitalertraege": 1000000, "kap_gewinn_aktien": 300000}))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"]["E0121709"] == 1000000 and r["deklaration"]["E1900901"] == 300000
-    assert r["deklaration"]["E1900901"] <= r["deklaration"]["E0121709"]   # Subset (Testdaten-konsistent)
+    assert r["deklaration"]["E1900701"] == 1000000 and r["deklaration"]["E1900901"] == 300000
+    assert r["deklaration"]["E1900901"] <= r["deklaration"]["E1900701"]   # Subset (Testdaten-konsistent)
 
 
 def test_scheibe2_sonder_35a_agb_1zu1_roundtrip(bindung):
@@ -220,10 +220,10 @@ def test_scheibe2_sonder_35a_agb_1zu1_roundtrip(bindung):
               "hh_dienstleistungen": 400000, "hh_handwerker_arbeitskosten": 120000}
     snap, _ = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"]["E0104109"] == 500000
-    assert r["deklaration"]["E0161404"] == 250000
-    assert r["deklaration"]["E0161504"] == 400000
-    assert r["deklaration"]["E0161804"] == 120000
+    assert r["deklaration"]["E0161804"] == 500000
+    assert r["deklaration"]["E0104109"] == 250000
+    assert r["deklaration"]["E0107208"] == 400000
+    assert r["deklaration"]["E0111215"] == 120000
     rt = EM.zuruecklesen(r, bindung)
     for fid, wert in felder.items():
         assert rt["felder"][fid] == wert
@@ -251,15 +251,17 @@ def test_scheibe4_rentner_p33b_1zu1_und_klasse_f(bindung):
 
 
 def test_ehegatte_behinderung_partner_1zu1(bindung):
-    """Ehegatte-Behinderung §33b Person B (Freigabe msg 2725): die _partner-Felder mappen 1:1 auf EIGENE
-    Person-B-Kz (E0505809/E0505807, E05058-Block) — Klasse 1, NICHT g (Person B hat eigene Kz, kein
-    Person-A-Reuse). Exakt invertierbar."""
+    """Ehegatte-Behinderung §33b Person B (XSD-Kz-Section-Sweep Cluster C): die _partner-Felder mappen
+    auf Klasse g (PARTNER_INSTANZ) — DENSELBEN Person-A-Kz (E0109708/E0109706, AgB/Beh-Block,
+    zweite Instanz), NICHT auf eigene E0505809/E0505807-Kz (das ist der §33b Abs.5-Kind-Übertrag,
+    strukturell fremd). person_b-Bucket, exakt invertierbar."""
     snap, _ = ST.materialisiere(_store_mit({
         "rentner_grad_der_behinderung_partner": 60,
         "rentner_hilflos_blind_taubblind_partner": True}))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"]["E0505809"] == 60                   # GdB Partner (Person-B-eigener Kz)
-    assert r["deklaration"]["E0505807"] is True                 # hilflos/blind Partner
+    assert r["person_b"]["E0109708"] == 60                      # GdB Partner (Person-A-Kz reused)
+    assert r["person_b"]["E0109706"] is True                    # hilflos/blind Partner
+    assert "E0505809" not in r["deklaration"] and "E0505807" not in r["deklaration"]
     rt = EM.zuruecklesen(r, bindung)
     assert rt["felder"]["rentner_grad_der_behinderung_partner"] == 60
     assert rt["felder"]["rentner_hilflos_blind_taubblind_partner"] is True
@@ -270,7 +272,7 @@ def test_neg_scheibe3_verfaelschtes_1zu1_bricht_roundtrip(bindung):
     snap, _ = ST.materialisiere(_store_mit({"kap_kapitalertraege": 1000000}))
     r = EM.deklariere(snap, bindung)
     r2 = copy.deepcopy(r)
-    r2["deklaration"]["E0121709"] += 1
+    r2["deklaration"]["E1900701"] += 1
     rt = EM.zuruecklesen(r2, bindung)
     assert rt["felder"]["kap_kapitalertraege"] != 1000000
 
@@ -363,9 +365,9 @@ def test_klasse_g_kapital_person_b(bindung):
               "kap_verlust_aktien_partner": 50000, "kap_verlust_sonstige_partner": 30000}
     snap, _ = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung)
-    assert r["person_b"]["E0121709"] == 500000 and r["person_b"]["E1900901"] == 200000
+    assert r["person_b"]["E1900701"] == 500000 and r["person_b"]["E1900901"] == 200000
     assert r["person_b"]["E1901301"] == 50000 and r["person_b"]["E1901201"] == 30000
-    assert "E0121709" not in r["deklaration"]                   # Person-B-Kapital NICHT in Person-A-Deklaration
+    assert "E1900701" not in r["deklaration"]                   # Person-B-Kapital NICHT in Person-A-Deklaration
     rt = EM.zuruecklesen(r, bindung)
     assert rt["felder"]["kap_kapitalertraege_partner"] == 500000
 

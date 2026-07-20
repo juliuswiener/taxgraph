@@ -19,6 +19,7 @@ sys.path.insert(0, ROOT)
 
 import xsd_verify as X  # noqa: E402
 import traverser as T  # noqa: E402
+import est_mapping as EM  # noqa: E402
 
 pytest.importorskip("yaml")
 
@@ -301,6 +302,77 @@ def test_real_verzweigung_veraeusserungsgewinn_alle_drei_anlagen_kz_korrekt():
         assert synth[feld_id]["elster_kz"] == kz
 
         ergebnis = X.pruefe_bindung({feld_id: synth[feld_id]}, schema_pfade={2025: _SCHEMA_2025})
+
+        assert ergebnis["felder"][feld_id]["status"] == X.STATUS_OK
+        assert ergebnis["felder"][feld_id]["jahre"][2025]["pfade"] == [pfad]
+        assert ergebnis["exit_code"] == 0
+
+
+@requires_real_schema
+def test_real_cluster_a_35a_agb_domaenen_swap_korrekt():
+    """XSD-Kz-Section-Sweep Cluster A (reports/review/2026-07-20-xsd-kz-section-sweep-findings.md):
+    §35a-Felder MÜSSEN in HA_35a/St_Erm/... landen (nicht AgB/And_Aufw/...), agb_aufwendungen MUSS
+    im §33-AgB-Sonst-Bucket landen (nicht HA_35a)."""
+    bindung = T.lade_bindung()
+    erwartet = {
+        "hh_minijob_aufwendungen": ("E0104109", "E10/HA_35a/St_Erm/Minijobs/Sum/E0104109"),
+        "hh_dienstleistungen": ("E0107208", "E10/HA_35a/St_Erm/Hhn_BV_DL/Sum/E0107208"),
+        "hh_handwerker_arbeitskosten": ("E0111215", "E10/HA_35a/St_Erm/Handw_L/Sum/E0111215"),
+        "agb_aufwendungen": ("E0161804", "E10/AgB/And_Aufw/Sonst/Sum/E0161804"),
+    }
+    for feld_id, (kz, pfad) in erwartet.items():
+        assert bindung[feld_id]["elster_kz"] == kz
+
+        ergebnis = X.pruefe_bindung({feld_id: bindung[feld_id]}, schema_pfade={2025: _SCHEMA_2025},
+                                     start_element="E10")
+
+        assert ergebnis["felder"][feld_id]["status"] == X.STATUS_OK
+        assert ergebnis["felder"][feld_id]["jahre"][2025]["pfade"] == [pfad]
+        assert ergebnis["exit_code"] == 0
+
+
+@requires_real_schema
+def test_real_cluster_b_kap_kapitalertraege_kap_elternzeile():
+    """XSD-Kz-Section-Sweep Cluster B: kap_kapitalertraege (§20 Abs.9) MUSS in der Anlage-KAP-Elternzeile
+    (KAP/KapErt_inl_StAbz/...) landen, nicht in der Unterhaltsleistungs-Zusatzsektion des Hauptvordrucks
+    (ESt1A_U/.../KapV/E0121709). Person A UND Person-B-PARTNER_INSTANZ-Reuse (est_mapping.py) müssen
+    denselben korrigierten Kz tragen."""
+    bindung = T.lade_bindung()
+    feld_id = "kap_kapitalertraege"
+    assert bindung[feld_id]["elster_kz"] == "E1900701"
+
+    ergebnis = X.pruefe_bindung({feld_id: bindung[feld_id]}, schema_pfade={2025: _SCHEMA_2025},
+                                 start_element="E10")
+
+    assert ergebnis["felder"][feld_id]["status"] == X.STATUS_OK
+    assert ergebnis["felder"][feld_id]["jahre"][2025]["pfade"] == [
+        "E10/KAP/KapErt_inl_StAbz/Betr_lt_StBesch/E1900701"]
+    assert ergebnis["exit_code"] == 0
+    assert EM.PARTNER_INSTANZ["kap_kapitalertraege_partner"] == "E1900701"
+    assert bindung["kap_kapitalertraege_partner"]["elster_kz"] is None  # Klasse g: kein eigenes Kz
+
+
+@requires_real_schema
+def test_real_cluster_c_partner_behinderung_instanz_reuse():
+    """XSD-Kz-Section-Sweep Cluster C: rentner_grad_der_behinderung_partner/
+    rentner_hilflos_blind_taubblind_partner tragen KEIN eigenes Kz mehr (E0505809/E0505807 wären der
+    §33b Abs.5-Kind-Übertragungsmechanismus, strukturell fremd) — stattdessen Klasse-g-Instanz-Reuse
+    von Person As E0109708/E0109706 (AgB/Beh-Block, walk-verifiziert), via est_mapping.PARTNER_INSTANZ."""
+    bindung = T.lade_bindung()
+    assert bindung["rentner_grad_der_behinderung_partner"]["elster_kz"] is None
+    assert bindung["rentner_hilflos_blind_taubblind_partner"]["elster_kz"] is None
+    assert EM.PARTNER_INSTANZ["rentner_grad_der_behinderung_partner"] == "E0109708"
+    assert EM.PARTNER_INSTANZ["rentner_hilflos_blind_taubblind_partner"] == "E0109706"
+
+    erwartet = {
+        "rentner_grad_der_behinderung": ("E0109708", "E10/AgB/Beh/Ausw_Rentb_Besch/E0109708"),
+        "rentner_hilflos_blind_taubblind": ("E0109706", "E10/AgB/Beh/Geh_Steh_Blind_Hilfl/E0109706"),
+    }
+    for feld_id, (kz, pfad) in erwartet.items():
+        assert bindung[feld_id]["elster_kz"] == kz
+
+        ergebnis = X.pruefe_bindung({feld_id: bindung[feld_id]}, schema_pfade={2025: _SCHEMA_2025},
+                                     start_element="E10")
 
         assert ergebnis["felder"][feld_id]["status"] == X.STATUS_OK
         assert ergebnis["felder"][feld_id]["jahre"][2025]["pfade"] == [pfad]

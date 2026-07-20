@@ -317,11 +317,16 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
 
   # ========== Ehegatte-Behinderung §33b (Partner-Zwillinge, NUR Zusammenveranlagung §26b) ==========
-  # Person-B-EIGENE distinkte Kz (E05058-Block, Hash m1740292092) — KEIN Person-A-Reuse. est_mapping 1:1
-  # (Klasse 1), NICHT g: Person B hat eigene Kz. K2-Guard produkt/konsistenz/partner_check: Partner-Feld
-  # gesetzt aber veranlagung!=zusammen -> Widerspruch (fail-closed). Hinterbliebenen-Partner = benannte GAP
-  # (kein E10-Kz, belegt), Pflege-Partner = N/A (gepflegte-Person-Block), Tarif-Integration = kein Ring
-  # diese Runde (wie Person A). Store-/Feldseite folgt Modell-A-flach (wie an_gesamt _partner).
+  # Klasse g (est_mapping PARTNER_INSTANZ), NICHT Klasse 1: KEIN distinktes Person-B-Kz. E05058
+  # (Ueb_PB_Beh_Hbl/Beh) ist der §33b Abs.5-Übertragungsmechanismus für den Behinderten-Pauschbetrag
+  # EINES KINDES auf die Eltern — strukturell fremd zur Fragestellung (Ehegatte hat selbst eine
+  # Behinderung). AgB_67907_CType.Beh hat maxOccurs=2 (Person A/B, E10-2025.xsd Z.9622-9639); Person B
+  # nutzt bei zweiter Block-Instanz DIESELBEN Kz wie Person A (E0109708/E0109706), kein eigenes Kz
+  # (XSD-Kz-Section-Sweep Cluster C, reports/review/2026-07-20-xsd-kz-section-sweep-findings.md).
+  # K2-Guard produkt/konsistenz/partner_check: Partner-Feld gesetzt aber veranlagung!=zusammen ->
+  # Widerspruch (fail-closed). Hinterbliebenen-Partner = benannte GAP (kein E10-Kz, belegt),
+  # Pflege-Partner = N/A (gepflegte-Person-Block), Tarif-Integration = kein Ring diese Runde (wie
+  # Person A). Store-/Feldseite folgt person_b-Bucket (wie kap_kapitalertraege_partner).
   - feld_id: rentner_grad_der_behinderung_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: grad_der_behinderung_partner}
     typ: int
@@ -333,8 +338,8 @@ bindungen:
     hilfe_kurz: "Nur bei Zusammenveranlagung: jeder Ehegatte hat einen eigenen Behinderten-Pauschbetrag nach seinem eigenen Grad der Behinderung."
     beispielwert: 50
     herkunft_slots: null
-    elster_kz: E0505809
-    elster_kz_grund: "E0505809 [Ausw_Rentb_Besch], XSD-Label 'Grad der Behinderung' — Ehegatte/Person B (Block m1740292092, E05058; NICHT Person A E0109708); Vordruck agb_2025 zweiter GdB-Block 'Ehefrau/Person B' (kurz-Kz 155). Sektions-Pfad-belegt (Hash + Dok-Order nach E01097 + Vordruck-Header, Instructor msg 2725)."
+    elster_kz: null
+    elster_kz_grund: "Klasse g (Instanz-Reuse): derselbe Kz E0109708 wie Person A, zweite AgB_67907_CType.Beh-Block-Instanz (maxOccurs=2, Person A/B) — kein distinktes Ehegatte-Kz. E0505809 (Ueb_PB_Beh_Hbl/Beh) ist §33b Abs.5-Kind-Übertragungsmechanismus, strukturell fremd (XSD-Kz-Section-Sweep Cluster C)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33b Abs. 3 S. 2 EStG"
@@ -350,8 +355,8 @@ bindungen:
     hilfe_kurz: "Mit einem dieser Merkzeichen bekommt der Partner den höchsten Pauschbetrag, unabhängig vom Grad der Behinderung."
     beispielwert: false
     herkunft_slots: null
-    elster_kz: E0505807
-    elster_kz_grund: "E0505807 [Blind_Hilfl], XSD-Label 'blind / taubblind / ständig hilflos (Merkzeichen Bl, TBl und/oder H)' — Ehegatte/Person B (Block m1740292092, E05058; NICHT Person A E0109706); Vordruck agb_2025 kurz-Kz 153. Sektions-Pfad-belegt (Instructor msg 2725)."
+    elster_kz: null
+    elster_kz_grund: "Klasse g (Instanz-Reuse): derselbe Kz E0109706 wie Person A, zweite AgB_67907_CType.Beh-Block-Instanz (maxOccurs=2, Person A/B) — kein distinktes Ehegatte-Kz. E0505807 (Ueb_PB_Beh_Hbl/Beh) ist §33b Abs.5-Kind-Übertragungsmechanismus, strukturell fremd (XSD-Kz-Section-Sweep Cluster C)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33b Abs. 3 S. 3 EStG"
