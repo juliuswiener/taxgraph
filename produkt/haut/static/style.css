@@ -99,3 +99,35 @@ h1,h2,h3{margin:0}
 .chat-vertrag{color:var(--muted);font-size:13px;background:#12162a;border:1px solid var(--line);border-radius:10px;padding:12px}
 
 @media (min-width:520px){ #app{padding:24px} }
+
+/* ============================================================================
+   K2-POLITUR (2026-07-20, dev-1) — reine Präsentation: Accessibility, Tap-Targets,
+   fehlende .btn-link-Styles, Zustands-Klarheit. KEINE Zahl/Steuerlogik/Schreibpfad.
+   ========================================================================== */
+
+/* .btn-link (Vorjahr-/Kontoauszug-Toggle) war UNGESTYLT (Browser-Default) */
+.btn-link{display:inline-flex;align-items:center;gap:6px;min-height:44px;background:none;border:0;
+  color:var(--akzent);font-size:14px;font-weight:600;cursor:pointer;padding:6px 4px;text-align:left}
+.btn-link:hover{text-decoration:underline}
+
+/* Tastatur-Fokus sichtbar (war unsichtbar → Barrierefreiheit) */
+:focus-visible{outline:2px solid var(--akzent);outline-offset:2px}
+.kachel:focus-visible,.card :focus-visible{outline-offset:3px}
+
+/* Mobile Tap-Targets ≥ 44px (Badges/kleine Buttons waren darunter) */
+.badge{min-height:34px;display:inline-flex;align-items:center;gap:4px}
+.overlay-zu{min-width:44px;min-height:44px;display:grid;place-items:center}
+.warum{min-height:44px}
+
+/* Zwei-Signal-UX: vorläufig etwas deutlicher (Vorschlag wartet auf Hold-Confirm) — der
+   Instructor-Wunsch „vorläufig-vs-bestätigt sichtbar". Klarer als das bisherige opacity:.7. */
+.badge-vorlaeufig{opacity:.85;border-style:dashed}
+
+/* Ergebnis-Guard freundlicher lesbar */
+.ergebnis-guard{line-height:1.5}
+.erg-zahl{letter-spacing:-.5px}
+
+/* Bewegungs-Reduktion respektieren (Barrierefreiheit) */
+@media (prefers-reduced-motion:reduce){
+  *,.screen,.overlay-card,.ring::after,.btn-hold .fill{animation:none !important;transition:none !important}
+}

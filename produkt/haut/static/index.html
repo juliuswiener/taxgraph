@@ -30,7 +30,7 @@
       <header class="kopf">
         <div id="ring" class="ring" aria-hidden="true"><span id="ring-mitte" class="ring-mitte"></span></div>
         <div class="kopf-text">
-          <div id="spanne" class="spanne">Spanne wird berechnet …</div>
+          <div id="spanne" class="spanne" role="status" aria-live="polite">Spanne wird berechnet …</div>
           <div id="spanne-hint" class="spanne-hint"></div>
         </div>
       </header>
@@ -63,7 +63,7 @@
 
       <section id="fertig" class="card screen" hidden>
         <h2>Ergebnis</h2>
-        <p id="ergebnis" class="ergebnis"></p>
+        <p id="ergebnis" class="ergebnis" role="status" aria-live="polite"></p>
       </section>
 
       <section class="belegt">
@@ -75,7 +75,7 @@
     <!-- Herkunft-Kette (Dim 1) — Overlay im Bestätigungsmoment -->
     <div id="kette-overlay" class="overlay" hidden>
       <div class="overlay-card">
-        <div class="overlay-kopf"><span id="kette-titel"></span><button id="kette-zu" class="overlay-zu" type="button">✕</button></div>
+        <div class="overlay-kopf"><span id="kette-titel"></span><button id="kette-zu" class="overlay-zu" type="button" aria-label="Herkunft schließen">✕</button></div>
         <div id="kette-body" class="kette"></div>
       </div>
     </div>
@@ -83,7 +83,7 @@
     <!-- Chat-Erklär-Panel (Dim 5) — KI erklärt, setzt nie Werte -->
     <div id="chat-overlay" class="overlay" hidden>
       <div class="overlay-card">
-        <div class="overlay-kopf"><span>💬 KI-Berater</span><button id="chat-zu" class="overlay-zu" type="button">✕</button></div>
+        <div class="overlay-kopf"><span>💬 KI-Berater</span><button id="chat-zu" class="overlay-zu" type="button" aria-label="Chat schließen">✕</button></div>
         <div id="chat-body" class="chat-body"></div>
       </div>
     </div>
