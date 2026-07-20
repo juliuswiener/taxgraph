@@ -91,9 +91,14 @@ für jedes bindung-Feld mit elster_kz != null:
 **(1) Sektions-Pfad statt E-Nr-Präfix:** erledigt durch den Walk selbst (§1/§4) — keine
 String-Heuristik auf der Kz-Nummer, reine Baum-Ahnenschaft.
 
-**(2) Datenart-Scoping:** nur `Datenarten/ElsterErklaerung/ESt` (E10). Bestätigt: 895 lokale
-XSDs insgesamt, alle 5 aktuellen `bindung_*.yaml`-Dateien referenzieren ausschließlich E10-Kz
-(EStG-only) — GewSt/USt/KSt/EÜR/etc. sind für diesen Pass irrelevant, kein Scan nötig.
+**(2) Datenart-Scoping:** ~~nur `Datenarten/ElsterErklaerung/ESt` (E10)~~ — KORRIGIERT (Task #8,
+2026-07-20, dev-2): diese Annahme war empirisch FALSCH. Der Voll-Katalog-Lauf (37 Felder) ergab 2
+NOT_FOUND für `gwg_anschaffungskosten_netto`/`sonstige_betriebsausgaben` (Kz E6002301/E6004901) —
+kein Kz-Bug, sondern dokumentierte E77/EÜR-Datenart-Kz (E60xx-Präfix), die außerhalb von E10
+liegen. Fix: Pro-Feld-Schema-Routing nach Kz-Präfix (`_datenart_fuer_kz` in `xsd_verify.py`) —
+E60xx routet auf `E77-<jahr>.xsd` (Root-Element `E77`, self-contained 2021-2025, empirisch
+analog zu E10 geprüft), alle anderen Präfixe bleiben Default E10. Nach dem Fix: Voll-Katalog
+37/37 OK, exit 0 (2026 separat als SCHEMA_UNVERFUEGBAR gemeldet, s. §3 Punkt 3).
 
 **(3) VZ-Jahr-Schema:** kein neues Schema-Feld — reuse `vz_gueltigkeit` (bereits pro
 bindung-Eintrag vorhanden). Lokal verfügbare Jahre: 2020–2025 (alle 6 empirisch geprüft, siehe
