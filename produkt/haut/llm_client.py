@@ -1,12 +1,12 @@
-"""Provider-agnostischer LLM-Client für den Chat-Berater (K1). Der LLM SCHLÄGT Feld-Werte VOR — er setzt sie
-NIE: die Store-Auflage A erzwingt für jeden `llm:`-Schreiber strukturell herkunft=llm_vorschlag, zustand=
-vorlaeufig, signal_2=null (nie in die Summe ohne menschlichen Hold-Confirm). stdlib-only (urllib), kein externes
-Paket.
+"""Provider-agnostischer LLM-Client: EINE niedrig-level Wahrheit (`complete`) für jeden LLM-Call im Haut/K3-
+Bereich. Task-spezifische Wrapper (Chat-Vorschläge, Kontoauszug-Klassifikation) leben NICHT hier, sondern in
+der Handler-Schicht (api.py) bzw. beim jeweiligen Writer (kontoauszug_writer.llm_klassifikator_factory) — der
+Client kennt keine Aufgaben, nur den rohen Call. stdlib-only (urllib), kein externes Paket.
 
 ⚠ CAP-GATED, $0 bis Julius den Key gibt: der echte LLM-Call passiert NUR wenn $LLM_API_KEY gesetzt ist — sonst
-LlmNichtVerfuegbar → der /chat-Handler fällt sauber auf die Erklär-Grenze zurück (501/Vertrag), nie ein Fake-Wert,
-nie ein Crash. KEIN Mock-Call (Julius-Regel: „nie Mock-LLM außer explizit verlangt" — der Test injiziert eine
-Fixture-Antwort, ruft aber NIE echt).
+LlmNichtVerfuegbar → der Aufrufer fällt sauber auf seine Erklär-Grenze zurück (501/Vertrag bzw. stiller Skip),
+nie ein Fake-Wert, nie ein Crash. KEIN Mock-Call (Julius-Regel: „nie Mock-LLM außer explizit verlangt" — Tests
+injizieren eine Fixture-Antwort, rufen aber NIE echt).
 
 PROVIDER-AGNOSTISCH: Endpunkt/Modell kommen aus der Umgebung ($LLM_API_BASE OpenAI-kompatibel, $LLM_MODEL), kein
 Anbieter hartkodiert — Julius wählt Provider/Modell/Key. Der Schlüssel kommt AUSSCHLIESSLICH aus der Umgebung
@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import urllib.request
+from dataclasses import dataclass
 
 _TIMEOUT = 30
 
@@ -40,26 +41,6 @@ def _model() -> str:
     return os.environ.get("LLM_MODEL", "").strip()
 
 
-def _prompt(freitext: str, katalog: list[dict]) -> list[dict]:
-    """Baut die OpenAI-kompatible messages-Liste. System-Regel: die KI darf AUSSCHLIESSLICH die Felder aus dem
-    übergebenen Katalog vorschlagen (askable + vorschlagbar; der Store-Katalog-Check ist die zweite Verteidigung),
-    NUR als Vorschlag, mit Feld-Metadaten (fragetext/typ/bereich/enum). Antwort = striktes JSON."""
-    felder = "\n".join(
-        f"- {f['feld_id']}: {f.get('fragetext_laie', '')}"
-        f" (Typ {f.get('typ', '')}"
-        + (f", Bereich {f['bereich']}" if f.get("bereich") else "")
-        + (f", Werte {f['enum_werte']}" if f.get("enum_werte") else "")
-        + ")"
-        for f in katalog)
-    system = (
-        "Du bist ein Steuer-Assistent, der aus der Freitext-Beschreibung eines Nutzers Feld-Werte VORSCHLÄGT. "
-        "Du SETZT nie einen Wert und triffst keine rechtliche Entscheidung — der Mensch bestätigt jeden Vorschlag. "
-        "Du darfst NUR diese Felder vorschlagen (keine anderen):\n" + felder + "\n\n"
-        "Antworte AUSSCHLIESSLICH mit einem JSON-Array [{\"feld_id\":\"…\",\"wert\":…,\"begruendung\":\"kurz\"}], "
-        "nur Felder für die die Beschreibung einen konkreten Wert hergibt, sonst []. Kein Fließtext.")
-    return [{"role": "system", "content": system}, {"role": "user", "content": freitext}]
-
-
 def _call(messages: list[dict]) -> str:
     """OpenAI-kompatibler Chat-Completions-Call (provider-agnostisch). Roher Antwort-Text. Jeder Fehler
     (kein Base/Modell, Netz, HTTP, JSON) → LlmNichtVerfuegbar (Aufrufer fällt auf die Erklär-Grenze zurück)."""
@@ -79,34 +60,16 @@ def _call(messages: list[dict]) -> str:
         raise LlmNichtVerfuegbar(f"LLM-Aufruf fehlgeschlagen: {type(e).__name__}") from e
 
 
-def _parse(text: str) -> list[dict]:
-    """Roher LLM-Text → Liste {feld_id, wert, begruendung}. Toleriert ein Objekt-Wrapper ({\"vorschlaege\":[…]})
-    oder ein nacktes Array. Nicht-Liste/kaputtes JSON → [] (kein Vorschlag ist besser als ein Müll-Vorschlag)."""
-    try:
-        j = json.loads(text)
-    except Exception:
-        return []
-    if isinstance(j, dict):
-        for k in ("vorschlaege", "vorschläge", "suggestions", "felder"):
-            if isinstance(j.get(k), list):
-                j = j[k]
-                break
-        else:
-            j = [j] if "feld_id" in j else []
-    if not isinstance(j, list):
-        return []
-    out = []
-    for v in j:
-        if isinstance(v, dict) and "feld_id" in v and "wert" in v:
-            out.append({"feld_id": str(v["feld_id"]), "wert": v["wert"],
-                        "begruendung": str(v.get("begruendung", ""))[:200]})
-    return out
+@dataclass
+class Completion:
+    """Rohe LLM-Antwort. Nur `text` — dieser Client kennt keine Aufgabe, nur den Call."""
+    text: str
 
 
-def vorschlaege(freitext: str, katalog: list[dict]) -> list[dict]:
-    """Freitext + Feld-Katalog → LLM-Feld-Vorschläge [{feld_id, wert, begruendung}]. Cap-gated: kein Key/Base/
-    Modell → LlmNichtVerfuegbar. Der Aufрufer (/chat-Handler) schreibt jeden Vorschlag als VORLÄUFIGES Event
-    (Store-Auflage A + Katalog-Check erzwingen die Sicherheit); der Mensch bestätigt via Hold-Confirm."""
-    if not (freitext or "").strip():
-        return []
-    return _parse(_call(_prompt(freitext, katalog)))
+def complete(role: str, messages: list[dict], fixture_id: str | None = None) -> Completion:
+    """Die EINE niedrig-level Wahrheit: OpenAI-kompatibler Chat-Call → Completion. Cap-gated wie `_call` (kein
+    Key/Base/Modell → LlmNichtVerfuegbar, kein Netz-Zugriff). `role`/`fixture_id` sind Interface-Parität zum
+    pipeline-Client (kontoauszug_writer.llm_klassifikator_factory erwartet `client.complete(role, msgs,
+    fixture_id=)`) — dieser Haut-Client hat EIN Modell aus der Umgebung, kein Rollen-Routing/Fixture-Replay
+    (das lebt in pipeline/client.py, eine andere Baustelle)."""
+    return Completion(text=_call(messages))

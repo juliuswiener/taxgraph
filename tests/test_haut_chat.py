@@ -4,10 +4,11 @@ Ergänzt dev-2s Store-Goldens S1-S8 (test_ui_zwei_signal_sicherheit) um die HAUT
 selbst. Der LLM SCHLÄGT Feld-Werte VOR, setzt NIE einen — jede Sicherheits-Untergrenze liegt strukturell
 im Store (Auflage A + Feld-Katalog); dieser Test beweist, dass der HANDLER sie korrekt bedient.
 
-KEIN echter LLM-Call: llm_client.vorschlaege wird monkeypatcht (Fixture-Antwort). Der Live-Call ist
-Julius-Cap-gated ($0 ohne $LLM_API_KEY) — genau das prüft test_cap_gate_kein_key_501 (ECHTER llm_client,
-kein Mock, kein Netz). Julius-Regel „nie Mock-LLM außer explizit verlangt": hier wird NUR die Handler-
-Verdrahtung getestet, die KI-Antwort ist eine injizierte Fixture, nie ein simulierter Call.
+KEIN echter LLM-Call: llm_client.complete wird monkeypatcht (Fixture-Antwort, fein-granular — der REALE
+_chat_prompt/_chat_parse-Task-Wrapper-Code in api.py läuft mit, nur der Netz-Call ist ersetzt). Der Live-Call
+ist Julius-Cap-gated ($0 ohne $LLM_API_KEY) — genau das prüft test_cap_gate_kein_key_501 (ECHTER llm_client,
+kein Mock, kein Netz). Julius-Regel „nie Mock-LLM außer explizit verlangt": die KI-Antwort ist eine injizierte
+Fixture, nie ein simulierter Call.
 
 Deckt:
   - test_cap_gate_kein_key_501 ...... kein Key → 501 CHAT_501 ($0, kein Call) — die echte llm_client-Grenze.
@@ -23,6 +24,7 @@ Deckt:
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
 
@@ -62,14 +64,15 @@ def fall(tmp_path, monkeypatch):
     return "chat1"
 
 
-def _fake_vorschlaege(*eintraege):
-    """Baut eine llm_client.vorschlaege-Ersatzfunktion, die eine feste Liste liefert (kein echter Call)."""
+def _fake_complete(*eintraege):
+    """Baut eine llm_client.complete-Ersatzfunktion (Fixture-Antwort als Completion, kein echter Call, kein
+    Mock) — der reale _chat_prompt/_chat_parse-Code in api.py läuft mit, nur der Netz-Call ist ersetzt."""
     liste = [{"feld_id": fid, "wert": w, "begruendung": "fixture"} for fid, w in eintraege]
 
-    def fake(freitext, katalog):
-        fake.gesehener_katalog = katalog          # für den Split-Test festhalten
-        return list(liste)
-    fake.gesehener_katalog = None
+    def fake(role, messages, fixture_id=None):
+        fake.gesehene_messages = messages          # für den Split-Test festhalten
+        return LC.Completion(text=json.dumps(liste))
+    fake.gesehene_messages = None
     return fake
 
 
@@ -85,27 +88,26 @@ def test_cap_gate_kein_key_501(fall, monkeypatch):
 
 # --------------------------------------------------------------- Prompt/Check-Katalog-Split (dev-2 msg 4365)
 def test_prompt_katalog_ist_liste(fall, monkeypatch):
-    """Der an llm_client übergebene PROMPT-Katalog ist eine LISTE von Feld-Metadaten (feld_id/fragetext_laie/
-    typ/…), NICHT der Store-Check-Katalog {typ→frozenset}. (Die frühere Verwechslung hätte llm_client._prompt
-    über die dict-KEYS iterieren lassen → TypeError → stilles 501, Chat nie funktionsfähig.)"""
-    spy = _fake_vorschlaege(("agb_aufwendungen", 300000))
-    monkeypatch.setattr(LC, "vorschlaege", spy)
+    """Der Chat-Prompt (_chat_prompt in api.py) wird aus einer LISTE von Feld-Metadaten gebaut (feld_id/
+    fragetext_laie/typ/…), NICHT aus dem Store-Check-Katalog {typ→frozenset}. (Eine Verwechslung hätte
+    _chat_prompt über die dict-KEYS iterieren lassen → TypeError → stilles 501, Chat nie funktionsfähig.)
+    Seam: llm_client.complete monkeypatcht (fein-granular, unterhalb von _chat_prompt) — der reale Prompt-Bau
+    läuft mit, geprüft über den erzeugten System-Message-Inhalt."""
+    spy = _fake_complete(("agb_aufwendungen", 300000))
+    monkeypatch.setattr(LC, "complete", spy)
     st, _ = API.chat(fall, {"text": "3000 Euro Krankheitskosten."})
     assert st == 200
-    kat = spy.gesehener_katalog
-    assert isinstance(kat, list) and kat, "Prompt-Katalog muss eine nicht-leere Liste sein"
-    assert all(isinstance(e, dict) and "feld_id" in e for e in kat), "jede Zeile = Feld-Metadaten-dict"
-    fids = {e["feld_id"] for e in kat}
-    assert "agb_aufwendungen" in fids               # ein gesamt-Scheibe-llm-Feld wird angeboten
-    assert "veranlagung" not in fids                # human-only wird der KI GAR NICHT erst angeboten
+    system_msg = spy.gesehene_messages[0]["content"]
+    assert "agb_aufwendungen" in system_msg          # ein gesamt-Scheibe-llm-Feld wird angeboten
+    assert "veranlagung" not in system_msg           # human-only wird der KI GAR NICHT erst angeboten
 
 
 # --------------------------------------------------------------- Happy-Path: zwei erlaubte Felder → vorläufig
 def test_happy_path_vorlaeufig(fall, monkeypatch):
     """Die KI schlägt zwei Katalog-erlaubte Felder vor → der Handler schreibt BEIDE als VORLÄUFIGE llm:chat-
     Events (herkunft=llm_vorschlag, signal_2=null). Nichts bewegt die Summe ohne menschlichen Confirm."""
-    monkeypatch.setattr(LC, "vorschlaege",
-                        _fake_vorschlaege(("agb_aufwendungen", 300000), ("berufsausbildung_aufwendungen", 90000)))
+    monkeypatch.setattr(LC, "complete",
+                        _fake_complete(("agb_aufwendungen", 300000), ("berufsausbildung_aufwendungen", 90000)))
     st, body = API.chat(fall, {"text": "3000 Euro Krankheitskosten, 900 Euro Fortbildung."})
     assert st == 200
     geschrieben = {g["feld_id"] for g in body["vorschlaege"]}
@@ -128,7 +130,7 @@ def test_graceful_skip_human_only(fall, monkeypatch, capsys):
     """Instructor-Auflage: schlägt die KI ein HUMAN-ONLY-Feld (veranlagung, Wahlrecht §26) vor, wirft der
     globale Store-Katalog-Check ValueError → der Handler fängt es, überspringt STILL, CRASHT NICHT, schreibt
     das Feld NICHT und verarbeitet die anderen Vorschläge weiter. veranlagung erscheint in `abgelehnt`."""
-    monkeypatch.setattr(LC, "vorschlaege", _fake_vorschlaege(
+    monkeypatch.setattr(LC, "complete", _fake_complete(
         ("agb_aufwendungen", 300000),
         ("veranlagung", "zusammen"),                # human-only → muss abgewiesen werden
         ("berufsausbildung_aufwendungen", 90000)))
@@ -163,7 +165,7 @@ def test_ring_e2e_vorlaeufig_bewegt_steuer_nicht(fall, monkeypatch):
     est_basis = erg["zahl_cent"]
 
     # (2) Chat schlägt agB VORLÄUFIG vor → /ergebnis UNVERÄNDERT (kein signal_2 → nicht in der Bemessung)
-    monkeypatch.setattr(LC, "vorschlaege", _fake_vorschlaege(("agb_aufwendungen", 500000)))
+    monkeypatch.setattr(LC, "complete", _fake_complete(("agb_aufwendungen", 500000)))
     st, _ = API.chat(fall, {"text": "5000 Euro Krankheitskosten."})
     assert st == 200
     _, erg_vor = API.ergebnis(fall)

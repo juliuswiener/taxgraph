@@ -1520,13 +1520,33 @@ KONTOAUSZUG_PDF_501 = {
 }
 
 
+def _kontoauszug_llm_klassifikator():
+    """Baut den Kontoauszug-LLM-Fallback-Klassifikator (dev-2s kontoauszug_writer.llm_klassifikator_factory,
+    llm_client-MODUL als `client` — hat `.complete`, kein Klassen-Bau nötig). Cap-gated wie /chat: JEDER Aufruf
+    fängt NUR LlmNichtVerfuegbar (Cap-Gate/Netzfehler — die Factory selbst fängt nichts) und liefert None (=
+    unklassifiziert, wie bisher llm_klassifikator=None) statt den GESAMTEN Upload bei der ERSTEN mehrdeutigen
+    Transaktion abstürzen zu lassen (Regression ggü. det-only). Ein Logik-/Parse-Bug ist KEIN erwarteter
+    Cap-Gate-Fall — der propagiert bewusst (K2: silent-swallow eines echten Bugs ist selbst ein Risiko)."""
+    import llm_client
+    import kontoauszug_writer as KW
+    roh = KW.llm_klassifikator_factory(llm_client, "kontoauszug_klassifikation")
+
+    def klassifikator(zweck, betrag):
+        try:
+            return roh(zweck, betrag)
+        except llm_client.LlmNichtVerfuegbar:
+            return None
+    return klassifikator
+
+
 def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
     """Kontoauszug-Upload (dev-2s kontoauszug_writer): parst den Auszug und schreibt je AUSGABEN-Transaktion
     mit eindeutiger deterministischer Kategorie + Ziel-Feld in DIESER Scheibe einen VORLÄUFIGEN Vorschlag
     (herkunft=kontoauszug, Store-Guard ^import:kontoauszug erzwingt vorläufig). Der Nutzer bestätigt neben
-    dem Auszug (K2). DET-ONLY: der LLM-Klassifikator-Fallback bleibt dev-2/Julius-gated (llm_klassifikator=None
-    — nie ein LLM-Call in der Haut). IBAN/Kontonummern werden vom Writer maskiert (PII). Kein Überschreiben
-    aktiver Felder. § 35a-Kategorien greifen nur, wenn die Scheibe die Ziel-Felder führt (sonst 0 Vorschläge)."""
+    dem Auszug (K2). Deterministik-first: der LLM-Klassifikator-Fallback (mehrdeutige Zwecke) ist verdrahtet,
+    aber selbst cap-gated (kein $LLM_API_KEY → jede Transaktion fällt still auf "unklassifiziert" zurück, kein
+    Crash, kein Mock-Call). IBAN/Kontonummern werden vom Writer maskiert (PII). Kein Überschreiben aktiver
+    Felder. § 35a-Kategorien greifen nur, wenn die Scheibe die Ziel-Felder führt (sonst 0 Vorschläge)."""
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     fmt = (body.get("format") or "").strip().lower()
@@ -1545,10 +1565,69 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
         return 501, KONTOAUSZUG_PDF_501
     else:
         raise ApiError(400, "format muss csv, json oder pdf sein")
-    # katalog GLOBAL (dev-2-Kontrakt): Enforcement decoupled vom per-Scheibe-Targeting. llm_klassifikator=None → det-only.
-    n = KW.uebernehme_kontoauszug(store, tx, bindung, katalog=ST.lade_katalog(TR.lade_bindung()))
+    # katalog GLOBAL (dev-2-Kontrakt): Enforcement decoupled vom per-Scheibe-Targeting.
+    n = KW.uebernehme_kontoauszug(store, tx, bindung, llm_klassifikator=_kontoauszug_llm_klassifikator(),
+                                  katalog=ST.lade_katalog(TR.lade_bindung()))
     speichere_fall(fall_id, store)
     return 200, {"uebernommen": n, "transaktionen": len(tx)}
+
+
+def _chat_prompt(freitext: str, katalog: list[dict]) -> list[dict]:
+    """Baut die OpenAI-kompatible messages-Liste für den Chat-Vorschlags-Task. System-Regel: die KI darf
+    AUSSCHLIESSLICH die Felder aus dem übergebenen Katalog vorschlagen (askable + vorschlagbar; der Store-
+    Katalog-Check ist die zweite Verteidigung), NUR als Vorschlag, mit Feld-Metadaten (fragetext/typ/bereich/
+    enum). Antwort = striktes JSON. Task-Wrapper (Handler-Schicht) — der Client (llm_client) kennt diesen
+    Prompt nicht."""
+    felder = "\n".join(
+        f"- {f['feld_id']}: {f.get('fragetext_laie', '')}"
+        f" (Typ {f.get('typ', '')}"
+        + (f", Bereich {f['bereich']}" if f.get("bereich") else "")
+        + (f", Werte {f['enum_werte']}" if f.get("enum_werte") else "")
+        + ")"
+        for f in katalog)
+    system = (
+        "Du bist ein Steuer-Assistent, der aus der Freitext-Beschreibung eines Nutzers Feld-Werte VORSCHLÄGT. "
+        "Du SETZT nie einen Wert und triffst keine rechtliche Entscheidung — der Mensch bestätigt jeden Vorschlag. "
+        "Du darfst NUR diese Felder vorschlagen (keine anderen):\n" + felder + "\n\n"
+        "Antworte AUSSCHLIESSLICH mit einem JSON-Array [{\"feld_id\":\"…\",\"wert\":…,\"begruendung\":\"kurz\"}], "
+        "nur Felder für die die Beschreibung einen konkreten Wert hergibt, sonst []. Kein Fließtext.")
+    return [{"role": "system", "content": system}, {"role": "user", "content": freitext}]
+
+
+def _chat_parse(text: str) -> list[dict]:
+    """Roher LLM-Text → Liste {feld_id, wert, begruendung}. Toleriert ein Objekt-Wrapper ({\"vorschlaege\":[…]})
+    oder ein nacktes Array. Nicht-Liste/kaputtes JSON → [] (kein Vorschlag ist besser als ein Müll-Vorschlag)."""
+    try:
+        j = json.loads(text)
+    except Exception:
+        return []
+    if isinstance(j, dict):
+        for k in ("vorschlaege", "vorschläge", "suggestions", "felder"):
+            if isinstance(j.get(k), list):
+                j = j[k]
+                break
+        else:
+            j = [j] if "feld_id" in j else []
+    if not isinstance(j, list):
+        return []
+    out = []
+    for v in j:
+        if isinstance(v, dict) and "feld_id" in v and "wert" in v:
+            out.append({"feld_id": str(v["feld_id"]), "wert": v["wert"],
+                        "begruendung": str(v.get("begruendung", ""))[:200]})
+    return out
+
+
+def _llm_vorschlaege(freitext: str, katalog: list[dict]) -> list[dict]:
+    """Chat-Task-Wrapper (Handler-Schicht) ÜBER llm_client.complete (der einen niedrig-level Wahrheit). Cap-
+    gated: kein Key/Base/Modell → LlmNichtVerfuegbar propagiert (der /chat-Handler fängt sie → 501). Der
+    Aufrufer schreibt jeden Vorschlag als VORLÄUFIGES Event (Store-Auflage A + Katalog-Check erzwingen die
+    Sicherheit); der Mensch bestätigt via Hold-Confirm."""
+    if not (freitext or "").strip():
+        return []
+    import llm_client
+    comp = llm_client.complete("chat", _chat_prompt(freitext, katalog))
+    return _chat_parse(comp.text)
 
 
 def chat(fall_id: str, body: dict) -> tuple[int, dict]:
@@ -1565,7 +1644,7 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     # ZWEI Kataloge (dev-2-Kontrakt, msg 4365 — NICHT verwechseln):
     #  (1) PROMPT-Katalog (Haut-Zone): die LLM-vorschlagbaren Felder DIESER Scheibe als Metadaten-LISTE
     #      [{feld_id, fragetext_laie, typ, bereich, enum_werte}] — nur Kontext für die KI, welche Felder sie
-    #      überhaupt vorschlagen darf. Wird an llm_client.vorschlaege übergeben (dessen _prompt eine Liste will).
+    #      überhaupt vorschlagen darf. Wird an _llm_vorschlaege übergeben (dessen _chat_prompt eine Liste will).
     #  (2) CHECK-Katalog (Store-Enforcement): GLOBAL via TR.lade_bindung(), Form {typ→frozenset(feld_id)} — die
     #      un-bypassbare Untergrenze in append_event. GLOBAL, NICHT per-Scheibe: die Autorisierung eines Felds
     #      hängt an seinem `vorschlagbar_von`, nicht an der offenen Scheibe (ein per-Scheibe-Check-Katalog würde
@@ -1576,11 +1655,11 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
          "bereich": b.get("bereich"), "enum_werte": b.get("enum_werte")}
         for fid, b in bindung.items() if "llm" in (b.get("vorschlagbar_von") or [])]
     check_katalog = ST.lade_katalog(TR.lade_bindung())
+    import llm_client
     try:
-        import llm_client
-        vorschlaege = llm_client.vorschlaege(freitext, prompt_katalog)
-    except Exception:                                # LlmNichtVerfuegbar / Import → reine Erklär-Grenze (kein Key, $0)
-        return 501, CHAT_501
+        vorschlaege = _llm_vorschlaege(freitext, prompt_katalog)
+    except (llm_client.LlmNichtVerfuegbar, ImportError):   # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
+        return 501, CHAT_501                               # echte Logik-/Parse-Bugs propagieren (konsistent zu kontoauszug)
     geschrieben, abgelehnt = [], []
     for v in vorschlaege:
         try:
