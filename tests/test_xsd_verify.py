@@ -391,3 +391,12 @@ def test_real_bindung_rentner_gegen_echtes_schema_2025():
     nicht_ok = {fid: f["jahre"][2025] for fid, f in ergebnis["felder"].items()
                 if f["jahre"][2025]["status"] != X.STATUS_OK}
     assert nicht_ok == {}
+
+
+@requires_real_schema
+def test_voll_katalog_ist_gate_gruen():
+    """CI-Gate (H1): der komplette Produktions-Katalog — lade_bindung() + ernte_est_mapping_kz-Harvest —
+    muss gegen das lokale ERiC-Schema restlos OK sein (main() exit_code 0). Fängt jede künftige
+    Kz-Section-Fehlbindung automatisch, ohne dass jemand xsd_verify manuell fahren muss (VZ2026 ohne
+    lokales Schema bleibt SCHEMA_UNVERFUEGBAR und rollt für Felder mit gültigem 2024/2025 zu OK)."""
+    assert X.main([]) == 0

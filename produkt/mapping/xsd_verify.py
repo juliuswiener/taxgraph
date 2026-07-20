@@ -271,7 +271,11 @@ def ernte_est_mapping_kz(bindung: dict) -> dict:
                 synth[f"verzweigung:{wert_feld}:{art_wert}"] = {"elster_kz": kz, "vz_gueltigkeit": vz}
 
     for kz, quell_felder in est_mapping.DOKUMENTIERT_AGGREGAT.items():
-        synth[f"aggregation:{kz}"] = {"elster_kz": kz, "vz_gueltigkeit": _vz(quell_felder[0])}
+        # Union der vz_gueltigkeit über ALLE Quellfelder (nicht nur [0]): falls die Quellfelder je
+        # divergierende Gültigkeit tragen, wird der Aggregat-Kz in JEDEM Jahr geprüft, in dem
+        # irgendein Quellfeld gilt — kein still verpasstes Jahr (dev-1-Härtung Task #18).
+        jahre = sorted({j for qf in quell_felder for j in _vz(qf)})
+        synth[f"aggregation:{kz}"] = {"elster_kz": kz, "vz_gueltigkeit": jahre}
 
     return synth
 
