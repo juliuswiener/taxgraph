@@ -9,6 +9,8 @@ herkunft=kontoauszug), fail-closed (unklassifiziert/kein Zielfeld/Einnahme = kei
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
 import sys
 
 import pytest
@@ -24,6 +26,61 @@ import kontoauszug_writer as KW  # noqa: E402
 
 TS = "2026-07-18T14:00:00+00:00"
 KA = {"herkunft": "kontoauszug", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}
+
+
+# ---- PDF-Fixture-Helfer (kein committetes Binary — on-the-fly, reproduzierbar) -----------------
+
+def _write_text_pdf(zeilen: list, pfad: str) -> None:
+    """Minimales ECHTES PDF mit Textlayer (roher Content-Stream, keine Lib nötig) — für den
+    Textlayer-Erkennungspfad (pdftotext liest es direkt, kein OCR)."""
+    content = "BT /F1 11 Tf 50 750 Td 14 TL\n"
+    for zeile in zeilen:
+        esc = zeile.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+        content += f"({esc}) Tj T*\n"
+    content += "ET"
+    content_bytes = content.encode("latin-1")
+    objs = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> "
+        b"/MediaBox [0 0 612 792] /Contents 5 0 R >>",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        b"<< /Length %d >>\nstream\n" % len(content_bytes) + content_bytes + b"\nendstream",
+    ]
+    out = b"%PDF-1.4\n"
+    offsets = [0]
+    for i, o in enumerate(objs, start=1):
+        offsets.append(len(out))
+        out += f"{i} 0 obj\n".encode() + o + b"\nendobj\n"
+    xref_off = len(out)
+    out += f"xref\n0 {len(objs) + 1}\n0000000000 65535 f \n".encode()
+    for off in offsets[1:]:
+        out += f"{off:010d} 00000 n \n".encode()
+    out += f"trailer\n<< /Size {len(objs) + 1} /Root 1 0 R >>\nstartxref\n{xref_off}\n%%EOF".encode()
+    with open(pfad, "wb") as f:
+        f.write(out)
+
+
+def _write_scan_pdf(zeilen: list, pfad: str) -> None:
+    """Bild-PDF OHNE Textlayer (PIL rendert Zeilen auf ein PNG, img2pdf verpackt) — erzwingt den
+    tesseract-Fallback-Pfad (pdftotext liefert hier nichts)."""
+    from PIL import Image, ImageDraw, ImageFont
+    img = Image.new("RGB", (1000, 80 + 40 * len(zeilen)), "white")
+    d = ImageDraw.Draw(img)
+    font = ImageFont.truetype("/usr/share/fonts/TTF/DejaVuSans.ttf", 22)
+    for i, zeile in enumerate(zeilen):
+        d.text((20, 20 + 40 * i), zeile, fill="black", font=font)
+    png_pfad = pfad + ".png"
+    img.save(png_pfad)
+    subprocess.run(["img2pdf", png_pfad, "-o", pfad], check=True)
+
+
+try:
+    import PIL  # noqa: F401
+    _PIL_OK = True
+except ImportError:
+    _PIL_OK = False
+_SCAN_FIXTURE_OK = _PIL_OK and shutil.which("img2pdf") is not None
 
 
 @pytest.fixture(scope="module")
@@ -134,6 +191,40 @@ def test_llm_replay_recorded_fixture(bindung):
     client = client_mod.OpenRouterClient(dry_run=True, fixtures_dir=fixtures_dir)
     klass = KW.llm_klassifikator_factory(client, role, fixture_id="kontoauszug_klassifikation")
     assert klass("kryptischer Zweck", -5000) in (set(KW.KATEGORIE_FELD) | {None})
+
+
+# ---- PDF-Extraktion: Textlayer-vs-Scan-Detektion + BEL-Fix + tesseract-OCR (kein Mock) --------
+
+def test_fix_bel():
+    assert KW._fix_bel("12.03.2025\x07Malermeister") == "12.03.2025 Malermeister"
+    assert KW._fix_bel("kein bel hier") == "kein bel hier"
+
+
+def test_lies_kontoauszug_pdf_textlayer(tmp_path):
+    """Digitaler Bank-Export-PDF (echter Textlayer) -> pdftotext reicht, kein OCR, confidence_map leer."""
+    zeilen = ["12.03.2025 Malermeister Schmidt Renovierung -480,00",
+              "15.03.2025 Spende Rotes Kreuz e.V. -200,00"]
+    pfad = str(tmp_path / "textlayer.pdf")
+    _write_text_pdf(zeilen, pfad)
+    text, conf_map = KW.lies_kontoauszug_pdf(pfad)
+    for zeile in zeilen:
+        assert zeile in text
+    assert conf_map == {}                            # Textlayer: keine OCR-Confidence nötig
+
+
+@pytest.mark.skipif(not _SCAN_FIXTURE_OK, reason="Pillow/img2pdf für Scan-PDF-Fixture nicht verfügbar")
+def test_lies_kontoauszug_pdf_scan_ocr(tmp_path):
+    """Echter Bild-Scan (kein Textlayer, PIL->PNG->img2pdf) -> tesseract-deu OCR (lokal, kein Mock,
+    kein API-Key). Wort-Confidence je Zeile > 0 belegt den echten OCR-Pfad (nicht den Textlayer-Pfad)."""
+    zeilen = ["12.03.2025 Malermeister Schmidt Renovierung -480,00",
+              "15.03.2025 Spende Rotes Kreuz e.V. -200,00"]
+    pfad = str(tmp_path / "scan.pdf")
+    _write_scan_pdf(zeilen, pfad)
+    text, conf_map = KW.lies_kontoauszug_pdf(pfad)
+    assert "Malermeister" in text and "Spende" in text
+    assert conf_map                                   # OCR-Pfad liefert Confidence je Zeilenindex
+    assert all(0.0 <= c <= 1.0 for c in conf_map.values())
+    assert max(conf_map.values()) > 0.6                # mindestens eine Zeile solide erkannt
 
 
 # ---- Store-Guard fail-closed -------------------------------------------------

@@ -21,7 +21,9 @@ import csv
 import io
 import os
 import re
+import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "store"))
@@ -113,6 +115,71 @@ def _eur_cent_signed(s: str) -> int:
     except ValueError:
         return 0
     return -cent if neg else cent
+
+
+# ---- PDF-Extraktion (Textlayer zuerst, Bild-Scan -> tesseract-deu-OCR; kein externer Dienst/API-Key) ------
+# Reine Text-Extraktion -- speist NUR den bestehenden Transaktions-/Klassifikations-Pfad (parse_csv-Form),
+# baut KEINE neue Klassifikation.
+
+def _fix_bel(text: str) -> str:
+    """Alt-Layer-Bug: manche PDF-Textlayer trennen Wörter mit U+0007 (BEL) statt Leerzeichen
+    (`[[bgbl-scan-textlayer-ocr-route]]`)."""
+    return text.replace("\x07", " ")
+
+
+def lies_kontoauszug_pdf(pfad: str) -> tuple[str, dict]:
+    """PDF-Kontoauszug -> (text, confidence_map je Zeilenindex). Textlayer zuerst (pdftotext -layout,
+    exakt, Confidence implizit 1.0 — Präzedenz beleg_writer.lies_beleg_text); BEL-Fix vor dem Leer-Check.
+    Kein Text danach -> echter Bild-Scan -> tesseract-deu (lokal, kein externer Dienst, kein API-Key)."""
+    text = subprocess.run(["pdftotext", "-layout", pfad, "-"], capture_output=True, text=True).stdout
+    text = _fix_bel(text)
+    if text.strip():
+        return text, {}
+    return _ocr_tesseract_zeilen(pfad)
+
+
+def _ocr_tesseract_zeilen(pfad: str) -> tuple[str, dict]:
+    """Bild-Scan: pdftoppm rastert jede Seite (200dpi), tesseract --tsv liefert Wort-Confidence je Zeile
+    — min über die Zeilen-Wörter (EINE unsichere Ziffer disqualifiziert die ganze Zeile, konservativ:
+    K2 Under-tax > Over-tax). Zeilen-Reihenfolge = Lesereihenfolge (block/par/line, Seiten sequenziell)."""
+    with tempfile.TemporaryDirectory() as td:
+        praefix = os.path.join(td, "seite")
+        subprocess.run(["pdftoppm", "-png", "-r", "200", pfad, praefix], capture_output=True)
+        seiten = sorted(f for f in os.listdir(td) if f.endswith(".png"))
+        zeilen = []
+        for seite in seiten:
+            tsv = subprocess.run(["tesseract", os.path.join(td, seite), "stdout", "-l", "deu", "tsv"],
+                                 capture_output=True, text=True).stdout
+            zeilen.extend(_tsv_zu_zeilen(tsv))
+    text = "\n".join(z for z, _ in zeilen)
+    conf_map = {i: c for i, (_, c) in enumerate(zeilen)}
+    return text, conf_map
+
+
+def _tsv_zu_zeilen(tsv: str) -> list[tuple[str, float]]:
+    """tesseract --tsv-Ausgabe -> [(zeilentext, confidence 0..1)], gruppiert nach (block,par,line)."""
+    reader = csv.DictReader(io.StringIO(tsv), delimiter="\t")
+    gruppen: dict[tuple, list] = {}
+    reihenfolge = []
+    for row in reader:
+        if row.get("level") != "5":            # nur Wort-Zeilen (level 5 = word)
+            continue
+        key = (row["block_num"], row["par_num"], row["line_num"])
+        if key not in gruppen:
+            gruppen[key] = []
+            reihenfolge.append(key)
+        try:
+            conf = float(row["conf"])
+        except (TypeError, ValueError):
+            conf = -1.0
+        gruppen[key].append((row["text"], conf))
+    out = []
+    for key in reihenfolge:
+        woerter = gruppen[key]
+        zeilentext = " ".join(w for w, _ in woerter if w.strip())
+        confs = [c / 100.0 for _, c in woerter if c >= 0]
+        out.append((zeilentext, min(confs) if confs else 0.0))
+    return out
 
 
 # ---- LLM-Fallback-Schicht (nur für mehrdeutige Zwecke / PDF; OpenRouter-REUSE, kein neues Key-Handling) --
