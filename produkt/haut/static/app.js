@@ -17,6 +17,16 @@ function euro(cent) {
   return (cent / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
 }
 const $ = (id) => document.getElementById(id);
+function _dateiAlsBase64(datei) {
+  // FileReader liefert eine data-URL "data:application/pdf;base64,JVBERi0x..." — der Endpoint erwartet
+  // reines base64 (api.py: base64.b64decode(inhalt, validate=True)) -> Präfix vor dem Komma strippen.
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",", 2)[1] || "");
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(datei);
+  });
+}
 
 // --- P0: Scheiben-Wahl (2 Kacheln) — scheibe NICHT hardcoden ---
 async function waehleScheibe(scheibe) {
@@ -349,18 +359,20 @@ async function vorjahrUebernehmen() {
   }
 }
 
-// --- Kontoauszug-Upload: CSV/JSON → Transaktion-Vorschläge (herkunft=kontoauszug), Nutzer bestätigt ---
+// --- Kontoauszug-Upload: CSV/JSON/PDF → Transaktion-Vorschläge (herkunft=kontoauszug), Nutzer bestätigt ---
 async function kontoauszugHochladen(datei) {
   const st = $("konto-status");
   if (!datei) return;
   const name = (datei.name || "").toLowerCase();
-  const format = name.endsWith(".json") ? "json" : name.endsWith(".csv") ? "csv" : null;
-  if (!format) { st.textContent = "Bitte eine CSV- oder JSON-Datei wählen (PDF-Import folgt)."; return; }
+  const format = name.endsWith(".json") ? "json" : name.endsWith(".csv") ? "csv"
+               : name.endsWith(".pdf") ? "pdf" : null;
+  if (!format) { st.textContent = "Bitte eine CSV-, JSON- oder PDF-Datei wählen."; return; }
   st.textContent = "Lese Auszug …";
-  const inhalt = await datei.text();
+  const inhalt = format === "pdf" ? await _dateiAlsBase64(datei) : await datei.text();
   const r = await jpost(`/fall/${FALL}/kontoauszug`, { format, inhalt });
   if (r.status === 200) {
-    st.textContent = `${r.body.uebernommen} von ${r.body.transaktionen} Buchung(en) als Vorschlag erfasst — bitte im Fluss bestätigen.`;
+    st.textContent = `${r.body.uebernommen} von ${r.body.transaktionen} Buchung(en) als Vorschlag erfasst — bitte im Fluss bestätigen.`
+      + (r.body.hinweis ? ` ${r.body.hinweis}` : "");
     await refresh();
   } else {
     st.textContent = "Upload fehlgeschlagen: " + ((r.body && (r.body.vertrag || r.body.fehler)) || r.status);

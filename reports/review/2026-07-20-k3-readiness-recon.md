@@ -25,14 +25,11 @@ Export/`settings.json`-`env` bleibt als Alternative — beides sticht die Datei.
 | Det-Klassifikator | ✅ KOMPLETT: `KATEGORIE_FELD` (handwerker→§35a Abs.3, dienstleistung→Abs.2, minijob→Abs.1, spende→§10b, vorsorge→§10) + konservative Keyword-Heuristik (nur eindeutig, sonst None). |
 | PII-Maskierung | ✅ `maskiere` (IBAN/Kontonummer vor LLM/Speicherung). |
 | `tests/test_kontoauszug_writer.py` | ✅ grün. |
-| **pdf** | ⛔ **501-Stub** (`KONTOAUSZUG_PDF_501`). Live-Switch braucht einen **PDF→Transaktions-Parser (OCR/Layout, NICHT der deterministische Spalten-Parser)**. KEY-UNABHÄNGIG (ein Parser, kein externer Dienst) — baubar jederzeit, aber echtes Stück Arbeit (Team hat tesseract-Route, s. Memory). |
-| **LLM-Klassifikator-Fallback** (mehrdeutige Zeilen, `klassifiziere_det`=None) | ⛔ GATED (`llm_klassifikator=None` im Handler). Factory `llm_klassifikator_factory(client, role, fixture_id=)` + `_LLM_PROMPT` + `_parse_llm_kategorie` existieren. |
+| **pdf** | ✅ **LIVE** (seit 442eb38, 2026-07-20): `KONTOAUSZUG_PDF_501` entfernt (Dead-Code, grep-belegt). Endpoint dekodiert base64 → tmp-Datei → `KW.lies_kontoauszug_pdf` (Textlayer/pdftotext ODER tesseract-OCR) → `KW.parse_pdf_zeilen` → `uebernehme_kontoauszug`; `finally: os.unlink` (PII-Pflicht). Response trägt `verworfen`/`hinweis` einheitlich über alle Formate. UI-Wiring (index.html/app.js) seit diesem Increment ebenfalls live (PDF-Upload via base64, kein Multipart). |
+| **LLM-Klassifikator-Fallback** (mehrdeutige Zeilen, `klassifiziere_det`=None) | ✅ **VERDRAHTET** (seit ba2922b): `_kontoauszug_llm_klassifikator()` (api.py) baut `KW.llm_klassifikator_factory(llm_client, "kontoauszug_klassifikation")`, fängt NUR `LlmNichtVerfuegbar`. Interface-Mismatch (s.u.) ist durch den complete()-Reconcile GELÖST — braucht nur noch `$LLM_API_KEY` zum Live-Schalten. |
 
-### ⚠ Integrations-Lücke LLM-Klassifikator (konkret, für die Live-Schaltung):
-`llm_klassifikator_factory` erwartet `client.complete(role, msgs, fixture_id=)` — **K1s `llm_client` exponiert aber `vorschlaege(freitext, katalog)`, KEIN `complete(role, msgs, fixture_id)`**. → Interface-MISMATCH. Zum Live-Schalten des LLM-Fallbacks:
-1. `$LLM_API_KEY` (K1-Cap, dieselbe wie /chat).
-2. **Client-Interface reconciliieren**: entweder `llm_client.complete(role, msgs, fixture_id)` ergänzen ODER einen Adapter (factory-Erwartung → llm_client-Form). Eine Wahrheit für den LLM-Call-Layer wäre sauberer (heute zwei Erwartungen: /chat=vorschlaege, kontoauszug=complete).
-3. `llm_klassifikator = KW.llm_klassifikator_factory(client, role)` in den Handler-Aufruf verdrahten (statt None).
+### ✅ Integrations-Lücke LLM-Klassifikator — GELÖST (complete()-Reconcile, ba2922b)
+War: `llm_klassifikator_factory` erwartet `client.complete(role, msgs, fixture_id=)`, K1s `llm_client` exponierte nur `vorschlaege(freitext, katalog)` → Interface-Mismatch. Fix: `llm_client` exponiert jetzt die EINE niedrig-level Wahrheit `complete(role, msgs, fixture_id=)`; `vorschlaege` ist Task-Wrapper in api.py (Chat), der kontoauszug-Klassifikator nutzt `complete` über die Factory direkt — EIN Client, EIN generischer Call. Nur noch `$LLM_API_KEY` fehlt zum Live-Schalten (0 Code mehr nötig).
 
 ## LLM-Live-Wiring-Requirement (Instructor-adjudiziert 4418 — die EINE Code-Aufgabe für LLM-Live)
 Heute ZWEI LLM-Client-Wahrheiten (widerspricht „eine-Wahrheit"): K1-Chat `llm_client.vorschlaege(freitext,

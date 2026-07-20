@@ -1444,10 +1444,10 @@ AMPEL_503 = {
               "— ein gültiger ESt-Fall entsteht erst mit der Gesamtsteuer-Integration. Kein Fake-Grün."),
     "regel": "gekappt_verdacht=true ist nie grün (API.md-Garantie 5).",
 }
-# Arbeitsweg-Entfernung über Karten-Dienst (Julius-Feature): der eigentliche Geocoding+Routing-Aufruf ist
-# eine AUSGEHENDE Integration mit PII (Adressen verlassen das Gerät) → wartet auf Julius' Service-Wahl + Cap.
-# Bis dahin STUB (kein Live-Aufruf), analog CHAT_501. Die UI-Affordance (Adress-Eingabe) ist gebaut; der
-# Karten-km-Vorschlag kommt erst, wenn der Dienst verbunden ist — die manuelle km-Eingabe bleibt Fallback.
+# Arbeitsweg-Entfernung über Karten-Dienst (Julius-Feature): der Geocoding+Routing-Aufruf ist LIVE
+# (ors_client, echter Call) — eine AUSGEHENDE Integration mit PII (Adressen verlassen das Gerät), daher
+# nur env-key-gated ($ORS_API_KEY, .env.maps). Kein Key / Netz-/Antwort-Fehler → sauberer Fallback auf
+# die manuelle km-Eingabe (ENTFERNUNG_FALLBACK unten), nie Crash, nie Fake-km.
 ENTFERNUNG_FALLBACK = {
     "fehler": "unavailable",
     "vertrag": ("Der Karten-Dienst ist nicht verbunden (kein Schlüssel gesetzt oder Netz-/Antwort-Fehler) "
@@ -1469,11 +1469,11 @@ def entfernung(fall_id: str, body: dict) -> tuple[int, dict]:
     bindung = _scheibe_bindung(store)
     if "ep_entfernung_km" not in bindung:
         raise ApiError(400, "diese Scheibe hat kein Arbeitsweg-km-Feld")
+    import ors_client
     try:
-        import ors_client
         km = ors_client.entfernung_km(von, nach)
-    except Exception:                                    # OrsNichtVerfuegbar / Import — sauberer Fallback
-        return 503, ENTFERNUNG_FALLBACK
+    except (ors_client.OrsNichtVerfuegbar, ImportError):  # Cap-Gate/Netzfehler/Import → Erklär-Grenze;
+        return 503, ENTFERNUNG_FALLBACK                   # ein echter Logik-Bug propagiert (K2, konsistent zu chat()/kontoauszug)
     # PROVENIENZ (K2, „Herkunft je Wert"): der km-Wert kommt aus dem Karten-Dienst → als VORLÄUFIGES
     # Event mit herkunft=berechnet ins Store (Badge zeigt „berechnet/maps", NICHT „selbst"). Der Nutzer
     # bestätigt/überschreibt (Zwei-Signal). Ein aktives Event des Felds wird ersetzt (Nutzer hat „berechnen"

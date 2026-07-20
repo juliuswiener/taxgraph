@@ -68,3 +68,15 @@ def test_leere_geocode_antwort_faellt_sauber(monkeypatch):
     monkeypatch.setattr(ors_client.urllib.request, "urlopen", _leer)
     with pytest.raises(ors_client.OrsNichtVerfuegbar):
         ors_client.entfernung_km("a", "b")
+
+
+def test_malformte_geometrie_faellt_sauber_nicht_keyerror(monkeypatch):
+    """Regression: features vorhanden, aber geometry/coordinates fehlt oder ist unbrauchbar (z. B. ORS
+    liefert ein Feature ohne Punktgeometrie) — MUSS OrsNichtVerfuegbar werfen, nie KeyError/TypeError.
+    Voraussetzung dafür, dass api.py den except-Block auf (OrsNichtVerfuegbar, ImportError) verengen darf."""
+    monkeypatch.setenv("ORS_API_KEY", "K")
+    def _malformt(req, timeout=None):
+        return _FakeResp(json.dumps({"features": [{"geometry": {}}]}).encode("utf-8"))
+    monkeypatch.setattr(ors_client.urllib.request, "urlopen", _malformt)
+    with pytest.raises(ors_client.OrsNichtVerfuegbar):
+        ors_client.geocode("a")

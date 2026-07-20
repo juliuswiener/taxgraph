@@ -143,6 +143,22 @@ def test_entfernung_erfolg_provenance(base, monkeypatch):
     assert f["wert"] == 30 and f["zustand"] == "vorlaeufig" and f["herkunft_badge"] == "berechnet"
 
 
+def test_entfernung_unerwarteter_bug_propagiert_nicht_503(base, monkeypatch):
+    """Regression zur except-Verengung (api.py: (OrsNichtVerfuegbar, ImportError) statt Exception): ein
+    ECHTER Logik-Bug in ors_client (keine OrsNichtVerfuegbar) darf NICHT still zu 503 (manueller Fallback)
+    geschluckt werden — er muss durchschlagen (K2, konsistent zu chat()/kontoauszug)."""
+    import sys, os
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
+    import ors_client
+    def _bug(von, nach):
+        raise ValueError("unerwarteter Bug, keine ORS-Nichtverfügbarkeit")
+    monkeypatch.setattr(ors_client, "entfernung_km", _bug)
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "ent4"})
+    st, b = _req(base, "POST", "/fall/ent4/entfernung", {"von": "Musterstr 1, Berlin", "nach": "Beispielweg 2, Berlin"})
+    assert st == 500, f"unerwarteter Bug darf NICHT als 503-Fallback geschluckt werden, war {st}"
+    assert "ValueError" in b.get("fehler", "")
+
+
 def test_vorjahr_uebernahme(base):
     """Vorjahr-Haut-Naht: ein bestätigter, vorjahr-flagged Wert im Vorjahres-Fall wird als VORLÄUFIGER
     Vorschlag (herkunft=vorjahr) in den neuen Fall übertragen — der Nutzer bestätigt (Zwei-Signal)."""

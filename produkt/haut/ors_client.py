@@ -43,9 +43,11 @@ def geocode(adresse: str) -> list[float]:
     q = urlencode({"api_key": _key(), "text": adresse, "size": 1, "boundary.country": "DE"})
     j = _hole(f"{_BASE}/geocode/search?{q}")
     feats = (j or {}).get("features") or []
-    if not feats:
-        raise OrsNichtVerfuegbar(f"keine Koordinate für Adresse gefunden")
-    return feats[0]["geometry"]["coordinates"]   # [lon, lat]
+    geom = (feats[0] if feats else {}).get("geometry") or {}
+    coords = geom.get("coordinates")
+    if not feats or not isinstance(coords, list) or len(coords) < 2:
+        raise OrsNichtVerfuegbar("keine verwertbare Koordinate für Adresse gefunden")
+    return coords   # [lon, lat]
 
 
 def _distanz_meter(von_lonlat: list[float], nach_lonlat: list[float]) -> float:
