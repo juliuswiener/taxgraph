@@ -1,0 +1,98 @@
+name: CI
+
+"on":
+  push:
+  pull_request:
+
+jobs:
+  # Fast Gate: reine Python-Logik (Makefile-Ziel `unit`). Kein Catala/opam, kein Netz.
+  # Alle catala-gebundenen Tests (runner.catala_*) skippen sich hier SELBST graceful, PER
+  # DATEI (kein zentrales conftest) -- jedes Testfile hat sein eigenes
+  # `try: import runner ... except Exception: pytest.skip(...)`. Verifiziert gegen ALLE
+  # tests/*.py (nicht nur die catala-gebundenen), Stand 2026-07-21: EINE Luecke gefunden --
+  # tests/test_kapital_accessoren.py importiert `runner` UNGEGUARDET auf Modul-Top-Level
+  # (kein try/except) -> ImportError bei der Collection ohne Toolchain, wuerde den ganzen
+  # Job rot machen. Deshalb hier per --ignore ausgenommen (Test-Fix ist ein Testfile-Edit,
+  # nicht Teil dieser CI-Zone). Im catala-toolchain-Job unten NICHT ausgenommen, dort ist
+  # `runner` importierbar und die Datei laeuft echt.
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # poppler-utils (pdftotext/pdfunite/pdftoppm) + tesseract-deu + img2pdf + Pillow:
+      # damit sind die Beleg-/Kontoauszug-Writer-Tests (PDF-Textlayer, OCR-Fallback,
+      # Scan-Fixtures) NICHT wegskipped, sondern laufen echt (kein Mock, siehe Testcode
+      # _SCAN_FIXTURE_OK = PIL vorhanden AND img2pdf im PATH).
+      - name: System-Abhaengigkeiten (poppler, tesseract, img2pdf)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-deu img2pdf
+
+      - name: Python-Abhaengigkeiten
+        run: pip install pyyaml jsonschema Pillow
+
+      - name: pytest tests/
+        run: python3 -m pytest tests/ -q --ignore=tests/test_kapital_accessoren.py
+
+  # Voller Gate: Catala/Clerk-Toolchain (docs/setup.md) dazu, damit die catala-gebundenen
+  # Tests ECHT laufen statt zu skippen. `clerk test -W rules/` (Makefile-Ziel `tests`) ist
+  # BEWUSST NICHT drin: Projekt-Fakt (Memory clerk-test-rules-preexisting-fails) — dieser
+  # Flat-Glob-Aufruf hat ~16 PRE-EXISTING Fails (Sibling-Module loesen sich in der
+  # Flat-Glob-Invocation nicht auf, "Could not resolve reference to ..."), kein echter
+  # Regressions-Gate. Der echte Build-Gate ist `clerk build p32a-python` rc=0 (baut das
+  # ganze Target inkl. aller Modul-Deps, wuerde bei echter Regression failen) + `pytest tests/`.
+  # opam switch create kompiliert OCaml aus dem Quellcode -> erster Lauf langsam (~10-15min),
+  # danach schnell ueber den ~/.opam-Cache. NICHT abgedeckt: das ERiC-XSD-Schema ist
+  # lizenzpflichtig (ERIC_DIR, kein oeffentlicher Download) -> alle @requires_real_schema-
+  # Tests in test_xsd_verify.py (inkl. test_voll_katalog_ist_gate_gruen) skippen hier
+  # graceful weiter. Dieses Gate bleibt lokal (make eric-gate, ERIC_DIR gesetzt).
+  catala-toolchain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: System-Abhaengigkeiten (poppler, tesseract, img2pdf, opam-Build-Deps)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-deu img2pdf \
+            opam m4 build-essential pkg-config libgmp-dev
+
+      - name: Python-Abhaengigkeiten
+        run: pip install pyyaml jsonschema Pillow
+
+      - name: opam-Root cachen (opam init + switch taxgraph 4.14.2 + catala 1.2.0)
+        uses: actions/cache@v4
+        with:
+          path: ~/.opam
+          key: opam-taxgraph-catala-1.2.0-ocaml-4.14.2-${{ runner.os }}
+
+      # docs/setup.md Abschnitt 1, ein Schritt (opam-Env muss im selben Shell-Prozess
+      # geladen bleiben wie catala/clerk-Aufrufe). opam init/switch create sind bei
+      # Cache-Hit no-ops (opam erkennt bestehenden Root/Switch).
+      - name: Catala/Clerk installieren + bauen + testen
+        run: |
+          set -e
+          export OPAMYES=1
+          export OPAMCONFIRMLEVEL=unsafe-yes
+          opam init --bare -y || true
+          opam switch create taxgraph 4.14.2 || true
+          eval $(opam env --switch=taxgraph --set-switch)
+          opam install -y catala
+          catala --version
+          clerk --version
+          clerk build p32a-python
+          bash oracle/gettsim/assemble_catala.sh
+
+      - name: pytest tests/ (mit gebauter Catala-Toolchain)
+        run: |
+          eval $(opam env --switch=taxgraph --set-switch)
+          python3 -m pytest tests/ -q
