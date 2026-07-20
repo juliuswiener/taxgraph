@@ -138,7 +138,35 @@ def make_server(port: int = 8000) -> HTTPServer:
     return HTTPServer((HOST, port), Handler)
 
 
+def _lade_env_dateien(root: str) -> None:
+    """Lädt gitignored Env-Dateien (`.env.maps` für $ORS_API_KEY, `.env.llm` für den LLM-Key) aus `root` in
+    os.environ — NUR Schlüssel, die noch NICHT gesetzt sind (das echte Prozess-Env gewinnt IMMER, kein Override).
+    Fehlt/unlesbar → still übersprungen (nie Crash beim Start). Keine externe Dependency (kein python-dotenv).
+    Zeilenformat KEY=VALUE, `#` = Kommentar, Anführungszeichen werden getrimmt. WERTE werden NIE geloggt (Secrets).
+    Macht die externe Live-Schaltung schlüsselfertig: Key in die (gitignored) Datei legen — kein Shell-Export nötig.
+    NUR in main() aufgerufen (nicht beim Import), damit Test-Importe von server.py keine echten Keys laden."""
+    for name in (".env.maps", ".env.llm"):
+        pfad = os.path.join(root, name)
+        if not os.path.isfile(pfad):
+            continue
+        try:
+            with open(pfad, encoding="utf-8") as f:
+                zeilen = f.readlines()
+        except OSError:
+            continue
+        for zeile in zeilen:
+            zeile = zeile.strip()
+            if not zeile or zeile.startswith("#") or "=" not in zeile:
+                continue
+            schluessel, _, wert = zeile.partition("=")
+            schluessel, wert = schluessel.strip(), wert.strip().strip('"').strip("'")
+            if schluessel and schluessel not in os.environ:
+                os.environ[schluessel] = wert
+
+
 def main(argv):
+    # Turnkey externe Live-Schaltung: gitignored .env.maps/.env.llm aus dem Repo-Root laden (Prozess-Env gewinnt).
+    _lade_env_dateien(os.path.dirname(os.path.dirname(HERE)))
     port = int(argv[1]) if len(argv) > 1 else 8000
     srv = make_server(port)
     host, gebunden = srv.server_address[0], srv.server_address[1]
