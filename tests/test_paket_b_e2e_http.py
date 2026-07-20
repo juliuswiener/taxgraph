@@ -1950,6 +1950,26 @@ def test_gesamt_faltung_erstattungsueberhang_carry(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "erstattungsueberhang_offen"
 
 
+def test_gesamt_faltung_kist_wert(base):
+    """Ring-WERT-Test (Testcov-Audit): § 10 Abs. 1 Nr. 4 KiSt gezahlt 1200 − erstattet 200 = 1000
+    abziehbare Sonderausgaben. Bruttolohn 60000 (kein_vuv/kein_kap) → ns 58770. DELTA-Methode: MIT
+    KiSt (sonderausgaben 1000 statt § 10c-Pauschbetrag-gefloorten 36) → festzusetzende_est 13554 =
+    1355400 Cent; OHNE KiSt → 13924 = 1392400 Cent. Δ 370 EUR = 37000 Cent (catala_est-Oracle,
+    golden/runner.py direkt — unabhängig vom Wiring — bestätigt den Marginal-Effekt)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "km", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True))
+    _gesamt_abzuege(base, "km", kist_gezahlt=120000, kist_erstattet=20000)
+    st, erg_mit = _req(base, "GET", "/fall/km/ergebnis")
+    _gesamt_anlegen(base, "ko", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True))
+    st, erg_ohne = _req(base, "GET", "/fall/ko/ergebnis")
+    if catala:
+        assert erg_mit["zahl_cent"] == 1355400 and erg_mit["grund"] == "bestaetigt"
+        assert erg_ohne["zahl_cent"] == 1392400 and erg_ohne["grund"] == "bestaetigt"
+        assert erg_ohne["zahl_cent"] - erg_mit["zahl_cent"] == 37000
+    else:
+        assert erg_mit["zahl_cent"] is None
+
+
 def test_gesamt_faltung_35a_est_floor(base):
     """Weg (ii) K2 §35a-ESt-Deckelung im gefalteten Ring: niedriges Einkommen (Lohn 14000, ESt ~93) + Handwerker
     10000 (§35a 1200 > verfügbare ESt) → festzusetzende_est auf 0 gefloort (nicht negativ). p32a wirksame_
@@ -2153,19 +2173,27 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0,
                    betriebsart=None, gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
                    gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
-                   geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False):
+                   geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False,
+                   vor_an=0, vor_ag=0, vor_rv_ausserhalb=0, basis_kv_pv=0, weitere_kv_pv=0,
+                   mit_anspruch_zuschuss=False):
     """rentner_gesamt-Kegel: § 22 (renten_art/jahresrente Cent/beginn/alter) + § 33b-Block + Flags
     (kein_sonstige=False = Rente IST § 22-sonstige; kein_kap/vuv=True). rentenfreibetrag (Cent) nur
     aa-Folgejahr; Partner-Behinderung + Partner-Rente (renten_art_partner gesetzt) nur zusammen (#4b).
     gewinn (§ 15/§ 18 laufender Gewinn, einkuenfte_gewinn, OPTIONAL/CENT) + vg (§ 16-Veräußerungsgewinn,
     rentner_veraeusserungsgewinn, OPTIONAL/CENT, 2-I) = 0 default → Feld absent (absent → 0, over-tax-safe); > 0
-    nur mit kein_gewinn=False (sonst flag_konsistenz_offen). kein_gewinn (§ 2 Abs. 1 Nr. 1-3) = True default."""
+    nur mit kein_gewinn=False (sonst flag_konsistenz_offen). kein_gewinn (§ 2 Abs. 1 Nr. 1-3) = True default.
+    vor_an/vor_ag/vor_rv_ausserhalb (§ 10 Altersvorsorge, Pflicht-Kegel, cent) + basis_kv_pv/weitere_kv_pv
+    (§ 10 Abs. 1 Nr. 3/3a KV/PV, Pflicht-Kegel, CENT) = 0 default (Weg-ii-Fix, 1:1 gesamt-Präzedenz)."""
     k = [("rentner_renten_art", renten_art), ("rentner_jahresrente", jahresrente),
          ("rentner_renten_beginn_jahr", beginn), ("rentner_alter_bei_rentenbeginn", alter),
          ("rentner_grad_der_behinderung", gdb), ("rentner_hilflos_blind_taubblind", hilflos),
          ("rentner_pflegegrad", pflegegrad), ("rentner_gepflegter_hilflos", gepflegter_hilflos),
          ("rentner_hinterbliebenenbezuege", hinterbliebenen), ("veranlagung", veranlagung),
-         ("kein_gewinn", kein_gewinn), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False)]
+         ("kein_gewinn", kein_gewinn), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
+         ("vor_an_anteil_rv", vor_an), ("vor_ag_anteil_rv", vor_ag),
+         ("vor_rv_ausserhalb_lstb", vor_rv_ausserhalb),
+         ("basis_kv_pv", basis_kv_pv), ("weitere_vorsorgeaufwendungen", weitere_kv_pv),
+         ("mit_anspruch_auf_zuschuss", mit_anspruch_zuschuss)]
     if gewinn:                                     # § 15/§ 18 laufender Gewinn (2-I, optional)
         k.append(("einkuenfte_gewinn", gewinn))
     for _fid, _w in (("betriebseinnahmen", betriebseinnahmen),           # § 4 Abs. 3 EÜR-Komponenten (2a Scope-A, cent, optional)
@@ -2217,6 +2245,25 @@ def _rentner_anlegen(base, fid, kegel):
         assert st == 201
 
 
+def _rentner_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechnung_unbar=None,
+                     spende=0, agb=0, kinder=0, kist_gezahlt=0, kist_erstattet=0,
+                     alleinerziehend=None, monate=0):
+    """Postet die OPTIONALEN Weg-ii/§24b-Felder (§35a/§10b/§33/§10-KiSt/§24b) auf einen rentner_gesamt-Fall
+    (cent; kinder/monate=int). hh_rechnung_unbar/fam_alleinstehend nur wenn nicht None. Analog _gesamt_abzuege."""
+    paare = [("hh_minijob_aufwendungen", minijob), ("hh_dienstleistungen", dienstleistung),
+             ("hh_handwerker_arbeitskosten", handwerker), ("spenden_betrag", spende),
+             ("agb_aufwendungen", agb), ("fam_anzahl_kinder", kinder),
+             ("kist_gezahlt", kist_gezahlt), ("kist_erstattet", kist_erstattet),
+             ("fam_monate_ohne_voraussetzung", monate)]
+    if rechnung_unbar is not None:
+        paare.append(("hh_rechnung_unbar", rechnung_unbar))
+    if alleinerziehend is not None:
+        paare.append(("fam_alleinstehend", alleinerziehend))
+    for feld, wert in paare:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
+        assert st == 201
+
+
 def test_rentner_gesetzl_erstjahr(base):
     """§ 22 gesetzl. Rente Erstjahr 20000 @ 83,5 % Kohorte → einkuenfte_sonstige 16598 →
     festzusetzende_est 811 = 81100 Cent (dev-2 Kreuzprobe S1)."""
@@ -2228,6 +2275,90 @@ def test_rentner_gesetzl_erstjahr(base):
         assert erg["zahl_cent"] == 81100 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
+
+
+def test_rentner_faltung_komposition(base):
+    """Weg-ii-Fix (K2, Rentner-Ring): dieselbe gesetzl. Rente 20000 wie test_rentner_gesetzl_erstjahr (baseline
+    81100 Cent OHNE Abzüge) + KV/PV (Basis 2000) + § 35a Handwerker 10000 (rechnung_unbar) + § 10b Spende 3000 +
+    § 33 agB 5000 + § 10 KiSt (gezahlt 500) in EINEM Bescheid → est SINKT gegenüber der Baseline (vorher fehlten
+    diese Abzüge im Rentner-Ring komplett, RENTNER_FELDER hatte KV_PV/GESAMT_ABZUEGE nicht mal postbar)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rk", _rentner_kegel(jahresrente=2000000, beginn=2025, basis_kv_pv=200000))
+    _rentner_abzuege(base, "rk", handwerker=1000000, rechnung_unbar=True, spende=300000, agb=500000,
+                     kist_gezahlt=50000)
+    st, erg = _req(base, "GET", "/fall/rk/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["grund"] == "bestaetigt" and erg["zahl_cent"] < 81100
+        assert erg["zahl_cent"] == 0
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_faltung_gde_echte_basis(base):
+    """Weg-ii-Fix, GdE-Basis-Test: gesetzl. Rente 20000 + laufender § 15-Gewinn 10000 (kein_gewinn=False,
+    betriebsart=gewerbe) → die neue gde speist § 10b/§ 33 aus RENTE + GEWINN (catala_gesamt_gde mit
+    einkuenfte_sonstige UND einkuenfte_gewinn, s. Fix), nicht aus einer Renten-only-Basis. § 10b-Spende 8000
+    NICHT voll gekappt (Deckel wächst mit der echten GdE) — belegt über den tatsächlichen Steuerbetrag."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rg", _rentner_kegel(jahresrente=2000000, beginn=2025, gewinn=1000000,
+                                                kein_gewinn=False, betriebsart="gewerbe"))
+    _rentner_abzuege(base, "rg", spende=800000)
+    st, erg = _req(base, "GET", "/fall/rg/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["grund"] == "bestaetigt"
+        assert erg["zahl_cent"] == 196000
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_rentner_p35_overwrite_beleg(base):
+    """Weg-ii-Fix, PFLICHT-Co-Fix-Beleg: § 35 GewSt-Anrechnung (opt-in via gewst_messbetrag) DARF § 35a
+    (steuerermaessigungen aus Handwerker-Aufwand) NICHT still überschreiben — additiv gefordert (Lead-Adjudikation).
+    Rente 20000 + laufender Gewerbe-Gewinn 10000 + Messbetrag 400/Hebesatz 400% (§35, greift) + § 35a Handwerker
+    10000 (rechnung_unbar) in EINEM Bescheid → est niedriger als OHNE § 35a bei sonst identischen Feldern (beide
+    Ermäßigungen wirken, keine löscht die andere)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rp35a", _rentner_kegel(jahresrente=2000000, beginn=2025, gewinn=1000000,
+                                                   kein_gewinn=False, betriebsart="gewerbe",
+                                                   gewst_messbetrag=40000, gewst_hebesatz=400))
+    st, ohne = _req(base, "GET", "/fall/rp35a/ergebnis")
+    _val("ergebnis", ohne)
+    _rentner_anlegen(base, "rp35b", _rentner_kegel(jahresrente=2000000, beginn=2025, gewinn=1000000,
+                                                   kein_gewinn=False, betriebsart="gewerbe",
+                                                   gewst_messbetrag=40000, gewst_hebesatz=400))
+    _rentner_abzuege(base, "rp35b", handwerker=1000000, rechnung_unbar=True)
+    st, mit = _req(base, "GET", "/fall/rp35b/ergebnis")
+    _val("ergebnis", mit)
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt"
+        assert ohne["zahl_cent"] == 208900 and mit["zahl_cent"] == 88900
+        assert mit["zahl_cent"] < ohne["zahl_cent"]
+    else:
+        assert ohne["zahl_cent"] is None and mit["zahl_cent"] is None
+
+
+def test_rentner_p24b_entlastung_alleinerziehend(base):
+    """§ 24b Entlastungsbetrag Alleinerziehende (Weg-ii-Parität-Fix, K2, ring-b-Fund #4): fehlte im Rentner-Ring
+    komplett (GESAMT_FREIBETRAEGE nie an RENTNER_FELDER, catala_p24b_entlastung nur im gesamt-Zweig aufgerufen).
+    Rentner-Witwe/-Witwer (Hinterbliebenenrente, alleinstehend) mit 1 Kind, monate_ohne_voraussetzung=0 (volle
+    Anspruchsdauer) → est SINKT gegenüber identischem Fall ohne § 24b-Felder (vorher fehlender 4260€+240€-
+    Freibetrag = Over-tax)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "r24bo", _rentner_kegel(jahresrente=2000000, beginn=2025))
+    st, ohne = _req(base, "GET", "/fall/r24bo/ergebnis")
+    _val("ergebnis", ohne)
+    _rentner_anlegen(base, "r24bm", _rentner_kegel(jahresrente=2000000, beginn=2025))
+    _rentner_abzuege(base, "r24bm", alleinerziehend=True, kinder=1, monate=0)
+    st, mit = _req(base, "GET", "/fall/r24bm/ergebnis")
+    _val("ergebnis", mit)
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt"
+        assert mit["zahl_cent"] < ohne["zahl_cent"]
+        assert ohne["zahl_cent"] == 81100 and mit["zahl_cent"] == 2900
+    else:
+        assert ohne["zahl_cent"] is None and mit["zahl_cent"] is None
 
 
 @pytest.mark.parametrize("vg_cent,erwartet_cent", [
@@ -2413,6 +2544,27 @@ def test_rentner_behinderung(base):
         assert erg["zahl_cent"] is None
 
 
+def test_rentner_pflege_hinterbliebenen_pb_wert(base):
+    """Ring-WERT-Test (Testcov-Audit): § 33b Pflege-Pauschbetrag (Pflegegrad 3 → 1100) + Hinterbliebenen-
+    Pauschbetrag (rentner_hinterbliebenenbezuege=True → 370), additiv zum Behinderten-PB (§ 33b Abs. 2/4/6,
+    bisher NUR der Default-Fall (gdb=50) e2e-geprüft, Pflege/Hinterbliebenen nie mit echtem Wert). Erstjahr
+    gesetzl. Rente 20000 (es 16598), GdB 0. DELTA: MIT (ausserg 1470) → festzusetzende_est 50300 Cent;
+    OHNE (ausserg 0) → 81100 Cent (catala_est-Oracle, golden/runner.py direkt)."""
+    catala = _catala_da()
+    _rentner_anlegen(base, "rpf2", _rentner_kegel(jahresrente=2000000, beginn=2025,
+                                                   pflegegrad=3, gepflegter_hilflos=False,
+                                                   hinterbliebenen=True))
+    st, erg_mit = _req(base, "GET", "/fall/rpf2/ergebnis")
+    _rentner_anlegen(base, "rpo2", _rentner_kegel(jahresrente=2000000, beginn=2025))
+    st, erg_ohne = _req(base, "GET", "/fall/rpo2/ergebnis")
+    if catala:
+        assert erg_mit["zahl_cent"] == 50300 and erg_mit["grund"] == "bestaetigt"
+        assert erg_ohne["zahl_cent"] == 81100 and erg_ohne["grund"] == "bestaetigt"
+        assert erg_ohne["zahl_cent"] - erg_mit["zahl_cent"] == 30800
+    else:
+        assert erg_mit["zahl_cent"] is None
+
+
 def test_rentner_folgejahr_fixierung_offen(base):
     """K2-KERN (S3): aa-Folgejahr (Rentenbeginn 2015 < VZ) OHNE fixierten Rentenfreibetrag → fail-closed
     rentenfreibetrag_fixierung_offen (kein %×aktuelle-Rente, das würde Rentenerhöhungen unterbesteuern)."""
@@ -2439,6 +2591,29 @@ def test_rentner_partner_behinderung_ohne_zusammen_gesperrt(base):
                                                 veranlagung="einzel", gdb_partner=60))
     st, erg = _req(base, "GET", "/fall/rp/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "partner_konsistenz_offen"
+
+
+def test_rentner_partner_behinderung_zusammen_wert(base):
+    """Ring-WERT-Test (Testcov-Audit): Partner-Behinderten-Pauschbetrag (§ 33b, rentner_grad_der_
+    behinderung_partner=50 → 1140) bei Zusammenveranlagung — bisher NUR der einzel-Sperr-Guard e2e-
+    geprüft (test_rentner_partner_behinderung_ohne_zusammen_gesperrt), nie mit echtem Zusammen-Wert.
+    Erstjahr gesetzl. Rente 40000 (es 33298), Person A GdB 0. DELTA-Oracle (golden/runner.py catala_est
+    direkt, UNABHÄNGIG vom api.py-Wiring): MIT Partner-PB (ausserg 1140) → 139400 Cent; OHNE → 164400
+    Cent, Δ 25000 Cent. § 26b: der Partner-eigene Pauschbetrag ist additiv zur gemeinsamen ESt-Basis."""
+    catala = _catala_da()
+    if not catala:
+        pytest.skip("Catala-Toolchain nicht verfügbar")
+    _rentner_anlegen(base, "rpz_mit", _rentner_kegel(jahresrente=4000000, beginn=2025,
+                                                      veranlagung="zusammen", gdb_partner=50))
+    st, erg_mit = _req(base, "GET", "/fall/rpz_mit/ergebnis")
+    _rentner_anlegen(base, "rpz_ohne", _rentner_kegel(jahresrente=4000000, beginn=2025,
+                                                       veranlagung="zusammen"))
+    st, erg_ohne = _req(base, "GET", "/fall/rpz_ohne/ergebnis")
+    assert erg_mit["grund"] == "bestaetigt" and erg_ohne["grund"] == "bestaetigt"
+    assert erg_mit["zahl_cent"] == 139400, \
+        f"Partner-GdB-Pauschbetrag nicht reflektiert: erwartet 139400, tatsaechlich {erg_mit['zahl_cent']}"
+    assert erg_ohne["zahl_cent"] == 164400
+    assert erg_ohne["zahl_cent"] - erg_mit["zahl_cent"] == 25000
 
 
 def test_rentner_zusammen_beide_renten(base):

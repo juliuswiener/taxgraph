@@ -105,7 +105,11 @@ RENTNER_22 = ("rentner_renten_art", "rentner_jahresrente", "rentner_renten_begin
 RENTNER_33B = ("rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad",
                "rentner_gepflegter_hilflos", "rentner_hinterbliebenenbezuege")
 RENTNER_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner")
-RENTNER_KEGEL = RENTNER_22 + RENTNER_33B + ("veranlagung",) + AN_GESAMT_FLAGS
+# Weg-ii-Fix (K2, Over-tax): VOR_FELDER (§ 10 Abs. 1 Nr. 2 Basisvorsorge) + KV_PV_FELDER (§ 10 Abs. 1 Nr. 3/3a
+# KV/PV) mandatory im Kegel — 1:1 gesamt-Präzedenz (Z. 254f). KV_PV zwingend: mit_anspruch_auf_zuschuss absent
+# → false → HB 2800 statt 1900 = Unter-tax bei Zuschuss-Nutzern (quasi-universell, betrifft jeden Rentner mit
+# KV/PV). VOR over-tax-safe (absent → 0), mandatory nur für Uniformität mit gesamt.
+RENTNER_KEGEL = RENTNER_22 + RENTNER_33B + ("veranlagung",) + AN_GESAMT_FLAGS + VOR_FELDER + KV_PV_FELDER
 # RENTNER_22_PARTNER: § 22-Rente des Ehegatten (Zusammenveranlagung, #4b), analog RENTNER_22; +
 # rentner_rentenfreibetrag_partner (aa-Folgejahr B). Nur bei zusammen relevant → nicht im Pflicht-Kegel.
 RENTNER_22_PARTNER = ("rentner_renten_art_partner", "rentner_jahresrente_partner",
@@ -156,6 +160,9 @@ RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner
 # global gebunden, s. GESAMT_P35). Der Deckel-3-Nenner ist hier VOLLSTÄNDIG renten(§22) + einkuenfte_gewinn —
 # die rentner-Scheibe hat KEIN § 19/§ 21 (ein Rentner-mit-Minijob/Miete ist scheiben-strukturell nicht modellierbar,
 # pre-existing Grenze, nicht § 35-spezifisch). Guard gewst_hebesatz_offen greift shared (gesamt_guard).
+# VOR_FELDER/KV_PV_FELDER kommen schon über RENTNER_KEGEL (jetzt mandatory, s.o.). GESAMT_ABZUEGE (§35a/§10b/
+# §33/§10-KiSt/§10-1-7) wird UNTEN nachgetragen (Weg-ii-Fix) — Tupel steht erst nach seiner Definition zur
+# Verfügung, s. Anhang bei GESAMT_ABZUEGE.
 RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
                   + RENTNER_PARTNER + RENTNER_22_PARTNER + RENTNER_GEWINN
                   + ("gewst_hebesatz", "gewst_messbetrag") + VERLUST_FELD)
@@ -180,11 +187,19 @@ AGB_KIST = ("kist_gezahlt", "kist_erstattet")                                # �
 # additiv auf JEDE Einkunfts-Kombi; die K2-Sperren (rechnung_unbar/erstattungsueberhang) fängt der Guard.
 GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
                   "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST)
+# Weg-ii-Fix (K2, Over-tax): GESAMT_ABZUEGE OPTIONAL auch im Rentner-Ring nachgetragen (NICHT im Kegel —
+# absent → 0, fail-safe, wie im gesamt-Ring). Ohne diese Deklaration wären die Felder für rentner_gesamt
+# nicht mal POSTbar (_scheibe_bindung filtert global-bindung auf cfg["felder"]).
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_ABZUEGE
 # § 24a/§ 24b Freibeträge (Weg ii Stage 2), OPTIONAL im gesamt-Ring (absent → 0). geburtsjahr = §24a-Kohorten-
 # Schlüssel (gesamt-only); fam_alleinstehend = §24b-Abs.3-Flag (quelle p24b/alleinstehend, fragetext „ohne
 # anderen Erwachsenen im Haushalt" — IST die Abs.3-Bedingung, kein Extra-Feld nötig); fam_monate = §24b-Kürzung.
 # fam_anzahl_kinder steht schon in GESAMT_ABZUEGE (§33-zumutbar + §24b geteilt).
 GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_voraussetzung")
+# Weg-ii-Parität-Fix (K2, Over-tax, ring-b-Fund #4): GESAMT_FREIBETRAEGE auch im Rentner-Ring nachgetragen —
+# ohne fam_alleinstehend/fam_monate_ohne_voraussetzung postbar war § 24b im Rentner-Ring nicht erreichbar
+# (geburtsjahr/fam_anzahl_kinder stehen schon in RENTNER_GEWINN/GESAMT_ABZUEGE, Duplikat harmlos).
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE
 # §§ 13-18 Gewinneinkünfte (Stufe 1), OPTIONAL im gesamt-Ring (NICHT Pflicht-Kegel → absent → 0, over-tax-safe).
 # einkuenfte_gewinn (CENT) = der vorberechnete Gewinn-Betrag → einkuenfte_gewinn-Slot der slot_fn (§ 2-Summand).
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
@@ -933,6 +948,14 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                        + runner.catala_hinterbliebenen_pb({
                            "veranlagungszeitraum": vz,
                            "hat_hinterbliebenenbezuege": _b("rentner_hinterbliebenenbezuege") is True}))
+            # Partner-§33b (§ 26b, #4b, Wiring-Fix): eigener Behinderten-Pauschbetrag des Ehegatten additiv zur
+            # gemeinsamen ausserg-Summe — nur Zusammenveranlagung (RENTNER_PARTNER hat nur GdB/hilflos, kein
+            # Pflegegrad/Hinterbliebenenbezüge für Person B). Vorher: Felder standen nur im Gate-Tuple, nie
+            # tatsächlich addiert → stiller Über-tax (250 € je betroffenem Fall).
+            if _b("veranlagung") == "zusammen":
+                ausserg += runner.catala_behinderten_pb({
+                    "veranlagungszeitraum": vz, "grad_der_behinderung": _c("rentner_grad_der_behinderung_partner"),
+                    "ist_hilflos_blind_taubblind": _b("rentner_hilflos_blind_taubblind_partner") is True})
             # §§ 13-18 Gewinn (2-I + 2a): laufender § 15/§ 18-Gewinn (aus _laufender_gewinn — Stufe 2a EÜR ODER
             # Stufe-1-Direktwert, Scope A geteilt mit dem gesamt-Ring) + § 16-Ver-
             # äußerungsgewinn NACH § 16 Abs. 4-Freibetrag. FB (roh) via catala_p16_4_freibetrag; der steuerbare Rest
@@ -952,25 +975,68 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             alt24a_r = runner.catala_p24a_altersentlastung({
                 "veranlagungszeitraum": vz, "geburtsjahr": _c("geburtsjahr"), "arbeitslohn": 0,
                 "positive_andere_einkuenfte": max(0, laufender_gewinn + netto_vg)})
+            # § 24b Entlastungsbetrag Alleinerziehende (Weg-ii-Parität-Fix, K2, Over-tax): fehlte im Rentner-Ring
+            # komplett (GESAMT_FREIBETRAEGE nie an RENTNER_FELDER, s.o.) — Rentner-Witwe/-Witwer mit Kindern kriegt
+            # sonst den 4260€+240€/Kind-Freibetrag nicht. 1:1 gesamt-Präzedenz Z. 671-674 (ungegatet, fam_anzahl_
+            # kinder-Kinder-Gate ist Fund D/separater Scope). alleinerziehend_mit_zusammen-Guard (Z. 1110) fängt
+            # den Widerspruch automatisch, sobald fam_alleinstehend gebunden ist — kein Zusatzcode nötig.
+            ent24b_r = runner.catala_p24b_entlastung({
+                "alleinstehend": f.get("fam_alleinstehend", {}).get("wert") is True,
+                "anzahl_kinder": _c("fam_anzahl_kinder"),
+                "monate_ohne_voraussetzung": _c("fam_monate_ohne_voraussetzung")})
             rentner_g = {
                 "gesamtfall": True, "veranlagungszeitraum": vz,
                 "veranlagung": _b("veranlagung") or "einzel",
                 "einkuenfte_sonstige": renten,
                 "einkuenfte_gewinn": laufender_gewinn + netto_vg,
                 "altersentlastungsbetrag": alt24a_r,
+                "entlastungsbetrag_alleinerziehende": ent24b_r,
                 "aussergewoehnliche_belastungen": ausserg}
             # § 10d Abs. 2 Verlustvortrag (Rentner-Ring): mindert die volle rentner-GdE (renten § 22 + einkuenfte_
             # gewinn) „vorrangig vor …" (§ 10d Abs. 2 S. 1) → sonstige_abzuege_vom_einkommen, VOR dem § 35 (dessen
             # Deckel-3 die post-§10d geminderte tarifliche ESt nutzt). catala_p10d_2-Höchstbetrag = min(GdE, …), absent
             # → 0. Der GdE-Zwilling nimmt die rentner-Einkunftsarten (kein § 19/§ 21 hier), § 32d-Kapital gibt's nicht.
-            gde_p10d = runner.catala_gesamt_gde({
+            # DIESELBE gde speist auch die Weg-ii-Abzüge unten (§10b-20%-Deckel + §33-zumutbar-Staffel) — EIN Aufruf.
+            gde = runner.catala_gesamt_gde({
                 "veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
                 "einkuenfte_sonstige": renten, "einkuenfte_gewinn": rentner_g["einkuenfte_gewinn"],
-                "altersentlastungsbetrag": alt24a_r})
+                "altersentlastungsbetrag": alt24a_r, "entlastungsbetrag_alleinerziehende": ent24b_r})
             rentner_g["sonstige_abzuege_vom_einkommen"] = runner.catala_p10d_2({
-                "gesamtbetrag_einkuenfte": gde_p10d,
+                "gesamtbetrag_einkuenfte": gde,
                 "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
                 "zusammenveranlagung": rentner_g["veranlagung"] == "zusammen"})
+            # Weg-ii-Fix (K2, Over-tax): § 10 Abs. 1 Nr. 2 Basisvorsorge (VOR_FELDER jetzt Pflicht-Kegel) —
+            # catala_est ruft _vorsorge_abzug intern (runner.py), kein Doppelzählen, nur die Slots setzen.
+            rentner_g["vorsorge_gesamtbeitraege_inkl_ag"] = (_c("vor_an_anteil_rv") + _c("vor_ag_anteil_rv")
+                                                              + _c("vor_rv_ausserhalb_lstb")) // 100
+            rentner_g["vorsorge_ag_anteil_steuerfrei"] = _c("vor_ag_anteil_rv") // 100
+            # § 35a Haushaltsnahe (Weg-ii-Fix) → steuerermaessigungen. rechnung_unbar=false nullt Abs.2/3 (Minijob
+            # unberührt) — 1:1 gesamt-Präzedenz (Z. 708-712).
+            abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
+            rentner_g["steuerermaessigungen"] = runner.catala_p35a_haushaltsnahe({
+                "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
+                "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
+                "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
+            # § 10b Spenden (gde-Deckel) + § 10 KiSt + § 10 Abs. 1 Nr. 3/3a KV/PV + § 10 Abs. 1 Nr. 7 Berufsausbildung
+            # (Weg-ii-Fix, additiv → sonderausgaben; 1:1 gesamt-Präzedenz Z. 717-737). Person-B-KV/PV DEFER (benannte
+            # Lücke, Folge-Ticket — Rentner-Ring hat noch keine Partner-KV/PV-Felder).
+            rentner_g["sonderausgaben"] = (runner.catala_p10b_spenden({
+                    "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": gde})
+                + runner.catala_p10_kist({
+                    "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
+                    "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
+                + runner.catala_p10_kv_pv({
+                    "basis_kv_pv": _c("basis_kv_pv") // 100,
+                    "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen") // 100,
+                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
+                + runner.catala_p10_1_7_berufsausbildung({
+                    "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100}))
+            # § 33-agB (Weg-ii-Fix) ADDITIV zu § 33b (ausserg, oben) — beide Absätze koexistieren (Pauschbetrag +
+            # Einzelnachweis sind unterschiedliche Aufwands-Arten). gde-Basis wie § 10b (§2 Abs.3-K2-Fix).
+            rentner_g["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
+                "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
+                "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
+                "splitting": rentner_g["veranlagung"] == "zusammen"})
             # § 34 CHOOSER im Rentner-Ring (Abs. 1 Fünftel Default vs Abs. 3 ermäßigter Satz auf Antrag): identisch zur
             # gesamt-Naht, SINGLE-computation (kein §31). Guard zve2>0. ao = netto_vg (laufender Gewinn progressiv). Der
             # §35-Block unten liest catala_gesamt_tarifliche(rentner_g) = post-§34-tarifliche (automatisch).
@@ -1006,7 +1072,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             p35_nenner = max(0, renten) + max(0, rentner_g["einkuenfte_gewinn"])
             if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
                 tarifliche = runner.catala_gesamt_tarifliche(rentner_g)
-                rentner_g["steuerermaessigungen"] = min(
+                # Weg-ii-Fix (K2, PFLICHT): ADDITIV statt hart überschreiben — sonst löscht § 35 GewSt-Anrechnung
+                # das neue § 35a-Ergebnis (steuerermaessigungen) still. 1:1 gesamt-Präzedenz (_festzusetzende Z. 842).
+                rentner_g["steuerermaessigungen"] = rentner_g.get("steuerermaessigungen", 0) + min(
                     4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100,
                     p35_zaehler * tarifliche // p35_nenner)
             return runner.catala_est(rentner_g)
