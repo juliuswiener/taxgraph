@@ -43,6 +43,7 @@ bindungen:
 
   # ========================= Sonderausgaben — Berufsausbildung (p10_1_7) =========================
   - feld_id: berufsausbildung_aufwendungen
+    vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p10_1_7_berufsausbildung, signatur_slot: aufwendungen}
     typ: cent
     einheit: EUR
@@ -62,6 +63,7 @@ bindungen:
 
   # ========================= agB §33 (p33_1_2_agb_abzug) =========================
   - feld_id: agb_aufwendungen
+    vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p33_1_2_agb_abzug, signatur_slot: aussergewoehnliche_belastungen}
     typ: cent
     einheit: EUR
@@ -114,6 +116,7 @@ bindungen:
 
   # ========================= §35a Haushaltsnahe (p35a_2_3_haushaltsnahe) =========================
   - feld_id: hh_minijob_aufwendungen
+    vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: minijob_aufwendungen}
     typ: cent
     einheit: EUR
@@ -130,6 +133,7 @@ bindungen:
       zitatanker: "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: hh_dienstleistungen
+    vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: haushaltsnahe_dienstleistungen}
     typ: cent
     einheit: EUR
@@ -146,6 +150,7 @@ bindungen:
       zitatanker: "gilt nur für Arbeitskosten"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: hh_handwerker_arbeitskosten
+    vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: handwerker_arbeitskosten}
     typ: cent
     einheit: EUR
@@ -215,6 +220,7 @@ bindungen:
 
   # ===== Spende §10b (Beleg-Writer Stufe 1b: Zuwendungsbestätigung, herkunft_slots=Label-Anker) =====
   - feld_id: spenden_betrag
+    vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p10b_spenden, signatur_slot: zuwendungen}
     typ: cent
     einheit: EUR

@@ -42,7 +42,7 @@ def _routes():
         ("GET", re.compile(rf"^/fall/{_ID}/deklaration$"), lambda m, b: api.deklaration(m["id"])),
         ("GET", re.compile(rf"^/fall/{_ID}/graph$"), lambda m, b: api.graph(m["id"])),
         ("POST", re.compile(rf"^/fall/{_ID}/elster-ampel$"), lambda m, b: (503, api.AMPEL_503)),
-        ("POST", re.compile(rf"^/fall/{_ID}/chat$"), lambda m, b: (501, api.CHAT_501)),
+        ("POST", re.compile(rf"^/fall/{_ID}/chat$"), lambda m, b: api.chat(m["id"], b)),
         # Arbeitsweg-Entfernung über Karten-Dienst (ORS): Vorschlag-Fluss; kein Key/Fehler → 503-Fallback.
         ("POST", re.compile(rf"^/fall/{_ID}/entfernung$"), lambda m, b: api.entfernung(m["id"], b)),
         # Vorjahr-Übernahme: Vorjahres-Fall → vorläufige Vorschläge (herkunft=vorjahr) im aktuellen Fall.

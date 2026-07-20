@@ -371,7 +371,8 @@ def _abs3_eligible(f: dict, vz: int) -> bool:
     return (alter_ge_55 or berufsunfaehig) and not einmal_genutzt
 
 
-def _gwg_sofortabzug_summe(f: dict, store: dict | None, bindung: dict | None) -> int:
+def _gwg_sofortabzug_summe(f: dict, store: dict | None, bindung: dict | None,
+                           nur_bestaetigt: bool = True) -> int:
     """§ 6 Abs. 2 GWG-Sofortabzug-Σ (EURO, Stufe 2b) — STUMPFE Σ über ALLE gwg-Instanzen: je Asset
     catala_p6_2_gwg (≤ 800 netto → Sofortabzug, sonst 0 = kein GWG, gehört in die AfA). instanzen-Naht wie
     Multi-Objekt-§21/Multi-Rente-§22 (EM.instanzen(gwg); Basis-Feld = Instanz 1). Ohne store (Alt-Aufrufer) nur
@@ -383,11 +384,18 @@ def _gwg_sofortabzug_summe(f: dict, store: dict | None, bindung: dict | None) ->
         netto = int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
         return runner.catala_p6_2_gwg({"gwg_anschaffungskosten_netto": netto // 100})
     if store is not None and bindung is not None:
-        return sum(_abzug(inst["felder"]) for inst in EM.instanzen(store, bindung, "gwg"))
+        # ⭐ SECURITY (Zwei-Signal am Ring, INSTANZ-Pfad): EM.instanzen liest den STORE separat vom bestätigt-
+        # gefilterten _bescheid_fn-Snapshot → eine VORLÄUFIGE gwg-Instanz bewegte sonst den Sofortabzug OHNE
+        # Confirm (dev-2-Repro: 600€ am Ring). gwg ist OPTIONAL → KEIN Kegel-/Sperr-Gate (anders als vv/rente) →
+        # bei nur_bestaetigt=True (festgesetzt) ist der Filter PFLICHT. nur_bestaetigt=False (Estimate /stand) zeigt
+        # die vorläufige Wirkung im Range (Parität zum agB-Skalar). inst["zustand"] = per-Instanz-meet.
+        return sum(_abzug(inst["felder"]) for inst in EM.instanzen(store, bindung, "gwg")
+                   if not nur_bestaetigt or inst["zustand"] == "bestaetigt")
     return _abzug(f)
 
 
-def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None = None) -> int:
+def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None = None,
+                      nur_bestaetigt: bool = True) -> int:
     """§§ 13-18 laufender Gewinn (§ 15 Gewerbe / § 18 selbständig), EURO — die EINE Quelle für den laufenden
     (Nicht-Veräußerungs-)Gewinn, geteilt von gesamt- und rentner-Ring (Scope A). § 4 Abs. 3 EÜR (Stufe 2a/2b) wenn
     IRGENDEINE EÜR-Komponente (betriebseinnahmen/sonstige_betriebsausgaben/afa_jahresbetrag) ODER ein GWG vorliegt:
@@ -399,7 +407,7 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
     def _c(fid):
         v = f.get(fid, {}).get("wert")
         return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
-    gwg_summe = _gwg_sofortabzug_summe(f, store, bindung)
+    gwg_summe = _gwg_sofortabzug_summe(f, store, bindung, nur_bestaetigt)
     # § 15 Abs. 1 S. 1 Nr. 2 Mitunternehmer (#2): SEPARATER §15-gewerblicher Summand (Beteiligung an PersG, additiv
     # zum eigenen Gewerbe/EÜR — KEIN gewinn_quelle_offen-Konflikt, eigene Felder). gewinnanteil = §15a-ausgleichs-
     # fähiger Anteil (kann NEGATIV, roh summiert). Hier IN _laufender_gewinn → symmetrisch in §35-Zähler+Nenner.
@@ -417,13 +425,31 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
 
 
 def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None,
-                 store: dict | None = None):
+                 store: dict | None = None, nur_bestaetigt: bool = True):
     """bescheid_fn(feld_werte)->cent für eine ring-fähige Familie (Naht-Einheit CENT via
     intervall.bescheid_via_slots). None, wenn die Catala-Toolchain oder ein Accessor fehlt —
     dann bleibt der Ring ehrlich leer, nie ein erfundener Betrag. `felder` (materialisierter
     Store-Snapshot) erlaubt den Zugriff auf Einzelfelder, die die Summen-Slots verdecken (VOR-AG).
     `store` (optional) erlaubt die Multi-Objekt-Instanz-Enumeration (est_mapping.instanzen, #5) — ohne
-    store rechnet der §21-Ring nur die Basis-Instanz (Alt-Aufrufer/Teil-Ringe)."""
+    store rechnet der §21-Ring nur die Basis-Instanz (Alt-Aufrufer/Teil-Ringe).
+
+    `nur_bestaetigt` (DEFAULT True = fail-safe): filtert den felder-Snapshot (+ die Instanz-Σ) auf bestätigt-
+    only → für die FESTGESETZTE Steuer (/ergebnis via _feste_zahl). False NUR in den Estimate-Pfaden (/stand +
+    fragen), die die [min,max]-Spanne bauen und NIE die festgesetzte Steuer emittieren — dort SOLL die vorläufige
+    Wirkung sichtbar sein (Steuer-at-Risk-Range, Instructor-Vertrag). Default True hält jeden neuen Caller sicher."""
+    # ⭐ SECURITY — Zwei-Signal-Invariant AM RING: bei nur_bestaetigt=True liest der Bescheid AUSSCHLIESSLICH
+    # bestätigte Werte. Ein VORLÄUFIGER Vorschlag (llm:chat / import:beleg / kontoauszug / vorjahr / berechnet:maps)
+    # für ein OPTIONALES Feld (agB §33, Spenden §10b, Berufsausbildung §10, Mitunternehmer §15, §16-vg … — NICHT im
+    # Pflicht-Kegel, also NICHT vom Meet-Gate in _feste_zahl erfasst) darf die festgesetzte Steuer NIE bewegen,
+    # bevor der Mensch signal_2 gesetzt hat ("ein Vorschlag bewegt die Summe nie ohne Confirm"). Ohne den Filter
+    # las _c/_cent/_b den Roh-Aktiv-Wert (zustand-blind) → ein vorläufiger llm:chat-agB senkte /ergebnis (604k
+    # statt 691k) OHNE Confirm. vorläufig → hier absent → 0 → kein Abzug bis zum Confirm (over-tax-safe). Kegel-
+    # Felder sind ohnehin alle bestätigt (Gate in _feste_zahl). Der Sperr-Guard (_an_gesamt_sperrgrund) sieht die
+    # Roh-felder SEPARAT weiter (ein vorläufiges nicht-ring-fähiges Feld muss den Ring weiter sperren). Die store-
+    # basierte Instanz-Σ (est_mapping.instanzen) liest den store separat → nur_bestaetigt wird DURCHgefädelt
+    # (_gwg_sofortabzug_summe/_laufender_gewinn + vv/rente-Σ inline), sonst zeigte /stand die gwg-Instanz-Wirkung nicht.
+    if nur_bestaetigt and felder:
+        felder = {fid: ev for fid, ev in felder.items() if ev.get("zustand") == "bestaetigt"}
     if quantitaet == "abziehbarer_betrag":          # § 9 Entfernungspauschale
         try:
             import runner  # noqa: F401
@@ -562,8 +588,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # __n = weitere Objekte, je Instanz auf die Basis-feld_id normiert). Ohne store (Teil-Ring/Alt-
             # Aufrufer) nur die Basis aus f. Unvollständige Instanzen fängt der Guard VOR diesem Aufruf ab.
             if store is not None:
+                # Zwei-Signal-Filter (Instanz-Pfad, nur_bestaetigt=True): vorläufige Objekt-Instanz nie in die Σ.
+                # Defense-in-depth — der vv_instanz_offen-Guard (_an_gesamt_sperrgrund) sperrt index≥2-vorläufig schon
+                # VOR diesem Aufruf, die Basis liegt im Kegel-Meet — aber konsistent zum gwg-Σ (refactor-sicher).
+                # nur_bestaetigt=False (/stand) zeigt die vorläufige Wirkung im Range.
                 vv = sum(_vv_objekt(inst["felder"])
-                         for inst in EM.instanzen(store, bindung, "vv_objekt"))
+                         for inst in EM.instanzen(store, bindung, "vv_objekt")
+                         if not nur_bestaetigt or inst["zustand"] == "bestaetigt")
             else:
                 vv = _vv_objekt(f)
             g = {"gesamtfall": True, "veranlagungszeitraum": vz,
@@ -602,7 +633,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # einkuenfte_gewinn (§ 16 Abs. 1: Veräußerungs- + laufender Gewinn = dieselbe § 2-Einkunftsart). Absent → 0.
             vg_euro = _c("rentner_veraeusserungsgewinn") // 100
             netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}))
-            laufender_gewinn = _laufender_gewinn(f, store, bindung)   # § 15/§ 18 laufend (für § 35-Zähler, OHNE § 16-vg)
+            laufender_gewinn = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (für § 35-Zähler, OHNE § 16-vg)
             g["einkuenfte_gewinn"] = laufender_gewinn + netto_vg
             # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
             # Altersentlastungsbetrag (§24a S.1: Arbeitslohn BRUTTO + max(0, positive Summe der Nicht-§19-Einkünfte =
@@ -870,8 +901,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # Sperre fängt der Guard je Instanz VORHER (rentenfreibetrag_fixierung_offen); hier kommt nur der
             # rechenbare Fall an. Unvollständige Renten-Instanz sperrt der Guard (rente_instanz_offen).
             if store is not None:
+                # Zwei-Signal-Filter (Instanz-Pfad, nur_bestaetigt=True): vorläufige Renten-Instanz nie in die Σ.
+                # Defense-in-depth — rente_instanz_offen-Guard sperrt index≥2-vorläufig schon vorher, Basis im Kegel-
+                # Meet — konsistent zum gwg/vv-Σ. nur_bestaetigt=False (/stand) zeigt die vorläufige Wirkung im Range.
                 renten = sum(_rente_instanz(inst["felder"])
-                             for inst in EM.instanzen(store, bindung, "rente"))
+                             for inst in EM.instanzen(store, bindung, "rente")
+                             if not nur_bestaetigt or inst["zustand"] == "bestaetigt")
             else:
                 renten = _rente_instanz(f)
             # Person B (§ 26b, #4b): die § 22-Rente des Ehegatten in DIESELBE einkuenfte_sonstige-Summe
@@ -908,7 +943,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             vg_euro = _c("rentner_veraeusserungsgewinn") // 100
             netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag(
                 {"rentner_veraeusserungsgewinn": vg_euro}))
-            laufender_gewinn = _laufender_gewinn(f, store, bindung)   # § 15/§ 18 laufend (§ 35-Zähler, OHNE § 16-vg)
+            laufender_gewinn = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (§ 35-Zähler, OHNE § 16-vg)
             # § 24a Altersentlastungsbetrag im Rentner-Ring (b): Bemessung = positive Nicht-§19-Einkünfte = §§13-18-Gewinn
             # (laufender + § 16-vg-netto); LEIBRENTE § 22 Nr. 1 (renten) + Versorgungsbezüge § 19 Abs. 2 sind KEINE Bemessung
             # (§ 24a S. 2-Ausschlüsse). Kein § 19-Mini-Job-Arbeitslohn im rentner-Ring (MVP-Lücke, over-tax-safe → 0). MIT
@@ -1200,13 +1235,13 @@ def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: st
     """Frage-Reihenfolge-Gewichte aus dem verfügbaren Ring (Gesamt bevorzugt, sonst erster Teil)."""
     if cfg["gesamt_ring"]:
         rb = _ring_bindung(cfg, bindung)
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
         if bf is not None:
             return {b["feld_id"]: b["spanne_cent"]
                     for b in IV.intervall(felder, rb, bf, snapshot_id=sid)["beitraege"]}
     for _name, q, tfelder in cfg["teil_ringe"]:
         tb = {f: bindung[f] for f in tfelder if f in bindung}
-        bf = _bescheid_fn(q, vz, tb)
+        bf = _bescheid_fn(q, vz, tb, nur_bestaetigt=False)   # Estimate-Pfad (fragen-Gewichte)
         if bf is not None:
             return {b["feld_id"]: b["spanne_cent"]
                     for b in IV.intervall(felder, tb, bf, snapshot_id=sid)["beitraege"]}
@@ -1256,14 +1291,14 @@ def stand(fall_id: str) -> tuple[int, dict]:
         engine = "gesperrt"          # nicht-ring-fähiger Abzug/Einkunftsart -> kein Ring (K2)
     elif cfg["gesamt_ring"]:
         rb = _ring_bindung(cfg, bindung)
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
         if bf is not None:
             gesamt_iv = IV.intervall(felder, rb, bf, snapshot_id=sid)["intervall"]
             engine = "catala"
     else:
         for name, q, tfelder in cfg["teil_ringe"]:
             tb = {f: bindung[f] for f in tfelder if f in bindung}
-            bf = _bescheid_fn(q, vz, tb, felder)
+            bf = _bescheid_fn(q, vz, tb, felder, nur_bestaetigt=False)   # Estimate-Pfad (/stand-Teil-Range)
             if bf is not None:
                 tiv = IV.intervall(felder, tb, bf, snapshot_id=sid)["intervall"]
                 teil.append({"familie": name, "quantitaet": q, "intervall": tiv})
@@ -1301,11 +1336,18 @@ def event(fall_id: str, body: dict) -> tuple[int, dict]:
     schreiber = body.get("schreiber")
     if not isinstance(schreiber, str) or not schreiber:
         raise ApiError(400, "schreiber ist Pflicht")
+    # dev-2-Kontrakt: der Katalog-Check gilt für Vorschlags-Schreiber (llm:/berechnet:/import:beleg/kontoauszug) —
+    # ein Client-gesetzter llm:-Schreiber über /event darf die human-only-Felder NICHT umgehen. mensch (ui:/import:
+    # vorjahr/import:elster) ist nicht betroffen → kein Katalog (Confirm braucht keins).
+    _vorschlag = isinstance(schreiber, str) and (
+        schreiber.startswith(("llm:", "berechnet:", "import:beleg", "import:kontoauszug")))
     try:
         ev = ST.append_event(
             store, feld_id=fid, wert=body.get("wert"), zustand=zustand, herkunft=herkunft,
             schreiber=schreiber, signal=body.get("signal"), ersetzt=body.get("ersetzt"),
-            ts=body.get("ts"))
+            ts=body.get("ts"),
+            # GLOBALER Katalog (TR.lade_bindung()), nicht per-Scheibe: die Autorisierung hängt am Feld, dev-2-Kontrakt.
+            katalog=(ST.lade_katalog(TR.lade_bindung()) if _vorschlag else None))
     except ValueError as e:
         # fail-closed-Abweisung des Stores -> 422 (nicht 500): die Haut hat korrekt weitergereicht.
         raise ApiError(422, str(e))
@@ -1442,7 +1484,8 @@ def entfernung(fall_id: str, body: dict) -> tuple[int, dict]:
             herkunft={"herkunft": "berechnet", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
             schreiber="berechnet:maps",
             signal={"signal_1": {"typ": "maps", "dienst": "openrouteservice"}, "signal_2": None},
-            ersetzt=(aktiv_ev["event_id"] if aktiv_ev else None))
+            ersetzt=(aktiv_ev["event_id"] if aktiv_ev else None),
+            katalog=ST.lade_katalog(TR.lade_bindung()))  # berechnet:-Schreiber → GLOBALER Katalog-Check (dev-2-Kontrakt)
     except ValueError as e:
         raise ApiError(422, str(e))
     speichere_fall(fall_id, store)
@@ -1502,6 +1545,57 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
         return 501, KONTOAUSZUG_PDF_501
     else:
         raise ApiError(400, "format muss csv, json oder pdf sein")
-    n = KW.uebernehme_kontoauszug(store, tx, bindung)   # llm_klassifikator=None → det-only, LLM gated
+    # katalog GLOBAL (dev-2-Kontrakt): Enforcement decoupled vom per-Scheibe-Targeting. llm_klassifikator=None → det-only.
+    n = KW.uebernehme_kontoauszug(store, tx, bindung, katalog=ST.lade_katalog(TR.lade_bindung()))
     speichere_fall(fall_id, store)
     return 200, {"uebernommen": n, "transaktionen": len(tx)}
+
+
+def chat(fall_id: str, body: dict) -> tuple[int, dict]:
+    """Chat-Berater (K1): der Nutzer beschreibt seine Situation in Freitext → das LLM SCHLÄGT Feld-Werte VOR →
+    jeder Vorschlag wird als VORLÄUFIGES Event geschrieben (schreiber='llm:chat'). Store-Auflage A + der Katalog-
+    Check (katalog=lade_katalog) erzwingen strukturell: herkunft=llm_vorschlag, zustand=vorlaeufig, signal_2=null
+    (nie in die Summe ohne menschlichen Hold-Confirm) UND nur Felder die der Katalog als LLM-vorschlagbar führt
+    (identitäts-/rechtskritische Felder lehnt der Check ab). CAP-GATED: kein LLM-Key/Provider → 501 + Erklär-
+    Vertrag ($0, kein Mock-Call). Ein einzelner abgelehnter Vorschlag (Katalog/Auflage A) überspringt still —
+    der Rest bleibt gültig, nie ein Crash, nie ein Fake-Wert. Die KI setzt NIE einen Wert."""
+    store = lade_fall(fall_id)
+    bindung = _scheibe_bindung(store)
+    freitext = (body.get("text") or "").strip()
+    # ZWEI Kataloge (dev-2-Kontrakt, msg 4365 — NICHT verwechseln):
+    #  (1) PROMPT-Katalog (Haut-Zone): die LLM-vorschlagbaren Felder DIESER Scheibe als Metadaten-LISTE
+    #      [{feld_id, fragetext_laie, typ, bereich, enum_werte}] — nur Kontext für die KI, welche Felder sie
+    #      überhaupt vorschlagen darf. Wird an llm_client.vorschlaege übergeben (dessen _prompt eine Liste will).
+    #  (2) CHECK-Katalog (Store-Enforcement): GLOBAL via TR.lade_bindung(), Form {typ→frozenset(feld_id)} — die
+    #      un-bypassbare Untergrenze in append_event. GLOBAL, NICHT per-Scheibe: die Autorisierung eines Felds
+    #      hängt an seinem `vorschlagbar_von`, nicht an der offenen Scheibe (ein per-Scheibe-Check-Katalog würde
+    #      Vorschlags-Schreiber auf global-autorisierte Nicht-Scheibe-Felder fälschlich abweisen — fail-OPEN wäre
+    #      es NIE, aber falsch-abweisen bricht legitime beleg/kontoauszug-Writes).
+    prompt_katalog = [
+        {"feld_id": fid, "fragetext_laie": b.get("fragetext_laie", ""), "typ": b.get("typ"),
+         "bereich": b.get("bereich"), "enum_werte": b.get("enum_werte")}
+        for fid, b in bindung.items() if "llm" in (b.get("vorschlagbar_von") or [])]
+    check_katalog = ST.lade_katalog(TR.lade_bindung())
+    try:
+        import llm_client
+        vorschlaege = llm_client.vorschlaege(freitext, prompt_katalog)
+    except Exception:                                # LlmNichtVerfuegbar / Import → reine Erklär-Grenze (kein Key, $0)
+        return 501, CHAT_501
+    geschrieben, abgelehnt = [], []
+    for v in vorschlaege:
+        try:
+            ev = ST.append_event(
+                store, feld_id=v["feld_id"], wert=v["wert"], zustand="vorlaeufig",
+                herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                schreiber="llm:chat",
+                signal={"signal_1": {"typ": "llm", "begruendung": v.get("begruendung", "")}, "signal_2": None},
+                katalog=check_katalog)               # dev-2s GLOBALER Katalog-Check lehnt human-only-Felder fail-closed ab
+            geschrieben.append({"feld_id": v["feld_id"], "event_id": ev["event_id"], "wert": v["wert"]})
+        except (ValueError, KeyError):
+            abgelehnt.append(v.get("feld_id"))       # Katalog/Auflage-A-Abweisung → still überspringen, Rest gilt
+    speichere_fall(fall_id, store)
+    _abg = [a for a in abgelehnt if a]
+    if _abg:                                         # Security-Observability (feld_ids, KEIN Wert/Freitext = PII-frei):
+        sys.stderr.write(f"[haut.chat] LLM-Vorschläge außerhalb Katalog abgelehnt: {sorted(set(_abg))}\n")
+    return 200, {"vorschlaege": geschrieben, "abgelehnt": _abg,
+                 "hinweis": "Vorschläge erfasst — bitte im Fluss neben jedem Wert bestätigen (die KI setzt nichts)."}

@@ -146,10 +146,14 @@ def extrahiere(text: str, bindung: dict, *, confidence_map: dict | None = None) 
     return kandidaten
 
 
-def schreibe_kandidaten(store: dict, kandidaten: list, *, beleg_ref: str, ts: str | None = None) -> list:
+def schreibe_kandidaten(store: dict, kandidaten: list, *, beleg_ref: str, bindung: dict,
+                        ts: str | None = None) -> list:
     """Schreibt je Kandidat ein VORLAEUFIGES Event (herkunft=beleg_import, schreiber=import:beleg).
     signal_1 = Beleg-Herkunfts-Objekt {typ, ref, confidence, roh_text}; signal_2=null (der Store-Guard
-    erzwingt das ohnehin). Überschreiben eines aktiven Felds via ersetzt liegt beim Aufrufer."""
+    erzwingt das ohnehin). Überschreiben eines aktiven Felds via ersetzt liegt beim Aufrufer.
+    `bindung` = für den Feld-Katalog-Check (K1): ein import:beleg-Schreiber darf nur beleg-freigegebene
+    Felder setzen (store.lade_katalog); ein Beleg für ein human-only-Feld fällt fail-closed."""
+    katalog = ST.lade_katalog(bindung)
     events = []
     for k in kandidaten:
         sig1 = {"typ": "beleg", "ref": f"{beleg_ref}#{k.get('beleg_typ', 'beleg')}:{k.get('anker', '')}",
@@ -158,7 +162,7 @@ def schreibe_kandidaten(store: dict, kandidaten: list, *, beleg_ref: str, ts: st
                              herkunft={"herkunft": "beleg_import", "pruef_tiefe": "ungeprueft",
                                        "haftung": "nutzer"},
                              schreiber="import:beleg",
-                             signal={"signal_1": sig1, "signal_2": None}, ts=ts)
+                             signal={"signal_1": sig1, "signal_2": None}, ts=ts, katalog=katalog)
         events.append(ev)
     return events
 

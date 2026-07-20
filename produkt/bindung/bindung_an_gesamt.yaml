@@ -11,6 +11,7 @@ scheibe: "Gesamtsteuer-Ring Arbeitnehmer: bruttoarbeitslohn (§19) + veranlagung
 bindungen:
   # ========================= Bruttoarbeitslohn (§ 19) =========================
   - feld_id: bruttoarbeitslohn
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: bruttoarbeitslohn}
     typ: cent
     einheit: EUR
@@ -198,6 +199,7 @@ bindungen:
   # (§ 15 Abs. 2 / § 18 Abs. 1, NICHT § 13-LuF → dev-1s luf_euer_offen-Guard). Kz=null VORERST (Anlage-EÜR-Kz
   # = eigene Kz-Review-Runde, wie Anlage-G/S/L); der Gewinn-Kz läuft über gewinn_betriebsart (Klasse-f).
   - feld_id: betriebseinnahmen
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p4_3_gewinn, signatur_slot: betriebseinnahmen}
     typ: cent
     einheit: EUR
@@ -215,6 +217,7 @@ bindungen:
       zitatanker: "Überschuss der Betriebseinnahmen über die Betriebsausgaben"
       datei: "sources/gesetze-im-internet/estg_p4_2026-07-14.txt"
   - feld_id: sonstige_betriebsausgaben
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p4_3_gewinn, signatur_slot: betriebsausgaben}
     slot_beitrag: summand
     typ: cent
@@ -410,6 +413,7 @@ bindungen:
       zitatanker: "tatsächlich zu zahlende Gewerbesteuer"
       datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
   - feld_id: gewst_messbetrag
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_messbetrag}
     typ: cent
     einheit: EUR
@@ -456,6 +460,7 @@ bindungen:
   # est_mapping-Klasse Person-Multiplikation: _partner -> Anlage-N-INSTANZ B (dieselben Kz wie Person A,
   # person_b-Bucket), KEINE neuen Kz. EP_partner (Person-B-Pendler-WK) = dokumentierter Folge-Nachtrag.
   - feld_id: bruttoarbeitslohn_partner
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: bruttoarbeitslohn_partner}
     typ: cent
     einheit: EUR
@@ -530,6 +535,7 @@ bindungen:
   # Slot-Kontrakt mit dev-1 fixiert: er liest die feld_ids DIREKT als Person-B-Inputs (KrankenPflegeVorsorge
   # bzw. §24a-Kohorte); kein Präfix-Mismatch. Klasse-g Person-Multiplikation, null-Kz (Reuse Person-A-Kz).
   - feld_id: basis_kv_pv_partner
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: basis_kv_pv_partner}
     typ: cent
     einheit: EUR

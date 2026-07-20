@@ -7,6 +7,7 @@ scheibe: "Kapital §20 (p20_6/p20_9) + V+V §21 (p21/p21_2) + Familie (p24b/p31/
 bindungen:
   # ========================= Kapital §20 — Sparer-Pauschbetrag (p20_9) =========================
   - feld_id: kap_kapitalertraege
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p20_9_sparer_pauschbetrag, signatur_slot: kapitalertraege}
     typ: cent
     einheit: EUR
@@ -113,6 +114,7 @@ bindungen:
   # Ehegatte-Kz) → est_mapping Klasse g mappt _partner auf DENSELBEN Person-A-Kz im person_b-Bucket, kein
   # neuer Kz. K2-Guard partner_check: nur bei veranlagung==zusammen. Accessor summiert A+B (dev-1-Nachtrag).
   - feld_id: kap_kapitalertraege_partner
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_kapitalertraege_partner}
     typ: cent
     einheit: EUR

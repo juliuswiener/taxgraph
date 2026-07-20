@@ -67,10 +67,13 @@ def _laie(fld, w):
             "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": f"ok@{fld}"}}
 
 
-def _llm(fld, w):
+def _vorl(fld, w):
+    # Generischer VORLÄUFIG-Fixture-Writer (ui:laie): ein Nutzer-Entwurf ohne signal_2 (noch nicht bestätigt).
+    # NICHT llm:chat — der K1-Feld-Katalog lässt llm: nur suggestible Felder setzen; diese Fixtures schreiben
+    # nicht-suggestible Kegel-Felder (ep_arbeitstage) → ui:laie ist der katalog-freie generische vorläufig-Kanal.
     return {"feld_id": fld, "wert": w, "zustand": "vorlaeufig",
-            "herkunft": {"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
-            "schreiber": "llm:chat", "signal": {"signal_1": None, "signal_2": None}}
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": None}}
 
 
 @pytest.fixture
@@ -361,24 +364,25 @@ def test_durchstich_http(base):
     # Fragetexte kommen aus der Bindung (laienverständlich, kein §)
     assert all("§" not in (q["fragetext_laie"] or "") for q in b["fragen"])
 
-    # 2) 3x laie-bestätigt + 1x llm-VORLÄUFIG
+    # 2) 3x laie-bestätigt + 1x laie-VORLÄUFIG (Nutzer-Entwurf; ep_arbeitstage ist human-only,
+    #    kein KI/Beleg-Kanal darf es setzen — K1-Feld-Katalog, daher ui:laie-vorläufig statt llm:chat)
     for fld, w in [("ep_entfernung_km", 30), ("ep_eigenes_kfz", True), ("ep_oepnv_kosten", 0)]:
         st, b = _req(base, "POST", f"/fall/{fid}/event", _laie(fld, w))
         assert st == 201
         _val("event", b)
-    st, llm = _req(base, "POST", f"/fall/{fid}/event", _llm("ep_arbeitstage", 220))
+    st, vorl = _req(base, "POST", f"/fall/{fid}/event", _vorl("ep_arbeitstage", 220))
     assert st == 201
-    llm_ev = llm["event_id"]
+    llm_ev = vorl["event_id"]
 
     # nur das offene Feld bleibt in der Queue
     st, b = _req(base, "GET", f"/fall/{fid}/fragen")
     assert [q["feld_id"] for q in b["fragen"]] == ["ep_arbeitstage"]
 
-    # 3) stand: arbeitstage schimmernd (KI), Spanne offen (nur mit Engine numerisch)
+    # 3) stand: arbeitstage vorläufig (Nutzer-Entwurf), Spanne offen (nur mit Engine numerisch)
     st, stand_a = _req(base, "GET", f"/fall/{fid}/stand")
     assert st == 200
     _val("stand", stand_a)
-    assert stand_a["felder"]["ep_arbeitstage"]["herkunft_badge"] == "llm_vorschlag"   # KI-Vorschlag
+    assert stand_a["felder"]["ep_arbeitstage"]["herkunft_badge"] == "laie"   # selbst, noch vorläufig
     assert stand_a["felder"]["ep_entfernung_km"]["herkunft_badge"] == "laie"          # selbst bestätigt
     spanne_a = None
     if catala:
@@ -540,12 +544,12 @@ def _store_append(fid, feld_id, wert, zustand="bestaetigt"):
     """Setzt ein Feld direkt im Fall-Store (simuliert Erfassung außerhalb des an_gesamt-Interviews) —
     für den Guard-Negativtest. Gleicher Prozess/FAELLE wie der Server."""
     s = API.lade_fall(fid)
-    herk = ({"herkunft": "llm_vorschlag"} if zustand == "vorlaeufig" else {"herkunft": "laie"})
-    herk.update({"pruef_tiefe": "ungeprueft", "haftung": "nutzer"})
-    schreiber = "llm:chat" if zustand == "vorlaeufig" else "ui:laie"
+    # ui:laie für BEIDE Zustände: der K1-Feld-Katalog lässt llm:chat nur suggestible Felder setzen;
+    # am_anschaffungskosten (Guard-Trigger) ist human-only → generischer vorläufig-Kanal = ui:laie (kein Katalog).
+    herk = {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}
     sig = {"signal_1": None, "signal_2": None if zustand == "vorlaeufig" else "ok"}
     ST.append_event(s, feld_id=feld_id, wert=wert, zustand=zustand, herkunft=herk,
-                    schreiber=schreiber, signal=sig)
+                    schreiber="ui:laie", signal=sig)
     API.speichere_fall(fid, s)
 
 

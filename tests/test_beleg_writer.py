@@ -113,7 +113,7 @@ def test_neg_handwerker_ohne_split_material_luecke(bindung):
 def test_schreibe_spende_vorlaeufig(bindung):
     s = ST.leerer_store(2025, fall_id="spende-test")
     kand = BW.extrahiere(SPENDE, bindung)
-    events = BW.schreibe_kandidaten(s, kand, beleg_ref="beleg:muster_zuwendung", ts=TS)
+    events = BW.schreibe_kandidaten(s, kand, beleg_ref="beleg:muster_zuwendung", bindung=bindung, ts=TS)
     assert len(events) == 1
     ev = events[0]
     assert ev["feld_id"] == "spenden_betrag" and ev["zustand"] == "vorlaeufig"
@@ -156,7 +156,7 @@ def test_neg_ambig_rechnung_fail_closed(bindung):
 def test_schreibe_vorlaeufig_beleg_import(bindung):
     s = ST.leerer_store(2025, fall_id="beleg-test")
     kand = BW.extrahiere(MUSTER, bindung)
-    events = BW.schreibe_kandidaten(s, kand, beleg_ref="beleg:muster_lstb_2025", ts=TS)
+    events = BW.schreibe_kandidaten(s, kand, beleg_ref="beleg:muster_lstb_2025", bindung=bindung, ts=TS)
     assert len(events) == 3
     for ev in events:
         assert ev["zustand"] == "vorlaeufig"
@@ -176,7 +176,7 @@ def test_schreibe_vorlaeufig_beleg_import(bindung):
 def test_confidence_bleibt_vorlaeufig(bindung):
     s = ST.leerer_store(2025, fall_id="beleg-conf")
     kand = BW.extrahiere(MUSTER, bindung, confidence_map={"3": 0.99, "22": 0.20, "23": 0.55})
-    events = BW.schreibe_kandidaten(s, kand, beleg_ref="beleg:x", ts=TS)
+    events = BW.schreibe_kandidaten(s, kand, beleg_ref="beleg:x", bindung=bindung, ts=TS)
     for ev in events:                                       # egal wie hoch/niedrig die Confidence
         assert ev["zustand"] == "vorlaeufig"                # NIE Auto-Bestätigung (K2)
     conf = {ev["feld_id"]: ev["signal"]["signal_1"]["confidence"] for ev in events}

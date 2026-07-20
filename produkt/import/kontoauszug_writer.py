@@ -148,12 +148,19 @@ def llm_klassifikator_factory(client, role, *, fixture_id: str | None = None):
 
 
 def uebernehme_kontoauszug(store: dict, transaktionen: list[dict], bindung: dict, *,
-                           llm_klassifikator=None, ts: str | None = None) -> int:
+                           llm_klassifikator=None, ts: str | None = None,
+                           katalog: dict | None = None) -> int:
     """Je AUSGABEN-Transaktion (betrag < 0): Kategorie deterministisch, sonst LLM-Fallback (falls injiziert),
     sonst kein Vorschlag. Kategorie mit existierendem Ziel-Feld → ein vorlaeufiges Event (Vorschlag). Gibt
     die Anzahl geschriebener Vorschläge zurück. Kein Überschreiben aktiver Events; keine Aggregation (je
     Transaktion ein eigenständiger Vorschlag — bei mehreren derselben Kategorie gewinnt der Store-One-Active-
-    Guard: nur die erste, weitere brauchen Nutzer-Merge = benannter Folge-Nachtrag Multi-Transaktion)."""
+    Guard: nur die erste, weitere brauchen Nutzer-Merge = benannter Folge-Nachtrag Multi-Transaktion).
+
+    `katalog` (optional) = der GLOBALE Feld-Katalog (dev-2-Kontrakt msg 4365: die Vorschlags-Autorisierung
+    hängt am Feld, nicht an der Scheibe). Wird er nicht übergeben, fällt der Check auf den per-Scheibe-Katalog
+    aus `bindung` zurück (rückwärts-kompatibel). Das TARGETING (feld in bindung, unten) bleibt bewusst
+    per-Scheibe — nur die ENFORCEMENT-Untergrenze ist global (decoupled, defense-in-depth)."""
+    katalog = katalog if katalog is not None else ST.lade_katalog(bindung)   # K1: import:kontoauszug nur kontoauszug-Felder
     aktiv = set(ST._aktives(store))
     n = 0
     for tx in transaktionen:
@@ -173,7 +180,7 @@ def uebernehme_kontoauszug(store: dict, transaktionen: list[dict], bindung: dict
         ST.append_event(store, feld_id=feld, wert=abs(betrag), zustand="vorlaeufig",
                         herkunft={"herkunft": "kontoauszug", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                         schreiber="import:kontoauszug",
-                        signal={"signal_1": sig1, "signal_2": None}, ts=ts)
+                        signal={"signal_1": sig1, "signal_2": None}, ts=ts, katalog=katalog)
         aktiv.add(feld)
         n += 1
     return n

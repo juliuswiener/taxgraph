@@ -44,10 +44,12 @@ def _laie_bestaetigt(s, feld_id, wert):
                     schreiber="ui:laie", signal={"signal_1": None, "signal_2": f"ok@{feld_id}"}, ts=TS)
 
 
-def _llm_vorschlag(s, feld_id, wert):
+def _vorlaeufig(s, feld_id, wert):
+    # Generischer VORLÄUFIG-Fixture-Writer (ui:laie-Entwurf, kein signal_2): der K1-Feld-Katalog lässt
+    # llm:chat nur suggestible Felder setzen; dieser Test schreibt ep_arbeitstage (human-only) → ui:laie.
     return ST.append_event(s, feld_id=feld_id, wert=wert, zustand="vorlaeufig",
-                           herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
-                           schreiber="llm:chat", signal={"signal_1": None, "signal_2": None}, ts=TS)
+                           herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                           schreiber="ui:laie", signal={"signal_1": None, "signal_2": None}, ts=TS)
 
 
 def _catala_bescheid_fn(ep_bindung):
@@ -84,11 +86,11 @@ def test_paket_a_end_to_end(ep_bindung):
     fragen = TR.naechste_fragen(s, ep_bindung)
     assert set(fragen) == set(EP_FELDER), f"Interview-Queue unvollständig: {fragen}"
 
-    # -- 2) Antworten: 3x laie-bestätigt, arbeitstage llm-VORLÄUFIG --
+    # -- 2) Antworten: 3x laie-bestätigt, arbeitstage laie-VORLÄUFIG (Entwurf, noch nicht bestätigt) --
     _laie_bestaetigt(s, "ep_entfernung_km", 30)
     _laie_bestaetigt(s, "ep_eigenes_kfz", True)
     _laie_bestaetigt(s, "ep_oepnv_kosten", 0)
-    llm_ev = _llm_vorschlag(s, "ep_arbeitstage", 220)
+    llm_ev = _vorlaeufig(s, "ep_arbeitstage", 220)
 
     # arbeitstage bleibt in der Queue (vorlaeufig = noch offen), die 3 bestätigten nicht mehr
     fragen2 = TR.naechste_fragen(s, ep_bindung)

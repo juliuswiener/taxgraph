@@ -24,6 +24,7 @@ bindungen:
       zitatanker: "jeden Arbeitstag"
       datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
   - feld_id: ep_entfernung_km
+    vorschlagbar_von: [maps]
     quelle: {regel_id: p09_entfernungspauschale, signatur_slot: entfernung_km_roh}
     typ: int
     einheit: km
@@ -40,6 +41,7 @@ bindungen:
       zitatanker: "0,30 Euro"
       datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
   - feld_id: ep_oepnv_kosten
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p09_entfernungspauschale, signatur_slot: oepnv_kosten_jahr}
     typ: cent
     einheit: EUR
@@ -444,6 +446,7 @@ bindungen:
 
   # ========================= VOR — p10_1_2_altersvorsorge (Summen-Konvention) =========================
   - feld_id: vor_an_anteil_rv
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p10_1_2_altersvorsorge, signatur_slot: gesamtbeitraege_inkl_ag}
     typ: cent
     slot_beitrag: summand
@@ -461,6 +464,7 @@ bindungen:
       zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: vor_ag_anteil_rv
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p10_1_2_altersvorsorge, signatur_slot: gesamtbeitraege_inkl_ag}
     typ: cent
     slot_beitrag: summand
@@ -478,6 +482,7 @@ bindungen:
       zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: vor_rv_ausserhalb_lstb
+    vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p10_1_2_altersvorsorge, signatur_slot: gesamtbeitraege_inkl_ag}
     typ: cent
     slot_beitrag: summand
@@ -532,6 +537,7 @@ bindungen:
   # KrankenPflegeVorsorge-Inputs; KEIN Präfix (verhindert Read-Key-Drift). null-Kz-MVP (b). mit_anspruch
   # in dev-1s Pflicht-Kegel (absent->false->HB2800 = Under-tax für Zuschuss-Empfänger).
   - feld_id: basis_kv_pv
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: basis_kv_pv}
     typ: cent
     einheit: EUR
@@ -585,6 +591,7 @@ bindungen:
 
   # ========================= GWG — p6_2_gwg_sofortabzug =========================
   - feld_id: gwg_anschaffungskosten_netto
+    vorschlagbar_von: [beleg]
     instanz_gruppe: gwg
     quelle: {regel_id: p6_2_gwg_sofortabzug, signatur_slot: anschaffungskosten_netto}
     typ: cent

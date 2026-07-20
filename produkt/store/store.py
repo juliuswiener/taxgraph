@@ -116,9 +116,39 @@ def _aktives(store: dict) -> dict:
     return aktiv
 
 
+_VORSCHLAG_TYP = (("llm:", "llm"), ("import:beleg", "beleg"),
+                  ("import:kontoauszug", "kontoauszug"), ("berechnet:", "maps"))
+# ⚠ `berechnet:`-Präfix (nicht nur berechnet:maps): fail-safe für künftige berechnet:X-Writer — jeder
+# berechnet:-Vorschlag ist katalog-restringiert (aktuell nur berechnet:maps=Entfernung existiert; ein neuer
+# berechnet-Dienst würde gegen den maps-Katalog geprüft = fail-closed bis ein eigener Typ-Eintrag ergänzt wird,
+# NIE exempt-Bypass). Instructor-Completeness-Note 2026-07-20.
+
+
+def _vorschlag_typ(schreiber: str) -> str | None:
+    """Vorschlags-Schreiber-Typ (llm|beleg|kontoauszug|maps) für den Feld-Katalog-Check, sonst None.
+    import:vorjahr/mensch/import:elster → None (nicht Katalog-restringiert: eigener bestätigter Wert bzw.
+    echter Kanal, kein KI/Dienst-Vorschlag über fremde Felder)."""
+    for praefix, typ in _VORSCHLAG_TYP:
+        if schreiber.startswith(praefix):
+            return typ
+    return None
+
+
+def lade_katalog(bindung: dict) -> dict:
+    """{schreiber_typ -> frozenset(feld_id)} aus dem per-Feld `vorschlagbar_von` der Bindung. DEFAULT
+    human-only (fail-closed): ein Feld ohne `vorschlagbar_von` ist in KEINER Menge → kein Vorschlags-Schreiber
+    darf es setzen. bindung = DATEN, dieser Store-Check = ENFORCEMENT."""
+    katalog = {"llm": set(), "beleg": set(), "kontoauszug": set(), "maps": set()}
+    for fid, b in bindung.items():
+        for typ in (b.get("vorschlagbar_von") or ()):
+            if typ in katalog:
+                katalog[typ].add(fid)
+    return {k: frozenset(v) for k, v in katalog.items()}
+
+
 def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dict,
                  schreiber: str, signal: dict | None = None, ersetzt: str | None = None,
-                 ts: str | None = None) -> dict:
+                 ts: str | None = None, katalog: dict | None = None) -> dict:
     """Baut EIN Event, prüft fail-closed (Auflagen A+B), setzt den content-adressierten event_id,
     hängt es an. Gibt das Event zurück. KEINE zweite Schreib-Implementierung."""
     signal = signal or {"signal_1": None, "signal_2": None}
@@ -170,6 +200,21 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
             raise ValueError(
                 "fail-closed (A): berechnet:-Schreiber muss herkunft=berechnet, zustand=vorlaeufig, "
                 "signal_2=null tragen — ein berechneter/abgeleiteter Vorschlag bestätigt nie direkt.")
+
+    # Auflage K1 (Feld-Katalog): ein Vorschlags-Schreiber (llm/beleg/kontoauszug/maps) darf NUR ein Feld
+    # setzen, das für seinen Typ freigegeben ist (bindung.vorschlagbar_von) — DEFAULT human-only, fail-closed.
+    # Verhindert dass KI/externer Dienst ein Wahlrecht/eine Abwesenheits-Erklärung/Identität/Allokation
+    # VORSCHLÄGT (der vorlaeufig-Zwang oben schützt die Steuer-Summe; dieser Katalog schützt die FRAGE selbst).
+    # import:vorjahr EXEMPT (eigener bestätigter Vorjahres-Wert, kein Fremd-Feld-Vorschlag).
+    typ = _vorschlag_typ(schreiber)
+    if typ is not None:
+        if katalog is None:
+            raise ValueError(
+                f"fail-closed (Katalog): Vorschlags-Schreiber {schreiber} braucht katalog=lade_katalog(bindung).")
+        if feld_id not in katalog.get(typ, frozenset()):
+            raise ValueError(
+                f"fail-closed (Katalog): {schreiber} darf {feld_id} nicht vorschlagen "
+                f"(human-only oder nicht für Typ '{typ}' freigegeben).")
 
     # Typ-Zwang: bestaetigt braucht signal_2.
     if zustand == "bestaetigt" and not (signal.get("signal_2") or "").strip():

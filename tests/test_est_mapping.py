@@ -37,10 +37,11 @@ def bindung():
 
 
 def _b(s, feld_id, wert, zustand="bestaetigt"):
+    # generischer Fixture-Writer: ein Nutzer-eingegebener Wert (ui:laie), bestätigt ODER vorläufig (1. Signal).
+    # NICHT llm:chat — ein vorläufiger Wert ≠ ein LLM-Vorschlag (K1 Feld-Katalog: llm:/import:*/berechnet: sind
+    # katalog-restringiert; ui:laie ist der Mensch → kein Katalog-Check). Deckt beliebige Felder generisch.
     sig = {"signal_1": None, "signal_2": f"ok@{feld_id}"} if zustand == "bestaetigt" else {"signal_1": None, "signal_2": None}
-    herk = H if zustand == "bestaetigt" else {"herkunft": "llm_vorschlag", **{k: v for k, v in H.items() if k != "herkunft"}}
-    schr = "ui:laie" if zustand == "bestaetigt" else "llm:chat"
-    ST.append_event(s, feld_id=feld_id, wert=wert, zustand=zustand, herkunft=herk, schreiber=schr, signal=sig, ts=TS)
+    ST.append_event(s, feld_id=feld_id, wert=wert, zustand=zustand, herkunft=H, schreiber="ui:laie", signal=sig, ts=TS)
 
 
 def _voller_store():

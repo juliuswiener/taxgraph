@@ -42,6 +42,15 @@ def _bindung_typen():
     return typen
 
 
+def _katalog():
+    """Feld-Katalog (K1) aus der echten Bindung — für die katalog-pflichtigen Vorschlags-Schreiber-Writes."""
+    b = {}
+    for f in glob.glob(os.path.join(BIND_DIR, "bindung_*.yaml")):
+        for e in (yaml.safe_load(open(f)).get("bindungen") or []):
+            b[e["feld_id"]] = e
+    return ST.lade_katalog(b)
+
+
 def _typ_ok(wert, typ, enum_werte) -> bool:
     if typ in ("cent", "int"):
         return isinstance(wert, int) and not isinstance(wert, bool)
@@ -64,9 +73,10 @@ def sample():
                     herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                     schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok@ep_arbeitstage"},
                     ts=TS)
-    ST.append_event(s, feld_id="ep_entfernung_km", wert=30, zustand="vorlaeufig",
+    ST.append_event(s, feld_id="agb_aufwendungen", wert=120000, zustand="vorlaeufig",
                     herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
-                    schreiber="llm:chat", signal={"signal_1": None, "signal_2": None}, ts=TS)
+                    schreiber="llm:chat", signal={"signal_1": None, "signal_2": None}, ts=TS,
+                    katalog=_katalog())   # K1: agb_aufwendungen ist llm-suggestible (Feld-Katalog); events[1]=llm-Event
     ST.append_event(s, feld_id="vor_an_anteil_rv", wert=3500000, zustand="bestaetigt",
                     herkunft={"herkunft": "beleg_import", "pruef_tiefe": "plausibilisiert", "haftung": "nutzer"},
                     schreiber="import:elster", signal={"signal_1": None, "signal_2": "lstb_z23"}, ts=TS)
@@ -170,7 +180,8 @@ def test_A_berechnet_schreiber_vorlaeufig_ok():
     ev = ST.append_event(s, feld_id="ep_entfernung_km", wert=30, zustand="vorlaeufig",
                          herkunft={"herkunft": "berechnet", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                          schreiber="berechnet:maps",
-                         signal={"signal_1": {"typ": "maps", "dienst": "openrouteservice"}, "signal_2": None}, ts=TS)
+                         signal={"signal_1": {"typ": "maps", "dienst": "openrouteservice"}, "signal_2": None},
+                         ts=TS, katalog=_katalog())
     assert ev["zustand"] == "vorlaeufig" and ev["herkunft"]["herkunft"] == "berechnet"
 
 

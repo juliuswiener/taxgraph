@@ -257,17 +257,34 @@ async function bestaetigen(kiFeld) {
   await refresh();
 }
 
-// --- Dim 5: Chat als Berater daneben — erklärt, setzt NIE Werte (KI-Sperre 501 fest) ---
+// --- Dim 5: Chat als Berater daneben — die KI SCHLÄGT VOR (vorläufig), setzt NIE einen Wert.
+//     Vorschläge erscheinen im Fluss mit ✦-Badge + Hold-Confirm (Zwei-Signal). Kein Key -> 501-Erklär-Grenze. ---
 async function oeffneChat() {
+  $("chat-body").innerHTML = `<p class="chat-erklaer">Beschreib deine Situation — die KI <b>schlägt Werte vor</b>, du bestätigst jeden selbst (die KI setzt <b>nie</b> einen Wert). <span class="chat-grenze">Du entscheidest.</span></p>`;
+  const t = $("chat-text"); if (t) t.value = "";
+  $("chat-overlay").hidden = false;
+}
+
+async function chatSenden() {
+  const t = $("chat-text"); const freitext = (t && t.value || "").trim();
+  if (!freitext) return;
   const body = $("chat-body");
-  const r = await jpost(`/fall/${FALL}/chat`, { text: AKTUELL ? AKTUELL.feld_id : "" });
+  body.innerHTML = `<p class="chat-erklaer">Die KI liest deine Beschreibung …</p>`;
+  const r = await jpost(`/fall/${FALL}/chat`, { text: freitext });
   if (r.status === 501) {
     body.innerHTML = `<p class="chat-erklaer">Die KI erklärt und verlinkt Paragraph &amp; Beleg — aber sie setzt <b>nie</b> selbst einen Wert. <span class="chat-grenze">Du entscheidest.</span></p>`
-      + `<p class="chat-vertrag">${(r.body && r.body.vertrag) ? r.body.vertrag : "Freitext-Erklärung folgt in einer späteren Stufe."}</p>`;
+      + `<p class="chat-vertrag">${(r.body && r.body.vertrag) ? r.body.vertrag : "Der KI-Kanal ist noch nicht verbunden."}</p>`;
+  } else if (r.status === 200 && r.body) {
+    const n = (r.body.vorschlaege || []).length;
+    if (n) {
+      body.innerHTML = `<p class="chat-erklaer">Die KI hat <b>${n} Vorschlag${n === 1 ? "" : "e"}</b> gemacht — sie erscheinen im Fluss mit dem <span class="chat-grenze">✦-Abzeichen</span>. Bitte bestätige jeden selbst (halten zum Bestätigen).</p>`;
+      await refresh();   // die vorläufigen KI-Vorschläge im Fluss zeigen (Hold-Confirm = Zwei-Signal)
+    } else {
+      body.innerHTML = `<p class="chat-erklaer">Die KI konnte daraus keinen konkreten Feld-Wert vorschlagen. Beschreib es genauer oder trag den Wert direkt ein.</p>`;
+    }
   } else {
-    body.textContent = "Chat-Kanal antwortete unerwartet (" + r.status + ").";
+    body.textContent = "Der KI-Kanal antwortete unerwartet (" + r.status + ").";
   }
-  $("chat-overlay").hidden = false;
 }
 
 async function zeigeWarum() {
@@ -353,6 +370,7 @@ async function kontoauszugHochladen(datei) {
 // --- Verdrahtung ---
 document.querySelectorAll(".kachel").forEach(k => k.addEventListener("click", () => waehleScheibe(k.dataset.scheibe)));
 $("chat").addEventListener("click", oeffneChat);
+$("chat-send").addEventListener("click", chatSenden);
 $("warum").addEventListener("click", zeigeWarum);
 $("kette-zu").addEventListener("click", () => $("kette-overlay").hidden = true);
 $("chat-zu").addEventListener("click", () => $("chat-overlay").hidden = true);

@@ -97,6 +97,10 @@ h1,h2,h3{margin:0}
 .kette .step:last-child{border:0}.kette .dot{color:var(--schimmernd)}
 .chat-erklaer{font-size:15px}.chat-grenze{color:var(--schimmernd);font-weight:600}
 .chat-vertrag{color:var(--muted);font-size:13px;background:#12162a;border:1px solid var(--line);border-radius:10px;padding:12px}
+/* K1 Chat-Eingabe (Freitext → KI-Vorschläge) */
+.chat-eingabe{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.chat-eingabe textarea{width:100%;background:#12162a;border:1px solid var(--line);color:var(--ink);
+  border-radius:10px;padding:10px;font:inherit;font-size:14px;resize:vertical;min-height:44px}
 
 @media (min-width:520px){ #app{padding:24px} }
 
