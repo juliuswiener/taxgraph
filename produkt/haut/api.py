@@ -212,10 +212,16 @@ GESAMT_DBA = ("dba_staat", "dba_methode", "dba_mehrere_staaten",
 # im Ring → Freigrenze+VTOP → ADDITIV in einkuenfte_sonstige (neben §22-Rente).
 GESAMT_P23 = ("p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten",
               "p23_werbungskosten", "p23_veraeusserungs_typ")
+# §33a EStG (Unterhalt Abs.1 + Ausbildungsfreibetrag Abs.2): 4 Felder, OPTIONAL
+# (absent→0→over-tax-safe). Keine zumutbare Eigenbelastung (§33) → sonstige_abzuege_
+# vom_einkommen (neben §10d). Teilmengen-Invariant: andere_einkuenfte_bezuege = nur
+# Einkünfte des Unterhaltsempfängers, NICHT die des Steuerpflichtigen.
+GESAMT_P33A = ("p33a_unterhalt_aufwendungen", "p33a_unterhalt_kv_pv",
+               "p33a_andere_einkuenfte_bezuege", "p33a_ausbildung_anzahl_kinder")
 # Weg-ii-Parität-Fix (K2, Over-tax, ring-b-Fund #4): GESAMT_FREIBETRAEGE auch im Rentner-Ring nachgetragen —
 # ohne fam_alleinstehend/fam_monate_ohne_voraussetzung postbar war § 24b im Rentner-Ring nicht erreichbar
 # (geburtsjahr/fam_anzahl_kinder stehen schon in RENTNER_GEWINN/GESAMT_ABZUEGE, Duplikat harmlos).
-RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A
 # §§ 13-18 Gewinneinkünfte (Stufe 1), OPTIONAL im gesamt-Ring (NICHT Pflicht-Kegel → absent → 0, over-tax-safe).
 # einkuenfte_gewinn (CENT) = der vorberechnete Gewinn-Betrag → einkuenfte_gewinn-Slot der slot_fn (§ 2-Summand).
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
@@ -286,7 +292,7 @@ SCHEIBEN = {
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
                    + GESAMT_33B + GESAMT_33B_PARTNER
-                   + GESAMT_DBA + GESAMT_P23),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 OPTIONAL
+                   + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -911,10 +917,18 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "einkuenfte_sonstige": g.get("einkuenfte_sonstige", 0),   # K2-Sweep-Konsistenz: §22-Loch-Vorsorge (heute ≡0 im gesamt, kein künftiger §10d-Under-tax)
                 "altersentlastungsbetrag": alt24a + alt24a_b,
                 "entlastungsbetrag_alleinerziehende": ent24b})
+            # §33a Unterhalt + Ausbildungsfreibetrag: ADDITIV zu §10d (beide GdE-Minderung "vom GdE abgezogen")
+            p33a_unt = runner.catala_p33a_unterhalt({
+                "veranlagungszeitraum": vz,
+                "aufwendungen": _c("p33a_unterhalt_aufwendungen") // 100,
+                "kv_pv_beitraege": _c("p33a_unterhalt_kv_pv") // 100,
+                "andere_einkuenfte_bezuege": _c("p33a_andere_einkuenfte_bezuege") // 100})
+            p33a_ausb = runner.catala_p33a_ausbildungsfreibetrag({
+                "anzahl_kinder": _c("p33a_ausbildung_anzahl_kinder")})
             g["sonstige_abzuege_vom_einkommen"] = runner.catala_p10d_2({
                 "gesamtbetrag_einkuenfte": gde_p10d,
                 "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
-                "zusammenveranlagung": g["veranlagung"] == "zusammen"})
+                "zusammenveranlagung": g["veranlagung"] == "zusammen"}) + p33a_unt + p33a_ausb
             # §34c Abs.1 DBA-Anrechnung (Stufe-1, single-country, fail-closed): anrechnung = min(gezahlt, HB).
             # HB = tarifliche_est * dba_auslaendische_einkuenfte / zvE. §34c VOR §35 (§35 Abs.1 S.4: geminderte
             # tarifliche Steuer = tarifliche NACH §34c). anrechnung in g → catala_gesamt-Slot, mindert
@@ -1173,10 +1187,18 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
                 "einkuenfte_sonstige": renten, "einkuenfte_gewinn": rentner_g["einkuenfte_gewinn"],
                 "altersentlastungsbetrag": alt24a_r, "entlastungsbetrag_alleinerziehende": ent24b_r})
+            # §33a Unterhalt + Ausbildungsfreibetrag: ADDITIV zu §10d (beide GdE-Minderung)
+            p33a_unt = runner.catala_p33a_unterhalt({
+                "veranlagungszeitraum": vz,
+                "aufwendungen": _c("p33a_unterhalt_aufwendungen") // 100,
+                "kv_pv_beitraege": _c("p33a_unterhalt_kv_pv") // 100,
+                "andere_einkuenfte_bezuege": _c("p33a_andere_einkuenfte_bezuege") // 100})
+            p33a_ausb = runner.catala_p33a_ausbildungsfreibetrag({
+                "anzahl_kinder": _c("p33a_ausbildung_anzahl_kinder")})
             rentner_g["sonstige_abzuege_vom_einkommen"] = runner.catala_p10d_2({
                 "gesamtbetrag_einkuenfte": gde,
                 "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
-                "zusammenveranlagung": rentner_g["veranlagung"] == "zusammen"})
+                "zusammenveranlagung": rentner_g["veranlagung"] == "zusammen"}) + p33a_unt + p33a_ausb
             # §34c Abs.1 DBA-Anrechnung (1:1 gesamt-Präzedenz, §34c VOR §35).
             dba_anrechnung = 0
             dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100

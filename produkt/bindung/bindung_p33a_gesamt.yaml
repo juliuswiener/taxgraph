@@ -1,0 +1,93 @@
+# Bindungstabelle — §33a EStG (Unterhalt Abs.1 + Ausbildungsfreibetrag Abs.2).
+# §33a mindert GdE ("vom Gesamtbetrag der Einkünfte abgezogen" — KEIN §33-Agb,
+# keine zumutbare Eigenbelastung → sonstige_abzuege_vom_einkommen, wie §10d).
+# 4 Felder, OPTIONAL (absent→0→over-tax-safe). Kz null+MVP.
+# Task §33a-Stufe-1, Stand 2026-07-21.
+version: 1
+scheibe: "§33a EStG Unterhalt + Ausbildungsfreibetrag (gesamt + rentner)"
+
+bindungen:
+  - feld_id: p33a_unterhalt_aufwendungen
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: aufwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viel hast du im vergangenen Jahr für Unterhalt und Berufsausbildung der unterhaltsberechtigten Person tatsächlich gezahlt?"
+    hilfe_kurz: "Nur tatsächlich geleistete Zahlungen an die unterhaltsberechtigte Person (z. B. monatliche Überweisungen, Mietzahlungen direkt). Maximal abziehbar ist der Grundfreibetrag (~12.348€, plus KV/PV-Beiträge)."
+    beispielwert: 1000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage Unterhalt-Kz — Kz-Recon = eigene Runde (null-MVP)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "Aufwendungen fuer den Unterhalt und eine etwaige Berufsausbildung"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_unterhalt_kv_pv
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: kv_pv_beitraege}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hast du für die unterhaltsberechtigte Person Beiträge zur Kranken- und Pflegeversicherung gezahlt?"
+    hilfe_kurz: "Diese Beiträge erhöhen den Höchstbetrag über den Grundfreibetrag hinaus (§33a Abs.1 S.2). Nur die von DIR gezahlten Beiträge."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage Unterhalt-Kz — null-MVP."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 2 EStG"
+      zitatanker: "erhoeht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_andere_einkuenfte_bezuege
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: andere_einkuenfte_bezuege}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie hoch sind die eigenen Einkünfte und Bezüge der unterhaltsberechtigten Person (NICHT deine eigenen)?"
+    hilfe_kurz: "⚠ Nur die Einkünfte des UNTERHALTSEMPFÄNGERS, nicht deine eigenen! Beträge über 624€ mindern den abziehbaren Unterhalt. Dazu zählen z. B. eigenes Gehalt, Rente, Kapitalerträge der unterhaltenen Person."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage Unterhalt-Kz — Teilmenge (Einkünfte des Empfängers, NIE additiv zum Welteinkommen). null-MVP."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 5 EStG"
+      zitatanker: "andere Einkuenfte oder Bezuege, so vermindert"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_ausbildung_anzahl_kinder
+    quelle: {regel_id: p33a_ausbildungsfreibetrag, signatur_slot: hat_anspruch}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 20, grund: "Anzahl qualifizierender Kinder (volljaehrig, auswaertig in Berufsausbildung, mit Kindergeld/§32-Abs.6-Anspruch). Max 20 = praktischer Cap."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele deiner volljaehrigen Kinder sind in auswaertiger Berufsausbildung UND du hast Anspruch auf Kindergeld oder den Kinderfreibetrag fuer sie?"
+    hilfe_kurz: "1.200€ Freibetrag JE Kind. Nur fuer Kinder zaahlen, fuer die dir der VOLLE Jahresbetrag zusteht (keine Elternteil-Haelftelung in Stufe-1). Monats-Zwoelftelung bei nicht-ganzjaehriger Ausbildung = Stufe-2-Backlog."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage Unterhalt-Kz — null-MVP. Eltern-Haelftelung (Abs.2 S.4) + Monats-Zwoelftelung (Abs.3) = Stufe-2-Backlog. Stufe-1: User gibt Anzahl KINDDER mit VOLLEM Jahresanspruch."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 2 S. 1 EStG"
+      zitatanker: "einen Freibetrag in Hoehe von 1 200 Euro je Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+
+  # ===== Lücken + Geltungsbedingungen =====
+luecken:
+  - regel_id: p33a_ausbildungsfreibetrag
+    geltungsbedingung: anspruch_ausbildung_auswaertig_volljaehrig
+    grund: "Rechtspraedikat (volljaehriges Kind in Berufsausbildung, auswaertig untergebracht, Kindergeld/§32-Abs.6-Anspruch). Im Feld p33a_ausbildung_anspruch materialisiert."
+  - regel_id: p33a_unterhalt
+    geltungsbedingung: grundfreibetrag_norm_konstante_nicht_input
+    grund: "GFB = Norm-Konstante (params-verankert, VZ-driftend). Im Accessor via _GFB_33A-Lookup. Kein Laien-Feld."
+  - regel_id: p33a_unterhalt
+    geltungsbedingung: anrechnung_ueber_schonbetrag_624
+    grund: "Schonbetrag 624€ fassungskonstant im Accessor. Materialisiert via andere_einkuenfte_bezuege-Feld."
+  - regel_id: p33a_unterhalt
+    geltungsbedingung: andere_einkuenfte_bezuege_netto
+    grund: "Einkünfte des Empfängers sind Netto (nach Abzügen) — Sachverhaltsannahme. Stufe-1 MVP."

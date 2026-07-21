@@ -576,6 +576,36 @@ def catala_hinterbliebenen_pb(s: dict) -> int:
     return p["hinterbliebenen"] if s.get("hat_hinterbliebenenbezuege") else 0
 
 
+# -- §33a EStG (Unterhalt Abs.1 + Ausbildungsfreibetrag Abs.2). EURO. --------------
+# Pure-Python. p33a_unterhalt: Hand-geschriebenes Catala-Modul (rules/estg/p33a_unterhalt/),
+# aber NICHT in clerk.toml → kein Python-Build → Pure-Python (wie solzg/p34c).
+# p33a_ausbildungsfreibetrag: verified_bedingt Snapshot, A==B (1200€ Festbetrag).
+
+_GFB_33A = {2024: 11784, 2025: 12096, 2026: 12348}
+
+
+def catala_p33a_unterhalt(s: dict) -> int:
+    """§33a Abs.1 EStG — Unterhaltsabzug, EURO. Höchstbetrag = GFB + kv_pv − max(0, andere_einkuenfte − 624),
+    return min(aufwendungen, Höchstbetrag). Schonbetrag 624€ fassungskonstant, GFB driftet per VZ.
+    5 pipeline-seeds fidel (10k/0/0→10000, 15k/0/0→12348 GFB-Deckel, etc.). Accessor nimmt EUROS."""
+    year = s["veranlagungszeitraum"]
+    assert year in _GFB_33A, f"§33a GFB VZ {year}: nur 2024-2026"
+    gfb = _GFB_33A[year]
+    aufw = int(s["aufwendungen"])
+    kv_pv = int(s.get("kv_pv_beitraege", 0))
+    andere = int(s.get("andere_einkuenfte_bezuege", 0))
+    anrechnung = max(0, andere - 624)
+    hoechstbetrag = max(0, gfb + kv_pv - anrechnung)
+    return min(aufw, hoechstbetrag)
+
+
+def catala_p33a_ausbildungsfreibetrag(s: dict) -> int:
+    """§33a Abs.2 EStG — Ausbildungsfreibetrag, 1200€ je Kind, EURO. Per-Kind-Komposition:
+    der Snapshot (1200€ per-unit) bleibt fidel; der Ring multipliziert mit anzahl_kinder.
+    Haelftelung Eltern (Abs.2 S.4) + Monats-Zwoelftelung (Abs.3) = Stufe-2-Backlog."""
+    return int(s.get("anzahl_kinder", 0)) * 1200
+
+
 def _kindergeld(year: int) -> int:
     """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
     p = load_yaml_fh(open(os.path.join(
