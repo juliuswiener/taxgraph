@@ -1,0 +1,57 @@
+# Bindungstabelle — §22 Nr.3 EStG sonstige Leistungen (Stufe-1).
+# Einzelner Eintrag: Einnahmen − Werbungskosten = Einkünfte; Freigrenze 256€.
+# Einkünfte ≥ 256 → voll steuerpflichtig, < 256 → 0.
+# Kz: null-MVP (Anlage-SO-Kz = Recon-Runde später).
+# Task §22-Nr.3-Front A8, Stand 2026-07-22.
+version: 1
+scheibe: "§22 Nr.3 EStG Sonstige Leistungen (gesamt + rentner)"
+
+bindungen:
+  - feld_id: p22_3_einnahmen
+    quelle: {regel_id: p22_3_sonstige_leistungen, signatur_slot: einnahmen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    instanz_gruppe: null
+    fragetext_laie: "Hattest du im letzten Jahr Einnahmen aus gelegentlichen Vermittlungen, Vermietung beweglicher Gegenstände oder ähnlichen sonstigen Leistungen?"
+    hilfe_kurz: "Gelegentliche Vermittlungen, Vermietung von Möbeln, Sportgeräten oder ähnliche Tätigkeiten. NICHT Gewerbebetrieb (das ist §18), NICHT Kapitalerträge (§20). Bruttobetrag VOR Werbungskosten."
+    beispielwert: 50000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-SO-Kz — Kz-Recon = eigene Runde (null-MVP). Sonstige Leistungen §22 Nr.3 ohne vorgegebene Elster-Position."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 3 S. 1 EStG"
+      zitatanker: "Einnahmen aus gelegentlichen Vermittlungen, Vermietung beweglicher Gegenstände"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: p22_3_werbungskosten
+    quelle: {regel_id: p22_3_sonstige_leistungen, signatur_slot: werbungskosten}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    instanz_gruppe: null
+    fragetext_laie: "Hattest du Kosten (z. B. Reparaturen, Makler) im Zusammenhang mit diesen Einnahmen?"
+    hilfe_kurz: "Nur Kosten, die direkt zur Erwirtschaftung dieser Einnahmen entstanden sind. Vermietungskosten, Provisionen, Transportkosten, Reparaturen. Nicht: private Aufwendungen."
+    beispielwert: 5000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-SO-Kz — Kz-Recon = eigene Runde (null-MVP)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 3 S. 2 EStG"
+      zitatanker: "Werbungskosten"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+
+  # ===== Lücken + Geltungsbedingungen =====
+luecken:
+  - regel_id: p22_3_sonstige_leistungen
+    geltungsbedingung: kein_gewerbebetrieb
+    grund: "Gewerbebetrieb = §18 (Anlage G), nicht §22 Nr.3. Nutzer-Selbst-Deklaration durch Fragetext-Kontext (keine Angestellten, keine Struktur)."
+  - regel_id: p22_3_sonstige_leistungen
+    signatur_slot: steuerpflichtige_einkuenfte
+    grund: "Berechnete Größe (max(0, einnahmen − werbungskosten) ≥ 256 → Betrag, sonst 0). Ring-Aggregator über Catala, kein Laien-Feld."
+  - regel_id: p22_3_sonstige_leistungen
+    geltungsbedingung: kein_ausgleich_mit_vv
+    grund: "§22 Nr.3-Verluste nicht mit §21-Überschüssen verrechenbar (separate Einkunftsarten). Im Ring: positive Einkünfte ≥ 256 ADDITIV in einkuenfte_sonstige, nie negativ (Verlustfall → 0)."

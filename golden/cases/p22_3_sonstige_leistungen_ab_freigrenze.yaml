@@ -1,0 +1,13 @@
+# §22 Nr.3 EStG Sonstige Leistungen: Freigrenze 256€, ≥ 256 voll steuerpflichtig
+# Test-Seed: 256€ Einkünfte (einnahmen 500 − werbungskosten 244 = 256) → 256€ (voll steuerpflichtig)
+veranlagungszeitraum: 2024
+erwartung:
+  accessor: catala_p22_3_sonstige_leistungen
+  result: 256
+  grund: "Einkünfte 256€ ≥ Freigrenze → voll steuerpflichtig (Freigrenze, kein Freibetrag)"
+inputs:
+  einnahmen: 500
+  werbungskosten: 244
+zitatanker: "weniger als 256 Euro im Kalenderjahr"
+quelle: "§ 22 Nr. 3 S. 2 EStG"
+datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"

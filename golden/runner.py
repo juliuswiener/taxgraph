@@ -55,6 +55,7 @@ from pkg import EuerGewinn as EG  # noqa: E402  (§ 4 Abs. 3 Einnahmenüberschus
 from pkg import Verlustvortrag as VL  # noqa: E402  (§ 10d Abs. 2 Verlustvortrag-Abzug)
 from pkg import MitunternehmerEinkuenfte as ME  # noqa: E402  (§ 15 Abs. 1 S. 1 Nr. 2 Mitunternehmer, #2-Front)
 from pkg import ErmaessigterDurchschnittssatz as ED  # noqa: E402  (§ 34 Abs. 3 ermäßigter Durchschnittssatz, Stufe-2a)
+from pkg import SonstigeLeistungen as SL  # noqa: E402  (§ 22 Nr. 3 sonstige Leistungen, Stufe-1)
 from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
@@ -1046,6 +1047,17 @@ def catala_p34c_1(s: dict) -> int:
         return 0
     hoechstbetrag = est * ausl // zve
     return min(gezahlt, hoechstbetrag)
+
+
+def catala_p22_3_sonstige_leistungen(s: dict) -> int:
+    """§22 Nr.3 EStG — Sonstige Leistungen (z.B. gelegentliche Vermittlungen, Vermietung
+    beweglicher Gegenstände), Freigrenze 256€, EURO.
+    Einnahmen − Werbungskosten = Einkünfte; Einkünfte ≥ 256 → VOLL steuerpflichtig,
+    < 256 → 0 (Freigrenze, KEIN Freibetrag). 2 test_seeds pipeline-verified (255→0, 256→256)."""
+    einnahmen = int(s["einnahmen"])
+    werbungskosten = int(s.get("werbungskosten", 0))
+    einkuenfte = einnahmen - werbungskosten
+    return einkuenfte if einkuenfte >= 256 else 0
 
 
 def catala_gesamt_tarifliche(s: dict) -> int:

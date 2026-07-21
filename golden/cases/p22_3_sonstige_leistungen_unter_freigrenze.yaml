@@ -1,0 +1,13 @@
+# §22 Nr.3 EStG Sonstige Leistungen: Freigrenze 256€, < 256 steuerfrei
+# Test-Seed: 255€ Einkünfte (einnahmen 300 − werbungskosten 45 = 255) → 0 (unter Freigrenze)
+veranlagungszeitraum: 2024
+erwartung:
+  accessor: catala_p22_3_sonstige_leistungen
+  result: 0
+  grund: "Einkünfte 255€ < Freigrenze 256€ → steuerfrei"
+inputs:
+  einnahmen: 300
+  werbungskosten: 45
+zitatanker: "Einnahmen aus gelegentlichen Vermittlungen"
+quelle: "§ 22 Nr. 3 S. 1 EStG"
+datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"

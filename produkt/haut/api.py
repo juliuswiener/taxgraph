@@ -212,6 +212,9 @@ GESAMT_DBA = ("dba_staat", "dba_methode", "dba_mehrere_staaten",
 # im Ring → Freigrenze+VTOP → ADDITIV in einkuenfte_sonstige (neben §22-Rente).
 GESAMT_P23 = ("p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten",
               "p23_werbungskosten", "p23_veraeusserungs_typ")
+# §22 Nr.3 Sonstige Leistungen (Stufe-1): 2 Felder (Einnahmen, Werbungskosten). OPTIONAL
+# (absent→0→safe). Freigrenze 256€ → ADDITIV in einkuenfte_sonstige (neben §22 Nr.1 Rente).
+GESAMT_P22_3 = ("p22_3_einnahmen", "p22_3_werbungskosten")
 # §33a EStG (Unterhalt Abs.1 + Ausbildungsfreibetrag Abs.2): 4 Felder, OPTIONAL
 # (absent→0→over-tax-safe). Keine zumutbare Eigenbelastung (§33) → sonstige_abzuege_
 # vom_einkommen (neben §10d). Teilmengen-Invariant: andere_einkuenfte_bezuege = nur
@@ -224,7 +227,7 @@ GESAMT_P32B = ("p32b_progressionseinkuenfte",)
 # Weg-ii-Parität-Fix (K2, Over-tax, ring-b-Fund #4): GESAMT_FREIBETRAEGE auch im Rentner-Ring nachgetragen —
 # ohne fam_alleinstehend/fam_monate_ohne_voraussetzung postbar war § 24b im Rentner-Ring nicht erreichbar
 # (geburtsjahr/fam_anzahl_kinder stehen schon in RENTNER_GEWINN/GESAMT_ABZUEGE, Duplikat harmlos).
-RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P22_3 + GESAMT_P33A + GESAMT_P32B
 # §§ 13-18 Gewinneinkünfte (Stufe 1), OPTIONAL im gesamt-Ring (NICHT Pflicht-Kegel → absent → 0, over-tax-safe).
 # einkuenfte_gewinn (CENT) = der vorberechnete Gewinn-Betrag → einkuenfte_gewinn-Slot der slot_fn (§ 2-Summand).
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
@@ -295,7 +298,7 @@ SCHEIBEN = {
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
                    + GESAMT_33B + GESAMT_33B_PARTNER
-                   + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b OPTIONAL
+                   + GESAMT_DBA + GESAMT_P23 + GESAMT_P22_3 + GESAMT_P33A + GESAMT_P32B),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §22Nr.3 + §33a + §32b OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -517,6 +520,16 @@ def _p23_ansonsten_einkuenfte(f: dict, store: dict | None, bindung: dict | None,
         return 0
     # Verlusttopf (same-year) auf die FREIGRENZEN-gerechneten Einzelkomponenten
     return runner.catala_p23_verlusttopf({"gewinn_pvg": gewinn_pvg, "verlust_pvg": verlust_pvg})
+
+
+def _p22_3_sonstige_leistungen(slots: dict) -> int:
+    """§22 Nr.3 Sonstige Leistungen (Stufe-1), EURO — Einzelner Eintrag, Freigrenze 256€.
+    einnahmen − werbungskosten = einkuenfte; einkuenfte ≥ 256 → voll steuerpflichtig,
+    < 256 → 0 (Freigrenze, KEIN Freibetrag). Cent→Euro-Umrechnung in slot_fn."""
+    einnahmen_euro = int(slots.get("p22_3_einnahmen", 0)) // 100
+    werbungskosten_euro = int(slots.get("p22_3_werbungskosten", 0)) // 100
+    return runner.catala_p22_3_sonstige_leistungen({
+        "einnahmen": einnahmen_euro, "werbungskosten": werbungskosten_euro})
 
 
 def _oepnv_eur(slots: dict) -> int:
@@ -1174,6 +1187,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # §23 Private Veräußerungsgeschäfte (Stufe-1): Σ über Instanzen → ADDITIV zu renten
             p23_eink = _p23_ansonsten_einkuenfte(f, store, bindung, nur_bestaetigt)
             renten += p23_eink
+            # §22 Nr.3 Sonstige Leistungen (Stufe-1): Freigrenze 256€ → ADDITIV zu renten
+            p22_3_eink = _p22_3_sonstige_leistungen(f)
+            renten += p22_3_eink
             # §§ 13-18 Gewinn (2-I + 2a): laufender § 15/§ 18-Gewinn (aus _laufender_gewinn — Stufe 2a EÜR ODER
             # Stufe-1-Direktwert, Scope A geteilt mit dem gesamt-Ring) + § 16-Ver-
             # äußerungsgewinn NACH § 16 Abs. 4-Freibetrag. FB (roh) via catala_p16_4_freibetrag; der steuerbare Rest
@@ -1188,14 +1204,14 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             laufender_gewinn, mitu = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (§ 35-Zähler, OHNE § 16-vg)
             # § 24a Altersentlastungsbetrag im Rentner-Ring (b): Bemessung = positive Nicht-§19-Einkünfte = §§13-18-Gewinn
             # (laufender + § 16-vg-netto); LEIBRENTE § 22 Nr. 1 (renten) + Versorgungsbezüge § 19 Abs. 2 sind KEINE Bemessung
-            # (§ 24a S. 2-Ausschlüsse). §23 private Veräußerungsgeschäfte (§22 Nr.2) gehören IN die
-            # §24a-Bemessung (S.2 erwähnt nur §19Abs.2/§22Nr.1/§22Nr.4/5 — kein §22Nr.2-Ausschluss).
-            # p23_eink additiv zu laufender_gewinn + netto_vg (K2-konservativ: floor auf kombinierte Summe).
+            # (§ 24a S. 2-Ausschlüsse). §23 private Veräußerungsgeschäfte (§22 Nr.2) + §22 Nr.3 sonstige Leistungen gehören IN die
+            # §24a-Bemessung (S.2 erwähnt nur §19Abs.2/§22Nr.1/§22Nr.4/5 — kein §22Nr.2/3-Ausschluss).
+            # p23_eink + p22_3_eink additiv zu laufender_gewinn + netto_vg (K2-konservativ: floor auf kombinierte Summe).
             # Kein § 19-Mini-Job-Arbeitslohn im rentner-Ring (MVP-Lücke, over-tax-safe → 0). MIT
             # dem 64+-Gate (§ 24a S. 3, geerbt vom Accessor via veranlagungszeitraum). Pure Leibrente (kein Gewinn) → 0.
             alt24a_r = runner.catala_p24a_altersentlastung({
                 "veranlagungszeitraum": vz, "geburtsjahr": _c("geburtsjahr"), "arbeitslohn": 0,
-                "positive_andere_einkuenfte": max(0, laufender_gewinn + netto_vg + p23_eink)})
+                "positive_andere_einkuenfte": max(0, laufender_gewinn + netto_vg + p23_eink + p22_3_eink)})
             # § 24b Entlastungsbetrag Alleinerziehende (Weg-ii-Parität-Fix, K2, Over-tax): fehlte im Rentner-Ring
             # komplett (GESAMT_FREIBETRAEGE nie an RENTNER_FELDER, s.o.) — Rentner-Witwe/-Witwer mit Kindern kriegt
             # sonst den 4260€+240€/Kind-Freibetrag nicht. 1:1 gesamt-Präzedenz Z. 671-674 (ungegatet, fam_anzahl_
