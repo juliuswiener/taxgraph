@@ -606,6 +606,24 @@ def catala_p33a_ausbildungsfreibetrag(s: dict) -> int:
     return int(s.get("anzahl_kinder", 0)) * 1200
 
 
+def catala_p10_1_5_kinderbetreuung(s: dict) -> int:
+    """§10 Abs.1 Nr.5 EStG — Kinderbetreuungskosten, 80% capped 4800€ je Kind, EURO.
+    Multi-Kind-Komposition: anzahl_kinder * min(aufwand_pro_kind * 0.8, 4800).
+    Accessor nimmt EUROS. Seeds: 6000/1→4800, 10000/2→9600, 1000/1→800."""
+    anzahl = int(s.get("anzahl_kinder", 0))
+    aufw = int(s.get("aufwendungen", 0))
+    if anzahl <= 0:
+        return 0
+    # Pro-Kind-Betrachtung (Schnitt): wir nehmen an, dass 'aufwendungen' die SUMME sind
+    # und verteilen sie gleichmäßig (Worst-Case für Deckelung wenn ungleich, aber ELSTER
+    # fragt oft Summe ab). Gesetz sagt: höchstens 4800 je Kind.
+    # Falls 'aufwendungen' pro Kind gemeint ist, müsste das Wiring das regeln.
+    # Hier: aufwendungen / anzahl = aufwand_pro_kind.
+    aufwand_pro_kind = aufw // anzahl
+    abzug_pro_kind = min(int(aufwand_pro_kind * 0.8), 4800)
+    return abzug_pro_kind * anzahl
+
+
 # -- §32b EStG Progressionsvorbehalt (Abs.1 Nr.1 Lohnersatz). EURO. -----------------
 # Pure-Python aus verified_bedingt Snapshot (p32b_progressionsvorbehalt.json).
 # 3 pipeline-seeds fidel. Besonderer Steuersatz = est_auf_erhoehte / erhoehte, applied

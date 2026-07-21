@@ -1,0 +1,55 @@
+# Bindungstabelle — §10 Abs.1 Nr.5 EStG Kinderbetreuungskosten (Stufe-1, Tier-0).
+# MVP: Kz null (XSD-Sektion unklar — Kind/Sonderausgaben Cross-Ref nötig).
+# Accessor: catala_p10_1_5_kinderbetreuung (pure-python, pro-Kind Deckel 4800€).
+version: 1
+scheibe: "Kinderbetreuungskosten (p10_1_5_kinderbetreuung)"
+
+bindungen:
+  # ========================= Kinderbetreuungskosten (p10_1_5_kinderbetreuung) =========================
+  - feld_id: kinderbetreuungskosten
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p10_1_5_kinderbetreuung, signatur_slot: aufwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr für die Betreuung deiner Kinder gezahlt (Kindergarten, Tagesmutter, Babysitter)? Bitte nur Betreuungskosten, keine Verpflegung oder Unterricht."
+    hilfe_kurz: "Du kannst 80% der Kosten absetzen, höchstens 4.800 Euro pro Kind."
+    beispielwert: 600000
+    herkunft_slots: ["Betreuungsrechnung: Kosten"]
+    elster_kz: null
+    elster_kz_grund: "MVP (Klasse-g): XSD-Sektion Kinderbetreuung ↔ Kind/Sonderausgaben mehrdeutig, Vordruck-Cross-Ref nötig (wie KiSt). Grep: 'Kind' ist strukturbewusster; Sonderausgaben-Anlage ohne präzise Feld-Label. Vordruck-Kz-Mapping deferred (Folge-Gate)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kinderbetreuung_anzahl_kinder
+    quelle: {regel_id: p10_1_5_kinderbetreuung, signatur_slot: anzahl_kinder}
+    typ: int
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele Kinder hast du, für die du Betreuungskosten bezahlt hast?"
+    hilfe_kurz: "Jedes Kind kriegt einen eigenen Höchstbetrag von 4.800 Euro."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Multiplikator-Feld (Anzahl), kein Betragsfeld; XSD-Struktur-Kopplung mit kinderbetreuungskosten (Summe pro Person)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "je Kind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+luecken:
+  # -- Kinderbetreuung: Kindqualifikation ist externe Gatekeeping (§ 32, altersgerecht unter 14, etc.) --
+  - regel_id: p10_1_5_kinderbetreuung
+    geltungsbedingung: kind_unter_14_oder_behindert
+    grund: "Kind-Qualifikation (§ 10 Abs. 1 Nr. 5 S. 1: 'unter 14' oder 'wegen ... Behinderung außerstande') wird vorgelagert überprüft (§ 32 Abs. 1-Geltung); keine Laien-Abfrage hier (Gate-Audit in der Ring/UI)."
+  - regel_id: p10_1_5_kinderbetreuung
+    geltungsbedingung: aufwendungen_enthalten_keine_unterricht_sportfreizeitbetraegungen
+    grund: "Ausschluss (§ 10 Abs. 1 Nr. 5 S. 2: 'nicht für Unterricht, Vermittlung besonderer Fähigkeiten, sportliche Freizeittätigkeiten') wird im Fragetext adressiert ('nur Betreuungskosten'; Annahme materialisiert); keine formale Gate-Abfrage."
+  - regel_id: p10_1_5_kinderbetreuung
+    geltungsbedingung: rechnung_und_unbare_zahlung
+    grund: "Formvoraussetzung (§ 10 Abs. 1 Nr. 5 S. 4: 'Rechnung erhalten' + 'Zahlung auf Konto des Erbringers') wird im Beleg-Writer behandelt (Verifikation); kein Laien-Feld."

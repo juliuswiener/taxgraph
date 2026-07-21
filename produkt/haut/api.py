@@ -182,11 +182,13 @@ GESAMT_PARTNER_KAP = (KAP_ERTRAEGE_PARTNER,) + KAP_TOEPFE_PARTNER
 HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")   # Abs. 2/3 (rechnung_unbar-Pflicht)
 HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23              # + Abs. 1 Minijob
 AGB_KIST = ("kist_gezahlt", "kist_erstattet")                                # § 10 KiSt gezahlt/erstattet
-# Gefaltete Sonder-Abzüge (Weg ii): §35a + §10b + §33 + §10-KiSt + §10 Abs.1 Nr.7 Berufsausbildung als OPTIONALE
-# Felder im gesamt-Ring (NICHT im Pflicht-Kegel — absent → Abzug 0, fail-SAFE). Der gesamt-slot_fn rechnet sie
-# additiv auf JEDE Einkunfts-Kombi; die K2-Sperren (rechnung_unbar/erstattungsueberhang) fängt der Guard.
+KINDERBETREUUNG = ("kinderbetreuungskosten", "kinderbetreuung_anzahl_kinder")  # § 10 Abs.1 Nr.5 Kinderbetreuung
+# Gefaltete Sonder-Abzüge (Weg ii): §35a + §10b + §33 + §10-KiSt + §10 Abs.1 Nr.5 Kinderbetreuung +
+# §10 Abs.1 Nr.7 Berufsausbildung als OPTIONALE Felder im gesamt-Ring (NICHT im Pflicht-Kegel — absent → Abzug 0,
+# fail-SAFE). Der gesamt-slot_fn rechnet sie additiv auf JEDE Einkunfts-Kombi; die K2-Sperren
+# (rechnung_unbar/erstattungsueberhang) fängt der Guard.
 GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
-                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST)
+                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST + KINDERBETREUUNG)
 # Weg-ii-Fix (K2, Over-tax): GESAMT_ABZUEGE OPTIONAL auch im Rentner-Ring nachgetragen (NICHT im Kegel —
 # absent → 0, fail-safe, wie im gesamt-Ring). Ohne diese Deklaration wären die Felder für rentner_gesamt
 # nicht mal POSTbar (_scheibe_bindung filtert global-bindung auf cfg["felder"]).
@@ -825,10 +827,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
                 "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
                 "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
-            # sonderausgaben = § 10b Spenden + § 10 KiSt + § 10 Abs.1 Nr.3/3a KV/PV-Vorsorge (§10-Stufe 2, additiv;
+            # sonderausgaben = § 10b Spenden + § 10 KiSt + § 10 Abs.1 Nr.3/3a KV/PV-Vorsorge +
+            # § 10 Abs.1 Nr.5 Kinderbetreuung (§10-Stufe 2, additiv;
             # KV/PV hat EIGENEN Abs.4-Höchstbetrag 1900/2800 + Basis-Durchbruch, getrennt von der Abs.3-Basisvorsorge
             # die catala_gesamt intern via _vorsorge_abzug addiert). PLAIN Read-Keys (1:1 mit dev-2s Binding). Die 3
             # KV/PV-Felder sind Pflicht-Kegel → immer beantwortet (kein stiller Über/Unter-tax; mit_anspruch steuert HB).
+            # Kinderbetreuung: pro-Kind-Deckel 4800€; anzahl_kinder Multiplikator; aufwendungen Summe/Person.
             g["sonderausgaben"] = (runner.catala_p10b_spenden({
                     "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": gde})
                 + runner.catala_p10_kist({
@@ -838,6 +842,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "basis_kv_pv": _c("basis_kv_pv") // 100,
                     "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen") // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
+                + runner.catala_p10_1_5_kinderbetreuung({
+                    "aufwendungen": _c("kinderbetreuungskosten") // 100,
+                    "anzahl_kinder": f.get("kinderbetreuung_anzahl_kinder", {}).get("wert", 0) or 0})
                 # Person-B-KV/PV (§ 10 Abs. 4, A.2): eigener Höchstbetrag JE PERSON → separater Accessor-Aufruf,
                 # additiv (kein gemeinsamer Deckel, kein Doppelzählen — B liest die _partner-Read-Keys).
                 + (runner.catala_p10_kv_pv({
@@ -1257,7 +1264,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
                 "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
                 "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
-            # § 10b Spenden (gde-Deckel) + § 10 KiSt + § 10 Abs. 1 Nr. 3/3a KV/PV + § 10 Abs. 1 Nr. 7 Berufsausbildung
+            # § 10b Spenden (gde-Deckel) + § 10 KiSt + § 10 Abs. 1 Nr. 3/3a KV/PV + § 10 Abs. 1 Nr. 5 Kinderbetreuung
+            # + § 10 Abs. 1 Nr. 7 Berufsausbildung
             # (Weg-ii-Fix, additiv → sonderausgaben; 1:1 gesamt-Präzedenz Z. 717-737). Person-B-KV/PV DEFER (benannte
             # Lücke, Folge-Ticket — Rentner-Ring hat noch keine Partner-KV/PV-Felder).
             rentner_g["sonderausgaben"] = (runner.catala_p10b_spenden({
@@ -1269,6 +1277,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "basis_kv_pv": _c("basis_kv_pv") // 100,
                     "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen") // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
+                + runner.catala_p10_1_5_kinderbetreuung({
+                    "aufwendungen": _c("kinderbetreuungskosten") // 100,
+                    "anzahl_kinder": f.get("kinderbetreuung_anzahl_kinder", {}).get("wert", 0) or 0})
                 + runner.catala_p10_1_7_berufsausbildung({
                     "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100}))
             # § 33-agB (Weg-ii-Fix) ADDITIV zu § 33b (ausserg, oben) — beide Absätze koexistieren (Pauschbetrag +
