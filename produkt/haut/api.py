@@ -425,14 +425,17 @@ def _gwg_sofortabzug_summe(f: dict, store: dict | None, bindung: dict | None,
 
 
 def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None = None,
-                      nur_bestaetigt: bool = True) -> int:
+                      nur_bestaetigt: bool = True):
     """§§ 13-18 laufender Gewinn (§ 15 Gewerbe / § 18 selbständig), EURO — die EINE Quelle für den laufenden
     (Nicht-Veräußerungs-)Gewinn, geteilt von gesamt- und rentner-Ring (Scope A). § 4 Abs. 3 EÜR (Stufe 2a/2b) wenn
     IRGENDEINE EÜR-Komponente (betriebseinnahmen/sonstige_betriebsausgaben/afa_jahresbetrag) ODER ein GWG vorliegt:
     gewinn = betriebseinnahmen − (sonstige_BA + AfA + GWG-Σ) via catala_euer_gewinn — KANN NEGATIV sein (Verlustjahr
     → § 2 Abs. 3-Ausgleich mindert andere Einkünfte); sonst der direkte einkuenfte_gewinn-Wert (Stufe 1). Der
     GWG-Sofortabzug (§ 6 Abs. 2, Stufe 2b) mindert als Betriebsausgabe den Gewinn (Σ über alle Assets). Naht-CENT
-    → EURO. BEIDE Quellen (Direktwert + EÜR) sperrt gewinn_quelle_offen VORHER; land_forst + EÜR sperrt luf_euer_offen."""
+    → EURO. BEIDE Quellen (Direktwert + EÜR) sperrt gewinn_quelle_offen VORHER; land_forst + EÜR sperrt luf_euer_offen.
+
+    Returns (laufender_gewinn, mitu): laufender_gewinn = kompletter §2-Gewinn (inkl. mitu-Summand);
+    mitu = §15-Mitunternehmer-Komponente (immer gewerbesteuerpflichtig, §35-Zähler)."""
     import runner
     def _c(fid):
         v = f.get(fid, {}).get("wert")
@@ -441,6 +444,8 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
     # § 15 Abs. 1 S. 1 Nr. 2 Mitunternehmer (#2): SEPARATER §15-gewerblicher Summand (Beteiligung an PersG, additiv
     # zum eigenen Gewerbe/EÜR — KEIN gewinn_quelle_offen-Konflikt, eigene Felder). gewinnanteil = §15a-ausgleichs-
     # fähiger Anteil (kann NEGATIV, roh summiert). Hier IN _laufender_gewinn → symmetrisch in §35-Zähler+Nenner.
+    # BOUNDED ASSUMPTION: mitu = ausschl. §15 gewerblich (Anlage G). §18-freiberufl-Mitunternehmerschaft wäre
+    # NICHT gewerbesteuerpflichtig → bräuchte eigenes Flag (out-of-scope, Backlog). Instructor-Ruling §35-Mitu.
     mitu = runner.catala_mitunternehmer_einkuenfte({
         "gewinnanteil": _c("gewinnanteil") // 100,
         "verguetung_taetigkeit": _c("verguetung_taetigkeit") // 100,
@@ -448,10 +453,12 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
         "verguetung_ueberlassung": _c("verguetung_ueberlassung") // 100,
     }) if any(_c(k) for k in MITU_FELDER) else 0
     if any(_c(k) for k in EUER_KOMPONENTEN) or gwg_summe > 0:
-        return runner.catala_euer_gewinn({
+        gewinn = runner.catala_euer_gewinn({
             "betriebseinnahmen": _c("betriebseinnahmen") // 100,
             "betriebsausgaben": (_c("sonstige_betriebsausgaben") + _c("afa_jahresbetrag")) // 100 + gwg_summe}) + mitu
-    return _c("einkuenfte_gewinn") // 100 + mitu
+    else:
+        gewinn = _c("einkuenfte_gewinn") // 100 + mitu
+    return gewinn, mitu
 
 
 def _oepnv_eur(slots: dict) -> int:
@@ -693,7 +700,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # einkuenfte_gewinn (§ 16 Abs. 1: Veräußerungs- + laufender Gewinn = dieselbe § 2-Einkunftsart). Absent → 0.
             vg_euro = _c("rentner_veraeusserungsgewinn") // 100
             netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}))
-            laufender_gewinn = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (für § 35-Zähler, OHNE § 16-vg)
+            laufender_gewinn, mitu = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (für § 35-Zähler, OHNE § 16-vg)
             g["einkuenfte_gewinn"] = laufender_gewinn + netto_vg
             # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
             # Altersentlastungsbetrag (§24a S.1: Arbeitslohn BRUTTO + max(0, positive Summe der Nicht-§19-Einkünfte =
@@ -864,7 +871,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # → kein § 35 (opt-out, over-tax-safe). Der gewst_hebesatz_offen-Guard sperrt Messbetrag-ohne-Hebesatz.
             p35_messbetrag = _c("gewst_messbetrag") // 100
             p35_hebesatz = _c("gewst_hebesatz")
-            p35_zaehler = max(0, laufender_gewinn) if f.get("gewinn_betriebsart", {}).get("wert") == "gewerbe" else 0
+            p35_zaehler = max(0, laufender_gewinn) if f.get("gewinn_betriebsart", {}).get("wert") == "gewerbe" else max(0, mitu)
             # Nenner (§ 35 Abs. 1 S. 2 „Summe aller positiven Einkünfte") = Σ positive TARIFLICHE Einkunftsarten:
             # § 19 (ns) + § 21 (vv) + § 22 (sonstige) + §§ 13-18 (gewinn, inkl. § 16-vg = § 2-Einkunft). Das
             # § 32d-Abgeltung-Kapital ist NICHT einzubeziehen (§ 2 Abs. 5b EStG: „Kapitalerträge nach § 32d Absatz 1
@@ -1053,7 +1060,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             vg_euro = _c("rentner_veraeusserungsgewinn") // 100
             netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag(
                 {"rentner_veraeusserungsgewinn": vg_euro}))
-            laufender_gewinn = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (§ 35-Zähler, OHNE § 16-vg)
+            laufender_gewinn, mitu = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (§ 35-Zähler, OHNE § 16-vg)
             # § 24a Altersentlastungsbetrag im Rentner-Ring (b): Bemessung = positive Nicht-§19-Einkünfte = §§13-18-Gewinn
             # (laufender + § 16-vg-netto); LEIBRENTE § 22 Nr. 1 (renten) + Versorgungsbezüge § 19 Abs. 2 sind KEINE Bemessung
             # (§ 24a S. 2-Ausschlüsse). Kein § 19-Mini-Job-Arbeitslohn im rentner-Ring (MVP-Lücke, over-tax-safe → 0). MIT
@@ -1130,7 +1137,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # in via gewst_messbetrag; gewst_hebesatz_offen-Guard (shared) fängt Messbetrag-ohne-Hebesatz.
             p35_messbetrag = _c("gewst_messbetrag") // 100
             p35_hebesatz = _c("gewst_hebesatz")
-            p35_zaehler = max(0, laufender_gewinn) if _b("gewinn_betriebsart") == "gewerbe" else 0
+            p35_zaehler = max(0, laufender_gewinn) if _b("gewinn_betriebsart") == "gewerbe" else max(0, mitu)
             p35_nenner = max(0, renten) + max(0, rentner_g["einkuenfte_gewinn"])
 
             # §3 Abs.2 SolzG: SolZ-Basis = KiFB-fiktive ESt (immer mit §32 Abs.6-Freibetraegen;
