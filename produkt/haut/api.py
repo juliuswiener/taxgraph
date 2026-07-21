@@ -238,12 +238,14 @@ SCHEIBEN = {
     # Arbeitnehmerfall (Bruttolohn + Entfernungspauschale, keine gesondert erfassten Sonderausgaben,
     # keine anderen Einkunftsarten). NICHT „fertig für Angestellte": VOR/dHf/… sperren via Guard.
     "an_gesamt": {
-        "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER
+        "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER + KV_PV_FELDER
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
-                   + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER),
+                   + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER),
         # Pflicht-Kegel = einzel-Basis (inkl. Verpflegungs-TAGE; die Reduktions-Guard-Felder prüft
-        # der Guard nur bei Tagen > 0). Partner-Pflichtfelder prüft der Guard nur bei zusammen.
-        "kegel": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER
+        # der Guard nur bei Tagen > 0). Partner-Pflichtfelder prüft der Guard nur bei zusammen. KV_PV_FELDER
+        # (§10 Abs.1 Nr.3/3a) PFLICHT wie in gesamt/rentner_gesamt — betrifft jeden (Gesamt-Parität, Over-tax-
+        # Fix). KV_PV_PARTNER_FELDER NICHT im Kegel (optional wie in gesamt, absent → 0, over-tax-safe).
+        "kegel": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER + KV_PV_FELDER
                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + AN_GESAMT_FLAGS),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est",
@@ -524,16 +526,27 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 for t in VERPFLEGUNG_TAGE:
                     wk_input[t] = _cent(t)
             wk = runner.catala_werbungskosten_n(wk_input)   # Person A: EP + dHf + Verpflegung, roh
+            # § 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge (Pflicht-Kegel Person A, Gesamt-Parität, Over-tax-Fix):
+            # eigener Abs.4-Höchstbetrag (1900/2800), additiv, GETRENNT von der VOR-Basisvorsorge unten.
+            kv_pv_a = runner.catala_p10_kv_pv({
+                "basis_kv_pv": _cent("basis_kv_pv") // 100,
+                "weitere_vorsorgeaufwendungen": _cent("weitere_vorsorgeaufwendungen") // 100,
+                "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
             # Zusammenveranlagung (§ 26b): Roh-Bruttolohn + Roh-WK pro Person -> catala_est_zusammen
             # (Pauschbetrag je Ehegatte + Splitting IM Scope). MVP: Person B ohne gesonderte WK (0),
-            # ohne VOR (Partner-VOR sperrt der Guard). Person-B-WK/VOR = benannte Folge-Nachträge.
+            # ohne VOR (Partner-VOR sperrt der Guard). Person-B-KV/PV optional (absent -> 0, eigener
+            # Höchstbetrag je Person, additiv wie in gesamt) — Person-B-WK/VOR bleiben Folge-Nachträge.
             if f.get("veranlagung", {}).get("wert") == "zusammen":
+                kv_pv_b = runner.catala_p10_kv_pv({
+                    "basis_kv_pv": _cent("basis_kv_pv_partner") // 100,
+                    "weitere_vorsorgeaufwendungen": _cent("weitere_vorsorgeaufwendungen_partner") // 100,
+                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
                 return runner.catala_est_zusammen({
                     "veranlagungszeitraum": vz,
                     "bruttoarbeitslohn_a": int(slots.get("bruttoarbeitslohn", 0)) // 100,
                     "bruttoarbeitslohn_b": _cent("bruttoarbeitslohn_partner") // 100,
                     "werbungskosten_a": wk, "werbungskosten_b": 0,
-                    "sonderausgaben_gemeinsam": 0})
+                    "sonderausgaben_gemeinsam": kv_pv_a + kv_pv_b})
             # § 10 Altersvorsorge (Stufe 1a): die VOR-Einzelfelder DIREKT aus dem Store greifen —
             # der Summen-Slot gesamtbeitraege_inkl_ag würde den AG-Anteil verschmelzen und die
             # Kürzung (nach dem Cap) unmöglich machen. gesamtbeitraege = AN + AG + außerhalb; der
@@ -542,7 +555,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                       + _cent("vor_rv_ausserhalb_lstb")) // 100
             ag = _cent("vor_ag_anteil_rv") // 100
             so = runner._vorsorge_abzug({"vorsorge_gesamtbeitraege_inkl_ag": gesamt,
-                                         "vorsorge_ag_anteil_steuerfrei": ag}, vz)
+                                         "vorsorge_ag_anteil_steuerfrei": ag}, vz) + kv_pv_a
             return runner.catala_est({
                 "veranlagungszeitraum": vz,
                 "veranlagung": slots.get("veranlagung", "einzel"),

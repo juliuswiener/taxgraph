@@ -524,12 +524,14 @@ def test_durchstich_n_vor_gwg(base):
 
 # ---- Gesamtsteuer-Ring MVP (an_gesamt): erster echter §2-Bescheid, reiner Arbeitnehmerfall ----
 AN_GESAMT_VOR = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
+AN_GESAMT_KV_PV = ("basis_kv_pv", "weitere_vorsorgeaufwendungen", "mit_anspruch_auf_zuschuss")
 AN_GESAMT_DHF = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland",
                  "dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
                  "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
 AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr",
                      "vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
-                     "vor_rv_ausserhalb_lstb_partner")
+                     "vor_rv_ausserhalb_lstb_partner", "basis_kv_pv_partner",
+                     "weitere_vorsorgeaufwendungen_partner", "mit_anspruch_auf_zuschuss_partner")
 AN_GESAMT_VERPFLEGUNG = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig",
                          "vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
 AN_GESAMT_KEGEL = [
@@ -537,6 +539,8 @@ AN_GESAMT_KEGEL = [
     ("veranlagung", "einzel"),
     ("ep_arbeitstage", 220), ("ep_entfernung_km", 30), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", True),
     ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),   # reiner Pendler: keine VOR
+    # KV/PV (§ 10 Abs. 1 Nr. 3/3a, Pflicht-Kegel seit Gesamt-Parität-Fix) = 0 default, kein Abzug
+    ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
     # reiner Pendler: keine dHf (Kosten 0 -> dHf-Abzug 0, Bedingungen egal aber bestätigt)
     ("dhf_unterkunftskosten_monat", 0), ("dhf_monate", 0), ("dhf_im_inland", True),
     ("dhf_beruflich_veranlasst", True), ("dhf_eigener_hausstand", True),
@@ -579,8 +583,8 @@ def test_an_gesamt_durchstich(base):
     _val("fragen", fr)
     ids = {q["feld_id"] for q in fr["fragen"]}
     assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
-             "kein_sonstige"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_DHF)
-            | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)) == ids
+             "kein_sonstige"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
+            | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)) == ids
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
         assert st == 201
@@ -618,6 +622,26 @@ def test_an_gesamt_vor_integration(base):
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 557000 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_an_gesamt_kv_pv_integration(base):
+    """Over-tax-Fix (Gesamt-Parität): § 10 Abs. 1 Nr. 3/3a KV/PV jetzt echt gerechnet in an_gesamt.
+    Bruttolohn 40000 + EP 2156, basis_kv_pv 3200 € (320000 ct, ohne Zuschuss-Anspruch, unter HB 2800→
+    voller Basis-Durchbruch) → sonderausgaben 3200 → festzusetzende_est 5660 = 566000 Cent (vs. 6629 =
+    662900 Cent bei basis_kv_pv=0, Golden-Wert von test_an_gesamt_durchstich) — Delta 969 € belegt den
+    Abzug live."""
+    catala = _catala_da()
+    kegel = [(f, w) for f, w in AN_GESAMT_KEGEL if f not in AN_GESAMT_KV_PV]
+    kegel += [("basis_kv_pv", 320000), ("weitere_vorsorgeaufwendungen", 0),
+              ("mit_anspruch_auf_zuschuss", False)]
+    _an_gesamt_anlegen(base, "ag_kvpv", kegel)
+    st, erg = _req(base, "GET", "/fall/ag_kvpv/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 566000 and erg["grund"] == "bestaetigt"
+        assert 662900 - erg["zahl_cent"] == 96900   # Delta = KV/PV-Sonderausgabenabzug-Wirkung (969 €)
     else:
         assert erg["zahl_cent"] is None
 
@@ -731,6 +755,26 @@ def test_an_gesamt_zusammen(base):
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 1383800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_an_gesamt_zusammen_kv_pv(base):
+    """Over-tax-Fix (Gesamt-Parität) bei Zusammenveranlagung: Person-A-KV/PV additiv in
+    sonderausgaben_gemeinsam. Beide Bruttolohn 40000, basis_kv_pv_a 3200 € (320000 ct) →
+    festzusetzende_est_zusammen 12862 = 1286200 Cent (vs. 13838 = 1383800 Cent bei kv_pv=0,
+    Golden-Wert von test_an_gesamt_zusammen) — Delta 976 € belegt den Abzug live."""
+    catala = _catala_da()
+    kegel = _zusammen_kegel()
+    kegel = [(f, w) for f, w in kegel if f not in AN_GESAMT_KV_PV]
+    kegel += [("basis_kv_pv", 320000), ("weitere_vorsorgeaufwendungen", 0),
+              ("mit_anspruch_auf_zuschuss", False)]
+    _an_gesamt_anlegen(base, "zus_kvpv", kegel)
+    st, erg = _req(base, "GET", "/fall/zus_kvpv/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1286200 and erg["grund"] == "bestaetigt"
+        assert 1383800 - erg["zahl_cent"] == 97600   # Delta = KV/PV-Sonderausgabenabzug-Wirkung (976 €)
     else:
         assert erg["zahl_cent"] is None
 
