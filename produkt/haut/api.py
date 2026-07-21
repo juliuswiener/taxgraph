@@ -247,16 +247,16 @@ SCHEIBEN = {
         "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER + KV_PV_FELDER
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
                    + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER
-                   + ("fam_anzahl_kinder",)),
+                   + ("fam_anzahl_kinder", "verlustvortrag_bestand")),
         # Pflicht-Kegel = einzel-Basis (inkl. Verpflegungs-TAGE; die Reduktions-Guard-Felder prüft
         # der Guard nur bei Tagen > 0). Partner-Pflichtfelder prüft der Guard nur bei zusammen. KV_PV_FELDER
         # (§10 Abs.1 Nr.3/3a) PFLICHT wie in gesamt/rentner_gesamt — betrifft jeden (Gesamt-Parität, Over-tax-
         # Fix). KV_PV_PARTNER_FELDER NICHT im Kegel (optional wie in gesamt, absent → 0, over-tax-safe).
-        # fam_anzahl_kinder = MANDATORY im Kegel (K2-Gap-A-Fix): an_gesamt kann Kinder NUR via Sperr-Grund
-        # verarbeiten (kinder_gehoeren_in_gesamt). Kein stiller §31-loser Bescheid.
+        # fam_anzahl_kinder + verlustvortrag_bestand = MANDATORY im Kegel (K2-Gap-A/B-Fix): an_gesamt
+        # kann Kinder/Verlustvortrag NUR via Sperr-Grund verarbeiten (gehoeren_in_gesamt).
         "kegel": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER + KV_PV_FELDER
                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + AN_GESAMT_FLAGS
-                  + ("fam_anzahl_kinder",)),
+                  + ("fam_anzahl_kinder", "verlustvortrag_bestand")),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est",
         "teil_ringe": [],
@@ -1271,6 +1271,10 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
     # (K2-safe: ohne Antwort keine festzusetzende Steuer). UI-Screening vor Scheibe-Wahl = Backlog.
     if cfg and not cfg.get("gesamt_guard") and _positiv("fam_anzahl_kinder"):
         return "kinder_gehoeren_in_gesamt"
+    # an_gesamt Gap-B (K2, Over-tax): Verlustvortrag (§10d Abs.2) nicht in catala_est rechenbar
+    # (kein §2-Gesamt-Scope, kein sonstige_abzuege_vom_einkommen-Slot). Gleiches Muster wie Gap-A.
+    if cfg and not cfg.get("gesamt_guard") and _positiv("verlustvortrag_bestand"):
+        return "verlustvortrag_gehoert_in_gesamt"
     if cfg and cfg.get("gesamt_guard"):
         # Gesamt-Ring: Flag↔Einkunftsart-Widerspruch (kein_X=true + echtes Feld > 0 bestätigt) surfacen —
         # K2, keine still übergangene Einkunftsart (dev-2s flag_check).

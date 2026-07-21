@@ -549,6 +549,7 @@ AN_GESAMT_KEGEL = [
     ("tage_24h", 0), ("tage_an_abreise", 0), ("tage_ueber_8h_eintaegig", 0),
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
     ("fam_anzahl_kinder", 0),   # Gap-A-Fix (K2): Pflichtfeld — an_gesamt ohne Kinder-Antwort rechnet nicht
+    ("verlustvortrag_bestand", 0),  # Gap-B-Fix (K2): Pflichtfeld — Verlustvortrag gehört in gesamt
 ]
 
 
@@ -584,7 +585,7 @@ def test_an_gesamt_durchstich(base):
     _val("fragen", fr)
     ids = {q["feld_id"] for q in fr["fragen"]}
     assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
-             "kein_sonstige", "fam_anzahl_kinder"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
+             "kein_sonstige", "fam_anzahl_kinder", "verlustvortrag_bestand"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
             | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)) == ids
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
@@ -619,6 +620,16 @@ def test_an_gesamt_kinder_guard(base):
     st, erg = _req(base, "GET", "/fall/ag_kids/ergebnis")
     assert erg["zahl_cent"] is None
     assert erg["grund"] == "kinder_gehoeren_in_gesamt"
+
+
+def test_an_gesamt_verlustvortrag_guard(base):
+    """Gap-B-Fix (K2): verlustvortrag_bestand > 0 → an_gesamt gesperrt (verlustvortrag_gehoert_in_gesamt).
+    §10d Verlustvortrag nicht in catala_est rechenbar → NIEMALS stiller Over-tax."""
+    kegel = [(f, (500000 if f == "verlustvortrag_bestand" else v)) for f, v in AN_GESAMT_KEGEL]
+    _an_gesamt_anlegen(base, "ag_vv", kegel)
+    st, erg = _req(base, "GET", "/fall/ag_vv/ergebnis")
+    assert erg["zahl_cent"] is None
+    assert erg["grund"] == "verlustvortrag_gehoert_in_gesamt"
 
 
 def test_an_gesamt_vor_integration(base):
