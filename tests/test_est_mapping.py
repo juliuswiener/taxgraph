@@ -282,6 +282,37 @@ def test_neg_scheibe3_verfaelschtes_1zu1_bricht_roundtrip(bindung):
     assert rt["felder"]["kap_kapitalertraege"] != 10000
 
 
+# ---- Asymmetrische Cent-Rundung (anl_est1a_2025.txt:269-274 "zu Ihren Gunsten") ----
+
+def test_asym_rundung_einnahme_floor_abzug_ceiling(bindung):
+    """Einnahmen→abrunden (floor), Abzüge→aufrunden (ceiling). Cent-Werte beweisen die Asymmetrie."""
+    # Einnahme: 300199 Cent = 3001,99 EUR → floor = 3001 EUR (abrunden=günstiger)
+    # Abzug:    500199 Cent = 5001,99 EUR → ceiling = 5002 EUR (aufrunden=günstiger)
+    snap, _ = ST.materialisiere(_store_mit({
+        "kap_kapitalertraege": 300199,     # E1900701 → floor
+        "agb_aufwendungen": 500199,         # E0161804 → ceiling
+        "kap_verlust_sonstige": 1,                   # E1901201 → ceiling (1 Cent → 1 EUR)
+        "vv_einnahmen": 100199,              # E0700201 → floor
+    }))
+    r = EM.deklariere(snap, bindung)
+    assert r["deklaration"]["E1900701"] == 3001     # floor: 3001,99→3001
+    assert r["deklaration"]["E0161804"] == 5002     # ceiling: 5001,99→5002
+    assert r["deklaration"]["E1901201"] == 1        # ceiling: 0,99→1
+    assert r["deklaration"]["E0700201"] == 1001     # floor: 1001,99→1001
+
+
+def test_asym_rundung_roundtrip_cent(bindung):
+    """Round-Trip nach asymmetrischer Rundung: floor/ceiling-EUR-Werte invertierbar (verlustbehaftet)."""
+    snap, _ = ST.materialisiere(_store_mit({
+        "kap_kapitalertraege": 300199,
+        "agb_aufwendungen": 500199,
+    }))
+    r = EM.deklariere(snap, bindung)
+    rt = EM.zuruecklesen(r, bindung)
+    assert rt["felder"]["kap_kapitalertraege"] == 3001     # floor-Rundung→EUR
+    assert rt["felder"]["agb_aufwendungen"] == 5002          # ceiling-Rundung→EUR
+
+
 # ---- Klasse f: Renten-Art-Verzweigung (Nachtrag A, 1 Wert-Slot -> N-Kz) -------
 
 def test_klasse_f_verzweigung_aa_basisversorgung(bindung):

@@ -29,15 +29,33 @@ ROOT = os.path.dirname(PRODUKT)
 FELDMAPPING = os.path.join(ROOT, "elster", "feldmapping.stub.yaml")   # Andock-Referenz (Auflage B)
 
 
+# ABZUGS_KZ — E10-Kz die Abzüge/Aufwendungen/Verluste deklarieren → ceiling (aufrunden).
+# Quelle: anl_est1a_2025.txt:269-274 "zu Ihren Gunsten": Einnahmen/Einkünfte→abrunden (floor),
+# Abzüge/Aufwendungen/Verluste→aufrunden (ceiling). Jedes Kz quell-verankert klassifiziert:
+# signatur_slot/Slot-Beitrag+Regel-Kontext (Einnahme=pos Einkunft-Summand/Abzug=neg Summand/Ausgabe).
+_ABZUGS_KZ = frozenset({
+    "E0703838",  # V+V Werbungskosten (Aggregat §21)
+    "E2000401",  # AN-Anteil RV (Vorsorgeaufwand §10 Abs.1 Nr.2)
+    "E2000801",  # AG-Anteil RV (Vorsorgeaufwand §10 Abs.1 Nr.2)
+    "E2000601",  # RV außerhalb LStB (Vorsorgeaufwand §10 Abs.1 Nr.2)
+    "E1901301",  # Verlust aus Aktien (§20 Abs.6)
+    "E1901201",  # Sonstige Verluste (§20 Abs.6)
+    "E0161804",  # agB Aufwendungen (§33 Abs.1-2)
+    "E0104109",  # §35a Minijob-Aufwendungen (haushaltsnahe)
+    "E0107208",  # §35a haushaltsnahe Dienstleistungen
+    "E0111215",  # §35a Handwerker-Arbeitskosten
+})
+
+
 def _cent_nach_kz(wert: int, kz: str) -> int | str:
-    """Store-CENT → Kz-Wert: E60-Präfix → "N,NN"-Dezimalstring (E77 EÜR), sonst floor//100 (E10 integer).
-    Backlog Stufe-2 (asymmetrische Rundung zu-Gunsten): Abzugs-Kz (WK/BA) sollten ceiling statt floor
-    verwenden (§ 2 Abs. 2 S. 2 "zu Ihren Gunsten"). Derzeit floor-all = konservativ legal (Finanzamt
-    akzeptiert, sub-euro von 0,00..0,99 im Einnahmen- und Abzugs-Fall; Abzüge minimal über-vorsichtig)."""
-    # Stufe-1: floor-all. Stufe-2: Abzugs-Kz sollten auf ceiling runden (amtlich "zu Ihren Gunsten").
+    """Store-CENT → Kz-Wert: E60-Präfix → "N,NN"-Dezimalstring, E10 integer asymmetrisch gerundet.
+    anl_est1a_2025.txt:269-274: "zu Ihren Gunsten" — Einnahmen/Einkünfte→abrunden (floor),
+    Abzüge/Aufwendungen/Verluste→aufrunden (ceiling)."""
     if kz.startswith("E60"):
         return f"{wert // 100},{wert % 100:02d}"
-    return wert // 100
+    if kz in _ABZUGS_KZ:
+        return -(-wert // 100)   # ceiling: 1..99 Cent → 1 EUR (aufrunden=günstiger)
+    return wert // 100            # floor: 1..99 Cent → 0 EUR (abrunden=günstiger)
 
 
 # --- Transform-Konfiguration (source-verankert via 2026-07-17-enr-nachtraege-kandidaten.md) ---
