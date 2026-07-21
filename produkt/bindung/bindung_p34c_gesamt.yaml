@@ -1,0 +1,142 @@
+# Bindungstabelle — §34c Abs.1 EStG DBA-Anrechnung ausländischer Steuer (Stufe-1).
+# Single-Country-Nicht-DBA / DBA-Anrechnungsmethode. Fail-closed: Freistellungs-DBA,
+# multi-country, §32d-Kapital → sperr. Muster: felder OPTIONAL (absent→0→safe).
+# Kz: null+MVP (Anlage-AUS-Kz = dev-2-Folgeticket, XSD-recon nicht rushed).
+# Teilmenge-Invariant (Q1): dba_auslaendische_einkuenfte ⊆ Welteinkommen, NIE additiv zur GdE.
+# Task §34c-Stufe-1, Stand 2026-07-21.
+version: 1
+scheibe: "§34c Abs.1 DBA-Anrechnung ausländischer Steuer (gesamt + rentner)"
+
+bindungen:
+  # ========================= Staat + Methode (Screening) =========================
+  - feld_id: dba_staat
+    quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, geltungsbedingung: per_country_ein_staat}
+    typ: enum
+    einheit: null
+    enum_werte: ["Frankreich", "Italien", "Oesterreich", "Schweiz", "Niederlande", "Polen", "Tschechien",
+                 "Grossbritannien", "Spanien", "USA", "sonstiger_staat"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Aus welchem Staat stammen deine ausländischen Einkünfte?"
+    hilfe_kurz: "Das Land, in dem du die Einkünfte erzielt hast und in dem ausländische Steuer einbehalten wurde."
+    beispielwert: Frankreich
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-AUS-Staatenschlüssel — Kz-Recon = dev-2-Folgeticket (null-MVP). Single-Country Stufe-1; multi-country (>1 Staat) sperrt dba_multi_country_offen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 1 S. 1 EStG"
+      zitatanker: "die Einkünfte aus diesem Staat entfällt"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+  - feld_id: dba_methode
+    quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, geltungsbedingung: kein_dba_mit_quellenstaat}
+    typ: enum
+    einheit: null
+    enum_werte: ["kein_dba", "dba_anrechnung", "dba_freistellung"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Methode gilt im Doppelbesteuerungsabkommen mit diesem Staat für deine Einkünfte?"
+    hilfe_kurz: "Die meisten DBA sehen Freistellung vor (dann kein §34c); bei Anrechnungs-DBA oder ohne DBA greift §34c. Frag deinen Steuerberater oder lies dein DBA nach."
+    beispielwert: kein_dba
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "DBA-Methoden-Marker — kein direkter Kz (reine Ring-Logik, nicht deklariert). Freistellung → fail-closed (dba_freistellung_offen, §32b ung ungebaut)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 6 S. 1 EStG"
+      zitatanker: "nicht anzuwenden, wenn die Einkünfte aus einem ausländischen Staat stammen, mit dem ein Abkommen zur Vermeidung der Doppelbesteuerung besteht"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+  - feld_id: dba_mehrere_staaten
+    quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, geltungsbedingung: per_country_ein_staat}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hast du ausländische Einkünfte aus mehr als einem Staat?"
+    hilfe_kurz: "Die DBA-Anrechnung ist in Stufe-1 auf EINEN Staat beschränkt. Bei mehreren Staaten brauchst du eine Steuerberatung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Feld (reine Ring-Logik, nicht deklariert). Bestätigt true → dba_multi_country_offen (fail-closed)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 1 S. 1 EStG"
+      zitatanker: "die auf die Einkünfte aus diesem Staat entfällt"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+
+  # ========================= Beträge (EURO) =========================
+  - feld_id: dba_gezahlte_auslaendische_steuer
+    quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, signatur_slot: gezahlte_auslaendische_steuer}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viel ausländische Steuer wurde in diesem Staat tatsächlich einbehalten (um Ermäßigungen gekürzt)?"
+    hilfe_kurz: "Betrag aus deiner ausländischen Steuerbescheinigung. Abzüglich etwaiger Erstattungen oder Ermäßigungsansprüche (§34c Abs.1 S.1)."
+    beispielwert: 300000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-AUS-Kz — Kz-Recon = dev-2-Folgeticket (null-MVP)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 1 S. 1 EStG"
+      zitatanker: "gezahlte und um einen entstandenen Ermäßigungsanspruch gekürzte ausländische Steuer"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+  - feld_id: dba_auslaendische_einkuenfte
+    quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, signatur_slot: auslaendische_einkuenfte_staat}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Von den oben bereits erfassten Einkünften: welcher Teil stammt aus diesem Staat?"
+    hilfe_kurz: "⚠ Wichtig: nur der ANTEIL deiner bereits deklarierten Einkünfte, der aus dem Ausland stammt — keine zusätzlichen Beträge. Der Betrag dient nur zur Berechnung des Höchstbetrags der Anrechnung."
+    beispielwert: 4000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-AUS-Kz, TEILMENGE der Welteinkünfte (Q1-Invariant: NIE additiv zur GdE, reiner Höchstbetrags-Zähler) — Kz-Recon = dev-2-Folgeticket (null-MVP)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 1 S. 2 EStG"
+      zitatanker: "der sich bei der Veranlagung des zu versteuernden Einkommens, einschließlich der ausländischen Einkünfte"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+
+# ===== Lücken + Geltungsbedingungen (Nicht-Feld-Logik) =====
+luecken:
+  # -- p34c_1: Geltungsbedingungen, die keine Felder sind --
+  - regel_id: p34c_1_anrechnung_hoechstbetrag
+    geltungsbedingung: keine_kapitalertraege_p32d
+    grund: "§32d-Kapital-ESt-Ausnahme (§34c Abs.1 S.1 Hs.2). MVP: Guard dba_kapital_offen im Ring; echtes Routing = eigene Kz-Runde."
+  - regel_id: p34c_1_anrechnung_hoechstbetrag
+    geltungsbedingung: andockung_est_zve_p2
+    grund: "deutsche_est_inkl_ausl + zvE = §2-Integrations-Andockung. Im Ring via catala_gesamt_tarifliche + catala_gesamt_zve bezogen."
+  - regel_id: p34c_1_anrechnung_hoechstbetrag
+    geltungsbedingung: steuer_festgesetzt_gezahlt_gekuerzt
+    grund: "Input-Sachverhaltsannahme: ausl. Steuer = festgesetzt + gezahlt + um Ermäßigungsanspruch gekürzt. Im Feld dba_gezahlte_auslaendische_steuer materialisiert."
+  - regel_id: p34c_1_anrechnung_hoechstbetrag
+    geltungsbedingung: auslaendische_einkuenfte_p34d_katalog
+    grund: "§34d-Katalog-Einkunfts-Qualifikation. MVP: Nutzer klassifiziert selbst (Teilmenge der deklarierten Einkünfte); Katalog-Check = eigene Runde."
+  - regel_id: p34c_1_anrechnung_hoechstbetrag
+    geltungsbedingung: zve_positiv
+    grund: "Division definiert: zvE > 0. Accessor (catala_p34c_1) rechnet bei zvE≤0 → 0 (fail-closed)."
+  - regel_id: p34c_1_anrechnung_hoechstbetrag
+    signatur_slot: deutsche_est_inkl_ausl
+    grund: "Berechnete Größe (deutsche ESt inkl. ausl. Einkünfte = catala_gesamt_tarifliche PRE-§34c); Ring-Andockung, kein Laien-Feld."
+  - regel_id: p34c_1_anrechnung_hoechstbetrag
+    signatur_slot: zu_versteuerndes_einkommen
+    grund: "Berechnete Größe (zvE = catala_gesamt_zve); Ring-Andockung, kein Laien-Feld."
+  # -- p34c_2: Stufe-2-Backlog --
+  - regel_id: p34c_2_abzug_statt_anrechnung
+    geltungsbedingung: kein_dba_mit_quellenstaat
+    grund: "DBA-Vorrang (identisch p34c_1). Stufe-2: Abzug-Wahlrecht greift nur, wenn kein DBA-Freistellungs-Vorrang (§34c Abs.6)."
+  - regel_id: p34c_2_abzug_statt_anrechnung
+    geltungsbedingung: antrag_abzug_statt_anrechnung
+    grund: "§34c Abs.2 Abzug-Wahlrecht auf Antrag — Stufe-2. Fail-closed in Stufe-1: ohne Antrag gilt die Anrechnung."
+  - regel_id: p34c_2_abzug_statt_anrechnung
+    geltungsbedingung: nur_nicht_steuerfreie_ausl_einkuenfte
+    grund: "Nur nicht-steuerfreie ausl. Einkünfte rechenbar (§34c Abs.2 S.2). Stufe-2: Materialisierung der Einkunfts-Qualifikation."
+  - regel_id: p34c_2_abzug_statt_anrechnung
+    geltungsbedingung: steuer_soweit_auf_ausl_einkuenfte
+    grund: "Steuer soweit auf ausl. Einkünfte entfallend (§34c Abs.2 S.1). Stufe-2: Abzug-Rechnung."
+  - regel_id: p34c_2_abzug_statt_anrechnung
+    signatur_slot: auslaendische_steuer_auf_ausl_einkuenfte
+    grund: "Abzug – Betrag der auf ausl. Einkünfte entfallenden deutschen Steuer. Berechnete Größe, kein Laien-Feld. Stufe-2-Backlog."

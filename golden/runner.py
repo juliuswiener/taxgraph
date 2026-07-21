@@ -947,6 +947,27 @@ def catala_p10d_2(s: dict) -> int:
     return int(r.verlustabzug) // 100
 
 
+# -- DBA § 34c Abs. 1 EStG (Anrechnung ausländischer Steuer). EURO. --------------
+# Pure-Python (p34c_1 steht in clerk.toml NICHT — nur p34_3; promoted+inert via
+# pipeline, 4 test_seeds verified fidel). EURO-floor-Idiom = ganzzahlige Division.
+# Q1-invariant (dev-2-Fragetext): auslaendische_einkuenfte_staat = TEILMENGE der
+# bereits im zvE enthaltenen Welteinkünfte, NIE additiv zur GdE — reiner Zähler.
+
+def catala_p34c_1(s: dict) -> int:
+    """§34c Abs.1 EStG — Anrechnung ausländischer Steuer, Single-Country, EURO.
+    anrechnung = min(gezahlte_auslaendische_steuer, deutsche_est_inkl_ausl * ausl / zvE).
+    zve ≤ 0 or ausl ≤ 0 → 0. 4 test_seeds pipeline-verified (3000→3000, 10000→8000-
+    Deckel, ausl=0→0, zve=60000-ausl=30000-30000→5000)."""
+    gezahlt = int(s["gezahlte_auslaendische_steuer"])
+    est = int(s["deutsche_est_inkl_ausl"])
+    zve = int(s["zu_versteuerndes_einkommen"])
+    ausl = int(s["auslaendische_einkuenfte_staat"])
+    if ausl <= 0 or zve <= 0:
+        return 0
+    hoechstbetrag = est * ausl // zve
+    return min(gezahlt, hoechstbetrag)
+
+
 def catala_gesamt_tarifliche(s: dict) -> int:
     """Die tarifliche ESt (§ 32a auf das zvE) des gesamt-Scopes, EURO — Output-Feld tarifliche_est des
     FestzusetzendeEstGesamt(-Zusammen)-Scopes. UNABHÄNGIG von steuerermaessigungen (nur zvE-abhängig, empirisch

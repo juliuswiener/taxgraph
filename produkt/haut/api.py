@@ -202,10 +202,15 @@ GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_vora
 GESAMT_33B = ("rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind",
               "rentner_hinterbliebenenbezuege", "rentner_pflegegrad", "rentner_gepflegter_hilflos")
 GESAMT_33B_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner")
+# §34c Abs.1 DBA-Anrechnung (Stufe-1, single-country, fail-closed): 5 Felder (Staat/Methode/
+# mehrere/Betrag/Einkünfte). OPTIONAL (absent→0→safe). Teilmenge-Invariant: dba_auslaendische_
+# einkuenfte ⊆ Welteinkommen, NIE additiv zur GdE, nur Accessor-Zähler. an_gesamt out-of-scope.
+GESAMT_DBA = ("dba_staat", "dba_methode", "dba_mehrere_staaten",
+              "dba_gezahlte_auslaendische_steuer", "dba_auslaendische_einkuenfte")
 # Weg-ii-Parität-Fix (K2, Over-tax, ring-b-Fund #4): GESAMT_FREIBETRAEGE auch im Rentner-Ring nachgetragen —
 # ohne fam_alleinstehend/fam_monate_ohne_voraussetzung postbar war § 24b im Rentner-Ring nicht erreichbar
 # (geburtsjahr/fam_anzahl_kinder stehen schon in RENTNER_GEWINN/GESAMT_ABZUEGE, Duplikat harmlos).
-RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA
 # §§ 13-18 Gewinneinkünfte (Stufe 1), OPTIONAL im gesamt-Ring (NICHT Pflicht-Kegel → absent → 0, over-tax-safe).
 # einkuenfte_gewinn (CENT) = der vorberechnete Gewinn-Betrag → einkuenfte_gewinn-Slot der slot_fn (§ 2-Summand).
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
@@ -275,7 +280,8 @@ SCHEIBEN = {
                    + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
-                   + GESAMT_33B + GESAMT_33B_PARTNER),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Person-B-Vorsorge (A.2) + §§13-18-Gewinn (Stufe 1) OPTIONAL
+                   + GESAMT_33B + GESAMT_33B_PARTNER
+                   + GESAMT_DBA),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn (Stufe 1) + §34c OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -865,6 +871,22 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "gesamtbetrag_einkuenfte": gde_p10d,
                 "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
                 "zusammenveranlagung": g["veranlagung"] == "zusammen"})
+            # §34c Abs.1 DBA-Anrechnung (Stufe-1, single-country, fail-closed): anrechnung = min(gezahlt, HB).
+            # HB = tarifliche_est * dba_auslaendische_einkuenfte / zvE. §34c VOR §35 (§35 Abs.1 S.4: geminderte
+            # tarifliche Steuer = tarifliche NACH §34c). anrechnung in g → catala_gesamt-Slot, mindert
+            # festzusetzende_est. dba_auslaendische_einkuenfte [cent] → EURO (wie alle Geld-Felder).
+            # PRE-§34c tarifliche = catala_gesamt_tarifliche(g) — invariant gegen anrechnung (empirisch bewiesen).
+            # Fail-closed: Freistellung, multi-country, §32d-Kapital → Guard sperrt (kein silent-zero).
+            dba_anrechnung = 0
+            dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100
+            dba_ausl = _c("dba_auslaendische_einkuenfte") // 100
+            if dba_gezahlt > 0 or dba_ausl > 0:
+                dba_anrechnung = runner.catala_p34c_1({
+                    "gezahlte_auslaendische_steuer": dba_gezahlt,
+                    "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(g),
+                    "zu_versteuerndes_einkommen": runner.catala_gesamt_zve(g),
+                    "auslaendische_einkuenfte_staat": dba_ausl})
+            g["anzurechnende_auslaendische_steuern"] = dba_anrechnung
             # § 35 GewSt-Anrechnung (S1, opt-in via gewst_messbetrag): der GewSt-Steuermessbetrag (INPUT aus dem
             # GewSt-Messbescheid, enthält § 8-Hinzurechnung/§ 9-Kürzung schon) + Hebesatz → Anrechnung auf die
             # tarifliche ESt. Zähler des Ermäßigungshöchstbetrags (§ 35 Abs. 1 S. 2) = gewerbliche Einkünfte (S. 3
@@ -926,13 +948,14 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 # zahlende Gewerbesteuer"], Ermäßigungshöchstbetrag [S. 2: Zähler/Nenner × geminderte tarifliche
                 # Steuer]). ADDITIV in steuerermaessigungen DIESES Freibetrag-Zweigs — tarifliche_est ist freibetrag-
                 # abhängig (Kinderfreibetrag senkt zvE), daher Deckel-3 JE ZWEIG (global-einmal würde den Kinder-
-                # freibetrag-Zweig über-crediten = stille Under-tax). geminderte tarifliche Steuer (S. 4) = catala_
-                # gesamt_tarifliche (== § 32a(zvE), MVP ohne DBA/§ 34c/§ 32d-ausl.). ALL-3-DECKEL, ALL-OR-CORRECT.
+                # freibetrag-Zweig über-crediten = stille Under-tax). §35 Abs.1 S.4: geminderte tarifliche Steuer
+                # = tarifliche_est NACH §34c-Anrechnung (PRE-§35, NEVER umgekehrt — sonst §35-Über-Kredit).
                 if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
-                    tarifliche = runner.catala_gesamt_tarifliche(g2)
+                    tarifliche_raw = runner.catala_gesamt_tarifliche(g2)
+                    tarifliche_gemindert = max(0, tarifliche_raw - dba_anrechnung)
                     p35 = min(4 * p35_messbetrag,
                               p35_messbetrag * p35_hebesatz // 100,
-                              p35_zaehler * tarifliche // p35_nenner)
+                              p35_zaehler * tarifliche_gemindert // p35_nenner)
                     g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35)
                 est_ohne = runner.catala_est(g2)     # KEIN Kapital (est_regulaer_ohne_kap)
                 if kapitaleinkuenfte <= 0:
@@ -1102,6 +1125,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "gesamtbetrag_einkuenfte": gde,
                 "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
                 "zusammenveranlagung": rentner_g["veranlagung"] == "zusammen"})
+            # §34c Abs.1 DBA-Anrechnung (1:1 gesamt-Präzedenz, §34c VOR §35).
+            dba_anrechnung = 0
+            dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100
+            dba_ausl = _c("dba_auslaendische_einkuenfte") // 100
+            if dba_gezahlt > 0 or dba_ausl > 0:
+                dba_anrechnung = runner.catala_p34c_1({
+                    "gezahlte_auslaendische_steuer": dba_gezahlt,
+                    "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(rentner_g),
+                    "zu_versteuerndes_einkommen": runner.catala_gesamt_zve(rentner_g),
+                    "auslaendische_einkuenfte_staat": dba_ausl})
+            rentner_g["anzurechnende_auslaendische_steuern"] = dba_anrechnung
             # Weg-ii-Fix (K2, Over-tax): § 10 Abs. 1 Nr. 2 Basisvorsorge (VOR_FELDER jetzt Pflicht-Kegel) —
             # catala_est ruft _vorsorge_abzug intern (runner.py), kein Doppelzählen, nur die Slots setzen.
             rentner_g["vorsorge_gesamtbeitraege_inkl_ag"] = (_c("vor_an_anteil_rv") + _c("vor_ag_anteil_rv")
@@ -1175,12 +1209,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 # § 35 GewSt-Anrechnung Deckel-3 (JE §31-Zweig — tarifliche_est ist freibetrag-abhängig, global-
                 # einmal würde den Kinderfreibetrag-Zweig über-crediten = stille Under-tax, 1:1 gesamt-Präzedenz).
                 if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
-                    tarifliche = runner.catala_gesamt_tarifliche(g2)
+                    tarifliche_raw = runner.catala_gesamt_tarifliche(g2)
+                    tarifliche_gemindert = max(0, tarifliche_raw - dba_anrechnung)
                     # Weg-ii-Fix (K2, PFLICHT): ADDITIV statt hart überschreiben — sonst löscht § 35 GewSt-
                     # Anrechnung das § 35a-Ergebnis (steuerermaessigungen) still.
                     g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + min(
                         4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100,
-                        p35_zaehler * tarifliche // p35_nenner))
+                        p35_zaehler * tarifliche_gemindert // p35_nenner))
                 result = runner.catala_est(g2)
                 # SolZ-Tracking: letzte Lauf überschreibt — KiFB>0 = SolZ-Basis (§3 Abs.2); kinderlose Fälle nur ein Lauf (freibetrag=0)
                 if freibetrag > 0 or kinder == 0:
@@ -1276,6 +1311,20 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
     if cfg and not cfg.get("gesamt_guard") and _positiv("verlustvortrag_bestand"):
         return "verlustvortrag_gehoert_in_gesamt"
     if cfg and cfg.get("gesamt_guard"):
+        # §34c DBA-Anrechnung (Stufe-1, K2): fail-closed bei Freistellungs-DBA, multi-country,
+        # §32d-Kapital. Ohne diese Gates wäre die Anrechnung still 0 (gezahlt=0/ausl=0=absent) —
+        # was bei vorhandenem (aber nicht gestütztem) DBA-Sachverhalt legitim = kein silent Over-tax.
+        # Die GATES treffen nur die Fälle, wo der Nutzer aktiv DBA-Werte gesetzt hat, die diese
+        # Scheibe nicht rechenbar macht → fail-closed (= keine stille 0-Anrechnung).
+        dba_methode = (felder.get("dba_methode") or {}).get("wert")
+        dba_mehrere = (felder.get("dba_mehrere_staaten") or {}).get("wert")
+        if dba_methode == "dba_freistellung":
+            return "dba_freistellung_offen"
+        if dba_mehrere is True:
+            return "dba_multi_country_offen"
+        if any(_positiv(k) for k in KAP_TOEPFE) or (felder.get(KAP_ERTRAEGE, {}).get("wert") or 0) > 0:
+            if _positiv("dba_auslaendische_einkuenfte"):
+                return "dba_kapital_offen"
         # Gesamt-Ring: Flag↔Einkunftsart-Widerspruch (kein_X=true + echtes Feld > 0 bestätigt) surfacen —
         # K2, keine still übergangene Einkunftsart (dev-2s flag_check).
         if FC.flag_widersprueche(felder):
