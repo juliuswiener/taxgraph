@@ -2756,6 +2756,48 @@ def test_rentner_multi_rente_fixierung_per_instanz(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "rentenfreibetrag_fixierung_offen"
 
 
+def test_rentner_p31_familienleistung_freibetrag_guenstiger(base):
+    """§ 31 Familienleistungsausgleich (Fund D, Rentner-Ring-Fix, Over-tax): fehlte komplett — Rentner mit
+    Kindern verlor die Günstiger-Freibetrag-Anrechnung. Hoher laufender Gewinn 200000 (zusammen, kein_gewinn=
+    False, keine Rente) → Grenzsteuersatz hoch genug, dass Kinderfreibetrag (9600 zusammen) die 3060 Kindergeld
+    schlägt (§ 31 S. 4 Hinzurechnung). kinder=1 OHNE alleinstehend/agb (isoliert § 31 von § 24b/§ 33). Vor dem
+    Fix war fam_anzahl_kinder im Rentner-Ring für § 31 ein totes Feld → mit/ohne identisch (Bug); nach dem Fix
+    sinkt die est real."""
+    catala = _catala_da()
+    if not catala:
+        pytest.skip("Catala-Toolchain nicht verfügbar")
+    _rentner_anlegen(base, "rp31o", _rentner_kegel(jahresrente=0, gewinn=20000000, kein_gewinn=False,
+                                                    veranlagung="zusammen"))
+    st, ohne = _req(base, "GET", "/fall/rp31o/ergebnis")
+    assert ohne["grund"] == "bestaetigt"
+    _rentner_anlegen(base, "rp31m", _rentner_kegel(jahresrente=0, gewinn=20000000, kein_gewinn=False,
+                                                    veranlagung="zusammen"))
+    _rentner_abzuege(base, "rp31m", kinder=1)
+    st, mit = _req(base, "GET", "/fall/rp31m/ergebnis")
+    assert mit["grund"] == "bestaetigt"
+    assert mit["zahl_cent"] < ohne["zahl_cent"], \
+        f"§ 31-Freibetrag-Günstiger nicht reflektiert: ohne={ohne['zahl_cent']} mit={mit['zahl_cent']}"
+
+
+def test_rentner_p31_kindergeld_guenstiger_kein_blinder_abzug(base):
+    """Gegenprobe zu test_rentner_p31_familienleistung_freibetrag_guenstiger: NIEDRIGE Rente (20000€, wie
+    test_rentner_gesetzl_erstjahr, es 811€) → Kinderfreibetrag-Ersparnis « 3060 Kindergeld → § 31 wählt
+    Kindergeld-günstiger → est UNVERÄNDERT trotz kinder=1. Beweist die ECHTE Günstigerprüfung (Vergleich), nicht
+    einen blinden Freibetrag-Abzug ohne Vergleich (der hier fälschlich die est senken würde)."""
+    catala = _catala_da()
+    if not catala:
+        pytest.skip("Catala-Toolchain nicht verfügbar")
+    _rentner_anlegen(base, "rp31ko", _rentner_kegel(jahresrente=2000000, beginn=2025))
+    st, ohne = _req(base, "GET", "/fall/rp31ko/ergebnis")
+    _rentner_anlegen(base, "rp31km", _rentner_kegel(jahresrente=2000000, beginn=2025))
+    _rentner_abzuege(base, "rp31km", kinder=1)
+    st, mit = _req(base, "GET", "/fall/rp31km/ergebnis")
+    assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt"
+    assert ohne["zahl_cent"] == 81100
+    assert mit["zahl_cent"] == ohne["zahl_cent"], \
+        f"§ 31 blind abgezogen statt verglichen: ohne={ohne['zahl_cent']} mit={mit['zahl_cent']}"
+
+
 def test_graph_uebersicht(base):
     """Read-only Desktop-Graph: Knoten = Regeln der Scheibe mit Status, Kanten = Feld→Regel mit
     Zustand. Ein Traverser-Aufruf, kein Bescheid, kein Schreibpfad."""

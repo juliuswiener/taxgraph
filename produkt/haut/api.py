@@ -1065,47 +1065,62 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
                 "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
                 "splitting": rentner_g["veranlagung"] == "zusammen"})
-            # § 34 CHOOSER im Rentner-Ring (Abs. 1 Fünftel Default vs Abs. 3 ermäßigter Satz auf Antrag): identisch zur
-            # gesamt-Naht, SINGLE-computation (kein §31). Guard zve2>0. ao = netto_vg (laufender Gewinn progressiv). Der
-            # §35-Block unten liest catala_gesamt_tarifliche(rentner_g) = post-§34-tarifliche (automatisch).
-            if netto_vg > 0:
-                zve2 = runner.catala_gesamt_zve(rentner_g)
-                if zve2 > 0:
-                    if f.get("antrag_ermaessigter_satz", {}).get("wert") is True \
-                            and _abs3_eligible(f, vz) and netto_vg <= 5_000_000:
-                        # § 34 Abs. 3: plain grundtarif(verbleibendes zvE, S.3) + ermäßigter_satz × min(ao,5Mio).
-                        est_rest = runner.catala_est({"veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
-                                                      "zu_versteuerndes_einkommen": max(0, zve2 - netto_vg)})
-                        est_ao = runner.catala_ermaessigter_durchschnittssatz({
-                            "ao_einkuenfte": netto_vg,
-                            "est_gesamt_zzgl_progression": runner.catala_gesamt_tarifliche(rentner_g),
-                            "bemessungsgrundlage_durchschnitt": zve2})
-                        rentner_g["tarif_modifiziert"] = True
-                        rentner_g["tarifliche_est_modifiziert"] = est_rest + est_ao
-                    else:
-                        rentner_g["tarif_modifiziert"] = True
-                        rentner_g["tarifliche_est_modifiziert"] = runner.catala_fuenftel({
-                            "veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
-                            "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg})
-            # § 35 GewSt-Anrechnung (S1-Port in den Rentner-Ring, SINGLE-computation — kein § 31-Günstiger hier, die
-            # rentner-Scheibe hat kein fam_anzahl_kinder). Zähler = laufender Gewerbe-Gewinn (NUR betriebsart=gewerbe,
-            # § 16-vg-netto RAUS § 7 S. 2 GewStG). Nenner = renten (§ 22 IM Nenner — echt hier, anders als gesamt wo
-            # sonstige=0) + einkuenfte_gewinn (VOLLSTÄNDIG: die rentner-Scheibe hat kein § 19/§ 21). tarifl == exakte
-            # rentner-tarifliche-ESt über den IDENTISCHEN rentner_g-Dict (kein Hand-Subset-Drift). min-3-Deckel (§ 35
-            # Abs. 1: 4×MB S. 1 / MB×Hebesatz S. 5 / Ermäßigungshöchstbetrag S. 2). Opt-in via gewst_messbetrag;
-            # gewst_hebesatz_offen-Guard (shared) fängt Messbetrag-ohne-Hebesatz. Kein Messbetrag → kein § 35.
+            # § 35 GewSt-Anrechnung Basiswerte (freibetrag-unabhängig — Zähler/Nenner hängen nicht vom § 31-Zweig
+            # ab, nur die tarifliche_est im Deckel-3 unten). Zähler = laufender Gewerbe-Gewinn (NUR betriebsart=
+            # gewerbe, § 16-vg-netto RAUS § 7 S. 2 GewStG). Nenner = renten (§ 22 IM Nenner — echt hier, anders als
+            # gesamt wo sonstige=0) + einkuenfte_gewinn (VOLLSTÄNDIG: die rentner-Scheibe hat kein § 19/§ 21). Opt-
+            # in via gewst_messbetrag; gewst_hebesatz_offen-Guard (shared) fängt Messbetrag-ohne-Hebesatz.
             p35_messbetrag = _c("gewst_messbetrag") // 100
             p35_hebesatz = _c("gewst_hebesatz")
             p35_zaehler = max(0, laufender_gewinn) if _b("gewinn_betriebsart") == "gewerbe" else 0
             p35_nenner = max(0, renten) + max(0, rentner_g["einkuenfte_gewinn"])
-            if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
-                tarifliche = runner.catala_gesamt_tarifliche(rentner_g)
-                # Weg-ii-Fix (K2, PFLICHT): ADDITIV statt hart überschreiben — sonst löscht § 35 GewSt-Anrechnung
-                # das neue § 35a-Ergebnis (steuerermaessigungen) still. 1:1 gesamt-Präzedenz (_festzusetzende Z. 842).
-                rentner_g["steuerermaessigungen"] = rentner_g.get("steuerermaessigungen", 0) + min(
-                    4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100,
-                    p35_zaehler * tarifliche // p35_nenner)
-            return runner.catala_est(rentner_g)
+
+            def _festzusetzende_r(freibetrag: int) -> int:
+                # § 31 Familienleistungsausgleich (Fund D, Rentner-Ring-Fix): PER §31-Zweig neu gerechnet (g2 statt
+                # rentner_g direkt) — Kinderfreibetrag senkt zvE (§ 2 Abs. 5) → eigener Tarif + eigene § 35-Deckel-3-
+                # Anrechnung je Zweig. 1:1 gesamt-Naht-Präzedenz (_festzusetzende Z. 842-892).
+                g2 = dict(rentner_g, freibetraege_kinder=freibetrag) if freibetrag else dict(rentner_g)
+                # § 34 CHOOSER im Rentner-Ring (Abs. 1 Fünftel Default vs Abs. 3 ermäßigter Satz auf Antrag):
+                # identisch zur gesamt-Naht. Guard zve2>0. ao = netto_vg (laufender Gewinn progressiv).
+                if netto_vg > 0:
+                    zve2 = runner.catala_gesamt_zve(g2)
+                    if zve2 > 0:
+                        if f.get("antrag_ermaessigter_satz", {}).get("wert") is True \
+                                and _abs3_eligible(f, vz) and netto_vg <= 5_000_000:
+                            # § 34 Abs. 3: plain grundtarif(verbleibendes zvE, S.3) + ermäßigter_satz × min(ao,5Mio).
+                            est_rest = runner.catala_est({"veranlagungszeitraum": vz, "veranlagung": g2["veranlagung"],
+                                                          "zu_versteuerndes_einkommen": max(0, zve2 - netto_vg)})
+                            est_ao = runner.catala_ermaessigter_durchschnittssatz({
+                                "ao_einkuenfte": netto_vg,
+                                "est_gesamt_zzgl_progression": runner.catala_gesamt_tarifliche(g2),
+                                "bemessungsgrundlage_durchschnitt": zve2})
+                            g2 = dict(g2, tarif_modifiziert=True, tarifliche_est_modifiziert=est_rest + est_ao)
+                        else:
+                            g2 = dict(g2, tarif_modifiziert=True, tarifliche_est_modifiziert=runner.catala_fuenftel({
+                                "veranlagungszeitraum": vz, "veranlagung": g2["veranlagung"],
+                                "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg}))
+                # § 35 GewSt-Anrechnung Deckel-3 (JE §31-Zweig — tarifliche_est ist freibetrag-abhängig, global-
+                # einmal würde den Kinderfreibetrag-Zweig über-crediten = stille Under-tax, 1:1 gesamt-Präzedenz).
+                if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
+                    tarifliche = runner.catala_gesamt_tarifliche(g2)
+                    # Weg-ii-Fix (K2, PFLICHT): ADDITIV statt hart überschreiben — sonst löscht § 35 GewSt-
+                    # Anrechnung das § 35a-Ergebnis (steuerermaessigungen) still.
+                    g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + min(
+                        4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100,
+                        p35_zaehler * tarifliche // p35_nenner))
+                return runner.catala_est(g2)
+
+            # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6, Fund D):
+            # fehlte komplett im Rentner-Ring — Rentner mit Kindern verlor die Günstiger-Freibetrag-Anrechnung
+            # (Over-tax). 1:1 gesamt-Naht-Präzedenz Z. 894-906. Ohne Kinder kein § 31.
+            kinder = _c("fam_anzahl_kinder")
+            if kinder > 0:
+                return runner.catala_p31_familienleistung({
+                    "est_ohne_freibetraege": _festzusetzende_r(0),
+                    "est_mit_freibetraegen": _festzusetzende_r(
+                        kinder * runner._kinderfreibetrag(vz, rentner_g["veranlagung"])),
+                    "kindergeld": kinder * runner._kindergeld(vz) * 12})
+            return _festzusetzende_r(0)
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
     # festzusetzende_est_haushalt (§35a+§10b) + festzusetzende_est_agb (§33+§10-KiSt) ENTFERNT (Weg ii, Stage 1b):
