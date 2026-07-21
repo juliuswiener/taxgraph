@@ -1672,6 +1672,8 @@ def _chat_prompt(freitext: str, katalog: list[dict]) -> list[dict]:
         "Du bist ein Steuer-Assistent, der aus der Freitext-Beschreibung eines Nutzers Feld-Werte VORSCHLÄGT. "
         "Du SETZT nie einen Wert und triffst keine rechtliche Entscheidung — der Mensch bestätigt jeden Vorschlag. "
         "Du darfst NUR diese Felder vorschlagen (keine anderen):\n" + felder + "\n\n"
+        "Geld-Beträge MUSST du als GANZZAHL in CENT angeben (EUR × 100), z.B. 2156,50 € → 215650. "
+        "Niemals als EUR-Kommazahl oder EUR-Ganzzahl.\n"
         "Antworte AUSSCHLIESSLICH mit einem JSON-Array [{\"feld_id\":\"…\",\"wert\":…,\"begruendung\":\"kurz\"}], "
         "nur Felder für die die Beschreibung einen konkreten Wert hergibt, sonst []. Kein Fließtext.")
     return [{"role": "system", "content": system}, {"role": "user", "content": freitext}]

@@ -269,3 +269,42 @@ def test_neg_schema_llm_bestaetigt(sample):
     e["zustand"] = "bestaetigt"
     e["signal"]["signal_2"] = "x"
     assert list(jsonschema.Draft202012Validator(_schema()).iter_errors(s)), "llm+bestaetigt nicht abgelehnt"
+
+
+# ---- (F2) Magnitude-Bound für Vorschlags-Schreiber (EUR-statt-Cent-Verwechslung) ----
+
+def test_F2_vorschlag_riesenwert_faellt():
+    s = ST.leerer_store(2025)
+    with pytest.raises(ValueError, match="Magnitude"):
+        ST.append_event(s, feld_id="agb_aufwendungen", wert=10**10, zustand="vorlaeufig",
+                        herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        schreiber="llm:chat", signal={"signal_1": None, "signal_2": None}, ts=TS,
+                        katalog=_katalog())
+
+
+def test_F2_vorschlag_normaler_centwert_ok():
+    s = ST.leerer_store(2025)
+    ev = ST.append_event(s, feld_id="agb_aufwendungen", wert=215600, zustand="vorlaeufig",
+                         herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                         schreiber="llm:chat", signal={"signal_1": None, "signal_2": None}, ts=TS,
+                         katalog=_katalog())
+    assert ev["wert"] == 215600
+
+
+def test_F2_vorschlag_negativer_verlust_ok():
+    """Symmetrischer Bound (abs) — kein 0-Floor, ein legitimer negativer Verlust-Wert bleibt zulässig."""
+    s = ST.leerer_store(2025)
+    ev = ST.append_event(s, feld_id="agb_aufwendungen", wert=-50000, zustand="vorlaeufig",
+                         herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                         schreiber="llm:chat", signal={"signal_1": None, "signal_2": None}, ts=TS,
+                         katalog=_katalog())
+    assert ev["wert"] == -50000
+
+
+def test_F2_mensch_schreiber_ohne_bound():
+    """Der Bound gilt NUR für Vorschlags-Schreiber — ein human-Write bleibt unbeschränkt (kein neuer Fail-Pfad)."""
+    s = ST.leerer_store(2025)
+    ev = ST.append_event(s, feld_id="agb_aufwendungen", wert=10**10, zustand="bestaetigt",
+                         herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                         schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"}, ts=TS)
+    assert ev["wert"] == 10**10

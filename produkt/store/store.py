@@ -216,6 +216,17 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
                 f"fail-closed (Katalog): {schreiber} darf {feld_id} nicht vorschlagen "
                 f"(human-only oder nicht für Typ '{typ}' freigegeben).")
 
+        # Auflage F2 (Magnitude-Bound, Vorschlags-Schreiber-only): ein Vorschlag (LLM/Beleg/Kontoauszug/Maps)
+        # ist ein GUESS — kein legitimer Steuer-Wert (Cent-Betrag, Zähler, Jahr, GdB, %) nähert sich 100 Mio €
+        # (10^10 Cent). Fängt EUR-statt-Cent-Verwechslung (100×-Fehler nach oben). Symmetrisch (abs): kein
+        # 0-Floor, denn negative Verlust-Felder sind legitim. HONEST LIMIT: fängt NUR Über-Skalierung (zu
+        # groß) — eine Unter-Skalierung (z.B. EUR-Betrag zu klein für Cent, aber < 10^10) bleibt unerkannt;
+        # dagegen wirkt die Cent-Instruktion im Chat-Prompt (_chat_prompt), nicht dieser Bound.
+        if isinstance(wert, (int, float)) and not isinstance(wert, bool) and abs(wert) >= 10**10:
+            raise ValueError(
+                f"fail-closed (F2/Magnitude): {feld_id}={wert!r} von {schreiber} — vermuteter "
+                f"Einheiten-/Skalierungsfehler (EUR statt Cent).")
+
     # Typ-Zwang: bestaetigt braucht signal_2.
     if zustand == "bestaetigt" and not (signal.get("signal_2") or "").strip():
         raise ValueError("fail-closed: zustand=bestaetigt braucht ein signal_2 (Zwei-Signal).")
