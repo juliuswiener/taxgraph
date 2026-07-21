@@ -392,8 +392,8 @@ bindungen:
     bereich: {min: 0, max: 20, grund: "Anzahl berücksichtigungsfähiger Kinder; praktische Obergrenze"}
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Wie viele Kinder, für die du Kindergeld oder einen Kinderfreibetrag bekommst, leben in deinem Haushalt?"
-    hilfe_kurz: "Nur Kinder, die zu deinem Haushalt gehören."
+    fragetext_laie: "Für wie viele Kinder stehen dir in diesem Jahr Kindergeld oder ein Kinderfreibetrag zu?"
+    hilfe_kurz: "Zähle nur Kinder, für die du im Steuerjahr Anspruch auf Kindergeld oder Kinderfreibetrag hattest — nicht einfach alle Kinder im Haushalt."
     beispielwert: 1
     herkunft_slots: null
     elster_kz: null
@@ -421,6 +421,11 @@ bindungen:
       quelle: "§ 24b Abs. 4 EStG"
       zitatanker: "Für jeden vollen Kalendermonat, in dem die Voraussetzungen des Absatzes 1 nicht vorgelegen haben"
       datei: "sources/gesetze-im-internet/estg_p24b_2026-07-09.txt"
+  # DEFERRED (Bug2 MVP): Feld ist TOT — kein Accessor in golden/runner.py, kein Lesezugriff in
+  # produkt/haut/api.py; die Catala-Signatur p24b_entlastungsbetrag nimmt nur alleinstehend/
+  # anzahl_kinder/monate_ohne_voraussetzung, kein eigenes Bool-Gate. Voll-Verdrahtung als
+  # Ring-Gate ist eine größere Änderung; MVP-Mitigation stattdessen: fam_anzahl_kinder ist per
+  # geschärfter Selbstdeklaration (fragetext_laie) bereits die anspruchsberechtigte Kinderzahl.
   - feld_id: fam_kinder_im_haushalt
     quelle: {regel_id: p24b_entlastungsbetrag, geltungsbedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt}
     typ: bool
@@ -440,6 +445,12 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p24b_2026-07-09.txt"
 
   # ========================= Familie — Kinderfreibeträge (p32_6) =========================
+  # DEFERRED (Bug2 MVP): Feld ist TOT — kein Accessor in golden/runner.py, kein Lesezugriff in
+  # produkt/haut/api.py. Die Regel p32_6_kinderfreibetraege wird im Ring gar nicht aufgerufen;
+  # der Kinderfreibetrag läuft direkt über runner._kinderfreibetrag(vz, veranlagung) * fam_anzahl_kinder
+  # (api.py:876), ungefiltert. Voll-Verdrahtung als Ring-Gate ist eine größere Änderung; MVP-
+  # Mitigation stattdessen: fam_anzahl_kinder ist per geschärfter Selbstdeklaration bereits die
+  # anspruchsberechtigte Kinderzahl.
   - feld_id: fam_kinder_beruecksichtigt
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kinder_sind_zu_beruecksichtigen}
     typ: bool
