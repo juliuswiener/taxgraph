@@ -1,0 +1,22 @@
+# Item-Registry (Protokolldekret Stufe 4). Monoton wachsend.
+# Nur Julius' Triage aendert diese Datei; nur diese Datei aendert Verdikte.
+
+rule_id: p23_veraeusserungsgewinn
+version: 1
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - veraeusserungspreis
+  - interpretation
+  formulierungen:
+  - Veräußerungspreis wird als Bruttowert (ohne Abzug von Nebenkosten, die unter Werbungskosten fallen) angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - werbungskosten
+  - einheit
+  formulierungen:
+  - Werbungskosten werden in Euro angenommen.
+  triage: nicht_material

@@ -207,10 +207,15 @@ GESAMT_33B_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_b
 # einkuenfte ⊆ Welteinkommen, NIE additiv zur GdE, nur Accessor-Zähler. an_gesamt out-of-scope.
 GESAMT_DBA = ("dba_staat", "dba_methode", "dba_mehrere_staaten",
               "dba_gezahlte_auslaendische_steuer", "dba_auslaendische_einkuenfte")
+# §23 Private Veräußerungsgeschäfte (Stufe-1): 4 Felder pro Veräußerung (Multi-Instanz,
+# instanz_gruppe "p23_veraeusserung" wie §21). OPTIONAL (absent→0→safe). Σ über Instanzen
+# im Ring → Freigrenze+VTOP → ADDITIV in einkuenfte_sonstige (neben §22-Rente).
+GESAMT_P23 = ("p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten",
+              "p23_werbungskosten", "p23_veraeusserungs_typ")
 # Weg-ii-Parität-Fix (K2, Over-tax, ring-b-Fund #4): GESAMT_FREIBETRAEGE auch im Rentner-Ring nachgetragen —
 # ohne fam_alleinstehend/fam_monate_ohne_voraussetzung postbar war § 24b im Rentner-Ring nicht erreichbar
 # (geburtsjahr/fam_anzahl_kinder stehen schon in RENTNER_GEWINN/GESAMT_ABZUEGE, Duplikat harmlos).
-RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23
 # §§ 13-18 Gewinneinkünfte (Stufe 1), OPTIONAL im gesamt-Ring (NICHT Pflicht-Kegel → absent → 0, over-tax-safe).
 # einkuenfte_gewinn (CENT) = der vorberechnete Gewinn-Betrag → einkuenfte_gewinn-Slot der slot_fn (§ 2-Summand).
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
@@ -281,7 +286,7 @@ SCHEIBEN = {
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
                    + GESAMT_33B + GESAMT_33B_PARTNER
-                   + GESAMT_DBA),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn (Stufe 1) + §34c OPTIONAL
+                   + GESAMT_DBA + GESAMT_P23),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -469,6 +474,40 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
     else:
         gewinn = _c("einkuenfte_gewinn") // 100 + mitu
     return gewinn, mitu
+
+
+def _p23_ansonsten_einkuenfte(f: dict, store: dict | None, bindung: dict | None,
+                                nur_bestaetigt: bool = True) -> int:
+    """§23 Private Veräußerungsgeschäfte (Stufe-1), EURO — Σ über ALLE p23_veraeusserung-Instanzen:
+    je Veräußerung: gewinn = veraeusserungspreis − AK/HK − WK (cent→euro); Σ pos → gewinn_pvg,
+    Σ neg-Beträge → verlust_pvg; Gesamtgewinn → Freigrenze 1000€ (§23 Abs.3 S.5, 999→0/1000→1000);
+    Verlusttopf max(0, gewinn_pvg−verlust_pvg) (§23 Abs.3 S.7) = anzusetzende_einkuenfte → ADDITIV
+    in einkuenfte_sonstige. Mehrjahr-Verlustvor-/rücktrag (S.8) = Stufe-2-Backlog. Absent→0 (safe)."""
+    import runner
+    if store is None or bindung is None:
+        return 0
+    from produkt.mapping import est_mapping as EM
+    instanzen = EM.instanzen(store, bindung, "p23_veraeusserung")
+    gewinn_pvg = 0
+    verlust_pvg = 0
+    for inst in instanzen:
+        # norm: inst["felder"] nutzt Basis-feld_ids (OHNE __n-Suffix)
+        preis = int(inst["felder"].get("p23_veraeusserungspreis", 0)) // 100
+        ak = int(inst["felder"].get("p23_anschaffung_herstellungskosten", 0)) // 100
+        wk = int(inst["felder"].get("p23_werbungskosten", 0)) // 100
+        gewinn = runner.catala_p23_veraeusserungsgewinn({
+            "veraeusserungspreis": preis, "anschaffungs_herstellungskosten": ak, "werbungskosten": wk})
+        if gewinn > 0:
+            gewinn_pvg += gewinn
+        else:
+            verlust_pvg += abs(gewinn)
+    # Freigrenze auf Gesamtsumme positive+negative = gesamtgewinn
+    gesamtgewinn = gewinn_pvg - verlust_pvg
+    steuerpflichtig = runner.catala_p23_freigrenze({"gesamtgewinn": gesamtgewinn})
+    if steuerpflichtig <= 0:
+        return 0
+    # Verlusttopf (same-year) auf die FREIGRENZEN-gerechneten Einzelkomponenten
+    return runner.catala_p23_verlusttopf({"gewinn_pvg": gewinn_pvg, "verlust_pvg": verlust_pvg})
 
 
 def _oepnv_eur(slots: dict) -> int:
@@ -723,7 +762,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "veranlagungszeitraum": vz,   # § 24a S. 3 64+-Gate (geburtsjahr+65 ≤ VZ)
                 "geburtsjahr": _c("geburtsjahr"),
                 "arbeitslohn": _c("bruttoarbeitslohn") // 100,
-                "positive_andere_einkuenfte": max(0, vv + g["einkuenfte_gewinn"])})
+                # §23 (§22Nr.2) gehört IN die §24a-Bemessung (S.2-Ausschluss nennt nur §22Nr.1/4/5)
+                "positive_andere_einkuenfte": max(0, vv + g["einkuenfte_gewinn"]
+                                                   + g.get("einkuenfte_sonstige", 0))})
             # § 24a PER PERSON (§ 24a S. 1 „der Steuerpflichtige", A.2): bei Zusammenveranlagung hat der Ehegatte
             # eine EIGENE Kohorte (geburtsjahr_partner + 65) + eigene Bemessung (bruttoarbeitslohn_partner; positive
             # andere Einkünfte-B = 0, da vv/Kapital im Ring nicht owner-getrennt = konservativ/over-tax-safe, mit
@@ -852,6 +893,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             kapitaleinkuenfte = runner.catala_sparer_pb({
                 "veranlagungszeitraum": vz, "kapitalertraege": verrechnete, "zusammenveranlagung": zusammen})
 
+            # §23 Private Veräußerungsgeschäfte (Stufe-1): Σ über Instanzen → ADDITIV in einkuenfte_sonstige
+            g["einkuenfte_sonstige"] = _p23_ansonsten_einkuenfte(f, store, bindung, nur_bestaetigt)
+
             # § 10d Abs. 2 Verlustvortrag (opt-in via verlustvortrag_bestand): der festgestellte verbleibende Verlust-
             # vortrag mindert den GdE „VORRANGIG vor Sonderausgaben, agB, sonstigen Abzugsbeträgen" (§ 10d Abs. 2 S. 1)
             # → Fold in sonstige_abzuege_vom_einkommen (§ 2 Abs. 5-Rest-Slot). Die zvE-Kette ist rein linear OHNE Floor
@@ -902,7 +946,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # § 19 (ns) + § 21 (vv) + § 22 (sonstige) + §§ 13-18 (gewinn, inkl. § 16-vg = § 2-Einkunft). Das
             # § 32d-Abgeltung-Kapital ist NICHT einzubeziehen (§ 2 Abs. 5b EStG: „Kapitalerträge nach § 32d Absatz 1
             # und § 43 Absatz 5 nicht einzubeziehen" — es ist nicht im tariflichen zvE, das tarifliche_est skaliert).
-            # einkuenfte_sonstige ist im gesamt-Ring stets 0 (§ 22 lebt in der rentner-Scheibe, die kein § 35 hat) —
+            # einkuenfte_sonstige im gesamt-Ring = §23 (§22Nr.2) + künftig eventuell §22Nr.5 — §22Nr.1
+            # (Leibrente) lebt in der rentner-Scheibe. §23-Nenner-Integration: §23-Einkünfte sind
+            # §2-tariflich, gehören also in den §35-Nenner (alle positiven tariflichen Einkünfte) —
             # der Term dokumentiert die korrekte Formel + ist robust, falls § 22 je in den gesamt-Ring kommt.
             p35_nenner = (max(0, ns) + max(0, vv) + max(0, g.get("einkuenfte_sonstige", 0))
                           + max(0, g["einkuenfte_gewinn"]))
@@ -1076,6 +1122,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 ausserg += runner.catala_behinderten_pb({
                     "veranlagungszeitraum": vz, "grad_der_behinderung": _c("rentner_grad_der_behinderung_partner"),
                     "ist_hilflos_blind_taubblind": _b("rentner_hilflos_blind_taubblind_partner") is True})
+            # §23 Private Veräußerungsgeschäfte (Stufe-1): Σ über Instanzen → ADDITIV zu renten
+            p23_eink = _p23_ansonsten_einkuenfte(f, store, bindung, nur_bestaetigt)
+            renten += p23_eink
             # §§ 13-18 Gewinn (2-I + 2a): laufender § 15/§ 18-Gewinn (aus _laufender_gewinn — Stufe 2a EÜR ODER
             # Stufe-1-Direktwert, Scope A geteilt mit dem gesamt-Ring) + § 16-Ver-
             # äußerungsgewinn NACH § 16 Abs. 4-Freibetrag. FB (roh) via catala_p16_4_freibetrag; der steuerbare Rest
@@ -1090,11 +1139,14 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             laufender_gewinn, mitu = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (§ 35-Zähler, OHNE § 16-vg)
             # § 24a Altersentlastungsbetrag im Rentner-Ring (b): Bemessung = positive Nicht-§19-Einkünfte = §§13-18-Gewinn
             # (laufender + § 16-vg-netto); LEIBRENTE § 22 Nr. 1 (renten) + Versorgungsbezüge § 19 Abs. 2 sind KEINE Bemessung
-            # (§ 24a S. 2-Ausschlüsse). Kein § 19-Mini-Job-Arbeitslohn im rentner-Ring (MVP-Lücke, over-tax-safe → 0). MIT
+            # (§ 24a S. 2-Ausschlüsse). §23 private Veräußerungsgeschäfte (§22 Nr.2) gehören IN die
+            # §24a-Bemessung (S.2 erwähnt nur §19Abs.2/§22Nr.1/§22Nr.4/5 — kein §22Nr.2-Ausschluss).
+            # p23_eink additiv zu laufender_gewinn + netto_vg (K2-konservativ: floor auf kombinierte Summe).
+            # Kein § 19-Mini-Job-Arbeitslohn im rentner-Ring (MVP-Lücke, over-tax-safe → 0). MIT
             # dem 64+-Gate (§ 24a S. 3, geerbt vom Accessor via veranlagungszeitraum). Pure Leibrente (kein Gewinn) → 0.
             alt24a_r = runner.catala_p24a_altersentlastung({
                 "veranlagungszeitraum": vz, "geburtsjahr": _c("geburtsjahr"), "arbeitslohn": 0,
-                "positive_andere_einkuenfte": max(0, laufender_gewinn + netto_vg)})
+                "positive_andere_einkuenfte": max(0, laufender_gewinn + netto_vg + p23_eink)})
             # § 24b Entlastungsbetrag Alleinerziehende (Weg-ii-Parität-Fix, K2, Over-tax): fehlte im Rentner-Ring
             # komplett (GESAMT_FREIBETRAEGE nie an RENTNER_FELDER, s.o.) — Rentner-Witwe/-Witwer mit Kindern kriegt
             # sonst den 4260€+240€/Kind-Freibetrag nicht. 1:1 gesamt-Präzedenz Z. 671-674 (ungegatet, fam_anzahl_

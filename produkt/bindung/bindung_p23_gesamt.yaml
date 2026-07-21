@@ -1,0 +1,120 @@
+# Bindungstabelle — §23 EStG private Veräußerungsgeschäfte (Stufe-1).
+# Multi-Instanz (wie §21-Multi-Objekt): pro Veräußerung ein Preis/AK/WK-Tripel
+# + Veräußerungs-Typ (Frist-Fragetext). instanz_gruppe: "p23_veraeusserung".
+# Nur steuerpflichtige Geschäfte innerhalb der Spekulationsfrist (Grundstück 10J,
+# andere WG 1J). Auto-Frist-aus-Datum = Stufe-2-Backlog.
+# Kz: null+MVP (Anlage-SO-Kz = eigene Recon-Runde, nicht gerushed).
+# Task §23-Stufe-1, Stand 2026-07-21.
+version: 1
+scheibe: "§23 EStG Private Veräußerungsgeschäfte (gesamt + rentner)"
+
+bindungen:
+  - feld_id: p23_veraeusserungspreis
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: veraeusserungspreis}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Wie hoch war der Veräußerungspreis (Verkaufserlös) für dieses Wirtschaftsgut?"
+    hilfe_kurz: "Der Brutto-Verkaufspreis vor Abzug von Nebenkosten (die unter Werbungskosten fallen). Nur eingeben, wenn das Geschäft innerhalb der steuerlichen Spekulationsfrist lag."
+    beispielwert: 20000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-SO-Kz — Kz-Recon = eigene Runde (null-MVP). Private Veräußerungsgeschäfte §23.Instanz-Gruppe je Geschäft, Reuse desselben Kz wie §21-Multi-Objekt-Muster."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 3 S. 1 EStG"
+      zitatanker: "Gewinn oder Verlust aus Veraeusserungsgeschaeften nach Absatz 1 ist der Unterschied zwischen Veraeusserungspreis"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_anschaffung_herstellungskosten
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: anschaffungs_herstellungskosten}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Wie hoch waren die Anschaffungs- oder Herstellungskosten für dieses Wirtschaftsgut?"
+    hilfe_kurz: "Der Kaufpreis, den du selbst ursprünglich bezahlt hast. Plus nachträgliche Herstellungskosten (z. B. Renovierung vor Verkauf)."
+    beispielwert: 15000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-SO-Kz — Kz-Recon = eigene Runde (null-MVP)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 3 S. 1 EStG"
+      zitatanker: "Anschaffungs- oder Herstellungskosten"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_werbungskosten
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: werbungskosten}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Hattest du Werbungskosten im Zusammenhang mit diesem Verkauf (z. B. Makler, Notar, Inserat)?"
+    hilfe_kurz: "Kosten, die direkt mit dem Verkauf zusammenhängen — aber NUR Kosten, die nicht schon zuvor absetzbar waren."
+    beispielwert: 500000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-SO-Kz — Kz-Recon = eigene Runde (null-MVP)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 3 S. 1 EStG"
+      zitatanker: "Werbungskosten"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_veraeusserungs_typ
+    quelle: {regel_id: p23_veraeusserungsgewinn, geltungsbedingung: veraeusserung_innerhalb_frist}
+    typ: enum
+    einheit: null
+    enum_werte: ["grundstueck", "anderes_wg"]
+    askable: true
+    vorjahr: uebernehmbar
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Um welche Art von Wirtschaftsgut handelt es sich?"
+    hilfe_kurz: "Grundstücke und Immobilien: Spekulationsfrist 10 Jahre. Andere Wirtschaftsgüter (z. B. Aktien außerhalb §20, Krypto, Kunst, Edelmetalle): 1 Jahr. Nur angeben, wenn du innerhalb der Frist verkauft hast."
+    beispielwert: grundstueck
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-SO-Kz — Fragetext-Typ (steuert Frist-Hinweis). Kein direkter Kz. Fristberechnung = Stufe-2-Backlog."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 Nr. 1 S. 1 EStG"
+      zitatanker: "Veraeusserungsgeschaefte bei Grundstuecken und Rechten, die den Vorschriften des buergerlichen Rechts ueber Grundstuecke"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+
+  # ===== Lücken + Geltungsbedingungen =====
+luecken:
+  - regel_id: p23_veraeusserungsgewinn
+    geltungsbedingung: veraeusserung_innerhalb_frist
+    grund: "Frist-Input (10J Grundstück/1J sonstige) ist Nutzer-Selbst-Deklaration auf p23_veraeusserungs_typ-Fragetext. Auto-Datums-aus-Tatbestand = Stufe-2-Backlog."
+  - regel_id: p23_veraeusserungsgewinn
+    geltungsbedingung: nicht_ausschliesslich_eigene_wohnzwecke
+    grund: "Selbstgenutzte Immobilie = steuerfrei (§23 Abs.1 Nr.1 S.3). Nutzer-Selbst-Deklaration über Fragetext-Kontext."
+  - regel_id: p23_veraeusserungsgewinn
+    geltungsbedingung: kein_gegenstand_taeglichen_gebrauchs
+    grund: "Gegenstände des täglichen Gebrauchs = steuerfrei (§23 Abs.1 Nr.2 S.2). Nutzer-Selbst-Deklaration."
+  - regel_id: p23_veraeusserungsgewinn
+    geltungsbedingung: anschaffung_veraeusserung_originaerer_erwerb
+    grund: "Nur originärer Erwerb (kein Erbe/Schenkung) — §23 Abs.1 S.2/4/5. Stufe-1: User-Deklaration."
+  - regel_id: p23_freigrenze
+    signatur_slot: gesamtgewinn
+    grund: "Berechnete Größe (Σ der Einzelgewinne aller Instanzen). Ring-Aggregator, kein Laien-Feld."
+  - regel_id: p23_freigrenze
+    geltungsbedingung: gesamtgewinn_nicht_negativ
+    grund: "Gesamtgewinn ≥ 0 (die Freigrenze 1000€ gilt auf POSITIVEN Gesamtgewinn). Bei negativem Gesamtgewinn = 0 (Verlustfall → kein steuerpflichtiger Gewinn). Im Ring: gesamtgewinn = max(0, Σgewinne − Σverluste) VOR Freigrenze."
+  - regel_id: p23_3_verlusttopf
+    signatur_slot: gewinn_pvg
+    grund: "Berechnete Größe (Summe positiver Gewinne). Ring-Aggregator, kein Laien-Feld."
+  - regel_id: p23_3_verlusttopf
+    signatur_slot: verlust_pvg
+    grund: "Berechnete Größe (Summe negativer Gewinne als Betrag). Ring-Aggregator, kein Laien-Feld."
+  - regel_id: p23_3_verlusttopf
+    geltungsbedingung: kein_verlustvor_ruecktrag_s8
+    grund: "Mehrjahr-Verlustvor-/rücktrag (§23 Abs.3 S.8) = Stufe-2-Backlog. Stufe-1: nur same-year VTOP."
+  - regel_id: p23_3_verlusttopf
+    geltungsbedingung: verlust_nur_gleichjaehriger_pvg_gewinn
+    grund: "Nur Verluste aus §23-Geschäften verrechenbar, NICHT mit anderen Einkunftsarten. Im Ring: gewinn_pvg/verlust_pvg = §23-instanz-summen, kein Cross-Einkunftsarten-Mix."
+  - regel_id: p23_3_verlusttopf
+    geltungsbedingung: kein_ausgleich_mit_anderen_einkunftsarten
+    grund: "§23 Abs.3 S.7: Verluste nur mit §23-Gewinnen verrechenbar, kein Ausgleich mit §19/§21. Im Ring: einkuenfte_sonstige += max(0, gew_pvg−verlust_pvg), nie negativ."

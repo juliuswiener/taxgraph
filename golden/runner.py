@@ -953,6 +953,37 @@ def catala_p10d_2(s: dict) -> int:
 # Q1-invariant (dev-2-Fragetext): auslaendische_einkuenfte_staat = TEILMENGE der
 # bereits im zvE enthaltenen Welteinkünfte, NIE additiv zur GdE — reiner Zähler.
 
+# -- §23 EStG private Veräußerungsgeschäfte. EURO. ----------------------------
+# Pure-Python (3 promoted+inert Snapshots: p23_veraeusserungsgewinn, p23_freigrenze,
+# p23_3_verlusttopf). Multi-Instanz wie §21 (pro Veräußerung ein p23-Veraeusserungspreis/
+# Anschaffungs/WK-Tripel), Σ über Instanzen im Ring. Freigrenze 1000€ (§23 Abs.3 S.5):
+# Gesamtgewinn ≥ 1000 → voll steuerpflichtig; < 1000 → 0 (Wächter 999→0/1000→1000).
+
+def catala_p23_veraeusserungsgewinn(s: dict) -> int:
+    """§23 Abs.3 EStG — Veräußerungsgewinn EINES Geschäfts, EURO.
+    veraeusserungspreis − anschaffungs_herstellungskosten − werbungskosten.
+    KANN NEGATIV sein (Verlust). 3 test_seeds pipeline-verified. Accessor nimmt EUROS."""
+    return (int(s["veraeusserungspreis"])
+            - int(s["anschaffungs_herstellungskosten"])
+            - int(s["werbungskosten"]))
+
+
+def catala_p23_freigrenze(s: dict) -> int:
+    """§23 Abs.3 S.5 EStG — Freigrenze 1000€, EURO. GESAMTgewinn ≥ 1000 → VOLL
+    steuerpflichtig; < 1000 → 0 (Freigrenze, KEIN Freibetrag). Wächter: 999→0, 1000→1000.
+    4 test_seeds pipeline-verified."""
+    gesamt = int(s["gesamtgewinn"])
+    return gesamt if gesamt >= 1000 else 0
+
+
+def catala_p23_verlusttopf(s: dict) -> int:
+    """§23 Abs.3 S.7 EStG — Verlusttopf same-year, EURO. anzusetzende_einkuenfte =
+    max(0, gewinn_pvg − verlust_pvg). Verluste mindern nur Gewinne, nie NEGATIV
+    in die §2-Einkünfte. 4 test_seeds pipeline-verified. Mehrjahr-Verlustvor-/rücktrag
+    (§23 Abs.3 S.8) = Stufe-2-Backlog (nicht in Stufe-1)."""
+    return max(0, int(s["gewinn_pvg"]) - int(s["verlust_pvg"]))
+
+
 def catala_p34c_1(s: dict) -> int:
     """§34c Abs.1 EStG — Anrechnung ausländischer Steuer, Single-Country, EURO.
     anrechnung = min(gezahlte_auslaendische_steuer, deutsche_est_inkl_ausl * ausl / zvE).
