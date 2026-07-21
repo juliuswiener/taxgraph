@@ -233,3 +233,24 @@ def test_s10_instanz_stand_estimate_zeigt_vorlaeufig():
     assert api._gwg_sofortabzug_summe(felder_best, s, BINDUNG, nur_bestaetigt=True) == 0
     # Estimate (/stand, False) → vorläufig DRIN → 600 (Range zeigt das Potenzial)
     assert api._gwg_sofortabzug_summe(felder_best, s, BINDUNG, nur_bestaetigt=False) == 600
+
+
+# ---------- S11 (Instructor-Fund): oepnv_kosten_jahr Cent→Euro-Naht, kein 100×-Under-tax ----------
+def test_s11_oepnv_kosten_jahr_cent_zu_euro_kein_100x():
+    """⭐ NAHT-BUG: ep_oepnv_kosten kommt aus dem Store in CENT (bindung typ=cent), der Runner-Accessor
+    (golden/runner.catala_entfernungspauschale) erwartet EURO — ohne //100 an der Slot-Übergabe wird eine
+    Cent-Eingabe 100× zu groß gelesen (1380€ Jobticket-Kosten kämen als 138000€ Werbungskosten an →
+    Steuer→0). Golden ep_2024_beispiel1_oepnv (220 Tage, 20 km, kein Kfz, ÖPNV 1380€ > Pauschale 1320€ →
+    ÖPNV-Günstiger greift) beweist die korrekte Größenordnung end-to-end über den echten api._bescheid_fn-
+    Slot-Pfad. War VOR dem Fix maskiert, weil jeder bestehende Test oepnv_kosten_jahr=0 setzt (0 // 100 == 0)."""
+    import api  # noqa: E402
+    try:
+        import runner  # noqa: F401
+    except Exception as e:
+        pytest.skip(f"Catala-Toolchain nicht verfügbar: {type(e).__name__}: {e}")
+    fn = api._bescheid_fn("abziehbarer_betrag", 2024, BINDUNG)
+    assert fn is not None
+    zahl = fn({"ep_arbeitstage": 220, "ep_entfernung_km": 20,
+              "ep_oepnv_kosten": 138000, "ep_eigenes_kfz": False})
+    assert zahl == 138000, f"1380€ ÖPNV-Kosten müssen 138000 Cent ergeben, nicht {zahl}"
+    assert zahl != 13800000, "100×-Regression: Cent-Rohwert ungeteilt als Euro gelesen"

@@ -440,6 +440,11 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
     return _c("einkuenfte_gewinn") // 100 + mitu
 
 
+def _oepnv_eur(slots: dict) -> int:
+    """oepnv_kosten_jahr Naht-CENT -> EURO (Store liefert Cent, EP_FELDER-Runner-Accessor erwartet Euro)."""
+    return int(slots.get("oepnv_kosten_jahr", 0)) // 100
+
+
 def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None,
                  store: dict | None = None, nur_bestaetigt: bool = True):
     """bescheid_fn(feld_werte)->cent für eine ring-fähige Familie (Naht-Einheit CENT via
@@ -476,7 +481,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             s = {"veranlagungszeitraum": int(vz),
                  "arbeitstage": int(slots.get("arbeitstage", 0)),
                  "entfernung_km_roh": int(slots.get("entfernung_km_roh", 0)),
-                 "oepnv_kosten_jahr": int(slots.get("oepnv_kosten_jahr", 0)),
+                 "oepnv_kosten_jahr": _oepnv_eur(slots),
                  "eigenes_oder_ueberlassenes_kfz": bool(slots.get("eigenes_oder_ueberlassenes_kfz", False))}
             return runner.catala_entfernungspauschale(s)
 
@@ -499,6 +504,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                         **{k: slots[k] for k in
                            ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
                            if k in slots}}
+            if "oepnv_kosten_jahr" in wk_input:
+                wk_input["oepnv_kosten_jahr"] = _oepnv_eur(wk_input)   # Naht-CENT -> EURO
             # doppelte Haushaltsführung (Stufe 1b): dHf-Abzug NUR bei erfülltem Tatbestand —
             # Kosten > 0, Inland, alle 4 Geltungsbedingungen bestätigt-true. Sonst legitim 0
             # (Bedingung bestätigt-false = kein dHf); offene Bedingung/Ausland sperrt der Guard.
@@ -621,10 +628,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # §19-Lohn (§ 2 Abs. 3). Bruttolohn 0 (reiner Vermieter) -> einkuenfte_ns 0, kein Effekt.
             # §19-WK = Entfernungspauschale (roh, § 9a-Günstiger im einzel-Tarif); dHf/Verpflegung/AM
             # sind hier NICHT modelliert (Folge-Nachtrag) — es gibt keine solchen Slots in der Scheibe.
-            ns_wk = runner.catala_werbungskosten_n({"veranlagungszeitraum": vz,
+            gesamt_wk_input = {"veranlagungszeitraum": vz,
                 **{k: slots[k] for k in
                    ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
-                   if k in slots}})
+                   if k in slots}}
+            if "oepnv_kosten_jahr" in gesamt_wk_input:
+                gesamt_wk_input["oepnv_kosten_jahr"] = _oepnv_eur(gesamt_wk_input)   # Naht-CENT -> EURO
+            ns_wk = runner.catala_werbungskosten_n(gesamt_wk_input)
             ns = runner.catala_einkuenfte_nichtselbststaendig({
                 "veranlagungszeitraum": vz,
                 "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,   # Naht-CENT -> EURO
