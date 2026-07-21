@@ -65,9 +65,9 @@ def _voller_store():
 def test_klasse_1_und_split_1zu1(bindung):
     snap, sid = ST.materialisiere(_voller_store())
     r = EM.deklariere(snap, bindung, snapshot_id=sid)
-    assert r["deklaration"]["E1900701"] == 300000                 # 1:1
-    assert r["deklaration"]["E2000401"] == 3500000                # VOR-Summand einzeln
-    assert r["deklaration"]["E2000801"] == 1000000
+    assert r["deklaration"]["E1900701"] == 3000                    # 1:1 (CENT→EURO floor)
+    assert r["deklaration"]["E2000401"] == 35000                   # VOR-Summand einzeln
+    assert r["deklaration"]["E2000801"] == 10000
     assert r["deklaration"]["E2000601"] == 0
     assert r["basis_snapshot"] == sid
 
@@ -76,7 +76,7 @@ def test_klasse_a_dokumentiert_nicht_deklariert(bindung):
     snap, _ = ST.materialisiere(_voller_store())
     r = EM.deklariere(snap, bindung)
     assert "E0703838" not in r["deklaration"]                      # Anlage-V-Ruling: NICHT deklariert
-    assert r["dokumentiert"]["E0703838"]["summe"] == 300000 + 200000 + 100000 + 50000  # Summe dokumentiert
+    assert r["dokumentiert"]["E0703838"]["summe"] == 6500  # 3000+2000+1000+500 (EUR)
     assert set(r["dokumentiert"]["E0703838"]["quell_felder"]) == {"vv_gebaeude_afa", "vv_schuldzinsen",
                                            "vv_erhaltungsaufwand", "vv_sonstige_wk"}  # Auflage A explizit
 
@@ -120,9 +120,9 @@ def test_roundtrip_1zu1_und_negation_exakt(bindung):
     snap, _ = ST.materialisiere(_voller_store())
     r = EM.deklariere(snap, bindung)
     rt = EM.zuruecklesen(r, bindung)
-    assert rt["felder"]["kap_kapitalertraege"] == 300000          # 1:1 exakt
-    assert rt["felder"]["vor_an_anteil_rv"] == 3500000
-    assert rt["felder"]["fam_alleinstehend"] is True              # Doppel-Negation == Store
+    assert rt["felder"]["kap_kapitalertraege"] == 3000            # 1:1 exakt (CENT→EURO nach Roundtrip)
+    assert rt["felder"]["vor_an_anteil_rv"] == 35000
+    assert rt["felder"]["fam_alleinstehend"] is True              # Doppel-Negation == Store (bool→unverändert)
 
 
 def test_roundtrip_aggregation_nur_summe(bindung):
@@ -131,10 +131,10 @@ def test_roundtrip_aggregation_nur_summe(bindung):
     rt = EM.zuruecklesen(r, bindung)
     # Auflage A: aggregat trägt die dokumentierte Summe (aus dem dokumentiert-Bucket, nicht deklariert);
     # die Details sind NICHT rekonstruierbar
-    assert rt["aggregat"]["E0703838"] == 650000
+    assert rt["aggregat"]["E0703838"] == 6500
     assert "vv_gebaeude_afa" not in rt["felder"]                  # kein stiller Detail-Verlust vorgetäuscht
-    # aggregat-genau: Summe == Σ Store-Details
-    assert rt["aggregat"]["E0703838"] == 300000 + 200000 + 100000 + 50000
+    # aggregat-genau: Summe == Σ Store-Details (EUR)
+    assert rt["aggregat"]["E0703838"] == 6500
 
 
 # ---- Konsistenz (Auflage B) --------------------------------------------------
@@ -194,14 +194,17 @@ def test_scheibe3_kapital_und_vv_1zu1_roundtrip(bindung):
               "kap_verlust_aktien": 20000, "kap_verlust_sonstige": 15000, "vv_einnahmen": 1200000}
     snap, sid = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung, snapshot_id=sid)
-    assert r["deklaration"]["E1900701"] == 1000000
-    assert r["deklaration"]["E1900901"] == 300000
-    assert r["deklaration"]["E1901301"] == 20000
-    assert r["deklaration"]["E1901201"] == 15000
-    assert r["deklaration"]["E0700201"] == 1200000
+    assert r["deklaration"]["E1900701"] == 10000
+    assert r["deklaration"]["E1900901"] == 3000
+    assert r["deklaration"]["E1901301"] == 200
+    assert r["deklaration"]["E1901201"] == 150
+    assert r["deklaration"]["E0700201"] == 12000
     rt = EM.zuruecklesen(r, bindung)
+    # Round-Trip Cent→Kz→zurueck: EURO-Werte (nicht Store-CENT)
     for fid, wert in felder.items():
-        assert rt["felder"][fid] == wert                       # 1:1 invertierbar (exakt)
+        b = bindung.get(fid, {})
+        expected = wert // 100 if b.get("typ") == "cent" else wert
+        assert rt["felder"][fid] == expected                   # 1:1 invertierbar (exakt, EURO)
 
 
 def test_aktien_subset_semantik_beide_deklariert(bindung):
@@ -210,7 +213,7 @@ def test_aktien_subset_semantik_beide_deklariert(bindung):
     Subset-Beziehung ist Validierungs- (nicht Transform-)Sache."""
     snap, _ = ST.materialisiere(_store_mit({"kap_kapitalertraege": 1000000, "kap_gewinn_aktien": 300000}))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"]["E1900701"] == 1000000 and r["deklaration"]["E1900901"] == 300000
+    assert r["deklaration"]["E1900701"] == 10000 and r["deklaration"]["E1900901"] == 3000
     assert r["deklaration"]["E1900901"] <= r["deklaration"]["E1900701"]   # Subset (Testdaten-konsistent)
 
 
@@ -220,13 +223,15 @@ def test_scheibe2_sonder_35a_agb_1zu1_roundtrip(bindung):
               "hh_dienstleistungen": 400000, "hh_handwerker_arbeitskosten": 120000}
     snap, _ = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"]["E0161804"] == 500000
-    assert r["deklaration"]["E0104109"] == 250000
-    assert r["deklaration"]["E0107208"] == 400000
-    assert r["deklaration"]["E0111215"] == 120000
+    assert r["deklaration"]["E0161804"] == 5000
+    assert r["deklaration"]["E0104109"] == 2500
+    assert r["deklaration"]["E0107208"] == 4000
+    assert r["deklaration"]["E0111215"] == 1200
     rt = EM.zuruecklesen(r, bindung)
     for fid, wert in felder.items():
-        assert rt["felder"][fid] == wert
+        b = bindung.get(fid, {})
+        expected = wert // 100 if b.get("typ") == "cent" else wert
+        assert rt["felder"][fid] == expected
 
 
 def test_scheibe4_rentner_p33b_1zu1_und_klasse_f(bindung):
@@ -274,7 +279,7 @@ def test_neg_scheibe3_verfaelschtes_1zu1_bricht_roundtrip(bindung):
     r2 = copy.deepcopy(r)
     r2["deklaration"]["E1900701"] += 1
     rt = EM.zuruecklesen(r2, bindung)
-    assert rt["felder"]["kap_kapitalertraege"] != 1000000
+    assert rt["felder"]["kap_kapitalertraege"] != 10000
 
 
 # ---- Klasse f: Renten-Art-Verzweigung (Nachtrag A, 1 Wert-Slot -> N-Kz) -------
@@ -284,18 +289,18 @@ def test_klasse_f_verzweigung_aa_basisversorgung(bindung):
     snap, _ = ST.materialisiere(_store_mit({"rentner_renten_art": "gesetzliche_rente",
                                             "rentner_jahresrente": 1800000, "rentner_renten_beginn_jahr": 2015}))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"]["E1800301"] == 1800000
-    assert r["deklaration"]["E1800501"] == 2015                # Jahr-Granularität (Datum = Submission-Layer)
+    assert r["deklaration"]["E1800301"] == 18000
+    assert r["deklaration"]["E1800501"] == 2015                # Jahr-Granularität (Datum = Submission-Layer, int→unverändert)
 
 
 def test_klasse_f_verzweigung_private_und_sonstige(bindung):
     """private Leibrente (bb) -> Leibr_priv E1801601/E1801701; sonstige -> Leibr_sonst E1803102/E1803202."""
     r_priv = EM.deklariere(ST.materialisiere(_store_mit({"rentner_renten_art": "private_leibrente",
         "rentner_jahresrente": 900000, "rentner_renten_beginn_jahr": 2018}))[0], bindung)
-    assert r_priv["deklaration"]["E1801601"] == 900000 and r_priv["deklaration"]["E1801701"] == 2018
+    assert r_priv["deklaration"]["E1801601"] == 9000 and r_priv["deklaration"]["E1801701"] == 2018
     r_sonst = EM.deklariere(ST.materialisiere(_store_mit({"rentner_renten_art": "sonstige_leibrente",
         "rentner_jahresrente": 120000, "rentner_renten_beginn_jahr": 2020}))[0], bindung)
-    assert r_sonst["deklaration"]["E1803102"] == 120000 and r_sonst["deklaration"]["E1803202"] == 2020
+    assert r_sonst["deklaration"]["E1803102"] == 1200 and r_sonst["deklaration"]["E1803202"] == 2020
 
 
 def test_klasse_f_fail_closed_ohne_bestaetigte_art(bindung):
@@ -315,7 +320,7 @@ def test_klasse_f_roundtrip_value(bindung):
                                             "rentner_jahresrente": 900000, "rentner_renten_beginn_jahr": 2018}))
     r = EM.deklariere(snap, bindung)
     rt = EM.zuruecklesen(r, bindung)
-    assert rt["felder"]["rentner_jahresrente"] == 900000
+    assert rt["felder"]["rentner_jahresrente"] == 9000
     assert rt["felder"]["rentner_renten_beginn_jahr"] == 2018
 
 
@@ -337,9 +342,9 @@ def test_klasse_f_veraeusserung_betriebsart(bindung):
         snap, _ = ST.materialisiere(_store_mit({"rentner_veraeusserungsgewinn": 15000000,
                                                 "rentner_veraeusserungs_betriebsart": art}))
         return EM.deklariere(snap, bindung)
-    assert dekl("gewerbe")["deklaration"]["E0801301"] == 15000000
-    assert dekl("selbstaendig")["deklaration"]["E0804501"] == 15000000
-    assert dekl("land_forst")["deklaration"]["E0901201"] == 15000000
+    assert dekl("gewerbe")["deklaration"]["E0801301"] == 150000
+    assert dekl("selbstaendig")["deklaration"]["E0804501"] == 150000
+    assert dekl("land_forst")["deklaration"]["E0901201"] == 150000
 
 
 # ---- Klasse g: Person-Multiplikation (Zusammenveranlagung, Front 2) -----------
@@ -352,8 +357,8 @@ def test_klasse_g_person_b_instanz(bindung):
               "person_b_idnr": "00000000000"}
     snap, _ = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung)
-    assert r["person_b"]["E0200201"] == 3800000                 # Bruttolohn Person B, Instanz B
-    assert r["person_b"]["E2000401"] == 350000 and r["person_b"]["E2000801"] == 350000
+    assert r["person_b"]["E0200201"] == 38000                    # Bruttolohn Person B, Instanz B (CENT→EUR)
+    assert r["person_b"]["E2000401"] == 3500 and r["person_b"]["E2000801"] == 3500
     assert r["deklaration"]["E0100082"] == "00000000000"        # IdNr B = 1:1 in der Haupt-Deklaration
     assert "E0200201" not in r["deklaration"]                   # Person-B-Lohn NICHT in Person-A-Deklaration
 
@@ -365,11 +370,11 @@ def test_klasse_g_kapital_person_b(bindung):
               "kap_verlust_aktien_partner": 50000, "kap_verlust_sonstige_partner": 30000}
     snap, _ = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung)
-    assert r["person_b"]["E1900701"] == 500000 and r["person_b"]["E1900901"] == 200000
-    assert r["person_b"]["E1901301"] == 50000 and r["person_b"]["E1901201"] == 30000
+    assert r["person_b"]["E1900701"] == 5000 and r["person_b"]["E1900901"] == 2000
+    assert r["person_b"]["E1901301"] == 500 and r["person_b"]["E1901201"] == 300
     assert "E1900701" not in r["deklaration"]                   # Person-B-Kapital NICHT in Person-A-Deklaration
     rt = EM.zuruecklesen(r, bindung)
-    assert rt["felder"]["kap_kapitalertraege_partner"] == 500000
+    assert rt["felder"]["kap_kapitalertraege_partner"] == 5000
 
 
 def test_klasse_gf_renten_verzweigung_person_b(bindung):
@@ -380,12 +385,12 @@ def test_klasse_gf_renten_verzweigung_person_b(bindung):
     snap, _ = ST.materialisiere(_store_mit({"rentner_renten_art_partner": "gesetzliche_rente",
         "rentner_jahresrente_partner": 1800000, "rentner_renten_beginn_jahr_partner": 2015}))
     r = EM.deklariere(snap, bindung)
-    assert r["person_b"]["E1800301"] == 1800000 and r["person_b"]["E1800501"] == 2015
+    assert r["person_b"]["E1800301"] == 18000 and r["person_b"]["E1800501"] == 2015
     assert "E1800301" not in r["deklaration"]                   # nicht in Person-A-Deklaration
     # bb private Leibrente Person B
     r2 = EM.deklariere(ST.materialisiere(_store_mit({"rentner_renten_art_partner": "private_leibrente",
         "rentner_jahresrente_partner": 900000, "rentner_renten_beginn_jahr_partner": 2018}))[0], bindung)
-    assert r2["person_b"]["E1801601"] == 900000 and r2["person_b"]["E1801701"] == 2018
+    assert r2["person_b"]["E1801601"] == 9000 and r2["person_b"]["E1801701"] == 2018
     # ohne Partner-Art -> fail-closed unvollständig
     r3 = EM.deklariere(ST.materialisiere(_store_mit({"rentner_jahresrente_partner": 1800000}))[0], bindung)
     assert "rentner_jahresrente_partner" in {x["feld_id"] for x in r3["unvollstaendig"]}
@@ -396,8 +401,8 @@ def test_klasse_g_roundtrip(bindung):
     felder = {"bruttoarbeitslohn_partner": 3800000, "vor_an_anteil_rv_partner": 350000}
     snap, _ = ST.materialisiere(_store_mit(felder))
     rt = EM.zuruecklesen(EM.deklariere(snap, bindung), bindung)
-    assert rt["felder"]["bruttoarbeitslohn_partner"] == 3800000
-    assert rt["felder"]["vor_an_anteil_rv_partner"] == 350000
+    assert rt["felder"]["bruttoarbeitslohn_partner"] == 38000
+    assert rt["felder"]["vor_an_anteil_rv_partner"] == 3500
 
 
 def test_klasse_g_fail_closed_partner_vorlaeufig(bindung):
@@ -424,13 +429,13 @@ def test_multi_objekt_vv_zwei_objekte(bindung):
     snap, _ = ST.materialisiere(_store_mit({**_OBJ_A, **_OBJ_B}))
     r = EM.deklariere(snap, bindung)
     # Objekt A (Instanz 1): unverändertes Verhalten
-    assert r["deklaration"]["E0700201"] == 1200000
-    assert r["dokumentiert"]["E0703838"]["summe"] == 650000
+    assert r["deklaration"]["E0700201"] == 12000
+    assert r["dokumentiert"]["E0703838"]["summe"] == 6500
     # Objekt B (Instanz 2): eigener Bucket, dieselbe Kz (Reuse)
     inst = r["anlage_instanzen"]["vv_objekt"]
     assert len(inst) == 1 and inst[0]["index"] == 2
-    assert inst[0]["felder"]["E0700201"] == 900000
-    assert inst[0]["dokumentiert"]["E0703838"]["summe"] == 300000
+    assert inst[0]["felder"]["E0700201"] == 9000
+    assert inst[0]["dokumentiert"]["E0703838"]["summe"] == 3000
     assert inst[0]["dokumentiert"]["E0703838"]["quell_felder"] == ["vv_gebaeude_afa__2", "vv_schuldzinsen__2"]
     assert r["vollstaendig"] is True
 
@@ -443,8 +448,8 @@ def test_multi_objekt_summe_datenvollstaendig_fuer_ring(bindung):
     obj_a = r["deklaration"]["E0700201"] - r["dokumentiert"]["E0703838"]["summe"]
     inst = r["anlage_instanzen"]["vv_objekt"][0]
     obj_b = inst["felder"]["E0700201"] - inst["dokumentiert"]["E0703838"]["summe"]
-    assert obj_a == 550000 and obj_b == 600000
-    assert obj_a + obj_b == 1150000                             # Σ § 21-Einkünfte über beide Objekte
+    assert obj_a == 5500 and obj_b == 6000
+    assert obj_a + obj_b == 11500                             # Σ § 21-Einkünfte über beide Objekte (EUR)
 
 
 def test_multi_objekt_roundtrip(bindung):
@@ -452,10 +457,10 @@ def test_multi_objekt_roundtrip(bindung):
     snap, _ = ST.materialisiere(_store_mit({**_OBJ_A, **_OBJ_B}))
     r = EM.deklariere(snap, bindung)
     rt = EM.zuruecklesen(r, bindung)
-    assert rt["felder"]["vv_einnahmen"] == 1200000             # Objekt A
-    assert rt["felder"]["vv_einnahmen__2"] == 900000           # Objekt B
-    assert rt["aggregat"]["E0703838"] == 650000                # Objekt-A-Aggregat
-    assert rt["aggregat"]["E0703838__2"] == 300000             # Objekt-B-Aggregat je Instanz
+    assert rt["felder"]["vv_einnahmen"] == 12000               # Objekt A (EUR)
+    assert rt["felder"]["vv_einnahmen__2"] == 9000             # Objekt B (EUR)
+    assert rt["aggregat"]["E0703838"] == 6500                  # Objekt-A-Aggregat (EUR)
+    assert rt["aggregat"]["E0703838__2"] == 3000               # Objekt-B-Aggregat je Instanz (EUR)
 
 
 def test_multi_objekt_fail_closed_objekt_b_vorlaeufig(bindung):
@@ -478,7 +483,7 @@ def test_multi_objekt_partner_beide_vermieter(bindung):
     # beide Objekte tragen dieselbe Person-A-Kz E0700201 (Anlage V je Objekt), kein distinktes Ehegatte-Kz
     alle_e0700201 = ([r["deklaration"]["E0700201"]]
                      + [e["felder"]["E0700201"] for e in r["anlage_instanzen"]["vv_objekt"]])
-    assert alle_e0700201 == [1200000, 900000]
+    assert alle_e0700201 == [12000, 9000]
 
 
 # ---- Klasse INSTANZ Konsument 2: Per-Kind (Anlage Kind, ELSTER-Form, reines 1:1 je Instanz × A/B) --------
@@ -568,10 +573,10 @@ def test_multi_rente_zwei_renten_verschiedene_art(bindung):
     Instanz-Art. Rente 1 in der Haupt-Deklaration, Rente 2 in anlage_instanzen[rente]."""
     snap, _ = ST.materialisiere(_store_mit({**_RENTE_1, **_RENTE_2}))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"]["E1800301"] == 2000000 and r["deklaration"]["E1800501"] == 2025   # Rente 1 aa
+    assert r["deklaration"]["E1800301"] == 20000 and r["deklaration"]["E1800501"] == 2025   # Rente 1 aa (EUR)
     inst = r["anlage_instanzen"]["rente"]
     assert len(inst) == 1 and inst[0]["index"] == 2
-    assert inst[0]["felder"]["E1801601"] == 900000 and inst[0]["felder"]["E1801701"] == 2018   # Rente 2 bb
+    assert inst[0]["felder"]["E1801601"] == 9000 and inst[0]["felder"]["E1801701"] == 2018   # Rente 2 bb (EUR)
     assert "E1801601" not in r["deklaration"]                            # Rente-2-Kz NICHT in Person-A-Deklaration
     assert r["vollstaendig"] is True
 
@@ -581,8 +586,8 @@ def test_multi_rente_kz_reuse_gleiche_art(bindung):
     zwei_gesetzl = {**_RENTE_1, "rentner_renten_art__2": "gesetzliche_rente",
                     "rentner_jahresrente__2": 1500000, "rentner_renten_beginn_jahr__2": 2020}
     r = EM.deklariere(ST.materialisiere(_store_mit(zwei_gesetzl))[0], bindung)
-    assert r["deklaration"]["E1800301"] == 2000000                       # Rente 1
-    assert r["anlage_instanzen"]["rente"][0]["felder"]["E1800301"] == 1500000   # Rente 2, DIESELBE Kz
+    assert r["deklaration"]["E1800301"] == 20000                       # Rente 1 (EUR)
+    assert r["anlage_instanzen"]["rente"][0]["felder"]["E1800301"] == 15000   # Rente 2, DIESELBE Kz (EUR)
 
 
 def test_multi_rente_fail_closed_instanz_art_offen(bindung):
@@ -603,9 +608,9 @@ def test_multi_rente_roundtrip(bindung):
     """Round-Trip: base + base__2 über die VERZWEIGUNG-Zweig-Kz invertierbar (Value; Art gruppen-genau)."""
     snap, _ = ST.materialisiere(_store_mit({**_RENTE_1, **_RENTE_2}))
     rt = EM.zuruecklesen(EM.deklariere(snap, bindung), bindung)
-    assert rt["felder"]["rentner_jahresrente"] == 2000000                # Rente 1
-    assert rt["felder"]["rentner_jahresrente__2"] == 900000              # Rente 2 (über E1801601)
-    assert rt["felder"]["rentner_renten_beginn_jahr__2"] == 2018         # über E1801701
+    assert rt["felder"]["rentner_jahresrente"] == 20000                  # Rente 1 (EUR)
+    assert rt["felder"]["rentner_jahresrente__2"] == 9000                # Rente 2 (über E1801601, EUR)
+    assert rt["felder"]["rentner_renten_beginn_jahr__2"] == 2018         # über E1801701 (int→unverändert)
 
 
 def test_multi_rente_instanz_kz_kein_phantom(bindung):
@@ -629,7 +634,7 @@ def test_multi_rente_alter_rentenfreibetrag_pro_instanz(bindung):
     assert snap["rentner_rentenfreibetrag__2"]["wert"] == 600000
     r = EM.deklariere(snap, bindung)
     inst = r["anlage_instanzen"]["rente"][0]
-    assert inst["felder"] == {"E1801601": 900000, "E1801701": 2018}      # nur Kz-Felder, alter/rentenfreibetrag KEIN Phantom
+    assert inst["felder"] == {"E1801601": 9000, "E1801701": 2018}       # nur Kz-Felder (EUR), alter/rentenfreibetrag KEIN Phantom
     nd = {x["feld_id"] for x in r["nicht_deklariert"]}
     assert "rentner_alter_bei_rentenbeginn__2" in nd and "rentner_rentenfreibetrag__2" in nd
     assert r["vollstaendig"] is True

@@ -28,6 +28,18 @@ PRODUKT = os.path.dirname(HERE)
 ROOT = os.path.dirname(PRODUKT)
 FELDMAPPING = os.path.join(ROOT, "elster", "feldmapping.stub.yaml")   # Andock-Referenz (Auflage B)
 
+
+def _cent_nach_kz(wert: int, kz: str) -> int | str:
+    """Store-CENT → Kz-Wert: E60-Präfix → "N,NN"-Dezimalstring (E77 EÜR), sonst floor//100 (E10 integer).
+    Backlog Stufe-2 (asymmetrische Rundung zu-Gunsten): Abzugs-Kz (WK/BA) sollten ceiling statt floor
+    verwenden (§ 2 Abs. 2 S. 2 "zu Ihren Gunsten"). Derzeit floor-all = konservativ legal (Finanzamt
+    akzeptiert, sub-euro von 0,00..0,99 im Einnahmen- und Abzugs-Fall; Abzüge minimal über-vorsichtig)."""
+    # Stufe-1: floor-all. Stufe-2: Abzugs-Kz sollten auf ceiling runden (amtlich "zu Ihren Gunsten").
+    if kz.startswith("E60"):
+        return f"{wert // 100},{wert % 100:02d}"
+    return wert // 100
+
+
 # --- Transform-Konfiguration (source-verankert via 2026-07-17-enr-nachtraege-kandidaten.md) ---
 # Klasse a — DOKUMENTIERTE Aggregation (dokumentiert, NICHT deklariert): die §21-WK-Detail-Slots
 # summieren auf ein Ziel-Kz, das die E10-Submission NICHT als sauberes Einzel-Kz führt (Anlage-V-Ruling
@@ -156,7 +168,7 @@ def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, snapsho
         for ziel, srcs in DOKUMENTIERT_AGGREGAT.items():
             if basis in srcs:
                 agg = inst["dokumentiert"].setdefault(ziel, {"summe": 0, "quell_felder": []})
-                agg["summe"] += int(wert)
+                agg["summe"] += (_cent_nach_kz(int(wert), ziel) if b.get("typ") == "cent" else int(wert))
                 agg["quell_felder"].append(feld_id)
     elif basis in VERZWEIGUNG:                            # Klasse f je Instanz (Kz je INSTANZ-Art, Multi-Rente)
         cfg = VERZWEIGUNG[basis]
@@ -168,12 +180,12 @@ def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, snapsho
         else:
             kz = cfg["kz"].get(art["wert"])
             if kz:
-                inst["felder"][kz] = wert
+                inst["felder"][kz] = _cent_nach_kz(wert, kz) if b.get("typ") == "cent" else wert
             else:
                 nicht_deklariert.append({"feld_id": feld_id,
                                          "grund": f"Instanz-Art '{art['wert']}' ohne Kz-Zweig"})
     elif b.get("elster_kz"):                              # 1:1 je Instanz (Kz-Reuse der Basis)
-        inst["felder"][b["elster_kz"]] = wert
+        inst["felder"][b["elster_kz"]] = _cent_nach_kz(wert, b["elster_kz"]) if b.get("typ") == "cent" else wert
     else:
         nicht_deklariert.append({"feld_id": feld_id,
                                  "grund": f"Instanz-Basis '{basis}' ohne elster_kz/Aggregat-Ziel"})
@@ -226,7 +238,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
         elif feld_id in agg_quellen:                             # Klasse a (dokumentierte Aggregation sammeln)
             for ziel, srcs in DOKUMENTIERT_AGGREGAT.items():
                 if feld_id in srcs:
-                    agg_akku[ziel].append((feld_id, int(wert)))
+                    agg_akku[ziel].append((feld_id, _cent_nach_kz(int(wert), ziel) if b.get("typ") == "cent" else int(wert)))
         elif feld_id in VERZWEIGUNG:                             # Klasse f (Art-Verzweigung: 1 Slot -> N-Kz)
             cfg = VERZWEIGUNG[feld_id]
             art = snapshot.get(cfg["art_feld"])
@@ -237,7 +249,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             else:
                 kz = cfg["kz"].get(art["wert"])
                 if kz:
-                    deklaration[kz] = wert
+                    deklaration[kz] = _cent_nach_kz(wert, kz) if b.get("typ") == "cent" else wert
                 else:
                     nicht_deklariert.append({"feld_id": feld_id,
                                              "grund": f"Art '{art['wert']}' ({cfg['art_feld']}) ohne Kz-Zweig"})
@@ -250,14 +262,14 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             else:
                 kz = cfg["kz"].get(art["wert"])
                 if kz:
-                    person_b[kz] = wert
+                    person_b[kz] = _cent_nach_kz(wert, kz) if b.get("typ") == "cent" else wert
                 else:
                     nicht_deklariert.append({"feld_id": feld_id,
                                              "grund": f"Partner-Renten-Art '{art['wert']}' ohne Kz-Zweig"})
         elif feld_id in PARTNER_INSTANZ:                         # Klasse g (Person-Multiplikation, Instanz B)
-            person_b[PARTNER_INSTANZ[feld_id]] = wert
+            person_b[PARTNER_INSTANZ[feld_id]] = _cent_nach_kz(wert, PARTNER_INSTANZ[feld_id]) if b.get("typ") == "cent" else wert
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)
-            deklaration[b["elster_kz"]] = wert
+            deklaration[b["elster_kz"]] = _cent_nach_kz(wert, b["elster_kz"]) if b.get("typ") == "cent" else wert
         else:                                                     # Klasse c (nicht deklariert)
             nicht_deklariert.append({"feld_id": feld_id,
                                      "grund": b.get("elster_kz_grund", "kein elster_kz")})
