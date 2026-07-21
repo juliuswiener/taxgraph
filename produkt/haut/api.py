@@ -453,7 +453,7 @@ def _oepnv_eur(slots: dict) -> int:
 
 
 def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None,
-                 store: dict | None = None, nur_bestaetigt: bool = True):
+                 store: dict | None = None, nur_bestaetigt: bool = True, solz_container=None):
     """bescheid_fn(feld_werte)->cent für eine ring-fähige Familie (Naht-Einheit CENT via
     intervall.bescheid_via_slots). None, wenn die Catala-Toolchain oder ein Accessor fehlt —
     dann bleibt der Ring ehrlich leer, nie ein erfundener Betrag. `felder` (materialisierter
@@ -541,33 +541,42 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # (Pauschbetrag je Ehegatte + Splitting IM Scope). MVP: Person B ohne gesonderte WK (0),
             # ohne VOR (Partner-VOR sperrt der Guard). Person-B-KV/PV optional (absent -> 0, eigener
             # Höchstbetrag je Person, additiv wie in gesamt) — Person-B-WK/VOR bleiben Folge-Nachträge.
-            if f.get("veranlagung", {}).get("wert") == "zusammen":
+            zusammen = f.get("veranlagung", {}).get("wert") == "zusammen"
+            if zusammen:
                 kv_pv_b = runner.catala_p10_kv_pv({
                     "basis_kv_pv": _cent("basis_kv_pv_partner") // 100,
                     "weitere_vorsorgeaufwendungen": _cent("weitere_vorsorgeaufwendungen_partner") // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
-                return runner.catala_est_zusammen({
+                est = runner.catala_est_zusammen({
                     "veranlagungszeitraum": vz,
                     "bruttoarbeitslohn_a": int(slots.get("bruttoarbeitslohn", 0)) // 100,
                     "bruttoarbeitslohn_b": _cent("bruttoarbeitslohn_partner") // 100,
                     "werbungskosten_a": wk, "werbungskosten_b": 0,
                     "sonderausgaben_gemeinsam": kv_pv_a + kv_pv_b})
-            # § 10 Altersvorsorge (Stufe 1a): die VOR-Einzelfelder DIREKT aus dem Store greifen —
-            # der Summen-Slot gesamtbeitraege_inkl_ag würde den AG-Anteil verschmelzen und die
-            # Kürzung (nach dem Cap) unmöglich machen. gesamtbeitraege = AN + AG + außerhalb; der
-            # steuerfreie AG-Anteil getrennt. Naht-CENT -> EURO für _vorsorge_abzug.
-            gesamt = (_cent("vor_an_anteil_rv") + _cent("vor_ag_anteil_rv")
-                      + _cent("vor_rv_ausserhalb_lstb")) // 100
-            ag = _cent("vor_ag_anteil_rv") // 100
-            so = runner._vorsorge_abzug({"vorsorge_gesamtbeitraege_inkl_ag": gesamt,
-                                         "vorsorge_ag_anteil_steuerfrei": ag}, vz) + kv_pv_a
-            return runner.catala_est({
-                "veranlagungszeitraum": vz,
-                "veranlagung": slots.get("veranlagung", "einzel"),
-                # bruttoarbeitslohn ist Naht-CENT (Bindung typ:cent) -> catala_est erwartet EURO.
-                "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,
-                "werbungskosten": wk,
-                "sonderausgaben": so})
+            else:
+                # § 10 Altersvorsorge (Stufe 1a): die VOR-Einzelfelder DIREKT aus dem Store greifen —
+                # der Summen-Slot gesamtbeitraege_inkl_ag würde den AG-Anteil verschmelzen und die
+                # Kürzung (nach dem Cap) unmöglich machen. gesamtbeitraege = AN + AG + außerhalb; der
+                # steuerfreie AG-Anteil getrennt. Naht-CENT -> EURO für _vorsorge_abzug.
+                gesamt = (_cent("vor_an_anteil_rv") + _cent("vor_ag_anteil_rv")
+                          + _cent("vor_rv_ausserhalb_lstb")) // 100
+                ag = _cent("vor_ag_anteil_rv") // 100
+                so = runner._vorsorge_abzug({"vorsorge_gesamtbeitraege_inkl_ag": gesamt,
+                                             "vorsorge_ag_anteil_steuerfrei": ag}, vz) + kv_pv_a
+                est = runner.catala_est({
+                    "veranlagungszeitraum": vz,
+                    "veranlagung": slots.get("veranlagung", "einzel"),
+                    # bruttoarbeitslohn ist Naht-CENT (Bindung typ:cent) -> catala_est erwartet EURO.
+                    "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,
+                    "werbungskosten": wk,
+                    "sonderausgaben": so})
+            # SolZ §3, §4 SolzG: Basis = festzusetzende ESt (kein KiFB/§32d-Kapital im AN-Ring)
+            if solz_container is not None:
+                solz_container[0] = runner.catala_solz({
+                    "veranlagungszeitraum": vz,
+                    "bemessungsgrundlage": est,
+                    "splitting": zusammen})
+            return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
     if quantitaet == "festzusetzende_est_gesamt":   # § 21 V+V via catala_gesamt (reiner §21-MVP)
@@ -839,6 +848,11 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             p35_nenner = (max(0, ns) + max(0, vv) + max(0, g.get("einkuenfte_sonstige", 0))
                           + max(0, g["einkuenfte_gewinn"]))
 
+            # §3 Abs.2 SolzG: SolZ-Basis = KiFB-fiktive ESt (immer mit §32 Abs.6-Freibetraegen,
+            # unabhaengig vom §31-Ergebnis) minus §32d-Kapitalsteuer. solz_info wird von
+            # _festzusetzende je Lauf befuellt; der letzte Lauf (KiFB>0) ueberschreibt.
+            solz_info = {}
+
             def _festzusetzende(freibetrag: int) -> int:
                 # Der volle festzusetzende ESt-Bescheid (§ 19+§21+alle Abzüge, PLUS § 20-Kapital-Günstiger § 32d
                 # Abs. 6) bei GEGEBENEM § 32-Abs.6-Kinderfreibetrag. Kapital-Günstiger: est_ohne_kap vs est_mit_kap
@@ -885,11 +899,19 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35)
                 est_ohne = runner.catala_est(g2)     # KEIN Kapital (est_regulaer_ohne_kap)
                 if kapitaleinkuenfte <= 0:
+                    if freibetrag > 0 or kinder == 0:
+                        solz_info["est_mit_fb"] = est_ohne
+                        solz_info["kap_st"] = 0
                     return est_ohne
                 est_mit = runner.catala_est(dict(g2, einkuenfte_kapitalvermoegen=kapitaleinkuenfte))
-                return est_ohne + runner.catala_kapital_steuer({
+                kap_st = runner.catala_kapital_steuer({
                     "veranlagungszeitraum": vz, "kapitaleinkuenfte": kapitaleinkuenfte,
                     "est_regulaer_mit_kap": est_mit, "est_regulaer_ohne_kap": est_ohne})
+                result = est_ohne + kap_st
+                if freibetrag > 0 or kinder == 0:
+                    solz_info["est_mit_fb"] = result
+                    solz_info["kap_st"] = kap_st
+                return result
 
             # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6): bei
             # Kindern den vollen Bescheid EINMAL OHNE + einmal MIT Kinderfreibetrag rechnen; FL wählt das für den
@@ -898,12 +920,22 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # NICHT die GdE (§ 2 Abs. 3) → die §10b/§33-Deckel (auf gde) bleiben unberührt. Ohne Kinder kein § 31.
             kinder = _c("fam_anzahl_kinder")
             if kinder > 0:
-                return runner.catala_p31_familienleistung({
+                est = runner.catala_p31_familienleistung({
                     "est_ohne_freibetraege": _festzusetzende(0),
                     "est_mit_freibetraegen": _festzusetzende(
                         kinder * runner._kinderfreibetrag(vz, g["veranlagung"])),
                     "kindergeld": kinder * runner._kindergeld(vz) * 12})
-            return _festzusetzende(0)
+            else:
+                est = _festzusetzende(0)
+            # SolZ §3, §4 SolzG: Basis = KiFB-fiktive ESt (§3 Abs.2) minus §32d-Kapitalsteuer (§3 Abs.3 S.1);
+            # §32d-Kapital-SolZ 5,5% ohne Freigrenze (§3 Abs.3 S.2) wird von catala_solz separat addiert.
+            if solz_container is not None and "est_mit_fb" in solz_info:
+                solz_container[0] = runner.catala_solz({
+                    "veranlagungszeitraum": vz,
+                    "bemessungsgrundlage": solz_info["est_mit_fb"],
+                    "kapital_steuer": solz_info.get("kap_st", 0),
+                    "splitting": g["veranlagung"] == "zusammen"})
+            return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
     if quantitaet == "festzusetzende_est_rentner":   # § 22 Renten + § 33b via catala_gesamt
@@ -1075,6 +1107,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             p35_zaehler = max(0, laufender_gewinn) if _b("gewinn_betriebsart") == "gewerbe" else 0
             p35_nenner = max(0, renten) + max(0, rentner_g["einkuenfte_gewinn"])
 
+            # §3 Abs.2 SolzG: SolZ-Basis = KiFB-fiktive ESt (immer mit §32 Abs.6-Freibetraegen;
+            # kein §32d-Kapital im Rentner-Ring → kap_st=0 immer). solz_info_r ueberschrieben vom KiFB-Lauf.
+            solz_info_r = {}
+
             def _festzusetzende_r(freibetrag: int) -> int:
                 # § 31 Familienleistungsausgleich (Fund D, Rentner-Ring-Fix): PER §31-Zweig neu gerechnet (g2 statt
                 # rentner_g direkt) — Kinderfreibetrag senkt zvE (§ 2 Abs. 5) → eigener Tarif + eigene § 35-Deckel-3-
@@ -1108,19 +1144,31 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + min(
                         4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100,
                         p35_zaehler * tarifliche // p35_nenner))
-                return runner.catala_est(g2)
+                result = runner.catala_est(g2)
+                # SolZ-Tracking: letzte Lauf überschreibt — KiFB>0 = SolZ-Basis (§3 Abs.2); kinderlose Fälle nur ein Lauf (freibetrag=0)
+                if freibetrag > 0 or kinder == 0:
+                    solz_info_r["est_mit_fb"] = result
+                return result
 
             # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6, Fund D):
             # fehlte komplett im Rentner-Ring — Rentner mit Kindern verlor die Günstiger-Freibetrag-Anrechnung
             # (Over-tax). 1:1 gesamt-Naht-Präzedenz Z. 894-906. Ohne Kinder kein § 31.
             kinder = _c("fam_anzahl_kinder")
             if kinder > 0:
-                return runner.catala_p31_familienleistung({
+                est = runner.catala_p31_familienleistung({
                     "est_ohne_freibetraege": _festzusetzende_r(0),
                     "est_mit_freibetraegen": _festzusetzende_r(
                         kinder * runner._kinderfreibetrag(vz, rentner_g["veranlagung"])),
                     "kindergeld": kinder * runner._kindergeld(vz) * 12})
-            return _festzusetzende_r(0)
+            else:
+                est = _festzusetzende_r(0)
+            # SolZ §3, §4 SolzG: Rentner-Ring hat kein §32d-Kapital → Basis = KiFB-fiktive ESt direkt
+            if solz_container is not None and "est_mit_fb" in solz_info_r:
+                solz_container[0] = runner.catala_solz({
+                    "veranlagungszeitraum": vz,
+                    "bemessungsgrundlage": solz_info_r["est_mit_fb"],
+                    "splitting": rentner_g["veranlagung"] == "zusammen"})
+            return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
     # festzusetzende_est_haushalt (§35a+§10b) + festzusetzende_est_agb (§33+§10-KiSt) ENTFERNT (Weg ii, Stage 1b):
@@ -1132,17 +1180,20 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
                 store: dict | None = None):
     """Fail-closed: die festzusetzende Zahl NUR bei Scheiben-Gesamt-Accessor UND vollständig
     bestätigtem Input-Kegel (Meet). Ohne Gesamt-Accessor gibt es KEINE Scheiben-Zahl (ehrlich).
-    `store` erlaubt dem §21-Ring die Multi-Objekt-Instanz-Σ (#5)."""
+    `store` erlaubt dem §21-Ring die Multi-Objekt-Instanz-Σ (#5).
+    Returns (zahl_euro, solz_cent) — solz_cent = None wenn SolZ nicht rechenbar."""
     q = cfg["gesamt_ring"]
     if q is None:
         return None
     zustaende = [felder[f]["zustand"] for f in scheibe_felder if f in felder]
     if len(zustaende) < len(scheibe_felder) or ST.meet_zustand(zustaende) != "bestaetigt":
         return None
-    bf = _bescheid_fn(q, vz, bindung, felder, store)
+    solz_out = [None]   # mutable container — slot_fn schreibt SolZ hinein
+    bf = _bescheid_fn(q, vz, bindung, felder, store, solz_container=solz_out)
     if bf is None:
         return None
-    return bf({f: felder[f]["wert"] for f in scheibe_felder})
+    zahl = bf({f: felder[f]["wert"] for f in scheibe_felder})
+    return zahl, solz_out[0]
 
 
 def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None = None,
@@ -1490,22 +1541,23 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
         sperr = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung)
         if sperr:
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
-                         "grund": sperr, "offen": [], "trace": None}
-    zahl = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder, store)
-    if zahl is None:
+                         "solz_cent": None, "grund": sperr, "offen": [], "trace": None}
+    result = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder, store)
+    if result is None:
         if cfg["gesamt_ring"] is None:
             # Multi-Regel-Scheibe ohne ehrlichen Gesamt-Accessor: bewusst KEINE Scheiben-Zahl.
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
-                         "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
+                         "solz_cent": None, "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
         offen = [f for f in scheibe_felder
                  if f not in felder or felder[f]["zustand"] != "bestaetigt"]
         bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
         grund = "engine_unavailable" if (bf is None and not offen) else "input_kegel_nicht_bestaetigt"
         return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
-                     "grund": grund, "offen": sorted(offen), "trace": None}
+                     "solz_cent": None, "grund": grund, "offen": sorted(offen), "trace": None}
+    zahl, solz = result
     trace = TR.trace_ergebnis(store, bindung, snapshot_id=sid)
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": zahl,
-                 "grund": "bestaetigt", "offen": [], "trace": trace}
+                 "solz_cent": solz, "grund": "bestaetigt", "offen": [], "trace": trace}
 
 
 def deklaration(fall_id: str) -> tuple[int, dict]:

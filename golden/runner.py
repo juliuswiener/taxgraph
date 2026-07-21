@@ -816,6 +816,47 @@ def catala_kst_nenner_b(s: dict) -> int:
     return kst + solz + _kst_gewst_cent(s)
 
 
+# -- Solidaritaetszuschlag § 3, § 4 SolzG 1995 (natuerliche Person). CENT. -------------
+
+_SOLZ_FREIGRENZE = {
+    # VZ → (einzel, zusammen). Wert-Provenance: params/<vz>/solidaritaetszuschlag_solzg.yaml,
+    # gegengeprueft mit GETTSIM 1.2.1. Nur die Freigrenze driftet; Satz (5,5%)/Milderung (11,9%)
+    # fassungskonstant. VZ 2024: Inflationsausgleichsgesetz; 2025/2026: SteFeG.
+    2024: (18130, 36260),
+    2025: (19950, 39900),
+    2026: (20350, 40700),
+}
+
+
+def catala_solz(s: dict) -> int:
+    """§3, §4 SolzG 1995 Solidaritaetszuschlag fuer natuerliche Personen, CENT.
+    bemessungsgrundlage (EURO) = KiFB-fiktive ESt (§3 Abs.2: IMMER mit §32 Abs.6-
+    Freibetraegen, unabhaengig von §31-Guenstigerpruefung). kapital_steuer (EURO) =
+    §32d-Abgeltung (§3 Abs.3 S.2: 5,5% OHNE Freigrenze). splitting = Zusammenveranlagung
+    (§32a Abs.5/6 → doppelte Freigrenze). veranlagungszeitraum = int-VZ (2024-2026)."""
+    year = s["veranlagungszeitraum"]
+    basis = int(s["bemessungsgrundlage"])              # EURO, KiFB-fiktiv
+    kap_est = int(s.get("kapital_steuer", 0))           # EURO, §32d-Abgeltung
+    basis_main = max(0, basis - kap_est)                # §3 Abs.3 S.1
+    splitting = s["splitting"]
+
+    assert year in _SOLZ_FREIGRENZE, f"SolZ VZ {year}: nur 2024-2026"
+    fg_einzel, fg_zusammen = _SOLZ_FREIGRENZE[year]
+    freigrenze = fg_zusammen if splitting else fg_einzel
+
+    # §4 S.1+2 + S.3 (Cent-Floor). Ganzzahlige Cent-Rechnung = decimal-Truncate-Äquivalent.
+    if basis_main <= freigrenze:
+        solz_main_cent = 0
+    else:
+        regel_cent = basis_main * 55 // 10             # 5,5 % in Cent (floor)
+        milderung_cent = (basis_main - freigrenze) * 119 // 10   # 11,9 % (floor)
+        solz_main_cent = min(regel_cent, milderung_cent)
+
+    # §3 Abs.3 S.2: Kapital-SolZ 5,5 % OHNE Freigrenze (Floor auf Cent)
+    solz_kap_cent = kap_est * 55 // 10
+    return solz_main_cent + solz_kap_cent
+
+
 VZ_ENUM = {
     2024: E.Veranlagungszeitraum(E.Veranlagungszeitraum.Code.VZ2024, None),
     2025: E.Veranlagungszeitraum(E.Veranlagungszeitraum.Code.VZ2025, None),
