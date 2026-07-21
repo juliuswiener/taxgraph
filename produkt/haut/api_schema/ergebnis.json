@@ -21,7 +21,7 @@
                        "rechnung_unbar_offen", "rente_instanz_offen",
                        "erstattungsueberhang_offen", "partner_vorsorge_offen",
                        "alleinerziehend_konsistenz_offen", "gewinn_quelle_offen",
-                       "luf_euer_offen", "gewst_hebesatz_offen", "abs3_ueber_5mio_offen", "kinder_gehoeren_in_gesamt", "verlustvortrag_gehoert_in_gesamt", "dba_freistellung_offen", "dba_multi_country_offen", "dba_kapital_offen"]},
+                       "luf_euer_offen", "gewst_hebesatz_offen", "abs3_ueber_5mio_offen", "kinder_gehoeren_in_gesamt", "verlustvortrag_gehoert_in_gesamt", "dba_freistellung_offen", "dba_multi_country_offen", "dba_kapital_offen", "p32b_p34_kombi_offen", "progression_gehoert_in_gesamt"]},
     "offen": {"type": "array", "items": {"type": "string"}},
     "trace": {"type": ["object", "null"]}
   }

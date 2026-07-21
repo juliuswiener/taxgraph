@@ -1,0 +1,41 @@
+# Bindungstabelle — §32b EStG Progressionsvorbehalt (Lohnersatz, Abs.1 Nr.1).
+# 1 Aggregat-Feld (Summe aller Lohnersatz). Kz null+MVP: Lohnersatz = eDaten-
+# Traegermeldung (§93c AO), kein Steuerpflichtigen-Kz. eDaten-Import = Stufe-2.
+# DBA-Freistellung (Abs.1 Nr.3) = Stufe-2 (unblockt §34c-Freistellung).
+# Task §32b-Stufe-1, Stand 2026-07-21.
+version: 1
+scheibe: "§32b EStG Progressionsvorbehalt Lohnersatz (gesamt + rentner)"
+
+bindungen:
+  - feld_id: p32b_progressionseinkuenfte
+    quelle: {regel_id: p32b_progressionsvorbehalt, signatur_slot: progressionseinkuenfte}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie hoch ist die SUMME aller erhaltenen Lohnersatzleistungen laut Bescheinigung? (Arbeitslosengeld, Krankengeld, Elterngeld, Mutterschaftsgeld, Kurzarbeitergeld, Insolvenzgeld u.ae.)"
+    hilfe_kurz: "Diese Leistungen sind steuerfrei, erhoehen aber den Steuersatz auf dein uebriges Einkommen (Progressionsvorbehalt). Nur den Gesamtbetrag aller Lohnersatzleistungen eintragen — NUR falls dein Sozialversicherungstraeger die Daten NICHT elektronisch gemeldet hat."
+    beispielwert: 1000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Lohnersatzleistungen werden von SV-Traegern per eDaten (§93c AO) gemeldet, kein Steuerpflichtigen-Kz. Aggregat-MVP (Summe aller Arten); eDaten-Import = Stufe-2-Backlog (blockiert durch Julius-Cap)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32b Abs. 1 Nr. 1 EStG"
+      zitatanker: "Arbeitslosengeld, Teilarbeitslosengeld, Zuschuesse zum Arbeitsentgelt, Kurzarbeitergeld"
+      datei: "sources/gesetze-im-internet/estg_p32b_2026-07-13.txt"
+
+  # ===== Lücken + Geltungsbedingungen =====
+luecken:
+  - regel_id: p32b_progressionsvorbehalt
+    signatur_slot: est_auf_erhoehte_bemessung
+    grund: "Berechnete Groesse (§32a auf zvE+PE). Ring-Andockung, kein Laien-Feld."
+  - regel_id: p32b_progressionsvorbehalt
+    signatur_slot: zu_versteuerndes_einkommen
+    grund: "Berechnete Groesse (zvE = catala_gesamt_zve). Ring-Andockung, kein Laien-Feld."
+  - regel_id: p32b_progressionsvorbehalt
+    geltungsbedingung: tarifwert_ist_p32a_ergebnis
+    grund: "est_auf_erhoehte_bemessung = §32a-Ergebnis. Im Ring via catala_est-Andockung bezogen."
+  - regel_id: p32b_progressionsvorbehalt
+    geltungsbedingung: progressionseinkuenfte_sind_netto_nach_an_pauschbetrag
+    grund: "PE sind Netto nach §9a-Pauschbetrag (§32b Abs.2 S.1 Nr.1). Nutzer-Selbst-Deklaration auf Feld p32b_progressionseinkuenfte."

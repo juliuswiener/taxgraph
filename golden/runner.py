@@ -606,6 +606,25 @@ def catala_p33a_ausbildungsfreibetrag(s: dict) -> int:
     return int(s.get("anzahl_kinder", 0)) * 1200
 
 
+# -- §32b EStG Progressionsvorbehalt (Abs.1 Nr.1 Lohnersatz). EURO. -----------------
+# Pure-Python aus verified_bedingt Snapshot (p32b_progressionsvorbehalt.json).
+# 3 pipeline-seeds fidel. Besonderer Steuersatz = est_auf_erhoehte / erhoehte, applied
+# to zvE. Post-Engine-Wrapper (NICHT tarif_modifiziert, Scheibe-Isolation).
+
+def catala_p32b_1(s: dict) -> int:
+    """§32b Abs.1 Nr.1/2 EStG — Progressionsvorbehalt, EURO (cent-floor via integer arith).
+    erhoehte_bemessung = zvE + progressionseinkuenfte; besonderer_steuersatz =
+    est_auf_erhoehte_bemessung / erhoehte_bemessung (0 wenn 0); ret = satz * zvE.
+    Accessor nimmt EUROS. Seeds: 30000/10000/7209→5406, 30000/0/4217→4217, 10000/5000/435→290."""
+    zvE = int(s["zu_versteuerndes_einkommen"])
+    pe = int(s["progressionseinkuenfte"])
+    est_erhoeht = int(s["est_auf_erhoehte_bemessung"])
+    erhoehte = zvE + pe
+    if erhoehte <= 0:
+        return 0
+    return est_erhoeht * zvE // erhoehte
+
+
 def _kindergeld(year: int) -> int:
     """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
     p = load_yaml_fh(open(os.path.join(

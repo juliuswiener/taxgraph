@@ -218,10 +218,13 @@ GESAMT_P23 = ("p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten",
 # Einkünfte des Unterhaltsempfängers, NICHT die des Steuerpflichtigen.
 GESAMT_P33A = ("p33a_unterhalt_aufwendungen", "p33a_unterhalt_kv_pv",
                "p33a_andere_einkuenfte_bezuege", "p33a_ausbildung_anzahl_kinder")
+# §32b Progressionsvorbehalt (Abs.1 Nr.1 Lohnersatz): 1 Aggregat-Feld, OPTIONAL
+# (absent→0→safe). Post-Engine-Wrapper (NICHT tarif_modifiziert, Scheibe-Isolation).
+GESAMT_P32B = ("p32b_progressionseinkuenfte",)
 # Weg-ii-Parität-Fix (K2, Over-tax, ring-b-Fund #4): GESAMT_FREIBETRAEGE auch im Rentner-Ring nachgetragen —
 # ohne fam_alleinstehend/fam_monate_ohne_voraussetzung postbar war § 24b im Rentner-Ring nicht erreichbar
 # (geburtsjahr/fam_anzahl_kinder stehen schon in RENTNER_GEWINN/GESAMT_ABZUEGE, Duplikat harmlos).
-RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B
 # §§ 13-18 Gewinneinkünfte (Stufe 1), OPTIONAL im gesamt-Ring (NICHT Pflicht-Kegel → absent → 0, over-tax-safe).
 # einkuenfte_gewinn (CENT) = der vorberechnete Gewinn-Betrag → einkuenfte_gewinn-Slot der slot_fn (§ 2-Summand).
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
@@ -292,7 +295,7 @@ SCHEIBEN = {
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
                    + GESAMT_33B + GESAMT_33B_PARTNER
-                   + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a OPTIONAL
+                   + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -972,6 +975,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # _festzusetzende je Lauf befuellt; der letzte Lauf (KiFB>0) ueberschreibt.
             solz_info = {}
 
+            # §32b Progressionsvorbehalt (Stufe-1, Lohnersatz, Post-Engine-Wrapper)
+            pe_raw = _c("p32b_progressionseinkuenfte") // 100
+            pe_active = pe_raw > 0
+            p35_active = p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0
+            # §32b×§34-Koinzidenz-Guard: Post-Engine §32b NACH §34 (tarif_modifiziert).
+            # Bewegt: Guard in _an_gesamt_sperrgrund sperrt p32b_p34_kombi_offen bei Co-Präsenz.
+
             def _festzusetzende(freibetrag: int) -> int:
                 # Der volle festzusetzende ESt-Bescheid (§ 19+§21+alle Abzüge, PLUS § 20-Kapital-Günstiger § 32d
                 # Abs. 6) bei GEGEBENEM § 32-Abs.6-Kinderfreibetrag. Kapital-Günstiger: est_ohne_kap vs est_mit_kap
@@ -1010,24 +1020,49 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 # abhängig (Kinderfreibetrag senkt zvE), daher Deckel-3 JE ZWEIG (global-einmal würde den Kinder-
                 # freibetrag-Zweig über-crediten = stille Under-tax). §35 Abs.1 S.4: geminderte tarifliche Steuer
                 # = tarifliche_est NACH §34c-Anrechnung (PRE-§35, NEVER umgekehrt — sonst §35-Über-Kredit).
+                # §32b Progressionsvorbehalt: §35-Deckel-3 braucht POST-§32b tarifliche wenn pe_active.
+                # Stufe-1: §35 NORMAL in g2 wenn ¬pe_active; POST-WRAPPER-APPLY wenn pe_active.
+                p35_credit = 0
                 if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
                     tarifliche_raw = runner.catala_gesamt_tarifliche(g2)
                     tarifliche_gemindert = max(0, tarifliche_raw - dba_anrechnung)
-                    p35 = min(4 * p35_messbetrag,
-                              p35_messbetrag * p35_hebesatz // 100,
-                              p35_zaehler * tarifliche_gemindert // p35_nenner)
-                    g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35)
-                est_ohne = runner.catala_est(g2)     # KEIN Kapital (est_regulaer_ohne_kap)
+                    p35_credit = min(4 * p35_messbetrag,
+                                     p35_messbetrag * p35_hebesatz // 100,
+                                     p35_zaehler * tarifliche_gemindert // p35_nenner)
+                    if not pe_active:
+                        g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35_credit)
+                est_raw = runner.catala_est(g2)     # KEIN Kapital (est_regulaer_ohne_kap)
+                # §32b Post-Engine-Wrapper (NACH catala_est, VOR §35-Apply-if-pe_active)
+                if pe_active:
+                    tarifliche_pre32b = runner.catala_gesamt_tarifliche(g2)
+                    est_without_tarifliche = est_raw - tarifliche_pre32b
+                    zve32b = runner.catala_gesamt_zve(g2)
+                    t_32b = 0
+                    if zve32b > 0:
+                        est_erhoeht = runner.catala_est({"veranlagungszeitraum": vz,
+                                                          "veranlagung": g2.get("veranlagung", "einzel"),
+                                                          "zu_versteuerndes_einkommen": zve32b + pe_raw})
+                        t_32b = runner.catala_p32b_1({
+                            "zu_versteuerndes_einkommen": zve32b,
+                            "progressionseinkuenfte": pe_raw,
+                            "est_auf_erhoehte_bemessung": est_erhoeht})
+                        est_raw = t_32b + est_without_tarifliche
+                    # §35-Deckel-3 apply post-wrapper mit t_32b (§35 Abs.1 S.4 geminderte tarifliche = Post-§32b)
+                    if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
+                        deckel3_32b = p35_zaehler * max(0, t_32b - dba_anrechnung) // p35_nenner
+                        p35_credit_pe = min(4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100, deckel3_32b)
+                        est_raw = max(0, est_raw - p35_credit_pe)
+                # End §32b wrapper
                 if kapitaleinkuenfte <= 0:
                     if freibetrag > 0 or kinder == 0:
-                        solz_info["est_mit_fb"] = est_ohne
+                        solz_info["est_mit_fb"] = est_raw
                         solz_info["kap_st"] = 0
-                    return est_ohne
+                    return est_raw
                 est_mit = runner.catala_est(dict(g2, einkuenfte_kapitalvermoegen=kapitaleinkuenfte))
                 kap_st = runner.catala_kapital_steuer({
                     "veranlagungszeitraum": vz, "kapitaleinkuenfte": kapitaleinkuenfte,
-                    "est_regulaer_mit_kap": est_mit, "est_regulaer_ohne_kap": est_ohne})
-                result = est_ohne + kap_st
+                    "est_regulaer_mit_kap": est_mit, "est_regulaer_ohne_kap": est_raw})
+                result = est_raw + kap_st
                 if freibetrag > 0 or kinder == 0:
                     solz_info["est_mit_fb"] = result
                     solz_info["kap_st"] = kap_st
@@ -1256,6 +1291,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # kein §32d-Kapital im Rentner-Ring → kap_st=0 immer). solz_info_r ueberschrieben vom KiFB-Lauf.
             solz_info_r = {}
 
+            # §32b Progressionsvorbehalt (Rentner-Ring, 1:1 gesamt-Präzedenz)
+            pe_raw = _c("p32b_progressionseinkuenfte") // 100
+            pe_active = pe_raw > 0
+
             def _festzusetzende_r(freibetrag: int) -> int:
                 # § 31 Familienleistungsausgleich (Fund D, Rentner-Ring-Fix): PER §31-Zweig neu gerechnet (g2 statt
                 # rentner_g direkt) — Kinderfreibetrag senkt zvE (§ 2 Abs. 5) → eigener Tarif + eigene § 35-Deckel-3-
@@ -1282,16 +1321,35 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                                 "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg}))
                 # § 35 GewSt-Anrechnung Deckel-3 (JE §31-Zweig — tarifliche_est ist freibetrag-abhängig, global-
                 # einmal würde den Kinderfreibetrag-Zweig über-crediten = stille Under-tax, 1:1 gesamt-Präzedenz).
+                p35_credit_r = 0
                 if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
                     tarifliche_raw = runner.catala_gesamt_tarifliche(g2)
                     tarifliche_gemindert = max(0, tarifliche_raw - dba_anrechnung)
                     # Weg-ii-Fix (K2, PFLICHT): ADDITIV statt hart überschreiben — sonst löscht § 35 GewSt-
                     # Anrechnung das § 35a-Ergebnis (steuerermaessigungen) still.
-                    g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + min(
-                        4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100,
-                        p35_zaehler * tarifliche_gemindert // p35_nenner))
+                    p35_credit_r = min(4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100,
+                                       p35_zaehler * tarifliche_gemindert // p35_nenner)
+                    if not pe_active:
+                        g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35_credit_r)
                 result = runner.catala_est(g2)
-                # SolZ-Tracking: letzte Lauf überschreibt — KiFB>0 = SolZ-Basis (§3 Abs.2); kinderlose Fälle nur ein Lauf (freibetrag=0)
+                # §32b Post-Engine-Wrapper (Rentner-Ring, 1:1 gesamt-Präzedenz)
+                if pe_active:
+                    tarifliche_pre32b = runner.catala_gesamt_tarifliche(g2)
+                    est_without_tarifliche = result - tarifliche_pre32b
+                    zve32b = runner.catala_gesamt_zve(g2)
+                    if zve32b > 0:
+                        est_erhoeht = runner.catala_est({"veranlagungszeitraum": vz,
+                                                          "veranlagung": g2.get("veranlagung", "einzel"),
+                                                          "zu_versteuerndes_einkommen": zve32b + pe_raw})
+                        tarifliche_32b = runner.catala_p32b_1({
+                            "zu_versteuerndes_einkommen": zve32b,
+                            "progressionseinkuenfte": pe_raw,
+                            "est_auf_erhoehte_bemessung": est_erhoeht})
+                        result = tarifliche_32b + est_without_tarifliche
+                    # §35-Deckel-3 post-wrapper mit tarifliche_32b
+                    if p35_credit_r > 0:
+                        result = max(0, result - p35_credit_r)
+                # SolZ-Tracking
                 if freibetrag > 0 or kinder == 0:
                     solz_info_r["est_mit_fb"] = result
                 return result
@@ -1384,6 +1442,10 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
     # (kein §2-Gesamt-Scope, kein sonstige_abzuege_vom_einkommen-Slot). Gleiches Muster wie Gap-A.
     if cfg and not cfg.get("gesamt_guard") and _positiv("verlustvortrag_bestand"):
         return "verlustvortrag_gehoert_in_gesamt"
+    # an_gesamt §32b (K2, Over-tax): Lohnersatz (Elterngeld/Krankengeld) ist bei Angestellten
+    # HAEUFIG. an_gesamts catala_est hat KEIN extrahierbares zvE → GATE statt Under-tax.
+    if cfg and not cfg.get("gesamt_guard") and _positiv("p32b_progressionseinkuenfte"):
+        return "progression_gehoert_in_gesamt"
     if cfg and cfg.get("gesamt_guard"):
         # §34c DBA-Anrechnung (Stufe-1, K2): fail-closed bei Freistellungs-DBA, multi-country,
         # §32d-Kapital. Ohne diese Gates wäre die Anrechnung still 0 (gezahlt=0/ausl=0=absent) —
@@ -1399,6 +1461,23 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if any(_positiv(k) for k in KAP_TOEPFE) or (felder.get(KAP_ERTRAEGE, {}).get("wert") or 0) > 0:
             if _positiv("dba_auslaendische_einkuenfte"):
                 return "dba_kapital_offen"
+        # §32b-Koinzidenz (K2, fail-closed): §32b Post-Engine NACH §34/§35/§34c.
+        # Co-Präsenz (Lohnersatz + ao-Gewinn/GewSt/DBA) unaufgelöst in Stufe-1 → fail-closed
+        # (kein silent-wrong-Basis-Deckel). Stufe-2: korrekte Post-§32b-Höchstbeträge.
+        p32b_pe = (felder.get("p32b_progressionseinkuenfte") or {}).get("wert")
+        p32b_has_pe = isinstance(p32b_pe, (int, float)) and not isinstance(p32b_pe, bool) and p32b_pe > 0
+        if p32b_has_pe:
+            # 1. §34 ao-Gewinn / ermäßigter Satz
+            ao_gewinn = (felder.get("rentner_veraeusserungsgewinn") or {}).get("wert")
+            if (isinstance(ao_gewinn, (int, float)) and not isinstance(ao_gewinn, bool) and ao_gewinn > 0) \
+                    or (felder.get("antrag_ermaessigter_satz", {}).get("wert") is True):
+                return "p32b_kombi_offen"
+            # 2. §35 Gewerbesteuer
+            if _positiv("gewst_messbetrag"):
+                return "p32b_kombi_offen"
+            # 3. §34c DBA-Anrechnung
+            if _positiv("dba_gezahlte_auslaendische_steuer") or _positiv("dba_auslaendische_einkuenfte"):
+                return "p32b_kombi_offen"
         # Gesamt-Ring: Flag↔Einkunftsart-Widerspruch (kein_X=true + echtes Feld > 0 bestätigt) surfacen —
         # K2, keine still übergangene Einkunftsart (dev-2s flag_check).
         if FC.flag_widersprueche(felder):
