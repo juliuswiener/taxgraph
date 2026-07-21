@@ -400,6 +400,11 @@ def _gwg_sofortabzug_summe(f: dict, store: dict | None, bindung: dict | None,
     def _abzug(fi: dict) -> int:
         v = fi.get("gwg_anschaffungskosten_netto", {}).get("wert")
         netto = int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+        # ⭐ CENT-GUARD (§ 6 Abs. 2, 800€-Schwelle): netto//100 FLOORT Cent vor dem catala-≤800-Vergleich
+        # → 800,01-800,99€ (80001-80099 Cent) würde auf 800 abgerundet fälschlich als GWG durchgehen
+        # (under-tax, Sofortabzug statt AfA). Schwelle VOR der Euro-Rundung in Cent prüfen.
+        if netto > 80000:
+            return 0
         return runner.catala_p6_2_gwg({"gwg_anschaffungskosten_netto": netto // 100})
     if store is not None and bindung is not None:
         # ⭐ SECURITY (Zwei-Signal am Ring, INSTANZ-Pfad): EM.instanzen liest den STORE separat vom bestätigt-

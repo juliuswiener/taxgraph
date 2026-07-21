@@ -254,3 +254,22 @@ def test_s11_oepnv_kosten_jahr_cent_zu_euro_kein_100x():
               "ep_oepnv_kosten": 138000, "ep_eigenes_kfz": False})
     assert zahl == 138000, f"1380€ ÖPNV-Kosten müssen 138000 Cent ergeben, nicht {zahl}"
     assert zahl != 13800000, "100×-Regression: Cent-Rohwert ungeteilt als Euro gelesen"
+
+
+# ---------- S12 (Lead-Fund): § 6 Abs. 2 GWG-800€-Schwelle, Cent-Trunkierung an der Grenze ----------
+def test_s12_gwg_schwelle_800eur_cent_trunkierung():
+    """⭐ NAHT-BUG: _abzug rechnete netto//100 (Euro-Floor) VOR dem catala-≤800-Vergleich → 800,01-800,99€
+    (80001-80099 Cent) rundete auf 800 ab und ging fälschlich als GWG durch (Sofortabzug statt AfA,
+    under-tax). Fix: Cent-Schwellen-Guard VOR der Euro-Rundung. Grenzfälle: 80000ct (=800,00€, voller
+    Sofortabzug), 80001ct (=800,01€, GENAU über der Schwelle → kein GWG), 79999ct (knapp drunter → GWG)."""
+    import api  # noqa: E402
+    try:
+        import runner  # noqa: F401
+    except Exception as e:
+        pytest.skip(f"Catala-Toolchain nicht verfügbar: {type(e).__name__}: {e}")
+    assert api._gwg_sofortabzug_summe({"gwg_anschaffungskosten_netto": {"wert": 80000}}, None, None) == 800, \
+        "800,00€ (Schwelle exakt) muss voller Sofortabzug bleiben"
+    assert api._gwg_sofortabzug_summe({"gwg_anschaffungskosten_netto": {"wert": 80001}}, None, None) == 0, \
+        "800,01€ (1 Cent über der Schwelle) darf NICHT mehr als GWG durchgehen (war Under-tax-Bug)"
+    assert api._gwg_sofortabzug_summe({"gwg_anschaffungskosten_netto": {"wert": 79999}}, None, None) == 799, \
+        "799,99€ (knapp unter der Schwelle) bleibt GWG (Sofortabzug)"
