@@ -548,6 +548,7 @@ AN_GESAMT_KEGEL = [
     # reiner Pendler: keine Verpflegung (alle Tage 0 → Verpflegungs-Abzug 0, Guard irrelevant)
     ("tage_24h", 0), ("tage_an_abreise", 0), ("tage_ueber_8h_eintaegig", 0),
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
+    ("fam_anzahl_kinder", 0),   # Gap-A-Fix (K2): Pflichtfeld — an_gesamt ohne Kinder-Antwort rechnet nicht
 ]
 
 
@@ -583,7 +584,7 @@ def test_an_gesamt_durchstich(base):
     _val("fragen", fr)
     ids = {q["feld_id"] for q in fr["fragen"]}
     assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
-             "kein_sonstige"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
+             "kein_sonstige", "fam_anzahl_kinder"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
             | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)) == ids
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
@@ -608,6 +609,16 @@ def test_an_gesamt_flag_guard(base):
     st, erg = _req(base, "GET", "/fall/ag_kap/ergebnis")
     assert erg["zahl_cent"] is None
     assert erg["grund"] == "einkunftsart_nicht_ring_faehig"
+
+
+def test_an_gesamt_kinder_guard(base):
+    """Gap-A-Fix (K2): fam_anzahl_kinder > 0 → an_gesamt gesperrt (kinder_gehoeren_in_gesamt).
+    NIEMALS stiller §31-loser Bescheid — Kinder-Fälle gehören in Scheibe 'gesamt'."""
+    kegel = [(f, (2 if f == "fam_anzahl_kinder" else v)) for f, v in AN_GESAMT_KEGEL]
+    _an_gesamt_anlegen(base, "ag_kids", kegel)
+    st, erg = _req(base, "GET", "/fall/ag_kids/ergebnis")
+    assert erg["zahl_cent"] is None
+    assert erg["grund"] == "kinder_gehoeren_in_gesamt"
 
 
 def test_an_gesamt_vor_integration(base):
