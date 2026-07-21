@@ -196,6 +196,12 @@ RENTNER_FELDER = RENTNER_FELDER + GESAMT_ABZUEGE
 # anderen Erwachsenen im Haushalt" — IST die Abs.3-Bedingung, kein Extra-Feld nötig); fam_monate = §24b-Kürzung.
 # fam_anzahl_kinder steht schon in GESAMT_ABZUEGE (§33-zumutbar + §24b geteilt).
 GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_voraussetzung")
+# §33b Behinderten-/Pflege-/Hinterbliebenen-Pauschbetrag — NUR über rentner_-Felder geführt
+# (globale Bindung, Kz E0109708/etc.). Im gesamt-Ring optional (NICHT im Kegel, absent→0→over-tax-safe).
+# rentner_-Präfix = Namensschuld (wie rentner_veraeusserungsgewinn), selbe Felder wie rentner-Scheibe.
+GESAMT_33B = ("rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind",
+              "rentner_hinterbliebenenbezuege", "rentner_pflegegrad", "rentner_gepflegter_hilflos")
+GESAMT_33B_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner")
 # Weg-ii-Parität-Fix (K2, Over-tax, ring-b-Fund #4): GESAMT_FREIBETRAEGE auch im Rentner-Ring nachgetragen —
 # ohne fam_alleinstehend/fam_monate_ohne_voraussetzung postbar war § 24b im Rentner-Ring nicht erreichbar
 # (geburtsjahr/fam_anzahl_kinder stehen schon in RENTNER_GEWINN/GESAMT_ABZUEGE, Duplikat harmlos).
@@ -264,7 +270,8 @@ SCHEIBEN = {
         "felder": (VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ("veranlagung", "bruttoarbeitslohn")
                    + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
-                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Person-B-Vorsorge (A.2) + §§13-18-Gewinn (Stufe 1) OPTIONAL
+                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
+                   + GESAMT_33B + GESAMT_33B_PARTNER),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Person-B-Vorsorge (A.2) + §§13-18-Gewinn (Stufe 1) OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -776,7 +783,26 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 # kein Doppelzählen — eigenes Feld berufsausbildung_aufwendungen). OPTIONAL: absent → 0 (over-tax-safe).
                 + runner.catala_p10_1_7_berufsausbildung({
                     "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100}))
-            g["aussergewoehnliche_belastungen"] = runner.catala_p33_agb({
+            # §33b Behinderten-/Pflege-/Hinterbliebenen-Pauschbetrag Person A (additiv zu §33-agB).
+            # 1:1 gespiegelt vom rentner-Ring (api.py:1002-1010). Felder = rentner_-globale IDs
+            # (Kz E0109708/etc. über rentner-Bindung, selbe Felder wie rentner-Scheibe). Absent→0 (safe).
+            ausserg = (runner.catala_behinderten_pb({
+                           "veranlagungszeitraum": vz, "grad_der_behinderung": _c("rentner_grad_der_behinderung"),
+                           "ist_hilflos_blind_taubblind": f.get("rentner_hilflos_blind_taubblind", {}).get("wert") is True})
+                       + runner.catala_pflege_pb({
+                           "veranlagungszeitraum": vz, "pflegegrad": _c("rentner_pflegegrad"),
+                           "ist_hilflos": f.get("rentner_gepflegter_hilflos", {}).get("wert") is True})
+                       + runner.catala_hinterbliebenen_pb({
+                           "veranlagungszeitraum": vz,
+                           "hat_hinterbliebenenbezuege": f.get("rentner_hinterbliebenenbezuege", {}).get("wert") is True}))
+            # Person-B-§33b: eigener Behinderten-Pauschbetrag des Ehegatten additiv (1:1 Rentner-Präzedenz
+            # api.py:1015-1018). Nur Zusammenveranlagung. Pflege-/Hinterbliebenen-PB für Person B nicht
+            # modelliert (wie rentner). Felder = rentner_*-globale IDs.
+            if g["veranlagung"] == "zusammen":
+                ausserg += runner.catala_behinderten_pb({
+                    "veranlagungszeitraum": vz, "grad_der_behinderung": _c("rentner_grad_der_behinderung_partner"),
+                    "ist_hilflos_blind_taubblind": f.get("rentner_hilflos_blind_taubblind_partner", {}).get("wert") is True})
+            g["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
                 "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
                 "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
                 "splitting": g["veranlagung"] == "zusammen"})
