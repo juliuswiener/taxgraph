@@ -221,8 +221,16 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
         # (10^10 Cent). Fängt EUR-statt-Cent-Verwechslung (100×-Fehler nach oben). Symmetrisch (abs): kein
         # 0-Floor, denn negative Verlust-Felder sind legitim. HONEST LIMIT: fängt NUR Über-Skalierung (zu
         # groß) — eine Unter-Skalierung (z.B. EUR-Betrag zu klein für Cent, aber < 10^10) bleibt unerkannt;
-        # dagegen wirkt die Cent-Instruktion im Chat-Prompt (_chat_prompt), nicht dieser Bound.
-        if isinstance(wert, (int, float)) and not isinstance(wert, bool) and abs(wert) >= 10**10:
+        # dagegen wirkt die Cent-Instruktion im Chat-Prompt (_chat_prompt), nicht dieser Bound. Deckt auch
+        # numerische STRING-Werte ab (chat()/generic /event reichen wert roh durch, LLMs liefern oft JSON-
+        # Strings) — nicht-numerische Strings (Enums, IBAN) bleiben unangetastet.
+        _num = wert
+        if isinstance(wert, str):
+            try:
+                _num = float(wert)
+            except ValueError:
+                _num = None
+        if isinstance(_num, (int, float)) and not isinstance(_num, bool) and abs(_num) >= 10**10:
             raise ValueError(
                 f"fail-closed (F2/Magnitude): {feld_id}={wert!r} von {schreiber} — vermuteter "
                 f"Einheiten-/Skalierungsfehler (EUR statt Cent).")

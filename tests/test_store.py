@@ -308,3 +308,33 @@ def test_F2_mensch_schreiber_ohne_bound():
                          herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                          schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"}, ts=TS)
     assert ev["wert"] == 10**10
+
+
+def test_F2_vorschlag_riesenwert_als_string_faellt():
+    """String-Bypass (Review-Fund): chat()/generic /event reichen wert roh durch, LLMs liefern oft JSON-Strings."""
+    s = ST.leerer_store(2025)
+    with pytest.raises(ValueError, match="Magnitude"):
+        ST.append_event(s, feld_id="agb_aufwendungen", wert="12000000000", zustand="vorlaeufig",
+                        herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        schreiber="llm:chat", signal={"signal_1": None, "signal_2": None}, ts=TS,
+                        katalog=_katalog())
+
+
+def test_F2_vorschlag_negative_grenze_faellt():
+    """abs()-Symmetrie-Mutationskiller: ohne abs() im Bound würde dieser negative Grenzwert durchrutschen."""
+    s = ST.leerer_store(2025)
+    with pytest.raises(ValueError, match="Magnitude"):
+        ST.append_event(s, feld_id="agb_aufwendungen", wert=-(10**10), zustand="vorlaeufig",
+                        herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        schreiber="llm:chat", signal={"signal_1": None, "signal_2": None}, ts=TS,
+                        katalog=_katalog())
+
+
+def test_F2_vorschlag_kleiner_stringwert_ok():
+    """Kein False-Reject: kleiner numerischer String-Wert bleibt zulässig."""
+    s = ST.leerer_store(2025)
+    ev = ST.append_event(s, feld_id="agb_aufwendungen", wert="215600", zustand="vorlaeufig",
+                         herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                         schreiber="llm:chat", signal={"signal_1": None, "signal_2": None}, ts=TS,
+                         katalog=_katalog())
+    assert ev["wert"] == "215600"
