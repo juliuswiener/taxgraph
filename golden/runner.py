@@ -1332,5 +1332,17 @@ def catala_p35c_energieberater(s: dict) -> int:
     return int(aufwand * 0.50)
 
 
+def catala_p35c_jahresdeckel(s: dict) -> int:
+    """§35c Jahresdeckel (Kombination Sanierung + Energieberater), EURO — Muster catala
+    P35cJahresdeckel (rules/estg/p35c/energetische_massnahmen.catala_en): min(s+e, HB),
+    HB = 12.000 im Abschlussjahr (ist_uebernaechstes_foerderjahr) sonst 14.000.
+    sanierung_ermaessigung ist intern schon gedeckelt → Kombination subsumiert das."""
+    sanierung = int(s.get("sanierung_ermaessigung", 0))
+    energieberater = int(s.get("energieberater_ermaessigung", 0))
+    hb = 12000 if s.get("ist_uebernaechstes_foerderjahr") else 14000
+    summe = sanierung + energieberater
+    return hb if summe > hb else summe
+
+
 if __name__ == "__main__":
     sys.exit(main())
