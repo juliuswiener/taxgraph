@@ -217,6 +217,96 @@ def test_p34c_dba_senkt_steuer_rentner(base):
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
 
 
+# ===== §34c Abs.2 ABZUG STATT ANRECHNUNG (Wahlrecht, Mutual-Exclusion) ==================
+# Abs.2: „Statt der Anrechnung (Absatz 1) ist die ausländische Steuer auf Antrag bei der Ermittlung
+# der Einkünfte abzuziehen …" — statt Anrechnung (Steuergutschrift, flach ×100) wird die ausländische
+# Steuer von der Bemessungsgrundlage abgezogen (aggregiert-GdE → PROGRESSIV). MUTUAL-EXCLUSION:
+# Antrag=True ⟹ KEINE Anrechnung mehr (sonst Doppel-Relief = Under-tax, K2). Fail-closed: Flag absent
+# → Abs.1-Anrechnung (test_p34c_dba_senkt_steuer_gesamt oben ist die Flag-absent-Regression).
+
+DBA_ABS2 = [("dba_gezahlte_auslaendische_steuer", 300000),   # 3000€ ausländische Steuer
+            ("dba_auslaendische_einkuenfte", 4000000),       # 40000€ ausländische Einkünfte
+            ("dba_abzug_statt_anrechnung", True)]             # Antrag §34c Abs.2
+# Progressiver Abzug 3000€ × 42% (~200k zvE, § 32a-Zone 68.481–277.825) ≈ 1260€. Anrechnung (Abs.1)
+# wäre flach 3000€. Band großzügig gegen zvE-/§22-Besteuerungsanteil-Rundung.
+ABS2_MIN = 100000   # 1000€
+ABS2_MAX = 150000   # 1500€
+
+
+def test_p34c_2_abzug_statt_anrechnung_gesamt(base):
+    """Abs.2-Antrag: die ausländische Steuer (3000€) mindert die Bemessungsgrundlage progressiv
+    (~1260€ bei 42%) statt als Anrechnung flach (3000€). Beweist: Feld erreichbar (POST 201, nicht
+    400) + Base-Reduction-Durchgriff am echten /ergebnis."""
+    catala = _catala_da()
+    _ges_anlegen(base, "abz1", _mit_gewinn(GESAMT_KEGEL_BASIS))
+    st, ohne = _req(base, "GET", "/fall/abz1/ergebnis")
+    _val("ergebnis", ohne)
+
+    _ges_anlegen(base, "abz2", _mit_gewinn(GESAMT_KEGEL_BASIS) + DBA_ABS2)
+    st, mit = _req(base, "GET", "/fall/abz2/ergebnis")
+    _val("ergebnis", mit)
+
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt"
+        delta = ohne["zahl_cent"] - mit["zahl_cent"]
+        assert ABS2_MIN <= delta <= ABS2_MAX, f"Abs.2 Abzug delta={delta} nicht in [{ABS2_MIN},{ABS2_MAX}]"
+    else:
+        assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
+def test_p34c_2_mutual_exclusion_kein_doppel_relief_gesamt(base):
+    """MUTUAL-EXCLUSION: bei Abs.2-Antrag darf die Abs.1-Anrechnung NICHT zusätzlich greifen.
+    Abs.1 (nur Anrechnung) senkt flach um 3000€; Abs.2 (Antrag) senkt nur progressiv (~1260€).
+    Wäre die Anrechnung fälschlich ADDITIV, läge Abs.2-delta > Abs.1-delta (Doppel-Relief = Under-tax).
+    Assert: Abs.2-delta im progressiven Band UND strikt < Abs.1-delta."""
+    catala = _catala_da()
+    kegel_abs1 = _mit_gewinn(GESAMT_KEGEL_BASIS) + [
+        ("dba_gezahlte_auslaendische_steuer", 300000),
+        ("dba_auslaendische_einkuenfte", 4000000)]           # OHNE Antrag → Abs.1-Anrechnung
+    _ges_anlegen(base, "me_abs1", kegel_abs1)
+    st, r_abs1 = _req(base, "GET", "/fall/me_abs1/ergebnis")
+    _val("ergebnis", r_abs1)
+
+    _ges_anlegen(base, "me_abs2", _mit_gewinn(GESAMT_KEGEL_BASIS) + DBA_ABS2)
+    st, r_abs2 = _req(base, "GET", "/fall/me_abs2/ergebnis")
+    _val("ergebnis", r_abs2)
+
+    _ges_anlegen(base, "me_base", _mit_gewinn(GESAMT_KEGEL_BASIS))
+    st, r_base = _req(base, "GET", "/fall/me_base/ergebnis")
+    _val("ergebnis", r_base)
+
+    if catala:
+        for r in (r_abs1, r_abs2, r_base):
+            assert r["grund"] == "bestaetigt"
+        d_abs1 = r_base["zahl_cent"] - r_abs1["zahl_cent"]   # 3000€ Anrechnung (flach)
+        d_abs2 = r_base["zahl_cent"] - r_abs2["zahl_cent"]   # ~1260€ Abzug (progressiv)
+        assert d_abs1 == 300000, f"Abs.1 Anrechnung delta={d_abs1} ≠ 300000 (Regression Flag-absent)"
+        assert ABS2_MIN <= d_abs2 <= ABS2_MAX, f"Abs.2 delta={d_abs2} nicht im progressiven Band"
+        assert d_abs2 < d_abs1, f"Doppel-Relief? Abs.2-delta {d_abs2} ≥ Abs.1-delta {d_abs1}"
+    else:
+        assert r_abs1["zahl_cent"] is None or r_abs2["zahl_cent"] is None
+
+
+def test_p34c_2_abzug_statt_anrechnung_rentner(base):
+    """Abs.2-Antrag im rentner_gesamt-Ring: ausländische Steuer mindert die Bemessungsgrundlage
+    progressiv (Point C). Spiegelt gesamt (1:1 Präzedenz)."""
+    catala = _catala_da()
+    _rent_anlegen(base, "abzr1", RENTNER_KEGEL_HOCH)
+    st, ohne = _req(base, "GET", "/fall/abzr1/ergebnis")
+    _val("ergebnis", ohne)
+
+    _rent_anlegen(base, "abzr2", list(RENTNER_KEGEL_HOCH) + DBA_ABS2)
+    st, mit = _req(base, "GET", "/fall/abzr2/ergebnis")
+    _val("ergebnis", mit)
+
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt"
+        delta = ohne["zahl_cent"] - mit["zahl_cent"]
+        assert ABS2_MIN <= delta <= ABS2_MAX, f"Abs.2 rentner delta={delta} nicht in [{ABS2_MIN},{ABS2_MAX}]"
+    else:
+        assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
 def test_p34c_mit_p35_kombi_senkt_steuer_kumulativ(base):
     """200k Gewinn + DBA (3000€) + §35 GewSt (4000€) → tax um 7000€ niedriger.
     Verifiziert: §34c VOR §35 (§35 Abs.1 S.4: geminderte tarifliche nach §34c).

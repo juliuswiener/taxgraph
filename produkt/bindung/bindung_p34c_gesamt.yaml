@@ -100,6 +100,25 @@ bindungen:
       zitatanker: "der sich bei der Veranlagung des zu versteuernden Einkommens, einschließlich der ausländischen Einkünfte"
       datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
 
+  # ========================= §34c Abs.2 Abzug-Wahlrecht (Antrag) =========================
+  - feld_id: dba_abzug_statt_anrechnung
+    quelle: {regel_id: p34c_2_abzug_statt_anrechnung, geltungsbedingung: antrag_abzug_statt_anrechnung}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Möchtest du die im Ausland gezahlte Steuer von deinen Einkünften abziehen, statt sie auf die deutsche Steuer anrechnen zu lassen (nur auf Antrag)?"
+    hilfe_kurz: "Standard ist die Anrechnung (§34c Abs.1, meist günstiger). Der Abzug (Abs.2) lohnt nur in Sonderfällen — z.B. wenn keine deutsche Steuer da ist, auf die angerechnet werden könnte. Ohne Antrag wird angerechnet."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Antrags-/Wahlrechts-Marker (Anlage-AUS) — reine Ring-Weiche (Abzug statt Anrechnung), Kz-Recon = dev-2-Folgeticket (null-MVP)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 2 EStG"
+      zitatanker: "auf Antrag bei der Ermittlung der Einkünfte abzuziehen"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+
 # ===== Lücken + Geltungsbedingungen (Nicht-Feld-Logik) =====
 luecken:
   # -- p34c_1: Geltungsbedingungen, die keine Felder sind --

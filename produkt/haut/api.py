@@ -208,7 +208,8 @@ GESAMT_33B_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_b
 # mehrere/Betrag/Einkünfte). OPTIONAL (absent→0→safe). Teilmenge-Invariant: dba_auslaendische_
 # einkuenfte ⊆ Welteinkommen, NIE additiv zur GdE, nur Accessor-Zähler. an_gesamt out-of-scope.
 GESAMT_DBA = ("dba_staat", "dba_methode", "dba_mehrere_staaten",
-              "dba_gezahlte_auslaendische_steuer", "dba_auslaendische_einkuenfte")
+              "dba_gezahlte_auslaendische_steuer", "dba_auslaendische_einkuenfte",
+              "dba_abzug_statt_anrechnung")
 # §23 Private Veräußerungsgeschäfte (Stufe-1): 4 Felder pro Veräußerung (Multi-Instanz,
 # instanz_gruppe "p23_veraeusserung" wie §21). OPTIONAL (absent→0→safe). Σ über Instanzen
 # im Ring → Freigrenze+VTOP → ADDITIV in einkuenfte_sonstige (neben §22-Rente).
@@ -1010,7 +1011,16 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             dba_anrechnung = 0
             dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100
             dba_ausl = _c("dba_auslaendische_einkuenfte") // 100
-            if dba_gezahlt > 0 or dba_ausl > 0:
+            # §34c Abs.2 (Abzug statt Anrechnung, auf Antrag): „Statt der Anrechnung (Absatz 1) ist die
+            # ausländische Steuer auf Antrag bei der Ermittlung der Einkünfte abzuziehen, soweit sie auf
+            # ausländische Einkünfte entfällt, die nicht steuerfrei sind." MUTUAL-EXCLUSION mit Abs.1 (elif):
+            # Antrag=True → Abzug von der Bemessungsgrundlage (sonstige_abzuege_vom_einkommen, aggregiert-GdE,
+            # progressiv), dba_anrechnung bleibt 0 → KEIN Doppel-Relief (= Under-tax). Fail-closed: Flag absent
+            # → Abs.1-Pfad (unverändert). „soweit nicht steuerfrei" (Stufe-1): dba_auslaendische_einkuenfte>0
+            # = nicht-freigestellte Einkünfte (Freistellung wird im offen-Guard separat gehalten).
+            if f.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
+                g["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
+            elif dba_gezahlt > 0 or dba_ausl > 0:
                 dba_anrechnung = runner.catala_p34c_1({
                     "gezahlte_auslaendische_steuer": dba_gezahlt,
                     "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(g),
@@ -1314,7 +1324,11 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             dba_anrechnung = 0
             dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100
             dba_ausl = _c("dba_auslaendische_einkuenfte") // 100
-            if dba_gezahlt > 0 or dba_ausl > 0:
+            # §34c Abs.2 (Abzug statt Anrechnung, auf Antrag) — 1:1 gesamt-Präzedenz. Mutual-Exclusion (elif):
+            # Antrag=True → Abzug von der Bemessungsgrundlage (aggregiert-GdE, progressiv), keine Anrechnung.
+            if f.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
+                rentner_g["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
+            elif dba_gezahlt > 0 or dba_ausl > 0:
                 dba_anrechnung = runner.catala_p34c_1({
                     "gezahlte_auslaendische_steuer": dba_gezahlt,
                     "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(rentner_g),
