@@ -1,0 +1,31 @@
+# Bindungstabelle § 22 Nr. 3 EStG — Sonstige Einkünfte aus Leistungen (A8)
+# Freigrenze 256 € (§ 22 Nr. 3 S. 2): < 25600 Cent → 0 (steuerfrei), ≥ 25600 Cent → voller Betrag.
+# Stufe-1: EIN Laien-Feld (Einnahmen − WK, ≥ 0), keine Verlustrestriktion (S. 3/4 = Stufe-2-Backlog).
+# Ring-Wiring: ADDITIV in einkuenfte_sonstige (neben §23 + §22-Renten).
+# elster_kz bewusst null (kein XSD-verifiziertes Kz-Mapping — fail-closed, Stufe-2).
+
+version: 1
+scheibe: "§22 Nr.3 Sonstige Leistungen"
+
+bindungen:
+  - feld_id: p22_nr3_einkuenfte
+    quelle: {regel_id: p22_3_leistungen, signatur_slot: einkuenfte_vor_freigrenze}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie hoch waren Ihre sonstigen Einkünfte aus Leistungen im Jahr — also Einnahmen abzüglich Werbungskosten?"
+    hilfe_kurz: "Dazu gehören z. B. gelegentliche Vermittlungen oder die Vermietung beweglicher Gegenstände. Die ersten 256 € sind steuerfrei (Freigrenze), der darüberliegende Betrag ist voll steuerpflichtig."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Sonstige Einkünfte §22 Nr.3 — kein XSD-verifiziertes Kz-Mapping in dieser Runde; fail-closed statt Rate-Kz. XSD-Sweep offen (Backlog)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 3 EStG (sonstige Einkünfte aus Leistungen)"
+      zitatanker: "Einkünfte aus Leistungen, soweit sie weder zu anderen Einkunftsarten (§ 2 Absatz 1 Satz 1 Nummer 1 bis 6) noch zu den Einkünften im Sinne der Nummern 1, 1a, 2 oder 4 gehören"
+      datei: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+
+luecken:
+  - regel_id: p22_3_leistungen
+    signatur_slot: verlustrestriktion_s3_s4
+    grund: "Stufe-2-Backlog: §22 Nr.3 S.3/4 schließt Verlustausgleich mit anderen Einkunftsarten aus (kein negativer Gesamtbetrag der Einkünfte aus §22 Nr.3). Verlustvor-/rücktrag nur §22-Nr.3-intern via §10d. Stufe-1: absent → 0 (over-tax-safe, kein Einkünfte-Abzug aus Verlust)."

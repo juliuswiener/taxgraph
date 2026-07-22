@@ -809,3 +809,64 @@ def test_a4_accessor_snapshot_seeds():
             "lohnsteuer_cent": round(lst_eur * 100),
             "vorauszahlungen_cent": round(vor_eur * 100)})
         assert got == exp_eur * 100, f"seed {est_eur}/{lst_eur}/{vor_eur}: {got} != {exp_eur * 100}"
+
+
+# ---- A8 § 22 Nr. 3: Sonstige Einkünfte aus Leistungen (Freigrenze 256 €, < 256 → 0 / ≥ 256 → voll) ----
+# Nutzt gesamt-Ring (fremd_arten:kein_sonstige = schützt Rente §22 Nr.1, erlaubt §22 Nr.3 via p23-Präzedenz).
+
+def test_a8_accessor_freigrenze_seeds():
+    """Accessor-Unit: Freigrenze exakt bei 25600 Cent. < 25600 → 0, ≥ 25600 → Betrag."""
+    for betrag, erwartet in [(0, 0), (25599, 0), (25600, 25600), (100000, 100000)]:
+        assert R.catala_p22_nr3_einkuenfte(betrag) == erwartet, f"seed {betrag} → {erwartet}"
+
+
+def _a8_baseline_gesamt(base, fid="a8base"):
+    """Baseline gesamt-Ring OHNE §22 Nr.3-Feld bei ansonsten leeres GESAMT_AN_KEGEL."""
+    _ges_anlegen(base, fid, GESAMT_AN_KEGEL)
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt", f"grund={erg.get('grund')}"
+    return erg["zahl_cent"]
+
+
+def _a8_kegel_gesamt(betrag_cent):
+    """GESAMT_AN_KEGEL + p22_nr3_einkuenfte."""
+    kegel = list(GESAMT_AN_KEGEL) + [("p22_nr3_einkuenfte", betrag_cent)]
+    return kegel
+
+
+def test_a8_freigrenze_25599_kein_est_impact_gesamt(base):
+    """§22 Nr.3 = 25599 Cent (< 25600) → Δ zahl_cent == 0. Freigrenze absorbiert, Wiring lebt."""
+    z0 = _a8_baseline_gesamt(base, "a8b0")
+    _ges_anlegen(base, "a8unter", _a8_kegel_gesamt(25599))
+    st, erg = _req(base, "GET", "/fall/a8unter/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] == z0, f"25599 Freigrenze: {erg['zahl_cent']} != {z0}"
+
+
+def test_a8_freigrenze_25600_steuer_steigt_gesamt(base):
+    """§22 Nr.3 = 25600 Cent (≥ 25600) → Δ zahl_cent > 0. Freigrenze ≠ Freibetrag."""
+    z0 = _a8_baseline_gesamt(base, "a8c0")
+    _ges_anlegen(base, "a8grenze", _a8_kegel_gesamt(25600))
+    st, erg = _req(base, "GET", "/fall/a8grenze/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] > z0, f"25600 muss strikt steigen: {erg['zahl_cent']} <= {z0}"
+    diff = erg["zahl_cent"] - z0
+    assert diff > 0, f"Delta muss positiv sein, war {diff}"
+
+
+def test_a8_ring_lebt_exakt_an_der_freigrenze(base):
+    """25599 vs 25600 im selben Kegel (nur p22_nr3_einkuenfte differiert). 25599=Δ0, 25600=Δ>0."""
+    z0 = _a8_baseline_gesamt(base, "a8d0")
+    _ges_anlegen(base, "a8free", _a8_kegel_gesamt(25599))
+    st, e_free = _req(base, "GET", "/fall/a8free/ergebnis")
+    _val("ergebnis", e_free)
+    assert e_free["grund"] == "bestaetigt", f"grund={e_free.get('grund')}"
+    assert e_free["zahl_cent"] == z0, f"25599: {e_free['zahl_cent']} != {z0}"
+    _ges_anlegen(base, "a8tax", _a8_kegel_gesamt(25600))
+    st, e_tax = _req(base, "GET", "/fall/a8tax/ergebnis")
+    _val("ergebnis", e_tax)
+    assert e_tax["grund"] == "bestaetigt", f"grund={e_tax.get('grund')}"
+    assert e_tax["zahl_cent"] > z0, f"25600: {e_tax['zahl_cent']} <= {z0}"

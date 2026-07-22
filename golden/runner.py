@@ -1496,5 +1496,12 @@ def catala_p35c_jahresdeckel(s: dict) -> int:
     return hb if summe > hb else summe
 
 
+def catala_p22_nr3_einkuenfte(betrag_cent: int) -> int:
+    """§ 22 Nr. 3 S. 2 EStG — Freigrenze für sonstige Einkünfte aus Leistungen, CENT.
+    < 25600 Cent (256 €) → 0 (steuerfrei), ≥ 25600 Cent → voller Betrag.
+    Stufe-1: reine Freigrenze, kein Verlustrestriktion S. 3/4 (Stufe-2-Backlog)."""
+    return 0 if betrag_cent < 25600 else betrag_cent
+
+
 if __name__ == "__main__":
     sys.exit(main())
