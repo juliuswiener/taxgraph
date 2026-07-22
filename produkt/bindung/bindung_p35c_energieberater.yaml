@@ -1,0 +1,39 @@
+# Bindungstabelle — §35c EStG Steuerermäßigung Energieberater (Abs.1a)
+# 50% Sondersatz für BAFA-zugelassene Energieberater-Kosten (Besonderheit:
+# NICHT auf 3 Jahre verteilt wie Sanierungsmassnahmen, sondern vollständig im
+# Abschlussjahr). Zählen gemeinsam mit Sanierung gegen Jahresdeckel (14k/12k).
+# Diese Bindung: Energieberater-Aufwendungen (separate vom Sanierungsfeld).
+# Task A10, Stand 2026-07-22.
+version: 1
+scheibe: "§35c EStG Steuerermäßigung Energieberater BAFA (gesamt + rentner)"
+
+bindungen:
+  - feld_id: p35c_energieberater_aufwendungen
+    quelle: {regel_id: p35c_energieberater_ermaessigung, signatur_slot: energieberater_aufwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch waren die Kosten für den BAFA-Energieberater (Vor-Ort-Beratung oder Sanierungsfahrplan)?"
+    hilfe_kurz: "Nur Kosten für einen vom BAFA zugelassenen Energieberater, der mit dir die energetische Sanierung geplant/beaufsichtigt hat. Wird im Abschlussjahr vollständig berücksichtigt (nicht auf 3 Jahre aufgeteilt). Zählt zusammen mit den Sanierungskosten gegen den Jahresdeckel."
+    beispielwert: 80000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "MVP: XSD-Sektion offen, ELSTER-Mapping TBD (Folge-Gate)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 4 EStG"
+      zitatanker: "abweichend von Satz 1 um 50 Prozent der Aufwendungen für den Energieberater"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  # ===== Lücken + Geltungsbedingungen =====
+luecken:
+  - regel_id: p35c_energieberater_ermaessigung
+    geltungsbedingung: eigenes_gebaeude
+    grund: "Eigentuemer-Erfordernis (wie Sanierung). Vorfrage der §2-Integration."
+  - regel_id: p35c_energieberater_ermaessigung
+    geltungsbedingung: energieberater_bafa_zugelassen_und_beauftragt
+    grund: "BAFA-Zulassung + Beauftragung mit planerischer Begleitung. Belege-Validierung (Stufe-2): Fachunternehmen-Bescheinigung + BAFA-Registernummer."
+  - regel_id: p35c_energieberater_ermaessigung
+    geltungsbedingung: objekt_hoechstbetrag_40k_nicht_ausgeschoepft
+    grund: "Lebensdauer-Objektdeckel 40k EUR nicht überschritten (gemeinsam mit Sanierung). Mehrjahres-State (§2-Integration), Stufe-2."

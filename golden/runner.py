@@ -1294,5 +1294,43 @@ def main() -> int:
     return 0 if not failures else 1
 
 
+# -- §35c EStG energetische Sanierungsmassnahmen + Energieberater ---------------
+# Pure-Python aus verified_bedingt Snapshots (p35c_sanierung_ermaessigung.json,
+# p35c_energieberater_ermaessigung.json). Beide sind Teile einer gemeinsamen Integration
+# via Jahresdeckel in rules/estg/p35c/energetische_massnahmen.catala_en.
+
+def catala_p35c_sanierung(s: dict) -> int:
+    """§35c Abs.1 EStG — Sanierungsermaessigung, 7%/7%/6% Staffel mit Jahresdeckel.
+    ist_uebernaechstes_foerderjahr=False: 7% bis 14.000 EUR
+                                 True:  6% bis 12.000 EUR
+    Accessor nimmt EUROS, gibt EUROS. Input-Werte: sanierungsaufwendungen (EUR int),
+    ist_uebernaechstes_foerderjahr (bool). Seeds aus Snapshot:
+    - Jahr 1-2: min(20000 * 0.07, 14000) = 1400
+    - Jahr 3: min(20000 * 0.06, 12000) = 1200
+    - Brutto-Cap: min(200000 * 0.07, 14000) = 14000
+    """
+    aufw = int(s.get("sanierungsaufwendungen", 0))
+    ist_uebernachst = bool(s.get("ist_uebernaechstes_foerderjahr", False))
+
+    satz = 0.06 if ist_uebernachst else 0.07
+    hoechstbetrag = 12000 if ist_uebernachst else 14000
+
+    roh = int(aufw * satz)
+    return min(roh, hoechstbetrag)
+
+
+def catala_p35c_energieberater(s: dict) -> int:
+    """§35c Abs.1 S.4 EStG — Energieberater-Sondersatz, 50% (kein Jahrestal).
+    Im Abschlussjahr der energetischen Massnahme, NICHT auf 3 Jahre verteilt.
+    Accessor nimmt EUROS, gibt EUROS. Input: energieberater_aufwendungen (EUR int).
+    Seeds aus Snapshot:
+    - 1000 EUR -> 500 EUR
+    - 2000 EUR -> 1000 EUR
+    - 0 EUR -> 0 EUR
+    """
+    aufwand = int(s.get("energieberater_aufwendungen", 0))
+    return int(aufwand * 0.50)
+
+
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,0 +1,72 @@
+# Bindungstabelle — §35c EStG Steuerermäßigung energetische Sanierungsmassnahmen
+# Abs.1: 7%/7%/6%-Staffel über 3 Förderjahre mit Jahresdeckeln 14k/14k/12k und
+# 40k-Lebensdauer-Objektdeckel. Abs.1a: 50% Energieberater-Sondersatz.
+# Diese Bindung: Sanierungsaufwendungen + Flagge für Jahr-Diskrimination.
+# Energieberater getrennte Bindung (p35c_energieberater).
+# Task A10, Stand 2026-07-22.
+version: 1
+scheibe: "§35c EStG Steuerermäßigung energetische Sanierungsmassnahmen (gesamt + rentner)"
+
+bindungen:
+  - feld_id: p35c_sanierungsaufwendungen
+    quelle: {regel_id: p35c_sanierung_ermaessigung, signatur_slot: sanierungsaufwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch sind die GESAMTEN Aufwendungen für die energetische Sanierung (Material + Arbeitsleistung + Bescheinigung)?"
+    hilfe_kurz: "Alle Kosten für die Wärmedämmung, Fenster-/Türenerneuerung, Lüftung, Heizung oder digitale Optimierung (ohne MwSt., falls gezogen). EINSCHL. Kosten der amtl. Bescheinigung und ggfs. BAFA-Energieberater-Kosten (falls diese im selben Jahr durchgeführt)."
+    beispielwert: 3000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "MVP: XSD-Sektion offen, ELSTER-Vordruck-Mapping TBD (Folge-Gate für Integration in ESt 1A/1AV)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 1 EStG"
+      zitatanker: "Aufwendungen des Steuerpflichtigen"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  - feld_id: p35c_ist_uebernaechstes_foerderjahr
+    quelle: {regel_id: p35c_sanierung_ermaessigung, signatur_slot: ist_uebernaechstes_foerderjahr}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Ist dies das dritte (übernächste) Förderjahr der Sanierung?"
+    hilfe_kurz: "Das Förderjahr wird mit dem Abschluss der energetischen Massnahme bestimmt: Jahr 1 = Abschlussjahr selbst, Jahr 2 = nächstes Kalenderjahr, Jahr 3 = übernächstes Kalenderjahr (6% statt 7%, Deckel 12k statt 14k). Nur relevant, falls die Sanierung in den letzten 3 Jahren abgeschlossen wurde."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "MVP: Jahr-Determination bleibt bei Nutzer (keine Mehrjahres-State in Stufe-1). ELSTER-Mapping offen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 1-2 EStG"
+      zitatanker: "im übernächsten Kalenderjahr um 6 Prozent"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  # ===== Lücken + Geltungsbedingungen =====
+luecken:
+  - regel_id: p35c_sanierung_ermaessigung
+    geltungsbedingung: eigenes_gebaeude
+    grund: "Eigentuemer-Erfordernis. Vorfrage der §2-Integration (Sachverhaltsermittlung), nicht im Laien-Feld abgedeckt."
+  - regel_id: p35c_sanierung_ermaessigung
+    geltungsbedingung: objekt_aelter_zehn_jahre
+    grund: "Gebaeudealter >= 10 Jahre. Dokumentation über Fachunternehmen-Bescheinigung (S.6-7); wird mit Belege hochgeladen, kein Laien-Feld nötig."
+  - regel_id: p35c_sanierung_ermaessigung
+    geltungsbedingung: ausschliesslich_eigene_wohnzwecke
+    grund: "Ausschließliche Eigennutzung im Förderjahr. Vorfrage der §2-Integration, kein separates Feld (unentgeltliche Teilu. unschaedlich)."
+  - regel_id: p35c_sanierung_ermaessigung
+    geltungsbedingung: kein_doppelabzug_ba_wk_sa_agb
+    grund: "Aufwendungen nicht bereits als BA/WK/SA/agB berücksichtigt. Komplementär-Guard im Ring (nicht aktuell kodiert, Folge-Gate)."
+  - regel_id: p35c_sanierung_ermaessigung
+    geltungsbedingung: keine_10f_35a_oeffentliche_foerderung
+    grund: "Keine §10f / §35a / öffentliche Förderung (zinsverbilligte Darlehen). Komplementär-Guard im Ring (Folge-Gate)."
+  - regel_id: p35c_sanierung_ermaessigung
+    geltungsbedingung: rechnung_und_zahlung_aufs_konto
+    grund: "Rechnung deutsch + unbare Zahlung aufs Leistungserbringer-Konto. Belege-Validierung, nicht im Feld abgedeckt (Stufe-2)."
+  - regel_id: p35c_sanierung_ermaessigung
+    geltungsbedingung: fachunternehmen_bescheinigung
+    grund: "Fachunternehmen-Bescheinigung nach amtlichem Muster. Belege-Upload + Validierung (Stufe-2), nicht im Feld codiert."
+  - regel_id: p35c_sanierung_ermaessigung
+    geltungsbedingung: objekt_hoechstbetrag_40k_nicht_ausgeschoepft
+    grund: "Lebensdauer-Objektdeckel 40k EUR nicht überschritten. Mehrjahres-State über alle Förderjahre (§2-Integration), Stufe-2 (Ring-Wert)."
