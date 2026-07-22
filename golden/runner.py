@@ -655,6 +655,19 @@ def catala_p32b_1(s: dict) -> int:
     return est_erhoeht * zvE // erhoehte
 
 
+def catala_p101_mobilitaetspraemie(s: dict) -> int:
+    """§101 Abs.1 EStG — Mobilitätsprämie (14% Prämie auf nicht-ausgewirkte Entfernungspauschale).
+    Geringverdiener (zvE < Grundfreibetrag) deren EP sich nicht steuerlich auswirkt.
+    Formel: min(entfernungspauschale_ab_21km, max(0, grundfreibetrag - zvE)) * 14%.
+    Accessor EURO int; returns EURO int."""
+    ep_ab_21 = int(s.get("entfernungspauschale_ab_21km", 0))
+    zvE = int(s.get("zu_versteuerndes_einkommen", 0))
+    gfb = int(s.get("grundfreibetrag", 0))
+    unterschreitung = max(0, gfb - zvE)
+    bemessungsgrundlage = min(ep_ab_21, unterschreitung)
+    return bemessungsgrundlage * 14 // 100
+
+
 def _kindergeld(year: int) -> int:
     """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
     p = load_yaml_fh(open(os.path.join(

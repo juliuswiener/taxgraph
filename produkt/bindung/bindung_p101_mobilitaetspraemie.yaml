@@ -1,0 +1,18 @@
+# Bindungstabelle § 101 Mobilitätsprämie — Geringverdiener-Förderung
+# Prämie für Arbeitnehmer, deren Entfernungspauschale nicht zur Steuerminderung führt (zvE < Grundfreibetrag).
+# Post-Engine-Wrapper (KEIN Input-Kegel, reine Tarifberechnung).
+# Geltungsbedingungen aus Snapshot bedingungen[].
+
+version: 1
+scheibe: "§101 Mobilitätsprämie (Post-Engine-Wrapper)"
+
+bindungen: []
+
+luecken:
+  - regel_id: p101_mobilitaetspraemie
+    geltungsbedingung: entfernung_ab_21_km
+    grund: "Accessor-interner Gate: Entfernungspauschale ab 21 km vorhanden (entfernungspauschale_ab_21km > 0). Tarif-Seite prüft POST-Engine."
+
+  - regel_id: p101_mobilitaetspraemie
+    geltungsbedingung: ep_ueber_arbeitnehmer_pauschbetrag
+    grund: "Accessor-interner Gate: Entfernungspauschale übersteigt AN-Pauschbetrag (1230€), nur DANN wirkt sie nicht in die Steuer. Tarif-Seite prüft POST-Engine."
