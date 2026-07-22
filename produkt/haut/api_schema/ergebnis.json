@@ -17,7 +17,7 @@
                        "sonderausgaben_nicht_ring_faehig", "einkunftsart_nicht_ring_faehig",
                        "dhf_tatbestand_offen", "ausland_dhf_nicht_ring_faehig",
                        "uebernachtung_tatbestand_offen", "ausland_uebernachtung_nicht_ring_faehig",
-                       "uebernachtung_zeitraum_offen",
+                       "uebernachtung_zeitraum_offen", "arbeitsmittel_afa_ueber_gwg_offen",
                        "partner_kegel_offen", "partner_vor_offen",
                        "verpflegung_reduktion_offen", "flag_konsistenz_offen",
                        "partner_konsistenz_offen", "kapital_semantik_offen",

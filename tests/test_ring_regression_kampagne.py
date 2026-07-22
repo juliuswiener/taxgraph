@@ -629,3 +629,79 @@ def test_a5_uebernachtung_nach_48_kappung_gesamt(base):
         assert 470000 <= delta <= 540000, f"nach-48-Kappung delta={delta} nicht in [470000,540000]"
     else:
         assert vor["zahl_cent"] is None or nach["zahl_cent"] is None
+
+
+# ===================== A6: § 9 Abs. 1 S. 3 Nr. 6/7 i.V.m. § 6 Abs. 2 Arbeitsmittel-GWG =====================
+# Vierte §9-WK-Art (nach dHf/Verpflegung/Übernachtung): Arbeitsmittel als GWG-Sofortabzug ≤ 800 € (§ 6
+# Abs. 2). Level-1 = nur der Sofortabzug ist ring-fähig; der mehrjährige § 7-AfA-Zweig (> 800 €) sowie
+# ein abgelehntes Wahlrecht sperren fail-closed. Da der GWG-Betrag (max 800 €) UNTER dem AN-Pauschbetrag
+# (1.230 €) liegt, kann er allein den Pauschbetrag nie überschreiten (Δ=0 maskiert vom Günstigerprinzip)
+# → der Senk-Test stapelt das GWG auf eine gültige Übernachtungs-Basis (12.000 € Roh-WK > 1.230 €), sodass
+# der 800-€-Zuwachs als reiner Inkrement-Effekt messbar wird. CENT-Schwelle (80000) statt Euro-Floor: 800,01 €
+# = 80001 ct darf NICHT als GWG durchrutschen (Under-tax-Wächter).
+
+# Arbeitsmittel GWG gültig: 800 € (= Grenze, ≤ 800) mit ausgeübtem Wahlrecht. In CENT (80000).
+ARBEITSMITTEL_GWG_VALID = [
+    ("am_anschaffungskosten", 80000), ("am_gwg_sofortabzug_gewaehlt", True),
+]
+
+
+def test_a6_arbeitsmittel_gwg_senkt_steuer_gesamt(base):
+    """gesamt-Ring: gültige Übernachtungs-Basis (12.000 € Roh-WK) OHNE vs. MIT Arbeitsmittel-GWG (800 €,
+    Wahlrecht ausgeübt). Der GWG-Sofortabzug erhöht die Roh-WK um 800 € → einkuenfte_nichtselbststaendig
+    sinkt um 800 € → Δtax ≈ 336 € bei 42 %. Beweist Erreichbarkeit (POST 201) + GWG-Durchgriff
+    (catala_p6_2_gwg) im gesamt-WK. Ohne A6 wäre Δ=0 (stiller Over-tax = kein Arbeitsmittel-Abzug)."""
+    catala = _catala_da()
+    _ges_anlegen(base, "a6gwg_o", GESAMT_AN_KEGEL + UEBERNACHTUNG_GESAMT_VALID)
+    st, ohne = _req(base, "GET", "/fall/a6gwg_o/ergebnis")
+    _val("ergebnis", ohne)
+    _ges_anlegen(base, "a6gwg_m", GESAMT_AN_KEGEL + UEBERNACHTUNG_GESAMT_VALID + ARBEITSMITTEL_GWG_VALID)
+    st, mit = _req(base, "GET", "/fall/a6gwg_m/ergebnis")
+    _val("ergebnis", mit)
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt", \
+            f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
+        delta = ohne["zahl_cent"] - mit["zahl_cent"]
+        # Δeinkünfte = 800 €; × 42 % ≈ 336 € = 33600 ct. Band robust ggü. Satz-Rundung.
+        assert 25000 <= delta <= 42000, f"Arbeitsmittel-GWG gesamt delta={delta} nicht in [25000,42000]"
+    else:
+        assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
+def test_a6_arbeitsmittel_afa_ueber_800_haelt_offen_gesamt(base):
+    """gesamt-Ring + Arbeitsmittel-AK 1.000 € (> 800 € = kein GWG, sondern mehrjährige § 7-AfA), Wahlrecht
+    ausgeübt. Der § 7-AfA-Zweig ist ungebunden (Nutzungsdauer/Anschaffungsmonat nicht im Ring) → der
+    SHARED Guard sperrt fail-closed (arbeitsmittel_afa_ueber_gwg_offen, zahl_cent=null). K2: kein stiller,
+    ungezwölftelter Voll-Abzug der AfA-Basis."""
+    kegel = GESAMT_AN_KEGEL + [("am_anschaffungskosten", 100000), ("am_gwg_sofortabzug_gewaehlt", True)]
+    _ges_anlegen(base, "a6afa", kegel)
+    st, erg = _req(base, "GET", "/fall/a6afa/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "arbeitsmittel_afa_ueber_gwg_offen", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] is None
+
+
+def test_a6_arbeitsmittel_gwg_cent_floor_haelt_offen_gesamt(base):
+    """gesamt-Ring + Arbeitsmittel-AK 800,01 € = 80001 ct (> 800-€-Grenze). Der Under-tax-Wächter: würde
+    die Schwelle in EURO (80001 // 100 = 800) statt CENT (80000) geprüft, rutschte 800,01 € fälschlich als
+    GWG durch (voller Sofortabzug statt AfA-Verteilung = Under-tax). Guard muss fail-closed sperren
+    (arbeitsmittel_afa_ueber_gwg_offen)."""
+    kegel = GESAMT_AN_KEGEL + [("am_anschaffungskosten", 80001), ("am_gwg_sofortabzug_gewaehlt", True)]
+    _ges_anlegen(base, "a6floor", kegel)
+    st, erg = _req(base, "GET", "/fall/a6floor/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "arbeitsmittel_afa_ueber_gwg_offen", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] is None
+
+
+def test_a6_arbeitsmittel_wahlrecht_abgelehnt_haelt_offen_gesamt(base):
+    """gesamt-Ring + Arbeitsmittel-AK 800 € (≤ 800, GWG-fähig), aber Wahlrecht NICHT ausgeübt
+    (am_gwg_sofortabzug_gewaehlt=False → § 6 Abs. 2 „koennen"). Ohne ausgeübtes Wahlrecht ist der
+    Sofortabzug nicht anwendbar; der § 7-AfA-Pfad wäre nötig, ist aber ungebunden → Guard sperrt
+    fail-closed (arbeitsmittel_afa_ueber_gwg_offen). K2: kein Sofortabzug ohne ausgeübtes Wahlrecht."""
+    kegel = GESAMT_AN_KEGEL + [("am_anschaffungskosten", 80000), ("am_gwg_sofortabzug_gewaehlt", False)]
+    _ges_anlegen(base, "a6nowahl", kegel)
+    st, erg = _req(base, "GET", "/fall/a6nowahl/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "arbeitsmittel_afa_ueber_gwg_offen", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] is None

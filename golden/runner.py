@@ -184,9 +184,10 @@ def catala_werbungskosten_n(s: dict) -> int:
 
     Stufe 1b: Entfernungspauschale (Catala-Modul) + doppelte Haushaltsfuehrung (Python-Andockung
     _dhf_abzug, Registry-Transkription p9_1_3_nr5) + Verpflegung (§ 9 Abs. 4a) + Übernachtung
-    (§ 9 Abs. 1 Nr. 5a, _uebernachtung_abzug, Registry-Transkription p9_1_3_nr5a_*). Arbeitsmittel
-    (§ 9 Abs. 1 Nr. 6/7) noch nicht aggregiert -> sein Vorhandensein sperrt in der Haut den Ring
-    (Guard, kein stiller 0-Verschluck). Alle EURO. Kein § 9a (der sitzt im Tarif)."""
+    (§ 9 Abs. 1 Nr. 5a, _uebernachtung_abzug, Registry-Transkription p9_1_3_nr5a_*) + Arbeitsmittel
+    (§ 9 Abs. 1 Nr. 6/7 i.V.m. § 6 Abs. 2 GWG, Level-1 = Sofortabzug ≤ 800 EUR via catala_p6_2_gwg;
+    der mehrjährige § 7-AfA-Zweig > 800 ist ungebunden -> die Haut sperrt ihn fail-closed).
+    Alle EURO. Kein § 9a (der sitzt im Tarif)."""
     wk = 0
     if "entfernung_km_roh" in s:
         wk += catala_entfernungspauschale(s)
@@ -196,7 +197,11 @@ def catala_werbungskosten_n(s: dict) -> int:
         wk += _verpflegung_abzug(s, s["veranlagungszeitraum"])
     if "uebernachtung_kosten_monat" in s:
         wk += _uebernachtung_abzug(s, s["veranlagungszeitraum"])
-    # eigenes Paket: + Arbeitsmittel-AfA (mehrjährig)
+    # Arbeitsmittel (§ 9 Abs. 1 S. 3 Nr. 7 i.V.m. § 6 Abs. 2): Level-1 GWG-Sofortabzug ≤ 800 EUR.
+    # Die Haut lässt nur AK ≤ 800 mit ausgeübtem Wahlrecht bis hierher (Guard sperrt > 800 = § 7-AfA
+    # sowie abgelehntes Wahlrecht). catala_p6_2_gwg gibt bei > 800 defensiv 0 (over-tax-safe).
+    if "am_anschaffungskosten" in s:
+        wk += catala_p6_2_gwg({"gwg_anschaffungskosten_netto": s["am_anschaffungskosten"]})
     return wk
 
 

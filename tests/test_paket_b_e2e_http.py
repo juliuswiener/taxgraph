@@ -538,6 +538,8 @@ AN_GESAMT_UEBERNACHTUNG = ("uebernachtung_kosten_monat", "uebernachtung_monate",
                           "uebernachtung_monate_bisher", "uebernachtung_im_inland",
                           "uebernachtung_auswaerts", "uebernachtung_alleinnutzung",
                           "uebernachtung_keine_lange_unterbrechung")
+# A6 Arbeitsmittel-GWG (askable Felder; am_massgebliche_ak ist askable:false → nicht in /fragen)
+AN_GESAMT_ARBEITSMITTEL = ("am_anschaffungskosten", "am_gwg_sofortabzug_gewaehlt")
 AN_GESAMT_KEGEL = [
     ("bruttoarbeitslohn", 4000000),   # 40000 € in Cent (Bindung typ:cent)
     ("veranlagung", "einzel"),
@@ -595,7 +597,7 @@ def test_an_gesamt_durchstich(base):
     assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
              "kein_sonstige", "fam_anzahl_kinder", "verlustvortrag_bestand"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
             | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)
-            | set(AN_GESAMT_UEBERNACHTUNG)) == ids
+            | set(AN_GESAMT_UEBERNACHTUNG) | set(AN_GESAMT_ARBEITSMITTEL)) == ids
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
         assert st == 201
@@ -678,14 +680,15 @@ def test_an_gesamt_kv_pv_integration(base):
 
 
 def test_an_gesamt_am_guard_vorlaeufig(base):
-    """Arbeitsmittel (noch kein Modell) bleibt im Guard: ein vorläufiges am-Feld > 0 sperrt (kein Fake)."""
+    """Arbeitsmittel mehrjährige AfA (> 800 EUR, § 7) bleibt im Guard: ein vorläufiges am-Feld > 800
+    sperrt fail-closed (kein Fake). A6 modelliert nur den GWG-Sofortabzug ≤ 800; 1000 € = AfA-Zweig."""
     _an_gesamt_anlegen(base, "ag_am")
-    _store_append("ag_am", "am_anschaffungskosten", 60000, zustand="vorlaeufig")
+    _store_append("ag_am", "am_anschaffungskosten", 100000, zustand="vorlaeufig")  # 1000 € > 800 = AfA
     st, stand = _req(base, "GET", "/fall/ag_am/stand")
     assert stand["engine"] == "gesperrt"
-    assert stand["ring_gesperrt"] == "werbungskosten_nicht_ring_faehig"
+    assert stand["ring_gesperrt"] == "arbeitsmittel_afa_ueber_gwg_offen"
     st, erg = _req(base, "GET", "/fall/ag_am/ergebnis")
-    assert erg["zahl_cent"] is None and erg["grund"] == "werbungskosten_nicht_ring_faehig"
+    assert erg["zahl_cent"] is None and erg["grund"] == "arbeitsmittel_afa_ueber_gwg_offen"
 
 
 def _dhf_kegel(kosten, im_inland=True, weglassen=()):

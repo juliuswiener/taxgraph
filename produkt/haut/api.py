@@ -46,10 +46,13 @@ EP_FELDER = ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigene
 # an_gesamt MVP (reiner Arbeitnehmerfall). Die 4 Abwesenheits-Flags sind die Anwendbarkeits-
 # Voraussetzung (bestätigte Null je Einkunftsart); Invertierung der positiven Laienfrage macht die Haut.
 AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
-# Sperr-Felder (K2-Guard): ein aktiver Wert > 0 macht den Ring UNMÖGLICH (die Engine kann diese
-# Werbungskosten mangels Modell nicht rechnen) → Ring bleibt unavailable, NIE still auf 0.
-# Stufe 1b: dHf + Verpflegung sind RING-FÄHIG (raus); nur Arbeitsmittel (kein Modell) bleibt hart im Guard.
-GUARD_WERBUNGSKOSTEN = ("am_anschaffungskosten",)
+# Stufe 1b — Arbeitsmittel als Werbungskosten (§ 9 Abs. 1 S. 3 Nr. 6/7 i.V.m. § 6 Abs. 2 GWG): Level-1 =
+# GWG-Sofortabzug (AK ≤ 800 EUR, Wahlrecht ausgeübt) ist RING-FÄHIG via catala_p6_2_gwg; der mehrjährige
+# AfA-Zweig (> 800, § 7 lineare AfA) ist ungebunden → der Guard sperrt fail-closed
+# (arbeitsmittel_afa_ueber_gwg_offen), NIE stiller 0-Abzug. Schwelle in CENT (80000): 800,01 EUR (80001 ct)
+# floort sonst fälschlich auf 800 → Sofortabzug statt AfA = Under-tax (vgl. _gwg_sofortabzug_summe-Cent-Guard).
+ARBEITSMITTEL_KOSTEN = "am_anschaffungskosten"
+ARBEITSMITTEL_RING = ("am_anschaffungskosten", "am_gwg_sofortabzug_gewaehlt")
 # Verpflegung (§ 9 Abs. 4a): 3 Tage-Ring-Inputs + 2 Reduktions-Guard-Felder. FAIL-CLOSED-ON-UNSET:
 # bei Tagen > 0 ist der Ring nur fähig, wenn beide Guard-Felder EXPLIZIT sicher sind (monate ≤ 3
 # gesetzt UND keine_mahlzeitengestellung=true gesetzt); sonst (inkl. UNSET) verpflegung_reduktion_offen.
@@ -290,7 +293,7 @@ SCHEIBEN = {
     "an_gesamt": {
         "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER + KV_PV_FELDER
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
-                   + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN
+                   + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER
                    + ("fam_anzahl_kinder", "verlustvortrag_bestand")),
         # Pflicht-Kegel = einzel-Basis (inkl. Verpflegungs-TAGE; die Reduktions-Guard-Felder prüft
@@ -324,7 +327,7 @@ SCHEIBEN = {
                    + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
-                   + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b + §35c + §10 Abs.1a Realsplitting + §9-dHf/Verpflegung (B1) + §9-Übernachtung (A5, gemischt §19) OPTIONAL
+                   + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b + §35c + §10 Abs.1a Realsplitting + §9-dHf/Verpflegung (B1) + §9-Übernachtung (A5) + §9-Arbeitsmittel-GWG (A6, gemischt §19) OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -643,7 +646,11 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 wk_input["uebernachtung_kosten_monat"] = _cent(UEBERNACHTUNG_KOSTEN) // 100   # cent -> euro
                 wk_input["uebernachtung_monate"] = _ub_monate
                 wk_input["uebernachtung_monate_bisher"] = _ub_bisher
-            wk = runner.catala_werbungskosten_n(wk_input)   # Person A: EP + dHf + Verpflegung + Übernachtung, roh
+            # Arbeitsmittel (A6, § 9 Abs. 1 Nr. 7 i.V.m. § 6 Abs. 2 GWG): NUR GWG-Sofortabzug — AK ≤ 800 EUR
+            # (Schwelle in CENT, 80000) UND Wahlrecht ausgeübt. > 800 = mehrjährige § 7-AfA sperrt der Guard.
+            if 0 < _cent(ARBEITSMITTEL_KOSTEN) <= 80000 and f.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is True:
+                wk_input["am_anschaffungskosten"] = _cent(ARBEITSMITTEL_KOSTEN) // 100   # cent -> euro
+            wk = runner.catala_werbungskosten_n(wk_input)   # Person A: EP + dHf + Verpflegung + Übernachtung + AM-GWG, roh
             # § 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge (Pflicht-Kegel Person A, Gesamt-Parität, Over-tax-Fix):
             # eigener Abs.4-Höchstbetrag (1900/2800), additiv, GETRENNT von der VOR-Basisvorsorge unten.
             kv_pv_a = runner.catala_p10_kv_pv({
@@ -794,9 +801,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # kombiniert §19+§21: Bruttolohn im Kegel -> §19-Einkünfte (§9a-bereinigt, § 2 Abs. 2 Nr. 2)
             # als einkuenfte_nichtselbststaendig in die §-2-Summe; der §21-Verlust mindert dann den
             # §19-Lohn (§ 2 Abs. 3). Bruttolohn 0 (reiner Vermieter) -> einkuenfte_ns 0, kein Effekt.
-            # §19-WK = Entfernungspauschale (roh, § 9a-Günstiger im einzel-Tarif) + dHf + Verpflegung (B1:
-            # gemischt-§19-Fall bekommt dieselben §9-WK wie der reine an_gesamt-Ring, sonst Over-tax). AM
-            # (§9 Abs.1 Nr.6 Arbeitsmittel-AfA) bleibt hier wie im an_gesamt NICHT modelliert (eigenes L-Item).
+            # §19-WK = Entfernungspauschale (roh, § 9a-Günstiger im einzel-Tarif) + dHf + Verpflegung + Über-
+            # nachtung + Arbeitsmittel-GWG (B1/A5/A6: gemischt-§19-Fall bekommt dieselben §9-WK wie der reine
+            # an_gesamt-Ring, sonst Over-tax). Der mehrjährige AM-AfA-Zweig (> 800) sperrt hier wie an_gesamt.
             gesamt_wk_input = {"veranlagungszeitraum": vz,
                 **{k: slots[k] for k in
                    ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
@@ -830,6 +837,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 gesamt_wk_input["uebernachtung_kosten_monat"] = _c(UEBERNACHTUNG_KOSTEN) // 100    # cent -> euro
                 gesamt_wk_input["uebernachtung_monate"] = _ub_monate
                 gesamt_wk_input["uebernachtung_monate_bisher"] = _ub_bisher
+            # Arbeitsmittel (A6, Parität an_gesamt): NUR GWG-Sofortabzug — AK ≤ 800 EUR (CENT-Schwelle 80000)
+            # UND Wahlrecht ausgeübt. > 800 = mehrjährige § 7-AfA sperrt der SHARED _an_gesamt_sperrgrund.
+            if 0 < _c(ARBEITSMITTEL_KOSTEN) <= 80000 and f.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is True:
+                gesamt_wk_input["am_anschaffungskosten"] = _c(ARBEITSMITTEL_KOSTEN) // 100    # cent -> euro
             ns_wk = runner.catala_werbungskosten_n(gesamt_wk_input)
             ns = runner.catala_einkuenfte_nichtselbststaendig({
                 "veranlagungszeitraum": vz,
@@ -1611,6 +1622,13 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                     and isinstance(monate, int) and not isinstance(monate, bool)
                     and bisher < 48 < bisher + monate):
                 return "uebernachtung_zeitraum_offen"
+        # Arbeitsmittel (§ 9 Abs. 1 Nr. 6/7 i.V.m. § 6 Abs. 2 GWG / § 7 AfA): AK > 0 → Ring nur fähig für den
+        # GWG-Sofortabzug (AK ≤ 800 EUR mit ausgeübtem Wahlrecht). Der mehrjährige § 7-AfA-Zweig (> 800) ist
+        # ungebunden → fail-closed. Schwelle in CENT (80000): 800,01 EUR floort sonst fälschlich auf 800 (Under-tax).
+        _am = felder.get(ARBEITSMITTEL_KOSTEN, {}).get("wert")
+        if isinstance(_am, (int, float)) and not isinstance(_am, bool) and _am > 0:
+            if _am > 80000 or felder.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is not True:
+                return "arbeitsmittel_afa_ueber_gwg_offen"
         return None
     # Partner-Behinderungsfeld (§ 33b Person B) ohne Zusammenveranlagung: benannte Inkonsistenz
     # (dev-2s partner_check, Spiegel zu partner_kegel_offen). Universell VOR der Scheiben-Verzweigung —
@@ -1791,10 +1809,9 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if _dvg:
             return _dvg
         return None
-    if any(_positiv(f) for f in GUARD_WERBUNGSKOSTEN):
-        return "werbungskosten_nicht_ring_faehig"
-    # dHf-Tatbestand + Verpflegungs-Reduktion (§ 9 Abs. 1 Nr. 5 / Abs. 4a): fail-closed bei Ausland /
-    # offener Geltungsbedingung / offener Reduktion. Non-gesamt-Pfad (an_gesamt catala_est).
+    # dHf-Tatbestand + Verpflegungs-Reduktion + Übernachtung + Arbeitsmittel-GWG (§ 9 Abs. 1 Nr. 5/6/7 / Abs. 4a):
+    # fail-closed bei Ausland / offener Geltungsbedingung / offener Reduktion / AM > 800 (AfA). Non-gesamt-Pfad
+    # (an_gesamt catala_est) — die AM-Sperre (früher GUARD_WERBUNGSKOSTEN) sitzt jetzt in _dhf_vpf_grund (beide Pfade).
     _dvg = _dhf_vpf_grund()
     if _dvg:
         return _dvg
