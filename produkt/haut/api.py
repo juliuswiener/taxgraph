@@ -311,7 +311,8 @@ SCHEIBEN = {
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
                    + GESAMT_33B + GESAMT_33B_PARTNER
                    + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
-                   + GESAMT_REALSPLITTING),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b + §35c + §10 Abs.1a Realsplitting OPTIONAL
+                   + GESAMT_REALSPLITTING
+                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b + §35c + §10 Abs.1a Realsplitting + §9-dHf/Verpflegung (B1, gemischt §19) OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -770,14 +771,31 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # kombiniert §19+§21: Bruttolohn im Kegel -> §19-Einkünfte (§9a-bereinigt, § 2 Abs. 2 Nr. 2)
             # als einkuenfte_nichtselbststaendig in die §-2-Summe; der §21-Verlust mindert dann den
             # §19-Lohn (§ 2 Abs. 3). Bruttolohn 0 (reiner Vermieter) -> einkuenfte_ns 0, kein Effekt.
-            # §19-WK = Entfernungspauschale (roh, § 9a-Günstiger im einzel-Tarif); dHf/Verpflegung/AM
-            # sind hier NICHT modelliert (Folge-Nachtrag) — es gibt keine solchen Slots in der Scheibe.
+            # §19-WK = Entfernungspauschale (roh, § 9a-Günstiger im einzel-Tarif) + dHf + Verpflegung (B1:
+            # gemischt-§19-Fall bekommt dieselben §9-WK wie der reine an_gesamt-Ring, sonst Over-tax). AM
+            # (§9 Abs.1 Nr.6 Arbeitsmittel-AfA) bleibt hier wie im an_gesamt NICHT modelliert (eigenes L-Item).
             gesamt_wk_input = {"veranlagungszeitraum": vz,
                 **{k: slots[k] for k in
                    ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
                    if k in slots}}
             if "oepnv_kosten_jahr" in gesamt_wk_input:
                 gesamt_wk_input["oepnv_kosten_jahr"] = _oepnv_eur(gesamt_wk_input)   # Naht-CENT -> EURO
+            # doppelte Haushaltsführung (B1, Parität an_gesamt): dHf-Roh-WK NUR bei erfülltem Tatbestand
+            # (Kosten>0, Inland, alle 4 Bedingungen bestätigt-true). Offener/Ausland-Tatbestand sperrt der
+            # SHARED _an_gesamt_sperrgrund (gesamt guard=True) → hier doppelt sicher gegen Über-Abzug.
+            if (_c(DHF_KOSTEN) > 0 and f.get("dhf_im_inland", {}).get("wert") is True
+                    and all(f.get(b, {}).get("wert") is True for b in DHF_BEDINGUNGEN)):
+                gesamt_wk_input["unterkunftskosten_monat"] = _c(DHF_KOSTEN) // 100    # cent -> euro
+                gesamt_wk_input["monate"] = _c("dhf_monate")
+                gesamt_wk_input["im_inland"] = True
+            # Verpflegung (B1, Parität an_gesamt): Tage in Roh-WK NUR wenn Reduktion explizit safe (≤3 Monate
+            # + keine Mahlzeitengestellung); fail-closed bei UNSET (Guard sperrt sonst). Tage = Anzahl (kein cent).
+            _mon = f.get("vpf_monate_am_ort", {}).get("wert")
+            if (sum(_c(t) for t in VERPFLEGUNG_TAGE) > 0
+                    and isinstance(_mon, int) and not isinstance(_mon, bool) and _mon <= 3
+                    and f.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True):
+                for t in VERPFLEGUNG_TAGE:
+                    gesamt_wk_input[t] = _c(t)
             ns_wk = runner.catala_werbungskosten_n(gesamt_wk_input)
             ns = runner.catala_einkuenfte_nichtselbststaendig({
                 "veranlagungszeitraum": vz,
@@ -1529,6 +1547,22 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         v = felder.get(f)
         w = v and v.get("wert")
         return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
+    def _dhf_vpf_grund():
+        # dHf/Verpflegung §9-WK-Tatbestand — fail-closed (K2). Gilt für JEDE Scheibe, die diese Felder
+        # ring-verdrahtet: an_gesamt (catala_est) UND der gesamt/rentner-WK-Pfad (B1, catala_werbungskosten_n).
+        # Ausland-dHf → nicht ring-fähig; offene Geltungsbedingung → offen; offene Reduktion (§9 Abs.4a) → offen.
+        if _positiv(DHF_KOSTEN):
+            if felder.get("dhf_im_inland", {}).get("wert") is False:
+                return "ausland_dhf_nicht_ring_faehig"
+            if any((felder.get(b) or {}).get("zustand") != "bestaetigt" for b in DHF_BEDINGUNGEN):
+                return "dhf_tatbestand_offen"
+        if sum((felder.get(t, {}).get("wert") or 0) for t in VERPFLEGUNG_TAGE) > 0:
+            mon = felder.get("vpf_monate_am_ort", {}).get("wert")
+            safe = (isinstance(mon, int) and not isinstance(mon, bool) and mon <= 3
+                    and felder.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True)
+            if not safe:
+                return "verpflegung_reduktion_offen"
+        return None
     # Partner-Behinderungsfeld (§ 33b Person B) ohne Zusammenveranlagung: benannte Inkonsistenz
     # (dev-2s partner_check, Spiegel zu partner_kegel_offen). Universell VOR der Scheiben-Verzweigung —
     # feuert live, sobald eine Scheibe (rentner_gesamt) die rentner_*_partner-Felder führt.
@@ -1702,26 +1736,19 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # (Stufe 2). Die von der Scheibe GERECHNETEN Arten stehen NICHT in fremd_arten (kein Fehl-Sperr).
         if any(felder.get(fl, {}).get("wert") is False for fl in cfg.get("fremd_arten", ())):
             return "einkunftsart_nicht_ring_faehig"
+        # dHf/Verpflegung sind seit B1 auch im gesamt/rentner-WK-Pfad (catala_werbungskosten_n) verdrahtet →
+        # dieselbe fail-closed-Sperre wie an_gesamt (der frühe return None unten würde sie sonst überspringen).
+        _dvg = _dhf_vpf_grund()
+        if _dvg:
+            return _dvg
         return None
     if any(_positiv(f) for f in GUARD_WERBUNGSKOSTEN):
         return "werbungskosten_nicht_ring_faehig"
-    # dHf-Tatbestand: Kosten > 0, aber Auslandsunterkunft ODER eine der 4 Geltungsbedingungen offen
-    # (nicht bestätigt) → kein Ring (K2: kein dHf-Abzug ohne bestätigten Tatbestand). Eine Bedingung
-    # bestätigt-FALSE ist NICHT offen — dann greift dHf legitim nicht (Abzug 0), Ring bleibt gültig.
-    if _positiv(DHF_KOSTEN):
-        if felder.get("dhf_im_inland", {}).get("wert") is False:
-            return "ausland_dhf_nicht_ring_faehig"
-        if any((felder.get(b) or {}).get("zustand") != "bestaetigt" for b in DHF_BEDINGUNGEN):
-            return "dhf_tatbestand_offen"
-    # Verpflegung: Tage > 0 → Ring nur fähig, wenn BEIDE Reduktions-Guard-Felder EXPLIZIT sicher
-    # sind (§ 9 Abs. 4a S. 6 3-Monats-Frist + S. 8 Mahlzeitenkürzung). FAIL-CLOSED bei UNSET: wer
-    # Reisetage einträgt, aber die Reduktions-Fragen nicht beantwortet, bekommt keinen Über-Abzug.
-    if sum((felder.get(t, {}).get("wert") or 0) for t in VERPFLEGUNG_TAGE) > 0:
-        mon = felder.get("vpf_monate_am_ort", {}).get("wert")
-        safe = (isinstance(mon, int) and not isinstance(mon, bool) and mon <= 3
-                and felder.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True)
-        if not safe:
-            return "verpflegung_reduktion_offen"
+    # dHf-Tatbestand + Verpflegungs-Reduktion (§ 9 Abs. 1 Nr. 5 / Abs. 4a): fail-closed bei Ausland /
+    # offener Geltungsbedingung / offener Reduktion. Non-gesamt-Pfad (an_gesamt catala_est).
+    _dvg = _dhf_vpf_grund()
+    if _dvg:
+        return _dvg
     # Zusammenveranlagung: der Splitting-Ring braucht den vollständigen Kegel BEIDER Personen.
     if felder.get("veranlagung", {}).get("wert") == "zusammen":
         if any((felder.get(pf) or {}).get("zustand") != "bestaetigt" for pf in AN_GESAMT_PARTNER):

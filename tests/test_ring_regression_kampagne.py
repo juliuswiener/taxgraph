@@ -445,3 +445,93 @@ def test_p33a_unterhalt_und_ausbildung_senkt_steuer_gesamt(base):
         assert delta >= 500000, f"§33a delta={delta} < 500000 cent (Mindestwirkung 5000€)"
     else:
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
+# ===== B1 §9 dHf/Verpflegung im GESAMT-Ring (gemischt-§19, Over-tax-Fix) ==================
+# Der gesamt-Ring rechnete §19-WK bisher NUR als Entfernungspauschale; ein Angestellter MIT
+# weiterer Einkunftsart (→ gesamt statt an_gesamt) verlor doppelte Haushaltsführung + Verpflegung
+# = Over-tax. B1 verdrahtet catala_werbungskosten_n mit dHf/Verpflegung (Parität an_gesamt) UND
+# registriert die Felder in gesamt.felder (Erreichbarkeit, POST 201). Der SHARED _an_gesamt_sperrgrund
+# hält Ausland-dHf / offene Verpflegungs-Reduktion fail-closed offen (auch für gesamt).
+
+# Reiner Angestellter (200k Lohn) im GESAMT-Ring (nicht an_gesamt): kein_gewinn=True, aber die Scheibe
+# ist gesamt → nur hier greifen die weiteren Einkunftsarten/Abzüge. dHf/Verpflegung müssen trotzdem wirken.
+GESAMT_AN_KEGEL = [
+    ("veranlagung", "einzel"), ("bruttoarbeitslohn", 20000000),   # 200.000 € §19-Lohn
+    ("vv_einnahmen", 0), ("vv_gebaeude_afa", 0), ("vv_schuldzinsen", 0),
+    ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("vv_entgelt_quote_prozent", 100),
+    ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", False),
+    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
+    ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+    ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
+    ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
+    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0), ("kap_zusammenveranlagung", False),
+]
+
+# dHf Inland gültig: 1000 €/Monat × 12 = 12.000 € Roh-WK (Kappung §9 Abs.1 Nr.5 = 1000 €/Monat).
+DHF_GESAMT_VALID = [
+    ("dhf_unterkunftskosten_monat", 100000), ("dhf_monate", 12), ("dhf_im_inland", True),
+    ("dhf_beruflich_veranlasst", True), ("dhf_eigener_hausstand", True),
+    ("dhf_finanzielle_beteiligung", True), ("dhf_keine_pflicht_dienstwohnung", True),
+]
+# Verpflegung: 100 volle Tage × 28 € = 2.800 € Roh-WK; Reduktion explizit safe (≤3 Monate + keine Mahlzeit).
+VPF_GESAMT_VALID = [
+    ("tage_24h", 100), ("tage_an_abreise", 0), ("tage_ueber_8h_eintaegig", 0),
+    ("vpf_monate_am_ort", 2), ("vpf_keine_mahlzeitengestellung", True),
+]
+
+
+def test_b1_dhf_senkt_steuer_gesamt(base):
+    """gesamt-Ring, 200k Lohn + gültige dHf (12.000 € Roh-WK statt AN-Pauschbetrag 1230 €): einkuenfte_
+    nichtselbststaendig sinkt um 10.770 € → tax progressiv (~4.523 € bei 42 %). Beweist Erreichbarkeit
+    (POST 201, nicht 400) + dHf-Durchgriff im gesamt-WK. Ohne B1 wäre Δ=0 (Over-tax)."""
+    catala = _catala_da()
+    _ges_anlegen(base, "b1dhf_o", GESAMT_AN_KEGEL)
+    st, ohne = _req(base, "GET", "/fall/b1dhf_o/ergebnis")
+    _val("ergebnis", ohne)
+    _ges_anlegen(base, "b1dhf_m", GESAMT_AN_KEGEL + DHF_GESAMT_VALID)
+    st, mit = _req(base, "GET", "/fall/b1dhf_m/ergebnis")
+    _val("ergebnis", mit)
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt", \
+            f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
+        delta = ohne["zahl_cent"] - mit["zahl_cent"]
+        # Δeinkünfte = 12000 − 1230 = 10770 €; × 42 % ≈ 4523 € = 452340 ct.
+        assert 430000 <= delta <= 475000, f"dHf gesamt delta={delta} nicht in [430000,475000]"
+    else:
+        assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
+def test_b1_dhf_ausland_haelt_offen_gesamt(base):
+    """gesamt-Ring + dHf mit dhf_im_inland=False → der SHARED Guard sperrt fail-closed
+    (ausland_dhf_nicht_ring_faehig, zahl_cent=null). K2: kein stiller Über-Abzug im gesamt-Ring."""
+    kegel = GESAMT_AN_KEGEL + [
+        ("dhf_unterkunftskosten_monat", 100000), ("dhf_monate", 12), ("dhf_im_inland", False),
+        ("dhf_beruflich_veranlasst", True), ("dhf_eigener_hausstand", True),
+        ("dhf_finanzielle_beteiligung", True), ("dhf_keine_pflicht_dienstwohnung", True)]
+    _ges_anlegen(base, "b1ausl", kegel)
+    st, erg = _req(base, "GET", "/fall/b1ausl/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "ausland_dhf_nicht_ring_faehig", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] is None
+
+
+def test_b1_verpflegung_senkt_steuer_gesamt(base):
+    """gesamt-Ring, 200k Lohn + Verpflegung (100 volle Tage = 2.800 € Roh-WK, Reduktion safe): einkuenfte_
+    nichtselbststaendig sinkt (2.800 − 1.230 = 1.570 € über Pauschbetrag) → tax progressiv (~660 €).
+    Beweist die zweite §9-WK-Art (Verpflegung) im gesamt-Ring erreichbar + verdrahtet."""
+    catala = _catala_da()
+    _ges_anlegen(base, "b1vpf_o", GESAMT_AN_KEGEL)
+    st, ohne = _req(base, "GET", "/fall/b1vpf_o/ergebnis")
+    _val("ergebnis", ohne)
+    _ges_anlegen(base, "b1vpf_m", GESAMT_AN_KEGEL + VPF_GESAMT_VALID)
+    st, mit = _req(base, "GET", "/fall/b1vpf_m/ergebnis")
+    _val("ergebnis", mit)
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt", \
+            f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
+        delta = ohne["zahl_cent"] - mit["zahl_cent"]
+        # 100×28=2800 € Roh; Δeinkünfte ≈ 1570 €; × 42 % ≈ 659 € = 65940 ct. Band robust ggü. Satz-Rundung.
+        assert 40000 <= delta <= 85000, f"Verpflegung gesamt delta={delta} nicht in [40000,85000]"
+    else:
+        assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
