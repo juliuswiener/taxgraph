@@ -103,6 +103,54 @@ def catala_entfernungspauschale(s: dict) -> int:
     return int(out.abziehbarer_betrag) // 100
 
 
+def catala_ep_ab_21km(s: dict) -> int:
+    """§ 9 Abs. 1 S. 3 Nr. 4 S. 2 EStG — der ab dem 21. VOLLEN Entfernungskilometer erhöhte
+    Teil der Entfernungspauschale (Bemessungsbasis der § 101-Mobilitätsprämie), EURO int.
+
+    Deterministisch aus DENSELBEN params wie catala_entfernungspauschale (single source of
+    truth für die Sätze, KEIN neues Input-Feld → kein Denormalisierungs-Drift). KONSERVATIV
+    abgerundet und gekappt am tatsächlich abziehbaren Rest (abziehbarer_betrag − Anteil ≤ 20 km)
+    → nie mehr ab-21km als real berücksichtigt. Für eine PRÄMIE (Auszahlung) ist Unter-Ansatz
+    die K2-sichere Richtung (Über-Ansatz = Über-Förderung = Fiskus-Verlust = Under-tax-Analog)."""
+    year = s["veranlagungszeitraum"]
+    r = _ep_saetze(year)
+    km_voll = int(Decimal(str(s["entfernung_km_roh"])))                # volle Entfernungs-km (§ 9 Abs.1 S.3 Nr.4 S.4)
+    grenze = int(r["staffelgrenze_km"])                               # 20
+    arbeitstage = int(s.get("arbeitstage", 0))
+    satz_ab21_ct = int(Decimal(str(r["satz_ab_21_km"])) * 100)        # €/km ab 21 in Cent
+    satz_bis20_ct = int(Decimal(str(r["satz_bis_20_km"])) * 100)      # €/km bis 20 in Cent
+    ab21_roh = arbeitstage * max(0, km_voll - grenze) * satz_ab21_ct // 100   # abrunden → konservativ
+    ep_bis20 = arbeitstage * min(km_voll, grenze) * satz_bis20_ct // 100
+    gesamt = catala_entfernungspauschale(s)                           # tatsächlich abziehbar (inkl. Höchstbetrag)
+    return max(0, min(ab21_roh, gesamt - ep_bis20))
+
+
+def catala_p101_mobilitaetspraemie(s: dict) -> int:
+    """§ 101 EStG — Mobilitätsprämie: 14 % der Bemessungsgrundlage (S. 4). EURO int.
+
+    Bemessungsgrundlage (§ 101 S. 1-3):
+      Basis  = berücksichtigte Entfernungspauschale ab dem 21. km (entfernungspauschale_ab_21km,
+               vgl. catala_ep_ab_21km).
+      S. 3   = bei Einkünften aus nichtselbständiger Arbeit (ist_arbeitnehmer=True) NUR SOWEIT
+               diese ab-21km-EP zusammen mit den übrigen Werbungskosten den Arbeitnehmer-
+               Pauschbetrag (§ 9a S. 1 Nr. 1a) übersteigt → Basis = min(ab21,
+               max(0, werbungskosten_gesamt − arbeitnehmer_pauschbetrag)). Bei Nicht-AN
+               (Betriebsausgaben, ist_arbeitnehmer=False) entfällt S. 3.
+      S. 2   = begrenzt auf den Betrag, um den das zvE den Grundfreibetrag unterschreitet
+               (max(0, GFB − zvE)); bei Zusammenveranlagung übergibt der Caller gemeinsames
+               zvE + VERDOPPELTEN Grundfreibetrag (§ 101 S. 2 Hs. 2)."""
+    ep_ab_21 = int(s.get("entfernungspauschale_ab_21km", 0))
+    zvE = int(s.get("zu_versteuerndes_einkommen", 0))
+    gfb = int(s.get("grundfreibetrag", 0))
+    if s.get("ist_arbeitnehmer", False):                              # § 101 S. 3 (AN-Pauschbetrag-soweit)
+        wk_gesamt = int(s.get("werbungskosten_gesamt", 0))
+        an_pausch = int(s.get("arbeitnehmer_pauschbetrag", 0))
+        ep_ab_21 = min(ep_ab_21, max(0, wk_gesamt - an_pausch))
+    unterschreitung = max(0, gfb - zvE)                              # § 101 S. 2
+    bemessungsgrundlage = min(ep_ab_21, unterschreitung)
+    return bemessungsgrundlage * 14 // 100                           # § 101 S. 4
+
+
 def catala_werbungskosten_n(s: dict) -> int:
     """§ 9 Werbungskosten Anlage N — ROH-Summe in EURO, OHNE § 9a-Arbeitnehmer-Pauschbetrag.
     Den Pauschbetrag-Guenstiger wendet der Tarif `festzusetzende_est_einzel` intern an

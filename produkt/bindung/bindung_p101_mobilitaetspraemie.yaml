@@ -1,0 +1,26 @@
+# Bindungstabelle § 101 Mobilitätsprämie — Geringverdiener-Förderung
+# Prämie für Arbeitnehmer, deren Entfernungspauschale nicht zur Steuerminderung führt (zvE < Grundfreibetrag).
+# Post-Engine-Wrapper (KEIN Input-Kegel, reine Tarifberechnung).
+# Geltungsbedingungen aus Snapshot bedingungen[].
+
+version: 1
+scheibe: "§101 Mobilitätsprämie (Post-Engine-Wrapper)"
+
+bindungen: []
+
+luecken:
+  - regel_id: p101_mobilitaetspraemie
+    geltungsbedingung: entfernung_ab_21_km
+    grund: "Accessor-interner Gate: Entfernungspauschale ab 21 km vorhanden (entfernungspauschale_ab_21km > 0). Tarif-Seite prüft POST-Engine."
+
+  - regel_id: p101_mobilitaetspraemie
+    geltungsbedingung: ep_ueber_arbeitnehmer_pauschbetrag
+    grund: "Accessor-interner Gate (§ 101 S. 3): EP ab 21km zählt nur soweit sie mit den übrigen WK den AN-Pauschbetrag (1230€) übersteigt; catala_p101_mobilitaetspraemie materialisiert die soweit-Kappung. Tarif-Seite prüft POST-Engine."
+
+  - regel_id: p101_mobilitaetspraemie
+    signatur_slot: entfernungspauschale_ab_21km
+    grund: "Ring-derived (kein Laien-Input): Output von catala_ep_ab_21km — der ab-21km-Teil der Entfernungspauschale, deterministisch aus denselben EP-params. Wird beim Ring-Wiring post-engine geliefert."
+
+  - regel_id: p101_mobilitaetspraemie
+    signatur_slot: zu_versteuerndes_einkommen
+    grund: "Ring-derived (kein Laien-Input): zvE des AN-Tarif-Scopes (FestzusetzendeEstEinzel-Output). Wird beim Ring-Wiring post-engine geliefert (catala_est_einzel_zve)."
