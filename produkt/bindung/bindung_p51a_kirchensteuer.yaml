@@ -1,0 +1,52 @@
+# Bindungstabelle § 51a EStG i.V.m. Landes-KiStG — Kirchensteuer-Festsetzung (Zuschlagsteuer).
+# kist = est_mit_fb (Maßstabsteuer, § 51a-Basis = SolZ-§3-Abs.2-Zwilling) × Hebesatz.
+# konfession + bundesland = Laien-Enums (askable); est_mit_fb = ring-derived (Lücke).
+# Hebesatz-Grounding (8 % BY/BW, 9 % übrige) amtlich in anker_ref.datei; KEINE EStG-Konstante.
+# elster_kz bewusst null (kein XSD-verifiziertes Kz-Mapping — fail-closed, kein Rate-Kz).
+
+version: 1
+scheibe: "§51a Kirchensteuer (Zuschlagsteuer auf die Maßstabsteuer)"
+
+bindungen:
+  - feld_id: kist_konfession
+    quelle:
+      regel_id: p51a_kirchensteuer
+      signatur_slot: konfession
+    typ: enum
+    enum_werte: [keine, evangelisch, roemisch-katholisch, andere]
+    askable: true
+    fragetext_laie: "Gehören Sie einer Kirche an, die Kirchensteuer erhebt (evangelisch oder römisch-katholisch)?"
+    hilfe_kurz: "Nur evangelische und römisch-katholische Kirche erheben hier Kirchensteuer. Andere Religionsgemeinschaften oder kein Bekenntnis: keine Kirchensteuer."
+    beispielwert: roemisch-katholisch
+    elster_kz: null
+    elster_kz_grund: "Kein XSD-verifiziertes Kz-Mapping für das Religionsschlüssel-Feld (ESt1A) vorhanden; fail-closed statt Rate-Kz. XSD-Sweep offen (Backlog)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 51a EStG i.V.m. Landes-KiStG (Kirchensteuer als Zuschlag der Mitglieder steuererhebender Religionsgemeinschaften)"
+      zitatanker: "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer"
+      datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+
+  - feld_id: kist_bundesland
+    quelle:
+      regel_id: p51a_kirchensteuer
+      signatur_slot: bundesland
+    typ: enum
+    enum_werte: [baden_wuerttemberg, bayern, berlin, brandenburg, bremen, hamburg, hessen,
+                 mecklenburg_vorpommern, niedersachsen, nordrhein_westfalen, rheinland_pfalz,
+                 saarland, sachsen, sachsen_anhalt, schleswig_holstein, thueringen]
+    askable: true
+    fragetext_laie: "In welchem Bundesland wohnen Sie?"
+    hilfe_kurz: "Bayern und Baden-Württemberg erheben 8 %, alle übrigen Länder 9 % Kirchensteuer."
+    beispielwert: bayern
+    elster_kz: null
+    elster_kz_grund: "Bundesland wird für die ELSTER-Übermittlung aus dem Finanzamt/Wohnsitz abgeleitet, kein eigenes Kz im ESt-Formular; fail-closed statt Rate-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Landes-KiStG Hebesatz (8 v.H. Bayern/Baden-Württemberg, 9 v.H. übrige Länder)"
+      zitatanker: "8 v.H. in Bayern + Baden-Württemberg, 9 v.H. in den übrigen 14 Bundesländern"
+      datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+
+luecken:
+  - regel_id: p51a_kirchensteuer
+    signatur_slot: est_mit_fb
+    grund: "Ring-derived (kein Laien-Input): Maßstabsteuer nach § 51a EStG = veranlagte ESt mit Kinderfreibetrag = SolZ-§3-Abs.2-Zwilling. Wird beim Ring-Wiring aus solz_info['est_mit_fb'] (ohne §32d-Abgeltung-Kapital) geliefert."

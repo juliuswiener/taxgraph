@@ -319,6 +319,28 @@ def catala_p10_kist(s: dict) -> int:
     return int(r.abziehbare_kirchensteuer) // 100
 
 
+# Kirchensteuer-Hebesätze — Landes-KiStG-Beschluss (KEINE EStG-Konstante): 8 % Bayern +
+# Baden-Württemberg, 9 % übrige Länder. Amtlich: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+# (Art. 8 BayKirchStG + Erzbistum München; FinMin-NRW-Erlass 18.04.2024). VZ 2024-2026.
+_KIST_BY_BW = ("bayern", "baden_wuerttemberg")                    # 8 %
+_KIST_KONFESSION_STEUERERHEBEND = ("evangelisch", "roemisch-katholisch")
+
+
+def catala_kist(s: dict) -> int:
+    """§ 51a EStG i.V.m. Landes-KiStG — Kirchensteuer-Festsetzung auf die Maßstabsteuer, CENT.
+
+    Pipeline-verifiziert (snapshot p51a_kirchensteuer, catala_a): int-kodiert konfession
+    0=keine/3=andere → satz 0 ; sonst bundesland Bayern/Baden-Württemberg → 8 % ; sonst 9 %.
+    Hier laien-enum-domäniert (Store-Werte). est_mit_fb = § 51a-Bemessungsgrundlage (veranlagte
+    ESt mit Kinderfreibetrag = SolZ-§3-Abs.2-Zwilling, ohne § 32d-Abgeltung-Kapital — die
+    Abgeltung-KiSt e/(4+k) ist ein eigener Nachtrag), EURO. EURO × Prozent-int = CENT, exakt
+    (ganzzahlige EURO-Basis × ganzzahliger Hebesatz → kein Rundungsschnitt)."""
+    if str(s.get("konfession", "keine")) not in _KIST_KONFESSION_STEUERERHEBEND:
+        return 0
+    satz = 8 if str(s.get("bundesland", "")) in _KIST_BY_BW else 9
+    return int(s.get("est_mit_fb", 0)) * satz
+
+
 def _altersentlastung_kohorte(folgejahr: int):
     """§ 24a S. 5 Kohorten-Staffel (prozentsatz % + hoechstbetrag EURO) je maßgebendem Folgejahr (Jahr NACH der
     Vollendung des 64. Lj), lebenslang fix. Außerhalb der Tabelle geklemmt: vor 2005 → Höchststaffel, ab 2058 → 0."""

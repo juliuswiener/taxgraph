@@ -8158,3 +8158,68 @@ regeln:
     quelle: § 8d Abs. 2 KStG
     datei: sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt
     beschreibung: 'Abs. 2: wird der Geschäftsbetrieb eingestellt (oder ruhend gestellt, Zweckänderung, zusätzlicher Betrieb, Mitunternehmerschaft, Organträger, Übertragung unter gemeinem Wert), geht der fortführungsgebundene Verlustvortrag unter (§ 8c Abs. 1 S. 5-8 stille Reserven entsprechend). Benannter Nachtrag, hier nicht modelliert (setzt Mehrjahres-Tracking voraus).'
+- rule_id: p51a_kirchensteuer
+  norm: § 51a EStG i.V.m. Art. 8 KirchStG (Bayern) / Landes-KiStG — Kirchensteuer-Festsetzung auf die Maßstabsteuer (Zuschlagsteuer)
+  hinweis: 'kist = est_mit_fb * satz. satz ist KEIN Input, sondern aus zwei int-kodierten Inputs abgeleitet: konfession (0=keine, 1=evangelisch, 2=roemisch-katholisch, 3=andere) und bundesland (1=Bayern, 2=Baden-Wuerttemberg -> 0,08 ; jeder andere Wert -> 0,09). Ableitung: wenn konfession = 0 oder konfession = 3 dann satz = 0 ; sonst wenn bundesland = 1 oder bundesland = 2 dann satz = 0,08 ; sonst satz = 0,09. est_mit_fb ist die Massstabsteuer nach § 51a EStG (Einkommensteuer mit Kinderfreibetrag), in EURO als money. Cent-Schnitt zuletzt (Klasse 5 money x decimal). Die Saetze 0,08/0,09 sind Landes-KiStG-Hebesaetze (Beschluss), KEINE EStG-Konstante.'
+  quellen:
+  - typ: gesetz
+    label: Landes-KiStG Hebesatz übrige Länder (9 v.H., FinMin-NRW-Erlass 18.04.2024)
+    datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    zitatanker: 9 v. H.
+    auszug: Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer „9 v. H."
+  - typ: gesetz
+    label: Landes-KiStG Hebesatz Bayern (8 %, Erzbistum München / Art. 8 KirchStG)
+    datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    zitatanker: Der Umlagesatz beträgt in Bayern derzeit 8 %
+    auszug: „Der Umlagesatz beträgt in Bayern derzeit 8 % der Einkommen-, Lohn- und Kapitalertragsteuer
+  - typ: gesetz
+    label: § 51a-Bemessungsgrundlage (ESt mit Kinderfreibetrag)
+    datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    zitatanker: Maßgabe des § 51a des Einkommensteuergesetzes
+    auszug: Vor Anwendung der Kirchensteuerhebesätze ist die Bemessungsgrundlage nach Maßgabe des § 51a des Einkommensteuergesetzes
+  rundung: []
+  signature:
+    scope: Kirchensteuer
+    inputs:
+      est_mit_fb: money
+      konfession: int
+      bundesland: int
+    output: kist
+  raster:
+  - {est_mit_fb: 10000, konfession: 1, bundesland: 1}
+  - {est_mit_fb: 10000, konfession: 2, bundesland: 2}
+  - {est_mit_fb: 10000, konfession: 2, bundesland: 5}
+  - {est_mit_fb: 10000, konfession: 0, bundesland: 5}
+  - {est_mit_fb: 10000, konfession: 3, bundesland: 1}
+  - {est_mit_fb: 50000, konfession: 1, bundesland: 9}
+  test_seed:
+  - quelle: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    zitatanker: Der Umlagesatz beträgt in Bayern derzeit 8 %
+    herkunft: synthetisch
+    rechenweg: 'ev in Bayern: 10.000 x 0,08 = 800,00.'
+    inputs: {est_mit_fb: 10000, konfession: 1, bundesland: 1}
+    expected: 800.0
+  - quelle: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    zitatanker: 9 v. H.
+    herkunft: synthetisch
+    rechenweg: 'rk in NRW (Code 5): 10.000 x 0,09 = 900,00.'
+    inputs: {est_mit_fb: 10000, konfession: 2, bundesland: 5}
+    expected: 900.0
+  - quelle: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    zitatanker: Der Umlagesatz beträgt in Bayern derzeit 8 %
+    herkunft: synthetisch
+    rechenweg: 'rk in Baden-Württemberg: 10.000 x 0,08 = 800,00.'
+    inputs: {est_mit_fb: 10000, konfession: 2, bundesland: 2}
+    expected: 800.0
+  - quelle: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    zitatanker: 9 v. H.
+    herkunft: synthetisch
+    rechenweg: 'konfessionslos: satz 0 -> 0,00.'
+    inputs: {est_mit_fb: 10000, konfession: 0, bundesland: 5}
+    expected: 0.0
+  - quelle: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    zitatanker: 9 v. H.
+    herkunft: synthetisch
+    rechenweg: 'andere Religionsgemeinschaft (Code 3): satz 0 -> 0,00.'
+    inputs: {est_mit_fb: 10000, konfession: 3, bundesland: 1}
+    expected: 0.0

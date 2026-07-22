@@ -527,7 +527,8 @@ def _oepnv_eur(slots: dict) -> int:
 
 
 def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None,
-                 store: dict | None = None, nur_bestaetigt: bool = True, solz_container=None):
+                 store: dict | None = None, nur_bestaetigt: bool = True, solz_container=None,
+                 extras: dict | None = None):
     """bescheid_fn(feld_werte)->cent für eine ring-fähige Familie (Naht-Einheit CENT via
     intervall.bescheid_via_slots). None, wenn die Catala-Toolchain oder ein Accessor fehlt —
     dann bleibt der Ring ehrlich leer, nie ein erfundener Betrag. `felder` (materialisierter
@@ -650,6 +651,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "veranlagungszeitraum": vz,
                     "bemessungsgrundlage": est,
                     "splitting": zusammen})
+            # KiSt § 51a: dieselbe Maßstabsteuer wie SolZ (reiner AN-Fall: kein KiFB/§32d)
+            if extras is not None:
+                extras["kist_cent"] = runner.catala_kist({
+                    "est_mit_fb": est,
+                    "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
+                    "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
             return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
@@ -1117,6 +1124,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "bemessungsgrundlage": solz_info["est_mit_fb"],
                     "kapital_steuer": solz_info.get("kap_st", 0),
                     "splitting": g["veranlagung"] == "zusammen"})
+            # KiSt § 51a: Basis = Maßstabsteuer ohne §32d-Abgeltung-Kapital (= SolZ-basis_main;
+            # die Abgeltung-KiSt e/(4+k) ist ein eigener Nachtrag → hier NICHT auf kap_st).
+            if extras is not None and "est_mit_fb" in solz_info:
+                extras["kist_cent"] = runner.catala_kist({
+                    "est_mit_fb": solz_info["est_mit_fb"] - solz_info.get("kap_st", 0),
+                    "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
+                    "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
             return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
@@ -1420,6 +1434,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "veranlagungszeitraum": vz,
                     "bemessungsgrundlage": solz_info_r["est_mit_fb"],
                     "splitting": rentner_g["veranlagung"] == "zusammen"})
+            # KiSt § 51a: Rentner-Ring hat kein §32d-Kapital → Basis = KiFB-fiktive ESt direkt (= SolZ-Basis)
+            if extras is not None and "est_mit_fb" in solz_info_r:
+                extras["kist_cent"] = runner.catala_kist({
+                    "est_mit_fb": solz_info_r["est_mit_fb"],
+                    "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
+                    "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
             return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
@@ -1433,7 +1453,7 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     """Fail-closed: die festzusetzende Zahl NUR bei Scheiben-Gesamt-Accessor UND vollständig
     bestätigtem Input-Kegel (Meet). Ohne Gesamt-Accessor gibt es KEINE Scheiben-Zahl (ehrlich).
     `store` erlaubt dem §21-Ring die Multi-Objekt-Instanz-Σ (#5).
-    Returns (zahl_euro, solz_cent) — solz_cent = None wenn SolZ nicht rechenbar."""
+    Returns (zahl_euro, solz_cent, kist_cent) — solz_cent/kist_cent = None wenn nicht rechenbar."""
     q = cfg["gesamt_ring"]
     if q is None:
         return None
@@ -1441,11 +1461,12 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     if len(zustaende) < len(scheibe_felder) or ST.meet_zustand(zustaende) != "bestaetigt":
         return None
     solz_out = [None]   # mutable container — slot_fn schreibt SolZ hinein
-    bf = _bescheid_fn(q, vz, bindung, felder, store, solz_container=solz_out)
+    extras = {}         # slot_fn schreibt kist_cent hinein (§101-ready)
+    bf = _bescheid_fn(q, vz, bindung, felder, store, solz_container=solz_out, extras=extras)
     if bf is None:
         return None
     zahl = bf({f: felder[f]["wert"] for f in scheibe_felder})
-    return zahl, solz_out[0]
+    return zahl, solz_out[0], extras.get("kist_cent")
 
 
 def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None = None,
@@ -1841,23 +1862,23 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
         sperr = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung)
         if sperr:
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
-                         "solz_cent": None, "grund": sperr, "offen": [], "trace": None}
+                         "solz_cent": None, "kist_cent": None, "grund": sperr, "offen": [], "trace": None}
     result = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder, store)
     if result is None:
         if cfg["gesamt_ring"] is None:
             # Multi-Regel-Scheibe ohne ehrlichen Gesamt-Accessor: bewusst KEINE Scheiben-Zahl.
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
-                         "solz_cent": None, "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
+                         "solz_cent": None, "kist_cent": None, "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
         offen = [f for f in scheibe_felder
                  if f not in felder or felder[f]["zustand"] != "bestaetigt"]
         bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
         grund = "engine_unavailable" if (bf is None and not offen) else "input_kegel_nicht_bestaetigt"
         return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
-                     "solz_cent": None, "grund": grund, "offen": sorted(offen), "trace": None}
-    zahl, solz = result
+                     "solz_cent": None, "kist_cent": None, "grund": grund, "offen": sorted(offen), "trace": None}
+    zahl, solz, kist = result
     trace = TR.trace_ergebnis(store, bindung, snapshot_id=sid)
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": zahl,
-                 "solz_cent": solz, "grund": "bestaetigt", "offen": [], "trace": trace}
+                 "solz_cent": solz, "kist_cent": kist, "grund": "bestaetigt", "offen": [], "trace": trace}
 
 
 def deklaration(fall_id: str) -> tuple[int, dict]:

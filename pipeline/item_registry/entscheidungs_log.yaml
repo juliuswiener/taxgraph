@@ -4489,3 +4489,60 @@ entscheidungen:
     klasse: wirkt_hinein
   entschieden_via: adjudikation-instructor-2026-07-17-p10c-b8
   timestamp: '2026-07-17T14:19:14.148110+00:00'
+- rule_id: p51a_kirchensteuer
+  schluessel: '["annahme", "betrifft_kat", "bundesland", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - bundesland
+    - interpretation
+    text: Bundesland 1 und 2 werden als Bayern interpretiert. | Alle anderen Bundesländer
+      werden mit 9 % Hebesatz angenommen.
+  entschieden_via: adjudikation-instructor-2026-07-22-p51a
+  timestamp: '2026-07-22T12:47:33.620308+00:00'
+- rule_id: p51a_kirchensteuer
+  schluessel: '["annahme", "betrifft_kat", "konfession", "interpretation"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - konfession
+    - interpretation
+    text: Konfession 0 und 3 gelten als kirchensteuerfrei. | Konfession 0 oder 3 bedeutet
+      keine Kirchensteuerpflicht. | Konfession 0 oder 3 wird als nicht kirchensteuerpflichtig
+      interpretiert.
+  entschieden_via: adjudikation-instructor-2026-07-22-p51a
+  timestamp: '2026-07-22T12:47:34.420956+00:00'
+- rule_id: p51a_kirchensteuer
+  schluessel: '["annahme", "betrifft_kat", "est_mit_fb", "geltungsvoraussetzung"]'
+  triage: nicht_material
+  bedingung: null
+  weitere_bedingungen: []
+  konvention: input_nur_etikettiertes
+  neue_bedingung: null
+  bedingung_deklariert: null
+  gemerged: false
+  item_snapshot:
+    art: annahme
+    anker:
+    - betrifft_kat
+    - est_mit_fb
+    - geltungsvoraussetzung
+    text: est_mit_fb ist bereits nach § 51a EStG bereinigt.
+  entschieden_via: adjudikation-instructor-2026-07-22-p51a
+  timestamp: '2026-07-22T12:47:35.215055+00:00'

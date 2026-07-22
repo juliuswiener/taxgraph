@@ -1,0 +1,362 @@
+{
+  "bedingungen": [],
+  "candidate_id": "p51a_kirchensteuer",
+  "catala_a": "declaration scope Kirchensteuer:\n  input est_mit_fb content money\n  input konfession content integer\n  input bundesland content integer\n  internal satz content decimal\n  output kist content money\n\nscope Kirchensteuer:\n  definition satz equals\n    if (konfession = 0) or (konfession = 3) then 0.0\n    else if (bundesland = 1) or (bundesland = 2) then 0.08\n    else 0.09\n\n  definition kist equals est_mit_fb * satz",
+  "catala_a_sha256": "3c9fcad66cc95491f01a32c19b9284cd75aa6707e0300dab0d06a3acee78f08a",
+  "catala_b": "declaration scope Kirchensteuer:\n  input est_mit_fb content money\n  input konfession content integer\n  input bundesland content integer\n  internal satz content decimal\n  internal roh_kist content money\n  output kist content money\n\nscope Kirchensteuer:\n  definition satz equals\n    if konfession = 0 or konfession = 3 then 0.0\n    else (if bundesland = 1 or bundesland = 2 then 0.08 else 0.09)\n  definition roh_kist equals est_mit_fb * satz\n  definition kist equals (Decimal.truncate of (roh_kist / $1.00)) * $1.00",
+  "catala_b_sha256": "3fdfc4b01f1bac4853829433593fc40e3ef73ca49213be5e0e14c0c4e1402332",
+  "gates": [
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_a",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b_first",
+      "status": "PASS"
+    },
+    {
+      "detail": "catala parser ok",
+      "name": "syntax_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "clerk typecheck ok",
+      "name": "typecheck_b",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Rundungsoperation",
+      "name": "rundungs_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein finaler Cent-Schnitt-Idiom",
+      "name": "praezisions_lint",
+      "status": "PASS"
+    },
+    {
+      "detail": "A == B on 6 raster point(s) for 'kist'",
+      "name": "equivalence",
+      "status": "PASS"
+    },
+    {
+      "detail": "alle registrierten Annahmen deklariert oder als nicht_material/nicht_echt triagiert",
+      "name": "roundtrip",
+      "status": "PASS"
+    },
+    {
+      "detail": "informativ: 6 wirkt_hinein (blockierend ist geltungsbereich), 0 unabhaengig -> Backlog",
+      "name": "scope_gap",
+      "status": "PASS"
+    },
+    {
+      "detail": "0 registrierte(s) wirkt_hinein-Item(s) abgedeckt",
+      "name": "geltungsbereich",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine Grenzfaelle in der Registry",
+      "name": "grenzfall",
+      "status": "PASS"
+    },
+    {
+      "detail": "kein registrierter Formalisierungsfehler",
+      "name": "defekt",
+      "status": "PASS"
+    },
+    {
+      "detail": "keine neuen Items",
+      "name": "discovery",
+      "status": "PASS"
+    },
+    {
+      "detail": "5 seed test(s) passed, anchors verified",
+      "name": "clerk",
+      "status": "PASS"
+    }
+  ],
+  "judge_verdict": {
+    "abweichungen": [],
+    "faithful": false,
+    "grenzfaelle": [],
+    "judge_instability": {
+      "cluster": {
+        "abweichungen": 0,
+        "annahmen": 6,
+        "norm_teile": 6
+      },
+      "gesaettigt": true,
+      "grenzfaelle": [],
+      "inventar_laeufe": 5,
+      "inventar_streuung": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "betrifft_kat",
+              "konfession",
+              "interpretation"
+            ],
+            "text": "Konfession 0 und 3 gelten als kirchensteuerfrei."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "bundesland",
+              "interpretation"
+            ],
+            "text": "Alle anderen Bundesländer werden mit 9 % Hebesatz angenommen."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "konfession",
+              "interpretation"
+            ],
+            "text": "Konfession 0 oder 3 bedeutet keine Kirchensteuerpflicht."
+          },
+          {
+            "in_laeufen": 1,
+            "key": [
+              "betrifft_kat",
+              "konfession",
+              "interpretation"
+            ],
+            "text": "Konfession 0 oder 3 wird als nicht kirchensteuerpflichtig interpretiert."
+          }
+        ],
+        "norm_teile": [
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "§ 51a-bemessungsgrundlage (est mit kinderfreibetrag)"
+            ],
+            "text": "Vor Anwendung der Kirchensteuerhebesätze ist die Bemessungsgrundlage nach Maßgabe des § 51a des Einkommensteuergesetzes"
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "landes-kistg hebesatz übrige länder (9 v.h., finmin-nrw-erlass 18.04.2024)"
+            ],
+            "text": "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer „9 v. H.\""
+          },
+          {
+            "in_laeufen": 3,
+            "key": [
+              "ref",
+              "landes-kistg hebesatz bayern (8 %, erzbistum münchen / art. 8 kirchstg)"
+            ],
+            "text": "Der Umlagesatz beträgt in Bayern derzeit 8 % der Einkommen-, Lohn- und Kapitalertragsteuer"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "landes-kistg hebesatz übrige länder"
+            ],
+            "text": "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer „9 v. H.“"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "landes-kistg hebesatz bayern"
+            ],
+            "text": "Der Umlagesatz beträgt in Bayern derzeit 8 % der Einkommen-, Lohn- und Kapitalertragsteuer"
+          },
+          {
+            "in_laeufen": 2,
+            "key": [
+              "ref",
+              "§ 51a-bemessungsgrundlage"
+            ],
+            "text": "Vor Anwendung der Kirchensteuerhebesätze ist die Bemessungsgrundlage nach Maßgabe des § 51a des Einkommensteuergesetzes"
+          }
+        ]
+      },
+      "inventar_ungueltig": 0,
+      "item_splits": [],
+      "items_ohne_mehrheit": [],
+      "merge_log": {
+        "abweichungen": [],
+        "annahmen": [
+          {
+            "cluster": "Konfession 0 und 3 gelten als kirchensteuerfrei.",
+            "eingeschmolzen": "Konfession 0 und 3 gelten als nicht kirchensteuerpflichtig.",
+            "key": [
+              "betrifft_kat",
+              "konfession",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "est_mit_fb ist bereits nach § 51a EStG bereinigt.",
+            "eingeschmolzen": "est_mit_fb ist bereits nach § 51a EStG angepasst.",
+            "key": [
+              "betrifft_kat",
+              "est_mit_fb",
+              "geltungsvoraussetzung"
+            ]
+          },
+          {
+            "cluster": "Bundesland 1 und 2 werden als Bayern interpretiert.",
+            "eingeschmolzen": "Bundesland 1 oder 2 wird als Bayern interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "bundesland",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "Bundesland 1 und 2 werden als Bayern interpretiert.",
+            "eingeschmolzen": "Bundesland 1 oder 2 wird als Bayern interpretiert.",
+            "key": [
+              "betrifft_kat",
+              "bundesland",
+              "interpretation"
+            ]
+          },
+          {
+            "cluster": "est_mit_fb ist bereits nach § 51a EStG bereinigt.",
+            "eingeschmolzen": "est_mit_fb wird als bereits nach § 51a EStG angepasst angenommen.",
+            "key": [
+              "betrifft_kat",
+              "est_mit_fb",
+              "geltungsvoraussetzung"
+            ]
+          }
+        ],
+        "norm_teile": []
+      },
+      "saettigungskurve": [
+        6,
+        3,
+        2,
+        1,
+        0
+      ]
+    },
+    "judge_protokoll": "dekomponiert@2 (Anker-Schluessel, Union-until-Saturation, Mehrheit je Item)",
+    "lauf_id": "da374de871a6",
+    "parse_error": false,
+    "scope_gap": [
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Vor Anwendung der Kirchensteuerhebesätze ist die Bemessungsgrundlage nach Maßgabe des § 51a des Einkommensteuergesetzes",
+        "referenz": "§ 51a-Bemessungsgrundlage (ESt mit Kinderfreibetrag)"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer „9 v. H.\"",
+        "referenz": "Landes-KiStG Hebesatz übrige Länder (9 v.H., FinMin-NRW-Erlass 18.04.2024)"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Der Umlagesatz beträgt in Bayern derzeit 8 % der Einkommen-, Lohn- und Kapitalertragsteuer",
+        "referenz": "Landes-KiStG Hebesatz Bayern (8 %, Erzbistum München / Art. 8 KirchStG)"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer „9 v. H.“",
+        "referenz": "Landes-KiStG Hebesatz übrige Länder"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Der Umlagesatz beträgt in Bayern derzeit 8 % der Einkommen-, Lohn- und Kapitalertragsteuer",
+        "referenz": "Landes-KiStG Hebesatz Bayern"
+      },
+      {
+        "abgedeckt_von": "none",
+        "begruendung": "",
+        "grenzfall": false,
+        "klasse": "wirkt_hinein",
+        "norm_teil": "Vor Anwendung der Kirchensteuerhebesätze ist die Bemessungsgrundlage nach Maßgabe des § 51a des Einkommensteuergesetzes",
+        "referenz": "§ 51a-Bemessungsgrundlage"
+      }
+    ],
+    "stille_zusatzannahmen": [
+      {
+        "annahme": "Bundesland 1 und 2 werden als Bayern interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "bundesland",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Konfession 0 und 3 gelten als kirchensteuerfrei.",
+        "bedingung_id": null,
+        "betrifft": "konfession",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "est_mit_fb ist bereits nach § 51a EStG bereinigt.",
+        "bedingung_id": null,
+        "betrifft": "est_mit_fb",
+        "kategorie": "geltungsvoraussetzung"
+      },
+      {
+        "annahme": "Alle anderen Bundesländer werden mit 9 % Hebesatz angenommen.",
+        "bedingung_id": null,
+        "betrifft": "bundesland",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Konfession 0 oder 3 bedeutet keine Kirchensteuerpflicht.",
+        "bedingung_id": null,
+        "betrifft": "konfession",
+        "kategorie": "interpretation"
+      },
+      {
+        "annahme": "Konfession 0 oder 3 wird als nicht kirchensteuerpflichtig interpretiert.",
+        "bedingung_id": null,
+        "betrifft": "konfession",
+        "kategorie": "interpretation"
+      }
+    ],
+    "timestamp": "2026-07-22T11:12:54+00:00"
+  },
+  "module_name": "Kirchensteuer",
+  "queue_status": "verified",
+  "schema_version": 2
+}
