@@ -32,7 +32,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie hoch waren die Kranken- und Pflegeversicherungsbeiträge des Ex-Ehegatten, die du bezahlt hast (§ 10 Abs. 1 Nr. 3)? Diese erhöhen den Abzugshöchstbetrag."
+    fragetext_laie: "Hast du Kranken- und Pflegeversicherungsbeiträge für deinen Ex-Ehepartner bezahlt? Falls ja, wie viel im Jahr? Diese erhöhen den absetzbaren Höchstbetrag."
     hilfe_kurz: "Nur die KV/PV-Beiträge nach § 10 Abs. 1 Nr. 3 zählen; sie erhöhen den Deckel von 13.805 Euro."
     beispielwert: 400000
     herkunft_slots: null
@@ -41,7 +41,7 @@ bindungen:
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1a Nr. 1 S. 2 EStG"
-      zitatanker: "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder dauernd getrennt lebenden Ehegatten"
+      zitatanker: "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten aufgewandten Beiträge"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
 
   - feld_id: realsplitting_zustimmung
@@ -51,7 +51,7 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Hat der Ex-Ehegatte der Geltendmachung dieser Unterhaltsleistungen schriftlich zugestimmt (§ 10 Abs. 1a Nr. 1 S. 1)?"
+    fragetext_laie: "Hat dein Ex-Ehepartner der steuerlichen Geltendmachung dieser Unterhaltszahlungen zugestimmt (z.B. per Anlage U)?"
     hilfe_kurz: "Ohne ausdrückliche Zustimmung des Ex-Partners ist der Abzug nicht möglich. Beide Ehegatten müssen dies beantragen oder schriftlich bestätigen."
     beispielwert: true
     herkunft_slots: null
