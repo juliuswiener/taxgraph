@@ -657,6 +657,28 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "est_mit_fb": est,
                     "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
                     "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
+            # § 101 Mobilitätsprämie (Post-Engine-Prämie, KEIN ESt-Impact; extras-Naht wie KiSt).
+            # Stufe-1: reiner-AN einzel mit Pendlerstrecke (ab-21km-EP). zusammen = Stufe-2 (per-
+            # Ehegatte-S.3 + doppelter GFB, S.2 Hs.2). Ohne Entfernung → kein § 101 (Feld absent →
+            # mobilitaetspraemie_cent bleibt None). Prämie zahlt nur bei zvE < GFB (Accessor: 0 sonst).
+            if (extras is not None and not zusammen
+                    and int(slots.get("entfernung_km_roh", 0)) > 0):
+                ep_ab_21 = runner.catala_ep_ab_21km({
+                    "veranlagungszeitraum": vz,
+                    "arbeitstage": int(slots.get("arbeitstage", 0)),
+                    "entfernung_km_roh": int(slots.get("entfernung_km_roh", 0)),
+                    "eigenes_oder_ueberlassenes_kfz": bool(slots.get("eigenes_oder_ueberlassenes_kfz", False)),
+                    "oepnv_kosten_jahr": _oepnv_eur(slots)})
+                extras["mobilitaetspraemie_cent"] = runner.catala_p101_mobilitaetspraemie_cent({
+                    "entfernungspauschale_ab_21km": ep_ab_21,
+                    "zu_versteuerndes_einkommen": runner.catala_est_einzel_zve({
+                        "veranlagungszeitraum": vz,
+                        "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,
+                        "werbungskosten": wk, "sonderausgaben": so}),
+                    "grundfreibetrag": runner.catala_grundfreibetrag(vz),
+                    "ist_arbeitnehmer": True,                 # § 101 S. 3 (AN-Pauschbetrag-soweit)
+                    "werbungskosten_gesamt": wk,              # roh AN-WK inkl. voller EP
+                    "arbeitnehmer_pauschbetrag": runner.catala_arbeitnehmer_pauschbetrag(vz)})
             return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
@@ -1453,7 +1475,8 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     """Fail-closed: die festzusetzende Zahl NUR bei Scheiben-Gesamt-Accessor UND vollständig
     bestätigtem Input-Kegel (Meet). Ohne Gesamt-Accessor gibt es KEINE Scheiben-Zahl (ehrlich).
     `store` erlaubt dem §21-Ring die Multi-Objekt-Instanz-Σ (#5).
-    Returns (zahl_euro, solz_cent, kist_cent) — solz_cent/kist_cent = None wenn nicht rechenbar."""
+    Returns (zahl_euro, solz_cent, extras) — extras = Post-Engine-Zuschlag-/Prämien-Dict
+    (kist_cent § 51a, mobilitaetspraemie_cent § 101; Schlüssel absent = nicht rechenbar)."""
     q = cfg["gesamt_ring"]
     if q is None:
         return None
@@ -1461,12 +1484,12 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     if len(zustaende) < len(scheibe_felder) or ST.meet_zustand(zustaende) != "bestaetigt":
         return None
     solz_out = [None]   # mutable container — slot_fn schreibt SolZ hinein
-    extras = {}         # slot_fn schreibt kist_cent hinein (§101-ready)
+    extras = {}         # slot_fn schreibt kist_cent (§51a) + mobilitaetspraemie_cent (§101) hinein
     bf = _bescheid_fn(q, vz, bindung, felder, store, solz_container=solz_out, extras=extras)
     if bf is None:
         return None
     zahl = bf({f: felder[f]["wert"] for f in scheibe_felder})
-    return zahl, solz_out[0], extras.get("kist_cent")
+    return zahl, solz_out[0], extras
 
 
 def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None = None,
@@ -1862,23 +1885,28 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
         sperr = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung)
         if sperr:
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
-                         "solz_cent": None, "kist_cent": None, "grund": sperr, "offen": [], "trace": None}
+                         "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
+                         "grund": sperr, "offen": [], "trace": None}
     result = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder, store)
     if result is None:
         if cfg["gesamt_ring"] is None:
             # Multi-Regel-Scheibe ohne ehrlichen Gesamt-Accessor: bewusst KEINE Scheiben-Zahl.
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
-                         "solz_cent": None, "kist_cent": None, "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
+                         "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
+                         "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
         offen = [f for f in scheibe_felder
                  if f not in felder or felder[f]["zustand"] != "bestaetigt"]
         bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
         grund = "engine_unavailable" if (bf is None and not offen) else "input_kegel_nicht_bestaetigt"
         return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
-                     "solz_cent": None, "kist_cent": None, "grund": grund, "offen": sorted(offen), "trace": None}
-    zahl, solz, kist = result
+                     "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
+                     "grund": grund, "offen": sorted(offen), "trace": None}
+    zahl, solz, extras = result
     trace = TR.trace_ergebnis(store, bindung, snapshot_id=sid)
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": zahl,
-                 "solz_cent": solz, "kist_cent": kist, "grund": "bestaetigt", "offen": [], "trace": trace}
+                 "solz_cent": solz, "kist_cent": extras.get("kist_cent"),
+                 "mobilitaetspraemie_cent": extras.get("mobilitaetspraemie_cent"),
+                 "grund": "bestaetigt", "offen": [], "trace": trace}
 
 
 def deklaration(fall_id: str) -> tuple[int, dict]:

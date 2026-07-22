@@ -88,6 +88,20 @@ def _ep_saetze(year: int) -> dict:
             ("satz_bis_20_km", "satz_ab_21_km", "staffelgrenze_km", "hoechstbetrag_ohne_kfz")}
 
 
+def catala_grundfreibetrag(year: int) -> int:
+    """§ 32a Abs. 1 S. 2 Nr. 1 EStG — Grundfreibetrag des VZ, EURO (aus params/)."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "einkommensteuertarif_p32a.yaml"), encoding="utf-8"))
+    return int(p["grundfreibetrag"]["wert"])
+
+
+def catala_arbeitnehmer_pauschbetrag(year: int) -> int:
+    """§ 9a S. 1 Nr. 1a EStG — Arbeitnehmer-Pauschbetrag des VZ, EURO (aus params/)."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(year), "arbeitnehmerpauschbetrag.yaml"), encoding="utf-8"))
+    return int(p["wert"]["wert"])
+
+
 def catala_entfernungspauschale(s: dict) -> int:
     year = s["veranlagungszeitraum"]
     r = _ep_saetze(year)
@@ -125,10 +139,9 @@ def catala_ep_ab_21km(s: dict) -> int:
     return max(0, min(ab21_roh, gesamt - ep_bis20))
 
 
-def catala_p101_mobilitaetspraemie(s: dict) -> int:
-    """§ 101 EStG — Mobilitätsprämie: 14 % der Bemessungsgrundlage (S. 4). EURO int.
+def _p101_bemessungsgrundlage(s: dict) -> int:
+    """§ 101 S. 1-3 EStG — Bemessungsgrundlage der Mobilitätsprämie, EURO int.
 
-    Bemessungsgrundlage (§ 101 S. 1-3):
       Basis  = berücksichtigte Entfernungspauschale ab dem 21. km (entfernungspauschale_ab_21km,
                vgl. catala_ep_ab_21km).
       S. 3   = bei Einkünften aus nichtselbständiger Arbeit (ist_arbeitnehmer=True) NUR SOWEIT
@@ -147,8 +160,21 @@ def catala_p101_mobilitaetspraemie(s: dict) -> int:
         an_pausch = int(s.get("arbeitnehmer_pauschbetrag", 0))
         ep_ab_21 = min(ep_ab_21, max(0, wk_gesamt - an_pausch))
     unterschreitung = max(0, gfb - zvE)                              # § 101 S. 2
-    bemessungsgrundlage = min(ep_ab_21, unterschreitung)
-    return bemessungsgrundlage * 14 // 100                           # § 101 S. 4
+    return min(ep_ab_21, unterschreitung)
+
+
+def catala_p101_mobilitaetspraemie(s: dict) -> int:
+    """§ 101 S. 4 EStG — Mobilitätsprämie: 14 % der Bemessungsgrundlage. EURO int (abgerundet)."""
+    return _p101_bemessungsgrundlage(s) * 14 // 100
+
+
+def catala_p101_mobilitaetspraemie_cent(s: dict) -> int:
+    """§ 101 S. 4 EStG — Mobilitätsprämie = 14 % der Bemessungsgrundlage, CENT-exakt.
+
+    bemessungsgrundlage(EURO) × 14 = CENT ohne Rundungsschnitt (14 %/100 × 100 ct/€ = ×14,
+    derselbe Einheiten-Trick wie catala_kist). Prämie=Auszahlung → cent-exakt statt euro-Floor
+    (kein Unter-Ansatz zu Lasten des Steuerpflichtigen). Ring-Naht-Variante (mobilitaetspraemie_cent)."""
+    return _p101_bemessungsgrundlage(s) * 14
 
 
 def catala_werbungskosten_n(s: dict) -> int:
@@ -1246,6 +1272,19 @@ def catala_est(sachverhalt: dict) -> int:
     else:
         raise ValueError(f"unknown veranlagung: {veranlagung}")
     return int(out.tarifliche_steuer) // 100
+
+
+def catala_est_einzel_zve(s: dict) -> int:
+    """§ 2 Abs. 5 zu versteuerndes Einkommen des reinen-AN-einzel-Scopes (festzusetzende_est_einzel),
+    EURO. SELBE Eingaben wie catala_est(einzel) → reproduziert dessen internes zvE (Bemessungsgröße
+    der § 101-Grundfreibetrags-Unterschreitung, S. 2). Kein neuer Rechenpfad, nur Output-Feld-Lesen."""
+    year = s["veranlagungszeitraum"]
+    out = E.festzusetzende_est_einzel(E.FestzusetzendeEstEinzelIn(
+        bruttoarbeitslohn_in=Money(f"{int(s['bruttoarbeitslohn'])}.00"),
+        werbungskosten_in=Money(f"{int(s.get('werbungskosten', 0))}.00"),
+        sonderausgaben_in=Money(f"{int(s.get('sonderausgaben', 0))}.00"),
+        veranlagungszeitraum_in=VZ_ENUM[year]))
+    return int(out.zu_versteuerndes_einkommen) // 100
 
 
 def catala_fuenftel(s: dict) -> int:

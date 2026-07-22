@@ -10,6 +10,7 @@
     "zahl_cent": {"type": ["integer", "null"]},
     "solz_cent": {"type": ["integer", "null"]},
     "kist_cent": {"type": ["integer", "null"]},
+    "mobilitaetspraemie_cent": {"type": ["integer", "null"]},
     "grund": {"type": "string",
               "enum": ["bestaetigt", "input_kegel_nicht_bestaetigt", "engine_unavailable",
                        "kein_scheiben_gesamtbescheid", "werbungskosten_nicht_ring_faehig",
