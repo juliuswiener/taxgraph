@@ -1,102 +1,86 @@
-"""Unit-test für §35c EStG Accessor (Sanierung + Energieberater).
+"""Unit-Golden für die ECHTEN §35c-Accessoren (golden/runner.py), nicht Inline-Dummies.
 
-Pure-python Accessoren aus verified_bedingt Snapshots (Stufe-1).
-Test Seeds direkt aus Snapshot-test-Scopes.
-
-HINWEIS: Catala-Paket wird nur beim vollständigen Clerk-Build geladen.
-Diese Tests sind pure-Python Syntax-Checks und werden vom Instructor
-in der Voll-Suite (mit Catala-Build) geratet.
+§35c Abs.1 EStG: Sanierung 7 %/max 14.000 € (Abschluss- + nächstes Jahr), 6 %/max 12.000 €
+(übernächstes Jahr); Energieberater (S.4) 50 %, aber gemäß BMF v. 2025-08-21 Rn. 56 „vom
+(Gesamt-)Höchstbetrag und den Jahreshöchstbeträgen umfasst" (Jahresdeckel INKLUSIVE Energieberater).
+Accessoren nehmen EUROS, geben EUROS. Deterministisch, NULL LLM.
 """
 import os
 import sys
 
-# Dummy catala_p35c Implementations für Syntax-Test
-def catala_p35c_sanierung(s):
-    """§35c Sanierungsermaessigung, 7%/6% Staffel mit Jahresdeckel."""
-    aufw = int(s.get("sanierungsaufwendungen", 0))
-    ist_uebernachst = bool(s.get("ist_uebernaechstes_foerderjahr", False))
-    satz = 0.06 if ist_uebernachst else 0.07
-    hoechstbetrag = 12000 if ist_uebernachst else 14000
-    roh = int(aufw * satz)
-    return min(roh, hoechstbetrag)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "golden"))
 
-def catala_p35c_energieberater(s):
-    """§35c Energieberater 50%."""
-    aufwand = int(s.get("energieberater_aufwendungen", 0))
-    return int(aufwand * 0.50)
+import runner as R  # noqa: E402
 
 
 class Test35cSanierung:
-    """§35c Sanierungsermaessigung: 7%/6% Staffel mit Jahresdeckel."""
+    """catala_p35c_sanierung: 7 %/6 %-Staffel mit Jahresdeckel 14.000/12.000 €."""
 
-    def test_seed_jahr1_unter_deckel(self):
-        """Jahr 1 (ist_uebernaechstes=False): 7% bis 14k.
-        20000 EUR * 7% = 1400 EUR (unter Deckel)."""
-        assert catala_p35c_sanierung({
-            "sanierungsaufwendungen": 20000,
-            "ist_uebernaechstes_foerderjahr": False
-        }) == 1400
+    def test_jahr1_unter_deckel(self):
+        # Jahr 1 (ist_uebernaechstes=False): 20.000 € × 7 % = 1.400 € (unter Deckel)
+        assert R.catala_p35c_sanierung({
+            "sanierungsaufwendungen": 20000, "ist_uebernaechstes_foerderjahr": False}) == 1400
 
-    def test_seed_jahr1_ueber_deckel(self):
-        """Jahr 1: 200000 EUR * 7% = 14000, aber Deckel = 14000 (exakt)."""
-        assert catala_p35c_sanierung({
-            "sanierungsaufwendungen": 200000,
-            "ist_uebernaechstes_foerderjahr": False
-        }) == 14000
+    def test_jahr1_am_deckel(self):
+        # Jahr 1: 200.000 € × 7 % = 14.000 € = Jahreshöchstbetrag (exakt)
+        assert R.catala_p35c_sanierung({
+            "sanierungsaufwendungen": 200000, "ist_uebernaechstes_foerderjahr": False}) == 14000
 
-    def test_seed_jahr3_unter_deckel(self):
-        """Jahr 3 (ist_uebernaechstes=True): 6% bis 12k.
-        20000 EUR * 6% = 1200 EUR (unter Deckel)."""
-        assert catala_p35c_sanierung({
-            "sanierungsaufwendungen": 20000,
-            "ist_uebernaechstes_foerderjahr": True
-        }) == 1200
+    def test_jahr1_ueber_deckel_gekappt(self):
+        # 215.000 € × 7 % = 15.050 € → gekappt auf 14.000 € (BMF Beispiel 10)
+        assert R.catala_p35c_sanierung({
+            "sanierungsaufwendungen": 215000, "ist_uebernaechstes_foerderjahr": False}) == 14000
 
-    def test_seed_jahr3_ueber_deckel(self):
-        """Jahr 3: 200000 EUR * 6% = 12000 EUR (genau Deckel)."""
-        assert catala_p35c_sanierung({
-            "sanierungsaufwendungen": 200000,
-            "ist_uebernaechstes_foerderjahr": True
-        }) == 12000
+    def test_jahr3_unter_deckel(self):
+        # übernächstes Jahr: 20.000 € × 6 % = 1.200 € (unter Deckel)
+        assert R.catala_p35c_sanierung({
+            "sanierungsaufwendungen": 20000, "ist_uebernaechstes_foerderjahr": True}) == 1200
 
-    def test_seed_null(self):
-        """Null-Fall: 0 EUR → 0 EUR."""
-        assert catala_p35c_sanierung({
-            "sanierungsaufwendungen": 0,
-            "ist_uebernaechstes_foerderjahr": False
-        }) == 0
+    def test_jahr3_am_deckel(self):
+        # übernächstes Jahr: 200.000 € × 6 % = 12.000 € = Jahreshöchstbetrag
+        assert R.catala_p35c_sanierung({
+            "sanierungsaufwendungen": 200000, "ist_uebernaechstes_foerderjahr": True}) == 12000
 
-    def test_seed_kleine_summe(self):
-        """Kleine Summe Jahr 1: 10000 EUR * 7% = 700 EUR."""
-        assert catala_p35c_sanierung({
-            "sanierungsaufwendungen": 10000,
-            "ist_uebernaechstes_foerderjahr": False
-        }) == 700
+    def test_null(self):
+        assert R.catala_p35c_sanierung({
+            "sanierungsaufwendungen": 0, "ist_uebernaechstes_foerderjahr": False}) == 0
 
 
 class Test35cEnergieberater:
-    """§35c Energieberater-Sondersatz: 50% flat (kein Jahrestal)."""
+    """catala_p35c_energieberater: 50 % flat (§35c Abs.1 S.4, Abschlussjahr)."""
 
-    def test_seed_1000(self):
-        """1000 EUR * 50% = 500 EUR."""
-        assert catala_p35c_energieberater({
-            "energieberater_aufwendungen": 1000
-        }) == 500
+    def test_1000(self):
+        assert R.catala_p35c_energieberater({"energieberater_aufwendungen": 1000}) == 500
 
-    def test_seed_2000(self):
-        """2000 EUR * 50% = 1000 EUR."""
-        assert catala_p35c_energieberater({
-            "energieberater_aufwendungen": 2000
-        }) == 1000
+    def test_3000(self):
+        # BMF Beispiel 10: 3.000 € Energieberater → 1.500 € (50 %)
+        assert R.catala_p35c_energieberater({"energieberater_aufwendungen": 3000}) == 1500
 
-    def test_seed_null(self):
-        """Null-Fall: 0 EUR → 0 EUR."""
-        assert catala_p35c_energieberater({
-            "energieberater_aufwendungen": 0
-        }) == 0
+    def test_null(self):
+        assert R.catala_p35c_energieberater({"energieberater_aufwendungen": 0}) == 0
 
-    def test_seed_kleine_summe(self):
-        """Kleine Summe: 400 EUR * 50% = 200 EUR."""
-        assert catala_p35c_energieberater({
-            "energieberater_aufwendungen": 400
-        }) == 200
+
+class Test35cJahresdeckel:
+    """catala_p35c_jahresdeckel: min(Sanierung + Energieberater, 14.000/12.000) — Energieberater
+    IST im Jahresdeckel umfasst (BMF Rn. 56 „Jahreshöchstbetrag inklusive Energieberaterkosten")."""
+
+    def test_bmf_beispiel10_kombi_am_deckel(self):
+        # BMF Beispiel 10 VZ 2020: Sanierung 14.000 (gekappt) + Energieberater 1.500 → Deckel 14.000
+        san = R.catala_p35c_sanierung({"sanierungsaufwendungen": 215000, "ist_uebernaechstes_foerderjahr": False})
+        eb = R.catala_p35c_energieberater({"energieberater_aufwendungen": 3000})
+        assert R.catala_p35c_jahresdeckel({
+            "sanierung_ermaessigung": san, "energieberater_ermaessigung": eb,
+            "ist_uebernaechstes_foerderjahr": False}) == 14000
+
+    def test_kombi_unter_deckel_additiv(self):
+        # Beide unter Deckel: 700 (Sanierung 10.000×7 %) + 1.000 (Energieberater 2.000×50 %) = 1.700
+        assert R.catala_p35c_jahresdeckel({
+            "sanierung_ermaessigung": 700, "energieberater_ermaessigung": 1000,
+            "ist_uebernaechstes_foerderjahr": False}) == 1700
+
+    def test_uebernaechstes_deckel_12000(self):
+        # übernächstes Jahr: Deckel 12.000 auch für die Kombination
+        assert R.catala_p35c_jahresdeckel({
+            "sanierung_ermaessigung": 12000, "energieberater_ermaessigung": 1500,
+            "ist_uebernaechstes_foerderjahr": True}) == 12000
