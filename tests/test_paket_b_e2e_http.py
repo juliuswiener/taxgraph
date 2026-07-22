@@ -534,6 +534,10 @@ AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr",
                      "weitere_vorsorgeaufwendungen_partner", "mit_anspruch_auf_zuschuss_partner")
 AN_GESAMT_VERPFLEGUNG = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig",
                          "vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
+AN_GESAMT_UEBERNACHTUNG = ("uebernachtung_kosten_monat", "uebernachtung_monate",
+                          "uebernachtung_monate_bisher", "uebernachtung_im_inland",
+                          "uebernachtung_auswaerts", "uebernachtung_alleinnutzung",
+                          "uebernachtung_keine_lange_unterbrechung")
 AN_GESAMT_KEGEL = [
     ("bruttoarbeitslohn", 4000000),   # 40000 € in Cent (Bindung typ:cent)
     ("veranlagung", "einzel"),
@@ -547,6 +551,10 @@ AN_GESAMT_KEGEL = [
     ("dhf_finanzielle_beteiligung", True), ("dhf_keine_pflicht_dienstwohnung", True),
     # reiner Pendler: keine Verpflegung (alle Tage 0 → Verpflegungs-Abzug 0, Guard irrelevant)
     ("tage_24h", 0), ("tage_an_abreise", 0), ("tage_ueber_8h_eintaegig", 0),
+    # reiner Pendler: keine Übernachtung (Kosten 0 → Übernachtungs-Abzug 0, Guard irrelevant)
+    ("uebernachtung_kosten_monat", 0), ("uebernachtung_monate", 0), ("uebernachtung_monate_bisher", 0),
+    ("uebernachtung_im_inland", True), ("uebernachtung_auswaerts", True),
+    ("uebernachtung_alleinnutzung", True), ("uebernachtung_keine_lange_unterbrechung", True),
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
     ("fam_anzahl_kinder", 0),   # Gap-A-Fix (K2): Pflichtfeld — an_gesamt ohne Kinder-Antwort rechnet nicht
     ("verlustvortrag_bestand", 0),  # Gap-B-Fix (K2): Pflichtfeld — Verlustvortrag gehört in gesamt
@@ -586,7 +594,8 @@ def test_an_gesamt_durchstich(base):
     ids = {q["feld_id"] for q in fr["fragen"]}
     assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
              "kein_sonstige", "fam_anzahl_kinder", "verlustvortrag_bestand"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
-            | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)) == ids
+            | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)
+            | set(AN_GESAMT_UEBERNACHTUNG)) == ids
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
         assert st == 201
@@ -2830,7 +2839,7 @@ def test_graph_uebersicht(base):
     _val("graph", g)
     rids = {k["regel_id"] for k in g["knoten"]}
     assert "p09_entfernungspauschale" in rids
-    assert len(g["knoten"]) == 7          # EP + dHf + Verpflegung + Arbeitsmittel + VOR + GWG + KV/PV
+    assert len(g["knoten"]) == 8          # EP + dHf + Verpflegung + Übernachtung + Arbeitsmittel + VOR + GWG + KV/PV
     # frischer Fall: alle Kanten offen; beide Rollen vertreten
     assert all(k["zustand"] == "offen" for k in g["kanten"])
     assert any(k["rolle"] == "slot" for k in g["kanten"])

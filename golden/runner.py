@@ -183,8 +183,9 @@ def catala_werbungskosten_n(s: dict) -> int:
     (handverifiziert: ESt(WK 0)==ESt(WK 1230)); ein § 9a hier waere doppelter Abzug.
 
     Stufe 1b: Entfernungspauschale (Catala-Modul) + doppelte Haushaltsfuehrung (Python-Andockung
-    _dhf_abzug, Registry-Transkription p9_1_3_nr5). Verpflegung (§ 9 Abs. 4a) und Arbeitsmittel
-    (§ 9 Abs. 1 Nr. 6/7) noch nicht aggregiert -> ihr Vorhandensein sperrt in der Haut den Ring
+    _dhf_abzug, Registry-Transkription p9_1_3_nr5) + Verpflegung (§ 9 Abs. 4a) + Übernachtung
+    (§ 9 Abs. 1 Nr. 5a, _uebernachtung_abzug, Registry-Transkription p9_1_3_nr5a_*). Arbeitsmittel
+    (§ 9 Abs. 1 Nr. 6/7) noch nicht aggregiert -> sein Vorhandensein sperrt in der Haut den Ring
     (Guard, kein stiller 0-Verschluck). Alle EURO. Kein § 9a (der sitzt im Tarif)."""
     wk = 0
     if "entfernung_km_roh" in s:
@@ -193,6 +194,8 @@ def catala_werbungskosten_n(s: dict) -> int:
         wk += _dhf_abzug(s, s["veranlagungszeitraum"])
     if any(k in s for k in ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig")):
         wk += _verpflegung_abzug(s, s["veranlagungszeitraum"])
+    if "uebernachtung_kosten_monat" in s:
+        wk += _uebernachtung_abzug(s, s["veranlagungszeitraum"])
     # eigenes Paket: + Arbeitsmittel-AfA (mehrjährig)
     return wk
 
@@ -252,6 +255,25 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
     return (int(s.get("tage_24h", 0)) * p["pauschale_24h"]
             + int(s.get("tage_an_abreise", 0)) * p["pauschale_an_abreise"]
             + int(s.get("tage_ueber_8h_eintaegig", 0)) * p["pauschale_ab_8h"])
+
+
+def _uebernachtung_abzug(s: dict, year: int) -> int:
+    """§ 9 Abs. 1 S. 3 Nr. 5a EStG — abziehbare Übernachtungskosten bei Auswärtstätigkeit, EURO.
+    WÖRTLICHE Transkription der Registry-Regeln p9_1_3_nr5a_uebernachtung_vor_48 / _nach_48:
+    Zeitraum VOR Ablauf der 48 Monate (uebernachtung_monate_bisher < 48) → tatsächliche Kosten
+    ungekappt (Satz 1-3): kosten × monate. NACH Ablauf (>= 48) → Kappung auf den Nr.-5-Betrag
+    (Satz 4 via Verweis, 1.000 EUR/Monat Inland aus params/<vz>/dhf_p9_1_nr5.yaml):
+    min(kosten, 1.000) × monate. Der Ring-Guard stellt sicher, dass der Zeitraum NICHT die
+    48-Monats-Schwelle überspannt (p9_1_3_nr5a_uebernachtung: zeitraum_ohne_schwellenuebertritt)
+    und Inland ist (Ausland-2.000er-Grenze zurückgestellt). KOPPLUNG: bei Änderung der Registry-
+    Regeln p9_1_3_nr5a_* diese Formel nachziehen."""
+    kosten = int(s.get("uebernachtung_kosten_monat", 0))
+    monate = int(s.get("uebernachtung_monate", 0))
+    bisher = int(s.get("uebernachtung_monate_bisher", 0))
+    if bisher >= 48:
+        cap = _dhf_params(year)["cap_monat_inland"]
+        return min(kosten, cap) * monate
+    return kosten * monate
 
 
 def catala_vermietung_einkuenfte(s: dict) -> int:

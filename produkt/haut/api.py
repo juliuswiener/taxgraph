@@ -68,6 +68,16 @@ DHF_KOSTEN = "dhf_unterkunftskosten_monat"
 DHF_RING = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland")
 DHF_BEDINGUNGEN = ("dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
                    "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
+# Stufe 1b — Übernachtung Auswärtstätigkeit (§ 9 Abs. 1 S. 3 Nr. 5a): 3 Ring-Inputs (Kosten/Monat,
+# Monate, bisherige Monate am Ort für die 48-Monats-Schwelle) + Inland-Flag + 3 Tatbestands-
+# Bedingungen. Abzug greift NUR wenn Inland, alle 3 bestätigt-true UND der Zeitraum die 48-Monats-
+# Schwelle nicht überspannt; Ausland → ausland_uebernachtung_nicht_ring_faehig, offener Tatbestand
+# → uebernachtung_tatbestand_offen, Schwellenübertritt → uebernachtung_zeitraum_offen (kein Fake-0).
+UEBERNACHTUNG_KOSTEN = "uebernachtung_kosten_monat"
+UEBERNACHTUNG_RING = ("uebernachtung_kosten_monat", "uebernachtung_monate",
+                      "uebernachtung_monate_bisher", "uebernachtung_im_inland")
+UEBERNACHTUNG_BEDINGUNGEN = ("uebernachtung_auswaerts", "uebernachtung_alleinnutzung",
+                             "uebernachtung_keine_lange_unterbrechung")
 # Front 2 — Zusammenveranlagung (§ 26b, Splitting). Partner-Pflichtfelder + Partner-VOR. Nur bei
 # veranlagung=zusammen relevant: der Ring rechnet dann catala_est_zusammen (§9a je Person + Splitting
 # im Scope). MVP: Person B ohne gesonderte WK (wk_b=0), ohne VOR (Partner-VOR sperrt via Guard).
@@ -280,6 +290,7 @@ SCHEIBEN = {
     "an_gesamt": {
         "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER + KV_PV_FELDER
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
+                   + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN
                    + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER
                    + ("fam_anzahl_kinder", "verlustvortrag_bestand")),
         # Pflicht-Kegel = einzel-Basis (inkl. Verpflegungs-TAGE; die Reduktions-Guard-Felder prüft
@@ -312,7 +323,8 @@ SCHEIBEN = {
                    + GESAMT_33B + GESAMT_33B_PARTNER
                    + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
-                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b + §35c + §10 Abs.1a Realsplitting + §9-dHf/Verpflegung (B1, gemischt §19) OPTIONAL
+                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
+                   + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b + §35c + §10 Abs.1a Realsplitting + §9-dHf/Verpflegung (B1) + §9-Übernachtung (A5, gemischt §19) OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -620,7 +632,18 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     and f.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True):
                 for t in VERPFLEGUNG_TAGE:
                     wk_input[t] = _cent(t)
-            wk = runner.catala_werbungskosten_n(wk_input)   # Person A: EP + dHf + Verpflegung, roh
+            # Übernachtung Auswärtstätigkeit (Stufe 1b, § 9 Abs. 1 Nr. 5a): NUR bei Inland, allen 3
+            # Tatbestands-Bedingungen bestätigt-true UND ohne 48-Monats-Schwellenübertritt (der Guard
+            # sperrt sonst); der Accessor kappt nach-48 auf 1.000/Monat. Kosten = cent, Monate = Anzahl.
+            _ub_bisher = _cent("uebernachtung_monate_bisher")
+            _ub_monate = _cent("uebernachtung_monate")
+            if (_cent(UEBERNACHTUNG_KOSTEN) > 0 and f.get("uebernachtung_im_inland", {}).get("wert") is True
+                    and all(f.get(b, {}).get("wert") is True for b in UEBERNACHTUNG_BEDINGUNGEN)
+                    and not (_ub_bisher < 48 < _ub_bisher + _ub_monate)):
+                wk_input["uebernachtung_kosten_monat"] = _cent(UEBERNACHTUNG_KOSTEN) // 100   # cent -> euro
+                wk_input["uebernachtung_monate"] = _ub_monate
+                wk_input["uebernachtung_monate_bisher"] = _ub_bisher
+            wk = runner.catala_werbungskosten_n(wk_input)   # Person A: EP + dHf + Verpflegung + Übernachtung, roh
             # § 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge (Pflicht-Kegel Person A, Gesamt-Parität, Over-tax-Fix):
             # eigener Abs.4-Höchstbetrag (1900/2800), additiv, GETRENNT von der VOR-Basisvorsorge unten.
             kv_pv_a = runner.catala_p10_kv_pv({
@@ -796,6 +819,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     and f.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True):
                 for t in VERPFLEGUNG_TAGE:
                     gesamt_wk_input[t] = _c(t)
+            # Übernachtung Auswärtstätigkeit (B1/A5, § 9 Abs. 1 Nr. 5a): Parität an_gesamt — NUR bei
+            # Inland, allen 3 Bedingungen bestätigt-true UND ohne 48-Monats-Schwellenübertritt (Guard
+            # sperrt sonst); Accessor kappt nach-48 auf 1.000/Monat. Kosten = cent, Monate = Anzahl.
+            _ub_bisher = _c("uebernachtung_monate_bisher")
+            _ub_monate = _c("uebernachtung_monate")
+            if (_c(UEBERNACHTUNG_KOSTEN) > 0 and f.get("uebernachtung_im_inland", {}).get("wert") is True
+                    and all(f.get(b, {}).get("wert") is True for b in UEBERNACHTUNG_BEDINGUNGEN)
+                    and not (_ub_bisher < 48 < _ub_bisher + _ub_monate)):
+                gesamt_wk_input["uebernachtung_kosten_monat"] = _c(UEBERNACHTUNG_KOSTEN) // 100    # cent -> euro
+                gesamt_wk_input["uebernachtung_monate"] = _ub_monate
+                gesamt_wk_input["uebernachtung_monate_bisher"] = _ub_bisher
             ns_wk = runner.catala_werbungskosten_n(gesamt_wk_input)
             ns = runner.catala_einkuenfte_nichtselbststaendig({
                 "veranlagungszeitraum": vz,
@@ -1562,6 +1596,21 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                     and felder.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True)
             if not safe:
                 return "verpflegung_reduktion_offen"
+        # Übernachtung Auswärtstätigkeit (§ 9 Abs. 1 Nr. 5a): Kosten > 0 → Ring nur fähig bei Inland,
+        # allen 3 Tatbestands-Bedingungen bestätigt UND ohne 48-Monats-Schwellenübertritt. Ausland /
+        # offener Tatbestand (inkl. UNSET Inland, fail-closed) / überspannender Zeitraum sperren.
+        if _positiv(UEBERNACHTUNG_KOSTEN):
+            if felder.get("uebernachtung_im_inland", {}).get("wert") is False:
+                return "ausland_uebernachtung_nicht_ring_faehig"
+            if (felder.get("uebernachtung_im_inland", {}).get("wert") is not True
+                    or any((felder.get(b) or {}).get("zustand") != "bestaetigt" for b in UEBERNACHTUNG_BEDINGUNGEN)):
+                return "uebernachtung_tatbestand_offen"
+            bisher = felder.get("uebernachtung_monate_bisher", {}).get("wert")
+            monate = felder.get("uebernachtung_monate", {}).get("wert")
+            if (isinstance(bisher, int) and not isinstance(bisher, bool)
+                    and isinstance(monate, int) and not isinstance(monate, bool)
+                    and bisher < 48 < bisher + monate):
+                return "uebernachtung_zeitraum_offen"
         return None
     # Partner-Behinderungsfeld (§ 33b Person B) ohne Zusammenveranlagung: benannte Inkonsistenz
     # (dev-2s partner_check, Spiegel zu partner_kegel_offen). Universell VOR der Scheiben-Verzweigung —

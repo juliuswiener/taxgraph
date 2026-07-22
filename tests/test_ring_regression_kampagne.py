@@ -535,3 +535,97 @@ def test_b1_verpflegung_senkt_steuer_gesamt(base):
         assert 40000 <= delta <= 85000, f"Verpflegung gesamt delta={delta} nicht in [40000,85000]"
     else:
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
+# ===================== A5: § 9 Abs. 1 S. 3 Nr. 5a Übernachtung im gesamt-Ring =====================
+# Dritte §9-WK-Art (nach dHf/Verpflegung) im gesamt-Ring: tatsächliche Übernachtungskosten bei
+# Auswärtstätigkeit. Beweist Erreichbarkeit (POST 201) + Durchgriff (catala_werbungskosten_n), die
+# Satz-4-Kappung nach 48 Monaten (Under-tax-Wächter: monate_bisher muss durch den Ring fließen),
+# und fail-closed bei Ausland / überspannendem 48-Monats-Zeitraum.
+
+# Übernachtung Inland gültig, vor 48 Monaten: 1.000 €/Monat × 12 = 12.000 € Roh-WK (ungekappt).
+UEBERNACHTUNG_GESAMT_VALID = [
+    ("uebernachtung_kosten_monat", 100000), ("uebernachtung_monate", 12),
+    ("uebernachtung_monate_bisher", 10), ("uebernachtung_im_inland", True),
+    ("uebernachtung_auswaerts", True), ("uebernachtung_alleinnutzung", True),
+    ("uebernachtung_keine_lange_unterbrechung", True),
+]
+
+
+def _ueb(bisher, kosten=200000, monate=12):
+    """Übernachtungs-Kegelteil; bisher steuert vor/nach 48 (Kappung), kosten in Cent (2.000 €/Monat)."""
+    return [("uebernachtung_kosten_monat", kosten), ("uebernachtung_monate", monate),
+            ("uebernachtung_monate_bisher", bisher), ("uebernachtung_im_inland", True),
+            ("uebernachtung_auswaerts", True), ("uebernachtung_alleinnutzung", True),
+            ("uebernachtung_keine_lange_unterbrechung", True)]
+
+
+def test_a5_uebernachtung_senkt_steuer_gesamt(base):
+    """gesamt-Ring, 200k Lohn + gültige Übernachtung (12.000 € Roh-WK statt Pauschbetrag 1.230 €):
+    einkuenfte_nichtselbststaendig sinkt um 10.770 € → tax progressiv (~4.523 € bei 42 %). Beweist
+    Erreichbarkeit (POST 201, nicht 400) + Übernachtungs-Durchgriff im gesamt-WK. Ohne A5 wäre Δ=0."""
+    catala = _catala_da()
+    _ges_anlegen(base, "a5ueb_o", GESAMT_AN_KEGEL)
+    st, ohne = _req(base, "GET", "/fall/a5ueb_o/ergebnis")
+    _val("ergebnis", ohne)
+    _ges_anlegen(base, "a5ueb_m", GESAMT_AN_KEGEL + UEBERNACHTUNG_GESAMT_VALID)
+    st, mit = _req(base, "GET", "/fall/a5ueb_m/ergebnis")
+    _val("ergebnis", mit)
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt", \
+            f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
+        delta = ohne["zahl_cent"] - mit["zahl_cent"]
+        # Δeinkünfte = 12000 − 1230 = 10770 €; × 42 % ≈ 4523 € = 452340 ct.
+        assert 430000 <= delta <= 475000, f"Übernachtung gesamt delta={delta} nicht in [430000,475000]"
+    else:
+        assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
+def test_a5_uebernachtung_ausland_haelt_offen_gesamt(base):
+    """gesamt-Ring + uebernachtung_im_inland=False → der SHARED Guard sperrt fail-closed
+    (ausland_uebernachtung_nicht_ring_faehig, zahl_cent=null). K2: kein stiller Über-Abzug (2.000er-
+    Auslandsgrenze ist außerhalb dieser Scheibe)."""
+    kegel = GESAMT_AN_KEGEL + [
+        ("uebernachtung_kosten_monat", 100000), ("uebernachtung_monate", 12),
+        ("uebernachtung_monate_bisher", 10), ("uebernachtung_im_inland", False),
+        ("uebernachtung_auswaerts", True), ("uebernachtung_alleinnutzung", True),
+        ("uebernachtung_keine_lange_unterbrechung", True)]
+    _ges_anlegen(base, "a5ausl", kegel)
+    st, erg = _req(base, "GET", "/fall/a5ausl/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "ausland_uebernachtung_nicht_ring_faehig", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] is None
+
+
+def test_a5_uebernachtung_zeitraum_offen_gesamt(base):
+    """gesamt-Ring + Übernachtungs-Zeitraum überspannt die 48-Monats-Schwelle (bisher=40, monate=12 →
+    40<48<52). Die Einzel-Regel (_vor_48 / _nach_48) kann den gemischten Zeitraum nicht kappen → der
+    Guard sperrt fail-closed (uebernachtung_zeitraum_offen). K2: kein still-ungekappter Über-Abzug."""
+    kegel = GESAMT_AN_KEGEL + _ueb(40)
+    _ges_anlegen(base, "a5span", kegel)
+    st, erg = _req(base, "GET", "/fall/a5span/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "uebernachtung_zeitraum_offen", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] is None
+
+
+def test_a5_uebernachtung_nach_48_kappung_gesamt(base):
+    """gesamt-Ring: 2.000 €/Monat Übernachtung. VOR 48 (bisher=10) → 24.000 € Roh-WK ungekappt; NACH 48
+    (bisher=48) → Satz-4-Kappung min(2.000,1.000)×12 = 12.000 €. Der nach-48-Fall MUSS mehr Steuer haben
+    (12.000 € weniger Abzug ≈ 5.040 € Δtax bei 42 %). K2-Wächter: ein vergessenes monate_bisher-Wiring
+    rechnete beide ungekappt = stiller Under-tax nach 48 Monaten."""
+    catala = _catala_da()
+    _ges_anlegen(base, "a5vor48", GESAMT_AN_KEGEL + _ueb(10))
+    st, vor = _req(base, "GET", "/fall/a5vor48/ergebnis")
+    _val("ergebnis", vor)
+    _ges_anlegen(base, "a5nach48", GESAMT_AN_KEGEL + _ueb(48))
+    st, nach = _req(base, "GET", "/fall/a5nach48/ergebnis")
+    _val("ergebnis", nach)
+    if catala:
+        assert vor["grund"] == "bestaetigt" and nach["grund"] == "bestaetigt", \
+            f"vor={vor.get('grund')} nach={nach.get('grund')}"
+        delta = nach["zahl_cent"] - vor["zahl_cent"]
+        # (24000−12000)=12000 € weniger Abzug nach 48; × 42 % ≈ 5040 € = 504000 ct.
+        assert 470000 <= delta <= 540000, f"nach-48-Kappung delta={delta} nicht in [470000,540000]"
+    else:
+        assert vor["zahl_cent"] is None or nach["zahl_cent"] is None

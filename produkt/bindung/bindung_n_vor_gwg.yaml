@@ -392,6 +392,135 @@ bindungen:
       zitatanker: "an dem der Arbeitnehmer ohne Übernachtung außerhalb"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
 
+  # =============== Übernachtung Auswärtstätigkeit — p9_1_3_nr5a_uebernachtung_nach_48 (A5) ===============
+  # § 9 Abs. 1 S. 3 Nr. 5a: tatsächliche Übernachtungskosten bei beruflich veranlasster Auswärtstätigkeit
+  # (Tätigkeitsstätte ≠ erste Tätigkeitsstätte). Der Ring (runner._uebernachtung_abzug) rechnet vor/nach
+  # 48 Monaten: monate_bisher_am_ort >= 48 → Kappung auf den Nr.-5-Betrag (1.000 €/Monat Inland), sonst
+  # ungekappter Ansatz. Gebunden an _nach_48 (identische Signatur zu _vor_48, trägt zusätzlich die
+  # Inland-Geltungsbedingung); die binäre 48er-Zeitraum-Auswahl selbst = benannte Lücke (Ring materialisiert
+  # sie aus monate_bisher_am_ort). Ausland (2.000er-Grenze) außerhalb dieser Scheibe — Guard sperrt fail-closed.
+  - feld_id: uebernachtung_kosten_monat
+    quelle: {regel_id: p9_1_3_nr5a_uebernachtung_nach_48, signatur_slot: uebernachtungskosten_monat}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Was zahlst du im Monat für deine Übernachtung am auswärtigen Arbeitsort?"
+    hilfe_kurz: "Tatsächliche Kosten für die Unterkunft, in der du bei auswärtiger Arbeit übernachtest. Bei gemeinsamer Nutzung nur dein eigener Anteil."
+    beispielwert: 80000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Reisekosten-Übernachtung; im Vordruck kein eigenes Jahres-Monats-Betragsfeld (Sammelposition Reisekosten bei Auswärtstätigkeit). Ring-Input, keine 1:1-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 2 EStG"
+      zitatanker: "Übernachtungskosten sind die tatsächlichen Aufwendungen für die persönliche Inanspruchnahme einer Unterkunft zur Übernachtung"
+      datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
+  - feld_id: uebernachtung_monate
+    quelle: {regel_id: p9_1_3_nr5a_uebernachtung_nach_48, signatur_slot: monate}
+    typ: int
+    einheit: Monate
+    bereich: {min: 0, max: 12, grund: "Kalendermonate im Veranlagungszeitraum mit auswärtiger Übernachtung."}
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In wie vielen Monaten dieses Jahres bist du am auswärtigen Arbeitsort untergebracht gewesen?"
+    hilfe_kurz: "Volle Monate zählen. Die monatlichen Kosten werden mit dieser Anzahl multipliziert."
+    beispielwert: 12
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zeitraum-Bezug der Monatsrechnung; im Vordruck kein eigenes Monats-Feld (Ring rechnet Kosten × Monate)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 4 EStG"
+      zitatanker: "bis zur Höhe des Betrags nach Nummer 5"
+      datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
+  - feld_id: uebernachtung_monate_bisher
+    quelle: {regel_id: p9_1_3_nr5a_uebernachtung_nach_48, signatur_slot: monate_bisher_am_ort}
+    typ: int
+    einheit: Monate
+    bereich: {min: 0, max: 600, grund: "Kumulierte Monate der Tätigkeit am selben auswärtigen Ort (48-Monats-Schwelle Satz 4)."}
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Seit wie vielen Monaten arbeitest du schon an genau diesem auswärtigen Ort?"
+    hilfe_kurz: "Nach 48 Monaten am selben Ort sind die Übernachtungskosten auf 1.000 Euro im Monat begrenzt (Inland)."
+    beispielwert: 10
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "48-Monats-Frist-Input; im Vordruck kein eigenes Monats-Feld (Frist prüft der Ring)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 4 EStG"
+      zitatanker: "Nach Ablauf von 48 Monaten einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte"
+      datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
+  - feld_id: uebernachtung_im_inland
+    quelle: {regel_id: p9_1_3_nr5a_uebernachtung_nach_48, geltungsbedingung: unterkunft_im_inland}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Liegt die auswärtige Unterkunft in Deutschland?"
+    hilfe_kurz: "Bei einer Unterkunft im Ausland gelten andere Grenzen."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Inland/Ausland-Fallunterscheidung der Kappung; kein eigenes Ja/Nein-Deklarationsfeld (Ort ergibt sich aus dem Beleg)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 4 EStG"
+      zitatanker: "höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland"
+      datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
+  - feld_id: uebernachtung_auswaerts
+    quelle: {regel_id: p9_1_3_nr5a_uebernachtung_nach_48, geltungsbedingung: erste_taetigkeitsstaette_liegt_nicht_am_ort}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "War der Übernachtungsort ein auswärtiger Arbeitsort und nicht deine feste Arbeitsstelle?"
+    hilfe_kurz: "Zum Beispiel eine Montage, Baustelle oder ein längerer Einsatz weg von deiner normalen Arbeitsstelle."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 1 EStG"
+      zitatanker: "an einer Tätigkeitsstätte, die nicht erste Tätigkeitsstätte ist"
+      datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
+  - feld_id: uebernachtung_alleinnutzung
+    quelle: {regel_id: p9_1_3_nr5a_uebernachtung_nach_48, geltungsbedingung: kosten_bei_alleiniger_nutzung}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Sind die eingetragenen Kosten nur dein eigener Anteil (falls du die Unterkunft mit anderen geteilt hast)?"
+    hilfe_kurz: "Wenn du die Unterkunft mit betriebsfremden Personen geteilt hast, zählt nur, was du bei alleiniger Nutzung gezahlt hättest."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein) zur Kostenbegrenzung, kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 3 EStG"
+      zitatanker: "die bei alleiniger Nutzung durch den Arbeitnehmer angefallen wären"
+      datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
+  - feld_id: uebernachtung_keine_lange_unterbrechung
+    quelle: {regel_id: p9_1_3_nr5a_uebernachtung_nach_48, geltungsbedingung: keine_unterbrechung_mit_neubeginn}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "War deine Tätigkeit an diesem Ort ohne eine Pause von mindestens sechs Monaten am Stück?"
+    hilfe_kurz: "Eine Unterbrechung von mindestens sechs Monaten lässt die Frist neu beginnen."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein) zur Neubeginn-Regel, kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 5 EStG"
+      zitatanker: "wenn die Unterbrechung mindestens sechs Monate dauert"
+      datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
+
   # ========================= Arbeitsmittel — p9_1_3_nr6_7_arbeitsmittel_afa =========================
   - feld_id: am_anschaffungskosten
     quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, signatur_slot: anschaffungskosten}
@@ -678,6 +807,9 @@ luecken:
   - regel_id: p9_4a_verpflegungsmehraufwand
     geltungsbedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
     grund: "Wird durch die Kombination der Felder vpf_mit_uebernachtung + vpf_abwesenheit_stunden abgedeckt; keine eigene Abfrage (Mitternachtsregel rechnet die Regel)."
+  - regel_id: p9_1_3_nr5a_uebernachtung_nach_48
+    geltungsbedingung: zeitraum_vollstaendig_nach_48_monate
+    grund: "Binäre Zeitraum-Auswahl vor/nach 48 Monaten; der Ring (runner._uebernachtung_abzug) materialisiert sie deterministisch aus monate_bisher_am_ort (>= 48 → Kappung auf den Nr.-5-Betrag, sonst ungekappt). Keine eigene Laien-Abfrage; überspannende Zeiträume (bisher<48<bisher+monate) sperrt der Guard fail-closed (uebernachtung_zeitraum_offen)."
   - regel_id: p9_1_3_nr6_7_arbeitsmittel_afa
     signatur_slot: nutzungsdauer_jahre
     grund: "AfA-Zweig (§ 7, Verteilung über die Nutzungsdauer > 800 Euro); Anker liegt im §7-AfA-Freeze, Bindung im AfA-Scheiben-Nachtrag."

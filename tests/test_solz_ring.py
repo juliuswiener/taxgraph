@@ -133,6 +133,9 @@ AN_KEGEL_BASIS = [
     ("dhf_beruflich_veranlasst", True), ("dhf_eigener_hausstand", True),
     ("dhf_finanzielle_beteiligung", True), ("dhf_keine_pflicht_dienstwohnung", True),
     ("tage_24h", 0), ("tage_an_abreise", 0), ("tage_ueber_8h_eintaegig", 0),
+    ("uebernachtung_kosten_monat", 0), ("uebernachtung_monate", 0), ("uebernachtung_monate_bisher", 0),
+    ("uebernachtung_im_inland", True), ("uebernachtung_auswaerts", True),
+    ("uebernachtung_alleinnutzung", True), ("uebernachtung_keine_lange_unterbrechung", True),
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
     ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
 ]
