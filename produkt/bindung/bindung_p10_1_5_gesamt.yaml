@@ -45,11 +45,8 @@ bindungen:
 luecken:
   # -- Kinderbetreuung: Kindqualifikation ist externe Gatekeeping (§ 32, altersgerecht unter 14, etc.) --
   - regel_id: p10_1_5_kinderbetreuung
-    geltungsbedingung: kind_unter_14_oder_behindert
-    grund: "Kind-Qualifikation (§ 10 Abs. 1 Nr. 5 S. 1: 'unter 14' oder 'wegen ... Behinderung außerstande') wird vorgelagert überprüft (§ 32 Abs. 1-Geltung); keine Laien-Abfrage hier (Gate-Audit in der Ring/UI)."
+    geltungsbedingung: kind_unter_14_haushaltszugehoerig
+    grund: "Kind-Qualifikation (§ 10 Abs. 1 Nr. 5 S. 1: 'unter 14 Jahre' + haushaltszugehörig, bzw. Behinderung) wird vorgelagert überprüft (§ 32-Geltung / Ring-Gate); keine Laien-Abfrage hier. Ausschluss Unterricht/Sport (S. 2) + Form Rechnung/unbare Zahlung (S. 4) im Fragetext/Beleg-Writer adressiert."
   - regel_id: p10_1_5_kinderbetreuung
-    geltungsbedingung: aufwendungen_enthalten_keine_unterricht_sportfreizeitbetraegungen
-    grund: "Ausschluss (§ 10 Abs. 1 Nr. 5 S. 2: 'nicht für Unterricht, Vermittlung besonderer Fähigkeiten, sportliche Freizeittätigkeiten') wird im Fragetext adressiert ('nur Betreuungskosten'; Annahme materialisiert); keine formale Gate-Abfrage."
-  - regel_id: p10_1_5_kinderbetreuung
-    geltungsbedingung: rechnung_und_unbare_zahlung
-    grund: "Formvoraussetzung (§ 10 Abs. 1 Nr. 5 S. 4: 'Rechnung erhalten' + 'Zahlung auf Konto des Erbringers') wird im Beleg-Writer behandelt (Verifikation); kein Laien-Feld."
+    geltungsbedingung: achtzig_prozent_deckel_4800_je_kind
+    grund: "80%-Quote + 4.800€-je-Kind-Deckel (§ 10 Abs. 1 Nr. 5 S. 1) sind im pure-python Accessor catala_p10_1_5_kinderbetreuung materialisiert (Rechenlogik, keine Laien-Abfrage)."
