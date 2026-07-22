@@ -513,7 +513,8 @@ def catala_p16_4_freibetrag(s: dict) -> int:
     Freibetrag (ungecappt) — der Aufrufer floort den steuerbaren Rest bei 0 (max(0, vg − fb); § 16 Abs. 4 „soweit
     nicht übersteigt", FB > vg erzeugt keinen Verlust). Read-Key rentner_veraeusserungsgewinn (feld_id 1:1
     dev-2-Binding, NICHT bare veraeusserungsgewinn = § 8b-KStG-Kollision) → Modul-Slot veraeusserungsgewinn_in.
-    Alters-55/Behinderung-Gate (§ 16 Abs. 4 S. 1) + einmal-je-Leben (S. 2) = Backlog (MVP gewährt den FB stets)."""
+    Alters-55/Behinderung-Gate (§ 16 Abs. 4 S. 1) + einmal-je-Leben (S. 2) = fail-closed in api.py (_sperrgrund),
+    Felder rentner_alter_55_oder_berufsunfaehig + rentner_freibetrag_erstmalig."""
     r = BF.betriebs_freibetrag(BF.BetriebsFreibetragIn(
         veraeusserungsgewinn_in=Money(f"{int(s.get('rentner_veraeusserungsgewinn', 0))}.00")))
     return int(r.freibetrag) // 100

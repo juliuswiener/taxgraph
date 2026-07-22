@@ -842,7 +842,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None, vg=0,
              gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
              gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
-             geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False):
+             geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False,
+             p16_alter_55=True, p16_erstmalig=True):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
     (bestätigte Null) — + veranlagung + Flags. kein_vuv=false wenn V+V vorhanden, kein_kap=false wenn Kapital.
@@ -880,6 +881,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
         k.append(("gwg_anschaffungskosten_netto" if _i == 1 else f"gwg_anschaffungskosten_netto__{_i}", _netto))
     if vg:                                          # § 16 Veräußerungsgewinn im gesamt-Ring (Non-Rentner-§16-vg, REUSE-Feld)
         k.append(("rentner_veraeusserungsgewinn", vg))
+        k.append(("rentner_alter_55_oder_berufsunfaehig", p16_alter_55))
+        k.append(("rentner_freibetrag_erstmalig", p16_erstmalig))
     if gewst_messbetrag:                            # § 35 GewSt-Anrechnung (S1, opt-in): Messbetrag (cent) + Hebesatz (%)
         k.append(("gewst_messbetrag", gewst_messbetrag))
     if gewst_hebesatz:
@@ -2256,7 +2259,8 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
                    geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False,
                    vor_an=0, vor_ag=0, vor_rv_ausserhalb=0, basis_kv_pv=0, weitere_kv_pv=0,
-                   mit_anspruch_zuschuss=False):
+                   mit_anspruch_zuschuss=False,
+                   p16_alter_55=True, p16_erstmalig=True):
     """rentner_gesamt-Kegel: § 22 (renten_art/jahresrente Cent/beginn/alter) + § 33b-Block + Flags
     (kein_sonstige=False = Rente IST § 22-sonstige; kein_kap/vuv=True). rentenfreibetrag (Cent) nur
     aa-Folgejahr; Partner-Behinderung + Partner-Rente (renten_art_partner gesetzt) nur zusammen (#4b).
@@ -2292,6 +2296,8 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
         k.append(("verlustvortrag_bestand", verlustvortrag_bestand))
     if vg:                                          # § 16 Veräußerungsgewinn (2-I, optional)
         k.append(("rentner_veraeusserungsgewinn", vg))
+        k.append(("rentner_alter_55_oder_berufsunfaehig", p16_alter_55))
+        k.append(("rentner_freibetrag_erstmalig", p16_erstmalig))
     for _mf, _mv in (("gewinnanteil", gewinnanteil), ("verguetung_taetigkeit", verg_taetigkeit),  # § 15 Nr. 2 Mitunternehmer (cent, opt.)
                      ("verguetung_darlehen", verg_darlehen), ("verguetung_ueberlassung", verg_ueberlassung)):
         if _mv:

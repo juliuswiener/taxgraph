@@ -923,3 +923,61 @@ def test_kist_ohne_konfession_null(base):
     _val("ergebnis", erg)
     assert erg["grund"] == "bestaetigt"
     assert erg["kist_cent"] == 0, f"kist_cent={erg['kist_cent']}"
+
+
+# ---- § 16 Abs. 4: Veräußerungsfreibetrag fail-closed gaten (Under-tax-Fix) ----
+
+_RENTNER_KEGEL_VG_BASIS = [
+    (f, (False if f == "kein_gewinn" else w)) for f, w in RENTNER_KEGEL_HOCH
+] + [
+    ("rentner_veraeusserungsgewinn", 8000000),           # 80.000 €, FB = 45.000 € (≤ 136k), netto = 35.000 €
+    ("rentner_veraeusserungs_betriebsart", "gewerbe"),
+]
+
+
+def test_p16_4_gate_sperrt_ohne_bedingungen(base):
+    """vg > 0 ohne gate-Felder → p16_4_gate_offen (fail-closed, kein stiller FB)."""
+    _rent_anlegen(base, "p16a", _RENTNER_KEGEL_VG_BASIS)
+    st, erg = _req(base, "GET", "/fall/p16a/ergebnis")
+    assert st == 200
+    assert erg["grund"] == "p16_4_gate_offen", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] is None
+
+
+def test_p16_4_gate_sperrt_bei_alter_false(base):
+    """vg > 0 + alter_55=False + erstmalig=True → sperr (S.1 nicht erfüllt)."""
+    k = list(_RENTNER_KEGEL_VG_BASIS) + [("rentner_alter_55_oder_berufsunfaehig", False),
+                                          ("rentner_freibetrag_erstmalig", True)]
+    _rent_anlegen(base, "p16b", k)
+    st, erg = _req(base, "GET", "/fall/p16b/ergebnis")
+    assert erg["grund"] == "p16_4_gate_offen", f"grund={erg.get('grund')}"
+
+
+def test_p16_4_gate_durchlaesst_mit_bedingungen(base):
+    """vg > 0 + alter_55=True + erstmalig=True → bestaetigt, FB greift (zahl_cent > baseline)."""
+    # Baseline ohne vg
+    _rent_anlegen(base, "p16c0", RENTNER_KEGEL_HOCH)
+    st, e0 = _req(base, "GET", "/fall/p16c0/ergebnis")
+    _val("ergebnis", e0)
+    assert e0["grund"] == "bestaetigt"
+    z0 = e0["zahl_cent"]
+    # vg + beide Bedingungen → bestaetigt
+    k = list(_RENTNER_KEGEL_VG_BASIS) + [("rentner_alter_55_oder_berufsunfaehig", True),
+                                          ("rentner_freibetrag_erstmalig", True)]
+    _rent_anlegen(base, "p16c1", k)
+    st, e1 = _req(base, "GET", "/fall/p16c1/ergebnis")
+    _val("ergebnis", e1)
+    assert e1["grund"] == "bestaetigt", f"grund={e1.get('grund')}"
+    assert e1["zahl_cent"] > z0, "vg+FB muss ESt erhöhen (netto 35k€ zusätzlich)"
+    diff = e1["zahl_cent"] - z0
+    # Plausibilität: max Grenzsteuer 45% × 35.000 € = 15.750 €; 35k bei 0% = 0
+    assert 0 < diff < 1575000, f"Delta {diff} außerhalb plausibler Band (0–15.750 €)"
+
+
+def test_p16_4_gate_ignoriert_ohne_vg(base):
+    """vg = 0 → Gate nicht aktiv (grund=bestaetigt)."""
+    _rent_anlegen(base, "p16d", RENTNER_KEGEL_HOCH)
+    st, erg = _req(base, "GET", "/fall/p16d/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt"
+    assert isinstance(erg["zahl_cent"], int)
