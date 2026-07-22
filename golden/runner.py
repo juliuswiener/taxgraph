@@ -624,6 +624,18 @@ def catala_p10_1_5_kinderbetreuung(s: dict) -> int:
     return abzug_pro_kind * anzahl
 
 
+# -- §10 Abs.1a Nr.1 EStG Realsplitting (Unterhalt Ex-Ehegatte). EURO. -----------
+# Pure-Python aus verified_bedingt Snapshot (p10_1a_realsplitting.json).
+# 4 pipeline-seeds fidel. Abzug = min(unterhaltsleistungen, 13.805 + kv_pv_beitraege).
+def catala_p10_1a_realsplitting(s: dict) -> int:
+    """§10 Abs.1a Nr.1 EStG — Realsplitting, Unterhalt Ex-Ehegatte bis 13.805€ + KV/PV.
+    Accessor nimmt EUROS. Seeds: 10k/0→10k, 15k/0→13805, 15k/2k→15k, 20k/0→13805."""
+    unterhaltsleistungen = int(s.get("unterhaltsleistungen", 0))
+    kv_pv_beitraege = int(s.get("kv_pv_beitraege", 0))
+    deckel = 13805 + kv_pv_beitraege
+    return min(unterhaltsleistungen, deckel)
+
+
 # -- §32b EStG Progressionsvorbehalt (Abs.1 Nr.1 Lohnersatz). EURO. -----------------
 # Pure-Python aus verified_bedingt Snapshot (p32b_progressionsvorbehalt.json).
 # 3 pipeline-seeds fidel. Besonderer Steuersatz = est_auf_erhoehte / erhoehte, applied

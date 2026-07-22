@@ -1,0 +1,74 @@
+# Bindungstabelle — §10 Abs.1a Nr.1 EStG Realsplitting (Unterhalt Ex-Ehegatte, Stufe-1, Tier-0).
+# MVP: Kz null (XSD-Sektion unklar — Sonderausgaben Cross-Ref mit Ehegatten-Slots nötig).
+# Accessor: catala_p10_1a_realsplitting (pure-python, min(unterhaltsleistungen, 13.805 + kv_pv_beitraege)).
+version: 1
+scheibe: "Realsplitting Unterhalt (p10_1a_realsplitting)"
+
+bindungen:
+  # ========================= Realsplitting: Unterhaltsleistungen (p10_1a_realsplitting) =========================
+  - feld_id: realsplitting_unterhaltsleistungen
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p10_1a_realsplitting, signatur_slot: unterhaltsleistungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hast du deinem geschiedenen oder dauernd getrennt lebenden Ex-Ehepartner Unterhalt gezahlt? Falls ja, wie viel im Jahr?"
+    hilfe_kurz: "Unterhaltsleistungen werden bis 13.805 Euro pro Jahr abgezogen, erhöht um KV/PV-Beiträge für den Ex-Ehegatten."
+    beispielwert: 1200000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "MVP (Klasse-g): XSD-Sektion Ehegatten-Unterhalts-Slots (vs. Kind-Unterhalt §33a) mehrdeutig, Vordruck-Cross-Ref nötig. Kz-Mapping deferred (Folge-Gate)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1a Nr. 1 S. 1 EStG"
+      zitatanker: "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung des Empfängers beantragt, bis zu 13 805 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  - feld_id: realsplitting_empfaenger_kv_pv
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p10_1a_realsplitting, signatur_slot: kv_pv_beitraege}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch waren die Kranken- und Pflegeversicherungsbeiträge des Ex-Ehegatten, die du bezahlt hast (§ 10 Abs. 1 Nr. 3)? Diese erhöhen den Abzugshöchstbetrag."
+    hilfe_kurz: "Nur die KV/PV-Beiträge nach § 10 Abs. 1 Nr. 3 zählen; sie erhöhen den Deckel von 13.805 Euro."
+    beispielwert: 400000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "MVP (Klasse-g): KV/PV-Beteiligung für Ehegatten-Slots in XSD unklar; Versicherungsnachweise als Belege. Kz-Mapping deferred (Folge-Gate)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1a Nr. 1 S. 2 EStG"
+      zitatanker: "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder dauernd getrennt lebenden Ehegatten"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  - feld_id: realsplitting_zustimmung
+    vorschlagbar_von: []
+    quelle: {regel_id: p10_1a_realsplitting, geltungsbedingung: antrag_mit_zustimmung}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hat der Ex-Ehegatte der Geltendmachung dieser Unterhaltsleistungen schriftlich zugestimmt (§ 10 Abs. 1a Nr. 1 S. 1)?"
+    hilfe_kurz: "Ohne ausdrückliche Zustimmung des Ex-Partners ist der Abzug nicht möglich. Beide Ehegatten müssen dies beantragen oder schriftlich bestätigen."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "MVP (Klasse-g): Zustimmungs-Checkbox für Ehegatten-Slots; XSD-Integration mit E-Nr/Person-Slots unklar. Mapping deferred (Folge-Gate)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1a Nr. 1 S. 1 EStG"
+      zitatanker: "wenn der Geber dies mit Zustimmung des Empfängers beantragt"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+luecken:
+  # -- Realsplitting: Ex-Ehegatte Statusprüfung ist externe Gatekeeping (§ 10 Abs.1a S.1 + Registerabfrage) --
+  - regel_id: p10_1a_realsplitting
+    geltungsbedingung: empfaenger_geschieden_getrennt_unbeschraenkt
+    grund: "Ex-Ehegatte-Qualifikation (§ 10 Abs. 1a Nr. 1 S. 1: 'geschieden oder dauernd getrennt lebend' + 'unbeschränkt einkommensteuerpflichtig') wird vorgelagert via Register/eDaten überprüft oder via Partnerschafts-Steuererklärung bestätigt; keine separate Laien-Abfrage hier."
+
+  - regel_id: p10_1a_realsplitting
+    geltungsbedingung: deckel_13805_plus_kv_pv
+    grund: "13.805€-Höchstbetrag + KV/PV-Erhöhung (§ 10 Abs. 1a Nr. 1 S. 1-2) sind im pure-python Accessor catala_p10_1a_realsplitting materialisiert (Rechenlogik: min(unterhaltsleistungen, 13.805 + kv_pv_beitraege))."

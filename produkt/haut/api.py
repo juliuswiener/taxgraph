@@ -845,6 +845,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 + runner.catala_p10_1_5_kinderbetreuung({
                     "aufwendungen": _c("kinderbetreuungskosten") // 100,
                     "anzahl_kinder": f.get("kinderbetreuung_anzahl_kinder", {}).get("wert", 0) or 0})
+                # § 10 Abs. 1a Nr. 1 Realsplitting (Unterhalt Ex-Ehegatte, Tier-1): min(unterhaltsleistungen,
+                # 13.805 + kv_pv_beitraege). Gate: realsplitting_zustimmung==true → sonst 0 (over-tax-safe).
+                + (runner.catala_p10_1a_realsplitting({
+                    "unterhaltsleistungen": _c("realsplitting_unterhaltsleistungen") // 100,
+                    "kv_pv_beitraege": _c("realsplitting_empfaenger_kv_pv") // 100})
+                   if f.get("realsplitting_zustimmung", {}).get("wert") is True else 0)
                 # Person-B-KV/PV (§ 10 Abs. 4, A.2): eigener Höchstbetrag JE PERSON → separater Accessor-Aufruf,
                 # additiv (kein gemeinsamer Deckel, kein Doppelzählen — B liest die _partner-Read-Keys).
                 + (runner.catala_p10_kv_pv({
@@ -1280,6 +1286,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 + runner.catala_p10_1_5_kinderbetreuung({
                     "aufwendungen": _c("kinderbetreuungskosten") // 100,
                     "anzahl_kinder": f.get("kinderbetreuung_anzahl_kinder", {}).get("wert", 0) or 0})
+                # § 10 Abs. 1a Nr. 1 Realsplitting (Unterhalt Ex-Ehegatte, Tier-1): 1:1 gesamt-Präzedenz.
+                # Gate: realsplitting_zustimmung==true → sonst 0 (over-tax-safe).
+                + (runner.catala_p10_1a_realsplitting({
+                    "unterhaltsleistungen": _c("realsplitting_unterhaltsleistungen") // 100,
+                    "kv_pv_beitraege": _c("realsplitting_empfaenger_kv_pv") // 100})
+                   if f.get("realsplitting_zustimmung", {}).get("wert") is True else 0)
                 + runner.catala_p10_1_7_berufsausbildung({
                     "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100}))
             # § 33-agB (Weg-ii-Fix) ADDITIV zu § 33b (ausserg, oben) — beide Absätze koexistieren (Pauschbetrag +
