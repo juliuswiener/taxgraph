@@ -1,0 +1,57 @@
+# Bindungstabelle § 36 Abs. 2 EStG — Anrechnung (A4): festgesetzte ESt minus einbehaltene LSt
+# (Nr. 2, Steuerabzug) minus geleistete ESt-Vorauszahlungen (Nr. 1, § 37) → Abschlusszahlung/
+# Erstattung (Abs. 4). Reine Post-Festsetzungs-Abrechnung: ändert NUR die Zahllast, nicht die ESt.
+# festzusetzende_est = ring-derived (Lücke, aus der bereits festgesetzten Scheiben-ESt geliefert).
+# elster_kz bewusst null (kein XSD-verifiziertes Kz-Mapping — fail-closed, kein Rate-Kz).
+
+version: 1
+scheibe: "§36 Anrechnung (Abschlusszahlung/Erstattung)"
+
+bindungen:
+  - feld_id: p36_lohnsteuer
+    quelle: {regel_id: p36_2_anrechnung, signatur_slot: lohnsteuer}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Lohnsteuer wurde im Jahr von Ihrem Arbeitgeber einbehalten und abgeführt?"
+    hilfe_kurz: "Steht auf der Lohnsteuerbescheinigung (Nr. 4). Dieser bereits gezahlte Betrag wird auf die Steuerschuld angerechnet — er verringert die Nachzahlung bzw. führt zur Erstattung."
+    beispielwert: 800000
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 4"]
+    elster_kz: null
+    elster_kz_grund: "Anrechnungsbetrag (Anlage N / ESt-Abrechnung) — kein XSD-verifiziertes Kz-Mapping in dieser Runde; fail-closed statt Rate-Kz. XSD-Sweep offen (Backlog)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 36 Abs. 2 S. 1 Nr. 2 EStG (durch Steuerabzug erhobene Einkommensteuer)"
+      zitatanker: "die durch Steuerabzug erhobene Einkommensteuer"
+      datei: sources/gesetze-im-internet/estg_p36_2026-07-11.txt
+
+  - feld_id: p36_vorauszahlungen
+    quelle: {regel_id: p36_2_anrechnung, signatur_slot: vorauszahlungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Einkommensteuer-Vorauszahlungen haben Sie im Laufe des Jahres bereits an das Finanzamt geleistet?"
+    hilfe_kurz: "Vierteljährliche Vorauszahlungen, die das Finanzamt festgesetzt hat (falls zutreffend). Bereits Gezahltes wird auf die Steuerschuld angerechnet. Wenn keine: 0."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anrechnungsbetrag (ESt-Abrechnung) — kein XSD-verifiziertes Kz-Mapping in dieser Runde; fail-closed statt Rate-Kz. XSD-Sweep offen (Backlog)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 36 Abs. 2 S. 1 Nr. 1 EStG (entrichtete Einkommensteuer-Vorauszahlungen, § 37)"
+      zitatanker: "Einkommensteuer-Vorauszahlungen"
+      datei: sources/gesetze-im-internet/estg_p36_2026-07-11.txt
+
+luecken:
+  - regel_id: p36_2_anrechnung
+    signatur_slot: festzusetzende_est
+    grund: "Ring-derived (kein Laien-Input): die festgesetzte Einkommensteuer der Scheibe (§ 36 Abs. 1) wird beim Ring-Wiring aus der bereits berechneten Scheiben-Zahl (zahl_cent) geliefert, nicht erfragt."
+  - regel_id: p36_2_anrechnung
+    geltungsbedingung: lohnsteuer_ist_anrechenbar
+    grund: "Vereinfachung: Gesamtbetrag der einbehaltenen und abgeführten LSt wird als anrechenbar vorausgesetzt (keine Prüfung nach § 36 Abs. 2 Nr. 2 S. 2). Materiell unbedenklich: est_cent-Impact = 0 (Post-Festsetzung)."
+  - regel_id: p36_2_anrechnung
+    geltungsbedingung: keine_weiteren_anrechnungsbetraege
+    grund: "Vereinfachung: keine weiteren Anrechnungsbeträge (z.B. Körperschaftsteuer, KapESt § 36 Abs. 2 Nr. 2 S. 1) — Subsumtion unter ‚keine weiteren relevanten Steuerabzüge außer LSt'. Backlog: vollständige Aufzählung § 36 Abs. 2 Nr. 2 S. 1."
+  - regel_id: p36_2_anrechnung
+    geltungsbedingung: ein_dienstverhaeltnis
+    grund: "Vereinfachung: LSt-Abzug setzt mindestens ein Dienstverhältnis voraus — bei fehlendem Dienstverhältnis (§ 38 Abs. 1 S. 1) würde lohnsteuer_cent=0 sein und der Accessor liefert korrekt ESt − 0 = ESt. Kein Over-tax-Risiko."

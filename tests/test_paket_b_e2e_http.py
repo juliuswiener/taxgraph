@@ -540,6 +540,7 @@ AN_GESAMT_UEBERNACHTUNG = ("uebernachtung_kosten_monat", "uebernachtung_monate",
                           "uebernachtung_keine_lange_unterbrechung")
 # A6 Arbeitsmittel-GWG (askable Felder; am_massgebliche_ak ist askable:false → nicht in /fragen)
 AN_GESAMT_ARBEITSMITTEL = ("am_anschaffungskosten", "am_gwg_sofortabzug_gewaehlt")
+AN_GESAMT_P36 = ("p36_lohnsteuer", "p36_vorauszahlungen")
 AN_GESAMT_KEGEL = [
     ("bruttoarbeitslohn", 4000000),   # 40000 € in Cent (Bindung typ:cent)
     ("veranlagung", "einzel"),
@@ -597,7 +598,8 @@ def test_an_gesamt_durchstich(base):
     assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
              "kein_sonstige", "fam_anzahl_kinder", "verlustvortrag_bestand"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
             | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)
-            | set(AN_GESAMT_UEBERNACHTUNG) | set(AN_GESAMT_ARBEITSMITTEL)) == ids
+            | set(AN_GESAMT_UEBERNACHTUNG) | set(AN_GESAMT_ARBEITSMITTEL)
+            | set(AN_GESAMT_P36)) == ids
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
         assert st == 201

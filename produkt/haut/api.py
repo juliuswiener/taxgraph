@@ -53,6 +53,11 @@ AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
 # floort sonst fälschlich auf 800 → Sofortabzug statt AfA = Under-tax (vgl. _gwg_sofortabzug_summe-Cent-Guard).
 ARBEITSMITTEL_KOSTEN = "am_anschaffungskosten"
 ARBEITSMITTEL_RING = ("am_anschaffungskosten", "am_gwg_sofortabzug_gewaehlt")
+# § 36 Abs. 2 EStG — Anrechnung (A4): geleistete LSt (Nr. 2, Steuerabzug) + ESt-Vorauszahlungen (Nr. 1,
+# § 37) → Abschlusszahlung/Erstattung (Abs. 4). Reine Post-Festsetzungs-Abrechnung (KEIN ESt-Höhe-Impact,
+# ändert nur die Zahllast). Beide OPTIONAL (nicht im Kegel); absent → abschlusszahlung_cent None (keine
+# irreführende Voll-Steuer-Nachzahlung). Gilt für alle 3 Rate-Scheiben (jede erzeugt eine festzusetzende ESt).
+P36_ANRECHNUNG = ("p36_lohnsteuer", "p36_vorauszahlungen")
 # Verpflegung (§ 9 Abs. 4a): 3 Tage-Ring-Inputs + 2 Reduktions-Guard-Felder. FAIL-CLOSED-ON-UNSET:
 # bei Tagen > 0 ist der Ring nur fähig, wenn beide Guard-Felder EXPLIZIT sicher sind (monate ≤ 3
 # gesetzt UND keine_mahlzeitengestellung=true gesetzt); sonst (inkl. UNSET) verpflegung_reduktion_offen.
@@ -252,7 +257,7 @@ GESAMT_REALSPLITTING = ("realsplitting_unterhaltsleistungen", "realsplitting_emp
 # Weg-ii-Parität-Fix (K2, Over-tax, ring-b-Fund #4): GESAMT_FREIBETRAEGE auch im Rentner-Ring nachgetragen —
 # ohne fam_alleinstehend/fam_monate_ohne_voraussetzung postbar war § 24b im Rentner-Ring nicht erreichbar
 # (geburtsjahr/fam_anzahl_kinder stehen schon in RENTNER_GEWINN/GESAMT_ABZUEGE, Duplikat harmlos).
-RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + P36_ANRECHNUNG
 # §§ 13-18 Gewinneinkünfte (Stufe 1), OPTIONAL im gesamt-Ring (NICHT Pflicht-Kegel → absent → 0, over-tax-safe).
 # einkuenfte_gewinn (CENT) = der vorberechnete Gewinn-Betrag → einkuenfte_gewinn-Slot der slot_fn (§ 2-Summand).
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
@@ -295,6 +300,7 @@ SCHEIBEN = {
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER
+                   + P36_ANRECHNUNG
                    + ("fam_anzahl_kinder", "verlustvortrag_bestand")),
         # Pflicht-Kegel = einzel-Basis (inkl. Verpflegungs-TAGE; die Reduktions-Guard-Felder prüft
         # der Guard nur bei Tagen > 0). Partner-Pflichtfelder prüft der Guard nur bei zusammen. KV_PV_FELDER
@@ -327,7 +333,8 @@ SCHEIBEN = {
                    + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
-                   + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b + §35c + §10 Abs.1a Realsplitting + §9-dHf/Verpflegung (B1) + §9-Übernachtung (A5) + §9-Arbeitsmittel-GWG (A6, gemischt §19) OPTIONAL
+                   + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
+                   + P36_ANRECHNUNG),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b + §35c + §10 Abs.1a Realsplitting + §9-dHf/Verpflegung (B1) + §9-Übernachtung (A5) + §9-Arbeitsmittel-GWG (A6, gemischt §19) OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.
@@ -1582,6 +1589,28 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     return zahl, solz_out[0], extras
 
 
+def _abschlusszahlung_cent(felder: dict, zahl_cent: int):
+    """§ 36 Abs. 2+4 EStG — Abschlusszahlung (+) / Erstattung (−) in CENT auf der bereits festgesetzten
+    ESt (zahl_cent), scheibe-agnostisch (jede Rate-Scheibe erzeugt genau eine festzusetzende ESt).
+    None, wenn WEDER LSt NOCH Vorauszahlung bestätigt vorliegt — dann keine irreführende Voll-Steuer-
+    Nachzahlung ausweisen. Nur BESTÄTIGTE Felder (vorläufige LSt/VZ bewegen die Anrechnung nie —
+    [[ring-liest-vorlaeufig-parallel-pfad-luecke]])."""
+    def _best(fid):
+        e = felder.get(fid)
+        if e is None or e.get("zustand") != "bestaetigt":
+            return None
+        w = e.get("wert")
+        return w if isinstance(w, (int, float)) and not isinstance(w, bool) else None
+    lst, vor = _best("p36_lohnsteuer"), _best("p36_vorauszahlungen")
+    if lst is None and vor is None:
+        return None
+    import runner
+    return runner.catala_p36_abschlusszahlung({
+        "festzusetzende_est_cent": int(zahl_cent),
+        "lohnsteuer_cent": int(lst or 0),
+        "vorauszahlungen_cent": int(vor or 0)})
+
+
 def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None = None,
                           store: dict | None = None, bindung: dict | None = None):
     """K2-Guard: nicht-ring-fähige Werbungskosten/Einkunftsarten sperren den Ring GANZ (nie Fake-0).
@@ -2006,6 +2035,7 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
         if sperr:
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                          "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
+                         "abschlusszahlung_cent": None,
                          "grund": sperr, "offen": [], "trace": None}
     result = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder, store)
     if result is None:
@@ -2013,6 +2043,7 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
             # Multi-Regel-Scheibe ohne ehrlichen Gesamt-Accessor: bewusst KEINE Scheiben-Zahl.
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                          "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
+                         "abschlusszahlung_cent": None,
                          "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
         offen = [f for f in scheibe_felder
                  if f not in felder or felder[f]["zustand"] != "bestaetigt"]
@@ -2020,12 +2051,14 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
         grund = "engine_unavailable" if (bf is None and not offen) else "input_kegel_nicht_bestaetigt"
         return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                      "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
+                     "abschlusszahlung_cent": None,
                      "grund": grund, "offen": sorted(offen), "trace": None}
     zahl, solz, extras = result
     trace = TR.trace_ergebnis(store, bindung, snapshot_id=sid)
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": zahl,
                  "solz_cent": solz, "kist_cent": extras.get("kist_cent"),
                  "mobilitaetspraemie_cent": extras.get("mobilitaetspraemie_cent"),
+                 "abschlusszahlung_cent": _abschlusszahlung_cent(felder, zahl),
                  "grund": "bestaetigt", "offen": [], "trace": trace}
 
 

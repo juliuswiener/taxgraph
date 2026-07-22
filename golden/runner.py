@@ -394,6 +394,22 @@ def catala_kist(s: dict) -> int:
     return int(s.get("est_mit_fb", 0)) * satz
 
 
+def catala_p36_abschlusszahlung(s: dict) -> int:
+    """§ 36 Abs. 2+4 EStG — Abschlusszahlung (+) / Erstattung (−), CENT.
+
+    Festzusetzende ESt (§ 36 Abs. 1) minus anrechenbare Beträge: durch Steuerabzug erhobene ESt/LSt
+    (§ 36 Abs. 2 S. 1 Nr. 2) — auf volle Euro AUFgerundet (§ 36 Abs. 3 S. 1) — minus geleistete
+    ESt-Vorauszahlungen (§ 36 Abs. 2 S. 1 Nr. 1, § 37). Überschuss zuungunsten (+) = Abschlusszahlung,
+    zugunsten (−) = Erstattung (§ 36 Abs. 4). MVP-AN: nur LSt + VZ — keine KapESt darüber, keine
+    Forschungszulage (Nr. 3), kein § 32c (Nr. 4). Snapshot p36_2_anrechnung (verified_bedingt).
+    Nur die LSt wird aufgerundet (Abzugsbetrag Abs. 2 Nr. 2); die festgesetzte ESt ist bereits volle
+    Euro (§ 32a) und die Vorauszahlungen werden in vollen Euro festgesetzt (§ 37)."""
+    lst_cent = int(s.get("lohnsteuer_cent", 0))
+    lst_aufgerundet = -(-lst_cent // 100) * 100          # ceil auf volle Euro (§ 36 Abs. 3 S. 1)
+    return (int(s.get("festzusetzende_est_cent", 0))
+            - lst_aufgerundet - int(s.get("vorauszahlungen_cent", 0)))
+
+
 def _altersentlastung_kohorte(folgejahr: int):
     """§ 24a S. 5 Kohorten-Staffel (prozentsatz % + hoechstbetrag EURO) je maßgebendem Folgejahr (Jahr NACH der
     Vollendung des 64. Lj), lebenslang fix. Außerhalb der Tabelle geklemmt: vor 2005 → Höchststaffel, ab 2058 → 0."""

@@ -705,3 +705,107 @@ def test_a6_arbeitsmittel_wahlrecht_abgelehnt_haelt_offen_gesamt(base):
     _val("ergebnis", erg)
     assert erg["grund"] == "arbeitsmittel_afa_ueber_gwg_offen", f"grund={erg.get('grund')}"
     assert erg["zahl_cent"] is None
+
+
+# ---- A4 § 36 Abs. 2+4: Anrechnung / Abschlusszahlung (Post-Festsetzung, ändert NIE die ESt) ----
+
+def _a4_zahl_baseline(base, fid="a4base"):
+    """Baseline an_gesamt OHNE §36-Felder → festgesetzte ESt (zahl_cent); prüft abschlusszahlung None."""
+    _an_anlegen(base, fid, AN_KEGEL_HOCH)
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt", f"grund={erg.get('grund')}"
+    assert erg["abschlusszahlung_cent"] is None
+    return erg["zahl_cent"]
+
+
+def test_a4_abschlusszahlung_none_ohne_felder(base):
+    """Ohne §36-Anrechnungsfelder bleibt abschlusszahlung_cent None (keine irreführende Voll-Nachzahlung)."""
+    z = _a4_zahl_baseline(base)
+    assert isinstance(z, int) and z > 0
+
+
+def test_a4_lohnsteuer_only_erstattung_und_kein_est_impact(base):
+    """LSt hoch einbehalten → Abschlusszahlung = ESt − aufgerundete LSt (hier Erstattung, negativ).
+    KERN: zahl_cent IDENTISCH zur Baseline → §36-Anrechnung bewegt die festgesetzte ESt NIE."""
+    z0 = _a4_zahl_baseline(base, "a4b0")
+    lst = z0 + 5000000
+    _an_anlegen(base, "a4lst", AN_KEGEL_HOCH + [("p36_lohnsteuer", lst)])
+    st, erg = _req(base, "GET", "/fall/a4lst/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt"
+    assert erg["zahl_cent"] == z0, "§36-Anrechnung darf die festgesetzte ESt nicht verändern"
+    exp = R.catala_p36_abschlusszahlung(
+        {"festzusetzende_est_cent": z0, "lohnsteuer_cent": lst, "vorauszahlungen_cent": 0})
+    assert erg["abschlusszahlung_cent"] == exp
+    assert exp < 0
+
+
+def test_a4_lohnsteuer_und_vorauszahlung_nachzahlung(base):
+    """LSt + Vorauszahlung beide bestätigt → Abschlusszahlung = ESt − LSt(aufgerundet) − VZ."""
+    z0 = _a4_zahl_baseline(base, "a4c0")
+    lst, vor = 3000000, 1000000
+    _an_anlegen(base, "a4lv", AN_KEGEL_HOCH + [("p36_lohnsteuer", lst), ("p36_vorauszahlungen", vor)])
+    st, erg = _req(base, "GET", "/fall/a4lv/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["zahl_cent"] == z0
+    exp = R.catala_p36_abschlusszahlung(
+        {"festzusetzende_est_cent": z0, "lohnsteuer_cent": lst, "vorauszahlungen_cent": vor})
+    assert erg["abschlusszahlung_cent"] == exp
+    assert exp == z0 - 3000000 - 1000000
+
+
+def test_a4_lohnsteuer_cent_aufrundung_auf_volle_euro(base):
+    """§36 Abs.3 S.1: Steuerabzugsbetrag auf volle Euro AUFrunden. 7.500,30 € → 7.501 € abgezogen."""
+    z0 = _a4_zahl_baseline(base, "a4d0")
+    _an_anlegen(base, "a4ceil", AN_KEGEL_HOCH + [("p36_lohnsteuer", 750030)])
+    st, erg = _req(base, "GET", "/fall/a4ceil/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["zahl_cent"] == z0
+    assert erg["abschlusszahlung_cent"] == z0 - 750100
+
+
+def test_a4_vorlaeufige_lohnsteuer_bewegt_anrechnung_nicht(base):
+    """[[ring-liest-vorlaeufig-parallel-pfad-luecke]]: vorläufige (nicht bestätigte) LSt darf die
+    Abschlusszahlung NICHT bewegen → bleibt None wie ohne Feld. Nur bestätigte Anrechnung zählt."""
+    z0 = _a4_zahl_baseline(base, "a4s0")
+    _an_anlegen(base, "a4vorl", AN_KEGEL_HOCH)
+    body = {"feld_id": "p36_lohnsteuer", "wert": z0 + 5000000, "zustand": "vorlaeufig",
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": None}}
+    st, _ = _req(base, "POST", "/fall/a4vorl/event", body)
+    assert st == 201, f"vorläufiger POST erwartet 201, war {st}"
+    st, erg = _req(base, "GET", "/fall/a4vorl/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["zahl_cent"] == z0
+    assert erg["abschlusszahlung_cent"] is None, "vorläufige LSt darf Anrechnung nicht auslösen"
+
+
+def test_a4_abschlusszahlung_gesamt_scheibe(base):
+    """§36-Anrechnung ist scheibe-agnostisch: auch im gesamt-Ring registriert + emittiert (Reachability)."""
+    _ges_anlegen(base, "a4g0", GESAMT_AN_KEGEL)
+    st, e0 = _req(base, "GET", "/fall/a4g0/ergebnis")
+    _val("ergebnis", e0)
+    z0 = e0["zahl_cent"]
+    assert e0["abschlusszahlung_cent"] is None
+    _ges_anlegen(base, "a4g1", GESAMT_AN_KEGEL + [("p36_lohnsteuer", 500000)])
+    st, e1 = _req(base, "GET", "/fall/a4g1/ergebnis")
+    _val("ergebnis", e1)
+    assert e1["zahl_cent"] == z0
+    assert e1["abschlusszahlung_cent"] == z0 - 500000
+
+
+def test_a4_accessor_snapshot_seeds():
+    """catala_p36_abschlusszahlung gegen die 4 verified_bedingt-Snapshot-Seeds (EURO→CENT ×100)."""
+    seeds = [
+        (10000, 8000, 0, 2000),
+        (5000, 8000, 0, -3000),
+        (12000, 7500.30, 0, 4499),
+        (10000, 6000, 3000, 1000),
+    ]
+    for est_eur, lst_eur, vor_eur, exp_eur in seeds:
+        got = R.catala_p36_abschlusszahlung({
+            "festzusetzende_est_cent": round(est_eur * 100),
+            "lohnsteuer_cent": round(lst_eur * 100),
+            "vorauszahlungen_cent": round(vor_eur * 100)})
+        assert got == exp_eur * 100, f"seed {est_eur}/{lst_eur}/{vor_eur}: {got} != {exp_eur * 100}"
