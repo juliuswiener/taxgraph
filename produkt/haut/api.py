@@ -59,6 +59,7 @@ ARBEITSMITTEL_RING = ("am_anschaffungskosten", "am_gwg_sofortabzug_gewaehlt")
 # irreführende Voll-Steuer-Nachzahlung). Gilt für alle 3 Rate-Scheiben (jede erzeugt eine festzusetzende ESt).
 P36_ANRECHNUNG = ("p36_lohnsteuer", "p36_vorauszahlungen")
 P22_NR3_EINKUENFTE = ("p22_nr3_einkuenfte",)
+KIST_KONFESSION_FELDER = ("kist_konfession", "kist_bundesland")
 # Verpflegung (§ 9 Abs. 4a): 3 Tage-Ring-Inputs + 2 Reduktions-Guard-Felder. FAIL-CLOSED-ON-UNSET:
 # bei Tagen > 0 ist der Ring nur fähig, wenn beide Guard-Felder EXPLIZIT sicher sind (monate ≤ 3
 # gesetzt UND keine_mahlzeitengestellung=true gesetzt); sonst (inkl. UNSET) verpflegung_reduktion_offen.
@@ -258,7 +259,7 @@ GESAMT_REALSPLITTING = ("realsplitting_unterhaltsleistungen", "realsplitting_emp
 # Weg-ii-Parität-Fix (K2, Over-tax, ring-b-Fund #4): GESAMT_FREIBETRAEGE auch im Rentner-Ring nachgetragen —
 # ohne fam_alleinstehend/fam_monate_ohne_voraussetzung postbar war § 24b im Rentner-Ring nicht erreichbar
 # (geburtsjahr/fam_anzahl_kinder stehen schon in RENTNER_GEWINN/GESAMT_ABZUEGE, Duplikat harmlos).
-RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + P36_ANRECHNUNG + P22_NR3_EINKUENFTE
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P22_NR3_EINKUENFTE
 # §§ 13-18 Gewinneinkünfte (Stufe 1), OPTIONAL im gesamt-Ring (NICHT Pflicht-Kegel → absent → 0, over-tax-safe).
 # einkuenfte_gewinn (CENT) = der vorberechnete Gewinn-Betrag → einkuenfte_gewinn-Slot der slot_fn (§ 2-Summand).
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
@@ -302,6 +303,7 @@ SCHEIBEN = {
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER
                    + P36_ANRECHNUNG
+                   + KIST_KONFESSION_FELDER
                    + ("fam_anzahl_kinder", "verlustvortrag_bestand")),
         # Pflicht-Kegel = einzel-Basis (inkl. Verpflegungs-TAGE; die Reduktions-Guard-Felder prüft
         # der Guard nur bei Tagen > 0). Partner-Pflichtfelder prüft der Guard nur bei zusammen. KV_PV_FELDER
@@ -335,7 +337,7 @@ SCHEIBEN = {
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
-                   + P36_ANRECHNUNG),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b + §35c + §10 Abs.1a Realsplitting + §9-dHf/Verpflegung (B1) + §9-Übernachtung (A5) + §9-Arbeitsmittel-GWG (A6, gemischt §19) OPTIONAL
+                   + P36_ANRECHNUNG + KIST_KONFESSION_FELDER),  # Weg ii: Abzüge + §24a/§24b + §21-Abs.2 + Vorsorge + §§13-18-Gewinn + §34c + §23 + §33a + §32b + §35c + §10 Abs.1a Realsplitting + §9-dHf/Verpflegung (B1) + §9-Übernachtung (A5) + §9-Arbeitsmittel-GWG (A6, gemischt §19) OPTIONAL
         # Pflicht-Kegel = einzel-Basis (ohne Person-B-Felder UND ohne die optionalen Abzugs-Felder); der Guard
         # erzwingt den Person-B-Kegel nur bei zusammen. Abzüge sind fail-safe optional (absent → 0). VOR_FELDER
         # (§ 10 Altersvorsorge) + KV_PV_FELDER (§ 10 KV/PV) im Kegel (mandatory) → kein stiller Über-/Unter-tax.

@@ -870,3 +870,56 @@ def test_a8_ring_lebt_exakt_an_der_freigrenze(base):
     _val("ergebnis", e_tax)
     assert e_tax["grund"] == "bestaetigt", f"grund={e_tax.get('grund')}"
     assert e_tax["zahl_cent"] > z0, f"25600: {e_tax['zahl_cent']} <= {z0}"
+
+
+# ---- § 51a KiSt: kist_konfession/kist_bundesland Erreichbarkeit (totes Wiring-Fix) ----
+
+def test_kist_accessor_konfession_keine_oder_andere(base):
+    """Accessor-Unit: konfession keine/andere → kist_cent = 0 (auch bei beliebigem bundesland)."""
+    assert R.catala_kist({"est_mit_fb": 10000, "konfession": "keine", "bundesland": "nordrhein_westfalen"}) == 0
+    assert R.catala_kist({"est_mit_fb": 10000, "konfession": "andere", "bundesland": "bayern"}) == 0
+
+
+def test_kist_accessor_satz_9_nrw_und_8_bayern(base):
+    """Accessor-Unit: 9 % NRW (steuererhebend) vs 8 % BY (Kirchensteuer-Cent exakt)."""
+    assert R.catala_kist({"est_mit_fb": 10000, "konfession": "roemisch-katholisch", "bundesland": "nordrhein_westfalen"}) == 90000
+    assert R.catala_kist({"est_mit_fb": 10000, "konfession": "evangelisch", "bundesland": "bayern"}) == 80000
+
+
+def _kist_kegel(betrag_cent=20000000, konfession="roemisch-katholisch", bundesland="nordrhein_westfalen"):
+    """AN_KEGEL_HOCH + KiSt-Felder."""
+    k = list(AN_KEGEL_HOCH)
+    k.append(("kist_konfession", konfession))
+    k.append(("kist_bundesland", bundesland))
+    return k
+
+
+def test_kist_erreichbarkeit_an_gesamt(base):
+    """§51a KiSt: kist_konfession + kist_bundesland POSTbar → kist_cent > 0."""
+    _an_anlegen(base, "kist1", _kist_kegel())
+    st, erg = _req(base, "GET", "/fall/kist1/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt", f"grund={erg.get('grund')}"
+    assert isinstance(erg["kist_cent"], int) and erg["kist_cent"] > 0, f"kist_cent={erg['kist_cent']}"
+
+
+def test_kist_ratio_9zu8_exakt(base):
+    """NRW(9%) vs Bayern(8%) bei gleichem est_mit_fb: kist_nrw × 8 == kist_by × 9 (Ganzzahl-Ratio)."""
+    _an_anlegen(base, "kist_nrw", _kist_kegel(konfession="roemisch-katholisch", bundesland="nordrhein_westfalen"))
+    st, e_nrw = _req(base, "GET", "/fall/kist_nrw/ergebnis")
+    _val("ergebnis", e_nrw)
+    assert e_nrw["grund"] == "bestaetigt"
+    _an_anlegen(base, "kist_by", _kist_kegel(konfession="evangelisch", bundesland="bayern"))
+    st, e_by = _req(base, "GET", "/fall/kist_by/ergebnis")
+    _val("ergebnis", e_by)
+    assert e_by["grund"] == "bestaetigt"
+    assert e_nrw["kist_cent"] * 8 == e_by["kist_cent"] * 9, f"9:8-Ratio verletzt: {e_nrw['kist_cent']}*8 vs {e_by['kist_cent']}*9"
+
+
+def test_kist_ohne_konfession_null(base):
+    """Keine Konfession gesetzt (default→keine) → kist_cent = 0 (Accessor liefert 0)."""
+    _an_anlegen(base, "kist_null", AN_KEGEL_HOCH)  # kein kist_konfession/kist_bundesland
+    st, erg = _req(base, "GET", "/fall/kist_null/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt"
+    assert erg["kist_cent"] == 0, f"kist_cent={erg['kist_cent']}"
