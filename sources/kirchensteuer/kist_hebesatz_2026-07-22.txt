@@ -1,0 +1,54 @@
+Quelle: mehrere amtliche Landesquellen (siehe je Abschnitt)
+Abgerufen: 2026-07-22
+Norm: Kirchensteuer-Hebesatz (Umlagesatz) je Bundesland — Landes-KiStG + Kirchensteuerbeschlüsse/Erlasse
+Fassung/Gültigkeit: Hebesatz = jährlicher Kirchensteuerbeschluss der Religionsgemeinschaften bzw.
+  gleichlautender Erlass der obersten Landes-Finanzbehörde (KEINE feste Statut-Konstante). Stand
+  VZ 2024 (NRW-Erlass 18.04.2024), unverändert fortgeschrieben für VZ 2025/2026:
+  8 v.H. in Bayern + Baden-Württemberg, 9 v.H. in den übrigen 14 Bundesländern.
+  Statutarischer Rahmen: Art. 8 KirchStG Bayern (Umlagesatz max. 10 v.H.); Bemessungsgrundlage
+  einheitlich nach § 51a EStG (Einkommensteuer MIT Kinderfreibetrag).
+Hinweis: Der 8/9-Split geht auf die Konkordate der Weimarer Republik zurück (preußisches Konkordat
+  1929 = 9 v.H.; badisches 1932 + bayerisches 1924 = 8 v.H.). Grounding für den taxgraph-Accessor
+  catala_kist (§51a-KiSt-Festsetzung auf die Tarif-ESt) und die params/<vz>/kirchensteuer.yaml.
+
+--- Bayern: 8 v.H. (Art. 8 KirchStG; Beschluss der Steuerverbände) ---
+
+Quelle: https://www.gesetze-bayern.de/Content/Document/BayKirchStG/true
+Fassung: Kirchensteuergesetz (KirchStG) i.d.F. der Bekanntmachung vom 21.11.1994 (GVBl. S. 1026,
+  BayRS 2220-4-F/K), zuletzt geändert durch Gesetz vom 09.11.2021 (GVBl. S. 606); gilt ab 01.05.2019.
+
+Art. 8 Abs. 1 (Umlagesatz): Die umlageerhebenden gemeinschaftlichen Steuerverbände bestimmen die
+Höhe des Umlagesatzes gemeinsam; der Umlagesatz „darf zehn v.H. der Einkommen-, Lohn- und
+Kapitalertragsteuer nicht übersteigen". Bei fehlender Einigung bestimmt auf Antrag „das
+Staatsministerium der Finanzen und für Heimat" den Satz.
+
+Art. 8 Abs. 2 (Bemessungsgrundlage): Vor Erhebung ist die Maßstabsteuer „nach § 51a des
+Einkommensteuergesetzes (EStG)" zu ermitteln.
+
+Aktueller Umlagesatz (amtliche Feststellung Erzdiözese München und Freising, Kirchensteueramt):
+„Der Umlagesatz beträgt in Bayern derzeit 8 % der Einkommen-, Lohn- und Kapitalertragsteuer
+(8 v. H. aus der Bemessungsgrundlage, Art. 8 KirchStG, Art. 6 DKirchStO)."
+(https://www.erzbistum-muenchen.de/ueber-das-erzbistum/erzbistum-von-a-bis-z/kirchensteueramt)
+
+--- Nordrhein-Westfalen: 9 v.H. (repräsentativ für die übrigen Länder) ---
+
+Quelle: Finanzministerium des Landes Nordrhein-Westfalen, Erlass vom 18.04.2024
+  (S 2442 - 2-2023 - 20839 - V B 2).
+Wortlaut (Kern): Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer „9 v. H."; „Vor Anwendung
+der Kirchensteuerhebesätze ist die Bemessungsgrundlage nach Maßgabe des § 51a des
+Einkommensteuergesetzes in der für den Veranlagungszeitraum 2024 geltenden Fassung zu ermitteln."
+
+Evangelische Kirche von Westfalen — Kirchengesetz über den Kirchensteuerhebesatz für das Steuerjahr
+2024: der Hebesatz wird „gemäß § 6 Absatz 1 Ziffer 1 Buchstabe a der KiStO in Höhe von 9 vom Hundert
+festgesetzt".
+
+Erzbistum Köln (kath., NRW): Zuschlag „in Höhe von 9 % von der festgesetzten Einkommensteuer,
+vermindert um Kinder- und Betreuungsfreibeträge". → bestätigt: Bemessungsgrundlage = ESt nach § 51a
+EStG (mit Kinderfreibetrag), identisch zur SolZ-Basis (§ 3 Abs. 2 SolzG); im Accessor = est_mit_fb.
+
+--- Baden-Württemberg: 8 v.H. ---
+
+Belegt durch die übereinstimmenden amtlichen Länder-übergreifenden Feststellungen (u.a. Erzdiözese
+München, Deutsche Bischofskonferenz, Bayerisches Landesamt für Steuern): „In Bayern und
+Baden-Württemberg 8 %, in den übrigen Bundesländern 9 %." Landes-spezifischer BW-Beschluss
+(KiStG BW / Kirchensteuerbeschlüsse der Landeskirchen + (Erz-)Diözesen) als Primär-Anker = Backfill.
