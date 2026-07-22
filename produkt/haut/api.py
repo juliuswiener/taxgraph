@@ -827,6 +827,20 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
                 "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
                 "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
+            # § 35c EStG energetische Sanierungsmassnahmen + Energieberater-Sondersatz.
+            # Zwei Teilregeln (Sanierung 7%/6%, Energieberater 50%) werden im Jahresdeckel
+            # kombiniert (14k/12k). Accessor nimmt EUROS (Cent→EUR via //100).
+            p35c_sanierung_rohbetrag = runner.catala_p35c_sanierung({
+                "sanierungsaufwendungen": _c("p35c_sanierungsaufwendungen") // 100,
+                "ist_uebernaechstes_foerderjahr": f.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
+            p35c_energieberater_rohbetrag = runner.catala_p35c_energieberater({
+                "energieberater_aufwendungen": _c("p35c_energieberater_aufwendungen") // 100})
+            # Jahresdeckel-Kombination (P35cJahresdeckel aus Catala)
+            p35c_gesamt_deckel = runner.catala_p35c_jahresdeckel({
+                "sanierung_ermaessigung": p35c_sanierung_rohbetrag,
+                "energieberater_ermaessigung": p35c_energieberater_rohbetrag,
+                "ist_uebernaechstes_foerderjahr": f.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
+            g["steuerermaessigungen"] += p35c_gesamt_deckel
             # sonderausgaben = § 10b Spenden + § 10 KiSt + § 10 Abs.1 Nr.3/3a KV/PV-Vorsorge +
             # § 10 Abs.1 Nr.5 Kinderbetreuung (§10-Stufe 2, additiv;
             # KV/PV hat EIGENEN Abs.4-Höchstbetrag 1900/2800 + Basis-Durchbruch, getrennt von der Abs.3-Basisvorsorge
@@ -1270,6 +1284,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
                 "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
                 "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
+            # § 35c EStG energetische Sanierungsmassnahmen + Energieberater (1:1 gesamt-Präzedenz).
+            p35c_sanierung_r = runner.catala_p35c_sanierung({
+                "sanierungsaufwendungen": _c("p35c_sanierungsaufwendungen") // 100,
+                "ist_uebernaechstes_foerderjahr": f.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
+            p35c_energieberater_r = runner.catala_p35c_energieberater({
+                "energieberater_aufwendungen": _c("p35c_energieberater_aufwendungen") // 100})
+            p35c_gesamt_deckel_r = runner.catala_p35c_jahresdeckel({
+                "sanierung_ermaessigung": p35c_sanierung_r,
+                "energieberater_ermaessigung": p35c_energieberater_r,
+                "ist_uebernaechstes_foerderjahr": f.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
+            rentner_g["steuerermaessigungen"] += p35c_gesamt_deckel_r
             # § 10b Spenden (gde-Deckel) + § 10 KiSt + § 10 Abs. 1 Nr. 3/3a KV/PV + § 10 Abs. 1 Nr. 5 Kinderbetreuung
             # + § 10 Abs. 1 Nr. 7 Berufsausbildung
             # (Weg-ii-Fix, additiv → sonderausgaben; 1:1 gesamt-Präzedenz Z. 717-737). Person-B-KV/PV DEFER (benannte
