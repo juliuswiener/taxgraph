@@ -2851,7 +2851,7 @@ def test_graph_uebersicht(base):
     _val("graph", g)
     rids = {k["regel_id"] for k in g["knoten"]}
     assert "p09_entfernungspauschale" in rids
-    assert len(g["knoten"]) == 8          # EP + dHf + Verpflegung + Übernachtung + Arbeitsmittel + VOR + GWG + KV/PV
+    assert len(g["knoten"]) == 9          # EP + dHf + Verpflegung + Übernachtung + Arbeitsmittel + VOR + GWG + KV/PV + A6-L2 lineare AfA
     # frischer Fall: alle Kanten offen; beide Rollen vertreten
     assert all(k["zustand"] == "offen" for k in g["kanten"])
     assert any(k["rolle"] == "slot" for k in g["kanten"])
