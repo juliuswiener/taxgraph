@@ -1698,12 +1698,18 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                     and bisher < 48 < bisher + monate):
                 return "uebernachtung_zeitraum_offen"
         # Arbeitsmittel (§ 9 Abs. 1 Nr. 6/7 i.V.m. § 6 Abs. 2 GWG / § 7 AfA): AK > 0 → Ring nur fähig für den
-        # GWG-Sofortabzug (AK ≤ 800 EUR mit ausgeübtem Wahlrecht). Der mehrjährige § 7-AfA-Zweig (> 800) ist
-        # ungebunden → fail-closed. Schwelle in CENT (80000): 800,01 EUR floort sonst fälschlich auf 800 (Under-tax).
+        # GWG-Sofortabzug (AK ≤ 800 EUR mit ausgeübtem Wahlrecht). AK > 800 → mehrjährige § 7-AfA (A6-L2),
+        # die ring-fähig ist sobald die Nutzungsdauer gesetzt ist (arbeitsmittel_nutzungsdauer > 0).
+        # Schwelle in CENT (80000): 800,01 EUR floort sonst fälschlich auf 800 (Under-tax).
         _am = felder.get(ARBEITSMITTEL_KOSTEN, {}).get("wert")
         if isinstance(_am, (int, float)) and not isinstance(_am, bool) and _am > 0:
-            if _am > 80000 or felder.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is not True:
-                return "arbeitsmittel_afa_ueber_gwg_offen"
+            if _am <= 80000:
+                if felder.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is not True:
+                    return "arbeitsmittel_afa_ueber_gwg_offen"
+            else:  # _am > 80000 → AfA-Pfad
+                nd = felder.get("arbeitsmittel_nutzungsdauer", {}).get("wert")
+                if not isinstance(nd, int) or isinstance(nd, bool) or nd <= 0:
+                    return "arbeitsmittel_afa_ueber_gwg_offen"
         return None
     # Partner-Behinderungsfeld (§ 33b Person B) ohne Zusammenveranlagung: benannte Inkonsistenz
     # (dev-2s partner_check, Spiegel zu partner_kegel_offen). Universell VOR der Scheiben-Verzweigung —

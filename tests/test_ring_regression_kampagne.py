@@ -707,6 +707,18 @@ def test_a6_arbeitsmittel_wahlrecht_abgelehnt_haelt_offen_gesamt(base):
     assert erg["zahl_cent"] is None
 
 
+def test_a6_l2_catala_afa_linear_unit(base):
+    """Unit-Test für runner.catala_p7_linear_afa: bestätigt korrekte lineare AfA-Berechnung
+    (anschaffungskosten_cent // nutzungsdauer_euro). Nutzungsdauer=0 oder negativ → 0."""
+    if not _catala_da():
+        pytest.skip("catala runner not available")
+    assert R.catala_p7_linear_afa({"anschaffungskosten_cent": 150000, "nutzungsdauer": 5}) == 300   # 1500/5=300
+    assert R.catala_p7_linear_afa({"anschaffungskosten_cent": 80001, "nutzungsdauer": 3}) == 266    # 800.01/3=266.67 floor=266
+    assert R.catala_p7_linear_afa({"anschaffungskosten_cent": 100000, "nutzungsdauer": 10}) == 100  # 1000/10=100
+    assert R.catala_p7_linear_afa({"anschaffungskosten_cent": 100000, "nutzungsdauer": 0}) == 0    # fail-safe
+    assert R.catala_p7_linear_afa({"anschaffungskosten_cent": 100000, "nutzungsdauer": -1}) == 0   # fail-safe
+
+
 # ---- A4 § 36 Abs. 2+4: Anrechnung / Abschlusszahlung (Post-Festsetzung, ändert NIE die ESt) ----
 
 def _a4_zahl_baseline(base, fid="a4base"):
