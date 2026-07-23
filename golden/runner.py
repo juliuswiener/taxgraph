@@ -563,6 +563,19 @@ def catala_p6_2_gwg(s: dict) -> int:
     return int(r.sofortabzug) // 100
 
 
+def catala_p7_linear_afa(s: dict) -> int:
+    """§ 7 Abs. 1 EStG — lineare AfA für ein Wirtschaftsgut > 800 EUR, EURO (Pure-Python).
+    Anschaffungskosten in Cent, Nutzungsdauer in Jahren (integer). AfA-Betrag =
+    anschaffungskosten_cent // (nutzungsdauer * 100) — Euro-gleichmäßig über die Laufzeit
+    verteilt, floor (konservativ/over-tax-safe). Nutzungsdauer ≤ 0 → Abzug 0."""
+    ak_cent = int(s.get("anschaffungskosten_cent", 0))
+    nd = int(s.get("nutzungsdauer", 0))
+    if nd <= 0 or ak_cent <= 0:
+        return 0
+    nd_cent = nd * 100
+    return ak_cent // nd_cent
+
+
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --
 
 def _sparer_pauschbetrag(year: int) -> int:

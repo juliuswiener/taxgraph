@@ -52,7 +52,7 @@ AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
 # (arbeitsmittel_afa_ueber_gwg_offen), NIE stiller 0-Abzug. Schwelle in CENT (80000): 800,01 EUR (80001 ct)
 # floort sonst fälschlich auf 800 → Sofortabzug statt AfA = Under-tax (vgl. _gwg_sofortabzug_summe-Cent-Guard).
 ARBEITSMITTEL_KOSTEN = "am_anschaffungskosten"
-ARBEITSMITTEL_RING = ("am_anschaffungskosten", "am_gwg_sofortabzug_gewaehlt")
+ARBEITSMITTEL_RING = ("am_anschaffungskosten", "am_gwg_sofortabzug_gewaehlt", "arbeitsmittel_nutzungsdauer")
 # § 36 Abs. 2 EStG — Anrechnung (A4): geleistete LSt (Nr. 2, Steuerabzug) + ESt-Vorauszahlungen (Nr. 1,
 # § 37) → Abschlusszahlung/Erstattung (Abs. 4). Reine Post-Festsetzungs-Abrechnung (KEIN ESt-Höhe-Impact,
 # ändert nur die Zahllast). Beide OPTIONAL (nicht im Kegel); absent → abschlusszahlung_cent None (keine
@@ -661,6 +661,14 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # (Schwelle in CENT, 80000) UND Wahlrecht ausgeübt. > 800 = mehrjährige § 7-AfA sperrt der Guard.
             if 0 < _cent(ARBEITSMITTEL_KOSTEN) <= 80000 and f.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is True:
                 wk_input["am_anschaffungskosten"] = _cent(ARBEITSMITTEL_KOSTEN) // 100   # cent -> euro
+            # A6-L2 (§ 7 Abs. 1 lineare AfA): AK > 80000 CENT → kein GWG mehr → mehrjährige AfA
+            # über die Nutzungsdauer (Jahre). Nutzungsdauer absent → Guard sperrt (fail-closed).
+            elif _cent(ARBEITSMITTEL_KOSTEN) > 80000:
+                nd = _c("arbeitsmittel_nutzungsdauer")
+                if nd > 0:
+                    wk_input["am_anschaffungskosten"] = runner.catala_p7_linear_afa({
+                        "anschaffungskosten_cent": _cent(ARBEITSMITTEL_KOSTEN),
+                        "nutzungsdauer": nd})  # europe, already euro
             wk = runner.catala_werbungskosten_n(wk_input)   # Person A: EP + dHf + Verpflegung + Übernachtung + AM-GWG, roh
             # § 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge (Pflicht-Kegel Person A, Gesamt-Parität, Over-tax-Fix):
             # eigener Abs.4-Höchstbetrag (1900/2800), additiv, GETRENNT von der VOR-Basisvorsorge unten.
@@ -852,6 +860,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # UND Wahlrecht ausgeübt. > 800 = mehrjährige § 7-AfA sperrt der SHARED _an_gesamt_sperrgrund.
             if 0 < _c(ARBEITSMITTEL_KOSTEN) <= 80000 and f.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is True:
                 gesamt_wk_input["am_anschaffungskosten"] = _c(ARBEITSMITTEL_KOSTEN) // 100    # cent -> euro
+            # A6-L2 (§ 7 Abs. 1 lineare AfA, >800 CENT): AK > 80000 → kein GWG → mehrjährige AfA
+            elif _c(ARBEITSMITTEL_KOSTEN) > 80000:
+                nd = _c("arbeitsmittel_nutzungsdauer")
+                if nd > 0:
+                    gesamt_wk_input["am_anschaffungskosten"] = runner.catala_p7_linear_afa({
+                        "anschaffungskosten_cent": _c(ARBEITSMITTEL_KOSTEN),
+                        "nutzungsdauer": nd})
             ns_wk = runner.catala_werbungskosten_n(gesamt_wk_input)
             ns = runner.catala_einkuenfte_nichtselbststaendig({
                 "veranlagungszeitraum": vz,

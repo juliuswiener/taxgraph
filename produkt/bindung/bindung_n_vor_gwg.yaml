@@ -542,6 +542,23 @@ bindungen:
   - feld_id: am_gwg_sofortabzug_gewaehlt
     quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, geltungsbedingung: gwg_sofortabzug_gewaehlt}
     typ: bool
+  - feld_id: arbeitsmittel_nutzungsdauer
+    quelle: {regel_id: p7_1_lineare_afa, signatur_slot: nutzungsdauer}
+    typ: int
+    einheit: Jahre
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele Jahre willst du die Anschaffungskosten verteilen (übliche Nutzungsdauer)?"
+    hilfe_kurz: "Der AfA-Zeitraum für Arbeitsmittel ohne GWG. Typisch: 3-5 Jahre für Hardware, 5-10 Jahre für Einrichtung, 15 Jahre für Gebäudeanteile."
+    beispielwert: 5
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Nutzungsdauer geht in die lineare AfA-Rechnung der Anlage-N; kein eigenes Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 7 Abs. 1 EStG"
+      zitatanker: "bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung"
+      datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
     einheit: null
     askable: true
     vorjahr: uebernehmbar
