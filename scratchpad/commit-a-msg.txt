@@ -1,0 +1,15 @@
+feat(mapping): XSD-Kz-Verifikationspass + Per-Datenart-Routing E60xx->E77
+
+Verifiziert Existenz+Sektionspfad der via lade_bindung() geladenen bindung-Kz
+gegen lokales ERiC-Schema; Per-Datenart-Routing E60xx->E77 (EUER-Datenart,
+eigenes Root-Element); Voll-Katalog 37 Felder EXIT=0 (VZ2026 laut
+SCHEMA_UNVERFUEGBAR, nicht still uebersprungen).
+
+H1 (Gate-tauglich: exit 0 nur wenn alle Felder OK) + H2 (geteilter-Typ-Fixture
+treibt vollen Report-Treiber, non-vacuous verifiziert -- nicht nur Walker-
+Primitive) + H3 (MAX_DEPTH-Abbruch gezaehlt+sichtbar) als Gate-Tests.
+
+Coverage-Vollstaendigkeit (Instanz-/Verzweigungs-Kz) = Audit in flight,
+noch nicht garantiert.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>

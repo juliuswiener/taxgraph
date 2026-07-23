@@ -1,0 +1,11 @@
+feat(mapping): XSD-Kz-Coverage-Harvester + Anlage-Kz-Fix rentner_veraeusserungsgewinn
+
+XSD-Kz-Coverage vervollständigt (Harvester erntet Verzweigungs-/Negations-/
+Instanz-Kz aus est_mapping) + amtlich belegter Anlage-Kz-Fix
+rentner_veraeusserungsgewinn (selbstaendig E0901201/Anlage-L →
+E0804501/Anlage-S; land_forst GAP → E0901201/Anlage-L). Dreifach-konvergent
+verifiziert, Tarif-Impact 0 (Ring liest Store-Feld, reiner
+ELSTER-Submission-Kz), schließt stille land_forst-Unter-Deklaration (K2).
+Full-Katalog 62 Felder EXIT=0.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>

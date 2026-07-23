@@ -1,0 +1,70 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/julius/00_projects/168_TaxGraph/taxgraph
+plugins: logfire-4.30.0, hypothesis-6.155.7, anyio-4.14.1
+collected 761 items / 1 skipped
+
+tests/test_abzinsungsfaktor.py ...                                       [  0%]
+tests/test_afa_kohorten.py ...                                           [  0%]
+tests/test_agb_kist_p33_p10.py ........                                  [  1%]
+tests/test_behinderten_pauschbetrag_p33b.py ......                       [  2%]
+tests/test_beleg_writer.py .......................                       [  5%]
+tests/test_bindungstabelle.py .............                              [  7%]
+tests/test_charge30_p24a_p24b_p31.py ............                        [  8%]
+tests/test_deckt_ab_freeze.py .......                                    [  9%]
+tests/test_deklarations_abdeckung.py ........                            [ 10%]
+tests/test_ebilanz_feldmapping.py .......                                [ 11%]
+tests/test_ebilanz_katalog.py .............                              [ 13%]
+tests/test_einheiten.py ........                                         [ 14%]
+tests/test_env_loader.py ....                                            [ 15%]
+tests/test_est_mapping.py .............................................. [ 21%]
+.....                                                                    [ 21%]
+tests/test_flag_konsistenz.py .................                          [ 24%]
+tests/test_gate_semantik.py ............................................ [ 29%]
+..........                                                               [ 31%]
+tests/test_golden_anker_freeze.py ....                                   [ 31%]
+tests/test_haushalt_35a_10b.py .............                             [ 33%]
+tests/test_haut_chat.py .....                                            [ 34%]
+tests/test_hinweis_provenance.py ....                                    [ 34%]
+tests/test_instanz_kern.py ...........                                   [ 36%]
+tests/test_item_registry.py ...................                          [ 38%]
+tests/test_judge_mehrheit.py ..........................                  [ 41%]
+tests/test_kapital_32d.py ........                                       [ 42%]
+tests/test_kapital_accessoren.py .........                               [ 44%]
+tests/test_kontoauszug_pdf_endpoint.py .....                             [ 44%]
+tests/test_kontoauszug_writer.py .........s...............               [ 48%]
+tests/test_llm_client.py .....                                           [ 48%]
+tests/test_ors_client.py .....                                           [ 49%]
+tests/test_p10_1_7_berufsausbildung.py ........                          [ 50%]
+tests/test_p10_kv_pv.py ..........                                       [ 51%]
+tests/test_p21_2_verbilligt.py ........                                  [ 52%]
+tests/test_p33b.py ......                                                [ 53%]
+tests/test_paket_a_e2e.py .                                              [ 53%]
+tests/test_paket_b_e2e_http.py ......................................... [ 59%]
+........................................................................ [ 68%]
+.....................................................                    [ 75%]
+tests/test_partner_konsistenz.py ....................                    [ 78%]
+tests/test_partner_konsistenz_wiring.py ....                             [ 78%]
+tests/test_praezedenz.py .............                                   [ 80%]
+tests/test_quellen.py ....                                               [ 80%]
+tests/test_renten_ertragsanteil_p22.py ....                              [ 81%]
+tests/test_renten_p22.py .........                                       [ 82%]
+tests/test_snapshot.py ............                                      [ 84%]
+tests/test_sonderausgaben_p10c.py ....                                   [ 84%]
+tests/test_store.py .....................                                [ 87%]
+tests/test_traverser.py ...........                                      [ 88%]
+tests/test_triage_log_bindung.py ...                                     [ 89%]
+tests/test_ui_backend.py ............                                    [ 90%]
+tests/test_ui_zwei_signal_sicherheit.py ...................              [ 93%]
+tests/test_unsicherheit.py ..........                                    [ 94%]
+tests/test_vorjahr_writer.py ......                                      [ 95%]
+tests/test_werbungskosten_n.py ..............                            [ 97%]
+tests/test_xsd_verify.py ....................                            [100%]
+
+=============================== warnings summary ===============================
+tests/test_ui_backend.py::test_schreiben_ohne_token_gesperrt
+  /usr/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============ 760 passed, 2 skipped, 1 warning in 123.89s (0:02:03) =============

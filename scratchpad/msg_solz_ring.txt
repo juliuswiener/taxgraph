@@ -1,0 +1,16 @@
+test(solz): Ring-Level-SolZ-Wert-Regression je Scheibe — K1-Lücke geschlossen
+
+verify-b-ring bestätigte Accessor-Fidelity (5/5), aber /ergebnis solz_cent
+war nie per-Scheibe assertet. Dieser Test fährt den echten HTTP-Pfad:
+
+- gesamt Hochverdiener (200000€ Gewinn) → solz_cent ≈401896 (4018.96€)
+- gesamt unter Freigrenze (0€ Gewinn) → solz_cent == 0
+- gesamt + §32d-Kapital (5000€) → solz_cent > ohne Kapital (§3 Abs.3 S.2)
+- rentner_gesamt Hochverdiener (200000€ Rente) → solz_cent ≈401896
+- rentner_gesamt klein (20000€) → solz_cent == 0 (unter FG)
+- an_gesamt Hochverdiener (200000€ Bruttolohn) → solz_cent Ring==Accessor
+- an_gesamt klein (5000€ Brutto) → solz_cent == 0 (unter FG)
+
+Gate: 820 passed, 2 skipped, clerk build p32a-python rc=0.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

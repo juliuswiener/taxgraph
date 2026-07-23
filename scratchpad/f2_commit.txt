@@ -1,0 +1,29 @@
+fix(store/haut): F2 Härtung — Vorschlags-Magnitude-Bound + Chat-Cent-Instruktion
+
+Teil A (produkt/store/store.py, append_event): fail-closed Magnitude-Bound für
+Vorschlags-Schreiber (llm/beleg/kontoauszug/maps — _vorschlag_typ != None). Ein
+realer Zahlenwert (int/float, bool exkludiert) muss |wert| < 10^10 (< 100 Mio €
+in Cent) sein, sonst ValueError mit feld_id+wert+Klartext ("vermuteter Einheiten-/
+Skalierungsfehler EUR statt Cent"). Symmetrisch (abs) — kein 0-Floor, da negative
+Verlust-Felder legitim sind. Human-/Engine-Schreiber bleiben unbeschränkt (typ is
+None → Bound greift nicht). Honest Limit als Code-Kommentar: fängt nur
+Über-Skalierung (zu groß), keine Unter-Skalierung (zu klein, aber < 10^10) —
+dagegen wirkt Teil C.
+
+Teil C (produkt/haut/api.py, _chat_prompt): Vertrag verifiziert — chat() schreibt
+v["wert"] aus dem LLM-Parse UNVERÄNDERT (kein ×100) via append_event; die Ring-
+Accessoren (_c/_ci in api.py) lesen Geld-Felder mit //100 (Cent → EUR für Catala).
+Store-Einheit für Geld ist also Cent, roh vom LLM. System-Prompt ergänzt um klare
+Cent-Instruktion (EUR × 100, Beispiel 2156,50 € → 215650).
+
+Teil B (Doppel-Signal/Zwei-Stufen-Bestätigung im Chat-Flow): DEFERRED, nicht gebaut.
+
+Tests (tests/test_store.py, kein Mock-LLM, Events von Hand gebaut): Vorschlags-
+Schreiber mit wert=10^10 fällt; normaler Cent-Wert (215600) geht durch; negativer
+Verlust-Wert (-50000) geht durch (Symmetrie-Gegenprobe); human-Schreiber mit
+wert=10^10 bleibt unbeschränkt (Gegenprobe kein Über-Blocken).
+
+Gate: python3 -m pytest tests/ -q → 764 passed, 2 skipped (Baseline 760/2 + 4 neue
+Tests). Keine .catala-Änderung, kein clerk-Build nötig.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

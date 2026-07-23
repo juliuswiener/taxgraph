@@ -1,0 +1,11 @@
+chore(xsd_verify): CI-Gate-Test + DOKUMENTIERT_AGGREGAT-vz-Härtung
+
+- test_voll_katalog_ist_gate_gruen: hängt den Voll-Katalog-Check (lade_bindung() + Harvest,
+  main() exit 0) als skipif-gated Gate in die pytest-Suite ein — jede künftige Kz-Section-
+  Fehlbindung bricht ab jetzt automatisch, ohne manuellen xsd_verify-Lauf. (H1-Zweck)
+- ernte_est_mapping_kz: DOKUMENTIERT_AGGREGAT-vz_gueltigkeit jetzt Union über ALLE Quellfelder
+  statt nur [0] (dev-1-Härtung #18) — kein still verpasstes Jahr, falls Quellfelder je divergieren.
+
+Gate: pytest tests/test_xsd_verify.py 20 passed; Voll-Katalog main() exit 0.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

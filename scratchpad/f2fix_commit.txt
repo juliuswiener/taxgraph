@@ -1,0 +1,29 @@
+fix(store): F2 String-Wert-Bypass schließen + abs()-Symmetrie-Test (Review-Fund)
+
+Adversarial Review von 92824c4 fand realen Bypass im F2-Magnitude-Bound in
+append_event: `isinstance(wert, (int, float))` überspringt jeden numerischen
+STRING (z.B. "12000000000") stillschweigend — isinstance(str, (int, float))
+ist False, der Bound greift nie. Reachable über zwei Pfade: chat() schreibt
+den LLM-Wert 1:1 ohne int-Cast (LLMs liefern oft JSON-Strings), und der
+generische /event-Endpunkt reicht body.get("wert") roh vom Client durch.
+append_event ist der Store-Choke-Point — der Fix hier deckt beide Pfade ab.
+
+Fix: String-Werte werden vor dem Bound-Check via float() geparst; scheitert
+das (nicht-numerischer String — Enum, IBAN, etc.), bleibt der Bound wie
+zuvor deaktiviert (kein False-Reject). Nur numerische Strings ab 10^10
+lösen jetzt noch aus.
+
+Tests (tests/test_store.py):
+- test_F2_vorschlag_riesenwert_als_string_faellt: numerischer String
+  "12000000000" löst jetzt ValueError(Magnitude) aus (der eigentliche
+  Bypass-Beweis).
+- test_F2_vorschlag_negative_grenze_faellt: wert=-(10**10) löst aus —
+  Mutationskiller für die abs()-Symmetrie (ohne abs() im Bound würde
+  dieser Test durchrutschen).
+- test_F2_vorschlag_kleiner_stringwert_ok: kleiner numerischer String
+  "215600" bleibt zulässig (kein False-Reject-Beweis).
+
+Gate: python3 -m pytest tests/ -q → 767 passed, 2 skipped (vorher 764,
++3 neue). Kein .catala-Change, kein clerk nötig.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

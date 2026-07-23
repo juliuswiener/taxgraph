@@ -1,0 +1,13 @@
+fix(ring/§6): GWG-800€-Schwelle Cent-Trunkierung — Under-tax im Sub-Euro-Band
+
+_gwg_sofortabzug_summe rechnete netto//100 (Euro-Floor) VOR dem catala-≤800-Vergleich
+in catala_p6_2_gwg. Ein Asset zu 800,01-800,99€ (80001-80099 Cent) rundete auf 800€ ab
+und ging fälschlich als GWG durch (Sofortabzug statt AfA über die Nutzungsdauer,
+Under-tax). Fix: Cent-Schwellen-Guard (>80000 Cent → 0, kein GWG) VOR der Euro-Rundung
+in api._gwg_sofortabzug_summe._abzug. 800€-Schwelle selbst unverändert, GWG-Fälle
+≤800€ unverändert.
+
+Boundary-Test S12 (tests/test_ui_zwei_signal_sicherheit.py): 80000ct→800 (voller
+Sofortabzug), 80001ct→0 (AfA), 79999ct→799 (GWG).
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

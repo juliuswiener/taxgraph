@@ -1,0 +1,24 @@
+fix(ring/§9): oepnv_kosten_jahr fehlendes //100 an 3 Call-Sites — 100× Under-tax
+
+Der §9-ÖPNV-Slot ep_oepnv_kosten (bindung typ=cent) lief roh (kein //100) in den
+Runner-Accessor catala_entfernungspauschale, der EURO erwartet (runner.py
+Money(f"{int(...)}.00")). Cent-Eingabe → 100× zu hoher Werbungskosten-Abzug →
+Under-tax (Steuer→0 sobald ÖPNV>0). Betraf ep + an_gesamt + gesamt (geteilter
+Slot-Pfad); rentner_gesamt immun (keine EP_FELDER). Pre-existing seit MVP, von
+0-Wert-Tests permanent maskiert.
+
+Fix: Helper _oepnv_eur(slots) = int(oepnv_kosten_jahr)//100, an allen 3 Call-Sites
+(api.py ep:484 / an_gesamt:508 / gesamt:636), analog zum bestehenden bruttoarbeitslohn-
+//100-Muster. Nur der eine money-Slot betroffen; arbeitstage/entfernung_km/kfz bleiben
+unskaliert (Zähler/km/bool).
+
+Anti-Mask-Test S11 (test_ui_zwei_signal_sicherheit.py): echter _bescheid_fn-Pfad,
+ep_oepnv_kosten=138000 Cent (1380€ Jobticket > 1320€ Pauschale → ÖPNV-Günstiger) →
+abziehbarer_betrag == 138000 Cent, != 13800000 (100×-Regression). Failt ohne Fix.
+Nötig, weil jeder bestehende Test oepnv=0 setzt (0//100==0, Bug maskiert).
+
+Fund: konvergent von zwei unabhängigen Read-only-Audits (an_gesamt-units + ep).
+
+Gate: python3 -m pytest tests/ -q → 768 passed, 2 skipped (767 + S11). Kein .catala-Change.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

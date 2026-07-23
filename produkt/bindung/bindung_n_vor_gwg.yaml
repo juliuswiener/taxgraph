@@ -542,8 +542,22 @@ bindungen:
   - feld_id: am_gwg_sofortabzug_gewaehlt
     quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, geltungsbedingung: gwg_sofortabzug_gewaehlt}
     typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Möchtest du günstige Arbeitsmittel (bis 800 Euro) sofort komplett absetzen?"
+    hilfe_kurz: "Sofort-Abzug ist ein Wahlrecht. Alternative: über die Nutzungsjahre verteilen."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wahlrecht (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "in voller Höhe als Betriebsausgaben abgezogen"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
   - feld_id: arbeitsmittel_nutzungsdauer
-    quelle: {regel_id: p7_1_lineare_afa, signatur_slot: nutzungsdauer}
+    quelle: {regel_id: p7_1_lineare_afa, signatur_slot: nutzungsdauer_jahre}
     typ: int
     einheit: Jahre
     askable: true
@@ -559,20 +573,6 @@ bindungen:
       quelle: "§ 7 Abs. 1 EStG"
       zitatanker: "bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung"
       datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
-    einheit: null
-    askable: true
-    vorjahr: uebernehmbar
-    fragetext_laie: "Möchtest du günstige Arbeitsmittel (bis 800 Euro) sofort komplett absetzen?"
-    hilfe_kurz: "Sofort-Abzug ist ein Wahlrecht. Alternative: über die Nutzungsjahre verteilen."
-    beispielwert: true
-    herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Wahlrecht (Ja/Nein), kein Betragsfeld."
-    vz_gueltigkeit: [2024, 2025, 2026]
-    anker_ref:
-      quelle: "§ 6 Abs. 2 S. 1 EStG"
-      zitatanker: "in voller Höhe als Betriebsausgaben abgezogen"
-      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
   - feld_id: am_massgebliche_ak
     quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, geltungsbedingung: anschaffungskosten_sind_massgebliche_ak}
     typ: bool
@@ -827,6 +827,24 @@ luecken:
   - regel_id: p9_1_3_nr5a_uebernachtung_nach_48
     geltungsbedingung: zeitraum_vollstaendig_nach_48_monate
     grund: "Binäre Zeitraum-Auswahl vor/nach 48 Monaten; der Ring (runner._uebernachtung_abzug) materialisiert sie deterministisch aus monate_bisher_am_ort (>= 48 → Kappung auf den Nr.-5-Betrag, sonst ungekappt). Keine eigene Laien-Abfrage; überspannende Zeiträume (bisher<48<bisher+monate) sperrt der Guard fail-closed (uebernachtung_zeitraum_offen)."
+  - regel_id: p7_1_lineare_afa
+    signatur_slot: nutzungsdauer_jahre
+    grund: "AfA-Zweig (§ 7, Verteilung über die Nutzungsdauer > 800 Euro); Anker liegt im §7-AfA-Freeze, Bindung im AfA-Scheiben-Nachtrag."
+  - regel_id: p7_1_lineare_afa
+    signatur_slot: anzurechnende_monate
+    grund: "AfA-Zweig (§ 7, zeitanteilige AfA im Anschaffungsjahr); Bindung im AfA-Scheiben-Nachtrag."
+  - regel_id: p7_1_lineare_afa
+    signatur_slot: anschaffungs_herstellungskosten
+    grund: "AfA-Zweig (§ 7, Anschaffungskosten > 800 Euro); Bindung im AfA-Scheiben-Nachtrag."
+  - regel_id: p7_1_lineare_afa
+    geltungsbedingung: abnutzbares_wg_ueber_ein_jahr
+    grund: "AfA-Zweig (§ 7, Anlagegut > 1 Jahr Nutzungsdauer); Annahme für Arbeitsmittel."
+  - regel_id: p7_1_lineare_afa
+    geltungsbedingung: zwoelftelung_volle_monate
+    grund: "AfA-Zweig (§ 7, zeitanteilige AfA per Zwölftelung); im Ring runner._p7_linear_afa materialisiert."
+  - regel_id: p7_1_lineare_afa
+    geltungsbedingung: lineare_methode_keine_leistungs_afa
+    grund: "AfA-Zweig (§ 7, lineare Methode); Grundregel für bewegliche Arbeitsmittel."
   - regel_id: p9_1_3_nr6_7_arbeitsmittel_afa
     signatur_slot: nutzungsdauer_jahre
     grund: "AfA-Zweig (§ 7, Verteilung über die Nutzungsdauer > 800 Euro); Anker liegt im §7-AfA-Freeze, Bindung im AfA-Scheiben-Nachtrag."

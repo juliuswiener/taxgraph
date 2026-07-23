@@ -1,0 +1,20 @@
+feat(§33a): Unterhalt Abs.1 + Ausbildungsfreibetrag Abs.2 — GdE-Abzug verdrahtet
+
+§33a mindert GdE (§33a "vom GdE abgezogen"), war komplett unverdrahtet.
+
+- runner.py: 2 Pure-Python Accessoren (EURO):
+  catala_p33a_unterhalt (VZ-driftend GFB 11784/12096/12348, KV/PV-additiv,
+  624€-Schonbetrag-Anrechnung, 5 pipeline-seeds fidel)
+  catala_p33a_ausbildungsfreibetrag (1200€ Festbetrag, 2 seeds fidel)
+- bindung_p33a_gesamt.yaml: 4 Felder, OPTIONAL (absent→0→safe), Kz null+MVP.
+  Teilmengen-Invariant: p33a_andere_einkuenfte_bezuege = nur Einkuenfte des
+  Unterhaltsempfaengers (Fragetext-Kontext klar, aehlich §34c-Q1)
+- api.py: GESAMT_P33A-Tupel, in gesamt+rentner additiv zu sonstige_abzuege_
+  vom_einkommen (neben §10d — §33a hat keine zumutbare Eigenbelastung, KEIN
+  §33-agB). §33a sitzt VOR GdE → beruehrt §24a-Bemessung NICHT (§24a rechnet
+  auf Einkuenften, vor GdE-Abzuegen)
+- test_p33a_accessor.py: 10 Tests (5+2 seeds + VZ-Drift + Assertion)
+
+Gate: 841 passed, 2 skipped, clerk build p32a-python rc=0, xsd_verify passed.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

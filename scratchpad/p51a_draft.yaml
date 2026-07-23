@@ -1,0 +1,74 @@
+rule_id: p51a_kirchensteuer
+hinweis: 'Triage p51a — int-Encoding-Interpretationen (konfession/bundesland/est_mit_fb)
+  = nicht_material (Input-Etikett, im Formel-Zweig materialisiert, keine externe Bedingung);
+  Norm-Text-Fragmente (Hebesatz 8/9 %, § 51a-Basis) = nicht_material_backlog (wirkt_hinein,
+  scope_gap informativ). KEINE bedingung_neu: Kirchensteuerpflicht steckt in satz=0.'
+items:
+- art: annahme
+  anker:
+  - betrifft_kat
+  - bundesland
+  - interpretation
+  text: Bundesland 1 und 2 werden als Bayern interpretiert. | Alle anderen Bundesländer
+    werden mit 9 % Hebesatz angenommen.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - konfession
+  - interpretation
+  text: Konfession 0 und 3 gelten als kirchensteuerfrei. | Konfession 0 oder 3 bedeutet
+    keine Kirchensteuerpflicht. | Konfession 0 oder 3 wird als nicht kirchensteuerpflichtig
+    interpretiert.
+  triage: nicht_material
+- art: annahme
+  anker:
+  - betrifft_kat
+  - est_mit_fb
+  - geltungsvoraussetzung
+  text: est_mit_fb ist bereits nach § 51a EStG bereinigt.
+  triage: nicht_material
+- art: norm_teil
+  anker:
+  - ref
+  - § 51a-bemessungsgrundlage (est mit kinderfreibetrag)
+  text: Vor Anwendung der Kirchensteuerhebesätze ist die Bemessungsgrundlage nach
+    Maßgabe des § 51a des Einkommensteuergesetzes
+  klasse: wirkt_hinein
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - landes-kistg hebesatz übrige länder (9 v.h., finmin-nrw-erlass 18.04.2024)
+  text: Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer „9 v. H."
+  klasse: wirkt_hinein
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - landes-kistg hebesatz bayern (8 %, erzbistum münchen / art. 8 kirchstg)
+  text: Der Umlagesatz beträgt in Bayern derzeit 8 % der Einkommen-, Lohn- und Kapitalertragsteuer
+  klasse: wirkt_hinein
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - landes-kistg hebesatz übrige länder
+  text: Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer „9 v. H.“
+  klasse: wirkt_hinein
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - landes-kistg hebesatz bayern
+  text: Der Umlagesatz beträgt in Bayern derzeit 8 % der Einkommen-, Lohn- und Kapitalertragsteuer
+  klasse: wirkt_hinein
+  triage: nicht_material_backlog
+- art: norm_teil
+  anker:
+  - ref
+  - § 51a-bemessungsgrundlage
+  text: Vor Anwendung der Kirchensteuerhebesätze ist die Bemessungsgrundlage nach
+    Maßgabe des § 51a des Einkommensteuergesetzes
+  klasse: wirkt_hinein
+  triage: nicht_material_backlog

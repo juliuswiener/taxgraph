@@ -1,0 +1,12 @@
+docs(security): Import-Writer Security-Sweep (K1 dreifach-gated)
+
+Read-only Cross-cutting-Sweep: beweist die K1-Kern-Invariante haelt fuer
+die neuen Import-Kanaele (import:beleg/import:kontoauszug/llm:chat) -- kein
+vorlaeufig-Event bewegt die festgesetzte Steuer ohne Mensch-signal_2.
+
+Drei unabhaengige Gates dokumentiert: Store-Katalog (append_event Auflage
+A+K1), Ring-Bescheid (_bescheid_fn/_feste_zahl nur_bestaetigt=True default),
+Elster-Export (deklariere()/_deklariere_instanz fail-closed bei
+zustand!=bestaetigt). Verdikt GRUEN, keine neue parallele Roh-Pfad-Luecke.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>

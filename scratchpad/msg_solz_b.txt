@@ -1,0 +1,19 @@
+fix(solz/§3,§4): SolZ für natürliche Personen verdrahten — Under-tax geschlossen
+
+War 0€ für alle Natürlichen-Personen-Scheiben (Solzg-Modul + params
+gebaut, aber nie verdrahtet — only KStG-KapGes hatte SolZ).
+
+- catala_solz(s) in golden/runner.py: Pure-Python Accessor (CENT),
+  KiFB-fiktive Basis (§3 Abs.2 SolzG), §32d-Kapital-Split
+  (§3 Abs.3 S.1+2: Freigrenze auf Haupt-Basis, Kapital 5.5% immer),
+  VZ 2024/2025/2026 Freigrenzen aus params.
+- api.py: SolZ in alle 3 Scheiben (an_gesamt, gesamt, rentner_gesamt)
+  via solz_container-Pattern. _festzusetzende trackt KiFB-Lauf
+  (freibetrag>0) als SolZ-Basis; kinderlose Fälle = einziger Lauf.
+  §32d-Kapital-Steuer aus catala_kapital_steuer separiert.
+- /ergebnis: neues Feld solz_cent (null-safe).
+- api_schema/ergebnis.json: solz_cent hinzugefügt.
+
+Gate: 773 passed, 2 skipped, clerk build p32a-python rc=0.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

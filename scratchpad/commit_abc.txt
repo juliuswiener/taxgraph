@@ -1,0 +1,34 @@
+fix(mapping): Kz-Section-Fehlbindungen A/B/C — §35a↔§33-Swap + kap→KAP + Partner-Behinderung→PARTNER_INSTANZ
+
+Der XSD-Section-Plausibilitäts-Sweep (produkt/mapping/xsd_verify.py) deckte 3 weitere
+Kz-Sektion-Fehlbindungen im vorher "verified" Katalog auf (nach L/S in 73e3268). Alle
+reiner ELSTER-Submission-Layer — Tarif-Impact 0 (Ring liest Store-Felder, nie den Kz;
+kein golden est-Wert im Changeset).
+
+FUND A — §35a↔§33-Domänen-Swap (bindung_sonder_agb_35a.yaml):
+- hh_minijob_aufwendungen        E0161404 (AgB/Pflege)  → E0104109 (HA_35a/Minijobs)
+- hh_dienstleistungen            E0161504 (AgB/Beh)     → E0107208 (HA_35a/Hhn_BV_DL)
+- hh_handwerker_arbeitskosten    E0161804 (AgB/Sonst)   → E0111215 (HA_35a/Handw_L)
+- agb_aufwendungen               E0104109 (HA_35a)      → E0161804 (AgB/And_Aufw/Sonst)
+
+FUND B — kap_kapitalertraege (§20 Abs.9, eigene Erträge):
+- E0121709 (Anlage-U / unterhaltene Person) → E1900701 (KAP/KapErt_inl_StAbz)
+- est_mapping.py PARTNER_INSTANZ (Person-B-Mirror) mitgezogen
+
+FUND C — Partner-Behinderung (§33b Abs.3, Ehegatte eigene Behinderung):
+- rentner_grad_der_behinderung_partner    E0505809 (Kind-Übertragung §33b Abs.5) → elster_kz:null
+- rentner_hilflos_blind_taubblind_partner E0505807 (Kind-Übertragung §33b Abs.5) → elster_kz:null
+- est_mapping.py PARTNER_INSTANZ: Reuse Person-A E0109708/E0109706 (Mechanismus existierte, nie angeschlossen)
+
+Verifikation: dreifach-konvergent (2 unabhängige strikte Sweeps + Walker-Belege);
+7 bug-kodierende Roundtrip-Tests KORRIGIERT (nicht grün-poliert); 3 neue XSD-Struktur-
+Pin-Regressionstests; Kommentar/Doku-Cleanup (api.py, partner_check.py, KONZEPT.md).
+
+Gate: Rest-Suite 593 passed / 2 skipped / 0 failed; targeted 70 passed; xsd_verify
+Full-Katalog EXIT=0; clerk build p32a-python rc=0. Ausgeschlossen: test_paket_b_e2e_http
+(bekannter Daemon-Thread-catala-Race, Flaky-Hänger, pre-existing — ein Kz-Wert-Fehler
+gäbe eine Assertion-Failure, nie einen Thread-Hänger).
+
+Report: reports/review/2026-07-20-xsd-kz-section-sweep-findings.md.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

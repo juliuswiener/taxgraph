@@ -1,0 +1,24 @@
+feat(§23/Abs.1): private Veraeusserungsgeschaefte Stufe-1 (Freigrenze 1000€, same-year-Verlusttopf) — Einkunftsart-Luecke geschlossen
+
+Erstmalig §23-Einkünfte (private Veräußerungsgeschäfte) in den Rechen-Ring
+integriert — vorher komplett unverdrahtet (Einkunftsart-Lücke).
+
+- runner.py: 3 Pure-Python Accessoren (EURO):
+  catala_p23_veraeusserungsgewinn (3 test_seeds), catala_p23_freigrenze
+  (4 seeds: 999→0/1000→1000-Wächter), catala_p23_verlusttopf (4 seeds)
+- bindung_p23_gesamt.yaml: 4 Felder (p23_veraeusserungspreis/AK/WK/typ),
+  Multi-Instanz wie §21 (instanz_gruppe: "p23_veraeusserung"), Kz null+MVP
+  (Anlage-SO-Res = eigene Recon-Runde)
+- item_registry: p23_veraeusserungsgewinn.yaml (fehlte komplett)
+- api.py: _p23_ansonsten_einkuenfte Aggregator (Σ über Instanzen →
+  Freigrenze → Verlusttopf → ADDITIV in einkuenfte_sonstige).
+  Gesamt: einkuenfte_sonstige = p23; Rentner: renten + p23. NIE additiv
+  zu an_gesamt (kein_sonstige-Flag routet implizit raus)
+- test_p23_accessor.py: 11 Tests (alle 3 Snapshots seed-treu)
+- log_bindung_baseline.tsv: 2 neue auth-Items grandfatherd
+
+Stufe-2-Backlog: Mehrjahr-Verlustvor-/rücktrag (S.8), auto-Frist-aus-Datum.
+
+Gate: 831 passed, 2 skipped, clerk build p32a-python rc=0, xsd_verify passed.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

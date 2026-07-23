@@ -1,0 +1,27 @@
+fix(rentner/§31): Familienleistungsausgleich fehlte im Rentner-Ring — Over-tax
+
+catala_p31_familienleistung (Günstigerprüfung Kinderfreibetrag vs Kindergeld,
+§ 32 Abs. 6/§ 31 EStG) wurde im gesamt-Ring aufgerufen, aber nie im
+rentner_gesamt-Block: Rentner mit Kindern verloren die Günstiger-
+Freibetrag-Anrechnung komplett (fam_anzahl_kinder war für § 31 totes Feld).
+
+Fix in produkt/haut/api.py (EINZIGER Konsument von festzusetzende_est_rentner,
+kein Duplikat in golden/runner.py — dort liegen nur die Catala-Accessoren,
+kein zweiter Ring): der bisherige lineare rentner_g-Aufbau + §34-Chooser +
+§35-Anrechnung wird in eine Closure _festzusetzende_r(freibetrag) gefasst
+(Spiegel der gesamt-Naht _festzusetzende), zweimal aufgerufen (0 / voller
+Kinderfreibetrag) und per catala_p31_familienleistung verglichen — 1:1
+Präzedenz der gesamt-Scheibe.
+
+2 neue e2e-Tests (tests/test_paket_b_e2e_http.py):
+- test_rentner_p31_familienleistung_freibetrag_guenstiger: hohes Einkommen
+  (zusammen, Gewinn 200000) → Freibetrag-günstiger, est sinkt real.
+- test_rentner_p31_kindergeld_guenstiger_kein_blinder_abzug: Gegenprobe
+  niedriges Einkommen → Kindergeld-günstiger, est bleibt exakt gleich
+  (81100 Cent) — beweist ECHTEN Vergleich, nicht blinden Freibetrag-Abzug.
+
+Gate: pytest tests/test_paket_b_e2e_http.py -k rentner (42 passed) +
+volle Datei (170 passed). Kein Catala-Modul berührt (nur Ring-Wiring in
+Python) → kein clerk-build nötig.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>

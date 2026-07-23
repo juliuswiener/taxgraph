@@ -1,0 +1,18 @@
+fix(§31/an_gesamt): Kinder-Screening-Sperr — silent Over-tax geschlossen
+
+an_gesamt (reiner AN-MVP via catala_est) hat keinen §31/§32-KiFB-Mechanismus.
+Familie mit Kindern in an_gesamt → ~9.540€/Kind Over-tax (KiFB-Wirkung fehlt).
+
+- fam_anzahl_kinder → PFLICHT-Kegel in an_gesamt (K2-safe: ohne Antwort keine
+  festzusetzende Steuer)
+- Guard: fam_anzahl_kinder > 0 (bestätigt) → "kinder_gehoeren_in_gesamt"
+  — feuert NUR für Scheiben ohne gesamt_guard (an_gesamt; gesamt/rentner
+  haben §31 und bleiben unberührt)
+- fam_anzahl_kinder == 0 → normale AN-Berechnung
+- ergebnis.json: neuer Sperr-Grund "kinder_gehoeren_in_gesamt"
+- e2e-Test: an_gesamt mit Kindern → gesperrt; kinderlose AN → rechnen
+- UI-Screening-Frage VOR Scheibe-Wahl = Backlog (dev-2/UI)
+
+Gate: 806 passed, 2 skipped, clerk build p32a-python rc=0.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

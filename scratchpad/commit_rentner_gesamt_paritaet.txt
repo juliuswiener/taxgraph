@@ -1,0 +1,14 @@
+fix(charge/rentner): rentner_gesamt auf gesamt-Parität — 4 Over-tax-Bugs
+
+Rentner-Scheibe war systematisch unterbaut (strukturell erzwungen: §22→
+kein_sonstige-Guard sperrt gesamt). 1) Weg-ii-Abzüge (KV/PV quasi-universell/
+§35a/§10b/§33/KiSt/§10-1-7, RENTNER_KEGEL+VOR/KV_PV, GESAMT_ABZUEGE, GdE mit
+§22-Renten; 81100→0). 2) Partner-§33b-PB zusammen (250€). 3) §24b
+Alleinerziehende (GESAMT_FREIBETRAEGE, gde+est; 782€-Fall). 4)
+§35-Overwrite-Co-Fix (.get+min, §35a additiv, 208900→88900). Alle Over-tax/
+K2-positiv, dreifach-verifiziert, bestehende Rentner-Tests numerisch
+unverändert. DEFER dokumentiert: Person-B-KV/PV, §24b-Kinder-Gate (Fund 2).
+
+Gate: pytest tests/ 760 passed, 2 skipped, 0 failed; clerk build p32a-python rc=0.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>

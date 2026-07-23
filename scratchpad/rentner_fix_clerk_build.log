@@ -1,0 +1,5 @@
+┌─[RESULT]─
+│ Build successful. The targets can be found in the following files:
+│     [p32a-python] → _target/p32a-python
+└─
+EXIT=0

@@ -1,0 +1,23 @@
+feat(§34c/Abs.1): DBA-Anrechnung ausländischer Steuer Stufe-1 (single-country, §34c-vor-§35) — Under-tax geschlossen
+
+Erstmalige DBA-Anrechnung (p34c_1, promoted+inert seit 2026-07-14) in den
+Rechen-Ring (gesamt + rentner) — vorher komplett unverdrahtet (still 0).
+
+- runner.py: catala_p34c_1(s) Pure-Python (EURO-floor), 4 pipeline-verified
+  test_seeds fidel (3000→3000, 10000→8000-Deckel, ausl=0→0, zve=60000-ausl=30000→5000)
+- bindung_p34c_gesamt.yaml: 5 Felder (dba_staat/dba_methode/dba_mehrere_staaten/
+  dba_gezahlte_auslaendische_steuer/dba_auslaendische_einkuenfte), askable, OPTIONAL
+  (absent→0→over-tax-safe), Kz null+grund (Anlage-AUS-Recon = dev-2-Folgeticket)
+- api.py: GESAMT_DBA in gesamt+rentner.felder, Ring-Wiring §34c-ANRECHNUNG VOR §35
+  (§35 Abs.1 S.4: tarifliche_gemindert = tarifliche_raw − anrechnung_34c),
+  Teilmenge-Invariant: dba_auslaendische_einkuenfte NIE additiv zur GdE
+- Fail-closed-Gates: dba_freistellung_offen (Freistellungs-DBA → §32b nicht gebaut),
+  dba_multi_country_offen (>1 Staat → out-of-scope), dba_kapital_offen (§32d-Kapital)
+- ergebnis.json: 3 neue Sperr-Gründe
+- test_p34c_accessor.py: 6 Tests (4 seed-fidelity + zve=0/zve<0)
+
+Invarianz: tarifliche_est PRE-§34c == tarifliche_est MIT anrechnung=5000 → PRE bestätigt.
+
+Gate: 813 passed, 2 skipped, clerk build p32a-python rc=0.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

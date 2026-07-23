@@ -1,0 +1,17 @@
+fix(§35/zaehler): Mitunternehmer-Anteil im §35-Zähler — Over-tax geschlossen
+
+Reiner Mitunternehmer (§15 Abs.1 S.1 Nr.2, mitu>0, gewst_messbetrag>0) mit
+betriebsart≠gewerbe (z.B. §18-selbstständig daneben oder unset) → §35-Kredit
+blockiert (Zähler=0 trotz gewerblichem mitu) → Over-tax.
+
+- _laufender_gewinn: Rückgabe von int auf (laufender_gewinn, mitu)-Tupel
+  (mitu war schon berechnet, nur nicht exponiert)
+- §35-Zähler gesamt (Z.874) + rentner (Z.1140): betriebsart=="gewerbe" ?
+  max(0, laufender_gewinn) : max(0, mitu) — Nenner unberührt (mitu schon drin)
+- Backlog: mitu = ausschl. §15 gewerblich (Anlage G); §18-freiberufl-MU out-of-scope
+- test_p35_mitu_zaehler.py: 9 Unit-Seeds (reiner MU, MU+§18, Gewerbe-ungestört,
+  Negativ-Fälle, Accessor-Konsistenz)
+
+Gate: 805 passed, 2 skipped, clerk build p32a-python rc=0.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

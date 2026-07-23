@@ -1,0 +1,21 @@
+fix(bindung): Bug2 — fam_anzahl_kinder Fragetext schärfen (Eligibility-Selbstdeklaration) + tote Gate-Felder DEFERRED
+
+fam_anzahl_kinder wird im Ring roh übernommen (kein Eligibility-Gate verdrahtet,
+Voll-Verdrahtung ist eine größere Änderung). MVP-Mitigation: fragetext_laie/hilfe_kurz
+schärfen, damit die Selbstdeklaration explizit nach der Anzahl der Kinder mit
+Kindergeld-/Kinderfreibetrag-Anspruch im Steuerjahr fragt (nicht mehr "leben im
+Haushalt"), sodass der Rohwert bereits der steuerlich anspruchsberechtigten Zahl
+entspricht.
+
+Tote Gate-Felder identifiziert + als DEFERRED markiert (nicht gelöscht):
+- fam_kinder_im_haushalt (p24b): kein Accessor in golden/runner.py, kein Lesezugriff
+  in produkt/haut/api.py; Catala-Signatur p24b_entlastungsbetrag nimmt nur
+  alleinstehend/anzahl_kinder/monate_ohne_voraussetzung.
+- fam_kinder_beruecksichtigt (p32_6): kein Accessor in golden/runner.py, kein
+  Lesezugriff in api.py; die Regel p32_6_kinderfreibetraege wird im Ring gar nicht
+  aufgerufen — Kinderfreibetrag läuft direkt über
+  runner._kinderfreibetrag(vz, veranlagung) * fam_anzahl_kinder (api.py:876).
+
+Gate: 764 passed, 2 skipped, 0 failed (unverändert ggü. Baseline). Kein Ring-/Catala-Change.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

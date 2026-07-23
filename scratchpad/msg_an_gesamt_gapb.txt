@@ -1,0 +1,15 @@
+fix(§10d/an_gesamt): Verlustvortrag-Screening-Sperr — silent Over-tax geschlossen
+
+an_gesamt (reiner AN-MVP via catala_est) hat kein §2-Gesamt-Scope → kein
+sonstige_abzuege_vom_einkommen-Slot → §10d Verlustvortrag nicht rechenbar.
+AN mit Verlustvortrag aus Vorjahr → Vortrag nicht abgezogen → Over-tax.
+
+- verlustvortrag_bestand → PFLICHT-Kegel in an_gesamt (wie fam_anzahl_kinder Gap-A)
+- Guard: _positiv("verlustvortrag_bestand") ∧ ¬cfg.gesamt_guard → "verlustvortrag_gehoert_in_gesamt"
+- Gesamt + rentner haben §10d voll (catala_p10d_2) → Route-zu-gesamt valide
+- ergebnis.json: neuer Sperr-Grund
+- e2e: an_gesamt mit verlustvortrag → gesperrt; ohne → rechnet (16 tests grün)
+
+Gate: 807 passed, 2 skipped, clerk build p32a-python rc=0.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

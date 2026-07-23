@@ -1,0 +1,24 @@
+fix(charge/an_gesamt): §10 KV/PV-Sonderausgaben verdrahten — Gesamt-Parität (Over-tax)
+
+Die an_gesamt-Scheibe (reiner AN-Fall) ließ die §10 Abs.1 Nr.3/3a KV/PV-Sonderausgaben
+strukturell weg, die gesamt + rentner_gesamt als Pflicht-Kegel führen ("betrifft jeden").
+Jeder an_gesamt-Fall wurde dadurch über-besteuert (~450-1400€ fehlender Sonderausgaben-
+abzug, HB 1900/2800 + Basis-Durchbruch). Scheibe ist client-wählbar + liefert echten
+§2-Bescheid → live Over-tax. Fund: audit-an-parity (Read-only-Sweep).
+
+Fix (spiegelt gesamt api.py:714-736):
+- KV_PV_FELDER in an_gesamt felder+kegel (Person A PFLICHT, wie gesamt/rentner_gesamt),
+  KV_PV_PARTNER_FELDER in felder (optional, absent→0, over-tax-safe).
+- slot_fn einzel: kv_pv_a = catala_p10_kv_pv(Person A), additiv in sonderausgaben (so + kv_pv_a).
+- slot_fn zusammen: kv_pv_a + kv_pv_b (Partner, eigener HB je Person, additiv) in
+  sonderausgaben_gemeinsam (war hart 0).
+Getrennt von der VOR-Basisvorsorge (§10 Abs.3, eigener Abs.4-HB), //100 Cent→EUR,
+mit_anspruch als bool. §24a-"GESAMT-ONLY" + Person-B-WK/VOR unangetastet (bewusster Scope).
+
+Tests (test_paket_b_e2e_http): einzel basis_kv_pv=3200€ → est 5660€ (Δ 969€ vs kv_pv=0);
+zusammen → Δ 976€ — beide catala-gepinnt, beweisen den Abzug live. Fragen-Set-Assertion um
+AN_GESAMT_KV_PV erweitert (Feld jetzt askable).
+
+Gate: pytest tests/ -q → 770 passed, 2 skipped (768 + 2 neu). Kein .catala-Change.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

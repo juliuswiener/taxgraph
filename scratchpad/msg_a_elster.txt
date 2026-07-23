@@ -1,0 +1,18 @@
+fix(mapping/elster): Kz-Werte Cent→EUR/Dezimalstring konvertieren — 100×-Über-Deklaration geschlossen
+
+Store-CENT wurden 1:1 als Integer in E10-Kz geschrieben → Kz 100× überhöht.
+E10-Kz verlangen volle EUR (Integer floor), E60/E77-Kz verlangen Dezimalstring
+"N,NN" (Anlage EÜR).
+
+- _cent_nach_kz(wert, kz): zentraler Converter (est_mapping.py:31-40)
+  E60-Präfix → "N,NN"-Dezimalstring; sonst floor//100
+- 6 Schreib-Pfade konvertiert: 1:1, VERZWEIGUNG, PARTNER_VERZWEIGUNG,
+  PARTNER_INSTANZ, Instanz 1:1, Instanz VERZWEIGUNG, dokumentiert-Aggregat
+- Stufe-1: floor-all (konservativ FA-konform). Stufe-2-Backlog:
+  asymmetrische Rundung zu-Gunsten (ceiling für Abzugs-Kz, §2 Abs.2 S.2)
+- test_est_mapping.py: alle 51 Deklarations-Assertions von CENT→EUR korrigiert
+  (zu-Gunsten-Rundung auf sub-Euro-Präzision, hand-verifiziert)
+
+Gate: 813 passed, 2 skipped, clerk build p32a-python rc=0, xsd_verify passed.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

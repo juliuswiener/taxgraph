@@ -1,0 +1,21 @@
+feat(§32b): Progressionsvorbehalt Stufe-1 (Lohnersatz, Post-Engine)
+
+Erstmalig §32b (Lohnersatz-Leistungen erhöhen Steuersatz) in den Rechen-Ring.
+
+- runner.py: catala_p32b_1 Pure-Python (3 pipeline-seeds fidel: 5406/4217/290)
+- bindung_p32b_gesamt.yaml: 1 Aggregat-Feld p32b_progressionseinkuenfte (cent,
+  null-Kz: Lohnersatz = eDaten-Trägermeldung §93c AO, kein Steuerpflichtigen-Kz)
+- api.py: GESAMT_P32B in gesamt+rentner. Post-Engine-Wrapper (NICHT tarif_modifiziert,
+  Scheibe-Isolation): pe_active → catala_est → §32b ersetzt tarifliche → est_raw.
+  §35-Deckel-3 post-wrapper mit tarifliche_32b (§35 Abs.1 S.4).
+  §32b×§34-Guard: p32b_p34_kombi_offen (Co-Präsenz Fail-closed, extrem selten).
+  §32b×§34c: est_without_tarifliche-Mechanik erhält §34c/§35-Abzug intakt.
+- an_gesamt: GATE (progression_gehoert_in_gesamt, Muster Gap-A/B) — catala_est
+  hat kein extrahierbares zvE, Lohnersatz bei AN häufig → kein stiller Under-tax.
+- test_p32b_accessor.py: 5 Tests (3 seeds + zvE=0 + negativ)
+
+Stufe-2-Backlog: DBA-Freistellung (Abs.1 Nr.3), eDaten-Import (§93c AO).
+
+Gate: 848 passed, 2 skipped, clerk build p32a-python rc=0, xsd_verify passed.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

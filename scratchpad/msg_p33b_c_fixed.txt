@@ -1,0 +1,16 @@
+fix(§33b/gesamt): Behinderten-/Pflege-/Hinterbliebenen-PB im gesamt-Ring — Over-tax geschlossen
+
+War 0€ für Nicht-Rentner (nur rentner-Scheibe hatte §33b-Pauschbeträge).
+rentner_-Feld-IDs im gesamt-Ring wiederverwendet (globale Bindung, Kz E0109708/etc.,
+Namensschuld wie rentner_veraeusserungsgewinn).
+
+- api.py: GESAMT_33B + GESAMT_33B_PARTNER-Tupel in gesamt.felder (optional, absent→0→safe).
+  §33b additiv zu catala_p33_agb im gesamt-slot (1:1 Rentner-Präzedenz).
+  Person-B-§33b nur bei veranlagung==zusammen.
+- test_p33b_gesamt.py: 13 Accessor-Kompositions-Tests (GdB/Pflege/Hinterbliebene,
+  Person A+B additiv, agB-Additivität).
+- Keine neue Bindungs-Datei nötig — rentner_-Felder sind global gebunden.
+
+Gate: 796 passed, 2 skipped, clerk build p32a-python rc=0.
+
+Co-Authored-By: Claude <noreply@anthropic.com>
