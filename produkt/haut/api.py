@@ -1250,11 +1250,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "splitting": g["veranlagung"] == "zusammen"})
             # KiSt § 51a: Basis = Maßstabsteuer ohne §32d-Abgeltung-Kapital (= SolZ-basis_main;
             # die Abgeltung-KiSt e/(4+k) ist ein eigener Nachtrag → hier NICHT auf kap_st).
-            if extras is not None and "est_mit_fb" in solz_info:
-                extras["kist_cent"] = runner.catala_kist({
-                    "est_mit_fb": solz_info["est_mit_fb"] - solz_info.get("kap_st", 0),
-                    "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
-                    "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
+            # FIX: §32d KiSt-Abgeltung — KiSt muss auf die vollen Kapitalerträge angewendet werden (vor 25% Reduktion)
+            kap_st_total = runner.catala_kapital_steuer({
+                "veranlagungszeitraum": vz,
+                "kapitaleinkuenfte": kapitaleinkuenfte,
+                "est_regulaer_mit_kap": g2["est_gesamt"],  # Full tax before credits
+                "est_regulaer_ohne_kap": est_raw})
+            kap_st_netto = kap_st_total * 0.75  # Apply 25% KiSt reduction per §32d(3)
+            extras["kist_cent"] = runner.catala_kist({
+                "est_mit_fb": kap_st_total,  # Full capital tax with KiSt for church tax calculation
+                "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
+                "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
             return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
