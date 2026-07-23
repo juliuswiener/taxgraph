@@ -719,6 +719,55 @@ def test_a6_l2_catala_afa_linear_unit(base):
     assert R.catala_p7_linear_afa({"anschaffungskosten_cent": 100000, "nutzungsdauer": -1}) == 0   # fail-safe
 
 
+DBA_KEGEL_ANRECHNUNG = [
+    ("dba_staat", "at"),
+    ("dba_methode", "anrechnung"),
+    ("dba_gezahlte_auslaendische_steuer", 500000),     # 5000€ gezahlt
+    ("dba_auslaendische_einkuenfte", 3000000),          # 30000€ ausländisch
+]
+
+DBA_KEGEL_FREISTELLUNG = [
+    ("dba_staat", "at"),
+    ("dba_methode", "freistellung"),
+    ("dba_gezahlte_auslaendische_steuer", 0),
+    ("dba_auslaendische_einkuenfte", 3000000),          # 30000€ ausländisch
+]
+
+# DBA-Konstante für Unit-Tests — Accessor nur. Keine HTTP-E2E wegen gesamt-g2-Bug.
+
+def test_dba_unit_catala_p34c_1_anrechnung_seed():
+    """Unit-Test für catala_p34c_1 (Anrechnung): min(gezahlt, HB)."""
+    if not _catala_da():
+        pytest.skip("catala runner not available")
+    s = {"gezahlte_auslaendische_steuer": 5000, "deutsche_est_inkl_ausl": 30000,
+         "zu_versteuerndes_einkommen": 60000, "auslaendische_einkuenfte_staat": 30000}
+    result = R.catala_p34c_1(s)
+    hb = 30000 * 30000 // 60000  # = 15000
+    assert result == 5000, f"min(5000, 15000) = {result}, expected 5000"
+
+
+def test_dba_unit_catala_p34c_1_hoechstbetrag_limit():
+    """Unit-Test catala_p34c_1: HB limit funktioniert."""
+    if not _catala_da():
+        pytest.skip("catala runner not available")
+    s = {"gezahlte_auslaendische_steuer": 20000, "deutsche_est_inkl_ausl": 30000,
+         "zu_versteuerndes_einkommen": 60000, "auslaendische_einkuenfte_staat": 30000}
+    result = R.catala_p34c_1(s)
+    hb = 15000  # 30000*30000//60000
+    assert result == 15000, f"Höchstbetrag: {result}, expected {hb}"
+
+
+def test_dba_method_map_coverage():
+    """Verify all 11 DBA countries are mapped to a method."""
+    if not _catala_da():
+        pytest.skip("catala runner not available")
+    for country in ["at", "ch", "dk", "es", "fr", "gb", "lu", "nl", "pl", "tr", "us"]:
+        assert country in API.DBA_METHOD_MAP, f"{country} missing from DBA_METHOD_MAP"
+        method = API.DBA_METHOD_MAP[country]
+        assert method in ("anrechnung", "freistellung"), \
+            f"{country} has invalid method '{method}'"
+
+
 # ---- A4 § 36 Abs. 2+4: Anrechnung / Abschlusszahlung (Post-Festsetzung, ändert NIE die ESt) ----
 
 def _a4_zahl_baseline(base, fid="a4base"):

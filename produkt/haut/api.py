@@ -231,6 +231,23 @@ GESAMT_33B_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_b
 GESAMT_DBA = ("dba_staat", "dba_methode", "dba_mehrere_staaten",
               "dba_gezahlte_auslaendische_steuer", "dba_auslaendische_einkuenfte",
               "dba_abzug_statt_anrechnung")
+# DBA-Länder-Methoden-Mapping (source: sources/dba/*.txt Art. 23).
+# AT→FREISTELLUNG, US→FREISTELLUNG, CH→ANRECHNUNG(default)/FREISTELLUNG(nach Notifikation),
+# DK→ANRECHNUNG, ES→ANRECHNUNG, FR→ANRECHNUNG, GB→ANRECHNUNG, LU→ANRECHNUNG(default)/FREISTELLUNG(nach Notif.),
+# NL→ANRECHNUNG, PL→ANRECHNUNG, TR→ANRECHNUNG.
+DBA_METHOD_MAP = {
+    "at": "freistellung",
+    "ch": "anrechnung",
+    "dk": "anrechnung",
+    "es": "anrechnung",
+    "fr": "anrechnung",
+    "gb": "anrechnung",
+    "lu": "anrechnung",
+    "nl": "anrechnung",
+    "pl": "anrechnung",
+    "tr": "anrechnung",
+    "us": "freistellung",
+}
 # §23 Private Veräußerungsgeschäfte (Stufe-1): 4 Felder pro Veräußerung (Multi-Instanz,
 # instanz_gruppe "p23_veraeusserung" wie §21). OPTIONAL (absent→0→safe). Σ über Instanzen
 # im Ring → Freigrenze+VTOP → ADDITIV in einkuenfte_sonstige (neben §22-Rente).
@@ -1112,14 +1129,26 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # progressiv), dba_anrechnung bleibt 0 → KEIN Doppel-Relief (= Under-tax). Fail-closed: Flag absent
             # → Abs.1-Pfad (unverändert). „soweit nicht steuerfrei" (Stufe-1): dba_auslaendische_einkuenfte>0
             # = nicht-freigestellte Einkünfte (Freistellung wird im offen-Guard separat gehalten).
+            # LÄNDER-METHODEN-ROUTING: dba_staat → DBA_METHOD_MAP.get(staat_lower) → anrechnung/freistellung.
+            # Anrechnung → catala_p34c_1(hb=berechnet); Freistellung → 0 anrechnung, aber progressionsvorbehalt.
+            dba_staat_raw = f.get("dba_staat", {}).get("wert")
+            dba_method_from_user = f.get("dba_methode", {}).get("wert")  # user-specified override
+            if dba_method_from_user == "dba_freistellung":
+                pass  # Guard sperrt (Z.1758); code hier nicht erreichbar
             if f.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
                 g["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
             elif dba_gezahlt > 0 or dba_ausl > 0:
-                dba_anrechnung = runner.catala_p34c_1({
-                    "gezahlte_auslaendische_steuer": dba_gezahlt,
-                    "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(g),
-                    "zu_versteuerndes_einkommen": runner.catala_gesamt_zve(g),
-                    "auslaendische_einkuenfte_staat": dba_ausl})
+                dba_method_auto = DBA_METHOD_MAP.get(dba_staat_raw.lower() if dba_staat_raw else "") or "anrechnung"
+                if dba_method_auto == "freistellung":
+                    dba_anrechnung = 0  # Freistellung → kein Anrechnungs-Betrag
+                    # Progressionsvorbehalt: dba_ausl in zvE einbeziehen für Tarif-Berechnung
+                    g["p32b_progressionseinkuenfte"] = dba_ausl
+                else:  # anrechnung (default + alle anderen Länder)
+                    dba_anrechnung = runner.catala_p34c_1({
+                        "gezahlte_auslaendische_steuer": dba_gezahlt,
+                        "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(g),
+                        "zu_versteuerndes_einkommen": runner.catala_gesamt_zve(g),
+                        "auslaendische_einkuenfte_staat": dba_ausl})
             g["anzurechnende_auslaendische_steuern"] = dba_anrechnung
             # § 35 GewSt-Anrechnung (S1, opt-in via gewst_messbetrag): der GewSt-Steuermessbetrag (INPUT aus dem
             # GewSt-Messbescheid, enthält § 8-Hinzurechnung/§ 9-Kürzung schon) + Hebesatz → Anrechnung auf die
@@ -1426,19 +1455,24 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
                 "zusammenveranlagung": rentner_g["veranlagung"] == "zusammen"}) + p33a_unt + p33a_ausb
             # §34c Abs.1 DBA-Anrechnung (1:1 gesamt-Präzedenz, §34c VOR §35).
+            # LÄNDER-METHODEN-ROUTING wie gesamt (Z.1132-1148).
             dba_anrechnung = 0
             dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100
             dba_ausl = _c("dba_auslaendische_einkuenfte") // 100
-            # §34c Abs.2 (Abzug statt Anrechnung, auf Antrag) — 1:1 gesamt-Präzedenz. Mutual-Exclusion (elif):
-            # Antrag=True → Abzug von der Bemessungsgrundlage (aggregiert-GdE, progressiv), keine Anrechnung.
+            dba_staat_raw = f.get("dba_staat", {}).get("wert")
             if f.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
                 rentner_g["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
             elif dba_gezahlt > 0 or dba_ausl > 0:
-                dba_anrechnung = runner.catala_p34c_1({
-                    "gezahlte_auslaendische_steuer": dba_gezahlt,
-                    "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(rentner_g),
-                    "zu_versteuerndes_einkommen": runner.catala_gesamt_zve(rentner_g),
-                    "auslaendische_einkuenfte_staat": dba_ausl})
+                dba_method_auto = DBA_METHOD_MAP.get(dba_staat_raw.lower() if dba_staat_raw else "") or "anrechnung"
+                if dba_method_auto == "freistellung":
+                    dba_anrechnung = 0
+                    rentner_g["p32b_progressionseinkuenfte"] = dba_ausl
+                else:
+                    dba_anrechnung = runner.catala_p34c_1({
+                        "gezahlte_auslaendische_steuer": dba_gezahlt,
+                        "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(rentner_g),
+                        "zu_versteuerndes_einkommen": runner.catala_gesamt_zve(rentner_g),
+                        "auslaendische_einkuenfte_staat": dba_ausl})
             rentner_g["anzurechnende_auslaendische_steuern"] = dba_anrechnung
             # Weg-ii-Fix (K2, Over-tax): § 10 Abs. 1 Nr. 2 Basisvorsorge (VOR_FELDER jetzt Pflicht-Kegel) —
             # catala_est ruft _vorsorge_abzug intern (runner.py), kein Doppelzählen, nur die Slots setzen.
