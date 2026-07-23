@@ -14,7 +14,7 @@ bindungen:
     einheit: EUR
     askable: true
     fragetext_laie: "Wie hoch waren Ihre sonstigen Einkünfte aus Leistungen im Jahr — also Einnahmen abzüglich Werbungskosten?"
-    hilfe_kurz: "Dazu gehören z. B. gelegentliche Vermittlungen oder die Vermietung beweglicher Gegenstände. Die ersten 256 € sind steuerfrei (Freigrenze), der darüberliegende Betrag ist voll steuerpflichtig."
+    hilfe_kurz: "Dazu gehören z. B. gelegentliche Vermittlungen oder die Vermietung beweglicher Gegenstände. Wenn die Summe 256 € nicht übersteigt, ist sie steuerfrei. Übersteigt sie 256 €, ist der gesamte Betrag steuerpflichtig."
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
