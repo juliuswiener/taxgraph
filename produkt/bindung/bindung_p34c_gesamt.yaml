@@ -14,7 +14,7 @@ bindungen:
     typ: enum
     einheit: null
     enum_werte: ["Frankreich", "Italien", "Oesterreich", "Schweiz", "Niederlande", "Polen", "Tschechien",
-                 "Grossbritannien", "Spanien", "USA", "sonstiger_staat"]
+                 "Dänemark", "Luxemburg", "Türkei", "Grossbritannien", "Spanien", "USA", "sonstiger_staat"]
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Aus welchem Staat stammen deine ausländischen Einkünfte?"
