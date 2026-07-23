@@ -981,3 +981,48 @@ def test_p16_4_gate_ignoriert_ohne_vg(base):
     _val("ergebnis", erg)
     assert erg["grund"] == "bestaetigt"
     assert isinstance(erg["zahl_cent"], int)
+
+
+# ---- P2-#2: Rentner Person-B KV/PV bei Zusammenveranlagung (fehlte → Over-tax) ----
+
+# Für rentner zusammen brauchen wir Partner-Rentenfelder, damit keine Guard-Sperre.
+_RENTNER_ZUSAMMEN_BASIS = [
+    (f, ("zusammen" if f == "veranlagung" else w)) for f, w in RENTNER_KEGEL_HOCH
+] + [
+    ("rentner_renten_art_partner", "gesetzliche_rente"),
+    ("rentner_jahresrente_partner", 0),
+    ("rentner_renten_beginn_jahr_partner", 2025),
+    ("rentner_alter_bei_rentenbeginn_partner", 65),
+]
+
+
+def test_p2_nr2_erreichbarkeit_partner_kv_pv_post(base):
+    """Person-B-KV/PV-Felder in rentner_gesamt POSTbar (201, nicht 400/422 totes Wiring)."""
+    _rent_anlegen(base, "p2kv_e", _RENTNER_ZUSAMMEN_BASIS)
+    # Dann POSTen wir die 3 Partner-Felder einzeln via _laie (signal_2 ok@feld)
+    for feld, wert in [("basis_kv_pv_partner", 200000), ("weitere_vorsorgeaufwendungen_partner", 0),
+                       ("mit_anspruch_auf_zuschuss_partner", True)]:
+        st, resp = _req(base, "POST", "/fall/p2kv_e/event", _laie(feld, wert))
+        assert st == 201, f"POST {feld}: {st} {resp.get('fehler', resp)}"
+
+
+def test_p2_nr2_ring_differential_kv_pv_senkt_steuer(base):
+    """Rentner zusammen MIT B-KV/PV → zahl_cent strikt niedriger als OHNE (Over-tax entfernt)."""
+    _rent_anlegen(base, "p2k0", _RENTNER_ZUSAMMEN_BASIS)
+    st, e0 = _req(base, "GET", "/fall/p2k0/ergebnis")
+    _val("ergebnis", e0)
+    assert e0["grund"] == "bestaetigt", f"grund={e0.get('grund')}"
+    z0 = e0["zahl_cent"]
+
+    k = list(_RENTNER_ZUSAMMEN_BASIS) + [
+        ("basis_kv_pv_partner", 200000),     # 2000 € × ~14-40% HB
+        ("weitere_vorsorgeaufwendungen_partner", 0),
+        ("mit_anspruch_auf_zuschuss_partner", True)]
+    _rent_anlegen(base, "p2k1", k)
+    st, e1 = _req(base, "GET", "/fall/p2k1/ergebnis")
+    _val("ergebnis", e1)
+    assert e1["grund"] == "bestaetigt", f"grund={e1.get('grund')}"
+    assert e1["zahl_cent"] < z0, f"B-KV/PV: {e1['zahl_cent']} >= {z0} (Over-tax noch da)"
+    delta = z0 - e1["zahl_cent"]
+    # HB max 2800 €, min 0 → Delta im plausiblen Band
+    assert delta > 0 and delta < 280000, f"Delta {delta} außerhalb plausiblen Band"

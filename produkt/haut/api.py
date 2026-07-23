@@ -260,7 +260,7 @@ GESAMT_REALSPLITTING = ("realsplitting_unterhaltsleistungen", "realsplitting_emp
 # Weg-ii-Parität-Fix (K2, Over-tax, ring-b-Fund #4): GESAMT_FREIBETRAEGE auch im Rentner-Ring nachgetragen —
 # ohne fam_alleinstehend/fam_monate_ohne_voraussetzung postbar war § 24b im Rentner-Ring nicht erreichbar
 # (geburtsjahr/fam_anzahl_kinder stehen schon in RENTNER_GEWINN/GESAMT_ABZUEGE, Duplikat harmlos).
-RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P22_NR3_EINKUENFTE + P16_4_GATE_FELDER
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P22_NR3_EINKUENFTE + P16_4_GATE_FELDER + KV_PV_PARTNER_FELDER
 # §§ 13-18 Gewinneinkünfte (Stufe 1), OPTIONAL im gesamt-Ring (NICHT Pflicht-Kegel → absent → 0, over-tax-safe).
 # einkuenfte_gewinn (CENT) = der vorberechnete Gewinn-Betrag → einkuenfte_gewinn-Slot der slot_fn (§ 2-Summand).
 # gewinn_betriebsart (Enum gewerbe/selbstaendig/land_forst) = NUR gespeichert — Kz-Weiche für est_mapping/
@@ -1442,10 +1442,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "energieberater_ermaessigung": p35c_energieberater_r,
                 "ist_uebernaechstes_foerderjahr": f.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
             rentner_g["steuerermaessigungen"] += p35c_gesamt_deckel_r
-            # § 10b Spenden (gde-Deckel) + § 10 KiSt + § 10 Abs. 1 Nr. 3/3a KV/PV + § 10 Abs. 1 Nr. 5 Kinderbetreuung
+            # § 10b Spenden (gde-Deckel) + § 10 KiSt + § 10 Abs. 1 Nr. 3/3a KV/PV (A+B) + § 10 Abs. 1 Nr. 5 Kinderbetreuung
             # + § 10 Abs. 1 Nr. 7 Berufsausbildung
-            # (Weg-ii-Fix, additiv → sonderausgaben; 1:1 gesamt-Präzedenz Z. 717-737). Person-B-KV/PV DEFER (benannte
-            # Lücke, Folge-Ticket — Rentner-Ring hat noch keine Partner-KV/PV-Felder).
+            # (Weg-ii-Fix, additiv → sonderausgaben; 1:1 gesamt-Präzedenz Z. 717-737).
             rentner_g["sonderausgaben"] = (runner.catala_p10b_spenden({
                     "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": gde})
                 + runner.catala_p10_kist({
@@ -1465,7 +1464,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "kv_pv_beitraege": _c("realsplitting_empfaenger_kv_pv") // 100})
                    if f.get("realsplitting_zustimmung", {}).get("wert") is True else 0)
                 + runner.catala_p10_1_7_berufsausbildung({
-                    "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100}))
+                    "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100})
+                # Person-B-KV/PV (§ 10 Abs. 4, A.2): eigener HB je Person, additiv (1:1 gesamt-Pattern L987-991).
+                + (runner.catala_p10_kv_pv({
+                    "basis_kv_pv": _c("basis_kv_pv_partner") // 100,
+                    "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen_partner") // 100,
+                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
+                   if f.get("veranlagung", {}).get("wert") == "zusammen" else 0))
             # § 33-agB (Weg-ii-Fix) ADDITIV zu § 33b (ausserg, oben) — beide Absätze koexistieren (Pauschbetrag +
             # Einzelnachweis sind unterschiedliche Aufwands-Arten). gde-Basis wie § 10b (§2 Abs.3-K2-Fix).
             rentner_g["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
