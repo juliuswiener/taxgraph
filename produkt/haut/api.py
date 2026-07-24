@@ -1298,7 +1298,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             kap_st_total = runner.catala_kapital_steuer({
                 "veranlagungszeitraum": vz,
                 "kapitaleinkuenfte": kapitaleinkuenfte,
-                "est_regulaer_mit_kap": g2["est_gesamt"],  # Full tax before credits
+                "est_regulaer_mit_kap": kapitalertraege,  # Full tax before credits
                 "est_regulaer_ohne_kap": est_raw})
             kap_st_netto = kap_st_total * 0.75  # Apply 25% KiSt reduction per §32d(3)
             extras["kist_cent"] = runner.catala_kist({
