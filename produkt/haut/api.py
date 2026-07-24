@@ -1132,14 +1132,15 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # LÄNDER-METHODEN-ROUTING: dba_staat → DBA_METHOD_MAP.get(staat_lower) → anrechnung/freistellung.
             # Anrechnung → catala_p34c_1(hb=berechnet); Freistellung → 0 anrechnung, aber progressionsvorbehalt.
             dba_staat_raw = f.get("dba_staat", {}).get("wert")
-            dba_method_from_user = f.get("dba_methode", {}).get("wert")  # user-specified override
-            if dba_method_from_user == "dba_freistellung":
-                pass  # Guard sperrt (Z.1758); code hier nicht erreichbar
+            # Länder-Methoden-Routing: Nutzer-Vorgabe (dba_methode) > DBA_METHOD_MAP > default anrechnung
+            dba_staat_lower = dba_staat_raw.lower() if dba_staat_raw else ""
+            dba_method_from_user = f.get("dba_methode", {}).get("wert")
+            dba_effective_method = "freistellung" if dba_method_from_user == "dba_freistellung" \
+                else (DBA_METHOD_MAP.get(dba_staat_lower) or "anrechnung")
             if f.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
                 g["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
             elif dba_gezahlt > 0 or dba_ausl > 0:
-                dba_method_auto = DBA_METHOD_MAP.get(dba_staat_raw.lower() if dba_staat_raw else "") or "anrechnung"
-                if dba_method_auto == "freistellung":
+                if dba_effective_method == "freistellung":
                     dba_anrechnung = 0  # Freistellung → kein Anrechnungs-Betrag
                     # Progressionsvorbehalt: dba_ausl in zvE einbeziehen für Tarif-Berechnung
                     g["p32b_progressionseinkuenfte"] = dba_ausl
@@ -1182,7 +1183,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             pe_active = pe_raw > 0
             p35_active = p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0
             # §32b×§34-Koinzidenz-Guard: Post-Engine §32b NACH §34 (tarif_modifiziert).
-            # Bewegt: Guard in _an_gesamt_sperrgrund sperrt p32b_p34_kombi_offen bei Co-Präsenz.
+            # Bewegt: Guard in _an_gesamt_sperrgrund sperrt p32b_kombi_offen bei Co-Präsenz.
 
             def _festzusetzende(freibetrag: int) -> int:
                 # Der volle festzusetzende ESt-Bescheid (§ 19+§21+alle Abzüge, PLUS § 20-Kapital-Günstiger § 32d
@@ -1259,6 +1260,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     if freibetrag > 0 or kinder == 0:
                         solz_info["est_mit_fb"] = est_raw
                         solz_info["kap_st"] = 0
+                        solz_info["est_roh_ohne_kap"] = est_raw
+                        solz_info["est_roh_mit_kap"] = est_raw
                     return est_raw
                 est_mit = runner.catala_est(dict(g2, einkuenfte_kapitalvermoegen=kapitaleinkuenfte))
                 kap_st = runner.catala_kapital_steuer({
@@ -1268,6 +1271,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 if freibetrag > 0 or kinder == 0:
                     solz_info["est_mit_fb"] = result
                     solz_info["kap_st"] = kap_st
+                    solz_info["est_roh_ohne_kap"] = est_raw
+                    solz_info["est_roh_mit_kap"] = est_mit
                 return result
 
             # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6): bei
@@ -1295,16 +1300,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # KiSt § 51a: Basis = Maßstabsteuer ohne §32d-Abgeltung-Kapital (= SolZ-basis_main;
             # die Abgeltung-KiSt e/(4+k) ist ein eigener Nachtrag → hier NICHT auf kap_st).
             # FIX: §32d KiSt-Abgeltung — KiSt muss auf die vollen Kapitalerträge angewendet werden (vor 25% Reduktion)
-            kap_st_total = runner.catala_kapital_steuer({
-                "veranlagungszeitraum": vz,
-                "kapitaleinkuenfte": kapitaleinkuenfte,
-                "est_regulaer_mit_kap": kapitalertraege,  # Full tax before credits
-                "est_regulaer_ohne_kap": est_raw})
-            kap_st_netto = kap_st_total * 0.75  # Apply 25% KiSt reduction per §32d(3)
-            extras["kist_cent"] = runner.catala_kist({
-                "est_mit_fb": kap_st_total,  # Full capital tax with KiSt for church tax calculation
-                "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
-                "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
+            if extras is not None:
+                kap_st_total = runner.catala_kapital_steuer({
+                    "veranlagungszeitraum": vz,
+                    "kapitaleinkuenfte": kapitaleinkuenfte,
+                    "est_regulaer_mit_kap": solz_info.get("est_roh_mit_kap", 0),  # Full tax before credits
+                    "est_regulaer_ohne_kap": solz_info.get("est_roh_ohne_kap", 0)})
+                kap_st_netto = kap_st_total * 0.75  # Apply 25% KiSt reduction per §32d(3)
+                extras["kist_cent"] = runner.catala_kist({
+                    "est_mit_fb": kap_st_total,  # Full capital tax with KiSt for church tax calculation
+                    "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
+                    "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
             return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
@@ -1460,11 +1466,15 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100
             dba_ausl = _c("dba_auslaendische_einkuenfte") // 100
             dba_staat_raw = f.get("dba_staat", {}).get("wert")
+            # Länder-Methoden-Routing: Nutzer-Vorgabe (dba_methode) > DBA_METHOD_MAP > default anrechnung
+            dba_staat_lower = dba_staat_raw.lower() if dba_staat_raw else ""
+            dba_method_from_user = f.get("dba_methode", {}).get("wert")
+            dba_effective_method = "freistellung" if dba_method_from_user == "dba_freistellung" \
+                else (DBA_METHOD_MAP.get(dba_staat_lower) or "anrechnung")
             if f.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
                 rentner_g["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
             elif dba_gezahlt > 0 or dba_ausl > 0:
-                dba_method_auto = DBA_METHOD_MAP.get(dba_staat_raw.lower() if dba_staat_raw else "") or "anrechnung"
-                if dba_method_auto == "freistellung":
+                if dba_effective_method == "freistellung":
                     dba_anrechnung = 0
                     rentner_g["p32b_progressionseinkuenfte"] = dba_ausl
                 else:
@@ -1782,15 +1792,13 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
     if cfg and not cfg.get("gesamt_guard") and _positiv("p32b_progressionseinkuenfte"):
         return "progression_gehoert_in_gesamt"
     if cfg and cfg.get("gesamt_guard"):
-        # §34c DBA-Anrechnung (Stufe-1, K2): fail-closed bei Freistellungs-DBA, multi-country,
+        # §34c DBA-Anrechnung (Stufe-1, K2): fail-closed bei multi-country,
         # §32d-Kapital. Ohne diese Gates wäre die Anrechnung still 0 (gezahlt=0/ausl=0=absent) —
         # was bei vorhandenem (aber nicht gestütztem) DBA-Sachverhalt legitim = kein silent Over-tax.
         # Die GATES treffen nur die Fälle, wo der Nutzer aktiv DBA-Werte gesetzt hat, die diese
         # Scheibe nicht rechenbar macht → fail-closed (= keine stille 0-Anrechnung).
         dba_methode = (felder.get("dba_methode") or {}).get("wert")
         dba_mehrere = (felder.get("dba_mehrere_staaten") or {}).get("wert")
-        if dba_methode == "dba_freistellung":
-            return "dba_freistellung_offen"
         if dba_mehrere is True:
             return "dba_multi_country_offen"
         if any(_positiv(k) for k in KAP_TOEPFE) or (felder.get(KAP_ERTRAEGE, {}).get("wert") or 0) > 0:
