@@ -167,6 +167,23 @@ bindungen:
       quelle: "§ 35a Abs. 3 EStG"
       zitatanker: "für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: p35a_mitveranlagung
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: mitveranlagung_faktor}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Haben Sie eine Zusammenveranlagung beantragt und möchten Sie die haushaltsnahen Leistungen im Rahmen der Mitveranlagung geltend machen?"
+    hilfe_kurz: "Bei Zusammenveranlagung wird der Höchstbetrag für haushaltsnahe Leistungen nur einmal gewährt und der Abzugsbetrag geteilt."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein spezifisches Kz für Mitveranlagung im §35a-Kontext. Reine Ring-Logik zur Halbierung des Abzugs."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 5 EStG"
+      zitatanker: "Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge nach den Absätzen 1 bis 3 insgesamt jeweils nur einmal in Anspruch nehmen."
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: hh_rechnung_unbar
     quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: rechnung_und_unbare_zahlung}
     typ: bool
@@ -218,7 +235,6 @@ bindungen:
       quelle: "§ 35a Abs. 3 S. 2 EStG"
       zitatanker: "nicht für öffentlich geförderte Maßnahmen"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
-
 
   # ===== Spende §10b (Beleg-Writer Stufe 1b: Zuwendungsbestätigung, herkunft_slots=Label-Anker) =====
   - feld_id: spenden_betrag
