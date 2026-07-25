@@ -32,6 +32,7 @@ for _sub in ("produkt/store", "produkt/traverser", "produkt/unsicherheit", "prod
         sys.path.insert(0, _p)
 
 import store as ST          # noqa: E402
+import audit                # noqa: E402 — P1.6 Audit-Log
 import traverser as TR      # noqa: E402
 import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
@@ -202,6 +203,7 @@ GESAMT_PARTNER_KAP = (KAP_ERTRAEGE_PARTNER,) + KAP_TOEPFE_PARTNER
 # Minijob nicht. Bausteine der gefalteten Sonder-Abzüge (die Standalone-haushalt/agb-Scheiben sind deprecated).
 HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")   # Abs. 2/3 (rechnung_unbar-Pflicht)
 HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23              # + Abs. 1 Minijob
+P35A_MITVER_ANZEIGE = ("p35a_mitveranlagung",)                                # Mitveranlagung-Zähler für §35a Halbe-Logik
 AGB_KIST = ("kist_gezahlt", "kist_erstattet")                                # § 10 KiSt gezahlt/erstattet
 KINDERBETREUUNG = ("kinderbetreuungskosten", "kinderbetreuung_anzahl_kinder")  # § 10 Abs.1 Nr.5 Kinderbetreuung
 # Gefaltete Sonder-Abzüge (Weg ii): §35a + §10b + §33 + §10-KiSt + §10 Abs.1 Nr.5 Kinderbetreuung +
@@ -218,7 +220,7 @@ RENTNER_FELDER = RENTNER_FELDER + GESAMT_ABZUEGE
 # Schlüssel (gesamt-only); fam_alleinstehend = §24b-Abs.3-Flag (quelle p24b/alleinstehend, fragetext „ohne
 # anderen Erwachsenen im Haushalt" — IST die Abs.3-Bedingung, kein Extra-Feld nötig); fam_monate = §24b-Kürzung.
 # fam_anzahl_kinder steht schon in GESAMT_ABZUEGE (§33-zumutbar + §24b geteilt).
-GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_voraussetzung")
+GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_voraussetzung") + P35A_MITVER_ANZEIGE
 # §33b Behinderten-/Pflege-/Hinterbliebenen-Pauschbetrag — NUR über rentner_-Felder geführt
 # (globale Bindung, Kz E0109708/etc.). Im gesamt-Ring optional (NICHT im Kegel, absent→0→over-tax-safe).
 # rentner_-Präfix = Namensschuld (wie rentner_veraeusserungsgewinn), selbe Felder wie rentner-Scheibe.
@@ -322,6 +324,7 @@ SCHEIBEN = {
                    + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER
                    + P36_ANRECHNUNG
                    + KIST_KONFESSION_FELDER
+                   + P35A_MITVER_ANZEIGE
                    + ("fam_anzahl_kinder", "verlustvortrag_bestand")),
         # Pflicht-Kegel = einzel-Basis (inkl. Verpflegungs-TAGE; die Reduktions-Guard-Felder prüft
         # der Guard nur bei Tagen > 0). Partner-Pflichtfelder prüft der Guard nur bei zusammen. KV_PV_FELDER
@@ -408,6 +411,27 @@ class ApiError(ValueError):
     def __init__(self, status: int, msg: str):
         super().__init__(msg)
         self.status = status
+
+
+# ----------------------------------------------------------------- Auth-Kontext (P1.1, P1.2)
+# Single-threaded Server → Modul-Variable sicher. None = kein Auth (dev/Test → erlaubt).
+_AUTH_USER: str | None = None
+
+
+def _fall_owner_check(fall_id: str) -> None:
+    """Prüft Zugriff auf fall_id gegen _AUTH_USER. Kein Auth-Kontext → erlaubt.
+    Alt-Fall ohne user_id → erlaubt. Sonst: user_id muss stimmen."""
+    uid = _AUTH_USER
+    if uid is None:
+        return  # dev/Test → immer erlaubt
+    try:
+        store = lade_fall(fall_id)
+    except ApiError:
+        return  # 404 wird der Aufrufer werfen — kein Grund zur Sperre
+    stored = store.get("user_id")
+    if stored is not None and stored != uid:
+        audit.append(uid, "zugriff_verweigert", fall_id, f"user={uid}, owner={stored}")
+        raise ApiError(403, f"Zugriff auf Fall {fall_id!r} verweigert")
 
 
 # ----------------------------------------------------------------- Fall-Persistenz (atomar JSON)
@@ -972,10 +996,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                                             "altersentlastungsbetrag": alt24a + alt24a_b,
                                             "entlastungsbetrag_alleinerziehende": ent24b})
             abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
-            g["steuerermaessigungen"] = runner.catala_p35a_haushaltsnahe({
-                "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
-                "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
-                "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
+            base = runner.catala_p35a_haushaltsnahe({
+                "minijob_aufwendungen": _c("hh_minijob_aufwendungen"),
+                "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen"),
+                "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten")})
+            mitver = f.get("p35a_mitveranlagung", {}).get("wert") is True
+            g["steuerermaessigungen_cent"] = base // 2 if mitver else base
             # § 35c EStG energetische Sanierungsmassnahmen + Energieberater-Sondersatz.
             # Zwei Teilregeln (Sanierung 7%/6%, Energieberater 50%) werden im Jahresdeckel
             # kombiniert (14k/12k). Accessor nimmt EUROS (Cent→EUR via //100).
@@ -1498,10 +1524,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # § 35a Haushaltsnahe (Weg-ii-Fix) → steuerermaessigungen. rechnung_unbar=false nullt Abs.2/3 (Minijob
             # unberührt) — 1:1 gesamt-Präzedenz (Z. 708-712).
             abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
-            rentner_g["steuerermaessigungen"] = runner.catala_p35a_haushaltsnahe({
+            base = runner.catala_p35a_haushaltsnahe({
                 "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
                 "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
                 "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
+            mitver = f.get("p35a_mitveranlagung", {}).get("wert") is True
+            rentner_g["steuerermaessigungen"] = base // 2 if mitver else base
             # § 35c EStG energetische Sanierungsmassnahmen + Energieberater (1:1 gesamt-Präzedenz).
             p35c_sanierung_r = runner.catala_p35c_sanierung({
                 "sanierungsaufwendungen": _c("p35c_sanierungsaufwendungen") // 100,
@@ -1971,6 +1999,9 @@ def fall_anlegen(body: dict) -> tuple[int, dict]:
         raise ApiError(409, f"Fall {fall_id!r} existiert bereits")
     store = ST.leerer_store(vz, fall_id=fall_id)
     store["scheibe"] = scheibe
+    if _AUTH_USER is not None:
+        store["user_id"] = _AUTH_USER
+        audit.append(_AUTH_USER, "fall_angelegt", fall_id, f"scheibe={scheibe}")
     speichere_fall(fall_id, store)
     return 201, {"fall_id": fall_id, "scheibe": scheibe, "veranlagungszeitraum": vz}
 
@@ -2007,6 +2038,7 @@ def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: st
 
 
 def fragen(fall_id: str) -> tuple[int, dict]:
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     cfg = _cfg(store)
     bindung = _scheibe_bindung(store)
@@ -2031,6 +2063,7 @@ def fragen(fall_id: str) -> tuple[int, dict]:
 
 
 def stand(fall_id: str) -> tuple[int, dict]:
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     cfg = _cfg(store)
     bindung = _scheibe_bindung(store)
@@ -2073,6 +2106,7 @@ _ERLAUBTE_ZUSTAENDE = {"vorlaeufig", "bestaetigt"}
 def event(fall_id: str, body: dict) -> tuple[int, dict]:
     """DER einzige Schreib-Endpunkt — dünne Hülle über store.append_event. Die fail-closed-Garantien
     (llm->vorlaeufig, bestaetigt->signal_2, ein aktives Event/feld) erzwingt der Store, nicht die Haut."""
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     fid = body.get("feld_id")
@@ -2114,6 +2148,7 @@ def event(fall_id: str, body: dict) -> tuple[int, dict]:
 
 
 def warum(fall_id: str, feld_id: str) -> tuple[int, dict]:
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     j = TR.justification(store, feld_id, bindung)
@@ -2123,6 +2158,7 @@ def warum(fall_id: str, feld_id: str) -> tuple[int, dict]:
 
 
 def ergebnis(fall_id: str) -> tuple[int, dict]:
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     cfg = _cfg(store)
     bindung = _scheibe_bindung(store)
@@ -2165,6 +2201,7 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
 
 
 def deklaration(fall_id: str) -> tuple[int, dict]:
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
@@ -2176,6 +2213,7 @@ def graph(fall_id: str) -> tuple[int, dict]:
     """Read-only Abhängigkeits-Übersicht (Desktop): Knoten = Regeln der Scheibe mit ihrem
     Relevanz-Status (aus traverser.relevanz), Kanten = Feld→Regel (welches Abfrage-Feld welche Regel
     speist, mit Feld-Zustand). Reine Ableitung, EIN Traverser-Aufruf, kein Bescheid, kein Schreibpfad."""
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
@@ -2228,6 +2266,7 @@ def entfernung(fall_id: str, body: dict) -> tuple[int, dict]:
     das km-Feld, der Nutzer bestätigt/überschreibt (Zwei-Signal, § 9 kürzeste Straßenverbindung; eine
     längere ist bei regelmäßiger Nutzung zulässig). Kein Key / Netzfehler → 503-Fallback (manuell), nie
     Crash, nie still gesetzt. Der API-Key kommt nur aus $ORS_API_KEY (nie im Repo)."""
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)                            # 404, wenn der Fall nicht existiert
     von = (body.get("von") or "").strip()
     nach = (body.get("nach") or "").strip()
@@ -2266,6 +2305,7 @@ def vorjahr(fall_id: str, body: dict) -> tuple[int, dict]:
     BESTÄTIGTEN Felder als VORLÄUFIGE Vorschläge (herkunft=vorjahr) in den aktuellen Fall — der Nutzer
     bestätigt/überschreibt (Zwei-Signal). Der Store-Guard ^import:vorjahr erzwingt vorläufig strukturell;
     schon belegte Felder bleiben unangetastet (One-Active-Event)."""
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     vj_id = body.get("vorjahr_fall_id")
@@ -2308,6 +2348,7 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
     aber selbst cap-gated (kein $LLM_API_KEY → jede Transaktion fällt still auf "unklassifiziert" zurück, kein
     Crash, kein Mock-Call). IBAN/Kontonummern werden vom Writer maskiert (PII). Kein Überschreiben aktiver
     Felder. § 35a-Kategorien greifen nur, wenn die Scheibe die Ziel-Felder führt (sonst 0 Vorschläge)."""
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     fmt = (body.get("format") or "").strip().lower()
@@ -2422,6 +2463,7 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     (identitäts-/rechtskritische Felder lehnt der Check ab). CAP-GATED: kein LLM-Key/Provider → 501 + Erklär-
     Vertrag ($0, kein Mock-Call). Ein einzelner abgelehnter Vorschlag (Katalog/Auflage A) überspringt still —
     der Rest bleibt gültig, nie ein Crash, nie ein Fake-Wert. Die KI setzt NIE einen Wert."""
+    _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     freitext = (body.get("text") or "").strip()
@@ -2462,3 +2504,17 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
         sys.stderr.write(f"[haut.chat] LLM-Vorschläge außerhalb Katalog abgelehnt: {sorted(set(_abg))}\n")
     return 200, {"vorschlaege": geschrieben, "abgelehnt": _abg,
                  "hinweis": "Vorschläge erfasst — bitte im Fluss neben jedem Wert bestätigen (die KI setzt nichts)."}
+
+
+# ----------------------------------------------------------------- P8.3 Health / Ready
+
+def health() -> tuple:
+    """GET /health — Lebendtest, keine Abhängigkeiten."""
+    return 200, {"status": "ok"}
+
+
+def ready() -> tuple:
+    """GET /ready — prüft, ob Store-Pfad erreichbar ist."""
+    if not os.path.isdir(FAELLE):
+        return 503, {"status": "not_ready", "detail": "faelle-verzeichnis fehlt"}
+    return 200, {"status": "ok"}

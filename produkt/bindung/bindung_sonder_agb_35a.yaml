@@ -219,6 +219,7 @@ bindungen:
       zitatanker: "nicht für öffentlich geförderte Maßnahmen"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
 
+
   # ===== Spende §10b (Beleg-Writer Stufe 1b: Zuwendungsbestätigung, herkunft_slots=Label-Anker) =====
   - feld_id: spenden_betrag
     vorschlagbar_von: [kontoauszug, beleg]
