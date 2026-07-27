@@ -40,6 +40,7 @@ import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche, de
 import partner_check as PC  # noqa: E402  (Partner-Behinderungsfeld↔Zusammenveranlagung, dev-2)
 import vorjahr_writer as VW  # noqa: E402  (Vorjahres-Übernahme, dev-2 Store-Writer)
 from api_constants import *  # noqa: E402, F401, F403  (55 Feld-Konstanten + Scheiben)
+import api_llm  # noqa: E402  (LLM-Integration: _llm_vorschlaege, _kontoauszug_llm_klassifikator)
 
 
 class ApiError(ValueError):
@@ -1952,23 +1953,6 @@ def vorjahr(fall_id: str, body: dict) -> tuple[int, dict]:
     return 200, {"uebernommen": n, "vorjahr_fall_id": vj_id}
 
 
-def _kontoauszug_llm_klassifikator():
-    """Baut den Kontoauszug-LLM-Fallback-Klassifikator (dev-2s kontoauszug_writer.llm_klassifikator_factory,
-    llm_client-MODUL als `client` — hat `.complete`, kein Klassen-Bau nötig). Cap-gated wie /chat: JEDER Aufruf
-    fängt NUR LlmNichtVerfuegbar (Cap-Gate/Netzfehler — die Factory selbst fängt nichts) und liefert None (=
-    unklassifiziert, wie bisher llm_klassifikator=None) statt den GESAMTEN Upload bei der ERSTEN mehrdeutigen
-    Transaktion abstürzen zu lassen (Regression ggü. det-only). Ein Logik-/Parse-Bug ist KEIN erwarteter
-    Cap-Gate-Fall — der propagiert bewusst (K2: silent-swallow eines echten Bugs ist selbst ein Risiko)."""
-    import llm_client
-    import kontoauszug_writer as KW
-    roh = KW.llm_klassifikator_factory(llm_client, "kontoauszug_klassifikation")
-
-    def klassifikator(zweck, betrag):
-        try:
-            return roh(zweck, betrag)
-        except llm_client.LlmNichtVerfuegbar:
-            return None
-    return klassifikator
 
 
 def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
@@ -2017,7 +2001,7 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
     else:
         raise ApiError(400, "format muss csv, json oder pdf sein")
     # katalog GLOBAL (dev-2-Kontrakt): Enforcement decoupled vom per-Scheibe-Targeting.
-    n = KW.uebernehme_kontoauszug(store, tx, bindung, llm_klassifikator=_kontoauszug_llm_klassifikator(),
+    n = KW.uebernehme_kontoauszug(store, tx, bindung, llm_klassifikator=api_llm._kontoauszug_llm_klassifikator(),
                                   katalog=ST.lade_katalog(TR.lade_bindung()))
     speichere_fall(fall_id, store)
     out = {"uebernommen": n, "transaktionen": len(tx), "verworfen": n_verworfen}
@@ -2026,64 +2010,10 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
     return 200, out
 
 
-def _chat_prompt(freitext: str, katalog: list[dict]) -> list[dict]:
-    """Baut die OpenAI-kompatible messages-Liste für den Chat-Vorschlags-Task. System-Regel: die KI darf
-    AUSSCHLIESSLICH die Felder aus dem übergebenen Katalog vorschlagen (askable + vorschlagbar; der Store-
-    Katalog-Check ist die zweite Verteidigung), NUR als Vorschlag, mit Feld-Metadaten (fragetext/typ/bereich/
-    enum). Antwort = striktes JSON. Task-Wrapper (Handler-Schicht) — der Client (llm_client) kennt diesen
-    Prompt nicht."""
-    felder = "\n".join(
-        f"- {f['feld_id']}: {f.get('fragetext_laie', '')}"
-        f" (Typ {f.get('typ', '')}"
-        + (f", Bereich {f['bereich']}" if f.get("bereich") else "")
-        + (f", Werte {f['enum_werte']}" if f.get("enum_werte") else "")
-        + ")"
-        for f in katalog)
-    system = (
-        "Du bist ein Steuer-Assistent, der aus der Freitext-Beschreibung eines Nutzers Feld-Werte VORSCHLÄGT. "
-        "Du SETZT nie einen Wert und triffst keine rechtliche Entscheidung — der Mensch bestätigt jeden Vorschlag. "
-        "Du darfst NUR diese Felder vorschlagen (keine anderen):\n" + felder + "\n\n"
-        "Geld-Beträge MUSST du als GANZZAHL in CENT angeben (EUR × 100), z.B. 2156,50 € → 215650. "
-        "Niemals als EUR-Kommazahl oder EUR-Ganzzahl.\n"
-        "Antworte AUSSCHLIESSLICH mit einem JSON-Array [{\"feld_id\":\"…\",\"wert\":…,\"begruendung\":\"kurz\"}], "
-        "nur Felder für die die Beschreibung einen konkreten Wert hergibt, sonst []. Kein Fließtext.")
-    return [{"role": "system", "content": system}, {"role": "user", "content": freitext}]
 
 
-def _chat_parse(text: str) -> list[dict]:
-    """Roher LLM-Text → Liste {feld_id, wert, begruendung}. Toleriert ein Objekt-Wrapper ({\"vorschlaege\":[…]})
-    oder ein nacktes Array. Nicht-Liste/kaputtes JSON → [] (kein Vorschlag ist besser als ein Müll-Vorschlag)."""
-    try:
-        j = json.loads(text)
-    except Exception:
-        return []
-    if isinstance(j, dict):
-        for k in ("vorschlaege", "vorschläge", "suggestions", "felder"):
-            if isinstance(j.get(k), list):
-                j = j[k]
-                break
-        else:
-            j = [j] if "feld_id" in j else []
-    if not isinstance(j, list):
-        return []
-    out = []
-    for v in j:
-        if isinstance(v, dict) and "feld_id" in v and "wert" in v:
-            out.append({"feld_id": str(v["feld_id"]), "wert": v["wert"],
-                        "begruendung": str(v.get("begruendung", ""))[:200]})
-    return out
 
 
-def _llm_vorschlaege(freitext: str, katalog: list[dict]) -> list[dict]:
-    """Chat-Task-Wrapper (Handler-Schicht) ÜBER llm_client.complete (der einen niedrig-level Wahrheit). Cap-
-    gated: kein Key/Base/Modell → LlmNichtVerfuegbar propagiert (der /chat-Handler fängt sie → 501). Der
-    Aufrufer schreibt jeden Vorschlag als VORLÄUFIGES Event (Store-Auflage A + Katalog-Check erzwingen die
-    Sicherheit); der Mensch bestätigt via Hold-Confirm."""
-    if not (freitext or "").strip():
-        return []
-    import llm_client
-    comp = llm_client.complete("chat", _chat_prompt(freitext, katalog))
-    return _chat_parse(comp.text)
 
 
 def chat(fall_id: str, body: dict) -> tuple[int, dict]:
@@ -2112,11 +2042,10 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
          "bereich": b.get("bereich"), "enum_werte": b.get("enum_werte")}
         for fid, b in bindung.items() if "llm" in (b.get("vorschlagbar_von") or [])]
     check_katalog = ST.lade_katalog(TR.lade_bindung())
-    import llm_client
     try:
-        vorschlaege = _llm_vorschlaege(freitext, prompt_katalog)
-    except (llm_client.LlmNichtVerfuegbar, ImportError):   # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
-        return 501, CHAT_501                               # echte Logik-/Parse-Bugs propagieren (konsistent zu kontoauszug)
+        vorschlaege = api_llm._llm_vorschlaege(freitext, prompt_katalog)
+    except (api_llm.LlmNichtVerfuegbar, ImportError):   # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
+        return 501, CHAT_501                             # echte Logik-/Parse-Bugs propagieren (konsistent zu kontoauszug)
     geschrieben, abgelehnt = [], []
     for v in vorschlaege:
         try:
