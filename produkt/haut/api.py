@@ -202,7 +202,7 @@ GESAMT_PARTNER_KAP = (KAP_ERTRAEGE_PARTNER,) + KAP_TOEPFE_PARTNER
 # § 35a-Töpfe (charge29): Abs. 2/3 (Dienstleistung/Handwerker) verlangen rechnung_unbar (Abs. 5 S. 3), Abs. 1
 # Minijob nicht. Bausteine der gefalteten Sonder-Abzüge (die Standalone-haushalt/agb-Scheiben sind deprecated).
 HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")   # Abs. 2/3 (rechnung_unbar-Pflicht)
-HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23              # + Abs. 1 Minijob
+HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23 + ("hh_in_eu_ewr",)  # + Abs. 1 Minijob, Abs.4 EU/EWR-Gate
 P35A_MITVER_ANZEIGE = ("p35a_mitveranlagung",)                                # Mitveranlagung-Zähler für §35a Halbe-Logik
 AGB_KIST = ("kist_gezahlt", "kist_erstattet")                                # § 10 KiSt gezahlt/erstattet
 KINDERBETREUUNG = ("kinderbetreuungskosten", "kinderbetreuung_anzahl_kinder")  # § 10 Abs.1 Nr.5 Kinderbetreuung
@@ -995,13 +995,14 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                                             "einkuenfte_sonstige": g.get("einkuenfte_sonstige", 0),
                                             "altersentlastungsbetrag": alt24a + alt24a_b,
                                             "entlastungsbetrag_alleinerziehende": ent24b})
-            abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
             base = runner.catala_p35a_haushaltsnahe({
-                "minijob_aufwendungen": _c("hh_minijob_aufwendungen"),
-                "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen"),
-                "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten")})
-            mitver = f.get("p35a_mitveranlagung", {}).get("wert") is True
-            g["steuerermaessigungen_cent"] = base // 2 if mitver else base
+                "hh_minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
+                "hh_dienstleistungen": _c("hh_dienstleistungen") // 100,
+                "hh_handwerker_arbeitskosten": _c("hh_handwerker_arbeitskosten") // 100,
+                "hh_in_eu_ewr": f.get("hh_in_eu_ewr", {}),
+                "hh_rechnung_unbar": f.get("hh_rechnung_unbar", {}),
+                "p35a_mitveranlagung": f.get("p35a_mitveranlagung", {})})
+            g["steuerermaessigungen"] = base
             # § 35c EStG energetische Sanierungsmassnahmen + Energieberater-Sondersatz.
             # Zwei Teilregeln (Sanierung 7%/6%, Energieberater 50%) werden im Jahresdeckel
             # kombiniert (14k/12k). Accessor nimmt EUROS (Cent→EUR via //100).
@@ -1521,15 +1522,15 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 rentner_g["vorsorge_gesamtbeitraege_inkl_ag"] += (_c("vor_an_anteil_rv_partner")
                     + _c("vor_ag_anteil_rv_partner") + _c("vor_rv_ausserhalb_lstb_partner")) // 100
                 rentner_g["vorsorge_ag_anteil_steuerfrei"] += _c("vor_ag_anteil_rv_partner") // 100
-            # § 35a Haushaltsnahe (Weg-ii-Fix) → steuerermaessigungen. rechnung_unbar=false nullt Abs.2/3 (Minijob
-            # unberührt) — 1:1 gesamt-Präzedenz (Z. 708-712).
-            abs23_aus = f.get("hh_rechnung_unbar", {}).get("wert") is False
+            # § 35a Haushaltsnahe — Accessor rechnet EURO, gibt EURO.
             base = runner.catala_p35a_haushaltsnahe({
-                "minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
-                "haushaltsnahe_dienstleistungen": 0 if abs23_aus else _c("hh_dienstleistungen") // 100,
-                "handwerker_arbeitskosten": 0 if abs23_aus else _c("hh_handwerker_arbeitskosten") // 100})
-            mitver = f.get("p35a_mitveranlagung", {}).get("wert") is True
-            rentner_g["steuerermaessigungen"] = base // 2 if mitver else base
+                "hh_minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
+                "hh_dienstleistungen": _c("hh_dienstleistungen") // 100,
+                "hh_handwerker_arbeitskosten": _c("hh_handwerker_arbeitskosten") // 100,
+                "hh_in_eu_ewr": f.get("hh_in_eu_ewr", {}),
+                "hh_rechnung_unbar": f.get("hh_rechnung_unbar", {}),
+                "p35a_mitveranlagung": f.get("p35a_mitveranlagung", {})})
+            rentner_g["steuerermaessigungen"] = base
             # § 35c EStG energetische Sanierungsmassnahmen + Energieberater (1:1 gesamt-Präzedenz).
             p35c_sanierung_r = runner.catala_p35c_sanierung({
                 "sanierungsaufwendungen": _c("p35c_sanierungsaufwendungen") // 100,

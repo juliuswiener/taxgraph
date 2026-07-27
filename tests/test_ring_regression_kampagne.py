@@ -719,6 +719,29 @@ def test_a6_l2_catala_afa_linear_unit(base):
     assert R.catala_p7_linear_afa({"anschaffungskosten_cent": 100000, "nutzungsdauer": -1}) == 0   # fail-safe
 
 
+def test_a6_l2_afa_mit_nutzungsdauer_senkt_steuer_gesamt(base):
+    """§ 7 lineare AfA im gesamt-Ring (A6-L2): AK 1500€ = 150000 ct (> 800€ → kein GWG) + Nutzungsdauer
+    5 Jahre → AfA = 150000 // 500 = 300 €/Jahr → WK +300 → zvE −300 → Steuer sinkt messbar. Beweist
+    ring-fähiger A6-L2-Durchgriff (nicht mehr nur Guard). Baucht auf Übernachtungs-Basis 12000€ (wie GWG-
+    Test), damit Δ über AN-Pauschbetrag (1230€) sichtbar ist."""
+    catala = _catala_da()
+    a6l2 = [("am_anschaffungskosten", 150000), ("arbeitsmittel_nutzungsdauer", 5)]
+    _ges_anlegen(base, "a6l2o", GESAMT_AN_KEGEL + UEBERNACHTUNG_GESAMT_VALID)
+    st, ohne = _req(base, "GET", "/fall/a6l2o/ergebnis")
+    _val("ergebnis", ohne)
+    _ges_anlegen(base, "a6l2m", GESAMT_AN_KEGEL + UEBERNACHTUNG_GESAMT_VALID + a6l2)
+    st, mit = _req(base, "GET", "/fall/a6l2m/ergebnis")
+    _val("ergebnis", mit)
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt", \
+            f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
+        delta = ohne["zahl_cent"] - mit["zahl_cent"]
+        # AfA 300€ → Δzve 300€ → Δtax ≈ 126€ = 12600 ct bei ~42%. Band ±5000 ct.
+        assert 8000 <= delta <= 17000, f"A6-L2 AfA delta={delta} nicht in [8000,17000]"
+    else:
+        assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
 DBA_KEGEL_ANRECHNUNG = [
     ("dba_staat", "at"),
     ("dba_methode", "anrechnung"),
@@ -1087,3 +1110,51 @@ def test_p2_nr2_ring_differential_kv_pv_senkt_steuer(base):
     delta = z0 - e1["zahl_cent"]
     # HB max 2800 €, min 0 → Delta im plausiblen Band
     assert delta > 0 and delta < 280000, f"Delta {delta} außerhalb plausiblen Band"
+
+
+def test_p35a_mitveranlagung_senkt_steuer_gesamt(base):
+    """200k Gewinn + haushaltsnahe Aufwendungen 4000€ → bei Zusammenveranlagung nur halb so viel Abzug.
+    Verifiziert: Bei zusammen veranlagt wird der Betrag halbiert (je Ehegatte nur die Hälfte).
+    """
+    catala = _catala_da()
+    if not catala:
+        pytest.skip("Catala nicht verfügbar")
+
+    # Ohne haushaltsnahe Aufwendungen
+    kegel_ohne = _mit_gewinn(GESAMT_KEGEL_BASIS)
+    kegel_ohne.append(("hh_minijob_aufwendungen", 0))
+    kegel_ohne.append(("hh_dienstleistungen", 0))
+    kegel_ohne.append(("hh_handwerker_arbeitskosten", 0))
+    kegel_ohne.append(("hh_in_eu_ewr", True))
+    kegel_ohne.append(("hh_rechnung_unbar", True))
+    _ges_anlegen(base, "p35a_no", kegel_ohne)
+    st, ohne = _req(base, "GET", "/fall/p35a_no/ergebnis")
+    _val("ergebnis", ohne)
+
+    # Mit haushaltsnahe Aufwendungen 4000€ (400000 Cent) und zusammen veranlagt
+    # (Mitveranlagung aktivieren)
+    kegel_mit = list(kegel_ohne)
+    # Replace the zero values with actual numbers
+    new_kegel_mit = []
+    for f, v in kegel_mit:
+        if f == "hh_dienstleistungen":
+            new_kegel_mit.append((f, 400000))
+        elif f == "hh_minijob_aufwendungen":
+            new_kegel_mit.append((f, 0))
+        elif f == "hh_handwerker_arbeitskosten":
+            new_kegel_mit.append((f, 0))
+        else:
+            new_kegel_mit.append((f, v))
+    new_kegel_mit.append(("p35a_mitveranlagung", True))
+    _ges_anlegen(base, "p35a_yes", new_kegel_mit)
+    st, mit = _req(base, "GET", "/fall/p35a_yes/ergebnis")
+    _val("ergebnis", mit)
+
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt"
+        delta = ohne["zahl_cent"] - mit["zahl_cent"]
+        # Erwarteter Abzug: 400000 Cent Aufwand → 20% = 80000 Cent Erstattung bei Einzelveranlagung
+        # Bei zusammen veranlagt wird der Höchstbetrag nur einmal gewährt → nur die Hälfte des Betrags (40000 Cent) wird insgesamt abgezogen
+        assert delta == 40000, f"Erwarteter Steuervorteil bei Zusammenveranlagung: 40000 Cent, bekommen: {delta}"
+    else:
+        assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None

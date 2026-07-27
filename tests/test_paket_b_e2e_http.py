@@ -597,7 +597,7 @@ def test_an_gesamt_durchstich(base):
     _val("fragen", fr)
     ids = {q["feld_id"] for q in fr["fragen"]}
     assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
-             "kein_sonstige", "fam_anzahl_kinder", "verlustvortrag_bestand"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
+             "kein_sonstige", "fam_anzahl_kinder", "verlustvortrag_bestand", "p35a_mitveranlagung"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
             | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)
             | set(AN_GESAMT_UEBERNACHTUNG) | set(AN_GESAMT_ARBEITSMITTEL)
             | set(AN_GESAMT_P36) | set(AN_GESAMT_KIST)) == ids
@@ -1965,12 +1965,13 @@ def test_gesamt_zusammen_kapital_semantik_partner(base):
 
 def _gesamt_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechnung_unbar=None,
                     spende=0, agb=0, kinder=0, kist_gezahlt=0, kist_erstattet=0,
-                    geburtsjahr=None, alleinerziehend=None, monate=0):
+                    geburtsjahr=None, alleinerziehend=None, monate=0, eu_ewr=True):
     """Postet die OPTIONALEN gefalteten Sonder-Abzugs- + §24a/§24b-Freibetrag-Felder (Weg ii) auf einen gesamt-Fall
     (cent; kinder/geburtsjahr/monate=int; alleinerziehend=bool). hh_rechnung_unbar/geburtsjahr/alleinerziehend nur
     wenn nicht None. Nicht im Pflicht-Kegel — der Ring rechnet sie additiv."""
     paare = [("hh_minijob_aufwendungen", minijob), ("hh_dienstleistungen", dienstleistung),
-             ("hh_handwerker_arbeitskosten", handwerker), ("spenden_betrag", spende),
+             ("hh_handwerker_arbeitskosten", handwerker), ("hh_in_eu_ewr", eu_ewr),
+             ("spenden_betrag", spende),
              ("agb_aufwendungen", agb), ("fam_anzahl_kinder", kinder),
              ("kist_gezahlt", kist_gezahlt), ("kist_erstattet", kist_erstattet),
              ("fam_monate_ohne_voraussetzung", monate)]
@@ -2334,11 +2335,12 @@ def _rentner_anlegen(base, fid, kegel):
 
 def _rentner_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechnung_unbar=None,
                      spende=0, agb=0, kinder=0, kist_gezahlt=0, kist_erstattet=0,
-                     alleinerziehend=None, monate=0):
+                     alleinerziehend=None, monate=0, eu_ewr=True):
     """Postet die OPTIONALEN Weg-ii/§24b-Felder (§35a/§10b/§33/§10-KiSt/§24b) auf einen rentner_gesamt-Fall
     (cent; kinder/monate=int). hh_rechnung_unbar/fam_alleinstehend nur wenn nicht None. Analog _gesamt_abzuege."""
     paare = [("hh_minijob_aufwendungen", minijob), ("hh_dienstleistungen", dienstleistung),
-             ("hh_handwerker_arbeitskosten", handwerker), ("spenden_betrag", spende),
+             ("hh_handwerker_arbeitskosten", handwerker), ("hh_in_eu_ewr", eu_ewr),
+             ("spenden_betrag", spende),
              ("agb_aufwendungen", agb), ("fam_anzahl_kinder", kinder),
              ("kist_gezahlt", kist_gezahlt), ("kist_erstattet", kist_erstattet),
              ("fam_monate_ohne_voraussetzung", monate)]

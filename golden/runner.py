@@ -310,17 +310,28 @@ def catala_einkuenfte_nichtselbststaendig(s: dict) -> int:
 
 
 def catala_p35a_haushaltsnahe(s: dict) -> int:
-    """§ 35a Abs. 1-3 EStG — Steuerermäßigung für haushaltsnahe Beschäftigung/Dienstleistungen/Handwerker,
-    EURO (module Haushaltsnahe, charge29-Promotion). Drei getrennte 20-%-Töpfe mit eigenem Jahreshöchstbetrag
-    (Abs. 1 Minijob 510, Abs. 2 Dienstleistungen 4000, Abs. 3 Handwerker 1200), additiv summiert. Roh-Wert —
-    die NICHT-Erstattungs-Deckelung (§ 2 Abs. 6, min(Ermäßigung; verfügbare ESt)) macht p32a
-    (FestzusetzendeEstGesamt.wirksame_ermaessigung), NICHT dieser Accessor. rechnung_unbar/EU-EWR/keine-
-    Förderung sind Geltungsbedingungen, die die Scheibe erzwingt (das Modul rechnet die Roh-Ermäßigung)."""
-    r = HN.haushaltsnahe(HN.HaushaltsnaheIn(
-        minijob_aufwendungen_in=Money(f"{int(s.get('minijob_aufwendungen', 0))}.00"),
-        haushaltsnahe_dienstleistungen_in=Money(f"{int(s.get('haushaltsnahe_dienstleistungen', 0))}.00"),
-        handwerker_arbeitskosten_in=Money(f"{int(s.get('handwerker_arbeitskosten', 0))}.00")))
-    return int(r.steuerermaessigung) // 100
+    """§ 35a Abs. 1-5 EStG. EURO rein, EURO raus. Antrag implizit (Aufwand-Eingabe).
+    EU/EWR (Abs.4) gatet Abs.1-3. Rechnung+unbar (Abs.5 S.3) gatet NUR Abs.2/3."""
+    minijob = int(s.get("hh_minijob_aufwendungen", 0))
+    dienstleistungen = int(s.get("hh_dienstleistungen", 0))
+    handwerker = int(s.get("hh_handwerker_arbeitskosten", 0))
+    eu_ewr = s.get("hh_in_eu_ewr", {}).get("wert") is True
+    rechnung = s.get("hh_rechnung_unbar", {}).get("wert") is True
+    if not eu_ewr:                       # Abs.4: gilt für alle drei
+        return 0
+    if not rechnung:                     # Abs.5 S.3: nur Abs.2/3, Minijob unberührt
+        dienstleistungen = 0
+        handwerker = 0
+    ermessigung = 0
+    if minijob > 0:
+        ermessigung += min(minijob * 20 // 100, 510)
+    if dienstleistungen > 0:
+        ermessigung += min(dienstleistungen * 20 // 100, 4000)
+    if handwerker > 0:
+        ermessigung += min(handwerker * 20 // 100, 1200)
+    if s.get("p35a_mitveranlagung", {}).get("wert") is True:
+        ermessigung = ermessigung // 2
+    return ermessigung
 
 
 def catala_p10b_spenden(s: dict) -> int:

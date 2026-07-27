@@ -17,25 +17,45 @@ sys.path.insert(0, os.path.join(ROOT, "golden"))
 def R():
     try:
         import runner
-        runner.catala_p35a_haushaltsnahe({"minijob_aufwendungen": 0})
+        runner.catala_p35a_haushaltsnahe({"hh_in_eu_ewr": {"wert": True}})
     except Exception:
         pytest.skip("Catala-Toolchain / pkg nicht verfügbar")
     return runner
 
 
-# ---- § 35a: drei getrennte 20-%-Töpfe mit eigenem Deckel (510/4000/1200), additiv ----
+# ---- § 35a: drei getrennte 20-%-Töpfe mit eigenem Deckel (510/4000/1200), additiv, EURO ----
+
+GATE = {"hh_in_eu_ewr": {"wert": True}, "hh_rechnung_unbar": {"wert": True}}
 
 @pytest.mark.parametrize("s,erwartet", [
-    ({"minijob_aufwendungen": 2800}, 510),                                  # Abs. 1: 20 % = 560 > 510 -> Deckel
-    ({"minijob_aufwendungen": 2000}, 400),                                  # Abs. 1: 20 % = 400 <= 510 -> ungekürzt
-    ({"handwerker_arbeitskosten": 4500}, 900),                             # Abs. 3: 20 % = 900 <= 1200
-    ({"handwerker_arbeitskosten": 10000}, 1200),                          # Abs. 3: 20 % = 2000 > 1200 -> Deckel
-    ({"haushaltsnahe_dienstleistungen": 3000}, 600),                      # Abs. 2: 20 % = 600 <= 4000
-    ({"minijob_aufwendungen": 2800, "handwerker_arbeitskosten": 10000}, 1710),  # 510 + 1200 (getrennte Deckel)
-    ({}, 0),                                                              # kein Aufwand -> kein Phantom-Betrag
+    ({"hh_minijob_aufwendungen": 2800},  510),
+    ({"hh_minijob_aufwendungen": 2000},  400),
+    ({"hh_handwerker_arbeitskosten": 4500},  900),
+    ({"hh_handwerker_arbeitskosten": 10000}, 1200),
+    ({"hh_dienstleistungen": 3000},  600),
+    ({"hh_minijob_aufwendungen": 2800, "hh_handwerker_arbeitskosten": 10000}, 1710),
+    ({}, 0),
 ])
 def test_p35a_seeds(R, s, erwartet):
-    assert R.catala_p35a_haushaltsnahe(s) == erwartet
+    assert R.catala_p35a_haushaltsnahe({**GATE, **s}) == erwartet
+
+
+def test_p35a_minijob_ohne_rechnung(R):
+    """Minijob (Abs.1) braucht KEIN hh_rechnung_unbar — Abs.5 S.3 gilt nur Abs.2/3."""
+    assert R.catala_p35a_haushaltsnahe(
+        {"hh_in_eu_ewr": {"wert": True}, "hh_minijob_aufwendungen": 2800}) == 510
+
+
+def test_p35a_handwerker_ohne_rechnung_null(R):
+    """Handwerker (Abs.3) braucht hh_rechnung_unbar — ohne rechnung → Abs.2/3 nullt, Abs.1 bleibt."""
+    assert R.catala_p35a_haushaltsnahe(
+        {"hh_in_eu_ewr": {"wert": True}, "hh_handwerker_arbeitskosten": 4500}) == 0
+
+
+def test_p35a_ohne_eu_ewr_null(R):
+    """EU/EWR (Abs.4) gatet alle drei Absätze."""
+    assert R.catala_p35a_haushaltsnahe(
+        {"hh_handwerker_arbeitskosten": 4500, "hh_rechnung_unbar": {"wert": True}}) == 0
 
 
 # ---- § 10b: min(Zuwendungen; 20 % GdE) ----
@@ -57,7 +77,7 @@ def test_35a_est_deckelung_floor(R):
         {"veranlagungszeitraum": 2025, "bruttoarbeitslohn": 14000, "werbungskosten": 0})
     ohne = R.catala_gesamt({"veranlagungszeitraum": 2025, "veranlagung": "einzel",
                             "einkuenfte_nichtselbststaendig": ns})
-    p35a = R.catala_p35a_haushaltsnahe({"handwerker_arbeitskosten": 10000})   # 1200
+    p35a = R.catala_p35a_haushaltsnahe({"hh_in_eu_ewr": {"wert": True}, "hh_rechnung_unbar": {"wert": True}, "hh_handwerker_arbeitskosten": 10000})   # 1200 EURO
     assert 0 < ohne < p35a          # Roh-Ermäßigung übersteigt die verfügbare ESt (Vorbedingung des Tests)
     mit = R.catala_gesamt({"veranlagungszeitraum": 2025, "veranlagung": "einzel",
                            "einkuenfte_nichtselbststaendig": ns, "steuerermaessigungen": p35a})
