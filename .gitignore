@@ -24,6 +24,9 @@ openrouter.env
 # Paket-B Haut: Fall-Daten sind Nutzerdaten (Steuer-Antworten) — NIE ins Repo
 produkt/haut/faelle/
 
+# Auth runtime state (user database, not tracked)
+produkt/auth/users.json
+
 # Pipeline run artifacts (logs may contain prompts/costs; keep out of git)
 pipeline/runs/
 sources/**/*.pdf
