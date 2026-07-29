@@ -13,8 +13,8 @@ bindungen:
     quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, geltungsbedingung: per_country_ein_staat}
     typ: enum
     einheit: null
-    enum_werte: ["Frankreich", "Italien", "Oesterreich", "Schweiz", "Niederlande", "Polen", "Tschechien",
-                 "Dänemark", "Luxemburg", "Türkei", "Grossbritannien", "Spanien", "USA", "sonstiger_staat"]
+    enum_werte: ["Deutschland", "Frankreich", "Italien", "Oesterreich", "Schweiz", "Niederlande", "Polen", "Tschechien",
+                 "Dänemark", "Luxemburg", "Türkei", "Grossbritannien", "Spanien", "USA", "Kanada", "sonstiger_staat"]
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Aus welchem Staat stammen deine ausländischen Einkünfte?"

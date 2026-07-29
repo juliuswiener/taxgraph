@@ -7,9 +7,8 @@ Rechtsgrund: § 150 Abs. 7 S. 2 AO — von der Finanzverwaltung elektronisch üb
 Invariant: eine EIGENE (abweichende) Angabe des Nutzers hat Vorrang. Umgesetzt via One-Active-Event:
 der Writer überschreibt NIE ein bereits aktives Event.
 
-Sicherheits-Posture: Der Writer schreibt NUR zustand="vorlaeufig" (fail-closed, symmetrisch zu
-vorjahr/beleg/kontoauszug). Das „auto-bestätigt"-Verhalten (§150 Abs.7 als sofort bestätigt) ist eine
-offene Julius-Cap-Entscheidung und AUSSERHALB dieses Scopes — der Writer schreibt NIEMALS bestaetigt.
+Posture (§ 150 Abs. 7 S. 2 AO — auto-bestätigt): die Finanzverwaltungs-Daten gelten als Angaben des
+Steuerpflichtigen. Der Writer schreibt zustand="bestaetigt" + signal_2="edaten_uebermittelt".
 
 signal_1 = {typ: "edaten", quell_feld_id, quell_wert, kategorie} — die Justification-Kante zeigt
 „von der Finanzverwaltung übermittelt".
@@ -25,16 +24,16 @@ import store as ST   # noqa: E402
 
 
 def uebernehme_edaten(store: dict, edaten_record: list, *, ts: str | None = None) -> int:
-    """Übernimmt eDaten in den Store (vorläufig, One-Active-Event).
+    """Übernimmt eDaten in den Store (bestätigt, One-Active-Event).
 
     edaten_record = Liste von {"feld_id": ..., "wert": ..., "kategorie": ...}
     (die von der Finanzverwaltung übermittelten Datensätze).
 
-    Überträgt je Feld ein VORLÄUFIGES Event in den Store — aber NUR, wenn dort noch KEIN aktives
+    Überträgt je Feld ein BESTÄTIGTES Event in den Store — aber NUR, wenn dort noch KEIN aktives
     Event für das feld_id liegt (One-Active-Event: eine abweichende Angabe des Stpfl. hat Vorrang,
     § 150 Abs. 7 S. 2 AO). Gibt die Anzahl übertragener Felder zurück.
     """
-    aktiv = set(ST._aktives(store))
+    aktiv = ST._aktives(store)
     n = 0
     for rec in edaten_record:
         fid = rec["feld_id"]
@@ -51,14 +50,14 @@ def uebernehme_edaten(store: dict, edaten_record: list, *, ts: str | None = None
             store,
             feld_id=fid,
             wert=wert,
-            zustand="vorlaeufig",
+            zustand="bestaetigt",
             herkunft={
                 "herkunft": "edaten",
-                "pruef_tiefe": "amtlich_uebermittelt",
-                "haftung": "finanzverwaltung",
+                "pruef_tiefe": "amtlich",
+                "haftung": "amt",
             },
             schreiber="import:elster",
-            signal={"signal_1": sig1, "signal_2": None},
+            signal={"signal_1": sig1, "signal_2": "edaten_uebermittelt"},
             ts=ts,
         )
         n += 1

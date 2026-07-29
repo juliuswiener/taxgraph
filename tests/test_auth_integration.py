@@ -224,7 +224,6 @@ class TestAudit:
         assert len(login_entries) >= 1
         assert login_entries[-1]["user_id"] == "audituser"
 
-    @pytest.mark.xfail(reason="fall-Audit-Trail noch nicht verdrahtet: server.py /fall-Endpunkte rufen audit.append nicht", strict=False)
     def test_fall_lifecycle_audited(self, base):
         """Fall operations audit logged."""
         _req(base, "POST", "/auth/register",

@@ -26,8 +26,8 @@
       "required": ["herkunft", "pruef_tiefe", "haftung"],
       "description": "Vertrauen als Vektor (nicht Leiter). Meet läuft pro Achse getrennt.",
       "properties": {
-        "herkunft": {"enum": ["laie", "llm_vorschlag", "beleg_import", "vorjahr", "kontoauszug", "berechnet", "orakel"],
-          "description": "Woher der Wert stammt."},
+        "herkunft": {"enum": ["laie", "llm_vorschlag", "beleg_import", "vorjahr", "kontoauszug", "edaten", "berechnet", "orakel"],
+          "description": "Woher der Wert stammt. edaten = von der Finanzverwaltung übermittelt (§ 150 Abs. 7 AO)."},
         "pruef_tiefe": {"enum": ["ungeprueft", "plausibilisiert", "orakel_bestaetigt", "amtlich"],
           "description": "Wie tief geprüft (aufsteigend). ungeprueft ⊑ plausibilisiert ⊑ orakel_bestaetigt ⊑ amtlich."},
         "haftung": {"enum": ["nutzer", "berater", "system", "amt"],

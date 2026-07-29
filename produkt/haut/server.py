@@ -11,14 +11,32 @@ from __future__ import annotations
 import json
 import os
 import re
+import signal
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+PRODUKT = os.path.dirname(HERE)
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
+_AUTH_DIR = os.path.join(PRODUKT, "auth")
+if _AUTH_DIR not in sys.path:
+    sys.path.insert(0, _AUTH_DIR)
+_STORE_DIR = os.path.join(PRODUKT, "store")
+if _STORE_DIR not in sys.path:
+    sys.path.insert(0, _STORE_DIR)
 
 import api  # noqa: E402
+import auth  # noqa: E402 — P1.1 Authentifizierung
+import audit  # noqa: E402 — P1.6 Audit-Log
+
+
+def _session_check():
+    """GET /auth/session — JWT schon von _dispatch via api._AUTH_USER verifiziert."""
+    uid = api._AUTH_USER
+    if uid is None:
+        raise auth.AuthError(401, "ungültiges oder abgelaufenes Token")
+    return 200, {"username": uid, "authenticated": True}
 
 HOST = "127.0.0.1"          # Auflage B — niemals 0.0.0.0
 STATIC = os.path.join(HERE, "static")
@@ -33,6 +51,18 @@ _FID = r"(?P<fid>[A-Za-z0-9_]{1,64})"
 
 def _routes():
     return [
+        # P8.3 Health / Ready
+        ("GET", re.compile(r"^/health$"), lambda m, b: api.health()),
+        ("GET", re.compile(r"^/ready$"), lambda m, b: api.ready()),
+        # P1.1 Auth (kein _fall_owner_check — öffentlich)
+        ("POST", re.compile(r"^/auth/register$"), lambda m, b: auth.register(b)),
+        ("POST", re.compile(r"^/auth/login$"),
+         lambda m, b: auth.login(b, audit_fn=lambda uid, act, fid, det: audit.append(uid, act, fid, det))),
+        ("POST", re.compile(r"^/auth/logout$"),
+         lambda m, b: auth.logout(b, audit_fn=lambda uid, act, fid, det: audit.append(uid, act, fid, det))),
+        ("GET", re.compile(r"^/auth/session$"),
+         lambda m, b: _session_check()),
+        # Fall-Endpunkte
         ("POST", re.compile(r"^/fall$"), lambda m, b: api.fall_anlegen(b)),
         ("GET", re.compile(rf"^/fall/{_ID}/fragen$"), lambda m, b: api.fragen(m["id"])),
         ("GET", re.compile(rf"^/fall/{_ID}/stand$"), lambda m, b: api.stand(m["id"])),
@@ -88,6 +118,15 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     # -- Dispatch --
+    def _extract_user(self) -> str | None:
+        """Liest Authorization-Header, verifiziert JWT → user_id oder None."""
+        raw = (self.headers.get("Authorization") or self.headers.get("authorization") or "").strip()
+        if raw.startswith("Bearer "):
+            raw = raw[7:]
+        if not raw:
+            return None
+        return auth.verify_token(raw)
+
     def _dispatch(self, method: str) -> None:
         pfad = self.path.split("?", 1)[0]
         if method == "GET" and (pfad == "/" or pfad.startswith("/static/")):
@@ -103,21 +142,35 @@ class Handler(BaseHTTPRequestHandler):
                 except json.JSONDecodeError:
                     self._json(400, {"fehler": "ungültiges JSON im Body"})
                     return
-        for m, muster, fn in ROUTES:
-            if m != method:
-                continue
-            treffer = muster.match(pfad)
-            if treffer:
-                try:
-                    status, obj = fn(treffer.groupdict(), body)
-                except api.ApiError as e:
-                    self._json(e.status, {"fehler": str(e)})
-                except Exception as e:  # nie eine nackte Exception nach aussen lecken
-                    self._json(500, {"fehler": f"{type(e).__name__}: {e}"})
-                else:
-                    self._json(status, obj)
-                return
-        self._json(404, {"fehler": "route_not_found", "methode": method, "pfad": pfad})
+        # JWT-Kontext für DIESEN Request setzen (single-threaded → Modul-Variable sicher)
+        api._AUTH_USER = self._extract_user()
+        try:
+            for m, muster, fn in ROUTES:
+                if m != method:
+                    continue
+                treffer = muster.match(pfad)
+                if treffer:
+                    status = 500
+                    try:
+                        status, obj = fn(treffer.groupdict(), body)
+                    except (api.ApiError, auth.AuthError) as e:
+                        self._json(e.status, {"fehler": str(e)})
+                    except Exception as e:  # nie eine nackte Exception nach aussen lecken
+                        self._json(500, {"fehler": f"{type(e).__name__}: {e}"})
+                    else:
+                        self._json(status, obj)
+                    if pfad.startswith("/fall"):
+                        uid = api._AUTH_USER or "dev"
+                        fid = treffer.groupdict().get("id")
+                        if pfad == "/fall":
+                            audit.append(uid, "fall_create", fid, f"status={status}")
+                        elif fid:
+                            act = pfad.split("/")[-1]
+                            audit.append(uid, f"fall_{act}", fid, f"status={status}")
+                    return
+            self._json(404, {"fehler": "route_not_found", "methode": method, "pfad": pfad})
+        finally:
+            api._AUTH_USER = None  # Request-Kontext sauber räumen
 
     def do_GET(self):
         self._dispatch("GET")
@@ -171,10 +224,15 @@ def main(argv):
     srv = make_server(port)
     host, gebunden = srv.server_address[0], srv.server_address[1]
     print(f"TaxGraph-Haut auf http://{host}:{gebunden}  (Ctrl-C zum Beenden)")
+    # P8.5 Graceful Shutdown: SIGTERM → KeyboardInterrupt → laufende Requests zu Ende
+    signal.signal(signal.SIGTERM, lambda _sig, _frame: sys.stderr.write("\nSIGTERM empfangen, fahre herunter...\n") or os.kill(os.getpid(), signal.SIGINT))
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
+        pass
+    finally:
         srv.shutdown()
+        print("Server heruntergefahren.")
 
 
 if __name__ == "__main__":

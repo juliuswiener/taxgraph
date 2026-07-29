@@ -37,15 +37,15 @@ def _vorlaeufig(store, fid, wert):
 
 # ---- (1) Übertrag als vorlaeufig ------------------------------------------
 
-def test_edaten_uebertraegt_vorlaeufig():
-    s = ST.leerer_store(2025, fall_id="edaten-vorl")
+def test_edaten_uebertraegt_bestaetigt():
+    s = ST.leerer_store(2025, fall_id="edaten-best")
     record = [{"feld_id": "bruttoarbeitslohn", "wert": 4000000, "kategorie": "lohn"}]
     n = EW.uebernehme_edaten(s, record, ts=TS)
     assert n == 1
     ev = ST._aktives(s)["bruttoarbeitslohn"]
-    assert ev["zustand"] == "vorlaeufig"
+    assert ev["zustand"] == "bestaetigt"
     assert ev["schreiber"] == "import:elster"
-    assert ev["signal"]["signal_2"] is None
+    assert ev["signal"]["signal_2"] == "edaten_uebermittelt"
     assert ev["herkunft"]["herkunft"] == "edaten"
     assert ev["wert"] == 4000000
 
@@ -96,15 +96,15 @@ def test_edaten_mehrere_felder_teilweise_aktiv():
     # veranlagung unverändert (abweichende Angabe hat Vorrang)
     assert ST._aktives(s)["veranlagung"]["wert"] == "zusammen"
     # neue Felder
-    assert ST._aktives(s)["bruttoarbeitslohn"]["zustand"] == "vorlaeufig"
+    assert ST._aktives(s)["bruttoarbeitslohn"]["zustand"] == "bestaetigt"
     assert ST._aktives(s)["bruttoarbeitslohn"]["wert"] == 4000000
-    assert ST._aktives(s)["rentenbezug"]["zustand"] == "vorlaeufig"
+    assert ST._aktives(s)["rentenbezug"]["zustand"] == "bestaetigt"
     assert ST._aktives(s)["rentenbezug"]["wert"] == 1200000
 
 
 # ---- (6) belt-and-suspenders: signal_2=None + vorlaeufig -------------------
 
-def test_edaten_signal2_immer_none_und_vorlaeufig():
+def test_edaten_signal2_edaten_uebermittelt_und_bestaetigt():
     s = ST.leerer_store(2025, fall_id="edaten-signal2")
     record = [
         {"feld_id": "bruttoarbeitslohn", "wert": 4000000, "kategorie": "lohn"},
@@ -112,5 +112,5 @@ def test_edaten_signal2_immer_none_und_vorlaeufig():
     ]
     EW.uebernehme_edaten(s, record, ts=TS)
     for ev in ST._aktives(s).values():
-        assert ev["signal"]["signal_2"] is None
-        assert ev["zustand"] == "vorlaeufig"
+        assert ev["signal"]["signal_2"] == "edaten_uebermittelt"
+        assert ev["zustand"] == "bestaetigt"

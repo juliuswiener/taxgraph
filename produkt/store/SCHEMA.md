@@ -42,7 +42,7 @@ verdeckt):
 
 | Achse | Werte (aufsteigend) | Bedeutung |
 |---|---|---|
-| `herkunft` | laie · llm_vorschlag · beleg_import · vorjahr · berechnet · orakel | woher der Wert stammt (keine totale Ordnung — Kategorie; Meet = „unspezifischer"/Konflikt-Markierung) |
+| `herkunft` | laie · llm_vorschlag · beleg_import · vorjahr · kontoauszug · edaten · berechnet · orakel | woher der Wert stammt (keine totale Ordnung — Kategorie; Meet = „unspezifischer"/Konflikt-Markierung) |
 | `pruef_tiefe` | ungeprueft ⊑ plausibilisiert ⊑ orakel_bestaetigt ⊑ amtlich | wie tief geprüft |
 | `haftung` | nutzer · berater · system · amt | wer haftet (AO § 150 Abs. 7 / § 153 / § 93c) |
 
