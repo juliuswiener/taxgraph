@@ -262,48 +262,66 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
     S. 8 Mahlzeitenkürzung: Frühstück 20 % von 28€ = 5,60€/Mahlzeit; Mittag/Abend je 40 % von 28€ = 11,20€.
     Bezugsgröße ist IMMER die Pauschale für einen vollen Kalendertag (28€), auch an 14€-Tagen (die Kürzung
     ist nicht tagesabhängig, sondern mahlzeitenabhängig).
+    Rechnung: CENT-Genauigkeit (pauschale_24h_cent * prozent // 100 gibt Cent), finale Umrechnung auf EURO.
     ANNAHME (fail-closed): Mahlzeiten werden zuerst den 28€-Tagen zugeordnet, dann den 14€-Tagen. Das
-    schöpft die Kürzung maximal aus (Deckel greift seltener). Der Deckel pro Tages-Kategorie (S. 8: "die
-    Kürzung darf die ermittelte Verpflegungspauschale nicht übersteigen") ist hier pro Kategorie implementiert.
+    schöpft die Kürzung maximal aus. Der Deckel (S. 8: "Kürzung darf Pauschale nicht übersteigen") ist
+    PRO TAG pro Kategorie: min(kuerzung_je_tag_cent, pauschale_je_tag_cent) * tage, nicht Jahressumme.
 
     S. 10: gezahltes Entgelt des Arbeitnehmer mindert Kürzungsbetrag (Floor 0 auf diesen Betrag).
 
     S. 11: steuerfreie Verpflegungserstattung zieht vom Abzug ab (Floor 0 auf Gesamt-Abzug).
 
-    Rückgabe: max(0, (S. 3 Jahressumme) - (S. 8 Kürzung - S. 10 Entgelt) - (S. 11 Erstattung)).
+    Rückgabe: max(0, (S. 3 Jahressumme) - (S. 8 Kürzung - S. 10 Entgelt) - (S. 11 Erstattung)), in EURO.
     """
     p = _verpflegung_params(year)
-    # S. 3: Jahres-Pauschale, kategorisiert
-    pauschale_24h_summe = int(s.get("tage_24h", 0)) * p["pauschale_24h"]
-    pauschale_an_abreise_summe = int(s.get("tage_an_abreise", 0)) * p["pauschale_an_abreise"]
-    pauschale_ab_8h_summe = int(s.get("tage_ueber_8h_eintaegig", 0)) * p["pauschale_ab_8h"]
+    # S. 3: Jahres-Pauschale, kategorisiert (EURO)
+    tage_24h = int(s.get("tage_24h", 0))
+    tage_an_abreise = int(s.get("tage_an_abreise", 0))
+    tage_ab_8h = int(s.get("tage_ueber_8h_eintaegig", 0))
+    pauschale_24h_summe = tage_24h * p["pauschale_24h"]
+    pauschale_an_abreise_summe = tage_an_abreise * p["pauschale_an_abreise"]
+    pauschale_ab_8h_summe = tage_ab_8h * p["pauschale_ab_8h"]
     pauschale_gesamt = pauschale_24h_summe + pauschale_an_abreise_summe + pauschale_ab_8h_summe
 
-    # S. 8: Mahlzeitenkürzung (Bezugsgröße: pauschale_24h = 28€ IMMER)
+    # S. 8: Mahlzeitenkürzung (CENT-Rechnung für Genauigkeit)
+    # Bezugsgröße: pauschale_24h = 28€ = 2800 Cent IMMER (nicht tagesabhängig)
     fruehstuecke = int(s.get("vpf_fruehstuecke_gestellt_anzahl", 0))
     mittagessen = int(s.get("vpf_mittagessen_gestellt_anzahl", 0))
     abendessen = int(s.get("vpf_abendessen_gestellt_anzahl", 0))
-    kuerzung_fruehstueck_betrag = fruehstuecke * (p["pauschale_24h"] * p["kuerzung_fruehstueck_prozent"] // 100)
-    kuerzung_mittag_abend_betrag = (mittagessen + abendessen) * (p["pauschale_24h"] * p["kuerzung_mittag_abend_prozent"] // 100)
-    kuerzung_brutto = kuerzung_fruehstueck_betrag + kuerzung_mittag_abend_betrag
+    pauschale_24h_cent = p["pauschale_24h"] * 100
 
-    # S. 10: gezahltes Entgelt des Arbeitnehmer mindert Kürzung
+    # Kürzung je Mahlzeit-Typ (CENT)
+    kuerzung_fruehstueck_je_st_cent = (pauschale_24h_cent * p["kuerzung_fruehstueck_prozent"]) // 100
+    kuerzung_mittag_abend_je_st_cent = (pauschale_24h_cent * p["kuerzung_mittag_abend_prozent"]) // 100
+
+    # Gesamtkürzung pro Kategorie (CENT): Mahlzeiten erst den 28€-Tagen, dann 14€-Tagen
+    # 28€-Tage: Deckel pro Tag = pauschale_24h_cent, kumuliert über alle 28€-Tage
+    kuerzung_28er_brutto_cent = (
+        fruehstuecke * kuerzung_fruehstueck_je_st_cent
+        + mittagessen * kuerzung_mittag_abend_je_st_cent
+        + abendessen * kuerzung_mittag_abend_je_st_cent
+    )
+    # Deckel pro Tag (28€-Tage): min(kuerzung_brutto, tage_24h * pauschale_24h_cent)
+    kuerzung_28er_cent = min(kuerzung_28er_brutto_cent, tage_24h * pauschale_24h_cent)
+
+    # Rest-Kürzung (falls Mahlzeiten mehr kürzen wollten als 28€-Tage Platz bieten): 14€-Tage
+    rest_kuerzung_brutto_cent = max(0, kuerzung_28er_brutto_cent - kuerzung_28er_cent)
+    pauschale_14er_summe_cent = (tage_an_abreise + tage_ab_8h) * 14 * 100
+    kuerzung_14er_cent = min(rest_kuerzung_brutto_cent, pauschale_14er_summe_cent)
+
+    kuerzung_brutto_cent = kuerzung_28er_cent + kuerzung_14er_cent
+
+    # S. 10: gezahltes Entgelt des Arbeitnehmer mindert Kürzung (CENT)
     entgelt_cent = int(s.get("vpf_mahlzeiten_gezahltes_entgelt", 0))
-    entgelt_euro = entgelt_cent // 100  # cent -> euro
-    kuerzung_nach_entgelt = max(0, kuerzung_brutto - entgelt_euro)
+    kuerzung_nach_entgelt_cent = max(0, kuerzung_brutto_cent - entgelt_cent)
 
-    # Deckel pro Tages-Kategorie (S. 8: Kürzung darf Pauschale nicht übersteigen)
-    # ANNAHME: Mahlzeiten zuerst 28€-Tagen, dann 14€-Tagen
-    kuerzung_28er = min(kuerzung_nach_entgelt, pauschale_24h_summe)
-    rest_kuerzung = max(0, kuerzung_nach_entgelt - kuerzung_28er)
-    kuerzung_14er = min(rest_kuerzung, pauschale_an_abreise_summe + pauschale_ab_8h_summe)
-    kuerzung_final = kuerzung_28er + kuerzung_14er
-
-    # S. 11: steuerfreie Verpflegungserstattung schließt Abzug insoweit aus
+    # S. 11: steuerfreie Verpflegungserstattung (CENT → EURO)
     erstattung_cent = int(s.get("vpf_steuerfreie_erstattung_betrag", 0))
-    erstattung_euro = erstattung_cent // 100  # cent -> euro
 
-    return max(0, pauschale_gesamt - kuerzung_final - erstattung_euro)
+    # Rückgabe in EURO (Cent → Euro Division)
+    kuerzung_final_euro = kuerzung_nach_entgelt_cent // 100
+    erstattung_euro = erstattung_cent // 100
+    return max(0, pauschale_gesamt - kuerzung_final_euro - erstattung_euro)
 
 
 def _uebernachtung_abzug(s: dict, year: int) -> int:

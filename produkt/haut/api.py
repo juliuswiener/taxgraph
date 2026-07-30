@@ -597,9 +597,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "bruttoarbeitslohn": _c("bruttoarbeitslohn_partner") // 100, "werbungskosten": 0})
             # § 19 Abs. 2 Versorgungsfreibetrag (K2): Einkünfte nach VFB + Zuschlag + 102€-Pauschbetrag.
             # cent-Felder (jahresrente, bemessungsgrundlage) sind CENT, Accessor rechnet EURO.
-            versorgung_jahresrente_cent = _c("versorgung_jahresrente", 0)
-            versorgung_bemessungsgrundlage_cent = _c("versorgung_bemessungsgrundlage", 0)
-            versorgung_beginn_jahr = _c("versorgung_beginn_jahr", 0)
+            versorgung_jahresrente_cent = _c("versorgung_jahresrente")
+            versorgung_bemessungsgrundlage_cent = _c("versorgung_bemessungsgrundlage")
+            versorgung_beginn_jahr = _c("versorgung_beginn_jahr")
             if versorgung_jahresrente_cent > 0 and versorgung_bemessungsgrundlage_cent > 0 and versorgung_beginn_jahr > 0:
                 vers_einkuenfte = runner.catala_einkuenfte_versorgung({
                     "versorgung_jahresrente": versorgung_jahresrente_cent // 100,       # CENT → EURO
