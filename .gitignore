@@ -10,8 +10,14 @@ oracle/gettsim/_catala/
 __pycache__/
 *.pyc
 
+# Test coverage
+.coverage
+.coverage.*
+
 # Scratch
 scratch/
+*.bak
+scratchpad/task_queue.json.bak
 
 # Secrets (never commit)
 .env*

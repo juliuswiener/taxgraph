@@ -191,3 +191,53 @@ def test_ersetzt_mit_event_id_erlaubt_ueberschreiben(base):
 
     # Wert aktualisiert
     assert resp_stand2["felder"]["einkuenfte_gewinn"]["wert"] == 70000
+
+
+def test_stand_event_id_aequivalent_zu_aktives(base):
+    """Äquivalenz: /stand.event_id == ST._aktives()[fid]["event_id"] bei mehreren Korrektionen.
+
+    Nagelt fest: die Logik in api.py::stand() muss exakt mit ST._aktives() synchron sein.
+    Unterschiede bedeuten Korrektheit-Drift (wie die DBA-Enum-Naht).
+    """
+    import sys, json
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
+    import store as ST_module
+
+    # Fall anlegen
+    status, resp = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": "2025", "fall_id": "test-6"})
+    assert status == 201
+    fall_id = resp["fall_id"]
+
+    # Event 1
+    status, resp1 = _req(base, "POST", f"/fall/{fall_id}/event", _laie("einkuenfte_gewinn", 10000))
+    assert status == 201
+    event_id_1 = resp1["event_id"]
+
+    # Event 2 (überschreibt Event 1)
+    ev_body2 = _laie("einkuenfte_gewinn", 20000)
+    ev_body2["ersetzt"] = event_id_1
+    status, resp2 = _req(base, "POST", f"/fall/{fall_id}/event", ev_body2)
+    assert status == 201
+    event_id_2 = resp2["event_id"]
+
+    # Event 3 (überschreibt Event 2)
+    ev_body3 = _laie("einkuenfte_gewinn", 30000)
+    ev_body3["ersetzt"] = event_id_2
+    status, resp3 = _req(base, "POST", f"/fall/{fall_id}/event", ev_body3)
+    assert status == 201
+    event_id_3 = resp3["event_id"]
+
+    # /stand abrufen
+    status, resp_stand = _req(base, "GET", f"/fall/{fall_id}/stand", None)
+    assert status == 200
+    event_id_from_stand = resp_stand["felder"]["einkuenfte_gewinn"]["event_id"]
+
+    # Store über API.lade_fall laden + _aktives() aufrufen
+    store = API.lade_fall(fall_id)
+    aktiv = ST_module._aktives(store)
+    event_id_from_aktives = aktiv["einkuenfte_gewinn"]["event_id"]
+
+    # Äquivalenz nageln fest
+    assert event_id_from_stand == event_id_from_aktives, \
+        f"Drift: /stand={event_id_from_stand} != _aktives()={event_id_from_aktives}"
+    assert event_id_from_stand == event_id_3, "Nach 3 Korrektionen sollte neueste event_id vorhanden sein"
