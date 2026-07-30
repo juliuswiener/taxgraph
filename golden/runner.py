@@ -764,6 +764,71 @@ def catala_renten_einkuenfte(s: dict) -> int:
     return max(0, stpfl - wk_pb)
 
 
+# -- § 19 Abs. 2 Versorgungsfreibetrag + Zuschlag (p19_2), Weg A, EURO. -----------
+
+def _versorgungsfreibetrag_kohorte(versorgungsbeginn_jahr: int):
+    """§ 19 Abs. 2 S. 3 Kohorten-Staffel (prozentsatz % + hoechstbetrag + zuschlag, alle EURO)
+    je Jahr des Versorgungsbeginns, lebenslang fix (S. 8-9). Außerhalb der Tabelle geklemmt:
+    vor 2005 → Höchststaffel, ab 2058 → 0."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", "kohorten", "versorgungsfreibetrag_p19_2.yaml"), encoding="utf-8"))
+    k = p["kohorten"]
+    j = min(max(versorgungsbeginn_jahr, min(k)), max(k))
+    return k[j]["prozentsatz"], k[j]["hoechstbetrag"], k[j]["zuschlag"]
+
+
+def catala_p19_2_versorgungsfreibetrag(s: dict) -> int:
+    """§ 19 Abs. 2 EStG — Versorgungsfreibetrag + Zuschlag, EURO (keine Catala-Modul, reiner
+    Python-Accessor, da Bemessungsgrundlage-Heuristik komplex). § 19 Abs. 2 S. 1: Von
+    Versorgungsbezügen bleiben ein Freibetrag (Prozentsatz × BG, gedeckelt Höchstbetrag)
+    + separater Zuschlag steuerfrei. S. 3: Prozentsatz/Höchstbetrag/Zuschlag = Kohorten-Staffel
+    nach dem JAHR DES VERSORGUNGSBEGINNS, lebenslang fix. S. 4: Bemessungsgrundlage = 12× Monatsbezug
+    (+ anrechenbare SZ) — INPUTS: versorgungsbezuege_bemessungsgrundlage (muß vom Ring konstruiert sein,
+    siehe § 19 Abs. 2 S. 4 Def.) + versorgungsbeginn_jahr (Kohorte-Schlüssel).
+
+    INKOMPLETTHEIT (fail-closed bis Bemessungsgrundlage-Klärung):
+    - versorgungsbezuege_bemessungsgrundlage absent → VersorgungsfreibetragOffen (Gate stoppt Rechnung).
+    - versorgungsbeginn_jahr absent → VersorgungsfreibetragOffen (keine Kohorte).
+
+    S. 2 Alters-Gate (beamten-/nicht-beamten-Grenze):
+    - Beamtenrechtliche Bezüge (Ruhegehalt etc.): KEIN Alters-Gate.
+    - Nicht-beamtenrechtliche Bezüge (Betriebsrente wegen Altersgrenze):
+      § 19 Abs. 2 S. 2 Nr. 2: 63. Lj oder (Schwerbehinderung) 60. Lj vollendet.
+    - Hinterbliebenenbezüge (Witwe/Waise): KEIN Alters-Gate.
+    - Erwerbsminderung: KEIN Alters-Gate.
+    INPUT: versorgungsbezuege_sind_beamtenrechtlich (bool, askable). Alters-Gate ausgelagert an ring-Verdrahtung
+    (fail-closed in api.py, wie Rentenfreibetrag).
+
+    S. 5: Zuschlag-Deckel: der Zuschlag darf nicht über die um VFB verminderte BG hinausgehen.
+    S. 12: Bei Monaten ohne Bezug: VFB + Zuschlag um 1/12 je voller Ausfall-Monat gekürzt (INPUT: monate_ohne_bezug,
+    ein Nachtrag = KZ-Grenze aber in ring-Verdrahtung, MVP absent).
+
+    Nicht umgesetzt (Backlog): S. 10-11 (Neuberechnung bei Anrechnung/Ruhe/Kürzung der Versorgung),
+    S. 7 (mehrere Versorgungsbezüge, Hinterbliebenennachfolge).
+    """
+    bg = int(s.get("versorgungsbezuege_bemessungsgrundlage", 0))
+    beginn = int(s.get("versorgungsbeginn_jahr", 0))
+    if not bg or not beginn:
+        # fail-closed: ohne diese Inputs kann nicht gerechnet werden. Der Ring speist sie
+        # oder liefert einen Grund (z.B. VersorgungsfreibetragOffen).
+        raise VersorgungsfreibetragOffen("Bemessungsgrundlage oder Versorgungsbeginn-Jahr fehlt")
+    prozent, hb, zuschl = _versorgungsfreibetrag_kohorte(beginn)
+    # Freibetrag: min(prozentsatz/100 × BG; Höchstbetrag)
+    vfb_roh = bg * round(prozent * 10) // 1000  # wie catala_renten-stpfl: dezimal × 10, dann /1000
+    vfb = min(vfb_roh, hb)
+    # Zuschlag: min(Zuschlag-Höchst; um VFB verminderte BG), § 19 Abs. 2 S. 5
+    zuschl_deckel = max(0, bg - vfb)
+    zuschl_abzug = min(zuschl, zuschl_deckel)
+    return vfb + zuschl_abzug
+
+
+class VersorgungsfreibetragOffen(Exception):
+    """Sperrgrund: Versorgungsfreibetrag kann nicht berechnet werden (fehlende Bemessungsgrundlage
+    oder Versorgungsbeginn-Jahr), oder Alters-Gate offen (nicht-beamtenrechtliche Bezüge,
+    Altersgrenze 60/63 nicht erfüllt)."""
+    pass
+
+
 # -- § 33b Pauschbeträge (Behinderung / Pflege / Hinterbliebene), Weg A, EURO. ---
 
 def _p33b_params(year: int) -> dict:

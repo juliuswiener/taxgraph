@@ -1,0 +1,67 @@
+# § 19 Abs. 2 EStG Versorgungsfreibetrag + Zuschlag — Kohorten-Staffel.
+# NICHT vz-versioniert: der Wert hängt am 'Jahr des Versorgungsbeginns'
+# und gilt lebenslang fix (§ 19 Abs. 2 S. 8-9). Quelle: § 19 Abs. 2 Satz 3 Tabelle.
+# Aus sources/gesetze-im-internet/estg_p19_2026-07-17.txt geparst, Zeilen 12-13.
+parameter: versorgungsfreibetrag_kohorten
+authority: gesetz
+redistributable: true
+rechtsquelle: {gesetz: EStG, paragraph: '19', absatz: '2', satz: '3', tabelle: 'Versorgungsbeginns-Kohorten-Staffel'}
+datenquelle: 'sources/gesetze-im-internet/estg_p19_2026-07-17.txt (sha256 9e6b48ab, § 19 Abs. 2 Satz 3 Tabelle)'
+einheit: {prozentsatz: prozent, hoechstbetrag: euro, zuschlag: euro}
+
+# Schlüssel = versorgungsbeginn_jahr (Jahr des Versorgungsbeginns).
+kohorten:
+  2005: {prozentsatz: 40.0, hoechstbetrag: 3000, zuschlag: 900}
+  2006: {prozentsatz: 38.4, hoechstbetrag: 2880, zuschlag: 864}
+  2007: {prozentsatz: 36.8, hoechstbetrag: 2760, zuschlag: 828}
+  2008: {prozentsatz: 35.2, hoechstbetrag: 2640, zuschlag: 792}
+  2009: {prozentsatz: 33.6, hoechstbetrag: 2520, zuschlag: 756}
+  2010: {prozentsatz: 32.0, hoechstbetrag: 2400, zuschlag: 720}
+  2011: {prozentsatz: 30.4, hoechstbetrag: 2280, zuschlag: 684}
+  2012: {prozentsatz: 28.8, hoechstbetrag: 2160, zuschlag: 648}
+  2013: {prozentsatz: 27.2, hoechstbetrag: 2040, zuschlag: 612}
+  2014: {prozentsatz: 25.6, hoechstbetrag: 1920, zuschlag: 576}
+  2015: {prozentsatz: 24.0, hoechstbetrag: 1800, zuschlag: 540}
+  2016: {prozentsatz: 22.4, hoechstbetrag: 1680, zuschlag: 504}
+  2017: {prozentsatz: 20.8, hoechstbetrag: 1560, zuschlag: 468}
+  2018: {prozentsatz: 19.2, hoechstbetrag: 1440, zuschlag: 432}
+  2019: {prozentsatz: 17.6, hoechstbetrag: 1320, zuschlag: 396}
+  2020: {prozentsatz: 16.0, hoechstbetrag: 1200, zuschlag: 360}
+  2021: {prozentsatz: 15.2, hoechstbetrag: 1140, zuschlag: 342}
+  2022: {prozentsatz: 14.4, hoechstbetrag: 1080, zuschlag: 324}
+  2023: {prozentsatz: 14.0, hoechstbetrag: 1050, zuschlag: 315}
+  2024: {prozentsatz: 13.6, hoechstbetrag: 1020, zuschlag: 306}
+  2025: {prozentsatz: 13.2, hoechstbetrag: 990, zuschlag: 297}
+  2026: {prozentsatz: 12.8, hoechstbetrag: 960, zuschlag: 288}
+  2027: {prozentsatz: 12.4, hoechstbetrag: 930, zuschlag: 279}
+  2028: {prozentsatz: 12.0, hoechstbetrag: 900, zuschlag: 270}
+  2029: {prozentsatz: 11.6, hoechstbetrag: 870, zuschlag: 261}
+  2030: {prozentsatz: 11.2, hoechstbetrag: 840, zuschlag: 252}
+  2031: {prozentsatz: 10.8, hoechstbetrag: 810, zuschlag: 243}
+  2032: {prozentsatz: 10.4, hoechstbetrag: 780, zuschlag: 234}
+  2033: {prozentsatz: 10.0, hoechstbetrag: 750, zuschlag: 225}
+  2034: {prozentsatz: 9.6, hoechstbetrag: 720, zuschlag: 216}
+  2035: {prozentsatz: 9.2, hoechstbetrag: 690, zuschlag: 207}
+  2036: {prozentsatz: 8.8, hoechstbetrag: 660, zuschlag: 198}
+  2037: {prozentsatz: 8.4, hoechstbetrag: 630, zuschlag: 189}
+  2038: {prozentsatz: 8.0, hoechstbetrag: 600, zuschlag: 180}
+  2039: {prozentsatz: 7.6, hoechstbetrag: 570, zuschlag: 171}
+  2040: {prozentsatz: 7.2, hoechstbetrag: 540, zuschlag: 162}
+  2041: {prozentsatz: 6.8, hoechstbetrag: 510, zuschlag: 153}
+  2042: {prozentsatz: 6.4, hoechstbetrag: 480, zuschlag: 144}
+  2043: {prozentsatz: 6.0, hoechstbetrag: 450, zuschlag: 135}
+  2044: {prozentsatz: 5.6, hoechstbetrag: 420, zuschlag: 126}
+  2045: {prozentsatz: 5.2, hoechstbetrag: 390, zuschlag: 117}
+  2046: {prozentsatz: 4.8, hoechstbetrag: 360, zuschlag: 108}
+  2047: {prozentsatz: 4.4, hoechstbetrag: 330, zuschlag: 99}
+  2048: {prozentsatz: 4.0, hoechstbetrag: 300, zuschlag: 90}
+  2049: {prozentsatz: 3.6, hoechstbetrag: 270, zuschlag: 81}
+  2050: {prozentsatz: 3.2, hoechstbetrag: 240, zuschlag: 72}
+  2051: {prozentsatz: 2.8, hoechstbetrag: 210, zuschlag: 63}
+  2052: {prozentsatz: 2.4, hoechstbetrag: 180, zuschlag: 54}
+  2053: {prozentsatz: 2.0, hoechstbetrag: 150, zuschlag: 45}
+  2054: {prozentsatz: 1.6, hoechstbetrag: 120, zuschlag: 36}
+  2055: {prozentsatz: 1.2, hoechstbetrag: 90, zuschlag: 27}
+  2056: {prozentsatz: 0.8, hoechstbetrag: 60, zuschlag: 18}
+  2057: {prozentsatz: 0.4, hoechstbetrag: 30, zuschlag: 9}
+  2058: {prozentsatz: 0.0, hoechstbetrag: 0, zuschlag: 0}
