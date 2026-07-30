@@ -131,6 +131,28 @@ def test_a_feld_id_eindeutig(daten):
         assert not dups, f"{os.path.basename(f)}: doppelte feld_id {dups}"
 
 
+def test_a_feld_id_eindeutig_ueber_alle_dateien(daten):
+    """Eine feld_id darf NUR EINMAL im gesamten Bindungsverzeichnis stehen — nicht nur
+    einmal je Datei.
+
+    Zwei Bindungen für dasselbe Feld sind kein doppelter Eintrag, sondern zwei
+    Wahrheiten: welche gilt, hängt an der Ladereihenfolge. Typ, Fragetext, anker_ref
+    und elster_kz können auseinanderlaufen, ohne dass ein Test es merkt — der
+    Feld-in-einer-Datei-Test oben sieht dateiübergreifende Duplikate nicht.
+    """
+    heimat = {}
+    dups = {}
+    for f, d in daten.items():
+        for b in d["bindungen"]:
+            fid = b["feld_id"]
+            if fid in heimat:
+                dups.setdefault(fid, [heimat[fid]]).append(os.path.basename(f))
+            else:
+                heimat[fid] = os.path.basename(f)
+    assert not dups, "feld_id in mehreren Bindungsdateien: " + "; ".join(
+        f"{k} in {v}" for k, v in sorted(dups.items()))
+
+
 # ---- (b) Vollständigkeit -------------------------------------------------------
 
 def test_b_vollstaendigkeit(daten):
