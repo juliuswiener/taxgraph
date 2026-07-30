@@ -1819,7 +1819,7 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                          "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
                          "abschlusszahlung_cent": None,
-                         "grund": sperr, "offen": [], "trace": None}
+                         "grund": sperr, "offen": [], "trace": None, "kette": None}
     result = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder, store)
     if result is None:
         if cfg["gesamt_ring"] is None:
@@ -1827,7 +1827,7 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                          "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
                          "abschlusszahlung_cent": None,
-                         "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
+                         "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None, "kette": None}
         offen = [f for f in scheibe_felder
                  if f not in felder or felder[f]["zustand"] != "bestaetigt"]
         bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
@@ -1835,14 +1835,21 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
         return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                      "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
                      "abschlusszahlung_cent": None,
-                     "grund": grund, "offen": sorted(offen), "trace": None}
+                     "grund": grund, "offen": sorted(offen), "trace": None, "kette": None}
     zahl, solz, extras = result
     trace = TR.trace_ergebnis(store, bindung, snapshot_id=sid)
+    # Rechenweg-Kette: GdE → zvE → tarifliche ESt → festzusetzende ESt
+    from golden import runner as GR
+    kette_dict = GR.catala_gesamt_kette(felder)
+    kette = {"gesamtbetrag_der_einkuenfte_cent": kette_dict["gesamtbetrag_der_einkuenfte"] * 100,
+             "zu_versteuerndes_einkommen_cent": kette_dict["zu_versteuerndes_einkommen"] * 100,
+             "tarifliche_est_cent": kette_dict["tarifliche_est"] * 100,
+             "festzusetzende_est_cent": kette_dict["festzusetzende_est"] * 100}
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": zahl,
                  "solz_cent": solz, "kist_cent": extras.get("kist_cent"),
                  "mobilitaetspraemie_cent": extras.get("mobilitaetspraemie_cent"),
                  "abschlusszahlung_cent": _abschlusszahlung_cent(felder, zahl),
-                 "grund": "bestaetigt", "offen": [], "trace": trace}
+                 "grund": "bestaetigt", "offen": [], "trace": trace, "kette": kette}
 
 
 def deklaration(fall_id: str) -> tuple[int, dict]:

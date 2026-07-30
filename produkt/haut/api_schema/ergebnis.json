@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "haut.ergebnis response",
   "type": "object",
-  "required": ["fall_id", "snapshot_id", "zahl_cent", "grund", "offen", "trace"],
+  "required": ["fall_id", "snapshot_id", "zahl_cent", "grund", "offen", "trace", "kette"],
   "additionalProperties": false,
   "properties": {
     "fall_id": {"type": "string"},
@@ -28,6 +28,18 @@
                        "alleinerziehend_konsistenz_offen", "gewinn_quelle_offen",
                        "luf_euer_offen", "gewst_hebesatz_offen", "abs3_ueber_5mio_offen", "kinder_gehoeren_in_gesamt", "verlustvortrag_gehoert_in_gesamt", "dba_multi_country_offen", "dba_kapital_offen", "p32b_kombi_offen", "progression_gehoert_in_gesamt", "p16_4_gate_offen"]},
     "offen": {"type": "array", "items": {"type": "string"}},
-    "trace": {"type": ["object", "null"]}
+    "trace": {"type": ["object", "null"]},
+    "kette": {"oneOf": [
+      {"type": "null"},
+      {"type": "object",
+       "properties": {
+         "gesamtbetrag_der_einkuenfte_cent": {"type": "integer"},
+         "zu_versteuerndes_einkommen_cent": {"type": "integer"},
+         "tarifliche_est_cent": {"type": "integer"},
+         "festzusetzende_est_cent": {"type": "integer"}
+       },
+       "required": ["gesamtbetrag_der_einkuenfte_cent", "zu_versteuerndes_einkommen_cent", "tarifliche_est_cent", "festzusetzende_est_cent"],
+       "additionalProperties": false}
+    ]}
   }
 }
