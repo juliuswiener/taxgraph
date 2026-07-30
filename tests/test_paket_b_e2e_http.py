@@ -539,8 +539,9 @@ AN_GESAMT_UEBERNACHTUNG = ("uebernachtung_kosten_monat", "uebernachtung_monate",
                           "uebernachtung_auswaerts", "uebernachtung_alleinnutzung",
                           "uebernachtung_keine_lange_unterbrechung")
 # A6 Arbeitsmittel-GWG (askable Felder; am_massgebliche_ak ist askable:false → nicht in /fragen)
-AN_GESAMT_ARBEITSMITTEL = ("am_anschaffungskosten", "arbeitsmittel_nutzungsdauer", "am_gwg_sofortabzug_gewaehlt",
-                            "am_anschaffung_monat", "am_afa_ist_anschaffungsjahr")
+# am_anschaffung_monat / am_afa_ist_anschaffungsjahr stehen bewusst NICHT hier: die § 7 Abs. 4-
+# Zwölftelung ist nur im gefalteten gesamt-Ring verdrahtet (ARBEITSMITTEL_AFA_GESAMT).
+AN_GESAMT_ARBEITSMITTEL = ("am_anschaffungskosten", "arbeitsmittel_nutzungsdauer", "am_gwg_sofortabzug_gewaehlt")
 AN_GESAMT_P36 = ("p36_lohnsteuer", "p36_vorauszahlungen")
 AN_GESAMT_KIST = ("kist_konfession", "kist_bundesland")
 AN_GESAMT_KEGEL = [
