@@ -640,6 +640,15 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                                             "einkuenfte_sonstige": g.get("einkuenfte_sonstige", 0),
                                             "altersentlastungsbetrag": alt24a + alt24a_b,
                                             "entlastungsbetrag_alleinerziehende": ent24b})
+            # § 10 Abs. 4b S. 3: übersteigt die erstattete die gezahlte Kirchensteuer, wird der
+            # Überhang dem GdE hinzugerechnet. Hier auf die eben berechnete gde, damit der
+            # § 10b-20%-Deckel und die § 33-zumutbare Belastung sich am erhöhten Betrag bemessen.
+            # Die Hinzurechnung in den ENGINE-Slot passiert bei einkuenfte_sonstige unten — hier
+            # wäre sie tot, weil die Zeile dort das Feld neu setzt (§23/§22 Nr.3).
+            kist_ueberhang = runner.catala_p10_4b_erstattungsueberhang({
+                "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
+                "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
+            gde += kist_ueberhang
             base = runner.catala_p35a_haushaltsnahe({
                 "hh_minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
                 "hh_dienstleistungen": _c("hh_dienstleistungen") // 100,
@@ -762,6 +771,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             nr3 = _c("p22_nr3_einkuenfte")
             if nr3:
                 g["einkuenfte_sonstige"] += runner.catala_p22_nr3_einkuenfte(nr3) // 100
+            # § 10 Abs. 4b S. 3 KiSt-Erstattungsüberhang: „ist dem Gesamtbetrag der Einkünfte
+            # hinzuzurechnen". Der Engine-GdE entsteht aus den Einkunfts-Slots, es gibt keinen
+            # eigenen Hinzurechnungs-Slot — die Aufstockung läuft deshalb über einkuenfte_sonstige
+            # (§ 2 Abs. 3-Summand). Erst HIER, nach den §23-/§22-Nr.3-Zuweisungen oben, sonst
+            # überschreibt Z. 768 den Zuschlag wieder. Der lokale `gde` (§10b/§33-Deckel) wurde
+            # schon oben erhöht; gde_p10d unten liest einkuenfte_sonstige und bekommt ihn hier.
+            g["einkuenfte_sonstige"] += kist_ueberhang
 
             # § 10d Abs. 2 Verlustvortrag (opt-in via verlustvortrag_bestand): der festgestellte verbleibende Verlust-
             # vortrag mindert den GdE „VORRANGIG vor Sonderausgaben, agB, sonstigen Abzugsbeträgen" (§ 10d Abs. 2 S. 1)
@@ -846,7 +862,11 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # (Leibrente) lebt in der rentner-Scheibe. §23-Nenner-Integration: §23-Einkünfte sind
             # §2-tariflich, gehören also in den §35-Nenner (alle positiven tariflichen Einkünfte) —
             # der Term dokumentiert die korrekte Formel + ist robust, falls § 22 je in den gesamt-Ring kommt.
-            p35_nenner = (max(0, ns) + max(0, vv) + max(0, g.get("einkuenfte_sonstige", 0))
+            # Der § 10 Abs. 4b-Überhang sitzt technisch in einkuenfte_sonstige (es gibt keinen
+            # Hinzurechnungs-Slot), ist aber KEINE Einkunft — § 35 Abs. 1 S. 2 nennt „Einkünfte".
+            # Hier wieder raus, sonst verwässert er den Anrechnungsbruch.
+            p35_nenner = (max(0, ns) + max(0, vv)
+                          + max(0, g.get("einkuenfte_sonstige", 0) - kist_ueberhang)
                           + max(0, g["einkuenfte_gewinn"]))
 
             # §3 Abs.2 SolzG: SolZ-Basis = KiFB-fiktive ESt (immer mit §32 Abs.6-Freibetraegen,
@@ -1128,6 +1148,15 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
                 "einkuenfte_sonstige": renten, "einkuenfte_gewinn": rentner_g["einkuenfte_gewinn"],
                 "altersentlastungsbetrag": alt24a_r, "entlastungsbetrag_alleinerziehende": ent24b_r})
+            # § 10 Abs. 4b S. 3 — wie im gesamt-Pfad: der Erstattungsüberhang erhöht den GdE
+            # (lokale gde für §10b/§33) und geht mangels Hinzurechnungs-Slot über
+            # einkuenfte_sonstige in die Engine. NICHT in den § 35-Nenner unten — der liest
+            # `renten`, nicht rentner_g, und bleibt damit auf echten Einkünften.
+            kist_ueberhang_r = runner.catala_p10_4b_erstattungsueberhang({
+                "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
+                "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
+            gde += kist_ueberhang_r
+            rentner_g["einkuenfte_sonstige"] += kist_ueberhang_r
             # §33a Unterhalt + Ausbildungsfreibetrag: ADDITIV zu §10d (beide GdE-Minderung)
             p33a_unt = runner.catala_p33a_unterhalt({
                 "veranlagungszeitraum": vz,
@@ -1603,14 +1632,11 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if _positiv("hh_dienstleistungen") or _positiv("hh_handwerker_arbeitskosten"):
             if (felder.get("hh_rechnung_unbar") or {}).get("zustand") != "bestaetigt":
                 return "rechnung_unbar_offen"
-        # § 10 Abs. 4b KiSt-Erstattungsüberhang (K2, #8): erstattete > gezahlte Kirchensteuer → fail-closed. Der
-        # abziehbare Teil wäre 0, ABER die Überhang-Hinzurechnung zum GdE (§ 10 Abs. 4b S. 3) ist NICHT
-        # materialisiert → ein stiller Abzug 0 würde unterbesteuern. Benannter Nachtrag → erstattungsueberhang_offen.
-        def _num(fid):
-            w = (felder.get(fid) or {}).get("wert")
-            return w if isinstance(w, (int, float)) and not isinstance(w, bool) else 0
-        if _num("kist_erstattet") > _num("kist_gezahlt"):
-            return "erstattungsueberhang_offen"
+        # § 10 Abs. 4b KiSt-Erstattungsüberhang: früher sperrte hier erstattungsueberhang_offen,
+        # weil die GdE-Hinzurechnung (S. 3) fehlte und ein stiller Abzug 0 unterbesteuert hätte.
+        # Sie ist jetzt gebaut (catala_p10_4b_erstattungsueberhang, im Ring vor den GdE-Verwendungen
+        # verdrahtet) — der Fall rechnet. erstattungsueberhang_offen bleibt im Schema-Enum als
+        # Alt-Grund erhalten, feuert aber nicht mehr.
         # fremd_arten = Arten, die DIESE Scheibe NICHT rechnet → bestätigt-false (Nutzer HAT die Art) sperrt
         # (Stufe 2). Die von der Scheibe GERECHNETEN Arten stehen NICHT in fremd_arten (kein Fehl-Sperr).
         if any(felder.get(fl, {}).get("wert") is False for fl in cfg.get("fremd_arten", ())):

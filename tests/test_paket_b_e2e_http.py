@@ -2026,13 +2026,30 @@ def test_gesamt_faltung_rechnung_unbar_carry(base):
     assert erg["zahl_cent"] is None and erg["grund"] == "rechnung_unbar_offen"
 
 
-def test_gesamt_faltung_erstattungsueberhang_carry(base):
-    """Weg (ii) K2-Guard trägt mit: KiSt erstattet > gezahlt im gefalteten gesamt-Ring → erstattungsueberhang_offen
-    (§10 Abs.4b, feld-präsenz-getrieben)."""
+def test_gesamt_faltung_erstattungsueberhang_erhoeht_die_steuer(base):
+    """§ 10 Abs. 4b S. 3 im gefalteten gesamt-Ring: erstattete KiSt > gezahlte → der Überhang
+    wird dem GdE hinzugerechnet, statt den Fall zu sperren.
+
+    DIFFERENTIAL: beide Fälle haben denselben KiSt-ABZUG (0, weil erstattet ≥ gezahlt), sie
+    unterscheiden sich nur im Überhang. Fall A: gezahlt 200 / erstattet 1200 → Überhang 1000.
+    Fall B: gezahlt 200 / erstattet 200 → Überhang 0. Der Unterschied MUSS positiv sein — er
+    ist genau das, was der alte Guard fail-closed umschifft hat. Wäre die Hinzurechnung nicht
+    verdrahtet, wären beide Beträge gleich.
+    """
+    catala = _catala_da()
     _gesamt_anlegen(base, "feu", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True))
     _gesamt_abzuege(base, "feu", kist_gezahlt=20000, kist_erstattet=120000)
-    st, erg = _req(base, "GET", "/fall/feu/ergebnis")
-    assert erg["zahl_cent"] is None and erg["grund"] == "erstattungsueberhang_offen"
+    st, erg_ueber = _req(base, "GET", "/fall/feu/ergebnis")
+    _gesamt_anlegen(base, "feo", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True))
+    _gesamt_abzuege(base, "feo", kist_gezahlt=20000, kist_erstattet=20000)
+    st, erg_ohne = _req(base, "GET", "/fall/feo/ergebnis")
+    if catala:
+        assert erg_ueber["grund"] == "bestaetigt", "der Fall muss jetzt rechnen, nicht sperren"
+        assert erg_ohne["grund"] == "bestaetigt"
+        assert erg_ueber["zahl_cent"] > erg_ohne["zahl_cent"], \
+            "Erstattungsüberhang erhöht den GdE — ohne Wirkung wäre § 10 Abs. 4b S. 3 tot"
+    else:
+        assert erg_ueber["zahl_cent"] is None
 
 
 def test_gesamt_faltung_kist_wert(base):
@@ -2364,6 +2381,29 @@ def test_rentner_gesetzl_erstjahr(base):
         assert erg["zahl_cent"] == 81100 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
+
+
+def test_rentner_erstattungsueberhang_erhoeht_die_steuer(base):
+    """§ 10 Abs. 4b S. 3 im Rentner-Ring — dieselbe Verdrahtung wie im gesamt-Ring, eigener Pfad.
+
+    Zwei Fälle mit identischem KiSt-ABZUG (0, weil erstattet ≥ gezahlt) und unterschiedlichem
+    Überhang: 1000 € gegen 0 €. Der Rentner-Pfad hat seinen eigenen gde-Aufruf und sein eigenes
+    rentner_g-Dict; ohne beide Verdrahtungen wären die Beträge gleich. Rente hoch genug (40000),
+    damit der Zuschlag überhaupt Tarif trifft.
+    """
+    catala = _catala_da()
+    _rentner_anlegen(base, "reu", _rentner_kegel(jahresrente=4000000, beginn=2025))
+    _rentner_abzuege(base, "reu", kist_gezahlt=20000, kist_erstattet=120000)
+    st, erg_ueber = _req(base, "GET", "/fall/reu/ergebnis")
+    _rentner_anlegen(base, "reo", _rentner_kegel(jahresrente=4000000, beginn=2025))
+    _rentner_abzuege(base, "reo", kist_gezahlt=20000, kist_erstattet=20000)
+    st, erg_ohne = _req(base, "GET", "/fall/reo/ergebnis")
+    if catala:
+        assert erg_ueber["grund"] == "bestaetigt" and erg_ohne["grund"] == "bestaetigt"
+        assert erg_ueber["zahl_cent"] > erg_ohne["zahl_cent"], \
+            "Rentner-Pfad: § 10 Abs. 4b S. 3 nicht verdrahtet"
+    else:
+        assert erg_ueber["zahl_cent"] is None
 
 
 def test_rentner_faltung_komposition(base):

@@ -71,7 +71,38 @@ def test_kist_gezahlt_minus_erstattet(R, gezahlt, erstattet, erwartet):
 
 
 def test_kist_ueberhang_modul_gibt_null(R):
-    """Erstattungsüberhang (erstattet > gezahlt): das Modul liefert 0 abziehbar — DESHALB sperrt die Scheibe
-    diesen Fall fail-closed (erstattungsueberhang_offen), sonst würde der fehlende § 10 Abs. 4b-GdE-Zuschlag
-    still unterbesteuern. Der Accessor selbst gibt hier nur den (inkorrekt niedrigen) Modulwert zurück."""
+    """Erstattungsüberhang (erstattet > gezahlt): das Modul liefert 0 abziehbar. Das allein wäre
+    Unterbesteuerung — die fehlende Gegenrichtung liefert catala_p10_4b_erstattungsueberhang
+    (§ 10 Abs. 4b S. 3), siehe unten."""
     assert R.catala_p10_kist({"gezahlte_kirchensteuer": 200, "erstattete_kirchensteuer": 1200}) == 0
+
+
+# ---- § 10 Abs. 4b S. 3 Erstattungsüberhang → GdE-Hinzurechnung ----
+
+@pytest.mark.parametrize("gezahlt,erstattet,erwartet", [
+    (200, 1200, 1000),      # Überhang: erstattet − gezahlt
+    (1200, 200, 0),         # kein Überhang (der Normalfall)
+    (1200, 1200, 0),        # exakt aufgezehrt — Grenze, kein Zuschlag
+    (1200, 1201, 1),        # ein Euro darüber → Zuschlag beginnt
+    (0, 500, 500),          # gar nichts gezahlt, nur erstattet
+    (0, 0, 0),
+])
+def test_p10_4b_ueberhang(R, gezahlt, erstattet, erwartet):
+    assert R.catala_p10_4b_erstattungsueberhang(
+        {"gezahlte_kirchensteuer": gezahlt, "erstattete_kirchensteuer": erstattet}) == erwartet
+
+
+def test_p10_4b_und_p10_kist_ueberschneiden_sich_nicht(R):
+    """Die beiden Accessoren teilen sich denselben Sachverhalt und dürfen ihn nicht doppelt
+    verwerten: entweder es gibt einen Abzug (gezahlt > erstattet) ODER eine Hinzurechnung.
+    Nie beides — sonst würde derselbe Euro zweimal wirken."""
+    for gezahlt, erstattet in [(1200, 200), (200, 1200), (1200, 1200), (0, 0), (500, 0)]:
+        s = {"gezahlte_kirchensteuer": gezahlt, "erstattete_kirchensteuer": erstattet}
+        abzug = R.catala_p10_kist(s)
+        zuschlag = R.catala_p10_4b_erstattungsueberhang(s)
+        assert not (abzug > 0 and zuschlag > 0), f"beides bei {s}: {abzug}/{zuschlag}"
+
+
+def test_p10_4b_absente_felder_geben_null(R):
+    """Ein Fall ohne Kirchensteuer-Angaben darf keinen Zuschlag erfinden."""
+    assert R.catala_p10_4b_erstattungsueberhang({}) == 0

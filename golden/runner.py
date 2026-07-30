@@ -409,13 +409,39 @@ def catala_p33_agb(s: dict) -> int:
 
 def catala_p10_kist(s: dict) -> int:
     """§ 10 Abs. 1 Nr. 4 EStG — abziehbare Kirchensteuer, EURO (module Kirchensteuerabzug): gezahlte minus
-    erstattete KiSt. Der Erstattungsüberhang (erstattet > gezahlt, § 10 Abs. 4b) ist ein NICHT materialisierter
-    Nachtrag (fehlt die GdE-Hinzurechnung) → die Scheibe sperrt diesen Fall fail-closed (erstattungsueberhang_
-    offen), dieser Accessor sieht nur den regulären Fall. Roh-Wert speist § 2 Abs. 4 sonderausgaben (additiv)."""
+    erstattete KiSt, nie negativ. Übersteigt die erstattete die gezahlte Kirchensteuer, liefert dieser
+    Accessor 0 — der Überhang gehört nicht in die Sonderausgaben, sondern nach § 10 Abs. 4b S. 3 zum
+    Gesamtbetrag der Einkünfte (siehe catala_p10_4b_erstattungsueberhang).
+    Roh-Wert speist § 2 Abs. 4 sonderausgaben (additiv)."""
     r = KI.kirchensteuerabzug(KI.KirchensteuerabzugIn(
         gezahlte_kirchensteuer_in=Money(f"{int(s.get('gezahlte_kirchensteuer', 0))}.00"),
         erstattete_kirchensteuer_in=Money(f"{int(s.get('erstattete_kirchensteuer', 0))}.00")))
     return int(r.abziehbare_kirchensteuer) // 100
+
+
+def catala_p10_4b_erstattungsueberhang(s: dict) -> int:
+    """§ 10 Abs. 4b S. 3 EStG — Erstattungsüberhang zum GdE hinzurechnen, EURO rein/raus.
+
+    Wortlaut S. 2/3 (sources/gesetze-im-internet/estg_p10_2026-07-11.txt):
+      "Übersteigen bei den Sonderausgaben nach Absatz 1 Nummer 2 bis 3a die im
+       Veranlagungszeitraum erstatteten Aufwendungen die geleisteten Aufwendungen
+       (Erstattungsüberhang), ist der Erstattungsüberhang mit anderen im Rahmen der
+       jeweiligen Nummer anzusetzenden Aufwendungen zu verrechnen. Ein verbleibender
+       Betrag des sich bei den Aufwendungen nach Absatz 1 Nummer 3 und 4 ergebenden
+       Erstattungsüberhangs ist dem Gesamtbetrag der Einkünfte hinzuzurechnen."
+
+    Umgesetzt ist die Hinzurechnung für Nummer 4 (Kirchensteuer): erstattet − gezahlt,
+    sofern positiv. Das ist der Fall, der in der Praxis auftritt — eine Kirchensteuer-
+    Erstattung aus einem Vorjahr, die die laufende Zahlung übersteigt.
+
+    NICHT umgesetzt: die Verrechnung nach S. 2 innerhalb derselben Nummer und der
+    Überhang bei Nummer 3 (Kranken-/Pflegeversicherung). Beides braucht die
+    erstatteten Beträge je Nummer getrennt; der Ring führt sie nicht. Bei
+    KV/PV-Erstattungen bleibt es deshalb beim bisherigen Verhalten.
+    """
+    gezahlt = int(s.get("gezahlte_kirchensteuer", 0))
+    erstattet = int(s.get("erstattete_kirchensteuer", 0))
+    return max(0, erstattet - gezahlt)
 
 
 # Kirchensteuer-Hebesätze — Landes-KiStG-Beschluss (KEINE EStG-Konstante): 8 % Bayern +
