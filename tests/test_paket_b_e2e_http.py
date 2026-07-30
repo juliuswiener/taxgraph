@@ -736,7 +736,13 @@ def test_an_gesamt_dhf_ausland(base):
 
 def _verpflegung_kegel(monate=2, keine_mahlzeit=True, tage_24h=10):
     """an_gesamt-Kegel mit Verpflegungs-Reisetagen. Guard-Felder werden nur gesetzt, wenn nicht None
-    (None simuliert den UNSET-Fall für den fail-closed-Test)."""
+    (None simuliert den UNSET-Fall für den fail-closed-Test).
+
+    Mahlzeitengestellung: alte Semantik (kein Anzahl-Feld in an_gesamt-Scheibe):
+    - keine_mahlzeit=True (Default) → vpf_keine_mahlzeitengestellung=True (OK, keine Kürzung)
+    - keine_mahlzeit=False → vpf_keine_mahlzeitengestellung=False (würde neue Anzahl-Felder brauchen)
+    - keine_mahlzeit=None → Felder UNSET (unbeantwortet, fail-closed-Sperre)
+    """
     kegel = [(f, w) for f, w in AN_GESAMT_KEGEL if f != "tage_24h"]
     kegel.append(("tage_24h", tage_24h))
     if monate is not None:

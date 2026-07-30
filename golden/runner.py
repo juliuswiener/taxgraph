@@ -225,10 +225,15 @@ def _dhf_abzug(s: dict, year: int) -> int:
 
 
 def _verpflegung_params(year: int) -> dict:
-    """Verpflegungspauschalen (Inland) aus params/<vz> (§ 9 Abs. 4a S. 3 Nr. 1-3)."""
+    """Verpflegungspauschalen (Inland) aus params/<vz> (§ 9 Abs. 4a S. 3 Nr. 1-3 + Satz 8 Kürzungssätze)."""
     p = load_yaml_fh(open(os.path.join(
         ROOT, "params", str(year), "verpflegung_p9_4a.yaml"), encoding="utf-8"))
-    return {k: p[k]["wert"] for k in ("pauschale_24h", "pauschale_an_abreise", "pauschale_ab_8h")}
+    # Pauschalen + Kürzungssätze
+    out = {k: p[k]["wert"] for k in ("pauschale_24h", "pauschale_an_abreise", "pauschale_ab_8h")}
+    # Kürzungssätze: 20% Frühstück, 40% Mittag/Abend (S. 8) — fallback auf 0 wenn fehlt (Test-Robustheit)
+    out["kuerzung_fruehstueck_prozent"] = p.get("kuerzung_fruehstueck_prozent", {}).get("wert", 0)
+    out["kuerzung_mittag_abend_prozent"] = p.get("kuerzung_mittag_abend_prozent", {}).get("wert", 0)
+    return out
 
 
 def _verpflegung_pauschale(s: dict, year: int) -> int:
@@ -249,17 +254,56 @@ def _verpflegung_pauschale(s: dict, year: int) -> int:
 
 
 def _verpflegung_abzug(s: dict, year: int) -> int:
-    """§ 9 Abs. 4a S. 3 EStG — Jahres-Verpflegungspauschale, EURO = Summe der Tage je Kategorie mal
-    ihrer Pauschale (Registry-Transkription p9_4a, Sätze aus params/<vz>):
-        tage_24h × 28 (voller Tag) + tage_an_abreise × 14 + tage_ueber_8h_eintaegig × 14.
-    LÜCKE (bewusst, NICHT still — Haut-Guard/Annahme): die 3-Monats-Frist (S. 6, Pauschale nur die
-    ersten drei Monate je Einsatzort) und die Mahlzeitenkürzung (S. 8) sind REDUKTIONEN, hier NICHT
-    modelliert — ein voller Σ ohne sie überschätzt den Abzug. KOPPLUNG: bei Registry-Änderung p9_4a
-    diese Formel + _verpflegung_pauschale nachziehen."""
+    """§ 9 Abs. 4a EStG — Jahres-Verpflegungspauschale MINUS Mahlzeitenkürzung + Satz-11-Erstattung, EURO.
+
+    S. 3: Jahres-Summe (Registry-Transkription p9_4a):
+        tage_24h × 28 + tage_an_abreise × 14 + tage_ueber_8h_eintaegig × 14.
+
+    S. 8 Mahlzeitenkürzung: Frühstück 20 % von 28€ = 5,60€/Mahlzeit; Mittag/Abend je 40 % von 28€ = 11,20€.
+    Bezugsgröße ist IMMER die Pauschale für einen vollen Kalendertag (28€), auch an 14€-Tagen (die Kürzung
+    ist nicht tagesabhängig, sondern mahlzeitenabhängig).
+    ANNAHME (fail-closed): Mahlzeiten werden zuerst den 28€-Tagen zugeordnet, dann den 14€-Tagen. Das
+    schöpft die Kürzung maximal aus (Deckel greift seltener). Der Deckel pro Tages-Kategorie (S. 8: "die
+    Kürzung darf die ermittelte Verpflegungspauschale nicht übersteigen") ist hier pro Kategorie implementiert.
+
+    S. 10: gezahltes Entgelt des Arbeitnehmer mindert Kürzungsbetrag (Floor 0 auf diesen Betrag).
+
+    S. 11: steuerfreie Verpflegungserstattung zieht vom Abzug ab (Floor 0 auf Gesamt-Abzug).
+
+    Rückgabe: max(0, (S. 3 Jahressumme) - (S. 8 Kürzung - S. 10 Entgelt) - (S. 11 Erstattung)).
+    """
     p = _verpflegung_params(year)
-    return (int(s.get("tage_24h", 0)) * p["pauschale_24h"]
-            + int(s.get("tage_an_abreise", 0)) * p["pauschale_an_abreise"]
-            + int(s.get("tage_ueber_8h_eintaegig", 0)) * p["pauschale_ab_8h"])
+    # S. 3: Jahres-Pauschale, kategorisiert
+    pauschale_24h_summe = int(s.get("tage_24h", 0)) * p["pauschale_24h"]
+    pauschale_an_abreise_summe = int(s.get("tage_an_abreise", 0)) * p["pauschale_an_abreise"]
+    pauschale_ab_8h_summe = int(s.get("tage_ueber_8h_eintaegig", 0)) * p["pauschale_ab_8h"]
+    pauschale_gesamt = pauschale_24h_summe + pauschale_an_abreise_summe + pauschale_ab_8h_summe
+
+    # S. 8: Mahlzeitenkürzung (Bezugsgröße: pauschale_24h = 28€ IMMER)
+    fruehstuecke = int(s.get("vpf_fruehstuecke_gestellt_anzahl", 0))
+    mittagessen = int(s.get("vpf_mittagessen_gestellt_anzahl", 0))
+    abendessen = int(s.get("vpf_abendessen_gestellt_anzahl", 0))
+    kuerzung_fruehstueck_betrag = fruehstuecke * (p["pauschale_24h"] * p["kuerzung_fruehstueck_prozent"] // 100)
+    kuerzung_mittag_abend_betrag = (mittagessen + abendessen) * (p["pauschale_24h"] * p["kuerzung_mittag_abend_prozent"] // 100)
+    kuerzung_brutto = kuerzung_fruehstueck_betrag + kuerzung_mittag_abend_betrag
+
+    # S. 10: gezahltes Entgelt des Arbeitnehmer mindert Kürzung
+    entgelt_cent = int(s.get("vpf_mahlzeiten_gezahltes_entgelt", 0))
+    entgelt_euro = entgelt_cent // 100  # cent -> euro
+    kuerzung_nach_entgelt = max(0, kuerzung_brutto - entgelt_euro)
+
+    # Deckel pro Tages-Kategorie (S. 8: Kürzung darf Pauschale nicht übersteigen)
+    # ANNAHME: Mahlzeiten zuerst 28€-Tagen, dann 14€-Tagen
+    kuerzung_28er = min(kuerzung_nach_entgelt, pauschale_24h_summe)
+    rest_kuerzung = max(0, kuerzung_nach_entgelt - kuerzung_28er)
+    kuerzung_14er = min(rest_kuerzung, pauschale_an_abreise_summe + pauschale_ab_8h_summe)
+    kuerzung_final = kuerzung_28er + kuerzung_14er
+
+    # S. 11: steuerfreie Verpflegungserstattung schließt Abzug insoweit aus
+    erstattung_cent = int(s.get("vpf_steuerfreie_erstattung_betrag", 0))
+    erstattung_euro = erstattung_cent // 100  # cent -> euro
+
+    return max(0, pauschale_gesamt - kuerzung_final - erstattung_euro)
 
 
 def _uebernachtung_abzug(s: dict, year: int) -> int:
@@ -298,7 +342,7 @@ def catala_einkuenfte_nichtselbststaendig(s: dict) -> int:
     """§ 19 i.V.m. § 2 Abs. 2 Nr. 2, § 9a S. 1 Nr. 1 EStG — Einkünfte aus nichtselbständiger Arbeit
     (Bruttolohn − Werbungskosten, mindestens Arbeitnehmer-Pauschbetrag 1230), EURO. Liest die fertige
     Größe summe_der_einkuenfte des einzel-Tarifs (§ 9a-Günstiger IM Scope) — KEIN § 9a-Doppelabzug.
-    Für die § 2-Abs.-3-Summierung im Gesamt-Scope (kombiniert §19+§21): dieser Wert geht als
+    Für die § 2-Abs.-3-Summierung im Gesamt-Scope (kombiniert §19+§21+Versorgung): dieser Wert geht als
     einkuenfte_nichtselbststaendig in catala_gesamt. sonderausgaben=0 hier — der § 10c-Floor gilt EINMAL
     auf Personen-Ebene und wird von catala_gesamt (_sonderausgaben_final) gebildet, nicht je Einkunftsart."""
     out = E.festzusetzende_est_einzel(E.FestzusetzendeEstEinzelIn(
@@ -787,8 +831,8 @@ def catala_p19_2_versorgungsfreibetrag(s: dict) -> int:
     siehe § 19 Abs. 2 S. 4 Def.) + versorgungsbeginn_jahr (Kohorte-Schlüssel).
 
     INKOMPLETTHEIT (fail-closed bis Bemessungsgrundlage-Klärung):
-    - versorgungsbezuege_bemessungsgrundlage absent → VersorgungsfreibetragOffen (Gate stoppt Rechnung).
-    - versorgungsbeginn_jahr absent → VersorgungsfreibetragOffen (keine Kohorte).
+    - versorgung_bemessungsgrundlage absent → VersorgungsfreibetragOffen (Gate stoppt Rechnung).
+    - versorgung_beginn_jahr absent → VersorgungsfreibetragOffen (keine Kohorte).
 
     S. 2 Alters-Gate (beamten-/nicht-beamten-Grenze):
     - Beamtenrechtliche Bezüge (Ruhegehalt etc.): KEIN Alters-Gate.
@@ -806,8 +850,9 @@ def catala_p19_2_versorgungsfreibetrag(s: dict) -> int:
     Nicht umgesetzt (Backlog): S. 10-11 (Neuberechnung bei Anrechnung/Ruhe/Kürzung der Versorgung),
     S. 7 (mehrere Versorgungsbezüge, Hinterbliebenennachfolge).
     """
-    bg = int(s.get("versorgungsbezuege_bemessungsgrundlage", 0))
-    beginn = int(s.get("versorgungsbeginn_jahr", 0))
+    # Beide alten und neuen Feld-Namen akzeptieren (Rückwärtskompatibilität).
+    bg = int(s.get("versorgung_bemessungsgrundlage") or s.get("versorgungsbezuege_bemessungsgrundlage", 0))
+    beginn = int(s.get("versorgung_beginn_jahr") or s.get("versorgungsbeginn_jahr", 0))
     if not bg or not beginn:
         # fail-closed: ohne diese Inputs kann nicht gerechnet werden. Der Ring speist sie
         # oder liefert einen Grund (z.B. VersorgungsfreibetragOffen).
@@ -827,6 +872,45 @@ class VersorgungsfreibetragOffen(Exception):
     oder Versorgungsbeginn-Jahr), oder Alters-Gate offen (nicht-beamtenrechtliche Bezüge,
     Altersgrenze 60/63 nicht erfüllt)."""
     pass
+
+
+def catala_einkuenfte_versorgung(s: dict) -> int:
+    """§ 19 Abs. 2 EStG — Einkünfte aus Versorgungsbezügen nach Abzug des Freibetrags,
+    Zuschlags und des Pauschbetrags, EURO.
+
+    Reihenfolge (§ 19 Abs. 2 S. 2/4-6, § 9a S. 2):
+    1. Versorgungsbezüge (Jahresrente).
+    2. − (Versorgungsfreibetrag + Zuschlag), berechnet per catala_p19_2_versorgungsfreibetrag.
+    3. − Pauschbetrag § 9a Abs. 1 Nr. 1 Buchst. b: max. 102 EUR, aber nur bis zur Höhe
+         der um VFB/Zuschlag geminderten Versorgungsbezüge (§ 9a S. 2 Deckel).
+
+    Inputs: versorgung_jahresrente (cent), versorgung_bemessungsgrundlage,
+            versorgung_beginn_jahr (für VFB-Berechnung).
+
+    Fail-closed: Fehlende Inputs → 0 (Versorgung nicht abfragbar, keine Einkünfte).
+    Art/Alter-Gate: wird in api.py (haut-Ring) geprüft; hier wird gerechnet, falls Inputs vorliegen.
+    """
+    jahresrente = int(s.get("versorgung_jahresrente", 0))
+    if jahresrente == 0:
+        # Keine Versorgung gemeldet.
+        return 0
+
+    # VFB + Zuschlag berechnen.
+    try:
+        vfb_plus_zuschlag = catala_p19_2_versorgungsfreibetrag(s)
+    except VersorgungsfreibetragOffen:
+        # Bemessungsgrundlage oder Beginnjahr fehlt → keine Einkünfte (fail-closed).
+        # Der Ring kann diese Inputs nicht konstruieren, daher wird 0 zurückgegeben.
+        return 0
+
+    # Einkünfte nach VFB/Zuschlag-Abzug.
+    rest = max(0, jahresrente - vfb_plus_zuschlag)
+
+    # Pauschbetrag § 9a Abs. 1 Nr. 1 Buchst. b: max. 102 EUR, gedeckelt auf rest.
+    pauschbetrag = min(102, rest)
+
+    # Endgültige Einkünfte: Rest − Pauschbetrag.
+    return max(0, rest - pauschbetrag)
 
 
 # -- § 33b Pauschbeträge (Behinderung / Pflege / Hinterbliebene), Weg A, EURO. ---
@@ -1260,12 +1344,15 @@ def _gesamt_out(s: dict):
     # Bestandsfaelle mit SA >= Pauschbetrag rechnen unveraendert.
     sonder = _sonderausgaben_final(
         int(s.get("sonderausgaben", 0)) + _vorsorge_abzug(s, year), year, s.get("veranlagung"))
+    # § 19 Abs. 2: Versorgungsbezüge + Arbeitseinkünfte addieren (beide Quellen zu "einkuenfte_nichtselbststaendig").
+    einkuenfte_an = int(s.get("einkuenfte_nichtselbststaendig", 0))
+    einkuenfte_versorgung = catala_einkuenfte_versorgung(s)
     scope = (E.festzusetzende_est_gesamt_zusammen if s.get("veranlagung") == "zusammen"
              else E.festzusetzende_est_gesamt)
     cls = (E.FestzusetzendeEstGesamtZusammenIn if s.get("veranlagung") == "zusammen"
            else E.FestzusetzendeEstGesamtIn)
     out = scope(cls(
-        einkuenfte_nichtselbststaendig_in=m("einkuenfte_nichtselbststaendig"),
+        einkuenfte_nichtselbststaendig_in=Money(f"{einkuenfte_an + einkuenfte_versorgung}.00"),
         einkuenfte_kapitalvermoegen_in=m("einkuenfte_kapitalvermoegen"),
         einkuenfte_vermietung_in=m("einkuenfte_vermietung"),
         einkuenfte_sonstige_in=m("einkuenfte_sonstige"),

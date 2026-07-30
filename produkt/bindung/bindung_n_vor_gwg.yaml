@@ -316,22 +316,94 @@ bindungen:
       quelle: "§ 9 Abs. 4a Satz 7 EStG"
       zitatanker: "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
-  - feld_id: vpf_keine_steuerfreien_erstattungen
-    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: keine_steuerfreien_verpflegungserstattungen}
-    typ: bool
+
+  # ===== Mahlzeitenkürzung (§ 9 Abs. 4a S. 8-11) — Accessor-Inputs für Jahres-WK-Abzug =====
+  # vpf_keine_steuerfreien_erstattungen (bool) wurde zugunsten vpf_steuerfreie_erstattung_betrag (cent) entfernt:
+  # S. 11 sagt "insoweit", also betragsmäßig anteilig — nicht Alles-oder-Nichts (Ja/Nein). Der Betrag ist genauer.
+  - feld_id: vpf_fruehstuecke_gestellt_anzahl
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: fruehstuecke_gestellt}
+    typ: int
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Hast du für die Verpflegung eine steuerfreie Erstattung bekommen?"
-    hilfe_kurz: "Steuerfreie Erstattungen mindern, was du absetzen kannst."
-    beispielwert: false
-    herkunft_slots: null
+    fragetext_laie: "Wie viele Frühstücke wurden dir gestellt (Hotel, Betrieb, etc.)?"
+    hilfe_kurz: "Jedes gestelle Frühstück kürzt die Pauschale um 20% von 28 Euro (also 5,60 Euro)."
+    beispielwert: 0
+    herkunft_slots: ["Interview: Gestelle Mahlzeiten"]
     elster_kz: null
-    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein); der Erstattungs-Betrag wird separat deklariert."
+    elster_kz_grund: "Kürzungsrechnung (Satz 8); Vordruck-Mapping open."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
-      quelle: "§ 9 Abs. 4a Satz 11 EStG"
-      zitatanker: "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung"
+      quelle: "§ 9 Abs. 4a S. 8 EStG"
+      zitatanker: "für Frühstück um 20 Prozent"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_mittagessen_gestellt_anzahl
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: mittagessen_gestellt}
+    typ: int
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele Mittagessen wurden dir gestellt?"
+    hilfe_kurz: "Jedes gestelle Mittagessen kürzt um 40% von 28 Euro (also 11,20 Euro)."
+    beispielwert: 0
+    herkunft_slots: ["Interview: Gestelle Mahlzeiten"]
+    elster_kz: null
+    elster_kz_grund: "Kürzungsrechnung (Satz 8); Vordruck-Mapping open."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 8 EStG"
+      zitatanker: "für Mittag- und Abendessen um jeweils 40 Prozent"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_abendessen_gestellt_anzahl
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: abendessen_gestellt}
+    typ: int
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele Abendessen wurden dir gestellt?"
+    hilfe_kurz: "Jedes gestelle Abendessen kürzt um 40% von 28 Euro (also 11,20 Euro)."
+    beispielwert: 0
+    herkunft_slots: ["Interview: Gestelle Mahlzeiten"]
+    elster_kz: null
+    elster_kz_grund: "Kürzungsrechnung (Satz 8); Vordruck-Mapping open."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 8 EStG"
+      zitatanker: "für Mittag- und Abendessen um jeweils 40 Prozent"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_mahlzeiten_gezahltes_entgelt
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: mahlzeiten_gezahltes_entgelt}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viel hast du selbst für diese gestellen Mahlzeiten gezahlt? (z.B. Zuschuss zum Hotel-Frühstück, Mittagstisch im Betrieb)"
+    hilfe_kurz: "Was du selbst zahlst, mindert den Kürzungsbetrag (aber nicht negativ). Der Arbeitgeber-Anteil zählt nicht."
+    beispielwert: 0
+    herkunft_slots: ["Interview: Mahlzeiten-Entgelt"]
+    elster_kz: null
+    elster_kz_grund: "Kürzungsminderung (Satz 10); Vordruck-Mapping open."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 10 EStG"
+      zitatanker: "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag nach Satz 8"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_steuerfreie_erstattung_betrag
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: steuerfreie_erstattung_betrag}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viel hat dein Arbeitgeber dir steuerfrei für Verpflegung erstattet (in Euro)?"
+    hilfe_kurz: "Steuerfrei erstattete Beträge (z.B. nach Steuerrecht) darfst du nicht zusätzlich abziehen, da sie bereits als Erstattung gezählt sind."
+    beispielwert: 0
+    herkunft_slots: ["Betrieb: Steuerfrei-Erstattung"]
+    elster_kz: null
+    elster_kz_grund: "Ausschluss-Bedingung (Satz 11); Vordruck-Mapping open."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 11 EStG"
+      zitatanker: "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug insoweit ausgeschlossen"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
 
   # ===== Verpflegungs-JAHRES-Tage je Kategorie (§ 9 Abs. 4a S. 3) — WK-Ring-Input =====
@@ -838,6 +910,9 @@ luecken:
   - regel_id: p9_4a_verpflegungsmehraufwand
     geltungsbedingung: uebernachtung_oder_eintaegig_ueber_acht_stunden
     grund: "Wird durch die Kombination der Felder vpf_mit_uebernachtung + vpf_abwesenheit_stunden abgedeckt; keine eigene Abfrage (Mitternachtsregel rechnet die Regel)."
+  - regel_id: p9_4a_verpflegungsmehraufwand
+    geltungsbedingung: keine_steuerfreien_verpflegungserstattungen
+    grund: "Satz 11 schließt den Abzug insoweit aus (§ 9 Abs. 4a S. 11 EStG). Das Bindungsfeld vpf_steuerfreie_erstattung_betrag erfasst den Betrag und der Accessor (_verpflegung_abzug) rechnet den Abzug anteilig. Die Bedingung ist durch den Input-Betrag selbst implizit erfüllt (wenn > 0, dann keine WK-Erstattung für diesen Betrag; wenn = 0, dann keine Minderung). Keine separate bool-Abfrage nötig."
   - regel_id: p9_1_3_nr5a_uebernachtung_nach_48
     geltungsbedingung: zeitraum_vollstaendig_nach_48_monate
     grund: "Binäre Zeitraum-Auswahl vor/nach 48 Monaten; der Ring (runner._uebernachtung_abzug) materialisiert sie deterministisch aus monate_bisher_am_ort (>= 48 → Kappung auf den Nr.-5-Betrag, sonst ungekappt). Keine eigene Laien-Abfrage; überspannende Zeiträume (bisher<48<bisher+monate) sperrt der Guard fail-closed (uebernachtung_zeitraum_offen)."

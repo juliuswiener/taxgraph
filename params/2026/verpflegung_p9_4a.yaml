@@ -33,3 +33,19 @@ pauschale_ab_8h:
   rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "4a", satz: "3 Nr. 3"}
   datenquelle: "§ 9 Abs. 4a S. 3 Nr. 3 EStG i.d.F. VZ 2026"
   zitatanker: "14 Euro für den Kalendertag, an dem der Arbeitnehmer ohne Übernachtung außerhalb"
+
+kuerzung_fruehstueck_prozent:
+  wert: 20
+  einheit: prozent
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "4a", satz: "8"}
+  datenquelle: "§ 9 Abs. 4a S. 8 EStG i.d.F. VZ 2026"
+  zitatanker: "für Frühstück um 20 Prozent"
+
+kuerzung_mittag_abend_prozent:
+  wert: 40
+  einheit: prozent
+  veranlagungszeitraum: 2026
+  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "4a", satz: "8"}
+  datenquelle: "§ 9 Abs. 4a S. 8 EStG i.d.F. VZ 2026"
+  zitatanker: "für Mittag- und Abendessen um jeweils 40 Prozent"

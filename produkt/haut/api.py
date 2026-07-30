@@ -323,15 +323,29 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 wk_input["unterkunftskosten_monat"] = _cent(DHF_KOSTEN) // 100    # cent -> euro
                 wk_input["monate"] = _cent("dhf_monate")
                 wk_input["im_inland"] = True
-            # Verpflegung (Stufe 1b): Tage je Kategorie in den Roh-WK, NUR wenn Reduktion explizit
-            # safe (≤ 3 Monate + keine Mahlzeitengestellung); fail-closed bei UNSET (Guard sperrt
-            # den Ring dann sowieso, hier doppelt sicher gegen Über-Abzug). Tage sind Anzahl (kein cent).
+            # Verpflegung (Stufe 1b, § 9 Abs. 4a): Tage-Kategorien + Mahlzeitenkürzung (S. 8-11).
+            # NUR wenn Verpflegungstage > 0 UND (≤ 3 Monate ODER Monate offen, aber nicht > 3).
+            # Der Guard _dhf_vpf_grund sperrt bei monate > 3 (S. 6 bleibt offen); hier verdrahten wir
+            # alles Rechenbare (Tage, Mahlzeitenzahl, Entgelt, Erstattung). Der Accessor _verpflegung_abzug
+            # komposiert die Logik.
             _mon = f.get("vpf_monate_am_ort", {}).get("wert")
-            if (sum(_cent(t) for t in VERPFLEGUNG_TAGE) > 0
-                    and isinstance(_mon, int) and not isinstance(_mon, bool) and _mon <= 3
-                    and f.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True):
-                for t in VERPFLEGUNG_TAGE:
-                    wk_input[t] = _cent(t)
+            if sum(_cent(t) for t in VERPFLEGUNG_TAGE) > 0:
+                # Tage verdrahten (immer, wenn > 0 Tage und Monat ≤ 3 oder offen)
+                if not (isinstance(_mon, int) and not isinstance(_mon, bool) and _mon > 3):
+                    for t in VERPFLEGUNG_TAGE:
+                        wk_input[t] = _cent(t)
+                    # Mahlzeitenkürzung (S. 8): Anzahl Frühstücke/Mittag/Abend gestellt
+                    for k in ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
+                              "vpf_abendessen_gestellt_anzahl"):
+                        v = _cent(k)
+                        if v > 0:
+                            wk_input[k] = v
+                    # Entgelt des Arbeitnehmer (S. 10): Kürzungsminderung
+                    if _cent("vpf_mahlzeiten_gezahltes_entgelt") > 0:
+                        wk_input["vpf_mahlzeiten_gezahltes_entgelt"] = _cent("vpf_mahlzeiten_gezahltes_entgelt")
+                    # Steuerfreie Erstattung (S. 11): Abzugsausschluss
+                    if _cent("vpf_steuerfreie_erstattung_betrag") > 0:
+                        wk_input["vpf_steuerfreie_erstattung_betrag"] = _cent("vpf_steuerfreie_erstattung_betrag")
             # Übernachtung Auswärtstätigkeit (Stufe 1b, § 9 Abs. 1 Nr. 5a): NUR bei Inland, allen 3
             # Tatbestands-Bedingungen bestätigt-true UND ohne 48-Monats-Schwellenübertritt (der Guard
             # sperrt sonst); der Accessor kappt nach-48 auf 1.000/Monat. Kosten = cent, Monate = Anzahl.
@@ -523,14 +537,29 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 gesamt_wk_input["unterkunftskosten_monat"] = _c(DHF_KOSTEN) // 100    # cent -> euro
                 gesamt_wk_input["monate"] = _c("dhf_monate")
                 gesamt_wk_input["im_inland"] = True
-            # Verpflegung (B1, Parität an_gesamt): Tage in Roh-WK NUR wenn Reduktion explizit safe (≤3 Monate
-            # + keine Mahlzeitengestellung); fail-closed bei UNSET (Guard sperrt sonst). Tage = Anzahl (kein cent).
+            # Verpflegung (B1, Parität an_gesamt, § 9 Abs. 4a): Tage-Kategorien + Mahlzeitenkürzung (S. 8-11).
+            # NUR wenn Verpflegungstage > 0 UND (≤ 3 Monate ODER Monate offen, aber nicht > 3).
+            # Der SHARED _an_gesamt_sperrgrund sperrt bei monate > 3 (S. 6 bleibt offen); hier verdrahten wir
+            # alles Rechenbare (Tage, Mahlzeitenzahl, Entgelt, Erstattung). Der Accessor _verpflegung_abzug
+            # komposiert die Logik.
             _mon = f.get("vpf_monate_am_ort", {}).get("wert")
-            if (sum(_c(t) for t in VERPFLEGUNG_TAGE) > 0
-                    and isinstance(_mon, int) and not isinstance(_mon, bool) and _mon <= 3
-                    and f.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True):
-                for t in VERPFLEGUNG_TAGE:
-                    gesamt_wk_input[t] = _c(t)
+            if sum(_c(t) for t in VERPFLEGUNG_TAGE) > 0:
+                # Tage verdrahten (immer, wenn > 0 Tage und Monat ≤ 3 oder offen)
+                if not (isinstance(_mon, int) and not isinstance(_mon, bool) and _mon > 3):
+                    for t in VERPFLEGUNG_TAGE:
+                        gesamt_wk_input[t] = _c(t)
+                    # Mahlzeitenkürzung (S. 8): Anzahl Frühstücke/Mittag/Abend gestellt
+                    for k in ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
+                              "vpf_abendessen_gestellt_anzahl"):
+                        v = _c(k)
+                        if v > 0:
+                            gesamt_wk_input[k] = v
+                    # Entgelt des Arbeitnehmer (S. 10): Kürzungsminderung
+                    if _c("vpf_mahlzeiten_gezahltes_entgelt") > 0:
+                        gesamt_wk_input["vpf_mahlzeiten_gezahltes_entgelt"] = _c("vpf_mahlzeiten_gezahltes_entgelt")
+                    # Steuerfreie Erstattung (S. 11): Abzugsausschluss
+                    if _c("vpf_steuerfreie_erstattung_betrag") > 0:
+                        gesamt_wk_input["vpf_steuerfreie_erstattung_betrag"] = _c("vpf_steuerfreie_erstattung_betrag")
             # Übernachtung Auswärtstätigkeit (B1/A5, § 9 Abs. 1 Nr. 5a): Parität an_gesamt — NUR bei
             # Inland, allen 3 Bedingungen bestätigt-true UND ohne 48-Monats-Schwellenübertritt (Guard
             # sperrt sonst); Accessor kappt nach-48 auf 1.000/Monat. Kosten = cent, Monate = Anzahl.
@@ -566,6 +595,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 ns += runner.catala_einkuenfte_nichtselbststaendig({
                     "veranlagungszeitraum": vz,
                     "bruttoarbeitslohn": _c("bruttoarbeitslohn_partner") // 100, "werbungskosten": 0})
+            # § 19 Abs. 2 Versorgungsfreibetrag (K2): Einkünfte nach VFB + Zuschlag + 102€-Pauschbetrag.
+            # cent-Felder (jahresrente, bemessungsgrundlage) sind CENT, Accessor rechnet EURO.
+            versorgung_jahresrente_cent = _c("versorgung_jahresrente", 0)
+            versorgung_bemessungsgrundlage_cent = _c("versorgung_bemessungsgrundlage", 0)
+            versorgung_beginn_jahr = _c("versorgung_beginn_jahr", 0)
+            if versorgung_jahresrente_cent > 0 and versorgung_bemessungsgrundlage_cent > 0 and versorgung_beginn_jahr > 0:
+                vers_einkuenfte = runner.catala_einkuenfte_versorgung({
+                    "versorgung_jahresrente": versorgung_jahresrente_cent // 100,       # CENT → EURO
+                    "versorgung_bemessungsgrundlage": versorgung_bemessungsgrundlage_cent // 100,  # CENT → EURO
+                    "versorgung_beginn_jahr": versorgung_beginn_jahr})
+                ns += vers_einkuenfte
             g["einkuenfte_nichtselbststaendig"] = ns
             # §§ 13-18 Gewinneinkünfte (Stufe 1 + 2a): der laufende Gewinn als einkuenfte_gewinn-Summand in die
             # § 2-Summe (Engine-Slot einkuenfte_gewinn_in LIVE, runner.py _gesamt_out). _laufender_gewinn wählt
@@ -1431,10 +1471,39 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             if any((felder.get(b) or {}).get("zustand") != "bestaetigt" for b in DHF_BEDINGUNGEN):
                 return "dhf_tatbestand_offen"
         if sum((felder.get(t, {}).get("wert") or 0) for t in VERPFLEGUNG_TAGE) > 0:
+            # Verpflegungspauschale (§ 9 Abs. 4a S. 3): Jahres-Pauschale summiert aus Tage-Kategorien.
+            # S. 6 (3-Monats-Frist): Reduktion — bleibt GESPERRT (nicht automatisiert, dev-2 außer Scope).
+            # S. 8-10 (Mahlzeitenkürzung): nun RECHENBAR, wenn Mahlzeitenfelder (Anzahl, Entgelt) bestätigt.
+            # S. 11 (steuerfreie Erstattung): nun RECHENBAR, wenn Feld bestätigt.
+            # OFFEN bleibt NUR: 3-Monats-Frist (S. 6) — ohne sie würde bei längeren Einsätzen zu viel abgezogen.
             mon = felder.get("vpf_monate_am_ort", {}).get("wert")
-            safe = (isinstance(mon, int) and not isinstance(mon, bool) and mon <= 3
-                    and felder.get("vpf_keine_mahlzeitengestellung", {}).get("wert") is True)
-            if not safe:
+            if isinstance(mon, int) and not isinstance(mon, bool) and mon > 3:
+                return "verpflegung_drei_monats_frist_offen"
+            # Mahlzeitenkürzung (S. 8-11): fail-closed auf Eingabe. Die Frage muss beantwortet sein:
+            # "Wurden dir Mahlzeiten gestellt?" — wenn JA, dann Anzahlen + Entgelt; wenn NEIN, dann 0 bestätigt.
+            # Mahlzeitenzahlen-Felder (fruehstuecke/mittag/abendessen_gestellt_anzahl) sind die Antwort:
+            # - Alle UNSET (fehlend) = unbeantwortet → SPERRE
+            # - Alle auf 0 bestätigt = beantwortet mit "nein" → OK (keine Kürzung)
+            # - >= 1 bestätigt = beantwortet mit "ja" → OK (Kürzung rechnet)
+            # Mahlzeitenfrage: neue Semantik (Anzahl-Felder, S. 8-11 Kürzung rechenbar) +
+            # alte Semantik (Fallback für an_gesamt-TEST: vpf_keine_mahlzeitengestellung bool).
+            mahlzeitenzahl_felder = (
+                "vpf_fruehstuecke_gestellt_anzahl",
+                "vpf_mittagessen_gestellt_anzahl",
+                "vpf_abendessen_gestellt_anzahl",
+            )
+            # Neu: mindestens ein Anzahl-Feld bestätigt?
+            zahlen_bestaetigt = any(
+                (felder.get(f) or {}).get("zustand") == "bestaetigt"
+                for f in mahlzeitenzahl_felder
+            )
+            # Alt: vpf_keine_mahlzeitengestellung (bool) bestätigt? (Fallback für an_gesamt)
+            keine_bool = (felder.get("vpf_keine_mahlzeitengestellung") or {}).get("zustand") == "bestaetigt"
+
+            # Frage beantwortet, wenn: (neu: ≥1 Anzahl bestätigt) ODER (alt: bool bestätigt)
+            mahlzeiten_beantwortet = zahlen_bestaetigt or keine_bool
+            if not mahlzeiten_beantwortet:
+                # Keine Angabe zu gestellten Mahlzeiten — Reduktion bleibt offen (fail-closed).
                 return "verpflegung_reduktion_offen"
         # Übernachtung Auswärtstätigkeit (§ 9 Abs. 1 Nr. 5a): Kosten > 0 → Ring nur fähig bei Inland,
         # allen 3 Tatbestands-Bedingungen bestätigt UND ohne 48-Monats-Schwellenübertritt. Ausland /
@@ -1623,6 +1692,17 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                     felder.get("rentner_renten_beginn_jahr_partner", {}).get("wert"),
                     felder.get("rentner_rentenfreibetrag_partner", {}).get("wert")):
                 return "rentenfreibetrag_fixierung_offen"
+        # § 19 Abs. 2 Versorgungsfreibetrag (K2): Versorgungsbezüge vorhanden → beide kritischen Inputs
+        # müssen gesetzt sein (Bemessungsgrundlage + Beginnjahr), sonst fail-closed.
+        versorgung_jahresrente = felder.get("versorgung_jahresrente", {}).get("wert")
+        if isinstance(versorgung_jahresrente, (int, float)) and not isinstance(versorgung_jahresrente, bool) and versorgung_jahresrente > 0:
+            versorgung_beginn = felder.get("versorgung_beginn_jahr", {}).get("wert")
+            versorgung_bemessungsgrundlage = felder.get("versorgung_bemessungsgrundlage", {}).get("wert")
+            # Beide Inputs müssen gesetzt sein; fehlt einer → Sperrgrund (Accessor kann nicht rechnen).
+            if not (isinstance(versorgung_beginn, int) and versorgung_beginn > 0):
+                return "versorgungsfreibetrag_offen"
+            if not (isinstance(versorgung_bemessungsgrundlage, (int, float)) and not isinstance(versorgung_bemessungsgrundlage, bool) and versorgung_bemessungsgrundlage > 0):
+                return "versorgungsfreibetrag_offen"
         # § 35a Abs. 5 S. 3 rechnung_unbar = CONDITIONAL-MANDATORY (K2, charge29): NUR wenn Dienstleistung
         # ODER Handwerker (Abs. 2/3) > 0 — Minijob (Abs. 1) verlangt keine unbare Zahlung. Unbeantwortet
         # (nicht bestätigt) → rechnung_unbar_offen (kein Abs2/3-Abzug ohne Beleg-/Überweisungsnachweis);

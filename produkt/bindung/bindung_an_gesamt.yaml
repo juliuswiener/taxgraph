@@ -28,6 +28,100 @@ bindungen:
       zitatanker: "Gehälter, Löhne, Gratifikationen, Tantiemen und andere Bezüge und Vorteile für eine Beschäftigung"
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
 
+  # ========================= Versorgungsbezüge (§ 19 Abs. 2, p19_2) =========================
+  - feld_id: versorgung_jahresrente
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: jahresrente}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel Versorgung hast du dieses Jahr insgesamt bekommen (Ruhegehalt, Betriebsrente, Witwen-/Waisengeld)?"
+    hilfe_kurz: "Der Jahresbetrag deiner Pension, Betriebsrente oder Versorgung, bevor etwas abgezogen wird. Steht in der Versorgungsmitteilung."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz abhängig von Versorgungsart und Form (Anlage N oder R); Kz-Wahl in est_mapping nach versorgung_art-Weiche."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 1 EStG"
+      zitatanker: "bleiben ein nach einem Prozentsatz ermittelter, auf einen Höchstbetrag begrenzter Betrag"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_bemessungsgrundlage
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: bemessungsgrundlage}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie lautet deine Bemessungsgrundlage laut Steuerbescheid (in Euro)?"
+    hilfe_kurz: "Das Zwölffache des Monatsbezugs bei Versorgungsbeginn, plus anrechenbare Sonderzahlungen. Dieser Wert ändert sich nie — auch Rentensteigerungen ändern ihn nicht. Der Betrag steht im Steuerbescheid."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Keine Anlage-Kz (Bemessungsgrundlage ist interne Heuristik, kein Deklarationsfeld). Laienfeld für den fixierten Betrag aus dem Bescheid; nur Folgejahr."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 4 EStG"
+      zitatanker: "das Zwölffache des Versorgungsbezugs für den ersten vollen Monat, jeweils zuzüglich voraussichtlicher Sonderzahlungen"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_beginn_jahr
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, geltungsbedingung: versorgungsbeginn_kohorte}
+    typ: int
+    einheit: Jahr
+    bereich: {min: 1955, max: 2060, grund: "Jahr des Versorgungsbeginns; Kohorten-Staffel nach dem Jahr bestimmt den Freibetrag lebenslang."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Jahr hast du die Versorgung zum ersten Mal bekommen?"
+    hilfe_kurz: "Das Jahr der Pensionierung oder des Betriebsrenten-Starts. Dieses Jahrgang bestimmt deinen Steuerfreibetrag für immer."
+    beispielwert: 2020
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kohorten-Schlüssel für die Kz-Wahl in est_mapping (Jahr-Granularität). Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 3 EStG"
+      zitatanker: "Jahr des Versorgungsbeginns"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_art
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, geltungsbedingung: art_beamtenrechtlich_oder_nicht}
+    typ: enum
+    einheit: null
+    enum_werte: ["beamtenrechtlich", "hinterbliebene", "erwerbsminderung", "altersgrenze_sonstige"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Art von Versorgung bekommst du?"
+    hilfe_kurz: "Beamtenrechtlich: Ruhegehalt eines Beamten oder öffentlichen Körperschaft. Hinterbliebene: Witwen-, Waisengeld. Erwerbsminderung: Rente wegen Behinderung. Altersgrenze: Betriebsrente, Direktversicherung."
+    beispielwert: "beamtenrechtlich"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche nach dem Alters-Gate in der Haut-Logik. Steuert Kz-Verzweigung in est_mapping. Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 1-2 EStG"
+      zitatanker: "auf Grund beamtenrechtlicher oder entsprechender gesetzlicher Vorschriften"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_alter_bei_beginn
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, geltungsbedingung: altersgrenze_sonstige_alter}
+    typ: int
+    einheit: null
+    bereich: {min: 18, max: 100, grund: "Vollendetes Lebensjahr bei Versorgungsbeginn; Alters-Gate nach dem Jahr (63 Lj, 60 Lj bei Schwerbehinderung)."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie alt warst du (vollendetes Lebensjahr), als die Versorgung begonnen hat?"
+    hilfe_kurz: "Nur bei nicht-beamtenrechtlichen Versorgungen nötig. Der Freibetrag wird nur gewährt, wenn du mindestens 63 Jahre alt warst (oder 60, falls schwerbehindert)."
+    beispielwert: 63
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Alters-Gate für die Haut-Logik; nur bei versorgung_art=altersgrenze_sonstige abgefragt. Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
+      zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
   # ========================= Altersentlastungsbetrag §24a — Kohorten-Schlüssel (Stage-2-Faltung) =========================
   # §24a GESAMT-ONLY (Instructor Q2, §22-Leibrente §24a-S.2-ausgeschlossen). geburtsjahr -> dev-1s slot_fn
   # leitet massgebendes_folgejahr = geburtsjahr + 65 ab -> Prozentsatz/Höchstbetrag-Lookup in

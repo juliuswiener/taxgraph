@@ -22,7 +22,7 @@
                        "partner_kegel_offen", "partner_vor_offen",
                        "verpflegung_reduktion_offen", "flag_konsistenz_offen",
                        "partner_konsistenz_offen", "kapital_semantik_offen",
-                       "rentenfreibetrag_fixierung_offen", "vv_instanz_offen",
+                       "rentenfreibetrag_fixierung_offen", "versorgungsfreibetrag_offen", "vv_instanz_offen",
                        "rechnung_unbar_offen", "rente_instanz_offen",
                        "erstattungsueberhang_offen", "partner_vorsorge_offen",
                        "alleinerziehend_konsistenz_offen", "gewinn_quelle_offen",

@@ -37,9 +37,12 @@ KIST_KONFESSION_FELDER = ("kist_konfession", "kist_bundesland")
 # ========== § 16 Abs. 4 Freibetrag-Gates (Rentner) ==========
 P16_4_GATE_FELDER = ("rentner_alter_55_oder_berufsunfaehig", "rentner_freibetrag_erstmalig")
 
-# ========== § 9 Abs. 4a Verpflegung ==========
+# ========== § 9 Abs. 4a Verpflegung + Mahlzeitenkürzung ==========
 VERPFLEGUNG_TAGE = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig")
 VERPFLEGUNG_GUARD = ("vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
+VERPFLEGUNG_KUERZUNG = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
+                        "vpf_abendessen_gestellt_anzahl", "vpf_mahlzeiten_gezahltes_entgelt",
+                        "vpf_steuerfreie_erstattung_betrag")
 
 # ========== § 10 Vorsorge ==========
 VOR_FELDER = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
@@ -102,6 +105,10 @@ ABS3_FELDER = ("antrag_ermaessigter_satz", "dauernd_berufsunfaehig", "ermaessigu
 
 # ========== § 35 GewSt-Anrechnung ==========
 GESAMT_P35 = ("gewst_hebesatz", "gewst_messbetrag")
+
+# ========== § 19 Abs. 2 Versorgungsfreibetrag ==========
+GESAMT_VERSORGUNG = ("versorgung_jahresrente", "versorgung_bemessungsgrundlage",
+                     "versorgung_beginn_jahr", "versorgung_art", "versorgung_alter_bei_beginn")
 
 # ========== Rentner: §§ 13-18 Gewinn + Veräußerungs-Gewinn ==========
 RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
@@ -330,11 +337,12 @@ SCHEIBEN = {
         "felder": (VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ("veranlagung", "bruttoarbeitslohn")
                    + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
+                   + GESAMT_VERSORGUNG
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
                    + GESAMT_33B + GESAMT_33B_PARTNER
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
-                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD
+                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD + VERPFLEGUNG_KUERZUNG
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P16_4_GATE_FELDER),
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
@@ -378,7 +386,7 @@ __all__ = [
     # § 36/§22/§10 KiSt
     "P36_ANRECHNUNG", "P22_NR3_EINKUENFTE", "KIST_KONFESSION_FELDER", "P16_4_GATE_FELDER",
     # Verpflegung
-    "VERPFLEGUNG_TAGE", "VERPFLEGUNG_GUARD",
+    "VERPFLEGUNG_TAGE", "VERPFLEGUNG_GUARD", "VERPFLEGUNG_KUERZUNG",
     # Vorsorge
     "VOR_FELDER", "VOR_PARTNER_FELDER", "KV_PV_FELDER", "KV_PV_PARTNER_FELDER", "VORSORGE_PARTNER_FELDER",
     # dHf
@@ -395,6 +403,8 @@ __all__ = [
     "EUER_KOMPONENTEN", "GWG_FELDER", "VERLUST_FELD", "MITU_FELDER", "ABS3_FELDER",
     # § 35
     "GESAMT_P35",
+    # § 19 Abs. 2 Versorgung
+    "GESAMT_VERSORGUNG",
     # Rentner Gewinn
     "RENTNER_GEWINN", "RENTNER_KEGEL",
     # Abzüge
