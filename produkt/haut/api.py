@@ -575,19 +575,29 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # UND Wahlrecht ausgeübt. > 800 = mehrjährige § 7-AfA sperrt der SHARED _an_gesamt_sperrgrund.
             if 0 < _c(ARBEITSMITTEL_KOSTEN) <= 80000 and f.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is True:
                 gesamt_wk_input["am_anschaffungskosten"] = _c(ARBEITSMITTEL_KOSTEN) // 100    # cent -> euro
-            # § 7 Abs. 1 Lineare AfA (>800€): gleichmäßige Jahresverteilung über Nutzungsdauer
-            # S. 4 (Anschaffungsjahr): pro-rata-temporis nach Anschaffungsmonat
-            am_afa_betrag = 0  # Wird separat gerechnet, addiert nach gesamt_wk
+            # § 7 Abs. 1 Lineare AfA (>800€): Nutzungsdauer MUSS beantwortet sein.
+            # Monat + Zustand-Flag: nur wenn Anschaffungsjahr=true (S. 4 Zwölftelung).
+            # Flag unbeantwortet → Folgejahr angenommen (voller Jahresbetrag).
+            am_afa_betrag = 0
             if _c(ARBEITSMITTEL_KOSTEN) > 80000:
                 nd = _c("arbeitsmittel_nutzungsdauer")
-                am = _c("am_anschaffung_monat")
                 ist_aj = f.get("am_afa_ist_anschaffungsjahr", {}).get("wert")
-                if nd > 0 and am > 0 and ist_aj is not None:
-                    am_afa_betrag = runner.catala_p7_linear_afa({
-                        "anschaffungskosten": _c(ARBEITSMITTEL_KOSTEN) // 100,       # CENT → EURO
-                        "nutzungsdauer": nd,
-                        "anschaffung_monat": am,
-                        "ist_anschaffungsjahr": ist_aj})
+                if nd > 0:
+                    if ist_aj is True:
+                        # Anschaffungsjahr: Monat MUSS beantwortet sein für S. 4 Zwölftelung
+                        am = _c("am_anschaffung_monat")
+                        if am > 0:
+                            am_afa_betrag = runner.catala_p7_linear_afa({
+                                "anschaffungskosten": _c(ARBEITSMITTEL_KOSTEN) // 100,
+                                "nutzungsdauer": nd,
+                                "anschaffung_monat": am,
+                                "ist_anschaffungsjahr": True})
+                    else:
+                        # Folgejahr oder Flag unbeantwortet: voller Jahresbetrag, Monat egal
+                        am_afa_betrag = runner.catala_p7_linear_afa({
+                            "anschaffungskosten": _c(ARBEITSMITTEL_KOSTEN) // 100,
+                            "nutzungsdauer": nd,
+                            "ist_anschaffungsjahr": False})
             ns_wk = runner.catala_werbungskosten_n(gesamt_wk_input)
             ns_wk += am_afa_betrag  # § 7 AfA addieren (Accessor-Betrag in EUR)
             # § 19 Abs. 2 Versorgungsfreibetrag (K2): Gate entscheidet über Behandlung.
@@ -1563,12 +1573,17 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                 nd = felder.get("arbeitsmittel_nutzungsdauer", {}).get("wert")
                 monat = felder.get("am_anschaffung_monat", {}).get("wert")
                 ist_aj = felder.get("am_afa_ist_anschaffungsjahr", {}).get("wert")
-                # Beide Parameter MÜSSEN beantwortet sein: Nutzungsdauer UND Anschaffungsmonat
-                # Zustandsfeld ist bool → kann True/False sein, aber nicht null
-                if (not isinstance(nd, int) or isinstance(nd, bool) or nd <= 0 or
-                    not isinstance(monat, int) or isinstance(monat, bool) or monat < 1 or monat > 12 or
-                    ist_aj is None):
+                # § 7 Abs. 1: Nutzungsdauer MUSS beantwortet sein (fail-closed).
+                # Anschaffungsmonat + Zustand-Flag: nur wenn Anschaffungsjahr=true.
+                # Flag unbeantwortet → Folgejahr angenommen (voller Jahresbetrag, Monat egal).
+                # Grund: S. 4 Zwölftelung gilt NUR im Anschaffungsjahr; Folgejahre voller Betrag.
+                if not isinstance(nd, int) or isinstance(nd, bool) or nd <= 0:
                     return "arbeitsmittel_afa_ueber_gwg_offen"
+                # Wenn Anschaffungsjahr=true: Monat MUSS beantwortet sein
+                if ist_aj is True:
+                    if (not isinstance(monat, int) or isinstance(monat, bool) or monat < 1 or monat > 12):
+                        return "arbeitsmittel_afa_ueber_gwg_offen"
+                # ist_aj == false oder None → Folgejahr/unbeantwortet: voller Jahresbetrag, OK
         return None
     # Partner-Behinderungsfeld (§ 33b Person B) ohne Zusammenveranlagung: benannte Inkonsistenz
     # (dev-2s partner_check, Spiegel zu partner_kegel_offen). Universell VOR der Scheiben-Verzweigung —

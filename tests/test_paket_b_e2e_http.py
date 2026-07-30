@@ -539,7 +539,8 @@ AN_GESAMT_UEBERNACHTUNG = ("uebernachtung_kosten_monat", "uebernachtung_monate",
                           "uebernachtung_auswaerts", "uebernachtung_alleinnutzung",
                           "uebernachtung_keine_lange_unterbrechung")
 # A6 Arbeitsmittel-GWG (askable Felder; am_massgebliche_ak ist askable:false → nicht in /fragen)
-AN_GESAMT_ARBEITSMITTEL = ("am_anschaffungskosten", "arbeitsmittel_nutzungsdauer", "am_gwg_sofortabzug_gewaehlt")
+AN_GESAMT_ARBEITSMITTEL = ("am_anschaffungskosten", "arbeitsmittel_nutzungsdauer", "am_gwg_sofortabzug_gewaehlt",
+                            "am_anschaffung_monat", "am_afa_ist_anschaffungsjahr")
 AN_GESAMT_P36 = ("p36_lohnsteuer", "p36_vorauszahlungen")
 AN_GESAMT_KIST = ("kist_konfession", "kist_bundesland")
 AN_GESAMT_KEGEL = [
@@ -3097,17 +3098,32 @@ def test_gesamt_versorgungsfreibetrag_offen(base):
     )
 
 
+_AFA_UEBERNACHTUNG = [
+    ("uebernachtung_kosten_monat", 100000), ("uebernachtung_monate", 12),
+    ("uebernachtung_monate_bisher", 10), ("uebernachtung_im_inland", True),
+    ("uebernachtung_auswaerts", True), ("uebernachtung_alleinnutzung", True),
+    ("uebernachtung_keine_lange_unterbrechung", True),
+]
+
+
 def test_gesamt_arbeitsmittel_afa_1200_3jahre(base):
     """§ 7 Abs. 1 S. 1/2/4 EStG — lineare AfA: 1.200 EUR / 3 Jahre = 400 EUR pro Jahr.
-    Anschaffungsjahr (Oktober): 400 × 3/12 = 100 EUR.
-    Vergleich: Anschaffungsjahr (100) vs Folgejahr (400) → Steuern(AJ) > Steuern(FJ)
+    Anschaffungsjahr (Kauf im Oktober): 9 volle Monate davor → 400 × 3/12 = 100 EUR.
+
+    Differenzial Anschaffungsjahr (100) gegen Folgejahr (400): 300 EUR mehr Abzug im
+    Folgejahr → dort weniger Steuer.
+
+    Die Übernachtungskosten (12 × 1.000 EUR) sind Beiwerk, aber notwendig: ohne sie
+    lägen BEIDE Fälle mit 100 bzw. 400 EUR unter dem Arbeitnehmer-Pauschbetrag von
+    1.230 EUR (§ 9a S. 1 Nr. 1 Buchst. a), der dann statt der tatsächlichen
+    Werbungskosten greift — die AfA wäre unsichtbar und der Test grün, ohne etwas
+    zu messen. Dieselbe Konstruktion nutzt test_a6_l2_afa_mit_nutzungsdauer_senkt_steuer_gesamt.
     """
     catala = _catala_da()
 
-    # Fall 1: Anschaffungsjahr Oktober
-    st, _ = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "am-1200-3j-okt"})
-    assert st == 201
-    _req(base, "POST", "/fall/am-1200-3j-okt/event", _laie("bruttolohn", 5000000))
+    # Fall 1: Anschaffungsjahr, Kauf im Oktober → 3/12 des Jahresbetrags
+    kegel_aj = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True) + _AFA_UEBERNACHTUNG
+    _gesamt_anlegen(base, "am-1200-3j-okt", kegel_aj)
     _req(base, "POST", "/fall/am-1200-3j-okt/event", _laie("am_anschaffungskosten", 120000))
     _req(base, "POST", "/fall/am-1200-3j-okt/event", _laie("arbeitsmittel_nutzungsdauer", 3))
     _req(base, "POST", "/fall/am-1200-3j-okt/event", _laie("am_anschaffung_monat", 10))
@@ -3116,10 +3132,9 @@ def test_gesamt_arbeitsmittel_afa_1200_3jahre(base):
     _val("ergebnis", erg_aj)
     steuern_aj = erg_aj["zahl_cent"]
 
-    # Fall 2: Folgejahr (same Betrag, aber kein Anschaffungsjahr)
-    st, _ = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "am-1200-3j-fj"})
-    assert st == 201
-    _req(base, "POST", "/fall/am-1200-3j-fj/event", _laie("bruttolohn", 5000000))
+    # Fall 2: Folgejahr, identisch bis auf das Flag → voller Jahresbetrag, Monat irrelevant
+    kegel_fj = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True) + _AFA_UEBERNACHTUNG
+    _gesamt_anlegen(base, "am-1200-3j-fj", kegel_fj)
     _req(base, "POST", "/fall/am-1200-3j-fj/event", _laie("am_anschaffungskosten", 120000))
     _req(base, "POST", "/fall/am-1200-3j-fj/event", _laie("arbeitsmittel_nutzungsdauer", 3))
     _req(base, "POST", "/fall/am-1200-3j-fj/event", _laie("am_anschaffung_monat", 10))
@@ -3128,21 +3143,22 @@ def test_gesamt_arbeitsmittel_afa_1200_3jahre(base):
     _val("ergebnis", erg_fj)
     steuern_fj = erg_fj["zahl_cent"]
 
-    if catala and steuern_aj is not None and steuern_fj is not None:
-        # Anschaffungsjahr (100 EUR AfA) → höhere Steuern als Folgejahr (400 EUR AfA)
-        assert steuern_aj > steuern_fj, (
-            f"Anschaffungsjahr sollte weniger Abzug (100€) haben → höhere Steuern: "
-            f"AJ {steuern_aj}, FJ {steuern_fj}"
-        )
+    if catala:
+        assert erg_aj["grund"] == "bestaetigt" and erg_fj["grund"] == "bestaetigt", \
+            f"aj={erg_aj.get('grund')} fj={erg_fj.get('grund')}"
+        # 300 EUR mehr Abzug im Folgejahr → bei ~42 % Grenzsatz rund 126 EUR weniger Steuer.
+        delta = steuern_aj - steuern_fj
+        assert 8000 <= delta <= 17000, f"AfA-Differenzial AJ/FJ delta={delta} nicht in [8000,17000]"
+    else:
+        assert steuern_aj is None
 
 
 def test_gesamt_arbeitsmittel_afa_offen_monat_fehlt(base):
     """K2-Gate: Arbeitsmittel > 800 EUR, Nutzungsdauer vorhanden, aber Anschaffungsmonat fehlt
     → Sperrgrund arbeitsmittel_afa_ueber_gwg_offen.
     """
-    st, _ = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "am-offen-monat"})
-    assert st == 201
-    _req(base, "POST", "/fall/am-offen-monat/event", _laie("bruttolohn", 5000000))
+    kegel = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True)
+    _gesamt_anlegen(base, "am-offen-monat", kegel)
     _req(base, "POST", "/fall/am-offen-monat/event", _laie("am_anschaffungskosten", 120000))
     _req(base, "POST", "/fall/am-offen-monat/event", _laie("arbeitsmittel_nutzungsdauer", 3))
     _req(base, "POST", "/fall/am-offen-monat/event", _laie("am_afa_ist_anschaffungsjahr", True))
@@ -3155,3 +3171,5 @@ def test_gesamt_arbeitsmittel_afa_offen_monat_fehlt(base):
     assert erg["grund"] == "arbeitsmittel_afa_ueber_gwg_offen", (
         f"Sperrgrund sollte 'arbeitsmittel_afa_ueber_gwg_offen' sein, bekam '{erg.get('grund')}'"
     )
+
+

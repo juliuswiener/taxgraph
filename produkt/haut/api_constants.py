@@ -23,9 +23,14 @@ EP_FELDER = ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigene
 AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
 AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr")
 
-# ========== § 9 Arbeitsmittel (GWG) ==========
+# ========== § 9 Arbeitsmittel (GWG) + § 7 Abs. 1 AfA ==========
 ARBEITSMITTEL_KOSTEN = "am_anschaffungskosten"
 ARBEITSMITTEL_RING = ("am_anschaffungskosten", "am_gwg_sofortabzug_gewaehlt", "arbeitsmittel_nutzungsdauer")
+# § 7 Abs. 1 S. 4 Zwölftelung im Anschaffungsjahr — NUR im gefalteten gesamt-Ring. an_gesamt
+# rechnet über catala_est ohne § 2-Gesamt-Scope und ist über die Oberfläche ohnehin nicht
+# wählbar (index.html bietet gesamt + rentner_gesamt); dort würden die Felder nur den
+# Fragenkegel aufblähen.
+ARBEITSMITTEL_AFA_GESAMT = ("am_anschaffung_monat", "am_afa_ist_anschaffungsjahr")
 
 # ========== § 36 Abs. 2 Anrechnung (LSt + Vorauszahlungen) ==========
 P36_ANRECHNUNG = ("p36_lohnsteuer", "p36_vorauszahlungen")
@@ -313,7 +318,8 @@ SCHEIBEN = {
     "n_vor_gwg": {
         "felder": None, "felder_datei": "bindung_n_vor_gwg.yaml",
         "gesamt_ring": None,
-        "teil_ringe": [("ep_werbungskosten", "abziehbarer_betrag", EP_FELDER)],
+        "teil_ringe": [("ep_werbungskosten", "abziehbarer_betrag", EP_FELDER),
+                       ("arbeitsmittel_afa", "am_afa_betrag", ARBEITSMITTEL_RING)],
         "guard": False,
     },
     "an_gesamt": {
@@ -344,6 +350,7 @@ SCHEIBEN = {
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD + VERPFLEGUNG_KUERZUNG
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
+                   + ARBEITSMITTEL_AFA_GESAMT
                    + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P16_4_GATE_FELDER),
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
                   + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
@@ -382,7 +389,7 @@ __all__ = [
     # an_gesamt
     "AN_GESAMT_FLAGS", "AN_GESAMT_PARTNER",
     # Arbeitsmittel
-    "ARBEITSMITTEL_KOSTEN", "ARBEITSMITTEL_RING",
+    "ARBEITSMITTEL_KOSTEN", "ARBEITSMITTEL_RING", "ARBEITSMITTEL_AFA_GESAMT",
     # § 36/§22/§10 KiSt
     "P36_ANRECHNUNG", "P22_NR3_EINKUENFTE", "KIST_KONFESSION_FELDER", "P16_4_GATE_FELDER",
     # Verpflegung

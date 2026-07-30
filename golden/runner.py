@@ -715,7 +715,13 @@ def catala_p6_2_gwg(s: dict) -> int:
 def catala_p7_linear_afa(s: dict) -> int:
     """§ 7 Abs. 1 S. 1/2/4 EStG — lineare AfA für Wirtschaftsgüter > 800 EUR, EURO (Pure-Python).
 
-    Eingaben (EURO):
+    Zwei Signaturen unterstützt:
+
+    ALT (Pre-Existing Unit-Tests, CENT-Input):
+    - anschaffungskosten_cent: Cent (wird zu EURO / 100 konvertiert)
+    - nutzungsdauer: Jahre (int > 0)
+
+    NEU (§ 7 Abs. 1 volle Implementierung, EURO-Input):
     - anschaffungskosten: EUR (nicht Cent)
     - nutzungsdauer: Jahre (int > 0)
     - anschaffung_monat: Monat 1-12
@@ -724,17 +730,23 @@ def catala_p7_linear_afa(s: dict) -> int:
     Rechnung (S. 1/2):
     - Jahresbetrag = anschaffungskosten / nutzungsdauer, gleichmäßig
 
-    S. 4 (Anschaffungsjahr):
+    S. 4 (Anschaffungsjahr, NEU nur):
     - pro-rata-temporis: Abzug vermindert sich um 1/12 für jeden vollen Monat VOR Anschaffung
     - Beispiel: Kauf Oktober (Monat 10) → 9 Monate VOR → 9/12 Reduktion → nur 3/12 AfA im Jahr
     - Umkehrung: (12 - (monat - 1)) / 12 = (13 - monat) / 12 Monate im Jahr
 
-    Folgejahre: voller Jahresbetrag.
+    Folgejahre (ALT: automatisch, NEU: nur wenn ist_anschaffungsjahr=False): voller Jahresbetrag.
     """
-    ak = int(s.get("anschaffungskosten", 0))
+    # ALT: anschaffungskosten_cent → EURO / 100
+    ak_cent = int(s.get("anschaffungskosten_cent", 0))
+    if ak_cent > 0:
+        ak = ak_cent // 100
+    else:
+        ak = int(s.get("anschaffungskosten", 0))
+
     nd = int(s.get("nutzungsdauer", 0))
     monat = int(s.get("anschaffung_monat", 0))
-    ist_aj = s.get("ist_anschaffungsjahr", False)
+    ist_aj = s.get("ist_anschaffungsjahr")
 
     if nd <= 0 or ak <= 0:
         return 0
