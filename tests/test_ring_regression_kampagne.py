@@ -1158,3 +1158,75 @@ def test_p35a_mitveranlagung_senkt_steuer_gesamt(base):
         assert delta == 40000, f"Erwarteter Steuervorteil bei Zusammenveranlagung: 40000 Cent, bekommen: {delta}"
     else:
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
+# ===== §32b PROGRESSIONSVORBEHALT ======================================
+
+def test_p32b_progressionsvorbehalt_erhoeht_steuer_gesamt(base):
+    """P7.2 — Ring-Beweis: Progressionseinkünfte erhöhen die festzusetzende ESt.
+
+    § 32b Abs. 1 EStG: steuerfreie Lohnersatzleistungen und (bei Freistellungs-DBA)
+    ausländische Einkünfte bleiben selbst steuerfrei, heben aber den Steuersatz auf
+    das übrige Einkommen. Der Accessor war getestet, der Ring nicht — ohne diesen
+    Test bliebe unbemerkt, wenn p32b_progressionseinkuenfte im Bescheid versandet.
+    """
+    catala = _catala_da()
+    kegel_ohne = _mit_gewinn(GESAMT_KEGEL_BASIS)
+    _ges_anlegen(base, "p32b_ohne", kegel_ohne)
+    st, ohne = _req(base, "GET", "/fall/p32b_ohne/ergebnis")
+    _val("ergebnis", ohne)
+
+    kegel_mit = _mit_gewinn(GESAMT_KEGEL_BASIS)
+    kegel_mit.append(("p32b_progressionseinkuenfte", 3000000))     # 30.000 €
+    _ges_anlegen(base, "p32b_mit", kegel_mit)
+    st, mit = _req(base, "GET", "/fall/p32b_mit/ergebnis")
+    _val("ergebnis", mit)
+
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt"
+        delta = mit["zahl_cent"] - ohne["zahl_cent"]
+        assert delta > 0, (
+            f"§32b bewegt die Steuer nicht (delta={delta}) — Progressionseinkünfte "
+            f"erreichen den Bescheid nicht")
+    else:
+        assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
+def test_p32b_null_progression_aendert_nichts_gesamt(base):
+    """Negativtest: pe=0 darf die Steuer NICHT bewegen (sonst feuert der Zweig ungewollt)."""
+    catala = _catala_da()
+    _ges_anlegen(base, "p32b_n0", _mit_gewinn(GESAMT_KEGEL_BASIS))
+    st, ohne = _req(base, "GET", "/fall/p32b_n0/ergebnis")
+
+    kegel_null = _mit_gewinn(GESAMT_KEGEL_BASIS)
+    kegel_null.append(("p32b_progressionseinkuenfte", 0))
+    _ges_anlegen(base, "p32b_n1", kegel_null)
+    st, null = _req(base, "GET", "/fall/p32b_n1/ergebnis")
+
+    if catala:
+        assert ohne["zahl_cent"] == null["zahl_cent"], (
+            "pe=0 verändert die Steuer — der §32b-Zweig feuert, obwohl es nichts zu "
+            "progressionieren gibt")
+
+
+def test_p32b_hoehere_progression_hoehere_steuer_gesamt(base):
+    """Monotonie: mehr Progressionseinkünfte → höherer Steuersatz → mehr Steuer.
+
+    Fängt ein Vorzeichen- oder Einheiten-Vertauschen ab, das ein einzelner
+    Ja/Nein-Vergleich durchgehen ließe.
+    """
+    catala = _catala_da()
+    kegel_klein = _mit_gewinn(GESAMT_KEGEL_BASIS)
+    kegel_klein.append(("p32b_progressionseinkuenfte", 1000000))    # 10.000 €
+    _ges_anlegen(base, "p32b_k", kegel_klein)
+    st, klein = _req(base, "GET", "/fall/p32b_k/ergebnis")
+
+    kegel_gross = _mit_gewinn(GESAMT_KEGEL_BASIS)
+    kegel_gross.append(("p32b_progressionseinkuenfte", 5000000))    # 50.000 €
+    _ges_anlegen(base, "p32b_g", kegel_gross)
+    st, gross = _req(base, "GET", "/fall/p32b_g/ergebnis")
+
+    if catala:
+        assert gross["zahl_cent"] > klein["zahl_cent"], (
+            f"50k PE ({gross['zahl_cent']}) muss mehr Steuer erzeugen als 10k PE "
+            f"({klein['zahl_cent']})")
