@@ -18,18 +18,18 @@ def _audit_pfad() -> str:
     return os.path.join(AUDIT_DIR, "audit.jsonl")
 
 
-def append(user_id: str, action: str, fall_id: str | None = None,
+def append(user_id: str | None, action: str, fall_id: str | None = None,
            detail: str | None = None) -> None:
     """Hängt EINEN Audit-Eintrag an (append-only, immutable).
 
-    user_id: Username (system-intern, kein Klarname/Email).
-    action: login | logout | fall_angelegt | zugriff_verweigert.
+    user_id: Username (system-intern, kein Klarname/Email). None → "unbekannt".
+    action: login | logout | fall_angelegt | zugriff_verweigert | llm_call.
     fall_id: Optional — betroffener Fall.
-    detail: Optional — z.B. Grund der Verweigerung.
+    detail: Optional — z.B. Grund der Verweigerung. KEINE PII.
     """
     entry = {
         "ts": datetime.now(timezone.utc).isoformat(),
-        "user_id": user_id,
+        "user_id": user_id or "unbekannt",
         "action": action,
         "fall_id": fall_id,
         "detail": detail,
