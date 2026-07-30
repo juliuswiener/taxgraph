@@ -43,15 +43,45 @@ def flag_widersprueche(snapshot: dict) -> list:
     """{feld_id -> {wert, zustand, ...}} → Liste der Flag↔Einkunftsart-Widersprüche.
     Ein Widerspruch: das Flag ist bestätigt=true (Abwesenheit behauptet) UND ein negiertes Einkunfts-
     Feld ist bestätigt mit Wert > 0. Rein deterministisch, kein Rate-Wert."""
+    # Lesbare Namen für die Flags (aus fragetext_laie der Bindung)
+    FLAG_NAME = {
+        "kein_gewinn": "Gewinneinkünfte (Gewerbe, Landwirtschaft, selbständige Arbeit)",
+        "kein_kap": "Kapitalerträge (Zinsen, Dividenden, Kursgewinne)",
+        "kein_vuv": "Einnahmen aus Vermietung oder Verpachtung",
+        "kein_sonstige": "sonstige Einkünfte (z. B. Renten, private Verkäufe)",
+    }
+    # Lesbare Namen für die negierten Felder
+    FELD_NAME = {
+        "kap_kapitalertraege": "Kapitaleinkünfte",
+        "kap_gewinn_aktien": "Aktiengewinne",
+        "vv_einnahmen": "Einnahmen aus Vermietung",
+        "rentner_jahresrente": "Renteneinkünfte",
+        "einkuenfte_gewinn": "Gewinneinkünfte",
+        "rentner_veraeusserungsgewinn": "Veräußerungsgewinne",
+        "betriebseinnahmen": "Betriebseinnahmen",
+        "sonstige_betriebsausgaben": "sonstige Betriebsausgaben",
+        "afa_jahresbetrag": "Abschreibungen (AfA)",
+        "gwg_anschaffungskosten_netto": "GWG-Anschaffungen",
+        "gewinnanteil": "Mitunternehmer-Gewinnanteil",
+        "verguetung_taetigkeit": "Mitunternehmer-Vergütung (Tätigkeit)",
+        "verguetung_darlehen": "Mitunternehmer-Vergütung (Darlehen)",
+        "verguetung_ueberlassung": "Mitunternehmer-Vergütung (Überlassung)",
+    }
+
     widersprueche = []
     for flag, felder in FLAG_NEGIERT.items():
         if _bestaetigt_wert(snapshot, flag) is not True:
             continue                                    # Flag nicht bestätigt-true -> keine Behauptung
+        flag_titel = FLAG_NAME.get(flag, flag)
         for feld_id in felder:
             wert = _bestaetigt_wert(snapshot, feld_id)
             if isinstance(wert, (int, float)) and wert > 0:
+                feld_titel = FELD_NAME.get(feld_id, feld_id)
+                # Cent → Euro für monetäre Felder (Wert > 1000 gilt als Cent)
+                betrag = f"{wert // 100} €" if wert > 1000 else str(wert)
                 widersprueche.append({
                     "flag": flag, "feld_id": feld_id, "wert": wert,
-                    "grund": f"{flag}=true behauptet Abwesenheit, aber {feld_id}={wert} liegt vor "
-                             f"— für diese Einkunftsart muss das Flag false sein (sonst still übergangen)."})
+                    "grund": f"Du hast angegeben, keine {flag_titel} zu haben — "
+                             f"bei den {feld_titel} wurden aber {betrag} erfasst. "
+                             f"Bitte prüfe, welche der beiden Angaben stimmt."})
     return widersprueche

@@ -123,7 +123,7 @@ class TestPreflightFlag:
         assert r["status"] == "RED"
         flag_items = [i for i in r["items"] if i["bereich"] == "flag"]
         assert len(flag_items) >= 1
-        assert "kein_kap" in flag_items[0]["text"]
+        assert "Kapitalerträge" in flag_items[0]["text"]
 
 
 class TestPreflightPartner:
