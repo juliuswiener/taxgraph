@@ -210,6 +210,48 @@ def test_B_ersetzt_fremdes_feld_faellt():
                         ersetzt=e1["event_id"], ts=TS)
 
 
+def test_B_veraltete_event_id_faellt():
+    """Guard: Kette a→b aufbauen, dann erneut mit a["event_id"] überschreiben → ValueError.
+
+    Eine einmal ersetzte event_id ist verbraucht. Sonst könnten zwei Korrekturen dieselbe
+    Vorlage überschreiben und eine ginge verloren.
+    """
+    s = ST.leerer_store(2025)
+    # Event a (wird ersetzt)
+    e_a = ST.append_event(s, feld_id="ep_arbeitstage", wert=100, zustand="bestaetigt",
+                          herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                          schreiber="ui:laie", signal={"signal_1": None, "signal_2": "a"}, ts=TS)
+    # Event b (ersetzt a)
+    e_b = ST.append_event(s, feld_id="ep_arbeitstage", wert=150, zustand="bestaetigt",
+                          herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                          schreiber="ui:laie", signal={"signal_1": None, "signal_2": "b"},
+                          ersetzt=e_a["event_id"], ts=TS)
+    # Versuch: erneut mit a["event_id"] überschreiben → sollte fehlschlagen
+    with pytest.raises(ValueError, match="ersetzt-Ziel ist bereits ersetzt"):
+        ST.append_event(s, feld_id="ep_arbeitstage", wert=200, zustand="bestaetigt",
+                        herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        schreiber="ui:laie", signal={"signal_1": None, "signal_2": "c"},
+                        ersetzt=e_a["event_id"], ts=TS)
+
+
+def test_B_bestaetigt_ohne_signal_2_beim_ersetzen_faellt():
+    """Guard: aktives Event vorhanden, Korrektur mit zustand=bestaetigt und signal_2=None → ValueError.
+
+    Die Zwei-Signal-Regel darf nicht dadurch umgehbar sein, dass man den Umweg über ersetzt nimmt.
+    """
+    s = ST.leerer_store(2025)
+    # Aktives Event
+    e_aktiv = ST.append_event(s, feld_id="ep_arbeitstage", wert=100, zustand="bestaetigt",
+                              herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                              schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"}, ts=TS)
+    # Versuch: ersetzen mit bestaetigt aber ohne signal_2 → sollte fehlschlagen
+    with pytest.raises(ValueError, match="zustand=bestaetigt braucht ein signal_2"):
+        ST.append_event(s, feld_id="ep_arbeitstage", wert=200, zustand="bestaetigt",
+                        herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        schreiber="ui:laie", signal={"signal_1": None, "signal_2": None},
+                        ersetzt=e_aktiv["event_id"], ts=TS)
+
+
 # ---- (C) gekappt_verdacht + Falsch-Grün-Regel ---------------------------------
 
 def _ist_gruen(eric: dict) -> bool:
