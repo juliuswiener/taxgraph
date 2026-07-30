@@ -1,0 +1,16 @@
+dokument:
+  norm_uri: "estg/p3/2026-07-30"
+  norm: "§ 3 EStG (Steuerfreie Einnahmen)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__3.html"
+  abrufdatum: "2026-07-30"
+  datei: "estg_p3_2026-07-30.txt"
+  sha256: "ca12dc738343984953768d85bb0a422202f7b158d56e2da8cb43e0d281e9b435"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  erwartete_anker:
+    - "Photovoltaikanlagen"
+    - "30 Kilowatt (peak) je Wohn- oder Gewerbeeinheit"
+    - "insgesamt höchstens 100 Kilowatt (peak) pro Steuerpflichtigem"
+  verwendet_in: ["P7.3 § 3 Nr. 72 Photovoltaik"]

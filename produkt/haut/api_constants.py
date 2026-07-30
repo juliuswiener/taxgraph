@@ -178,8 +178,11 @@ GESAMT_REALSPLITTING = ("realsplitting_unterhaltsleistungen", "realsplitting_emp
 # ========== § 21 Veräußerungs-Gewinn (Gesamt) ==========
 GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")
 
+# ========== § 3 Nr. 72 Photovoltaik (steuerfreie Einnahmen) ==========
+GESAMT_PV = ("pv_einnahmen", "pv_bruttoleistung_kwp", "pv_anzahl_einheiten", "pv_auf_gebaeude")
+
 # ========== § 2 Gewinn (Gesamt) ==========
-GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD + MITU_FELDER + ABS3_FELDER
+GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD + MITU_FELDER + ABS3_FELDER + GESAMT_PV
 
 # ========== RENTNER_FELDER — DRITTE ÄNDERUNG (Z.282 api.py) ==========
 RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P22_NR3_EINKUENFTE + P16_4_GATE_FELDER + KV_PV_PARTNER_FELDER + VOR_PARTNER_FELDER
@@ -293,6 +296,7 @@ __all__ = [
     "GESAMT_DBA", "DBA_METHOD_MAP",
     # Weitere Abzüge
     "GESAMT_P23", "GESAMT_P33A", "GESAMT_P32B", "GESAMT_P35C", "GESAMT_REALSPLITTING",
+    "GESAMT_PV",
     # Veräußerungs-Gewinn
     "GESAMT_VG", "GESAMT_GEWINN",
     # Rentner Felder

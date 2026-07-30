@@ -200,6 +200,16 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
             "betriebsausgaben": (_c("sonstige_betriebsausgaben") + _c("afa_jahresbetrag")) // 100 + gwg_summe}) + mitu
     else:
         gewinn = _c("einkuenfte_gewinn") // 100 + mitu
+    # § 3 Nr. 72: Einnahmen aus Gebäude-PV bis 30 kWp/Einheit und 100 kWp gesamt sind steuerfrei —
+    # sie mindern den Gewinn, bevor er in die § 2-Summe geht. Freigrenze: über der Grenze bleibt
+    # alles steuerpflichtig (Accessor gibt dann 0 zurück). Nie unter 0 abziehen.
+    pv_frei = runner.catala_p3_nr72_photovoltaik({
+        "pv_einnahmen": _c("pv_einnahmen") // 100,
+        "pv_bruttoleistung_kwp": _c("pv_bruttoleistung_kwp"),
+        "pv_anzahl_einheiten": _c("pv_anzahl_einheiten"),
+        "pv_auf_gebaeude": f.get("pv_auf_gebaeude", {})})
+    if pv_frei > 0:
+        gewinn -= min(pv_frei, max(0, gewinn))
     return gewinn, mitu
 
 

@@ -1,0 +1,93 @@
+# Bindungstabelle — § 3 Nr. 72 EStG (steuerfreie Einnahmen aus Gebäude-Photovoltaik).
+# 4 Felder: Einnahmen + zwei Leistungsgrenzen-Parameter + Gebäude-Merkmal.
+# Kein Kz: die Befreiung ist eine Nicht-Erfassung — steuerfreie Einnahmen werden in der
+# Erklärung nicht deklariert (nur der verbleibende steuerpflichtige Gewinn). Die Felder
+# steuern ausschließlich die Berechnung.
+# Task P7.3, Stand 2026-07-30.
+version: 1
+scheibe: "§ 3 Nr. 72 EStG Photovoltaik-Steuerbefreiung (gesamt)"
+
+bindungen:
+  - feld_id: pv_einnahmen
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: einkuenfte_gewinn}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch waren deine Einnahmen aus dem Betrieb der Photovoltaikanlage dieses Jahr?"
+    hilfe_kurz: "Alles, was du für eingespeisten Strom bekommen hast, plus den Wert des selbst verbrauchten Stroms. Bei kleinen Anlagen auf Gebäuden ist das steuerfrei — die Angabe entscheidet, wie viel von deinem Gewinn unversteuert bleibt."
+    beispielwert: 120000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Steuerfreie Einnahmen nach § 3 Nr. 72 werden nicht deklariert; sie mindern den erklärten Gewinn. Kein eigenes Kz im Vordruck."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 3 Nr. 72 EStG"
+      zitatanker: "die Einnahmen und Entnahmen im Zusammenhang mit dem Betrieb von auf, an oder in Gebäuden (einschließlich Nebengebäuden) vorhandenen Photovoltaikanlagen"
+      datei: "sources/gesetze-im-internet/estg_p3_2026-07-30.txt"
+
+  - feld_id: pv_bruttoleistung_kwp
+    quelle: {regel_id: p2_festzusetzung_einzel, geltungsbedingung: pv_leistungsgrenze}
+    typ: int
+    einheit: kWp
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Bruttoleistung hat deine Photovoltaikanlage laut Marktstammdatenregister (in Kilowatt peak)?"
+    hilfe_kurz: "Steht in deiner Anmeldung im Marktstammdatenregister. Bis 30 kWp je Wohn- oder Gewerbeeinheit und höchstens 100 kWp insgesamt bleiben die Einnahmen steuerfrei."
+    beispielwert: 12
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Reiner Berechnungsparameter für die Freigrenze; kein Vordruck-Feld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 3 Nr. 72 EStG"
+      zitatanker: "wenn die installierte Bruttoleistung laut Marktstammdatenregister bis zu 30 Kilowatt (peak) je Wohn- oder Gewerbeeinheit"
+      datei: "sources/gesetze-im-internet/estg_p3_2026-07-30.txt"
+
+  - feld_id: pv_anzahl_einheiten
+    quelle: {regel_id: p2_festzusetzung_einzel, geltungsbedingung: pv_leistungsgrenze}
+    typ: int
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele Wohn- oder Gewerbeeinheiten hat das Gebäude, auf dem die Anlage sitzt?"
+    hilfe_kurz: "Ein Einfamilienhaus hat eine Einheit, ein Dreifamilienhaus drei. Je Einheit sind 30 kWp steuerfrei möglich — insgesamt aber nie mehr als 100 kWp."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Reiner Berechnungsparameter für die Freigrenze; kein Vordruck-Feld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 3 Nr. 72 EStG"
+      zitatanker: "je Wohn- oder Gewerbeeinheit und insgesamt höchstens 100 Kilowatt (peak) pro Steuerpflichtigem oder Mitunternehmerschaft"
+      datei: "sources/gesetze-im-internet/estg_p3_2026-07-30.txt"
+
+  - feld_id: pv_auf_gebaeude
+    quelle: {regel_id: p2_festzusetzung_einzel, geltungsbedingung: pv_auf_gebaeude}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Ist die Photovoltaikanlage auf, an oder in einem Gebäude angebracht?"
+    hilfe_kurz: "Nur Anlagen an Gebäuden (auch Nebengebäude wie Garage oder Scheune) sind begünstigt. Eine Freiflächenanlage auf dem Feld ist es nicht."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestandsmerkmal der Befreiung; kein Vordruck-Feld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 3 Nr. 72 EStG"
+      zitatanker: "von auf, an oder in Gebäuden (einschließlich Nebengebäuden) vorhandenen Photovoltaikanlagen"
+      datei: "sources/gesetze-im-internet/estg_p3_2026-07-30.txt"
+
+  # ===== Lücken + Geltungsbedingungen =====
+luecken:
+  - regel_id: p2_festzusetzung_einzel
+    geltungsbedingung: pv_leistungsgrenze
+    grund: "Freigrenze (30 kWp/Einheit, 100 kWp gesamt) im Accessor catala_p3_nr72_photovoltaik geprüft; im Ring über _laufender_gewinn angedockt."
+  - regel_id: p2_festzusetzung_einzel
+    geltungsbedingung: pv_auf_gebaeude
+    grund: "Tatbestandsmerkmal 'auf, an oder in Gebäuden' als askable Bool; fail-closed ohne Bestätigung."
+  - regel_id: p2_festzusetzung_einzel
+    signatur_slot: pv_entnahmen
+    grund: "§ 3 Nr. 72 nennt Einnahmen UND Entnahmen. Der Selbstverbrauch (Entnahme) ist im Feld pv_einnahmen mit erfasst (Laien-Formulierung 'plus Wert des selbst verbrauchten Stroms'); ein getrenntes Entnahme-Feld wäre eine eigene Bewertungsfrage (Teilwert) und ist Stufe-2."

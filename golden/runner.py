@@ -334,6 +334,41 @@ def catala_p35a_haushaltsnahe(s: dict) -> int:
     return ermessigung
 
 
+def catala_p3_nr72_photovoltaik(s: dict) -> int:
+    """§ 3 Nr. 72 EStG — steuerfreie Einnahmen aus Gebäude-Photovoltaik. EURO rein, EURO raus.
+
+    Rückgabe = der Betrag, der von den Gewinneinkünften ABZUZIEHEN ist (0 = keine Befreiung).
+
+    Zwei kumulative Leistungsgrenzen (S. 1), beide „bis zu"/„höchstens", also einschließend:
+      - 30 kWp je Wohn- oder Gewerbeeinheit
+      - insgesamt 100 kWp pro Steuerpflichtigem oder Mitunternehmerschaft
+
+    Die Befreiung ist eine Freigrenze, kein Freibetrag: wird eine Grenze gerissen, sind die
+    Einnahmen VOLL steuerpflichtig (kein anteiliger Abzug bis zur Grenze).
+
+    Anker: "die Einnahmen und Entnahmen im Zusammenhang mit dem Betrieb von auf, an oder in
+    Gebäuden (einschließlich Nebengebäuden) vorhandenen Photovoltaikanlagen, wenn die
+    installierte Bruttoleistung laut Marktstammdatenregister bis zu 30 Kilowatt (peak) je
+    Wohn- oder Gewerbeeinheit und insgesamt höchstens 100 Kilowatt (peak) pro
+    Steuerpflichtigem oder Mitunternehmerschaft beträgt"
+    (sources/gesetze-im-internet/estg_p3_2026-07-30.txt)
+    """
+    einnahmen = int(s.get("pv_einnahmen", 0))
+    if einnahmen <= 0:
+        return 0
+    if s.get("pv_auf_gebaeude", {}).get("wert") is not True:
+        return 0                                    # S. 1: nur Anlagen auf/an/in Gebäuden
+    leistung = int(s.get("pv_bruttoleistung_kwp", 0))
+    einheiten = int(s.get("pv_anzahl_einheiten", 0))
+    if leistung <= 0 or einheiten <= 0:
+        return 0                                    # ohne Leistungsangabe keine Befreiung
+    if leistung > 30 * einheiten:                   # S. 1: 30 kWp je Einheit
+        return 0
+    if leistung > 100:                              # S. 1: insgesamt höchstens 100 kWp
+        return 0
+    return einnahmen
+
+
 def catala_p10b_spenden(s: dict) -> int:
     """§ 10b Abs. 1 S. 1 EStG — abziehbare Zuwendungen (Spenden), EURO (module SpendenAbzug, charge29-
     Promotion): min(zuwendungen; 20 % des Gesamtbetrags der Einkünfte). GdE = est_einzel-Ergebnis VOR

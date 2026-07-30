@@ -1230,3 +1230,72 @@ def test_p32b_hoehere_progression_hoehere_steuer_gesamt(base):
         assert gross["zahl_cent"] > klein["zahl_cent"], (
             f"50k PE ({gross['zahl_cent']}) muss mehr Steuer erzeugen als 10k PE "
             f"({klein['zahl_cent']})")
+
+
+# ===== §3 Nr. 72 PHOTOVOLTAIK =========================================
+
+PV_GATE = [("pv_auf_gebaeude", True), ("pv_anzahl_einheiten", 1)]
+
+
+def test_p3_nr72_pv_senkt_steuer_gesamt(base):
+    """P7.3 — Ring-Beweis: steuerfreie PV-Einnahmen mindern die festzusetzende ESt.
+
+    § 3 Nr. 72 EStG: Einnahmen aus Gebäude-PV bis 30 kWp/Einheit (max. 100 kWp) sind
+    steuerfrei. Sie mindern den Gewinn vor der § 2-Summe.
+    """
+    catala = _catala_da()
+    _ges_anlegen(base, "pv_ohne", _mit_gewinn(GESAMT_KEGEL_BASIS))
+    st, ohne = _req(base, "GET", "/fall/pv_ohne/ergebnis")
+    _val("ergebnis", ohne)
+
+    kegel_mit = _mit_gewinn(GESAMT_KEGEL_BASIS) + PV_GATE + [
+        ("pv_bruttoleistung_kwp", 12), ("pv_einnahmen", 500000)]      # 12 kWp, 5.000 €
+    _ges_anlegen(base, "pv_mit", kegel_mit)
+    st, mit = _req(base, "GET", "/fall/pv_mit/ergebnis")
+    _val("ergebnis", mit)
+
+    if catala:
+        assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt"
+        delta = ohne["zahl_cent"] - mit["zahl_cent"]
+        assert delta > 0, (
+            f"§3 Nr.72 bewegt die Steuer nicht (delta={delta}) — die Befreiung "
+            f"erreicht den Bescheid nicht")
+    else:
+        assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
+
+
+def test_p3_nr72_ueber_grenze_keine_befreiung_gesamt(base):
+    """Freigrenze im Ring: 35 kWp bei 1 Einheit reißt die 30-kWp-Grenze → volle Steuer.
+
+    Fängt ab, dass der Ring die Befreiung anteilig oder ungeprüft gewährt.
+    """
+    catala = _catala_da()
+    _ges_anlegen(base, "pv_g0", _mit_gewinn(GESAMT_KEGEL_BASIS))
+    st, ohne = _req(base, "GET", "/fall/pv_g0/ergebnis")
+
+    kegel_ueber = _mit_gewinn(GESAMT_KEGEL_BASIS) + PV_GATE + [
+        ("pv_bruttoleistung_kwp", 35), ("pv_einnahmen", 500000)]      # 35 kWp > 30
+    _ges_anlegen(base, "pv_g1", kegel_ueber)
+    st, ueber = _req(base, "GET", "/fall/pv_g1/ergebnis")
+
+    if catala:
+        assert ohne["zahl_cent"] == ueber["zahl_cent"], (
+            "35 kWp bei 1 Einheit überschreitet die Freigrenze — es darf KEINE "
+            "Steuerminderung geben")
+
+
+def test_p3_nr72_freiflaeche_keine_befreiung_gesamt(base):
+    """Ohne Gebäude-Merkmal keine Befreiung — § 3 Nr. 72 verlangt 'auf, an oder in Gebäuden'."""
+    catala = _catala_da()
+    _ges_anlegen(base, "pv_f0", _mit_gewinn(GESAMT_KEGEL_BASIS))
+    st, ohne = _req(base, "GET", "/fall/pv_f0/ergebnis")
+
+    kegel_frei = _mit_gewinn(GESAMT_KEGEL_BASIS) + [
+        ("pv_auf_gebaeude", False), ("pv_anzahl_einheiten", 1),
+        ("pv_bruttoleistung_kwp", 12), ("pv_einnahmen", 500000)]
+    _ges_anlegen(base, "pv_f1", kegel_frei)
+    st, frei = _req(base, "GET", "/fall/pv_f1/ergebnis")
+
+    if catala:
+        assert ohne["zahl_cent"] == frei["zahl_cent"], (
+            "Freiflächenanlage ist nicht begünstigt — keine Steuerminderung erwartet")
