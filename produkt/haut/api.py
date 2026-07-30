@@ -1372,7 +1372,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             p35_nenner = max(0, renten) + max(0, rentner_g["einkuenfte_gewinn"])
 
             # §3 Abs.2 SolzG: SolZ-Basis = KiFB-fiktive ESt (immer mit §32 Abs.6-Freibetraegen;
-            # kein §32d-Kapital im Rentner-Ring → kap_st=0 immer). solz_info_r ueberschrieben vom KiFB-Lauf.
+            # solz_info_r wird im KiFB-Lauf und im § 32d-Kapital-Lauf gefüllt.
             solz_info_r = {}
 
             # §32b Progressionsvorbehalt (Rentner-Ring, 1:1 gesamt-Präzedenz)
@@ -1430,6 +1430,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                         "est_regulaer_mit_kap": est_mit,
                         "est_regulaer_ohne_kap": est_raw})
                     result = est_raw + kap_st
+                    # SolZ-Tracking: kap_st für §32d-Abgeltung-SolZ (5,5% ohne Freigrenze, SolzG §3 Abs.3 S.2)
+                    if freibetrag > 0 or kinder == 0:
+                        solz_info_r["est_mit_fb"] = result
+                        solz_info_r["kap_st"] = kap_st
                 # §32b Post-Engine-Wrapper (Rentner-Ring, 1:1 gesamt-Präzedenz)
                 if pe_active:
                     tarifliche_pre32b = runner.catala_gesamt_tarifliche(g2)
@@ -1447,9 +1451,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     # §35-Deckel-3 post-wrapper mit tarifliche_32b
                     if p35_credit_r > 0:
                         result = max(0, result - p35_credit_r)
-                # SolZ-Tracking
+                # SolZ-Tracking: nur bei kap_st=0 (keine Günstigerprüfung)
                 if freibetrag > 0 or kinder == 0:
                     solz_info_r["est_mit_fb"] = result
+                    solz_info_r["kap_st"] = 0
                 return result
 
             # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6, Fund D):
@@ -1464,13 +1469,15 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "kindergeld": kinder * runner._kindergeld(vz) * 12})
             else:
                 est = _festzusetzende_r(0)
-            # SolZ §3, §4 SolzG: Rentner-Ring hat kein §32d-Kapital → Basis = KiFB-fiktive ESt direkt
+            # SolZ §3, §4 SolzG: Basis = KiFB-fiktive ESt (§3 Abs.2) minus §32d-Kapitalsteuer (§3 Abs.3 S.1);
+            # §32d-Kapital-SolZ 5,5% ohne Freigrenze (§3 Abs.3 S.2) wird von catala_solz separat addiert.
             if solz_container is not None and "est_mit_fb" in solz_info_r:
                 solz_container[0] = runner.catala_solz({
                     "veranlagungszeitraum": vz,
                     "bemessungsgrundlage": solz_info_r["est_mit_fb"],
+                    "kapital_steuer": solz_info_r.get("kap_st", 0),
                     "splitting": rentner_g["veranlagung"] == "zusammen"})
-            # KiSt § 51a: Rentner-Ring hat kein §32d-Kapital → Basis = KiFB-fiktive ESt direkt (= SolZ-Basis)
+            # KiSt § 51a: Basis = KiFB-fiktive ESt (= SolZ-Basis); §32d-Abgeltung-KiSt ist separater Nachtrag
             if extras is not None and "est_mit_fb" in solz_info_r:
                 extras["kist_cent"] = runner.catala_kist({
                     "est_mit_fb": solz_info_r["est_mit_fb"],

@@ -3489,12 +3489,12 @@ def test_rentner_kap_zusammenveranlagung_pb_verdopplung(base):
     steuern_20 = erg["zahl_cent"]
 
     if steuern_25 is not None and steuern_20 is not None:
-        # 500 EUR steuerpflichtig × ~25% = ~125 EUR (Differential gemessen)
+        # 500 EUR steuerpflichtig × ~19% Grenzsteuersatz bei 4.000€ Gesamtrente = ~95 EUR (9500 Cent)
+        # Verdoppelter Sparer-PB (§ 20 Abs. 9 S. 3): 1.000€ + 1.000€ = 2.000€ pro Veranlagung
         delta = steuern_25 - steuern_20
-        # Gemessene Differential: Ist-Wert bei verdoppeltem PB
-        assert delta > 0, (
-            f"Verdopplung der PB bei Zusammenveranlagung nicht erkannt: "
-            f"2.500€ {steuern_25}, 2.000€ {steuern_20}, delta={delta}"
+        assert 8500 < delta < 12000, (
+            f"Verdopplung der PB bei Zusammenveranlagung (2.000€ Basis, 500€ über): "
+            f"2.500€ {steuern_25}, 2.000€ {steuern_20}, delta={delta} (erwartet ~9500)"
         )
 
 
