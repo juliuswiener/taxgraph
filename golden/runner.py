@@ -1292,24 +1292,6 @@ def catala_gesamt_zve(s: dict) -> int:
     return int(_gesamt_out(s).zu_versteuerndes_einkommen) // 100
 
 
-def catala_gesamt_kette(s: dict) -> dict:
-    """Rechenweg-Kette für Erklär-UI: alle Zwischenschritte vom gesamt-Scope als dict, EURO.
-    {
-      "gesamtbetrag_der_einkuenfte": (§2 Abs.3 GdE, ∑ Einkunftsarten),
-      "zu_versteuerndes_einkommen": (§2 Abs.5 zvE = GdE − Abzüge),
-      "tarifliche_est": (§32a Tarif auf zvE),
-      "festzusetzende_est": (ESt nach Zuschläge/Abschläge)
-    }
-    Jeder Wert ist ganzzahlig EURO (//100 vom Money-Output)."""
-    out = _gesamt_out(s)
-    return {
-        "gesamtbetrag_der_einkuenfte": int(out.gesamtbetrag_der_einkuenfte) // 100,
-        "zu_versteuerndes_einkommen": int(out.zu_versteuerndes_einkommen) // 100,
-        "tarifliche_est": int(out.tarifliche_est) // 100,
-        "festzusetzende_est": int(out.festzusetzende_est) // 100,
-    }
-
-
 def catala_ermaessigter_durchschnittssatz(s: dict) -> int:
     """§ 34 Abs. 3 EStG — ermäßigter Durchschnittssatz auf den VÄ-Gewinn (≤ 5 Mio), EURO (module Ermaessigter-
     Durchschnittssatz): est_ao = min(ao, 5Mio) × max(0.56 × Durchschnittssatz; 0.14). Durchschnittssatz =
