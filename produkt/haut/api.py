@@ -800,14 +800,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # progressiv), dba_anrechnung bleibt 0 → KEIN Doppel-Relief (= Under-tax). Fail-closed: Flag absent
             # → Abs.1-Pfad (unverändert). „soweit nicht steuerfrei" (Stufe-1): dba_auslaendische_einkuenfte>0
             # = nicht-freigestellte Einkünfte (Freistellung wird im offen-Guard separat gehalten).
-            # LÄNDER-METHODEN-ROUTING: dba_staat → DBA_METHOD_MAP.get(staat_lower) → anrechnung/freistellung.
+            # METHODEN-ROUTING: (dba_staat, dba_einkunftsart) → anrechnung/freistellung.
             # Anrechnung → catala_p34c_1(hb=berechnet); Freistellung → 0 anrechnung, aber progressionsvorbehalt.
+            # Vorrang: Nutzer-Vorgabe (dba_methode) > per-Einkunftsart-Tabelle > pauschale Länder-Methode.
             dba_staat_raw = f.get("dba_staat", {}).get("wert")
-            # Länder-Methoden-Routing: Nutzer-Vorgabe (dba_methode) > DBA_METHOD_MAP > default anrechnung
-            dba_staat_lower = dba_staat_raw.lower() if dba_staat_raw else ""
             dba_method_from_user = f.get("dba_methode", {}).get("wert")
             dba_effective_method = "freistellung" if dba_method_from_user == "dba_freistellung" \
-                else (DBA_METHOD_MAP.get(dba_staat_lower) or "anrechnung")
+                else dba_methode_fuer(dba_staat_raw, f.get("dba_einkunftsart", {}).get("wert"))
             if f.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
                 g["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
             elif dba_gezahlt > 0 or dba_ausl > 0:
@@ -1137,11 +1136,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100
             dba_ausl = _c("dba_auslaendische_einkuenfte") // 100
             dba_staat_raw = f.get("dba_staat", {}).get("wert")
-            # Länder-Methoden-Routing: Nutzer-Vorgabe (dba_methode) > DBA_METHOD_MAP > default anrechnung
-            dba_staat_lower = dba_staat_raw.lower() if dba_staat_raw else ""
+            # Vorrang: Nutzer-Vorgabe (dba_methode) > per-Einkunftsart-Tabelle > pauschale Länder-Methode
             dba_method_from_user = f.get("dba_methode", {}).get("wert")
             dba_effective_method = "freistellung" if dba_method_from_user == "dba_freistellung" \
-                else (DBA_METHOD_MAP.get(dba_staat_lower) or "anrechnung")
+                else dba_methode_fuer(dba_staat_raw, f.get("dba_einkunftsart", {}).get("wert"))
             if f.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
                 rentner_g["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
             elif dba_gezahlt > 0 or dba_ausl > 0:

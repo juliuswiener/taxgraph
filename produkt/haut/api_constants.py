@@ -137,11 +137,14 @@ RENTNER_FELDER = RENTNER_FELDER + GESAMT_ABZUEGE
 GESAMT_FREIBETRAEGE = ("geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_voraussetzung") + P35A_MITVER_ANZEIGE
 
 # ========== § 34c DBA-Anrechnung ==========
-GESAMT_DBA = ("dba_staat", "dba_methode", "dba_mehrere_staaten",
+GESAMT_DBA = ("dba_staat", "dba_methode", "dba_einkunftsart", "dba_mehrere_staaten",
               "dba_gezahlte_auslaendische_steuer", "dba_auslaendische_einkuenfte",
               "dba_abzug_statt_anrechnung")
 
 # ========== DBA-Länder-Methoden-Mapping ==========
+# Pauschale Methode je Land (Stufe 1). Gilt, wo DBA_METHOD_MAP_ART keinen Eintrag für die
+# konkrete Einkunftsart hat. Kein Abkommen wendet EINE Methode auf alle Einkunftsarten an —
+# diese Tabelle ist die grobe Näherung, die per-Einkunftsart-Tabelle darunter verfeinert sie.
 DBA_METHOD_MAP = {
     "at": "freistellung",
     "ch": "anrechnung",
@@ -155,6 +158,112 @@ DBA_METHOD_MAP = {
     "tr": "anrechnung",
     "us": "freistellung",
 }
+
+# Das Feld dba_staat führt deutsche Ländernamen als Enum, die Methoden-Tabellen ISO-Codes.
+# Ohne diese Brücke trifft KEIN Enum-Wert die Map und alles fällt auf den Default
+# "anrechnung" — für Österreich und die USA (Freistellungs-DBA) wäre das falsch gerechnet.
+# Enum-Werte ohne Eintrag (Italien, Tschechien, Kanada, Deutschland, sonstiger_staat) haben
+# noch keine adjudizierte Methode und laufen bewusst auf den Anrechnungs-Default.
+DBA_STAAT_ISO = {
+    "oesterreich": "at",
+    "österreich": "at",
+    "schweiz": "ch",
+    "dänemark": "dk",
+    "daenemark": "dk",
+    "spanien": "es",
+    "frankreich": "fr",
+    "grossbritannien": "gb",
+    "großbritannien": "gb",
+    "luxemburg": "lu",
+    "niederlande": "nl",
+    "polen": "pl",
+    "türkei": "tr",
+    "tuerkei": "tr",
+    "usa": "us",
+}
+
+# Einkunftsarten für das per-Einkunftsart-Routing. Die Namen folgen den Überschriften der
+# OECD-Musterabkommens-Verteilungsartikel, weil die DBA-Methodenartikel genau darauf verweisen.
+DBA_EINKUNFTSARTEN = (
+    "unbewegliches_vermoegen",      # Art. 6
+    "unternehmensgewinne",          # Art. 7
+    "dividenden",                   # Art. 10
+    "zinsen",                       # Art. 11
+    "lizenzgebuehren",              # Art. 12
+    "veraeusserungsgewinne",        # Art. 13
+    "unselbstaendige_arbeit",       # Art. 15
+    "aufsichtsratsverguetungen",    # Art. 16
+    "kuenstler_sportler",           # Art. 17
+    "ruhegehaelter",                # Art. 18
+)
+
+# ========== DBA per-Einkunftsart (P7.1) ==========
+# {(staat, einkunftsart): methode}. Ein fehlender Eintrag fällt auf DBA_METHOD_MAP zurück,
+# damit die Tabelle Land für Land wachsen kann, ohne bestehendes Verhalten zu ändern.
+#
+# Jeder Eintrag ist am Methodenartikel des jeweiligen Abkommens belegt (Zitatanker in
+# produkt/bindung/bindung_p34c_gesamt.yaml). Adjudikation gehört zu Julius/Instructor —
+# hier stehen nur Einträge, deren Wortlaut eindeutig ist.
+#
+# STAND: nur Polen ausgearbeitet (Muster). Die übrigen zehn Länder laufen weiter über
+# DBA_METHOD_MAP, bis ihr Methodenartikel einzeln adjudiziert ist.
+#
+# Polen — Art. 24 Abs. 1 DBA-PL 2003 (sources/dba/dba_pl_abkommen_2003.txt):
+#   Buchst. a  Freistellung als Grundregel ("werden … ausgenommen"), vorbehaltlich b
+#   Buchst. b  Anrechnung für aa) Dividenden ausserhalb des Schachtelprivilegs und
+#              bb) Einkünfte nach Art. 11 Abs. 2, 12 Abs. 2, 13 Abs. 2, 15 Abs. 3, 16 Abs. 1, 17
+#   Buchst. c  Rückfall auf Anrechnung für Art. 7 und 10 ohne Aktivitätsnachweis (§ 8 AStG)
+#
+# NICHT abgebildet (bewusst, je eigener Sachverhalt statt Einkunftsart):
+#   - Schachtelprivileg Dividenden (a S. 2: ≥10 % Kapital, keine Personengesellschaft) →
+#     hier durchgehend "anrechnung", also die für den Steuerpflichtigen ungünstigere Variante.
+#     Fail-closed statt stiller Besserstellung.
+#   - Aktivitätsvorbehalt Buchst. c → Art. 7/10 stehen auf der Grundregel; der Rückfall
+#     braucht ein eigenes Nachweis-Feld (Stufe 2).
+#   - Teil-Absätze (13 Abs. 2, 15 Abs. 3) → die Einkunftsart trägt die Absatz-Ebene nicht.
+#     Beide stehen auf der jeweiligen Grundregel; die Absatz-Feinheit ist Stufe 2.
+DBA_METHOD_MAP_ART = {
+    ("pl", "unbewegliches_vermoegen"): "freistellung",   # Art. 24 Abs. 1 a
+    ("pl", "unternehmensgewinne"): "freistellung",       # Art. 24 Abs. 1 a (c-Rückfall = Stufe 2)
+    ("pl", "dividenden"): "anrechnung",                  # Art. 24 Abs. 1 b aa
+    ("pl", "zinsen"): "anrechnung",                      # Art. 24 Abs. 1 b bb (Art. 11 Abs. 2)
+    ("pl", "lizenzgebuehren"): "anrechnung",             # Art. 24 Abs. 1 b bb (Art. 12 Abs. 2)
+    ("pl", "veraeusserungsgewinne"): "freistellung",     # Art. 24 Abs. 1 a (nur Abs. 2 → b bb)
+    ("pl", "unselbstaendige_arbeit"): "freistellung",    # Art. 24 Abs. 1 a (nur Abs. 3 → b bb)
+    ("pl", "aufsichtsratsverguetungen"): "anrechnung",   # Art. 24 Abs. 1 b bb (Art. 16 Abs. 1)
+    ("pl", "kuenstler_sportler"): "anrechnung",          # Art. 24 Abs. 1 b bb (Art. 17)
+    ("pl", "ruhegehaelter"): "freistellung",             # Art. 24 Abs. 1 a
+}
+
+
+def dba_staat_iso(staat: str | None) -> str:
+    """Enum-Wert des Feldes dba_staat → ISO-Code der Methoden-Tabellen.
+
+    Nimmt sowohl den deutschen Namen ("Polen") als auch den ISO-Code ("pl") entgegen,
+    damit Aufrufer beides übergeben können. Unbekanntes bleibt unverändert und läuft
+    damit in den Anrechnungs-Default.
+    """
+    if not staat:
+        return ""
+    s = staat.strip().lower()
+    return DBA_STAAT_ISO.get(s, s)
+
+
+def dba_methode_fuer(staat: str | None, einkunftsart: str | None = None) -> str:
+    """Methode zur Vermeidung der Doppelbesteuerung für (Staat, Einkunftsart).
+
+    Reihenfolge: per-Einkunftsart-Eintrag → pauschale Länder-Methode → "anrechnung".
+    Der Default ist Anrechnung, weil sie ohne Abkommensgrundlage der gesetzliche
+    Regelfall ist (§ 34c Abs. 1 EStG) und niemanden stillschweigend besserstellt.
+    """
+    s = dba_staat_iso(staat)
+    if not s:
+        return "anrechnung"
+    if einkunftsart:
+        treffer = DBA_METHOD_MAP_ART.get((s, einkunftsart.strip().lower()))
+        if treffer:
+            return treffer
+    return DBA_METHOD_MAP.get(s) or "anrechnung"
 
 # ========== § 23 Private Veräußerungsgeschäfte ==========
 GESAMT_P23 = ("p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten",
@@ -293,7 +402,8 @@ __all__ = [
     # Freibeträge
     "GESAMT_FREIBETRAEGE",
     # DBA
-    "GESAMT_DBA", "DBA_METHOD_MAP",
+    "GESAMT_DBA", "DBA_METHOD_MAP", "DBA_METHOD_MAP_ART", "DBA_EINKUNFTSARTEN",
+    "DBA_STAAT_ISO", "dba_methode_fuer", "dba_staat_iso",
     # Weitere Abzüge
     "GESAMT_P23", "GESAMT_P33A", "GESAMT_P32B", "GESAMT_P35C", "GESAMT_REALSPLITTING",
     "GESAMT_PV",

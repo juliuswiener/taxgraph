@@ -1299,3 +1299,110 @@ def test_p3_nr72_freiflaeche_keine_befreiung_gesamt(base):
     if catala:
         assert ohne["zahl_cent"] == frei["zahl_cent"], (
             "Freiflächenanlage ist nicht begünstigt — keine Steuerminderung erwartet")
+
+
+# ===== §34c DBA PER-EINKUNFTSART (P7.1) ================================
+
+def test_dba_einkunftsart_freistellung_statt_anrechnung_gesamt(base):
+    """P7.1 — Ring-Beweis: die Einkunftsart entscheidet über die Methode.
+
+    Polen steht pauschal auf Anrechnung. Für Arbeitslohn stellt Art. 24 Abs. 1 a
+    DBA-PL aber frei — derselbe Sachverhalt muss je nach Einkunftsart anders rechnen.
+    Freistellung heisst: keine Anrechnung der ausländischen Steuer, dafür
+    Progressionsvorbehalt.
+    """
+    catala = _catala_da()
+    dba_basis = [("dba_staat", "Polen"),
+                 ("dba_gezahlte_auslaendische_steuer", 300000),     # 3.000 €
+                 ("dba_auslaendische_einkuenfte", 4000000)]         # 40.000 €
+
+    kegel_zinsen = _mit_gewinn(GESAMT_KEGEL_BASIS) + dba_basis + [("dba_einkunftsart", "zinsen")]
+    _ges_anlegen(base, "dbaart_z", kegel_zinsen)
+    st, zinsen = _req(base, "GET", "/fall/dbaart_z/ergebnis")
+    _val("ergebnis", zinsen)
+
+    kegel_lohn = _mit_gewinn(GESAMT_KEGEL_BASIS) + dba_basis + [
+        ("dba_einkunftsart", "unselbstaendige_arbeit")]
+    _ges_anlegen(base, "dbaart_l", kegel_lohn)
+    st, lohn = _req(base, "GET", "/fall/dbaart_l/ergebnis")
+    _val("ergebnis", lohn)
+
+    if catala:
+        assert zinsen["grund"] == "bestaetigt" and lohn["grund"] == "bestaetigt"
+        assert zinsen["zahl_cent"] != lohn["zahl_cent"], (
+            "Zinsen (Anrechnung) und Arbeitslohn (Freistellung) ergeben dieselbe Steuer — "
+            "die Einkunftsart erreicht das Methoden-Routing nicht")
+    else:
+        assert zinsen["zahl_cent"] is None or lohn["zahl_cent"] is None
+
+
+def test_dba_ohne_einkunftsart_bleibt_pauschal_gesamt(base):
+    """Rückwärtskompatibilität: ohne dba_einkunftsart rechnet der Ring wie bisher."""
+    catala = _catala_da()
+    dba_basis = [("dba_staat", "Polen"),
+                 ("dba_gezahlte_auslaendische_steuer", 300000),
+                 ("dba_auslaendische_einkuenfte", 4000000)]
+
+    _ges_anlegen(base, "dbaart_o", _mit_gewinn(GESAMT_KEGEL_BASIS) + dba_basis)
+    st, ohne_art = _req(base, "GET", "/fall/dbaart_o/ergebnis")
+
+    kegel_zinsen = _mit_gewinn(GESAMT_KEGEL_BASIS) + dba_basis + [("dba_einkunftsart", "zinsen")]
+    _ges_anlegen(base, "dbaart_z2", kegel_zinsen)
+    st, zinsen = _req(base, "GET", "/fall/dbaart_z2/ergebnis")
+
+    if catala:
+        assert ohne_art["zahl_cent"] == zinsen["zahl_cent"], (
+            "Polen steht pauschal auf Anrechnung und Zinsen ebenfalls — beide Fälle "
+            "müssen identisch rechnen")
+
+
+def test_dba_nicht_ausgearbeitetes_land_ignoriert_einkunftsart_gesamt(base):
+    """Für die zehn noch nicht adjudizierten Länder darf die Einkunftsart nichts ändern."""
+    catala = _catala_da()
+    dba_basis = [("dba_staat", "Frankreich"),
+                 ("dba_gezahlte_auslaendische_steuer", 300000),
+                 ("dba_auslaendische_einkuenfte", 4000000)]
+
+    _ges_anlegen(base, "dbaart_f0", _mit_gewinn(GESAMT_KEGEL_BASIS) + dba_basis)
+    st, ohne_art = _req(base, "GET", "/fall/dbaart_f0/ergebnis")
+
+    kegel_lohn = _mit_gewinn(GESAMT_KEGEL_BASIS) + dba_basis + [
+        ("dba_einkunftsart", "unselbstaendige_arbeit")]
+    _ges_anlegen(base, "dbaart_f1", kegel_lohn)
+    st, mit_art = _req(base, "GET", "/fall/dbaart_f1/ergebnis")
+
+    if catala:
+        assert ohne_art["zahl_cent"] == mit_art["zahl_cent"], (
+            "Frankreich ist nicht per-Einkunftsart adjudiziert — die Angabe darf die "
+            "Berechnung nicht verändern")
+
+
+def test_dba_oesterreich_freistellung_wirkt_im_ring_gesamt(base):
+    """REGRESSION: Österreich ist ein Freistellungs-DBA — der Ring muss freistellen.
+
+    Vorher traf der Enum-Wert "Oesterreich" die ISO-basierte DBA_METHOD_MAP nicht und
+    fiel auf den Anrechnungs-Default. Freistellung heisst: keine Anrechnung der
+    ausländischen Steuer, dafür Progressionsvorbehalt — also eine ANDERE Steuer als
+    bei einem Anrechnungs-Land mit sonst identischen Werten.
+    """
+    catala = _catala_da()
+    werte = [("dba_gezahlte_auslaendische_steuer", 300000),      # 3.000 €
+             ("dba_auslaendische_einkuenfte", 4000000)]          # 40.000 €
+
+    _ges_anlegen(base, "dba_at", _mit_gewinn(GESAMT_KEGEL_BASIS)
+                 + [("dba_staat", "Oesterreich")] + werte)
+    st, at = _req(base, "GET", "/fall/dba_at/ergebnis")
+    _val("ergebnis", at)
+
+    _ges_anlegen(base, "dba_fr", _mit_gewinn(GESAMT_KEGEL_BASIS)
+                 + [("dba_staat", "Frankreich")] + werte)
+    st, fr = _req(base, "GET", "/fall/dba_fr/ergebnis")
+    _val("ergebnis", fr)
+
+    if catala:
+        assert at["grund"] == "bestaetigt" and fr["grund"] == "bestaetigt"
+        assert at["zahl_cent"] != fr["zahl_cent"], (
+            "Österreich (Freistellung) und Frankreich (Anrechnung) ergeben dieselbe "
+            "Steuer — die Länder-Methode erreicht den Ring nicht")
+    else:
+        assert at["zahl_cent"] is None or fr["zahl_cent"] is None

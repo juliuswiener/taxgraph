@@ -46,6 +46,26 @@ bindungen:
       quelle: "§ 34c Abs. 6 S. 1 EStG"
       zitatanker: "nicht anzuwenden, wenn die Einkünfte aus einem ausländischen Staat stammen, mit dem ein Abkommen zur Vermeidung der Doppelbesteuerung besteht"
       datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+  - feld_id: dba_einkunftsart
+    quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, geltungsbedingung: methode_je_einkunftsart}
+    typ: enum
+    einheit: null
+    enum_werte: ["unbewegliches_vermoegen", "unternehmensgewinne", "dividenden", "zinsen",
+                 "lizenzgebuehren", "veraeusserungsgewinne", "unselbstaendige_arbeit",
+                 "aufsichtsratsverguetungen", "kuenstler_sportler", "ruhegehaelter"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Um welche Art von ausländischen Einkünften handelt es sich?"
+    hilfe_kurz: "Doppelbesteuerungsabkommen behandeln Einkunftsarten unterschiedlich: Arbeitslohn wird oft freigestellt, Zinsen und Lizenzgebühren dagegen angerechnet. Ohne Angabe rechnet TaxGraph mit der pauschalen Methode des Staates."
+    beispielwert: unselbstaendige_arbeit
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Reiner Routing-Parameter für die Methodenwahl; kein Vordruck-Feld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Art. 24 Abs. 1 DBA-Polen 2003"
+      zitatanker: "Einkünfte, die nach Artikel 11 Absatz 2, Artikel 12"
+      datei: "sources/dba/dba_pl_abkommen_2003.txt"
   - feld_id: dba_mehrere_staaten
     quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, geltungsbedingung: per_country_ein_staat}
     typ: bool
@@ -122,6 +142,9 @@ bindungen:
 # ===== Lücken + Geltungsbedingungen (Nicht-Feld-Logik) =====
 luecken:
   # -- p34c_1: Geltungsbedingungen, die keine Felder sind --
+  - regel_id: p34c_1_anrechnung_hoechstbetrag
+    geltungsbedingung: methode_je_einkunftsart
+    grund: "Per-Einkunftsart-Routing (P7.1) in DBA_METHOD_MAP_ART (api_constants.py), belegt am Methodenartikel des jeweiligen Abkommens. STAND: nur Polen (Art. 24 Abs. 1 DBA-PL 2003) ausgearbeitet; die übrigen zehn Länder laufen weiter über die pauschale DBA_METHOD_MAP, bis ihr Methodenartikel adjudiziert ist. Nicht abgebildet: Dividenden-Schachtelprivileg (Art. 24 Abs. 1 a S. 2), Aktivitätsvorbehalt (Buchst. c) und Teil-Absatz-Verweise (13 Abs. 2, 15 Abs. 3) — je Stufe 2."
   - regel_id: p34c_1_anrechnung_hoechstbetrag
     geltungsbedingung: keine_kapitalertraege_p32d
     grund: "§32d-Kapital-ESt-Ausnahme (§34c Abs.1 S.1 Hs.2). MVP: Guard dba_kapital_offen im Ring; echtes Routing = eigene Kz-Runde."
