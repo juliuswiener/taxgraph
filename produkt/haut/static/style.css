@@ -111,6 +111,17 @@ h1,h2,h3{margin:0}
 .rw-end .rw-wert{font-size:16px}
 .rechenweg-hinweis{font-size:14px;color:var(--muted);margin:10px 0 0;line-height:1.5}
 
+/* P5.5 Preflight-Check: Konsistenz-Hinweise unter dem Ergebnis */
+.preflight{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.preflight-titel{font-size:13px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.preflight-liste{list-style:none;margin:0;padding:0}
+.preflight-eintrag{display:flex;gap:8px;align-items:flex-start;padding:8px 4px;border-bottom:1px solid var(--line);font-size:14px;line-height:1.4}
+.preflight-eintrag:last-child{border:0}
+.preflight-badge{flex:0 0 auto;font-size:11px;padding:2px 7px;border-radius:999px;font-weight:600;white-space:nowrap;margin-top:1px}
+.preflight-widerspruch .preflight-badge{background:rgba(255,107,107,.18);color:var(--fehler)}
+.preflight-hinweis .preflight-badge{background:rgba(255,180,84,.18);color:var(--warn)}
+.preflight-text{flex:1;color:var(--ink);font-size:13px}
+
 /* Overlays: Herkunft-Kette + Chat */
 .overlay{position:fixed;inset:0;background:rgba(6,8,18,.72);display:grid;place-items:end center;z-index:10}
 .overlay-card{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);

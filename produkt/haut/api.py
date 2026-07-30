@@ -42,6 +42,7 @@ import vorjahr_writer as VW  # noqa: E402  (Vorjahres-Übernahme, dev-2 Store-Wr
 import elster_xml as EX      # noqa: E402  (P3.2 Deklaration → ELSTER-Submission-XML)
 from api_constants import *  # noqa: E402, F401, F403  (55 Feld-Konstanten + Scheiben)
 import api_llm  # noqa: E402  (LLM-Integration: _llm_vorschlaege, _kontoauszug_llm_klassifikator)
+import preflight as PF  # noqa: E402  (P5.5 Preflight-Check: Konsistenz + vergessene Pauschalen)
 
 
 class ApiError(ValueError):
@@ -1642,8 +1643,18 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
 def fall_loeschen(fall_id: str) -> tuple[int, dict]:
     """DSGVO-Löschung: Fall-Datei entfernen, Audit-Eintrag hinterlassen.
     Kein Soft-Delete (§ 147 AO Abs. 1 zählt Buchführungsunterlagen auf —
-    trifft Arbeitnehmer/Rentner als Zielgruppe nicht). Owner-Check vor
-    Löschung, Audit-Eintrag nach erfolgreichem Löschen.
+    trifft Arbeitnehmer/Rentner als Zielgruppe nicht).
+
+    Reihenfolge Owner-Check → remove → audit ist bewusst:
+    - Scheitert das Löschen (Permission, Datei weg), gibt es keinen Eintrag
+      über einen Vorgang, der nicht stattfand.
+    - Scheitert umgekehrt das Audit nach erfolgreichem Löschen, bleibt eine
+      Protokoll-Lücke — hinnehmbar, weil ein falscher "fall_geloescht"-Eintrag
+      als Nachweis schlechter wäre als gar keiner.
+    - Beide Schreibpfade zeigen ins selbe Verzeichnis (audit.py:AUDIT_DIR =
+      produkt/haut/faelle/), sodass Permission-/Disk-Fehler meist beide treffen.
+      Ein Audit-Write VOR dem Löschen würde bei voller Platte die Löschung
+      selbst verhindern — inakzeptabel für DSGVO.
     """
     pfad = _fall_pfad(fall_id)
     if not os.path.exists(pfad):
@@ -1665,6 +1676,9 @@ def fall_loeschen(fall_id: str) -> tuple[int, dict]:
 
 
 def fall_anlegen(body: dict) -> tuple[int, dict]:
+    """Neuen Fall anlegen. Speichert zuerst, protokolliert danach — Regel
+    im Modul: erst wirken (store/speichern), dann auditieren. Der Audit-
+    Eintrag steht NUR, wenn die Datei auf Platte ist."""
     scheibe = body.get("scheibe", "ep")
     if scheibe not in SCHEIBEN:
         raise ApiError(400, f"unbekannte Scheibe {scheibe!r}")
@@ -1678,8 +1692,9 @@ def fall_anlegen(body: dict) -> tuple[int, dict]:
     store["scheibe"] = scheibe
     if _AUTH_USER is not None:
         store["user_id"] = _AUTH_USER
-        audit.append(_AUTH_USER, "fall_angelegt", fall_id, f"scheibe={scheibe}")
     speichere_fall(fall_id, store)
+    if _AUTH_USER is not None:
+        audit.append(_AUTH_USER, "fall_angelegt", fall_id, f"scheibe={scheibe}")
     return 201, {"fall_id": fall_id, "scheibe": scheibe, "veranlagungszeitraum": vz}
 
 
@@ -1878,6 +1893,25 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
                  "abschlusszahlung_cent": _abschlusszahlung_cent(felder, zahl),
                  "grund": "bestaetigt", "offen": [], "trace": trace,
                  "kette": extras.get("kette")}
+
+
+def preflight_check(fall_id: str) -> tuple[int, dict]:
+    """P5.5 Preflight-Check: Konsistenz-Prüfungen + vergessene Pauschalen. NULL LLM."""
+    _fall_owner_check(fall_id)
+    store = lade_fall(fall_id)
+    felder, _ = ST.materialisiere(store)
+    ergebnis = PF.preflight(felder)
+    # Nur hinweise/items ausliefern, die auch was zu sagen haben
+    items = []
+    for w in ergebnis.get("widersprueche_flag", []):
+        items.append({"typ": "widerspruch", "bereich": "flag", "text": w["grund"]})
+    for w in ergebnis.get("widersprueche_partner", []):
+        items.append({"typ": "widerspruch", "bereich": "partner", "text": w["grund"]})
+    for w in ergebnis.get("widersprueche_alleinerziehend", []):
+        items.append({"typ": "widerspruch", "bereich": "alleinerziehend", "text": w["grund"]})
+    for h in ergebnis.get("hinweise_pauschalen", []):
+        items.append({"typ": "hinweis", "bereich": "pauschale", "text": h["hinweis"]})
+    return 200, {"fall_id": fall_id, "status": ergebnis["status"], "items": items}
 
 
 def deklaration(fall_id: str) -> tuple[int, dict]:

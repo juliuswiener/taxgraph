@@ -491,7 +491,39 @@ async function zeigeErgebnis() {
       hn.hidden = false;
       rw.hidden = false;
     }
+    // P5.5 Preflight-Check: Konsistenz + vergessene Pauschalen
+    zeigePreflight();
   }
+}
+
+async function zeigePreflight() {
+  const pf = $("preflight"), pl = $("preflight-liste");
+  const r = await jget(`/fall/${FALL}/preflight`);
+  if (r.status !== 200 || !r.body || !r.body.items || r.body.items.length === 0) {
+    pf.hidden = true;
+    return;
+  }
+  pl.innerHTML = "";
+  for (const item of r.body.items) {
+    const li = document.createElement("li");
+    li.className = "preflight-eintrag";
+    const badge = document.createElement("span");
+    badge.className = "preflight-badge";
+    if (item.typ === "widerspruch") {
+      badge.textContent = "Widerspruch";
+      li.className += " preflight-widerspruch";
+    } else {
+      badge.textContent = "Hinweis";
+      li.className += " preflight-hinweis";
+    }
+    const txt = document.createElement("span");
+    txt.className = "preflight-text";
+    txt.textContent = item.text;
+    li.appendChild(badge);
+    li.appendChild(txt);
+    pl.appendChild(li);
+  }
+  pf.hidden = false;
 }
 
 // --- Vorjahr-Übernahme: Vorjahres-Fall → vorläufige Vorschläge (herkunft=vorjahr), Nutzer bestätigt ---

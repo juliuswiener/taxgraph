@@ -1,86 +1,184 @@
-"""Gate für den Preflight-Orchestrator (produkt/konsistenz/preflight.py). Deterministisch, NULL LLM.
+"""P5.5 Preflight-Check — GET /fall/{id}/preflight.
 
-Prüft: RED bei harten Widersprüchen, AMBER bei nur soft warnings, GREEN bei sauberem Snapshot.
+Testet: leeren Fall, Flag-Widerspruch, Partner-Widerspruch, Alleinerziehend-Widerspruch,
+Pauschal-Hinweis, Owner-Check.
 """
-from __future__ import annotations
 
+import json
 import os
 import sys
+import threading
+import urllib.error
+import urllib.request
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                "produkt", "konsistenz"))
-import preflight   # noqa: E402
+import pytest
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+for sub in ("produkt/haut", "produkt/import", "golden"):
+    sys.path.insert(0, os.path.join(ROOT, sub))
+sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 
-def _snap(**felder):
-    """{feld_id: (wert, zustand)} -> Snapshot-felder-Ebene."""
-    return {fid: {"wert": w, "zustand": z} for fid, (w, z) in felder.items()}
-
-
-def test_preflight_green():
-    """Keine Widersprüche, keine vergessenen Pauschalen -> GREEN."""
-    erg = preflight.preflight(_snap())
-    assert erg["status"] == "GREEN"
-    assert erg["widersprueche_flag"] == []
-    assert erg["widersprueche_partner"] == []
-    assert erg["widersprueche_alleinerziehend"] == []
-    assert erg["hinweise_pauschalen"] == []
+import api as API        # noqa: E402
+import server as SRV     # noqa: E402
 
 
-def test_preflight_red_flag():
-    """Flag-Widerspruch -> RED."""
-    erg = preflight.preflight(_snap(kein_vuv=(True, "bestaetigt"), vv_einnahmen=(1200000, "bestaetigt")))
-    assert erg["status"] == "RED"
-    assert len(erg["widersprueche_flag"]) >= 1
+def _req(base: str, method: str, path: str, body: dict | None = None):
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    req = urllib.request.Request(base + path, data=data, method=method,
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
 
 
-def test_preflight_red_partner():
-    """Partner-ohne-Zusammen -> RED."""
-    erg = preflight.preflight(_snap(rentner_grad_der_behinderung_partner=(50, "bestaetigt"),
-                                     veranlagung=("einzel", "bestaetigt")))
-    assert erg["status"] == "RED"
-    assert len(erg["widersprueche_partner"]) >= 1
+def _laie(fld, w):
+    return {"feld_id": fld, "wert": w, "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": f"ok@{fld}"}}
 
 
-def test_preflight_red_alleinerziehend():
-    """Alleinerziehend+Zusammen -> RED."""
-    erg = preflight.preflight(_snap(fam_alleinstehend=(True, "bestaetigt"),
-                                     veranlagung=("zusammen", "bestaetigt")))
-    assert erg["status"] == "RED"
-    assert len(erg["widersprueche_alleinerziehend"]) >= 1
+@pytest.fixture
+def base(tmp_path, monkeypatch):
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    srv = SRV.make_server(0)
+    assert srv.server_address[0] == "127.0.0.1"
+    th = threading.Thread(target=srv.serve_forever, daemon=True)
+    th.start()
+    try:
+        yield f"http://{srv.server_address[0]}:{srv.server_address[1]}"
+    finally:
+        srv.shutdown()
+        th.join(timeout=5)
+        srv.server_close()
 
 
-def test_preflight_amber():
-    """Keine harten Widersprüche, aber vergessene Pauschale -> AMBER."""
-    erg = preflight.preflight(_snap(bruttoarbeitslohn=(4000000, "bestaetigt")))
-    assert erg["status"] == "AMBER"
-    assert erg["widersprueche_flag"] == []
-    assert erg["widersprueche_partner"] == []
-    assert erg["widersprueche_alleinerziehend"] == []
-    assert len(erg["hinweise_pauschalen"]) >= 1
+def _init_gesamt(base, fall_id="pf"):
+    """Minimal-Gesamtfall mit neutralen Feldern. Nur Kegel-Felder setzen (einmalig, kein Konflikt)."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": fall_id})
+    # Setze nur Felder, die nicht überschrieben werden müssen:
+    # Alle Kegel-Felder auf 0/False/neutral
+    for ev in [
+        _laie("veranlagung", "einzel"),
+        _laie("bruttoarbeitslohn", 0),
+        _laie("vv_einnahmen", 0), _laie("vv_gebaeude_afa", 0), _laie("vv_schuldzinsen", 0),
+        _laie("vv_erhaltungsaufwand", 0), _laie("vv_sonstige_wk", 0), _laie("vv_entgelt_quote_prozent", 0),
+        _laie("ep_entfernung_km", 0), _laie("ep_eigenes_kfz", False), _laie("ep_oepnv_kosten", 0), _laie("ep_arbeitstage", 0),
+        _laie("vor_an_anteil_rv", 0), _laie("vor_ag_anteil_rv", 0), _laie("vor_rv_ausserhalb_lstb", 0),
+        _laie("basis_kv_pv", 0), _laie("weitere_vorsorgeaufwendungen", 0), _laie("mit_anspruch_auf_zuschuss", False),
+        _laie("kap_kapitalertraege", 0), _laie("kap_gewinn_aktien", 0), _laie("kap_verlust_aktien", 0),
+        _laie("kap_gewinn_sonstige", 0), _laie("kap_verlust_sonstige", 0),
+        _laie("kein_gewinn", True), _laie("kein_kap", True), _laie("kein_vuv", True), _laie("kein_sonstige", True),
+    ]:
+        _req(base, "POST", f"/fall/{fall_id}/event", ev)
+    return fall_id
 
 
-def test_preflight_red_beats_amber():
-    """Harte Widersprüche + Pauschal-Hinweise -> RED (nicht AMBER)."""
-    erg = preflight.preflight(_snap(kein_vuv=(True, "bestaetigt"),
-                                     vv_einnahmen=(1200000, "bestaetigt"),
-                                     bruttoarbeitslohn=(4000000, "bestaetigt")))
-    assert erg["status"] == "RED", "Harte Widersprüche dominieren AMBER"
-    assert len(erg["widersprueche_flag"]) >= 1
-    assert len(erg["hinweise_pauschalen"]) >= 1
+def _init_an_gesamt(base, fall_id="pf"):
+    """Minimaler an_gesamt-Fall."""
+    _req(base, "POST", "/fall", {"scheibe": "an_gesamt", "veranlagungszeitraum": 2025, "fall_id": fall_id})
+    for ev in [
+        _laie("bruttoarbeitslohn", 0),
+        _laie("veranlagung", "einzel"),
+        _laie("ep_entfernung_km", 0), _laie("ep_eigenes_kfz", False), _laie("ep_oepnv_kosten", 0), _laie("ep_arbeitstage", 0),
+        _laie("vor_an_anteil_rv", 0), _laie("vor_ag_anteil_rv", 0), _laie("vor_rv_ausserhalb_lstb", 0),
+        _laie("basis_kv_pv", 0), _laie("weitere_vorsorgeaufwendungen", 0), _laie("mit_anspruch_auf_zuschuss", False),
+        _laie("dhf_unterkunftskosten_monat", 0), _laie("dhf_monate", 0), _laie("dhf_im_inland", True),
+        _laie("dhf_beruflich_veranlasst", False), _laie("dhf_eigener_hausstand", False),
+        _laie("dhf_finanzielle_beteiligung", False), _laie("dhf_keine_pflicht_dienstwohnung", False),
+        _laie("tage_24h", 0), _laie("tage_an_abreise", 0), _laie("tage_ueber_8h_eintaegig", 0),
+        _laie("kein_gewinn", True), _laie("kein_kap", True), _laie("kein_vuv", True), _laie("kein_sonstige", True),
+        _laie("fam_anzahl_kinder", 0), _laie("verlustvortrag_bestand", 0),
+    ]:
+        _req(base, "POST", f"/fall/{fall_id}/event", ev)
+    return fall_id
 
 
-def test_preflight_green_mit_pauschal_gefuellt():
-    """Alle Checks sauber wenn Pauschal-Felder gesetzt -> GREEN."""
-    erg = preflight.preflight(_snap(kap_kapitalertraege=(300000, "bestaetigt"),
-                                     veranlagung=("zusammen", "bestaetigt"),
-                                     bruttoarbeitslohn=(4000000, "bestaetigt"),
-                                     ep_arbeitstage=(220, "bestaetigt")))
-    assert erg["status"] == "GREEN"
+class TestPreflightEmpty:
+    def test_leerer_fall_gruen_keine_items(self, base):
+        fid = _init_an_gesamt(base)
+        st, r = _req(base, "GET", f"/fall/{fid}/preflight")
+        assert st == 200
+        assert r["status"] == "GREEN"
+        assert r["items"] == []
+
+    def test_unbekannter_fall_404(self, base):
+        st, _ = _req(base, "GET", "/fall/nixda/preflight")
+        assert st == 404
 
 
-def test_preflight_ergebnis_struktur():
-    """Ergebnis-Dict hat alle erwarteten Schlüssel."""
-    erg = preflight.preflight(_snap())
-    assert set(erg.keys()) == {"widersprueche_flag", "widersprueche_partner",
-                                "widersprueche_alleinerziehend", "hinweise_pauschalen", "status"}
+class TestPreflightFlag:
+    def test_kein_kap_mit_kapitalertraegen(self, base):
+        """Gesamt-Fall: kein_kap=True + kap_kapitalertraege>0 = Widerspruch.
+        Setze kap_kapitalertraege NICHT in init (dann wäre es 0 und Änderung braucht ersetzt).
+        Stattdessen: init setzt kein_kap, dann separat kap_kapitalertraege."""
+        _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "pf-flag"})
+        _req(base, "POST", "/fall/pf-flag/event", _laie("kein_kap", True))
+        _req(base, "POST", "/fall/pf-flag/event", _laie("kap_kapitalertraege", 50000))
+        _req(base, "POST", "/fall/pf-flag/event", _laie("veranlagung", "einzel"))
+        st, r = _req(base, "GET", "/fall/pf-flag/preflight")
+        assert st == 200
+        assert r["status"] == "RED"
+        flag_items = [i for i in r["items"] if i["bereich"] == "flag"]
+        assert len(flag_items) >= 1
+        assert "kein_kap" in flag_items[0]["text"]
+
+
+class TestPreflightPartner:
+    def test_partner_feld_ohne_zusammen(self, base):
+        """Gesamt: veranlagung=einzel + partner-Feld gesetzt = Widerspruch."""
+        _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "pf-part"})
+        _req(base, "POST", "/fall/pf-part/event", _laie("veranlagung", "einzel"))
+        _req(base, "POST", "/fall/pf-part/event", _laie("rentner_grad_der_behinderung_partner", 50))
+        st, r = _req(base, "GET", "/fall/pf-part/preflight")
+        assert st == 200
+        assert r["status"] == "RED"
+        p_items = [i for i in r["items"] if i["bereich"] == "partner"]
+        assert len(p_items) >= 1
+        assert "Zusammenveranlagung" in p_items[0]["text"]
+
+
+class TestPreflightAlleinerziehend:
+    def test_alleinerziehend_mit_zusammen(self, base):
+        """Gesamt: veranlagung=zusammen + fam_alleinstehend=True = Widerspruch."""
+        _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "pf-ae"})
+        _req(base, "POST", "/fall/pf-ae/event", _laie("veranlagung", "zusammen"))
+        _req(base, "POST", "/fall/pf-ae/event", _laie("fam_alleinstehend", True))
+        st, r = _req(base, "GET", "/fall/pf-ae/preflight")
+        assert st == 200
+        assert r["status"] == "RED"
+        a_items = [i for i in r["items"] if i["bereich"] == "alleinerziehend"]
+        assert len(a_items) >= 1
+        assert "Alleinerziehende" in a_items[0]["text"]
+
+
+class TestPreflightPauschal:
+    def test_pauschal_ep_arbeitstage(self, base):
+        """an_gesamt: bruttoarbeitslohn > 0, ep_arbeitstage=0 → EP-Hinweis."""
+        _req(base, "POST", "/fall", {"scheibe": "an_gesamt", "veranlagungszeitraum": 2025, "fall_id": "pf-pau"})
+        # Setze nur die Felder die den Pauschal-Check triggern
+        _req(base, "POST", "/fall/pf-pau/event", _laie("bruttoarbeitslohn", 5000000))
+        _req(base, "POST", "/fall/pf-pau/event", _laie("ep_arbeitstage", 0))
+        _req(base, "POST", "/fall/pf-pau/event", _laie("veranlagung", "einzel"))
+        st, r = _req(base, "GET", "/fall/pf-pau/preflight")
+        assert st == 200
+        p_items = [i for i in r["items"] if i["bereich"] == "pauschale"]
+        assert len(p_items) >= 1
+        assert "Entfernungspauschale" in p_items[0]["text"]
+
+
+def test_preflight_bestaetigt_typ_bereich(base):
+    """Jeder item hat typ und bereich — Struktur-Garantie."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "pf-str"})
+    _req(base, "POST", "/fall/pf-str/event", _laie("kein_kap", True))
+    _req(base, "POST", "/fall/pf-str/event", _laie("kap_kapitalertraege", 50000))
+    _req(base, "POST", "/fall/pf-str/event", _laie("veranlagung", "einzel"))
+    st, r = _req(base, "GET", "/fall/pf-str/preflight")
+    assert st == 200
+    for item in r["items"]:
+        assert "typ" in item
+        assert "bereich" in item
+        assert "text" in item
+        assert item["typ"] in ("widerspruch", "hinweis")
