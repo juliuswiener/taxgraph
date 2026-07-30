@@ -3095,3 +3095,63 @@ def test_gesamt_versorgungsfreibetrag_offen(base):
     assert erg["grund"] == "versorgungsfreibetrag_offen", (
         f"Sperrgrund sollte 'versorgungsfreibetrag_offen' sein, bekam '{erg.get('grund')}'"
     )
+
+
+def test_gesamt_arbeitsmittel_afa_1200_3jahre(base):
+    """§ 7 Abs. 1 S. 1/2/4 EStG — lineare AfA: 1.200 EUR / 3 Jahre = 400 EUR pro Jahr.
+    Anschaffungsjahr (Oktober): 400 × 3/12 = 100 EUR.
+    Vergleich: Anschaffungsjahr (100) vs Folgejahr (400) → Steuern(AJ) > Steuern(FJ)
+    """
+    catala = _catala_da()
+
+    # Fall 1: Anschaffungsjahr Oktober
+    st, _ = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "am-1200-3j-okt"})
+    assert st == 201
+    _req(base, "POST", "/fall/am-1200-3j-okt/event", _laie("bruttolohn", 5000000))
+    _req(base, "POST", "/fall/am-1200-3j-okt/event", _laie("am_anschaffungskosten", 120000))
+    _req(base, "POST", "/fall/am-1200-3j-okt/event", _laie("arbeitsmittel_nutzungsdauer", 3))
+    _req(base, "POST", "/fall/am-1200-3j-okt/event", _laie("am_anschaffung_monat", 10))
+    _req(base, "POST", "/fall/am-1200-3j-okt/event", _laie("am_afa_ist_anschaffungsjahr", True))
+    st_aj, erg_aj = _req(base, "GET", "/fall/am-1200-3j-okt/ergebnis")
+    _val("ergebnis", erg_aj)
+    steuern_aj = erg_aj["zahl_cent"]
+
+    # Fall 2: Folgejahr (same Betrag, aber kein Anschaffungsjahr)
+    st, _ = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "am-1200-3j-fj"})
+    assert st == 201
+    _req(base, "POST", "/fall/am-1200-3j-fj/event", _laie("bruttolohn", 5000000))
+    _req(base, "POST", "/fall/am-1200-3j-fj/event", _laie("am_anschaffungskosten", 120000))
+    _req(base, "POST", "/fall/am-1200-3j-fj/event", _laie("arbeitsmittel_nutzungsdauer", 3))
+    _req(base, "POST", "/fall/am-1200-3j-fj/event", _laie("am_anschaffung_monat", 10))
+    _req(base, "POST", "/fall/am-1200-3j-fj/event", _laie("am_afa_ist_anschaffungsjahr", False))
+    st_fj, erg_fj = _req(base, "GET", "/fall/am-1200-3j-fj/ergebnis")
+    _val("ergebnis", erg_fj)
+    steuern_fj = erg_fj["zahl_cent"]
+
+    if catala and steuern_aj is not None and steuern_fj is not None:
+        # Anschaffungsjahr (100 EUR AfA) → höhere Steuern als Folgejahr (400 EUR AfA)
+        assert steuern_aj > steuern_fj, (
+            f"Anschaffungsjahr sollte weniger Abzug (100€) haben → höhere Steuern: "
+            f"AJ {steuern_aj}, FJ {steuern_fj}"
+        )
+
+
+def test_gesamt_arbeitsmittel_afa_offen_monat_fehlt(base):
+    """K2-Gate: Arbeitsmittel > 800 EUR, Nutzungsdauer vorhanden, aber Anschaffungsmonat fehlt
+    → Sperrgrund arbeitsmittel_afa_ueber_gwg_offen.
+    """
+    st, _ = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "am-offen-monat"})
+    assert st == 201
+    _req(base, "POST", "/fall/am-offen-monat/event", _laie("bruttolohn", 5000000))
+    _req(base, "POST", "/fall/am-offen-monat/event", _laie("am_anschaffungskosten", 120000))
+    _req(base, "POST", "/fall/am-offen-monat/event", _laie("arbeitsmittel_nutzungsdauer", 3))
+    _req(base, "POST", "/fall/am-offen-monat/event", _laie("am_afa_ist_anschaffungsjahr", True))
+    # am_anschaffung_monat = NICHT gesetzt
+
+    st, erg = _req(base, "GET", "/fall/am-offen-monat/ergebnis")
+    _val("ergebnis", erg)
+
+    assert erg["zahl_cent"] is None
+    assert erg["grund"] == "arbeitsmittel_afa_ueber_gwg_offen", (
+        f"Sperrgrund sollte 'arbeitsmittel_afa_ueber_gwg_offen' sein, bekam '{erg.get('grund')}'"
+    )
