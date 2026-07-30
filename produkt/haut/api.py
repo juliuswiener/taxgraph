@@ -583,19 +583,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                         "anschaffungskosten_cent": _c(ARBEITSMITTEL_KOSTEN),
                         "nutzungsdauer": nd})
             ns_wk = runner.catala_werbungskosten_n(gesamt_wk_input)
-            ns = runner.catala_einkuenfte_nichtselbststaendig({
-                "veranlagungszeitraum": vz,
-                "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,   # Naht-CENT -> EURO
-                "werbungskosten": ns_wk})
-            # Person B (§ 26b Zusammenveranlagung, #4): die § 19-Einkünfte des Ehegatten (§9a-bereinigt JE
-            # PERSON) in DIESELBE einkuenfte_nichtselbststaendig-Summe — kein _a/_b-Split, der Gesamt-Scope
-            # rechnet Splitting + doppelten § 10c aus veranlagung=zusammen (handverifiziert: gesamt(zusammen,
-            # ns_A+ns_B) == catala_est_zusammen(brutto_A, brutto_B)). Person-B-WK MVP 0 (Folge-Nachtrag).
-            if g["veranlagung"] == "zusammen":
-                ns += runner.catala_einkuenfte_nichtselbststaendig({
-                    "veranlagungszeitraum": vz,
-                    "bruttoarbeitslohn": _c("bruttoarbeitslohn_partner") // 100, "werbungskosten": 0})
-            # § 19 Abs. 2 Versorgungsfreibetrag (K2): Einkünfte nach VFB + Zuschlag + 102€-Pauschbetrag.
+            # § 19 Abs. 2 Versorgungsfreibetrag (K2): Gate entscheidet über Behandlung.
             # cent-Felder (jahresrente, bemessungsgrundlage) sind CENT, Accessor rechnet EURO.
             versorgung_jahresrente_cent = _c("versorgung_jahresrente")
             versorgung_bemessungsgrundlage_cent = _c("versorgung_bemessungsgrundlage")
@@ -610,15 +598,35 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 alters_grenze = 60 if gdb >= 50 else 63
                 if versorgung_alter < alters_grenze:
                     alters_gate_erfuellt = False
-            # Falls Alters-Gate nicht erfüllt → Jahresrente nullen (kein Freibetrag, kein Einkünfte aus § 19 Abs. 2).
-            if not alters_gate_erfuellt:
-                versorgung_jahresrente_cent = 0
+            # Gate entscheidet über Behandlung: erfüllt → VFB-Weg (102€ Pauschbetrag Nr. 1b),
+            # nicht erfüllt → Arbeitslohn-Weg (1.230€ Pauschbetrag Nr. 1a).
+            bruttoarbeitslohn_basis = int(slots.get("bruttoarbeitslohn", 0)) // 100   # Naht-CENT -> EURO
             if versorgung_jahresrente_cent > 0 and versorgung_bemessungsgrundlage_cent > 0 and versorgung_beginn_jahr > 0:
-                vers_einkuenfte = runner.catala_einkuenfte_versorgung({
-                    "versorgung_jahresrente": versorgung_jahresrente_cent // 100,       # CENT → EURO
-                    "versorgung_bemessungsgrundlage": versorgung_bemessungsgrundlage_cent // 100,  # CENT → EURO
-                    "versorgung_beginn_jahr": versorgung_beginn_jahr})
-                ns += vers_einkuenfte
+                if not alters_gate_erfuellt:
+                    # Gate nicht erfüllt: Bezüge als normale Arbeitseinkünfte (§ 19 Abs. 1) addieren.
+                    # Der Pauschbetrag (Nr. 1a, 1.230€ insgesamt) wirkt über catala_einkuenfte_nichtselbststaendig
+                    # auf die SUMME bruttolohn + versorgungsbezüge.
+                    bruttoarbeitslohn_basis += versorgung_jahresrente_cent // 100  # CENT → EURO
+            ns = runner.catala_einkuenfte_nichtselbststaendig({
+                "veranlagungszeitraum": vz,
+                "bruttoarbeitslohn": bruttoarbeitslohn_basis,
+                "werbungskosten": ns_wk})
+            # Person B (§ 26b Zusammenveranlagung, #4): die § 19-Einkünfte des Ehegatten (§9a-bereinigt JE
+            # PERSON) in DIESELBE einkuenfte_nichtselbststaendig-Summe — kein _a/_b-Split, der Gesamt-Scope
+            # rechnet Splitting + doppelten § 10c aus veranlagung=zusammen (handverifiziert: gesamt(zusammen,
+            # ns_A+ns_B) == catala_est_zusammen(brutto_A, brutto_B)). Person-B-WK MVP 0 (Folge-Nachtrag).
+            if g["veranlagung"] == "zusammen":
+                ns += runner.catala_einkuenfte_nichtselbststaendig({
+                    "veranlagungszeitraum": vz,
+                    "bruttoarbeitslohn": _c("bruttoarbeitslohn_partner") // 100, "werbungskosten": 0})
+            # § 19 Abs. 2 Gate erfüllt: VFB + Zuschlag + 102€ Pauschbetrag (Nr. 1b)
+            if versorgung_jahresrente_cent > 0 and versorgung_bemessungsgrundlage_cent > 0 and versorgung_beginn_jahr > 0:
+                if alters_gate_erfuellt:
+                    vers_einkuenfte = runner.catala_einkuenfte_versorgung({
+                        "versorgung_jahresrente": versorgung_jahresrente_cent // 100,       # CENT → EURO
+                        "versorgung_bemessungsgrundlage": versorgung_bemessungsgrundlage_cent // 100,  # CENT → EURO
+                        "versorgung_beginn_jahr": versorgung_beginn_jahr})
+                    ns += vers_einkuenfte
             g["einkuenfte_nichtselbststaendig"] = ns
             # §§ 13-18 Gewinneinkünfte (Stufe 1 + 2a): der laufende Gewinn als einkuenfte_gewinn-Summand in die
             # § 2-Summe (Engine-Slot einkuenfte_gewinn_in LIVE, runner.py _gesamt_out). _laufender_gewinn wählt
@@ -1489,9 +1497,6 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             # S. 8-10 (Mahlzeitenkürzung): nun RECHENBAR, wenn Mahlzeitenfelder (Anzahl, Entgelt) bestätigt.
             # S. 11 (steuerfreie Erstattung): nun RECHENBAR, wenn Feld bestätigt.
             # OFFEN bleibt NUR: 3-Monats-Frist (S. 6) — ohne sie würde bei längeren Einsätzen zu viel abgezogen.
-            mon = felder.get("vpf_monate_am_ort", {}).get("wert")
-            if isinstance(mon, int) and not isinstance(mon, bool) and mon > 3:
-                return "verpflegung_drei_monats_frist_offen"
             # Mahlzeitenkürzung (S. 8-11): fail-closed auf Eingabe. Die Frage muss beantwortet sein:
             # "Wurden dir Mahlzeiten gestellt?" — wenn JA, dann Anzahlen + Entgelt; wenn NEIN, dann 0 bestätigt.
             # Mahlzeitenzahlen-Felder (fruehstuecke/mittag/abendessen_gestellt_anzahl) sind die Antwort:

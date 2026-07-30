@@ -406,6 +406,66 @@ bindungen:
       zitatanker: "Erhält der Arbeitnehmer steuerfreie Erstattungen für Verpflegung, ist ein Werbungskostenabzug insoweit ausgeschlossen"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
 
+  # ===== Dreimonatsfrist (§ 9 Abs. 4a S. 6/7) — pro Tages-Kategorie =====
+  # S. 6: Pauschale beschränkt auf erste 3 Monate am selben Ort.
+  # S. 7: Unterbrechung ≥4 Wochen setzt Frist zurück.
+  # Nutzer gibt für jede Tages-Kategorie an, wie viele NACH Ablauf der 3 Monate fielen.
+  # Diese Tage fallen aus dem Abzug heraus.
+  - feld_id: vpf_tage_24h_nach_drei_monaten
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: tage_24h_nach_frist}
+    typ: int
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele volle Reisetage (24h) lagen nach Ablauf der ersten drei Monate am selben Ort?"
+    hilfe_kurz: "Nach drei Monaten am selben Ort entfällt die Pauschale. Zählen Sie nur die Tage nach der Frist. Wenn Sie eine Unterbrechung von mindestens vier Wochen hatten, beginnt die Frist danach neu."
+    beispielwert: 0
+    bereich: {min: 0, max: 366, grund: "Tage nach Ablauf der Dreimonats-Frist (nicht negativ)"}
+    herkunft_slots: ["Interview: Dreimonatsfrist"]
+    elster_kz: null
+    elster_kz_grund: "Fristen-Reduktion (Satz 6/7); Vordruck-Mapping open."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 6 EStG"
+      zitatanker: "auf die ersten drei Monate einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte beschränkt"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_tage_an_abreise_nach_drei_monaten
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: tage_an_abreise_nach_frist}
+    typ: int
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele An-/Abreisetage lagen nach Ablauf der ersten drei Monate am selben Ort?"
+    hilfe_kurz: "An- und Abreisetage mit Übernachtung zählen nach den gleichen Regeln wie volle Reisetage."
+    beispielwert: 0
+    bereich: {min: 0, max: 366, grund: "An-/Abreisetage nach Dreimonats-Frist"}
+    herkunft_slots: ["Interview: Dreimonatsfrist"]
+    elster_kz: null
+    elster_kz_grund: "Fristen-Reduktion (Satz 6/7); Vordruck-Mapping open."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 6 EStG"
+      zitatanker: "auf die ersten drei Monate einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte beschränkt"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: vpf_tage_ueber_8h_nach_drei_monaten
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: tage_ueber_8h_nach_frist}
+    typ: int
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele eintägige Reisetage (>8h ohne Übernachtung) lagen nach Ablauf der ersten drei Monate am selben Ort?"
+    hilfe_kurz: "Eintägige Reisetage zählen nach den gleichen Regeln wie volle Reisetage und An-/Abreisetage."
+    beispielwert: 0
+    bereich: {min: 0, max: 366, grund: "Eintägige Reisetage nach Dreimonats-Frist"}
+    herkunft_slots: ["Interview: Dreimonatsfrist"]
+    elster_kz: null
+    elster_kz_grund: "Fristen-Reduktion (Satz 6/7); Vordruck-Mapping open."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 6 EStG"
+      zitatanker: "auf die ersten drei Monate einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte beschränkt"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+
   # ===== Verpflegungs-JAHRES-Tage je Kategorie (§ 9 Abs. 4a S. 3) — WK-Ring-Input =====
   # p9_4a_verpflegungsmehraufwand rechnet EINE Reise; die Jahres-Tage-Zähler (dev-1 runner._verpflegung_
   # abzug summiert Pauschale × Tage je Kategorie) hängen an DERSELBEN §-9-Abs-4a-Regel (EIN Verpflegungs-

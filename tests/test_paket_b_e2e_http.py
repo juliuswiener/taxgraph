@@ -2959,67 +2959,119 @@ def test_gesamt_versorgungsfreibetrag_kohortenvergleich_2005_vs_2040(base):
 
 def test_gesamt_versorgungsfreibetrag_altersgate_60_ohne_gdb(base):
     """§ 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: altersgrenze_sonstige, Alter 60, OHNE Schwerbehinderung
-    → kein Freibetrag (gate nicht erfüllt), Bezüge laufen als normaler Arbeitslohn.
+    → Gate NICHT erfüllt, Bezüge als normaler Arbeitslohn (30k EUR).
+    Messung: Steuern (60-ohne-GdB) sollten nahe bei Baseline (30k als Arbeitslohn) liegen.
     """
     catala = _catala_da()
 
-    # Versorgung mit Alter 60 ohne GdB (Gate nicht erfüllt)
-    kegel = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True)
+    # Baseline: 30k Arbeitslohn, keine Versorgung
+    kegel_base = _gesamt_kegel(0, bruttolohn=3000000, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-baseline-30k", kegel_base)
+    st_base, erg_base = _req(base, "GET", "/fall/vf-baseline-30k/ergebnis")
+    _val("ergebnis", erg_base)
+    steuern_baseline = erg_base["zahl_cent"]
+
+    # Versorgung (30k) mit Alter 60 ohne GdB (Gate nicht erfüllt)
+    # → sollte als normaler Arbeitslohn laufen, Steuern ≈ Baseline
+    kegel = _gesamt_kegel(0, bruttolohn=0, kein_vuv=True)
     _gesamt_anlegen(base, "vf-60-nogdb", kegel)
-    _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_jahresrente", 3000000))
+    _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_jahresrente", 3000000))    # 30k EUR
     _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_bemessungsgrundlage", 3000000))
     _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_beginn_jahr", 2024))
     _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_art", "altersgrenze_sonstige"))
     _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_alter_bei_beginn", 60))
-    # GdB NICHT gesetzt (default 0) → Gate nicht erfüllt (< 63 UND < 60 bei GdB≥50)
+    # GdB NICHT gesetzt (default 0) → Gate nicht erfüllt
     st, erg = _req(base, "GET", "/fall/vf-60-nogdb/ergebnis")
     _val("ergebnis", erg)
+    steuern_60_ohne_gdb = erg["zahl_cent"]
 
-    if catala:
-        # Versorgung sollte NULL gezählt werden (kein Freibetrag)
-        # Bruttolohn 50k → Einkünfte ~47.7k, ohne Versorgung gleich
-        assert erg["zahl_cent"] is not None
+    if catala and steuern_baseline is not None and steuern_60_ohne_gdb is not None:
+        # Gate nicht erfüllt → Versorgung als Arbeitslohn (§ 19 Abs. 1) → EXAKT dasselbe wie Baseline
+        # Derselbe Sachverhalt: 30k Einkünfte, § 9a Pauschbetrag einmal über Summe
+        assert steuern_60_ohne_gdb == steuern_baseline, (
+            f"Gate-nicht-erfüllt MUSS exakt Baseline sein: "
+            f"Baseline {steuern_baseline}, 60-ohne-GdB {steuern_60_ohne_gdb}"
+        )
 
 
 def test_gesamt_versorgungsfreibetrag_altersgate_63(base):
-    """§ 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: altersgrenze_sonstige, Alter 63
-    → Gate erfüllt, Freibetrag + Zuschlag wirken.
+    """§ 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: altersgrenze_sonstige, Alter 63 → Gate ERFÜLLT
+    Vergleich: 60-ohne-GdB (Gate nicht erfüllt) vs 63 (Gate erfüllt).
+    Steuern(60-ohne-GdB) > Steuern(63) wegen Freibetrag + Zuschlag.
     """
     catala = _catala_da()
 
-    kegel = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True)
-    _gesamt_anlegen(base, "vf-63", kegel)
+    # Fall 1: Alter 60 ohne GdB (Gate nicht erfüllt, als Arbeitslohn)
+    kegel_60 = _gesamt_kegel(0, bruttolohn=0, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-60-nogdb-vs63", kegel_60)
+    _req(base, "POST", "/fall/vf-60-nogdb-vs63/event", _laie("versorgung_jahresrente", 3000000))
+    _req(base, "POST", "/fall/vf-60-nogdb-vs63/event", _laie("versorgung_bemessungsgrundlage", 3000000))
+    _req(base, "POST", "/fall/vf-60-nogdb-vs63/event", _laie("versorgung_beginn_jahr", 2024))
+    _req(base, "POST", "/fall/vf-60-nogdb-vs63/event", _laie("versorgung_art", "altersgrenze_sonstige"))
+    _req(base, "POST", "/fall/vf-60-nogdb-vs63/event", _laie("versorgung_alter_bei_beginn", 60))
+    st_60, erg_60 = _req(base, "GET", "/fall/vf-60-nogdb-vs63/ergebnis")
+    _val("ergebnis", erg_60)
+    steuern_60 = erg_60["zahl_cent"]
+
+    # Fall 2: Alter 63 (Gate erfüllt, Freibetrag + Zuschlag wirken)
+    kegel_63 = _gesamt_kegel(0, bruttolohn=0, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-63", kegel_63)
     _req(base, "POST", "/fall/vf-63/event", _laie("versorgung_jahresrente", 3000000))
     _req(base, "POST", "/fall/vf-63/event", _laie("versorgung_bemessungsgrundlage", 3000000))
     _req(base, "POST", "/fall/vf-63/event", _laie("versorgung_beginn_jahr", 2024))
     _req(base, "POST", "/fall/vf-63/event", _laie("versorgung_art", "altersgrenze_sonstige"))
     _req(base, "POST", "/fall/vf-63/event", _laie("versorgung_alter_bei_beginn", 63))
-    st, erg = _req(base, "GET", "/fall/vf-63/ergebnis")
-    _val("ergebnis", erg)
+    st_63, erg_63 = _req(base, "GET", "/fall/vf-63/ergebnis")
+    _val("ergebnis", erg_63)
+    steuern_63 = erg_63["zahl_cent"]
 
-    if catala:
-        assert erg["zahl_cent"] is not None
+    if catala and steuern_60 is not None and steuern_63 is not None:
+        # Gate erfüllt (63) → Freibetrag + Zuschlag wirken → Steuern < 60-ohne-GdB
+        assert steuern_60 > steuern_63, (
+            f"Alter 63 (Gate erfüllt) sollte weniger Steuern haben als 60-ohne-GdB: "
+            f"60-ohne {steuern_60}, 63 {steuern_63}"
+        )
 
 
 def test_gesamt_versorgungsfreibetrag_altersgate_60_mit_gdb50(base):
     """§ 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: altersgrenze_sonstige, Alter 60, GdB 50
-    → Gate erfüllt (60 bei GdB≥50), Freibetrag + Zuschlag wirken.
+    → Gate ERFÜLLT (60 bei GdB≥50), Freibetrag + Zuschlag wirken.
+    Vergleich: 60-ohne-GdB (Gate nicht erfüllt) vs 60-mit-GdB50 (Gate erfüllt).
+    Steuern(60-ohne-GdB) > Steuern(60-mit-GdB50) wegen Freibetrag + Zuschlag.
     """
     catala = _catala_da()
 
-    kegel = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True)
-    _gesamt_anlegen(base, "vf-60-gdb50", kegel)
+    # Fall 1: Alter 60 ohne GdB (Gate nicht erfüllt)
+    kegel_ohne = _gesamt_kegel(0, bruttolohn=0, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-60-nogdb-vsgdb50", kegel_ohne)
+    _req(base, "POST", "/fall/vf-60-nogdb-vsgdb50/event", _laie("versorgung_jahresrente", 3000000))
+    _req(base, "POST", "/fall/vf-60-nogdb-vsgdb50/event", _laie("versorgung_bemessungsgrundlage", 3000000))
+    _req(base, "POST", "/fall/vf-60-nogdb-vsgdb50/event", _laie("versorgung_beginn_jahr", 2024))
+    _req(base, "POST", "/fall/vf-60-nogdb-vsgdb50/event", _laie("versorgung_art", "altersgrenze_sonstige"))
+    _req(base, "POST", "/fall/vf-60-nogdb-vsgdb50/event", _laie("versorgung_alter_bei_beginn", 60))
+    st_ohne, erg_ohne = _req(base, "GET", "/fall/vf-60-nogdb-vsgdb50/ergebnis")
+    _val("ergebnis", erg_ohne)
+    steuern_ohne = erg_ohne["zahl_cent"]
+
+    # Fall 2: Alter 60 mit GdB 50 (Gate erfüllt)
+    kegel_mit = _gesamt_kegel(0, bruttolohn=0, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-60-gdb50", kegel_mit)
     _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("versorgung_jahresrente", 3000000))
     _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("versorgung_bemessungsgrundlage", 3000000))
     _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("versorgung_beginn_jahr", 2024))
     _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("versorgung_art", "altersgrenze_sonstige"))
     _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("versorgung_alter_bei_beginn", 60))
     _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("rentner_grad_der_behinderung", 50))
-    st, erg = _req(base, "GET", "/fall/vf-60-gdb50/ergebnis")
-    _val("ergebnis", erg)
+    st_mit, erg_mit = _req(base, "GET", "/fall/vf-60-gdb50/ergebnis")
+    _val("ergebnis", erg_mit)
+    steuern_mit = erg_mit["zahl_cent"]
 
-    if catala:
-        assert erg["zahl_cent"] is not None
+    if catala and steuern_ohne is not None and steuern_mit is not None:
+        # Gate erfüllt (60 mit GdB50) → Freibetrag + Zuschlag wirken → Steuern < 60-ohne-GdB
+        assert steuern_ohne > steuern_mit, (
+            f"Alter 60 mit GdB50 (Gate erfüllt) sollte weniger Steuern haben als 60-ohne-GdB: "
+            f"60-ohne {steuern_ohne}, 60-mit-GdB50 {steuern_mit}"
+        )
 
 
 def test_gesamt_versorgungsfreibetrag_offen(base):

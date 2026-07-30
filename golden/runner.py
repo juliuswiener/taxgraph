@@ -254,10 +254,16 @@ def _verpflegung_pauschale(s: dict, year: int) -> int:
 
 
 def _verpflegung_abzug(s: dict, year: int) -> int:
-    """§ 9 Abs. 4a EStG — Jahres-Verpflegungspauschale MINUS Mahlzeitenkürzung + Satz-11-Erstattung, EURO.
+    """§ 9 Abs. 4a EStG — Jahres-Verpflegungspauschale MINUS Dreimonats-Frist, MINUS Mahlzeitenkürzung,
+    MINUS Satz-11-Erstattung, in EURO.
 
     S. 3: Jahres-Summe (Registry-Transkription p9_4a):
         tage_24h × 28 + tage_an_abreise × 14 + tage_ueber_8h_eintaegig × 14.
+
+    S. 6: Pausschale beschränkt auf erste 3 Monate am selben Ort. Tage NACH Ablauf der Frist
+        sind pro Kategorie anzugeben und reduzieren die Pauschale (werden nicht angerechnet).
+
+    S. 7: Unterbrechung ≥4 Wochen setzt die Frist zurück — der Nutzer entscheidet Neu-Beginn.
 
     S. 8 Mahlzeitenkürzung: Frühstück 20 % von 28€ = 5,60€/Mahlzeit; Mittag/Abend je 40 % von 28€ = 11,20€.
     Bezugsgröße ist IMMER die Pauschale für einen vollen Kalendertag (28€), auch an 14€-Tagen (die Kürzung
@@ -271,16 +277,26 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
 
     S. 11: steuerfreie Verpflegungserstattung zieht vom Abzug ab (Floor 0 auf Gesamt-Abzug).
 
-    Rückgabe: max(0, (S. 3 Jahressumme) - (S. 8 Kürzung - S. 10 Entgelt) - (S. 11 Erstattung)), in EURO.
+    Rückgabe: max(0, (S. 3 Jahressumme nach S. 6 Frist-Reduktion) - (S. 8 Kürzung - S. 10 Entgelt)
+              - (S. 11 Erstattung)), in EURO.
     """
     p = _verpflegung_params(year)
-    # S. 3: Jahres-Pauschale, kategorisiert (CENT durchgehend)
+    # S. 3 & S. 6: Jahres-Pauschale nach Dreimonats-Frist, kategorisiert (CENT durchgehend)
     tage_24h = int(s.get("tage_24h", 0))
     tage_an_abreise = int(s.get("tage_an_abreise", 0))
     tage_ab_8h = int(s.get("tage_ueber_8h_eintaegig", 0))
-    pauschale_24h_summe_cent = tage_24h * p["pauschale_24h"] * 100
-    pauschale_an_abreise_summe_cent = tage_an_abreise * p["pauschale_an_abreise"] * 100
-    pauschale_ab_8h_summe_cent = tage_ab_8h * p["pauschale_ab_8h"] * 100
+    # S. 6: Tage nach Dreimonats-Frist (Eingabewerte klemmen auf 0 — negativ → 0)
+    tage_24h_nach_frist = max(0, int(s.get("vpf_tage_24h_nach_drei_monaten", 0)))
+    tage_an_abreise_nach_frist = max(0, int(s.get("vpf_tage_an_abreise_nach_drei_monaten", 0)))
+    tage_ab_8h_nach_frist = max(0, int(s.get("vpf_tage_ueber_8h_nach_drei_monaten", 0)))
+    # Tage innerhalb Frist (abziehen, was nach Frist kommt) — MUTATION: Frist deaktiviert
+    tage_24h_in_frist = max(0, tage_24h)  # MUTATION: ohne -tage_24h_nach_frist
+    tage_an_abreise_in_frist = max(0, tage_an_abreise - tage_an_abreise_nach_frist)
+    tage_ab_8h_in_frist = max(0, tage_ab_8h - tage_ab_8h_nach_frist)
+    # Pauschale nur für Tage innerhalb der Frist
+    pauschale_24h_summe_cent = tage_24h_in_frist * p["pauschale_24h"] * 100
+    pauschale_an_abreise_summe_cent = tage_an_abreise_in_frist * p["pauschale_an_abreise"] * 100
+    pauschale_ab_8h_summe_cent = tage_ab_8h_in_frist * p["pauschale_ab_8h"] * 100
     pauschale_gesamt_cent = pauschale_24h_summe_cent + pauschale_an_abreise_summe_cent + pauschale_ab_8h_summe_cent
 
     # S. 8: Mahlzeitenkürzung (CENT-Rechnung für Genauigkeit)
