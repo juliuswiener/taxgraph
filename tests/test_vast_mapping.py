@@ -230,3 +230,72 @@ def test_eigene_angabe_schlaegt_edaten():
     felder, _ = ST.materialisiere(s)
     assert felder["bruttoarbeitslohn"]["wert"] == 5000000, \
         "eDaten haben die eigene Angabe überschrieben — § 150 Abs. 7 S. 2 AO verletzt"
+
+
+# ----------------------------------------------------------------- Summen-Felder
+
+def test_kv_und_pv_werden_summiert():
+    """§ 10 Abs. 1 Nr. 3: Kranken- UND Pflegeversicherung bilden zusammen die
+    Basisabsicherung. Der Beleg trennt sie, unsere Bindung führt ein Feld."""
+    ev = VM.aus_lstb({"ArbnAnteilKrankVers": "3200.00", "ArbnAnteilPflegVers": "800.00"})
+    per_feld = {e["feld_id"]: e["wert"] for e in ev}
+    assert per_feld["basis_kv_pv"] == 400000
+
+
+def test_nur_kv_ohne_pv_wird_uebernommen():
+    """Ein besetztes Teilfeld reicht — nicht auf Vollständigkeit warten."""
+    ev = VM.aus_lstb({"ArbnAnteilKrankVers": "3200.00"})
+    assert {e["feld_id"]: e["wert"] for e in ev}["basis_kv_pv"] == 320000
+
+
+def test_arbeitslosenversicherung_nicht_in_der_basis():
+    """§ 10 Abs. 1 Nr. 3a nennt die Arbeitslosenversicherung ausdrücklich neben den
+    Kranken-/Pflegebeiträgen, die NICHT unter Nr. 3 fallen. Sie in basis_kv_pv zu
+    schreiben würde den Basis-Abzug erhöhen, der nicht gedeckelt ist — Unterbesteuerung."""
+    ev = VM.aus_lstb({"ArbnAnteilKrankVers": "3200.00",
+                      "ArbnAnteilPflegVers": "800.00",
+                      "ArbnAnteilArblVers": "1200.00"})
+    per_feld = {e["feld_id"]: e["wert"] for e in ev}
+    assert per_feld["basis_kv_pv"] == 400000, "AV darf die Basis nicht erhöhen"
+    assert per_feld["weitere_vorsorgeaufwendungen"] == 120000
+
+
+def test_summenfeld_kategorie_nennt_alle_teile():
+    """Die Kategorie muss offenlegen, woraus die Summe entstand — sonst ist im
+    Bescheid nicht nachvollziehbar, warum dort eine Zahl steht, die auf keinem
+    Beleg-Feld einzeln steht."""
+    ev = VM.aus_lstb({"ArbnAnteilKrankVers": "3200.00", "ArbnAnteilPflegVers": "800.00"})
+    kat = next(e["kategorie"] for e in ev if e["feld_id"] == "basis_kv_pv")
+    assert "ArbnAnteilKrankVers" in kat and "ArbnAnteilPflegVers" in kat
+
+
+def test_kein_summenfeld_ohne_quelldaten():
+    ev = VM.aus_lstb({"BruttoArbLohn": "45000.00"})
+    assert "basis_kv_pv" not in {e["feld_id"] for e in ev}
+
+
+def test_summen_ziele_existieren_und_sind_cent():
+    """Dieselbe Naht-Prüfung wie für die 1:1-Felder — ein Summenfeld, das auf eine
+    nicht existierende feld_id zeigt, schriebe still ins Leere."""
+    import yaml
+    typen = {}
+    for f in glob.glob(os.path.join(ROOT, "produkt", "bindung", "bindung_*.yaml")):
+        d = yaml.safe_load(open(f, encoding="utf-8")) or {}
+        for b in (d.get("bindungen") or []):
+            typen[b["feld_id"]] = b.get("typ")
+    falsch = {z: typen.get(z) for z in VM.LSTB_SUMMEN if typen.get(z) != "cent"}
+    assert not falsch, f"Summen-Ziele ohne typ=cent: {falsch}"
+
+
+@braucht_schema
+def test_summen_quellen_existieren_im_schema():
+    import re
+    haupt = [p for p in glob.glob(os.path.join(_SCHEMA_DIR, "VaSt_LStB-*.xsd"))
+             if "Nutzdaten" not in p]
+    if not haupt:
+        pytest.skip("LStB-Schema nicht gefunden")
+    im_schema = set(re.findall(r'name="([A-Za-z_0-9]+)"',
+                               open(haupt[0], encoding="utf-8").read()))
+    fehlend = sorted(n for quellen in VM.LSTB_SUMMEN.values()
+                     for n, _d in quellen if n not in im_schema)
+    assert not fehlend, f"Nicht im LStB-Schema 2025: {fehlend}"

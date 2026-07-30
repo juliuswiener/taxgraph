@@ -60,6 +60,29 @@ LSTB = {
     "ArbgAnteilRenVers":      ("vor_ag_anteil_rv",           "Arbeitgeberanteil zur gesetzlichen Rentenversicherung"),
 }
 
+# Mehrere Beleg-Felder auf EIN Zielfeld — die Bescheinigung trennt feiner als unsere
+# Bindung, also wird summiert. Beleg für die Zuordnung ist der Gesetzestext:
+#
+#   § 10 Abs. 1 Nr. 3 a)  Krankenversicherung, soweit zur Erlangung eines
+#                         sozialhilfegleichen Versorgungsniveaus erforderlich
+#   § 10 Abs. 1 Nr. 3 b)  gesetzliche Pflegeversicherung
+#   § 10 Abs. 1 Nr. 3a    "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese
+#                         nicht nach Nummer 3 zu berücksichtigen sind; Beiträge zu
+#                         Versicherungen gegen Arbeitslosigkeit …"
+#   (sources/gesetze-im-internet/estg_p10_2026-07-11.txt)
+#
+# Die Arbeitslosenversicherung steht damit ausdrücklich in Nr. 3a, nicht in Nr. 3 —
+# sie gehört zu weitere_vorsorgeaufwendungen, nicht zur Basisabsicherung.
+LSTB_SUMMEN = {
+    "basis_kv_pv": (
+        ("ArbnAnteilKrankVers", "Arbeitnehmerbeiträge zur gesetzlichen Krankenversicherung"),
+        ("ArbnAnteilPflegVers", "Arbeitnehmerbeiträge zur sozialen Pflegeversicherung"),
+    ),
+    "weitere_vorsorgeaufwendungen": (
+        ("ArbnAnteilArblVers", "Arbeitnehmerbeiträge zur Arbeitslosenversicherung"),
+    ),
+}
+
 # --------------------------------------------------------------- Belegart LErsL
 # Lohnersatzleistungen. Schema: VaSt_LErsL-<jahr>01.xsd
 # Struktur: mehrere <Leistung> mit <Betrag> und <Art>. Die Summe geht in § 32b.
@@ -76,11 +99,17 @@ NICHT_GEMAPPT = {
                          "gefüllt (eigener Vorgang, eigene Berechtigung).",
     "LStB/Steuerklasse": "Die Lohnsteuerklasse steuert den Lohnsteuerabzug, nicht die "
                          "Veranlagung. Der Ring rechnet aus `veranlagung` (§ 26).",
-    "LStB/ArbnAnteilKrankVers": "KV/PV-Beiträge fließen in basis_kv_pv, aber der Beleg "
-                                "trennt gesetzlich/privat/Pflege in fünf Felder, deren "
-                                "Zusammenfassung eine eigene Adjudikation braucht (§ 10 "
-                                "Abs. 1 Nr. 3/3a). Bis dahin lieber ungefüllt als falsch "
-                                "summiert.",
+    "LStB/BeitrPrKrankVers": "Private Krankenversicherung: § 10 Abs. 1 Nr. 3 S. 3 zählt "
+                             "nur die Beitragsanteile, die den Leistungen des SGB V "
+                             "entsprechen — abzüglich des Krankengeld-Anteils. Der Beleg "
+                             "liefert den Gesamtbeitrag ohne diese Aufteilung; ihn voll "
+                             "als Basisabsicherung zu übernehmen wäre zu hoch. Privat "
+                             "Versicherte tragen den Wert weiter selbst ein.",
+    "LStB/StFreiGeKrankVers": "Steuerfreie Arbeitgeberzuschüsse mindern die abziehbaren "
+                              "Beiträge (§ 10 Abs. 2 S. 1 Nr. 1), sind aber kein eigener "
+                              "Abzugsposten. Ob unser basis_kv_pv brutto oder netto "
+                              "gemeint ist, klärt die Bindung nicht eindeutig — offen, "
+                              "statt auf Verdacht zu saldieren.",
     "LStB/StFreiArbLohnDBA": "Steuerfreier Arbeitslohn nach DBA berührt § 32b und die "
                              "DBA-Methodenwahl; welches unserer Felder das trifft, hängt "
                              "am Staat und ist offen (siehe DBA_METHOD_MAP_ART).",
@@ -105,6 +134,15 @@ def aus_lstb(werte: dict) -> list[dict]:
     kein Fehler, weil das Schema mehr Felder kennt als wir mappen (siehe NICHT_GEMAPPT).
     """
     raus = []
+    # Mehrere Beleg-Felder → ein Zielfeld (KV+PV, Arbeitslosenversicherung).
+    for feld_id, quellen in LSTB_SUMMEN.items():
+        teile = [(n, _cent(werte.get(n)), d) for n, d in quellen]
+        besetzt = [(n, c, d) for n, c, d in teile if c is not None]
+        if not besetzt:
+            continue
+        kat = "LStB: " + " + ".join(f"{d} ({n})" for n, _c, d in besetzt)
+        raus.append({"feld_id": feld_id, "wert": sum(c for _n, c, _d in besetzt),
+                     "kategorie": kat})
     for vast_name, (feld_id, doku) in LSTB.items():
         cent = _cent(werte.get(vast_name))
         if cent is None:
