@@ -310,7 +310,6 @@ def catala_einkuenfte_nichtselbststaendig(s: dict) -> int:
 
 
 def catala_p35a_haushaltsnahe(s: dict) -> int:
-    raise RuntimeError("SABOTAGE: catala_p35a_haushaltsnahe")
     """§ 35a Abs. 1-5 EStG. EURO rein, EURO raus. Antrag implizit (Aufwand-Eingabe).
     EU/EWR (Abs.4) gatet Abs.1-3. Rechnung+unbar (Abs.5 S.3) gatet NUR Abs.2/3."""
     minijob = int(s.get("hh_minijob_aufwendungen", 0))
@@ -336,7 +335,6 @@ def catala_p35a_haushaltsnahe(s: dict) -> int:
 
 
 def catala_p3_nr72_photovoltaik(s: dict) -> int:
-    raise RuntimeError("SABOTAGE: catala_p3_nr72_photovoltaik")
     """§ 3 Nr. 72 EStG — steuerfreie Einnahmen aus Gebäude-Photovoltaik. EURO rein, EURO raus.
 
     Rückgabe = der Betrag, der von den Gewinneinkünften ABZUZIEHEN ist (0 = keine Befreiung).
@@ -428,7 +426,6 @@ _KIST_KONFESSION_STEUERERHEBEND = ("evangelisch", "roemisch-katholisch")
 
 
 def catala_kist(s: dict) -> int:
-    raise RuntimeError("SABOTAGE: catala_kist")
     """§ 51a EStG i.V.m. Landes-KiStG — Kirchensteuer-Festsetzung auf die Maßstabsteuer, CENT.
 
     Pipeline-verifiziert (snapshot p51a_kirchensteuer, catala_a): int-kodiert konfession
@@ -663,7 +660,6 @@ def catala_kapital_verrechnung(s: dict) -> int:
 
 
 def catala_kapital_steuer(s: dict) -> int:
-    raise RuntimeError("SABOTAGE: catala_kapital_steuer")
     """§ 32d Abs. 1 EStG — Kapital-Steuer via Günstigerprüfung (Abs. 6), EURO. WÖRTLICHE Transkription
     p32d_1_abgeltung: abgeltung = satz% × kapitaleinkuenfte; guenstiger_delta = est_regulaer_mit_kap −
     est_regulaer_ohne_kap; kapital_steuer = min(abgeltung, guenstiger_delta). Die zwei est-Größen liefert
@@ -1267,7 +1263,6 @@ def catala_p23_verlusttopf(s: dict) -> int:
 
 
 def catala_p34c_1(s: dict) -> int:
-    raise RuntimeError("SABOTAGE: catala_p34c_1")
     """§34c Abs.1 EStG — Anrechnung ausländischer Steuer, Single-Country, EURO.
     anrechnung = min(gezahlte_auslaendische_steuer, deutsche_est_inkl_ausl * ausl / zvE).
     zve ≤ 0 or ausl ≤ 0 → 0. 4 test_seeds pipeline-verified (3000→3000, 10000→8000-
