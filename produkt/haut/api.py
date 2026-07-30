@@ -1639,6 +1639,31 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
 
 # ----------------------------------------------------------------- Endpunkte (reine Logik)
 
+def fall_loeschen(fall_id: str) -> tuple[int, dict]:
+    """DSGVO-Löschung: Fall-Datei entfernen, Audit-Eintrag hinterlassen.
+    Kein Soft-Delete (§ 147 AO Abs. 1 zählt Buchführungsunterlagen auf —
+    trifft Arbeitnehmer/Rentner als Zielgruppe nicht). Owner-Check vor
+    Löschung, Audit-Eintrag nach erfolgreichem Löschen.
+    """
+    pfad = _fall_pfad(fall_id)
+    if not os.path.exists(pfad):
+        raise ApiError(404, f"Fall {fall_id!r} existiert nicht")
+    with open(pfad, encoding="utf-8") as f:
+        store = json.load(f)
+    uid = _AUTH_USER
+    if uid is not None:
+        stored = store.get("user_id")
+        if stored is not None and stored != uid:
+            audit.append(uid, "zugriff_verweigert", fall_id, f"user={uid}, owner={stored}")
+            raise ApiError(403, f"Zugriff auf Fall {fall_id!r} verweigert")
+    os.remove(pfad)
+    audit.append(uid or "unbekannt", "fall_geloescht", fall_id,
+                 f"scheibe={store.get('scheibe')}, vz={store.get('veranlagungszeitraum')}")
+    return 200, {"geloescht": True, "fall_id": fall_id,
+                 "scheibe": store.get("scheibe"),
+                 "veranlagungszeitraum": store.get("veranlagungszeitraum")}
+
+
 def fall_anlegen(body: dict) -> tuple[int, dict]:
     scheibe = body.get("scheibe", "ep")
     if scheibe not in SCHEIBEN:

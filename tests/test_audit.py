@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import pathlib
 import sys
 
 import pytest
@@ -159,39 +160,58 @@ class TestUserId:
 
 # --------------------------------------------------------------- PII-Freiheit (Static Analysis)
 class TestPiiFrei:
-    def test_detail_kein_freitext(self):
-        """Jeder audit.append()-Aufruf im Code: detail enthält keine
-        Nutzer-Freitextwerte (Namen, IdNr, IBAN, Beträge, etc.).
+    def test_alle_audit_aufrufer_sind_bekannt(self):
+        """Jede Datei, die audit.append() ruft, muss hier eingetragen sein.
 
-        Diese Prüfung listet alle Aufruf-Stellen auf und belegt, dass
-        detail nur Metadaten enthält (Feld-IDs, Status-Codes, Kategorien,
-        Scheiben-Namen, Veranlagungszeiträume)."""
-        # Diese Assertion ist der Platzhalter für die statische Analyse
-        # unten im Test — siehe test_detail_aufrufer_enthalten_kein_pii
-        pass
+        Zweck: die PII-Freiheit eines neuen Aufrufers muss ausdrücklich bestätigt
+        werden, statt stillschweigend mitzulaufen. Ein neuer Aufrufer macht diesen
+        Test rot — das ist die Absicht.
 
-    def test_all_audit_call_sites_known(self):
-        """Liefert eine Liste aller audit.append-Aufrufer als
-        Dokumentation. Jeder neue Aufrufer muss hier ergänzt werden."""
-        sites = self._call_sites()
-        # Bekannte Aufrufer: dict {relativer_pfad: zeile}
-        expected = {
-            "produkt/haut/api.py:67",
-            "produkt/haut/api.py:1656",
-            "produkt/haut/api.py:1914",
-            "produkt/haut/api_llm.py:87",
-            "produkt/haut/server.py:60",
-            "produkt/haut/server.py:62",
-            "produkt/haut/server.py:169",
-            "produkt/haut/server.py:172",
+        Bewusst auf DATEI-Ebene, nicht auf Zeilenebene: Zeilennummern verschieben
+        sich bei jeder Änderung darüber, und ein Test, der bei unbeteiligten Edits
+        rot wird, wird irgendwann entnervt gelockert. Die Datei ist die Einheit, in
+        der jemand die detail-Felder prüft.
+        """
+        dateien = {s.split(":", 1)[0] for s in self._call_sites()}
+        erwartet = {
+            "produkt/haut/api.py",       # fall_anlegen, fall_loeschen, zugriff_verweigert
+            "produkt/haut/api_llm.py",   # PII-Kategorien beim LLM-Call
+            "produkt/haut/server.py",    # login, logout, Fall-Zugriffe
         }
-        for site in sites:
-            assert site in expected, f"Unbekannter audit.append-Aufrufer: {site}"
-        # Umgekehrt: jeder Erwartete muss auch gefunden werden
-        for exp in expected:
-            assert exp in sites, f"Erwarteter Aufrufer nicht gefunden: {exp}"
-        assert len(sites) == len(expected), \
-            f"Anzahl Aufrufer ({len(sites)}) != erwartet ({len(expected)})"
+        neu_dazu = dateien - erwartet
+        assert not neu_dazu, (
+            f"Neue audit.append-Aufrufer in {sorted(neu_dazu)} — prüf ihre detail-Felder "
+            f"auf PII (nur Metadaten: Feld-IDs, Status, Kategorien, Scheibe, VZ) und trag "
+            f"die Datei hier ein.")
+        verschwunden = erwartet - dateien
+        assert not verschwunden, (
+            f"Erwartete Aufrufer fehlen: {sorted(verschwunden)} — wurde Audit-Protokollierung "
+            f"entfernt? Wenn absichtlich, hier austragen.")
+
+    def test_detail_felder_enthalten_nur_metadaten(self):
+        """Die detail-Argumente der Aufrufer sind Metadaten, kein Nutzer-Freitext.
+
+        Geprüft wird der Quelltext: ein detail-Ausdruck darf Feld-IDs, Status-Codes,
+        Kategorien, Scheibennamen und Zeiträume enthalten — aber keinen Wert, der aus
+        einer Nutzereingabe stammt.
+        """
+        import re as _re
+        # Der Nutzerwert selbst ist gefährlich, seine LÄNGE nicht: len(freitext) sagt
+        # nichts über den Inhalt. Deshalb nur direkte Interpolation treffen ({wert}),
+        # nicht jede Erwähnung des Bezeichners.
+        verdaechtig = _re.compile(
+            r"audit\.append\([^)]*\{(?!len\()[^}]*\b"
+            r"(wert|name|idnr|iban|betrag|freitext|eingabe)\b[^}]*\}",
+            _re.IGNORECASE | _re.DOTALL)
+        treffer = []
+        for rel in ("produkt/haut/api.py", "produkt/haut/api_llm.py", "produkt/haut/server.py"):
+            quelle = (pathlib.Path(ROOT) / rel).read_text(encoding="utf-8")
+            for m in verdaechtig.finditer(quelle):
+                zeile = quelle[:m.start()].count("\n") + 1
+                treffer.append(f"{rel}:{zeile}")
+        assert not treffer, (
+            f"audit.append mit möglichem Nutzerwert im detail: {treffer}. "
+            f"Das Audit protokolliert WER WANN WAS getan hat, nie WELCHE Werte.")
 
     def _call_sites(self) -> list[str]:
         """Gibt alle Dateien+Zeilen mit audit.append zurück."""

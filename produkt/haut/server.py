@@ -82,6 +82,8 @@ def _routes():
         ("POST", re.compile(rf"^/fall/{_ID}/vorjahr$"), lambda m, b: api.vorjahr(m["id"], b)),
         # Kontoauszug-Upload (csv/json/pdf, alle det+LLM-Fallback): Transaktion-Vorschläge (herkunft=kontoauszug).
         ("POST", re.compile(rf"^/fall/{_ID}/kontoauszug$"), lambda m, b: api.kontoauszug(m["id"], b)),
+        # P1.7 DSGVO-Löschung: Fall-Datei entfernen, Audit behalten.
+        ("DELETE", re.compile(rf"^/fall/{_ID}$"), lambda m, b: api.fall_loeschen(m["id"])),
     ]
 
 
@@ -180,6 +182,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         self._dispatch("POST")
+
+    def do_DELETE(self):
+        self._dispatch("DELETE")
 
 
 def make_server(port: int = 8000) -> HTTPServer:
