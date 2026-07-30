@@ -959,6 +959,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "kindergeld": kinder * runner._kindergeld(vz) * 12})
             else:
                 est = _festzusetzende(0)
+            # P5.4 Rechenweg-Kette: nur im kinderlosen Fall (§ 31-Zweig-Ambiguität vermeiden).
+            # Kette in extras = dict von runner.catala_gesamt_kette(g) für /ergebnis-Erklär-UI.
+            if extras is not None and kinder == 0:
+                extras["kette"] = runner.catala_gesamt_kette(g)
             # SolZ §3, §4 SolzG: Basis = KiFB-fiktive ESt (§3 Abs.2) minus §32d-Kapitalsteuer (§3 Abs.3 S.1);
             # §32d-Kapital-SolZ 5,5% ohne Freigrenze (§3 Abs.3 S.2) wird von catala_solz separat addiert.
             if solz_container is not None and "est_mit_fb" in solz_info:
@@ -1842,7 +1846,8 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
                  "solz_cent": solz, "kist_cent": extras.get("kist_cent"),
                  "mobilitaetspraemie_cent": extras.get("mobilitaetspraemie_cent"),
                  "abschlusszahlung_cent": _abschlusszahlung_cent(felder, zahl),
-                 "grund": "bestaetigt", "offen": [], "trace": trace}
+                 "grund": "bestaetigt", "offen": [], "trace": trace,
+                 "kette": extras.get("kette")}
 
 
 def deklaration(fall_id: str) -> tuple[int, dict]:

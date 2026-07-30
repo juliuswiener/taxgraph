@@ -28,6 +28,15 @@
                        "alleinerziehend_konsistenz_offen", "gewinn_quelle_offen",
                        "luf_euer_offen", "gewst_hebesatz_offen", "abs3_ueber_5mio_offen", "kinder_gehoeren_in_gesamt", "verlustvortrag_gehoert_in_gesamt", "dba_multi_country_offen", "dba_kapital_offen", "p32b_kombi_offen", "progression_gehoert_in_gesamt", "p16_4_gate_offen"]},
     "offen": {"type": "array", "items": {"type": "string"}},
-    "trace": {"type": ["object", "null"]}
+    "trace": {"type": ["object", "null"]},
+    "kette": {"type": ["object", "null"],
+              "properties": {
+                "gesamtbetrag_der_einkuenfte": {"type": "integer"},
+                "zu_versteuerndes_einkommen": {"type": "integer"},
+                "tarifliche_est": {"type": "integer"},
+                "festzusetzende_est": {"type": "integer"}
+              },
+              "required": ["gesamtbetrag_der_einkuenfte", "zu_versteuerndes_einkommen", "tarifliche_est", "festzusetzende_est"],
+              "additionalProperties": false}
   }
 }
