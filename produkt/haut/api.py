@@ -1475,7 +1475,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 solz_container[0] = runner.catala_solz({
                     "veranlagungszeitraum": vz,
                     "bemessungsgrundlage": solz_info_r["est_mit_fb"],
-                    "kapital_steuer": solz_info_r.get("kap_st", 0),
+                    "kapital_steuer": 0,  # MUTATION
                     "splitting": rentner_g["veranlagung"] == "zusammen"})
             # KiSt § 51a: Basis = KiFB-fiktive ESt (= SolZ-Basis); §32d-Abgeltung-KiSt ist separater Nachtrag
             if extras is not None and "est_mit_fb" in solz_info_r:

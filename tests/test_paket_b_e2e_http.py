@@ -3489,12 +3489,13 @@ def test_rentner_kap_zusammenveranlagung_pb_verdopplung(base):
     steuern_20 = erg["zahl_cent"]
 
     if steuern_25 is not None and steuern_20 is not None:
-        # 500 EUR steuerpflichtig × ~19% Grenzsteuersatz bei 4.000€ Gesamtrente = ~95 EUR (9500 Cent)
-        # Verdoppelter Sparer-PB (§ 20 Abs. 9 S. 3): 1.000€ + 1.000€ = 2.000€ pro Veranlagung
+        # § 20 Abs. 9 S. 3: verdoppelter Sparer-PB bei Zusammenveranlagung = 2.000 EUR
+        # 2.500 EUR Kapitalerträge − 2.000 EUR PB = 500 EUR steuerpflichtig
+        # ESt-Berechnung: ohne Kapital 162.200 Cent, mit Kapital 173.400 Cent → Delta 11.200 Cent
         delta = steuern_25 - steuern_20
-        assert 8500 < delta < 12000, (
-            f"Verdopplung der PB bei Zusammenveranlagung (2.000€ Basis, 500€ über): "
-            f"2.500€ {steuern_25}, 2.000€ {steuern_20}, delta={delta} (erwartet ~9500)"
+        assert delta == 11200, (
+            f"Verdopplung Sparer-PB Zusammenveranlagung (500€ über PB): "
+            f"2.500€ {steuern_25}, 2.000€ {steuern_20}, delta={delta} (sollte 11200)"
         )
 
 
