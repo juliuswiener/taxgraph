@@ -1713,9 +1713,17 @@ def stand(fall_id: str) -> tuple[int, dict]:
     felder, sid = ST.materialisiere(store)
     rel = TR.relevanz(store, bindung)
     vz = int(store["veranlagungszeitraum"])
+
+    # event_id je feld_id: Index über nicht-ersetzte Events
+    ersetzt_ids = {e["ersetzt"] for e in store["events"] if e.get("ersetzt")}
+    event_id_per_feld = {}
+    for e in store["events"]:
+        if e["event_id"] not in ersetzt_ids:
+            event_id_per_feld[e["feld_id"]] = e["event_id"]
+
     felder_out = {
         fid: {"wert": v["wert"], "zustand": v["zustand"], "herkunft": v["herkunft"],
-              "herkunft_badge": _badge(v["herkunft"])}
+              "herkunft_badge": _badge(v["herkunft"]), "event_id": event_id_per_feld.get(fid)}
         for fid, v in felder.items()
     }
 

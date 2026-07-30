@@ -1,0 +1,41 @@
+{
+  "project": "TaxGraph",
+  "version": 1,
+  "queue": [
+    {
+      "id": "TASK-1",
+      "title": "A6-L2 netto/brutto-AK §7 AfA > 800 EUR",
+      "assigned_to": "dev-1",
+      "status": "completed",
+      "description": "Fixmap verification & delivery"
+    },
+    {
+      "id": "TASK-2",
+      "title": "eDaten auto-bestätigt Posture (§150 Abs.7 AO)",
+      "assigned_to": "dev-2",
+      "status": "completed",
+      "description": "Elster writer posture verification"
+    },
+    {
+      "id": "TASK-3",
+      "title": "DBA-Verträge erweitern & Multi-Country §34c",
+      "assigned_to": "dev-1",
+      "status": "in_progress",
+      "description": "DBA-Anrechnung auf multi-country scope erweitern: DB-Provider-Vertragstypen zu {DEU, AT, CH, USA, CAN, GBR} erweitern, scope-Struktur verbesserte Datenverdrahtung/Verifikation sicherstellen, Separate Standorte pro Verkäufer definieren, API-Felder für alle skalieren, Validierungs-Gate sicherstellen."
+    },
+    {
+      "id": "TASK-4",
+      "title": "§34c Multi-Country Verifikation",
+      "assigned_to": "dev-2",
+      "status": "in_progress",
+      "description": "Verifikation der §34c Multi-Country-Implementierung: Gate-Loop für dev-2 einrichten, um die korrekte Anrechnung von ausländischen Steuern aus verschiedenen Ländern sicherzustellen. Testfälle für DEU, AT, CH, USA, CAN, GBR erstellen und im Gate validieren."
+    },
+    {
+      "id": "TASK-5",
+      "title": "Elster-Rundung Fix (Stufe-2)",
+      "assigned_to": null,
+      "status": "unassigned",
+      "description": "Cent/Euro-Asymmetrie-Verifikation"
+    }
+  ]
+}

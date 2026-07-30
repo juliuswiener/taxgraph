@@ -6,6 +6,7 @@ let FALL = null;
 let AKTUELL = null;   // aktuelle Frage (aus /fragen)
 let STAND = null;     // letzter /stand
 let SPANNE0 = null;   // Referenz-Spanne (für den Schrumpf-Anteil)
+let KORREKTUR_FID = null;  // feld_id bei Korrektur; null = neue Frage
 
 const NETZ_FEHLER_TEXT = "Netzwerkfehler — bitte Verbindung prüfen und erneut versuchen.";
 function zeigeNetzFehler(msg) { const b = document.getElementById("netz-banner"); b.textContent = msg; b.hidden = false; }
@@ -82,11 +83,14 @@ async function refresh() {
 // --- Dim 4: der Bescheid als schrumpfender Ring ---
 function zeigeRing(stand) {
   const spanneEl = $("spanne"), hintEl = $("spanne-hint"), ringEl = $("ring"), mitteEl = $("ring-mitte");
+  const fortschritt = $("fortschritt");
   const felder = Object.values(stand.felder || {});
   const fest = felder.filter(f => f.zustand === "bestaetigt").length;
   const anteil = felder.length ? fest / felder.length : 0;
   ringEl.style.setProperty("--anteil", anteil);
   mitteEl.textContent = felder.length ? `${fest}/${felder.length}` : "";
+  fortschritt.max = Math.max(1, felder.length);
+  fortschritt.value = fest;
 
   if (stand.ring_gesperrt) {
     spanneEl.textContent = "Vereinfachter Bescheid hier nicht möglich"; hintEl.textContent = "siehe Ergebnis unten";
@@ -125,13 +129,14 @@ function badgeInfo(k) { return BADGE[k] || BADGE.laie; }
 function zeigeBelegt(felder) {
   const ul = $("belegt-liste"); ul.innerHTML = "";
   for (const [fid, f] of Object.entries(felder || {})) {
-    const li = document.createElement("li"); li.className = "zeile";
+    const li = document.createElement("li"); li.className = "zeile zeile-klickbar";
+    li.addEventListener("click", () => korrigiereBestaetigt(fid));
     const bi = badgeInfo(f.herkunft_badge);
     const badge = document.createElement("button");
     badge.className = "badge " + bi.kl + (f.zustand === "vorlaeufig" ? " badge-vorlaeufig" : "");
     badge.textContent = bi.sym + " " + bi.lab;
     badge.title = "Herkunft ansehen"; badge.type = "button";
-    badge.addEventListener("click", () => herkunftKette(fid, f));
+    badge.addEventListener("click", (e) => { e.stopPropagation(); herkunftKette(fid, f); });
     li.appendChild(badge);
     const t = document.createElement("span"); t.className = "z-name"; t.textContent = fid;
     const v = document.createElement("span"); v.className = "z-wert"; v.textContent = JSON.stringify(f.wert);
@@ -278,6 +283,39 @@ function leseWert(q) {
   return parseInt(el.value || "0", 10);
 }
 
+// --- Korrektur: Belegt-Feld erneut bearbeiten (event_id aus /warum holen + mit ersetzt überschreiben)
+async function korrigiereBestaetigt(fid) {
+  // event_id für dieses Feld holen (aus justification)
+  const r = await jget(`/fall/${FALL}/feld/${fid}/warum`);
+  if (r.status !== 200 || !r.body.justification) {
+    zeigeNetzFehler("Korrektur konnte nicht geladen werden.");
+    return;
+  }
+  const event_id = r.body.justification.event_id;
+  if (!event_id) {
+    zeigeNetzFehler("Feld hat keine event_id (nicht belegbar?).");
+    return;
+  }
+
+  // Frage aus /fragen laden — wir brauchen Feldtyp, Optionen etc.
+  const fragen_r = await jget(`/fall/${FALL}/fragen`);
+  if (fragen_r.status !== 200) {
+    zeigeNetzFehler("Fragen konnten nicht geladen werden.");
+    return;
+  }
+  const frage = (fragen_r.body.fragen || []).find(q => q.feld_id === fid);
+  if (!frage) {
+    // Feld steht nicht mehr in den offenen Fragen — könnte sein, dass andere
+    // Felder es obsolet gemacht haben. Für Korrektur brauchen wir die Frage.
+    zeigeNetzFehler(`Feld ${fid} ist nicht mehr im Fragenfluss.`);
+    return;
+  }
+
+  KORREKTUR_FID = fid;
+  AKTUELL = frage;  // Jetzt ist dieses Feld die "aktuelle" Frage
+  zeigeFrage(AKTUELL, STAND);
+}
+
 // --- Bestätigen: Zwei-Signal über den EINZIGEN Schreibpfad. kiFeld gesetzt -> ersetzt das vorläufige KI-Event. ---
 async function bestaetigen(kiFeld) {
   if (!AKTUELL) return;
@@ -297,6 +335,10 @@ async function bestaetigen(kiFeld) {
     // U12: das aktive KI-Event holen (event_id via /warum) und ersetzen.
     const j = (await jget(`/fall/${FALL}/feld/${AKTUELL.feld_id}/warum`)).body.justification || {};
     if (j.event_id) { ev.ersetzt = j.event_id; ev.signal.signal_1 = j.event_id; }
+  } else if (KORREKTUR_FID) {
+    // Korrektur: event_id aus justification holen + mit ersetzt überschreiben.
+    const j = (await jget(`/fall/${FALL}/feld/${AKTUELL.feld_id}/warum`)).body.justification || {};
+    if (j.event_id) { ev.ersetzt = j.event_id; ev.signal.signal_1 = j.event_id; }
   }
   const r = await jpost(`/fall/${FALL}/event`, ev);
   if (!okStatus(r.status)) {
@@ -306,6 +348,7 @@ async function bestaetigen(kiFeld) {
     return;
   }
   btn.disabled = false;   // refresh() klont den Button (rüsteBestaetigen) — Attribut sonst dauerhaft übernommen
+  KORREKTUR_FID = null;  // Korrektur abgeschlossen
   await refresh();
 }
 

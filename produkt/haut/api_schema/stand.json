@@ -14,14 +14,15 @@
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["wert", "zustand", "herkunft", "herkunft_badge"],
+        "required": ["wert", "zustand", "herkunft", "herkunft_badge", "event_id"],
         "additionalProperties": false,
         "properties": {
           "wert": {},
           "zustand": {"type": "string", "enum": ["vorlaeufig", "bestaetigt"]},
           "herkunft": {"type": "object"},
           "herkunft_badge": {"type": "string",
-            "enum": ["laie", "beleg_import", "vorjahr", "kontoauszug", "berechnet", "orakel", "llm_vorschlag"]}
+            "enum": ["laie", "beleg_import", "vorjahr", "kontoauszug", "berechnet", "orakel", "llm_vorschlag"]},
+          "event_id": {"type": ["string", "null"]}
         }
       }
     },
