@@ -70,7 +70,12 @@ def partner_ohne_zusammen(snapshot: dict) -> list:
         feld_titel = PARTNER_NAME.get(feld_id, feld_id)
         widersprueche.append({
             "feld_id": feld_id, "wert": wert, "veranlagung": veranlagung,
-            "grund": f"Du hast Angaben zu den {feld_titel} gemacht, aber keine "
+            # Feldname in Anführungszeichen statt im Satzfluss: die Namen sind teils
+            # Singular ("Grad der Behinderung des Partners"), teils Plural
+            # ("Aktiengewinne des Partners"). Jede feste Präposition-Artikel-Kombination
+            # würde die Hälfte der acht Fälle falsch beugen ("zu den Grad", "zu
+            # Aktiengewinne"). Der zitierte Name umgeht die Beugung ganz.
+            "grund": f"Du hast etwas bei „{feld_titel}“ eingetragen, aber keine "
                      f"Zusammenveranlagung gewählt. Partnerbezogene Angaben sind nur bei "
                      f"gemeinsamer Veranlagung möglich. Bitte prüfe deine Angaben."})
     return widersprueche
