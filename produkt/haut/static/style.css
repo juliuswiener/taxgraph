@@ -62,7 +62,8 @@ h1,h2,h3{margin:0}
 /* Aktionen: Bestätigen + Chat gleichberechtigt (Dim 5, always-on) */
 .aktionen{display:flex;gap:8px}
 .btn{flex:1;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:600;cursor:pointer}
-.btn-best{background:var(--akzent);color:#fff}
+/* #3d5fa8 statt --akzent: 6,18:1 gegen Weiß (WCAG 2.2 AA verlangt 4,5:1; --akzent lag bei 3,16:1) */
+.btn-best{background:#3d5fa8;color:#fff}
 .btn-chat{background:var(--card2);color:var(--ink);border:1px solid var(--line)}
 /* Hold-to-confirm (Dim 2) */
 .btn-hold{position:relative;overflow:hidden;background:var(--card2);color:var(--ink);border:1px solid var(--schimmernd);touch-action:none;user-select:none}

@@ -208,7 +208,9 @@ function zeigeFrage(q, stand) {
     input.placeholder = q.typ === "cent" ? "Betrag in Euro" : String(q.beispielwert ?? "");
     if (kiVorschlag && vorhanden.wert !== null) input.value = (q.typ === "cent") ? (vorhanden.wert / 100) : vorhanden.wert;
   }
-  input.id = "feld-input"; box.appendChild(input);
+  input.id = "feld-input";
+  input.setAttribute("aria-labelledby", "frage");   // a11y: Screenreader liest die Frage als Feldnamen
+  box.appendChild(input);
   if (q.einheit) { const s = document.createElement("span"); s.className = "einheit"; s.textContent = " " + q.einheit; box.appendChild(s); }
 
   // Bestätigungs-Geste skaliert mit KI-Konfidenz (Dim 2): KI-Vorschlag -> Halten; sonst 1-Tipp.

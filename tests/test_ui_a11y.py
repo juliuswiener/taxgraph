@@ -99,7 +99,6 @@ def _inject_axe_and_run(page, context_selector="body"):
     return result
 
 
-@pytest.mark.xfail(reason="A11y-Verstöße erwartet — Initial-Report", strict=False)
 def test_a11y_startscreen(base, playwright_context):
     """Start-Screen: Kachel-Wahl ohne WCAG-Verstöße."""
     page = playwright_context.new_page()
@@ -130,7 +129,6 @@ def test_a11y_startscreen(base, playwright_context):
         page.close()
 
 
-@pytest.mark.xfail(reason="A11y-Verstöße erwartet — Initial-Report", strict=False)
 def test_a11y_wegpunkt(base, playwright_context):
     """Wegpunkt-Fluss: Frage + Buttons ohne WCAG-Verstöße."""
     page = playwright_context.new_page()
@@ -161,7 +159,6 @@ def test_a11y_wegpunkt(base, playwright_context):
                 selectors = [n.get("target", ["?"])[0] for n in nodes[:3]]
                 msg += f"\n[{impact.upper()}] {rule_id}: {description}\n"
                 msg += f"  Selektoren: {', '.join(selectors)}\n"
-            # Melde Verstöße, aber lass xfail laufen (strict=False)
-            print(msg)
+            pytest.fail(msg)
     finally:
         page.close()
