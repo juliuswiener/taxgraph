@@ -289,8 +289,8 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
     tage_24h_nach_frist = max(0, int(s.get("vpf_tage_24h_nach_drei_monaten", 0)))
     tage_an_abreise_nach_frist = max(0, int(s.get("vpf_tage_an_abreise_nach_drei_monaten", 0)))
     tage_ab_8h_nach_frist = max(0, int(s.get("vpf_tage_ueber_8h_nach_drei_monaten", 0)))
-    # Tage innerhalb Frist (abziehen, was nach Frist kommt) — MUTATION: Frist deaktiviert
-    tage_24h_in_frist = max(0, tage_24h)  # MUTATION: ohne -tage_24h_nach_frist
+    # Tage innerhalb Frist (abziehen, was nach Frist kommt)
+    tage_24h_in_frist = max(0, tage_24h - tage_24h_nach_frist)
     tage_an_abreise_in_frist = max(0, tage_an_abreise - tage_an_abreise_nach_frist)
     tage_ab_8h_in_frist = max(0, tage_ab_8h - tage_ab_8h_nach_frist)
     # Pauschale nur für Tage innerhalb der Frist
