@@ -70,6 +70,9 @@ def _routes():
         ("GET", re.compile(rf"^/fall/{_ID}/feld/{_FID}/warum$"), lambda m, b: api.warum(m["id"], m["fid"])),
         ("GET", re.compile(rf"^/fall/{_ID}/ergebnis$"), lambda m, b: api.ergebnis(m["id"])),
         ("GET", re.compile(rf"^/fall/{_ID}/deklaration$"), lambda m, b: api.deklaration(m["id"])),
+        # P3.2b Einreichen: Deklaration → ELSTER-XML → checkESt (ERIC_VALIDIERE, offline).
+        # Prüft nur; Versand (ERIC_ENCRYPT_AND_SEND) ist bewusst nicht verdrahtet.
+        ("POST", re.compile(rf"^/fall/{_ID}/einreichen$"), lambda m, b: api.einreichen(m["id"], b)),
         ("GET", re.compile(rf"^/fall/{_ID}/graph$"), lambda m, b: api.graph(m["id"])),
         ("POST", re.compile(rf"^/fall/{_ID}/elster-ampel$"), lambda m, b: (503, api.AMPEL_503)),
         ("POST", re.compile(rf"^/fall/{_ID}/chat$"), lambda m, b: api.chat(m["id"], b)),

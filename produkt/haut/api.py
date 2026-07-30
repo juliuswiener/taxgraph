@@ -26,7 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PRODUKT = os.path.dirname(HERE)
 ROOT = os.path.dirname(PRODUKT)
 for _sub in ("produkt/store", "produkt/traverser", "produkt/unsicherheit", "produkt/mapping",
-             "produkt/konsistenz", "produkt/import", "golden"):
+             "produkt/konsistenz", "produkt/import", "golden", "elster"):
     _p = os.path.join(ROOT, _sub)
     if _p not in sys.path:
         sys.path.insert(0, _p)
@@ -39,6 +39,7 @@ import est_mapping as EM    # noqa: E402
 import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche, dev-2)
 import partner_check as PC  # noqa: E402  (Partner-Behinderungsfeld↔Zusammenveranlagung, dev-2)
 import vorjahr_writer as VW  # noqa: E402  (Vorjahres-Übernahme, dev-2 Store-Writer)
+import elster_xml as EX      # noqa: E402  (P3.2 Deklaration → ELSTER-Submission-XML)
 from api_constants import *  # noqa: E402, F401, F403  (55 Feld-Konstanten + Scheiben)
 import api_llm  # noqa: E402  (LLM-Integration: _llm_vorschlaege, _kontoauszug_llm_klassifikator)
 
@@ -1839,6 +1840,59 @@ def deklaration(fall_id: str) -> tuple[int, dict]:
     felder, sid = ST.materialisiere(store)
     result = EM.deklariere(felder, bindung, snapshot_id=sid)
     return 200, {"fall_id": fall_id, **result}
+
+
+def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
+    """P3.2b — Deklaration → ELSTER-XML → checkESt-Plausibilitätsprüfung. KEIN Versand.
+
+    Nur validieren: `EricBearbeiteVorgang` läuft mit ERIC_VALIDIERE (ohne ERIC_SENDE), also
+    rein lokal im checkESt-Plugin — kein Netz, keine Credentials, nichts verlässt die Maschine.
+    Der eigentliche Versand (ERIC_ENCRYPT_AND_SEND) braucht Nutzer-Zertifikat + PIN und ist
+    bewusst NICHT verdrahtet; er kommt als eigener, explizit freigeschalteter Schritt.
+
+    Fail-closed an drei Stellen: unvollständige Deklaration → 409, XML nicht baubar → 422,
+    Plausibilitätsfehler → 422 mit der ERiC-Antwort. Nur rc==0 ist grün — ein leerer
+    Fehlerpuffer bei rc!=0 heißt „nicht geprüft", nicht „fehlerfrei" (I/O-Gate-Short-Circuit).
+    """
+    _fall_owner_check(fall_id)
+    store = lade_fall(fall_id)
+    bindung = _scheibe_bindung(store)
+    felder, sid = ST.materialisiere(store)
+    result = EM.deklariere(felder, bindung, snapshot_id=sid)
+    if not result["vollstaendig"]:
+        return 409, {"fall_id": fall_id, "eingereicht": False, "grund": "deklaration_unvollstaendig",
+                     "unvollstaendig": result["unvollstaendig"]}
+
+    vz = int(store.get("veranlagungszeitraum") or 0)
+    try:
+        xml = EX.erzeuge_xml(result, vz=vz,
+                             empfaenger_land=str(body.get("empfaenger_land") or "BY"),
+                             testmerker=EX.TESTMERKER_ERIC)
+    except EX.XmlFehler as e:
+        return 422, {"fall_id": fall_id, "eingereicht": False, "grund": "xml_nicht_baubar",
+                     "detail": str(e)}
+
+    try:
+        import checkest_gate as CE
+    except ImportError as e:
+        return 503, {"fall_id": fall_id, "eingereicht": False, "grund": "eric_nicht_verfuegbar",
+                     "detail": str(e)}
+    try:
+        rc, antwort = CE.validate(xml, f"ESt_{vz}")
+    except (RuntimeError, OSError) as e:
+        return 503, {"fall_id": fall_id, "eingereicht": False, "grund": "eric_nicht_verfuegbar",
+                     "detail": str(e)}
+
+    klasse = CE.klassifiziere_rc(rc)
+    basis = {"fall_id": fall_id, "eingereicht": False, "basis_snapshot": sid,
+             "vz": vz, "rc": rc, "klasse": klasse, "xml_bytes": len(xml.encode("utf-8"))}
+    if rc != CE.RC_OK:
+        return 422, {**basis, "grund": "plausibilitaet_verletzt", "ericantwort": antwort,
+                     "moeglicherweise_gekappt": CE.gekappt_verdacht(antwort)}
+    audit.append(_AUTH_USER or "dev", "fall_validiert", fall_id, f"vz={vz} rc=0")
+    return 200, {**basis, "plausibel": True,
+                 "hinweis": "checkESt bestanden. Versand ist nicht verdrahtet — "
+                            "ERIC_ENCRYPT_AND_SEND braucht Zertifikat + explizite Freigabe."}
 
 
 def graph(fall_id: str) -> tuple[int, dict]:
