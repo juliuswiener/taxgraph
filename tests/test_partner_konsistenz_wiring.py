@@ -47,3 +47,41 @@ def test_ohne_partner_feld_kein_sperr():
     """Kein Partner-Behinderungsfeld → der Guard bleibt still (inert für die Bestandsscheiben)."""
     felder = _snap(veranlagung=("einzel", "bestaetigt"))
     assert API._an_gesamt_sperrgrund(felder) != "partner_konsistenz_offen"
+
+
+# ===== § 20 Abs. 9 S. 3 — kap_zusammenveranlagung =====================
+#
+# REGRESSION (gemessen 2026-07-30): das Feld behauptet Zusammenveranlagung für den
+# Sparer-Pauschbetrag. Stand es allein — ohne veranlagung="zusammen" — verdoppelte es den
+# Pauschbetrag (2.000 statt 1.000 €), ohne dass das Partner-Kapital dazugerechnet wurde.
+# Bei 4.000 € Kapital waren das 250 € zu wenig Steuer, und kein Guard sperrte den Fall.
+#
+# Ein Mischzustand aus Einzelveranlagung und gemeinsamer Kapital-Veranlagung existiert in
+# § 26 EStG nicht; der Widerspruch wird deshalb gesperrt, nicht aufgelöst.
+
+def test_kap_zusammenveranlagung_ohne_zusammen_sperrt():
+    """Flag=True + veranlagung=einzel → gesperrt statt still verdoppeltem Sparer-Pauschbetrag."""
+    felder = _snap(kap_zusammenveranlagung=(True, "bestaetigt"),
+                   veranlagung=("einzel", "bestaetigt"))
+    assert API._an_gesamt_sperrgrund(felder) == "partner_konsistenz_offen"
+
+
+def test_kap_zusammenveranlagung_mit_zusammen_kein_sperr():
+    """Bei echter Zusammenveranlagung ist das Flag stimmig → kein Sperrgrund."""
+    felder = _snap(kap_zusammenveranlagung=(True, "bestaetigt"),
+                   veranlagung=("zusammen", "bestaetigt"))
+    assert API._an_gesamt_sperrgrund(felder) != "partner_konsistenz_offen"
+
+
+def test_kap_zusammenveranlagung_false_kein_sperr():
+    """Flag=False ist keine Behauptung — der Einzelveranlagungs-Fall bleibt rechenbar."""
+    felder = _snap(kap_zusammenveranlagung=(False, "bestaetigt"),
+                   veranlagung=("einzel", "bestaetigt"))
+    assert API._an_gesamt_sperrgrund(felder) != "partner_konsistenz_offen"
+
+
+def test_kap_zusammenveranlagung_vorlaeufig_kein_sperr():
+    """Nur BESTÄTIGTE Werte sind eine Behauptung; ein vorläufiger Vorschlag sperrt nicht."""
+    felder = _snap(kap_zusammenveranlagung=(True, "vorlaeufig"),
+                   veranlagung=("einzel", "bestaetigt"))
+    assert API._an_gesamt_sperrgrund(felder) != "partner_konsistenz_offen"

@@ -1406,3 +1406,41 @@ def test_dba_oesterreich_freistellung_wirkt_im_ring_gesamt(base):
             "Steuer — die Länder-Methode erreicht den Ring nicht")
     else:
         assert at["zahl_cent"] is None or fr["zahl_cent"] is None
+
+
+# ===== § 20 Abs. 9 kap_zusammenveranlagung (Under-tax-Regression) ======
+
+def test_kap_zusammenveranlagung_ohne_zusammen_sperrt_ring(base):
+    """REGRESSION: das KAP-Flag allein darf keinen doppelten Sparer-Pauschbetrag erzeugen.
+
+    Gemessen am 2026-07-30: mit veranlagung=einzel und kap_zusammenveranlagung=true wurde
+    der Sparer-Pauschbetrag verdoppelt (2.000 statt 1.000 €), das Partner-Kapital aber nicht
+    addiert — bei 4.000 € Kapital 250 € ZU WENIG Steuer. Ein Mischzustand aus Einzel- und
+    gemeinsamer Kapital-Veranlagung existiert in § 26 EStG nicht, deshalb fail-closed.
+    """
+    catala = _catala_da()
+    def _mit_flag(wert):
+        # Beide Felder stehen schon im Basis-Kegel — Werte ERSETZEN, nicht anhängen; sonst
+        # lehnt der Store das zweite Event fürs selbe Feld ab (One-Active-Event).
+        # kein_kap muss mit: der Basis-Kegel deklariert "keine Kapitaleinkünfte", was zu
+        # Erträgen > 0 widerspricht (flag_konsistenz_offen).
+        ersatz = {"kap_zusammenveranlagung": wert, "kap_kapitalertraege": 400000,   # 4.000 €
+                  "kein_kap": False}
+        return [(f, ersatz.get(f, w)) for f, w in _mit_gewinn(GESAMT_KEGEL_BASIS)]
+
+    _ges_anlegen(base, "kapz_ok", _mit_flag(False))
+    st, ohne = _req(base, "GET", "/fall/kapz_ok/ergebnis")
+    _val("ergebnis", ohne)
+
+    _ges_anlegen(base, "kapz_bug", _mit_flag(True))
+    st, mit = _req(base, "GET", "/fall/kapz_bug/ergebnis")
+    _val("ergebnis", mit)
+
+    assert mit["grund"] == "partner_konsistenz_offen", (
+        f"Widerspruch veranlagung=einzel + kap_zusammenveranlagung=true muss sperren, "
+        f"bekam grund={mit['grund']!r} zahl={mit['zahl_cent']!r}")
+    assert mit["zahl_cent"] is None, "gesperrter Ring darf keine Zahl liefern"
+
+    if catala:
+        assert ohne["grund"] == "bestaetigt", "ohne Widerspruch muss der Ring rechnen"
+        assert ohne["zahl_cent"] is not None
