@@ -443,23 +443,25 @@ async function zeigeErgebnis() {
       const k = r.kette;
       const body = $("rechenweg-body");
       body.innerHTML = "";
-      // title-Erklärungen für Laien (keine erfundenen Rechtsbegriffe)
-      const RW_TITEL = {
-        "Gesamtbetrag der Einkünfte": "Summe aller Einkünfte aus den sieben Einkunftsarten",
-        "zu versteuerndes Einkommen": "Einkommen nach Abzügen — die Besteuerungsgrundlage",
-        "→ tarifliche Einkommensteuer": "Steuer nach dem Einkommensteuertarif (§ 32a)",
-        "festzusetzende Einkommensteuer": "Endgültige Steuer nach Hinzurechnungen und Ermäßigungen",
-        "Abzüge": "Vorsorge, Sonderausgaben, Verlustvortrag und weitere Posten",
-        "Ermäßigungen/Zuschläge": "Steuerermäßigungen (z. B. GewSt-Anrechnung) und Zuschläge (z. B. SolZ, KiSt)",
+      // Kurzerklärung unter Stufen-Label (dauerhaft sichtbar, kein Hover nötig)
+      const RW_SUB = {
+        "Gesamtbetrag der Einkünfte": "Summe aller Einkunftsarten",
+        "zu versteuerndes Einkommen": "Einkommen nach allen Abzügen",
+        "→ tarifliche Einkommensteuer": "Steuer nach dem Grundtarif (§ 32a)",
+        "festzusetzende Einkommensteuer": "Endgültige Steuer nach Ermäßigungen und Zuschlägen",
       };
       const _rw = (label, wert, cls) => {
         const tr = document.createElement("tr");
         tr.className = "rw-reihe" + (cls ? " " + cls : "");
         const th = document.createElement("th"); th.scope = "row"; th.className = "rw-label";
         th.textContent = label;
-        if (RW_TITEL[label]) th.title = RW_TITEL[label];
-        // "→" ist rein visuell — Screenreader liest den Label-Teil ohne Pfeil
+        // "→" ist rein visuell — Screenreader liest Label ohne Pfeil
         if (label.charCodeAt(0) === 0x2192) th.setAttribute("aria-label", label.slice(2));
+        const sub = RW_SUB[label];
+        if (sub) {
+          const span = document.createElement("span"); span.className = "rw-sub"; span.textContent = sub;
+          th.appendChild(span);
+        }
         const td = document.createElement("td"); td.className = "rw-wert";
         td.textContent = wert.toLocaleString("de-DE") + " €";
         tr.appendChild(th); tr.appendChild(td); body.appendChild(tr);
@@ -469,9 +471,6 @@ async function zeigeErgebnis() {
         tr.className = "rw-reihe rw-delta";
         const th = document.createElement("th"); th.scope = "row"; th.className = "rw-label";
         th.textContent = label;
-        if (RW_TITEL[label]) th.title = RW_TITEL[label];
-        // "→" ist rein visuell — Screenreader liest den Label-Teil ohne Pfeil
-        if (label.charCodeAt(0) === 0x2192) th.setAttribute("aria-label", label.slice(2));
         const td = document.createElement("td"); td.className = "rw-wert";
         const vz = delta < 0 ? "− " : "+ ";
         td.textContent = vz + Math.abs(delta).toLocaleString("de-DE") + " €";
