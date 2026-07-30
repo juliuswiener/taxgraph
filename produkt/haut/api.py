@@ -575,14 +575,21 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # UND Wahlrecht ausgeübt. > 800 = mehrjährige § 7-AfA sperrt der SHARED _an_gesamt_sperrgrund.
             if 0 < _c(ARBEITSMITTEL_KOSTEN) <= 80000 and f.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is True:
                 gesamt_wk_input["am_anschaffungskosten"] = _c(ARBEITSMITTEL_KOSTEN) // 100    # cent -> euro
-            # A6-L2 (§ 7 Abs. 1 lineare AfA, >800 CENT): AK > 80000 → kein GWG → mehrjährige AfA
-            elif _c(ARBEITSMITTEL_KOSTEN) > 80000:
+            # § 7 Abs. 1 Lineare AfA (>800€): gleichmäßige Jahresverteilung über Nutzungsdauer
+            # S. 4 (Anschaffungsjahr): pro-rata-temporis nach Anschaffungsmonat
+            am_afa_betrag = 0  # Wird separat gerechnet, addiert nach gesamt_wk
+            if _c(ARBEITSMITTEL_KOSTEN) > 80000:
                 nd = _c("arbeitsmittel_nutzungsdauer")
-                if nd > 0:
-                    gesamt_wk_input["am_anschaffungskosten"] = runner.catala_p7_linear_afa({
-                        "anschaffungskosten_cent": _c(ARBEITSMITTEL_KOSTEN),
-                        "nutzungsdauer": nd})
+                am = _c("am_anschaffung_monat")
+                ist_aj = f.get("am_afa_ist_anschaffungsjahr", {}).get("wert")
+                if nd > 0 and am > 0 and ist_aj is not None:
+                    am_afa_betrag = runner.catala_p7_linear_afa({
+                        "anschaffungskosten": _c(ARBEITSMITTEL_KOSTEN) // 100,       # CENT → EURO
+                        "nutzungsdauer": nd,
+                        "anschaffung_monat": am,
+                        "ist_anschaffungsjahr": ist_aj})
             ns_wk = runner.catala_werbungskosten_n(gesamt_wk_input)
+            ns_wk += am_afa_betrag  # § 7 AfA addieren (Accessor-Betrag in EUR)
             # § 19 Abs. 2 Versorgungsfreibetrag (K2): Gate entscheidet über Behandlung.
             # cent-Felder (jahresrente, bemessungsgrundlage) sind CENT, Accessor rechnet EURO.
             versorgung_jahresrente_cent = _c("versorgung_jahresrente")
@@ -1552,9 +1559,15 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             if _am <= 80000:
                 if felder.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is not True:
                     return "arbeitsmittel_afa_ueber_gwg_offen"
-            else:  # _am > 80000 → AfA-Pfad
+            else:  # _am > 80000 → § 7 Abs. 1 lineare AfA
                 nd = felder.get("arbeitsmittel_nutzungsdauer", {}).get("wert")
-                if not isinstance(nd, int) or isinstance(nd, bool) or nd <= 0:
+                monat = felder.get("am_anschaffung_monat", {}).get("wert")
+                ist_aj = felder.get("am_afa_ist_anschaffungsjahr", {}).get("wert")
+                # Beide Parameter MÜSSEN beantwortet sein: Nutzungsdauer UND Anschaffungsmonat
+                # Zustandsfeld ist bool → kann True/False sein, aber nicht null
+                if (not isinstance(nd, int) or isinstance(nd, bool) or nd <= 0 or
+                    not isinstance(monat, int) or isinstance(monat, bool) or monat < 1 or monat > 12 or
+                    ist_aj is None):
                     return "arbeitsmittel_afa_ueber_gwg_offen"
         return None
     # Partner-Behinderungsfeld (§ 33b Person B) ohne Zusammenveranlagung: benannte Inkonsistenz

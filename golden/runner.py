@@ -713,16 +713,42 @@ def catala_p6_2_gwg(s: dict) -> int:
 
 
 def catala_p7_linear_afa(s: dict) -> int:
-    """§ 7 Abs. 1 EStG — lineare AfA für ein Wirtschaftsgut > 800 EUR, EURO (Pure-Python).
-    Anschaffungskosten in Cent, Nutzungsdauer in Jahren (integer). AfA-Betrag =
-    anschaffungskosten_cent // (nutzungsdauer * 100) — Euro-gleichmäßig über die Laufzeit
-    verteilt, floor (konservativ/over-tax-safe). Nutzungsdauer ≤ 0 → Abzug 0."""
-    ak_cent = int(s.get("anschaffungskosten_cent", 0))
+    """§ 7 Abs. 1 S. 1/2/4 EStG — lineare AfA für Wirtschaftsgüter > 800 EUR, EURO (Pure-Python).
+
+    Eingaben (EURO):
+    - anschaffungskosten: EUR (nicht Cent)
+    - nutzungsdauer: Jahre (int > 0)
+    - anschaffung_monat: Monat 1-12
+    - ist_anschaffungsjahr: bool (True = Anschaffungsjahr, False = Folgejahr)
+
+    Rechnung (S. 1/2):
+    - Jahresbetrag = anschaffungskosten / nutzungsdauer, gleichmäßig
+
+    S. 4 (Anschaffungsjahr):
+    - pro-rata-temporis: Abzug vermindert sich um 1/12 für jeden vollen Monat VOR Anschaffung
+    - Beispiel: Kauf Oktober (Monat 10) → 9 Monate VOR → 9/12 Reduktion → nur 3/12 AfA im Jahr
+    - Umkehrung: (12 - (monat - 1)) / 12 = (13 - monat) / 12 Monate im Jahr
+
+    Folgejahre: voller Jahresbetrag.
+    """
+    ak = int(s.get("anschaffungskosten", 0))
     nd = int(s.get("nutzungsdauer", 0))
-    if nd <= 0 or ak_cent <= 0:
+    monat = int(s.get("anschaffung_monat", 0))
+    ist_aj = s.get("ist_anschaffungsjahr", False)
+
+    if nd <= 0 or ak <= 0:
         return 0
-    nd_cent = nd * 100
-    return ak_cent // nd_cent
+
+    jahresbetrag = ak // nd  # floor (over-tax-safe)
+
+    if ist_aj and 1 <= monat <= 12:
+        # Anschaffungsjahr: pro-rata nach S. 4
+        # Monate ab Kaufmonat = 12 - (monat - 1) = 13 - monat
+        monate_im_jahr = 13 - monat
+        return jahresbetrag * monate_im_jahr // 12  # floor
+    else:
+        # Folgejahr oder ungültige Eingabe: voller Jahresbetrag
+        return jahresbetrag
 
 
 # -- Kapital § 20 / § 32d (Weg A — kein callable Catala-Scope im pkg). EURO. --

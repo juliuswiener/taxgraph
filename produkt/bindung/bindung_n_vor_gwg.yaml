@@ -695,30 +695,52 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Wie viele Jahre willst du die Anschaffungskosten verteilen (übliche Nutzungsdauer)?"
-    hilfe_kurz: "Der AfA-Zeitraum für Arbeitsmittel ohne GWG. Typisch: 3-5 Jahre für Hardware, 5-10 Jahre für Einrichtung, 15 Jahre für Gebäudeanteile."
-    beispielwert: 5
+    hilfe_kurz: "Der AfA-Zeitraum für Arbeitsmittel ohne GWG. Typisch: 3 Jahre für Laptop, 5 Jahre für Möbel, 10 Jahre für Einbauteile."
+    beispielwert: 3
+    bereich: {min: 1, max: 30, grund: "Nutzungsdauer in Jahren"}
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Nutzungsdauer geht in die lineare AfA-Rechnung der Anlage-N; kein eigenes Kz."
+    elster_kz_grund: "Nutzungsdauer geht in die lineare AfA-Rechnung; kein eigenes Kz."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
-      quelle: "§ 7 Abs. 1 EStG"
-      zitatanker: "bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung"
+      quelle: "§ 7 Abs. 1 S. 2 EStG"
+      zitatanker: "Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer des Wirtschaftsguts."
       datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
+  - feld_id: am_anschaffung_monat
+    quelle: {regel_id: p7_1_lineare_afa, signatur_slot: anschaffung_monat}
+    typ: int
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Möchtest du günstige Arbeitsmittel (bis 800 Euro) sofort komplett absetzen?"
-    hilfe_kurz: "Sofort-Abzug ist ein Wahlrecht. Alternative: über die Nutzungsjahre verteilen."
+    fragetext_laie: "In welchem Monat hast du das Arbeitsmittel angeschafft? (1 = Januar, 12 = Dezember)"
+    hilfe_kurz: "Im Anschaffungsjahr wird die AfA nur anteilig berechnet (pro-rata nach Kaufmonat)."
+    beispielwert: 10
+    bereich: {min: 1, max: 12, grund: "Monat (1-12)"}
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anschaffungsmonat für pro-rata-temporis AfA; kein eigenes Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 7 Abs. 1 S. 4 EStG"
+      zitatanker: "Im Jahr der Anschaffung oder Herstellung des Wirtschaftsguts vermindert sich für dieses Jahr der Absetzungsbetrag nach Satz 1 um jeweils ein Zwölftel für jeden vollen Monat, der dem Monat der Anschaffung oder Herstellung vorangeht."
+      datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
+  - feld_id: am_afa_ist_anschaffungsjahr
+    quelle: {regel_id: p7_1_lineare_afa, geltungsbedingung: afa_ist_anschaffungsjahr}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hast du das Arbeitsmittel DIESES Jahr (2026) angeschafft? Oder in einem früheren Jahr?"
+    hilfe_kurz: "Im Anschaffungsjahr wird die AfA anteilig berechnet. In Folgejahren läuft die volle Jahresrate."
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Wahlrecht (Ja/Nein), kein Betragsfeld."
+    elster_kz_grund: "Zustandsfeld: Steuerung, ob Anschaffungsjahr-Reduktion greift oder volle AfA."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
-      quelle: "§ 6 Abs. 2 S. 1 EStG"
-      zitatanker: "in voller Höhe als Betriebsausgaben abgezogen"
-      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+      quelle: "§ 7 Abs. 1 S. 1 EStG"
+      zitatanker: "ist jeweils für ein Jahr der Teil der Anschaffungs- oder Herstellungskosten abzusetzen, der bei gleichmäßiger Verteilung dieser Kosten auf die Gesamtdauer der Verwendung oder Nutzung auf ein Jahr entfällt (Absetzung für Abnutzung in gleichen Jahresbeträgen)."
+      datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
   - feld_id: am_massgebliche_ak
     quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, geltungsbedingung: anschaffungskosten_sind_massgebliche_ak}
     typ: bool
