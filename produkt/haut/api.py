@@ -1226,6 +1226,31 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "veranlagungszeitraum": vz, "veranlagung": rentner_g["veranlagung"],
                 "einkuenfte_sonstige": renten, "einkuenfte_gewinn": rentner_g["einkuenfte_gewinn"],
                 "altersentlastungsbetrag": alt24a_r, "entlastungsbetrag_alleinerziehende": ent24b_r})
+            # Kapital § 20/§ 32d (Rentner): SINGLE-SOURCE (Instructor-Q1) — Töpfe XOR Aggregat.
+            # Töpfe (§ 20 Abs. 6) → verrechnet; sonst Aggregat. Sparer-PB (§ 20 Abs. 9) — UNABHÄNGIG von GdE.
+            # § 2 Abs. 5b: § 32d-Kapitalerträge gehören NICHT in gde (oben berechnet) — nur Renten + Gewinn.
+            if any(_c(t) != 0 for t in KAP_TOEPFE):
+                verrechnete = runner.catala_kapital_verrechnung({
+                    "gewinn_aktien": _c("kap_gewinn_aktien") // 100,
+                    "verlust_aktien": _c("kap_verlust_aktien") // 100,
+                    "gewinn_sonstige": _c("kap_gewinn_sonstige") // 100,
+                    "verlust_sonstige": _c("kap_verlust_sonstige") // 100})
+            else:
+                verrechnete = _c(KAP_ERTRAEGE) // 100
+            # Zusammenveranlagung für § 20 Sparer-PB: nur aus Veranlagungsart (§ 26).
+            # § 20 Abs. 9 S. 3: PB wird verdoppelt bei Zusammenveranlagung.
+            zusammen_r = rentner_g["veranlagung"] == "zusammen"
+            if zusammen_r:
+                if any(_c(t) != 0 for t in KAP_TOEPFE_PARTNER):
+                    verrechnete += runner.catala_kapital_verrechnung({
+                        "gewinn_aktien": _c("kap_gewinn_aktien_partner") // 100,
+                        "verlust_aktien": _c("kap_verlust_aktien_partner") // 100,
+                        "gewinn_sonstige": _c("kap_gewinn_sonstige_partner") // 100,
+                        "verlust_sonstige": _c("kap_verlust_sonstige_partner") // 100})
+                else:
+                    verrechnete += _c(KAP_ERTRAEGE_PARTNER) // 100
+            kapitaleinkuenfte_r = runner.catala_sparer_pb({
+                "veranlagungszeitraum": vz, "kapitalertraege": verrechnete, "zusammenveranlagung": zusammen_r})
             # § 10 Abs. 4b S. 3 — wie im gesamt-Pfad: der Erstattungsüberhang erhöht den GdE
             # (lokale gde für §10b/§33) und geht mangels Hinzurechnungs-Slot über
             # einkuenfte_sonstige in die Engine. NICHT in den § 35-Nenner unten — der liest
@@ -1390,7 +1415,21 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                                        p35_zaehler * tarifliche_gemindert // p35_nenner)
                     if not pe_active:
                         g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35_credit_r)
-                result = runner.catala_est(g2)
+                # § 32d Abs. 6 Günstigerprüfung: Kapitalerträge tariflich oder Abgeltungsteuer?
+                if kapitaleinkuenfte_r <= 0:
+                    result = runner.catala_est(g2)
+                else:
+                    # EST ohne Kapitalerträge (Baseline)
+                    est_raw = runner.catala_est(g2)
+                    # EST mit Kapitalerträgen (tariflich)
+                    est_mit = runner.catala_est(dict(g2, einkuenfte_kapitalvermoegen=kapitaleinkuenfte_r))
+                    # Günstigerprüfung: min(25 % Abgeltungsteuer, tariflicher Mehrbetrag)
+                    kap_st = runner.catala_kapital_steuer({
+                        "veranlagungszeitraum": vz,
+                        "kapitaleinkuenfte": kapitaleinkuenfte_r,
+                        "est_regulaer_mit_kap": est_mit,
+                        "est_regulaer_ohne_kap": est_raw})
+                    result = est_raw + kap_st
                 # §32b Post-Engine-Wrapper (Rentner-Ring, 1:1 gesamt-Präzedenz)
                 if pe_active:
                     tarifliche_pre32b = runner.catala_gesamt_tarifliche(g2)

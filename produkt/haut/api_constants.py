@@ -364,7 +364,7 @@ SCHEIBEN = {
         "multi_objekt": "vv_objekt",
     },
     "rentner_gesamt": {
-        "felder": RENTNER_FELDER,
+        "felder": RENTNER_FELDER + KAP_FELDER + GESAMT_PARTNER_KAP,
         "kegel": RENTNER_KEGEL,
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_rentner",
@@ -373,7 +373,7 @@ SCHEIBEN = {
         "gesamt_guard": True,
         "rentner": True,
         "multi_rente": "rente",
-        "fremd_arten": ("kein_kap", "kein_vuv"),
+        "fremd_arten": ("kein_vuv",),
     },
 }
 
