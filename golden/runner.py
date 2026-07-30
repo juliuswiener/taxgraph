@@ -310,6 +310,7 @@ def catala_einkuenfte_nichtselbststaendig(s: dict) -> int:
 
 
 def catala_p35a_haushaltsnahe(s: dict) -> int:
+    raise RuntimeError("SABOTAGE: catala_p35a_haushaltsnahe")
     """§ 35a Abs. 1-5 EStG. EURO rein, EURO raus. Antrag implizit (Aufwand-Eingabe).
     EU/EWR (Abs.4) gatet Abs.1-3. Rechnung+unbar (Abs.5 S.3) gatet NUR Abs.2/3."""
     minijob = int(s.get("hh_minijob_aufwendungen", 0))
@@ -335,6 +336,7 @@ def catala_p35a_haushaltsnahe(s: dict) -> int:
 
 
 def catala_p3_nr72_photovoltaik(s: dict) -> int:
+    raise RuntimeError("SABOTAGE: catala_p3_nr72_photovoltaik")
     """§ 3 Nr. 72 EStG — steuerfreie Einnahmen aus Gebäude-Photovoltaik. EURO rein, EURO raus.
 
     Rückgabe = der Betrag, der von den Gewinneinkünften ABZUZIEHEN ist (0 = keine Befreiung).
@@ -426,6 +428,7 @@ _KIST_KONFESSION_STEUERERHEBEND = ("evangelisch", "roemisch-katholisch")
 
 
 def catala_kist(s: dict) -> int:
+    raise RuntimeError("SABOTAGE: catala_kist")
     """§ 51a EStG i.V.m. Landes-KiStG — Kirchensteuer-Festsetzung auf die Maßstabsteuer, CENT.
 
     Pipeline-verifiziert (snapshot p51a_kirchensteuer, catala_a): int-kodiert konfession
@@ -660,6 +663,7 @@ def catala_kapital_verrechnung(s: dict) -> int:
 
 
 def catala_kapital_steuer(s: dict) -> int:
+    raise RuntimeError("SABOTAGE: catala_kapital_steuer")
     """§ 32d Abs. 1 EStG — Kapital-Steuer via Günstigerprüfung (Abs. 6), EURO. WÖRTLICHE Transkription
     p32d_1_abgeltung: abgeltung = satz% × kapitaleinkuenfte; guenstiger_delta = est_regulaer_mit_kap −
     est_regulaer_ohne_kap; kapital_steuer = min(abgeltung, guenstiger_delta). Die zwei est-Größen liefert
@@ -1263,6 +1267,7 @@ def catala_p23_verlusttopf(s: dict) -> int:
 
 
 def catala_p34c_1(s: dict) -> int:
+    raise RuntimeError("SABOTAGE: catala_p34c_1")
     """§34c Abs.1 EStG — Anrechnung ausländischer Steuer, Single-Country, EURO.
     anrechnung = min(gezahlte_auslaendische_steuer, deutsche_est_inkl_ausl * ausl / zvE).
     zve ≤ 0 or ausl ≤ 0 → 0. 4 test_seeds pipeline-verified (3000→3000, 10000→8000-
@@ -1290,6 +1295,20 @@ def catala_gesamt_zve(s: dict) -> int:
     FestzusetzendeEstGesamt(-Zusammen)-Scopes. Basis für die § 34 Abs. 1-Fünftelregelung (verbleibendes zvE = zvE − ao,
     ao = außerordentliche Einkünfte = § 16-vg-netto). Tarif-unabhängig (steht vor § 32a) → kein Zirkel mit tarif_modifiziert."""
     return int(_gesamt_out(s).zu_versteuerndes_einkommen) // 100
+
+
+def catala_gesamt_kette(s: dict) -> dict:
+    """Rechenweg-Kette für Erklär-UI: GdE → zvE → tarifliche ESt → festzusetzende ESt, EURO.
+    {"gesamtbetrag_der_einkuenfte": ..., "zu_versteuerndes_einkommen": ...,
+     "tarifliche_est": ..., "festzusetzende_est": ...}
+    Jeder Wert ganzzahlig EURO (//100 vom Money-Output). EINMALIGER _gesamt_out-Aufruf."""
+    out = _gesamt_out(s)
+    return {
+        "gesamtbetrag_der_einkuenfte": int(out.gesamtbetrag_der_einkuenfte) // 100,
+        "zu_versteuerndes_einkommen": int(out.zu_versteuerndes_einkommen) // 100,
+        "tarifliche_est": int(out.tarifliche_est) // 100,
+        "festzusetzende_est": int(out.festzusetzende_est) // 100,
+    }
 
 
 def catala_ermaessigter_durchschnittssatz(s: dict) -> int:
