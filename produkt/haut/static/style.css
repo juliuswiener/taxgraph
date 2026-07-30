@@ -96,6 +96,20 @@ h1,h2,h3{margin:0}
 .ergebnis-guard{background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.35);border-radius:12px;
   padding:16px;color:var(--warn);font-size:15px;text-align:left}
 
+/* Rechenweg-Kette (P5.4) — Stufenliste, semantisch <table>, kein Diagramm */
+.rechenweg{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.rechenweg-titel{font-size:13px;color:var(--muted);margin:0 0 10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.rechenweg-tabelle{width:100%;border-collapse:collapse}
+.rw-reihe{display:flex;justify-content:space-between;align-items:baseline;padding:8px 2px;border-bottom:1px dashed var(--line);gap:12px}
+.rw-reihe:last-child{border:0}
+.rw-label{font-weight:400;font-size:14px;color:var(--ink);text-align:left;white-space:nowrap}
+.rw-delta .rw-label{font-size:13px;color:var(--muted);padding-left:12px}
+.rw-end .rw-label{font-weight:600}
+.rw-wert{flex-shrink:0;font-size:14px;font-weight:600;color:var(--solide);white-space:nowrap;text-align:right}
+.rw-delta .rw-wert{font-weight:400;color:var(--muted);font-size:13px}
+.rw-end .rw-wert{font-size:16px}
+.rechenweg-hinweis{font-size:14px;color:var(--muted);margin:10px 0 0;line-height:1.5}
+
 /* Overlays: Herkunft-Kette + Chat */
 .overlay{position:fixed;inset:0;background:rgba(6,8,18,.72);display:grid;place-items:end center;z-index:10}
 .overlay-card{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);

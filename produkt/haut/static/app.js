@@ -435,6 +435,48 @@ async function zeigeErgebnis() {
   } else {
     el.className = "ergebnis";
     el.innerHTML = `<span class="erg-zahl">${euro(r.zahl_cent)}</span><span class="erg-label">festzusetzende Einkommensteuer</span>`;
+    // P5.4 Rechenweg-Kette — Stufen-Liste aus r.kette (vier EURO-Werte, zwei Delta-Zeilen dazwischen)
+    const rw = $("rechenweg");
+    const tb = $("rechenweg-tabelle");
+    const hn = $("rechenweg-hinweis");
+    if (r.kette) {
+      const k = r.kette;
+      const body = $("rechenweg-body");
+      body.innerHTML = "";
+      const _rw = (label, wert, cls) => {
+        const tr = document.createElement("tr");
+        tr.className = "rw-reihe" + (cls ? " " + cls : "");
+        const th = document.createElement("th"); th.scope = "row"; th.className = "rw-label";
+        th.textContent = label;
+        const td = document.createElement("td"); td.className = "rw-wert";
+        td.textContent = wert.toLocaleString("de-DE") + " €";
+        tr.appendChild(th); tr.appendChild(td); body.appendChild(tr);
+      };
+      const _rwDelta = (label, delta) => {
+        const tr = document.createElement("tr");
+        tr.className = "rw-reihe rw-delta";
+        const th = document.createElement("th"); th.scope = "row"; th.className = "rw-label";
+        th.textContent = label;
+        const td = document.createElement("td"); td.className = "rw-wert";
+        const vz = delta < 0 ? "− " : "+ ";
+        td.textContent = vz + Math.abs(delta).toLocaleString("de-DE") + " €";
+        tr.appendChild(th); tr.appendChild(td); body.appendChild(tr);
+      };
+      _rw("Gesamtbetrag der Einkünfte", k.gesamtbetrag_der_einkuenfte);
+      _rwDelta("Abzüge", k.zu_versteuerndes_einkommen - k.gesamtbetrag_der_einkuenfte);
+      _rw("zu versteuerndes Einkommen", k.zu_versteuerndes_einkommen);
+      _rw("→ tarifliche Einkommensteuer", k.tarifliche_est);
+      _rwDelta("Ermäßigungen/Zuschläge", k.festzusetzende_est - k.tarifliche_est);
+      _rw("festzusetzende Einkommensteuer", k.festzusetzende_est, "rw-end");
+      rw.hidden = false;
+      tb.hidden = false;
+      hn.hidden = true;
+    } else {
+      // Ergebnis da, aber keine Kette (Rentner, Kinder, an_gesamt)
+      tb.hidden = true;
+      hn.hidden = false;
+      rw.hidden = false;
+    }
   }
 }
 
