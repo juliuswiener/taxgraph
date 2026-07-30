@@ -71,7 +71,7 @@ VV_ABS2_TATBESTAND = ("vv_wohnzwecke", "vv_auf_dauer")
 # ========== § 20 Kapital ==========
 KAP_ERTRAEGE = "kap_kapitalertraege"
 KAP_TOEPFE = ("kap_gewinn_aktien", "kap_verlust_aktien", "kap_gewinn_sonstige", "kap_verlust_sonstige")
-KAP_FELDER = (KAP_ERTRAEGE,) + KAP_TOEPFE + ("kap_zusammenveranlagung",)
+KAP_FELDER = (KAP_ERTRAEGE,) + KAP_TOEPFE   # Veranlagungsart kommt aus `veranlagung`, nicht aus einem KAP-eigenen Feld
 KAP_ERTRAEGE_PARTNER = "kap_kapitalertraege_partner"
 KAP_TOEPFE_PARTNER = ("kap_gewinn_aktien_partner", "kap_gewinn_sonstige_partner",
                       "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner")

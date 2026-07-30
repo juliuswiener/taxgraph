@@ -866,7 +866,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
          ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", ep_kfz),
          ("kap_kapitalertraege", kap_ertraege), ("kap_gewinn_aktien", kap_gewinn_aktien),
          ("kap_verlust_aktien", kap_verlust_aktien), ("kap_gewinn_sonstige", kap_gewinn_sonstige),
-         ("kap_verlust_sonstige", kap_verlust_sonstige), ("kap_zusammenveranlagung", False),
+         ("kap_verlust_sonstige", kap_verlust_sonstige),
          ("kein_gewinn", kein_gewinn), ("kein_kap", kein_kap), ("kein_vuv", kein_vuv), ("kein_sonstige", True)]
     if gewinn:                                     # §§ 13-18 Stufe 1: einkuenfte_gewinn nur wenn > 0 (OPTIONAL, absent → 0)
         k.append(("einkuenfte_gewinn", gewinn))

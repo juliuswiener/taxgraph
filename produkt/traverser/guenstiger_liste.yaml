@@ -22,7 +22,7 @@ guenstiger_regeln:
       Anspruch (tarifl. ESt ohne Kinderfreibeträge + Kindergeld) und Kinderfreibeträgen (§ 32 Abs. 6).
       Beide Zweige hängen von den Kinderdaten und der Veranlagungsart ab; diese müssen erfragt werden,
       kein Zweig wird anhand eines vorläufigen Siegers weggeschnitten.
-    zweig_felder: [fam_anzahl_kinder, kap_zusammenveranlagung]
+    zweig_felder: [fam_anzahl_kinder, veranlagung]
     anker_ref:
       quelle: "§ 31 S. 1 EStG"
       zitatanker: "entweder durch die Freibeträge nach § 32 Absatz 6 oder durch Kindergeld"

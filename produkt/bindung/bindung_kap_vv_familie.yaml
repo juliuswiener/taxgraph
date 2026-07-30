@@ -23,24 +23,6 @@ bindungen:
       quelle: "§ 20 Abs. 9 S. 1 EStG"
       zitatanker: "als Werbungskosten ein Betrag von 1 000 Euro abzuziehen"
       datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
-  - feld_id: kap_zusammenveranlagung
-    quelle: {regel_id: p20_9_sparer_pauschbetrag, signatur_slot: zusammenveranlagung}
-    typ: bool
-    einheit: null
-    askable: true
-    vorjahr: uebernehmbar
-    fragetext_laie: "Gebt ihr als Ehepaar oder eingetragene Partnerschaft eine gemeinsame Steuererklärung ab?"
-    hilfe_kurz: "Bei gemeinsamer Veranlagung verdoppelt sich der steuerfreie Betrag auf 2.000 Euro."
-    beispielwert: false
-    herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Veranlagungsart (global), ergibt sich aus dem Mantelbogen; kein eigenes KAP-Feld."
-    vz_gueltigkeit: [2024, 2025, 2026]
-    anker_ref:
-      quelle: "§ 20 Abs. 9 S. 2 EStG"
-      zitatanker: "als Werbungskosten ein Betrag von 1 000 Euro abzuziehen"
-      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
-
   # ========================= Kapital §20 — Verlustverrechnung (p20_6) =========================
   - feld_id: kap_gewinn_aktien
     quelle: {regel_id: p20_6_verlustverrechnung, signatur_slot: gewinn_aktien}
@@ -563,6 +545,9 @@ bindungen:
 luecken:
   # -- §20 Annahmen --
   - regel_id: p20_9_sparer_pauschbetrag
+    signatur_slot: zusammenveranlagung
+    grund: "Geteiltes Laien-Feld = veranlagung (Mantelbogen, § 26). Das frühere eigene Feld kap_zusammenveranlagung stellte dieselbe Frage ein zweites Mal und konnte ihr widersprechen: bei veranlagung=einzel + Flag=true wurde der Sparer-Pauschbetrag verdoppelt, ohne das Partner-Kapital zu addieren (250 € zu wenig Steuer, gemessen 2026-07-30). Ein Mischzustand aus Einzel- und gemeinsamer Kapital-Veranlagung existiert in § 26 EStG nicht — der Ring liest die Veranlagungsart jetzt nur noch aus veranlagung."
+  - regel_id: p20_9_sparer_pauschbetrag
     geltungsbedingung: sparer_pb_1000_2000_konstante
     grund: "Konstante 1.000/2.000 Euro (Parameter), keine Laien-Abfrage."
   - regel_id: p20_6_verlustverrechnung
@@ -591,7 +576,7 @@ luecken:
     grund: "Geteiltes Laien-Feld = fam_anzahl_kinder (Slot anzahl_kinder in p24b); im UI einmalige Abfrage, intern auf beide Regeln verteilt."
   - regel_id: p32_6_kinderfreibetraege
     signatur_slot: zusammenveranlagung
-    grund: "Geteiltes Laien-Feld = kap_zusammenveranlagung (Veranlagungsart, global); einmalige Abfrage."
+    grund: "Geteiltes Laien-Feld = veranlagung (Mantelbogen, § 26); einmalige Abfrage."
   - regel_id: p32_6_kinderfreibetraege
     geltungsbedingung: kind_zu_beiden_ehegatten
     grund: "Verdopplung der Freibeträge bei Zusammenveranlagung ist Rechenlogik der Regel; keine eigene Abfrage."
@@ -616,7 +601,7 @@ luecken:
     grund: "Der Kindergeld-Zweig rechnet mit dem ANSPRUCH (nicht dem Ausgezahlten); Rechenlogik, keine Abfrage."
   - regel_id: p31_familienleistungsausgleich
     geltungsbedingung: zusammenveranlagte_eltern
-    grund: "Veranlagungsart (kap_zusammenveranlagung) steuert die Freibeträge; keine eigene Abfrage."
+    grund: "Veranlagungsart (veranlagung) steuert die Freibeträge; keine eigene Abfrage."
   - regel_id: p31_familienleistungsausgleich
     geltungsbedingung: keine_kindergeld_sonderfaelle
     grund: "Kindergeld-Sonderfälle (Zählkinder, Auslandskinder) außerhalb dieser Scheibe."

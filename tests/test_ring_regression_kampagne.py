@@ -116,7 +116,7 @@ GESAMT_KEGEL_BASIS = [
     ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
     ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
     ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
-    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0), ("kap_zusammenveranlagung", False),
+    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
 ]
 
 RENTNER_KEGEL_HOCH = [
@@ -465,7 +465,7 @@ GESAMT_AN_KEGEL = [
     ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
     ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
-    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0), ("kap_zusammenveranlagung", False),
+    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
 ]
 
 # dHf Inland gültig: 1000 €/Monat × 12 = 12.000 € Roh-WK (Kappung §9 Abs.1 Nr.5 = 1000 €/Monat).
@@ -1408,39 +1408,39 @@ def test_dba_oesterreich_freistellung_wirkt_im_ring_gesamt(base):
         assert at["zahl_cent"] is None or fr["zahl_cent"] is None
 
 
-# ===== § 20 Abs. 9 kap_zusammenveranlagung (Under-tax-Regression) ======
+# ===== § 20 Abs. 9 Sparer-Pauschbetrag hängt an `veranlagung` ==========
 
-def test_kap_zusammenveranlagung_ohne_zusammen_sperrt_ring(base):
-    """REGRESSION: das KAP-Flag allein darf keinen doppelten Sparer-Pauschbetrag erzeugen.
+def test_sparer_pauschbetrag_folgt_der_veranlagungsart(base):
+    """REGRESSION: der Sparer-Pauschbetrag richtet sich nach der Veranlagungsart — und NUR danach.
 
-    Gemessen am 2026-07-30: mit veranlagung=einzel und kap_zusammenveranlagung=true wurde
-    der Sparer-Pauschbetrag verdoppelt (2.000 statt 1.000 €), das Partner-Kapital aber nicht
-    addiert — bei 4.000 € Kapital 250 € ZU WENIG Steuer. Ein Mischzustand aus Einzel- und
-    gemeinsamer Kapital-Veranlagung existiert in § 26 EStG nicht, deshalb fail-closed.
+    Bis 2026-07-30 gab es ein zweites Feld kap_zusammenveranlagung, das dieselbe Frage stellte.
+    Bei veranlagung=einzel + Flag=true verdoppelte es den Pauschbetrag (2.000 statt 1.000 €),
+    ohne das Partner-Kapital zu addieren: 250 € zu wenig Steuer bei 4.000 € Kapital. Das Feld
+    ist entfernt; dieser Test pinnt, dass der Einzelveranlagungs-Fall den einfachen
+    Pauschbetrag bekommt und niemand ihn von aussen verdoppeln kann.
     """
     catala = _catala_da()
-    def _mit_flag(wert):
-        # Beide Felder stehen schon im Basis-Kegel — Werte ERSETZEN, nicht anhängen; sonst
-        # lehnt der Store das zweite Event fürs selbe Feld ab (One-Active-Event).
-        # kein_kap muss mit: der Basis-Kegel deklariert "keine Kapitaleinkünfte", was zu
-        # Erträgen > 0 widerspricht (flag_konsistenz_offen).
-        ersatz = {"kap_zusammenveranlagung": wert, "kap_kapitalertraege": 400000,   # 4.000 €
-                  "kein_kap": False}
+
+    def _kegel(kapital):
+        ersatz = {"kap_kapitalertraege": kapital, "kein_kap": False}
         return [(f, ersatz.get(f, w)) for f, w in _mit_gewinn(GESAMT_KEGEL_BASIS)]
 
-    _ges_anlegen(base, "kapz_ok", _mit_flag(False))
-    st, ohne = _req(base, "GET", "/fall/kapz_ok/ergebnis")
-    _val("ergebnis", ohne)
+    # 1.000 € Kapital = genau der einfache Sparer-Pauschbetrag → nichts zu versteuern
+    _ges_anlegen(base, "spb_1000", _kegel(100000))
+    st, bei_1000 = _req(base, "GET", "/fall/spb_1000/ergebnis")
+    _val("ergebnis", bei_1000)
 
-    _ges_anlegen(base, "kapz_bug", _mit_flag(True))
-    st, mit = _req(base, "GET", "/fall/kapz_bug/ergebnis")
-    _val("ergebnis", mit)
-
-    assert mit["grund"] == "partner_konsistenz_offen", (
-        f"Widerspruch veranlagung=einzel + kap_zusammenveranlagung=true muss sperren, "
-        f"bekam grund={mit['grund']!r} zahl={mit['zahl_cent']!r}")
-    assert mit["zahl_cent"] is None, "gesperrter Ring darf keine Zahl liefern"
+    # 2.000 € Kapital: bei Einzelveranlagung sind 1.000 € steuerpflichtig
+    _ges_anlegen(base, "spb_2000", _kegel(200000))
+    st, bei_2000 = _req(base, "GET", "/fall/spb_2000/ergebnis")
+    _val("ergebnis", bei_2000)
 
     if catala:
-        assert ohne["grund"] == "bestaetigt", "ohne Widerspruch muss der Ring rechnen"
-        assert ohne["zahl_cent"] is not None
+        assert bei_1000["grund"] == "bestaetigt" and bei_2000["grund"] == "bestaetigt"
+        delta = bei_2000["zahl_cent"] - bei_1000["zahl_cent"]
+        # 1.000 € über dem Pauschbetrag × 25 % Abgeltungsteuer = 250 €
+        assert delta == 25000, (
+            f"Bei Einzelveranlagung muss der zweite Tausender voll besteuert werden "
+            f"(1.000 € × 25 % = 250 €), gemessen: {delta} ct")
+    else:
+        assert bei_1000["zahl_cent"] is None or bei_2000["zahl_cent"] is None

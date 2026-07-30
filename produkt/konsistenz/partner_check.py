@@ -26,11 +26,6 @@ PARTNER_FELDER = (
     # § 22 Rente Person-B (Anlage-R-Instanz B, Klasse g×f) — der Renten-Betrag ist der Indikator (die
     # int-Meta beginn/alter würden über _ist_gesetzt (>0) falsch-positiv, daher nur der Betrag):
     "rentner_jahresrente_partner",
-    # § 20 Abs. 9 S. 3 KAP-Flag: behauptet selbst Zusammenveranlagung. Ohne diesen Eintrag verdoppelte
-    # es den Sparer-Pauschbetrag auch bei veranlagung=einzel — 250 € zu wenig Steuer bei 4.000 €
-    # Kapital (gemessen 2026-07-30). Ein Mischzustand aus Einzelveranlagung und gemeinsamer
-    # Kapital-Veranlagung existiert in § 26 EStG nicht.
-    "kap_zusammenveranlagung",
 )
 
 

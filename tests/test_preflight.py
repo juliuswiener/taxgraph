@@ -73,7 +73,7 @@ def test_preflight_red_beats_amber():
 def test_preflight_green_mit_pauschal_gefuellt():
     """Alle Checks sauber wenn Pauschal-Felder gesetzt -> GREEN."""
     erg = preflight.preflight(_snap(kap_kapitalertraege=(300000, "bestaetigt"),
-                                     kap_zusammenveranlagung=(True, "bestaetigt"),
+                                     veranlagung=("zusammen", "bestaetigt"),
                                      bruttoarbeitslohn=(4000000, "bestaetigt"),
                                      ep_arbeitstage=(220, "bestaetigt")))
     assert erg["status"] == "GREEN"

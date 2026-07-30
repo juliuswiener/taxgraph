@@ -732,13 +732,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "verlust_sonstige": _c("kap_verlust_sonstige") // 100})
             else:
                 verrechnete = _c(KAP_ERTRAEGE) // 100
-            # Zusammenveranlagung für § 20: entweder aus der allgemeinen Veranlagungsart oder aus
-            # dem KAP-eigenen Flag. Beide Verwendungen unten MÜSSEN dieselbe Variable lesen —
-            # vorher prüfte die Partner-Addition nur g["veranlagung"], der Sparer-PB aber `zusammen`.
-            # Bei veranlagung=einzel + Flag=true wurde der Pauschbetrag verdoppelt, ohne das
-            # Partner-Kapital zu addieren: 250 € zu wenig Steuer bei 4.000 € Kapital (gemessen).
-            zusammen = (g["veranlagung"] == "zusammen"
-                        or f.get("kap_zusammenveranlagung", {}).get("wert") is True)
+            # Zusammenveranlagung für § 20 kommt AUSSCHLIESSLICH aus der Veranlagungsart (§ 26).
+            # Bis 2026-07-30 gab es ein zweites Feld kap_zusammenveranlagung, das dieselbe Frage
+            # stellte und ihr widersprechen konnte: bei veranlagung=einzel + Flag=true wurde der
+            # Sparer-Pauschbetrag verdoppelt, ohne das Partner-Kapital zu addieren — 250 € zu wenig
+            # Steuer bei 4.000 € Kapital. Das Feld ist entfernt; eine Kapital-Veranlagung getrennt
+            # von der allgemeinen Veranlagungsart kennt § 26 EStG nicht.
+            zusammen = g["veranlagung"] == "zusammen"
             # Person B (§ 26b, #4b): das Kapital des Ehegatten single-source (Aggregat XOR Töpfe) ROH
             # addieren VOR dem gemeinsamen Sparer-PB (§ 20 Abs. 9 S. 3, ×2 über zusammenveranlagung). Nur
             # bei Zusammenveranlagung; Co-Okkurrenz B sperrt der Guard (kapital_semantik_offen).

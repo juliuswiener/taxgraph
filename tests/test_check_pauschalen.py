@@ -37,7 +37,7 @@ def test_sparer_pb_hinweis_hat_hinweistext():
     assert len(h) == 1
     assert "Sparer-Pauschbetrag" in h[0]["hinweis"]
     assert h[0]["ausloeser_felder"][0]["feld_id"] == "kap_kapitalertraege"
-    assert h[0]["fehlende_felder"] == ["kap_zusammenveranlagung"]
+    assert h[0]["fehlende_felder"] == ["veranlagung"]
 
 
 def test_sparer_pb_konsistent_kein_kapital():
@@ -48,7 +48,7 @@ def test_sparer_pb_konsistent_kein_kapital():
 def test_sparer_pb_konsistent_zusammen_gesetzt():
     # Kapital vorhanden + Zusammenveranlagung bestätigt -> kein Hinweis mehr
     assert CP.pauschal_hinweise(_snap(kap_kapitalertraege=(300000, "bestaetigt"),
-                                       kap_zusammenveranlagung=(True, "bestaetigt"))) == []
+                                       veranlagung=("zusammen", "bestaetigt"))) == []
 
 
 def test_sparer_pb_konsistent_nur_vorlaeufig():
@@ -149,7 +149,7 @@ def test_gemischter_snapshot_alle_hinweise():
 def test_gemischter_snapshot_teilweise_gefuellt():
     snap = _snap(
         kap_kapitalertraege=(500000, "bestaetigt"),
-        kap_zusammenveranlagung=(True, "bestaetigt"),   # Sparer-PB ok
+        veranlagung=("zusammen", "bestaetigt"),   # Sparer-PB ok
         bruttoarbeitslohn=(4000000, "bestaetigt"),       # EP fehlt
         vv_einnahmen=(1200000, "bestaetigt"),
         vv_schuldzinsen=(200000, "bestaetigt"),          # V+V ok

@@ -102,7 +102,7 @@ GESAMT_KEGEL_BASIS = [
     ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
     ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
     ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
-    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0), ("kap_zusammenveranlagung", False),
+    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
     ("einkuenfte_gewinn", 20000000), ("gewinn_betriebsart", "gewerbe"),
 ]
 

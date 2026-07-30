@@ -17,7 +17,7 @@ PAUSCHAL_CHECKS: tuple[dict[str, Any], ...] = (
     {
         "id": "sparer_pb",
         "ausloeser_felder": ("kap_kapitalertraege", "kap_gewinn_aktien"),
-        "pauschal_felder": ("kap_zusammenveranlagung",),
+        "pauschal_felder": ("veranlagung",),
         "label": "Sparer-Pauschbetrag (§ 20 Abs. 9)",
         "hinweis": "Kapitaleinkünfte vorhanden, aber der Sparer-Pauschbetrag (1.000/2.000 €) ist "
                     "nur mit Angabe der Veranlagungsart korrekt bestimmbar.",
