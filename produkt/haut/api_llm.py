@@ -6,7 +6,9 @@ der Funktionen halten die Abhängigkeit locker. Exportiert LlmNichtVerfuegbar da
 api.py sie in except-Clauses nutzen kann."""
 
 import json
+import audit  # noqa: E402 — P1.6 Audit-Log (sys.path via api.py)
 import kontoauszug_writer as KW
+from pii_filter import filtere  # noqa: E402 — PII-Filter vor ausgehendem LLM-Call
 
 # Exception für Exception-Handling in api.py (ohne dass api.py selbst llm_client importiert)
 try:
@@ -66,15 +68,24 @@ def _chat_parse(text: str) -> list[dict]:
     return out
 
 
-def _llm_vorschlaege(freitext: str, katalog: list[dict]) -> list[dict]:
+def _llm_vorschlaege(freitext: str, katalog: list[dict],
+                     user_id: str | None = None) -> list[dict]:
     """Chat-Task-Wrapper (Handler-Schicht) ÜBER llm_client.complete (der einen niedrig-level Wahrheit). Cap-
     gated: kein Key/Base/Modell → LlmNichtVerfuegbar propagiert (der /chat-Handler fängt sie → 501). Der
     Aufrufer schreibt jeden Vorschlag als VORLÄUFIGES Event (Store-Auflage A + Katalog-Check erzwingen die
-    Sicherheit); der Mensch bestätigt via Hold-Confirm."""
+    Sicherheit); der Mensch bestätigt via Hold-Confirm.
+
+    PII-Filter: Vor dem ausgehenden LLM-Call werden personenbezogene Daten (IdNr, IBAN, Datum,
+    PLZ/Ort, Straße, Anrede+Name) maskiert. Geldbeträge und Paragraphen bleiben unangetastet.
+    Audit: pro Call ein Eintrag mit Kategorien + Textlänge (NIEMALS der Freitext selbst)."""
     if not (freitext or "").strip():
         return []
+    gefiltert, kategorien = filtere(freitext)
     import llm_client
-    comp = llm_client.complete("chat", _chat_prompt(freitext, katalog))
+    comp = llm_client.complete("chat", _chat_prompt(gefiltert, katalog))
+    # Audit: nur Metadaten, nie den Freitext (roh oder gefiltert)
+    audit.append(user_id or "unbekannt", "llm_call", None,
+                 f"pii_kategorien={kategorien}, textlaenge_vor={len(freitext)}, textlaenge_nach={len(gefiltert)}")
     return _chat_parse(comp.text)
 
 

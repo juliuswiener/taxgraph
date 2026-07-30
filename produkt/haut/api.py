@@ -2119,7 +2119,7 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
         for fid, b in bindung.items() if "llm" in (b.get("vorschlagbar_von") or [])]
     check_katalog = ST.lade_katalog(TR.lade_bindung())
     try:
-        vorschlaege = api_llm._llm_vorschlaege(freitext, prompt_katalog)
+        vorschlaege = api_llm._llm_vorschlaege(freitext, prompt_katalog, user_id=_AUTH_USER)
     except (api_llm.LlmNichtVerfuegbar, ImportError):   # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
         return 501, CHAT_501                             # echte Logik-/Parse-Bugs propagieren (konsistent zu kontoauszug)
     geschrieben, abgelehnt = [], []
