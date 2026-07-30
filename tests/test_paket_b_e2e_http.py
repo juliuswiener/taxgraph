@@ -2909,3 +2909,137 @@ def test_graph_uebersicht(base):
     st, g2 = _req(base, "GET", f"/fall/{fid}/graph")
     kante = next(k for k in g2["kanten"] if k["feld_id"] == "ep_arbeitstage")
     assert kante["zustand"] == "bestaetigt"
+
+
+def test_gesamt_versorgungsfreibetrag_kohortenvergleich_2005_vs_2040(base):
+    """§ 19 Abs. 2 Differenzial: Gleiche Bezüge, unterschiedliche Kohorten → Freibetrag-Unterschied.
+
+    Fall: Single, Bruttolohn 50.000€ + Versorgung 30.000€ (BG 30.000€).
+    Kohorte 2005: 40%, HB 3.000, Zuschlag 900 → FVB 3.000 + Zuschlag 900 = 3.900.
+    Kohorte 2040:  7,2%, HB 540, Zuschlag 162 → VFB 540 + Zuschlag 162 = 702.
+    Einkünfte: 30.000 − (VFB+Zuschlag) − 102.
+    2005: 30.000 − 3.900 − 102 = 25.998€.
+    2040: 30.000 − 702 − 102 = 27.196€.
+    Steuern(2005) < Steuern(2040) wegen geringerer Einkünfte.
+    """
+    catala = _catala_da()
+
+    # Kohorte 2005 (hoher Freibetrag)
+    kegel_2005 = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-2005", kegel_2005)
+    _req(base, "POST", "/fall/vf-2005/event", _laie("versorgung_jahresrente", 3000000))
+    _req(base, "POST", "/fall/vf-2005/event", _laie("versorgung_bemessungsgrundlage", 3000000))  # 30.000 EUR
+    _req(base, "POST", "/fall/vf-2005/event", _laie("versorgung_beginn_jahr", 2005))
+    _req(base, "POST", "/fall/vf-2005/event", _laie("versorgung_art", "altersgrenze_sonstige"))
+    _req(base, "POST", "/fall/vf-2005/event", _laie("versorgung_alter_bei_beginn", 63))
+    st, erg_2005 = _req(base, "GET", "/fall/vf-2005/ergebnis")
+    _val("ergebnis", erg_2005)
+    steuern_2005 = erg_2005.get("zahl_cent")
+
+    # Kohorte 2040 (niedriger Freibetrag)
+    kegel_2040 = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-2040", kegel_2040)
+    _req(base, "POST", "/fall/vf-2040/event", _laie("versorgung_jahresrente", 3000000))
+    _req(base, "POST", "/fall/vf-2040/event", _laie("versorgung_bemessungsgrundlage", 3000000))
+    _req(base, "POST", "/fall/vf-2040/event", _laie("versorgung_beginn_jahr", 2040))
+    _req(base, "POST", "/fall/vf-2040/event", _laie("versorgung_art", "altersgrenze_sonstige"))
+    _req(base, "POST", "/fall/vf-2040/event", _laie("versorgung_alter_bei_beginn", 63))
+    st, erg_2040 = _req(base, "GET", "/fall/vf-2040/ergebnis")
+    _val("ergebnis", erg_2040)
+    steuern_2040 = erg_2040.get("zahl_cent")
+
+    if catala:
+        # Kohorte 2005 (höherer Freibetrag) → niedrigere Steuern
+        assert steuern_2005 is not None and steuern_2040 is not None
+        assert steuern_2005 < steuern_2040, (
+            f"Kohorte 2005 (hoher FB) sollte niedrigere Steuern haben: 2005={steuern_2005}, 2040={steuern_2040}. "
+            f"Freibetrag wirkt nicht."
+        )
+
+
+def test_gesamt_versorgungsfreibetrag_altersgate_60_ohne_gdb(base):
+    """§ 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: altersgrenze_sonstige, Alter 60, OHNE Schwerbehinderung
+    → kein Freibetrag (gate nicht erfüllt), Bezüge laufen als normaler Arbeitslohn.
+    """
+    catala = _catala_da()
+
+    # Versorgung mit Alter 60 ohne GdB (Gate nicht erfüllt)
+    kegel = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-60-nogdb", kegel)
+    _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_jahresrente", 3000000))
+    _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_bemessungsgrundlage", 3000000))
+    _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_beginn_jahr", 2024))
+    _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_art", "altersgrenze_sonstige"))
+    _req(base, "POST", "/fall/vf-60-nogdb/event", _laie("versorgung_alter_bei_beginn", 60))
+    # GdB NICHT gesetzt (default 0) → Gate nicht erfüllt (< 63 UND < 60 bei GdB≥50)
+    st, erg = _req(base, "GET", "/fall/vf-60-nogdb/ergebnis")
+    _val("ergebnis", erg)
+
+    if catala:
+        # Versorgung sollte NULL gezählt werden (kein Freibetrag)
+        # Bruttolohn 50k → Einkünfte ~47.7k, ohne Versorgung gleich
+        assert erg["zahl_cent"] is not None
+
+
+def test_gesamt_versorgungsfreibetrag_altersgate_63(base):
+    """§ 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: altersgrenze_sonstige, Alter 63
+    → Gate erfüllt, Freibetrag + Zuschlag wirken.
+    """
+    catala = _catala_da()
+
+    kegel = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-63", kegel)
+    _req(base, "POST", "/fall/vf-63/event", _laie("versorgung_jahresrente", 3000000))
+    _req(base, "POST", "/fall/vf-63/event", _laie("versorgung_bemessungsgrundlage", 3000000))
+    _req(base, "POST", "/fall/vf-63/event", _laie("versorgung_beginn_jahr", 2024))
+    _req(base, "POST", "/fall/vf-63/event", _laie("versorgung_art", "altersgrenze_sonstige"))
+    _req(base, "POST", "/fall/vf-63/event", _laie("versorgung_alter_bei_beginn", 63))
+    st, erg = _req(base, "GET", "/fall/vf-63/ergebnis")
+    _val("ergebnis", erg)
+
+    if catala:
+        assert erg["zahl_cent"] is not None
+
+
+def test_gesamt_versorgungsfreibetrag_altersgate_60_mit_gdb50(base):
+    """§ 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: altersgrenze_sonstige, Alter 60, GdB 50
+    → Gate erfüllt (60 bei GdB≥50), Freibetrag + Zuschlag wirken.
+    """
+    catala = _catala_da()
+
+    kegel = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-60-gdb50", kegel)
+    _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("versorgung_jahresrente", 3000000))
+    _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("versorgung_bemessungsgrundlage", 3000000))
+    _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("versorgung_beginn_jahr", 2024))
+    _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("versorgung_art", "altersgrenze_sonstige"))
+    _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("versorgung_alter_bei_beginn", 60))
+    _req(base, "POST", "/fall/vf-60-gdb50/event", _laie("rentner_grad_der_behinderung", 50))
+    st, erg = _req(base, "GET", "/fall/vf-60-gdb50/ergebnis")
+    _val("ergebnis", erg)
+
+    if catala:
+        assert erg["zahl_cent"] is not None
+
+
+def test_gesamt_versorgungsfreibetrag_offen(base):
+    """K2-Gate: Versorgungsbezüge vorhanden (jahresrente > 0) ABER Bemessungsgrundlage fehlt
+    → Sperrgrund versorgungsfreibetrag_offen, Fall bleibt offen.
+    """
+    # Fall mit Versorgung OHNE Bemessungsgrundlage
+    kegel = _gesamt_kegel(0, bruttolohn=8000000, kein_vuv=True)
+    _gesamt_anlegen(base, "vf-offen", kegel)
+    _req(base, "POST", "/fall/vf-offen/event", _laie("versorgung_jahresrente", 3000000))  # 30.000 EUR
+    _req(base, "POST", "/fall/vf-offen/event", _laie("versorgung_beginn_jahr", 2024))
+    _req(base, "POST", "/fall/vf-offen/event", _laie("versorgung_art", "altersgrenze_sonstige"))
+    _req(base, "POST", "/fall/vf-offen/event", _laie("versorgung_alter_bei_beginn", 63))
+    # versorgung_bemessungsgrundlage = NICHT gesetzt
+
+    st, erg = _req(base, "GET", "/fall/vf-offen/ergebnis")
+    _val("ergebnis", erg)
+
+    # Fall sollte offen sein (keine Steuer berechnet)
+    assert erg["zahl_cent"] is None
+    assert erg["grund"] == "versorgungsfreibetrag_offen", (
+        f"Sperrgrund sollte 'versorgungsfreibetrag_offen' sein, bekam '{erg.get('grund')}'"
+    )

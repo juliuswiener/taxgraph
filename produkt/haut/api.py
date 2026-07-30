@@ -600,6 +600,19 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             versorgung_jahresrente_cent = _c("versorgung_jahresrente")
             versorgung_bemessungsgrundlage_cent = _c("versorgung_bemessungsgrundlage")
             versorgung_beginn_jahr = _c("versorgung_beginn_jahr")
+            versorgung_art = f.get("versorgung_art", {}).get("wert")
+            versorgung_alter = _c("versorgung_alter_bei_beginn")
+            # § 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: nur bei altersgrenze_sonstige prüfen.
+            # Nicht-beamtenrechtliche Bezüge zählen nur ab 63. Lj (oder 60. Lj bei Schwerbehinderung, GdB ≥ 50).
+            alters_gate_erfuellt = True
+            if versorgung_art == "altersgrenze_sonstige" and versorgung_alter > 0:
+                gdb = _c("rentner_grad_der_behinderung")
+                alters_grenze = 60 if gdb >= 50 else 63
+                if versorgung_alter < alters_grenze:
+                    alters_gate_erfuellt = False
+            # Falls Alters-Gate nicht erfüllt → Jahresrente nullen (kein Freibetrag, kein Einkünfte aus § 19 Abs. 2).
+            if not alters_gate_erfuellt:
+                versorgung_jahresrente_cent = 0
             if versorgung_jahresrente_cent > 0 and versorgung_bemessungsgrundlage_cent > 0 and versorgung_beginn_jahr > 0:
                 vers_einkuenfte = runner.catala_einkuenfte_versorgung({
                     "versorgung_jahresrente": versorgung_jahresrente_cent // 100,       # CENT → EURO
@@ -1497,13 +1510,18 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                 (felder.get(f) or {}).get("zustand") == "bestaetigt"
                 for f in mahlzeitenzahl_felder
             )
-            # Alt: vpf_keine_mahlzeitengestellung (bool) bestätigt? (Fallback für an_gesamt)
-            keine_bool = (felder.get("vpf_keine_mahlzeitengestellung") or {}).get("zustand") == "bestaetigt"
+            # Alt: vpf_keine_mahlzeitengestellung (bool) bestätigt?
+            # Nur "True" (="keine gestellt") ist vollständige Antwort.
+            # "False" (="doch gestellt") OHNE Anzahlen → Sperre (unvollständig).
+            keine_mahlz_feld = felder.get("vpf_keine_mahlzeitengestellung") or {}
+            keine_mahlz_bestaetigt = keine_mahlz_feld.get("zustand") == "bestaetigt"
+            keine_mahlz_wert_true = keine_mahlz_bestaetigt and keine_mahlz_feld.get("wert") is True
 
-            # Frage beantwortet, wenn: (neu: ≥1 Anzahl bestätigt) ODER (alt: bool bestätigt)
-            mahlzeiten_beantwortet = zahlen_bestaetigt or keine_bool
+            # Frage beantwortet, wenn:
+            # (neu: ≥1 Anzahl bestätigt) ODER (alt: bool=True bestätigt, "keine gestellt")
+            mahlzeiten_beantwortet = zahlen_bestaetigt or keine_mahlz_wert_true
             if not mahlzeiten_beantwortet:
-                # Keine Angabe zu gestellten Mahlzeiten — Reduktion bleibt offen (fail-closed).
+                # Keine Angabe zu gestellten Mahlzeiten, oder bool=False ohne Anzahlen — fail-closed.
                 return "verpflegung_reduktion_offen"
         # Übernachtung Auswärtstätigkeit (§ 9 Abs. 1 Nr. 5a): Kosten > 0 → Ring nur fähig bei Inland,
         # allen 3 Tatbestands-Bedingungen bestätigt UND ohne 48-Monats-Schwellenübertritt. Ausland /

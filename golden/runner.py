@@ -274,14 +274,14 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
     Rückgabe: max(0, (S. 3 Jahressumme) - (S. 8 Kürzung - S. 10 Entgelt) - (S. 11 Erstattung)), in EURO.
     """
     p = _verpflegung_params(year)
-    # S. 3: Jahres-Pauschale, kategorisiert (EURO)
+    # S. 3: Jahres-Pauschale, kategorisiert (CENT durchgehend)
     tage_24h = int(s.get("tage_24h", 0))
     tage_an_abreise = int(s.get("tage_an_abreise", 0))
     tage_ab_8h = int(s.get("tage_ueber_8h_eintaegig", 0))
-    pauschale_24h_summe = tage_24h * p["pauschale_24h"]
-    pauschale_an_abreise_summe = tage_an_abreise * p["pauschale_an_abreise"]
-    pauschale_ab_8h_summe = tage_ab_8h * p["pauschale_ab_8h"]
-    pauschale_gesamt = pauschale_24h_summe + pauschale_an_abreise_summe + pauschale_ab_8h_summe
+    pauschale_24h_summe_cent = tage_24h * p["pauschale_24h"] * 100
+    pauschale_an_abreise_summe_cent = tage_an_abreise * p["pauschale_an_abreise"] * 100
+    pauschale_ab_8h_summe_cent = tage_ab_8h * p["pauschale_ab_8h"] * 100
+    pauschale_gesamt_cent = pauschale_24h_summe_cent + pauschale_an_abreise_summe_cent + pauschale_ab_8h_summe_cent
 
     # S. 8: Mahlzeitenkürzung (CENT-Rechnung für Genauigkeit)
     # Bezugsgröße: pauschale_24h = 28€ = 2800 Cent IMMER (nicht tagesabhängig)
@@ -302,11 +302,11 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
         + abendessen * kuerzung_mittag_abend_je_st_cent
     )
     # Deckel pro Tag (28€-Tage): min(kuerzung_brutto, tage_24h * pauschale_24h_cent)
-    kuerzung_28er_cent = min(kuerzung_28er_brutto_cent, tage_24h * pauschale_24h_cent)
+    kuerzung_28er_cent = min(kuerzung_28er_brutto_cent, pauschale_24h_summe_cent)
 
     # Rest-Kürzung (falls Mahlzeiten mehr kürzen wollten als 28€-Tage Platz bieten): 14€-Tage
     rest_kuerzung_brutto_cent = max(0, kuerzung_28er_brutto_cent - kuerzung_28er_cent)
-    pauschale_14er_summe_cent = (tage_an_abreise + tage_ab_8h) * 14 * 100
+    pauschale_14er_summe_cent = pauschale_an_abreise_summe_cent + pauschale_ab_8h_summe_cent
     kuerzung_14er_cent = min(rest_kuerzung_brutto_cent, pauschale_14er_summe_cent)
 
     kuerzung_brutto_cent = kuerzung_28er_cent + kuerzung_14er_cent
@@ -315,13 +315,12 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
     entgelt_cent = int(s.get("vpf_mahlzeiten_gezahltes_entgelt", 0))
     kuerzung_nach_entgelt_cent = max(0, kuerzung_brutto_cent - entgelt_cent)
 
-    # S. 11: steuerfreie Verpflegungserstattung (CENT → EURO)
+    # S. 11: steuerfreie Verpflegungserstattung (CENT)
     erstattung_cent = int(s.get("vpf_steuerfreie_erstattung_betrag", 0))
 
-    # Rückgabe in EURO (Cent → Euro Division)
-    kuerzung_final_euro = kuerzung_nach_entgelt_cent // 100
-    erstattung_euro = erstattung_cent // 100
-    return max(0, pauschale_gesamt - kuerzung_final_euro - erstattung_euro)
+    # Rückgabe in EURO: alle Berechnungen in Cent, finale Division rundet ab (abrundung = konservativ)
+    result_cent = max(0, pauschale_gesamt_cent - kuerzung_nach_entgelt_cent - erstattung_cent)
+    return result_cent // 100
 
 
 def _uebernachtung_abzug(s: dict, year: int) -> int:
