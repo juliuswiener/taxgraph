@@ -43,71 +43,91 @@ def _dekl(**kz) -> dict:
            "Person-B-Writer: ein Muster (maxOccurs=2 auf Pfad), Weg B (Person-Zuordnung in est_mapping)."
 )
 def test_person_b_partner_felder_im_xml():
-    """Zusammenveranlagung: Partner-Felder erscheinen unter Person=PersonB im XML.
+    """Zusammenveranlagung: Partner-Felder unter Person=PersonB im XML.
+
+    Unterschiedliche Werte für A und B, danach Blöcke zerlegen und prüfen:
+    – PersonB-Block enthält Partner-Wert
+    – PersonA-Block enthält Partner-Wert NICHT
 
     Iteriert über die 10 Partner-Felder aus est_mapping.PARTNER_INSTANZ.
-    (Zwei Felder basis_kv_pv_partner, weitere_vorsorgeaufwendungen_partner
-    haben keinen Kz-Eintrag und fallen raus — bleiben Ring-Felder.)
-
-    Für jedes Feld: Wert in Deklaration, prüfe dass er im XML unter PersonB landet.
+    Zwei Felder (basis_kv_pv_partner, weitere_vorsorgeaufwendungen_partner)
+    haben keinen Kz-Eintrag und fallen raus — bleiben Ring-Felder.
     """
     # 10 Partner-Felder mit Kz (aus PARTNER_INSTANZ in est_mapping.py Z. 116-131)
+    # Person A Werte (erste Spalte) vs Person B Werte (zweite Spalte)
     partner_felder = {
-        "bruttoarbeitslohn_partner": ("E0200201", 5000000),        # 50.000 EUR
-        "vor_an_anteil_rv_partner": ("E2000401", 100000),          # 1.000 EUR
-        "vor_ag_anteil_rv_partner": ("E2000801", 50000),           # 500 EUR
-        "vor_rv_ausserhalb_lstb_partner": ("E2000601", 30000),     # 300 EUR
-        "kap_kapitalertraege_partner": ("E1900701", 200000),       # 2.000 EUR
-        "kap_gewinn_aktien_partner": ("E1900901", 150000),         # 1.500 EUR
-        "kap_verlust_aktien_partner": ("E1901301", 0),             # 0 EUR
-        "kap_verlust_sonstige_partner": ("E1901201", 0),           # 0 EUR
-        "rentner_grad_der_behinderung_partner": ("E0109708", 0),   # N/A
-        "rentner_hilflos_blind_taubblind_partner": ("E0109706", 0),  # N/A
+        "E0200201": (5000000, 4000000),        # Bruttolohn: 50k vs 40k
+        "E2000401": (100000, 80000),           # VOR AN: 1k vs 0.8k
+        "E2000801": (50000, 40000),            # VOR AG: 500 vs 400
+        "E2000601": (30000, 20000),            # VOR RV: 300 vs 200
+        "E1900701": (200000, 150000),          # Kapital Erträge: 2k vs 1.5k
+        "E1900901": (150000, 100000),          # Kapital Gewinn Aktien: 1.5k vs 1k
+        "E1901301": (0, 0),                    # Kapital Verlust Aktien
+        "E1901201": (0, 0),                    # Kapital Verlust Sonstiges
+        "E0109708": (0, 0),                    # GdB (N/A)
+        "E0109706": (0, 0),                    # Hilflos (N/A)
     }
 
-    # Baue Deklaration mit Person-A + B Werten
-    # Person A: Lohn 5.000 EUR + Kapital 500 EUR
+    # Baue Deklaration mit UNTERSCHIEDLICHEN Person-A + B Werten
     kz_decl = {}
-    for feld_id, (kz, wert) in partner_felder.items():
-        if wert > 0:
-            # Partner-Kz direkt in Deklaration
-            kz_decl[kz] = wert
+    for kz, (wert_a, wert_b) in partner_felder.items():
+        if wert_a > 0:
+            kz_decl[kz] = wert_a
 
-    # Minimal Person-A Werte (damit es nicht leer ist)
-    kz_decl["E0100201"] = "Maier"  # Name Person A
-    kz_decl["E0100401"] = "01.01.1960"  # Geburtsdatum
+    # Person-B Werte (die aktuell NICHT ins XML kommen) mit Suffix als separate Kz
+    # (simuliert, als würden sie ins XML gehen — dient nur der Prüfung)
+    for kz, (wert_a, wert_b) in partner_felder.items():
+        if wert_b > 0:
+            # Marker: diese Werte sollen unter PersonB sein
+            kz_decl[f"__person_b_{kz}"] = wert_b
+
+    # Minimal Person-A Basis
+    kz_decl["E0100201"] = "Maier"
+    kz_decl["E0100401"] = "01.01.1960"
 
     # Erzeuge XML
     xml = EX.erzeuge_xml(_dekl(**kz_decl), vz=2025, hersteller_id=HID)
-
-    # Entferne Namespaces für Pattern-Matching
     xml_clean = xml.replace("ns0:", "").replace("ns1:", "")
 
-    # Prüfe: Person-A muss drin sein
-    assert "<Person>PersonA</Person>" in xml_clean, "Person A fehlt im XML"
+    # Zerlege XML in Person-Blöcke
+    # Muster: <Person>PersonA</Person> ... <Person>PersonB</Person>
+    # Finde die zwei Person-Container
+    person_a_start = xml_clean.find("<Person>PersonA</Person>")
+    person_b_start = xml_clean.find("<Person>PersonB</Person>")
 
-    # Hauptprüfung: Person-B muss drin sein (rot bis Writer gebaut)
-    # Mindestens ein Partner-Kz sollte unter PersonB auftauchen
-    has_person_b = "<Person>PersonB</Person>" in xml_clean
-
-    # Detaillierte Prüfung pro Partner-Feld
-    for feld_id, (kz, wert) in partner_felder.items():
-        if wert > 0:
-            # Suche nach Muster: <Kz>wert</Kz> irgendwo nach PersonB
-            # Vereinfacht: check dass Kz im XML ist (könnte Person A oder B sein)
-            if kz in xml_clean:
-                # OK, Kz ist präsent
-                pass
-            else:
-                # Kz komplett absent — würde auch für Person A gelten
-                # Aber wir setzen es nur für Person B, also Fehler
-                pytest.skip(f"{kz} nicht im Schema / nicht deklariert")
-
-    # Assert: mindestens PersonB muss existieren (hauptsächlicher Fehler)
-    assert has_person_b, (
+    assert person_a_start >= 0, "Person=PersonA nicht im XML"
+    assert person_b_start >= 0, (
         "Person=PersonB nicht im XML. "
-        "Alle Partner-Felder landen unter PersonA oder gar nicht. "
-        "PFLICHT_DEFAULT ist hart auf PersonA verdrahtet (elster_xml.py Z. 39)."
+        "PFLICHT_DEFAULT='PersonA' erzeugt keine zweite Person — alle Kz gehen nach A."
+    )
+
+    # Extrahiere Person-A-Block (von PersonA bis zum nächsten Person-Tag oder Ende)
+    person_a_end = xml_clean.find("<Person>", person_a_start + 1)
+    if person_a_end == -1:
+        person_a_end = len(xml_clean)
+    person_a_block = xml_clean[person_a_start:person_a_end]
+
+    # Extrahiere Person-B-Block (von PersonB bis zum nächsten Person-Tag oder Ende)
+    person_b_end = xml_clean.find("<Person>", person_b_start + 1)
+    if person_b_end == -1:
+        person_b_end = len(xml_clean)
+    person_b_block = xml_clean[person_b_start:person_b_end]
+
+    # Prüfe für jedes Partner-Feld: Wert im PersonB-Block, nicht in PersonA
+    failures = []
+    for kz, (wert_a, wert_b) in partner_felder.items():
+        if wert_b > 0:
+            # PersonB sollte diesen Wert haben
+            if f">{wert_b}<" not in person_b_block:
+                failures.append(f"{kz} Wert {wert_b} fehlt in PersonB-Block")
+            # PersonA sollte diesen Wert NICHT haben (unterschiedlich)
+            if f">{wert_b}<" in person_a_block:
+                failures.append(f"{kz} Wert {wert_b} falsch in PersonA-Block (sollte nur in B sein)")
+
+    assert not failures, (
+        f"Person-B-Werte nicht korrekt zugeordnet:\n" +
+        "\n".join(f"  – {f}" for f in failures) +
+        "\nPerson-B-Writer nicht gebaut oder Werte fehlen."
     )
 
 
