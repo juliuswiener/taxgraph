@@ -377,11 +377,6 @@ UNERREICHBAR_BEKANNT = {
     # § 9 Abs. 4a Einzelreise-Slots — der Ring rechnet aus den Tages-Aggregaten
     "vpf_abwesenheit_stunden", "vpf_an_oder_abreisetag", "vpf_auswaertige_taetigkeit",
     "vpf_keine_unterbrechung", "vpf_mit_uebernachtung",
-    # OFFENER FEHLER (2026-07-31), nicht legitim — Verdrahtung fehlt, in Arbeit:
-    # § 35a Abs. 3 S. 2 schließt öffentlich geförderte Maßnahmen vom Abzug aus. Solange
-    # die Frage nicht gestellt wird, zieht der Ring auch bei Förderung ab — bis zu
-    # 1.200 EUR zu wenig Steuer je Fall. Beim Schließen hier streichen.
-    "hh_handwerker_keine_foerderung",
 }
 
 
