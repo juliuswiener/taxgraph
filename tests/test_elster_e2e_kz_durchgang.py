@@ -196,3 +196,23 @@ def test_e2e_kz_durchgang_26_felder(base):
         print(f"✗ FEHLEN: {fehlen}")
 
     assert len(fehlen) == 0, f"Felder ohne Kz in Deklaration: {fehlen}"
+
+    # ===== XML-SCHRITT: Deklaration → XML =====
+    import importlib
+    spec = importlib.util.spec_from_file_location(
+        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+    EX = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(EX)
+
+    xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
+    assert len(xml_str) > 0, "XML leer"
+    print(f"\n✓ XML gebaut: {len(xml_str)} Zeichen")
+
+    # Prüfe: alle Kz aus Deklaration auch im XML
+    kz_im_xml = 0
+    for kz in deklaration.keys():
+        if kz in xml_str:
+            kz_im_xml += 1
+
+    print(f"✓ Kz im XML: {kz_im_xml}/{len(deklaration)}")
+    assert kz_im_xml == len(deklaration), f"Nur {kz_im_xml}/{len(deklaration)} Kz im XML"
