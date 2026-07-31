@@ -125,3 +125,24 @@ def test_ausland_uebernachtung_nicht_ring_faehig_sperrgrund(base):
     assert status == 200
     _val("stand", resp)
     assert resp["ring_gesperrt"] == "ausland_uebernachtung_nicht_ring_faehig"
+
+
+def test_verpflegung_dreimonats_felder_erreichbar(base):
+    """Regressions-Wächter: vpf_tage_*_nach_drei_monaten müssen über POST 201 erreichbar sein.
+    Tote Bindung ohne Scheibe (4.Vorkommen heute).
+    """
+    from tests.test_paket_b_e2e_http import _gesamt_kegel, _gesamt_anlegen, _req, _laie
+    
+    kegel = _gesamt_kegel(0, bruttolohn=5000000)
+    _gesamt_anlegen(base, "vpf-drei", kegel)
+    
+    # Die drei Dreimonatsfrist-Felder
+    felder_zu_pruefen = [
+        "vpf_tage_24h_nach_drei_monaten",
+        "vpf_tage_an_abreise_nach_drei_monaten",
+        "vpf_tage_ueber_8h_nach_drei_monaten"
+    ]
+    
+    for feld_id in felder_zu_pruefen:
+        st, resp = _req(base, "POST", "/fall/vpf-drei/event", _laie(feld_id, 0))
+        assert st == 201, f"{feld_id}: POST {st} statt 201 — tote Bindung?"

@@ -3638,3 +3638,39 @@ def test_rentner_p32d_kapital_hohe_rente_abgeltung_25pct(base):
         assert 490 < steuern < 510, (
             f"Rentner 80k + 2k Kapital sollte exakt ca. 500 EUR Steuer haben (Abgeltung 25%): {steuern} EUR"
         )
+
+
+def test_verpflegung_dreimonats_frist_ring(base):
+    """Ring-Test § 9 Abs. 4a S. 6/7 Dreimonatsfrist.
+    60 Reisetage @ 28€ Pauschale: 60×28 = 1.680€.
+    Nach 3 Monaten: 20 Tage, davon nur 15 in Frist → 45 Tage Voll.
+    Pauschale: 45×28 = 1.260€ statt 1.680€.
+    Bei ~42% Tarif: 420€ Einsparung → etwa 176€ weniger Steuer.
+    """
+    catala = _catala_da()
+    
+    # Fall A: ohne Dreimonatsfrist-Angabe (alle 60 Tage = Frist)
+    kegel_ohne = _gesamt_kegel(0, bruttolohn=5000000)
+    _gesamt_anlegen(base, "vpf-d-ohne", kegel_ohne)
+    _req(base, "POST", "/fall/vpf-d-ohne/event", _laie("tage_24h", 60))
+    st, erg_ohne = _req(base, "GET", "/fall/vpf-d-ohne/ergebnis")
+    _val("ergebnis", erg_ohne)
+    steuern_ohne = erg_ohne["zahl_cent"]
+    
+    # Fall B: mit Dreimonatsfrist-Angabe (15 nach Frist, 45 davor)
+    kegel_mit = _gesamt_kegel(0, bruttolohn=5000000)
+    _gesamt_anlegen(base, "vpf-d-mit", kegel_mit)
+    _req(base, "POST", "/fall/vpf-d-mit/event", _laie("tage_24h", 60))
+    _req(base, "POST", "/fall/vpf-d-mit/event", _laie("vpf_tage_24h_nach_drei_monaten", 15))
+    st, erg_mit = _req(base, "GET", "/fall/vpf-d-mit/ergebnis")
+    _val("ergebnis", erg_mit)
+    steuern_mit = erg_mit["zahl_cent"]
+    
+    if catala and steuern_ohne and steuern_mit:
+        delta = steuern_ohne - steuern_mit
+        # 15 Tage × 28€ = 420€ Minderung × ~42% = ~176€ (17600 Cent)
+        # Toleranz ±20€ für Freibetrags-Effekte
+        assert 15600 < delta < 19600, (
+            f"Dreimonatsfrist 60→45 Tage (420€ Minderung): "
+            f"ohne={steuern_ohne}, mit={steuern_mit}, delta={delta}c (erwartet ~17600)"
+        )

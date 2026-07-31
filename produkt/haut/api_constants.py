@@ -44,6 +44,8 @@ P16_4_GATE_FELDER = ("rentner_alter_55_oder_berufsunfaehig", "rentner_freibetrag
 
 # ========== § 9 Abs. 4a Verpflegung + Mahlzeitenkürzung ==========
 VERPFLEGUNG_TAGE = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig")
+VERPFLEGUNG_TAGE_NACH_FRIST = ("vpf_tage_24h_nach_drei_monaten", "vpf_tage_an_abreise_nach_drei_monaten",
+                                "vpf_tage_ueber_8h_nach_drei_monaten")
 VERPFLEGUNG_GUARD = ("vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
 VERPFLEGUNG_KUERZUNG = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
                         "vpf_abendessen_gestellt_anzahl", "vpf_mahlzeiten_gezahltes_entgelt",
@@ -129,7 +131,7 @@ RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfr
 
 # ========== § 35a Haushaltsnahe ==========
 HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")
-HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23 + ("hh_in_eu_ewr",)
+HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23 + ("hh_in_eu_ewr", "hh_handwerker_keine_foerderung")
 P35A_MITVER_ANZEIGE = ("p35a_mitveranlagung",)
 
 # ========== § 10b Spenden + § 10 KiSt (Gesamt) ==========
@@ -348,7 +350,7 @@ SCHEIBEN = {
                    + GESAMT_33B + GESAMT_33B_PARTNER
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
-                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_GUARD + VERPFLEGUNG_KUERZUNG
+                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_KUERZUNG
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + ARBEITSMITTEL_AFA_GESAMT
                    + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P16_4_GATE_FELDER),
@@ -393,7 +395,7 @@ __all__ = [
     # § 36/§22/§10 KiSt
     "P36_ANRECHNUNG", "P22_NR3_EINKUENFTE", "KIST_KONFESSION_FELDER", "P16_4_GATE_FELDER",
     # Verpflegung
-    "VERPFLEGUNG_TAGE", "VERPFLEGUNG_GUARD", "VERPFLEGUNG_KUERZUNG",
+    "VERPFLEGUNG_TAGE", "VERPFLEGUNG_TAGE_NACH_FRIST", "VERPFLEGUNG_GUARD", "VERPFLEGUNG_KUERZUNG",
     # Vorsorge
     "VOR_FELDER", "VOR_PARTNER_FELDER", "KV_PV_FELDER", "KV_PV_PARTNER_FELDER", "VORSORGE_PARTNER_FELDER",
     # dHf
