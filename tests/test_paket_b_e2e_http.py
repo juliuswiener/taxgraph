@@ -3426,7 +3426,6 @@ def test_rentner_kap_differential(base):
         )
 
 
-@pytest.mark.xfail(reason="§ 32d Abs. 6 Günstigerprüfung im Rentner-Ring noch nicht verdrahtet, siehe dev-p20")
 def test_rentner_kap_abgeltungsteuer_hohe_rente(base):
     """§ 32d Abs. 1 Abgeltungsteuer greift bei hohem Einkommen.
     Bei 80.000 EUR Rente (tariflicher Grenzsteuersatz > 25%) wird Abgeltungsteuer angewendet.
