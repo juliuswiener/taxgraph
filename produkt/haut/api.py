@@ -2148,12 +2148,21 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
+
+    # Sperrgrund-Prüfung VOR Deklaration: Ring ist rechnerunfähig → 409 mit unserem Grund,
+    # nicht ERiCs falschem Grund später. Identisch wie in ergebnis() (Zeile 2075).
+    cfg = _cfg(store)
+    vz = int(store.get("veranlagungszeitraum") or 0)
+    if cfg.get("guard"):
+        sperr = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung)
+        if sperr:
+            return 409, {"fall_id": fall_id, "eingereicht": False, "grund": sperr,
+                         "hinweis": "Die Deklaration kann nicht erstellt werden, weil eine erforderliche Angabe fehlt."}
+
     result = EM.deklariere(felder, bindung, snapshot_id=sid)
     if not result["vollstaendig"]:
         return 409, {"fall_id": fall_id, "eingereicht": False, "grund": "deklaration_unvollstaendig",
                      "unvollstaendig": result["unvollstaendig"]}
-
-    vz = int(store.get("veranlagungszeitraum") or 0)
     try:
         xml = EX.erzeuge_xml(result, vz=vz,
                              empfaenger_land=str(body.get("empfaenger_land") or "BY"),
