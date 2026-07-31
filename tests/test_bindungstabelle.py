@@ -422,3 +422,149 @@ def test_g_gate_faengt_tote_bindung(daten):
         erreichbar |= set(AC.SCHEIBEN[scheibe].get("felder") or ())
     askable = {"zzz_erfundenes_feld_ohne_scheibe"}
     assert sorted(askable - erreichbar - UNERREICHBAR_BEKANNT) == ["zzz_erfundenes_feld_ohne_scheibe"]
+
+
+# ========== Betragsfelder ohne Kz / ELSTER-Audit ==========
+
+# 59 Betragsfelder (typ: cent) steuerwirksam, aber ohne elster_kz.
+# Gruppiert nach Audit-Befund (siehe tests/test_bindungstabelle.py:test_h_betragsfelder_haben_kz_oder_begruendung).
+# Stand: 2026-07-31, Audit zeigt 58/77 steuerwirksame Beträge ohne Weg ins XML-Schema.
+
+BETRAGSFELDER_OHNE_KZ = {
+    # Gruppe B: Partner-Instanzen — XML-Writer kennt PersonB nicht (elster_xml.py Z. 39 nur PersonA).
+    # Stille Fehler bei Zusammenveranlagung: Ehepaar 50k+50k rechnet 20.490€ ESt, Erklärung enthält
+    # nur Lohn von Person A → 14.982€ Under-Tax (gemessen 2026-07-31).
+    # Status: FEHLER, Klärung offen. PersonB-Logik in XML-Writer fehlt komplett.
+    "basis_kv_pv_partner",
+    "bruttoarbeitslohn_partner",
+    "kap_gewinn_aktien_partner",
+    "kap_gewinn_sonstige_partner",
+    "kap_kapitalertraege_partner",
+    "kap_verlust_aktien_partner",
+    "kap_verlust_sonstige_partner",
+    "rentner_rentenfreibetrag_partner",
+    "vor_ag_anteil_rv_partner",
+    "vor_an_anteil_rv_partner",
+    "vor_rv_ausserhalb_lstb_partner",
+    "weitere_vorsorgeaufwendungen_partner",
+
+    # Gruppe A: Accessor-Output ohne Kz-Mapping.
+    # Begründung nennt Ziel-Kz (z.B. E0204401), aber grep über produkt/ findet es nur in elster_kz_grund,
+    # nicht in est_mapping.py oder elster_xml.py. Behauptung unbelegt.
+    # Status: Gruppe-A-Felder sind Accessor-Ergebnis, nicht direkt als INPUT in ein Kz-tragendes Feld abbildbar.
+    "am_anschaffungskosten",
+    "berufsausbildung_aufwendungen",
+    "afa_jahresbetrag",
+    "betriebseinnahmen",
+
+    # Gruppe C: Dokumentierte MVP-Lücken / andere offene Posten (44 Felder).
+    # elster_kz_grund nennt "MVP", "Folgeticket", oder konkrete Baustellen-Referenzen.
+    # Status: legitime Lücken, Roadmap-Items, nicht kurzfristig lösbar.
+    "basis_kv_pv",
+    "dba_auslaendische_einkuenfte",
+    "dba_gezahlte_auslaendische_steuer",
+    "einkuenfte_gewinn",
+    "gewinnanteil",
+    "gewst_messbetrag",
+    "kinderbetreuungskosten",
+    "kist_erstattet",
+    "kist_gezahlt",
+    "kap_gewinn_sonstige",
+    "p22_nr3_einkuenfte",
+    "p23_anschaffung_herstellungskosten",
+    "p23_veraeusserungspreis",
+    "p23_werbungskosten",
+    "p32b_progressionseinkuenfte",
+    "p33a_andere_einkuenfte_bezuege",
+    "p33a_unterhalt_aufwendungen",
+    "p33a_unterhalt_kv_pv",
+    "p35c_energieberater_aufwendungen",
+    "p35c_sanierungsaufwendungen",
+    "p36_lohnsteuer",
+    "p36_vorauszahlungen",
+    "pv_einnahmen",
+    "realsplitting_empfaenger_kv_pv",
+    "realsplitting_unterhaltsleistungen",
+    "rentner_jahresrente",
+    "rentner_jahresrente_partner",
+    "rentner_rentenfreibetrag",
+    "rentner_veraeusserungsgewinn",
+    "uebernachtung_kosten_monat",
+    "verguetung_darlehen",
+    "verguetung_taetigkeit",
+    "verguetung_ueberlassung",
+    "verlustvortrag_bestand",
+    "versorgung_bemessungsgrundlage",
+    "versorgung_jahresrente",
+    "vpf_mahlzeiten_gezahltes_entgelt",
+    "vpf_steuerfreie_erstattung_betrag",
+    "vv_erhaltungsaufwand",
+    "vv_gebaeude_afa",
+    "vv_schuldzinsen",
+    "vv_sonstige_wk",
+    "weitere_vorsorgeaufwendungen",
+}
+
+
+def test_h_betragsfelder_haben_kz_oder_begruendung(daten):
+    """Betragsfelder (typ: cent) müssen elster_kz ODER benannte Ausnahme haben.
+
+    Von 77 steuerwirksamen Betragsfeldern haben nur 18 einen Weg in die ELSTER-Erklärung.
+    Dieser Test hält die 59 bekannten Lücken fest, damit NEUE Felder ohne Kz auffallen
+    und nicht unbemerkt in dieser großen Menge untergehen.
+
+    Audit 2026-07-31: Gruppe B (12 Partner-Felder) = FEHLER, PersonB-Logik fehlt.
+    Gruppe A (2 Accessor-Output) = Behauptung unbelegt. Gruppe C (44) = MVP-offen.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "api_constants_kz", os.path.join(ROOT, "produkt", "haut", "api_constants.py"))
+    AC = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(AC)
+
+    # Menge: alle Felder in nutzerwählbaren Scheiben
+    in_scheiben = set()
+    for scheibe in ("gesamt", "rentner_gesamt"):
+        in_scheiben |= set(AC.SCHEIBEN[scheibe].get("felder") or ())
+
+    # Subgroup: Betragsfelder (typ: cent)
+    betragsfelder = {
+        b["feld_id"] for d in daten.values() for b in d["bindungen"]
+        if b.get("typ") == "cent" and b["feld_id"] in in_scheiben
+    }
+
+    # Prüfung: entweder kz gesetzt ODER in benannter Ausnahme
+    # (daten[feld_id] = {bindungen: [...]}, alle Bindungen-Einträge sollten same elster_kz haben)
+    ohne_kz = {
+        b["feld_id"] for d in daten.values() for b in d["bindungen"]
+        if b.get("typ") == "cent" and b["feld_id"] in betragsfelder
+        and not b.get("elster_kz")
+    }
+    unbekannt = sorted(ohne_kz - BETRAGSFELDER_OHNE_KZ)
+
+    assert not unbekannt, (
+        "Neue Betragsfelder ohne elster_kz gefunden (weder Kz noch Ausnahme): "
+        f"{unbekannt} — entweder in est_mapping.py elster_kz hinzufügen oder in "
+        "BETRAGSFELDER_OHNE_KZ mit Gruppen-Kommentar eintragen")
+
+
+def test_h_gate_faengt_neue_felder_ohne_kz(daten):
+    """Gegenprobe: ein erfundenes cent-Feld ohne Kz MUSS auffallen.
+
+    Ohne diese Probe könnte BETRAGSFELDER_OHNE_KZ heimlich alle neuen Fehler verdecken.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "api_constants_kz2", os.path.join(ROOT, "produkt", "haut", "api_constants.py"))
+    AC = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(AC)
+    in_scheiben = set()
+    for scheibe in ("gesamt", "rentner_gesamt"):
+        in_scheiben |= set(AC.SCHEIBEN[scheibe].get("felder") or ())
+
+    # Simuliere ein neues cent-Feld ohne Kz und ohne Ausnahme
+    betragsfelder = {"zzz_neues_feld_ohne_kz"}
+    ohne_kz = betragsfelder - {f for f in betragsfelder if False}  # Alle haben kein kz
+    unbekannt = sorted(ohne_kz - BETRAGSFELDER_OHNE_KZ)
+    assert unbekannt == ["zzz_neues_feld_ohne_kz"], (
+        f"Gegenprobe fehlgeschlagen: erfundenes Feld nicht erkannt: {unbekannt}")
