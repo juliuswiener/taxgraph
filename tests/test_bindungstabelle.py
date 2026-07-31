@@ -351,3 +351,79 @@ def test_neg_gemischte_summanden(daten):
                 b.get("slot_beitrag", "exakt"))
     gemischt = any(len(v) > 1 and set(v) != {"summand"} for v in slots.values())
     assert gemischt, "gemischte exakt/summand würde nicht auffallen"
+
+
+# ---- (g) Erreichbarkeit: askable-Feld ohne Scheibe ------------------------------
+
+# Felder, die askable gebunden sind, aber in KEINER nutzerwählbaren Scheibe stehen.
+# Die Oberfläche bietet nur "gesamt" und "rentner_gesamt" (produkt/haut/static/index.html),
+# also kann der Nutzer sie nicht setzen — ein POST endet mit "feld_id nicht in dieser
+# Scheibe". Wer so ein Feld verdrahtet, baut ins Leere.
+#
+# Die Liste ist eine BESTANDSAUFNAHME, kein Freibrief: sie hält den Stand fest, damit ein
+# NEUES unerreichbares Feld auffällt. Wer hier etwas einträgt, sollte begründen können,
+# warum das Feld nicht gefragt wird. Wer eines entfernt, hat es erreichbar gemacht.
+UNERREICHBAR_BEKANNT = {
+    # § 33 Abs. 1 Tatbestand — Geltungsbedingungen der Regel, nicht erfragt
+    "agb_notwendig_angemessen", "agb_zwangslaeufig",
+    # § 32 Kind-Stammdaten — der Ring rechnet aus fam_anzahl_kinder, nicht je Kind
+    "fam_kinder_beruecksichtigt", "fam_kinder_im_haushalt", "kind_idnr",
+    "kind_kindschaftsverh_zeitraum_a", "kind_kindschaftsverh_zeitraum_b",
+    "kind_kindschaftsverhaeltnis_a", "kind_kindschaftsverhaeltnis_b",
+    # § 6 Abs. 2 GWG-Tatbestand — Geltungsbedingungen, nicht erfragt
+    "gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250",
+    # § 24a — der Accessor leitet das Alter aus geburtsjahr + VZ ab
+    "rentner_alter_64_erfuellt",
+    # § 9 Abs. 4a Einzelreise-Slots — der Ring rechnet aus den Tages-Aggregaten
+    "vpf_abwesenheit_stunden", "vpf_an_oder_abreisetag", "vpf_auswaertige_taetigkeit",
+    "vpf_keine_unterbrechung", "vpf_mit_uebernachtung",
+    # OFFENER FEHLER (2026-07-31), nicht legitim — Verdrahtung fehlt, in Arbeit:
+    # § 35a Abs. 3 S. 2 schließt öffentlich geförderte Maßnahmen vom Abzug aus. Solange
+    # die Frage nicht gestellt wird, zieht der Ring auch bei Förderung ab — bis zu
+    # 1.200 EUR zu wenig Steuer je Fall. Beim Schließen hier streichen.
+    "hh_handwerker_keine_foerderung",
+}
+
+
+def test_g_askable_felder_sind_erreichbar(daten):
+    """Ein askable-Feld, das in keiner nutzerwählbaren Scheibe steht, ist tote Bindung.
+
+    Dieser Fehler ist mehrfach aufgetreten: Bindung geschrieben, Accessor gebaut,
+    Unit-Tests grün — und das Feld war über die Oberfläche nie setzbar, weil der Eintrag
+    in SCHEIBEN fehlte. Unit-Tests fangen das nicht, weil sie den Accessor direkt aufrufen
+    und die Scheibe nie berühren.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "api_constants_gate", os.path.join(ROOT, "produkt", "haut", "api_constants.py"))
+    AC = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(AC)
+
+    erreichbar = set()
+    for scheibe in ("gesamt", "rentner_gesamt"):
+        erreichbar |= set(AC.SCHEIBEN[scheibe].get("felder") or ())
+
+    askable = {b["feld_id"] for d in daten.values() for b in d["bindungen"] if b.get("askable")}
+    neu = sorted(askable - erreichbar - UNERREICHBAR_BEKANNT)
+    assert not neu, (
+        "askable gebunden, aber in keiner nutzerwählbaren Scheibe (tote Bindung): "
+        f"{neu} — entweder in SCHEIBEN aufnehmen oder in UNERREICHBAR_BEKANNT "
+        "mit Begründung eintragen")
+
+
+def test_g_gate_faengt_tote_bindung(daten):
+    """Gegenprobe: ein erfundenes askable-Feld ohne Scheibe MUSS auffallen.
+
+    Ohne diese Probe wäre nicht belegt, dass das Gate überhaupt anschlagen kann —
+    UNERREICHBAR_BEKANNT könnte alles verdecken.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "api_constants_gate2", os.path.join(ROOT, "produkt", "haut", "api_constants.py"))
+    AC = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(AC)
+    erreichbar = set()
+    for scheibe in ("gesamt", "rentner_gesamt"):
+        erreichbar |= set(AC.SCHEIBEN[scheibe].get("felder") or ())
+    askable = {"zzz_erfundenes_feld_ohne_scheibe"}
+    assert sorted(askable - erreichbar - UNERREICHBAR_BEKANNT) == ["zzz_erfundenes_feld_ohne_scheibe"]
