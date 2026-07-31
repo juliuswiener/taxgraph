@@ -1809,6 +1809,12 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if _positiv("hh_dienstleistungen") or _positiv("hh_handwerker_arbeitskosten"):
             if (felder.get("hh_rechnung_unbar") or {}).get("zustand") != "bestaetigt":
                 return "rechnung_unbar_offen"
+        # § 35a Abs. 3 S. 2: öffentlich geförderte Handwerkermaßnahmen (zinsverbilligtes Darlehen
+        # oder steuerfreier Zuschuss) → hh_handwerker_keine_foerderung CONDITIONAL-MANDATORY
+        # (nur wenn Handwerker > 0). Unbeantwortet → handwerker_foerderung_offen (Abs. 3 unhaltbar).
+        if _positiv("hh_handwerker_arbeitskosten"):
+            if (felder.get("hh_handwerker_keine_foerderung") or {}).get("zustand") != "bestaetigt":
+                return "handwerker_foerderung_offen"
         # § 10 Abs. 4b KiSt-Erstattungsüberhang: früher sperrte hier erstattungsueberhang_offen,
         # weil die GdE-Hinzurechnung (S. 3) fehlte und ein stiller Abzug 0 unterbesteuert hätte.
         # Sie ist jetzt gebaut (catala_p10_4b_erstattungsueberhang, im Ring vor den GdE-Verwendungen

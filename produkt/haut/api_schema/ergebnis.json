@@ -23,7 +23,7 @@
                        "verpflegung_reduktion_offen", "flag_konsistenz_offen",
                        "partner_konsistenz_offen", "kapital_semantik_offen",
                        "rentenfreibetrag_fixierung_offen", "versorgungsfreibetrag_offen", "vv_instanz_offen",
-                       "rechnung_unbar_offen", "rente_instanz_offen",
+                       "rechnung_unbar_offen", "handwerker_foerderung_offen", "rente_instanz_offen",
                        "erstattungsueberhang_offen", "partner_vorsorge_offen",
                        "alleinerziehend_konsistenz_offen", "gewinn_quelle_offen",
                        "luf_euer_offen", "gewst_hebesatz_offen", "abs3_ueber_5mio_offen", "kinder_gehoeren_in_gesamt", "verlustvortrag_gehoert_in_gesamt", "dba_multi_country_offen", "dba_kapital_offen", "p32b_kombi_offen", "progression_gehoert_in_gesamt", "p16_4_gate_offen"]},

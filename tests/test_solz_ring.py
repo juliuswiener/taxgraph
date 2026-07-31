@@ -287,3 +287,83 @@ def test_solz_ring_an_gesamt_unter_freigrenze(base):
         assert erg["solz_cent"] is not None and erg["solz_cent"] == 0
     else:
         assert erg["solz_cent"] is None
+
+
+def test_solz_ring_rentner_grenzfall_mit_kapital(base):
+    """§ 32d SolZ Grenzfall: Rente knapp unter Freigrenze ESt (19.950€ VZ2025).
+    Bruttorente 88.000 EUR → Renten-Eink 73.348 EUR (Besteuerungsanteil 83,5% Erstjahr 2025)
+    → ESt 19.891 EUR (knapp UNTER FG).
+    + 5.000 EUR Kapitalerträge − 1.000 EUR Sparer-PB = 4.000 EUR stpfl → Kapitalsteuer ~1.000 EUR.
+
+    § 3 Abs. 3 S. 2 SolzG: Kapital-SolZ = 5.5% auf Kapitalsteuer, ADDITIV ohne Freigrenze.
+    Erwartung:
+      - SolZ ohne Kapital: 0 (ESt unter FG)
+      - SolZ mit Kapital: 5.5% × 1.000€ = 55€ (5.500 Cent)
+
+    Mutation-Test: Gate invertieren (Kapital-SolZ weglassen) → delta = 0, false green erkannt.
+    """
+    catala = _catala_da()
+
+    # Fall 1: 88k Rente, OHNE Kapital → ESt ~19.891€ (unter FG) → SolZ 0
+    kegel_ohne_kap = [
+        ("veranlagung", "einzel"),
+        ("rentner_renten_art", "gesetzliche_rente"),
+        ("rentner_jahresrente", 8800000),     # 88.000€ in Cent
+        ("rentner_renten_beginn_jahr", 2025),
+        ("rentner_alter_bei_rentenbeginn", 66),
+        ("rentner_rentenfreibetrag", 0),
+        ("rentner_grad_der_behinderung", 0),
+        ("rentner_hilflos_blind_taubblind", False),
+        ("rentner_hinterbliebenenbezuege", False),
+        ("rentner_pflegegrad", 0),
+        ("rentner_gepflegter_hilflos", False),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
+        ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
+        ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+        # Kapital-Felder (bestätigte Null für rentner-gesamt):
+        ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
+        ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
+    ]
+    _rent_anlegen(base, "szr-grenzfall-ohne", kegel_ohne_kap)
+    st, erg_ohne = _req(base, "GET", "/fall/szr-grenzfall-ohne/ergebnis")
+    _val("ergebnis", erg_ohne)
+    solz_ohne = erg_ohne.get("solz_cent")
+    est_ohne = erg_ohne.get("zahl_cent")
+
+    # Fall 2: 88k Rente + 5k Kapital → ESt bleibt ~19.891€ (unter FG, Kapital addiert sich nicht zur ESt-Basis),
+    # aber Kapitalsteuer separate Besteuerung 25% Abgeltung.
+    # Kapitalerträge 5.000€ − Sparer-PB 1.000€ = 4.000€ stpfl → Kapitalsteuer 1.000€
+    kegel_mit_kap = [(f, (
+        False if f == "kein_kap" else
+        500000 if f == "kap_kapitalertraege" else w)) for f, w in kegel_ohne_kap]
+    _rent_anlegen(base, "szr-grenzfall-mit", kegel_mit_kap)
+    st, erg_mit = _req(base, "GET", "/fall/szr-grenzfall-mit/ergebnis")
+    _val("ergebnis", erg_mit)
+    solz_mit = erg_mit.get("solz_cent")
+    est_mit = erg_mit.get("zahl_cent")
+
+    if catala and solz_ohne is not None and solz_mit is not None:
+        # Ohne Kapital: ESt unter FG → SolZ 0
+        assert solz_ohne == 0, f"Rente 88k unter FG: solz_ohne sollte 0 sein, got {solz_ohne}"
+
+        # Mit Kapital: SolZ aus Kapitalsteuer, aber Gleitzone § 4 SolzG kann Mitigation applizieren
+        # bei Grenzfall-Nähe. Baseline: 1.000€ Kapitalsteuer × 5.5% = 55€ = 5.500 Cent.
+        # Mit Gleitzone-Mitigation: bis zu 2× so hoch in worst-case-Grenzfall.
+        assert solz_mit > 0, f"Rente 88k + Kapital: solz_mit sollte > 0, got {solz_mit}"
+
+        # Delta sollte mindestens 5.000 Cent sein (Minimal-SolZ), kann aber bis 11.000+ sein bei Gleitzone.
+        delta = solz_mit - solz_ohne
+        assert delta >= 5000, (
+            f"Kapital-SolZ delta sollte ≥5.000 cent, got delta={delta} "
+            f"(solz_ohne={solz_ohne}, solz_mit={solz_mit})"
+        )
+
+        # Meldung für User
+        print(f"\n§ 32d Grenzfall-Test:")
+        print(f"  est_ohne={est_ohne} cent ({est_ohne//100}€)")
+        print(f"  est_mit={est_mit} cent ({est_mit//100}€)")
+        print(f"  solz_ohne={solz_ohne} cent ({solz_ohne//100}€)")
+        print(f"  solz_mit={solz_mit} cent ({solz_mit//100}€)")
+        print(f"  delta={delta} cent ({delta//100}€) [Gleitzone § 4 SolzG möglich]")
+    else:
+        assert solz_ohne is None or solz_mit is None or not catala

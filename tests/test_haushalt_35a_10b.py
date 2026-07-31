@@ -25,7 +25,7 @@ def R():
 
 # ---- § 35a: drei getrennte 20-%-Töpfe mit eigenem Deckel (510/4000/1200), additiv, EURO ----
 
-GATE = {"hh_in_eu_ewr": {"wert": True}, "hh_rechnung_unbar": {"wert": True}}
+GATE = {"hh_in_eu_ewr": {"wert": True}, "hh_rechnung_unbar": {"wert": True}, "hh_handwerker_keine_foerderung": {"wert": True}}
 
 @pytest.mark.parametrize("s,erwartet", [
     ({"hh_minijob_aufwendungen": 2800},  510),

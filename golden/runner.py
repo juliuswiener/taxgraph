@@ -388,16 +388,24 @@ def catala_einkuenfte_nichtselbststaendig(s: dict) -> int:
 
 def catala_p35a_haushaltsnahe(s: dict) -> int:
     """§ 35a Abs. 1-5 EStG. EURO rein, EURO raus. Antrag implizit (Aufwand-Eingabe).
-    EU/EWR (Abs.4) gatet Abs.1-3. Rechnung+unbar (Abs.5 S.3) gatet NUR Abs.2/3."""
+    EU/EWR (Abs.4) gatet Abs.1-3. Rechnung+unbar (Abs.5 S.3) gatet NUR Abs.2/3.
+    Abs.3 S.2: öffentlich geförderte Maßnahmen (zinsverbilligtes Darlehen oder
+    steuerfreier Zuschuss) nullen NUR Abs.3 (Handwerker), Abs.1/2 unberührt."""
     minijob = int(s.get("hh_minijob_aufwendungen", 0))
     dienstleistungen = int(s.get("hh_dienstleistungen", 0))
     handwerker = int(s.get("hh_handwerker_arbeitskosten", 0))
     eu_ewr = s.get("hh_in_eu_ewr", {}).get("wert") is True
     rechnung = s.get("hh_rechnung_unbar", {}).get("wert") is True
+    # Abs.3 S.2: Feld present + wert=False → GEFÖRDERT (keine_foerderung=False) → nullen.
+    # Feld absent oder wert!=False (True, None) → nicht getestete Förderung → normal abziehen.
+    foerderung_info = s.get("hh_handwerker_keine_foerderung", {})
+    ist_gefoerdert = foerderung_info.get("wert") is False  # explizit False = gefördert
     if not eu_ewr:                       # Abs.4: gilt für alle drei
         return 0
     if not rechnung:                     # Abs.5 S.3: nur Abs.2/3, Minijob unberührt
         dienstleistungen = 0
+        handwerker = 0
+    if handwerker > 0 and ist_gefoerdert:  # Abs.3 S.2: öffentlich gefördert → Handwerker = 0
         handwerker = 0
     ermessigung = 0
     if minijob > 0:

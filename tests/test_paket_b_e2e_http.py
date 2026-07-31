@@ -1973,7 +1973,8 @@ def test_gesamt_zusammen_kapital_semantik_partner(base):
 
 def _gesamt_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechnung_unbar=None,
                     spende=0, agb=0, kinder=0, kist_gezahlt=0, kist_erstattet=0,
-                    geburtsjahr=None, alleinerziehend=None, monate=0, eu_ewr=True):
+                    geburtsjahr=None, alleinerziehend=None, monate=0, eu_ewr=True,
+                    handwerker_keine_foerderung=True):
     """Postet die OPTIONALEN gefalteten Sonder-Abzugs- + §24a/§24b-Freibetrag-Felder (Weg ii) auf einen gesamt-Fall
     (cent; kinder/geburtsjahr/monate=int; alleinerziehend=bool). hh_rechnung_unbar/geburtsjahr/alleinerziehend nur
     wenn nicht None. Nicht im Pflicht-Kegel — der Ring rechnet sie additiv."""
@@ -1985,6 +1986,8 @@ def _gesamt_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechnu
              ("fam_monate_ohne_voraussetzung", monate)]
     if rechnung_unbar is not None:
         paare.append(("hh_rechnung_unbar", rechnung_unbar))
+    if handwerker > 0:
+        paare.append(("hh_handwerker_keine_foerderung", handwerker_keine_foerderung))
     if geburtsjahr is not None:
         paare.append(("geburtsjahr", geburtsjahr))
     if alleinerziehend is not None:
@@ -2363,7 +2366,8 @@ def _rentner_anlegen(base, fid, kegel):
 
 def _rentner_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechnung_unbar=None,
                      spende=0, agb=0, kinder=0, kist_gezahlt=0, kist_erstattet=0,
-                     alleinerziehend=None, monate=0, eu_ewr=True):
+                     alleinerziehend=None, monate=0, eu_ewr=True,
+                     handwerker_keine_foerderung=True):
     """Postet die OPTIONALEN Weg-ii/§24b-Felder (§35a/§10b/§33/§10-KiSt/§24b) auf einen rentner_gesamt-Fall
     (cent; kinder/monate=int). hh_rechnung_unbar/fam_alleinstehend nur wenn nicht None. Analog _gesamt_abzuege."""
     paare = [("hh_minijob_aufwendungen", minijob), ("hh_dienstleistungen", dienstleistung),
@@ -2374,6 +2378,8 @@ def _rentner_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechn
              ("fam_monate_ohne_voraussetzung", monate)]
     if rechnung_unbar is not None:
         paare.append(("hh_rechnung_unbar", rechnung_unbar))
+    if handwerker > 0:
+        paare.append(("hh_handwerker_keine_foerderung", handwerker_keine_foerderung))
     if alleinerziehend is not None:
         paare.append(("fam_alleinstehend", alleinerziehend))
     for feld, wert in paare:
