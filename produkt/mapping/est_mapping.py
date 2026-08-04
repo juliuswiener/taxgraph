@@ -253,6 +253,9 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             deklaration[NEGATION[feld_id]] = not bool(wert)
         elif feld_id in MULTIPLIKATION:                           # Klasse e
             kind_anlagen = [{"index": i + 1} for i in range(int(wert))]
+            nicht_deklariert.append({"feld_id": feld_id,
+                                     "grund": b.get("elster_kz_grund") or
+                                     "Multiplikation -> kind_anlagen (Kinderzahl implizit)"})
         elif feld_id in agg_quellen:                             # Klasse a (dokumentierte Aggregation sammeln)
             for ziel, srcs in DOKUMENTIERT_AGGREGAT.items():
                 if feld_id in srcs:

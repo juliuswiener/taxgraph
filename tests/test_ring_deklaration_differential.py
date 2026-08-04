@@ -51,6 +51,19 @@ def _alle_kz_im_xml(xml_str: str) -> set[str]:
     return set(f"E{m}" for m in re.findall(r"<E(\d{7})>", clean))
 
 
+def _verzweigungs_kz(feld_id: str, snapshot: dict, bindung: dict) -> str | None:
+    """Ermittelt das Kz, das VERZWEIGUNG/PARTNER_VERZWEIGUNG fuer feld_id produziert."""
+    from est_mapping import VERZWEIGUNG, PARTNER_VERZWEIGUNG
+    for tabelle, art_feld_key in [(VERZWEIGUNG, "art_feld"),
+                                    (PARTNER_VERZWEIGUNG, "art_feld")]:
+        cfg = tabelle.get(feld_id)
+        if cfg:
+            art = snapshot.get(cfg[art_feld_key])
+            if art and art.get("zustand") == "bestaetigt" and art.get("wert"):
+                return cfg["kz"].get(art["wert"])
+    return None
+
+
 def _pruefe_differential(felder_snapshot: dict, bindung: dict,
                          result: dict, xml: str,
                          label: str) -> list[str]:
@@ -108,8 +121,13 @@ def _pruefe_differential(felder_snapshot: dict, bindung: dict,
             if kz in kz_ankommend and kz in kz_im_xml:
                 continue
 
-        # (a) Kz in der XML (direkt via deklaration)
+        # (a) Kz in der XML (direkt via deklaration oder Verzweigung)
         if kz and kz in kz_im_xml:
+            continue
+
+        # (a') Verzweigungs-Kz (Klasse f/g×f): feld_id via VERZWEIGUNG/PARTNER_VERZWEIGUNG
+        vz_kz = _verzweigungs_kz(feld_id, felder_snapshot, bindung)
+        if vz_kz and vz_kz in kz_im_xml:
             continue
 
         # (c) dokumentiert (Aggregat-Ziel-Kz, z.B. E0703838)
@@ -236,6 +254,104 @@ def test_differential_zusammen_keine_luecken(bindung):
     funde = _pruefe_differential(snap, bindung, result, xml, "Zusammen")
     assert not funde, (
         f"Zusammenveranlagung: {len(funde)} Betragsfelder ohne Weg ins XML:\n"
+        + "\n".join(f"  – {f}" for f in funde))
+
+
+# ---------------------------------------------------------------- Rentner (Leibrente § 22)
+
+def test_differential_rentner_keine_luecken(bindung):
+    """Rentner-Szenario: Leibrente (aa, gesetzlich) + Behinderung (§ 33b)."""
+    s = ST.leerer_store(2025, fall_id="diff_rentner")
+    # Rentner-Kegel
+    _b(s, "veranlagung", "einzel")
+    _b(s, "rentner_renten_art", "gesetzliche_rente")   # aa
+    _b(s, "rentner_jahresrente", 20000000)               # 200k cent -> 200k EUR
+    _b(s, "rentner_renten_beginn_jahr", 2025)
+    _b(s, "rentner_alter_bei_rentenbeginn", 65)
+    _b(s, "rentner_rentenfreibetrag", 0)
+    _b(s, "rentner_grad_der_behinderung", 50)            # → E0109708
+    _b(s, "rentner_hilflos_blind_taubblind", False)      # → E0109706 (bool=False = 0)
+    _b(s, "rentner_hinterbliebenenbezuege", False)
+    _b(s, "rentner_pflegegrad", 0)
+    _b(s, "rentner_gepflegter_hilflos", False)
+    # Basis-Vorsorge
+    _b(s, "vor_an_anteil_rv", 200000)
+    _b(s, "vor_ag_anteil_rv", 150000)
+    _b(s, "vor_rv_ausserhalb_lstb", 100000)
+    _b(s, "basis_kv_pv", 450000)
+    _b(s, "weitere_vorsorgeaufwendungen", 0)
+    _b(s, "mit_anspruch_auf_zuschuss", False)
+    # Pflichtkegel
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", False)  # Renten = sonstige Einkünfte
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+
+    funde = _pruefe_differential(snap, bindung, result, xml, "Rentner")
+    assert not funde, (
+        f"Rentner: {len(funde)} Betragsfelder ohne Weg ins XML:\n"
+        + "\n".join(f"  – {f}" for f in funde))
+
+
+# ---------------------------------------------------------------- Kinder (2 Kinder)
+
+def test_differential_kinder_keine_luecken(bindung):
+    """Kinder-Szenario: 2 Kinder via kind_anlagen + anlage_instanzen."""
+    s = ST.leerer_store(2025, fall_id="diff_kinder")
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "fam_anzahl_kinder", 2)                        # Klasse e -> kind_anlagen
+    _b(s, "kind_idnr", "12345678901")                     # Instanz 1 -> E0500406
+    _b(s, "kind_idnr__2", "23456789012")                  # Instanz 2 -> E0500406
+    _b(s, "kind_geburtsjahr", 2010)                       # no Kz -> nicht_deklariert
+    _b(s, "kind_geburtsjahr__2", 2012)                    # no Kz -> nicht_deklariert
+    _b(s, "bruttoarbeitslohn", 6000000)
+    _b(s, "vor_an_anteil_rv", 200000)
+    _b(s, "vor_ag_anteil_rv", 150000)
+    _b(s, "vor_rv_ausserhalb_lstb", 100000)
+    _b(s, "kap_kapitalertraege", 0)
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+
+    funde = _pruefe_differential(snap, bindung, result, xml, "Kinder")
+    assert not funde, (
+        f"Kinder: {len(funde)} Betragsfelder ohne Weg ins XML:\n"
+        + "\n".join(f"  – {f}" for f in funde))
+
+
+# ---------------------------------------------------------------- Gewinneinkünfte
+
+def test_differential_gewinneinkuenfte_keine_luecken(bindung):
+    """Gewinneinkünfte: § 15/§ 16 (§ 18) — E77-Ausschluss-Thema."""
+    s = ST.leerer_store(2025, fall_id="diff_gewinn")
+    _b(s, "veranlagung", "einzel")
+    _b(s, "kein_gewinn", False)
+    _b(s, "einkuenfte_gewinn", 5000000)                   # 50k -> VERZWEIGUNG leeres kz-dict
+    _b(s, "gewinn_betriebsart", "gewerbe")                # Art-Weiche -> nicht_deklariert
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+    _b(s, "bruttoarbeitslohn", 5000000)
+    _b(s, "vor_an_anteil_rv", 200000)
+    _b(s, "vor_ag_anteil_rv", 150000)
+    _b(s, "vor_rv_ausserhalb_lstb", 100000)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+
+    funde = _pruefe_differential(snap, bindung, result, xml, "Gewinn")
+    assert not funde, (
+        f"Gewinneinkünfte: {len(funde)} Betragsfelder ohne Weg ins XML:\n"
         + "\n".join(f"  – {f}" for f in funde))
 
 
