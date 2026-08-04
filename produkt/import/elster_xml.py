@@ -45,6 +45,7 @@ PFLICHT_DEFAULT = {"Person": "PersonA"}
 # Datenart-Routing: E60xx → E77 (Anlage EÜR, eigene Datenart).
 E10_AUSSCHLUSS_DATENART: dict[str, str] = {
     "E6002301": "E77/EÜR (§ 4 Abs. 3 — Gewinnermittlung) Datenart, kein E10-Element",
+    "E6004901": "E77/EÜR (§ 4 Abs. 3 — Gewinnermittlung) Datenart, kein E10-Element",
 }
 
 
@@ -270,7 +271,12 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                         "(nie im Repo, nie im Code).")
 
     pfade = kz_pfade(vz)
-    fehlend = sorted(kz for kz in deklaration if kz not in pfade)
+    # Benannte Ausschlüsse (E10_AUSSCHLUSS_DATENART, z.B. E60xx->E77/EÜR) sind dokumentiert,
+    # kein stilles Weglassen — sie dürfen einen anderen Datenart-Kz nicht als E10-Fehler crashen.
+    # Konsistent mit dem anlage_instanzen-Pfad unten. Fehlt ein Kz hier UND im Schema UND im
+    # Ausschluss -> fail-closed (nie stilles Weglassen).
+    fehlend = sorted(kz for kz in deklaration
+                     if kz not in pfade and kz not in E10_AUSSCHLUSS_DATENART)
     if fehlend:
         raise XmlFehler(f"{len(fehlend)} Kz ohne Pfad im E10-{vz}-Schema: {fehlend[:5]}")
 
