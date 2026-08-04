@@ -96,3 +96,102 @@ jobs:
         run: |
           eval $(opam env --switch=taxgraph --set-switch)
           python3 -m pytest tests/ -q
+
+  golden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: System-Abhaengigkeiten (opam-Build-Deps)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y opam m4 build-essential pkg-config libgmp-dev
+
+      - name: Python-Abhaengigkeiten
+        run: pip install pyyaml jsonschema Pillow
+
+      - name: opam-Root cachen (gleicher Key wie catala-toolchain)
+        uses: actions/cache@v4
+        with:
+          path: ~/.opam
+          key: opam-taxgraph-catala-1.2.0-ocaml-4.14.2-${{ runner.os }}
+
+      - name: Catala bauen + assembliertes Package
+        run: |
+          set -e
+          export OPAMYES=1
+          export OPAMCONFIRMLEVEL=unsafe-yes
+          opam init --bare -y || true
+          opam switch create taxgraph 4.14.2 || true
+          eval $(opam env --switch=taxgraph --set-switch)
+          opam install -y catala
+          clerk build p32a-python
+          bash oracle/gettsim/assemble_catala.sh
+
+      # golden/runner.py ruft direkt python golden/runner.py auf, NICHT `make golden`.
+      # Grund: Makefile-Target `golden` sourcet venv312 (oracle/.venv312/bin/activate),
+      # das golden/runner.py NICHT braucht — es importiert Catala-Compiler-Output aus
+      # oracle/gettsim/_catala/{pkg,rt} (sys.path.insert in Z. 36-37), kein GETTSIM.
+      # `pip install pyyaml jsonschema Pillow` oben reicht. Venv312 im Makefile ist
+      # funktionsloser Nebeneffekt von build-python-Dep-Chain.
+      - name: golden (135 Faelle, direkt — venv312 nicht noetig)
+        run: |
+          eval $(opam env --switch=taxgraph --set-switch)
+          python golden/runner.py
+
+  # Differentielles Rechen-Oracle: unsere Catala-Werte gegen GETTSIM. Faengt Rechen-
+  # Regressionen, die die Unit-Suite nicht sieht. Die bekannten Divergenzen stehen als
+  # Allowlist in tests/test_gettsim_crosscheck.py (KNOWN_DEVIATIONS, GETTSIM-Bug #1209
+  # Splitting-Rundung) — eine NEUE Abweichung schlaegt rot, das ist der Zweck.
+  # Braucht — anders als golden — die venv312: golden_crosscheck.py importiert GETTSIM.
+  gettsim-crosscheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: System-Abhaengigkeiten (opam-Build-Deps)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y opam m4 build-essential pkg-config libgmp-dev
+
+      - name: opam-Root cachen (gleicher Key wie catala-toolchain)
+        uses: actions/cache@v4
+        with:
+          path: ~/.opam
+          key: opam-taxgraph-catala-1.2.0-ocaml-4.14.2-${{ runner.os }}
+
+      - name: Catala bauen + assembliertes Package
+        run: |
+          set -e
+          export OPAMYES=1
+          export OPAMCONFIRMLEVEL=unsafe-yes
+          opam init --bare -y || true
+          opam switch create taxgraph 4.14.2 || true
+          eval $(opam env --switch=taxgraph --set-switch)
+          opam install -y catala
+          clerk build p32a-python
+          bash oracle/gettsim/assemble_catala.sh
+
+      # venv312 nach docs/setup.md: GETTSIM braucht Python 3.12.
+      - name: venv312 mit GETTSIM
+        run: |
+          set -e
+          pip install uv
+          uv venv oracle/.venv312 --python 3.12
+          uv pip install --python oracle/.venv312/bin/python gettsim pyyaml jsonschema
+
+      - name: gettsim-crosscheck (Report + Gate)
+        run: |
+          set -e
+          eval $(opam env --switch=taxgraph --set-switch)
+          . oracle/.venv312/bin/activate
+          python oracle/gettsim/golden_crosscheck.py
+          python -m pytest tests/test_gettsim_crosscheck.py -q

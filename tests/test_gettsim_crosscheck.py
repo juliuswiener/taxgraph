@@ -29,10 +29,21 @@ import golden_crosscheck as GC  # noqa: E402
 # Die heute deckungsgleichen Faelle (Catala == GETTSIM cent-exakt) — Regressions-Anker.
 # Abweichungen duerfen NUR aus dieser Allowlist der offenen GETTSIM-Bugs stammen (#1209,
 # Splitting-Rundung; BMF-Steuerrechner bestaetigt Catala, s. reports/s02-divergenzen.md).
+#
+# Alle Eintraege am 2026-08-05 gegen params/<vz>/einkommensteuertarif_p32a.yaml nachgerechnet;
+# beide Rundungswege reproduzieren JEDEN der 16 Werte exakt:
+#   wir      2 * abrunden(Tarif(abrunden(Z/2)))   § 32a Abs. 5 i.V.m. Abs. 1 S. 6 (Wortlaut)
+#   GETTSIM  abrunden(2 * Tarif(Z/2))             rundet erst nach der Verdopplung
+# Daher immer +1 EUR bei GETTSIM; bei UNGERADER zvE (g32a_2024_split_43139: 43139/2 = 21569,5)
+# +2 EUR, weil dort zusaetzlich die Abrundung von Z/2 fehlt. Nur Splitting betroffen, der
+# Grundtarif ist durchgaengig deckungsgleich.
+# g32a_2025_split_52150 ist zusaetzlich direkt amtlich belegt: EStH 2025 H 34.2 nennt fuer
+# zvE 52.150 EUR woertlich 6.430 EUR (corpus/vwv/esth2025/h-34-2.txt Z. 26) — unser Wert.
+# Freigabe Julius 2026-08-05.
 KNOWN_DEVIATIONS = {
     "g32a_2024_split_100000", "g32a_2024_split_23634", "g32a_2024_split_43139",
-    "g32a_2025_split_24342", "g32a_2025_split_55555", "g32a_2025_split_60000",
-    "g32a_2026_split_77777",
+    "g32a_2025_split_24342", "g32a_2025_split_52150", "g32a_2025_split_55555",
+    "g32a_2025_split_60000", "g32a_2026_split_77777",
 }
 
 
@@ -43,7 +54,7 @@ def rows():
 
 
 def test_tarif_faelle_vorhanden(rows):
-    assert len(rows) == 44, f"erwartet 44 § 32a-Tarif-Faelle, got {len(rows)}"
+    assert len(rows) == 47, f"erwartet 47 § 32a-Tarif-Faelle, got {len(rows)}"
 
 
 def test_keine_neue_abweichung(rows):
