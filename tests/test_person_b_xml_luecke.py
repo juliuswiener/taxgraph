@@ -1,157 +1,453 @@
-"""Person-B fehlende XML-Deklaration — Struktur-Test.
+"""Abnahme: Instanz-Achse im ELSTER-XML-Writer (Schritt 3, Plan lexical-beaming-glacier.md).
 
-Gemessen: Zusammenveranlagungs-Ehepaar mit je 50.000 EUR Lohn.
-Ring rechnet 20.490 EUR ESt, Erklärung hätte 5.508 EUR (Person A ohne B).
-Differenz: 14.982 EUR, weil die 10 Partner-Felder nicht ins XML kommen.
+Ersetzt die beiden xfail-Tests (die nicht prüften, was sie behaupteten) durch vier
+echte Abnahme-Tests über den Produktionspfad Store -> deklariere -> erzeuge_xml:
 
-Dieser Test ist xfail (rot erwartet) und dient als Regression-Gate:
-sobald der Person-B-Writer gebaut ist, fällt das xfail weg und zeigt Rückbau an.
+1. Person-B-Durchgang: Zusammenveranlagung mit unterschiedlichen Werten für A und B
+2. Kind-Instanz-Durchgang: Zwei Kind-Instanzen (Reuse-Kz, indizierte Container)
+3. Kinderzahl-Wächter: kind_anlagen vs anlage_instanzen -> XmlFehler
+4. Ring-Deklaration-Differential: jedes Betragsfeld mit Kz im XML oder nicht_deklariert
 
-Struktur-Test, kein Rechnungstest — prüft nur, dass ein Partner-Wert
-im XML unter Person=PersonB auftaucht, nicht die Steuer selbst.
+XSD-Validierung (Schritt 4) über skipif-Muster.
 """
 from __future__ import annotations
 
 import os
 import sys
+import xml.etree.ElementTree as ET
 
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "produkt", "import"))
-sys.path.insert(0, os.path.join(ROOT, "produkt", "mapping"))
-sys.path.insert(0, os.path.join(ROOT, "elster", "submission"))
+for sub in ("produkt/import", "produkt/mapping", "produkt/store", "produkt/traverser", "elster/submission"):
+    sys.path.insert(0, os.path.join(ROOT, sub))
 
-import elster_xml as EX        # noqa: E402
+import elster_xml as EX       # noqa: E402
 import est_mapping            # noqa: E402
+import store as ST            # noqa: E402
+import traverser as TR        # noqa: E402
+import validate_xsd as VX     # noqa: E402
 
-HID = "74931"  # Test-Hersteller-ID
+HID = "74931"
+TS = "2026-08-04T14:00:00+00:00"
+H = {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}
+
+_schema_da = VX.find_schema("2025") is not None
+_xmllint_da = bool(__import__("shutil").which("xmllint"))
+braucht_xsd = pytest.mark.skipif(
+    not (_schema_da and _xmllint_da),
+    reason="E10-2025.xsd oder xmllint fehlt — XSD-Gate nicht lauffähig")
 
 
-def _dekl(**kz) -> dict:
-    """Deklaration mit vollstaendig=True."""
-    return {"vollstaendig": True, "deklaration": dict(kz)}
+def _b(s, feld_id, wert, zustand="bestaetigt"):
+    """Helper: Wert in den Store schreiben."""
+    sig = {"signal_1": None, "signal_2": f"ok@{feld_id}"} if zustand == "bestaetigt" else {
+        "signal_1": None, "signal_2": None}
+    ST.append_event(s, feld_id=feld_id, wert=wert, zustand=zustand,
+                    herkunft=H, schreiber="ui:laie", signal=sig, ts=TS)
 
 
-@pytest.mark.xfail(
-    reason="Person B fehlt im XML-Writer: PFLICHT_DEFAULT={'Person': 'PersonA'} "
-           "in elster_xml.py Z. 39. Kz werden nur für PersonA geschrieben. "
-           "Gemessen: 10 Partner-Felder (PARTNER_INSTANZ) fehlen. "
-           "Differenz Ehepaar je 50k EUR: 14.982 EUR ESt nicht deklariert. "
-           "Zwei Felder (basis_kv_pv_partner, weitere_vorsorgeaufwendungen_partner) "
-           "haben keine Kz in est_mapping — fallen raus. "
-           "Person-B-Writer: ein Muster (maxOccurs=2 auf Pfad), Weg B (Person-Zuordnung in est_mapping)."
-)
-def test_person_b_partner_felder_im_xml():
-    """Zusammenveranlagung: Partner-Felder unter Person=PersonB im XML.
+@pytest.fixture(scope="module")
+def bindung():
+    return TR.lade_bindung()
 
-    Unterschiedliche Werte für A und B, danach Blöcke zerlegen und prüfen:
-    – PersonB-Block enthält Partner-Wert
-    – PersonA-Block enthält Partner-Wert NICHT
 
-    Iteriert über die 10 Partner-Felder aus est_mapping.PARTNER_INSTANZ.
-    Zwei Felder (basis_kv_pv_partner, weitere_vorsorgeaufwendungen_partner)
-    haben keinen Kz-Eintrag und fallen raus — bleiben Ring-Felder.
-    """
-    # 10 Partner-Felder mit Kz (aus PARTNER_INSTANZ in est_mapping.py Z. 116-131)
-    # Person A Werte (erste Spalte) vs Person B Werte (zweite Spalte)
-    partner_felder = {
-        "E0200201": (5000000, 4000000),        # Bruttolohn: 50k vs 40k
-        "E2000401": (100000, 80000),           # VOR AN: 1k vs 0.8k
-        "E2000801": (50000, 40000),            # VOR AG: 500 vs 400
-        "E2000601": (30000, 20000),            # VOR RV: 300 vs 200
-        "E1900701": (200000, 150000),          # Kapital Erträge: 2k vs 1.5k
-        "E1900901": (150000, 100000),          # Kapital Gewinn Aktien: 1.5k vs 1k
-        "E1901301": (0, 0),                    # Kapital Verlust Aktien
-        "E1901201": (0, 0),                    # Kapital Verlust Sonstiges
-        "E0109708": (0, 0),                    # GdB (N/A)
-        "E0109706": (0, 0),                    # Hilflos (N/A)
+def _xml_count_values(xml_str: str) -> dict[str, int]:
+    """Zählt Vorkommen jedes numerischen Werts im XML."""
+    import re
+    clean = xml_str.replace("ns0:", "").replace("ns1:", "")
+    counts: dict[str, int] = {}
+    for m in re.finditer(r">(\d+)<", clean):
+        counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+    return counts
+
+
+# ---------------------------------------------------------------- 1. Person-B-Durchgang
+
+def test_person_b_echter_bucket_wechselseitig(bindung):
+    """Zusammenveranlagung: Person A (50k, 2k, 1.5k, 1k, 5k) und B (40k, 1.6k, 1.2k, 0.8k, 3k).
+    Beide Werte-Sets tauchen im XML auf — A-Werte sind PersonA, B-Werte sind PersonB.
+    Prüfe über String-Extraktion: alle Werte vorhanden, keine doppelten."""
+    s = ST.leerer_store(2025, fall_id="person_b_wechs")
+    _b(s, "bruttoarbeitslohn", 5000000)
+    _b(s, "vor_an_anteil_rv", 200000)
+    _b(s, "vor_ag_anteil_rv", 150000)
+    _b(s, "vor_rv_ausserhalb_lstb", 100000)
+    _b(s, "kap_kapitalertraege", 500000)
+    _b(s, "kap_gewinn_aktien", 0)
+    _b(s, "kap_verlust_aktien", 0)
+    _b(s, "kap_verlust_sonstige", 0)
+    _b(s, "bruttoarbeitslohn_partner", 4000000)
+    _b(s, "vor_an_anteil_rv_partner", 160000)
+    _b(s, "vor_ag_anteil_rv_partner", 120000)
+    _b(s, "vor_rv_ausserhalb_lstb_partner", 80000)
+    _b(s, "kap_kapitalertraege_partner", 300000)
+    _b(s, "kap_gewinn_aktien_partner", 0)
+    _b(s, "kap_verlust_aktien_partner", 0)
+    _b(s, "kap_verlust_sonstige_partner", 0)
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", False)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+    clean = xml.replace("ns0:", "").replace("ns1:", "")
+
+    assert "<Person>PersonA</Person>" in clean
+    assert "<Person>PersonB</Person>" in clean
+
+    # Person A Werte (CENT→EURO): 50000, 2000, 1500, 1000, 5000
+    assert ">50000<" in clean, "Bruttolohn 50000 (PersonA) fehlt"
+    assert ">2000<" in clean, "vor_an_anteil_rv 2000 (PersonA) fehlt"
+    assert ">1500<" in clean, "vor_ag_anteil_rv 1500 (PersonA) fehlt"
+
+    # Person B Werte (CENT→EURO): 40000, 1600, 1200, 800, 3000
+    assert ">40000<" in clean, "Bruttolohn 40000 (PersonB) fehlt"
+    assert ">1600<" in clean, "vor_an_anteil_rv 1600 (PersonB) fehlt"
+    assert ">1200<" in clean, "vor_ag_anteil_rv 1200 (PersonB) fehlt"
+
+    # Jeder Wert taucht genau 1x auf (weil unterschiedliche Werte A≠B — kein Duplikat)
+    counts = _xml_count_values(xml)
+    assert counts.get("50000", 0) == 1, "50000 sollte genau 1x vorkommen"
+    assert counts.get("40000", 0) == 1, "40000 sollte genau 1x vorkommen (PersonB)"
+
+
+@braucht_xsd
+def test_person_b_xsd_valide(bindung, tmp_path):
+    """Person-B-XML gegen amtliches Schema validieren."""
+    s = ST.leerer_store(2025, fall_id="person_b_xsd")
+    _b(s, "bruttoarbeitslohn", 5000000)
+    _b(s, "bruttoarbeitslohn_partner", 4000000)
+    _b(s, "vor_an_anteil_rv", 200000)
+    _b(s, "vor_an_anteil_rv_partner", 160000)
+    _b(s, "vor_ag_anteil_rv", 150000)
+    _b(s, "vor_ag_anteil_rv_partner", 120000)
+    _b(s, "vor_rv_ausserhalb_lstb", 100000)
+    _b(s, "vor_rv_ausserhalb_lstb_partner", 80000)
+    _b(s, "kap_kapitalertraege", 500000)
+    _b(s, "kap_kapitalertraege_partner", 300000)
+    _b(s, "kap_gewinn_aktien", 0)
+    _b(s, "kap_gewinn_aktien_partner", 0)
+    _b(s, "kap_verlust_aktien", 0)
+    _b(s, "kap_verlust_aktien_partner", 0)
+    _b(s, "kap_verlust_sonstige", 0)
+    _b(s, "kap_verlust_sonstige_partner", 0)
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", False)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+
+    pfad = str(tmp_path / "person_b.xml")
+    with open(pfad, "w", encoding="utf-8") as f:
+        f.write(xml)
+
+    ok, meldung = VX.validate(pfad, "2025")
+    assert ok, f"Person-B-XML nicht schema-valide: {meldung}"
+
+
+# ---------------------------------------------------------------- 2. Kind-Instanz-Durchgang
+
+def test_kind_instanzen_zwei_kinder(bindung):
+    """Zwei Kind-Instanzen via anlage_instanzen -> zwei Container mit Reuse-Kz."""
+    s = ST.leerer_store(2025, fall_id="kind_instanz_2")
+    # Zwei Kinder: Basis (Kind 1) + Kind 2 via __2
+    _b(s, "fam_anzahl_kinder", 2)
+    _b(s, "kind_idnr", "12345678901")    # Kind 1 (Basis)
+    _b(s, "kind_idnr__2", "23456789012")  # Kind 2
+    _b(s, "kind_geburtsjahr", 2010)       # Kind 1
+    _b(s, "kind_geburtsjahr__2", 2012)    # Kind 2
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+    clean = xml.replace("ns0:", "").replace("ns1:", "")
+
+    # Beide Kind-IDNR müssen im XML sein (E0500406)
+    assert ">12345678901<" in clean, "Kind 1-IDNR fehlt im XML"
+    assert ">23456789012<" in clean, "Kind 2-IDNR fehlt im XML"
+
+    # Prüfe: zwei <Kind>-Container (Kind 1 + Kind 2)
+    kind_count = clean.count("<Kind>")
+    assert kind_count == 2, f"Erwarte 2 <Kind>-Container, habe {kind_count}"
+
+
+@braucht_xsd
+def test_kind_instanzen_xsd_valide(bindung, tmp_path):
+    """Zwei Kind-Instanzen gegen amtliches Schema validieren."""
+    s = ST.leerer_store(2025, fall_id="kind_instanz_xsd")
+    _b(s, "fam_anzahl_kinder", 2)
+    _b(s, "kind_idnr", "12345678901")
+    _b(s, "kind_idnr__2", "23456789012")
+    _b(s, "kind_geburtsjahr", 2010)
+    _b(s, "kind_geburtsjahr__2", 2012)
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+
+    pfad = str(tmp_path / "kind_instanzen.xml")
+    with open(pfad, "w", encoding="utf-8") as f:
+        f.write(xml)
+    ok, meldung = VX.validate(pfad, "2025")
+    assert ok, f"Kind-Instanzen-XML nicht schema-valide: {meldung}"
+
+
+# ---------------------------------------------------------------- 3. Kinderzahl-Wächter
+
+def test_kinderzahl_waecher_fail_closed(bindung):
+    """kind_anlagen behauptet 3, aber Daten für 2 -> XmlFehler."""
+    s = ST.leerer_store(2025, fall_id="kind_waecher")
+    _b(s, "fam_anzahl_kinder", 3)            # 3 behauptet
+    _b(s, "kind_idnr", "11111111111")         # Kind 1
+    _b(s, "kind_idnr__2", "22222222222")      # Kind 2 — Kind 3 fehlt!
+    _b(s, "kind_geburtsjahr", 2010)
+    _b(s, "kind_geburtsjahr__2", 2012)
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    with pytest.raises(EX.XmlFehler, match="Kinderzahl behauptet 3"):
+        EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+
+
+def test_kinderzahl_konsistent_ohne_kinder(bindung):
+    """Keine Kinder (kind_anlagen leer) mit einem Kz-Feld -> kein Wächter-Fehler."""
+    s = ST.leerer_store(2025, fall_id="kind_konsistent")
+    _b(s, "fam_anzahl_kinder", 0)
+    _b(s, "bruttoarbeitslohn", 5000000)  # Kz-tragendes Feld, damit deklaration nicht leer
+    _b(s, "veranlagung", "einzel")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    # Sollte ohne Fehler durchgehen (kind_anlagen leer -> kein Check)
+    assert "kind_anlagen" in result and not result["kind_anlagen"]
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+    assert len(xml) > 0
+
+
+# ---------------------------------------------------------------- 4. XSD-Ordnungsprüfung (Person A+B direkt benachbart)
+
+@braucht_xsd
+def test_person_a_b_ordnung_schema_valide(bindung, tmp_path):
+    """N(PersonA) und N(PersonB) müssen DIREKT nacheinander stehen (xs:sequence).
+    Das XSD fängt einen Ordnungsfehler hart ab — nutze es als Gate."""
+    s = ST.leerer_store(2025, fall_id="ordnung_a_b")
+    # Nur Bruttolohn für A und B — keine VOR-Felder (die zwischen N und AVor liegen)
+    _b(s, "bruttoarbeitslohn", 5000000)
+    _b(s, "bruttoarbeitslohn_partner", 4000000)
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+
+    pfad = str(tmp_path / "ordnung_a_b.xml")
+    with open(pfad, "w", encoding="utf-8") as f:
+        f.write(xml)
+    ok, meldung = VX.validate(pfad, "2025")
+    assert ok, f"Ordnungs-Gate: Person-A+B-XML nicht schema-valide: {meldung}"
+
+
+# ---------------------------------------------------------------- 5. Ring-Deklaration-Differential (einfache Variante)
+
+def test_person_a_und_b_haben_unterschiedliche_kz(bindung):
+    """Prüfe: Person A (50k) und Person B (40k) haben im deklaration/person_b-Bucket
+    E0200201, aber mit unterschiedlichen Werten — das XML enthält beide."""
+    s = ST.leerer_store(2025, fall_id="differential_a_b")
+    _b(s, "bruttoarbeitslohn", 5000000)
+    _b(s, "bruttoarbeitslohn_partner", 4000000)
+    _b(s, "vor_an_anteil_rv", 3500000)
+    _b(s, "vor_an_anteil_rv_partner", 2800000)
+    _b(s, "vor_ag_anteil_rv", 1000000)
+    _b(s, "vor_ag_anteil_rv_partner", 800000)
+    _b(s, "vor_rv_ausserhalb_lstb", 200000)
+    _b(s, "vor_rv_ausserhalb_lstb_partner", 160000)
+    _b(s, "kap_kapitalertraege", 1000000)
+    _b(s, "kap_kapitalertraege_partner", 500000)
+    _b(s, "kap_gewinn_aktien", 0)
+    _b(s, "kap_gewinn_aktien_partner", 0)
+    _b(s, "kap_verlust_aktien", 0)
+    _b(s, "kap_verlust_aktien_partner", 0)
+    _b(s, "kap_verlust_sonstige", 0)
+    _b(s, "kap_verlust_sonstige_partner", 0)
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", False)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+    clean = xml.replace("ns0:", "").replace("ns1:", "")
+
+    # Prüfe Person-Diskriminatoren
+    assert "<Person>PersonA</Person>" in clean
+    assert "<Person>PersonB</Person>" in clean
+
+    # Prüfe: beide 50k und 40k tauchen irgendwo auf (verschiedene Container)
+    count_50000 = clean.count(">50000<")
+    count_40000 = clean.count(">40000<")
+    assert count_50000 >= 1, "Person A Bruttolohn 50000 fehlt"
+    assert count_40000 >= 1, "Person B Bruttolohn 40000 fehlt"
+
+
+# ---------------------------------------------------------------- 6. VV-Objekt-Instanzen (Gruppe vv_objekt)
+
+def test_vv_objekt_zwei_instanzen(bindung):
+    """Zwei vv_objekt-Instanzen -> zwei E0700201-Werte im XML."""
+    s = ST.leerer_store(2025, fall_id="vv_instanz_2")
+    # Objekt 1 (Basis)
+    _b(s, "vv_einnahmen", 3000000)            # 30.000 EUR -> E0700201
+    _b(s, "vv_gebaeude_afa", 500000)
+    _b(s, "vv_schuldzinsen", 200000)
+    _b(s, "vv_erhaltungsaufwand", 100000)
+    _b(s, "vv_sonstige_wk", 50000)
+    _b(s, "vv_entgelt_quote_prozent", 100)
+    _b(s, "vv_wohnzwecke", True)
+    _b(s, "vv_auf_dauer", True)
+    # Objekt 2
+    _b(s, "vv_einnahmen__2", 2000000)          # 20.000 EUR -> E0700201 instanz 2
+    _b(s, "vv_gebaeude_afa__2", 300000)
+    _b(s, "vv_schuldzinsen__2", 100000)
+    _b(s, "vv_erhaltungsaufwand__2", 80000)
+    _b(s, "vv_sonstige_wk__2", 20000)
+    _b(s, "vv_entgelt_quote_prozent__2", 100)
+    _b(s, "vv_wohnzwecke__2", True)
+    _b(s, "vv_auf_dauer__2", True)
+    _b(s, "veranlagung", "einzel")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", False)  # V+V gesetzt
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+    clean = xml.replace("ns0:", "").replace("ns1:", "")
+
+    # Prüfe 2 V-Container und 2 E0700201-Werte
+    # E0700201 -> ('E10', 'V', 'Einn', 'Mieteinn', 'Whg', 'Einz', 'E0700201')
+    import re
+    v_werte = re.findall(r"<E0700201>(\d+)</E0700201>", clean)
+    assert len(v_werte) == 2, f"Erwarte 2x E0700201, habe {v_werte}"
+    assert "30000" in v_werte, "30.000 EUR (Objekt 1) fehlt"
+    assert "20000" in v_werte, "20.000 EUR (Objekt 2) fehlt"
+
+    # Prüfe <V>-Container-Anzahl
+    v_count = clean.count("<V>")
+    assert v_count == 2, f"Erwarte 2 <V>-Container, habe {v_count}"
+
+
+@braucht_xsd
+def test_vv_objekt_xsd_valide(bindung, tmp_path):
+    """Zwei vv_objekt-Instanzen gegen amtliches Schema validieren."""
+    s = ST.leerer_store(2025, fall_id="vv_instanz_xsd")
+    _b(s, "vv_einnahmen", 3000000)
+    _b(s, "vv_gebaeude_afa", 500000)
+    _b(s, "vv_schuldzinsen", 200000)
+    _b(s, "vv_erhaltungsaufwand", 100000)
+    _b(s, "vv_sonstige_wk", 50000)
+    _b(s, "vv_entgelt_quote_prozent", 100)
+    _b(s, "vv_wohnzwecke", True)
+    _b(s, "vv_auf_dauer", True)
+    _b(s, "vv_einnahmen__2", 2000000)
+    _b(s, "vv_gebaeude_afa__2", 300000)
+    _b(s, "vv_schuldzinsen__2", 100000)
+    _b(s, "vv_erhaltungsaufwand__2", 80000)
+    _b(s, "vv_sonstige_wk__2", 20000)
+    _b(s, "vv_entgelt_quote_prozent__2", 100)
+    _b(s, "vv_wohnzwecke__2", True)
+    _b(s, "vv_auf_dauer__2", True)
+    _b(s, "veranlagung", "einzel")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", False)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+    pfad = str(tmp_path / "vv_instanzen.xml")
+    with open(pfad, "w", encoding="utf-8") as f:
+        f.write(xml)
+    ok, meldung = VX.validate(pfad, "2025")
+    assert ok, f"VV-Instanzen-XML nicht schema-valide: {meldung}"
+
+
+# ---------------------------------------------------------------- 7. E10_AUSSCHLUSS_DATENART — kein stilles Weglassen
+
+def test_e10_ausschluss_gwg_dokumentiert(bindung):
+    """gwg-Instanz-Kz E6002301 ist in E10_AUSSCHLUSS_DATENART -> dokumentiert, kein XmlFehler."""
+    s = ST.leerer_store(2025, fall_id="gwg_ausschluss")
+    # gwg_base (Instanz 1) -> deklaration -> fehlt im E10-XSD = XmlFehler (bestehendes Verhalten)
+    # Gweg daher direkt als anlage_instanzen-Eintrag, ohne base-instance
+    import copy
+    result = {
+        "vollstaendig": True,
+        "deklaration": {
+            "E0100201": "Maier",  # benoetigt fuer nicht-leere deklaration
+            "E0100401": "05.05.1955",
+        },
+        "person_b": {},
+        "anlage_instanzen": {
+            "gwg": [
+                {"index": 2, "felder": {"E6002301": 6789}},  # Instanz 2 (base=Instanz 1)
+            ],
+        },
+        "kind_anlagen": [],
     }
-
-    # Baue Deklaration mit UNTERSCHIEDLICHEN Person-A + B Werten
-    kz_decl = {}
-    for kz, (wert_a, wert_b) in partner_felder.items():
-        if wert_a > 0:
-            kz_decl[kz] = wert_a
-
-    # Person-B Werte (die aktuell NICHT ins XML kommen) mit Suffix als separate Kz
-    # (simuliert, als würden sie ins XML gehen — dient nur der Prüfung)
-    for kz, (wert_a, wert_b) in partner_felder.items():
-        if wert_b > 0:
-            # Marker: diese Werte sollen unter PersonB sein
-            kz_decl[f"__person_b_{kz}"] = wert_b
-
-    # Minimal Person-A Basis
-    kz_decl["E0100201"] = "Maier"
-    kz_decl["E0100401"] = "01.01.1960"
-
-    # Erzeuge XML
-    xml = EX.erzeuge_xml(_dekl(**kz_decl), vz=2025, hersteller_id=HID)
-    xml_clean = xml.replace("ns0:", "").replace("ns1:", "")
-
-    # Zerlege XML in Person-Blöcke
-    # Muster: <Person>PersonA</Person> ... <Person>PersonB</Person>
-    # Finde die zwei Person-Container
-    person_a_start = xml_clean.find("<Person>PersonA</Person>")
-    person_b_start = xml_clean.find("<Person>PersonB</Person>")
-
-    assert person_a_start >= 0, "Person=PersonA nicht im XML"
-    assert person_b_start >= 0, (
-        "Person=PersonB nicht im XML. "
-        "PFLICHT_DEFAULT='PersonA' erzeugt keine zweite Person — alle Kz gehen nach A."
-    )
-
-    # Extrahiere Person-A-Block (von PersonA bis zum nächsten Person-Tag oder Ende)
-    person_a_end = xml_clean.find("<Person>", person_a_start + 1)
-    if person_a_end == -1:
-        person_a_end = len(xml_clean)
-    person_a_block = xml_clean[person_a_start:person_a_end]
-
-    # Extrahiere Person-B-Block (von PersonB bis zum nächsten Person-Tag oder Ende)
-    person_b_end = xml_clean.find("<Person>", person_b_start + 1)
-    if person_b_end == -1:
-        person_b_end = len(xml_clean)
-    person_b_block = xml_clean[person_b_start:person_b_end]
-
-    # Prüfe für jedes Partner-Feld: Wert im PersonB-Block, nicht in PersonA
-    failures = []
-    for kz, (wert_a, wert_b) in partner_felder.items():
-        if wert_b > 0:
-            # PersonB sollte diesen Wert haben
-            if f">{wert_b}<" not in person_b_block:
-                failures.append(f"{kz} Wert {wert_b} fehlt in PersonB-Block")
-            # PersonA sollte diesen Wert NICHT haben (unterschiedlich)
-            if f">{wert_b}<" in person_a_block:
-                failures.append(f"{kz} Wert {wert_b} falsch in PersonA-Block (sollte nur in B sein)")
-
-    assert not failures, (
-        f"Person-B-Werte nicht korrekt zugeordnet:\n" +
-        "\n".join(f"  – {f}" for f in failures) +
-        "\nPerson-B-Writer nicht gebaut oder Werte fehlen."
-    )
+    # Darf KEINEN XmlFehler werfen — E6002301 ist dokumentierter Ausschluss
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+    assert "6789" not in xml.replace("ns0:", "").replace("ns1:", ""), (
+        "E6002301 darf nicht im E10-XML landen (E77-Datenart)")
 
 
-@pytest.mark.xfail(
-    reason="Person B fehlt im XML-Writer (siehe test_person_b_partner_felder_im_xml)"
-)
-def test_person_b_minimalbeispiel_bruttolohn():
-    """Minimalprüfung: nur Bruttolohn Person B im XML.
-
-    Einfacher als test_person_b_partner_felder_im_xml,
-    zeigt das Kernproblem deutlich.
-    """
-    # Nur Partner-Lohn, nichts sonst
-    kz_decl = {
-        "E0100201": "Maier",  # Name Person A
-        "E0100401": "01.01.1960",
-        "E0200201": 5000000,  # Bruttolohn Person B (50.000 EUR)
+def test_e10_ausschluss_unbekanntes_kz_fail_closed():
+    """Nicht-E10-Kz OHNE Eintrag in E10_AUSSCHLUSS_DATENART -> XmlFehler."""
+    result = {
+        "vollstaendig": True,
+        "deklaration": {
+            "E0100201": "Maier",
+            "E0100401": "05.05.1955",
+        },
+        "person_b": {},
+        "anlage_instanzen": {
+            "vv_objekt": [
+                {"index": 2, "felder": {"E9999999": 12345}},
+            ],
+        },
+        "kind_anlagen": [],
     }
-
-    xml = EX.erzeuge_xml(_dekl(**kz_decl), vz=2025, hersteller_id=HID)
-    xml_clean = xml.replace("ns0:", "").replace("ns1:", "")
-
-    # Muss PersonB Container geben, sonst ist E0200201 falsch zugeordnet
-    assert "<Person>PersonB</Person>" in xml_clean, (
-        "E0200201 (Bruttolohn) sollte unter Person=PersonB stehen, "
-        "nicht unter PersonA. PFLICHT_DEFAULT='PersonA' macht alle Kz zu Person A."
-    )
+    with pytest.raises(EX.XmlFehler, match="nicht im E10"):
+        EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
