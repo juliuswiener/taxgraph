@@ -41,3 +41,19 @@ def test_llm_datei_auch_geladen(tmp_path, monkeypatch):
     monkeypatch.delenv("TG_LLM_TEST", raising=False)
     SRV._lade_env_dateien(str(tmp_path))
     assert os.environ.get("TG_LLM_TEST") == "abc"
+
+
+def test_env_datei_auch_geladen(tmp_path, monkeypatch):
+    """Schlichte `.env` (z.B. $ELSTER_HERSTELLER_ID) — sonst liegt die Datei wirkungslos herum."""
+    (tmp_path / ".env").write_text("TG_ENV_TEST=hid42\n", encoding="utf-8")
+    monkeypatch.delenv("TG_ENV_TEST", raising=False)
+    SRV._lade_env_dateien(str(tmp_path))
+    assert os.environ.get("TG_ENV_TEST") == "hid42"
+
+
+def test_env_datei_ueberschreibt_prozess_env_nicht(tmp_path, monkeypatch):
+    """Dieselbe Sicherheits-Invariante wie fuer .env.maps — auch fuer die neue `.env`."""
+    (tmp_path / ".env").write_text("TG_ENV_TEST=aus_datei\n", encoding="utf-8")
+    monkeypatch.setenv("TG_ENV_TEST", "aus_prozess")
+    SRV._lade_env_dateien(str(tmp_path))
+    assert os.environ["TG_ENV_TEST"] == "aus_prozess"

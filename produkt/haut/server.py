@@ -201,13 +201,17 @@ def make_server(port: int = 8000) -> HTTPServer:
 
 
 def _lade_env_dateien(root: str) -> None:
-    """Lädt gitignored Env-Dateien (`.env.maps` für $ORS_API_KEY, `.env.llm` für den LLM-Key) aus `root` in
-    os.environ — NUR Schlüssel, die noch NICHT gesetzt sind (das echte Prozess-Env gewinnt IMMER, kein Override).
+    """Lädt gitignored Env-Dateien (`.env.maps` für $ORS_API_KEY, `.env.llm` für den LLM-Key, `.env` für
+    Sonstiges wie $ELSTER_HERSTELLER_ID) aus `root` in os.environ — NUR Schlüssel, die noch NICHT gesetzt
+    sind (das echte Prozess-Env gewinnt IMMER, kein Override).
     Fehlt/unlesbar → still übersprungen (nie Crash beim Start). Keine externe Dependency (kein python-dotenv).
     Zeilenformat KEY=VALUE, `#` = Kommentar, Anführungszeichen werden getrimmt. WERTE werden NIE geloggt (Secrets).
     Macht die externe Live-Schaltung schlüsselfertig: Key in die (gitignored) Datei legen — kein Shell-Export nötig.
-    NUR in main() aufgerufen (nicht beim Import), damit Test-Importe von server.py keine echten Keys laden."""
-    for name in (".env.maps", ".env.llm"):
+    NUR in main() aufgerufen (nicht beim Import), damit Test-Importe von server.py keine echten Keys laden.
+
+    ACHTUNG Reichweite: das gilt nur für den Server-Start. pytest und `make eric-gate` rufen main() NICHT
+    auf — für die muss der Schlüssel echt in der Umgebung stehen (Shell-Export bzw. settings.json `env`)."""
+    for name in (".env.maps", ".env.llm", ".env"):
         pfad = os.path.join(root, name)
         if not os.path.isfile(pfad):
             continue
