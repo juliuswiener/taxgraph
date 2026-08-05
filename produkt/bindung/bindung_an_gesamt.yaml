@@ -649,7 +649,7 @@ bindungen:
     beispielwert: 250000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Feldaufteilung erledigt; Kz-Bindung offen (Versicherungsart-Weiche fehlt)."
+    elster_kz_grund: "Kz via PARTNER_VERZWEIGUNG (est_mapping): gesetzlich_an=E2001203, gesetzlich_freiwillig=E2001805, privat=E2003104. Art-Feld=versicherungsart_partner."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 3 EStG"
@@ -668,11 +668,29 @@ bindungen:
     beispielwert: 50000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Feldaufteilung erledigt; Kz-Bindung offen (Versicherungsart-Weiche fehlt)."
+    elster_kz_grund: "Kz via PARTNER_VERZWEIGUNG (est_mapping): gesetzlich_an=E2001505, gesetzlich_freiwillig=E2002105, privat=E2003202. Art-Feld=versicherungsart_partner."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 3 EStG"
       zitatanker: "gesetzlichen Pflegeversicherung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: versicherungsart_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: versicherungsart_partner_weiche}
+    typ: enum
+    einheit: null
+    enum_werte: ["gesetzlich_an", "gesetzlich_freiwillig", "privat"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie ist die Kranken- und Pflegeversicherung deines Partners geregelt?"
+    hilfe_kurz: "Person-individuell: gesetzlich als Arbeitnehmer, gesetzlich als Rentner/Selbstzahler oder privat. Bestimmt, welche ELSTER-Kz gesetzt werden."
+    beispielwert: gesetzlich_an
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche für KV/PV-Kz Person B (PARTNER_VERZWEIGUNG): steuert AN/And_Pers/privat-Pfad."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 EStG"
+      zitatanker: "Krankenversicherungen, soweit diese zur Erlangung eines durch das Zwölfte Buch Sozialgesetzbuch bestimmten sozialhilfegleichen Versorgungsniveaus erforderlich sind"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: weitere_vorsorgeaufwendungen_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}

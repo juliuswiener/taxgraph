@@ -55,8 +55,8 @@ VERPFLEGUNG_KUERZUNG = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_ges
 VOR_FELDER = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
 VOR_PARTNER_FELDER = ("vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
                       "vor_rv_ausserhalb_lstb_partner")
-KV_PV_FELDER = ("basis_kv", "basis_pv", "weitere_vorsorgeaufwendungen", "mit_anspruch_auf_zuschuss")
-KV_PV_PARTNER_FELDER = ("basis_kv_partner", "basis_pv_partner", "weitere_vorsorgeaufwendungen_partner",
+KV_PV_FELDER = ("versicherungsart", "basis_kv", "basis_pv", "weitere_vorsorgeaufwendungen", "mit_anspruch_auf_zuschuss")
+KV_PV_PARTNER_FELDER = ("versicherungsart_partner", "basis_kv_partner", "basis_pv_partner", "weitere_vorsorgeaufwendungen_partner",
                         "mit_anspruch_auf_zuschuss_partner")
 VORSORGE_PARTNER_FELDER = VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER + ("geburtsjahr_partner",)
 

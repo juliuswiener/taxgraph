@@ -105,6 +105,7 @@ class TestErreichbarkeitVP:
             ("vor_rv_ausserhalb_lstb", 0),
             ("basis_kv", 0),
             ("basis_pv", 0),
+        ("versicherungsart", "gesetzlich_an"),
             ("weitere_vorsorgeaufwendungen", 0),
             ("mit_anspruch_auf_zuschuss", False),
         ]:
@@ -150,6 +151,7 @@ def _setup_rentner_zusammen(base, fall_id, vor_partner=0):
         ("vor_rv_ausserhalb_lstb", 0),
         ("basis_kv", 0),
         ("basis_pv", 0),
+        ("versicherungsart", "gesetzlich_an"),
         ("weitere_vorsorgeaufwendungen", 0),
         ("mit_anspruch_auf_zuschuss", False),
     ]
@@ -214,6 +216,7 @@ def test_rentner_einzel_kein_impact_bvor(base):
         ("vor_rv_ausserhalb_lstb", 0),
         ("basis_kv", 0),
         ("basis_pv", 0),
+        ("versicherungsart", "gesetzlich_an"),
         ("weitere_vorsorgeaufwendungen", 0),
         ("mit_anspruch_auf_zuschuss", False),
     ]

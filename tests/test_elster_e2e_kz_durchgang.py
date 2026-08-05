@@ -113,8 +113,9 @@ def test_e2e_kz_durchgang_26_felder(base):
         "tage_an_abreise": 0,
         "tage_24h": 0,
         "vpf_keine_mahlzeitengestellung": 0,
-        "basis_kv": 450000,  # 4.5k § 10 (KV)
-	        "basis_pv": 0,  # PV (kein PV-Beitrag in diesem Testfall)
+        "basis_kv": 450000,  # 4.5k 10 (KV)
+        "basis_pv": 0,  # PV
+        "versicherungsart": "gesetzlich_freiwillig",
         "weitere_vorsorgeaufwendungen": 0,
         "vor_an_anteil_rv": 200000,  # 2k
         "vor_ag_anteil_rv": 150000,  # 1.5k
@@ -217,3 +218,148 @@ def test_e2e_kz_durchgang_26_felder(base):
 
     print(f"✓ Kz im XML: {kz_im_xml}/{len(deklaration)}")
     assert kz_im_xml == len(deklaration), f"Nur {kz_im_xml}/{len(deklaration)} Kz im XML"
+
+# -----------------------------------------------------------------
+# KV/PV Kz-Durchgang: alle 3 Versicherungsarten x Person A + Person B
+# -----------------------------------------------------------------
+
+def _kvpv_deklaration(base, fall_id, steuerfall):
+    """Minimalfall (gesamt-Scheibe) -> Deklaration + XML."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": fall_id})
+    for feld, wert in steuerfall:
+        st, resp = _req(base, "POST", f"/fall/{fall_id}/event", _laie(feld, wert))
+        assert st == 201, f"POST {feld}={wert} -> {st}: {resp}"
+    st, dekl = _req(base, "GET", f"/fall/{fall_id}/deklaration")
+    assert st == 200
+    import importlib
+    spec = importlib.util.spec_from_file_location(
+        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+    EX = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(EX)
+    result = dekl.get("deklaration", {})
+    xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
+    assert len(xml_str) > 0
+    return result, xml_str
+
+
+@pytest.mark.parametrize("vers_art,basis_kv_val,basis_pv_val,kz_kv,kz_pv", [
+    ("gesetzlich_an", 200000, 100000, "E2001203", "E2001505"),
+    ("gesetzlich_freiwillig", 200000, 100000, "E2001805", "E2002105"),
+    ("privat", 200000, 100000, "E2003104", "E2003202"),
+])
+def test_kvpv_kz_person_a(base, vers_art, basis_kv_val, basis_pv_val, kz_kv, kz_pv):
+    """KV/PV Kz Person A: jede Art -> korrekte Kz in Deklaration + XML."""
+    fall = [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
+        ("basis_kv", basis_kv_val), ("basis_pv", basis_pv_val),
+        ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+        ("versicherungsart", vers_art),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+        ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
+        ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_eigenes_kfz", False),
+    ]
+    dekl, xml = _kvpv_deklaration(base, f"kvpv-a-{vers_art}", fall)
+    assert kz_kv in dekl, f"KV-Kz {kz_kv} fehlt in Deklaration fuer {vers_art}"
+    assert kz_pv in dekl, f"PV-Kz {kz_pv} fehlt in Deklaration fuer {vers_art}"
+    assert kz_kv in xml, f"KV-Kz {kz_kv} fehlt im XML fuer {vers_art}"
+    assert kz_pv in xml, f"PV-Kz {kz_pv} fehlt im XML fuer {vers_art}"
+
+
+@pytest.mark.parametrize("vers_art,basis_kv_val,basis_pv_val,kz_kv,kz_pv", [
+    ("gesetzlich_an", 200000, 100000, "E2001203", "E2001505"),
+    ("gesetzlich_freiwillig", 200000, 100000, "E2001805", "E2002105"),
+    ("privat", 200000, 100000, "E2003104", "E2003202"),
+])
+def test_kvpv_kz_person_b(base, vers_art, basis_kv_val, basis_pv_val, kz_kv, kz_pv):
+    """KV/PV Kz Person B (Zusammenveranlagung): Kz im person_b-Bucket (nicht deklaration)."""
+    fall = [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "zusammen"),
+        ("person_b_idnr", "12345678901"),
+        ("basis_kv", 0), ("basis_pv", 0),
+        ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+        ("versicherungsart", "gesetzlich_an"),
+        ("basis_kv_partner", basis_kv_val), ("basis_pv_partner", basis_pv_val),
+        ("weitere_vorsorgeaufwendungen_partner", 0), ("mit_anspruch_auf_zuschuss_partner", False),
+        ("versicherungsart_partner", vers_art),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+        ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
+        ("vor_an_anteil_rv_partner", 0), ("vor_ag_anteil_rv_partner", 0),
+        ("vor_rv_ausserhalb_lstb_partner", 0),
+        ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_eigenes_kfz", False),
+    ]
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": f"kvpv-b-{vers_art}"})
+    for feld, wert in fall:
+        st, resp = _req(base, "POST", f"/fall/kvpv-b-{vers_art}/event", _laie(feld, wert))
+        assert st == 201
+    st, dekl = _req(base, "GET", f"/fall/kvpv-b-{vers_art}/deklaration")
+    assert st == 200
+    person_b = dekl.get("person_b", {})
+    assert kz_kv in person_b, f"KV-Kz {kz_kv} fehlt in person_b fuer {vers_art}"
+    assert kz_pv in person_b, f"PV-Kz {kz_pv} fehlt in person_b fuer {vers_art}"
+    # Pruefe Person-A Kz sind NICHT in person_b
+    for kz_a in ["E2001203", "E2001505"]:
+        assert kz_a in dekl.get("deklaration", {}), f"Person A Kz {kz_a} fehlt in Haupt-Deklaration"
+    import importlib
+    _spec_xml = importlib.util.spec_from_file_location(
+        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+    _EX = importlib.util.module_from_spec(_spec_xml)
+    _spec_xml.loader.exec_module(_EX)
+    xml_str = _EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
+    assert kz_kv in xml_str, f"KV-Kz {kz_kv} fehlt im XML Person B {vers_art}"
+    assert kz_pv in xml_str, f"PV-Kz {kz_pv} fehlt im XML Person B {vers_art}"
+
+
+def test_kvpv_negativ_keine_art(base):
+    """Negativ-Probe: basis_kv=2000 + basis_pv=1000, versicherungsart ABSENT
+    -> KEIN KV/PV-Kz in Deklaration, muss in unvollstaendig landen."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": "kvpv-neg"})
+    for feld, wert in [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
+        ("basis_kv", 200000), ("basis_pv", 100000),
+        ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+        ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
+        ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_eigenes_kfz", False),
+    ]:
+        _req(base, "POST", "/fall/kvpv-neg/event", _laie(feld, wert))
+    st, dekl = _req(base, "GET", "/fall/kvpv-neg/deklaration")
+    assert st == 200
+    result = dekl.get("deklaration", {})
+    for kz in ["E2001203", "E2001505", "E2001805", "E2002105", "E2003104", "E2003202"]:
+        assert kz not in result, f"KV/PV-Kz {kz} trotz fehlender versicherungsart in Deklaration"
+    # unvollstaendig muss versicherungsart im Grund nennen
+    unvollst = dekl.get("unvollstaendig", [])
+    grund_art = [u for u in unvollst if "versicherungsart" in u.get("grund", "")]
+    assert len(grund_art) >= 1, (
+        f"basis_kv ohne versicherungsart muss in unvollstaendig. "
+        f"Grund: {[u['grund'][:60] for u in unvollst]}")
+
+
+def test_kvpv_unvollstaendig_ohne_art(base):
+    """Bestandsfall: basis_kv gesetzt, versicherungsart fehlt -> unvollstaendig (nicht nicht_deklariert)."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": "kvpv-uv"})
+    for feld, wert in [
+        ("bruttoarbeitslohn", 4000000), ("veranlagung", "einzel"),
+        ("basis_kv", 200000), ("basis_pv", 100000),
+        ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+        ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_eigenes_kfz", False),
+    ]:
+        st, _ = _req(base, "POST", "/fall/kvpv-uv/event", _laie(feld, wert))
+        assert st == 201
+    st, dekl = _req(base, "GET", "/fall/kvpv-uv/deklaration")
+    assert st == 200
+    assert not dekl.get("vollstaendig"), "Fall ohne versicherungsart darf nicht vollstaendig sein"
+    unvollst = dekl.get("unvollstaendig", [])
+    grund_art = [u for u in unvollst if "versicherungsart" in u.get("grund", "")]
+    assert len(grund_art) >= 1, (
+        f"Fehlende versicherungsart muss in unvollstaendig. "
+        f"Grund: {[u['grund'][:60] for u in unvollst]}")

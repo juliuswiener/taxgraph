@@ -44,6 +44,12 @@ _ABZUGS_KZ = frozenset({
     "E0104109",  # §35a Minijob-Aufwendungen (haushaltsnahe)
     "E0107208",  # §35a haushaltsnahe Dienstleistungen
     "E0111215",  # §35a Handwerker-Arbeitskosten
+    "E2001203",  # KV AN (Vorsorgeaufwand §10 Abs.1 Nr.3) (ceiling)
+    "E2001505",  # PV AN (Vorsorgeaufwand §10 Abs.1 Nr.3) (ceiling)
+    "E2001805",  # KV And_Pers (Vorsorgeaufwand §10 Abs.1 Nr.3) (ceiling)
+    "E2002105",  # PV And_Pers (Vorsorgeaufwand §10 Abs.1 Nr.3) (ceiling)
+    "E2003104",  # KV privat (Vorsorgeaufwand §10 Abs.1 Nr.3) (ceiling)
+    "E2003202",  # PV privat (Vorsorgeaufwand §10 Abs.1 Nr.3) (ceiling)
 })
 
 
@@ -107,7 +113,15 @@ VERZWEIGUNG = {
     # (einkuenfte_gewinn-Slot der § 2-Summe, dev-1). Struktur spiegelt § 16; die Kz-Review füllt später
     # kz{gewerbe -> Anlage G, selbstaendig -> Anlage S, land_forst -> Anlage L}.
     "einkuenfte_gewinn": {"art_feld": "gewinn_betriebsart", "kz": {}},
-}
+
+# KV/PV-Versicherungsart-Weiche: ein Betragsfeld -> 3 Kz je Art.
+# Art-Feld = versicherungsart. XML-Writer routet ueber Schema-Pfad.
+# TEILMENGEN (nicht binden): E2001405 (KV ohne Krankengeld, AN-Subset von E2001203),
+# E2002005 (KV mit Krankengeld, And_Pers-Subset von E2001805) — keine Doppelzählung. (AN/And_Pers/Beitr_p).
+"basis_kv": {"art_feld": "versicherungsart", "kz": {
+    "gesetzlich_an": "E2001203", "gesetzlich_freiwillig": "E2001805", "privat": "E2003104"}},
+"basis_pv": {"art_feld": "versicherungsart", "kz": {
+    "gesetzlich_an": "E2001505", "gesetzlich_freiwillig": "E2002105", "privat": "E2003202"}}}
 # Klasse g — Person-Multiplikation (Zusammenveranlagung, Store-Modell A): die person-individuellen
 # _partner-Einkommensfelder gehen in die Anlage-N-INSTANZ B (person_b-Bucket) — DIESELBEN Kz wie Person A
 # (KEINE neuen Kz; E0220201/E2200401 existieren nicht, Person-B ist ein zweites Sub-Dokument). Globale
@@ -142,7 +156,12 @@ PARTNER_VERZWEIGUNG = {
         "gesetzliche_rente": "E1800501", "berufsstaendische_versorgung": "E1800501",
         "private_basisrente": "E1800501", "private_leibrente": "E1801701",
         "sonstige_leibrente": "E1803202"}},
-}
+
+# KV/PV Versicherungsart-Weiche Person B (Klasse g×f): Art-Feld = versicherungsart_partner.
+"basis_kv_partner": {"art_feld": "versicherungsart_partner", "kz": {
+    "gesetzlich_an": "E2001203", "gesetzlich_freiwillig": "E2001805", "privat": "E2003104"}},
+"basis_pv_partner": {"art_feld": "versicherungsart_partner", "kz": {
+    "gesetzlich_an": "E2001505", "gesetzlich_freiwillig": "E2002105", "privat": "E2003202"}}}
 # Klasse INSTANZ — Repeated-Instance (Store-Modell A, Multi-Objekt/Multi-Rente/Per-Kind): ein wiederholbares
 # Anlage-Feld trägt für Instanz 2..N das Suffix __<n> am feld_id (Instanz 1 = die Basis-feld_id ohne Suffix,
 # unverändert deklariert). Das Suffix liegt vollständig in [a-z0-9_] → der Store-feld_id-Pattern

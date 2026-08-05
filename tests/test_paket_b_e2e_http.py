@@ -524,11 +524,11 @@ def test_durchstich_n_vor_gwg(base):
 
 # ---- Gesamtsteuer-Ring MVP (an_gesamt): erster echter §2-Bescheid, reiner Arbeitnehmerfall ----
 AN_GESAMT_VOR = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
-AN_GESAMT_KV_PV = ("basis_kv", "basis_pv", "weitere_vorsorgeaufwendungen", "mit_anspruch_auf_zuschuss")
+AN_GESAMT_KV_PV = ("versicherungsart", "basis_kv", "basis_pv", "weitere_vorsorgeaufwendungen", "mit_anspruch_auf_zuschuss")
 AN_GESAMT_DHF = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland",
                  "dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
                  "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
-AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr",
+AN_GESAMT_PARTNER = ("versicherungsart_partner", "bruttoarbeitslohn_partner", "person_b_idnr",
                      "vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
                      "vor_rv_ausserhalb_lstb_partner", "basis_kv_partner", "basis_pv_partner",
                      "weitere_vorsorgeaufwendungen_partner", "mit_anspruch_auf_zuschuss_partner")
@@ -550,7 +550,7 @@ AN_GESAMT_KEGEL = [
     ("ep_arbeitstage", 220), ("ep_entfernung_km", 30), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", True),
     ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),   # reiner Pendler: keine VOR
     # KV/PV (§ 10 Abs. 1 Nr. 3/3a, Pflicht-Kegel seit Gesamt-Parität-Fix) = 0 default, kein Abzug
-    ("basis_kv", 0), ("basis_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+    ("basis_kv", 0), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
     # reiner Pendler: keine dHf (Kosten 0 -> dHf-Abzug 0, Bedingungen egal aber bestätigt)
     ("dhf_unterkunftskosten_monat", 0), ("dhf_monate", 0), ("dhf_im_inland", True),
     ("dhf_beruflich_veranlasst", True), ("dhf_eigener_hausstand", True),
@@ -672,7 +672,7 @@ def test_an_gesamt_kv_pv_integration(base):
     Abzug live."""
     catala = _catala_da()
     kegel = [(f, w) for f, w in AN_GESAMT_KEGEL if f not in AN_GESAMT_KV_PV]
-    kegel += [("basis_kv", 320000), ("basis_pv", 0), ("weitere_vorsorgeaufwendungen", 0),
+    kegel += [("basis_kv", 320000), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"), ("weitere_vorsorgeaufwendungen", 0),
               ("mit_anspruch_auf_zuschuss", False)]
     _an_gesamt_anlegen(base, "ag_kvpv", kegel)
     st, erg = _req(base, "GET", "/fall/ag_kvpv/ergebnis")
@@ -812,7 +812,7 @@ def test_an_gesamt_zusammen_kv_pv(base):
     catala = _catala_da()
     kegel = _zusammen_kegel()
     kegel = [(f, w) for f, w in kegel if f not in AN_GESAMT_KV_PV]
-    kegel += [("basis_kv", 320000), ("basis_pv", 0), ("weitere_vorsorgeaufwendungen", 0),
+    kegel += [("basis_kv", 320000), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"), ("weitere_vorsorgeaufwendungen", 0),
               ("mit_anspruch_auf_zuschuss", False)]
     _an_gesamt_anlegen(base, "zus_kvpv", kegel)
     st, erg = _req(base, "GET", "/fall/zus_kvpv/ergebnis")
@@ -846,7 +846,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_ertraege_partner=0, kap_gewinn_aktien_partner=0, kap_verlust_aktien_partner=0,
              kap_gewinn_sonstige_partner=0,
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
-             basis_kv=0, basis_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True,
+             basis_kv=0, basis_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, versicherungsart="gesetzlich_an", versicherungsart_partner=None, gewinn=0, kein_gewinn=True,
              betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None, vg=0,
              gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
              gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
@@ -868,6 +868,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
          ("bruttoarbeitslohn", bruttolohn),
          ("vor_an_anteil_rv", vor_an), ("vor_ag_anteil_rv", vor_ag),
          ("vor_rv_ausserhalb_lstb", vor_rv_ausserhalb),
+         ("versicherungsart", versicherungsart),
          ("basis_kv", basis_kv), ("basis_pv", basis_pv), ("weitere_vorsorgeaufwendungen", weitere_kv_pv),
          ("mit_anspruch_auf_zuschuss", mit_anspruch_zuschuss),
          ("ep_arbeitstage", ep_tage), ("ep_entfernung_km", ep_km),
@@ -911,6 +912,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
     if person_b_idnr is not None:
         k.append(("person_b_idnr", person_b_idnr))
+    if versicherungsart_partner is not None:
+        k.append(("versicherungsart_partner", versicherungsart_partner))
     if veranlagung == "zusammen":                 # Person-B-Kapital-Kegel (bestätigte Null default, #4b)
         k += [("kap_kapitalertraege_partner", kap_ertraege_partner),
               ("kap_gewinn_aktien_partner", kap_gewinn_aktien_partner),
@@ -2287,7 +2290,7 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    betriebsart=None, gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
                    gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
                    geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False,
-                   vor_an=0, vor_ag=0, vor_rv_ausserhalb=0, basis_kv=0, basis_pv=0, weitere_kv_pv=0,
+                   vor_an=0, vor_ag=0, vor_rv_ausserhalb=0, basis_kv=0, basis_pv=0, weitere_kv_pv=0, versicherungsart="gesetzlich_freiwillig",
                    mit_anspruch_zuschuss=False,
                    p16_alter_55=True, p16_erstmalig=True,
                    kein_kap=True, kap_ertraege=0, kap_toepfe_partner=None):
@@ -2307,6 +2310,7 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
          ("kein_gewinn", kein_gewinn), ("kein_kap", kein_kap), ("kein_vuv", True), ("kein_sonstige", False),
          ("vor_an_anteil_rv", vor_an), ("vor_ag_anteil_rv", vor_ag),
          ("vor_rv_ausserhalb_lstb", vor_rv_ausserhalb),
+         ("versicherungsart", versicherungsart),
          ("basis_kv", basis_kv), ("basis_pv", basis_pv), ("weitere_vorsorgeaufwendungen", weitere_kv_pv),
          ("mit_anspruch_auf_zuschuss", mit_anspruch_zuschuss)]
     if kap_ertraege:

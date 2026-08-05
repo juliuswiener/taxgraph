@@ -148,11 +148,11 @@ def test_nicht_deklariert_inventar():
     # E0300717 (SO/Unt_Leist, NICHT die § 33a-Kz aus ESt1A_U — die waren faelschlich
     # notiert), dba_auslaendische_einkuenfte -> E0601401,
     # dba_gezahlte_auslaendische_steuer -> E0601901.
-    # 2026-08 Feldsplit: basis_kv_pv (+_partner) -> basis_kv + basis_pv (+_partner). Alte Felder
-    # fallen aus OFFEN raus (−2). Neue Felder haben elster_kz: null + Grund → werden als OFFEN
-    # gezählt (+4). Netto: 21+2=23. Kz-Bindung folgt in Schritt 3 (Versicherungsart-Weiche).
-    OFFEN_SOLL = 23  # 21 - 2 (alte Summen weg) + 4 (neue Felder, alle OFFEN).
-
+    # 2026-08 Feldsplit: basis_kv_pv (+_partner) -> basis_kv + basis_pv (+_partner).
+    # Alte Felder fallen aus OFFEN raus (-2). Kz-Bindung Schritt 3: alle 4 neuen
+    # Felder haben Kz via VERZWEIGUNG/PARTNER_VERZWEIGUNG -> nicht mehr OFFEN.
+    # Netto: 23-4=19. weitere_vorsorgeaufwendungen(_partner) bleibt OFFEN (10 Abs. 1 Nr. 3a).
+    OFFEN_SOLL = 19  # 23 - 4 (Kz-Bindung Schritt 3). Bei Kz-Arbeit nachziehen.
     # === Themenblock-Gruppierung ===
     # OFFEN-Felder in Themenblöcke gruppiert
     bloecke = {

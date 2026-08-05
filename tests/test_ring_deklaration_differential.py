@@ -279,7 +279,8 @@ def test_differential_rentner_keine_luecken(bindung):
     _b(s, "vor_ag_anteil_rv", 150000)
     _b(s, "vor_rv_ausserhalb_lstb", 100000)
     _b(s, "basis_kv", 450000)
-    _b(s, "weitere_vorsorgeaufwendungen", 0)
+    _b(s, "basis_pv", 0)
+    _b(s, "versicherungsart", "gesetzlich_freiwillig")
     _b(s, "mit_anspruch_auf_zuschuss", False)
     # Pflichtkegel
     _b(s, "kein_gewinn", True)
