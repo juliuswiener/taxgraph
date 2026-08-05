@@ -46,3 +46,5 @@ corpus/dba_pdfs/
 # Urheberrechtlich geschuetzt (NWB-Redaktionstexte, Kommentar-Literatur) — NIE committen/pushen
 corpus/dba_text_nwb/
 corpus/kommentare/
+# Werkzeug-Output (Codebase-Graph, 11M AST-Cache) — reproduzierbar, nie committen
+graphify-out/
