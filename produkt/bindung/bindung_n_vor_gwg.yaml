@@ -847,26 +847,45 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
 
   # ========================= KV/PV — p10_1_3_3a_kv_pv (§ 10 Abs. 1 Nr. 3/3a i.V.m. Abs. 4) =========================
-  # feld_id == Modul-Slot 1:1 (Instructor-Adjudikation a): dev-1s Fold liest die feld_ids direkt als
-  # KrankenPflegeVorsorge-Inputs; KEIN Präfix (verhindert Read-Key-Drift). null-Kz-MVP (b). mit_anspruch
-  # in dev-1s Pflicht-Kegel (absent->false->HB2800 = Under-tax für Zuschuss-Empfänger).
-  - feld_id: basis_kv_pv
+  # Feldsplit 2026-08: basis_kv_pv (Summenfeld) -> basis_kv + basis_pv (slot_beitrag: summand, selber
+  # signatur_slot). Der Ring-Slot heisst weiterhin basis_kv_pv (Summe beider Felder). Kz-Bindung folgt.
+  - feld_id: basis_kv
     vorschlagbar_von: [beleg]
     quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: basis_kv_pv}
+    slot_beitrag: summand
     typ: cent
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen für deine Basis-Krankenversicherung und die gesetzliche Pflegeversicherung gezahlt?"
-    hilfe_kurz: "Der Basistarif (gesetzlich oder privater Basisschutz), ohne Zusatz-/Komfortleistungen. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung."
-    beispielwert: 300000
-    herkunft_slots: ["Beitragsbescheinigung KV/PV: Basisbeitrag"]
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen für deine Basis-Krankenversicherung gezahlt?"
+    hilfe_kurz: "Der Basistarif (gesetzlich oder privater Basisschutz), ohne Zusatz-/Komfortleistungen. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung (Nr. 25)."
+    beispielwert: 250000
+    herkunft_slots: ["Beitragsbescheinigung KV/PV: Basisbeitrag KV", "LStB Nr. 25"]
     elster_kz: null
-    elster_kz_grund: "Kz E2001203 (E10/VOR/Beitr_g_KV_PV_Inl/AN/E2001203, KV) + E2001505 (PV) belegt 2026-08-05 am amtlichen E10-2025.xsd. KV/PV muessen getrennt werden (Feldaufteilung, ~5-7h). Bindung noch offen."
+    elster_kz_grund: "Feldaufteilung erledigt; Kz-Bindung E2001203/E2001505 offen (Versicherungsart-Weiche fehlt)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 3 EStG"
       zitatanker: "Krankenversicherungen, soweit diese zur Erlangung eines durch das Zwölfte Buch Sozialgesetzbuch bestimmten sozialhilfegleichen Versorgungsniveaus erforderlich sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: basis_pv
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: basis_kv_pv}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen für die gesetzliche Pflegeversicherung gezahlt?"
+    hilfe_kurz: "Der Pflege-Pflichtbeitrag (gesetzlich), ohne private Pflege-Zusatzversicherung. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung (Nr. 26)."
+    beispielwert: 50000
+    herkunft_slots: ["Beitragsbescheinigung KV/PV: Basisbeitrag PV", "LStB Nr. 26"]
+    elster_kz: null
+    elster_kz_grund: "Feldaufteilung erledigt; Kz-Bindung E2001203/E2001505 offen (Versicherungsart-Weiche fehlt)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 EStG"
+      zitatanker: "gesetzlichen Pflegeversicherung"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: weitere_vorsorgeaufwendungen
     quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: weitere_vorsorgeaufwendungen}

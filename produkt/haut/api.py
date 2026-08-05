@@ -373,7 +373,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # § 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge (Pflicht-Kegel Person A, Gesamt-Parität, Over-tax-Fix):
             # eigener Abs.4-Höchstbetrag (1900/2800), additiv, GETRENNT von der VOR-Basisvorsorge unten.
             kv_pv_a = runner.catala_p10_kv_pv({
-                "basis_kv_pv": _cent("basis_kv_pv") // 100,
+                "basis_kv_pv": (_cent("basis_kv") + _cent("basis_pv")) // 100,
                 "weitere_vorsorgeaufwendungen": _cent("weitere_vorsorgeaufwendungen") // 100,
                 "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
             # Zusammenveranlagung (§ 26b): Roh-Bruttolohn + Roh-WK pro Person -> catala_est_zusammen
@@ -383,7 +383,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             zusammen = f.get("veranlagung", {}).get("wert") == "zusammen"
             if zusammen:
                 kv_pv_b = runner.catala_p10_kv_pv({
-                    "basis_kv_pv": _cent("basis_kv_pv_partner") // 100,
+                    "basis_kv_pv": (_cent("basis_kv_partner") + _cent("basis_pv_partner")) // 100,
                     "weitere_vorsorgeaufwendungen": _cent("weitere_vorsorgeaufwendungen_partner") // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
                 est = runner.catala_est_zusammen({
@@ -761,7 +761,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
                     "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
                 + runner.catala_p10_kv_pv({
-                    "basis_kv_pv": _c("basis_kv_pv") // 100,
+                    "basis_kv_pv": (_c("basis_kv") + _c("basis_pv")) // 100,
                     "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen") // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
                 + runner.catala_p10_1_5_kinderbetreuung({
@@ -776,7 +776,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 # Person-B-KV/PV (§ 10 Abs. 4, A.2): eigener Höchstbetrag JE PERSON → separater Accessor-Aufruf,
                 # additiv (kein gemeinsamer Deckel, kein Doppelzählen — B liest die _partner-Read-Keys).
                 + (runner.catala_p10_kv_pv({
-                    "basis_kv_pv": _c("basis_kv_pv_partner") // 100,
+                    "basis_kv_pv": (_c("basis_kv_partner") + _c("basis_pv_partner")) // 100,
                     "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen_partner") // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
                    if g["veranlagung"] == "zusammen" else 0)
@@ -1335,7 +1335,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
                     "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
                 + runner.catala_p10_kv_pv({
-                    "basis_kv_pv": _c("basis_kv_pv") // 100,
+                    "basis_kv_pv": (_c("basis_kv") + _c("basis_pv")) // 100,
                     "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen") // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
                 + runner.catala_p10_1_5_kinderbetreuung({
@@ -1351,7 +1351,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100})
                 # Person-B-KV/PV (§ 10 Abs. 4, A.2): eigener HB je Person, additiv (1:1 gesamt-Pattern L987-991).
                 + (runner.catala_p10_kv_pv({
-                    "basis_kv_pv": _c("basis_kv_pv_partner") // 100,
+                    "basis_kv_pv": (_c("basis_kv_partner") + _c("basis_pv_partner")) // 100,
                     "weitere_vorsorgeaufwendungen": _c("weitere_vorsorgeaufwendungen_partner") // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
                    if f.get("veranlagung", {}).get("wert") == "zusammen" else 0))

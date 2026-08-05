@@ -247,9 +247,9 @@ def test_gesamt_zusammen_person_b_vorsorge(base):
     _gesamt_anlegen(base, "pbv", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
                                                veranlagung="zusammen", bruttolohn_partner=4000000,
                                                person_b_idnr="12345678901", vor_an=350000, vor_ag=350000,
-                                               basis_kv_pv=320000))
+                                               basis_kv=320000))
     for feld, wert in [("vor_an_anteil_rv_partner", 350000), ("vor_ag_anteil_rv_partner", 350000),
-                       ("basis_kv_pv_partner", 320000)]:
+                       ("basis_kv_partner", 320000)]:
         st, _ = _req(base, "POST", "/fall/pbv/event", _laie(feld, wert))
         assert st == 201
     st, erg = _req(base, "GET", "/fall/pbv/ergebnis")
@@ -269,7 +269,7 @@ def test_gesamt_zusammen_person_b_vorsorge_null_wie_a_only(base):
     _gesamt_anlegen(base, "pbn", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
                                                veranlagung="zusammen", bruttolohn_partner=4000000,
                                                person_b_idnr="12345678901", vor_an=350000, vor_ag=350000,
-                                               basis_kv_pv=320000))
+                                               basis_kv=320000))
     st, erg = _req(base, "GET", "/fall/pbn/ergebnis")
     _val("ergebnis", erg)
     if catala:
@@ -524,13 +524,13 @@ def test_durchstich_n_vor_gwg(base):
 
 # ---- Gesamtsteuer-Ring MVP (an_gesamt): erster echter §2-Bescheid, reiner Arbeitnehmerfall ----
 AN_GESAMT_VOR = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
-AN_GESAMT_KV_PV = ("basis_kv_pv", "weitere_vorsorgeaufwendungen", "mit_anspruch_auf_zuschuss")
+AN_GESAMT_KV_PV = ("basis_kv", "basis_pv", "weitere_vorsorgeaufwendungen", "mit_anspruch_auf_zuschuss")
 AN_GESAMT_DHF = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland",
                  "dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
                  "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
 AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr",
                      "vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
-                     "vor_rv_ausserhalb_lstb_partner", "basis_kv_pv_partner",
+                     "vor_rv_ausserhalb_lstb_partner", "basis_kv_partner", "basis_pv_partner",
                      "weitere_vorsorgeaufwendungen_partner", "mit_anspruch_auf_zuschuss_partner")
 AN_GESAMT_VERPFLEGUNG = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig",
                          "vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
@@ -550,7 +550,7 @@ AN_GESAMT_KEGEL = [
     ("ep_arbeitstage", 220), ("ep_entfernung_km", 30), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", True),
     ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),   # reiner Pendler: keine VOR
     # KV/PV (§ 10 Abs. 1 Nr. 3/3a, Pflicht-Kegel seit Gesamt-Parität-Fix) = 0 default, kein Abzug
-    ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+    ("basis_kv", 0), ("basis_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
     # reiner Pendler: keine dHf (Kosten 0 -> dHf-Abzug 0, Bedingungen egal aber bestätigt)
     ("dhf_unterkunftskosten_monat", 0), ("dhf_monate", 0), ("dhf_im_inland", True),
     ("dhf_beruflich_veranlasst", True), ("dhf_eigener_hausstand", True),
@@ -666,13 +666,13 @@ def test_an_gesamt_vor_integration(base):
 
 def test_an_gesamt_kv_pv_integration(base):
     """Over-tax-Fix (Gesamt-Parität): § 10 Abs. 1 Nr. 3/3a KV/PV jetzt echt gerechnet in an_gesamt.
-    Bruttolohn 40000 + EP 2156, basis_kv_pv 3200 € (320000 ct, ohne Zuschuss-Anspruch, unter HB 2800→
+    Bruttolohn 40000 + EP 2156, basis_kv 3200 € (320000 ct, ohne Zuschuss-Anspruch, unter HB 2800→
     voller Basis-Durchbruch) → sonderausgaben 3200 → festzusetzende_est 5660 = 566000 Cent (vs. 6629 =
-    662900 Cent bei basis_kv_pv=0, Golden-Wert von test_an_gesamt_durchstich) — Delta 969 € belegt den
+    662900 Cent bei basis_kv=0, Golden-Wert von test_an_gesamt_durchstich) — Delta 969 € belegt den
     Abzug live."""
     catala = _catala_da()
     kegel = [(f, w) for f, w in AN_GESAMT_KEGEL if f not in AN_GESAMT_KV_PV]
-    kegel += [("basis_kv_pv", 320000), ("weitere_vorsorgeaufwendungen", 0),
+    kegel += [("basis_kv", 320000), ("basis_pv", 0), ("weitere_vorsorgeaufwendungen", 0),
               ("mit_anspruch_auf_zuschuss", False)]
     _an_gesamt_anlegen(base, "ag_kvpv", kegel)
     st, erg = _req(base, "GET", "/fall/ag_kvpv/ergebnis")
@@ -806,13 +806,13 @@ def test_an_gesamt_zusammen(base):
 
 def test_an_gesamt_zusammen_kv_pv(base):
     """Over-tax-Fix (Gesamt-Parität) bei Zusammenveranlagung: Person-A-KV/PV additiv in
-    sonderausgaben_gemeinsam. Beide Bruttolohn 40000, basis_kv_pv_a 3200 € (320000 ct) →
+    sonderausgaben_gemeinsam. Beide Bruttolohn 40000, basis_kv_a 3200 € (320000 ct) →
     festzusetzende_est_zusammen 12862 = 1286200 Cent (vs. 13838 = 1383800 Cent bei kv_pv=0,
     Golden-Wert von test_an_gesamt_zusammen) — Delta 976 € belegt den Abzug live."""
     catala = _catala_da()
     kegel = _zusammen_kegel()
     kegel = [(f, w) for f, w in kegel if f not in AN_GESAMT_KV_PV]
-    kegel += [("basis_kv_pv", 320000), ("weitere_vorsorgeaufwendungen", 0),
+    kegel += [("basis_kv", 320000), ("basis_pv", 0), ("weitere_vorsorgeaufwendungen", 0),
               ("mit_anspruch_auf_zuschuss", False)]
     _an_gesamt_anlegen(base, "zus_kvpv", kegel)
     st, erg = _req(base, "GET", "/fall/zus_kvpv/ergebnis")
@@ -846,7 +846,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              kap_ertraege_partner=0, kap_gewinn_aktien_partner=0, kap_verlust_aktien_partner=0,
              kap_gewinn_sonstige_partner=0,
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
-             basis_kv_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True,
+             basis_kv=0, basis_pv=0, weitere_kv_pv=0, mit_anspruch_zuschuss=False, gewinn=0, kein_gewinn=True,
              betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None, vg=0,
              gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
              gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
@@ -858,7 +858,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
     bruttolohn_partner/person_b_idnr (nur bei veranlagung=zusammen) = Person-B-§19-Kegel (#4). entgelt_quote
     (§ 21 Abs. 2, Pflicht-Kegel, %) = 100 (nicht verbilligt) default; < 66 → WK-Kürzung. vor_an/vor_ag/
     vor_rv_ausserhalb (§ 10 Altersvorsorge, Pflicht-Kegel, cent) = 0 default (keine Vorsorge → kein Abzug).
-    basis_kv_pv/weitere_kv_pv (§ 10 Abs. 1 Nr. 3/3a KV/PV, Pflicht-Kegel, CENT wie VOR!) = 0 default; 3200 € = 320000.
+    basis_kv + basis_pv (§ 10 Abs. 1 Nr. 3 KV/PV, Pflicht-Kegel, cent) = 0 default; 3200 € = 320000 Cent.
     gewinn (§§ 13-18 Gewinneinkünfte, Stufe 1, einkuenfte_gewinn, OPTIONAL/CENT) = 0 default → Feld absent (absent → 0,
     over-tax-safe); > 0 nur mit kein_gewinn=False (sonst flag_konsistenz_offen). kein_gewinn (§ 2 Abs. 1 Nr. 1-3
     Abwesenheits-Flag) = True default (keine Gewinneinkünfte); für einen echten Gewinnfall auf False setzen."""
@@ -868,7 +868,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
          ("bruttoarbeitslohn", bruttolohn),
          ("vor_an_anteil_rv", vor_an), ("vor_ag_anteil_rv", vor_ag),
          ("vor_rv_ausserhalb_lstb", vor_rv_ausserhalb),
-         ("basis_kv_pv", basis_kv_pv), ("weitere_vorsorgeaufwendungen", weitere_kv_pv),
+         ("basis_kv", basis_kv), ("basis_pv", basis_pv), ("weitere_vorsorgeaufwendungen", weitere_kv_pv),
          ("mit_anspruch_auf_zuschuss", mit_anspruch_zuschuss),
          ("ep_arbeitstage", ep_tage), ("ep_entfernung_km", ep_km),
          ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", ep_kfz),
@@ -1817,7 +1817,7 @@ def test_gesamt_kv_pv_durchbruch_abzug(base):
     gesamt-Ring gewährt den KV/PV-Abzug + der Durchbruch schlägt den Höchstbetrag (sonst Über-tax auf den 400 €
     über HB). KV/PV im Pflicht-Kegel → immer gefragt, kein stiller Über-tax."""
     catala = _catala_da()
-    _gesamt_anlegen(base, "kvd", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True, basis_kv_pv=320000))
+    _gesamt_anlegen(base, "kvd", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True, basis_kv=320000))
     st, erg = _req(base, "GET", "/fall/kvd/ergebnis")
     _val("ergebnis", erg)
     if catala:
@@ -1833,7 +1833,7 @@ def test_gesamt_kv_pv_hoechstbetrag_mit_zuschuss(base):
     reduzierten) HB angerechnet — Basis + weitere GETRENNT behandelt."""
     catala = _catala_da()
     _gesamt_anlegen(base, "kvz", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True,
-                                               basis_kv_pv=150000, weitere_kv_pv=80000, mit_anspruch_zuschuss=True))
+                                               basis_kv=150000, weitere_kv_pv=80000, mit_anspruch_zuschuss=True))
     st, erg = _req(base, "GET", "/fall/kvz/ergebnis")
     _val("ergebnis", erg)
     if catala:
@@ -1843,9 +1843,9 @@ def test_gesamt_kv_pv_hoechstbetrag_mit_zuschuss(base):
 
 
 def test_gesamt_kv_pv_kegel_fehlt(base):
-    """§ 10 KV/PV Pflicht-Kegel: basis_kv_pv nicht bestätigt → input_kegel_nicht_bestaetigt (kein stiller Bescheid
+    """§ 10 KV/PV Pflicht-Kegel: basis_kv + basis_pv nicht bestätigt → input_kegel_nicht_bestaetigt (kein stiller Bescheid
     mit KV/PV-Abzug 0 — die KV/PV-Beiträge MÜSSEN beantwortet sein, sonst Über-tax-Risiko der Pflichtbeiträge)."""
-    kegel = [(f, w) for (f, w) in _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True) if f != "basis_kv_pv"]
+    kegel = [(f, w) for (f, w) in _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True) if f not in ("basis_kv", "basis_pv")]
     _gesamt_anlegen(base, "kvk", kegel)
     st, erg = _req(base, "GET", "/fall/kvk/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "input_kegel_nicht_bestaetigt"
@@ -2287,7 +2287,7 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    betriebsart=None, gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
                    gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
                    geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False,
-                   vor_an=0, vor_ag=0, vor_rv_ausserhalb=0, basis_kv_pv=0, weitere_kv_pv=0,
+                   vor_an=0, vor_ag=0, vor_rv_ausserhalb=0, basis_kv=0, basis_pv=0, weitere_kv_pv=0,
                    mit_anspruch_zuschuss=False,
                    p16_alter_55=True, p16_erstmalig=True,
                    kein_kap=True, kap_ertraege=0, kap_toepfe_partner=None):
@@ -2297,7 +2297,7 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
     gewinn (§ 15/§ 18 laufender Gewinn, einkuenfte_gewinn, OPTIONAL/CENT) + vg (§ 16-Veräußerungsgewinn,
     rentner_veraeusserungsgewinn, OPTIONAL/CENT, 2-I) = 0 default → Feld absent (absent → 0, over-tax-safe); > 0
     nur mit kein_gewinn=False (sonst flag_konsistenz_offen). kein_gewinn (§ 2 Abs. 1 Nr. 1-3) = True default.
-    vor_an/vor_ag/vor_rv_ausserhalb (§ 10 Altersvorsorge, Pflicht-Kegel, cent) + basis_kv_pv/weitere_kv_pv
+    vor_an/vor_ag/vor_rv_ausserhalb (§ 10 Altersvorsorge, Pflicht-Kegel, cent) + basis_kv + basis_pv/weitere_kv_pv
     (§ 10 Abs. 1 Nr. 3/3a KV/PV, Pflicht-Kegel, CENT) = 0 default (Weg-ii-Fix, 1:1 gesamt-Präzedenz)."""
     k = [("rentner_renten_art", renten_art), ("rentner_jahresrente", jahresrente),
          ("rentner_renten_beginn_jahr", beginn), ("rentner_alter_bei_rentenbeginn", alter),
@@ -2307,7 +2307,7 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
          ("kein_gewinn", kein_gewinn), ("kein_kap", kein_kap), ("kein_vuv", True), ("kein_sonstige", False),
          ("vor_an_anteil_rv", vor_an), ("vor_ag_anteil_rv", vor_ag),
          ("vor_rv_ausserhalb_lstb", vor_rv_ausserhalb),
-         ("basis_kv_pv", basis_kv_pv), ("weitere_vorsorgeaufwendungen", weitere_kv_pv),
+         ("basis_kv", basis_kv), ("basis_pv", basis_pv), ("weitere_vorsorgeaufwendungen", weitere_kv_pv),
          ("mit_anspruch_auf_zuschuss", mit_anspruch_zuschuss)]
     if kap_ertraege:
         k.append(("kap_kapitalertraege", kap_ertraege))
@@ -2429,7 +2429,7 @@ def test_rentner_faltung_komposition(base):
     § 33 agB 5000 + § 10 KiSt (gezahlt 500) in EINEM Bescheid → est SINKT gegenüber der Baseline (vorher fehlten
     diese Abzüge im Rentner-Ring komplett, RENTNER_FELDER hatte KV_PV/GESAMT_ABZUEGE nicht mal postbar)."""
     catala = _catala_da()
-    _rentner_anlegen(base, "rk", _rentner_kegel(jahresrente=2000000, beginn=2025, basis_kv_pv=200000))
+    _rentner_anlegen(base, "rk", _rentner_kegel(jahresrente=2000000, beginn=2025, basis_kv=200000))
     _rentner_abzuege(base, "rk", handwerker=1000000, rechnung_unbar=True, spende=300000, agb=500000,
                      kist_gezahlt=50000)
     st, erg = _req(base, "GET", "/fall/rk/ergebnis")

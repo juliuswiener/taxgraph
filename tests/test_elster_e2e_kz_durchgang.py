@@ -113,7 +113,8 @@ def test_e2e_kz_durchgang_26_felder(base):
         "tage_an_abreise": 0,
         "tage_24h": 0,
         "vpf_keine_mahlzeitengestellung": 0,
-        "basis_kv_pv": 450000,  # 4.5k § 10
+        "basis_kv": 450000,  # 4.5k § 10 (KV)
+	        "basis_pv": 0,  # PV (kein PV-Beitrag in diesem Testfall)
         "weitere_vorsorgeaufwendungen": 0,
         "vor_an_anteil_rv": 200000,  # 2k
         "vor_ag_anteil_rv": 150000,  # 1.5k

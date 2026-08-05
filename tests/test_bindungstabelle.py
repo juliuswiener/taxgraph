@@ -435,7 +435,7 @@ BETRAGSFELDER_OHNE_KZ = {
     # Stille Fehler bei Zusammenveranlagung: Ehepaar 50k+50k rechnet 20.490€ ESt, Erklärung enthält
     # nur Lohn von Person A → 14.982€ Under-Tax (gemessen 2026-07-31).
     # Status: FEHLER, Klärung offen. PersonB-Logik in XML-Writer fehlt komplett.
-    "basis_kv_pv_partner",
+    "basis_kv_partner",
     "bruttoarbeitslohn_partner",
     "kap_gewinn_aktien_partner",
     "kap_gewinn_sonstige_partner",
@@ -460,7 +460,10 @@ BETRAGSFELDER_OHNE_KZ = {
     # Gruppe C: Dokumentierte MVP-Lücken / andere offene Posten (44 Felder).
     # elster_kz_grund nennt "MVP", "Folgeticket", oder konkrete Baustellen-Referenzen.
     # Status: legitime Lücken, Roadmap-Items, nicht kurzfristig lösbar.
-    "basis_kv_pv",
+    "basis_kv",
+    "basis_kv_partner",
+    "basis_pv",
+    "basis_pv_partner",
     "dba_auslaendische_einkuenfte",
     "dba_gezahlte_auslaendische_steuer",
     "einkuenfte_gewinn",

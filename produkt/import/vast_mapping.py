@@ -58,10 +58,12 @@ LSTB = {
     "LeistungenProgVorbeh":   ("p32b_progressionseinkuenfte", "Leistungen, die dem Progressionsvorbehalt unterliegen"),
     "ArbnAnteilRenVers":      ("vor_an_anteil_rv",           "Arbeitnehmeranteil zur gesetzlichen Rentenversicherung"),
     "ArbgAnteilRenVers":      ("vor_ag_anteil_rv",           "Arbeitgeberanteil zur gesetzlichen Rentenversicherung"),
+    "ArbnAnteilKrankVers":    ("basis_kv",                   "Arbeitnehmerbeiträge zur gesetzlichen Krankenversicherung (LStB Nr. 25)"),
+    "ArbnAnteilPflegVers":    ("basis_pv",                   "Arbeitnehmerbeiträge zur sozialen Pflegeversicherung (LStB Nr. 26)"),
 }
 
-# Mehrere Beleg-Felder auf EIN Zielfeld — die Bescheinigung trennt feiner als unsere
-# Bindung, also wird summiert. Beleg für die Zuordnung ist der Gesetzestext:
+# Ehemals Summen-Feld KV+PV (basis_kv_pv); seit Feldsplit 2026-08 direkt als zwei 1:1-Einträge
+# in LSTB. Beleg für die Zuordnung ist der Gesetzestext:
 #
 #   § 10 Abs. 1 Nr. 3 a)  Krankenversicherung, soweit zur Erlangung eines
 #                         sozialhilfegleichen Versorgungsniveaus erforderlich
@@ -74,10 +76,6 @@ LSTB = {
 # Die Arbeitslosenversicherung steht damit ausdrücklich in Nr. 3a, nicht in Nr. 3 —
 # sie gehört zu weitere_vorsorgeaufwendungen, nicht zur Basisabsicherung.
 LSTB_SUMMEN = {
-    "basis_kv_pv": (
-        ("ArbnAnteilKrankVers", "Arbeitnehmerbeiträge zur gesetzlichen Krankenversicherung"),
-        ("ArbnAnteilPflegVers", "Arbeitnehmerbeiträge zur sozialen Pflegeversicherung"),
-    ),
     "weitere_vorsorgeaufwendungen": (
         ("ArbnAnteilArblVers", "Arbeitnehmerbeiträge zur Arbeitslosenversicherung"),
     ),
@@ -134,7 +132,9 @@ def aus_lstb(werte: dict) -> list[dict]:
     kein Fehler, weil das Schema mehr Felder kennt als wir mappen (siehe NICHT_GEMAPPT).
     """
     raus = []
-    # Mehrere Beleg-Felder → ein Zielfeld (KV+PV, Arbeitslosenversicherung).
+    # LSTB_SUMMEN: mehrere Beleg-Felder → ein Zielfeld (Arbeitslosenversicherung).
+    # KV/PV sind seit Feldsplit 2026-08 1:1 in LSTB (ArbnAnteilKrankVers -> basis_kv,
+    # ArbnAnteilPflegVers -> basis_pv).
     for feld_id, quellen in LSTB_SUMMEN.items():
         teile = [(n, _cent(werte.get(n)), d) for n, d in quellen]
         besetzt = [(n, c, d) for n, c, d in teile if c is not None]

@@ -636,23 +636,43 @@ bindungen:
   # ===== KV/PV Person-B (§ 10 Abs. 1 Nr. 3/3a + Abs. 4) + §24a-B — A.2, feld_id==dev-1-Read-Key 1:1 =====
   # Slot-Kontrakt mit dev-1 fixiert: er liest die feld_ids DIREKT als Person-B-Inputs (KrankenPflegeVorsorge
   # bzw. §24a-Kohorte); kein Präfix-Mismatch. Klasse-g Person-Multiplikation, null-Kz (Reuse Person-A-Kz).
-  - feld_id: basis_kv_pv_partner
+  - feld_id: basis_kv_partner
     vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: basis_kv_pv_partner}
+    slot_beitrag: summand
     typ: cent
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr für seine Basis-Kranken- und die gesetzliche Pflegeversicherung gezahlt?"
-    hilfe_kurz: "Person-individuell: die Kranken-/Pflege-Basisbeiträge deines Partners (aus seiner Beitragsbescheinigung), ohne Zusatzleistungen."
-    beispielwert: 300000
+    fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr an Beiträgen für seine Basis-Krankenversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell: die Kranken-Basisbeiträge deines Partners (aus seiner Beitragsbescheinigung), ohne Zusatzleistungen."
+    beispielwert: 250000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz wie basis_kv_pv (E2001203/E2001505), Person-B-Instanz via VOR/Beitr_g_KV_PV_Inl (maxOccurs=2, <Person>). Bindung noch offen."
+    elster_kz_grund: "Feldaufteilung erledigt; Kz-Bindung offen (Versicherungsart-Weiche fehlt)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 3 EStG"
       zitatanker: "Krankenversicherungen, soweit diese zur Erlangung eines durch das Zwölfte Buch Sozialgesetzbuch bestimmten sozialhilfegleichen Versorgungsniveaus erforderlich sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: basis_pv_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: basis_kv_pv_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr an Beiträgen für die gesetzliche Pflegeversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell: die Pflege-Pflichtbeiträge deines Partners (aus seiner Beitragsbescheinigung), ohne private Zusatzversicherung."
+    beispielwert: 50000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Feldaufteilung erledigt; Kz-Bindung offen (Versicherungsart-Weiche fehlt)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 EStG"
+      zitatanker: "gesetzlichen Pflegeversicherung"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: weitere_vorsorgeaufwendungen_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}

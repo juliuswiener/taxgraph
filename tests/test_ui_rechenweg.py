@@ -118,7 +118,7 @@ def _einfachen_fall_anlegen(base: str, fall_id: str) -> str:
         _laie("vor_ag_anteil_rv", 0),
         _laie("vor_rv_ausserhalb_lstb", 0),
         # KV/PV
-        _laie("basis_kv_pv", 0),
+        _laie("basis_kv", 0), _laie("basis_pv", 0),
         _laie("weitere_vorsorgeaufwendungen", 0),
         _laie("mit_anspruch_auf_zuschuss", False),
         # KAP
@@ -158,7 +158,7 @@ def _einfachen_an_gesamt_fall_anlegen(base: str, fall_id: str) -> str:
         _laie("vor_an_anteil_rv", 0),
         _laie("vor_ag_anteil_rv", 0),
         _laie("vor_rv_ausserhalb_lstb", 0),
-        _laie("basis_kv_pv", 0),
+        _laie("basis_kv", 0), _laie("basis_pv", 0),
         _laie("weitere_vorsorgeaufwendungen", 0),
         _laie("mit_anspruch_auf_zuschuss", False),
         _laie("dhf_unterkunftskosten_monat", 0),

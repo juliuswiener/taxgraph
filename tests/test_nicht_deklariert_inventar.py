@@ -148,13 +148,16 @@ def test_nicht_deklariert_inventar():
     # E0300717 (SO/Unt_Leist, NICHT die § 33a-Kz aus ESt1A_U — die waren faelschlich
     # notiert), dba_auslaendische_einkuenfte -> E0601401,
     # dba_gezahlte_auslaendische_steuer -> E0601901.
-    OFFEN_SOLL = 21  # 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
+    # 2026-08 Feldsplit: basis_kv_pv (+_partner) -> basis_kv + basis_pv (+_partner). Alte Felder
+    # fallen aus OFFEN raus (−2). Neue Felder haben elster_kz: null + Grund → werden als OFFEN
+    # gezählt (+4). Netto: 21+2=23. Kz-Bindung folgt in Schritt 3 (Versicherungsart-Weiche).
+    OFFEN_SOLL = 23  # 21 - 2 (alte Summen weg) + 4 (neue Felder, alle OFFEN).
 
     # === Themenblock-Gruppierung ===
     # OFFEN-Felder in Themenblöcke gruppiert
     bloecke = {
         "§36 Anrechnung (LSt, VZ)": ["p36_lohnsteuer", "p36_vorauszahlungen"],
-        "KV/PV-Vorsorge §10": ["basis_kv_pv", "basis_kv_pv_partner",
+        "KV/PV-Vorsorge §10": ["basis_kv", "basis_pv", "basis_kv_partner", "basis_pv_partner",
                                 "weitere_vorsorgeaufwendungen", "weitere_vorsorgeaufwendungen_partner"],
         "Unterhalt §33a (Rest)": ["p33a_andere_einkuenfte_bezuege",
                                   "p33a_ausbildung_anzahl_kinder"],

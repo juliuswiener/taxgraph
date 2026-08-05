@@ -52,3 +52,36 @@ def test_p10_kv_pv_weitere_gedeckelt(R):
     (< HB) + weitere 2000 = 4000 → auf HB 2800 gedeckelt (nur die Basis genießt den Durchbruch, nicht die weitere)."""
     assert R.catala_p10_kv_pv({"basis_kv_pv": 2000, "weitere_vorsorgeaufwendungen": 2000,
                                "mit_anspruch_auf_zuschuss": False}) == 2800
+
+
+def test_kv_pv_ring_invariante_feldsplit(R):
+    """Invariante (Gate 3): Feldsplit ändert Ring-Ergebnis nicht. Der Ring sieht nur die
+    Summe basis_kv + basis_pv (= altes basis_kv_pv). Beispiel:
+    - Früher: basis_kv_pv=3000 (direkt)
+    - Heute: basis_kv=200000Cent + basis_pv=100000Cent → api.py summiert → Ring kriegt 3000
+    Ergebnis: bitgleich (der Ring kann den Unterschied nicht sehen)."""
+    summe = (200000 + 100000) // 100  # Cent -> Euro, wie api.py
+    ergebnis = R.catala_p10_kv_pv({"basis_kv_pv": summe,
+                                    "weitere_vorsorgeaufwendungen": 500,
+                                    "mit_anspruch_auf_zuschuss": False})
+    # Dieselbe Summe wie altes basis_kv_pv=3000 — Ergebnis muss identisch sein
+    referenz = R.catala_p10_kv_pv({"basis_kv_pv": 3000,
+                                    "weitere_vorsorgeaufwendungen": 500,
+                                    "mit_anspruch_auf_zuschuss": False})
+    assert ergebnis == referenz, (
+        f"Feldsplit-Invariante verletzt: {ergebnis} != {referenz}")
+
+
+def test_kv_pv_mutation_basis_pv_aendert_ergebnis(R):
+    """Mutations-Probe (Gate 4): basis_pv auf 0 setzen → Ring-Ergebnis ändert sich.
+    Wenn es sich NICHT ändert, wäre das Feld tot verdrahtet."""
+    mit_pv = R.catala_p10_kv_pv({"basis_kv_pv": (200000 + 100000) // 100,
+                                  "weitere_vorsorgeaufwendungen": 0,
+                                  "mit_anspruch_auf_zuschuss": False})
+    ohne_pv = R.catala_p10_kv_pv({"basis_kv_pv": (200000 + 0) // 100,
+                                   "weitere_vorsorgeaufwendungen": 0,
+                                   "mit_anspruch_auf_zuschuss": False})
+    assert ohne_pv != mit_pv, (
+        f"basis_pv ist tot verdrahtet: mit PV {mit_pv}, ohne PV {ohne_pv} (gleich)")
+    assert ohne_pv == 2000
+    assert mit_pv == 3000

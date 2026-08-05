@@ -234,44 +234,49 @@ def test_eigene_angabe_schlaegt_edaten():
 
 # ----------------------------------------------------------------- Summen-Felder
 
-def test_kv_und_pv_werden_summiert():
-    """§ 10 Abs. 1 Nr. 3: Kranken- UND Pflegeversicherung bilden zusammen die
-    Basisabsicherung. Der Beleg trennt sie, unsere Bindung führt ein Feld."""
+def test_kv_und_pv_getrennt_statt_summiert():
+    """§ 10 Abs. 1 Nr. 3: KV und PV sind jetzt getrennte Felder (Feldsplit 2026-08)."""
     ev = VM.aus_lstb({"ArbnAnteilKrankVers": "3200.00", "ArbnAnteilPflegVers": "800.00"})
     per_feld = {e["feld_id"]: e["wert"] for e in ev}
-    assert per_feld["basis_kv_pv"] == 400000
+    assert per_feld["basis_kv"] == 320000
+    assert per_feld["basis_pv"] == 80000
+    assert "basis_kv_pv" not in per_feld, "Summenfeld existiert nicht mehr"
 
 
 def test_nur_kv_ohne_pv_wird_uebernommen():
-    """Ein besetztes Teilfeld reicht — nicht auf Vollständigkeit warten."""
+    """KV allein, ohne PV — wird als basis_kv geschrieben, basis_pv bleibt leer."""
     ev = VM.aus_lstb({"ArbnAnteilKrankVers": "3200.00"})
-    assert {e["feld_id"]: e["wert"] for e in ev}["basis_kv_pv"] == 320000
+    per_feld = {e["feld_id"]: e["wert"] for e in ev}
+    assert per_feld["basis_kv"] == 320000
+    assert "basis_pv" not in per_feld
 
 
 def test_arbeitslosenversicherung_nicht_in_der_basis():
     """§ 10 Abs. 1 Nr. 3a nennt die Arbeitslosenversicherung ausdrücklich neben den
-    Kranken-/Pflegebeiträgen, die NICHT unter Nr. 3 fallen. Sie in basis_kv_pv zu
-    schreiben würde den Basis-Abzug erhöhen, der nicht gedeckelt ist — Unterbesteuerung."""
+    Kranken-/Pflegebeiträgen. KV und PV erscheinen getrennt, die AV nicht in der Basis."""
     ev = VM.aus_lstb({"ArbnAnteilKrankVers": "3200.00",
                       "ArbnAnteilPflegVers": "800.00",
                       "ArbnAnteilArblVers": "1200.00"})
     per_feld = {e["feld_id"]: e["wert"] for e in ev}
-    assert per_feld["basis_kv_pv"] == 400000, "AV darf die Basis nicht erhöhen"
+    assert per_feld["basis_kv"] == 320000
+    assert per_feld["basis_pv"] == 80000
     assert per_feld["weitere_vorsorgeaufwendungen"] == 120000
+    # Probe: keine Vermischung
+    assert "basis_kv_pv" not in per_feld
 
 
-def test_summenfeld_kategorie_nennt_alle_teile():
-    """Die Kategorie muss offenlegen, woraus die Summe entstand — sonst ist im
-    Bescheid nicht nachvollziehbar, warum dort eine Zahl steht, die auf keinem
-    Beleg-Feld einzeln steht."""
+def test_kv_und_pv_kategorie_nennt_herkunft():
+    """KV und PV haben eigene Kategorien (nicht mehr summiert)."""
     ev = VM.aus_lstb({"ArbnAnteilKrankVers": "3200.00", "ArbnAnteilPflegVers": "800.00"})
-    kat = next(e["kategorie"] for e in ev if e["feld_id"] == "basis_kv_pv")
-    assert "ArbnAnteilKrankVers" in kat and "ArbnAnteilPflegVers" in kat
+    per_feld = {e["feld_id"]: e for e in ev}
+    assert "ArbnAnteilKrankVers" in per_feld["basis_kv"]["kategorie"]
+    assert "ArbnAnteilPflegVers" in per_feld["basis_pv"]["kategorie"]
 
 
 def test_kein_summenfeld_ohne_quelldaten():
     ev = VM.aus_lstb({"BruttoArbLohn": "45000.00"})
-    assert "basis_kv_pv" not in {e["feld_id"] for e in ev}
+    assert "basis_kv" not in {e["feld_id"] for e in ev}
+    assert "basis_pv" not in {e["feld_id"] for e in ev}
 
 
 def test_summen_ziele_existieren_und_sind_cent():

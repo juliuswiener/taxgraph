@@ -113,7 +113,7 @@ GESAMT_KEGEL_BASIS = [
     ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("vv_entgelt_quote_prozent", 100),
     ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", False),
     ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+    ("basis_kv", 0), ("basis_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
     ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
     ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
     ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
@@ -133,7 +133,7 @@ RENTNER_KEGEL_HOCH = [
     ("rentner_gepflegter_hilflos", False),
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
     ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+    ("basis_kv", 0), ("basis_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
 ]
 
 AN_KEGEL_HOCH = [
@@ -141,7 +141,7 @@ AN_KEGEL_HOCH = [
     ("veranlagung", "einzel"),
     ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", False),
     ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+    ("basis_kv", 0), ("basis_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
     ("dhf_unterkunftskosten_monat", 0), ("dhf_monate", 0), ("dhf_im_inland", True),
     ("dhf_beruflich_veranlasst", True), ("dhf_eigener_hausstand", True),
     ("dhf_finanzielle_beteiligung", True), ("dhf_keine_pflicht_dienstwohnung", True),
@@ -462,7 +462,7 @@ GESAMT_AN_KEGEL = [
     ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("vv_entgelt_quote_prozent", 100),
     ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", False),
     ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("basis_kv_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+    ("basis_kv", 0), ("basis_pv", 0), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
     ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
     ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
@@ -1084,7 +1084,7 @@ def test_p2_nr2_erreichbarkeit_partner_kv_pv_post(base):
     """Person-B-KV/PV-Felder in rentner_gesamt POSTbar (201, nicht 400/422 totes Wiring)."""
     _rent_anlegen(base, "p2kv_e", _RENTNER_ZUSAMMEN_BASIS)
     # Dann POSTen wir die 3 Partner-Felder einzeln via _laie (signal_2 ok@feld)
-    for feld, wert in [("basis_kv_pv_partner", 200000), ("weitere_vorsorgeaufwendungen_partner", 0),
+    for feld, wert in [("basis_kv_partner", 200000), ("weitere_vorsorgeaufwendungen_partner", 0),
                        ("mit_anspruch_auf_zuschuss_partner", True)]:
         st, resp = _req(base, "POST", "/fall/p2kv_e/event", _laie(feld, wert))
         assert st == 201, f"POST {feld}: {st} {resp.get('fehler', resp)}"
@@ -1099,7 +1099,7 @@ def test_p2_nr2_ring_differential_kv_pv_senkt_steuer(base):
     z0 = e0["zahl_cent"]
 
     k = list(_RENTNER_ZUSAMMEN_BASIS) + [
-        ("basis_kv_pv_partner", 200000),     # 2000 € × ~14-40% HB
+        ("basis_kv_partner", 200000),     # 2000 € × ~14-40% HB
         ("weitere_vorsorgeaufwendungen_partner", 0),
         ("mit_anspruch_auf_zuschuss_partner", True)]
     _rent_anlegen(base, "p2k1", k)
