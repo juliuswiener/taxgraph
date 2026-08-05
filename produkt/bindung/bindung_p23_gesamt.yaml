@@ -21,7 +21,7 @@ bindungen:
     beispielwert: 20000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage-SO-Kz — Kz-Recon = eigene Runde (null-MVP). Private Veräußerungsgeschäfte §23.Instanz-Gruppe je Geschäft, Reuse desselben Kz wie §21-Multi-Objekt-Muster."
+    elster_kz_grund: "Kz E0318902 (E10/SO/Priv_VA_G/Ant_Ek/Sum/E0318902) + 35 per-asset-Kz belegt 2026-08-05 am amtlichen E10-2025.xsd. Bindung per-asset vs Sum offen. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 23 Abs. 3 S. 1 EStG"
@@ -39,7 +39,7 @@ bindungen:
     beispielwert: 15000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage-SO-Kz — Kz-Recon = eigene Runde (null-MVP)."
+    elster_kz_grund: "Kz wie p23_veraeusserungspreis: E0318902 + per-asset-Kz in SO/Priv_VA_G, belegt 2026-08-05. Bindung per-asset vs Sum offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 23 Abs. 3 S. 1 EStG"
@@ -57,7 +57,7 @@ bindungen:
     beispielwert: 500000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage-SO-Kz — Kz-Recon = eigene Runde (null-MVP)."
+    elster_kz_grund: "Kz wie p23_veraeusserungspreis: E0318902 + per-asset-Kz in SO/Priv_VA_G, belegt 2026-08-05. Bindung per-asset vs Sum offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 23 Abs. 3 S. 1 EStG"

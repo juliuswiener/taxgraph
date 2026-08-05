@@ -17,7 +17,7 @@ bindungen:
     beispielwert: 60000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Vordruck-Form-Kz 103 ('gezahlt'): 'gezahlt'/'erstattet' ist Spalten-Kontext, NICHT Teil des XSD-Feld-Labels (Flat-Grep findet nur Lohnsteuer-KiSt/KapErtrag-KiSt); Vordruck-Zeilen↔XSD-Sequenz-Cross-Check nötig, kein Rate-Mapping."
+    elster_kz_grund: "Kz E0107601 (E10/SA/KiSt/Gezahlt/Sum) belegt 2026-08-05 am amtlichen E10-2025.xsd. Alte Notiz 'Vordruck-Form-Kz, Spalten-Kontext' war ein Suchfehler: die KiSt-Kz liegen in der SA/KiSt-Sektion, das XSD traegt keine Spalten-Info. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 4 EStG"
@@ -34,7 +34,7 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Vordruck-Form-Kz 104 ('erstattet'): Spalten-Kontext, nicht im XSD-Feld-Label; Vordruck-Zeilen-Cross-Check nötig (wie kist_gezahlt)."
+    elster_kz_grund: "Kz E0107602 (E10/SA/KiSt/Erstattet) belegt 2026-08-05 am amtlichen E10-2025.xsd. Alte Notiz wie kist_gezahlt. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 4b Satz 2 EStG"
@@ -54,7 +54,7 @@ bindungen:
     beispielwert: 200000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kein XSD-Feld-Label 'Aufwendungen für die eigene Berufsausbildung' (strukturbewusster Parse: kein Treffer); die disambiguierenden Vordruck-Wörter fehlen im Feld-Label → Vordruck-Zeilen-Cross-Check nötig."
+    elster_kz_grund: "Kz E0108202 (E10/SA/AW_eig_BAusb/Sum) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Hoehe der Aufwendungen' — der Kontext steckt im Element-Pfad 'AW_eig_BAusb', nicht im Vordruck-Label. Alte Notiz 'kein XSD-Feld-Label' war Suchfehler. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 7 EStG"

@@ -19,7 +19,7 @@ bindungen:
     beispielwert: 3000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "MVP: XSD-Sektion offen, ELSTER-Vordruck-Mapping TBD (Folge-Gate für Integration in ESt 1A/1AV)."
+    elster_kz_grund: "Kz E0241901 (E10/EM_35c/Obj/Aufw/Massn/Sum) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Summe der Aufwendungen fuer energetische Massnahmen'. Alte Notiz 'XSD-Sektion offen' war falsch. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35c Abs. 1 S. 1 EStG"

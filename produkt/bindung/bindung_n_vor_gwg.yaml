@@ -862,7 +862,7 @@ bindungen:
     beispielwert: 300000
     herkunft_slots: ["Beitragsbescheinigung KV/PV: Basisbeitrag"]
     elster_kz: null
-    elster_kz_grund: "Anlage-Vorsorgeaufwand-Kz (Sektions-Pfad-Adjudikation) = benannter Nachtrag; null-Kz-MVP, kein Kz-Rate."
+    elster_kz_grund: "Kz E2001203 (E10/VOR/Beitr_g_KV_PV_Inl/AN/E2001203, KV) + E2001505 (PV) belegt 2026-08-05 am amtlichen E10-2025.xsd. KV/PV muessen getrennt werden (Feldaufteilung, ~5-7h). Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 3 EStG"
@@ -879,7 +879,7 @@ bindungen:
     beispielwert: 80000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage-Vorsorgeaufwand-Kz (Sektions-Pfad-Adjudikation) = benannter Nachtrag; null-Kz-MVP, kein Kz-Rate."
+    elster_kz_grund: "Kz E2001403 (E10/VOR/Weit_Sons_VorAW/A_B_LP/AL_Vers/Sum/E2001403) belegt 2026-08-05 am amtlichen E10-2025.xsd. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 3a EStG"

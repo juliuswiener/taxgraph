@@ -18,7 +18,7 @@ bindungen:
     beispielwert: 1200000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "MVP (Klasse-g): XSD-Sektion Ehegatten-Unterhalts-Slots (vs. Kind-Unterhalt §33a) mehrdeutig, Vordruck-Cross-Ref nötig. Kz-Mapping deferred (Folge-Gate)."
+    elster_kz_grund: "Kz E0120103 (E10/ESt1A_U/Ang_HH_unt_P_Unt_Leist/AW_U/U_Ztr/E0120103) belegt 2026-08-05. Selbe ESt1A_U-Sektion wie §33a. Alte Notiz 'Ehegatten-Slots mehrdeutig' war zu pessimistisch. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1a Nr. 1 S. 1 EStG"
@@ -37,7 +37,7 @@ bindungen:
     beispielwert: 400000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "MVP (Klasse-g): KV/PV-Beteiligung für Ehegatten-Slots in XSD unklar; Versicherungsnachweise als Belege. Kz-Mapping deferred (Folge-Gate)."
+    elster_kz_grund: "Kz E0124401 (E10/ESt1A_U/Ang_HH_unt_P_Unt_Leist/Ang_Unt_Pers/KV_PV/E0124401) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'uebernommene Beitraege zu Basis-Kranken- und Pflegeversicherungen'. Alte Notiz 'Ehegatten-Slots unklar' war falsch. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1a Nr. 1 S. 2 EStG"

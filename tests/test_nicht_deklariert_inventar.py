@@ -95,7 +95,22 @@ def test_nicht_deklariert_inventar():
             ohne_grund.append((fid, typ))
             continue
 
-        # Manuelle Ausnahmen haben Vorrang
+        # (1) EXPLIZITES Feld schlaegt jede Heuristik. `kz_status: endgueltig` in der Bindung
+        # heisst: am XSD belegt, dass es KEIN Kz gibt (nicht "noch nicht gesucht").
+        # Eingefuehrt 2026-08-05, weil das Substring-Matching unten an der Prosa scheitert:
+        # ein Grund, der "ENDGUELTIG kein E10-Kz (belegt, nicht Backlog)" sagt, enthaelt
+        # das Wort "Backlog" und wurde als OFFEN gezaehlt — die Klassifikation las das
+        # Gegenteil der Aussage. Neue Felder tragen `kz_status`, Altbestand laeuft weiter
+        # ueber die Heuristik.
+        status = v.get("kz_status")
+        if status == "endgueltig":
+            endgueltig.append((fid, typ, grund[:80]))
+            continue
+        if status == "offen":
+            offen.append((fid, typ, grund[:80]))
+            continue
+
+        # (2) Manuelle Ausnahmen
         if fid in OFFEN_MANUELL:
             offen.append((fid, typ, grund[:80]))
             continue
@@ -103,7 +118,7 @@ def test_nicht_deklariert_inventar():
             endgueltig.append((fid, typ, grund[:80]))
             continue
 
-        # Automatische Klassifikation
+        # (3) Heuristik ueber Marker-Woerter (Altbestand)
         grund_lower = grund.lower()
         if any(k in grund_lower for k in OFFEN_KERNE):
             offen.append((fid, typ, grund[:80]))
@@ -116,7 +131,12 @@ def test_nicht_deklariert_inventar():
         + ", ".join(f"{f} ({t})" for f, t in ohne_grund))
 
     # === IST-Stand festschreiben (Ratsche) ===
-    OFFEN_SOLL = 38  # 2026-08-05, 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
+    # 2026-08-05: 38 -> 36. Die zwei § 36-Felder (p36_lohnsteuer, p36_vorauszahlungen) sind
+    # von OFFEN nach ENDGUELTIG gewandert — am E10-2025.xsd belegt, dass es dafuer kein
+    # Erklaerungs-Kz gibt (E10 erklaert Besteuerungsgrundlagen, die Anrechnung rechnet das FA).
+    # Sie tragen jetzt `kz_status: endgueltig` in der Bindung. Das ist KEINE Kz-Arbeit, sondern
+    # eine korrigierte Einordnung: die Zahl war vorher zu hoch, nicht die Lage besser geworden.
+    OFFEN_SOLL = 36  # 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
 
     # === Themenblock-Gruppierung ===
     # OFFEN-Felder in Themenblöcke gruppiert

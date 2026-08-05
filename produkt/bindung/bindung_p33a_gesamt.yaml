@@ -18,7 +18,7 @@ bindungen:
     beispielwert: 1000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage Unterhalt-Kz — Kz-Recon = eigene Runde (null-MVP)."
+    elster_kz_grund: "Kz E0120103 (E10/ESt1A_U/Ang_HH_unt_P_Unt_Leist/AW_U/U_Ztr/E0120103) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Hoehe der Unterhaltszahlung'. Alte Notiz 'Kz-Recon = eigene Runde' war zu pessimistisch. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33a Abs. 1 S. 1 EStG"

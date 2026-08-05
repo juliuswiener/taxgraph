@@ -18,7 +18,7 @@ bindungen:
     beispielwert: 1000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Lohnersatzleistungen werden von SV-Traegern per eDaten (§93c AO) gemeldet, kein Steuerpflichtigen-Kz. Aggregat-MVP (Summe aller Arten); eDaten-Import = Stufe-2-Backlog (blockiert durch Julius-Cap)."
+    elster_kz_grund: "Kz E0104801 (E10/ESt1A/Eink_Ers/Inl/Sum) am amtlichen E10-2025.xsd belegt 2026-08-05: 'Einkommensersatzleistungen, die dem Progressionsvorbehalt unterliegen, z. B. Arbeitslosengeld, Elterngeld, Insolvenzgeld, Krankengeld'. Bindung noch offen, deshalb weiter fail-closed. Die frühere Notiz 'kein Steuerpflichtigen-Kz, wird per eDaten gemeldet' war falsch: das Schema führt eine eigene Sektion Eink_Ers, getrennt nach Inl (E0104801) und Ausl (E0103910, EU/EWR/Schweiz) — Auslandsleistungen meldet ohnehin kein deutscher SV-Träger."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 32b Abs. 1 Nr. 1 EStG"

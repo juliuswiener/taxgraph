@@ -18,7 +18,7 @@ bindungen:
     beispielwert: 600000
     herkunft_slots: ["Betreuungsrechnung: Kosten"]
     elster_kz: null
-    elster_kz_grund: "MVP (Klasse-g): XSD-Sektion Kinderbetreuung ↔ Kind/Sonderausgaben mehrdeutig, Vordruck-Cross-Ref nötig (wie KiSt). Grep: 'Kind' ist strukturbewusster; Sonderausgaben-Anlage ohne präzise Feld-Label. Vordruck-Kz-Mapping deferred (Folge-Gate)."
+    elster_kz_grund: "Kz E0506105 (E10/Kind/KBK/Art/Sum) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'beruecksichtigungsfaehige Gesamtaufwendungen der Eltern'. Alte Notiz 'XSD-Sektion mehrdeutig' war zu pessimistisch. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"

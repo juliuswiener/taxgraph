@@ -75,6 +75,8 @@
           "description": "Amtliche XSD-E-Nummer; null wenn (noch) nicht belegt — dann elster_kz_grund Pflicht."},
         "elster_kz_grund": {"type": "string",
           "description": "Grund, warum elster_kz null ist (benannte Lücke, kein Rate-Mapping)."},
+        "kz_status": {"enum": ["offen", "endgueltig"],
+          "description": "Explizite Einordnung der Lücke, schlägt jede Textheuristik. 'endgueltig' = am amtlichen XSD BELEGT, dass es kein Kz gibt (z.B. § 36: E10 erklärt Besteuerungsgrundlagen, die Anrechnung rechnet das FA). 'offen' = Kz existiert oder ist ungeprüft, Bindungsarbeit steht aus. Fehlt das Feld, klassifiziert das Inventar-Gate über Marker-Wörter im Grund — das ist die Altbestands-Heuristik und scheitert an Prosa wie 'belegt, nicht Backlog'."},
         "vz_gueltigkeit": {"type": "array", "items": {"type": "integer"}, "minItems": 1,
           "description": "Veranlagungszeiträume, für die die Bindung gilt, z.B. [2024, 2025, 2026]."},
         "anker_ref": {"$ref": "#/$defs/anker_ref"},

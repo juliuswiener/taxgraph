@@ -2,7 +2,9 @@
 # (Nr. 2, Steuerabzug) minus geleistete ESt-Vorauszahlungen (Nr. 1, § 37) → Abschlusszahlung/
 # Erstattung (Abs. 4). Reine Post-Festsetzungs-Abrechnung: ändert NUR die Zahllast, nicht die ESt.
 # festzusetzende_est = ring-derived (Lücke, aus der bereits festgesetzten Scheiben-ESt geliefert).
-# elster_kz bewusst null (kein XSD-verifiziertes Kz-Mapping — fail-closed, kein Rate-Kz).
+# elster_kz null und das bleibt so: am amtlichen E10-2025.xsd belegt (2026-08-05), dass es fuer
+# die § 36-Anrechnung KEIN Erklaerungs-Kz gibt — E10 erklaert Besteuerungsgrundlagen, die
+# Anrechnung rechnet das FA. Daher kz_status: endgueltig (kein Backlog). Details je Feld unten.
 
 version: 1
 scheibe: "§36 Anrechnung (Abschlusszahlung/Erstattung)"
@@ -18,7 +20,8 @@ bindungen:
     beispielwert: 800000
     herkunft_slots: ["Lohnsteuerbescheinigung Nr. 4"]
     elster_kz: null
-    elster_kz_grund: "Anrechnungsbetrag (Anlage N / ESt-Abrechnung) — kein XSD-verifiziertes Kz-Mapping in dieser Runde; fail-closed statt Rate-Kz. XSD-Sweep offen (Backlog)."
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGÜLTIG kein E10-Kz (belegt 2026-08-05, nicht Backlog): E10 ist ein Erklärungs-Schema, die § 36-Anrechnung (festgesetzte ESt − LSt − Vorauszahlungen) ist ein Berechnungsschritt des FA-Systems. Die vier Kandidaten mit 'Lohnsteuer' im xs:documentation (E0200301–E0200304) liegen unter E10/N/ArbL/LStB_… = Anlage N Zeile 6, also Einkunftsermittlung — ein Mapping dorthin schriebe den Betrag doppelt zur eLStB. E10/WA_ESt/Anzur_Steu führt nur § 50a-Abzugsbeträge."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 36 Abs. 2 S. 1 Nr. 2 EStG (durch Steuerabzug erhobene Einkommensteuer)"
@@ -35,7 +38,8 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anrechnungsbetrag (ESt-Abrechnung) — kein XSD-verifiziertes Kz-Mapping in dieser Runde; fail-closed statt Rate-Kz. XSD-Sweep offen (Backlog)."
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGÜLTIG kein E10-Kz (belegt 2026-08-05, nicht Backlog): geleistete Vorauszahlungen sind dem FA aus der eigenen Festsetzung bekannt; die § 36-Anrechnung ist ein Berechnungsschritt des FA-Systems, kein Erklärungsfeld. Kein Kz im E10-2025-Schema trägt 'Vorauszahlung' im § 36-Kontext; E10/WA_ESt/Anzur_Steu führt nur § 50a-Abzugsbeträge."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 36 Abs. 2 S. 1 Nr. 1 EStG (entrichtete Einkommensteuer-Vorauszahlungen, § 37)"

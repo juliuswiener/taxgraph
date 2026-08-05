@@ -306,7 +306,7 @@ bindungen:
     beispielwert: 100
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage V, Entgelt/Marktmiete-Quote; XSD-E-Nr Sektions-Lookup-Nachtrag."
+    elster_kz_grund: "Kz E0708601 (E10/V/Verbilligt/E0708601) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Kuerzung der Werbungskosten wegen verbilligter Vermietung (in %)'. Alte Notiz 'Sektions-Lookup-Nachtrag' war zu pessimistisch. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 2 S. 1 EStG"

@@ -19,7 +19,7 @@ bindungen:
     beispielwert: 80000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "MVP: XSD-Sektion offen, ELSTER-Mapping TBD (Folge-Gate)."
+    elster_kz_grund: "Kz E0241901 (E10/EM_35c/Obj/Aufw/Massn/Sum) belegt 2026-08-05 — selbe Sektion wie p35c_sanierungsaufwendungen. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35c Abs. 1 S. 4 EStG"

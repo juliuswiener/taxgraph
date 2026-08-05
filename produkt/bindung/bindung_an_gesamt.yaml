@@ -260,7 +260,7 @@ bindungen:
     beispielwert: 3000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Klasse-f VERZWEIGUNG je gewinn_betriebsart (kein fixes Feld-Kz; Kz-Wahl in est_mapping): gewerbe -> Anlage G, selbstaendig -> Anlage S, land_forst -> Anlage L. Die konkreten Anlage-G/S/L-Kz sind eine eigene Kz-Review-Runde (Instructor-Adjudikation) — null-Kz-MVP; die Berechnung (einkuenfte_gewinn-Slot in der § 2-Summe) hängt nicht am Kz."
+    elster_kz_grund: "Kz E0800502 (E10/G/Gew/Ges_Fest/Sum/E0800502) belegt 2026-08-05 am amtlichen E10-2025.xsd. Anlage G/S/L haben Gewinn-Kz je Betriebsart. VERZWEIGUNG je gewinn_betriebsart noetig (est_mapping leeres kz-dict). Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 2 Abs. 2 S. 1 Nr. 1 EStG"
@@ -500,7 +500,7 @@ bindungen:
     beispielwert: 450
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "§ 35-Anrechnungs-Input (Anlage G, Kz-Kandidat E0801705 [Zu_zah_GSt_VZ] „Hebesatz in Prozent“) — null-Kz-MVP; exakte Kz (E0801705 vs E0802104 „sofern bekannt“ = VZ/Mitunternehmer-Disambiguierung) = eigene Kz-Review-Runde. Der Hebesatz ist ohnehin FA-bekannt (Gemeinde), unser Feld dient der § 35-Vorschau-Rechnung."
+    elster_kz_grund: "Kz E0801705 (E10/G/St_Erm_P35/.../Zu_zah_GSt_VZ/E0801705) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Hebesatz in Prozent'. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35 Abs. 1 S. 1 EStG"
@@ -518,7 +518,7 @@ bindungen:
     beispielwert: 2024750
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "§ 35-Anrechnungs-Input, Steuermessbetrag (§ 11 GewStG); Anlage G, Kz-Kandidat E0801606 [Festzus_GMB_VZ] „Gewerbesteuer-Messbetrag“ — null-Kz-MVP, Disambiguierung (E0801606 vs E0802009) = eigene Kz-Review-Runde."
+    elster_kz_grund: "Kz E0801606 (E10/G/St_Erm_P35/.../Festzus_GMB_VZ/E0801606) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Gewerbesteuer-Messbetrag'. Alte Notiz nannte Kz als 'Kandidat' — korrekt. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 11 Abs. 1 S. 1 GewStG"
@@ -541,7 +541,7 @@ bindungen:
     beispielwert: 6000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "§ 10d-Verlustvortrag-Betrag = FA-festgestellter Wert (Verlustfeststellungs-Bescheid, Abs. 4); Kz-Kandidat E0190701 [Vortrag] ist nur der „Vortrag festgestellt“-FLAG, der Betrag ist FA-bekannt (wie gewst_messbetrag) → null-Kz-MVP."
+    elster_kz_grund: "Kz E0190701 (E10/Sonst/Verl_Abz/Vortrag/E0190701) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'verbleibender Verlustvortrag nach § 10d'. Alte Notiz nannte Kz als 'Kandidat' — korrekt, jetzt bestaetigt. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10d Abs. 2 S. 1 EStG"
@@ -640,7 +640,7 @@ bindungen:
     beispielwert: 300000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage-Vorsorgeaufwand-Instanz B (Person-Multiplikation, Klasse g): Kz-Reuse Person A, zweites Sub-Dokument; Sektions-Pfad-Adjudikation = benannter Nachtrag, null-Kz-MVP."
+    elster_kz_grund: "Kz wie basis_kv_pv (E2001203/E2001505), Person-B-Instanz via VOR/Beitr_g_KV_PV_Inl (maxOccurs=2, <Person>). Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 3 EStG"
@@ -657,7 +657,7 @@ bindungen:
     beispielwert: 80000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage-Vorsorgeaufwand-Instanz B (Person-Multiplikation, Klasse g): Kz-Reuse Person A; Sektions-Pfad-Adjudikation = benannter Nachtrag, null-Kz-MVP."
+    elster_kz_grund: "Kz wie weitere_vorsorgeaufwendungen, Person-B-Instanz via VOR/Weit_Sons_VorAW. Bindung noch offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 3a EStG"
