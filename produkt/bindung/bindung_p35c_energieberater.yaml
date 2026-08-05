@@ -19,7 +19,11 @@ bindungen:
     beispielwert: 80000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz E0241901 (E10/EM_35c/Obj/Aufw/Massn/Sum) belegt 2026-08-05 — selbe Sektion wie p35c_sanierungsaufwendungen. Bindung noch offen."
+    # E10/EM_35c/Obj/Aufw/Massn/Energieberat — EIGENES Kz, NICHT E0241901 (das ist die
+    # Maßnahmen-Summe von p35c_sanierungsaufwendungen). § 35c Abs. 1 S. 4 behandelt die
+    # Energieberater-Kosten getrennt (50 % statt der Staffel), das Schema trennt sie ebenso.
+    # Belegt 2026-08-05.
+    elster_kz: E0242001
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35c Abs. 1 S. 4 EStG"

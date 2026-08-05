@@ -139,7 +139,11 @@ def test_nicht_deklariert_inventar():
     # vv_entgelt_quote_prozent und verlustvortrag_bestand bleiben OFFEN: dort ist das
     # Kz zwar da, passt aber semantisch/typmaessig nicht (Kuerzungs- statt Entgeltquote;
     # Ja-Feld statt Betrag) — kz_status: offen, Begruendung in der Bindung.
-    OFFEN_SOLL = 30  # 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
+    # 2026-08-05 Block 3: 30 -> 26. p33a_unterhalt_aufwendungen -> E0120103,
+    # p33a_unterhalt_kv_pv -> E0124401 (darin enthaltene Teilmenge, nicht additiv),
+    # p35c_sanierungsaufwendungen -> E0241901, p35c_energieberater -> E0242001
+    # (GETRENNTE Kz — der Energieberater hatte faelschlich dasselbe Kz notiert).
+    OFFEN_SOLL = 26  # 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
 
     # === Themenblock-Gruppierung ===
     # OFFEN-Felder in Themenblöcke gruppiert
@@ -147,8 +151,8 @@ def test_nicht_deklariert_inventar():
         "§36 Anrechnung (LSt, VZ)": ["p36_lohnsteuer", "p36_vorauszahlungen"],
         "KV/PV-Vorsorge §10": ["basis_kv_pv", "basis_kv_pv_partner",
                                 "weitere_vorsorgeaufwendungen", "weitere_vorsorgeaufwendungen_partner"],
-        "Unterhalt §33a": ["p33a_unterhalt_aufwendungen", "p33a_unterhalt_kv_pv",
-                           "p33a_andere_einkuenfte_bezuege", "p33a_ausbildung_anzahl_kinder"],
+        "Unterhalt §33a (Rest)": ["p33a_andere_einkuenfte_bezuege",
+                                  "p33a_ausbildung_anzahl_kinder"],
         "Realsplitting §10 Abs.1a": ["realsplitting_unterhaltsleistungen",
                                       "realsplitting_empfaenger_kv_pv"],
         "DBA/AUS §34c": ["dba_auslaendische_einkuenfte", "dba_gezahlte_auslaendische_steuer"],
@@ -156,7 +160,6 @@ def test_nicht_deklariert_inventar():
                                 "einkuenfte_gewinn", "gewinnanteil",
                                 "verguetung_taetigkeit", "verguetung_darlehen",
                                 "verguetung_ueberlassung"],
-        "§35c Sanierung": ["p35c_sanierungsaufwendungen", "p35c_energieberater_aufwendungen"],
         "Kapital §20 Modell-Mismatch": ["kap_gewinn_sonstige", "kap_gewinn_sonstige_partner"],
         "§23 private Veräußerung": ["p23_veraeusserungspreis",
                                     "p23_anschaffung_herstellungskosten",

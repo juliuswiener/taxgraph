@@ -17,8 +17,12 @@ bindungen:
     hilfe_kurz: "Nur tatsächlich geleistete Zahlungen an die unterhaltsberechtigte Person (z. B. monatliche Überweisungen, Mietzahlungen direkt). Maximal abziehbar ist der Grundfreibetrag (~12.348€, plus KV/PV-Beiträge)."
     beispielwert: 1000000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Kz E0120103 (E10/ESt1A_U/Ang_HH_unt_P_Unt_Leist/AW_U/U_Ztr/E0120103) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Hoehe der Unterhaltszahlung'. Alte Notiz 'Kz-Recon = eigene Runde' war zu pessimistisch. Bindung noch offen."
+    # E10/ESt1A_U/Ang_HH_unt_P_Unt_Leist/AW_U/U_Ztr — "Höhe der Unterhaltszahlung
+    # – ohne Bargeldzahlung – (einschließlich Beiträge zu Basis-Kranken- und
+    # Pflegeversicherungen laut Zeile E0124401)". ESt1A_U ist § 33a (unterstützte Person,
+    # Kindergeld-Anspruch, Haushaltszugehörigkeit) — NICHT Realsplitting/Anlage U, das liegt
+    # unter SO/Unt_Leist. Belegt 2026-08-05.
+    elster_kz: E0120103
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33a Abs. 1 S. 1 EStG"
@@ -34,8 +38,10 @@ bindungen:
     hilfe_kurz: "Diese Beiträge erhöhen den Höchstbetrag über den Grundfreibetrag hinaus (§33a Abs.1 S.2). Nur die von DIR gezahlten Beiträge."
     beispielwert: 0
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Anlage Unterhalt-Kz — null-MVP."
+    # E10/ESt1A_U/.../Ang_Unt_Pers/KV_PV — "In Zeile E0120103 enthaltene übernommene
+    # Beiträge zu Basis-Kranken- und gesetzlichen Pflegeversicherungen". Teilmenge von
+    # E0120103, kein additiver Posten. Belegt 2026-08-05.
+    elster_kz: E0124401
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33a Abs. 1 S. 2 EStG"

@@ -19,7 +19,11 @@ bindungen:
     beispielwert: 3000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz E0241901 (E10/EM_35c/Obj/Aufw/Massn/Sum) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Summe der Aufwendungen fuer energetische Massnahmen'. Alte Notiz 'XSD-Sektion offen' war falsch. Bindung noch offen."
+    # E10/EM_35c/Obj/Aufw/Massn/Sum — "Summe der Aufwendungen für energetische Maßnahmen".
+    # Die Einzelmaßnahmen daneben (Wände E0241001, Dach E0241101, Fenster E0241301,
+    # Heizung E0241501, Lüftung, Digital, …) sind eine optionale Aufschlüsselung; unser Feld
+    # ist die Summe, also das Sum-Kz. Belegt 2026-08-05.
+    elster_kz: E0241901
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35c Abs. 1 S. 1 EStG"

@@ -101,6 +101,37 @@ def test_block2_kommt_im_xml_an(bindung):
     assert "E0305101" not in xml, "p22_nr3 im Einnahmen-Kz statt im Einkuenfte-Kz"
 
 
+# ---------------------------------------------------------------- Block 3
+
+def test_block3_kommt_im_xml_an(bindung):
+    """§ 33a Unterhalt und § 35c energetische Maßnahmen.
+
+    Zwei Verwechslungen, die der Test festnagelt:
+    - § 35c: Sanierung (E0241901 Summe Maßnahmen) und Energieberater (E0242001) haben
+      GETRENNTE Kz. § 35c Abs. 1 S. 4 behandelt die Beratungskosten anders (50 % statt
+      Staffel), das Schema trennt sie ebenso.
+    - § 33a: E0124401 ist die in E0120103 ENTHALTENE KV/PV-Teilmenge, kein additiver
+      Posten — die Summe darf nicht doppelt gezählt werden.
+    """
+    xml = _xml({"p33a_unterhalt_aufwendungen": 600000,        # 6.000 EUR
+                "p33a_unterhalt_kv_pv": 90000,                #   900 EUR (darin enthalten)
+                "p35c_sanierungsaufwendungen": 2000000,       # 20.000 EUR
+                "p35c_energieberater_aufwendungen": 150000},  #  1.500 EUR
+               bindung)
+
+    assert _pfad_im_xml(xml, ("ESt1A_U", "Ang_HH_unt_P_Unt_Leist", "AW_U", "U_Ztr",
+                              "E0120103"), "6000")
+    assert _pfad_im_xml(xml, ("ESt1A_U", "Ang_HH_unt_P_Unt_Leist", "Ang_Unt_Pers",
+                              "KV_PV", "E0124401"), "900")
+    assert _pfad_im_xml(xml, ("EM_35c", "Obj", "Aufw", "Massn", "Sum", "E0241901"), "20000")
+    assert _pfad_im_xml(xml, ("EM_35c", "Obj", "Aufw", "Massn", "Energieberat",
+                              "E0242001"), "1500")
+
+    # Energieberater darf NICHT auf der Massnahmen-Summe landen (frueherer Fehlbefund)
+    massn_sum = xml[xml.find("E0241901"):xml.find("E0241901") + 60]
+    assert ">1500<" not in massn_sum, "Energieberater-Betrag steht in der Massnahmen-Summe"
+
+
 def test_kist_xml_ist_schema_valide(bindung, tmp_path):
     """Das erzeugte XML validiert gegen das amtliche E10-2025-Schema.
 
@@ -115,7 +146,11 @@ def test_kist_xml_ist_schema_valide(bindung, tmp_path):
     ziel.write_text(_xml({"kist_gezahlt": 60000, "kist_erstattet": 5000,
                           "berufsausbildung_aufwendungen": 120000,
                           "p22_nr3_einkuenfte": 80000,
-                          "gewst_messbetrag": 350000, "gewst_hebesatz": 400}, bindung),
+                          "gewst_messbetrag": 350000, "gewst_hebesatz": 400,
+                          "p33a_unterhalt_aufwendungen": 600000,
+                          "p33a_unterhalt_kv_pv": 90000,
+                          "p35c_sanierungsaufwendungen": 2000000,
+                          "p35c_energieberater_aufwendungen": 150000}, bindung),
                     encoding="utf-8")
     ok, meldung = VX.validate(str(ziel), "2025")
     assert ok, f"XML nicht schema-valide: {meldung}"
