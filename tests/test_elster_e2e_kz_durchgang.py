@@ -482,3 +482,61 @@ def test_p23_rundung_beweist_floor(base):
     assert value == 1234567 // 100, (
         f"§23-Rundung falsch: erwartet 12345 (floor), erhalten {value}. "
         f"Ceiling waere {-(-1234567 // 100)}.")
+
+
+# -----------------------------------------------------------------
+# Gewinn-Einkünfte Kz-Durchgang: Gewerbe + Selbstaendig
+# -----------------------------------------------------------------
+
+@pytest.mark.parametrize("betriebsart,gewinn_cent,kz", [
+    ("gewerbe", 500000, "E0800502"),
+    ("selbstaendig", 500000, "E0803402"),
+])
+def test_gewinn_kz_durchgang(base, betriebsart, gewinn_cent, kz):
+    """Gewinn-Einkuenfte: Gewerbe -> E0800502, Selbstaendig -> E0803402 in Deklaration + XML."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": f"gew-{betriebsart}"})
+    for feld, wert in [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
+        ("einkuenfte_gewinn", gewinn_cent),
+        ("gewinn_betriebsart", betriebsart),
+        ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+    ]:
+        st, _ = _req(base, "POST", f"/fall/gew-{betriebsart}/event", _laie(feld, wert))
+        assert st == 201
+    st, dekl = _req(base, "GET", f"/fall/gew-{betriebsart}/deklaration")
+    assert st == 200
+    result = dekl.get("deklaration", {})
+    assert kz in result, f"Gewinn-Kz {kz} fehlt fuer {betriebsart}"
+    import importlib
+    spec = importlib.util.spec_from_file_location(
+        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+    EX = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(EX)
+    xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
+    assert kz in xml_str, f"Gewinn-Kz {kz} fehlt im XML fuer {betriebsart}"
+
+
+def test_gewinn_negativ_land_forst(base):
+    """land_forst hat kein Kz (Gewinnermittlungsart fehlt) -> Kz in nicht_deklariert."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": "gew-lf"})
+    for feld, wert in [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
+        ("einkuenfte_gewinn", 500000),
+        ("gewinn_betriebsart", "land_forst"),
+        ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+    ]:
+        _req(base, "POST", "/fall/gew-lf/event", _laie(feld, wert))
+    st, dekl = _req(base, "GET", "/fall/gew-lf/deklaration")
+    assert st == 200
+    result = dekl.get("deklaration", {})
+    for kz in ["E0800502", "E0803402"]:
+        assert kz not in result, f"Kz {kz} darf bei land_forst nicht in Deklaration"
+    nd = dekl.get("nicht_deklariert", [])
+    grund_lf = [x for x in nd if "land_forst" in x["grund"] or "ohne Kz-Zweig" in x["grund"]]
+    assert len(grund_lf) >= 1, (
+        f"land_forst muss in nicht_deklariert erscheinen. "
+        f"Grund: {[x['grund'][:80] for x in nd[:3]]}")

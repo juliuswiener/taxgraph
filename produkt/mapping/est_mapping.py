@@ -115,12 +115,11 @@ VERZWEIGUNG = {
     "rentner_veraeusserungsgewinn": {"art_feld": "rentner_veraeusserungs_betriebsart", "kz": {
         "gewerbe": "E0801301", "selbstaendig": "E0804501", "land_forst": "E0901201"}},
     # §§ 13-18 Gewinneinkünfte (Stufe 1, p2_festzusetzung_einzel): der vorberechnete Gewinn verzweigt nach
-    # gewinn_betriebsart in Anlage G/S/L. Kz=null VORERST — die konkreten Anlage-G/S/L-Kz sind eine eigene
-    # Kz-Review-Runde (Instructor-Adjudikation). Leeres kz-dict => jede bestätigte Betriebsart landet
-    # fail-closed in nicht_deklariert ("ohne Kz-Zweig"); der Gewinn-BETRAG rechnet ungehindert im Ring
-    # (einkuenfte_gewinn-Slot der § 2-Summe, dev-1). Struktur spiegelt § 16; die Kz-Review füllt später
-    # kz{gewerbe -> Anlage G, selbstaendig -> Anlage S, land_forst -> Anlage L}.
-    "einkuenfte_gewinn": {"art_feld": "gewinn_betriebsart", "kz": {}},
+    # gewinn_betriebsart in Anlage G/S. land_forst NICHT gebunden — Anlage L hat zwei alternative Kz
+    # (P4_Abs_1_3=E0901007, P13a=E0901103) je Gewinnermittlungsart; unser Modell differenziert nicht.
+    # land_forst -> fail-closed in nicht_deklariert ("ohne Kz-Zweig", kein Over-Tax — Gewinn rechnet).
+    "einkuenfte_gewinn": {"art_feld": "gewinn_betriebsart", "kz": {
+        "gewerbe": "E0800502", "selbstaendig": "E0803402"}},
 
 # KV/PV-Versicherungsart-Weiche: ein Betragsfeld -> 3 Kz je Art.
 # Art-Feld = versicherungsart. XML-Writer routet ueber Schema-Pfad.

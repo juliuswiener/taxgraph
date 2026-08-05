@@ -262,8 +262,13 @@ def test_ernte_est_mapping_kz_negation_und_verzweigung_mit_echtem_vz():
         "elster_kz": "E0503701", "vz_gueltigkeit": bindung["fam_alleinstehend"]["vz_gueltigkeit"]}
     assert synth["verzweigung:rentner_jahresrente:sonstige_leibrente"] == {
         "elster_kz": "E1803102", "vz_gueltigkeit": bindung["rentner_jahresrente"]["vz_gueltigkeit"]}
-    # einkuenfte_gewinn hat ein LEERES kz-dict (Kz-Review noch offen) -> bewusst KEINE Synth-Einträge
-    assert not any(fid.startswith("verzweigung:einkuenfte_gewinn:") for fid in synth)
+    # einkuenfte_gewinn hat Kz (gewerbe=E0800502, selbstaendig=E0803402)
+    assert synth.get("verzweigung:einkuenfte_gewinn:gewerbe", {}).get("elster_kz") == "E0800502"
+    assert synth.get("verzweigung:einkuenfte_gewinn:selbstaendig", {}).get("elster_kz") == "E0803402"
+    # land_forst BEWUSST ohne Kz: Anlage L trennt § 4 Abs. 1/3 (E0901007) und
+    # § 13a (E0901103) — unser gewinn_betriebsart unterscheidet das nicht.
+    # fail-closed bis zweites Art-Feld existiert.
+    assert "verzweigung:einkuenfte_gewinn:land_forst" not in synth
 
 
 @requires_real_schema
