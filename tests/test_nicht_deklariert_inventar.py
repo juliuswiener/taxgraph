@@ -152,7 +152,7 @@ def test_nicht_deklariert_inventar():
     # Alte Felder fallen aus OFFEN raus (-2). Kz-Bindung Schritt 3: alle 4 neuen
     # Felder haben Kz via VERZWEIGUNG/PARTNER_VERZWEIGUNG -> nicht mehr OFFEN.
     # Netto: 23-4=19. weitere_vorsorgeaufwendungen(_partner) bleibt OFFEN (10 Abs. 1 Nr. 3a).
-    OFFEN_SOLL = 19  # 23 - 4 (Kz-Bindung Schritt 3). Bei Kz-Arbeit nachziehen.
+    OFFEN_SOLL = 18  # 19 - 1: p33a_andere_einkuenfte_bezuege in ENDGUELTIG gewandert (durch dev-1s Durchgangstests)
     # === Themenblock-Gruppierung ===
     # OFFEN-Felder in Themenblöcke gruppiert
     bloecke = {

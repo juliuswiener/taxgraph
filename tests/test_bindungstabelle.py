@@ -571,3 +571,114 @@ def test_h_gate_faengt_neue_felder_ohne_kz(daten):
     unbekannt = sorted(ohne_kz - BETRAGSFELDER_OHNE_KZ)
     assert unbekannt == ["zzz_neues_feld_ohne_kz"], (
         f"Gegenprobe fehlgeschlagen: erfundenes Feld nicht erkannt: {unbekannt}")
+
+
+# Bekannte Ausnahmen für api.py-Read-Keys, die keinem Store-Feld entsprechen.
+API_READ_AUSNAHMEN: set[str] = set()
+
+
+def test_i_api_read_keys_sind_in_bindung(daten):
+    """Jeder feld_id-String in `_c(...)`/`_cent(...)`/`f.get("...")`-Aufrufen von api.py
+    muss in mindestens einer bindung_*.yaml als `feld_id` existieren.
+
+    `_c(fid)` (z. B. api.py:183) gibt bei unbekanntem fid still 0 zurück — kein Error,
+    kein None, kein Log. `f.get("fid", {}).get("wert")` gibt None → `is True` = False →
+    still falscher Zweig. Beide Bauarten senken den Abzug still (Over-tax), ohne dass
+    ein Test rot wird.
+
+    Realer Fall 2026-08-05: basis_kv_pv → basis_kv + basis_pv (Feldsplit, 4 neue Felder).
+    Vier von sechs _c-Lesestellen (api.py:764/779/1338/1354) lasen beim Commit noch
+    basis_kv_pv → _c gab still 0 → der gesamte KV/PV-Vorsorgeabzug in den Scheiben
+    gesamt und rentner_gesamt fiel weg → Over-tax. Die Suite blieb grün.
+    Weder test_g (askable→SCHEIBEN) noch ein anderer Test hat es gefangen — gefunden
+    per Hand beim Review. Dieses Gate ist die systematische Lösung.
+    """
+    api_py = os.path.join(ROOT, "produkt", "haut", "api.py")
+    with open(api_py) as f:
+        src = f.read()
+
+    read_keys: set[str] = set()
+
+    # Pattern 1: _c("feld_id") und _cent("feld_id")
+    read_keys |= set(re.findall(r'_c(?:ent)?\("([a-z0-9_]+)"\)', src))
+
+    # Pattern 2: f.get("feld_id")
+    read_keys |= set(re.findall(r'f\.get\("([a-z0-9_]+)"', src))
+
+    # Alle feld_ids aus der Bindungstabelle sammeln
+    binding_keys: set[str] = set()
+    for d in daten.values():
+        for b in d["bindungen"]:
+            fid = b.get("feld_id")
+            if fid:
+                binding_keys.add(fid)
+
+    unbekannt = sorted(read_keys - binding_keys - API_READ_AUSNAHMEN)
+    assert not unbekannt, (
+        f"api.py ruft _c / _cent / f.get für Feld-IDs auf, die in keiner "
+        f"bindung_*.yaml als feld_id existieren: {unbekannt}. Das Feld wurde "
+        f"umbenannt/gelöscht, die api.py-Lesestelle nicht mitgezogen → stiller "
+        f"Over-tax (keine Test-Rot-Warnung).")
+
+
+# Bekannte Ausnahmen für Kz, die gebunden sind aber nicht in Tests vorkommen.
+# Jeder Eintrag braucht eine Begründung (z. B. "Nur im XSD-Kommentar, keine echte Bindung").
+GEBUNDENE_KZ_OHNE_TEST: set[str] = set()
+
+
+def test_j_gebundene_kz_sind_test_belegt():
+    """Jedes Kz, das in einer bindung_*.yaml als elster_kz gesetzt oder in
+    est_mapping.py (VERZWEIGUNG / PARTNER_VERZWEIGUNG / PARTNER_INSTANZ /
+    DOKUMENTIERT_AGGREGAT / NEGATION) als Kz-Eintrag vorkommt, muss als
+    String-Literal in mindestens einer Datei unter tests/ vorkommen.
+
+    Prüft ANWESENHEIT, nicht KORREKTHEIT. Ein Kz in einem Kommentar zählt
+    ebenso wie ein Kz in einem Assert — das ist die billigste Annäherung
+    an Vollständigkeit. Ein vertauschtes Kz im Test zählt auch. Später kann
+    eine Laufzeitmessung ergänzt werden.
+
+    Realer Fall 2026-08-05: sechs KV/PV-Kz (E2001203, E2001505, E2001805,
+    E2002105, E2003104, E2003202) gebunden in est_mapping.py, Suite grün,
+    kein Test kannte auch nur eines. Ein vertauschtes KV/PV-Paar (z. B.
+    KV auf PV-Kz) wäre nie aufgefallen. Gefunden beim manuellen Review.
+    """
+    # (a) elster_kz aus allen bindung_*.yaml
+    binding_kz: set[str] = set()
+    for fp in glob.glob(os.path.join(BIND_DIR, "bindung_*.yaml")):
+        with open(fp) as f:
+            doc = yaml.safe_load(f)
+        for eintrag in doc.get("bindungen", []):
+            kz = eintrag.get("elster_kz")
+            if kz and str(kz).startswith("E") and len(str(kz)) == 8:
+                binding_kz.add(kz)
+
+    # (b) Kz aus est_mapping-Datenstrukturen via Import
+    import importlib.util
+    em_spec = importlib.util.spec_from_file_location(
+        "est_mapping", os.path.join(ROOT, "produkt", "mapping", "est_mapping.py"))
+    EM = importlib.util.module_from_spec(em_spec)
+    em_spec.loader.exec_module(EM)
+
+    mapping_kz: set[str] = set()
+    for cfg in EM.VERZWEIGUNG.values():
+        mapping_kz.update(cfg["kz"].values())
+    for cfg in EM.PARTNER_VERZWEIGUNG.values():
+        mapping_kz.update(cfg["kz"].values())
+    mapping_kz.update(EM.PARTNER_INSTANZ.values())
+    mapping_kz.update(EM.NEGATION.values())
+    mapping_kz.update(EM.DOKUMENTIERT_AGGREGAT.keys())
+
+    alle_kz = binding_kz | mapping_kz
+
+    # Gegen alle Test-Dateien prüfen
+    test_files = glob.glob(os.path.join(ROOT, "tests", "*.py"))
+    ungedeckt = sorted(
+        kz for kz in alle_kz
+        if all(kz not in open(tf).read() for tf in test_files)
+    )
+
+    ungedeckt = [k for k in ungedeckt if k not in GEBUNDENE_KZ_OHNE_TEST]
+    assert not ungedeckt, (
+        f"Kz gebunden (elster_kz / est_mapping), aber in keiner Test-Datei "
+        f"als Literal vorhanden: {ungedeckt}. Ein Kz ohne Test-Erwähnung "
+        f"kann vertauscht oder falsch sein, ohne dass jemand es merkt.")
