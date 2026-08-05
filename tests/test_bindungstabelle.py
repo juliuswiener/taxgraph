@@ -682,3 +682,48 @@ def test_j_gebundene_kz_sind_test_belegt():
         f"Kz gebunden (elster_kz / est_mapping), aber in keiner Test-Datei "
         f"als Literal vorhanden: {ungedeckt}. Ein Kz ohne Test-Erwähnung "
         f"kann vertauscht oder falsch sein, ohne dass jemand es merkt.")
+
+
+# Bekannte Ausnahmen: Dateien, deren Syntaxfehler ignoriert werden (fehlende Toolchain o.Ä.).
+SYNTAX_IGNORIERTE_DATEIEN: set[str] = set()
+
+
+def test_k_alle_python_dateien_parsen():
+    """Jede von git getrackte .py-Datei muss syntaktisch korrekt parsen (ast.parse).
+    Fehlende Dateien (z. B. golden/catala_runtime.py ohne Catala-Toolchain) werden
+    übersprungen und gezählt.
+
+    Zwei reale Edit-Unfälle vom 2026-08-05: (1) literale `\n` statt Zeilenumbrüche,
+    (2) Ersetzung als Einfügung gelandet — beide hinterliessen SyntaxError, die erst
+    bei der pytest-Collection auffielen. ~75 standalone-Skripte (elster/, corpus/,
+    oracle/gettsim/) geraten NIE in einen pytest-Lauf — dort fällt ein SyntaxError
+    erst beim manuellen Aufruf auf. Dieses Gate schliesst diese Lücke.
+    """
+    import subprocess, ast
+    result = subprocess.run(
+        ["git", "ls-files", "*.py"],
+        cwd=ROOT, capture_output=True, text=True, check=True)
+    tracked = set(result.stdout.strip().splitlines())
+
+    syntaxfehler = []
+    fehlt = 0
+    for fp in sorted(tracked):
+        full = os.path.join(ROOT, fp)
+        if not os.path.exists(full):
+            fehlt += 1
+            continue
+        if fp in SYNTAX_IGNORIERTE_DATEIEN:
+            fehlt += 1
+            continue
+        try:
+            with open(full) as f:
+                ast.parse(f.read())
+        except SyntaxError as e:
+            syntaxfehler.append((fp, str(e)))
+
+    if fehlt > 0:
+        print(f"\n  [test_k] {fehlt} getrackte .py-Dateien nicht gefunden (fehlende Toolchain)")
+
+    assert not syntaxfehler, (
+        f"{len(syntaxfehler)} getrackte .py-Datei(en) mit SyntaxError: " +
+        "; ".join(f"{fp}: {msg}" for fp, msg in syntaxfehler))
