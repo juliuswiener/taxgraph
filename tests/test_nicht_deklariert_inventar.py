@@ -143,7 +143,12 @@ def test_nicht_deklariert_inventar():
     # p33a_unterhalt_kv_pv -> E0124401 (darin enthaltene Teilmenge, nicht additiv),
     # p35c_sanierungsaufwendungen -> E0241901, p35c_energieberater -> E0242001
     # (GETRENNTE Kz — der Energieberater hatte faelschlich dasselbe Kz notiert).
-    OFFEN_SOLL = 26  # 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
+    # 2026-08-05 Block 4: 26 -> 21. kinderbetreuungskosten -> E0506105,
+    # realsplitting_unterhaltsleistungen -> E0304601, realsplitting_empfaenger_kv_pv ->
+    # E0300717 (SO/Unt_Leist, NICHT die § 33a-Kz aus ESt1A_U — die waren faelschlich
+    # notiert), dba_auslaendische_einkuenfte -> E0601401,
+    # dba_gezahlte_auslaendische_steuer -> E0601901.
+    OFFEN_SOLL = 21  # 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
 
     # === Themenblock-Gruppierung ===
     # OFFEN-Felder in Themenblöcke gruppiert
@@ -153,9 +158,6 @@ def test_nicht_deklariert_inventar():
                                 "weitere_vorsorgeaufwendungen", "weitere_vorsorgeaufwendungen_partner"],
         "Unterhalt §33a (Rest)": ["p33a_andere_einkuenfte_bezuege",
                                   "p33a_ausbildung_anzahl_kinder"],
-        "Realsplitting §10 Abs.1a": ["realsplitting_unterhaltsleistungen",
-                                      "realsplitting_empfaenger_kv_pv"],
-        "DBA/AUS §34c": ["dba_auslaendische_einkuenfte", "dba_gezahlte_auslaendische_steuer"],
         "EÜR/Gewinn §§13-18": ["betriebseinnahmen", "afa_jahresbetrag",
                                 "einkuenfte_gewinn", "gewinnanteil",
                                 "verguetung_taetigkeit", "verguetung_darlehen",

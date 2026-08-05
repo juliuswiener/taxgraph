@@ -17,8 +17,12 @@ bindungen:
     hilfe_kurz: "Unterhaltsleistungen werden bis 13.805 Euro pro Jahr abgezogen, erhöht um KV/PV-Beiträge für den Ex-Ehegatten."
     beispielwert: 1200000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Kz E0120103 (E10/ESt1A_U/Ang_HH_unt_P_Unt_Leist/AW_U/U_Ztr/E0120103) belegt 2026-08-05. Selbe ESt1A_U-Sektion wie §33a. Alte Notiz 'Ehegatten-Slots mehrdeutig' war zu pessimistisch. Bindung noch offen."
+    # E10/SO/Unt_Leist — "Unterhaltsleistungen, soweit sie vom Geber als Sonderausgaben
+    # abgezogen werden können, laut Anlage U". NICHT E0120103: das ist § 33a (Unterhalt an
+    # bedürftige Personen, Sektion ESt1A_U). Realsplitting ist die Geberseite der Anlage U
+    # und liegt unter SO/Unt_Leist. Die frühere Notiz hatte beide verwechselt — das Kürzel
+    # "ESt1A_U" legt "Anlage U" nahe, meint aber § 33a. Belegt 2026-08-05.
+    elster_kz: E0304601
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1a Nr. 1 S. 1 EStG"
@@ -36,9 +40,16 @@ bindungen:
     hilfe_kurz: "Nur die KV/PV-Beiträge nach § 10 Abs. 1 Nr. 3 zählen; sie erhöhen den Deckel von 13.805 Euro."
     beispielwert: 400000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Kz E0124401 (E10/ESt1A_U/Ang_HH_unt_P_Unt_Leist/Ang_Unt_Pers/KV_PV/E0124401) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'uebernommene Beitraege zu Basis-Kranken- und Pflegeversicherungen'. Alte Notiz 'Ehegatten-Slots unklar' war falsch. Bindung noch offen."
-    vz_gueltigkeit: [2024, 2025, 2026]
+    # E10/SO/Unt_Leist — "In Zeile E0304601 enthaltene Beiträge (abzüglich Erstattungen und
+    # Zuschüsse) zur Basis-Kranken- und Pflegeversicherung". Teilmenge von E0304601, nicht
+    # additiv. NICHT E0124401 (das ist die § 33a-Entsprechung). Belegt 2026-08-05.
+    #
+    # AB VZ 2025: das Kz existiert im E10-2024 NICHT (dort trägt SO/Unt_Leist nur E0304601).
+    # Vom xsd_verify-Gate gefangen, als vz_gueltigkeit noch [2024,2025,2026] stand. Für 2024
+    # bleibt der Betrag undeklariert — materiell unschädlich, weil er ohnehin nur den
+    # Höchstbetrag des Gebers erhöht (§ 10 Abs. 1a Nr. 1 S. 2) und in E0304601 enthalten ist.
+    elster_kz: E0300717
+    vz_gueltigkeit: [2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1a Nr. 1 S. 2 EStG"
       zitatanker: "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten aufgewandten Beiträge"

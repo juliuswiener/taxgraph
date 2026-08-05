@@ -17,8 +17,14 @@ bindungen:
     hilfe_kurz: "Du kannst 80% der Kosten absetzen, höchstens 4.800 Euro pro Kind."
     beispielwert: 600000
     herkunft_slots: ["Betreuungsrechnung: Kosten"]
-    elster_kz: null
-    elster_kz_grund: "Kz E0506105 (E10/Kind/KBK/Art/Sum) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'beruecksichtigungsfaehige Gesamtaufwendungen der Eltern'. Alte Notiz 'XSD-Sektion mehrdeutig' war zu pessimistisch. Bindung noch offen."
+    # E10/Kind/KBK/Art/Sum — "berücksichtigungsfähige Gesamtaufwendungen der Eltern".
+    # GRENZE: der Kz liegt im Kind-Container (maxOccurs=14, pro Kind), unser Feld ist aber
+    # global (keine instanz_gruppe). Bei EINEM Kind ist das korrekt — der Betrag landet im
+    # einzigen Kind-Container, XSD-validiert. Bei mehreren Kindern landet die Gesamtsumme
+    # beim ersten Kind statt aufgeteilt; das ist eine Aufteilungs-Frage an die Oberfläche
+    # (welches Kind welche Kosten), keine Kz-Frage. Bis dahin over-tax-safe: der Gesamtbetrag
+    # ist deklariert, nur die Zuordnung je Kind fehlt. Belegt 2026-08-05.
+    elster_kz: E0506105
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"

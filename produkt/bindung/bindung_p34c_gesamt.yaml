@@ -95,8 +95,10 @@ bindungen:
     hilfe_kurz: "Betrag aus deiner ausländischen Steuerbescheinigung. Abzüglich etwaiger Erstattungen oder Ermäßigungsansprüche (§34c Abs.1 S.1)."
     beispielwert: 300000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Kz E0601901 (E10/AUS/Staat_Spez_InvFonds/Anzur_ausl_St/E0601901) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'fuer alle Einkunftsarten'. Bindung noch offen."
+    # E10/AUS/Staat_Spez_InvFonds/Anzur_ausl_St — "für alle Einkunftsarten".
+    # Ein-Staat-Fall: dba_mehrere_staaten=true ist fail-closed gesperrt (Stufe-1), es gibt
+    # also genau einen Staat-Container. Belegt 2026-08-05.
+    elster_kz: E0601901
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 34c Abs. 1 S. 1 EStG"
@@ -112,8 +114,9 @@ bindungen:
     hilfe_kurz: "⚠ Wichtig: nur der ANTEIL deiner bereits deklarierten Einkünfte, der aus dem Ausland stammt — keine zusätzlichen Beträge. Der Betrag dient nur zur Berechnung des Höchstbetrags der Anrechnung."
     beispielwert: 4000000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Kz E0601401 (E10/AUS/Staat_Spez_InvFonds/Ek/E0601401) belegt 2026-08-05 am amtlichen E10-2025.xsd. Alte Notiz 'Kz-Recon = dev-2-Folgeticket' war korrekt im Status, aber Kz existiert. Bindung noch offen."
+    # E10/AUS/Staat_Spez_InvFonds/Ek — "Einkünfte (einschließlich der gemäß § 3 Nr. 40 und
+    # § 3c Abs. 2 EStG steuerfreien Teile ...)". Ein-Staat-Fall, s.o. Belegt 2026-08-05.
+    elster_kz: E0601401
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 34c Abs. 1 S. 2 EStG"

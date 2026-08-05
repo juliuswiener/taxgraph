@@ -132,6 +132,37 @@ def test_block3_kommt_im_xml_an(bindung):
     assert ">1500<" not in massn_sum, "Energieberater-Betrag steht in der Massnahmen-Summe"
 
 
+# ---------------------------------------------------------------- Block 4
+
+def test_block4_kommt_im_xml_an(bindung):
+    """Kinderbetreuung, Realsplitting § 10 Abs. 1a, DBA § 34c.
+
+    Der wichtigste Teil ist die Trennung Realsplitting ↔ § 33a: beide heißen
+    "Unterhalt", liegen aber in verschiedenen Sektionen.
+      Realsplitting (Geberseite, Anlage U)  -> SO/Unt_Leist       E0304601 / E0300717
+      § 33a (bedürftige Person)             -> ESt1A_U/…          E0120103 / E0124401
+    Das Kürzel "ESt1A_U" legt "Anlage U" nahe, meint aber § 33a — in der Bindung waren
+    dem Realsplitting zunächst die § 33a-Kz zugewiesen.
+    """
+    xml = _xml({"kinderbetreuungskosten": 300000,             #  3.000 EUR
+                "realsplitting_unterhaltsleistungen": 1200000,  # 12.000 EUR
+                "realsplitting_empfaenger_kv_pv": 180000,     #  1.800 EUR (darin enthalten)
+                "dba_auslaendische_einkuenfte": 500000,       #  5.000 EUR
+                "dba_gezahlte_auslaendische_steuer": 70000},  #    700 EUR
+               bindung)
+
+    assert _pfad_im_xml(xml, ("Kind", "KBK", "Art", "Sum", "E0506105"), "3000")
+    assert _pfad_im_xml(xml, ("SO", "Unt_Leist", "E0304601"), "12000")
+    assert _pfad_im_xml(xml, ("SO", "Unt_Leist", "E0300717"), "1800")
+    assert _pfad_im_xml(xml, ("AUS", "Staat_Spez_InvFonds", "Ek", "E0601401"), "5000")
+    assert _pfad_im_xml(xml, ("AUS", "Staat_Spez_InvFonds", "Anzur_ausl_St",
+                              "E0601901"), "700")
+
+    # Realsplitting darf NICHT in der § 33a-Sektion landen (und umgekehrt)
+    assert "E0120103" not in xml, "Realsplitting im § 33a-Kz (ESt1A_U) statt SO/Unt_Leist"
+    assert "E0124401" not in xml, "Realsplitting-KV/PV im § 33a-Kz statt SO/Unt_Leist"
+
+
 def test_kist_xml_ist_schema_valide(bindung, tmp_path):
     """Das erzeugte XML validiert gegen das amtliche E10-2025-Schema.
 
