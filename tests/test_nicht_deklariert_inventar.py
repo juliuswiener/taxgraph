@@ -12,7 +12,7 @@ OFFEN_MARKER (10 Kerne, narrow):
   kandidat, recon, mvp
 
 Zusätzlich manuell klassifizierte Felder (6):
-  berufsausbildung_aufwendungen, kap_gewinn_sonstige,
+  kap_gewinn_sonstige,
   kap_gewinn_sonstige_partner,
   vv_entgelt_quote_prozent
 
@@ -50,12 +50,10 @@ OFFEN_KERNE = frozenset({
 # Manuelle Ausnahmen: Felder, die trotz fehlendem OFFEN_KERN Kz-Arbeit brauchen.
 # (weil Marker-Sprache die echte Situation nicht trifft, z.B. "Modell-Mismatch")
 # Jedes einzeln begründet:
-#   berufsausbildung_aufwendungen   — "Kein XSD-Feld-Label" = echtes Mapping-Problem
 #   kap_gewinn_sonstige             — MODELL-MISMATCH (4-Topf vs XSD-Summe), braucht Kz-Struktur
 #   kap_gewinn_sonstige_partner     — selbe Struktur wie Person A
 #   vv_entgelt_quote_prozent        — "XSD-E-Nr Sektions-Lookup-Nachtrag" = Kz-Mapping offen
 OFFEN_MANUELL = frozenset({
-    "berufsausbildung_aufwendungen",
     "kap_gewinn_sonstige",
     "kap_gewinn_sonstige_partner",
     "vv_entgelt_quote_prozent",
@@ -135,7 +133,13 @@ def test_nicht_deklariert_inventar():
     # 2026-08-05 Block 1: 36 -> 34. kist_gezahlt -> E0107601, kist_erstattet -> E0107602
     # gebunden (E10/SA/KiSt/Gezahlt/Sum | Erstattet). Das IST erledigte Kz-Arbeit,
     # anders als der 38->36-Schritt davor (der war nur eine korrigierte Einordnung).
-    OFFEN_SOLL = 34  # 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
+    # 2026-08-05 Block 2: 34 -> 30. berufsausbildung_aufwendungen -> E0108202,
+    # p22_nr3_einkuenfte -> E0305301 (Einkuenfte, NICHT E0305101 Einnahmen),
+    # gewst_messbetrag -> E0801606, gewst_hebesatz -> E0801705.
+    # vv_entgelt_quote_prozent und verlustvortrag_bestand bleiben OFFEN: dort ist das
+    # Kz zwar da, passt aber semantisch/typmaessig nicht (Kuerzungs- statt Entgeltquote;
+    # Ja-Feld statt Betrag) — kz_status: offen, Begruendung in der Bindung.
+    OFFEN_SOLL = 30  # 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
 
     # === Themenblock-Gruppierung ===
     # OFFEN-Felder in Themenblöcke gruppiert
@@ -148,16 +152,15 @@ def test_nicht_deklariert_inventar():
         "Realsplitting §10 Abs.1a": ["realsplitting_unterhaltsleistungen",
                                       "realsplitting_empfaenger_kv_pv"],
         "DBA/AUS §34c": ["dba_auslaendische_einkuenfte", "dba_gezahlte_auslaendische_steuer"],
-        "GewSt / §35": ["gewst_messbetrag", "gewst_hebesatz"],
         "EÜR/Gewinn §§13-18": ["betriebseinnahmen", "afa_jahresbetrag",
                                 "einkuenfte_gewinn", "gewinnanteil",
                                 "verguetung_taetigkeit", "verguetung_darlehen",
                                 "verguetung_ueberlassung"],
         "§35c Sanierung": ["p35c_sanierungsaufwendungen", "p35c_energieberater_aufwendungen"],
         "Kapital §20 Modell-Mismatch": ["kap_gewinn_sonstige", "kap_gewinn_sonstige_partner"],
-        "§22 Nr.3 / §23": ["p22_nr3_einkuenfte",
-                           "p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten",
-                           "p23_werbungskosten"],
+        "§23 private Veräußerung": ["p23_veraeusserungspreis",
+                                    "p23_anschaffung_herstellungskosten",
+                                    "p23_werbungskosten"],
         "§32b Progressionsvorbehalt": ["p32b_progressionseinkuenfte"],
         "§10d Verlustvortrag": ["verlustvortrag_bestand"],
         "Berufsausbildung §10 Abs.1 Nr.7": ["berufsausbildung_aufwendungen"],

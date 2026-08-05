@@ -500,7 +500,9 @@ bindungen:
     beispielwert: 450
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz E0801705 (E10/G/St_Erm_P35/.../Zu_zah_GSt_VZ/E0801705) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Hebesatz in Prozent'. Bindung noch offen."
+    # E10/G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Zu_zah_GSt_VZ — "Hebesatz in Prozent",
+    # Ganzzahl wie unser typ:int. Erster Betrieb (s. gewst_messbetrag). Belegt 2026-08-05.
+    elster_kz: E0801705
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35 Abs. 1 S. 1 EStG"
@@ -518,7 +520,12 @@ bindungen:
     beispielwert: 2024750
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz E0801606 (E10/G/St_Erm_P35/.../Festzus_GMB_VZ/E0801606) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Gewerbesteuer-Messbetrag'. Alte Notiz nannte Kz als 'Kandidat' — korrekt. Bindung noch offen."
+    # E10/G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Festzus_GMB_VZ — erster Betrieb. Die früher als
+    # offen notierte "Disambiguierung E0801606 vs E0802009" löst der Pfad auf: E0802009 liegt
+    # unter Weit_Betr/Einz (weitere Betriebe), also dieselbe Instanz-Achse wie Person B.
+    # Mehrbetriebs-Fall ist heute nicht erfassbar (kein instanz_gruppe) — dann greift die
+    # Instanz-Achse, sobald es ein Feld dafür gibt. Belegt 2026-08-05.
+    elster_kz: E0801606
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 11 Abs. 1 S. 1 GewStG"
@@ -541,7 +548,8 @@ bindungen:
     beispielwert: 6000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz E0190701 (E10/Sonst/Verl_Abz/Vortrag/E0190701) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'verbleibender Verlustvortrag nach § 10d'. Alte Notiz nannte Kz als 'Kandidat' — korrekt, jetzt bestaetigt. Bindung noch offen."
+    kz_status: offen
+    elster_kz_grund: "NICHT 1:1 bindbar — Typ-Unterschied, 2026-08-05 am E10-2025.xsd geprüft. E0190701 (E10/Sonst/Verl_Abz/Vortrag) ist ein JA-FELD (xs:type Ja1BaseCType_RABE): 'Es wurde ein verbleibender Verlustvortrag nach § 10d EStG zum 31.12. festgestellt.' — es erklärt nur DASS ein Vortrag besteht, nicht dessen HÖHE. Unser Feld ist ein cent-Betrag. Den Betrag kennt das FA aus dem eigenen Feststellungsbescheid (§ 10d Abs. 4); das E10 fragt ihn nicht ab. Ein Betrag in ein Ja-Feld geschrieben wäre schema-invalid. Offen bleibt, ob wir E0190701 als abgeleitetes Ja/Nein (bestand > 0) mitgeben sollten — das ist eine Deklarations-Entscheidung, kein Kz-Mapping."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10d Abs. 2 S. 1 EStG"

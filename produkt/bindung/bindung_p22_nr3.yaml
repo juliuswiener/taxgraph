@@ -18,7 +18,10 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz E0305104 (E10/SO/Leist/Einz, 'Betrag Einnahmen') bzw. Summe E0305101 (E10/SO/Leist/Sum) am amtlichen E10-2025.xsd belegt 2026-08-05 — Bindung noch offen, deshalb weiter fail-closed. Die frühere Notiz 'kein XSD-verifiziertes Kz-Mapping' war ein Suchfehler: gesucht wurde nach dem Vordruck-Label, das XSD trägt aber nur 'Betrag Einnahmen' — der fachliche Kontext steckt im Element-PFAD (SO/Leist), nicht im Text."
+    # E10/SO/Leist/Sum/E0305301 "Einkünfte" — NICHT E0305101 ("Summe der Einnahmen") und nicht
+    # E0305104 (Einzelbetrag). Der Slot heißt einkuenfte_vor_freigrenze, ist also die Netto-Größe
+    # nach Werbungskosten (die stehen separat in E0305201). Belegt 2026-08-05.
+    elster_kz: E0305301
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 22 Nr. 3 EStG (sonstige Einkünfte aus Leistungen)"

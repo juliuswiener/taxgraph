@@ -54,8 +54,10 @@ bindungen:
     hilfe_kurz: "Zum Beispiel Studiengebühren, Fachbücher, Fahrten. Bis 6.000 Euro im Jahr."
     beispielwert: 200000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Kz E0108202 (E10/SA/AW_eig_BAusb/Sum) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Hoehe der Aufwendungen' — der Kontext steckt im Element-Pfad 'AW_eig_BAusb', nicht im Vordruck-Label. Alte Notiz 'kein XSD-Feld-Label' war Suchfehler. Bindung noch offen."
+    # E10/SA/AW_eig_BAusb/Sum — Summen-Kz. Einzelposten liegen unter Einz (E0108002 Betrag +
+    # E0108201 Bezeichnung); unser Feld ist die Jahressumme. xs:documentation ist nur
+    # "Höhe der Aufwendungen" — der Kontext steckt im Element-Pfad. Belegt 2026-08-05.
+    elster_kz: E0108202
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 7 EStG"

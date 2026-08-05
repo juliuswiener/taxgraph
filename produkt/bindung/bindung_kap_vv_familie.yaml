@@ -306,7 +306,8 @@ bindungen:
     beispielwert: 100
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz E0708601 (E10/V/Verbilligt/E0708601) belegt 2026-08-05 am amtlichen E10-2025.xsd. XS:documentation: 'Kuerzung der Werbungskosten wegen verbilligter Vermietung (in %)'. Alte Notiz 'Sektions-Lookup-Nachtrag' war zu pessimistisch. Bindung noch offen."
+    kz_status: offen
+    elster_kz_grund: "NICHT 1:1 bindbar — Semantik-Unterschied, 2026-08-05 am E10-2025.xsd geprüft. Unser Feld ist die ENTGELT-Quote (Miete/Marktmiete, 0..100 %). Das einzige Prozent-Kz der Sektion, E0708601 (E10/V/Verbilligt), ist die 'Kürzung der Werbungskosten wegen verbilligter Vermietung (in %)' — also die Gegengröße: bei 60 % Entgelt wird um 40 % gekürzt, und die Kürzung folgt der 50/66-%-Staffel des § 21 Abs. 2, ist keine lineare Umrechnung. Bindung erfordert, dass die Regel die KÜRZUNGSQUOTE als eigene Ausgabe liefert (heute rechnet sie intern damit); E0708701 daneben ist die betragsmäßige Kürzung bei Teilobjekten. Kein Rate-Mapping: ein direkt geschriebener Entgelt-Prozentsatz stünde als Kürzung im Vordruck und kehrte die Wirkung um."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 21 Abs. 2 S. 1 EStG"

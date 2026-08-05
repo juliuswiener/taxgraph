@@ -73,6 +73,34 @@ def test_kist_kommt_im_xml_an(bindung):
     assert ">600<" not in erstattet, "gezahlter Betrag steht im Erstattet-Zweig"
 
 
+# ---------------------------------------------------------------- Block 2
+
+def test_block2_kommt_im_xml_an(bindung):
+    """Berufsausbildung, § 22 Nr. 3, GewSt-Messbetrag + Hebesatz an ihrer Schema-Stelle.
+
+    § 22 Nr. 3 geht bewusst auf E0305301 ("Einkünfte"), NICHT auf E0305101
+    ("Summe der Einnahmen"): der Regel-Slot heißt einkuenfte_vor_freigrenze, ist also
+    die Netto-Größe nach Werbungskosten (die separat in E0305201 stehen).
+
+    Der Hebesatz ist kein Cent-Feld (typ:int, "Hebesatz in Prozent") — 400 muss 400
+    bleiben und darf nicht durch die Cent→Euro-Wandlung laufen.
+    """
+    xml = _xml({"berufsausbildung_aufwendungen": 120000,   # 1.200 EUR
+                "p22_nr3_einkuenfte": 80000,               #   800 EUR
+                "gewst_messbetrag": 350000,                # 3.500 EUR
+                "gewst_hebesatz": 400}, bindung)           #   400 % (kein Cent!)
+
+    assert _pfad_im_xml(xml, ("SA", "AW_eig_BAusb", "Sum", "E0108202"), "1200")
+    assert _pfad_im_xml(xml, ("SO", "Leist", "Sum", "E0305301"), "800")
+    assert _pfad_im_xml(xml, ("G", "St_Erm_P35", "Ang_GSt_GMB", "Einz_Betr",
+                              "Festzus_GMB_VZ", "E0801606"), "3500")
+    assert _pfad_im_xml(xml, ("G", "St_Erm_P35", "Ang_GSt_GMB", "Einz_Betr",
+                              "Zu_zah_GSt_VZ", "E0801705"), "400")
+
+    # § 22 Nr. 3 darf NICHT im Einnahmen-Kz landen (das waere die Brutto-Groesse)
+    assert "E0305101" not in xml, "p22_nr3 im Einnahmen-Kz statt im Einkuenfte-Kz"
+
+
 def test_kist_xml_ist_schema_valide(bindung, tmp_path):
     """Das erzeugte XML validiert gegen das amtliche E10-2025-Schema.
 
@@ -83,8 +111,11 @@ def test_kist_xml_ist_schema_valide(bindung, tmp_path):
     if not VX.find_schema("2025"):
         pytest.skip("elster11_E10_2025_extern.xsd nicht gefunden — ERIC_DIR setzen")
 
-    ziel = tmp_path / "kist.xml"
-    ziel.write_text(_xml({"kist_gezahlt": 60000, "kist_erstattet": 5000}, bindung),
+    ziel = tmp_path / "bloecke.xml"
+    ziel.write_text(_xml({"kist_gezahlt": 60000, "kist_erstattet": 5000,
+                          "berufsausbildung_aufwendungen": 120000,
+                          "p22_nr3_einkuenfte": 80000,
+                          "gewst_messbetrag": 350000, "gewst_hebesatz": 400}, bindung),
                     encoding="utf-8")
     ok, meldung = VX.validate(str(ziel), "2025")
-    assert ok, f"KiSt-XML nicht schema-valide: {meldung}"
+    assert ok, f"XML nicht schema-valide: {meldung}"
