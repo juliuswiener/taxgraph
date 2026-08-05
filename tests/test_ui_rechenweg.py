@@ -45,15 +45,36 @@ def base(tmp_path, monkeypatch):
         srv.server_close()
 
 
-def _req(base: str, method: str, path: str, body: dict | None = None):
+def _req(base: str, method: str, path: str, body: dict | None = None,
+         erwarte: int | None = None):
+    """HTTP-Request mit optionalem Status-Check.
+
+    Prüft selbst:
+    - 5xx → AssertionError (nie unterdrückbar)
+    - 4xx → AssertionError, es sei denn `erwarte=<code>` ist gesetzt
+    - 2xx → durch
+    - erwarte=N → assert status == N
+    """
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(base + path, data=data, method=method,
                                  headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status, json.loads(r.read())
+            status = r.status
+            content = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read())
+        status = e.code
+        content = json.loads(e.read())
+    if erwarte is not None:
+        assert status == erwarte, (
+            f"erwarte={erwarte}, erhalten={status} {method} {path} {body}")
+    elif status >= 500:
+        raise AssertionError(
+            f"Serverfehler {status} {method} {path} {body}: {content}")
+    elif status >= 400:
+        raise AssertionError(
+            f"Fehler {status} {method} {path} {body}: {content}")
+    return status, content
 
 
 def _laie(fld, w):
@@ -268,17 +289,7 @@ def test_rechenweg_negativ(base, playwright_context):
         _req(base, "POST", "/fall/rw-neg/event", _laie("ep_eigenes_kfz", True))
         _req(base, "POST", "/fall/rw-neg/event", _laie("ep_oepnv_kosten", 0))
         _req(base, "POST", "/fall/rw-neg/event", _laie("ep_arbeitstage", 220))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_beitrag_rente", 5000))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_beitrag_kranken", 3000))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_beitrag_pflege", 500))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_davon_arbeitnehmer", 4000))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_beitrag_rente_pausch", 0))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_beitrag_rente_arbeitgeber", 0))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_davon_basis", 5000))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_beitrag_kranken_arbeitgeber", 0))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_beitrag_pflege_arbeitgeber", 0))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_beitrag_arbeitslosen", 0))
-        _req(base, "POST", "/fall/rw-neg/event", _laie("p10_vorsorge_beitrag_arbeitslosen_arbeitgeber", 0))
+        # Restlicher Kegel (nicht mehr existierende Felder ausgelassen)
         _req(base, "POST", "/fall/rw-neg/event", _laie("verlustvortrag_bestand", 0))
         _req(base, "POST", "/fall/rw-neg/event", _laie("p36_lohnsteuer", 0))
         _req(base, "POST", "/fall/rw-neg/event", _laie("p36_vorauszahlungen", 0))
