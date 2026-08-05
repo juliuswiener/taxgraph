@@ -260,7 +260,8 @@ bindungen:
     beispielwert: 3000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz E0800502 (E10/G/Gew/Ges_Fest/Sum/E0800502) belegt 2026-08-05 am amtlichen E10-2025.xsd. Anlage G/S/L haben Gewinn-Kz je Betriebsart. VERZWEIGUNG je gewinn_betriebsart noetig (est_mapping leeres kz-dict). Bindung noch offen."
+    kz_status: endgueltig
+    elster_kz_grund: "Gebunden via VERZWEIGUNG (est_mapping): gewerbe=E0800502 (G/Gew/Ges_Fest/Sum), selbstaendig=E0803402 (S/Gewinn/Ges_Fest/Sum). land_forst bewusst ohne Kz (Anlage L zwei Kz, Art-Feld fehlt). Kz sind Einkuenfte -> floor."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 2 Abs. 2 S. 1 Nr. 1 EStG"
@@ -368,7 +369,8 @@ bindungen:
     beispielwert: 4000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Mitunternehmer-Gewinnanteil (§ 15 Abs. 1 S. 1 Nr. 2) → Anlage G; die konkrete Anlage-G-Mitunternehmer-Zeile ist eine eigene Kz-Review-Runde (Instructor-Adjudikation) — null-Kz-MVP. Der Betrag ist FA-festgestellt (gesonderte + einheitliche Feststellung), wie gewst_messbetrag/verlustvortrag_bestand."
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Mitu-Gewinnanteil, in E0800502 (Anlage G) aufgegangen. Schema E0800602 = ein Betrag je Beteiligung (G/Gew/M_Unt/Beteil), keine Sonderverg.-Trennung. Modell feiner als Formular."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
@@ -385,7 +387,8 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Sondervergütung Tätigkeit (§ 15 Abs. 1 S. 1 Nr. 2) → Anlage G Mitunternehmer-Zeile; null-Kz-MVP (eigene Kz-Review-Runde), Aggregat mit Gewinnanteil."
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung, in E0800502 aufgegangen. Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
@@ -402,7 +405,8 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Sondervergütung Darlehen (§ 15 Abs. 1 S. 1 Nr. 2) → Anlage G Mitunternehmer-Zeile; null-Kz-MVP (eigene Kz-Review-Runde), Aggregat mit Gewinnanteil."
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung, in E0800502 aufgegangen. Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
@@ -419,7 +423,8 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Sondervergütung Überlassung (§ 15 Abs. 1 S. 1 Nr. 2) → Anlage G Mitunternehmer-Zeile; null-Kz-MVP (eigene Kz-Review-Runde), Aggregat mit Gewinnanteil."
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung, in E0800502 aufgegangen. Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"

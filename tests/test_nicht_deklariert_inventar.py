@@ -156,7 +156,10 @@ def test_nicht_deklariert_inventar():
 # p33a_andere_einkuenfte_bezuege automatisch ENDGUELTIG (Grund ohne "offen")
 # Netto: 19-3=16.
     # Netto: 16-1=15. p32b_progressionseinkuenfte -> E0104801 (1:1).
-    OFFEN_SOLL = 15  # 16 - 1 (p32b). Bei Kz-Arbeit nachziehen.
+    # 5 EÜR/Mitu-Felder: einkuenfte_gewinn (kz_status:endgueltig, via VERZWEIGUNG) +
+    # 4 Mitunternehmer-Komponenten (in E0800502 aufgegangen, keine SV-Trennung im Schema).
+    # Netto: 15-5=10.
+    OFFEN_SOLL = 10  # 15 - 5 (EÜR/Mitu ENDGUELTIG). Bei Kz-Arbeit nachziehen.
     # OFFEN-Felder in Themenblöcke gruppiert
     bloecke = {
         "§36 Anrechnung (LSt, VZ)": ["p36_lohnsteuer", "p36_vorauszahlungen"],
