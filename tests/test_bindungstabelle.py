@@ -727,3 +727,63 @@ def test_k_alle_python_dateien_parsen():
     assert not syntaxfehler, (
         f"{len(syntaxfehler)} getrackte .py-Datei(en) mit SyntaxError: " +
         "; ".join(f"{fp}: {msg}" for fp, msg in syntaxfehler))
+
+
+# Store-Event-Gate fuer unbekannte feld_ids in deklariere()
+# Siehe Report: test_i deckt die api.py-Lesestellen-Seite ab.
+# Dieses Gate deckt die deklariere()-Semantik ab: was passiert mit einem
+# Feld, das im Snapshot steht, aber nicht in der Bindung?
+#
+# Heute: `vollstaendig` bleibt True, das Feld landet in `nicht_deklariert`
+# mit Grund "nicht in der Bindungstabelle". Klasse c ("Feld in Bindung,
+# kein Kz") und "Feld gar nicht in Bindung" fallen in denselben Bucket.
+# Der zweite Fall ist fast immer ein Bug (Umbenennung nicht mitgezogen),
+# der erste ist legitim. Das Signal geht im Rauschen unter.
+#
+# SCHAEKFUNG: wenn est_mapping.py:260-262 erweitert wird, sodass
+# unbekannte feld_ids `unvollstaendig` ausloesen, muss dieser Test
+# auf `vollstaendig is False` schaerfen. Die Assertion ist bewusst
+# auf `is True` gesetzt, damit der Umbau den Test zwingt, sich zu
+# aendern — nicht stillschweigend weiterzulaufen.
+
+def test_l_unbekannte_feld_id_in_deklariere():
+    """Ein snapshot-Feld ohne Bindungseintrag -> vollstaendig bleibt True (Ist-Verhalten).
+
+    Negativ-Probe: das Feld existiert in der Bindung -> gleiches Verhalten.
+    Erst wenn est_mapping.py:260-262 erweitert wird (unbekanntes Feld ->
+    unvollstaendig), muss dieser Test auf False schaerfen.
+    """
+    import importlib.util
+    em_spec = importlib.util.spec_from_file_location(
+        "est_mapping", os.path.join(ROOT, "produkt", "mapping", "est_mapping.py"))
+    EM = importlib.util.module_from_spec(em_spec)
+    em_spec.loader.exec_module(EM)
+
+    # Minimal bindung: ein cent-Feld mit elster_kz
+    mini_bindung = {
+        "test_geld": {"typ": "cent", "elster_kz": "E0000001", "vz_gueltigkeit": [2025]},
+    }
+    # Minimal snapshot: das Feld + ein unbekanntes Feld
+    snapshot = {
+        "test_geld": {"wert": 100000, "zustand": "bestaetigt"},
+        "test_xxx_feld_fehlte": {"wert": 50000, "zustand": "bestaetigt"},
+    }
+    ergebnis = EM.deklariere(snapshot, mini_bindung)
+
+    # (1) Bekanntes Feld landet in deklaration
+    assert not ergebnis["unvollstaendig"], (
+        f"Geld-Feld mit Kz darf nicht unvollstaendig sein: {ergebnis['unvollstaendig']}")
+    assert "E0000001" in ergebnis["deklaration"], (
+        f"Geld-Feld fehlt in Deklaration: {ergebnis['deklaration']}")
+
+    # (2) Unbekanntes Feld landet in nicht_deklariert (heutiges Ist-Verhalten)
+    nd_gruende = [nd["grund"] for nd in ergebnis["nicht_deklariert"]]
+    assert any("nicht in der Bindungstabelle" in g for g in nd_gruende), (
+        f"Unbekanntes Feld muss 'nicht in der Bindungstabelle' melden: {nd_gruende}")
+
+    # (3) Unbekanntes Feld -> vollstaendig bleibt True (heute)
+    # Beim Umbau: assert ergebnis["vollstaendig"] is False
+    assert ergebnis["vollstaendig"] is True, (
+        f"Ist-Verhalten: unbekanntes Feld darf vollstaendig nicht auf False setzen: "
+        f"{ergebnis['vollstaendig']}. Beim Umstieg auf schaerfere Zusicherung "
+        f"diese Zeile auf is False aendern.")
