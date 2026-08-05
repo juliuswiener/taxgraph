@@ -155,7 +155,8 @@ def test_nicht_deklariert_inventar():
 # 3 p23-Felder via est_mapping ENDGUELTIG (Ring-Input, berechneter Gewinn hat Kz).
 # p33a_andere_einkuenfte_bezuege automatisch ENDGUELTIG (Grund ohne "offen")
 # Netto: 19-3=16.
-    OFFEN_SOLL = 16  # 19 - 3 (p23 ENDGUELTIG). Bei Kz-Arbeit nachziehen.
+    # Netto: 16-1=15. p32b_progressionseinkuenfte -> E0104801 (1:1).
+    OFFEN_SOLL = 15  # 16 - 1 (p32b). Bei Kz-Arbeit nachziehen.
     # OFFEN-Felder in Themenblöcke gruppiert
     bloecke = {
         "§36 Anrechnung (LSt, VZ)": ["p36_lohnsteuer", "p36_vorauszahlungen"],

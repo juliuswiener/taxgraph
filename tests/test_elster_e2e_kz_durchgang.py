@@ -540,3 +540,32 @@ def test_gewinn_negativ_land_forst(base):
     assert len(grund_lf) >= 1, (
         f"land_forst muss in nicht_deklariert erscheinen. "
         f"Grund: {[x['grund'][:80] for x in nd[:3]]}")
+
+
+# -----------------------------------------------------------------
+# §32b Progressionseinkuenfte (1:1, E0104801)
+# -----------------------------------------------------------------
+
+def test_p32b_kz_durchgang(base):
+    """p32b_progressionseinkuenfte -> E0104801 in Deklaration + XML."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": "p32b"})
+    for feld, wert in [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
+        ("p32b_progressionseinkuenfte", 120000),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+    ]:
+        st, _ = _req(base, "POST", "/fall/p32b/event", _laie(feld, wert))
+        assert st == 201
+    st, dekl = _req(base, "GET", "/fall/p32b/deklaration")
+    assert st == 200
+    result = dekl.get("deklaration", {})
+    assert "E0104801" in result, "E0104801 fehlt in Deklaration"
+    import importlib
+    spec = importlib.util.spec_from_file_location(
+        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+    EX = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(EX)
+    xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
+    assert "E0104801" in xml_str, "E0104801 fehlt im XML"
