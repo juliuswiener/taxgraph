@@ -13,7 +13,7 @@ OFFEN_MARKER (10 Kerne, narrow):
 
 Zusätzlich manuell klassifizierte Felder (6):
   berufsausbildung_aufwendungen, kap_gewinn_sonstige,
-  kap_gewinn_sonstige_partner, kist_erstattet, kist_gezahlt,
+  kap_gewinn_sonstige_partner,
   vv_entgelt_quote_prozent
 
 ENDGUELTIG (8, trotz "Vordruck-Mapping open"-Marker):
@@ -53,15 +53,11 @@ OFFEN_KERNE = frozenset({
 #   berufsausbildung_aufwendungen   — "Kein XSD-Feld-Label" = echtes Mapping-Problem
 #   kap_gewinn_sonstige             — MODELL-MISMATCH (4-Topf vs XSD-Summe), braucht Kz-Struktur
 #   kap_gewinn_sonstige_partner     — selbe Struktur wie Person A
-#   kist_erstattet                  — Vordruck-Form-Kz, Spalten-Kontext, Cross-Ref nötig
-#   kist_gezahlt                    — selbe Struktur
 #   vv_entgelt_quote_prozent        — "XSD-E-Nr Sektions-Lookup-Nachtrag" = Kz-Mapping offen
 OFFEN_MANUELL = frozenset({
     "berufsausbildung_aufwendungen",
     "kap_gewinn_sonstige",
     "kap_gewinn_sonstige_partner",
-    "kist_erstattet",
-    "kist_gezahlt",
     "vv_entgelt_quote_prozent",
 })
 
@@ -136,7 +132,10 @@ def test_nicht_deklariert_inventar():
     # Erklaerungs-Kz gibt (E10 erklaert Besteuerungsgrundlagen, die Anrechnung rechnet das FA).
     # Sie tragen jetzt `kz_status: endgueltig` in der Bindung. Das ist KEINE Kz-Arbeit, sondern
     # eine korrigierte Einordnung: die Zahl war vorher zu hoch, nicht die Lage besser geworden.
-    OFFEN_SOLL = 36  # 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
+    # 2026-08-05 Block 1: 36 -> 34. kist_gezahlt -> E0107601, kist_erstattet -> E0107602
+    # gebunden (E10/SA/KiSt/Gezahlt/Sum | Erstattet). Das IST erledigte Kz-Arbeit,
+    # anders als der 38->36-Schritt davor (der war nur eine korrigierte Einordnung).
+    OFFEN_SOLL = 34  # 115 Betragsfelder. Bei Kz-Arbeit nachziehen.
 
     # === Themenblock-Gruppierung ===
     # OFFEN-Felder in Themenblöcke gruppiert
@@ -155,7 +154,6 @@ def test_nicht_deklariert_inventar():
                                 "verguetung_taetigkeit", "verguetung_darlehen",
                                 "verguetung_ueberlassung"],
         "§35c Sanierung": ["p35c_sanierungsaufwendungen", "p35c_energieberater_aufwendungen"],
-        "KiSt §51a": ["kist_gezahlt", "kist_erstattet"],
         "Kapital §20 Modell-Mismatch": ["kap_gewinn_sonstige", "kap_gewinn_sonstige_partner"],
         "§22 Nr.3 / §23": ["p22_nr3_einkuenfte",
                            "p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten",

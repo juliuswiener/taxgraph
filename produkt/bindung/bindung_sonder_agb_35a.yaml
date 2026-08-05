@@ -16,8 +16,9 @@ bindungen:
     hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung oder deinem Steuerbescheid."
     beispielwert: 60000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Kz E0107601 (E10/SA/KiSt/Gezahlt/Sum) belegt 2026-08-05 am amtlichen E10-2025.xsd. Alte Notiz 'Vordruck-Form-Kz, Spalten-Kontext' war ein Suchfehler: die KiSt-Kz liegen in der SA/KiSt-Sektion, das XSD traegt keine Spalten-Info. Bindung noch offen."
+    # E10/SA/KiSt/Gezahlt/Sum — Summen-Kz. Der Einzelposten (E0108004 + Art E0108003) liegt
+    # unter Gezahlt/Einz; unser Feld ist die Jahressumme, also das Sum-Kz. Belegt 2026-08-05.
+    elster_kz: E0107601
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 4 EStG"
@@ -33,8 +34,8 @@ bindungen:
     hilfe_kurz: "Erstattete Kirchensteuer mindert, was du absetzen kannst. Wenn nichts, gib 0 ein."
     beispielwert: 0
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Kz E0107602 (E10/SA/KiSt/Erstattet) belegt 2026-08-05 am amtlichen E10-2025.xsd. Alte Notiz wie kist_gezahlt. Bindung noch offen."
+    # E10/SA/KiSt/Erstattet — eigener Zweig neben Gezahlt, kein Sum/Einz-Paar. Belegt 2026-08-05.
+    elster_kz: E0107602
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 4b Satz 2 EStG"
