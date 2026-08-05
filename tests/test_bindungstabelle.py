@@ -770,9 +770,9 @@ def test_l_unbekannte_feld_id_in_deklariere():
     }
     ergebnis = EM.deklariere(snapshot, mini_bindung)
 
-    # (1) Bekanntes Feld landet in deklaration
-    assert not ergebnis["unvollstaendig"], (
-        f"Geld-Feld mit Kz darf nicht unvollstaendig sein: {ergebnis['unvollstaendig']}")
+    # (1) Bekanntes Feld landet in deklaration; unbekanntes Feld in unvollstaendig
+    assert len([u for u in ergebnis["unvollstaendig"] if "nicht in der Bindungstabelle" in u.get("grund", "")]) > 0, (
+        f"Unbekanntes Feld muss unvollstaendig ausloesen: {ergebnis['unvollstaendig']}")
     assert "E0000001" in ergebnis["deklaration"], (
         f"Geld-Feld fehlt in Deklaration: {ergebnis['deklaration']}")
 
@@ -781,9 +781,6 @@ def test_l_unbekannte_feld_id_in_deklariere():
     assert any("nicht in der Bindungstabelle" in g for g in nd_gruende), (
         f"Unbekanntes Feld muss 'nicht in der Bindungstabelle' melden: {nd_gruende}")
 
-    # (3) Unbekanntes Feld -> vollstaendig bleibt True (heute)
-    # Beim Umbau: assert ergebnis["vollstaendig"] is False
-    assert ergebnis["vollstaendig"] is True, (
-        f"Ist-Verhalten: unbekanntes Feld darf vollstaendig nicht auf False setzen: "
-        f"{ergebnis['vollstaendig']}. Beim Umstieg auf schaerfere Zusicherung "
-        f"diese Zeile auf is False aendern.")
+    # (3) Unbekanntes Feld -> vollstaendig = False (Verschärfung)
+    assert ergebnis["vollstaendig"] is False, (
+        f"Unbekanntes Feld muss vollstaendig auf False setzen: {ergebnis['vollstaendig']}")

@@ -268,7 +268,9 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             continue
         b = bindung.get(feld_id)
         if b is None:
+            # Instanz-1-Felder (ohne __1-Suffix) werden über _deklariere_instanz geroutet, siehe oben.
             nicht_deklariert.append({"feld_id": feld_id, "grund": "nicht in der Bindungstabelle"})
+            unvollstaendig.append({"feld_id": feld_id, "grund": "Feld nicht in der Bindungstabelle"})
             continue
         getroffen += 1
         # fail-closed (Auflage 3/C): nur bestätigte Werte deklarieren; vorlaeufig/offen -> unvollständig

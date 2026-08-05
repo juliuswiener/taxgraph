@@ -305,7 +305,8 @@ bindungen:
     beispielwert: 8000000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "EÜR-Komponente (§ 4 Abs. 3): Rechen-Input für den Gewinn, kein eigenes Deklarations-Kz — der Gewinn-Kz läuft über gewinn_betriebsart (Klasse-f, Anlage G/S). Die Anlage-EÜR-Zeilen-Kz sind eine eigene Kz-Review-Runde (null-Kz-MVP, wie der ganze §§ 13-18-Bogen)."
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: EÜR-Komponente (Datenart E77, nicht E10). Wert geht in betriebsausgaben-Slot -> EÜR-Gewinn (E0800502)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 4 Abs. 3 S. 1 EStG"
@@ -342,7 +343,8 @@ bindungen:
     beispielwert: 500000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "EÜR-Ausgaben-Summand (§ 7 Abs. 1, als Betriebsausgabe im § 4 Abs. 3-Gewinn): Betriebs-AfA, speist den betriebsausgaben-Slot; kein eigenes Deklarations-Kz (null-Kz-MVP). Distinkt von vv_gebaeude_afa (§ 21 V+V)."
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: EÜR-Ausgaben-Summand (Datenart E77, nicht E10). Wert geht in betriebsausgaben-Slot für den EÜR-Gewinn (E0800502)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 7 Abs. 1 S. 1 EStG"
@@ -554,7 +556,8 @@ bindungen:
     herkunft_slots: null
     elster_kz: null
     kz_status: offen
-    elster_kz_grund: "NICHT 1:1 bindbar — Typ-Unterschied, 2026-08-05 am E10-2025.xsd geprüft. E0190701 (E10/Sonst/Verl_Abz/Vortrag) ist ein JA-FELD (xs:type Ja1BaseCType_RABE): 'Es wurde ein verbleibender Verlustvortrag nach § 10d EStG zum 31.12. festgestellt.' — es erklärt nur DASS ein Vortrag besteht, nicht dessen HÖHE. Unser Feld ist ein cent-Betrag. Den Betrag kennt das FA aus dem eigenen Feststellungsbescheid (§ 10d Abs. 4); das E10 fragt ihn nicht ab. Ein Betrag in ein Ja-Feld geschrieben wäre schema-invalid. Offen bleibt, ob wir E0190701 als abgeleitetes Ja/Nein (bestand > 0) mitgeben sollten — das ist eine Deklarations-Entscheidung, kein Kz-Mapping."
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: Typ-Unterschied. E0190701 ist Ja/Nein-Feld (RABE), unser Feld cent (Betrag). FA kennt Betrag aus Feststellungsbescheid. E10 fragt ihn nicht ab."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10d Abs. 2 S. 1 EStG"

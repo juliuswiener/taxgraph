@@ -58,7 +58,8 @@ bindungen:
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage Unterhalt-Kz — Teilmenge (Einkünfte des Empfängers, NIE additiv zum Welteinkommen). null-MVP."
+    kz_status: endgueltig
+    elster_kz_grund: "Anlage Unterhalt-Kz — Teilmenge (Einkünfte des Empfängers, NIE additiv zum Welteinkommen). Ring-Input, Höchstbetragskürzung § 33a. null-MVP."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33a Abs. 1 S. 5 EStG"
@@ -76,7 +77,8 @@ bindungen:
     beispielwert: 1
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage Unterhalt-Kz — null-MVP. Eltern-Haelftelung (Abs.2 S.4) + Monats-Zwoelftelung (Abs.3) = Stufe-2-Backlog. Stufe-1: User gibt Anzahl KINDDER mit VOLLEM Jahresanspruch."
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: Anzahl (int) als Divisor der HB-Kürzung, kein Betrags-Kz. § 33a Abs. 2 S. 4."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 33a Abs. 2 S. 1 EStG"
