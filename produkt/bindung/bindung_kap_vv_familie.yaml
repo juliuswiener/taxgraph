@@ -476,6 +476,25 @@ bindungen:
       quelle: "§ 32 Abs. 6 S. 12 EStG"
       zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
       datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_geburtsjahr
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: int
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Jahr ist dein Kind geboren?"
+    hilfe_kurz: "Das Geburtsjahr deines Kindes. Wird fuer die Berechnung des Kinderfreibetrags benoetigt."
+    beispielwert: 2015
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: Anlage Kind (§ 32 Abs. 6). E0500701 (E10/Kind/Ang_Kind/Allg) ist ein GeburtsDATUM (vollstaendiger Tag), unser Modell hat nur das JAHR. Typ-Mismatch, nicht bindbar bis volle Datumsangabe existiert."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 1 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
   - feld_id: kind_kindschaftsverhaeltnis_a
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverhaeltnis_elternteil_a}

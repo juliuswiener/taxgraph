@@ -370,6 +370,7 @@ UNERREICHBAR_BEKANNT = {
     "fam_kinder_beruecksichtigt", "fam_kinder_im_haushalt", "kind_idnr",
     "kind_kindschaftsverh_zeitraum_a", "kind_kindschaftsverh_zeitraum_b",
     "kind_kindschaftsverhaeltnis_a", "kind_kindschaftsverhaeltnis_b",
+    "kind_geburtsjahr",
     # § 6 Abs. 2 GWG-Tatbestand — Geltungsbedingungen, nicht erfragt
     "gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250",
     # § 24a — der Accessor leitet das Alter aus geburtsjahr + VZ ab
