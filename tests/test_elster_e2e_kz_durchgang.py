@@ -363,3 +363,122 @@ def test_kvpv_unvollstaendig_ohne_art(base):
     assert len(grund_art) >= 1, (
         f"Fehlende versicherungsart muss in unvollstaendig. "
         f"Grund: {[u['grund'][:60] for u in unvollst]}")
+
+
+# -----------------------------------------------------------------
+# §23 Kz-Durchgang: Grundstueck + anderes WG + Negativ-Probe + Rundung
+# -----------------------------------------------------------------
+
+@pytest.mark.parametrize("typ,typ_wert,kz", [
+    ("grundstueck", "grundstueck", "E0306801"),
+    ("anderes_wg", "anderes_wg", "E0307701"),
+])
+def test_p23_kz_durchgang(base, typ, typ_wert, kz):
+    """§23 Kz: Grundstueck -> E0306801, anderes WG -> E0307701 in Deklaration + XML."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": f"p23-{typ}"})
+    for feld, wert in [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
+        ("p23_veraeusserungspreis", 20000000),
+        ("p23_anschaffung_herstellungskosten", 15000000),
+        ("p23_werbungskosten", 500000),
+        ("p23_veraeusserungs_typ", typ_wert),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+    ]:
+        st, _ = _req(base, "POST", f"/fall/p23-{typ}/event", _laie(feld, wert))
+        assert st == 201
+    st, dekl = _req(base, "GET", f"/fall/p23-{typ}/deklaration")
+    assert st == 200
+    ai = dekl.get("anlage_instanzen", {})
+    p23_inst = ai.get("p23_veraeusserung", [])
+    found = any(kz in inst.get("felder", {}) for inst in p23_inst)
+    assert found, f"§23-Kz {kz} fehlt in anlage_instanzen ({p23_inst})"
+    import importlib
+    spec = importlib.util.spec_from_file_location(
+        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+    EX = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(EX)
+    xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
+    assert kz in xml_str, f"§23-Kz {kz} fehlt im XML fuer {typ}"
+
+
+def test_p23_negativ_typ_fehlt(base):
+    """§23 Negativ-Probe: p23_veraeusserungs_typ unbestätigt -> kein Kz."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": "p23-neg"})
+    for feld, wert in [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
+        ("p23_veraeusserungspreis", 20000000),
+        ("p23_anschaffung_herstellungskosten", 15000000),
+        ("p23_werbungskosten", 500000),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+    ]:
+        _req(base, "POST", "/fall/p23-neg/event", _laie(feld, wert))
+    st, dekl = _req(base, "GET", "/fall/p23-neg/deklaration")
+    assert st == 200
+    result = dekl.get("deklaration", {})
+    ai = dekl.get("anlage_instanzen", {})
+    has_kz_in_inst = any(kz in inst.get("felder", {}) for insts in ai.values() for inst in insts for kz in ("E0306801", "E0307701"))
+    for kz in ["E0306801", "E0307701"]:
+        assert kz not in result, f"§23-Kz {kz} trotz fehlendem p23_veraeusserungs_typ"
+    assert not has_kz_in_inst, "§23-Kz in anlage_instanzen trotz fehlendem Typ"
+    unvollst = dekl.get("unvollstaendig", [])
+    grund_typ = [u for u in unvollst if "p23_veraeusserungs_typ" in u.get("grund", "")]
+    assert len(grund_typ) >= 1, (
+        f"p23 ohne typ muss in unvollstaendig: {[u['grund'][:60] for u in unvollst]}")
+
+
+def test_p23_negativ_gewinn_null(base):
+    """§23 ohne Gewinn (Preis=AK+WK) -> kein Kz (Netto-Gewinn = 0)."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": "p23-null"})
+    for feld, wert in [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
+        ("p23_veraeusserungspreis", 1000000),
+        ("p23_anschaffung_herstellungskosten", 1000000),
+        ("p23_werbungskosten", 0),
+        ("p23_veraeusserungs_typ", "grundstueck"),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+    ]:
+        _req(base, "POST", "/fall/p23-null/event", _laie(feld, wert))
+    st, dekl = _req(base, "GET", "/fall/p23-null/deklaration")
+    assert st == 200
+    result = dekl.get("deklaration", {})
+    ai = dekl.get("anlage_instanzen", {})
+    has_kz = any(kz in inst.get("felder", {}) for insts in ai.values() for inst in insts for kz in ("E0306801", "E0307701"))
+    for kz in ["E0306801", "E0307701"]:
+        assert kz not in result, f"§23-Kz {kz} bei Null-Gewinn in deklaration"
+    assert not has_kz, "§23-Kz bei Null-Gewinn in anlage_instanzen"
+
+
+def test_p23_rundung_beweist_floor(base):
+    """§23-Gewinn 1234567 Cent=12.345,67 EUR -> Wert muss 12345 (floor), nicht 12346 (ceiling).
+    Test laeuft aktuell noch mit ceiling (in _ABZUGS_KZ) -> ROT erwartet.
+    Nach Entfernung aus _ABZUGS_KZ -> GRUEN."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": "p23-rnd"})
+    for feld, wert in [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
+        ("p23_veraeusserungspreis", 1300000),
+        ("p23_anschaffung_herstellungskosten", 65433),
+        ("p23_werbungskosten", 0),
+        ("p23_veraeusserungs_typ", "grundstueck"),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+    ]:
+        st, _ = _req(base, "POST", "/fall/p23-rnd/event", _laie(feld, wert))
+        assert st == 201
+    st, dekl = _req(base, "GET", "/fall/p23-rnd/deklaration")
+    assert st == 200
+    ai = dekl.get("anlage_instanzen", {})
+    p23_inst = ai.get("p23_veraeusserung", [])
+    inst = next((inst for inst in p23_inst if "E0306801" in inst.get("felder", {})), None)
+    assert inst is not None, "E0306801 fehlt in anlage_instanzen trotz Gewinn"
+    value = inst["felder"]["E0306801"]
+    # 1.300.000 - 65.433 = 1.234.567 Cent -> floor = 12345, ceiling = 12346
+    assert value == 1234567 // 100, (
+        f"§23-Rundung falsch: erwartet 12345 (floor), erhalten {value}. "
+        f"Ceiling waere {-(-1234567 // 100)}.")

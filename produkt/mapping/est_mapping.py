@@ -87,6 +87,14 @@ NEGATION = {"fam_alleinstehend": "E0503701"}
 # "2448", keine erkennbare Semantik) und (b) bereits 2026-07-18 explizit abgelehnt (reports/review/
 # 2026-07-18-anlage-kind-kz-kandidaten.md: "≠Haushaltszugehörigkeit"). Bewusste Lücke, kein Vergessen.
 MULTIPLIKATION = ("fam_anzahl_kinder",)
+# §23 private Veraeusserungsgeschaefte: Rohdaten-Felder je Instanz (Ring-Input,
+# kein eigenes Kz). Der per-Instanz-Gewinn wird in deklariere() berechnet
+# und an die Art-Kz (Grundstueck/anderes WG) geroutet.
+P23_BETRAGSFELDER = frozenset({
+    "p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten", "p23_werbungskosten",
+})
+P23_GEWINN = {"art_feld": "p23_veraeusserungs_typ", "kz": {
+    "grundstueck": "E0306801", "anderes_wg": "E0307701"}}
 # Klasse f — Verzweigung: EIN Wert-Slot -> N-Kz je Enum-Wert eines Art-Felds. § 22-Renten: die Anlage-R-
 # Zeile (und damit das Kz) hängt an rentner_renten_art. aa-Basisversorgung (gesetzl/berufsst/basisrente)
 # -> Leibr_gesetzl; bb-Ertragsanteil private/sonstige -> Leibr_priv/Leibr_sonst. Nur DEKLARATION (Kz-Wahl);
@@ -221,6 +229,8 @@ def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, snapsho
             else:
                 nicht_deklariert.append({"feld_id": feld_id,
                                          "grund": f"Instanz-Art '{art['wert']}' ohne Kz-Zweig"})
+    elif basis in P23_BETRAGSFELDER:                     # Klasse h — §23 Rohdaten (still speichern, kein Kz)
+        inst.setdefault("rohdaten", {})[basis] = int(wert)
     elif b.get("elster_kz"):                              # 1:1 je Instanz (Kz-Reuse der Basis)
         inst["felder"][b["elster_kz"]] = _cent_nach_kz(wert, b["elster_kz"]) if b.get("typ") == "cent" else wert
     else:
@@ -310,6 +320,9 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             person_b[PARTNER_INSTANZ[feld_id]] = _cent_nach_kz(wert, PARTNER_INSTANZ[feld_id]) if b.get("typ") == "cent" else wert
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)
             deklaration[b["elster_kz"]] = _cent_nach_kz(wert, b["elster_kz"]) if b.get("typ") == "cent" else wert
+        elif feld_id in P23_BETRAGSFELDER:                  # Klasse h — §23 Instanz-1-Rohdaten: in p23_veraeusserung sammeln
+            anlage_instanzen.setdefault("p23_veraeusserung", {}).setdefault(
+                1, {"index": 1, "felder": {}, "dokumentiert": {}}).setdefault("rohdaten", {})[feld_id] = int(wert)
         else:                                                     # Klasse c (nicht deklariert)
             nicht_deklariert.append({"feld_id": feld_id,
                                      "grund": b.get("elster_kz_grund", "kein elster_kz")})
@@ -325,6 +338,29 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
         if akku:
             dokumentiert[ziel] = {"summe": sum(w for _, w in akku),
                                   "quell_felder": sorted(f for f, _ in akku)}
+
+    # §23 per-Instanz-Gewinn (ALLE p23-Rohdaten sind jetzt gesammelt):
+    # Gewinn = preis - AK/HK - WK (Cent), dann via P23_GEWINN an Kz des Typs.
+    for idx, inst in anlage_instanzen.get("p23_veraeusserung", {}).items():
+        raw = inst.get("rohdaten", {})
+        preis = int(raw.get("p23_veraeusserungspreis", 0))
+        ak = int(raw.get("p23_anschaffung_herstellungskosten", 0))
+        wk = int(raw.get("p23_werbungskosten", 0))
+        gewinn_cent = preis - ak - wk
+        if gewinn_cent == 0:
+            continue
+        art_feld_inst = "p23_veraeusserungs_typ" if idx == 1 else f"p23_veraeusserungs_typ__{idx}"
+        art = snapshot.get(art_feld_inst)
+        if art is None or art.get("zustand") != "bestaetigt":
+            unvollstaendig.append({"feld_id": f"p23_veraeusserung__{idx}",
+                                   "grund": f"{art_feld_inst} unbestätigt — Kz-Zweig offen"})
+            continue
+        kz = P23_GEWINN["kz"].get(art["wert"])
+        if kz:
+            inst["felder"][kz] = _cent_nach_kz(gewinn_cent, kz)
+        else:
+            nicht_deklariert.append({"feld_id": f"p23_veraeusserung__{idx}",
+                                     "grund": f"p23-Typ '{art['wert']}' ohne Kz-Zweig"})
 
     # Klasse INSTANZ: dict-of-dicts -> stabile, index-sortierte Liste je Gruppe (leere dokumentiert-Buckets weg)
     anlage_instanzen_out: dict = {}

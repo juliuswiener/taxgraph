@@ -109,6 +109,11 @@ def _pruefe_differential(felder_snapshot: dict, bindung: dict,
             betraege_ohne_kz += 1
             continue
 
+        # P23_BETRAGSFELDER (Klasse h): Ring-Input, rohdaten in anlage_instanzen, kein Kz an der Basis.
+        if hasattr(est_mapping, "P23_BETRAGSFELDER") and feld_id in est_mapping.P23_BETRAGSFELDER:
+            betraege_ohne_kz += 1
+            continue
+
         # PARTNER_INSTANZ (Klasse g): mapped zu person_b
         if feld_id in est_mapping.PARTNER_INSTANZ:
             kz = est_mapping.PARTNER_INSTANZ[feld_id]

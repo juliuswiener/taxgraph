@@ -169,10 +169,10 @@ def test_zone_b_am_p23(bindung):
     _b(s, "arbeitsmittel_nutzungsdauer", 3)              # int, elster_kz=null → nicht_deklariert
 
     # === ZIEL-FELDER: §23 Veräußerung (instanz_gruppe) ===
-    _b(s, "p23_veraeusserungspreis", 20000000)           # cent, elster_kz=null → nicht_deklariert
-    _b(s, "p23_anschaffung_herstellungskosten", 15000000)  # cent, elster_kz=null → nicht_deklariert
-    _b(s, "p23_werbungskosten", 500000)                  # cent, elster_kz=null → nicht_deklariert
-
+    _b(s, "p23_veraeusserungspreis", 20000000)           # -> E0306801 (per-Instanz-Gewinn)
+    _b(s, "p23_anschaffung_herstellungskosten", 15000000)
+    _b(s, "p23_werbungskosten", 500000)
+    _b(s, "p23_veraeusserungs_typ", "grundstueck")       # steuert Kz
     snap, _ = ST.materialisiere(s)
     result = est_mapping.deklariere(snap, bindung)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)

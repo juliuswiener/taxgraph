@@ -56,11 +56,13 @@ def _verzweigung_ziel_kz() -> set:
 def _transform_quellen() -> set:
     # Klasse f: Wert-Felder (VERZWEIGUNG-Keys) + Art-Felder; Klasse g: die _partner-Felder;
     # Klasse g×f: PARTNER_VERZWEIGUNG-Wert-Felder + deren Partner-Art-Felder (Renten Person-B).
+    # Klasse h: §23 per-Instanz-Gewinnberechnung (verschwinden aus nicht_deklariert).
     verzweigung = set(EM.VERZWEIGUNG) | {cfg["art_feld"] for cfg in EM.VERZWEIGUNG.values()}
     partner_verzweigung = (set(EM.PARTNER_VERZWEIGUNG)
                            | {cfg["art_feld"] for cfg in EM.PARTNER_VERZWEIGUNG.values()})
     return (set(EM.NEGATION) | set(EM.MULTIPLIKATION) | EM._aggregation_quellen()
-            | verzweigung | set(EM.PARTNER_INSTANZ) | partner_verzweigung)
+            | verzweigung | set(EM.PARTNER_INSTANZ) | partner_verzweigung
+            | EM.P23_BETRAGSFELDER)
 
 
 def _erlaubte_kz(merged: dict) -> set:
