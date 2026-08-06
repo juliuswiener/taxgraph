@@ -151,11 +151,6 @@ def defekte(reg: dict) -> list[dict]:
             if it.get("triage") == "defekt_formalisierer"]
 
 
-def registrierte_bedingungen(reg: dict) -> set[str]:
-    return {it["bedingung"] for it in reg.get("items", [])
-            if it.get("triage") == "bedingung_neu" and it.get("bedingung")}
-
-
 def geltungsbereich_gate(reg: dict, rule: dict) -> "G.GateResult":
     """Deterministisch: jedes registrierte wirkt_hinein-Item ist abgedeckt.
 

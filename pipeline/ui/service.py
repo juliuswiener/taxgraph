@@ -46,10 +46,6 @@ def _rules_list() -> list[dict]:
     return list(d.get("regeln", []))
 
 
-def alle_regeln() -> list[dict]:
-    return _rules_list()
-
-
 def get_rule(rule_id: str) -> dict | None:
     for r in _rules_list():
         if r.get("rule_id") == rule_id:

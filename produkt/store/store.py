@@ -89,20 +89,6 @@ def lade(pfad: str) -> dict:
         return yaml.safe_load(f)
 
 
-def speichere(pfad: str, store: dict) -> None:
-    import yaml
-    d = os.path.dirname(pfad) or "."
-    os.makedirs(d, exist_ok=True)
-    tmp = tempfile.NamedTemporaryFile("w", dir=d, delete=False, encoding="utf-8", suffix=".tmp")
-    try:
-        yaml.safe_dump(store, tmp, allow_unicode=True, sort_keys=False)
-        tmp.flush()
-        os.fsync(tmp.fileno())
-    finally:
-        tmp.close()
-    os.replace(tmp.name, pfad)
-
-
 # ------------------------------------------------------------------ DER Schreibpfad
 
 def _aktives(store: dict) -> dict:

@@ -81,11 +81,6 @@ def _fixwert(feld_id: str, snapshot: dict, b: dict):
     return NICHT_FIXIERBAR
 
 
-def _unsicher(feld_id: str, snapshot: dict) -> bool:
-    cur = snapshot.get(feld_id)
-    return cur is None or cur.get("zustand") == "vorlaeufig"
-
-
 def intervall(snapshot: dict, bindung: dict, bescheid_fn, *, cap: int = CAP_DEFAULT,
               snapshot_id: str | None = None) -> dict:
     """snapshot: {feld_id -> {wert, zustand, herkunft}}. bindung: {feld_id -> bindungs-Eintrag}.

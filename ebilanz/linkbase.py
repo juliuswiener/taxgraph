@@ -109,26 +109,6 @@ def parse_concepts_xsd(path: str) -> set:
     return names
 
 
-def parse_presentation_parents(path: str, prefix: str = "de-gaap-ci_") -> dict:
-    """child-concept -> parent-concept (aus presentationArc + loc-Aufloesung)."""
-    root = ET.parse(path).getroot()
-    loc: dict = {}
-    arcs: list = []
-    for el in root.iter():
-        tag = el.tag.split("}")[-1]
-        if tag == "loc":
-            loc[el.get(_q(XLINK, "label"))] = _concept_from_href(
-                el.get(_q(XLINK, "href")), prefix)
-        elif tag == "presentationArc":
-            arcs.append((el.get(_q(XLINK, "from")), el.get(_q(XLINK, "to"))))
-    out: dict = {}
-    for frm, to in arcs:
-        p, c = loc.get(frm), loc.get(to)
-        if p and c:
-            out.setdefault(c, p)
-    return out
-
-
 def categorize(refmap: dict) -> dict:
     """fiscalRequirement-Kategorie -> Menge der Concepts."""
     cat: dict = {}
