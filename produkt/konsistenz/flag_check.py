@@ -31,12 +31,7 @@ FLAG_NEGIERT = {
 }
 
 
-def _bestaetigt_wert(snapshot: dict, feld_id: str):
-    """Wert eines Felds nur, wenn es bestätigt vorliegt (sonst None — vorlaeufig zählt nicht als Beleg)."""
-    f = snapshot.get(feld_id)
-    if f is None or f.get("zustand") != "bestaetigt":
-        return None
-    return f.get("wert")
+from _helpers import _bestaetigt_wert
 
 
 def flag_widersprueche(snapshot: dict) -> list:

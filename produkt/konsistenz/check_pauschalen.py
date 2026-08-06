@@ -13,6 +13,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from _helpers import _bestaetigt_wert
+
+
 PAUSCHAL_CHECKS: tuple[dict[str, Any], ...] = (
     {
         "id": "sparer_pb",
@@ -43,19 +46,13 @@ PAUSCHAL_CHECKS: tuple[dict[str, Any], ...] = (
 
 def _bestaetigt_wert_gt0(snapshot: dict, feld_id: str) -> bool:
     """True wenn Feld bestätigt und Wert > 0."""
-    f = snapshot.get(feld_id)
-    if f is None or f.get("zustand") != "bestaetigt":
-        return False
-    w = f.get("wert")
+    w = _bestaetigt_wert(snapshot, feld_id)
     return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
 
 
 def _pauschal_feld_ist_leer(snapshot: dict, feld_id: str) -> bool:
     """True wenn Feld fehlt, unbestätigt oder Wert == 0/False/None."""
-    f = snapshot.get(feld_id)
-    if f is None or f.get("zustand") != "bestaetigt":
-        return True
-    w = f.get("wert")
+    w = _bestaetigt_wert(snapshot, feld_id)
     # 0, False, None, "" gelten als leer
     if w is None or w is False or w == 0:
         return True
