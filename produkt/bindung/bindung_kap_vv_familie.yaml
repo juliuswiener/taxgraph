@@ -498,13 +498,14 @@ bindungen:
   - feld_id: kind_kindschaftsverhaeltnis_a
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverhaeltnis_elternteil_a}
-    typ: text
+    typ: enum
+    enum_werte: ["1", "2", "3"]
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "In welchem Verhältnis steht das Kind zu dir (z. B. leibliches Kind, Adoptivkind, Pflegekind)?"
-    hilfe_kurz: "Gib an, wie das Kind mit dir verwandt ist. 'Leiblich' heißt dein eigenes Kind."
-    beispielwert: "leibliches Kind"
+    fragetext_laie: "In welchem Verhältnis steht das Kind zu dir? 1 = leibliches Kind/Adoptivkind, 2 = Pflegekind, 3 = Enkelkind/Stiefkind"
+    hilfe_kurz: "1 = leibliches Kind/Adoptivkind, 2 = Pflegekind, 3 = Enkelkind/Stiefkind"
+    beispielwert: "1"
     herkunft_slots: null
     elster_kz: E0500807
     vz_gueltigkeit: [2024, 2025, 2026]
@@ -515,13 +516,14 @@ bindungen:
   - feld_id: kind_kindschaftsverhaeltnis_b
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverhaeltnis_elternteil_b}
-    typ: text
+    typ: enum
+    enum_werte: ["1", "2", "3"]
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "In welchem Verhältnis steht das Kind zur zweiten Person (z. B. leibliches Kind, Adoptivkind, Pflegekind)?"
-    hilfe_kurz: "Bei gemeinsamer Erklärung: das Verhältnis des Kindes zur zweiten Person, etwa dem Ehe- oder Lebenspartner."
-    beispielwert: "leibliches Kind"
+    fragetext_laie: "In welchem Verhältnis steht das Kind zur zweiten Person? 1 = leibliches Kind/Adoptivkind, 2 = Pflegekind, 3 = Enkelkind/Stiefkind"
+    hilfe_kurz: "1 = leibliches Kind/Adoptivkind, 2 = Pflegekind, 3 = Enkelkind/Stiefkind"
+    beispielwert: "1"
     herkunft_slots: null
     elster_kz: E0500808
     vz_gueltigkeit: [2024, 2025, 2026]
@@ -537,8 +539,8 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "In welchem Zeitraum dieses Jahr bestand das Verhältnis zwischen dir und dem Kind (von – bis)?"
-    hilfe_kurz: "Meist das ganze Jahr. Nur bei Geburt, Adoption oder Wegfall im Jahr den genauen Zeitraum angeben."
-    beispielwert: "01.01.2025 - 31.12.2025"
+    hilfe_kurz: "Meist das ganze Jahr. Nur bei Geburt, Adoption oder Wegfall im Jahr den genauen Zeitraum angeben. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
     herkunft_slots: null
     elster_kz: E0500601
     vz_gueltigkeit: [2024, 2025, 2026]
@@ -554,8 +556,8 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "In welchem Zeitraum dieses Jahr bestand das Verhältnis zwischen der zweiten Person und dem Kind (von – bis)?"
-    hilfe_kurz: "Bei gemeinsamer Erklärung: der Zeitraum für die zweite Person. Meist das ganze Jahr."
-    beispielwert: "01.01.2025 - 31.12.2025"
+    hilfe_kurz: "Bei gemeinsamer Erklärung: der Zeitraum für die zweite Person. Meist das ganze Jahr. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
     herkunft_slots: null
     elster_kz: E0500805
     vz_gueltigkeit: [2024, 2025, 2026]
