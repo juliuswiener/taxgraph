@@ -50,15 +50,36 @@ def _catala_da() -> bool:
         return False
 
 
-def _req(base: str, method: str, path: str, body: dict | None = None):
+def _req(base: str, method: str, path: str, body: dict | None = None,
+         erwarte: int | None = None):
+    """HTTP-Request mit optionalem Status-Check.
+
+    Prüft selbst:
+    - 5xx → AssertionError (nie unterdrückbar)
+    - 4xx → AssertionError, es sei denn `erwarte=<code>` ist gesetzt
+    - 2xx → durch
+    - erwarte=N → assert status == N
+    """
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(base + path, data=data, method=method,
                                  headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status, json.loads(r.read())
+            status = r.status
+            content = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read())
+        status = e.code
+        content = json.loads(e.read())
+    if erwarte is not None:
+        assert status == erwarte, (
+            f"erwarte={erwarte}, erhalten={status} {method} {path} {body}")
+    elif status >= 500:
+        raise AssertionError(
+            f"Serverfehler {status} {method} {path} {body}: {content}")
+    elif status >= 400:
+        raise AssertionError(
+            f"Fehler {status} {method} {path} {body}: {content}")
+    return status, content
 
 
 def _laie(fld, w):
@@ -104,8 +125,7 @@ def test_bindet_nur_localhost():
 def test_chat_501(base):
     """Auflage A: POST /chat liefert 501 mit erklärendem Vertrag, NIE 200."""
     _req(base, "POST", "/fall", {"scheibe": "ep", "veranlagungszeitraum": 2025, "fall_id": "c1"})
-    st, b = _req(base, "POST", "/fall/c1/chat", {"text": "hallo"})
-    assert st == 501, f"chat muss 501 sein, war {st}"
+    st, b = _req(base, "POST", "/fall/c1/chat", {"text": "hallo"}, erwarte=501)
     assert "vertrag" in b and "stufe" in b
     assert b.get("fehler") == "not_implemented"
 
@@ -115,16 +135,14 @@ def test_entfernung_kein_key_fallback(base, monkeypatch):
     Eingabe, NIE Crash, NIE Fake-km. Kein Live-Aufruf (der Client wirft OrsNichtVerfuegbar ohne Key)."""
     monkeypatch.delenv("ORS_API_KEY", raising=False)
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "ent1"})
-    st, b = _req(base, "POST", "/fall/ent1/entfernung", {"von": "A-Str 1, Berlin", "nach": "B-Weg 2, Berlin"})
-    assert st == 503, f"ohne Key muss der Fallback 503 sein, war {st}"
+    st, b = _req(base, "POST", "/fall/ent1/entfernung", {"von": "A-Str 1, Berlin", "nach": "B-Weg 2, Berlin"}, erwarte=503)
     assert b.get("fehler") == "unavailable" and "vertrag" in b
 
 
 def test_entfernung_leere_adressen_400(base):
     """Ohne beide Adressen → 400 (kein Aufruf)."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "ent2"})
-    st, _ = _req(base, "POST", "/fall/ent2/entfernung", {"von": "", "nach": "irgendwo"})
-    assert st == 400
+    st, _ = _req(base, "POST", "/fall/ent2/entfernung", {"von": "", "nach": "irgendwo"}, erwarte=400)
 
 
 def test_entfernung_erfolg_provenance(base, monkeypatch):
@@ -154,8 +172,7 @@ def test_entfernung_unerwarteter_bug_propagiert_nicht_503(base, monkeypatch):
         raise ValueError("unerwarteter Bug, keine ORS-Nichtverfügbarkeit")
     monkeypatch.setattr(ors_client, "entfernung_km", _bug)
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "ent4"})
-    st, b = _req(base, "POST", "/fall/ent4/entfernung", {"von": "Musterstr 1, Berlin", "nach": "Beispielweg 2, Berlin"})
-    assert st == 500, f"unerwarteter Bug darf NICHT als 503-Fallback geschluckt werden, war {st}"
+    st, b = _req(base, "POST", "/fall/ent4/entfernung", {"von": "Musterstr 1, Berlin", "nach": "Beispielweg 2, Berlin"}, erwarte=500)
     assert "ValueError" in b.get("fehler", "")
 
 
@@ -178,8 +195,7 @@ def test_vorjahr_uebernahme(base):
 def test_vorjahr_fehlender_fall_404(base):
     """Übernahme aus einem nicht existierenden Vorjahres-Fall → 404 (kein stiller No-Op)."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "neu2"})
-    st, _ = _req(base, "POST", "/fall/neu2/vorjahr", {"vorjahr_fall_id": "gibtsnicht"})
-    assert st == 404
+    st, _ = _req(base, "POST", "/fall/neu2/vorjahr", {"vorjahr_fall_id": "gibtsnicht"}, erwarte=404)
 
 
 def test_kontoauszug_csv_vorsorge_vorschlag(base):
@@ -200,8 +216,7 @@ def test_kontoauszug_csv_vorsorge_vorschlag(base):
 def test_kontoauszug_pdf_ungueltiges_base64_400(base):
     """PDF-Inhalt muss base64-kodiert sein (roher PDF-Text ist es nicht) → 400, nie Crash/Fake."""
     _req(base, "POST", "/fall", {"scheibe": "an_gesamt", "veranlagungszeitraum": 2025, "fall_id": "kap"})
-    st, b = _req(base, "POST", "/fall/kap/kontoauszug", {"format": "pdf", "inhalt": "%PDF-1.4 ..."})
-    assert st == 400
+    st, b = _req(base, "POST", "/fall/kap/kontoauszug", {"format": "pdf", "inhalt": "%PDF-1.4 ..."}, erwarte=400)
 
 
 def test_kontoauszug_json_liste(base):
@@ -351,8 +366,7 @@ def test_fail_closed_llm_kann_nicht_bestaetigen(base):
     boese = {"feld_id": "ep_arbeitstage", "wert": 220, "zustand": "bestaetigt",
              "herkunft": {"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
              "schreiber": "llm:chat", "signal": {"signal_1": None, "signal_2": "gefaelscht"}}
-    st, b = _req(base, "POST", "/fall/f1/event", boese)
-    assert st == 422, f"llm-bestaetigt muss abgewiesen werden, war {st}"
+    st, b = _req(base, "POST", "/fall/f1/event", boese, erwarte=422)
     assert "fail-closed" in b["fehler"]
 
 
@@ -1717,8 +1731,7 @@ def test_gesamt_multi_objekt_schreibpfad_akzeptiert_instanz(base):
     _gesamt_anlegen(base, "mos", _gesamt_kegel(3000000))
     st, _ = _req(base, "POST", "/fall/mos/event", _laie("vv_einnahmen__2", 1500000))
     assert st == 201                                   # vv_einnahmen ist instanz_gruppe:vv_objekt -> ok
-    st, _ = _req(base, "POST", "/fall/mos/event", _laie("bruttoarbeitslohn__2", 1000000))
-    assert st == 400                                   # bruttoarbeitslohn NICHT instanz-fähig -> abgewiesen
+    st, _ = _req(base, "POST", "/fall/mos/event", _laie("bruttoarbeitslohn__2", 1000000), erwarte=400)
 
 
 def test_gesamt_p21_2_verbilligt_kuerzung(base):
@@ -3290,9 +3303,8 @@ def test_gesamt_p33b_partner_gdb_zusammenveranlagung(base):
     catala = _catala_da()
 
     # Fall 1: Zusammenveranlagung, beide GdB 50
-    kegel = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True) + _AFA_UEBERNACHTUNG
+    kegel = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True, veranlagung="zusammen") + _AFA_UEBERNACHTUNG
     _gesamt_anlegen(base, "p33b-zuzam", kegel)
-    _req(base, "POST", "/fall/p33b-zuzam/event", _laie("veranlagung", "zusammen"))
     _req(base, "POST", "/fall/p33b-zuzam/event", _laie("bruttoarbeitslohn_partner", 3000000))
     _req(base, "POST", "/fall/p33b-zuzam/event", _laie("rentner_grad_der_behinderung", 50))
     _req(base, "POST", "/fall/p33b-zuzam/event", _laie("rentner_grad_der_behinderung_partner", 50))
@@ -3301,9 +3313,8 @@ def test_gesamt_p33b_partner_gdb_zusammenveranlagung(base):
     steuern_zuzam = erg_zuzam["zahl_cent"]
 
     # Fall 2: Zusammenveranlagung, nur Person A GdB 50
-    kegel_a = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True) + _AFA_UEBERNACHTUNG
+    kegel_a = _gesamt_kegel(0, bruttolohn=5000000, kein_vuv=True, veranlagung="zusammen") + _AFA_UEBERNACHTUNG
     _gesamt_anlegen(base, "p33b-a-nur", kegel_a)
-    _req(base, "POST", "/fall/p33b-a-nur/event", _laie("veranlagung", "zusammen"))
     _req(base, "POST", "/fall/p33b-a-nur/event", _laie("bruttoarbeitslohn_partner", 3000000))
     _req(base, "POST", "/fall/p33b-a-nur/event", _laie("rentner_grad_der_behinderung", 50))
     st, erg_a = _req(base, "GET", "/fall/p33b-a-nur/ergebnis")

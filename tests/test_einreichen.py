@@ -25,20 +25,42 @@ import api as API        # noqa: E402
 import server as SRV     # noqa: E402
 
 
-def _req(base: str, method: str, path: str, body: dict | None = None):
+def _req(base: str, method: str, path: str, body: dict | None = None,
+         erwarte: int | None = None):
+    """HTTP-Request mit optionalem Status-Check.
+
+    Prüft selbst:
+    - 5xx → AssertionError (nie unterdrückbar)
+    - 4xx → AssertionError, es sei denn `erwarte=<code>` ist gesetzt
+    - 2xx → durch
+    - erwarte=N → assert status == N
+    """
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(base + path, data=data, method=method,
                                  headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
-            return r.status, json.loads(r.read())
+            status = r.status
+            content = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read())
+        status = e.code
+        content = json.loads(e.read())
+    if erwarte is not None:
+        assert status == erwarte, (
+            f"erwarte={erwarte}, erhalten={status} {method} {path} {body}")
+    elif status >= 500:
+        raise AssertionError(
+            f"Serverfehler {status} {method} {path} {body}: {content}")
+    elif status >= 400:
+        raise AssertionError(
+            f"Fehler {status} {method} {path} {body}: {content}")
+    return status, content
 
 
 def _laie(fld, w):
     return {"feld_id": fld, "wert": w, "zustand": "bestaetigt",
             "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "schreiber": "ui:laie",
             "signal": {"signal_1": {"typ": "laie_eingabe"}, "signal_2": "laie_bestaetigt"}}
 
 
@@ -69,20 +91,18 @@ def _fall(base, scheibe="an_gesamt", vz=2025):
 def test_leerer_fall_wird_nicht_eingereicht(base):
     """Ohne bestätigte Pflichtfelder ist die Deklaration unvollständig → 409, kein XML."""
     fid = _fall(base)
-    st, r = _req(base, "POST", f"/fall/{fid}/einreichen", {})
-    assert st in (409, 422), r
+    st, r = _req(base, "POST", f"/fall/{fid}/einreichen", {}, erwarte=422)
     assert r["eingereicht"] is False
 
 
 def test_unbekannter_fall_404(base):
-    st, r = _req(base, "POST", "/fall/gibtsnicht/einreichen", {})
-    assert st == 404, r
+    st, r = _req(base, "POST", "/fall/gibtsnicht/einreichen", {}, erwarte=404)
 
 
 def test_antwort_behauptet_nie_versand(base):
     """Egal welcher Ausgang — 'eingereicht' ist immer False, solange Versand nicht verdrahtet ist."""
     fid = _fall(base)
-    st, r = _req(base, "POST", f"/fall/{fid}/einreichen", {})
+    st, r = _req(base, "POST", f"/fall/{fid}/einreichen", {}, erwarte=422)
     assert r.get("eingereicht") is False
     assert "versendet" not in json.dumps(r).lower()
 
@@ -90,19 +110,30 @@ def test_antwort_behauptet_nie_versand(base):
 def test_grund_ist_maschinenlesbar(base):
     """Fehlerantworten tragen einen stabilen grund-Code, nicht nur Prosa."""
     fid = _fall(base)
-    _st, r = _req(base, "POST", f"/fall/{fid}/einreichen", {})
+    _st, r = _req(base, "POST", f"/fall/{fid}/einreichen", {}, erwarte=422)
     assert r["grund"] in {"deklaration_unvollstaendig", "xml_nicht_baubar",
                           "eric_nicht_verfuegbar", "plausibilitaet_verletzt"}
 
 
 def test_unvollstaendig_nennt_die_offenen_felder(base):
-    """409 muss sagen WELCHES Feld fehlt — sonst ist die Antwort für den Nutzer wertlos."""
+    """409 muss sagen WELCHES Feld fehlt — sonst ist die Antwort für den Nutzer wertlos.
+
+    Der Wert wird VORLAEUFIG gesetzt (Zwei-Signal unvollständig): nur dann ist die
+    Deklaration unvollständig. Ein bestätigter bruttoarbeitslohn macht sie vollständig,
+    der Lauf käme bis zum XML-Bau und stürbe dort an der fehlenden Hersteller-ID — der
+    Test hätte seine eigene Prämisse nie hergestellt und 409 nie gesehen.
+    """
     fid = _fall(base)
-    _req(base, "POST", f"/fall/{fid}/event", _laie("bruttoarbeitslohn", 4500000))
-    st, r = _req(base, "POST", f"/fall/{fid}/einreichen", {})
-    if st == 409:
-        assert r["grund"] == "deklaration_unvollstaendig"
-        assert isinstance(r["unvollstaendig"], list)
+    vorlaeufig = dict(_laie("bruttoarbeitslohn", 4500000),
+                      zustand="vorlaeufig",
+                      signal={"signal_1": {"typ": "laie_eingabe"}, "signal_2": None})
+    _req(base, "POST", f"/fall/{fid}/event", vorlaeufig)
+
+    st, r = _req(base, "POST", f"/fall/{fid}/einreichen", {}, erwarte=409)
+    assert r["grund"] == "deklaration_unvollstaendig", r
+    offen = r["unvollstaendig"]
+    assert isinstance(offen, list) and offen, "409 ohne die offenen Felder ist wertlos"
+    assert any(e.get("feld_id") == "bruttoarbeitslohn" for e in offen), offen
 
 
 # ----------------------------------------------------------------- Einheit (ohne HTTP)

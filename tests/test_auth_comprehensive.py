@@ -35,7 +35,16 @@ import store as ST
 
 # ------------------------------------------------------------------ HTTP Helper
 
-def _req(base: str, method: str, path: str, body: dict | None = None, token: str | None = None):
+def _req(base: str, method: str, path: str, body: dict | None = None,
+         token: str | None = None, erwarte: int | None = None):
+    """HTTP-Request mit optionalem Status-Check.
+
+    Prüft selbst:
+    - 5xx → AssertionError (nie unterdrückbar)
+    - 4xx → AssertionError, es sei denn `erwarte=<code>` ist gesetzt
+    - 2xx → durch
+    - erwarte=N → assert status == N
+    """
     data = json.dumps(body).encode("utf-8") if body is not None else None
     headers = {"Content-Type": "application/json"}
     if token:
@@ -43,9 +52,21 @@ def _req(base: str, method: str, path: str, body: dict | None = None, token: str
     req = urllib.request.Request(base + path, data=data, method=method, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status, json.loads(r.read())
+            status = r.status
+            content = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read())
+        status = e.code
+        content = json.loads(e.read())
+    if erwarte is not None:
+        assert status == erwarte, (
+            f"erwarte={erwarte}, erhalten={status} {method} {path} {body}")
+    elif status >= 500:
+        raise AssertionError(
+            f"Serverfehler {status} {method} {path} {body}: {content}")
+    elif status >= 400:
+        raise AssertionError(
+            f"Fehler {status} {method} {path} {body}: {content}")
+    return status, content
 
 # ------------------------------------------------------------------ P1.1 Auth Core (Registration + Login)
 
@@ -81,15 +102,13 @@ class TestAuthCore:
     def test_register_short_password(self, base):
         """Password <8 chars → validation error."""
         status, data = _req(base, "POST", "/auth/register",
-                          {"username": "user", "password": "short"})
-        assert status == 400
+                          {"username": "user", "password": "short"}, erwarte=400)
         assert "password" in data.get("fehler", "")
 
     def test_register_invalid_username(self, base):
         """Username rule violation (first char not letter) → validation error."""
         status, data = _req(base, "POST", "/auth/register",
-                          {"username": "1invalid", "password": "validpassword1"})
-        assert status == 400
+                          {"username": "1invalid", "password": "validpassword1"}, erwarte=400)
         assert "username" in data.get("fehler", "")
 
     def test_register_duplicate_username(self, base):
@@ -97,8 +116,7 @@ class TestAuthCore:
         _req(base, "POST", "/auth/register",
              {"username": "duplicate", "password": "password1"})
         status, data = _req(base, "POST", "/auth/register",
-                          {"username": "duplicate", "password": "another123"})
-        assert status == 409
+                          {"username": "duplicate", "password": "another123"}, erwarte=409)
         assert "existiert" in data.get("fehler", "") or "bereits" in data.get("fehler", "")
 
     # ------------------------------------------------------------------ Login
@@ -117,14 +135,12 @@ class TestAuthCore:
         _req(base, "POST", "/auth/register",
              {"username": "pwdtest", "password": "correct123"})
         status, data = _req(base, "POST", "/auth/login",
-                          {"username": "pwdtest", "password": "wrong123"})
-        assert status == 401
+                          {"username": "pwdtest", "password": "wrong123"}, erwarte=401)
 
     def test_login_nonexistent_user(self, base):
         """Nonexistent username → authentication failure."""
         status, data = _req(base, "POST", "/auth/login",
-                          {"username": "nonexistent", "password": "anypassword1"})
-        assert status == 401
+                          {"username": "nonexistent", "password": "anypassword1"}, erwarte=401)
 
     # ------------------------------------------------------------------ Security: Token Contents
     def test_token_no_plaintext_password(self, base, monkeypatch):
@@ -243,8 +259,7 @@ class TestAuthorization:
             "/fall/testfall/stand",
         ]
         for path in endpoints:
-            s, _ = _req(base, "GET", path, token=fremd_token)
-            assert s == 403, f"{path} should deny non-owner access"
+            s, _ = _req(base, "GET", path, token=fremd_token, erwarte=403)
 
     def test_no_auth_allowed_for_dev(self, base):
         """No auth header: dev/test path allowed."""
@@ -285,8 +300,7 @@ class TestSessionManagement:
 
     def test_session_invalid_token(self, base):
         """Invalid token → 401."""
-        status, _ = _req(base, "GET", "/auth/session", token="invalid.token.here")
-        assert status == 401
+        status, _ = _req(base, "GET", "/auth/session", token="invalid.token.here", erwarte=401)
 
 # ------------------------------------------------------------------ P1.4 Logout
 
@@ -327,8 +341,7 @@ class TestLogout:
         assert s2 == 200
 
         # Token invalid after logout
-        s3, _ = _req(base, "GET", "/auth/session", token=token)
-        assert s3 == 401
+        s3, _ = _req(base, "GET", "/auth/session", token=token, erwarte=401)
 
 # ------------------------------------------------------------------ P1.6 Audit
 

@@ -31,7 +31,16 @@ import store as ST
 
 # ------------------------------------------------------------------ HTTP Helper
 
-def _req(base: str, method: str, path: str, body: dict | None = None, token: str | None = None):
+def _req(base: str, method: str, path: str, body: dict | None = None,
+         token: str | None = None, erwarte: int | None = None):
+    """HTTP-Request mit optionalem Status-Check.
+
+    Prüft selbst:
+    - 5xx → AssertionError (nie unterdrückbar)
+    - 4xx → AssertionError, es sei denn `erwarte=<code>` ist gesetzt
+    - 2xx → durch
+    - erwarte=N → assert status == N
+    """
     data = json.dumps(body).encode("utf-8") if body is not None else None
     headers = {"Content-Type": "application/json"}
     if token:
@@ -39,9 +48,21 @@ def _req(base: str, method: str, path: str, body: dict | None = None, token: str
     req = urllib.request.Request(base + path, data=data, method=method, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status, json.loads(r.read())
+            status = r.status
+            content = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read())
+        status = e.code
+        content = json.loads(e.read())
+    if erwarte is not None:
+        assert status == erwarte, (
+            f"erwarte={erwarte}, erhalten={status} {method} {path} {body}")
+    elif status >= 500:
+        raise AssertionError(
+            f"Serverfehler {status} {method} {path} {body}: {content}")
+    elif status >= 400:
+        raise AssertionError(
+            f"Fehler {status} {method} {path} {body}: {content}")
+    return status, content
 
 # ------------------------------------------------------------------ Base Fixture
 
@@ -77,14 +98,12 @@ class TestAuthCore:
     def test_register_short_password(self, base):
         """Password <8 chars rejected."""
         status, data = _req(base, "POST", "/auth/register",
-                          {"username": "user", "password": "short"})
-        assert status == 400
+                          {"username": "user", "password": "short"}, erwarte=400)
 
     def test_register_invalid_username(self, base):
         """Invalid username rejected."""
         status, _ = _req(base, "POST", "/auth/register",
-                      {"username": "1invalid", "password": "validpass123"})
-        assert status == 400
+                      {"username": "1invalid", "password": "validpass123"}, erwarte=400)
 
     def test_login_valid(self, base):
         """Valid login returns token."""
@@ -133,8 +152,7 @@ class TestAuthCore:
 
     def test_session_invalid(self, base):
         """Invalid token → 401."""
-        status, _ = _req(base, "GET", "/auth/session", token="invalid.token")
-        assert status == 401
+        status, _ = _req(base, "GET", "/auth/session", token="invalid.token", erwarte=401)
 
     def test_logout_invalidates(self, base):
         """Logout invalidates token."""
@@ -153,8 +171,7 @@ class TestAuthCore:
         assert s2 == 200
 
         # Session invalid after logout
-        s3, _ = _req(base, "GET", "/auth/session", token=token)
-        assert s3 == 401
+        s3, _ = _req(base, "GET", "/auth/session", token=token, erwarte=401)
 
     def test_jwt_secret_not_hardcoded(self):
         """JWT secret is not hardcoded."""
@@ -202,8 +219,7 @@ class TestAuthorization:
             "/fall/testfall/stand",
         ]
         for path in endpoints:
-            s, _ = _req(base, "GET", path, token=fremd_token)
-            assert s == 403
+            s, _ = _req(base, "GET", path, token=fremd_token, erwarte=403)
 
     def test_no_auth_allowed_dev(self, base):
         """No auth header allowed for dev testing."""

@@ -35,15 +35,36 @@ def _val(name: str, obj: dict) -> None:
     jsonschema.Draft202012Validator(_schema(name)).validate(obj)
 
 
-def _req(base: str, method: str, path: str, body: dict | None = None):
+def _req(base: str, method: str, path: str, body: dict | None = None,
+         erwarte: int | None = None):
+    """HTTP-Request mit optionalem Status-Check.
+
+    Prüft selbst:
+    - 5xx → AssertionError (nie unterdrückbar)
+    - 4xx → AssertionError, es sei denn `erwarte=<code>` ist gesetzt
+    - 2xx → durch
+    - erwarte=N → assert status == N
+    """
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(base + path, data=data, method=method,
                                  headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status, json.loads(r.read())
+            status = r.status
+            content = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read())
+        status = e.code
+        content = json.loads(e.read())
+    if erwarte is not None:
+        assert status == erwarte, (
+            f"erwarte={erwarte}, erhalten={status} {method} {path} {body}")
+    elif status >= 500:
+        raise AssertionError(
+            f"Serverfehler {status} {method} {path} {body}: {content}")
+    elif status >= 400:
+        raise AssertionError(
+            f"Fehler {status} {method} {path} {body}: {content}")
+    return status, content
 
 
 def _laie(fld, w):
@@ -152,9 +173,8 @@ def test_fehler_ohne_ersetzt_bleibt_fail_closed(base):
     status, resp = _req(base, "POST", f"/fall/{fall_id}/event", _laie("einkuenfte_gewinn", 65000))
     assert status == 201
 
-    # Zweites Event OHNE ersetzt → sollte 422 sein
-    status, resp2 = _req(base, "POST", f"/fall/{fall_id}/event", _laie("einkuenfte_gewinn", 70000))
-    assert status == 422, f"Sollte 422 sein, aber war {status}: {resp2}"
+    # Zweites Event OHNE ersetzt → sollte 422 sein (geprüft via erwarte=422)
+    _, resp2 = _req(base, "POST", f"/fall/{fall_id}/event", _laie("einkuenfte_gewinn", 70000), erwarte=422)
 
 
 def test_ersetzt_mit_event_id_erlaubt_ueberschreiben(base):

@@ -45,16 +45,36 @@ def base(tmp_path, monkeypatch):
         srv.server_close()
 
 
-def _req(base: str, method: str, path: str, body: dict | None = None):
-    """HTTP request (urllib fallback für Seiten-State)."""
+def _req(base: str, method: str, path: str, body: dict | None = None,
+         erwarte: int | None = None):
+    """HTTP request (urllib fallback für Seiten-State).
+
+    Prüft selbst:
+    - 5xx → AssertionError (nie unterdrückbar)
+    - 4xx → AssertionError, es sei denn `erwarte=<code>` ist gesetzt
+    - 2xx → durch
+    - erwarte=N → assert status == N
+    """
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(base + path, data=data, method=method,
                                  headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status, json.loads(r.read())
+            status = r.status
+            content = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read())
+        status = e.code
+        content = json.loads(e.read())
+    if erwarte is not None:
+        assert status == erwarte, (
+            f"erwarte={erwarte}, erhalten={status} {method} {path} {body}")
+    elif status >= 500:
+        raise AssertionError(
+            f"Serverfehler {status} {method} {path} {body}: {content}")
+    elif status >= 400:
+        raise AssertionError(
+            f"Fehler {status} {method} {path} {body}: {content}")
+    return status, content
 
 
 def _laie(fld, w):

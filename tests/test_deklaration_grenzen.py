@@ -44,15 +44,36 @@ def _vorl(fld, w):
             "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": None}}
 
 
-def _req(base: str, method: str, path: str, body: dict | None = None):
+def _req(base: str, method: str, path: str, body: dict | None = None,
+         erwarte: int | None = None):
+    """HTTP-Request mit optionalem Status-Check.
+
+    Prüft selbst:
+    - 5xx → AssertionError (nie unterdrückbar)
+    - 4xx → AssertionError, es sei denn `erwarte=<code>` ist gesetzt
+    - 2xx → durch
+    - erwarte=N → assert status == N
+    """
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(base + path, data=data, method=method,
                                  headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status, json.loads(r.read())
+            status = r.status
+            content = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read())
+        status = e.code
+        content = json.loads(e.read())
+    if erwarte is not None:
+        assert status == erwarte, (
+            f"erwarte={erwarte}, erhalten={status} {method} {path} {body}")
+    elif status >= 500:
+        raise AssertionError(
+            f"Serverfehler {status} {method} {path} {body}: {content}")
+    elif status >= 400:
+        raise AssertionError(
+            f"Fehler {status} {method} {path} {body}: {content}")
+    return status, content
 
 
 @pytest.fixture
@@ -159,14 +180,10 @@ def test_gesperrter_fall_einreichen_mit_sperrgrund(base):
     # hh_handwerker_keine_foerderung NICHT setzen → Sperrung
 
     # /einreichen aufrufen
-    st, resp = _req(base, "POST", f"/fall/sp1/einreichen", {"empfaenger_land": "BY"})
+    st, resp = _req(base, "POST", f"/fall/sp1/einreichen", {"empfaenger_land": "BY"}, erwarte=409)
 
     # MUSS 409 sein mit unserem Sperrgrund (handwerker_foerderung_offen),
     # NICHT 422 mit ERiCs plausibilitaet_verletzt
-    assert st == 409, (
-        f"Gesperrter Fall sollte 409 sein, got {st}. "
-        "Sperrgrund muss VOR XML-Bauversuch prüft werden."
-    )
     assert resp.get("grund") == "handwerker_foerderung_offen", (
         f"Grund sollte handwerker_foerderung_offen, got {resp.get('grund')}. "
         "Nutzer bekommt falschen Grund (plausibilitaet_verletzt) statt echten (Förderung vergessen)."
