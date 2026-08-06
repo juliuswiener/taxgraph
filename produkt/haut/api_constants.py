@@ -154,9 +154,14 @@ SCHULGELD = ("schulgeld",)
 # ========== § 10 Abs.1 Nr.3 S.2 KV/PV-Beiträge des Kindes ==========
 KIND_KV_PV = ("kind_kv", "kind_pv", "kind_idnr")
 
+# ========== § 33b Abs.5 Kind-PB-Übertragung ==========
+KIND_PB_UEBERTRAGUNG = ("kind_grad_der_behinderung", "kind_hilflos_blind_taubblind",
+                        "kind_hinterbliebenen_uebertragung",
+                        "kind_behinderten_pb_antrag", "kind_pb_nicht_selbst_genutzt")
+
 # ========== Gefaltete Sonder-Abzüge (Weg ii) ==========
 GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
-                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST + KINDERBETREUUNG + SCHULGELD + KIND_KV_PV)
+                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST + KINDERBETREUUNG + SCHULGELD + KIND_KV_PV + KIND_PB_UEBERTRAGUNG)
 
 # ========== RENTNER_FELDER — ZWEITE ÄNDERUNG (Z.218 api.py) ==========
 RENTNER_FELDER = RENTNER_FELDER + GESAMT_ABZUEGE
@@ -431,7 +436,7 @@ __all__ = [
     # Rentner Gewinn
     "RENTNER_GEWINN", "RENTNER_KEGEL",
     # Abzüge
-    "HAUSHALT_35A_ABS23", "HAUSHALT_35A", "P35A_MITVER_ANZEIGE", "AGB_KIST", "KINDERBETREUUNG", "SCHULGELD", "KIND_KV_PV", "GESAMT_ABZUEGE",
+    "HAUSHALT_35A_ABS23", "HAUSHALT_35A", "P35A_MITVER_ANZEIGE", "AGB_KIST", "KINDERBETREUUNG", "SCHULGELD", "KIND_KV_PV", "KIND_PB_UEBERTRAGUNG", "GESAMT_ABZUEGE",
     # Freibeträge
     "GESAMT_FREIBETRAEGE",
     # DBA

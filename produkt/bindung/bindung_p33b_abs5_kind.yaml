@@ -1,0 +1,130 @@
+# Bindungstabelle — §33b Abs.5 EStG Übertragung des Kind-Pauschbetrags (Stufe-1, Tier-0).
+# PER-KIND: Kz E0505809/E0505807/E0505805 sitzen im Kind-Container (Ueb_PB_Beh_Hbl),
+# Ring liest per EM.instanzen.
+# S.1: "Steht der Behinderten-Pauschbetrag oder der Hinterbliebenen-Pauschbetrag einem Kind
+# zu, für das der Steuerpflichtige Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf
+# Kindergeld hat, so wird der Pauschbetrag auf Antrag auf den Steuerpflichtigen übertragen,
+# wenn ihn das Kind nicht in Anspruch nimmt."
+# S.5: "Voraussetzung für die Übertragung nach Satz 1 ist die Angabe der erteilten
+# Identifikationsnummer (§ 139b der Abgabenordnung) des Kindes in der
+# Einkommensteuererklärung des Steuerpflichtigen."
+# STUFE 1: OHNE S.4-Ausschluss (agb_aufwendungen nicht nach Aufwandsart getrennt).
+# S.4: "In diesen Fällen besteht für Aufwendungen, für die der Behinderten-Pauschbetrag
+# gilt, kein Anspruch auf eine Steuerermäßigung nach § 33."
+# → Benannte Lücke (siehe luecken), Under-tax-Risiko: Nutzer könnte PB + dieselben
+# Aufwendungen über § 33 geltend machen. Fragetexte weisen darauf hin.
+version: 1
+scheibe: "Kind-PB-Übertragung (p33b_abs5)"
+
+bindungen:
+  - feld_id: kind_grad_der_behinderung
+    instanz_gruppe: kind
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33b_behinderten_pauschbetrag, signatur_slot: grad_der_behinderung}
+    typ: int
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    bereich: {min: 20, max: 100, grund: "Grad der Behinderung (GdB) amtlich 20..100 in 10er-Schritten"}
+    fragetext_laie: "Welchen Grad der Behinderung hat dein Kind (eine Zahl zwischen 20 und 100)?"
+    hilfe_kurz: "Steht im Feststellungsbescheid oder Schwerbehindertenausweis des Kindes. Je höher der Grad, desto höher der Pauschbetrag."
+    beispielwert: 50
+    herkunft_slots: null
+    elster_kz: E0505809
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 5 S. 1 i.V.m. Abs. 3 S. 2 EStG"
+      zitatanker: "Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: kind_hilflos_blind_taubblind
+    instanz_gruppe: kind
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33b_behinderten_pauschbetrag, signatur_slot: ist_hilflos_blind_taubblind}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Ist dein Kind hilflos, blind oder taubblind (Merkzeichen H, Bl oder TBl im Ausweis)?"
+    hilfe_kurz: "Mit einem dieser Merkzeichen bekommt dein Kind den höchsten Pauschbetrag (7.400 EUR), unabhängig vom Grad der Behinderung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0505807
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 5 S. 1 i.V.m. Abs. 3 S. 3 EStG"
+      zitatanker: "Menschen, die hilflos im Sinne des Satzes 4 sind, Blinde und Taubblinde erhalten einen Pauschbetrag von 7 400 Euro"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: kind_hinterbliebenen_uebertragung
+    instanz_gruppe: kind
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33b_hinterbliebenen_pauschbetrag, signatur_slot: hat_hinterbliebenenbezuege}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Soll der Hinterbliebenen-Pauschbetrag für dein Kind auf dich übertragen werden (370 EUR)?"
+    hilfe_kurz: "Das Kind muss laufende Hinterbliebenenbezüge erhalten (z.B. Witwen-/Waisenrente). Der Pauschbetrag von 370 EUR wird dann auf dich übertragen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0505805
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 5 S. 1 i.V.m. Abs. 4 EStG"
+      zitatanker: "Personen, denen laufende Hinterbliebenenbezüge bewilligt worden sind, erhalten auf Antrag einen Pauschbetrag von 370 Euro"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: kind_behinderten_pb_antrag
+    instanz_gruppe: kind
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33b_abs5_kind_uebertragung, signatur_slot: kind_behinderten_pb_antrag}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Beantragst du die Übertragung des Behinderten-Pauschbetrags oder Hinterbliebenen-Pauschbetrags deines Kindes auf dich? Wichtig: Die behinderungsbedingten Aufwendungen deines Kindes (z.B. Fahrtkosten, Pflege, Medikamente) kannst du dann NICHT mehr als außergewöhnliche Belastung abziehen — beides zusammen geht nicht."
+    hilfe_kurz: "Wenn du den Pauschbetrag des Kindes auf dich überträgst, kannst du dieselben Aufwendungen nicht zusätzlich unter 'Außergewöhnliche Belastungen' geltend machen. Das Kind darf den Pauschbetrag nicht selbst in Anspruch nehmen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld. Der Antrag ist im Formular (Ueb_PB_Beh_Hbl) durch Ausfüllen der GdB-/Hbl-Felder implizit — eigenes Feld für Ring-Steuerung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 5 S. 1 EStG"
+      zitatanker: "so wird der Pauschbetrag auf Antrag auf den Steuerpflichtigen übertragen, wenn ihn das Kind nicht in Anspruch nimmt"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: kind_pb_nicht_selbst_genutzt
+    instanz_gruppe: kind
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33b_abs5_kind_uebertragung, signatur_slot: kind_pb_nicht_selbst_genutzt}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Nimmt dein Kind den Behinderten-Pauschbetrag oder Hinterbliebenen-Pauschbetrag nicht selbst in Anspruch (z.B. weil es kein eigenes Einkommen hat oder keine Steuererklärung abgibt)?"
+    hilfe_kurz: "Der Pauschbetrag kann nur auf dich übertragen werden, wenn das Kind ihn nicht selbst geltend macht. Das ist typischerweise der Fall, wenn das Kind keine Steuererklärung abgibt."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld. Die Nicht-Inanspruchnahme durch das Kind ist gesetzliche Voraussetzung, kein Formularfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 5 S. 1 EStG"
+      zitatanker: "so wird der Pauschbetrag auf Antrag auf den Steuerpflichtigen übertragen, wenn ihn das Kind nicht in Anspruch nimmt"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+luecken:
+  - regel_id: p33b_abs5_kind_uebertragung
+    geltungsbedingung: s4_ausschluss_nicht_implementiert
+    grund: "§33b Abs.5 S.4 schließt §33-Abzug für Aufwendungen aus, 'für die der Behinderten-Pauschbetrag gilt' (Teilmenge: behinderungsbedingte Aufwendungen, nicht alle §33). agb_aufwendungen ist ein ungetrennter Topf — pauschale Kürzung wäre Over-tax (auch Krankheitskosten, Beerdigung etc.). Separates Feld 'kind_behinderungsbedingte_aufwendungen' nötig, dann S.4-Kürzung in der agb-Bemessungsgrundlage. Stufe 2 geplant. Fragetext des Antrag-Feldes weist Nutzer auf das Ausschlussverhältnis hin."
+  - regel_id: p33b_behinderten_pauschbetrag
+    geltungsbedingung: gdb_stufenfunktion_von_mindestens
+    grund: "Die Stufenfunktion (Pauschbetrag je GdB-Stufe) ist Rechenlogik der Regel; in den Feldern kind_grad_der_behinderung + rentner_grad_der_behinderung materialisiert."
+  - regel_id: p33b_behinderten_pauschbetrag
+    geltungsbedingung: hilflos_blind_taubblind_override
+    grund: "Der Höchst-Pauschbetrag bei H/Bl/TBl überschreibt die GdB-Staffel; in den Feldern kind_hilflos_blind_taubblind + rentner_hilflos_blind_taubblind materialisiert."
+  - regel_id: p33b_hinterbliebenen_pauschbetrag
+    geltungsbedingung: hinterbliebenenbezuege_bewilligt
+    grund: "Hinterbliebenenbezüge müssen bewilligt sein (S.1); in den Feldern kind_hinterbliebenen_uebertragung + rentner_hinterbliebenenbezuege materialisiert."

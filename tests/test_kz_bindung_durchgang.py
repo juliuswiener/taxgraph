@@ -217,3 +217,78 @@ def test_kind_kv_pv_kommt_im_xml_an(bindung):
     pv_werte = re.findall(r"E0503310>(\d+)", flach)
     assert pv_werte == ["500", "0"], (
         f"PV-Werte je Kind-Dokument nicht [500,0]: {pv_werte}\n" + xml)
+
+
+# ---------------------------------------------------------------- Block 7: §33b Abs.5 Kind-PB-Übertragung
+
+def test_kind_pb_uebertragung_kommt_im_xml_an(bindung):
+    """kind_grad_der_behinderung (E0505809), kind_hilflos_blind_taubblind (E0505807),
+    kind_hinterbliebenen_uebertragung (E0505805) an ihrer Schema-Stelle.
+
+    Zwei Kinder mit UNTERSCHIEDLICHEN GdB-Werten:
+      Kind1 (Basis): GdB 50, nicht hilflos, keine Hbl
+      Kind2 (__2):   GdB 100, nicht hilflos, keine Hbl
+
+    E0505809 im ersten Kind-Dokument muss "50", im zweiten "100".
+    E0505807/E0505805 müssen False (kein >1) sein.
+    """
+    xml = _xml({"kind_idnr": "11111111111", "kind_grad_der_behinderung": 50,
+                "kind_hilflos_blind_taubblind": False, "kind_hinterbliebenen_uebertragung": False,
+                "kind_idnr__2": "22222222222", "kind_grad_der_behinderung__2": 100,
+                "kind_hilflos_blind_taubblind__2": False, "kind_hinterbliebenen_uebertragung__2": False},
+               bindung)
+
+    assert _pfad_im_xml(xml, ("Kind", "Ueb_PB_Beh_Hbl", "Beh", "Ausw_Rentb_Besch", "E0505809"), "50"), (
+        "E0505809 trägt nicht 50 (GdB Kind1):\n" + xml)
+    import re
+    flach = re.sub(r"<(/?)[a-zA-Z0-9]+:", r"<\1", xml)
+    gdb_werte = re.findall(r"E0505809>(\d+)", flach)
+    assert gdb_werte == ["50", "100"], (
+        f"GdB-Werte je Kind-Dokument nicht [50,100]: {gdb_werte}")
+    assert "E0505807" not in flach, (
+        "E0505807 (blind/hilflos) sollte False sein → Element weggelassen, nicht 1:")
+    assert "E0505805" not in flach, (
+        "E0505805 (Hbl-Übertragung) sollte False sein → Element weggelassen, nicht 1:")
+
+
+def test_kind_pb_uebertragung_hinterbliebenen_kommt_im_xml_an(bindung):
+    """Hbl-Übertragung (E0505805) = True → "1" im XML."""
+    xml = _xml({"kind_idnr": "11111111111", "kind_grad_der_behinderung": 50,
+                "kind_hilflos_blind_taubblind": False, "kind_hinterbliebenen_uebertragung": True},
+               bindung)
+    assert _pfad_im_xml(xml, ("Kind", "Ueb_PB_Beh_Hbl", "Hbl", "E0505805"), "1"), (
+        "E0505805 trägt nicht 1 (Hbl-Übertragung, Ja1-Typ):\n" + xml)
+
+
+def test_kind_pb_uebertragung_xml_ist_schema_valide(bindung, tmp_path):
+    """Das erzeugte XML validiert gegen das amtliche E10-2025-Schema.
+
+    Schärft die String-Assertions oben: xs:sequence ist ordnungsempfindlich, ein Kz an
+    falscher Stelle oder mit falschem Ja1-Wert ('X' statt '1') fällt nur hier auf. Beide
+    Kinder tragen GdB 50/100 + False-Ja-Werte (E0505807/E0505805 werden weggelassen)."""
+    import validate_xsd as VX
+    if not VX.find_schema("2025"):
+        pytest.skip("elster11_E10_2025_extern.xsd nicht gefunden")
+    ziel = tmp_path / "kind_pb.xml"
+    ziel.write_text(_xml({"kind_idnr": "11111111111", "kind_grad_der_behinderung": 50,
+                          "kind_hilflos_blind_taubblind": False, "kind_hinterbliebenen_uebertragung": False,
+                          "kind_idnr__2": "22222222222", "kind_grad_der_behinderung__2": 100,
+                          "kind_hilflos_blind_taubblind__2": False, "kind_hinterbliebenen_uebertragung__2": False},
+                         bindung), encoding="utf-8")
+    ok, meldung = VX.validate(str(ziel), "2025")
+    assert ok, f"XML nicht schema-valide: {meldung}"
+
+
+def test_kind_pb_uebertragung_xml_mit_hbl_ist_schema_valide(bindung, tmp_path):
+    """Hbl-Übertragung (E0505805=True) validiert gegen das amtliche Schema.
+
+    E0505805 ist Ja1-Typ — ohne Fix rendert er 'X', XSD erwartet '1'."""
+    import validate_xsd as VX
+    if not VX.find_schema("2025"):
+        pytest.skip("elster11_E10_2025_extern.xsd nicht gefunden")
+    ziel = tmp_path / "kind_pb_hbl.xml"
+    ziel.write_text(_xml({"kind_idnr": "11111111111", "kind_grad_der_behinderung": 50,
+                          "kind_hilflos_blind_taubblind": False, "kind_hinterbliebenen_uebertragung": True},
+                         bindung), encoding="utf-8")
+    ok, meldung = VX.validate(str(ziel), "2025")
+    assert ok, f"XML mit Hbl nicht schema-valide: {meldung}"

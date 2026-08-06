@@ -303,6 +303,35 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
         def _kind_kv_pv_summe() -> int:
             return 0
 
+    # §33b Abs.5 Kind-PB-Übertragung (Stufe 1, OHNE S.4-Ausschluss → benannte Lücke).
+    # S.1: "auf Antrag ... wenn ihn das Kind nicht in Anspruch nimmt" (kumulativ).
+    # S.5: kind_idnr als Voraussetzung (fail-closed wie B2).
+    # S.4: "In diesen Fällen besteht für Aufwendungen, für die der Behinderten-Pauschbetrag
+    # gilt, kein Anspruch auf eine Steuerermäßigung nach § 33" — NICHT implementiert
+    # (agb_aufwendungen ist nicht nach Aufwandsart getrennt, pauschale Kürzung = Over-tax).
+    # Return: list[dict] per Kind, passend für catala_behinderten_pb / catala_hinterbliebenen_pb.
+    def _kind_behinderten_pb_daten() -> list:
+        if store is None:
+            return []
+        daten = []
+        for inst in EM.instanzen(store, bindung, "kind"):
+            if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
+                idnr = inst["felder"].get("kind_idnr", {}).get("wert")
+                if not idnr or not isinstance(idnr, str) or len(idnr) < 11:
+                    continue
+                antrag = inst["felder"].get("kind_behinderten_pb_antrag", {}).get("wert") is True
+                nicht_selbst = inst["felder"].get("kind_pb_nicht_selbst_genutzt", {}).get("wert") is True
+                if not (antrag and nicht_selbst):
+                    continue
+                gdb_raw = inst["felder"].get("kind_grad_der_behinderung", {}).get("wert")
+                gdb = int(gdb_raw) if isinstance(gdb_raw, (int, float)) and not isinstance(gdb_raw, bool) else 0
+                daten.append({
+                    "grad_der_behinderung": gdb,
+                    "ist_hilflos_blind_taubblind": inst["felder"].get("kind_hilflos_blind_taubblind", {}).get("wert") is True,
+                    "hat_hinterbliebenenbezuege": inst["felder"].get("kind_hinterbliebenen_uebertragung", {}).get("wert") is True,
+                })
+        return daten
+
     if quantitaet == "abziehbarer_betrag":          # § 9 Entfernungspauschale
         try:
             import runner  # noqa: F401
@@ -855,6 +884,18 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                        + runner.catala_hinterbliebenen_pb({
                            "veranlagungszeitraum": vz,
                            "hat_hinterbliebenenbezuege": f.get("rentner_hinterbliebenenbezuege", {}).get("wert") is True}))
+            # §33b Abs.5 Kind-PB-Übertragung (Stufe 1, OHNE S.4 → benannte Lücke):
+            # per Kind, nur wenn Antrag + Kind-nimmt-nicht + kind_idnr (kumulativ).
+            # Kind-PB additiv zu Person-A/B-PB (eigener Abzugstatbestand).
+            for kd in _kind_behinderten_pb_daten():
+                ausserg += runner.catala_behinderten_pb({
+                    "veranlagungszeitraum": vz,
+                    "grad_der_behinderung": kd["grad_der_behinderung"],
+                    "ist_hilflos_blind_taubblind": kd["ist_hilflos_blind_taubblind"]})
+                if kd["hat_hinterbliebenenbezuege"]:
+                    ausserg += runner.catala_hinterbliebenen_pb({
+                        "veranlagungszeitraum": vz,
+                        "hat_hinterbliebenenbezuege": True})
             # Person-B-§33b: eigener Behinderten-Pauschbetrag des Ehegatten additiv (1:1 Rentner-Präzedenz
             # api.py:1015-1018). Nur Zusammenveranlagung. Pflege-/Hinterbliebenen-PB für Person B nicht
             # modelliert (wie rentner). Felder = rentner_*-globale IDs.
@@ -1252,6 +1293,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                        + runner.catala_hinterbliebenen_pb({
                            "veranlagungszeitraum": vz,
                            "hat_hinterbliebenenbezuege": _b("rentner_hinterbliebenenbezuege") is True}))
+            # §33b Abs.5 Kind-PB-Übertragung (Stufe 1, OHNE S.4 → benannte Lücke):
+            # per Kind, nur wenn Antrag + Kind-nimmt-nicht + kind_idnr (kumulativ).
+            for kd in _kind_behinderten_pb_daten():
+                ausserg += runner.catala_behinderten_pb({
+                    "veranlagungszeitraum": vz,
+                    "grad_der_behinderung": kd["grad_der_behinderung"],
+                    "ist_hilflos_blind_taubblind": kd["ist_hilflos_blind_taubblind"]})
+                if kd["hat_hinterbliebenenbezuege"]:
+                    ausserg += runner.catala_hinterbliebenen_pb({
+                        "veranlagungszeitraum": vz,
+                        "hat_hinterbliebenenbezuege": True})
             # Partner-§33b (§ 26b, #4b, Wiring-Fix): eigener Behinderten-Pauschbetrag des Ehegatten additiv zur
             # gemeinsamen ausserg-Summe — nur Zusammenveranlagung (RENTNER_PARTNER hat nur GdB/hilflos, kein
             # Pflegegrad/Hinterbliebenenbezüge für Person B). Vorher: Felder standen nur im Gate-Tuple, nie
