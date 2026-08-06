@@ -1088,6 +1088,32 @@ def catala_p10_1_5_kinderbetreuung(s: dict) -> int:
     return min(int(aufw * abzugssatz), hb)
 
 
+def catala_p10_1_9_schulgeld(s: dict) -> int:
+    """§10 Abs.1 Nr.9 EStG — Schulgeld, EIN Kind (pro-Kind-Aufruf).
+    30% der Aufwendungen, capped 2.500€ je Kind (aus params/<vz>/schulgeld_p10.yaml).
+    Bei Zusammenveranlagung verdoppelt auf 5.000€ je Kind. S.5: "Der Höchstbetrag
+    nach Satz 1 wird für jedes Kind, bei dem die Voraussetzungen vorliegen, je
+    Elternpaar nur einmal gewährt." — wir lesen das als Verdopplung des HB für
+    zusammenveranlagte Elternpaare.
+    ANNAHME: Bei getrennter Veranlagung teilen Eltern den Höchstbetrag per
+    Aufteilungsprozentsatz (Kz E0504603 wird NICHT ausgewertet, daher 2.500/Kind
+    bei Einzelveranlagung = over-tax-safe für den Fall, dass der Steuerpflichtige
+    den vollen Betrag allein geltend macht. Eine abweichende Aufteilung ist Stufe 2.)
+    Aufruf mit: {"aufwendungen": <pro-kind-eur>, "veranlagungszeitraum": <vz>,
+                 "splitting": <bool>}."""
+    aufw = int(s.get("aufwendungen", 0))
+    if aufw <= 0:
+        return 0
+    vz = int(s.get("veranlagungszeitraum", 2025))
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(vz), "schulgeld_p10.yaml"), encoding="utf-8"))
+    abzugssatz = p["abzugssatz"]["wert"]
+    hb = p["hoechstbetrag_je_kind"]["wert"]
+    if s.get("splitting"):
+        hb *= 2
+    return min(int(aufw * abzugssatz), hb)
+
+
 # -- §10 Abs.1a Nr.1 EStG Realsplitting (Unterhalt Ex-Ehegatte). EURO. -----------
 # Pure-Python aus verified_bedingt Snapshot (p10_1a_realsplitting.json).
 # 4 pipeline-seeds fidel. Abzug = min(unterhaltsleistungen, 13.805 + kv_pv_beitraege).

@@ -1,0 +1,32 @@
+# Bindungstabelle — §10 Abs.1 Nr.9 EStG Schulgeld (Stufe-1, Tier-0).
+# PER-KIND: Kz E0505607 sitzt im Kind-Container, Ring liest per EM.instanzen.
+version: 1
+scheibe: "Schulgeld (p10_1_9_schulgeld)"
+
+bindungen:
+  - feld_id: schulgeld
+    instanz_gruppe: kind
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p10_1_9_schulgeld, signatur_slot: aufwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel Schulgeld hast du für dein Kind gezahlt? Bitte nur Schul- und Ausbildungskosten, keine Kosten für Unterkunft, Betreuung oder Verpflegung (das Gesetz schließt 'Beherbergung, Betreuung und Verpflegung' ausdrücklich aus)."
+    hilfe_kurz: "Du kannst 30% der Schulgebühren absetzen, höchstens 2.500 Euro pro Kind (bei Zusammenveranlagung 5.000 Euro)."
+    beispielwert: 300000
+    herkunft_slots: ["Schulrechnung: Kosten"]
+    elster_kz: E0505607
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 9 S. 1 EStG"
+      zitatanker: "30 Prozent des Entgelts, höchstens 5 000 Euro, das der Steuerpflichtige für ein Kind, für das er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld hat, für dessen Besuch einer Schule"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+luecken:
+  - regel_id: p10_1_9_schulgeld
+    geltungsbedingung: kind_schulbesuch
+    grund: "Kind-Qualifikation (§ 10 Abs. 1 Nr. 9 S. 1: 'für den Besuch einer Schule') wird vorgelagert überprüft; Ausschluss Beherbergung/Betreuung/Verpflegung (S. 1) im Fragetext adressiert."
+  - regel_id: p10_1_9_schulgeld
+    geltungsbedingung: dreissig_prozent_deckel_2500_je_kind
+    grund: "30%-Quote + 2.500€-je-Kind-Deckel (§ 10 Abs. 1 Nr. 9 S. 1) sind im pure-python Accessor catala_p10_1_9_schulgeld materialisiert; Verdopplung auf 5.000 bei Zusammenveranlagung (S. 5) im Accessor."

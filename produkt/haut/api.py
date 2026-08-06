@@ -472,6 +472,24 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                             "veranlagungszeitraum": vz})
             return total
 
+        def _schulgeld_summe() -> int:
+            """Per-Kind-Summe §10 Abs.1 Nr.9 via EM.instanzen (Ring-Lese-Naht wie Nr.5).
+            ANNAHME: bei Einzelveranlagung 2.500€ je Kind (hb aus params), bei Zusammenveranlagung
+            5.000€ je Kind (Accessor-splitting). Aufteilung bei getrennter Veranlagung (Kz E0504603)
+            wird NICHT ausgewertet — Begründung im Accessor-Docstring."""
+            if store is None:
+                return 0
+            total = 0
+            splitting = f.get("veranlagung", {}).get("wert") == "zusammen"
+            for inst in EM.instanzen(store, bindung, "kind"):
+                if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
+                    aufw = inst["felder"].get("schulgeld", {}).get("wert")
+                    if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
+                        total += runner.catala_p10_1_9_schulgeld({
+                            "aufwendungen": int(aufw) // 100,
+                            "veranlagungszeitraum": vz, "splitting": splitting})
+            return total
+
         def _vv_objekt(fi: dict) -> int:
             # § 21 Überschuss EINES Objekts (Einnahmen − Werbungskosten), Naht-CENT -> EURO. KEIN per-
             # Objekt-Floor (catala_vermietung_einkuenfte gibt Verluste durch → horizontaler Verlustausgleich
@@ -780,6 +798,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung") + _c("vorsorge_erwerbsunfaehigkeit") + _c("vorsorge_unfall_haftpflicht") + _c("vorsorge_rv_alt_mit_ueberschuss") + _c("vorsorge_rv_alt_ohne_ueberschuss")) // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
                 + _kinderbetreuung_summe()
+                + _schulgeld_summe()
                 # § 10 Abs. 1a Nr. 1 Realsplitting (Unterhalt Ex-Ehegatte, Tier-1): min(unterhaltsleistungen,
                 # 13.805 + kv_pv_beitraege). Gate: realsplitting_zustimmung==true → sonst 0 (over-tax-safe).
                 + (runner.catala_p10_1a_realsplitting({
@@ -1150,6 +1169,21 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                             "veranlagungszeitraum": vz})
             return total
 
+        def _schulgeld_summe() -> int:
+            """Per-Kind-Summe §10 Abs.1 Nr.9 — rentner-Zweig (eigene Closure, 1:1 gesamt-Pattern)."""
+            if store is None:
+                return 0
+            total = 0
+            splitting = f.get("veranlagung", {}).get("wert") == "zusammen"
+            for inst in EM.instanzen(store, bindung, "kind"):
+                if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
+                    aufw = inst["felder"].get("schulgeld", {}).get("wert")
+                    if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
+                        total += runner.catala_p10_1_9_schulgeld({
+                            "aufwendungen": int(aufw) // 100,
+                            "veranlagungszeitraum": vz, "splitting": splitting})
+            return total
+
         def slot_fn(slots: dict) -> int:
             # § 22 Renten-Einkünfte → einkuenfte_sonstige, als STUMPFE Σ über ALLE rente-Instanzen der Person A
             # (Multi-Rente, #6: gesetzl. + Betriebs- + Leibrente je eigene aa/bb-Behandlung, § 22-Anteil JE
@@ -1366,6 +1400,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung") + _c("vorsorge_erwerbsunfaehigkeit") + _c("vorsorge_unfall_haftpflicht") + _c("vorsorge_rv_alt_mit_ueberschuss") + _c("vorsorge_rv_alt_ohne_ueberschuss")) // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
                 + _kinderbetreuung_summe()
+                + _schulgeld_summe()
                 # § 10 Abs. 1a Nr. 1 Realsplitting (Unterhalt Ex-Ehegatte, Tier-1): 1:1 gesamt-Präzedenz.
                 # Gate: realsplitting_zustimmung==true → sonst 0 (over-tax-safe).
                 + (runner.catala_p10_1a_realsplitting({

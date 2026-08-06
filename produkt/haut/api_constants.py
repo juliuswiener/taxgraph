@@ -148,9 +148,12 @@ AGB_KIST = ("kist_gezahlt", "kist_erstattet")
 # ========== § 10 Abs.1 Nr.5 Kinderbetreuung ==========
 KINDERBETREUUNG = ("kinderbetreuungskosten",)
 
+# ========== § 10 Abs.1 Nr.9 Schulgeld ==========
+SCHULGELD = ("schulgeld",)
+
 # ========== Gefaltete Sonder-Abzüge (Weg ii) ==========
 GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
-                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST + KINDERBETREUUNG)
+                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST + KINDERBETREUUNG + SCHULGELD)
 
 # ========== RENTNER_FELDER — ZWEITE ÄNDERUNG (Z.218 api.py) ==========
 RENTNER_FELDER = RENTNER_FELDER + GESAMT_ABZUEGE
@@ -425,7 +428,7 @@ __all__ = [
     # Rentner Gewinn
     "RENTNER_GEWINN", "RENTNER_KEGEL",
     # Abzüge
-    "HAUSHALT_35A_ABS23", "HAUSHALT_35A", "P35A_MITVER_ANZEIGE", "AGB_KIST", "KINDERBETREUUNG", "GESAMT_ABZUEGE",
+    "HAUSHALT_35A_ABS23", "HAUSHALT_35A", "P35A_MITVER_ANZEIGE", "AGB_KIST", "KINDERBETREUUNG", "SCHULGELD", "GESAMT_ABZUEGE",
     # Freibeträge
     "GESAMT_FREIBETRAEGE",
     # DBA

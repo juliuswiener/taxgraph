@@ -56,6 +56,7 @@ _ABZUGS_KZ = frozenset({
     "E2001803",  # U_HP_Ris_Vers/Sum (Unfall/Haftpflicht) (ceiling)
     "E2001903",  # RV_m_WR_KapLV/Sum (Rente mit Überschuss) (ceiling)
     "E2002003",  # RV_o_WR_o_AV/Sum (Rente ohne Überschuss) (ceiling)
+    "E0505607",  # Schulgeld-Summe (§10 Abs.1 Nr.9, Abzug) (ceiling)
 })
 
 

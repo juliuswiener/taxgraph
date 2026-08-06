@@ -1,0 +1,26 @@
+# Schulgeld-Abzug § 10 Abs. 1 Nr. 9 EStG.
+# 30 % des Entgelts (Gesetzeswortlaut), höchstens 2.500 Euro je Kind (unsere Auslegung:
+# S.1 sagt 5.000; bei Einzelveranlagung teilen Eltern den HB — S.5 "je Elternpaar nur
+# einmal", daher 2.500 als hälftiger Ansatz; siehe Accessor-Docstring).
+# Bei Zusammenveranlagung verdoppelt sich der Höchstbetrag auf 5.000 Euro je Kind
+# (unsere Auslegung von S.5: "je Elternpaar nur einmal" → effektive Verdopplung).
+# Stand: 2026-08-06, gültig für VZ 2024 (unverändert zu 2025).
+parameter: schulgeld
+veranlagungszeitraum: 2024
+authority: gesetz
+redistributable: true
+gueltig_ab: "2024-01-01"
+
+abzugssatz:
+  wert: 0.3
+  einheit: faktor
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "10", absatz: "1", nummer: "9"}
+  datenquelle: "§ 10 Abs. 1 Nr. 9 S. 1 EStG: 30 Prozent des Entgelts (Gesetzeswortlaut)"
+
+hoechstbetrag_je_kind:
+  wert: 2500
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: EStG, paragraph: "10", absatz: "1", nummer: "9"}
+  datenquelle: "§ 10 Abs. 1 Nr. 9 S. 1 EStG: höchstens 5 000 Euro (Gesetzeswortlaut). Unser Wert 2.500: hälftiger Ansatz bei Einzelveranlagung (S.5 'je Elternpaar nur einmal'), siehe Accessor-Docstring. Bei Zusammenveranlagung 5.000 (Verdopplung gem. S.5)."
