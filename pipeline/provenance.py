@@ -19,7 +19,7 @@ import yaml  # noqa: F401
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from yamlstrict import load_yaml  # noqa: E402
 
-from client import RoleConfig, Completion, mask_key
+from client import RoleConfig, Completion
 
 PIPELINE_DIR = os.path.dirname(__file__)
 MODELS_YAML = os.path.join(PIPELINE_DIR, "models.yaml")
@@ -80,6 +80,3 @@ def stamp(role: RoleConfig, comp: Completion, models_hash: str) -> Provenance:
         truncated=comp.truncated)
 
 
-def redact(obj) -> str:
-    """String form with any leaked key masked (defense in depth for logs)."""
-    return mask_key(str(obj))

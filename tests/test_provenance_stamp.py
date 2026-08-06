@@ -158,15 +158,3 @@ def test_now_iso_utc_mit_sekunden():
     assert s.endswith("+00:00") or s.endswith("Z")
     # timespec="seconds": kein Mikrosekunden-Teil
     assert "." not in s.split("T")[1]
-
-
-# -- redact: Key-Maskierung fuer Logs -------------------------------------------
-
-def test_redact_maskt_sk_key():
-    result = PV.redact({"api": "sk-or-abcdef0123456789"})
-    assert "sk-or-***" in result
-    assert "sk-or-abcdef0123456789" not in result
-
-
-def test_redact_laesst_normalen_text():
-    assert PV.redact("kein key hier") == "kein key hier"
