@@ -457,6 +457,21 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             v = f.get(fid, {}).get("wert")
             return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
 
+        def _kinderbetreuung_summe() -> int:
+            """Per-Kind-Summe §10 Abs.1 Nr.5 via EM.instanzen. Keine Gleichverteilung mehr.
+            (2026-08-06 Fix: 2 Kinder/10000€ → 6400€ statt 8000€.)"""
+            if store is None:
+                return 0
+            total = 0
+            for inst in EM.instanzen(store, bindung, "kind"):
+                if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
+                    aufw = inst["felder"].get("kinderbetreuungskosten", {}).get("wert")
+                    if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
+                        total += runner.catala_p10_1_5_kinderbetreuung({
+                            "aufwendungen": int(aufw) // 100,
+                            "veranlagungszeitraum": vz})
+            return total
+
         def _vv_objekt(fi: dict) -> int:
             # § 21 Überschuss EINES Objekts (Einnahmen − Werbungskosten), Naht-CENT -> EURO. KEIN per-
             # Objekt-Floor (catala_vermietung_einkuenfte gibt Verluste durch → horizontaler Verlustausgleich
@@ -754,7 +769,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # KV/PV hat EIGENEN Abs.4-Höchstbetrag 1900/2800 + Basis-Durchbruch, getrennt von der Abs.3-Basisvorsorge
             # die catala_gesamt intern via _vorsorge_abzug addiert). PLAIN Read-Keys (1:1 mit dev-2s Binding). Die 3
             # KV/PV-Felder sind Pflicht-Kegel → immer beantwortet (kein stiller Über/Unter-tax; mit_anspruch steuert HB).
-            # Kinderbetreuung: pro-Kind-Deckel 4800€; anzahl_kinder Multiplikator; aufwendungen Summe/Person.
+            # Kinderbetreuung: pro-Kind-Deckel 4800€, Summe per EM.instanzen (keine Gleichverteilung).
             g["sonderausgaben"] = (runner.catala_p10b_spenden({
                     "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": gde})
                 + runner.catala_p10_kist({
@@ -764,9 +779,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "basis_kv_pv": (_c("basis_kv") + _c("basis_pv")) // 100,
                     "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung") + _c("vorsorge_erwerbsunfaehigkeit") + _c("vorsorge_unfall_haftpflicht") + _c("vorsorge_rv_alt_mit_ueberschuss") + _c("vorsorge_rv_alt_ohne_ueberschuss")) // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
-                + runner.catala_p10_1_5_kinderbetreuung({
-                    "aufwendungen": _c("kinderbetreuungskosten") // 100,
-                    "anzahl_kinder": f.get("kinderbetreuung_anzahl_kinder", {}).get("wert", 0) or 0})
+                + _kinderbetreuung_summe()
                 # § 10 Abs. 1a Nr. 1 Realsplitting (Unterhalt Ex-Ehegatte, Tier-1): min(unterhaltsleistungen,
                 # 13.805 + kv_pv_beitraege). Gate: realsplitting_zustimmung==true → sonst 0 (over-tax-safe).
                 + (runner.catala_p10_1a_realsplitting({
@@ -1123,6 +1136,20 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "rentenfreibetrag": (rf // 100 if isinstance(rf, (int, float))
                                      and not isinstance(rf, bool) else None)})
 
+        def _kinderbetreuung_summe() -> int:
+            """Per-Kind-Summe §10 Abs.1 Nr.5 — rentner-Zweig (eigene Closure)."""
+            if store is None:
+                return 0
+            total = 0
+            for inst in EM.instanzen(store, bindung, "kind"):
+                if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
+                    aufw = inst["felder"].get("kinderbetreuungskosten", {}).get("wert")
+                    if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
+                        total += runner.catala_p10_1_5_kinderbetreuung({
+                            "aufwendungen": int(aufw) // 100,
+                            "veranlagungszeitraum": vz})
+            return total
+
         def slot_fn(slots: dict) -> int:
             # § 22 Renten-Einkünfte → einkuenfte_sonstige, als STUMPFE Σ über ALLE rente-Instanzen der Person A
             # (Multi-Rente, #6: gesetzl. + Betriebs- + Leibrente je eigene aa/bb-Behandlung, § 22-Anteil JE
@@ -1338,9 +1365,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "basis_kv_pv": (_c("basis_kv") + _c("basis_pv")) // 100,
                     "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung") + _c("vorsorge_erwerbsunfaehigkeit") + _c("vorsorge_unfall_haftpflicht") + _c("vorsorge_rv_alt_mit_ueberschuss") + _c("vorsorge_rv_alt_ohne_ueberschuss")) // 100,
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
-                + runner.catala_p10_1_5_kinderbetreuung({
-                    "aufwendungen": _c("kinderbetreuungskosten") // 100,
-                    "anzahl_kinder": f.get("kinderbetreuung_anzahl_kinder", {}).get("wert", 0) or 0})
+                + _kinderbetreuung_summe()
                 # § 10 Abs. 1a Nr. 1 Realsplitting (Unterhalt Ex-Ehegatte, Tier-1): 1:1 gesamt-Präzedenz.
                 # Gate: realsplitting_zustimmung==true → sonst 0 (over-tax-safe).
                 + (runner.catala_p10_1a_realsplitting({
@@ -2123,11 +2148,51 @@ def preflight_check(fall_id: str) -> tuple[int, dict]:
     return 200, {"fall_id": fall_id, "status": ergebnis["status"], "items": items}
 
 
+def _mit_ring_werten(felder: dict, vz: int) -> dict:
+    """Hängt berechnete Ring-Werte als fertige Events in felder ein.
+
+    Aktuell: E0205508 (Kürzungsbetrag wegen Mahlzeitengestellung).
+    Der Ring (runner._verpflegung_kuerzung_cent) rechnet den CENT-Wert aus
+    den Rohdaten (tage_24h, frühstücke, etc.). Wir injizieren ihn als
+    nicht-askables Feld mit zustand=bestaetigt, schreiber=engine,
+    herkunft=berechnet/amtlich/system (fail-closed, Haftung beim System).
+
+    Inert: ohne Verpflegungs-Felder kein Eintrag (auch kein Wert 0).
+    """
+    # Prüfe, ob Verpflegungs-Rohdaten existieren
+    verpflegungs_felder = {"tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig"}
+    if not verpflegungs_felder & set(felder):
+        return felder
+
+    try:
+        import runner
+        s = {fid: e["wert"] if isinstance(e, dict) else e
+             for fid, e in felder.items()}
+        kuerzung_cent = runner._verpflegung_kuerzung_cent(s, vz)
+    except Exception:
+        return felder
+
+    # Nur injizieren wenn Kürzung > 0 (sonst 0 = kein Kz-Eintrag nötig)
+    if kuerzung_cent <= 0:
+        return felder
+
+    felder["p9_4a_kuerzung_nach_entgelt"] = {
+        "wert": kuerzung_cent,  # CENT — _cent_nach_kz wandelt in EURO
+        "zustand": "bestaetigt",
+        "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+        "schreiber": "engine",
+        "signal": {"signal_1": None, "signal_2": None},
+    }
+    return felder
+
+
 def deklaration(fall_id: str) -> tuple[int, dict]:
     _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
+    vz = int(store.get("veranlagungszeitraum") or 0)
+    felder = _mit_ring_werten(felder, vz)
     result = EM.deklariere(felder, bindung, snapshot_id=sid)
     return 200, {"fall_id": fall_id, **result}
 
@@ -2153,6 +2218,7 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
     # nicht ERiCs falschem Grund später. Identisch wie in ergebnis() (Zeile 2075).
     cfg = _cfg(store)
     vz = int(store.get("veranlagungszeitraum") or 0)
+    felder = _mit_ring_werten(felder, vz)
     if cfg.get("guard"):
         sperr = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung)
         if sperr:

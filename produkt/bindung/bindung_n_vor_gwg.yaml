@@ -293,10 +293,26 @@ bindungen:
     hilfe_kurz: "Kostenlose oder verbilligte Mahlzeiten kürzen die Pauschale."
     beispielwert: false
     herkunft_slots: ["Anlage N: Kürzung Mahlzeitengestellung"]
-    elster_kz: E0205508
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld. Der Kürzungsbetrag wird aus den Mahlzeiten-Anzahlen und dem Entgelt berechnet (p9_4a_kuerzung_nach_entgelt)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 9 Abs. 4a Satz 8 EStG"
+      zitatanker: "eine Mahlzeit zur Verfügung gestellt"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  - feld_id: p9_4a_kuerzung_nach_entgelt
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: mahlzeitengestellung_kuerzung}
+    typ: cent
+    einheit: EUR
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Berechneter Kürzungsbetrag (automatisch)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0205508
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a Satz 8-10 EStG"
       zitatanker: "eine Mahlzeit zur Verfügung gestellt"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
   - feld_id: vpf_keine_unterbrechung

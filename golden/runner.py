@@ -253,9 +253,9 @@ def _verpflegung_pauschale(s: dict, year: int) -> int:
     return 0
 
 
-def _verpflegung_abzug(s: dict, year: int) -> int:
-    """§ 9 Abs. 4a EStG — Jahres-Verpflegungspauschale MINUS Dreimonats-Frist, MINUS Mahlzeitenkürzung,
-    MINUS Satz-11-Erstattung, in EURO.
+def _verpflegung_roh_cent(s: dict, year: int) -> tuple[int, int, int]:
+    """§ 9 Abs. 4a EStG — Jahres-Verpflegungskomponenten in CENT:
+    (pauschale_gesamt_cent, kuerzung_nach_entgelt_cent, erstattung_cent).
 
     S. 3: Jahres-Summe (Registry-Transkription p9_4a):
         tage_24h × 28 + tage_an_abreise × 14 + tage_ueber_8h_eintaegig × 14.
@@ -334,9 +334,22 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
     # S. 11: steuerfreie Verpflegungserstattung (CENT)
     erstattung_cent = int(s.get("vpf_steuerfreie_erstattung_betrag", 0))
 
-    # Rückgabe in EURO: alle Berechnungen in Cent, finale Division rundet ab (abrundung = konservativ)
+    return pauschale_gesamt_cent, kuerzung_nach_entgelt_cent, erstattung_cent
+
+
+def _verpflegung_abzug(s: dict, year: int) -> int:
+    """§ 9 Abs. 4a EStG — Jahres-Verpflegungspauschale MINUS Dreimonats-Frist, MINUS Mahlzeitenkürzung,
+    MINUS Satz-11-Erstattung, in EURO."""
+    pauschale_gesamt_cent, kuerzung_nach_entgelt_cent, erstattung_cent = _verpflegung_roh_cent(s, year)
     result_cent = max(0, pauschale_gesamt_cent - kuerzung_nach_entgelt_cent - erstattung_cent)
     return result_cent // 100
+
+
+def _verpflegung_kuerzung_cent(s: dict, year: int) -> int:
+    """Netto-Kürzungsbetrag wegen Mahlzeitengestellung (für E0205508), in CENT.
+    § 9 Abs. 4a S. 8-10 EStG: Kürzung − gezahltes Entgelt, min 0."""
+    _, kuerzung_nach_entgelt_cent, _ = _verpflegung_roh_cent(s, year)
+    return kuerzung_nach_entgelt_cent
 
 
 def _uebernachtung_abzug(s: dict, year: int) -> int:
@@ -1060,21 +1073,19 @@ def catala_p33a_ausbildungsfreibetrag(s: dict) -> int:
 
 
 def catala_p10_1_5_kinderbetreuung(s: dict) -> int:
-    """§10 Abs.1 Nr.5 EStG — Kinderbetreuungskosten, 80% capped 4800€ je Kind, EURO.
-    Multi-Kind-Komposition: anzahl_kinder * min(aufwand_pro_kind * 0.8, 4800).
-    Accessor nimmt EUROS. Seeds: 6000/1→4800, 10000/2→9600, 1000/1→800."""
-    anzahl = int(s.get("anzahl_kinder", 0))
+    """§10 Abs.1 Nr.5 EStG — Kinderbetreuungskosten, EIN Kind (pro-Kind-Aufruf).
+    80% der Aufwendungen, capped 4800€ je Kind (aus params/<vz>/kinderbetreuung_p10.yaml).
+    KEINE Gleichverteilung mehr — Ring summiert per EM.instanzen.
+    Aufruf mit: {"aufwendungen": <pro-kind-eur>, "veranlagungszeitraum": <vz>}."""
     aufw = int(s.get("aufwendungen", 0))
-    if anzahl <= 0:
+    if aufw <= 0:
         return 0
-    # Pro-Kind-Betrachtung (Schnitt): wir nehmen an, dass 'aufwendungen' die SUMME sind
-    # und verteilen sie gleichmäßig (Worst-Case für Deckelung wenn ungleich, aber ELSTER
-    # fragt oft Summe ab). Gesetz sagt: höchstens 4800 je Kind.
-    # Falls 'aufwendungen' pro Kind gemeint ist, müsste das Wiring das regeln.
-    # Hier: aufwendungen / anzahl = aufwand_pro_kind.
-    aufwand_pro_kind = aufw // anzahl
-    abzug_pro_kind = min(int(aufwand_pro_kind * 0.8), 4800)
-    return abzug_pro_kind * anzahl
+    vz = int(s.get("veranlagungszeitraum", 2025))
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(vz), "kinderbetreuung_p10.yaml"), encoding="utf-8"))
+    abzugssatz = p["abzugssatz"]["wert"]
+    hb = p["hoechstbetrag_je_kind"]["wert"]
+    return min(int(aufw * abzugssatz), hb)
 
 
 # -- §10 Abs.1a Nr.1 EStG Realsplitting (Unterhalt Ex-Ehegatte). EURO. -----------

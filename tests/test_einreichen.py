@@ -238,3 +238,86 @@ def test_xml_nicht_baubar_gibt_422(tmp_path, monkeypatch):
     st, resp = API.einreichen(r["fall_id"], {})
     assert st == 422
     assert resp["grund"] == "xml_nicht_baubar"
+
+
+# ----------------------------------------------------------------- E0205508 Kürzungsbetrag (A1)
+
+def test_einreichen_traegt_verpflegung_kuerzung_ein(tmp_path, monkeypatch):
+    """E0205508 (Kürzungsbetrag 84€, 10×24h+5Früh+5Mitt) muss in der Deklaration sein.
+
+    Realer Durchlauf durch _mit_ring_werten + EM.deklariere — nur EX/CE gemockt.
+    Rot wenn _mit_ring_werten in einreichen() fehlt.
+    """
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    import elster_xml as EX
+    import checkest_gate as CE
+    import store as ST
+
+    captured = {}
+
+    def fake_xml(result, **kw):
+        captured["deklaration"] = result.get("deklaration", {})
+        return '<?xml version="1.0"?><Elster/>'
+
+    monkeypatch.setattr(EX, "erzeuge_xml", fake_xml)
+    monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_OK, ""))
+
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "n_vor_gwg",
+                                "veranlagungszeitraum": 2025})
+    fid = r["fall_id"]
+    store = API.lade_fall(fid)
+
+    for fld, w in [("tage_24h", 10),
+                   ("vpf_fruehstuecke_gestellt_anzahl", 5),
+                   ("vpf_mittagessen_gestellt_anzahl", 5)]:
+        ST.append_event(store, feld_id=fld, wert=w, zustand="bestaetigt",
+                        herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft",
+                                   "haftung": "nutzer"},
+                        schreiber="laie",
+                        signal={"signal_1": {"typ": "laie_eingabe"},
+                                 "signal_2": "laie_bestaetigt"})
+    API.speichere_fall(fid, store)
+
+    st, resp = API.einreichen(fid, {})
+    assert st == 200, f"einreichen fehlgeschlagen: {resp}"
+    dekl = captured.get("deklaration", {})
+    assert "E0205508" in dekl, (
+        f"E0205508 fehlt in Deklaration — _mit_ring_werten in einreichen()? "
+        f"vorhandene Kz: {sorted(dekl.keys())}")
+    assert dekl["E0205508"] == 84, (
+        f"E0205508={dekl['E0205508']}, erwartet 84 (8400 cent → EURO)")
+
+
+def test_einreichen_ohne_verpflegung_kein_kuerzung_kz(tmp_path, monkeypatch):
+    """Ohne Verpflegungs-Felder: kein E0205508 in der Deklaration (Inertheit)."""
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    import elster_xml as EX
+    import checkest_gate as CE
+    import store as ST
+
+    captured = {}
+
+    def fake_xml(result, **kw):
+        captured["deklaration"] = result.get("deklaration", {})
+        return '<?xml version="1.0"?><Elster/>'
+
+    monkeypatch.setattr(EX, "erzeuge_xml", fake_xml)
+    monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_OK, ""))
+
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "n_vor_gwg",
+                                "veranlagungszeitraum": 2025})
+    fid = r["fall_id"]
+    store = API.lade_fall(fid)
+    ST.append_event(store, feld_id="ep_arbeitstage", wert=0, zustand="bestaetigt",
+                    herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft",
+                               "haftung": "nutzer"},
+                    schreiber="laie",
+                    signal={"signal_1": {"typ": "laie_eingabe"},
+                             "signal_2": "laie_bestaetigt"})
+    API.speichere_fall(fid, store)
+
+    st, resp = API.einreichen(fid, {})
+    assert st == 200, f"einreichen fehlgeschlagen: {resp}"
+    dekl = captured.get("deklaration", {})
+    assert "E0205508" not in dekl, (
+        f"E0205508 unerwartet in Deklaration (keine Verpflegungsdaten): {dekl}")
