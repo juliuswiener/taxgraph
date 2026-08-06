@@ -162,7 +162,8 @@ def _wert_text(wert) -> str:
 
 def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
                 pflicht: dict[tuple, list[str]],
-                instanz: dict[tuple, int] | None = None) -> None:
+                instanz: dict[tuple, int] | None = None,
+                kz_meta: dict[str, dict] | None = None) -> None:
     """Legt den Pfad unterhalb `wurzel` an (idempotent) und setzt das Blatt auf `wert`.
 
     `pfad` beginnt mit dem Namen der Wurzel selbst (z.B. ('E10','ESt1A','Art_Erkl','E0100001'));
@@ -174,6 +175,9 @@ def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
     (0-basiert) für wiederholbare Container angibt — statt `knoten.find(tag)` wird das n-te
     Vorkommen gesucht und ggf. angelegt. Person-Diskriminatoren werden je nach Index gesetzt:
     Index 0 = PersonA, Index >= 1 = PersonB.
+
+    Ja-Typ-Handling (mit `kz_meta`): True → enum-Wert ("1"/"X"), False → Element weglassen.
+    Kz ohne Ja-Typ oder ohne kz_meta-Info werden normal über _wert_text gerendert.
     """
     knoten = wurzel
     inst = instanz or {}
@@ -218,7 +222,19 @@ def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
                             f"(PFLICHT_DEFAULT erweitern).")
                     ET.SubElement(kind, f"{{{ns}}}{pflicht_name}").text = vorgabe
             knoten = kind
-    blatt = ET.SubElement(knoten, f"{{{ns}}}{pfad[-1]}")
+
+    kz_name = pfad[-1]
+    # Ja-Typ: True → enum-Wert, False → Element weglassen
+    if kz_meta and kz_name in kz_meta:
+        km = kz_meta[kz_name]
+        if km["is_ja"] and isinstance(wert, bool):
+            if wert is True:
+                blatt = ET.SubElement(knoten, f"{{{ns}}}{kz_name}")
+                blatt.text = km["enums"][0]  # "1" für Ja1, "X" für JaX
+            # False → Element weglassen (nicht "X" oder "1" setzen)
+            return
+
+    blatt = ET.SubElement(knoten, f"{{{ns}}}{kz_name}")
     blatt.text = _wert_text(wert)
 
 
@@ -339,6 +355,8 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
 
     e10 = ET.SubElement(nutzdaten, f"{{{ns_e10}}}E10", {"version": str(vz)})
     pflicht = pflicht_kinder(vz)
+    schema_pfad = XV._find_schema(vz)
+    kz_meta = XV._resolve_kz_meta(schema_pfad) if schema_pfad else {}
 
     # Vorbereitung: Person-Container-Bestimmung fuer person_b
     person_container_cache: dict[str, tuple | None] = {}
@@ -358,7 +376,7 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
     for kz in pfade:
         # Person A (Haupt-Deklaration, Index 0)
         if kz in deklaration:
-            _einhaengen(e10, pfade[kz], deklaration[kz], ns_e10, pflicht)
+            _einhaengen(e10, pfade[kz], deklaration[kz], ns_e10, pflicht, kz_meta=kz_meta)
 
         # Person B (Instanz-Achse Index 1, nur Person-Container)
         if kz in person_b:
@@ -368,12 +386,12 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                     f"person_b-Kz {kz} liegt in Container ohne Person-Diskriminator "
                     f"(Pfad: {'/'.join(pfade[kz])}) — kann nicht als Instanz 1 (PersonB) geschrieben werden.")
             _einhaengen(e10, pfade[kz], person_b[kz], ns_e10, pflicht,
-                        instanz={cp: 1})
+                        instanz={cp: 1}, kz_meta=kz_meta)
 
         # Anlage-Instanzen 2..N (Gruppen-kind, gwg, vv_objekt, rente, ...)
         for container, inst_idx_0, wert in instanz_map.get(kz, []):
             _einhaengen(e10, pfade[kz], wert, ns_e10, pflicht,
-                        instanz={container: inst_idx_0})
+                        instanz={container: inst_idx_0}, kz_meta=kz_meta)
 
     ET.indent(wurzel, space="\t")
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(wurzel, encoding="unicode")
