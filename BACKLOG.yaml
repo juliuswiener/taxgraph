@@ -1,6 +1,6 @@
 # TaxGraph — offene Punkte
 #
-# Stand: 2026-08-06, HEAD dba31df, Suite 1623 passed / 4 skipped / 1 xfailed.
+# Stand: 2026-08-07, HEAD ea99947, Suite 1632 passed / 4 skipped / 0 xfailed.
 #
 # Jeder Eintrag nennt den Beleg (Messung oder Fundstelle), nicht nur die Absicht.
 # Ein Punkt ohne Messung ist eine Vermutung und gehoert hier nicht hinein.
@@ -11,14 +11,23 @@
 #   entschieden  — Julius hat zugestimmt, kann gebaut werden
 
 version: 1
-stand: "2026-08-06"
-head: dba31df
+stand: "2026-08-07"
+head: ea99947
 
 rechenluecken:
 
   - id: vpf-dreimonatsfrist
     titel: "§ 9 Abs. 4a S. 6 — Dreimonatsfrist wird nie angewandt"
-    status: analysiert
+    status: erledigt
+    erledigt_in: "5140266 (2026-08-07)"
+    erledigt_wie: |
+      Alle drei Loecher zu. L1: NACH_FRIST in beiden Zweigen verdrahtet, an_gesamt-Scheibe
+      um die Felder erweitert (vorher 400). L3: Alles-oder-Nichts bei >3 Monaten aufgeloest.
+      L2: Guard fail-closed, kategorie-weise — NACH_FRIST_i nur Pflicht wenn TAGE_i > 0.
+      Sperrgrund verpflegung_dreimonatsfrist_aufteilung_offen. xfail(strict) entfernt,
+      Assert auf gemessene -14700 Cent (Fenster +/- 100). Julius-Entscheid: Scope
+      gesamt + an_gesamt, fail-closed statt stiller 0.
+    julius_offene_frage_beantwortet: "an_gesamt JA mit aufgenommen (2026-08-07)"
     bericht: reports/adjudikation/vpf_dreimonatsfrist_tote_naht_2026-08-06.md
     aufwand_h: 1.5
     richtung: under-tax
@@ -48,6 +57,17 @@ rechenluecken:
     titel: "§ 33b — Doppelabzug Pauschbetrag neben § 33"
     status: analysiert
     bericht: reports/adjudikation/p33b-abs5-s4-analyse.md
+    bauanleitung: reports/adjudikation/p33b_stufe2_bauanleitung_2026-08-07.md
+    achse_geklaert: |
+      2026-08-07: behinderungsbedingte_aufwendungen gehoert FALLWEIT, nicht per Kind.
+      Beleg: agb_aufwendungen (bindung_sonder_agb_35a.yaml:68) hat keine instanz_gruppe;
+      eine "davon"-Teilmenge muss auf derselben Achse liegen wie ihr Obermengen-Feld.
+      Die Uebertragung nach S. 1 ist zwar per Kind, die ausgeschlossenen Aufwendungen
+      nach S. 4 sind aber die des Steuerpflichtigen. Damit entfaellt die
+      EM.instanzen-Schleife — kein kind_kv/kind_pv-Muster, einfaches Zusatzfeld.
+    einheiten_falle: |
+      _c(...) liefert CENT, die Senke (catala_p33_agb) will EURO. In CENT rechnen,
+      genau EINMAL am Ende // 100. Der erste Entwurf zog EURO von CENT ab.
     aufwand_h: 2
     richtung: under-tax
     messung: |
@@ -78,6 +98,28 @@ rechenluecken:
         grosser Aufwand  PB 880 < agB 3157  -> PB waere zu niedrig
       Der Nutzer MUSS gefragt werden.
     reihenfolge: "Abs. 5 zuerst (Ring erzwingt), dann Abs. 1 (Nutzerfrage)"
+
+  - id: vpf-frist-null-plausibilitaet
+    titel: "§ 9 Abs. 4a S. 6/7 — >3 Monate erklaert, aber 0 Tage nach Frist"
+    status: entschieden
+    aufwand_h: 1.5
+    richtung: under-tax
+    entdeckt: "2026-08-07, als Nebenbefund beim Schliessen von vpf-dreimonatsfrist"
+    messung: |
+      monate=5, tage_24h=60, alle drei NACH_FRIST=0 bestaetigt
+        -> voller Abzug 1680 EUR WK, keine S.6-Kuerzung
+      identisch zum Fall ohne jede Monatsangabe. Der Ring kann "wirklich 0 Tage
+      nach Fristablauf" nicht von "Nutzer hat 0 hingeschrieben" unterscheiden.
+    warum_keine_harte_sperre: |
+      0 ist eine legitime Antwort. § 9 Abs. 4a S. 7 laesst die Frist bei laengerer
+      Unterbrechung neu anlaufen — wer 5 Monate auf Montage gemeldet ist, aber nur
+      in den ersten Wochen hinfaehrt, hat korrekt 0 Tage nach Frist. Schlamper und
+      Sonderfall tippen dieselbe 0.
+    entscheidung_julius: "2026-08-07: sperren MIT Rueckfrage, nicht hart ablehnen"
+    plan: |
+      Bool-Feld vpf_frist_unterbrochen (askable, fallweit), Sperrgrund solange
+      unbeantwortet. Die Antwort ist eine Bestaetigung, kein Rechenparameter —
+      sie aendert das Ergebnis nicht, sie holt die Erklaerung ein.
 
   - id: p32d-q-auslandssteuer
     titel: "§ 32d Abs. 1 S. 5 — q (anrechenbare auslaendische Steuer) ist fest 0"
@@ -118,7 +160,14 @@ test-schulden:
 
   - id: kz-ohne-assert
     titel: "7 gebundene Kz stehen in keinem Assert"
-    status: offen
+    status: erledigt
+    erledigt_in: "ea99947 (2026-08-07)"
+    erledigt_wie: |
+      Je ein Test mit Kz-Literal im Assert, der den deklarierten WERT prueft.
+      Bindungseintrag kommt aus der echten bindung_*.yaml statt aus einem im Test
+      gebauten Dict — sonst schreibt der Test dem Mapper die Wahrheit vor und eine
+      typ-Drift bliebe unsichtbar. Mutationsprobe je Kz (typ gekippt, elster_kz
+      entfernt) macht den Test rot. GEBUNDENE_KZ_KEIN_ASSERT ist leer.
     aufwand_h: 1
     gate: "tests/test_bindungstabelle.py::test_m (741a222), Ausnahmeliste GEBUNDENE_KZ_KEIN_ASSERT"
     liste:
