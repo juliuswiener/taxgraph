@@ -1042,6 +1042,23 @@ def catala_hinterbliebenen_pb(s: dict) -> int:
     return p["hinterbliebenen"] if s.get("hat_hinterbliebenenbezuege") else 0
 
 
+def catala_p33_2a_fahrtkostenpauschale(s: dict) -> int:
+    """§ 33 Abs. 2a EStG — Behinderungsbedingte Fahrtkostenpauschale, EURO.
+
+    S.3: 900 EUR für GdB >= 80 ODER GdB >= 70 + Merkzeichen G (fahrtkosten_pausch_gdb80_oder_70g).
+    S.4: 4.500 EUR für aG/Bl/TBl/H (fahrtkosten_pausch_ag_bl_tbl_h).
+    S.5: 4.500 schließt 900 aus — sind beide Tatbestände erfüllt, gilt NUR die höhere Pauschale
+    (nie additiv). Werte aus params/<vz> (fahrtkostenpauschale_p33_2a)."""
+    p = load_yaml_fh(open(os.path.join(
+        ROOT, "params", str(s["veranlagungszeitraum"]), "fahrtkostenpauschale_p33_2a.yaml"),
+        encoding="utf-8"))
+    if s.get("hat_ag_bl_tbl_h"):
+        return p["pauschale_4500"]
+    if s.get("hat_gdb80_oder_70g"):
+        return p["pauschale_900"]
+    return 0
+
+
 # -- §33a EStG (Unterhalt Abs.1 + Ausbildungsfreibetrag Abs.2). EURO. --------------
 # Pure-Python. p33a_unterhalt: Hand-geschriebenes Catala-Modul (rules/estg/p33a_unterhalt/),
 # aber NICHT in clerk.toml → kein Python-Build → Pure-Python (wie solzg/p34c).

@@ -292,3 +292,36 @@ def test_kind_pb_uebertragung_xml_mit_hbl_ist_schema_valide(bindung, tmp_path):
                          bindung), encoding="utf-8")
     ok, meldung = VX.validate(str(ziel), "2025")
     assert ok, f"XML mit Hbl nicht schema-valide: {meldung}"
+
+
+# ---------------------------------------------------------------- Block 8: §33 Abs.2a Fahrtkostenpauschale (Person A)
+
+def test_fahrtkostenpauschale_kommt_im_xml_an(bindung):
+    """fahrtkosten_pausch_gdb80_oder_70g (E0161706) und fahrtkosten_pausch_ag_bl_tbl_h (E0161806)
+    sind Ja1-Kz unter AgB/Beh_Fk_Pausch → True="1", False = Element weggelassen."""
+    xml = _xml({"fahrtkosten_pausch_gdb80_oder_70g": True,
+                "fahrtkosten_pausch_ag_bl_tbl_h": False}, bindung)
+    assert _pfad_im_xml(xml, ("AgB", "Beh_Fk_Pausch", "E0161706"), "1"), (
+        "E0161706 trägt nicht 1 (GdB80/70+G, Ja1-Typ):\n" + xml)
+    assert "E0161806" not in xml.replace("ns0:", "").replace("ns1:", ""), (
+        "E0161806 (aG/Bl/TBl/H) sollte False sein → Element weggelassen:\n" + xml)
+
+
+def test_fahrtkostenpauschale_ag_bl_tbl_h_kommt_im_xml_an(bindung):
+    """fahrtkosten_pausch_ag_bl_tbl_h (E0161806) = True → "1" (Ja1-Typ)."""
+    xml = _xml({"fahrtkosten_pausch_gdb80_oder_70g": False,
+                "fahrtkosten_pausch_ag_bl_tbl_h": True}, bindung)
+    assert _pfad_im_xml(xml, ("AgB", "Beh_Fk_Pausch", "E0161806"), "1"), (
+        "E0161806 trägt nicht 1 (aG/Bl/TBl/H, Ja1-Typ):\n" + xml)
+
+
+def test_fahrtkostenpauschale_xml_ist_schema_valide(bindung, tmp_path):
+    """Beide Fahrtkosten-Kz (True auf E0161706, False auf E0161806) validieren gegen das Schema."""
+    import validate_xsd as VX
+    if not VX.find_schema("2025"):
+        pytest.skip("elster11_E10_2025_extern.xsd nicht gefunden")
+    ziel = tmp_path / "fk_pausch.xml"
+    ziel.write_text(_xml({"fahrtkosten_pausch_gdb80_oder_70g": True,
+                          "fahrtkosten_pausch_ag_bl_tbl_h": False}, bindung), encoding="utf-8")
+    ok, meldung = VX.validate(str(ziel), "2025")
+    assert ok, f"XML nicht schema-valide: {meldung}"

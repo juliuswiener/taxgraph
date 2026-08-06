@@ -1,0 +1,24 @@
+# § 33 Abs. 2a EStG — Behinderungsbedingte Fahrtkostenpauschale. VZ 2026.
+# S.3: 900 EUR bei GdB >= 80 ODER GdB >= 70 + Merkzeichen G.
+# S.4: 4.500 EUR bei aG / Bl / TBl / H (Pflegegrad 4-5 explizit nicht im Wortlaut,
+# aber die amtliche Anleitung Anlage Kind 2026 fasst sie mit aG/Bl/TBl/H zusammen).
+# S.5: 4.500 schließt 900 aus (nicht additiv).
+parameter: fahrtkostenpauschale_p33_2a
+veranlagungszeitraum: 2026
+authority: gesetz
+redistributable: true
+gueltig_ab: "2026-01-01"
+
+# Satz 3 — 900 EUR für GdB >= 80 oder GdB >= 70 + Merkzeichen G.
+pauschale_900: 900
+pauschale_900_quelle:
+  rechtsquelle: {gesetz: EStG, paragraph: '33', absatz: '2a', satz: '3'}
+  zitatanker: "Bei Erfüllung der Anspruchsvoraussetzungen nach Satz 2 Nummer 1 beträgt die Pauschale 900 Euro"
+  datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
+
+# Satz 4 — 4.500 EUR für aG / Bl / TBl / H.
+pauschale_4500: 4500
+pauschale_4500_quelle:
+  rechtsquelle: {gesetz: EStG, paragraph: '33', absatz: '2a', satz: '4'}
+  zitatanker: "Bei Erfüllung der Anspruchsvoraussetzungen nach Satz 2 Nummer 2 beträgt die Pauschale 4 500 Euro"
+  datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"

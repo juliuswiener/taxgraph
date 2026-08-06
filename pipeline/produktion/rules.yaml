@@ -1334,9 +1334,9 @@ regeln:
     quelle: § 33 Abs. 2 Satz 2-4 EStG
     beschreibung: BA/WK/SA, Diaetverpflegung, Prozesskosten ausser Betracht. Input enthaelt sie nicht.
   - bedingung: keine_behinderungsbedingten_fahrtkosten
-    deckt_ab: behinderungsbedingte Fahrtkostenpauschale
-    quelle: § 33 Abs. 2a EStG
-    beschreibung: Behinderungs-Fahrtkosten laufen ueber die Pauschale (900/4.500), eigener Zweig - MVP ausgeklammert.
+    deckt_ab: "keine weiteren behinderungsbedingten Fahrtkosten als außergewöhnliche Belastung nach Absatz 1 berücksichtigungsfähig"
+    quelle: § 33 Abs. 2a Satz 6 EStG
+    beschreibung: "Behinderungs-Fahrtkosten laufen ueber die Pauschale (900/4.500, bindung_p33_2a_fahrtkostenpauschale). Die alte Geltungsbedingung am p33_1_2_agb_abzug ist aufgeloest: die Pauschale geht IN den agb-Slot, nicht daneben."
   - bedingung: zumutbare_belastung_ist_p33_3_ergebnis
     deckt_ab: zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen
     quelle: § 33 Abs. 1 EStG

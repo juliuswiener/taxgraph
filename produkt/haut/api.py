@@ -904,7 +904,11 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "veranlagungszeitraum": vz, "grad_der_behinderung": _c("rentner_grad_der_behinderung_partner"),
                     "ist_hilflos_blind_taubblind": f.get("rentner_hilflos_blind_taubblind_partner", {}).get("wert") is True})
             g["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
-                "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
+                "aussergewoehnliche_belastungen": (_c("agb_aufwendungen") // 100
+                                                   + runner.catala_p33_2a_fahrtkostenpauschale({
+                                                       "veranlagungszeitraum": vz,
+                                                       "hat_gdb80_oder_70g": f.get("fahrtkosten_pausch_gdb80_oder_70g", {}).get("wert") is True,
+                                                       "hat_ag_bl_tbl_h": f.get("fahrtkosten_pausch_ag_bl_tbl_h", {}).get("wert") is True})),
                 "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
                 "splitting": g["veranlagung"] == "zusammen"})
             # Kapital § 20/§ 32d: SINGLE-SOURCE (Instructor-Q1) — E1900701-Aggregat XOR Verlust-Töpfe;
@@ -1501,7 +1505,11 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # § 33-agB (Weg-ii-Fix) ADDITIV zu § 33b (ausserg, oben) — beide Absätze koexistieren (Pauschbetrag +
             # Einzelnachweis sind unterschiedliche Aufwands-Arten). gde-Basis wie § 10b (§2 Abs.3-K2-Fix).
             rentner_g["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
-                "aussergewoehnliche_belastungen": _c("agb_aufwendungen") // 100,
+                "aussergewoehnliche_belastungen": (_c("agb_aufwendungen") // 100
+                                                   + runner.catala_p33_2a_fahrtkostenpauschale({
+                                                       "veranlagungszeitraum": vz,
+                                                       "hat_gdb80_oder_70g": f.get("fahrtkosten_pausch_gdb80_oder_70g", {}).get("wert") is True,
+                                                       "hat_ag_bl_tbl_h": f.get("fahrtkosten_pausch_ag_bl_tbl_h", {}).get("wert") is True})),
                 "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
                 "splitting": rentner_g["veranlagung"] == "zusammen"})
             # § 35 GewSt-Anrechnung Basiswerte (freibetrag-unabhängig — Zähler/Nenner hängen nicht vom § 31-Zweig

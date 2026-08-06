@@ -1,0 +1,52 @@
+# Bindungstabelle — §33 Abs.2a EStG Behinderungsbedingte Fahrtkostenpauschale (Person A).
+# Zwei bool-Felder, die den Anspruchsgrund abfragen:
+#   fahrtkosten_pausch_gdb80_oder_70g  -> E0161706 -> 900 EUR (S.3)
+#   fahrtkosten_pausch_ag_bl_tbl_h     -> E0161806 -> 4.500 EUR (S.4)
+# S.5: 4.500 schließt 900 aus (nicht additiv). S.7: Pauschale geht IN den
+# aussergewoehnliche_belastungen-Slot von catala_p33_agb, nicht in `ausserg`.
+# Person B (Partner): Beh_Fk_Pausch-Container hat Person-Diskriminator, aber Partner-Kz
+# sind nicht identifiziert → Person B in separatem Schritt (Future).
+version: 1
+scheibe: "Fahrtkostenpauschale (p33_2a)"
+
+bindungen:
+  - feld_id: fahrtkosten_pausch_gdb80_oder_70g
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33_2a_fahrtkostenpauschale, signatur_slot: hat_gdb80_oder_70g}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: 'Hast du einen Grad der Behinderung von mindestens 80 oder mindestens 70 mit dem Merkzeichen "G" (gehbehindert)?'
+    hilfe_kurz: "Dann bekommst du eine Fahrtkostenpauschale von 900 Euro. Die Pauschale ersetzt einzelne Fahrtkosten und wird mit der zumutbaren Belastung verrechnet."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0161706
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33 Abs. 2a S. 2 Nr. 1 EStG"
+      zitatanker: 'Menschen mit einem Grad der Behinderung von mindestens 80 oder mit einem Grad der Behinderung von mindestens 70 und dem Merkzeichen „G“'
+      datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
+
+  - feld_id: fahrtkosten_pausch_ag_bl_tbl_h
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33_2a_fahrtkostenpauschale, signatur_slot: hat_ag_bl_tbl_h}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Bist du außergewöhnlich gehbehindert, blind, taubblind oder ständig hilflos (Merkzeichen aG, Bl, TBl oder H)?"
+    hilfe_kurz: "Dann bekommst du eine Fahrtkostenpauschale von 4.500 Euro. Diese Pauschale schließt die 900-Euro-Pauschale aus – du bekommst immer nur die höhere."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0161806
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33 Abs. 2a S. 2 Nr. 2 EStG"
+      zitatanker: 'Menschen mit dem Merkzeichen „aG“, mit dem Merkzeichen „Bl“, mit dem Merkzeichen „TBl“ oder mit dem Merkzeichen „H“'
+      datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
+
+luecken:
+  - regel_id: p33_2a_fahrtkostenpauschale
+    geltungsbedingung: partner_kz_fehlen
+    grund: "Person B (Partner) hat dieselben Beh_Fk_Pausch-Kz nicht im E10-XSD identifiziert (E0161706/E0161806 sind nur für Person A). Separate Suche nötig. Person-B-Infrastruktur (Person-Diskriminator im Container) existiert, aber ohne Kz keine Deklaration."
