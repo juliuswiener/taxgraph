@@ -1133,18 +1133,21 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "bemessungsgrundlage": solz_info["est_mit_fb"],
                     "kapital_steuer": solz_info.get("kap_st", 0),
                     "splitting": g["veranlagung"] == "zusammen"})
-            # KiSt § 51a: Basis = Maßstabsteuer ohne §32d-Abgeltung-Kapital (= SolZ-basis_main;
-            # die Abgeltung-KiSt e/(4+k) ist ein eigener Nachtrag → hier NICHT auf kap_st).
-            # FIX: §32d KiSt-Abgeltung — KiSt muss auf die vollen Kapitalerträge angewendet werden (vor 25% Reduktion)
+            # KiSt § 51a: Bemessungsgrundlage = veranlagte ESt mit Kinderfreibetrag, OHNE
+            # §32d-Kapitalanteil (= SolZ-basis_main). est_roh_ohne_kap = ESt ohne Kapitalsteuer.
+            # BUG-FIX 2026-08-06: c09bd7d hatte hier versehentlich kap_st_total (nur die
+            # Kapitalsteuer) als est_mit_fb übergeben → KiSt=0 für jeden kirchensteuerpflichtigen
+            # Angestellten ohne Kapital (Under-tax im Normalfall).
+            # BENANNTE LÜCKE: KiSt auf Abgeltungsteuer (§ 32d Abs. 1 S. 3-5 EStG) ist NICHT
+            # implementiert. S. 3: "Im Fall der Kirchensteuerpflicht ermäßigt sich die Steuer
+            # nach den Sätzen 1 und 2 um 25 Prozent der auf die Kapitalerträge entfallenden
+            # Kirchensteuer." — die e/(4+k)-Formel SETZT die Kapital-KiSt voraus und ermäßigt
+            # damit die Einkommensteuer; sie ersetzt die KiSt nicht. Folge hier: Kapitalerträge
+            # tragen in der Veranlagung keine KiSt. Im Regelfall ist die Kapital-KiSt beim
+            # Kreditinstitut einbehalten (nur §32d Abs. 3/4-Fälle gehören in die Veranlagung).
             if extras is not None:
-                kap_st_total = runner.catala_kapital_steuer({
-                    "veranlagungszeitraum": vz,
-                    "kapitaleinkuenfte": kapitaleinkuenfte,
-                    "est_regulaer_mit_kap": solz_info.get("est_roh_mit_kap", 0),  # Full tax before credits
-                    "est_regulaer_ohne_kap": solz_info.get("est_roh_ohne_kap", 0)})
-                kap_st_netto = kap_st_total * 0.75  # Apply 25% KiSt reduction per §32d(3)
                 extras["kist_cent"] = runner.catala_kist({
-                    "est_mit_fb": kap_st_total,  # Full capital tax with KiSt for church tax calculation
+                    "est_mit_fb": solz_info.get("est_roh_ohne_kap", 0),
                     "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
                     "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
             return est
