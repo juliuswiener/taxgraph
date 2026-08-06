@@ -1521,10 +1521,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                         "est_regulaer_mit_kap": est_mit,
                         "est_regulaer_ohne_kap": est_raw})
                     result = est_raw + kap_st
-                    # SolZ-Tracking: kap_st für §32d-Abgeltung-SolZ (5,5% ohne Freigrenze, SolzG §3 Abs.3 S.2)
+                    # SolZ-Tracking: est_mit_fb = KiFB-fiktive ESt (SolzG §3 Abs.3 S.1: cap-st ist
+                    # abgezogen VOR Freigrenze). kap_st = §32d-Abgeltung-SolZ (5,5% ohne Freigrenze).
+                    # est_roh_ohne_kap = ESt vor §32d-Kapital — für §51a-KiSt-Basis (OHNE §32d).
                     if freibetrag > 0 or kinder == 0:
                         solz_info_r["est_mit_fb"] = result
-                        solz_info_r["kap_st"] = kap_st
+                        solz_info_r["est_roh_ohne_kap"] = est_raw
                 # §32b Post-Engine-Wrapper (Rentner-Ring, 1:1 gesamt-Präzedenz)
                 if pe_active:
                     tarifliche_pre32b = runner.catala_gesamt_tarifliche(g2)
@@ -1542,9 +1544,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     # §35-Deckel-3 post-wrapper mit tarifliche_32b
                     if p35_credit_r > 0:
                         result = max(0, result - p35_credit_r)
-                # SolZ-Tracking: nur bei kap_st=0 (keine Günstigerprüfung)
+                # SolZ-Tracking: nur bei kap_st=0 (keine Günstigerprüfung).
+                # est_roh_ohne_kap bleibt unverändert, wenn bereits vom kap>0-Zweig gesetzt
+                # (dort = est_raw, die ESt ohne §32d-Kapital). Bei kap=0 wird hier erstmals gesetzt.
                 if freibetrag > 0 or kinder == 0:
                     solz_info_r["est_mit_fb"] = result
+                    solz_info_r["est_roh_ohne_kap"] = solz_info_r.get("est_roh_ohne_kap", result)
                     solz_info_r["kap_st"] = 0
                 return result
 
@@ -1568,10 +1573,14 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "bemessungsgrundlage": solz_info_r["est_mit_fb"],
                     "kapital_steuer": 0,  # MUTATION
                     "splitting": rentner_g["veranlagung"] == "zusammen"})
-            # KiSt § 51a: Basis = KiFB-fiktive ESt (= SolZ-Basis); §32d-Abgeltung-KiSt ist separater Nachtrag
-            if extras is not None and "est_mit_fb" in solz_info_r:
+            # KiSt § 51a: Basis = KiFB-fiktive ESt OHNE §32d-Kapital (= est_roh_ohne_kap).
+            # §32d-Abgeltung-KiSt ist separater Nachtrag (§32d Abs.1 S.3-5, benannte Lücke).
+            # BUG-FIX 2026-08-06: selbe Bugklasse wie gesamt-Ring (Z.1144). Z.1575/1578 setzte
+            # est_mit_fb = est_raw + kap_st → KiSt auf 13.855 statt 1.605 (Rentner 20k + Kapital 50k).
+            # est_roh_ohne_kap = est_raw (ESt ohne §32d-Kapital), separat von est_mit_fb (SolZ-Basis).
+            if extras is not None and "est_roh_ohne_kap" in solz_info_r:
                 extras["kist_cent"] = runner.catala_kist({
-                    "est_mit_fb": solz_info_r["est_mit_fb"],
+                    "est_mit_fb": solz_info_r["est_roh_ohne_kap"],
                     "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
                     "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
             return est

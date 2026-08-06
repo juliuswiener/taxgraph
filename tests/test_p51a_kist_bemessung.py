@@ -178,6 +178,110 @@ def test_kist_mit_kapital(base):
           f"(vollständig: ~{kist_vollstaendig} cent)")
 
 
+# ===== RENTNER-KiSt (Befund 1: Z.1526 gibt est_mit_fb = est_raw + kap_st) =====
+
+# RENTNER_KEGEL (api_constants Z.133): RENTNER_22 + RENTNER_33B + veranlagung
+# + AN_GESAMT_FLAGS + VOR_FELDER + KV_PV_FELDER
+RENTNER_KEGEL_BASE = [
+    ("veranlagung", "einzel"),
+    ("rentner_renten_art", "gesetzliche_rente"), ("rentner_jahresrente", 2000000),  # 20.000 EUR
+    ("rentner_renten_beginn_jahr", 2023), ("rentner_alter_bei_rentenbeginn", 65),
+    ("rentner_grad_der_behinderung", 0), ("rentner_hilflos_blind_taubblind", False),
+    ("rentner_pflegegrad", 0), ("rentner_gepflegter_hilflos", False), ("rentner_hinterbliebenenbezuege", False),
+    ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
+    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
+    ("basis_kv", 0), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"),
+    ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
+    ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0),
+    ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
+    ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
+    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
+    ("einkuenfte_gewinn", 0), ("rentner_veraeusserungsgewinn", 0),
+    ("gewinn_betriebsart", "keine"), ("geburtsjahr", 1960),
+    ("gewst_hebesatz", 0), ("gewst_messbetrag", 0), ("verlustvortrag_bestand", 0),
+    ("rentner_rentenfreibetrag", 0),
+]
+
+
+def _rentner_kegel(mit_kapital: bool):
+    kegel = list(RENTNER_KEGEL_BASE)
+    kegel += [("kist_konfession", "roemisch-katholisch"),
+              ("kist_bundesland", "nordrhein_westfalen")]
+    if mit_kapital:
+        for i, (k, v) in enumerate(kegel):
+            if k == "kein_kap":
+                kegel[i] = (k, False)
+            elif k == "kap_kapitalertraege":
+                kegel[i] = (k, 5000000)  # 50.000 EUR in cent
+    return kegel
+
+
+def test_kist_rentner_ohne_kapital(base):
+    """Rentner 20.000 Rente, roem.-kath., NRW, kein Kapital → KiSt = 9% von est_raw.
+
+    Baseline: ESt 1.605,00 → KiSt 144,45 (9%).
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    _anlegen(base, "rkist0", "rentner_gesamt", _rentner_kegel(mit_kapital=False))
+    st, erg = _req(base, "GET", "/fall/rkist0/ergebnis")
+    assert st == 200
+    kist_cent = erg.get("kist_cent")
+    assert kist_cent is not None, f"kist_cent fehlt: {erg}"
+    assert kist_cent > 0, f"KiSt = 0 obwohl kirchensteuerpflichtig. {erg}"
+    # Erwartet: 9% von ESt ohne Kapital (= est_raw). est=1605 EUR → KiSt 144,45 EUR
+    est_cent = erg["zahl_cent"]
+    expected = est_cent // 100 * 9
+    assert kist_cent == expected, (
+        f"KiSt {kist_cent} != {expected} (9% von {est_cent} CENT)")
+
+
+def test_kist_rentner_mit_kapital(base):
+    """Rentner 20.000 Rente + 50.000 Kapital → KiSt nur auf ESt OHNE Kapital.
+
+    MUSS ROT sein auf aktuellem Code: Z.1526 setzt est_mit_fb = est_raw + kap_st,
+    KiSt rechnet auf 13.855 statt 1.605. Erwartet 144,45, aktuell 1.246,95.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    _anlegen(base, "rkistkap", "rentner_gesamt", _rentner_kegel(mit_kapital=True))
+    st, erg = _req(base, "GET", "/fall/rkistkap/ergebnis")
+    assert st == 200
+    kist_cent = erg.get("kist_cent")
+    assert kist_cent is not None, f"kist_cent fehlt: {erg}"
+    # Kapital 50.000: est_raw=1.605, est_mit=18.010, kap_st=12.250 (Abgeltung)
+    # §51a-Basis = est_raw = 1.605 → KiSt = 144,45 (9%).
+    # Aktuell: est_mit_fb = 1.605+12.250 = 13.855 → KiSt = 1.246,95 (9%).
+    expected = 14445  # cent = 144,45 EUR (9% von 1.605 EUR)
+    assert kist_cent == expected, (
+        f"KiSt {kist_cent} != {expected} (9% von est_raw=1.605). "
+        f"BUG: rentner-Zweig gibt est_mit_fb={erg.get('kist_cent')} statt est_raw. erg={erg}")
+    assert erg["zahl_cent"] == 1385500, (
+        f"ESt {erg['zahl_cent']} != 1385500 (13.855 EUR = est_raw+kap_st) — Fall abweichend")
+
+
+def test_kist_rentner_mit_kapital_solz(base):
+    """Rentner 20.000 + 50.000 Kapital: SolZ DARF durch Fix NICHT ändern.
+
+    SolZ = 0 (pre-existing, egal vor/nach Fix). KiSt = 144,45 (nach Fix)
+    statt 1.246,95 (vor Fix). Nur KiSt-Basis geändert (est_roh_ohne_kap),
+    est_mit_fb für SolZ unverändert.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    _anlegen(base, "rkistsolz", "rentner_gesamt", _rentner_kegel(mit_kapital=True))
+    st, erg = _req(base, "GET", "/fall/rkistsolz/ergebnis")
+    assert st == 200
+    # SolZ unverändert (0, pre-existing)
+    assert erg.get("solz_cent") == 0, f"SolZ durch Fix geändert: {erg}"
+    # KiSt korrigiert (est_roh_ohne_kap statt est_mit_fb)
+    assert erg.get("kist_cent") == 14445, (
+        f"KiSt {erg.get('kist_cent')} != 14445 nach Fix. erg={erg}")
+    # ESt unverändert (est_mit_fb für SolZ ist gleich geblieben)
+    assert erg.get("zahl_cent") == 1385500, (
+        f"ESt {erg.get('zahl_cent')} != 1385500. erg={erg}")
+
+
 def _anlegen(base, fid, scheibe, kegel):
     st, _ = _req(base, "POST", "/fall", {"scheibe": scheibe, "veranlagungszeitraum": 2025, "fall_id": fid})
     assert st == 201
