@@ -1478,3 +1478,59 @@ def test_sparer_pauschbetrag_folgt_der_veranlagungsart(base):
             f"(1.000 € × 25 % = 250 €), gemessen: {delta} ct")
     else:
         assert bei_1000["zahl_cent"] is None or bei_2000["zahl_cent"] is None
+
+
+# ===== §32d Abs.1 S.3-5 Abgeltung-KiSt (e/(4+k)-Korrektur) ==============
+
+def test_p32d_abgeltung_kist_gesamt(base):
+    """REGRESSION: KiSt auf Abgeltungsteuer (§32d Abs.1 S.3-5) fehlte komplett — Kapitalerträge
+    trugen in der Veranlagung keine KiSt, obwohl §51a nur die Nicht-Kapital-ESt erfasst (Reihen-
+    folge-Fix c09bd7d). 40.000 € Lohn + 50.000 € Kapital, roem.-kath. NRW (k=9):
+
+        heute (Under-tax)    korrekt           Differenz
+        KiSt_kap    0,00      1.078,24        +1.078,24  (§32d Abs.1 S.3-5)
+        ESt_kap 12.250,00    11.980,44          −269,56  (S.3-Ermäßigung: 25%×e/(1+k/400))
+
+    Beide Seiten gehören zusammen — nur die KiSt zu erhöhen ohne die ESt zu ermäßigen wäre
+    Over-tax (§32d-p32d-abgeltung-kist.md Auflage 6.3)."""
+    catala = _catala_da()
+
+    def _kegel(kapital):
+        ersatz = {"kap_kapitalertraege": kapital, "kein_kap": False, "bruttoarbeitslohn": 4000000}
+        k = [(f, ersatz.get(f, w)) for f, w in GESAMT_KEGEL_BASIS]
+        return k + [("kist_konfession", "roemisch-katholisch"), ("kist_bundesland", "nordrhein_westfalen")]
+
+    _ges_anlegen(base, "p32d_kist", _kegel(5000000))    # 50.000 € Kapital
+    st, erg = _req(base, "GET", "/fall/p32d_kist/ergebnis")
+    _val("ergebnis", erg)
+
+    if catala:
+        assert erg["grund"] == "bestaetigt"
+        # Heutiger (falscher) Wert wäre kist_cent == 62271 (nur §51a auf 40.000 € Lohn, ohne
+        # Kapital-Nachtrag). Korrekt (Ring-gemessen, CENT-Floor): 170.094 = 622,71 + 1.078,23.
+        assert erg["kist_cent"] == 170094, f"kist_cent={erg['kist_cent']} (Abgeltung-KiSt fehlt)"
+        # ESt sinkt um die S.3-Ermäßigung gegenüber dem unkorrigierten Kapitalanteil (19.169,00 → 18.899,00).
+        assert erg["zahl_cent"] == 1889900, f"zahl_cent={erg['zahl_cent']} (S.3-Ermäßigung fehlt)"
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_p32d_abgeltung_kist_rentner(base):
+    """Spiegelt test_p32d_abgeltung_kist_gesamt im rentner_gesamt-Ring (1:1-Präzedenz, dieselbe
+    Bugklasse api.py Z.1508 vor dem Fix). 20.000 € Rente + 50.000 € Kapital, roem.-kath. NRW."""
+    catala = _catala_da()
+    kegel = list(RENTNER_KEGEL_HOCH) + [
+        ("kap_kapitalertraege", 5000000), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
+        ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
+        ("kist_konfession", "roemisch-katholisch"), ("kist_bundesland", "nordrhein_westfalen")]
+    kegel = [(f, (False if f == "kein_kap" else w)) for f, w in kegel]
+    _rent_anlegen(base, "p32d_kist_r", kegel)
+    st, erg = _req(base, "GET", "/fall/p32d_kist_r/ergebnis")
+    _val("ergebnis", erg)
+
+    if catala:
+        assert erg["grund"] == "bestaetigt"
+        assert erg["kist_cent"] == 640353, f"kist_cent={erg['kist_cent']} (Abgeltung-KiSt fehlt)"
+        assert erg["zahl_cent"] == 7115000, f"zahl_cent={erg['zahl_cent']} (S.3-Ermäßigung fehlt)"
+    else:
+        assert erg["zahl_cent"] is None

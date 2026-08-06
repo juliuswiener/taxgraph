@@ -1135,12 +1135,33 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 kap_st = runner.catala_kapital_steuer({
                     "veranlagungszeitraum": vz, "kapitaleinkuenfte": kapitaleinkuenfte,
                     "est_regulaer_mit_kap": est_mit, "est_regulaer_ohne_kap": est_raw})
-                result = est_raw + kap_st
+                # § 32d Abs. 1 S. 3-5: bei KiSt-Pflicht ermäßigt sich die Abgeltungsteuer um
+                # 25 % der Kapital-KiSt (e/(4+k)-Formel), die Kapital-KiSt kommt als eigener
+                # Nachtrag zu extras["kist_cent"] hinzu. NUR im Abs. 1-Fall (kap_st == abgeltung,
+                # S. 6 verweist die Günstigerprüfung raus — dort greift die Formel nicht, die
+                # KiSt läuft dann über §51a auf den tariflichen Kapitalanteil). Rechnung in CENT
+                # (kap_st ist bereits EURO-gerundet aus catala_kapital_steuer, S. 32d-p32d-
+                # abgeltung-kist.md Abschnitt 5.1) für den KiSt-Nachtrag; kap_st_k fließt EURO-
+                # geglättet (Ganzzahl-Addition, wie der Rest dieser Kette) in `result`.
+                kap_st_k = kap_st
+                kist_kap_cent = 0
+                konfession = f.get("kist_konfession", {}).get("wert", "keine")
+                if konfession in runner._KIST_KONFESSION_STEUERERHEBEND:
+                    bundesland = f.get("kist_bundesland", {}).get("wert", "")
+                    ksatz = 8 if bundesland in runner._KIST_BY_BW else 9
+                    abgeltung = kapitaleinkuenfte * runner._abgeltungssatz(vz) // 100
+                    if kap_st == abgeltung:
+                        kap_st_k_cent = kap_st * 100 * 400 // (400 + ksatz)
+                        kist_kap_cent = kap_st_k_cent * ksatz // 100
+                        kap_st_k = kap_st_k_cent // 100
+                result = est_raw + kap_st_k
                 if freibetrag > 0 or kinder == 0:
                     solz_info["est_mit_fb"] = result
-                    solz_info["kap_st"] = kap_st
+                    solz_info["kap_st"] = kap_st_k
                     solz_info["est_roh_ohne_kap"] = est_raw
                     solz_info["est_roh_mit_kap"] = est_mit
+                    if extras is not None:
+                        extras["kist_kap_cent"] = kist_kap_cent
                 return result
 
             # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6): bei
@@ -1174,18 +1195,17 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # BUG-FIX 2026-08-06: c09bd7d hatte hier versehentlich kap_st_total (nur die
             # Kapitalsteuer) als est_mit_fb übergeben → KiSt=0 für jeden kirchensteuerpflichtigen
             # Angestellten ohne Kapital (Under-tax im Normalfall).
-            # BENANNTE LÜCKE: KiSt auf Abgeltungsteuer (§ 32d Abs. 1 S. 3-5 EStG) ist NICHT
-            # implementiert. S. 3: "Im Fall der Kirchensteuerpflicht ermäßigt sich die Steuer
-            # nach den Sätzen 1 und 2 um 25 Prozent der auf die Kapitalerträge entfallenden
-            # Kirchensteuer." — die e/(4+k)-Formel SETZT die Kapital-KiSt voraus und ermäßigt
-            # damit die Einkommensteuer; sie ersetzt die KiSt nicht. Folge hier: Kapitalerträge
-            # tragen in der Veranlagung keine KiSt. Im Regelfall ist die Kapital-KiSt beim
-            # Kreditinstitut einbehalten (nur §32d Abs. 3/4-Fälle gehören in die Veranlagung).
+            # § 32d Abs. 1 S. 3-5: KiSt auf die Abgeltungsteuer ist ein SEPARATER Summand zur
+            # §51a-KiSt (die nur die Nicht-Kapital-ESt erfasst, est_roh_ohne_kap). Berechnet
+            # oben in _festzusetzende (e/(4+k)-Korrektur, benötigt kap_st/abgeltung, die dort
+            # bereits vorliegen). q=0-Default bei ausländischer Quellensteuer auf Kapital-
+            # erträge (§ 32d Abs. 5) ist BENANNTE LÜCKE, over-tax-safe — s.
+            # reports/adjudikation/p32d-abgeltung-kist.md Abschnitt 3.
             if extras is not None:
                 extras["kist_cent"] = runner.catala_kist({
                     "est_mit_fb": solz_info.get("est_roh_ohne_kap", 0),
                     "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
-                    "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
+                    "bundesland": f.get("kist_bundesland", {}).get("wert", "")}) + extras.get("kist_kap_cent", 0)
             return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 
@@ -1485,13 +1505,28 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                         "kapitaleinkuenfte": kapitaleinkuenfte_r,
                         "est_regulaer_mit_kap": est_mit,
                         "est_regulaer_ohne_kap": est_raw})
-                    result = est_raw + kap_st
+                    # § 32d Abs. 1 S. 3-5 (1:1 gesamt-Präzedenz Z. 1138-1160): Abgeltungsteuer-
+                    # Ermäßigung + Kapital-KiSt-Nachtrag, NUR im Abs. 1-Fall (kap_st == abgeltung).
+                    kap_st_k = kap_st
+                    kist_kap_cent = 0
+                    konfession_r = f.get("kist_konfession", {}).get("wert", "keine")
+                    if konfession_r in runner._KIST_KONFESSION_STEUERERHEBEND:
+                        bundesland_r = f.get("kist_bundesland", {}).get("wert", "")
+                        ksatz_r = 8 if bundesland_r in runner._KIST_BY_BW else 9
+                        abgeltung_r = kapitaleinkuenfte_r * runner._abgeltungssatz(vz) // 100
+                        if kap_st == abgeltung_r:
+                            kap_st_k_cent = kap_st * 100 * 400 // (400 + ksatz_r)
+                            kist_kap_cent = kap_st_k_cent * ksatz_r // 100
+                            kap_st_k = kap_st_k_cent // 100
+                    result = est_raw + kap_st_k
                     # SolZ-Tracking: est_mit_fb = KiFB-fiktive ESt (SolzG §3 Abs.3 S.1: cap-st ist
-                    # abgezogen VOR Freigrenze). kap_st = §32d-Abgeltung-SolZ (5,5% ohne Freigrenze).
+                    # abgezogen VOR Freigrenze). kap_st_k = §32d-Abgeltung-SolZ (5,5% ohne Freigrenze).
                     # est_roh_ohne_kap = ESt vor §32d-Kapital — für §51a-KiSt-Basis (OHNE §32d).
                     if freibetrag > 0 or kinder == 0:
                         solz_info_r["est_mit_fb"] = result
                         solz_info_r["est_roh_ohne_kap"] = est_raw
+                        if extras is not None:
+                            extras["kist_kap_cent"] = kist_kap_cent
                 # §32b Post-Engine-Wrapper (Rentner-Ring, 1:1 gesamt-Präzedenz)
                 if pe_active:
                     tarifliche_pre32b = runner.catala_gesamt_tarifliche(g2)
@@ -1547,7 +1582,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 extras["kist_cent"] = runner.catala_kist({
                     "est_mit_fb": solz_info_r["est_roh_ohne_kap"],
                     "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
-                    "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
+                    "bundesland": f.get("kist_bundesland", {}).get("wert", "")}) + extras.get("kist_kap_cent", 0)
             return est
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
 

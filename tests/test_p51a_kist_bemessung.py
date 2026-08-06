@@ -139,15 +139,18 @@ def test_kist_bemessung_ohne_kapital_24000(base):
 
 
 def test_kist_mit_kapital(base):
-    """Angestellter mit Kapitalerträgen (5000 EUR).
+    """Angestellter 24.000 Lohn + 5.000 Kapital, roem.-kath. NRW.
 
-    §51a-Bemessungsgrundlage OHNE §32d-Kapital → KiSt nur auf Nicht-Kapital-ESt.
-    KiSt auf Abgeltungsteuer (§32d Abs.1 S.3-5) ist NICHT implementiert (benannte Lücke).
+    KiSt = §51a auf Nicht-Kapital-ESt + §32d Abs.1 S.3-5 Kapital-KiSt (e/(4+k)).
+    5.000 Kapital − 1.000 Sparer-PB = 4.000 steuerpflichtig.
+    Abgeltung (25 %) = 1.000,00 EUR → e/(4+k) mit k=9 = 977,99 EUR (CENT-Floor).
+    KiSt auf Kapital = 977,99 × 9 % = 88,01 EUR = 8.801 CENT.
+    KiSt auf Nicht-Kapital = 209,88 EUR (§51a, 9 % von 2.332).
+    Summe = 209,88 + 88,01 = 297,89 EUR = 29.789 CENT.
     """
     if not _catala_da():
         pytest.skip("Catala nicht verfügbar")
     kegel = list(GESAMT_KEGEL_BASE)
-    # kein_kap=False → Kapital vorhanden; kap_kapitalertraege=500000 (5000 EUR in cent)
     for i, (k, v) in enumerate(kegel):
         if k == "kein_kap":
             kegel[i] = (k, False)
@@ -160,22 +163,12 @@ def test_kist_mit_kapital(base):
     assert st == 200
     kist_cent = erg.get("kist_cent")
     assert kist_cent is not None, f"kist_cent fehlt: {erg}"
-    # Charakterisierung der Lücke: KiSt entspricht 9% der ESt OHNE Kapitalanteil.
-    # Bei 24.000 Lohn + 5.000 Kapital, ESt ~14.582 EUR. KiSt=209,88 = 9% von 2.332.
-    # Der Kapitalanteil (ESt-Differenz ~12.250 EUR) trägt 0 KiSt.
-    # Vollständige KiSt wäre ~320 EUR. Die 110 EUR Differenz = §32d-Abs.1-S.3-5-Lücke.
-    ohni_kap = 233200  # est_cent ohne Kapital aus test_kist_bemessung_ohne_kapital_24000
-    expected_ohne_kap = ohni_kap // 100 * 9  # 20988 cent = 209,88 EUR
-    assert kist_cent == expected_ohne_kap, (
-        f"KiSt {kist_cent} != {expected_ohne_kap} (9% von ESt ohne Kapital). "
-        f"Lücke: Kapital-KiSt nach §32d Abs.1 S.3-5 fehlt. erg={erg}")
-    # Lücke dokumentieren: KiSt auf Kapital nach §32d Abs.1 S.3-5
-    # Formel: KiSt_on_cap = k × (e - 4q) / (4 + k), mit q=0 → k × e / (4 + k)
-    # Für NRW (k=9%): 0.09 × 500000 / 4.09 = 11002 cent = 110,02 EUR
-    kist_auf_kapital_erwartet = 11002
-    kist_vollstaendig = expected_ohne_kap + kist_auf_kapital_erwartet
-    print(f"\n[LÜCKE] KiSt auf Kapital (§32d Abs.1 S.3-5) fehlt: ~{kist_auf_kapital_erwartet} cent "
-          f"(vollständig: ~{kist_vollstaendig} cent)")
+    # KiSt = 297,89 EUR (Nicht-Kapital 209,88 + Kapital 88,01)
+    assert kist_cent == 29789, (
+        f"KiSt {kist_cent} != 29789 (Nicht-Kapital 20988 + Abgeltung-KiSt 8801). erg={erg}")
+    # ESt = 3.309,00 EUR (2.332 + 977,99 nach e/(4+k), statt 2.332 + 1.000 = 3.332)
+    assert erg["zahl_cent"] == 330900, (
+        f"ESt {erg['zahl_cent']} != 330900. erg={erg}")
 
 
 # ===== RENTNER-KiSt (Befund 1: Z.1526 gibt est_mit_fb = est_raw + kap_st) =====
@@ -237,10 +230,15 @@ def test_kist_rentner_ohne_kapital(base):
 
 
 def test_kist_rentner_mit_kapital(base):
-    """Rentner 20.000 Rente + 50.000 Kapital → KiSt nur auf ESt OHNE Kapital.
+    """Rentner 20.000 Rente + 50.000 Kapital, roem.-kath. NRW.
 
-    MUSS ROT sein auf aktuellem Code: Z.1526 setzt est_mit_fb = est_raw + kap_st,
-    KiSt rechnet auf 13.855 statt 1.605. Erwartet 144,45, aktuell 1.246,95.
+    KiSt = §51a auf Rente (est_raw=1.605) + §32d Abs.1 S.3-5 Kapital-KiSt.
+    Kapital 50.000 − Sparer-PB 1.000 = 49.000. Abgeltung 25 % = 12.250 EUR.
+    e/(4+k) mit k=9: 12.250 × 400 // 409 = 11.980 EUR (CENT-Floor).
+    KiSt auf Kapital = 11.980 × 9 % = 1.078,23 EUR (CENT-Floor).
+    KiSt auf Rente (§51a) = 1.605 × 9 % = 144,45 EUR.
+    Summe KiSt = 144,45 + 1.078,23 = 1.222,68 EUR = 122.268 CENT.
+    ESt = 1.605 + 11.980 = 13.585 EUR.
     """
     if not _catala_da():
         pytest.skip("Catala nicht verfügbar")
@@ -249,23 +247,18 @@ def test_kist_rentner_mit_kapital(base):
     assert st == 200
     kist_cent = erg.get("kist_cent")
     assert kist_cent is not None, f"kist_cent fehlt: {erg}"
-    # Kapital 50.000: est_raw=1.605, est_mit=18.010, kap_st=12.250 (Abgeltung)
-    # §51a-Basis = est_raw = 1.605 → KiSt = 144,45 (9%).
-    # Aktuell: est_mit_fb = 1.605+12.250 = 13.855 → KiSt = 1.246,95 (9%).
-    expected = 14445  # cent = 144,45 EUR (9% von 1.605 EUR)
-    assert kist_cent == expected, (
-        f"KiSt {kist_cent} != {expected} (9% von est_raw=1.605). "
-        f"BUG: rentner-Zweig gibt est_mit_fb={erg.get('kist_cent')} statt est_raw. erg={erg}")
-    assert erg["zahl_cent"] == 1385500, (
-        f"ESt {erg['zahl_cent']} != 1385500 (13.855 EUR = est_raw+kap_st) — Fall abweichend")
+    assert kist_cent == 122268, (
+        f"KiSt {kist_cent} != 122268 (Rente 14445 + Kapital 107823). erg={erg}")
+    assert erg["zahl_cent"] == 1358500, (
+        f"ESt {erg['zahl_cent']} != 1358500 (1.605 + 11.980). erg={erg}")
 
 
 def test_kist_rentner_mit_kapital_solz(base):
-    """Rentner 20.000 + 50.000 Kapital: SolZ DARF durch Fix NICHT ändern.
+    """Rentner 20.000 + 50.000 Kapital: SolZ durch §32d-Abgeltung-KiSt unbeeinflusst.
 
-    SolZ = 0 (pre-existing, egal vor/nach Fix). KiSt = 144,45 (nach Fix)
-    statt 1.246,95 (vor Fix). Nur KiSt-Basis geändert (est_roh_ohne_kap),
-    est_mit_fb für SolZ unverändert.
+    §32d Abs.1 S.3-5 ändert die Abgeltungsteuer (e/(4+k)-Korrektur), nicht die
+    SolZ-Basis. SolZ bleibt 0 (pre-existing, unter Freigrenze). KiSt = 1.222,68 EUR,
+    ESt = 13.585 EUR (nach e/(4+k)-Ermäßigung von 270 EUR).
     """
     if not _catala_da():
         pytest.skip("Catala nicht verfügbar")
@@ -274,12 +267,12 @@ def test_kist_rentner_mit_kapital_solz(base):
     assert st == 200
     # SolZ unverändert (0, pre-existing)
     assert erg.get("solz_cent") == 0, f"SolZ durch Fix geändert: {erg}"
-    # KiSt korrigiert (est_roh_ohne_kap statt est_mit_fb)
-    assert erg.get("kist_cent") == 14445, (
-        f"KiSt {erg.get('kist_cent')} != 14445 nach Fix. erg={erg}")
-    # ESt unverändert (est_mit_fb für SolZ ist gleich geblieben)
-    assert erg.get("zahl_cent") == 1385500, (
-        f"ESt {erg.get('zahl_cent')} != 1385500. erg={erg}")
+    # KiSt = 122.268 CENT (Rente 14445 + Kapital 107823)
+    assert erg.get("kist_cent") == 122268, (
+        f"KiSt {erg.get('kist_cent')} != 122268. erg={erg}")
+    # ESt = 13.585 EUR (est_raw 1.605 + kap_st_k 11.980 nach e/(4+k))
+    assert erg.get("zahl_cent") == 1358500, (
+        f"ESt {erg.get('zahl_cent')} != 1358500. erg={erg}")
 
 
 def _anlegen(base, fid, scheibe, kegel):
