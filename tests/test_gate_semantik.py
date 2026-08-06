@@ -22,6 +22,7 @@ import os
 import sys
 
 import pytest
+import yaml
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
@@ -308,6 +309,57 @@ def test_manifeste_laden_strikt():
     for rel in ("pipeline/produktion/rules.yaml", "pipeline/models.yaml",
                 "pipeline/bakeoff/tasks.yaml"):
         assert load_yaml(os.path.join(ROOT, rel))
+
+
+# -- Strikter YAML-Loader: weitere Fallstricke --------------------------------
+
+@pytest.mark.parametrize("text", [
+    "x:\n  a: 1\n  a: 2\n",          # Duplikat in verschachteltem Mapping
+    "- a: 1\n  a: 2\n",              # Duplikat in Mapping innerhalb einer Liste
+])
+def test_doppelter_schluessel_verschachtelt_ist_fehler(text):
+    """Der Duplikat-Schutz greift auch NESTED (nicht nur top-level)."""
+    with pytest.raises(DuplicateKeyError):
+        load_str(text)
+
+
+def test_tabs_werden_abgelehnt():
+    """YAML verbietet Tabs als Einrueckung -> StrictLoader wirft ScannerError.
+    Ein Tab-Verdreher darf kein stilles Gate sein."""
+    with pytest.raises(yaml.scanner.ScannerError):
+        load_str("\t\tx: 1\n")
+
+
+def test_fuehrende_null_wird_still_oktal_or_string():
+    """FUEHRENDE NULL (YAML-1.1-Oktal): StrictLoader laesst still durch.
+    '04260' -> 2224 (Oktal), '04800' -> '04800' (String, ungültig im Oktal).
+    Ein Geldbetrag mit fuehrender Null wird also verfaelscht ODER bleibt String —
+    inkonsistent. STILLER BUG, gemeldet (nicht selbst gefixt)."""
+    assert load_str("x: 04260\n")["x"] == 2224
+    assert load_str("x: 04800\n")["x"] == "04800"
+
+
+def test_norway_bools_werden_still_akzeptiert():
+    """Norway-Problem: yes/no/on/off -> bool. Fuer ein Wertfeld, das einen
+    Betrag/Namen tragen soll, waere das ein stiller Typwechsel. STILLER BUG,
+    gemeldet (nicht selbst gefixt)."""
+    assert load_str("x: yes\n")["x"] is True
+    assert load_str("x: no\n")["x"] is False
+    assert load_str("x: on\n")["x"] is True
+    assert load_str("x: off\n")["x"] is False
+
+
+def test_colon_ohne_leerzeichen_wird_still_string():
+    """': ' ohne Leerzeichen: 'abzugssatz:0.8' wird zum STRING 'abzugssatz:0.8',
+    kein Stichwort, kein Fehler. Ein Tippfehler ('abzugssatz:0.8' statt
+    'abzugssatz: 0.8') erzeugt einen String-Schluessel statt eines int-Werts.
+    STILLER BUG, gemeldet (nicht selbst gefixt)."""
+    assert load_str("abzugssatz:0.8\n") == "abzugssatz:0.8"
+
+
+def test_leerer_wert_wird_still_none():
+    """'x:' ohne Wert -> None. Ist dokumentiertes YAML-Verhalten, kein Fehler."""
+    assert load_str("x:\n")["x"] is None
 
 
 # -- regate darf ein kaputtes Verdikt nicht ueberspringen ---------------------
