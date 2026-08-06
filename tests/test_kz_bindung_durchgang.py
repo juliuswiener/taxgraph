@@ -185,3 +185,35 @@ def test_kist_xml_ist_schema_valide(bindung, tmp_path):
                     encoding="utf-8")
     ok, meldung = VX.validate(str(ziel), "2025")
     assert ok, f"XML nicht schema-valide: {meldung}"
+
+
+# ---------------------------------------------------------------- Block 6: Kind-KV/PV § 10 Abs. 1 Nr. 3 S. 2
+
+def test_kind_kv_pv_kommt_im_xml_an(bindung):
+    """kind_kv (E0503110) und kind_pv (E0503310) an ihrer Schema-Stelle, NICHT vertauscht.
+    Anlage Kind ist PRO KIND ein Dokument. Zwei Kinder mit UNTERSCHIEDLICHEN KV- und PV-Werten:
+      Kind1 (Basis): kind_kv=100000ct (1000€), kind_pv=50000ct (500€)
+      Kind2 (__2):   kind_kv=50000ct (500€), kind_pv=0ct (0€)
+    Das erste Kind-Dokument muss E0503110=1000 (KV) und E0503310=500 (PV) tragen.
+    Vertauschung in der Bindung (kind_kv→E0503310, kind_pv→E0503110) liefert
+    E0503110=500 im ersten Dokument — der KV-Assert schlägt fehl.
+    """
+    xml = _xml({"kind_idnr": "11111111111", "kind_kv": 100000, "kind_pv": 50000,
+                "kind_idnr__2": "22222222222", "kind_kv__2": 50000, "kind_pv__2": 0},
+               bindung)
+
+    # Erstes Kind-Dokument (kind_idnr 11111111111): E0503110 = KV 1000€
+    assert _pfad_im_xml(xml, ("Kind", "KV_PV", "AW_Stpfl", "E0503110"), "1000"), (
+        "E0503110 trägt nicht 1000 (KV Kind1):\n" + xml)
+    # Erstes Kind-Dokument: E0503310 = PV 500€
+    assert _pfad_im_xml(xml, ("Kind", "KV_PV", "AW_Stpfl", "E0503310"), "500"), (
+        "E0503310 trägt nicht 500 (PV Kind1):\n" + xml)
+    # Beide Kinder haben ein Kind-Dokument: E0503110 kommt 2× vor (1000 + 500)
+    import re
+    flach = re.sub(r"<(/?)[a-zA-Z0-9]+:", r"<\1", xml)
+    kv_werte = re.findall(r"E0503110>(\d+)", flach)
+    assert kv_werte == ["1000", "500"], (
+        f"KV-Werte je Kind-Dokument nicht [1000,500]: {kv_werte}\n" + xml)
+    pv_werte = re.findall(r"E0503310>(\d+)", flach)
+    assert pv_werte == ["500", "0"], (
+        f"PV-Werte je Kind-Dokument nicht [500,0]: {pv_werte}\n" + xml)

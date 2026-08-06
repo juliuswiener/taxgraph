@@ -1,0 +1,59 @@
+# Bindungstabelle — §10 Abs.1 Nr.3 S.2 EStG KV/PV-Beiträge des Kindes (Stufe-1, Tier-0).
+# PER-KIND: Kz E0503110/E0503310 sitzen im Kind-Container, Ring liest per EM.instanzen.
+# S.2: "Als eigene Beiträge des Steuerpflichtigen können auch eigene Beiträge im Sinne der
+# Buchstaben a oder b eines Kindes behandelt werden, wenn der Steuerpflichtige die Beiträge
+# des Kindes ... durch Leistungen in Form von Bar- oder Sachunterhalt wirtschaftlich getragen
+# hat, unabhängig von Einkünften oder Bezügen des Kindes; Voraussetzung für die Berücksichtigung
+# beim Steuerpflichtigen ist die Angabe der erteilten Identifikationsnummer (§ 139b der
+# Abgabenordnung) des Kindes in der Einkommensteuererklärung des Steuerpflichtigen."
+# MVP: nur AW_Stpfl (Elternteil als Versicherungsnehmer, Zeilen 27-30 Anlage Kind).
+# AW_Kind (Kind selbst VN, Zeilen 31-36) ist Stufe-2.
+version: 1
+scheibe: "Kind-KV/PV (p10_1_3_kind)"
+
+bindungen:
+  - feld_id: kind_kv
+    instanz_gruppe: kind
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p10_1_3_kv_pv_kind, signatur_slot: basis_kv}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr für die Krankenversicherung deines Kindes gezahlt (nur Basisabsicherung, keine Wahlleistungen)?"
+    hilfe_kurz: "Die Beiträge zur Krankenversicherung des Kindes (Basisabsicherung) kannst du als eigene Sonderausgaben absetzen, wenn du sie wirtschaftlich getragen hast. Voraussetzung: Angabe der Identifikationsnummer des Kindes."
+    beispielwert: 300000
+    herkunft_slots: ["KV-Beitragsrechnung Kind: Basis-Beiträge"]
+    elster_kz: E0503110
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 S. 2 EStG"
+      zitatanker: "Als eigene Beiträge des Steuerpflichtigen können auch eigene Beiträge im Sinne der Buchstaben a oder b eines Kindes behandelt werden"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  - feld_id: kind_pv
+    instanz_gruppe: kind
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p10_1_3_kv_pv_kind, signatur_slot: basis_pv}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr für die Pflegeversicherung deines Kindes gezahlt (soziale oder private Pflege-Pflichtversicherung)?"
+    hilfe_kurz: "Die Beiträge zur Pflegeversicherung des Kindes kannst du als eigene Sonderausgaben absetzen, wenn du sie wirtschaftlich getragen hast. Voraussetzung: Angabe der Identifikationsnummer des Kindes."
+    beispielwert: 100000
+    herkunft_slots: ["PV-Beitragsrechnung Kind: Basis-Beiträge"]
+    elster_kz: E0503310
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 S. 2 EStG"
+      zitatanker: "Als eigene Beiträge des Steuerpflichtigen können auch eigene Beiträge im Sinne der Buchstaben a oder b eines Kindes behandelt werden"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+luecken:
+  - regel_id: p10_1_3_kv_pv_kind
+    geltungsbedingung: kind_kv_pv_nur_aw_stpfl
+    grund: "MVP: nur AW_Stpfl (Elternteil als Versicherungsnehmer, Zeilen 27-30 Anlage Kind). AW_Kind (Kind als VN, Zeilen 31-36) ist Stufe-2. Voraussetzung kind_idnr (S. 2) wird im Ring geprüft."
+  - regel_id: p10_1_3_kv_pv_kind
+    geltungsbedingung: kind_beitraege_gehen_in_gleichen_deckel
+    grund: "Die Kind-Beiträge gehen in DENSELBEN §10 Abs.4-Höchstbetrag des Elternteils (nicht separat). Der Ring addiert kind_summe zu basis_kv_pv des Elternteils vor dem catala_p10_kv_pv-Aufruf."
