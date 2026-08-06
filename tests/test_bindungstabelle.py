@@ -14,6 +14,7 @@ Plus Negativtests: manipulierte Kopien MÜSSEN rot werden.
 """
 from __future__ import annotations
 
+import ast
 import copy
 import glob
 import json
@@ -628,6 +629,18 @@ def test_i_api_read_keys_sind_in_bindung(daten):
 # Jeder Eintrag braucht eine Begründung (z. B. "Nur im XSD-Kommentar, keine echte Bindung").
 GEBUNDENE_KZ_OHNE_TEST: set[str] = set()
 
+# Scharfe Ausnahmeliste (test_m_): Kz in keiner assert-gesteuerten Prüfung.
+# Jeder Eintrag einzeln begründet — hier ist die Lücke sichtbar, nicht still.
+GEBUNDENE_KZ_KEIN_ASSERT: dict[str, str] = {
+    "E0108405": "spenden_betrag — Kz im ELSTER-Durchgangs-Kegel, assert prüft Feld-Ergebnis, nicht Kz direkt",
+    "E0203611": "ep_oepnv_kosten — Kz in differential_zone_a; Wert-Abgleich, kein Kz-Assert",
+    "E0205201": "tage_ueber_8h_eintaegig — Verpflegungs-Tage; Ring-Test prüft Delta auf zahl_cent, nicht Kz",
+    "E0205302": "tage_an_abreise — Verpflegungs-Tage; Ring-Test prüft Delta auf zahl_cent, nicht Kz",
+    "E0205409": "tage_24h — Verpflegungs-Tage; Ring-Test prüft Delta auf zahl_cent, nicht Kz",
+    "E0207611": "dhf_unterkunftskosten_monat — Kz in differential_zone_a; Wert-Abgleich, kein Kz-Assert",
+    "E0505607": "schulgeld — heute committet (52b87c9), Kz-Durchgang nie in assert; Ring-Test prüft Delta auf zahl_cent",
+}
+
 
 def test_j_gebundene_kz_sind_test_belegt():
     """Jedes Kz, das in einer bindung_*.yaml als elster_kz gesetzt oder in
@@ -685,6 +698,139 @@ def test_j_gebundene_kz_sind_test_belegt():
         f"Kz gebunden (elster_kz / est_mapping), aber in keiner Test-Datei "
         f"als Literal vorhanden: {ungedeckt}. Ein Kz ohne Test-Erwähnung "
         f"kann vertauscht oder falsch sein, ohne dass jemand es merkt.")
+
+
+def _ast_kz_in_assert_helper(kz: str, src: str) -> bool:
+    """Prüft ob Kz via AST in einem assert-gesteuerten Pfad liegt.
+
+    Zählt als geprüft wenn:
+    (a) Kz als String-Literal INNERHALB eines ast.Assert-Knotens
+    (b) Kz als String-Literal in einer for-loop-Iterable, deren Laufvariable
+        in einem assert des loop-Bodys referenziert wird
+    (c) Kz in einem parametrize-Decorator, dessen Parameter in einem assert
+        der dekorierten Funktion referenziert wird
+    """
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return False
+
+    # (a) Literal in assert
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assert):
+            for child in ast.walk(node):
+                if isinstance(child, ast.Constant) and isinstance(child.value, str) and kz in child.value:
+                    return True
+
+    # Hilfsfunktion: Variablen in asserts unter einem Knoten
+    def _vars_in_asserts(body):
+        v = set()
+        for n in ast.walk(body):
+            if isinstance(n, ast.Assert):
+                for c in ast.walk(n):
+                    if isinstance(c, ast.Name):
+                        v.add(c.id)
+        return v
+
+    # (b) For-loop-Iterable
+    for node in ast.walk(tree):
+        if isinstance(node, ast.For) and isinstance(node.target, ast.Name):
+            lv = node.target.id
+            if lv in _vars_in_asserts(node):
+                if isinstance(node.iter, (ast.List, ast.Tuple)):
+                    for elt in node.iter.elts:
+                        if isinstance(elt, ast.Constant) and isinstance(elt.value, str) and elt.value == kz:
+                            return True
+
+    # (c) parametrize-Decorator
+    def _param_names(arg):
+        p = set()
+        if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+            for s in arg.value.split(","):
+                p.add(s.strip())
+        return p
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            fv = _vars_in_asserts(node)
+            for dec in node.decorator_list:
+                if (isinstance(dec, ast.Call) and isinstance(dec.func, ast.Attribute)
+                        and dec.func.attr == "parametrize" and len(dec.args) >= 2):
+                    pn = _param_names(dec.args[0])
+                    if not (pn & fv):
+                        continue
+                    vals = dec.args[1]
+                    if isinstance(vals, (ast.List, ast.Tuple)):
+                        for elt in vals.elts:
+                            if isinstance(elt, ast.Constant) and isinstance(elt.value, str) and elt.value == kz:
+                                return True
+                            if isinstance(elt, (ast.List, ast.Tuple)):
+                                for sub in elt.elts:
+                                    if isinstance(sub, ast.Constant) and isinstance(sub.value, str) and sub.value == kz:
+                                        return True
+    return False
+
+
+def test_m_gebundene_kz_sind_in_assert_belegt():
+    """Jedes gebundene Kz muss in ASSERT einer Test-Datei vorkommen, nicht nur im Dateitext.
+
+    Schärfere Variante von test_j: ein Kz im Docstring von test_j selbst ließ den Test
+    grün. Diese Variante prüft via AST, ob das Kz in einem assert-gesteuerten Pfad liegt
+    (assert-Literal, for-Schleife vor assert, parametrize mit assert in der Funktion).
+
+    Sieben Kz sind als bekannte Ausnahmen gelistet (GEBUNDENE_KZ_KEIN_ASSERT) — jede mit
+    Begründung, warum sie noch nicht in einem assert geprüft werden.
+    """
+    # (a) elster_kz aus bindung_*.yaml
+    binding_kz: set[str] = set()
+    for fp in glob.glob(os.path.join(BIND_DIR, "bindung_*.yaml")):
+        with open(fp) as f:
+            doc = yaml.safe_load(f)
+        for eintrag in doc.get("bindungen", []):
+            kz = eintrag.get("elster_kz")
+            if kz and str(kz).startswith("E") and len(str(kz)) == 8:
+                binding_kz.add(kz)
+
+    # (b) Kz aus est_mapping
+    import importlib.util
+    em_spec = importlib.util.spec_from_file_location(
+        "est_mapping", os.path.join(ROOT, "produkt", "mapping", "est_mapping.py"))
+    EM = importlib.util.module_from_spec(em_spec)
+    em_spec.loader.exec_module(EM)
+
+    mapping_kz: set[str] = set()
+    for cfg in EM.VERZWEIGUNG.values():
+        mapping_kz.update(cfg["kz"].values())
+    for cfg in EM.PARTNER_VERZWEIGUNG.values():
+        mapping_kz.update(cfg["kz"].values())
+    mapping_kz.update(EM.PARTNER_INSTANZ.values())
+    mapping_kz.update(EM.NEGATION.values())
+    mapping_kz.update(EM.DOKUMENTIERT_AGGREGAT.keys())
+
+    alle_kz = binding_kz | mapping_kz
+    test_files = glob.glob(os.path.join(ROOT, "tests", "*.py"))
+
+    ungedeckt: list[str] = []
+    for kz in sorted(alle_kz):
+        # Prüfe ob Kz in irgendeiner Test-Datei in assert-gesteuertem Pfad
+        gefunden = False
+        for tf in test_files:
+            with open(tf, encoding="utf-8") as f:
+                src = f.read()
+            if kz not in src:
+                continue
+            if _ast_kz_in_assert_helper(kz, src):
+                gefunden = True
+                break
+        if not gefunden:
+            ungedeckt.append(kz)
+
+    ungedeckt = [k for k in ungedeckt if k not in GEBUNDENE_KZ_KEIN_ASSERT]
+    assert not ungedeckt, (
+        f"{len(ungedeckt)} gebundene Kz in KEINEM assert einer Test-Datei:\n"
+        + "\n".join(f"  {k}" for k in ungedeckt)
+        + "\nIn GEBUNDENE_KZ_KEIN_ASSERT eintragen (mit Begründung) oder Assert ergänzen."
+    )
 
 
 # Bekannte Ausnahmen: Dateien, deren Syntaxfehler ignoriert werden (fehlende Toolchain o.Ä.).
