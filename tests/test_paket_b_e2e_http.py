@@ -3178,9 +3178,12 @@ def test_gesamt_arbeitsmittel_afa_1200_3jahre(base):
     if catala:
         assert erg_aj["grund"] == "bestaetigt" and erg_fj["grund"] == "bestaetigt", \
             f"aj={erg_aj.get('grund')} fj={erg_fj.get('grund')}"
-        # 300 EUR mehr Abzug im Folgejahr → bei ~42 % Grenzsatz rund 126 EUR weniger Steuer.
+        # 300 EUR mehr Abzug im Folgejahr. Seed 50k Lohn → zvE ~38k → Progressionszone ~30%,
+        # nicht 42% wie bei 200k-Seeds. 300 × 0,31 = 93 € = 9300 ct.
+        # Gemessen 2026-08-06: Δ=9300 (exakt, kein Rest).
+        AFA_AJ_FJ_DELTA_EXACT = 9300
         delta = steuern_aj - steuern_fj
-        assert 8000 <= delta <= 17000, f"AfA-Differenzial AJ/FJ delta={delta} nicht in [8000,17000]"
+        assert delta == AFA_AJ_FJ_DELTA_EXACT, f"AfA-Differenzial AJ/FJ delta={delta} ≠ {AFA_AJ_FJ_DELTA_EXACT}"
     else:
         assert steuern_aj is None
 
@@ -3681,7 +3684,7 @@ def test_verpflegung_dreimonats_frist_ring(base):
     st, erg_ohne = _req(base, "GET", "/fall/vpf-d-ohne/ergebnis")
     _val("ergebnis", erg_ohne)
     steuern_ohne = erg_ohne["zahl_cent"]
-    
+
     # Fall B: mit Dreimonatsfrist-Angabe (15 nach Frist, 45 davor)
     kegel_mit = _gesamt_kegel(0, bruttolohn=5000000)
     _gesamt_anlegen(base, "vpf-d-mit", kegel_mit)
@@ -3690,7 +3693,7 @@ def test_verpflegung_dreimonats_frist_ring(base):
     st, erg_mit = _req(base, "GET", "/fall/vpf-d-mit/ergebnis")
     _val("ergebnis", erg_mit)
     steuern_mit = erg_mit["zahl_cent"]
-    
+
     if catala and steuern_ohne and steuern_mit:
         delta = steuern_ohne - steuern_mit
         # 15 Tage × 28€ = 420€ Minderung × ~42% = ~176€ (17600 Cent)

@@ -522,7 +522,9 @@ def test_b1_dhf_senkt_steuer_gesamt(base):
             f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
         delta = ohne["zahl_cent"] - mit["zahl_cent"]
         # Δeinkünfte = 12000 − 1230 = 10770 €; × 42 % ≈ 4523 € = 452340 ct.
-        assert 430000 <= delta <= 475000, f"dHf gesamt delta={delta} nicht in [430000,475000]"
+        # Gemessen 2026-08-06: Δ=452400 (60ct Diff durch Tarifrundung).
+        DHF_DELTA_EXACT = 452400
+        assert delta == DHF_DELTA_EXACT, f"dHf gesamt delta={delta} ≠ {DHF_DELTA_EXACT}"
     else:
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
 
@@ -556,8 +558,10 @@ def test_b1_verpflegung_senkt_steuer_gesamt(base):
         assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt", \
             f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
         delta = ohne["zahl_cent"] - mit["zahl_cent"]
-        # 100×28=2800 € Roh; Δeinkünfte ≈ 1570 €; × 42 % ≈ 659 € = 65940 ct. Band robust ggü. Satz-Rundung.
-        assert 40000 <= delta <= 85000, f"Verpflegung gesamt delta={delta} nicht in [40000,85000]"
+        # 100×28=2800 € Roh; Δeinkünfte ≈ 1570 €; × 42 % ≈ 659 € = 65940 ct.
+        # Gemessen 2026-08-06: Δ=66000 (60ct Diff durch Tarifrundung).
+        VPF_DELTA_EXACT = 66000
+        assert delta == VPF_DELTA_EXACT, f"Verpflegung gesamt delta={delta} ≠ {VPF_DELTA_EXACT}"
     else:
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
 
@@ -601,7 +605,9 @@ def test_a5_uebernachtung_senkt_steuer_gesamt(base):
             f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
         delta = ohne["zahl_cent"] - mit["zahl_cent"]
         # Δeinkünfte = 12000 − 1230 = 10770 €; × 42 % ≈ 4523 € = 452340 ct.
-        assert 430000 <= delta <= 475000, f"Übernachtung gesamt delta={delta} nicht in [430000,475000]"
+        # Gemessen 2026-08-06: Δ=452400 (identisch zu DHF, selbe Δeinkünfte, 60ct Tarifrundung).
+        UEB_DELTA_EXACT = 452400
+        assert delta == UEB_DELTA_EXACT, f"Übernachtung gesamt delta={delta} ≠ {UEB_DELTA_EXACT}"
     else:
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
 
@@ -761,8 +767,11 @@ def test_a6_l2_afa_mit_nutzungsdauer_senkt_steuer_gesamt(base):
         assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt", \
             f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
         delta = ohne["zahl_cent"] - mit["zahl_cent"]
-        # AfA 300€ → Δzve 300€ → Δtax ≈ 126€ = 12600 ct bei ~42%. Band ±5000 ct.
-        assert 8000 <= delta <= 17000, f"A6-L2 AfA delta={delta} nicht in [8000,17000]"
+        # AfA 300€ → Δzve 300€ → Δtax ≈ 126€ = 12600 ct bei ~42%.
+        # Gemessen 2026-08-06: Δ=12600 — exakte Übereinstimmung.
+        AFA_DELTA_EXACT = 12600
+        assert delta == AFA_DELTA_EXACT, f"A6-L2 AfA delta={delta} ≠ {AFA_DELTA_EXACT}"
+
     else:
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
 
