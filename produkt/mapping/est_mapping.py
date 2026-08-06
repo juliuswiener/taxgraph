@@ -50,6 +50,12 @@ _ABZUGS_KZ = frozenset({
     "E2002105",  # PV And_Pers (Vorsorgeaufwand §10 Abs.1 Nr.3) (ceiling)
     "E2003104",  # KV privat (Vorsorgeaufwand §10 Abs.1 Nr.3) (ceiling)
     "E2003202",  # PV privat (Vorsorgeaufwand §10 Abs.1 Nr.3) (ceiling)
+    # § 10 Abs. 1 Nr. 3a — weitere Vorsorgeaufwendungen, 5 Kategorien (2026-08-06 Feldsplit)
+    "E2001403",  # AL_Vers/Sum (Arbeitslosenversicherung) (ceiling)
+    "E2001503",  # ErwU_BU_Vers/Sum (Erwerbsunfähigkeit) (ceiling)
+    "E2001803",  # U_HP_Ris_Vers/Sum (Unfall/Haftpflicht) (ceiling)
+    "E2001903",  # RV_m_WR_KapLV/Sum (Rente mit Überschuss) (ceiling)
+    "E2002003",  # RV_o_WR_o_AV/Sum (Rente ohne Überschuss) (ceiling)
 })
 
 

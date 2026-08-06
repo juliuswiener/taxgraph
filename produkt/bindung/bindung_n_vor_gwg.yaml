@@ -905,18 +905,99 @@ bindungen:
       quelle: "§ 10 Abs. 1 Nr. 3 EStG"
       zitatanker: "Krankenversicherungen, soweit diese zur Erlangung eines durch das Zwölfte Buch Sozialgesetzbuch bestimmten sozialhilfegleichen Versorgungsniveaus erforderlich sind"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
-  - feld_id: weitere_vorsorgeaufwendungen
+  # Feldsplit 2026-08-06: weitere_vorsorgeaufwendungen -> 5 Kategorien (je eigenes Kz).
+  # Catala-Slot bleibt weitere_vorsorgeaufwendungen (Summe aller 5).
+  # Kz je am E10-2025.xsd verifiziert: Weit_Sons_VorAW/A_B_LP/<Kategorie>/Sum/<Kz>.
+  - feld_id: vorsorge_arbeitslosenversicherung
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: weitere_vorsorgeaufwendungen}
+    slot_beitrag: summand
     typ: cent
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Was hast du dieses Jahr für weitere Vorsorge gezahlt (private Zusatz-Krankenversicherung, Haftpflicht, Arbeitslosen-, Unfall- oder Risikolebensversicherung)?"
-    hilfe_kurz: "Alles über die Basis-Kranken-/Pflegeversicherung hinaus. Wird nur bis zum gemeinsamen Höchstbetrag (2.800 bzw. 1.900 Euro) berücksichtigt."
-    beispielwert: 80000
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen zur Arbeitslosenversicherung gezahlt?"
+    hilfe_kurz: "Die Arbeitnehmerbeiträge zur Arbeitslosenversicherung laut Lohnsteuerbescheinigung (Nr. 27) oder freiwillige Beiträge."
+    beispielwert: 50000
+    herkunft_slots: ["LStB Nr. 27"]
+    elster_kz: E2001403
+    elster_kz_grund: "AL_Vers/Sum/E2001403 (E10-2025.xsd 2026-08-06). § 10 Abs. 1 Nr. 3a."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_erwerbsunfaehigkeit
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: weitere_vorsorgeaufwendungen}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen zur Erwerbs- oder Berufsunfähigkeitsversicherung gezahlt?"
+    hilfe_kurz: "Beiträge zu einer privaten Berufsunfähigkeits-, Erwerbsunfähigkeits- oder Risikolebensversicherung."
+    beispielwert: 30000
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Kz E2001403 (E10/VOR/Weit_Sons_VorAW/A_B_LP/AL_Vers/Sum/E2001403) belegt 2026-08-05 am amtlichen E10-2025.xsd. Bindung noch offen."
+    elster_kz: E2001503
+    elster_kz_grund: "ErwU_BU_Vers/Sum/E2001503 (E10-2025.xsd 2026-08-06). § 10 Abs. 1 Nr. 3a."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_unfall_haftpflicht
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: weitere_vorsorgeaufwendungen}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen zur Unfall- oder Haftpflichtversicherung gezahlt?"
+    hilfe_kurz: "Private Unfallversicherung und/oder Haftpflichtversicherung (Privat-, Tierhalter-, Berufs-Haftpflicht etc.)."
+    beispielwert: 20000
+    herkunft_slots: null
+    elster_kz: E2001803
+    elster_kz_grund: "U_HP_Ris_Vers/Sum/E2001803 (E10-2025.xsd 2026-08-06). § 10 Abs. 1 Nr. 3a."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_rv_alt_mit_ueberschuss
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: weitere_vorsorgeaufwendungen}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen zu einer privaten Rentenversicherung mit Überschussbeteiligung oder Kapitallebensversicherung gezahlt?"
+    hilfe_kurz: "Private Rentenversicherung mit Überschussbeteiligung oder Kapitallebensversicherung (altklassisch), soweit nicht Basis-Rente (§ 10 Abs. 1 Nr. 2)."
+    beispielwert: 40000
+    herkunft_slots: null
+    elster_kz: E2001903
+    elster_kz_grund: "RV_m_WR_KapLV/Sum/E2001903 (E10-2025.xsd 2026-08-06). § 10 Abs. 1 Nr. 3a."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_rv_alt_ohne_ueberschuss
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: weitere_vorsorgeaufwendungen}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen zu einer privaten Rentenversicherung ohne Überschussbeteiligung oder fondsgebundenen Rentenversicherung gezahlt?"
+    hilfe_kurz: "Private Rentenversicherung ohne Überschussbeteiligung (z. B. fondsgebundene Rente, Riester-ähnliche Verträge außerhalb der Zulagenförderung)."
+    beispielwert: 30000
+    herkunft_slots: null
+    elster_kz: E2002003
+    elster_kz_grund: "RV_o_WR_o_AV/Sum/E2002003 (E10-2025.xsd 2026-08-06). § 10 Abs. 1 Nr. 3a."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 3a EStG"

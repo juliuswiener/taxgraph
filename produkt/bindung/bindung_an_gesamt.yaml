@@ -700,18 +700,106 @@ bindungen:
       quelle: "§ 10 Abs. 1 Nr. 3 EStG"
       zitatanker: "Krankenversicherungen, soweit diese zur Erlangung eines durch das Zwölfte Buch Sozialgesetzbuch bestimmten sozialhilfegleichen Versorgungsniveaus erforderlich sind"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
-  - feld_id: weitere_vorsorgeaufwendungen_partner
+  # Feldsplit 2026-08-06: weitere_vorsorgeaufwendungen_partner -> 5 Kategorien.
+  # ACHTUNG: Weit_Sons_VorAW ist maxOccurs=1, A_B_LP maxOccurs=1 — NICHT person-multipliziert.
+  # Anders als Beitr_g_KV_PV_Inl (maxOccurs=2) gibt es keine zweite Container-Instanz für Person B.
+  # Daher kz_status: endgueltig — es gibt kein eigenes Kz zu binden; der Betrag läuft in die
+  # gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3: gemeinsamer HB aus Summe der Einzel-HB).
+  - feld_id: vorsorge_arbeitslosenversicherung_partner
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    slot_beitrag: summand
     typ: cent
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Was hat dein Partner dieses Jahr für weitere Vorsorge gezahlt (private Zusatz-Krankenversicherung, Haftpflicht, Arbeitslosen-, Unfall- oder Risikolebensversicherung)?"
-    hilfe_kurz: "Person-individuell; alles über die Basis-Kranken-/Pflegeversicherung hinaus. Wird bis zum gemeinsamen Höchstbetrag berücksichtigt."
-    beispielwert: 80000
+    fragetext_laie: "Wie viel hat dein Partner dieses Jahr an Beiträgen zur Arbeitslosenversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell; die Arbeitnehmerbeiträge zur Arbeitslosenversicherung laut Lohnsteuerbescheinigung (Nr. 27) oder freiwillige Beiträge."
+    beispielwert: 50000
+    herkunft_slots: ["LStB Nr. 27"]
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Kein eigenes Kz: A_B_LP maxOccurs=1 (nicht person-multipliziert, anders als Beitr_g_KV_PV_Inl maxOccurs=2). Der Pers-Zweig (maxOccurs=2, mit Person-Diskriminator) führt nur E2004403 (Arbeitslosenversicherung), nicht die übrigen vier Kategorien, und ist zu A_B_LP ADDITIV — beide zu füllen würde den Partner-Anteil doppelt zählen. Der Betrag läuft daher in die gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3: gemeinsamer Höchstbetrag aus der Summe der Einzelhöchstbeträge)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_erwerbsunfaehigkeit_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Partner dieses Jahr an Beiträgen zur Erwerbs- oder Berufsunfähigkeitsversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell; Beiträge zu einer privaten Berufsunfähigkeits-, Erwerbsunfähigkeits- oder Risikolebensversicherung."
+    beispielwert: 30000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz wie weitere_vorsorgeaufwendungen, Person-B-Instanz via VOR/Weit_Sons_VorAW. Bindung noch offen."
+    kz_status: endgueltig
+    elster_kz_grund: "Kein eigenes Kz: A_B_LP maxOccurs=1 (nicht person-multipliziert). Pers-Zweig führt nur E2004403, nicht die übrigen 4 Kategorien, und ist zu A_B_LP ADDITIV. Betrag läuft in gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_unfall_haftpflicht_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Partner dieses Jahr an Beiträgen zur Unfall- oder Haftpflichtversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell; private Unfallversicherung und/oder Haftpflichtversicherung."
+    beispielwert: 20000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Kein eigenes Kz: A_B_LP maxOccurs=1 (nicht person-multipliziert). Pers-Zweig führt nur E2004403, nicht die übrigen 4 Kategorien, und ist zu A_B_LP ADDITIV. Betrag läuft in gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_rv_alt_mit_ueberschuss_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Partner dieses Jahr an Beiträgen zu einer privaten Rentenversicherung mit Überschussbeteiligung oder Kapitallebensversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell; private Rentenversicherung mit Überschussbeteiligung oder Kapitallebensversicherung (altklassisch)."
+    beispielwert: 40000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Kein eigenes Kz: A_B_LP maxOccurs=1 (nicht person-multipliziert). Pers-Zweig führt nur E2004403, nicht die übrigen 4 Kategorien, und ist zu A_B_LP ADDITIV. Betrag läuft in gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_rv_alt_ohne_ueberschuss_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Partner dieses Jahr an Beiträgen zu einer privaten Rentenversicherung ohne Überschussbeteiligung oder fondsgebundenen Rentenversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell; private Rentenversicherung ohne Überschussbeteiligung (z. B. fondsgebundene Rente)."
+    beispielwert: 30000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Kein eigenes Kz: A_B_LP maxOccurs=1 (nicht person-multipliziert). Pers-Zweig führt nur E2004403, nicht die übrigen 4 Kategorien, und ist zu A_B_LP ADDITIV. Betrag läuft in gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10 Abs. 1 Nr. 3a EStG"

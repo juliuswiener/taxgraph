@@ -141,7 +141,7 @@ def _einfachen_fall_anlegen(base: str, fall_id: str) -> str:
         # KV/PV
         _laie("basis_kv", 0), _laie("basis_pv", 0),
         _laie("versicherungsart", "gesetzlich_an"),
-        _laie("weitere_vorsorgeaufwendungen", 0),
+        _laie("vorsorge_arbeitslosenversicherung", 0), _laie("vorsorge_erwerbsunfaehigkeit", 0), _laie("vorsorge_unfall_haftpflicht", 0), _laie("vorsorge_rv_alt_mit_ueberschuss", 0), _laie("vorsorge_rv_alt_ohne_ueberschuss", 0),
         _laie("mit_anspruch_auf_zuschuss", False),
         # KAP
         _laie("kap_kapitalertraege", 0),
@@ -182,7 +182,7 @@ def _einfachen_an_gesamt_fall_anlegen(base: str, fall_id: str) -> str:
         _laie("vor_rv_ausserhalb_lstb", 0),
         _laie("basis_kv", 0), _laie("basis_pv", 0),
         _laie("versicherungsart", "gesetzlich_an"),
-        _laie("weitere_vorsorgeaufwendungen", 0),
+        _laie("vorsorge_arbeitslosenversicherung", 0), _laie("vorsorge_erwerbsunfaehigkeit", 0), _laie("vorsorge_unfall_haftpflicht", 0), _laie("vorsorge_rv_alt_mit_ueberschuss", 0), _laie("vorsorge_rv_alt_ohne_ueberschuss", 0),
         _laie("mit_anspruch_auf_zuschuss", False),
         _laie("dhf_unterkunftskosten_monat", 0),
         _laie("dhf_monate", 0),

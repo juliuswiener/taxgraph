@@ -260,7 +260,7 @@ def test_arbeitslosenversicherung_nicht_in_der_basis():
     per_feld = {e["feld_id"]: e["wert"] for e in ev}
     assert per_feld["basis_kv"] == 320000
     assert per_feld["basis_pv"] == 80000
-    assert per_feld["weitere_vorsorgeaufwendungen"] == 120000
+    assert per_feld["vorsorge_arbeitslosenversicherung"] == 120000
     # Probe: keine Vermischung
     assert "basis_kv_pv" not in per_feld
 

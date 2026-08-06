@@ -69,7 +69,11 @@ def test_differential_zone_c_rentner_ehepaar(bindung):
     _b(s, "basis_kv", 450000)
     _b(s, "basis_pv", 0)
     _b(s, "versicherungsart", "gesetzlich_freiwillig")
-    _b(s, "weitere_vorsorgeaufwendungen", 0)
+    _b(s, "vorsorge_arbeitslosenversicherung", 0)
+    _b(s, "vorsorge_erwerbsunfaehigkeit", 0)
+    _b(s, "vorsorge_unfall_haftpflicht", 0)
+    _b(s, "vorsorge_rv_alt_mit_ueberschuss", 0)
+    _b(s, "vorsorge_rv_alt_ohne_ueberschuss", 0)
     _b(s, "mit_anspruch_auf_zuschuss", False)
 
     # === Person A: Rentner (§22, aa-Erstjahr) ===
@@ -109,7 +113,11 @@ def test_differential_zone_c_rentner_ehepaar(bindung):
     _b(s, "basis_kv_partner", 350000)
     _b(s, "basis_pv_partner", 0)
     _b(s, "versicherungsart_partner", "gesetzlich_freiwillig")
-    _b(s, "weitere_vorsorgeaufwendungen_partner", 50000)  # → nicht_deklariert
+    _b(s, "vorsorge_arbeitslosenversicherung_partner", 50000)
+    _b(s, "vorsorge_erwerbsunfaehigkeit_partner", 0)
+    _b(s, "vorsorge_unfall_haftpflicht_partner", 0)
+    _b(s, "vorsorge_rv_alt_mit_ueberschuss_partner", 0)
+    _b(s, "vorsorge_rv_alt_ohne_ueberschuss_partner", 0)  # → nicht_deklariert
 
     # === Person A: Bruttoarbeitslohn (damit Einkünfte ≠ 0) ===
     _b(s, "bruttoarbeitslohn", 5000000)                # → E0200201

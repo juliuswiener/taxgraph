@@ -447,7 +447,11 @@ BETRAGSFELDER_OHNE_KZ = {
     "vor_ag_anteil_rv_partner",
     "vor_an_anteil_rv_partner",
     "vor_rv_ausserhalb_lstb_partner",
-    "weitere_vorsorgeaufwendungen_partner",
+    "vorsorge_arbeitslosenversicherung_partner",
+    "vorsorge_erwerbsunfaehigkeit_partner",
+    "vorsorge_unfall_haftpflicht_partner",
+    "vorsorge_rv_alt_mit_ueberschuss_partner",
+    "vorsorge_rv_alt_ohne_ueberschuss_partner",
 
     # Gruppe A: Accessor-Output ohne Kz-Mapping.
     # Begründung nennt Ziel-Kz (z.B. E0204401), aber grep über produkt/ findet es nur in elster_kz_grund,
@@ -506,7 +510,6 @@ BETRAGSFELDER_OHNE_KZ = {
     "vv_gebaeude_afa",
     "vv_schuldzinsen",
     "vv_sonstige_wk",
-    "weitere_vorsorgeaufwendungen",
 }
 
 

@@ -116,7 +116,11 @@ def test_e2e_kz_durchgang_26_felder(base):
         "basis_kv": 450000,  # 4.5k 10 (KV)
         "basis_pv": 0,  # PV
         "versicherungsart": "gesetzlich_freiwillig",
-        "weitere_vorsorgeaufwendungen": 0,
+        "vorsorge_arbeitslosenversicherung": 0,
+        "vorsorge_erwerbsunfaehigkeit": 0,
+        "vorsorge_unfall_haftpflicht": 0,
+        "vorsorge_rv_alt_mit_ueberschuss": 0,
+        "vorsorge_rv_alt_ohne_ueberschuss": 0,
         "vor_an_anteil_rv": 200000,  # 2k
         "vor_ag_anteil_rv": 150000,  # 1.5k
         "vor_rv_ausserhalb_lstb": 100000,  # 1k
@@ -253,7 +257,7 @@ def test_kvpv_kz_person_a(base, vers_art, basis_kv_val, basis_pv_val, kz_kv, kz_
     fall = [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("basis_kv", basis_kv_val), ("basis_pv", basis_pv_val),
-        ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+        ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
         ("versicherungsart", vers_art),
         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
@@ -278,10 +282,10 @@ def test_kvpv_kz_person_b(base, vers_art, basis_kv_val, basis_pv_val, kz_kv, kz_
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "zusammen"),
         ("person_b_idnr", "12345678901"),
         ("basis_kv", 0), ("basis_pv", 0),
-        ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+        ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
         ("versicherungsart", "gesetzlich_an"),
         ("basis_kv_partner", basis_kv_val), ("basis_pv_partner", basis_pv_val),
-        ("weitere_vorsorgeaufwendungen_partner", 0), ("mit_anspruch_auf_zuschuss_partner", False),
+        ("vorsorge_arbeitslosenversicherung_partner", 0), ("vorsorge_erwerbsunfaehigkeit_partner", 0), ("vorsorge_unfall_haftpflicht_partner", 0), ("vorsorge_rv_alt_mit_ueberschuss_partner", 0), ("vorsorge_rv_alt_ohne_ueberschuss_partner", 0), ("mit_anspruch_auf_zuschuss_partner", False),
         ("versicherungsart_partner", vers_art),
         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
@@ -321,7 +325,7 @@ def test_kvpv_negativ_keine_art(base):
     for feld, wert in [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("basis_kv", 200000), ("basis_pv", 100000),
-        ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+        ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
         ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
@@ -348,7 +352,7 @@ def test_kvpv_unvollstaendig_ohne_art(base):
     for feld, wert in [
         ("bruttoarbeitslohn", 4000000), ("veranlagung", "einzel"),
         ("basis_kv", 200000), ("basis_pv", 100000),
-        ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+        ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
         ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_eigenes_kfz", False),
@@ -569,3 +573,51 @@ def test_p32b_kz_durchgang(base):
     spec.loader.exec_module(EX)
     xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
     assert "E0104801" in xml_str, "E0104801 fehlt im XML"
+
+
+# -----------------------------------------------------------------
+# §10 Abs. 1 Nr. 3a weitere_vorsorgeaufwendungen Kz-Durchgang
+# -----------------------------------------------------------------
+
+@pytest.mark.parametrize("feld_id,kz,wert", [
+    ("vorsorge_arbeitslosenversicherung", "E2001403", 50000),
+    ("vorsorge_erwerbsunfaehigkeit", "E2001503", 30000),
+    ("vorsorge_unfall_haftpflicht", "E2001803", 20000),
+    ("vorsorge_rv_alt_mit_ueberschuss", "E2001903", 40000),
+    ("vorsorge_rv_alt_ohne_ueberschuss", "E2002003", 30000),
+])
+def test_weitere_vorsorge_kz_durchgang(base, feld_id, kz, wert):
+    """Jedes der 5 weitere_vorsorgeaufwendungen-Kz -> in Deklaration + XML."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                  "fall_id": f"wv-{feld_id}"})
+    for f, w in [
+        ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
+        ("basis_kv", 0), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"),
+        ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
+        ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0),
+        ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
+        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
+        ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
+        ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
+        ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_eigenes_kfz", False),
+    ]:
+        _req(base, "POST", f"/fall/wv-{feld_id}/event", _laie(f, w))
+    # Setze das zu prüfende Feld auf non-zero
+    _req(base, "POST", f"/fall/wv-{feld_id}/event", _laie(feld_id, wert))
+    st, dekl = _req(base, "GET", f"/fall/wv-{feld_id}/deklaration")
+    assert st == 200
+    result = dekl.get("deklaration", {})
+    assert kz in result, f"{kz} ({feld_id}) fehlt in Deklaration"
+    import importlib
+    spec = importlib.util.spec_from_file_location(
+        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+    EX = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(EX)
+    xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
+    assert kz in xml_str, f"{kz} ({feld_id}) fehlt im XML"
+    # Negativ-Probe: die anderen 4 Kz sind Kegel-Füllwerte (0) — sie dürfen nicht den Wert des
+    # gesetzten Feldes übernehmen (distinkte Kz pro Feld, keine Vermischung).
+    andere_kz = {"E2001403", "E2001503", "E2001803", "E2001903", "E2002003"} - {kz}
+    for akz in andere_kz:
+        assert result.get(akz, 0) == 0, f"{akz} ({feld_id}) soll 0 sein (nur {kz} hat wert {wert})"
+

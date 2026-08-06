@@ -76,7 +76,9 @@ LSTB = {
 # Die Arbeitslosenversicherung steht damit ausdrücklich in Nr. 3a, nicht in Nr. 3 —
 # sie gehört zu weitere_vorsorgeaufwendungen, nicht zur Basisabsicherung.
 LSTB_SUMMEN = {
-    "weitere_vorsorgeaufwendungen": (
+    # Feldsplit 2026-08-06: weitere_vorsorgeaufwendungen -> 5 Kategorien.
+    # ArbnAnteilArblVers (Nr. 27 LStB) ist reine Arbeitslosenversicherung -> vorsorge_arbeitslosenversicherung.
+    "vorsorge_arbeitslosenversicherung": (
         ("ArbnAnteilArblVers", "Arbeitnehmerbeiträge zur Arbeitslosenversicherung"),
     ),
 }

@@ -106,7 +106,7 @@ class TestErreichbarkeitVP:
             ("basis_kv", 0),
             ("basis_pv", 0),
         ("versicherungsart", "gesetzlich_an"),
-            ("weitere_vorsorgeaufwendungen", 0),
+            ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
             ("mit_anspruch_auf_zuschuss", False),
         ]:
             s, _ = _req(base, "POST", "/fall/vor-pf-test/event", _laie(f, v))
@@ -152,7 +152,7 @@ def _setup_rentner_zusammen(base, fall_id, vor_partner=0):
         ("basis_kv", 0),
         ("basis_pv", 0),
         ("versicherungsart", "gesetzlich_an"),
-        ("weitere_vorsorgeaufwendungen", 0),
+        ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
         ("mit_anspruch_auf_zuschuss", False),
     ]
     st, _ = _req(base, "POST", "/fall", {"scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025,
@@ -217,7 +217,7 @@ def test_rentner_einzel_kein_impact_bvor(base):
         ("basis_kv", 0),
         ("basis_pv", 0),
         ("versicherungsart", "gesetzlich_an"),
-        ("weitere_vorsorgeaufwendungen", 0),
+        ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
         ("mit_anspruch_auf_zuschuss", False),
     ]
     st, _ = _req(base, "POST", "/fall", {"scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025,

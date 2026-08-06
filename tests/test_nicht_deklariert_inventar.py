@@ -159,12 +159,14 @@ def test_nicht_deklariert_inventar():
     # 8 Felder ENDGUELTIG (kz_status): EÜR-Komponenten, Kap-Modell-Mismatch, Verlustvortrag,
     # Entgeltquote, §33a-Einkuenfte+Kinderzahl. Nur 2 OFFEN (weitere_vorsorge).
     # Netto: 10->2.
-    OFFEN_SOLL = 2  # 10 - 8 (Einordnungs-Korrektur). Bei Kz-Arbeit nachziehen.
+    OFFEN_SOLL = 0  # 5 Person-A-Kz E2001403/E2001503/E2001803/E2001903/E2002003 gebunden, Person-B-Felder kz_status: endgueltig (A_B_LP maxOccurs=1).
     # OFFEN-Felder in Themenblöcke gruppiert
     bloecke = {
         "§36 Anrechnung (LSt, VZ)": ["p36_lohnsteuer", "p36_vorauszahlungen"],
         "KV/PV-Vorsorge §10": ["basis_kv", "basis_pv", "basis_kv_partner", "basis_pv_partner",
-                                "weitere_vorsorgeaufwendungen", "weitere_vorsorgeaufwendungen_partner"],
+                                "vorsorge_arbeitslosenversicherung", "vorsorge_erwerbsunfaehigkeit",
+                                "vorsorge_unfall_haftpflicht", "vorsorge_rv_alt_mit_ueberschuss",
+                                "vorsorge_rv_alt_ohne_ueberschuss"],
         "Unterhalt §33a (Rest)": ["p33a_andere_einkuenfte_bezuege",
                                   "p33a_ausbildung_anzahl_kinder"],
         "EÜR/Gewinn §§13-18": ["betriebseinnahmen", "afa_jahresbetrag",

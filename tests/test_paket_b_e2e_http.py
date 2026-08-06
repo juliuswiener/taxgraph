@@ -524,14 +524,19 @@ def test_durchstich_n_vor_gwg(base):
 
 # ---- Gesamtsteuer-Ring MVP (an_gesamt): erster echter §2-Bescheid, reiner Arbeitnehmerfall ----
 AN_GESAMT_VOR = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
-AN_GESAMT_KV_PV = ("versicherungsart", "basis_kv", "basis_pv", "weitere_vorsorgeaufwendungen", "mit_anspruch_auf_zuschuss")
+AN_GESAMT_KV_PV = ("versicherungsart", "basis_kv", "basis_pv", "vorsorge_arbeitslosenversicherung", "vorsorge_erwerbsunfaehigkeit", "vorsorge_unfall_haftpflicht", "vorsorge_rv_alt_mit_ueberschuss", "vorsorge_rv_alt_ohne_ueberschuss", "mit_anspruch_auf_zuschuss")
 AN_GESAMT_DHF = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland",
                  "dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
                  "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
 AN_GESAMT_PARTNER = ("versicherungsart_partner", "bruttoarbeitslohn_partner", "person_b_idnr",
                      "vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
                      "vor_rv_ausserhalb_lstb_partner", "basis_kv_partner", "basis_pv_partner",
-                     "weitere_vorsorgeaufwendungen_partner", "mit_anspruch_auf_zuschuss_partner")
+                     "vorsorge_arbeitslosenversicherung_partner",
+                     "vorsorge_erwerbsunfaehigkeit_partner",
+                     "vorsorge_unfall_haftpflicht_partner",
+                     "vorsorge_rv_alt_mit_ueberschuss_partner",
+                     "vorsorge_rv_alt_ohne_ueberschuss_partner",
+                     "mit_anspruch_auf_zuschuss_partner")
 AN_GESAMT_VERPFLEGUNG = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig",
                          "vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
 AN_GESAMT_UEBERNACHTUNG = ("uebernachtung_kosten_monat", "uebernachtung_monate",
@@ -550,7 +555,7 @@ AN_GESAMT_KEGEL = [
     ("ep_arbeitstage", 220), ("ep_entfernung_km", 30), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", True),
     ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),   # reiner Pendler: keine VOR
     # KV/PV (§ 10 Abs. 1 Nr. 3/3a, Pflicht-Kegel seit Gesamt-Parität-Fix) = 0 default, kein Abzug
-    ("basis_kv", 0), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"), ("weitere_vorsorgeaufwendungen", 0), ("mit_anspruch_auf_zuschuss", False),
+    ("basis_kv", 0), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
     # reiner Pendler: keine dHf (Kosten 0 -> dHf-Abzug 0, Bedingungen egal aber bestätigt)
     ("dhf_unterkunftskosten_monat", 0), ("dhf_monate", 0), ("dhf_im_inland", True),
     ("dhf_beruflich_veranlasst", True), ("dhf_eigener_hausstand", True),
@@ -672,7 +677,7 @@ def test_an_gesamt_kv_pv_integration(base):
     Abzug live."""
     catala = _catala_da()
     kegel = [(f, w) for f, w in AN_GESAMT_KEGEL if f not in AN_GESAMT_KV_PV]
-    kegel += [("basis_kv", 320000), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"), ("weitere_vorsorgeaufwendungen", 0),
+    kegel += [("basis_kv", 320000), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
               ("mit_anspruch_auf_zuschuss", False)]
     _an_gesamt_anlegen(base, "ag_kvpv", kegel)
     st, erg = _req(base, "GET", "/fall/ag_kvpv/ergebnis")
@@ -812,7 +817,7 @@ def test_an_gesamt_zusammen_kv_pv(base):
     catala = _catala_da()
     kegel = _zusammen_kegel()
     kegel = [(f, w) for f, w in kegel if f not in AN_GESAMT_KV_PV]
-    kegel += [("basis_kv", 320000), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"), ("weitere_vorsorgeaufwendungen", 0),
+    kegel += [("basis_kv", 320000), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
               ("mit_anspruch_auf_zuschuss", False)]
     _an_gesamt_anlegen(base, "zus_kvpv", kegel)
     st, erg = _req(base, "GET", "/fall/zus_kvpv/ergebnis")
@@ -869,7 +874,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
          ("vor_an_anteil_rv", vor_an), ("vor_ag_anteil_rv", vor_ag),
          ("vor_rv_ausserhalb_lstb", vor_rv_ausserhalb),
          ("versicherungsart", versicherungsart),
-         ("basis_kv", basis_kv), ("basis_pv", basis_pv), ("weitere_vorsorgeaufwendungen", weitere_kv_pv),
+         ("basis_kv", basis_kv), ("basis_pv", basis_pv), ("vorsorge_arbeitslosenversicherung", weitere_kv_pv), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
          ("mit_anspruch_auf_zuschuss", mit_anspruch_zuschuss),
          ("ep_arbeitstage", ep_tage), ("ep_entfernung_km", ep_km),
          ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", ep_kfz),
@@ -2311,7 +2316,7 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
          ("vor_an_anteil_rv", vor_an), ("vor_ag_anteil_rv", vor_ag),
          ("vor_rv_ausserhalb_lstb", vor_rv_ausserhalb),
          ("versicherungsart", versicherungsart),
-         ("basis_kv", basis_kv), ("basis_pv", basis_pv), ("weitere_vorsorgeaufwendungen", weitere_kv_pv),
+         ("basis_kv", basis_kv), ("basis_pv", basis_pv), ("vorsorge_arbeitslosenversicherung", weitere_kv_pv), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
          ("mit_anspruch_auf_zuschuss", mit_anspruch_zuschuss)]
     if kap_ertraege:
         k.append(("kap_kapitalertraege", kap_ertraege))
