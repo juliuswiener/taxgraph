@@ -482,6 +482,29 @@ bindungen:
       zitatanker: "auf die ersten drei Monate einer längerfristigen beruflichen Tätigkeit an derselben Tätigkeitsstätte beschränkt"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
 
+  # ===== Dreimonatsfrist-Bestätigung: Unterbrechung oder Ausnahmesituation =====
+  # S. 7: Unterbrechung ≥4 Wochen setzt Frist zurück. Der Ring kann das nicht automatisch erkennen.
+  # Plausibilitäts-Frage: monate > 3 + Tage insgesamt > 0 + alle NACH_FRIST = 0 → unplausibel,
+  # aber nicht unmöglich (legitimer Fall: nur in der 1. Woche gefahren, dann Unterbrechung).
+  # Diese Bool-Frage bestätigt, dass die 0 Tage nach Frist tatsächlich stimmt.
+  - feld_id: vpf_frist_unterbrochen
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: vpf_frist_unterbrochen_erklaert}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Du warst mehr als 3 Monate am selben Ort, hast aber keine Reisetage nach Ablauf der 3 Monate angegeben. War die Tätigkeit dort zwischendurch länger unterbrochen (z.B. 4 Wochen oder mehr, ohne zu arbeiten)? Dann läuft die Frist neu an."
+    hilfe_kurz: "Bei einer Unterbrechung von mindestens 4 Wochen beginnt die Dreimonatsfrist neu. Wenn du z.B. nur in den ersten Wochen hingefahren bist und dann pausiert hast, sind keine Tage nach der Frist korrekt."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Bestätigungsfrage (Tatbestand); kein Betragsfeld, nicht deklariert."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 4a S. 7 EStG"
+      zitatanker: "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn, wenn sie mindestens vier Wochen dauert"
+      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+
   # ===== Verpflegungs-JAHRES-Tage je Kategorie (§ 9 Abs. 4a S. 3) — WK-Ring-Input =====
   # p9_4a_verpflegungsmehraufwand rechnet EINE Reise; die Jahres-Tage-Zähler (dev-1 runner._verpflegung_
   # abzug summiert Pauschale × Tage je Kategorie) hängen an DERSELBEN §-9-Abs-4a-Regel (EIN Verpflegungs-

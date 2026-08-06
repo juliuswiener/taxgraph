@@ -29,6 +29,7 @@ for sub in ("produkt/haut", "produkt/auth", "produkt/store"):
 
 import auth as AUTH
 import api as API
+import api_auth
 import server as SRV
 import audit
 import store as ST
@@ -76,7 +77,7 @@ class TestAuthCore:
         """Fixture: spun-up test server with temporary stores and fresh auth state."""
         faelle_dir = str(tmp_path / "faelle")
         monkeypatch.setattr(API, "FAELLE", faelle_dir)
-        monkeypatch.setattr(API, "_AUTH_USER", None)
+        monkeypatch.setattr(api_auth, "_AUTH_USER", None)
         # Use a temporary user store (not the real produkt/auth/users.json)
         auth_store = str(tmp_path / "users.json")
         monkeypatch.setattr(AUTH, "USER_STORE", auth_store)
@@ -205,7 +206,7 @@ class TestAuthorization:
         """Shared fixture: spun-up test server."""
         faelle_dir = str(tmp_path / "faelle")
         monkeypatch.setattr(API, "FAELLE", faelle_dir)
-        monkeypatch.setattr(API, "_AUTH_USER", None)
+        monkeypatch.setattr(api_auth, "_AUTH_USER", None)
         auth_store = str(tmp_path / "users.json")
         monkeypatch.setattr(AUTH, "USER_STORE", auth_store)
         monkeypatch.setattr(audit, "AUDIT_DIR", faelle_dir)
@@ -274,7 +275,7 @@ class TestSessionManagement:
         """Shared fixture: spun-up test server."""
         faelle_dir = str(tmp_path / "faelle")
         monkeypatch.setattr(API, "FAELLE", faelle_dir)
-        monkeypatch.setattr(API, "_AUTH_USER", None)
+        monkeypatch.setattr(api_auth, "_AUTH_USER", None)
         auth_store = str(tmp_path / "users.json")
         monkeypatch.setattr(AUTH, "USER_STORE", auth_store)
         monkeypatch.setattr(audit, "AUDIT_DIR", faelle_dir)
@@ -310,7 +311,7 @@ class TestLogout:
         """Shared fixture: spun-up test server."""
         faelle_dir = str(tmp_path / "faelle")
         monkeypatch.setattr(API, "FAELLE", faelle_dir)
-        monkeypatch.setattr(API, "_AUTH_USER", None)
+        monkeypatch.setattr(api_auth, "_AUTH_USER", None)
         auth_store = str(tmp_path / "users.json")
         monkeypatch.setattr(AUTH, "USER_STORE", auth_store)
         monkeypatch.setattr(audit, "AUDIT_DIR", faelle_dir)
@@ -351,7 +352,7 @@ class TestAudit:
         """Shared fixture: spun-up test server."""
         faelle_dir = str(tmp_path / "faelle")
         monkeypatch.setattr(API, "FAELLE", faelle_dir)
-        monkeypatch.setattr(API, "_AUTH_USER", None)
+        monkeypatch.setattr(api_auth, "_AUTH_USER", None)
         auth_store = str(tmp_path / "users.json")
         monkeypatch.setattr(AUTH, "USER_STORE", auth_store)
         monkeypatch.setattr(audit, "AUDIT_DIR", faelle_dir)

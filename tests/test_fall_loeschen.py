@@ -22,6 +22,7 @@ for _sub in ("produkt/haut", "produkt/store", "produkt/auth", "produkt/traverser
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
 import api as API
+import api_auth
 import audit
 
 
@@ -76,7 +77,7 @@ class TestOwnerCheck:
         """Fall gehört user1, Request läuft als user2 → 403."""
         # Fall mit owner user1 anlegen
         assert API.lade_fall(fall) is not None  # exists
-        monkeypatch.setattr(API, "_AUTH_USER", "user1")
+        monkeypatch.setattr(api_auth, "_AUTH_USER", "user1")
         # Fall-Datei ohne Auth setzen (direkt)
         pfad = API._fall_pfad(fall)
         with open(pfad, encoding="utf-8") as f:
@@ -86,14 +87,14 @@ class TestOwnerCheck:
             json.dump(store, f)
 
         # Als user2 löschen
-        monkeypatch.setattr(API, "_AUTH_USER", "user2")
+        monkeypatch.setattr(api_auth, "_AUTH_USER", "user2")
         with pytest.raises(API.ApiError) as exc:
             API.fall_loeschen(fall)
         assert exc.value.status == 403
 
     def test_loeschen_ohne_auth_erlaubt(self, fall, monkeypatch):
         """Kein Auth-Kontext → Löschen erlaubt (dev/Test)."""
-        monkeypatch.setattr(API, "_AUTH_USER", None)
+        monkeypatch.setattr(api_auth, "_AUTH_USER", None)
         st, body = API.fall_loeschen(fall)
         assert st == 200
 
@@ -107,7 +108,7 @@ class TestOwnerCheck:
         with open(pfad, "w", encoding="utf-8") as f:
             json.dump(store, f)
 
-        monkeypatch.setattr(API, "_AUTH_USER", "user1")
+        monkeypatch.setattr(api_auth, "_AUTH_USER", "user1")
         st, body = API.fall_loeschen(fall)
         assert st == 200
 
@@ -122,7 +123,7 @@ class TestOwnerCheck:
 class TestAudit:
     def test_audit_eintrag_nach_loeschung(self, fall, audit_dir, monkeypatch):
         """Nach Löschen steht ein Audit-Eintrag mit action=fall_geloescht."""
-        monkeypatch.setattr(API, "_AUTH_USER", "testuser")
+        monkeypatch.setattr(api_auth, "_AUTH_USER", "testuser")
         audit.AUDIT_DIR = audit_dir
         API.fall_loeschen(fall)
         entries = audit.lies()
@@ -133,7 +134,7 @@ class TestAudit:
 
     def test_audit_ueberlebt_loeschung(self, fall, audit_dir, monkeypatch):
         """Audit-Eintrag existiert, NACHDEM die Fall-Datei weg ist."""
-        monkeypatch.setattr(API, "_AUTH_USER", "testuser")
+        monkeypatch.setattr(api_auth, "_AUTH_USER", "testuser")
         audit.AUDIT_DIR = audit_dir
         API.fall_loeschen(fall)
         # Fall-Datei ist weg
@@ -144,7 +145,7 @@ class TestAudit:
 
     def test_audit_kein_freitext(self, fall, audit_dir, monkeypatch):
         """Detail enthält nur Metadaten, nie PII."""
-        monkeypatch.setattr(API, "_AUTH_USER", "testuser")
+        monkeypatch.setattr(api_auth, "_AUTH_USER", "testuser")
         audit.AUDIT_DIR = audit_dir
         API.fall_loeschen(fall)
         entries = audit.lies()

@@ -43,6 +43,7 @@ import elster_xml as EX      # noqa: E402  (P3.2 Deklaration → ELSTER-Submissi
 from api_constants import *  # noqa: E402, F401, F403  (55 Feld-Konstanten + Scheiben)
 import api_llm  # noqa: E402  (LLM-Integration: _llm_vorschlaege, _kontoauszug_llm_klassifikator)
 import preflight as PF  # noqa: E402  (P5.5 Preflight-Check: Konsistenz + vergessene Pauschalen)
+import api_auth  # noqa: E402  (Request-scoped Auth, Modul-Attribute für Mutation-Sicherheit)
 
 
 class ApiError(ValueError):
@@ -54,9 +55,9 @@ class ApiError(ValueError):
 
 
 def _fall_owner_check(fall_id: str) -> None:
-    """Prüft Zugriff auf fall_id gegen _AUTH_USER. Kein Auth-Kontext → erlaubt.
+    """Prüft Zugriff auf fall_id gegen api_auth._AUTH_USER. Kein Auth-Kontext → erlaubt.
     Alt-Fall ohne user_id → erlaubt. Sonst: user_id muss stimmen."""
-    uid = _AUTH_USER
+    uid = api_auth._AUTH_USER
     if uid is None:
         return  # dev/Test → immer erlaubt
     try:
@@ -1692,6 +1693,24 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                         if not nach_frist_bestaetigt:
                             # Kategorie mit Tagen aber ohne NACH_FRIST-Angabe → fail-closed
                             return "verpflegung_dreimonatsfrist_aufteilung_offen"
+            # Plausibilitäts-Frage: monate > 3 + Tage > 0 aber ALLE NACH_FRIST = 0
+            # → unplausibel (0 Tage nach Frist bei mehrmonatiger Tätigkeit), aber legitim möglich
+            # (Unterbrechung ≥4 Wochen setzt Frist zurück per S.7). Rückfrage nötig.
+            _mon = felder.get("vpf_monate_am_ort", {}).get("wert")
+            if isinstance(_mon, int) and not isinstance(_mon, bool) and _mon > 3:
+                # Nur bestätigte Tage zählen (Konsistenz mit kategorie-weise Prüfung oben)
+                tage_gesamt = sum((felder.get(t, {}).get("wert") or 0)
+                                  for t in VERPFLEGUNG_TAGE
+                                  if (felder.get(t) or {}).get("zustand") == "bestaetigt")
+                tage_nach_frist_gesamt = sum((felder.get(t, {}).get("wert") or 0)
+                                             for t in VERPFLEGUNG_TAGE_NACH_FRIST
+                                             if (felder.get(t) or {}).get("zustand") == "bestaetigt")
+                if tage_gesamt > 0 and tage_nach_frist_gesamt == 0:
+                    # monate > 3 + Tage insgesamt > 0 + ALLE nach_frist = 0 → Rückfrage
+                    frist_unterbrochen_bestaetigt = (felder.get("vpf_frist_unterbrochen") or {}).get("zustand") == "bestaetigt"
+                    if not frist_unterbrochen_bestaetigt:
+                        # Rückfrage nicht beantwortet
+                        return "verpflegung_dreimonatsfrist_unterbrechung_offen"
             # Mahlzeitenkürzung (S. 8-11): fail-closed auf Eingabe. Die Frage muss beantwortet sein:
             # "Wurden dir Mahlzeiten gestellt?" — wenn JA, dann Anzahlen + Entgelt; wenn NEIN, dann 0 bestätigt.
             # Mahlzeitenzahlen-Felder (fruehstuecke/mittag/abendessen_gestellt_anzahl) sind die Antwort:
@@ -2002,7 +2021,7 @@ def fall_loeschen(fall_id: str) -> tuple[int, dict]:
         raise ApiError(404, f"Fall {fall_id!r} existiert nicht")
     with open(pfad, encoding="utf-8") as f:
         store = json.load(f)
-    uid = _AUTH_USER
+    uid = api_auth._AUTH_USER
     if uid is not None:
         stored = store.get("user_id")
         if stored is not None and stored != uid:
@@ -2031,11 +2050,11 @@ def fall_anlegen(body: dict) -> tuple[int, dict]:
         raise ApiError(409, f"Fall {fall_id!r} existiert bereits")
     store = ST.leerer_store(vz, fall_id=fall_id)
     store["scheibe"] = scheibe
-    if _AUTH_USER is not None:
-        store["user_id"] = _AUTH_USER
+    if api_auth._AUTH_USER is not None:
+        store["user_id"] = api_auth._AUTH_USER
     speichere_fall(fall_id, store)
-    if _AUTH_USER is not None:
-        audit.append(_AUTH_USER, "fall_angelegt", fall_id, f"scheibe={scheibe}")
+    if api_auth._AUTH_USER is not None:
+        audit.append(api_auth._AUTH_USER, "fall_angelegt", fall_id, f"scheibe={scheibe}")
     return 201, {"fall_id": fall_id, "scheibe": scheibe, "veranlagungszeitraum": vz}
 
 
@@ -2361,7 +2380,7 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
     if rc != CE.RC_OK:
         return 422, {**basis, "grund": "plausibilitaet_verletzt", "ericantwort": antwort,
                      "moeglicherweise_gekappt": CE.gekappt_verdacht(antwort)}
-    audit.append(_AUTH_USER or "dev", "fall_validiert", fall_id, f"vz={vz} rc=0")
+    audit.append(api_auth._AUTH_USER or "dev", "fall_validiert", fall_id, f"vz={vz} rc=0")
     return 200, {**basis, "plausibel": True,
                  "hinweis": "checkESt bestanden. Versand ist nicht verdrahtet — "
                             "ERIC_ENCRYPT_AND_SEND braucht Zertifikat + explizite Freigabe."}
@@ -2569,7 +2588,7 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
         for fid, b in bindung.items() if "llm" in (b.get("vorschlagbar_von") or [])]
     check_katalog = ST.lade_katalog(TR.lade_bindung())
     try:
-        vorschlaege = api_llm._llm_vorschlaege(freitext, prompt_katalog, user_id=_AUTH_USER)
+        vorschlaege = api_llm._llm_vorschlaege(freitext, prompt_katalog, user_id=api_auth._AUTH_USER)
     except (api_llm.LlmNichtVerfuegbar, ImportError):   # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
         return 501, CHAT_501                             # echte Logik-/Parse-Bugs propagieren (konsistent zu kontoauszug)
     geschrieben, abgelehnt = [], []

@@ -27,13 +27,14 @@ if _STORE_DIR not in sys.path:
     sys.path.insert(0, _STORE_DIR)
 
 import api  # noqa: E402
+import api_auth  # noqa: E402 — Request-Auth (Modul-Attribute)
 import auth  # noqa: E402 — P1.1 Authentifizierung
 import audit  # noqa: E402 — P1.6 Audit-Log
 
 
 def _session_check():
-    """GET /auth/session — JWT schon von _dispatch via api._AUTH_USER verifiziert."""
-    uid = api._AUTH_USER
+    """GET /auth/session — JWT schon von _dispatch via api_auth._AUTH_USER verifiziert."""
+    uid = api_auth._AUTH_USER
     if uid is None:
         raise auth.AuthError(401, "ungültiges oder abgelaufenes Token")
     return 200, {"username": uid, "authenticated": True}
@@ -149,7 +150,7 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(400, {"fehler": "ungültiges JSON im Body"})
                     return
         # JWT-Kontext für DIESEN Request setzen (single-threaded → Modul-Variable sicher)
-        api._AUTH_USER = self._extract_user()
+        api_auth._AUTH_USER = self._extract_user()
         try:
             for m, muster, fn in ROUTES:
                 if m != method:
@@ -166,7 +167,7 @@ class Handler(BaseHTTPRequestHandler):
                     else:
                         self._json(status, obj)
                     if pfad.startswith("/fall"):
-                        uid = api._AUTH_USER or "dev"
+                        uid = api_auth._AUTH_USER or "dev"
                         fid = treffer.groupdict().get("id")
                         if pfad == "/fall":
                             audit.append(uid, "fall_create", fid, f"status={status}")
@@ -176,7 +177,7 @@ class Handler(BaseHTTPRequestHandler):
                     return
             self._json(404, {"fehler": "route_not_found", "methode": method, "pfad": pfad})
         finally:
-            api._AUTH_USER = None  # Request-Kontext sauber räumen
+            api_auth._AUTH_USER = None  # Request-Kontext sauber räumen
 
     def do_GET(self):
         self._dispatch("GET")

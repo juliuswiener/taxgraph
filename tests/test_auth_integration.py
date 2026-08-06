@@ -25,6 +25,7 @@ for sub in ("produkt/haut", "produkt/auth", "produkt/store"):
 
 import auth as AUTH
 import api as API
+import api_auth
 import server as SRV
 import audit
 import store as ST
@@ -71,7 +72,7 @@ def base(tmp_path, monkeypatch):
     """Fixture: spun-up test server with temporary stores."""
     faelle_dir = str(tmp_path / "faelle")
     monkeypatch.setattr(API, "FAELLE", faelle_dir)
-    monkeypatch.setattr(API, "_AUTH_USER", None)
+    monkeypatch.setattr(api_auth, "_AUTH_USER", None)
     auth_store = str(tmp_path / "users.json")
     monkeypatch.setattr(AUTH, "USER_STORE", auth_store)
     monkeypatch.setattr(audit, "AUDIT_DIR", faelle_dir)

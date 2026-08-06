@@ -13,7 +13,6 @@ FAELLE = os.path.join(HERE, "faelle")
 
 # ========== Private (führender Unterstrich) Konstanten — müssen in __all__ sein für import * ==========
 _FALL_RE = re.compile(r"[A-Za-z0-9_-]{1,64}")
-_AUTH_USER: str | None = None
 _ERLAUBTE_ZUSTAENDE = {"vorlaeufig", "bestaetigt"}
 
 # ========== § 19 Einkünfte (Arbeit) ==========
@@ -50,6 +49,7 @@ VERPFLEGUNG_GUARD = ("vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
 VERPFLEGUNG_KUERZUNG = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
                         "vpf_abendessen_gestellt_anzahl", "vpf_mahlzeiten_gezahltes_entgelt",
                         "vpf_steuerfreie_erstattung_betrag")
+VERPFLEGUNG_FRIST = ("vpf_frist_unterbrochen",)
 
 # ========== § 10 Vorsorge ==========
 VOR_FELDER = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
@@ -349,7 +349,7 @@ SCHEIBEN = {
     },
     "an_gesamt": {
         "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER + KV_PV_FELDER
-                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD
+                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER
                    + P36_ANRECHNUNG
@@ -373,7 +373,7 @@ SCHEIBEN = {
                    + GESAMT_33B + GESAMT_33B_PARTNER
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
-                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_KUERZUNG
+                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + ARBEITSMITTEL_AFA_GESAMT
                    + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P16_4_GATE_FELDER),
@@ -406,7 +406,7 @@ SCHEIBEN = {
 # Alle public Namen (ohne führenden _) + private (_*) Namen die für api.py kritisch sind
 __all__ = [
     # Private/regex
-    "_FALL_RE", "_AUTH_USER", "_ERLAUBTE_ZUSTAENDE",
+    "_FALL_RE", "_ERLAUBTE_ZUSTAENDE",
     # Pfade
     "HERE", "FAELLE",
     # § 19 Einkünfte
@@ -418,7 +418,7 @@ __all__ = [
     # § 36/§22/§10 KiSt
     "P36_ANRECHNUNG", "P22_NR3_EINKUENFTE", "KIST_KONFESSION_FELDER", "P16_4_GATE_FELDER",
     # Verpflegung
-    "VERPFLEGUNG_TAGE", "VERPFLEGUNG_TAGE_NACH_FRIST", "VERPFLEGUNG_GUARD", "VERPFLEGUNG_KUERZUNG",
+    "VERPFLEGUNG_TAGE", "VERPFLEGUNG_TAGE_NACH_FRIST", "VERPFLEGUNG_GUARD", "VERPFLEGUNG_FRIST", "VERPFLEGUNG_KUERZUNG",
     # Vorsorge
     "VOR_FELDER", "VOR_PARTNER_FELDER", "KV_PV_FELDER", "KV_PV_PARTNER_FELDER", "VORSORGE_PARTNER_FELDER",
     # dHf

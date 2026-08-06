@@ -20,7 +20,7 @@
                        "uebernachtung_tatbestand_offen", "ausland_uebernachtung_nicht_ring_faehig",
                        "uebernachtung_zeitraum_offen", "arbeitsmittel_afa_ueber_gwg_offen",
                        "partner_kegel_offen", "partner_vor_offen",
-                       "verpflegung_reduktion_offen", "verpflegung_dreimonatsfrist_aufteilung_offen", "flag_konsistenz_offen",
+                       "verpflegung_reduktion_offen", "verpflegung_dreimonatsfrist_aufteilung_offen", "verpflegung_dreimonatsfrist_unterbrechung_offen", "flag_konsistenz_offen",
                        "partner_konsistenz_offen", "kapital_semantik_offen",
                        "rentenfreibetrag_fixierung_offen", "versorgungsfreibetrag_offen", "vv_instanz_offen",
                        "rechnung_unbar_offen", "handwerker_foerderung_offen", "rente_instanz_offen",
