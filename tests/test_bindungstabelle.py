@@ -474,7 +474,6 @@ BETRAGSFELDER_OHNE_KZ = {
     "einkuenfte_gewinn",
     "gewinnanteil",
     "gewst_messbetrag",
-    "kinderbetreuungskosten",
     "kist_erstattet",
     "kist_gezahlt",
     "kap_gewinn_sonstige",

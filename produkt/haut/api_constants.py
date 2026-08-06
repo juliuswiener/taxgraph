@@ -146,7 +146,7 @@ P35A_MITVER_ANZEIGE = ("p35a_mitveranlagung",)
 AGB_KIST = ("kist_gezahlt", "kist_erstattet")
 
 # ========== § 10 Abs.1 Nr.5 Kinderbetreuung ==========
-KINDERBETREUUNG = ("kinderbetreuungskosten", "kinderbetreuung_anzahl_kinder")
+KINDERBETREUUNG = ("kinderbetreuungskosten",)
 
 # ========== Gefaltete Sonder-Abzüge (Weg ii) ==========
 GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",

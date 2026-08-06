@@ -3,16 +3,8 @@ ESt (zahl_cent) am echten /ergebnis-Output. Differential-Test (mit Kinderbetreuu
 beweist die Ring-Verdrahtung + Erreichbarkeit (POST 201, nicht 400). Deckt Point B (gesamt Z.894)
 + Point C (rentner Z.1360). NULL LLM.
 
-Regression-Lock gegen das TOTE-WIRING-Muster (§35c/§10-Realsplitting: Feld nie in SCHEIBEN.felder
-→ 400 → tot → Over-tax). A1 landete worker-seitig (ca23e04) und hatte NUR einen Accessor-Unit-Test
-(test_p10_1_5_accessor.py) — kein Ring-Test, der die Erreichbarkeit am echten Output lockt. Die
-Felder SIND erreichbar (dieser Test würde am POST 400 scheitern, wenn nicht) — hier fixiert.
-
-Kinderbetreuung = SONDERAUSGABE (mindert zvE, § 10 Abs.1 Nr.5, 80 % cap 4.800 €/Kind) — progressiver
-Effekt, kein flaches ×100. Muster §33a/§10-Realsplitting: Richtung + Band (Hochverdiener ~200k € zvE
-= 42 %-Zone → Abzug 4.800 € × 0,42 ≈ 2.016 €). Der Accessor (min(aufwand_pro_kind × 80 %, 4.800) ×
-anzahl) ist unit-gegolded (test_p10_1_5_accessor.py). Kinderbetreuung hat KEIN conditional Gate →
-Baseline (Felder absent → 0) vs mit-1-Kind ist selbst der Erreichbarkeits-Beweis.
+PER-KIND (2026-08-06 Fix): Kz im Kind-Container, Ring liest per EM.instanzen. 2 Kinder
+UNGLEICHE Beträge (8000+2000) → pro Kind: 4800+1600 = 6400€ Abzug. KEINE Gleichverteilung.
 """
 import json
 import os
@@ -151,35 +143,37 @@ RENTNER_KEGEL_BASIS = [
 ]
 
 
-# Kinderbetreuung: 1 Kind, 6.000 € Aufwand → 80 % = 4.800 € = Deckel (exakt). kosten=cent, anzahl=int.
-KINDERBETREUUNG_1KIND = [
-    ("kinderbetreuungskosten", 600000),        # 6.000 €
-    ("kinderbetreuung_anzahl_kinder", 1),      # → min(6000×0,8, 4800) × 1 = 4.800 € Abzug
+# 2 Kinder, UNGLEICHE Beträge: Kind1=8000€ (gedeckelt 4800), Kind2=2000€ (1600) → Σ=6400€.
+# Vor Fix (Gleichverteilung): 10000/2=5000 → 2×4000=8000€ (falsch).
+KINDERBETREUUNG_2KINDER = [
+    ("kinderbetreuungskosten", 800000),          # Kind 1: 8.000 € → 80%=6400, Deckel 4800 → 4800
+    ("kinderbetreuungskosten__2", 200000),       # Kind 2: 2.000 € → 80%=1600 (< Deckel) → 1600
 ]
 
-# Erwartetes Δ-Band: Abzug 4.800 € × Grenzsteuersatz 42 % (zvE ~200k) ≈ 2.016 € = 201.600 ct.
-DELTA_MIN = 180000   # 1.800 €
-DELTA_MAX = 220000   # 2.200 €
+# Erwartetes Δ-Band: Abzug 6.400 € × Grenzsteuersatz 42 % (zvE ~200k) ≈ 2.688 € = 268.800 ct.
+DELTA_MIN = 240000   # 2.400 €
+DELTA_MAX = 290000   # 2.900 €
 
 
 # ===== TESTS =============================================================
 
 def test_p10_1_5_ring_gesamt(base):
-    """gesamt Hochverdiener: Kinderbetreuung 1 Kind/6.000 € (Abzug 4.800 €) mindert zahl_cent
-    progressiv (~2.016 € bei 42 %). Beweist Erreichbarkeit (POST 201) + Sonderausgaben-Durchgriff."""
+    """gesamt Hochverdiener: 2 Kinder ungleiche Beträge (8000+2000) → Σ=6400€ Abzug.
+    KEINE Gleichverteilung mehr. Beweist Erreichbarkeit + per-Kind-Instanz-Mechanik."""
     if not _catala_da():
         pytest.skip("catala nicht verfügbar")
     baseline = _zahl(base, "gesamt", "gkb_base", GESAMT_KEGEL_BASIS)
-    mit = _zahl(base, "gesamt", "gkb_mit", GESAMT_KEGEL_BASIS + KINDERBETREUUNG_1KIND)
+    mit = _zahl(base, "gesamt", "gkb_mit", GESAMT_KEGEL_BASIS + KINDERBETREUUNG_2KINDER)
     delta = baseline - mit
     assert DELTA_MIN <= delta <= DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta} nicht in [{DELTA_MIN},{DELTA_MAX}]"
 
 
 def test_p10_1_5_ring_rentner(base):
-    """rentner_gesamt Hochverdiener: Kinderbetreuung am Point C (Z.1360) mindert zahl_cent progressiv."""
+    """rentner_gesamt Hochverdiener: Kinderbetreuung am Point C (Z.1360) mindert zahl_cent.
+    2 Kinder ungleiche Beträge."""
     if not _catala_da():
         pytest.skip("catala nicht verfügbar")
     baseline = _zahl(base, "rentner_gesamt", "rkb_base", RENTNER_KEGEL_BASIS)
-    mit = _zahl(base, "rentner_gesamt", "rkb_mit", RENTNER_KEGEL_BASIS + KINDERBETREUUNG_1KIND)
+    mit = _zahl(base, "rentner_gesamt", "rkb_mit", RENTNER_KEGEL_BASIS + KINDERBETREUUNG_2KINDER)
     delta = baseline - mit
     assert DELTA_MIN <= delta <= DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta} nicht in [{DELTA_MIN},{DELTA_MAX}]"

@@ -180,7 +180,6 @@ def test_nicht_deklariert_inventar():
         "§32b Progressionsvorbehalt": ["p32b_progressionseinkuenfte"],
         "§10d Verlustvortrag": ["verlustvortrag_bestand"],
         "Berufsausbildung §10 Abs.1 Nr.7": ["berufsausbildung_aufwendungen"],
-        "Kinderbetreuung §10 Abs.1 Nr.5": ["kinderbetreuungskosten"],
         "§21 VV Quote": ["vv_entgelt_quote_prozent"],
     }
 

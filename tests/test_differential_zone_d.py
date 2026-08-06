@@ -35,11 +35,11 @@ def bindung():
 # ----------------------------------------------------------------
 
 def test_zone_d_unterhalt_agb_keine_luecken(bindung):
-    """§33a Unterhalt/Ausbildung + §10 Abs.1 Nr.7 + §10 Abs.1 Nr.5 — 7 Betragsfelder.
+    """§33a Unterhalt/Ausbildung + §10 Abs.1 Nr.7 + §10 Abs.1 Nr.5 — 6 Betragsfelder.
 
     p33a_* alle null-kz -> nicht_deklariert (Topf b).
     berufsausbildung_aufwendungen null-kz -> nicht_deklariert (Topf b).
-    kinderbetreuung_* null-kz -> nicht_deklariert (Topf b).
+    kinderbetreuungskosten hat Kz E0506105 (per-Kind, 2026-08-06 Fix).
     """
     s = ST.leerer_store(2025, fall_id="zone_d_unterhalt")
     _b(s, "veranlagung", "einzel")
@@ -58,9 +58,9 @@ def test_zone_d_unterhalt_agb_keine_luecken(bindung):
     # Berufsausbildung §10 Abs.1 Nr.7 (1)
     _b(s, "berufsausbildung_aufwendungen", 300000)       # cent, null-kz -> nicht_deklariert
 
-    # Kinderbetreuung §10 Abs.1 Nr.5 (2)
-    _b(s, "kinderbetreuungskosten", 600000)              # cent, null-kz -> nicht_deklariert
-    _b(s, "kinderbetreuung_anzahl_kinder", 2)            # int, null-kz -> nicht_deklariert
+    # Kinderbetreuung §10 Abs.1 Nr.5 (1) — hat Kz E0506105 (per-Kind, 2026-08-06)
+    _b(s, "kinderbetreuungskosten", 600000)              # cent, E0506105 -> 1:1
+    # int+null-kz bereits durch p33a_ausbildung_anzahl_kinder (Z.56) gedeckt
 
     snap, _ = ST.materialisiere(s)
     result = est_mapping.deklariere(snap, bindung)
@@ -224,8 +224,7 @@ def test_zone_d_zusammenveranlagung_keine_luecken(bindung):
     _b(s, "spenden_betrag", 30000)                        # cent, E0108405 -> 1:1
     _b(s, "p36_lohnsteuer", 800000)                       # cent, null-kz -> nicht_deklariert
     _b(s, "p36_vorauszahlungen", 200000)                  # cent, null-kz -> nicht_deklariert
-    _b(s, "kinderbetreuungskosten", 600000)               # cent, null-kz -> nicht_deklariert
-    _b(s, "kinderbetreuung_anzahl_kinder", 2)             # int, null-kz -> nicht_deklariert
+    _b(s, "kinderbetreuungskosten", 600000)                # cent, E0506105 (per-Kind, 2026-08-06)
 
     snap, _ = ST.materialisiere(s)
     result = est_mapping.deklariere(snap, bindung)
