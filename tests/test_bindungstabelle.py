@@ -631,15 +631,7 @@ GEBUNDENE_KZ_OHNE_TEST: set[str] = set()
 
 # Scharfe Ausnahmeliste (test_m_): Kz in keiner assert-gesteuerten Prüfung.
 # Jeder Eintrag einzeln begründet — hier ist die Lücke sichtbar, nicht still.
-GEBUNDENE_KZ_KEIN_ASSERT: dict[str, str] = {
-    "E0108405": "spenden_betrag — Kz im ELSTER-Durchgangs-Kegel, assert prüft Feld-Ergebnis, nicht Kz direkt",
-    "E0203611": "ep_oepnv_kosten — Kz in differential_zone_a; Wert-Abgleich, kein Kz-Assert",
-    "E0205201": "tage_ueber_8h_eintaegig — Verpflegungs-Tage; Ring-Test prüft Delta auf zahl_cent, nicht Kz",
-    "E0205302": "tage_an_abreise — Verpflegungs-Tage; Ring-Test prüft Delta auf zahl_cent, nicht Kz",
-    "E0205409": "tage_24h — Verpflegungs-Tage; Ring-Test prüft Delta auf zahl_cent, nicht Kz",
-    "E0207611": "dhf_unterkunftskosten_monat — Kz in differential_zone_a; Wert-Abgleich, kein Kz-Assert",
-    "E0505607": "schulgeld — heute committet (52b87c9), Kz-Durchgang nie in assert; Ring-Test prüft Delta auf zahl_cent",
-}
+GEBUNDENE_KZ_KEIN_ASSERT: dict[str, str] = {}
 
 
 def test_j_gebundene_kz_sind_test_belegt():
