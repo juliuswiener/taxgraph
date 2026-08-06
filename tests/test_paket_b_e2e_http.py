@@ -3668,15 +3668,30 @@ def test_rentner_p32d_kapital_hohe_rente_abgeltung_25pct(base):
         )
 
 
+@pytest.mark.xfail(reason="§9 Abs.4a S.6 nicht verdrahtet: api.py liest "
+                          "VERPFLEGUNG_TAGE_NACH_FRIST nie aus f; Felder sind in "
+                          "SCHEIBEN gesetzt und im Ring gerechnet, aber die Naht "
+                          "fehlt. Gemessen 2026-08-06: Ring kuerzt 420 EUR bei "
+                          "60 Tagen/15 nach Frist, api.py liefert die Kuerzung nie.",
+                   strict=True)
 def test_verpflegung_dreimonats_frist_ring(base):
     """Ring-Test § 9 Abs. 4a S. 6/7 Dreimonatsfrist.
     60 Reisetage @ 28€ Pauschale: 60×28 = 1.680€.
     Nach 3 Monaten: 20 Tage, davon nur 15 in Frist → 45 Tage Voll.
     Pauschale: 45×28 = 1.260€ statt 1.680€.
     Bei ~42% Tarif: 420€ Einsparung → etwa 176€ weniger Steuer.
+
+    ZWEITES LOCH (Guard): Fall A/B setzen die Mahlzeiten-Frage
+    (vpf_keine_mahlzeitengestellung / vpf_*_gestellt_anzahl) nie —
+    _an_gesamt_sperrgrund sperrt daher JETZT SCHON mit
+    grund=verpflegung_reduktion_offen, zahl_cent=None, bevor die
+    Dreimonatsfrist überhaupt gerechnet würde. Wer nur dieses Loch stopft
+    (Guard-Felder ergänzen) und nicht auch die api.py-Naht (s.o.) verdrahtet,
+    misst danach delta=0 statt der erwarteten S.6-Kürzung — kein Fortschritt,
+    nur eine andere Art Falschgrün.
     """
     catala = _catala_da()
-    
+
     # Fall A: ohne Dreimonatsfrist-Angabe (alle 60 Tage = Frist)
     kegel_ohne = _gesamt_kegel(0, bruttolohn=5000000)
     _gesamt_anlegen(base, "vpf-d-ohne", kegel_ohne)
@@ -3694,7 +3709,14 @@ def test_verpflegung_dreimonats_frist_ring(base):
     _val("ergebnis", erg_mit)
     steuern_mit = erg_mit["zahl_cent"]
 
-    if catala and steuern_ohne and steuern_mit:
+    if catala:
+        # Loch 1 (Guard): ohne Mahlzeiten-Frage sperrt _an_gesamt_sperrgrund JETZT SCHON
+        # (grund=verpflegung_reduktion_offen, zahl_cent=None) — dieser Assert schlägt
+        # deshalb bereits hier fehl, bevor Loch 2 (api.py-Naht) überhaupt zum Tragen käme.
+        assert steuern_ohne is not None and steuern_mit is not None, (
+            f"Guard blockiert (verpflegung_reduktion_offen erwartet): "
+            f"ohne={steuern_ohne} mit={steuern_mit}"
+        )
         delta = steuern_ohne - steuern_mit
         # 15 Tage × 28€ = 420€ Minderung × ~42% = ~176€ (17600 Cent)
         # Toleranz ±20€ für Freibetrags-Effekte
