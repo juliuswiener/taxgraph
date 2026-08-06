@@ -160,10 +160,11 @@ REALSPLITTING_OHNE_ZUSTIMMUNG = [
     ("realsplitting_zustimmung", False),               # Gate zu → KEIN Abzug (over-tax-safe)
 ]
 
-# Erwartetes Δ-Band: Abzug 13.805 € × Grenzsteuersatz 42 % (zvE ~200k, § 32a-Progressionszone
-# 68.481–277.825 €) ≈ 5.798 € = 579.800 ct. Band großzügig gegen zvE-/§32a-Rundung.
-DELTA_MIN = 550000   # 5.500 €
-DELTA_MAX = 620000   # 6.200 €
+# Erwartetes Δ exakt: 13.805 € (Maximalabzug §10 Abs.1a) × Grenzsteuersatz im Seed ~41,9 %
+# (zvE 200k Lohn → Progressionszone 68.481–277.825 €). 20000000 cent Lohn → zvE ca. 164.000 €
+# brutto (nach Vorsorge/Werbungsk), 13.805 € runter auf ~150.195 € → 42 %-Zone.
+# Gemessen 2026-08-06 17:10: gesamt=578300, rentner=578300 (beide selber Grenzsatz).
+DELTA_EXACT = 578300
 
 
 # ===== TESTS =============================================================
@@ -176,7 +177,7 @@ def test_p10_1a_ring_gesamt_mit_zustimmung(base):
     baseline = _zahl(base, "gesamt", "grs_base", GESAMT_KEGEL_BASIS)
     mit = _zahl(base, "gesamt", "grs_mit", GESAMT_KEGEL_BASIS + REALSPLITTING_MIT)
     delta = baseline - mit
-    assert DELTA_MIN <= delta <= DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta} nicht in [{DELTA_MIN},{DELTA_MAX}]"
+    assert delta == DELTA_EXACT, f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT}"
 
 
 def test_p10_1a_ring_gesamt_ohne_zustimmung_kein_abzug(base):
@@ -196,4 +197,4 @@ def test_p10_1a_ring_rentner_mit_zustimmung(base):
     baseline = _zahl(base, "rentner_gesamt", "rrs_base", RENTNER_KEGEL_BASIS)
     mit = _zahl(base, "rentner_gesamt", "rrs_mit", RENTNER_KEGEL_BASIS + REALSPLITTING_MIT)
     delta = baseline - mit
-    assert DELTA_MIN <= delta <= DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta} nicht in [{DELTA_MIN},{DELTA_MAX}]"
+    assert delta == DELTA_EXACT, f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT}"

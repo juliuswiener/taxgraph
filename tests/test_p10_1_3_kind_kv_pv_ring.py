@@ -163,11 +163,12 @@ KV_PV_2KINDER_KEINE_IDNR = [
     ("kind_kv__2", 50000), ("kind_pv__2", 30000),
 ]
 
-# Basis-Durchbruch: kind_summe (2300€) voll abziehbar (kein Deckel durch Abs.4).
-# 2300€ × 42% (Grenzsteuersatz) ≈ 966€ = 96600ct.
-# Mit Toleranz für Scheiben-Unterschiede.
-DELTA_MIN = 80000   # 800 €
-DELTA_MAX = 120000  # 1200 €
+# Basis-Durchbruch: kind_summe (1000+500+500+300 = 2300€ Grundbeträge) voll abziehbar.
+# gesamt: höheres zvE (200k Lohn + VV-Gewinn) → 42%-Zone → 2300 × 0,45 ≈ 1035 = 103500 ct.
+# rentner: zvE 20k Rente (niedriger Tarif) → 2300 × 0,42 ≈ 966 = 96600 ct.
+# Gemessen 2026-08-06 17:10: gesamt=103500, rentner=96600. 1035-966=69ct Differenz = Tarifstufe.
+DELTA_EXACT_GESAMT = 103500
+DELTA_EXACT_RENTNER = 96600
 
 
 # ===== TESTS =============================================================
@@ -179,7 +180,7 @@ def test_p10_1_3_kind_kv_pv_ring_gesamt(base):
     baseline = _zahl(base, "gesamt", "kb_base", GESAMT_KEGEL_BASIS)
     mit = _zahl(base, "gesamt", "kb_mit", GESAMT_KEGEL_BASIS + KV_PV_2KINDER)
     delta = baseline - mit
-    assert DELTA_MIN <= delta <= DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta}"
+    assert delta == DELTA_EXACT_GESAMT, f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT_GESAMT}"
 
 
 def test_p10_1_3_kind_kv_pv_ring_rentner(base):
@@ -189,7 +190,7 @@ def test_p10_1_3_kind_kv_pv_ring_rentner(base):
     baseline = _zahl(base, "rentner_gesamt", "kr_base", RENTNER_KEGEL_BASIS)
     mit = _zahl(base, "rentner_gesamt", "kr_mit", RENTNER_KEGEL_BASIS + KV_PV_2KINDER)
     delta = baseline - mit
-    assert DELTA_MIN <= delta <= DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta}"
+    assert delta == DELTA_EXACT_RENTNER, f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT_RENTNER}"
 
 
 def test_p10_1_3_kind_kv_pv_ring_fail_closed(base):

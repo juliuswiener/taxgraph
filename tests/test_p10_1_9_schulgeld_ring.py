@@ -145,9 +145,10 @@ SCHULGELD_2KINDER_EINZEL = [
     ("schulgeld__2", 500000),        # Kind 2:  5.000 € → 30%=1500, Deckel 2500 → 1500
 ]
 
-# Erwartetes Δ-Band: Abzug 4000€ × Grenzsteuersatz 42% ≈ 1680€ = 168.000 ct (Einzel)
-DELTA_MIN = 140000   # 1.400 €
-DELTA_MAX = 190000   # 1.900 €
+# Erwartetes Δ exakt: 4000€ (10000×30%=Deckel 2500 + 5000×30%=1500) × ~41,6% = 166400 ct.
+# Gemessen 2026-08-06 17:10: gesamt=166400, rentner=166500 (100ct Diff = Tarif-Rundung).
+DELTA_EXACT_GESAMT = 166400
+DELTA_EXACT_RENTNER = 166500
 
 # Veranlagungs-Weiche (Accessor-seitig getestet in test_p10_1_9_schulgeld_accessor.py).
 # Zusammenveranlagung braucht Partner-Kegel (partner_kegel_offen) → hier nur Einzel-Tests;
@@ -162,7 +163,7 @@ def test_p10_1_9_schulgeld_ring_gesamt(base):
     baseline = _zahl(base, "gesamt", "gs_base", GESAMT_KEGEL_BASIS)
     mit = _zahl(base, "gesamt", "gs_mit", GESAMT_KEGEL_BASIS + SCHULGELD_2KINDER_EINZEL)
     delta = baseline - mit
-    assert DELTA_MIN <= delta <= DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta}"
+    assert delta == DELTA_EXACT_GESAMT, f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT_GESAMT}"
 
 
 def test_p10_1_9_schulgeld_ring_rentner(base):
@@ -172,4 +173,4 @@ def test_p10_1_9_schulgeld_ring_rentner(base):
     baseline = _zahl(base, "rentner_gesamt", "rs_base", RENTNER_KEGEL_BASIS)
     mit = _zahl(base, "rentner_gesamt", "rs_mit", RENTNER_KEGEL_BASIS + SCHULGELD_2KINDER_EINZEL)
     delta = baseline - mit
-    assert DELTA_MIN <= delta <= DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta}"
+    assert delta == DELTA_EXACT_RENTNER, f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT_RENTNER}"

@@ -150,9 +150,10 @@ KINDERBETREUUNG_2KINDER = [
     ("kinderbetreuungskosten__2", 200000),       # Kind 2: 2.000 € → 80%=1600 (< Deckel) → 1600
 ]
 
-# Erwartetes Δ-Band: Abzug 6.400 € × Grenzsteuersatz 42 % (zvE ~200k) ≈ 2.688 € = 268.800 ct.
-DELTA_MIN = 240000   # 2.400 €
-DELTA_MAX = 290000   # 2.900 €
+# Erwartetes Δ exakt: 6.400 € (80 % von 8000+2000, per-Kind-Deckel 4800) × ~41,8 % = 2.672 €.
+# Gemessen 2026-08-06 17:10: gesamt=267200, rentner=267300 (100 ct Diff = Rundung gde-Unterschied).
+DELTA_EXACT_GESAMT = 267200
+DELTA_EXACT_RENTNER = 267300
 
 
 # ===== TESTS =============================================================
@@ -165,7 +166,7 @@ def test_p10_1_5_ring_gesamt(base):
     baseline = _zahl(base, "gesamt", "gkb_base", GESAMT_KEGEL_BASIS)
     mit = _zahl(base, "gesamt", "gkb_mit", GESAMT_KEGEL_BASIS + KINDERBETREUUNG_2KINDER)
     delta = baseline - mit
-    assert DELTA_MIN <= delta <= DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta} nicht in [{DELTA_MIN},{DELTA_MAX}]"
+    assert delta == DELTA_EXACT_GESAMT, f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT_GESAMT}"
 
 
 def test_p10_1_5_ring_rentner(base):
@@ -176,4 +177,4 @@ def test_p10_1_5_ring_rentner(base):
     baseline = _zahl(base, "rentner_gesamt", "rkb_base", RENTNER_KEGEL_BASIS)
     mit = _zahl(base, "rentner_gesamt", "rkb_mit", RENTNER_KEGEL_BASIS + KINDERBETREUUNG_2KINDER)
     delta = baseline - mit
-    assert DELTA_MIN <= delta <= DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta} nicht in [{DELTA_MIN},{DELTA_MAX}]"
+    assert delta == DELTA_EXACT_RENTNER, f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT_RENTNER}"

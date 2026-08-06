@@ -112,11 +112,11 @@ def _zahl(base, scheibe, fid, kegel):
 # Basis: ESt ~51.970€ laut Grenzsteuersatz ~42%.
 # Kind1: GdB 50 → PB 1140€, nicht hilflos/blind
 # Kind2: GdB 100 → PB 2840€, nicht hilflos/blind
-# Σ Kind-PB = 1140 + 2840 = 3980€ → Δ ~3980€ × 42% ≈ 1671€ = 167100ct
-# Für Hbl-Test: Kind1 Hbl-Übertragung → +370€
-# Mit Toleranz für Scheiben-Unterschiede.
-PB_DELTA_MIN = 150000   # 1500 €
-PB_DELTA_MAX = 180000   # 1800 €
+# Σ Kind-PB = 1140 + 2840 = 3980€. Δ gesamt: höheres zvE → 45%-Zone → 3980 × 0,45 = 1791 = 179100 ct.
+# Δ rentner: zvE 20k Rente → ~42%-Zone → 3980 × 0,42 = 1671 = 167100 ct.
+# Gemessen 2026-08-06 17:10: gesamt=179100, rentner=167200. 100ct Diff durch Tarif-Rundung.
+PB_DELTA_EXACT_GESAMT = 179100
+PB_DELTA_EXACT_RENTNER = 167200
 PB_HBL_DELTA = 15000    # 370€ × 42% ≈ 155€ = 15500ct, plus etwas
 
 GESAMT_KEGEL_BASIS = [
@@ -221,7 +221,7 @@ def test_p33b_abs5_kind_pb_ring_gesamt(base):
     baseline = _zahl(base, "gesamt", "pb_base", GESAMT_KEGEL_BASIS)
     mit = _zahl(base, "gesamt", "pb_mit", GESAMT_KEGEL_BASIS + PB_2KINDER)
     delta = baseline - mit
-    assert PB_DELTA_MIN <= delta <= PB_DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta}"
+    assert delta == PB_DELTA_EXACT_GESAMT, f"baseline={baseline} mit={mit} Δ={delta} ≠ {PB_DELTA_EXACT_GESAMT}"
 
 
 def test_p33b_abs5_kind_pb_ring_rentner(base):
@@ -231,7 +231,7 @@ def test_p33b_abs5_kind_pb_ring_rentner(base):
     baseline = _zahl(base, "rentner_gesamt", "pr_base", RENTNER_KEGEL_BASIS)
     mit = _zahl(base, "rentner_gesamt", "pr_mit", RENTNER_KEGEL_BASIS + PB_2KINDER)
     delta = baseline - mit
-    assert PB_DELTA_MIN <= delta <= PB_DELTA_MAX, f"baseline={baseline} mit={mit} Δ={delta}"
+    assert delta == PB_DELTA_EXACT_RENTNER, f"baseline={baseline} mit={mit} Δ={delta} ≠ {PB_DELTA_EXACT_RENTNER}"
 
 
 def test_p33b_abs5_kind_pb_ring_fail_closed_keine_idnr(base):
