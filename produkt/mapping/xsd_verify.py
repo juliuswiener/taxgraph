@@ -34,6 +34,13 @@ STATUS_AMBIGUOUS = "AMBIGUOUS"
 STATUS_NOT_FOUND = "NOT_FOUND"
 STATUS_UNVERFUEGBAR = "SCHEMA_UNVERFUEGBAR"
 
+# Ja-Typ-Familie im XSD: enumeration-basierte Ja/Nein-Werte (keine Beträge).
+# NAMENSMUSTER, gemessen gegen das E10-2025-XSD: die 4 Ja-Typen
+# (Ja1/JaX/JaNein12/Ja2) heißen Ja...BaseCType[(_RABE)]. Es trifft die 4 Ja-Typen
+# exakt. Enum_*-Typen, die nur {1,2} zulassen, sind NICHT erfasst — sie werden über
+# den text-Zweig behandelt (nur deren Enum-Werte zählen, nicht der Name).
+_JA_TYP_RE = re.compile(r"^Ja(1|X|Nein12|2)?BaseCType(_RABE)?$")
+
 
 # ---------------------------------------------------------------- Schema-Lookup
 
@@ -174,6 +181,96 @@ def walk(schema_pfad: str, start_element: str = "E10") -> tuple[dict[str, list[t
 
     recurse(element_index[start_element], (), 0)
     return kz_index, max_depth_hits
+
+
+def _resolve_type_facets(typ_name: str, type_index: dict,
+                          _seen: set | None = None) -> dict:
+    """XSD-type-Name -> {enums, patterns, base}.
+
+    Folgt der Vererbungskette (RABE extension -> base -> restriction) und
+    sammelt xs:enumeration und xs:pattern aus der tiefsten restriction.
+    """
+    seen = _seen or set()
+    if typ_name in seen or typ_name not in type_index:
+        return {"enums": [], "patterns": [], "base": typ_name}
+    seen.add(typ_name)
+    node = type_index[typ_name]
+    for child in node:
+        if child.tag == XS + "simpleContent":
+            for ch in child:
+                if ch.tag in (XS + "restriction", XS + "extension"):
+                    base = ch.get("base")
+                    enums = [e.get("value") for e in ch if e.tag == XS + "enumeration"]
+                    pats = [e.get("value") for e in ch if e.tag == XS + "pattern"]
+                    sub = _resolve_type_facets(base, type_index, seen)
+                    return {
+                        "enums": enums or sub["enums"],
+                        "patterns": pats or sub["patterns"],
+                        "base": sub["base"],
+                    }
+    return {"enums": [], "patterns": [], "base": typ_name}
+
+
+def _resolve_kz_meta(schema_pfad: str, start_element: str = "E10") -> dict[str, dict]:
+    """Top-Down-Walk: Kz -> {type_name, enums, patterns, is_ja}.
+
+    Parallel zu walk(), aber statt Pfaden jedes Kz-Elements type-Name + Facetten.
+    Enums/Patterns werden über die Vererbungskette aufgelöst.
+    """
+    top_level = _parse_top_level_children(schema_pfad)
+    type_index, group_index, element_index = _load_indices(top_level)
+    if start_element not in element_index:
+        raise ValueError(f"Start-Element '{start_element}' nicht im Schema {schema_pfad} gefunden")
+
+    kz_meta: dict[str, dict] = {}
+
+    def recurse(elem_node, depth: int) -> None:
+        if depth > MAX_DEPTH:
+            return
+        local_name = elem_node.get("name") or elem_node.get("ref")
+        if _KZ_RE.match(local_name):
+            typ = elem_node.get("type")
+            if typ:
+                facets = _resolve_type_facets(typ, type_index)
+                kz_meta[local_name] = {
+                    "type_name": typ,
+                    "enums": facets["enums"],
+                    "patterns": facets["patterns"],
+                    "is_ja": ist_ja_typ(typ),
+                }
+
+        content = _content_of(elem_node, type_index)
+        if content is None:
+            return
+        for child in _flatten_content(content):
+            if child.tag == XS + "element":
+                ref = child.get("ref")
+                if ref:
+                    target = element_index.get(ref)
+                    if target is not None:
+                        recurse(target, depth + 1)
+                else:
+                    recurse(child, depth + 1)
+            elif child.tag == XS + "group":
+                grp = group_index.get(child.get("ref"))
+                if grp is not None:
+                    for gc in _flatten_content(grp):
+                        if gc.tag == XS + "element":
+                            recurse(gc, depth + 1)
+
+    recurse(element_index[start_element], 0)
+    return kz_meta
+
+
+def ist_ja_typ(typ_name: str) -> bool:
+    """True wenn typ_name ein Ja-Typ ist (Ja1/JaX/JaNein12/Ja2 - Familie).
+
+    Namensmuster, gemessen gegen das E10-2025-XSD: die 4 Ja-Typen heißen
+    Ja...BaseCType[(_RABE)]. Trifft die 4 Ja-Typen exakt. Enum_*-Typen mit
+    1/2-Werten sind NICHT erfasst — sie werden im text-Zweig des Typ-Gates
+    über ihre xs:enumeration-Facetten behandelt.
+    """
+    return bool(_JA_TYP_RE.match(typ_name))
 
 
 # ---------------------------------------------------------------- Report-Treiber (Konsument, H1/H2/H3)
