@@ -30,16 +30,35 @@ import api as API
 import server as SRV
 
 
-def _req(base, method, path, body=None):
-    """HTTP request."""
+def _req(base, method, path, body=None, erwarte=None):
+    """HTTP request with optional status check.
+
+    Prüft selbst:
+    - 5xx → AssertionError (nie unterdrückbar)
+    - 4xx → AssertionError, es sei denn `erwarte=<code>` ist gesetzt
+    - 2xx → durch
+    - erwarte=N → assert status == N
+    """
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(base + path, data=data, method=method,
                                  headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status, json.loads(r.read())
+            status = r.status
+            content = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read())
+        status = e.code
+        content = json.loads(e.read())
+    if erwarte is not None:
+        assert status == erwarte, (
+            f"erwarte={erwarte}, erhalten={status} {method} {path} {body}")
+    elif status >= 500:
+        raise AssertionError(
+            f"Serverfehler {status} {method} {path} {body}: {content}")
+    elif status >= 400:
+        raise AssertionError(
+            f"Fehler {status} {method} {path} {body}: {content}")
+    return status, content
 
 
 def _laie(fld, w):
@@ -86,12 +105,11 @@ def test_e2e_kz_durchgang_26_felder(base):
     erzeuge_xml() brauchen).
     """
     # POST /fall
-    st, _ = _req(base, "POST", "/fall", {
+    _req(base, "POST", "/fall", {
         "scheibe": "gesamt",
         "veranlagungszeitraum": 2025,
         "fall_id": "e2e_kz_26"
-    })
-    assert st == 201
+    }, erwarte=201)
 
     # Pflicht-Kegel (27) + Kz-Felder die funktionieren (9 = 36 Felder)
     felder = {
@@ -140,20 +158,17 @@ def test_e2e_kz_durchgang_26_felder(base):
     # POST Felder
     felder_gesendet = []
     for feld, wert in felder.items():
-        st, resp = _req(base, "POST", f"/fall/e2e_kz_26/event", _laie(feld, wert))
-        assert st == 201, f"POST {feld}={wert} → {st}: {resp}"
+        _req(base, "POST", f"/fall/e2e_kz_26/event", _laie(feld, wert), erwarte=201)
         felder_gesendet.append(feld)
 
     # GET /ergebnis
-    st, erg = _req(base, "GET", "/fall/e2e_kz_26/ergebnis")
-    assert st == 200
+    _, erg = _req(base, "GET", "/fall/e2e_kz_26/ergebnis", erwarte=200)
     assert erg.get("grund") == "bestaetigt", f"Fall nicht bestaetigt: {erg.get('grund')}"
     steuern_cent = erg.get("zahl_cent", 0)
     print(f"✓ Ring rechnet: {steuern_cent}c = {steuern_cent/100}€ ESt")
 
     # GET /deklaration
-    st, dekl = _req(base, "GET", "/fall/e2e_kz_26/deklaration")
-    assert st == 200
+    _, dekl = _req(base, "GET", "/fall/e2e_kz_26/deklaration", erwarte=200)
     deklaration = dekl.get("deklaration", {})
     print(f"✓ Deklaration: {len(deklaration)} Kz")
 
@@ -230,12 +245,10 @@ def test_e2e_kz_durchgang_26_felder(base):
 def _kvpv_deklaration(base, fall_id, steuerfall):
     """Minimalfall (gesamt-Scheibe) -> Deklaration + XML."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": fall_id})
+                                  "fall_id": fall_id}, erwarte=201)
     for feld, wert in steuerfall:
-        st, resp = _req(base, "POST", f"/fall/{fall_id}/event", _laie(feld, wert))
-        assert st == 201, f"POST {feld}={wert} -> {st}: {resp}"
-    st, dekl = _req(base, "GET", f"/fall/{fall_id}/deklaration")
-    assert st == 200
+        _req(base, "POST", f"/fall/{fall_id}/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", f"/fall/{fall_id}/deklaration", erwarte=200)
     import importlib
     spec = importlib.util.spec_from_file_location(
         "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
@@ -295,12 +308,10 @@ def test_kvpv_kz_person_b(base, vers_art, basis_kv_val, basis_pv_val, kz_kv, kz_
         ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_eigenes_kfz", False),
     ]
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": f"kvpv-b-{vers_art}"})
+                                  "fall_id": f"kvpv-b-{vers_art}"}, erwarte=201)
     for feld, wert in fall:
-        st, resp = _req(base, "POST", f"/fall/kvpv-b-{vers_art}/event", _laie(feld, wert))
-        assert st == 201
-    st, dekl = _req(base, "GET", f"/fall/kvpv-b-{vers_art}/deklaration")
-    assert st == 200
+        _req(base, "POST", f"/fall/kvpv-b-{vers_art}/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", f"/fall/kvpv-b-{vers_art}/deklaration", erwarte=200)
     person_b = dekl.get("person_b", {})
     assert kz_kv in person_b, f"KV-Kz {kz_kv} fehlt in person_b fuer {vers_art}"
     assert kz_pv in person_b, f"PV-Kz {kz_pv} fehlt in person_b fuer {vers_art}"
@@ -321,7 +332,7 @@ def test_kvpv_negativ_keine_art(base):
     """Negativ-Probe: basis_kv=2000 + basis_pv=1000, versicherungsart ABSENT
     -> KEIN KV/PV-Kz in Deklaration, muss in unvollstaendig landen."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": "kvpv-neg"})
+                                  "fall_id": "kvpv-neg"}, erwarte=201)
     for feld, wert in [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("basis_kv", 200000), ("basis_pv", 100000),
@@ -331,9 +342,8 @@ def test_kvpv_negativ_keine_art(base):
         ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
         ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_eigenes_kfz", False),
     ]:
-        _req(base, "POST", "/fall/kvpv-neg/event", _laie(feld, wert))
-    st, dekl = _req(base, "GET", "/fall/kvpv-neg/deklaration")
-    assert st == 200
+        _req(base, "POST", "/fall/kvpv-neg/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", "/fall/kvpv-neg/deklaration", erwarte=200)
     result = dekl.get("deklaration", {})
     for kz in ["E2001203", "E2001505", "E2001805", "E2002105", "E2003104", "E2003202"]:
         assert kz not in result, f"KV/PV-Kz {kz} trotz fehlender versicherungsart in Deklaration"
@@ -348,7 +358,7 @@ def test_kvpv_negativ_keine_art(base):
 def test_kvpv_unvollstaendig_ohne_art(base):
     """Bestandsfall: basis_kv gesetzt, versicherungsart fehlt -> unvollstaendig (nicht nicht_deklariert)."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": "kvpv-uv"})
+                                  "fall_id": "kvpv-uv"}, erwarte=201)
     for feld, wert in [
         ("bruttoarbeitslohn", 4000000), ("veranlagung", "einzel"),
         ("basis_kv", 200000), ("basis_pv", 100000),
@@ -357,10 +367,8 @@ def test_kvpv_unvollstaendig_ohne_art(base):
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
         ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_eigenes_kfz", False),
     ]:
-        st, _ = _req(base, "POST", "/fall/kvpv-uv/event", _laie(feld, wert))
-        assert st == 201
-    st, dekl = _req(base, "GET", "/fall/kvpv-uv/deklaration")
-    assert st == 200
+        _req(base, "POST", "/fall/kvpv-uv/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", "/fall/kvpv-uv/deklaration", erwarte=200)
     assert not dekl.get("vollstaendig"), "Fall ohne versicherungsart darf nicht vollstaendig sein"
     unvollst = dekl.get("unvollstaendig", [])
     grund_art = [u for u in unvollst if "versicherungsart" in u.get("grund", "")]
@@ -380,7 +388,7 @@ def test_kvpv_unvollstaendig_ohne_art(base):
 def test_p23_kz_durchgang(base, typ, typ_wert, kz):
     """§23 Kz: Grundstueck -> E0306801, anderes WG -> E0307701 in Deklaration + XML."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": f"p23-{typ}"})
+                                  "fall_id": f"p23-{typ}"}, erwarte=201)
     for feld, wert in [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("p23_veraeusserungspreis", 20000000),
@@ -390,10 +398,8 @@ def test_p23_kz_durchgang(base, typ, typ_wert, kz):
         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
-        st, _ = _req(base, "POST", f"/fall/p23-{typ}/event", _laie(feld, wert))
-        assert st == 201
-    st, dekl = _req(base, "GET", f"/fall/p23-{typ}/deklaration")
-    assert st == 200
+        _req(base, "POST", f"/fall/p23-{typ}/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", f"/fall/p23-{typ}/deklaration", erwarte=200)
     ai = dekl.get("anlage_instanzen", {})
     p23_inst = ai.get("p23_veraeusserung", [])
     found = any(kz in inst.get("felder", {}) for inst in p23_inst)
@@ -410,7 +416,7 @@ def test_p23_kz_durchgang(base, typ, typ_wert, kz):
 def test_p23_negativ_typ_fehlt(base):
     """§23 Negativ-Probe: p23_veraeusserungs_typ unbestätigt -> kein Kz."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": "p23-neg"})
+                                  "fall_id": "p23-neg"}, erwarte=201)
     for feld, wert in [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("p23_veraeusserungspreis", 20000000),
@@ -419,9 +425,8 @@ def test_p23_negativ_typ_fehlt(base):
         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
-        _req(base, "POST", "/fall/p23-neg/event", _laie(feld, wert))
-    st, dekl = _req(base, "GET", "/fall/p23-neg/deklaration")
-    assert st == 200
+        _req(base, "POST", "/fall/p23-neg/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", "/fall/p23-neg/deklaration", erwarte=200)
     result = dekl.get("deklaration", {})
     ai = dekl.get("anlage_instanzen", {})
     has_kz_in_inst = any(kz in inst.get("felder", {}) for insts in ai.values() for inst in insts for kz in ("E0306801", "E0307701"))
@@ -437,7 +442,7 @@ def test_p23_negativ_typ_fehlt(base):
 def test_p23_negativ_gewinn_null(base):
     """§23 ohne Gewinn (Preis=AK+WK) -> kein Kz (Netto-Gewinn = 0)."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": "p23-null"})
+                                  "fall_id": "p23-null"}, erwarte=201)
     for feld, wert in [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("p23_veraeusserungspreis", 1000000),
@@ -447,9 +452,8 @@ def test_p23_negativ_gewinn_null(base):
         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
-        _req(base, "POST", "/fall/p23-null/event", _laie(feld, wert))
-    st, dekl = _req(base, "GET", "/fall/p23-null/deklaration")
-    assert st == 200
+        _req(base, "POST", "/fall/p23-null/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", "/fall/p23-null/deklaration", erwarte=200)
     result = dekl.get("deklaration", {})
     ai = dekl.get("anlage_instanzen", {})
     has_kz = any(kz in inst.get("felder", {}) for insts in ai.values() for inst in insts for kz in ("E0306801", "E0307701"))
@@ -463,7 +467,7 @@ def test_p23_rundung_beweist_floor(base):
     Test laeuft aktuell noch mit ceiling (in _ABZUGS_KZ) -> ROT erwartet.
     Nach Entfernung aus _ABZUGS_KZ -> GRUEN."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": "p23-rnd"})
+                                  "fall_id": "p23-rnd"}, erwarte=201)
     for feld, wert in [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("p23_veraeusserungspreis", 1300000),
@@ -473,10 +477,8 @@ def test_p23_rundung_beweist_floor(base):
         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
-        st, _ = _req(base, "POST", "/fall/p23-rnd/event", _laie(feld, wert))
-        assert st == 201
-    st, dekl = _req(base, "GET", "/fall/p23-rnd/deklaration")
-    assert st == 200
+        _req(base, "POST", "/fall/p23-rnd/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", "/fall/p23-rnd/deklaration", erwarte=200)
     ai = dekl.get("anlage_instanzen", {})
     p23_inst = ai.get("p23_veraeusserung", [])
     inst = next((inst for inst in p23_inst if "E0306801" in inst.get("felder", {})), None)
@@ -499,7 +501,7 @@ def test_p23_rundung_beweist_floor(base):
 def test_gewinn_kz_durchgang(base, betriebsart, gewinn_cent, kz):
     """Gewinn-Einkuenfte: Gewerbe -> E0800502, Selbstaendig -> E0803402 in Deklaration + XML."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": f"gew-{betriebsart}"})
+                                  "fall_id": f"gew-{betriebsart}"}, erwarte=201)
     for feld, wert in [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("einkuenfte_gewinn", gewinn_cent),
@@ -507,10 +509,8 @@ def test_gewinn_kz_durchgang(base, betriebsart, gewinn_cent, kz):
         ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
-        st, _ = _req(base, "POST", f"/fall/gew-{betriebsart}/event", _laie(feld, wert))
-        assert st == 201
-    st, dekl = _req(base, "GET", f"/fall/gew-{betriebsart}/deklaration")
-    assert st == 200
+        _req(base, "POST", f"/fall/gew-{betriebsart}/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", f"/fall/gew-{betriebsart}/deklaration", erwarte=200)
     result = dekl.get("deklaration", {})
     assert kz in result, f"Gewinn-Kz {kz} fehlt fuer {betriebsart}"
     import importlib
@@ -525,7 +525,7 @@ def test_gewinn_kz_durchgang(base, betriebsart, gewinn_cent, kz):
 def test_gewinn_negativ_land_forst(base):
     """land_forst hat kein Kz (Gewinnermittlungsart fehlt) -> Kz in nicht_deklariert."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": "gew-lf"})
+                                  "fall_id": "gew-lf"}, erwarte=201)
     for feld, wert in [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("einkuenfte_gewinn", 500000),
@@ -533,9 +533,8 @@ def test_gewinn_negativ_land_forst(base):
         ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
-        _req(base, "POST", "/fall/gew-lf/event", _laie(feld, wert))
-    st, dekl = _req(base, "GET", "/fall/gew-lf/deklaration")
-    assert st == 200
+        _req(base, "POST", "/fall/gew-lf/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", "/fall/gew-lf/deklaration", erwarte=200)
     result = dekl.get("deklaration", {})
     for kz in ["E0800502", "E0803402"]:
         assert kz not in result, f"Kz {kz} darf bei land_forst nicht in Deklaration"
@@ -553,17 +552,15 @@ def test_gewinn_negativ_land_forst(base):
 def test_p32b_kz_durchgang(base):
     """p32b_progressionseinkuenfte -> E0104801 in Deklaration + XML."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": "p32b"})
+                                  "fall_id": "p32b"}, erwarte=201)
     for feld, wert in [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("p32b_progressionseinkuenfte", 120000),
         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
-        st, _ = _req(base, "POST", "/fall/p32b/event", _laie(feld, wert))
-        assert st == 201
-    st, dekl = _req(base, "GET", "/fall/p32b/deklaration")
-    assert st == 200
+        _req(base, "POST", "/fall/p32b/event", _laie(feld, wert), erwarte=201)
+    _, dekl = _req(base, "GET", "/fall/p32b/deklaration", erwarte=200)
     result = dekl.get("deklaration", {})
     assert "E0104801" in result, "E0104801 fehlt in Deklaration"
     import importlib
@@ -589,23 +586,27 @@ def test_p32b_kz_durchgang(base):
 def test_weitere_vorsorge_kz_durchgang(base, feld_id, kz, wert):
     """Jedes der 5 weitere_vorsorgeaufwendungen-Kz -> in Deklaration + XML."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
-                                  "fall_id": f"wv-{feld_id}"})
+                                  "fall_id": f"wv-{feld_id}"}, erwarte=201)
     for f, w in [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "einzel"),
         ("basis_kv", 0), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"),
-        ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
-        ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0),
-        ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
+        ("mit_anspruch_auf_zuschuss", False),
         ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True),
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
         ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
         ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_eigenes_kfz", False),
     ]:
-        _req(base, "POST", f"/fall/wv-{feld_id}/event", _laie(f, w))
+        _req(base, "POST", f"/fall/wv-{feld_id}/event", _laie(f, w), erwarte=201)
+    # Alle 5 Vorsorge-Felder auf 0 setzen (außer dem zu prüfenden)
+    for vf in ["vorsorge_arbeitslosenversicherung", "vorsorge_erwerbsunfaehigkeit",
+               "vorsorge_unfall_haftpflicht", "vorsorge_rv_alt_mit_ueberschuss",
+               "vorsorge_rv_alt_ohne_ueberschuss"]:
+        if vf == feld_id:
+            continue
+        _req(base, "POST", f"/fall/wv-{feld_id}/event", _laie(vf, 0), erwarte=201)
     # Setze das zu prüfende Feld auf non-zero
-    _req(base, "POST", f"/fall/wv-{feld_id}/event", _laie(feld_id, wert))
-    st, dekl = _req(base, "GET", f"/fall/wv-{feld_id}/deklaration")
-    assert st == 200
+    _req(base, "POST", f"/fall/wv-{feld_id}/event", _laie(feld_id, wert), erwarte=201)
+    _, dekl = _req(base, "GET", f"/fall/wv-{feld_id}/deklaration", erwarte=200)
     result = dekl.get("deklaration", {})
     assert kz in result, f"{kz} ({feld_id}) fehlt in Deklaration"
     import importlib
