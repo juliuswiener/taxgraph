@@ -332,6 +332,107 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 })
         return daten
 
+    # Gemeinsame Abzüge — EIN Paar shared-Funktionen für gesamt und rentner.
+    # _shared_steuer_sonder_agb: §35a/§35c + Sonderausgaben + agB (vor §35)
+    # _shared_dba_sonstige: §33a/§10d + DBA (nach §35a, vor §35)
+    # c_fn/b_fn sind die per-Quantitaet-Closures _c/_b (wertgleich zwischen gesamt/rentner,
+    # weil alle Aufrufer identische felder durchreichen — geprüft 2026-08-06, 6 Aufrufstellen).
+    def _shared_steuer_sonder_agb(g_dict, gde, ausserg, veranlagung,
+                                  c_fn, f_dict, kinderbetreuung_fn, schulgeld_fn):
+        """Füllt g_dict: steuerermaessigungen, sonderausgaben, aussergewoehnliche_belastungen."""
+        def _c(fid):
+            v = f_dict.get(fid, {}).get("wert")
+            return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+        base = runner.catala_p35a_haushaltsnahe({
+            "hh_minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
+            "hh_dienstleistungen": _c("hh_dienstleistungen") // 100,
+            "hh_handwerker_arbeitskosten": _c("hh_handwerker_arbeitskosten") // 100,
+            "hh_in_eu_ewr": f_dict.get("hh_in_eu_ewr", {}),
+            "hh_rechnung_unbar": f_dict.get("hh_rechnung_unbar", {}),
+            "p35a_mitveranlagung": f_dict.get("p35a_mitveranlagung", {})})
+        g_dict["steuerermaessigungen"] = base
+        p35c_sanierung = runner.catala_p35c_sanierung({
+            "sanierungsaufwendungen": _c("p35c_sanierungsaufwendungen") // 100,
+            "ist_uebernaechstes_foerderjahr": f_dict.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
+        p35c_energieberater = runner.catala_p35c_energieberater({
+            "energieberater_aufwendungen": _c("p35c_energieberater_aufwendungen") // 100})
+        p35c_deckel = runner.catala_p35c_jahresdeckel({
+            "sanierung_ermaessigung": p35c_sanierung,
+            "energieberater_ermaessigung": p35c_energieberater,
+            "ist_uebernaechstes_foerderjahr": f_dict.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
+        g_dict["steuerermaessigungen"] += p35c_deckel
+        g_dict["sonderausgaben"] = (runner.catala_p10b_spenden({
+                "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": gde})
+            + runner.catala_p10_kist({
+                "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
+                "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
+            + runner.catala_p10_kv_pv({
+                "basis_kv_pv": (_c("basis_kv") + _c("basis_pv") + _kind_kv_pv_summe()) // 100,
+                "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung") + _c("vorsorge_erwerbsunfaehigkeit") + _c("vorsorge_unfall_haftpflicht") + _c("vorsorge_rv_alt_mit_ueberschuss") + _c("vorsorge_rv_alt_ohne_ueberschuss")) // 100,
+                "mit_anspruch_auf_zuschuss": f_dict.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
+            + kinderbetreuung_fn()
+            + schulgeld_fn()
+            + (runner.catala_p10_1a_realsplitting({
+                "unterhaltsleistungen": _c("realsplitting_unterhaltsleistungen") // 100,
+                "kv_pv_beitraege": _c("realsplitting_empfaenger_kv_pv") // 100})
+               if f_dict.get("realsplitting_zustimmung", {}).get("wert") is True else 0)
+            + (runner.catala_p10_kv_pv({
+                "basis_kv_pv": (_c("basis_kv_partner") + _c("basis_pv_partner")) // 100,
+                "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung_partner") + _c("vorsorge_erwerbsunfaehigkeit_partner") + _c("vorsorge_unfall_haftpflicht_partner") + _c("vorsorge_rv_alt_mit_ueberschuss_partner") + _c("vorsorge_rv_alt_ohne_ueberschuss_partner")) // 100,
+                "mit_anspruch_auf_zuschuss": f_dict.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
+               if veranlagung == "zusammen" else 0)
+            + runner.catala_p10_1_7_berufsausbildung({
+                "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100}))
+        g_dict["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
+            "aussergewoehnliche_belastungen": (_c("agb_aufwendungen") // 100
+                + runner.catala_p33_2a_fahrtkostenpauschale({
+                    "veranlagungszeitraum": vz,
+                    "hat_gdb80_oder_70g": f_dict.get("fahrtkosten_pausch_gdb80_oder_70g", {}).get("wert") is True,
+                    "hat_ag_bl_tbl_h": f_dict.get("fahrtkosten_pausch_ag_bl_tbl_h", {}).get("wert") is True})),
+            "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
+            "splitting": veranlagung == "zusammen"})
+
+    def _shared_dba_sonstige(g_dict, gde_p10d, veranlagung, c_fn, f_dict):
+        """Füllt g_dict: sonstige_abzuege_vom_einkommen (§33a + §10d_2),
+        anzurechnende_auslaendische_steuern (§34c). Gibt dba_anrechnung (EURO) zurück.
+        c_fn/f_dict: per-Quantitaet-Closure für Feldzugriff (wertgleich gesamt/rentner)."""
+        def _c(fid):
+            v = f_dict.get(fid, {}).get("wert")
+            return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+        p33a_unt = runner.catala_p33a_unterhalt({
+            "veranlagungszeitraum": vz,
+            "aufwendungen": _c("p33a_unterhalt_aufwendungen") // 100,
+            "kv_pv_beitraege": _c("p33a_unterhalt_kv_pv") // 100,
+            "andere_einkuenfte_bezuege": _c("p33a_andere_einkuenfte_bezuege") // 100})
+        p33a_ausb = runner.catala_p33a_ausbildungsfreibetrag({
+            "anzahl_kinder": _c("p33a_ausbildung_anzahl_kinder")})
+        g_dict["sonstige_abzuege_vom_einkommen"] = (runner.catala_p10d_2({
+                "gesamtbetrag_einkuenfte": gde_p10d,
+                "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
+                "zusammenveranlagung": veranlagung == "zusammen"})
+            + p33a_unt + p33a_ausb)
+        dba_anrechnung = 0
+        dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100
+        dba_ausl = _c("dba_auslaendische_einkuenfte") // 100
+        dba_staat_raw = f_dict.get("dba_staat", {}).get("wert")
+        dba_method_from_user = f_dict.get("dba_methode", {}).get("wert")
+        dba_effective_method = "freistellung" if dba_method_from_user == "dba_freistellung" \
+            else dba_methode_fuer(dba_staat_raw, f_dict.get("dba_einkunftsart", {}).get("wert"))
+        if f_dict.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
+            g_dict["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
+        elif dba_gezahlt > 0 or dba_ausl > 0:
+            if dba_effective_method == "freistellung":
+                dba_anrechnung = 0
+                g_dict["p32b_progressionseinkuenfte"] = dba_ausl
+            else:
+                dba_anrechnung = runner.catala_p34c_1({
+                    "gezahlte_auslaendische_steuer": dba_gezahlt,
+                    "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(g_dict),
+                    "zu_versteuerndes_einkommen": runner.catala_gesamt_zve(g_dict),
+                    "auslaendische_einkuenfte_staat": dba_ausl})
+        g_dict["anzurechnende_auslaendische_steuern"] = dba_anrechnung
+        return dba_anrechnung
+
     if quantitaet == "abziehbarer_betrag":          # § 9 Entfernungspauschale
         try:
             import runner  # noqa: F401
@@ -813,66 +914,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
                 "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
             gde += kist_ueberhang
-            base = runner.catala_p35a_haushaltsnahe({
-                "hh_minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
-                "hh_dienstleistungen": _c("hh_dienstleistungen") // 100,
-                "hh_handwerker_arbeitskosten": _c("hh_handwerker_arbeitskosten") // 100,
-                "hh_in_eu_ewr": f.get("hh_in_eu_ewr", {}),
-                "hh_rechnung_unbar": f.get("hh_rechnung_unbar", {}),
-                "p35a_mitveranlagung": f.get("p35a_mitveranlagung", {})})
-            g["steuerermaessigungen"] = base
-            # § 35c EStG energetische Sanierungsmassnahmen + Energieberater-Sondersatz.
-            # Zwei Teilregeln (Sanierung 7%/6%, Energieberater 50%) werden im Jahresdeckel
-            # kombiniert (14k/12k). Accessor nimmt EUROS (Cent→EUR via //100).
-            p35c_sanierung_rohbetrag = runner.catala_p35c_sanierung({
-                "sanierungsaufwendungen": _c("p35c_sanierungsaufwendungen") // 100,
-                "ist_uebernaechstes_foerderjahr": f.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
-            p35c_energieberater_rohbetrag = runner.catala_p35c_energieberater({
-                "energieberater_aufwendungen": _c("p35c_energieberater_aufwendungen") // 100})
-            # Jahresdeckel-Kombination (P35cJahresdeckel aus Catala)
-            p35c_gesamt_deckel = runner.catala_p35c_jahresdeckel({
-                "sanierung_ermaessigung": p35c_sanierung_rohbetrag,
-                "energieberater_ermaessigung": p35c_energieberater_rohbetrag,
-                "ist_uebernaechstes_foerderjahr": f.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
-            g["steuerermaessigungen"] += p35c_gesamt_deckel
-            # sonderausgaben = § 10b Spenden + § 10 KiSt + § 10 Abs.1 Nr.3/3a KV/PV-Vorsorge +
-            # § 10 Abs.1 Nr.5 Kinderbetreuung (§10-Stufe 2, additiv;
-            # KV/PV hat EIGENEN Abs.4-Höchstbetrag 1900/2800 + Basis-Durchbruch, getrennt von der Abs.3-Basisvorsorge
-            # die catala_gesamt intern via _vorsorge_abzug addiert). PLAIN Read-Keys (1:1 mit dev-2s Binding). Die 3
-            # KV/PV-Felder sind Pflicht-Kegel → immer beantwortet (kein stiller Über/Unter-tax; mit_anspruch steuert HB).
-            # Kinderbetreuung: pro-Kind-Deckel 4800€, Summe per EM.instanzen (keine Gleichverteilung).
-            g["sonderausgaben"] = (runner.catala_p10b_spenden({
-                    "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": gde})
-                + runner.catala_p10_kist({
-                    "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
-                    "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
-                + runner.catala_p10_kv_pv({
-                    # §10 Abs.1 Nr.3 S.2: Kind-Beiträge in DENSELBEN Abs.4-Deckel des Elternteils
-                    # (kind_summe CENT + basis CENT, dann //100 → EURO; nicht separat = keine Deckel-Umgehung).
-                    "basis_kv_pv": (_c("basis_kv") + _c("basis_pv") + _kind_kv_pv_summe()) // 100,
-                    "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung") + _c("vorsorge_erwerbsunfaehigkeit") + _c("vorsorge_unfall_haftpflicht") + _c("vorsorge_rv_alt_mit_ueberschuss") + _c("vorsorge_rv_alt_ohne_ueberschuss")) // 100,
-                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
-                + _kinderbetreuung_summe()
-                + _schulgeld_summe()
-                # § 10 Abs. 1a Nr. 1 Realsplitting (Unterhalt Ex-Ehegatte, Tier-1): min(unterhaltsleistungen,
-                # 13.805 + kv_pv_beitraege). Gate: realsplitting_zustimmung==true → sonst 0 (over-tax-safe).
-                + (runner.catala_p10_1a_realsplitting({
-                    "unterhaltsleistungen": _c("realsplitting_unterhaltsleistungen") // 100,
-                    "kv_pv_beitraege": _c("realsplitting_empfaenger_kv_pv") // 100})
-                   if f.get("realsplitting_zustimmung", {}).get("wert") is True else 0)
-                # Person-B-KV/PV (§ 10 Abs. 4, A.2): eigener Höchstbetrag JE PERSON → separater Accessor-Aufruf,
-                # additiv (kein gemeinsamer Deckel, kein Doppelzählen — B liest die _partner-Read-Keys).
-                + (runner.catala_p10_kv_pv({
-                    "basis_kv_pv": (_c("basis_kv_partner") + _c("basis_pv_partner")) // 100,
-                    "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung_partner") + _c("vorsorge_erwerbsunfaehigkeit_partner") + _c("vorsorge_unfall_haftpflicht_partner") + _c("vorsorge_rv_alt_mit_ueberschuss_partner") + _c("vorsorge_rv_alt_ohne_ueberschuss_partner")) // 100,
-                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
-                   if g["veranlagung"] == "zusammen" else 0)
-                # § 10 Abs. 1 Nr. 7 Aufwendungen eigene Berufsausbildung (Tier-1): min(aufwendungen, 6000), Person-A
-                # (Satz 2 je-Person Ehegatten = Nachtrag wie A.2). Additiv wie § 10b/KV-PV/KiSt (eigener Höchstbetrag,
-                # kein Doppelzählen — eigenes Feld berufsausbildung_aufwendungen). OPTIONAL: absent → 0 (over-tax-safe).
-                + runner.catala_p10_1_7_berufsausbildung({
-                    "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100}))
             # §33b Behinderten-/Pflege-/Hinterbliebenen-Pauschbetrag Person A (additiv zu §33-agB).
+            # Steht VOR _shared_steuer_sonder_agb, weil ausserg dort benötigt wird.
             # 1:1 gespiegelt vom rentner-Ring (api.py:1002-1010). Felder = rentner_-globale IDs
             # (Kz E0109708/etc. über rentner-Bindung, selbe Felder wie rentner-Scheibe). Absent→0 (safe).
             ausserg = (runner.catala_behinderten_pb({
@@ -903,14 +946,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 ausserg += runner.catala_behinderten_pb({
                     "veranlagungszeitraum": vz, "grad_der_behinderung": _c("rentner_grad_der_behinderung_partner"),
                     "ist_hilflos_blind_taubblind": f.get("rentner_hilflos_blind_taubblind_partner", {}).get("wert") is True})
-            g["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
-                "aussergewoehnliche_belastungen": (_c("agb_aufwendungen") // 100
-                                                   + runner.catala_p33_2a_fahrtkostenpauschale({
-                                                       "veranlagungszeitraum": vz,
-                                                       "hat_gdb80_oder_70g": f.get("fahrtkosten_pausch_gdb80_oder_70g", {}).get("wert") is True,
-                                                       "hat_ag_bl_tbl_h": f.get("fahrtkosten_pausch_ag_bl_tbl_h", {}).get("wert") is True})),
-                "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
-                "splitting": g["veranlagung"] == "zusammen"})
+            # Abzüge §35a/§35c + Sonderausgaben + agB (via _shared)
+            _shared_steuer_sonder_agb(g, gde, ausserg, g["veranlagung"],
+                                      _c, f, _kinderbetreuung_summe, _schulgeld_summe)
             # Kapital § 20/§ 32d: SINGLE-SOURCE (Instructor-Q1) — E1900701-Aggregat XOR Verlust-Töpfe;
             # Co-Okkurrenz sperrt der Guard (kapital_semantik_offen). Töpfe (§ 20 Abs. 6, per-Topf-Floor)
             # → verrechnete; sonst das Aggregat. Dann Sparer-PB (§ 20 Abs. 9). kapitaleinkuenfte ist UNABHÄNGIG
@@ -975,55 +1013,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "einkuenfte_sonstige": g.get("einkuenfte_sonstige", 0),   # K2-Sweep-Konsistenz: §22-Loch-Vorsorge (heute ≡0 im gesamt, kein künftiger §10d-Under-tax)
                 "altersentlastungsbetrag": alt24a + alt24a_b,
                 "entlastungsbetrag_alleinerziehende": ent24b})
-            # §33a Unterhalt + Ausbildungsfreibetrag: ADDITIV zu §10d (beide GdE-Minderung "vom GdE abgezogen")
-            p33a_unt = runner.catala_p33a_unterhalt({
-                "veranlagungszeitraum": vz,
-                "aufwendungen": _c("p33a_unterhalt_aufwendungen") // 100,
-                "kv_pv_beitraege": _c("p33a_unterhalt_kv_pv") // 100,
-                "andere_einkuenfte_bezuege": _c("p33a_andere_einkuenfte_bezuege") // 100})
-            p33a_ausb = runner.catala_p33a_ausbildungsfreibetrag({
-                "anzahl_kinder": _c("p33a_ausbildung_anzahl_kinder")})
-            g["sonstige_abzuege_vom_einkommen"] = runner.catala_p10d_2({
-                "gesamtbetrag_einkuenfte": gde_p10d,
-                "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
-                "zusammenveranlagung": g["veranlagung"] == "zusammen"}) + p33a_unt + p33a_ausb
-            # §34c Abs.1 DBA-Anrechnung (Stufe-1, single-country, fail-closed): anrechnung = min(gezahlt, HB).
-            # HB = tarifliche_est * dba_auslaendische_einkuenfte / zvE. §34c VOR §35 (§35 Abs.1 S.4: geminderte
-            # tarifliche Steuer = tarifliche NACH §34c). anrechnung in g → catala_gesamt-Slot, mindert
-            # festzusetzende_est. dba_auslaendische_einkuenfte [cent] → EURO (wie alle Geld-Felder).
-            # PRE-§34c tarifliche = catala_gesamt_tarifliche(g) — invariant gegen anrechnung (empirisch bewiesen).
-            # Fail-closed: Freistellung, multi-country, §32d-Kapital → Guard sperrt (kein silent-zero).
-            dba_anrechnung = 0
-            dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100
-            dba_ausl = _c("dba_auslaendische_einkuenfte") // 100
-            # §34c Abs.2 (Abzug statt Anrechnung, auf Antrag): „Statt der Anrechnung (Absatz 1) ist die
-            # ausländische Steuer auf Antrag bei der Ermittlung der Einkünfte abzuziehen, soweit sie auf
-            # ausländische Einkünfte entfällt, die nicht steuerfrei sind." MUTUAL-EXCLUSION mit Abs.1 (elif):
-            # Antrag=True → Abzug von der Bemessungsgrundlage (sonstige_abzuege_vom_einkommen, aggregiert-GdE,
-            # progressiv), dba_anrechnung bleibt 0 → KEIN Doppel-Relief (= Under-tax). Fail-closed: Flag absent
-            # → Abs.1-Pfad (unverändert). „soweit nicht steuerfrei" (Stufe-1): dba_auslaendische_einkuenfte>0
-            # = nicht-freigestellte Einkünfte (Freistellung wird im offen-Guard separat gehalten).
-            # METHODEN-ROUTING: (dba_staat, dba_einkunftsart) → anrechnung/freistellung.
-            # Anrechnung → catala_p34c_1(hb=berechnet); Freistellung → 0 anrechnung, aber progressionsvorbehalt.
-            # Vorrang: Nutzer-Vorgabe (dba_methode) > per-Einkunftsart-Tabelle > pauschale Länder-Methode.
-            dba_staat_raw = f.get("dba_staat", {}).get("wert")
-            dba_method_from_user = f.get("dba_methode", {}).get("wert")
-            dba_effective_method = "freistellung" if dba_method_from_user == "dba_freistellung" \
-                else dba_methode_fuer(dba_staat_raw, f.get("dba_einkunftsart", {}).get("wert"))
-            if f.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
-                g["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
-            elif dba_gezahlt > 0 or dba_ausl > 0:
-                if dba_effective_method == "freistellung":
-                    dba_anrechnung = 0  # Freistellung → kein Anrechnungs-Betrag
-                    # Progressionsvorbehalt: dba_ausl in zvE einbeziehen für Tarif-Berechnung
-                    g["p32b_progressionseinkuenfte"] = dba_ausl
-                else:  # anrechnung (default + alle anderen Länder)
-                    dba_anrechnung = runner.catala_p34c_1({
-                        "gezahlte_auslaendische_steuer": dba_gezahlt,
-                        "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(g),
-                        "zu_versteuerndes_einkommen": runner.catala_gesamt_zve(g),
-                        "auslaendische_einkuenfte_staat": dba_ausl})
-            g["anzurechnende_auslaendische_steuern"] = dba_anrechnung
+            # Abzüge §33a + §10d + DBA (§34c) via _shared
+            dba_anrechnung = _shared_dba_sonstige(g, gde_p10d, g["veranlagung"], _c, f)
             # § 35 GewSt-Anrechnung (S1, opt-in via gewst_messbetrag): der GewSt-Steuermessbetrag (INPUT aus dem
             # GewSt-Messbescheid, enthält § 8-Hinzurechnung/§ 9-Kürzung schon) + Hebesatz → Anrechnung auf die
             # tarifliche ESt. Zähler des Ermäßigungshöchstbetrags (§ 35 Abs. 1 S. 2) = gewerbliche Einkünfte (S. 3
@@ -1258,6 +1249,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                             "veranlagungszeitraum": vz, "splitting": splitting})
             return total
 
+        # Keine rentner-eigenen shared-Funktionen nötig — _shared_steuer_sonder_agb
+        # und _shared_dba_sonstige im Hauptscope werden mit den rentner-Closures aufgerufen.
+
         def slot_fn(slots: dict) -> int:
             # § 22 Renten-Einkünfte → einkuenfte_sonstige, als STUMPFE Σ über ALLE rente-Instanzen der Person A
             # (Multi-Rente, #6: gesetzl. + Betriebs- + Leibrente je eigene aa/bb-Behandlung, § 22-Anteil JE
@@ -1406,41 +1400,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
             gde += kist_ueberhang_r
             rentner_g["einkuenfte_sonstige"] += kist_ueberhang_r
-            # §33a Unterhalt + Ausbildungsfreibetrag: ADDITIV zu §10d (beide GdE-Minderung)
-            p33a_unt = runner.catala_p33a_unterhalt({
-                "veranlagungszeitraum": vz,
-                "aufwendungen": _c("p33a_unterhalt_aufwendungen") // 100,
-                "kv_pv_beitraege": _c("p33a_unterhalt_kv_pv") // 100,
-                "andere_einkuenfte_bezuege": _c("p33a_andere_einkuenfte_bezuege") // 100})
-            p33a_ausb = runner.catala_p33a_ausbildungsfreibetrag({
-                "anzahl_kinder": _c("p33a_ausbildung_anzahl_kinder")})
-            rentner_g["sonstige_abzuege_vom_einkommen"] = runner.catala_p10d_2({
-                "gesamtbetrag_einkuenfte": gde,
-                "verlustvortrag_bestand": _c("verlustvortrag_bestand") // 100,
-                "zusammenveranlagung": rentner_g["veranlagung"] == "zusammen"}) + p33a_unt + p33a_ausb
-            # §34c Abs.1 DBA-Anrechnung (1:1 gesamt-Präzedenz, §34c VOR §35).
-            # LÄNDER-METHODEN-ROUTING wie gesamt (Z.1132-1148).
-            dba_anrechnung = 0
-            dba_gezahlt = _c("dba_gezahlte_auslaendische_steuer") // 100
-            dba_ausl = _c("dba_auslaendische_einkuenfte") // 100
-            dba_staat_raw = f.get("dba_staat", {}).get("wert")
-            # Vorrang: Nutzer-Vorgabe (dba_methode) > per-Einkunftsart-Tabelle > pauschale Länder-Methode
-            dba_method_from_user = f.get("dba_methode", {}).get("wert")
-            dba_effective_method = "freistellung" if dba_method_from_user == "dba_freistellung" \
-                else dba_methode_fuer(dba_staat_raw, f.get("dba_einkunftsart", {}).get("wert"))
-            if f.get("dba_abzug_statt_anrechnung", {}).get("wert") is True and dba_gezahlt > 0 and dba_ausl > 0:
-                rentner_g["sonstige_abzuege_vom_einkommen"] += dba_gezahlt
-            elif dba_gezahlt > 0 or dba_ausl > 0:
-                if dba_effective_method == "freistellung":
-                    dba_anrechnung = 0
-                    rentner_g["p32b_progressionseinkuenfte"] = dba_ausl
-                else:
-                    dba_anrechnung = runner.catala_p34c_1({
-                        "gezahlte_auslaendische_steuer": dba_gezahlt,
-                        "deutsche_est_inkl_ausl": runner.catala_gesamt_tarifliche(rentner_g),
-                        "zu_versteuerndes_einkommen": runner.catala_gesamt_zve(rentner_g),
-                        "auslaendische_einkuenfte_staat": dba_ausl})
-            rentner_g["anzurechnende_auslaendische_steuern"] = dba_anrechnung
+            # Abzüge §33a + §10d + DBA (§34c) via _shared (1:1 gesamt-Präzedenz).
+            # Steht NACH kist_ueberhang (gde vollständig), VOR vorsorge/§35a (kein Overlap).
+            dba_anrechnung = _shared_dba_sonstige(rentner_g, gde, rentner_g["veranlagung"], _c, f)
             # Weg-ii-Fix (K2, Over-tax): § 10 Abs. 1 Nr. 2 Basisvorsorge (VOR_FELDER jetzt Pflicht-Kegel) —
             # catala_est ruft _vorsorge_abzug intern (runner.py), kein Doppelzählen, nur die Slots setzen.
             rentner_g["vorsorge_gesamtbeitraege_inkl_ag"] = (_c("vor_an_anteil_rv") + _c("vor_ag_anteil_rv")
@@ -1452,66 +1414,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 rentner_g["vorsorge_gesamtbeitraege_inkl_ag"] += (_c("vor_an_anteil_rv_partner")
                     + _c("vor_ag_anteil_rv_partner") + _c("vor_rv_ausserhalb_lstb_partner")) // 100
                 rentner_g["vorsorge_ag_anteil_steuerfrei"] += _c("vor_ag_anteil_rv_partner") // 100
-            # § 35a Haushaltsnahe — Accessor rechnet EURO, gibt EURO.
-            base = runner.catala_p35a_haushaltsnahe({
-                "hh_minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
-                "hh_dienstleistungen": _c("hh_dienstleistungen") // 100,
-                "hh_handwerker_arbeitskosten": _c("hh_handwerker_arbeitskosten") // 100,
-                "hh_in_eu_ewr": f.get("hh_in_eu_ewr", {}),
-                "hh_rechnung_unbar": f.get("hh_rechnung_unbar", {}),
-                "p35a_mitveranlagung": f.get("p35a_mitveranlagung", {})})
-            rentner_g["steuerermaessigungen"] = base
-            # § 35c EStG energetische Sanierungsmassnahmen + Energieberater (1:1 gesamt-Präzedenz).
-            p35c_sanierung_r = runner.catala_p35c_sanierung({
-                "sanierungsaufwendungen": _c("p35c_sanierungsaufwendungen") // 100,
-                "ist_uebernaechstes_foerderjahr": f.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
-            p35c_energieberater_r = runner.catala_p35c_energieberater({
-                "energieberater_aufwendungen": _c("p35c_energieberater_aufwendungen") // 100})
-            p35c_gesamt_deckel_r = runner.catala_p35c_jahresdeckel({
-                "sanierung_ermaessigung": p35c_sanierung_r,
-                "energieberater_ermaessigung": p35c_energieberater_r,
-                "ist_uebernaechstes_foerderjahr": f.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
-            rentner_g["steuerermaessigungen"] += p35c_gesamt_deckel_r
-            # § 10b Spenden (gde-Deckel) + § 10 KiSt + § 10 Abs. 1 Nr. 3/3a KV/PV (A+B) + § 10 Abs. 1 Nr. 5 Kinderbetreuung
-            # + § 10 Abs. 1 Nr. 7 Berufsausbildung
-            # (Weg-ii-Fix, additiv → sonderausgaben; 1:1 gesamt-Präzedenz Z. 717-737).
-            rentner_g["sonderausgaben"] = (runner.catala_p10b_spenden({
-                    "zuwendungen": _c("spenden_betrag") // 100, "gesamtbetrag_der_einkuenfte": gde})
-                + runner.catala_p10_kist({
-                    "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
-                    "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
-                + runner.catala_p10_kv_pv({
-                    # §10 Abs.1 Nr.3 S.2: Kind-Beiträge in DENSELBEN Abs.4-Deckel des Elternteils
-                    # (kind_summe CENT + basis CENT, dann //100 → EURO).
-                    "basis_kv_pv": (_c("basis_kv") + _c("basis_pv") + _kind_kv_pv_summe()) // 100,
-                    "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung") + _c("vorsorge_erwerbsunfaehigkeit") + _c("vorsorge_unfall_haftpflicht") + _c("vorsorge_rv_alt_mit_ueberschuss") + _c("vorsorge_rv_alt_ohne_ueberschuss")) // 100,
-                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
-                + _kinderbetreuung_summe()
-                + _schulgeld_summe()
-                # § 10 Abs. 1a Nr. 1 Realsplitting (Unterhalt Ex-Ehegatte, Tier-1): 1:1 gesamt-Präzedenz.
-                # Gate: realsplitting_zustimmung==true → sonst 0 (over-tax-safe).
-                + (runner.catala_p10_1a_realsplitting({
-                    "unterhaltsleistungen": _c("realsplitting_unterhaltsleistungen") // 100,
-                    "kv_pv_beitraege": _c("realsplitting_empfaenger_kv_pv") // 100})
-                   if f.get("realsplitting_zustimmung", {}).get("wert") is True else 0)
-                + runner.catala_p10_1_7_berufsausbildung({
-                    "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100})
-                # Person-B-KV/PV (§ 10 Abs. 4, A.2): eigener HB je Person, additiv (1:1 gesamt-Pattern L987-991).
-                + (runner.catala_p10_kv_pv({
-                    "basis_kv_pv": (_c("basis_kv_partner") + _c("basis_pv_partner")) // 100,
-                    "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung_partner") + _c("vorsorge_erwerbsunfaehigkeit_partner") + _c("vorsorge_unfall_haftpflicht_partner") + _c("vorsorge_rv_alt_mit_ueberschuss_partner") + _c("vorsorge_rv_alt_ohne_ueberschuss_partner")) // 100,
-                    "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
-                   if f.get("veranlagung", {}).get("wert") == "zusammen" else 0))
-            # § 33-agB (Weg-ii-Fix) ADDITIV zu § 33b (ausserg, oben) — beide Absätze koexistieren (Pauschbetrag +
-            # Einzelnachweis sind unterschiedliche Aufwands-Arten). gde-Basis wie § 10b (§2 Abs.3-K2-Fix).
-            rentner_g["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
-                "aussergewoehnliche_belastungen": (_c("agb_aufwendungen") // 100
-                                                   + runner.catala_p33_2a_fahrtkostenpauschale({
-                                                       "veranlagungszeitraum": vz,
-                                                       "hat_gdb80_oder_70g": f.get("fahrtkosten_pausch_gdb80_oder_70g", {}).get("wert") is True,
-                                                       "hat_ag_bl_tbl_h": f.get("fahrtkosten_pausch_ag_bl_tbl_h", {}).get("wert") is True})),
-                "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
-                "splitting": rentner_g["veranlagung"] == "zusammen"})
+            # Abzüge §35a/§35c + Sonderausgaben + agB (via _shared, 1:1 gesamt-Präzedenz)
+            _shared_steuer_sonder_agb(rentner_g, gde, ausserg, rentner_g["veranlagung"],
+                                      _c, f, _kinderbetreuung_summe, _schulgeld_summe)
             # § 35 GewSt-Anrechnung Basiswerte (freibetrag-unabhängig — Zähler/Nenner hängen nicht vom § 31-Zweig
             # ab, nur die tarifliche_est im Deckel-3 unten). Zähler = laufender Gewerbe-Gewinn (NUR betriebsart=
             # gewerbe, § 16-vg-netto RAUS § 7 S. 2 GewStG). Nenner = renten (§ 22 IM Nenner — echt hier, anders als
