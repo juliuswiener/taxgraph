@@ -103,13 +103,97 @@ anderes Falschgrün (Test grün bei Delta 0, behauptet aber S.6-Abdeckung).
   - `produkt/haut/api.py` NICHT angefasst (gesperrt — dev-a baut dort die
     Abgeltung-KiSt-Naht).
 
-## Für das Verdrahtungs-Paket (main, nach Abgeltung-KiSt)
+## Verdrahtungs-Paket — Analyse (2026-08-06, Ergänzung, NUR gelesen, api.py nicht verändert)
 
-- Fix-Ort: `produkt/haut/api.py`, `gesamt_wk_input`-Aufbau im
-  `festzusetzende_est_gesamt`-Zweig (~Zeile 727-749) — `VERPFLEGUNG_TAGE_NACH_FRIST`
-  analog zu `VERPFLEGUNG_TAGE` aus `f` lesen und in `gesamt_wk_input` weiterreichen.
-  `an_gesamt`-Zweig (~452-530) fehlt die Scheiben-Feld-Deklaration UND die
-  Verdrahtung — falls S.6 dort auch gelten soll, beides ergänzen.
-- Nach der Verdrahtung: `test_verpflegung_dreimonats_frist_ring` wird XPASS(strict)
-  → Test schlägt fehl → `xfail`-Marker entfernen, echten Toleranz-/Exakt-Assert
-  wiederherstellen (siehe Kommentar im Test: 15 Tage × 28€ = 420€, ~17600 Cent bei 42%).
+### 1. Namens-Match: `catala_werbungskosten_n` erwartet exakt die Konstanten-Namen
+
+Kein Enum/Lookup-Mismatch. `_verpflegung_roh_cent` (`golden/runner.py:288-291`) liest:
+```python
+s.get("vpf_tage_24h_nach_drei_monaten", 0)
+s.get("vpf_tage_an_abreise_nach_drei_monaten", 0)
+s.get("vpf_tage_ueber_8h_nach_drei_monaten", 0)
+```
+— Zeichen für Zeichen identisch mit `VERPFLEGUNG_TAGE_NACH_FRIST` in
+`api_constants.py:47-48`. Der Fix ist eine reine Weiterreichungs-Lücke (Feld kommt
+in `f` an, geht nie in `wk_input`/`gesamt_wk_input`), kein Namens-Drift wie beim
+DBA-Enum-Fall. Analog zum bestehenden `VERPFLEGUNG_TAGE`-Verdrahtungsmuster
+(`gesamt_wk_input[t] = _c(t)` für `t in VERPFLEGUNG_TAGE`,
+`produkt/haut/api.py:736`) — derselbe Loop-Bauplan, nur mit der
+NACH_FRIST-Tupel und Ziel-Keys unter denselben Namen.
+
+### 2. Betrifft nur `gesamt`, NICHT `an_gesamt` — geprüft, nicht nur vermutet
+
+- `SCHEIBEN["an_gesamt"]["felder"]` (`api_constants.py:351-358`): enthält
+  `VERPFLEGUNG_TAGE` und `VERPFLEGUNG_GUARD`, **NICHT** `VERPFLEGUNG_TAGE_NACH_FRIST`.
+- Live-Probe gegen den echten Server (an_gesamt-Scheibe, Feld gesetzt):
+  ```
+  POST /fall/{id}/event {"feld_id":"vpf_tage_24h_nach_drei_monaten", ...}
+  → 400 {"fehler": "feld_id 'vpf_tage_24h_nach_drei_monaten' nicht in dieser Scheibe"}
+  ```
+  Das Feld ist in `an_gesamt` also **hart nicht setzbar** — das Schema weist es
+  zurück, bevor überhaupt ein Ring-Aufruf stattfindet. Das ist keine Lücke im
+  selben Sinn wie Loch 1 (dort *kommt* das Feld an und wird verworfen; hier kommt
+  es gar nicht erst durch).
+- Einschätzung: `an_gesamt` rechnet Verpflegung grundsätzlich (`VERPFLEGUNG_TAGE`
+  ist verdrahtet, S.3/S.8-11 laufen dort), nur S.6 fehlt komplett — konsistent
+  mit "reiner AN-Fall, MVP" (Docstring `api.py:452`, "§ 2 Gesamtsteuer MVP").
+  Ich halte es für richtig, `VERPFLEGUNG_TAGE_NACH_FRIST` auch dort zu ergänzen
+  (Scheiben-Deklaration + Verdrahtung), weil sonst zwei Scheiben, die dieselbe
+  Vorschrift (§9 Abs.4a) ansonsten identisch abbilden, bei Dienstreisen > 3 Monate
+  unterschiedlich (und beide falsch: `gesamt` über-abzieht, `an_gesamt` lässt den
+  Fall gar nicht zu) reagieren — aber das ist eine Produktentscheidung, kein
+  Muss aus der Messung. Entscheidung liegt bei main.
+
+### 3. Guard-Korrektheit — GEPRÜFT, Ergebnis: Guard selbst korrekt, aber ein Nebenfund dabei
+
+Guard-Frage: sperrt `_an_gesamt_sperrgrund` auch dann, wenn der Nutzer
+"keine Mahlzeiten gestellt" (=`vpf_keine_mahlzeitengestellung=True`, bestätigt)
+geantwortet hat? Live gemessen (gesamt-Scheibe, `tage_24h=60`,
+`vpf_keine_mahlzeitengestellung=True` bestätigt, alle Pflichtfelder gesetzt):
+```
+grund=bestaetigt, zahl_cent=1024500   (kein Sperren — Guard lässt legitime "nein"-Antwort durch)
+```
+→ Guard-Antwort ist korrekt: "keine Mahlzeiten gestellt" bestätigt-true
+entsperrt den Fall wie in `keine_mahlz_wert_true` (`api.py:1651`) vorgesehen.
+Kein zu strenger Guard, keine Korrektur nötig.
+
+**Nebenfund (nicht Teil der ursprünglichen Frage, aber bei derselben Messung
+aufgefallen):** derselbe Fall mit `vpf_monate_am_ort=4` (>3, "Frist überschritten")
+lieferte **exakt denselben Wert** (`zahl_cent=1024500`) wie ein Fall mit
+`tage_24h=0` (keine Verpflegung überhaupt). D.h. der bestehende `_mon > 3`-Zweig
+(`api.py:735`, `if not (isinstance(_mon, int) ... and _mon > 3):`) lässt bei
+Monat > 3 **gar keine** Verpflegungstage mehr in `gesamt_wk_input` — nicht nur
+die Tage nach der Frist, sondern alle. Zum Vergleich `vpf_monate_am_ort=3`
+(genau an der Grenze, Frist nicht überschritten): `zahl_cent=1008700`, also mit
+voller Pauschale gerechnet (60×28€ = 1680€ WK-Wirkung sichtbar in der Differenz
+zu 1024500). Das ist over-tax-safe (0 Abzug statt Fake-voller-Abzug bei fehlender
+Information), aber es bedeutet: **selbst nach dem Verdrahten von
+VERPFLEGUNG_TAGE_NACH_FRIST bleibt der `_mon > 3`-Alles-oder-Nichts-Zweig aktiv**
+und muss mit-angefasst werden, sonst bleibt jeder Fall mit `vpf_monate_am_ort > 3`
+weiterhin bei 0€ Verpflegungs-WK statt bei der korrekt reduzierten Pauschale
+(S.6 rechnet ja genau DAS: nicht "alles oder nichts", sondern "Tage in Frist ja,
+Tage danach nein"). Diese Bedingung (`api.py:735` und `api.py:485` im an_gesamt-
+Zweig) müsste beim Verdrahten so umgebaut werden, dass sie bei `_mon > 3` NICHT
+mehr komplett sperrt, sondern die NACH_FRIST-Felder zusätzlich verlangt/verdrahtet
+— sonst bleibt der Alles-oder-Nichts-Pfad ein dritter, bisher unentdeckter
+Fehlerzweig neben Loch 1 und Loch 2.
+
+### Aufwandsschätzung
+
+- Verdrahtung `gesamt`-Zweig (NACH_FRIST-Felder in `gesamt_wk_input`,
+  analog VERPFLEGUNG_TAGE-Loop): ~15 Min.
+- Umbau `_mon > 3`-Bedingung (Alles-oder-Nichts → Tage-in-Frist-vs-danach,
+  `gesamt`-Zweig, betrifft `api.py:733-735`): ~30-45 Min. inkl. Nachdenken über
+  Wechselwirkung mit dem bestehenden Guard (`_an_gesamt_sperrgrund` sperrt
+  aktuell NICHT bei `_mon > 3` — das ist reine Datenfrage, kein Fail-Closed;
+  zu klären, ob das so bleiben soll oder ob >3 Monate ohne NACH_FRIST-Angabe
+  neu sperren sollte, fail-closed statt 0-Abzug).
+- Falls `an_gesamt` mit-verdrahtet wird (Produktentscheidung, s.o.): +Scheiben-
+  Deklaration (`api_constants.py`) + identische Verdrahtung im `festzusetzende_est`-
+  Zweig (~452-530) + derselbe `_mon > 3`-Umbau dort: weitere ~30 Min.
+- `xfail` entfernen, echten Assert wiederherstellen, ggf. auf exakten Wert
+  schärfen (Kat-B-Muster): ~15 Min.
+- Test-Ergänzung für den `_mon > 3`-Alles-oder-Nichts-Zweig selbst (bisher
+  ungetestet, siehe Nebenfund): ~20 Min.
+- **Summe: gesamt-only ≈ 1,5h; inkl. an_gesamt ≈ 2h.** Kein Catala-Änderung nötig
+  (Ring ist bereits vollständig und korrekt, isoliert verifiziert).

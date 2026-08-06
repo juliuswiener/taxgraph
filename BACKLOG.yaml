@@ -1,0 +1,143 @@
+# TaxGraph — offene Punkte
+#
+# Stand: 2026-08-06, HEAD dba31df, Suite 1623 passed / 4 skipped / 1 xfailed.
+#
+# Jeder Eintrag nennt den Beleg (Messung oder Fundstelle), nicht nur die Absicht.
+# Ein Punkt ohne Messung ist eine Vermutung und gehoert hier nicht hinein.
+#
+# status: offen | analysiert | entschieden
+#   offen        — noch nicht untersucht
+#   analysiert   — Bericht liegt, Aufwand geschaetzt, Entscheidung steht aus
+#   entschieden  — Julius hat zugestimmt, kann gebaut werden
+
+version: 1
+stand: "2026-08-06"
+head: dba31df
+
+rechenluecken:
+
+  - id: vpf-dreimonatsfrist
+    titel: "§ 9 Abs. 4a S. 6 — Dreimonatsfrist wird nie angewandt"
+    status: analysiert
+    bericht: reports/adjudikation/vpf_dreimonatsfrist_tote_naht_2026-08-06.md
+    aufwand_h: 1.5
+    richtung: under-tax
+    wirkung: "420 EUR zu viel Werbungskosten je Fall, bei 42 % rund 176 EUR zu wenig Steuer"
+    betrifft: "jeden mit mehr als drei Monaten Taetigkeit am selben Ort"
+    messung: |
+      runner isoliert:  60 Tage ohne Frist-Reduktion   1680 EUR
+                        60 Tage, 15 nach Fristablauf   1260 EUR   -> S.6 kuerzt 420 EUR
+      grep nach_drei_monaten in produkt/haut/api.py:   0 Treffer
+      in SCHEIBEN["gesamt"]["felder"]:                 alle drei gelistet
+    loecher:
+      - "Guard (_an_gesamt_sperrgrund) verlangt bei gesetzten Verpflegungstagen eine
+         beantwortete Mahlzeiten-Frage — die Testfaelle setzen sie nie, der Assert lief nie"
+      - "api.py liest VERPFLEGUNG_TAGE_NACH_FRIST nie aus f in gesamt_wk_input —
+         die eigentliche tote Naht"
+      - "vpf_monate_am_ort > 3 laesst ALLE Verpflegungstage aus dem Ring fallen
+         (api.py:735, Alles-oder-Nichts), nicht nur die nach Fristablauf"
+    hinweise:
+      - "Kein Namens-Mismatch: runner liest exakt die Konstanten-Namen aus api_constants.py:47-48"
+      - "Betrifft nur die gesamt-Scheibe; an_gesamt listet die Felder nicht (API lehnt mit 400 ab)"
+      - "Das dritte Loch MUSS mit umgebaut werden — sonst misst der Test danach immer noch 0"
+    markiert_durch: "tests/test_paket_b_e2e_http.py::test_verpflegung_dreimonats_frist_ring
+                     (xfail strict=True, wird rot sobald die Naht steht)"
+    offene_frage_julius: "S. 6 auch in die an_gesamt-Scheibe aufnehmen? (Konsistenz vs Umfang)"
+
+  - id: p33b-stufe-2
+    titel: "§ 33b — Doppelabzug Pauschbetrag neben § 33"
+    status: analysiert
+    bericht: reports/adjudikation/p33b-abs5-s4-analyse.md
+    aufwand_h: 2
+    richtung: under-tax
+    messung: |
+      40.000 Lohn, einzel, GdB 100, 3.000 EUR agB:
+        nur Pauschbetrag        880,00 Wirkung
+        nur agB                 259,00 Wirkung
+        beides                1.131,00 Wirkung   -> praktisch additiv
+      ~251 EUR zu wenig Steuer, WENN die Aufwendungen behinderungsbedingt sind.
+    fundstellen:
+      - stelle: "§ 33b Abs. 5 S. 4"
+        art: "automatischer Ausschluss bei Uebertragung"
+        ring: "kann kuerzen"
+      - stelle: "§ 33b Abs. 1 S. 1 (anstelle einer Steuerermaessigung nach § 33)"
+        art: "WAHLRECHT, S. 2 einheitlich auszuueben"
+        ring: "kann es NICHT erzwingen — braucht eine Nutzerfrage"
+    blocker: |
+      agb_aufwendungen ist ein ungetrennter Topf. Pauschal kuerzen waere Over-tax
+      (Krankheitskosten, Beerdigung fielen mit raus), gar nicht kuerzen ist Under-tax.
+      Loesung: ein Feld behinderungsbedingte_aufwendungen als "davon"-Teilmenge,
+      additiv (absent = 0 = heutiges Verhalten). Praezedenz: kind_kv/kind_pv.
+    belegt_negativ: |
+      KEIN Kz im E10-XSD fuer diese Teilmenge. Gegenprobe ueber xs:documentation nach
+      Waeschebedarf / taeglichem Leben / Einzelnachweis: 6 Treffer, alle
+      "Kilometersatz bei Einzelnachweis", unbeteiligt. Das Feld bleibt rein rechnerisch.
+    kein_default_moeglich: |
+      Bei unbeantworteter Wahlrechts-Frage gibt es KEINEN over-tax-sicheren Default:
+        kleiner Aufwand  PB 880 > agB 259   -> PB waere zu hoch
+        grosser Aufwand  PB 880 < agB 3157  -> PB waere zu niedrig
+      Der Nutzer MUSS gefragt werden.
+    reihenfolge: "Abs. 5 zuerst (Ring erzwingt), dann Abs. 1 (Nutzerfrage)"
+
+  - id: p32d-q-auslandssteuer
+    titel: "§ 32d Abs. 1 S. 5 — q (anrechenbare auslaendische Steuer) ist fest 0"
+    status: offen
+    aufwand_h: null
+    richtung: over-tax
+    wirkung: "wer auslaendische Quellensteuer auf Kapitalertraege hat, bekommt eine zu hohe KiSt"
+    hinweis: |
+      Bewusst so gebaut in dba31df, im Docstring benannt. Over-tax-safe, also die
+      harmlose Richtung. Ob es sich lohnt, haengt daran wie viele Nutzer betroffen sind —
+      Produktfrage, keine Korrektheitsfrage.
+
+struktur:
+
+  - id: api-py-datei-split
+    titel: "api.py in Ring und Endpunkte trennen"
+    status: entschieden
+    aufwand_h: 1
+    voraussetzung_erfuellt: "_bescheid_fn-Umbau ist durch (7b1d59a, 1396 -> 1301 Zeilen)"
+    messung: |
+      api.py 2539 Zeilen, _bescheid_fn 1301 (51 %), 14 HTTP-Endpunkte je 40-60 Zeilen.
+      Modul-Globals: 6. Tests, die api-Interna patchen: 0.
+    plan: "api_ring.py + api_endpunkte.py, api.py als Fassade mit Re-Exports"
+    gate: "Aequivalenz-Collector (tests/test_bescheid_fn_collector.py), diff MUSS leer sein"
+
+  - id: sys-path-zu-paketen
+    titel: "sys.path-Injektion durch echte Pakete ersetzen"
+    status: offen
+    aufwand_h: null
+    messung: "148 Dateien manipulieren sys.path (107 in tests/, 35 in Produktion), 3 __init__.py"
+    wirkung: |
+      Was am AST-Resolver scheitert, scheitert genauso an mypy/pyright, IDE-Navigation,
+      automatischem Rename und Import-Zyklus-Checks. Groesster struktureller Hebel,
+      aber auch der teuerste Eingriff.
+    reihenfolge: "NACH dem api.py-Split — beide fassen dieselben Dateien an"
+
+test-schulden:
+
+  - id: kz-ohne-assert
+    titel: "7 gebundene Kz stehen in keinem Assert"
+    status: offen
+    aufwand_h: 1
+    gate: "tests/test_bindungstabelle.py::test_m (741a222), Ausnahmeliste GEBUNDENE_KZ_KEIN_ASSERT"
+    liste:
+      - "E0108405  Spenden"
+      - "E0203611  OePNV"
+      - "E0205201  Verpflegung Tage > 8h"
+      - "E0205302  Verpflegung An-/Abreise"
+      - "E0205409  Verpflegung 24h"
+      - "E0207611  dHf Unterkunft"
+      - "E0505607  Schulgeld (am 2026-08-06 committet, sofort durchgerutscht)"
+    hinweis: |
+      Jeder Eintrag ist einzeln begruendet, die Luecke ist sichtbar statt still.
+      Ein neu gebundener Kz ohne Assert faellt jetzt sofort auf.
+
+  - id: toleranzfenster-rest
+    titel: "4 Plausibilitaetsbaender ohne bestimmbaren Einzelwert"
+    status: offen
+    aufwand_h: null
+    hinweis: |
+      BEWUSST nicht geschaerft (a3b154d, 7b83905 haben die 10 schaerfbaren erledigt).
+      Bei § 32b-Progression ueber mehrere Tarifstufen ist das Fenster die richtige Form,
+      nicht die bequeme. Nur anfassen, wenn jemand einen exakten Wert herleiten kann.
