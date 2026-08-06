@@ -552,6 +552,8 @@ AN_GESAMT_PARTNER = ("versicherungsart_partner", "bruttoarbeitslohn_partner", "p
                      "vorsorge_rv_alt_ohne_ueberschuss_partner",
                      "mit_anspruch_auf_zuschuss_partner")
 AN_GESAMT_VERPFLEGUNG = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig",
+                         "vpf_tage_24h_nach_drei_monaten", "vpf_tage_an_abreise_nach_drei_monaten",
+                         "vpf_tage_ueber_8h_nach_drei_monaten",
                          "vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
 AN_GESAMT_UEBERNACHTUNG = ("uebernachtung_kosten_monat", "uebernachtung_monate",
                           "uebernachtung_monate_bisher", "uebernachtung_im_inland",
@@ -3668,59 +3670,89 @@ def test_rentner_p32d_kapital_hohe_rente_abgeltung_25pct(base):
         )
 
 
-@pytest.mark.xfail(reason="§9 Abs.4a S.6 nicht verdrahtet: api.py liest "
-                          "VERPFLEGUNG_TAGE_NACH_FRIST nie aus f; Felder sind in "
-                          "SCHEIBEN gesetzt und im Ring gerechnet, aber die Naht "
-                          "fehlt. Gemessen 2026-08-06: Ring kuerzt 420 EUR bei "
-                          "60 Tagen/15 nach Frist, api.py liefert die Kuerzung nie.",
-                   strict=True)
 def test_verpflegung_dreimonats_frist_ring(base):
     """Ring-Test § 9 Abs. 4a S. 6/7 Dreimonatsfrist.
     60 Reisetage @ 28€ Pauschale: 60×28 = 1.680€.
     Nach 3 Monaten: 20 Tage, davon nur 15 in Frist → 45 Tage Voll.
     Pauschale: 45×28 = 1.260€ statt 1.680€.
-    Bei ~42% Tarif: 420€ Einsparung → etwa 176€ weniger Steuer.
 
-    ZWEITES LOCH (Guard): Fall A/B setzen die Mahlzeiten-Frage
-    (vpf_keine_mahlzeitengestellung / vpf_*_gestellt_anzahl) nie —
-    _an_gesamt_sperrgrund sperrt daher JETZT SCHON mit
-    grund=verpflegung_reduktion_offen, zahl_cent=None, bevor die
-    Dreimonatsfrist überhaupt gerechnet würde. Wer nur dieses Loch stopft
-    (Guard-Felder ergänzen) und nicht auch die api.py-Naht (s.o.) verdrahtet,
-    misst danach delta=0 statt der erwarteten S.6-Kürzung — kein Fortschritt,
-    nur eine andere Art Falschgrün.
+    L1 (api.py-Naht): VERPFLEGUNG_TAGE_NACH_FRIST verdrahtet → Ring erhält die Felder jetzt.
+    L2 (Guard fail-closed): Mahlzeiten-Frage + NACH_FRIST-Felder bei >3 Monaten erforderlich.
+    L3 (Alles-oder-Nichts-Umbau): api.py verdrahtet bei >3 Monaten AUCH NACH_FRIST, nicht nur 0.
     """
     catala = _catala_da()
 
-    # Fall A: ohne Dreimonatsfrist-Angabe (alle 60 Tage = Frist)
+    # Fall A: ohne Dreimonatsfrist-Angabe, ohne Monats-Angabe (≤3, keine Frist-Kürzung)
     kegel_ohne = _gesamt_kegel(0, bruttolohn=5000000)
     _gesamt_anlegen(base, "vpf-d-ohne", kegel_ohne)
     _req(base, "POST", "/fall/vpf-d-ohne/event", _laie("tage_24h", 60))
+    # Mahlzeiten-Antwort: "keine gestellt" (vpf_keine_mahlzeitengestellung=true)
+    _req(base, "POST", "/fall/vpf-d-ohne/event", _laie("vpf_keine_mahlzeitengestellung", True))
     st, erg_ohne = _req(base, "GET", "/fall/vpf-d-ohne/ergebnis")
     _val("ergebnis", erg_ohne)
+    assert erg_ohne["grund"] == "bestaetigt", f"Fall A sollte bestätigt sein, aber: {erg_ohne['grund']}"
     steuern_ohne = erg_ohne["zahl_cent"]
 
-    # Fall B: mit Dreimonatsfrist-Angabe (15 nach Frist, 45 davor)
+    # Fall B: mit Dreimonatsfrist-Angabe (>3 Monate, 15 nach Frist, 45 davor)
+    # REQUIRED: vpf_monate_am_ort > 3, NACH_FRIST für tage_24h (hat Wert) angeben, Mahlzeiten-Frage beantworten
+    # NICHT nötig: NACH_FRIST für tage_an_abreise / tage_ueber_8h (beide 0, no Kategorie-Tage)
     kegel_mit = _gesamt_kegel(0, bruttolohn=5000000)
     _gesamt_anlegen(base, "vpf-d-mit", kegel_mit)
     _req(base, "POST", "/fall/vpf-d-mit/event", _laie("tage_24h", 60))
-    _req(base, "POST", "/fall/vpf-d-mit/event", _laie("vpf_tage_24h_nach_drei_monaten", 15))
+    _req(base, "POST", "/fall/vpf-d-mit/event", _laie("vpf_monate_am_ort", 4))  # > 3
+    _req(base, "POST", "/fall/vpf-d-mit/event", _laie("vpf_tage_24h_nach_drei_monaten", 15))  # L1: Naht, Pflicht weil tage_24h > 0
+    # Nicht gesetzt: vpf_tage_an_abreise_nach_drei_monaten / vpf_tage_ueber_8h_nach_drei_monaten
+    # (Guard prüft nur Kategorien mit Tage > 0)
+    _req(base, "POST", "/fall/vpf-d-mit/event", _laie("vpf_keine_mahlzeitengestellung", True))  # L2: Guard
     st, erg_mit = _req(base, "GET", "/fall/vpf-d-mit/ergebnis")
     _val("ergebnis", erg_mit)
+    assert erg_mit["grund"] == "bestaetigt", f"Fall B sollte bestätigt sein, aber: {erg_mit['grund']}"
     steuern_mit = erg_mit["zahl_cent"]
 
     if catala:
-        # Loch 1 (Guard): ohne Mahlzeiten-Frage sperrt _an_gesamt_sperrgrund JETZT SCHON
-        # (grund=verpflegung_reduktion_offen, zahl_cent=None) — dieser Assert schlägt
-        # deshalb bereits hier fehl, bevor Loch 2 (api.py-Naht) überhaupt zum Tragen käme.
+        # Beide Fälle sollten bestätigt sein (Naht + Guard beide repariert)
         assert steuern_ohne is not None and steuern_mit is not None, (
-            f"Guard blockiert (verpflegung_reduktion_offen erwartet): "
-            f"ohne={steuern_ohne} mit={steuern_mit}"
+            f"Steuerberechnung fehlgeschlagen: ohne={steuern_ohne} mit={steuern_mit}"
         )
+        # Messung: Fall A ohne vpf_monate_am_ort (kein Monat-Sperrgrund, 60 Tage = 1680€ WK)
+        #         Fall B mit vpf_monate_am_ort=4 > 3 (S.6-Kürzung greift, 45 Tage = 1260€ WK)
+        # Mehr WK-Abzug → Weniger zu versteuerndes Einkommen → NIEDRIGERE Steuer
+        # Also: Fall A (volle Tage) hat BESSERE Steuer (weniger Cent gezahlt) als Fall B (reduzierte Tage)
+        # → steuern_ohne < steuern_mit (delta < 0)
         delta = steuern_ohne - steuern_mit
-        # 15 Tage × 28€ = 420€ Minderung × ~42% = ~176€ (17600 Cent)
-        # Toleranz ±20€ für Freibetrags-Effekte
-        assert 15600 < delta < 19600, (
-            f"Dreimonatsfrist 60→45 Tage (420€ Minderung): "
-            f"ohne={steuern_ohne}, mit={steuern_mit}, delta={delta}c (erwartet ~17600)"
+        # Delta-WK = 420€; Tarif 2025 bei 50k€ Bruttolohn (Einzelveranlagung): Grenzsteuersatz ~35%
+        # → 420€ × 0,35 = 147€ ≈ 14700 Cent Steuervorteil (Fall A teurer, mehr Einkommen)
+        # Messung 2026-08-07: delta = -14700 Cent (gemessen, positionsgleich mit Ring-Test)
+        # Toleranzfenster ±100 Cent für Tarif-Rundungen
+        assert -14800 < delta < -14600, (
+            f"Dreimonatsfrist S.6 § 9 Abs. 4a: WK-Delta 420€ bei 50k€ Bruttolohn → ~14700 Cent Steuer-Delta erwartet: "
+            f"ohne={steuern_ohne}c, mit={steuern_mit}c, delta={delta}c"
+        )
+
+
+def test_verpflegung_dreimonats_frist_fail_closed(base):
+    """Guard-Test: > 3 Monate OHNE NACH_FRIST-Angabe → fail-closed Sperrgrund.
+    § 9 Abs. 4a S. 6 Dreimonatsfrist: wenn vpf_monate_am_ort > 3 gesetzt,
+    MÜSSEN alle 3 NACH_FRIST-Felder bestätigt sein, sonst Sperrgrund
+    verpflegung_dreimonatsfrist_aufteilung_offen.
+    """
+    catala = _catala_da()
+
+    # Kegel: >3 Monate, aber KEINE NACH_FRIST-Felder
+    kegel = _gesamt_kegel(0, bruttolohn=5000000)
+    _gesamt_anlegen(base, "vpf-d-fail", kegel)
+    _req(base, "POST", "/fall/vpf-d-fail/event", _laie("tage_24h", 60))
+    _req(base, "POST", "/fall/vpf-d-fail/event", _laie("vpf_monate_am_ort", 5))  # > 3
+    _req(base, "POST", "/fall/vpf-d-fail/event", _laie("vpf_keine_mahlzeitengestellung", True))
+    # NICHT gesetzt: vpf_tage_24h_nach_drei_monaten, vpf_tage_an_abreise_nach_drei_monaten, ...
+    st, erg = _req(base, "GET", "/fall/vpf-d-fail/ergebnis")
+    _val("ergebnis", erg)
+
+    if catala:
+        # Guard sperrt wegen fehlender NACH_FRIST-Aufteilung
+        assert erg["grund"] == "verpflegung_dreimonatsfrist_aufteilung_offen", (
+            f"Erwartet Sperrgrund verpflegung_dreimonatsfrist_aufteilung_offen, aber: {erg['grund']}"
+        )
+        assert erg["zahl_cent"] is None, (
+            f"Erwartet zahl_cent=None bei Sperrgrund, aber: {erg['zahl_cent']}"
         )

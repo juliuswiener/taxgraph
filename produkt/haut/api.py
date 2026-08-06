@@ -483,22 +483,32 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # komposiert die Logik.
             _mon = f.get("vpf_monate_am_ort", {}).get("wert")
             if sum(_cent(t) for t in VERPFLEGUNG_TAGE) > 0:
-                # Tage verdrahten (immer, wenn > 0 Tage und Monat ≤ 3 oder offen)
-                if not (isinstance(_mon, int) and not isinstance(_mon, bool) and _mon > 3):
+                # Tage verdrahten, aber Logik bei > 3 Monaten neu: nicht alles sperren, sondern
+                # NACH_FRIST-Reduktion versuchen. § 9 Abs. 4a S. 6: bei > 3 Monaten am selben Ort
+                # nur die Tage VOR Fristablauf abziehbar.
+                if isinstance(_mon, int) and not isinstance(_mon, bool) and _mon > 3:
+                    # > 3 Monate: nur Tage innerhalb der Frist (Tage_gesamt - Tage_nach_Frist)
+                    # NACH_FRIST-Felder müssen angegeben sein (Guard prüft fail-closed).
                     for t in VERPFLEGUNG_TAGE:
                         wk_input[t] = _cent(t)
-                    # Mahlzeitenkürzung (S. 8): Anzahl Frühstücke/Mittag/Abend gestellt
-                    for k in ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
-                              "vpf_abendessen_gestellt_anzahl"):
-                        v = _cent(k)
-                        if v > 0:
-                            wk_input[k] = v
-                    # Entgelt des Arbeitnehmer (S. 10): Kürzungsminderung
-                    if _cent("vpf_mahlzeiten_gezahltes_entgelt") > 0:
-                        wk_input["vpf_mahlzeiten_gezahltes_entgelt"] = _cent("vpf_mahlzeiten_gezahltes_entgelt")
-                    # Steuerfreie Erstattung (S. 11): Abzugsausschluss
-                    if _cent("vpf_steuerfreie_erstattung_betrag") > 0:
-                        wk_input["vpf_steuerfreie_erstattung_betrag"] = _cent("vpf_steuerfreie_erstattung_betrag")
+                    for t_nach in VERPFLEGUNG_TAGE_NACH_FRIST:
+                        wk_input[t_nach] = _cent(t_nach)
+                else:
+                    # ≤ 3 Monate oder offen: alle Tage normal
+                    for t in VERPFLEGUNG_TAGE:
+                        wk_input[t] = _cent(t)
+                # Mahlzeitenkürzung (S. 8-11): unabhängig von Monaten, wenn Mahlzeitenfrage beantwortet
+                for k in ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
+                          "vpf_abendessen_gestellt_anzahl"):
+                    v = _cent(k)
+                    if v > 0:
+                        wk_input[k] = v
+                # Entgelt des Arbeitnehmer (S. 10): Kürzungsminderung
+                if _cent("vpf_mahlzeiten_gezahltes_entgelt") > 0:
+                    wk_input["vpf_mahlzeiten_gezahltes_entgelt"] = _cent("vpf_mahlzeiten_gezahltes_entgelt")
+                # Steuerfreie Erstattung (S. 11): Abzugsausschluss
+                if _cent("vpf_steuerfreie_erstattung_betrag") > 0:
+                    wk_input["vpf_steuerfreie_erstattung_betrag"] = _cent("vpf_steuerfreie_erstattung_betrag")
             # Übernachtung Auswärtstätigkeit (Stufe 1b, § 9 Abs. 1 Nr. 5a): NUR bei Inland, allen 3
             # Tatbestands-Bedingungen bestätigt-true UND ohne 48-Monats-Schwellenübertritt (der Guard
             # sperrt sonst); der Accessor kappt nach-48 auf 1.000/Monat. Kosten = cent, Monate = Anzahl.
@@ -731,22 +741,32 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # komposiert die Logik.
             _mon = f.get("vpf_monate_am_ort", {}).get("wert")
             if sum(_c(t) for t in VERPFLEGUNG_TAGE) > 0:
-                # Tage verdrahten (immer, wenn > 0 Tage und Monat ≤ 3 oder offen)
-                if not (isinstance(_mon, int) and not isinstance(_mon, bool) and _mon > 3):
+                # Tage verdrahten, aber Logik bei > 3 Monaten neu: nicht alles sperren, sondern
+                # NACH_FRIST-Reduktion versuchen. § 9 Abs. 4a S. 6: bei > 3 Monaten am selben Ort
+                # nur die Tage VOR Fristablauf abziehbar.
+                if isinstance(_mon, int) and not isinstance(_mon, bool) and _mon > 3:
+                    # > 3 Monate: nur Tage innerhalb der Frist (Tage_gesamt - Tage_nach_Frist)
+                    # NACH_FRIST-Felder müssen angegeben sein (Guard prüft fail-closed).
                     for t in VERPFLEGUNG_TAGE:
                         gesamt_wk_input[t] = _c(t)
-                    # Mahlzeitenkürzung (S. 8): Anzahl Frühstücke/Mittag/Abend gestellt
-                    for k in ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
-                              "vpf_abendessen_gestellt_anzahl"):
-                        v = _c(k)
-                        if v > 0:
-                            gesamt_wk_input[k] = v
-                    # Entgelt des Arbeitnehmer (S. 10): Kürzungsminderung
-                    if _c("vpf_mahlzeiten_gezahltes_entgelt") > 0:
-                        gesamt_wk_input["vpf_mahlzeiten_gezahltes_entgelt"] = _c("vpf_mahlzeiten_gezahltes_entgelt")
-                    # Steuerfreie Erstattung (S. 11): Abzugsausschluss
-                    if _c("vpf_steuerfreie_erstattung_betrag") > 0:
-                        gesamt_wk_input["vpf_steuerfreie_erstattung_betrag"] = _c("vpf_steuerfreie_erstattung_betrag")
+                    for t_nach in VERPFLEGUNG_TAGE_NACH_FRIST:
+                        gesamt_wk_input[t_nach] = _c(t_nach)
+                else:
+                    # ≤ 3 Monate oder offen: alle Tage normal
+                    for t in VERPFLEGUNG_TAGE:
+                        gesamt_wk_input[t] = _c(t)
+                # Mahlzeitenkürzung (S. 8-11): unabhängig von Monaten, wenn Mahlzeitenfrage beantwortet
+                for k in ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
+                          "vpf_abendessen_gestellt_anzahl"):
+                    v = _c(k)
+                    if v > 0:
+                        gesamt_wk_input[k] = v
+                # Entgelt des Arbeitnehmer (S. 10): Kürzungsminderung
+                if _c("vpf_mahlzeiten_gezahltes_entgelt") > 0:
+                    gesamt_wk_input["vpf_mahlzeiten_gezahltes_entgelt"] = _c("vpf_mahlzeiten_gezahltes_entgelt")
+                # Steuerfreie Erstattung (S. 11): Abzugsausschluss
+                if _c("vpf_steuerfreie_erstattung_betrag") > 0:
+                    gesamt_wk_input["vpf_steuerfreie_erstattung_betrag"] = _c("vpf_steuerfreie_erstattung_betrag")
             # Übernachtung Auswärtstätigkeit (B1/A5, § 9 Abs. 1 Nr. 5a): Parität an_gesamt — NUR bei
             # Inland, allen 3 Bedingungen bestätigt-true UND ohne 48-Monats-Schwellenübertritt (Guard
             # sperrt sonst); Accessor kappt nach-48 auf 1.000/Monat. Kosten = cent, Monate = Anzahl.
@@ -1656,10 +1676,22 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                 return "dhf_tatbestand_offen"
         if sum((felder.get(t, {}).get("wert") or 0) for t in VERPFLEGUNG_TAGE) > 0:
             # Verpflegungspauschale (§ 9 Abs. 4a S. 3): Jahres-Pauschale summiert aus Tage-Kategorien.
-            # S. 6 (3-Monats-Frist): Reduktion — bleibt GESPERRT (nicht automatisiert, dev-2 außer Scope).
-            # S. 8-10 (Mahlzeitenkürzung): nun RECHENBAR, wenn Mahlzeitenfelder (Anzahl, Entgelt) bestätigt.
-            # S. 11 (steuerfreie Erstattung): nun RECHENBAR, wenn Feld bestätigt.
-            # OFFEN bleibt NUR: 3-Monats-Frist (S. 6) — ohne sie würde bei längeren Einsätzen zu viel abgezogen.
+            # S. 6 (3-Monats-Frist): Reduktion — wenn vpf_monate_am_ort > 3, MUSS die Aufteilung
+            #   (Tage_gesamt vs. Tage_nach_Frist) angegeben sein, ABER NUR FÜR KATEGORIEN MIT TAGEN > 0.
+            # S. 8-11 (Mahlzeitenkürzung + steuerfreie Erstattung): RECHENBAR, wenn Felder bestätigt.
+            # Prüfung Frist (S. 6): kategorie-weise — nur wenn Tage_i > 0, muss NACH_FRIST_i bestätigt sein.
+            _mon = felder.get("vpf_monate_am_ort", {}).get("wert")
+            if isinstance(_mon, int) and not isinstance(_mon, bool) and _mon > 3:
+                # > 3 Monate: Prüfe jede Kategorie separat
+                # VERPFLEGUNG_TAGE[i] <-> VERPFLEGUNG_TAGE_NACH_FRIST[i] sind positionsgleich
+                for i, (tage_feld, nach_frist_feld) in enumerate(zip(VERPFLEGUNG_TAGE, VERPFLEGUNG_TAGE_NACH_FRIST)):
+                    tage_wert = (felder.get(tage_feld, {}).get("wert") or 0)
+                    if isinstance(tage_wert, (int, float)) and not isinstance(tage_wert, bool) and tage_wert > 0:
+                        # Diese Kategorie hat Tage > 0 → NACH_FRIST-Feld ist Pflicht
+                        nach_frist_bestaetigt = (felder.get(nach_frist_feld) or {}).get("zustand") == "bestaetigt"
+                        if not nach_frist_bestaetigt:
+                            # Kategorie mit Tagen aber ohne NACH_FRIST-Angabe → fail-closed
+                            return "verpflegung_dreimonatsfrist_aufteilung_offen"
             # Mahlzeitenkürzung (S. 8-11): fail-closed auf Eingabe. Die Frage muss beantwortet sein:
             # "Wurden dir Mahlzeiten gestellt?" — wenn JA, dann Anzahlen + Entgelt; wenn NEIN, dann 0 bestätigt.
             # Mahlzeitenzahlen-Felder (fruehstuecke/mittag/abendessen_gestellt_anzahl) sind die Antwort:
