@@ -230,10 +230,19 @@ def _p23_ansonsten_einkuenfte(f: dict, store: dict | None, bindung: dict | None,
     gewinn_pvg = 0
     verlust_pvg = 0
     for inst in instanzen:
-        # norm: inst["felder"] nutzt Basis-feld_ids (OHNE __n-Suffix)
-        preis = int(inst["felder"].get("p23_veraeusserungspreis", 0)) // 100
-        ak = int(inst["felder"].get("p23_anschaffung_herstellungskosten", 0)) // 100
-        wk = int(inst["felder"].get("p23_werbungskosten", 0)) // 100
+        # Zwei-Signal-Filter (Instanz-Pfad, wie gwg/kind/vv_objekt/rente): eine vorläufige
+        # p23-Instanz darf bei nur_bestaetigt=True nicht in die festgesetzte Summe.
+        if nur_bestaetigt and inst["zustand"] != "bestaetigt":
+            continue
+        # norm: inst["felder"] nutzt Basis-feld_ids (OHNE __n-Suffix); inst["felder"][fid] ist
+        # {wert, zustand, herkunft} (EM.instanzen()) — .get("wert") + isinstance-Guard wie an
+        # den anderen inst["felder"]-Stellen in dieser Datei (_kind_kv_pv_summe u.a.).
+        _preis_v = inst["felder"].get("p23_veraeusserungspreis", {}).get("wert")
+        _ak_v = inst["felder"].get("p23_anschaffung_herstellungskosten", {}).get("wert")
+        _wk_v = inst["felder"].get("p23_werbungskosten", {}).get("wert")
+        preis = int(_preis_v) // 100 if isinstance(_preis_v, (int, float)) and not isinstance(_preis_v, bool) else 0
+        ak = int(_ak_v) // 100 if isinstance(_ak_v, (int, float)) and not isinstance(_ak_v, bool) else 0
+        wk = int(_wk_v) // 100 if isinstance(_wk_v, (int, float)) and not isinstance(_wk_v, bool) else 0
         gewinn = runner.catala_p23_veraeusserungsgewinn({
             "veraeusserungspreis": preis, "anschaffungs_herstellungskosten": ak, "werbungskosten": wk})
         if gewinn > 0:
