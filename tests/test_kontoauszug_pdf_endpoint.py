@@ -45,6 +45,19 @@ def fall(tmp_path, monkeypatch):
     return "pdf1"
 
 
+def _tmp_pdfs():
+    """Nur die tmp-Dateien, die der Endpunkt selbst anlegen kann: tempfile.mkstemp(suffix=".pdf")
+    in api.py:2552, also gettempprefix() + Zufall + ".pdf".
+
+    Vorher verglich der Test GANZ /tmp und sah damit jeden Fremdprozess. Einmal rot mit
+    `assert {'go-build2607090677'} == set()` — ein paralleler Go-Compiler, nicht der Endpunkt.
+    Die Einschraenkung schwaecht den PII-Guard nicht, sie schaerft ihn: geleakt waere genau
+    eine Datei dieser Form."""
+    pre = tempfile.gettempprefix()
+    return {n for n in os.listdir(tempfile.gettempdir())
+            if n.startswith(pre) and n.endswith(".pdf")}
+
+
 def test_pdf_base64_upload_verworfen_feld(fall, monkeypatch):
     """base64-kodiertes PDF → 200, Response trägt `verworfen`+`hinweis` bei unsicheren Zeilen; die
     tmp-Datei existiert NACH dem Call nicht mehr (PII-Leck-Guard, Bank-PDF darf nie liegen bleiben)."""
@@ -53,14 +66,15 @@ def test_pdf_base64_upload_verworfen_feld(fall, monkeypatch):
         KW, "parse_pdf_zeilen",
         lambda text, conf_map, schwelle=0.6: (
             [{"datum": "2025-03-15", "betrag": -120000, "verwendungszweck": "Spende Verein"}], 1))
-    vor = set(os.listdir(tempfile.gettempdir()))
+    vor = _tmp_pdfs()
     b64 = base64.b64encode(b"%PDF-1.4 fake").decode("ascii")
     st, body = API.kontoauszug(fall, {"format": "pdf", "inhalt": b64})
     assert st == 200
     assert body["transaktionen"] == 1 and body["verworfen"] == 1
     assert "hinweis" in body
-    nach = set(os.listdir(tempfile.gettempdir()))
-    assert nach - vor == set()
+    assert _tmp_pdfs() - vor == set(), (
+        "der Endpunkt hat seine tmp-PDF liegen lassen — das ist der ROHE Bank-Auszug "
+        "(IBAN/PII vor der Writer-Maskierung). api.py:2559 os.unlink im finally pruefen.")
 
 
 def test_pdf_ungueltiges_base64_400(fall):
