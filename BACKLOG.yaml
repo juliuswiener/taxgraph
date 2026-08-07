@@ -1,18 +1,21 @@
 # TaxGraph — offene Punkte
 #
-# Stand: 2026-08-07, HEAD ea99947, Suite 1632 passed / 4 skipped / 0 xfailed.
+# Stand: 2026-08-07, HEAD 35c3c54, Suite 1644 passed / 4 skipped / 0 xfailed.
 #
 # Jeder Eintrag nennt den Beleg (Messung oder Fundstelle), nicht nur die Absicht.
 # Ein Punkt ohne Messung ist eine Vermutung und gehoert hier nicht hinein.
 #
-# status: offen | analysiert | entschieden
-#   offen        — noch nicht untersucht
-#   analysiert   — Bericht liegt, Aufwand geschaetzt, Entscheidung steht aus
-#   entschieden  — Julius hat zugestimmt, kann gebaut werden
+# status: offen | analysiert | entschieden | blockiert | teil_erledigt | erledigt
+#   offen         — noch nicht untersucht
+#   analysiert    — Bericht liegt, Aufwand geschaetzt, Entscheidung steht aus
+#   entschieden   — Julius hat zugestimmt, kann gebaut werden
+#   blockiert     — zugestimmt, aber eine benannte Voraussetzung fehlt noch
+#   teil_erledigt — ein Teil ist gebaut und gemessen, der Rest steht benannt daneben
+#   erledigt      — gebaut, gemessen, committet (erledigt_in nennt den Commit)
 
 version: 1
 stand: "2026-08-07"
-head: ea99947
+head: 35c3c54
 
 rechenluecken:
 
@@ -55,7 +58,27 @@ rechenluecken:
 
   - id: p33b-stufe-2
     titel: "§ 33b — Doppelabzug Pauschbetrag neben § 33"
-    status: analysiert
+    status: teil_erledigt
+    stufe_2a_erledigt: |
+      2026-08-07, Commit 35c3c54. Abs. 5 S. 4 (automatischer Ausschluss bei
+      Uebertragung) ist gebaut: Feld behinderungsbedingte_aufwendungen, Kuerzung in
+      _shared_steuer_sonder_agb (api.py:387), 4 Tests, Suite 1644.
+      Gemessen: gesamt +135.000 ct, rentner +126.000 ct.
+      Zwei Abweichungen von der Bauanleitung, beide beim Bau gefunden:
+        - EINE Kuerzungsstelle, nicht zwei. _shared_steuer_sonder_agb bedient beide
+          Zweige (api.py:971 gesamt, :1459 rentner); ein zweiter Eingriff im
+          rentner-Zweig waere ein Doppelabzug gewesen.
+        - Bindung an eine geltungsbedingung, NICHT an den agb-Slot. slot_beitrag
+          kennt nur exakt|summand; als "summand" haette intervall.py:188 den Betrag
+          addiert statt subtrahiert. test_e_summen_konvention hat es gefangen.
+          Neue Bedingung in rules.yaml:
+          kein_uebertragener_behinderten_pb_fuer_dieselben_aufwendungen.
+    stufe_2b_offen: |
+      Abs. 1 S. 1 (Wahlrecht des Steuerpflichtigen fuer den EIGENEN Pauschbetrag)
+      ist NICHT gebaut. Braucht eine Nutzerfrage + Sperrgrund, siehe
+      kein_default_moeglich unten. Das Feld behinderungsbedingte_aufwendungen ist
+      wiederverwendbar, die Kuerzungslogik auch — es fehlt nur die Frage und der
+      zweite Guard-Zweig.
     bericht: reports/adjudikation/p33b-abs5-s4-analyse.md
     bauanleitung: reports/adjudikation/p33b_stufe2_bauanleitung_2026-08-07.md
     achse_geklaert: |
@@ -136,7 +159,7 @@ struktur:
 
   - id: api-py-datei-split
     titel: "api.py in Ring und Endpunkte trennen"
-    status: entschieden
+    status: blockiert
     aufwand_h: 1
     voraussetzung_erfuellt: "_bescheid_fn-Umbau ist durch (7b1d59a, 1396 -> 1301 Zeilen)"
     messung: |
@@ -144,17 +167,58 @@ struktur:
       Modul-Globals: 6. Tests, die api-Interna patchen: 0.
     plan: "api_ring.py + api_endpunkte.py, api.py als Fassade mit Re-Exports"
     gate: "Aequivalenz-Collector (tests/test_bescheid_fn_collector.py), diff MUSS leer sein"
+    blockiert_seit: "2026-08-07"
+    blockade: |
+      Zwei Gruende, beide gemessen, keiner davon geraten:
+
+      1. Das Gate deckt die Naht nicht ab, an der der Split zuerst bricht.
+         Der Aequivalenz-Collector vergleicht den RECHENpfad. Der Fehler, den ein
+         Split hier baut, sitzt aber im AUTH-Pfad: `from api import _AUTH_USER`
+         bindet den WERT beim Import, nicht den Namen. Eine spaetere Zuweisung an
+         api._AUTH_USER erreicht das ausgelagerte Modul dann nicht mehr — stiller
+         Auth-Bypass, gruener Collector. Genau dieses Muster wurde in fffd7c8
+         entschaerft (Zugriff jetzt als Modul-Attribut), die Falle ist damit aber
+         nur an einer Stelle zu, nicht als Klasse.
+         -> Voraussetzung: ein zweiter deterministischer Gate-Test, der die
+            Auth-Naht nach dem Split prueft (Zuweisung an das Attribut MUSS im
+            ausgelagerten Modul ankommen; Mutationsprobe muss ihn rot machen).
+
+      2. Die Messung oben ist unvollstaendig, nicht falsch. "Modul-Globals: 6"
+         zaehlt die Definitionen, nicht die IMPORTEURE — wer `from api import X`
+         macht und damit an einem der 6 haengt. Ohne diese Liste ist nicht
+         entscheidbar, welche Namen die Fassade re-exportieren muss.
+         -> Voraussetzung: Importeur-Inventar (je Global: alle from-api-Importe).
+    reihenfolge: "loest sys-path-zu-paketen Stufe 1 aus, blockiert sie also mit"
 
   - id: sys-path-zu-paketen
     titel: "sys.path-Injektion durch echte Pakete ersetzen"
-    status: offen
+    status: analysiert
+    bericht: reports/adjudikation/sys_path_messung_2026-08-07.md
     aufwand_h: null
-    messung: "148 Dateien manipulieren sys.path (107 in tests/, 35 in Produktion), 3 __init__.py"
+    messung: |
+      2026-08-07 nachgemessen, die alte Zahl war falsch:
+        133 Dateien, 187 sys.path.insert-Aufrufe (andere Formen: 0)
+        tests/   123 Dateien / 174 Aufrufe  = 92 % des Problems
+        produkt/  10 Dateien /  13 Aufrufe
+      Die alte Angabe "35 in Produktion" war um Faktor 3,5 zu hoch.
     wirkung: |
       Was am AST-Resolver scheitert, scheitert genauso an mypy/pyright, IDE-Navigation,
-      automatischem Rename und Import-Zyklus-Checks. Groesster struktureller Hebel,
-      aber auch der teuerste Eingriff.
-    reihenfolge: "NACH dem api.py-Split — beide fassen dieselben Dateien an"
+      automatischem Rename und Import-Zyklus-Checks. Beides im Report belegt
+      (mypy und pyright koennen die Injektionen nicht aufloesen).
+    zwei_stufen: |
+      Weil die Produktion fast sauber ist, zerfaellt der Umbau in zwei unabhaengige
+      Vorhaben, die einzeln entschieden werden koennen:
+        Stufe 1  produkt/, 10 Dateien — ~0,5 Tage. Echtes Laufzeitrisiko (ein
+                 falsch aufgeloester Import bricht Ring oder Server erst zur
+                 Laufzeit), braucht ein Gate. Lohnt sich auch allein.
+                 api_llm.py hat keinen eigenen Aufruf und erbt den Pfad von api.py —
+                 muss mit api.py zusammen umgestellt werden.
+        Stufe 2  tests/, 123 Dateien — ~2,5-4 Tage. Mechanisch, kein Produktions-
+                 risiko: ein Fehler ist sofort ein roter Test.
+    reihenfolge: |
+      Stufe 1 NACH dem api.py-Split — beide fassen api.py/api_llm.py/server.py an,
+      und der Split legt die Modulgrenzen fest, an denen sich die Importe danach
+      ausrichten. Stufe 2 blockiert nichts und kann jederzeit laufen.
 
 test-schulden:
 
