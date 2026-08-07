@@ -1,6 +1,6 @@
 # TaxGraph — offene Punkte
 #
-# Stand: 2026-08-07, HEAD 63bce6f, Suite 1655 passed / 4 skipped / 0 xfailed.
+# Stand: 2026-08-07, HEAD 5757829, Suite 1655 passed / 4 skipped / 0 xfailed.
 #
 # Jeder Eintrag nennt den Beleg (Messung oder Fundstelle), nicht nur die Absicht.
 # Ein Punkt ohne Messung ist eine Vermutung und gehoert hier nicht hinein.
@@ -15,7 +15,7 @@
 
 version: 1
 stand: "2026-08-07"
-head: 63bce6f
+head: 5757829
 
 rechenluecken:
 
@@ -543,3 +543,60 @@ test-schulden:
     fix: |
       Statt ganz /tmp zu vergleichen nur auf das Praefix filtern, das der Endpunkt selbst
       benutzt. Der PII-Leck-Guard bleibt damit erhalten und wird sogar schaerfer.
+
+  - id: stille-null-klasse-c
+    titel: "Vorlaeufige Instanz faellt still aus der Rechnung — gwg, kind x3, p23"
+    status: analysiert
+    aufwand_h: 1
+    entdeckt: "2026-08-07, beim p23-Fix (63bce6f) als Folgefrage"
+    bericht: reports/adjudikation/instanz_stille_null_2026-08-07.md
+    messung: |
+      Frage war: faellt eine vorlaeufige Instanz an ALLEN 9 gefilterten Aggregat-Stellen
+      still durch, wie bei p23? Antwort: nein, nur an 4 von 9. Es gibt drei Klassen.
+
+      Klasse A — Basis-Instanz (index 1) von vv_objekt und rente: sind Kegel-Pflichtfelder.
+      ergebnis() prueft das VOR der Zahl -> grund="input_kegel_nicht_bestaetigt",
+      zahl_cent=None, offen listet das Feld. Fail-closed, gemeldet. KEIN Bug.
+
+      Klasse B — Zusatz-Instanz (index >=2) von vv_objekt und rente: Guard in
+      _an_gesamt_sperrgrund (api.py:1930/1948) prueft inst["zustand"] != "bestaetigt"
+      unbedingt -> grund="vv_instanz_offen"/"rente_instanz_offen", zahl_cent=None.
+      Fail-closed, gemeldet. KEIN Bug.
+      Von main unabhaengig nachgemessen fuer vv_objekt index 2: grund="vv_instanz_offen",
+      zahl_cent=None. rente index 2 laeuft noch bei dev-a.
+
+      Klasse C — gwg, alle drei kind-Aufrufer, p23: kein Kegel-Gate, kein Sperrgrund.
+      Der Filter tut, was er soll (die Zahl bleibt korrekt), aber nichts in der Antwort
+      sagt, dass eine Nutzereingabe ignoriert wurde. Gemessen fuer gwg, kinderbetreuung
+      und p23 direkt — in allen drei Faellen identisch zur Referenz "Feld fehlt komplett":
+        grund   "bestaetigt"
+        zahl    1392400 ct
+        offen   []
+    wirkung: |
+      Kein Geldfehler — die Zahl ist nach dem p23-Fix korrekt. Der Schaden ist
+      Vertrauensschaden: der Nutzer traegt etwas ein, sieht es in /fragen, und die
+      festgesetzte Zahl enthaelt es trotzdem nicht, ohne Hinweis. /fragen zeigt das Feld
+      zwar (traverser._unbeantwortet behandelt vorlaeufig als offen), aber das ist ein
+      SEPARATER Endpunkt, den der Nutzer aktiv abrufen muss.
+    bauvarianten: |
+      (a) Neuer Sperrgrund instanz_vorlaeufig_offen, Parität zu vv_objekt/rente.
+          Nutzer kommt nicht weiter, bis er bestaetigt oder loescht.
+          Aufwand mittel. GEGENARGUMENT: der Docstring von _gwg_sofortabzug_summe sagt
+          ausdruecklich "gwg ist OPTIONAL -> KEIN Kegel-/Sperr-Gate (anders als vv/rente)".
+          (a) wuerde eine bewusste Entscheidung umkehren.
+      (b) Die vorlaeufigen Felder in das bereits vorhandene "offen"-Feld der Antwort.
+          Nutzer sieht es, kann aber weitermachen. grund und zahl_cent bleiben.
+          Aufwand klein. api.py:2277 setzt "offen": [] im Erfolgspfad hart —
+          von main nachgelesen, das ist die einzige Stelle, die sich aendern muss.
+          Die Antwortstruktur bleibt gleich, das Schema (api_schema/ergebnis.json)
+          fuehrt "offen" bereits als required.
+      (c) Pro Gruppe verschieden — faellt unter der jetzigen Faktenlage mit (b) zusammen,
+          weil keine der vier Gruppen ein Argument fuer (a) hat.
+    empfehlung_main: |
+      (b). Sie macht die stille Null sichtbar, ohne die dokumentierte Additiv-Entscheidung
+      fuer gwg/kind zu brechen, und sie ist billiger als der Bericht schaetzt: das
+      offen-Feld existiert bereits in JEDER /ergebnis-Antwort und ist im Erfolgspfad
+      leer. Es geht um eine Sammelstelle in ergebnis() plus 4 Tests.
+    entscheidung_julius: |
+      OFFEN. Nichts gebaut. Welche Variante — und ob ueberhaupt, denn es ist kein
+      Geldfehler, sondern eine Sichtbarkeitsluecke.
