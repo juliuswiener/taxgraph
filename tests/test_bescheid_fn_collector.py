@@ -25,6 +25,7 @@ for sub in ("produkt/haut", "golden", "produkt/store", "produkt/traverser",
 
 import api as API
 import server as SRV
+import audit                # noqa: E402
 
 OUT_DIR = "/tmp/ring_collector"
 VZ = 2025
@@ -57,6 +58,7 @@ def _req(base, method, path, body=None, erwarte=None):
 @pytest.fixture
 def base(tmp_path, monkeypatch):
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     srv = SRV.make_server(0)
     assert srv.server_address[0] == "127.0.0.1"
     th = threading.Thread(target=srv.serve_forever, daemon=True)

@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 
 import api as API        # noqa: E402
 import server as SRV     # noqa: E402
+import audit                # noqa: E402
 
 
 try:
@@ -33,6 +34,7 @@ except ImportError:
 def base(tmp_path, monkeypatch):
     """HTTP-Server auf Port 0, daemon thread."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     srv = SRV.make_server(0)
     assert srv.server_address[0] == "127.0.0.1"
     th = threading.Thread(target=srv.serve_forever, daemon=True)

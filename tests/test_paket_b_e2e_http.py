@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 
 import api as API        # noqa: E402
 import server as SRV     # noqa: E402
+import audit                # noqa: E402
 import store as ST       # noqa: E402
 
 jsonschema = pytest.importorskip("jsonschema")
@@ -101,6 +102,7 @@ def _vorl(fld, w):
 def base(tmp_path, monkeypatch):
     # Fall-Daten in ein temporäres Verzeichnis (nie ins Repo, nie in den echten faelle/-Ordner)
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     srv = SRV.make_server(0)                      # port=0 -> freier Port; SINGLE-THREADED (kein Request-Thread-Leak)
     assert srv.server_address[0] == "127.0.0.1", "Auflage B: Server muss an 127.0.0.1 binden"
     th = threading.Thread(target=srv.serve_forever, daemon=True)

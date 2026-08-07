@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 
 import api as API
 import server as SRV
+import audit                # noqa: E402
 
 
 def _req(base: str, method: str, path: str, body: dict | None = None,
@@ -82,6 +83,7 @@ def _catala_da() -> bool:
 def base(tmp_path, monkeypatch):
     faelle_dir = str(tmp_path / "faelle")
     monkeypatch.setattr(API, "FAELLE", faelle_dir)
+    monkeypatch.setattr(audit, "AUDIT_DIR", faelle_dir)
     srv = SRV.make_server(0)
     th = threading.Thread(target=srv.serve_forever, daemon=True)
     th.start()

@@ -33,6 +33,7 @@ for _sub in ("produkt/haut", "produkt/import", "produkt/store", "produkt/travers
 import api as API                    # noqa: E402
 import kontoauszug_writer as KW      # noqa: E402
 import store as ST                   # noqa: E402
+import audit                # noqa: E402
 from test_kontoauszug_writer import _write_text_pdf  # noqa: E402 -- dev-2s echtes-PDF-Helfer, kein Mock
 
 
@@ -40,6 +41,7 @@ from test_kontoauszug_writer import _write_text_pdf  # noqa: E402 -- dev-2s echt
 def fall(tmp_path, monkeypatch):
     """Ein leerer gesamt-Fall in einem tmp-FAELLE-Verzeichnis (kein Zugriff auf echte Fälle)."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
     st, _ = API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "pdf1"})
     assert st == 201
     return "pdf1"

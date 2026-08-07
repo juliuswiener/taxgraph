@@ -12,6 +12,7 @@ import runner as R  # noqa: E402
 sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
 sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 import api as API  # noqa: E402
+import audit        # noqa: E402
 
 
 # -- p23_veraeusserungsgewinn (3 seeds: 200000-150000-5000=45000 / 100000-120000-3000=-23000 / 50000-50000-0=0)
@@ -90,6 +91,7 @@ def test_p23_ueber_ring_accessor(tmp_path, monkeypatch):
     diesen Pfad (_p23_ansonsten_einkuenfte via EM.instanzen()) — s. Modul-Docstring oben.
     """
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     fid = "p23ring"
     st, r = API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": fid})
     assert st == 201, r
@@ -137,6 +139,7 @@ def test_p23_vorlaeufige_instanz_nicht_in_bestaetigter_rechnung(tmp_path, monkey
     EM.instanzen()-Stellen in dieser Datei) — die vorläufige Instanz fließt daher genauso
     ein wie eine bestätigte. Referenz: 1392400 ct (derselbe Kegel OHNE die p23-Instanz)."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     fid = "p23vorlaeufig"
     st, r = API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": fid})
     assert st == 201, r

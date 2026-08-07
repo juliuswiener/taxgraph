@@ -59,10 +59,13 @@ def test_auth_mutation_reaches_owner_check():
     assert api_auth._AUTH_USER is None
 
 
-def test_auth_mutation_blocks_wrong_owner():
+def test_auth_mutation_blocks_wrong_owner(monkeypatch, tmp_path):
     """Owner-Check sperre Zugriff wenn UID nicht stimmt."""
     import api_auth
     import api
+    import audit
+
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
 
     # server.py: setze UID auf 'alice'
     api_auth._AUTH_USER = "alice"

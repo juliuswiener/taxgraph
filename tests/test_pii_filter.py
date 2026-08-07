@@ -133,9 +133,10 @@ class TestPlzOrt:
 
 # --------------------------------------------------------------- Leck-Test: PII im ausgehenden Call
 class TestLeak:
-    def test_pii_entfernt_vor_llm_call(self, monkeypatch):
+    def test_pii_entfernt_vor_llm_call(self, monkeypatch, tmp_path):
         """Monkeypatch llm_client.complete, Argument einfangen, Freitext MIT IdNr + IBAN
         durch _llm_vorschlaege schicken, assert Roh-IdNr im messages-Objekt NICHT vorkommt."""
+        monkeypatch.setattr(AUDIT, "AUDIT_DIR", str(tmp_path))
         captured = {}
 
         def fake_complete(role, messages, fixture_id=None):

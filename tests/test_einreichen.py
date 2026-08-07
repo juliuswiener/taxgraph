@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 
 import api as API        # noqa: E402
 import server as SRV     # noqa: E402
+import audit                # noqa: E402
 
 
 def _req(base: str, method: str, path: str, body: dict | None = None,
@@ -67,6 +68,7 @@ def _laie(fld, w):
 @pytest.fixture
 def base(tmp_path, monkeypatch):
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     srv = SRV.make_server(0)
     assert srv.server_address[0] == "127.0.0.1"
     th = threading.Thread(target=srv.serve_forever, daemon=True)
@@ -141,6 +143,7 @@ def test_unvollstaendig_nennt_die_offenen_felder(base):
 def test_vorlaeufiges_feld_blockiert_einreichen(tmp_path, monkeypatch):
     """Ein vorläufiger Wert macht die Deklaration unvollständig — fail-closed vor dem XML."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "an_gesamt", "veranlagungszeitraum": 2025})
     fid = r["fall_id"]
     store = API.lade_fall(fid)
@@ -157,6 +160,7 @@ def test_vorlaeufiges_feld_blockiert_einreichen(tmp_path, monkeypatch):
 def test_eric_fehlt_gibt_503_statt_crash(tmp_path, monkeypatch):
     """Ohne ERiC-Bibliothek: sauberes 503, kein Traceback nach aussen."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     import elster_xml as EX
     monkeypatch.setattr(EX, "erzeuge_xml",
                         lambda *a, **k: '<?xml version="1.0"?><Elster/>')
@@ -176,6 +180,7 @@ def test_eric_fehlt_gibt_503_statt_crash(tmp_path, monkeypatch):
 def test_plausibilitaetsfehler_reicht_ericantwort_durch(tmp_path, monkeypatch):
     """rc!=0 → 422 mit der ERiC-Antwort, damit der Nutzer die verletzte Regel sieht."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     import elster_xml as EX
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
@@ -195,6 +200,7 @@ def test_plausibilitaetsfehler_reicht_ericantwort_durch(tmp_path, monkeypatch):
 def test_io_gate_rc_ist_nicht_gruen(tmp_path, monkeypatch):
     """rc=610301200 liefert 0 Fehler im Puffer, ist aber NICHT geprüft — nie als grün werten."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     import elster_xml as EX
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
@@ -211,6 +217,7 @@ def test_io_gate_rc_ist_nicht_gruen(tmp_path, monkeypatch):
 def test_erfolg_meldet_plausibel_aber_nicht_eingereicht(tmp_path, monkeypatch):
     """rc==0 ist der Erfolgsfall — und selbst der sagt eingereicht=False."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     import elster_xml as EX
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
@@ -228,6 +235,7 @@ def test_erfolg_meldet_plausibel_aber_nicht_eingereicht(tmp_path, monkeypatch):
 
 def test_xml_nicht_baubar_gibt_422(tmp_path, monkeypatch):
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     import elster_xml as EX
     monkeypatch.setattr(API.EM, "deklariere",
                         lambda *a, **k: {"vollstaendig": True, "deklaration": {"E9999999": "x"},
@@ -249,6 +257,7 @@ def test_einreichen_traegt_verpflegung_kuerzung_ein(tmp_path, monkeypatch):
     Rot wenn _mit_ring_werten in einreichen() fehlt.
     """
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     import elster_xml as EX
     import checkest_gate as CE
     import store as ST
@@ -291,6 +300,7 @@ def test_einreichen_traegt_verpflegung_kuerzung_ein(tmp_path, monkeypatch):
 def test_einreichen_ohne_verpflegung_kein_kuerzung_kz(tmp_path, monkeypatch):
     """Ohne Verpflegungs-Felder: kein E0205508 in der Deklaration (Inertheit)."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     import elster_xml as EX
     import checkest_gate as CE
     import store as ST

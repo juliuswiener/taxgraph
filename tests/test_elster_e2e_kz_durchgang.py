@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, 'produkt', 'import'))
 
 import api as API
 import server as SRV
+import audit                # noqa: E402
 
 
 def _req(base, method, path, body=None, erwarte=None):
@@ -77,6 +78,7 @@ def _laie(fld, w):
 def base(tmp_path, monkeypatch):
     """HTTP-Server für Tests."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     srv = SRV.make_server(0)
     th = threading.Thread(target=srv.serve_forever, daemon=True)
     th.start()

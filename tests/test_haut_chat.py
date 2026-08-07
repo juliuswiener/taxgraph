@@ -38,6 +38,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 
 import api as API          # noqa: E402
 import llm_client as LC     # noqa: E402
+import audit                # noqa: E402
 
 
 def _catala_da() -> bool:
@@ -59,6 +60,7 @@ def _laie(fld, w):
 def fall(tmp_path, monkeypatch):
     """Ein leerer gesamt-Fall in einem tmp-FAELLE-Verzeichnis (kein Zugriff auf echte Fälle)."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
     st, _ = API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "chat1"})
     assert st == 201
     return "chat1"

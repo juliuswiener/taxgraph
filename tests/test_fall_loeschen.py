@@ -31,6 +31,7 @@ import audit
 def fall(tmp_path, monkeypatch):
     """Legt einen Fall an (Owner-Kontext: dev/Test = immer erlaubt)."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     st, body = API.fall_anlegen({"scheibe": "ep", "veranlagungszeitraum": 2025, "fall_id": "del1"})
     assert st == 201
     return "del1"
