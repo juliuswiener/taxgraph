@@ -933,3 +933,191 @@ def test_l_unbekannte_feld_id_in_deklariere():
     # (3) Unbekanntes Feld -> vollstaendig = False (Verschärfung)
     assert ergebnis["vollstaendig"] is False, (
         f"Unbekanntes Feld muss vollstaendig auf False setzen: {ergebnis['vollstaendig']}")
+
+
+# ---- (n) Rückrichtung von (b): Bindung -> existierende Bedingung/Slot ----------
+
+# Bestandsaufnahme, kein Freibrief: geltungsbedingung/signatur_slot-Namen, die HEUTE in
+# einer bindung_*.yaml stehen, aber weder in rules.yaml (geltungsbedingungen/signature.inputs)
+# noch in der Catala-Signatur der jeweiligen Regel existieren. test_b prüft nur die Richtung
+# "jede Bedingung der Regel ist gebunden" — die Rückrichtung "jede Bindung zeigt auf eine
+# echte Bedingung/Slot" fehlte. Mutationsprobe 2026-08-07: neues Feld mit erfundener
+# geltungsbedingung hinzufügen blieb GRÜN, obwohl der Name frei erfunden war — genau so ist
+# vpf_frist_unterbrochen entstanden (gebunden an "vpf_frist_unterbrochen_erklaert", das es in
+# p9_4a_verpflegungsmehraufwand nicht gibt). Wer einen Eintrag entfernt, hat ihn korrigiert
+# (Bindung auf die echte Bedingung umgehängt) oder die Regel in rules.yaml erweitert.
+GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
+    # bindung_kap_vv_familie.yaml — p32_6_kinderfreibetraege
+    ("kap_vv_familie", "kind_idnr", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
+    ("kap_vv_familie", "kind_geburtsjahr", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
+    ("kap_vv_familie", "kind_kindschaftsverhaeltnis_a", "p32_6_kinderfreibetraege", "kindschaftsverhaeltnis_elternteil_a"),
+    ("kap_vv_familie", "kind_kindschaftsverhaeltnis_b", "p32_6_kinderfreibetraege", "kindschaftsverhaeltnis_elternteil_b"),
+    ("kap_vv_familie", "kind_kindschaftsverh_zeitraum_a", "p32_6_kinderfreibetraege", "kindschaftsverh_zeitraum_elternteil_a"),
+    ("kap_vv_familie", "kind_kindschaftsverh_zeitraum_b", "p32_6_kinderfreibetraege", "kindschaftsverh_zeitraum_elternteil_b"),
+    # bindung_n_vor_gwg.yaml — p9_4a_verpflegungsmehraufwand, p7_1_lineare_afa, p10_1_3_3a_kv_pv
+    ("n_vor_gwg", "p9_4a_kuerzung_nach_entgelt", "p9_4a_verpflegungsmehraufwand", "mahlzeitengestellung_kuerzung"),
+    ("n_vor_gwg", "vpf_frist_unterbrochen", "p9_4a_verpflegungsmehraufwand", "vpf_frist_unterbrochen_erklaert"),
+    ("n_vor_gwg", "am_afa_ist_anschaffungsjahr", "p7_1_lineare_afa", "afa_ist_anschaffungsjahr"),
+    ("n_vor_gwg", "versicherungsart", "p10_1_3_3a_kv_pv", "versicherungsart_bestimmt"),
+    # bindung_p34c_gesamt.yaml — p34c_1_anrechnung_hoechstbetrag (Bindung + Lücke, gleicher Name)
+    ("p34c_gesamt", "dba_einkunftsart", "p34c_1_anrechnung_hoechstbetrag", "methode_je_einkunftsart"),
+    ("p34c_gesamt", "[Lücke]", "p34c_1_anrechnung_hoechstbetrag", "methode_je_einkunftsart"),
+    # bindung_rentner.yaml — p22_1_leibrente_besteuerungsanteil, p16_4_freibetrag
+    ("rentner", "rentner_renten_art", "p22_1_leibrente_besteuerungsanteil", "renten_art_basis_oder_ertragsanteil"),
+    ("rentner", "rentner_alter_bei_rentenbeginn", "p22_1_leibrente_besteuerungsanteil", "ertragsanteil_alter_bei_rentenbeginn"),
+    ("rentner", "rentner_rentenfreibetrag", "p22_1_leibrente_besteuerungsanteil", "rentenfreibetrag_fixierung_folgejahr"),
+    ("rentner", "rentner_veraeusserungs_betriebsart", "p16_4_freibetrag", "veraeusserungs_betriebsart_weiche"),
+    # bindung_sonder_agb_35a.yaml — p35a_2_3_haushaltsnahe
+    ("sonder_agb_35a", "p35a_mitveranlagung", "p35a_2_3_haushaltsnahe", "mitveranlagung_faktor"),
+}
+
+# Analog: signatur_slot-Namen, die in keiner Signatur (rules.yaml inputs / Catala input) stehen.
+# Alle 13 aus derselben Regel p9_4a_verpflegungsmehraufwand + zwei aus p7_1_lineare_afa —
+# beide Scheiben liegen in bindung_n_vor_gwg.yaml.
+SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
+    # bindung_n_vor_gwg.yaml — p9_4a_verpflegungsmehraufwand (VPF-Tagesaggregate, Dreimonatsfrist)
+    ("n_vor_gwg", "vpf_fruehstuecke_gestellt_anzahl", "p9_4a_verpflegungsmehraufwand", "fruehstuecke_gestellt"),
+    ("n_vor_gwg", "vpf_mittagessen_gestellt_anzahl", "p9_4a_verpflegungsmehraufwand", "mittagessen_gestellt"),
+    ("n_vor_gwg", "vpf_abendessen_gestellt_anzahl", "p9_4a_verpflegungsmehraufwand", "abendessen_gestellt"),
+    ("n_vor_gwg", "vpf_mahlzeiten_gezahltes_entgelt", "p9_4a_verpflegungsmehraufwand", "mahlzeiten_gezahltes_entgelt"),
+    ("n_vor_gwg", "vpf_steuerfreie_erstattung_betrag", "p9_4a_verpflegungsmehraufwand", "steuerfreie_erstattung_betrag"),
+    ("n_vor_gwg", "vpf_tage_24h_nach_drei_monaten", "p9_4a_verpflegungsmehraufwand", "tage_24h_nach_frist"),
+    ("n_vor_gwg", "vpf_tage_an_abreise_nach_drei_monaten", "p9_4a_verpflegungsmehraufwand", "tage_an_abreise_nach_frist"),
+    ("n_vor_gwg", "vpf_tage_ueber_8h_nach_drei_monaten", "p9_4a_verpflegungsmehraufwand", "tage_ueber_8h_nach_frist"),
+    ("n_vor_gwg", "tage_24h", "p9_4a_verpflegungsmehraufwand", "tage_24h"),
+    ("n_vor_gwg", "tage_an_abreise", "p9_4a_verpflegungsmehraufwand", "tage_an_abreise"),
+    ("n_vor_gwg", "tage_ueber_8h_eintaegig", "p9_4a_verpflegungsmehraufwand", "tage_ueber_8h_eintaegig"),
+    # bindung_n_vor_gwg.yaml — p7_1_lineare_afa (AfA-Slots)
+    ("n_vor_gwg", "arbeitsmittel_nutzungsdauer", "p7_1_lineare_afa", "nutzungsdauer"),
+    ("n_vor_gwg", "am_anschaffung_monat", "p7_1_lineare_afa", "anschaffung_monat"),
+}
+
+
+def test_n_bindung_zeigt_auf_existierende_bedingung(daten):
+    """Rückrichtung von test_b: jede Bindung/Lücke muss auf eine ECHTE geltungsbedingung/
+    signatur_slot der Regel zeigen — nicht nur umgekehrt.
+
+    test_b prüft nur "jede Bedingung der Regel ist gebunden" (gbs - geb_gbs - lk_gbs).
+    Ein erfundener Name auf der Bindungsseite fällt dabei nie auf: er taucht ja nicht in
+    `gbs` auf, verkleinert also nichts. Mutationsprobe bestätigt das (siehe Testdatei-Header
+    von test_b_vollstaendigkeit-Nachbarschaft): neues Feld + freierfundene geltungsbedingung
+    hinzufügen bleibt GRÜN. Genau so ist vpf_frist_unterbrochen entstanden — gebunden an
+    "vpf_frist_unterbrochen_erklaert", das es in p9_4a_verpflegungsmehraufwand nicht gibt.
+
+    Regeln OHNE Ground Truth (weder rules.yaml-Eintrag noch Catala-Datei) werden übersprungen
+    und gesammelt ausgegeben — dort ist nichts prüfbar, ein Assert wäre nur Rauschen.
+    """
+    gefunden_gb, gefunden_slot, uebersprungene_regeln = _n_gefundene_verstoesse(daten, _rules())
+
+    if uebersprungene_regeln:
+        print(f"\n  [test_n] {len(uebersprungene_regeln)} Regel(n) ohne Ground Truth "
+              f"übersprungen (weder rules.yaml noch Catala): {sorted(uebersprungene_regeln)}")
+
+    neue_gb = gefunden_gb - GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE
+    neue_slot = gefunden_slot - SIGNATUR_SLOT_ZEIGT_INS_LEERE
+    assert not neue_gb, (
+        f"geltungsbedingung zeigt auf keine existierende Bedingung der Regel: {sorted(neue_gb)} "
+        "— entweder Bindung auf den echten Namen korrigieren oder Regel in rules.yaml erweitern; "
+        "kein neuer Eintrag in GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE ohne Begründung.")
+    assert not neue_slot, (
+        f"signatur_slot zeigt auf keinen existierenden Input der Regel: {sorted(neue_slot)} "
+        "— entweder Bindung auf den echten Slot-Namen korrigieren oder Signatur erweitern; "
+        "kein neuer Eintrag in SIGNATUR_SLOT_ZEIGT_INS_LEERE ohne Begründung.")
+
+    # Die Ausnahmelisten dürfen nicht verrotten: ein Eintrag, der nicht mehr gefunden wird,
+    # ist repariert (oder die Bindung ist weg) und deckt sonst still eine neue Verletzung
+    # mit demselben Namen. Erst dieser Assert macht die Liste zur Bestandsaufnahme.
+    tot_gb = GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE - gefunden_gb
+    tot_slot = SIGNATUR_SLOT_ZEIGT_INS_LEERE - gefunden_slot
+    assert not tot_gb and not tot_slot, (
+        f"Ausnahmeliste enthaelt erledigte Eintraege — bitte streichen: "
+        f"gb={sorted(tot_gb)} slot={sorted(tot_slot)}")
+
+
+def _n_gefundene_verstoesse(daten, rules):
+    """DIE Implementierung der Rückrichtung — test_n und beide Gegenproben rufen sie auf,
+    damit die Gegenproben nicht eine Zweitfassung prüfen, die von test_n abdriftet.
+
+    Liefert (gb-Verstoesse, slot-Verstoesse, uebersprungene_regel_ids). Uebersprungen wird
+    eine Regel ohne jede Ground Truth (kein rules.yaml-Eintrag, keine Catala-Datei) — dort
+    ist nichts pruefbar, ein Assert waere nur Rauschen.
+    """
+    gefunden_gb, gefunden_slot, uebersprungen = set(), set(), set()
+    for f, d in daten.items():
+        scheibe = os.path.basename(f)[len("bindung_"):-len(".yaml")]
+        bindungen = d["bindungen"]
+        luecken = d.get("luecken", [])
+        rule_ids = {b["quelle"]["regel_id"] for b in bindungen} | {l["regel_id"] for l in luecken}
+        for rid in sorted(rule_ids):
+            if rid in rules:
+                r = rules[rid]
+                sig = r.get("signature") or {}
+                inputs = set((sig.get("inputs") or {}).keys())
+                gbs = {g["bedingung"] for g in (r.get("geltungsbedingungen") or []) if "bedingung" in g}
+            else:
+                inputs = _catala_inputs(rid)
+                if not inputs and not glob.glob(os.path.join(ROOT, "rules", "estg", rid, "*.catala_en")):
+                    uebersprungen.add(rid)
+                    continue
+                gbs = set()   # Catala-Signaturen kennen keine rules.yaml-geltungsbedingungen
+            for b in bindungen:
+                if b["quelle"]["regel_id"] != rid:
+                    continue
+                q = b["quelle"]
+                if "geltungsbedingung" in q and q["geltungsbedingung"] not in gbs:
+                    gefunden_gb.add((scheibe, b["feld_id"], rid, q["geltungsbedingung"]))
+                if "signatur_slot" in q and q["signatur_slot"] not in inputs:
+                    gefunden_slot.add((scheibe, b["feld_id"], rid, q["signatur_slot"]))
+            for l in luecken:
+                if l["regel_id"] != rid:
+                    continue
+                if l.get("geltungsbedingung") and l["geltungsbedingung"] not in gbs:
+                    gefunden_gb.add((scheibe, "[Lücke]", rid, l["geltungsbedingung"]))
+                if l.get("signatur_slot") and l["signatur_slot"] not in inputs:
+                    gefunden_slot.add((scheibe, "[Lücke]", rid, l["signatur_slot"]))
+    return gefunden_gb, gefunden_slot, uebersprungen
+
+
+def _erste_bindung_mit_ground_truth(daten, rules, schluessel):
+    """Erste Bindung, deren Regel eine pruefbare Ground Truth hat — und die den geforderten
+    Schluessel fuehrt (geltungsbedingung|signatur_slot).
+
+    Wichtig fuer die Gegenproben: _n_gefundene_verstoesse UEBERSPRINGT Regeln ohne Ground
+    Truth. Eine Mutation auf bindungen[0] traf p2_festzusetzung_einzel — genau so eine
+    uebersprungene Regel — und wurde deshalb nie gemeldet. Die Gegenprobe war gruen, ohne
+    irgendetwas zu belegen. Liefert (kopiertes daten-Dict, Bindung darin).
+    """
+    for f in sorted(daten):
+        d = copy.deepcopy(daten[f])
+        for b in d["bindungen"]:
+            if b["quelle"]["regel_id"] in rules and schluessel in b["quelle"]:
+                return {f: d}, b
+    raise AssertionError(f"keine Bindung mit {schluessel} auf einer Regel mit Ground Truth gefunden")
+
+
+def test_n_gate_faengt_erfundene_geltungsbedingung(daten):
+    """Gegenprobe (Mutationsprobe 2026-08-07): eine erfundene geltungsbedingung auf einer
+    ECHTEN Bindung MUSS auffallen — sonst ist test_n nur Dekoration.
+
+    Ohne diese Probe wäre nicht belegt, dass die Rückrichtung überhaupt greift. Reales
+    Vorbild: Variante 2 der Mutationsprobe (neues Feld + erfundene Bedingung) blieb bei
+    test_b GRÜN — genauso wäre vpf_frist_unterbrochen nie aufgefallen.
+    """
+    rules = _rules()
+    d, b = _erste_bindung_mit_ground_truth(daten, rules, "geltungsbedingung")
+    b["quelle"]["geltungsbedingung"] = "zzz_frei_erfundene_geltungsbedingung"
+    gefunden_gb, _, _ = _n_gefundene_verstoesse(d, rules)
+    treffer = [e for e in gefunden_gb if e[3] == "zzz_frei_erfundene_geltungsbedingung"]
+    assert treffer, "Gegenprobe fehlgeschlagen: erfundene geltungsbedingung nicht erkannt"
+
+
+def test_n_gate_faengt_erfundenen_signatur_slot(daten):
+    """Gegenprobe (Mutationsprobe 2026-08-07): ein erfundener signatur_slot auf einer
+    ECHTEN Bindung MUSS auffallen — analog zu test_n_gate_faengt_erfundene_geltungsbedingung.
+    """
+    rules = _rules()
+    d, b = _erste_bindung_mit_ground_truth(daten, rules, "signatur_slot")
+    b["quelle"]["signatur_slot"] = "zzz_frei_erfundener_slot"
+    _, gefunden_slot, _ = _n_gefundene_verstoesse(d, rules)
+    treffer = [e for e in gefunden_slot if e[3] == "zzz_frei_erfundener_slot"]
+    assert treffer, "Gegenprobe fehlgeschlagen: erfundener signatur_slot nicht erkannt"
