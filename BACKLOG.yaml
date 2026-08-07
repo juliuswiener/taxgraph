@@ -1,6 +1,6 @@
 # TaxGraph — offene Punkte
 #
-# Stand: 2026-08-07, HEAD 5b46741, Suite 1650 passed / 4 skipped / 0 xfailed.
+# Stand: 2026-08-07, HEAD d9132aa, Suite 1653 passed / 4 skipped / 0 xfailed.
 #
 # Jeder Eintrag nennt den Beleg (Messung oder Fundstelle), nicht nur die Absicht.
 # Ein Punkt ohne Messung ist eine Vermutung und gehoert hier nicht hinein.
@@ -15,7 +15,7 @@
 
 version: 1
 stand: "2026-08-07"
-head: 5b46741
+head: d9132aa
 
 rechenluecken:
 
@@ -246,7 +246,73 @@ struktur:
          (b) dynamisch — setattr(FAELLE) auf tmp, schreiben, und auf die DATEI im
              tmp-Verzeichnis asserten (nicht auf den Roundtrip).
          Laeuft bei dev-b, Ablage tests/test_split_naht_gate.py.
+    voraussetzung_1_erledigt: |
+      2026-08-07, tests/test_split_naht_gate.py (da6eeeb, dev-b, beide Mutationen von
+      main selbst nachgemessen und per cp zurueckgesetzt, git diff --stat danach leer):
+        (a) zusaetzlicher `from os import *` in produkt/traverser/traverser.py ->
+            AssertionError: neuer ungeprüfter Star-Import:
+            [('produkt/traverser/traverser.py', 'os')]
+        (b) FAELLE per Wert statt per Attribut gehalten ->
+            AssertionError: fall_anlegen hat NICHT in .../faelle geschrieben —
+            FAELLE-Mutation kam nicht an   (2 failed, 1 passed)
+      Damit sind BEIDE Voraussetzungen erfuellt. Der Split ist nicht mehr blockiert,
+      sondern wartet nur noch auf Julius' Startwort.
     reihenfolge: "loest sys-path-zu-paketen Stufe 1 aus, blockiert sie also mit"
+
+  - id: p23-instanzen-accessor
+    titel: "§ 23 Ring crasht mit TypeError — inst['felder'] ohne .get('wert')"
+    status: offen
+    aufwand_h: 0.5
+    entdeckt: "2026-08-07"
+    messung: |
+      produkt/haut/api.py:231-236 in _p23_ansonsten_einkuenfte liest die Instanz-Felder
+      als Rohwert:
+        preis = int(inst["felder"].get("p23_veraeusserungspreis", 0)) // 100
+        ak    = int(inst["felder"].get("p23_anschaffung_herstellungskosten", 0)) // 100
+        wk    = int(inst["felder"].get("p23_werbungskosten", 0)) // 100
+      EM.instanzen() (produkt/mapping/est_mapping.py:451-481) liefert felder[fid] aber als
+      {"wert":..., "zustand":..., "herkunft":...}. int() laeuft also ueber ein dict.
+
+      Von main unabhaengig reproduziert (Direktaufruf nach ST.materialisiere(store)):
+        File ".../produkt/haut/api.py", line 234, in _p23_ansonsten_einkuenfte
+            preis = int(inst["felder"].get("p23_veraeusserungspreis", 0)) // 100
+        TypeError: int() argument must be a string, a bytes-like object or a real number,
+                   not 'dict'
+
+      Alle 13 ANDEREN inst["felder"]-Stellen in api.py machen .get(fid, {}).get("wert").
+      Nur diese drei nicht.
+    warum_nicht_gefangen: |
+      tests/test_p23_accessor.py existiert (17 passed, 1 skipped) und ist trotzdem gruen.
+      Warum, ist noch nicht beantwortet — laeuft bei dev-a als Teil des Fix-Auftrags.
+    wirkung: |
+      Blockiert die 3 p23_*-Felder in der kegel-Vollmessung. Ob ein echter Nutzer den
+      Pfad erreicht, ist NICHT gemessen — der Kegel-Guard ("input_kegel_nicht_bestaetigt")
+      greift bei den Standardfaellen vorher.
+    aufwand_begruendung: |
+      3 Zeilen Fix. Der Aufwand steckt im Nachweis, dass die Zahl danach STIMMT:
+      § 23 Abs. 3 (Preis - AK - WK) plus Freigrenze 1.000 EUR nach § 23 Abs. 3 S. 5.
+      Der Fix aendert die Rechnung — braucht Test-rot-vor-Fix und Julius' Wort.
+
+  - id: audit-jsonl-wucherung
+    titel: "produkt/haut/faelle/audit.jsonl ist 564 MB — Tests schreiben in das echte Log"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-07"
+    messung: |
+      produkt/haut/faelle/audit.jsonl: 564 MB, 4.547.549 Zeilen. Gitignored, darum nie
+      aufgefallen. Wachstum konzentriert 2026-07-27 bis 07-30.
+
+      produkt/store/audit.py:
+        AUDIT_DIR = os.environ.get("TAXGRAPH_AUDIT_DIR") or os.path.join(_HIER, "haut", "faelle")
+      6 Testdateien patchen AUDIT_DIR. Aber 7 der 9 Testdateien, die fall_anlegen
+      aufrufen, tun es NICHT — die Suite haengt also bei jedem Lauf an das echte
+      Audit-Log an. append() macht fsync pro Zeile.
+    nicht_gemessen: |
+      Wieviele Zeilen EIN Suite-Lauf anhaengt. Wieviel Laufzeit der fsync kostet.
+      Ob in der Datei echte Falldaten stehen oder nur Testmuell. Laeuft bei dev-b.
+    entscheidung_julius: |
+      Die 564-MB-Datei selbst wird NICHT angefasst, bevor Julius entschieden hat.
+      Loeschen/rotieren ist seine Entscheidung, nicht die des Agenten.
 
   - id: sys-path-zu-paketen
     titel: "sys.path-Injektion durch echte Pakete ersetzen"
@@ -370,35 +436,66 @@ test-schulden:
 
   - id: kegel-luecke-gesamt
     titel: "SCHEIBEN['gesamt']['kegel'] deckt 33 von 180 Feldern"
-    status: offen
+    status: analysiert
+    bericht: reports/adjudikation/kegel_luecke_gesamt_2026-08-07.md
     aufwand_h: null
     entdeckt: "2026-08-07"
     messung: |
-      _ring_bindung baut die Bindung fuer intervall() / bescheid_via_slots NUR aus
-      cfg["kegel"]. Ein Feld in ["felder"], das nicht im kegel steht, kann NIE eine
-      Unsicherheitsachse werden. Von 147 ausgeschlossenen Feldern erklaert der
-      dokumentierte Partnerfeld-Grund nur 21.
-      Bewegen fuenfstellige Summen und sind trotzdem draussen:
-        einkuenfte_gewinn      +83.799 EUR
-        verlustvortrag_bestand -13.568 EUR
-        agb_aufwendungen        -8.924 EUR
+      Vollmessung 2026-08-07 (d9132aa), jede Zeile mit dem Skript belegt, das sie erzeugt
+      hat. Sie ERSETZT die frueheren Schaetzzahlen dieses Eintrags vollstaendig — die
+      alten drei Werte (einkuenfte_gewinn +83.799 EUR usw.) stammten aus einer nicht
+      nachgeprueften Vormessung und sind hier gestrichen.
+
+      _ring_bindung (produkt/haut/api.py:2082) baut die Bindung fuer intervall() /
+      bescheid_via_slots NUR aus cfg["kegel"]. Ein Feld in ["felder"], das nicht im kegel
+      steht, kann NIE eine Unsicherheitsachse werden.
+
+        felder 180, kegel 33, Differenz 147
+        davon 21 Partner-Felder    -> vom Docstring-Grund gedeckt
+             126 Nicht-Partner     -> NICHT gedeckt
+        von den 126: 84 mit signatur_slot, 42 gate-only
+        gemessen 123 von 126, davon 26 mit Delta != 0, 97 mit Delta = 0
+
+      Basis: bruttoarbeitslohn 6.000.000 Cent, ledig -> BASIS_CENT 1.392.400.
+      Top-5 (Cent):
+        rentner_veraeusserungsgewinn  +4.914.000
+        betriebseinnahmen             +3.343.200
+        gewinnanteil                  +1.663.200
+        gewst_messbetrag              -1.597.600
+        verlustvortrag_bestand        -1.392.400
+      Kein einziges der Top-10 ist ein Partner-Feld.
     zwischenstand: |
       Die 13 toten Slots aus derselben Messung sind fuer die SPANNE harmlos (alle 13 sind
       in ["felder"], keiner im kegel — der Filter greift vor intervall()), aber sie bewegen
       die Steuer: tage_24h 10 -> 0 sind 16.400 ct.
-    offene_frage: "gewachsen oder begruendet? Vollmessung steht AUS."
+    offene_frage: |
+      Beantwortet fuer das OB: gewachsen, nicht begruendet — der dokumentierte
+      Partnerfeld-Grund deckt keinen der Top-10 ab.
+      Offen bleibt das WIE: welche der 26 Delta-Felder in den kegel gehoeren. Das ist
+      eine Produktentscheidung (jedes Feld im kegel ist ein Pflichtfeld im Dialog), kein
+      Messproblem mehr. -> Julius.
+    rest_nicht_gemessen: |
+      Aus Abschnitt "Nicht gemessen" des Berichts, unveraendert offen:
+        - 3 p23_*-Felder haengen an einem TypeError -> eigener Eintrag p23-instanzen-accessor
+        - ~20 Felder mit signatur_slot, Delta=0 nur MANGELS Begleitfeldern (Basis-Artefakt,
+          keine Aussage "kein Effekt")
+        - Kombinationseffekte mehrerer Nicht-Kegel-Felder gleichzeitig
+        - ob die 42 gate-only Felder ueber /stand oder /fragen doch betragsrelevant werden
     fehlversuch_2026_08_07: |
-      Ein Bericht reports/adjudikation/kegel_luecke_gesamt_2026-08-07.md wurde committet
-      (2669ddf) und wieder zurueckgenommen (5b46741). Er behauptete Messungen, die nie
-      gelaufen sind — die Delta-Liste war aus diesem BACKLOG-Eintrag abgeschrieben, die
-      Aussage "alle 147 uebrigen Felder haben Delta 0" und die Gegenprobe mit
-      einkuenfte_gewinn im kegel waren erfunden. Die Frage ist also unverandert offen.
-      Wer sie angeht: die drei Zahlen oben stammen aus dev-a's Vormessung und sind selbst
-      nicht nachgeprueft. Erst nachmessen, dann schliessen.
+      Ein erster Bericht wurde committet (2669ddf) und wieder zurueckgenommen (5b46741).
+      Er behauptete Messungen, die nie gelaufen sind. Der jetzige Bericht ist unabhaengig
+      neu gemessen; keine Zahl daraus wurde uebernommen.
 
   - id: kontoauszug-pdf-test-vergleicht-ganz-tmp
     titel: "test_pdf_base64_upload_verworfen_feld ist flaky durch Fremdprozesse"
-    status: offen
+    status: erledigt
+    erledigt_in: "c487ad0 (2026-08-07)"
+    erledigt_wie: |
+      _tmp_pdfs() filtert jetzt auf tempfile.gettempprefix() + ".pdf" — genau die Form,
+      die api.py:2552 selbst anlegt. Mutationsprobe: os.unlink(pfad) -> pass ergab
+      "Extra items in the left set: tmpx5bhkx90.pdf". Gegenprobe mit einer fremden
+      /tmp-Datei waehrend des Laufs: gruen. Der PII-Guard ist dadurch schaerfer, nicht
+      schwaecher.
     aufwand_h: 0.25
     entdeckt: "2026-08-07"
     messung: |
