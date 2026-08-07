@@ -554,7 +554,7 @@ AN_GESAMT_PARTNER = ("versicherungsart_partner", "bruttoarbeitslohn_partner", "p
 AN_GESAMT_VERPFLEGUNG = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig",
                          "vpf_tage_24h_nach_drei_monaten", "vpf_tage_an_abreise_nach_drei_monaten",
                          "vpf_tage_ueber_8h_nach_drei_monaten",
-                         "vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung", "vpf_frist_unterbrochen")
+                         "vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung", "vpf_frist_nicht_unterbrochen")
 AN_GESAMT_UEBERNACHTUNG = ("uebernachtung_kosten_monat", "uebernachtung_monate",
                           "uebernachtung_monate_bisher", "uebernachtung_im_inland",
                           "uebernachtung_auswaerts", "uebernachtung_alleinnutzung",

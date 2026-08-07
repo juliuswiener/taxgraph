@@ -1718,8 +1718,11 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                                              if (felder.get(t) or {}).get("zustand") == "bestaetigt")
                 if tage_gesamt > 0 and tage_nach_frist_gesamt == 0:
                     # monate > 3 + Tage insgesamt > 0 + ALLE nach_frist = 0 → Rückfrage
-                    frist_unterbrochen_bestaetigt = (felder.get("vpf_frist_unterbrochen") or {}).get("zustand") == "bestaetigt"
-                    if not frist_unterbrochen_bestaetigt:
+                    # Nur der ZUSTAND zaehlt, nicht der Wert: die Antwort ist eine Erklaerung,
+                    # kein Rechenparameter. Deshalb aendert die Polaritaet des Feldes die
+                    # Steuer nicht — sie steuert nur den Traverser (Gate, siehe Bindung).
+                    frist_erklaert = (felder.get("vpf_frist_nicht_unterbrochen") or {}).get("zustand") == "bestaetigt"
+                    if not frist_erklaert:
                         # Rückfrage nicht beantwortet
                         return "verpflegung_dreimonatsfrist_unterbrechung_offen"
             # Mahlzeitenkürzung (S. 8-11): fail-closed auf Eingabe. Die Frage muss beantwortet sein:

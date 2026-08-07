@@ -49,7 +49,7 @@ VERPFLEGUNG_GUARD = ("vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
 VERPFLEGUNG_KUERZUNG = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
                         "vpf_abendessen_gestellt_anzahl", "vpf_mahlzeiten_gezahltes_entgelt",
                         "vpf_steuerfreie_erstattung_betrag")
-VERPFLEGUNG_FRIST = ("vpf_frist_unterbrochen",)
+VERPFLEGUNG_FRIST = ("vpf_frist_nicht_unterbrochen",)
 
 # ========== § 10 Vorsorge ==========
 VOR_FELDER = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")

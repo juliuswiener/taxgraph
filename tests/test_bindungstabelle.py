@@ -378,7 +378,7 @@ UNERREICHBAR_BEKANNT = {
     "rentner_alter_64_erfuellt",
     # § 9 Abs. 4a Einzelreise-Slots — der Ring rechnet aus den Tages-Aggregaten
     "vpf_abwesenheit_stunden", "vpf_an_oder_abreisetag", "vpf_auswaertige_taetigkeit",
-    "vpf_keine_unterbrechung", "vpf_mit_uebernachtung",
+    "vpf_mit_uebernachtung",
 }
 
 
@@ -956,7 +956,6 @@ GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
     ("kap_vv_familie", "kind_kindschaftsverh_zeitraum_b", "p32_6_kinderfreibetraege", "kindschaftsverh_zeitraum_elternteil_b"),
     # bindung_n_vor_gwg.yaml — p9_4a_verpflegungsmehraufwand, p7_1_lineare_afa, p10_1_3_3a_kv_pv
     ("n_vor_gwg", "p9_4a_kuerzung_nach_entgelt", "p9_4a_verpflegungsmehraufwand", "mahlzeitengestellung_kuerzung"),
-    ("n_vor_gwg", "vpf_frist_unterbrochen", "p9_4a_verpflegungsmehraufwand", "vpf_frist_unterbrochen_erklaert"),
     ("n_vor_gwg", "am_afa_ist_anschaffungsjahr", "p7_1_lineare_afa", "afa_ist_anschaffungsjahr"),
     ("n_vor_gwg", "versicherungsart", "p10_1_3_3a_kv_pv", "versicherungsart_bestimmt"),
     # bindung_p34c_gesamt.yaml — p34c_1_anrechnung_hoechstbetrag (Bindung + Lücke, gleicher Name)

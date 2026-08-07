@@ -315,23 +315,12 @@ bindungen:
       quelle: "§ 9 Abs. 4a Satz 8-10 EStG"
       zitatanker: "eine Mahlzeit zur Verfügung gestellt"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
-  - feld_id: vpf_keine_unterbrechung
-    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: keine_unterbrechung_mit_neubeginn}
-    typ: bool
-    einheit: null
-    askable: true
-    vorjahr: uebernehmbar
-    fragetext_laie: "Hast du die Tätigkeit an diesem Ort für mindestens vier Wochen am Stück unterbrochen?"
-    hilfe_kurz: "Eine längere Pause setzt die Drei-Monats-Frist neu in Gang."
-    beispielwert: false
-    herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
-    vz_gueltigkeit: [2024, 2025, 2026]
-    anker_ref:
-      quelle: "§ 9 Abs. 4a Satz 7 EStG"
-      zitatanker: "Eine Unterbrechung der beruflichen Tätigkeit an derselben Tätigkeitsstätte führt zu einem Neubeginn"
-      datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  # vpf_keine_unterbrechung (S. 7, gleiche Geltungsbedingung) stand hier bis 2026-08-07 und ist
+  # gestrichen: dasselbe Tatbestandsmerkmal war zweimal gebunden, einmal hier und einmal weiter
+  # unten als vpf_frist_nicht_unterbrochen. Zwei Felder, eine Bedingung — der Nutzer haette die
+  # Unterbrechung zweimal beantworten muessen und der Traverser haette bei widerspruechlichen
+  # Antworten das strengere Gate gewinnen lassen. Das ueberlebende Feld ist das, auf das der
+  # Guard in _dhf_vpf_grund (api.py:1721) zeigt.
 
   # ===== Mahlzeitenkürzung (§ 9 Abs. 4a S. 8-11) — Accessor-Inputs für Jahres-WK-Abzug =====
   # vpf_keine_steuerfreien_erstattungen (bool) wurde zugunsten vpf_steuerfreie_erstattung_betrag (cent) entfernt:
@@ -487,15 +476,35 @@ bindungen:
   # Plausibilitäts-Frage: monate > 3 + Tage insgesamt > 0 + alle NACH_FRIST = 0 → unplausibel,
   # aber nicht unmöglich (legitimer Fall: nur in der 1. Woche gefahren, dann Unterbrechung).
   # Diese Bool-Frage bestätigt, dass die 0 Tage nach Frist tatsächlich stimmt.
-  - feld_id: vpf_frist_unterbrochen
-    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: vpf_frist_unterbrochen_erklaert}
+  #
+  # POLARITAET — bitte vor dem Umformulieren lesen. Das Feld ist ein GATE: traverser.py:96 setzt
+  # `ausgeschlossen`, sobald ein askable bool-Geltungsbedingungsfeld `false` ist. Es kommt also
+  # darauf an, welche Antwort der NORMALFALL gibt.
+  # Das Feld hiess bis 2026-08-07 vpf_frist_unterbrochen und fragte "War die Taetigkeit
+  # unterbrochen?". Der Normalfall — durchgehend am selben Ort — antwortete wahrheitsgemaess
+  # `false` und verlor damit den GESAMTEN Verpflegungsmehraufwand. Gemessen: status
+  # ausgeschlossen, 0 statt 16 offene vpf-Fragen. Genau verkehrt herum, denn S. 7 ist eine
+  # Ausnahme ZUGUNSTEN des Steuerpflichtigen: ohne Unterbrechung laeuft die Frist weiter, die
+  # Regel gilt.
+  # Jetzt nach dem Muster von uebernachtung_keine_lange_unterbrechung (§ 9 Abs. 1 S. 3 Nr. 5a
+  # S. 5, dort sechs Monate): Feldname und Frage zielen beide auf das NICHT-Unterbrochensein,
+  # Normalfall antwortet "ja", Gate bleibt offen.
+  # askable MUSS true bleiben. Der Guard in _dhf_vpf_grund (api.py:1721) sperrt mit
+  # verpflegung_dreimonatsfrist_unterbrechung_offen, solange das Feld unbeantwortet ist — als
+  # nicht-askable verschwaende die Frage aus /fragen, waehrend der Guard weiter sperrt:
+  # gemessen 2026-08-07 ein echter Deadlock, der Fall waere nicht mehr aufloesbar.
+  # Die Bindung zeigt jetzt auf keine_unterbrechung_mit_neubeginn — die Bedingung, die es in
+  # p9_4a wirklich gibt. Vorher stand hier vpf_frist_unterbrochen_erklaert, eine Bedingung, die
+  # in keiner Regel existiert (das war der Fund, aus dem test_n entstanden ist).
+  - feld_id: vpf_frist_nicht_unterbrochen
+    quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: keine_unterbrechung_mit_neubeginn}
     typ: bool
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Du warst mehr als 3 Monate am selben Ort, hast aber keine Reisetage nach Ablauf der 3 Monate angegeben. War die Tätigkeit dort zwischendurch länger unterbrochen (z.B. 4 Wochen oder mehr, ohne zu arbeiten)? Dann läuft die Frist neu an."
-    hilfe_kurz: "Bei einer Unterbrechung von mindestens 4 Wochen beginnt die Dreimonatsfrist neu. Wenn du z.B. nur in den ersten Wochen hingefahren bist und dann pausiert hast, sind keine Tage nach der Frist korrekt."
-    beispielwert: false
+    fragetext_laie: "Du warst mehr als 3 Monate am selben Ort, hast aber keine Reisetage nach Ablauf der 3 Monate angegeben. Lief die Tätigkeit dort durchgehend, ohne eine Pause von 4 Wochen oder mehr?"
+    hilfe_kurz: "Antworte mit Nein, wenn du mindestens 4 Wochen am Stück pausiert hast — dann beginnt die Dreimonatsfrist neu und deine 0 Tage nach Fristablauf sind korrekt."
+    beispielwert: true
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Bestätigungsfrage (Tatbestand); kein Betragsfeld, nicht deklariert."
