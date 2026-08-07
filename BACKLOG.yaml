@@ -214,6 +214,38 @@ struktur:
          macht und damit an einem der 6 haengt. Ohne diese Liste ist nicht
          entscheidbar, welche Namen die Fassade re-exportieren muss.
          -> Voraussetzung: Importeur-Inventar (je Global: alle from-api-Importe).
+    voraussetzung_2_erledigt: |
+      2026-08-07, reports/adjudikation/api_importeur_inventar_2026-08-07.md (dev-b,
+      von main nachgemessen). Ergebnis: 6 top-level Assigns in api.py, KEINER wird zur
+      Laufzeit neu zugewiesen, 0 global-Statements, 0 Treffer fuer `from api import
+      <name>` repo-weit. Die Fassade muss also KEINEN dieser 6 re-exportieren.
+      _AUTH_USER liegt gar nicht in api.py, sondern in api_auth.py; alle 45 Zugriffe
+      laufen als Modul-Attribut. Die aus fffd7c8 gelernte Regel ist durchgaengig
+      angewandt, nicht nur an der einen Stelle.
+    blockade_verschoben: |
+      Die Sorge aus Punkt 1 (_AUTH_USER) ist damit ENTKRAEFTET — an dieser Stelle
+      bricht der Split nicht. Der Blocker bleibt aber, weil dieselbe Fehlerklasse an
+      einer ANDEREN Stelle sitzt, die im Inventar zuerst durchgerutscht war:
+
+        api.py:43   from api_constants import *
+
+      Ein Star-Import ist eine Wert-Bindung fuer 84 Namen auf einmal. Darunter FAELLE
+      (das Fall-Store-Verzeichnis), das in 32 Testdateien 46x per
+      monkeypatch.setattr(API, "FAELLE", tmp_path) umgebogen wird — die einzige
+      api-Attribut-Patch-Stelle im ganzen Repo, dafuer die haeufigste.
+      Nach dem Split liest ein ausgelagerter api_ring seine EIGENE star-importierte
+      Kopie; setattr auf die Fassade erreicht ihn nicht mehr.
+      Im Kleinen nachgebaut (2026-08-07): Roundtrip-Assert bleibt GRUEN, das
+      tmp_path-Verzeichnis wird nie angelegt, geschrieben wird in den echten Store.
+      Der Test kann das nicht merken, weil Lesen UND Schreiben denselben falschen
+      Pfad nehmen. produkt/haut/faelle/ enthaelt 289 Fall-Dateien.
+      -> Voraussetzung 1 praezisiert: das Gate muss die STAR-IMPORT-Naht pruefen,
+         nicht die Auth-Naht. Zwei Haelften, je mit Mutationsbeweis:
+         (a) statisch — kein zweiter `from X import *` unter produkt/ (benannte
+             Ausnahmeliste fuer api.py:43, Bauart wie REGELN_OHNE_GROUND_TRUTH),
+         (b) dynamisch — setattr(FAELLE) auf tmp, schreiben, und auf die DATEI im
+             tmp-Verzeichnis asserten (nicht auf den Roundtrip).
+         Laeuft bei dev-b, Ablage tests/test_split_naht_gate.py.
     reihenfolge: "loest sys-path-zu-paketen Stufe 1 aus, blockiert sie also mit"
 
   - id: sys-path-zu-paketen
