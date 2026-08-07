@@ -9,11 +9,17 @@
 **Behauptung (Backlog):** 148 Dateien manipulieren sys.path (107 in tests/, 35 in Produktion)
 
 **Gemessen:**
-- `grep -r "sys\.path" --include="*.py" tests/ produkt/` → **133 Dateien** (exklusive `.venv`, `oracle/`)
-  - Tests: ~95 Dateien
-  - Produktion: ~38 Dateien
+```bash
+grep -rl "sys\.path" --include="*.py" tests/   | wc -l   # 123
+grep -rl "sys\.path" --include="*.py" produkt/ | wc -l   # 10
+# Total: 133 Dateien (exklusive `.venv`, `oracle/`)
+```
 
-**Abweichung:** -15 Dateien vs. Backlog-Behauptung (148). Backlog zählte wahrscheinlich `.venv`-Bibliotheken mit ein oder nutzte andere Grenzen.
+**Aufteilung:**
+- **Tests:** 123 Dateien
+- **Produktion:** 10 Dateien
+
+**Abweichung:** -15 Dateien vs. Backlog (148). Backlog zählte wahrscheinlich `.venv`-Bibliotheken oder nutzte andere Grenzen. Die 10:123-Split ist KRITISCH anders als Backlog-Behauptung "35 in Produktion".
 
 **Zählmethode:**
 ```bash
@@ -37,18 +43,45 @@ grep -r "sys\.path" --include="*.py" tests/ produkt/ 2>/dev/null | cut -d: -f1 |
 
 **Besonderheit:** `dirname_golden` ist eine Anti-Pattern (redundant komplexe Pfad-Berechnung). Könnte unified zu `golden` werden.
 
-**Summe:** 140 Dateien-Injektionen (133 unique + Überschneidungen in ~7 Dateien mehrfach pro Datei).
+**Drei Zahlen, die nicht verwechselt werden dürfen:**
+
+| Zahl | Bedeutung | Messung |
+|------|-----------|---------|
+| **133** | Dateien, die `sys.path` überhaupt erwähnen | `grep -rl "sys\.path" --include="*.py" tests/ produkt/ \| wc -l` |
+| **187** | tatsächliche `sys.path.insert`-Aufrufe (Vorkommen, nicht Dateien) | `grep -rho "sys\.path\.insert" --include="*.py" tests/ produkt/ \| wc -l` |
+| **140** | Summe der Muster-Spalte oben | 41+24+25+19+17+14 |
+
+Die Muster-Spalte zählt **Dateien pro Muster**, nicht Aufrufe. 140 > 133, weil einige Dateien
+zwei Muster gleichzeitig verwenden. Die 187 Aufrufe sind die Zahl, die beim Umbau tatsächlich
+angefasst wird — 174 in `tests/`, 13 in `produkt/`.
+
+Andere Formen als `.insert` kommen nicht vor (`sys.path.append`/`extend`: 0 Treffer).
 
 ---
 
 ## 3. Produktions-Blöcke (Nicht-Tests)
 
-**38 Dateien in produkt/**:
-- **produkt/haut/** (api.py, server.py): 5 Injektionen für lokale Module
-- **produkt/import/** (elster_xml.py, elster_writer.py, beleg_writer.py, kontoauszug_writer.py, vorjahr_writer.py): 10 Injektionen
-- **produkt/mapping/** (xsd_verify.py): 2 Injektionen
-- **produkt/konsistenz/** (preflight.py): 1 Injektion
-- **produkt/traverser/**, **produkt/store/**, etc.: verteilte einzelne Injektionen
+**10 Dateien in produkt/, 13 Aufrufe.** Vollständig, namentlich (`grep -rc 'sys\.path\.insert' --include='*.py' produkt/`):
+
+| Datei | Aufrufe |
+|-------|---------|
+| produkt/haut/server.py | 3 |
+| produkt/import/elster_xml.py | 2 |
+| produkt/mapping/xsd_verify.py | 2 |
+| produkt/haut/api.py | 1 |
+| produkt/import/beleg_writer.py | 1 |
+| produkt/import/elster_writer.py | 1 |
+| produkt/import/kontoauszug_writer.py | 1 |
+| produkt/import/vorjahr_writer.py | 1 |
+| produkt/konsistenz/preflight.py | 1 |
+| produkt/haut/api_llm.py | 0 |
+
+`api_llm.py` erscheint in der Datei-Liste, hat aber keinen eigenen Aufruf — nur einen Kommentar
+(Zeile 9: `import audit  # noqa: E402 — P1.6 Audit-Log (sys.path via api.py)`). Es erbt den Pfad
+von `api.py`. Das ist genau die Kopplung, die der Umbau beseitigen soll: eine Datei, die nur
+importierbar ist, weil eine andere vorher `sys.path` manipuliert hat.
+
+`produkt/traverser/` und `produkt/store/` tauchen NICHT auf — sie sind bereits sauber.
 
 **Muster in Produktion:**
 - Meist `os.path.join(PRODUKT, "mapping")`, `os.path.join(HERE, "store")`
@@ -122,18 +155,45 @@ tests/test_item_registry.py:17: error: Cannot find implementation or library stu
 
 | Punkt | Befund |
 |-------|--------|
-| **Anzahl Dateien** | 133 (nicht 148; -15 vs. Backlog) |
+| **Anzahl Dateien** | 133 (nicht 148; -15 vs. Backlog), 187 Aufrufe |
 | **Muster-Komplexität** | 6 Hauptmuster (mechanisch lösbar) + 1 Anti-Pattern |
-| **Produktions-Umfang** | 38 Dateien (separater, kleinerer Scope als Tests) |
+| **Produktions-Umfang** | **10 Dateien / 13 Aufrufe** — nicht 38. Die Produktion ist fast sauber. |
+| **Test-Umfang** | 123 Dateien / 174 Aufrufe = **92 % des Problems** |
 | **Package-Struktur** | HALB-vorhanden (produkt/store/ kann erweitert werden, Rest würde Neuaufbau erfordern) |
 | **mypy/pyright Blockade** | **VERIFIZIERT** — beide können sys.path-Injektionen nicht auflösen; IDE-Navigation/Rename broken |
-| **Aufwand-Schätzung** | ~3–5 Tage (133 Dateien, 6 einfache Muster → pro Muster ~20–30 Minuten × 6, plus Integration der 38 Produktions-Files) |
+
+---
+
+## 7. Folgerung: zwei unabhängige Stufen
+
+Die 10:123-Aufteilung ist der wichtigste Befund dieser Messung, weil sie den Umbau in zwei
+Vorhaben zerlegt, die **nichts miteinander zu tun haben** und einzeln entschieden werden können:
+
+**Stufe 1 — `produkt/` (10 Dateien, 13 Aufrufe).**
+Klein, aber echtes Produktionsrisiko: ein falsch aufgelöster Import bricht den Ring oder den
+Server zur Laufzeit, nicht beim Type-Check. Braucht ein Gate. Aufwand: **~0,5 Tage.**
+Reihenfolge-Hinweis: `api_llm.py` erbt seinen Pfad von `api.py` und muss mit `api.py` zusammen
+umgestellt werden, sonst ist es nach dem Schnitt nicht mehr importierbar.
+
+**Stufe 2 — `tests/` (123 Dateien, 174 Aufrufe).**
+Mechanisch, kein Produktionsrisiko. Ein Fehler zeigt sich sofort als roter Test, nicht als
+stiller Laufzeitfehler. Kann am Stück und später laufen, muster-basiert statt datei-für-datei.
+Aufwand: **~2,5–4 Tage.**
+
+Die alte Gesamtschätzung von 3–5 Tagen bleibt in Summe gültig; neu ist, dass der riskante
+Anteil davon ein halber Tag ist. Stufe 1 lohnt sich auch dann, wenn Stufe 2 nie kommt.
+
+**Abhängigkeit zum api.py-Split:** Stufe 1 fasst `api.py`, `api_llm.py` und `server.py` an —
+dieselben Dateien wie der Split. Beides gleichzeitig ist ein vermeidbares Risiko. Eins nach dem
+anderen, und der Split zuerst, weil er die Modulgrenzen festlegt, an denen sich die Importe
+danach ausrichten.
 
 ---
 
 ## Empfehlung
 
-1. **Priorität:** Nach api.py-Split, vor Paket-B (balances Risiko vs. Nutzen)
+1. **Priorität:** Stufe 1 (produkt/) nach dem api.py-Split, vor Paket-B. Stufe 2 (tests/) offen —
+   sie blockiert nichts und kann jederzeit am Stück laufen.
 2. **Strategie:** Muster-basiert (nicht datei-für-datei):
    - `loop_sub` → Zielindex-Konstante
    - `root_direct` → ROOT-Konstante zentralisieren

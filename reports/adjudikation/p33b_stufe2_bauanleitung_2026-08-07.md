@@ -88,9 +88,8 @@ def _kind_kv_pv_summe() -> int:
 | **Bindung** | bindung_sonder_agb_35a.yaml (nach agb_aufwendungen, Zeile 74+) | Neuer Eintrag: `behinderungsbedingte_aufwendungen` (cent, KEIN instanz_gruppe, askable, kein Kz, fragetext: "Davon behinderungsbedingt (Hilfe tägliche Verrichtungen, Pflege, Wäschebedarf):") |
 | **Scheibe** | api_constants.py | Neue Konstante `BEHINDERUNGSBEDINGTE_AUFWENDUNGEN = ("behinderungsbedingte_aufwendungen",)` |
 | **Scheibe** | api_constants.py | In `GESAMT_ABZUEGE` aufnehmen (nach AGB_KIST oder am Ende) |
-| **Ring-Aufruf gesamt** | api.py:~387 | Bei Kind-PB-Übertragung: `agb_bereinigt_cent = _c("agb_aufwendungen") - _c("behinderungsbedingte_aufwendungen")` (beide CENT), dann `agb_bereinigt_euro = max(0, agb_bereinigt_cent) // 100` |
-| **Ring-Aufruf gesamt** | api.py:~387 | Übergabe an catala_p33_agb: `"aussergewoehnliche_belastungen": agb_bereinigt_euro + fartkostenpauschale_euro` |
-| **Ring-Aufruf rentner** | api.py:~530+ | Analog für rentner_gesamt |
+| **Ring** | api.py:387-388, in `_shared_steuer_sonder_agb` | **EINE Stelle, nicht zwei.** Der Helfer wurde am 2026-08-06 extrahiert und wird von beiden Zweigen gerufen: L971 (gesamt) und L1459 (rentner). `_c("agb_aufwendungen") // 100` bei L388 ist die einzige agB-Senke. Bei Kind-PB-Übertragung: `agb_bereinigt_cent = _c("agb_aufwendungen") - _c("behinderungsbedingte_aufwendungen")` (beide CENT), dann `max(0, agb_bereinigt_cent) // 100` |
+| **Closure** | api.py:314 | `_kind_behinderten_pb_daten()` liegt im selben `_bescheid_fn`-Scope, ist also in `_shared_steuer_sonder_agb` sichtbar. Leere Liste = keine Übertragung = keine Kürzung. |
 | **Guard** | api.py (beide Zweige) | `if _kind_pb_uebertragen():` prüft Übertragung; fallweit agb-Kürzung macht Sinn nur, wenn Kind-PB tatsächlich übertragen wurde |
 
 ---
@@ -126,7 +125,7 @@ Muster: `{feld}_{aspekt}_offen` (siehe api_schema/ergebnis.json Zeile 15-29, z.B
 
 **Neues Feld:** `behinderungsbedingte_aufwendungen`
 - **Typ:** CENT (Integer)
-- **Instanz:** `kind` (per-Kind, wie kind_kv/kind_pv)
+- **Instanz:** KEINE — fallweit, wie `agb_aufwendungen` (siehe Frage B, Absatz "WICHTIG"). Keine `instanz_gruppe`, keine `EM.instanzen`-Schleife.
 - **askable:** true
 - **Kz:** keines (dokumentiert, Grund: "reines Rechenfeld, keine ELSTER-Bindung")
 - **Bedeutung:** "Davon"-Teilmenge von agb_aufwendungen; welcher Anteil ist behinderungsbedingt i.S.v. §33b Abs.1 S.1 (Hilfe tägliche Verrichtungen, Pflege, Wäschebedarf)?
@@ -186,8 +185,7 @@ else:
 
 - [ ] **bindung_sonder_agb_35a.yaml:** Neuer Eintrag nach agb_aufwendungen (Zeile ~86)
 - [ ] **api_constants.py:** Neue Konstante + GESAMT_ABZUEGE erweitern
-- [ ] **api.py::_bescheid_fn, gesamt-Zweig (~360):** Hilfsfunktion + Ring-Kürzung
-- [ ] **api.py::_bescheid_fn, rentner-Zweig (~530):** Analog
+- [ ] **api.py::_shared_steuer_sonder_agb (387-394):** Kürzung genau HIER, eine Stelle. Beide Zweige (L971 gesamt, L1459 rentner) gehen durch diesen Helfer — ein zweiter Eingriff im rentner-Zweig wäre ein Doppelabzug.
 - [ ] **tests/test_p10_1_3_kind_kv_pv_ring.py:** Regression (kind_kv/kind_pv addiert korrekt)
 - [ ] **tests/test_p33b_abs5_s4_ring.py** (NEU): Test mit Kind-PB + behinderungsbedingte_aufwendungen
   - Fall 1: Kind-PB übertragen, behinderungsbedingte_aufwendungen=3000 → agB gekürzt
