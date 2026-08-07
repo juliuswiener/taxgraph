@@ -1,6 +1,6 @@
 # TaxGraph — offene Punkte
 #
-# Stand: 2026-08-07, HEAD 5757829, Suite 1655 passed / 4 skipped / 0 xfailed.
+# Stand: 2026-08-08, HEAD d089195, Suite 1655 passed / 4 skipped / 0 xfailed.
 #
 # Jeder Eintrag nennt den Beleg (Messung oder Fundstelle), nicht nur die Absicht.
 # Ein Punkt ohne Messung ist eine Vermutung und gehoert hier nicht hinein.
@@ -14,8 +14,8 @@
 #   erledigt      — gebaut, gemessen, committet (erledigt_in nennt den Commit)
 
 version: 1
-stand: "2026-08-07"
-head: 5757829
+stand: "2026-08-08"
+head: d089195
 
 rechenluecken:
 
@@ -329,25 +329,61 @@ struktur:
       Der Fix aendert die Rechnung — braucht Test-rot-vor-Fix und Julius' Wort.
 
   - id: audit-jsonl-wucherung
-    titel: "produkt/haut/faelle/audit.jsonl ist 564 MB — Tests schreiben in das echte Log"
-    status: offen
-    aufwand_h: null
-    entdeckt: "2026-08-07"
+    titel: "produkt/haut/faelle/audit.jsonl ist 582 MB — Tests schreiben in das echte Log"
+    status: teil_erledigt
+    teil_erledigt_in: "d089195 (2026-08-08)"
+    teil_erledigt_wie: |
+      32 Testdateien biegen AUDIT_DIR jetzt auf tmp um, ueberall dasselbe Muster:
+        monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
+
+      Der Beweis ist die Zeilen-Differenz, nicht "Tests gruen":
+        vorher   4689786 -> nach Suite 4689790   delta = +4
+        nach Fix 4689790 -> nach Suite 4689790   delta =  0
+      Die +4 waren exakt die vier Zeilen der beiden zuletzt gefundenen Schreibpfade.
+      Von main quiescent nachgemessen: BEFORE=4689790, 1655 passed / 4 skipped, EXIT=0,
+      AFTER=4689790, DELTA=0.
+
+      Drei Faelle, die ein Grep nach dem Patch-Muster NICHT gefunden haette:
+        test_auth_naht_mutation.py   ruft _fall_owner_check direkt; zugriff_verweigert
+                                     schreibt unconditional (api.py:69)
+        test_pii_filter.py::TestLeak ruft _llm_vorschlaege ohne Patch; nur die
+                                     Schwesterklasse TestAudit patchte
+        test_fall_loeschen.py        hat ZWEI Fixtures, nur eine patchte — die anderen
+                                     9 Tests liefen ungeschuetzt
+      Umgekehrt wurde test_split_naht_gate.py falsch verdaechtigt und braucht KEINEN
+      Fix: der Audit-Call in fall_anlegen ist conditional auf _AUTH_USER is not None,
+      der Test setzt ihn auf None. Trigger-Keyword vorhanden heisst nicht, dass
+      geschrieben wird — die Datei-Ebene ist die falsche Aufloesung, es zaehlt der
+      Aufrufpfad pro Testfunktion.
     messung: |
-      produkt/haut/faelle/audit.jsonl: 564 MB, 4.547.549 Zeilen. Gitignored, darum nie
-      aufgefallen. Wachstum konzentriert 2026-07-27 bis 07-30.
+      produkt/haut/faelle/audit.jsonl: 582 MB, 4.689.790 Zeilen. Gitignored, darum nie
+      aufgefallen. Wachstum 2026-07-27 bis heute — deckt sich exakt mit dem
+      Testlauf-Zeitfenster.
 
       produkt/store/audit.py:
         AUDIT_DIR = os.environ.get("TAXGRAPH_AUDIT_DIR") or os.path.join(_HIER, "haut", "faelle")
-      6 Testdateien patchen AUDIT_DIR. Aber 7 der 9 Testdateien, die fall_anlegen
-      aufrufen, tun es NICHT — die Suite haengt also bei jedem Lauf an das echte
-      Audit-Log an. append() macht fsync pro Zeile.
+      append() macht fsync pro Zeile.
+
+      Inhalt (nur gelesen): user_id fast nur dev/testuser, fall_id u.a. p101a,
+      test_fall_id — Fixture-Namen aus dem Testcode. Bewertung: Testmuell, KEINE echten
+      Falldaten. Stichprobe 2000 Zeilen ab Kopf plus head/tail.
+    rest_offen: |
+      Regressionssperre fehlt. Ohne Gate schreibt der naechste Test, der AUDIT_DIR
+      vergisst, wieder ins echte Log — und niemand merkt es, weil die Datei gitignored
+      ist. Genau so ist sie auf 582 MB gewachsen. Laeuft bei dev-b: conftest-Autouse
+      gegen Zeilenzahl-Vergleich, mit Pflicht-Mutationsprobe (Patch entfernen -> rot
+      mit Testnamen).
+      Offene Nebenfrage: wenn die conftest-Variante traegt, koennten die 32
+      Einzelpatches zurueckgebaut werden. Nur gemessen, nicht gemacht — separater
+      Aufraeumschritt.
     nicht_gemessen: |
-      Wieviele Zeilen EIN Suite-Lauf anhaengt. Wieviel Laufzeit der fsync kostet.
-      Ob in der Datei echte Falldaten stehen oder nur Testmuell. Laeuft bei dev-b.
+      Laufzeit-Ersparnis durch den wegfallenden fsync. Die Vorher-Laeufe schwankten
+      193s/407s unter Fremdlast, die Nachher-Laeufe liegen stabil bei ~225s — das ist
+      NICHT auf fsync zurueckfuehrbar. Keine Zahl behauptet.
     entscheidung_julius: |
-      Die 564-MB-Datei selbst wird NICHT angefasst, bevor Julius entschieden hat.
-      Loeschen/rotieren ist seine Entscheidung, nicht die des Agenten.
+      Die 582-MB-Datei selbst wird NICHT angefasst. Loeschen oder rotieren ist Julius'
+      Entscheidung. Sie waechst ab jetzt nicht weiter (delta=0 gemessen), der Druck ist
+      also raus — es ist Plattenplatz, kein Datenrisiko (Testmuell, keine Falldaten).
 
   - id: sys-path-zu-paketen
     titel: "sys.path-Injektion durch echte Pakete ersetzen"
