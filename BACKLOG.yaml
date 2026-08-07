@@ -1,6 +1,6 @@
 # TaxGraph — offene Punkte
 #
-# Stand: 2026-08-07, HEAD d9132aa, Suite 1653 passed / 4 skipped / 0 xfailed.
+# Stand: 2026-08-07, HEAD 63bce6f, Suite 1655 passed / 4 skipped / 0 xfailed.
 #
 # Jeder Eintrag nennt den Beleg (Messung oder Fundstelle), nicht nur die Absicht.
 # Ein Punkt ohne Messung ist eine Vermutung und gehoert hier nicht hinein.
@@ -15,7 +15,7 @@
 
 version: 1
 stand: "2026-08-07"
-head: d9132aa
+head: 63bce6f
 
 rechenluecken:
 
@@ -261,7 +261,42 @@ struktur:
 
   - id: p23-instanzen-accessor
     titel: "§ 23 Ring crasht mit TypeError — inst['felder'] ohne .get('wert')"
-    status: offen
+    status: erledigt
+    erledigt_in: "63bce6f (2026-08-07)"
+    erledigt_wie: |
+      Es waren ZWEI Bugs an derselben Stelle, nicht einer. Beide gefixt, beide Mutationen
+      von main nachgemessen, Suite 1655 passed / 4 skipped.
+
+      (1) Der hier gemeldete TypeError: .get(fid, {}).get("wert") + isinstance-Guard,
+          Idiom der 13 anderen inst["felder"]-Stellen. Handrechnung § 23 Abs. 3
+          (200.000 - 150.000 - 5.000 = 45.000 EUR, ueber der 1.000-EUR-Freigrenze S. 5)
+          deckt sich exakt mit dem Ring.
+
+      (2) Beim Fixen gefunden und SCHWERER: nur_bestaetigt wurde entgegengenommen, aber
+          nie ausgewertet. Eine p23-Instanz im Zustand "vorlaeufig" bewegte die
+          FESTGESETZTE Steuer, als waere sie bestaetigt:
+            ohne p23                     1.392.400 ct
+            mit VORLAEUFIGER p23-Instanz 3.265.600 ct
+          18.732 EUR aus einer unbestaetigten Angabe, grund blieb "bestaetigt".
+          K2-Zwei-Signal-Verletzung, dieselbe Klasse wie
+          ring-liest-vorlaeufig-parallel-pfad-luecke.
+          Fix: `if nur_bestaetigt and inst["zustand"] != "bestaetigt": continue`.
+
+      Vollstaendigkeitspruefung: 11 EM.instanzen(-Aufrufstellen in api.py, 9 mit Filter,
+      2 Guards mit eigener Zustandspruefung. p23 war die einzige Luecke.
+
+      Warum die 12 bestehenden Tests nichts merkten: alle rufen die Catala-Funktionen
+      DIREKT mit Hand-Dicts, keiner geht ueber EM.instanzen()/Store/api.py. Die zwei neuen
+      Tests laufen den echten /fall -> /event -> /ergebnis-Pfad und asserten auf die
+      gemessene Zahl.
+    berichte:
+      - reports/adjudikation/p23_bugfix_2026-08-07.md
+      - reports/adjudikation/p23_nur_bestaetigt_2026-08-07.md
+    rest_offen: |
+      nur_bestaetigt=False-Pfad (/stand, /fragen) hat keinen eigenen Test — nur
+      nachvollzogen, dass die Bedingung symmetrisch zu den 9 anderen Stellen ist.
+      Multi-Instanz-Guard fuer p23 (wie vv_objekt/rente bei index>=2) existiert nicht;
+      falls er kommt, separat pruefen.
     aufwand_h: 0.5
     entdeckt: "2026-08-07"
     messung: |
