@@ -181,6 +181,66 @@ rechenluecken:
       harmlose Richtung. Ob es sich lohnt, haengt daran wie viele Nutzer betroffen sind —
       Produktfrage, keine Korrektheitsfrage.
 
+  - id: slot-fail-open-13568-eur
+    titel: "slots.get(name, 0) — falscher signatur_slot loescht die Steuer lautlos"
+    status: offen
+    aufwand_h: 2
+    richtung: under-tax
+    entdeckt: "2026-08-08, beim Nachmessen der p2_festzusetzung-Slot-Verstoesse"
+    bericht: reports/adjudikation/p2_festzusetzung_slot_verstoesse_2026-08-08.md
+    kein_aktueller_fehler: |
+      WICHTIG: heute rechnet das Produkt RICHTIG. Der Slot bruttoarbeitslohn ist korrekt
+      benannt, die Zahl stimmt. Das hier ist eine scharfe Kante, kein aktiver Bug —
+      aber eine, die beim naechsten Umbenennen zuschlaegt und dabei schweigt.
+    messung: |
+      produkt/haut/api.py, slot_fn von festzusetzende_est:
+        :589  "veranlagung":         slots.get("veranlagung", "einzel")
+        :592  "bruttoarbeitslohn":   int(slots.get("bruttoarbeitslohn", 0)) // 100
+        :574  "bruttoarbeitslohn_a": int(slots.get("bruttoarbeitslohn", 0)) // 100
+      .get() MIT DEFAULT. Kein KeyError moeglich — ein unbekannter Slot-Name liefert
+      still 0 bzw. "einzel". Es gibt in ganz api.py nur 2 echte slots[...]-Zugriffe
+      (:485, :743), beide fuer Werbungskosten.
+
+      Mutationsprobe, von main selbst gefahren (dev-a hatte denselben Befund; Backup
+      /tmp/slot_probe/, Rueckweg per cp, git diff --stat danach leer):
+        bindung_an_gesamt.yaml:15  signatur_slot: bruttoarbeitslohn -> bruttoarbeitslohn_x
+        60k-Basisfall, echter HTTP-/ergebnis-Pfad:
+          vorher   zahl_cent 1356800   grund "bestaetigt"
+          nachher  zahl_cent       0   grund "bestaetigt"
+      13.568 EUR verschwinden. grund bleibt "bestaetigt", offen bleibt leer, nichts
+      wird rot. Genau die Bauart von 519199e (Gate-Polaritaet) und 63bce6f
+      (vorlaeufig-Filter) — beide waren Geldfehler.
+    gate_lage: |
+      test_bindungstabelle.py: 26 passed, GRUEN. Kein Bindungs-Gate faengt es.
+      Einziger Fang im Repo: test_paket_b_e2e_http.py::test_an_gesamt_durchstich
+        assert 0 == 662900
+      Der faengt zufaellig, weil er einen harten Cent-Wert assertet — nicht weil er
+      Slot-Namen prueft. Ein neuer Slot ohne solchen E2E-Wert waere ungeschuetzt.
+    warum_niemand_es_sieht: |
+      Die Bindung nennt fuer p2_festzusetzung_zusammen 21 signatur_slots, von denen
+      KEIN EINZIGER die 6 echten Scope-Inputs trifft (bruttoarbeitslohn_a/_b,
+      werbungskosten_a/_b, sonderausgaben_gemeinsam, veranlagungszeitraum). Bei
+      _einzel trifft nur bruttoarbeitslohn. Der Rechenweg liest die Werte direkt per
+      Feld-ID und laeuft an den Slots vorbei — die Namen sind ueberwiegend
+      Dokumentation. Deshalb faellt ein falscher Name nicht auf, ausser bei den 2,
+      die wirklich gelesen werden.
+      test_n sieht nichts, weil _catala_inputs auf rules/estg/<rule_id>/ globbt und
+      dieses Verzeichnis fuer p2_festzusetzung_* nicht existiert (die Implementierung
+      liegt in rules/estg/p32a/einkommensteuertarif.catala_en:319/:382). Die Regel
+      steht deshalb in REGELN_OHNE_GROUND_TRUTH und wird uebersprungen.
+    varianten: |
+      (a) fail-closed lesen: slots["bruttoarbeitslohn"] statt slots.get(..., 0), bzw.
+          ein expliziter KeyError-Zweig. Falscher Name -> Crash statt stiller Null.
+          Klein (3 Zeilen), aber: bricht jeden Aufrufer, der den Slot legitim weglaesst.
+          Muss vorher gemessen werden, nicht angenommen.
+      (b) Gate: Test, der fuer die 2 wirklich gelesenen Slots prueft, dass Bindungs-Name
+          und slot_fn-Leser uebereinstimmen. Faengt genau diese Klasse, aendert kein
+          Produktverhalten. Klein.
+      (c) beides.
+      Empfehlung main: (b) zuerst — billig, risikolos, faengt die Klasse. (a) erst
+      nach einer Messung, welche Aufrufer den Slot weglassen duerfen.
+    entscheidung_julius: OFFEN
+
 struktur:
 
   - id: api-py-datei-split
