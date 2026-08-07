@@ -304,12 +304,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
         def _kind_kv_pv_summe() -> int:
             return 0
 
-    # §33b Abs.5 Kind-PB-Übertragung (Stufe 1, OHNE S.4-Ausschluss → benannte Lücke).
+    # §33b Abs.5 Kind-PB-Übertragung.
     # S.1: "auf Antrag ... wenn ihn das Kind nicht in Anspruch nimmt" (kumulativ).
     # S.5: kind_idnr als Voraussetzung (fail-closed wie B2).
-    # S.4: "In diesen Fällen besteht für Aufwendungen, für die der Behinderten-Pauschbetrag
-    # gilt, kein Anspruch auf eine Steuerermäßigung nach § 33" — NICHT implementiert
-    # (agb_aufwendungen ist nicht nach Aufwandsart getrennt, pauschale Kürzung = Over-tax).
+    # S.4-Ausschluss: in _shared_steuer_sonder_agb — sobald diese Funktion eine
+    # nichtleere Liste liefert, wird behinderungsbedingte_aufwendungen von
+    # agb_aufwendungen abgezogen. Getrennt statt pauschal, weil eine pauschale
+    # Kürzung von agb_aufwendungen Over-tax wäre.
     # Return: list[dict] per Kind, passend für catala_behinderten_pb / catala_hinterbliebenen_pb.
     def _kind_behinderten_pb_daten() -> list:
         if store is None:
@@ -384,8 +385,16 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                if veranlagung == "zusammen" else 0)
             + runner.catala_p10_1_7_berufsausbildung({
                 "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100}))
+        # § 33b Abs. 5 S. 4: "In diesen Fällen besteht für Aufwendungen, für die der
+        # Behinderten-Pauschbetrag gilt, kein Anspruch auf eine Steuerermäßigung nach § 33".
+        # "In diesen Fällen" = Übertragung des Kind-PB (Abs. 5 S. 1). Nur dann kürzen —
+        # der eigene PB des Steuerpflichtigen fällt unter Abs. 1 S. 1 (Wahlrecht, offen).
+        # Beide Summanden in CENT, genau eine Division am Ende.
+        agb_cent = _c("agb_aufwendungen")
+        if _kind_behinderten_pb_daten():
+            agb_cent = max(0, agb_cent - _c("behinderungsbedingte_aufwendungen"))
         g_dict["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
-            "aussergewoehnliche_belastungen": (_c("agb_aufwendungen") // 100
+            "aussergewoehnliche_belastungen": (agb_cent // 100
                 + runner.catala_p33_2a_fahrtkostenpauschale({
                     "veranlagungszeitraum": vz,
                     "hat_gdb80_oder_70g": f_dict.get("fahrtkosten_pausch_gdb80_oder_70g", {}).get("wert") is True,
@@ -948,8 +957,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                        + runner.catala_hinterbliebenen_pb({
                            "veranlagungszeitraum": vz,
                            "hat_hinterbliebenenbezuege": f.get("rentner_hinterbliebenenbezuege", {}).get("wert") is True}))
-            # §33b Abs.5 Kind-PB-Übertragung (Stufe 1, OHNE S.4 → benannte Lücke):
-            # per Kind, nur wenn Antrag + Kind-nimmt-nicht + kind_idnr (kumulativ).
+            # §33b Abs.5 Kind-PB-Übertragung: per Kind, nur wenn Antrag +
+            # Kind-nimmt-nicht + kind_idnr (kumulativ). S.4-Ausschluss greift
+            # in _shared_steuer_sonder_agb (agb_cent-Kürzung).
             # Kind-PB additiv zu Person-A/B-PB (eigener Abzugstatbestand).
             for kd in _kind_behinderten_pb_daten():
                 ausserg += runner.catala_behinderten_pb({
@@ -1332,8 +1342,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                        + runner.catala_hinterbliebenen_pb({
                            "veranlagungszeitraum": vz,
                            "hat_hinterbliebenenbezuege": _b("rentner_hinterbliebenenbezuege") is True}))
-            # §33b Abs.5 Kind-PB-Übertragung (Stufe 1, OHNE S.4 → benannte Lücke):
-            # per Kind, nur wenn Antrag + Kind-nimmt-nicht + kind_idnr (kumulativ).
+            # §33b Abs.5 Kind-PB-Übertragung: per Kind, nur wenn Antrag +
+            # Kind-nimmt-nicht + kind_idnr (kumulativ). S.4-Ausschluss greift
+            # in _shared_steuer_sonder_agb (agb_cent-Kürzung).
             for kd in _kind_behinderten_pb_daten():
                 ausserg += runner.catala_behinderten_pb({
                     "veranlagungszeitraum": vz,

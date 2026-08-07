@@ -506,6 +506,14 @@ BETRAGSFELDER_OHNE_KZ = {
     "versorgung_jahresrente",
     "vpf_mahlzeiten_gezahltes_entgelt",
     "vpf_steuerfreie_erstattung_betrag",
+
+    # Gruppe D: Kuerzungsfeld, das ELSTER per Konstruktion nicht sieht.
+    # behinderungsbedingte_aufwendungen wird VOR dem Ring von agb_aufwendungen
+    # abgezogen (§ 33b Abs. 5 S. 4, api.py _shared_steuer_sonder_agb). Uebermittelt
+    # wird in E0161804 der bereits bereinigte Betrag — ein eigenes Kz dafuer gibt es
+    # im XSD nicht und waere auch falsch, weil der Betrag nicht erklaert, sondern
+    # herausgerechnet wird.
+    "behinderungsbedingte_aufwendungen",
     "vv_erhaltungsaufwand",
     "vv_gebaeude_afa",
     "vv_schuldzinsen",

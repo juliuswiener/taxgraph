@@ -159,13 +159,16 @@ KIND_PB_UEBERTRAGUNG = ("kind_grad_der_behinderung", "kind_hilflos_blind_taubbli
                         "kind_hinterbliebenen_uebertragung",
                         "kind_behinderten_pb_antrag", "kind_pb_nicht_selbst_genutzt")
 
+# ========== § 33b Abs.5 S.4 agB-Ausschluss bei Kind-PB-Übertragung ==========
+BEHINDERUNGSBEDINGTE_AUFWENDUNGEN = ("behinderungsbedingte_aufwendungen",)
+
 # ========== § 33 Abs.2a Fahrtkostenpauschale (Person A) ==========
 FAHRTKOSTEN_PAUSCHALE = ("fahrtkosten_pausch_gdb80_oder_70g",
                          "fahrtkosten_pausch_ag_bl_tbl_h")
 
 # ========== Gefaltete Sonder-Abzüge (Weg ii) ==========
 GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
-                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST + KINDERBETREUUNG + SCHULGELD + KIND_KV_PV + KIND_PB_UEBERTRAGUNG + FAHRTKOSTEN_PAUSCHALE)
+                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST + KINDERBETREUUNG + SCHULGELD + KIND_KV_PV + KIND_PB_UEBERTRAGUNG + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN + FAHRTKOSTEN_PAUSCHALE)
 
 # ========== RENTNER_FELDER — ZWEITE ÄNDERUNG (Z.218 api.py) ==========
 RENTNER_FELDER = RENTNER_FELDER + GESAMT_ABZUEGE
@@ -440,7 +443,7 @@ __all__ = [
     # Rentner Gewinn
     "RENTNER_GEWINN", "RENTNER_KEGEL",
     # Abzüge
-    "HAUSHALT_35A_ABS23", "HAUSHALT_35A", "P35A_MITVER_ANZEIGE", "AGB_KIST", "KINDERBETREUUNG", "SCHULGELD", "KIND_KV_PV", "KIND_PB_UEBERTRAGUNG", "FAHRTKOSTEN_PAUSCHALE", "GESAMT_ABZUEGE",
+    "HAUSHALT_35A_ABS23", "HAUSHALT_35A", "P35A_MITVER_ANZEIGE", "AGB_KIST", "KINDERBETREUUNG", "SCHULGELD", "KIND_KV_PV", "KIND_PB_UEBERTRAGUNG", "BEHINDERUNGSBEDINGTE_AUFWENDUNGEN", "FAHRTKOSTEN_PAUSCHALE", "GESAMT_ABZUEGE",
     # Freibeträge
     "GESAMT_FREIBETRAEGE",
     # DBA

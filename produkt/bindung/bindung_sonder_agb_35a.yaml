@@ -83,6 +83,36 @@ bindungen:
       quelle: "§ 33 Abs. 2 S. 1 EStG"
       zitatanker: "den Umständen nach notwendig sind und einen angemessenen Betrag nicht übersteigen"
       datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
+  # § 33b Abs. 5 S. 4: Wird der Behinderten-Pauschbetrag eines Kindes auf den
+  # Steuerpflichtigen uebertragen, sind genau die Aufwendungen, die der Pauschbetrag
+  # abgilt, nicht zusaetzlich als agB nach § 33 abziehbar. agb_aufwendungen ist nicht
+  # nach Aufwandsart getrennt — deshalb dieses Feld: der behinderungsbedingte Anteil,
+  # den der Ring bei Uebertragung herausrechnet. Fallweit wie agb_aufwendungen selbst
+  # (die Uebertragung ist per Kind, die Aufwendungen sind die des Steuerpflichtigen).
+  #
+  # Gebunden als geltungsbedingung, NICHT an den agb-Slot. Grund: das Feld ist ein
+  # Subtrahend, und slot_beitrag kennt nur exakt|summand. Als zweiter "summand" am
+  # selben Slot deklariert wuerde intervall.py:188 es ADDIEREN — Vorzeichenfehler in
+  # der Unsicherheitsrechnung. Praezedenz: p9_4a_kuerzung_nach_entgelt, ebenfalls ein
+  # cent-Kuerzungsfeld an einer geltungsbedingung.
+  - feld_id: behinderungsbedingte_aufwendungen
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: kein_uebertragener_behinderten_pb_fuer_dieselben_aufwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel der oben genannten außergewöhnlichen Ausgaben entfiel auf die Behinderung — also auf Hilfe bei den täglichen Verrichtungen, auf Pflege oder auf erhöhten Wäschebedarf?"
+    hilfe_kurz: "Nur wenn du den Pauschbetrag eines Kindes auf dich überträgst. Diese Aufwendungen deckt der Pauschbetrag bereits ab, sie können nicht zusätzlich abgesetzt werden."
+    beispielwert: 100000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Reines Rechenfeld fuer die Kuerzung nach § 33b Abs. 5 S. 4. Der Wert wird nicht uebermittelt, sondern von agb_aufwendungen abgezogen; ELSTER erhaelt in E0161804 den bereits bereinigten Betrag. Ein eigenes Kz gibt es dafuer im XSD nicht."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 5 S. 4 EStG"
+      zitatanker: "In diesen Fällen besteht für Aufwendungen, für die der Behinderten-Pauschbetrag gilt, kein Anspruch auf eine Steuerermäßigung nach § 33"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
   - feld_id: agb_zwangslaeufig
     quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: agb_ist_zwangslaeufig}
     typ: bool

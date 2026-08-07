@@ -1341,6 +1341,11 @@ regeln:
     deckt_ab: zumutbare Belastung (Absatz 3) übersteigt, vom Gesamtbetrag der Einkünfte abgezogen
     quelle: § 33 Abs. 1 EStG
     beschreibung: zumutbare_belastung = Ergebnis von p33_3 (Abs. 3). Von der § 2-Integration.
+  - bedingung: kein_uebertragener_behinderten_pb_fuer_dieselben_aufwendungen
+    deckt_ab: "In diesen Fällen besteht für Aufwendungen, für die der Behinderten-Pauschbetrag gilt, kein Anspruch auf eine Steuerermäßigung nach § 33"
+    quelle: § 33b Abs. 5 Satz 4 EStG
+    datei: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    beschreibung: "Wird der Behinderten-Pauschbetrag eines Kindes auf den Steuerpflichtigen uebertragen (Abs. 5 S. 1), sind die davon abgegoltenen Aufwendungen nicht zusaetzlich als agB abziehbar. Der agb-Slot enthaelt sie nicht mehr: behinderungsbedingte_aufwendungen wird vor dem Ring von agb_aufwendungen abgezogen (api.py _shared_steuer_sonder_agb). Ohne Uebertragung greift die Bedingung nicht — der eigene Pauschbetrag des Steuerpflichtigen faellt unter das Wahlrecht in Abs. 1 S. 1 und ist offen."
   rundung: []
   signature:
     scope: AgbAbzug
