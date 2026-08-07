@@ -475,12 +475,46 @@ test-schulden:
       p19_2_versorgungsfreibetrag ist der einzige echte Rest-Kandidat, siehe unten.
       p2_einkunftsarten hat wirklich keine Ground Truth (Pseudoregel-Scope).
     offene_frage_p19_2: |
-      catala_p19_2_versorgungsfreibetrag(s: dict) existiert (golden/runner.py:916) und hat die
-      richtige Form — aber der Accessor liest FELD-IDs (versorgung_bemessungsgrundlage),
-      waehrend die Bindung SLOT-Namen fuehrt (bemessungsgrundlage). Ausserdem ruft der Ring
-      catala_einkuenfte_versorgung (inputs: ['versorgung_jahresrente']), nicht den
-      Freibetrag-Accessor. Anschliessen hiesse, eine Namensuebersetzung in den Test zu bauen —
-      das ist eine Entscheidung, keine Mechanik. Deshalb dokumentiert stehengelassen.
+      GEMESSEN 2026-08-08 (dev-a, Bericht
+      reports/adjudikation/p19_2_versorgungsfreibetrag_2026-08-07.md; main hat die
+      Geldfrage unabhaengig gegen den Gesetzestext nachgerechnet).
+      Der Punkt ist KLEINER als er hier stand: KEIN Geldfehler, reine test_n-Sichtbarkeit.
+
+      Der Namens-Mismatch besteht: Bindung fuehrt signatur_slot jahresrente/
+      bemessungsgrundlage (bindung_an_gesamt.yaml:33,51), der Accessor liest die Feld-IDs
+      versorgung_jahresrente/versorgung_bemessungsgrundlage (golden/runner.py:946-947).
+
+      Aber der Accessor ist NICHT tot. api.py:868 ruft catala_einkuenfte_versorgung, und
+      die ruft catala_p19_2_versorgungsfreibetrag intern mit demselben Feld-ID-Dict
+      (runner.py:992). Spy-Wrapper waehrend eines echten /ergebnis-Laufs: 1 Aufruf,
+      input {'versorgung_jahresrente': 30000, 'versorgung_bemessungsgrundlage': 30000,
+      'versorgung_beginn_jahr': 2005} -> 3900.
+
+      Die Zahl stimmt. Von main gegen sources/gesetze-im-internet/estg_p19_2026-07-17.txt
+      geprueft — die Kohortentabelle steht dort woertlich ("bis 2005 40,0 3 000 900"):
+        Kohorte 2005  (40.0, 3000, 900)   amtlich 40,0 / 3 000 / 900
+        Kohorte 2006  (38.4, 2880, 864)   amtlich 38,4 / 2 880 / 864
+        Kohorte 2025  (13.2,  990, 297)   amtlich 13,2 /   990 / 297
+        Kohorte 2058  ( 0.0,    0,   0)   amtlich  0,0 /     0 /   0
+      BG 30.000 / Beginn 2005 -> 3900 (= HB 3.000 + Zuschlag 900).
+      Zuschlag-Deckel nach S. 5 greift nachweislich: BG 1.000 -> 1000, nicht 1300
+      (VFB 400, Deckel 1000-400=600, Zuschlag min(900,600)=600).
+      einkuenfte_versorgung 30.000 -> 25998 (= 30000 - 3900 - 102 Pauschbetrag § 9a).
+      Differential (dev-a): dieselben 30k als Versorgung 318500 ct Steuer, als normaler
+      Bruttolohn ohne VFB 394600 ct. Der Freibetrag wirkt numerisch, kein stiller No-op.
+    anschlusskosten_p19_2: |
+      Hookup-Simulation (dev-a, _n_gefundene_verstoesse direkt aufgerufen): exakt 5 neue
+      Verstoesse, identisch egal ob Ziel catala_p19_2_versorgungsfreibetrag oder
+      catala_einkuenfte_versorgung.
+        3x geltungsbedingung — strukturell, RUNNER_ACCESSOR kennt nie geltungsbedingungen.
+                               Anwendung einer bereits getroffenen Entscheidung
+                               (Ausnahmeliste), wie bei den 2 existierenden Hookups.
+        2x signatur_slot     — der echte Naming-Mismatch. Kleine Entscheidung:
+                               Bindung umbenennen ODER Ausnahmeliste. Die Uebersetzung
+                               selbst ist mechanisch, der Weg ist die Entscheidung.
+      NICHT gemessen: ob eine Bindungs-Umbenennung andere Verbraucher der signatur_slots
+      jahresrente/bemessungsgrundlage bricht. Das muss vor der Umbenennungs-Variante
+      gegrept werden.
     aufwand_h: 1
     entdeckt: "2026-08-07 beim Bau von test_n (34198c9)"
     messung: |
