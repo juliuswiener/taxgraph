@@ -968,6 +968,14 @@ GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
     ("rentner", "rentner_veraeusserungs_betriebsart", "p16_4_freibetrag", "veraeusserungs_betriebsart_weiche"),
     # bindung_sonder_agb_35a.yaml — p35a_2_3_haushaltsnahe
     ("sonder_agb_35a", "p35a_mitveranlagung", "p35a_2_3_haushaltsnahe", "mitveranlagung_faktor"),
+    # bindung_p10_1_9_schulgeld_gesamt.yaml / bindung_p33_2a_fahrtkostenpauschale.yaml — beide Regeln
+    # haben ihre Ground Truth in golden/runner.py (RUNNER_ACCESSOR_FUER_REGEL, 2026-08-07 angebunden),
+    # kein rules.yaml-Eintrag → keine geltungsbedingungen-Liste (gbs=set()). Die drei geltungsbedingung-
+    # Lücken sind dokumentierte, im Accessor materialisierte Tatbestände (30%/2.500€-Deckel + Kind-
+    # Schulbesuch-Vorprüfung; Person-B-Kz fehlen im XSD) — kein loses Ende, nur nicht rules.yaml-prüfbar.
+    ("p10_1_9_schulgeld_gesamt", "[Lücke]", "p10_1_9_schulgeld", "dreissig_prozent_deckel_2500_je_kind"),
+    ("p10_1_9_schulgeld_gesamt", "[Lücke]", "p10_1_9_schulgeld", "kind_schulbesuch"),
+    ("p33_2a_fahrtkostenpauschale", "[Lücke]", "p33_2a_fahrtkostenpauschale", "partner_kz_fehlen"),
 }
 
 # Analog: signatur_slot-Namen, die in keiner Signatur (rules.yaml inputs / Catala input) stehen.
@@ -992,6 +1000,38 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
 }
 
 
+# Bestandsaufnahme der Regeln, die _n_gefundene_verstoesse HEUTE überspringt (weder
+# rules.yaml-Eintrag noch rules/estg/<rule_id>/*.catala_en noch RUNNER_ACCESSOR_FUER_REGEL) —
+# d.h. dort ist die Rückrichtung BLIND, nicht grün. Ohne diesen Assert wäre der Blindspot
+# unsichtbar: eine weitere übersprungene Regel würde nie auffallen. Die Liste darf NUR
+# SCHRUMPFEN (eine Regel bekommt Ground Truth angebunden → raus hier) — nie stillschweigend
+# wachsen. Neue Einträge nur bewusst, mit Grund.
+# Waren am 2026-08-07 neun; p10_1_9_schulgeld und p33_2a_fahrtkostenpauschale sind seither
+# über golden/runner.py angebunden.
+REGELN_OHNE_GROUND_TRUTH = {
+    # Catala-Scope ist schmaler als die Bindung: FestzusetzendeEstEinzel kennt 4 Inputs, die
+    # Bindung fuehrt zusaetzlich veranlagung/gewst_*/einkuenfte_gewinn (+ bei _zusammen ~34
+    # Partner-Slots). Die laufen ueber api.py:560-585, nicht durch den Scope. Ein Anschluss
+    # wuerde 5 bzw. ~39 Schein-Verstoesse erzeugen — gemessen und deshalb verworfen.
+    "p2_festzusetzung_einzel",
+    "p2_festzusetzung_zusammen",
+    # Pseudoregel-Scope, hat wirklich keine Signatur.
+    "p2_einkunftsarten",
+    # Hat einen dict-Accessor (catala_p19_2_versorgungsfreibetrag), aber der liest FELD-IDs
+    # (versorgung_bemessungsgrundlage), waehrend die Bindung SLOT-Namen fuehrt
+    # (bemessungsgrundlage). Der Ring ruft ausserdem catala_einkuenfte_versorgung, nicht den
+    # Freibetrag-Accessor direkt. Ein naiver Anschluss meldete beide Slots als Verstoss,
+    # obwohl versorgung_jahresrente live gelesen wird (api.py:822/843/860). Braucht erst eine
+    # Entscheidung, welche Namensebene die Ground Truth ist — siehe BACKLOG.
+    "p19_2_versorgungsfreibetrag",
+    # Aggregationsbruch: Kind-Achse gegen Fall-Achse.
+    "p10_1_3_kv_pv_kind",
+    "p33b_abs5_kind_uebertragung",
+    # Positionale Signatur (catala_p22_nr3_einkuenfte(betrag_cent: int)), kein dict-Parameter.
+    "p22_3_leistungen",
+}
+
+
 def test_n_bindung_zeigt_auf_existierende_bedingung(daten):
     """Rückrichtung von test_b: jede Bindung/Lücke muss auf eine ECHTE geltungsbedingung/
     signatur_slot der Regel zeigen — nicht nur umgekehrt.
@@ -1011,6 +1051,15 @@ def test_n_bindung_zeigt_auf_existierende_bedingung(daten):
     if uebersprungene_regeln:
         print(f"\n  [test_n] {len(uebersprungene_regeln)} Regel(n) ohne Ground Truth "
               f"übersprungen (weder rules.yaml noch Catala): {sorted(uebersprungene_regeln)}")
+
+    # Blindspot sichtbar machen: uebersprungene_regeln MUSS exakt REGELN_OHNE_GROUND_TRUTH sein.
+    # Beide Richtungen zählen — eine neu übersprungene Regel (Menge wächst) UND eine angebundene
+    # Regel, deren Eintrag hier nicht gestrichen wurde (Menge schrumpft nicht mit), fallen auf.
+    assert uebersprungene_regeln == REGELN_OHNE_GROUND_TRUTH, (
+        f"uebersprungene Regeln haben sich geaendert: neu={sorted(uebersprungene_regeln - REGELN_OHNE_GROUND_TRUTH)} "
+        f"nicht_mehr_uebersprungen={sorted(REGELN_OHNE_GROUND_TRUTH - uebersprungene_regeln)} "
+        "— neu uebersprungene Regel: bewusst in REGELN_OHNE_GROUND_TRUTH aufnehmen; "
+        "nicht mehr uebersprungene Regel: aus REGELN_OHNE_GROUND_TRUTH streichen (sie hat jetzt Ground Truth).")
 
     neue_gb = gefunden_gb - GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE
     neue_slot = gefunden_slot - SIGNATUR_SLOT_ZEIGT_INS_LEERE
@@ -1033,13 +1082,46 @@ def test_n_bindung_zeigt_auf_existierende_bedingung(daten):
         f"gb={sorted(tot_gb)} slot={sorted(tot_slot)}")
 
 
+GOLDEN_RUNNER_PATH = os.path.join(ROOT, "golden", "runner.py")
+
+# regel_id -> Name der golden/runner.py-Funktion, die die ECHTE Ground Truth für diese
+# Pseudoregel ist (kein rules.yaml-Eintrag, kein rules/estg/<rid>/-Dir). Nur Funktionen mit
+# einem einzigen dict-Parameter (s.get("key")/s["key"]) — positionale Signaturen (z.B.
+# p22_3_leistungen: catala_p22_nr3_einkuenfte(betrag_cent: int)) passen nicht in dieses Schema
+# und bleiben in REGELN_OHNE_GROUND_TRUTH.
+RUNNER_ACCESSOR_FUER_REGEL = {
+    "p10_1_9_schulgeld": "catala_p10_1_9_schulgeld",
+    "p33_2a_fahrtkostenpauschale": "catala_p33_2a_fahrtkostenpauschale",
+}
+
+
+def _runner_dict_inputs(func_name):
+    """dict-Keys, die eine golden/runner.py-Funktion mit EINEM dict-Parameter liest
+    (s.get("key", ...) / s["key"]) — AST-basiert, kein Regex-Bleeding über Funktionsgrenzen."""
+    tree = ast.parse(open(GOLDEN_RUNNER_PATH, encoding="utf-8").read())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == func_name:
+            arg0 = node.args.args[0].arg
+            keys = set()
+            for n in ast.walk(node):
+                if (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "get"
+                        and isinstance(n.func.value, ast.Name) and n.func.value.id == arg0
+                        and n.args and isinstance(n.args[0], ast.Constant)):
+                    keys.add(n.args[0].value)
+                if (isinstance(n, ast.Subscript) and isinstance(n.value, ast.Name) and n.value.id == arg0
+                        and isinstance(n.slice, ast.Constant)):
+                    keys.add(n.slice.value)
+            return keys
+    raise AssertionError(f"golden/runner.py: Funktion {func_name} nicht gefunden")
+
+
 def _n_gefundene_verstoesse(daten, rules):
     """DIE Implementierung der Rückrichtung — test_n und beide Gegenproben rufen sie auf,
     damit die Gegenproben nicht eine Zweitfassung prüfen, die von test_n abdriftet.
 
     Liefert (gb-Verstoesse, slot-Verstoesse, uebersprungene_regel_ids). Uebersprungen wird
-    eine Regel ohne jede Ground Truth (kein rules.yaml-Eintrag, keine Catala-Datei) — dort
-    ist nichts pruefbar, ein Assert waere nur Rauschen.
+    eine Regel ohne jede Ground Truth (kein rules.yaml-Eintrag, keine Catala-Datei, kein
+    RUNNER_ACCESSOR_FUER_REGEL-Eintrag) — dort ist nichts pruefbar, ein Assert waere nur Rauschen.
     """
     gefunden_gb, gefunden_slot, uebersprungen = set(), set(), set()
     for f, d in daten.items():
@@ -1053,6 +1135,9 @@ def _n_gefundene_verstoesse(daten, rules):
                 sig = r.get("signature") or {}
                 inputs = set((sig.get("inputs") or {}).keys())
                 gbs = {g["bedingung"] for g in (r.get("geltungsbedingungen") or []) if "bedingung" in g}
+            elif rid in RUNNER_ACCESSOR_FUER_REGEL:
+                inputs = _runner_dict_inputs(RUNNER_ACCESSOR_FUER_REGEL[rid])
+                gbs = set()   # golden/runner.py kennt keine rules.yaml-geltungsbedingungen
             else:
                 inputs = _catala_inputs(rid)
                 if not inputs and not glob.glob(os.path.join(ROOT, "rules", "estg", rid, "*.catala_en")):
