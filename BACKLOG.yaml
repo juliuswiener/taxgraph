@@ -562,16 +562,32 @@ test-schulden:
       _an_gesamt_sperrgrund (api.py:1930/1948) prueft inst["zustand"] != "bestaetigt"
       unbedingt -> grund="vv_instanz_offen"/"rente_instanz_offen", zahl_cent=None.
       Fail-closed, gemeldet. KEIN Bug.
-      Von main unabhaengig nachgemessen fuer vv_objekt index 2: grund="vv_instanz_offen",
-      zahl_cent=None. rente index 2 laeuft noch bei dev-a.
+      Beide Zusatz-Instanzen einzeln gemessen: vv_objekt index 2 (von main)
+      grund="vv_instanz_offen", zahl_cent=None. rente index 2 in rentner_gesamt (dev-a,
+      echte Werte aus der test_p3_vor_partner-Fixture) grund="rente_instanz_offen",
+      zahl_cent=None, stand.ring_gesperrt="rente_instanz_offen".
 
       Klasse C — gwg, alle drei kind-Aufrufer, p23: kein Kegel-Gate, kein Sperrgrund.
       Der Filter tut, was er soll (die Zahl bleibt korrekt), aber nichts in der Antwort
-      sagt, dass eine Nutzereingabe ignoriert wurde. Gemessen fuer gwg, kinderbetreuung
-      und p23 direkt — in allen drei Faellen identisch zur Referenz "Feld fehlt komplett":
-        grund   "bestaetigt"
-        zahl    1392400 ct
-        offen   []
+      sagt, dass eine Nutzereingabe ignoriert wurde. Alle 6 Klasse-C-Funktionen einzeln
+      gemessen, je dreifach — Referenz ohne Feld / vorlaeufig / bestaetigt:
+
+        _schulgeld_summe            1392400 / 1392400 / 1359200   (D = 33200 ct)
+        _kind_kv_pv_summe           1392400 / 1392400 / 1336300   (D = 56100 ct)
+        _kind_behinderten_pb_daten  1392400 / 1392400 / 1311400   (D = 81000 ct)
+
+      Die bestaetigt-Kontrolle ist der Punkt: ohne sie belegt "gleich wie Referenz" nur,
+      dass das Feld folgenlos ist — nicht, dass ein Filter greift. Der Delta beweist, dass
+      das Feld sehr wohl wirkt, wenn es bestaetigt ist. grund bleibt in allen Faellen
+      "bestaetigt", offen bleibt [].
+      main hat die schulgeld-Zeile unabhaengig nachgerechnet und exakt reproduziert.
+
+      Es gibt KEINE fuenfte Klasse-C-Stelle. Die Vermutung, die gesamt-Scheibe koenne
+      wegen multi_rente=None eine ungeschuetzte rente-Zusatz-Instanz aufnehmen, ist
+      widerlegt: event() lehnt rentner_jahresrente__2 in gesamt mit
+      ApiError "feld_id 'rentner_jahresrente__2' nicht in dieser Scheibe" ab, weil die
+      RENTNER_22-Kernfelder gar nicht in der gesamt-Bindung stehen (api.py:2197).
+      Von dev-a gemessen, von main unabhaengig nachgestellt.
     wirkung: |
       Kein Geldfehler — die Zahl ist nach dem p23-Fix korrekt. Der Schaden ist
       Vertrauensschaden: der Nutzer traegt etwas ein, sieht es in /fragen, und die

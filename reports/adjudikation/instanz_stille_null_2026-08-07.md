@@ -21,9 +21,10 @@ verglichen mit derselben Referenz ohne das Feld.
 | vv_objekt (Basis-Instanz, index 1) | Kegel-Pflichtfeld selbst | `input_kegel_nicht_bestaetigt` | None | **nein — gesperrt** | ja | None (aber `grund` zeigt Blockade) |
 | rente (Basis-Instanz, index 1, `rentner_gesamt`) | Kegel-Pflichtfeld selbst | `input_kegel_nicht_bestaetigt` | None | **nein — gesperrt** | (nicht separat geprüft, Muster identisch zu vv_objekt) | — |
 | vv_objekt (Zusatz-Instanz, index ≥2) | `_an_gesamt_sperrgrund` → `vv_instanz_offen` | `vv_instanz_offen` | None | **nein — gesperrt** | ja | `vv_instanz_offen` |
-| rente (Zusatz-Instanz, index ≥2) | `_an_gesamt_sperrgrund` → `rente_instanz_offen` | (nicht separat gemessen — identischer Code-Pfad wie vv_objekt, s.u.) | — | erwartet: gesperrt | — | — |
-| kind (weitere Kind-Felder: KV/PV, Behinderten-PB) | `_kind_kv_pv_summe`, `_kind_behinderten_pb_daten` | (nicht separat gemessen — identischer Code-Pfad wie `kinderbetreuungskosten`, gleiche Gruppe `kind`, gleiches Filter-Idiom) | — | erwartet: stille Null | — | — |
-| kind (schulgeld) | `_schulgeld_summe` | (nicht separat gemessen — identischer Code-Pfad) | — | erwartet: stille Null | — | — |
+| rente (Zusatz-Instanz, index ≥2) | `_an_gesamt_sperrgrund` → `rente_instanz_offen` | **gemessen 2026-08-07**: `rente_instanz_offen` | None | **nein — gesperrt** | (Muster identisch zu vv_objekt, bestätigt) | `rente_instanz_offen` |
+| kind (KV/PV) | `_kind_kv_pv_summe` | **gemessen 2026-08-07**: `bestaetigt` | 1392400 | **ja — stille Null** | (nicht separat geprüft, `/fragen`-Mechanismus identisch zu kinderbetreuungskosten) | None |
+| kind (Behinderten-PB-Übertragung) | `_kind_behinderten_pb_daten` | **gemessen 2026-08-07**: `bestaetigt` | 1392400 | **ja — stille Null** | (dito) | None |
+| kind (schulgeld) | `_schulgeld_summe` | **gemessen 2026-08-07**: `bestaetigt` | 1392400 | **ja — stille Null** | (dito) | None |
 
 **Kernbefund:** Es gibt ZWEI strukturell verschiedene Klassen unter den 9 Stellen, keine
 einheitliche Lücke:
@@ -40,18 +41,36 @@ einheitliche Lücke:
   (alle drei kind-Aufrufer), p23**: KEIN Sperrgrund-Mechanismus geprüft diese Gruppen. Die
   vorläufige Instanz wird von der Summe übersprungen (Filter tut, was er soll — Zahl bleibt
   korrekt), aber `grund` bleibt `"bestaetigt"` und nichts in der `/ergebnis`-Antwort zeigt an,
-  dass eine Eingabe des Nutzers ignoriert wurde. **Das ist die "stille Null" — real, für
-  gwg + alle kind-Aufrufer + p23 (4 von 9 Stellen, aber strukturell dieselbe Ursache: keine
-  dieser Gruppen hat ein Kegel- oder `_an_gesamt_sperrgrund`-Gate).**
+  dass eine Eingabe des Nutzers ignoriert wurde. **Das ist die "stille Null" — jetzt für ALLE
+  6 Klasse-C-Funktionen einzeln gemessen und bestätigt: `_gwg_sofortabzug_summe`,
+  `_kinderbetreuung_summe`, `_schulgeld_summe`, `_kind_kv_pv_summe`,
+  `_kind_behinderten_pb_daten`, `_p23_ansonsten_einkuenfte` (letztere strukturell stille
+  Null nach dem heutigen Zahl-Fix — keine dieser Gruppen hat ein Kegel- oder
+  `_an_gesamt_sperrgrund`-Gate).**
 
-Gemessen wurden gwg, kinderbetreuungskosten, p23 direkt (3 von 4 Klasse-C-Vertretern) sowie
-vv_objekt Basis + Zusatz-Instanz und rente-Basis-Instanz. Die restlichen Klasse-C-Aufrufer
-(`_kind_kv_pv_summe`, `_kind_behinderten_pb_daten`, `_schulgeld_summe`) und die rente-
-Zusatz-Instanz wurden NICHT einzeln durchgemessen — identischer Code-Pfad (`kind`-Gruppe
-teilt sich EINEN `EM.instanzen(store, bindung, "kind")`-Aufruf pro Funktion, gleiches Filter-
-Idiom; rente-Zusatz-Instanz nutzt exakt denselben `_an_gesamt_sperrgrund`-Code wie
-vv_objekt, nur andere Feldliste `RENTNER_22`). Siehe „Nicht gemessen" für die genaue
-Abgrenzung.
+Gemessen (2026-08-07, alle mit Referenz-ohne-Feld / vorläufig / bestätigt-Kontrolle
+nebeneinander — Kontrolle beweist, dass das Feld bei Bestätigung tatsächlich Δ hat, damit
+„gleich wie Referenz" nicht durch Wirkungslosigkeit vorgetäuscht wird):
+- `_kind_kv_pv_summe` (60k€-Basisfall, `kind_idnr="99988877766"`, `kind_kv=100000`,
+  `kind_pv=50000`): Referenz `1392400`, vorläufig `1392400` (**stille Null**), bestätigt
+  `1336300` (Δ = 56100 ct — Kontrolle wirkt).
+- `_kind_behinderten_pb_daten` (`kind_idnr`, `kind_behinderten_pb_antrag=True`,
+  `kind_pb_nicht_selbst_genutzt=True`, `kind_grad_der_behinderung=80`): Referenz `1392400`,
+  vorläufig `1392400` (**stille Null**), bestätigt `1311400` (Δ = 81000 ct — Kontrolle wirkt).
+- `_schulgeld_summe` (`schulgeld=300000`, kein `kind_idnr` nötig): Referenz `1392400`,
+  vorläufig `1392400` (**stille Null**), bestätigt `1359200` (Δ = 33200 ct — Kontrolle
+  wirkt).
+- rente-Zusatz-Instanz (`rentner_gesamt`, vollständige 2. Instanz mit allen 4 RENTNER_22-
+  Feldern, `zustand="vorlaeufig"`): `grund="rente_instanz_offen"`, `zahl_cent=None`,
+  `stand.ring_gesperrt="rente_instanz_offen"` — bestätigt Klasse B, fail-closed, symmetrisch
+  zu vv_objekt.
+
+Damit sind alle 4 zuvor offenen Zeilen aus der ursprünglichen Tabelle geschlossen. Keine
+davon war ein neuer Bug derselben Klasse wie p23 — bei allen dreien (b)-(d) unterscheidet
+sich `vorläufig` NICHT von der Referenz (stille Null bestätigt, kein Fließen), und die
+Kontrolle (bestätigt) zeigt in allen drei Fällen einen echten, plausiblen Δ, also greift
+der `nur_bestaetigt`-Filter tatsächlich numerisch korrekt — die einzige Lücke bleibt das
+Schweigen der `/ergebnis`-Antwort (`grund`/`offen`), nicht die Zahl selbst.
 
 ## 2. Existiert bereits ein Mechanismus?
 
@@ -127,6 +146,29 @@ Entscheidung „gwg ist OPTIONAL → KEIN Sperr-Gate", macht die stille Null sic
 bestehende Additiv-Philosophie der drei Klasse-C-Gruppen zu brechen. Aber: Entscheidung liegt
 bei Julius, nicht bei mir — nur als Bewertungshilfe genannt.
 
+## 3a. Fünfte Klasse-C-Stelle? `SCHEIBEN["gesamt"]` + rente-Felder — geprüft, verneint
+
+Main's offene Frage: `gesamt` führt `multi_rente=None`, hat aber rente-artige Feldnamen im
+`felder`-Superset (`versorgung_jahresrente` u.ä.); nur `rentner_gesamt` setzt
+`multi_rente="rente"`. Kann in `gesamt` trotzdem eine rente-Zusatz-Instanz (`<feld>__2`)
+angelegt werden, und greift dann ein Guard?
+
+Gemessen (`API.event(fid, laie("rentner_jahresrente__2", 1200000, "vorlaeufig"))` gegen
+einen `gesamt`-Fall):
+```
+api.ApiError: feld_id 'rentner_jahresrente__2' nicht in dieser Scheibe
+```
+`event()` (api.py:2183-2222) prüft `fid` gegen die SCHEIBEN-gebundene `_scheibe_bindung(store)`
+— `rentner_jahresrente` (und alle 4 RENTNER_22-Kernfelder) sind in `gesamt`'s Bindung gar nicht
+enthalten (bestätigt per Introspektion von `SCHEIBEN["gesamt"]["felder"]`). Der Schreib-
+Endpunkt selbst blockt den Versuch, BEVOR irgendeine Ring-/Instanz-Logik läuft — es kann in
+`gesamt` keine rente-Instanz je entstehen.
+
+**Antwort: NEIN, keine fünfte Klasse-C-Stelle.** Die 12 rente-artigen Feldnamen, die main in
+`gesamt`s Kegel/Felder gesehen hat, sind keine RENTNER_22-Kernfelder und tragen keinen
+`instanz_gruppe="rente"`-Eintrag in dieser Scheibe — sie sind einzelne Skalarfelder, keine
+Instanz-Gruppe. Die Klasse-C-Liste bleibt bei 6 Funktionen (s. Abschnitt 1).
+
 ## 4. Bestätigt: KEIN Problem bei vv_objekt und rente (Klasse A + B)
 
 Wie in Abschnitt 1/2 gemessen: beide haben einen greifenden, gemeldeten Sperrgrund. Punkt 4
@@ -144,22 +186,23 @@ Befehl: `timeout 500 python3 -m pytest -q`
 Exit-Code: 0. Identisch zur Referenz (1655/4) — keine Code-Änderung in diesem Auftrag, also
 keine Verschiebung erwartet und keine gemessen.
 
+**Nachtrag-Gate (nach den Messungen (a)-(d) + 5.-Stelle-Frage, immer noch KEIN Code
+geändert):**
+```
+1655 passed, 4 skipped, 1 warning in 226.13s (0:03:46)
+```
+Exit-Code: 0. Identisch — bestätigt, dass keine der Messungen (reine `/tmp`-Skripte gegen
+`API.FAELLE`-Tempdir) Produktcode berührt hat.
+
 ## Nicht gemessen
 
-1. **`_kind_kv_pv_summe`, `_kind_behinderten_pb_daten`, `_schulgeld_summe`** einzeln — nicht
-   separat durchgemessen; teilen sich mit `_kinderbetreuung_summe` dieselbe `EM.instanzen(store,
-   bindung, "kind")`-Quelle und dasselbe Filter-Idiom. Die Kern-Aussage (stille Null, kein
-   Sperrgrund) gilt strukturell identisch, aber jede hat einen eigenen Rechenpfad
-   (Kinder-KV/PV-Beiträge bzw. Behinderten-Pauschbetrag-Datenliste) — eine eigene Zahl wurde
-   nicht gemessen.
-2. **rente-Zusatz-Instanz (index ≥2) in `rentner_gesamt`** — nicht einzeln nachgemessen (nur
-   die Basis-Instanz und der vv_objekt-Zusatz-Fall). Code-Pfad in `_an_gesamt_sperrgrund` ist
-   strukturell identisch zu vv_objekt (`cfg["multi_rente"]`, gleiche `if inst["index"] >= 2 and
-   (... or inst["zustand"] != "bestaetigt")`-Bedingung), daher hohe Zuversicht, aber nicht
-   verifiziert.
-3. **Kombinierte Fälle** (z.B. zwei Klasse-C-Gruppen gleichzeitig vorläufig) — nicht geprüft,
+Die 4 Punkte aus der ursprünglichen Liste (`_kind_kv_pv_summe`, `_kind_behinderten_pb_daten`,
+`_schulgeld_summe`, rente-Zusatz-Instanz) sind mit diesem Nachtrag geschlossen — s. Abschnitt 1
+und 3a. Verbleibend:
+
+1. **Kombinierte Fälle** (z.B. zwei Klasse-C-Gruppen gleichzeitig vorläufig) — nicht geprüft,
    Auftrag verlangte Gruppe-für-Gruppe.
-4. **Wie sich (a)/(b)/(c) auf bestehende Tests auswirken würden** — reine Messaufgabe, keine
+2. **Wie sich (a)/(b)/(c) auf bestehende Tests auswirken würden** — reine Messaufgabe, keine
    Implementierung versucht, also auch keine Kompatibilitätsprüfung mit den 9 bestehenden
    nur_bestaetigt-Tests.
 
