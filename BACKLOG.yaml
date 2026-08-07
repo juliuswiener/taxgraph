@@ -1,6 +1,6 @@
 # TaxGraph — offene Punkte
 #
-# Stand: 2026-08-07, HEAD 35c3c54, Suite 1644 passed / 4 skipped / 0 xfailed.
+# Stand: 2026-08-07, HEAD 519199e, Suite 1649 passed / 4 skipped / 0 xfailed.
 #
 # Jeder Eintrag nennt den Beleg (Messung oder Fundstelle), nicht nur die Absicht.
 # Ein Punkt ohne Messung ist eine Vermutung und gehoert hier nicht hinein.
@@ -15,7 +15,7 @@
 
 version: 1
 stand: "2026-08-07"
-head: 35c3c54
+head: 519199e
 
 rechenluecken:
 
@@ -124,7 +124,8 @@ rechenluecken:
 
   - id: vpf-frist-null-plausibilitaet
     titel: "§ 9 Abs. 4a S. 6/7 — >3 Monate erklaert, aber 0 Tage nach Frist"
-    status: entschieden
+    status: erledigt
+    erledigt_in: "519199e (2026-08-07)"
     aufwand_h: 1.5
     richtung: under-tax
     entdeckt: "2026-08-07, als Nebenbefund beim Schliessen von vpf-dreimonatsfrist"
@@ -143,6 +144,31 @@ rechenluecken:
       Bool-Feld vpf_frist_unterbrochen (askable, fallweit), Sperrgrund solange
       unbeantwortet. Die Antwort ist eine Bestaetigung, kein Rechenparameter —
       sie aendert das Ergebnis nicht, sie holt die Erklaerung ein.
+    gebaut_2026_08_07: |
+      Guard steht (api.py:1721, Sperrgrund verpflegung_dreimonatsfrist_unterbrechung_offen),
+      das Feld heisst aber vpf_frist_NICHT_unterbrochen. Grund: der erste Entwurf hatte die
+      Gate-Polaritaet verdreht.
+      Ein askable bool an einer geltungsbedingung ist ein GATE — traverser.py:96 setzt
+      `ausgeschlossen`, sobald es `false` ist. Die Frage lautete "War die Taetigkeit
+      unterbrochen?", also antwortete der NORMALFALL wahrheitsgemaess `false` und verlor den
+      gesamten Verpflegungsmehraufwand. Gemessen:
+        unbeantwortet -> unentschieden,  16 offene vpf-Fragen
+        false         -> ausgeschlossen,  0 offene vpf-Fragen
+        true          -> relevant,       15 offene vpf-Fragen
+      S. 7 ist eine Ausnahme ZUGUNSTEN des Steuerpflichtigen und taugt so nicht als Gate.
+      Muster uebernommen von uebernachtung_keine_lange_unterbrechung (§ 9 Abs. 1 S. 3 Nr. 5a
+      S. 5): Name und Frage zielen aufs Nicht-Unterbrochensein, Normalfall antwortet "ja".
+      Verworfene Alternative: askable: false. Schliesst die Polaritaetsfalle, oeffnet aber
+      einen Deadlock — der Guard liest das Feld direkt und sperrt weiter, waehrend
+      naechste_fragen es nicht mehr anbietet. Gemessen, jetzt als Test festgehalten.
+      Zwei Nebenbefunde mit erledigt: die Bindung zeigte auf die nicht existierende Bedingung
+      vpf_frist_unterbrochen_erklaert, und vpf_keine_unterbrechung band dasselbe
+      Tatbestandsmerkmal ein zweites Mal an dieselbe Bedingung.
+    lehre: |
+      Ein askable bool an einer geltungsbedingung ist IMMER ein Gate. Vor dem Formulieren der
+      Frage pruefen: welche Antwort gibt der Normalfall, und heisst diese Antwort "Regel gilt"?
+      Wenn die Norm eine Ausnahme ZUGUNSTEN des Steuerpflichtigen ist, muss die Frage negiert
+      werden, sonst schliesst der Normalfall die Regel aus.
 
   - id: p32d-q-auslandssteuer
     titel: "§ 32d Abs. 1 S. 5 — q (anrechenbare auslaendische Steuer) ist fest 0"
@@ -254,3 +280,66 @@ test-schulden:
       BEWUSST nicht geschaerft (a3b154d, 7b83905 haben die 10 schaerfbaren erledigt).
       Bei § 32b-Progression ueber mehrere Tarifstufen ist das Fenster die richtige Form,
       nicht die bequeme. Nur anfassen, wenn jemand einen exakten Wert herleiten kann.
+
+  - id: test-n-blindstelle-ohne-ground-truth
+    titel: "Rueckrichtungs-Gate ueberspringt 9 Regeln still"
+    status: offen
+    aufwand_h: 2
+    entdeckt: "2026-08-07 beim Bau von test_n (34198c9)"
+    messung: |
+      test_n_bindung_zeigt_auf_existierende_bedingung braucht eine Ground Truth pro Regel
+      (rules.yaml-signature oder Catala-inputs). 9 Regeln haben keine und werden
+      UEBERSPRUNGEN, ohne dass irgendetwas rot wird.
+      Repo-weit: 33 geltungsbedingung- und 50 signatur_slot-Verstoesse. Das Gate faengt
+      17 + 13 (die Ausnahmelisten). Der Rest liegt in den uebersprungenen Regeln.
+    davon_reparierbar: |
+      8 von 9 sind anschliessbar (gemessen):
+        p2_festzusetzung_einzel / _zusammen  -> rules/estg/p32a/einkommensteuertarif.catala_en:319 / :382
+        p10_1_9_schulgeld / p33_2a_fahrtkostenpauschale -> exakter Match in golden/runner.py
+        p10_1_3_kv_pv_kind / p33b_abs5_kind_uebertragung -> Aggregationsbruch (Kind- vs Fallachse)
+        p22_3_leistungen -> positionales int
+      Nur p2_einkunftsarten hat wirklich keine (Pseudoregel-Scope).
+    plan: |
+      Sichtbarkeit ZUERST: `uebersprungen` gegen eine explizite Konstante asserten, in beide
+      Richtungen (neue uebersprungene Regel rot, reparierte Regel auch rot) — gleiche Bauart
+      wie der tot_gb/tot_slot-Assert. Danach Regel fuer Regel anschliessen, jede mit
+      Mutationsbeweis. Laeuft bei dev-b.
+    warum_wichtig: |
+      Ein Gate, das still ueberspringt, liest sich wie volle Deckung. Genau die Bauart, die
+      vpf_frist_unterbrochen_erklaert jahrelang unentdeckt liess.
+
+  - id: kegel-luecke-gesamt
+    titel: "SCHEIBEN['gesamt']['kegel'] deckt 33 von 180 Feldern"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-07"
+    messung: |
+      _ring_bindung baut die Bindung fuer intervall() / bescheid_via_slots NUR aus
+      cfg["kegel"]. Ein Feld in ["felder"], das nicht im kegel steht, kann NIE eine
+      Unsicherheitsachse werden. Von 147 ausgeschlossenen Feldern erklaert der
+      dokumentierte Partnerfeld-Grund nur 21.
+      Bewegen fuenfstellige Summen und sind trotzdem draussen:
+        einkuenfte_gewinn      +83.799 EUR
+        verlustvortrag_bestand -13.568 EUR
+        agb_aufwendungen        -8.924 EUR
+    zwischenstand: |
+      Die 13 toten Slots aus derselben Messung sind fuer die SPANNE harmlos (alle 13 sind
+      in ["felder"], keiner im kegel — der Filter greift vor intervall()), aber sie bewegen
+      die Steuer: tage_24h 10 -> 0 sind 16.400 ct.
+    offene_frage: "gewachsen oder begruendet? Vollmessung laeuft bei dev-a."
+
+  - id: kontoauszug-pdf-test-vergleicht-ganz-tmp
+    titel: "test_pdf_base64_upload_verworfen_feld ist flaky durch Fremdprozesse"
+    status: offen
+    aufwand_h: 0.25
+    entdeckt: "2026-08-07"
+    messung: |
+      Der Test macht os.listdir(tempfile.gettempdir()) vor und nach dem Call und verlangt
+      `nach - vor == set()`. Er sieht damit JEDEN Fremdprozess, der waehrenddessen etwas in
+      /tmp anlegt. Einmal rot mit:
+        AssertionError: assert {'go-build2607090677'} == set()
+      Ein paralleler Go-Compiler, nicht der Kontoauszug-Endpunkt. Danach 3x hintereinander
+      gruen, auf HEAD ohne Aenderungen ebenfalls gruen.
+    fix: |
+      Statt ganz /tmp zu vergleichen nur auf das Praefix filtern, das der Endpunkt selbst
+      benutzt. Der PII-Leck-Guard bleibt damit erhalten und wird sogar schaerfer.
