@@ -1,6 +1,6 @@
 # TaxGraph — offene Punkte
 #
-# Stand: 2026-08-07, HEAD 519199e, Suite 1649 passed / 4 skipped / 0 xfailed.
+# Stand: 2026-08-07, HEAD 5b46741, Suite 1650 passed / 4 skipped / 0 xfailed.
 #
 # Jeder Eintrag nennt den Beleg (Messung oder Fundstelle), nicht nur die Absicht.
 # Ein Punkt ohne Messung ist eine Vermutung und gehoert hier nicht hinein.
@@ -15,7 +15,7 @@
 
 version: 1
 stand: "2026-08-07"
-head: 519199e
+head: 5b46741
 
 rechenluecken:
 
@@ -283,8 +283,36 @@ test-schulden:
 
   - id: test-n-blindstelle-ohne-ground-truth
     titel: "Rueckrichtungs-Gate ueberspringt 9 Regeln still"
-    status: offen
-    aufwand_h: 2
+    status: teil_erledigt
+    teil_erledigt_in: "0469d38 (2026-08-07)"
+    teil_erledigt_wie: |
+      Sichtbarkeit steht: uebersprungene_regeln wird gegen die Konstante
+      REGELN_OHNE_GROUND_TRUTH geassertet, in BEIDE Richtungen (neu uebersprungen rot,
+      angebunden-aber-nicht-gestrichen rot). Mutationsprobe belegt: Eintrag entfernen
+      -> rot mit Namen p22_3_leistungen.
+      Angebunden wurden 2 von 8: p10_1_9_schulgeld und p33_2a_fahrtkostenpauschale ueber
+      RUNNER_ACCESSOR_FUER_REGEL + AST-Leser _runner_dict_inputs (golden/runner.py).
+      Mutationsprobe: Eintrag entfernen -> rot mit Namen p10_1_9_schulgeld.
+      Liste damit 9 -> 7. Suite 1650 gruen.
+    rest_offen: |
+      5 der 7 sind mit Grund drin und brauchen erst eine Entscheidung, keinen Anschluss:
+        p2_festzusetzung_einzel/_zusammen  Catala-Scope ist SCHMALER als die Bindung
+                                          (4 Inputs vs +veranlagung/gewst_*/einkuenfte_gewinn,
+                                          bei _zusammen ~34 Partner-Slots). Naiver Anschluss
+                                          erzeugt 5 bzw. ~39 Schein-Verstoesse — gemessen,
+                                          deshalb verworfen.
+        p10_1_3_kv_pv_kind / p33b_abs5_kind_uebertragung  Aggregationsbruch Kind- vs Fallachse.
+        p22_3_leistungen                  positionale Signatur (betrag_cent: int), kein dict.
+      p19_2_versorgungsfreibetrag ist der einzige echte Rest-Kandidat, siehe unten.
+      p2_einkunftsarten hat wirklich keine Ground Truth (Pseudoregel-Scope).
+    offene_frage_p19_2: |
+      catala_p19_2_versorgungsfreibetrag(s: dict) existiert (golden/runner.py:916) und hat die
+      richtige Form — aber der Accessor liest FELD-IDs (versorgung_bemessungsgrundlage),
+      waehrend die Bindung SLOT-Namen fuehrt (bemessungsgrundlage). Ausserdem ruft der Ring
+      catala_einkuenfte_versorgung (inputs: ['versorgung_jahresrente']), nicht den
+      Freibetrag-Accessor. Anschliessen hiesse, eine Namensuebersetzung in den Test zu bauen —
+      das ist eine Entscheidung, keine Mechanik. Deshalb dokumentiert stehengelassen.
+    aufwand_h: 1
     entdeckt: "2026-08-07 beim Bau von test_n (34198c9)"
     messung: |
       test_n_bindung_zeigt_auf_existierende_bedingung braucht eine Ground Truth pro Regel
@@ -326,7 +354,15 @@ test-schulden:
       Die 13 toten Slots aus derselben Messung sind fuer die SPANNE harmlos (alle 13 sind
       in ["felder"], keiner im kegel — der Filter greift vor intervall()), aber sie bewegen
       die Steuer: tage_24h 10 -> 0 sind 16.400 ct.
-    offene_frage: "gewachsen oder begruendet? Vollmessung laeuft bei dev-a."
+    offene_frage: "gewachsen oder begruendet? Vollmessung steht AUS."
+    fehlversuch_2026_08_07: |
+      Ein Bericht reports/adjudikation/kegel_luecke_gesamt_2026-08-07.md wurde committet
+      (2669ddf) und wieder zurueckgenommen (5b46741). Er behauptete Messungen, die nie
+      gelaufen sind — die Delta-Liste war aus diesem BACKLOG-Eintrag abgeschrieben, die
+      Aussage "alle 147 uebrigen Felder haben Delta 0" und die Gegenprobe mit
+      einkuenfte_gewinn im kegel waren erfunden. Die Frage ist also unverandert offen.
+      Wer sie angeht: die drei Zahlen oben stammen aus dev-a's Vormessung und sind selbst
+      nicht nachgeprueft. Erst nachmessen, dann schliessen.
 
   - id: kontoauszug-pdf-test-vergleicht-ganz-tmp
     titel: "test_pdf_base64_upload_verworfen_feld ist flaky durch Fremdprozesse"
