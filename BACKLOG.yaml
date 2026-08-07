@@ -15,7 +15,7 @@
 
 version: 1
 stand: "2026-08-08"
-head: d089195
+head: 86b3d4a
 
 rechenluecken:
 
@@ -330,9 +330,9 @@ struktur:
 
   - id: audit-jsonl-wucherung
     titel: "produkt/haut/faelle/audit.jsonl ist 582 MB — Tests schreiben in das echte Log"
-    status: teil_erledigt
-    teil_erledigt_in: "d089195 (2026-08-08)"
-    teil_erledigt_wie: |
+    status: erledigt
+    erledigt_in: "d089195 + 52db438 (2026-08-08)"
+    erledigt_wie: |
       32 Testdateien biegen AUDIT_DIR jetzt auf tmp um, ueberall dasselbe Muster:
         monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
 
@@ -367,15 +367,29 @@ struktur:
       Inhalt (nur gelesen): user_id fast nur dev/testuser, fall_id u.a. p101a,
       test_fall_id — Fixture-Namen aus dem Testcode. Bewertung: Testmuell, KEINE echten
       Falldaten. Stichprobe 2000 Zeilen ab Kopf plus head/tail.
+    regressionssperre: |
+      tests/conftest.py, autouse-Fixture, committed in 52db438. Misst
+      os.path.getsize der echten Datei vor/nach JEDEM Test; waechst sie, faellt der
+      Test mit seiner eigenen nodeid in der Meldung.
+
+      Warum Dateigroesse und nicht Grep nach dem Patch-Muster: die drei Faelle oben,
+      die den Fix noetig machten, waren fuer einen Grep unsichtbar. Das Gate misst den
+      echten Schreibpfad pro Test, nicht ein Namensmuster.
+      Warum getsize und nicht Zeilenzahl: O(1) stat() statt die 582-MB-Datei 1655x
+      einzulesen.
+
+      Mutationsprobe (main, selbst gelaufen — nicht von dev-b uebernommen):
+      AUDIT_DIR-Patch aus der fall-Fixture in test_fall_loeschen.py entfernt
+      (Backup via cp, danach zurueckkopiert, git diff --stat leer) ->
+        assert 610186167 == 610186020   (tests/conftest.py:40)
+      plus 7 namentlich genannte ERRORs. Das Gate faengt.
+
+      GATE mit conftest drin: 1655 passed, 4 skipped in 531.80s, Exit 0.
+      audit.jsonl 4689797 -> 4689797 (Delta 0).
     rest_offen: |
-      Regressionssperre fehlt. Ohne Gate schreibt der naechste Test, der AUDIT_DIR
-      vergisst, wieder ins echte Log — und niemand merkt es, weil die Datei gitignored
-      ist. Genau so ist sie auf 582 MB gewachsen. Laeuft bei dev-b: conftest-Autouse
-      gegen Zeilenzahl-Vergleich, mit Pflicht-Mutationsprobe (Patch entfernen -> rot
-      mit Testnamen).
-      Offene Nebenfrage: wenn die conftest-Variante traegt, koennten die 32
-      Einzelpatches zurueckgebaut werden. Nur gemessen, nicht gemacht — separater
-      Aufraeumschritt.
+      Nur noch ein Aufraeumschritt, kein Risiko: da das conftest-Gate traegt, koennten
+      die 32 Einzelpatches zurueckgebaut werden. Nicht gemacht, nicht gemessen —
+      Doppelabsicherung schadet nicht, der Rueckbau waere reine Kosmetik.
     nicht_gemessen: |
       Laufzeit-Ersparnis durch den wegfallenden fsync. Die Vorher-Laeufe schwankten
       193s/407s unter Fremdlast, die Nachher-Laeufe liegen stabil bei ~225s — das ist
@@ -512,17 +526,63 @@ test-schulden:
         2x signatur_slot     — der echte Naming-Mismatch. Kleine Entscheidung:
                                Bindung umbenennen ODER Ausnahmeliste. Die Uebersetzung
                                selbst ist mechanisch, der Weg ist die Entscheidung.
-      NICHT gemessen: ob eine Bindungs-Umbenennung andere Verbraucher der signatur_slots
-      jahresrente/bemessungsgrundlage bricht. Das muss vor der Umbenennungs-Variante
-      gegrept werden.
+      Verbraucher-Frage GEMESSEN 2026-08-08 (dev-a, Bericht
+      reports/adjudikation/p19_2_signatur_slot_naming_2026-08-08.md, 86b3d4a):
+        bemessungsgrundlage  genau 1 Treffer (bindung_an_gesamt.yaml:51). Der Near-Miss
+                             bemessungsgrundlage_durchschnitt ist ein unabhaengiges
+                             §2-Ring-Output-Feld, kein Konflikt.
+        jahresrente          ECHTE Namenskollision (p19_2 in bindung_an_gesamt.yaml:33
+                             vs p22_1 in bindung_rentner.yaml:13) — aber FOLGENLOS:
+                             keiner der beiden Rechenwege liest seinen Slot ueber den
+                             generischen Mechanismus. p19_2 laeuft ueber Feld-IDs
+                             (api.py:829-873), p22_1 ueber _ci() in _rente_instanz();
+                             die umschliessende slot_fn (api.py:1315-1628) enthaelt
+                             null slots[...]-Zugriffe.
+        Einziger echter Rechen-Konsument von signatur_slot ueberhaupt:
+        intervall.py:185 (bescheid_via_slots). Die anderen drei sind Kommentar,
+        Trace-Echo und Schluessel-Praesenz — nicht wertabhaengig.
+        Kz-Naht sauber: versorgung_jahresrente hat elster_kz: null, die Kz-Vergabe
+        laeuft ueber b["elster_kz"] bzw. die versorgung_art-Weiche, nie ueber den
+        Slot-Namen.
+      Damit kostet Umbenennen 2 YAML-Zeilen. Die Entscheidung "umbenennen vs
+      Ausnahmeliste" bleibt reine Stilfrage — Praezedenz p7_1_lineare_afa liegt vor.
+      NICHT nachgeprueft von main: die Konsumenten-Tabelle und die Kz-Naht selbst
+      (Negativbefunde, folgenlos solange nichts umbenannt wird). Wird die Umbenennung
+      beschlossen, gehoeren beide vorher nachgemessen.
     aufwand_h: 1
     entdeckt: "2026-08-07 beim Bau von test_n (34198c9)"
     messung: |
       test_n_bindung_zeigt_auf_existierende_bedingung braucht eine Ground Truth pro Regel
       (rules.yaml-signature oder Catala-inputs). 9 Regeln haben keine und werden
       UEBERSPRUNGEN, ohne dass irgendetwas rot wird.
-      Repo-weit: 33 geltungsbedingung- und 50 signatur_slot-Verstoesse. Das Gate faengt
-      17 + 13 (die Ausnahmelisten). Der Rest liegt in den uebersprungenen Regeln.
+
+      NEUMESSUNG 2026-08-08 (dev-a, von main unabhaengig reproduziert — eigenes Skript,
+      alle 8 regel_id-Zeilen und beide Summen deckungsgleich). Sie ERSETZT die alten
+      Zahlen "33 / 50 / 17+13" dieses Feldes:
+        aktueller Gate-Zustand:  gb=19  slot=13  uebersprungen=7
+        ohne Skip (Simulation):  gb=41  slot=49
+      gb=19 statt 17, weil 0469d38 die Ausnahmeliste durch die 2 Hookups vergroessert
+      hat. slot 49 statt 50: Differenz von 1 nicht rekonstruiert, andere Ursprungs-
+      methodik der historischen Messung — offen benannt, nicht weggerechnet.
+
+      Verteilung der 49 slot-Verstoesse nach regel_id:
+        p2_festzusetzung_zusammen        21   Catala-Scope schmaler als Bindung
+        p9_4a_verpflegungsmehraufwand    11   bewusste Ring-Zusatz-Inputs (34198c9), gelistet
+        p2_festzusetzung_einzel           7   dieselbe Ursache wie oben
+        p19_2_versorgungsfreibetrag       2   echter Naming-Mismatch, NEU
+        p10_1_3_kv_pv_kind                2   Kind- vs Fallachse
+        p33b_abs5_kind_uebertragung       2   Kind- vs Fallachse
+        p22_3_leistungen                  2   positionale Signatur
+        p7_1_lineare_afa                  2   Naming-Mismatch, bereits gelistet (Praezedenz)
+      KEIN systematisches Muster: ~5 klar verschiedene Ursachen, davon 39 von 49 bereits
+      dokumentiert. p19_2 ist der einzige neue Fall einer schon geloesten Klasse — keine
+      neue Fallklasse.
+
+      OFFEN daraus: die 28 Verstoesse von p2_festzusetzung_zusammen/_einzel (57 %) sind
+      mit "Catala-Scope schmaler" nur BESCHRIEBEN, nicht geprueft. "Scope ist schmaler"
+      und "der AST-Parser findet die Inputs nicht" sehen im Testergebnis identisch aus,
+      sind aber verschiedene Befunde — und es ist der zentrale Festsetzungspfad. Als
+      Messauftrag bei dev-a.
     davon_reparierbar: |
       8 von 9 sind anschliessbar (gemessen):
         p2_festzusetzung_einzel / _zusammen  -> rules/estg/p32a/einkommensteuertarif.catala_en:319 / :382
