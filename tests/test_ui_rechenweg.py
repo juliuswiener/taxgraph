@@ -369,3 +369,53 @@ def test_rechenweg_bestaetigt_ohne_kette(base, playwright_context):
         assert scroll <= 360, f"scrollWidth={scroll} > 360"
     finally:
         page.close()
+
+
+def test_ergebnis_hinweis_offen_bei_stiller_null(base, playwright_context):
+    """stille-null-klasse-c (Variante b): grund=bestaetigt, zahl_cent gilt, aber eine vorlaeufige
+    p23-Instanz steht in offen -> UI muss den Hinweis im Erfolgs-Zweig zeigen (nicht nur im
+    guard-Zweig, wo r.offen vorher schon gerendert wurde)."""
+    page = playwright_context.new_page()
+    try:
+        fid = _einfachen_fall_anlegen(base, "rw-hinweis-offen")
+        for feld, wert in [
+            ("p23_veraeusserungspreis", 20000000),
+            ("p23_anschaffung_herstellungskosten", 15000000),
+            ("p23_werbungskosten", 500000),
+            ("p23_veraeusserungs_typ", "grundstueck"),
+        ]:
+            ev = _laie(feld, wert)
+            ev["zustand"] = "vorlaeufig"
+            ev["signal"] = {"signal_1": None, "signal_2": None}
+            _req(base, "POST", f"/fall/{fid}/event", ev)
+
+        s, ergebnis = _req(base, "GET", f"/fall/{fid}/ergebnis")
+        assert s == 200
+        assert ergebnis["grund"] == "bestaetigt", ergebnis
+        assert ergebnis["zahl_cent"] is not None, "Zahl muss trotz stiller Null stehen"
+        assert "p23_veraeusserungspreis" in ergebnis["offen"], ergebnis["offen"]
+
+        page.goto(base)
+        page.wait_for_load_state("networkidle")
+        page.evaluate(f"FALL = '{fid}';")
+        page.evaluate("document.getElementById('start').hidden = true;")
+        page.evaluate("document.getElementById('flow').hidden = false;")
+        page.evaluate("(async () => { await zeigeErgebnis(); })();")
+        page.wait_for_selector("#ergebnis .ergebnis-hinweis-offen", timeout=5000)
+
+        # Zahl bleibt im Erfolgs-Zweig sichtbar (kein Guard-Umschalten)
+        klasse = page.evaluate("document.getElementById('ergebnis').className")
+        assert klasse == "ergebnis", f"Erfolgs-Zweig erwartet, war: {klasse}"
+        zahl = page.query_selector("#ergebnis .erg-zahl")
+        assert zahl is not None and zahl.text_content().strip(), "Zahl fehlt trotz stiller Null"
+
+        hinweis_text = page.evaluate(
+            "document.querySelector('#ergebnis .ergebnis-hinweis-offen').textContent")
+        assert "p23_veraeusserungspreis" in hinweis_text, hinweis_text
+        assert "nicht" in hinweis_text.lower(), hinweis_text
+
+        # Kein horizontales Scrollen
+        scroll = page.evaluate("document.documentElement.scrollWidth")
+        assert scroll <= 360, f"scrollWidth={scroll} > 360"
+    finally:
+        page.close()

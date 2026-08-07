@@ -2270,11 +2270,21 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
                      "grund": grund, "offen": sorted(offen), "trace": None}
     zahl, solz, extras = result
     trace = TR.trace_ergebnis(store, bindung, snapshot_id=sid)
+    # Klasse-C "stille Null" (BACKLOG stille-null-klasse-c, Variante b): gwg/kind/p23_veraeusserung
+    # sind reine additive Σ-Funktionen OHNE Kegel-/Sperrgrund-Gate (anders als vv_objekt/rente) — ihr
+    # nur_bestaetigt-Filter laesst eine vorlaeufige Instanz korrekt aus der Zahl raus (Zahl bleibt
+    # richtig), meldet das aber nirgends. Hinweis statt Sperre: grund bleibt "bestaetigt", zahl_cent
+    # bleibt die gefilterte Zahl, offen listet die Basis-Feld-IDs der vorlaeufigen Instanzen.
+    offen_c = sorted({
+        fid for gruppe in ("gwg", "kind", "p23_veraeusserung")
+        for inst in EM.instanzen(store, bindung, gruppe)
+        for fid, fw in inst["felder"].items() if fw.get("zustand") != "bestaetigt"
+    })
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": zahl,
                  "solz_cent": solz, "kist_cent": extras.get("kist_cent"),
                  "mobilitaetspraemie_cent": extras.get("mobilitaetspraemie_cent"),
                  "abschlusszahlung_cent": _abschlusszahlung_cent(felder, zahl),
-                 "grund": "bestaetigt", "offen": [], "trace": trace,
+                 "grund": "bestaetigt", "offen": offen_c, "trace": trace,
                  "kette": extras.get("kette")}
 
 

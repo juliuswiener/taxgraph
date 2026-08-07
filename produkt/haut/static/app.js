@@ -435,6 +435,15 @@ async function zeigeErgebnis() {
   } else {
     el.className = "ergebnis";
     el.innerHTML = `<span class="erg-zahl">${euro(r.zahl_cent)}</span><span class="erg-label">festzusetzende Einkommensteuer</span>`;
+    // stille-null-klasse-c (Variante b): grund bleibt "bestaetigt", zahl_cent gilt — aber offen listet
+    // Felder aus vorlaeufigen Zusatz-Instanzen (gwg/kind/p23), die NICHT in der Zahl stecken. Hinweis,
+    // keine Sperre — anderer Stil als ergebnis-guard (der ist rot/blockierend, das hier ist informativ).
+    if ((r.offen || []).length) {
+      const hinweis = document.createElement("p");
+      hinweis.className = "ergebnis-hinweis-offen";
+      hinweis.textContent = "Diese Angaben sind noch nicht bestätigt und in der Zahl NICHT enthalten: " + r.offen.join(", ");
+      el.appendChild(hinweis);
+    }
     // P5.4 Rechenweg-Kette — Stufen-Liste aus r.kette (vier EURO-Werte, zwei Delta-Zeilen dazwischen)
     const rw = $("rechenweg");
     const tb = $("rechenweg-tabelle");
