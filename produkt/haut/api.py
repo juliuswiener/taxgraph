@@ -260,7 +260,7 @@ def _p23_ansonsten_einkuenfte(f: dict, store: dict | None, bindung: dict | None,
 
 def _oepnv_eur(slots: dict) -> int:
     """oepnv_kosten_jahr Naht-CENT -> EURO (Store liefert Cent, EP_FELDER-Runner-Accessor erwartet Euro)."""
-    return int(slots.get("oepnv_kosten_jahr", 0)) // 100
+    return int(slots["oepnv_kosten_jahr"]) // 100
 
 
 def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None,
@@ -460,10 +460,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
 
         def slot_fn(slots: dict) -> int:
             s = {"veranlagungszeitraum": int(vz),
-                 "arbeitstage": int(slots.get("arbeitstage", 0)),
-                 "entfernung_km_roh": int(slots.get("entfernung_km_roh", 0)),
+                 "arbeitstage": int(slots["arbeitstage"]),
+                 "entfernung_km_roh": int(slots["entfernung_km_roh"]),
                  "oepnv_kosten_jahr": _oepnv_eur(slots),
-                 "eigenes_oder_ueberlassenes_kfz": bool(slots.get("eigenes_oder_ueberlassenes_kfz", False))}
+                 "eigenes_oder_ueberlassenes_kfz": bool(slots["eigenes_oder_ueberlassenes_kfz"])}
             return runner.catala_entfernungspauschale(s)
 
         return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="abziehbarer_betrag")
@@ -571,7 +571,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss_partner", {}).get("wert") is True})
                 est = runner.catala_est_zusammen({
                     "veranlagungszeitraum": vz,
-                    "bruttoarbeitslohn_a": int(slots.get("bruttoarbeitslohn", 0)) // 100,
+                    "bruttoarbeitslohn_a": int(slots["bruttoarbeitslohn"]) // 100,
                     "bruttoarbeitslohn_b": _cent("bruttoarbeitslohn_partner") // 100,
                     "werbungskosten_a": wk, "werbungskosten_b": 0,
                     "sonderausgaben_gemeinsam": kv_pv_a + kv_pv_b})
@@ -587,9 +587,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                                              "vorsorge_ag_anteil_steuerfrei": ag}, vz) + kv_pv_a
                 est = runner.catala_est({
                     "veranlagungszeitraum": vz,
-                    "veranlagung": slots.get("veranlagung", "einzel"),
+                    "veranlagung": slots["veranlagung"],
                     # bruttoarbeitslohn ist Naht-CENT (Bindung typ:cent) -> catala_est erwartet EURO.
-                    "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,
+                    "bruttoarbeitslohn": int(slots["bruttoarbeitslohn"]) // 100,
                     "werbungskosten": wk,
                     "sonderausgaben": so})
             # SolZ §3, §4 SolzG: Basis = festzusetzende ESt (kein KiFB/§32d-Kapital im AN-Ring)
@@ -609,18 +609,18 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # Ehegatte-S.3 + doppelter GFB, S.2 Hs.2). Ohne Entfernung → kein § 101 (Feld absent →
             # mobilitaetspraemie_cent bleibt None). Prämie zahlt nur bei zvE < GFB (Accessor: 0 sonst).
             if (extras is not None and not zusammen
-                    and int(slots.get("entfernung_km_roh", 0)) > 0):
+                    and int(slots["entfernung_km_roh"]) > 0):
                 ep_ab_21 = runner.catala_ep_ab_21km({
                     "veranlagungszeitraum": vz,
-                    "arbeitstage": int(slots.get("arbeitstage", 0)),
-                    "entfernung_km_roh": int(slots.get("entfernung_km_roh", 0)),
-                    "eigenes_oder_ueberlassenes_kfz": bool(slots.get("eigenes_oder_ueberlassenes_kfz", False)),
+                    "arbeitstage": int(slots["arbeitstage"]),
+                    "entfernung_km_roh": int(slots["entfernung_km_roh"]),
+                    "eigenes_oder_ueberlassenes_kfz": bool(slots["eigenes_oder_ueberlassenes_kfz"]),
                     "oepnv_kosten_jahr": _oepnv_eur(slots)})
                 extras["mobilitaetspraemie_cent"] = runner.catala_p101_mobilitaetspraemie_cent({
                     "entfernungspauschale_ab_21km": ep_ab_21,
                     "zu_versteuerndes_einkommen": runner.catala_est_einzel_zve({
                         "veranlagungszeitraum": vz,
-                        "bruttoarbeitslohn": int(slots.get("bruttoarbeitslohn", 0)) // 100,
+                        "bruttoarbeitslohn": int(slots["bruttoarbeitslohn"]) // 100,
                         "werbungskosten": wk, "sonderausgaben": so}),
                     "grundfreibetrag": runner.catala_grundfreibetrag(vz),
                     "ist_arbeitnehmer": True,                 # § 101 S. 3 (AN-Pauschbetrag-soweit)
@@ -731,7 +731,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             else:
                 vv = _vv_objekt(f)
             g = {"gesamtfall": True, "veranlagungszeitraum": vz,
-                 "veranlagung": slots.get("veranlagung", "einzel"),
+                 "veranlagung": slots["veranlagung"],
                  "einkuenfte_vermietung": vv}
             # kombiniert §19+§21: Bruttolohn im Kegel -> §19-Einkünfte (§9a-bereinigt, § 2 Abs. 2 Nr. 2)
             # als einkuenfte_nichtselbststaendig in die §-2-Summe; der §21-Verlust mindert dann den
@@ -843,7 +843,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     alters_gate_erfuellt = False
             # Gate entscheidet über Behandlung: erfüllt → VFB-Weg (102€ Pauschbetrag Nr. 1b),
             # nicht erfüllt → Arbeitslohn-Weg (1.230€ Pauschbetrag Nr. 1a).
-            bruttoarbeitslohn_basis = int(slots.get("bruttoarbeitslohn", 0)) // 100   # Naht-CENT -> EURO
+            bruttoarbeitslohn_basis = int(slots["bruttoarbeitslohn"]) // 100   # Naht-CENT -> EURO
             if versorgung_jahresrente_cent > 0 and versorgung_bemessungsgrundlage_cent > 0 and versorgung_beginn_jahr > 0:
                 if not alters_gate_erfuellt:
                     # Gate nicht erfüllt: Bezüge als normale Arbeitseinkünfte (§ 19 Abs. 1) addieren.

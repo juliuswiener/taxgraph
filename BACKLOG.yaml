@@ -270,10 +270,10 @@ rechenluecken:
       niemand, und kein Finanzamt findet es. Nur nachrangig gemessen, nicht geringer
       gewichtet.
     entscheidung_julius: |
-      OFFEN — (b) ist gebaut. Offen bleibt (a), fail-closed lesen.
-      Empfehlung main unveraendert "noch nicht" — erst dev-b's laufende Messung, welche
-      Slots real jemals fehlen. Slots ohne realen Miss koennen danach ohne
-      Verhaltensaenderung fail-closed werden.
+      OFFEN — (b) ist gebaut. Messung variante (a) abgeschlossen: kein echter Miss bei
+      irgendeinem der 6 Slots (siehe Bericht). Alle 6 Slots koennen auf slots[name]
+      umgestellt werden ohne Verhaltensaenderung im Normalbetrieb.
+      Einziger Effekt: zukünftige Bindungsfehler werfen KeyError statt stillen Default.
 
 struktur:
 
