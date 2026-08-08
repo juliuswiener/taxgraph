@@ -239,7 +239,41 @@ rechenluecken:
       (c) beides.
       Empfehlung main: (b) zuerst — billig, risikolos, faengt die Klasse. (a) erst
       nach einer Messung, welche Aufrufer den Slot weglassen duerfen.
-    entscheidung_julius: OFFEN
+    stand_b_erledigt: |
+      (b) GEBAUT, 2026-08-08. tests/test_slot_fn_reader_existiert.py, 3 Tests,
+      scheibengenau: fuer jede quantitaet (= genau eine Scheibe ueber
+      SCHEIBEN[...]["gesamt_ring"]) muss jeder per slots.get() gelesene Name in DER
+      Bindung existieren, die _scheibe_bindung() fuer diese Scheibe baut — nicht nur
+      irgendwo im Repo. Eine repo-weite Pruefung waere blind, sobald ein Name zwei
+      Traeger hat; Doppel-Mutationsprobe (main) belegt das: alte Fassung 2 passed,
+      /ergebnis trotzdem 0 ct.
+      Gemessen dabei: 16 Kollisionspaare ueber die 22 bindung_*.yaml (u.a.
+      "aufwendungen" in 4 Dateien). Von den 6 heute gelesenen Namen hat aber JEDER
+      genau einen Traeger — die Schaerfung faengt heute nichts, was die repo-weite
+      Pruefung nicht auch faengt. Vorsorge, kein aktueller Fang.
+    blast_radius: |
+      dev-b, isolierte git-archive-Kopie, echter HTTP-Pfad (Bericht
+      reports/adjudikation/slot_fn_fail_open_sweep_2026-08-08.md):
+        einzel/gesamt      api.py:846   1.392.400 -> 0        ct  (-13.924 EUR)
+        zusammen/gesamt    api.py:846   1.077.600 -> 72.400   ct  (-10.052 EUR)
+        zusammen/an_gesamt api.py:574   1.383.800 -> 295.600  ct  (-10.882 EUR)
+      grund bleibt in allen drei Faellen "bestaetigt". Bei zusammen faellt es nicht
+      auf 0, weil Person B ueber einen getrennten Feld-ID-Kanal
+      (bruttoarbeitslohn_partner) laeuft, den die Slot-Mutation nicht beruehrt.
+      NEU dabei gefunden — Klasse 3, bisher uebersehen: {k: slots[k] for k in (...)
+      if k in slots} (api.py:485, :743) sieht fail-closed aus, ist es nicht — der Key
+      faellt einfach weg, und catala_werbungskosten_n gated ihn nochmal selbst mit
+      if "X" in s:. Zwei Ebenen fail-open hintereinander.
+      Richtung: bruttoarbeitslohn -> 0 = under-tax (gemessen). Die 4 EP-Slots -> 0/False
+      = over-tax. veranlagung -> "einzel" ungeklaert, Messung laeuft.
+      HINWEIS: over-tax ist NICHT harmlos — der Nutzer zahlt zu viel, es reklamiert
+      niemand, und kein Finanzamt findet es. Nur nachrangig gemessen, nicht geringer
+      gewichtet.
+    entscheidung_julius: |
+      OFFEN — (b) ist gebaut. Offen bleibt (a), fail-closed lesen.
+      Empfehlung main unveraendert "noch nicht" — erst dev-b's laufende Messung, welche
+      Slots real jemals fehlen. Slots ohne realen Miss koennen danach ohne
+      Verhaltensaenderung fail-closed werden.
 
 struktur:
 
