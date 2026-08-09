@@ -827,6 +827,36 @@ struktur:
       Entscheidung. Sie waechst ab jetzt nicht weiter (delta=0 gemessen), der Druck ist
       also raus — es ist Plattenplatz, kein Datenrisiko (Testmuell, keine Falldaten).
 
+  - id: audit-jsonl-altlast
+    titel: "audit.jsonl ist wieder 582 MB — der Schreibpfad ist zu, die Altlast liegt"
+    status: offen
+    entdeckt: "2026-08-09"
+    richtung: "kein Geldfehler — Betriebslast und ein Gate, das im Parallelbetrieb falsch anschlaegt"
+    messung: |
+      produkt/haut/faelle/audit.jsonl (gitignored, .gitignore:31):
+        582 MB, 4.689.851 Zeilen
+        erster Eintrag 2026-07-27T09:34, letzter 2026-08-09T23:22
+      Der Eintrag audit-jsonl-wucherung steht auf "erledigt" (d089195 + 52db438) — das gilt
+      auch: Tests schreiben nicht mehr in das echte Log, und ein Gate haelt das fest. Was
+      NICHT geschah: die Altlast aufraeumen. Die Datei wurde nie rotiert, sie traegt die
+      komplette Historie seit Juli.
+    zweiter_effekt: |
+      Die conftest-Fixture _kein_schreiben_ins_echte_audit_log misst die Dateigroesse vor
+      und nach JEDEM Test. Schreibt ein PARALLEL laufender Prozess (anderer Worker, eigenes
+      Messskript ueber den echten API-Pfad) in derselben Sekunde, schlaegt sie an und
+      beschuldigt den gerade laufenden Test. Am 2026-08-09 23:22 real passiert und einen
+      Commit blockiert: 610186423 -> 610193355 Bytes waehrend test_m lief, ohne dass dieser
+      Test etwas geschrieben haette.
+      Das Gate ist richtig gebaut, aber seine Messmethode (absolute Dateigroesse) traegt im
+      Mehrprozessbetrieb nicht.
+    plan: |
+      Zwei getrennte Fragen:
+      (a) Altlast — Rotation/Archivierung. Loeschen ist eine ausgehende, unwiderrufliche
+          Aktion an einem Audit-Log und gehoert zu Julius, nicht in einen Automatismus.
+      (b) Gate-Methode — statt der absoluten Groesse etwas messen, das nur der eigene
+          Prozess beeinflusst (z.B. Zeilen mit der eigenen Fall-ID, oder AUDIT_DIR fuer die
+          gesamte Session auf tmp legen). Sonst bleibt es im Parallelbetrieb unzuverlaessig.
+
   - id: sys-path-zu-paketen
     titel: "sys.path-Injektion durch echte Pakete ersetzen"
     status: analysiert
