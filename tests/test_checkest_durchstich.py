@@ -121,13 +121,21 @@ def _b(s, feld_id, wert):
 # Bewusst so: ein kirchensteuerpflichtiger Schluessel verlangt laut Messung ZUSAETZLICH
 # Lohnsteuer und Kirchensteuer auf Anlage N (reports/adjudikation/checkest_feldkopplungen_
 # 2026-08-09.md), und der Lohnsteuer-Ausschluss ist eine offene Julius-Entscheidung.
+# stammdaten_steuernummer (2026-08-10, keine Kz -> erreicht erzeuge_xml() ueber den
+# snapshot-Parameter, s. produkt/import/elster_xml.py:_leite_steuernummer_ab()): Wert aus
+# demselben amtlichen Beispiel wie _ABSENDER["absender_steuernummer"] unten, Praefix 9181
+# passt zum Default-empfaenger_finanzamt. Steht hier in _STAMM_A, nicht als eigene Fixtur --
+# _ABSENDER ueberschreibt sie ohnehin explizit (Vorrang der Parameter), aendert also nichts
+# an RESTFEHLER_EINZEL/ZUSAMMEN. Erst test_steuernummer_ableitung_liefert_dieselbe_amtliche_
+# fehlerzahl() unten nutzt sie ohne expliziten Parameter.
 _STAMM_A = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
             ("stammdaten_geburtsdatum", "05.05.1955"),
             ("stammdaten_strasse", "Musterstr."), ("stammdaten_hausnummer", "55"),
             ("stammdaten_plz", "55555"), ("stammdaten_wohnort", "Musterort"),
             ("stammdaten_keine_bankverbindung", True),
             ("stammdaten_art_est_erklaerung", True),
-            ("kist_konfession", "keine"))
+            ("kist_konfession", "keine"),
+            ("stammdaten_steuernummer", "9181081508155"))
 
 _STAMM_B = (("stammdaten_nachname_partner", "Maier"),
             ("stammdaten_vorname_partner", "Carolina"),
@@ -241,3 +249,30 @@ def test_restfehler_ratsche(name, bauer, grenze):
         f"[{name}] FORTSCHRITT: nur noch {len(texte)} statt {grenze} Fehler. "
         f"Trag das ein: RESTFEHLER_{name.upper()} = {len(texte)}.\n"
         f"Verbleibend:\n" + "\n".join(f"  - {t[:160]}" for t in texte))
+
+
+@braucht_eric
+def test_steuernummer_ableitung_liefert_dieselbe_amtliche_fehlerzahl():
+    """Die Messung, auf die es ankommt (Auftrag 2026-08-10): stammdaten_steuernummer im Fall
+    setzen (s. _STAMM_A), erzeuge_xml(abgabefaehig=True) OHNE absender_steuernummer aufrufen,
+    dafuer mit `snapshot=snap` -- checkESt muss dieselbe Fehlerzahl liefern wie mit dem
+    expliziten Parameter aus _ABSENDER. Sonst waere die Ableitung nur syntaktisch aequivalent,
+    nicht amtlich."""
+    snap, _ = ST.materialisiere(_fall_einzel())
+    dekl = est_mapping.deklariere(snap, TR.lade_bindung())
+    absender_ohne_stnr = {k: v for k, v in _ABSENDER.items() if k != "absender_steuernummer"}
+
+    xml_explizit = EX.erzeuge_xml(dekl, vz=2025, hersteller_id=_HID, abgabefaehig=True,
+                                  **_ABSENDER)
+    xml_abgeleitet = EX.erzeuge_xml(dekl, vz=2025, hersteller_id=_HID, abgabefaehig=True,
+                                    snapshot=snap, **absender_ohne_stnr)
+
+    assert "9181081508155" not in str(absender_ohne_stnr)  # Vorbedingung: Parameter fehlt wirklich
+
+    rc1, antwort1 = CE.validate(xml_explizit, "ESt_2025")
+    rc2, antwort2 = CE.validate(xml_abgeleitet, "ESt_2025")
+    n1 = len(re.findall(r"<Text>", antwort1 or ""))
+    n2 = len(re.findall(r"<Text>", antwort2 or ""))
+    assert n1 == n2, (
+        f"Ableitung ueber snapshot liefert eine ANDERE amtliche Fehlerzahl als der explizite "
+        f"absender_steuernummer-Parameter ({n2} vs {n1}) -- keine echte Aequivalenz.")

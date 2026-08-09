@@ -312,7 +312,11 @@ def test_abgabefaehiges_xml_ist_xsd_valide(tmp_path):
 # absender_name/_strasse/_plz/_ort sind KEINE zweite Wahrheit: dieselben Angaben stehen bereits
 # als Kz im Hauptvordruck ESt 1 A (Stammdaten Person A). Statt sie als Pflicht-Parameter zu
 # verlangen (zweite Repraesentation), leitet erzeuge_xml() sie aus `deklaration` ab, wenn kein
-# expliziter Parameter kommt — nur absender_steuernummer hat keinen Kz-Spiegel und bleibt Parameter.
+# expliziter Parameter kommt. absender_steuernummer hat KEINEN Kz-Spiegel (Vorsatz ist kein
+# Kz-Element) — ohne `snapshot`-Parameter bleibt sie deshalb Pflicht-Parameter, s.
+# test_absender_steuernummer_bleibt_ohne_kz_ableitung_pflicht_parameter() unten. Mit `snapshot`
+# leitet erzeuge_xml() sie aus `stammdaten_steuernummer` ab (s. _leite_steuernummer_ab() in
+# produkt/import/elster_xml.py) — eigene Tests dafuer in tests/test_stammdaten_steuernummer.py.
 
 _STAMM_KZ = dict(E0100201="Maier", E0100301="Hans", E0101104="Musterstr.",
                  E0101206="55", E0100601="55555", E0100602="Musterort")

@@ -331,9 +331,12 @@ GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart
 GESAMT_PV = ("pv_einnahmen", "pv_bruttoleistung_kwp", "pv_anzahl_einheiten", "pv_auf_gebaeude")
 
 # ========== § 150 Abs. 2 AO Stammdaten (ESt1A/Allg/A + BV) ==========
+# stammdaten_steuernummer traegt kein Kz (Vorsatz-Block, kein E10-Element) — steht trotzdem
+# hier, gleiche Stelle wie die uebrigen Stammdaten (s. produkt/bindung/bindung_an_gesamt.yaml).
 STAMMDATEN_FELDER = ("stammdaten_nachname", "stammdaten_vorname", "stammdaten_geburtsdatum",
                      "stammdaten_strasse", "stammdaten_hausnummer", "stammdaten_plz", "stammdaten_wohnort",
-                     "stammdaten_keine_bankverbindung", "stammdaten_art_est_erklaerung")
+                     "stammdaten_keine_bankverbindung", "stammdaten_art_est_erklaerung",
+                     "stammdaten_steuernummer")
 # ========== § 150 Abs. 2 AO Stammdaten Person B (ESt1A/Allg/B, nur Zusammenveranlagung) ==========
 STAMMDATEN_FELDER_PARTNER = ("stammdaten_nachname_partner", "stammdaten_vorname_partner",
                              "stammdaten_geburtsdatum_partner", "kist_konfession_partner")

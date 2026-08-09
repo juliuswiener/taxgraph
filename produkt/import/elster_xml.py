@@ -242,8 +242,11 @@ def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
 # Absender-Werte fuer den Vorsatz-Block sind KEINE zweite Wahrheit: dieselben Angaben stehen
 # bereits als Kz im Hauptvordruck ESt 1 A / Stammdaten Person A (s. _vorsatz()-Docstring).
 # {absender_feld: [(Kz, Label), ...]} -- ALLE Kz eines Feldes muessen vorhanden sein, sonst
-# bleibt das Feld unabgeleitet (None). absender_steuernummer hat KEINEN Kz-Spiegel (eigenes
-# Fall-Feld existiert noch nicht, Stand 2026-08-10) und bleibt deshalb reiner Parameter.
+# bleibt das Feld unabgeleitet (None). absender_steuernummer hat KEINEN Kz-Spiegel -- der
+# Vorsatz-Block ist kein E10-Kz-Element (s. _vorsatz()-Docstring) und `stammdaten_steuernummer`
+# ist deshalb selbst als bindungslose Bindung (elster_kz: null, kz_status: endgueltig) gebaut.
+# Die Ableitung laeuft deshalb nicht ueber diese Kz-Tabelle, sondern direkt ueber den
+# Store-Snapshot (s. `_leite_steuernummer_ab()`).
 _ABSENDER_HERKUNFT: dict[str, list[tuple[str, str]]] = {
     "absender_name": [("E0100201", "Nachname"), ("E0100301", "Vorname")],
     "absender_strasse": [("E0101104", "Straße"), ("E0101206", "Hausnummer")],
@@ -251,6 +254,11 @@ _ABSENDER_HERKUNFT: dict[str, list[tuple[str, str]]] = {
     "absender_ort": [("E0100602", "Wohnort")],
 }
 _ABSENDER_STRASSE_ZUSATZ_KZ = "E0101207"   # optional, wird an die Hausnummer angehaengt
+
+# StNr-Format laut amtlichem Schema: SteuernummerBaseCType, E10-2025.xsd:1779-1786 --
+# ([0-9]{4})0[0-9]{8}: 4-stellige Finanzamtsnummer, Ziffer "0", 8 weitere Ziffern (13 Ziffern
+# gesamt). Fuehrende Nullen sind bedeutungstragend -- deshalb typ=text, nicht int/cent.
+_STNR_PATTERN = re.compile(r"^[0-9]{4}0[0-9]{8}$")
 
 
 def _leite_absender_ab(deklaration: dict) -> dict[str, str | None]:
@@ -272,6 +280,22 @@ def _leite_absender_ab(deklaration: dict) -> dict[str, str | None]:
         if zusatz:
             abgeleitet["absender_strasse"] += str(zusatz)
     return abgeleitet
+
+
+def _leite_steuernummer_ab(snapshot: dict) -> str | None:
+    """absender_steuernummer aus dem Store-Snapshot ableiten (`stammdaten_steuernummer`).
+
+    Kein Kz-Spiegel moeglich (Vorsatz traegt kein Kz) -- die Quelle ist deshalb nicht
+    `deklaration` (Kz -> Wert, wie bei `_leite_absender_ab()`), sondern der materialisierte
+    Snapshot selbst ({feld_id -> {wert, zustand, herkunft}}, dieselbe Ebene, die auch
+    `est_mapping.deklariere()` als erstes Argument nimmt). Nur ein BESTAETIGTER Wert zaehlt
+    (Zwei-Signal) -- nie eine erratene Ersatzangabe.
+    """
+    feld = snapshot.get("stammdaten_steuernummer")
+    if not feld or feld.get("zustand") != "bestaetigt":
+        return None
+    wert = feld.get("wert")
+    return str(wert) if wert else None
 
 
 def _vorsatz(vz: int, absender_name: str, absender_strasse: str, absender_plz: str,
@@ -313,11 +337,12 @@ def _vorsatz(vz: int, absender_name: str, absender_strasse: str, absender_plz: s
         angefordert) — konservativer Default, bis das Produkt diesen Workflow anbietet.
 
     AbsName/AbsStr/AbsPlz/AbsOrt/StNr kommen aus dem Fall (Absender = steuerpflichtige Person).
-    Es sind PARAMETER dieser Funktion — der Aufrufer (`erzeuge_xml`) leitet die ersten vier im
-    Normalfall aus der Deklaration ab (s. `_leite_absender_ab()`, dieselben Angaben stehen
-    bereits als Kz im Hauptvordruck) und erzwingt fail-closed, wenn weder Parameter noch Kz
-    vorliegen. Ein expliziter Parameter (z.B. aus Tests) hat Vorrang vor der Ableitung.
-    StNr hat keinen Kz-Spiegel und bleibt reiner Parameter.
+    Es sind PARAMETER dieser Funktion — der Aufrufer (`erzeuge_xml`) leitet alle fuenf im
+    Normalfall ab (die ersten vier aus der Deklaration, s. `_leite_absender_ab()`, dieselben
+    Angaben stehen bereits als Kz im Hauptvordruck; StNr aus dem Store-Snapshot, s.
+    `_leite_steuernummer_ab()` — kein Kz-Spiegel moeglich) und erzwingt fail-closed, wenn
+    weder Parameter noch Ableitung vorliegen. Ein expliziter Parameter (z.B. aus Tests) hat
+    Vorrang vor der Ableitung.
     """
     v = ET.Element(f"{{{ns_e10}}}Vorsatz")
     ET.SubElement(v, f"{{{ns_e10}}}Unterfallart").text = "10"
@@ -360,7 +385,8 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                 nutzdaten_ticket: str = "taxgraph-0001", abgabefaehig: bool = False,
                 absender_name: str | None = None, absender_strasse: str | None = None,
                 absender_plz: str | None = None, absender_ort: str | None = None,
-                absender_steuernummer: str | None = None) -> str:
+                absender_steuernummer: str | None = None,
+                snapshot: dict | None = None) -> str:
     """Deklaration (aus est_mapping.deklariere()) -> ELSTER-Submission-XML als String.
 
     Fail-closed: `result["vollstaendig"] is False` -> XmlFehler. Kz ohne Schema-Pfad -> XmlFehler.
@@ -385,10 +411,18 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
     explizit gesetzt, aus `deklaration` abgeleitet (s. `_leite_absender_ab()`): dieselben
     Angaben stehen ohnehin als Kz im Hauptvordruck ESt 1 A, eine zweite Repraesentation ueber
     Pflicht-Parameter waere eine Naht mit zwei Wahrheiten. `absender_steuernummer` hat keinen
-    Kz-Spiegel (Stand 2026-08-10) und bleibt reiner Parameter. Mit `abgabefaehig=True` und
-    weder Parameter noch Kz fuer eines der vier ableitbaren Felder bricht dieser Aufruf
-    fail-closed ab — die Meldung nennt das fehlende Kz, nicht nur den Parameternamen —, statt
-    ein XML zu erzeugen, das checkESt spaeter still ablehnt.
+    Kz-Spiegel (der Vorsatz-Block traegt kein Kz-Element) — sie wird deshalb, wenn nicht
+    explizit gesetzt, aus dem optionalen `snapshot`-Parameter abgeleitet (s.
+    `_leite_steuernummer_ab()`; `snapshot` ist dieselbe {feld_id -> {wert, zustand}}-Ebene, die
+    auch `est_mapping.deklariere()` als erstes Argument nimmt — der Aufrufer haelt sie ohnehin
+    schon, wenn er `result` gebaut hat). Ohne `snapshot` UND ohne expliziten Parameter bleibt
+    `absender_steuernummer` unabgeleitet. Mit `abgabefaehig=True` und weder Parameter noch
+    Ableitung fuer eines der fuenf Absender-Felder bricht dieser Aufruf fail-closed ab — die
+    Meldung nennt das fehlende Kz bzw. Feld, nicht nur den Parameternamen —, statt ein XML zu
+    erzeugen, das checkESt spaeter still ablehnt. Die Steuernummer muss zusaetzlich mit der
+    Finanzamtsnummer des Empfaengers beginnen und dem amtlichen StNr-Muster entsprechen
+    (`_STNR_PATTERN`, gemessen — s. dort); beides gilt fuer Parameter UND Ableitung gleich,
+    die Pruefung sitzt nach der Ableitung, nicht davor.
     """
     if not result.get("vollstaendig", False):
         offen = result.get("unvollstaendig", [])
@@ -510,13 +544,16 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                         instanz={container: inst_idx_0}, kz_meta=kz_meta)
 
     if abgabefaehig:
-        # Ableitung ist der Normalfall (dieselben Angaben stehen als Kz im Hauptvordruck) —
-        # ein expliziter Parameter (z.B. aus Tests) hat Vorrang und wird nie überschrieben.
+        # Ableitung ist der Normalfall (dieselben Angaben stehen als Kz im Hauptvordruck bzw.
+        # — bei der Steuernummer, die kein Kz hat — im Store-Snapshot) — ein expliziter
+        # Parameter (z.B. aus Tests) hat Vorrang und wird nie überschrieben.
         abgeleitet = _leite_absender_ab(deklaration)
         absender_name = absender_name or abgeleitet["absender_name"]
         absender_strasse = absender_strasse or abgeleitet["absender_strasse"]
         absender_plz = absender_plz or abgeleitet["absender_plz"]
         absender_ort = absender_ort or abgeleitet["absender_ort"]
+        if not absender_steuernummer and snapshot is not None:
+            absender_steuernummer = _leite_steuernummer_ab(snapshot)
 
         fehlend_absender = []
         for param_name, wert in (
@@ -529,7 +566,8 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
             fehlend_absender.append(f"{param_name} (fehlendes Kz: {fehlende_kz})")
         if not absender_steuernummer:
             fehlend_absender.append(
-                "absender_steuernummer (kein Kz-Spiegel — muss als Parameter übergeben werden)")
+                "absender_steuernummer (kein Kz-Spiegel — weder als Parameter übergeben noch "
+                "aus snapshot['stammdaten_steuernummer'] ableitbar, s. _leite_steuernummer_ab())")
         if fehlend_absender:
             raise XmlFehler(
                 f"abgabefaehig=True verlangt Absender-Stammdaten, es fehlen:\n" +
@@ -538,6 +576,15 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                 f"(still fuer den Nutzer; gemessen 2026-08-09: 9 Vorsatz-Fehlermeldungen, "
                 f"gleich bei Einzel- und Zusammenveranlagung — die uebrigen, fallabhaengigen "
                 f"Fehler bleiben davon unberuehrt).")
+        # Format zuerst (amtliches Muster, s. _STNR_PATTERN), dann die Finanzamts-Kopplung —
+        # eine Steuernummer mit falscher Form kann sonst zufaellig mit dem richtigen Praefix
+        # beginnen und den Kopplungs-Check bestehen, obwohl sie kein gueltiges StNr-XML-Element
+        # waere (PII bleibt aus der Fehlermeldung: nur ob das Muster passt, nie der Wert).
+        if not _STNR_PATTERN.match(absender_steuernummer):
+            raise XmlFehler(
+                "absender_steuernummer entspricht nicht dem amtlichen Muster "
+                "([0-9]{4}0[0-9]{8}, SteuernummerBaseCType, E10-2025.xsd:1779-1786) — "
+                "13 Ziffern, 5. Ziffer '0'. Wert nicht geloggt.")
         # Gemessener Befund (reports/adjudikation/vorsatz_block_2026-08-09.md): OrdNrArt="S"
         # ohne konsistente StNr ersetzt die urspruenglichen Fehler NICHT durch Null, sondern
         # durch 2 ANDERE ("Bundesfinanzamtsnummer ... unterscheiden sich"). Praefix-Check hier

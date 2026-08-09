@@ -1021,6 +1021,30 @@ bindungen:
     # ist hier eigentlich ein Schein-Wahlrecht (das Produkt deckt nur den ESt-Fall ab) — ggf. besser als
     # nicht-askable Konstante modellieren statt als Interview-Frage.
 
+  - feld_id: stammdaten_steuernummer
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_steuernummer}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet deine Steuernummer?"
+    hilfe_kurz: "13-stellige Steuernummer laut letztem Steuerbescheid oder Schreiben vom Finanzamt, ohne Trennzeichen (z. B. 9181/081/50815 → 9181081508155). Die ersten vier Ziffern sind die Nummer deines Finanzamts."
+    beispielwert: "9181081508155"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Vorsatz-Block (<StNr>) ist kein E10-Kz-Element (E10-2025.xsd:25286-25360, Vorsatz_67907_CType) — kz_pfade() indiziert ihn strukturell nie. Der Wert erreicht erzeuge_xml() deshalb nicht ueber deklaration/Kz, sondern ueber den Store-Snapshot (produkt/import/elster_xml.py:_leite_steuernummer_ab())."
+    kz_status: endgueltig
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # Format- und Finanzamts-Kopplungspruefung (amtliches Muster [0-9]{4}0[0-9]{8}, erste vier
+    # Ziffern = Finanzamtsnummer) sitzt in produkt/import/elster_xml.py (_STNR_PATTERN + Praefix-
+    # Check gegen empfaenger_finanzamt), nicht hier — bindung/schema.json kennt fuer typ=text kein
+    # statisches Pattern-Feld (nur beispielwert), und die Finanzamts-Kopplung ist ohnehin fallabhaengig
+    # (wechselt mit empfaenger_finanzamt), kein statischer Bindungs-Fakt.
+
   # ========================= Stammdaten Person B (§ 150 Abs. 2 AO, ESt1A/Allg/B) =========================
   # geltungsbedingung wie person_b_idnr: nur relevant bei Zusammenveranlagung. typ text/datum/enum,
   # daher inert als Gate (relevanz() prüft nur `wert is False`, greift nie bei Nicht-bool-Werten).
