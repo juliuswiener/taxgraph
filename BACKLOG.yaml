@@ -245,6 +245,35 @@ abgabe:
       weil es die Felder erst geben muss. Danach: die Ratsche zusaetzlich auf der
       Endpunkt-Ebene ziehen, sonst wiederholt sich die Divergenz.
 
+  - id: relevanz-nicht-bool-gate
+    titel: "34 von 74 askable-Feldern koennen ihre Regel strukturell nie ausschliessen"
+    status: analysiert
+    entdeckt: "2026-08-09, als Nebenbefund der Dialog-Luecken-Messung"
+    bericht: reports/adjudikation/dialog_luecke_abgabe_2026-08-09.md
+    richtung: "Ueberangebot im Dialog — kein Geldfehler, aber falsche Fragen"
+    messung: |
+      traverser.relevanz() schliesst eine Regel nur aus, wenn ein Gate-Feld ein
+      BESTAETIGTES False traegt (`ev.get("wert") is False`). Bei typ enum/text/datum
+      trifft das nie zu — solche Felder koennen ihre Regel damit strukturell nie
+      abschalten, egal was der Nutzer antwortet.
+
+      34 von 74 askable-Feldern mit geltungsbedingung sind nicht-bool.
+
+      Sichtbares Symptom: 26 Partner-Felder (stammdaten_nachname_partner, person_b_idnr,
+      kist_konfession_partner ...) stehen auch nach veranlagung="einzel" noch im Angebot,
+      weil p2_festzusetzung_zusammen als einzige Gates fuenf nicht-bool-Felder hat.
+    bauart_der_fehlerklasse: |
+      Dieselbe Bauart wie die Gate-Polaritaets-Falle, die den ganzen Verpflegungsmehraufwand
+      gekostet hat (519199e): ein Gate, das im Normalfall nie greift, sieht aus wie ein
+      Gate und ist keins. Hier faellt es harmloser aus — der Dialog fragt zu viel statt zu
+      wenig —, aber die Ursache ist identisch und die Zahl (34 von 74) gross.
+    offene_frage: |
+      Ob das ein Fix-Kandidat ist, ist NICHT entschieden. Denkbar waere, relevanz() um
+      einen typ-abhaengigen Ausschluss zu erweitern (enum-Wert x schliesst Regel y aus),
+      das ist aber ein Eingriff in die Relevanzpropagation und braucht eine eigene
+      Messung des Blast-Radius. Zuerst: lohnt es sich? Ein Ueberangebot im Dialog ist
+      laestig, kein Rechenfehler.
+
   - id: vz-matrix
     titel: "Welcher Veranlagungszeitraum ist der Zielfall? Produkt kann 2026, ERiC nicht"
     status: analysiert
