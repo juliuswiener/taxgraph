@@ -63,12 +63,22 @@ import traverser as TR       # noqa: E402
 #                "einzel mit zweitem Lohn"; ein Stammdaten-Bau, der nur A bedient,
 #                laesst 6 Beanstandungen stehen.
 #
-# Stand jetzt, nach e365a37 (Vorsatz-Block): der Block schliesst in BEIDEN Faellen
-# genau seine 9 Meldungen.
-#   einzel   18 -> 9
-#   zusammen 24 -> 15
-RESTFEHLER_EINZEL = 9
-RESTFEHLER_ZUSAMMEN = 15
+# Verlauf:
+#   e365a37 Vorsatz-Block      einzel 18 -> 9    zusammen 24 -> 15
+#   6063dda Stammdaten         einzel  9 -> 3    zusammen 15 -> 6
+#
+# Der Stammdaten-Schritt zaehlt nur, wenn die Felder im Fall auch BEANTWORTET sind —
+# ihr blosses Vorhandensein aendert nichts. Deshalb stehen sie jetzt in _STAMM_A/_STAMM_B.
+#
+# Die verbleibenden Meldungen sind KEINE Bauaufgaben mehr, sondern genau die drei
+# offenen Adjudikationen (BACKLOG: anlage-kap-folgeangabe, anlage-n-lohnsteuer-
+# steuerklasse, Julius-Entscheidung kap-Nulldeklaration):
+#   1x/2x  Anlage KAP: Angabegrund, weil kap_*=0 als Kz deklariert wird
+#   1x/2x  Anlage N:   Steuerklasse (E0200002, ungebunden)
+#   1x/2x  Anlage N:   Lohnsteuer (E0200301, absichtlich ausgeschlossen)
+# zusammen = einzel x2, weil jede Person ihre eigene Anlage N und KAP hat.
+RESTFEHLER_EINZEL = 3
+RESTFEHLER_ZUSAMMEN = 6
 
 TS = "2026-08-09T22:00:00+00:00"
 _H = {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}
@@ -104,19 +114,40 @@ def _b(s, feld_id, wert):
                     signal={"signal_1": None, "signal_2": f"ok@{feld_id}"}, ts=TS)
 
 
+# Stammdaten Person A (6063dda). Sie MUESSEN im Fall stehen, nicht nur als Feld
+# existieren: die Beanstandungen verschwinden erst, wenn der Nutzer sie beantwortet hat.
+# Ein Testfall ohne sie misst den Bau der Felder nicht.
+# kist_konfession = "keine" -> Religionsschluessel 11 ("nicht kirchensteuerpflichtig").
+# Bewusst so: ein kirchensteuerpflichtiger Schluessel verlangt laut Messung ZUSAETZLICH
+# Lohnsteuer und Kirchensteuer auf Anlage N (reports/adjudikation/checkest_feldkopplungen_
+# 2026-08-09.md), und der Lohnsteuer-Ausschluss ist eine offene Julius-Entscheidung.
+_STAMM_A = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
+            ("stammdaten_geburtsdatum", "05.05.1955"),
+            ("stammdaten_strasse", "Musterstr."), ("stammdaten_hausnummer", "55"),
+            ("stammdaten_plz", "55555"), ("stammdaten_wohnort", "Musterort"),
+            ("stammdaten_keine_bankverbindung", True),
+            ("stammdaten_art_est_erklaerung", True),
+            ("kist_konfession", "keine"))
+
+_STAMM_B = (("stammdaten_nachname_partner", "Maier"),
+            ("stammdaten_vorname_partner", "Carolina"),
+            ("stammdaten_geburtsdatum_partner", "09.07.1988"),
+            ("kist_konfession_partner", "keine"))
+
 _BASIS_A = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
             ("vor_ag_anteil_rv", 1200000), ("vor_rv_ausserhalb_lstb", 0),
             ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0),
             ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
             ("kein_gewinn", True), ("kein_kap", True),
-            ("kein_vuv", True), ("kein_sonstige", True))
+            ("kein_vuv", True), ("kein_sonstige", True)) + _STAMM_A
 
 _BASIS_B = (("bruttoarbeitslohn_partner", 5000000),
             ("vor_an_anteil_rv_partner", 3500000),
             ("vor_ag_anteil_rv_partner", 1000000),
             ("vor_rv_ausserhalb_lstb_partner", 0),
             ("kap_kapitalertraege_partner", 0), ("kap_gewinn_aktien_partner", 0),
-            ("kap_verlust_aktien_partner", 0), ("kap_verlust_sonstige_partner", 0))
+            ("kap_verlust_aktien_partner", 0),
+            ("kap_verlust_sonstige_partner", 0)) + _STAMM_B
 
 
 def _fall_einzel():
