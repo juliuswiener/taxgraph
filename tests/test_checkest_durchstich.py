@@ -52,16 +52,23 @@ import est_mapping           # noqa: E402
 import store as ST           # noqa: E402
 import traverser as TR       # noqa: E402
 
-# Gemessen 2026-08-09 nach Commit cebb228 (Namespace-Fix), ERiC 44.2.4.0, ESt_2025.
+# Gemessen gegen ERiC 44.2.4.0, ESt_2025, auf dem ABGABE-Pfad (abgabefaehig=True).
 #
-# einzel   18: Vorsatz-Block (9), Hauptvordruck ESt 1 A (2), Stammdaten Person A (4),
-#              Anlage N Steuerklasse + Lohnsteuer (2), Anlage KAP (1).
-# zusammen 24: dieselben 18, plus 6 fuer Person B — Person B traegt eigene Stammdaten
-#              und eine eigene Steuerklasse. Die Zusammenveranlagung ist also NICHT
-#              nur "einzel mit zweitem Lohn"; jeder Stammdaten-Bau muss beide Personen
-#              bedienen, sonst bleibt die Haelfte stehen.
-RESTFEHLER_EINZEL = 18
-RESTFEHLER_ZUSAMMEN = 24
+# Ausgangsstand nach cebb228 (Namespace-Fix), als die amtliche Pruefung erstmals
+# erreichbar wurde:
+#   einzel   18: Vorsatz-Block (9), Hauptvordruck ESt 1 A (2), Stammdaten Person A (4),
+#                Anlage N Steuerklasse + Lohnsteuer (2), Anlage KAP (1).
+#   zusammen 24: dieselben 18, plus 6 fuer Person B — Person B traegt eigene Stammdaten
+#                und eine eigene Steuerklasse. Die Zusammenveranlagung ist NICHT nur
+#                "einzel mit zweitem Lohn"; ein Stammdaten-Bau, der nur A bedient,
+#                laesst 6 Beanstandungen stehen.
+#
+# Stand jetzt, nach e365a37 (Vorsatz-Block): der Block schliesst in BEIDEN Faellen
+# genau seine 9 Meldungen.
+#   einzel   18 -> 9
+#   zusammen 24 -> 15
+RESTFEHLER_EINZEL = 9
+RESTFEHLER_ZUSAMMEN = 15
 
 TS = "2026-08-09T22:00:00+00:00"
 _H = {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}
@@ -130,11 +137,28 @@ def _fall_zusammen():
     return s
 
 
+# Absender-Stammdaten fuer den Vorsatz-Block. Sie liegen noch nicht als Fall-Felder vor
+# (Bau laeuft), muessen fuer den ABGABE-Pfad aber gesetzt sein — erzeuge_xml() verlangt sie
+# fail-closed bei abgabefaehig=True. Werte aus dem amtlichen Beispiel-XML
+# (elster/testdaten/est_2020_amtliches_beispiel.xml): die Steuernummer MUSS mit der
+# Finanzamtsnummer des Empfaengers beginnen (9181), sonst weist der Writer sie zurueck.
+_ABSENDER = dict(absender_name="Maier Hans", absender_strasse="Musterstr. 55",
+                 absender_plz="55555", absender_ort="Musterort",
+                 absender_steuernummer="9181081508155")
+
+
 def _pruefe(store) -> tuple[int, list[str]]:
-    """Echter Pfad bis zum amtlichen Plugin. Gibt (rc, Fehlermeldungen) zurueck."""
+    """Echter Pfad bis zum amtlichen Plugin, auf der ABGABE-Variante.
+
+    `abgabefaehig=True` ist hier nicht optional: ohne das Flag haengt erzeuge_xml() den
+    <Vorsatz>-Block nicht an, und die Ratsche wuerde einen Pfad messen, der nie eingereicht
+    wird. Gemessen 2026-08-09 nach e365a37: ohne Flag bleiben es 18 Fehler (Vorsatz fehlt
+    im XML), mit Flag faellt der Vorsatz-Block weg. Eine Ratsche auf dem Nicht-Abgabe-Pfad
+    haette den Fortschritt nie gesehen.
+    """
     snap, _ = ST.materialisiere(store)
     xml = EX.erzeuge_xml(est_mapping.deklariere(snap, TR.lade_bindung()),
-                         vz=2025, hersteller_id=_HID)
+                         vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     rc, antwort = CE.validate(xml, "ESt_2025")
     texte = [" ".join(t.split())
              for t in re.findall(r"<Text>(.*?)</Text>", antwort or "", re.S)]
