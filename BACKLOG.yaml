@@ -215,6 +215,36 @@ abgabe:
       statt durch Bauen. ZUERST messen, ob ein Fall ohne kap_*-Felder die Meldung
       noch zeigt — nicht bauen.
 
+  - id: endpunkt-naht-abgabepfad
+    titel: "Live-/einreichen faehrt nicht den Abgabe-Pfad — Ratsche misst etwas anderes"
+    status: offen
+    entdeckt: "2026-08-09, beim Schliessen der Mock-Naht in test_einreichen"
+    richtung: "kein Geldfehler — Fortschrittsmessung misst am Produktivpfad vorbei"
+    messung: |
+      produkt/haut/api.py:2398 (Endpunkt /einreichen):
+        xml = EX.erzeuge_xml(result, vz=vz,
+                             empfaenger_land=..., testmerker=EX.TESTMERKER_ERIC)
+      KEIN abgabefaehig, KEINE absender_*. Der Writer haengt den <Vorsatz>-Block damit
+      nicht an (Default abgabefaehig=False), und die 9 Vorsatz-Beanstandungen bestehen
+      am Live-Endpunkt fort.
+
+      Die Ratsche tests/test_checkest_durchstich.py ruft dagegen seit 5a70f4f mit
+      abgabefaehig=True und Absender-Konstanten und zaehlt deshalb 9 statt 18.
+      Am Endpunkt gemessen (anderer Worker, echter HTTP-Pfad): 17 Fehler.
+    bauart_der_fehlerklasse: |
+      Zwei Repraesentationen desselben Vorgangs, ungetestete Uebergabe — dieselbe Bauart
+      wie die frueheren Naht-Blindstellen. Das Gate ist nicht falsch, es misst nur einen
+      Pfad, den der Nutzer nie nimmt. Ein gruenes Gate auf dem Nebenpfad ist gefaehrlicher
+      als gar keins, weil es Fortschritt behauptet.
+    verantwortung: |
+      Von main gebaut und uebersehen: die Ratsche wurde auf den Funktionspfad gestellt,
+      ohne zu pruefen, ob der Endpunkt denselben Pfad nimmt.
+    plan: |
+      Der Endpunkt muss abgabefaehig=True fahren und die absender_*-Werte AUS DEM FALL
+      lesen — nicht aus Konstanten. Haengt an den Stammdatenfeldern (stammdaten-person),
+      weil es die Felder erst geben muss. Danach: die Ratsche zusaetzlich auf der
+      Endpunkt-Ebene ziehen, sonst wiederholt sich die Divergenz.
+
   - id: vz-matrix
     titel: "Welcher Veranlagungszeitraum ist der Zielfall? Produkt kann 2026, ERiC nicht"
     status: analysiert
