@@ -1,4 +1,4 @@
-# Mock-Naht in `tests/test_einreichen.py` — Inventur, Falsch-Grün-Prüfung, Durchstich-Test
+# Mock-Naht in `tests/test_einreichen.py` — Inventur, Falsch-Grün-Prüfung, Durchstich-Test, Endpunkt-Ratsche
 
 Auftrag von team-lead, 2026-08-09/10: die "Mock-Naht" schließen, über die
 `tests/test_einreichen.py` fast durchgängig `erzeuge_xml` (und/oder `checkest_gate.validate`)
@@ -181,6 +181,83 @@ Arbeit verursacht; nicht mein Task, wird team-lead zur Kenntnis gegeben, nicht s
 Mein neuer Test läuft in diesem Lauf **im `passed`-Kontingent** (ERiC + Hersteller-ID im
 Environment vorhanden, kein Skip).
 
+## Teil 6 — Endpunkt-Ratsche (Folgeauftrag, 2026-08-10)
+
+Team-lead-Befund nach Teil 3: der Live-Endpunkt übergibt `abgabefaehig`/`absender_*` NICHT an
+`erzeuge_xml` (`api.py:2398`, bestätigt von team-lead) — die Funktions-Ratsche in
+`test_checkest_durchstich.py` misst seither einen saubereren Pfad (9 Restfehler), als ein
+echter Nutzer ihn heute fährt (17, s. Teil 3). Auftrag: eine EIGENE Ratsche auf Endpunkt-Ebene,
+plus eine Absicherung, dass die beiden Ratschen nicht unbemerkt auseinanderlaufen.
+`produkt/haut/api.py` ist explizit NICHT mein Bereich in diesem Folgeauftrag (team-lead zieht
+`abgabefaehig` selbst nach, sobald die Absender-Ableitung in `erzeuge_xml` steht) — reine
+`tests/`-Arbeit.
+
+**Design-Entscheidung (Begründung, wie von team-lead verlangt):** von den zwei angebotenen
+Optionen — expliziter Delta-Test vs. gemeinsamer Messpfad — habe ich den **expliziten
+Delta-Test** gewählt. Ein gemeinsamer Messpfad ist hier nicht ehrlich baubar: die Endpunkt-Seite
+läuft über `_scheibe_bindung`/`EM.deklariere`/`_mit_ring_werten` (scheiben-spezifisches
+Bindungs-Gate), die Funktions-Seite direkt über `est_mapping.deklariere(snap,
+TR.lade_bindung())` (generische Bindung, kein Vollständigkeits-Gate) — genau das ist der
+Unterschied, den die Ratsche sichtbar machen soll, ihn wegzuabstrahieren würde die Messung
+entwerten. Der Delta-Test importiert `RESTFEHLER_EINZEL` direkt aus
+`test_checkest_durchstich.py` (keine duplizierte Kopie der Zahl) und braucht selbst kein ERiC
+(reine Konstanten-Arithmetik) — bleibt also auch credential-frei grün und fängt Drift auch dort,
+wo jemand nur eine der beiden Dateien anfasst.
+
+**Messung (frisch, `python /tmp/.../scratchpad/probe_ratsche.py`, gleiche Fixtur wie Teil 3):**
+
+```
+STATUS 422
+rc 610001002 klasse plausibilitaet_fehler
+ANZAHL 17
+```
+
+17 Fehler = Vorsatz-Block (9) + Hauptvordruck (2) + Stammdaten Person A (4, andere Texte als
+die Funktions-Ratsche, aber gleiche Anzahl) + Anlage N Steuerklasse/Lohnsteuer (2). KEIN
+Anlage-KAP-Fehler (die Endpunkt-Fixtur lässt die KAP-Nullfelder weg, s. Teil 3-Fixtur-Hinweis;
+die Funktions-Fixtur deklariert sie explizit als 0 und löst damit noch 1 KAP-Fehler aus).
+Damit: `RESTFEHLER_ENDPUNKT_EINZEL = 17`, Differenz zu `RESTFEHLER_EINZEL = 9`
+(HEAD-committed, `git show HEAD:tests/test_checkest_durchstich.py`) ist `17 - 9 = 8` = +9
+Vorsatz − 1 Anlage-KAP.
+
+**Neue Tests in `tests/test_einreichen_durchstich.py`:**
+- `test_restfehler_ratsche_endpunkt` — gleiche Bauart wie
+  `test_checkest_durchstich.py::test_restfehler_ratsche`, rot bei Anstieg (REGRESSION) und bei
+  Rückgang ohne Nachziehen (FORTSCHRITT).
+- `test_delta_endpunkt_funktion_ratsche_bekannt` — vergleicht `RESTFEHLER_ENDPUNKT_EINZEL -
+  RESTFEHLER_EINZEL` gegen `DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8`, rot bei jeder
+  unerklärten Änderung der Beziehung.
+
+**Mutationsbeweis, beide Tests, beide Richtungen:**
+
+```
+$ sed -i 's/RESTFEHLER_ENDPUNKT_EINZEL = 17/= 18/' ...  -> FAILED: assert 17 == 18
+$ sed -i 's/RESTFEHLER_ENDPUNKT_EINZEL = 17/= 16/' ...  -> FAILED: assert 17 <= 16
+$ sed -i 's/DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8/= 9/' ... -> FAILED: assert ist == 9
+$ sed -i 's/DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8/= 7/' ... -> FAILED: assert ist == 7
+```
+
+Nach jeder Mutation zurückgebaut, `grep` bestätigt Originalwerte (17, 8) wiederhergestellt.
+
+**Lebender Zwischenfall während der Mutationsproben (Beleg für den Zweck des Delta-Tests):**
+Während der Arbeit hat ein anderer, nicht-geclaimter Worker (vermutlich #7 Anlage N) live
+und uncommitted `RESTFEHLER_EINZEL` in `tests/test_checkest_durchstich.py` von 9 auf 3
+verändert (`git status` zeigte `M`, `git show HEAD:...` weiterhin 9 — Stand nach Commit
+`5a70f4f`). Der Delta-Test hat das SOFORT gefangen: `ist=14` statt erwarteter 8, weil er
+`RESTFEHLER_EINZEL` live aus der Datei importiert, nicht aus einer Kopie. Meine Konstanten
+(17/8) sind gegen den zuletzt COMMITTETEN Stand (9) gemessen und korrekt — der aktuelle
+Fehlschlag im Arbeitsbaum ist kein Defekt meines Tests, sondern genau die Funktion, für die
+er gebaut wurde: sobald der andere Worker committet, MUSS `RESTFEHLER_ENDPUNKT_EINZEL` neu
+gemessen (voraussichtlich sinkt es, falls dieselben Stammdaten-Felder auch über den
+Endpunkt-Pfad deklariert würden — das ist in der aktuellen Endpunkt-Fixtur NICHT der Fall)
+und `DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL` zusammen mit dem Kommentar aktualisiert werden.
+Bis dahin bleibt `test_delta_endpunkt_funktion_ratsche_bekannt` im Arbeitsbaum korrekt ROT —
+das ist erwartet, kein Bug, und team-lead sollte es dem Anlage-N-Worker mitteilen, damit die
+Nachmessung nicht vergessen wird.
+
+**Skip-Mechanik unverändert geprüft** (`env -u ELSTER_HERSTELLER_ID ERIC_DIR=/nonexistent`):
+beide ERiC-abhängigen Tests skippen sauber, der Delta-Test bleibt grün (braucht kein ERiC).
+
 ## Zusammenfassung
 
 - Inventur von 13 Tests in `test_einreichen.py`: alle 13 bleiben unverändert — jeder mockt genau
@@ -198,3 +275,10 @@ Environment vorhanden, kein Skip).
 - Volle Suite mit meinem Diff: 1 failed, 1695 passed, 4 skipped — der eine Fehlschlag
   (`test_bindungs_typ_vs_xsd_typ.py`) liegt an Bindungsdateien anderer, paralleler Tasks (#7/#8),
   nicht an dieser Arbeit. Mein neuer Durchstich-Test läuft grün im `passed`-Kontingent.
+- Folgeauftrag (Teil 6): Endpunkt-Ratsche `RESTFEHLER_ENDPUNKT_EINZEL = 17` +
+  Delta-Wache `DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8` gegen `RESTFEHLER_EINZEL = 9`
+  (HEAD-committed). Beide Tests per Mutation in beide Richtungen rot gefahren. Ein live
+  laufender, uncommitteter Fremdeingriff in `test_checkest_durchstich.py` während der Arbeit
+  hat die Delta-Wache bereits real ausgelöst — Beleg, dass sie den ihr zugedachten Zweck
+  erfüllt. Im aktuellen (fremd-dirty) Arbeitsbaum bleibt sie deshalb rot, bis dieser Eingriff
+  committet und die Endpunkt-Zahl neu gemessen ist; team-lead informiert.

@@ -37,11 +37,26 @@ vollstaendig zu machen und echtes XML zu erzeugen.
 
 Ueberspringt sauber ohne ERiC/Hersteller-ID (credential-freies CI). Die ID wird nie
 geloggt — Skip-Mechanik uebernommen aus `tests/test_checkest_durchstich.py::_hid`.
+
+Endpunkt-Ratsche + Delta-Wache (2026-08-10)
+--------------------------------------------
+Team-lead-Befund: der Live-Endpunkt uebergibt `abgabefaehig`/`absender_*` NICHT an
+`erzeuge_xml` (api.py:2398) — die Funktions-Ratsche in `test_checkest_durchstich.py` misst
+also einen saubereren Pfad (9 Restfehler), als ein echter Nutzer ihn heute faehrt (17). Bis
+das nachgezogen ist (BACKLOG `endpunkt-naht-abgabepfad`, nicht mein Bereich — produkt/haut/
+api.py gehoert team-lead), braucht dieser Pfad eine EIGENE Ratsche, sonst kann er unbemerkt
+weiter auseinanderlaufen. Zwei Zahlen ohne Beziehung zueinander waren genau der Zustand, der
+den Vorsatz-Fortschritt (18->9 auf Funktionsebene) am Endpunkt (weiterhin 17) unsichtbar
+liess. Deshalb zusaetzlich zur Endpunkt-Ratsche ein dritter Test, der die Differenz zur
+Funktions-Ratsche explizit benennt und rot wird, wenn sie sich aendert — er braucht kein ERiC
+(reine Konstanten-Arithmetik), bleibt also auch credential-frei gruen und faengt Drift selbst
+dort, wo die beiden Ratschen unabhaengig voneinander editiert werden.
 """
 from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import threading
 import urllib.error
@@ -51,12 +66,13 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for _sub in ("produkt/haut", "produkt/import", "golden", "produkt/store"):
+for _sub in ("produkt/haut", "produkt/import", "golden", "produkt/store", "elster"):
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
-import api as API        # noqa: E402
-import server as SRV     # noqa: E402
-import audit              # noqa: E402
+import api as API                # noqa: E402
+import server as SRV             # noqa: E402
+import audit                      # noqa: E402
+import checkest_gate as CE       # noqa: E402
 
 
 def _hid() -> str | None:
@@ -123,6 +139,13 @@ def _laie(fld, w):
             "signal": {"signal_1": {"typ": "laie_eingabe"}, "signal_2": "laie_bestaetigt"}}
 
 
+def _texte(ericantwort: str) -> list[str]:
+    """Fehlertexte aus der rohen ericantwort — gleiche Extraktion wie
+    tests/test_checkest_durchstich.py::_pruefe."""
+    return [" ".join(t.split())
+            for t in re.findall(r"<Text>(.*?)</Text>", ericantwort or "", re.S)]
+
+
 # Minimale Feldmenge fuer eine vollstaendige an_gesamt-Deklaration, gemessen 2026-08-10
 # (s. Docstring). KAP-Detailfelder bewusst weggelassen (Task #8, Anlage-KAP-Bindung offen).
 _BASIS_A = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
@@ -178,3 +201,63 @@ def test_einreichen_endpunkt_erreicht_die_amtliche_pruefung(base, monkeypatch):
             f"rc={rc} != 0, aber der Endpunkt meldet Erfolg: {resp}")
         assert isinstance(resp.get("ericantwort"), str) and resp["ericantwort"], (
             f"Plausibilitaetsfehler ohne ericantwort — der Nutzer saehe keine Regel: {resp}")
+
+
+# Gemessen 2026-08-10 gegen ERiC 44.2.4.0, ESt_2025, ueber den echten HTTP-Endpunkt (dieselbe
+# Fixtur wie _fall_einzel oben). Der Endpunkt uebergibt (noch) kein abgabefaehig=True/
+# absender_* an erzeuge_xml (api.py:2398) — die 9 Vorsatz-Fehler, die die Funktions-Ratsche in
+# test_checkest_durchstich.py seit e365a37 schliesst, tauchen hier weiterhin auf. Sinkt erst,
+# wenn team-lead das nachzieht (BACKLOG endpunkt-naht-abgabepfad).
+RESTFEHLER_ENDPUNKT_EINZEL = 17
+
+
+@braucht_eric
+def test_restfehler_ratsche_endpunkt(base, monkeypatch):
+    """Ratsche auf Endpunkt-Ebene, analog zu test_checkest_durchstich.py::test_restfehler_ratsche.
+    Rot in BEIDE Richtungen: Anstieg ist Regression, Rueckgang ohne Nachziehen der Konstante
+    ist unverbuchter Fortschritt — beides soll auffallen, nicht verpuffen."""
+    monkeypatch.setenv("ELSTER_HERSTELLER_ID", _HID)
+    fid = _fall_einzel(base)
+    st, resp = _req(base, "POST", f"/fall/{fid}/einreichen", {})
+
+    rc = resp.get("rc")
+    if rc == CE.RC_OK:
+        assert RESTFEHLER_ENDPUNKT_EINZEL == 0, (
+            f"Endpunkt meldet rc=0 (abgabefaehig!), Ratsche steht noch auf "
+            f"{RESTFEHLER_ENDPUNKT_EINZEL}. Setze RESTFEHLER_ENDPUNKT_EINZEL = 0.")
+        return
+
+    texte = _texte(resp.get("ericantwort", ""))
+    assert not CE.gekappt_verdacht(resp.get("ericantwort", "")), (
+        "Puffer gekappt — Zahl waere nicht belastbar")
+    assert len(texte) <= RESTFEHLER_ENDPUNKT_EINZEL, (
+        f"REGRESSION: {len(texte)} amtliche Fehler am Endpunkt, erlaubt sind "
+        f"{RESTFEHLER_ENDPUNKT_EINZEL}.\n" + "\n".join(f"  - {t[:160]}" for t in texte))
+    assert len(texte) == RESTFEHLER_ENDPUNKT_EINZEL, (
+        f"FORTSCHRITT: nur noch {len(texte)} statt {RESTFEHLER_ENDPUNKT_EINZEL} Fehler am "
+        f"Endpunkt. Trag das ein: RESTFEHLER_ENDPUNKT_EINZEL = {len(texte)}.\n"
+        f"Verbleibend:\n" + "\n".join(f"  - {t[:160]}" for t in texte))
+
+
+# Differenz Endpunkt minus Funktion, Stand 2026-08-10 (17 - 9): +9 Vorsatz-Block (fehlt am
+# Endpunkt, s.o.) minus 1 Anlage-KAP-Fehler (die Endpunkt-Fixtur laesst die KAP-Nullfelder
+# weg, s. Docstring/Fixtur-Hinweis oben — die Funktions-Fixtur in test_checkest_durchstich.py
+# deklariert sie explizit als 0 und loest damit noch einen KAP-Fehler aus, den der Endpunkt-
+# Pfad gar nicht erst baut). Wer eine der beiden Ratschen aendert, MUSS diese Zahl nachziehen
+# und den Grund hier eintragen — sonst laufen die zwei Messungen wieder unbemerkt auseinander.
+DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8
+
+
+def test_delta_endpunkt_funktion_ratsche_bekannt():
+    """Braucht kein ERiC (reine Konstanten-Pruefung) — bleibt auch credential-frei gruen und
+    faengt trotzdem, wenn RESTFEHLER_ENDPUNKT_EINZEL oder die Funktions-Ratsche
+    RESTFEHLER_EINZEL (test_checkest_durchstich.py) einzeln editiert werden, ohne die
+    Beziehung zwischen beiden nachzuziehen."""
+    from test_checkest_durchstich import RESTFEHLER_EINZEL
+    ist = RESTFEHLER_ENDPUNKT_EINZEL - RESTFEHLER_EINZEL
+    assert ist == DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL, (
+        f"Differenz Endpunkt- vs. Funktions-Ratsche hat sich geaendert: {ist} statt "
+        f"{DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL} (RESTFEHLER_ENDPUNKT_EINZEL="
+        f"{RESTFEHLER_ENDPUNKT_EINZEL}, RESTFEHLER_EINZEL={RESTFEHLER_EINZEL}). "
+        f"Miss neu, trag die neue Differenz UND den Grund im Kommentar ueber "
+        f"DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL ein — nicht nur die Zahl.")
