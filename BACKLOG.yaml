@@ -964,22 +964,46 @@ test-schulden:
 
   - id: klasse3-fail-open
     titel: "{k: slots[k] ... if k in slots} — fail-open, das fail-closed aussieht"
-    status: offen
+    status: erledigt
+    erledigt_in: "4966726 (2026-08-09)"
     aufwand_h: 1
     entdeckt: "2026-08-08, im slot_fn_fail_open_sweep als Nebenbefund"
-    bericht: reports/adjudikation/slot_fn_fail_open_sweep_2026-08-08.md
+    bericht: reports/adjudikation/klasse3_fail_open_2026-08-09.md
+    richtung: over-tax
     messung: |
-      produkt/haut/api.py:487 und :745. Der eckige-Klammer-Zugriff sieht fail-closed
-      aus, aber die Bedingung `if k in slots` laesst den Key einfach wegfallen. Danach
-      gated catala_werbungskosten_n ihn ein zweites Mal selbst mit `if "X" in s:` —
-      zwei Ebenen fail-open hintereinander, jede fuer sich unauffaellig.
-      Der Blast-Radius ist NICHT gemessen; die Sweep-Messung hat die Stelle nur benannt.
-    plan: |
-      Erst messen (Mutationsprobe an einem der dort gelesenen signatur_slots, echter
-      /ergebnis-Pfad), dann entscheiden. Verschwindet Geld still -> fail-closed, aber
-      vorher pruefen, welche Aufrufer den Key legitim weglassen duerfen. Verschwindet
-      keins -> nur ein Gate, keine Verhaltensaenderung. Beide Ebenen zusammen anfassen;
-      ein einseitiger Fix laesst die Naht offen.
+      Der Blast-Radius war beim Aufnehmen NICHT gemessen. Jetzt ist er es — und der
+      Punkt war groesser als der Sweep vermuten liess. Zwei unabhaengige Wege:
+
+      (1) HTTP-Mutationsprobe (bindung_n_vor_gwg.yaml:28, signatur_slot
+          entfernung_km_roh -> _x, echter Server, danach zurueckkopiert,
+          git diff --stat leer):
+            gesamt      1.310.100 -> 1.345.200 ct   = 351 EUR verschwinden lautlos,
+                        grund bleibt "bestaetigt"
+            an_gesamt   crasht stattdessen mit HTTP 500 KeyError — ein ko-lozierter
+                        bare-Subscript-Read im §101-Block faengt es VOR dem stillen
+                        Pfad ab, aber NUR wenn extras is not None (gilt fuer /ergebnis,
+                        NICHT fuer /stand, wo extras=None Default ist)
+      (2) Direkter Unit-Aufruf von _bescheid_fn mit UNVERAENDERTER Bindung, nur
+          feld_werte ohne den Key ep_entfernung_km:
+            an_gesamt 323 EUR, gesamt 351 EUR
+          Das ist der eigentliche Befund: Klasse 3 braucht GAR KEINE kaputte Bindung.
+          Jeder Aufrufer, der ein Kegel-Feld weglaesst, verliert lautlos Geld.
+    legitime_aufrufer_geprueft: |
+      Pflichtschritt vor jedem fail-closed. Alle 4 EP-Keys stehen im Pflicht-Kegel
+      BEIDER Scheiben (EP_FELDER, an_gesamt + gesamt). _feste_zahl und IV.intervall
+      koennen strukturell nie ein Kegel-Feld weglassen (Meet-Gate bzw.
+      nicht_fix-Fruehausstieg). catala_werbungskosten_n hat genau 2 Aufrufer, beide
+      Klasse-3-Stellen. Kein legitimer Weglass-Fall gefunden -> fail-closed vertretbar.
+    zweite_ebene_bewusst_offen: |
+      golden/runner.py::catala_werbungskosten_n behaelt ihr eigenes `if "X" in s:`.
+      Das ist dort der KORREKTE generelle Mechanismus fuer die echt optionalen
+      WK-Komponenten (dHf, Verpflegung, Uebernachtung, Arbeitsmittel). Mit dem
+      Ebene-1-Fix sieht sie die 4 EP-Keys nie mehr fehlend — Ebene 1 wirft vorher.
+      Ein reflexhaftes "beide Ebenen dicht" haette den optionalen Pfad gebrochen.
+    gate: |
+      tests/test_klasse3_dictcomp_wk_fail_open.py (3 Tests). Von main unabhaengig
+      nachgemessen: fail-open an beiden Stellen wieder eingebaut -> 2 failed
+      ("DID NOT RAISE KeyError"), zurueckgesetzt -> 3 passed, git diff leer.
 
   - id: stille-null-klasse-c
     titel: "Vorlaeufige Instanz faellt still aus der Rechnung — gwg, kind x3, p23"
