@@ -227,6 +227,111 @@ Fehlerverschiebung außerhalb dieses einen Punkts.
 
 ---
 
+## Zusammenveranlagung — derselbe Beweis für den eigentlichen Zielfall
+
+Auftrag team-lead, 2026-08-10 (Nachtrag). Basis: `_fall_zusammen()` aus
+`tests/test_checkest_durchstich.py` (RESTFEHLER_ZUSAMMEN=6), Methodik unverändert
+(Kz-Injektion, kein Produktionscode). Skript:
+`/tmp/claude-1000/-home-julius-00-projects-168-TaxGraph-taxgraph/db772487-ddbf-429b-a0e4-37a31085356e/scratchpad/entscheidungsvorlage_zusammen_messung.py`.
+Person-B-Kz sind **dieselben Kz-Nummern** wie Person A (`E0200002`, `E0200301`,
+`E0200501`, `E1900701`/`0901`/`1201`/`1301`) — Person B liegt im `person_b`-Bucket von
+`est_mapping.deklariere()` und wird von `_einhaengen()` mit einem
+Person-Diskriminator als eigene Instanz desselben Kz geschrieben
+(`produkt/import/elster_xml.py:511-539`), kein eigenes Ehegatten-Kz.
+
+### Schrittweise Messung, konfessionslos (beide `kist_konfession="keine"`)
+
+| Schritt | vorher | nachher | Kommentar |
+|---|---|---|---|
+| 0 Baseline (`_fall_zusammen`) | — | 6 | KAP A+B, Steuerklasse A+B, Lohnsteuer A+B (2× je Kategorie) |
+| 1 KAP-Kz **nur** A entfernt | 6 | 6 | **kein Nettogewinn** — neue Meldung ersetzt die alte, siehe unten |
+| 2 KAP-Kz **auch** B entfernt | 6 | 4 | jetzt sauber −2 (beide KAP-Meldungen weg) |
+| 3 + Steuerklasse A=1 | 4 | 3 | |
+| 4 + Steuerklasse B=1 | 3 | 2 | |
+| 5 + Lohnsteuer A=0,00 | 2 | 1 | |
+| 6 + Lohnsteuer B=0,00 | 1 | **0** | **rc=0, klasse=plausibel** |
+
+**Der wichtige Befund liegt in Schritt 1, nicht am Ende.** Wird KAP-Option A nur für
+EINE Person angewandt (Person A entfernt, Person B noch mit `kap_*=0` deklariert),
+bleibt die Fehlerzahl bei 6 — aber die KAP-Angabegrund-Meldung für A verschwindet
+NICHT ersatzlos, sie wird durch eine neue, zusammenveranlagungsspezifische Meldung
+ersetzt:
+
+> "Sie haben angegeben, dass Sie Angaben für 'PersonA' machen möchten, haben aber
+> außer der Angabe im Feld '$/KAP[1]/Person[1]$' keine weiteren Angaben getätigt."
+
+Das ist dieselbe Bauart wie Entscheidung 1/Option B bei `einzel` (ein Fehler wird
+gegen einen anderen getauscht, kein Nettogewinn) — hier aber durch **asymmetrische
+Anwendung über zwei Personen**, nicht durch eine falsche Kz-Wahl. Der doppelte
+Person-Container der Anlage KAP verträgt offenbar keinen Zwischenzustand, in dem eine
+Person vollständig fehlt, während die andere noch einen (wenn auch leeren) KAP-Block
+trägt. **Konsequenz für den Bau von Option A bei `zusammen`:** die Kz-Entfernung muss
+für beide Personen ATOMAR erfolgen (gleicher Schreibvorgang), nicht Person-für-Person
+nacheinander — sonst entsteht ein neuer, vorher nicht existierender Fehlertyp auf dem
+Weg dorthin, auch wenn der Endzustand sauber ist.
+
+### Konfessions-Achse
+
+**Beide kirchensteuerpflichtig** (`evangelisch`/`evangelisch`):
+
+| Variante | vorher | nachher | neue Beanstandungen |
+|---|---|---|---|
+| Baseline (nur Konfession geändert) | 6 | **8** | +2: Kirchensteuer-Meldung je Person (exakt das Doppelte von einzel, keine Überraschung) |
+| alle 6 billigen Fixes, OHNE Kirchensteuer | 8 | 2 | beide Kirchensteuer-Meldungen bleiben (erwartet) |
+| + Kirchensteuer A=0,00 + Kirchensteuer B=0,00 | 2 | **0** | rc=0, klasse=plausibel |
+
+**Gemischt** (A `evangelisch`, B `keine` — der Fall, bei dem am ehesten eine
+Extra-Regel zu erwarten wäre):
+
+| Variante | vorher | nachher | neue Beanstandungen |
+|---|---|---|---|
+| Baseline (nur A's Konfession geändert) | 6 | **7** | +1: nur A's Kirchensteuer-Meldung, B bleibt unberührt |
+| alle 6 billigen Fixes, OHNE Kirchensteuer A | 7 | 1 | nur A's Kirchensteuer-Meldung bleibt |
+| + Kirchensteuer **nur** A=0,00 (B bleibt ohne, korrekt) | 1 | **0** | rc=0, klasse=plausibel |
+
+**Kein zusammenveranlagungsspezifischer Kopplungsfehler auf der Konfessions-Achse
+gefunden.** Die Kirchensteuerpflicht koppelt strikt PRO PERSON — B's Fehlerbild ist im
+gemischten Fall byte-identisch zu B's Fehlerbild im konfessionslosen Fall. Auch die von
+team-lead vermutete Steuerklassen-Kombinationsregel für Ehegatten (z. B. dass 1/1 für
+Verheiratete unplausibel sein könnte, weil das reale Steuerklassenpaar meist 3/5 oder
+4/4 ist) **hat checkESt in keinem der drei Läufe angemeldet** — Steuerklasse "1" für
+beide Personen gleichzeitig, bei `veranlagung=zusammen`, erreicht in allen drei
+Konfessions-Konstellationen rc=0. Das schließt eine spätere Sachbearbeiter-Prüfung
+außerhalb von checkESt nicht aus, aber die amtliche Plausibilitätsprüfung selbst kennt
+diese Regel nicht (oder prüft sie nicht auf Feldebene).
+
+### Komma-Dezimal-Falle — betrifft Person B identisch
+
+`E0200301`/`E0200501` sind bei Person B **dieselben Kz-Elemente** wie bei Person A,
+nur unter einem anderen Instanz-Diskriminator (`instanz={cp: 1}` in `_einhaengen()`,
+`elster_xml.py:538`) — der XSD-Typ
+(`DezimalzahlNichtNegOhneFuehrNull_MaxL15_MaxVK12_MinNK2_MaxNK2_CType_RABE`, exakt 2
+Nachkommastellen, Komma-Format) ist identisch, weil es dasselbe Schema-Element ist.
+Die Falle aus Entscheidung 2 (`_cent_nach_kz()` formatiert nur `E60`-Präfix-Kz als
+Komma-String, alles andere als rohen Integer) betrifft also **beide Personen mit
+demselben Code-Pfad** — es gibt keine separate Formatierungsfunktion für `person_b`,
+die geprüft oder gefixt werden müsste. Wer die echte Deklaration für `zusammen` baut,
+muss `_cent_nach_kz()` (oder die Formatierung an der PARTNER_INSTANZ-Einhängestelle,
+`est_mapping.py:340`) für **beide** Schreibpfade gleichzeitig korrigieren — betroffene
+Kz explizit: `E0200301` (Lohnsteuer, Person A + Person B), `E0200501` (Kirchensteuer,
+Person A + Person B). Ein Fix, der nur die Klasse-b/1:1-Deklaration
+(`est_mapping.py:350`) anpasst, aber nicht die PARTNER_INSTANZ-Zeile, ließe Person B
+falsch formatiert zurück.
+
+### Ergebnis für Julius
+
+`zusammen` erreicht **rc=0** unter denselben drei "billigen" Bedingungen wie `einzel`
+(KAP nicht deklarieren, Steuerklasse deklarieren, Lohnsteuer als 0,00 deklarieren),
+angewandt auf **beide** Personen — gemessen für alle drei Konfessions-Konstellationen
+(beide konfessionslos, beide kirchensteuerpflichtig, gemischt), jeweils inklusive
+Kirchensteuer=0,00 wo die Kirchensteuerpflicht-Kopplung greift. Keine
+zusammenveranlagungsspezifische Zusatzregel verhindert das — die einzige
+Zusammenveranlagung-spezifische Erkenntnis ist eine **Bau-Reihenfolge-Warnung**
+(KAP-Kz-Entfernung muss atomar über beide Personen erfolgen), keine neue
+Fehlerquelle im Endzustand.
+
+---
+
 ## Zusammenfassung für die Entscheidung
 
 | Entscheidung | billige Option | teure Option | Empfehlungsfreie Messung |
@@ -239,6 +344,9 @@ Werden alle drei "billig" entschieden (A / 0-Deklaration+KiSt-Paar / Steuerklass
 deklarieren) UND kombiniert (nicht nur isoliert getestet), landet `einzel` amtlich bei
 **rc=0, klasse=plausibel, 0 Fehler** — gemessen für den kirchensteuerpflichtigen
 Zielfall (KAP-Kz entfernt + Steuerklasse=1 + Lohnsteuer=0,00 + Kirchensteuer=0,00).
-Der Fall ist damit tatsächlich abgabefähig, kein Rest. `zusammen` verdoppelt sich
-entsprechend (Person B trägt eigene Anlage N + KAP), noch nicht separat kombiniert
-gemessen.
+Der Fall ist damit tatsächlich abgabefähig, kein Rest. **`zusammen` erreicht dieselbe
+rc=0 unter denselben Bedingungen, angewandt auf beide Personen — gemessen für alle drei
+Konfessions-Konstellationen** (siehe eigener Abschnitt unten). Einzige
+zusammenveranlagungsspezifische Erkenntnis: die KAP-Entfernung (Entscheidung 1,
+Option A) muss atomar über beide Personen erfolgen, sonst tauscht ein Zwischenzustand
+einen Fehler gegen einen neuen, bisher unbekannten.

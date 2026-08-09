@@ -364,9 +364,37 @@ abgabe:
       Der Versand ist ein eigener Schritt (Zertifikat, PIN, ERIC_SENDE statt
       ERIC_VALIDIERE, echter Netzpfad) und im Code bewusst nirgends verdrahtet.
       Er gehoert zu Julius, nicht in einen Automatismus. Siehe testversand.
+    zusammenveranlagung_belegt: |
+      NACHGETRAGEN 2026-08-10: zusammen erreicht rc=0 ebenfalls, unter denselben drei
+      Entscheidungen auf beide Personen angewandt. In ALLEN drei Konfessions-Konstellationen
+      gemessen — das ist wichtig, weil unsere Testfaelle bisher auf "keine" standen:
+
+        beide konfessionslos              6 -> 0
+        beide kirchensteuerpflichtig      8 -> 0   (Kirchensteuer 0,00 fuer beide)
+        gemischt (A pflichtig, B nicht)   7 -> 0   (Kirchensteuer nur fuer A)
+
+      Damit ist der Zielfall der Roadmap (M6.1: Zusammenveranlagung) belegt, nicht nur
+      der einfachere Einzelfall. Kirchensteuerpflicht koppelt strikt pro Person, keine
+      person-uebergreifende Kopplung gefunden.
+    zwei_bau_konsequenzen: |
+      Beide beim Messen gefunden, nicht vorher bekannt:
+
+      (1) Die KAP-Entfernung muss ATOMAR ueber beide Personen laufen. Wird sie nur fuer
+          Person A gemacht und B behaelt kap_*=0, bleibt die Fehlerzahl bei 6 — aber die
+          Meldung wechselt auf einen NEUEN Typ: "Sie haben angegeben, dass Sie Angaben
+          fuer 'PersonA' machen moechten, haben aber ausser der Angabe im Feld
+          $/KAP[1]/Person[1]$ keine weiteren Angaben getaetigt." Ein halber Umbau
+          durchlaeuft also einen Zwischenzustand mit eigener Fehlerklasse.
+
+      (2) Die Komma-Dezimal-Falle betrifft Person B identisch (dieselben Kz-Elemente
+          E0200301/E0200501, nur mit Person-Diskriminator). Ein Fix, der NUR die
+          1:1-Stelle (est_mapping.py:350) korrigiert und die PARTNER_INSTANZ-Stelle
+          (est_mapping.py:340) auslaesst, laesst Person B falsch formatiert zurueck.
+    nicht_gefunden: |
+      Erwartet und WIDERLEGT: eine Steuerklassen-Kombinationsregel fuer Verheiratete.
+      Steuerklasse 1/1 laeuft in allen drei Konfessions-Faellen sauber bis rc=0 durch —
+      checkESt kennt diese Plausibilitaet nicht. Negativbefund, damit niemand danach sucht.
     was_noch_fehlt: |
-      - zusammen ist noch nicht kombiniert gemessen (verdoppelt sich rechnerisch:
-        Person B hat eigene Anlage N und KAP)
       - der Produktivpfad (/einreichen) faehrt weiter abgabefaehig=False, siehe
         endpunkt-naht-abgabepfad; die Messung oben lief ueber erzeuge_xml direkt
       - die drei Entscheidungen sind offen, die Messung nimmt sie nur vorweg
