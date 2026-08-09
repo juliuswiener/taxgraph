@@ -2,7 +2,9 @@
 # kist = est_mit_fb (Maßstabsteuer, § 51a-Basis = SolZ-§3-Abs.2-Zwilling) × Hebesatz.
 # konfession + bundesland = Laien-Enums (askable); est_mit_fb = ring-derived (Lücke).
 # Hebesatz-Grounding (8 % BY/BW, 9 % übrige) amtlich in anker_ref.datei; KEINE EStG-Konstante.
-# elster_kz bewusst null (kein XSD-verifiziertes Kz-Mapping — fail-closed, kein Rate-Kz).
+# kist_konfession -> E0100402 (Religionsschlüssel ESt1A, Enum_Religionsschluessel_ab_VZ_2014_3):
+# Laien-Enum -> XSD-Code-Übersetzung läuft über est_mapping.WERTEKODIERUNG (Klasse i), nicht 1:1.
+# kist_bundesland bleibt elster_kz null (kein eigenes Kz, wird aus Wohnsitz/Finanzamt abgeleitet).
 
 version: 1
 scheibe: "§51a Kirchensteuer (Zuschlagsteuer auf die Maßstabsteuer)"
@@ -18,13 +20,14 @@ bindungen:
     fragetext_laie: "Gehören Sie einer Kirche an, die Kirchensteuer erhebt (evangelisch oder römisch-katholisch)?"
     hilfe_kurz: "Nur evangelische und römisch-katholische Kirche erheben hier Kirchensteuer. Andere Religionsgemeinschaften oder kein Bekenntnis: keine Kirchensteuer."
     beispielwert: roemisch-katholisch
-    elster_kz: null
-    elster_kz_grund: "Kein XSD-verifiziertes Kz-Mapping für das Religionsschlüssel-Feld (ESt1A) vorhanden; fail-closed statt Rate-Kz. XSD-Sweep offen (Backlog)."
+    elster_kz: E0100402
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 51a EStG i.V.m. Landes-KiStG (Kirchensteuer als Zuschlag der Mitglieder steuererhebender Religionsgemeinschaften)"
       zitatanker: "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer"
       datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    # Wert "andere" hat KEINEN verifizierten Religionsschlüssel-Code (~35 mögliche XSD-Werte, kein
+    # Raten) -> fail-closed in nicht_deklariert (est_mapping.WERTEKODIERUNG). Julius-Entscheidung offen.
 
   - feld_id: kist_bundesland
     quelle:

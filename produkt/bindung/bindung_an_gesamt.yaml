@@ -860,6 +860,242 @@ bindungen:
     # p2_festzusetzung_einzel); beide_ehegatten_zusammen_veranlagt = Platzhalter-gb (§ 26 Abs. 2 S. 2).
     # Der Gate validiert gb-Existenz für Pseudoregel-Scopes nicht; gesichert über Kz/Drift-Wächter.
 
+  # ========================= Stammdaten Person A (§ 150 Abs. 2 AO, ESt1A/Allg/A) =========================
+  # signatur_slot = eigene feld_id (wie bruttoarbeitslohn): kein Gate, immer relevant (Pflichtangabe
+  # in jeder Erklärung), kein echter Catala-Input — p2_festzusetzung_einzel ist Pseudoregel-Scope.
+  - feld_id: stammdaten_nachname
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_nachname}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet dein Nachname?"
+    hilfe_kurz: "Familienname, wie im Ausweis."
+    beispielwert: "Maier"
+    herkunft_slots: null
+    elster_kz: E0100201
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_vorname
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_vorname}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet dein Vorname?"
+    hilfe_kurz: "Vorname(n), wie im Ausweis."
+    beispielwert: "Hans"
+    herkunft_slots: null
+    elster_kz: E0100301
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_geburtsdatum
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_geburtsdatum}
+    typ: datum
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann bist du geboren (Tag, Monat, Jahr)?"
+    hilfe_kurz: "Geburtsdatum. Format TT.MM.JJJJ (amtliches ELSTER-Format, kein ISO-8601 — nichts in der Pipeline konvertiert Datumswerte)."
+    beispielwert: "05.05.1955"
+    herkunft_slots: null
+    elster_kz: E0100401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_strasse
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_strasse}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welcher Straße wohnst du?"
+    hilfe_kurz: "Straßenname ohne Hausnummer."
+    beispielwert: "Musterstr."
+    herkunft_slots: null
+    elster_kz: E0101104
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_hausnummer
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_hausnummer}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Hausnummer hat deine Wohnadresse?"
+    hilfe_kurz: "Nur die Nummer, ggf. mit Buchstabenzusatz getrennt im Zusatzfeld."
+    beispielwert: "55"
+    herkunft_slots: null
+    elster_kz: E0101206
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_plz
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_plz}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet die Postleitzahl deines Wohnorts?"
+    hilfe_kurz: "Fünfstellige Postleitzahl."
+    beispielwert: "55555"
+    herkunft_slots: null
+    elster_kz: E0100601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_wohnort
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_wohnort}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welcher Stadt oder Gemeinde wohnst du?"
+    hilfe_kurz: "Wohnort/Stadt des Hauptwohnsitzes."
+    beispielwert: "Musterort"
+    herkunft_slots: null
+    elster_kz: E0100602
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_keine_bankverbindung
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_keine_bankverbindung}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du keine Bankverbindung, die du für eine Erstattung angeben möchtest?"
+    hilfe_kurz: "Sonderfeld: bestätigt gegenüber dem Finanzamt ausdrücklich, dass keine Bankverbindung vorliegt (statt IBAN/BIC anzugeben)."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: E0102002
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # IBAN/BIC-Erfassung bewusst NICHT gebaut (Mindestumfang-Entscheidung): nur das Sonderfeld
+    # "keine Bankverbindung vorhanden". Julius-Entscheidung offen, falls echte Erstattungskonten nötig.
+
+  - feld_id: stammdaten_art_est_erklaerung
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_art_est_erklaerung}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Möchtest du eine Einkommensteuererklärung einreichen (der übliche Fall)?"
+    hilfe_kurz: "Kennzeichnet die Erklärung im Hauptvordruck als Einkommensteuererklärung."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: E0100001
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # Art_Erkl hat 5 Kz im XSD (E0100001..E0100003, E0100009, E0100302); nur E0100001 (ESt-Erklärung,
+    # der Regelfall dieses Produkts) gebunden. Die anderen 4 (Sparzulage-Antrag u.a.) sind feature-
+    # konditional und Mindestumfang-bewusst NICHT gebaut. Offene Frage an Julius: askable Ja/Nein-Frage
+    # ist hier eigentlich ein Schein-Wahlrecht (das Produkt deckt nur den ESt-Fall ab) — ggf. besser als
+    # nicht-askable Konstante modellieren statt als Interview-Frage.
+
+  # ========================= Stammdaten Person B (§ 150 Abs. 2 AO, ESt1A/Allg/B) =========================
+  # geltungsbedingung wie person_b_idnr: nur relevant bei Zusammenveranlagung. typ text/datum/enum,
+  # daher inert als Gate (relevanz() prüft nur `wert is False`, greift nie bei Nicht-bool-Werten).
+  - feld_id: stammdaten_nachname_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet der Nachname deines Ehe-/Lebenspartners?"
+    hilfe_kurz: "Familienname des Ehe-/Lebenspartners, wie im Ausweis."
+    beispielwert: "Maier"
+    herkunft_slots: null
+    elster_kz: E0100901
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_vorname_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet der Vorname deines Ehe-/Lebenspartners?"
+    hilfe_kurz: "Vorname(n) des Ehe-/Lebenspartners, wie im Ausweis."
+    beispielwert: "Carolina"
+    herkunft_slots: null
+    elster_kz: E0100801
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_geburtsdatum_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: datum
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann ist dein Ehe-/Lebenspartner geboren (Tag, Monat, Jahr)?"
+    hilfe_kurz: "Geburtsdatum des Ehe-/Lebenspartners. Format TT.MM.JJJJ (amtliches ELSTER-Format)."
+    beispielwert: "09.07.1988"
+    herkunft_slots: null
+    elster_kz: E0101001
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: kist_konfession_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: enum
+    enum_werte: [keine, evangelisch, roemisch-katholisch, andere]
+    einheit: null
+    askable: true
+    fragetext_laie: "Gehört dein Ehe-/Lebenspartner einer Kirche an, die Kirchensteuer erhebt (evangelisch oder römisch-katholisch)?"
+    hilfe_kurz: "Wie kist_konfession, aber für den Ehe-/Lebenspartner. Nur evangelisch/römisch-katholisch werden hier deklariert."
+    beispielwert: roemisch-katholisch
+    herkunft_slots: null
+    elster_kz: E0101002
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # Wert "andere" ohne verifizierten Code -> fail-closed in nicht_deklariert (est_mapping.WERTEKODIERUNG),
+    # wie kist_konfession (bindung_p51a_kirchensteuer.yaml). Bewusst NICHT in Kirchensteuer-Regel
+    # (p51a_kirchensteuer) verankert — der Ring rechnet Person-B-Konfession nicht mit; reines
+    # Deklarations-Stammdatum, kein Steuerungs-Slot.
+
 luecken:
   # -- §24a Altersentlastungsbetrag: Bemessungs-Inputs + Kohorten-Parameter (gesamt-Kontext, §24a gesamt-only) --
   - regel_id: p24a_altersentlastungsbetrag

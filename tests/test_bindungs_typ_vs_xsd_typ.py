@@ -31,6 +31,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "produkt", "mapping"))
 sys.path.insert(0, os.path.join(ROOT, "produkt", "traverser"))
 
+import est_mapping as EM  # noqa: E402
 import xsd_verify as X  # noqa: E402
 import traverser as TR  # noqa: E402
 
@@ -100,6 +101,19 @@ def test_bindungs_typ_vs_xsd_typ():
                 mismatches.append(
                     f"{feld_id}: typ={typ}, Kz {kz}, XSD type={meta['type_name']} "
                     f"(Ja-Typ, aber Betrag)")
+        elif typ == "enum" and feld_id in EM.WERTEKODIERUNG:
+            # Klasse i (est_mapping.WERTEKODIERUNG): enum_werte sind Laien-Vokabular, KEIN
+            # 1:1-Passthrough — geprüft wird die ÜBERSETZUNG (die amtlichen Codes), nicht die
+            # Laien-Werte selbst gegen die XSD-enum.
+            if not meta["enums"]:
+                mismatches.append(
+                    f"{feld_id}: typ=enum (Wertekodierung), Kz {kz}, XSD keine enumeration")
+            else:
+                for laie, code in EM.WERTEKODIERUNG[feld_id]["code"].items():
+                    if code not in meta["enums"]:
+                        mismatches.append(
+                            f"{feld_id}: Wertekodierung {laie!r} -> {code!r}, Kz {kz}, "
+                            f"XSD erlaubt nur {meta['enums']}")
         elif typ == "enum":
             enum_werte = b.get("enum_werte", [])
             if not meta["enums"]:
@@ -112,6 +126,17 @@ def test_bindungs_typ_vs_xsd_typ():
                         mismatches.append(
                             f"{feld_id}: typ=enum, Kz {kz}, enum_werte enthalten {ev!r}, "
                             f"XSD erlaubt nur {meta['enums']}")
+        elif typ == "datum":
+            beispiel = b.get("beispielwert")
+            if meta["patterns"]:
+                if beispiel is None:
+                    ungeprueft.append(f"{feld_id} (Kz {kz}): datum an Pattern "
+                                      f"{meta['patterns']} gebunden, aber kein beispielwert")
+                elif not all(re.fullmatch(p, str(beispiel)) for p in meta["patterns"]):
+                    mismatches.append(
+                        f"{feld_id}: typ=datum, Kz {kz}, XSD pattern={meta['patterns']}, "
+                        f"beispielwert {beispiel!r} matcht nicht")
+            # kein Pattern -> Datumsfeld ohne Format-Facette, ok
         elif typ == "text":
             beispiel = b.get("beispielwert")
             if meta["enums"]:

@@ -178,6 +178,16 @@ PARTNER_VERZWEIGUNG = {
     "gesetzlich_an": "E2001203", "gesetzlich_freiwillig": "E2001805", "privat": "E2003104"}},
 "basis_pv_partner": {"art_feld": "versicherungsart_partner", "kz": {
     "gesetzlich_an": "E2001505", "gesetzlich_freiwillig": "E2002105", "privat": "E2003202"}}}
+# Klasse i — Wertekodierung (Laien-Enum -> amtlicher XSD-Code, kein 1:1-Passthrough): der Store trägt
+# den laienverständlichen Enum-Wert (z.B. "roemisch-katholisch"), das Kz erwartet den amtlichen
+# Religionsschlüssel (Enum_Religionsschluessel_ab_VZ_2014_3, E10-2025.xsd). "andere" hat KEINEN
+# verifizierten Code (~35 mögliche Werte, kein Raten) -> fail-closed in nicht_deklariert.
+WERTEKODIERUNG = {
+    "kist_konfession": {"kz": "E0100402", "code": {
+        "keine": "11", "evangelisch": "02", "roemisch-katholisch": "03"}},
+    "kist_konfession_partner": {"kz": "E0101002", "code": {
+        "keine": "11", "evangelisch": "02", "roemisch-katholisch": "03"}},
+}
 # Klasse INSTANZ — Repeated-Instance (Store-Modell A, Multi-Objekt/Multi-Rente/Per-Kind): ein wiederholbares
 # Anlage-Feld trägt für Instanz 2..N das Suffix __<n> am feld_id (Instanz 1 = die Basis-feld_id ohne Suffix,
 # unverändert deklariert). Das Suffix liegt vollständig in [a-z0-9_] → der Store-feld_id-Pattern
@@ -328,6 +338,14 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
                                              "grund": f"Partner-Renten-Art '{art['wert']}' ohne Kz-Zweig"})
         elif feld_id in PARTNER_INSTANZ:                         # Klasse g (Person-Multiplikation, Instanz B)
             person_b[PARTNER_INSTANZ[feld_id]] = _cent_nach_kz(wert, PARTNER_INSTANZ[feld_id]) if b.get("typ") == "cent" else wert
+        elif feld_id in WERTEKODIERUNG:                          # Klasse i (Laien-Enum -> XSD-Code)
+            cfg = WERTEKODIERUNG[feld_id]
+            code = cfg["code"].get(wert)
+            if code:
+                deklaration[cfg["kz"]] = code
+            else:
+                nicht_deklariert.append({"feld_id": feld_id,
+                                         "grund": f"Wert '{wert}' ohne XSD-Code-Zuordnung ({cfg['kz']})"})
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)
             deklaration[b["elster_kz"]] = _cent_nach_kz(wert, b["elster_kz"]) if b.get("typ") == "cent" else wert
         elif feld_id in P23_BETRAGSFELDER:                  # Klasse h — §23 Instanz-1-Rohdaten: in p23_veraeusserung sammeln

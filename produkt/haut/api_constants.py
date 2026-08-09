@@ -330,11 +330,19 @@ GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart
 # ========== § 3 Nr. 72 Photovoltaik (steuerfreie Einnahmen) ==========
 GESAMT_PV = ("pv_einnahmen", "pv_bruttoleistung_kwp", "pv_anzahl_einheiten", "pv_auf_gebaeude")
 
+# ========== § 150 Abs. 2 AO Stammdaten (ESt1A/Allg/A + BV) ==========
+STAMMDATEN_FELDER = ("stammdaten_nachname", "stammdaten_vorname", "stammdaten_geburtsdatum",
+                     "stammdaten_strasse", "stammdaten_hausnummer", "stammdaten_plz", "stammdaten_wohnort",
+                     "stammdaten_keine_bankverbindung", "stammdaten_art_est_erklaerung")
+# ========== § 150 Abs. 2 AO Stammdaten Person B (ESt1A/Allg/B, nur Zusammenveranlagung) ==========
+STAMMDATEN_FELDER_PARTNER = ("stammdaten_nachname_partner", "stammdaten_vorname_partner",
+                             "stammdaten_geburtsdatum_partner", "kist_konfession_partner")
+
 # ========== § 2 Gewinn (Gesamt) ==========
 GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD + MITU_FELDER + ABS3_FELDER + GESAMT_PV
 
 # ========== RENTNER_FELDER — DRITTE ÄNDERUNG (Z.282 api.py) ==========
-RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P22_NR3_EINKUENFTE + P16_4_GATE_FELDER + KV_PV_PARTNER_FELDER + VOR_PARTNER_FELDER
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P22_NR3_EINKUENFTE + P16_4_GATE_FELDER + KV_PV_PARTNER_FELDER + VOR_PARTNER_FELDER + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER
 
 # ========== Scheiben-Konfiguration ==========
 SCHEIBEN = {
@@ -379,7 +387,8 @@ SCHEIBEN = {
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + ARBEITSMITTEL_AFA_GESAMT
-                   + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P16_4_GATE_FELDER),
+                   + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P16_4_GATE_FELDER
+                   + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER),
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
                   + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
         "felder_datei": None,
@@ -452,6 +461,8 @@ __all__ = [
     # Weitere Abzüge
     "GESAMT_P23", "GESAMT_P33A", "GESAMT_P32B", "GESAMT_P35C", "GESAMT_REALSPLITTING",
     "GESAMT_PV",
+    # Stammdaten
+    "STAMMDATEN_FELDER", "STAMMDATEN_FELDER_PARTNER",
     # Veräußerungs-Gewinn
     "GESAMT_VG", "GESAMT_GEWINN",
     # Rentner Felder
