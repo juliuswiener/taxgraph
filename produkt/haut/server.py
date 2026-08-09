@@ -210,8 +210,11 @@ def _lade_env_dateien(root: str) -> None:
     Macht die externe Live-Schaltung schlüsselfertig: Key in die (gitignored) Datei legen — kein Shell-Export nötig.
     NUR in main() aufgerufen (nicht beim Import), damit Test-Importe von server.py keine echten Keys laden.
 
-    ACHTUNG Reichweite: das gilt nur für den Server-Start. pytest und `make eric-gate` rufen main() NICHT
-    auf — für die muss der Schlüssel echt in der Umgebung stehen (Shell-Export bzw. settings.json `env`)."""
+    Reichweite: tests/conftest.py ruft diese Funktion zusätzlich direkt (nicht über main()) beim
+    pytest-Sessionstart auf, und das Makefile-Ziel `eric-gate` laedt `.env` per Shell-`source` vor dem
+    Python-Aufruf (s. Makefile) — beide Wege bewusst, damit `$ELSTER_HERSTELLER_ID` nicht mehr blind aus
+    einer .env liegt (Naht 2026-08: HERSTELLER_ID vs. ELSTER_HERSTELLER_ID, s. BACKLOG). `eric_gate.py`
+    selbst liest .env weiterhin NIEMALS (s. dortige Doku) — dort muss die Variable schon gesetzt sein."""
     for name in (".env.maps", ".env.llm", ".env"):
         pfad = os.path.join(root, name)
         if not os.path.isfile(pfad):

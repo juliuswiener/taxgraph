@@ -23,8 +23,18 @@ _ROOT = os.path.dirname(_HERE)
 _STORE = os.path.join(_ROOT, "produkt", "store")
 if _STORE not in sys.path:
     sys.path.insert(0, _STORE)
+_HAUT = os.path.join(_ROOT, "produkt", "haut")
+if _HAUT not in sys.path:
+    sys.path.insert(0, _HAUT)
 
 import audit as _audit  # echtes Modul-Attribut, gelesen VOR jedem Test-Monkeypatch
+import server as _server  # noqa: E402 — teilt server._lade_env_dateien mit dem Server-Start
+
+# .env-Naht (s. tests/test_env_loader.py): pytest rief server._lade_env_dateien() bisher NIE auf
+# (nur server.main() tat das) — dadurch blieb z.B. $ELSTER_HERSTELLER_ID aus einer lokalen `.env`
+# fuer die gesamte Suite unsichtbar. Reuse der bestehenden Funktion, kein neuer Mechanismus.
+# Bestehendes Prozess-Env gewinnt IMMER (kein Override, s. Doku dort); fehlende .env = no-op.
+_server._lade_env_dateien(_ROOT)
 
 _REAL_AUDIT_PFAD = os.path.join(_audit.AUDIT_DIR, "audit.jsonl")
 

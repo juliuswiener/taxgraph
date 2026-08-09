@@ -102,7 +102,11 @@ elster-check:
 ## ERiC Offline-CI-Gate (VZ 2025): E10_2025-XSD-Struktur + checkESt (ERIC_VALIDIERE,
 ## offline, kein Versand, keine Datei-Credentials). Hersteller-ID nur aus $ELSTER_HERSTELLER_ID
 ## falls exportiert; ohne sie laeuft das Gate ueber die dokumentierte GESPERRT-Grenze durch.
+## Laedt eine lokale, gitignored .env (falls vorhanden) VOR dem Python-Aufruf, damit die ID nicht
+## per Hand exportiert werden muss; bereits gesetztes Prozess-Env gewinnt (kein Override). In CI
+## fehlt .env -> bleibt credential-frei, faellt weiterhin auf die GESPERRT-Grenze zurueck.
 eric-gate:
+	if [ -z "$$ELSTER_HERSTELLER_ID" ] && [ -f .env ]; then set -a; . ./.env; set +a; fi; \
 	ERIC_DIR=$${ERIC_DIR:-$$HOME/02_Software/eric} python3 elster/eric_gate.py
 
 clean:
