@@ -287,11 +287,23 @@ abgabe:
       trifft das nie zu — solche Felder koennen ihre Regel damit strukturell nie
       abschalten, egal was der Nutzer antwortet.
 
-      34 von 74 askable-Feldern mit geltungsbedingung sind nicht-bool.
+      NACHGEMESSEN 2026-08-10, und der Punkt ist KLEINER und SCHAERFER als die erste
+      Zahl. Sie ERSETZT das frueher hier stehende "34 von 74":
 
-      Sichtbares Symptom: 26 Partner-Felder (stammdaten_nachname_partner, person_b_idnr,
-      kist_konfession_partner ...) stehen auch nach veranlagung="einzel" noch im Angebot,
-      weil p2_festzusetzung_zusammen als einzige Gates fuenf nicht-bool-Felder hat.
+        real faelschlich angeboten:  26 Felder (Einzel), 28 (Rentner)
+        Kontrolle Zusammenveranlagung: 21 davon dort legitim
+        -> die Differenz ist echtes Ueberangebot, kein Messartefakt
+
+      Der Grund fuer die Diskrepanz ist die eigentliche Erkenntnis: von den 5
+      "strukturell gefangenen" Regeln hat nur p2_festzusetzung_zusammen ueberhaupt eine
+      echte OB-Bedingung. Die anderen vier — p10_1_3_3a_kv_pv, p19_2_versorgungsfreibetrag,
+      p22_1_leibrente_besteuerungsanteil, p23_veraeusserungsgewinn — sind RECHEN-WEICHEN
+      (Kz-Verzweigung, Kohortentabelle, Alter-Parameter), keine Eligibility-Gates. Sie
+      SOLLEN nicht ausschliessbar sein; ihre Inline-Kommentare sagen das selbst
+      ("Kein Betragsfeld", "gb-Weiche aa/bb"). Sie kosten nichts, auch nicht nach einem Fix.
+
+      Die erste Zahl warf beides in einen Topf und hat den Punkt dadurch groesser
+      aussehen lassen als er ist.
     bauart_der_fehlerklasse: |
       Dieselbe Bauart wie die Gate-Polaritaets-Falle, die den ganzen Verpflegungsmehraufwand
       gekostet hat (519199e): ein Gate, das im Normalfall nie greift, sieht aus wie ein
