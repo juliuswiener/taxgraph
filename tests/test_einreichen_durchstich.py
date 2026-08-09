@@ -28,12 +28,11 @@ und sieht damit aus wie "keine Beanstandungen" — ist aber ein Abbruch VOR der 
 `CE.klassifiziere_rc()` haelt das auseinander; der Endpunkt darf das NIE als Erfolg (200,
 plausibel=True) melden.
 
-Fixtur-Hinweis: die minimale Feldmenge fuer scheibe=an_gesamt wurde 2026-08-10 leer
-gemessen (`API.einreichen` mit `_BASIS_A` aus test_checkest_durchstich.py meldete
-"kap_gewinn_aktien/kap_kapitalertraege/kap_verlust_aktien/kap_verlust_sonstige: Feld nicht
-in der Bindungstabelle" — Anlage KAP ist Task #8, noch offen). Diese Fixtur laesst die
-KAP-Detailfelder deshalb weg und setzt nur `kein_kap=True`; das reicht, um die Deklaration
-vollstaendig zu machen und echtes XML zu erzeugen.
+Fixtur-Hinweis: KAP-Detailfelder bewusst weggelassen (nur `kein_kap=True`, keine explizite
+kap_*=0-Deklaration) — ein Feld explizit auf 0 zu deklarieren loest bei checkESt einen
+eigenen "Angabegrund fehlt"-Fehler aus (Anlage-KAP-Adjudikation, noch offen), das blosse
+Weglassen unter `kein_kap=True` nicht. Das reicht, um die Deklaration vollstaendig zu
+machen und echtes XML zu erzeugen.
 
 Ueberspringt sauber ohne ERiC/Hersteller-ID (credential-freies CI). Die ID wird nie
 geloggt — Skip-Mechanik uebernommen aus `tests/test_checkest_durchstich.py::_hid`.
@@ -42,15 +41,22 @@ Endpunkt-Ratsche + Delta-Wache (2026-08-10)
 --------------------------------------------
 Team-lead-Befund: der Live-Endpunkt uebergibt `abgabefaehig`/`absender_*` NICHT an
 `erzeuge_xml` (api.py:2398) — die Funktions-Ratsche in `test_checkest_durchstich.py` misst
-also einen saubereren Pfad (9 Restfehler), als ein echter Nutzer ihn heute faehrt (17). Bis
-das nachgezogen ist (BACKLOG `endpunkt-naht-abgabepfad`, nicht mein Bereich — produkt/haut/
-api.py gehoert team-lead), braucht dieser Pfad eine EIGENE Ratsche, sonst kann er unbemerkt
-weiter auseinanderlaufen. Zwei Zahlen ohne Beziehung zueinander waren genau der Zustand, der
-den Vorsatz-Fortschritt (18->9 auf Funktionsebene) am Endpunkt (weiterhin 17) unsichtbar
-liess. Deshalb zusaetzlich zur Endpunkt-Ratsche ein dritter Test, der die Differenz zur
-Funktions-Ratsche explizit benennt und rot wird, wenn sie sich aendert — er braucht kein ERiC
-(reine Konstanten-Arithmetik), bleibt also auch credential-frei gruen und faengt Drift selbst
-dort, wo die beiden Ratschen unabhaengig voneinander editiert werden.
+also einen saubereren Pfad, als ein echter Nutzer ihn heute faehrt. Bis das nachgezogen ist
+(BACKLOG `endpunkt-naht-abgabepfad`, nicht mein Bereich — produkt/haut/api.py gehoert
+team-lead), braucht dieser Pfad eine EIGENE Ratsche, sonst kann er unbemerkt weiter
+auseinanderlaufen. Zwei Zahlen ohne Beziehung zueinander waren genau der Zustand, der den
+Vorsatz-Fortschritt auf Funktionsebene am Endpunkt unsichtbar liess. Deshalb zusaetzlich zur
+Endpunkt-Ratsche ein dritter Test, der die Differenz zur Funktions-Ratsche explizit benennt
+und rot wird, wenn sie sich aendert — er braucht kein ERiC (reine Konstanten-Arithmetik),
+bleibt also auch credential-frei gruen und faengt Drift selbst dort, wo die beiden Ratschen
+unabhaengig voneinander editiert werden.
+
+Scheiben-Korrektur (2026-08-10, team-lead-Entscheidung): der erste Anlauf hing die
+Stammdaten an scheibe="an_gesamt" — die lehnt sie am Endpunkt mit 400 ab, weil
+`api_constants.py` STAMMDATEN_FELDER nur in "gesamt"/"rentner_gesamt" fuehrt (an_gesamt hat
+auch kein `gesamt_guard`, ist also strukturell keine abgabefaehige Scheibe, sondern eine
+Arbeitnehmer-Teilrechnung). Fixtur + beide Tests laufen deshalb auf scheibe="gesamt" — misst
+den Pfad, den ein Nutzer tatsaechlich einreicht, auf Kosten einer groesseren Fixtur.
 """
 from __future__ import annotations
 
@@ -146,16 +152,28 @@ def _texte(ericantwort: str) -> list[str]:
             for t in re.findall(r"<Text>(.*?)</Text>", ericantwort or "", re.S)]
 
 
-# Minimale Feldmenge fuer eine vollstaendige an_gesamt-Deklaration, gemessen 2026-08-10
-# (s. Docstring). KAP-Detailfelder bewusst weggelassen (Task #8, Anlage-KAP-Bindung offen).
+# Minimale Feldmenge fuer eine vollstaendige gesamt-Deklaration, gemessen 2026-08-10 per
+# Probe-Skript gegen den echten HTTP-Endpunkt (s. Docstring, Scheiben-Korrektur). scheibe=
+# "gesamt" statt "an_gesamt": nur "gesamt"/"rentner_gesamt" fuehren STAMMDATEN_FELDER in
+# api_constants.py, "an_gesamt" hat kein gesamt_guard und ist strukturell keine abgabefaehige
+# Scheibe (team-lead-Messung). KAP-Detailfelder bewusst weggelassen (nur kein_kap=True) —
+# s. Docstring.
+_STAMM_A = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
+            ("stammdaten_geburtsdatum", "05.05.1955"),
+            ("stammdaten_strasse", "Musterstr."), ("stammdaten_hausnummer", "55"),
+            ("stammdaten_plz", "55555"), ("stammdaten_wohnort", "Musterort"),
+            ("stammdaten_keine_bankverbindung", True),
+            ("stammdaten_art_est_erklaerung", True),
+            ("kist_konfession", "keine"))
+
 _BASIS_A = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
             ("vor_ag_anteil_rv", 1200000), ("vor_rv_ausserhalb_lstb", 0),
             ("kein_gewinn", True), ("kein_kap", True),
-            ("kein_vuv", True), ("kein_sonstige", True))
+            ("kein_vuv", True), ("kein_sonstige", True)) + _STAMM_A
 
 
 def _fall_einzel(base):
-    st, r = _req(base, "POST", "/fall", {"fall_id": "durchstich_http", "scheibe": "an_gesamt",
+    st, r = _req(base, "POST", "/fall", {"fall_id": "durchstich_http", "scheibe": "gesamt",
                                          "veranlagungszeitraum": 2025}, erwarte=201)
     fid = r["fall_id"]
     for fld, w in _BASIS_A:
@@ -168,8 +186,8 @@ def _fall_einzel(base):
 def test_einreichen_endpunkt_erreicht_die_amtliche_pruefung(base, monkeypatch):
     """Echter HTTP-Durchstich: /fall -> /event (bestaetigt) -> /einreichen, ECHTES XML,
     ECHTES checkESt — nichts gemockt. Die Deklaration ist absichtlich NICHT vollstaendig
-    im Sinne einer abgabefertigen Erklaerung (Vorsatz-Block, Anlage N, Anlage KAP sind noch
-    offene Baustellen, s. BACKLOG.yaml) — das ist erlaubt, das XML muss nur bis zur
+    im Sinne einer abgabefertigen Erklaerung (Vorsatz-Block, Anlage N sind noch offene
+    Baustellen, s. BACKLOG.yaml) — das ist erlaubt, das XML muss nur bis zur
     Plausibilitaetspruefung durchkommen, nicht sie bestehen (rc=0 ist NICHT erwartet)."""
     monkeypatch.setenv("ELSTER_HERSTELLER_ID", _HID)
     fid = _fall_einzel(base)
@@ -203,12 +221,12 @@ def test_einreichen_endpunkt_erreicht_die_amtliche_pruefung(base, monkeypatch):
             f"Plausibilitaetsfehler ohne ericantwort — der Nutzer saehe keine Regel: {resp}")
 
 
-# Gemessen 2026-08-10 gegen ERiC 44.2.4.0, ESt_2025, ueber den echten HTTP-Endpunkt (dieselbe
-# Fixtur wie _fall_einzel oben). Der Endpunkt uebergibt (noch) kein abgabefaehig=True/
-# absender_* an erzeuge_xml (api.py:2398) — die 9 Vorsatz-Fehler, die die Funktions-Ratsche in
-# test_checkest_durchstich.py seit e365a37 schliesst, tauchen hier weiterhin auf. Sinkt erst,
-# wenn team-lead das nachzieht (BACKLOG endpunkt-naht-abgabepfad).
-RESTFEHLER_ENDPUNKT_EINZEL = 17
+# Gemessen 2026-08-10 gegen ERiC 44.2.4.0, ESt_2025, ueber den echten HTTP-Endpunkt, scheibe=
+# "gesamt" (dieselbe Fixtur wie _fall_einzel oben). Zusammensetzung: 9 Vorsatz-Block-Fehler
+# (Endpunkt uebergibt noch kein abgabefaehig=True/absender_* an erzeuge_xml, api.py:2398 —
+# echte Naht, sinkt erst wenn team-lead das nachzieht, BACKLOG endpunkt-naht-abgabepfad) plus
+# 2 Anlage-N-Fehler (Steuerklasse + Lohnsteuer fehlen, offene Adjudikation, keine Naht).
+RESTFEHLER_ENDPUNKT_EINZEL = 11
 
 
 @braucht_eric
@@ -239,12 +257,18 @@ def test_restfehler_ratsche_endpunkt(base, monkeypatch):
         f"Verbleibend:\n" + "\n".join(f"  - {t[:160]}" for t in texte))
 
 
-# Differenz Endpunkt minus Funktion, Stand 2026-08-10 (17 - 9): +9 Vorsatz-Block (fehlt am
-# Endpunkt, s.o.) minus 1 Anlage-KAP-Fehler (die Endpunkt-Fixtur laesst die KAP-Nullfelder
-# weg, s. Docstring/Fixtur-Hinweis oben — die Funktions-Fixtur in test_checkest_durchstich.py
-# deklariert sie explizit als 0 und loest damit noch einen KAP-Fehler aus, den der Endpunkt-
-# Pfad gar nicht erst baut). Wer eine der beiden Ratschen aendert, MUSS diese Zahl nachziehen
-# und den Grund hier eintragen — sonst laufen die zwei Messungen wieder unbemerkt auseinander.
+# Differenz Endpunkt minus Funktion, Stand 2026-08-10 (11 - 3 = 8), beide auf scheibe="gesamt"-
+# foermigen Fixturen gemessen. Zwei GEGENLAEUFIGE Ursachen, nicht eine Zahl:
+#   +9  Vorsatz-Block: der Endpunkt uebergibt (noch) kein abgabefaehig=True/absender_* an
+#       erzeuge_xml (api.py:2398) — ECHTE Naht, schliesst sich, wenn team-lead
+#       abgabefaehig=True nachzieht (BACKLOG endpunkt-naht-abgabepfad).
+#   -1  Anlage-KAP: die Funktions-Fixtur in test_checkest_durchstich.py::_BASIS_A deklariert
+#       kap_kapitalertraege/kap_gewinn_aktien/kap_verlust_aktien/kap_verlust_sonstige explizit
+#       als 0 und loest damit einen KAP-Angabegrund-Fehler aus; die Endpunkt-Fixtur hier laesst
+#       diese Felder weg (nur kein_kap=True) und baut Anlage KAP gar nicht erst — KEINE echte
+#       Naht, nur ein Fixtur-Unterschied zwischen den beiden Ratschen.
+# Wer eine der beiden Ratschen aendert, MUSS diese Zahl nachziehen und den Grund hier
+# eintragen — sonst laufen die zwei Messungen wieder unbemerkt auseinander.
 DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8
 
 

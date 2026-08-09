@@ -258,6 +258,85 @@ Nachmessung nicht vergessen wird.
 **Skip-Mechanik unverändert geprüft** (`env -u ELSTER_HERSTELLER_ID ERIC_DIR=/nonexistent`):
 beide ERiC-abhängigen Tests skippen sauber, der Delta-Test bleibt grün (braucht kein ERiC).
 
+## Teil 7 — Naht/Messlücke-Trennung + Scheiben-Korrektur (2026-08-10)
+
+Team-lead-Auftrag nach Teil 6: die dort dokumentierte Zahl `RESTFEHLER_ENDPUNKT_EINZEL = 17`
+vermischte zwei verschiedene Ursachen — bevor irgendeine Konstante angefasst wird, erst
+trennen: (1) die echte Naht (Endpunkt übergibt kein `abgabefaehig=True`/`absender_*`), (2) den
+Verdacht, dass meine eigene Endpunkt-Fixtur dieselbe Klasse Fehler hat, die team-lead bei
+`test_checkest_durchstich.py` gerade selbst behoben hat (Stammdaten-Felder gebaut, aber nie
+über die Fixtur beantwortet — Commit `0053377`, `RESTFEHLER_EINZEL` dort 9→3).
+
+**Blocker beim ersten Versuch:** die Stammdaten-Felder (`stammdaten_nachname` etc.) an
+`scheibe="an_gesamt"` zu hängen scheiterte am Endpunkt mit `400 "feld_id 'stammdaten_nachname'
+nicht in dieser Scheibe"`. Geprüft gegen `git show HEAD:produkt/haut/api_constants.py` (sauberer
+Commit-Stand, kein Artefakt eines schmutzigen Arbeitsbaums): `STAMMDATEN_FELDER` steht nur in
+`SCHEIBEN["gesamt"]["felder"]` (Zeile 391) und `SCHEIBEN["rentner_gesamt"]` (über
+`RENTNER_FELDER`, Zeile 345) — NICHT in `SCHEIBEN["an_gesamt"]["felder"]` (Zeile 361–369).
+`an_gesamt` hat außerdem kein `gesamt_guard` (nur `gesamt`/`rentner_gesamt` haben
+`"gesamt_guard": True`) — strukturell ist `an_gesamt` eine Arbeitnehmer-Teilrechnung
+(`gesamt_ring: "festzusetzende_est"`), keine eigenständig abgabefähige Scheibe. Das ist ein
+echter Kegel-Gap in `produkt/haut/api_constants.py`, keine Messlücke meiner Fixtur — aber
+`produkt/haut/api.py`/`api_constants.py` sind explizit nicht mein Bereich. Fixtur-Edit
+zurückgesetzt (nur der erklärende Kommentar blieb), zwei Optionen an team-lead gemeldet
+((a) `an_gesamt`s Kegel um `STAMMDATEN_FELDER` erweitern — Produktionscode, außerhalb meines
+Auftrags; (b) Testfixtur auf `scheibe="gesamt"` umstellen), auf Entscheidung gewartet statt
+selbst zu wählen.
+
+**Team-lead-Entscheidung:** (b). Eigene Messung von team-lead bestätigt: `an_gesamt` hat
+`gesamt_guard=None`, Ring `festzusetzende_est`, 0 Stammdaten-Felder; `gesamt` und
+`rentner_gesamt` haben beide `gesamt_guard=True`, 12 Stammdaten-Felder — `an_gesamt` war nie
+als eigenständig abgabefähig gedacht. Option (a) hätte einen Produktionsfehler eingebaut.
+
+**Neue Messung (Probe-Skript gegen echten HTTP-Server, `scheibe="gesamt"`, minimale Feldmenge —
+nur Kernfelder + vier `kein_*`-Flags + `kist_konfession="keine"` + 9 Stammdaten-Felder, KEINE
+explizite Nulldeklaration von Detailfeldern):**
+
+```
+STATUS 422, grund plausibilitaet_verletzt, rc 610001002, klasse plausibilitaet_fehler
+ANZAHL 11
+```
+
+11 Fehler = 9 Vorsatz-Block (Absendername/-straße/-ort, Unterfallart, Vorgang, Zeitraum,
+Copyright, OrdNrArt, Rückübermittlung/Bescheid) + 2 Anlage N (Steuerklasse, Lohnsteuer —
+Task #7, offene Adjudikation). **0 Anlage-KAP-Fehler** — ein erster Versuch mit dem vollen
+"Pflicht-Kegel-27" aus `test_elster_e2e_kz_durchgang.py` (inkl. expliziter `*=0`-Detailfelder für
+VV/KAP/EP/Verpflegung) hatte 23 Fehler gemessen; die 0-Deklarationen lösen bei checkESt jeweils
+eigene "Angabegrund fehlt"-Meldungen aus, obwohl das zugehörige `kein_*`-Flag bereits `True`
+ist — dieselbe Mechanik, die Teil 6/team-leads Messung als "−1 KAP" für die Funktions-Fixtur
+schon kannte. Weglassen statt explizit auf 0 setzen vermeidet das.
+
+**Endgültige Trennung der beiden Ursachen** (nicht mehr eine Summenzahl, siehe Kommentar in
+`tests/test_einreichen_durchstich.py` über `DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL`):
+
+| Ursache | Effekt | Klasse |
+|---|---|---|
+| Endpunkt übergibt kein `abgabefaehig=True`/`absender_*` an `erzeuge_xml` (`api.py:2398`) | +9 (Vorsatz-Block) | echte Naht — schließt sich, sobald team-lead das nachzieht |
+| Funktions-Fixtur deklariert `kap_*` explizit als 0, Endpunkt-Fixtur lässt sie weg | −1 (Anlage-KAP) | Fixtur-Unterschied, keine Naht |
+
+`RESTFEHLER_ENDPUNKT_EINZEL = 11` (neu, ersetzt die 17 aus Teil 6 — beide auf verschiedenen
+Scheiben gemessen, nicht direkt vergleichbar, s.o.), `RESTFEHLER_EINZEL = 3` (committed,
+`0053377`), `DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8` (11 − 3, gleicher Zahlenwert wie in
+Teil 6 zufällig, aber jetzt aus zwei sauber getrennten, korrekt gemessenen Ursachen statt aus
+einer vermischten).
+
+**Mutationsbeweis (2026-08-10, beide Tests, beide Richtungen, gegen echtes ERiC):**
+
+```
+RESTFEHLER_ENDPUNKT_EINZEL = 11 -> 10  => FAILED REGRESSION: 11 amtliche Fehler, erlaubt 10
+RESTFEHLER_ENDPUNKT_EINZEL = 10 -> 12  => FAILED: assert 11 == 12 (FORTSCHRITT-Zweig)
+RESTFEHLER_ENDPUNKT_EINZEL = 12 -> 11  (zurückgesetzt)
+DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8 -> 7  => FAILED: assert 8 == 7
+DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 7 -> 8  (zurückgesetzt)
+```
+
+`git diff --stat`/`grep` danach bestätigt: Originalwerte (11, 8) wiederhergestellt.
+
+```
+$ python -m pytest tests/test_einreichen_durchstich.py -v
+3 passed in 1.18s
+```
+
 ## Zusammenfassung
 
 - Inventur von 13 Tests in `test_einreichen.py`: alle 13 bleiben unverändert — jeder mockt genau
@@ -275,10 +354,15 @@ beide ERiC-abhängigen Tests skippen sauber, der Delta-Test bleibt grün (brauch
 - Volle Suite mit meinem Diff: 1 failed, 1695 passed, 4 skipped — der eine Fehlschlag
   (`test_bindungs_typ_vs_xsd_typ.py`) liegt an Bindungsdateien anderer, paralleler Tasks (#7/#8),
   nicht an dieser Arbeit. Mein neuer Durchstich-Test läuft grün im `passed`-Kontingent.
-- Folgeauftrag (Teil 6): Endpunkt-Ratsche `RESTFEHLER_ENDPUNKT_EINZEL = 17` +
-  Delta-Wache `DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8` gegen `RESTFEHLER_EINZEL = 9`
-  (HEAD-committed). Beide Tests per Mutation in beide Richtungen rot gefahren. Ein live
-  laufender, uncommitteter Fremdeingriff in `test_checkest_durchstich.py` während der Arbeit
-  hat die Delta-Wache bereits real ausgelöst — Beleg, dass sie den ihr zugedachten Zweck
-  erfüllt. Im aktuellen (fremd-dirty) Arbeitsbaum bleibt sie deshalb rot, bis dieser Eingriff
-  committet und die Endpunkt-Zahl neu gemessen ist; team-lead informiert.
+- Folgeauftrag (Teil 6, überholt durch Teil 7): erste Endpunkt-Ratsche-Messung
+  `RESTFEHLER_ENDPUNKT_EINZEL = 17` auf `scheibe="an_gesamt"` vermischte eine echte Naht
+  (Vorsatz-Block) mit einer Fixtur-bedingten Messlücke. Ein live laufender, uncommitteter
+  Fremdeingriff in `test_checkest_durchstich.py` während der Arbeit hat die Delta-Wache
+  bereits real ausgelöst — Beleg, dass sie den ihr zugedachten Zweck erfüllt.
+- Naht/Messlücke-Trennung (Teil 7): `an_gesamt` kann Stammdaten strukturell nicht tragen
+  (Kegel-Gap in `api_constants.py`, kein `gesamt_guard`) — Fixtur nach team-lead-Entscheidung
+  auf `scheibe="gesamt"` umgestellt. Frisch gemessen: `RESTFEHLER_ENDPUNKT_EINZEL = 11`
+  (9 Vorsatz-Naht + 2 Anlage-N, 0 KAP) gegen `RESTFEHLER_EINZEL = 3` (committed, `0053377`) ⇒
+  `DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8`, dokumentiert als zwei getrennte Ursachen
+  (+9 Naht, −1 Fixtur-Unterschied), nicht als eine Summenzahl. Beide Ratschen erneut per
+  Mutation in beide Richtungen rot gefahren, danach sauber zurückgesetzt (11/8 bestätigt).
