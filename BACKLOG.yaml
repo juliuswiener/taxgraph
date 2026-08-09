@@ -111,7 +111,32 @@ abgabe:
 
   - id: vorsatz-block
     titel: "Vorsatz-Block fehlt komplett — 9 der 18 Beanstandungen"
-    status: teil_erledigt
+    status: erledigt
+    erledigt_in: "e365a37 (2026-08-09)"
+    erledigt_wie: |
+      Eigene Funktion _vorsatz(), analog _transfer_header(), letztes Kind von <E10>.
+      Flag abgabefaehig=False als Default haelt alle ~68 bestehenden erzeuge_xml-Aufrufe
+      unveraendert; bei True sind die 5 absender_*-Parameter fail-closed Pflicht.
+      Gemessen: einzel 18 -> 9, zusammen 24 -> 15, in beiden Faellen exakt die
+      erwarteten 9 Meldungen. 8 Tests, alle per Mutation rot gefahren (5 Mutationen).
+    schema_quelle_korrigiert: |
+      WICHTIG fuer kuenftige Arbeit: Vorsatz steht NICHT in elster11_E10_2025_extern.xsd
+      (0 Treffer), sondern in der Schwesterdatei E10-2025.xsd im selben Verzeichnis
+      (1 Treffer). Von main nachgeprueft. Das Briefing hatte die falsche Datei genannt;
+      der Worker hat es beim Bauen korrigiert.
+    empirischer_fallstrick: |
+      NICHT aus dem XSD ableitbar, nur durch scharfe Messung gefunden: OrdNrArt="S" ohne
+      konsistente Steuernummer ersetzt die 9 Fehler nicht durch 0, sondern durch 2 NEUE
+      ("Bundesfinanzamtsnummer ... unterscheiden sich"). Daher ein fuenfter Pflicht-
+      parameter absender_steuernummer plus Praefix-Check gegen empfaenger_finanzamt.
+      Lehre: die amtliche Pruefung kennt Konsistenzregeln zwischen Feldern, die kein
+      Schema ausdrueckt. Jeder neue Block muss scharf gemessen werden, nicht nur
+      schema-valide gebaut.
+    abweichung_dokumentiert: |
+      Copyright wird mit dem datenlieferant-Parameter belegt ("TaxGraph"), nicht mit dem
+      Referenz-Literal "ELSTER" — laut Schema-Doku bezeichnet das Feld den Software-
+      Hersteller, und "ELSTER" ist dort der Autor der amtlichen Beispieldatei.
+      checkESt beanstandet den Wert nicht.
     aufwand_h: 2
     messung: |
       Amtliche Meldungen, woertlich:
