@@ -28,6 +28,13 @@ bindungen:
       datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
     # Wert "andere" hat KEINEN verifizierten Religionsschlüssel-Code (~35 mögliche XSD-Werte, kein
     # Raten) -> fail-closed in nicht_deklariert (est_mapping.WERTEKODIERUNG). Julius-Entscheidung offen.
+    # ACHTUNG Kopplung (gemessen, reports/adjudikation/checkest_feldkopplungen_2026-08-09.md):
+    # jeder kirchensteuerpflichtige Code (alles außer "11") verlangt laut checkESt ZUSÄTZLICH
+    # Lohnsteuer (E0200301) UND Kirchensteuer (E0200501) auf Anlage N, sonst 2 NEUE statt 0 alte
+    # Fehler. E0200301 ist in bindung_p36_abschlusszahlung.yaml:24 dauerhaft ausgeschlossen
+    # (Doppel-Erfassung ggü. eLStB) -> echte Kollision, Julius-Entscheidung offen, bevor
+    # "evangelisch"/"roemisch-katholisch" produktiv beantwortet werden können, ohne checkESt zu
+    # kippen. "keine" (-> Code 11) ist davon NICHT betroffen und bleibt sauber.
 
   - feld_id: kist_bundesland
     quelle:

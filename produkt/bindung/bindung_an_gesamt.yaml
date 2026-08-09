@@ -1095,6 +1095,10 @@ bindungen:
     # wie kist_konfession (bindung_p51a_kirchensteuer.yaml). Bewusst NICHT in Kirchensteuer-Regel
     # (p51a_kirchensteuer) verankert — der Ring rechnet Person-B-Konfession nicht mit; reines
     # Deklarations-Stammdatum, kein Steuerungs-Slot.
+    # ACHTUNG Kopplung (gemessen, reports/adjudikation/checkest_feldkopplungen_2026-08-09.md):
+    # dieselbe Kollision wie bei kist_konfession — jeder Code außer "11" verlangt zusätzlich
+    # Lohnsteuer/Kirchensteuer auf Anlage N (Person B), E0200301-Ausschluss
+    # (bindung_p36_abschlusszahlung.yaml:24) kollidiert. Julius-Entscheidung offen; "keine" bleibt sauber.
 
 luecken:
   # -- §24a Altersentlastungsbetrag: Bemessungs-Inputs + Kohorten-Parameter (gesamt-Kontext, §24a gesamt-only) --
