@@ -239,6 +239,63 @@ def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
     blatt.text = _wert_text(wert)
 
 
+def _vorsatz(vz: int, absender_name: str, absender_strasse: str, absender_plz: str,
+            absender_ort: str, absender_steuernummer: str, datenlieferant: str,
+            ns_e10: str) -> ET.Element:
+    """<Vorsatz>-Block: Vordruck-Verwaltungsdaten. KEIN Kz-Element (kein `E\\d{7}`-Name) —
+    `kz_pfade()` indiziert ihn deshalb nie; er muss hier von Hand gebaut werden, genau wie
+    `_transfer_header()`. Lebt im E10-Namespace (`ns_e10`), NICHT im Elster-Rahmen-Namespace,
+    weil er Kind von `<E10>` ist (s. Referenz-XML, Zeile 108 — kein eigenes Praefix).
+
+    Struktur, Reihenfolge und zulaessige Werte kommen aus dem amtlichen Schema
+    (`Vorsatz_67907_CType`, E10-2025.xsd:25286-25360) und der amtlichen Referenz
+    (elster/submission/testfall_est2025_minimal.xml, validiert rc=0, Zeilen 108-122) —
+    nichts geraten:
+      - Unterfallart: XSD-Pattern laesst nur "10" zu (String_MinL2_MaxL2_Muster1567_CType,
+        E10-2025.xsd:8079-8087; Doku "bei ESt ist der Wert 10 zu verwenden").
+      - Vorgang: Enum_Vorsatz_Vorgang_CType kennt "01" (Veranlagung) / "04" (Veranlagung +
+        Festsetzung von Vorauszahlungen), E10-2025.xsd:7466-7479. "01" ist der Normalfall
+        (reine Veranlagung, keine Vorauszahlungsfestsetzung) — auch der Referenz-Wert.
+      - Zeitraum: = vz, kein neuer Wert (der Parameter existiert schon).
+      - Copyright: XSD verlangt nur einen freien String, max. 50 Zeichen ("Copyrightvermerk
+        des Herstellers der Steuersoftware", E10-2025.xsd:25343-25346) — NICHT der Referenz-
+        Literal "ELSTER" (der bezeichnet den Ersteller der amtlichen Beispieldatei, nicht
+        TaxGraph als Hersteller). Hier der bereits vorhandene `datenlieferant`-Parameter
+        (Default "TaxGraph"), der denselben Sachverhalt im TransferHeader traegt.
+      - OrdNrArt: XSD-Pattern "S|O" (String_MinL1_MaxL1_Muster83686_CType,
+        E10-2025.xsd:7974-7982); Referenz nutzt "S" (Ordnung nach Steuernummer).
+      - StNr: GEMESSENER Befund (2026-08-09, s. reports/adjudikation/vorsatz_block_2026-08-09.md):
+        anfangs weggelassen, weil sie nicht in den 9 Original-Fehlern stand — checkESt akzeptierte
+        das nicht klaglos, sondern ersetzte die 9 Fehler durch 2 ANDERE: „Es wurde ... angegeben,
+        dass die Steuererklaerung mit einer vorhandenen Steuernummer abgegeben wird [...]" und
+        „Die Bundesfinanzamtsnummer und die ersten 4 Stellen der Steuernummer unterscheiden
+        sich." OrdNrArt="S" VERLANGT also eine StNr, deren erste 4 Stellen mit der
+        Finanzamtsnummer (`empfaenger_finanzamt`) uebereinstimmen — kein Konstante, sondern ein
+        weiterer Absender-Parameter, den `erzeuge_xml()` genauso fail-closed erzwingt und dessen
+        Praefix es gegen `empfaenger_finanzamt` prueft.
+      - Rueckuebermittlung/Bescheid: JaNein12BaseCType, "1"=Ja/"2"=Nein
+        (E10-2025.xsd:1634-1649). Referenz nutzt "2" (keine elektronische Bescheid-Abholung
+        angefordert) — konservativer Default, bis das Produkt diesen Workflow anbietet.
+
+    AbsName/AbsStr/AbsPlz/AbsOrt/StNr kommen aus dem Fall (Absender = steuerpflichtige Person) —
+    das sind PARAMETER, keine Konstanten; der Aufrufer (`erzeuge_xml`) erzwingt sie fail-closed.
+    """
+    v = ET.Element(f"{{{ns_e10}}}Vorsatz")
+    ET.SubElement(v, f"{{{ns_e10}}}Unterfallart").text = "10"
+    ET.SubElement(v, f"{{{ns_e10}}}Vorgang").text = "01"
+    ET.SubElement(v, f"{{{ns_e10}}}StNr").text = absender_steuernummer
+    ET.SubElement(v, f"{{{ns_e10}}}Zeitraum").text = str(vz)
+    ET.SubElement(v, f"{{{ns_e10}}}AbsName").text = absender_name
+    ET.SubElement(v, f"{{{ns_e10}}}AbsStr").text = absender_strasse
+    ET.SubElement(v, f"{{{ns_e10}}}AbsPlz").text = absender_plz
+    ET.SubElement(v, f"{{{ns_e10}}}AbsOrt").text = absender_ort
+    ET.SubElement(v, f"{{{ns_e10}}}Copyright").text = datenlieferant
+    ET.SubElement(v, f"{{{ns_e10}}}OrdNrArt").text = "S"
+    rueck = ET.SubElement(v, f"{{{ns_e10}}}Rueckuebermittlung")
+    ET.SubElement(rueck, f"{{{ns_e10}}}Bescheid").text = "2"
+    return v
+
+
 def _transfer_header(vz: int, empfaenger_land: str, hersteller_id: str,
                      datenlieferant: str, testmerker: str | None) -> ET.Element:
     th = ET.Element(f"{{{NS_ELSTER}}}TransferHeader", {"version": "11"})
@@ -261,7 +318,10 @@ def _transfer_header(vz: int, empfaenger_land: str, hersteller_id: str,
 def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                 empfaenger_finanzamt: str = "9181", hersteller_id: str | None = None,
                 datenlieferant: str = "TaxGraph", testmerker: str | None = TESTMERKER_ERIC,
-                nutzdaten_ticket: str = "taxgraph-0001") -> str:
+                nutzdaten_ticket: str = "taxgraph-0001", abgabefaehig: bool = False,
+                absender_name: str | None = None, absender_strasse: str | None = None,
+                absender_plz: str | None = None, absender_ort: str | None = None,
+                absender_steuernummer: str | None = None) -> str:
     """Deklaration (aus est_mapping.deklariere()) -> ELSTER-Submission-XML als String.
 
     Fail-closed: `result["vollstaendig"] is False` -> XmlFehler. Kz ohne Schema-Pfad -> XmlFehler.
@@ -274,6 +334,14 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
 
     Äußere Schleife über Kz in Schema-Reihenfolge, innere über Instanzen — so bleiben
     N(PersonA) und N(PersonB) direkt benachbart, VOR dem VOR-Container.
+
+    `abgabefaehig=True` haengt zusaetzlich den <Vorsatz>-Block an (s. `_vorsatz()`) — ohne ihn
+    weist checkESt jedes Produkt-XML mit 9 Plausibilitaetsfehlern ab (gemessen 2026-08-09,
+    reports/adjudikation/vorsatz_block_2026-08-09.md). Default bleibt False: Vorsatz ist KEIN
+    Kz-Element, kann also nie ueber `deklaration` befuellt werden, und die Absender-Stammdaten
+    (`absender_*`) liegen heute noch nicht im Fall vor (s. stammdaten_inventur_2026-08-09.md).
+    Mit `abgabefaehig=True` und fehlenden `absender_*` bricht dieser Aufruf fail-closed ab,
+    statt ein XML zu erzeugen, das checkESt spaeter still ablehnt.
     """
     if not result.get("vollstaendig", False):
         offen = result.get("unvollstaendig", [])
@@ -393,6 +461,31 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
         for container, inst_idx_0, wert in instanz_map.get(kz, []):
             _einhaengen(e10, pfade[kz], wert, ns_e10, pflicht,
                         instanz={container: inst_idx_0}, kz_meta=kz_meta)
+
+    if abgabefaehig:
+        fehlend_absender = [name for name, wert in (
+            ("absender_name", absender_name), ("absender_strasse", absender_strasse),
+            ("absender_plz", absender_plz), ("absender_ort", absender_ort),
+            ("absender_steuernummer", absender_steuernummer)) if not wert]
+        if fehlend_absender:
+            raise XmlFehler(
+                f"abgabefaehig=True verlangt Absender-Stammdaten, es fehlen: "
+                f"{', '.join(fehlend_absender)} — sonst lehnt checkESt das XML mit "
+                f"9 Plausibilitaetsfehlern im Vorsatz-Block ab (still fuer den Nutzer).")
+        # Gemessener Befund (reports/adjudikation/vorsatz_block_2026-08-09.md): OrdNrArt="S"
+        # ohne konsistente StNr ersetzt die urspruenglichen Fehler NICHT durch Null, sondern
+        # durch 2 ANDERE ("Bundesfinanzamtsnummer ... unterscheiden sich"). Praefix-Check hier
+        # schlaegt beim Bau fehl statt erst bei checkESt / beim Finanzamt.
+        if absender_steuernummer[:4] != empfaenger_finanzamt:
+            raise XmlFehler(
+                f"absender_steuernummer beginnt nicht mit der Finanzamtsnummer "
+                f"{empfaenger_finanzamt!r} (Praefix {absender_steuernummer[:4]!r}) — "
+                f"checkESt lehnt das als 'Bundesfinanzamtsnummer ... unterscheiden sich' ab.")
+        # Vorsatz ist laut Schema (E10-2025.xsd:8403) das LETZTE Kind von E10 — Anhaengen
+        # NACH der Kz-Schleife ist deshalb schema-korrekt, unabhaengig davon, welche
+        # Kz-Container zuvor entstanden sind.
+        e10.append(_vorsatz(vz, absender_name, absender_strasse, absender_plz, absender_ort,
+                            absender_steuernummer, datenlieferant, ns_e10))
 
     ET.indent(wurzel, space="\t")
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + _serialisiere(wurzel, ns_e10)

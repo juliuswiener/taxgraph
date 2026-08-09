@@ -191,3 +191,89 @@ def test_e10_traegt_seinen_namespace_lokal():
     ns = EX.NS_E10.format(vz=2025)
     assert f'<E10 xmlns="{ns}"' in xml, "E10 ohne lokale Default-Namespace-Deklaration"
     assert "ns0:" not in xml and "ns1:" not in xml, "Praefix-Reste im Nutzdatenteil"
+
+
+# ----------------------------------------------------------------- Vorsatz-Block
+#
+# <Vorsatz> traegt KEIN Kz (kein E\d{7}-Name) — kz_pfade() indiziert ihn deshalb nie, egal was
+# in `deklaration` steht. Ohne ihn lehnt checkESt jedes Produkt-XML mit 9 Plausibilitaetsfehlern
+# ab (gemessen 2026-08-09, reports/adjudikation/vorsatz_block_2026-08-09.md). Die Absender-
+# Stammdaten liegen heute nicht im Fall vor -> `abgabefaehig=True` erzwingt sie fail-closed.
+
+ABSENDER = dict(absender_name="Maier Hans", absender_strasse="Musterstr. 55",
+                absender_plz="55555", absender_ort="Musterort",
+                absender_steuernummer="9181081508155")
+
+
+def test_ohne_abgabefaehig_gibt_es_keinen_vorsatz_block():
+    """Default-Verhalten (abgabefaehig=False) bleibt unveraendert — keine stille Erweiterung."""
+    xml = EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID)
+    assert "<Vorsatz>" not in xml
+
+
+def test_abgabefaehig_haengt_vorsatz_mit_allen_pflichtfeldern_an():
+    xml = EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID,
+                         abgabefaehig=True, **ABSENDER)
+    for tag, wert in [("Unterfallart", "10"), ("Vorgang", "01"),
+                      ("StNr", "9181081508155"), ("Zeitraum", "2025"),
+                      ("AbsName", "Maier Hans"), ("AbsStr", "Musterstr. 55"),
+                      ("AbsPlz", "55555"), ("AbsOrt", "Musterort"),
+                      ("OrdNrArt", "S"), ("Bescheid", "2")]:
+        assert f"<{tag}>{wert}</{tag}>" in xml, f"{tag} fehlt oder falscher Wert"
+    assert "<Copyright>TaxGraph</Copyright>" in xml
+    assert "<Rueckuebermittlung>" in xml
+
+
+def test_vorsatz_kinder_in_schema_reihenfolge():
+    """xs:sequence in Vorsatz_67907_CType (E10-2025.xsd:25286): Unterfallart, Vorgang, StNr,
+    Zeitraum, AbsName, AbsStr, AbsPlz, AbsOrt, Copyright, OrdNrArt, Rueckuebermittlung/Bescheid.
+
+    `<Vorgang>` kommt zweimal vor (auch im TransferHeader) — deshalb erst auf den Vorsatz-
+    Teilstring einschraenken, sonst misst man versehentlich den falschen Treffer.
+    """
+    xml = EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID,
+                         abgabefaehig=True, **ABSENDER)
+    vorsatz = xml[xml.index("<Vorsatz>"):xml.index("</Vorsatz>")]
+    reihenfolge = ["Unterfallart", "Vorgang", "StNr", "Zeitraum", "AbsName", "AbsStr",
+                   "AbsPlz", "AbsOrt", "Copyright", "OrdNrArt", "Bescheid"]
+    positionen = [vorsatz.index(f"<{tag}>") for tag in reihenfolge]
+    assert positionen == sorted(positionen), "Vorsatz-Kinder nicht in Schema-Reihenfolge"
+
+
+def test_vorsatz_ist_das_letzte_kind_von_e10():
+    """Laut Schema (E10-2025.xsd:8403) das letzte E10-Kind — muss NACH allen Kz-Containern stehen."""
+    xml = EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID,
+                         abgabefaehig=True, **ABSENDER)
+    assert xml.index("<ESt1A>") < xml.index("<Vorsatz>")
+    assert xml.index("</Vorsatz>") < xml.index("</E10>")
+
+
+def test_abgabefaehig_ohne_absender_ist_fail_closed():
+    """Crash statt stiller Null — die 9 Absender-Fehler sollen nie unbemerkt zurueckkehren."""
+    with pytest.raises(EX.XmlFehler, match="Absender-Stammdaten"):
+        EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID, abgabefaehig=True)
+
+
+def test_abgabefaehig_nennt_jedes_fehlende_absender_feld():
+    with pytest.raises(EX.XmlFehler, match="absender_ort"):
+        EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID, abgabefaehig=True,
+                       absender_name="Maier Hans", absender_strasse="Musterstr. 55",
+                       absender_plz="55555", absender_steuernummer="9181081508155")
+
+
+def test_steuernummer_praefix_muss_zur_finanzamtsnummer_passen():
+    """Gemessener Befund: OrdNrArt='S' ohne konsistente StNr ersetzt die 9 Original-Fehler NICHT
+    durch 0, sondern durch 2 andere ('Bundesfinanzamtsnummer ... unterscheiden sich')."""
+    absender = dict(ABSENDER, absender_steuernummer="1234081508155")  # Praefix != "9181"
+    with pytest.raises(EX.XmlFehler, match="Finanzamtsnummer"):
+        EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID,
+                       empfaenger_finanzamt="9181", abgabefaehig=True, **absender)
+
+
+@braucht_xsd
+def test_abgabefaehiges_xml_ist_xsd_valide(tmp_path):
+    pfad = _schreibe(tmp_path, _dekl(E0100201="Maier", E0100301="Hans",
+                                     E0100401="05.05.1955"),
+                     abgabefaehig=True, **ABSENDER)
+    ok, meldung = VX.validate(pfad, "2025")
+    assert ok, meldung
