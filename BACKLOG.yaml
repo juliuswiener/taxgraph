@@ -245,6 +245,36 @@ abgabe:
       weil es die Felder erst geben muss. Danach: die Ratsche zusaetzlich auf der
       Endpunkt-Ebene ziehen, sonst wiederholt sich die Divergenz.
 
+  - id: einreichen-ohne-scheiben-pruefung
+    titel: "/einreichen prueft nicht, ob die Scheibe eine vollstaendige Erklaerung tragen kann"
+    status: offen
+    entdeckt: "2026-08-09, beim Bau der Endpunkt-Ratsche"
+    richtung: "kein Geldfehler — Fehlermeldung zeigt auf den Nutzer statt auf die Scheibenwahl"
+    messung: |
+      Ein Fall auf scheibe="an_gesamt" laeuft in die Einreichung hinein und scheitert erst
+      an checkESt — mit Beanstandungen ueber fehlende Stammdaten, die der Nutzer auf dieser
+      Scheibe STRUKTURELL nie haette beantworten koennen:
+
+        scheibe          gesamt_guard   Ring                        Stammdaten-Felder
+        an_gesamt        None           festzusetzende_est                   0
+        gesamt           True           festzusetzende_est_gesamt           12
+        rentner_gesamt   True           festzusetzende_est_rentner          12
+
+      an_gesamt ist die Arbeitnehmer-TEILRECHNUNG, keine vollstaendige Erklaerung — es fehlt
+      nicht nur STAMMDATEN_FELDER im Kegel (api_constants.py:361-369), sondern auch der
+      gesamt_guard. Beides zusammen ist Absicht, kein Versehen.
+      POST /fall/<id>/event mit feld_id stammdaten_nachname auf an_gesamt:
+        400 "feld_id 'stammdaten_nachname' nicht in dieser Scheibe"
+    verworfene_variante: |
+      STAMMDATEN_FELDER in den an_gesamt-Kegel aufnehmen wurde VERWORFEN: das haette eine
+      Scheibe abgabefaehig aussehen lassen, die es inhaltlich nicht ist. Der Worker hat die
+      Entscheidung vorgelegt statt sie zu treffen — richtig so.
+    plan: |
+      /einreichen soll frueh und mit klarer Meldung ablehnen, wenn die Scheibe des Falls
+      keine vollstaendige Erklaerung tragen kann (Kriterium: gesamt_guard). Heute ist das
+      fail-closed, aber die Meldung beschuldigt den Nutzer unvollstaendiger Angaben, statt
+      die Scheibenwahl zu benennen.
+
   - id: relevanz-nicht-bool-gate
     titel: "34 von 74 askable-Feldern koennen ihre Regel strukturell nie ausschliessen"
     status: analysiert
