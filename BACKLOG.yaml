@@ -215,6 +215,32 @@ abgabe:
       statt durch Bauen. ZUERST messen, ob ein Fall ohne kap_*-Felder die Meldung
       noch zeigt — nicht bauen.
 
+  - id: vz-matrix
+    titel: "Welcher Veranlagungszeitraum ist der Zielfall? Produkt kann 2026, ERiC nicht"
+    status: analysiert
+    entdeckt: "2026-08-09"
+    messung: |
+      Alle Abgabe-Messungen dieser Nacht liefen gegen VZ 2025, ohne dass jemand geprueft
+      haette, ob das der gemeinte Zeitraum ist. Nachgemessen:
+
+      ERiC 44.2.4.0, ausgelieferte Plugin-Module (Dateisystem, nicht README):
+        libcheckESt_2015.so ... libcheckESt_2025.so     -> 2015-2025
+        KEIN libcheckESt_2026.so
+      Produkt, params/:
+        2024, 2025, 2026                                 -> rechnet auch 2026
+
+      Das Produkt rechnet also weiter, als ERiC validieren kann.
+    bewertung: |
+      Fuer den Zielfall (Dogfooding M6.1) ist das KEIN Blocker: die Veranlagung fuer
+      VZ 2026 oeffnet erst 2027, und ELSTER liefert das Modul mit einer spaeteren
+      ERiC-Auslieferung nach. VZ 2025 ist damit der richtige Zeitraum zum Fertigbauen —
+      wir messen an der richtigen Stelle.
+    offene_frage_julius: |
+      Welchen VZ soll der erste echte Durchstich haben? 2025 ist heute vollstaendig
+      pruefbar. Falls die eigene Erklaerung fuer 2025 noch offen ist, ist sie der
+      natuerliche Zielfall; sonst verschiebt sich der Testversand auf die
+      ERiC-Auslieferung mit VZ-2026-Modul.
+
   - id: testversand
     titel: "Testversand gegen die ELSTER-Testumgebung (Roadmap M4.4)"
     status: blockiert
