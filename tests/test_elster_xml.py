@@ -7,6 +7,7 @@ Deklaration, fehlende Hersteller-ID, unbekannte Kz -> kein XML statt kaputtes XM
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 
@@ -15,9 +16,11 @@ import pytest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "produkt", "import"))
 sys.path.insert(0, os.path.join(ROOT, "elster", "submission"))
+sys.path.insert(0, os.path.join(ROOT, "elster"))
 
 import elster_xml as EX      # noqa: E402
 import validate_xsd as VX    # noqa: E402
+import checkest_gate as CE   # noqa: E402
 
 HID = "74931"                # ERiC-Test-Hersteller-ID aus dem amtlichen Beispiel-XML
 
@@ -26,6 +29,31 @@ _xmllint_da = bool(__import__("shutil").which("xmllint"))
 braucht_xsd = pytest.mark.skipif(
     not (_schema_da and _xmllint_da),
     reason="E10-2025.xsd oder xmllint fehlt — XSD-Gate nicht lauffähig")
+
+
+def _hid_eric() -> str | None:
+    """Echte Hersteller-ID fuer checkESt-Aufrufe (NICHT die feste XSD-Test-ID oben) — aus der
+    Umgebung, sonst aus der gitignoreten .env. Nie loggen. Gleiches Muster wie
+    tests/test_checkest_durchstich.py (dort nicht importierbar geteilt, s. dessen Docstring)."""
+    hid = os.environ.get("ELSTER_HERSTELLER_ID")
+    if hid:
+        return hid
+    pfad = os.path.join(ROOT, ".env")
+    if not os.path.exists(pfad):
+        return None
+    for zeile in open(pfad, encoding="utf-8"):
+        if zeile.startswith(("ELSTER_HERSTELLER_ID=", "HERSTELLER_ID=")):
+            return zeile.split("=", 1)[1].strip().strip('"').strip("'") or None
+    return None
+
+
+_HID_ERIC = _hid_eric()
+_ERIC_DA = bool(_HID_ERIC) and os.path.isdir(
+    os.environ.get("ERIC_DIR", os.path.expanduser("~/02_Software/eric")))
+braucht_eric = pytest.mark.skipif(
+    not _ERIC_DA,
+    reason="ERiC oder Hersteller-ID fehlt — amtliche Pruefung nicht lauffaehig "
+           "(credential-freies CI)")
 
 
 def _dekl(**kz) -> dict:
@@ -277,3 +305,85 @@ def test_abgabefaehiges_xml_ist_xsd_valide(tmp_path):
                      abgabefaehig=True, **ABSENDER)
     ok, meldung = VX.validate(pfad, "2025")
     assert ok, meldung
+
+
+# --------------------------------------------------------- Absender-Ableitung aus der Deklaration
+#
+# absender_name/_strasse/_plz/_ort sind KEINE zweite Wahrheit: dieselben Angaben stehen bereits
+# als Kz im Hauptvordruck ESt 1 A (Stammdaten Person A). Statt sie als Pflicht-Parameter zu
+# verlangen (zweite Repraesentation), leitet erzeuge_xml() sie aus `deklaration` ab, wenn kein
+# expliziter Parameter kommt — nur absender_steuernummer hat keinen Kz-Spiegel und bleibt Parameter.
+
+_STAMM_KZ = dict(E0100201="Maier", E0100301="Hans", E0101104="Musterstr.",
+                 E0101206="55", E0100601="55555", E0100602="Musterort")
+
+
+def test_absender_wird_aus_deklaration_abgeleitet():
+    """Kein absender_name/_strasse/_plz/_ort uebergeben -> aus den Stammdaten-Kz gebaut."""
+    xml = EX.erzeuge_xml(_dekl(**_STAMM_KZ), vz=2025, hersteller_id=HID, abgabefaehig=True,
+                         absender_steuernummer="9181081508155")
+    for tag, wert in [("AbsName", "Maier Hans"), ("AbsStr", "Musterstr. 55"),
+                      ("AbsPlz", "55555"), ("AbsOrt", "Musterort")]:
+        assert f"<{tag}>{wert}</{tag}>" in xml, f"{tag} nicht abgeleitet"
+
+
+def test_explizit_absender_hat_vorrang_vor_ableitung():
+    """Ein gesetzter Parameter gewinnt — Ableitung ist Fallback, keine Ueberschreibung.
+
+    Mutationsprobe: `absender_name or abgeleitet[...]` zu `abgeleitet[...] or absender_name`
+    vertauscht macht diesen Test bei abweichenden Werten rot.
+    """
+    xml = EX.erzeuge_xml(_dekl(**_STAMM_KZ), vz=2025, hersteller_id=HID, abgabefaehig=True,
+                         absender_name="Explizit Vorrang", absender_steuernummer="9181081508155")
+    assert "<AbsName>Explizit Vorrang</AbsName>" in xml
+    assert "<AbsName>Maier Hans</AbsName>" not in xml
+
+
+def test_hausnummernzusatz_wird_an_die_strasse_angehaengt():
+    kz = dict(_STAMM_KZ, E0101207="a")
+    xml = EX.erzeuge_xml(_dekl(**kz), vz=2025, hersteller_id=HID, abgabefaehig=True,
+                         absender_steuernummer="9181081508155")
+    assert "<AbsStr>Musterstr. 55a</AbsStr>" in xml
+
+
+def test_fehlende_ableitung_nennt_das_kz_nicht_nur_den_parameternamen():
+    """Wohnort-Kz (E0100602) fehlt, kein absender_ort-Parameter -> Meldung nennt E0100602."""
+    kz = {k: v for k, v in _STAMM_KZ.items() if k != "E0100602"}
+    with pytest.raises(EX.XmlFehler, match="E0100602"):
+        EX.erzeuge_xml(_dekl(**kz), vz=2025, hersteller_id=HID, abgabefaehig=True,
+                       absender_steuernummer="9181081508155")
+
+
+def test_teilweise_fehlendes_kz_nennt_nur_das_fehlende():
+    """Nachname (E0100201) vorhanden, Vorname (E0100301) fehlt -> nur E0100301 in der Meldung,
+    nicht E0100201 (das ist ja da)."""
+    kz = {k: v for k, v in _STAMM_KZ.items() if k != "E0100301"}
+    with pytest.raises(EX.XmlFehler) as exc:
+        EX.erzeuge_xml(_dekl(**kz), vz=2025, hersteller_id=HID, abgabefaehig=True,
+                       absender_steuernummer="9181081508155")
+    assert "E0100301" in str(exc.value)
+    assert "E0100201" not in str(exc.value)
+
+
+def test_absender_steuernummer_bleibt_ohne_kz_ableitung_pflicht_parameter():
+    """Kein Kz-Spiegel fuer StNr — die Ableitung darf sie nicht ersetzen, Meldung sagt warum."""
+    with pytest.raises(EX.XmlFehler, match="absender_steuernummer.*kein Kz-Spiegel"):
+        EX.erzeuge_xml(_dekl(**_STAMM_KZ), vz=2025, hersteller_id=HID, abgabefaehig=True)
+
+
+@braucht_eric
+def test_ableitung_liefert_checkest_dieselbe_fehlerzahl_wie_explizite_parameter():
+    """Beweis: ein XML mit abgeleiteten Absenderdaten ist fuer checkESt UNUNTERSCHEIDBAR von
+    einem mit expliziten Parametern — keine der beiden Bauarten hinterlaesst eine eigene Spur
+    von Beanstandungen."""
+    kz_voll = dict(_STAMM_KZ, E0100401="05.05.1955")
+    xml_abgeleitet = EX.erzeuge_xml(_dekl(**kz_voll), vz=2025, hersteller_id=_HID_ERIC,
+                                    abgabefaehig=True, absender_steuernummer="9181081508155")
+    xml_explizit = EX.erzeuge_xml(_dekl(**kz_voll), vz=2025, hersteller_id=_HID_ERIC,
+                                  abgabefaehig=True, **ABSENDER)
+    rc1, antwort1 = CE.validate(xml_abgeleitet, "ESt_2025")
+    rc2, antwort2 = CE.validate(xml_explizit, "ESt_2025")
+    n1 = len(re.findall(r"<Text>", antwort1 or ""))
+    n2 = len(re.findall(r"<Text>", antwort2 or ""))
+    assert n1 == n2, (f"Ableitung liefert eine ANDERE Fehlerzahl als explizite Parameter "
+                      f"({n1} vs {n2}) — Ableitung ist keine echte Aequivalenz.")

@@ -239,6 +239,41 @@ def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
     blatt.text = _wert_text(wert)
 
 
+# Absender-Werte fuer den Vorsatz-Block sind KEINE zweite Wahrheit: dieselben Angaben stehen
+# bereits als Kz im Hauptvordruck ESt 1 A / Stammdaten Person A (s. _vorsatz()-Docstring).
+# {absender_feld: [(Kz, Label), ...]} -- ALLE Kz eines Feldes muessen vorhanden sein, sonst
+# bleibt das Feld unabgeleitet (None). absender_steuernummer hat KEINEN Kz-Spiegel (eigenes
+# Fall-Feld existiert noch nicht, Stand 2026-08-10) und bleibt deshalb reiner Parameter.
+_ABSENDER_HERKUNFT: dict[str, list[tuple[str, str]]] = {
+    "absender_name": [("E0100201", "Nachname"), ("E0100301", "Vorname")],
+    "absender_strasse": [("E0101104", "Straße"), ("E0101206", "Hausnummer")],
+    "absender_plz": [("E0100601", "PLZ")],
+    "absender_ort": [("E0100602", "Wohnort")],
+}
+_ABSENDER_STRASSE_ZUSATZ_KZ = "E0101207"   # optional, wird an die Hausnummer angehaengt
+
+
+def _leite_absender_ab(deklaration: dict) -> dict[str, str | None]:
+    """AbsName/AbsStr/AbsPlz/AbsOrt aus den Stammdaten-Kz der Deklaration (Person A) ableiten.
+
+    Fehlt eines der zugrunde liegenden Kz eines Feldes, bleibt das Feld None -- nie eine
+    erratene Ersatzangabe. Format gemessen (reports/adjudikation/absender_ableitung_2026-08-10.md):
+    checkESt prueft AbsStr NICHT auf Trennzeichen/Hausnummer/Zusatz-Format (XSD-Typ ist ein
+    freier String_MinL1_MaxL30 ohne Muster) -- "Straße Hausnummer[Zusatz]" (Leerzeichen vor
+    der Nummer, Zusatz direkt angehaengt) ist eine unauffaellige, aber nicht die einzig
+    moegliche Wahl.
+    """
+    abgeleitet: dict[str, str | None] = {}
+    for feld, quellen in _ABSENDER_HERKUNFT.items():
+        teile = [deklaration.get(kz) for kz, _ in quellen]
+        abgeleitet[feld] = " ".join(str(t) for t in teile) if all(teile) else None
+    if abgeleitet["absender_strasse"] is not None:
+        zusatz = deklaration.get(_ABSENDER_STRASSE_ZUSATZ_KZ)
+        if zusatz:
+            abgeleitet["absender_strasse"] += str(zusatz)
+    return abgeleitet
+
+
 def _vorsatz(vz: int, absender_name: str, absender_strasse: str, absender_plz: str,
             absender_ort: str, absender_steuernummer: str, datenlieferant: str,
             ns_e10: str) -> ET.Element:
@@ -277,8 +312,12 @@ def _vorsatz(vz: int, absender_name: str, absender_strasse: str, absender_plz: s
         (E10-2025.xsd:1634-1649). Referenz nutzt "2" (keine elektronische Bescheid-Abholung
         angefordert) — konservativer Default, bis das Produkt diesen Workflow anbietet.
 
-    AbsName/AbsStr/AbsPlz/AbsOrt/StNr kommen aus dem Fall (Absender = steuerpflichtige Person) —
-    das sind PARAMETER, keine Konstanten; der Aufrufer (`erzeuge_xml`) erzwingt sie fail-closed.
+    AbsName/AbsStr/AbsPlz/AbsOrt/StNr kommen aus dem Fall (Absender = steuerpflichtige Person).
+    Es sind PARAMETER dieser Funktion — der Aufrufer (`erzeuge_xml`) leitet die ersten vier im
+    Normalfall aus der Deklaration ab (s. `_leite_absender_ab()`, dieselben Angaben stehen
+    bereits als Kz im Hauptvordruck) und erzwingt fail-closed, wenn weder Parameter noch Kz
+    vorliegen. Ein expliziter Parameter (z.B. aus Tests) hat Vorrang vor der Ableitung.
+    StNr hat keinen Kz-Spiegel und bleibt reiner Parameter.
     """
     v = ET.Element(f"{{{ns_e10}}}Vorsatz")
     ET.SubElement(v, f"{{{ns_e10}}}Unterfallart").text = "10"
@@ -340,10 +379,16 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
     (gemessen 2026-08-09 an ZWEI Faellen, Einzel- UND Zusammenveranlagung: dieselben 9
     Vorsatz-Fehler in beiden, unabhaengig von den uebrigen, fallabhaengigen Fehlern —
     reports/adjudikation/vorsatz_block_2026-08-09.md). Default bleibt False: Vorsatz ist KEIN
-    Kz-Element, kann also nie ueber `deklaration` befuellt werden, und die Absender-Stammdaten
-    (`absender_*`) liegen heute noch nicht im Fall vor (s. stammdaten_inventur_2026-08-09.md).
-    Mit `abgabefaehig=True` und fehlenden `absender_*` bricht dieser Aufruf fail-closed ab,
-    statt ein XML zu erzeugen, das checkESt spaeter still ablehnt.
+    Kz-Element, kann also nie ueber `deklaration` befuellt werden.
+
+    `absender_name/_strasse/_plz/_ort` sind deshalb eigene Parameter — werden aber, wenn nicht
+    explizit gesetzt, aus `deklaration` abgeleitet (s. `_leite_absender_ab()`): dieselben
+    Angaben stehen ohnehin als Kz im Hauptvordruck ESt 1 A, eine zweite Repraesentation ueber
+    Pflicht-Parameter waere eine Naht mit zwei Wahrheiten. `absender_steuernummer` hat keinen
+    Kz-Spiegel (Stand 2026-08-10) und bleibt reiner Parameter. Mit `abgabefaehig=True` und
+    weder Parameter noch Kz fuer eines der vier ableitbaren Felder bricht dieser Aufruf
+    fail-closed ab — die Meldung nennt das fehlende Kz, nicht nur den Parameternamen —, statt
+    ein XML zu erzeugen, das checkESt spaeter still ablehnt.
     """
     if not result.get("vollstaendig", False):
         offen = result.get("unvollstaendig", [])
@@ -465,18 +510,34 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                         instanz={container: inst_idx_0}, kz_meta=kz_meta)
 
     if abgabefaehig:
-        fehlend_absender = [name for name, wert in (
-            ("absender_name", absender_name), ("absender_strasse", absender_strasse),
-            ("absender_plz", absender_plz), ("absender_ort", absender_ort),
-            ("absender_steuernummer", absender_steuernummer)) if not wert]
+        # Ableitung ist der Normalfall (dieselben Angaben stehen als Kz im Hauptvordruck) —
+        # ein expliziter Parameter (z.B. aus Tests) hat Vorrang und wird nie überschrieben.
+        abgeleitet = _leite_absender_ab(deklaration)
+        absender_name = absender_name or abgeleitet["absender_name"]
+        absender_strasse = absender_strasse or abgeleitet["absender_strasse"]
+        absender_plz = absender_plz or abgeleitet["absender_plz"]
+        absender_ort = absender_ort or abgeleitet["absender_ort"]
+
+        fehlend_absender = []
+        for param_name, wert in (
+                ("absender_name", absender_name), ("absender_strasse", absender_strasse),
+                ("absender_plz", absender_plz), ("absender_ort", absender_ort)):
+            if wert:
+                continue
+            fehlende_kz = ", ".join(f"{kz} ({label})" for kz, label in _ABSENDER_HERKUNFT[param_name]
+                                    if not deklaration.get(kz))
+            fehlend_absender.append(f"{param_name} (fehlendes Kz: {fehlende_kz})")
+        if not absender_steuernummer:
+            fehlend_absender.append(
+                "absender_steuernummer (kein Kz-Spiegel — muss als Parameter übergeben werden)")
         if fehlend_absender:
             raise XmlFehler(
-                f"abgabefaehig=True verlangt Absender-Stammdaten, es fehlen: "
-                f"{', '.join(fehlend_absender)} — sonst lehnt checkESt das XML wegen "
-                f"fehlender Vorsatz-Pflichtfelder ab (still fuer den Nutzer; gemessen "
-                f"2026-08-09: 9 Vorsatz-Fehlermeldungen, gleich bei Einzel- und "
-                f"Zusammenveranlagung — die uebrigen, fallabhaengigen Fehler bleiben "
-                f"davon unberuehrt).")
+                f"abgabefaehig=True verlangt Absender-Stammdaten, es fehlen:\n" +
+                "\n".join(f"  - {f}" for f in fehlend_absender) +
+                f"\nsonst lehnt checkESt das XML wegen fehlender Vorsatz-Pflichtfelder ab "
+                f"(still fuer den Nutzer; gemessen 2026-08-09: 9 Vorsatz-Fehlermeldungen, "
+                f"gleich bei Einzel- und Zusammenveranlagung — die uebrigen, fallabhaengigen "
+                f"Fehler bleiben davon unberuehrt).")
         # Gemessener Befund (reports/adjudikation/vorsatz_block_2026-08-09.md): OrdNrArt="S"
         # ohne konsistente StNr ersetzt die urspruenglichen Fehler NICHT durch Null, sondern
         # durch 2 ANDERE ("Bundesfinanzamtsnummer ... unterscheiden sich"). Praefix-Check hier
