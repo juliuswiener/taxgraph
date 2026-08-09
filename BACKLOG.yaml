@@ -330,6 +330,35 @@ abgabe:
       natuerliche Zielfall; sonst verschiebt sich der Testversand auf die
       ERiC-Auslieferung mit VZ-2026-Modul.
 
+  - id: rc-null-erreichbar-belegt
+    titel: "rc=0 ist erreicht — das amtliche Plugin akzeptiert eine TaxGraph-Erklaerung"
+    status: analysiert
+    entdeckt: "2026-08-10"
+    bericht: reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md
+    messung: |
+      Erstmals in der Projektgeschichte hat checkESt eine vom Produkt erzeugte
+      Einkommensteuererklaerung vollstaendig angenommen. Von main unabhaengig
+      nachgemessen, Schritt fuer Schritt, ERiC 44.2.4.0 / ESt_2025, einzel:
+
+        Ausgangslage (committet)   rc=610001002   3 Fehler
+        + KAP-Kz entfernt          rc=610001002   2
+        + Steuerklasse "1"         rc=610001002   1
+        + Lohnsteuer "0,00"        rc=0           0   [plausibel]
+
+      Damit ist der Weg zum Ziel nicht mehr geschaetzt, sondern vermessen: DREI
+      Entscheidungen trennen das Produkt von einer amtlich plausiblen Erklaerung.
+    wichtige_abgrenzung: |
+      rc=0 heisst "besteht die amtliche Plausibilitaetspruefung", NICHT "eingereicht".
+      Der Versand ist ein eigener Schritt (Zertifikat, PIN, ERIC_SENDE statt
+      ERIC_VALIDIERE, echter Netzpfad) und im Code bewusst nirgends verdrahtet.
+      Er gehoert zu Julius, nicht in einen Automatismus. Siehe testversand.
+    was_noch_fehlt: |
+      - zusammen ist noch nicht kombiniert gemessen (verdoppelt sich rechnerisch:
+        Person B hat eigene Anlage N und KAP)
+      - der Produktivpfad (/einreichen) faehrt weiter abgabefaehig=False, siehe
+        endpunkt-naht-abgabepfad; die Messung oben lief ueber erzeuge_xml direkt
+      - die drei Entscheidungen sind offen, die Messung nimmt sie nur vorweg
+
   - id: testversand
     titel: "Testversand gegen die ELSTER-Testumgebung (Roadmap M4.4)"
     status: blockiert
