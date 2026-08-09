@@ -2416,6 +2416,14 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
     klasse = CE.klassifiziere_rc(rc)
     basis = {"fall_id": fall_id, "eingereicht": False, "basis_snapshot": sid,
              "vz": vz, "rc": rc, "klasse": klasse, "xml_bytes": len(xml.encode("utf-8"))}
+    if rc == CE.RC_DATENARTVERSION_UNBEKANNT:
+        # Kein Pruefmodul fuer diesen VZ (z.B. ESt_2026 in ERiC 44.2.4.0). Die Erklaerung
+        # wurde NICHT geprueft — sie als "plausibilitaet_verletzt" zu melden waere eine
+        # Falschaussage ueber die Erklaerung des Nutzers, nicht ueber unser Werkzeug.
+        return 422, {**basis, "grund": "kein_pruefmodul_fuer_vz",
+                     "detail": f"ERiC kennt die Datenartversion ESt_{vz} nicht — fuer diesen "
+                               f"Veranlagungszeitraum liegt kein Pruefmodul vor. Die Erklaerung "
+                               f"wurde nicht geprueft.", "ericantwort": antwort}
     if rc != CE.RC_OK:
         return 422, {**basis, "grund": "plausibilitaet_verletzt", "ericantwort": antwort,
                      "moeglicherweise_gekappt": CE.gekappt_verdacht(antwort)}

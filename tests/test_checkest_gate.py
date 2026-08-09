@@ -90,3 +90,25 @@ def test_validate_braucht_eric_oder_skip():
         pytest.skip("kein lokales ERiC (find_eric_lib leer) — validate() nicht testbar")
     # validate() wird via _load_and_init indirekt getestet; hier nur der Pfad.
     assert os.path.exists(lib), f"find_eric_lib meldet {lib}, existiert aber nicht"
+
+# -- ERIC_GLOBAL_DATENARTVERSION_UNBEKANNT: kein Pruefmodul fuer den VZ -------
+
+def test_rc_datenartversion_unbekannt_ist_eigene_klasse():
+    """ESt_2026 hat in ERiC 44.2.4.0 kein Pruefmodul — das ist NICHT "sonstig".
+
+    Gemessen 2026-08-09 (reports/adjudikation/vz_matrix_2026-08-09.md): das Produkt
+    rechnet VZ 2026 (params/2026 vollstaendig, fall_anlegen nimmt jede Jahreszahl),
+    ERiC liefert dafuer aber kein libcheckESt_2026.so und antwortet mit 610001042.
+    Ohne eigene Klasse fiel der Code auf "sonstig", und der Endpunkt meldete
+    "plausibilitaet_verletzt" — eine Falschaussage ueber die Erklaerung des Nutzers,
+    die in Wahrheit nie geprueft wurde.
+    """
+    assert CE.klassifiziere_rc(CE.RC_DATENARTVERSION_UNBEKANNT) == "datenartversion_unbekannt"
+    assert CE.klassifiziere_rc(CE.RC_DATENARTVERSION_UNBEKANNT) != "sonstig"
+    assert CE.klassifiziere_rc(CE.RC_DATENARTVERSION_UNBEKANNT) != "plausibilitaet_fehler"
+
+
+def test_datenartversion_unbekannt_ist_nicht_geprueft():
+    """Wie RC_IO_KEIN_TICKET: leerer Fehlerpuffer, aber kein Pruefergebnis."""
+    assert CE.klassifiziere_rc(CE.RC_DATENARTVERSION_UNBEKANNT) != "plausibel"
+    assert CE.RC_DATENARTVERSION_UNBEKANNT != CE.RC_OK

@@ -41,14 +41,28 @@ RC_OK = 0
 RC_PLAUSIBILITAET = 610001002           # Plausibilitaetsfehler -> Fehlerliste im Rueckgabepuffer
 RC_IO_KEIN_TICKET = 610301200           # I/O-Gate (z.B. Nutzdatenticket) -> short-circuit VOR Plausi
 RC_HERSTELLER_GESPERRT = 610301202      # Test-Hersteller-ID gesperrt
+# ERIC_GLOBAL_DATENARTVERSION_UNBEKANNT (eric_fehlercodes.h:162): "Die uebergebene
+# Datenartversion ist unbekannt oder das benoetigte ERiC-Plugin wurde nicht gefunden."
+# Praktischer Fall: ESt_2026. Das Produkt rechnet VZ 2026 (params/2026 ist vollstaendig),
+# ERiC 44.2.4.0 liefert dafuer aber kein libcheckESt_2026.so — gemessen 2026-08-09,
+# reports/adjudikation/vz_matrix_2026-08-09.md. Ohne eigene Klasse fiel der Code auf
+# "sonstig" und der Endpunkt meldete "plausibilitaet_verletzt": der Nutzer haette gelesen,
+# seine Erklaerung sei fehlerhaft, obwohl sie nie geprueft wurde.
+RC_DATENARTVERSION_UNBEKANNT = 610001042
 
 
 def klassifiziere_rc(rc: int) -> str:
-    """rc einer Validierung klassifizieren. Wichtig: RC_IO_KEIN_TICKET liefert 0 Fehler im
-    Puffer, ist aber NICHT geprueft (short-circuit vor der Plausibilitaet) — nie als gruen werten."""
+    """rc einer Validierung klassifizieren.
+
+    Zwei Klassen bedeuten NICHT GEPRUEFT und duerfen nie wie ein Pruefergebnis behandelt
+    werden — beide liefern einen leeren Fehlerpuffer, der wie "keine Beanstandungen" aussieht:
+      RC_IO_KEIN_TICKET          short-circuit VOR der Plausibilitaet
+      RC_DATENARTVERSION_UNBEKANNT  fuer diesen VZ existiert gar kein Pruefmodul
+    """
     return {RC_OK: "plausibel", RC_PLAUSIBILITAET: "plausibilitaet_fehler",
             RC_IO_KEIN_TICKET: "io_gate_nicht_geprueft",
-            RC_HERSTELLER_GESPERRT: "hersteller_id_gesperrt"}.get(rc, "sonstig")
+            RC_HERSTELLER_GESPERRT: "hersteller_id_gesperrt",
+            RC_DATENARTVERSION_UNBEKANNT: "datenartversion_unbekannt"}.get(rc, "sonstig")
 
 
 def gekappt_verdacht(antwort: str) -> bool:
