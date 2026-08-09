@@ -336,7 +336,9 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
     N(PersonA) und N(PersonB) direkt benachbart, VOR dem VOR-Container.
 
     `abgabefaehig=True` haengt zusaetzlich den <Vorsatz>-Block an (s. `_vorsatz()`) — ohne ihn
-    weist checkESt jedes Produkt-XML mit 9 Plausibilitaetsfehlern ab (gemessen 2026-08-09,
+    weist checkESt jedes Produkt-XML mit 9 zusaetzlichen Vorsatz-Plausibilitaetsfehlern ab
+    (gemessen 2026-08-09 an ZWEI Faellen, Einzel- UND Zusammenveranlagung: dieselben 9
+    Vorsatz-Fehler in beiden, unabhaengig von den uebrigen, fallabhaengigen Fehlern —
     reports/adjudikation/vorsatz_block_2026-08-09.md). Default bleibt False: Vorsatz ist KEIN
     Kz-Element, kann also nie ueber `deklaration` befuellt werden, und die Absender-Stammdaten
     (`absender_*`) liegen heute noch nicht im Fall vor (s. stammdaten_inventur_2026-08-09.md).
@@ -470,8 +472,11 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
         if fehlend_absender:
             raise XmlFehler(
                 f"abgabefaehig=True verlangt Absender-Stammdaten, es fehlen: "
-                f"{', '.join(fehlend_absender)} — sonst lehnt checkESt das XML mit "
-                f"9 Plausibilitaetsfehlern im Vorsatz-Block ab (still fuer den Nutzer).")
+                f"{', '.join(fehlend_absender)} — sonst lehnt checkESt das XML wegen "
+                f"fehlender Vorsatz-Pflichtfelder ab (still fuer den Nutzer; gemessen "
+                f"2026-08-09: 9 Vorsatz-Fehlermeldungen, gleich bei Einzel- und "
+                f"Zusammenveranlagung — die uebrigen, fallabhaengigen Fehler bleiben "
+                f"davon unberuehrt).")
         # Gemessener Befund (reports/adjudikation/vorsatz_block_2026-08-09.md): OrdNrArt="S"
         # ohne konsistente StNr ersetzt die urspruenglichen Fehler NICHT durch Null, sondern
         # durch 2 ANDERE ("Bundesfinanzamtsnummer ... unterscheiden sich"). Praefix-Check hier
