@@ -213,12 +213,56 @@ class TestPiiFrei:
             f"audit.append mit möglichem Nutzerwert im detail: {treffer}. "
             f"Das Audit protokolliert WER WANN WAS getan hat, nie WELCHE Werte.")
 
+    # Verzeichnisse, die kein Aufrufer-Code sind, fuer den Fallback ohne Git (s. u.).
+    # Deckt sich mit .gitignore — dort gitignored, hier per Name ausgeschlossen.
+    _FALLBACK_AUSSCHLUSS = (
+        ".git", "__pycache__", "_build", "_target", "_targets",
+        ".venv", ".venv312", "graphify-out", "scratch",
+    )
+
     def _call_sites(self) -> list[str]:
-        """Gibt alle Dateien+Zeilen mit audit.append zurück."""
+        """Gibt alle Dateien+Zeilen mit audit.append zurück.
+
+        Nutzt `git ls-files` fuer die Dateiliste statt eines Repo-weiten `grep -r`:
+        unter oracle/.venv312 liegen allein 6079 fremde .py-Dateien (venv, gitignored),
+        macht aus 235 versionierten .py-Dateien 6410 zu durchsuchende — 27x mehr Datei-
+        Oeffnungen fuer denselben Befund. Isoliert kaum spuerbar, aber unter Last (mehrere
+        parallele Worker) sprengte genau das den 30s-Timeout (gemessen: 48s unter Last,
+        1,5s isoliert — 2026-08-10). git ls-files ist von sich aus blind fuer alles
+        Ignorierte, kein manueller Ausschluss noetig.
+
+        `--cached --others --exclude-standard` (nicht nur `--cached`): reines `--cached`
+        sieht einen frisch angelegten, noch nicht `git add`eten Aufrufer nicht — genau der
+        Fall, den die Mutationsprobe dieses Tests prueft. `--others --exclude-standard`
+        nimmt neue Dateien mit, respektiert aber weiter .gitignore (kein Rueckfall auf den
+        6410er-Wald).
+
+        Fallback ohne Git-Arbeitsbaum (z.B. eine git-archive-Kopie, s. Kommentar bei
+        test_k_alle_python_dateien_parsen): repo-weiter grep mit denselben Ausschluessen,
+        die ein Arbeitsbaum ueber .gitignore ohnehin haette. Kein Skip — die Invariante
+        bleibt scharf, nur der Weg zur Dateiliste ist ein anderer.
+
+        Timeouts grosszuegiger als vorher (30s): der schnelle Pfad braucht jetzt <1s
+        (27x weniger Dateien), das erlaubt mehr Toleranz fuer den Lastfall, ohne den
+        Normalfall zu verlangsamen.
+        """
         import subprocess
-        r = subprocess.run(
-            ["grep", "-rn", 'audit.append(', ROOT, "--include=*.py"],
-            capture_output=True, text=True, timeout=30)
+        lf = subprocess.run(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", "*.py"],
+            cwd=ROOT, capture_output=True, text=True, timeout=15)
+        if lf.returncode == 0:
+            dateien = [os.path.join(ROOT, d) for d in lf.stdout.strip().splitlines() if d]
+            if not dateien:
+                return []
+            r = subprocess.run(
+                ["grep", "-n", "audit.append(", *dateien],
+                capture_output=True, text=True, timeout=30)
+        else:
+            # Kein Git-Arbeitsbaum -> Fallback statt Absturz.
+            ausschluss = [f"--exclude-dir={d}" for d in self._FALLBACK_AUSSCHLUSS]
+            r = subprocess.run(
+                ["grep", "-rn", "audit.append(", ROOT, "--include=*.py", *ausschluss],
+                capture_output=True, text=True, timeout=90)
         sites = []
         for line in r.stdout.strip().split("\n"):
             if not line or "test_" in line:
