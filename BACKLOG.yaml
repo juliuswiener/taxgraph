@@ -1,6 +1,19 @@
 # TaxGraph — offene Punkte
 #
-# Stand: 2026-08-08, HEAD d089195, Suite 1655 passed / 4 skipped / 0 xfailed.
+# Stand: 2026-08-09, HEAD 969edd5, Suite 1672 passed / 4 skipped / 0 failed.
+#
+# ZIEL (Julius, 2026-08-09): abgabefaehig fuer den eigenen Fall — Roadmap M6.1,
+# eigene ESt, Zusammenveranlagung, Arbeitnehmerfall, durch TaxGraph erklaert und
+# ueber ELSTER eingereicht. NICHT Kz-Vollabdeckung des E10 (2242 Kz, 425 Sektionen);
+# die Roadmap nennt Scope-Explosion selbst als Hauptrisiko mit Mitigation
+# "harter MVP-Scope".
+#
+# Daraus folgen ZWEI Achsen, die vorher in einem Topf lagen:
+#
+#   RECHENACHSE   Was rechnet das Produkt richtig? Weit fortgeschritten. Jeder
+#                 bekannte Punkt ist gemessen und beziffert. -> rechenluecken
+#   ABGABEACHSE   Was kommt beim Finanzamt an? Bis 2026-08-09 komplett ungeprueft.
+#                 Das ist der Weg zu 100 %. -> abgabe
 #
 # Jeder Eintrag nennt den Beleg (Messung oder Fundstelle), nicht nur die Absicht.
 # Ein Punkt ohne Messung ist eine Vermutung und gehoert hier nicht hinein.
@@ -13,9 +26,178 @@
 #   teil_erledigt — ein Teil ist gebaut und gemessen, der Rest steht benannt daneben
 #   erledigt      — gebaut, gemessen, committet (erledigt_in nennt den Commit)
 
-version: 1
-stand: "2026-08-08"
-head: 86b3d4a
+version: 2
+stand: "2026-08-09"
+head: 969edd5
+
+# ============================================================================
+# ABGABEACHSE — der Weg zu "abgabefaehig"
+#
+# Fortschrittsmass ist KEINE Schaetzung, sondern die Zahl der Beanstandungen des
+# amtlichen checkESt-Plugins auf dem echten Produkt-XML. Gate und Ratsche:
+# tests/test_checkest_durchstich.py (969edd5). Ziel ist 0.
+#
+#   Stand 2026-08-09   einzel 18   zusammen 24
+# ============================================================================
+
+abgabe:
+
+  - id: hersteller-id-namens-naht
+    titel: ".env fuehrt HERSTELLER_ID, die Gates lesen ELSTER_HERSTELLER_ID"
+    status: teil_erledigt
+    richtung: "kein Geldfehler — blinder Fleck im Gate"
+    entdeckt: "2026-08-09"
+    messung: |
+      .env (gitignored, .gitignore:25) fuehrt den Schluessel HERSTELLER_ID.
+      elster/eric_gate.py und elster/checkest_gate.py lesen ELSTER_HERSTELLER_ID.
+      Wegen des Namens-Mismatch lief Stufe B (checkESt) NIE:
+        ohne Export   rc=610301202 hersteller_id_gesperrt -> Gate wertet das als
+                      "erwartete credential-freie Grenze" und meldet GRUEN
+        mit  Export   rc=0 plausibel
+      Die ID ist also seit jeher gueltig und registriert. Das Gate hat jahrelang
+      seine eigene Blindheit als erwartetes Ergebnis gemeldet.
+    wirkung: |
+      Ohne Stufe B blieb als einzige Pruefung des Abgabe-XML die XSD-Validierung —
+      und die ist nachweislich blind fuer das, was ERiC ablehnt (siehe
+      ns-praefix-am-elster-root). Der gesamte Abgabepfad war ungeprueft.
+    rest_offen: |
+      Der deterministische .env-Loader (conftest + Makefile) ist noch nicht gebaut;
+      heute muss man von Hand exportieren. tests/test_checkest_durchstich.py liest
+      .env bereits selbst als Notnagel.
+    lehre: "Ein Gate, das seine eigene Nicht-Ausfuehrung als erwartetes Ergebnis meldet, ist kein Gate."
+
+  - id: ns-praefix-am-elster-root
+    titel: "ERiC wies JEDES Produkt-XML ab — Namespace-Praefix am Elster-Root"
+    status: erledigt
+    erledigt_in: "cebb228 (2026-08-09)"
+    richtung: "kein Geldfehler — Abgabe war unmoeglich"
+    messung: |
+      ElementTree kennt nur EINEN Default-Namespace. register_namespace("", NS_ELSTER)
+      belegt den Rahmen, der E10-Teilbaum bekam ein generiertes Praefix, dessen
+      Deklaration am <Elster>-Root landete.
+        rc=610301200 ERIC_IO_READER_SCHEMA_VALIDIERUNGSFEHLER
+        eric.log: EDS-XML Zeile 2 Spalte 130: 'Der XML-Datensatz enthaelt an einer
+        nicht erlaubten Stelle eine Namespace-Praefix-Definition: xmlns:ns1'
+      Bisektion Header/Nutzdaten (4 Kombinationen aus Referenz- und Produkt-XML)
+      hat den Fehler auf genau diese eine Zeile eingegrenzt.
+    warum_niemand_es_sah: |
+      Das XSD faengt es NICHT — beide Fassungen validieren gegen
+      elster11_E10_2025_extern.xsd. Gemessen mit xmllint, beide "validates".
+      Damit war die einzige laufende Pruefung des Abgabepfads strukturell blind.
+    erledigt_wie: |
+      _serialisiere() haengt den E10-Namespace lokal ans <E10>, wie im amtlichen
+      Referenz-XML. 2 Tests, beide per Mutation rot gemacht.
+    folge: |
+      Erst dadurch wurde die amtliche Plausibilitaetspruefung ueberhaupt erreichbar —
+      und lieferte die 18/24 Beanstandungen, die diese Sektion jetzt abarbeitet.
+
+  - id: durchstich-gate
+    titel: "Abgabepfad hatte kein Gate — XSD blind, erzeuge_xml gemockt"
+    status: erledigt
+    erledigt_in: "969edd5 (2026-08-09)"
+    messung: |
+      Zwei Ersatzpruefungen, beide blind fuer das amtliche Urteil:
+       - XSD-Validierung: winkt durch, was ERiC ablehnt (siehe oben, belegt)
+       - tests/test_einreichen.py mockt erzeuge_xml weg
+         (monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml?><Elster/>'))
+         und prueft nur die Endpunkt-Verdrahtung. test_checkest_gate.py nennt das
+         im eigenen Docstring "Mock-Naht".
+    erledigt_wie: |
+      tests/test_checkest_durchstich.py: echter Pfad Store -> deklariere ->
+      erzeuge_xml -> CE.validate. Zwei Gates: (1) das XML muss die Pruefung
+      ERREICHEN — rc=610301200 liefert einen leeren Fehlerpuffer und sieht aus wie
+      "keine Beanstandungen"; (2) Ratsche auf die Fehlerzahl, rot in BEIDE
+      Richtungen. Mutationsprobe beidseitig gefahren. Ohne ERiC/ID: 4 skipped.
+
+  - id: vorsatz-block
+    titel: "Vorsatz-Block fehlt komplett — 9 der 18 Beanstandungen"
+    status: teil_erledigt
+    aufwand_h: 2
+    messung: |
+      Amtliche Meldungen, woertlich:
+        Der Absendername muss im Feld $/Vorsatz[1]/AbsName[1]$ angegeben werden.
+        ... AbsStr, AbsOrt, Unterfallart, Vorgang, Zeitraum, Copyright, OrdNrArt
+        Im Feld $/Vorsatz[1]/Rueckuebermittlung[1]/Bescheid[1]$ ist anzugeben, ob
+        die Bereitstellung der Bescheiddaten zur elektronischen Abholung
+        gewuenscht wird.
+      Strukturbefund (nachgemessen): der Vorsatz-Block traegt KEIN einziges Kz.
+        len([1 for v in kz_pfade(2025).values() if 'Vorsatz' in v]) == 0
+      kz_pfade() indiziert nur E\d{7}. Der uebliche Weg (Kz in deklaration ->
+      Schema-Walk -> _einhaengen legt Container an) kann diesen Block deshalb
+      strukturell NIE erzeugen. Er braucht einen eigenen Schreibpfad, gebaut wie
+      _transfer_header().
+    bericht: reports/adjudikation/stammdaten_inventur_2026-08-09.md
+
+  - id: stammdaten-person
+    titel: "Stammdaten fehlen — Name, Adresse, Religion, Bankverbindung"
+    status: teil_erledigt
+    aufwand_h: 4
+    messung: |
+      Amtliche Meldungen, woertlich:
+        Religion nicht angegeben oder kein gueltiger Wert (Person A).
+        Bitte geben Sie den Namen und Vornamen an (Person A).
+        Bitte geben Sie die vollstaendige derzeitige Adresse an.
+        Bitte geben Sie Ihre Bankverbindungsdaten an oder erklaeren Sie in dem
+        vorgesehenen Sonderfeld, dass keine Bankverbindung vorhanden ist.
+        Kein Hauptvordruck ESt 1 A vorhanden.
+        Auf dem Hauptvordruck ESt 1 A ist anzugeben, ob es sich um eine
+        Einkommensteuererklaerung [...] handelt.
+      26 Stammdaten-Kz sind im Inventurbericht gegen das amtliche Schema aufgeloest.
+    container_kein_eigenes_problem: |
+      ESt1A/Allg/A/B muessen NICHT gebaut werden. _einhaengen() legt jeden
+      Zwischenknoten an, sobald ein Kz darunter deklariert wird. Nachgemessen:
+        kz_pfade(2025)['E0100201'] == ('E10','ESt1A','Allg','A','E0100201')
+      "Kein Hauptvordruck ESt 1 A vorhanden" verschwindet also als FOLGE, nicht
+      als eigene Aufgabe.
+    achse_person_b: |
+      GEMESSEN: zusammen hat 24 Beanstandungen, einzel 18. Die 6 Differenz sind
+      Person B (eigene Stammdaten, eigene Steuerklasse). Zusammenveranlagung ist
+      NICHT "einzel mit zweitem Lohn" — ein Bau, der nur A bedient, laesst 6 stehen.
+    offene_entscheidung: |
+      Konfession: das Repo hat bereits Kirchensteuer-Logik mit einem Konfessions-
+      begriff. Andocken statt zweitem Feld — zwei Repraesentationen derselben Sache
+      sind hier die haeufigste Fehlerklasse (siehe naht-blindstelle im Gedaechtnis).
+    bericht: reports/adjudikation/stammdaten_inventur_2026-08-09.md
+
+  - id: anlage-n-lohnsteuer-steuerklasse
+    titel: "Anlage N: Steuerklasse und Lohnsteuer fehlen — 2 Beanstandungen"
+    status: offen
+    messung: |
+      Amtliche Meldungen, woertlich:
+        Die Steuerklasse wurde bei den Angaben zum Arbeitslohn auf der Anlage N
+        nicht eingetragen (Person A).
+        Arbeitslohn laut Lohnsteuerbescheinigung(en) Steuerklassen 1 - 5 angegeben,
+        Lohnsteuer jedoch nicht. Gegebenenfalls ist die Lohnsteuer mit dem Wert 0
+        zu erklaeren.
+      Bei Zusammenveranlagung doppelt (Person A und B).
+    hinweis: |
+      Beides sind Angaben aus der Lohnsteuerbescheinigung, die der Ring heute nicht
+      braucht (er rechnet die ESt, nicht die Anrechnung). Fuer die ABGABE sind sie
+      Pflicht. Vor dem Bau pruefen, ob die einbehaltene Lohnsteuer bereits irgendwo
+      im Fall liegt — sie gehoert in die Anrechnung nach § 36 Abs. 2 Nr. 2.
+
+  - id: anlage-kap-folgeangabe
+    titel: "Anlage KAP: Pflichtangabe bei inlaendischem Steuerabzug"
+    status: offen
+    messung: |
+      Woertlich: "Auf den Anlagen KAP und / oder KAP-BET wurden Kapitalertraege
+      erklaert, die dem inlaendischen Steuerabzug unterlegen haben. Bitte geben Sie
+      auf der Anlage KAP auch ... an."
+    verdacht_nicht_gemessen: |
+      Die Testfaelle setzen kap_* durchgaengig auf 0. Moeglicherweise deklariert der
+      Writer die 0-Werte trotzdem und loest damit erst die Pflichtangabe aus, die er
+      dann nicht erfuellt. Waere das so, verschwindet die Meldung durch Weglassen
+      statt durch Bauen. ZUERST messen, ob ein Fall ohne kap_*-Felder die Meldung
+      noch zeigt — nicht bauen.
+
+  - id: testversand
+    titel: "Testversand gegen die ELSTER-Testumgebung (Roadmap M4.4)"
+    status: blockiert
+    blockade: "setzt rc==0 auf dem echten Fall voraus (alle Punkte dieser Sektion)"
+    hinweis: |
+      Erst wenn checkESt rc=0 meldet, ist ein Versand ueberhaupt sinnvoll. Versand
+      ist ausgehende Aktion -> Julius, nie automatisch. Testmerker 700000004 ist im
+      Writer gesetzt und wird nie ans Finanzamt zugestellt.
 
 rechenluecken:
 
@@ -183,7 +365,19 @@ rechenluecken:
 
   - id: slot-fail-open-13568-eur
     titel: "slots.get(name, 0) — falscher signatur_slot loescht die Steuer lautlos"
-    status: offen
+    status: erledigt
+    erledigt_in: "e1be52d + 04f51db (2026-08-08)"
+    erledigt_wie: |
+      Beide Varianten gebaut. (b) Gate scheibengenau (tests/test_slot_fn_reader_existiert.py),
+      (a) fail-closed nach der Messung, die belegte, dass kein Aufrufer einen der 6 Slots
+      legitim weglaesst. Nachgemessen 2026-08-09:
+        grep -c 'slots\.get(' produkt/haut/api.py  ->  0
+    rest_offen: |
+      Klasse 3 aus demselben Sweep ist NICHT mit erledigt:
+      {k: slots[k] for k in (...) if k in slots} (api.py:487, :745) sieht fail-closed
+      aus, ist es nicht — der Key faellt weg, und catala_werbungskosten_n gated ihn
+      nochmal selbst mit `if "X" in s:`. Zwei Ebenen fail-open hintereinander.
+      Eigener Eintrag: klasse3-fail-open.
     aufwand_h: 2
     richtung: under-tax
     entdeckt: "2026-08-08, beim Nachmessen der p2_festzusetzung-Slot-Verstoesse"
@@ -768,9 +962,35 @@ test-schulden:
       Statt ganz /tmp zu vergleichen nur auf das Praefix filtern, das der Endpunkt selbst
       benutzt. Der PII-Leck-Guard bleibt damit erhalten und wird sogar schaerfer.
 
+  - id: klasse3-fail-open
+    titel: "{k: slots[k] ... if k in slots} — fail-open, das fail-closed aussieht"
+    status: offen
+    aufwand_h: 1
+    entdeckt: "2026-08-08, im slot_fn_fail_open_sweep als Nebenbefund"
+    bericht: reports/adjudikation/slot_fn_fail_open_sweep_2026-08-08.md
+    messung: |
+      produkt/haut/api.py:487 und :745. Der eckige-Klammer-Zugriff sieht fail-closed
+      aus, aber die Bedingung `if k in slots` laesst den Key einfach wegfallen. Danach
+      gated catala_werbungskosten_n ihn ein zweites Mal selbst mit `if "X" in s:` —
+      zwei Ebenen fail-open hintereinander, jede fuer sich unauffaellig.
+      Der Blast-Radius ist NICHT gemessen; die Sweep-Messung hat die Stelle nur benannt.
+    plan: |
+      Erst messen (Mutationsprobe an einem der dort gelesenen signatur_slots, echter
+      /ergebnis-Pfad), dann entscheiden. Verschwindet Geld still -> fail-closed, aber
+      vorher pruefen, welche Aufrufer den Key legitim weglassen duerfen. Verschwindet
+      keins -> nur ein Gate, keine Verhaltensaenderung. Beide Ebenen zusammen anfassen;
+      ein einseitiger Fix laesst die Naht offen.
+
   - id: stille-null-klasse-c
     titel: "Vorlaeufige Instanz faellt still aus der Rechnung — gwg, kind x3, p23"
-    status: analysiert
+    status: erledigt
+    erledigt_in: "42c2c99 (2026-08-08)"
+    erledigt_wie: |
+      Variante (b) gebaut, wie von main empfohlen: die vorlaeufigen Felder stehen jetzt
+      im bereits vorhandenen "offen"-Feld der /ergebnis-Antwort. grund und zahl_cent
+      bleiben unveraendert, die dokumentierte Additiv-Entscheidung fuer gwg/kind wird
+      nicht gebrochen. Nachgemessen 2026-08-09: api.py:2287 setzt im Erfolgspfad
+      "offen": offen_c statt der frueheren harten leeren Liste.
     aufwand_h: 1
     entdeckt: "2026-08-07, beim p23-Fix (63bce6f) als Folgefrage"
     bericht: reports/adjudikation/instanz_stille_null_2026-08-07.md
