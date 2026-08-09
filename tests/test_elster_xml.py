@@ -162,3 +162,32 @@ def test_schreibe_xml_ist_atomar(tmp_path):
     pfad = _schreibe(tmp_path, _dekl(E0100201="Maier"))
     assert os.path.exists(pfad)
     assert not os.path.exists(pfad + ".tmp")
+
+
+# ------------------------------------------------- ERiC-Rahmengate (XSD sieht es NICHT)
+
+def test_kein_namespace_praefix_am_elster_root():
+    """ERiC lehnt jede Praefix-Deklaration am <Elster>-Root ab — das XSD nicht.
+
+    Gemessen 2026-08-09 gegen ERiC 44.2.4.0 / ESt_2025: die von ElementTree erzeugte
+    Fassung mit `xmlns:ns1=...` am Root fiel mit
+
+        rc=610301200 ERIC_IO_READER_SCHEMA_VALIDIERUNGSFEHLER
+        eric.log: 'Der XML-Datensatz enthaelt an einer nicht erlaubten Stelle eine
+                   Namespace-Praefix-Definition: xmlns:ns1'
+
+    obwohl `xmllint --schema elster11_E10_2025_extern.xsd` sie als valide durchwinkt.
+    Deshalb ist dieser Test NICHT durch das XSD-Gate abgedeckt und steht separat.
+    """
+    xml = EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID)
+    kopf = xml[:xml.index(">", xml.index("<Elster")) + 1]
+    assert "xmlns:" not in kopf, (
+        f"Praefix-Deklaration am Elster-Root — ERiC weist das XML ab (610301200):\n{kopf}")
+
+
+def test_e10_traegt_seinen_namespace_lokal():
+    """Der E10-Namespace muss am <E10> haengen, so wie im amtlichen Referenz-XML."""
+    xml = EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID)
+    ns = EX.NS_E10.format(vz=2025)
+    assert f'<E10 xmlns="{ns}"' in xml, "E10 ohne lokale Default-Namespace-Deklaration"
+    assert "ns0:" not in xml and "ns1:" not in xml, "Praefix-Reste im Nutzdatenteil"

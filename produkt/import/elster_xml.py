@@ -18,6 +18,7 @@ Testmerker default 700000004 (ERiC-Testfall) — für echten Versand explizit No
 from __future__ import annotations
 
 import os
+import re
 import sys
 import xml.etree.ElementTree as ET
 
@@ -394,7 +395,40 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                         instanz={container: inst_idx_0}, kz_meta=kz_meta)
 
     ET.indent(wurzel, space="\t")
-    return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(wurzel, encoding="unicode")
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + _serialisiere(wurzel, ns_e10)
+
+
+def _serialisiere(wurzel: ET.Element, ns_e10: str) -> str:
+    """Serialisiert so, dass ERiC den Rahmen annimmt: E10-Namespace LOKAL am <E10>.
+
+    ElementTree kennt nur EINEN Default-Namespace. Da `register_namespace("", NS_ELSTER)`
+    den Elster-Rahmen belegt, bekommt der E10-Teilbaum ein generiertes Praefix (ns0/ns1/...)
+    und dessen Deklaration wandert an den <Elster>-Root. ERiC lehnt das ab — gemessen am
+    2026-08-09 gegen ERiC 44.2.4.0, ESt_2025:
+
+        rc=610301200 ERIC_IO_READER_SCHEMA_VALIDIERUNGSFEHLER
+        eric.log: EDS-XML in Zeile 2 in Spalte 130: 'Der XML-Datensatz enthaelt an einer
+        nicht erlaubten Stelle eine Namespace-Praefix-Definition: xmlns:ns1'
+
+    Das amtliche Referenz-XML (elster/submission/testfall_est2025_minimal.xml, rc=0)
+    deklariert den E10-Namespace stattdessen als Default direkt am <E10>. Genau das wird
+    hier hergestellt. Das XSD faengt den Unterschied NICHT — beide Fassungen validieren
+    gegen elster11_E10_2025_extern.xsd; nur checkESt sieht ihn.
+    """
+    roh = ET.tostring(wurzel, encoding="unicode")
+    m = re.search(rf'\s+xmlns:([A-Za-z0-9_.-]+)="{re.escape(ns_e10)}"', roh)
+    if m is None:
+        return roh                      # bereits praefixfrei serialisiert
+    praefix = m.group(1)
+    roh = roh[:m.start()] + roh[m.end():]
+    roh, n = re.subn(rf"<{re.escape(praefix)}:E10(\s|>)",
+                     lambda mm: f'<E10 xmlns="{ns_e10}"{mm.group(1)}', roh, count=1)
+    if n != 1:
+        raise XmlFehler(
+            f"E10-Wurzel mit Praefix '{praefix}' nicht gefunden — Serialisierung "
+            f"haette eine unerlaubte Praefix-Deklaration am Elster-Root hinterlassen.")
+    roh = re.sub(rf"</?{re.escape(praefix)}:", lambda mm: mm.group(0).replace(praefix + ":", ""), roh)
+    return roh
 
 
 def schreibe_xml(result: dict, ziel: str, **kw) -> str:
