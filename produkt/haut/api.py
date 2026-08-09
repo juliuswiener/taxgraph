@@ -481,10 +481,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
 
         def slot_fn(slots: dict) -> int:
+            # Klasse-3 fail-open geschlossen (2026-08-09): alle 4 Keys stehen im Pflicht-Kegel
+            # von an_gesamt (EP_FELDER, api_constants.py) — "if k in slots" liess einen fehlenden
+            # Key (defekte Bindung) lautlos aus wk_input verschwinden statt zu werfen; gemessen
+            # 323 EUR stille Steuermehrbelastung ohne KeyError (reports/adjudikation/klasse3_fail_open_2026-08-09.md).
             wk_input = {"veranlagungszeitraum": vz,
                         **{k: slots[k] for k in
-                           ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
-                           if k in slots}}
+                           ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")}}
             if "oepnv_kosten_jahr" in wk_input:
                 wk_input["oepnv_kosten_jahr"] = _oepnv_eur(wk_input)   # Naht-CENT -> EURO
             # doppelte Haushaltsführung (Stufe 1b): dHf-Abzug NUR bei erfülltem Tatbestand —
@@ -739,10 +742,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # §19-WK = Entfernungspauschale (roh, § 9a-Günstiger im einzel-Tarif) + dHf + Verpflegung + Über-
             # nachtung + Arbeitsmittel-GWG (B1/A5/A6: gemischt-§19-Fall bekommt dieselben §9-WK wie der reine
             # an_gesamt-Ring, sonst Over-tax). Der mehrjährige AM-AfA-Zweig (> 800) sperrt hier wie an_gesamt.
+            # Klasse-3 fail-open geschlossen (2026-08-09): dieselben 4 Keys sind auch im
+            # Pflicht-Kegel von gesamt (EP_FELDER) — "if k in slots" liess einen fehlenden Key
+            # lautlos aus gesamt_wk_input verschwinden statt zu werfen; gemessen 351 EUR stille
+            # Steuermehrbelastung ohne KeyError (reports/adjudikation/klasse3_fail_open_2026-08-09.md).
             gesamt_wk_input = {"veranlagungszeitraum": vz,
                 **{k: slots[k] for k in
-                   ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")
-                   if k in slots}}
+                   ("arbeitstage", "entfernung_km_roh", "oepnv_kosten_jahr", "eigenes_oder_ueberlassenes_kfz")}}
             if "oepnv_kosten_jahr" in gesamt_wk_input:
                 gesamt_wk_input["oepnv_kosten_jahr"] = _oepnv_eur(gesamt_wk_input)   # Naht-CENT -> EURO
             # doppelte Haushaltsführung (B1, Parität an_gesamt): dHf-Roh-WK NUR bei erfülltem Tatbestand
