@@ -70,6 +70,9 @@ _ABZUGS_KZ = frozenset({
 _KOMMA_OHNE_E60_KZ = frozenset({
     "E0200301",  # Lohnsteuer (Anlage N, Person A + B)
     "E0200501",  # Kirchensteuer vom Arbeitgeber einbehalten (Anlage N, Person A + B)
+    "E1904701",  # Kapitalertragsteuer (Anlage KAP Zeile 37, § 36 Abs. 2 S. 1 Nr. 2 Anrechnung)
+    "E1904901",  # Solidaritätszuschlag zur KapESt (Anlage KAP Zeile 38)
+    "E1904801",  # Kirchensteuer zur KapESt (Anlage KAP Zeile 39)
 })
 
 

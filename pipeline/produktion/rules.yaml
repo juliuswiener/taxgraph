@@ -1259,6 +1259,9 @@ regeln:
       festzusetzende_est: money
       lohnsteuer: money
       vorauszahlungen: money
+      kapitalertragsteuer: money
+      kapitalertragsteuer_solz: money
+      kapitalertragsteuer_kist: money
     output: abschlusszahlung
   test_seed:
   - quelle: sources/gesetze-im-internet/estg_p36_2026-07-11.txt

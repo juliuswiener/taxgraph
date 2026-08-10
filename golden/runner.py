@@ -568,16 +568,27 @@ def catala_p36_abschlusszahlung(s: dict) -> int:
     """§ 36 Abs. 2+4 EStG — Abschlusszahlung (+) / Erstattung (−), CENT.
 
     Festzusetzende ESt (§ 36 Abs. 1) minus anrechenbare Beträge: durch Steuerabzug erhobene ESt/LSt
-    (§ 36 Abs. 2 S. 1 Nr. 2) — auf volle Euro AUFgerundet (§ 36 Abs. 3 S. 1) — minus geleistete
-    ESt-Vorauszahlungen (§ 36 Abs. 2 S. 1 Nr. 1, § 37). Überschuss zuungunsten (+) = Abschlusszahlung,
-    zugunsten (−) = Erstattung (§ 36 Abs. 4). MVP-AN: nur LSt + VZ — keine KapESt darüber, keine
-    Forschungszulage (Nr. 3), kein § 32c (Nr. 4). Snapshot p36_2_anrechnung (verified_bedingt).
-    Nur die LSt wird aufgerundet (Abzugsbetrag Abs. 2 Nr. 2); die festgesetzte ESt ist bereits volle
-    Euro (§ 32a) und die Vorauszahlungen werden in vollen Euro festgesetzt (§ 37)."""
-    lst_cent = int(s.get("lohnsteuer_cent", 0))
-    lst_aufgerundet = -(-lst_cent // 100) * 100          # ceil auf volle Euro (§ 36 Abs. 3 S. 1)
+    UND KapESt/SolZ-KapESt/KiSt-KapESt (§ 36 Abs. 2 S. 1 Nr. 2 — KapESt zählt dazu, sobald die
+    Kapitalerträge per Günstigerprüfung/Pflichtveranlagung "bei der Veranlagung erfasst" sind, § 32d
+    Abs. 6; SolZ/KiSt darauf folgen entsprechend § 1 Abs. 2 SolzG 1995 bzw. den Landes-KiStG) — JEWEILS
+    EINZELN auf volle Euro AUFgerundet (§ 36 Abs. 3 S. 2: "jeweils ... die Summe der Beträge einer
+    einzelnen Abzugsteuer") — minus geleistete ESt-Vorauszahlungen (§ 36 Abs. 2 S. 1 Nr. 1, § 37).
+    Überschuss zuungunsten (+) = Abschlusszahlung, zugunsten (−) = Erstattung (§ 36 Abs. 4). Stufe 2
+    (2026-08-10, BAU-GO team-lead): LSt + KapESt + SolZ-KapESt + KiSt-KapESt + VZ. Weiterhin offen:
+    Forschungszulage (Nr. 3), § 32c (Nr. 4), Körperschaftsteuer (Nr. 2 S. 1) — s. luecken: in
+    bindung_p36_abschlusszahlung.yaml. Snapshot p36_2_anrechnung (verified_bedingt). Die festgesetzte
+    ESt ist bereits volle Euro (§ 32a) und die Vorauszahlungen werden in vollen Euro festgesetzt
+    (§ 37) — nur die Abzugsteuern brauchen die Rundung, und zwar JEDE FÜR SICH (Abs. 3 S. 2), nicht
+    erst nach Summierung."""
+    def _ceil_eur_cent(cent: int) -> int:
+        return -(-cent // 100) * 100          # ceil auf volle Euro (§ 36 Abs. 3 S. 1+2)
+    lst_aufgerundet = _ceil_eur_cent(int(s.get("lohnsteuer_cent", 0)))
+    kapest_aufgerundet = _ceil_eur_cent(int(s.get("kapitalertragsteuer_cent", 0)))
+    solz_aufgerundet = _ceil_eur_cent(int(s.get("kapitalertragsteuer_solz_cent", 0)))
+    kist_aufgerundet = _ceil_eur_cent(int(s.get("kapitalertragsteuer_kist_cent", 0)))
     return (int(s.get("festzusetzende_est_cent", 0))
-            - lst_aufgerundet - int(s.get("vorauszahlungen_cent", 0)))
+            - lst_aufgerundet - kapest_aufgerundet - solz_aufgerundet - kist_aufgerundet
+            - int(s.get("vorauszahlungen_cent", 0)))
 
 
 def _altersentlastung_kohorte(folgejahr: int):

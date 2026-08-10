@@ -117,6 +117,11 @@ GESAMT_PARTNER_KAP = (KAP_ERTRAEGE_PARTNER,) + KAP_TOEPFE_PARTNER
 # _scheibe_bindung() sie aus der Deklaration -- dieselbe Naht wie VERPFLEGUNG_KUERZUNG/
 # E0205508 oben: der Ring liefert den Wert, das XML wuerde ihn sonst stillschweigend verschweigen.
 KAP_ANTRAG_FELDER = ("kap_antrag_guenstigerpruefung", "kap_sparer_pauschbetrag_genutzt")
+# § 36 Abs. 2 S. 1 Nr. 2 EStG Anrechnung (Zeilen 37-39 Anlage KAP, E1904701/E1904901/E1904801) —
+# ASKABLE (Steuerbescheinigung-Werte, anders als KAP_ANTRAG_FELDER oben, das aus dem Ring
+# injiziert wird). Stufe 2 (BAU-GO team-lead 2026-08-10, spiegelt P36_ANRECHNUNG-Wiring oben).
+# Nur in gesamt/rentner_gesamt verdrahtet (an_gesamt fuehrt kein KAP_FELDER, s.u.).
+P36_ANRECHNUNG_KAP = ("p36_kapitalertragsteuer", "p36_kapitalertragsteuer_solz", "p36_kapitalertragsteuer_kist")
 GESAMT_PARTNER_19 = ("bruttoarbeitslohn_partner", "person_b_idnr")
 
 # ========== § 22 Renten + § 33b Pauschbeträge ==========
@@ -421,7 +426,7 @@ SCHEIBEN = {
     },
     "gesamt": {
         "felder": (VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ("veranlagung", "bruttoarbeitslohn")
-                   + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + AN_GESAMT_FLAGS
+                   + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + AN_GESAMT_FLAGS
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_VERSORGUNG
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
@@ -446,7 +451,7 @@ SCHEIBEN = {
         "multi_objekt": "vv_objekt",
     },
     "rentner_gesamt": {
-        "felder": RENTNER_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + GESAMT_PARTNER_KAP,
+        "felder": RENTNER_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + GESAMT_PARTNER_KAP,
         "kegel": RENTNER_KEGEL,
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_rentner",
@@ -473,7 +478,7 @@ __all__ = [
     # Arbeitsmittel
     "ARBEITSMITTEL_KOSTEN", "ARBEITSMITTEL_RING", "ARBEITSMITTEL_AFA_GESAMT",
     # § 36/§22/§10 KiSt
-    "P36_ANRECHNUNG", "P22_NR3_EINKUENFTE", "KIST_KONFESSION_FELDER", "P16_4_GATE_FELDER",
+    "P36_ANRECHNUNG", "P36_ANRECHNUNG_KAP", "P22_NR3_EINKUENFTE", "KIST_KONFESSION_FELDER", "P16_4_GATE_FELDER",
     # Verpflegung
     "VERPFLEGUNG_TAGE", "VERPFLEGUNG_TAGE_NACH_FRIST", "VERPFLEGUNG_GUARD", "VERPFLEGUNG_FRIST", "VERPFLEGUNG_KUERZUNG",
     # Vorsorge

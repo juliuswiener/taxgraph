@@ -56,7 +56,7 @@ import store as ST                  # noqa: E402
 import traverser as TR              # noqa: E402
 
 from test_checkest_durchstich import (  # noqa: E402
-    _ABSENDER, _HID, _b, _fall_einzel, braucht_eric,
+    _ABSENDER, _HID, _b, _fall_einzel, _fall_einzel_kirchensteuerpflichtig, braucht_eric,
 )
 
 
@@ -134,6 +134,14 @@ MATRIX = [
     ("kap_gewinn_aktien", 200000),
     ("kap_verlust_aktien", 100000),
     ("kap_verlust_sonstige", 50000),
+    # KAP Stufe 2 (Zeile 37-39, § 36 Abs.2 Nr.2 Anrechnung Abzugsteuer) NICHT hier: kein
+    # Alleinsteher. GEMESSEN 2026-08-10: p36_kapitalertragsteuer allein (Basisfixtur fuehrt
+    # kap_kapitalertraege=0) ergibt rc=610001002 — "Kapitalertragsteuer und/oder Solidaritaets-
+    # zuschlag zur Kapitalertragsteuer laut Bescheinigung(en) eingegeben, es wurden aber keine
+    # zugehoerigen Kapitalertraege erklaert." Dieselbe Klasse wie basis_kv/versicherungsart:
+    # Feld ohne seinen Block. p36_kapitalertragsteuer_kist zusaetzlich an kist_konfession="keine"
+    # (Religionsschluessel 11) gekoppelt. Eigener Test statt MATRIX-Eintrag, s.
+    # test_p36_kap_anrechnung_amtlich_plausibel_mit_kapitalertraegen unten.
     # § 35a NICHT hier: die drei Sum-Felder sind seit der Einzelaufstellung (2026-08-10)
     # askable:false, ein einzeln gesetztes Sum-Feld deklariert den alten Kz zwar noch, bleibt
     # aber OHNE Einz-Instanz beim selben rc=610001002 -- Art+Betrag GEHOEREN zusammen, die
@@ -229,6 +237,80 @@ def test_kap_antrag_ist_inert_ohne_kapitalertraege():
         f"Bei 5.000 EUR Kapitalertraegen fehlt im XML: "
         f"{'E1900401 ' if not antrag_mit else ''}{'E1901401' if not pb_mit else ''} — "
         f"ohne beide ist die Erklaerung uneinreichbar (rc=610001002).")
+
+
+def _ersetzen(s, feld_id, wert):
+    """Setzt feld_id auf wert, ersetzt ein evtl. schon aktives Event (Store fail-closed B,
+    store.py:232). `_fall_einzel_kirchensteuerpflichtig()` fuehrt kap_kapitalertraege=0 bereits
+    aktiv — ein zweites _b() auf dasselbe Feld waere ein doppeltes aktives Event."""
+    aktiv = None
+    for e in reversed(s.get("events") or []):
+        if e.get("feld_id") == feld_id and not e.get("ersetzt_durch"):
+            aktiv = e["event_id"]
+            break
+    if aktiv:
+        ST.append_event(s, feld_id=feld_id, wert=wert, zustand="bestaetigt",
+                        herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft",
+                                  "haftung": "nutzer"},
+                        schreiber="laie",
+                        signal={"signal_1": {"typ": "laie_eingabe"},
+                                "signal_2": "laie_bestaetigt"},
+                        ersetzt=aktiv)
+    else:
+        _b(s, feld_id, wert)
+
+
+@braucht_eric
+def test_p36_kap_anrechnung_amtlich_plausibel_mit_kapitalertraegen():
+    """KAP Stufe 2 (Zeile 37-39) im vollstaendigen Block: mit Kapitalertraegen UND
+    kirchensteuerpflichtiger Konfession sind KapESt/SolZ/KiSt amtlich plausibel.
+
+    GEMESSEN 2026-08-10: allein (kap_kapitalertraege=0, kist_konfession='keine') ergibt
+    rc=610001002 fuer KapESt/SolZ ("keine zugehoerigen Kapitalertraege erklaert") — deshalb
+    kein MATRIX-Eintrag, sondern dieser Block-Test mit den noetigen Begleitangaben.
+    """
+    s = _fall_einzel_kirchensteuerpflichtig()
+    _ersetzen(s, "kap_kapitalertraege", 500000)
+    _b(s, "p36_kapitalertragsteuer", 135680)
+    _b(s, "p36_kapitalertragsteuer_solz", 7460)
+    _b(s, "p36_kapitalertragsteuer_kist", 12211)
+    rc, texte = _scharf(s)
+    assert rc == CE.RC_OK, (
+        f"KAP-Anrechnung (Zeile 37-39) macht die Erklaerung uneinreichbar (rc={rc}).\n"
+        + "\n".join(f"   - {t}" for t in texte[:5]))
+
+
+def test_p36_kap_anrechnung_kz_inert_ohne_angabe():
+    """KAP Stufe 2 (Zeile 37-39): E1904701/E1904901/E1904801 duerfen nur im XML stehen, wenn
+    der Nutzer die Abzugsteuer laut Steuerbescheinigung bestaetigt hat. Braucht kein ERiC.
+
+    E1904701 = Anlage KAP Zeile 37 (Kapitalertragsteuer)
+    E1904901 = Anlage KAP Zeile 38 (Solidaritaetszuschlag zur KapESt)
+    E1904801 = Anlage KAP Zeile 39 (Kirchensteuer zur KapESt)
+    """
+    def _kz_im_xml(store):
+        store = dict(store)
+        store.setdefault("scheibe", "gesamt")
+        bindung = API._scheibe_bindung(store)
+        felder, sid = ST.materialisiere(store)
+        felder = API._mit_ring_werten(felder, 2025)
+        xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid),
+                             vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
+        return "E1904701" in xml, "E1904901" in xml, "E1904801" in xml
+
+    kapest_ohne, solz_ohne, kist_ohne = _kz_im_xml(_fall_einzel())
+    assert not (kapest_ohne or solz_ohne or kist_ohne), (
+        "E1904701/E1904901/E1904801 stehen im XML, obwohl der Nutzer keine Angabe zur "
+        "Kapitalertragsteuer-Abzugsteuer gemacht hat.")
+
+    s = _mit("p36_kapitalertragsteuer", 135680)
+    _b(s, "p36_kapitalertragsteuer_solz", 7460)
+    _b(s, "p36_kapitalertragsteuer_kist", 12211)
+    kapest_mit, solz_mit, kist_mit = _kz_im_xml(s)
+    assert kapest_mit and solz_mit and kist_mit, (
+        f"Bei bestaetigter KapESt/SolZ/KiSt fehlt im XML: "
+        f"{'E1904701 ' if not kapest_mit else ''}{'E1904901 ' if not solz_mit else ''}"
+        f"{'E1904801' if not kist_mit else ''}")
 
 
 def test_matrix_geht_durch_den_ring_pfad():

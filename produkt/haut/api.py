@@ -1733,9 +1733,12 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
 def _abschlusszahlung_cent(felder: dict, zahl_cent: int):
     """§ 36 Abs. 2+4 EStG — Abschlusszahlung (+) / Erstattung (−) in CENT auf der bereits festgesetzten
     ESt (zahl_cent), scheibe-agnostisch (jede Rate-Scheibe erzeugt genau eine festzusetzende ESt).
-    None, wenn WEDER LSt NOCH Vorauszahlung bestätigt vorliegt — dann keine irreführende Voll-Steuer-
-    Nachzahlung ausweisen. Nur BESTÄTIGTE Felder (vorläufige LSt/VZ bewegen die Anrechnung nie —
-    [[ring-liest-vorlaeufig-parallel-pfad-luecke]])."""
+    None, wenn KEIN einziges Anrechnungsfeld (LSt/VZ/KapESt/SolZ-KapESt/KiSt-KapESt) bestätigt
+    vorliegt — dann keine irreführende Voll-Steuer-Nachzahlung ausweisen. Nur BESTÄTIGTE Felder
+    (vorläufige Werte bewegen die Anrechnung nie — [[ring-liest-vorlaeufig-parallel-pfad-luecke]]).
+    Stufe 2 (2026-08-10, BAU-GO team-lead): KapESt/SolZ/KiSt (Zeilen 37-39 Anlage KAP) spiegeln
+    p36_lohnsteuer — dieselbe Quelle speist Deklaration (bindung_p36_abschlusszahlung.yaml) UND
+    Ring-Anrechnung hier, sonst zeigt /ergebnis eine Zahl, die der Bescheid unterschreitet."""
     def _best(fid):
         e = felder.get(fid)
         if e is None or e.get("zustand") != "bestaetigt":
@@ -1743,12 +1746,18 @@ def _abschlusszahlung_cent(felder: dict, zahl_cent: int):
         w = e.get("wert")
         return w if isinstance(w, (int, float)) and not isinstance(w, bool) else None
     lst, vor = _best("p36_lohnsteuer"), _best("p36_vorauszahlungen")
-    if lst is None and vor is None:
+    kapest = _best("p36_kapitalertragsteuer")
+    solz = _best("p36_kapitalertragsteuer_solz")
+    kist = _best("p36_kapitalertragsteuer_kist")
+    if lst is None and vor is None and kapest is None and solz is None and kist is None:
         return None
     import runner
     return runner.catala_p36_abschlusszahlung({
         "festzusetzende_est_cent": int(zahl_cent),
         "lohnsteuer_cent": int(lst or 0),
+        "kapitalertragsteuer_cent": int(kapest or 0),
+        "kapitalertragsteuer_solz_cent": int(solz or 0),
+        "kapitalertragsteuer_kist_cent": int(kist or 0),
         "vorauszahlungen_cent": int(vor or 0)})
 
 

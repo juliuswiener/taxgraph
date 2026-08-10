@@ -7,6 +7,12 @@
 # p36_lohnsteuer: REVIDIERT 2026-08-10 (Julius-Entscheidung) — traegt jetzt E0200301 (Anlage N),
 # weil checkESt es dort verlangt (Paar mit Kirchensteuer bei Konfessionspflicht). Details je Feld
 # unten, volle Vorgeschichte im elster_kz_grund des Feldes selbst.
+# Stufe 2 (2026-08-10, BAU-GO team-lead): p36_kapitalertragsteuer/_solz/_kist (Zeilen 37-39 Anlage
+# KAP) — dieselbe Quelle speist Deklaration (hier) UND Ring-Anrechnung (api._abschlusszahlung_cent
+# -> runner.catala_p36_abschlusszahlung), sonst zeigt /ergebnis eine Zahl, die der Bescheid
+# unterschreitet (Deklaration ohne Anrechnung) bzw. der Nutzer zahlt doppelt (Anrechnung ohne
+# Deklaration). Recherche: reports/adjudikation/kap-stufe2-anrechnung-noetig-2026-08-10.md — KEIN
+# Bank->FA-Automatismus fuer KapESt (anders als LSt/§41b): ohne Deklaration keine Anrechnung.
 
 version: 1
 scheibe: "§36 Anrechnung (Abschlusszahlung/Erstattung)"
@@ -47,16 +53,67 @@ bindungen:
       zitatanker: "Einkommensteuer-Vorauszahlungen"
       datei: sources/gesetze-im-internet/estg_p36_2026-07-11.txt
 
+  - feld_id: p36_kapitalertragsteuer
+    quelle: {regel_id: p36_2_anrechnung, signatur_slot: kapitalertragsteuer}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Kapitalertragsteuer wurde von Ihrer Bank/Ihrem Broker im Jahr einbehalten und abgeführt?"
+    hilfe_kurz: "Steht auf der Steuerbescheinigung Ihrer Bank (Zeile 37 der Anlage KAP). Nur relevant, wenn Sie Kapitalerträge über den Sparer-Pauschbetrag hinaus hatten und die Günstigerprüfung beantragt haben oder eine Pflichtveranlagung vorliegt — sonst 0. Bereits einbehaltene Steuer wird auf die Steuerschuld angerechnet."
+    beispielwert: 0
+    herkunft_slots: ["Steuerbescheinigung Zeile 37"]
+    elster_kz: E1904701
+    elster_kz_grund: "BAU-GO 2026-08-10 (team-lead, Stufe 2). Anlage-KAP-Vordruck Zeile 37 'Kapitalertragsteuer' (bestätigt sources/bfinv_raw/Anlage_KAP_2025.pdf), XSD St_Abz_Betr_Inl_u_Inv_Ert_2368107_CType (E10-2025.xsd:19787, Dokumentation 'Kapitalertragsteuer', Typ DezimalzahlNichtNegOhneFuehrNull_MaxL15_MaxVK12_MinNK2_MaxNK2_CType_RABE — deshalb in est_mapping._KOMMA_OHNE_E60_KZ, sonst schriebe _cent_nach_kz() den rohen Integer statt 'N,NN'). Deklarationspflicht: KEIN Bank->FA-Automatismus fuer KapESt (anders als LSt/§41b elektronische Übermittlung) — reports/adjudikation/kap-stufe2-anrechnung-noetig-2026-08-10.md."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 36 Abs. 2 S. 1 Nr. 2 EStG (durch Steuerabzug erhobene Einkommensteuer — umfasst KapESt § 43 EStG, sobald die Kapitalerträge per Günstigerprüfung/Pflichtveranlagung § 32d Abs. 6 bei der Veranlagung erfasst sind)"
+      zitatanker: "die durch Steuerabzug erhobene Einkommensteuer"
+      datei: sources/gesetze-im-internet/estg_p36_2026-07-11.txt
+
+  - feld_id: p36_kapitalertragsteuer_solz
+    quelle: {regel_id: p36_2_anrechnung, signatur_slot: kapitalertragsteuer_solz}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Solidaritätszuschlag zur Kapitalertragsteuer wurde einbehalten?"
+    hilfe_kurz: "Steht auf der Steuerbescheinigung Ihrer Bank (Zeile 38 der Anlage KAP). Gilt nur zusammen mit der Kapitalertragsteuer oben — wenn Sie dort 0 eingetragen haben, hier auch 0."
+    beispielwert: 0
+    herkunft_slots: ["Steuerbescheinigung Zeile 38"]
+    elster_kz: E1904901
+    elster_kz_grund: "BAU-GO 2026-08-10 (team-lead, Stufe 2). Vordruck Zeile 38 'Solidaritätszuschlag' (sources/bfinv_raw/Anlage_KAP_2025.pdf), XSD E10-2025.xsd:19792 ('Solidaritätszuschlag'), gleicher Dezimal-Typ wie p36_kapitalertragsteuer (in _KOMMA_OHNE_E60_KZ). Anrechnung folgt § 1 Abs. 2 SolzG 1995 (EStG-Vorschriften — mit Ausnahme § 36a EStG — 'entsprechend anzuwenden' auf den SolZ), d.h. § 36 Abs. 2 EStG gilt fuer den SolZ-Zuschlag zur KapESt spiegelbildlich."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 1 Abs. 2 SolzG 1995 (Vorschriften des EStG — außer § 36a — entsprechend anzuwenden)"
+      zitatanker: "sind die Vorschriften des Einkommensteuergesetzes mit Ausnahme des § 36a des Einkommensteuergesetzes"
+      datei: sources/gesetze-im-internet/solzg_1995_p1_2026-08-10.txt
+
+  - feld_id: p36_kapitalertragsteuer_kist
+    quelle: {regel_id: p36_2_anrechnung, signatur_slot: kapitalertragsteuer_kist}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Kirchensteuer zur Kapitalertragsteuer wurde einbehalten?"
+    hilfe_kurz: "Steht auf der Steuerbescheinigung Ihrer Bank (Zeile 39 der Anlage KAP) — nur bei Kirchensteuerpflicht und automatischem Kirchensteuerabzug (KiStAM). Gilt nur zusammen mit der Kapitalertragsteuer oben. Wenn keine: 0."
+    beispielwert: 0
+    herkunft_slots: ["Steuerbescheinigung Zeile 39"]
+    elster_kz: E1904801
+    elster_kz_grund: "BAU-GO 2026-08-10 (team-lead, Stufe 2). Vordruck Zeile 39 'Kirchensteuer zur Kapitalertragsteuer' (sources/bfinv_raw/Anlage_KAP_2025.pdf), XSD E10-2025.xsd:19797 ('Kirchensteuer zur Kapitalertragsteuer'), gleicher Dezimal-Typ (in _KOMMA_OHNE_E60_KZ). Anrechnung strukturell wie SolZ: Landes-KiStG behandelt KapESt als Bemessungsgrundlage der KiSt (sources/kirchensteuer/kist_hebesatz_2026-07-22.txt: Art. 8 BayKirchStG/NRW-Erlass 'Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer') und uebernimmt die EStG-Anrechnungssystematik analog zu § 1 Abs. 2 SolzG — kein wörtlicher Bundes-Einzelbeleg (16 Landes-KiStG), daher STRUKTURELL statt woertlich gestuetzt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Art. 8 BayKirchStG (Kapitalertragsteuer als KiSt-Bemessungsgrundlage, repräsentativ für die Landes-KiStG-Systematik)"
+      zitatanker: "Einkommen-, Lohn- und Kapitalertragsteuer"
+      datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+
 luecken:
   - regel_id: p36_2_anrechnung
     signatur_slot: festzusetzende_est
     grund: "Ring-derived (kein Laien-Input): die festgesetzte Einkommensteuer der Scheibe (§ 36 Abs. 1) wird beim Ring-Wiring aus der bereits berechneten Scheiben-Zahl (zahl_cent) geliefert, nicht erfragt."
   - regel_id: p36_2_anrechnung
     geltungsbedingung: lohnsteuer_ist_anrechenbar
-    grund: "Vereinfachung: Gesamtbetrag der einbehaltenen und abgeführten LSt wird als anrechenbar vorausgesetzt (keine Prüfung nach § 36 Abs. 2 Nr. 2 S. 2). Materiell unbedenklich: est_cent-Impact = 0 (Post-Festsetzung)."
+    grund: "Vereinfachung: Gesamtbetrag der einbehaltenen und abgeführten LSt wird als anrechenbar vorausgesetzt (keine Prüfung nach § 36 Abs. 2 Nr. 2 S. 2). Materiell unbedenklich: est_cent-Impact = 0 (Post-Festsetzung). Stufe 2 (2026-08-10): dieselbe Vereinfachung gilt jetzt auch fuer KapESt/SolZ-KapESt/KiSt-KapESt (Zeilen 37-39) — deckt_ab dieser Bedingung ist die allgemeine 'durch Steuerabzug erhobene Einkommensteuer' (§ 36 Abs.2 Nr.2 Chapeau), die LSt UND KapESt umfasst. Gesamtbetrag wird als anrechenbar vorausgesetzt, keine Pruefung ob im Einzelfall bereits durch die Abgeltungswirkung (§ 43 Abs. 5 EStG) endgueltig UND keine Guenstigerpruefung/Pflichtveranlagung beantragt wurde. Materiell unbedenklich, solange der Nutzer die Felder nur bei tatsaechlicher Veranlagung der Kapitalertraege befuellt (fragetext_laie/hilfe_kurz weisen darauf hin)."
   - regel_id: p36_2_anrechnung
     geltungsbedingung: keine_weiteren_anrechnungsbetraege
-    grund: "Vereinfachung: keine weiteren Anrechnungsbeträge (z.B. Körperschaftsteuer, KapESt § 36 Abs. 2 Nr. 2 S. 1) — Subsumtion unter ‚keine weiteren relevanten Steuerabzüge außer LSt'. Backlog: vollständige Aufzählung § 36 Abs. 2 Nr. 2 S. 1."
+    grund: "Stufe 2 (2026-08-10) hat KapESt/SolZ-KapESt/KiSt-KapESt (Zeilen 37-39) geschlossen. WEITERHIN offen: Körperschaftsteuer (§ 36 Abs. 2 Nr. 2 S. 1, seltener Privatfall), Zeile 40 (angerechnete ausländische Steuer, E1905001), Zeile 41/q (noch nicht angerechnete ausländische Steuer, E1905101) und Zeile 42 (fiktive Quellensteuer, E1905201) — bewusst zurückgestellt (Julius/team-lead-Entscheidung, 'das entscheiden wir, wenn Stufe 2 steht')."
   - regel_id: p36_2_anrechnung
     geltungsbedingung: ein_dienstverhaeltnis
     grund: "Vereinfachung: LSt-Abzug setzt mindestens ein Dienstverhältnis voraus — bei fehlendem Dienstverhältnis (§ 38 Abs. 1 S. 1) würde lohnsteuer_cent=0 sein und der Accessor liefert korrekt ESt − 0 = ESt. Kein Over-tax-Risiko."

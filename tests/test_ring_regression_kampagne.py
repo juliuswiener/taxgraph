@@ -931,6 +931,111 @@ def test_a4_accessor_snapshot_seeds():
         assert got == exp_eur * 100, f"seed {est_eur}/{lst_eur}/{vor_eur}: {got} != {exp_eur * 100}"
 
 
+# ---- KAP Stufe 2 (Zeile 37-39, § 36 Abs.2 Nr.2): KapESt/SolZ/KiSt-Anrechnung, eine Quelle mit
+# der Deklaration (p36_kapitalertragsteuer[_solz|_kist]), spiegelt p36_lohnsteuer 1:1. Anders als
+# LSt/VZ (P36_ANRECHNUNG) NUR auf 'gesamt'/'rentner_gesamt' gebunden, nicht 'an_gesamt' -- die
+# ganze KAP-Domaene existiert dort nicht (kein_kap-Scheibe), darum _ges_anlegen statt _an_anlegen.
+
+def _a4_zahl_baseline_gesamt(base, fid):
+    """Wie _a4_zahl_baseline, aber auf der 'gesamt'-Scheibe (P36_ANRECHNUNG_KAP ist dort gebunden,
+    nicht auf an_gesamt)."""
+    _ges_anlegen(base, fid, GESAMT_AN_KEGEL)
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt", f"grund={erg.get('grund')}"
+    assert erg["abschlusszahlung_cent"] is None
+    return erg["zahl_cent"]
+
+
+def test_a4_kapitalertragsteuer_solz_kist_reduzieren_abschlusszahlung(base):
+    """KAP Stufe 2 (Zeile 37-39): KapESt+SolZ+KiSt zaehlen zu § 36 Abs.2 Nr.2 'durch Steuerabzug
+    erhobene Einkommensteuer' -- identisch zu LSt (p36_lohnsteuer). KERN: zahl_cent bleibt exakt
+    z0 (Anrechnung bewegt die Festsetzung nie), Abschlusszahlung sinkt um die volle Summe.
+    Explizite Vorher/Nachher-Cent-Werte gegen unabhaengigen Accessor-Aufruf -- 'anders' allein
+    beweist nichts ([[4afc800]])."""
+    z0 = _a4_zahl_baseline_gesamt(base, "a4kap0")
+    kapest, solz, kist = 1200000, 66000, 108000   # 12.000€/660€/1.080€, glatt (keine Rundung)
+    _ges_anlegen(base, "a4kap1", GESAMT_AN_KEGEL + [
+        ("p36_kapitalertragsteuer", kapest),
+        ("p36_kapitalertragsteuer_solz", solz),
+        ("p36_kapitalertragsteuer_kist", kist)])
+    st, erg = _req(base, "GET", "/fall/a4kap1/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt"
+    assert erg["zahl_cent"] == z0, "KAP-Anrechnung darf die festgesetzte ESt nicht veraendern"
+    exp = R.catala_p36_abschlusszahlung({
+        "festzusetzende_est_cent": z0,
+        "kapitalertragsteuer_cent": kapest,
+        "kapitalertragsteuer_solz_cent": solz,
+        "kapitalertragsteuer_kist_cent": kist})
+    assert erg["abschlusszahlung_cent"] == exp
+    assert exp == z0 - 1374000, f"exp={exp}, erwartet z0-1374000={z0 - 1374000}"
+
+
+def test_a4_kap_anrechnung_rundet_je_abzugsteuer_unabhaengig(base):
+    """§ 36 Abs.3 S.2: 'die Summe der Betraege einer EINZELNEN Abzugsteuer' wird je Abzugsteuer-
+    ART separat auf volle Euro aufgerundet -- NICHT die Gesamtsumme einmal. 1.356,80€/74,60€/
+    122,11€ unabhaengig gerundet: 1.357+75+123 = 1.555,00€. Kombiniert-dann-gerundet waere
+    1.553,51€ -> 1.554,00€ -- 1€ Differenz beweist die Reihenfolge ist tatsaechlich verdrahtet,
+    nicht nur zufaellig gleich."""
+    z0 = _a4_zahl_baseline_gesamt(base, "a4kapr0")
+    kapest, solz, kist = 135680, 7460, 12211
+    _ges_anlegen(base, "a4kapr1", GESAMT_AN_KEGEL + [
+        ("p36_kapitalertragsteuer", kapest),
+        ("p36_kapitalertragsteuer_solz", solz),
+        ("p36_kapitalertragsteuer_kist", kist)])
+    st, erg = _req(base, "GET", "/fall/a4kapr1/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["zahl_cent"] == z0
+    exp = R.catala_p36_abschlusszahlung({
+        "festzusetzende_est_cent": z0,
+        "kapitalertragsteuer_cent": kapest,
+        "kapitalertragsteuer_solz_cent": solz,
+        "kapitalertragsteuer_kist_cent": kist})
+    unabhaengig = z0 - 155500      # 1.357+75+123 = 1.555,00€, je einzeln aufgerundet
+    naiv_kombiniert = z0 - 155400  # 135680+7460+12211=155351 -> einmal gemeinsam aufgerundet 155400
+    assert erg["abschlusszahlung_cent"] == exp
+    assert exp == unabhaengig, f"exp={exp} != unabhaengig-gerundet={unabhaengig}"
+    assert exp != naiv_kombiniert, (
+        "exp trifft den kombiniert-gerundeten Wert -- Testwerte kollidieren, keine Aussage "
+        "ueber die Rundungsreihenfolge.")
+
+
+def test_a4_vorlaeufige_kapitalertragsteuer_bewegt_anrechnung_nicht(base):
+    """Wie p36_lohnsteuer: eine vorlaeufige (nicht bestaetigte) KapESt darf die Abschlusszahlung
+    NICHT bewegen -- bleibt None wie ganz ohne Feld [[ring-liest-vorlaeufig-parallel-pfad-luecke]]."""
+    z0 = _a4_zahl_baseline_gesamt(base, "a4kaps0")
+    _ges_anlegen(base, "a4kapvorl", GESAMT_AN_KEGEL)
+    body = {"feld_id": "p36_kapitalertragsteuer", "wert": 135680, "zustand": "vorlaeufig",
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": None}}
+    st, _ = _req(base, "POST", "/fall/a4kapvorl/event", body)
+    assert st == 201, f"vorlaeufiger POST erwartet 201, war {st}"
+    st, erg = _req(base, "GET", "/fall/a4kapvorl/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["zahl_cent"] == z0
+    assert erg["abschlusszahlung_cent"] is None, "vorlaeufige KapESt darf Anrechnung nicht ausloesen"
+
+
+def test_a4_kap_anrechnung_rentner_scheibe(base):
+    """P36_ANRECHNUNG_KAP ist auf 'rentner_gesamt' genauso gebunden wie auf 'gesamt' (beide
+    Scheiben-Felder-Tuples in api_constants.py) -- Reachability auf der ZWEITEN Scheibe, nicht
+    nur der schon von obigen Tests abgedeckten 'gesamt'."""
+    _rent_anlegen(base, "a4kapre0", RENTNER_KEGEL_HOCH)
+    st, e0 = _req(base, "GET", "/fall/a4kapre0/ergebnis")
+    _val("ergebnis", e0)
+    z0 = e0["zahl_cent"]
+    assert e0["abschlusszahlung_cent"] is None
+    _rent_anlegen(base, "a4kapre1", list(RENTNER_KEGEL_HOCH) + [
+        ("p36_kapitalertragsteuer", 500000),
+        ("p36_kapitalertragsteuer_solz", 27500),
+        ("p36_kapitalertragsteuer_kist", 45000)])
+    st, e1 = _req(base, "GET", "/fall/a4kapre1/ergebnis")
+    _val("ergebnis", e1)
+    assert e1["zahl_cent"] == z0
+    assert e1["abschlusszahlung_cent"] == z0 - 572500
+
+
 # ---- A8 § 22 Nr. 3: Sonstige Einkünfte aus Leistungen (Freigrenze 256 €, < 256 → 0 / ≥ 256 → voll) ----
 # Nutzt gesamt-Ring (fremd_arten:kein_sonstige = schützt Rente §22 Nr.1, erlaubt §22 Nr.3 via p23-Präzedenz).
 
