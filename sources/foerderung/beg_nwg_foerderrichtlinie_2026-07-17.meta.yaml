@@ -1,0 +1,21 @@
+dokument:
+  norm_uri: "beg/2026-07-17/nwg"
+  norm: "Förderrichtlinie für die Bundesförderung für effiziente Gebäude – Nichtwohngebäude (BEG NWG), Neufassung v. 17.07.2026 (ersetzt BEG NWG v. 09.12.2022, BAnz AT 30.12.2022 B3)"
+  fassung: "17.07.2026, in Kraft ab 21.07.2026, Geltungsdauer bis 31.12.2030"
+  quelle_url: "https://www.energiewechsel.de/KAENEF/Redaktion/DE/PDF-Anlagen/BEG/beg-richtlinien-juli-2026/20260720-beg-nichtwohngebaeude.pdf?__blob=publicationFile"
+  abrufdatum: "2026-08-10"
+  datei: "beg_nwg_foerderrichtlinie_2026-07-17.txt"
+  pdf_datei: "beg_nwg_foerderrichtlinie_2026-07-17.pdf"
+  sha256: "483f32ed19f7c9fe14084d9ed61e1a7d5f5aa397e05407820d1c4a9d0e4485ec"
+  pdf_sha256: "130183a86b02efc0d71f615597cde768322e0e5e073fd4b82517e0acd309d989"
+  authority: verwaltung
+  redistributable: true
+  hinweis: >
+    Dritte Parallel-Richtlinie (Nichtwohngebaeude), nur zur Vollstaendigkeit beschafft --
+    fuer den Foerderfinder-Anwendungsfall Heizungsfoerderung Privatpersonen nicht einschlaegig
+    (siehe beg_em_foerderrichtlinie_2026-07-17 fuer die massgebliche Quelle). Gleiche
+    BAnz-Fundstellen-Einschraenkung: Vorabfassung, Fundstelle im Dokument als Platzhalter.
+    PDF via curl direkt von energiewechsel.de geladen, Text via pdftotext -layout extrahiert.
+  erwartete_anker:
+    - "ersetzt die Richtlinie für die Bundesförderung für effiziente Gebäude – Nichtwohngebäude in der Fassung vom 9. Dezember 2022 (BAnz AT 30.12.2022 B3)"
+  verwendet_in: ["BEG-Quellenbeschaffung 2026-08-10 (Team-Lead-Auftrag), Vollstaendigkeit"]

@@ -28,13 +28,37 @@ bindungen:
       datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
     # Wert "andere" hat KEINEN verifizierten Religionsschlüssel-Code (~35 mögliche XSD-Werte, kein
     # Raten) -> fail-closed in nicht_deklariert (est_mapping.WERTEKODIERUNG). Julius-Entscheidung offen.
-    # ACHTUNG Kopplung (gemessen, reports/adjudikation/checkest_feldkopplungen_2026-08-09.md):
-    # jeder kirchensteuerpflichtige Code (alles außer "11") verlangt laut checkESt ZUSÄTZLICH
-    # Lohnsteuer (E0200301) UND Kirchensteuer (E0200501) auf Anlage N, sonst 2 NEUE statt 0 alte
-    # Fehler. E0200301 ist in bindung_p36_abschlusszahlung.yaml:24 dauerhaft ausgeschlossen
-    # (Doppel-Erfassung ggü. eLStB) -> echte Kollision, Julius-Entscheidung offen, bevor
-    # "evangelisch"/"roemisch-katholisch" produktiv beantwortet werden können, ohne checkESt zu
-    # kippen. "keine" (-> Code 11) ist davon NICHT betroffen und bleibt sauber.
+    # GELOEST 2026-08-10 (Julius-Entscheidung, war ACHTUNG Kopplung): jeder kirchensteuerpflichtige
+    # Code (alles außer "11") verlangt laut checkESt ZUSÄTZLICH Lohnsteuer (E0200301, jetzt gebunden
+    # in bindung_p36_abschlusszahlung.yaml) UND Kirchensteuer (E0200501, kirchensteuer_arbeitgeber
+    # unten) auf Anlage N — beide jetzt gebunden, Paar-Zwang erfuellt. "keine" (-> Code 11) bleibt
+    # unveraendert sauber (keine Kirchensteuer-Deklaration noetig).
+
+  - feld_id: kirchensteuer_arbeitgeber
+    quelle:
+      regel_id: p2_festzusetzung_einzel
+      signatur_slot: kirchensteuer_arbeitgeber
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Kirchensteuer wurde im Jahr von deinem Arbeitgeber einbehalten (nur falls kirchensteuerpflichtig)?"
+    hilfe_kurz: "Steht auf der Lohnsteuerbescheinigung, falls dort Kirchensteuer abgeführt wurde. Bei konfessionslos: 0."
+    beispielwert: 0
+    herkunft_slots: ["Lohnsteuerbescheinigung"]
+    elster_kz: E0200501
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 51a EStG i.V.m. Landes-KiStG (Kirchensteuer als Zuschlag der Mitglieder steuererhebender Religionsgemeinschaften)"
+      zitatanker: "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer"
+      datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    # Julius-Entscheidung 2026-08-10: echte Deklaration statt 0,00-Platzhalter (revidiert die
+    # bisherige Nicht-Deklaration von p36_lohnsteuer, s. dort). Reines Anlage-N-Deklarationsfeld,
+    # kein Ring-Input (p51a_kirchensteuer rechnet die FESTGESETZTE Kirchensteuer aus est_mit_fb,
+    # nicht die vom Arbeitgeber bereits einbehaltene) -- daher signatur_slot = eigene feld_id unter
+    # der Pseudoregel p2_festzusetzung_einzel, wie bei den Stammdaten-Feldern (bindung_an_gesamt.yaml).
+    # Paar-Zwang (gemessen reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md:161-164):
+    # sobald kist_konfession ≠ "keine" ist, verlangt checkESt E0200301 UND E0200501 zusammen.
+    # Komma-Dezimal OHNE E60-Präfix (est_mapping._KOMMA_OHNE_E60_KZ deckt das ab).
 
   - feld_id: kist_bundesland
     quelle:

@@ -62,11 +62,22 @@ _ABZUGS_KZ = frozenset({
 })
 
 
+# _KOMMA_OHNE_E60_KZ — Kz vom XSD-Typ DezimalzahlNichtNegOhneFuehrNull_MaxL15_MaxVK12_MinNK2_MaxNK2_
+# CType_RABE (E10-2025.xsd): Komma-Dezimal mit genau 2 Nachkommastellen ("12500,00"), aber OHNE
+# E60-Praefix. Ohne diese Liste schriebe _cent_nach_kz() den rohen Integer -- Format-Falle, gemessen
+# reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md:176-187/303-319. Betrifft
+# BEIDE Aufrufpfade (Klasse-b/1:1 UND PARTNER_INSTANZ), weil beide _cent_nach_kz() rufen.
+_KOMMA_OHNE_E60_KZ = frozenset({
+    "E0200301",  # Lohnsteuer (Anlage N, Person A + B)
+    "E0200501",  # Kirchensteuer vom Arbeitgeber einbehalten (Anlage N, Person A + B)
+})
+
+
 def _cent_nach_kz(wert: int, kz: str) -> int | str:
     """Store-CENT → Kz-Wert: E60-Präfix → "N,NN"-Dezimalstring, E10 integer asymmetrisch gerundet.
     anl_est1a_2025.txt:269-274: "zu Ihren Gunsten" — Einnahmen/Einkünfte→abrunden (floor),
     Abzüge/Aufwendungen/Verluste→aufrunden (ceiling)."""
-    if kz.startswith("E60"):
+    if kz.startswith("E60") or kz in _KOMMA_OHNE_E60_KZ:
         return f"{wert // 100},{wert % 100:02d}"
     if kz in _ABZUGS_KZ:
         return -(-wert // 100)   # ceiling: 1..99 Cent → 1 EUR (aufrunden=günstiger)
@@ -83,6 +94,11 @@ def _cent_nach_kz(wert: int, kz: str) -> int | str:
 DOKUMENTIERT_AGGREGAT = {
     "E0703838": ["vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand", "vv_sonstige_wk"],
 }
+# Kz, die deklariere() unbedingt setzt, unabhaengig von Bindung/Snapshot (kein Interview-Feld
+# dahinter). Art_Erkl (E0100001, Julius-Entscheidung 2026-08-10): das Produkt erzeugt
+# ausschliesslich Einkommensteuererklaerungen. Test-Gate (test_deklarations_abdeckung.py)
+# zaehlt diese als erlaubt, nicht als Phantom-Kz.
+KONSTANTE_KZ = frozenset({"E0100001"})
 # Klasse d — Negation: Store-Feld -> EfA-Kz (invertiert; Vordruck kodiert die schädliche Haushaltsgem.).
 NEGATION = {"fam_alleinstehend": "E0503701"}
 # Klasse e — Multiplikation: Zähl-Feld -> N Anlage-Kind-Instanzen (MVP: nur die ANZAHL).
@@ -159,6 +175,13 @@ PARTNER_INSTANZ = {
     # Block-Instanz DIESELBEN Kz wie Person A, kein eigenes Ehegatte-Kz.
     "rentner_grad_der_behinderung_partner": "E0109708",
     "rentner_hilflos_blind_taubblind_partner": "E0109706",
+    # Anlage N Person-B (Julius-Entscheidung 2026-08-10: echte Werte statt 0,00-Platzhalter, s.
+    # bindung_p36_abschlusszahlung.yaml + bindung_p51a_kirchensteuer.yaml): dieselben Person-A-Kz,
+    # kein eigenes Ehegatte-Kz. steuerklasse_partner ist typ=enum (kein cent) -> _cent_nach_kz()
+    # greift hier nicht, Wert laeuft unformatiert durch.
+    "steuerklasse_partner": "E0200002",
+    "p36_lohnsteuer_partner": "E0200301",
+    "kirchensteuer_arbeitgeber_partner": "E0200501",
 }
 # Klasse g×f — Renten-Verzweigung Person-B (§ 22, Anlage-R-Instanz B): wie VERZWEIGUNG (aa/bb-Kz je
 # renten_art), aber der Wert läuft in den person_b-Bucket (dieselben Person-A-Kz, kein Ehegatte-Kz).
@@ -291,6 +314,14 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
 
     agg_quellen = _aggregation_quellen()
     deklaration: dict = {}
+    # Art_Erkl (E0100001) ist eine KONSTANTE, kein Interview-Feld (Julius-Entscheidung 2026-08-10,
+    # s. bindung_an_gesamt.yaml:stammdaten_art_est_erklaerung, jetzt askable=false): das Produkt
+    # erzeugt ausschliesslich Einkommensteuererklaerungen -- die bisherige Ja/Nein-Frage war ein
+    # Schein-Wahlrecht. MUSS zurueck zur askable Frage, sobald das Produkt weitere Erklaerungsarten
+    # unterstuetzt (E0100002/E0100003/E0100009/E0100302, z.B. Arbeitnehmer-Sparzulage) -- diese 4
+    # bleiben bewusst UNBERUEHRT und weiterhin ungebunden.
+    for kz in KONSTANTE_KZ:
+        deklaration[kz] = True
     dokumentiert: dict = {}
     kind_anlagen: list = []
     person_b: dict = {}                 # Anlage-N-Instanz B (Zusammenveranlagung, Klasse g)

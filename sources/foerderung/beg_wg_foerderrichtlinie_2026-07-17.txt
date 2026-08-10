@@ -1,0 +1,1173 @@
+                                                               Bundesministerium
+                                                         für Wirtschaft und Energie
+                                                                  Förderrichtlinie
+                                        für die Bundesförderung für effiziente Gebäude
+                                                         – Wohngebäude (BEG WG)
+                                                                 Vom 17. Juli 2026
+
+
+
+
+Inhalt
+1 Präambel ................................................................................................................................................. 2
+2 Rechtsgrundlagen ................................................................................................................................... 4
+3 Begriffsbestimmungen ............................................................................................................................. 4
+4 Förderziel und Förderzweck .................................................................................................................... 6
+5 Gegenstand der Förderung...................................................................................................................... 7
+   5.1 Energetische Sanierung von Wohngebäuden ................................................................................... 7
+   5.2 Energetische Fachplanung und Baubegleitung; Nachhaltigkeitszertifizierung ................................... 8
+6 Förderempfänger ..................................................................................................................................... 8
+   6.1 Antragsberechtigte ............................................................................................................................ 8
+   6.2 Nicht antragsberechtigt ..................................................................................................................... 9
+7 Fördervoraussetzungen ........................................................................................................................... 9
+   7.1 Allgemeine Fördervoraussetzungen .................................................................................................. 9
+   7.2 Voraussetzungen für die Förderung des Ersterwerbs nach Sanierung ............................................ 10
+   7.3 Verfügbarkeit von Haushaltsmitteln ................................................................................................. 10
+   7.4 Anwendungsbereich des Ordnungsrechts ....................................................................................... 10
+   7.5 Technische Mindestanforderungen ................................................................................................. 10
+8 Art und Umfang der Förderung, Höhe der Förderung ............................................................................ 10
+   8.1 Art der Förderung ............................................................................................................................ 10
+   8.2 Förderfähige Ausgaben ................................................................................................................... 11
+   8.3 Höchstgrenze förderfähiger Ausgaben ............................................................................................ 11
+   8.4 Fördersätze ..................................................................................................................................... 12
+   8.5 Zuschuss (nur kommunale Antragsteller) ........................................................................................ 13
+   8.6 Kredit .............................................................................................................................................. 13
+   8.7 Kumulierungsverbot, Kombination mit anderen Förderprogrammen ................................................ 14
+9 Verfahren............................................................................................................................................... 15
+   9.1 Zuständigkeit; Informationen, Merkblätter, Öffentlichkeitsarbeit....................................................... 15
+   9.2 Antragstellung ................................................................................................................................. 16
+   9.3 Einbindung eines Energieeffizienz-Experten ................................................................................... 17
+   9.4 Zusage- und Bewilligungsverfahren ................................................................................................ 18
+   9.5 Auszahlung, Nachweisführung ........................................................................................................ 18
+   9.6 Subventionserheblichkeit ................................................................................................................ 19
+   9.7 Auskunfts- und Prüfungsrechte, Monitoring ..................................................................................... 20
+10 Geltungsdauer ..................................................................................................................................... 21
+1 Anforderungen an ein Effizienzhaus ...................................................................................................... 22
+2 Anforderungen an die Anlagentechnik eines Effizienzhauses ................................................................ 23
+   3 Anforderungen an den Einsatz von Wärme aus erneuerbaren Energien eines Effizienzhauses ......... 24
+4 NH-Klasse: Bei anerkannter Nachhaltigkeitszertifizierung ..................................................................... 25
+5 Regelungen und Hinweise zur Effizienzhaus-Berechnung ..................................................................... 25
+6 Leistungen des Energieeffizienz-Experten ............................................................................................. 26
+   7 Notwendige Nachweise und Dokumente für ein Effizienzhaus ........................................................... 27
+
+
+
+
+1 Präambel
+Diese Förderrichtlinie ersetzt die Richtlinie für die Bundesförderung für effiziente Gebäude – Wohngebäude
+in der Fassung vom 9. Dezember 2022 (BAnz AT 30.12.2022 B2).
+Die Bundesförderung für effiziente Gebäude (BEG) unterstützt die Erreichung der Klimaziele, die auf natio-
+naler Ebene im Bundes-Klimaschutzgesetz (KSG) dargelegt sind. Sie dient der Umsetzung des Klima-
+schutzprogramms 2030, des Klimaschutzprogramms 2023 und zur Umsetzung des Klimaschutzplans 2050.
+Mit der BEG wurde die energetische Gebäudeförderung des Bundes daher in Umsetzung des Klimaschutz-
+programms 2030 und der Förderstrategie „Energieeffizienz und Wärme aus Erneuerbaren Energien“ des
+Bundesministeriums für Wirtschaft und Energie (BMWE) neu aufgesetzt und 2021 eingeführt. Die BEG ent-
+wickelt beziehungsweise ergänzt die Förderung von erneuerbaren Energien im Gebäudesektor um Nach-
+haltigkeitsaspekte und Digitalisierungsmaßnahmen weiter und berücksichtigt damit neben der Betriebs-
+phase von Gebäuden auch die Emissionen von Treibhausgasen (THG) aus der Herstellungsphase ein-
+schließlich vorgelagerter Lieferketten noch stärker.
+Die BEG flankiert die Vorgaben des Gebäudeenergiegesetzes (GEG)1 und führt den Markt durch effiziente
+Anreize an die darin festgelegten Anforderungen heran. Die BEG verfolgt bewusst einen technologieoffenen
+Ansatz und integriert darüber hinaus Naturschutzbelange und trägt damit auch zur Umsetzung der Natio-
+nalen Strategie zur Biologischen Vielfalt 2030 und des Masterplans Stadtnatur bei.
+Für die BEG wird eine jährliche Programmevaluation durchgeführt, die die Effizienz des Mitteleinsatzes im
+Hinblick auf die erzielten CO2-Einsparungen und die Kohärenz zur CO2-Bepreisung untersucht und in deren
+Rahmen auch die Menge der energetischen Biomassenutzung durch die geförderten Maßnahmen, die Aus-
+wirkungen auf die Luftqualität sowie perspektivisch auch Angaben zum Energieverbrauch berücksichtigt
+werden. Parallel zur jährlichen Programmevaluation erfolgt im Hinblick auf die Einhaltung der EU-rechtli-
+chen Vorgaben der National Emission Ceilings (NEC)-Richtlinie ein engmaschiges vierteljährliches Monito-
+ring der Förderung im Bereich der Biomasseheizungen mit Datenaustausch zwischen dem Bundesamt für
+Wirtschaft und Ausfuhrkontrolle (BAFA), der KfW, dem Umweltbundesamt (UBA) und dem Deutschen Bio-
+masseforschungszentrum (DBFZ), um kurzfristig auf Fehlentwicklungen reagieren zu können.
+Im Kontext der Förderung soll auf Ebene des Gebäudebestandes auch die gesetzliche Pflicht zur kommu-
+nalen Wärmeplanung ab 2026 für alle Gemeinden über 100 000 Einwohnern und ab 2028 für solche mit
+weniger als 100 000 Einwohnern flankiert werden.
+Auch müssen die begrenzt nachhaltig zur Verfügung stehenden Biomassepotenziale und die Verpflichtung
+zur Stärkung des land use, land-use change and forestry (LULUCF)-Sektors aus dem Bundes-Klimaschutz-
+gesetz (KSG) berücksichtigt werden. Zudem soll das Prinzip der Kaskadennutzung von Biomasse gemäß
+Artikel 3 Absatz 3 Unterabsatz 2 und Absatz 3a der Richtline (EU) 2018/2001 in der Fassung vom 18.
+Oktober 2023 eingehalten werden.
+Mit der vorliegenden Änderung der Förderrichtlinie wird die Förderung der BEG für die systemische Sanie-
+rung gestrafft und durch Fokussierung auf die Lebenszyklusbetrachtung (Life Cycle Assessment – LCA)
+gezielt auf eine wesentliche Kernanforderung des nachhaltigen Bauens ausgerichtet. So werden die Anfor-
+derungen an die Nachhaltigkeits-Klasse analog der Praxis in der Neubauförderung vereinfacht und Büro-
+kratie abgebaut. Gleichzeitig erfolgt eine Fokussierung auf innovative Ansätze wie das serielle Sanieren,
+indem der bereits bestehende Bonus für serielle Sanierungen ausgeweitet wird. Schnelle und hochwertige
+energetische Sanierungen werden dadurch noch mehr als vorher gefördert. Zusätzlich wird die priorisierte
+Sanierung energetisch besonders schlechter Gebäude noch stärker in den Fokus gerückt. Darüber hinaus
+werden Tilgungszuschüsse und Boni nur noch gewährt, wenn die neu installierte Wärmepumpe ihren Ur-
+sprung in der Union hat. Dadurch soll die lokale Wertschöpfung und Beschäftigung gestärkt und technolo-
+gische Souveränität und resiliente Lieferketten gesichert werden. Die Förderung von Einzelheizungen in
+Gebieten, die sich für eine Versorgung durch ein Wärmenetz eignen, wird künftig stärker fokussiert. Dadurch
+wird die Förderkulisse unter anderem mit der Bundesförderung für effiziente Wärmenetze (BEW) besser
+abgestimmt. Mit dieser effizienteren Gestaltung leistet die systemische Förderung einen Beitrag zur not-
+wendigen Haushaltskonsolidierung und soll zugleich weiterhin signifikant zur Senkung der Emissionen im
+Gebäudebereich beitragen. Die BEG ist für eine leichtere Zugänglichkeit der einzelnen Zielgruppen in eine
+Grundstruktur mit vier Förderrichtlinien aufgeteilt: In die „Bundesförderung für effiziente Gebäude – Wohn-
+gebäude“ (BEG WG), die „Bundesförderung für effiziente Gebäude − Nichtwohngebäude“ (BEG NWG), die
+
+
+
+
+1 Verweise auf das Gebäudeenergiegesetz (GEG) sind sinngemäß als Verweise auf die Regelungen des Gebäudemodernisie-
+
+rungsgesetzes (GModG) zu verstehen.
+„Bundesförderung für effiziente Gebäude − Einzelmaßnahmen“ (BEG EM) und die Neu- und Umbauförde-
+rung des Bundesministeriums für Wohnen, Stadtentwicklung und Bauwesen (BMWSB).
+Die BEG WG vereint sämtliche Förderangebote für Gesamtmaßnahmen bei Wohngebäuden. Als Gesamt-
+maßnahme sind alle Vorhaben zu verstehen, die im Ergebnis zu einem energetischen Zustand des Be-
+standsgebäudes auf einer Effizienzhaus-Stufe führen.
+
+2 Rechtsgrundlagen
+Der Bund gewährt Förderungen auf Grundlage dieser Förderrichtlinie und nach Maßgabe insbesondere
+folgender Regelungen in der jeweils gültigen Fassung:
+   –   §§ 23 und 44 der Bundeshaushaltsordnung (BHO) sowie den zu diesen Regelungen erlassenen
+       Allgemeinen Verwaltungsvorschriften;
+   –   Allgemeine Nebenbestimmungen für Zuwendungen zur Projektförderung (ANBest-P), wobei an-
+       stelle von Nummer 3.1 ab dem dort genannten Schwellenwert bis zu einer Wertgrenze (Zuwen-
+       dungsbetrag) in Höhe von 5 Millionen Euro folgende Regelung gilt, dass der Zuwendungsempfänger
+       Aufträge nur an fachkundige und leistungsfähige Anbieter nach wettbewerblichen Gesichtspunkten
+       zu wirtschaftlichen Bedingungen zu vergeben hat. Soweit möglich, sind dazu mindestens drei An-
+       gebote einzuholen. Verfahren und Ergebnisse sind zu dokumentieren;
+   –   Allgemeine Nebenbestimmungen für Zuwendungen zur Projektförderung an Gebietskörperschaften
+       und Zusammenschlüsse von Gebietskörperschaften (ANBest-Gk);
+   –   Gebäudeenergiegesetz (GEG) vom 8. August 2020 (BGBl. I S. 1728), das zuletzt durch Artikel 1
+       des Gesetzes vom 16. Oktober 2023 (BGBl. 2023 I Nr. 280) geändert worden ist;
+   –   Bundes-Immissionsschutzgesetz (BImSchG) in der Fassung der Bekanntmachung vom 17. Mai
+       2013 (BGBl. I S. 1274; 2021 I S. 123), das zuletzt durch Artikel 1 des Gesetzes vom 24. Februar
+       2024 (BGBl. 2025 I Nr. 58) geändert worden ist, und Sechste Allgemeine Verwaltungsvorschrift zum
+       Bundes-Immissionsschutzgesetz (TA Lärm);
+   –   Verordnung (EU) 2017/1369 des Europäischen Parlaments und des Rates vom 4. Juli 2017 zur
+       Festlegung eines Rahmens für die Energieverbrauchskennzeichnung und zur Aufhebung der Richt-
+       linie 2010/30/EU (ABl. L 198 vom 28. Juli 2017, S. 1 – Energieverbrauchskennzeichnungs-VO);
+   –   Verordnung (EU) 2024/1781 des Europäischen Parlaments und des Rates vom 13. Juni 2024 zur
+       Schaffung eines Rahmens für die Festlegung von Ökodesign-Anforderungen für nachhaltige Pro-
+       dukte, zur Änderung der Richtlinie (EU) 2020/1828 und der Verordnung (EU) 2023/1542 und zur
+       Aufhebung der Richtlinie 2009/125/EG (ABl. L 1781 vom 28. Juni 2024, S. 1);
+   –   Richtlinie 2009/125/EG des Europäischen Parlaments und des Rates vom 21. Oktober 2009 zur
+       Schaffung eines Rahmens für die Festlegung von Anforderungen an die umweltgerechte Gestaltung
+       energieverbrauchsrelevanter Produkte (ABl. L 285 vom 31. Oktober 2009, S. 10) sowie relevante
+       Durchführungsrechtsakte.
+Die in diesem Abschnitt genannten Vorschriften der BHO, die zu diesen Regelungen erlassenen Allgemei-
+nen Verwaltungsvorschriften sowie die Vorschriften der ANBest-P und der ANBest-Gk sind durch die KfW
+anzuwenden oder sinngemäß vertragsrechtlich umzusetzen. Das Nähere regelt der zwischen Bund und
+KfW abzuschließende Mandatarvertrag.
+
+3 Begriffsbestimmungen
+Im Sinne dieser Förderrichtlinie sind
+a)     „Akkreditierte Zertifizierungsstelle“: eine durch eine nationale Akkreditierungsstelle (DAkkS) gemäß
+der Verordnung (EG) 765/2008 akkreditierte Konformitätsbewertungsstelle, die für die Gewährleistungs-
+marke „Qualitätssiegel Nachhaltiges Gebäude PLUS (QNG-PLUS)“ des Bundesministeriums für Wohnen,
+Stadtentwicklung und Bauwesen (BMWSB) zugelassen ist (siehe www.qng.info);
+b)     „Bestandsgebäude“: fertiggestellte Gebäude, deren Bauantrag beziehungsweise Bauanzeige zum
+Zeitpunkt der Antragstellung mindestens fünf Jahre zurückliegt;
+c)     „Bewilligungszeitraum“: beginnt mit der Zusage beziehungsweise dem Zuwendungsbescheid und
+umfasst die nach BEG zur Umsetzung der Maßnahme verfügbare Zeit; der Verwendungsnachweis ist
+nach Abschluss des Bewilligungszeitraums einzureichen;
+d)     „Contractoren“: natürliche oder juristische Personen, die in Einrichtungen oder Räumlichkeiten eines
+Contractingnehmers Dienstleistungen zur Steigerung der Energieeffizienz oder zur gebäudenahen Ener-
+gieversorgung aus erneuerbaren Energien erbringen, Investitionen tätigen oder Energieeffizienzmaßnah-
+men durchführt und dabei in eigenem Namen und auf eigene Rechnung handelt und das finanzielle Risiko
+trägt;
+e)     „Durchführer“: die mit der Durchführung dieser Förderrichtlinie der BEG jeweils beauftragten admi-
+nistrierenden Stellen BAFA und KfW;
+f)      „Effizienzhaus“: Wohngebäude, das sich durch eine energetisch optimierte Bauweise und Anlagen-
+technik auszeichnet und die in den Technischen Mindestanforderungen zu dieser Förderrichtlinie definier-
+ten Vorgaben an die Gesamtenergieeffizienz (Bezugsgröße: Primärenergiebedarf Qp) und an die Energie-
+effizienz der Gebäudehülle (Bezugsgröße: Transmissionswärmeverlust H’T) für eine Effizienzhaus (EH)-
+Stufe erreicht;
+g)      „Energieeffizienz-Experte/-Expertin“: eine in der Expertenliste unter www.energie-effizienz-exper-
+ten.de in der Kategorie „BEG – Wohngebäude – Effizienzhaus“ geführte natürliche Person;
+h)     „Erneuerbare Energien“: Energie nach § 3 Absatz 2 GEG;
+i)     „Fachunternehmer“: Natürliche Personen, die auf einen oder mehrere Leistungsbereiche (Gewerke)
+der Bauausführung spezialisiert und in diesem Bereich gewerblich, selbständig beruflich oder angestellt
+tätig sind;
+j)     „Gebäudenetz“: Netz nach § 3 Absatz 1 Nummer 9a GEG zur ausschließlichen Versorgung mit
+Wärme und Kälte von mindestens zwei und bis zu 16 Gebäuden (Wohngebäude oder Nichtwohnge-
+bäude); und bis zu 100 Wohneinheiten;
+k)     „Investor“: Auftraggeber der Maßnahme sowie der Ersterwerber von sanierten Gebäuden oder Woh-
+nungen;
+l)      „Kommunale Antragsteller“: kommunale Gebietskörperschaften, Gemeinde- und Zweckverbände
+und rechtlich unselbständige Eigenbetriebe von kommunalen Gebietskörperschaften;
+m) „NT-ready“: Gebäude sind Niedertemperatur-ready (NT-ready), wenn sie eine Heizkreis-Vorlauftem-
+peratur von 55°C im Auslegungsfall und Betrieb nicht überschreiten;
+n)      „Serielle Sanierung“: die energetische Sanierung von bestehenden Gebäuden unter Verwendung
+abseits der Baustelle vorgefertigter Fassaden- beziehungsweise Dachelemente sowie deren Montage an
+bestehende Gebäude. Die abseits der Baustelle vorgefertigten Elemente weisen dabei einen so hohen
+Vorfertigungsgrad auf, dass sich im Vergleich zur herkömmlichen Sanierung der handwerkliche Aufwand
+vor Ort deutlich reduziert. Genaueres regelt das „Infoblatt zu den förderfähigen Maßnahmen und Leistun-
+gen“;
+o)     „Technische Mindestanforderungen (TMA)“: die in der Anlage aufgeführten technischen Anforderun-
+gen zu den einzelnen Fördertatbeständen, beispielsweise zu den Anforderungen an eine Effizienzhaus-
+Stufe;
+ p)    „Transaktionskosten“: sämtliche aus der Verhandlung, Vorbereitung, dem Abschluss und der Durch-
+ setzung eines Kaufvertrags über ein nach dieser Förderrichtlinie förderfähiges Wohngebäude oder einer
+ darin befindlichen Wohnung entstehenden Kosten wie beispielsweise Notar- oder Rechtsverfolgungskos-
+ ten;
+ q)    „Umfeldmaßnahmen“: notwendige Nebenarbeiten, die unmittelbar zur Vorbereitung und Umsetzung
+ sowie für die Ausführung und Funktionstüchtigkeit einer förderfähigen Maßnahme notwendig sind
+ und/oder deren Energieeffizienz erhöhen beziehungsweise absichern. Näheres regelt das „Infoblatt zu
+ den förderfähigen Maßnahmen und Leistungen“;
+ r)    „Unvermeidbare Abwärme“: Anteil der Wärme, der als Nebenprodukt in einer Industrie- oder Gewer-
+ beanlage oder im tertiären Sektor (etwa IT-Rechenzentren) aufgrund thermodynamischer Gesetzmäßig-
+ keiten anfällt, nicht durch Anwendung des Standes der Technik vermieden werden kann, in einem Pro-
+ duktionsprozess nicht nutzbar ist und ohne den Zugang zu einem Wärmenetz ungenutzt in Luft oder Was-
+ ser abgeleitet werden würde. Die Wärme aus KWK-Anlagen sowie aus der thermischen Verwertung von
+ Abfall sind keine unvermeidbare Abwärme im Sinne der BEG;
+ s)    „Wärmenetz“: dient der Versorgung von Gebäuden mit leitungsgebundener Wärme und ist kein Ge-
+ bäudenetz;
+ t)    „Wohneinheiten“: in einem abgeschlossenen Zusammenhang liegende und zu dauerhaften Wohn-
+ zwecken bestimmte Räume, die die Führung eines eigenen Haushalts ermöglichen und daher mindestens
+ über die nachfolgende Ausstattung verfügen: eigener abschließbarer Zugang, Zimmer, Versorgungsan-
+ schlüsse für beziehungsweise bei Wohn-, Alten- und Pflegeheimen Zugänge zu Küche, Badezimmer und
+ Toilette (bei Pflegeheimen ist eine separate Küche entbehrlich); als Wohneinheiten in Wohn-, Alten- und
+ Pflegeheimen gelten die Appartements beziehungsweise Wohnschlafräume der Bewohnenden;
+ u)    „Wohngebäude“: Gebäude nach § 3 Absatz 1 Nummer 33 GEG, das nach seiner Zweckbestimmung
+ überwiegend dem Wohnen dient. Hierzu gehören auch Wohn-, Alten- und Pflegeheime, Obdachlosen-
+ und Flüchtlingsunterkünfte und ähnliche Einrichtungen. Ferienhäuser und -wohnungen sowie Wochen-
+ endhäuser sind nur dann förderfähige Wohngebäude im Sinne dieser Richtlinie, sofern sie in den Anwen-
+ dungsbereich des GEG fallen.
+ v)    „Worst Performing Building (WPB)“: Gebäude, das auf Grund des energetischen Sanierungsstandes
+ seiner Bauteilkomponenten zu den energetisch schlechtesten des deutschen Gebäudebestandes gehört.
+ Näheres regelt das „Infoblatt zu den förderfähigen Maßnahmen und Leistungen“.
+
+4 Förderziel und Förderzweck
+Ziel dieser Förderrichtlinie ist es, Investitionen in Gesamtmaßnahmen anzureizen, mit denen die Energie-
+effizienz und der Anteil erneuerbarer Energien am Endenergieverbrauch für Wärme und Kälte in Wohnge-
+bäuden in Deutschland gesteigert und die CO2-Emissionen des Gebäudesektors in Deutschland gesenkt
+werden. Gefördert wird die Sanierung von Wohngebäuden, die sich durch eine energetisch optimierte Ge-
+bäudehülle und Anlagentechnik sowie einen klimafreundlichen Wärmeerzeuger auszeichnen und die die in
+den Technischen Mindestanforderungen zu dieser Förderrichtlinie definierten Vorgaben an die Gesamte-
+nergieeffizienz (Bezugsgröße: Primärenergiebedarf Qp) und an die Energieeffizienz der Gebäudehülle (Be-
+zugsgröße: Transmissionswärmeverlust H’T) für eine Effizienzhaus (EH)-Stufe erreichen. Der Kohärenz zur
+CO2-Bepreisung und dem effizienten Mitteleinsatz im Hinblick auf die erzielten CO2-Einsparungen wird da-
+bei Rechnung getragen.
+Die BEG trägt dazu bei, die Treibhausgasemissionen im Gebäudesektor auf die zulässige Jahresemissi-
+onsmenge von rund 66 Mt CO2-Äquivalente (angepasst gemäß § 4 Absatz 3 KSG) im Jahr 2030 zu mindern
+und somit sowohl die nationalen als auch die europäischen Energie- und Klimaziele bis 2030 zu erreichen.
+Auf Grundlage der Ausgestaltung und Mittelverfügbarkeit soll die BEG weiterhin rund 3,2 Mt CO2-Äquiva-
+lente brutto pro Jahr einsparen.
+
+5 Gegenstand der Förderung
+Gefördert wird die Sanierung sowie der Ersterwerb nach Sanierung von Effizienzhäusern, die den in der
+Anlage zu dieser Förderrichtlinie festgelegten Technischen Mindestanforderungen entsprechen sowie zu
+einer Verbesserung des energetischen Niveaus des Gebäudes führen und damit zur Minderung von CO2-
+Emissionen, zur Erhöhung der Energieeffizienz und des Anteils erneuerbarer Wärme und Kälte im Gebäu-
+desektor in Deutschland beitragen.
+Anlagen, die ausschließlich zur Stromversorgung dienen (zum Beispiel Photovoltaik, Windkraftanlagen,
+Stromspeicher) werden nicht mitgefördert.
+5.1 Energetische Sanierung von Wohngebäuden
+Gefördert werden die energetische Sanierung und der Ersterwerb nach Sanierung von Bestandsgebäuden,
+die nach Abschluss der Sanierungsmaßnahme erstmals das energetische Niveau eines Effizienzhauses
+   –   Denkmal EE oder Denkmal NH;
+   –   85 EE oder 85 NH;
+   –   70 EE oder 70 NH;
+   –   55 EE oder 55 NH;
+   –   40 EE oder 40 NH
+gemäß den Technischen Mindestanforderungen in der Anlage erreichen, einschließlich der Vorgaben zum
+sommerlichen Wärmeschutz. Ebenfalls gefördert wird der Ersterwerb nach Sanierung einzelner in einem
+solchen Gebäude befindlicher Wohnungen.
+Das Erreichen einer Effizienzhaus-Stufe setzt voraus, dass erneuerbare Energien und/oder unvermeidbare
+Abwärme einen Anteil von mindestens 65 % des für die Wärme- und Kälteversorgung des Gebäudes erfor-
+derlichen Energiebedarfs erbringen.
+Eine „Effizienzhaus NH“-Klasse wird erreicht, wenn für ein Effizienzhaus die Anforderung an Treibhaus-
+gasemissionen im Gebäudelebenszyklus (Life Cycle Assessment – LCA) erreicht wird. Der konkrete Zeit-
+punkt, ab dem diese Anforderung gilt, sowie Näheres zu den Anforderungen wird in Abstimmung mit dem
+BMWE von der KfW in dem jeweils geltenden Merkblatt und/oder auf deren Website bekannt gegeben. Als
+Übergangsregelung gilt die bisherige Anforderung fort, wonach eine NH-Klasse erreicht wird, wenn ein
+Nachhaltigkeitszertifikat im Sinne von Nummer 5.2 dieser Förderrichtlinie ausgestellt wird.
+Die Förderung für ein Effizienzhaus Denkmal kann nur für Baudenkmale oder sonstige erhaltenswerte Bau-
+substanz im Sinne des § 105 GEG gewährt werden.
+Ab Quartal 1 2027: Nicht gefördert im Rahmen der energetischen Sanierung zu einem Effizienzgebäude
+werden der Einbau von Anlagen zur Wärmeerzeugung beziehungsweise der Anschluss an ein Gebäude-
+oder Wärmenetz nach Nummer 5.3 BEG EM, sofern das betreffende Gebäude bereits mit einer Anlage
+nach Nummer 5.3 Buchstabe a bis f und j BEG EM versorgt wird, die seit dem 1. Januar 2008 in Betrieb
+genommen wurde beziehungsweise an ein Gebäude- oder Wärmenetz nach Nummer 5.3 Buchstabe g bis
+i BEG EM angeschlossen ist. Abweichend davon wird der Ersatz von mit Gas, Öl und Kohle betriebenen
+Wärmeerzeugern in bivalenten Systemen durch Wärmeerzeuger nach Nummer 5.3 BEG EM weiterhin ge-
+fördert.
+5.2 Energetische Fachplanung und Baubegleitung; Nachhaltigkeitszertifizierung
+Gefördert werden
+   a) energetische Fachplanungs- und Baubegleitungsleistungen im Zusammenhang (direkter inhaltlicher
+      Bezug zu der investiven Maßnahme) mit der Umsetzung einer gemäß der Nummer 5.1 geförderten
+      Maßnahme einschließlich einer akustischen Fachplanung in Verbindung mit dem Leitfaden für die
+      Verbesserung des Schutzes gegen Lärm bei stationären Geräten der Bund/Länder-Arbeitsgemein-
+      schaft Immissionsschutz für relevante technische Anlagen (zum Beispiel Luftwärmepumpen, Klima-
+      geräte, Lüftungsanlagen, Klein-Windenergieanlagen sowie sonstige nicht genehmigungsbedürftige
+      KWK-Anlagen) zur Einhaltung des Stands der Technik entsprechend § 22 BImSchG sowie
+   b) im Zusammenhang mit der Anwendung der Methode der Lebenszyklusbetrachtung (LCA) stehen-
+      den Leistungen einer gemäß Nummer 5.1 geförderten Maßnahme, sowie gemäß der Übergangsre-
+      gelung Nachhaltigkeitszertifizierungen und die damit in Zusammenhang stehenden Beratungs- und
+      Planungsleistungen einer gemäß Nummer 5.1 geförderten Maßnahme, sofern diese von einer ak-
+      kreditierten Zertifizierungsstelle ausgestellt worden sind. Das Zertifikat bestätigt die Übereinstim-
+      mung der Maßnahme mit den Anforderungen des „Qualitätssiegels Nachhaltiges Gebäude PLUS
+      (QNG-PLUS)“.
+Die Leistungen in Nummer 5.2 Buchstabe a können nur dann gefördert werden, wenn sie durch einen
+Energieeffizienz-Experten oder einen zusätzlich beauftragten Dritten erbracht werden. Näheres regelt das
+„Infoblatt zu den förderfähigen Maßnahmen und Leistungen“.
+Die Leistungen in Nummer 5.2 Buchstabe b zur Anwendung der Methode der Lebenszyklusbetrachtung
+(LCA) können nur dann gefördert werden, wenn sie durch einen Nachweisausstellungsberechtigten er-
+bracht werden. Als Übergangsregelung können die Leistungen in Nummer 5.2 Buchstabe b nur dann ge-
+fördert werden, wenn diese durch akkreditierte Zertifizierungsstellen ausgestellt worden sind und das Zer-
+tifikat die Übereinstimmung der Maßnahme mit den Anforderungen des „Qualitätssiegels Nachhaltiges Ge-
+bäude PLUS (QNG-PLUS)“ bestätigt. Näheres regelt das „Infoblatt zu den förderfähigen Maßnahmen und
+Leistungen“.
+
+6 Förderempfänger
+6.1 Antragsberechtigte
+Antragsberechtigt sind alle Investoren (zum Beispiel private Hauseigentümer beziehungsweise Wohnungs-
+eigentümergemeinschaften (WEG), Contractoren, Unternehmen, gemeinnützige Organisationen, Kommu-
+nen) von förderfähigen Maßnahmen an Wohngebäuden.
+Antragsberechtigt sind Stadtstaaten und deren Einrichtungen/Unternehmen als Ausnahme zu Nummer 6.2,
+wenn sie mit der geförderten Maßnahme Aufgaben nachkommen, die in anderen Ländern auf kommunaler
+Ebene wahrgenommen werden, sowie Einrichtungen/Unternehmen der (Flächen-)Bundesländer, die mit
+der geförderten Maßnahme kommunale Aufgaben wahrnehmen.
+Wenn der Antragsteller nicht der Eigentümer des Gebäudes ist, ist er nur dann antragberechtigt, wenn auch
+der Gebäudeeigentümer antragsberechtigt ist und dieser vor Antragsstellung über die Inanspruchnahme
+der Förderung sowie über die Höhe des maximalen Förderbetrags informiert wurde. Der Gebäudeeigentü-
+mer muss die Einhaltung der ihn betreffenden Verpflichtungen gegenüber dem Antragsteller bestätigen, wie
+insbesondere:
+   –   die in Nummer 7.1 geregelte Nutzungspflicht für das Gebäude,
+   –   die in Nummer 7.1 geregelten Hinweis-, Übertragungs- und Anzeigepflichten bei einem Eigentümer-
+       wechsel und die in
+   –   Nummer 9.7 geregelten Auskunfts- und Prüfungsrechte.
+6.2 Nicht antragsberechtigt
+Nicht antragsberechtigt sind:
+   –   der Bund, die Bundesländer sowie deren Einrichtungen als nicht rechtsfähige Bundesbehörden (das
+       heißt ohne eigene Rechtsform) in bundeseigener oder landeseigener Verwaltung, dazu zählen
+           – Oberste Bundesbehörden
+           – Bundesoberbehörden (auch Obere Bundesbehörden genannt)
+           – Bundesmittelbehörden
+           – Bundesunterbehörden (auch Ortsbehörden genannt)
+           – Landesbehörden
+   –   politische Parteien;
+   –   Antragsteller, über deren Vermögen ein Insolvenzverfahren beantragt oder eröffnet worden ist, so-
+       wie Antragsteller, die eine eidesstattliche Versicherung gemäß § 807 der Zivilprozessordnung oder
+       eine Vermögensauskunft gemäß § 802c der Zivilprozessordnung oder § 284 der Abgabenordnung
+       abgegeben haben oder zu deren Abgabe verpflichtet sind.
+Von einer Förderung ausgeschlossen sind entgeltliche und sonstige Vermögensübertragungen (zum Bei-
+spiel käuflicher Erwerb) die über den selbstnutzenden Erwerb einer Wohneinheit hinausgehen:
+   –   zwischen verbundenen Unternehmen im Sinne des § 15 des Aktiengesetzes (AktG) beziehungs-
+       weise die Übernahme des geförderten Unternehmens in einem solchen Unternehmensverbund.
+       Verbundene Unternehmen liegen auch vor, wenn das geförderte Unternehmen in einem zeitlichen
+       oder inhaltlichen Zusammenhang zur Antragstellung oder der Vermögensübertragung Teil des Un-
+       ternehmensverbundes wird;
+   –   zwischen Unternehmen und deren Gesellschaftern beziehungsweise den Gesellschaftern naheste-
+       henden Personen im Sinne von § 138 Absatz 1 Nummer 1 bis 3 der Insolvenzordnung (IO);
+   –   im Rahmen beziehungsweise in Folge von Betriebsaufspaltungen;
+   –   zwischen nahestehenden Personen im Sinne von § 138 Absatz 1 Nummer 1 bis 3 der Insolvenzor-
+       dnung (u. a. Eheleute und Lebenspartner)
+und die Umgehungen der vorgenannten Tatbestände (zum Beispiel durch Treuhandgeschäfte).
+
+7 Fördervoraussetzungen
+7.1 Allgemeine Fördervoraussetzungen
+Gefördert werden ausschließlich Investitionsvorhaben, die auf dem Gebiet der Bundesrepublik Deutschland
+durchgeführt werden.
+Die geförderten Gebäude und Wohneinheiten sind mindestens zehn Jahre zweckentsprechend zu nutzen.
+Innerhalb dieses Zeitraums ist bei der Veräußerung eines geförderten Gebäudes oder einer geförderten
+Wohneinheit der Erwerber auf die Förderung, die Nutzungspflicht und das Verschlechterungsverbot für die
+energetische Qualität des Gebäudes nach den §§ 46, 57 GEG hinzuweisen. Die Pflichten nach den Num-
+mern 7.1 und 9.7 sind hinsichtlich des geförderten Gebäudes im Rahmen des Kaufvertrags auf den Erwer-
+ber zu übertragen. Die Nutzungsänderung oder -aufgabe und der Abriss eines geförderten Gebäudes oder
+einer geförderten Wohneinheit innerhalb dieses Zeitraums sind dem Durchführer, der die Förderung
+gewährt hat, durch den Antragsteller, beziehungsweise im Fall einer Veräußerung durch den Erwerber,
+unverzüglich anzuzeigen. Der Durchführer ist in diesen Fällen berechtigt, die Förderung anteilig zurückzu-
+fordern, soweit der Förderzweck nicht mehr erreicht werden kann.
+7.2 Voraussetzungen für die Förderung des Ersterwerbs nach Sanierung
+Der förderfähige Ersterwerb nach Sanierung ist innerhalb von zwölf Monaten nach Bauabnahme (§ 640 des
+Bürgerlichen Gesetzbuches (BGB)) für den Kauf von nach dieser Förderrichtlinie sanierten Wohngebäu-
+den/Wohneinheiten möglich. Der Antrag ist vor Abschluss des Kauf- oder Bauträgervertrages zu stellen.
+Der Ersterwerber haftet für die Einhaltung der Technischen Mindestanforderungen.
+Beim Ersterwerb nach Sanierung sollte der Kauf- beziehungsweise ein verbundener Kauf- und Werkvertrag
+oder Bauträgervertrag eine Haftung des Verkäufers für die vereinbarte Effizienzhaus-Stufe gegenüber dem
+Käufer enthalten. Der Verkäufer hat den Schaden aus der Kündigung des Kreditvertrages oder der Rück-
+nahme der Zusage zu tragen, wenn die Anforderungen an die Effizienzhaus-Stufe nicht erfüllt oder mangels
+Unterlagen nicht nachgewiesen werden können und der Durchführer aus diesen Gründen die Förderung
+vom Fördernehmer innerhalb von fünf Jahren nach Fertigstellung zurückfordert.
+Die Sanierung ist nicht förderfähig, wenn der Ersterwerb in einen Grundstückskaufvertrag und einen sepa-
+raten Bau- und Werkvertrag für die Sanierung aufgespalten wird (verdecktes Bauherrenmodell), obwohl
+auch ein einheitlicher Vertrag über den Grundstückserwerb und die Sanierung des Wohngebäudes ge-
+schlossen werden könnte und die Makler- und Bauträgerverordnung auf diesen einheitlichen Vertrag An-
+wendung finden würde.
+Sofern für zu erwerbende Wohneinheiten bereits eine Effizienzhausförderung nach dieser oder einer vo-
+rangegangenen Version dieser Förderrichtlinie oder den von der KfW durchgeführten Programmen „Ener-
+gieeffizient Sanieren“ (151/152, 430) gewährt und ausgeschöpft wurde, ist eine erneute Förderung nach
+dieser Förderrichtlinie für dieselben Maßnahmen zugunsten des Ersterwerbers nicht möglich. In diesen
+Fällen kann bei einem Erwerb der geförderten Wohneinheit die Förderung auf den Ersterwerber übertragen
+werden.
+7.3 Verfügbarkeit von Haushaltsmitteln
+Ein Rechtsanspruch auf Gewährung der Zuwendung besteht nicht. Vielmehr entscheiden die Durchführer
+aufgrund ihres pflichtgemäßen Ermessens im Rahmen der verfügbaren Haushaltsmittel.
+7.4 Anwendungsbereich des Ordnungsrechts
+Förderfähig sind die in Nummer 5 genannten Maßnahmen nur bei Gebäuden, die nach Umsetzung aller
+Maßnahmen unter den Anwendungsbereich des GEG fallen.
+7.5 Technische Mindestanforderungen
+Die Förderung setzt voraus, dass die Anforderungen des geltenden Ordnungsrechts einschließlich der An-
+forderungen aus dem GEG und § 22 Absatz 1 BImSchG, insbesondere auch hinsichtlich des Stands der
+Technik, sowie die in der Anlage zu dieser Förderrichtlinie festgelegten Technischen Mindestanforderungen
+erfüllt sind.
+
+8 Art und Umfang der Förderung, Höhe der Förderung
+8.1 Art der Förderung
+Die Förderung erfolgt als Projektförderung auf Ausgabenbasis2 in Form der Anteilfinanzierung durch einen
+Kredit mit Zinsverbilligung aus Bundesmitteln sowie Teilschuldenerlass aus Bundesmitteln (Tilgungszu-
+schuss). Kommunale Antragsteller haben zudem die Möglichkeit, einen nicht rückzahlbaren Investitionszu-
+schuss („Zuschussförderung“) zu beantragen.
+8.2 Förderfähige Ausgaben
+Förderfähige Ausgaben sind die vom Antragsteller für die energetische Maßnahme tatsächlich zu tragenden
+Bruttoausgaben (einschließlich Mehrwertsteuer). Sofern für Teile des Investitionsvorhabens eine Vorsteu-
+erabzugsberechtigung des Antragstellers besteht, können nur die Nettoausgaben (ohne Mehrwertsteuer)
+berücksichtigt werden. Wird die Maßnahme nicht durch ein Fachunternehmen durchgeführt (Eigenleistung),
+werden nur die direkt mit der energetischen Sanierungsmaßnahme verbundenen Materialkosten gefördert,
+wenn ein Energieeffizienz-Experte die fachgerechte Durchführung und die korrekte Angabe der Material-
+kosten mit dem Verwendungsnachweis bestätigt.
+Förderfähige Ausgaben sind:
+a) Energetische Sanierungsmaßnahmen
+Energetische Sanierungsmaßnahmen sind alle Ein-, Umbau- und Optimierungsmaßnahmen an der Gebäu-
+dehülle oder der Anlagentechnik des Gebäudes, die am Gebäude oder im unmittelbaren räumlichen Zu-
+sammenhang zum Gebäude vorgenommen werden, und auf die Verringerung des Primärenergiebedarfs
+oder Transmissionswärmeverlustes gerichtet sind.
+Die im Einzelnen förderfähigen Maßnahmen werden im „Infoblatt zu den förderfähigen Maßnahmen und
+Leistungen“ konkretisiert. Nicht förderfähig sind die Ausgaben für den Ein- und Umbau und die Optimierung
+von mit Gas oder Heizöl betriebenen Wärmeerzeugern sowie der zugehörigen Umfeldmaßnahmen. Ab
+Quartal 1 2027: Soweit im Rahmen der energetischen Sanierung eine neue Wärmepumpe installiert wird,
+sind die Ausgaben hierfür nur förderfähig, wenn die Wärmepumpe ihren Ursprung in der Union hat.
+b) Fachplanung und Baubegleitung
+Förderfähig sind die Ausgaben für energetische Fachplanungs- und Baubegleitungsleistungen einschließ-
+lich einer akustischen Fachplanung sowie im Zusammenhang mit der Anwendung der Methode der Lebens-
+zyklusbetrachtung (LCA) beziehungsweise als Übergangsregelung im Zusammenhang mit der Nachhaltig-
+keitszertifizierung stehenden Leistungen von nach Nummer 5.1 geförderten Maßnahmen, die dem Antrag-
+steller durch den Energieeffizienz-Experten in Rechnung gestellt werden, einschließlich der Ausgaben für
+die Einbindung des Experten in das Förderverfahren beziehungsweise im Fall der Beauftragung eines Drit-
+ten mit diesen Leistungen für die Ausgaben für die von diesem Dritten in Rechnung gestellten Kosten sowie
+die Ausgaben für die Überprüfung dieser Leistungen durch den Energieeffizienz-Experten auf Plausibilität.
+Nicht förderfähig sind laufende Lizenzgebühren für die Verwendung des hierbei ausgestellten Nachhaltig-
+keitszertifikats.
+8.3 Höchstgrenze förderfähiger Ausgaben
+Die Bemessungsgrundlage für die Höchstgrenze förderfähiger Ausgaben ist die Anzahl der Wohneinheiten
+nach Sanierung. Dies gilt auch bei Umwidmung (Nutzungsänderung) von beheizten Nichtwohnflächen.
+
+
+
+
+2 „Ausgaben“ im Sinne der Förderrichtlinie werden synonym für „Kosten“ im Sinne der Merkblätter der KfW zu dieser Förderrichtlinie
+
+verwendet.
+Die in Nummer 8.2 genannten Bruttoausgaben sind bis zur Höhe der nachfolgenden Höchstbeträge förder-
+fähig (Höchstgrenze):
+   –   Ausgaben nach Nummer 8.2 Buchstabe a auf bis zu 150 000 Euro pro Wohneinheit;
+   –   Ausgaben nach Nummer 8.2 Buchstabe b bei Ein- und Zweifamilienhäusern auf bis zu 10 000 Euro
+       pro Vorhaben bei dem eine neue Effizienzhaus-Stufe erreicht wird. Für Mehrfamilienhäuser mit drei
+       oder mehr Wohneinheiten beträgt die diesbezügliche Höchstgrenze förderfähiger Ausgaben 4 000
+       Euro pro Wohneinheit, insgesamt maximal 40 000 Euro pro Vorhaben bei dem eine neue Effizienz-
+       haus-Stufe erreicht wird. Dabei können die Ausgaben für Fachplanungs- und Baubegleitungsleis-
+       tungen nach Nummer 5.2 Buchstabe a und für in Zusammenhang mit der Anwendung der Methode
+       der Lebenszyklusbetrachtung (LCA) beziehungsweise gemäß der Übergangsregelung der Nachhal-
+       tigkeitszertifizierung stehenden Leistungen nach Nummer 5.2 Buchstabe b jeweils gesondert bis zu
+       den genannten Höchstgrenzen angesetzt werden.
+Bei mehreren Investoren für ein Vorhaben haben sich die Antragsteller vor Antragstellung über die Auftei-
+lung der Förderhöchstbeträge zu verständigen und entsprechend die Förderung zu beantragen.
+Fallen nach dem Erreichen einer Effizienzhaus-Stufe erneut Ausgaben nach Nummer 8.2 Buchstabe a und
+b für die Sanierung auf eine höhere Effizienzhaus-Stufe an, so sind diese in der Summe erneut bis zu den
+oben genannten Höchstgrenzen förderfähig.
+8.4 Fördersätze
+8.4.1 Sanierung und Ersterwerb nach Sanierung
+Für das Erreichen der jeweiligen Effizienzhaus-Stufe wird der nachfolgend aufgeführte Prozentsatz auf den
+hierfür bewilligten Kreditbetrag als Tilgungszuschuss gewährt:
+   –   Effizienzhaus Denkmal EE: 5 %
+   –   Effizienzhaus 55 EE: 5 %
+   –   Effizienzhaus 40 EE: 10 %
+Für kommunale Antragsteller wird für das Erreichen der jeweiligen Effizienzhaus-Stufe der nachfolgend
+aufgeführte Prozentsatz auf die hierfür entstandenen förderfähigen Ausgaben als Zuschuss gewährt:
+   –   Effizienzhaus Denkmal EE: 10 %
+   –   Effizienzhaus 85 EE: 10 %
+   –   Effizienzhaus 70 EE: 15 %
+   –   Effizienzhaus 55 EE: 20 %
+   –   Effizienzhaus 40 EE: 25 %
+Bei Erreichen einer „Effizienzhaus NH“-Klasse erhöht sich der jeweils anzusetzende Prozentsatz um zu-
+sätzliche fünf Prozentpunkte. Bei einer schrittweisen Sanierung werden die Fördersätze nur für denjenigen
+Sanierungsschritt erhöht, bei dem die „Effizienzhaus NH“-Klasse zum ersten Mal erreicht wird.
+Für ein Worst Performing Building (WPB) erhöht sich der jeweils anzusetzende Prozentsatz um zusätzliche
+zehn Prozentpunkte, wenn dieses auf die Effizienzhaus-Stufe 40 EE, 55 EE oder 70 EE saniert wird (WPB-
+Bonus). Der Bonus ist kumulierbar mit dem SerSan-Bonus und der NH-Klasse.
+Für die serielle Sanierung erhöht sich der jeweils anzusetzende Prozentsatz um zusätzliche 15 Prozent-
+punkte, wenn das Gebäude auf die Effizienzhaus-Stufe 40 EE oder 55 EE saniert wird beziehungsweise
+um zusätzliche fünf Prozentpunkte, wenn das Gebäude auf die Effizienzhaus-Stufe 70 EE saniert wird (Ser-
+San-Bonus). Der Bonus ist kumulierbar mit dem WPB-Bonus und der NH-Klasse.
+                                                                                      Boni
+                                Standard                     Klasse
+                                                                           (kumulierbar mit NH-Klasse)
+
+                      Tilgungszu-      Zuschuss (nur
+                                                               NH               WPB            SerSan
+                         schuss         Kommunen)
+
+EH Denkmal EE             5%                10%                5%
+EH 85 EE                                    10%                5%
+EH 70 EE                                    15%                5%               10%               5%
+EH 55 EE                  5%                20%                5%               10%              15%
+EH 40 EE                  10%               25%                5%               10%              15%
+
+8.4.2 Sonderregelung für Gebäudenetze
+Wird in einem Vorhaben nach der Nummer 5.1 ein Gebäudenetz errichtet, müssen mindestens 50 % der
+erzeugten Wärme genutzt werden, um mit dem Vorhaben erstmals zu einer förderfähigen Effizienzhaus-
+Stufe sanierte Gebäude (BEG WG beziehungsweise NWG) zu versorgen. Der Fördersatz für das Gebäu-
+denetz orientiert sich dabei an der höchsten erreichten Effizienzhaus-Stufe. Dabei kann auch die NH-Klasse
+berücksichtigt werden. Die Aufteilung der erzeugten Wärme zwischen den Gebäuden ist dabei nicht rele-
+vant.
+8.4.3 Fachplanung und Baubegleitung
+Für förderfähige Ausgaben der energetischen Fachplanung und Baubegleitung sowie Dienstleistungen im
+Zuge einer Lebenszyklusbetrachtung (LCA) beziehungsweise als Übergangsregelung im Zuge einer Nach-
+haltigkeitszertifizierung nach Nummer 5.2 beträgt der Fördersatz 50 %.
+8.5 Zuschuss (nur kommunale Antragsteller)
+Ein Zuschuss wird gewährt, wenn nach Abschluss der in Nummer 5 aufgeführten Maßnahmen ein Nachweis
+der erreichten Effizienzhaus-Stufe gemäß Zusage erbracht wird.
+Die Höhe des Zuschusses bemisst sich nach einem Prozentsatz der für das Vorhaben insgesamt entstan-
+denen förderfähigen Ausgaben; mit Ausnahme der nach Nummer 5.2 geförderten Leistungen wird der je-
+weilige Prozentsatz durch die erreichte Effizienzhaus-Stufe bestimmt. Im Einzelnen gelten die in Nummer
+8.4 genannten Fördersätze. Die maximale Höhe der Förderung ist dabei insgesamt begrenzt durch die
+Höchstgrenze der förderfähigen Ausgaben nach Nummer 8.3.
+8.6 Kredit
+Der Förderkredit wird gewährt als Kredit mit Zinsverbilligung aus Bundesmitteln sowie Teilschuldenerlass
+durch einen Tilgungszuschuss aus Bundesmitteln in Höhe des jeweiligen Fördersatzes unter Bezugnahme
+auf den für diesen Fördersatz gewährten Kreditbetrag maximal bis zur Höchstgrenze der förderfähigen Aus-
+gaben nach Nummer 8.3 („Kreditförderung“).
+8.6.1 Kreditbetrag
+Ein Kredit kann maximal in Höhe von 100 % der jeweiligen Höchstgrenze förderfähiger Ausgaben gewährt
+werden.
+8.6.2 Zinssatz
+a) Höhe des Zinssatzes, Verbilligung aus Bundesmitteln
+Der Zinssatz orientiert sich an der Kapitalmarktentwicklung.
+Der Zinssatz wird für die Dauer der ersten Zinsbindungsfrist festgeschrieben. Die Verbilligung aus Bundes-
+mitteln erfolgt maximal für die ersten zehn Jahre der Kreditlaufzeit. Der Kredit wird von der KfW an die
+durchleitenden Finanzierungsinstitute mit einem Zinssatz gewährt, der bis zu vier Prozentpunkte unter-
+halb der KfW-Refinanzierungskonditionen liegen kann (gilt exemplarisch für das Angebot mit 30 Jahren
+Laufzeit und zehn Jahren Zinsbindung; andere Laufzeitangebote barwertig abgeleitet).
+b) Prolongationsangebot
+Bei Krediten, die eine über die Zinsbindungsfrist hinausgehende Laufzeit haben, unterbreitet der Durchfüh-
+rer im Fall von kommunalen Antragstellern unmittelbar dem Antragsteller, in allen übrigen Fällen dem Kre-
+ditinstitut des Antragstellers ein Prolongationsangebot ohne Verbilligung aus Bundesmitteln.
+Bei endfälligen Darlehen wird der Zinssatz für die gesamte Laufzeit festgeschrieben. Die Verbilligung aus
+Bundesmitteln erfolgt für maximal zehn Jahre.
+8.6.3 Tilgungszuschüsse
+Ein Tilgungszuschuss wird gewährt, wenn nach Abschluss der in Nummer 5 aufgeführten Maßnahmen ein
+Nachweis der erreichten Effizienzhaus-Stufe gemäß Zusage erbracht wird. Die Höhe des Tilgungszuschus-
+ses bemisst sich nach einem Prozentsatz des aufgenommenen Kreditbetrags; mit Ausnahme der nach
+Nummer 5.2 geförderten Leistungen wird der jeweilige Prozentsatz durch die erreichte Effizienzhaus-Stufe
+bestimmt. Im Einzelnen gelten die in Nummer 8.4 genannten Fördersätze.
+8.7 Kumulierungsverbot, Kombination mit anderen Förderprogrammen
+Eine Kombination mit der BEG EM ist ausgeschlossen.
+Eine Kumulierung einer Förderung für dieselbe Maßnahme nach dieser Förderrichtlinie mit anderen För-
+dermitteln (Kredite oder Zulagen/Zuschüsse) ist grundsätzlich möglich. Die gleichzeitige Inanspruchnahme
+einer Förderung nach dieser Förderrichtlinie und einer Förderung nach der Kommunalrichtlinie des Bun-
+desministeriums für Umwelt, Klimaschutz, Naturschutz und nukleare Sicherheit (BMUKN) sowie der Kälte-
+Klima-Richtlinie der Nationen Klimaschutzinitiative (NKI), dem Kraft-Wärme-Kopplungsgesetz (KWKG),
+dem Erneuerbare-Energien-Gesetz (EEG), oder einer Bundesförderung für Wärmenetze (z. B. Erneuerbare
+Energien – Premium, Wärmenetzsysteme 4.0, Bundesförderung für effiziente Wärmenetze) oder den Vor-
+gängerprogrammen (CO2-Gebäudesanierungsprogramm/EBS-Programme, Marktanreizprogramm (MAP),
+Anreizprogramm Energieeffizienz (APEE) oder Heizungsoptimierung (HZO)) oder dem Programm „Zu-
+schuss Brennstoffzelle“ für dieselben förderfähigen Ausgaben ist nicht möglich.
+Im Falle einer Kombination mit anderen Fördermitteln gilt eine Höchstgrenze für die Förderung aus öffent-
+lichen Mitteln (Kumulierungsgrenze) in Höhe von 60 % der geförderten Investitionsausgaben. Für Maßnah-
+men von kommunalen Antragstellern ist abweichend davon ein Fördersatz von insgesamt bis zu 90 % zu-
+lässig. Die Kumulierung bezieht sich dabei auf die jeweils tatsächlich geförderten Kosten, die sowohl in der
+BEG als auch in den anderen Förderprogrammen berücksichtigt wurden. Grundlage für die Berechnung der
+Kumulierungsgrenze sind die im Verwendungsnachweis angegebenen, tatsächlich durch die BEG geför-
+derten Kosten pro Maßnahme. Maximal ist der jeweilige Förderhöchstbetrag zu berücksichtigen.
+Wird die Kumulierungsgrenze für die Maßnahme überschritten, hat der Fördernehmer dies dem Durchführer
+anzuzeigen. Der Anteil der BEG-Förderung wird entsprechend reduziert, bis die Kumulierungsgrenze ein-
+gehalten ist. Der überschüssige Betrag ist durch den Fördernehmer zurückzuerstatten.
+Für dieselben förderfähigen Ausgaben darf jeweils nur ein Antrag entweder bei der KfW oder dem BAFA
+gestellt werden; eine doppelte Antragstellung ist ausgeschlossen.
+Ebenso ist eine Kumulierung mit der steuerlichen Förderung nach § 35a und § 35c Einkommensteuergesetz
+(EStG) ausgeschlossen. Antragsteller müssen sich verpflichten, für dieselbe Maßnahme keinen Antrag auf
+steuerliche Förderung zu stellen oder bestätigen, dass kein Antrag auf steuerliche Förderung gestellt wurde.
+
+9 Verfahren
+9.1 Zuständigkeit; Informationen, Merkblätter, Öffentlichkeitsarbeit
+Mit der Durchführung der BEG hat das BMWE beauftragt:
+Bundesamt für Wirtschaft und Ausfuhrkontrolle (BAFA)
+Frankfurter Straße 29 – 35
+65760 Eschborn
+KfW
+Palmengartenstraße 5 – 9
+60325 Frankfurt am Main.
+Für die BEG WG liegt die Zuständigkeit bei der KfW.
+Das BAFA und die KfW stellen auf ihren Webseiten unter www.bafa.de und www.kfw.de sowie in geeigneten
+weiteren Formaten detaillierte Informationen zum Förderprogramm sowie zu ihrer Förderpraxis bereit, re-
+gelmäßig unter Verwendung des Namens „Bundeförderung für effiziente Gebäude“ oder der Kurzbezeich-
+nung BEG sowie unter Bezugnahme auf diese Förderrichtlinie. Die „Antworten auf häufig gestellte Fragen
+(FAQ) zur BEG“ auf www.energiewechsel.de und die „Liste der technischen FAQ – Einzelmaßnahmen“ auf
+https://www.bafa.de/SharedDocs/Downloads/DE/Energie/beg_liste_technische_faq.html enthalten Ausle-
+gungshilfen, die zwischen BMWE, BAFA und KfW abgestimmt sind.
+Das BAFA und die KfW erstellen in enger Abstimmung mit dem BMWE die Antragsverfahren nebst etwaig
+erforderlichen Bestätigungen beziehungsweise Nachweisen und informieren darüber auf ihren Webseiten.
+Von der KfW und dem BAFA erstellte Programminformationen, die Gegenstand, Förderkonditionen und
+Verfahren zur BEG für Interessierte leicht verständlich zusammenfassen, müssen in ihren Inhalten mit der
+vorliegenden Förderrichtlinie übereinstimmen. Inhaltliche Änderungen der Programminformationen müssen
+mit dem Bund abgestimmt werden. Widersprechen sich die Programminformationen und die vorliegende
+Förderrichtlinie, hat letztere Vorrang.
+Das BAFA und die KfW stimmen eine etwaige Öffentlichkeitsarbeit zu diesem Förderprogramm, regelmäßig
+unter Nutzung des Namens „Bundesförderung für effiziente Gebäude“ oder der Kurzbezeichnung BEG, eng
+mit dem BMWE ab. Sie arbeiten in Abstimmung mit dem BMWE eng mit Evaluatoren, dem Bundesrech-
+nungshof sowie den Prüforganen der Europäischen Union zusammen.
+Zudem umfasst die vorliegende Beauftragung für das BAFA und die KfW die Verpflichtung, im Rahmen der
+übertragenen Aufgaben in eigener Verantwortung förderspezifische Analysen zur Effizienz des Mittelein-
+satzes und zur Erreichung von Förderzielen durchzuführen (Sparsamkeit, Wirtschaftlichkeit und Wirkungen
+des    Förderprogramms       unter    Berücksichtigung    der   Anforderungen        der    BHO     zur
+Wirtschaftlichkeitsuntersuchung). Hierfür können die für die Antragsentscheidung und im weiteren Verfah-
+ren mitgeteilten Daten verwendet als auch in angemessenem Umfang weitere auswertungs- beziehungs-
+weise wirksamkeitsrelevante Daten – unabhängig eines etwaigen Personenbezugs (Artikel 4 Nummer 1
+DSGVO) – durch den jeweiligen Durchführer des Förderprogramms mit Antragstellung sowie bei und nach
+Vorhabenumsetzung (längstens für die Mindesthaltedauer der jeweiligen geförderten Anlage) beim Antrag-
+steller/Fördernehmer erhoben und für die vorgenannten Zwecke (einschließlich der Messung von sowohl
+potenziellen als auch tatsächlich erreichten Wirkungsgraden) ausgewertet werden. Ferner können von den
+Durchführern personenbezogene Daten, einschließlich nichtöffentlicher Daten, erhoben und für die vorge-
+nannten Zwecke verarbeitet werden. Reichweite und Umsetzung entsprechender Wirkungsmessungen
+werden durch die jeweiligen Durchführer in Abstimmung mit dem BMWE festgelegt. Auswertungsergeb-
+nisse werden in einer anonymisierten statistischen Übersicht für die Zwecke des regelmäßigen Reporting
+an das BMWE übermittelt.
+9.2 Antragstellung
+Für die Förderung nach dieser Förderrichtlinie gilt ein zweistufiges Antragsverfahren. Die Antragstellung
+einschließlich der Einreichung aller erforderlichen Unterlagen und Nachweise zum Antrag erfolgt gemäß
+des Antragsverfahrens der KfW. Die KfW ist berechtigt, bei Bedarf weitere Unterlagen zu verlangen sowie
+verpflichtende elektronische Formulare für notwendige Unterlagen bereitzustellen.
+Förderanträge sind vor Vorhabenbeginn zu stellen. Als Vorhabenbeginn gilt grundsätzlich der Abschluss
+eines der Ausführung zuzurechnenden Lieferungs- oder Leistungsvertrags; dies gilt auch bei Nachinvesti-
+tionen im Rahmen bestehender Contractingverträge, bei denen das Vorhaben der Nachinvestition erst mit
+Abschluss der weiteren Liefer- und Leistungsverträge des Contractors mit Dritten beginnt. Planungs- und
+Beratungsleistungen dürfen vor Antragstellung erbracht werden und führen für sich genommen nicht zur
+Annahme eines Vorhabenbeginns. Bei Antragstellung zum förderfähigen Ersterwerb nach Sanierung eines
+Gebäudes gilt der Abschluss des Kaufvertrags als Vorhabenbeginn. Für den Zeitpunkt der Antragstellung
+ist das Datum des Eingangs des Antrags bei der KfW maßgeblich. Der Vorhabenbeginn vor Bewilligung
+des Antrags ist zulässig, erfolgt aber auf eigenes Risiko und begründet keinen Rechtsanspruch auf Förde-
+rung.
+Ein Verzicht auf die Zusage nach der BEG WG ist über das kreditdurchleitende Finanzierungsinstitut (Kre-
+dit) oder direkt bei der KfW (kommunale Antragsteller) möglich. Frühestens sechs Monate nach Eingang
+der Verzichtserklärung kann in der BEG WG ein neuer Antrag für das gleiche Vorhaben (identisches Ge-
+bäude und identische Maßnahmen beziehungsweise Effizienzhaus-Stufe) gestellt werden („Sperrfrist“); dies
+gilt nicht, wenn der Verzicht erklärt wird, um zwischen den Förderarten „Kreditförderung“ und „Zuschussför-
+derung“ zu wechseln – derselbe Antrag kann dann sofort erneut gestellt werden. Für den neuen Antrag
+gelten die dann aktuellen Förderbedingungen einschließlich der Regelungen zum Vorhabenbeginn.
+9.2.1 Zuschussförderung (nur kommunale Antragsteller)
+Die Antragstellung erfolgt durch den kommunalen Antragsteller gemäß dem Antragsverfahren der KfW. Die
+KfW ist berechtigt, bei Bedarf weitere Unterlagen zu verlangen sowie verpflichtende elektronische Formu-
+lare für notwendige Unterlagen bereitzustellen.
+9.2.2 Kreditförderung
+Abweichend von Nummer 9.2 Satz 5 gilt als Vorhabenbeginn im Kreditfall der Beginn der Bauarbeiten vor
+Ort, wenn vor Abschluss eines der Ausführung zuzurechnenden Lieferungs- oder Leistungsvertrags ein
+dokumentiertes Beratungsgespräch stattfand. In diesem Sinne ist eine Antragstellung somit auch nach
+Abschluss eines der Ausführung zuzurechnenden Lieferungs- oder Leistungsvertrags möglich, wenn der
+Fördernehmer zum Zeitpunkt der Antragstellung den Nachweis über ein dokumentiertes Beratungsge-
+spräch mit einem Finanzierungspartner der KfW (entspricht kreditdurchleitendem Finanzierungsinstitut)
+oder einem Finanzvermittler erbringt. Ein solches dokumentiertes Beratungsgespräch umfasst Informatio-
+nen zu Förderbedingungen und -voraussetzungen sowie zur Förderhöhe und zu der Einplanung der Förde-
+rung der BEG in das potenzielle Kreditgeschäft auf Basis eines von der KfW bereitgestellten Musterformu-
+lars. Das Beratungsgespräch ist zwingend vor Abschluss eines der Ausführung zuzurechnenden Liefe-
+rungs- oder Leistungsvertrags zu führen. Kann der Fördernehmer den Nachweis über ein entsprechendes
+Beratungsgespräch vor Abschluss eines der Ausführung zuzurechnenden Lieferungs- oder Leistungsver-
+trags nicht vorweisen und wurden entsprechende Lieferungs- und Leistungsverträge schon vor Antragstel-
+lung abgeschlossen, so ist eine Förderung im Rahmen der BEG WG nicht möglich.
+Kommunale Antragsteller stellen den Antrag einschließlich notwendiger Anlagen direkt bei der KfW. Alle
+anderen Antragsteller oder deren Bevollmächtigte stellen den Antrag über ein Finanzinstitut (Hausbank)
+ihrer Wahl. Die KfW ist berechtigt, bei Bedarf weitere Unterlagen zu verlangen und verpflichtende elektro-
+nische Formulare für notwendige Unterlagen beziehungsweise Erklärungen bereitzustellen.
+9.3 Einbindung eines Energieeffizienz-Experten
+Für die Beantragung der Förderung und Begleitung des Vorhabens ist ein Energieeffizienz-Experte einzu-
+binden. Nach Abschluss des Vorhabens bestätigt der Energieeffizienz-Experte die Einhaltung der in der
+Anlage zu dieser Förderrichtlinie aufgeführten Technischen Mindestanforderungen und die Einsparungen
+von Primär- und Endenergie und CO2. Er bestätigt auch die für die Maßnahmen angefallenen, förderfähigen
+Ausgaben. Eine Prüfung der Zahlungsnachweise durch den Energieeffizienz-Experten erfolgt nicht.
+Der Energieeffizienz-Experte ist für das Bauvorhaben vorhabenbezogen unabhängig zu beauftragen. Der
+Energieeffizienz-Experte, beziehungsweise das Unternehmen, bei dem der Energieeffizienz-Experte ange-
+stellt ist, darf also – auch mittelbar – nicht
+   –   in einem Inhaber-, Gesellschafts- oder Beschäftigungsverhältnis zu den bauausführenden Unter-
+       nehmen oder Lieferanten stehen oder
+   –   von diesen Unternehmen oder Lieferanten beauftragt werden oder
+   –   an diese Unternehmen oder Lieferanten Lieferungen oder Leistungen vermitteln.
+Nicht unter diese Regelung zur vorhabenbezogenen Unabhängigkeit fallen
+   –   beim Antragsteller (auch Contractoren) oder Verkäufer (zum Beispiel Bauträger) angestellte Ener-
+       gieeffizienz-Experten,
+   –   angestellte Energieeffizienz-Experten von ausführenden Bau- oder Handwerksunternehmen (zum
+       Beispiel Fertighausbauer), deren Produkte und Leistungen nach einer von den Durchführern aner-
+       kannten Gütesicherung definiert und überwacht werden. Die Durchführer veröffentlichen auf ihren
+       Webseiten eine Liste der anerkannten Gütegemeinschaften.
+In diesen Fällen wird jedoch nicht der Fördersatz nach Nummer 8.4.3 sondern der nach Nummer 8.4.1
+gewährt. Es können keine zusätzlichen Kosten für Fachplanung und Baubegleitung nach Nummer 8.2 Buch-
+stabe b angesetzt werden, sondern die Kosten müssen in Nummer 8.2 Buchstabe a enthalten sein.
+Bei der Sanierung zum Effizienzhaus Denkmal EE sowie bei der Sanierung von Baudenkmalen und sons-
+tiger besonders erhaltenswerten Bausubstanz zu sonstigen Effizienzhäusern sind ausschließlich die in der
+Energieeffizienz-Expertenliste für Förderprogramme des Bundes unter www.energie-effizienz-experten.de
+geführten Sachverständigen der Kategorie „BEG – Wohngebäude Denkmal “ zugelassen.
+9.4 Zusage- und Bewilligungsverfahren
+Für die Bewilligung, Auszahlung und Abrechnung der Zuwendung sowie für den Nachweis und die Prüfung
+der Verwendung und die gegebenenfalls erforderliche Aufhebung der Zusage und die Rückforderung der
+gewährten Zuwendung finden die §§ 48 bis 49a des Verwaltungsverfahrensgesetzes (VwVfG), die §§ 23,
+44 BHO und die hierzu erlassenen Allgemeinen Verwaltungsvorschriften Anwendung, soweit nicht in dieser
+Förderrichtlinie Abweichungen von den Allgemeinen Verwaltungsvorschriften zugelassen worden sind.
+Die KfW vergibt Kredite und Zuschüsse auf Grundlage privatrechtlicher Verträge. Für die Kreditförderung
+sowie die von der KfW durchgeführte Zuschussförderung sind die vorgenannten Regelungen sowie die
+Vorschriften der ANBest-P und der AnBest-Gk durch die KfW anzuwenden oder sinngemäß vertragsrecht-
+lich umzusetzen. Das Nähere regelt der zwischen Bund und KfW abzuschließende Mandatarvertrag.
+Abweichungen von der in der Zusage bewilligten Maßnahme sind dem Durchführer unverzüglich anzuzei-
+gen.
+9.4.1 Zuschussförderung (nur kommunale Antragsteller)
+Eine Zuschussförderung wird nur befristet zugesagt. Die Dauer der Befristung beträgt 48 Monate ab Zugang
+der Zusage (Bewilligungszeitraum).
+9.4.2 Kreditförderung
+Für die Kreditgewährung ist die Einreichung eines Nachweises über die voraussichtlichen förderfähigen
+Ausgaben sowie über die Einhaltung der Technischen Mindestanforderungen erforderlich.
+Ein Kredit wird nur befristet zugesagt. Der Kredit muss innerhalb von zwölf Monaten nach Kreditzusage
+abgerufen werden (Abruffrist). Für den noch nicht abgerufenen Kreditbetrag wird ab dem 13. Monat nach
+Zusagedatum eine Bereitstellungsprovision fällig. Dies gilt nicht für kommunale Antragsteller. Die Abruffrist
+für noch nicht ausgezahlte Kreditbeträge wird ohne gesonderten Antrag um bis zu 24 Monate verlängert.
+Die Abruffrist kann um weitere zwölf Monate verlängert werden, wenn der Abruf innerhalb der ursprüngli-
+chen Frist vom Antragsteller aus Gründen nicht erfolgen konnte, die der Antragsteller nicht zu vertreten hat.
+Die maximale Abruffrist und damit der Bewilligungszeitraum beträgt damit 48 Monate.
+Der Zeitraum, innerhalb dessen die angeforderten (Teil-)Beträge dem festgelegten Verwendungszweck zu-
+geführt werden müssen, beträgt zwölf Monate ab Auszahlung des jeweiligen (Teil-)Betrags (Mitteleinsatz-
+frist). Im Fall der Überschreitung dieser Frist hat der Antragsteller einen Zinszuschlag zu zahlen. Der Kredit
+wird nach Ablauf der Tilgungsfreijahre zurückgezahlt. Während der Zinsbindungsfrist ist eine vorzeitige
+Rückzahlung des gesamten ausstehenden Kreditbetrages nur gegen Zahlung einer Vorfälligkeitsentschä-
+digung möglich. Teilrückzahlungen sind ausgeschlossen. Gesetzliche Kündigungsrechte bleiben hiervon
+unberührt. Zum Ende der Zinsbindung kann der Kredit ohne Kosten teilweise oder komplett zurückgezahlt
+werden. Während der Tilgungsfreijahre und bei der endfälligen Kreditvariante werden lediglich die Zinsen
+auf die abgerufenen Kreditbeträge gezahlt.
+9.5 Auszahlung, Nachweisführung
+Für die Auszahlung des Zuschusses beziehungsweise die Verrechnung des Tilgungszuschusses ist die
+Einreichung eines Nachweises über die sachgerechte Verwendung der Fördermittel, über die Höhe der
+förderfähigen Ausgaben sowie über die Einhaltung der Technischen Mindestanforderungen erforderlich
+(„Verwendungsnachweis“). Rechnungen sind unbar zu begleichen und die entsprechenden Belege (zum
+Beispiel Kontoauszüge) als Zahlungsnachweise vom Antragsteller aufzubewahren. Rechnungen müssen
+den Namen des Antragstellers, die förderfähigen Maßnahmen, die Arbeitsleistung, den
+Durchführungszeitraum sowie die Adresse des Gebäudes ausweisen und in deutscher Sprache ausgefertigt
+sein. Rechnungen nur über Materialkosten, beispielsweise bei Eigenleistungen, müssen den Namen des
+Antragstellers ausweisen und in deutscher Sprache ausgefertigt sein.
+Kommunale Antragsteller haben bei Durchführung des Gesamtvorhabens in mehreren Bauabschnitten, für
+die in der Kreditförderung auch gesonderte Anträge gestellt werden, nach jedem Bauabschnitt einen sepa-
+raten (Zwischen-)Verwendungsnachweis zu erstellen. Nach Abschluss des Gesamtbauvorhabens ist ein
+abschließender Verwendungsnachweis zu erbringen.
+Näheres zu den Anforderungen an den Verwendungsnachweis, insbesondere die zur Nachweisführung
+beizufügenden Formulare, regelt der zuständige Durchführer. Dieser kann bei Bedarf weitere Unterlagen
+beziehungsweise Auskünfte verlangen und verpflichtende elektronische Formulare für notwendige Unterla-
+gen beziehungsweise Erklärungen bereitstellen.
+9.5.1 Zuschussförderung (nur kommunale Antragsteller)
+Die Auszahlung des Zuschusses erfolgt nach positivem Abschluss der Prüfung des Verwendungsnachwei-
+ses. Der Verwendungsnachweis einschließlich aller erforderlichen Unterlagen ist gemäß den geltenden AN-
+Best-P spätestens sechs Monate nach Ende des Bewilligungszeitraums mittels der dafür vorgesehenen
+Formulare beim zuständigen Durchführer einzureichen.
+Wird der Verwendungsnachweis später als sechs Monate nach Ablauf des Bewilligungszeitraums einge-
+reicht, führt dies grundsätzlich zur Rücknahme der Zusage.
+9.5.2 Kreditförderung
+Die Verrechnung des Tilgungszuschusses erfolgt nach positivem Abschluss der Prüfung des Verwendungs-
+nachweises zum nächsten in der Finanzierungszusage festgelegten Verrechnungszeitpunkt. Weitere Vo-
+raussetzung für die Verrechnung des Tilgungszuschusses ist, dass das Darlehen zum Zeitpunkt der Gut-
+schrift (Verrechnungszeitpunkt) nicht gekündigt ist. Die KfW legt in der Finanzierungszusage die möglichen
+Verrechnungszeitpunkte für einen Tilgungszuschuss mit Abständen von maximal zwei Jahren fest. Die Gut-
+schrift des Tilgungszuschusses kann vorgezogen werden, sofern das Darlehen bankseitig aus wichtigem
+Grund gekündigt oder wegen einer Insolvenzeröffnung fällig gestellt wird.
+Der Tilgungszuschuss wird auf den Zusagebetrag und auf die nach dem Tilgungsplan zuletzt fälligen Raten
+angerechnet. Sofern zum Zeitpunkt der Gutschrift die Kreditvaluta geringer ist als die Höhe des Gutschrift-
+betrags, erfolgt die Gutschrift des Tilgungszuschusses nur in Höhe der aktuellen Kreditvaluta. Eine Baraus-
+zahlung oder Überweisung des Tilgungszuschusses ist nicht möglich.
+Der Verwendungsnachweis einschließlich aller erforderlichen Unterlagen ist innerhalb von sechs Monaten
+nach Ablauf des Bewilligungszeitraums, spätestens aber innerhalb von 54 Monaten nach Zusage, bei der
+KfW einzureichen. Kommunale Antragsteller reichen den Verwendungsnachweis direkt bei der KfW ein.
+Wird der Verwendungsnachweis später als sechs Monate nach Ablauf der Abruffrist eingereicht, so verliert
+der Antragsteller grundsätzlich seinen Anspruch auf die Gewährung eines Tilgungszuschusses. Zudem
+führt dies grundsätzlich zur Kündigung des Darlehens.
+9.6 Subventionserheblichkeit
+Die nach dieser Förderrichtlinie gewährte Förderung an Unternehmen sind Subventionen im Sinne des
+§ 264 des Strafgesetzbuches. Im Antragsverfahren wird der Antragsteller daher bereits vor der Antragstel-
+lung vom Durchführer auf die Strafbarkeit des Subventionsbetrugs und auf seine Mitteilungspflichten nach
+§ 3 des Subventionsgesetzes hingewiesen, sowie entsprechend Verwaltungsvorschrift Nummer 3.4.6 zu
+§ 44 BHO, nach der die im konkreten Fall subventionserheblichen Tatsachen in Form einer abschließenden
+Positivliste zu benennen sind, auf die im konkreten Fall subventionserheblichen Tatsachen hingewiesen.
+9.7 Auskunfts- und Prüfungsrechte, Monitoring
+Den Beauftragten des BMWE, dem Bundesrechnungshof und den Prüforganen der Europäischen Union
+sind auf Verlangen erforderliche Auskünfte zu erteilen und Einsicht in Bücher und Unterlagen sowie Prü-
+fungen zu gestatten. Der Bundesrechnungshof ist gemäß den § 91 BHO zur Prüfung berechtigt.
+Der Antragsteller muss sich im Antrag auf Förderung damit einverstanden erklären, dass
+   –   sämtliche mit dem Antrag oder im weiteren Verfahren eingereichten Unterlagen nach Maßgabe der
+       einschlägigen datenschutzrechtlichen Vorschriften BAFA, KfW und dem BMWE insbesondere auch
+       zur Weitergabe an den Bundestag oder zu Veröffentlichungszwecken zur Verfügung stehen;
+   –   folgende Unterlagen bis zum Ablauf von zehn Jahren nach Kreditzusage beziehungsweise Bekannt-
+       gabe der Zuschusszusage aufbewahrt und dem Durchführer innerhalb dieses Zeitraums auf Verlan-
+       gen vorgelegt werden (auch nach gegebenenfalls vollständiger Tilgung des Förderkredits):
+        – Unterlagen zur Dokumentation der vom Energieeffizienz-Experten erbrachten Leistungen (Pla-
+            nung und Baubegleitung) einschließlich eventuelle Unterlagen zur Dokumentation einer optio-
+            nalen akustischen Fachplanung;
+        – sämtliche Nachweise, die in den Technischen Mindestanforderungen zu dieser Förderrichtlinie
+            für die jeweiligen geförderten Maßnahmen gelistet sind;
+        – Unterlagen zur Dokumentation der für die Anforderung an Treibhausgasemissionen im Gebäu-
+            delebenszyklus im Sinne des „Qualitätssiegels Nachhaltiges Gebäude PLUS“ (QNG-PLUS) be-
+            ziehungsweise für die Nachhaltigkeitszertifizierung erforderlichen und von der akkreditierten
+            Zertifizierungsstelle geprüften Nachweise;
+        – die vollständigen Berechnungsunterlagen sowie alle vorhabenbezogenen Rechnungen und
+            Nachweise über die geleisteten Zahlungen, Aufstellung der förderfähigen Investitionsmaßnah-
+            men und Investitionskosten;
+        – beim Ersterwerb nach Sanierung: die vorgenannten Unterlagen zum Effizienzhaus; anstelle von
+            Rechnungen ein Nachweis über die förderfähigen Investitionsmaßnahmen und -kosten (min-
+            destens durch eine Bestätigung des Verkäufers);
+        – bei der Sanierung von Baudenkmalen oder sonstiger besonders erhaltenswerter Bausubstanz:
+            die für die baulichen Sanierungsmaßnahmen erforderlichen Abstimmungsnachweise und die
+            Genehmigung der Denkmalschutzbehörde oder einer sonstigen zuständigen Behörde.
+   –   dem Durchführer oder anderen Beauftragten des Bundes innerhalb der Mindestnutzungsdauer von
+       zehn Jahren der geförderten Maßnahme auf Anforderung ein Betretungsrecht für eine Vor-Ort-Kon-
+       trolle des geförderten Gebäudes gewährt wird, beziehungsweise zur Qualitätssicherung die geför-
+       derten Maßnahmen im Rahmen einer Unterlagen- beziehungsweise Vor-Ort-Kontrolle auf Grund-
+       lage eines qualifizierten Stichprobenkonzepts überprüft werden dürfen;
+   –   er auf Nachfrage, insbesondere im Rahmen einer Evaluation unter Beachtung datenschutzrechtli-
+       cher Regelungen, innerhalb der Mindestnutzungsdauer von zehn Jahren der geförderten Maß-
+       nahme weitergehende Auskünfte gibt und die Bereitschaft zur freiwilligen Nennung im Rahmen der
+       Öffentlichkeitsarbeit erfragt werden darf;
+   –   die Daten seines Förderfalls, insbesondere Gegenstand, Ort und Höhe der erhaltenen Förderung,
+       anonymisiert zu Zwecken der Evaluation, der parlamentarischen Berichterstattung und der Öffent-
+       lichkeitsarbeit verwendet werden können;
+   –   für die Förderung auf Grundlage von § 44 BHO in Verbindung mit Verwaltungsvorschrift Nummer
+       9.1 und 9.2 zu § 44 BHO beziehungsweise der sinngemäßen Anwendung dieser Vorschriften Daten
+       zu einzelnen Fördermaßnahmen in einem zentralen System des Bundes erfasst werden (Zuwen-
+       dungsdatenbank);
+   –   alle im Zusammenhang mit der Förderung bekannt gewordenen Unterlagen, Daten und Nachweise
+       von BAFA beziehungsweise KfW und dem BMWE oder einer von diesen beauftragten Stelle gespei-
+       chert werden können, zum Zweck der Erfolgskontrolle gemäß der VV zu § 7 BHO weiterverarbeitet
+       werden können und vom BMWE an zur Vertraulichkeit verpflichtete, mit einer Evaluation beauftragte
+       Dritte weitergegeben und dort weiterverarbeitet werden können. Darüber hinaus dürfen Unterlagen,
+       Daten und Nachweise von ihnen, in deren Auftrag oder nach deren Zustimmung für Zwecke der
+       Statistik, des Monitorings, der Verknüpfung mit amtlichen Daten, der Evaluation und der Erfolgskon-
+       trolle für die Wirksamkeit des Förderprogramms sowie in anonymisierter Form für Zwecke der Öf-
+       fentlichkeitsarbeit und des wissenschaftlichen Erkenntnisgewinns verwendet und ausgewertet wer-
+       den. Zu diesen Zwecken dürfen in angemessenem Umfang weitere auswertungsrelevante Daten –
+       unabhängig eines etwaigen Personenbezugs (Artikel 4 Nummer 1 DSGVO) – durch die KfW beim
+       Antragsteller/Fördernehmer erhoben und für vorgenannte Zwecke ausgewertet werden. Die Erklä-
+       rung beinhaltet ferner das Einverständnis mit der Veröffentlichung der Auswertungsergebnisse und
+       deren Weiterleitung – jeweils in einer anonymisierten statistischen Übersicht – an das BMWE, den
+       Deutschen Bundestag und an Einrichtungen des Bundes und der Europäischen Union;
+   –   das BMWE den Mitgliedern des Deutschen Bundestages im Einzelfall auch personenbezogene In-
+       formationen zur Förderung bekannt gibt.
+Zur Qualitätssicherung werden die im Rahmen der Förderung sanierten Effizienzhäuser im Rahmen einer
+Unterlagen- beziehungsweise Vor-Ort-Kontrolle auf Grundlage eines qualifizierten Stichprobenkonzepts
+überprüft.
+
+10 Geltungsdauer
+Diese Förderrichtlinie tritt am 21. Juli 2026 in Kraft und endet mit Ablauf des 31. Dezember 2030. Sie ersetzt
+die Richtlinie für die Bundesförderung für effiziente Gebäude – Wohngebäude (BEG WG) vom 9. Dezember
+2022 (BAnz AT 30.12.2022 B2).
+Für Förderanträge, die vor Inkrafttreten dieser Förderrichtlinie gestellt wurden, gilt die letzte Fassung der
+ersetzten Förderrichtlinie, auch wenn die Entscheidung über den Antrag erst nach Inkrafttreten dieser För-
+derrichtlinie erfolgt.
+Berlin, den 17. Juli 2026
+                                             Bundesministerium
+                                         für Wirtschaft und Energie
+                                                 Im Auftrag
+                                          Stephanie von Ahlefeldt
+                                                Anlage
+                        Technische Mindestanforderungen (TMA) zum Programm
+                        Bundesförderung für effiziente Gebäude – Wohngebäude
+
+1 Anforderungen an ein Effizienzhaus
+Der energetische Standard eines Effizienzhauses wird durch bauliche und anlagentechnische Maßnahmen
+zur Verbesserung der Energieeffizienz sowie die Einbindung erneuerbarer Energien erreicht. Die nachfol-
+genden Mindestanforderungen sind einzuhalten.
+Effizienzhaus-Stufen
+
+Effizienzhaus                 EH 40 EE EH 55 EE       EH 70 EE    EH 85 EE EH Denkmal EE
+
+QP in % von QP,REF            40         55           70          85         160
+
+H’T in % von H’T,REF          55         70           85          100        –
+
+EE-Anteil in %                                                   65
+
+                                                    LCA-Anforderung / QNG-PLUS
+NH-Klasse
+
+                                               Ja
+WPB-Bonus                                                                          Nein
+
+
+SerSan-Bonus                                   Ja                                  Nein
+
+
+
+Effizienzhausnachweis
+Der Jahres-Primärenergiebedarf (QP) sowie der Transmissionswärmeverlust (H’T) für das Effizienzhaus und
+das entsprechende Referenzgebäude sind zu berechnen. Die in der obenstehenden Tabelle angegebenen
+prozentualen Maximalwerte im Verhältnis zum entsprechenden Wert des Referenzgebäudes (QP REF;
+H’T REF) sind einzuhalten:
+   –   Der Jahres-Primärenergiebedarf (QP) und der auf die wärmeübertragende Umfassungsfläche des
+       Gebäudes bezogene Transmissionswärmeverlust (H’T) sind nach GEG in Verbindung mit DIN V
+       18599 zu berechnen.
+   –   Die energetischen Kennwerte des Referenzgebäudes (QP,REF; H’T,REF) sind nach Anlage 1 GEG in
+       Verbindung mit DIN V 18599 zu berechnen.
+   –   Bei der Realisierung von Effizienzhäusern ist stets zu prüfen, ob Maßnahmen zur Vermeidung von
+       Tauwasserausfall und Schimmelpilzbildung erforderlich sind. Hierzu ist ein Lüftungskonzept zu er-
+       stellen, in dem der erforderliche Außenluftvolumenstrom und die Lösung zur Umsetzung spezifiziert
+       werden, zum Beispiel unter Anwendung der DIN 1946-6. Die Veranlassung der Umsetzung lüftungs-
+       technischer Maßnahmen verantwortet der Bauherr. Auf eine wärmebrückenminimierte und mög-
+       lichst luftdichte Ausführung nach den anerkannten Regeln der Technik ist zu achten. Der Bauherr
+       ist bei der Entwicklung des energetischen Gesamtkonzepts zu den Effizienzgewinnen einer Lüf-
+       tungsanlage mit Wärmerückgewinnung zu beraten. Dabei ist eine Ausführungsvariante der
+      Effizienzhausberechnung mit einer Lüftungsanlage mit Wärmerückgewinnung für alle Nutzungsein-
+      heiten (z. B. zentrale Anlage, Wärmebereitstellungsgrad von ηWBG ≥ 80 Prozent bei einer spezifi-
+      schen elektrischen Leistungsaufnahme von Pel,Vent ≤ 0,45 W/(m3/h)) zu erstellen, und dem Bauherrn
+      zu erläutern und zu übergeben.
+  –   Eine Anforderung an den Transmissionswärmeverlust (H’T) für das Effizienzhaus Denkmal besteht
+      nicht. Die bauphysikalischen Mindestanforderungen an den Wärmeschutz nach DIN 4108-2 sind für
+      diejenigen Bauteile der Gebäudehülle einzuhalten (Feuchteschutz), die im Rahmen der Sanierung
+      nachträglich gedämmt werden.
+
+2 Anforderungen an die Anlagentechnik eines Effizienzhauses
+  –   Für ein Effizienzhaus mit wassergeführten Wärmeversorgungsanlage ist der hydraulische Abgleich
+      gemäß dem aktuellen Bestätigungsformular für Effizienzhäuser (Verfahren B) der „VdZ − Wirt-
+      schaftsvereinigung Gebäude und Energie e.V.“ (www.vdzev.de/broschueren/formulare-hydrauli-
+      scher-abgleich) durchzuführen und zu dokumentieren.
+  –   Mit Ausnahme des Effizienzhaus Denkmal müssen alle Effizienzhäuser Niedertemperatur-Ready
+      (NT-ready) sein das heißt eine Heizkreis-Vorlauftemperatur von 55 °C im Auslegungsfall und Betrieb
+      nicht überschreiten.
+  –   Neu installierte Feuerungsanlagen müssen folgende Emissionsgrenzwerte für Staub einhalten:
+       – ≤ 10 mg/m3 für Kessel zur Verbrennung von Biomassepellets und -hackgut; ≤ 15 mg/m3 für Pel-
+           letöfen und Anlagen zur Verbrennung von Scheitholz.
+       – Ab 1. Oktober 2027 gilt für alle Biomasseanlagen ein Emissionsgrenzwert für Staub von ≤
+           2,5 mg/m3.
+       – Das BMWE wird bis zum 30. Juni 2027 prüfen, ob eine eventuelle Anpassung der Emissions-
+           grenzwerte vor dem Hintergrund des dann aktuellen Standes der Verhandlungen auf EU-Ebene
+           zu den Durchführungs-Verordnungen (EU) 2015/1189 und (EU) 2015/1185 und insbesondere
+           unter Berücksichtigung der Aspekte der Luftreinhaltung erforderlich ist und dann gegebenenfalls
+           einen entsprechenden Vorschlag vorlegen.
+  –   Luft-Wasser-WP dürfen nur dann in Effizienzhäuser eingesetzt werden, wenn die Geräuschemissi-
+      onen des Außengeräts zumindest 10 dB niedriger liegen als die Geräuschemissionsgrenzwerte für
+      Wärmepumpen in der Europäischen Durchführungsverordnung Nr. 813/2013 (Ökodesign-Verord-
+      nung) in der Fassung vom 2. August 2013.
+  –   Ab 1. Januar 2028 dürfen in neu installierten Wärmepumpen ausschließlich natürliche Kältemittel
+      eingesetzt werden.
+  –   Neu eingebaute Wärmepumpen müssen über eine digitale Schnittstelle zur netzorientierten Steue-
+      rung und zur Anbindung an ein intelligentes Messsystem einschließlich Steuerungseinrichtung ver-
+      fügen. Die digitale Schnittstelle muss interoperabel ausgestaltet sein und die Umsetzung der netz-
+      orientierten Steuerung nach § 14a EnWG einschließlich der hierfür erforderlichen Status- und Rück-
+      meldeinformationen ermöglichen. Ab dem 1. Juli 2027 ist für neu eingebaute Wärmepumpen die
+      digitale Schnittstelle in einem dem Code of Conduct for Energy Smart Appliances der Europäischen
+      Kommission entsprechenden Format (zum Beispiel EEBUS gemäß VDE-AR-E 2829-6) auszufüh-
+      ren. Die Anbindung an das intelligente Messsystem kann unmittelbar oder über ein Energiemana-
+      gementsystem erfolgen. Die digitale Schnittstelle muss auch die Einbindung in Energiemanage-
+      mentsysteme ermöglichen. Des Weiteren muss der Antragstellende nach erfolgter Inbetriebnahme
+      der zu fördernden Wärmepumpe den Einbau eines intelligenten Messsystems (iMSys) inklusive
+      Steuerungseinrichtung beim grundzuständigen oder einem wettbewerblichen Messstellenbetreiber
+      (MStB) beantragen, sofern der Haus- bzw. Gebäudeanschluss noch nicht mit einem iMSys
+       ausgerüstet ist (iMSys-Bestellpflicht). Näheres regelt das „Infoblatt zu den förderfähigen Maßnah-
+       men und Leistungen“. Es werden nur noch Wärmepumpen gefördert, die diese Anforderung erfüllen.
+   –   Ausschließlich der Anschluss an das Wärmenetz nach BEG EM TMA Nummer 3.9 und nicht die
+       Errichtung von Einzelheizungen nach den BEG EM TMA Nummern 3.2 bis Fehler! Verweisquelle
+       konnte nicht gefunden werden. wird gefördert:
+       – wenn das betreffende Grundstück aufgrund einer kommunalen Entscheidung (beispielsweise
+            durch Beschluss einer Satzung oder aufgrund eines Anschluss- und Benutzungszwangs) an ein
+            Wärmenetz angeschlossen werden soll. Dieser Förderausschluss für Einzelheizungen greift
+            nur, wenn und soweit eine Kommune beziehungsweise die zuständige Stelle eine entspre-
+            chende Entscheidung getroffen und transparent gemacht hat; oder
+       – wenn ein Wärmeversorger rechtsverbindlich erklärt hat, das betreffende Grundstück innerhalb
+            von drei Jahren an sein Wärmenetz anzuschließen und die Verantwortung für die Richtigkeit
+            dieser Angaben öffentlich erklärt hat. Diese Option tritt erst in Kraft, wenn die Anforderungen im
+            unten genannten „Infoblatt zu den förderfähigen Maßnahmen und Leistungen“ veröffentlicht
+            sind.
+       Näheres regelt das „Infoblatt zu den förderfähigen Maßnahmen und Leistungen“.
+3 Anforderungen an den Einsatz von Wärme aus erneuerbaren Energien eines Effizienzhauses
+Der berechnete Wärme- und Kälteenergiebedarf des Effizienzhauses muss zu einem Mindestanteil von 65
+% durch die Nutzung von Wärme aus erneuerbaren Energien, unvermeidbarer Abwärme und/oder aus
+Wärmerückgewinnung von Lüftungsanlagen gedeckt werden. Alternativ kann das geförderte Gebäude an
+ein Wärmenetz angeschlossen werden.
+Es können folgende Arten der Wärmeerzeugung und -rückgewinnung verwendet werden:
+   a) Nutzung von Solarthermie
+   b) Eigene Erzeugung und Nutzung von Strom aus erneuerbaren Energien zur Wärmeerzeugung,
+      ausgenommen Stromdirektheizungen auf der Basis von Festkörperwärmespeichern
+   c) Über ein technisches System nutzbar gemachte Geothermie/Umweltwärme/unvermeidbare Ab-
+      wärme
+   d) Verfeuerung fester Biomasse
+   e) Wärmerückgewinnung aus Lüftungsanlagen
+   f) Grüner Wasserstoff oder Biomethan in Brennstoffzellen-Heizsystemen
+   g) Anschluss an Wärme- oder Gebäudenetze; für die Deckung des Anteils erneuerbarer Energien im
+      Gebäudenetz darf nur Wärmeerzeugung nach den Buchstaben a) bis f) verwendet werden; für die
+      Deckung des Anteils erneuerbarer Energien im Wärmenetz, darf für das Wärmenetz ein Anteil von
+      65 % erneuerbarer Energien pauschal angesetzt werden.
+Die Maßnahmen zur Nutzung erneuerbarer Energien können kombiniert werden. Weitere Arten der Wär-
+meerzeugung und -rückgewinnung können nicht angerechnet werden.
+Gefördert werden nur Anlagen, die in den Wärmeerzeugerlisten des BAFA gelistet sind. Die Wärmeerzeug-
+erlisten werden fortlaufend aktualisiert und sind abschließend. Näheres regelt das „Infoblatt zu den förder-
+fähigen Maßnahmen und Leistungen“.
+Der Einsatz einer Lüftungsanlage mit Wärmerückgewinnung ist für die EH-Stufe 40 EE verpflichtend. Dabei
+können zentrale, dezentrale und Mischformen aus zentralen und dezentralen Lüftungsanlagen zur Anwen-
+dung kommen. Die Lüftungsanlage muss in der Lage sein, die in DIN 1946-6 genannten planmäßigen Au-
+ßenluftvolumenströme (Nennlüftung) für sämtliche Nutzungseinheiten beziehungsweise für das Gebäude
+sicher zu stellen. Die Lüftungsanlage muss einreguliert werden.
+Anforderungen an die Luftdichtheit der Gebäudehülle nach GEG bestehen nicht, sofern in der Berechnung
+die Luftdichtheitskategorie I nach DIN V 18599-2 nicht angesetzt wird. Die Luftdichtheit der Gebäudehülle
+muss jedoch für die EH-Stufe 40 EE messtechnisch bestimmt werden. Die messtechnische Bestimmung
+der Luftdichtheit der Gebäudehülle kann dabei entweder nach GEG für das fertig gestellte Gebäude oder
+während der Bauphase als Bestandteil der Qualitätssicherung erfolgen.
+
+4 NH-Klasse: Bei anerkannter Nachhaltigkeitszertifizierung
+Bei der Nachhaltigkeits-Klasse (NH-Klasse) muss die Anforderung an Treibhausgasemissionen im Gebäu-
+delebenszyklus eingehalten werden Die Anforderungen an das Treibhauspotenzial (GWP 100) sind unter
+Anwendung der Methode der Lebenszyklusanalyse (LCA) nachzuweisen. Der konkrete Zeitpunkt, ab dem
+diese Anforderung gilt, sowie Näheres zu den Anforderungen wird in Abstimmung mit dem BMWE von der
+KfW in dem jeweils geltenden Merkblatt und/oder auf deren Website bekannt gegeben. Als Übergangsre-
+gelung gilt die bisherige Anforderung fort, wonach bei der NH-Klasse die akkreditierte Zertifizierungsstelle
+mit einer Nachhaltigkeitszertifizierung die Übereinstimmung der Maßnahme mit den Anforderungen des
+„Qualitätssiegels Nachhaltiges Gebäude PLUS“ (QNG-PLUS) des Bundesministeriums für Wohnen, Stadt-
+entwicklung und Bauwesen (BMWSB) bestätigen muss. Für detaillierte Anforderungen an die Nachhaltig-
+keitszertifizierung siehe www.nachhaltigesbauen.de und www.qng.info.
+Zusätzlich ist der Einsatz einer Lüftungsanlage mit Wärmerückgewinnung in der NH-Klasse für alle
+Wohneinheiten verpflichtend. Dabei können zentrale, dezentrale und Mischformen aus zentralen und de-
+zentralen Lüftungsanlagen zur Anwendung kommen. Die Lüftungsanlage muss in der Lage sein, die in DIN
+1946-6 genannten planmäßigen Außenluftvolumenströme (Nennlüftung) für sämtliche Nutzungseinheiten
+beziehungsweise für das Gebäude sicher zu stellen. Die Lüftungsanlage muss einreguliert werden.
+
+5 Regelungen und Hinweise zur Effizienzhaus-Berechnung
+   –   Für ein Effizienzhaus ist eine Energiebedarfsberechnung nach § 20 GEG ohne Anwendung von § 31
+       und Anlage 5 GEG (vereinfachtes Nachweisverfahren für Wohngebäude) durchzuführen.
+   –   Für das zu sanierende Effizienzhaus und das Referenzgebäude ist der Jahres-Primärenergiebedarf
+       nach DIN V 18599 zu ermitteln. § 20 Absatz 2 GEG ist nicht anzuwenden.
+   –   Wird ein Wärmebrückenzuschlag ∆UWB < 0,10 W/(m2 · K) angesetzt, ist dieser gesondert nach den
+       Regeln der Technik zu berechnen beziehungsweise nachzuweisen. Die Erstellung eines Gleichwer-
+       tigkeitsnachweises ist bei der Verwendung des pauschalen Wärmebrückenzuschlags von ∆UWB =
+       0,05 W/(m2 · K) (Kategorie A) beziehungsweise von ∆UWB = 0,03 W/(m2 · K) (Kategorie B) stets
+       erforderlich. Zusätzlich können die gemäß DIN 4108 Beiblatt 2 in Verbindung mit der DIN V 18599-
+       2 zugelassenen Methoden angewendet werden.
+   –   Für eine Effizienzhaus-Berechnung können die Werte für die Bauteile der Gebäudehülle aus den
+       veröffentlichten „Regeln zur Datenaufnahme und Datenverwendung im Wohngebäudebestand“ an-
+       gewendet werden (http://www.bbsr-energieeinsparung.de, „Gebäudeenergiegesetz, Bekanntma-
+       chungen“). Die dort beschriebenen oder die in § 50 Absatz 4 GEG benannten Vereinfachungen beim
+       geometrischen Aufmaß dürfen bei der Bilanzierung eines Effizienzhauses nicht verwendet werden.
+   –   Berechnung der Energieeinsparung und der CO2-Einsparung (Treibhausgas-Reduktion): Es sind die
+       Einsparung des Jahres-Primärenergiebedarfs und Endenergiebedarfs sowie die jährliche Treib-
+       hausgas-Reduktion im Vergleich zum Ausgangszustand (vor Sanierung) auszuweisen. Die Einspa-
+       rung ergibt sich aus der Differenz der Energiebedarfsberechnung nach GEG für den Zustand vor
+       Sanierung und dem berechneten Jahres-Primärenergiebedarf beziehungsweise Endenergiebedarf
+       des Effizienzhauses. Die resultierende Treibhausgas-Reduktion ist nach den Vorgaben der Anlage
+       9 „Umrechnung in Treibhausgasemission“ GEG auf der Grundlage der Endenergieeinsparungen zu
+       berechnen.
+   –   Erfolgt die Wärmeversorgung über einen nicht förderfähigen Wärmeerzeuger, ist dieser bei der ener-
+       getischen Berechnung eines Effizienzhauses zu berücksichtigen.
+   –   Die Anrechnung von Strom aus erneuerbaren Energien erfolgt gemäß § 23 GEG.
+   –   Die Einhaltung der Mindestanforderungen an den sommerlichen Wärmeschutz ist bei Effizienzhäu-
+       sern nach DIN 4108-2:2013-02, Abschnitt 8 unabhängig vom Anwendungsbereich der Norm nach-
+       zuweisen. Bei Sanierung von Baudenkmalen kann von der Einhaltung des sommerlichen Wärme-
+       schutzes abgewichen werden, soweit Auflagen des Denkmalschutzes der Einhaltung der Anforde-
+       rungen entgegenstehen.
+   –   Bei gemischt genutzten Nichtwohngebäuden (überwiegende Nichtwohnnutzung) können vollstän-
+       dige Wohneinheiten unabhängig von den Flächenanteilen getrennt als Wohngebäude bilanziert und
+       gefördert werden.
+
+6 Leistungen des Energieeffizienz-Experten
+Die Energieeffizienz-Expertin oder der Energieeffizienz-Experte muss mindestens folgende Leistungen im
+Rahmen einer energetischen Fachplanung und Begleitung der Baumaßnahme erbringen und deren pro-
+grammgemäße Umsetzung bestätigen. Werden Teilleistungen durch Dritte (zum Beispiel Fachplaner oder
+bauüberwachender Architekt) erbracht, sind diese von der Energieeffizienz-Expertin beziehungsweise vom
+Energieeffizienz-Experten im Rahmen seiner Gesamtverantwortung zu überprüfen.
+Allgemeine Leistungen
+   –   Die „Bestätigung zum Antrag“ für die geplante Förderstufe erstellen.
+   –   Die für den Effizienzhaus-Nachweis relevanten Gebäudeparameter hinsichtlich des baulichen Wär-
+       meschutzes und der Anlagentechnik den Fachplanern beziehungsweise den ausführenden Unter-
+       nehmen übergeben.
+   –   Bei der Ausschreibung beziehungsweise Auftragsvergabe mit Blick auf die förderfähigen Maßnah-
+       men mitwirken sowie die Auftragserteilung auf Übereinstimmung mit Umfang und Qualität entspre-
+       chend der im Effizienzhaus-Nachweis geplanten Maßnahmen prüfen.
+   –   Bei der Aufstellung der förderfähigen Ausgaben zur Antragstellung mitwirken (anhand von Angebo-
+       ten oder Kostenschätzung).
+   –   Eine für das Vorhaben angemessene Anzahl von Baustellenbegehungen (mindestens eine) zur
+       Sichtprüfung der in der Effizienzhaus-Berechnung berücksichtigten Maßnahmen durchführen.
+   –   Die eingebauten Materialien, Produkte und Komponenten auf Übereinstimmung mit den in der Effi-
+       zienzhaus-Berechnung berücksichtigten Ansätzen prüfen.
+   –   Die energetische Fachplanung und Begleitung der Baumaßnahme dokumentieren sowie die Doku-
+       mentation an den Bauherrn übergeben (siehe Abschnitt „Notwendige Nachweise und Dokumente“).
+   –   Die förderfähigen Maßnahmen nach Vorhabendurchführung gemäß „BEG-Infoblatt zu den förderfä-
+       higen Maßnahmen und Leistungen“ prüfen sowie die Feststellungen dokumentieren.
+   –   Prüfen und bestätigen, dass Eigenleistungen fachgerecht durchgeführt und Materialkosten korrekt
+       aufgeführt wurden.
+   –   Effizienzhaus-Sanierung eines Worst Performing Building (WPB): Prüfen und bestätigen, dass das
+       Gebäude vor der Sanierung einem WPB entspricht.
+   –   Effizienzhaus-Sanierung im Rahmen einer seriellen Sanierung: Prüfen und bestätigen, dass es sich
+       bei der Maßnahme um eine serielle Sanierung handelt.
+   –   Die „Bestätigung nach Durchführung“ für die umgesetzte Effizienzhaus-Stufe erstellen.
+Effizienzhausnachweis
+   –   Energetisches Gesamtkonzept für den baulichen Wärmeschutz und die energetische Anlagentech-
+       nik erstellen.
+   –   Effizienzhaus-Berechnung erstellen; bestehend aus der Berechnung für das Effizienzhaus und der
+       Berechnung für das Referenzgebäude.
+   –   Einhaltung der Anforderungen an den Einsatz von Wärme aus erneuerbaren Energien nachweisen.
+   –   Einsparungen des Jahres-Primärenergiebedarfs, des Jahres-Endenergiebedarfs und der CO2- und
+       Treibhausgas-Reduktion berechnen.
+   –   Wärmebrückenkonzept erstellen.
+   –   Luftdichtheitskonzept erstellen.
+   –   Maßnahmen zum sommerlichen Wärmeschutz benennen und den Nachweis des sommerlichen
+       Wärmeschutzes erstellen.
+   –   Lüftungskonzept erstellen und den Bauherrn über das Ergebnis informieren. Vergleichsbilanzierung
+       mit einer Lüftungsanlage mit Wärmerückgewinnung erstellen und Bauherrn zu Effizienzgewinnen
+       beraten.
+   –   Die Durchführung und das Ergebnis einer Luftdichtheitsmessung prüfen, soweit für den Effizienz-
+       haus-Nachweis relevant.
+   –   Die Einregulierung der energetischen Anlagentechnik prüfen, die Durchführung des hydraulischen
+       Abgleichs prüfen.
+   –   Die Übergabe der energetischen Anlagentechnik prüfen (technische Einweisung des Bauherrn).
+   –   Die Einhaltung der NT-ready Anforderung prüfen (Ausnahme für Denkmäler).
+   –   Die energetische Fachplanung und Begleitung der Baumaßnahme dokumentieren sowie die Doku-
+       mentation an den Bauherrn übergeben (siehe Abschnitt oben: Notwendige Nachweise und Doku-
+       mente für ein Effizienzhaus).
+Nachhaltigkeitszertifizierung
+   –   Prüfen und bestätigen, dass die Anforderung an Treibhausgasemissionen im Gebäudelebenszyklus
+       (LCA) eingehalten sind.
+   –   Übergangsregelung: Die QNG-Zertifizierung des Gebäudes und die erreichte QNG-PLUS-Stufe for-
+       mal prüfen auf:
+        – Übereinstimmung mit dem beantragten Standard,
+        – Übereinstimmung mit dem beantragten Gebäude (Adresse) und
+        – Akkreditierung der Zertifizierungsstelle.
+7 Notwendige Nachweise und Dokumente für ein Effizienzhaus
+Effizienzhausnachweis
+   –   Vollständige Dokumentation der Berechnung gemäß § 20 GEG inklusive der detaillierten U-Wert-
+       Berechnungen für die einzelnen Bauteile und einer Beschreibung des anlagentechnischen Systems
+       (Dokumentation für das Effizienzhaus und für das Referenzgebäude).
+   –   Sämtliche Pläne (Grundrisse, Ansichten, Schnitte, Lageplan), auf deren Grundlage die Effizienz-
+       haus-Berechnung erstellt wurde.
+   –   Die Systemgrenze für die Effizienzhaus-Berechnung ist die wärmeübertragende Umfassungsfläche.
+       Diese ist in den Plänen zu markieren.
+   –   Die Bauteile der thermischen Gebäudehülle, die der Berechnung zugrunde gelegt wurden, sind in
+       den Plänen so zu markieren, dass die Zuordnung gemäß Bauteiltabelle nachvollzogen werden kann.
+   –   Dokumentation der Maßnahmen und der Nachweise zur Einhaltung des sommerlichen Wärme-
+       schutzes.
+   –   Nachweise der Übereinstimmung der eingebauten Materialien, Produkte und Komponenten mit der
+       Effizienzhaus-Berechnung (zum Beispiel Unternehmererklärungen, Herstellernachweise, Liefer-
+       scheine, Rechnungen, Fotos).
+   –   Bestätigung eines Fachunternehmens über die Durchführung des hydraulischen Abgleichs unter
+       Verwendung des Bestätigungsformulars für ein Effizienzhaus (Wohngebäude) des „VdZ – Wirt-
+       schaftsvereinigung Gebäude und Energie e.V.“ (www.vdzev.de/broschueren/formulare-hydrauli-
+       scher-abgleich).
+   –   Alle vorhabenbezogenen Rechnungen und Nachweise über die geleisteten Zahlungen, beim Erst-
+       erwerb nach Sanierung anstelle von Rechnungen ein Nachweis über die förderfähigen Investitions-
+       maßnahmen und -kosten (mindestens durch eine Bestätigung des Verkäufers).
+   –   Aufstellung der förderfähigen Investitionsmaßnahmen und Investitionskosten.
+   –   Sonstige Unterlagen, soweit für den Effizienzhaus-Nachweis relevant, zum Beispiel
+       – Wärmebrücken-Nachweis, sofern ein Wärmebrückenzuschlag ∆UWB < 0,10 W/(m2·K) angesetzt
+            wurde (Gleichwertigkeitsnachweis beziehungsweise detaillierte Wärmebrückenberechnung)
+       – Nachweise produktspezifischer anlagentechnischer Kennwerte
+       – Prüfbericht über die Durchführung einer Luftdichtheitsmessung, soweit in der Berechnung die
+            Luftdichtheitskategorie I nach DIN V 18599-2 angesetzt wurde.
+       – Bei Nah-/Fernwärme: gegebenenfalls Zertifikat des Primärenergiefaktors nach Arbeitsblatt FW-
+            309 des Energieeffizienzverbands für Wärme, Kälte und Kraft-Wärme-Kopplung (AGFW)
+       – Nachweise zur Einhaltung der Anforderungen an den Einsatz von Wärme aus erneuerbaren
+            Energien eines Effizienzhauses
+       – Nachweise zur Einhaltung der NT-ready Anforderung (nicht für Denkmäler)
+       – Nachweise zur Einhaltung der Anforderungen an ein „Worst Performing Building“ (z. B. Ener-
+            gieausweis, Dokumentation zum Zustand des Gebäudes vor der Sanierung zum Effizienzhaus).
+       – Nachweise zur Einhaltung der Anforderungen für den Bonus „Serielles Sanieren“
+Nachhaltigkeitszertifizierung
+   –   Nachweis der Einhaltung der Anforderung an Treibhausgasemissionen im Gebäudelebenszyklus
+       (LCA)
+Übergangsregelung:
+   –   BEG-NH-Formular „Dokumentation zur geplanten Zertifizierung mit dem Qualitätssiegel Nachhalti-
+       ges Gebäude“ einschließlich der im Formular benannten Anlagen oder ein gleichwertiger Nachweis
+       muss zur Antragstellung vorliegen.
+   –   Gebäudezertifikat einer akkreditierten Zertifizierungsstelle über die Einhaltung des jeweiligen Anfor-
+       derungsniveaus des „Qualitätssiegels Nachhaltiges Gebäude PLUS“ (QNG-PLUS).
+   –   Vollständige Dokumentation der Nachhaltigkeitszertifizierung nach den jeweiligen Vorgaben des an-
+       gewendeten Bewertungssystems und der Anforderungen nach „Anlage 3 zum Handbuch des Qua-
+       litätssiegels Nachhaltiges Gebäude“.
+

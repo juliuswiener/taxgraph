@@ -1,0 +1,23 @@
+dokument:
+  norm_uri: "beg/2026-07-17/wg"
+  norm: "Förderrichtlinie für die Bundesförderung für effiziente Gebäude – Wohngebäude (BEG WG), Neufassung v. 17.07.2026 (ersetzt BEG WG v. 09.12.2022, BAnz AT 30.12.2022 B2)"
+  fassung: "17.07.2026, in Kraft ab 21.07.2026, Geltungsdauer bis 31.12.2030"
+  quelle_url: "https://www.energiewechsel.de/KAENEF/Redaktion/DE/PDF-Anlagen/BEG/beg-richtlinien-juli-2026/20260720-beg-wohngebaeude.pdf?__blob=publicationFile"
+  abrufdatum: "2026-08-10"
+  datei: "beg_wg_foerderrichtlinie_2026-07-17.txt"
+  pdf_datei: "beg_wg_foerderrichtlinie_2026-07-17.pdf"
+  sha256: "e00b82ea130d56725fcbdfec26ac2a253c47f646af7668033db24a524eec536f"
+  pdf_sha256: "b8b78a747cc8c8f551723646bc170d22d24517793c21d2c001b10a31a88843e7"
+  authority: verwaltung
+  redistributable: true
+  hinweis: >
+    Ergaenzende Richtlinie zur BEG EM (siehe beg_em_foerderrichtlinie_2026-07-17): regelt die
+    Effizienzhaus-Sanierung (Gesamtgebaeude-Sanierungsfoerderung), NICHT die Einzelmassnahme
+    Heizungstausch -- fuer den Foerderfinder-Anwendungsfall (Heizungsfoerderung) ist beg_em die
+    einschlaegige Quelle, diese Datei dient nur zur Abgrenzung/Vollstaendigkeit. Gleiche
+    BAnz-Fundstellen-Einschraenkung wie bei beg_em: Vorabfassung, Bundesanzeiger-Fundstelle
+    im Dokument als Platzhalter ausgewiesen, nicht verifizierbar (Stand 2026-08-10).
+    PDF via curl direkt von energiewechsel.de geladen, Text via pdftotext -layout extrahiert.
+  erwartete_anker:
+    - "Diese Förderrichtlinie ersetzt die Richtlinie für die Bundesförderung für effiziente Gebäude – Wohngebäude in der Fassung vom 9. Dezember 2022 (BAnz AT 30.12.2022 B2)."
+  verwendet_in: ["BEG-Quellenbeschaffung 2026-08-10 (Team-Lead-Auftrag), Abgrenzung WG vs. EM"]

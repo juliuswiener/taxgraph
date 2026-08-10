@@ -70,7 +70,7 @@ def _erlaubte_kz(merged: dict) -> set:
     Die Person-B-Instanz-Kz (Klasse g) sind KEINE neuen Kz — sie sind identisch mit den Person-A-1:1-Kz
     und erscheinen im person_b-Bucket, nicht in der Haupt-Deklaration (kein Kollisions-/Phantom-Fall)."""
     return ({b["elster_kz"] for b in merged.values() if b.get("elster_kz")}
-            | set(EM.NEGATION.values()) | _verzweigung_ziel_kz())
+            | set(EM.NEGATION.values()) | _verzweigung_ziel_kz() | EM.KONSTANTE_KZ)
 
 
 # ---- Assertion 5: globale feld_id-Eindeutigkeit ------------------------------

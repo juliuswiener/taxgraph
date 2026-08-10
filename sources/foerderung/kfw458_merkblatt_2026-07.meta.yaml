@@ -1,0 +1,34 @@
+dokument:
+  norm_uri: "kfw/458/2026-07"
+  norm: "KfW Merkblatt Zuschuss Nr. 458 – BEG Heizungsförderung für Privatpersonen – Wohngebäude, Stand 07/2026 (gültig ab 21.07.2026)"
+  fassung: "Stand 07/2026, gültig ab 21.07.2026"
+  quelle_url: "https://www.kfw.de/PDF/Download-Center/F%C3%B6rderprogramme-(Inlandsf%C3%B6rderung)/PDF-Dokumente/6000005131_M_458.pdf"
+  abrufdatum: "2026-08-10"
+  datei: "kfw458_merkblatt_2026-07.txt"
+  pdf_datei: "kfw458_merkblatt_2026-07.pdf"
+  sha256: "5194f2d5a98ce6b1e108be83f702aa17e7647bc3480176359e1f344425397d61"
+  pdf_sha256: "27056983339718d66cb02e9dd526db5787df742350de15eb7821040299d9fd5d"
+  authority: verwaltung
+  redistributable: true
+  hinweis: >
+    ACHTUNG QUELLENRANG: Die KfW ist Programmtraeger (Foerderbank, Anstalt oeffentlichen
+    Rechts), NICHT Normgeber -- Normgeber ist das BMWE ueber die Foerderrichtlinie
+    (beg_em_foerderrichtlinie_2026-07-17). Dieses Merkblatt ist eine starke, aber ABGELEITETE
+    Quelle: es zitiert und paraphrasiert die Richtlinie fuer die Programmabwicklung, ist selbst
+    kein Rechtstext. Fuer Parameterwerte im Code sollte primaer auf die Richtlinie verwiesen
+    werden; das Merkblatt dient als Cross-Check (hier: alle geprueften Werte -- Grundfoerderung
+    30%, Einkommensbonus-Staffel, Familienzuschlag, Klimageschwindigkeitsbonus, Deckel 70/80%,
+    Hoechstbetraege 28.000/15.000/8.000 -- stimmen wortgleich mit der Richtlinie ueberein).
+    Das Merkblatt selbst zitiert explizit dieselbe energiewechsel.de-URL wie
+    beg_em_foerderrichtlinie_2026-07-17 als "Anlage" (Zeile ~768) -- das ist die staerkste
+    verfuegbare Bestaetigung, dass die dort abgerufene Vorabfassung tatsaechlich die massgebliche
+    ist. PDF via curl direkt von kfw.de geladen, Text via pdftotext -layout extrahiert.
+  erwartete_anker:
+    - "Als Grundförderung wird ein Zuschuss in Höhe von 30 Prozent bezogen auf die förderfähigen Gesamtkosten gewährt."
+    - "Der Klimageschwindigkeitsbonus beträgt 16 Prozent bezogen auf die förderfähigen Gesamtkosten."
+    - "ihr zu versteuerndes Haushaltsjahreseinkommen bis zu 30.000 Euro beträgt. Der Bonus beträgt 40 Prozent"
+    - "erhöht sich die Bemessungsgrenze des zu versteuernden Haushaltseinkommens pauschal und einmalig und unabhängig von der Anzahl weiterer Kinder im Haushalt um 10.000 Euro (Familienzuschlag)"
+    - "Obergrenze von maximal 70 Prozent der förderfähigen Gesamtkosten für eine Wohneinheit"
+    - "beträgt die Obergrenze bis zu 80 Prozent der förderfähigen Gesamtkosten für eine Wohneinheit"
+    - "Die Förderung erfolgt auf Grundlage der am 21.07.2026 in der Fassung vom 17.07.2026 veröffentlichten \"Richtlinie für die Bundesförderung für effiziente Gebäude – Einzelmaßnahmen (BEG EM)\"."
+  verwendet_in: ["BEG-Quellenbeschaffung 2026-08-10 (Team-Lead-Auftrag), Cross-Check gegen BEG EM"]

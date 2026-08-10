@@ -33,10 +33,19 @@ ARBEITSMITTEL_AFA_GESAMT = ("am_anschaffung_monat", "am_afa_ist_anschaffungsjahr
 
 # ========== § 36 Abs. 2 Anrechnung (LSt + Vorauszahlungen) ==========
 P36_ANRECHNUNG = ("p36_lohnsteuer", "p36_vorauszahlungen")
+# p36_lohnsteuer_partner NICHT in P36_ANRECHNUNG (das haengt an RENTNER_FELDER, s.u.): ein
+# Rentner-Partner-Lohn-Feld ohne begleitendes bruttoarbeitslohn_partner (das rentner_gesamt
+# bewusst nicht fuehrt, s. AN_GESAMT_PARTNER/GESAMT_PARTNER_19) waere dort eine Einzel-Naht.
+# Eigene Tuple, nur in an_gesamt/gesamt verdrahtet (Julius-Entscheidung 2026-08-10).
+P36_ANRECHNUNG_PARTNER = ("p36_lohnsteuer_partner",)
 
 # ========== § 22 Sonstige Einkünfte + § 10 KiSt ==========
 P22_NR3_EINKUENFTE = ("p22_nr3_einkuenfte",)
 KIST_KONFESSION_FELDER = ("kist_konfession", "kist_bundesland")
+KIRCHENSTEUER_ARBEITGEBER_FELDER = ("kirchensteuer_arbeitgeber", "kirchensteuer_arbeitgeber_partner")
+
+# ========== § 38b EStG Steuerklasse (Anlage N, E0200002) ==========
+STEUERKLASSE_FELDER = ("steuerklasse", "steuerklasse_partner")
 
 # ========== § 16 Abs. 4 Freibetrag-Gates (Rentner) ==========
 P16_4_GATE_FELDER = ("rentner_alter_55_oder_berufsunfaehig", "rentner_freibetrag_erstmalig")
@@ -390,7 +399,8 @@ SCHEIBEN = {
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + ARBEITSMITTEL_AFA_GESAMT
-                   + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P16_4_GATE_FELDER
+                   + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER
+                   + STEUERKLASSE_FELDER
                    + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER),
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
                   + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),

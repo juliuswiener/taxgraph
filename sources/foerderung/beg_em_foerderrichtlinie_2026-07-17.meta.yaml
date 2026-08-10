@@ -1,0 +1,49 @@
+dokument:
+  norm_uri: "beg/2026-07-17/em"
+  norm: "Förderrichtlinie für die Bundesförderung für effiziente Gebäude – Einzelmaßnahmen (BEG EM), Neufassung v. 17.07.2026 (ersetzt BEG EM v. 21.12.2023, BAnz AT 29.12.2023 B1)"
+  fassung: "17.07.2026, in Kraft ab 21.07.2026, Geltungsdauer bis 31.12.2030"
+  quelle_url: "https://www.energiewechsel.de/KAENEF/Redaktion/DE/PDF-Anlagen/BEG/beg-richtlinien-juli-2026/20260720-beg-einzelmassnahmen.pdf?__blob=publicationFile"
+  abrufdatum: "2026-08-10"
+  datei: "beg_em_foerderrichtlinie_2026-07-17.txt"
+  pdf_datei: "beg_em_foerderrichtlinie_2026-07-17.pdf"
+  sha256: "dab4f0aa95ce40ac73fd4b33162f693b9e27f01a7bad24a8904062c2f4855218"
+  pdf_sha256: "7f0d716171db2693c7bb7b01d1228e3b9b34bd057feb3f7b44c1cbfd1e2e7977"
+  authority: verwaltung
+  redistributable: true
+  hinweis: >
+    Dies ist die vom BMWE auf energiewechsel.de vorab veröffentlichte Fassung, unterzeichnet
+    "Berlin, den 17. Juli 2026, Bundesministerium für Wirtschaft und Energie, Im Auftrag
+    Stephanie von Ahlefeldt". Die Bundesanzeiger-Fundstelle ist im Dokument selbst noch als
+    Platzhalter ausgewiesen: "Datum vom 17. Juli 2026 (BAnz AT XX.XX.XXXX B1)" (Zeile ~540,
+    ~1580 im extrahierten Text). Die endgueltige BAnz-AT-Nummer/-Datum konnte trotz gezielter
+    Suche (bundesanzeiger.de amtlicher Teil, WebSearch nach "BAnz AT 20.07.2026"/"21.07.2026" BEG)
+    NICHT verifiziert werden -- weder bundesanzeiger.de noch Sekundaerquellen (tga-fachplaner.de,
+    BAFA-Kurzmeldung) nennen eine bestaetigte Nummer. Inhaltlich ist die Fassung durch das
+    KfW-Merkblatt 458 (Stand 07/2026) als "die" massgebliche Richtlinie referenziert und mit
+    identischer energiewechsel.de-URL verlinkt (kfw458_merkblatt_2026-07.txt, Zeile ~768) --
+    das stuetzt die inhaltliche Verlaesslichkeit trotz fehlender BAnz-Zitierbarkeit.
+    PDF via curl direkt von energiewechsel.de geladen, Text via pdftotext -layout extrahiert.
+  erwartete_anker:
+    - "Für Maßnahmen nach Nummer 5.3 beträgt der Fördersatz 30 %."
+    - "Bis 30 000 Euro zu versteuerndes Haushaltsjahreseinkommen: 40 Prozentpunkte"
+    - "Über 30 000 Euro bis 40 000 Euro zu versteuerndes Haushaltsjahreseinkommen: 30 Prozentpunkte"
+    - "Über 40 000 Euro bis 50 000 Euro zu versteuerndes Haushaltsjahreseinkommen: 10 Prozentpunkte"
+    - "reduziert sich das anzusetzende zu versteuernde Haushaltsjahreseinkommen pauschal und einmalig um 10 000 Euro"
+    - "ab 21. Juli 2026 bis 31. Januar 2027: 16 Prozentpunkte"
+    - "ab 1. Februar 2027 bis 31. Juli 2027: 12 Prozentpunkte"
+    - "ab 1. August 2027 bis 31. Januar 2028: 8 Prozentpunkte"
+    - "ab 1. Februar 2028 bis 31. Juli 2028: 4 Prozentpunkte"
+    - "Ab 1. August 2028 entfällt der Bonus."
+    - "Obergrenze von 80 % für ein zu versteuerndes Haushaltsjahreseinkommen bis zu 30 000 Euro"
+    - "70 % für ein zu versteuerndes Haushaltsjahreseinkommen über 30 000 Euro"
+    - "28 000 Euro für die erste Wohneinheit"
+    - "jeweils 15 000 Euro für die zweite bis sechste Wohneinheit"
+    - "jeweils 8 000 Euro ab der siebten Wohneinheit"
+    - "sinkt für die erste Wohneinheit beginnend ab 1. Februar 2027 alle sechs Monate jeweils zum 1. Februar und 1. August eines Jahres um 750 Euro"
+    - "wird der Durchschnitt aus den zu versteuernden Einkommen des zweiten und dritten Jahres vor Antragseingang ermittelt"
+    - "wird ab Quartal 1 2027 zusätzlich ein Bonus von 15 Prozentpunkten gewährt, wenn die geförderte Wärmepumpe ihren Ursprung in der Union hat"
+  hinweis_entfallene_boni: >
+    "Effizienzbonus", "Emissionsminderungszuschlag" und "EE-Bonus" kommen im gesamten Dokument
+    KEIN einziges Mal vor (grep negativ) -- Wegfall ist durch Abwesenheit in der neuen
+    Fördersatz-Tabelle (Abschnitt 8.4.1) belegt, nicht durch eine explizite Streichungs-Klausel.
+  verwendet_in: ["BEG-Quellenbeschaffung 2026-08-10 (Team-Lead-Auftrag), Foerderfinder Phase 1"]

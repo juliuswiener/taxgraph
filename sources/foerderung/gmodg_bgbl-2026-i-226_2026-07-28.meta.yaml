@@ -1,0 +1,29 @@
+dokument:
+  norm_uri: "bgbl/2026-i/226"
+  norm: "Gesetz zur Änderung des Gebäudeenergiegesetzes, zur Änderung des Gebäude-Elektromobilitätsinfrastruktur-Gesetzes und zur Änderung weiterer Vorschriften im Wärmebereich (Gebäudemodernisierungsgesetz, GModG)"
+  fassung: "Gesetz vom 23.07.2026, verkündet BGBl. 2026 I Nr. 226 (ausgegeben zu Bonn am 28.07.2026), Hauptteil in Kraft ab 29.07.2026"
+  quelle_url: "https://www.recht.bund.de/bgbl/1/2026/226/regelungstext.pdf?__blob=publicationFile&v=1"
+  abrufdatum: "2026-08-10"
+  datei: "gmodg_bgbl-2026-i-226_2026-07-28.txt"
+  pdf_datei: "gmodg_bgbl-2026-i-226_2026-07-28.pdf"
+  sha256: "77201a88c223e5b1cb1edb6317a09b28c1fc22efffbfc92133bcb6e3058d5004"
+  pdf_sha256: "e24d08e69485cfaf53c114b62e2a6000f7236dd0fbde9e5fe2408676cfffb6df"
+  authority: gesetz
+  redistributable: true
+  hinweis: >
+    Amtlicher Regelungstext von recht.bund.de (offizielles Verkuendungsportal des Bundes),
+    Verkuendungsstand vollstaendig bestaetigt: unterzeichnet Berlin 23.07.2026 (Bundespraesident
+    Steinmeier, Bundeskanzler Merz, BMin Wirtschaft/Energie Reiche, BMin Wohnen/Bauen Hubertz),
+    "Bundesgesetzblatt Jahrgang 2026 Teil I Nr. 226, ausgegeben zu Bonn am 28. Juli 2026".
+    Artikel 9: Hauptteil tritt "am Tag nach der Verkuendung" (= 29.07.2026) in Kraft, Art. 2+7
+    zum 1.1.2027, Art. 3 zum 1.1.2028, Art. 4 zum 1.1.2030.
+    WICHTIG: Das GModG regelt KEINE Foerdersaetze/Betraege -- es ist Ordnungsrecht (loest die
+    65%-EE-Pflicht des GEG ab, benennt das GEG faktisch um). Die Foerderung der Heizungen wird
+    ausschliesslich ueber die BEG-Foerderrichtlinie geregelt (siehe beg_em_foerderrichtlinie_2026-07-17).
+    Grep nach "Fördersatz|Grundförderung|Einkommensbonus|BEG " im Volltext: keine Treffer --
+    bestaetigt die Trennung Ordnungsrecht (GModG) vs. Foerderrecht (BEG-Richtlinie).
+    PDF via curl direkt von recht.bund.de geladen, Text via pdftotext -layout extrahiert.
+  erwartete_anker:
+    - "Dieses Gesetz tritt vorbehaltlich der Absätze 2 bis 4 am Tag nach der Verkündung in Kraft."
+    - "Bundesgesetzblatt Jahrgang 2026 Teil I Nr. 226, ausgegeben zu Bonn am 28. Juli 2026"
+  verwendet_in: ["BEG-Quellenbeschaffung 2026-08-10 (Team-Lead-Auftrag), Verkündungsstand-Nachweis"]

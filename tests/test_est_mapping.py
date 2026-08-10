@@ -722,3 +722,32 @@ def test_instanzen_leere_gruppe(bindung):
     """Keine Felder der Gruppe im Store -> leere Liste (kein Phantom)."""
     s = _store_mit({"vv_einnahmen": 1200000})
     assert EM.instanzen(s, bindung, "kind") == []
+
+
+# ---- Anlage N: Steuerklasse (§38b) + Lohnsteuer/Kirchensteuer (Julius-Entscheidung 2026-08-10) ----
+
+def test_steuerklasse_lohnsteuer_kirchensteuer_person_a(bindung):
+    """E0200002 (Klasse 1, Enum-String direkt) + E0200301/E0200501 (Klasse b/1:1) Person A.
+    Nicht-runde Cent-Beträge beweisen den Format-Fix: E0200301/E0200501 sind Komma-Dezimal OHNE
+    E60-Präfix (_KOMMA_OHNE_E60_KZ) -- ohne den Fix käme hier ein roher (gefloorter) Integer statt
+    des exakten "N,NN"-Strings zurück."""
+    felder = {"steuerklasse": "3", "p36_lohnsteuer": 1250050, "kirchensteuer_arbeitgeber": 112575}
+    snap, _ = ST.materialisiere(_store_mit(felder))
+    r = EM.deklariere(snap, bindung)
+    assert r["deklaration"]["E0200002"] == "3"
+    assert r["deklaration"]["E0200301"] == "12500,50"
+    assert r["deklaration"]["E0200501"] == "1125,75"
+
+
+def test_steuerklasse_lohnsteuer_kirchensteuer_person_b(bindung):
+    """Dieselben drei Kz für Person B über PARTNER_INSTANZ (person_b-Bucket, kein Ehegatte-eigenes Kz).
+    Beweist: der Komma-Format-Fix greift auf BEIDE _cent_nach_kz()-Aufrufpfade (Klasse-b/1:1 UND
+    PARTNER_INSTANZ), nicht nur auf Person A."""
+    felder = {"steuerklasse_partner": "5", "p36_lohnsteuer_partner": 1250050,
+              "kirchensteuer_arbeitgeber_partner": 112575}
+    snap, _ = ST.materialisiere(_store_mit(felder))
+    r = EM.deklariere(snap, bindung)
+    assert r["person_b"]["E0200002"] == "5"
+    assert r["person_b"]["E0200301"] == "12500,50"
+    assert r["person_b"]["E0200501"] == "1125,75"
+    assert "E0200002" not in r["deklaration"]                        # Person-B-Wert NICHT in Person-A-Deklaration

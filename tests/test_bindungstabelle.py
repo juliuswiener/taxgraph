@@ -518,6 +518,13 @@ BETRAGSFELDER_OHNE_KZ = {
     "vv_gebaeude_afa",
     "vv_schuldzinsen",
     "vv_sonstige_wk",
+
+    # Gruppe E: Anlage-N-Instanz B (Person-Multiplikation, Julius-Entscheidung 2026-08-10) — ANDERS
+    # als Gruppe B kein Fehler: est_mapping.PARTNER_INSTANZ routet beide auf denselben Kz wie Person A
+    # (E0200301/E0200501), Wert landet im person_b-Bucket. elster_kz bleibt in der Bindung bewusst null
+    # (s. bindung_an_gesamt.yaml, test_est_mapping.py::test_steuerklasse_lohnsteuer_kirchensteuer_person_b).
+    "p36_lohnsteuer_partner",
+    "kirchensteuer_arbeitgeber_partner",
 }
 
 

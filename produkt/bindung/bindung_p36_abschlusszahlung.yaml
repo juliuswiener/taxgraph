@@ -2,9 +2,11 @@
 # (Nr. 2, Steuerabzug) minus geleistete ESt-Vorauszahlungen (Nr. 1, § 37) → Abschlusszahlung/
 # Erstattung (Abs. 4). Reine Post-Festsetzungs-Abrechnung: ändert NUR die Zahllast, nicht die ESt.
 # festzusetzende_est = ring-derived (Lücke, aus der bereits festgesetzten Scheiben-ESt geliefert).
-# elster_kz null und das bleibt so: am amtlichen E10-2025.xsd belegt (2026-08-05), dass es fuer
-# die § 36-Anrechnung KEIN Erklaerungs-Kz gibt — E10 erklaert Besteuerungsgrundlagen, die
-# Anrechnung rechnet das FA. Daher kz_status: endgueltig (kein Backlog). Details je Feld unten.
+# p36_vorauszahlungen: elster_kz null und das bleibt so (belegt 2026-08-05, kz_status: endgueltig)
+# — keine Anlage-N-Deklarationspflicht, das FA kennt seine eigenen Vorauszahlungsbescheide.
+# p36_lohnsteuer: REVIDIERT 2026-08-10 (Julius-Entscheidung) — traegt jetzt E0200301 (Anlage N),
+# weil checkESt es dort verlangt (Paar mit Kirchensteuer bei Konfessionspflicht). Details je Feld
+# unten, volle Vorgeschichte im elster_kz_grund des Feldes selbst.
 
 version: 1
 scheibe: "§36 Anrechnung (Abschlusszahlung/Erstattung)"
@@ -19,9 +21,8 @@ bindungen:
     hilfe_kurz: "Steht auf der Lohnsteuerbescheinigung (Nr. 4). Dieser bereits gezahlte Betrag wird auf die Steuerschuld angerechnet — er verringert die Nachzahlung bzw. führt zur Erstattung."
     beispielwert: 800000
     herkunft_slots: ["Lohnsteuerbescheinigung Nr. 4"]
-    elster_kz: null
-    kz_status: endgueltig
-    elster_kz_grund: "ENDGÜLTIG kein E10-Kz (belegt 2026-08-05, nicht Backlog): E10 ist ein Erklärungs-Schema, die § 36-Anrechnung (festgesetzte ESt − LSt − Vorauszahlungen) ist ein Berechnungsschritt des FA-Systems. Die vier Kandidaten mit 'Lohnsteuer' im xs:documentation (E0200301–E0200304) liegen unter E10/N/ArbL/LStB_… = Anlage N Zeile 6, also Einkunftsermittlung — ein Mapping dorthin schriebe den Betrag doppelt zur eLStB. E10/WA_ESt/Anzur_Steu führt nur § 50a-Abzugsbeträge."
+    elster_kz: E0200301
+    elster_kz_grund: "REVIDIERT 2026-08-10 (Julius-Entscheidung, Option A = echte Werte statt 0,00; s. reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md Entscheidung 2). Vorgeschichte (2026-08-05, damals ENDGÜLTIG kein E10-Kz): E10/N/ArbL/LStB_… (E0200301) liege unter Anlage-N-Einkunftsermittlung, ein Mapping dorthin schriebe den Betrag doppelt zur eLStB (§ 41b EStG). Diese eLStB-Doppel-Erfassungs-Sorge ist nur STRUKTURELL gestützt, nicht wörtlich belegt (kein 'eLStB'-Treffer in sources/) — und gemessen ist die Deklaration checkESt-notwendig: ohne E0200301 bleibt eine Beanstandung ('Kirchensteuer jedoch nicht angegeben' bzw. fehlende Anlage-N-Pflichtangabe) stehen, checkESt kennt keine Betrags-Plausibilitätsprüfung gegen den Bruttoarbeitslohn. E0200301 ist Komma-Dezimal OHNE E60-Präfix (est_mapping._KOMMA_OHNE_E60_KZ deckt das ab, sonst rohe Integer-Falle)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 36 Abs. 2 S. 1 Nr. 2 EStG (durch Steuerabzug erhobene Einkommensteuer)"

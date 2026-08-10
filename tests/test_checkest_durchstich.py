@@ -70,17 +70,16 @@ import traverser as TR       # noqa: E402
 #                KAP_FELDER_A/_B + _kap_alle_null): einzel 3 -> 2    zusammen 6 -> 4.
 #                Bestaetigte KAP-Nullen werden nicht mehr deklariert, atomar ueber
 #                Person A/B (s. dortiger Kommentar zur Writer-Luecken-Falle).
+#   (2026-08-10) Anlage N Steuerklasse + Lohnsteuer (Julius-Entscheidung, Option A =
+#                echte Werte statt 0,00; bindung_an_gesamt.yaml/bindung_p36_abschlusszahlung.yaml,
+#                _STAMM_A/_STAMM_B jetzt mit steuerklasse[_partner] + p36_lohnsteuer[_partner]):
+#                einzel 2 -> 0    zusammen 4 -> 0. Gemessen rc=CE.RC_OK (amtlich abgabefaehig)
+#                fuer BEIDE Faelle -- kein Restfehler mehr, harter Gate-Zweig unten aktiv.
 #
 # Der Stammdaten-Schritt zaehlt nur, wenn die Felder im Fall auch BEANTWORTET sind —
 # ihr blosses Vorhandensein aendert nichts. Deshalb stehen sie jetzt in _STAMM_A/_STAMM_B.
-#
-# Die verbleibenden Meldungen sind KEINE Bauaufgaben mehr, sondern genau die zwei
-# offenen Adjudikationen (BACKLOG: anlage-n-lohnsteuer-steuerklasse):
-#   1x/2x  Anlage N:   Steuerklasse (E0200002, ungebunden)
-#   1x/2x  Anlage N:   Lohnsteuer (E0200301, absichtlich ausgeschlossen)
-# zusammen = einzel x2, weil jede Person ihre eigene Anlage N hat.
-RESTFEHLER_EINZEL = 2
-RESTFEHLER_ZUSAMMEN = 4
+RESTFEHLER_EINZEL = 0
+RESTFEHLER_ZUSAMMEN = 0
 
 TS = "2026-08-09T22:00:00+00:00"
 _H = {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}
@@ -137,12 +136,15 @@ _STAMM_A = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
             ("stammdaten_keine_bankverbindung", True),
             ("stammdaten_art_est_erklaerung", True),
             ("kist_konfession", "keine"),
-            ("stammdaten_steuernummer", "9181081508155"))
+            ("stammdaten_steuernummer", "9181081508155"),
+            # Anlage N (Julius-Entscheidung 2026-08-10, Option A): E0200002 + E0200301 real deklariert.
+            ("steuerklasse", "1"), ("p36_lohnsteuer", 1200000))
 
 _STAMM_B = (("stammdaten_nachname_partner", "Maier"),
             ("stammdaten_vorname_partner", "Carolina"),
             ("stammdaten_geburtsdatum_partner", "09.07.1988"),
-            ("kist_konfession_partner", "keine"))
+            ("kist_konfession_partner", "keine"),
+            ("steuerklasse_partner", "5"), ("p36_lohnsteuer_partner", 1000000))
 
 _BASIS_A = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
             ("vor_ag_anteil_rv", 1200000), ("vor_rv_ausserhalb_lstb", 0),
@@ -173,6 +175,36 @@ def _fall_zusammen():
     # Events (store.py:232), `veranlagung` darf also nur EINMAL gesetzt werden.
     s = ST.leerer_store(2025, fall_id="durchstich_zusammen")
     for f, w in _BASIS_A + _BASIS_B:
+        _b(s, f, w)
+    _b(s, "veranlagung", "zusammen")
+    return s
+
+
+def _mit_kirchensteuer(basis, konfession_feld, konfession_wert, kirchensteuer_feld, kirchensteuer_cent):
+    """Ersetzt kist_konfession[_partner]='keine' durch einen kirchensteuerpflichtigen Wert und
+    ergaenzt kirchensteuer_arbeitgeber[_partner] -- Paar-Zwang (E0200301+E0200501 zusammen,
+    reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md:279-290): jeder Code
+    ausser 'keine' verlangt checkESt zufolge BEIDE Kz auf Anlage N."""
+    ersetzt = tuple((f, konfession_wert) if f == konfession_feld else (f, w) for f, w in basis)
+    return ersetzt + ((kirchensteuer_feld, kirchensteuer_cent),)
+
+
+def _fall_einzel_kirchensteuerpflichtig():
+    s = ST.leerer_store(2025, fall_id="durchstich_einzel_kist")
+    for f, w in _mit_kirchensteuer(_BASIS_A, "kist_konfession", "evangelisch",
+                                   "kirchensteuer_arbeitgeber", 100000):
+        _b(s, f, w)
+    _b(s, "veranlagung", "einzel")
+    return s
+
+
+def _fall_zusammen_kirchensteuerpflichtig():
+    s = ST.leerer_store(2025, fall_id="durchstich_zusammen_kist")
+    a = _mit_kirchensteuer(_BASIS_A, "kist_konfession", "evangelisch",
+                           "kirchensteuer_arbeitgeber", 100000)
+    b = _mit_kirchensteuer(_BASIS_B, "kist_konfession_partner", "roemisch-katholisch",
+                           "kirchensteuer_arbeitgeber_partner", 90000)
+    for f, w in a + b:
         _b(s, f, w)
     _b(s, "veranlagung", "zusammen")
     return s
@@ -251,6 +283,21 @@ def test_restfehler_ratsche(name, bauer, grenze):
         f"[{name}] FORTSCHRITT: nur noch {len(texte)} statt {grenze} Fehler. "
         f"Trag das ein: RESTFEHLER_{name.upper()} = {len(texte)}.\n"
         f"Verbleibend:\n" + "\n".join(f"  - {t[:160]}" for t in texte))
+
+
+@braucht_eric
+@pytest.mark.parametrize("name,bauer", [
+    ("einzel", _fall_einzel_kirchensteuerpflichtig),
+    ("zusammen", _fall_zusammen_kirchensteuerpflichtig),
+])
+def test_restfehler_kirchensteuerpflichtig(name, bauer):
+    """Explizite Messung des kirchensteuerpflichtigen Pfads (Paar-Zwang E0200301+E0200501):
+    kist_konfession != 'keine' + kirchensteuer_arbeitgeber[_partner] mitdeklariert -> amtlich
+    weiterhin rc=RC_OK, keine neuen Beanstandungen gegenueber dem konfessionslosen Basisfall."""
+    rc, texte = _pruefe(bauer())
+    assert rc == CE.RC_OK, (
+        f"[{name}] kirchensteuerpflichtig: rc={rc} (erwartet RC_OK/abgabefaehig). "
+        f"Beanstandungen: {texte}")
 
 
 @braucht_eric

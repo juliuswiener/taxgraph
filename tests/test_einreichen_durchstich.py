@@ -170,7 +170,9 @@ _STAMM_A = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
             # Writer. Ohne dieses Feld liefert /einreichen seit der abgabefaehig=True-Umstellung
             # 'xml_nicht_baubar' — und dann zaehlt die Ratsche unten 0 Fehlertexte, weil es gar
             # keine ERiC-Antwort gibt. Genau dieser Fall hat hier einmal Falsch-Gruen erzeugt.
-            ("stammdaten_steuernummer", "9181081508155"))
+            ("stammdaten_steuernummer", "9181081508155"),
+            # Anlage N (Julius-Entscheidung 2026-08-10, Option A): E0200002 + E0200301 real deklariert.
+            ("steuerklasse", "1"), ("p36_lohnsteuer", 1200000))
 
 _BASIS_A = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
             ("vor_ag_anteil_rv", 1200000), ("vor_rv_ausserhalb_lstb", 0),
@@ -234,11 +236,10 @@ def test_einreichen_endpunkt_erreicht_die_amtliche_pruefung(base, monkeypatch):
 #             (api.py:2398). Die 9 Vorsatz-Block-Fehler sind damit weg; Absender und
 #             Steuernummer werden aus den deklarierten Stammdaten abgeleitet.
 #
-# Die verbleibenden 2 sind KEINE Naht mehr, sondern die offene Adjudikation:
-# Anlage-N-Steuerklasse (E0200002, ungebunden) und Anlage-N-Lohnsteuer (E0200301,
-# absichtlich ausgeschlossen). Damit steht der Endpunkt auf demselben Rest wie die
-# Funktions-Ratsche — beide warten nur noch auf Entscheidungen, nicht auf Bau.
-RESTFEHLER_ENDPUNKT_EINZEL = 2
+#   2 -> 0    (2026-08-10) Anlage N Steuerklasse + Lohnsteuer (Julius-Entscheidung, Option A =
+#             echte Werte statt 0,00; _STAMM_A jetzt mit steuerklasse + p36_lohnsteuer).
+#             Gemessen rc=CE.RC_OK ueber den echten HTTP-Endpunkt.
+RESTFEHLER_ENDPUNKT_EINZEL = 0
 
 
 @braucht_eric
@@ -285,8 +286,8 @@ def test_restfehler_ratsche_endpunkt(base, monkeypatch):
         f"Verbleibend:\n" + "\n".join(f"  - {t[:160]}" for t in texte))
 
 
-# Differenz Endpunkt minus Funktion, Stand 2026-08-10 (2 - 2 = 0), beide auf scheibe="gesamt"-
-# foermigen Fixturen gemessen. BEIDE Ursachen sind inzwischen geschlossen:
+# Differenz Endpunkt minus Funktion, Stand 2026-08-10 (0 - 0 = 0), beide auf scheibe="gesamt"-
+# foermigen Fixturen gemessen. ALLE bisherigen Ursachen sind geschlossen:
 #   +0  Vorsatz-Block: GESCHLOSSEN. Der Endpunkt faehrt jetzt abgabefaehig=True und reicht
 #       den snapshot durch (api.py:2398); Absender und Steuernummer werden aus den
 #       deklarierten Stammdaten abgeleitet. Vorher +9.
@@ -294,6 +295,9 @@ def test_restfehler_ratsche_endpunkt(base, monkeypatch):
 #       damit einen Angabegrund-Fehler aus, den die Endpunkt-Fixtur durch Weglassen vermied.
 #       Seit Julius' Entscheidung (Option A) filtert est_mapping.deklariere() die Nullwerte
 #       selbst heraus — beide Fixturen erzeugen jetzt dasselbe Bild. Vorher -1.
+#   +0  Anlage N Steuerklasse+Lohnsteuer: GESCHLOSSEN. Beide Fixturen tragen jetzt
+#       steuerklasse + p36_lohnsteuer (Julius-Entscheidung 2026-08-10, Option A). Beide
+#       Ratschen erreichen rc=CE.RC_OK. Vorher 2 auf beiden Seiten (Delta blieb 0).
 #
 # Delta 0 heisst NICHT, dass die Wache ueberfluessig ist: sie faengt weiterhin jedes
 # kuenftige Auseinanderlaufen. Ein Delta von 0 ist der Zustand, den man will, nicht der,

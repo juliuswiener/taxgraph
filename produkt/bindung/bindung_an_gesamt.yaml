@@ -28,6 +28,29 @@ bindungen:
       zitatanker: "Gehälter, Löhne, Gratifikationen, Tantiemen und andere Bezüge und Vorteile für eine Beschäftigung"
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
 
+  # ========================= Steuerklasse (§ 38b EStG, Anlage N) =========================
+  # Julius-Entscheidung 2026-08-10 (reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md
+  # Entscheidung 3): gemessen sauber -- +E0200002 schliesst 1 checkESt-Beanstandung ohne Kopplung.
+  # XSD-Enum "1".."6" (E10-2025.xsd, Enum_N_ArbL_LStB_1_5_Sum_E0200002_CType) deckt sich 1:1 mit den
+  # sechs Steuerklassen aus § 38b Abs. 1 EStG -- kein WERTEKODIERUNG-Eintrag noetig.
+  - feld_id: steuerklasse
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: steuerklasse}
+    typ: enum
+    enum_werte: ["1", "2", "3", "4", "5", "6"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Steuerklasse hast du (steht auf deiner Lohnsteuerbescheinigung)?"
+    hilfe_kurz: "Steuerklasse I bis VI, unter Nummer 1 der Lohnsteuerbescheinigung."
+    beispielwert: "1"
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 1"]
+    elster_kz: E0200002
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 38b Abs. 1 EStG"
+      zitatanker: "Für die Durchführung des Lohnsteuerabzugs werden Arbeitnehmer in Steuerklassen eingereiht."
+      datei: "sources/gesetze-im-internet/estg_p38b_2026-08-10.txt"
+
   # ========================= Versorgungsbezüge (§ 19 Abs. 2, p19_2) =========================
   - feld_id: versorgung_jahresrente
     quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: jahresrente}
@@ -1004,22 +1027,25 @@ bindungen:
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_art_est_erklaerung}
     typ: bool
     einheit: null
-    askable: true
-    fragetext_laie: "Möchtest du eine Einkommensteuererklärung einreichen (der übliche Fall)?"
+    askable: false
+    fragetext_laie: null
     hilfe_kurz: "Kennzeichnet die Erklärung im Hauptvordruck als Einkommensteuererklärung."
     beispielwert: true
     herkunft_slots: null
-    elster_kz: E0100001
+    elster_kz: null
+    elster_kz_grund: "E0100001 wird von est_mapping.deklariere() als KONSTANTE gesetzt (Julius-Entscheidung 2026-08-10), nicht ueber diese Bindung -- das Produkt erzeugt ausschliesslich Einkommensteuererklaerungen, die Ja/Nein-Frage war ein Schein-Wahlrecht. Kein Interview-Feld mehr."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 150 Abs. 2 AO"
       zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
       datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
     # Art_Erkl hat 5 Kz im XSD (E0100001..E0100003, E0100009, E0100302); nur E0100001 (ESt-Erklärung,
-    # der Regelfall dieses Produkts) gebunden. Die anderen 4 (Sparzulage-Antrag u.a.) sind feature-
-    # konditional und Mindestumfang-bewusst NICHT gebaut. Offene Frage an Julius: askable Ja/Nein-Frage
-    # ist hier eigentlich ein Schein-Wahlrecht (das Produkt deckt nur den ESt-Fall ab) — ggf. besser als
-    # nicht-askable Konstante modellieren statt als Interview-Frage.
+    # der Regelfall dieses Produkts) betroffen. Die anderen 4 (Sparzulage-Antrag u.a.) sind feature-
+    # konditional und Mindestumfang-bewusst NICHT gebaut. GELOEST 2026-08-10 (war offene Frage an
+    # Julius): askable Ja/Nein war ein Schein-Wahlrecht (das Produkt deckt nur den ESt-Fall ab) --
+    # jetzt nicht-askable Konstante (E0100001 in est_mapping.deklariere() hart gesetzt). MUSS
+    # zurueckgebaut werden, sobald das Produkt weitere Erklaerungsarten unterstuetzt (z.B.
+    # Arbeitnehmer-Sparzulage) -- dann wird Art_Erkl wieder eine echte Interview-Frage.
 
   - feld_id: stammdaten_steuernummer
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_steuernummer}
@@ -1119,10 +1145,65 @@ bindungen:
     # wie kist_konfession (bindung_p51a_kirchensteuer.yaml). Bewusst NICHT in Kirchensteuer-Regel
     # (p51a_kirchensteuer) verankert — der Ring rechnet Person-B-Konfession nicht mit; reines
     # Deklarations-Stammdatum, kein Steuerungs-Slot.
-    # ACHTUNG Kopplung (gemessen, reports/adjudikation/checkest_feldkopplungen_2026-08-09.md):
-    # dieselbe Kollision wie bei kist_konfession — jeder Code außer "11" verlangt zusätzlich
-    # Lohnsteuer/Kirchensteuer auf Anlage N (Person B), E0200301-Ausschluss
-    # (bindung_p36_abschlusszahlung.yaml:24) kollidiert. Julius-Entscheidung offen; "keine" bleibt sauber.
+    # GELOEST 2026-08-10 (Julius-Entscheidung, war offene Kopplung): jeder Code außer "11" verlangt
+    # zusätzlich Lohnsteuer (E0200301) UND Kirchensteuer (E0200501) auf Anlage N Person B —
+    # p36_lohnsteuer_partner + kirchensteuer_arbeitgeber_partner unten decken das ab.
+
+  # ========================= Steuerklasse/Lohnsteuer/Kirchensteuer Person B (Anlage N) =========
+  # Wie kist_konfession_partner: reine Deklarations-Stammdaten, kein Ring-Input (kein Catala-Slot).
+  # PARTNER_INSTANZ in est_mapping.py routet auf DIESELBEN Person-A-Kz (kein eigenes Ehegatte-Kz).
+  - feld_id: steuerklasse_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: enum
+    enum_werte: ["1", "2", "3", "4", "5", "6"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Steuerklasse hat dein Ehe-/Lebenspartner (steht auf seiner/ihrer Lohnsteuerbescheinigung)?"
+    hilfe_kurz: "Steuerklasse I bis VI des Ehe-/Lebenspartners, unter Nummer 1 der Lohnsteuerbescheinigung."
+    beispielwert: "1"
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 1"]
+    elster_kz: null
+    elster_kz_grund: "Anlage-N-Instanz B (Person-Multiplikation): derselbe Kz E0200002 wie Person A, zweites Sub-Dokument — kein distinktes Partner-Kz. PARTNER_INSTANZ (est_mapping.py) routet den Wert in den person_b-Bucket."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 38b Abs. 1 EStG"
+      zitatanker: "Für die Durchführung des Lohnsteuerabzugs werden Arbeitnehmer in Steuerklassen eingereiht."
+      datei: "sources/gesetze-im-internet/estg_p38b_2026-08-10.txt"
+
+  - feld_id: p36_lohnsteuer_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Lohnsteuer wurde im Jahr vom Arbeitgeber deines Ehe-/Lebenspartners einbehalten und abgeführt?"
+    hilfe_kurz: "Steht auf der Lohnsteuerbescheinigung des Partners (Nr. 4)."
+    beispielwert: 800000
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 4"]
+    elster_kz: null
+    elster_kz_grund: "Anlage-N-Instanz B (Person-Multiplikation): derselbe Kz E0200301 wie Person A, zweites Sub-Dokument — PARTNER_INSTANZ (est_mapping.py) routet den Wert in den person_b-Bucket. Spiegel von p36_lohnsteuer (bindung_p36_abschlusszahlung.yaml): gleiche Julius-Entscheidung 2026-08-10 (echte Deklaration statt 0,00), aber HIER ohne Ring-Slot — der § 36-Anrechnungs-Ring rechnet nur EINE Scheiben-ESt, keine Person-B-Variante von p36_2_anrechnung. Reines Anlage-N-Deklarationsfeld fuer Person B."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 36 Abs. 2 S. 1 Nr. 2 EStG (durch Steuerabzug erhobene Einkommensteuer)"
+      zitatanker: "die durch Steuerabzug erhobene Einkommensteuer"
+      datei: sources/gesetze-im-internet/estg_p36_2026-07-11.txt
+
+  - feld_id: kirchensteuer_arbeitgeber_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: cent
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Kirchensteuer wurde im Jahr vom Arbeitgeber deines Ehe-/Lebenspartners einbehalten (nur falls kirchensteuerpflichtig)?"
+    hilfe_kurz: "Steht auf der Lohnsteuerbescheinigung des Partners, falls dort Kirchensteuer abgeführt wurde. Bei konfessionslos: 0."
+    beispielwert: 0
+    herkunft_slots: ["Lohnsteuerbescheinigung"]
+    elster_kz: null
+    elster_kz_grund: "Anlage-N-Instanz B (Person-Multiplikation): derselbe Kz E0200501 wie Person A, zweites Sub-Dokument — PARTNER_INSTANZ (est_mapping.py) routet den Wert in den person_b-Bucket. Paar-Zwang (gemessen reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md:279-290): sobald kist_konfession_partner ≠ \"keine\" ist, verlangt checkESt E0200301 UND E0200501 fuer Person B zusammen — koppelt strikt PRO PERSON (unabhaengig von Person A's Konfession)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 51a EStG i.V.m. Landes-KiStG (Kirchensteuer als Zuschlag der Mitglieder steuererhebender Religionsgemeinschaften)"
+      zitatanker: "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer"
+      datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
 
 luecken:
   # -- §24a Altersentlastungsbetrag: Bemessungs-Inputs + Kohorten-Parameter (gesamt-Kontext, §24a gesamt-only) --
