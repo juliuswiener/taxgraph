@@ -1020,8 +1020,54 @@ bindungen:
       quelle: "§ 150 Abs. 2 AO"
       zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
       datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
-    # IBAN/BIC-Erfassung bewusst NICHT gebaut (Mindestumfang-Entscheidung): nur das Sonderfeld
-    # "keine Bankverbindung vorhanden". Julius-Entscheidung offen, falls echte Erstattungskonten nötig.
+    # IBAN/BIC jetzt gebaut (Julius-Entscheidung 2026-08-10, Bankverbindungs-Baustein) —
+    # s. stammdaten_iban/stammdaten_bic unten + est_mapping.deklariere() Exklusivitäts-Block.
+
+  - feld_id: stammdaten_iban
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_iban}
+    typ: text
+    einheit: null
+    askable: true
+    fragetext_laie: "Wie lautet die IBAN des Kontos für eine mögliche Erstattung?"
+    hilfe_kurz: "Nur ausfüllen, wenn du NICHT 'keine Bankverbindung vorhanden' erklärst — genau eines von beidem gilt. Leerzeichen sind egal, werden automatisch entfernt."
+    beispielwert: "DE02120300000000202051"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz hängt vom IBAN-Länderpräfix ab (E0102102 inländisch / E0102603 ausländisch, beide String_MinL5_MaxL34_Musterm188614856_CType, E10-2025.xsd) — est_mapping.deklariere() routet über den Wert selbst (Präfix 'DE' = inländisch), kein statisches 1:1-Kz."
+    kz_status: endgueltig
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # Exklusiv zu stammdaten_keine_bankverbindung: fail-closed in est_mapping.deklariere() (post-loop
+    # Bankverbindungs-Block) — genau eines von beidem darf im XML stehen (gemessen, checkESt lehnt
+    # sowohl Gleichzeitigkeit als auch Schweigen mit rc=610001002 ab). Kontoinhaber (E0101601) wird
+    # bei bestätigter IBAN automatisch mitgesetzt (kein eigenes Interview-Feld, Schein-Wahlrecht wie
+    # Art_Erkl/E0100001 — wer die eigene IBAN einträgt, IST der Kontoinhaber; E0102402/E0101602
+    # [Kontoinhaber Person B / Abtretungs-Name] bewusst NICHT gebaut, s. Person-B-Messung). Format-
+    # (XSD-Muster) und Prüfziffer-Validierung (ISO 13616, Modulo 97) sitzt ebenfalls in
+    # est_mapping.deklariere(), analog zur Steuernummer-Formatprüfung in elster_xml.py
+    # (_STNR_PATTERN) — fail-closed, PII bleibt aus jeder Fehlermeldung.
+
+  - feld_id: stammdaten_bic
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_bic}
+    typ: text
+    einheit: null
+    askable: true
+    fragetext_laie: "Wie lautet der BIC deiner Bank (nur bei einer ausländischen Bankverbindung)?"
+    hilfe_kurz: "Nur nötig, wenn deine IBAN NICHT mit 'DE' beginnt (ausländisches Geldinstitut). Bei einer deutschen IBAN leer lassen."
+    beispielwert: "PBNKDEFF370"
+    herkunft_slots: null
+    elster_kz: E0102201
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # BIC bei Auslands-IBAN gemessen (checkESt, 2026-08-10, scripts/measure_bankverbindung.py) —
+    # KEIN Pflichtfeld (rc=0 auch ganz ohne BIC). checkESt prüft nur, WENN ein BIC mitkommt, ob er
+    # zur IBAN passt (Stellen 5-6 = Ländercode). S. est_mapping.deklariere() Bankverbindungs-Block.
 
   - feld_id: stammdaten_art_est_erklaerung
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_art_est_erklaerung}

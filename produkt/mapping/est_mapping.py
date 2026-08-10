@@ -99,6 +99,13 @@ DOKUMENTIERT_AGGREGAT = {
 # ausschliesslich Einkommensteuererklaerungen. Test-Gate (test_deklarations_abdeckung.py)
 # zaehlt diese als erlaubt, nicht als Phantom-Kz.
 KONSTANTE_KZ = frozenset({"E0100001"})
+# Klasse j — Wert-Praefix-Routing: stammdaten_iban hat elster_kz=null in der Bindung, weil das
+# Ziel-Kz vom eigenen Wert (Laenderpraefix) abhaengt statt von einem zweiten Art-Feld (s. Kommentar
+# bei _IBAN_PATTERN unten). E0101601 (Kontoinhaber) ist der davon auto-abgeleitete Kz — Schein-
+# Wahlrecht wie E0100001, aber NICHT unconditional (nur gesetzt, wenn IBAN bestaetigt ist), deshalb
+# eigene Konstante statt KONSTANTE_KZ. Test-Gate (test_deklarations_abdeckung.py) braucht diese
+# Liste, um die drei Kz nicht als Phantom-Kz zu werten.
+IBAN_TRANSFORM_ZIEL_KZ = frozenset({"E0102102", "E0102603", "E0101601"})
 # Klasse d — Negation: Store-Feld -> EfA-Kz (invertiert; Vordruck kodiert die schädliche Haushaltsgem.).
 NEGATION = {"fam_alleinstehend": "E0503701"}
 # Klasse e — Multiplikation: Zähl-Feld -> N Anlage-Kind-Instanzen (MVP: nur die ANZAHL).
@@ -236,6 +243,24 @@ WERTEKODIERUNG = {
     "kist_konfession_partner": {"kz": "E0101002", "code": {
         "keine": "11", "evangelisch": "02", "roemisch-katholisch": "03"}},
 }
+
+# Bankverbindung (Klasse j — Wert-Verzweigung ohne separates Art-Feld): stammdaten_iban traegt sowohl
+# inlaendische als auch auslaendische IBAN; das Kz haengt vom Laenderpraefix des Werts selbst ab
+# (E0102102 "DE..." / E0102603 sonst), nicht von einem zweiten Interview-Feld -- eine Auslands-
+# Checkbox waere eine zweite Repraesentation derselben Tatsache (naht-blindstelle-zwei-repraesentationen).
+# Format laut Schema (String_MinL5_MaxL34_Musterm188614856_CType, E10-2025.xsd, beide Kz teilen den
+# Typ): 2 Buchstaben Laendercode + 2 Pruefziffern + 1-30 alphanumerische Zeichen.
+_IBAN_PATTERN = re.compile(r"^[A-Z]{2}[0-9]{2}[0-9A-Z]{1,30}$")
+
+
+def _iban_pruefziffer_gueltig(iban: str) -> bool:
+    """ISO 13616 Pruefziffer (Modulo 97): die ersten 4 Zeichen ans Ende verschieben, Buchstaben zu
+    Zahlen (A=10..Z=35), das Ergebnis als Dezimalzahl mod 97 -- gueltig genau wenn Rest 1. Rein
+    strukturelle Musterpruefung (_IBAN_PATTERN) faengt das NICHT: eine IBAN mit falscher Pruefziffer
+    ist trotzdem XSD-valide (2 Buchstaben + 2 Ziffern + alphanumerisch), aber amtlich falsch."""
+    umgestellt = iban[4:] + iban[:4]
+    ziffern = "".join(str(int(c, 36)) for c in umgestellt)  # int(c,36): '0'-'9'->0-9, 'A'-'Z'->10-35
+    return int(ziffern) % 97 == 1
 # Klasse INSTANZ — Repeated-Instance (Store-Modell A, Multi-Objekt/Multi-Rente/Per-Kind): ein wiederholbares
 # Anlage-Feld trägt für Instanz 2..N das Suffix __<n> am feld_id (Instanz 1 = die Basis-feld_id ohne Suffix,
 # unverändert deklariert). Das Suffix liegt vollständig in [a-z0-9_] → der Store-feld_id-Pattern
@@ -402,6 +427,20 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             else:
                 nicht_deklariert.append({"feld_id": feld_id,
                                          "grund": f"Wert '{wert}' ohne XSD-Code-Zuordnung ({cfg['kz']})"})
+        elif feld_id == "stammdaten_iban":                        # Klasse j (Format+Pruefziffer, Wert-Verzweigung)
+            iban_norm = re.sub(r"\s+", "", str(wert)).upper()
+            if not _IBAN_PATTERN.match(iban_norm):
+                unvollstaendig.append({"feld_id": feld_id,
+                                       "grund": "IBAN entspricht nicht dem amtlichen Muster (2 Buchstaben "
+                                       "Laendercode + 2 Pruefziffern + 1-30 alphanumerische Zeichen, "
+                                       "String_MinL5_MaxL34_Musterm188614856_CType, E10-2025.xsd) -- "
+                                       "Wert nicht geloggt."})
+            elif not _iban_pruefziffer_gueltig(iban_norm):
+                unvollstaendig.append({"feld_id": feld_id,
+                                       "grund": "IBAN-Pruefziffer (ISO 13616, Modulo 97) ungueltig -- "
+                                       "Wert nicht geloggt."})
+            else:
+                deklaration["E0102102" if iban_norm[:2] == "DE" else "E0102603"] = iban_norm
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)
             deklaration[b["elster_kz"]] = _cent_nach_kz(wert, b["elster_kz"]) if b.get("typ") == "cent" else wert
         elif feld_id in P23_BETRAGSFELDER:                  # Klasse h — §23 Instanz-1-Rohdaten: in p23_veraeusserung sammeln
@@ -416,6 +455,36 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
     if snapshot and getroffen == 0:
         raise ValueError("kein Eingabe-Feld in der Bindungstabelle gefunden — vermutlich falsche "
                          "Eingabe-Ebene/-Struktur; deklariere() liefert kein stilles Leer-Ergebnis.")
+
+    # Bankverbindung: Exklusivitaets-Weiche (Julius-Entscheidung 2026-08-10, Bankverbindungs-Baustein).
+    # Gemessen (checkESt, ERiC 44.2.4.0): IBAN UND "keine Bankverbindung" gleichzeitig -> rc=610001002
+    # (Widerspruch). Beide Checks hier feuern NUR, wenn die betroffenen Kz tatsaechlich BESTAETIGT
+    # in der Deklaration stehen (absence-safe, wie der Rest von deklariere() -- ein Snapshot, der
+    # Bankverbindung gar nicht anfasst, bleibt unberuehrt). Der Fall "WEDER NOCH bestaetigt" ist KEIN
+    # Fall fuer deklariere(): das waere ein unconditional Check, der jeden Snapshot ohne Bankverbindungs-
+    # Bezug (z.B. reine Instanz-Mechanik-Tests) unvollstaendig machen wuerde -- deklariere() markiert nur
+    # ANWESENDE, aber fehlerhafte/widerspruechliche Werte. Die "kein Schweigen"-Pflicht sitzt deshalb auf
+    # dem echten Abgabe-Pfad in elster_xml.erzeuge_xml() (abgabefaehig=True), symmetrisch zum dortigen
+    # Absender-Pflichtfelder-Gate.
+    _bv_iban_kz = "E0102102" in deklaration or "E0102603" in deklaration
+    _bv_keine = deklaration.get("E0102002") is True
+    if _bv_iban_kz and _bv_keine:
+        unvollstaendig.append({"feld_id": "stammdaten_iban",
+                               "grund": "IBAN UND 'keine Bankverbindung' gleichzeitig bestaetigt -- "
+                               "checkESt lehnt den Widerspruch ab (rc=610001002). Genau eines von "
+                               "beidem darf gelten."})
+    elif _bv_iban_kz:
+        # Kontoinhaber (E0101601, Ja/X): auto-abgeleitet, kein eigenes Interview-Feld -- wer die eigene
+        # IBAN eintraegt, IST der Kontoinhaber (Schein-Wahlrecht wie E0100001/Art_Erkl). Gemessen: IBAN
+        # ohne Kontoinhaber lehnt checkESt ab ("Bei den Bankverbindungsdaten fehlt die Angabe des
+        # Kontoinhabers").
+        deklaration["E0101601"] = True
+        # BIC bei Auslands-IBAN: gemessen (checkESt, ERiC 44.2.4.0, scripts/measure_bankverbindung.py) --
+        # KEIN Pflichtfeld (rc=0 auch ganz ohne E0102201). checkESt prueft nur, WENN ein BIC mitkommt,
+        # ob er zur IBAN passt (Stellen 5-6 = ISO-Laendercode; ein "DE"-BIC zu einer Nicht-DE-IBAN
+        # -> rc=610001002 "der jedoch an den Stellen 5 und 6 'DE' enthaelt"). Eine eigene BIC-Laender-
+        # Konsistenzpruefung baut dieser Baustein bewusst NICHT nach -- checkESt faengt das bereits
+        # amtlich, und stammdaten_bic ist ein optionales Feld ohne eigene Geltungsbedingung.
 
     # Option A: KAP-Nulldeklaration unterdruecken (s. KAP_FELDER_A/_KAP_NULL_GRUND oben).
     # ATOMAR ueber beide Personen (gemessen 2026-08-10): unterdrueckt man nur Person A, waehrend

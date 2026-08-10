@@ -278,7 +278,8 @@ abgabe:
 
   - id: relevanz-nicht-bool-gate
     titel: "34 von 74 askable-Feldern koennen ihre Regel strukturell nie ausschliessen"
-    status: analysiert
+    status: erledigt
+    erledigt_in: "f886768 (2026-08-10)"
     entdeckt: "2026-08-09, als Nebenbefund der Dialog-Luecken-Messung"
     bericht: reports/adjudikation/dialog_luecke_abgabe_2026-08-09.md
     richtung: "Ueberangebot im Dialog — kein Geldfehler, aber falsche Fragen"
@@ -316,6 +317,27 @@ abgabe:
       das ist aber ein Eingriff in die Relevanzpropagation und braucht eine eigene
       Messung des Blast-Radius. Zuerst: lohnt es sich? Ein Ueberangebot im Dialog ist
       laestig, kein Rechenfehler.
+    fix: |
+      2026-08-10, scharf gemessen statt geschaetzt. Von den 5 strukturell gefangenen Regeln
+      hat NUR p2_festzusetzung_zusammen eine echte Ob-Bedingung (die anderen 4 sind
+      Rechen-Weichen, unangetastet). Statt relevanz() typ-abhaengig zu erweitern (Blast-Radius
+      auf ALLE Regeln), neuer regel-weiter Mechanismus additiv zum Schema: `regel_bedingungen[]`
+      (schema.json $defs/regel_bedingung: {regel_id, feld, wert, grund}) in eigener Datei
+      `bindung_regel_bedingungen.yaml`, ausgewertet in relevanz() VOR dem alten Gate-Loop
+      (produkt/traverser/traverser.py, lade_regel_bedingungen()). `feld` muss kein eigenes
+      Feld der Regel sein — das war der Blocker, relevanz() iterierte nur Bindungen der
+      eigenen rid. Fail-closed erhalten: unbeantwortet/vorlaeufig schliesst NICHT aus.
+
+      Ein Eintrag: p2_festzusetzung_zusammen ← veranlagung == "zusammen" (§ 26 Abs. 2 S. 2
+      EStG, Anker verifiziert). Gemessen (naechste_fragen, Store leer vs. veranlagung
+      bestaetigt): 34 Partner-Felder fallen bei veranlagung=einzel weg, 0 bei zusammen
+      (Kontrolle: kein Overshoot). Gegenprobe ohne den Fix (lade_regel_bedingungen
+      gemonkeypatcht auf leer): 0 Felder fallen weg — Bug reproduziert, Fix nicht vakuos.
+
+      5 neue Tests (test_traverser.py): ausgeschlossen bei einzel, bleibt relevant bei
+      zusammen, faengt nicht bei unbeantwortet, faengt nicht bei vorlaeufig, Mutations-
+      Gegenprobe. Vollsuite +5 gruen, keine Regression (Abgabeachse rc=0 auf allen vier
+      Ratschen: RESTFEHLER_EINZEL/ZUSAMMEN/ENDPUNKT_EINZEL = 0).
 
   - id: vz-matrix
     titel: "Welcher Veranlagungszeitraum ist der Zielfall? Produkt kann 2026, ERiC nicht"
@@ -980,7 +1002,38 @@ struktur:
 
   - id: audit-jsonl-altlast
     titel: "audit.jsonl ist wieder 582 MB — der Schreibpfad ist zu, die Altlast liegt"
-    status: offen
+    status: erledigt
+    erledigt_in: "2026-08-10 (Betriebsmassnahme, kein Commit — Verzeichnis ist gitignored)"
+    erledigt_wie: |
+      Julius' Freigabe 2026-08-10. NICHT geloescht, sondern getrennt und archiviert —
+      an einem Audit-Log ist Loeschen unwiderruflich, also der reversible Weg:
+
+        1. Vollstaendiges gzip-Archiv angelegt und VERIFIZIERT, bevor irgendetwas
+           angefasst wurde: audit.jsonl.bis-2026-08-10.gz, 28 MB.
+           Zeilenzahl Original 4.689.851 == Archiv 4.689.851.
+        2. Aktives Log auf die Eintraege mit Auditwert reduziert (atomar per tmp+mv).
+        3. Ergebnis: 582 MB -> 648 KB, 4.133 Zeilen.
+
+      Vor dem Eingriff gemessen, weil es die Entscheidung traegt:
+        PII:   400.000 Zeilen auf IBAN / Steuernummer / Geburtsdatum geprueft -> 0 Treffer.
+               Struktur ist action/detail/fall_id/ts/user_id, kein Klartext-Sachverhalt.
+        Wert:  4.685.718 von 4.689.851 Eintraegen tragen user_id="dev" (99,91 %) — das ist
+               Entwicklungs- und Testlauf-Rauschen, kein Nutzerhandeln. Behalten wurden
+               alle Nicht-dev-Eintraege (test, testuser, unbekannt, user1, user2, alice)
+               sowie jede unparsbare Zeile, die NIE weggeworfen wird.
+
+      Nachgemessen: test_audit 17 passed, Abgabeachse unveraendert (10 passed, rc=0).
+      Zuwachs durch einen kompletten Testlauf: 0 Bytes — das in 657b19d reparierte Gate
+      haelt, die Ursache ist zu und nicht nur das Symptom beseitigt.
+    rueckweg: |
+      gzip -dc produkt/haut/faelle/audit.jsonl.bis-2026-08-10.gz
+      stellt den vollstaendigen Vorzustand wieder her. Das Archiv liegt im gitignoreten
+      faelle/-Verzeichnis und wird nicht mitversioniert.
+    offen_geblieben: |
+      Eine automatische Rotation gibt es weiterhin NICHT. Solange das Gate haelt, waechst
+      das Log nur durch echtes Nutzerhandeln, und das ist gewollt. Eine Retention-Regel
+      waere erst noetig, wenn es echte Nutzer in Zahl gibt — dann aber als bewusste
+      Aufbewahrungsentscheidung, nicht als Aufraeumautomatik an einem Audit-Log.
     entdeckt: "2026-08-09"
     richtung: "kein Geldfehler — Betriebslast und ein Gate, das im Parallelbetrieb falsch anschlaegt"
     messung: |

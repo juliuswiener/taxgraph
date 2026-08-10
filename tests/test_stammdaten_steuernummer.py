@@ -36,8 +36,11 @@ import api_constants as AC   # noqa: E402
 HID = "74931"                # ERiC-Test-Hersteller-ID aus dem amtlichen Beispiel-XML
 
 _STNR = "9181081508155"      # amtliches Beispiel, Praefix = Finanzamtsnummer 9181
+# E0102002 (keine Bankverbindung): seit dem Bankverbindungs-Baustein (2026-08-10) verlangt
+# abgabefaehig=True zusaetzlich eine Bankverbindungs-Entscheidung (s. elster_xml.erzeuge_xml());
+# hier dabei, damit diese Tests weiter isoliert nur die Steuernummer-Ableitung pruefen.
 _STAMM_KZ = dict(E0100201="Maier", E0100301="Hans", E0101104="Musterstr.",
-                 E0101206="55", E0100601="55555", E0100602="Musterort")
+                 E0101206="55", E0100601="55555", E0100602="Musterort", E0102002=True)
 
 
 def _dekl(**kz) -> dict:

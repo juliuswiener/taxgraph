@@ -240,7 +240,7 @@ def test_ohne_abgabefaehig_gibt_es_keinen_vorsatz_block():
 
 
 def test_abgabefaehig_haengt_vorsatz_mit_allen_pflichtfeldern_an():
-    xml = EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID,
+    xml = EX.erzeuge_xml(_dekl(E0100201="Maier", E0102002=True), vz=2025, hersteller_id=HID,
                          abgabefaehig=True, **ABSENDER)
     for tag, wert in [("Unterfallart", "10"), ("Vorgang", "01"),
                       ("StNr", "9181081508155"), ("Zeitraum", "2025"),
@@ -259,7 +259,7 @@ def test_vorsatz_kinder_in_schema_reihenfolge():
     `<Vorgang>` kommt zweimal vor (auch im TransferHeader) — deshalb erst auf den Vorsatz-
     Teilstring einschraenken, sonst misst man versehentlich den falschen Treffer.
     """
-    xml = EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID,
+    xml = EX.erzeuge_xml(_dekl(E0100201="Maier", E0102002=True), vz=2025, hersteller_id=HID,
                          abgabefaehig=True, **ABSENDER)
     vorsatz = xml[xml.index("<Vorsatz>"):xml.index("</Vorsatz>")]
     reihenfolge = ["Unterfallart", "Vorgang", "StNr", "Zeitraum", "AbsName", "AbsStr",
@@ -270,7 +270,7 @@ def test_vorsatz_kinder_in_schema_reihenfolge():
 
 def test_vorsatz_ist_das_letzte_kind_von_e10():
     """Laut Schema (E10-2025.xsd:8403) das letzte E10-Kind — muss NACH allen Kz-Containern stehen."""
-    xml = EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID,
+    xml = EX.erzeuge_xml(_dekl(E0100201="Maier", E0102002=True), vz=2025, hersteller_id=HID,
                          abgabefaehig=True, **ABSENDER)
     assert xml.index("<ESt1A>") < xml.index("<Vorsatz>")
     assert xml.index("</Vorsatz>") < xml.index("</E10>")
@@ -279,12 +279,14 @@ def test_vorsatz_ist_das_letzte_kind_von_e10():
 def test_abgabefaehig_ohne_absender_ist_fail_closed():
     """Crash statt stiller Null — die 9 Absender-Fehler sollen nie unbemerkt zurueckkehren."""
     with pytest.raises(EX.XmlFehler, match="Absender-Stammdaten"):
-        EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID, abgabefaehig=True)
+        EX.erzeuge_xml(_dekl(E0100201="Maier", E0102002=True), vz=2025, hersteller_id=HID,
+                       abgabefaehig=True)
 
 
 def test_abgabefaehig_nennt_jedes_fehlende_absender_feld():
     with pytest.raises(EX.XmlFehler, match="absender_ort"):
-        EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID, abgabefaehig=True,
+        EX.erzeuge_xml(_dekl(E0100201="Maier", E0102002=True), vz=2025, hersteller_id=HID,
+                       abgabefaehig=True,
                        absender_name="Maier Hans", absender_strasse="Musterstr. 55",
                        absender_plz="55555", absender_steuernummer="9181081508155")
 
@@ -294,14 +296,14 @@ def test_steuernummer_praefix_muss_zur_finanzamtsnummer_passen():
     durch 0, sondern durch 2 andere ('Bundesfinanzamtsnummer ... unterscheiden sich')."""
     absender = dict(ABSENDER, absender_steuernummer="1234081508155")  # Praefix != "9181"
     with pytest.raises(EX.XmlFehler, match="Finanzamtsnummer"):
-        EX.erzeuge_xml(_dekl(E0100201="Maier"), vz=2025, hersteller_id=HID,
+        EX.erzeuge_xml(_dekl(E0100201="Maier", E0102002=True), vz=2025, hersteller_id=HID,
                        empfaenger_finanzamt="9181", abgabefaehig=True, **absender)
 
 
 @braucht_xsd
 def test_abgabefaehiges_xml_ist_xsd_valide(tmp_path):
     pfad = _schreibe(tmp_path, _dekl(E0100201="Maier", E0100301="Hans",
-                                     E0100401="05.05.1955"),
+                                     E0100401="05.05.1955", E0102002=True),
                      abgabefaehig=True, **ABSENDER)
     ok, meldung = VX.validate(pfad, "2025")
     assert ok, meldung
@@ -318,8 +320,11 @@ def test_abgabefaehiges_xml_ist_xsd_valide(tmp_path):
 # leitet erzeuge_xml() sie aus `stammdaten_steuernummer` ab (s. _leite_steuernummer_ab() in
 # produkt/import/elster_xml.py) — eigene Tests dafuer in tests/test_stammdaten_steuernummer.py.
 
+# E0102002 (keine Bankverbindung): seit dem Bankverbindungs-Baustein (2026-08-10) verlangt
+# abgabefaehig=True zusaetzlich eine Bankverbindungs-Entscheidung (s. erzeuge_xml()); hier dabei,
+# damit diese Tests weiter isoliert nur die Absender-Ableitung pruefen.
 _STAMM_KZ = dict(E0100201="Maier", E0100301="Hans", E0101104="Musterstr.",
-                 E0101206="55", E0100601="55555", E0100602="Musterort")
+                 E0101206="55", E0100601="55555", E0100602="Musterort", E0102002=True)
 
 
 def test_absender_wird_aus_deklaration_abgeleitet():

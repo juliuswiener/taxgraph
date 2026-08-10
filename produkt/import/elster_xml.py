@@ -544,6 +544,22 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                         instanz={container: inst_idx_0}, kz_meta=kz_meta)
 
     if abgabefaehig:
+        # Bankverbindung: "kein Schweigen" ist NUR auf dem echten Abgabe-Pfad Pflicht (nicht in
+        # deklariere() selbst -- ein unconditional Check dort wuerde jeden Snapshot ohne
+        # Bankverbindungs-Bezug unvollstaendig machen, s. Kommentar in est_mapping.py). Gemessen
+        # (checkESt, ERiC 44.2.4.0): weder IBAN (E0102102/E0102603) noch "keine Bankverbindung"
+        # (E0102002) bestaetigt -> rc=610001002 ("Bitte geben Sie Ihre Bankverbindungsdaten an
+        # oder erklaeren Sie in dem vorgesehenen Sonderfeld, dass keine Bankverbindung vorhanden
+        # ist"). Kein stiller Default (der bisherige Zustand -- das Produkt erklaerte "keine
+        # Bankverbindung" UNGEFRAGT fuer jeden Nutzer).
+        if not (deklaration.get("E0102002") is True
+                or "E0102102" in deklaration or "E0102603" in deklaration):
+            raise XmlFehler(
+                "abgabefaehig=True verlangt eine Bankverbindungs-Entscheidung: weder IBAN "
+                "(stammdaten_iban) noch 'keine Bankverbindung vorhanden' "
+                "(stammdaten_keine_bankverbindung) ist bestaetigt. checkESt akzeptiert kein "
+                "Schweigen (rc=610001002).")
+
         # Ableitung ist der Normalfall (dieselben Angaben stehen als Kz im Hauptvordruck bzw.
         # — bei der Steuernummer, die kein Kz hat — im Store-Snapshot) — ein expliziter
         # Parameter (z.B. aus Tests) hat Vorrang und wird nie überschrieben.

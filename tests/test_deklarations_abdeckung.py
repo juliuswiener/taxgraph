@@ -57,20 +57,23 @@ def _transform_quellen() -> set:
     # Klasse f: Wert-Felder (VERZWEIGUNG-Keys) + Art-Felder; Klasse g: die _partner-Felder;
     # Klasse g×f: PARTNER_VERZWEIGUNG-Wert-Felder + deren Partner-Art-Felder (Renten Person-B).
     # Klasse h: §23 per-Instanz-Gewinnberechnung (verschwinden aus nicht_deklariert).
+    # Klasse j: stammdaten_iban (Wert-Praefix-Routing, kein Art-Feld — s. IBAN_TRANSFORM_ZIEL_KZ).
     verzweigung = set(EM.VERZWEIGUNG) | {cfg["art_feld"] for cfg in EM.VERZWEIGUNG.values()}
     partner_verzweigung = (set(EM.PARTNER_VERZWEIGUNG)
                            | {cfg["art_feld"] for cfg in EM.PARTNER_VERZWEIGUNG.values()})
     return (set(EM.NEGATION) | set(EM.MULTIPLIKATION) | EM._aggregation_quellen()
             | verzweigung | set(EM.PARTNER_INSTANZ) | partner_verzweigung
-            | EM.P23_BETRAGSFELDER)
+            | EM.P23_BETRAGSFELDER | {"stammdaten_iban"})
 
 
 def _erlaubte_kz(merged: dict) -> set:
-    """1:1-Kz aus der Bindung + Transform-Ziel-Kz (Negation + Verzweigung), die deklariert werden dürfen.
-    Die Person-B-Instanz-Kz (Klasse g) sind KEINE neuen Kz — sie sind identisch mit den Person-A-1:1-Kz
-    und erscheinen im person_b-Bucket, nicht in der Haupt-Deklaration (kein Kollisions-/Phantom-Fall)."""
+    """1:1-Kz aus der Bindung + Transform-Ziel-Kz (Negation + Verzweigung + IBAN-Routing), die
+    deklariert werden dürfen. Die Person-B-Instanz-Kz (Klasse g) sind KEINE neuen Kz — sie sind
+    identisch mit den Person-A-1:1-Kz und erscheinen im person_b-Bucket, nicht in der Haupt-
+    Deklaration (kein Kollisions-/Phantom-Fall)."""
     return ({b["elster_kz"] for b in merged.values() if b.get("elster_kz")}
-            | set(EM.NEGATION.values()) | _verzweigung_ziel_kz() | EM.KONSTANTE_KZ)
+            | set(EM.NEGATION.values()) | _verzweigung_ziel_kz() | EM.KONSTANTE_KZ
+            | EM.IBAN_TRANSFORM_ZIEL_KZ)
 
 
 # ---- Assertion 5: globale feld_id-Eindeutigkeit ------------------------------
