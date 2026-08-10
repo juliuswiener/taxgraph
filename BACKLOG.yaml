@@ -548,7 +548,36 @@ abgabe:
 
   - id: testversand
     titel: "Testversand gegen die ELSTER-Testumgebung (Roadmap M4.4)"
-    status: blockiert
+    status: teil_erledigt
+    vorbereitet_in: "a1e8e0f (2026-08-10)"
+    vorbereitet_wie: |
+      Der Sendepfad ist gebaut, aber NIE ausgeloest worden — kein einziger ERiC-Sendeaufruf,
+      auch nicht testweise. elster/versand.py als eigenstaendiges Modul, checkest_gate.py
+      unangetastet. 19 Tests, ERiC vollstaendig gemockt.
+
+      Kein versehentlicher Sendeweg (von main nachgeprueft, alle Zaehler 0): kein Import in
+      produkt/, kein Makefile-Target, KEINE HTTP-Route, nicht in Fixtures. ERIC_SENDE wird
+      an genau EINER Stelle im Repo gesetzt (versand.py:226). Eine /versenden-Route wurde
+      bewusst NICHT gebaut — sie haette einen ueber HTTP erreichbaren Sendepfad geschaffen.
+
+      Drei unabhaengige Sperren, jede fail-closed VOR jedem ERiC-Aufruf:
+        1. Echtversand verlangt die woertliche Phrase ECHTVERSAND_FREIGABE — kein Bool,
+           kein Default.
+        2. versand.py liest das XML SELBST und prueft den Testmerker gegen den behaupteten
+           Modus. Es vertraut weder dem Aufrufer noch dem Writer.
+        3. CLI verlangt zusaetzlich eine interaktiv getippte Zweitbestaetigung (nicht aus
+           der History kopierbar).
+      Von main unabhaengig mutationsgeprueft: Sperre 1 ausgebaut -> 2 Tests rot, zurueck ->
+      19 gruen, git diff leer.
+
+      Ohne Zertifikat bricht es dreistufig ab (kein Pfad / Datei fehlt / keine PIN), jeweils
+      BEVOR ERiC kontaktiert wird; ein Test belegt das ueber fake.calls == [].
+      Anleitung: elster/VERSAND.md.
+    blockade_rest: |
+      Nur noch das Zertifikat + PIN (Julius, 2026-08-10 nachmittags). Der Versand selbst
+      bleibt eine ausgehende Aktion und wird ausschliesslich von Julius ausgeloest —
+      Testmerker 700000004 heisst amtlich: in der Clearingstelle aussortiert und verworfen,
+      keine Verarbeitung im Finanzamt.
     blockade: "setzt rc==0 auf dem echten Fall voraus (alle Punkte dieser Sektion)"
     hinweis: |
       Erst wenn checkESt rc=0 meldet, ist ein Versand ueberhaupt sinnvoll. Versand
