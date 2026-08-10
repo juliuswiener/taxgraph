@@ -392,6 +392,48 @@ abgabe:
       der heutige Zustand (nur Summe) ist gar nicht einreichbar. Die drei bestehenden
       askable-Felder werden damit zu berechneten Feldern, ihr fragetext_laie entfaellt.
 
+  - id: rentner-solz-kap-st-tracking
+    titel: "rentner-Ring: SolZ rechnet ohne die § 32d-Kapitalsteuer (kap_st wird nie getrackt)"
+    status: offen
+    richtung: "unklar, beide Effekte gegenlaeufig — muss gemessen werden"
+    entdeckt: |
+      2026-08-10 von p33b-2b beim KAP-Stufe-3-Bau gemeldet ("rentner-Ring-SolZ-kap_st-
+      Tracking-Gap, MUTATION-Marker in api.py"), von team-lead nachgemessen. Der Marker
+      stammt aus Commit 556c28f (2026-07-31) — eine Mutationsprobe wurde committet und nie
+      zurueckgesetzt, sie stand 10 Tage im Produktionscode.
+    befund: |
+      Der Marker selbst war FUNKTIONAL FOLGENLOS: `"kapital_steuer": 0` gegen
+      `solz_info_r.get("kap_st", 0)` getauscht laesst alle 17 SolZ/KiSt-Tests gruen, weil
+      solz_info_r["kap_st"] ohnehin nur an einer Stelle gesetzt wird — auf 0 (api.py:1689).
+      Der echte Fehler ist das FEHLENDE TRACKING: dem rentner-Ring fehlt das Gegenstueck zu
+      der gesamt-Ring-Zeile, die den echten Wert traegt (`solz_info["kap_st"] = kap_st_k`,
+      api.py:1282). Der gesamt-Ring hat zwei Setzstellen (1236 fuer "kein Kapital", 1282
+      fuer den echten Wert), der rentner-Ring nur die Null-Stelle.
+    wirkung: |
+      Rentner MIT Kapitalertraegen, § 3 SolzG:
+        Abs. 3 S. 1  die SolZ-Basis muesste um die § 32d-Kapitalsteuer gemindert werden
+                     -> passiert nicht -> Basis zu hoch -> zu viel SolZ (over-tax)
+        Abs. 3 S. 2  der § 32d-Kapital-SolZ (5,5 % ohne Freigrenze) muesste separat addiert
+                     werden -> passiert nicht -> zu wenig SolZ (under-tax)
+      Beide Effekte gegenlaeufig, netto unbestimmt. VOR einem Fix messen, in welche Richtung
+      und wie viel — der Fix ist sonst nicht bewertbar.
+    bereits_erledigt: |
+      2026-08-10: der MUTATION-Marker ist raus, der Zugriff steht jetzt als
+      solz_info_r.get("kap_st", 0) mit erklaerendem Kommentar. Damit rechnet der SolZ
+      automatisch richtig, sobald das Tracking nachgezogen wird — und im Produktionscode
+      steht kein Marker mehr, der wie ein kaputter Zwischenstand aussieht.
+    zu_pruefen: |
+      tests/test_solz_ring.py::test_solz_ring_rentner_grenzfall_mit_kapital ist heute gruen.
+      Entweder deckt er den Fall nicht scharf ab, oder er hat den aktuellen Zustand als
+      Erwartung eingefroren. Vor dem Fix klaeren — sonst faellt er beim Richtigstellen um und
+      es ist unklar, welche Zahl stimmt.
+    lehre: |
+      Eine committete Mutationsprobe ist 10 Tage unbemerkt geblieben, obwohl der Marker im
+      Klartext im Code stand. Gefunden hat sie niemand, der danach suchte, sondern jemand,
+      der zufaellig in derselben Funktion arbeitete. Ein Gate gegen MUTATION/TODO-Marker im
+      committeten Produktionscode waere billig — siehe auch commit-nur-defer-sweep-2026-08-10,
+      dieselbe Klasse.
+
   - id: checkest-blockmatrix
     titel: "Block-Matrix gegen checkESt (Nachfolger der Einzelfeld-Matrix)"
     status: offen

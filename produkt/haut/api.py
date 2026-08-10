@@ -1707,7 +1707,13 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 solz_container[0] = runner.catala_solz({
                     "veranlagungszeitraum": vz,
                     "bemessungsgrundlage": solz_info_r["est_mit_fb"],
-                    "kapital_steuer": 0,  # MUTATION
+                    # Heute IMMER 0 — nicht als Konstante gemeint, sondern weil solz_info_r
+                    # ["kap_st"] nur an einer Stelle gesetzt wird (oben, auf 0) und dem
+                    # rentner-Ring das Gegenstueck zur gesamt-Ring-Zeile fehlt, die den echten
+                    # Wert traegt (`solz_info["kap_st"] = kap_st_k`). Der Zugriff steht hier
+                    # trotzdem als get(), damit der SolZ automatisch richtig rechnet, sobald das
+                    # Tracking nachgezogen wird. BACKLOG rentner-solz-kap-st-tracking.
+                    "kapital_steuer": solz_info_r.get("kap_st", 0),
                     "splitting": rentner_g["veranlagung"] == "zusammen"})
             # KiSt § 51a: Basis = KiFB-fiktive ESt OHNE §32d-Kapital (= est_roh_ohne_kap).
             # §32d-Abgeltung-KiSt ist separater Nachtrag (§32d Abs.1 S.3-5, benannte Lücke).
