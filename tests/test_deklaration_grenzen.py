@@ -173,7 +173,7 @@ def test_gesperrter_fall_einreichen_mit_sperrgrund(base):
         assert st == 201, f"Feld {fld} fehlgeschlagen: {st}"
 
     # Sperrgrund auslösen: Handwerker OHNE Förder-Antwort
-    st, _ = _req(base, "POST", f"/fall/sp1/event", _laie("hh_handwerker_arbeitskosten", 300000))
+    st, _ = _req(base, "POST", f"/fall/sp1/event", _laie("hh_handwerker_betrag", 300000))
     assert st == 201
     st, _ = _req(base, "POST", f"/fall/sp1/event", _laie("hh_in_eu_ewr", True))
     assert st == 201

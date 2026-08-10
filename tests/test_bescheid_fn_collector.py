@@ -119,7 +119,7 @@ GESAMT_KEGEL = [
     ("p35c_sanierungsaufwendungen", 500000), ("p35c_energieberater_aufwendungen", 100000),
     ("p35c_ist_uebernaechstes_foerderjahr", True),
     ("p22_nr3_einkuenfte", 50000),
-    ("hh_minijob_aufwendungen", 50000),
+    ("hh_minijob_betrag", 50000),
     ("realsplitting_unterhaltsleistungen", 100000), ("realsplitting_empfaenger_kv_pv", 0),
     ("realsplitting_zustimmung", True),
     ("dba_staat", "polen"), ("dba_methode", "anrechnung"),

@@ -143,11 +143,11 @@ def test_uebernahme_ausgaben_als_vorschlag(bindung):
     n = KW.uebernehme_kontoauszug(s, tx, bindung, ts=TS)
     assert n == 2
     felder, _ = ST.materialisiere(s)
-    assert felder["hh_handwerker_arbeitskosten"]["wert"] == 48000
-    assert felder["hh_handwerker_arbeitskosten"]["zustand"] == "vorlaeufig"
-    assert felder["hh_handwerker_arbeitskosten"]["herkunft"]["herkunft"] == "kontoauszug"
+    assert felder["hh_handwerker_betrag"]["wert"] == 48000
+    assert felder["hh_handwerker_betrag"]["zustand"] == "vorlaeufig"
+    assert felder["hh_handwerker_betrag"]["herkunft"]["herkunft"] == "kontoauszug"
     assert felder["spenden_betrag"]["wert"] == 20000
-    ev = ST._aktives(s)["hh_handwerker_arbeitskosten"]
+    ev = ST._aktives(s)["hh_handwerker_betrag"]
     assert ev["signal"]["signal_1"]["kategorie"] == "handwerker" and ev["signal"]["signal_2"] is None
 
 

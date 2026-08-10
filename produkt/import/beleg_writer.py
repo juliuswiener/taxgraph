@@ -11,7 +11,7 @@ Nr. 3/22/23") — kein Rate-Match. Confidence (bei OCR aus tesseract --tsv) wand
 aber NIE den Zustand. Unlesbar/nicht gefunden → KEIN geratener Wert, benannte Lücke (Feld bleibt offen).
 
 Stufe 1 = Lohnsteuerbescheinigung (Positions-Anker Nr. N). Stufe 1b = Zuwendungsbestätigung (§ 10b,
-spenden_betrag) + Handwerker-Rechnung (§ 35a, hh_handwerker_arbeitskosten) über einen Label-Anker.
+spenden_betrag) + Handwerker-Rechnung (§ 35a, hh_handwerker_betrag) über einen Label-Anker.
 § 35a-Missbrauchsschutz: nur ein getrennt ausgewiesener Arbeitskosten-Betrag wird extrahiert, sonst
 Lücke (nie Material/Gesamt als Arbeitskosten raten). Dienstleistungen/Minijob, Kontoauszug, LLM-Freitext
 = spätere Stufen (eigener Julius-Cap).

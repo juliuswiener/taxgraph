@@ -166,14 +166,14 @@ def test_extrahiere_spende(bindung):
 def test_extrahiere_handwerker_nur_arbeitskosten(bindung):
     """Nur der getrennt ausgewiesene Arbeitskosten-Anteil (1.200) — NICHT Material (800) / Gesamt (2.000)."""
     k = {x["feld_id"]: x for x in BW.extrahiere(HANDWERKER, bindung)}
-    assert k["hh_handwerker_arbeitskosten"]["wert"] == 120000   # 1.200,00, nicht 800/2000
-    assert k["hh_handwerker_arbeitskosten"]["beleg_typ"] == "handwerker"
+    assert k["hh_handwerker_betrag"]["wert"] == 120000   # 1.200,00, nicht 800/2000
+    assert k["hh_handwerker_betrag"]["beleg_typ"] == "handwerker"
 
 
 def test_neg_handwerker_ohne_split_material_luecke(bindung):
     """§35a-Missbrauchsschutz: Rechnung OHNE getrennte Arbeitskosten -> KEIN Wert (Lücke), nie Gesamt raten."""
     fids = {x["feld_id"] for x in BW.extrahiere(HANDWERKER_OHNE_SPLIT, bindung)}
-    assert "hh_handwerker_arbeitskosten" not in fids            # keine Arbeitskosten-Zeile -> Lücke
+    assert "hh_handwerker_betrag" not in fids            # keine Arbeitskosten-Zeile -> Lücke
 
 
 def test_schreibe_spende_vorlaeufig(bindung):
@@ -192,21 +192,21 @@ def test_schreibe_spende_vorlaeufig(bindung):
 def test_extrahiere_minijob_voll_kein_guard(bindung):
     """Minijob (§35a Abs.1): volle Aufwendungen (reine Lohn-/Haushaltsscheck-Kosten, keine Material-Zeile)."""
     k = {x["feld_id"]: x for x in BW.extrahiere(MINIJOB, bindung)}
-    assert k["hh_minijob_aufwendungen"]["wert"] == 250000        # 2.500,00
-    assert k["hh_minijob_aufwendungen"]["beleg_typ"] == "minijob"
+    assert k["hh_minijob_betrag"]["wert"] == 250000        # 2.500,00
+    assert k["hh_minijob_betrag"]["beleg_typ"] == "minijob"
 
 
 def test_extrahiere_dienstleistung_nur_arbeitskosten(bindung):
     """Dienstleistung (§35a Abs.2): NUR Arbeitskosten (1.000), NICHT Material (200)/Gesamt (1.200)."""
     k = {x["feld_id"]: x for x in BW.extrahiere(DIENSTLEISTUNG, bindung)}
-    assert k["hh_dienstleistungen"]["wert"] == 100000            # 1.000,00, Material-Guard greift
-    assert "hh_handwerker_arbeitskosten" not in k               # Typ-Scoping: NICHT das Handwerker-Feld
+    assert k["hh_dienstleistung_betrag"]["wert"] == 100000            # 1.000,00, Material-Guard greift
+    assert "hh_handwerker_betrag" not in k               # Typ-Scoping: NICHT das Handwerker-Feld
 
 
 def test_typ_scoping_handwerker_nicht_dienstleistung(bindung):
-    """Ein handwerker-Dokument füllt NUR hh_handwerker, nie hh_dienstleistungen (Typ-Scoping)."""
+    """Ein handwerker-Dokument füllt NUR hh_handwerker, nie hh_dienstleistung_betrag (Typ-Scoping)."""
     fids = {x["feld_id"] for x in BW.extrahiere(HANDWERKER, bindung)}
-    assert "hh_handwerker_arbeitskosten" in fids and "hh_dienstleistungen" not in fids
+    assert "hh_handwerker_betrag" in fids and "hh_dienstleistung_betrag" not in fids
 
 
 def test_neg_ambig_rechnung_fail_closed(bindung):
@@ -214,7 +214,7 @@ def test_neg_ambig_rechnung_fail_closed(bindung):
     kand = BW.extrahiere(AMBIG, bindung)
     assert kand == []                                           # kein Feld geraten
     fids = {x["feld_id"] for x in kand}
-    assert "hh_handwerker_arbeitskosten" not in fids and "hh_dienstleistungen" not in fids
+    assert "hh_handwerker_betrag" not in fids and "hh_dienstleistung_betrag" not in fids
 
 
 # ---- (b) fail-closed: Writer schreibt nur vorlaeufig --------------------------

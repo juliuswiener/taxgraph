@@ -32,9 +32,12 @@ import store as ST   # noqa: E402
 # Kategorie -> Ziel-feld_id (NUR MVP-Kategorien mit EXISTIERENDEM Feld; Instructor-Ruling 2026-07-18).
 # Andere Kategorien = benannte GAP (kein Vorschlag ohne Zielfeld).
 KATEGORIE_FELD = {
-    "handwerker":    "hh_handwerker_arbeitskosten",   # § 35a Abs. 3
-    "dienstleistung": "hh_dienstleistungen",           # § 35a Abs. 2
-    "minijob":       "hh_minijob_aufwendungen",        # § 35a Abs. 1
+    # § 35a-Ziele zeigen seit der Einzelaufstellung (2026-08-10) auf die Instanz-Basisfelder
+    # (Instanz 1 = bare feld_id) statt auf die Sum-Kz — die Sum ist askable:false, kein Schreiber
+    # darf sie mehr direkt setzen (_mit_ring_werten injiziert sie aus der Instanz-Σ).
+    "handwerker":    "hh_handwerker_betrag",           # § 35a Abs. 3
+    "dienstleistung": "hh_dienstleistung_betrag",       # § 35a Abs. 2
+    "minijob":       "hh_minijob_betrag",               # § 35a Abs. 1
     "spende":        "spenden_betrag",                 # § 10b
     "vorsorge":      "vor_rv_ausserhalb_lstb",         # § 10 (Vorsorge außerhalb LStB)
 }

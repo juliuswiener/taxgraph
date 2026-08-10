@@ -146,9 +146,9 @@ def test_p35a_foerderung_mit_foerderung(base):
     _gesamt_anlegen(base, "p35a-foerd-ja", kegel)
 
     # Abs. 1/2/3 eingeben, aber hh_handwerker_keine_foerderung=false (ist gefördert)
-    _req(base, "POST", "/fall/p35a-foerd-ja/event", _laie("hh_minijob_aufwendungen", 40000))  # 400 EUR
-    _req(base, "POST", "/fall/p35a-foerd-ja/event", _laie("hh_dienstleistungen", 200000))  # 2000 EUR
-    _req(base, "POST", "/fall/p35a-foerd-ja/event", _laie("hh_handwerker_arbeitskosten", 300000))  # 3000 EUR
+    _req(base, "POST", "/fall/p35a-foerd-ja/event", _laie("hh_minijob_betrag", 40000))  # 400 EUR
+    _req(base, "POST", "/fall/p35a-foerd-ja/event", _laie("hh_dienstleistung_betrag", 200000))  # 2000 EUR
+    _req(base, "POST", "/fall/p35a-foerd-ja/event", _laie("hh_handwerker_betrag", 300000))  # 3000 EUR
     _req(base, "POST", "/fall/p35a-foerd-ja/event", _laie("hh_in_eu_ewr", True))
     _req(base, "POST", "/fall/p35a-foerd-ja/event", _laie("hh_rechnung_unbar", True))
     _req(base, "POST", "/fall/p35a-foerd-ja/event", _laie("hh_handwerker_keine_foerderung", False))  # GEFÖRDERT
@@ -178,9 +178,9 @@ def test_p35a_foerderung_ohne_foerderung(base):
     _gesamt_anlegen(base, "p35a-foerd-nein", kegel)
 
     # Gleiche Aufwendungen, aber keine_foerderung=true (nicht gefördert)
-    _req(base, "POST", "/fall/p35a-foerd-nein/event", _laie("hh_minijob_aufwendungen", 40000))
-    _req(base, "POST", "/fall/p35a-foerd-nein/event", _laie("hh_dienstleistungen", 200000))
-    _req(base, "POST", "/fall/p35a-foerd-nein/event", _laie("hh_handwerker_arbeitskosten", 300000))
+    _req(base, "POST", "/fall/p35a-foerd-nein/event", _laie("hh_minijob_betrag", 40000))
+    _req(base, "POST", "/fall/p35a-foerd-nein/event", _laie("hh_dienstleistung_betrag", 200000))
+    _req(base, "POST", "/fall/p35a-foerd-nein/event", _laie("hh_handwerker_betrag", 300000))
     _req(base, "POST", "/fall/p35a-foerd-nein/event", _laie("hh_in_eu_ewr", True))
     _req(base, "POST", "/fall/p35a-foerd-nein/event", _laie("hh_rechnung_unbar", True))
     _req(base, "POST", "/fall/p35a-foerd-nein/event", _laie("hh_handwerker_keine_foerderung", True))  # NICHT GEFÖRDERT
@@ -204,7 +204,7 @@ def test_p35a_foerderung_unbeantwortet_sperrung(base):
     _gesamt_anlegen(base, "p35a-foerd-offen", kegel)
 
     # Handwerker > 0, aber KEINE Antwort auf hh_handwerker_keine_foerderung
-    _req(base, "POST", "/fall/p35a-foerd-offen/event", _laie("hh_handwerker_arbeitskosten", 300000))
+    _req(base, "POST", "/fall/p35a-foerd-offen/event", _laie("hh_handwerker_betrag", 300000))
     _req(base, "POST", "/fall/p35a-foerd-offen/event", _laie("hh_in_eu_ewr", True))
     _req(base, "POST", "/fall/p35a-foerd-offen/event", _laie("hh_rechnung_unbar", True))
     # hh_handwerker_keine_foerderung NICHT GESETZT
@@ -230,8 +230,8 @@ def test_p35a_foerderung_minijob_bleibt_aktiv(base):
     kegel = _minimal_gesamt_kegel()
     _gesamt_anlegen(base, "p35a-foerd-minijob", kegel)
 
-    _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_minijob_aufwendungen", 40000))  # 400 EUR
-    _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_handwerker_arbeitskosten", 300000))  # 3000 EUR
+    _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_minijob_betrag", 40000))  # 400 EUR
+    _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_handwerker_betrag", 300000))  # 3000 EUR
     _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_in_eu_ewr", True))
     # hh_rechnung_unbar NICHT GESETZT (Abs. 5 S. 3 NUR für Abs. 2/3)
     _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_handwerker_keine_foerderung", False))  # GEFÖRDERT
@@ -255,7 +255,7 @@ def test_p35a_foerderung_mutation_gate_inversion(base):
     kegel = _minimal_gesamt_kegel()
     _gesamt_anlegen(base, "p35a-mut", kegel)
 
-    _req(base, "POST", "/fall/p35a-mut/event", _laie("hh_handwerker_arbeitskosten", 300000))
+    _req(base, "POST", "/fall/p35a-mut/event", _laie("hh_handwerker_betrag", 300000))
     _req(base, "POST", "/fall/p35a-mut/event", _laie("hh_in_eu_ewr", True))
     _req(base, "POST", "/fall/p35a-mut/event", _laie("hh_rechnung_unbar", True))
     _req(base, "POST", "/fall/p35a-mut/event", _laie("hh_handwerker_keine_foerderung", True))  # nicht gefördert

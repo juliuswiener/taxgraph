@@ -134,10 +134,11 @@ MATRIX = [
     ("kap_gewinn_aktien", 200000),
     ("kap_verlust_aktien", 100000),
     ("kap_verlust_sonstige", 50000),
-    # § 35a — die drei Toepfe, jeder fuer sich erklaerbar
-    ("hh_handwerker_arbeitskosten", 300000),
-    ("hh_dienstleistungen", 200000),
-    ("hh_minijob_aufwendungen", 100000),
+    # § 35a NICHT hier: die drei Sum-Felder sind seit der Einzelaufstellung (2026-08-10)
+    # askable:false, ein einzeln gesetztes Sum-Feld deklariert den alten Kz zwar noch, bleibt
+    # aber OHNE Einz-Instanz beim selben rc=610001002 -- Art+Betrag GEHOEREN zusammen, die
+    # Ein-Feld-Matrix misst das falsch. Eigener Test unten:
+    # test_p35a_einzelaufstellung_alle_drei_toepfe_amtlich_plausibel.
     # § 33 / Vorsorge / Anlage N — je ein Vertreter, der allein steht
     ("agb_aufwendungen", 500000),
     ("tage_24h", 10),
@@ -155,17 +156,12 @@ MATRIX = [
 # Sparer-Pauschbetrag) werden jetzt in _mit_ring_werten injiziert; alle vier Faelle erreichen
 # rc=0. Der Test hat das selbst erzwungen — ein Eintrag hier, der sauber durchlaeuft, schlaegt
 # fehl, damit eine geschlossene Luecke nicht als Dauer-Ausnahme stehen bleibt.
+# § 35a (hh_handwerker_arbeitskosten/hh_dienstleistungen/hh_minijob_aufwendungen) stand hier bis
+# 2026-08-10 mit drei Eintraegen ("Einzelaufstellung fehlt", rc=610001002). ENTFERNT, nicht
+# GESCHLOSSEN-markiert: die Sum-Felder sind jetzt askable:false und werden gar nicht mehr
+# einzeln erklaert (kein MATRIX-Eintrag mehr fuer sie) — die Luecke ist mit einem eigenen Test
+# geschlossen, s. test_p35a_einzelaufstellung_alle_drei_toepfe_amtlich_plausibel unten.
 BEKANNTE_LUECKEN = {
-    "hh_handwerker_arbeitskosten": (
-        "§ 35a: checkESt verlangt eine EINZELAUFSTELLUNG, wir liefern nur die Summe. Von dieser "
-        "Matrix beim ersten Lauf gefunden (2026-08-10, rc=610001002): '...es wurde aber keine "
-        "Einzelaufstellung der Handwerkerleistungen vorgenommen.' BACKLOG p35a-einzelaufstellung."),
-    "hh_dienstleistungen": (
-        "§ 35a, gleiche Ursache wie hh_handwerker_arbeitskosten: Einzelaufstellung fehlt. "
-        "Der Befund ist damit systematisch ueber alle drei § 35a-Toepfe, nicht punktuell."),
-    "hh_minijob_aufwendungen": (
-        "§ 35a Minijobs, gleiche Ursache: 'Gesamtbetrag der Aufwendungen angegeben, es wurde "
-        "aber kein(e Einzelaufstellung)...' — dritter von drei Toepfen."),
 }
 
 
@@ -295,3 +291,55 @@ def test_bekannte_luecken_sind_begruendet():
             f"{feld} steht in BEKANNTE_LUECKEN, wird aber gar nicht gefahren — "
             f"toter Eintrag, der eine Abdeckung vortaeuscht.")
         assert len(grund) > 20, f"{feld}: Begruendung zu duenn, um spaeter noch zu tragen"
+
+
+# ---- § 35a Einzelaufstellung: eigener Test statt MATRIX-Zeilen -------------------------------
+#
+# Der Fund, der diese Datei ausgeloest hat (s. Modul-Docstring): drei Sum-Felder waren rc=610001002,
+# weil checkESt neben der Summe eine Einzelaufstellung (Einz[maxOccurs=99] je Topf, XSD-Sektion
+# St_Erm_1426027020_CType, s. reports/adjudikation/anlage-haushaltsnahe-einzelaufstellung-2026-08-10.md)
+# verlangt. MATRIX setzt genau EIN Feld je Fall (_mit) — dafuer taugt ein Feldpaar (Art+Betrag je
+# Instanz) nicht. Deshalb ein eigener Test, kein MATRIX-Eintrag.
+
+def test_p35a_einzelaufstellung_alle_drei_toepfe_amtlich_plausibel():
+    """Je Topf EIN vollstaendiger Einz-Posten (Art+Betrag, Instanz 1 = bare feld_id) → rc=0.
+
+    Die Sum-Kz (E0104109/E0107208/E0111215) werden NICHT direkt gesetzt — sie kommen aus
+    _mit_ring_werten (4), berechnet aus genau diesen Instanz-Feldern. Ein Test, der die Sum-Felder
+    weiter direkt schriebe, wuerde den alten, jetzt abgeklemmten Pfad pruefen statt den echten.
+    """
+    s = _fall_einzel()
+    for betrag_fid, art_fid, betrag, art in (
+        ("hh_minijob_betrag", "hh_minijob_art", 100000, "Haushaltshilfe"),
+        ("hh_dienstleistung_betrag", "hh_dienstleistung_art", 200000, "Gartenpflege"),
+        ("hh_handwerker_betrag", "hh_handwerker_art", 300000, "Heizungswartung"),
+    ):
+        _b(s, betrag_fid, betrag)
+        _b(s, art_fid, art)
+
+    rc, texte = _scharf(s)
+    assert rc == CE.RC_OK, (
+        f"§35a Einzelaufstellung (alle drei Toepfe, je ein Art+Betrag-Posten) macht die "
+        f"Erklaerung uneinreichbar (rc={rc}).\n" + "\n".join(f"   - {t}" for t in texte[:5]))
+
+
+def test_p35a_ohne_daten_kein_einz_und_keine_sum_im_xml():
+    """Gegenprobe zum Inert-Vertrag von _mit_ring_werten (4): keine §35a-Angaben → weder Sum-
+    noch Einz-Kz im XML (keine Instanz-Σ > 0 heisst KEIN Eintrag, nicht Eintrag mit Wert 0).
+
+    Ohne diese Gegenprobe waere eine Injektion, die die Sum-Kz bedingungslos mit 0 fuellt,
+    unsichtbar gruen — Standardfalle bei Injektionen (s. test_kap_antrag_ist_inert_ohne_
+    kapitalertraege oben, dieselbe Klasse Test fuer § 35a statt Anlage KAP).
+    """
+    store = dict(_fall_einzel())
+    store.setdefault("scheibe", "gesamt")
+    bindung = API._scheibe_bindung(store)
+    felder, sid = ST.materialisiere(store)
+    felder = API._mit_ring_werten(felder, 2025)
+    xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid),
+                         vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
+    for kz in ("E0104109", "E0104206", "E0104108",   # Minijob (Sum, Art, Betrag)
+               "E0107208", "E0107206", "E0107207",   # Dienstleistung
+               "E0111215", "E0111217", "E0111214"):  # Handwerker
+        assert kz not in xml, (
+            f"{kz} steht im XML, obwohl der Fall keine §35a-Haushaltsnahe-Angaben fuehrt.")

@@ -218,15 +218,19 @@ def test_aktien_subset_semantik_beide_deklariert(bindung):
 
 
 def test_scheibe2_sonder_35a_agb_1zu1_roundtrip(bindung):
-    """§35a-Ermäßigung (Minijob/Dienstleistung/Handwerker) + agB: STRONG-Kz je 1:1 + Round-Trip."""
-    felder = {"agb_aufwendungen": 500000, "hh_minijob_aufwendungen": 250000,
-              "hh_dienstleistungen": 400000, "hh_handwerker_arbeitskosten": 120000}
+    """§35a-Ermäßigung (Minijob/Dienstleistung/Handwerker) + agB: STRONG-Kz je 1:1 + Round-Trip.
+
+    §35a-Beträge seit der Einzelaufstellung (2026-08-10) über die Instanz-Basisfelder
+    (Instanz 1 = bare feld_id), die Sum-Kz (E0104109/E0107208/E0111215) sind askable:false
+    und nur noch Ring-Injektion — direktes Setzen wäre ein Pfad, den die Produktion nicht kennt."""
+    felder = {"agb_aufwendungen": 500000, "hh_minijob_betrag": 250000,
+              "hh_dienstleistung_betrag": 400000, "hh_handwerker_betrag": 120000}
     snap, _ = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung)
     assert r["deklaration"]["E0161804"] == 5000
-    assert r["deklaration"]["E0104109"] == 2500
-    assert r["deklaration"]["E0107208"] == 4000
-    assert r["deklaration"]["E0111215"] == 1200
+    assert r["deklaration"]["E0104108"] == 2500
+    assert r["deklaration"]["E0107207"] == 4000
+    assert r["deklaration"]["E0111214"] == 1200
     rt = EM.zuruecklesen(r, bindung)
     for fid, wert in felder.items():
         b = bindung.get(fid, {})

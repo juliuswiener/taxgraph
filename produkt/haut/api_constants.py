@@ -162,7 +162,13 @@ RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfr
 
 # ========== § 35a Haushaltsnahe ==========
 HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")
-HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23 + ("hh_in_eu_ewr", "hh_handwerker_keine_foerderung")
+# Einzelaufstellung (Anlass 2026-08-10, checkESt rc=610001002 ohne Einz-Kz): Instanz-Basisfelder
+# der drei Töpfe (instanz_gruppe hh_minijob/hh_dienstleistung/hh_handwerker) — dieselbe Kette wie
+# die Sum-Felder oben, sonst deklariert _scheibe_bindung sie auf keiner Scheibe.
+HAUSHALT_35A_EINZ = ("hh_minijob_betrag", "hh_minijob_art",
+                     "hh_dienstleistung_betrag", "hh_dienstleistung_art",
+                     "hh_handwerker_betrag", "hh_handwerker_art")
+HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23 + HAUSHALT_35A_EINZ + ("hh_in_eu_ewr", "hh_handwerker_keine_foerderung")
 P35A_MITVER_ANZEIGE = ("p35a_mitveranlagung",)
 
 # ========== § 10b Spenden + § 10 KiSt (Gesamt) ==========

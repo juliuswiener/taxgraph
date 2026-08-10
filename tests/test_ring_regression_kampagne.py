@@ -1161,9 +1161,9 @@ def test_p35a_mitveranlagung_senkt_steuer_gesamt(base):
 
     # Ohne haushaltsnahe Aufwendungen
     kegel_ohne = _mit_gewinn(GESAMT_KEGEL_BASIS)
-    kegel_ohne.append(("hh_minijob_aufwendungen", 0))
-    kegel_ohne.append(("hh_dienstleistungen", 0))
-    kegel_ohne.append(("hh_handwerker_arbeitskosten", 0))
+    kegel_ohne.append(("hh_minijob_betrag", 0))
+    kegel_ohne.append(("hh_dienstleistung_betrag", 0))
+    kegel_ohne.append(("hh_handwerker_betrag", 0))
     kegel_ohne.append(("hh_in_eu_ewr", True))
     kegel_ohne.append(("hh_rechnung_unbar", True))
     _ges_anlegen(base, "p35a_no", kegel_ohne)
@@ -1176,11 +1176,11 @@ def test_p35a_mitveranlagung_senkt_steuer_gesamt(base):
     # Replace the zero values with actual numbers
     new_kegel_mit = []
     for f, v in kegel_mit:
-        if f == "hh_dienstleistungen":
+        if f == "hh_dienstleistung_betrag":
             new_kegel_mit.append((f, 400000))
-        elif f == "hh_minijob_aufwendungen":
+        elif f == "hh_minijob_betrag":
             new_kegel_mit.append((f, 0))
-        elif f == "hh_handwerker_arbeitskosten":
+        elif f == "hh_handwerker_betrag":
             new_kegel_mit.append((f, 0))
         else:
             new_kegel_mit.append((f, v))

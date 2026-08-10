@@ -196,7 +196,7 @@ def test_differential_einzel_keine_luecken(bindung):
     _b(s, "vv_erhaltungsaufwand", 100000)
     _b(s, "vv_sonstige_wk", 50000)
     _b(s, "vv_entgelt_quote_prozent", 100)       # Klasse c (nicht deklariert)
-    _b(s, "hh_handwerker_arbeitskosten", 300000)  # → E0111215 (1:1)
+    _b(s, "hh_handwerker_betrag", 300000)         # → E0111214 (1:1, Instanz 1)
     _b(s, "agb_aufwendungen", 500000)             # → E0161804 (1:1)
     _b(s, "fam_alleinstehend", True)              # Klasse d (Negation)
 
@@ -231,7 +231,7 @@ def test_differential_zusammen_keine_luecken(bindung):
     _b(s, "vv_erhaltungsaufwand", 100000)
     _b(s, "vv_sonstige_wk", 50000)
     _b(s, "vv_entgelt_quote_prozent", 100)
-    _b(s, "hh_handwerker_arbeitskosten", 300000)
+    _b(s, "hh_handwerker_betrag", 300000)
     _b(s, "agb_aufwendungen", 500000)
     _b(s, "fam_alleinstehend", True)
 

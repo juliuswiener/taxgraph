@@ -175,52 +175,163 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
 
   # ========================= §35a Haushaltsnahe (p35a_2_3_haushaltsnahe) =========================
+  # Sum-Felder (E01041xx/E01072xx/E01112xx): checkESt verlangt neben der Summe eine Einzelaufstellung
+  # (Einz[maxOccurs=99] im XSD) -- rc=610001002, wenn Sum ohne Einz uebermittelt wird (gemessen
+  # 2026-08-10, s. reports/adjudikation/anlage-haushaltsnahe-einzelaufstellung-2026-08-10.md).
+  # Die drei Sum-Felder bleiben als Kz, werden aber NICHT mehr direkt erfragt (askable:false) --
+  # der Wert kommt aus der Summe der instanz_gruppe-Eintraege unten (_mit_ring_werten-Injektion,
+  # Praezedenz kap_sparer_pauschbetrag_genutzt). Eine Quelle statt zwei, sonst laufen Summe und
+  # Einzelaufstellung auseinander (kap_zusammenveranlagung-Praezedenz, 2026-07-30).
   - feld_id: hh_minijob_aufwendungen
-    vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: minijob_aufwendungen}
     typ: cent
     einheit: EUR
-    askable: true
-    vorjahr: vorschlag
-    fragetext_laie: "Hast du eine Haushaltshilfe auf Minijob-Basis beschäftigt? Wenn ja, was hast du ihr dieses Jahr gezahlt?"
-    hilfe_kurz: "Zum Beispiel eine Putzhilfe im Minijob. Wenn nicht, gib 0 ein."
-    beispielwert: 250000
-    herkunft_slots: ["Minijob-Bescheinigung: Aufwendungen"]
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Summe der Minijob-Aufwendungen (berechnet aus den Einzelposten unten)."
+    beispielwert: null
+    herkunft_slots: null
     elster_kz: E0104109
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35a Abs. 1 EStG"
       zitatanker: "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
-  - feld_id: hh_dienstleistungen
+  - feld_id: hh_minijob_betrag
+    instanz_gruppe: hh_minijob
     vorschlagbar_von: [kontoauszug, beleg]
-    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: haushaltsnahe_dienstleistungen}
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4}
     typ: cent
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Was hast du dieses Jahr für haushaltsnahe Dienstleistungen bezahlt (nur der Arbeitslohn, ohne Material)?"
-    hilfe_kurz: "Zum Beispiel eine Reinigungsfirma oder Gartenpflege. Nur die Arbeitskosten, nicht das Material."
-    beispielwert: 100000
-    herkunft_slots: ["Dienstleistungsrechnung: Arbeitskosten"]
+    fragetext_laie: "Was hast du deiner Haushaltshilfe auf Minijob-Basis für diesen Posten gezahlt?"
+    hilfe_kurz: "Ein einzelner Zahlungsposten (z. B. ein Monat). Mehrere Zahlungen? Trag sie einzeln ein."
+    beispielwert: 25000
+    herkunft_slots: ["Minijob-Bescheinigung: Aufwendungen"]
+    elster_kz: E0104108
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 1 EStG"
+      zitatanker: "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_minijob_art
+    instanz_gruppe: hh_minijob
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wofür war das (zum Beispiel 'Haushaltshilfe')? Optional."
+    hilfe_kurz: "Kurze Bezeichnung der Tätigkeit, freiwillig (XSD minOccurs=0)."
+    beispielwert: "Haushaltshilfe"
+    herkunft_slots: null
+    elster_kz: E0104206
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 1 EStG"
+      zitatanker: "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_dienstleistungen
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: haushaltsnahe_dienstleistungen}
+    typ: cent
+    einheit: EUR
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Summe der haushaltsnahen Dienstleistungen (berechnet aus den Einzelposten unten)."
+    beispielwert: null
+    herkunft_slots: null
     elster_kz: E0107208
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35a Abs. 2 EStG"
       zitatanker: "gilt nur für Arbeitskosten"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
-  - feld_id: hh_handwerker_arbeitskosten
+  - feld_id: hh_dienstleistung_betrag
+    instanz_gruppe: hh_dienstleistung
     vorschlagbar_von: [kontoauszug, beleg]
-    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: handwerker_arbeitskosten}
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: dienstleistungen_sind_keine_handwerkerleistungen}
     typ: cent
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Was hast du dieses Jahr für Handwerker im Haushalt an Arbeitskosten bezahlt (Renovierung, Reparatur, Modernisierung)?"
-    hilfe_kurz: "Nur die Arbeitskosten auf der Rechnung, nicht das Material."
-    beispielwert: 120000
-    herkunft_slots: ["Handwerkerrechnung: Arbeitskosten"]
+    fragetext_laie: "Was hast du für diesen Posten an Arbeitskosten für eine haushaltsnahe Dienstleistung gezahlt (ohne Material)?"
+    hilfe_kurz: "Ein einzelner Rechnungsposten. Nur die Arbeitskosten, nicht das Material."
+    beispielwert: 50000
+    herkunft_slots: ["Dienstleistungsrechnung: Arbeitskosten"]
+    elster_kz: E0107207
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 2 EStG"
+      zitatanker: "gilt nur für Arbeitskosten"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_dienstleistung_art
+    instanz_gruppe: hh_dienstleistung
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: dienstleistungen_sind_keine_handwerkerleistungen}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wofür war das (zum Beispiel 'Gartenpflege')? Optional."
+    hilfe_kurz: "Kurze Bezeichnung der Dienstleistung, freiwillig (XSD minOccurs=0)."
+    beispielwert: "Gartenpflege"
+    herkunft_slots: null
+    elster_kz: E0107206
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 2 EStG"
+      zitatanker: "gilt nur für Arbeitskosten"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_handwerker_arbeitskosten
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: handwerker_arbeitskosten}
+    typ: cent
+    einheit: EUR
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Summe der Handwerker-Arbeitskosten (berechnet aus den Einzelposten unten)."
+    beispielwert: null
+    herkunft_slots: null
     elster_kz: E0111215
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 3 EStG"
+      zitatanker: "für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  # E0170601 (Rechnungsbetrag inkl. Material, Einz-Element) bewusst NICHT gebunden: minOccurs=0
+  # im XSD, und der bestehende Fragetext fragt ohnehin nur die Arbeitskosten/Lohnanteile (Zeile
+  # "handwerkerbetrag_enthaelt_nur_arbeitskosten" unten) -- ein Gesamtrechnungsbetrag-Feld würde
+  # eine Angabe verlangen, die nirgends im Produkt sonst erfragt wird. Minimal-Scope, XSD-Beleg
+  # in reports/adjudikation/anlage-haushaltsnahe-einzelaufstellung-2026-08-10.md.
+  - feld_id: hh_handwerker_betrag
+    instanz_gruppe: hh_handwerker
+    vorschlagbar_von: [kontoauszug, beleg]
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: handwerker_nur_renovierung_erhaltung_modernisierung}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Was hast du für diesen Posten an Arbeitskosten für eine Handwerkerleistung gezahlt (ohne Material)?"
+    hilfe_kurz: "Ein einzelner Rechnungsposten. Nur die Arbeitskosten, nicht das Material."
+    beispielwert: 60000
+    herkunft_slots: ["Handwerkerrechnung: Arbeitskosten"]
+    elster_kz: E0111214
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 3 EStG"
+      zitatanker: "für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_handwerker_art
+    instanz_gruppe: hh_handwerker
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: handwerker_nur_renovierung_erhaltung_modernisierung}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wofür war das (zum Beispiel 'Heizungswartung')? Optional."
+    hilfe_kurz: "Kurze Bezeichnung der Handwerkerleistung, freiwillig (XSD minOccurs=0)."
+    beispielwert: "Heizungswartung"
+    herkunft_slots: null
+    elster_kz: E0111217
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35a Abs. 3 EStG"
@@ -349,16 +460,19 @@ luecken:
   - regel_id: p33_1_2_agb_abzug
     geltungsbedingung: keine_behinderungsbedingten_fahrtkosten
     grund: "AUFGELÖST: Fahrtkostenpauschale jetzt in eigener Scheibe (p33_2a) und IN den agb-Slot von catala_p33_agb integriert. Die alte Abgrenzung 'außerhalb dieser Scheibe' gilt nicht mehr — die Pauschale ist Teil der agB-Bemessung."
-  # -- §35a: die übrigen 9 Geltungsbedingungen sind Qualifikationen/Annahmen (nicht die 3 Laien-Gates oben) --
+  # -- §35a: die übrigen 6 Geltungsbedingungen sind Qualifikationen/Annahmen ohne eigene Laien-Abfrage.
+  # Die 3 topf-identifizierenden Bedingungen (minijob_ist_.../dienstleistungen_sind_.../handwerker_nur_...)
+  # stehen NICHT mehr hier -- seit der Einzelaufstellung sind sie echt gebunden (Art- UND Betrag-Feld
+  # jedes Topfs, quelle.geltungsbedingung), nicht mehr bloß Fragetext-Annahme. Siehe Bindungen oben. --
   - regel_id: p35a_2_3_haushaltsnahe
     geltungsbedingung: keine_beruecksichtigung_als_wk_sa_agb
     grund: "Annahme: die Beträge sind nicht schon als Betriebsausgaben/Werbungskosten berücksichtigt (Dedup)."
   - regel_id: p35a_2_3_haushaltsnahe
     geltungsbedingung: handwerkerbetrag_enthaelt_nur_arbeitskosten
-    grund: "Die Abfrage hh_handwerker_arbeitskosten fragt bereits nur die Arbeitskosten (Fragetext + Hilfe); Annahme im Feld materialisiert."
+    grund: "Die Abfrage hh_handwerker_betrag fragt bereits nur die Arbeitskosten (Fragetext + Hilfe, 'ohne Material'); Annahme im Feld materialisiert."
   - regel_id: p35a_2_3_haushaltsnahe
     geltungsbedingung: dienstleistungsbetrag_enthaelt_nur_arbeitskosten
-    grund: "Die Abfrage hh_dienstleistungen fragt bereits nur die Arbeitskosten; Annahme im Feld materialisiert."
+    grund: "Die Abfrage hh_dienstleistung_betrag fragt bereits nur die Arbeitskosten (Fragetext 'ohne Material'); Annahme im Feld materialisiert."
   - regel_id: p35a_2_3_haushaltsnahe
     geltungsbedingung: kein_gemeinsamer_haushalt_zweier_alleinstehender
     grund: "Sonderfall gemeinsamer Haushalt zweier Alleinstehender (Höchstbeträge nur einmal) — außerhalb dieser Scheibe."
@@ -366,14 +480,5 @@ luecken:
     geltungsbedingung: antrag_gestellt
     grund: "Der Abzug wird durch die Angabe in der Erklärung beantragt; die Eingabe der Beträge IST der Antrag, keine separate Abfrage."
   - regel_id: p35a_2_3_haushaltsnahe
-    geltungsbedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4
-    grund: "Die Abfrage hh_minijob_aufwendungen setzt Minijob (§ 8a SGB IV) voraus (Fragetext nennt Minijob-Basis); Annahme im Feld."
-  - regel_id: p35a_2_3_haushaltsnahe
-    geltungsbedingung: dienstleistungen_sind_keine_handwerkerleistungen
-    grund: "Abgrenzung Dienstleistungen ↔ Handwerker ist in den getrennten Feldern (hh_dienstleistungen vs hh_handwerker_arbeitskosten) materialisiert."
-  - regel_id: p35a_2_3_haushaltsnahe
     geltungsbedingung: keine_pflege_oder_heimkosten
     grund: "Pflege-/Heimkosten sind ein eigener § 35a-Zweig (Abs. 2 S. 2) außerhalb dieser Erst-Scheibe."
-  - regel_id: p35a_2_3_haushaltsnahe
-    geltungsbedingung: handwerker_nur_renovierung_erhaltung_modernisierung
-    grund: "Die Abfrage hh_handwerker_arbeitskosten nennt bereits Renovierung/Reparatur/Modernisierung (Fragetext); Annahme im Feld."

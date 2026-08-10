@@ -2003,8 +2003,8 @@ def _gesamt_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechnu
     """Postet die OPTIONALEN gefalteten Sonder-Abzugs- + §24a/§24b-Freibetrag-Felder (Weg ii) auf einen gesamt-Fall
     (cent; kinder/geburtsjahr/monate=int; alleinerziehend=bool). hh_rechnung_unbar/geburtsjahr/alleinerziehend nur
     wenn nicht None. Nicht im Pflicht-Kegel — der Ring rechnet sie additiv."""
-    paare = [("hh_minijob_aufwendungen", minijob), ("hh_dienstleistungen", dienstleistung),
-             ("hh_handwerker_arbeitskosten", handwerker), ("hh_in_eu_ewr", eu_ewr),
+    paare = [("hh_minijob_betrag", minijob), ("hh_dienstleistung_betrag", dienstleistung),
+             ("hh_handwerker_betrag", handwerker), ("hh_in_eu_ewr", eu_ewr),
              ("spenden_betrag", spende),
              ("agb_aufwendungen", agb), ("fam_anzahl_kinder", kinder),
              ("kist_gezahlt", kist_gezahlt), ("kist_erstattet", kist_erstattet),
@@ -2396,8 +2396,8 @@ def _rentner_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechn
                      handwerker_keine_foerderung=True):
     """Postet die OPTIONALEN Weg-ii/§24b-Felder (§35a/§10b/§33/§10-KiSt/§24b) auf einen rentner_gesamt-Fall
     (cent; kinder/monate=int). hh_rechnung_unbar/fam_alleinstehend nur wenn nicht None. Analog _gesamt_abzuege."""
-    paare = [("hh_minijob_aufwendungen", minijob), ("hh_dienstleistungen", dienstleistung),
-             ("hh_handwerker_arbeitskosten", handwerker), ("hh_in_eu_ewr", eu_ewr),
+    paare = [("hh_minijob_betrag", minijob), ("hh_dienstleistung_betrag", dienstleistung),
+             ("hh_handwerker_betrag", handwerker), ("hh_in_eu_ewr", eu_ewr),
              ("spenden_betrag", spende),
              ("agb_aufwendungen", agb), ("fam_anzahl_kinder", kinder),
              ("kist_gezahlt", kist_gezahlt), ("kist_erstattet", kist_erstattet),
@@ -3350,7 +3350,7 @@ def test_gesamt_p35a_minijob_hoechstbetrag(base):
     # Fall 1: Minijob 400 EUR → 20% = 80 EUR Ermäßigung
     kegel_1 = _gesamt_kegel(0, bruttolohn=10000000, kein_vuv=True)
     _gesamt_anlegen(base, "p35a-400", kegel_1)
-    _req(base, "POST", "/fall/p35a-400/event", _laie("hh_minijob_aufwendungen", 40000))  # 400 EUR
+    _req(base, "POST", "/fall/p35a-400/event", _laie("hh_minijob_betrag", 40000))  # 400 EUR
     _req(base, "POST", "/fall/p35a-400/event", _laie("hh_in_eu_ewr", True))
     st, erg_1 = _req(base, "GET", "/fall/p35a-400/ergebnis")
     _val("ergebnis", erg_1)
@@ -3359,7 +3359,7 @@ def test_gesamt_p35a_minijob_hoechstbetrag(base):
     # Fall 2: Minijob 3000 EUR → min(20%, 510) = 510 EUR Ermäßigung
     kegel_2 = _gesamt_kegel(0, bruttolohn=10000000, kein_vuv=True)
     _gesamt_anlegen(base, "p35a-3000", kegel_2)
-    _req(base, "POST", "/fall/p35a-3000/event", _laie("hh_minijob_aufwendungen", 300000))  # 3000 EUR
+    _req(base, "POST", "/fall/p35a-3000/event", _laie("hh_minijob_betrag", 300000))  # 3000 EUR
     _req(base, "POST", "/fall/p35a-3000/event", _laie("hh_in_eu_ewr", True))
     st, erg_2 = _req(base, "GET", "/fall/p35a-3000/ergebnis")
     _val("ergebnis", erg_2)
@@ -3388,9 +3388,9 @@ def test_gesamt_p35a_alle_toepfe(base):
     # Fall 1: Alle drei Töpfe
     kegel = _gesamt_kegel(0, bruttolohn=10000000, kein_vuv=True)
     _gesamt_anlegen(base, "p35a-all", kegel)
-    _req(base, "POST", "/fall/p35a-all/event", _laie("hh_minijob_aufwendungen", 50000))  # 500 EUR
-    _req(base, "POST", "/fall/p35a-all/event", _laie("hh_dienstleistungen", 500000))  # 5000 EUR
-    _req(base, "POST", "/fall/p35a-all/event", _laie("hh_handwerker_arbeitskosten", 300000))  # 3000 EUR
+    _req(base, "POST", "/fall/p35a-all/event", _laie("hh_minijob_betrag", 50000))  # 500 EUR
+    _req(base, "POST", "/fall/p35a-all/event", _laie("hh_dienstleistung_betrag", 500000))  # 5000 EUR
+    _req(base, "POST", "/fall/p35a-all/event", _laie("hh_handwerker_betrag", 300000))  # 3000 EUR
     _req(base, "POST", "/fall/p35a-all/event", _laie("hh_in_eu_ewr", True))
     _req(base, "POST", "/fall/p35a-all/event", _laie("hh_rechnung_unbar", True))
     st, erg_all = _req(base, "GET", "/fall/p35a-all/ergebnis")
@@ -3400,7 +3400,7 @@ def test_gesamt_p35a_alle_toepfe(base):
     # Fall 2: Nur Minijob (500 EUR → 100 EUR)
     kegel_mj = _gesamt_kegel(0, bruttolohn=10000000, kein_vuv=True)
     _gesamt_anlegen(base, "p35a-mjonly", kegel_mj)
-    _req(base, "POST", "/fall/p35a-mjonly/event", _laie("hh_minijob_aufwendungen", 50000))  # 500 EUR
+    _req(base, "POST", "/fall/p35a-mjonly/event", _laie("hh_minijob_betrag", 50000))  # 500 EUR
     _req(base, "POST", "/fall/p35a-mjonly/event", _laie("hh_in_eu_ewr", True))
     st, erg_mj = _req(base, "GET", "/fall/p35a-mjonly/ergebnis")
     _val("ergebnis", erg_mj)

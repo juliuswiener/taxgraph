@@ -79,7 +79,11 @@ def test_zone_d_unterhalt_agb_keine_luecken(bindung):
 def test_zone_d_steuerermaeßigungen_keine_luecken(bindung):
     """§35a Haushaltsnahe + §35c Sanierung — 4 Betragsfelder.
 
-    hh_dienstleistungen (E0107208), hh_minijob_aufwendungen (E0104109) -> Topf a.
+    hh_dienstleistung_betrag (E0107207), hh_minijob_betrag (E0104108) -> Topf a
+    (Einzelaufstellung seit 2026-08-10; Instanz 1 = bare feld_id, instanz_gruppe-Zweig).
+    Die Sum-Kz (E0107208/E0104109) sind seither askable:false und werden nur noch von
+    _mit_ring_werten aus der Instanz-Σ injiziert -- direktes Setzen testet einen Pfad,
+    den die Produktion nicht mehr kennt.
     p35c_* null-kz -> nicht_deklariert (Topf b).
     """
     s = ST.leerer_store(2025, fall_id="zone_d_erm")
@@ -90,9 +94,9 @@ def test_zone_d_steuerermaeßigungen_keine_luecken(bindung):
     _b(s, "kein_vuv", True)
     _b(s, "kein_sonstige", True)
 
-    # §35a (2 mit Kz)
-    _b(s, "hh_dienstleistungen", 300000)                # cent, E0107208 -> 1:1 (Topf a)
-    _b(s, "hh_minijob_aufwendungen", 280000)            # cent, E0104109 -> 1:1 (Topf a)
+    # §35a (2 mit Kz, jetzt Instanz-Basisfelder statt Sum)
+    _b(s, "hh_dienstleistung_betrag", 300000)           # cent, E0107207 -> 1:1 (Topf a, Instanz 1)
+    _b(s, "hh_minijob_betrag", 280000)                  # cent, E0104108 -> 1:1 (Topf a, Instanz 1)
 
     # §35c (2 ohne Kz)
     _b(s, "p35c_sanierungsaufwendungen", 2000000)       # cent, null-kz -> nicht_deklariert
@@ -217,8 +221,8 @@ def test_zone_d_zusammenveranlagung_keine_luecken(bindung):
     # Zone-D-Felder (Auswahl über alle Gruppen)
     _b(s, "p33a_unterhalt_aufwendungen", 1000000)        # cent, null-kz -> nicht_deklariert
     _b(s, "p33a_ausbildung_anzahl_kinder", 1)             # int, null-kz -> nicht_deklariert
-    _b(s, "hh_dienstleistungen", 300000)                  # cent, E0107208 -> 1:1
-    _b(s, "hh_minijob_aufwendungen", 280000)              # cent, E0104109 -> 1:1
+    _b(s, "hh_dienstleistung_betrag", 300000)             # cent, E0107207 -> 1:1 (Instanz 1)
+    _b(s, "hh_minijob_betrag", 280000)                    # cent, E0104108 -> 1:1 (Instanz 1)
     _b(s, "kist_gezahlt", 60000)                          # cent, null-kz -> nicht_deklariert
     _b(s, "kist_erstattet", 5000)                         # cent, null-kz -> nicht_deklariert
     _b(s, "spenden_betrag", 30000)                        # cent, E0108405 -> 1:1

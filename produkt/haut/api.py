@@ -354,10 +354,26 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
         def _c(fid):
             v = f_dict.get(fid, {}).get("wert")
             return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+        # § 35a Einzelaufstellung (Anlass 2026-08-10, checkESt rc=610001002 ohne Einz-Kz): die
+        # Sum-Kz sind seit dem Fix askable:false, ihr Ring-Input kommt aus der STUMPFEN Σ über
+        # alle <gruppe>-Instanzen (Instanz-Reuse, Naht wie GWG/Vermietung/Rente — Instanz 1 =
+        # bare feld_id). store/bindung/nur_bestaetigt hier via Closure aus _bescheid_fn (nested
+        # def, siehe _kind_behinderten_pb_daten-Präzedenz). Ohne store (Alt-Aufrufer) nur die
+        # Instanz-1-Basis aus f_dict — genau wie _gwg_sofortabzug_summe.
+        def _hh_summe(betrag_fid, gruppe):
+            if store is None or bindung is None:
+                return _c(betrag_fid)
+            total = 0
+            for inst in EM.instanzen(store, bindung, gruppe):
+                if nur_bestaetigt and inst["zustand"] != "bestaetigt":
+                    continue
+                v = inst["felder"].get(betrag_fid, {}).get("wert")
+                total += int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+            return total
         base = runner.catala_p35a_haushaltsnahe({
-            "hh_minijob_aufwendungen": _c("hh_minijob_aufwendungen") // 100,
-            "hh_dienstleistungen": _c("hh_dienstleistungen") // 100,
-            "hh_handwerker_arbeitskosten": _c("hh_handwerker_arbeitskosten") // 100,
+            "hh_minijob_aufwendungen": _hh_summe("hh_minijob_betrag", "hh_minijob") // 100,
+            "hh_dienstleistungen": _hh_summe("hh_dienstleistung_betrag", "hh_dienstleistung") // 100,
+            "hh_handwerker_arbeitskosten": _hh_summe("hh_handwerker_betrag", "hh_handwerker") // 100,
             "hh_in_eu_ewr": f_dict.get("hh_in_eu_ewr", {}),
             "hh_rechnung_unbar": f_dict.get("hh_rechnung_unbar", {}),
             "p35a_mitveranlagung": f_dict.get("p35a_mitveranlagung", {})})
@@ -2067,19 +2083,34 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if eigener_pb_vorhanden and _positiv("behinderungsbedingte_aufwendungen") and not _kind_pb_uebertragen():
             if (felder.get("behinderungsbedingte_aufwendungen_wahlrecht_pb") or {}).get("zustand") != "bestaetigt":
                 return "behinderungsbedingte_aufwendungen_wahlrecht_offen"
+        # § 35a Einzelaufstellung (Anlass 2026-08-10): hh_dienstleistungen/hh_handwerker_arbeitskosten
+        # sind seit dem Fix askable:false — kein Schreiber setzt sie mehr direkt, _positiv(<sum_fid>)
+        # sähe hier NIE wieder einen Wert (permanent stumm, gleiche Fehlerklasse wie ein fail-open
+        # get(name,0), nur am Guard statt am Ring). Ersatz: INSTANZ-basiert, wie _kind_pb_uebertragen
+        # oben — "vorläufig ODER bestätigt" (irgendeine Instanz, jeder zustand), 1:1 zu _positiv's
+        # eigener Semantik (Zeile 1731), NUR die Datenquelle wechselt von Skalar auf instanz_gruppe.
+        def _hh_instanz_positiv(gruppe, betrag_fid):
+            if store is None or bindung is None:
+                return _positiv(betrag_fid)
+            for inst in EM.instanzen(store, bindung, gruppe):
+                v = inst["felder"].get(betrag_fid, {}).get("wert")
+                if isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0:
+                    return True
+            return False
         # § 35a Abs. 5 S. 3 rechnung_unbar = CONDITIONAL-MANDATORY (K2, charge29): NUR wenn Dienstleistung
         # ODER Handwerker (Abs. 2/3) > 0 — Minijob (Abs. 1) verlangt keine unbare Zahlung. Unbeantwortet
         # (nicht bestätigt) → rechnung_unbar_offen (kein Abs2/3-Abzug ohne Beleg-/Überweisungsnachweis);
         # explizit false ist ANTWORT (Ring rechenbar, die slot_fn nullt Abs. 2/3), nur UNSET sperrt.
         # Feld-präsenz-getrieben (gilt für JEDE gesamt_guard-Scheibe, die diese Felder führt — haushalt/agb UND
         # der gefaltete gesamt-Ring, Weg ii). Scheiben ohne die Felder: _positiv/_num liefern absent→False/0.
-        if _positiv("hh_dienstleistungen") or _positiv("hh_handwerker_arbeitskosten"):
+        if (_hh_instanz_positiv("hh_dienstleistung", "hh_dienstleistung_betrag")
+                or _hh_instanz_positiv("hh_handwerker", "hh_handwerker_betrag")):
             if (felder.get("hh_rechnung_unbar") or {}).get("zustand") != "bestaetigt":
                 return "rechnung_unbar_offen"
         # § 35a Abs. 3 S. 2: öffentlich geförderte Handwerkermaßnahmen (zinsverbilligtes Darlehen
         # oder steuerfreier Zuschuss) → hh_handwerker_keine_foerderung CONDITIONAL-MANDATORY
         # (nur wenn Handwerker > 0). Unbeantwortet → handwerker_foerderung_offen (Abs. 3 unhaltbar).
-        if _positiv("hh_handwerker_arbeitskosten"):
+        if _hh_instanz_positiv("hh_handwerker", "hh_handwerker_betrag"):
             if (felder.get("hh_handwerker_keine_foerderung") or {}).get("zustand") != "bestaetigt":
                 return "handwerker_foerderung_offen"
         # § 10 Abs. 4b KiSt-Erstattungsüberhang: früher sperrte hier erstattungsueberhang_offen,
@@ -2425,6 +2456,17 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
     Direkt auf `felder` gerechnet (kein _feste_zahl/Meet-Gate): der Wert
     hängt nur an KAP-Feldern, nicht an unverwandten Kegel-Feldern.
 
+    (4) § 35a Haushaltsnahe Sum-Kz (E0104109/E0107208/E0111215): seit der
+    Einzelaufstellung (Anlass 2026-08-10, checkESt rc=610001002 ohne Einz-Kz)
+    sind diese drei Felder askable:false — ohne diese Injektion bliebe die
+    Sum-Kz auf der Scheibe leer und _scheibe_bindung deklariert sie NICHT
+    (dieselbe Naht wie E0205508/E1900401 oben). Wert = STUMPFE Σ über die
+    Einz-Instanzen (hh_minijob_betrag/hh_dienstleistung_betrag/
+    hh_handwerker_betrag, instanz_gruppe hh_minijob/hh_dienstleistung/
+    hh_handwerker) direkt aus `felder` (bereits materialisiert, Instanz-
+    Suffixe __n flach enthalten — keine store/bindung-Naht nötig hier).
+    Inert wie (1): keine Instanz-Σ > 0 → kein Eintrag (kein Wert-0-Kz).
+
     Alle Injektionen sind fertige Events (zustand=bestaetigt, schreiber=
     engine, herkunft=berechnet/amtlich/system — fail-closed, Haftung System).
     """
@@ -2500,6 +2542,35 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
             "schreiber": "engine",
             "signal": {"signal_1": None, "signal_2": None},
         }
+
+    # (4) § 35a Haushaltsnahe: Sum-Kz aus der Σ der Einz-Instanzen (Instanz-Reuse, Basis-feld_id
+    # ohne Suffix = Instanz 1 — dieselbe Konvention wie EM.instanzen, hier ohne store/bindung
+    # direkt auf dem bereits materialisierten `felder` gerechnet).
+    def _instanz_summe(basis_fid):
+        total = 0
+        for fid, ev in felder.items():
+            parsed = EM.parse_instanz(fid)
+            if (parsed[0] if parsed else fid) != basis_fid:
+                continue
+            if not isinstance(ev, dict) or ev.get("zustand") != "bestaetigt":
+                continue
+            v = ev.get("wert")
+            total += int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+        return total
+    for sum_fid, betrag_fid in (
+        ("hh_minijob_aufwendungen", "hh_minijob_betrag"),
+        ("hh_dienstleistungen", "hh_dienstleistung_betrag"),
+        ("hh_handwerker_arbeitskosten", "hh_handwerker_betrag"),
+    ):
+        summe_cent = _instanz_summe(betrag_fid)
+        if summe_cent > 0:
+            felder[sum_fid] = {
+                "wert": summe_cent,
+                "zustand": "bestaetigt",
+                "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+                "schreiber": "engine",
+                "signal": {"signal_1": None, "signal_2": None},
+            }
 
     return felder
 
