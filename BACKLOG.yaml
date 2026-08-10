@@ -1240,6 +1240,40 @@ rechenluecken:
       Bewusst so gebaut in dba31df, im Docstring benannt. Over-tax-safe, also die
       harmlose Richtung. Ob es sich lohnt, haengt daran wie viele Nutzer betroffen sind —
       Produktfrage, keine Korrektheitsfrage.
+    kz_belegt: |
+      2026-08-10: Anlage KAP Zeile 41, Kz 284/484, XSD E1905101 in Sektion
+      St_Abz_Betr_Inl_u_Inv_Ert. Amtlich gegengeprueft, s.
+      reports/adjudikation/anlage-kap-kz-zuordnung-2026-08-10.md.
+      NICHT Zeile 40 (E1905001 "Angerechnete auslaendische Steuern" — die hat die
+      auszahlende Stelle bereits verrechnet) und NICHT Zeile 42 (E1905201 fiktive
+      Quellensteuer, laut Vordruck ausdruecklich nicht in 40/41 enthalten). Die drei
+      Bezeichnungen aehneln sich, die Bedeutung ist gegenteilig.
+    kein_abklatsch_von_stufe_2: |
+      2026-08-10, Gegenrede p33b-2b gegen ein widerspruechliches Briefing von mir (ich
+      schrieb erst "Bauform identisch zu Stufe 2", dann "mehr Arbeit als bei Stufe 2").
+      Er hat recht: q sitzt in der § 32d-FORMEL (e - 4q)/(4 + k), also VOR der
+      Festsetzung. Die Zeilen 37-39 (KAP Stufe 2, gebaut in ac2989a) rechnen nach § 36
+      NACH der Festsetzung an. Andere Gesetzesstelle, andere Codestelle — kein Spiegeln
+      des Stufe-2-Baus.
+      Dazu aus reports/adjudikation/p32d-abgeltung-kist.md (2026-08-06, Abschnitt 5.7):
+      ein echtes q-Feld braucht eigenes § 32d-Kapital-DBA-Routing. Die bestehende
+      DBA-Infrastruktur (dba_gezahlte_auslaendische_steuer, catala_p34c_1) ist fuer
+      § 34c gebaut und greift hier nicht; dba_kapital_offen ist ein grober Sperrgrund
+      bei DBA+Kapital, kein q-Kredit.
+      Eigener Scoping-Task, kein Anhaengsel.
+    wirkung_praezisiert: |
+      "Over-tax, also harmlos" ist die richtige Prioritaets-Einordnung (kein
+      Haftungsrisiko, das Finanzamt kommt nicht nach), aber der Nutzer zahlt real zu
+      viel: bei 15 % US-Quellensteuer auf eine Dividende sind das 15 % dieses Ertrags,
+      die er nicht wiedersieht. Nicht als "egal" behandeln, nur als nachrangig.
+    rechenseite: |
+      Beide Formelstellen (api.py ~1200 gesamt, ~1565 rentner) rechnen heute
+      kap_st * 100 * 400 // (400 + ksatz), also e*400/(400+k) — das "- 4q" fehlt ganz.
+      Dazu die Deckelung: § 32d Abs. 5 S. 1 "hoechstens 25 Prozent auslaendische Steuer
+      auf den einzelnen steuerpflichtigen Kapitalertrag", S. 3 zusaetzlich begrenzt auf
+      die deutsche Steuer, die auf diese Ertraege entfaellt. OFFEN und vor dem Bau zu
+      klaeren: ob "einzelner Kapitalertrag" bei unserem Datenmodell pro Topf oder auf
+      die Summe wirkt — geht aus der Struktur nicht automatisch hervor.
 
   - id: slot-fail-open-13568-eur
     titel: "slots.get(name, 0) — falscher signatur_slot loescht die Steuer lautlos"
