@@ -938,7 +938,7 @@ rechenluecken:
 
   - id: rentner-gesamt-partner-kegel-ungeschuetzt
     titel: "rentner_gesamt/zusammen — KEIN Partner-Kegel-Guard fuer 28 wired Partnerfelder"
-    status: offen
+    status: teil_erledigt
     richtung: "under-tax (strukturell, durch Asymmetrie: Abzuege einzeln erreichbar, Einkommen nur als Gruppe)"
     entdeckt: |
       2026-08-10, Folgeauftrag team-lead nach p33b-partner-pb-doppelabzug: pruefen, ob die
@@ -1016,6 +1016,39 @@ rechenluecken:
       Renten-Crash) — kein Beleg gefunden, weder Kommentar noch Commit-Text.
     aufwand_h: unbeziffert
     api_py: "kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation"
+    fix_2026-08-10: |
+      Folgeauftrag team-lead, Julius freigegeben ("nimm den Rentner-Partner-Kegel + Guard"):
+      NICHT alle 28 Felder gegated, nur die zwei Funde in messung_2, die echte Bugs sind (Crash,
+      fail-open bei Kz-Weiche) — nicht die uebrigen 12 Abzugs-Felder, die einzeln abzugsfaehig
+      bleiben duerfen (§26b Splitting, A.2-Praezedenzfall bei partner_19: Partner ohne eigenes
+      Einkommen ist Normalfall, kein Sperrgrund noetig).
+      (a) CRASH -> Sperrgrund: RENTNER_22_PARTNER (4 Kernfelder, api_constants.py, bereits
+          vorhanden) muss ALLE bestaetigt sein oder KEINS, sonst rente_instanz_offen — dieselbe
+          Semantik wie der bestehende multi_rente-Instanz-Check fuer Person A.
+      (b) KV/PV-Kz-Weiche: versicherungsart_partner muss bestaetigt sein, wenn basis_kv_partner
+          oder basis_pv_partner gesetzt ist, sonst partner_kegel_offen (est_mapping.py
+          PARTNER_VERZWEIGUNG entscheidet sonst zwischen 3 moeglichen Kz ohne Antwort).
+      Beide in api.py::_an_gesamt_sperrgrund, cfg.get("rentner")-Block. Mutationsprobe (git
+      stash auf nur api.py): ohne Fix reproduziert Test 1 die ORIGINALE Exception
+      (RentenfreibetragFixierungOffen), Test 2 zeigt grund='bestaetigt' (das gemessene
+      fail-open) — beide exakt wie in messung_2 protokolliert. 3 Gegenproben (vollstaendige
+      Partner-Rente, komplett leere Partner-Rente bei zusammen, KV/PV MIT Art) bleiben in
+      beiden Zustaenden gruen. Neu: tests/test_rentner_partner_kegel_guard.py (5 Tests).
+      1 bestehender Test proaktiv gehaertet: test_ring_regression_kampagne.py::
+      _RENTNER_ZUSAMMEN_BASIS fehlte versicherungsart_partner (haette sonst neu gesperrt).
+      Volle Suite gruen: 1813 passed, 4 skipped (Baseline 1808 + 5 neue).
+
+      Neuer Fund, NICHT Teil von messung_2 (die zaehlte nur Felder mit "_partner"-Suffix):
+      person_b_idnr (E0100082, aus GESAMT_PARTNER_19) ist auf rentner_gesamt gar nicht in
+      RENTNER_FELDER erreichbar — bei zusammen braeuchte der Splitting-Ring das eigentlich,
+      wie bei gesamt/an_gesamt. ~10 bestehende gruene Tests setzen zusammen+rentner_gesamt
+      OHNE idnr — ein Fix wuerde die alle anfassen. NICHT mitgezogen, hier nur protokolliert.
+
+      Weiterhin offen, bewusst ausserhalb dieses Auftrags:
+        - person_b_idnr-Erreichbarkeit (s.o.)
+        - §33b GdB/hilflos-Partnerfelder-Doppelabzug: eigener Auftrag p33b-partner-pb-doppelabzug
+        - die 12 individuellen Abzugsfelder aus messung_2 bleiben ABSICHTLICH ungegated
+          (kein Bug, s. Begruendung oben)
 
   - id: commit-nur-defer-sweep-2026-08-10
     titel: "Commit-Historie nach Selbst-Markierungen durchsucht — 9 Notizen ohne Entsprechung in BACKLOG/reports"
