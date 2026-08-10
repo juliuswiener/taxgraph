@@ -81,7 +81,7 @@ def base(tmp_path, monkeypatch):
         srv.server_close()
 
 
-def _fall(base, scheibe="an_gesamt", vz=2025):
+def _fall(base, scheibe="gesamt", vz=2025):
     st, r = _req(base, "POST", "/fall", {"fall_id": "tg1", "scheibe": scheibe,
                                         "veranlagungszeitraum": vz})
     assert st == 201, r
@@ -144,7 +144,7 @@ def test_vorlaeufiges_feld_blockiert_einreichen(tmp_path, monkeypatch):
     """Ein vorläufiger Wert macht die Deklaration unvollständig — fail-closed vor dem XML."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
     monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
-    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "an_gesamt", "veranlagungszeitraum": 2025})
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
     fid = r["fall_id"]
     store = API.lade_fall(fid)
     import store as ST
@@ -170,7 +170,7 @@ def test_eric_fehlt_gibt_503_statt_crash(tmp_path, monkeypatch):
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate",
                         lambda *a, **k: (_ for _ in ()).throw(RuntimeError("libericapi.so nicht gefunden")))
-    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "an_gesamt", "veranlagungszeitraum": 2025})
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
     st, resp = API.einreichen(r["fall_id"], {})
     assert st == 503
     assert resp["grund"] == "eric_nicht_verfuegbar"
@@ -189,7 +189,7 @@ def test_plausibilitaetsfehler_reicht_ericantwort_durch(tmp_path, monkeypatch):
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate",
                         lambda *a, **k: (CE.RC_PLAUSIBILITAET, "<FehlerRegelpruefung>E0100201</FehlerRegelpruefung>"))
-    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "an_gesamt", "veranlagungszeitraum": 2025})
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
     st, resp = API.einreichen(r["fall_id"], {})
     assert st == 422
     assert resp["grund"] == "plausibilitaet_verletzt"
@@ -208,7 +208,7 @@ def test_io_gate_rc_ist_nicht_gruen(tmp_path, monkeypatch):
                                          "unvollstaendig": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_IO_KEIN_TICKET, ""))
-    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "an_gesamt", "veranlagungszeitraum": 2025})
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
     st, resp = API.einreichen(r["fall_id"], {})
     assert st == 422, "leerer Fehlerpuffer bei rc!=0 darf nicht als plausibel durchgehen"
     assert resp["klasse"] == "io_gate_nicht_geprueft"
@@ -225,7 +225,7 @@ def test_erfolg_meldet_plausibel_aber_nicht_eingereicht(tmp_path, monkeypatch):
                                          "unvollstaendig": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_OK, ""))
-    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "an_gesamt", "veranlagungszeitraum": 2025})
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
     st, resp = API.einreichen(r["fall_id"], {})
     assert st == 200
     assert resp["plausibel"] is True
@@ -242,7 +242,7 @@ def test_xml_nicht_baubar_gibt_422(tmp_path, monkeypatch):
                                          "unvollstaendig": []})
     monkeypatch.setattr(EX, "erzeuge_xml",
                         lambda *a, **k: (_ for _ in ()).throw(EX.XmlFehler("Kz ohne Pfad")))
-    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "an_gesamt", "veranlagungszeitraum": 2025})
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
     st, resp = API.einreichen(r["fall_id"], {})
     assert st == 422
     assert resp["grund"] == "xml_nicht_baubar"
@@ -271,7 +271,7 @@ def test_einreichen_traegt_verpflegung_kuerzung_ein(tmp_path, monkeypatch):
     monkeypatch.setattr(EX, "erzeuge_xml", fake_xml)
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_OK, ""))
 
-    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "n_vor_gwg",
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt",
                                 "veranlagungszeitraum": 2025})
     fid = r["fall_id"]
     store = API.lade_fall(fid)
@@ -314,7 +314,7 @@ def test_einreichen_ohne_verpflegung_kein_kuerzung_kz(tmp_path, monkeypatch):
     monkeypatch.setattr(EX, "erzeuge_xml", fake_xml)
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_OK, ""))
 
-    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "n_vor_gwg",
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt",
                                 "veranlagungszeitraum": 2025})
     fid = r["fall_id"]
     store = API.lade_fall(fid)

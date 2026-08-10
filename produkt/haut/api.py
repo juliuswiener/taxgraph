@@ -2379,9 +2379,36 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
 
+    cfg = _cfg(store)
+
+    # Scheibenwahl VOR allem anderen: nicht jede Scheibe kann eine Erklaerung tragen.
+    # Kriterium ist NICHT `gesamt_guard` (der meint Rechen-Vollstaendigkeit), sondern ob die
+    # STAMMDATEN_FELDER ueberhaupt im Kegel liegen. Gemessen 2026-08-10:
+    #   an_gesamt  69 Felder,   0/12 Stammdaten   -> strukturell nicht abgabefaehig
+    #   gesamt     201 Felder, 12/12 Stammdaten
+    #   rentner_gesamt 148 Felder, 12/12
+    # Ohne diese Pruefung laeuft so ein Fall bis checkESt und scheitert dort an fehlenden
+    # Stammdaten, die der Nutzer auf dieser Scheibe nie haette liefern koennen: POST /event
+    # lehnt sie mit 400 "nicht in dieser Scheibe" ab. Die Meldung zeigte auf den Nutzer
+    # ("Angaben fehlen") statt auf die Scheibenwahl. Fail-closed war es vorher schon —
+    # ehrlich erst jetzt. (BACKLOG einreichen-ohne-scheiben-pruefung)
+    _fehlend = [f for f in STAMMDATEN_FELDER if f not in set(cfg.get("felder") or ())]
+    if _fehlend:
+        return 409, {
+            "fall_id": fall_id, "eingereicht": False,
+            "grund": "scheibe_nicht_abgabefaehig",
+            "scheibe": store.get("scheibe"),
+            "fehlende_stammdatenfelder": _fehlend,
+            "hinweis": (
+                f"Die Scheibe {store.get('scheibe')!r} ist eine Teilrechnung und kann keine "
+                f"Einkommensteuererklaerung tragen: {len(_fehlend)} Stammdatenfelder "
+                f"(Name, Anschrift, Steuernummer) liegen nicht in ihrem Fragenkegel und "
+                f"koennen dort auch nicht beantwortet werden. Legen Sie den Fall auf einer "
+                f"abgabefaehigen Scheibe an ('gesamt' oder 'rentner_gesamt'). Die Berechnung "
+                f"auf dieser Scheibe bleibt nutzbar.")}
+
     # Sperrgrund-Prüfung VOR Deklaration: Ring ist rechnerunfähig → 409 mit unserem Grund,
     # nicht ERiCs falschem Grund später. Identisch wie in ergebnis() (Zeile 2075).
-    cfg = _cfg(store)
     vz = int(store.get("veranlagungszeitraum") or 0)
     felder = _mit_ring_werten(felder, vz)
     if cfg.get("guard"):
