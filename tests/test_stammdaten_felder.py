@@ -217,3 +217,38 @@ def test_stammdaten_im_xml(bindung):
     assert "<E0100402>03</E0100402>" in clean
     assert "<E0102002>X</E0102002>" in clean
     assert "<E0100001>X</E0100001>" in clean
+
+
+def test_konfession_andere_nennt_dem_nutzer_den_ausweg(bindung):
+    """"andere" ist bewusst fail-closed — aber der Nutzer muss erfahren, was er tun kann.
+
+    Der amtliche Enum fuehrt rund zwanzig Religionsschluessel, fast durchweg regionale
+    Koerperschaften (juedische Gemeinden getrennt nach Bundesland: 19 Hessen, 26 Bayern,
+    18 Frankfurt, 25 Baden). Eine Laien-Option "juedisch" waere nicht eindeutig abbildbar,
+    ein geratener Schluessel ein Kirchensteuerfehler, der in keiner Summe auffaellt.
+    Deshalb kein Code — aber auch keine Sackgasse: "Wert 'andere' ohne XSD-Code-Zuordnung"
+    allein sagt dem Nutzer weder warum noch was jetzt zu tun ist.
+    """
+    s = ST.leerer_store(2025, fall_id="konf_andere")
+    _b(s, "kist_konfession", "andere")
+    snap, _ = ST.materialisiere(s)
+    result = EM.deklariere(snap, bindung)
+
+    assert "E0100402" not in result["deklaration"], "geratener Religionsschluessel — nie tun"
+    eintrag = next(x for x in result["nicht_deklariert"] if x["feld_id"] == "kist_konfession")
+    hinweis = eintrag.get("hinweis", "")
+    assert hinweis, "kein Hinweis — der Nutzer steht vor einer Sackgasse"
+    assert "ELSTER" in hinweis, "Hinweis nennt keinen Weg, wie der Nutzer weiterkommt"
+    assert "unberuehrt" in hinweis, (
+        "Hinweis sagt nicht, dass der Rest der Erklaerung gueltig bleibt — sonst glaubt "
+        "der Nutzer, seine ganze Erklaerung sei blockiert")
+
+
+def test_konfession_bekannter_wert_hat_keinen_hinweis(bindung):
+    """Gegenprobe: ein zuordenbarer Wert erzeugt gar keinen nicht_deklariert-Eintrag."""
+    s = ST.leerer_store(2025, fall_id="konf_ev")
+    _b(s, "kist_konfession", "evangelisch")
+    snap, _ = ST.materialisiere(s)
+    result = EM.deklariere(snap, bindung)
+    assert result["deklaration"]["E0100402"] == "02"
+    assert not [x for x in result["nicht_deklariert"] if x["feld_id"] == "kist_konfession"]

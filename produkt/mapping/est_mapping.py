@@ -237,11 +237,34 @@ def _kap_alle_null(snapshot: dict, felder: tuple) -> bool:
 # den laienverständlichen Enum-Wert (z.B. "roemisch-katholisch"), das Kz erwartet den amtlichen
 # Religionsschlüssel (Enum_Religionsschluessel_ab_VZ_2014_3, E10-2025.xsd). "andere" hat KEINEN
 # verifizierten Code (~35 mögliche Werte, kein Raten) -> fail-closed in nicht_deklariert.
+# `hinweis_unbekannt`: was der NUTZER tun kann, wenn sein Wert keinen amtlichen Code hat.
+# Ohne diesen Text liest er nur "Wert 'andere' ohne XSD-Code-Zuordnung (E0100402)" — eine
+# Sackgasse, die ihm weder sagt, warum es nicht geht, noch was jetzt zu tun ist.
+#
+# Warum "andere" bewusst KEINEN Code bekommt (Entscheidung 2026-08-10, BACKLOG
+# entscheidungen-2026-08-10): der amtliche Enum Enum_Religionsschluessel_ab_VZ_2014_3 fuehrt
+# rund zwanzig weitere Schluessel, und die sind fast durchweg REGIONALE Koerperschaften —
+# "Freireligioese Gemeinde Mainz" (15), "Evangelisch-reformierte Kirche Bueckeburg" (20),
+# juedische Gemeinden getrennt nach Bundesland (19 Hessen, 26 Bayern, 18 Frankfurt, 25 Baden).
+# Eine Laien-Option "juedisch" waere also gar nicht eindeutig abbildbar, und ein geratener
+# Schluessel erzeugt einen Kirchensteuerfehler, der in keiner Summe auffaellt.
 WERTEKODIERUNG = {
     "kist_konfession": {"kz": "E0100402", "code": {
-        "keine": "11", "evangelisch": "02", "roemisch-katholisch": "03"}},
+        "keine": "11", "evangelisch": "02", "roemisch-katholisch": "03"},
+        "hinweis_unbekannt": (
+            "Ihre Konfession laesst sich nicht automatisch dem amtlichen "
+            "Religionsschluessel zuordnen. Der amtliche Schluessel unterscheidet rund "
+            "zwanzig einzelne Koerperschaften, viele davon regional (etwa juedische "
+            "Gemeinden je nach Bundesland). Bitte tragen Sie die Konfession in Mein "
+            "ELSTER nach oder waehlen Sie eine der angebotenen, falls sie zutrifft. "
+            "Alles Uebrige Ihrer Erklaerung bleibt davon unberuehrt.")},
     "kist_konfession_partner": {"kz": "E0101002", "code": {
-        "keine": "11", "evangelisch": "02", "roemisch-katholisch": "03"}},
+        "keine": "11", "evangelisch": "02", "roemisch-katholisch": "03"},
+        "hinweis_unbekannt": (
+            "Die Konfession Ihres Ehegatten laesst sich nicht automatisch dem amtlichen "
+            "Religionsschluessel zuordnen (rund zwanzig Koerperschaften, viele regional). "
+            "Bitte in Mein ELSTER nachtragen oder eine der angebotenen waehlen, falls sie "
+            "zutrifft. Alles Uebrige Ihrer Erklaerung bleibt davon unberuehrt.")},
 }
 
 # Bankverbindung (Klasse j — Wert-Verzweigung ohne separates Art-Feld): stammdaten_iban traegt sowohl
@@ -425,8 +448,13 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             if code:
                 deklaration[cfg["kz"]] = code
             else:
-                nicht_deklariert.append({"feld_id": feld_id,
-                                         "grund": f"Wert '{wert}' ohne XSD-Code-Zuordnung ({cfg['kz']})"})
+                # Technischer Grund fuer uns, Handlungsanweisung fuer den Nutzer. Ohne den
+                # Hinweis steht er vor einer Sackgasse, die ihm nicht sagt, was zu tun ist.
+                eintrag = {"feld_id": feld_id,
+                           "grund": f"Wert '{wert}' ohne XSD-Code-Zuordnung ({cfg['kz']})"}
+                if cfg.get("hinweis_unbekannt"):
+                    eintrag["hinweis"] = cfg["hinweis_unbekannt"]
+                nicht_deklariert.append(eintrag)
         elif feld_id == "stammdaten_iban":                        # Klasse j (Format+Pruefziffer, Wert-Verzweigung)
             iban_norm = re.sub(r"\s+", "", str(wert)).upper()
             if not _IBAN_PATTERN.match(iban_norm):
