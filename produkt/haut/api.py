@@ -360,7 +360,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
         # bare feld_id). store/bindung/nur_bestaetigt hier via Closure aus _bescheid_fn (nested
         # def, siehe _kind_behinderten_pb_daten-Präzedenz). Ohne store (Alt-Aufrufer) nur die
         # Instanz-1-Basis aus f_dict — genau wie _gwg_sofortabzug_summe.
-        def _hh_summe(betrag_fid, gruppe):
+        def _hh_summe(betrag_fid, gruppe, sum_fid):
             if store is None or bindung is None:
                 return _c(betrag_fid)
             total = 0
@@ -369,11 +369,20 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     continue
                 v = inst["felder"].get(betrag_fid, {}).get("wert")
                 total += int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
-            return total
+            if total > 0:
+                return total
+            # Bestandsdaten-Fallback (test_p35a_bestandsdaten.py, Nebenbefund aus 03aa10b): ohne
+            # Instanz auf den alten Flat-Wert zurückfallen. Sonst rechnete der Ring 0 für einen
+            # Fall, der die Summe schon bestätigt hat, während _mit_ring_werten (Deklaration)
+            # denselben Flat-Wert weiter zeigt — Ring und XML liefen auseinander. `_c` liest aus
+            # f_dict, das bei nur_bestaetigt=True schon auf zustand=bestaetigt gefiltert ist
+            # (Zeile 291f., Zwei-Signal-Invariant) — der Fallback erbt den Schutz, kein eigener
+            # Zustandscheck nötig.
+            return _c(sum_fid)
         base = runner.catala_p35a_haushaltsnahe({
-            "hh_minijob_aufwendungen": _hh_summe("hh_minijob_betrag", "hh_minijob") // 100,
-            "hh_dienstleistungen": _hh_summe("hh_dienstleistung_betrag", "hh_dienstleistung") // 100,
-            "hh_handwerker_arbeitskosten": _hh_summe("hh_handwerker_betrag", "hh_handwerker") // 100,
+            "hh_minijob_aufwendungen": _hh_summe("hh_minijob_betrag", "hh_minijob", "hh_minijob_aufwendungen") // 100,
+            "hh_dienstleistungen": _hh_summe("hh_dienstleistung_betrag", "hh_dienstleistung", "hh_dienstleistungen") // 100,
+            "hh_handwerker_arbeitskosten": _hh_summe("hh_handwerker_betrag", "hh_handwerker", "hh_handwerker_arbeitskosten") // 100,
             "hh_in_eu_ewr": f_dict.get("hh_in_eu_ewr", {}),
             "hh_rechnung_unbar": f_dict.get("hh_rechnung_unbar", {}),
             "p35a_mitveranlagung": f_dict.get("p35a_mitveranlagung", {})})
@@ -2089,28 +2098,32 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # get(name,0), nur am Guard statt am Ring). Ersatz: INSTANZ-basiert, wie _kind_pb_uebertragen
         # oben — "vorläufig ODER bestätigt" (irgendeine Instanz, jeder zustand), 1:1 zu _positiv's
         # eigener Semantik (Zeile 1731), NUR die Datenquelle wechselt von Skalar auf instanz_gruppe.
-        def _hh_instanz_positiv(gruppe, betrag_fid):
+        def _hh_instanz_positiv(gruppe, betrag_fid, sum_fid):
             if store is None or bindung is None:
                 return _positiv(betrag_fid)
             for inst in EM.instanzen(store, bindung, gruppe):
                 v = inst["felder"].get(betrag_fid, {}).get("wert")
                 if isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0:
                     return True
-            return False
+            # Bestandsdaten-Fallback (1:1 zu _hh_summe in _shared_steuer_sonder_agb, api.py:363):
+            # ohne Instanz auf den alten Flat-Wert zurückfallen. Sonst griffe dieser Guard für
+            # einen Bestandsfall NIE — rechnung_unbar_offen/handwerker_foerderung_offen sperrten
+            # dann nicht, obwohl der Ring (mit dem Fallback dort) den Flat-Betrag längst mitrechnet.
+            return _positiv(sum_fid)
         # § 35a Abs. 5 S. 3 rechnung_unbar = CONDITIONAL-MANDATORY (K2, charge29): NUR wenn Dienstleistung
         # ODER Handwerker (Abs. 2/3) > 0 — Minijob (Abs. 1) verlangt keine unbare Zahlung. Unbeantwortet
         # (nicht bestätigt) → rechnung_unbar_offen (kein Abs2/3-Abzug ohne Beleg-/Überweisungsnachweis);
         # explizit false ist ANTWORT (Ring rechenbar, die slot_fn nullt Abs. 2/3), nur UNSET sperrt.
         # Feld-präsenz-getrieben (gilt für JEDE gesamt_guard-Scheibe, die diese Felder führt — haushalt/agb UND
         # der gefaltete gesamt-Ring, Weg ii). Scheiben ohne die Felder: _positiv/_num liefern absent→False/0.
-        if (_hh_instanz_positiv("hh_dienstleistung", "hh_dienstleistung_betrag")
-                or _hh_instanz_positiv("hh_handwerker", "hh_handwerker_betrag")):
+        if (_hh_instanz_positiv("hh_dienstleistung", "hh_dienstleistung_betrag", "hh_dienstleistungen")
+                or _hh_instanz_positiv("hh_handwerker", "hh_handwerker_betrag", "hh_handwerker_arbeitskosten")):
             if (felder.get("hh_rechnung_unbar") or {}).get("zustand") != "bestaetigt":
                 return "rechnung_unbar_offen"
         # § 35a Abs. 3 S. 2: öffentlich geförderte Handwerkermaßnahmen (zinsverbilligtes Darlehen
         # oder steuerfreier Zuschuss) → hh_handwerker_keine_foerderung CONDITIONAL-MANDATORY
         # (nur wenn Handwerker > 0). Unbeantwortet → handwerker_foerderung_offen (Abs. 3 unhaltbar).
-        if _hh_instanz_positiv("hh_handwerker", "hh_handwerker_betrag"):
+        if _hh_instanz_positiv("hh_handwerker", "hh_handwerker_betrag", "hh_handwerker_arbeitskosten"):
             if (felder.get("hh_handwerker_keine_foerderung") or {}).get("zustand") != "bestaetigt":
                 return "handwerker_foerderung_offen"
         # § 10 Abs. 4b KiSt-Erstattungsüberhang: früher sperrte hier erstattungsueberhang_offen,
