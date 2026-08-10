@@ -24,6 +24,11 @@ scratchpad/task_queue.json.bak
 openrouter.env
 **/.env*
 
+# ELSTER-Zertifikat (Echtversand-Schluessel) — NIE ins Repo, auch nicht versehentlich abgelegt
+*.pfx
+*.p12
+elster/zertifikat/
+
 # OMC state
 .omc/
 
