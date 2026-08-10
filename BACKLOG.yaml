@@ -1,6 +1,7 @@
 # TaxGraph — offene Punkte
 #
-# Stand: 2026-08-09, HEAD 969edd5, Suite 1672 passed / 4 skipped / 0 failed.
+# Stand: 2026-08-10, HEAD 70614c2, Suite 1741 passed / 4 skipped / 0 failed.
+# ABGABEACHSE: rc=0 erreicht, einzel wie zusammen. Keine offene Bauaufgabe mehr.
 #
 # ZIEL (Julius, 2026-08-09): abgabefaehig fuer den eigenen Fall — Roadmap M6.1,
 # eigene ESt, Zusammenveranlagung, Arbeitnehmerfall, durch TaxGraph erklaert und
@@ -27,8 +28,8 @@
 #   erledigt      — gebaut, gemessen, committet (erledigt_in nennt den Commit)
 
 version: 2
-stand: "2026-08-09"
-head: 969edd5
+stand: "2026-08-10"
+head: 70614c2
 
 # ============================================================================
 # ABGABEACHSE — der Weg zu "abgabefaehig"
@@ -406,7 +407,26 @@ abgabe:
 
   - id: rc-null-erreichbar-belegt
     titel: "rc=0 ist erreicht — das amtliche Plugin akzeptiert eine TaxGraph-Erklaerung"
-    status: analysiert
+    status: erledigt
+    erledigt_in: "70614c2 (2026-08-10)"
+    erledigt_wie: |
+      Nicht mehr nur erreichbar, sondern ERREICHT. Nach Julius' drei Entscheiden
+      (KAP-Nullwerte filtern, echte Lohnsteuer deklarieren, VZ 2025) meldet checkESt
+      auf ALLEN Pfaden rc=0, von main unabhaengig nachgemessen:
+
+        einzel     rc=0 [plausibel]  0 Fehler
+        zusammen   rc=0 [plausibel]  0 Fehler
+        Endpunkt   rc=0
+        Delta-Wache Endpunkt/Funktion: 0
+
+      Kirchensteuerpflichtig mitgemessen (einzel evangelisch, zusammen evangelisch +
+      roemisch-katholisch) — beide rc=0. Das war der Fall, an dem die Religion-
+      Lohnsteuer-Kopplung haette scheitern koennen.
+
+      Volle Suite 1741 passed, 4 skipped, 0 failed.
+
+      DAMIT IST DIE ABGABEACHSE OHNE OFFENE BAUAUFGABE. Was bleibt, sind Entscheidungen
+      (testversand, bankverbindung-nur-bool) und Punkte ausserhalb dieser Achse.
     entdeckt: "2026-08-10"
     bericht: reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md
     messung: |
