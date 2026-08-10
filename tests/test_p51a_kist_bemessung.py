@@ -173,6 +173,111 @@ def test_kist_mit_kapital(base):
         f"ESt {erg['zahl_cent']} != 330900. erg={erg}")
 
 
+# ===== KAP Stufe 3 (Zeile 41, Kz E1905101, § 32d Abs. 1 S. 2/4-5): q-Anrechnung =====
+
+def test_kist_mit_kapital_und_q(base):
+    """Wie test_kist_mit_kapital, zusaetzlich 100 EUR anrechenbare auslaendische Steuer (q).
+
+    § 32d Abs. 1 S. 4-5: e=4.000, q=100, k=9% -> (4.000-400)/4,09 = 880,19 EUR (CENT-Floor
+    88.019). KiSt auf Kapital = 88.019 × 9% = 792,171 -> 7.921 CENT (Floor).
+    KiSt gesamt = 20.988 (Nicht-Kapital, unveraendert) + 7.921 = 28.909 CENT.
+    ESt = 2.332 + 880 = 3.212 EUR = 321.200 CENT (vs. 330.900 CENT ohne q, s. test_kist_mit_kapital).
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    kegel = list(GESAMT_KEGEL_BASE)
+    for i, (k, v) in enumerate(kegel):
+        if k == "kein_kap":
+            kegel[i] = (k, False)
+        elif k == "kap_kapitalertraege":
+            kegel[i] = (k, 500000)  # 5000 EUR in cent
+    kegel += [("kist_konfession", "roemisch-katholisch"),
+              ("kist_bundesland", "nordrhein_westfalen"),
+              ("kap_q_auslaendische_steuer", 10000)]  # 100 EUR
+    _anlegen(base, "kistkapq", "gesamt", kegel)
+    st, erg = _req(base, "GET", "/fall/kistkapq/ergebnis")
+    assert st == 200
+    assert erg.get("kist_cent") == 28909, (
+        f"KiSt {erg.get('kist_cent')} != 28909 (Nicht-Kapital 20988 + Kapital-mit-q 7921). erg={erg}")
+    assert erg["zahl_cent"] == 321200, (
+        f"ESt {erg['zahl_cent']} != 321200 (2.332 + 880 nach q-Anrechnung, vs. 330900 ohne q). erg={erg}")
+
+
+def test_kist_mit_kapital_q_deckel(base):
+    """q weit ueber kap_st (25%-Abgeltung auf Kapital, VOR der KiSt-Formel) -> Deckel (§ 32d
+    Abs. 5 S. 3) greift, q wird NICHT voll angerechnet.
+
+    Kapitalertraege 5.001 EUR (bewusst NICHT durch 4 teilbar nach Sparer-PB-Abzug) statt der
+    500.000-Cent-Rundzahl der Nachbartests: kap_st = e*25//100 ist ein EUR-Floor von e/4, bei
+    e=4.000 (Nachbartests) trifft der Deckel q_eur=kap_st EXAKT auf 4*kap_st=e -> Zaehler der
+    KiSt-Formel (e-4q) wird IMMER 0, ob mit oder ohne Deckel (das aeussere max(0,...) faengt
+    ein unbegrenztes q genauso ab) — an dieser Stelle waere der Deckel nicht vom bereits
+    vorhandenen max(0,...)-Floor zu unterscheiden. Mit e=4.001 bleibt bei korrektem Deckel ein
+    EUR-Rundungsrest (e-4*kap_st=1) uebrig, den ein FEHLENDER Deckel nicht erzeugen kann.
+
+    e=4.001, kap_st=4.001*25//100=1.000 EUR (Abgeltung, CENT-Floor). q_deklariert=5.000 EUR
+    wird gedeckelt auf min(5.000, 1.000)=1.000. (4.001-4×1.000)/4,09 = 1/4,09 = 0,2445 EUR
+    (CENT-Floor 24). KiSt auf Kapital = 24×9% = 2,16 -> 2 CENT (Floor). KiSt gesamt =
+    20.988+2 = 20.990 CENT. kap_st_k = 24 CENT // 100 = 0 EUR -> ESt = 2.332+0 = 233.200 CENT
+    (unveraendert ggue. q=0, weil der 24-CENT-Rest EUR-seitig abrundet — ESt allein
+    unterscheidet Deckel/kein-Deckel hier NICHT).
+    OHNE Deckel waere q_eur=5.000 > e=4.001 -> (4.001-20.000) negativ -> max(0,...) = 0 ->
+    KiSt-Anteil Kapital = 0 CENT -> KiSt gesamt 20.988 CENT (NICHT 20.990). Der 2-CENT-
+    Unterschied in kist_cent ist der Beweis: der Deckel laesst den gesetzlich noch
+    geschuldeten Rest (Abs. 5 S. 3 begrenzt auf die tatsaechlich entfallende deutsche Steuer,
+    NICHT auf 0) stehen, ein fehlender Deckel wuerde ihn ueber den max(0,...)-Floor
+    verschlucken.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    kegel = list(GESAMT_KEGEL_BASE)
+    for i, (k, v) in enumerate(kegel):
+        if k == "kein_kap":
+            kegel[i] = (k, False)
+        elif k == "kap_kapitalertraege":
+            kegel[i] = (k, 500100)  # 5001 EUR in cent (bewusst nicht durch 4 teilbar, s.o.)
+    kegel += [("kist_konfession", "roemisch-katholisch"),
+              ("kist_bundesland", "nordrhein_westfalen"),
+              ("kap_q_auslaendische_steuer", 500000)]  # 5000 EUR, weit ueber kap_st=1000
+    _anlegen(base, "kistkapdeckel", "gesamt", kegel)
+    st, erg = _req(base, "GET", "/fall/kistkapdeckel/ergebnis")
+    assert st == 200
+    assert erg["zahl_cent"] == 233200, (
+        f"ESt {erg['zahl_cent']} != 233200 (kap_st_k rundet EUR-seitig auf 0, s. Docstring). "
+        f"erg={erg}")
+    assert erg.get("kist_cent") == 20990, (
+        f"KiSt {erg.get('kist_cent')} != 20990 (Nicht-Kapital 20988 + 2 CENT Deckel-Rest — "
+        f"bei fehlendem Deckel waeren es 20988, der max(0,...)-Floor verschluckt dann auch "
+        f"den gesetzlich geschuldeten Rest). erg={erg}")
+
+
+def test_kap_q_ohne_kirchensteuerpflicht(base):
+    """§ 32d Abs. 1 S. 1+2: q-Anrechnung gilt AUCH ohne Kirchensteuerpflicht (S. 2 ist
+    grammatisch unabhaengig von S. 3 — Fund neben der team-lead-Vorgabe, die nur den
+    KiSt-pflichtigen (e-4q)/(4+k)-Zweig verlangte). Netto-neuer Code-Pfad.
+
+    e=4.000, Abgeltung 25% = 1.000 EUR (kap_st==abgeltung, konfession=keine -> kein KiSt-Zweig).
+    q=300 EUR -> kap_st_k = max(0, 1.000-300) = 700 EUR. ESt = 2.332+700 = 3.032 EUR =
+    303.200 CENT (vs. 3.332 EUR = 333.200 CENT ohne q).
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    kegel = list(GESAMT_KEGEL_BASE)
+    for i, (k, v) in enumerate(kegel):
+        if k == "kein_kap":
+            kegel[i] = (k, False)
+        elif k == "kap_kapitalertraege":
+            kegel[i] = (k, 500000)
+    kegel += [("kap_q_auslaendische_steuer", 30000)]  # 300 EUR, keine Kirchensteuerpflicht
+    _anlegen(base, "kapqnokist", "gesamt", kegel)
+    st, erg = _req(base, "GET", "/fall/kapqnokist/ergebnis")
+    assert st == 200
+    assert erg["zahl_cent"] == 303200, (
+        f"ESt {erg['zahl_cent']} != 303200 (2.332+700 nach q-Anrechnung ohne KiSt-Pflicht, "
+        f"vs. 333200 ohne q). erg={erg}")
+    assert erg.get("kist_cent", 0) == 0, f"KiSt sollte 0 sein (keine Konfession). erg={erg}"
+
+
 # ===== RENTNER-KiSt (Befund 1: Z.1526 gibt est_mit_fb = est_raw + kap_st) =====
 
 # RENTNER_KEGEL (api_constants Z.133): RENTNER_22 + RENTNER_33B + veranlagung

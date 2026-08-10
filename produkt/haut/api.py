@@ -1258,13 +1258,24 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 kap_st_k = kap_st
                 kist_kap_cent = 0
                 konfession = f.get("kist_konfession", {}).get("wert", "keine")
-                if konfession in runner._KIST_KONFESSION_STEUERERHEBEND:
-                    bundesland = f.get("kist_bundesland", {}).get("wert", "")
-                    ksatz = 8 if bundesland in runner._KIST_BY_BW else 9
-                    if kap_st == abgeltung:
-                        kap_st_k_cent = kap_st * 100 * 400 // (400 + ksatz)
+                if kap_st == abgeltung:
+                    # § 32d Abs. 1 S. 2 „Die Steuer nach Satz 1 vermindert sich um die nach
+                    # Maßgabe des Absatzes 5 anrechenbaren ausländischen Steuern" — gilt
+                    # UNABHÄNGIG von KiSt-Pflicht (S. 2 ist grammatisch nicht an S. 3 gekoppelt).
+                    # Deckel Abs. 5 S. 3 „nur bis zur Höhe der ... entfallenden deutschen Steuer":
+                    # nur Jahres-Summe geprüft (q <= kap_st), der engere Pro-Kapitalertrag-25%-
+                    # Deckel (Abs. 5 S. 1) ist mangels Einzelposten-Datenmodell NICHT geprüft.
+                    q_roh_cent = f.get("kap_q_auslaendische_steuer", {}).get("wert") or 0
+                    q_eur = min(int(q_roh_cent) // 100, kap_st)
+                    if konfession in runner._KIST_KONFESSION_STEUERERHEBEND:
+                        bundesland = f.get("kist_bundesland", {}).get("wert", "")
+                        ksatz = 8 if bundesland in runner._KIST_BY_BW else 9
+                        # § 32d Abs. 1 S. 4-5: e = kapitaleinkuenfte, q = q_eur, k = ksatz.
+                        kap_st_k_cent = max(0, (kapitaleinkuenfte - 4 * q_eur) * 10000 // (400 + ksatz))
                         kist_kap_cent = kap_st_k_cent * ksatz // 100
                         kap_st_k = kap_st_k_cent // 100
+                    else:
+                        kap_st_k = max(0, kap_st - q_eur)
                 result = est_raw + kap_st_k
                 if freibetrag > 0 or kinder == 0:
                     solz_info["est_mit_fb"] = result
@@ -1310,8 +1321,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # § 32d Abs. 1 S. 3-5: KiSt auf die Abgeltungsteuer ist ein SEPARATER Summand zur
             # §51a-KiSt (die nur die Nicht-Kapital-ESt erfasst, est_roh_ohne_kap). Berechnet
             # oben in _festzusetzende (e/(4+k)-Korrektur, benötigt kap_st/abgeltung, die dort
-            # bereits vorliegen). q=0-Default bei ausländischer Quellensteuer auf Kapital-
-            # erträge (§ 32d Abs. 5) ist BENANNTE LÜCKE, over-tax-safe — s.
+            # bereits vorliegen), seit KAP Stufe 3 inkl. q-Anrechnung (kap_q_auslaendische_steuer,
+            # Zeile 41/E1905101) mit Jahres-Summen-Deckel (Abs. 5 S. 3). REST-LÜCKE: der engere
+            # Pro-Kapitalertrag-25%-Deckel (Abs. 5 S. 1) bleibt ungeprüft, over-tax-safe (der
+            # Jahres-Deckel lässt höchstens so viel q durch wie der Jahres-Deckel erlaubt) — s.
             # reports/adjudikation/p32d-abgeltung-kist.md Abschnitt 3.
             if extras is not None:
                 extras["kist_cent"] = runner.catala_kist({
@@ -1627,13 +1640,19 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     kap_st_k = kap_st
                     kist_kap_cent = 0
                     konfession_r = f.get("kist_konfession", {}).get("wert", "keine")
-                    if konfession_r in runner._KIST_KONFESSION_STEUERERHEBEND:
-                        bundesland_r = f.get("kist_bundesland", {}).get("wert", "")
-                        ksatz_r = 8 if bundesland_r in runner._KIST_BY_BW else 9
-                        if kap_st == abgeltung_r:
-                            kap_st_k_cent = kap_st * 100 * 400 // (400 + ksatz_r)
+                    if kap_st == abgeltung_r:
+                        # § 32d Abs. 1 S. 2 q-Anrechnung, unabhängig von KiSt-Pflicht (1:1
+                        # gesamt-Präzedenz, s. dort). Deckel Abs. 5 S. 3: Jahres-Summe only.
+                        q_roh_cent_r = f.get("kap_q_auslaendische_steuer", {}).get("wert") or 0
+                        q_eur_r = min(int(q_roh_cent_r) // 100, kap_st)
+                        if konfession_r in runner._KIST_KONFESSION_STEUERERHEBEND:
+                            bundesland_r = f.get("kist_bundesland", {}).get("wert", "")
+                            ksatz_r = 8 if bundesland_r in runner._KIST_BY_BW else 9
+                            kap_st_k_cent = max(0, (kapitaleinkuenfte_r - 4 * q_eur_r) * 10000 // (400 + ksatz_r))
                             kist_kap_cent = kap_st_k_cent * ksatz_r // 100
                             kap_st_k = kap_st_k_cent // 100
+                        else:
+                            kap_st_k = max(0, kap_st - q_eur_r)
                     result = est_raw + kap_st_k
                     # SolZ-Tracking: est_mit_fb = KiFB-fiktive ESt (SolzG §3 Abs.3 S.1: cap-st ist
                     # abgezogen VOR Freigrenze). kap_st_k = §32d-Abgeltung-SolZ (5,5% ohne Freigrenze).

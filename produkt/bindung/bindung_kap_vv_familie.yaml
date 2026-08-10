@@ -142,6 +142,30 @@ bindungen:
       quelle: "§ 32d Abs. 6 S. 1 EStG"
       zitatanker: "wenn dies zu einer niedrigeren Einkommensteuer einschließlich Zuschlagsteuern führt"
       datei: "sources/gesetze-im-internet/estg_p32d_2026-07-13.txt"
+  # KAP Stufe 3 (Zeile 41, Kz 284/484): noch nicht angerechnete auslaendische Quellensteuer (q).
+  # Kz belegt in reports/adjudikation/anlage-kap-kz-zuordnung-2026-08-10.md. ABGRENZUNG: Zeile 40
+  # (E1905001, von der Bank bereits angerechnet) und Zeile 42 (E1905201, fiktive Quellensteuer)
+  # sind eigene Konzepte, NICHT dieses Feld. Formel (e-4q)/(4+k) nur im kirchensteuerpflichtigen
+  # Fall (p32d_1_kirchensteuer); ohne Kirchensteuerpflicht reduziert q die Abgeltungsteuer direkt
+  # nach § 32d Abs. 1 S. 1+2 (Ring-Logik, api.py, kein eigener rule_id-Zweig fuer den k=0-Fall).
+  # Deckel: nur Jahres-Summe (Abs. 5 S. 3, q <= kap_st) gebaut. Der engere Pro-Kapitalertrag-
+  # 25 %-Deckel (Abs. 5 S. 1) ist NICHT pruefbar (kein Einzelposten-Datenmodell) — offene Frage.
+  - feld_id: kap_q_auslaendische_steuer
+    quelle: {regel_id: p32d_1_kirchensteuer, signatur_slot: anrechenbare_auslaendische_steuer}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel ausländische Quellensteuer auf deine Kapitalerträge wurde noch nicht angerechnet (z. B. von deiner Bank)?"
+    hilfe_kurz: "Anlage KAP Zeile 41. Nur die noch nicht angerechnete ausländische Steuer — bereits von der Bank angerechnete Beträge (Zeile 40) hier nicht nochmal eintragen."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E1905101
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32d Abs. 1 S. 2 EStG"
+      zitatanker: "die nach Maßgabe des Absatzes 5 anrechenbaren ausländischen Steuern"
+      datei: "sources/gesetze-im-internet/estg_p32d_2026-07-13.txt"
 
   # ===== §20 Kapital Person-B (Zusammenveranlagung): Klasse-g-Zwillinge, Anlage-KAP-Instanz B =====
   # Anlage KAP wird PER PERSON gefüllt (jeder Ehegatte eigener Sparer-Pauschbetrag § 20 Abs. 9 S. 3);
@@ -645,6 +669,22 @@ luecken:
   - regel_id: p32d_1_abgeltung
     geltungsbedingung: keine_kirchensteuer_auf_kapitalertraege
     grund: "Verzweigung zwischen glattem 25-%-Satz und der KiSt-ermaessigten Formel (e-4q)/(4+k), s. rules.yaml Z.4143f. Der Sachverhalt dahinter wird bereits ueber kist_konfession erfragt (bindung_kist.yaml) und vom Ring ausgewertet — ein zweites Feld waere dieselbe Frage ein zweites Mal, mit der Moeglichkeit zu widersprechen. Praezedenz: kap_zusammenveranlagung, gestrichen aus genau diesem Grund (250 EUR Under-tax, gemessen 2026-07-30, s. Luecke p20_9/zusammenveranlagung oben)."
+  # -- §32d Abs. 1 S. 3-5 KiSt-ermaessigte Formel (p32d_1_kirchensteuer), seit KAP Stufe 3 --
+  - regel_id: p32d_1_kirchensteuer
+    signatur_slot: kapitaleinkuenfte
+    grund: "Dieselbe Herkunft wie bei p32d_1_abgeltung/kapitaleinkuenfte (oben): Ring-Ergebnis aus kap_kapitalertraege nach Verlustverrechnung (p20_6) und Sparer-Pauschbetrag (catala_sparer_pb), keine eigene Abfrage."
+  - regel_id: p32d_1_kirchensteuer
+    signatur_slot: kirchensteuersatz
+    grund: "Abgeleitet aus kist_bundesland (bindung_p51a_kirchensteuer.yaml, 8 % Bayern/Baden-Wuerttemberg, 9 % uebrige Laender laut dortigem anker_ref) — derselbe Hebesatz wie bei der § 51a-Kirchensteuer-Festsetzung, keine zweite Abfrage."
+  - regel_id: p32d_1_kirchensteuer
+    geltungsbedingung: kirchensteuerpflicht_besteht
+    grund: "Derselbe Sachverhalt wie keine_kirchensteuer_auf_kapitalertraege bei p32d_1_abgeltung (oben): ueber kist_konfession erfragt (bindung_p51a_kirchensteuer.yaml) und vom Ring ausgewertet, keine zweite Abfrage."
+  - regel_id: p32d_1_kirchensteuer
+    geltungsbedingung: keine_guenstigerpruefung_beantragt
+    grund: "Deckt sich mit kap_antrag_guenstigerpruefung (oben, E1900401): der Ring wendet die Abgeltung-Formel nur an, wenn kap_st == abgeltung, sonst laeuft der Guenstiger-Zweig — kein eigenes Feld noetig."
+  - regel_id: p32d_1_kirchensteuer
+    geltungsbedingung: kapitaleinkuenfte_nicht_negativ
+    grund: "Guard-Bedingung der Regel, im Ring als fruehe Rueckgabe bei kapitaleinkuenfte <= 0 materialisiert (produkt/haut/api.py), kein eigenes Feld."
   - regel_id: p20_6_verlustverrechnung
     geltungsbedingung: aktienverlust_nur_gegen_aktiengewinn
     grund: "Topf-Trennung Aktien ist Rechenlogik der Regel (eigene Verrechnung), im Feld-Zuschnitt (getrennte Aktien-/Sonstige-Felder) materialisiert."

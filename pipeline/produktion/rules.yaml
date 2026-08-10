@@ -4136,7 +4136,7 @@ regeln:
   - gewinn_pvg: 0
     verlust_pvg: 0
 - rule_id: p32d_1_kirchensteuer
-  hinweis: 'KiSt-ermaessigte Abgeltung (§ 32d Abs 1 S 3-5), NICHT der glatte 25-%-Satz (das ist p32d_1_abgeltung). Rechenkern: kapital_steuer = (kapitaleinkuenfte - 4 * anrechenbare_auslaendische_steuer) / (4 + kirchensteuersatz). kirchensteuersatz ist bereits ein Dezimalsatz (0,09 bzw. 0,08 - Landessatz), NICHT durch 100 teilen. Die beiden 4er sind exakte Strukturkonstanten (NICHT /100). Cent-Schnitt zuletzt.'
+  hinweis: 'KiSt-ermaessigte Abgeltung (§ 32d Abs 1 S 3-5), NICHT der glatte 25-%-Satz (das ist p32d_1_abgeltung). Rechenkern: kapital_steuer = (kapitaleinkuenfte - 4 * anrechenbare_auslaendische_steuer) / (4 + kirchensteuersatz). kirchensteuersatz ist bereits ein Dezimalsatz (0,09 bzw. 0,08 - Landessatz), NICHT durch 100 teilen. Die beiden 4er sind exakte Strukturkonstanten (NICHT /100). Cent-Schnitt zuletzt. Verwandter, hier NICHT abgebildeter Degenerationsfall (k=0, keine Kirchensteuerpflicht): § 32d Abs 1 S 2 laesst die q-Anrechnung unabhaengig von S 3-5 zu (kapital_steuer = kapitaleinkuenfte - anrechenbare_auslaendische_steuer); zu klein fuer eine eigene rule_id, seit KAP Stufe 3 adjazent in produkt/haut/api.py implementiert.'
   norm: § 32d Abs. 1 S. 3-5 EStG (KiSt-ermaessigte Abgeltungsteuer, Formel e-4q durch 4+k)
   quellen:
   - typ: gesetz
