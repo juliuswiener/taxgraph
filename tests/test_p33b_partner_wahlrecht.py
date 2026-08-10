@@ -129,6 +129,51 @@ def test_partner_wahlrecht_true_und_false_liefern_unterschiedliche_ergebnisse():
         f"true={erg_true['zahl_cent']} false={erg_false['zahl_cent']}")
 
 
+def test_partner_wahlrecht_false_landet_auf_der_gdb_losen_baseline():
+    """Der starke Anker: bei Wahlrecht=False MUSS dieselbe Zahl herauskommen wie ohne Partner-GdB.
+
+    Ergaenzt 2026-08-10 nach einer Mutationsprobe, die der Differenzierungstest oben NICHT fing:
+    wird der True-Zweig der Kuerzung deaktiviert (`if False:` statt der Bedingung), unterscheiden
+    sich True und False weiterhin — nur eben falsch (True traegt dann PB UND ungekuerzte agB,
+    also genau den Doppelabzug, den dieser Fix beseitigt). "Unterschiedlich" ist damit zu schwach
+    als Kriterium; es beweist, dass die Kuerzung kein no-op ist, nicht dass sie stimmt.
+
+    Diese Invariante ist enger und stammt aus dem Person-A-Bau (p33b Stufe 2b): wer den
+    Pauschbetrag NICHT nimmt, steht exakt wie jemand ohne GdB — der PB ist der einzige Effekt des
+    GdB, und genau der entfaellt. Gemessen: Baseline 566.000 ct == Wahlrecht=False 566.000 ct,
+    waehrend True bei 508.600 ct liegt.
+    """
+    _, ohne_gdb = _anlegen_und_fuellen("anker_ohne_gdb", _PARTNER_AGB)
+    _, false_ = _anlegen_und_fuellen("anker_false", _PARTNER_GDB100 + _PARTNER_AGB
+                                     + [("behinderungsbedingte_aufwendungen_wahlrecht_pb_partner", False)])
+    assert false_["zahl_cent"] == ohne_gdb["zahl_cent"], (
+        f"Wahlrecht=False muss bit-identisch zur GdB-losen Baseline sein: "
+        f"false={false_['zahl_cent']} baseline={ohne_gdb['zahl_cent']}. Weicht es ab, wird der "
+        f"Partner-Pauschbetrag entweder nicht entfernt (Doppelabzug bleibt) oder es wird zuviel "
+        f"abgezogen.")
+
+
+def test_partner_wahlrecht_true_kuerzt_die_agb_wirklich():
+    """Gegenstueck: bei Wahlrecht=True MUSS die agB-Kuerzung sichtbar wirken.
+
+    Verglichen wird derselbe Fall mit und ohne `behinderungsbedingte_aufwendungen_partner`. Wirkt
+    die Kuerzung, ist das Ergebnis MIT der Teilmenge hoeher (weniger Abzug). Ohne diesen Test
+    bleibt ein toter True-Zweig unbemerkt — genau die Mutation, die der Differenzierungstest
+    durchgehen liess.
+    """
+    _, mit_bb = _anlegen_und_fuellen("kuerz_mit", _PARTNER_GDB100 + _PARTNER_AGB
+                                     + [("behinderungsbedingte_aufwendungen_wahlrecht_pb_partner", True)])
+    _, ohne_bb = _anlegen_und_fuellen("kuerz_ohne",
+                                      _PARTNER_GDB100 + [("agb_aufwendungen", 300000)]
+                                      + [("behinderungsbedingte_aufwendungen_partner", 0),
+                                         ("behinderungsbedingte_aufwendungen_wahlrecht_pb_partner", True)])
+    assert mit_bb["zahl_cent"] > ohne_bb["zahl_cent"], (
+        f"Mit behinderungsbedingten Aufwendungen des Partners muss die agB gekuerzt werden, die "
+        f"Steuer also HOEHER liegen: mit={mit_bb['zahl_cent']} ohne={ohne_bb['zahl_cent']}. "
+        f"Gleichstand heisst, der True-Zweig kuerzt nicht — Pauschbetrag und volle agB stuenden "
+        f"nebeneinander (§ 33b Abs. 1 S. 1 'anstelle').")
+
+
 # ---- Unabhängigkeit von Person A ----
 
 def test_partner_wahlrecht_unabhaengig_von_person_a():
