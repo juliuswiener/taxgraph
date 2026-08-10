@@ -1198,6 +1198,12 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 kap_st = runner.catala_kapital_steuer({
                     "veranlagungszeitraum": vz, "kapitaleinkuenfte": kapitaleinkuenfte,
                     "est_regulaer_mit_kap": est_mit, "est_regulaer_ohne_kap": est_raw})
+                # § 32d Abs. 6 S. 1 „wenn dies zu einer niedrigeren Einkommensteuer ... führt":
+                # kap_st = min(abgeltung, delta) aus catala_kapital_steuer; guenstiger=True heißt,
+                # der tarifliche Zweig (delta) hat GEWONNEN (strikt <, nicht <=, laut Gesetzeswortlaut
+                # „niedrigeren"). Speist E1900401 (Antrag Günstigerprüfung), siehe _mit_ring_werten.
+                abgeltung = kapitaleinkuenfte * runner._abgeltungssatz(vz) // 100
+                guenstiger = kap_st < abgeltung
                 # § 32d Abs. 1 S. 3-5: bei KiSt-Pflicht ermäßigt sich die Abgeltungsteuer um
                 # 25 % der Kapital-KiSt (e/(4+k)-Formel), die Kapital-KiSt kommt als eigener
                 # Nachtrag zu extras["kist_cent"] hinzu. NUR im Abs. 1-Fall (kap_st == abgeltung,
@@ -1212,7 +1218,6 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 if konfession in runner._KIST_KONFESSION_STEUERERHEBEND:
                     bundesland = f.get("kist_bundesland", {}).get("wert", "")
                     ksatz = 8 if bundesland in runner._KIST_BY_BW else 9
-                    abgeltung = kapitaleinkuenfte * runner._abgeltungssatz(vz) // 100
                     if kap_st == abgeltung:
                         kap_st_k_cent = kap_st * 100 * 400 // (400 + ksatz)
                         kist_kap_cent = kap_st_k_cent * ksatz // 100
@@ -1225,6 +1230,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     solz_info["est_roh_mit_kap"] = est_mit
                     if extras is not None:
                         extras["kist_kap_cent"] = kist_kap_cent
+                        extras["kap_guenstiger_gewonnen"] = guenstiger
                 return result
 
             # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6): bei
@@ -1569,6 +1575,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                         "kapitaleinkuenfte": kapitaleinkuenfte_r,
                         "est_regulaer_mit_kap": est_mit,
                         "est_regulaer_ohne_kap": est_raw})
+                    # § 32d Abs. 6 S. 1 (1:1 gesamt-Präzedenz Z. 1201-1204): guenstiger=True heißt,
+                    # der tarifliche Zweig hat GEWONNEN (strikt <). Speist E1900401.
+                    abgeltung_r = kapitaleinkuenfte_r * runner._abgeltungssatz(vz) // 100
+                    guenstiger_r = kap_st < abgeltung_r
                     # § 32d Abs. 1 S. 3-5 (1:1 gesamt-Präzedenz Z. 1138-1160): Abgeltungsteuer-
                     # Ermäßigung + Kapital-KiSt-Nachtrag, NUR im Abs. 1-Fall (kap_st == abgeltung).
                     kap_st_k = kap_st
@@ -1577,7 +1587,6 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     if konfession_r in runner._KIST_KONFESSION_STEUERERHEBEND:
                         bundesland_r = f.get("kist_bundesland", {}).get("wert", "")
                         ksatz_r = 8 if bundesland_r in runner._KIST_BY_BW else 9
-                        abgeltung_r = kapitaleinkuenfte_r * runner._abgeltungssatz(vz) // 100
                         if kap_st == abgeltung_r:
                             kap_st_k_cent = kap_st * 100 * 400 // (400 + ksatz_r)
                             kist_kap_cent = kap_st_k_cent * ksatz_r // 100
@@ -1591,6 +1600,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                         solz_info_r["est_roh_ohne_kap"] = est_raw
                         if extras is not None:
                             extras["kist_kap_cent"] = kist_kap_cent
+                            extras["kap_guenstiger_gewonnen"] = guenstiger_r
                 # §32b Post-Engine-Wrapper (Rentner-Ring, 1:1 gesamt-Präzedenz)
                 if pe_active:
                     tarifliche_pre32b = runner.catala_gesamt_tarifliche(g2)
@@ -2362,38 +2372,104 @@ def preflight_check(fall_id: str) -> tuple[int, dict]:
 def _mit_ring_werten(felder: dict, vz: int) -> dict:
     """Hängt berechnete Ring-Werte als fertige Events in felder ein.
 
-    Aktuell: E0205508 (Kürzungsbetrag wegen Mahlzeitengestellung).
-    Der Ring (runner._verpflegung_kuerzung_cent) rechnet den CENT-Wert aus
-    den Rohdaten (tage_24h, frühstücke, etc.). Wir injizieren ihn als
-    nicht-askables Feld mit zustand=bestaetigt, schreiber=engine,
-    herkunft=berechnet/amtlich/system (fail-closed, Haftung beim System).
+    (1) E0205508 (Kürzungsbetrag wegen Mahlzeitengestellung). Der Ring
+    (runner._verpflegung_kuerzung_cent) rechnet den CENT-Wert aus den
+    Rohdaten (tage_24h, frühstücke, etc.). Inert: ohne Verpflegungs-Felder
+    kein Eintrag (auch kein Wert 0).
 
-    Inert: ohne Verpflegungs-Felder kein Eintrag (auch kein Wert 0).
+    (2) E1900401 (Antrag Günstigerprüfung § 32d Abs. 6) + (3) E1901401
+    (genutzter Sparer-Pauschbetrag § 20 Abs. 9): NICHT an den vom Ring beim
+    Rechnen gewählten Zweig gekoppelt (kap_st < abgeltung) — gemessen
+    2026-08-10 gegen checkESt: der Antrag löst nur eine Prüfung aus (§ 32d
+    Abs. 6 S. 1 "wenn dies zu einer niedrigeren Einkommensteuer ... führt"),
+    er kann also nie schlechterstellen, aber die alte Kopplung ließ den
+    HÄUFIGEREN Fall (Abgeltung günstiger) uneinreichbar (rc=610001002).
+    Stattdessen: gesetzt, sobald irgendein KAP-Betragsfeld (eigene Töpfe/
+    Aggregat ODER — bei Zusammenveranlagung — die des Ehegatten, § 32d
+    Abs. 6 S. 4) erklärt wird. Beide Kz sind ZUSAMMEN Pflicht (ohne
+    E1901401 bleibt rc=610001002 trotz Antrag, siehe
+    bindung_kap_vv_familie.yaml) — deshalb ein gemeinsames Gate.
+    Töpfe-XOR-Aggregat-Auswahl 1:1 zur SINGLE-SOURCE in _bescheid_fn
+    (api.py Z. 1019-1047/1462-1483) — bei Änderung dort nachziehen.
+    Direkt auf `felder` gerechnet (kein _feste_zahl/Meet-Gate): der Wert
+    hängt nur an KAP-Feldern, nicht an unverwandten Kegel-Feldern.
+
+    Alle Injektionen sind fertige Events (zustand=bestaetigt, schreiber=
+    engine, herkunft=berechnet/amtlich/system — fail-closed, Haftung System).
     """
-    # Prüfe, ob Verpflegungs-Rohdaten existieren
+    # (1) Verpflegungskürzung
     verpflegungs_felder = {"tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig"}
-    if not verpflegungs_felder & set(felder):
-        return felder
+    if verpflegungs_felder & set(felder):
+        try:
+            import runner
+            s = {fid: e["wert"] if isinstance(e, dict) else e
+                 for fid, e in felder.items()}
+            kuerzung_cent = runner._verpflegung_kuerzung_cent(s, vz)
+        except Exception:
+            kuerzung_cent = 0
+        if kuerzung_cent > 0:
+            felder["p9_4a_kuerzung_nach_entgelt"] = {
+                "wert": kuerzung_cent,  # CENT — _cent_nach_kz wandelt in EURO
+                "zustand": "bestaetigt",
+                "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+                "schreiber": "engine",
+                "signal": {"signal_1": None, "signal_2": None},
+            }
 
-    try:
-        import runner
-        s = {fid: e["wert"] if isinstance(e, dict) else e
-             for fid, e in felder.items()}
-        kuerzung_cent = runner._verpflegung_kuerzung_cent(s, vz)
-    except Exception:
-        return felder
+    # (2)+(3) Anlage KAP: Antrag Günstigerprüfung + genutzter Sparer-Pauschbetrag
+    def _kap_positiv(fid):
+        w = (felder.get(fid) or {}).get("wert")
+        return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
 
-    # Nur injizieren wenn Kürzung > 0 (sonst 0 = kein Kz-Eintrag nötig)
-    if kuerzung_cent <= 0:
-        return felder
+    zusammen = (felder.get("veranlagung") or {}).get("wert") == "zusammen"
+    kap_erklaert = (any(_kap_positiv(t) for t in KAP_TOEPFE) or _kap_positiv(KAP_ERTRAEGE)
+                    or (zusammen and (any(_kap_positiv(t) for t in KAP_TOEPFE_PARTNER)
+                                       or _kap_positiv(KAP_ERTRAEGE_PARTNER))))
+    if kap_erklaert:
+        felder["kap_antrag_guenstigerpruefung"] = {
+            "wert": True,
+            "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+            "schreiber": "engine",
+            "signal": {"signal_1": None, "signal_2": None},
+        }
+        try:
+            import runner
 
-    felder["p9_4a_kuerzung_nach_entgelt"] = {
-        "wert": kuerzung_cent,  # CENT — _cent_nach_kz wandelt in EURO
-        "zustand": "bestaetigt",
-        "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
-        "schreiber": "engine",
-        "signal": {"signal_1": None, "signal_2": None},
-    }
+            def _c2(fid):
+                return int((felder.get(fid) or {}).get("wert") or 0)
+
+            if any(_c2(t) != 0 for t in KAP_TOEPFE):
+                verrechnete = runner.catala_kapital_verrechnung({
+                    "gewinn_aktien": _c2("kap_gewinn_aktien") // 100,
+                    "verlust_aktien": _c2("kap_verlust_aktien") // 100,
+                    "gewinn_sonstige": _c2("kap_gewinn_sonstige") // 100,
+                    "verlust_sonstige": _c2("kap_verlust_sonstige") // 100})
+            else:
+                verrechnete = _c2(KAP_ERTRAEGE) // 100
+            if zusammen:
+                if any(_c2(t) != 0 for t in KAP_TOEPFE_PARTNER):
+                    verrechnete += runner.catala_kapital_verrechnung({
+                        "gewinn_aktien": _c2("kap_gewinn_aktien_partner") // 100,
+                        "verlust_aktien": _c2("kap_verlust_aktien_partner") // 100,
+                        "gewinn_sonstige": _c2("kap_gewinn_sonstige_partner") // 100,
+                        "verlust_sonstige": _c2("kap_verlust_sonstige_partner") // 100})
+                else:
+                    verrechnete += _c2(KAP_ERTRAEGE_PARTNER) // 100
+            kapitaleinkuenfte = runner.catala_sparer_pb({
+                "veranlagungszeitraum": vz, "kapitalertraege": verrechnete,
+                "zusammenveranlagung": zusammen})
+            pb_genutzt_cent = max(0, verrechnete - kapitaleinkuenfte) * 100
+        except Exception:
+            pb_genutzt_cent = 0
+        felder["kap_sparer_pauschbetrag_genutzt"] = {
+            "wert": pb_genutzt_cent,  # CENT, Vordruck erlaubt ausdruecklich "(ggf. 0)"
+            "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+            "schreiber": "engine",
+            "signal": {"signal_1": None, "signal_2": None},
+        }
+
     return felder
 
 

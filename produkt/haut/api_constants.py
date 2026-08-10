@@ -112,6 +112,11 @@ KAP_ERTRAEGE_PARTNER = "kap_kapitalertraege_partner"
 KAP_TOEPFE_PARTNER = ("kap_gewinn_aktien_partner", "kap_gewinn_sonstige_partner",
                       "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner")
 GESAMT_PARTNER_KAP = (KAP_ERTRAEGE_PARTNER,) + KAP_TOEPFE_PARTNER
+# BERECHNETE Anlage-KAP-Antragsfelder (askable=false, § 32d Abs. 6 E1900401 + § 20 Abs. 9
+# E1901401, injiziert von api._mit_ring_werten). Muessen mit in die Scheibe, sonst filtert
+# _scheibe_bindung() sie aus der Deklaration -- dieselbe Naht wie VERPFLEGUNG_KUERZUNG/
+# E0205508 oben: der Ring liefert den Wert, das XML wuerde ihn sonst stillschweigend verschweigen.
+KAP_ANTRAG_FELDER = ("kap_antrag_guenstigerpruefung", "kap_sparer_pauschbetrag_genutzt")
 GESAMT_PARTNER_19 = ("bruttoarbeitslohn_partner", "person_b_idnr")
 
 # ========== § 22 Renten + § 33b Pauschbeträge ==========
@@ -401,7 +406,7 @@ SCHEIBEN = {
     },
     "gesamt": {
         "felder": (VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ("veranlagung", "bruttoarbeitslohn")
-                   + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS
+                   + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + AN_GESAMT_FLAGS
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_VERSORGUNG
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
@@ -426,7 +431,7 @@ SCHEIBEN = {
         "multi_objekt": "vv_objekt",
     },
     "rentner_gesamt": {
-        "felder": RENTNER_FELDER + KAP_FELDER + GESAMT_PARTNER_KAP,
+        "felder": RENTNER_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + GESAMT_PARTNER_KAP,
         "kegel": RENTNER_KEGEL,
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_rentner",

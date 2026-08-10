@@ -43,11 +43,12 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for sub in ("elster", "produkt/import", "produkt/mapping", "produkt/store",
-            "produkt/traverser"):
+for sub in ("elster", "produkt/haut", "produkt/import", "produkt/mapping",
+            "produkt/store", "produkt/traverser"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 sys.path.insert(0, HERE)
 
+import api as API                   # noqa: E402
 import checkest_gate as CE          # noqa: E402
 import elster_xml as EX             # noqa: E402
 import est_mapping                  # noqa: E402
@@ -60,9 +61,23 @@ from test_checkest_durchstich import (  # noqa: E402
 
 
 def _scharf(store) -> tuple[int, list[str]]:
-    """Store -> Deklaration -> Abgabe-XML -> amtliches Plugin. Kein Versand."""
-    snap, _ = ST.materialisiere(store)
-    xml = EX.erzeuge_xml(est_mapping.deklariere(snap, TR.lade_bindung()),
+    """Store -> Ring-Werte -> Deklaration -> Abgabe-XML -> amtliches Plugin. Kein Versand.
+
+    Der Weg MUSS ueber `_mit_ring_werten` gehen, sonst misst die Matrix den falschen Pfad.
+    Die erste Fassung ging direkt store -> est_mapping.deklariere und uebersprang damit alle
+    Ring-Injektionen — E0205508 (Verpflegungskuerzung) und die KAP-Antragsfelder entstehen aber
+    genau dort. Ein Bau, der nur in `_mit_ring_werten` sitzt, waere hier unsichtbar gruen
+    geblieben. Gefunden 2026-08-10 von p33b-2b beim Bau des KAP-Antrags.
+
+    `_fall_einzel()` liefert einen rohen Store ohne `scheibe`; die setzen wir hier, weil
+    _scheibe_bindung()/_cfg() sie brauchen. Die Ratschen-Fixtur selbst bleibt unangetastet.
+    """
+    store = dict(store)
+    store.setdefault("scheibe", "gesamt")
+    bindung = API._scheibe_bindung(store)
+    felder, sid = ST.materialisiere(store)
+    felder = API._mit_ring_werten(felder, 2025)
+    xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid),
                          vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     rc, antwort = CE.validate(xml, "ESt_2025")
     texte = [" ".join(t.split())
@@ -135,13 +150,12 @@ MATRIX = [
 # Bekannte, GEMESSENE Beanstandungen mit Begruendung. Ein Eintrag hier ist eine Schuld,
 # kein Freibrief: er benennt, was fehlt, damit der Test nicht dauerrot ist und trotzdem
 # niemand vergisst, dass der Fall heute nicht einreichbar ist.
+# Anlage KAP stand hier bis 2026-08-10 mit vier Eintraegen (Antragsgrund fehlt, rc=610001002).
+# GESCHLOSSEN: E1900401 (Antrag Guenstigerpruefung) + E1901401 (in Anspruch genommener
+# Sparer-Pauschbetrag) werden jetzt in _mit_ring_werten injiziert; alle vier Faelle erreichen
+# rc=0. Der Test hat das selbst erzwungen — ein Eintrag hier, der sauber durchlaeuft, schlaegt
+# fehl, damit eine geschlossene Luecke nicht als Dauer-Ausnahme stehen bleibt.
 BEKANNTE_LUECKEN = {
-    "kap_kapitalertraege": (
-        "Anlage KAP: Antragsgrund fehlt (E1900401 Guenstigerpruefung / E1900501 Ueberpruefung "
-        "des Steuereinbehalts). Gemessen 2026-08-10, rc=610001002. BACKLOG kap-antragsgrund-fehlt."),
-    "kap_gewinn_aktien": ("dito Anlage KAP Antragsgrund"),
-    "kap_verlust_aktien": ("dito Anlage KAP Antragsgrund"),
-    "kap_verlust_sonstige": ("dito Anlage KAP Antragsgrund"),
     "hh_handwerker_arbeitskosten": (
         "§ 35a: checkESt verlangt eine EINZELAUFSTELLUNG, wir liefern nur die Summe. Von dieser "
         "Matrix beim ersten Lauf gefunden (2026-08-10, rc=610001002): '...es wurde aber keine "
@@ -183,6 +197,81 @@ def test_feld_einzeln_bleibt_amtlich_plausibel(feld_id, wert):
         + "\n".join(f"   - {t}" for t in texte[:5])
         + "\nEntweder fehlt eine Begleitangabe (dann bauen) oder es ist eine bewusste "
           "Luecke (dann mit gemessener Begruendung in BEKANNTE_LUECKEN eintragen).")
+
+
+def test_kap_antrag_ist_inert_ohne_kapitalertraege():
+    """Der KAP-Antrag darf NUR erscheinen, wenn Kapitalertraege erklaert werden.
+
+    Braucht kein ERiC. Ohne diese Gegenprobe waere ein Bau, der den Antrag bedingungslos setzt,
+    gruen — und wir wuerden fuer jeden Nutzer die Guenstigerpruefung beantragen, auch fuer die
+    ohne einen einzigen Kapitalertrag. Die Standard-Falle bei Injektionen: das Feuern testen und
+    das Schweigen vergessen.
+
+    E1900401 = Anlage KAP Zeile 4 (Antrag Guenstigerpruefung, § 32d Abs. 6)
+    E1901401 = Anlage KAP Zeile 16 (in Anspruch genommener Sparer-Pauschbetrag)
+    """
+    def _kz_im_xml(store):
+        store = dict(store)
+        store.setdefault("scheibe", "gesamt")
+        bindung = API._scheibe_bindung(store)
+        felder, sid = ST.materialisiere(store)
+        felder = API._mit_ring_werten(felder, 2025)
+        xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid),
+                             vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
+        return "E1900401" in xml, "E1901401" in xml
+
+    antrag_ohne, pb_ohne = _kz_im_xml(_fall_einzel())          # Fixtur fuehrt kap = 0
+    assert not antrag_ohne, (
+        "E1900401 steht im XML, obwohl der Fall keine Kapitalertraege erklaert — dann "
+        "beantragen wir die Guenstigerpruefung fuer jeden Nutzer.")
+    assert not pb_ohne, (
+        "E1901401 steht im XML ohne Kapitalertraege — ein Sparer-Pauschbetrag ohne Ertraege, "
+        "auf die er entfaellt.")
+
+    antrag_mit, pb_mit = _kz_im_xml(_mit("kap_kapitalertraege", 500000))
+    assert antrag_mit and pb_mit, (
+        f"Bei 5.000 EUR Kapitalertraegen fehlt im XML: "
+        f"{'E1900401 ' if not antrag_mit else ''}{'E1901401' if not pb_mit else ''} — "
+        f"ohne beide ist die Erklaerung uneinreichbar (rc=610001002).")
+
+
+def test_matrix_geht_durch_den_ring_pfad():
+    """Der Weg dieser Matrix MUSS die Ring-Injektionen mitnehmen — sonst misst sie das Falsche.
+
+    Braucht kein ERiC: geprueft wird der Pfad, nicht die Plausibilitaet.
+
+    Die erste Fassung von `_scharf` ging direkt store -> est_mapping.deklariere und uebersprang
+    `_mit_ring_werten`. Damit waere jeder Bau, der dort sitzt, hier unsichtbar gruen geblieben —
+    die Matrix haette Abwesenheit von Beanstandungen gemeldet, ohne den Code je auszufuehren.
+    Dieser Test haelt die Differenz fest, statt sie einer Messung zu ueberlassen, die niemand
+    wiederholt.
+    """
+    store = _mit("tage_24h", 10)
+    for feld, wert in [("vpf_fruehstuecke_gestellt_anzahl", 5),
+                       ("vpf_mittagessen_gestellt_anzahl", 5)]:
+        _b(store, feld, wert)
+    store = dict(store)
+    store["scheibe"] = "gesamt"
+
+    bindung = API._scheibe_bindung(store)
+    felder, sid = ST.materialisiere(store)
+
+    ohne = est_mapping.deklariere(dict(felder), bindung, snapshot_id=sid)
+    mit_ring = API._mit_ring_werten(felder, 2025)
+    mit = est_mapping.deklariere(mit_ring, bindung, snapshot_id=sid)
+
+    kuerzung = (mit_ring.get("p9_4a_kuerzung_nach_entgelt") or {}).get("wert")
+    assert kuerzung and kuerzung > 0, (
+        f"Vorbedingung kaputt: der Ring kuerzt bei 5 Fruehstuecken + 5 Mittagessen nicht "
+        f"({kuerzung}). Ohne Kuerzung sagt dieser Test nichts aus.")
+
+    assert "E0205508" not in ohne.get("deklaration", {}), (
+        "E0205508 entsteht schon OHNE _mit_ring_werten — dann ist dieser Test kein Nachweis "
+        "mehr, dass der Ring-Pfad laeuft. Der Nachweis muss neu gebaut werden.")
+    assert "E0205508" in mit.get("deklaration", {}), (
+        f"Der Ring kuerzt {kuerzung} Cent, aber E0205508 kommt nicht in der Deklaration an — "
+        f"_scharf() umgeht die Ring-Injektionen. Genau dieser Fehler machte die Matrix blind "
+        f"fuer alles, was in _mit_ring_werten gebaut wird.")
 
 
 @braucht_eric

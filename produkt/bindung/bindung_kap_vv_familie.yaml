@@ -90,6 +90,58 @@ bindungen:
       quelle: "§ 20 Abs. 6 S. 1 EStG"
       zitatanker: "nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
       datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  # Antrag Günstigerprüfung (§ 32d Abs. 6): Ring-berechnet, kein Nutzer-Opt-in fuer DIESEN
+  # Antrag. NICHT an den vom Ring beim Rechnen gewaehlten Zweig gekoppelt (kap_st < abgeltung)
+  # — das war der urspruengliche Entwurf und blockierte genau den HAEUFIGEREN Fall (Abgeltung
+  # guenstiger bleibt uneinreichbar, rc=610001002, gemessen 2026-08-10). § 32d Abs. 6 S. 1: die
+  # Hinzurechnung zur tariflichen ESt erfolgt nur, "wenn dies zu einer niedrigeren
+  # Einkommensteuer ... führt" — der Antrag löst eine PRÜFUNG aus und kann strukturell nicht
+  # schlechterstellen. Jetzt gesetzt, sobald irgendein KAP-Betragsfeld erklärt wird (eigen ODER
+  # — bei Zusammenveranlagung — Partner). S.3/S.4: EIN Antrag je Erklaerung (auch bei
+  # Zusammenveranlagung fuer saemtliche Kapitalertraege beider Ehegatten) — kein Partner-
+  # Zwilling, kein eigenes distinktes Kz je Person (XSD: E1900401 erscheint schemaweit genau
+  # einmal). Injektion in _mit_ring_werten (produkt/haut/api.py).
+  # Anlage KAP Zeile 16 (Kz 217/417): der IN ANSPRUCH GENOMMENE Sparer-Pauschbetrag. Ohne dieses
+  # Feld bleibt die Erklaerung uneinreichbar, auch MIT Antrag — gemessen 2026-08-10, Kz direkt in
+  # die Deklaration injiziert, Basisfall + kap_kapitalertraege=5.000:
+  #   ohne beides            rc=610001002  "...einen Grund fuer die Angabe ... angeben"
+  #   nur E1901401           rc=610001002  derselbe Blocker
+  #   nur E1900401           rc=610001002  "...keine Angabe zum in Anspruch genommenen
+  #                                          Sparer-Pauschbetrag"
+  #   E1900401 + E1901401    rc=0          einreichbar
+  # Abgeleitet, nicht gefragt: catala_sparer_pb liefert die Kapitaleinkuenfte NACH Abzug, der
+  # genutzte Pauschbetrag ist die Differenz zum verrechneten Rohbetrag. Der Vordruck vermerkt bei
+  # dieser Zeile ausdruecklich "(ggf. 0)" — 0 ist ein zulaessiger Wert, kein fehlender.
+  - feld_id: kap_sparer_pauschbetrag_genutzt
+    quelle: {regel_id: p20_9_sparer_pauschbetrag, geltungsbedingung: sparer_pb_1000_2000_konstante}
+    typ: cent
+    einheit: EUR
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "In Anspruch genommener Sparer-Pauschbetrag (berechnet, ggf. 0)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E1901401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 9 S. 1 EStG"
+      zitatanker: "als Werbungskosten ein Betrag von 1 000 Euro abzuziehen"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_antrag_guenstigerpruefung
+    quelle: {regel_id: p32d_1_abgeltung, geltungsbedingung: guenstigerpruefung_beantragt}
+    typ: bool
+    einheit: null
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Automatisch gestellt, wenn die tarifliche Besteuerung günstiger ist als die 25 %-Abgeltungsteuer."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: E1900401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32d Abs. 6 S. 1 EStG"
+      zitatanker: "wenn dies zu einer niedrigeren Einkommensteuer einschließlich Zuschlagsteuern führt"
+      datei: "sources/gesetze-im-internet/estg_p32d_2026-07-13.txt"
 
   # ===== §20 Kapital Person-B (Zusammenveranlagung): Klasse-g-Zwillinge, Anlage-KAP-Instanz B =====
   # Anlage KAP wird PER PERSON gefüllt (jeder Ehegatte eigener Sparer-Pauschbetrag § 20 Abs. 9 S. 3);
@@ -573,7 +625,26 @@ luecken:
     grund: "Geteiltes Laien-Feld = veranlagung (Mantelbogen, § 26). Das frühere eigene Feld kap_zusammenveranlagung stellte dieselbe Frage ein zweites Mal und konnte ihr widersprechen: bei veranlagung=einzel + Flag=true wurde der Sparer-Pauschbetrag verdoppelt, ohne das Partner-Kapital zu addieren (250 € zu wenig Steuer, gemessen 2026-07-30). Ein Mischzustand aus Einzel- und gemeinsamer Kapital-Veranlagung existiert in § 26 EStG nicht — der Ring liest die Veranlagungsart jetzt nur noch aus veranlagung."
   - regel_id: p20_9_sparer_pauschbetrag
     geltungsbedingung: sparer_pb_1000_2000_konstante
-    grund: "Konstante 1.000/2.000 Euro (Parameter), keine Laien-Abfrage."
+    grund: "Konstante 1.000/2.000 Euro (Parameter), keine Laien-Abfrage. Seit 2026-08-10 haengt an derselben Bedingung zusaetzlich das NICHT-askable Feld kap_sparer_pauschbetrag_genutzt (Kz E1901401, Anlage KAP Zeile 16): der in Anspruch genommene Betrag ist deklarationspflichtig, bleibt aber berechnet — die Konstante wird weiterhin nicht gefragt."
+  # -- §32d Abs. 6 Guenstigerpruefung: Rechen-Slots, keine Laien-Fragen --
+  # Seit 2026-08-10 bindet kap_antrag_guenstigerpruefung (Kz E1900401) an diese Regel. Damit
+  # verlangt test_b_vollstaendigkeit, dass ALLE askable Slots der Regel gebunden oder als Luecke
+  # dokumentiert sind. Die drei hier sind Ring-Ergebnisse und koennen es nicht sein.
+  - regel_id: p32d_1_abgeltung
+    signatur_slot: kapitaleinkuenfte
+    grund: "Ring-Ergebnis, keine Laien-Abfrage: die nach § 20 ermittelten Kapitaleinkuenfte entstehen aus kap_kapitalertraege und der Verlustverrechnung (p20_6) nach Abzug des Sparer-Pauschbetrags (catala_sparer_pb). Der Nutzer nennt die Rohbetraege, nicht das Zwischenergebnis."
+  - regel_id: p32d_1_abgeltung
+    signatur_slot: est_regulaer_mit_kap
+    grund: "Tarifergebnis aus der § 2-Integration (p32a), nicht abfragbar. rules.yaml sagt es selbst unter der Bedingung tarifwerte_sind_p2_ergebnis: 'est_regulaer_mit_kap / est_regulaer_ohne_kap sind p32a-Tarifergebnisse (mit/ohne Hinzurechnung der Kapitaleinkuenfte)'. Andockung wie § 31, kein Selbst-Tarif."
+  - regel_id: p32d_1_abgeltung
+    signatur_slot: est_regulaer_ohne_kap
+    grund: "Gegenstueck zu est_regulaer_mit_kap, dieselbe Herkunft (p32a-Tarif ohne Hinzurechnung). Die Differenz beider ist die Guenstiger-Entscheidung selbst — ein Rechenergebnis, das der Nutzer nicht liefern kann."
+  - regel_id: p32d_1_abgeltung
+    geltungsbedingung: tarifwerte_sind_p2_ergebnis
+    grund: "Beschreibt die HERKUNFT der Tarifwerte (p32a-Ergebnisse aus der § 2-Integration, Andockung wie § 31), nicht einen Sachverhalt des Nutzers. Nichts daran ist abfragbar — die Bedingung dokumentiert, dass der Ring die Werte nicht selbst tarifiert."
+  - regel_id: p32d_1_abgeltung
+    geltungsbedingung: keine_kirchensteuer_auf_kapitalertraege
+    grund: "Verzweigung zwischen glattem 25-%-Satz und der KiSt-ermaessigten Formel (e-4q)/(4+k), s. rules.yaml Z.4143f. Der Sachverhalt dahinter wird bereits ueber kist_konfession erfragt (bindung_kist.yaml) und vom Ring ausgewertet — ein zweites Feld waere dieselbe Frage ein zweites Mal, mit der Moeglichkeit zu widersprechen. Praezedenz: kap_zusammenveranlagung, gestrichen aus genau diesem Grund (250 EUR Under-tax, gemessen 2026-07-30, s. Luecke p20_9/zusammenveranlagung oben)."
   - regel_id: p20_6_verlustverrechnung
     geltungsbedingung: aktienverlust_nur_gegen_aktiengewinn
     grund: "Topf-Trennung Aktien ist Rechenlogik der Regel (eigene Verrechnung), im Feld-Zuschnitt (getrennte Aktien-/Sonstige-Felder) materialisiert."
