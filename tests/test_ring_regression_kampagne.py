@@ -1113,6 +1113,9 @@ _RENTNER_ZUSAMMEN_BASIS = [
     ("rentner_jahresrente_partner", 0),
     ("rentner_renten_beginn_jahr_partner", 2025),
     ("rentner_alter_bei_rentenbeginn_partner", 65),
+    # versicherungsart_partner: KV/PV-Weiche (Anchor für basis_kv_partner/basis_pv_partner weiter unten,
+    # s. Partner-Kegel-Guard in api.py::_an_gesamt_sperrgrund) — ohne sie ab jetzt partner_kegel_offen.
+    ("versicherungsart_partner", "gesetzlich_an"),
 ]
 
 

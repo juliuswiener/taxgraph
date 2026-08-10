@@ -1990,6 +1990,37 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                                   felder.get("rentner_renten_beginn_jahr", {}).get("wert"),
                                   felder.get("rentner_rentenfreibetrag", {}).get("wert")):
                 return "rentenfreibetrag_fixierung_offen"
+            # Person B, Partner-Kegel (K2, BACKLOG rentner-gesamt-partner-kegel-ungeschuetzt, messung_2):
+            # rentner_gesamt/zusammen hatte KEINEN Vollständigkeits-Guard für die 28 gewired-ten Partnerfelder
+            # (cfg fehlte "partner_19", der einzige zweite Fast-Treffer api.py:2076 liegt nach dem
+            # unbedingten `return None` unten und ist toter Code für gesamt_guard-Scheiben). Zwei konkrete
+            # Lücken, beide K2 (fail-closed, kein Rate-Bescheid statt stillem Fehl-Ergebnis):
+            # (a) Renten-Gruppe: ein einzelnes rentner_renten_art_partner (ohne beginn_jahr_partner) lief
+            #     ungefangen in den Fixierungs-Guard unten — _fixierung_offen(beginn=None) liefert False
+            #     (kein isinstance(None, int)), der Guard griff NICHT — und crashte im Ring mit HTTP 500
+            #     ("RentenfreibetragFixierungOffen"), weil der Ring das fehlende Feld intern als 0 (=
+            #     aa-Folgejahr) behandelt und dort einen fixierten Freibetrag verlangt, den niemand gesetzt
+            #     hat. Jetzt: entweder ALLE 4 Kernfelder (RENTNER_22_PARTNER) bestätigt (wie Person A) oder
+            #     KEINS — sonst rente_instanz_offen (dieselbe Semantik wie die multi_rente-Instanz-
+            #     Vollständigkeit oben, nur ohne Instanz-Achse; wandelt den Crash in einen Sperrgrund um).
+            # (b) KV/PV-Weiche: versicherungsart_partner ist die Kz-VERZWEIGUNG für basis_kv_partner/
+            #     basis_pv_partner (est_mapping.py PARTNER_VERZWEIGUNG: gesetzlich_an/_freiwillig/privat ->
+            #     3 verschiedene Kz je Feld) — ohne sie bewegte der Ring Geld (-810/-180 EUR gemessen), ohne
+            #     dass klar ist, WELCHES Kz gilt. Individuelle Vorsorge-Einzelfelder (VOR_PARTNER_FELDER,
+            #     vorsorge_*_partner) bleiben absichtlich UNGEGATED — das ist der A.2-Präzedenzfall (Kommentar
+            #     oben): Sonderausgaben sind je Kategorie eigenständig abzugsfähig, kein Kegel nötig.
+            # NICHT hier: person_b_idnr (E0100082) ist auf rentner_gesamt noch gar nicht erreichbar (fehlt in
+            # RENTNER_FELDER) — eigener, breiterer Fund, an team-lead gemeldet statt hier mitgezogen (würde
+            # ~10 bestehende gruene Tests ohne idnr brechen, die dieser Auftrag nicht anfasst).
+            if felder.get("veranlagung", {}).get("wert") == "zusammen":
+                _rente_b_kern = frozenset(RENTNER_22_PARTNER)
+                _rente_b_da = {f for f in _rente_b_kern
+                               if (felder.get(f) or {}).get("zustand") == "bestaetigt"}
+                if _rente_b_da and _rente_b_da != _rente_b_kern:
+                    return "rente_instanz_offen"
+                if ((_positiv("basis_kv_partner") or _positiv("basis_pv_partner"))
+                        and (felder.get("versicherungsart_partner") or {}).get("zustand") != "bestaetigt"):
+                    return "partner_kegel_offen"
             # Person B (#4b): dieselbe aa-Folgejahr-Fixierungs-Sperre für die Ehegatten-Rente bei zusammen.
             if felder.get("veranlagung", {}).get("wert") == "zusammen" and _fixierung_offen(
                     felder.get("rentner_renten_art_partner", {}).get("wert"),
