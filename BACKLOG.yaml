@@ -280,8 +280,8 @@ abgabe:
 
   - id: kap-antragsgrund-fehlt
     titel: "Anlage KAP ohne Antragsgrund — Erklaerung mit Kapitalertraegen ist nicht einreichbar"
-    status: offen
-    richtung: "ABGABE-BLOCKER (rc=610001002), zusaetzlich zwei Anrechnungsluecken"
+    status: teil_erledigt
+    richtung: "Baustein 1 (Antragsgrund) gebaut, Baustein 2+3 (Steuerabzugsbetraege, q) weiter offen"
     entdeckt: "2026-08-10, tests/test_checkest_feldmatrix.py, erster Lauf"
     messung: |
       Ratschen-Fixtur einzel, nur kap_kapitalertraege veraendert:
@@ -308,18 +308,44 @@ abgabe:
       Betr_lt_StBesch (die Ertraege-Seite). Die gesamte Steuerabzugsbetraege-Seite fehlt:
       es gibt kein Feld fuer einbehaltene Kapitalertragsteuer, SolZ oder KiSt. Wer Ertraege
       erklaert, ohne die darauf gezahlte Steuer zu erklaeren, bekommt sie nicht angerechnet.
+    baustein_1_geloest: |
+      2026-08-10, produkt/haut/api.py::_mit_ring_werten + produkt/bindung/bindung_kap_vv_familie.yaml.
+      Entscheidung (praezisiert 2026-08-10, ersetzt die vorsichtigere Mittags-Vorgabe): E1900401
+      wird IMMER gesetzt, sobald irgendein KAP-Betragsfeld > 0 erklaert wird (eigen ODER — bei
+      Zusammenveranlagung — Partner) — NICHT an den vom Ring beim Rechnen gewaehlten Zweig
+      (kap_st < abgeltung) gekoppelt. Begruendung: § 32d Abs. 6 S. 1 kann strukturell nicht
+      schlechterstellen ("wenn dies zu einer niedrigeren Einkommensteuer ... fuehrt"); die
+      Ring-Kopplung blockierte genau den haeufigeren Fall (Abgeltung guenstiger) weiter mit
+      rc=610001002.
+      Zusaetzlich gemessen: E1900401 allein reicht NICHT. checkESt verlangt zusaetzlich Kz
+      E1901401 (§ 20 Abs. 9, in Anspruch genommener Sparer-Pauschbetrag, Anlage KAP Zeile 16,
+      Vordruck erlaubt ausdruecklich "(ggf. 0)"), sonst rc=610001002 mit anderer Meldung
+      ("...jedoch keine Angabe zum in Anspruch genommenen Sparer-Pauschbetrag"). Truth-table
+      (Basisfall + kap_kapitalertraege=5.000):
+        ohne beides                rc=610001002  "...einen Grund fuer die Angabe ... angeben"
+        nur E1901401                rc=610001002  derselbe Blocker
+        nur E1900401                rc=610001002  "...keine Angabe zum in Anspruch genommenen
+                                                    Sparer-Pauschbetrag"
+        E1900401 + E1901401         rc=0          einreichbar
+      E1901401-Wert = (rohe/verrechnete Kapitalertraege) - (catala_sparer_pb-Ergebnis), floor 0.
+      offen_bei_julius (b) unten damit beantwortet: NICHT an den Ring-Gewinnzweig koppeln.
     reihenfolge: |
-      1. Antrags-Kz (hebt den Blocker auf, bringt Guenstigerpruefung in Deckung)
-      2. Steuerabzugsbetraege (die grosse Anrechnung)
-      3. p32d-q-auslandssteuer (die auslaendische Anrechnung, kleinster Betrag)
+      1. Antrags-Kz (hebt den Blocker auf, bringt Guenstigerpruefung in Deckung) — GEBAUT,
+         s. baustein_1_geloest. Gate: tests/test_kap_antrag_kz.py (Bindung) +
+         tests/test_checkest_feldmatrix.py::test_kap_antrag_ist_inert_ohne_kapitalertraege
+         (Gegenprobe: beide Kz aus ohne Kapitalertraege, beide an mit).
+      2. Steuerabzugsbetraege (die grosse Anrechnung) — weiter offen
+      3. p32d-q-auslandssteuer (die auslaendische Anrechnung, kleinster Betrag) — weiter offen
     offen_bei_julius: |
-      (a) Formularsatz: Anlage KAP fehlt in sources/. Ohne den amtlichen Vordruck bleibt die
-          Sektionswahl fuer 2./3. geraten — St_Abz_Betr_Inl_u_Inv_Ert (E1905101) vs
-          St_Abz_Betr_Ert_m_o_inl_StAbz (E1905102) sind ein identischer 6-Kz-Parallelblock.
-          kz_extract.py nennt Sektionspfad-allein MITTEL und verlangt den Vordruck-Kreuzcheck.
-          Laut aus_2025.meta.yaml war KAP im steuern.de-Formularsatz-ZIP enthalten.
-      (b) Antragslogik: Antrag setzen, wenn der Ring die Guenstigerpruefung gewaehlt hat?
-          Produktentscheidung, keine Rechenfrage.
+      (a) Formularsatz fuer Baustein 2/3 (Steuerabzugsbetraege, Zeilen 37-42): amtlicher Vordruck
+          inzwischen in sources/bfinv_raw/ gefunden (s. reports/adjudikation/anlage-kap-kz-
+          zuordnung-2026-08-10.md); E1900401/E1900501 dort STARK belegt (fuer Baustein 1 genutzt).
+          Fuer die zweite, strukturgleiche XSD-Serie (St_Abz_Betr_Ert_m_o_inl_StAbz) bleibt eine
+          offene Frage: 6 Kz im Schema, nur 3 im entsprechenden Vordruck-Block (Zeilen 286-288)
+          — vor Bau von 2./3. gegen 040_Anleitung_Anlage_KAP_2025.pdf und
+          Anlage_KAP_BET_2025.pdf pruefen, nicht raten.
+      (b) Antragslogik: BEANTWORTET, s. baustein_1_geloest — immer setzen, nicht an den
+          Ring-Gewinnzweig gekoppelt.
 
   - id: p35a-einzelaufstellung
     titel: "§ 35a: checkESt verlangt Einzelaufstellung, wir liefern nur die Summe"
