@@ -838,6 +838,51 @@ rechenluecken:
       Der Nutzer MUSS gefragt werden.
     reihenfolge: "Abs. 5 zuerst (Ring erzwingt), dann Abs. 1 (Nutzerfrage)"
 
+  - id: p33b-partner-pb-doppelabzug
+    titel: "§ 33b — Partner-Pauschbetrag laeuft ungeschuetzt neben behinderungsbedingte_aufwendungen"
+    status: offen
+    richtung: under-tax
+    entdeckt: |
+      2026-08-10, AUFTRAG team-lead nach Gegenlesen von p33b-stufe-2. team-lead fand:
+      der Ring gewaehrt den Partner-PB unconditional (api.py:1010 gesamt, api.py:1395
+      rentner_gesamt, catala_behinderten_pb liest rentner_grad_der_behinderung_partner),
+      waehrend behinderungsbedingte_aufwendungen ein fallweites Feld OHNE Partner-Variante
+      ist und Stufe 2b (Wahlrecht+Sperrgrund) nur Person-A-Feldnamen liest
+      (rentner_grad_der_behinderung, rentner_hilflos_blind_taubblind — s. p33b-stufe-2,
+      "Ausser Scope gelassen"). team-lead's eigene Sonde traf zuerst
+      input_kegel_nicht_bestaetigt, aber selbst als Luecke der Sonde benannt ("Kegel nicht
+      vollstaendig gemacht") — daher AUFTRAG: ergebnisoffen sauber messen.
+    messung: |
+      Scheibe rentner_gesamt, veranlagung=zusammen, VZ 2025, RENTNER_ZUSAMMEN_BASIS
+      (vollstaendiger Kegel aus tests/test_p3_vor_partner.py::_setup_rentner_zusammen)
+      + rentner_grad_der_behinderung_partner=100 + behinderungsbedingte_aufwendungen=300.000ct,
+      Wahlrecht (Person A) unbeantwortet, Person A ohne eigenen GdB.
+      (a) Fall rechnet: grund="bestaetigt", KEIN Sperrgrund. -> Pfad (b), nicht (c).
+      (b) Doppelabzug belegt, drei Zahlen aus derselben Messreihe (zahl_cent):
+        heute (Partner-PB unconditional + agB voll):        3.604.000 ct
+        Referenz Wahlrecht=True-Analogon  (PB behalten,
+          agB um BB gekuerzt, wie Stufe 2b es fuer Person A tut): 3.727.400 ct
+        Referenz Wahlrecht=False-Analogon (kein PB, agB voll,
+          wie Stufe 2b es fuer Person A tut):                     3.720.800 ct
+      heute liegt UNTER beiden legitimen Alternativen: -1.234,00 EUR ggue. True-Analogon,
+      -1.168,00 EUR ggue. False-Analogon. Kein Default-Pfad reproduziert die heutige Zahl —
+      der Partner-PB steht schlicht zusaetzlich zur vollen agB, exakt die "anstelle einer
+      Steuerermaessigung nach § 33"-Kollision, die Stufe 2b fuer Person A behebt.
+    ursache: |
+      cfg["rentner_gesamt"] fuehrt kein partner_19 (api_constants.py:428-439) — die einzige
+      Zusammenveranlagungs-Sperre, die unvollstaendige Partnerdaten fangen koennte
+      (_an_gesamt_sperrgrund, "partner_kegel_offen"), greift fuer diese Scheibe strukturell
+      NIE. RENTNER_KEGEL (api_constants.py:151) fuehrt keine _partner-Felder als Pflicht.
+      Stufe 2b (Wahlrecht+Sperrgrund, _shared_steuer_sonder_agb api.py:397-421 und
+      _an_gesamt_sperrgrund api.py:2000-2028) wurde bewusst auf den EIGENEN Pauschbetrag
+      begrenzt gebaut (Bauanleitungs-Wortlaut) — das war beim Bau richtig begruendet, deckt
+      aber den Partner-Fall nicht ab.
+      fundstelle: "§ 33b Abs. 1 S. 1 gilt pro Person — Partner braucht dieselbe
+        Wahlrecht/Sperrgrund-Mechanik wie Person A, nur an rentner_grad_der_behinderung_partner
+        + rentner_hilflos_blind_taubblind_partner gebunden."
+    aufwand_h: unbeziffert
+    api_py: "bleibt bei dev-dieser-Session, kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation"
+
   - id: vpf-frist-null-plausibilitaet
     titel: "§ 9 Abs. 4a S. 6/7 — >3 Monate erklaert, aber 0 Tage nach Frist"
     status: erledigt
