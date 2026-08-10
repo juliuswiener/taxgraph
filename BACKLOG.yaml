@@ -883,6 +883,87 @@ rechenluecken:
     aufwand_h: unbeziffert
     api_py: "bleibt bei dev-dieser-Session, kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation"
 
+  - id: rentner-gesamt-partner-kegel-ungeschuetzt
+    titel: "rentner_gesamt/zusammen — KEIN Partner-Kegel-Guard fuer 28 wired Partnerfelder"
+    status: offen
+    richtung: "under-tax (strukturell, durch Asymmetrie: Abzuege einzeln erreichbar, Einkommen nur als Gruppe)"
+    entdeckt: |
+      2026-08-10, Folgeauftrag team-lead nach p33b-partner-pb-doppelabzug: pruefen, ob die
+      dortige Luecke (Partner-PB ungeschuetzt) ein Einzelfall ist oder rentner_gesamt bei
+      veranlagung=zusammen GENERELL keinen Partner-Vollstaendigkeits-Guard hat.
+    messung_1_guard_existenz: |
+      (1) BELEGT: kein Guard greift. Zwei Fast-Treffer im Code, keiner wirkt:
+        - api.py:1939 `if cfg.get("partner_19") and veranlagung=="zusammen"` — cfg["rentner_gesamt"]
+          fuehrt kein partner_19 (api_constants.py:428-439), Bedingung greift nie.
+        - api.py:2066 `if veranlagung=="zusammen": ... AN_GESAMT_PARTNER` — liegt NACH einem
+          unbedingten `return None` bei Zeile 2058, das den gesamten `if cfg.get("gesamt_guard")`-
+          Zweig abschliesst. rentner_gesamt hat gesamt_guard=True (api_constants.py:435) UND
+          gesamt hat gesamt_guard=True (api_constants.py:423) — fuer BEIDE Scheiben ist Zeile
+          2066 toter Code, nie erreichbar. Er wirkt nur fuer an_gesamt (gesamt_guard fehlt dort).
+      Damit ist api.py:2066 kein zweiter Schutzwall, sondern unreachable code — Fund am Rande,
+      nicht Teil des AUFTRAGs, hier nur als Beleg fuer (1) protokolliert.
+    messung_2_systematischer_sweep: |
+      (2) 28 Partnerfelder sind in cfg["rentner_gesamt"]["felder"] erreichbar (per Python
+      berechnet, nicht gezaehlt: set(f for f in SCHEIBEN["rentner_gesamt"]["felder"] if
+      f.endswith("_partner")) == 28), DAVON 0 in RENTNER_KEGEL (dem Pflicht-Set) — jedes einzelne
+      ist optional. Sweep: RENTNER_ZUSAMMEN_BASIS (veranlagung=zusammen, Partner komplett leer)
+      gegen BASIS+je-ein-Feld, rentner_gesamt, VZ 2025. BASIS zahl_cent=4.727.000.
+        Bewegt Geld OHNE Sperrgrund (grund bleibt "bestaetigt"):
+          kap_kapitalertraege_partner (allein)                    +750,00 EUR
+          vorsorge_arbeitslosenversicherung_partner (allein)      -180,00 EUR
+          vorsorge_erwerbsunfaehigkeit_partner (allein)           -180,00 EUR
+          vorsorge_unfall_haftpflicht_partner (allein)            -180,00 EUR
+          vorsorge_rv_alt_mit_ueberschuss_partner (allein)        -180,00 EUR
+          vorsorge_rv_alt_ohne_ueberschuss_partner (allein)       -180,00 EUR
+          vor_an_anteil_rv_partner (allein)                     -1.230,00 EUR
+          vor_rv_ausserhalb_lstb_partner (allein)               -1.230,00 EUR
+          basis_kv_partner (allein, OHNE versicherungsart_partner) -810,00 EUR
+          basis_pv_partner (allein, OHNE versicherungsart_partner) -180,00 EUR
+          KV/PV-Gruppe (Art+kv+pv zusammen)                     -1.020,00 EUR
+          Renten-Gruppe (Art+Jahresrente+Beginn+Alter zusammen) +3.464,00 EUR  (Einkommen -> korrekt
+            MEHR Steuer; zeigt: die Einkommens-Seite rechnet richtig, WENN vollstaendig gemeldet)
+          rentner_grad_der_behinderung_partner (allein, ohne BB)  -1.192,00 EUR (fuer sich genommen
+            korrekt — der Doppelabzug entsteht erst MIT behinderungsbedingte_aufwendungen, s.
+            p33b-partner-pb-doppelabzug)
+          rentner_hilflos_blind_taubblind_partner (allein)       -3.108,00 EUR
+        CRASH statt Guard (schlimmer als fail-open): rentner_renten_art_partner allein (ohne
+          rentner_renten_beginn_jahr_partner) -> HTTP 500 "RentenfreibetragFixierungOffen:
+          aa-Folgejahr 0<2025 ohne fixierten Rentenfreibetrag". Ursache: der Fixierungs-Guard
+          (api.py:1984-1988) liest `felder.get(...).get("wert")` (None bei fehlendem Feld) und
+          `_fixierung_offen()` gibt bei beginn=None `False` zurueck (kein isinstance(None,int)) —
+          der Guard greift NICHT. Der Ring selbst behandelt das fehlende Feld intern als 0
+          (0<2025 = aa-Folgejahr) und verlangt dort einen fixierten Freibetrag, den niemand
+          gesetzt hat -> ungefangene Exception statt Sperrgrund. Naht-Blindstelle (zwei
+          Repraesentationen von "fehlt": None im Guard, 0 im Ring), keine neue Erfindung.
+        Kein messbarer Effekt allein (Feld ohne seinen Block, erwartungsgemaess bzw. legitim):
+          kap_gewinn_aktien_partner, kap_gewinn_sonstige_partner, kap_verlust_aktien_partner,
+          kap_verlust_sonstige_partner, vor_ag_anteil_rv_partner (AG-Anteil ist korrekt nicht
+          abzugsfaehig), mit_anspruch_auf_zuschuss_partner, versicherungsart_partner,
+          rentner_jahresrente_partner/_beginn_jahr_partner/_alter_bei_rentenbeginn_partner/
+          rentner_rentenfreibetrag_partner (je allein, brauchen die Renten-Gruppe),
+          kist_konfession_partner, Stammdaten-Gruppe (Name/Geburtsdatum Partner).
+      Skript: /tmp/.../scratchpad/measure_partner_kegel_sweep.py (nicht Teil des Repos).
+      Richtung strukturell under-tax: 11 von 14 geld-bewegenden Feldern sind Abzuege, jeder
+      einzeln OHNE Gegenstueck erreichbar; das einzige Einkommens-Feld (Kapitalertraege) ist
+      ebenso optional wie die Abzuege, die Renten-EINKOMMENS-Gruppe braucht dagegen 4 Felder
+      GLEICHZEITIG oder liefert 0/crasht. Ein Nutzer kann jeden Partner-Abzug einzeln bestaetigen
+      und die Partner-Einkuenfte komplett weglassen, ohne dass der Ring das bemerkt.
+    messung_3_absicht: |
+      (3) TEILWEISE BELEGT, aber nicht fuer diese Luecke: Commit dbac431 (2026-07-21,
+      "rentner_gesamt auf gesamt-Parität — 4 Over-tax-Bugs") verdrahtete genau diese
+      Partnerfelder (KV/PV, Vorsorge, RV-Beitraege, GdB) um vier damalige Over-tax-Bugs zu
+      schliessen und nennt im Commit-Text explizit: "DEFER dokumentiert: Person-B-KV/PV,
+      §24b-Kinder-Gate (Fund 2)" — die Partner-Vollstaendigkeit war zum Bauzeitpunkt ALS LUECKE
+      ERKANNT, nicht uebersehen. Diese DEFER-Notiz existiert aber NUR im Commit-Text: grep ueber
+      BACKLOG.yaml und reports/ nach "Person-B-KV/PV" und "Fund 2" liefert null Treffer — sie
+      wurde nie in ein trackbares Dokument uebernommen und ist seit 2026-07-21 (20 Tage) unsichtbar
+      gewesen, bis dieser Sweep sie wiederfand. Fuer die Frage "bewusst weggelassen oder
+      uebersehen" gilt beides gleichzeitig: die LUECKE war bewusst, ihr VERSCHWINDEN aus der
+      Nachverfolgung war es nicht. Fuer die anderen 26 Felder (Vorsorge, RV-Beitraege, Kapital,
+      Renten-Crash) — kein Beleg gefunden, weder Kommentar noch Commit-Text.
+    aufwand_h: unbeziffert
+    api_py: "kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation"
+
   - id: vpf-frist-null-plausibilitaet
     titel: "§ 9 Abs. 4a S. 6/7 — >3 Monate erklaert, aber 0 Tage nach Frist"
     status: erledigt
