@@ -893,7 +893,7 @@ rechenluecken:
 
   - id: p33b-partner-pb-doppelabzug
     titel: "§ 33b — Partner-Pauschbetrag laeuft ungeschuetzt neben behinderungsbedingte_aufwendungen"
-    status: offen
+    status: erledigt
     richtung: under-tax
     entdeckt: |
       2026-08-10, AUFTRAG team-lead nach Gegenlesen von p33b-stufe-2. team-lead fand:
@@ -935,6 +935,37 @@ rechenluecken:
         + rentner_hilflos_blind_taubblind_partner gebunden."
     aufwand_h: unbeziffert
     api_py: "bleibt bei dev-dieser-Session, kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation"
+    achse_geklaert: |
+      Aus dem Statute-Text (sources/gesetze-im-internet/estg_p33b_2026-07-13.txt), nicht aus
+      Analogie zu Stufe 2b: § 33b Abs. 1 S. 1 gilt PRO PERSON (Subjekt "Menschen mit
+      Behinderungen", Anspruch nach Abs. 2/3 individuell nach eigenem GdB). Abs. 1 S. 2
+      "einheitlich" bindet die Wahl EINER Person ueber ihre eigenen Aufwandsarten (Hilfe/
+      Pflege/Waesche) hinweg, NICHT zwei Ehegatten aneinander — kein Textbefund fuer eine
+      Kopplung der beiden Wahlrechte. Feld-Achse: behinderungsbedingte_aufwendungen_partner
+      als eigenstaendige "davon"-Teilmenge, fallweit (wie das Obermengenfeld agb_aufwendungen
+      selbst — das Haushalts-Aggregat unter Zusammenveranlagung), NICHT instanz_gruppe.
+    bericht: |
+      Fix 828a2e6. Person-A-Mechanik (Stufe 2b) unabhaengig auf den Partner gespiegelt:
+      - Neue Felder (produkt/bindung/bindung_sonder_agb_35a.yaml, gefaltet in GESAMT_ABZUEGE):
+        behinderungsbedingte_aufwendungen_partner (cent), behinderungsbedingte_aufwendungen_
+        wahlrecht_pb_partner (bool, askable).
+      - _shared_steuer_sonder_agb (api.py): eigenstaendiger if/elif-Block NACH Person As Block,
+        NICHT elif-gekettet (beide Wahlrechte unabhaengig, jede Kombination moeglich).
+        partner_pb_eur bit-identisch zu den beiden ausserg-Aufbaustellen (gesamt api.py~1034,
+        rentner_gesamt api.py~1425). Nur bei veranlagung=="zusammen".
+      - _an_gesamt_sperrgrund (api.py): neuer Sperrgrund behinderungsbedingte_aufwendungen_
+        wahlrecht_partner_offen, auf 8-Space-Ebene (Geschwister zu Person As Block, NICHT im
+        cfg.get("rentner")-nur-Block) — feuert auf "gesamt" UND "rentner_gesamt" gleichermassen.
+      - pipeline/produktion/rules.yaml: gespiegelte geltungsbedingung
+        eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb_partner an p33_1_2_agb_abzug.
+      Verifikation: Gegenprobe bit-exakt (Paar ohne Partner-GdB: zahl_cent 583400ct identisch
+      vor/nach Fix, via git-stash-Vergleich gegen HEAD). Beide neuen Zweige (Sperrgrund +
+      Kuerzung) einzeln mutation-getestet (je auf rot gebracht und zurueckgesetzt).
+      tests/test_p33b_partner_wahlrecht.py, 6 Tests. Vollsuite 1823 passed/4 skipped
+      (Baseline 1817+6, keine Regression) — ein Nebenbefund unterwegs behoben:
+      tests/test_bindungstabelle.py::test_h_betragsfelder_haben_kz_oder_begruendung verlangte
+      den neuen Cent-Feld in BETRAGSFELDER_OHNE_KZ (Gruppe D, gespiegelt zu
+      behinderungsbedingte_aufwendungen).
 
   - id: rentner-gesamt-partner-kegel-ungeschuetzt
     titel: "rentner_gesamt/zusammen — KEIN Partner-Kegel-Guard fuer 28 wired Partnerfelder"
