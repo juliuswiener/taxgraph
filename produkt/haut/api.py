@@ -2395,9 +2395,20 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
         return 409, {"fall_id": fall_id, "eingereicht": False, "grund": "deklaration_unvollstaendig",
                      "unvollstaendig": result["unvollstaendig"]}
     try:
+        # abgabefaehig=True haengt den <Vorsatz>-Block an. Ohne ihn beanstandet checkESt
+        # 9 Pflichtfelder (Absender, Unterfallart, Vorgang, Zeitraum, Copyright, OrdNrArt,
+        # Rueckuebermittlung) — gemessen 2026-08-09, in Einzel- wie Zusammenveranlagung
+        # gleich. Der Endpunkt fuhr bis dahin den Default False und damit einen Pfad, der
+        # nie einreichbar war; die Ratsche in tests/test_checkest_durchstich.py mass
+        # gleichzeitig die abgabefaehige Variante und zeigte deshalb weniger Fehler an,
+        # als der Nutzer tatsaechlich bekam (BACKLOG: endpunkt-naht-abgabepfad).
+        # snapshot=felder: der Vorsatz-Block leitet Absender und Steuernummer aus den
+        # bereits deklarierten Stammdaten ab (elster_xml._leite_absender_ab /
+        # _leite_steuernummer_ab) — keine zweite Repraesentation derselben Angaben.
         xml = EX.erzeuge_xml(result, vz=vz,
                              empfaenger_land=str(body.get("empfaenger_land") or "BY"),
-                             testmerker=EX.TESTMERKER_ERIC)
+                             testmerker=EX.TESTMERKER_ERIC,
+                             abgabefaehig=True, snapshot=felder)
     except EX.XmlFehler as e:
         return 422, {"fall_id": fall_id, "eingereicht": False, "grund": "xml_nicht_baubar",
                      "detail": str(e)}

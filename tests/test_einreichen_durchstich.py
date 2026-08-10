@@ -164,7 +164,13 @@ _STAMM_A = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
             ("stammdaten_plz", "55555"), ("stammdaten_wohnort", "Musterort"),
             ("stammdaten_keine_bankverbindung", True),
             ("stammdaten_art_est_erklaerung", True),
-            ("kist_konfession", "keine"))
+            ("kist_konfession", "keine"),
+            # 3b5ccfc: kein Kz-Spiegel, erreicht erzeuge_xml() ueber den snapshot-Parameter.
+            # Praefix 9181 muss zur Finanzamtsnummer des Empfaengers passen, sonst wirft der
+            # Writer. Ohne dieses Feld liefert /einreichen seit der abgabefaehig=True-Umstellung
+            # 'xml_nicht_baubar' — und dann zaehlt die Ratsche unten 0 Fehlertexte, weil es gar
+            # keine ERiC-Antwort gibt. Genau dieser Fall hat hier einmal Falsch-Gruen erzeugt.
+            ("stammdaten_steuernummer", "9181081508155"))
 
 _BASIS_A = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
             ("vor_ag_anteil_rv", 1200000), ("vor_rv_ausserhalb_lstb", 0),
@@ -222,11 +228,17 @@ def test_einreichen_endpunkt_erreicht_die_amtliche_pruefung(base, monkeypatch):
 
 
 # Gemessen 2026-08-10 gegen ERiC 44.2.4.0, ESt_2025, ueber den echten HTTP-Endpunkt, scheibe=
-# "gesamt" (dieselbe Fixtur wie _fall_einzel oben). Zusammensetzung: 9 Vorsatz-Block-Fehler
-# (Endpunkt uebergibt noch kein abgabefaehig=True/absender_* an erzeuge_xml, api.py:2398 —
-# echte Naht, sinkt erst wenn team-lead das nachzieht, BACKLOG endpunkt-naht-abgabepfad) plus
-# 2 Anlage-N-Fehler (Steuerklasse + Lohnsteuer fehlen, offene Adjudikation, keine Naht).
-RESTFEHLER_ENDPUNKT_EINZEL = 11
+# "gesamt" (dieselbe Fixtur wie _fall_einzel oben).
+#
+#   11 -> 2   nachdem der Endpunkt auf abgabefaehig=True + snapshot umgestellt wurde
+#             (api.py:2398). Die 9 Vorsatz-Block-Fehler sind damit weg; Absender und
+#             Steuernummer werden aus den deklarierten Stammdaten abgeleitet.
+#
+# Die verbleibenden 2 sind KEINE Naht mehr, sondern die offene Adjudikation:
+# Anlage-N-Steuerklasse (E0200002, ungebunden) und Anlage-N-Lohnsteuer (E0200301,
+# absichtlich ausgeschlossen). Damit steht der Endpunkt auf demselben Rest wie die
+# Funktions-Ratsche — beide warten nur noch auf Entscheidungen, nicht auf Bau.
+RESTFEHLER_ENDPUNKT_EINZEL = 2
 
 
 @braucht_eric
@@ -238,12 +250,28 @@ def test_restfehler_ratsche_endpunkt(base, monkeypatch):
     fid = _fall_einzel(base)
     st, resp = _req(base, "POST", f"/fall/{fid}/einreichen", {})
 
+    # Zuerst: wurde ueberhaupt geprueft? Ohne diese Schranke zaehlt die Ratsche bei einem
+    # Abbruch VOR checkESt null Fehlertexte und meldet triumphierend Fortschritt.
+    # Real passiert am 2026-08-10: nach der Umstellung des Endpunkts auf abgabefaehig=True
+    # fehlte in dieser Fixtur stammdaten_steuernummer, der Writer brach mit
+    # 'xml_nicht_baubar' ab, es gab keine ericantwort — und die Ratsche las daraus
+    # "0 statt 11 Fehler". Dieselbe Falsch-Gruen-Klasse wie rc=610301200 mit leerem Puffer.
+    grund = resp.get("grund")
+    assert grund not in ("xml_nicht_baubar", "deklaration_unvollstaendig",
+                         "eric_nicht_verfuegbar", "kein_pruefmodul_fuer_vz"), (
+        f"Abbruch VOR der Pruefung (grund={grund!r}) — keine Fehlertexte heisst hier NICHT "
+        f"fehlerfrei. Die Ratsche darf das nie als Fortschritt lesen. Antwort: {resp}")
+
     rc = resp.get("rc")
     if rc == CE.RC_OK:
         assert RESTFEHLER_ENDPUNKT_EINZEL == 0, (
             f"Endpunkt meldet rc=0 (abgabefaehig!), Ratsche steht noch auf "
             f"{RESTFEHLER_ENDPUNKT_EINZEL}. Setze RESTFEHLER_ENDPUNKT_EINZEL = 0.")
         return
+
+    assert CE.klassifiziere_rc(rc) == "plausibilitaet_fehler", (
+        f"rc={rc} [{CE.klassifiziere_rc(rc)}]: kein Pruefergebnis, die Fehlerzahl unten "
+        f"waere bedeutungslos. Antwort: {resp}")
 
     texte = _texte(resp.get("ericantwort", ""))
     assert not CE.gekappt_verdacht(resp.get("ericantwort", "")), (
@@ -259,9 +287,9 @@ def test_restfehler_ratsche_endpunkt(base, monkeypatch):
 
 # Differenz Endpunkt minus Funktion, Stand 2026-08-10 (11 - 3 = 8), beide auf scheibe="gesamt"-
 # foermigen Fixturen gemessen. Zwei GEGENLAEUFIGE Ursachen, nicht eine Zahl:
-#   +9  Vorsatz-Block: der Endpunkt uebergibt (noch) kein abgabefaehig=True/absender_* an
-#       erzeuge_xml (api.py:2398) — ECHTE Naht, schliesst sich, wenn team-lead
-#       abgabefaehig=True nachzieht (BACKLOG endpunkt-naht-abgabepfad).
+#   +0  Vorsatz-Block: GESCHLOSSEN am 2026-08-10. Der Endpunkt faehrt jetzt
+#       abgabefaehig=True und reicht den snapshot durch (api.py:2398); Absender und
+#       Steuernummer werden aus den deklarierten Stammdaten abgeleitet. Vorher +9.
 #   -1  Anlage-KAP: die Funktions-Fixtur in test_checkest_durchstich.py::_BASIS_A deklariert
 #       kap_kapitalertraege/kap_gewinn_aktien/kap_verlust_aktien/kap_verlust_sonstige explizit
 #       als 0 und loest damit einen KAP-Angabegrund-Fehler aus; die Endpunkt-Fixtur hier laesst
@@ -269,7 +297,7 @@ def test_restfehler_ratsche_endpunkt(base, monkeypatch):
 #       Naht, nur ein Fixtur-Unterschied zwischen den beiden Ratschen.
 # Wer eine der beiden Ratschen aendert, MUSS diese Zahl nachziehen und den Grund hier
 # eintragen — sonst laufen die zwei Messungen wieder unbemerkt auseinander.
-DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 8
+DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = -1
 
 
 def test_delta_endpunkt_funktion_ratsche_bekannt():
