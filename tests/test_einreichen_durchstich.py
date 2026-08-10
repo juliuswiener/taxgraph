@@ -285,19 +285,26 @@ def test_restfehler_ratsche_endpunkt(base, monkeypatch):
         f"Verbleibend:\n" + "\n".join(f"  - {t[:160]}" for t in texte))
 
 
-# Differenz Endpunkt minus Funktion, Stand 2026-08-10 (11 - 3 = 8), beide auf scheibe="gesamt"-
-# foermigen Fixturen gemessen. Zwei GEGENLAEUFIGE Ursachen, nicht eine Zahl:
-#   +0  Vorsatz-Block: GESCHLOSSEN am 2026-08-10. Der Endpunkt faehrt jetzt
-#       abgabefaehig=True und reicht den snapshot durch (api.py:2398); Absender und
-#       Steuernummer werden aus den deklarierten Stammdaten abgeleitet. Vorher +9.
-#   -1  Anlage-KAP: die Funktions-Fixtur in test_checkest_durchstich.py::_BASIS_A deklariert
+# Differenz Endpunkt minus Funktion, Stand 2026-08-10 (2 - 2 = 0), beide auf scheibe="gesamt"-
+# foermigen Fixturen gemessen. BEIDE Ursachen sind inzwischen geschlossen:
+#   +0  Vorsatz-Block: GESCHLOSSEN. Der Endpunkt faehrt jetzt abgabefaehig=True und reicht
+#       den snapshot durch (api.py:2398); Absender und Steuernummer werden aus den
+#       deklarierten Stammdaten abgeleitet. Vorher +9.
+#   -0  Anlage-KAP: GESCHLOSSEN. Die Funktions-Fixtur deklarierte kap_*=0 explizit und loeste
+#       damit einen Angabegrund-Fehler aus, den die Endpunkt-Fixtur durch Weglassen vermied.
+#       Seit Julius' Entscheidung (Option A) filtert est_mapping.deklariere() die Nullwerte
+#       selbst heraus — beide Fixturen erzeugen jetzt dasselbe Bild. Vorher -1.
+#
+# Delta 0 heisst NICHT, dass die Wache ueberfluessig ist: sie faengt weiterhin jedes
+# kuenftige Auseinanderlaufen. Ein Delta von 0 ist der Zustand, den man will, nicht der,
+# den man aufgibt. Historischer Rest des alten Kommentars zur Nachvollziehbarkeit:
 #       kap_kapitalertraege/kap_gewinn_aktien/kap_verlust_aktien/kap_verlust_sonstige explizit
-#       als 0 und loest damit einen KAP-Angabegrund-Fehler aus; die Endpunkt-Fixtur hier laesst
+#       als 0 und loeste damit einen KAP-Angabegrund-Fehler aus; die Endpunkt-Fixtur laesst
 #       diese Felder weg (nur kein_kap=True) und baut Anlage KAP gar nicht erst — KEINE echte
 #       Naht, nur ein Fixtur-Unterschied zwischen den beiden Ratschen.
 # Wer eine der beiden Ratschen aendert, MUSS diese Zahl nachziehen und den Grund hier
 # eintragen — sonst laufen die zwei Messungen wieder unbemerkt auseinander.
-DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = -1
+DELTA_ENDPUNKT_MINUS_FUNKTION_EINZEL = 0
 
 
 def test_delta_endpunkt_funktion_ratsche_bekannt():

@@ -66,19 +66,21 @@ import traverser as TR       # noqa: E402
 # Verlauf:
 #   e365a37 Vorsatz-Block      einzel 18 -> 9    zusammen 24 -> 15
 #   6063dda Stammdaten         einzel  9 -> 3    zusammen 15 -> 6
+#   (2026-08-10) KAP-Nulldeklaration (Julius-Entscheidung, Option A, est_mapping.py
+#                KAP_FELDER_A/_B + _kap_alle_null): einzel 3 -> 2    zusammen 6 -> 4.
+#                Bestaetigte KAP-Nullen werden nicht mehr deklariert, atomar ueber
+#                Person A/B (s. dortiger Kommentar zur Writer-Luecken-Falle).
 #
 # Der Stammdaten-Schritt zaehlt nur, wenn die Felder im Fall auch BEANTWORTET sind —
 # ihr blosses Vorhandensein aendert nichts. Deshalb stehen sie jetzt in _STAMM_A/_STAMM_B.
 #
-# Die verbleibenden Meldungen sind KEINE Bauaufgaben mehr, sondern genau die drei
-# offenen Adjudikationen (BACKLOG: anlage-kap-folgeangabe, anlage-n-lohnsteuer-
-# steuerklasse, Julius-Entscheidung kap-Nulldeklaration):
-#   1x/2x  Anlage KAP: Angabegrund, weil kap_*=0 als Kz deklariert wird
+# Die verbleibenden Meldungen sind KEINE Bauaufgaben mehr, sondern genau die zwei
+# offenen Adjudikationen (BACKLOG: anlage-n-lohnsteuer-steuerklasse):
 #   1x/2x  Anlage N:   Steuerklasse (E0200002, ungebunden)
 #   1x/2x  Anlage N:   Lohnsteuer (E0200301, absichtlich ausgeschlossen)
-# zusammen = einzel x2, weil jede Person ihre eigene Anlage N und KAP hat.
-RESTFEHLER_EINZEL = 3
-RESTFEHLER_ZUSAMMEN = 6
+# zusammen = einzel x2, weil jede Person ihre eigene Anlage N hat.
+RESTFEHLER_EINZEL = 2
+RESTFEHLER_ZUSAMMEN = 4
 
 TS = "2026-08-09T22:00:00+00:00"
 _H = {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}

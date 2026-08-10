@@ -178,6 +178,31 @@ PARTNER_VERZWEIGUNG = {
     "gesetzlich_an": "E2001203", "gesetzlich_freiwillig": "E2001805", "privat": "E2003104"}},
 "basis_pv_partner": {"art_feld": "versicherungsart_partner", "kz": {
     "gesetzlich_an": "E2001505", "gesetzlich_freiwillig": "E2002105", "privat": "E2003202"}}}
+# Option A (Julius-Entscheidung 2026-08-10, BACKLOG anlage-kap-folgeangabe): s. deklariere() fuer die
+# volle Begruendung (Angabegrund-Pflicht + Atomaritaets-Naht Person A/B). Bewusst NUR diese 5+5
+# Felder -- kein genereller "alle Nullen raus"-Filter, andere Kz tragen bedeutungsvolle Nullen (z.B.
+# E2000601 = 0 EUR Rentenversicherung ausserhalb LStB ist eine echte, gewollte Aussage).
+KAP_FELDER_A = ("kap_kapitalertraege", "kap_gewinn_aktien", "kap_verlust_aktien",
+                "kap_gewinn_sonstige", "kap_verlust_sonstige")
+KAP_FELDER_B = tuple(f"{f}_partner" for f in KAP_FELDER_A)
+_KAP_NULL_GRUND = ("Option A (Julius-Entscheidung 2026-08-10): alle KAP-Felder beider Personen "
+                   "bestaetigt 0 -- als Kz deklariert wuerde ELSTER 'Kapitalertraege erklaert' lesen "
+                   "und einen Angabegrund verlangen, den wir nicht liefern.")
+
+
+def _kap_alle_null(snapshot: dict, felder: tuple) -> bool:
+    """True wenn JEDES uebergebene KAP-Feld entweder gar nicht im Snapshot steht oder bestaetigt+0
+    ist. False sobald eins bestaetigt+!=0 ODER nicht bestaetigt ist -- die Entscheidung bleibt dann
+    vertagt (nichts wird unterdrueckt), den Rest regelt die bestehende fail-closed-Logik."""
+    for f in felder:
+        sfeld = snapshot.get(f)
+        if sfeld is None:
+            continue
+        if sfeld.get("zustand") != "bestaetigt" or int(sfeld["wert"]) != 0:
+            return False
+    return True
+
+
 # Klasse i — Wertekodierung (Laien-Enum -> amtlicher XSD-Code, kein 1:1-Passthrough): der Store trägt
 # den laienverständlichen Enum-Wert (z.B. "roemisch-katholisch"), das Kz erwartet den amtlichen
 # Religionsschlüssel (Enum_Religionsschluessel_ab_VZ_2014_3, E10-2025.xsd). "andere" hat KEINEN
@@ -360,6 +385,30 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
     if snapshot and getroffen == 0:
         raise ValueError("kein Eingabe-Feld in der Bindungstabelle gefunden — vermutlich falsche "
                          "Eingabe-Ebene/-Struktur; deklariere() liefert kein stilles Leer-Ergebnis.")
+
+    # Option A: KAP-Nulldeklaration unterdruecken (s. KAP_FELDER_A/_KAP_NULL_GRUND oben).
+    # ATOMAR ueber beide Personen (gemessen 2026-08-10): unterdrueckt man nur Person A, waehrend
+    # Person B ihre bestaetigten Nullen behaelt, legt der Writer (_einhaengen, elster_xml.py) beim
+    # Schreiben von Person B [Instanz-Index 1] zuerst eine leere Person-A-Instanz [Index 0] an
+    # (Luecken-Fuellung vor der Ziel-Instanz) — checkESt meldet dann NICHT weniger, sondern eine NEUE
+    # Fehlerklasse ("PersonA ... keine weiteren Angaben getaetigt"). Deshalb nur unterdruecken, wenn
+    # BEIDE Seiten eindeutig 0 sind — oder die andere Seite die Felder gar nicht fuehrt (einzel:
+    # KAP_FELDER_B steht dann nicht im Snapshot, _kap_alle_null liefert dafuer True).
+    #
+    # Klasse-C-Abwaegung (stille-null-klasse-c, 42c2c99): dort verschwand ein vom Nutzer EINGETRAGENER
+    # Wert lautlos aus der Rechnung. Hier ist es umgekehrt — eine Aussage entsteht im XML ("ich habe
+    # Kapitalertraege, naemlich 0"), die der Nutzer so nicht getroffen hat (er sagte "keine"). Der
+    # Store selbst unterscheidet "bestaetigt 0" weiterhin von "unbeantwortet"; nur das ABGEGEBENE XML
+    # verliert diese Unterscheidung. Bewusst in Kauf genommen (Julius' Entscheidung).
+    if _kap_alle_null(snapshot, KAP_FELDER_A) and _kap_alle_null(snapshot, KAP_FELDER_B):
+        for f in KAP_FELDER_A:
+            kz = bindung.get(f, {}).get("elster_kz")
+            if kz and deklaration.pop(kz, None) is not None:
+                nicht_deklariert.append({"feld_id": f, "grund": _KAP_NULL_GRUND})
+        for f in KAP_FELDER_B:
+            kz = PARTNER_INSTANZ.get(f)
+            if kz and person_b.pop(kz, None) is not None:
+                nicht_deklariert.append({"feld_id": f, "grund": _KAP_NULL_GRUND})
 
     # Dokumentierte Aggregation ausrechnen (Auflage A: Summe + Quell-Felder explizit; NICHT deklariert)
     for ziel, akku in agg_akku.items():
