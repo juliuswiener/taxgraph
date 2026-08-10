@@ -57,7 +57,16 @@ VERPFLEGUNG_TAGE_NACH_FRIST = ("vpf_tage_24h_nach_drei_monaten", "vpf_tage_an_ab
 VERPFLEGUNG_GUARD = ("vpf_monate_am_ort", "vpf_keine_mahlzeitengestellung")
 VERPFLEGUNG_KUERZUNG = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
                         "vpf_abendessen_gestellt_anzahl", "vpf_mahlzeiten_gezahltes_entgelt",
-                        "vpf_steuerfreie_erstattung_betrag")
+                        "vpf_steuerfreie_erstattung_betrag",
+                        # Das BERECHNETE Ergebnis (askable=false, Kz E0205508) muss mit in die
+                        # Scheibe, sonst filtert _scheibe_bindung() es aus der Deklaration —
+                        # der Ring kuerzt dann, das XML zeigt aber nur die vollen Tage-Kz
+                        # (E0205409/E0205302/E0205201) und die Erklaerung faellt ZU HOCH aus.
+                        # Gemessen 2026-08-10 auf 'gesamt': Ring rechnet 8400 Cent Kuerzung,
+                        # deklariert 0. n_vor_gwg war korrekt, weil es seine Felder ueber
+                        # felder_datei aus der YAML zieht statt aus diesen Tupeln — genau die
+                        # Naht, an der P9.4a (826bfdf) halb fertig blieb.
+                        "p9_4a_kuerzung_nach_entgelt")
 VERPFLEGUNG_FRIST = ("vpf_frist_nicht_unterbrochen",)
 
 # ========== § 10 Vorsorge ==========
