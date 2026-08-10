@@ -68,6 +68,19 @@ Ein Regel-Slot oder eine Geltungsbedingung, die die Scheibe bewusst NICHT bindet
 `luecken`-Eintrag mit `grund` geführt. Der Gate akzeptiert **Bindung ODER benannte Lücke** — stille
 Nicht-Abdeckung ist ROT.
 
+## `regel_bedingungen[]` — Ob-Bedingung regel-weit (nicht je Gate-Feld)
+
+`relevanz()` (`produkt/traverser/traverser.py`) schließt eine Regel bisher nur über EIGENE
+`askable`-bool-Geltungsbedingungen aus (`false` bestätigt → ausgeschlossen). Trägt eine Regel
+ausschließlich nicht-bool Gates (enum/text/datum), kann sie so strukturell **nie** ausgeschlossen
+werden, egal was der Nutzer antwortet (Dialog-Überangebot).
+
+`regel_bedingungen[]` (Top-Level, additiv, `$defs/regel_bedingung`) schließt diese Lücke: EIN
+`{regel_id, feld, wert, grund}`-Eintrag pro betroffener Regel, ausgewertet regel-weit — `feld` muss
+kein eigenes Feld der Regel sein. Bestätigt UND abweichend → ausgeschlossen; unbeantwortet/vorläufig
+schließt NICHT aus (fail-closed, wie die bool-Gates). Beispiel: `p2_festzusetzung_zusammen` gilt nur
+bei `veranlagung == "zusammen"` (`bindung_regel_bedingungen.yaml`).
+
 ## Gate-Vertrag (`tests/test_bindungstabelle.py`)
 
 1. **(a) Schema-Validierung** — jede `bindung_*.yaml` validiert gegen `schema.json`.

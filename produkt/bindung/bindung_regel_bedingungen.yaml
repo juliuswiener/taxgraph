@@ -1,0 +1,27 @@
+# Cross-cutting Regel-Bedingungen (kein eigener Feld-Bestand, keine bindungen[]).
+#
+# Hintergrund: relevanz() (produkt/traverser/traverser.py) konnte bisher nur EIGENE Gate-Felder
+# einer Regel als Ausschlussgrund heranziehen (askable bool-Geltungsbedingung, bestätigt False).
+# p2_festzusetzung_zusammen trägt aber NUR nicht-bool Gates (text/enum/datum) — strukturell konnte
+# die Regel nie ausgeschlossen werden, egal was der Nutzer antwortet. Folge: bei
+# veranlagung="einzel" blieben alle Partner-Felder (Stammdaten, KV/PV, Vorsorge, Renten) im
+# Dialog-Angebot, obwohl die Regel de facto nie zutrifft (gemessen:
+# reports/adjudikation/relevanz_nicht_bool_blast_radius_2026-08-10.md).
+#
+# regel_bedingungen (schema.json $defs/regel_bedingung) schließt genau diese Lücke: EIN
+# strukturiertes Feld+Wert-Paar pro Regel, ausgewertet regel-weit (nicht je Gate-Feld). Bestätigt
+# UND abweichend -> ausgeschlossen; unbeantwortet/vorläufig schließt NICHT aus (fail-closed).
+#
+# Nur p2_festzusetzung_zusammen: die einzige der fünf strukturell gefangenen Regeln mit einer
+# echten Ob-Bedingung. Die anderen vier (p10_1_3_3a_kv_pv, p19_2_versorgungsfreibetrag,
+# p22_1_leibrente_besteuerungsanteil, p23_veraeusserungsgewinn) sind Rechen-Weichen ohne
+# Eligibility-Charakter (Kz-Verzweigung/Kohortentabelle/Alter-Parameter/Opt-in-Instanz) — laut
+# Blast-Radius-Bericht bewusst unangetastet.
+version: 1
+scheibe: "regel_bedingungen"
+bindungen: []
+regel_bedingungen:
+  - regel_id: p2_festzusetzung_zusammen
+    feld: veranlagung
+    wert: zusammen
+    grund: "§ 26 Abs. 2 S. 2 EStG: Ehegatten werden zusammen veranlagt, wenn beide Ehegatten die Zusammenveranlagung wählen — bei veranlagung=einzel (bestätigt) sind alle Partner-Angaben der Regel gegenstandslos."

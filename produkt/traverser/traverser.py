@@ -49,6 +49,20 @@ def lade_guenstiger() -> dict:
     return yaml.safe_load(open(os.path.join(HERE, "guenstiger_liste.yaml")))
 
 
+@functools.lru_cache(maxsize=1)
+def lade_regel_bedingungen() -> dict:
+    """regel_id -> Liste strukturierter Ob-Bedingungen ({regel_id, feld, wert, grund}) über alle
+    bindung_*.yaml (schema.json $defs/regel_bedingung). Regel-weit, unabhängig von den eigenen
+    Gate-Feldern der Regel (relevanz() prüft `feld` gegen den Store, nicht gegen die Regel selbst)."""
+    yaml = _yaml()
+    out = {}
+    for f in glob.glob(os.path.join(PRODUKT, "bindung", "bindung_*.yaml")):
+        d = yaml.safe_load(open(f))
+        for rb in d.get("regel_bedingungen", []):
+            out.setdefault(rb["regel_id"], []).append(rb)
+    return out
+
+
 def _aktive_events(store: dict) -> dict:
     """feld_id -> aktuell aktives Event (nicht durch ein späteres ersetzt)."""
     ersetzt = {e["ersetzt"] for e in store.get("events", []) if e.get("ersetzt")}
@@ -75,8 +89,15 @@ def relevanz(store: dict, bindung: dict) -> dict:
 
     Gate = askable bool-Geltungsbedingung. `false` (bestätigt) -> ausgeschlossen; offen/vorlaeufig ->
     unentschieden. Nicht-askable (berechnete) Geltungsbedingungen sind KEIN Gate, werden aber als
-    `annahmen_offen` geführt (nie still als erfüllt, Auflage 1-Zusatz)."""
+    `annahmen_offen` geführt (nie still als erfüllt, Auflage 1-Zusatz).
+
+    Zusätzlich `regel_bedingungen` (lade_regel_bedingungen, schema.json $defs/regel_bedingung):
+    strukturierte Ob-Bedingung AUSSERHALB der eigenen Regel-Felder (z.B. p2_festzusetzung_zusammen
+    gilt nur bei veranlagung=="zusammen" — ein Feld, das selbst zu einer ANDEREN Regel gehört, kann
+    ein bool-Gate strukturell nie sein). Bestätigt UND abweichend -> ausgeschlossen; unbeantwortet/
+    vorläufig schließt NICHT aus (fail-closed, wie die Gates)."""
     aktiv = _aktive_events(store)
+    bedingungen = lade_regel_bedingungen()
     out = {}
     for rid in _regel_ids(bindung):
         gates, annahmen = [], []
@@ -89,15 +110,20 @@ def relevanz(store: dict, bindung: dict) -> dict:
             else:
                 annahmen.append(q["geltungsbedingung"])
         status, offen = "relevant", []
-        for fid in gates:
-            ev = aktiv.get(fid)
-            if _unbeantwortet(ev):
-                offen.append(fid)
-            elif ev.get("wert") is False:
+        for cond in bedingungen.get(rid, []):
+            ev = aktiv.get(cond["feld"])
+            if not _unbeantwortet(ev) and ev.get("wert") != cond["wert"]:
                 status = "ausgeschlossen"
-                break
         if status != "ausgeschlossen":
-            status = "unentschieden" if offen else "relevant"
+            for fid in gates:
+                ev = aktiv.get(fid)
+                if _unbeantwortet(ev):
+                    offen.append(fid)
+                elif ev.get("wert") is False:
+                    status = "ausgeschlossen"
+                    break
+            if status != "ausgeschlossen":
+                status = "unentschieden" if offen else "relevant"
         out[rid] = {"status": status, "gates_offen": sorted(offen),
                     "annahmen_offen": sorted(annahmen)}
     return out

@@ -11,7 +11,9 @@
     "scheibe": {"type": "string", "description": "Welche Regel-Familien diese Datei abdeckt."},
     "bindungen": {"type": "array", "items": {"$ref": "#/$defs/bindung"}},
     "luecken": {"type": "array", "items": {"$ref": "#/$defs/luecke"},
-      "description": "Benannte Lücken: Slot/Geltungsbedingung einer Scheiben-Regel OHNE Bindung, mit Grund. Der Gate akzeptiert sie als bewusste Nicht-Abdeckung."}
+      "description": "Benannte Lücken: Slot/Geltungsbedingung einer Scheiben-Regel OHNE Bindung, mit Grund. Der Gate akzeptiert sie als bewusste Nicht-Abdeckung."},
+    "regel_bedingungen": {"type": "array", "items": {"$ref": "#/$defs/regel_bedingung"},
+      "description": "Strukturierte Ob-Bedingung EINER Regel (regel-weit, nicht je Gate-Feld): die Regel ist nur relevant, wenn `feld` bestätigt den Wert `wert` trägt. `feld` muss kein eigenes Feld der Regel sein. Unbeantwortet/vorläufig schließt NICHT aus (fail-closed, wie die bool-Gates in relevanz())."}
   },
   "$defs": {
     "quelle": {
@@ -99,6 +101,17 @@
         {"if": {"properties": {"typ": {"const": "enum"}}},
          "then": {"required": ["enum_werte"]}}
       ]
+    },
+    "regel_bedingung": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["regel_id", "feld", "wert", "grund"],
+      "properties": {
+        "regel_id": {"type": "string", "description": "Regel (rid), die nur bei passendem `feld`-Wert relevant ist."},
+        "feld": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "feld_id eines beliebigen gebundenen Felds (nicht notwendig Teil derselben Regel)."},
+        "wert": {"description": "Bestätigter Wert von `feld`, bei dem die Regel gilt. Abweichender bestätigter Wert -> Regel ausgeschlossen."},
+        "grund": {"type": "string", "minLength": 5, "description": "Fachliche Begründung (Norm-Bezug) der Bedingung."}
+      }
     },
     "luecke": {
       "type": "object",
