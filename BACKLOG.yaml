@@ -666,7 +666,7 @@ rechenluecken:
 
   - id: p33b-stufe-2
     titel: "§ 33b — Doppelabzug Pauschbetrag neben § 33"
-    status: teil_erledigt
+    status: erledigt
     stufe_2a_erledigt: |
       2026-08-07, Commit 35c3c54. Abs. 5 S. 4 (automatischer Ausschluss bei
       Uebertragung) ist gebaut: Feld behinderungsbedingte_aufwendungen, Kuerzung in
@@ -681,12 +681,35 @@ rechenluecken:
           addiert statt subtrahiert. test_e_summen_konvention hat es gefangen.
           Neue Bedingung in rules.yaml:
           kein_uebertragener_behinderten_pb_fuer_dieselben_aufwendungen.
-    stufe_2b_offen: |
-      Abs. 1 S. 1 (Wahlrecht des Steuerpflichtigen fuer den EIGENEN Pauschbetrag)
-      ist NICHT gebaut. Braucht eine Nutzerfrage + Sperrgrund, siehe
-      kein_default_moeglich unten. Das Feld behinderungsbedingte_aufwendungen ist
-      wiederverwendbar, die Kuerzungslogik auch — es fehlt nur die Frage und der
-      zweite Guard-Zweig.
+    stufe_2b_erledigt: |
+      2026-08-10, Commits ca9de21 (Ring+Bindung) / 60bdb6e (Tests). Abs. 1 S. 1
+      (eigenes Wahlrecht) ist gebaut: Feld
+      behinderungsbedingte_aufwendungen_wahlrecht_pb (askable bool, kein Kz —
+      reines Vorstufenfeld), zwei weitere Zweige in _shared_steuer_sonder_agb
+      (api.py:397-421), Sperrgrund behinderungsbedingte_aufwendungen_wahlrecht_offen
+      (api.py:2000-2028). 8 Tests, 5 Mutationsproben, Suite 1785 -> 1793 gruen
+      (4 skipped, unveraendert).
+      Gemessen (200k/einzel/45%-Zone, GdB100=2.840 EUR eigener PB, BB=3.000 EUR):
+        Wahlrecht=True  (PB behalten, agb gekuerzt): +135.000 ct gesamt / +126.000 ct rentner
+        Wahlrecht=False (agb voll, eigener PB raus):  exakt zurueck auf die GdB-lose
+                                                        Baseline, in BEIDEN Zweigen
+      Gegenprobe: ohne eigenen GdB bleibt behinderungsbedingte_aufwendungen komplett
+      wirkungslos (kein Sperrgrund, keine Zahlaenderung) — Gate-Polaritaets-Falle
+      mutationsgeprueft.
+      Praezedenz gebaut+gemessen: eigener GdB + gleichzeitig Kind-PB-Uebertragung ->
+      Abs. 5 S. 4 greift exklusiv (if/elif in _shared_steuer_sonder_agb), das eigene
+      Wahlrecht wird gar nicht erst abgefragt (Sperrgrund hat einen
+      _kind_pb_uebertragen()-Guard).
+      Abweichung von der Bauanleitungs-Skizze (Z.167-177): die Skizze liess den
+      Fall wahlrecht_pb=False unvollstaendig — "agb bleibt unberuehrt" allein haette
+      den eigenen PB weiter unconditional stehen gelassen und denselben Doppelabzug
+      reproduziert, den die ganze Stufe 2b beheben soll (rechnerisch nachgewiesen
+      gegen die Referenzzahlen 880/259/1.131 der Bauanleitung selbst). Gebaut wurde
+      zusaetzlich: wahlrecht_pb=False entfernt den eigenen PB aus ausserg.
+      Ausser Scope gelassen (nicht gefordert, im Bericht nicht erwaehnt): ein
+      Wahlrecht fuer rentner_grad_der_behinderung_partner (Partner-eigener PB) —
+      die Bauanleitung spricht durchgehend vom EIGENEN Pauschbetrag des
+      Steuerpflichtigen.
     bericht: reports/adjudikation/p33b-abs5-s4-analyse.md
     bauanleitung: reports/adjudikation/p33b_stufe2_bauanleitung_2026-08-07.md
     achse_geklaert: |
@@ -713,7 +736,7 @@ rechenluecken:
         ring: "kann kuerzen"
       - stelle: "§ 33b Abs. 1 S. 1 (anstelle einer Steuerermaessigung nach § 33)"
         art: "WAHLRECHT, S. 2 einheitlich auszuueben"
-        ring: "kann es NICHT erzwingen — braucht eine Nutzerfrage"
+        ring: "erzwingt es nicht selbst — Nutzerfrage gebaut (Stufe 2b, 2026-08-10)"
     blocker: |
       agb_aufwendungen ist ein ungetrennter Topf. Pauschal kuerzen waere Over-tax
       (Krankheitskosten, Beerdigung fielen mit raus), gar nicht kuerzen ist Under-tax.
