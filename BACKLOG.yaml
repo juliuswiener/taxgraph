@@ -1076,10 +1076,29 @@ rechenluecken:
       OHNE idnr — ein Fix wuerde die alle anfassen. NICHT mitgezogen, hier nur protokolliert.
 
       Weiterhin offen, bewusst ausserhalb dieses Auftrags:
-        - person_b_idnr-Erreichbarkeit (s.o.)
+        - person_b_idnr-Erreichbarkeit (s.o.) — HERABGESTUFT 2026-08-10, s. unten
         - §33b GdB/hilflos-Partnerfelder-Doppelabzug: eigener Auftrag p33b-partner-pb-doppelabzug
+          -> ERLEDIGT 2026-08-10 (828a2e6/6648f63/4afc800)
         - die 12 individuellen Abzugsfelder aus messung_2 bleiben ABSICHTLICH ungegated
           (kein Bug, s. Begruendung oben)
+    person_b_idnr_herabgestuft: |
+      2026-08-10 gemessen, bevor ein Bau beauftragt wurde: **checkESt verlangt die
+      Ehegatten-IdNr NICHT.**
+
+        Ratschen-Fixtur Zusammenveranlagung, Abgabe-XML, scharf gegen ERiC:
+          rc=0, 0 Beanstandungen
+          E0100082 (person_b_idnr) im XML: False
+
+      Die Erklaerung geht ohne das Feld durch — kein Abgabe-Blocker, keine
+      Plausibilitaetspflicht. Damit steht der Aufwand (~10 bestehende Tests, die
+      zusammen+rentner_gesamt ohne idnr setzen) in keinem Verhaeltnis zum Nutzen.
+
+      Was das NICHT heisst: dass die IdNr fuer die Verarbeitung beim Finanzamt entbehrlich
+      waere. checkESt prueft Plausibilitaet, nicht materielle Vollstaendigkeit. Nur solange
+      sie nicht verlangt wird, ist sie kein vorrangiger Bau.
+
+      Die Messung steht hier, damit niemand sie in drei Wochen wiederholt, um zur selben
+      Antwort zu kommen.
 
   - id: commit-nur-defer-sweep-2026-08-10
     titel: "Commit-Historie nach Selbst-Markierungen durchsucht — 9 Notizen ohne Entsprechung in BACKLOG/reports"
