@@ -964,6 +964,107 @@ rechenluecken:
     aufwand_h: unbeziffert
     api_py: "kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation"
 
+  - id: commit-nur-defer-sweep-2026-08-10
+    titel: "Commit-Historie nach Selbst-Markierungen durchsucht — 9 Notizen ohne Entsprechung in BACKLOG/reports"
+    status: offen
+    entdeckt: |
+      2026-08-10, Folgeauftrag team-lead nach rentner-gesamt-partner-kegel-ungeschuetzt: dort
+      trug Commit dbac431 (2026-07-21) die Notiz "DEFER dokumentiert: Person-B-KV/PV" NUR im
+      Commit-Text, 20 Tage unsichtbar. Frage: wie viele solcher Notizen liegen noch in der
+      Historie — Wissen, das nicht dort landet, wo es jemand wiederfindet.
+    methodik: |
+      848 Commits (gesamter `git log`), Volltext (Betreff+Body) durchsucht. Zwei Stufen:
+      Stufe 1 (hochpraezise, fast immer eine echte Selbst-Markierung): DEFER/deferred, GAP,
+      "kein/ohne Guard", "nicht gebaut", vorerst, ausgeklammert, verschoben, postponed,
+      "nicht modelliert", Workaround, TODO, FIXME, HACK -> 26 Treffer-Commits.
+      Stufe 2 (Domain-Vokabular mit hoher Rausch-Quote, NICHT aus team-leads Liste uebernommen
+      ohne Pruefung): MVP, "Stufe 2", LUECKE/Lücke, "noch nicht", vorlaeufig/vorläufig, später
+      -> 176 weitere Commits NACH Abzug der Stufe-1-Treffer. "offen" (246 Treffer) und "Annahme"
+      (83) verworfen OHNE Einzelpruefung: beides sind hier Domain-Begriffe fuer laufende
+      Rechenzustaende (Sperrgrund "offen", "vorlaeufige" Instanz) bzw. routinemaessig dokumentierte
+      Norm-Annahmen, keine Luecken-Marker — Stichproben (s.u.) bestaetigen das fuer "Stufe 2".
+      Stufe 2 auf 7 Kandidaten verdichtet (Sekundaer-Filter: "bleibt offen"/"Folgeticket"/
+      "unverdrahtet"/"Julius-Cap"/u.ae. — Marker, dass die Notiz NICHT im selben Commit
+      geschlossen wird) und einzeln gelesen: alle 7 bereits erledigt oder anderweitig getrackt,
+      0 neue Funde. "Stufe 2" als Literal-String separat stichprobiert (7 Commit-Cluster): alles
+      Phasen-Namen (§10-Stufe-2-Teil-1/2/3 usw.), keine Luecken-Marker.
+      Fuer jeden der 26 Stufe-1-Treffer per grep gegen BACKLOG.yaml + reports/ (Stichwort-Abgleich,
+      keine Commit-Hashes) geprueft, plus Code-Gegenprobe (steht die Notiz im HEUTIGEN Code noch?).
+      17 von 26 verworfen: 8 bereits vollstaendig getrackt (eigener Report oder BACKLOG-Eintrag,
+      z.B. kegel-luecke-gesamt deckt p23_ansonsten_einkuenfte inkl. TypeError-Sub-Punkt), 6 sind
+      der Fix-Commit selbst (Luecke im selben Commit geschlossen, nicht offen hinterlassen — u.a.
+      die zwei a11y-Verstoesse aus 62c04d0, die 3 Commits spaeter in 6705b33 gefixt wurden),
+      1 obsolet (ERiC-TODO von 57253c0, ERiC ist seit eric-elster-setup voll eingerichtet),
+      1 unabhaengig schon per eigenem Report sichtbar (a2a89c0 reports/catala-issue-draft.md
+      IST der Report, kein Buried-Text), 1 falsch-positiv (38409fb "kein Guard" beschreibt eine
+      korrekte Design-Entscheidung, keine Luecke).
+    funde_ohne_entsprechung: |
+      9 Notizen, je gegen den HEUTIGEN Code nachgemessen (Stand 2026-08-10, alle noch aktuell):
+
+      1. DBA §34c Anlage-AUS-Recon — b815b112 (2026-07-21): "Kz null+grund (Anlage-AUS-Recon =
+         dev-2-Folgeticket)". grep "Anlage-AUS" in produkt/mapping/est_mapping.py: 0 Treffer.
+         STRUKTUR (Deklarations-Abgleich fehlt; koennte wie kap-antragsgrund-fehlt zu einem
+         Abgabe-Blocker werden, aber ungeprueft).
+
+      2. Chat-Flow Doppel-Signal — 92824c4c (2026-07-21): "Teil B (Doppel-Signal/Zwei-Stufen-
+         Bestaetigung im Chat-Flow): DEFERRED, nicht gebaut." STRUKTUR (LLM-Vorschlag im Chat
+         bleibt Ein-Stufen-bestaetigt, kein zweites Signal wie beim K1-Beleg-Pfad).
+
+      3. §10d Abs.4 Vortragsfortschreibung — 6fa945a1 (2026-07-19): "§10d Abs.4 Vortrags-
+         Fortschreibung NICHT modelliert (Bestand=Input)". Code-Gegenprobe api.py:1064 bestaetigt:
+         verlustvortrag_bestand ist bis heute ein roher Jahres-Input, kein vom System
+         fortgeschriebener Zustand. GELD (Mehrjahres-Verlustvortrag ist Nutzer-Selbstauskunft
+         ohne Plausibilisierung gegen das Vorjahr — Betrag kann falsch sein, ohne dass es auffaellt).
+
+      4. Kette/Erklaer-UI §31-Zweig-Ambiguitaet — 10a37d15 (2026-07-30): "MVP: nur gesamt-Ring +
+         kinderlos-Fall (§31-Zweig-Ambiguität postponed)". Code-Gegenprobe api.py:1244 bestaetigt,
+         Kommentar steht wortgleich noch da. STRUKTUR/UI (Erklaer-Kette fehlt bei Faellen mit
+         Kindern; kein Rechenfehler, nur UI-Luecke).
+
+      5. Kinderbetreuung Lücken-Deklaration — ca23e047 (2026-07-22): "Kind-Qualifikation (§32),
+         Ausschlüsse (§10 Abs.1 Nr.5 S.2), Rechnung/Zahlung (extern)". Code-Gegenprobe api.py:663-
+         673 bestaetigt: _kinderbetreuung_summe summiert nur den Betrag, keine der drei Pruefungen.
+         GELD (Betreuungskosten fuer ein nicht-anspruchsberechtigtes Kind wuerden unbemerkt
+         abgezogen — ungemessen, ob/wie oft das in der Praxis vorkommt).
+
+      6. §16 Abs.4 per-Person-Freibetrag — b969c062 (2026-07-19): "per-Person §16-FB (je 45000)
+         deferred." Code-Gegenprobe api.py:906-907/1413-1415 bestaetigt: EIN vg_euro, EIN
+         catala_p16_4_freibetrag-Aufruf — bei zusammen mit Veraeusserungsgewinnen auf BEIDEN
+         Seiten wuerde nur ein Freibetrag statt zwei greifen. GELD (Richtung ungemessen,
+         vermutlich under-tax da FB zu niedrig angesetzt = zu wenig Abzug = over-tax fuer den
+         Nutzer, nicht under-tax fuer den Fiskus — VORSICHT: Richtung hier eine Lese-Vermutung,
+         nicht gemessen, absichtlich nicht als Fakt behauptet).
+
+      7. NAMING-DEBT rentner_-Praefix — b969c062 (2026-07-19), Kommentar noch api.py:903 wortgleich
+         vorhanden ("der „rentner_"-Feldname ist NICHT rentner-spezifisch"). Rein STRUKTUR
+         (Lesbarkeit/Wartung), kein Geldeffekt.
+
+      8. Tote Gate-Felder fam_kinder_im_haushalt/fam_kinder_beruecksichtigt — 92cdca69
+         (2026-07-21): "als DEFERRED markiert (nicht geloescht)", kein Accessor, kein Lesezugriff.
+         Code-Gegenprobe: beide Namen kommen in api.py und golden/runner.py bis heute NICHT vor
+         (0 Treffer) — Befund unveraendert. TEILWEISE sichtbar: zwei Kz-Kandidaten-Reports
+         (2026-07-17-kz-kandidaten-anlage-r-kind.md, 2026-07-20-ui-feldkatalog-eventschema-
+         designlock.md) nennen dieselben Feldnamen, aber nur unter dem Kz-Mapping-Aspekt (fehlt
+         eine Elster-Kennziffer) — die eigentliche Aussage aus 92cdca69 (die Felder sind toter
+         Code, keine Regel ruft sie auf) steht in keinem der beiden. STRUKTUR.
+
+      9. Unfallkosten Rz.30 Streitstand — a2a89c06 (2026-07-09): "Unfallkosten (Rz. 30) als
+         Streitstand-Claim markiert (BMF contra BFH VI R 8/18), nicht formalisiert." grep
+         "Unfallkosten" ueber produkt/+rules/+golden/: 0 Treffer, grep "VI R 8/18"/"Rz. 30" ueber
+         BACKLOG.yaml+reports/: 0 Treffer. STRUKTUR/Rechtsfrage (kein Geldeffekt heute, da gar
+         nicht gebaut — koennte bei Formalisierung Geld werden).
+    einschaetzung: |
+      Kein zweiter dbac431: die anderen 8 sind kleiner (kein 13.568-EUR-Fund), aber dieselbe
+      Klasse — bewusstes Wissen, das im Commit-Text eingefroren blieb statt in BACKLOG/reports zu
+      wandern. 2 von 9 sind GELD-nah (Nr. 3 Verlustvortrag, Nr. 5 Kinderbetreuung), 1 vermutet
+      GELD ungemessen (Nr. 6 §16-FB), Rest STRUKTUR/Deklaration/Recht. Keine Aussage, ob/was
+      gebaut werden soll — nur, dass es jetzt sichtbar ist.
+    aufwand_h: unbeziffert
+    api_py: "kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation. Sweep-Skript
+      (nicht Teil des Repos): /tmp/claude-1000/-home-julius-00-projects-168-TaxGraph-taxgraph/
+      db772487-ddbf-429b-a0e4-37a31085356e/scratchpad/{full_log.txt,tier1_hits.txt,
+      tier2_only.txt,tier2_secondary.txt}"
+
   - id: vpf-frist-null-plausibilitaet
     titel: "§ 9 Abs. 4a S. 6/7 — >3 Monate erklaert, aber 0 Tage nach Frist"
     status: erledigt
