@@ -45,7 +45,13 @@ abgabe:
 
   - id: hersteller-id-namens-naht
     titel: ".env fuehrt HERSTELLER_ID, die Gates lesen ELSTER_HERSTELLER_ID"
-    status: teil_erledigt
+    status: erledigt
+    erledigt_in: "f0e1c71 (2026-08-09)"
+    erledigt_wie: |
+      .env auf ELSTER_HERSTELLER_ID umbenannt (kein Dual-Read: alle 5+ Leser stimmten
+      bereits ueberein, ein Alias haette einen Doppelpfad geschaffen). Loader laeuft ueber
+      server._lade_env_dateien in tests/conftest.py + Makefile-Ziel. Nachgemessen: 3 Treffer
+      fuer _lade_env_dateien in conftest, make eric-gate erreicht rc=0 ohne manuellen Export.
     richtung: "kein Geldfehler — blinder Fleck im Gate"
     entdeckt: "2026-08-09"
     messung: |
@@ -156,7 +162,13 @@ abgabe:
 
   - id: stammdaten-person
     titel: "Stammdaten fehlen — Name, Adresse, Religion, Bankverbindung"
-    status: teil_erledigt
+    status: erledigt
+    erledigt_in: "6063dda + 3b5ccfc + 69a53d9/81c552b (2026-08-10)"
+    erledigt_wie: |
+      Name, Vorname, Geburtsdatum, Adresse, Konfession, Art_Erkl (6063dda); Steuernummer
+      ohne Kz-Spiegel ueber den snapshot-Parameter (3b5ccfc); Bankverbindung IBAN/BIC/
+      Kontoinhaber (69a53d9, Scheiben-Registrierung nachgereicht in 81c552b).
+      Person B wo noetig mit eigenen Kz, Bankverbindung gemessen NICHT noetig.
     aufwand_h: 4
     messung: |
       Amtliche Meldungen, woertlich:
@@ -187,7 +199,14 @@ abgabe:
 
   - id: anlage-n-lohnsteuer-steuerklasse
     titel: "Anlage N: Steuerklasse und Lohnsteuer fehlen — 2 Beanstandungen"
-    status: offen
+    status: erledigt
+    erledigt_in: "70614c2 (2026-08-10)"
+    erledigt_wie: |
+      Julius-Entscheid Option A: ECHTE Lohnsteuer-Werte statt 0,00. E0200002 (Steuerklasse,
+      neues Feld), E0200301 (p36_lohnsteuer, existierte laengst und war nur ungebunden),
+      E0200501 (Kirchensteuer, neues Feld). Die Adjudikation in bindung_p36_abschlusszahlung
+      wurde revidiert statt geloescht — die alte Begruendung steht mit ihrer Vorgeschichte
+      daneben. Komma-Dezimal-Falle an BEIDEN Stellen behandelt (1:1 und PARTNER_INSTANZ).
     messung: |
       Amtliche Meldungen, woertlich:
         Die Steuerklasse wurde bei den Angaben zum Arbeitslohn auf der Anlage N
@@ -204,7 +223,13 @@ abgabe:
 
   - id: anlage-kap-folgeangabe
     titel: "Anlage KAP: Pflichtangabe bei inlaendischem Steuerabzug"
-    status: offen
+    status: erledigt
+    erledigt_in: "b675001 (2026-08-10)"
+    erledigt_wie: |
+      Julius-Entscheid Option A: kap_*-Nullwerte werden nicht mehr deklariert. Filter eng
+      auf die 5+5 Felder begrenzt (kein genereller Null-Filter — E2000601=0 ist eine echte
+      Aussage) und ATOMAR ueber beide Personen, weil B dieselben Kz nutzt. Gegenprobe:
+      sobald ein Feld einen echten Wert traegt, wird Anlage KAP vollstaendig deklariert.
     messung: |
       Woertlich: "Auf den Anlagen KAP und / oder KAP-BET wurden Kapitalertraege
       erklaert, die dem inlaendischen Steuerabzug unterlegen haben. Bitte geben Sie
@@ -218,7 +243,14 @@ abgabe:
 
   - id: endpunkt-naht-abgabepfad
     titel: "Live-/einreichen faehrt nicht den Abgabe-Pfad — Ratsche misst etwas anderes"
-    status: offen
+    status: erledigt
+    erledigt_in: "b66dd89 (2026-08-10)"
+    erledigt_wie: |
+      /einreichen faehrt jetzt abgabefaehig=True und reicht den snapshot durch; Absender und
+      Steuernummer werden aus den deklarierten Stammdaten abgeleitet, keine zweite
+      Repraesentation. Endpunkt 11 -> 2 -> 0. Dabei ein Falsch-Gruen in der Ratsche selbst
+      gefunden: bei xml_nicht_baubar gibt es keine ericantwort, sie zaehlte 0 Fehler und
+      meldete Fortschritt. Gehaertet: prueft zuerst, ob ueberhaupt geprueft wurde.
     entdeckt: "2026-08-09, beim Schliessen der Mock-Naht in test_einreichen"
     richtung: "kein Geldfehler — Fortschrittsmessung misst am Produktivpfad vorbei"
     messung: |
@@ -341,7 +373,9 @@ abgabe:
 
   - id: vz-matrix
     titel: "Welcher Veranlagungszeitraum ist der Zielfall? Produkt kann 2026, ERiC nicht"
-    status: analysiert
+    status: entschieden
+    entscheidung_julius: "2025 (2026-08-10). VZ 2026 rechnet das Produkt, ERiC hat
+      kein Modul; die Veranlagung dafuer oeffnet ohnehin erst 2027."
     entdeckt: "2026-08-09"
     messung: |
       Alle Abgabe-Messungen dieser Nacht liefen gegen VZ 2025, ohne dass jemand geprueft
@@ -405,7 +439,16 @@ abgabe:
 
   - id: bankverbindung-nur-bool
     titel: "Der Testfall erklaert 'keine Bankverbindung' — das ist eine Aussage mit Geldfolge"
-    status: offen
+    status: erledigt
+    erledigt_in: "69a53d9 + 81c552b (2026-08-10)"
+    erledigt_wie: |
+      Julius-Freigabe. stammdaten_iban (Wert-Praefix-Routing DE -> E0102102, sonst E0102603),
+      stammdaten_bic -> E0102201, Kontoinhaber E0101601 automatisch. Exklusivitaet zweigeteilt:
+      Widerspruch faengt deklariere() praesenzsicher, Schweigen faengt der Abgabepfad.
+      GEMESSEN und damit zwei Annahmen widerlegt: Person B braucht KEIN eigenes Feld, und
+      BIC ist bei Auslands-IBAN NICHT Pflicht (checkESt prueft nur die Laender-Konsistenz,
+      wenn einer mitkommt). Der vorab als fail-closed gebaute BIC-Zwang wurde nach der
+      Messung wieder entfernt.
     richtung: "kein Rechenfehler — aber eine Erstattung koennte nicht ausgezahlt werden"
     entdeckt: "2026-08-10, beim Stammdaten-Bau"
     messung: |
