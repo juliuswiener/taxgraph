@@ -342,6 +342,68 @@ abgabe:
       natuerliche Zielfall; sonst verschiebt sich der Testversand auf die
       ERiC-Auslieferung mit VZ-2026-Modul.
 
+  - id: entscheidungen-2026-08-10
+    titel: "Julius' Entscheide zu den drei Restfehlern + delegierte Nebenentscheide"
+    status: entschieden
+    entschieden_am: "2026-08-10"
+    julius: |
+      1. Anlage KAP     -> A: Nullwerte NICHT deklarieren.
+      2. Lohnsteuer     -> A: ECHTE Werte deklarieren (nicht 0,00). Die Adjudikation in
+                           bindung_p36_abschlusszahlung.yaml:24 wird damit revidiert.
+      3. Veranlagungsz. -> 2025. VZ 2026 rechnet das Produkt, ERiC hat kein Modul; die
+                           Veranlagung dafuer oeffnet ohnehin erst 2027.
+    delegiert_an_main: |
+      Julius: "die anderen entscheidest du". Getroffen:
+
+      (a) Konfession "andere" BLEIBT im Dialog, BLEIBT fail-closed ohne Code.
+          Begruendung: ~35 amtliche Religionsschluessel, ueberwiegend regionale Kirchen.
+          Einen davon zu raten waere ein Kirchensteuerfehler, der in keiner Summe auffaellt
+          (vgl. slot-fail-open-Klasse). Den Wert aus dem Dialog zu entfernen waere schlimmer:
+          dann muesste jemand mit einer selteneren Konfession eine falsche angeben.
+          AUFLAGE: die Fehlermeldung muss dem Nutzer sagen, was er tun kann ("Ihre
+          Konfession koennen wir nicht automatisch abgeben") — nicht nur, dass es nicht geht.
+
+      (b) Art_Erkl (E0100001) wird KONSTANTE statt Nutzerfrage.
+          Begruendung: das Produkt erzeugt ausschliesslich Einkommensteuererklaerungen. Die
+          Frage hat genau eine richtige Antwort und ist damit Dialog-Ballast. E0100001 ist
+          laut Kopplungsmessung kopplungsfrei — anders als E0100002 (Sparzulage) und
+          E0100302 (Mobilitaetspraemie), die je eigene Zusatzpflichten nachziehen.
+          AUFLAGE: Kommentar an der Konstante, dass sie zur Frage zurueck muss, sobald das
+          Produkt auch Antraege auf Arbeitnehmer-Sparzulage o.ae. erzeugt.
+
+      (c) audit.jsonl-Altlast: LIEGEN LASSEN, kein Automatismus.
+          Begruendung: das Wachstum ist mit dem gefixten Gate kein Problem mehr (wenige KB
+          je Lauf). Loeschen oder Rotieren an einem Audit-Log ist unwiderruflich und keine
+          Entscheidung, die ein Agent im Vorbeigehen trifft — bleibt bei Julius.
+          Siehe audit-jsonl-altlast.
+
+      (d) Testversand: NICHT delegierbar. Ausgehende Aktion, bleibt bei Julius.
+          Siehe testversand.
+
+  - id: bankverbindung-nur-bool
+    titel: "Der Testfall erklaert 'keine Bankverbindung' — das ist eine Aussage mit Geldfolge"
+    status: offen
+    richtung: "kein Rechenfehler — aber eine Erstattung koennte nicht ausgezahlt werden"
+    entdeckt: "2026-08-10, beim Stammdaten-Bau"
+    messung: |
+      Gebaut wurde nur stammdaten_keine_bankverbindung (bool -> E0102002). Ein IBAN/BIC-Feld
+      existiert nicht; IBAN kommt im Produkt bisher ausschliesslich als PII-Maskierungsziel
+      vor, nie als Sachverhaltsfeld.
+      Fuer rc=0 reicht das Bool — checkESt verlangt nur, dass EINES von beidem da ist.
+    warum_es_trotzdem_zaehlt: |
+      "Keine Bankverbindung vorhanden" ist keine technische Fuellangabe, sondern eine
+      Erklaerung gegenueber dem Finanzamt. Wer sie abgibt und eine Erstattung erwartet,
+      bekommt sie nicht ueberwiesen. Unser Testfall und damit jeder heutige Durchstich
+      erklaert genau das.
+    kopplung_gemessen: |
+      IBAN allein -> "Kontoinhaber fehlt" (Kto_Inh faktisch Pflicht trotz minOccurs=0).
+      IBAN UND Sonderfeld gleichzeitig -> harter Exklusivitaetsfehler.
+      Ein IBAN-Baustein braucht also mindestens IBAN + Kontoinhaber + eine Weiche, die
+      genau eines von beidem deklariert.
+    entscheidung_julius: |
+      OFFEN. Fuer den ersten Durchstich nicht noetig. Vor einer ECHTEN Abgabe zu klaeren,
+      weil die Antwort daran haengt, ob eine Erstattung erwartet wird.
+
   - id: rc-null-erreichbar-belegt
     titel: "rc=0 ist erreicht — das amtliche Plugin akzeptiert eine TaxGraph-Erklaerung"
     status: analysiert
