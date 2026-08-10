@@ -278,6 +278,91 @@ abgabe:
       weil es die Felder erst geben muss. Danach: die Ratsche zusaetzlich auf der
       Endpunkt-Ebene ziehen, sonst wiederholt sich die Divergenz.
 
+  - id: kap-antragsgrund-fehlt
+    titel: "Anlage KAP ohne Antragsgrund — Erklaerung mit Kapitalertraegen ist nicht einreichbar"
+    status: offen
+    richtung: "ABGABE-BLOCKER (rc=610001002), zusaetzlich zwei Anrechnungsluecken"
+    entdeckt: "2026-08-10, tests/test_checkest_feldmatrix.py, erster Lauf"
+    messung: |
+      Ratschen-Fixtur einzel, nur kap_kapitalertraege veraendert:
+        kap = 0       -> rc=0          0 Beanstandungen   E1900701 nicht im XML
+        kap = 5.000 € -> rc=610001002  1 Beanstandung     E1900701 im XML
+      "Auf den Anlagen KAP und / oder KAP-BET wurden Kapitalertraege erklaert, die dem
+       inlaendischen Steuerabzug unterlegen haben. Bitte geben Sie auf der Anlage KAP auch
+       einen Grund fuer die Angabe der Kapitalertraege an."
+    fehlende_kz: |
+      Sektion Ant der Anlage KAP (Zeilen 4-5), einer davon MUSS gesetzt sein:
+        E1900401  "Ich beantrage die Guenstigerpruefung fuer saemtliche Kapitalertraege"  (§ 32d Abs. 6)
+        E1900501  "Ich beantrage eine Ueberpruefung des Steuereinbehalts fuer bestimmte
+                   Kapitalertraege"                                                       (§ 32d Abs. 4)
+    zweiter_befund: |
+      Der Ring rechnet die Guenstigerpruefung heute AUTOMATISCH (Golden Case
+      kapital_guenstiger_2025_einzel, festzusetzende_est 902). § 32d Abs. 6 S. 1 sagt aber
+      "Auf Antrag des Steuerpflichtigen". Ohne E1900401 in der Erklaerung macht das Finanzamt
+      sie nicht — unsere Berechnung verspricht dann etwas, was der Bescheid nicht liefert.
+      Gleiche Naht wie die Verpflegungskuerzung: Ring rechnet, Deklaration schweigt.
+      Bindungswirkung beachten: Abs. 6 S. 3 nur einheitlich fuer saemtliche Kapitalertraege,
+      S. 4 bei Zusammenveranlagung fuer beide Ehegatten.
+    dritter_befund: |
+      Von 164 E19-Kz (Anlage KAP) im E10-2025.xsd sind 5 gebunden, alle in Sektion
+      Betr_lt_StBesch (die Ertraege-Seite). Die gesamte Steuerabzugsbetraege-Seite fehlt:
+      es gibt kein Feld fuer einbehaltene Kapitalertragsteuer, SolZ oder KiSt. Wer Ertraege
+      erklaert, ohne die darauf gezahlte Steuer zu erklaeren, bekommt sie nicht angerechnet.
+    reihenfolge: |
+      1. Antrags-Kz (hebt den Blocker auf, bringt Guenstigerpruefung in Deckung)
+      2. Steuerabzugsbetraege (die grosse Anrechnung)
+      3. p32d-q-auslandssteuer (die auslaendische Anrechnung, kleinster Betrag)
+    offen_bei_julius: |
+      (a) Formularsatz: Anlage KAP fehlt in sources/. Ohne den amtlichen Vordruck bleibt die
+          Sektionswahl fuer 2./3. geraten — St_Abz_Betr_Inl_u_Inv_Ert (E1905101) vs
+          St_Abz_Betr_Ert_m_o_inl_StAbz (E1905102) sind ein identischer 6-Kz-Parallelblock.
+          kz_extract.py nennt Sektionspfad-allein MITTEL und verlangt den Vordruck-Kreuzcheck.
+          Laut aus_2025.meta.yaml war KAP im steuern.de-Formularsatz-ZIP enthalten.
+      (b) Antragslogik: Antrag setzen, wenn der Ring die Guenstigerpruefung gewaehlt hat?
+          Produktentscheidung, keine Rechenfrage.
+
+  - id: p35a-einzelaufstellung
+    titel: "§ 35a: checkESt verlangt Einzelaufstellung, wir liefern nur die Summe"
+    status: offen
+    richtung: "ABGABE-BLOCKER (rc=610001002), systematisch ueber alle drei Toepfe"
+    entdeckt: "2026-08-10, tests/test_checkest_feldmatrix.py, erster Lauf"
+    messung: |
+      Je Feld einzeln auf der Ratschen-Fixtur, alle rc=610001002:
+        hh_handwerker_arbeitskosten  "...es wurde aber keine Einzelaufstellung der
+                                      Handwerkerleistungen vorgenommen."
+        hh_dienstleistungen          "...haushaltsnahe Dienstleistungen, Hilfe im eigenen
+                                      Haushalt, Pflege- und Betreuungsleistungen..."
+        hh_minijob_aufwendungen      "...wurde der Gesamtbetrag der Aufwendungen angegeben,
+                                      es wurde aber kein(e Einzelaufstellung)..."
+      Kein Einzelfall, sondern dieselbe Anforderung an allen drei § 35a-Toepfen.
+    zu_klaeren: |
+      Welche Struktur die Einzelaufstellung im XSD hat (Instanz je Leistung mit Erbringer/
+      Betrag/Art?) und ob sie damit eine Instanz-Achse braucht wie kind/vv_objekt.
+
+  - id: checkest-blockmatrix
+    titel: "Block-Matrix gegen checkESt (Nachfolger der Einzelfeld-Matrix)"
+    status: offen
+    aufwand_h: 3
+    motiv: |
+      tests/test_checkest_feldmatrix.py deckt nur Felder ab, die ALLEIN eine sinnvolle
+      Erklaerung ergeben. Der erste, generierte Wurf zog alle 55 Kz-tragenden askable Felder:
+      29 rot, aber die Mehrheit Rauschen — Feld ohne seinen Block (kind_kv ohne Anlage Kind,
+      vv_einnahmen ohne Laufende_Nummer_V, gewst_hebesatz ohne messbetrag, p35c ohne
+      Gebaeude-Standort, basis_kv ohne versicherungsart) und untaugliche Probewerte (GdB=5).
+      `instanz_gruppe` trennt das nur teilweise: p35c_* und p33a_* brauchen ebenfalls
+      Kontext, fuehren aber keine Instanzgruppe.
+    plan: |
+      Statt Feld -> Block: je Anlage/Block eine MINIMAL VOLLSTAENDIGE Instanz bauen
+      (Anlage Kind mit Vorname, Anlage V mit Laufender Nummer, Anlage Energetische
+      Massnahmen mit Standort, § 35 mit Messbetrag UND Hebesatz) und dann die Felder des
+      Blocks variieren. Erst dann ist ein rotes Ergebnis ein Befund und kein Testartefakt.
+    ungeprueft_bis_dahin: |
+      21 Felder ohne instanz_gruppe fielen im generierten Lauf rot und sind NICHT
+      abschliessend klassifiziert — darunter p22_nr3_einkuenfte ("Einkuenfte erklaert, es
+      fehlt jedoch eine Angabe zu den Einnahmen") und spenden_betrag (Vermoegensstock-
+      Angabe), die nach echten Kopplungsluecken aussehen. Der generierte Lauf ist
+      reproduzierbar: MATRIX aus der Bindung ziehen statt der kuratierten Liste.
+
   - id: verpflegung-kuerzung-fehlt-auf-gesamt
     titel: "E0205508 war auf der Abgabe-Scheibe nicht gebunden — Erklaerung fiel zu hoch aus"
     status: erledigt
