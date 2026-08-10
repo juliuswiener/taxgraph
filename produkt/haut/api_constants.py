@@ -194,13 +194,22 @@ BEHINDERUNGSBEDINGTE_AUFWENDUNGEN = ("behinderungsbedingte_aufwendungen",)
 # ========== § 33b Abs.1 S.1 Wahlrecht (eigener PB) — Stufe 2b ==========
 BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT = ("behinderungsbedingte_aufwendungen_wahlrecht_pb",)
 
+# ========== § 33b Abs.1 S.1 Wahlrecht Partner — Stufe 2b-Partner ==========
+# Partner-Pauschbetrag lief bisher unconditional neben agb_aufwendungen (BACKLOG
+# p33b-partner-pb-doppelabzug, 1.168-1.234 EUR stiller Doppelabzug). § 33b gilt PRO PERSON
+# (Abs.1 S.1 Subjekt + Abs.2/3-Anspruch individuell) -- Wahlrecht/Sperrgrund braucht daher
+# eine eigene "davon"-Teilmenge fuer den Partner, auf derselben Achse (fallweit) wie das
+# Obermengenfeld agb_aufwendungen, NICHT instanz_gruppe.
+BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_PARTNER = ("behinderungsbedingte_aufwendungen_partner",)
+BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT_PARTNER = ("behinderungsbedingte_aufwendungen_wahlrecht_pb_partner",)
+
 # ========== § 33 Abs.2a Fahrtkostenpauschale (Person A) ==========
 FAHRTKOSTEN_PAUSCHALE = ("fahrtkosten_pausch_gdb80_oder_70g",
                          "fahrtkosten_pausch_ag_bl_tbl_h")
 
 # ========== Gefaltete Sonder-Abzüge (Weg ii) ==========
 GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
-                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST + KINDERBETREUUNG + SCHULGELD + KIND_KV_PV + KIND_PB_UEBERTRAGUNG + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT + FAHRTKOSTEN_PAUSCHALE)
+                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST + KINDERBETREUUNG + SCHULGELD + KIND_KV_PV + KIND_PB_UEBERTRAGUNG + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_PARTNER + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT_PARTNER + FAHRTKOSTEN_PAUSCHALE)
 
 # ========== RENTNER_FELDER — ZWEITE ÄNDERUNG (Z.218 api.py) ==========
 RENTNER_FELDER = RENTNER_FELDER + GESAMT_ABZUEGE

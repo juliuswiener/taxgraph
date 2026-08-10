@@ -444,6 +444,24 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             agb_cent = max(0, agb_cent - _c("behinderungsbedingte_aufwendungen"))
         elif eigener_pb_eur > 0 and wahlrecht_pb is False:
             ausserg = max(0, ausserg - eigener_pb_eur)
+        # Partner-Spiegel (BACKLOG p33b-partner-pb-doppelabzug): der Partner-PB lief bisher
+        # unconditional additiv (Aufbaustelle api.py ~1035/~1425), OHNE dass ein Wahlrecht/
+        # Sperrgrund geprüft wurde — 1.168-1.234 EUR stiller Doppelabzug. § 33b Abs. 1 S. 1
+        # gilt PRO PERSON (Subjekt individuell), Abs. 1 S. 2 "einheitlich" bindet nur EINE
+        # Person über ihre eigenen Aufwandsarten hinweg, nicht zwei Ehegatten aneinander —
+        # deshalb EIGENSTÄNDIGE if/elif-Kette (nicht an Person A elif-gekettet: beide Wahlrechte
+        # sind unabhängig, jede Kombination ist möglich). partner_pb_eur bit-identisch zu den
+        # beiden ausserg-Aufbaustellen. Nur zusammen — Partnerfelder sind sonst nicht gesetzt.
+        if veranlagung == "zusammen":
+            partner_pb_eur = runner.catala_behinderten_pb({
+                "veranlagungszeitraum": vz,
+                "grad_der_behinderung": _c("rentner_grad_der_behinderung_partner"),
+                "ist_hilflos_blind_taubblind": f_dict.get("rentner_hilflos_blind_taubblind_partner", {}).get("wert") is True})
+            wahlrecht_pb_partner = f_dict.get("behinderungsbedingte_aufwendungen_wahlrecht_pb_partner", {}).get("wert")
+            if partner_pb_eur > 0 and wahlrecht_pb_partner is True:
+                agb_cent = max(0, agb_cent - _c("behinderungsbedingte_aufwendungen_partner"))
+            elif partner_pb_eur > 0 and wahlrecht_pb_partner is False:
+                ausserg = max(0, ausserg - partner_pb_eur)
         g_dict["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
             "aussergewoehnliche_belastungen": (agb_cent // 100
                 + runner.catala_p33_2a_fahrtkostenpauschale({
@@ -2092,6 +2110,22 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if eigener_pb_vorhanden and _positiv("behinderungsbedingte_aufwendungen") and not _kind_pb_uebertragen():
             if (felder.get("behinderungsbedingte_aufwendungen_wahlrecht_pb") or {}).get("zustand") != "bestaetigt":
                 return "behinderungsbedingte_aufwendungen_wahlrecht_offen"
+        # Partner-Spiegel (K2, BACKLOG p33b-partner-pb-doppelabzug): derselbe Sperrgrund für den
+        # Partner-Pauschbetrag, der bisher unconditional additiv lief (api.py-Aufbaustellen
+        # gesamt/rentner_gesamt) OHNE Wahlrecht-Prüfung — 1.168-1.234 EUR stiller Doppelabzug.
+        # Selbständig von Person A's Block (unabhängige Wahlrechte, jede Kombination möglich),
+        # daher eigenständiges if, kein elif. Nur zusammen — sonst ist der Normalfall ohne
+        # Partner-GdB/-Aufwendungen unberührt (Gate-Polarität, 519199e-Präzedenz). 8-Space-Ebene
+        # bewusst NICHT im cfg.get("rentner")-Block oben (partner_19-Analyse api.py:2058-2072) —
+        # muss auf "gesamt" UND "rentner_gesamt" gleichermaßen feuern.
+        if felder.get("veranlagung", {}).get("wert") == "zusammen":
+            _gdb_partner = felder.get("rentner_grad_der_behinderung_partner", {}).get("wert")
+            _gdb_partner_num = _gdb_partner if isinstance(_gdb_partner, (int, float)) and not isinstance(_gdb_partner, bool) else 0
+            partner_pb_vorhanden = (_gdb_partner_num >= 20
+                                     or felder.get("rentner_hilflos_blind_taubblind_partner", {}).get("wert") is True)
+            if partner_pb_vorhanden and _positiv("behinderungsbedingte_aufwendungen_partner"):
+                if (felder.get("behinderungsbedingte_aufwendungen_wahlrecht_pb_partner") or {}).get("zustand") != "bestaetigt":
+                    return "behinderungsbedingte_aufwendungen_wahlrecht_partner_offen"
         # § 35a Einzelaufstellung (Anlass 2026-08-10): hh_dienstleistungen/hh_handwerker_arbeitskosten
         # sind seit dem Fix askable:false — kein Schreiber setzt sie mehr direkt, _positiv(<sum_fid>)
         # sähe hier NIE wieder einen Wert (permanent stumm, gleiche Fehlerklasse wie ein fail-open

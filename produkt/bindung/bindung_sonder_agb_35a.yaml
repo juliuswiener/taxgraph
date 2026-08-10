@@ -139,6 +139,47 @@ bindungen:
       quelle: "§ 33b Abs. 1 Satz 1 EStG"
       zitatanker: "anstelle einer Steuerermäßigung nach § 33 einen Pauschbetrag nach Absatz 3 geltend machen (Behinderten-Pauschbetrag)"
       datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  # § 33b Abs. 1 S. 1 gilt PRO PERSON (Subjekt "Menschen mit Behinderungen", Anspruch nach
+  # Abs. 2/3 individuell nach eigenem GdB) — bei Zusammenveranlagung braucht der Partner
+  # dieselbe Wahlrecht/Sperrgrund-Mechanik wie Person A, unabhaengig von deren Entscheidung
+  # (BACKLOG p33b-partner-pb-doppelabzug: Partner-PB lief bisher unconditional neben
+  # agb_aufwendungen, 1.168-1.234 EUR stiller Doppelabzug). "Davon"-Teilmenge auf derselben
+  # Achse (fallweit) wie agb_aufwendungen selbst, wie behinderungsbedingte_aufwendungen oben.
+  - feld_id: behinderungsbedingte_aufwendungen_partner
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel der außergewöhnlichen Ausgaben eures Haushalts entfiel auf die Behinderung deines Partners/deiner Partnerin — also auf Hilfe bei den täglichen Verrichtungen, auf Pflege oder auf erhöhten Wäschebedarf?"
+    hilfe_kurz: "Nur relevant, wenn dein Partner/deine Partnerin einen eigenen Grad-der-Behinderung-Pauschbetrag hat. Diese Aufwendungen deckt der Pauschbetrag ab, sie können nicht zusätzlich abgesetzt werden."
+    beispielwert: 100000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Reines Rechenfeld fuer die Kuerzung nach § 33b Abs. 1 S. 1/2 auf Partner-Seite, spiegelt behinderungsbedingte_aufwendungen. Kein eigenes Kz im XSD."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 1 Satz 1 EStG"
+      zitatanker: "anstelle einer Steuerermäßigung nach § 33 einen Pauschbetrag nach Absatz 3 geltend machen (Behinderten-Pauschbetrag)"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  - feld_id: behinderungsbedingte_aufwendungen_wahlrecht_pb_partner
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb_partner}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Möchte dein Partner/deine Partnerin für die eigenen behinderungsbedingten Aufwendungen seinen/ihren Behinderten-Pauschbetrag nutzen, statt sie einzeln als außergewöhnliche Belastung abzusetzen?"
+    hilfe_kurz: "Beides zusammen geht nicht (§ 33b Abs. 1 Satz 2): entweder der Pauschbetrag oder der Einzelnachweis für dieselben Aufwendungen. Nur relevant, wenn dein Partner/deine Partnerin einen eigenen GdB-Pauschbetrag hat. Unabhängig von deiner eigenen Wahl."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld — spiegelt behinderungsbedingte_aufwendungen_wahlrecht_pb, kein Weg ins XSD."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 1 Satz 1 EStG"
+      zitatanker: "anstelle einer Steuerermäßigung nach § 33 einen Pauschbetrag nach Absatz 3 geltend machen (Behinderten-Pauschbetrag)"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
   - feld_id: agb_zwangslaeufig
     quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: agb_ist_zwangslaeufig}
     typ: bool

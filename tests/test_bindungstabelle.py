@@ -514,6 +514,10 @@ BETRAGSFELDER_OHNE_KZ = {
     # im XSD nicht und waere auch falsch, weil der Betrag nicht erklaert, sondern
     # herausgerechnet wird.
     "behinderungsbedingte_aufwendungen",
+    # Partner-Spiegel (BACKLOG p33b-partner-pb-doppelabzug): behinderungsbedingte_aufwendungen_partner
+    # wird VOR dem Ring vom selben agb_aufwendungen-Pool abgezogen (§ 33b Abs. 1 S. 1/2, api.py
+    # _shared_steuer_sonder_agb) — dieselbe Konstruktions-Begruendung wie oben, nur fuer den Partner.
+    "behinderungsbedingte_aufwendungen_partner",
     "vv_erhaltungsaufwand",
     "vv_gebaeude_afa",
     "vv_schuldzinsen",
