@@ -396,12 +396,29 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "berufsausbildung_aufwendungen": _c("berufsausbildung_aufwendungen") // 100}))
         # § 33b Abs. 5 S. 4: "In diesen Fällen besteht für Aufwendungen, für die der
         # Behinderten-Pauschbetrag gilt, kein Anspruch auf eine Steuerermäßigung nach § 33".
-        # "In diesen Fällen" = Übertragung des Kind-PB (Abs. 5 S. 1). Nur dann kürzen —
-        # der eigene PB des Steuerpflichtigen fällt unter Abs. 1 S. 1 (Wahlrecht, offen).
-        # Beide Summanden in CENT, genau eine Division am Ende.
+        # "In diesen Fällen" = Übertragung des Kind-PB (Abs. 5 S. 1) — Automatismus, Ring
+        # kürzt selbst. § 33b Abs. 1 S. 1 (Stufe 2b): eigener GdB-PB gilt ANSTELLE der agB-
+        # Ermäßigung für dieselben Aufwendungen — WAHLRECHT, S.2 nur einheitlich ausübbar,
+        # nie beides. wahlrecht_pb=True (PB gewählt) kürzt agb wie Abs.5 S.4. wahlrecht_pb=
+        # False (Einzelnachweis gewählt): agb bleibt voll, aber dann muss der eigene PB aus
+        # ausserg raus — sonst wäre JEDE Antwort ein Doppelabzug (die Bauanleitungs-Skizze
+        # ließ das offen: 40k/GdB100/3000EUR agB ergäbe bei false weiter 1.131 statt der
+        # korrekten 259 EUR agB-only-Wirkung, siehe reports/adjudikation/
+        # p33b_stufe2_bauanleitung_2026-08-07.md Z.168-176 vs. Referenzzahlen Z.101-107).
+        # eigener_pb_eur exakt wie an den ausserg-Aufbaustellen (api.py ~966), damit beide
+        # Stellen bit-identisch bleiben. Beide Summanden in CENT, genau eine Division am Ende.
         agb_cent = _c("agb_aufwendungen")
+        eigener_pb_eur = runner.catala_behinderten_pb({
+            "veranlagungszeitraum": vz,
+            "grad_der_behinderung": _c("rentner_grad_der_behinderung"),
+            "ist_hilflos_blind_taubblind": f_dict.get("rentner_hilflos_blind_taubblind", {}).get("wert") is True})
+        wahlrecht_pb = f_dict.get("behinderungsbedingte_aufwendungen_wahlrecht_pb", {}).get("wert")
         if _kind_behinderten_pb_daten():
             agb_cent = max(0, agb_cent - _c("behinderungsbedingte_aufwendungen"))
+        elif eigener_pb_eur > 0 and wahlrecht_pb is True:
+            agb_cent = max(0, agb_cent - _c("behinderungsbedingte_aufwendungen"))
+        elif eigener_pb_eur > 0 and wahlrecht_pb is False:
+            ausserg = max(0, ausserg - eigener_pb_eur)
         g_dict["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
             "aussergewoehnliche_belastungen": (agb_cent // 100
                 + runner.catala_p33_2a_fahrtkostenpauschale({
@@ -1980,6 +1997,35 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                 return "versorgungsfreibetrag_offen"
             if not (isinstance(versorgung_bemessungsgrundlage, (int, float)) and not isinstance(versorgung_bemessungsgrundlage, bool) and versorgung_bemessungsgrundlage > 0):
                 return "versorgungsfreibetrag_offen"
+        # § 33b Abs. 1 S. 1 Wahlrecht (Stufe 2b, K2): kein over-tax-sicherer Default möglich
+        # (Bauanleitung Frage C: kleiner Aufwand -> PB zu hoch, großer Aufwand -> PB zu niedrig) ->
+        # der Nutzer MUSS antworten. Nur relevant, wenn (a) ein eigener GdB-PB > 0 vorliegt — bit-
+        # identisch zu runner.catala_behinderten_pb (golden/runner.py: hilflos/blind/taubblind ->
+        # Höchstbetrag, sonst GdB < 20 -> 0), (b) behinderungsbedingte Aufwendungen > 0 sind, UND
+        # (c) Abs. 5 S. 4 (Kind-PB-Übertragung) nicht schon automatisch kürzt — dann hat die Frage
+        # keinen Sinn (Reihenfolge: Abs. 5 vor Abs. 1). Sonst NIE fragen/sperren (Gate-Polarität,
+        # 519199e: der Normalfall ohne GdB oder ohne Aufwendungen bleibt unberührt).
+        def _kind_pb_uebertragen():
+            if store is None or bindung is None:
+                return False
+            for inst in EM.instanzen(store, bindung, "kind"):
+                if inst["zustand"] != "bestaetigt":
+                    continue
+                idnr = inst["felder"].get("kind_idnr", {}).get("wert")
+                if not idnr or not isinstance(idnr, str) or len(idnr) < 11:
+                    continue
+                antrag = inst["felder"].get("kind_behinderten_pb_antrag", {}).get("wert") is True
+                nicht_selbst = inst["felder"].get("kind_pb_nicht_selbst_genutzt", {}).get("wert") is True
+                if antrag and nicht_selbst:
+                    return True
+            return False
+        _gdb = felder.get("rentner_grad_der_behinderung", {}).get("wert")
+        _gdb_num = _gdb if isinstance(_gdb, (int, float)) and not isinstance(_gdb, bool) else 0
+        eigener_pb_vorhanden = (_gdb_num >= 20
+                                 or felder.get("rentner_hilflos_blind_taubblind", {}).get("wert") is True)
+        if eigener_pb_vorhanden and _positiv("behinderungsbedingte_aufwendungen") and not _kind_pb_uebertragen():
+            if (felder.get("behinderungsbedingte_aufwendungen_wahlrecht_pb") or {}).get("zustand") != "bestaetigt":
+                return "behinderungsbedingte_aufwendungen_wahlrecht_offen"
         # § 35a Abs. 5 S. 3 rechnung_unbar = CONDITIONAL-MANDATORY (K2, charge29): NUR wenn Dienstleistung
         # ODER Handwerker (Abs. 2/3) > 0 — Minijob (Abs. 1) verlangt keine unbare Zahlung. Unbeantwortet
         # (nicht bestätigt) → rechnung_unbar_offen (kein Abs2/3-Abzug ohne Beleg-/Überweisungsnachweis);

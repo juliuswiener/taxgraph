@@ -113,6 +113,32 @@ bindungen:
       quelle: "§ 33b Abs. 5 S. 4 EStG"
       zitatanker: "In diesen Fällen besteht für Aufwendungen, für die der Behinderten-Pauschbetrag gilt, kein Anspruch auf eine Steuerermäßigung nach § 33"
       datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  # § 33b Abs. 1 S. 1: wer wegen eigener Behinderung einen GdB-Pauschbetrag hat, kann ihn
+  # nur ANSTELLE der agB-Ermaessigung fuer dieselben Aufwendungen geltend machen (S.2: nur
+  # einheitlich ausuebbar), nicht zusaetzlich. Anders als Abs. 5 S. 4 (Kind-PB-Uebertragung,
+  # oben) ist das ein WAHLRECHT — kein Automatismus, der Ring darf nicht selbst entscheiden.
+  # Reine Ja/Nein-Frage, kein Betragsfeld; die Kuerzung nutzt weiterhin
+  # behinderungsbedingte_aufwendungen (oben), nur die Bedingung dafuer ist eine andere.
+  #
+  # Gebunden als geltungsbedingung (neue Bedingung an derselben Regel p33_1_2_agb_abzug),
+  # nicht an einen Slot — reine Tatbestands-Voraussetzung wie agb_zwangslaeufig.
+  - feld_id: behinderungsbedingte_aufwendungen_wahlrecht_pb
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Möchtest du für deine behinderungsbedingten Aufwendungen deinen Behinderten-Pauschbetrag nutzen, statt sie einzeln als außergewöhnliche Belastung abzusetzen?"
+    hilfe_kurz: "Beides zusammen geht nicht (§ 33b Abs. 1 Satz 2): entweder der Pauschbetrag oder der Einzelnachweis für dieselben Aufwendungen. Nur relevant, wenn du selbst einen Grad-der-Behinderung-Pauschbetrag hast."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld — reines Rechenfeld wie behinderungsbedingte_aufwendungen (oben), kein Weg ins XSD."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 1 Satz 1 EStG"
+      zitatanker: "anstelle einer Steuerermäßigung nach § 33 einen Pauschbetrag nach Absatz 3 geltend machen (Behinderten-Pauschbetrag)"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
   - feld_id: agb_zwangslaeufig
     quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: agb_ist_zwangslaeufig}
     typ: bool

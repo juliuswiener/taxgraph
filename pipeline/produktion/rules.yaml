@@ -1346,6 +1346,11 @@ regeln:
     quelle: § 33b Abs. 5 Satz 4 EStG
     datei: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
     beschreibung: "Wird der Behinderten-Pauschbetrag eines Kindes auf den Steuerpflichtigen uebertragen (Abs. 5 S. 1), sind die davon abgegoltenen Aufwendungen nicht zusaetzlich als agB abziehbar. Der agb-Slot enthaelt sie nicht mehr: behinderungsbedingte_aufwendungen wird vor dem Ring von agb_aufwendungen abgezogen (api.py _shared_steuer_sonder_agb). Ohne Uebertragung greift die Bedingung nicht — der eigene Pauschbetrag des Steuerpflichtigen faellt unter das Wahlrecht in Abs. 1 S. 1 und ist offen."
+  - bedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb
+    deckt_ab: "anstelle einer Steuerermäßigung nach § 33 einen Pauschbetrag nach Absatz 3 geltend machen (Behinderten-Pauschbetrag)"
+    quelle: § 33b Abs. 1 Satz 1 EStG
+    datei: sources/gesetze-im-internet/estg_p33b_2026-07-13.txt
+    beschreibung: "Wahlrecht (Stufe 2b): der Steuerpflichtige kann fuer seine EIGENEN behinderungsbedingten Aufwendungen ANSTELLE der agB-Ermaessigung seinen eigenen GdB-Pauschbetrag geltend machen (S.2: nur einheitlich ausuebbar, kein Nebeneinander). behinderungsbedingte_aufwendungen_wahlrecht_pb=true: behinderungsbedingte_aufwendungen wird von agb_aufwendungen abgezogen, der PB bleibt. =false: agb bleibt voll, der eigene PB wird stattdessen aus dem §33b-Betrag herausgerechnet (sonst waere jede Antwort ein Doppelabzug — api.py _shared_steuer_sonder_agb). Unbeantwortet bei vorhandenem eigenen PB (GdB>=20 oder hilflos/blind/taubblind) UND behinderungsbedingte_aufwendungen>0 UND ohne bereits greifende Kind-PB-Uebertragung (Abs.5 S.4 hat Vorrang) -> Sperrgrund behinderungsbedingte_aufwendungen_wahlrecht_offen. Kein over-tax-sicherer Default moeglich (BACKLOG p33b-stufe-2 kein_default_moeglich: kleiner Aufwand -> PB zu hoch, grosser Aufwand -> PB zu niedrig)."
   rundung: []
   signature:
     scope: AgbAbzug
