@@ -349,7 +349,7 @@ abgabe:
 
   - id: p35a-einzelaufstellung
     titel: "§ 35a: checkESt verlangt Einzelaufstellung, wir liefern nur die Summe"
-    status: offen
+    status: analysiert
     richtung: "ABGABE-BLOCKER (rc=610001002), systematisch ueber alle drei Toepfe"
     entdeckt: "2026-08-10, tests/test_checkest_feldmatrix.py, erster Lauf"
     messung: |
@@ -364,6 +364,33 @@ abgabe:
     zu_klaeren: |
       Welche Struktur die Einzelaufstellung im XSD hat (Instanz je Leistung mit Erbringer/
       Betrag/Art?) und ob sie damit eine Instanz-Achse braucht wie kind/vv_objekt.
+    struktur_analysiert: |
+      2026-08-10, reports/adjudikation/anlage-haushaltsnahe-einzelaufstellung-2026-08-10.md
+      (gegen E10-2025.xsd Z.10026-10137 direkt gegengelesen). Alle drei Toepfe sind
+      Einz[99]+Sum[1]-Paare (St_Erm_1426027020_CType); heutige Bindung fuellt nur Sum, nie
+      Einz — erklaert rc=610001002 identisch fuer alle drei. Einzelposten-Kz:
+        Minijob:      E0104206 (Art) + E0104108 (Betrag)
+        Dienstl.:     E0107206 (Art) + E0107207 (Betrag)
+        Handwerker:   E0111217 (Art) + E0170601 (Rechnungsbetrag) + E0111214 (Lohnanteil)
+      Praezedenz existiert bereits produktiv: instanz_gruppe-Mechanismus (est_mapping.py:294),
+      heute genutzt von vv_objekt/kind/Multi-Rente, Kz-Reuse je Instanz. §35a waere vierter
+      Konsument, kein Neubau. Anleitung-PDF (014_Anleitung_Anlage_Haushaltsnahe...) liefert
+      keine zusaetzliche Aussage.
+      Offene Bau-Frage war: die drei Sum-Kz weiter direkt erfragen oder aus den Instanzen
+      berechnen, damit Summe und Einzelaufstellung nicht auseinanderlaufen koennen —
+      Produktentscheidung, nicht Teil der Struktur-Analyse.
+    entschieden: |
+      2026-08-10: die Sum-Felder werden AUS DEN INSTANZEN BERECHNET, askable:false. Zwei
+      Repraesentationen desselben Sachverhalts, die auseinanderlaufen koennen, waren in
+      diesem Repo schon mehrfach Geld — Praezedenz steht als Luecken-Eintrag in
+      bindung_kap_vv_familie.yaml: kap_zusammenveranlagung wurde gestrichen, weil es
+      dieselbe Frage ein zweites Mal stellte und ihr widersprechen konnte (250 EUR
+      Under-tax, gemessen 2026-07-30). Wenn Nutzer Summe UND Einzelposten liefern, ist
+      "welche gilt?" unbeantwortbar, und checkESt duerfte eine Differenz ohnehin monieren.
+      Preis der Entscheidung, bewusst getragen: der Nutzer gibt je Posten Art + Betrag ein
+      statt einer Zahl. Mehr Aufwand fuer ihn — aber genau das verlangt der Vordruck, und
+      der heutige Zustand (nur Summe) ist gar nicht einreichbar. Die drei bestehenden
+      askable-Felder werden damit zu berechneten Feldern, ihr fragetext_laie entfaellt.
 
   - id: checkest-blockmatrix
     titel: "Block-Matrix gegen checkESt (Nachfolger der Einzelfeld-Matrix)"
