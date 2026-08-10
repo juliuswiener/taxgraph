@@ -278,9 +278,50 @@ abgabe:
       weil es die Felder erst geben muss. Danach: die Ratsche zusaetzlich auf der
       Endpunkt-Ebene ziehen, sonst wiederholt sich die Divergenz.
 
+  - id: verpflegung-kuerzung-fehlt-auf-gesamt
+    titel: "E0205508 war auf der Abgabe-Scheibe nicht gebunden — Erklaerung fiel zu hoch aus"
+    status: erledigt
+    erledigt: "2026-08-10, Commit 3ce178c"
+    richtung: under-tax
+    entdeckt: "2026-08-10, als die Scheiben-Pruefung die Tests von n_vor_gwg auf gesamt zwang"
+    messung: |
+      10 Tage, 5 Fruehstuecke, 5 Mittagessen:
+        Ring rechnet   8400 Cent Kuerzung   (auf BEIDEN Scheiben identisch)
+        gesamt         deklariert   0       <- Tage voll, Kuerzung verschwiegen
+        n_vor_gwg      deklariert E0205508
+      84 EUR zu viel Werbungskosten in der Erklaerung. Haftung beim Nutzer.
+    ursache: |
+      Zwei Wege, wie eine Scheibe zu ihren Feldern kommt. n_vor_gwg zieht sie ueber
+      felder_datei aus der YAML, wo p9_4a_kuerzung_nach_entgelt gebunden ist. gesamt
+      baut seine Feldliste aus den Tupeln in api_constants.py — und dort stand das
+      Feld in keinem einzigen, also filtert _scheibe_bindung() es heraus.
+      P9.4a (826bfdf) war auf der Entwicklungs-Scheibe fertig und auf der
+      Abgabe-Scheibe nie angekommen. Der Ring war nie falsch, nur die Deklaration schwieg.
+    nicht_betroffen: "rentner_gesamt hat keine Tage-Kz und ist damit konsistent."
+    gate: |
+      tests/test_abgabescheibe_gate.py prueft die REGEL, nicht den Einzelfall: wo ein
+      Abzugs-Kz gebunden ist, MUSS sein Kuerzungs-Kz mitkommen — auf jeder Scheibe,
+      die Stammdaten fuehrt. KUERZUNGS_PAARE ist die erweiterbare Liste.
+
   - id: einreichen-ohne-scheiben-pruefung
     titel: "/einreichen prueft nicht, ob die Scheibe eine vollstaendige Erklaerung tragen kann"
-    status: offen
+    status: erledigt
+    erledigt: |
+      2026-08-10, Commit f90a817. Kriterium ist NICHT gesamt_guard (der meint
+      Rechen-Vollstaendigkeit), sondern ob die STAMMDATEN_FELDER im Kegel liegen —
+      das ist, was Abgabefaehigkeit ausmacht. Gemessen:
+        an_gesamt        69 Felder,  0/12 Stammdaten  -> 409
+        n_vor_gwg        61 Felder,  0/12             -> 409
+        gesamt          201 Felder, 12/12             -> durch
+        rentner_gesamt  148 Felder, 12/12             -> durch
+      Die Antwort nennt die Scheibe, listet die fehlenden Felder und sagt, dass die
+      Berechnung auf der Teilrechnung nutzbar bleibt.
+      Gate: tests/test_abgabescheibe_gate.py, 2 Mutationen (Check entfernt -> rot;
+      Check lehnt alles ab -> Gegenprobe rot).
+    nebenbefund: |
+      Die noetige Test-Migration (8 Faelle von an_gesamt/n_vor_gwg auf gesamt) hat
+      einen GELDFEHLER aufgedeckt, der sonst in die Abgabe gelaufen waere — siehe
+      Eintrag verpflegung-kuerzung-fehlt-auf-gesamt.
     entdeckt: "2026-08-09, beim Bau der Endpunkt-Ratsche"
     richtung: "kein Geldfehler — Fehlermeldung zeigt auf den Nutzer statt auf die Scheibenwahl"
     messung: |
@@ -858,8 +899,24 @@ struktur:
 
   - id: api-py-datei-split
     titel: "api.py in Ring und Endpunkte trennen"
-    status: blockiert
+    status: bereit
     aufwand_h: 1
+    entblockt: |
+      2026-08-10. Der verbliebene Blocker (Star-Import bindet FAELLE als WERT, 37
+      Testdateien patchen API.FAELLE) trifft diesen Schnitt NICHT. Gemessen per AST:
+
+        _bescheid_fn  Zeile 266-1640, 1375 Zeilen = 50 % von api.py (2710)
+        braucht 18 freie Namen von aussen:
+          12 aus api_constants (Star-Import; keiner wird zur Laufzeit gepatcht)
+           6 aus api.py: EM, IV, _abs3_eligible, _laufender_gewinn,
+                         _oepnv_eur, _p23_ansonsten_einkuenfte
+        FAELLE ist NICHT darunter.
+
+      FAELLE hat nur 4 Nutzungen (Zeilen 78, 91, 92, 2708) — alle in den
+      Store-Helfern, alle ausserhalb von _bescheid_fn. Sie bleiben in api.py, der
+      gefaehrliche Name wandert also gar nicht mit. Die Schnittstelle des Rings ist
+      klein und explizit.
+    beide_gates_gruen: "2026-08-10: test_split_naht_gate.py + test_bescheid_fn_collector.py, 6 passed"
     voraussetzung_erfuellt: "_bescheid_fn-Umbau ist durch (7b1d59a, 1396 -> 1301 Zeilen)"
     messung: |
       api.py 2539 Zeilen, _bescheid_fn 1301 (51 %), 14 HTTP-Endpunkte je 40-60 Zeilen.
