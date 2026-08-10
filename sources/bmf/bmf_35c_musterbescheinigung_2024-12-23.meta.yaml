@@ -1,0 +1,30 @@
+dokument:
+  norm_uri: "bmf/2024-12-23/IV-C-1-S-2296-c"
+  norm: "BMF-Schreiben: Amtliches Muster der Bescheinigung des ausführenden Fachunternehmens und der nach § 88 GEG ausstellungsberechtigten Person (§ 35c EStG); Neufassung, ersetzt BMF v. 26.01.2023 (BStBl I S. 218), geändert durch BMF v. 06.02.2024 (BStBl I S. 237)"
+  fassung: "23.12.2024"
+  quelle_url: "https://www.bundesfinanzministerium.de/Content/DE/Downloads/BMF_Schreiben/Steuerarten/Einkommensteuer/2024-12-23-steuererm-energetische-bmf-schreiben.pdf?__blob=publicationFile&v=5"
+  abrufdatum: "2026-08-10"
+  datei: "bmf_35c_musterbescheinigung_2024-12-23.txt"
+  pdf_datei: "bmf_35c_musterbescheinigung_2024-12-23.pdf"
+  sha256: "dc85a79ef3104e78cc08b2b61cede339e1b948cf2c4eb052d1e08d0d0be9e4d7"
+  pdf_sha256: "3ce8e326d172eeacfb43c9800ed0006a6b5d2115fb9daa401f178883a5be9a02"
+  authority: verwaltung
+  redistributable: true
+  hinweis: >
+    NACHRANGIGER FUND (Julius-Vorgabe: "nicht lange danach suchen") -- § 35c Abs. 1 S. 7
+    EStG verlangt eine Bescheinigung "nach amtlich vorgeschriebenem Muster"; dieses
+    BMF-Schreiben IST das Muster (Anlage 1, ab Zeile 249 im Volltext = die eigentliche
+    Formularseite). PDF via curl direkt vom BMF geladen, pdftotext -layout, unbereinigt
+    (Seitenumbrueche "Seite 2" etc. NICHT entfernt, wie bei bmf_35c_einzelfragen_2025-08-21
+    ebenfalls unbereinigt gelassen -- Konvention fuer sources/bmf/). Gilt fuer Massnahmen
+    mit Beginn nach 31.12.2024 (Rn. 1); fuer frueheren Massnahmenbeginn verweist das
+    Schreiben auf die Vorgaenger-Muster (2020/2021/2023). Rn. 12: Mindestanforderungen
+    sind die der ESanMV i.d.F. der 3. AenderungsVO v. 4.11.2024 (BGBl. I Nr. 341) --
+    deckungsgleich mit esanmv_2026-08-10. Eigenstaendige Standalone-Formularversion
+    (identischer Text, separate BMF-Publikations-URL) gesichert als
+    bmf_35c_musterbescheinigung_formular_2024-12-23.
+  erwartete_anker:
+    - "GZ IV C 1 - S 2296-c/20/10003 :008"
+    - "Für die Bescheinigung von energetischen Maßnahmen, mit deren Ausführungen nach dem 31. Dezember 2024 begonnen wurde, ist das anliegende Muster zu verwenden."
+    - "Für die bescheinigten Maßnahmen müssen die Mindestanforderungen der zum 1. Januar 2025 durch die Dritte Verordnung zur Änderung der Energetische Sanierungsmaßnahmen-Verordnung vom 4. November 2024 (BGBl. I Nr. 341) angepassten ESanMV eingehalten werden."
+  verwendet_in: ["Foerderfinder BEG-Heizungsfoerderung / § 35c Nachweis-Kette (nachrangig, optional)"]

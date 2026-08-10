@@ -1,0 +1,288 @@
+Bescheinigung energetischer Maßnahmen nach § 35c Einkommensteuergesetz
+
+☐ Bescheinigung des ausführenden Fachunternehmens
+☐ Bescheinigung der nach § 88 Gebäudeenergiegesetz
+  (GEG) ausstellungsberechtigten Person
+☐ Bescheinigung vom            zur Vorlage beim zuständigen Finanzamt.
+☐ Diese Bescheinigung ergänzt oder berichtigt die Bescheinigung vom      und
+  ist dem zuständigen Finanzamt erneut vorzulegen.
+
+
+I. Objekt und Beteiligte
+
+1. An welchem Objekt wurden die energetischen Maßnahmen vorgenommen?
+
+ Adresse
+
+
+
+2. Für wen (Eigentümer, WEG-Verwalter) wird die Bescheinigung ausgestellt?
+
+ Name, Vorname; ggf. Verwaltereigenschaft
+
+ Adresse
+
+ Telefonnummer, optional: E-Mailadresse
+
+
+
+3. Welches Fachunternehmen hat die energetischen Maßnahmen ausgeführt?
+
+ Firma, Ansprechpartner (Fachunternehmen)
+
+ Adresse
+
+ Telefonnummer, optional: E-Mailadresse
+
+ Steuernummer, Wirtschafts-Identifikationsnummer
+
+
+
+4. In welchen Gewerken ist das Fachunternehmen tätig?
+
+☐ Mauer- und Betonbauarbeiten
+☐ Stukkateurarbeiten
+☐ Maler- und Lackierungsarbeiten
+☐ Zimmerer-, Tischler- und Schreinerarbeiten
+☐ Wärme-, Kälte- und Schallisolierungsarbeiten
+☐ Steinmetz- und Steinbildhauarbeiten
+☐ Brunnenbauarbeiten
+☐ Dachdeckerarbeiten
+                                               -2-
+☐ Klempnerarbeiten
+☐ Glasarbeiten
+☐ Installateur- und Heizungsbauarbeiten
+☐ Kälteanlagenbau
+☐ Elektrotechnik und -installation
+☐ Metallbau
+☐ Ofen- und Luftheizungsbau
+☐ Rollladen- und Sonnenschutztechnik
+☐ Schornsteinfegerarbeiten
+☐ Fliesen-, Platten- und Mosaiklegerarbeiten
+☐ Betonstein- und Terrazzoherstellung
+☐ Das Unternehmen ist auf die Fenstermontage spezialisiert und gewerblich tätig.
+
+5. Falls die vorliegende Bescheinigung nicht vom ausführenden Fachunterneh-
+men, sondern von einer nach § 88 GEG ausstellungsberechtigten Person erteilt
+wird, ergänzen Sie bitte zusätzlich die folgenden Angaben:
+
+ Firma, Ansprechpartner (ausstellungsberechtigte Person)
+
+ Adresse
+
+ Telefonnummer, optional: E-Mailadresse
+
+
+☐ Die Person ist als Energieberater oder Energieeffizienz-Experte der Energieeffizi-
+  enz-Expertenliste (www.energie-effizienz-experten.de) ausstellungsberechtigt.
+☐ Die Person ist wie folgt nach § 88 GEG ausstellungsberechtigt:
+
+
+
+II. Durchgeführte energetische Maßnahmen
+
+1           Wärmedämmung von Wänden
+1.1    ☐    Außenwand
+            Umax. von 0,20 W/(m² K), erreicht:            W/(m² K)
+1.2    ☐    Einblas-/Kerndämmung bei bestehendem zweischaligem Mauerwerk
+            Max. Wärmeleitfähigkeit λ ≤ 0,035 W/(m K), erreicht:   W/(m K)
+1.3    ☐    Außenwände von Baudenkmalen und sonstiger besonders erhaltenswer-
+            ter Bausubstanz
+            Umax. von 0,45 W/(m² K), erreicht:            W/(m² K)
+1.4    ☐    Außenwände mit Sichtfachwerk (Innendämmung bei Fachwerkaußenwän-
+            den, Erneuerung der Ausfachungen)
+            Umax. von 0,65 W/(m² K), erreicht:            W/(m² K)
+1.5    ☐    Wände gegen Erdreich oder unbeheizte Räume sowie Kellerräume
+            Umax. von 0,25 W/(m² K), erreicht:            W/(m² K)
+
+2        Wärmedämmung von Dachflächen
+2.1    ☐ Dachflächen von Schrägdächern und dazugehörigen Kehlbalkenlagen
+         Umax. von 0,14 W/(m² K), erreicht:        W/(m² K)
+                                       -3-
+2.2   ☐ Dachgauben
+        Umax. von 0,20 W/(m² K), erreicht:             W/(m² K)
+2.3   ☐ Flachdächer  und Dachflächen   mit Abdichtung
+        Umax. von 0,14 W/(m² K), erreicht:             W/(m² K)
+2.4   ☐ Dachflächen  bei Baudenkmalen    und sonstiger besonders erhaltenswerter
+        Bausubstanz (siehe Anlage 2 der ESanMV)
+        Max. Wärmeleitfähigkeit λ ≤ 0,040 W/(m K), erreicht:       W/(m K)
+
+3         Wärmedämmung von Geschossdecken
+3.1   ☐   Oberste Geschossdecken und Wände (einschließlich Abseitenwände) ge-
+          gen unbeheizte Dachräume
+          Umax. von 0,14 W/(m² K), erreicht:        W/(m² K)
+3.2   ☐   Decken gegen unbeheizte Räume sowie Kellerdecken
+          Umax. von 0,25 W/(m² K), erreicht:        W/(m² K)
+3.3   ☐   Geschossdecken gegen Außenluft von unten
+          Umax. von 0,20 W/(m² K), erreicht:        W/(m² K)
+3.4   ☐   Bodenflächen gegen Erdreich
+          Umax. von 0,25 W/(m² K), erreicht:        W/(m² K)
+
+4         Erneuerung der Fenster oder Außentüren
+4.1   ☐   Fenster, Balkon- und Terrassentüren
+          Umax. von 0,95 W/(m² K), erreicht:            W/(m² K)
+4.2   ☐   Barrierearme oder einbruchhemmende Fenster, Balkon-, Terrassentüren
+          Umax. von 1,10 W/(m² K), erreicht:            W/(m² K)
+4.3   ☐   Fenster, Balkon- und Terrassentüren mit Sonderverglasung
+          (siehe Anlage 4 der ESanMV)
+          Umax. von 1,10 W/(m² K), erreicht:            W/(m² K)
+4.4   ☐   Ertüchtigung von Fenstern, Balkon- und Terrassentüren, von Kastenfens-
+          tern sowie von Fenstern mit Sonderverglasung
+          Umax. von 1,30 W/(m² K), erreicht:            W/(m² K)
+4.5   ☐   Dachflächenfenster
+          Umax. von 1,00 W/(m² K), erreicht:            W/(m² K)
+4.6   ☐   Fenster, Balkon- und Terrassentüren von Baudenkmalen und von
+          sonstiger besonders erhaltenswerter Bausubstanz
+          Umax. von 1,40 W/(m² K), erreicht:            W/(m² K)
+4.7   ☐   Fenster, Balkon-, Terrassentüren mit echten glasteilenden Sprossen bei
+          Baudenkmalen und sonstiger besonders erhaltenswerter Bausubstanz
+          Umax. von 1,60 W/(m² K), erreicht:            W/(m² K)
+4.8   ☐   Ertüchtigung von Fenstern, Balkon- und Terrassentüren an Baudenkmalen
+          oder sonstiger besonders erhaltenswerter Bausubstanz
+          Umax. von 1,60 W/(m² K), erreicht:            W/(m² K)
+4.9   ☐   Außentüren beheizter Räume, Hauseingangstüren
+          Umax. von 1,30 W/(m² K), erreicht:            W/(m² K)
+4.10 ☐    Glasdächer
+          Umax. von 1,60 W/(m² K), erreicht:            W/(m² K)
+4.11 ☐    Lichtbänder und Lichtkuppeln
+          Umax. von 1,50 W/(m² K), erreicht:            W/(m² K)
+4.12 ☐    Vorhangfassaden
+          Umax. von 1,30 W/(m² K), erreicht:            W/(m² K)
+                                   -4-
+4a    ☐ Verbesserung des sommerlichen Wärmeschutzes
+        Beschreibung der Maßnahme:
+
+         ☐ Die Vorgaben der DIN 4108-2: 2013-02 werden eingehalten
+
+5     ☐ Erneuerung oder Einbau einer Lüftungsanlage
+        Beschreibung der Maßnahme:
+
+         ☐ Ausführungen zur Einhaltung der Anlage 5 der ESanMV liegen bei
+
+6       Erneuerung der Heizungsanlage
+6.1   ☐ Solarkollektoranlage
+        Hinweis: Photovoltaikanlagen sind nicht umfasst.
+        Hersteller und Typenbezeichnung gemäß BAFA-Liste der förderfähigen
+        Kollektoren und Solaranlagen:
+
+        ☐ Auszug aus BAFA-Liste (Stand: 1. Dezember 2024) liegt bei
+        alternativ: ☐ Nachweis Anlagenprüfung nach Anlage 6.1 der ESanMV liegt
+        bei; bei flüssigkeitsdurchströmten Kollektoren jährlicher Kollektorertrag
+        min. 525 kWh/m², vorliegend             kWh/m²
+        ☐ Nachweis des hydraulischen Abgleichs (Verfahren B) liegt bei
+        alternativ: ☐ Abgleich nach Anlage 6.1 der ESanMV nicht erforderlich
+6.2   ☐ Biomasseheizung
+        Hinweis: Anlagen < 5 kW, luftgeführte Pelletöfen, Scheitholzkaminöfen
+        und unter Naturzugbedingungen betriebene Anlagen sind nicht umfasst.
+        Hersteller und Typenbezeichnung gemäß BAFA-Liste der förderfähigen
+        Biomasseanlagen:
+
+        ☐ Auszug aus BAFA-Liste (Stand: 1. Dezember 2024) liegt bei
+        alternativ: ☐ Nachweis Anlagenprüfung nach Anlage 6.2 der ESanMV und
+        Erläuterung zur Einhaltung der Emissionsgrenzwerte liegen bei,
+        ETAs min. 81 %, vorliegend             %
+        ☐ nach Anlage 6.2 der ESanMV dimensionierter Pufferspeicher ist einge-
+        bunden
+        ☐ Nachweis des hydraulischen Abgleichs (Verfahren B) liegt bei
+6.3   ☐ Elektrisch angetriebene Wärmepumpe (WP)
+        Hersteller und Typenbezeichnung (bei Außenluft/Raumluft-WP: des Au-
+        ßengeräts) gemäß BAFA-Liste der förderfähigen WP-Anlagen:
+
+         ☐ Auszug aus BAFA-Liste (Stand: 1. Dezember 2024) liegt bei
+         alternativ: ☐ Nachweis Anlagenprüfung nach Anlage 6.3 der ESanMV und
+         Erläuterung zum erreichten ETAs liegen bei
+         ☐ bei Außenluft/Raumluft-WP bis 12 kW Heizleistung Effizienzklasse der
+         Gerätekombination min. A++, erreicht:        , Energielabel liegt bei
+         ☐ bei Außenluft/Raumluft-WP über 12 kW Heizleistung ETAs,h der Gerä-
+         tekombination min. 150 %, erreicht           , Herstellerblatt liegt bei
+         ☐ Nachweis des hydraulischen Abgleichs (Verfahren B) oder ☐ der Einre-
+         gulierung der Luftvolumenströme des luftgeführten Systems liegt bei
+                                        -5-
+        alternativ: ☐ Abgleich nicht erforderlich, da Außenluft/Raumluft-WP, deren
+        Inneneinheiten Sekundärluftgeräte einsetzen
+6.4   ☐ Brennstoffzellen
+        Hersteller und Typenbezeichnung:
+
+        ☐ Ausführungen zur Einhaltung der Anlage 6.4 der ESanMV liegen bei
+        ☐ Nachweis des hydraulischen Abgleichs (Verfahren B) liegt bei
+6.5   ☐ Bivalente Heizungsanlagen
+        Beschreibung der Maßnahme:
+
+        ☐ Ausführungen zur Einhaltung der jeweiligen Anlage der ESanMV unter
+        Nr. 6. und 6. .
+6.7   ☐ Gebäudenetz und Anschluss an ein Gebäude- oder Wärmenetz
+        Beschreibung der Maßnahme:
+
+          ☐ Ausführungen zur Einhaltung der Anlage 6.7 der ESanMV liegen bei
+
+7     ☐ Einbau von digitalen Systemen zur energetischen Betriebs- und Ver-
+        brauchsoptimierung
+        Beschreibung der Maßnahme:
+
+
+8     ☐ Optimierung einer bestehenden Heizungsanlage
+        Hinweis: Einbau und Austausch von Wärme- oder Stromerzeugern sind
+        nicht umfasst.
+        Beschreibung der Maßnahme:
+
+          ☐ Ausführungen zur Einhaltung der Anlage 8 der ESanMV liegen bei
+          ☐ Heizungsanlage bei Maßnahmenbeginn älter als 2 Jahre
+          ☐ Nachweis des hydraulischen Abgleichs (Verfahren B) liegt bei
+
+Hinweis: Die BAFA-Listen finden Sie unter www.bafa.de/EStG35c. Der hydraulische
+Abgleich ist nach Verfahren B gemäß Bestätigungsformular des VdZ e. V. durchzufüh-
+ren (www.vdzev.de).
+
+
+III. Beginn und Abschluss der energetischen Maßnahme
+
+ Nr. der Maßnahme           Maßnahmenbeginn             Maßnahmenabschluss
+
+
+
+
+Hinweis: Siehe hierzu Randnummer 2 des BMF-Schreibens vom 23. Dezember 2024.
+                                    -6-
+IV. Förderfähige Aufwendungen (Kosten der energetischen Maßnahme)
+
+ Nr. der Maßnahme        Kosten gem. Rechnung des Fachunternehmens
+                                      Euro
+                                      Euro
+                                      Euro
+                                      Euro
+☐ Die Rechnung des Fachunternehmens liegt bei.
+
+☐ Für nicht vom Fachunternehmen ausgeführte Umfeldmaßnahmen hat der Eigentü-
+  mer nach von ihm vorgelegten Rechnungen Aufwendungen in Höhe von
+  Euro getragen. Die Notwendigkeit dieser Umfeldmaßnahmen für die Durchführung
+  der energetischen Maßnahmen wird hiermit bestätigt.
+
+☐ Für selbst erworbene Materialien hat der Eigentümer nach von ihm vorgelegten
+  Rechnungen Aufwendungen in Höhe von             Euro getragen. Die Verwen-
+  dung dieser Materialien durch das Fachunternehmen wird hiermit bestätigt.
+
+☐ Die Kosten der planerischen Begleitung und Beaufsichtigung der energetischen
+  Maßnahmen durch einen Energieberater oder Energieeffizienz-Experten der Ener-
+  gieeffizienz-Expertenliste (www.energie-effizienz-experten.de) betragen
+  Euro. Die Rechnung liegt bei.
+
+☐ Die Kosten der Erteilung dieser Bescheinigung betragen          Euro.
+
+
+V. Ergänzende Angaben
+
+Hinweis: Wird über energetische Maßnahmen an einem Wohngebäude in Eigentums-
+gemeinschaft eine Gesamtbescheinigung erstellt, ist – in der Regel durch den Verwal-
+ter – hier zur Aufteilung der förderfähigen Aufwendungen auszuführen.
+
+
+
+
+Diese Bescheinigung beruht auf dem Muster des BMF-Schreibens vom 23. Dezem-
+ber 2024.
+
+
+
+______________________________________________________
+Datum, Stempel und Unterschrift
+

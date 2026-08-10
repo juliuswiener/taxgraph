@@ -1,0 +1,27 @@
+dokument:
+  norm_uri: "bmf/2024-12-23/IV-C-1-S-2296-c/anlage-1"
+  norm: "Anlage 1 zum BMF-Schreiben v. 23.12.2024: Formular 'Bescheinigung energetischer Maßnahmen nach § 35c Einkommensteuergesetz' (standalone Fassung)"
+  fassung: "23.12.2024"
+  quelle_url: "https://www.bundesfinanzministerium.de/Content/DE/Downloads/BMF_Schreiben/Steuerarten/Einkommensteuer/2024-12-23-muster-bescheinigung-pdf.pdf?__blob=publicationFile&v=3"
+  abrufdatum: "2026-08-10"
+  datei: "bmf_35c_musterbescheinigung_formular_2024-12-23.txt"
+  pdf_datei: "bmf_35c_musterbescheinigung_formular_2024-12-23.pdf"
+  sha256: "9434d40e10da8d37b0bb604d21ecbef3ad7d000d2dfc354f7f0f67b93f7c5ded"
+  pdf_sha256: "bd4e187774c97ef59916360484b922be4b83ab81b3a47124cddcd75d9bd3793f"
+  authority: verwaltung
+  redistributable: true
+  hinweis: >
+    Standalone-Publikation der Anlage 1 (identischer Formular-Text wie eingebettet in
+    bmf_35c_musterbescheinigung_2024-12-23, dort Zeilen 249-536), separat vom BMF als
+    eigene PDF-Datei bereitgestellt. Enthaelt die vollstaendige Massnahmen-Checkliste
+    (Waermedaemmung, Fenster, Heizungsanlagen inkl. Solarkollektor/Biomasse/Waermepumpe/
+    Brennstoffzelle/Gebaeudenetz) mit Verweisen auf die jeweiligen Anlagen der ESanMV
+    (Anlage 6.1-6.7 fuer Heizungsanlagen). Fuer den Foerderfinder relevant als
+    Referenz-Katalog der ueber § 35c EStG bescheinigungsfaehigen Massnahmen-Kategorien,
+    unabhaengig von den BEG-Foerdersaetzen. PDF via curl direkt vom BMF geladen,
+    pdftotext -layout, unbereinigt.
+  erwartete_anker:
+    - "Bescheinigung energetischer Maßnahmen nach § 35c Einkommensteuergesetz"
+    - "Elektrisch angetriebene Wärmepumpe (WP)"
+    - "Diese Bescheinigung beruht auf dem Muster des BMF-Schreibens vom 23. Dezem- ber 2024."
+  verwendet_in: ["Foerderfinder BEG-Heizungsfoerderung / § 35c Nachweis-Kette (nachrangig, optional)"]

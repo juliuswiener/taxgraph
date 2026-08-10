@@ -1,0 +1,58 @@
+dokument:
+  norm_uri: "bafa-kfw/beg-infoblatt-foerderfaehige-massnahmen/2026-08-10"
+  norm: "BEG-Infoblatt zu den förderfähigen Maßnahmen und Leistungen – Sanieren (BAFA/KfW gemeinsam, Version 10.1)"
+  fassung: "Version 10.1, Inkrafttreten 21.07.2026, KfW-Bestellnummer 600 000 4863"
+  quelle_url: "https://www.bafa.de/SharedDocs/Downloads/DE/Energie/beg_infoblatt_foerderfaehige_kosten_neu.pdf?__blob=publicationFile&v=13"
+  abrufdatum: "2026-08-10"
+  datei: "beg_infoblatt_2026-08-10.txt"
+  pdf_datei: "beg_infoblatt_2026-08-10.pdf"
+  sha256: "e3d9ae2f726f4cbeb84e3f58c137c3d210eb11b07f67d2e34e478d9ac49f721f"
+  pdf_sha256: "96789d940d1ec1b5d88540cd4b2d48592c6a162f98a492bf00a33b93401ac0ab"
+  authority: verwaltung
+  redistributable: true
+  hinweis: >
+    ACHTUNG QUELLENRANG: gemeinsames Dokument von BAFA und KfW (siehe Impressum),
+    Programmtraeger-Ebene wie kfw458_merkblatt_2026-07 -- kein Normgeber, sondern
+    Vollzugs-/Abwicklungsdokument zur Ermittlung foerderfaehiger KOSTEN (Kostenarten je
+    Massnahme), nicht der Foerdersaetze/Boni selbst. Fuer Parameterwerte (Prozentsaetze,
+    Deckel) bleibt die Foerderrichtlinie (beg_em_foerderrichtlinie_2026-07-17) die primaere
+    Quelle.
+
+    KRITISCHER BEFUND, SELBST-DEKLARIERT IM DOKUMENT (Zeilen 12-15): "Mit Version 10.1
+    wurde zunaechst ausschliesslich die Definition Worst-Performing-Building (WPB) [...]
+    an die aktuellen Foerderrichtlinien [...] angepasst. Die uebrigen Regelungen und
+    Anforderungen werden derzeit umfassend ueberarbeitet und an die neuen
+    Foerderbedingungen angepasst. Eine vollstaendig aktualisierte Fassung des Infoblatts
+    wird in Kuerze veroeffentlicht." Heisst: DIESES Dokument ist selbst nur TEILWEISE an
+    die Reform vom 21.07.2026 angepasst -- nur Abschnitt 1.6 (WPB) ist reform-aktuell,
+    alle anderen Abschnitte (2-9, insb. die Maßnahmenliste in Abschnitt 4) koennten noch
+    den Stand von Version 10.0 (01.07.2025, VOR der Reform) widerspiegeln. Fuer den
+    Foerderfinder heisst das: die GLIEDERUNG/Kategorienliste foerderfaehiger Massnahmen
+    (Abschnitte 2-8) ist brauchbar als Strukturgrundlage, aber jedes darin genannte
+    Detail sollte gegen die Foerderrichtlinie selbst gegengeprueft werden, bevor es als
+    reform-aktuell gilt. Eine "vollstaendig aktualisierte Fassung" existiert zum
+    Abrufzeitpunkt noch nicht -- erneut pruefen, sobald veroeffentlicht.
+
+    OFFENE FRAGE NICHT BEANTWORTET: der Begriff "Wertschoepfungsbonus" bzw.
+    "beihilferechtlich" kommt in diesem Dokument NICHT vor (Volltextsuche negativ,
+    2026-08-10). Die urspruengliche Vermutung, dieses Infoblatt sei die Quelle fuer den
+    beihilferechtlichen Vorbehalt beim Wertschoepfungsbonus, hat sich NICHT bestaetigt --
+    das Infoblatt behandelt Kostenarten, nicht Boni/Vorbehalte. Die Formulierung bleibt
+    unbelegt (siehe Hauptbericht).
+
+    POSITIVER BEFUND: Abschnitt 4.3 "Voraussetzungen fuer den Klimageschwindigkeits-Bonus"
+    (Zeile ~1429 im Volltext) referenziert explizit "Massnahmen nach Nummer 5.3 der
+    Foerderrichtlinie BEG EM" -- das ist dieselbe Nummerierung wie in der bereits
+    archivierten Richtlinie beg_em_foerderrichtlinie_2026-07-17, ein Indiz (kein Beweis),
+    dass zumindest dieser Abschnitt bereits reform-aktuell ist, obwohl der pauschale
+    Nicht-Aktualitaets-Hinweis oben fuer das gesamte Dokument gilt.
+
+    PDF via curl direkt von bafa.de geladen, Text via pdftotext -layout extrahiert,
+    Seiten-Kopf-/Fusszeilen ("Version 10.1 (07/2026), KfW-Bestellnummer: 600 000 4863"
+    + Seitenzahl, 39x) entfernt, sonst unveraendert.
+  erwartete_anker:
+    - "Mit Version 10.1 wurde zunächst ausschließlich die Definition Worst-Performing-Building (WPB)"
+    - "Eine vollständig aktualisierte Fassung des Infoblatts wird in Kürze veröffentlicht."
+    - "4.3 Voraussetzungen für den Klimageschwindigkeits-Bonus"
+    - "Maßnahmen nach Nummer 5.3 der Förderrichtlinie BEG EM"
+  verwendet_in: ["Foerderfinder BEG-Heizungsfoerderung / Screening foerderfaehige Massnahmen (mit Vorbehalt, siehe Hinweis)"]

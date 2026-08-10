@@ -1,0 +1,33 @@
+dokument:
+  norm_uri: "esanmv/gesamt/2026-08-10"
+  norm: "ESanMV (Energetische Sanierungsmaßnahmen-Verordnung, Rechtsverordnung nach § 35c Abs. 7 EStG)"
+  fassung: "zuletzt geändert durch Art. 1 der Verordnung vom 4. November 2024 (BGBl. 2024 I Nr. 341); gilt gem. § 3 ESanMV erstmals ab VZ 2025 (Maßnahmenbeginn nach dem 31.12.2024)"
+  quelle_url: "https://www.gesetze-im-internet.de/esanmv/ESanMV.pdf"
+  quelle_url_html: "https://www.gesetze-im-internet.de/esanmv/BJNR000300020.html"
+  abrufdatum: "2026-08-10"
+  datei: "esanmv_2026-08-10.txt"
+  pdf_datei: "esanmv_2026-08-10.pdf"
+  pdf_sha256: "80eeef60d81216093e00637741449a3ebfbcd6920bfb2d942c90616bc112b4db"
+  sha256: "2bbbb6de4efc5a480333bfa5d86ce2e30bcc5ed6d9b9c3f64010624ddec5936f"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: "ganze Verordnung (§§ 1-4 + Anlagen 1-8; keine Aufteilung nach Paragraph, da § 35c Abs. 7 EStG die Anlagen als Mindestanforderungs-Katalog referenziert und diese untrennbar von §§ 1/3 sind)"
+  hinweis: >
+    Ausfertigung 02.01.2020 (BGBl. I S. 3). Letzte Änderung Art. 1 der Verordnung vom
+    4.11.2024 (BGBl. 2024 I Nr. 341) — betrifft insb. Anlage 4a (neu), Anlage 6
+    (Heizungsanlagen, komplett neu gefasst) und Anlage 7 (digitale Systeme). § 3 ESanMV:
+    diese Fassung gilt erstmals für VZ 2025, für Maßnahmen mit Beginn nach 31.12.2024.
+    § 4: Verordnung tritt am 31.12.2029 außer Kraft (Stand-Vermerk im Original nennt
+    zusätzlich einen Außerkrafttretenstermin 1.1.2030 für § 4 selbst, laut Art. 1 Nr. 4
+    der Verordnung vom 14.6.2021 — beide Termine stehen so im Originaltext, kein
+    Abschreibfehler). Wortlaut aus PDF extrahiert (nicht HTML), um die Tabellenstruktur
+    der U-Wert-Anforderungen in Anlagen 1-4 und der Kennzahlen in Anlage 6 (Wärmepumpen-
+    Effizienz) zu erhalten; HTML-Fassung stichprobenartig gegengelesen, kein inhaltlicher
+    Unterschied in §§ 1-4 gefunden. § 35c Abs. 1 S. 6 EStG macht die "Anforderungen aus
+    der Rechtsverordnung nach Absatz 7" zur Tatbestandsvoraussetzung der Steuerermäßigung
+    — diese Verordnung ist damit Anspruchsvoraussetzung, nicht nur Betragsparameter.
+  erwartete_anker:
+    - "§ 3 Anwendungsregelungen"
+    - "erstmals für den Veranlagungszeitraum 2025"
+    - "Anlage 6 Erneuerung der Heizungsanlage"
+  verwendet_in: ["Foerderfinder BEG-Heizungsfoerderung / Anspruchspruefung § 35c EStG"]

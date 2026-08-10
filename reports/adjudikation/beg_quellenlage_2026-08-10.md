@@ -12,6 +12,11 @@ KfW-Merkblatt 458 wortgleich cross-verifiziert.** Offen bleibt ausschließlich d
 Bundesanzeiger-Zitierstelle (BAnz AT-Nummer) — die Richtlinie selbst führt sie noch als
 Platzhalter, und sie war über keine erreichbare Quelle final auffindbar.
 
+**Update Runde 2 (gleicher Tag):** ESanMV (Anspruchsvoraussetzung nach § 35c Abs. 1 S. 6
+EStG) und BEG-Infoblatt zu den förderfähigen Maßnahmen zusätzlich beschafft und gesichert,
+siehe Abschnitte weiter unten. Die "beihilferechtlich"-Frage beim Wertschöpfungsbonus bleibt
+auch nach Prüfung des Infoblatts **unbelegt**.
+
 ## Beschaffte Dokumente
 
 Alle Dateien liegen unter `sources/foerderung/` (Volltext .txt + Original .pdf + .meta.yaml
@@ -134,6 +139,96 @@ Zwei Einschränkungen für den weiteren Bau:
   Beschaffung des Infoblatts nicht als belegter Fakt in den Code, sondern als offene Notiz
   behandelt werden.
 
+## Runde 2 (2026-08-10): ESanMV, BEG-Infoblatt, Bescheinigungsmuster
+
+Nachtrag zum obigen Bericht, Auftrag: ESanMV dringend (Anspruchsvoraussetzung), Infoblatt
+zur Maßnahmenliste, Bescheinigungsmuster nachrangig/optional.
+
+### ESanMV (Energetische Sanierungsmaßnahmen-Verordnung)
+
+**Gefunden und vollständig gesichert.** Rechtsverordnung nach § 35c Abs. 7 EStG —
+§ 35c Abs. 1 S. 6 EStG macht "die Anforderungen aus der Rechtsverordnung nach Absatz 7"
+zur **Tatbestandsvoraussetzung** der Steuerermäßigung, nicht nur zu einem Betragsparameter.
+Ohne diese Verordnung kann der Förderfinder zwar Beträge rechnen, aber nicht die
+Anspruchsberechtigung prüfen — daher die von Auftraggeber markierte Dringlichkeit.
+
+- Quelle: `gesetze-im-internet.de/esanmv` (Bundesjustizministerium/juris), Volltext §§ 1-4 +
+  Anlagen 1-8.
+- Fundstellenkette: Ausfertigung 02.01.2020 (BGBl. I S. 3); letzte Änderung Art. 1 der
+  Verordnung vom 4.11.2024 (BGBl. 2024 I Nr. 341) — betrifft insb. Anlage 4a (neu), Anlage 6
+  (Heizungsanlagen, komplett neu gefasst) und Anlage 7 (digitale Systeme).
+- **§ 3 ESanMV (Anwendungsregelungen), primärquellenbestätigt**: "Diese Fassung der
+  Verordnung ist erstmals für den Veranlagungszeitraum 2025 anzuwenden; sie gilt für
+  energetische Maßnahmen, mit denen nach dem 31. Dezember 2024 begonnen wurde." Löst damit
+  einen zuvor offenen Punkt (VZ-2025-Anwendbarkeit) direkt aus dem Verordnungstext.
+- § 4: Stand-Vermerk im Original nennt sowohl ein Außerkrafttreten der Verordnung zum
+  31.12.2029 als auch, für § 4 selbst, einen Termin 1.1.2030 (laut Art. 1 Nr. 4 der
+  Verordnung vom 14.6.2021) — beide Angaben stehen so nebeneinander im Originaltext, kein
+  Abschreibfehler beim Sichern.
+- Extraktionsmethode bewusst PDF statt HTML: `scripts/freeze_source.py` wurde **nicht**
+  verwendet, weil sein generisches HTML-Tag-Stripping die Spaltenstruktur der U-Wert-Tabellen
+  (Anlagen 1-4) und der Wärmepumpen-Effizienzkennzahlen (Anlage 6) zerstört hätte. Stattdessen
+  `pdftotext -layout` auf das offizielle PDF; die HTML-Fassung wurde stichprobenartig
+  gegengelesen, kein inhaltlicher Unterschied in §§ 1-4 gefunden.
+- Datei: `sources/gesetze-im-internet/esanmv_2026-08-10.{txt,pdf,meta.yaml}`,
+  `einfrier_ebene: "ganze Verordnung"` (nicht nach Paragraph aufgeteilt, da § 35c Abs. 7 EStG
+  die Anlagen als Gesamtkatalog referenziert und diese untrennbar von §§ 1/3 sind).
+
+### BEG-Infoblatt zu den förderfähigen Maßnahmen und Leistungen – Sanieren
+
+**Gefunden und gesichert**, aber mit einer für den Förderfinder wichtigen Einschränkung.
+
+- Quelle: bafa.de, gemeinsames Dokument von BAFA und KfW, Version 10.1, Bestellnummer
+  600 000 4863. Datei: `sources/foerderung/beg_infoblatt_2026-08-10.{txt,pdf,meta.yaml}`.
+- Quellenrang wie beim KfW-Merkblatt 458: Programmträger-/Vollzugsdokument, kein Normgeber.
+  Inhaltlich zu **Kostenarten** je Maßnahme (was zählt als förderfähige Aufwendung), nicht zu
+  Fördersätzen/Boni — für Letztere bleibt die Förderrichtlinie selbst maßgeblich.
+- **Kritischer, selbst-deklarierter Befund im Dokument** (bestätigt den "sei
+  skeptisch"-Auftrag konkret): Version 10.1 hat laut eigenem Vorwort **ausschließlich** die
+  Definition Worst-Performing-Building (Abschnitt 1.6) an die 2026er-Reform angepasst; alle
+  übrigen Abschnitte (2-9, insb. die Maßnahmenliste in Abschnitt 4) werden laut Dokument
+  "derzeit umfassend überarbeitet", eine vollständig aktualisierte Fassung sei erst "in
+  Kürze" zu erwarten und existierte zum Abrufzeitpunkt noch nicht. Für den Förderfinder heißt
+  das: die Gliederung/Kategorienliste ist als Strukturgrundlage brauchbar, aber jedes Detail
+  darin muss gegen die Förderrichtlinie selbst gegengeprüft werden, bevor es als
+  reform-aktuell gilt.
+- **Negativbefund** (Runde-1-Hypothese nicht bestätigt): Volltextsuche nach "beihilf" und
+  "wertschöpfung" ergab in diesem Dokument **keinen Treffer**. Die Vermutung, dieses
+  Infoblatt sei die Quelle für den beihilferechtlichen Vorbehalt beim Wertschöpfungsbonus,
+  hat sich nicht bestätigt — das Infoblatt behandelt Kostenarten, keine Boni/Vorbehalte. Die
+  Formulierung bleibt weiterhin unbelegt.
+- **Positivbefund**: Abschnitt 4.3 "Voraussetzungen für den Klimageschwindigkeits-Bonus"
+  referenziert wörtlich "Maßnahmen nach Nummer 5.3 der Förderrichtlinie BEG EM" — identische
+  Nummerierung wie in der bereits archivierten Richtlinie
+  `beg_em_foerderrichtlinie_2026-07-17`. Ein Indiz (kein Beweis), dass zumindest dieser
+  Abschnitt bereits reform-aktuell ist, trotz des pauschalen Nicht-Aktualitäts-Hinweises für
+  das Gesamtdokument.
+
+### Bescheinigungsmuster nach § 35c Abs. 1 S. 7 EStG (nachrangig, Zusatzfund)
+
+Explizit als nachrangig markiert ("nicht lange danach suchen") — ohne größeren Suchaufwand
+gefunden (eine WebSearch, eine Landingpage, zwei Direktdownloads) und daher mitgesichert:
+
+- **BMF-Schreiben vom 23.12.2024** (GZ IV C 1 - S 2296-c/20/10003 :008): amtliches Muster der
+  Bescheinigung des ausführenden Fachunternehmens bzw. der nach § 88 GEG
+  ausstellungsberechtigten Person. Ersetzt BMF-Schreiben v. 26.01.2023 (BStBl I S. 218),
+  geändert durch BMF-Schreiben v. 06.02.2024 (BStBl I S. 237) — seit 01.01.2025 ein
+  einheitliches Muster (vorher getrennte Muster I/II). Gilt für Maßnahmenbeginn nach
+  31.12.2024; für früheren Beginn verweist das Schreiben auf die jeweiligen Vorgänger-Muster
+  (2020/2021/2023).
+- Rn. 12 des Schreibens bestätigt den Bezug zur ESanMV-Änderung: "Für die bescheinigten
+  Maßnahmen müssen die Mindestanforderungen der zum 1. Januar 2025 durch die Dritte
+  Verordnung zur Änderung der Energetische Sanierungsmaßnahmen-Verordnung vom 4. November
+  2024 (BGBl. I Nr. 341) angepassten ESanMV eingehalten werden." — dieselbe Änderungsverordnung
+  wie oben bei der ESanMV selbst gefunden, gegenseitig konsistent.
+- Zwei Dateien gesichert: `sources/bmf/bmf_35c_musterbescheinigung_2024-12-23.{txt,pdf,meta.yaml}`
+  (das Schreiben inkl. eingebettetem Formular) und
+  `sources/bmf/bmf_35c_musterbescheinigung_formular_2024-12-23.{txt,pdf,meta.yaml}`
+  (identischer Formular-Inhalt als eigenständige BMF-Publikation).
+- Charakter: Verwaltungsauffassung (`authority: verwaltung`), kein Gesetzestext — für den
+  Förderfinder relevant als Referenz-Katalog der über § 35c EStG bescheinigungsfähigen
+  Maßnahmen-Kategorien, nicht für die BEG-Fördersätze.
+
 ## Dateiliste
 
 ```
@@ -142,7 +237,12 @@ sources/foerderung/beg_wg_foerderrichtlinie_2026-07-17.{txt,pdf,meta.yaml}
 sources/foerderung/beg_nwg_foerderrichtlinie_2026-07-17.{txt,pdf,meta.yaml}
 sources/foerderung/kfw458_merkblatt_2026-07.{txt,pdf,meta.yaml}
 sources/foerderung/gmodg_bgbl-2026-i-226_2026-07-28.{txt,pdf,meta.yaml}
+sources/foerderung/beg_infoblatt_2026-08-10.{txt,pdf,meta.yaml}
+sources/gesetze-im-internet/esanmv_2026-08-10.{txt,pdf,meta.yaml}
+sources/bmf/bmf_35c_musterbescheinigung_2024-12-23.{txt,pdf,meta.yaml}
+sources/bmf/bmf_35c_musterbescheinigung_formular_2024-12-23.{txt,pdf,meta.yaml}
 ```
 
 Alle SHA256-Hashes in den `.meta.yaml`-Dateien wurden gegen die tatsächlichen Dateien
-gegengeprüft (ein Transkriptionsfehler beim KfW-PDF-Hash wurde dabei gefunden und korrigiert).
+gegengeprüft (ein Transkriptionsfehler beim KfW-PDF-Hash wurde dabei gefunden und korrigiert
+[Runde 1]; alle Runde-2-Hashes wurden nach Berechnung auf 64-stellige Hex-Länge geprüft).
