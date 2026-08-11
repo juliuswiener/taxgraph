@@ -361,19 +361,26 @@ def test_kist_rentner_mit_kapital(base):
 
 
 def test_kist_rentner_mit_kapital_solz(base):
-    """Rentner 20.000 + 50.000 Kapital: SolZ durch §32d-Abgeltung-KiSt unbeeinflusst.
+    """Rentner 20.000 + 50.000 Kapital: SolZ-Hauptbasis (§3 Abs.3 S.1) bleibt 0, aber der
+    separate Kapital-SolZ (§3 Abs.3 S.2, 5,5% ohne Freigrenze) kommt seit dem
+    rentner-solz-kap-st-tracking-Fix (BACKLOG, api.py — Setzstelle solz_info_r["kap_st"]
+    analog gesamt-Ring Z. 1282) korrekt oben drauf.
 
-    §32d Abs.1 S.3-5 ändert die Abgeltungsteuer (e/(4+k)-Korrektur), nicht die
-    SolZ-Basis. SolZ bleibt 0 (pre-existing, unter Freigrenze). KiSt = 1.222,68 EUR,
-    ESt = 13.585 EUR (nach e/(4+k)-Ermäßigung von 270 EUR).
+    §32d Abs.1 S.3-5 (e/(4+k)) ändert die Kapitalsteuer (kap_st_k=11.980 EUR), NICHT die
+    SolZ-Formel selbst: 5,5% × 11.980 EUR = 658,90 EUR = 65.890 Cent. Hauptbasis-Anteil
+    bleibt 0 (est_mit_fb=13.585€ − kap_st_k=11.980€ = 1.605€, weit unter Freigrenze).
+    KiSt = 1.222,68 EUR, ESt = 13.585 EUR (nach e/(4+k)-Ermäßigung von 270 EUR).
+
+    Vor dem Fix stand hier `solz_cent == 0` — das war der gefrorene Bug-Zustand (kap_st lief
+    nie in catala_solz, s. test_solz_ring_rentner_grenzfall_mit_kapital für die Kernmessung).
     """
     if not _catala_da():
         pytest.skip("Catala nicht verfügbar")
     _anlegen(base, "rkistsolz", "rentner_gesamt", _rentner_kegel(mit_kapital=True))
     st, erg = _req(base, "GET", "/fall/rkistsolz/ergebnis")
     assert st == 200
-    # SolZ unverändert (0, pre-existing)
-    assert erg.get("solz_cent") == 0, f"SolZ durch Fix geändert: {erg}"
+    # Kapital-SolZ: 5,5% × 11.980€ = 65.890 Cent (§3 Abs.3 S.2, additiv ohne Freigrenze)
+    assert erg.get("solz_cent") == 65890, f"SolZ != 65.890 Cent: {erg}"
     # KiSt = 122.268 CENT (Rente 14445 + Kapital 107823)
     assert erg.get("kist_cent") == 122268, (
         f"KiSt {erg.get('kist_cent')} != 122268. erg={erg}")

@@ -322,11 +322,20 @@ def test_solz_ring_rentner_grenzfall_mit_kapital(base):
     + 5.000 EUR Kapitalerträge − 1.000 EUR Sparer-PB = 4.000 EUR stpfl → Kapitalsteuer ~1.000 EUR.
 
     § 3 Abs. 3 S. 2 SolzG: Kapital-SolZ = 5.5% auf Kapitalsteuer, ADDITIV ohne Freigrenze.
-    Erwartung:
+    § 3 Abs. 3 S. 1: die Basis fuer den SolZ auf die UEBRIGE ESt wird um genau diese
+    Kapitalsteuer GEMINDERT — hier bleibt sie unter der Freigrenze, SolZ auf diesen Teil = 0.
+    Erwartung (exakt, nicht nur ein Mindestwert — s. Ratschen-Fund unten):
       - SolZ ohne Kapital: 0 (ESt unter FG)
-      - SolZ mit Kapital: 5.5% × 1.000€ = 55€ (5.500 Cent)
+      - SolZ mit Kapital: 5.5% × 1.000€ = 55€ = 5.500 Cent (NUR der Kapital-Anteil, S.1
+        senkt die Haupt-Basis exakt auf den kap-losen Wert, der unter der FG bleibt)
 
-    Mutation-Test: Gate invertieren (Kapital-SolZ weglassen) → delta = 0, false green erkannt.
+    RATSCHEN-FUND (BACKLOG rentner-solz-kap-st-tracking, bada2a0): bis zu diesem Fix fehlte im
+    rentner-Ring die Setzstelle fuer solz_info_r["kap_st"] (Gegenstueck zu api.py:1282 im
+    gesamt-Ring) — kapital_steuer=0 lief in catala_solz, S.1 minderte die Basis NIE, S.2 (Kapital-
+    SolZ) fehlte GANZ. Ergebnis war NICHT "delta=0" (das haette diese alte lose Assertion
+    `delta >= 5000` gefangen), sondern solz_mit=11.197 Cent — mehr als DOPPELT der korrekte Wert,
+    weil die volle Basis (ESt+Kapitalsteuer) unreduziert in die Milderungszone (§4 S.2) lief. Eine
+    lose Untergrenze haette das nicht gefangen (11.197 >= 5.000 ist wahr). Deshalb jetzt exakt.
     """
     catala = _catala_da()
 
@@ -373,15 +382,17 @@ def test_solz_ring_rentner_grenzfall_mit_kapital(base):
         # Ohne Kapital: ESt unter FG → SolZ 0
         assert solz_ohne == 0, f"Rente 88k unter FG: solz_ohne sollte 0 sein, got {solz_ohne}"
 
-        # Mit Kapital: SolZ aus Kapitalsteuer, aber Gleitzone § 4 SolzG kann Mitigation applizieren
-        # bei Grenzfall-Nähe. Baseline: 1.000€ Kapitalsteuer × 5.5% = 55€ = 5.500 Cent.
-        # Mit Gleitzone-Mitigation: bis zu 2× so hoch in worst-case-Grenzfall.
-        assert solz_mit > 0, f"Rente 88k + Kapital: solz_mit sollte > 0, got {solz_mit}"
+        # Mit Kapital: 1.000€ Kapitalsteuer × 5.5% = 55€ = 5.500 Cent, EXAKT (nicht nur > 0 —
+        # eine lose Untergrenze haette den 11.197-Cent-Bug (Basis nicht gemindert, S.1 fehlte)
+        # nicht gefangen, s. Ratschen-Fund im Docstring).
+        assert solz_mit == 5500, (
+            f"Rente 88k + Kapital: solz_mit sollte exakt 5.500 Cent sein (5.5% von "
+            f"1.000€ Kapitalsteuer, §3 Abs.3 S.2 SolzG additiv), got {solz_mit}"
+        )
 
-        # Delta sollte mindestens 5.000 Cent sein (Minimal-SolZ), kann aber bis 11.000+ sein bei Gleitzone.
         delta = solz_mit - solz_ohne
-        assert delta >= 5000, (
-            f"Kapital-SolZ delta sollte ≥5.000 cent, got delta={delta} "
+        assert delta == 5500, (
+            f"Kapital-SolZ delta sollte exakt 5.500 Cent sein, got delta={delta} "
             f"(solz_ohne={solz_ohne}, solz_mit={solz_mit})"
         )
 
@@ -391,6 +402,6 @@ def test_solz_ring_rentner_grenzfall_mit_kapital(base):
         print(f"  est_mit={est_mit} cent ({est_mit//100}€)")
         print(f"  solz_ohne={solz_ohne} cent ({solz_ohne//100}€)")
         print(f"  solz_mit={solz_mit} cent ({solz_mit//100}€)")
-        print(f"  delta={delta} cent ({delta//100}€) [Gleitzone § 4 SolzG möglich]")
+        print(f"  delta={delta} cent ({delta//100}€)")
     else:
         assert solz_ohne is None or solz_mit is None or not catala

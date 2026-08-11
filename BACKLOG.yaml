@@ -394,8 +394,8 @@ abgabe:
 
   - id: rentner-solz-kap-st-tracking
     titel: "rentner-Ring: SolZ rechnet ohne die § 32d-Kapitalsteuer (kap_st wird nie getrackt)"
-    status: offen
-    richtung: "unklar, beide Effekte gegenlaeufig — muss gemessen werden"
+    status: geschlossen
+    richtung: "gemessen 2026-08-11: netto OVER-TAX, S.1 (Basis nicht gemindert) dominiert klar"
     entdeckt: |
       2026-08-10 von p33b-2b beim KAP-Stufe-3-Bau gemeldet ("rentner-Ring-SolZ-kap_st-
       Tracking-Gap, MUTATION-Marker in api.py"), von team-lead nachgemessen. Der Marker
@@ -433,6 +433,27 @@ abgabe:
       der zufaellig in derselben Funktion arbeitete. Ein Gate gegen MUTATION/TODO-Marker im
       committeten Produktionscode waere billig — siehe auch commit-nur-defer-sweep-2026-08-10,
       dieselbe Klasse.
+    messung: |
+      2026-08-11, Grenzfall-Szenario (Rente 88.000€ + 5.000€ Kapitalertraege, ESt knapp unter
+      Freigrenze): solz_mit VOR Fix = 11.197 Cent, NACH Fix = 5.500 Cent — mehr als DOPPELT zu
+      viel SolZ, weil die volle Basis (ESt+Kapitalsteuer, ungemindert) in die Milderungszone
+      §4 S.2 SolzG lief. S.1 (Basis-Minderung, fehlte) dominiert S.2 (separater Kapital-SolZ,
+      fehlte ebenfalls) klar in diesem Fall — netto over-tax, kein Wash. test_kist_rentner_
+      mit_kapital_solz (test_p51a_kist_bemessung.py) bestaetigt am zweiten, unabhaengigen
+      Szenario denselben Mechanismus: solz_cent 0 -> 65.890 Cent (5,5% von 11.980€ Kapital-
+      steuer, additiv, waehrend der Hauptbasis-Anteil bei 0 bleibt — dort dominiert S.2, weil
+      die Hauptbasis auch ungemindert weit unter der Freigrenze liegt).
+    fix: |
+      2026-08-11 von p33b-2b: fehlende Setzstelle solz_info_r["kap_st"] = kap_st_k im
+      kap>0-Zweig von _festzusetzende_r ergaenzt (1:1 gesamt-Ring-Praezedenz api.py:1282).
+      Der gemeinsame Tail (§32b/§35-Wrapper + SolZ-Tracking, vorher unconditional
+      solz_info_r["kap_st"] = 0 fuer BEIDE Zweige) auf ein preserve-if-already-set-Muster
+      (`.get("kap_st", 0)`) umgestellt, damit er den kap>0-Zweig nicht mehr ueberschreibt.
+      test_solz_ring_rentner_grenzfall_mit_kapital von losen (`>=`) auf exakte Assertions
+      (`== 5500`) gehaertet — die alte Fassung haette den 11.197-Cent-Bug NICHT gefangen.
+      test_kist_rentner_mit_kapital_solz (test_p51a_kist_bemessung.py) hatte den Bug-Zustand
+      (solz_cent==0, Kommentar "pre-existing") explizit als Erwartung eingefroren — korrigiert
+      auf 65.890 Cent.
 
   - id: checkest-blockmatrix
     titel: "Block-Matrix gegen checkESt (Nachfolger der Einzelfeld-Matrix)"

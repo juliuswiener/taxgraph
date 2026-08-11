@@ -1660,6 +1660,10 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     if freibetrag > 0 or kinder == 0:
                         solz_info_r["est_mit_fb"] = result
                         solz_info_r["est_roh_ohne_kap"] = est_raw
+                        # BACKLOG rentner-solz-kap-st-tracking (bada2a0-Fund): fehlte, dadurch lief
+                        # kapital_steuer=0 in catala_solz -> §3 Abs.3 S.1 minderte die Basis nie und
+                        # S.2 (5,5% ohne Freigrenze) fehlte ganz. 1:1 gesamt-Präzedenz (Z. 1282).
+                        solz_info_r["kap_st"] = kap_st_k
                         if extras is not None:
                             extras["kist_kap_cent"] = kist_kap_cent
                             extras["kap_guenstiger_gewonnen"] = guenstiger_r
@@ -1680,13 +1684,15 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                     # §35-Deckel-3 post-wrapper mit tarifliche_32b
                     if p35_credit_r > 0:
                         result = max(0, result - p35_credit_r)
-                # SolZ-Tracking: nur bei kap_st=0 (keine Günstigerprüfung).
-                # est_roh_ohne_kap bleibt unverändert, wenn bereits vom kap>0-Zweig gesetzt
-                # (dort = est_raw, die ESt ohne §32d-Kapital). Bei kap=0 wird hier erstmals gesetzt.
+                # SolZ-Tracking: est_mit_fb wird HIER final gesetzt (nach §32b/§35-Wrappern), da
+                # `result` sich seit dem kap>0-Zweig (falls durchlaufen) noch ändern kann.
+                # est_roh_ohne_kap/kap_st bleiben unverändert, wenn bereits vom kap>0-Zweig gesetzt
+                # (dort = est_raw bzw. kap_st_k). Bei kap<=0 werden beide hier erstmals gesetzt
+                # (est_roh_ohne_kap=result, kap_st=0 — kein §32d-Kapitalanteil vorhanden).
                 if freibetrag > 0 or kinder == 0:
                     solz_info_r["est_mit_fb"] = result
                     solz_info_r["est_roh_ohne_kap"] = solz_info_r.get("est_roh_ohne_kap", result)
-                    solz_info_r["kap_st"] = 0
+                    solz_info_r["kap_st"] = solz_info_r.get("kap_st", 0)
                 return result
 
             # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6, Fund D):
@@ -1707,12 +1713,9 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 solz_container[0] = runner.catala_solz({
                     "veranlagungszeitraum": vz,
                     "bemessungsgrundlage": solz_info_r["est_mit_fb"],
-                    # Heute IMMER 0 — nicht als Konstante gemeint, sondern weil solz_info_r
-                    # ["kap_st"] nur an einer Stelle gesetzt wird (oben, auf 0) und dem
-                    # rentner-Ring das Gegenstueck zur gesamt-Ring-Zeile fehlt, die den echten
-                    # Wert traegt (`solz_info["kap_st"] = kap_st_k`). Der Zugriff steht hier
-                    # trotzdem als get(), damit der SolZ automatisch richtig rechnet, sobald das
-                    # Tracking nachgezogen wird. BACKLOG rentner-solz-kap-st-tracking.
+                    # kap_st_k (1:1 gesamt-Präzedenz Z. 1282) — BACKLOG rentner-solz-kap-st-tracking
+                    # geschlossen (bada2a0-Fund): Setzstelle oben ergänzt (kap>0-Zweig), .get()
+                    # bleibt als fail-closed-Default (0) für den kap<=0-Zweig stehen.
                     "kapital_steuer": solz_info_r.get("kap_st", 0),
                     "splitting": rentner_g["veranlagung"] == "zusammen"})
             # KiSt § 51a: Basis = KiFB-fiktive ESt OHNE §32d-Kapital (= est_roh_ohne_kap).
