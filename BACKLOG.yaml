@@ -455,6 +455,53 @@ abgabe:
       (solz_cent==0, Kommentar "pre-existing") explizit als Erwartung eingefroren — korrigiert
       auf 65.890 Cent.
 
+  - id: kinderbetreuung-ohne-qualifikationspruefung
+    titel: "§10 Abs.1 Nr.5 Kinderbetreuung: keine Alters-/Behinderungspruefung — jedes Kind zaehlte"
+    status: geschlossen
+    entdeckt: |
+      commit-nur-defer-sweep-2026-08-10, Fund Nr. 5 (ca23e047, 2026-07-22): "Kind-Qualifikation
+      (§32), Ausschluesse (§10 Abs.1 Nr.5 S.2), Rechnung/Zahlung (extern)" nie geschlossen.
+      Von p33b-2b als Punkt 2a (Reihenfolge nach rentner-solz-kap-st-tracking) aufgegriffen.
+    befund: |
+      rules.yaml registriert `kind_unter_14_haushaltszugehoerig` als Geltungsbedingung
+      (Anwendbarkeitsvoraussetzung) fuer p10_1_5_kinderbetreuung — aber kein Feld fragte sie
+      ab. Der luecken-Eintrag in bindung_p10_1_5_gesamt.yaml behauptete "Kind-Qualifikation
+      ... wird vorgelagert ueberprueft (§32-Geltung / Ring-Gate)" — das gab es nicht: grep
+      kind_geburtsjahr in *.py ausserhalb Test-Fixtures = 0 Treffer. Beide
+      _kinderbetreuung_summe-Closures (api.py, gesamt Z.706 + rentner Z.1368) summierten
+      jedes Kind mit kinderbetreuungskosten>0, unabhaengig von Alter oder Behinderung.
+      "Versprochene Bedingung materialisieren"-Klasse (dieselbe wie beim §33b-Partner-PB).
+    scoping: |
+      kind_geburtsjahr (einziges vorhandenes Alters-Feld) haengt an einer FREMDEN
+      Geltungsbedingung (kind_durch_idnr_identifiziert, §32-Kinderfreibetrag-Flow) — ein
+      Fail-Closed-Gate darauf haette Kinderbetreuung fuer jeden Nutzer ausserhalb dieses Flows
+      auf 0 gesetzt (bestaetigt: kein Test in test_p10_1_5_ring.py/test_differential_zone_d.py/
+      test_kz_bindung_durchgang.py/test_nicht_deklariert_inventar.py setzt kind_geburtsjahr).
+      Deshalb NEUES, eigenstaendiges askable bool-Feld statt Wiederverwendung.
+    fix: |
+      2026-08-11 von p33b-2b: neues Feld kind_unter_14_haushaltszugehoerig in
+      bindung_p10_1_5_gesamt.yaml (instanz_gruppe kind, elster_kz: null — reines
+      Anwendbarkeits-Gate, kein Vordruck-Kz, kz_status endgueltig), Laien-Frage deckt beide
+      Alternativen der Norm (unter 14 ODER Behinderungs-Ausnahme) in einer Ja/Nein-Frage ab.
+      Python-Gate in beiden _kinderbetreuung_summe-Closures (api.py) — mirrored auf
+      _kind_kv_pv_summe's kind_idnr-Pattern: fail-closed, unbeantwortet/false -> Kind zaehlt
+      nicht mit. api_constants.py KINDERBETREUUNG-Tupel um das neue Feld erweitert (sonst tote
+      Bindung, test_bindungstabelle::test_g waere rot). luecken-Eintrag korrigiert (die
+      Behauptung "wird vorgelagert ueberprueft" war falsch und ist raus).
+      Betrifft NUR die interne Steuerberechnung, NICHT die Elster-Deklaration (E0506105 bleibt
+      unveraendert) — orthogonal zu anlage-kind-unvollstaendig (dort: Deklarierbarkeit von
+      Anlage Kind selbst, kind_vorname fehlt).
+    tests: |
+      tests/test_p10_1_5_ring.py: bestehende 2 Tests brauchten das neue Gate=True in der
+      Fixtur (KINDERBETREUUNG_2KINDER), sonst waeren sie auf Δ=0 gefallen. 2 neue Gegenproben
+      (gesamt + rentner je einzeln): Kind 2 ohne Bestaetigung zaehlt nicht mit (Δ sinkt von
+      267.200/267.300 auf 200.000/200.100). Mutationsprobe manuell in BEIDEN Ringen einzeln
+      gefahren (Gate-Zeile durch `if False` ersetzt, Test faellt exakt auf den alten
+      ungefilterten Δ-Wert zurueck, dann zurueckgebaut) — team-lead hatte den rentner-Zweig
+      zunaechst unzureichend gedeckt gefunden (Mutation in beiden Ringen warf nur den
+      gesamt-Test um), Nachtrag test_p10_1_5_ring_rentner_ohne_qualifikationsgate_kein_abzug
+      deckt ihn jetzt einzeln ab.
+
   - id: anlage-kind-unvollstaendig
     titel: "Anlage Kind: kind_vorname fehlt komplett — jede Kind-Instanz macht die Erklaerung uneinreichbar"
     status: offen
@@ -1264,6 +1311,10 @@ rechenluecken:
          673 bestaetigt: _kinderbetreuung_summe summiert nur den Betrag, keine der drei Pruefungen.
          GELD (Betreuungskosten fuer ein nicht-anspruchsberechtigtes Kind wuerden unbemerkt
          abgezogen — ungemessen, ob/wie oft das in der Praxis vorkommt).
+         GESCHLOSSEN 2026-08-11 (Kind-Qualifikationsteil, s. kinderbetreuung-ohne-
+         qualifikationspruefung): Alters-/Behinderungsgate gebaut. Ausschluesse S.2 und
+         Rechnung/Zahlung S.4 bleiben wie im urspruenglichen luecken-Kommentar per
+         Fragetext/Beleg-Writer adressiert, nicht separat verifiziert.
 
       6. §16 Abs.4 per-Person-Freibetrag — b969c062 (2026-07-19): "per-Person §16-FB (je 45000)
          deferred." Code-Gegenprobe api.py:906-907/1413-1415 bestaetigt: EIN vg_euro, EIN
@@ -1294,9 +1345,10 @@ rechenluecken:
     einschaetzung: |
       Kein zweiter dbac431: die anderen 8 sind kleiner (kein 13.568-EUR-Fund), aber dieselbe
       Klasse — bewusstes Wissen, das im Commit-Text eingefroren blieb statt in BACKLOG/reports zu
-      wandern. 2 von 9 sind GELD-nah (Nr. 3 Verlustvortrag, Nr. 5 Kinderbetreuung), 1 vermutet
-      GELD ungemessen (Nr. 6 §16-FB), Rest STRUKTUR/Deklaration/Recht. Keine Aussage, ob/was
-      gebaut werden soll — nur, dass es jetzt sichtbar ist.
+      wandern. 2 von 9 waren GELD-nah (Nr. 3 Verlustvortrag, Nr. 5 Kinderbetreuung — Nr. 5
+      2026-08-11 geschlossen, s.o.), 1 vermutet GELD ungemessen (Nr. 6 §16-FB), Rest
+      STRUKTUR/Deklaration/Recht. Keine Aussage, ob/was gebaut werden soll — nur, dass es jetzt
+      sichtbar ist.
     aufwand_h: unbeziffert
     api_py: "kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation. Sweep-Skript
       (nicht Teil des Repos): /tmp/claude-1000/-home-julius-00-projects-168-TaxGraph-taxgraph/
