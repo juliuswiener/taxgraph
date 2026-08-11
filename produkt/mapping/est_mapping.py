@@ -73,6 +73,14 @@ _KOMMA_OHNE_E60_KZ = frozenset({
     "E1904701",  # Kapitalertragsteuer (Anlage KAP Zeile 37, § 36 Abs. 2 S. 1 Nr. 2 Anrechnung)
     "E1904901",  # Solidaritätszuschlag zur KapESt (Anlage KAP Zeile 38)
     "E1904801",  # Kirchensteuer zur KapESt (Anlage KAP Zeile 39)
+    # Zeile 41 gehoert in denselben Vordruck-Block wie 37-39 (Seite 3, Spalten "EUR | Ct") und
+    # traegt im XSD denselben Dezimal-Typ — nur ohne NichtNeg. Beim Stufe-3-Bau (9801efc) wurde
+    # sie hier vergessen; gemessen 2026-08-11 gegen checkESt:
+    #   "Feld '$/KAP[1]/St_Abz_Betr_Inl_u_Inv_Ert[1]/E1905101[1]$':
+    #    Geldbetraege muessen vom Format '0,00' sein"
+    # Der Wert stand als "1000" statt "1000,00" im XML — eine Erklaerung mit angerechneter
+    # auslaendischer Steuer war damit nicht einreichbar.
+    "E1905101",  # anrechenbare noch nicht angerechnete ausl. Steuer (Anlage KAP Zeile 41, q)
 })
 
 

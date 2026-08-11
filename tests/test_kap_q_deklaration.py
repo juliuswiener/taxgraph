@@ -59,25 +59,42 @@ def test_q_unbeantwortet_kein_kz(bindung):
 
 
 def test_q_beantwortet_kz_erscheint(bindung):
-    """q=100 EUR beantwortet -> E1905101 deklariert mit dem EUR-Wert (Cent-Feld, Konvention wie
-    E1900701 in test_kap_nulldeklaration.py)."""
+    """q=100 EUR beantwortet -> E1905101 deklariert als "100,00".
+
+    Erwartung korrigiert 2026-08-11: hier stand `== 100` (roher Integer), analog zu E1900701.
+    Das war falsch — die beiden Kz haben verschiedene XSD-Typen:
+
+        E1900701  Zeile 7   GanzzahlNichtNegOhneFuehrNull...       -> "5000"
+        E1905101  Zeile 41  Dezimalzahl...MinNK2_MaxNK2...         -> "100,00"
+
+    Der Vordruck zeigt es auch: Seite 3 fuehrt bei den Steuerabzugsbetraegen die Spalten
+    "EUR | Ct", Zeile 7 nur "EUR". checkESt lehnte den Integer ab:
+    "Geldbetraege muessen vom Format '0,00' sein". Das Kz gehoert deshalb in
+    est_mapping._KOMMA_OHNE_E60_KZ, wo die drei Geschwister aus Stufe 2 schon standen.
+    Format-Gate: tests/test_kap_dezimalformat.py.
+    """
     felder = {"kap_kapitalertraege": 500000, "kap_gewinn_aktien": 0, "kap_verlust_aktien": 0,
               "kap_gewinn_sonstige": 0, "kap_verlust_sonstige": 0,
               "kap_q_auslaendische_steuer": 10000}
     snap, _ = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"].get("E1905101") == 100, (
-        f"E1905101 fehlt oder falscher Wert: {r['deklaration'].get('E1905101')} != 100. "
+    assert r["deklaration"].get("E1905101") == "100,00", (
+        f"E1905101 fehlt oder falsches Format: {r['deklaration'].get('E1905101')!r} != '100,00'. "
         f"deklaration={r['deklaration']}")
 
 
 def test_q_null_beantwortet_kz_bleibt(bindung):
     """q=0 EXPLIZIT beantwortet (nicht: unbeantwortet) -> Kz bleibt deklariert (echte Null, keine
-    Sonderbehandlung wie bei KAP_FELDER_A — der Vordruck erlaubt 0, s. Bindung-Kommentar)."""
+    Sonderbehandlung wie bei KAP_FELDER_A — der Vordruck erlaubt 0, s. Bindung-Kommentar).
+
+    Auch die Null traegt das Dezimalformat: "0,00", nicht 0. Siehe
+    test_q_beantwortet_kz_erscheint.
+    """
     felder = {"kap_kapitalertraege": 500000, "kap_gewinn_aktien": 0, "kap_verlust_aktien": 0,
               "kap_gewinn_sonstige": 0, "kap_verlust_sonstige": 0,
               "kap_q_auslaendische_steuer": 0}
     snap, _ = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"].get("E1905101") == 0, (
-        f"E1905101 sollte als echte Null deklariert bleiben: {r['deklaration'].get('E1905101')}")
+    assert r["deklaration"].get("E1905101") == "0,00", (
+        f"E1905101 sollte als echte Null im Dezimalformat bleiben: "
+        f"{r['deklaration'].get('E1905101')!r} != '0,00'")
