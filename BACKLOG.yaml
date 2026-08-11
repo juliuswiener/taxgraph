@@ -455,6 +455,45 @@ abgabe:
       (solz_cent==0, Kommentar "pre-existing") explizit als Erwartung eingefroren — korrigiert
       auf 65.890 Cent.
 
+  - id: anlage-kind-unvollstaendig
+    titel: "Anlage Kind: kind_vorname fehlt komplett — jede Kind-Instanz macht die Erklaerung uneinreichbar"
+    status: offen
+    richtung: "ABGABE-BLOCKER (rc=610001002), sobald eine Kind-Instanz angelegt wird"
+    entdeckt: "2026-08-11, Block-Matrix-Sweep (checkest-blockmatrix)"
+    messung: |
+      Ratschen-Fixtur gesamt, Abgabe-XML scharf gegen ERiC:
+        A) nur fam_anzahl_kinder=1              rc=0          0 Beanstandungen
+        B) + kind_idnr                          rc=610001002  "Tragen Sie bitte den Vornamen
+                                                               des Kindes ein (1. Anlage Kind)."
+        C) + kinderbetreuungskosten             rc=610001002  4 Beanstandungen
+      Der Kinderfreibetrag laeuft also OHNE Anlage Kind durch (A). Sobald aber eine
+      Kind-INSTANZ entsteht, verlangt checkESt den Vornamen — und den gibt es bei uns nicht.
+    ursache: |
+      `kind_vorname` existiert weder in der Bindungstabelle noch in einem Scheiben-Kegel —
+      0 Treffer repo-weit. Zusaetzlich sind fuenf gebundene Kind-Felder nicht im
+      gesamt-Kegel und damit nicht setzbar:
+        kind_geburtsjahr, kind_kindschaftsverhaeltnis_a/b, kind_kindschaftsverh_zeitraum_a/b
+      Im Kegel sind: kind_idnr, kind_kv, kind_pv, kind_grad_der_behinderung,
+      kind_hilflos_blind_taubblind, kind_hinterbliebenen_uebertragung,
+      kind_behinderten_pb_antrag, kind_pb_nicht_selbst_genutzt, kinderbetreuungskosten.
+    betroffen: |
+      Alle kindbezogenen Abzuege AUSSER dem Freibetrag sind heute nicht einreichbar:
+        § 10 Abs. 1 Nr. 5   Kinderbetreuungskosten
+        § 10 Abs. 1 Nr. 3   KV/PV-Beitraege des Kindes
+        § 33b Abs. 5        Uebertragung des Kind-Pauschbetrags
+      Der reine Kinderfreibetrag (fam_anzahl_kinder) ist NICHT betroffen — er kommt ohne
+      Anlage Kind aus.
+    fall_c_weitere_beanstandungen: |
+      Bei gesetzten Betreuungskosten kamen VIER Beanstandungen, u. a.: "Die Eltern des
+      Kindes werden nicht zusammen veranlagt. Bitte geben Sie daher auch die Hoehe der
+      Kinderbetreuungskosten an, die von der [anderen Person getragen wurden]". Vor dem Bau
+      alle vier einzeln aufnehmen — der Vorname ist nur die erste.
+    zusammenhang: |
+      Verwandt mit dem DEFER-Fund "Kinderbetreuung ohne Alters-/Ausschlusspruefung"
+      (commit-nur-defer-sweep-2026-08-10): dort fehlt die Qualifikationspruefung nach
+      § 10 Abs. 1 Nr. 5 (unter 14 bzw. Behinderung), hier die Deklarierbarkeit. Beide
+      betreffen denselben Block und sollten zusammen gebaut werden.
+
   - id: checkest-blockmatrix
     titel: "Block-Matrix gegen checkESt (Nachfolger der Einzelfeld-Matrix)"
     status: offen
