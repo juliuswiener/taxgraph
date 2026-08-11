@@ -705,12 +705,20 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
 
         def _kinderbetreuung_summe() -> int:
             """Per-Kind-Summe §10 Abs.1 Nr.5 via EM.instanzen. Keine Gleichverteilung mehr.
-            (2026-08-06 Fix: 2 Kinder/10000€ → 6400€ statt 8000€.)"""
+            (2026-08-06 Fix: 2 Kinder/10000€ → 6400€ statt 8000€.)
+            Voraussetzung kind_unter_14_haushaltszugehoerig (S.1, Geltungsbedingung in
+            rules.yaml/p10_1_5_kinderbetreuung, bislang unbewacht): bei fehlender/verneinter
+            Bestaetigung wird das Kind NICHT eingerechnet (over-tax-safe, kein Abzug ohne
+            Altersnachweis). 2026-08-11 Fix: vorher summierte diese Funktion JEDES Kind ohne
+            Alters-/Behinderungspruefung."""
             if store is None:
                 return 0
             total = 0
             for inst in EM.instanzen(store, bindung, "kind"):
                 if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
+                    qualifiziert = inst["felder"].get("kind_unter_14_haushaltszugehoerig", {}).get("wert")
+                    if qualifiziert is not True:
+                        continue
                     aufw = inst["felder"].get("kinderbetreuungskosten", {}).get("wert")
                     if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
                         total += runner.catala_p10_1_5_kinderbetreuung({
@@ -1366,12 +1374,19 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                                      and not isinstance(rf, bool) else None)})
 
         def _kinderbetreuung_summe() -> int:
-            """Per-Kind-Summe §10 Abs.1 Nr.5 — rentner-Zweig (eigene Closure)."""
+            """Per-Kind-Summe §10 Abs.1 Nr.5 — rentner-Zweig (eigene Closure).
+            Voraussetzung kind_unter_14_haushaltszugehoerig (S.1, s. gesamt-Zweig): bei
+            fehlender/verneinter Bestaetigung wird das Kind NICHT eingerechnet
+            (over-tax-safe). 2026-08-11 Fix: vorher summierte diese Funktion JEDES Kind ohne
+            Alters-/Behinderungspruefung."""
             if store is None:
                 return 0
             total = 0
             for inst in EM.instanzen(store, bindung, "kind"):
                 if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
+                    qualifiziert = inst["felder"].get("kind_unter_14_haushaltszugehoerig", {}).get("wert")
+                    if qualifiziert is not True:
+                        continue
                     aufw = inst["felder"].get("kinderbetreuungskosten", {}).get("wert")
                     if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
                         total += runner.catala_p10_1_5_kinderbetreuung({

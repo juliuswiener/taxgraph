@@ -7,6 +7,29 @@ scheibe: "Kinderbetreuungskosten (p10_1_5_kinderbetreuung)"
 
 bindungen:
   # ========================= Kinderbetreuungskosten (p10_1_5_kinderbetreuung) =========================
+  # 2026-08-11 Fix: Kind-Qualifikation war bislang UNGEWACHT — rules.yaml registriert
+  # kind_unter_14_haushaltszugehoerig als Geltungsbedingung (Anwendbarkeitsvoraussetzung), aber
+  # kein Feld fragte sie ab; _kinderbetreuung_summe summierte jedes Kind ungeprueft. Dieses Feld
+  # schliesst die Luecke direkt am Accessor (Python-Gate wie kind_idnr bei §10 Abs.1 Nr.3 S.2).
+  - feld_id: kind_unter_14_haushaltszugehoerig
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_unter_14_haushaltszugehoerig}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "War dein Kind während der Betreuung unter 14 Jahre alt und gehört zu deinem Haushalt — oder ist es wegen einer vor dem 25. Lebensjahr eingetretenen Behinderung außerstande, sich selbst zu unterhalten?"
+    hilfe_kurz: "Betreuungskosten sind nur für Kinder unter 14 absetzbar, außer bei Behinderung (Eintritt vor dem 25. Geburtstag)."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: reine Anwendbarkeits-Voraussetzung (§ 10 Abs. 1 Nr. 5 S. 1), kein eigener Vordruck-Kz — steuert nur, ob E0506105 gezaehlt wird."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "welches das 14. Lebensjahr noch nicht vollendet hat oder wegen einer vor Vollendung des 25. Lebensjahres eingetretenen körperlichen, geistigen oder seelischen Behinderung außerstande ist, sich selbst zu unterhalten"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: kinderbetreuungskosten
     instanz_gruppe: kind
     vorschlagbar_von: [beleg, llm]
@@ -27,10 +50,9 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
 
 luecken:
-  # -- Kinderbetreuung: Kindqualifikation ist externe Gatekeeping (§ 32, altersgerecht unter 14, etc.) --
-  - regel_id: p10_1_5_kinderbetreuung
-    geltungsbedingung: kind_unter_14_haushaltszugehoerig
-    grund: "Kind-Qualifikation (§ 10 Abs. 1 Nr. 5 S. 1: 'unter 14 Jahre' + haushaltszugehörig, bzw. Behinderung) wird vorgelagert überprüft (§ 32-Geltung / Ring-Gate); keine Laien-Abfrage hier. Ausschluss Unterricht/Sport (S. 2) + Form Rechnung/unbare Zahlung (S. 4) im Fragetext/Beleg-Writer adressiert."
+  # -- Kind-Qualifikation (unter 14 / Behinderung) ist seit 2026-08-11 GEBUNDEN, s.o.
+  #    kind_unter_14_haushaltszugehoerig. Vorher stand hier faelschlich "wird vorgelagert
+  #    ueberprueft" — es gab keine solche Pruefung, weder im Ring noch im Accessor.
   - regel_id: p10_1_5_kinderbetreuung
     geltungsbedingung: achtzig_prozent_deckel_4800_je_kind
     grund: "80%-Quote + 4.800€-je-Kind-Deckel (§ 10 Abs. 1 Nr. 5 S. 1) sind im pure-python Accessor catala_p10_1_5_kinderbetreuung materialisiert (Rechenlogik, keine Laien-Abfrage)."

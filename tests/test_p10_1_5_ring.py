@@ -147,15 +147,29 @@ RENTNER_KEGEL_BASIS = [
 
 # 2 Kinder, UNGLEICHE Beträge: Kind1=8000€ (gedeckelt 4800), Kind2=2000€ (1600) → Σ=6400€.
 # Vor Fix (Gleichverteilung): 10000/2=5000 → 2×4000=8000€ (falsch).
+# kind_unter_14_haushaltszugehoerig (2026-08-11 Fix, § 10 Abs.1 Nr.5 S.1 Anwendbarkeit): ohne
+# diese Bestätigung zählt kein Kind mehr mit — s. Gegenprobe unten.
 KINDERBETREUUNG_2KINDER = [
+    ("kind_unter_14_haushaltszugehoerig", True),
     ("kinderbetreuungskosten", 800000),          # Kind 1: 8.000 € → 80%=6400, Deckel 4800 → 4800
+    ("kind_unter_14_haushaltszugehoerig__2", True),
     ("kinderbetreuungskosten__2", 200000),       # Kind 2: 2.000 € → 80%=1600 (< Deckel) → 1600
+]
+
+# Gegenprobe: Kind 1 wie oben (unter 14, bestätigt), Kind 2 OHNE Bestätigung -> nur Kind 1 zählt.
+KINDERBETREUUNG_2KINDER_KIND2_UNQUALIFIZIERT = [
+    ("kind_unter_14_haushaltszugehoerig", True),
+    ("kinderbetreuungskosten", 800000),          # Kind 1: zählt -> 4800 Abzug
+    ("kinderbetreuungskosten__2", 200000),       # Kind 2: kein Gate -> 0 Abzug (over-tax-safe)
 ]
 
 # Erwartetes Δ exakt: 6.400 € (80 % von 8000+2000, per-Kind-Deckel 4800) × ~41,8 % = 2.672 €.
 # Gemessen 2026-08-06 17:10: gesamt=267200, rentner=267300 (100 ct Diff = Rundung gde-Unterschied).
 DELTA_EXACT_GESAMT = 267200
 DELTA_EXACT_RENTNER = 267300
+# Kind 1 allein (4800€ gedeckelt), Kind 2 ohne Qualifikationsgate -> 0. Gemessen 2026-08-11.
+DELTA_EXACT_GESAMT_KIND1_ONLY = 200000
+DELTA_EXACT_RENTNER_KIND1_ONLY = 200100  # Gemessen 2026-08-11 (100 ct Diff = Rundung gde)
 
 
 # ===== TESTS =============================================================
@@ -180,3 +194,37 @@ def test_p10_1_5_ring_rentner(base):
     mit = _zahl(base, "rentner_gesamt", "rkb_mit", RENTNER_KEGEL_BASIS + KINDERBETREUUNG_2KINDER)
     delta = baseline - mit
     assert delta == DELTA_EXACT_RENTNER, f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT_RENTNER}"
+
+
+def test_p10_1_5_ring_gesamt_ohne_qualifikationsgate_kein_abzug(base):
+    """Gegenprobe (2026-08-11 Fix, § 10 Abs.1 Nr.5 S.1 Anwendbarkeit): Kind 2 hat
+    Betreuungskosten, aber KEINE Bestätigung kind_unter_14_haushaltszugehoerig -> zählt NICHT
+    mit. Nur Kind 1 (4800€ gedeckelt) mindert die Steuer. Vor dem Fix hätte diese Bindung beide
+    Kinder ungeprüft summiert (Δ hätte DELTA_EXACT_GESAMT entsprochen, nicht weniger) — Mutation:
+    das Gate in _kinderbetreuung_summe entfernen macht diesen Test rot."""
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    baseline = _zahl(base, "gesamt", "gkb_base2", GESAMT_KEGEL_BASIS)
+    mit = _zahl(base, "gesamt", "gkb_mit2",
+                GESAMT_KEGEL_BASIS + KINDERBETREUUNG_2KINDER_KIND2_UNQUALIFIZIERT)
+    delta = baseline - mit
+    assert delta == DELTA_EXACT_GESAMT_KIND1_ONLY, (
+        f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT_GESAMT_KIND1_ONLY}")
+    assert delta < DELTA_EXACT_GESAMT, "Kind 2 ohne Gate darf nicht mitzählen"
+
+
+def test_p10_1_5_ring_rentner_ohne_qualifikationsgate_kein_abzug(base):
+    """Gegenprobe rentner-Zweig (eigene Closure, api.py Z.1388) — analog zu
+    test_p10_1_5_ring_gesamt_ohne_qualifikationsgate_kein_abzug. Team-lead-Mutationsprobe
+    2026-08-11 zeigte: Gate in BEIDEN Ringen deaktiviert warf nur den gesamt-Test um, der
+    rentner-Zweig war ungedeckt — die Kopie bei 1388 hätte still kippen können, ohne dass
+    etwas rot wird. Dieser Test deckt genau das."""
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    baseline = _zahl(base, "rentner_gesamt", "rkb_base2", RENTNER_KEGEL_BASIS)
+    mit = _zahl(base, "rentner_gesamt", "rkb_mit2",
+                RENTNER_KEGEL_BASIS + KINDERBETREUUNG_2KINDER_KIND2_UNQUALIFIZIERT)
+    delta = baseline - mit
+    assert delta == DELTA_EXACT_RENTNER_KIND1_ONLY, (
+        f"baseline={baseline} mit={mit} Δ={delta} ≠ {DELTA_EXACT_RENTNER_KIND1_ONLY}")
+    assert delta < DELTA_EXACT_RENTNER, "Kind 2 ohne Gate darf nicht mitzählen"
