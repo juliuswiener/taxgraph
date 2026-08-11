@@ -960,6 +960,16 @@ def test_l_unbekannte_feld_id_in_deklariere():
 GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
     # bindung_kap_vv_familie.yaml — p32_6_kinderfreibetraege
     ("kap_vv_familie", "kind_idnr", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
+    # kind_vorname (Kz E0500107) teilt die Identifikations-Naht mit kind_idnr und damit auch
+    # deren fehlende Bedingung. Aufgenommen 2026-08-11 mit derselben Begruendung: der Vorname
+    # geht in KEINE Regel ein — er ist Formvoraussetzung der Anlage Kind, kein Tatbestand.
+    # p32_6_kinderfreibetraege kennt nur kinder_sind_zu_beruecksichtigen, kind_zu_beiden_
+    # ehegatten und keine_uebertragung_oder_sonderfaelle; keine davon beschreibt ihn.
+    # Ohne das Feld lehnt checkESt jede Kind-Instanz ab ("Tragen Sie bitte den Vornamen des
+    # Kindes ein"), womit jede kindbezogene Abzugsposition ausser dem Freibetrag uneinreichbar
+    # war. Der richtige Ort waere eine eigene Regel fuer die Anlage-Kind-Formalien — solange
+    # es die nicht gibt, steht der Eintrag hier statt in einer erfundenen Bedingung.
+    ("kap_vv_familie", "kind_vorname", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
     ("kap_vv_familie", "kind_geburtsjahr", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
     ("kap_vv_familie", "kind_kindschaftsverhaeltnis_a", "p32_6_kinderfreibetraege", "kindschaftsverhaeltnis_elternteil_a"),
     ("kap_vv_familie", "kind_kindschaftsverhaeltnis_b", "p32_6_kinderfreibetraege", "kindschaftsverhaeltnis_elternteil_b"),

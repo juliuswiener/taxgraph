@@ -535,6 +535,34 @@ bindungen:
   # Zwei Achsen: Kind-Instanz (instanz_gruppe) × Elternteil A/B (zwei distinkte Basis-Kz je Konzept, K_Verh_A/B).
   # TARIF-/RING-NEUTRAL: die count-MVP-Tarifrechnung (Kinderfreibetrag/Kindergeld = count×Betrag) bleibt; dies
   # ist die Anlage-Kind-FORM-Vervollständigung (Submission). Kz adjudiziert + byte-offset-verifiziert (msg 2873).
+  # Anlage Kind, Zeile 1 (Kz E0500107, Sektion Allg). PFLICHT, sobald eine Kind-Instanz
+  # ueberhaupt entsteht — gemessen 2026-08-11 gegen checkESt:
+  #   fam_anzahl_kinder=1 allein   rc=0          Kinderfreibetrag laeuft ohne Anlage Kind
+  #   + kind_idnr                  rc=610001002  "Tragen Sie bitte den Vornamen des Kindes
+  #                                               ein (1. Anlage Kind)."
+  # Das Feld fehlte bis dahin repo-weit. Damit war jede kindbezogene Abzugsposition ausser
+  # dem Freibetrag uneinreichbar (§ 10 Abs. 1 Nr. 5 Betreuungskosten, § 10 Abs. 1 Nr. 3
+  # KV/PV des Kindes, § 33b Abs. 5 Uebertragung des Pauschbetrags).
+  # Kein Rechenfeld: der Vorname geht in keine Regel ein, er identifiziert die Instanz
+  # gegenueber dem Finanzamt. Deshalb quelle wie kind_idnr (dieselbe Identifikationsnaht),
+  # aber ohne eigene Geltungsbedingung — er ist Formvoraussetzung, nicht Tatbestand.
+  - feld_id: kind_vorname
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie heisst dein Kind mit Vornamen?"
+    hilfe_kurz: "Das Finanzamt ordnet die Anlage Kind ueber den Vornamen zu. Bei mehreren Kindern jeweils der Vorname des einzelnen Kindes."
+    beispielwert: "Anna"
+    herkunft_slots: null
+    elster_kz: E0500107
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
   - feld_id: kind_idnr
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}

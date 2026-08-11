@@ -44,6 +44,7 @@ for sub in ("elster", "produkt/haut", "produkt/import", "produkt/mapping",
 sys.path.insert(0, HERE)
 
 import api as API                   # noqa: E402
+import audit                        # noqa: E402
 import checkest_gate as CE          # noqa: E402
 import elster_xml as EX             # noqa: E402
 import est_mapping                  # noqa: E402
@@ -52,6 +53,13 @@ import store as ST                  # noqa: E402
 from test_checkest_durchstich import (  # noqa: E402
     _ABSENDER, _HID, _b, _fall_einzel, braucht_eric,
 )
+
+
+@pytest.fixture(autouse=True)
+def _isoliert(tmp_path, monkeypatch):
+    """Faelle in tmp_path — sonst kollidieren Wiederholungslaeufe mit ihren eigenen Altfaellen."""
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
 
 
 def _setz(store, feld, wert):
@@ -108,10 +116,13 @@ BLOECKE = {
     "anlage_kind_instanz": [
         ("fam_anzahl_kinder", 1),
         ("kind_idnr", "12345678911"),
+        ("kind_vorname", "Anna"),
     ],
     "kinderbetreuung": [
         ("fam_anzahl_kinder", 1),
         ("kind_idnr", "12345678911"),
+        ("kind_vorname", "Anna"),
+        ("kind_unter_14_haushaltszugehoerig", True),
         ("kinderbetreuungskosten", 200000),
     ],
     "p35a_handwerker": [
@@ -137,13 +148,17 @@ BLOECKE = {
 # BACKLOG-Verweis. Ein Eintrag hier ist eine Schuld, kein Freibrief.
 BLOCKIERTE_BLOECKE = {
     "anlage_kind_instanz": (
-        "'Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind).' — kind_vorname "
-        "existiert repo-weit nicht, und fuenf weitere Kind-Felder (Geburtsjahr, "
-        "Kindschaftsverhaeltnis) sind gebunden, aber nicht im gesamt-Kegel. "
-        "BACKLOG anlage-kind-unvollstaendig."),
+        "kind_vorname (E0500107) ist seit 2026-08-11 gebaut und wird akzeptiert — es rueckten "
+        "aber drei weitere Beanstandungen nach: (a) 'Angaben zur Aufenthaltsdauer im In-/Ausland' "
+        "(kein Feld vorhanden), (b) 'Vorname, Geburtsdatum und Familienkasse wurden nicht "
+        "gemeinsam angegeben' (Familienkasse E0500706 fehlt; kind_geburtsjahr ist int ohne Kz, "
+        "waehrend E0500701 ein Datum TT.MM.JJJJ verlangt), (c) Kindschaftsverhaeltnis "
+        "(E0500807/E0500601 jetzt im Kegel, aber Enum-Werte und Datumsbereich-Format noch "
+        "ungeklaert). BACKLOG anlage-kind-unvollstaendig."),
     "kinderbetreuung": (
-        "dito, plus drei weitere Beanstandungen (u. a. Aufteilung der Betreuungskosten bei "
-        "nicht zusammen veranlagten Eltern). Alle vier vor dem Bau einzeln aufnehmen."),
+        "dito, plus die Aufteilungsangabe bei nicht zusammen veranlagten Eltern. Der "
+        "Qualifikations-Gate (kind_unter_14_haushaltszugehoerig, 1e140d2) ist hier gesetzt — "
+        "die verbleibenden Beanstandungen sind reine Anlage-Kind-Formalien."),
 }
 
 
@@ -188,6 +203,26 @@ def test_blockierte_bloecke_sind_begruendet():
             f"Eintrag, der Abdeckung vortaeuscht.")
         assert "BACKLOG" in grund or "dito" in grund, (
             f"{block}: Begruendung ohne BACKLOG-Verweis — dann findet den Punkt spaeter niemand.")
+
+
+def test_kind_vorname_ist_deklarierbar():
+    """E0500107 (Anlage Kind Zeile 1, Vorname) muss auf 'gesamt' gebunden und im Kegel sein.
+
+    Braucht kein ERiC. Das Feld fehlte bis 2026-08-11 repo-weit, wodurch checkESt jede
+    Kind-Instanz ablehnte ("Tragen Sie bitte den Vornamen des Kindes ein") und damit jede
+    kindbezogene Abzugsposition ausser dem Freibetrag uneinreichbar war.
+
+    Geprueft wird die BINDUNG, nicht das erzeugte XML: ohne den Kegel-Eintrag filtert
+    _scheibe_bindung() das Feld aus der Deklaration, egal was der Nutzer eintraegt —
+    dieselbe Naht wie bei E0205508 (Verpflegungskuerzung, 3ce178c).
+    """
+    API.fall_anlegen({"fall_id": "gate_kind_vorname", "scheibe": "gesamt",
+                      "veranlagungszeitraum": 2025})
+    bindung = API._scheibe_bindung(API.lade_fall("gate_kind_vorname"))
+    kz = {v.get("elster_kz") for v in bindung.values() if isinstance(v, dict)}
+    assert "E0500107" in kz, (
+        "E0500107 (Vorname des Kindes) ist auf 'gesamt' nicht deklarierbar — dann lehnt "
+        "checkESt jede Kind-Instanz ab und alle kindbezogenen Abzuege sind uneinreichbar.")
 
 
 @braucht_eric

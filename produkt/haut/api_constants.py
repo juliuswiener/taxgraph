@@ -189,7 +189,16 @@ KINDERBETREUUNG = ("kinderbetreuungskosten", "kind_unter_14_haushaltszugehoerig"
 SCHULGELD = ("schulgeld",)
 
 # ========== § 10 Abs.1 Nr.3 S.2 KV/PV-Beiträge des Kindes ==========
-KIND_KV_PV = ("kind_kv", "kind_pv", "kind_idnr")
+# kind_vorname (Kz E0500107) ist seit 2026-08-11 dabei: ohne ihn lehnt checkESt jede
+# Kind-Instanz ab ("Tragen Sie bitte den Vornamen des Kindes ein"), unabhaengig davon,
+# welche kindbezogene Position gerade erklaert wird. Er gehoert damit in denselben Kegel
+# wie kind_idnr — beide identifizieren die Instanz, keiner geht in eine Rechnung ein.
+KIND_KV_PV = ("kind_kv", "kind_pv", "kind_idnr", "kind_vorname",
+              # Kindschaftsverhaeltnis (E0500807/808) + Zeitraum (E0500601/805): gebunden seit
+              # jeher, aber bis 2026-08-11 in keinem Kegel — checkESt verlangt sie, sobald eine
+              # Kind-Instanz entsteht ("Der Vorname des Kindes wurde angegeben, die Angaben zum
+              # Kindschaftsverhaeltnis fehlen jedoch").
+              "kind_kindschaftsverhaeltnis_a", "kind_kindschaftsverh_zeitraum_a")
 
 # ========== § 33b Abs.5 Kind-PB-Übertragung ==========
 KIND_PB_UEBERTRAGUNG = ("kind_grad_der_behinderung", "kind_hilflos_blind_taubblind",
