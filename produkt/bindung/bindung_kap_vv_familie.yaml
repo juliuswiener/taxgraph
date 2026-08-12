@@ -532,7 +532,7 @@ bindungen:
     vorjahr: uebernehmbar
     fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer deines Kindes (11 Ziffern)?"
     hilfe_kurz: "Die Identifikationsnummer des Kindes steht auf dem Schreiben des Bundeszentralamts für Steuern. Bei mehreren Kindern jeweils die des einzelnen Kindes."
-    beispielwert: "12345678901"
+    beispielwert: "13579246007"
     herkunft_slots: null
     elster_kz: E0500406
     vz_gueltigkeit: [2024, 2025, 2026]

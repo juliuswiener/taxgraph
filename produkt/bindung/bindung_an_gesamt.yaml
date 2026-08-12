@@ -176,6 +176,17 @@ bindungen:
     enum_werte: ["einzel", "zusammen"]
     askable: true
     vorjahr: uebernehmbar
+    # Julius-Entscheid 2026-08-12: die KI DARF die Veranlagungsart vorschlagen. Sie war bis dahin
+    # human-only (Default fail-closed), weil der Katalog Wahlrechte grundsätzlich ausschließt
+    # (§ 26 Abs. 1 S. 1 EStG ist ein Wahlrecht). Begründung der Öffnung: das LLM liest hier einen
+    # FAKT aus dem Freitext ("verheiratet, geben zusammen ab") und übt kein Wahlrecht aus — die
+    # Ausübung bleibt beim Menschen, weil der Vorschlag nur zustand=vorlaeufig erzeugt und ein
+    # signal_2 braucht (store.py Auflage A + Typ-Zwang). Steht bereits ein Wert des Nutzers, wird
+    # daraus KEIN stiller Ersatz, sondern ein Konflikt: veranlagung ist das einzige Feld in
+    # bindung_regel_bedingungen.yaml und damit ein "großer" Konflikt, der zurückfragt statt zu
+    # überschreiben. Gate dazu: tests/test_veranlagung_llm_freigabe.py.
+    # Gilt NUR für dieses Feld — kein Präzedenzfall für andere Wahlrechte.
+    vorschlagbar_von: [llm]
     fragetext_laie: "Gibst du die Erklärung allein oder gemeinsam mit Ehe-/Lebenspartner ab?"
     hilfe_kurz: "Gemeinsam = Zusammenveranlagung (oft günstiger bei unterschiedlichen Einkommen); allein = Einzelveranlagung."
     beispielwert: "einzel"
@@ -872,7 +883,7 @@ bindungen:
     vorjahr: uebernehmbar
     fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer deines Ehe-/Lebenspartners (11 Ziffern)?"
     hilfe_kurz: "Bei gemeinsamer Erklärung braucht das Finanzamt die Identifikationsnummer beider Personen. Steht auf dem Steuerbescheid oder dem Schreiben des Bundeszentralamts."
-    beispielwert: "12345678901"
+    beispielwert: "02476291358"
     herkunft_slots: null
     elster_kz: E0100082
     vz_gueltigkeit: [2024, 2025, 2026]
