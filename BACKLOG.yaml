@@ -613,6 +613,198 @@ abgabe:
       fehlt jedoch eine Angabe zu den Einnahmen") und spenden_betrag (Vermoegensstock-
       Angabe), die nach echten Kopplungsluecken aussehen. Der generierte Lauf ist
       reproduzierbar: MATRIX aus der Bindung ziehen statt der kuratierten Liste.
+    nachtrag: |
+      2026-08-12: aufgeloest durch reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+      (commit 8ac2fd3, s. auch feldmatrix-21-unklassifiziert weiter unten). Der frische Lauf zog
+      68 statt 21 Felder. Ergebnis: 45 Felder sind BLOCKMATRIX-REIF (gehoeren hier in eine
+      Block-Instanz je Anlage, sobald jemand diesen Eintrag umsetzt — noch nicht eingetragen,
+      haelt gerade ein anderer Worker tests/test_checkest_blockmatrix.py), 18 Felder sind
+      eigene BEFUNDE und wurden zu individuellen BACKLOG-Eintraegen promoviert (s.
+      abgabe-luecke-gewst-tatsaechlich-gezahlt und die zehn folgenden Eintraege). Status/Plan
+      dieses Eintrags bleiben unveraendert offen — die Bloecke selbst sind noch nicht gebaut.
+
+  - id: abgabe-luecke-gewst-tatsaechlich-gezahlt
+    titel: "GewSt-Anrechnung (§ 35): tatsaechlich gezahlter Betrag hat kein Feld"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation"
+    anlage: "GewSt-Anrechnung nach § 35 EStG (Hauptvordruck, keine eigene Anlage)"
+    betroffene_felder: "gewst_hebesatz (E0801705), gewst_messbetrag (E0801606)"
+    fehlt: |
+      Beide Felder live kombiniert getestet (Hebesatz + Messbetrag gesetzt) — bleibt rot.
+      Kein drittes Feld fuer den TATSAECHLICH GEZAHLTEN Gewerbesteuerbetrag in der Bindung;
+      Hebesatz*Messbetrag allein reicht checkESt nicht.
+    eric_wortlaut: "... die zu zahlende Gewerbesteuer ... (gekuerzt, voller Wortlaut im Bericht)"
+    klassifikation: "Feld fehlt (nicht die ganze Anrechnung — Hebesatz/Messbetrag existieren bereits)"
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+
+  - id: abgabe-luecke-p22-nr3-einnahmen
+    titel: "§ 22 Nr. 3 EStG (sonstige Leistungen): Einnahmen-Detailangabe fehlt"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation"
+    anlage: "§ 22 Nr. 3 EStG, sonstige Einkuenfte (Hauptvordruck/Anlage SO)"
+    betroffene_felder: "p22_nr3_einkuenfte (E0305301)"
+    fehlt: |
+      Einziges Feld seiner Familie (Grep bestaetigt). Auch mit einem Wert ungleich 0 live
+      getestet — bleibt rot, kein Probewert-Fund. checkESt verlangt eine gesonderte
+      Einnahmen-Angabe, die p22_nr3_einkuenfte allein nicht liefert.
+    eric_wortlaut: "... Angabe zu den Einnahmen fehlt ... (gekuerzt, voller Wortlaut im Bericht)"
+    klassifikation: "Feld fehlt"
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+
+  - id: abgabe-luecke-p33a-unterhalt-empfaenger
+    titel: "§ 33a Abs. 1 Unterhaltsleistungen: Angaben zur unterstuetzten Person fehlen"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation"
+    anlage: "Anlage Unterhalt (§ 33a Abs. 1 EStG)"
+    betroffene_felder: "p33a_unterhalt_aufwendungen (E0120103), p33a_unterhalt_kv_pv (E0124401)"
+    fehlt: |
+      Datei vollstaendig gelesen (4 Felder gesamt in der Bindung) — keins deckt Name,
+      Adresse, Anzahl der Personen im Haushalt oder Zeitraum der unterstuetzten Person ab.
+    eric_wortlaut: "Name/Adresse/Anzahl-Haushalt/Zeitraum der unterstuetzten Person (gekuerzt, voller Wortlaut im Bericht)"
+    klassifikation: "Feld fehlt (mehrere Formalien der unterstuetzten Person)"
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+
+  - id: abgabe-luecke-dhf-formalien
+    titel: "Doppelte Haushaltsfuehrung: Beschaeftigungsort/Grund/Datum fehlen"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation"
+    anlage: "Doppelte Haushaltsfuehrung (Anlage N, Werbungskosten)"
+    betroffene_felder: "dhf_unterkunftskosten_monat (E0207611)"
+    fehlt: |
+      Datei vollstaendig gelesen (7 dhf_*-Felder) — keins deckt Beschaeftigungsort, Grund
+      oder Datum der Begruendung der doppelten Haushaltsfuehrung ab.
+    eric_wortlaut: "Beschaeftigungsort, Grund, Datum der Begruendung (gekuerzt, voller Wortlaut im Bericht)"
+    klassifikation: "Feld fehlt"
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+
+  - id: abgabe-luecke-ep-zieladresse
+    titel: "Entfernungspauschale: Zieladresse (PLZ/Ort/Strasse) fehlt"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation"
+    anlage: "Entfernungspauschale (Anlage N, Wege zwischen Wohnung und erster Taetigkeitsstaette)"
+    betroffene_felder: "ep_arbeitstage (E0203503), ep_entfernung_km (E0203504), ep_oepnv_kosten (E0203611)"
+    fehlt: |
+      Datei vollstaendig gelesen (4 ep_*-Felder inkl. ep_eigenes_kfz) — keine Zieladresse
+      (Ziel des Weges bzw. PLZ/Ort/Strasse).
+    eric_wortlaut: "Ziel des Weges + PLZ/Ort/Strasse (Zieladresse) (gekuerzt, voller Wortlaut im Bericht)"
+    klassifikation: "Feld fehlt"
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+
+  - id: abgabe-luecke-p35c-anlage-energetische-massnahmen
+    titel: "Anlage Energetische Massnahmen (§ 35c): Deklarationsseite fehlt bis auf 2 Summenfelder"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation"
+    anlage: "Anlage Energetische Massnahmen (§ 35c EStG)"
+    betroffene_felder: "p35c_energieberater_aufwendungen (E0242001), p35c_sanierungsaufwendungen (E0241901)"
+    fehlt: |
+      Groesste Luecke der Gruppe. Datei gelesen — ausser den zwei Summenfeldern ist die
+      Anlage nicht gebaut: 7 Formalien fehlen (Gebaeude-Standort, Herstellungsbeginn,
+      Wohn-/Nutzflaeche, Foerder-Historie seit 2020, oeffentliche Foerderung, Baubeginn der
+      Massnahme, Einzelaufwendungen). Deckt sich mit dem bereits im Modul-Docstring von
+      tests/test_checkest_feldmatrix.py genannten Beispiel "p35c ohne Gebaeude-Standort".
+    eric_wortlaut: "7 Formalien der Anlage Energetische Massnahmen (Standort, Herstellungsbeginn, Flaeche, Foerder-Historie seit 2020, oeff. Foerderung, Baubeginn, Einzelaufwendungen)"
+    klassifikation: "ganze Anlage fehlt (nur die 2 Summenfelder existieren) — GILT NUR FUER DIE DEKLARATIONSSEITE HIER"
+    achtung_zwei_projekte: |
+      Das betrifft NUR die Kz-/Anlage-Seite in diesem Repo (taxgraph). Die § 35c-RECHNUNG
+      (Lebenslagen-Prognose, Verfallsrisiko, BMF Rn. 26) existiert bereits, aber in einem
+      ANDEREN Projekt: ~/00_projects/169_Foerderfinder/foerderfinder/rechenkern/p35c.py
+      (Lebenslage, LEBENSLAGEN_TARIFLICHE_EST_PROGNOSE, P35cJahresVerfallsrisiko,
+      P35cPrognoseSpanne, berechne_prognose_spanne()). Diese dortige Rechenseite habe ich
+      in dieser Messung NICHT geprueft — nur bestaetigt, dass sie an anderer Stelle liegt.
+      NICHT "nicht gebaut" pauschal sagen, das war hier schon einmal falsch gemeldet
+      (Memory foerderfinder-arbeit-ist-unsichtbar-im-taxgraph). Beide Seiten sind fuer die
+      Abgabe noetig: die Foerderfinder-Rechnung liefert den Betrag, dieses Repo muesste ihn
+      in eine einreichbare Anlage Energetische Massnahmen giessen — das ist die eigentliche
+      Luecke hier.
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+
+  - id: abgabe-luecke-realsplitting-krankengeld
+    titel: "Realsplitting (Anlage U): Zeile 7 Krankengeld-Anspruch fehlt"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation"
+    anlage: "Anlage U, Realsplitting (§ 10 Abs. 1a Nr. 1 EStG)"
+    betroffene_felder: "realsplitting_empfaenger_kv_pv (E0300717)"
+    fehlt: |
+      realsplitting_unterhaltsleistungen (Zeile 5) live kombiniert loest NUR die erste
+      Meldung. Zeile 7 (Krankengeld-Anspruch des Empfaengers) bleibt offen — kein Feld
+      dafuer in der Bindung.
+    eric_wortlaut: "Zeile 5 (Unterhaltsleistungen) UND Zeile 7 (Krankengeld-Anspruch) (gekuerzt, voller Wortlaut im Bericht)"
+    klassifikation: "Feld fehlt"
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+
+  - id: abgabe-luecke-spenden-vermoegensstock
+    titel: "Spenden: Vermoegensstock-einer-Stiftung-Sonderzeile fehlt"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation"
+    anlage: "Sonderausgaben, Spenden (§ 10b EStG)"
+    betroffene_felder: "spenden_betrag (E0108405)"
+    fehlt: |
+      Kz-Mapping selbst GEPRUEFT KORREKT (E0108405 = allgemeine Spenden lt. E10-2025.xsd,
+      kein Fehlmapping). Fehlendes Companion ist E0108607 (Vermoegensstock-Stiftung-
+      Sonderzeile, § 10b Abs. 1a) — existiert nicht in der Bindung.
+    eric_wortlaut: "... Vermoegensstock einer Stiftung ... (gekuerzt, voller Wortlaut im Bericht)"
+    klassifikation: "Feld fehlt"
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+
+  - id: abgabe-luecke-rentner-pflege-hinterbliebene-formalien
+    titel: "Anlage R: drei Formalien-Luecken (Hinterbliebenenbezuege, Pflegegrad, gepflegte Person)"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation"
+    anlage: "Anlage R (Renten) sowie Pflegepauschbetrag-Kontext"
+    betroffene_felder: |
+      rentner_hinterbliebenenbezuege (E0109704)
+      rentner_pflegegrad (E0161606)
+      rentner_gepflegter_hilflos (E0161808)
+    fehlt: |
+      Drei separate, je einzige Felder ihrer Unterfamilie (bindung_rentner.yaml vollstaendig
+      gelesen). Keins der drei hat sein Begleitfeld:
+        rentner_hinterbliebenenbezuege -> Detailangabe zu den Hinterbliebenenbezuegen fehlt
+        rentner_pflegegrad             -> Wohnsitz-Inland-Angabe + Anzahl weiterer
+                                           Pflegepersonen fehlt
+        rentner_gepflegter_hilflos     -> Kontext Ang_pflegebeduerft_Pers leer (Angaben zur
+                                           pflegebeduerftigen Person)
+      Drei getrennte Luecken, absichtlich in einem Eintrag (dieselbe Anlage R), nicht
+      zusammengefasst zu einer Zahl — jede braucht ihr eigenes Feld.
+    eric_wortlaut: "s. drei Zeilen oben, voller Wortlaut im Bericht"
+    klassifikation: "Feld fehlt (drei unabhaengige Formalien innerhalb Anlage R)"
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+
+  - id: abgabe-luecke-anlage-v-vermietung
+    titel: "Anlage V (Vermietung und Verpachtung): nur Einnahmen-Summe, keine Objektangaben"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation (bereits im Modul-Docstring von test_checkest_feldmatrix.py Zeile 120-121 als Beispiel benannt, hier bestaetigt statt neu gemessen)"
+    anlage: "Anlage V (Vermietung und Verpachtung)"
+    betroffene_felder: "vv_einnahmen (E0700201)"
+    fehlt: |
+      Laufende_Nummer_V und mehrere weitere Anlage-V-Angaben (Objekt-Formalien) fehlen.
+      vv_einnahmen allein macht die Anlage nicht einreichbar.
+    eric_wortlaut: "... Laufende_Nummer_V ... (gekuerzt, voller Wortlaut im Bericht)"
+    klassifikation: "ganze Anlage fehlt (nur die Einnahmen-Summe existiert)"
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
+
+  - id: abgabe-luecke-berufsausbildung-formalien
+    titel: "Berufsausbildungskosten: Bezeichnung + Einzelaufwendungen fehlen"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, Feldmatrix-Vollklassifikation"
+    anlage: "Sonderausgaben, Berufsausbildung (§ 10 Abs. 1 Nr. 7 EStG)"
+    betroffene_felder: "berufsausbildung_aufwendungen (E0108202)"
+    fehlt: |
+      Einziges Feld seiner Datei (bindung_sonder_agb_35a.yaml, Grep bestaetigt). Bezeichnung
+      der Ausbildung sowie Art/Hoehe der Einzelaufwendungen fehlen komplett.
+    eric_wortlaut: "Bezeichnung der Ausbildung + Art/Hoehe der Einzelaufwendungen (gekuerzt, voller Wortlaut im Bericht)"
+    klassifikation: "Feld fehlt"
+    quelle: reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md
 
   - id: verpflegung-kuerzung-fehlt-auf-gesamt
     titel: "E0205508 war auf der Abgabe-Scheibe nicht gebunden — Erklaerung fiel zu hoch aus"
@@ -2594,9 +2786,19 @@ test-schulden:
 
   - id: feldmatrix-21-unklassifiziert
     titel: "21 rote Felder aus dem generierten Einzelfeld-Matrix-Lauf sind nie klassifiziert worden"
-    status: offen
+    status: erledigt
     aufwand_h: null
     entdeckt: "2026-08-10, beim Bau von tests/test_checkest_feldmatrix.py (c2848cd)"
+    nachtrag: |
+      2026-08-12: klassifiziert — aber der frische Lauf zog nicht 21, sondern 68 rote Felder
+      (der Pool war seit c2848cd gewachsen). Vollstaendige Drei-Klassen-Einordnung in
+      reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md (commit 8ac2fd3):
+      45 Felder BLOCK-ARTEFAKT (gehoeren in checkest-blockmatrix, s. dort), 18 Felder
+      BEFUND (echte Kopplungsluecken, je ein eigener BACKLOG-Eintrag ab
+      abgabe-luecke-gewst-tatsaechlich-gezahlt weiter unten in dieser Sektion), Rest
+      PROBEWERT-ARTEFAKT (u.a. der bereich.min-Bug bei tage_24h/tage_an_abreise/
+      tage_ueber_8h_eintaegig, gefixt in bindung_n_vor_gwg.yaml + neuer Gate
+      test_f2_beispielwert_in_bereich in tests/test_bindungstabelle.py).
     messung: |
       Der GENERIERTE Lauf ueber alle Felder ergab 29 rote Felder. Beim Durchsehen erwiesen
       sich die meisten als Testartefakt statt Befund — zwei Ursachen:
