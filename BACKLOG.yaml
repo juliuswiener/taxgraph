@@ -2163,6 +2163,32 @@ rechenluecken:
     aufwand_h: unbeziffert
     api_py: "kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation (Task-Scope war Stufe 1 Partnerseite, nicht die bestehende Person-A-Luecke)"
 
+  - id: sammelscope-p2-festzusetzung-zusammen-waechst-ungeprueft
+    titel: "Partner-Felder sammeln sich auf p2_festzusetzung_zusammen, das keine Ground Truth hat — Slot-Namen ungeprueft"
+    status: offen
+    entdeckt: |
+      2026-08-12, Task Gewinneinkuenfte-Partnerseite Stufe 1. Sechs Felder
+      (gewinnanteil_partner, verguetung_taetigkeit/darlehen/ueberlassung_partner,
+      rentner_veraeusserungsgewinn_partner, rentner_veraeusserungs_betriebsart_partner)
+      wurden statt auf p15_1_2_mitunternehmer/p16_4_freibetrag (echte Ground Truth in
+      rules.yaml) auf p2_festzusetzung_zusammen gebunden, konsistent mit dem bereits
+      etablierten Muster von bruttoarbeitslohn_partner.
+    befund: |
+      p2_festzusetzung_zusammen/p2_festzusetzung_einzel stehen in REGELN_OHNE_GROUND_TRUTH —
+      test_b/test_n (tests/test_bindungstabelle.py) ueberspringen jede regel_id in dieser Menge
+      komplett. Das macht erfundene _partner-Slot-Namen dort UNSICHTBAR statt gepruefter, nicht
+      korrekt: es verlagert acht dokumentierte Ausnahmen in sechs ungeprueft mitlaufende
+      Bindungen. Nachgemessen (2026-08-12): p2_festzusetzung_zusammen traegt jetzt 44 Felder,
+      p2_festzusetzung_einzel 21 — beide weiterhin mit 0 askable-bool-Gates (per
+      test_p_sammelscope_ohne_bool_gate strukturell erzwungen), das eigentliche Sicherheitsrisiko
+      dieser Scopes (pv_auf_gebaeude-Klasse) bleibt also ausgeschlossen. Aber der Scope waechst
+      bei jeder weiteren Partnerseiten-Task weiter, ohne dass je geprueft wird, ob ein
+      signatur_slot echt ist.
+    wirkung: "Kein akuter Fehler — der Scope hat keine Signatur, gegen die geprueft werden koennte, also auch keine Falsch-Bindung, die heute Schaden anrichtet. Das Risiko ist Verschleiss: je mehr Felder sich hier sammeln, desto teurer wird es, spaeter zu entwirren, welche davon echte Stufe-2-Ring-Inputs brauchen und welche zu Recht Sammel-Scaffolding bleiben."
+    aufloesung: "Erst behebbar, wenn p2_festzusetzung_einzel/_zusammen eine echte Signatur bekommen (oder durch spezifische regel_ids ersetzt werden, wie es p3_nr72_pv fuer pv_auf_gebaeude bereits vorgemacht hat) — dann pruefen test_b/test_n die Slot-/Bedingungsnamen wieder mit."
+    aufwand_h: unbeziffert
+    api_py: "kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation"
+
   - id: fragetext-polaritaet-tier2-unverifizierbar
     titel: "6 Gate-Felder ueber 3 Regeln: fragetext_laie fragt entgegengesetzt zum Feldnamen — aus diesem Backend nicht entscheidbar, ob die Erfassungsschicht invertiert"
     status: offen
@@ -2194,6 +2220,103 @@ rechenluecken:
       der Regel sind Tier-2.
     aufwand_h: unbeziffert
     api_py: "kein Fix moeglich in diesem Repo — Erfassungsschicht (UI/Beleg-Mapping) liegt ausserhalb; naechster Schritt ist Pruefung dort, nicht hier"
+
+  - id: disjunktion-in-geltungsbedingung-nicht-abbildbar
+    titel: "Fehlerklasse: relevanz() UND-verknuepft alle Gates einer Regel — eine gesetzliche ODER-Bedingung zwischen zwei Tatbestandsalternativen laesst sich damit nicht abbilden, wenn nur EINE Alternative als askable-bool-Gate verdrahtet ist"
+    status: teil_erledigt
+    entdeckt: "2026-08-12, p34_3_ermaessigter_durchschnittssatz — dauernd_berufsunfaehig, gefixt in 84f83f6"
+    bericht: reports/adjudikation/gate_screening_polaritaet_2026-08-12.md
+    fehlerklasse: |
+      `traverser.relevanz()` sammelt pro `regel_id` alle askable Felder, deren `quelle`
+      eine `geltungsbedingung` traegt, als "Gates". Bestaetigt EIN Gate `wert is False`,
+      wird die ganze Regel `ausgeschlossen` — strukturell eine UND-Verknuepfung ueber
+      ALLE Gates einer Regel. Das ist korrekt, solange jedes Gate eine eigene,
+      unabhaengige notwendige Bedingung ist.
+
+      Es ist FALSCH, sobald die zugrundeliegende Gesetzesnorm zwei ALTERNATIVE Wege zu
+      einer Tatbestandsvoraussetzung kennt ("X oder Y erfuellt Bedingung Z") und die
+      Bindung NUR X als askable Gate verdrahtet, waehrend Y entweder gar nicht erfasst
+      wird oder an anderer Stelle unverbunden bleibt. Ein bestaetigtes `X=False` schliesst
+      dann die Regel auch fuer Faelle aus, in denen Y zutrifft — die Ausschluss-Mechanik
+      kann eine Disjunktion nicht von einer zusaetzlichen UND-Bedingung unterscheiden,
+      weil sie syntaktisch identisch aussehen (askable bool + geltungsbedingung).
+
+      Gruende-Beispiel (§ 34 Abs. 3 S. 1 EStG): "wenn er das 55. Lebensjahr vollendet hat
+      oder ... im sozialversicherungsrechtlichen Sinne dauernd berufsunfaehig ist". Nur
+      `dauernd_berufsunfaehig` war als Gate verdrahtet; Alter>=55 war NICHT als Alternativ-
+      Pfad verfuegbar. Ein 60-Jaehriger ohne Berufsunfaehigkeit (dauernd_berufsunfaehig
+      bestaetigt False) wurde faelschlich komplett ausgeschlossen — 16.800 EUR (amtlicher
+      test_seed) blieben unberechnet, das gesamte Abs.3-Modul wurde nie aufgerufen.
+
+      Abgrenzung (WICHTIG, damit der Sweep unten nicht zu falschen Treffern fuehrt): kein
+      Fall dieser Fehlerklasse ist ein Feld, dessen `fragetext_laie`/`geltungsbedingung`
+      die volle Disjunktion selbst als EINE kombinierte Ja/Nein-Frage abbildet (z.B. "in
+      der EU ODER im EWR?" als ein Feld ueber eine Ortsangabe, oder "aus rechtlichen,
+      tatsaechlichen ODER sittlichen Gruenden" als eine zusammengesetzte
+      Zwangslaeufigkeits-Frage). Dort ist die Disjunktion INNERHALB des einen Feldes
+      vollstaendig erfasst — kein Informationsverlust, keine unabgedeckte Alternative.
+      Der Fehler entsteht nur, wenn die Alternativen zwei tatsaechlich UNTERSCHIEDLICHE,
+      unabhaengig ermittelbare Tatbestandsmerkmale sind (hier: Alter — aus geburtsjahr
+      ableitbar — vs. eine gesondert abgefragte medizinische Tatsache) und nur EINES
+      davon einen Gate/Pfad bekommen hat.
+    richtung_p34_3: "OVER-tax. Vor dem Fix wurde ein amtlich zustehender Steuersatz-Vorteil (ermaessigter Durchschnittssatz) gar nicht berechnet — der Steuerpflichtige zahlte mehr, nicht weniger, als das Gesetz vorsieht. Betrag gemessen (amtlicher test_seed): 1.680.000 Cent."
+    quellenbeleg: |
+      Alle Zitate unten GEMESSEN gegen sources/gesetze-im-internet/ (nicht aus dem
+      Gedaechtnis), Fundstellen:
+        - § 34 Abs. 3 S. 1 EStG, wortgleich in sources/gesetze-im-internet/estg_p34_2026-07-13.txt
+          Zeile 10: "...wenn der Steuerpflichtige das 55. Lebensjahr vollendet hat oder
+          wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfaehig ist."
+        - § 33 Abs. 2 S. 1 ("...tatsaechlichen oder sittlichen Gruenden...") in
+          sources/gesetze-im-internet/estg_p33_2026-07-11.txt gefunden.
+        - § 35a ("...Wirtschaftsraum...") in
+          sources/gesetze-im-internet/estg_p35a_2026-07-09.txt gefunden.
+        - § 3 Nr. 72 ("...auf, an oder in...") in
+          sources/gesetze-im-internet/estg_p3_2026-07-30.txt gefunden.
+    fix_p34_3: |
+      Kein Gate, reines Slot-Feld (`signatur_slot` statt `geltungsbedingung`): die
+      OR-Eligibility wird nicht mehr in `relevanz()` UND-verknuepft ausgeschlossen,
+      sondern als Rohwert in die Regel-Berechnung (Abs.1-vs-Abs.3-Chooser) durchgereicht,
+      die die Disjunktion selbst korrekt abbildet. Gleicher Fehlertyp bei
+      `ermaessigung_einmal_genutzt` (verdrehte Polaritaet auf einem Feld, das ebenfalls
+      kein Gate sein sollte), gleicher Fix. 7 Mutation-/Kontroll-Tests in
+      test_traverser.py, SIGNATUR_SLOT_ZEIGT_INS_LEERE-Eintrag in test_bindungstabelle.py.
+    sweep: |
+      Alle 99 aktuell verdrahteten askable+geltungsbedingung-Gates (gesamte Bindungstabelle,
+      `lade_bindung()`) nach " oder "/"beziehungsweise"/"alternativ"/"sowie ein"/"ebenso
+      wenn" im gespeicherten `anker_ref.zitatanker` durchsucht. 7 Treffer, alle einzeln
+      gegen den vollen Gesetzestext und den Fragetext geprueft — KEINER ist dieselbe
+      Fehlerklasse:
+        - p10_1_5_kinderbetreuung/kind_unter_14_haushaltszugehoerig (§10 Abs.1 Nr.5 S.1):
+          "unter 14 oder wegen Behinderung" — EIN Feld fragt beide Alternativen als
+          kombinierte Bedingung, bereits mit eigenem Qualifikationsgate ueberprueft
+          (1e140d2).
+        - p33_1_2_agb_abzug/agb_zwangslaeufig (§33 Abs.2 S.1): "rechtlich, tatsaechlich
+          oder sittlich" — eine zusammengesetzte Zwangslaeufigkeits-Frage, kein
+          getrennter zweiter Pfad noetig.
+        - p35a_2_3_haushaltsnahe/hh_in_eu_ewr (§35a Abs.4 S.1): "EU oder EWR" — eine
+          Ortsangabe, ein Feld deckt beide Raeume ab.
+        - p3_nr72_pv/pv_auf_gebaeude (§3 Nr.72): "auf, an oder in Gebaeuden" — eine
+          Anbringungsfrage mit drei Praepositionen, kein getrennter Pfad noetig.
+        - p9_1_3_nr5_doppelte_haushaltsfuehrung/dhf_keine_pflicht_dienstwohnung (§9 Abs.1
+          S.3 Nr.5 S.4 Hs.2): "Dienst- oder Werkswohnung" — ein zusammengesetzter Begriff,
+          ein Feld. (Dieses Feld traegt separat einen Tier-2-Polaritaetsverdacht, s.
+          fragetext-polaritaet-tier2-unverifizierbar — anderer Fehlerursprung.)
+        - p9_1_3_nr5_doppelte_haushaltsfuehrung/dhf_finanzielle_beteiligung: "sowie" ist
+          UND, kein ODER — falscher Treffer der Stichwortliste.
+        - p7_1_lineare_afa/am_afa_ist_anschaffungsjahr (§7 Abs.1 S.1): "Anschaffungs- oder
+          Herstellungskosten" bezieht sich auf die Kostenermittlung, nicht auf die
+          gegatete Frage (welches Jahr die Anschaffung war) — falscher Treffer.
+    sweep_grenze: |
+      Die Methode findet nur Faelle, in denen das "oder" selbst im gespeicherten
+      `zitatanker` steht. Ein Gate, dessen Anker so eng zugeschnitten ist, dass er NUR die
+      eigene Haelfte zitiert (wie es bei `dauernd_berufsunfaehig` VOR dem Fix beinahe der
+      Fall war — der Anker begann bereits mit "oder wenn er..." als abgeschnittener
+      Fortsetzung), waere im Sweep unsichtbar geblieben, wenn das fuehrende "oder" gefehlt
+      haette. Kein Vollstaendigkeitsbeweis — eine Stichprobe ueber die aktuell 99 Gates,
+      keine Aussage ueber Faelle mit unvollstaendig zitiertem Anker.
+    ergebnis: "1 bestaetigter+behobener Fall (p34_3), 0 weitere im Sweep der 99 geltungsbedingung-Gates — Fehlerklasse dokumentiert fuer kuenftige Bindungs-Reviews, aktuell kein zweiter offener Fall bekannt."
+    aufwand_h: 0
+    api_py: "kein weiterer Fix noetig — p34_3 bereits behoben (84f83f6), Sweep ergab keinen zweiten Fall; Eintrag ist Dokumentation der Fehlerklasse fuer kuenftige Reviews"
 
 struktur:
 
