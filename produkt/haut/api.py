@@ -2969,14 +2969,35 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
 
 
 
+def _ist_struktureller_konflikt(fid: str) -> bool:
+    """'Gross' (Stufe 2: Rückfrage statt Inline-Häkchen) heisst: das strittige Feld steuert SELBST eine
+    andere Regel — es taucht als `feld` in einer regel_bedingung auf (bindung_regel_bedingungen.yaml,
+    schema.json $defs/regel_bedingung; traverser.relevanz() wertet das regel-weit aus, traverser.py:113).
+    Dann ändert eine Übernahme nicht bloss einen Wert, sondern WELCHE FRAGEN im Interview überhaupt noch
+    gelten — ein stilles Häkchen wäre zu wenig. Bewusst NICHT hardcodiert (veraltet sonst lautlos): das
+    Kriterium liest dieselbe Quelle, die auch relevanz() bindet, und wächst mit ihr mit."""
+    bedingungen = TR.lade_regel_bedingungen()
+    return any(rb["feld"] == fid for liste in bedingungen.values() for rb in liste)
+
+
 def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     """Chat-Berater (K1): der Nutzer beschreibt seine Situation in Freitext → das LLM SCHLÄGT Feld-Werte VOR →
     jeder Vorschlag wird als VORLÄUFIGES Event geschrieben (schreiber='llm:chat'). Store-Auflage A + der Katalog-
     Check (katalog=lade_katalog) erzwingen strukturell: herkunft=llm_vorschlag, zustand=vorlaeufig, signal_2=null
     (nie in die Summe ohne menschlichen Hold-Confirm) UND nur Felder die der Katalog als LLM-vorschlagbar führt
     (identitäts-/rechtskritische Felder lehnt der Check ab). CAP-GATED: kein LLM-Key/Provider → 501 + Erklär-
-    Vertrag ($0, kein Mock-Call). Ein einzelner abgelehnter Vorschlag (Katalog/Auflage A) überspringt still —
-    der Rest bleibt gültig, nie ein Crash, nie ein Fake-Wert. Die KI setzt NIE einen Wert."""
+    Vertrag ($0, kein Mock-Call). Die KI setzt NIE einen Wert.
+
+    ZWEI sichtbare Abweisungs-Formen (vorher beide gleich still in `abgelehnt`, ununterscheidbar — Auftrag
+    Konfliktdialog): additiv, `abgelehnt`/dessen Form bleibt UNVERÄNDERT (Konsumenten-Vertrag).
+      - `abgelehnt` (+ NEU `abgelehnt_gruende`, feld_id→Text): Katalog/Auflage-A/F2-Abweisung — das Feld ist
+        human-only oder der Vorschlag selbst fällt durch (z.B. Magnitude-Bound). ENDGÜLTIG, die KI darf das nie.
+      - `konflikte` (NEU, additiv): das Feld ist grundsätzlich LLM-vorschlagbar, hat aber schon ein aktives
+        Event (Auflage B — höchstens ein aktives Event/Feld) — der Nutzer hat es selbst gesetzt. KEIN
+        stiller Abbruch mehr: feld_id/aktueller Wert/Vorschlag/Begründung gehen raus, dazu `gross`
+        (_ist_struktureller_konflikt) für Felder, die selbst andere Regeln steuern — dort reicht ein Häkchen
+        nicht (Stufe 2, Rückfrage-Formulierung ist UI/Julius). Auflage B bleibt SCHARF: die Übernahme selbst
+        läuft nie über llm:chat, sondern über den bestehenden /event-Pfad mit menschlichem signal_2."""
     _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
@@ -2999,23 +3020,42 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
         vorschlaege = api_llm._llm_vorschlaege(freitext, prompt_katalog, user_id=api_auth._AUTH_USER)
     except (api_llm.LlmNichtVerfuegbar, ImportError):   # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
         return 501, CHAT_501                             # echte Logik-/Parse-Bugs propagieren (konsistent zu kontoauszug)
-    geschrieben, abgelehnt = [], []
+    geschrieben, abgelehnt, konflikte = [], [], []
+    abgelehnt_gruende = {}
     for v in vorschlaege:
+        fid = v.get("feld_id")
+        # Auflage-B-Vorprüfung: fid schon aktiv UND grundsätzlich katalog-erlaubt? -> KONFLIKT (Fall 2), nicht
+        # abgelehnt. Reihenfolge spiegelt append_event: Katalog sticht immer zuerst — ein human-only-Feld bleibt
+        # abgelehnt, auch wenn es zufällig schon einen Wert trägt (die KI durfte es nie vorschlagen, Fall 1).
+        bestehendes = ST._aktives(store).get(fid) if fid else None
+        if bestehendes is not None and fid in check_katalog["llm"]:
+            konflikte.append({
+                "feld_id": fid,
+                "aktueller_wert": bestehendes["wert"],
+                "aktuelles_event_id": bestehendes["event_id"],
+                "vorschlag_wert": v["wert"],
+                "begruendung": v.get("begruendung", ""),
+                "gross": _ist_struktureller_konflikt(fid),
+            })
+            continue
         try:
             ev = ST.append_event(
-                store, feld_id=v["feld_id"], wert=v["wert"], zustand="vorlaeufig",
+                store, feld_id=fid, wert=v["wert"], zustand="vorlaeufig",
                 herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                 schreiber="llm:chat",
                 signal={"signal_1": {"typ": "llm", "begruendung": v.get("begruendung", "")}, "signal_2": None},
                 katalog=check_katalog)               # dev-2s GLOBALER Katalog-Check lehnt human-only-Felder fail-closed ab
-            geschrieben.append({"feld_id": v["feld_id"], "event_id": ev["event_id"], "wert": v["wert"]})
-        except (ValueError, KeyError):
-            abgelehnt.append(v.get("feld_id"))       # Katalog/Auflage-A-Abweisung → still überspringen, Rest gilt
+            geschrieben.append({"feld_id": fid, "event_id": ev["event_id"], "wert": v["wert"]})
+        except (ValueError, KeyError) as e:
+            abgelehnt.append(fid)                    # Katalog/Auflage-A/F2-Abweisung → still überspringen, Rest gilt
+            if fid:
+                abgelehnt_gruende[fid] = str(e)       # NEU: Grund (kein Wert/Freitext enthalten, PII-frei)
     speichere_fall(fall_id, store)
     _abg = [a for a in abgelehnt if a]
     if _abg:                                         # Security-Observability (feld_ids, KEIN Wert/Freitext = PII-frei):
         sys.stderr.write(f"[haut.chat] LLM-Vorschläge außerhalb Katalog abgelehnt: {sorted(set(_abg))}\n")
-    return 200, {"vorschlaege": geschrieben, "abgelehnt": _abg,
+    return 200, {"vorschlaege": geschrieben, "abgelehnt": _abg, "abgelehnt_gruende": abgelehnt_gruende,
+                 "konflikte": konflikte,
                  "hinweis": "Vorschläge erfasst — bitte im Fluss neben jedem Wert bestätigen (die KI setzt nichts)."}
 
 

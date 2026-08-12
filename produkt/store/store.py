@@ -187,6 +187,22 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
                 "fail-closed (A): berechnet:-Schreiber muss herkunft=berechnet, zustand=vorlaeufig, "
                 "signal_2=null tragen — ein berechneter/abgeleiteter Vorschlag bestätigt nie direkt.")
 
+    # Auflage A (Ersetzt-Guard, gemessen 2026-08-12): ein Vorschlag darf NIE ein aktives Event ersetzen. Ohne
+    # diese Sperre prüft der llm:-Zweig oben nur herkunft/zustand/signal_2, nicht `ersetzt` — ein llm:-Schreiber
+    # könnte also ein BESTÄTIGTES Nutzer-Event via ersetzt= inaktiv setzen und durch einen unbestätigten
+    # Vorschlag ersetzen; materialisiere() nimmt das jüngste nicht-ersetzte Event, der Vorschlag würde gewinnen —
+    # ein bestätigter Wert wäre still weg (fail-open genau an der Stelle, die Auflage B eigentlich sichert;
+    # Beleg: tests/test_haut_chat.py Mutation 2 gegen chat(), belegt am ungehärteten Store). Gilt für
+    # llm:/import:beleg/import:kontoauszug — gemessen: kein Aufrufer übergibt für diese drei je ersetzt=
+    # (beleg_writer.py, kontoauszug_writer.py). NICHT für berechnet: (maps): entfernung() (api.py, ~L2874-2879)
+    # übergibt dort bewusst ersetzt=<aktives Event>, weil der Nutzer selbst "berechnen" geklickt hat (explizite
+    # Aktion, kein autonomer Vorschlag) — das Ergebnis bleibt trotzdem nur vorlaeufig bis Bestätigung; einziger
+    # gemessene legitime Aufrufer, der Guard bleibt also berechnet:-scoped exempt.
+    if schreiber.startswith(("llm:", "import:beleg", "import:kontoauszug")) and ersetzt is not None:
+        raise ValueError(
+            f"fail-closed (A): {schreiber} darf kein ersetzt tragen — ein Vorschlag ersetzt nie einen "
+            "bestätigten Wert; die Übernahme läuft über /event mit menschlichem signal_2.")
+
     # Auflage K1 (Feld-Katalog): ein Vorschlags-Schreiber (llm/beleg/kontoauszug/maps) darf NUR ein Feld
     # setzen, das für seinen Typ freigegeben ist (bindung.vorschlagbar_von) — DEFAULT human-only, fail-closed.
     # Verhindert dass KI/externer Dienst ein Wahlrecht/eine Abwesenheits-Erklärung/Identität/Allokation

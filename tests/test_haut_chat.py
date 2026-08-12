@@ -139,7 +139,12 @@ def test_graceful_skip_human_only(fall, monkeypatch, capsys):
     st, body = API.chat(fall, {"text": "…"})        # KEIN Crash trotz eines bösen Vorschlags
     assert st == 200
     assert {g["feld_id"] for g in body["vorschlaege"]} == {"agb_aufwendungen", "berufsausbildung_aufwendungen"}
-    assert body["abgelehnt"] == ["veranlagung"]
+    assert body["abgelehnt"] == ["veranlagung"]      # UNVERÄNDERTE Form: list[feld_id] (Konsumenten-Vertrag)
+    # NEU (additiv): der Grund steht jetzt daneben — Katalog-Text, PII-frei (kein Wert/Freitext, nur die feld_id).
+    assert "veranlagung" in body["abgelehnt_gruende"]
+    grund = body["abgelehnt_gruende"]["veranlagung"]
+    assert "veranlagung" in grund and "zusammen" not in grund
+    assert body["konflikte"] == []                   # kein Konflikt — das Feld war nie LLM-vorschlagbar (Fall 1)
     # veranlagung wurde NICHT geschrieben (kein aktives Event)
     import store as ST
     assert "veranlagung" not in ST._aktives(API.lade_fall(fall))
@@ -192,3 +197,136 @@ def test_ring_e2e_vorlaeufig_bewegt_steuer_nicht(fall, monkeypatch):
     assert st == 201
     _, erg_nach = API.ergebnis(fall)
     assert erg_nach["zahl_cent"] < est_basis, "der BESTÄTIGTE agB-Abzug muss die Steuer senken"
+
+
+# --------------------------------------------------------------- Konfliktdialog (Auftrag team-lead, msg Konfliktdialog)
+# Fall (1) = human-only/Katalog/F2 -> abgelehnt (oben, test_graceful_skip_human_only), Fall (2) = Nutzer hat das
+# Feld schon selbst gesetzt -> KONFLIKT (b/d/e unten). Auflage B bleibt scharf: NUR der Mensch (schreiber=ui:…)
+# darf ein aktives Event ersetzen, nie llm:chat — s. store.py append_event Auflage A + B.
+
+def test_konflikt_bei_bereits_gesetztem_feld(fall, monkeypatch):
+    """(b) Die KI schlägt ein Feld vor, das der Nutzer schon SELBST (bestätigt) gesetzt hat: Auflage B verbietet
+    dem Store das Überschreiben ohne `ersetzt` — der Handler darf das NICHT mehr still in `abgelehnt` verstecken
+    (Fall 1 und Fall 2 waren bisher ununterscheidbar). Stattdessen: ein strukturierter Eintrag in `konflikte`
+    (feld_id/aktueller Wert/Vorschlag/Begründung/gross) — nichts wird geschrieben, nichts verschwindet."""
+    st, _ = API.event(fall, _laie("agb_aufwendungen", 200000))
+    assert st == 201
+    monkeypatch.setattr(LC, "complete", _fake_complete(("agb_aufwendungen", 500000)))
+    st, body = API.chat(fall, {"text": "Eigentlich waren es 5000 Euro Krankheitskosten."})
+    assert st == 200
+    assert body["vorschlaege"] == []                 # NICHT geschrieben — weder still noch offen
+    assert body["abgelehnt"] == []                    # KEIN stiller Fall-1-Fehlgriff — das ist Fall 2
+    assert len(body["konflikte"]) == 1
+    k = body["konflikte"][0]
+    assert k["feld_id"] == "agb_aufwendungen"
+    assert k["aktueller_wert"] == 200000               # der vom Nutzer bestätigte Wert
+    assert k["vorschlag_wert"] == 500000                # der KI-Vorschlag
+    assert k["begruendung"] == "fixture"
+    assert k["gross"] is False                          # agb_aufwendungen steuert keine andere Regel
+    # Store-Wahrheit: NICHTS hat sich bewegt — genau das ursprüngliche menschliche Event ist noch aktiv
+    import store as ST
+    aktiv = ST._aktives(API.lade_fall(fall))["agb_aufwendungen"]
+    assert aktiv["wert"] == 200000 and aktiv["schreiber"] == "ui:laie"
+
+
+def test_uebernahme_konflikt_via_event_menschliches_signal(fall, monkeypatch):
+    """(d) Übernahme eines gemeldeten Konflikts: die UI (nicht das LLM!) schickt den bestehenden /event-Pfad mit
+    `ersetzt=<konflikt.aktuelles_event_id>` und einem MENSCHLICHEN Signal (schreiber=ui:laie, signal_2 gesetzt) —
+    exakt derselbe Zwei-Signal-Confirm-Mechanismus wie jede andere Bestätigung (s. test_ring_e2e_vorlaeufig_
+    bewegt_steuer_nicht). Kein neuer Schreibpfad nötig — `aktuelles_event_id` im Konflikt-Objekt macht ihn nur
+    für die UI erreichbar. Danach: altes Event inaktiv, neues bestätigt mit dem übernommenen Wert."""
+    st, _ = API.event(fall, _laie("agb_aufwendungen", 200000))
+    assert st == 201
+    monkeypatch.setattr(LC, "complete", _fake_complete(("agb_aufwendungen", 500000)))
+    st, body = API.chat(fall, {"text": "Eigentlich waren es 5000 Euro."})
+    assert st == 200
+    k = body["konflikte"][0]
+    alt_event_id = k["aktuelles_event_id"]
+
+    uebernahme = _laie("agb_aufwendungen", k["vorschlag_wert"])
+    uebernahme["ersetzt"] = alt_event_id
+    st, _ = API.event(fall, uebernahme)
+    assert st == 201
+
+    import store as ST
+    store = API.lade_fall(fall)
+    aktiv = ST._aktives(store)["agb_aufwendungen"]
+    assert aktiv["wert"] == 500000
+    assert aktiv["zustand"] == "bestaetigt"
+    assert aktiv["signal"]["signal_2"] is not None       # MENSCHLICHES Signal, nicht die KI
+    assert aktiv["schreiber"] == "ui:laie"                # NICHT llm:chat
+    assert aktiv["event_id"] != alt_event_id              # das alte Event ist ersetzt, also inaktiv
+    ersetzt_ids = {e["ersetzt"] for e in store["events"] if e.get("ersetzt")}
+    assert alt_event_id in ersetzt_ids
+
+
+def test_llm_bekommt_nie_ersetzt_recht(fall, monkeypatch):
+    """(e) Negativtest: das LLM bekommt STRUKTURELL nie ein ersetzt-Recht. Bei einem erkannten Konflikt (Fall 2)
+    schreibt chat() KEIN llm:chat-Event — weder vorläufig noch mit `ersetzt`. Prüft den STORE direkt (nicht nur
+    die Antwort): unter allen Events mit schreiber=llm:chat darf für agb_aufwendungen keins existieren, und das
+    ursprüngliche menschliche Event bleibt unangetastet aktiv."""
+    st, _ = API.event(fall, _laie("agb_aufwendungen", 200000))
+    assert st == 201
+    monkeypatch.setattr(LC, "complete", _fake_complete(("agb_aufwendungen", 500000)))
+    st, body = API.chat(fall, {"text": "Eigentlich waren es 5000 Euro."})
+    assert st == 200
+    assert len(body["konflikte"]) == 1                   # der Konflikt wurde ERKANNT...
+    store = API.lade_fall(fall)
+    llm_events = [e for e in store["events"] if e["schreiber"] == "llm:chat"]
+    assert llm_events == []                               # ...aber NIE geschrieben — kein ersetzt-Versuch, kein Event
+    import store as ST
+    aktiv = ST._aktives(store)["agb_aufwendungen"]
+    assert aktiv["wert"] == 200000 and aktiv["schreiber"] == "ui:laie"   # unangetastet
+
+
+def test_store_guard_ersetzt_gesperrt_fuer_vorschlags_schreiber():
+    """INVARIANTE statt Disziplin (team-lead-Fund Nr. 6, gehärtet 2026-08-12): test_llm_bekommt_nie_ersetzt_
+    recht oben beweist nur, dass chat() nie versucht ersetzt zu übergeben — der Store selbst prüfte vorher NUR
+    herkunft/zustand/signal_2 für llm:, nicht `ersetzt`. Wer /event direkt mit schreiber=llm:chat + ersetzt=
+    aufruft (der Handler event() reicht schreiber/ersetzt roh durch, api.py:2428/2439), käme durch — ein
+    UNBESTÄTIGTER Vorschlag würde ein BESTÄTIGTES Nutzer-Event stillschweigend inaktiv setzen (materialisiere()
+    nimmt das jüngste nicht-ersetzte Event). Dieser Test prüft ST.append_event DIREKT, unterhalb von chat().
+    Gilt für llm:/import:beleg/import:kontoauszug (kein legitimer Aufrufer gemessen). Gegenprobe: berechnet:maps
+    bleibt AUSGENOMMEN — entfernung() (api.py, ~L2874-2879) braucht ersetzt= für den Nutzer-getriggerten
+    Neuberechnen-Klick, einziger gemessene legitime Fall — kein Über-Blocken."""
+    import store as ST
+    s = ST.leerer_store(2025)
+    mensch = ST.append_event(
+        s, feld_id="agb_aufwendungen", wert=200000, zustand="bestaetigt",
+        herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"})
+    katalog = {"llm": frozenset({"agb_aufwendungen"}), "beleg": frozenset({"agb_aufwendungen"}),
+               "kontoauszug": frozenset({"agb_aufwendungen"}), "maps": frozenset({"ep_entfernung_km"})}
+    for schreiber, herkunft_key in (("llm:chat", "llm_vorschlag"), ("import:beleg", "beleg_import"),
+                                     ("import:kontoauszug", "kontoauszug")):
+        with pytest.raises(ValueError, match="ersetzt"):
+            ST.append_event(
+                s, feld_id="agb_aufwendungen", wert=999999, zustand="vorlaeufig",
+                herkunft={"herkunft": herkunft_key, "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                schreiber=schreiber, signal={"signal_1": {"typ": "x"}, "signal_2": None},
+                ersetzt=mensch["event_id"], katalog=katalog)
+    # Gegenprobe: berechnet:maps darf weiterhin ersetzen (entfernung()-Nutzung) — der Guard ist scoped, kein
+    # Über-Blocken des einzigen legitimen Falls.
+    km_alt = ST.append_event(
+        s, feld_id="ep_entfernung_km", wert=10, zustand="vorlaeufig",
+        herkunft={"herkunft": "berechnet", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        schreiber="berechnet:maps", signal={"signal_1": {"typ": "maps"}, "signal_2": None}, katalog=katalog)
+    km_neu = ST.append_event(
+        s, feld_id="ep_entfernung_km", wert=12, zustand="vorlaeufig",
+        herkunft={"herkunft": "berechnet", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        schreiber="berechnet:maps", signal={"signal_1": {"typ": "maps"}, "signal_2": None},
+        ersetzt=km_alt["event_id"], katalog=katalog)
+    assert km_neu["ersetzt"] == km_alt["event_id"]
+
+
+# --------------------------------------------------------------- "gross"-Kriterium (Julius-Vorschlag, geprüft)
+def test_ist_struktureller_konflikt_kriterium():
+    """Kriterium für Stufe 2 (Rückfrage statt Häkchen): `gross` = das Feld steuert SELBST eine andere Regel
+    (feld_id kommt als `feld` in einer regel_bedingung vor, bindung_regel_bedingungen.yaml). Gemessen: aktuell
+    GENAU EIN Eintrag (veranlagung, § 26 Abs. 2 EStG) — Julius' eigenes Beispiel (Einzel- vs. Zusammenveranlagung)
+    trifft das Kriterium exakt. WICHTIG (gemessen, nicht geraten): veranlagung trägt selbst KEIN `vorschlagbar_von`
+    (human-only per Default-fail-closed, s. store.lade_katalog) — die KI kann es also nie vorschlagen und damit
+    nie über chat() in `konflikte` mit gross=True landen; dieser Test prüft das Kriterium deshalb DIREKT, nicht
+    end-to-end über chat(). Ein katalog-erlaubtes Feld ohne Regel-Bedingung (agb_aufwendungen) bleibt `gross=False`."""
+    assert API._ist_struktureller_konflikt("veranlagung") is True
+    assert API._ist_struktureller_konflikt("agb_aufwendungen") is False
