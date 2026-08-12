@@ -976,6 +976,94 @@ abgabe:
       ist ausgehende Aktion -> Julius, nie automatisch. Testmerker 700000004 ist im
       Writer gesetzt und wird nie ans Finanzamt zugestellt.
 
+  - id: person-b-idnr-wird-abgelehnt
+    titel: "E0100082 (Partner-IdNr): ERiC LEHNT das Kz ab — Zahl oder Abgabe, nicht beides"
+    status: offen
+    richtung: "ABGABE-BLOCKER fuer den Zielfall (Arbeitnehmer, Zusammenveranlagung, Scheibe gesamt, VZ 2025)"
+    entdeckt: "2026-08-12, Feldmatrix-Vollsweep — einziger echter Befund unter 68 roten Feldern"
+    messung: |
+      Gemessen ueber die ECHTE Kette (dieselbe die api.einreichen() faehrt: _cfg ->
+      _scheibe_bindung -> _mit_ring_werten -> _an_gesamt_sperrgrund -> deklariere ->
+      erzeuge_xml -> CE.validate), nicht ueber die Feldmatrix-Kurzform. IdNr
+      pruefziffergueltig (BZSt-Referenzbeispiel), der Fehler haengt also nicht am Testwert.
+
+        ohne person_b_idnr   sperrgrund = "partner_kegel_offen"  -> keine Zahl, 409
+                             (cfg["gesamt"]: guard=True, partner_19=True; das Feld steht
+                             in GESAMT_PARTNER_19 und muss bestaetigt sein)
+        mit  person_b_idnr   sperrgrund = None, deklariere() vollstaendig=True,
+                             E0100082 steht unfiltriert im <B>-Container,
+                             rc = 610301106  ERIC_IO_READER_UNERWARTETE_ELEMENTE
+
+      Amtlicher Wortlaut (aus eric.log, NICHT aus dem Rueckgabepuffer — der ist leer):
+        Nutzdaten enthalten das Feld "/ESt1A/Allg/B/E0100082" mit dem
+        Eingefuegt-Kennzeichen "J" oder "P"
+      Die Schemapruefung laeuft davor fehlerfrei durch ("Schemapruefung erfolgreich") —
+      der Reader wirft es auf einer Ebene raus, die das XSD nicht abbildet.
+      Gegenprobe: dieselbe <B>-Umgebung OHNE E0100082 validiert sauber (rc=0).
+      Skript: scripts/measure_person_b_idnr.py
+    warum_es_kein_widerspruch_zur_messung_vom_08_10_ist: |
+      Am 2026-08-10 wurde gemessen "checkESt verlangt die Ehegatten-IdNr nicht, rc=0,
+      E0100082 nicht im XML" und der Punkt daraufhin herabgestuft. BEIDE Messungen sind
+      richtig, sie beantworten verschiedene Fragen:
+        2026-08-10  ist es PFLICHT?   -> nein
+        2026-08-12  ist es ERLAUBT?   -> nein
+      Zusammen: das Feld darf nie mitgeschickt werden. Siehe auch
+      ratsche-misst-nicht-den-nutzerpfad — die alte Messung lief ueber einen Pfad, auf dem
+      das Feld gar nicht Pflicht werden KONNTE.
+    vermutete_ursache: |
+      NICHT verifiziert: das Eingefuegt-Kennzeichen J/P deutet auf ein Feld, das die
+      VERWALTUNG einfuegt, nicht der Steuerpflichtige. Dazu passt, dass auch Person As
+      eigene IdNr im amtlichen Beispiel-XML (est_e10_2025.xml) NIRGENDS als Element
+      vorkommt — vermutlich laeuft die Identifikation ueber Auth/Zertifikat.
+      XSD-Typ ist IDNrBaseCType_RABE (E10-2025.xsd:8617), einziger Kz-Typ in <B> mit
+      diesem Suffix.
+    fix_muss_beide_seiten_treffen: |
+      Kz aus der Deklaration nehmen UND person_b_idnr aus GESAMT_PARTNER_19 /
+      AN_GESAMT_PARTNER entfernen. Nur eins davon tauscht einen Blocker gegen den anderen:
+      ohne Kz-Fix bleibt rc=610301106, ohne Kegel-Fix bleibt partner_kegel_offen.
+      Offene Produktfrage: soll das Feld ueberhaupt noch erfragt werden? Wenn es weder
+      deklariert noch gerechnet wird, ist die Frage verlorene Nutzerzeit.
+    folgeauftrag: |
+      Gibt es eine Kategorie "nur-Ausgabe"-Kz, und binden wir noch andere davon? Jedes
+      weitere waere ein schlafender Blocker, der erst hochgeht, wenn ein Nutzer das Feld
+      ausfuellt. Sweep laeuft.
+
+  - id: ratsche-misst-nicht-den-nutzerpfad
+    titel: "Die Abgabe-Ratsche laeuft ueber die ungescopte Bindung — nicht ueber den Weg des Nutzers"
+    status: offen
+    richtung: "kein Geldfehler — aber es entwertet die zentrale 'abgabefaehig'-Aussage teilweise"
+    entdeckt: "2026-08-12, beim Aufloesen des person_b_idnr-Widerspruchs"
+    messung: |
+      tests/test_checkest_durchstich.py::_pruefe deklariert ueber
+        est_mapping.deklariere(snap, TR.lade_bindung())
+      also die VOLLE, scheiben-UNGESCOPTE Bindung. Der Pfad setzt nie eine Scheibe, laeuft
+      nie durch _scheibe_bindung() und nie durch _an_gesamt_sperrgrund().
+      Der echte Endpunkt (api.einreichen()) tut beides.
+    folge: |
+      Die Ratsche prueft eine Schicht, die ein Nutzer produktiv nie isoliert erreicht. Sie
+      kann deshalb GRUEN sein, waehrend der echte Weg blockiert ist — genau so ist
+      person-b-idnr-wird-abgelehnt monatelang unter 1864 gruenen Tests gelegen.
+      Das ist KEIN Fehler der alten Messung: sie war korrekt fuer den Pfad, den sie misst.
+      Der Fehler ist, dass wir sie als Aussage ueber den Nutzerpfad gelesen haben.
+    plan: |
+      Ein Durchstich ueber den DIALOG: leerer Fall -> /fragen -> nur die gestellten Fragen
+      beantworten -> /ergebnis -> deklarieren -> erzeuge_xml -> rc. Nicht Felder direkt
+      setzen, die man fuer noetig haelt — genau das verdeckt die Luecke. Ein Feld, das die
+      Erklaerung braucht, aber nie erfragt wird, faellt nur so auf.
+      Nebenprodukt: die Zahl der Fragen ist die ehrlichste Aussage darueber, was wir dem
+      Nutzer heute zumuten.
+      Baut gerade ein Worker; die bestehende Ratsche bleibt daneben stehen (sie prueft die
+      tiefere Schicht weiterhin sinnvoll).
+    fixtur_nebenbefund: |
+      _fall_zusammen() (die Durchstich-Fixtur) deckt GESAMT_PARTNER_KAP nicht vollstaendig
+      ab — kap_gewinn_sonstige_partner fehlt, _BASIS_B hat nur 3 von 4
+      KAP_TOEPFE_PARTNER-Feldern. Dadurch feuert partner_kegel_offen aus dem FALSCHEN
+      Grund und verfaelscht jede Messung, die diese Fixtur benutzt.
+    lehre: |
+      Dieselbe Klasse wie test-prueft-nicht-was-er-behauptet und
+      naht-blindstelle-zwei-repraesentationen: der Test ist gruen und misst etwas anderes
+      als das, was seine Ueberschrift behauptet.
+
 rechenluecken:
 
   - id: vpf-dreimonatsfrist
