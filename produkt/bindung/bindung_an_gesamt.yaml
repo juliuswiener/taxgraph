@@ -1318,7 +1318,11 @@ bindungen:
       zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
   - feld_id: gewinnanteil_partner
-    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: gewinnanteil_partner}
+    # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding, statt p15_1_2_mitunternehmer):
+    # dieselbe Naht wie bruttoarbeitslohn_partner oben — rules.yaml kennt fuer p15_1_2_mitunternehmer
+    # nur Person-A-Signatur-Slots, ein zweiter Aufruf fuer Person B ist Stufe 2 (Ring, api.py) und
+    # noch nicht gebaut. Rechtsgrundlage bleibt § 15 Abs. 1 S. 1 Nr. 2 EStG (s. anker_ref unten).
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewinnanteil_partner}
     typ: cent
     einheit: EUR
     askable: true
@@ -1336,7 +1340,9 @@ bindungen:
       zitatanker: "die Gewinnanteile der Gesellschafter einer Offenen Handelsgesellschaft, einer Kommanditgesellschaft und einer anderen Gesellschaft, bei der der Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen ist"
       datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
   - feld_id: verguetung_taetigkeit_partner
-    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_taetigkeit_partner}
+    # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): s. Begruendung bei gewinnanteil_partner
+    # oben. Loest sich mit Stufe 2 auf.
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: verguetung_taetigkeit_partner}
     typ: cent
     einheit: EUR
     askable: true
@@ -1354,7 +1360,9 @@ bindungen:
       zitatanker: "für seine Tätigkeit im Dienst der Gesellschaft"
       datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
   - feld_id: verguetung_darlehen_partner
-    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_darlehen_partner}
+    # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): s. Begruendung bei gewinnanteil_partner
+    # oben. Loest sich mit Stufe 2 auf.
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: verguetung_darlehen_partner}
     typ: cent
     einheit: EUR
     askable: true
@@ -1372,7 +1380,9 @@ bindungen:
       zitatanker: "für die Hingabe von Darlehen"
       datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
   - feld_id: verguetung_ueberlassung_partner
-    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_ueberlassung_partner}
+    # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): s. Begruendung bei gewinnanteil_partner
+    # oben. Loest sich mit Stufe 2 auf.
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: verguetung_ueberlassung_partner}
     typ: cent
     einheit: EUR
     askable: true

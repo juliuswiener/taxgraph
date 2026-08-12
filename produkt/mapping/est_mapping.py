@@ -200,6 +200,10 @@ PARTNER_INSTANZ = {
     "steuerklasse_partner": "E0200002",
     "p36_lohnsteuer_partner": "E0200301",
     "kirchensteuer_arbeitgeber_partner": "E0200501",
+    # § 35 GewSt-Anrechnung Person-B (Anlage-G-Instanz B): dieselben Person-A-Kz, kein eigenes
+    # Ehegatte-Kz (eigener Betrieb, eigener Hebesatz/Messbetrag je Person).
+    "gewst_hebesatz_partner": "E0801705",
+    "gewst_messbetrag_partner": "E0801606",
 }
 # Klasse g×f — Renten-Verzweigung Person-B (§ 22, Anlage-R-Instanz B): wie VERZWEIGUNG (aa/bb-Kz je
 # renten_art), aber der Wert läuft in den person_b-Bucket (dieselben Person-A-Kz, kein Ehegatte-Kz).
@@ -213,6 +217,14 @@ PARTNER_VERZWEIGUNG = {
         "gesetzliche_rente": "E1800501", "berufsstaendische_versorgung": "E1800501",
         "private_basisrente": "E1800501", "private_leibrente": "E1801701",
         "sonstige_leibrente": "E1803202"}},
+    # §§ 13-18 Gewinneinkünfte + § 16 Abs. 4 Veräußerungsfreibetrag Person-B: wie VERZWEIGUNG (Klasse f),
+    # aber der Wert läuft in den person_b-Bucket (dieselben Person-A-Kz, kein Ehegatte-Kz). Art-Weichen =
+    # gewinn_betriebsart_partner / rentner_veraeusserungs_betriebsart_partner. land_forst bei
+    # einkuenfte_gewinn_partner bewusst ohne Kz (spiegelt Person A, Anlage L hat zwei alternative Kz).
+    "einkuenfte_gewinn_partner": {"art_feld": "gewinn_betriebsart_partner", "kz": {
+        "gewerbe": "E0800502", "selbstaendig": "E0803402"}},
+    "rentner_veraeusserungsgewinn_partner": {"art_feld": "rentner_veraeusserungs_betriebsart_partner", "kz": {
+        "gewerbe": "E0801301", "selbstaendig": "E0804501", "land_forst": "E0901201"}},
 
 # KV/PV Versicherungsart-Weiche Person B (Klasse g×f): Art-Feld = versicherungsart_partner.
 "basis_kv_partner": {"art_feld": "versicherungsart_partner", "kz": {
