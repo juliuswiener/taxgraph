@@ -20,7 +20,11 @@ EP_FELDER = ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigene
 
 # ========== an_gesamt MVP + Flags ==========
 AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
-AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner", "person_b_idnr")
+# person_b_idnr NICHT hier: ERiC lehnt E0100082 amtlich ab (rc=610301106, "Eingefuegt-Kennzeichen
+# J/P"), unabhaengig vom Wert — Feld wird nicht mehr deklariert (elster_kz: null in
+# bindung_an_gesamt.yaml), darf also auch keinen Ehepaar-Bescheid mehr blockieren. Gemessen
+# 2026-08-12, scripts/measure_person_b_idnr.py, BACKLOG person-b-idnr-wird-abgelehnt.
+AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner",)
 
 # ========== § 9 Arbeitsmittel (GWG) + § 7 Abs. 1 AfA ==========
 ARBEITSMITTEL_KOSTEN = "am_anschaffungskosten"
@@ -49,6 +53,9 @@ STEUERKLASSE_FELDER = ("steuerklasse", "steuerklasse_partner")
 
 # ========== § 16 Abs. 4 Freibetrag-Gates (Rentner) ==========
 P16_4_GATE_FELDER = ("rentner_alter_55_oder_berufsunfaehig", "rentner_freibetrag_erstmalig")
+# Person-B (Deklaration, Task Gewinneinkünfte-Partnerseite Stufe 1): der zweite Freibetrags-Aufruf +
+# die gespiegelte p16_4_gate_offen-Sperre sind Stufe 2 (Ring, api.py), noch nicht gebaut.
+P16_4_GATE_FELDER_PARTNER = ("rentner_alter_55_oder_berufsunfaehig_partner", "rentner_freibetrag_erstmalig_partner")
 
 # ========== § 9 Abs. 4a Verpflegung + Mahlzeitenkürzung ==========
 VERPFLEGUNG_TAGE = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig")
@@ -125,7 +132,9 @@ P36_ANRECHNUNG_KAP = ("p36_kapitalertragsteuer", "p36_kapitalertragsteuer_solz",
 # KAP Stufe 3 (Zeile 41 Anlage KAP, E1905101, § 32d Abs. 1 S. 2/4-5): noch nicht angerechnete
 # auslaendische Quellensteuer (q). ASKABLE, wie P36_ANRECHNUNG_KAP oben (Steuerbescheinigung-Wert).
 P32D_Q_KAP = ("kap_q_auslaendische_steuer",)
-GESAMT_PARTNER_19 = ("bruttoarbeitslohn_partner", "person_b_idnr")
+# person_b_idnr NICHT hier: s. Kommentar bei AN_GESAMT_PARTNER oben (ERiC-Ablehnung E0100082,
+# nicht mehr deklariert, darf nicht mehr sperren).
+GESAMT_PARTNER_19 = ("bruttoarbeitslohn_partner",)
 
 # ========== § 22 Renten + § 33b Pauschbeträge ==========
 RENTNER_AA_ARTEN = ("gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente")
@@ -141,16 +150,24 @@ GESAMT_33B = ("rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind",
 GESAMT_33B_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner")
 
 # ========== §§ 13-18 Gewinn ==========
+# EUER_KOMPONENTEN bewusst OHNE Person-B-Pendant: Anlage EÜR ist Datenart E77, ein eigenes Dokument
+# ohne Person-A/B-Indexfeld (kein Enum_INDEXFELD_PERSON-Treffer in E77-2025.xsd) — der Partner-Betrieb
+# braeuchte ein zweites E77-Dokument, die Mechanik dafuer fehlt (BACKLOG rechenluecken, 2026-08-12).
 EUER_KOMPONENTEN = ("betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag")
 GWG_FELDER = ("gwg_anschaffungskosten_netto",)
 VERLUST_FELD = ("verlustvortrag_bestand",)
 MITU_FELDER = ("gewinnanteil", "verguetung_taetigkeit", "verguetung_darlehen", "verguetung_ueberlassung")
+# Person-B: gleiche Kz wie Person A (aufgegangen in E0800502-Instanz-B), keine Sondervergütungs-
+# Trennung im Schema — s. bindung_an_gesamt.yaml.
+MITU_FELDER_PARTNER = ("gewinnanteil_partner", "verguetung_taetigkeit_partner",
+                       "verguetung_darlehen_partner", "verguetung_ueberlassung_partner")
 
 # ========== § 34 Abs. 3 Ermäßigter Durchschnittssatz ==========
 ABS3_FELDER = ("antrag_ermaessigter_satz", "dauernd_berufsunfaehig", "ermaessigung_einmal_genutzt")
 
 # ========== § 35 GewSt-Anrechnung ==========
 GESAMT_P35 = ("gewst_hebesatz", "gewst_messbetrag")
+GESAMT_P35_PARTNER = ("gewst_hebesatz_partner", "gewst_messbetrag_partner")
 
 # ========== § 19 Abs. 2 Versorgungsfreibetrag ==========
 GESAMT_VERSORGUNG = ("versorgung_jahresrente", "versorgung_bemessungsgrundlage",
@@ -406,6 +423,7 @@ GESAMT_REALSPLITTING = ("realsplitting_unterhaltsleistungen", "realsplitting_emp
 
 # ========== § 21 Veräußerungs-Gewinn (Gesamt) ==========
 GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")
+GESAMT_VG_PARTNER = ("rentner_veraeusserungsgewinn_partner", "rentner_veraeusserungs_betriebsart_partner")
 
 # ========== § 3 Nr. 72 Photovoltaik (steuerfreie Einnahmen) ==========
 GESAMT_PV = ("pv_einnahmen", "pv_bruttoleistung_kwp", "pv_anzahl_einheiten", "pv_auf_gebaeude")
@@ -423,9 +441,17 @@ STAMMDATEN_FELDER_PARTNER = ("stammdaten_nachname_partner", "stammdaten_vorname_
 
 # ========== § 2 Gewinn (Gesamt) ==========
 GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD + MITU_FELDER + ABS3_FELDER + GESAMT_PV
+# Person-B (Task Gewinneinkünfte-Partnerseite Stufe 1, Deklaration): EÜR-Komponenten und §34 Abs.3-
+# Flags bewusst NICHT dupliziert (s. EUER_KOMPONENTEN-Kommentar bzw. ABS3_FELDER; §34-Fixes laufen an
+# Person A). GWG_FELDER/VERLUST_FELD sind global (nicht person-individuell), kein Pendant nötig.
+GESAMT_GEWINN_PARTNER = (("einkuenfte_gewinn_partner", "gewinn_betriebsart_partner")
+                         + GESAMT_VG_PARTNER + GESAMT_P35_PARTNER + MITU_FELDER_PARTNER)
 
 # ========== RENTNER_FELDER — DRITTE ÄNDERUNG (Z.282 api.py) ==========
 RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P22_NR3_EINKUENFTE + P16_4_GATE_FELDER + KV_PV_PARTNER_FELDER + VOR_PARTNER_FELDER + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER
+
+# ========== RENTNER_FELDER — VIERTE ÄNDERUNG (Gewinneinkünfte Person-B, Stufe 1 Deklaration) ==========
+RENTNER_FELDER = RENTNER_FELDER + GESAMT_GEWINN_PARTNER + P16_4_GATE_FELDER_PARTNER
 
 # ========== Scheiben-Konfiguration ==========
 SCHEIBEN = {
@@ -463,14 +489,14 @@ SCHEIBEN = {
                    + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_VERSORGUNG
-                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN
+                   + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER
                    + GESAMT_33B + GESAMT_33B_PARTNER
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + ARBEITSMITTEL_AFA_GESAMT
-                   + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER
+                   + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER
                    + STEUERKLASSE_FELDER
                    + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER),
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")

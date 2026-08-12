@@ -879,13 +879,18 @@ bindungen:
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
     typ: text
     einheit: null
-    askable: true
+    # askable: false (2026-08-12): ERiC lehnt E0100082 amtlich ab, egal welcher Wert (s. elster_kz_grund
+    # unten) — das Feld wird nicht mehr deklariert und darf keinen Bescheid mehr sperren
+    # (AN_GESAMT_PARTNER/GESAMT_PARTNER_19 in api_constants.py). Damit ist es in keiner Scheibe mehr
+    # erreichbar (SCHEIBEN[...]["felder"]) — es weiter askable zu lassen waere eine tote Frage.
+    askable: false
     vorjahr: uebernehmbar
     fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer deines Ehe-/Lebenspartners (11 Ziffern)?"
     hilfe_kurz: "Bei gemeinsamer Erklärung braucht das Finanzamt die Identifikationsnummer beider Personen. Steht auf dem Steuerbescheid oder dem Schreiben des Bundeszentralamts."
     beispielwert: "02476291358"
     herkunft_slots: null
-    elster_kz: E0100082
+    elster_kz: null
+    elster_kz_grund: "E0100082 (IDNrBaseCType_RABE) lehnt ERiC amtlich ab: 'Nutzdaten enthalten das Feld ... mit dem Eingefuegt-Kennzeichen J oder P' (rc=610301106), egal welcher Wert gesendet wird — gemessen 2026-08-12, scripts/measure_person_b_idnr.py. Das Kennzeichen kommt in E10-2025.xsd KEIN einziges Mal vor (reine ERiC-interne Laufzeitregel, dem Schema unsichtbar) — Person A's eigene IdNr (E0100081) erscheint aus demselben Grund auch nie im amtlichen Beispiel-XML. Beste Evidenz: beide Felder sind fuer einen ELSTER-internen Identitaets-/Zertifikatsfeed reserviert, kein vom Steuerpflichtigen zu deklarierendes Datum. Sweep (BACKLOG person-b-idnr-wird-abgelehnt) bestaetigt: von 10 Elementen mit demselben XSD-Typ ist nur dieses betroffen, kind_idnr (E0500406, gleicher Typ) ist sauber."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 26 Abs. 2 S. 2 EStG"
@@ -1262,6 +1267,163 @@ bindungen:
       quelle: "§ 51a EStG i.V.m. Landes-KiStG (Kirchensteuer als Zuschlag der Mitglieder steuererhebender Religionsgemeinschaften)"
       zitatanker: "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer"
       datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+
+  # ===== §§ 13-18 Gewinneinkünfte + § 35 GewSt Person-B (Store-Modell A) =====
+  # Wie oben (Zeile 602 ff.): _partner-Zwillinge der Gewinn-/GewSt-Felder, gleiche Kz wie Person A,
+  # Anlage-G/S-INSTANZ B (person_b-Bucket). Klasse f×g PARTNER_VERZWEIGUNG (est_mapping) fuer
+  # einkuenfte_gewinn_partner (Betriebsart-Weiche); Klasse g PARTNER_INSTANZ fuer die beiden flachen
+  # GewSt-Kz. §15-Mitunternehmer-Felder bleiben wie bei Person A elster_kz: null (aufgegangen in
+  # E0800502-Instanz-B, kein Sondervergütungs-Kz im Schema). EÜR-Komponenten (betriebseinnahmen/
+  # sonstige_betriebsausgaben/afa_jahresbetrag) bewusst NICHT dupliziert: Anlage EÜR ist Datenart E77,
+  # ein eigenes Dokument OHNE Person-A/B-Indexfeld (E77-2025.xsd hat keinen Enum_INDEXFELD_PERSON-Treffer,
+  # anders als E10 — verifiziert 2026-08-12) — der Partner-Betrieb braeuchte ein zweites E77-Dokument,
+  # die Mechanik dafuer fehlt (BACKLOG rechenluecken). §34 Abs.3-Flags ebenfalls NICHT dupliziert:
+  # diese Felder werden an Person A gerade korrigiert (ermaessigung_einmal_genutzt invertiert,
+  # dauernd_berufsunfaehig ohne Alter-55-ODER-Verknuepfung) — ein Partner-Pendant waere heute die
+  # Verdopplung eines bekannten Fehlers.
+  - feld_id: einkuenfte_gewinn_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: einkuenfte_gewinn_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war der Gewinn deines Ehe-/Lebenspartners aus Gewerbebetrieb, Land-/Forstwirtschaft oder selbständiger/freiberuflicher Arbeit dieses Jahr?"
+    hilfe_kurz: "Person-individuell: der bereits ermittelte Gewinn deines Partners (Einnahmen minus Betriebsausgaben, z. B. aus seiner Einnahmenüberschussrechnung). Einen Verlust trägst du als negativen Betrag ein."
+    beispielwert: 2500000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Klasse f×g PARTNER_VERZWEIGUNG (est_mapping) je gewinn_betriebsart_partner: dieselben Kz wie Person A (gewerbe=E0800502, selbstaendig=E0803402), Anlage-G/S-INSTANZ B (person_b-Bucket) — kein distinktes Ehegatte-Kz. land_forst bewusst ohne Kz (spiegelt Person A, Anlage L hat zwei alternative Kz je Gewinnermittlungsart)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 2 S. 1 Nr. 1 EStG"
+      zitatanker: "bei Land- und Forstwirtschaft, Gewerbebetrieb und selbständiger Arbeit der Gewinn"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  - feld_id: gewinn_betriebsart_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: gewinn_betriebsart_partner_weiche}
+    typ: enum
+    einheit: null
+    enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Aus welcher Art von Tätigkeit stammt der Gewinn deines Ehe-/Lebenspartners?"
+    hilfe_kurz: "Gewerbebetrieb (Anlage G), selbständige/freiberufliche Tätigkeit (Anlage S) oder Land- und Forstwirtschaft (Anlage L) — für den Betrieb deines Partners. Die Auswahl steuert nur, in welche Anlage sein Gewinn eingetragen wird."
+    beispielwert: "gewerbe"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche Person B (steuert die Klasse f×g-Kz-Verzweigung des Partner-Gewinns nach Anlage G/S), kein eigenes Betragsfeld/Kz. Gleiche Enum-Werte wie gewinn_betriebsart (Person A) und rentner_veraeusserungs_betriebsart."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 1-3 EStG"
+      zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  - feld_id: gewinnanteil_partner
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: gewinnanteil_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch ist der zugerechnete Gewinn- oder Verlustanteil deines Ehe-/Lebenspartners als Mitunternehmer (OHG/KG/GbR)?"
+    hilfe_kurz: "Der ausgleichsfähige Gewinn-/Verlustanteil deines Partners aus seinem eigenen Feststellungsbescheid (nach § 15a). Einen Verlust trägst du als negativen Betrag ein."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Mitu-Gewinnanteil Person B, in E0800502-Instanz-B aufgegangen (wie Person A). Schema E0800602 = ein Betrag je Beteiligung, keine Sonderverg.-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "die Gewinnanteile der Gesellschafter einer Offenen Handelsgesellschaft, einer Kommanditgesellschaft und einer anderen Gesellschaft, bei der der Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen ist"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_taetigkeit_partner
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_taetigkeit_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner als Gesellschafter Vergütungen für seine Tätigkeit im Dienst der Gesellschaft bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2 für deinen Partner: was er von der Gesellschaft für seine Mitarbeit erhalten hat — steuerlich Teil seiner gewerblichen Einkünfte, nicht Arbeitslohn."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung Person B, in E0800502-Instanz-B aufgegangen (wie Person A). Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für seine Tätigkeit im Dienst der Gesellschaft"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_darlehen_partner
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_darlehen_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner der Gesellschaft ein Darlehen gegeben und dafür Zinsen bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2 für deinen Partner: Zinsen für die Hingabe von Darlehen an die Gesellschaft — steuerlich Teil seiner gewerblichen Einkünfte."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung Person B, in E0800502-Instanz-B aufgegangen (wie Person A). Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für die Hingabe von Darlehen"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_ueberlassung_partner
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_ueberlassung_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner der Gesellschaft Wirtschaftsgüter überlassen (z. B. ein Grundstück vermietet) und dafür eine Vergütung bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2 für deinen Partner: Miete/Pacht für die Überlassung von Wirtschaftsgütern an die Gesellschaft — steuerlich Teil seiner gewerblichen Einkünfte, nicht Einkünfte aus Vermietung."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung Person B, in E0800502-Instanz-B aufgegangen (wie Person A). Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für die Überlassung von Wirtschaftsgütern"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: gewst_hebesatz_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_hebesatz_partner}
+    typ: int
+    einheit: null
+    bereich: {min: 1, max: 999, grund: "Reine Sanity-Bound (Hebesatz-Prozentzahl > 0), wie gewst_hebesatz (Person A). KEIN gesetzlicher Mindesthebesatz-Anker."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie hoch ist der Gewerbesteuer-Hebesatz der Gemeinde deines Ehe-/Lebenspartners (in Prozent)?"
+    hilfe_kurz: "Steht auf seinem Gewerbesteuer-Bescheid oder bei seiner Gemeinde (übliche Werte 200-900 %, z. B. 400). Bestimmt die tatsächlich gezahlte Gewerbesteuer für die Anrechnung auf die Einkommensteuer (§ 35) — eigener Betrieb, eigener Hebesatz."
+    beispielwert: 400
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse g PARTNER_INSTANZ (est_mapping): derselbe Kz E0801705 wie Person A (G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Zu_zah_GSt_VZ), Anlage-G-INSTANZ B (person_b-Bucket) — kein distinktes Ehegatte-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35 Abs. 1 S. 1 EStG"
+      zitatanker: "tatsächlich zu zahlende Gewerbesteuer"
+      datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
+  - feld_id: gewst_messbetrag_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_messbetrag_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch ist der Gewerbesteuer-Messbetrag deines Ehe-/Lebenspartners?"
+    hilfe_kurz: "Aus dem Gewerbesteuer-Messbescheid deines Partners. Trag ihn ein, wenn du die Anrechnung der Gewerbesteuer auf die Einkommensteuer (§ 35) für seinen Betrieb willst; ohne Eintrag entfällt die Anrechnung."
+    beispielwert: 1500000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse g PARTNER_INSTANZ (est_mapping): derselbe Kz E0801606 wie Person A (G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Festzus_GMB_VZ), Anlage-G-INSTANZ B (person_b-Bucket) — kein distinktes Ehegatte-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 11 Abs. 1 S. 1 GewStG"
+      zitatanker: "von einem Steuermessbetrag auszugehen"
+      datei: "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt"
 
 luecken:
   # -- §24a Altersentlastungsbetrag: Bemessungs-Inputs + Kohorten-Parameter (gesamt-Kontext, §24a gesamt-only) --
