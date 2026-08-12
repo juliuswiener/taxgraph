@@ -1416,6 +1416,10 @@ rechenluecken:
          designlock.md) nennen dieselben Feldnamen, aber nur unter dem Kz-Mapping-Aspekt (fehlt
          eine Elster-Kennziffer) — die eigentliche Aussage aus 92cdca69 (die Felder sind toter
          Code, keine Regel ruft sie auf) steht in keinem der beiden. STRUKTUR.
+         ERLEDIGT 2026-08-12 (reports/adjudikation/tote-gate-felder-unfallkosten-analyse-2026-08-12.md,
+         391d49f): beide Bindungs-Eintraege aus bindung_kap_vv_familie.yaml geloescht — dritte
+         Achse gemessen (elster_kz: null, scheiben-unerreichbar), redundant zu fam_anzahl_kinder.
+         UNERREICHBAR_BEKANNT in tests/test_bindungstabelle.py entsprechend gekuerzt.
 
       9. Unfallkosten Rz.30 Streitstand — a2a89c06 (2026-07-09): "Unfallkosten (Rz. 30) als
          Streitstand-Claim markiert (BMF contra BFH VI R 8/18), nicht formalisiert." grep

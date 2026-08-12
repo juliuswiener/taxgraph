@@ -367,8 +367,8 @@ def test_neg_gemischte_summanden(daten):
 UNERREICHBAR_BEKANNT = {
     # § 33 Abs. 1 Tatbestand — Geltungsbedingungen der Regel, nicht erfragt
     "agb_notwendig_angemessen", "agb_zwangslaeufig",
-    # § 32 Kind-Stammdaten — der Ring rechnet aus fam_anzahl_kinder, nicht je Kind
-    "fam_kinder_beruecksichtigt", "fam_kinder_im_haushalt", "kind_idnr",
+    # kind_idnr — instanz_gruppe: kind, kein Top-Level-Feld in SCHEIBEN["felder"]
+    "kind_idnr",
     # kind_kindschaftsverhaeltnis_a/b + kind_kindschaftsverh_zeitraum_a/b: seit 2026-08-12
     # via KIND_KV_PV im Kegel (checkESt-Messung), also erreichbar — nicht mehr hier.
     # § 6 Abs. 2 GWG-Tatbestand — Geltungsbedingungen, nicht erfragt
@@ -1053,10 +1053,13 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
 # Waren am 2026-08-07 neun; p10_1_9_schulgeld und p33_2a_fahrtkostenpauschale sind seither
 # über golden/runner.py angebunden.
 REGELN_OHNE_GROUND_TRUTH = {
-    # Catala-Scope ist schmaler als die Bindung: FestzusetzendeEstEinzel kennt 4 Inputs, die
-    # Bindung fuehrt zusaetzlich veranlagung/gewst_*/einkuenfte_gewinn (+ bei _zusammen ~34
-    # Partner-Slots). Die laufen ueber api.py:560-585, nicht durch den Scope. Ein Anschluss
-    # wuerde 5 bzw. ~39 Schein-Verstoesse erzeugen — gemessen und deshalb verworfen.
+    # KORREKTUR 2026-08-12 (598e966/e907fad): _catala_inputs() globt rules/estg/<rule_id>/*.catala_en
+    # — fuer diese rule_ids liefert das NICHTS, das Verzeichnis heisst nicht wie die rule_id.
+    # Die echte Ground Truth liegt bei rules/estg/p32a/einkommensteuertarif.catala_en:
+    # FestzusetzendeEstEinzel Zeile 319, FestzusetzendeEstZusammen Zeile 382. Verzeichnisname
+    # != rule_id. Ein Anschluss wurde gemessen und verworfen: 1 geloester Blindspot gegen 41
+    # neue Dokumentationseintraege, plus eine noetige rule_id->Scope-Namen-Tabelle, weil
+    # snake_case und PascalCase hier keinen gemeinsamen Wortstamm haben.
     "p2_festzusetzung_einzel",
     "p2_festzusetzung_zusammen",
     # Pseudoregel-Scope, hat wirklich keine Signatur.

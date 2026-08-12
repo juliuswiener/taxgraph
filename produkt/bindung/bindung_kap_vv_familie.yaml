@@ -482,53 +482,13 @@ bindungen:
       quelle: "§ 24b Abs. 4 EStG"
       zitatanker: "Für jeden vollen Kalendermonat, in dem die Voraussetzungen des Absatzes 1 nicht vorgelegen haben"
       datei: "sources/gesetze-im-internet/estg_p24b_2026-07-09.txt"
-  # DEFERRED (Bug2 MVP): Feld ist TOT — kein Accessor in golden/runner.py, kein Lesezugriff in
-  # produkt/haut/api.py; die Catala-Signatur p24b_entlastungsbetrag nimmt nur alleinstehend/
-  # anzahl_kinder/monate_ohne_voraussetzung, kein eigenes Bool-Gate. Voll-Verdrahtung als
-  # Ring-Gate ist eine größere Änderung; MVP-Mitigation stattdessen: fam_anzahl_kinder ist per
-  # geschärfter Selbstdeklaration (fragetext_laie) bereits die anspruchsberechtigte Kinderzahl.
-  - feld_id: fam_kinder_im_haushalt
-    quelle: {regel_id: p24b_entlastungsbetrag, geltungsbedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt}
-    typ: bool
-    einheit: null
-    askable: true
-    vorjahr: uebernehmbar
-    fragetext_laie: "Steht dir für die Kinder in deinem Haushalt Kindergeld oder ein Kinderfreibetrag zu?"
-    hilfe_kurz: "Nur solche Kinder zählen für den Entlastungsbetrag."
-    beispielwert: true
-    herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Konzept-Mismatch: 'Anspruch auf Kindergeld' (E0500702) ist ein ANDERES Konzept als 'Kind im Haushalt' — der Kindergeld-Anspruch besteht auch ohne Haushaltszugehörigkeit; kein Direkt-Kz."
-    vz_gueltigkeit: [2024, 2025, 2026]
-    anker_ref:
-      quelle: "§ 24b Abs. 1 S. 1 EStG"
-      zitatanker: "Freibetrag nach § 32 Absatz 6 oder Kindergeld zusteht"
-      datei: "sources/gesetze-im-internet/estg_p24b_2026-07-09.txt"
-
-  # ========================= Familie — Kinderfreibeträge (p32_6) =========================
-  # DEFERRED (Bug2 MVP): Feld ist TOT — kein Accessor in golden/runner.py, kein Lesezugriff in
-  # produkt/haut/api.py. Die Regel p32_6_kinderfreibetraege wird im Ring gar nicht aufgerufen;
-  # der Kinderfreibetrag läuft direkt über runner._kinderfreibetrag(vz, veranlagung) * fam_anzahl_kinder
-  # (api.py:876), ungefiltert. Voll-Verdrahtung als Ring-Gate ist eine größere Änderung; MVP-
-  # Mitigation stattdessen: fam_anzahl_kinder ist per geschärfter Selbstdeklaration bereits die
-  # anspruchsberechtigte Kinderzahl.
-  - feld_id: fam_kinder_beruecksichtigt
-    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kinder_sind_zu_beruecksichtigen}
-    typ: bool
-    einheit: null
-    askable: true
-    vorjahr: uebernehmbar
-    fragetext_laie: "Sind deine Kinder steuerlich zu berücksichtigen (z. B. unter 18, oder in Ausbildung unter 25)?"
-    hilfe_kurz: "Nur berücksichtigungsfähige Kinder bekommen einen Freibetrag."
-    beispielwert: true
-    herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
-    vz_gueltigkeit: [2024, 2025, 2026]
-    anker_ref:
-      quelle: "§ 32 Abs. 6 S. 1 EStG"
-      zitatanker: "für jedes zu berücksichtigende Kind des Steuerpflichtigen ein Freibetrag"
-      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  # fam_kinder_im_haushalt (p24b) + fam_kinder_beruecksichtigt (p32_6) GELOESCHT 2026-08-12
+  # (reports/adjudikation/tote-gate-felder-unfallkosten-analyse-2026-08-12.md, Commit 391d49f):
+  # auf drei Achsen tot gemessen — kein Accessor in api.py/golden/runner.py, elster_kz: null,
+  # scheiben-unerreichbar (nie in api_constants.py-Tupeln, UNERREICHBAR_BEKANNT dokumentierte
+  # das seit 92cdca69). Redundant zu fam_anzahl_kinder, das seit 92cdca69 bereits nach der
+  # anspruchsberechtigten Kinderzahl fragt. _scheibe_bindung() filtert unerreichbare Felder vor
+  # dem Traverser raus — kein Under-tax-Risiko durch die Loeschung, reines totes Gewicht.
 
   # ===== Anlage Kind — Per-Kind-Formfelder (Repeated-Instance-Konsument, instanz_gruppe:kind) =====
   # Kind 1 = Basis-feld_id (0 Regression zum count-MVP-Tarif), Kind 2..N = __n-Instanz (Kz-Reuse je Kind).
@@ -858,6 +818,9 @@ luecken:
   - regel_id: p24b_entlastungsbetrag
     geltungsbedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
     grund: "Konvention: volle Kalendermonate (ganzzahl_monate); im Feld fam_monate_ohne_voraussetzung materialisiert."
+  - regel_id: p24b_entlastungsbetrag
+    geltungsbedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+    grund: "War fam_kinder_im_haushalt, geloescht 2026-08-12 (reports/adjudikation/tote-gate-felder-unfallkosten-analyse-2026-08-12.md): dritte Achse tot — kein Accessor in api.py/golden/runner.py, elster_kz: null, scheiben-unerreichbar. fam_anzahl_kinder ist seit 92cdca69 per geschaerfter Selbstdeklaration bereits die anspruchsberechtigte Kinderzahl."
   # -- Familie p32_6 (geteilte Slots + Annahmen) --
   - regel_id: p32_6_kinderfreibetraege
     signatur_slot: anzahl_kinder
@@ -871,6 +834,9 @@ luecken:
   - regel_id: p32_6_kinderfreibetraege
     geltungsbedingung: keine_uebertragung_oder_sonderfaelle
     grund: "Übertragung des Kinderfreibetrags / Sonderfälle (Anlage Kind) außerhalb dieser Erst-Scheibe."
+  - regel_id: p32_6_kinderfreibetraege
+    geltungsbedingung: kinder_sind_zu_beruecksichtigen
+    grund: "War fam_kinder_beruecksichtigt, geloescht 2026-08-12 (reports/adjudikation/tote-gate-felder-unfallkosten-analyse-2026-08-12.md): die Regel wird im Ring gar nicht aufgerufen, der Kinderfreibetrag laeuft direkt ueber runner._kinderfreibetrag(vz, veranlagung) * fam_anzahl_kinder (api.py:876). fam_anzahl_kinder ist seit 92cdca69 per geschaerfter Selbstdeklaration bereits die anspruchsberechtigte Kinderzahl."
   # -- Familie p31 (Günstiger-Knoten; alle Inputs berechnet, keine askable Slots) --
   - regel_id: p31_familienleistungsausgleich
     signatur_slot: est_ohne_freibetraege
