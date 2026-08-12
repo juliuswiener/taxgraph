@@ -1100,6 +1100,37 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     # separaten dba_multi_country_offen-Sperrgrund in api.py, der von dieser Bindung nicht
     # beruehrt wird. Fix: signatur_slot statt geltungsbedingung.
     ("p34c_gesamt", "dba_mehrere_staaten", "p34c_1_anrechnung_hoechstbetrag", "mehrere_staaten"),
+    # bindung_an_gesamt.yaml — p34_3_ermaessigter_durchschnittssatz: dauernd_berufsunfaehig
+    # und ermaessigung_einmal_genutzt sind Eligibility-/Antrags-Flags (bindung_an_gesamt.yaml,
+    # Kommentar Zeile ~471: "3 bool-Flags, KEINE Modul-Inputs"), keine Inputs der Catala-
+    # Signatur (die kennt nur ao_einkuenfte/est_gesamt_zzgl_progression/bemessungsgrundlage_
+    # durchschnitt). Bis 2026-08-12 standen beide als geltungsbedingung an derselben Bindung —
+    # beide Bedingungsnamen (persoenliche_voraussetzung_erfuellt, einmal_im_leben) existieren
+    # echt in rules.yaml, aber die Kopplung war trotzdem falsch (s. reports/adjudikation/
+    # gate_screening_polaritaet_2026-08-12.md):
+    #   - persoenliche_voraussetzung_erfuellt = (Alter>=55 [DERIVE aus geburtsjahr] ODER
+    #     dauernd_berufsunfaehig) — eine ZWEI-Fakten-Disjunktion. relevanz() kann nur EIN Feld
+    #     UND-verknuepft ausschliessen; ein bestaetigtes "Nein" auf dauernd_berufsunfaehig hat
+    #     die Regel auch fuer einen 60-Jaehrigen ausgeschlossen, der die Voraussetzung ueber die
+    #     Altersgrenze laengst erfuellt. Kein Polaritaetsfix moeglich (keine Belegung von
+    #     dauernd_berufsunfaehig allein macht die Disjunktion wahr/falsch) — ein halber Fix
+    #     (nur Flip) haette den 55-Jaehrigen ohne Berufsunfaehigkeit weiter ausgeschlossen. Die
+    #     korrekte OR/AND/NOT-Formel steht laengst in api.py._abs3_eligible() (Chooser fuer
+    #     Abs.1-vs-Abs.3) UND im eigenen Bindungskommentar oben — das Interview-Gate war
+    #     redundant und strukturell unfaehig, die Disjunktion abzubilden. Fix: entfernen
+    #     (signatur_slot), nicht nachbauen — die Eligibility-Pruefung lebt schon korrekt in
+    #     _abs3_eligible().
+    #   - einmal_im_leben: False (noch nicht genutzt) = Normalfall/Erstantrag. relevanz()
+    #     schliesst bei bestaetigt False aus — der Erstantragsteller (die grosse Mehrheit) wird
+    #     nie gefragt. Anders als bei dauernd_berufsunfaehig waere diese eine WAERE mechanisch
+    #     per Flip loesbar (Einzelbedingung, sauber invertierbar) — abweichend von der
+    #     "mechanisch"-Einordnung aber trotzdem als signatur_slot entfernt statt umbenannt:
+    #     _abs3_eligible() in api.py liest den Rohwert direkt und braucht keine Gate-Kopplung;
+    #     ein Rename haette den API-Zugriff angefasst (ausserhalb des Auftragsrahmens fuer diese
+    #     Bugfix-Serie, s. Team-Lead-Vorgabe). Entfernen statt Umbenennen erreicht dieselbe
+    #     Korrektheit ohne dieses Risiko.
+    ("an_gesamt", "dauernd_berufsunfaehig", "p34_3_ermaessigter_durchschnittssatz", "berufsunfaehig"),
+    ("an_gesamt", "ermaessigung_einmal_genutzt", "p34_3_ermaessigter_durchschnittssatz", "bereits_genutzt"),
 }
 
 

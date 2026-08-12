@@ -299,3 +299,109 @@ def test_relevanz_p34c_mutation_mit_geltungsbedingung(bindung):
     rel = T.relevanz(s, b2)
     assert rel["p34c_1_anrechnung_hoechstbetrag"]["status"] == "ausgeschlossen", (
         "Gegenprobe fehlgeschlagen: mit geltungsbedingung müsste die Regel ausschließbar sein")
+
+
+# ---- p34_3: dauernd_berufsunfaehig / ermaessigung_einmal_genutzt, kein Gate (Screening-Sweep
+#      2026-08-12) --------------------------------------------------------------------------
+#
+# Beide Felder hingen über geltungsbedingung an p34_3_ermaessigter_durchschnittssatz — beide
+# Bedingungsnamen (persoenliche_voraussetzung_erfuellt, einmal_im_leben) existieren wirklich in
+# rules.yaml, wie bei per_country_ein_staat oben. Zwei verschiedene Fehlerbilder:
+#
+#   dauernd_berufsunfaehig: persoenliche_voraussetzung_erfuellt = (Alter>=55 [aus geburtsjahr
+#   abgeleitet] ODER dauernd_berufsunfaehig) — eine Disjunktion über ZWEI Fakten. relevanz()
+#   kann nur EIN Feld UND-verknüpft ausschließen; ein bestätigtes "Nein" auf
+#   dauernd_berufsunfaehig hätte die Regel auch für einen 60-Jährigen ausgeschlossen, der die
+#   Voraussetzung längst über die Altersgrenze erfüllt. Kein Polaritätsfix möglich — keine
+#   Belegung von dauernd_berufsunfaehig allein entscheidet die Disjunktion. Die korrekte
+#   OR/AND/NOT-Formel steht bereits in api.py._abs3_eligible() UND im Bindungskommentar
+#   (bindung_an_gesamt.yaml Zeile ~471) — das Interview-Gate war redundant und strukturell
+#   unfähig, die Disjunktion abzubilden. Fix: entfernt, nicht nachgebaut.
+#
+#   ermaessigung_einmal_genutzt: einmal_im_leben, False (noch nicht genutzt) = Normalfall/
+#   Erstantrag. relevanz() schließt bei bestätigt False aus — der Erstantragsteller (die große
+#   Mehrheit) wurde nie gefragt. Anders als bei dauernd_berufsunfaehig wäre dieses Feld
+#   mechanisch per Polaritäts-Flip lösbar gewesen (Einzelbedingung, sauber invertierbar) — hier
+#   trotzdem entfernt statt umbenannt, weil _abs3_eligible() in api.py den Rohwert direkt liest
+#   und keine Gate-Kopplung braucht; ein Rename hätte den API-Zugriff angefasst (außerhalb des
+#   Auftragsrahmens dieser Bugfix-Serie).
+#
+# antrag_ermaessigter_satz (geltungsbedingung: antrag_gestellt) ist NICHT Teil dieses Fixes:
+# eine Einzelbedingung ohne Disjunktion, False = "kein Antrag" = tatsächlich ineligibel — ein
+# Kontrolltest unten belegt, dass dieses Gate unverändert korrekt ausschließt.
+
+def test_dauernd_berufsunfaehig_ist_kein_gate(bindung):
+    assert "geltungsbedingung" not in bindung["dauernd_berufsunfaehig"]["quelle"]
+
+
+def test_ermaessigung_einmal_genutzt_ist_kein_gate(bindung):
+    assert "geltungsbedingung" not in bindung["ermaessigung_einmal_genutzt"]["quelle"]
+
+
+def test_relevanz_p34_3_ueber_55_ohne_berufsunfaehigkeit_bleibt_relevant(bindung):
+    """Normalfall: 60-Jähriger beantragt den ermäßigten Satz, ist NICHT dauernd berufsunfähig
+    (Antwort 'Nein' — erfüllt die Voraussetzung längst über die Altersgrenze). Die Regel darf
+    NICHT ausgeschlossen werden — sonst wird § 34 Abs. 3 dem Alters-Regelfall nie angeboten."""
+    s = ST.leerer_store(2025)
+    _bestaetigt(s, "antrag_ermaessigter_satz", True)
+    _bestaetigt(s, "dauernd_berufsunfaehig", False)
+    rel = T.relevanz(s, bindung)
+    assert rel["p34_3_ermaessigter_durchschnittssatz"]["status"] != "ausgeschlossen"
+    fragen = T.naechste_fragen(s, bindung)
+    p34_3_felder = [f for f in fragen if bindung[f]["quelle"]["regel_id"] == "p34_3_ermaessigter_durchschnittssatz"]
+    assert p34_3_felder, "§34-Abs.3-Folgefragen fehlen trotz Normalfall (Alter>=55, nicht berufsunfähig)"
+
+
+def test_relevanz_p34_3_mutation_mit_geltungsbedingung_berufsunfaehig(bindung):
+    """Gegenprobe: MIT der (falschen, aber namentlich echten) geltungsbedingung wäre die Regel
+    für den 60-Jährigen ohne Berufsunfähigkeit ausgeschlossen gewesen."""
+    b2 = {k: (dict(v, quelle=dict(v["quelle"])) if k == "dauernd_berufsunfaehig" else v)
+          for k, v in bindung.items()}
+    b2["dauernd_berufsunfaehig"]["quelle"]["geltungsbedingung"] = "persoenliche_voraussetzung_erfuellt"
+    s = ST.leerer_store(2025)
+    _bestaetigt(s, "antrag_ermaessigter_satz", True)
+    _bestaetigt(s, "dauernd_berufsunfaehig", False)
+    rel = T.relevanz(s, b2)
+    assert rel["p34_3_ermaessigter_durchschnittssatz"]["status"] == "ausgeschlossen", (
+        "Gegenprobe fehlgeschlagen: mit geltungsbedingung müsste die Regel ausschließbar sein")
+
+
+def test_relevanz_p34_3_erstantrag_bleibt_relevant(bindung):
+    """Normalfall: Erstantrag, ermaessigung_einmal_genutzt=False ('noch nie genutzt'). Die Regel
+    darf NICHT ausgeschlossen werden — sonst wird § 34 Abs. 3 dem Erstantragsteller (die große
+    Mehrheit) nie angeboten."""
+    s = ST.leerer_store(2025)
+    _bestaetigt(s, "antrag_ermaessigter_satz", True)
+    _bestaetigt(s, "ermaessigung_einmal_genutzt", False)
+    rel = T.relevanz(s, bindung)
+    assert rel["p34_3_ermaessigter_durchschnittssatz"]["status"] != "ausgeschlossen"
+    fragen = T.naechste_fragen(s, bindung)
+    p34_3_felder = [f for f in fragen if bindung[f]["quelle"]["regel_id"] == "p34_3_ermaessigter_durchschnittssatz"]
+    assert p34_3_felder, "§34-Abs.3-Folgefragen fehlen trotz Normalfall (Erstantrag)"
+
+
+def test_relevanz_p34_3_mutation_mit_geltungsbedingung_einmal_genutzt(bindung):
+    """Gegenprobe: MIT der (falschen, aber namentlich echten) geltungsbedingung wäre die Regel
+    für den Erstantragsteller ausgeschlossen gewesen."""
+    b2 = {k: (dict(v, quelle=dict(v["quelle"])) if k == "ermaessigung_einmal_genutzt" else v)
+          for k, v in bindung.items()}
+    b2["ermaessigung_einmal_genutzt"]["quelle"]["geltungsbedingung"] = "einmal_im_leben"
+    s = ST.leerer_store(2025)
+    _bestaetigt(s, "antrag_ermaessigter_satz", True)
+    _bestaetigt(s, "ermaessigung_einmal_genutzt", False)
+    rel = T.relevanz(s, b2)
+    assert rel["p34_3_ermaessigter_durchschnittssatz"]["status"] == "ausgeschlossen", (
+        "Gegenprobe fehlgeschlagen: mit geltungsbedingung müsste die Regel ausschließbar sein")
+
+
+def test_antrag_ermaessigter_satz_bleibt_echtes_gate(bindung):
+    """Kontrolle: antrag_ermaessigter_satz ist NICHT Teil dieses Fixes — eine echte
+    Einzelbedingung ohne Disjunktion. False ('kein Antrag') muss die Regel weiterhin
+    ausschließen, sonst hätte der Fix zu weit gegriffen."""
+    assert bindung["antrag_ermaessigter_satz"]["quelle"]["geltungsbedingung"] == "antrag_gestellt"
+    s = ST.leerer_store(2025)
+    _bestaetigt(s, "antrag_ermaessigter_satz", False)
+    rel = T.relevanz(s, bindung)
+    assert rel["p34_3_ermaessigter_durchschnittssatz"]["status"] == "ausgeschlossen", (
+        "antrag_ermaessigter_satz muss weiterhin ausschließen — dieses Gate war nicht Teil des Bugs"
+    )

@@ -491,7 +491,7 @@ bindungen:
       zitatanker: "so kann auf Antrag abweichend von Absatz 1 die auf den Teil dieser außerordentlichen Einkünfte, der den Betrag von insgesamt 5 Millionen Euro nicht übersteigt, entfallende Einkommensteuer nach einem ermäßigten Steuersatz bemessen werden"
       datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
   - feld_id: dauernd_berufsunfaehig
-    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, geltungsbedingung: persoenliche_voraussetzung_erfuellt}
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, signatur_slot: berufsunfaehig}
     typ: bool
     einheit: null
     askable: true
@@ -508,7 +508,7 @@ bindungen:
       zitatanker: "oder wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig ist"
       datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
   - feld_id: ermaessigung_einmal_genutzt
-    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, geltungsbedingung: einmal_im_leben}
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, signatur_slot: bereits_genutzt}
     typ: bool
     einheit: null
     askable: true
@@ -1301,6 +1301,12 @@ luecken:
   - regel_id: p34_3_ermaessigter_durchschnittssatz
     geltungsbedingung: bemessungsgrundlage_positiv
     grund: "Ring-Guard: bemessungsgrundlage_durchschnitt > 0 (Div-by-Zero-Schutz; ao>0 ⟹ zvE>0). Kein Laien-Feld; die Ring-Naht ruft das Modul nur bei positiver Basis."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    geltungsbedingung: persoenliche_voraussetzung_erfuellt
+    grund: "Disjunktion (Alter>=55 [DERIVE aus geburtsjahr] ODER dauernd_berufsunfaehig) — kein Einzelfeld-Gate möglich (relevanz() schließt nur UND-verknüpft auf EINEM Feld aus, wäre für den 55-Jährigen-ohne-Berufsunfähigkeit falsch-negativ). Die OR/AND/NOT-Eligibility lebt in api.py._abs3_eligible() (Chooser Abs.1-vs-Abs.3); dauernd_berufsunfaehig bleibt als reines Slot-Feld gebunden (kein Gate). Fund/Fix: reports/adjudikation/gate_screening_polaritaet_2026-08-12.md."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    geltungsbedingung: einmal_im_leben
+    grund: "War bis 2026-08-12 als Gate an ermaessigung_einmal_genutzt gebunden (bestätigt False schloss den Erstantragsteller-Normalfall — die große Mehrheit — aus). api.py._abs3_eligible() liest den Rohwert direkt (NOT ermaessigung_einmal_genutzt), keine Gate-Kopplung nötig; ermaessigung_einmal_genutzt bleibt als reines Slot-Feld gebunden. Fund/Fix: reports/adjudikation/gate_screening_polaritaet_2026-08-12.md."
 
   # -- EÜR § 4 Abs. 3 (p4_3_gewinn, Stufe 2-II): Geltungsbedingungen des Gewinn-Kerns --
   # Die vorberechneten net-Komponenten (betriebseinnahmen/-ausgaben) erfüllen die BE/BA-Reinheits-
