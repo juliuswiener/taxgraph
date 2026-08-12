@@ -214,6 +214,50 @@ def test_io_gate_rc_ist_nicht_gruen(tmp_path, monkeypatch):
     assert resp["klasse"] == "io_gate_nicht_geprueft"
 
 
+def test_io_reader_unerwartete_elemente_kein_plausibilitaetsverdikt(tmp_path, monkeypatch):
+    """rc=610301106 (ERIC_IO_READER_UNERWARTETE_ELEMENTE, gemessen bei person_b_idnr):
+    fiel vor dem Fix auf 'sonstig' und wurde trotzdem als grund=plausibilitaet_verletzt
+    gemeldet — eine Falschaussage ueber die Erklaerung. Muss jetzt eigene Klasse +
+    eigenen, ehrlichen grund haben."""
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
+    import elster_xml as EX
+    monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
+    monkeypatch.setattr(API.EM, "deklariere",
+                        lambda *a, **k: {"vollstaendig": True, "deklaration": {"E0100201": "M"},
+                                         "unvollstaendig": []})
+    import checkest_gate as CE
+    monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_IO_UNERWARTETE_ELEMENTE, ""))
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
+    st, resp = API.einreichen(r["fall_id"], {})
+    assert st == 422
+    assert resp["klasse"] == "io_reader_unerwartete_elemente"
+    assert resp["grund"] != "plausibilitaet_verletzt"
+    assert "610301106" in resp["detail"]
+
+
+def test_unbekannter_rc_faellt_nicht_in_plausibilitaet_verletzt(tmp_path, monkeypatch):
+    """Kern des Auftrags: ein rc, den klassifiziere_rc gar nicht kennt ('sonstig'), darf
+    NICHT im selben Sammeleimer wie ein echter Plausibilitaetsfehler landen. Vorher fiel
+    JEDER unbekannte rc hier auf grund=plausibilitaet_verletzt durch."""
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
+    import elster_xml as EX
+    monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
+    monkeypatch.setattr(API.EM, "deklariere",
+                        lambda *a, **k: {"vollstaendig": True, "deklaration": {"E0100201": "M"},
+                                         "unvollstaendig": []})
+    import checkest_gate as CE
+    monkeypatch.setattr(CE, "validate", lambda *a, **k: (777777, ""))
+    _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
+    st, resp = API.einreichen(r["fall_id"], {})
+    assert st == 422
+    assert resp["klasse"] == "sonstig"
+    assert resp["grund"] == "rc_kein_plausibilitaetsverdikt"
+    assert "777777" in resp["detail"], "roher rc muss im Klartext stehen"
+    assert "eric.log" in resp["detail"], "leerer Puffer -> eric.log muss benannt sein"
+
+
 def test_erfolg_meldet_plausibel_aber_nicht_eingereicht(tmp_path, monkeypatch):
     """rc==0 ist der Erfolgsfall — und selbst der sagt eingereicht=False."""
     monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))

@@ -122,8 +122,9 @@
           "description": "MUSS = snapshot_id dieses Snapshots sein (Gate prüft)."},
         "rc": {"type": "integer"},
         "klasse": {"enum": ["plausibel", "plausibilitaet_fehler", "io_gate_nicht_geprueft",
-                            "hersteller_id_gesperrt", "sonstig"],
-          "description": "checkest_gate.klassifiziere_rc; io_gate_nicht_geprueft ≠ grün (Falsch-Grün-Sperre)."},
+                            "hersteller_id_gesperrt", "datenartversion_unbekannt",
+                            "io_reader_unerwartete_elemente", "sonstig"],
+          "description": "checkest_gate.klassifiziere_rc; io_gate_nicht_geprueft ≠ grün (Falsch-Grün-Sperre). datenartversion_unbekannt und io_reader_unerwartete_elemente ebenso ≠ grün."},
         "gekappt_verdacht": {"type": "boolean",
           "description": "checkest_gate.gekappt_verdacht: Fehlerliste evtl. am Cap gekappt. klasse=plausibel MIT gekappt_verdacht=true darf downstream NIE als grün gelten (Trunkierungs-Sperre bis in den Store)."},
         "fehler_anzahl": {"type": "integer", "minimum": 0}

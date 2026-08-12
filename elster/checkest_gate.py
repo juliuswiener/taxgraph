@@ -49,20 +49,33 @@ RC_HERSTELLER_GESPERRT = 610301202      # Test-Hersteller-ID gesperrt
 # "sonstig" und der Endpunkt meldete "plausibilitaet_verletzt": der Nutzer haette gelesen,
 # seine Erklaerung sei fehlerhaft, obwohl sie nie geprueft wurde.
 RC_DATENARTVERSION_UNBEKANNT = 610001042
+# ERIC_IO_READER_UNERWARTETE_ELEMENTE (eric_fehlercodes.h:965): "Es wurden unerwartete
+# Elemente in der Eingabedatei gefunden, Details stehen ggf. im Logfile (eric.log)."
+# Gemessen (Vollsweep, scripts/_vollsweep_rohdaten.json): person_b_idnr (E0100082) loest das
+# aus. Ohne eigenen Eintrag fiel der Code auf "sonstig" — derselbe Blindspot wie oben bei
+# RC_DATENARTVERSION_UNBEKANNT, nur dass hier sogar ERiC selbst auf eric.log verweist.
+RC_IO_UNERWARTETE_ELEMENTE = 610301106
 
 
 def klassifiziere_rc(rc: int) -> str:
     """rc einer Validierung klassifizieren.
 
-    Zwei Klassen bedeuten NICHT GEPRUEFT und duerfen nie wie ein Pruefergebnis behandelt
-    werden — beide liefern einen leeren Fehlerpuffer, der wie "keine Beanstandungen" aussieht:
-      RC_IO_KEIN_TICKET          short-circuit VOR der Plausibilitaet
+    Drei Klassen bedeuten NICHT GEPRUEFT und duerfen nie wie ein Pruefergebnis behandelt
+    werden — alle liefern einen leeren Fehlerpuffer, der wie "keine Beanstandungen" aussieht:
+      RC_IO_KEIN_TICKET             short-circuit VOR der Plausibilitaet
       RC_DATENARTVERSION_UNBEKANNT  fuer diesen VZ existiert gar kein Pruefmodul
+      RC_IO_UNERWARTETE_ELEMENTE    ERiCs XML-Reader lehnt die Eingabedatei schon ab
+
+    Ein rc, der hier nicht gelistet ist, faellt auf "sonstig" — NIE auf eine der obigen
+    Klassen oder gar "plausibel". "sonstig" ist selbst schon der Fail-closed-Fall: ein
+    Aufrufer, der ihn wie "kein Problem" behandelt, baut den Fehler nur eine Ebene hoeher
+    wieder ein (s. unerwarteter_rc_hinweis()).
     """
     return {RC_OK: "plausibel", RC_PLAUSIBILITAET: "plausibilitaet_fehler",
             RC_IO_KEIN_TICKET: "io_gate_nicht_geprueft",
             RC_HERSTELLER_GESPERRT: "hersteller_id_gesperrt",
-            RC_DATENARTVERSION_UNBEKANNT: "datenartversion_unbekannt"}.get(rc, "sonstig")
+            RC_DATENARTVERSION_UNBEKANNT: "datenartversion_unbekannt",
+            RC_IO_UNERWARTETE_ELEMENTE: "io_reader_unerwartete_elemente"}.get(rc, "sonstig")
 
 
 def gekappt_verdacht(antwort: str) -> bool:
@@ -72,7 +85,54 @@ def gekappt_verdacht(antwort: str) -> bool:
     return antwort.count("<FehlerRegelpruefung>") >= VALIDIERE_MELDUNGEN_MAX
 
 
-_STATE = {"eric": None, "lib_dir": None}
+def eric_log_pfad() -> str | None:
+    """Pfad zu eric.log des aktuell initialisierten ERiC-Prozesses, falls vorhanden.
+
+    EricInitialisiere(pfadBinaries, logVerzeichnis) legt darin woertlich "eric.log" an
+    (ericmtapi.h, Doku zu EricInitialisiere; Entwicklerhandbuch Kap. "Das ERiC Protokoll
+    eric.log"). Vor dem ersten validate()-Aufruf (kein log_dir gesetzt) gibt es None zurueck."""
+    log_dir = _STATE.get("log_dir")
+    if not log_dir:
+        return None
+    pfad = os.path.join(log_dir, "eric.log")
+    return pfad if os.path.exists(pfad) else None
+
+
+def _log_auszug(pfad: str, n: int = 10) -> str:
+    """Best-effort letzte n ERROR-/EC(-Zeilen aus eric.log. Wirft nie — das Logfile ist ein
+    Diagnose-Zusatz, kein Pruefpfad; ein Lesefehler darf den Befund selbst nicht kippen."""
+    try:
+        with open(pfad, encoding="utf-8", errors="replace") as f:
+            zeilen = f.readlines()
+    except OSError:
+        return ""
+    treffer = [z.rstrip("\n") for z in zeilen if "ERROR" in z or z.startswith("EC(")]
+    return "\n".join(treffer[-n:])
+
+
+def unerwarteter_rc_hinweis(rc: int, antwort: str) -> str:
+    """Klartext-Befund fuer jeden rc, der weder RC_OK noch RC_PLAUSIBILITAET ist.
+
+    Fail-closed gegen die Falsch-Gruen-Falle: ein Aufrufer, der nur die einzeln bekannten
+    Klassen abfragt und den Rest pauschal als "plausibilitaet_verletzt" meldet, behauptet
+    einen Inhaltsfehler fuer eine Erklaerung, die gar nicht inhaltlich geprueft wurde —
+    egal ob der rc bekannt (RC_IO_KEIN_TICKET, RC_IO_UNERWARTETE_ELEMENTE, ...) oder ganz
+    unbekannt ("sonstig") ist. Nennt immer den rohen rc + die Klasse im Klartext; ist der
+    Fehlerpuffer leer, zusaetzlich den Weg zu eric.log — das ist dann die einzige Quelle.
+    """
+    klasse = klassifiziere_rc(rc)
+    kern = f"rc={rc} [{klasse}] — kein Plausibilitaetsverdikt, die Erklaerung wurde nicht inhaltlich geprueft."
+    if antwort and "<Text>" in antwort:
+        return kern  # Puffer nicht leer -- der Grund steht dann bereits in der Ericantwort selbst.
+    pfad = eric_log_pfad()
+    if not pfad:
+        return kern + " Rueckgabepuffer leer -> Details ggf. in eric.log (Pfad nicht ermittelbar)."
+    auszug = _log_auszug(pfad)
+    return (kern + f" Rueckgabepuffer leer -> Details in eric.log ({pfad})"
+            + (f":\n{auszug}" if auszug else "."))
+
+
+_STATE = {"eric": None, "lib_dir": None, "log_dir": None}
 
 
 def _load_and_init():
@@ -116,7 +176,7 @@ def _load_and_init():
             raise RuntimeError(f"EricEinstellungSetzen({name.decode()}={VALIDIERE_MELDUNGEN_MAX}) "
                                f"fehlgeschlagen (rc={r}) — Fehler-Cap NICHT angehoben, "
                                f"Falsch-Gruen-Risiko. Abbruch statt stiller Kappung.")
-    _STATE.update(eric=eric, lib_dir=lib_dir)
+    _STATE.update(eric=eric, lib_dir=lib_dir, log_dir=log_dir)
     return eric
 
 

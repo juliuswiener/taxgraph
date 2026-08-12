@@ -74,9 +74,10 @@ def test_gekappt_verdacht_ohne_fehler():
 # -- rc-Konstanten sind stabil (Falsch-Gruen-Sperre bricht sonst) ------------
 
 def test_rc_konstanten_distinkt():
-    """Alle 4 rc-Konstanten muessen verschieden sein, sonst kollidiert die Klasse."""
-    s = {CE.RC_OK, CE.RC_PLAUSIBILITAET, CE.RC_IO_KEIN_TICKET, CE.RC_HERSTELLER_GESPERRT}
-    assert len(s) == 4
+    """Alle rc-Konstanten muessen verschieden sein, sonst kollidiert die Klasse."""
+    s = {CE.RC_OK, CE.RC_PLAUSIBILITAET, CE.RC_IO_KEIN_TICKET, CE.RC_HERSTELLER_GESPERRT,
+         CE.RC_DATENARTVERSION_UNBEKANNT, CE.RC_IO_UNERWARTETE_ELEMENTE}
+    assert len(s) == 6
 
 
 def test_validate_braucht_eric_oder_skip():
@@ -112,3 +113,49 @@ def test_datenartversion_unbekannt_ist_nicht_geprueft():
     """Wie RC_IO_KEIN_TICKET: leerer Fehlerpuffer, aber kein Pruefergebnis."""
     assert CE.klassifiziere_rc(CE.RC_DATENARTVERSION_UNBEKANNT) != "plausibel"
     assert CE.RC_DATENARTVERSION_UNBEKANNT != CE.RC_OK
+
+
+# -- ERIC_IO_READER_UNERWARTETE_ELEMENTE (610301106): eigener Eintrag, kein "sonstig" mehr --
+
+def test_rc_io_unerwartete_elemente_ist_eigene_klasse():
+    """Gemessen (Vollsweep, scripts/_vollsweep_rohdaten.json): person_b_idnr (E0100082)
+    -> rc=610301106, ERiC lehnt die Eingabedatei am XML-Reader ab. Ohne eigenen Eintrag
+    fiel der Code auf "sonstig", genau die Blindstelle wie bei RC_DATENARTVERSION_UNBEKANNT."""
+    assert CE.klassifiziere_rc(CE.RC_IO_UNERWARTETE_ELEMENTE) == "io_reader_unerwartete_elemente"
+    assert CE.klassifiziere_rc(CE.RC_IO_UNERWARTETE_ELEMENTE) != "sonstig"
+    assert CE.klassifiziere_rc(CE.RC_IO_UNERWARTETE_ELEMENTE) != "plausibilitaet_fehler"
+    assert CE.klassifiziere_rc(CE.RC_IO_UNERWARTETE_ELEMENTE) != "plausibel"
+
+
+# -- unerwarteter_rc_hinweis: Fail-closed-Generalisierung fuer JEDEN Nicht-Plausibilitaets-rc --
+
+def test_unerwarteter_rc_hinweis_nennt_rc_und_klasse_roh():
+    """Der rohe rc und die Klasse muessen im Klartext stehen — auch fuer einen rc, den
+    klassifiziere_rc gar nicht kennt. Das ist der Kern von "faellt nie in einen Sammeleimer,
+    der wie 'nichts Schlimmes' aussieht"."""
+    hinweis = CE.unerwarteter_rc_hinweis(999999, "")
+    assert "999999" in hinweis
+    assert "sonstig" in hinweis
+    assert "nicht inhaltlich geprueft" in hinweis
+
+
+def test_unerwarteter_rc_hinweis_leerer_puffer_nennt_eric_log():
+    """rc!=0 mit leerem Puffer -> eric.log muss im Ergebnis benannt sein (Auftrag Punkt 2).
+    Ohne laufendes ERiC ist der Pfad nicht ermittelbar, aber der Hinweis muss das SAGEN,
+    statt eric.log einfach zu verschweigen."""
+    hinweis = CE.unerwarteter_rc_hinweis(CE.RC_IO_UNERWARTETE_ELEMENTE, "")
+    assert "eric.log" in hinweis
+
+
+def test_unerwarteter_rc_hinweis_gefuellter_puffer_kein_eric_log_zwang():
+    """Steht der Grund schon im Rueckgabepuffer (<Text>...), muss nicht extra auf eric.log
+    verwiesen werden — der Puffer selbst ist dann die Quelle."""
+    hinweis = CE.unerwarteter_rc_hinweis(CE.RC_HERSTELLER_GESPERRT, "<Text>Hersteller-ID gesperrt</Text>")
+    assert "610301202" in hinweis
+    assert "hersteller_id_gesperrt" in hinweis
+
+
+def test_eric_log_pfad_ohne_init_none():
+    """Vor jedem validate()-Aufruf ist kein log_dir bekannt -> None, nicht raten."""
+    CE._STATE["log_dir"] = None
+    assert CE.eric_log_pfad() is None

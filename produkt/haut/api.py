@@ -2785,9 +2785,17 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
                      "detail": f"ERiC kennt die Datenartversion ESt_{vz} nicht — fuer diesen "
                                f"Veranlagungszeitraum liegt kein Pruefmodul vor. Die Erklaerung "
                                f"wurde nicht geprueft.", "ericantwort": antwort}
-    if rc != CE.RC_OK:
+    if klasse == "plausibilitaet_fehler":
         return 422, {**basis, "grund": "plausibilitaet_verletzt", "ericantwort": antwort,
                      "moeglicherweise_gekappt": CE.gekappt_verdacht(antwort)}
+    if rc != CE.RC_OK:
+        # Fail-closed: JEDER andere rc — bekannt (io_gate_nicht_geprueft,
+        # hersteller_id_gesperrt, io_reader_unerwartete_elemente, ...) oder unbekannt
+        # ("sonstig") — ist KEIN Plausibilitaetsverdikt. "plausibilitaet_verletzt" wuerde
+        # hier eine Falschaussage ueber die Erklaerung sein (Fund 2026-08-12: rc=610301106
+        # / person_b_idnr fiel bisher auf "sonstig" und landete trotzdem hier).
+        return 422, {**basis, "grund": "rc_kein_plausibilitaetsverdikt",
+                     "detail": CE.unerwarteter_rc_hinweis(rc, antwort), "ericantwort": antwort}
     audit.append(api_auth._AUTH_USER or "dev", "fall_validiert", fall_id, f"vz={vz} rc=0")
     return 200, {**basis, "plausibel": True,
                  "hinweis": "checkESt bestanden. Versand ist nicht verdrahtet — "
