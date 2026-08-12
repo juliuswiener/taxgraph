@@ -4,7 +4,9 @@
 Prüft: (1) Store-Guard fail-closed — import:vorjahr kann NIE bestaetigt schreiben; (2) Übertrag der
 vorjahr-flagged Felder als vorlaeufig+herkunft=vorjahr; (3) fail-closed-default — nicht-flagged Feld wird
 NICHT übertragen; (4) K2 — nur BESTÄTIGTE Vorjahres-Werte werden übernommen; (5) kein Überschreiben eines
-schon aktiven Events; (6) signal_1-Vorjahr-Ref-Form.
+schon aktiven Events; (6) signal_1-Vorjahr-Ref-Form; (7) Ratsche — Bestand/Zustand-Felder (Wert ändert
+sich durch Verrechnung/Verbrauch im Vorjahr, z.B. verlustvortrag_bestand) tragen NIE das vorjahr-Flag,
+weil die generische Übernahme (Zeile 47, `wert = vf["wert"]`) wortwörtlich kopiert.
 """
 from __future__ import annotations
 
@@ -112,3 +114,35 @@ def test_kein_ueberschreiben_aktives_event(bindung):
     VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
     nf, _ = ST.materialisiere(neu)
     assert nf["bruttoarbeitslohn"]["wert"] == 4500000 and nf["bruttoarbeitslohn"]["zustand"] == "bestaetigt"
+
+
+# ---- (7) Ratsche: Bestand/Zustand-Felder duerfen NIE das vorjahr-Flag tragen -----
+
+BESTAND_FELDER_OHNE_VORJAHR = {
+    "verlustvortrag_bestand": (
+        "§ 10d Abs. 4 EStG: der Bestand aendert sich durch Verrechnung im Vorjahr. Die generische "
+        "Uebernahme kopiert wortwoertlich (vorjahr_writer.py:47) — mit Flag wuerde sie den "
+        "unverrechneten Altwert als Vorschlag zeigen statt des tatsaechlich verbleibenden Bestands."),
+    "rentner_freibetrag_erstmalig": (
+        "§ 16 Abs. 4 S. 2 EStG: der Freibetrag steht nur einmal im Leben zu. Wird er dieses Jahr "
+        "gewaehrt, muss die Antwort naechstes Jahr auf false kippen — eine literale Kopie zeigt ihn "
+        "faelschlich weiter verfuegbar."),
+    "am_afa_ist_anschaffungsjahr": (
+        "§ 7 Abs. 1 EStG: die Frage ('DIESES Jahr angeschafft?') ist per Definition in jedem "
+        "Folgejahr falsch, wenn kopiert — die AfA wuerde wieder anteilig statt voll fuer das Jahr "
+        "berechnet, Werbungskosten dauerhaft zu niedrig."),
+}
+
+
+def test_bestand_felder_tragen_kein_vorjahr_flag(bindung):
+    """Ratsche gegen §10d-Sweep 2026-08-12 (BACKLOG commit-nur-defer-sweep-2026-08-10, Fund 3).
+
+    vorjahr_writer.py kopiert den Vorjahreswert wortwoertlich (Zeile 47, `wert = vf["wert"]`). Das
+    ist bei Stammdaten (Name, Geburtsjahr, Renten-Beginn-Jahr) richtig, aber falsch bei Feldern,
+    deren Wert sich durch Verrechnung/Verbrauch im Vorjahr veraendert hat. Faellt dieser Test rot,
+    wurde das vorjahr-Flag fuer eines der u.g. Felder wieder gesetzt — der Grund im Dict steht,
+    warum das falsch waere.
+    """
+    for fid, grund in BESTAND_FELDER_OHNE_VORJAHR.items():
+        vj = bindung.get(fid, {}).get("vorjahr")
+        assert vj is None, f"{fid} traegt wieder ein vorjahr-Flag ({vj!r}). {grund}"

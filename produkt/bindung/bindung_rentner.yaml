@@ -421,7 +421,9 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
-    vorjahr: uebernehmbar
+    # KEIN vorjahr-Flag (bewusst, s. tests/test_vorjahr_writer.py): wird der Freibetrag dieses Jahr
+    # gewaehrt, muss die Antwort naechstes Jahr auf false kippen — literale Kopie wuerde ihn faelschlich
+    # als weiter verfuegbar zeigen (§ 16 Abs. 4 S. 2 EStG, nur einmal im Leben).
     fragetext_laie: "Hast du diesen Freibetrag für einen Betriebsverkauf noch nie zuvor in Anspruch genommen?"
     hilfe_kurz: "Diesen Freibetrag gibt es nur einmal im Leben. Antworte mit Ja, wenn du ihn noch nie genutzt hast."
     beispielwert: true

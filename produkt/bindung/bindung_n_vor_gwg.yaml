@@ -777,7 +777,9 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
-    vorjahr: uebernehmbar
+    # KEIN vorjahr-Flag (bewusst, s. tests/test_vorjahr_writer.py): die Frage bezieht sich per
+    # Definition auf DIESES Jahr — literale Kopie waere in jedem Folgejahr falsch (statt Volljahres-AfA
+    # wuerde wieder die anteilige Anschaffungsjahr-Rate greifen).
     fragetext_laie: "Hast du das Arbeitsmittel DIESES Jahr (2026) angeschafft? Oder in einem früheren Jahr?"
     hilfe_kurz: "Im Anschaffungsjahr wird die AfA anteilig berechnet. In Folgejahren läuft die volle Jahresrate."
     beispielwert: true

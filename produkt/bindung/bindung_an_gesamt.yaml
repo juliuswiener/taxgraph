@@ -572,7 +572,8 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
-    vorjahr: vorschlag
+    # KEIN vorjahr-Flag (bewusst, s. tests/test_vorjahr_writer.py): der Bestand aendert sich durch
+    # Verrechnung im Vorjahr, vorjahr_writer.py kopiert den alten Wert aber wortwoertlich weiter.
     fragetext_laie: "Wie hoch ist dein festgestellter verbleibender Verlustvortrag zum 31.12. des Vorjahres?"
     hilfe_kurz: "Aus deinem Verlustfeststellungs-Bescheid (§ 10d Abs. 4). Trag ihn ein, wenn du Verluste aus Vorjahren mit diesem Jahr verrechnen willst; ohne Eintrag entfällt der Verlustabzug."
     beispielwert: 6000000
