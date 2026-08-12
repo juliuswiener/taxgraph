@@ -524,12 +524,12 @@ bindungen:
     quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: tage_24h}
     typ: int
     einheit: Tage
-    bereich: {min: 0, max: 366, grund: "Kalendertage im Veranlagungszeitraum mit 24-Stunden-Abwesenheit."}
+    bereich: {min: 1, max: 366, grund: "ELSTER verlangt >0, wenn das Feld übermittelt wird (Kalendertage mit 24-Stunden-Abwesenheit); 0 Tage heißt: Feld weglassen, nicht 0 eintragen."}
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "An wie vielen Tagen warst du dieses Jahr volle 24 Stunden von zu Hause weg (mit Übernachtung)?"
     hilfe_kurz: "Für jeden solchen ganzen Tag gibt es 28 Euro Verpflegungspauschale."
-    beispielwert: 0
+    beispielwert: 10
     herkunft_slots: null
     elster_kz: E0205409
     vz_gueltigkeit: [2024, 2025, 2026]
@@ -541,12 +541,12 @@ bindungen:
     quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: tage_an_abreise}
     typ: int
     einheit: Tage
-    bereich: {min: 0, max: 366, grund: "An- und Abreisetage einer mehrtägigen Auswärtstätigkeit mit Übernachtung."}
+    bereich: {min: 1, max: 366, grund: "ELSTER verlangt >0, wenn das Feld übermittelt wird (An- und Abreisetage einer mehrtägigen Auswärtstätigkeit mit Übernachtung); 0 Tage heißt: Feld weglassen, nicht 0 eintragen."}
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "An wie vielen Tagen bist du dieses Jahr zu einer mehrtägigen Reise an- oder abgereist (mit Übernachtung)?"
     hilfe_kurz: "An- und Abreisetage einer mehrtägigen Reise zählen jeweils mit 14 Euro."
-    beispielwert: 0
+    beispielwert: 10
     herkunft_slots: null
     elster_kz: E0205302
     vz_gueltigkeit: [2024, 2025, 2026]
@@ -558,12 +558,12 @@ bindungen:
     quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: tage_ueber_8h_eintaegig}
     typ: int
     einheit: Tage
-    bereich: {min: 0, max: 366, grund: "Eintägige Auswärtstätigkeiten (ohne Übernachtung) mit mehr als 8 Stunden Abwesenheit."}
+    bereich: {min: 1, max: 366, grund: "ELSTER verlangt >0, wenn das Feld übermittelt wird (eintägige Auswärtstätigkeiten ohne Übernachtung mit mehr als 8 Stunden Abwesenheit); 0 Tage heißt: Feld weglassen, nicht 0 eintragen."}
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "An wie vielen Tagen warst du dieses Jahr mehr als 8 Stunden auswärts unterwegs, aber ohne Übernachtung?"
     hilfe_kurz: "Eintägige Reisen über 8 Stunden zählen mit 14 Euro."
-    beispielwert: 0
+    beispielwert: 10
     herkunft_slots: null
     elster_kz: E0205201
     vz_gueltigkeit: [2024, 2025, 2026]

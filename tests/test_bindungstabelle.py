@@ -263,6 +263,30 @@ def test_f_bereich(daten):
                 assert ber.get("grund"), f"{b['feld_id']}: negativer cent-Bereich braucht grund (Verlust-Begründung)"
 
 
+# ---- (f2) beispielwert innerhalb des eigenen bereich ---------------------------
+
+def test_f2_beispielwert_in_bereich(daten):
+    """Der beispielwert muss innerhalb des eigenen bereich liegen.
+
+    Sonst erzeugt jeder generierte Testlauf, der den beispielwert unbesehen übernimmt
+    (z.B. der Feldmatrix-Vollsweep), einen Fehler, der wie ein Befund aussieht, aber nur
+    eine falsche bereich-Angabe ist. Realer Fall 2026-08-12: tage_24h/tage_an_abreise/
+    tage_ueber_8h_eintaegig hatten bereich.min=0 und beispielwert=0, obwohl ELSTER strikt
+    >0 verlangt ("Der ... eingegebene Wert muss größer als 0 sein.") — drei Felder fielen
+    im Vollsweep als vermeintliche Befunde rot, waren aber reines Bindungs-Datenqualitäts-
+    Rauschen (reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md).
+    """
+    for f, d in daten.items():
+        for b in d["bindungen"]:
+            ber = b.get("bereich")
+            bw = b.get("beispielwert")
+            if ber is None or bw is None or not isinstance(bw, (int, float)) or isinstance(bw, bool):
+                continue
+            assert ber["min"] <= bw <= ber["max"], (
+                f"{os.path.basename(f)}::{b['feld_id']}: beispielwert {bw} außerhalb "
+                f"bereich [{ber['min']}, {ber['max']}]")
+
+
 # ---- Negativtests: manipulierte Kopien MÜSSEN rot werden -----------------------
 
 def _erste_datei_daten(daten):
@@ -329,6 +353,17 @@ def test_neg_bereich_min_groesser_max(daten):
     assert ziel is not None, "kein bereich-Feld in irgendeiner Scheibe — Negativtest wäre wirkungslos"
     verdreht = {"min": 100, "max": 0}                 # lokal, keine Fixture-Mutation
     assert not (verdreht["min"] <= verdreht["max"]), "bereich min>max würde nicht auffallen"
+
+
+def test_neg_beispielwert_ausserhalb_bereich(daten):
+    # Zielfeld über ALLE Scheiben suchen (bereich UND numerischer beispielwert nötig)
+    ziel = next((b for d in daten.values() for b in d["bindungen"]
+                 if b.get("bereich") and isinstance(b.get("beispielwert"), (int, float))
+                 and not isinstance(b.get("beispielwert"), bool)), None)
+    assert ziel is not None, "kein Feld mit bereich UND numerischem beispielwert — Negativtest wäre wirkungslos"
+    verfaelscht = ziel["bereich"]["max"] + 1
+    assert not (ziel["bereich"]["min"] <= verfaelscht <= ziel["bereich"]["max"]), (
+        "außerhalb-bereich-beispielwert würde nicht auffallen")
 
 
 def test_neg_gemischte_summanden(daten):
