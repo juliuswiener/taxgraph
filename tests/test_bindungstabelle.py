@@ -487,10 +487,11 @@ BETRAGSFELDER_OHNE_KZ = {
     "vorsorge_unfall_haftpflicht_partner",
     "vorsorge_rv_alt_mit_ueberschuss_partner",
     "vorsorge_rv_alt_ohne_ueberschuss_partner",
-    # Gewinneinkuenfte-Partnerseite Stufe 1 (2026-08-12): dieselbe Gruppe-B-Naht — Bindung ist
-    # Interview-Scaffolding, der Ring-Aufruf (zweiter GESAMT_GEWINN-Durchlauf fuer Person B) ist
-    # Stufe 2 und explizit noch nicht gebaut (s. BACKLOG partnerseite-gewinneinkuenfte-fehlt-
-    # strukturell). elster_kz kann daher noch nicht gesetzt werden.
+    # Gewinneinkuenfte-Partnerseite (2026-08-12): Stufe-1-Scaffolding, dieselbe Gruppe-B-Naht wie
+    # oben — Bindung ist Interview-Scaffolding, der Ring-Aufruf (zweiter GESAMT_GEWINN-Durchlauf
+    # fuer Person B) ist Stufe 2 und explizit noch nicht gebaut (s. BACKLOG
+    # partnerseite-gewinneinkuenfte-fehlt-strukturell). Loest sich auf, sobald Stufe 2 den
+    # Ring-Aufruf fuer Person B verdrahtet und einen echten elster_kz liefert.
     "einkuenfte_gewinn_partner",
     "gewinnanteil_partner",
     "verguetung_taetigkeit_partner",
@@ -1056,17 +1057,17 @@ GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
     ("rentner", "rentner_alter_bei_rentenbeginn", "p22_1_leibrente_besteuerungsanteil", "ertragsanteil_alter_bei_rentenbeginn"),
     ("rentner", "rentner_rentenfreibetrag", "p22_1_leibrente_besteuerungsanteil", "rentenfreibetrag_fixierung_folgejahr"),
     ("rentner", "rentner_veraeusserungs_betriebsart", "p16_4_freibetrag", "veraeusserungs_betriebsart_weiche"),
-    # rentner_alter_55_oder_berufsunfaehig_partner/rentner_freibetrag_erstmalig_partner/
-    # rentner_veraeusserungs_betriebsart_partner (2026-08-12, Gewinneinkuenfte-Partnerseite
-    # Stufe 1): dieselbe Naht wie rentner_veraeusserungs_betriebsart eine Zeile drueber — reine
-    # Interview-Scaffolding, p16_4_freibetrag kennt in rules.yaml nur die Person-A-Bedingungen
-    # (alter_55_oder_berufsunfaehig/freibetrag_einmal_im_leben/auf_antrag). Der zweite
-    # Freibetrags-Aufruf fuer Person B inkl. echter Bedingungspruefung ist Stufe 2 (Ring,
-    # api.py) und laut Auftrag noch nicht gebaut (s. P16_4_GATE_FELDER_PARTNER-Kommentar in
-    # api_constants.py).
+    # rentner_alter_55_oder_berufsunfaehig_partner/rentner_freibetrag_erstmalig_partner
+    # (2026-08-12, Gewinneinkuenfte-Partnerseite): Stufe-1-Scaffolding. Beide sind askable
+    # bool-Gates — sie duerfen NICHT auf einen Sammel-Scope (p2_festzusetzung_zusammen), das
+    # faengt test_p_sammelscope_ohne_bool_gate ab (bestaetigtes False raeumt sonst per
+    # traverser.relevanz() die GANZE regel_id samt aller sachfremden Felder aus
+    # naechste_fragen()). Bleiben deshalb auf p16_4_freibetrag, dessen rules.yaml-Bedingungen
+    # (alter_55_oder_berufsunfaehig/freibetrag_einmal_im_leben) nur Person A kennen. Loest sich
+    # auf, sobald Stufe 2 (Ring, api.py) den zweiten Freibetrags-Aufruf fuer Person B verdrahtet
+    # (s. P16_4_GATE_FELDER_PARTNER-Kommentar in api_constants.py).
     ("rentner", "rentner_alter_55_oder_berufsunfaehig_partner", "p16_4_freibetrag", "alter_55_oder_berufsunfaehig_partner"),
     ("rentner", "rentner_freibetrag_erstmalig_partner", "p16_4_freibetrag", "freibetrag_einmal_im_leben_partner"),
-    ("rentner", "rentner_veraeusserungs_betriebsart_partner", "p16_4_freibetrag", "veraeusserungs_betriebsart_partner_weiche"),
     # bindung_p10_1_9_schulgeld_gesamt.yaml / bindung_p33_2a_fahrtkostenpauschale.yaml — beide Regeln
     # haben ihre Ground Truth in golden/runner.py (RUNNER_ACCESSOR_FUER_REGEL, 2026-08-07 angebunden),
     # kein rules.yaml-Eintrag → keine geltungsbedingungen-Liste (gbs=set()). Die drei geltungsbedingung-
@@ -1153,17 +1154,6 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     #     Korrektheit ohne dieses Risiko.
     ("an_gesamt", "dauernd_berufsunfaehig", "p34_3_ermaessigter_durchschnittssatz", "berufsunfaehig"),
     ("an_gesamt", "ermaessigung_einmal_genutzt", "p34_3_ermaessigter_durchschnittssatz", "bereits_genutzt"),
-    # gewinnanteil_partner/verguetung_taetigkeit_partner/verguetung_darlehen_partner/
-    # verguetung_ueberlassung_partner (p15_1_2_mitunternehmer) + rentner_veraeusserungsgewinn_
-    # partner (p16_4_freibetrag) — 2026-08-12, Gewinneinkuenfte-Partnerseite Stufe 1. Dieselbe
-    # Naht wie oben: reine Interview-Scaffolding fuer Person B, der zweite Ring-Aufruf mit
-    # echten Signatur-Slots fuer Person B ist Stufe 2 (Ring, api.py) und laut Auftrag noch
-    # nicht gebaut (s. BACKLOG partnerseite-gewinneinkuenfte-fehlt-strukturell).
-    ("an_gesamt", "gewinnanteil_partner", "p15_1_2_mitunternehmer", "gewinnanteil_partner"),
-    ("an_gesamt", "verguetung_taetigkeit_partner", "p15_1_2_mitunternehmer", "verguetung_taetigkeit_partner"),
-    ("an_gesamt", "verguetung_darlehen_partner", "p15_1_2_mitunternehmer", "verguetung_darlehen_partner"),
-    ("an_gesamt", "verguetung_ueberlassung_partner", "p15_1_2_mitunternehmer", "verguetung_ueberlassung_partner"),
-    ("rentner", "rentner_veraeusserungsgewinn_partner", "p16_4_freibetrag", "veraeusserungsgewinn_partner"),
 }
 
 

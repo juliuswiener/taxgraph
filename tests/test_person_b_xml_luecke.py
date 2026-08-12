@@ -153,6 +153,111 @@ def test_person_b_xsd_valide(bindung, tmp_path):
     assert ok, f"Person-B-XML nicht schema-valide: {meldung}"
 
 
+# ---------------------------------------------------------------- 1b. Gewinneinkünfte Person-B (§§13-18, §16 Abs.4, §35)
+
+def test_gewinneinkuenfte_partner_kommt_im_xml_an(bindung):
+    """Stufe 1 (Deklaration) der Gewinneinkünfte-Partnerseite: einkuenfte_gewinn_partner
+    (gewerbe) -> E0800502, rentner_veraeusserungsgewinn_partner (selbstaendig) -> E0804501,
+    gewst_hebesatz_partner/gewst_messbetrag_partner -> E0801705/E0801606. Alle vier laufen
+    in den person_b-Bucket (dieselben Person-A-Kz, zweite Anlage-G-Instanz) — kein eigenes
+    Ehegatte-Kz. Person A und B mit UNTERSCHIEDLICHEN Werten, damit ein Vertauschen der
+    Buckets sofort auffiele. Hebesatz bleibt bewusst ein Nicht-Cent-Wert (410 -> "410",
+    keine Cent->Euro-Wandlung)."""
+    s = ST.leerer_store(2025, fall_id="gewinn_partner_xml")
+    _b(s, "einkuenfte_gewinn", 500000)                        # 5.000 EUR, Person A
+    _b(s, "gewinn_betriebsart", "gewerbe")
+    _b(s, "einkuenfte_gewinn_partner", 300000)                # 3.000 EUR, Person B
+    _b(s, "gewinn_betriebsart_partner", "gewerbe")
+    _b(s, "rentner_veraeusserungsgewinn_partner", 4500000)    # 45.000 EUR, Person B
+    _b(s, "rentner_veraeusserungs_betriebsart_partner", "selbstaendig")
+    _b(s, "gewst_hebesatz_partner", 410)                      # Prozent, kein Cent-Feld
+    _b(s, "gewst_messbetrag_partner", 120000)                 # 1.200 EUR
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", False)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+    clean = xml.replace("ns0:", "").replace("ns1:", "")
+
+    assert "<Person>PersonB</Person>" in clean
+
+    # Gewerbe-Gewinn: A (5000) und B (3000) teilen sich dasselbe Kz E0800502 in zwei
+    # Anlage-G-Instanzen — Reihenfolge A vor B, keine Verwechslung der Werte.
+    import re
+    gewinn_werte = re.findall(r"<E0800502>(\d+)</E0800502>", clean)
+    assert gewinn_werte == ["5000", "3000"], (
+        f"E0800502 nicht [5000 (Person A), 3000 (Person B)]: {gewinn_werte}\n" + xml)
+
+    # § 16 Abs.4 Veräußerungsgewinn Person B, selbstaendig -> E0804501 = 45000
+    assert "<E0804501>45000</E0804501>" in clean, (
+        "E0804501 (Veraeusserungsgewinn Person B) fehlt oder falscher Wert:\n" + xml)
+
+    # § 35 GewSt Person B: Hebesatz 410 (kein Cent), Messbetrag 1200 (Cent->Euro gewandelt)
+    assert "<E0801705>410</E0801705>" in clean, (
+        "Hebesatz Person B nicht 410 — Cent-Wandlung faelschlich angewandt?\n" + xml)
+    assert "<E0801606>1200</E0801606>" in clean, (
+        "Messbetrag Person B nicht 1200:\n" + xml)
+
+
+@braucht_xsd
+def test_gewinneinkuenfte_partner_xsd_valide(bindung, tmp_path):
+    """Gewinneinkünfte-Partnerseite (Gewerbe + §16 Abs.4 + §35) gegen amtliches Schema."""
+    s = ST.leerer_store(2025, fall_id="gewinn_partner_xsd")
+    _b(s, "einkuenfte_gewinn", 500000)
+    _b(s, "gewinn_betriebsart", "gewerbe")
+    _b(s, "einkuenfte_gewinn_partner", 300000)
+    _b(s, "gewinn_betriebsart_partner", "gewerbe")
+    _b(s, "rentner_veraeusserungsgewinn_partner", 4500000)
+    _b(s, "rentner_veraeusserungs_betriebsart_partner", "selbstaendig")
+    _b(s, "gewst_hebesatz_partner", 410)
+    _b(s, "gewst_messbetrag_partner", 120000)
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", False)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+
+    pfad = str(tmp_path / "gewinn_partner.xml")
+    with open(pfad, "w", encoding="utf-8") as f:
+        f.write(xml)
+    ok, meldung = VX.validate(pfad, "2025")
+    assert ok, f"Gewinneinkuenfte-Partner-XML nicht schema-valide: {meldung}"
+
+
+def test_mitunternehmer_partner_faellt_in_nicht_deklariert(bindung):
+    """Die 4 §15-Mitunternehmer-Partnerfelder haben (wie Person A) elster_kz: null — sie
+    sind im gemeinsamen Gewinn-Kz (E0800502/E0803402) AUFGEGANGEN, nicht separat deklariert.
+    Muessen daher in nicht_deklariert erscheinen, NICHT in person_b landen (Klasse c)."""
+    s = ST.leerer_store(2025, fall_id="mitu_partner_nd")
+    _b(s, "gewinnanteil_partner", 100000)
+    _b(s, "verguetung_taetigkeit_partner", 20000)
+    _b(s, "verguetung_darlehen_partner", 5000)
+    _b(s, "verguetung_ueberlassung_partner", 3000)
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", False)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+
+    nd_ids = {x["feld_id"] for x in result.get("nicht_deklariert", [])}
+    for fid in ("gewinnanteil_partner", "verguetung_taetigkeit_partner",
+                "verguetung_darlehen_partner", "verguetung_ueberlassung_partner"):
+        assert fid in nd_ids, f"{fid} muss in nicht_deklariert stehen (elster_kz: null)"
+    assert result.get("person_b", {}) == {}, (
+        f"Mitunternehmer-Partnerfelder duerfen NICHT im person_b-Bucket landen: {result.get('person_b')}")
+
+
 # ---------------------------------------------------------------- 2. Kind-Instanz-Durchgang
 
 def test_kind_instanzen_zwei_kinder(bindung):

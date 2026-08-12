@@ -131,6 +131,11 @@ BESTAND_FELDER_OHNE_VORJAHR = {
         "§ 7 Abs. 1 EStG: die Frage ('DIESES Jahr angeschafft?') ist per Definition in jedem "
         "Folgejahr falsch, wenn kopiert — die AfA wuerde wieder anteilig statt voll fuer das Jahr "
         "berechnet, Werbungskosten dauerhaft zu niedrig."),
+    "rentner_freibetrag_erstmalig_partner": (
+        "§ 16 Abs. 4 S. 2 EStG, gilt PRO Steuerpflichtigem: dieselbe Begruendung wie bei "
+        "rentner_freibetrag_erstmalig — der Freibetrag steht dem Partner nur einmal im Leben zu, "
+        "eine literale Kopie wuerde ihn faelschlich weiter verfuegbar zeigen, nachdem er einmal "
+        "gewaehrt wurde."),
 }
 
 

@@ -436,6 +436,116 @@ bindungen:
       zitatanker: "nur einmal zu gewähren"
       datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
 
+  # ===== Veräußerungsfreibetrag §16 Abs. 4 Person-B (Store-Modell A) =====
+  # _partner-Zwillinge der 4 Freibetrags-Felder oben. § 16 Abs. 4 ist PRO STEUERPFLICHTIGEN zu gewähren
+  # (Gesetzeswortlaut "dem Steuerpflichtigen", nicht "dem Ehepaar" — verifiziert gegen
+  # sources/gesetze-im-internet/estg_p16_2026-07-14.txt). Kz via Klasse f×g PARTNER_VERZWEIGUNG
+  # (est_mapping), dieselben Anlage-Kz wie Person A, Instanz B (person_b-Bucket). Nur die Deklaration
+  # (dieses Kapitel) — der zweite Freibetrags-Aufruf + die gespiegelte p16_4_gate_offen-Sperre sind
+  # Stufe 2 (Ring, produkt/haut/api.py), zurückgestellt bis zum _bescheid_fn-Refactor.
+  #
+  # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding, statt p16_4_freibetrag): dieselbe
+  # Naht wie bruttoarbeitslohn_partner/einkuenfte_gewinn_partner in bindung_an_gesamt.yaml — die
+  # echten Bedingungen von p16_4_freibetrag in rules.yaml (alter_55_oder_berufsunfaehig,
+  # freibetrag_einmal_im_leben, auf_antrag) kennen nur Person A, ein zweiter Aufruf fuer Person B
+  # existiert nicht (Stufe 2). p2_festzusetzung_zusammen ist der in dieser Datei etablierte
+  # Sammel-regel_id fuer Person-B-Felder ohne eigenen Ring-Slot; loest sich auf, sobald Stufe 2
+  # den echten zweiten p16_4_freibetrag-Aufruf fuer Person B verdrahtet.
+  - feld_id: rentner_veraeusserungsgewinn_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: veraeusserungsgewinn_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war der Gewinn deines Ehe-/Lebenspartners aus dem Verkauf oder der Aufgabe seines Betriebs?"
+    hilfe_kurz: "Der Gewinn deines Partners aus seiner eigenen Betriebsveräußerung/-aufgabe. Bis 45.000 Euro bleibt auf Antrag steuerfrei — der Freibetrag steht JEDEM Steuerpflichtigen einzeln zu, nicht dem Ehepaar gemeinsam."
+    beispielwert: 8000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse f×g PARTNER_VERZWEIGUNG je rentner_veraeusserungs_betriebsart_partner (est_mapping): dieselben Anlage-Kz wie Person A (gewerbe=E0801301, selbstaendig=E0804501, land_forst=E0901201), Instanz B (person_b-Bucket) — kein distinktes Ehegatte-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 1 EStG"
+      zitatanker: "so wird der Veräußerungsgewinn auf Antrag zur Einkommensteuer nur herangezogen, soweit er 45 000 Euro übersteigt"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_veraeusserungs_betriebsart_partner
+    # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): Art-Weiche fuer Person B, keine
+    # echte p16_4_freibetrag-Bedingung (s. Kommentar am Block-Anfang). Loest sich mit Stufe 2 auf.
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: veraeusserungs_betriebsart_partner_weiche}
+    typ: enum
+    einheit: null
+    enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Aus welcher Art von Betrieb stammt der Veräußerungsgewinn deines Ehe-/Lebenspartners?"
+    hilfe_kurz: "Gewerbebetrieb / Mitunternehmeranteil (Anlage G), selbständige/freiberufliche Tätigkeit (Anlage S) oder Land- und Forstwirtschaft (Anlage L) — für den Betrieb deines Partners."
+    beispielwert: "gewerbe"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche Person B (steuert die Klasse f×g-Kz-Verzweigung des Partner-Veräußerungsgewinns nach Anlage G/S/L), kein eigenes Betragsfeld/Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 1 S. 1 EStG"
+      zitatanker: "Gewinne, die erzielt werden bei der Veräußerung"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_alter_55_oder_berufsunfaehig_partner
+    # regel_id bleibt p16_4_freibetrag (NICHT p2_festzusetzung_zusammen): dieses Feld ist ein
+    # askables bool-Gate — auf einem Sammel-Scope wuerde eine bestaetigte False-Antwort per
+    # traverser.relevanz() die GANZE regel_id inkl. aller sachfremden Felder aus
+    # naechste_fragen() reissen (s. test_p_sammelscope_ohne_bool_gate, 2026-08-12,
+    # Dialog-Durchstich Task C / pv_auf_gebaeude-Fund). Die fiktive _partner-Bedingung ist daher
+    # in GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE dokumentiert statt auf den Sammel-Scope verschoben.
+    quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: alter_55_oder_berufsunfaehig_partner}
+    typ: bool
+    einheit: null
+    askable: true
+    # vorjahr: uebernehmbar — wie Person A. Begruendung (das Feld mischt zwei Tatbestaende
+    # unterschiedlicher Monotonie unter EINEM Bool: Alter ist monoton [steigt nur], dauernde
+    # Berufsunfaehigkeit ist es rechtlich NICHT [Nachpruefung durch den Rentenversicherungstraeger
+    # moeglich]): die Vorjahres-Uebernahme schreibt in JEDEM Fall (uebernehmbar UND vorschlag
+    # identisch, vorjahr_writer.py Zeile 50) nur zustand=vorlaeufig, NIE bestaetigt — der Mensch sieht
+    # den alten Wert nur als Vorbelegung und muss ihn im neuen VZ aktiv gegen DIESEN Veraeusserungsfall
+    # neu bestaetigen (Store-Guard ^import:vorjahr, store.append_event erzwingt Zwei-Signal). Die
+    # Nicht-Monotonie der Berufsunfaehigkeit ist damit strukturell abgefangen wie bei Person A — anders
+    # als bei rentner_freibetrag_erstmalig (wo die Uebernahme des ALTEN Werts einen materiell FALSCHEN
+    # Vorschlag waere, weil die Nutzung selbst den Zustand kippt) aendert eine blosse Vorbelegung hier
+    # nichts an der Pflicht zur Neu-Bestaetigung; keine partnerspezifische Abweichung noetig.
+    vorjahr: uebernehmbar
+    fragetext_laie: "War dein Ehe-/Lebenspartner beim Verkauf seines Betriebs mindestens 55 Jahre alt — oder dauerhaft berufsunfähig?"
+    hilfe_kurz: "Der Freibetrag steht deinem Partner nur zu, wenn eine dieser Voraussetzungen bei IHM erfüllt ist (§ 16 Abs. 4 gilt pro Person)."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Persönliche Voraussetzung (Ja/Nein) zum Veräußerungsfreibetrag des Partners; kein eigenes Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 1 EStG"
+      zitatanker: "das 55. Lebensjahr vollendet"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_freibetrag_erstmalig_partner
+    # regel_id bleibt p16_4_freibetrag: gleicher Grund wie rentner_alter_55_oder_berufsunfaehig_
+    # partner oben — bool-Gate darf nicht auf den Sammel-Scope (test_p_sammelscope_ohne_bool_gate).
+    quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: freibetrag_einmal_im_leben_partner}
+    typ: bool
+    einheit: null
+    askable: true
+    # KEIN vorjahr-Flag (bewusst, s. tests/test_vorjahr_writer.py, ratsche
+    # test_bestand_felder_tragen_kein_vorjahr_flag): wie rentner_freibetrag_erstmalig (Person A) — wird
+    # der Freibetrag dieses Jahr gewaehrt, muss die Antwort naechstes Jahr auf false kippen; eine
+    # literale Kopie wuerde ihn faelschlich als weiter verfuegbar zeigen (§ 16 Abs. 4 S. 2 EStG, nur
+    # einmal im Leben — gilt PRO Steuerpflichtigem, also unabhaengig fuer Person A und Person B).
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner diesen Freibetrag für einen Betriebsverkauf noch nie zuvor in Anspruch genommen?"
+    hilfe_kurz: "Diesen Freibetrag gibt es nur einmal im Leben — für jede Person einzeln. Antworte mit Ja, wenn dein Partner ihn noch nie genutzt hat."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Einmaligkeits-Voraussetzung (Ja/Nein) des Partners; lebenslange Einmal-Gewährung PRO PERSON, kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 2 EStG"
+      zitatanker: "nur einmal zu gewähren"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+
 luecken:
   # -- §22 Nr. 1 — Kohorten-Parameter + State-Annahme --
   - regel_id: p22_1_leibrente_besteuerungsanteil

@@ -300,6 +300,53 @@ def test_restfehler_kirchensteuerpflichtig(name, bauer):
         f"Beanstandungen: {texte}")
 
 
+# Gemessen 2026-08-12, Task Gewinneinkuenfte-Partnerseite Stufe 1. Das Kz-Mapping selbst ist
+# korrekt (E0800502 im person_b-Bucket, XSD-valide -- s. tests/test_person_b_xml_luecke.py).
+# checkESt verlangt aber ZUSAETZLICH zur Summe (E0800502) "Einzelangaben zu Gewinnen laut
+# gesonderter Feststellung" -- ein Sub-Block, den WEDER Person A NOCH Person B hat. Isoliert
+# gemessen: Person A ALLEIN mit einkuenfte_gewinn=500000 (kein_gewinn=False, ohne jeden
+# Partner-Anteil) liefert dieselbe Beanstandungsklasse fuer PersonA. Das ist also eine
+# PRAEEXISTIERENDE Luecke (E0800502-Summe ohne Einzelangaben-Unterbau), keine durch die
+# Partnerseite neu eingefuehrte Regression -- sie wird hier nur zum ersten Mal sichtbar, weil
+# RESTFEHLER_ZUSAMMEN/EINZEL oben kein_gewinn nie auf False stellen. Siehe BACKLOG rechenluecken:
+# gewinneinkuenfte-einzelangaben-fehlen.
+RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER = 2
+
+
+def _fall_zusammen_mit_gewinn_partner():
+    """Zusammen-Basisfall (rc=0, RESTFEHLER_ZUSAMMEN) PLUS Person-B-Gewinneinkuenfte
+    (Task Gewinneinkuenfte-Partnerseite Stufe 1, 2026-08-12): einkuenfte_gewinn_partner
+    (gewerbe) -> E0800502, dieselbe Kz-Instanz wie Person A, zweite Anlage-G-Instanz."""
+    s = ST.leerer_store(2025, fall_id="durchstich_zusammen_gewinn_partner")
+    a = tuple((f, False) if f == "kein_gewinn" else (f, w) for f, w in _BASIS_A)
+    for f, w in a + _BASIS_B:
+        _b(s, f, w)
+    _b(s, "einkuenfte_gewinn_partner", 500000)   # 5.000 EUR
+    _b(s, "gewinn_betriebsart_partner", "gewerbe")
+    _b(s, "veranlagung", "zusammen")
+    return s
+
+
+@braucht_eric
+def test_restfehler_zusammen_mit_gewinneinkuenfte_partner():
+    """Ratsche (wie test_restfehler_ratsche oben): misst ehrlich, statt rc=0 zu behaupten.
+    Der Restfehler ist die "Einzelangaben"-Luecke (s. Kommentar bei RESTFEHLER_ZUSAMMEN_
+    GEWINN_PARTNER), keine Regression der Kz-Bindung selbst."""
+    rc, texte = _pruefe(_fall_zusammen_mit_gewinn_partner())
+    if rc == CE.RC_OK:
+        assert RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER == 0, (
+            f"checkESt meldet rc=0, die Ratsche steht aber noch auf "
+            f"{RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER}. Setze die Konstante auf 0.")
+        return
+    assert not CE.gekappt_verdacht(""), "Puffer gekappt — Zahl waere nicht belastbar"
+    assert len(texte) <= RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER, (
+        f"REGRESSION: {len(texte)} amtliche Fehler, erlaubt sind "
+        f"{RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER}.\n" + "\n".join(f"  - {t[:200]}" for t in texte))
+    assert len(texte) == RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER, (
+        f"FORTSCHRITT: nur noch {len(texte)} statt {RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER} Fehler. "
+        f"Trag das ein.\nVerbleibend:\n" + "\n".join(f"  - {t[:200]}" for t in texte))
+
+
 @braucht_eric
 def test_steuernummer_ableitung_liefert_dieselbe_amtliche_fehlerzahl():
     """Die Messung, auf die es ankommt (Auftrag 2026-08-10): stammdaten_steuernummer im Fall
