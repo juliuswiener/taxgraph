@@ -272,3 +272,126 @@ Auftrag gesetzten Zeitrahmens ("Nebenfrage, wenn Zeit bleibt").
   aber sofort 40 neue (A)-"Verstoesse" produzieren, die dann in `SIGNATUR_SLOT_ZEIGT_INS_LEERE`
   einzeln dokumentiert werden muessten (dieser Bericht liefert dafuer bereits die vollstaendige
   Liste, Abschnitt 3).
+
+## Anhang (2026-08-12, zweite Runde): die uebrigen 6 der 7 auf reale Catala-Scopes geprueft
+
+Team-lead-Nachfrage: (1) p2_festzusetzung_zusammen unabhaengig pruefen statt annehmen, (2) fuer die
+uebrigen 7 pruefen, ob irgendwo unter `rules/` ein `declaration scope` zu ihnen gehoert, (3) sagen,
+ob `_catala_inputs()` reparierbar ist und was das je Regel GEMESSEN aendern wuerde.
+
+### A1. Zahlenkorrektur: 7, nicht 9
+
+Team-lead hatte 9 uebersprungene Regeln gemessen (inkl. `p10_1_9_schulgeld`,
+`p33_2a_fahrtkostenpauschale`). **Gemessen** gegen den echten `_n_gefundene_verstoesse`-Lauf
+(nicht nur `rules.yaml` + Verzeichnis-Fallback, sondern inklusive der dritten Ground-Truth-Quelle
+`RUNNER_ACCESSOR_FUER_REGEL`, Zeile 1133):
+
+```bash
+python3 -c "
+import tests.test_bindungstabelle as T
+daten = {f: T._load(f) for f in T._bindung_files()}
+_, _, skipped = T._n_gefundene_verstoesse(daten, T._rules())
+print(sorted(skipped))
+print('p10_1_9_schulgeld' in skipped, 'p33_2a_fahrtkostenpauschale' in skipped)
+"
+# -> ['p10_1_3_kv_pv_kind', 'p19_2_versorgungsfreibetrag', 'p22_3_leistungen', 'p2_einkunftsarten',
+#     'p2_festzusetzung_einzel', 'p2_festzusetzung_zusammen', 'p33b_abs5_kind_uebertragung']
+# -> False False
+```
+
+`p10_1_9_schulgeld`/`p33_2a_fahrtkostenpauschale` haben Ground Truth ueber
+`RUNNER_ACCESSOR_FUER_REGEL` (golden/runner.py-Accessor-Funktionen, AST-gelesen) — sie werden im
+`elif`-Zweig behandelt (Zeile 1179-1181) und erreichen den `_catala_inputs`-Fallback nie. Team-leads
+Skript hat vermutlich nur (1) rules.yaml und (2) Verzeichnis-Fallback geprueft und diese dritte
+Quelle nicht mitgezaehlt — daher 9 statt 7. Bleibt bei den **7** aus `REGELN_OHNE_GROUND_TRUTH`.
+
+### A2. p2_festzusetzung_zusammen: NICHT angenommen, sondern geprueft — bestaetigt (B)-artig
+
+```bash
+grep -n "^declaration scope FestzusetzendeEst\|^  input " rules/estg/p32a/einkommensteuertarif.catala_en
+# Zeile 382: declaration scope FestzusetzendeEstZusammen:
+#   input bruttoarbeitslohn_a / werbungskosten_a / bruttoarbeitslohn_b / werbungskosten_b /
+#         sonderausgaben_gemeinsam / veranlagungszeitraum content ...
+```
+
+Selbe Datei wie `p2_festzusetzung_einzel` (`rules/estg/p32a/einkommensteuertarif.catala_en`), 63
+Zeilen weiter unten. `_catala_inputs("p2_festzusetzung_zusammen")` sucht unter
+`rules/estg/p2_festzusetzung_zusammen/*.catala_en` — Verzeichnis existiert nicht (bestaetigt unten,
+A3). Damit gilt fuer **beide** p2_festzusetzung-Regeln: Ground Truth existiert, ist real, liegt aber
+unter einem Verzeichnis, das nicht dem `rule_id` entspricht. Der Kommentar in
+`REGELN_OHNE_GROUND_TRUTH` ("Catala-Scope ist schmaler als die Bindung") ist damit fuer beide
+Regeln in der Sache richtig (schmaler ist er wirklich — Abschnitt 3 oben, 40/42 sind echte (A)),
+aber in der BEGRUENDUNG unpraezise: der Lookup liefert nicht "schmaler", er liefert NULL — die
+Aussage "schmaler" war bisher nie pruefbar, nur angenommen.
+
+### A3. Verzeichnis-Check aller 7 — keines hat ein Verzeichnis mit eigenem Namen
+
+```bash
+for rid in p2_einkunftsarten p2_festzusetzung_einzel p2_festzusetzung_zusammen \
+           p19_2_versorgungsfreibetrag p10_1_3_kv_pv_kind p33b_abs5_kind_uebertragung p22_3_leistungen; do
+  [ -d "rules/estg/$rid" ] && echo "$rid: DIR" || echo "$rid: kein Verzeichnis"
+done
+# -> alle 7: kein Verzeichnis
+```
+
+### A4. Die uebrigen 5 (nicht p2_festzusetzung_*) gegen ALLE Scopes im Repo geprueft — kein Treffer
+
+```bash
+grep -rn "^declaration scope" rules/ --include="*.catala_en" \
+  | grep -v "declaration scope Test\|declaration scope Falle\|declaration scope Fall[0-9]"
+```
+
+Liefert 39 echte (Nicht-Test-)Scopes im ganzen `rules/`-Baum (vollstaendige Liste im Bericht-Log).
+Keiner davon heisst oder handelt semantisch von: `p2_einkunftsarten`, `p19_2_versorgungsfreibetrag`,
+`p10_1_3_kv_pv_kind`, `p33b_abs5_kind_uebertragung`, `p22_3_leistungen`.
+
+- `p2_einkunftsarten`: "Einkunftsart" kommt nur in Prosa-Kommentaren vor (`p32a/einkommensteuertarif.catala_en:341/444/458/495`,
+  `arbeitnehmerfall/tests_veranlagung_gesamt.catala_en`), nie als Scope-Name — geprueft per Grep, nicht angenommen.
+- `p19_2_versorgungsfreibetrag`: kein Treffer fuer "Versorgungsfreibetrag"/"versorgung" als Scope irgendwo.
+- `p10_1_3_kv_pv_kind`: es gibt `KrankenPflegeVorsorge` (`p10_1_3_3a/krankenpflegevorsorge.catala_en:33`) — das ist
+  aber die ERWACHSENEN-Vorsorge (Fall-Achse), keine Kind-Variante. Bestaetigt exakt den im Code
+  hinterlegten Grund ("Aggregationsbruch: Kind-Achse gegen Fall-Achse") — es gibt wirklich keinen
+  zweiten, Kind-spezifischen Scope, der uebersehen wuerde.
+- `p33b_abs5_kind_uebertragung`: kein Treffer.
+- `p22_3_leistungen`: kein Treffer (auch nicht unter anderem Namen fuer "sonstige Leistungen"/§22 Nr.3).
+
+**Fuer diese 5 ist die Begruendung in `REGELN_OHNE_GROUND_TRUTH` damit heute unabhaengig bestaetigt**
+(nicht nur plausibel gelesen wie im Hauptbericht Abschnitt 5): es gibt tatsaechlich keinen Catala-Scope,
+egal unter welchem Verzeichnisnamen. Nur die p2_festzusetzung-Regeln sind der (B)-artige Sonderfall.
+
+### A5. Ist `_catala_inputs()` reparierbar — und was aendert das GEMESSEN?
+
+Reparierbar ja, aber **nicht generisch**: `rule_id` ("p2_festzusetzung_einzel", snake_case) und
+Scope-Name ("FestzusetzendeEstEinzel", PascalCase mit anderem Wortstamm — "festzusetzung" vs.
+"festzusetzende", plus eingefuegtes "Est") stehen in keiner algorithmisch ableitbaren Beziehung.
+Ein Fix braucht eine explizite `rule_id -> scope_name`-Zuordnungstabelle, strukturell identisch zu
+`RUNNER_ACCESSOR_FUER_REGEL` (Zeile 1133) — kein Parser-Umbau, sondern ein zweiter Mapping-Eintrag
+pro Regel.
+
+Gemessen (nicht geschaetzt), was ein solcher Fix je Regel aendern wuerde — Simulation mit den
+ECHTEN Scope-Inputs statt `set()`, gegen die 42 Zeilen aus Abschnitt 3:
+
+| Regel | Zeilen betroffen | Sofort korrekt aufgeloest (kein Verstoss mehr) | Neu als `gefunden_slot` faellig (muesste in SIGNATUR_SLOT_ZEIGT_INS_LEERE dokumentiert werden) |
+|---|---|---|---|
+| `p2_festzusetzung_einzel` | 21 | **1** (Zeile 3, `bruttoarbeitslohn` — der (B)-Fall) | 20 |
+| `p2_festzusetzung_zusammen` | 21 | 0 (kein einziger Slotname trifft `_a`/`_b`/`sonderausgaben_gemeinsam`/`veranlagungszeitraum`) | 21 |
+| **Summe** | **42** | **1** | **41** |
+
+Herleitung: Der `luecken`-Zweig (Zeile 1199-1205) prueft `signatur_slot` genauso gegen `inputs` wie
+der `bindungen`-Zweig — die dokumentierte `[Luecke]` (Zeile 37, `pv_entnahmen`) bekaeme bei einem
+Fix ebenfalls einen `gefunden_slot`-Eintrag, obwohl sie bereits einen eigenen `grund` hat. Ein Fix
+waere also kein Nullsummenspiel: er loest **1** echten blinden Fleck (den (B)-Fall) und erzeugt
+**41** neue, einzeln zu dokumentierende Eintraege in der Ausnahmeliste — mehr Dokumentationsaufwand
+als Ertrag, es sei denn, man haelt gerade den (B)-Fall fuer wichtig genug (Geldpfad, Abschnitt 4).
+
+### A6. Fazit des Anhangs
+
+- Kein systematischer Blindspot ueber die 9 (recte: 7) hinaus — team-leads Vermutung war berechtigt
+  zu pruefen, das Ergebnis ist negativ (bestaetigt: NUR die p2_festzusetzung-Regeln betroffen).
+  Die vorhandene Dokumentation ist fuer 5 von 7 Regeln korrekt und fuer 2 von 7 (p2_festzusetzung_*)
+  in der Sache richtig, aber mit einer unpraezisen Begruendung ("schmaler" statt "Lookup findet
+  nichts, ist zufaellig plausibel").
+- `_catala_inputs()` ist reparierbar, aber nur mit einer expliziten Zuordnungstabelle (kein
+  genereller Algorithmus) — Aufwand vergleichbar mit dem bereits bestehenden
+  `RUNNER_ACCESSOR_FUER_REGEL`-Muster.
+- Gemessener Nutzen eines Fixes: 1 geloester Blindspot (Zeile 3), 41 neue Dokumentationspflichten.
