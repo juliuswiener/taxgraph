@@ -385,8 +385,10 @@ def test_klasse_f_veraeusserung_betriebsart(bindung):
 # ---- Klasse g: Person-Multiplikation (Zusammenveranlagung, Front 2) -----------
 
 def test_klasse_g_person_b_instanz(bindung):
-    """_partner-Einkommensfelder -> person_b-Bucket (Kz wie Person A, Instanz B); IdNr B = distinktes
-    Mantelbogen-Kz in der Haupt-Deklaration."""
+    """_partner-Einkommensfelder -> person_b-Bucket (Kz wie Person A, Instanz B). person_b_idnr wird
+    NICHT mehr deklariert (elster_kz: null seit 2026-08-12) -- ERiC lehnt E0100082 amtlich ab
+    (rc=610301106, "Eingefuegt-Kennzeichen J/P"), egal welcher Wert. S. BACKLOG
+    person-b-idnr-wird-abgelehnt, scripts/measure_person_b_idnr.py."""
     felder = {"bruttoarbeitslohn_partner": 3800000, "vor_an_anteil_rv_partner": 350000,
               "vor_ag_anteil_rv_partner": 350000, "vor_rv_ausserhalb_lstb_partner": 0,
               "person_b_idnr": "00000000000"}
@@ -394,7 +396,7 @@ def test_klasse_g_person_b_instanz(bindung):
     r = EM.deklariere(snap, bindung)
     assert r["person_b"]["E0200201"] == 38000                    # Bruttolohn Person B, Instanz B (CENT→EUR)
     assert r["person_b"]["E2000401"] == 3500 and r["person_b"]["E2000801"] == 3500
-    assert r["deklaration"]["E0100082"] == "00000000000"        # IdNr B = 1:1 in der Haupt-Deklaration
+    assert "E0100082" not in r["deklaration"]                   # IdNr B wird nicht mehr deklariert (ERiC-Ablehnung)
     assert "E0200201" not in r["deklaration"]                   # Person-B-Lohn NICHT in Person-A-Deklaration
 
 

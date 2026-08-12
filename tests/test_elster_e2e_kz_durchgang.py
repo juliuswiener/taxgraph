@@ -295,7 +295,6 @@ def test_kvpv_kz_person_b(base, vers_art, basis_kv_val, basis_pv_val, kz_kv, kz_
     """KV/PV Kz Person B (Zusammenveranlagung): Kz im person_b-Bucket (nicht deklaration)."""
     fall = [
         ("bruttoarbeitslohn", 5000000), ("veranlagung", "zusammen"),
-        ("person_b_idnr", "12345678901"),
         ("basis_kv", 0), ("basis_pv", 0),
         ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
         ("versicherungsart", "gesetzlich_an"),

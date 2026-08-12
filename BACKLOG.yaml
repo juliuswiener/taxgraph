@@ -1170,7 +1170,7 @@ abgabe:
 
   - id: person-b-idnr-wird-abgelehnt
     titel: "E0100082 (Partner-IdNr): ERiC LEHNT das Kz ab — Zahl oder Abgabe, nicht beides"
-    status: offen
+    status: erledigt
     richtung: "ABGABE-BLOCKER fuer den Zielfall (Arbeitnehmer, Zusammenveranlagung, Scheibe gesamt, VZ 2025)"
     entdeckt: "2026-08-12, Feldmatrix-Vollsweep — einziger echter Befund unter 68 roten Feldern"
     messung: |
@@ -1234,6 +1234,45 @@ abgabe:
       Kegel UND Deklaration), aber NICHT selbst verifiziert oder verantwortet — nur der
       zeitliche Zusammenhang ist festgehalten. Vor jeder Statusaenderung hier: mit dem Worker
       abstimmen, der gerade an bindung_an_gesamt.yaml/api_constants.py sitzt.
+    abschluss_2026_08_12: |
+      fix_muss_beide_seiten_treffen ist erledigt, commit 1420bb6: elster_kz: null in
+      bindung_an_gesamt.yaml (Kz-Seite) UND person_b_idnr raus aus AN_GESAMT_PARTNER /
+      GESAMT_PARTNER_19 in api_constants.py (Kegel-Seite). askable: false + Begruendung
+      (elster_kz_grund) inzwischen von anderer Hand in bindung_an_gesamt.yaml ergaenzt
+      (bb76dea) — beantwortet die oben offen gelassene Produktfrage "soll es noch erfragt
+      werden?" mit nein: tote Frage, da das Feld in keiner Scheibe mehr erreichbar ist.
+
+      Eigenstaendig (ohne Dialog-Durchstich) end-to-end nachgewiesen, per HTTP-Endpunkt statt
+      /fragen-Dialog — beantwortet dieselbe "ist es ERLAUBT"-Frage wie oben, nicht die
+      umfassendere "erreicht der Zielfall ehrlich eine Zahl"-Frage aus
+      ratsche-misst-nicht-den-nutzerpfad (die haengt an einem ANDEREN, separaten Blocker,
+      s. naechster_schritt dort):
+        - tests/test_einreichen_zusammen_person_b_idnr.py (neu): /ergebnis liefert echte
+          Zahl (grund=bestaetigt, ring-vollstaendiger Kegel) UND /einreichen erreicht rc=0
+          ueber den ECHTEN ERiC-Pfad (kein Mock, kein Skip) — beide gruen.
+        - scripts/measure_person_b_idnr.py (neu, Kredential-sicher, gibt nie Hersteller-ID/
+          echte IdNr aus): Tamper-Gegenprobe wertunabhaengig bestaetigt —
+            aktueller Stand (E0100082 nicht deklariert):        rc=0     plausibel
+            getampert mit gueltiger Dummy-IdNr:                 rc=610301106  io_reader_unerwartete_elemente
+            getampert mit Nullen-IdNr:                          rc=610301106  io_reader_unerwartete_elemente
+          Deckt sich exakt mit zwischenstand_dialog_durchstich oben (unabhaengige Bestaetigung
+          ueber einen zweiten Messweg).
+
+      Fixtur-Fallout gefunden UND behoben (Testdateien, nicht produkt/haut/api.py): mehrere
+      bereits laenger bestehende Tests in tests/test_paket_b_e2e_http.py (12 Call-Sites in
+      _gesamt_kegel()/_zusammen_kegel() + eine test-lokale AN_GESAMT_PARTNER-Tupel-Konstante,
+      Zeile ~544) und tests/test_elster_e2e_kz_durchgang.py (test_kvpv_kz_person_b) sendeten
+      person_b_idnr weiterhin aktiv als /event-Body oder erwarteten es in /fragen — seit
+      bb76dea (Partner-Felder auf p2_festzusetzung_zusammen umgehaengt, nach 1420bb6 committet)
+      antwortet die API darauf mit 400 "nicht in dieser Scheibe". Bereinigt: Feld aus allen
+      Fixtur-Helfern/Call-Sites entfernt, keine Produktionslogik angefasst. Vollsuite danach
+      1898 passed, 4 skipped (vorher: 1 Fehlschlag beim ersten Nachmess-Lauf, 15 beim allerersten
+      vollen Lauf direkt nach bb76dea).
+
+      Bezug zu fixtur_nebenbefund/zwischenstand_2026_08_12 unten (ratsche-misst-nicht-den-
+      nutzerpfad): dieselbe Fixtur-Klasse Fehler (Test behauptet mehr als er deckt), hier aber
+      am HTTP-Endpunkt-Fixturlevel statt am Dialog-Durchstich-Level — zwei unabhaengige Funde
+      derselben Wahrheit, nicht dieselbe Messung doppelt gezaehlt.
 
   - id: ratsche-misst-nicht-den-nutzerpfad
     titel: "Die Abgabe-Ratsche laeuft ueber die ungescopte Bindung — nicht ueber den Weg des Nutzers"
@@ -2748,6 +2787,102 @@ struktur:
       228 Feldern etwas gebaut wird.
     entscheidung_noetig: "Julius — was soll uebernehmbar vs. vorschlag tatsaechlich unterschiedlich tun? Kein Bau ohne diese Entscheidung."
     aufwand_h: unbeziffert
+
+  - id: teil-ring-am-afa-betrag-tot
+    titel: "arbeitsmittel_afa-Teil-Ring (am_afa_betrag) deklariert, aber in _bescheid_fn nicht verdrahtet"
+    status: offen
+    aufwand_h: unbeziffert
+    entdeckt: |
+      2026-08-12, Instrumentierung des Refactor-Workers (produkt/haut/api.py-Split-Vorarbeit)
+      foerderte einen fuenften quantitaet-Wert zutage, den niemand erwartet hatte. Auftrag von
+      team-lead: NUR MESSEN, api.py nicht anfassen (gehoert dem Refactor-Worker).
+    befund: |
+      GEMESSEN, api_constants.py:466-467:
+        SCHEIBEN["n_vor_gwg"]["teil_ringe"] = [
+          ("ep_werbungskosten", "abziehbarer_betrag", EP_FELDER),
+          ("arbeitsmittel_afa", "am_afa_betrag", ARBEITSMITTEL_RING)]
+      _bescheid_fn (api.py:266-1751) hat GENAU VIER `if quantitaet == "..."`-Zweige:
+        515 abziehbarer_betrag | 531 festzusetzende_est | 695 festzusetzende_est_gesamt
+        | 1345 festzusetzende_est_rentner
+      Kein Zweig fuer am_afa_betrag -> faellt auf den Tail zurueck, Zeile 1751:
+        return None   # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
+      Der eigene Kommentar nennt "AM" bereits als bewusst NICHT exponiert — der teil_ringe-
+      Eintrag widerspricht damit dem eigenen Nachbar-Kommentar in derselben Datei.
+
+      Alle 5 SCHEIBEN durchgesehen (api_constants.py:457-525): NUR n_vor_gwg hat eine
+      nicht-leere teil_ringe-Liste. ep/an_gesamt/gesamt/rentner_gesamt: teil_ringe: [] bei
+      allen vieren. Es gibt also insgesamt genau 2 teil_ringe-Eintraege im ganzen Repo, nicht
+      mehr — davon 1 lebt (abziehbarer_betrag hat einen Zweig), 1 ist tot (am_afa_betrag hat
+      keinen).
+
+      VOLLER SWEEP (Punkt 3, gesamt_ring + teil_ringe zusammen): jede der 5 SCHEIBEN hat einen
+      gesamt_ring-Wert oder None. GEMESSEN:
+        ep             -> "abziehbarer_betrag"          -> Zweig 515  OK
+        n_vor_gwg      -> None                          -> nutzt nur teil_ringe (s.o.)
+        an_gesamt      -> "festzusetzende_est"           -> Zweig 531  OK
+        gesamt         -> "festzusetzende_est_gesamt"    -> Zweig 695  OK
+        rentner_gesamt -> "festzusetzende_est_rentner"   -> Zweig 1345 OK
+      Alle 4 gesamt_ring-Werte 1:1 auf die 4 _bescheid_fn-Zweige gemappt, keine Luecke.
+
+      Gegenprobe ueber ALLE _bescheid_fn-Aufrufer (api.py, 6 Call-Sites: 1769, 2325, 2331,
+      2387, 2394, 2488): jede uebergebene quantitaet stammt nachweisbar entweder aus
+      cfg["gesamt_ring"] (1769/_feste_zahl, 2325, 2387, 2488/ergebnis()) oder aus dem
+      teil_ringe-Tupel q (2331, 2394) — keine dritte Quelle fuer quantitaet-Strings im ganzen
+      Modul. Der Sweep ist damit erschoepfend, nicht nur stichprobenartig: EIN Fund
+      (am_afa_betrag), kein Muster ueber mehrere Scheiben. Punkt 3 aus dem Auftrag beantwortet.
+    aufrufer: |
+      GEMESSEN, zwei Call-Sites, beide lesen cfg["teil_ringe"]:
+        _gesamt_beitrag() (api.py:2321-2335, von fragen() fuer Frage-Reihenfolge-Gewichte):
+          Schleife MIT frue-return beim ersten Treffer. ep_werbungskosten liefert praktisch
+          immer zuerst einen Bescheid (sobald EP_FELDER gesetzt sind) -> arbeitsmittel_afa
+          wird hier so gut wie nie erreicht. Wird es doch erreicht (ep_werbungskosten selbst
+          None), faellt die ganze Funktion still auf return None: keine Frage-Gewichte, kein
+          Fehler, keine Exception.
+        stand() (api.py:2363-2402, GET /fall/{id}/stand): Schleife OHNE frueh-return, haengt
+          jeden Treffer an die Liste `teil` an (Zeile 2392-2397). am_afa_betrag liefert
+          bf=None -> wird schlicht NICHT angehaengt. Die Zeile im API-Response fehlt einfach,
+          ohne Fehler-Flag.
+      EIN Aufruf in der gesamten Suite (bestaetigt team-leads Instrumentierungs-Fund):
+        tests/test_paket_b_e2e_http.py:472 test_durchstich_n_vor_gwg, /stand-Call Zeile 506.
+        Das Assert Zeile 512 prueft nur `any(t["familie"]=="ep_werbungskosten" ...)` — keine
+        Assertion zu arbeitsmittel_afa. Das Fehlen faellt in der Suite nicht auf, weil nichts
+        danach fragt.
+    geldfrage: |
+      GEMESSEN, WIDERLEGT die Sorge aus dem Auftrag — kein Geldfehler. Die AfA-Zahl wird in
+      BEIDEN echten Bescheid-Pfaden tatsaechlich gerechnet, nur ueber andere Variablen als
+      den toten Teil-Ring:
+        "festzusetzende_est"-Zweig (an_gesamt, Zeile 531-693): Zeile 611-616,
+          wk_input["am_anschaffungskosten"] = runner.catala_p7_linear_afa(...), fliesst
+          direkt in wk = runner.catala_werbungskosten_n(wk_input) (Zeile 617) ein.
+        "festzusetzende_est_gesamt"-Zweig (gesamt, Zeile 695-1747): Zeile 881-902, lokale
+          Variable am_afa_betrag = runner.catala_p7_linear_afa(...), direkt addiert auf
+          ns_wk += am_afa_betrag (Zeile 902).
+      Der tote Teil-Ring ist eine reine Interview-Gewichtungs-/Reporting-Luecke der
+      n_vor_gwg-Scheibe selbst — die traegt laut eigenem Docstring (test_paket_b_e2e_http.py:
+      473) ohnehin "KEIN Gesamt-Bescheid (ehrlich)", nur Interview+Deklaration+Trace. Betrifft
+      NICHT die Steuerberechnung in an_gesamt/gesamt.
+    empfehlung: |
+      Erreichbarkeits-Gate vorgeschlagen, NICHT gebaut (Auftrag war reine Analyse): ein
+      statischer Test, der fuer JEDEN registrierten Ring-Quantitaet-Wert prueft, dass er in
+      _bescheid_fn bedient wird — beide Quellen zusammen: cfg["gesamt_ring"] (5 Scheiben) UND
+      jedes quantitaet-Feld in cfg["teil_ringe"] (aktuell nur n_vor_gwg). Umsetzung z.B. per
+      AST-Scan von api.py auf die `if quantitaet == "..."`-String-Literale, oder eine gepflegte
+      Konstante der bekannten Werte, gegen SCHEIBEN abgeglichen. Gleiches Muster wie die drei
+      bereits bekannten SCHEIBEN.felder-Faelle (Gedaechtnis: p35c-tot-wiring-scheibe-felder),
+      hier auf gesamt_ring/teil_ringe statt felder.
+
+      Achtung Refactor-Kollision: _bescheid_fn wird gerade zerlegt (struktur: api-py-datei-
+      split, status bereit) — die vier Zweige wandern voraussichtlich in ein eigenes Modul
+      (api_ring.py laut dortigem Plan). Ein Erreichbarkeits-Gate, das die Zweige per Zeilen-
+      nummer oder festem Funktionsnamen _bescheid_fn anpeilt, bricht beim Split. Falls gebaut:
+      gegen die String-Literale selbst pruefen (AST-Scan des Moduls, das die Zweige nach dem
+      Split traegt), nicht gegen eine Zeilennummer — oder auf den bereits vorhandenen
+      Aequivalenz-Collector aufsetzen (tests/test_bescheid_fn_collector.py), der genau fuer
+      Vorher/Nachher-Vergleiche um den Split herum gebaut wurde.
+
+      Fix selbst (Zweig ergaenzen oder Eintrag streichen) nicht bewertet — noch keine Julius-
+      Entscheidung, ob am_afa_betrag ueberhaupt separat abfragbar sein soll.
+    entscheidung_noetig: "Julius — Zweig fuer am_afa_betrag in _bescheid_fn ergaenzen (dann echter Teil-Ring), oder Eintrag aus teil_ringe streichen (dann ehrlich wie die anderen 4 Scheiben)? Kein Bau ohne diese Entscheidung, kein Geldfehler dahinter."
 
 test-schulden:
 

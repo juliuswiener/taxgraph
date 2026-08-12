@@ -235,8 +235,7 @@ def test_gesamt_zusammen_beide_verdiener(base):
     doppelter § 10c → festzusetzende_est 10776 = 1077600 Cent (== catala_est_zusammen, handverifiziert)."""
     catala = _catala_da()
     _gesamt_anlegen(base, "zv", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
-                                              veranlagung="zusammen", bruttolohn_partner=3000000,
-                                              person_b_idnr="12345678901"))
+                                              veranlagung="zusammen", bruttolohn_partner=3000000))
     st, erg = _req(base, "GET", "/fall/zv/ergebnis")
     _val("ergebnis", erg)
     if catala:
@@ -249,7 +248,7 @@ def test_gesamt_zusammen_partner_kegel_offen(base):
     """K2: Zusammenveranlagung mit unvollständigem Person-B-Kegel (Bruttolohn_partner fehlt) → kein
     halber Ehepaar-Bescheid (partner_kegel_offen)."""
     _gesamt_anlegen(base, "zvo", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
-                                               veranlagung="zusammen", person_b_idnr="12345678901"))
+                                               veranlagung="zusammen"))
     st, erg = _req(base, "GET", "/fall/zvo/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "partner_kegel_offen"
 
@@ -263,7 +262,7 @@ def test_gesamt_zusammen_person_b_vorsorge(base):
     catala = _catala_da()
     _gesamt_anlegen(base, "pbv", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
                                                veranlagung="zusammen", bruttolohn_partner=4000000,
-                                               person_b_idnr="12345678901", vor_an=350000, vor_ag=350000,
+                                               vor_an=350000, vor_ag=350000,
                                                basis_kv=320000))
     for feld, wert in [("vor_an_anteil_rv_partner", 350000), ("vor_ag_anteil_rv_partner", 350000),
                        ("basis_kv_partner", 320000)]:
@@ -285,7 +284,7 @@ def test_gesamt_zusammen_person_b_vorsorge_null_wie_a_only(base):
     catala = _catala_da()
     _gesamt_anlegen(base, "pbn", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
                                                veranlagung="zusammen", bruttolohn_partner=4000000,
-                                               person_b_idnr="12345678901", vor_an=350000, vor_ag=350000,
+                                               vor_an=350000, vor_ag=350000,
                                                basis_kv=320000))
     st, erg = _req(base, "GET", "/fall/pbn/ergebnis")
     _val("ergebnis", erg)
@@ -302,8 +301,7 @@ def test_gesamt_zusammen_person_b_24a(base):
     gewährt (§ 24a S. 1), nicht nur für Person A."""
     catala = _catala_da()
     _gesamt_anlegen(base, "pb24", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
-                                                veranlagung="zusammen", bruttolohn_partner=4000000,
-                                                person_b_idnr="12345678901"))
+                                                veranlagung="zusammen", bruttolohn_partner=4000000))
     st, _ = _req(base, "POST", "/fall/pb24/event", _laie("geburtsjahr_partner", 1955))
     assert st == 201
     st, erg = _req(base, "GET", "/fall/pb24/ergebnis")
@@ -319,8 +317,7 @@ def test_gesamt_alleinerziehend_konsistenz_offen(base):
     (§ 24b Abs. 1/3 verlangt „allein stehend", nicht zusammenveranlagt) → alleinerziehend_konsistenz_offen. Der
     § 24b-Entlastungsbetrag würde sonst still gewährt = Unter-Besteuerung. Fail-closed (dev-2s partner_check-Wiring)."""
     _gesamt_anlegen(base, "azk", _gesamt_kegel(0, bruttolohn=4000000, kein_vuv=True,
-                                               veranlagung="zusammen", bruttolohn_partner=3000000,
-                                               person_b_idnr="12345678901"))
+                                               veranlagung="zusammen", bruttolohn_partner=3000000))
     st, _ = _req(base, "POST", "/fall/azk/event", _laie("fam_alleinstehend", True))
     assert st == 201
     st, erg = _req(base, "GET", "/fall/azk/ergebnis")
@@ -544,7 +541,7 @@ AN_GESAMT_KV_PV = ("versicherungsart", "basis_kv", "basis_pv", "vorsorge_arbeits
 AN_GESAMT_DHF = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland",
                  "dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
                  "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
-AN_GESAMT_PARTNER = ("versicherungsart_partner", "bruttoarbeitslohn_partner", "person_b_idnr",
+AN_GESAMT_PARTNER = ("versicherungsart_partner", "bruttoarbeitslohn_partner",
                      "vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
                      "vor_rv_ausserhalb_lstb_partner", "basis_kv_partner", "basis_pv_partner",
                      "vorsorge_arbeitslosenversicherung_partner",
@@ -808,7 +805,9 @@ def _zusammen_kegel(vor_a=0, ohne=()):
     k["ep_eigenes_kfz"] = False
     k["vor_an_anteil_rv"] = vor_a
     kegel = list(k.items())
-    for f, w in [("bruttoarbeitslohn_partner", 4000000), ("person_b_idnr", "00000000000")]:
+    # person_b_idnr NICHT hier: ERiC lehnt E0100082 amtlich ab, seit 2026-08-12 in keiner
+    # Scheibe mehr erreichbar (s. test_an_gesamt_zusammen_ohne_person_b_idnr weiter unten).
+    for f, w in [("bruttoarbeitslohn_partner", 4000000)]:
         if f not in ohne:
             kegel.append((f, w))
     return kegel
@@ -847,9 +846,28 @@ def test_an_gesamt_zusammen_kv_pv(base):
         assert erg["zahl_cent"] is None
 
 
+def test_an_gesamt_zusammen_ohne_person_b_idnr(base):
+    """Regression 2026-08-12: person_b_idnr (E0100082) sperrt NICHT mehr — ERiC lehnt das Feld amtlich
+    ab (rc=610301106), egal welcher Wert, es wird seither weder deklariert noch verlangt
+    (AN_GESAMT_PARTNER in api_constants.py). Fehlt nur person_b_idnr, muss der Splitting-Bescheid
+    trotzdem stehen — derselbe Golden-Wert wie test_an_gesamt_zusammen (1383800 Cent), weil
+    _zusammen_kegel() sonst identisch ist. S. BACKLOG person-b-idnr-wird-abgelehnt,
+    scripts/measure_person_b_idnr.py."""
+    catala = _catala_da()
+    _an_gesamt_anlegen(base, "zoi", _zusammen_kegel(ohne=("person_b_idnr",)))
+    st, erg = _req(base, "GET", "/fall/zoi/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        assert erg["zahl_cent"] == 1383800 and erg["grund"] == "bestaetigt"
+    else:
+        assert erg["zahl_cent"] is None
+
+
 def test_an_gesamt_zusammen_partner_offen(base):
-    """K2: Person-B-Pflichtfeld (person_b_idnr) offen → kein halber Splitting-Bescheid."""
-    _an_gesamt_anlegen(base, "zpo", _zusammen_kegel(ohne=("person_b_idnr",)))
+    """K2: Person-B-Pflichtfeld (bruttoarbeitslohn_partner) offen → kein halber Splitting-Bescheid.
+    person_b_idnr ist seit 2026-08-12 NICHT mehr Teil von AN_GESAMT_PARTNER (s.
+    test_an_gesamt_zusammen_ohne_person_b_idnr) — dieser Test prüft das verbleibende Pflichtfeld."""
+    _an_gesamt_anlegen(base, "zpo", _zusammen_kegel(ohne=("bruttoarbeitslohn_partner",)))
     st, erg = _req(base, "GET", "/fall/zpo/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "partner_kegel_offen"
 
@@ -865,7 +883,7 @@ def test_an_gesamt_zusammen_vor_guard(base):
 def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0,
              ep_tage=0, ep_km=0, ep_kfz=False, kein_kap=True, kap_ertraege=0,
              kap_gewinn_aktien=0, kap_verlust_aktien=0, kap_gewinn_sonstige=0, kap_verlust_sonstige=0,
-             veranlagung="einzel", bruttolohn_partner=None, person_b_idnr=None,
+             veranlagung="einzel", bruttolohn_partner=None,
              kap_ertraege_partner=0, kap_gewinn_aktien_partner=0, kap_verlust_aktien_partner=0,
              kap_gewinn_sonstige_partner=0,
              kap_verlust_sonstige_partner=0, entgelt_quote=100, vor_an=0, vor_ag=0, vor_rv_ausserhalb=0,
@@ -933,8 +951,8 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
         k.append(("geburtsjahr", geburtsjahr))
     if bruttolohn_partner is not None:
         k.append(("bruttoarbeitslohn_partner", bruttolohn_partner))
-    if person_b_idnr is not None:
-        k.append(("person_b_idnr", person_b_idnr))
+    # person_b_idnr NICHT hier: ERiC lehnt E0100082 amtlich ab (rc=610301106), das Feld ist
+    # seit 2026-08-12 in keiner Scheibe mehr erreichbar. S. BACKLOG person-b-idnr-wird-abgelehnt.
     if versicherungsart_partner is not None:
         k.append(("versicherungsart_partner", versicherungsart_partner))
     if veranlagung == "zusammen":                 # Person-B-Kapital-Kegel (bestätigte Null default, #4b)
@@ -1953,7 +1971,7 @@ def test_gesamt_zusammen_kapital_beide(base):
     _gesamt_anlegen(base, "zbk", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True,
                                        kein_kap=False, kap_ertraege=800000,
                                        veranlagung="zusammen", bruttolohn_partner=4000000,
-                                       person_b_idnr="12345678901", kap_ertraege_partner=600000))
+                                       kap_ertraege_partner=600000))
     st, erg = _req(base, "GET", "/fall/zbk/ergebnis")
     _val("ergebnis", erg)
     if catala:
@@ -1971,11 +1989,11 @@ def test_gesamt_zusammen_kapital_gewinn_sonstige_partner(base):
     if not catala:
         pytest.skip("Catala-Toolchain nicht verfügbar")
     _gesamt_anlegen(base, "zbgs_mit", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True, kein_kap=False,
-                    veranlagung="zusammen", bruttolohn_partner=4000000, person_b_idnr="12345678901",
+                    veranlagung="zusammen", bruttolohn_partner=4000000,
                     kap_gewinn_sonstige_partner=500000))
     _, erg_mit = _req(base, "GET", "/fall/zbgs_mit/ergebnis")
     _gesamt_anlegen(base, "zbgs_ohne", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True, kein_kap=False,
-                    veranlagung="zusammen", bruttolohn_partner=4000000, person_b_idnr="12345678901",
+                    veranlagung="zusammen", bruttolohn_partner=4000000,
                     kap_gewinn_sonstige_partner=0))
     _, erg_ohne = _req(base, "GET", "/fall/zbgs_ohne/ergebnis")
     assert erg_mit["grund"] == "bestaetigt" and erg_ohne["grund"] == "bestaetigt"
@@ -1990,7 +2008,6 @@ def test_gesamt_zusammen_kapital_semantik_partner(base):
     _gesamt_anlegen(base, "zsp", _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True,
                                        kein_kap=False, kap_ertraege=800000,
                                        veranlagung="zusammen", bruttolohn_partner=4000000,
-                                       person_b_idnr="12345678901",
                                        kap_ertraege_partner=600000, kap_gewinn_aktien_partner=300000))
     st, erg = _req(base, "GET", "/fall/zsp/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "kapital_semantik_offen"
@@ -2292,8 +2309,7 @@ def test_gesamt_faltung_31_freibetrag_besser(base):
     Cent. NON-VACUOUS Gegenzweig zu §31_kindergeld_besser (Instructor-K2: beide Günstiger-Ausgänge belegt)."""
     catala = _catala_da()
     _gesamt_anlegen(base, "f31f", _gesamt_kegel(0, bruttolohn=15000000, kein_vuv=True,
-                                                veranlagung="zusammen", bruttolohn_partner=0,
-                                                person_b_idnr="12345678901"))
+                                                veranlagung="zusammen", bruttolohn_partner=0))
     _gesamt_abzuege(base, "f31f", kinder=1)
     st, erg = _req(base, "GET", "/fall/f31f/ergebnis")
     _val("ergebnis", erg)
