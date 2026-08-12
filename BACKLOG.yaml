@@ -28,8 +28,8 @@
 #   erledigt      — gebaut, gemessen, committet (erledigt_in nennt den Commit)
 
 version: 2
-stand: "2026-08-10"
-head: 70614c2
+stand: "2026-08-12"
+head: 4519cc7
 
 # ============================================================================
 # ABGABEACHSE — der Weg zu "abgabefaehig"
@@ -280,8 +280,16 @@ abgabe:
 
   - id: kap-antragsgrund-fehlt
     titel: "Anlage KAP ohne Antragsgrund — Erklaerung mit Kapitalertraegen ist nicht einreichbar"
-    status: teil_erledigt
-    richtung: "Baustein 1 (Antragsgrund) gebaut, Baustein 2+3 (Steuerabzugsbetraege, q) weiter offen"
+    status: erledigt
+    erledigt_in: "02614c6 + 71996a8 (Stufe 1) + ac2989a (Stufe 2) + 9801efc/5760ff7 (Stufe 3)"
+    erledigt_wie: |
+      Alle drei Bausteine gebaut. Stufe 1 Antragsgrund E1900401 + Sparer-Pauschbetrag
+      E1901401 (gemessen: KEINES der beiden reicht allein, checkESt verlangt beide).
+      Stufe 2 KapESt/SolZ/KiSt-Anrechnung Zeilen 37-39 nach § 36 Abs. 2 Nr. 2 EStG.
+      Stufe 3 q (auslaendische Quellensteuer, E1905101) — dabei fiel auf, dass das Kz im
+      Dezimalformat "N,NN" geschrieben werden muss und als "1000" statt "1000,00" nicht
+      einreichbar war (5760ff7, _KOMMA_OHNE_E60_KZ in est_mapping.py).
+    richtung: "war ABGABE-BLOCKER, jetzt geschlossen — Anlage KAP ist vollstaendig"
     entdeckt: "2026-08-10, tests/test_checkest_feldmatrix.py, erster Lauf"
     messung: |
       Ratschen-Fixtur einzel, nur kap_kapitalertraege veraendert:
@@ -349,8 +357,16 @@ abgabe:
 
   - id: p35a-einzelaufstellung
     titel: "§ 35a: checkESt verlangt Einzelaufstellung, wir liefern nur die Summe"
-    status: analysiert
-    richtung: "ABGABE-BLOCKER (rc=610001002), systematisch ueber alle drei Toepfe"
+    status: erledigt
+    erledigt_in: "6562c52 + 03aa10b + 3cdbede (2026-08-10)"
+    erledigt_wie: |
+      Einzelaufstellung fuer alle drei Toepfe (Minijob, Dienstleistung, Handwerker) ueber
+      den vorhandenen instanz_gruppe-Mechanismus, Form Einz[99]+Sum[1]. Die Summen werden
+      jetzt AUS den Instanzen berechnet statt zusaetzlich erfragt (askable:false) — zwei
+      Repraesentationen derselben Sache waren hier mehrfach Geld.
+      Zwei Nebenbefunde aus derselben Arbeit: ein Uebergangstest fuer alte Flat-Werte
+      (03aa10b) und ein Ring, der den Bestandswert 0 statt des Flat-Werts las (3cdbede).
+    richtung: "war ABGABE-BLOCKER (rc=610001002) ueber alle drei Toepfe, jetzt geschlossen"
     entdeckt: "2026-08-10, tests/test_checkest_feldmatrix.py, erster Lauf"
     messung: |
       Je Feld einzeln auf der Ratschen-Fixtur, alle rc=610001002:
@@ -876,7 +892,22 @@ abgabe:
 
   - id: testversand
     titel: "Testversand gegen die ELSTER-Testumgebung (Roadmap M4.4)"
-    status: teil_erledigt
+    status: erledigt
+    erledigt_in: "durchgefuehrt 2026-08-12 (kein Code-Commit — der Pfad stand seit a1e8e0f)"
+    erledigt_wie: |
+      TESTVERSAND ERFOLGREICH: rc=0, Telenummer KS1, Testmerker 700000004
+      (ERIC_TESTMERKER_CLEARINGSTELLE — der Fall wird dort aussortiert und verworfen,
+      erreicht das Finanzamt nicht). Gesendet wurde der Ratschen-Testfall (Hans Maier),
+      NICHT Julius' eigene Daten. Damit ist die Uebertragungsstrecke zum ersten Mal
+      ende-zu-ende bewiesen, nicht nur die Plausibilitaet des XML.
+      Das alte Zertifikat war seit 538 Tagen abgelaufen (notAfter 2025-02-20;
+      ELSTER-Softwarezertifikate laufen 3 Jahre). Julius hat ein neues gezogen, Pfad und
+      PIN stehen in .env (gitignored, .gitignore:25).
+    einordnung_wichtig: |
+      checkest_gate.py ruft EricBearbeiteVorgang mit ERIC_VALIDIERE und uebergibt
+      Zertifikat-Handle und PIN als None. Die gesamte Test-Infrastruktur (Ratsche,
+      Feld-Matrix, Block-Matrix) lief also NIE ueber das Zertifikat. Ein abgelaufenes
+      Zertifikat blockiert allein den Versand und entwertet keine einzige rc=0-Aussage.
     vorbereitet_in: "a1e8e0f (2026-08-10)"
     vorbereitet_wie: |
       Der Sendepfad ist gebaut, aber NIE ausgeloest worden — kein einziger ERiC-Sendeaufruf,
@@ -1405,7 +1436,13 @@ rechenluecken:
 
   - id: p32d-q-auslandssteuer
     titel: "§ 32d Abs. 1 S. 5 — q (anrechenbare auslaendische Steuer) ist fest 0"
-    status: offen
+    status: erledigt
+    erledigt_in: "9801efc + 5760ff7 (2026-08-10/11)"
+    erledigt_wie: |
+      q (Zeile 41, E1905101) gebaut, § 32d Abs. 1 S. 2/4-5. Zwei Korrekturen am Briefing
+      durch die Messung: § 32d Abs. 1 S. 2 gilt AUCH OHNE Kirchensteuerpflicht (das
+      Briefing hatte nur die S.-4-Formel genannt), und das Kz braucht das Dezimalformat
+      "N,NN" — als "1000" statt "1000,00" war q nicht einreichbar (5760ff7).
     aufwand_h: null
     richtung: over-tax
     wirkung: "wer auslaendische Quellensteuer auf Kapitalertraege hat, bekommt eine zu hohe KiSt"
@@ -1879,6 +1916,81 @@ struktur:
       und der Split legt die Modulgrenzen fest, an denen sich die Importe danach
       ausrichten. Stufe 2 blockiert nichts und kann jederzeit laufen.
 
+  - id: llm-vorschlag-abweisung-ohne-grund
+    titel: "Abgewiesener LLM-Vorschlag verschwindet still — abgelehnt nennt nur die feld_id"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-12, beim Beantworten von Julius' Frage 'kann das LLM die Felder ausfuellen?'"
+    richtung: "kein Geldfehler — Vertrauens- und Bedienbarkeitsluecke im Kernpfad des Produkts"
+    messung: |
+      Der Pfad IST gebaut und funktioniert: chat() (api.py:2972) nimmt Freitext, das LLM
+      schlaegt Feldwerte vor, jeder Vorschlag wird als VORLAEUFIGES Event geschrieben
+      (schreiber="llm:chat", zustand="vorlaeufig", signal_2=None). Vier Sperren greifen:
+        store.py:200  Katalog-Check — nur Felder mit vorschlagbar_von: [llm]
+        store.py:219  Magnitude-Bound F2 — >= 10^10 Cent (EUR-statt-Cent)
+        store.py:225  Typ-Zwang — zustand=bestaetigt braucht signal_2, das LLM setzt None
+        store.py:228  Auflage B — hoechstens EIN aktives Event je feld_id; Ueberschreiben
+                      braucht ersetzt=<event_id>, und chat() uebergibt ersetzt NICHT
+      Aus Auflage B folgt: das LLM kann ein vom Nutzer gesetztes Feld strukturell NICHT
+      ueberschreiben. Das von Julius gewuenschte Permission-Gate existiert also bereits —
+      strenger als gefordert, denn es fragt nicht, es verweigert.
+    der_eigentliche_befund: |
+      api.py:3012 faengt (ValueError, KeyError) und ueberspringt STILL. Die Antwort fuehrt
+      den Vorschlag nur als feld_id in `abgelehnt` — OHNE Grund und OHNE den Wert, den das
+      LLM vorgeschlagen hatte. Damit fallen zwei voellig verschiedene Faelle in dieselbe
+      Liste:
+        (1) "dieses Feld darf ein LLM nie setzen"      -> korrekt, endgueltig
+        (2) "du hast dieses Feld schon selbst gesetzt" -> genau hier will der Nutzer gefragt
+                                                          werden, und genau hier schweigt es
+      Nutzersicht: langer Freitext, das LLM erkennt zehn Felder, drei davon hat der Nutzer
+      vorher selbst getippt. Die drei verschwinden lautlos. Er sieht drei feld_ids ohne
+      Erklaerung und erfaehrt nie, was das LLM dort vorgeschlagen haette.
+    bauvarianten: |
+      (a) `abgelehnt` von list[feld_id] auf list[{feld_id, grund, wert}] heben. Klein,
+          aber ein Schema-Bruch an einem oeffentlichen Endpunkt.
+      (b) Fall (2) gar nicht ablehnen, sondern als Konflikt-Vorschlag zurueckgeben, den der
+          Nutzer im Fluss annehmen kann (dann schreibt die HAUT das ersetzt-Event, nicht
+          das LLM). Das ist der eigentlich gewuenschte Permission-Dialog.
+          Auflage B bleibt unangetastet — das LLM bekommt kein ersetzt-Recht.
+      (c) Beides: (a) als Sofortmassnahme (Sichtbarkeit), (b) als Produktschritt.
+    achtung: |
+      Auflage B NICHT aufweichen. Ein ersetzt-Recht fuer den Schreiber "llm:chat" waere
+      genau der stille Ueberschreib-Pfad, den Julius verhindert haben will. Der Dialog
+      gehoert in die Haut, die Sperre bleibt im Store.
+    julius: "Frage kam von ihm (2026-08-12); Variante noch nicht entschieden."
+
+  - id: rentner-praefix-rename-bricht-den-store
+    titel: "rentner_-Praefix umbenennen ist kein Rename, sondern eine Datenmigration"
+    status: analysiert
+    aufwand_h: null
+    entdeckt: "2026-08-12, Blast-Radius-Messung vor einem beauftragten Rename"
+    ersetzt_einschaetzung: |
+      Fund 7 aus commit-nur-defer-sweep-2026-08-10 fuehrte das als "rein STRUKTUR
+      (Lesbarkeit/Wartung), kein Geldeffekt". Das stimmt fuer die WIRKUNG, unterschaetzt
+      aber die KOSTEN erheblich. Diese Messung ersetzt die Aufwandseinschaetzung.
+    messung: |
+      Ausgangspunkt ist der Kommentar api.py:903: der "rentner_"-Feldname ist NICHT
+      rentner-spezifisch. Stimmt inhaltlich — rentner_veraeusserungsgewinn betrifft jeden
+      mit § 16-Gewinn, rentner_grad_der_behinderung jeden mit GdB.
+      Gemessen 2026-08-12:
+        produkt/ + tests/ + golden/   ueber 30 verschiedene rentner_-Feld-IDs
+        produkt/haut/faelle/          295 Dateien, davon 89 mit rentner_-Feld-IDs
+      Der Store ist append-only und event_id ist ein Hash UEBER das Event inklusive
+      feld_id (store.py:246, event_id(event)). Ein Rename aendert damit jeden betroffenen
+      event_id und reisst die ersetzt-Ketten, die auf die alten IDs zeigen (store.py:235-241
+      loest ersetzt gegen event_id auf).
+    folge: |
+      Ein Rename braucht eine Migration, die (1) feld_id umschreibt, (2) alle event_ids neu
+      berechnet, (3) alle ersetzt-Referenzen nachzieht, (4) snapshot_ids invalidiert oder
+      neu bildet — plus ein Gate, das beweist, dass die materialisierten felder vor und nach
+      der Migration identisch sind. Das ist kein Aufraeumen, das ist ein eigenes Vorhaben.
+    empfehlung: |
+      LIEGENLASSEN. Der Nutzen ist Lesbarkeit, der Preis ist eine Migration auf dem
+      Event-Log — dem einzigen Artefakt im Repo, das echte Nutzerdaten traegt und nicht
+      reproduzierbar ist. Falls es doch gemacht wird: NICHT waehrend anderer Arbeit an
+      api.py, und mit einem Vorher/Nachher-Vergleich der materialisierten felder als Gate.
+    julius: "Auftrag zum Umbenennen kam 2026-08-12; nach dieser Messung zurueckgestellt, Entscheidung offen."
+
 test-schulden:
 
   - id: kz-ohne-assert
@@ -2246,3 +2358,53 @@ test-schulden:
     entscheidung_julius: |
       OFFEN. Nichts gebaut. Welche Variante — und ob ueberhaupt, denn es ist kein
       Geldfehler, sondern eine Sichtbarkeitsluecke.
+
+  - id: gettsim-crosscheck-g32a-52150
+    titel: "g32a_52150: amtlich 6.430 vs GETTSIM 6.431 — 1 EUR blockiert den Crosscheck-CI-Job"
+    status: analysiert
+    aufwand_h: 0.5
+    entdeckt: "vor 2026-08-07, bisher NUR im Gedaechtnis gefuehrt, nicht im BACKLOG"
+    warum_hier: |
+      Der Punkt stand ausschliesslich als Gedaechtnis-Eintrag (adjudikation-offen-g32a-52150)
+      und tauchte in keiner BACKLOG-Durchsicht auf. Genau die Bauart, die der
+      commit-nur-defer-sweep bei Commit-Texten gefunden hat — Wissen an einem Ort, an dem
+      niemand danach sucht.
+    messung: |
+      Ein Tarif-Stuetzpunkt bei zvE 52.150: der amtliche Programmablaufplan ergibt 6.430 EUR,
+      GETTSIM 6.431 EUR. Differenz 1 EUR. Der Diff liegt im Klartext gesichert.
+    wirkung: |
+      Blockiert den gettsim-crosscheck-CI-Job, weil der auf Deckungsgleichheit prueft.
+      Kein Produktfehler: unsere Zahl folgt dem amtlichen Ablaufplan.
+    empfehlung_main: |
+      AMTLICH GEWINNT. Der Programmablaufplan ist die Norm, gegen die das Finanzamt rechnet;
+      GETTSIM ist ein Forschungsmodell und hier Zweitmeinung, nicht Referenz. Der Crosscheck
+      bekommt eine DOKUMENTIERTE Einzelausnahme fuer diesen Stuetzpunkt — mit dem gemessenen
+      Diff daneben, damit die Ausnahme nicht zur stillen Dauer-Toleranz wird. KEINE Anpassung
+      unserer Zahl an GETTSIM.
+      Vorher pruefen: ist es wirklich EIN Stuetzpunkt oder der Rand einer ganzen Zone? Eine
+      Einzelausnahme auf einem Zonenrand waere die falsche Bauform.
+    entscheidung_julius: "OFFEN (Vorschlag 2026-08-12 vorgelegt)."
+
+  - id: feldmatrix-21-unklassifiziert
+    titel: "21 rote Felder aus dem generierten Einzelfeld-Matrix-Lauf sind nie klassifiziert worden"
+    status: offen
+    aufwand_h: null
+    entdeckt: "2026-08-10, beim Bau von tests/test_checkest_feldmatrix.py (c2848cd)"
+    messung: |
+      Der GENERIERTE Lauf ueber alle Felder ergab 29 rote Felder. Beim Durchsehen erwiesen
+      sich die meisten als Testartefakt statt Befund — zwei Ursachen:
+        (a) das Feld braucht seinen BLOCK (Anlage Kind ohne Vorname, Anlage V ohne
+            Laufende Nummer) -> dafuer wurde test_checkest_blockmatrix.py gebaut
+        (b) unzulaessige Probewerte (GdB=5 gibt es nicht)
+      Die kuratierte Liste in test_checkest_feldmatrix.py deckt nur die Felder ab, die
+      ALLEIN eine sinnvolle Erklaerung ergeben. 21 Felder aus dem Rohlauf sind bis heute
+      weder als Befund noch als Artefakt eingeordnet.
+    warum_es_zaehlt: |
+      Unter 21 unklassifizierten Meldungen kann ein Abgabe-Blocker liegen — die zwei
+      bekannten (Anlage KAP, § 35a) kamen aus genau diesem Lauf. Sie NICHT durchzusehen
+      heisst, das schaerfste Werkzeug des Projekts zur Haelfte ungenutzt zu lassen.
+    plan: |
+      Jedes der 21 Felder in eine von drei Klassen: BEFUND (echter Blocker/Fehler),
+      BLOCK-ARTEFAKT (gehoert in die Blockmatrix), PROBEWERT-ARTEFAKT (Testdatum falsch).
+      Ergebnis gehoert in eine der beiden Matrix-Dateien, nicht in einen Bericht — sonst
+      steht es in einem Jahr wieder hier.
