@@ -580,23 +580,70 @@ bindungen:
       quelle: "§ 32 Abs. 6 S. 12 EStG"
       zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
       datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
-  - feld_id: kind_geburtsjahr
+  # Geburtsdatum (Kz E0500701, Anlage Kind Allg). Bis 2026-08-11 als kind_geburtsjahr (int,
+  # OHNE Kz) gefuehrt — E0500701 verlangt aber ein volles Datum (TT.MM.JJJJ), kein Jahr.
+  # Weg (1) statt eines zweiten Feldes: kind_geburtsjahr hatte 0 Leser ausserhalb von
+  # Test-Fixturen (grep *.py repo-weit), seine geltungsbedingung kind_durch_idnr_identifiziert
+  # haengt an der toten p32_6-Anbindung (Kommentar bei fam_kinder_beruecksichtigt oben) — ein
+  # zweites Feld haette dieselbe Sache zweimal repraesentiert (Naht-Blindstelle, s.
+  # kap_zusammenveranlagung-Vorfall). Deshalb umbenannt+umtypisiert statt dupliziert.
+  - feld_id: kind_geburtsdatum
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
-    typ: int
+    typ: text
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "In welchem Jahr ist dein Kind geboren?"
-    hilfe_kurz: "Das Geburtsjahr deines Kindes. Wird fuer die Berechnung des Kinderfreibetrags benoetigt."
-    beispielwert: 2015
+    fragetext_laie: "Wann ist dein Kind geboren?"
+    hilfe_kurz: "Das Geburtsdatum deines Kindes im Format TT.MM.JJJJ (z.B. 15.03.2015). Bei mehreren Kindern jeweils das des einzelnen Kindes."
+    beispielwert: "15.03.2015"
     herkunft_slots: null
-    elster_kz: null
-    kz_status: endgueltig
-    elster_kz_grund: "ENDGUELTIG: Anlage Kind (§ 32 Abs. 6). E0500701 (E10/Kind/Ang_Kind/Allg) ist ein GeburtsDATUM (vollstaendiger Tag), unser Modell hat nur das JAHR. Typ-Mismatch, nicht bindbar bis volle Datumsangabe existiert."
+    elster_kz: E0500701
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
-      quelle: "§ 32 Abs. 6 S. 1 EStG"
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  # Familienkasse (Kz E0500706, Anlage Kind Allg). Formvoraussetzung wie kind_vorname/
+  # kind_idnr — geht in keine Regel ein, identifiziert nur die zustaendige Stelle gegenueber
+  # dem Finanzamt. checkESt verlangt sie zusammen mit Vorname+Geburtsdatum ("Vorname,
+  # Geburtsdatum und Familienkasse wurden nicht gemeinsam angegeben"), gemessen 2026-08-11.
+  - feld_id: kind_familienkasse
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Familienkasse ist fuer das Kindergeld deines Kindes zustaendig?"
+    hilfe_kurz: "Steht auf dem Kindergeldbescheid, z.B. 'Familienkasse Bayern Nord'. Bei mehreren Kindern jeweils die des einzelnen Kindes."
+    beispielwert: "Familienkasse Bayern Nord"
+    herkunft_slots: null
+    elster_kz: E0500706
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  # Wohnsitz Inland, Zeitraum (Kz E0500703, Anlage Kind WS/Inl). checkESt-Beanstandung "Angaben
+  # zur Aufenthaltsdauer im In-/Ausland" (gemessen 2026-08-11) — kein Feld deckte das bislang ab.
+  # Nur der Inland-Zeitraum; der Auslands-Zweig (E0500704/E0500103/E0500104) bleibt unbebaut
+  # (kein Testfall braucht ihn — Kind mit Auslandswohnsitz ist nicht Teil dieses Blockers).
+  - feld_id: kind_wohnsitz_inland_zeitraum
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum hatte dein Kind seinen Wohnsitz im Inland?"
+    hilfe_kurz: "Meist das ganze Jahr. Nur bei Zuzug/Wegzug den genauen Zeitraum angeben. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0500703
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
       zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
       datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
   - feld_id: kind_kindschaftsverhaeltnis_a
@@ -664,6 +711,84 @@ bindungen:
     beispielwert: "01.01-31.12"
     herkunft_slots: null
     elster_kz: E0500805
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 2 EStG"
+      zitatanker: "Besteht bei einem angenommenen Kind das Kindschaftsverhältnis zu den leiblichen Eltern weiter"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  # Anderer Elternteil bei NICHT zusammen veranlagten Eltern (K_Verh_and_P/Ang_Pers im XSD,
+  # neben K_Verh_A/K_Verh_B). Gemessen 2026-08-12: kind_kindschaftsverhaeltnis_b/E0500808 ist
+  # bei veranlagung=einzel checkESt zufolge UNZULAESSIG ("Es handelt sich um eine
+  # Einzelveranlagung, daher sind Angaben zum Kindschaftsverhaeltnis zur Ehefrau nicht
+  # zulaessig") — K_Verh_B bildet den MITERKLAERENDEN Ehegatten ab, nicht den anderen
+  # Elternteil allgemein. Fuer Einzelveranlagung verlangt checkESt stattdessen diese
+  # Personenangaben zum anderen Elternteil als Drittperson (E0501103/104/106/903). Die
+  # Adresse (E0501105) und der Weit_Ang-Zweig (Tod/Ausland/unbekannter Aufenthalt, E0501102/
+  # E0503903/E0501513) bleiben unbebaut — kein Testfall dieses Blockers braucht sie.
+  - feld_id: kind_anderer_elternteil_name
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie heisst der andere Elternteil deines Kindes (Vor- und Nachname)?"
+    hilfe_kurz: "Nur noetig, wenn ihr nicht zusammen veranlagt werdet. Format: Vorname Nachname."
+    beispielwert: "Michael Beispiel"
+    herkunft_slots: null
+    elster_kz: E0501103
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_anderer_elternteil_geburtsdatum
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann ist der andere Elternteil deines Kindes geboren?"
+    hilfe_kurz: "Nur noetig, wenn ihr nicht zusammen veranlagt werdet. Format: TT.MM.JJJJ (z.B. 01.01.1985)."
+    beispielwert: "01.01.1985"
+    herkunft_slots: null
+    elster_kz: E0501104
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_anderer_elternteil_kindschaftsverhaeltnis
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: enum
+    enum_werte: ["1", "2"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Verhaeltnis steht das Kind zum anderen Elternteil? 1 = leibliches Kind/Adoptivkind, 2 = Pflegekind"
+    hilfe_kurz: "1 = leibliches Kind/Adoptivkind, 2 = Pflegekind"
+    beispielwert: "1"
+    herkunft_slots: null
+    elster_kz: E0501106
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 1 EStG"
+      zitatanker: "im ersten Grad mit dem Steuerpflichtigen verwandte Kinder"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_anderer_elternteil_zeitraum
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum dieses Jahr bestand das Verhaeltnis zwischen dem anderen Elternteil und dem Kind (von – bis)?"
+    hilfe_kurz: "Meist das ganze Jahr. Nur bei Geburt, Adoption oder Wegfall im Jahr den genauen Zeitraum angeben. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0501903
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 32 Abs. 2 EStG"

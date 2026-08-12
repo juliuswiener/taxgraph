@@ -183,7 +183,12 @@ P35A_MITVER_ANZEIGE = ("p35a_mitveranlagung",)
 AGB_KIST = ("kist_gezahlt", "kist_erstattet")
 
 # ========== § 10 Abs.1 Nr.5 Kinderbetreuung ==========
-KINDERBETREUUNG = ("kinderbetreuungskosten", "kind_unter_14_haushaltszugehoerig")
+KINDERBETREUUNG = ("kinderbetreuungskosten", "kind_unter_14_haushaltszugehoerig",
+                    "kind_betreuung_dienstleister", "kind_betreuung_zeitraum",
+                    "kind_betreuung_eigenanteil", "kind_betreuung_kein_gemeinsamer_haushalt_zeitraum",
+                    "kind_betreuung_haushaltszugehoerigkeit_zeitraum",
+                    "kind_betreuung_einzelbetrag", "kind_betreuung_eigenanteil_betrag",
+                    "kind_betreuung_eigenanteil_zeitraum")
 
 # ========== § 10 Abs.1 Nr.9 Schulgeld ==========
 SCHULGELD = ("schulgeld",)
@@ -198,7 +203,24 @@ KIND_KV_PV = ("kind_kv", "kind_pv", "kind_idnr", "kind_vorname",
               # jeher, aber bis 2026-08-11 in keinem Kegel — checkESt verlangt sie, sobald eine
               # Kind-Instanz entsteht ("Der Vorname des Kindes wurde angegeben, die Angaben zum
               # Kindschaftsverhaeltnis fehlen jedoch").
-              "kind_kindschaftsverhaeltnis_a", "kind_kindschaftsverh_zeitraum_a")
+              "kind_kindschaftsverhaeltnis_a", "kind_kindschaftsverh_zeitraum_a",
+              # Geburtsdatum (E0500701, umbenannt/umtypisiert aus kind_geburtsjahr) + Familienkasse
+              # (E0500706) + Wohnsitz-Inland-Zeitraum (E0500703): zweite Haelfte des
+              # Anlage-Kind-Blockers, gemessen 2026-08-12 — checkESt verlangt Vorname, Geburtsdatum
+              # und Familienkasse gemeinsam, sowie die Aufenthaltsdauer-Angabe.
+              "kind_geburtsdatum", "kind_familienkasse", "kind_wohnsitz_inland_zeitraum",
+              # Kindschaftsverhaeltnis Elternteil B (E0500808/805): bildet den MITERKLAERENDEN
+              # Ehegatten ab (K_Verh_B im XSD) — gehoert in den Kegel fuer Zusammenveranlagung,
+              # bleibt aber bei Einzelveranlagung ungenutzt (s. naechster Kommentar).
+              "kind_kindschaftsverhaeltnis_b", "kind_kindschaftsverh_zeitraum_b",
+              # Anderer Elternteil als Drittperson (K_Verh_and_P/Ang_Pers, E0501103/104/106/903):
+              # gemessen 2026-08-12 — bei veranlagung=einzel ist kind_kindschaftsverhaeltnis_b
+              # (K_Verh_B, der MITERKLAERENDE Ehegatte) laut checkESt UNZULAESSIG ("Es handelt
+              # sich um eine Einzelveranlagung, daher sind Angaben zum Kindschaftsverhaeltnis zur
+              # Ehefrau nicht zulaessig"); stattdessen verlangt checkESt diese Personenangaben
+              # zum tatsaechlich anderen Elternteil.
+              "kind_anderer_elternteil_name", "kind_anderer_elternteil_geburtsdatum",
+              "kind_anderer_elternteil_kindschaftsverhaeltnis", "kind_anderer_elternteil_zeitraum")
 
 # ========== § 33b Abs.5 Kind-PB-Übertragung ==========
 KIND_PB_UEBERTRAGUNG = ("kind_grad_der_behinderung", "kind_hilflos_blind_taubblind",

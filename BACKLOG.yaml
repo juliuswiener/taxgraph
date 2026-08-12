@@ -519,9 +519,42 @@ abgabe:
       deckt ihn jetzt einzeln ab.
 
   - id: anlage-kind-unvollstaendig
-    titel: "Anlage Kind: kind_vorname fehlt komplett — jede Kind-Instanz macht die Erklaerung uneinreichbar"
-    status: offen
-    richtung: "ABGABE-BLOCKER (rc=610001002), sobald eine Kind-Instanz angelegt wird"
+    titel: "Anlage Kind: kind_vorname fehlte komplett — jede Kind-Instanz machte die Erklaerung uneinreichbar"
+    status: erledigt
+    erledigt: |
+      2026-08-12. anlage_kind_instanz UND kinderbetreuung messen jetzt rc=0 (CE.RC_OK),
+      beide Eintraege aus BLOCKIERTE_BLOECKE (tests/test_checkest_blockmatrix.py) entfernt.
+      Zweite Haelfte nach kind_vorname (E0500107, 4519cc7): drei weitere Beanstandungs-
+      Cluster geschlossen.
+        1) Kindschaftsverhaeltnis: K_Verh_B (E0500808, "Ehefrau/Person B") ist bei
+           Einzelveranlagung UNZULAESSIG ("Es handelt sich um eine Einzelveranlagung,
+           daher sind Angaben zum Kindschaftsverhaeltnis zur Ehefrau nicht zulaessig") —
+           der richtige Pfad ist K_Verh_and_P/Ang_Pers (E0501103 Name, E0501104
+           Geburtsdatum, E0501106 Enum [1,2] — NUR 2 Werte, kein Enkel/Stiefkind-Fall wie
+           bei E0500807/808 —, E0501903 Zeitraum): der "andere Elternteil" als Drittperson,
+           nicht als Mitveranlagte. Vier neue Felder kind_anderer_elternteil_*.
+        2) Kinderbetreuungskosten (KBK_72569777_CType): E0506105 (Gesamtsumme) allein
+           reicht checkESt nicht. Neu: Art/Einz (E0506101 Dienstleister, E0506103 Zeitraum,
+           E0506104 Einzelbetrag — muessen zusammen mit der Summe stehen), Ang_HH/K_gem_HH_Elt
+           (E0505201 kein-gemeinsamer-Haushalt-Zeitraum, E0505202 Haushaltszugehoerigkeit-
+           Zeitraum) und Elt_k_ZV/Kosten (E0506604 Eigenanteil-Summe + Einz-Paar E0506605
+           Betrag/E0506606 Zeitraum — Summe ohne Einzelposten wurde beanstandet).
+      kind_geburtsjahr (int, kein Kz) umbenannt zu kind_geburtsdatum (typ text, TT.MM.JJJJ,
+      E0500701) — 0 Produktions-Leser gemessen vor der Umbenennung, keine Zweit-Repraesentation.
+      Alle neuen Formalien-Felder haben KEINE eigene Regel-Bedingung (reine Anlage-Kind-
+      Vordruck-Voraussetzung, keine Rechenlogik) und stehen bewusst in
+      GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE (test_bindungstabelle.py) statt einer erfundenen
+      geltungsbedingung — gleiches Muster wie kind_vorname.
+    tests: |
+      Mutationsprobe je Gate: kind_anderer_elternteil_name aus BLOECKE["anlage_kind_instanz"]
+      entfernt -> rc=610001002 ("nur ein Kindschaftsverhaeltnis... zum anderen Elternteil");
+      kind_betreuung_eigenanteil_betrag aus BLOECKE["kinderbetreuung"] entfernt ->
+      rc=610001002 ("Summe... die einzelnen Aufwendungen wurden jedoch nicht angegeben");
+      kind_betreuung_eigenanteil_zeitraum aus KINDERBETREUUNG-Kegel entfernt -> test_kind_
+      formalien_sind_deklarierbar faellt auf E0506606. Alle drei danach zurueckgebaut, gruen.
+      tests/test_bindungstabelle.py 26/26 gruen, tests/test_checkest_blockmatrix.py 11/11
+      gruen, Vollsuite 1861 passed/4 skipped/0 failed.
+    richtung: "war ABGABE-BLOCKER (rc=610001002), sobald eine Kind-Instanz angelegt wurde"
     entdeckt: "2026-08-11, Block-Matrix-Sweep (checkest-blockmatrix)"
     messung: |
       Ratschen-Fixtur gesamt, Abgabe-XML scharf gegen ERiC:
@@ -2041,6 +2074,37 @@ struktur:
       reproduzierbar ist. Falls es doch gemacht wird: NICHT waehrend anderer Arbeit an
       api.py, und mit einem Vorher/Nachher-Vergleich der materialisierten felder als Gate.
     julius: "Auftrag zum Umbenennen kam 2026-08-12; nach dieser Messung zurueckgestellt, Entscheidung offen."
+
+  - id: vorjahr-kategorie-ohne-verhalten
+    titel: "vorjahr-Flag uebernehmbar/vorschlag ist deklariert, aber verhaltensgleich"
+    status: offen
+    entdeckt: |
+      2026-08-12, im Zuge des §10d-Sweeps (rechenluecken: commit-nur-defer-sweep-2026-08-10,
+      Fund 3 — verlustvortrag_bestand + zwei weitere Felder derselben Klasse).
+    befund: |
+      schema.json:70-71 deklariert zwei Kategorien mit unterschiedlicher Bedeutung:
+      uebernehmbar = Stammdaten/kohorten-fix (direkter Vorschlag), vorschlag =
+      jahres-spezifischer Betrag (Nutzer aktualisiert). produkt/import/vorjahr_writer.py
+      behandelt beide IDENTISCH: uebertragbare_felder() sammelt {fid: kategorie} nur als
+      Metadatum, uebernehme_vorjahr() kopiert `wert = vf["wert"]` (Zeile 47) unterschiedslos
+      fuer beide Kategorien. `kat` landet ausschliesslich in signal_1["kategorie"] — ohne
+      Einfluss auf zustand, Praesentation oder irgendeine Verzweigung im Code. Betrifft alle
+      228 Felder mit gesetztem vorjahr-Flag repo-weit (18 bindung_*.yaml-Dateien, gezaehlt
+      2026-08-12).
+    klasse: |
+      Versprochene Unterscheidung, nicht materialisiert — das Schema erklaert ein Verhalten,
+      der Code liefert es nicht. Dieselbe Fehlerklasse ist an anderer Stelle im Repo bereits
+      vorgekommen (Hinweis team-lead, 2026-08-12) — hier nicht neu recherchiert, nur uebernommen.
+    wirkung: |
+      Aktuell FOLGENLOS, kein Rechenfehler: das Zwei-Signal-Prinzip stuft jede Vorjahres-
+      Uebernahme ohnehin als vorlaeufig ein, traverser.py:77-78 (_unbeantwortet) fuehrt sie
+      unabhaengig von der Kategorie in naechste_fragen, der Nutzer bestaetigt jeden Wert selbst.
+      Die Luecke wird erst wirksam, wenn die Unterscheidung tatsaechlich GENUTZT werden soll
+      (z.B. vorschlag-Felder auffaelliger markieren, oder uebernehmbar-Felder ohne Ruecknachfrage
+      uebernehmen) — dann muss zuerst geklaert werden, was jede Kategorie tun soll, bevor an
+      228 Feldern etwas gebaut wird.
+    entscheidung_noetig: "Julius — was soll uebernehmbar vs. vorschlag tatsaechlich unterschiedlich tun? Kein Bau ohne diese Entscheidung."
+    aufwand_h: unbeziffert
 
 test-schulden:
 

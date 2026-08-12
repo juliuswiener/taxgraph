@@ -312,8 +312,8 @@ def test_differential_kinder_keine_luecken(bindung):
     _b(s, "fam_anzahl_kinder", 2)                        # Klasse e -> kind_anlagen
     _b(s, "kind_idnr", "12345678901")                     # Instanz 1 -> E0500406
     _b(s, "kind_idnr__2", "23456789012")                  # Instanz 2 -> E0500406
-    _b(s, "kind_geburtsjahr", 2010)                       # no Kz -> nicht_deklariert
-    _b(s, "kind_geburtsjahr__2", 2012)                    # no Kz -> nicht_deklariert
+    _b(s, "kind_geburtsdatum", "10.05.2010")               # typ text -> kein Betragsfeld, ungeprueft
+    _b(s, "kind_geburtsdatum__2", "20.09.2012")            # typ text -> kein Betragsfeld, ungeprueft
     _b(s, "bruttoarbeitslohn", 6000000)
     _b(s, "vor_an_anteil_rv", 200000)
     _b(s, "vor_ag_anteil_rv", 150000)

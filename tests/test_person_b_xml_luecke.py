@@ -162,8 +162,8 @@ def test_kind_instanzen_zwei_kinder(bindung):
     _b(s, "fam_anzahl_kinder", 2)
     _b(s, "kind_idnr", "12345678901")    # Kind 1 (Basis)
     _b(s, "kind_idnr__2", "23456789012")  # Kind 2
-    _b(s, "kind_geburtsjahr", 2010)       # Kind 1
-    _b(s, "kind_geburtsjahr__2", 2012)    # Kind 2
+    _b(s, "kind_geburtsdatum", "10.05.2010")       # Kind 1
+    _b(s, "kind_geburtsdatum__2", "20.09.2012")    # Kind 2
     _b(s, "veranlagung", "zusammen")
     _b(s, "kein_gewinn", True)
     _b(s, "kein_kap", True)
@@ -191,8 +191,8 @@ def test_kind_instanzen_xsd_valide(bindung, tmp_path):
     _b(s, "fam_anzahl_kinder", 2)
     _b(s, "kind_idnr", "12345678901")
     _b(s, "kind_idnr__2", "23456789012")
-    _b(s, "kind_geburtsjahr", 2010)
-    _b(s, "kind_geburtsjahr__2", 2012)
+    _b(s, "kind_geburtsdatum", "10.05.2010")
+    _b(s, "kind_geburtsdatum__2", "20.09.2012")
     _b(s, "veranlagung", "zusammen")
     _b(s, "kein_gewinn", True)
     _b(s, "kein_kap", True)
@@ -218,8 +218,8 @@ def test_kinderzahl_waecher_fail_closed(bindung):
     _b(s, "fam_anzahl_kinder", 3)            # 3 behauptet
     _b(s, "kind_idnr", "11111111111")         # Kind 1
     _b(s, "kind_idnr__2", "22222222222")      # Kind 2 — Kind 3 fehlt!
-    _b(s, "kind_geburtsjahr", 2010)
-    _b(s, "kind_geburtsjahr__2", 2012)
+    _b(s, "kind_geburtsdatum", "10.05.2010")
+    _b(s, "kind_geburtsdatum__2", "20.09.2012")
     _b(s, "veranlagung", "zusammen")
     _b(s, "kein_gewinn", True)
     _b(s, "kein_kap", True)

@@ -369,9 +369,8 @@ UNERREICHBAR_BEKANNT = {
     "agb_notwendig_angemessen", "agb_zwangslaeufig",
     # § 32 Kind-Stammdaten — der Ring rechnet aus fam_anzahl_kinder, nicht je Kind
     "fam_kinder_beruecksichtigt", "fam_kinder_im_haushalt", "kind_idnr",
-    "kind_kindschaftsverh_zeitraum_a", "kind_kindschaftsverh_zeitraum_b",
-    "kind_kindschaftsverhaeltnis_a", "kind_kindschaftsverhaeltnis_b",
-    "kind_geburtsjahr",
+    # kind_kindschaftsverhaeltnis_a/b + kind_kindschaftsverh_zeitraum_a/b: seit 2026-08-12
+    # via KIND_KV_PV im Kegel (checkESt-Messung), also erreichbar — nicht mehr hier.
     # § 6 Abs. 2 GWG-Tatbestand — Geltungsbedingungen, nicht erfragt
     "gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250",
     # § 24a — der Accessor leitet das Alter aus geburtsjahr + VZ ab
@@ -970,11 +969,35 @@ GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
     # war. Der richtige Ort waere eine eigene Regel fuer die Anlage-Kind-Formalien — solange
     # es die nicht gibt, steht der Eintrag hier statt in einer erfundenen Bedingung.
     ("kap_vv_familie", "kind_vorname", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
-    ("kap_vv_familie", "kind_geburtsjahr", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
+    # kind_geburtsdatum (E0500701, umbenannt aus kind_geburtsjahr 2026-08-12) + kind_familienkasse
+    # (E0500706) + kind_wohnsitz_inland_zeitraum (E0500703): dieselbe Formvoraussetzungs-Naht wie
+    # kind_vorname oben — Anlage-Kind-Formalien, keine eigene Regel-Bedingung.
+    ("kap_vv_familie", "kind_geburtsdatum", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
+    ("kap_vv_familie", "kind_familienkasse", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
+    ("kap_vv_familie", "kind_wohnsitz_inland_zeitraum", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
     ("kap_vv_familie", "kind_kindschaftsverhaeltnis_a", "p32_6_kinderfreibetraege", "kindschaftsverhaeltnis_elternteil_a"),
     ("kap_vv_familie", "kind_kindschaftsverhaeltnis_b", "p32_6_kinderfreibetraege", "kindschaftsverhaeltnis_elternteil_b"),
     ("kap_vv_familie", "kind_kindschaftsverh_zeitraum_a", "p32_6_kinderfreibetraege", "kindschaftsverh_zeitraum_elternteil_a"),
     ("kap_vv_familie", "kind_kindschaftsverh_zeitraum_b", "p32_6_kinderfreibetraege", "kindschaftsverh_zeitraum_elternteil_b"),
+    # Anderer Elternteil (K_Verh_and_P/Ang_Pers, E0501103/104/106/903): dieselbe
+    # Formvoraussetzungs-Naht wie kind_vorname/kind_geburtsdatum oben, gemessen 2026-08-12.
+    ("kap_vv_familie", "kind_anderer_elternteil_name", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
+    ("kap_vv_familie", "kind_anderer_elternteil_geburtsdatum", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
+    ("kap_vv_familie", "kind_anderer_elternteil_kindschaftsverhaeltnis", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
+    ("kap_vv_familie", "kind_anderer_elternteil_zeitraum", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
+    # bindung_p10_1_5_gesamt.yaml — p10_1_5_kinderbetreuung: Formalien der Anlage-Kind-Zeile
+    # Kinderbetreuungskosten (KBK_72569777_CType), gemessen 2026-08-12. E0506105 allein reicht
+    # checkESt nicht — Dienstleister/Zeitraum/Eigenanteil/Haushaltszugehoerigkeit sind reine
+    # Formvoraussetzungen, keine Rechenlogik (der 80%/4800€-Deckel bleibt in achtzig_prozent_
+    # deckel_4800_je_kind, s. luecken). Gleiches Muster wie kind_vorname oben.
+    ("p10_1_5_gesamt", "kind_betreuung_dienstleister", "p10_1_5_kinderbetreuung", "kind_betreuung_formalien_erklaert"),
+    ("p10_1_5_gesamt", "kind_betreuung_zeitraum", "p10_1_5_kinderbetreuung", "kind_betreuung_formalien_erklaert"),
+    ("p10_1_5_gesamt", "kind_betreuung_eigenanteil", "p10_1_5_kinderbetreuung", "kind_betreuung_formalien_erklaert"),
+    ("p10_1_5_gesamt", "kind_betreuung_kein_gemeinsamer_haushalt_zeitraum", "p10_1_5_kinderbetreuung", "kind_betreuung_formalien_erklaert"),
+    ("p10_1_5_gesamt", "kind_betreuung_haushaltszugehoerigkeit_zeitraum", "p10_1_5_kinderbetreuung", "kind_betreuung_formalien_erklaert"),
+    ("p10_1_5_gesamt", "kind_betreuung_einzelbetrag", "p10_1_5_kinderbetreuung", "kind_betreuung_formalien_erklaert"),
+    ("p10_1_5_gesamt", "kind_betreuung_eigenanteil_betrag", "p10_1_5_kinderbetreuung", "kind_betreuung_formalien_erklaert"),
+    ("p10_1_5_gesamt", "kind_betreuung_eigenanteil_zeitraum", "p10_1_5_kinderbetreuung", "kind_betreuung_formalien_erklaert"),
     # bindung_n_vor_gwg.yaml — p9_4a_verpflegungsmehraufwand, p7_1_lineare_afa, p10_1_3_3a_kv_pv
     ("n_vor_gwg", "p9_4a_kuerzung_nach_entgelt", "p9_4a_verpflegungsmehraufwand", "mahlzeitengestellung_kuerzung"),
     ("n_vor_gwg", "am_afa_ist_anschaffungsjahr", "p7_1_lineare_afa", "afa_ist_anschaffungsjahr"),
@@ -1226,3 +1249,56 @@ def test_n_gate_faengt_erfundenen_signatur_slot(daten):
     _, gefunden_slot, _ = _n_gefundene_verstoesse(d, rules)
     treffer = [e for e in gefunden_slot if e[3] == "zzz_frei_erfundener_slot"]
     assert treffer, "Gegenprobe fehlgeschlagen: erfundener signatur_slot nicht erkannt"
+
+
+# ---- (o) Keine harte Jahreszahl in VZ-abhaengigen Fragetexten ------------------
+
+_JAHR = re.compile(r"(19|20)\d{2}")
+
+# Ausnahmen: Jahreszahl ist Formatbeispiel oder Rechtstatsache, kein VZ-Bezug. Neue Ausnahme
+# braucht eine Begruendung hier -- sonst faengt (o) jede neue feste Jahreszahl.
+_JAHR_AUSNAHMEN = {
+    ("kind_geburtsdatum", "hilfe_kurz"):
+        "Formatbeispiel TT.MM.JJJJ (z.B. 15.03.2015), kein VZ-Bezug.",
+    ("kind_anderer_elternteil_geburtsdatum", "hilfe_kurz"):
+        "Formatbeispiel TT.MM.JJJJ (z.B. 01.01.1985), kein VZ-Bezug.",
+    ("vor_voller_abzug", "hilfe_kurz"):
+        "Rechtstatsache (Vorsorgeaufwand seit 2023 zu 100% ansetzbar), kein VZ-Bezug.",
+}
+
+
+def _harte_jahreszahlen(daten):
+    """[(feld_id, key, text)] fuer jede unbegruendete feste Jahreszahl in fragetext_laie/hilfe_kurz."""
+    treffer = []
+    for d in daten.values():
+        for b in d["bindungen"]:
+            for key in ("fragetext_laie", "hilfe_kurz"):
+                v = b.get(key)
+                if isinstance(v, str) and _JAHR.search(v) and (b["feld_id"], key) not in _JAHR_AUSNAHMEN:
+                    treffer.append((b["feld_id"], key, v))
+    return treffer
+
+
+def test_o_keine_harte_jahreszahl_in_vz_abhaengigem_text(daten):
+    """fragetext_laie/hilfe_kurz werden nirgends mit dem VZ formatiert (api.py:2351/:2818,
+    api_llm.py:30, fragekatalog.py reichen den String unveraendert durch) — eine feste
+    Jahreszahl im Text ist deshalb in jedem VZ ausser dem genannten falsch. Fund
+    am_afa_ist_anschaffungsjahr (2026-08-12): Frage nannte 2026 fest, im VZ 2025 wurde nach
+    dem falschen Jahr gefragt. Ausnahmen (Formatbeispiel/Rechtstatsache) stehen benannt und
+    begruendet in _JAHR_AUSNAHMEN — wer eine neue braucht, traegt sie dort ein statt den
+    Test zu loeschen.
+    """
+    treffer = _harte_jahreszahlen(daten)
+    assert not treffer, "\n".join(
+        f"{fid}.{key}: feste Jahreszahl ohne Ausnahme-Eintrag: {text!r}" for fid, key, text in treffer)
+
+
+def test_o_gate_faengt_neue_jahreszahl(daten):
+    """Gegenprobe: eine frisch eingefuegte, unbegruendete Jahreszahl MUSS auffallen — sonst
+    ist (o) nur Dekoration."""
+    d = _erste_datei_daten(daten)
+    fid = d["bindungen"][0]["feld_id"]
+    assert (fid, "fragetext_laie") not in _JAHR_AUSNAHMEN, "Testaufbau ungueltig: Feld ist zufaellig Ausnahme"
+    d["bindungen"][0]["fragetext_laie"] = "Testfrage mit fester Jahreszahl 2026?"
+    treffer = _harte_jahreszahlen({"mutiert.yaml": d})
+    assert treffer and treffer[0][0] == fid, "Gegenprobe fehlgeschlagen: neue Jahreszahl nicht erkannt"

@@ -117,13 +117,39 @@ BLOECKE = {
         ("fam_anzahl_kinder", 1),
         ("kind_idnr", "12345678911"),
         ("kind_vorname", "Anna"),
+        ("kind_geburtsdatum", "15.03.2015"),
+        ("kind_familienkasse", "Familienkasse Bayern Nord"),
+        ("kind_wohnsitz_inland_zeitraum", "01.01-31.12"),
+        ("kind_kindschaftsverhaeltnis_a", "1"),
+        ("kind_kindschaftsverh_zeitraum_a", "01.01-31.12"),
+        ("kind_anderer_elternteil_name", "Michael Beispiel"),
+        ("kind_anderer_elternteil_geburtsdatum", "01.01.1985"),
+        ("kind_anderer_elternteil_kindschaftsverhaeltnis", "1"),
+        ("kind_anderer_elternteil_zeitraum", "01.01-31.12"),
     ],
     "kinderbetreuung": [
         ("fam_anzahl_kinder", 1),
         ("kind_idnr", "12345678911"),
         ("kind_vorname", "Anna"),
+        ("kind_geburtsdatum", "15.03.2015"),
+        ("kind_familienkasse", "Familienkasse Bayern Nord"),
+        ("kind_wohnsitz_inland_zeitraum", "01.01-31.12"),
+        ("kind_kindschaftsverhaeltnis_a", "1"),
+        ("kind_kindschaftsverh_zeitraum_a", "01.01-31.12"),
+        ("kind_anderer_elternteil_name", "Michael Beispiel"),
+        ("kind_anderer_elternteil_geburtsdatum", "01.01.1985"),
+        ("kind_anderer_elternteil_kindschaftsverhaeltnis", "1"),
+        ("kind_anderer_elternteil_zeitraum", "01.01-31.12"),
         ("kind_unter_14_haushaltszugehoerig", True),
         ("kinderbetreuungskosten", 200000),
+        ("kind_betreuung_dienstleister", "Kindertagesstätte Sonnenschein, Musterstr. 1, 12345 Musterstadt"),
+        ("kind_betreuung_zeitraum", "01.01-31.12"),
+        ("kind_betreuung_eigenanteil", 200000),
+        ("kind_betreuung_kein_gemeinsamer_haushalt_zeitraum", "01.01-31.12"),
+        ("kind_betreuung_haushaltszugehoerigkeit_zeitraum", "01.01-31.12"),
+        ("kind_betreuung_einzelbetrag", 200000),
+        ("kind_betreuung_eigenanteil_betrag", 200000),
+        ("kind_betreuung_eigenanteil_zeitraum", "01.01-31.12"),
     ],
     "p35a_handwerker": [
         ("hh_handwerker_betrag", 300000),
@@ -147,18 +173,12 @@ BLOECKE = {
 # Bloecke, die HEUTE nicht durchgehen — jeder mit der gemessenen ERiC-Meldung und einem
 # BACKLOG-Verweis. Ein Eintrag hier ist eine Schuld, kein Freibrief.
 BLOCKIERTE_BLOECKE = {
-    "anlage_kind_instanz": (
-        "kind_vorname (E0500107) ist seit 2026-08-11 gebaut und wird akzeptiert — es rueckten "
-        "aber drei weitere Beanstandungen nach: (a) 'Angaben zur Aufenthaltsdauer im In-/Ausland' "
-        "(kein Feld vorhanden), (b) 'Vorname, Geburtsdatum und Familienkasse wurden nicht "
-        "gemeinsam angegeben' (Familienkasse E0500706 fehlt; kind_geburtsjahr ist int ohne Kz, "
-        "waehrend E0500701 ein Datum TT.MM.JJJJ verlangt), (c) Kindschaftsverhaeltnis "
-        "(E0500807/E0500601 jetzt im Kegel, aber Enum-Werte und Datumsbereich-Format noch "
-        "ungeklaert). BACKLOG anlage-kind-unvollstaendig."),
-    "kinderbetreuung": (
-        "dito, plus die Aufteilungsangabe bei nicht zusammen veranlagten Eltern. Der "
-        "Qualifikations-Gate (kind_unter_14_haushaltszugehoerig, 1e140d2) ist hier gesetzt — "
-        "die verbleibenden Beanstandungen sind reine Anlage-Kind-Formalien."),
+    # anlage_kind_instanz + kinderbetreuung: 2026-08-12 auf rc=0 gemessen, aus BLOCKIERTE_BLOECKE
+    # entfernt. Beide brauchten K_Verh_and_P/Ang_Pers (E0501103/104/106/903, "anderer Elternteil"
+    # statt Ehefrau-Kindschaftsverhaeltnis — checkESt lehnt K_Verh_B bei Einzelveranlagung ab)
+    # sowie bei kinderbetreuung zusaetzlich die KBK_72569777_CType-Einzelposten (Art/Einz,
+    # Elt_k_ZV/Kosten/Einz) neben den bereits vorhandenen Summenfeldern. BACKLOG
+    # anlage-kind-unvollstaendig.
 }
 
 
@@ -223,6 +243,50 @@ def test_kind_vorname_ist_deklarierbar():
     assert "E0500107" in kz, (
         "E0500107 (Vorname des Kindes) ist auf 'gesamt' nicht deklarierbar — dann lehnt "
         "checkESt jede Kind-Instanz ab und alle kindbezogenen Abzuege sind uneinreichbar.")
+
+
+def test_kind_formalien_sind_deklarierbar():
+    """E0500701/E0500706/E0500703 (Geburtsdatum, Familienkasse, Wohnsitz-Inland-Zeitraum)
+    muessen auf 'gesamt' gebunden und im Kegel sein — dieselbe Naht wie kind_vorname oben.
+
+    Braucht kein ERiC. Bis 2026-08-12 fehlte E0500706/E0500703 repo-weit und
+    kind_geburtsjahr (int, ohne Kz) konnte E0500701 nicht bedienen, weshalb checkESt
+    "Vorname, Geburtsdatum und Familienkasse wurden nicht gemeinsam angegeben" meldete.
+    """
+    API.fall_anlegen({"fall_id": "gate_kind_formalien", "scheibe": "gesamt",
+                      "veranlagungszeitraum": 2025})
+    bindung = API._scheibe_bindung(API.lade_fall("gate_kind_formalien"))
+    kz = {v.get("elster_kz") for v in bindung.values() if isinstance(v, dict)}
+    assert "E0500701" in kz, (
+        "E0500701 (Geburtsdatum des Kindes) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0500706" in kz, (
+        "E0500706 (Familienkasse) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0500703" in kz, (
+        "E0500703 (Zeitraum Wohnsitz Inland) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0501103" in kz, (
+        "E0501103 (Name anderer Elternteil) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0501104" in kz, (
+        "E0501104 (Geburtsdatum anderer Elternteil) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0501106" in kz, (
+        "E0501106 (Kindschaftsverhaeltnis anderer Elternteil) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0501903" in kz, (
+        "E0501903 (Zeitraum anderer Elternteil) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0506101" in kz, (
+        "E0506101 (Dienstleister Kinderbetreuung) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0506103" in kz, (
+        "E0506103 (Zeitraum Kinderbetreuung) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0506604" in kz, (
+        "E0506604 (Eigenanteil Kinderbetreuung) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0505201" in kz, (
+        "E0505201 (kein gemeinsamer Haushalt Zeitraum) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0505202" in kz, (
+        "E0505202 (Haushaltszugehoerigkeit Zeitraum) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0506104" in kz, (
+        "E0506104 (Einzelbetrag Dienstleister) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0506605" in kz, (
+        "E0506605 (Eigenanteil Einzelbetrag) ist auf 'gesamt' nicht deklarierbar.")
+    assert "E0506606" in kz, (
+        "E0506606 (Eigenanteil Einzel-Zeitraum) ist auf 'gesamt' nicht deklarierbar.")
 
 
 @braucht_eric
