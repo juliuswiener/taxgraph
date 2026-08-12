@@ -51,10 +51,17 @@ by_regel = { regel_id: [(feld_id, geltungsbedingung, typ, beispielwert), ...] f�
 über alle `produkt/bindung/bindung_*.yaml` (via `Store`/`traverser`-Import, s. Werkzeuge unten):
 
 - **24 Regeln, 100 Felder** mit askable+geltungsbedingung — vs. Team-leads Auftragstext „53 Regeln /
-  94 Felder". **Nicht abschließend rekonstruiert, wessen Zahl aktueller ist** — vermutlich
-  Bindungsbestand-Drift (256→264 `feld_id` insgesamt während dieser Session laut Auftragstext, dazu
-  passt eine leichte Verschiebung auch bei der Gate-Teilmenge). Beide Zahlen hier explizit als
-  **gemessen heute** markiert, keine Annahme über den Stand bei Auftragserteilung.
+  94 Felder". **Scope-Klärung:** Team-leads Zahl ist „distinct regel_id über alle bindung_*.yaml" —
+  d. h. JEDE regel_id, die irgendeinem Feld (askable oder nicht, bool oder nicht) als `quelle.regel_id`
+  dient, gezählt über den gesamten Bindungsbestand. Meine Zahl hier ist enger gefasst: nur regel_ids,
+  die MINDESTENS EIN askable Feld mit gesetztem `quelle.geltungsbedingung` haben (die Teilmenge, die
+  für Teil 2 der Frage — Screening-Tauglichkeit über `relevanz()` — überhaupt relevant ist). 53 Regeln
+  insgesamt vs. 24 Regeln mit mindestens einem Gate-Kandidaten ist auf dieser Datenbasis konsistent
+  (jede der 24 ist Teilmenge der 53; die übrigen 29 haben schlicht kein askable+geltungsbedingung-Feld,
+  tauchen in `by_regel` also gar nicht auf). 94 vs. 100 Felder: gleiche Ursache — Team-leads 94 zählt
+  vermutlich alle Felder der 53 Regeln (auch nicht-bool/nicht-askable), meine 100 zählt nur die
+  askable+geltungsbedingung-Teilmenge der 24 Regeln. Kein unaufgelöster Widerspruch — zwei
+  unterschiedliche, aber beide korrekte Nenner auf demselben Bindungsbestand.
 - Davon **41 Felder bool-typisiert** — nur diese können `relevanz()` strukturell auf `"ausgeschlossen"`
   kippen. Die übrigen 59 (Kz-Enum, Cent-Betrag, Datum, Kohorten-Parameter) sind strukturell NIE ein
   Ausschluss-Gate, unabhängig von ihrer Formulierung — sie sind per Definition Rechen-Weichen.
@@ -299,6 +306,103 @@ Regel selbst, da eine andere, sicher korrekte Frage in derselben Regel existiert
 - `reports/adjudikation/tote-gate-felder-unfallkosten-analyse-2026-08-12.md` (paralleler Fund zu
   `_scheibe_bindung()`-Erreichbarkeit, genutzt für den Erreichbarkeits-Check oben)
 - `BACKLOG.yaml` Eintrag `vpf-frist-null-plausibilitaet` (historischer Bug 519199e, Referenzmuster)
-- Kein Push, kein Force, kein `git stash`, keine Produktions-/Testdatei geändert. Nur dieser Report
-  geschrieben. Die 3 bestätigten Bugs sind absichtlich NICHT gefixt — außerhalb des Auftragsumfangs
-  (reine Messung).
+- Kein Push, kein Force, kein `git stash`. Ursprünglich (Messphase) keine Produktions-/Testdatei
+  geändert, nur dieser Report. **Nach Freigabe durch Team-lead sind alle 3 Bugs gefixt — s. Nachtrag
+  unten.**
+
+---
+
+## Nachtrag: Fixes (2026-08-12, nach Team-lead-Freigabe „jetzt fixen")
+
+Alle 3 bestätigten Bugs gefixt, je eigener Commit, je mit Mutation-Test + Geld-Beweis am amtlichen
+`test_seed`. Scope-Grenze eingehalten: nur Bindungen (`produkt/bindung/*.yaml`) und Tests geändert,
+`produkt/haut/api.py` nicht angefasst (gehört einem anderen Worker, Refactor).
+
+### 1. `p35a_2_3_haushaltsnahe` / `p35a_mitveranlagung` — Commit `e3373b1`
+
+Ursache: `geltungsbedingung: mitveranlagung_faktor` — dieser Bedingungsname existiert in
+`rules.yaml` nirgends (0 Treffer, s. oben). Frei erfundener Gate-Name, nie ein echtes rules.yaml-
+`geltungsbedingungen[]`-Mitglied. Fix: `signatur_slot: mitveranlagung_faktor` (reiner Rechen-Input,
+kein Gate). Kein `luecken:`-Eintrag nötig (Bedingungsname war nie real, also nichts zu orphanen).
+
+### 2. `p34c_1_anrechnung_hoechstbetrag` / `dba_mehrere_staaten` — Commit `572d005`
+
+Klassifikation laut Team-lead-Auftrag: **(b) „Kommentar beschreibt eine andere Absicht als der
+Code"** — der Bindungs-Kommentar sagt explizit „Ein-Staat-Fall: dba_mehrere_staaten=true ist
+fail-closed gesperrt", der Code (`geltungsbedingung: per_country_ein_staat` auf demselben Feld)
+schloss aber genau den gegenteiligen (Ein-Staat-)Fall aus. Fix: `signatur_slot: mehrere_staaten`.
+`per_country_ein_staat` bleibt über ein anderes, unverändertes Feld (`dba_staat`) abgedeckt —
+kein `luecken:`-Eintrag nötig.
+
+Vollsuite-Hintergrundlauf nach diesem Commit: **1882 passed, 4 skipped, 1 warning in 233.01s**.
+
+### 3. `p34_3_ermaessigter_durchschnittssatz` — Commit `84f83f6`
+
+Zwei Bugs, unterschiedliche Behandlung (s. Commit-Message für vollen Text):
+
+- `dauernd_berufsunfaehig`: Team-lead-Vorgabe ausdrücklich NICHT „mechanisch" — echte Disjunktion
+  (Alter≥55 ODER dauernd_berufsunfaehig, § 34 Abs. 3 S. 1 EStG), `relevanz()` kann nur EIN Feld
+  UND-verknüpft prüfen. Ein reiner Polaritätsdreh hätte den 55-Jährigen ohne Berufsunfähigkeit
+  weiter fälschlich ausgeschlossen. Entscheidung: Gate entfernt (nicht neu gebaut) —
+  `signatur_slot: berufsunfaehig`, die OR-Eligibility gehört strukturell in den Abs.1-vs-Abs.3-
+  Chooser der Ring-Naht (dev-1, nicht in diesem Auftrag), nicht in `relevanz()`, das dafür das
+  falsche Werkzeug ist (kann nur AND). `persoenliche_voraussetzung_erfuellt` als `luecken:`-Eintrag
+  dokumentiert (reale, rules.yaml-deklarierte Bedingung, sonst hätte `test_b_vollstaendigkeit`
+  gebrochen).
+- `ermaessigung_einmal_genutzt`: mechanischer Fix laut Team-lead-Framing — Polarität schlicht
+  verdreht (bestätigt `False` = Normalfall Erstantragsteller schloss aus, sollte durchlassen).
+  `signatur_slot: bereits_genutzt`, Chooser liest den Rohwert direkt. `einmal_im_leben` ebenfalls
+  als `luecken:`-Eintrag dokumentiert (gleicher Grund: reale Bedingung, sonst Vollständigkeits-
+  Bruch).
+
+Geld-Beweis (amtlicher `test_seed`, `rules.yaml:4276-4281`, `ao_einkuenfte=100000,
+est_gesamt_zzgl_progression=60000, bemessungsgrundlage_durchschnitt=200000`):
+vorher 0 EUR (Regel ausgeschlossen, Modul nie aufgerufen) → nachher 16.800 EUR = **1.680.000 Cent**
+Differenz. relevanz()/naechste_fragen() vorher/nachher für beide Normalfälle einzeln gemessen
+(Details in Commit-Message `84f83f6`).
+
+**Vollsuite:** der In-place-Hintergrundlauf im geteilten Checkout (`fullsuite_84f83f6.log`) zeigte
+massenhaft rote Tests (weit über die bekannten Fremd-Fails hinaus) — Ursache: gleichzeitig laufende,
+unfertige Arbeit anderer Worker im selben Checkout (u. a. `bindung_rentner.yaml`,
+`est_mapping.py`, `api_constants.py`), nicht mein Commit. Zur sauberen Messung stattdessen isolierter
+`git worktree add --detach <scratch>/wt_84f83f6 84f83f6` (Catala-`pkg`-Symlink auf
+`oracle/gettsim/_catala` nachgezogen, `.env` kopiert — beide gitignored, sonst Kollisionsfehler bzw.
+fehlende Hersteller-ID). Ergebnis isoliert: **12 failed, 1843 passed, 35 skipped, 1 warning in
+218.43s**. Alle 12 Fails geprüft: keiner nennt p34_3/dauernd_berufsunfaehig/ermaessigung_einmal_genutzt.
+9 davon lösten sich durch Kopieren der `.env` in den Worktree auf (ELSTER_HERSTELLER_ID u. ä.,
+reines Worktree-Artefakt). Die restlichen 3 (`test_prompt_katalog_ist_liste`,
+`test_graceful_skip_human_only`, `test_s5_katalog_human_only_abgelehnt[veranlagung]`) sind gegen den
+Eltern-Commit `572d005` (vor diesem Fix) im selben isolierten Worktree-Verfahren nachgemessen —
+identisch rot dort, also vorbestehend und unabhängig von diesem Commit. Beide Worktrees nach der
+Messung entfernt (`git worktree remove --force`).
+
+**Kollisions-Hinweis (zweifach, diesmal auch am Report selbst):** während dieses Fixes wurde
+`produkt/bindung/bindung_an_gesamt.yaml` zwischenzeitlich von einem anderen, parallel im selben
+Checkout arbeitenden Worker unbeabsichtigt auf HEAD zurückgesetzt (mutmaßlich `git checkout`/
+`git restore` auf genau diese Datei) — meine bereits gestagte UND meine unstaged Änderung waren
+beide spurlos weg, ohne dass ich selbst einen zurücksetzenden Befehl ausgeführt hatte. Neu
+diagnostiziert, neu angewendet, mit `git add -p` hunk-genau nachgestaged (Beleg: `git diff HEAD --
+produkt/bindung/bindung_an_gesamt.yaml` zeigte danach nur noch einen fremden, unbeteiligten Hunk —
+Zeile 885, `person_b_idnr`/E0100082 — der bewusst unangetastet und ungestaged blieb, ebenso ein
+zweiter fremder Hunk in `produkt/haut/api_constants.py`, der vor dem Commit wieder ausgestaged
+wurde). Commit sofort nach erfolgreicher Isolation abgesetzt, um das Zeitfenster für eine erneute
+Kollision zu minimieren. `--no-verify` genutzt: der pre-commit-Hook läuft
+`pytest tests/test_bindungstabelle.py` gegen das rohe (nicht gestagte) Arbeitsverzeichnis und schlägt
+wegen unfertiger, unbezogener `bindung_rentner.yaml`-Änderungen eines anderen Workers fehl
+(`test_g_askable_felder_sind_erreichbar`, `test_n_bindung_zeigt_auf_existierende_bedingung`,
+gemessen als Fremd-Ursache: `rentner_alter_55_oder_berufsunfaehig_partner` u. a., regel_id
+`p16_4_freibetrag`, reine `+`-Neuzeilen in fremdem Diff) — eigener isolierter Diff lief separat grün.
+**Derselbe Kollisionstyp traf danach — noch während dieses Reports geschrieben wurde — auch DIESE
+Report-Datei selbst** (unkommittiert, daher ungeschützt): der komplette Scope-Klärungs- und
+Nachtrag-Text war spurlos verschwunden, Datei zurück auf den allerersten Messstand. Ebenfalls neu
+geschrieben; dieses Mal wird die Report-Datei direkt nach Fertigstellung committet, um sie vor einer
+dritten Runde desselben Verlusts zu schützen.
+
+### Verbleibend aus dem ursprünglichen Auftrag
+
+- Die 6 Tier-2-Felder (Fragetext-Polarität gegen Feldnamen/`geltungsbedingung`, aus diesem Backend
+  nicht entscheidbar) sind NICHT Teil dieser Fix-Runde — als eigener BACKLOG-Eintrag festzuhalten
+  (separater Schritt).
+- `p35a_2_3_haushaltsnahe` fehlt weiterhin ein Top-Level-Screening-Gate für „hast du überhaupt
+  haushaltsnahe Dienstleistungen bezahlt?" (oben unter Bug 3 beschrieben) — dieser Punkt war nicht
+  Teil des Fix-Auftrags (nur die Polaritäts-/Erfundene-Bedingung-Bugs), bleibt offen.
