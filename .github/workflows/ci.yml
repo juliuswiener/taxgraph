@@ -181,12 +181,16 @@ jobs:
           bash oracle/gettsim/assemble_catala.sh
 
       # venv312 nach docs/setup.md: GETTSIM braucht Python 3.12.
+      # bcrypt/PyJWT: seit tests/conftest.py `import server` (f0e1c71, 2026-08-10) zieht
+      # jede Collection unter tests/ den vollen server->auth-Importpfad, unabhaengig vom
+      # Testinhalt. Fehlen sie in diesem isolierten venv312, schlaegt schon die Collection
+      # von test_gettsim_crosscheck.py fehl (ModuleNotFoundError), nicht erst ein Test.
       - name: venv312 mit GETTSIM
         run: |
           set -e
           pip install uv
           uv venv oracle/.venv312 --python 3.12
-          uv pip install --python oracle/.venv312/bin/python gettsim pyyaml jsonschema
+          uv pip install --python oracle/.venv312/bin/python gettsim pyyaml jsonschema bcrypt PyJWT
 
       - name: gettsim-crosscheck (Report + Gate)
         run: |
