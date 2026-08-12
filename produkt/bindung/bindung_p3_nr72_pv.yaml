@@ -27,7 +27,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p3_2026-07-30.txt"
 
   - feld_id: pv_bruttoleistung_kwp
-    quelle: {regel_id: p2_festzusetzung_einzel, geltungsbedingung: pv_leistungsgrenze}
+    quelle: {regel_id: p3_nr72_pv, geltungsbedingung: pv_leistungsgrenze}
     typ: int
     einheit: kWp
     askable: true
@@ -45,7 +45,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p3_2026-07-30.txt"
 
   - feld_id: pv_anzahl_einheiten
-    quelle: {regel_id: p2_festzusetzung_einzel, geltungsbedingung: pv_leistungsgrenze}
+    quelle: {regel_id: p3_nr72_pv, geltungsbedingung: pv_leistungsgrenze}
     typ: int
     einheit: null
     askable: true
@@ -63,7 +63,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p3_2026-07-30.txt"
 
   - feld_id: pv_auf_gebaeude
-    quelle: {regel_id: p2_festzusetzung_einzel, geltungsbedingung: pv_auf_gebaeude}
+    quelle: {regel_id: p3_nr72_pv, geltungsbedingung: pv_auf_gebaeude}
     typ: bool
     einheit: null
     askable: true
@@ -82,12 +82,12 @@ bindungen:
 
   # ===== Lücken + Geltungsbedingungen =====
 luecken:
-  - regel_id: p2_festzusetzung_einzel
+  - regel_id: p3_nr72_pv
     geltungsbedingung: pv_leistungsgrenze
     grund: "Freigrenze (30 kWp/Einheit, 100 kWp gesamt) im Accessor catala_p3_nr72_photovoltaik geprüft; im Ring über _laufender_gewinn angedockt."
-  - regel_id: p2_festzusetzung_einzel
+  - regel_id: p3_nr72_pv
     geltungsbedingung: pv_auf_gebaeude
-    grund: "Tatbestandsmerkmal 'auf, an oder in Gebäuden' als askable Bool; fail-closed ohne Bestätigung."
+    grund: "Tatbestandsmerkmal 'auf, an oder in Gebäuden' als askable Bool; fail-closed ohne Bestätigung. Bis 2026-08-12 auf p2_festzusetzung_einzel gebunden — dort teilt sich die regel_id mit 23 sachfremden Feldern (Bruttoarbeitslohn, Veranlagungsart, alle Stammdaten), und traverser.relevanz() schliesst pro regel_id aus. Ein bestaetigtes 'nein' auf diese Frage (die Mehrheitsantwort) hat die gesamte AN-Kernerklaerung dauerhaft aus der Frage-Warteschlange genommen, bevor sie je gestellt wurde — im Dialog-Durchstich gemessen. Fix: eigene regel_id p3_nr72_pv."
   - regel_id: p2_festzusetzung_einzel
     signatur_slot: pv_entnahmen
     grund: "§ 3 Nr. 72 nennt Einnahmen UND Entnahmen. Der Selbstverbrauch (Entnahme) ist im Feld pv_einnahmen mit erfasst (Laien-Formulierung 'plus Wert des selbst verbrauchten Stroms'); ein getrenntes Entnahme-Feld wäre eine eigene Bewertungsfrage (Teilwert) und ist Stufe-2."

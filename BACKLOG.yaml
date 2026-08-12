@@ -1219,6 +1219,21 @@ abgabe:
       Gibt es eine Kategorie "nur-Ausgabe"-Kz, und binden wir noch andere davon? Jedes
       weitere waere ein schlafender Blocker, der erst hochgeht, wenn ein Nutzer das Feld
       ausfuellt. Sweep laeuft.
+    zwischenstand_dialog_durchstich: |
+      2026-08-12, unabhaengig ueber den echten Dialog-Pfad reproduziert (siehe
+      ratsche-misst-nicht-den-nutzerpfad): person_b_idnr wird im ehrlichen Lauf gefragt und
+      bestaetigt, danach rc=610301106 mit leerem Fehlerpuffer — deckt sich mit dem oben
+      zitierten eric.log-Befund (E0100082, Eingefuegt-Kennzeichen J/P).
+      WICHTIG, nicht ueberinterpretieren: ein spaeterer Lauf desselben Skripts (kurz danach,
+      selbe Sitzung) zeigt rc=610001002 (echte Plausibilitaetspruefung, 46 Beanstandungen)
+      MIT person_b_idnr gar nicht mehr gefragt — nicht weil ich etwas geaendert habe, sondern
+      weil produkt/haut/api_constants.py, produkt/bindung/bindung_an_gesamt.yaml und
+      produkt/mapping/est_mapping.py zwischen den beiden Laeufen im geteilten Checkout
+      fremdes, noch unkommittetes WIP zeigten (git status: MM/M waehrend meiner Messung).
+      Passt zur hier oben skizzierten fix_muss_beide_seiten_treffen-Richtung (Feld raus aus
+      Kegel UND Deklaration), aber NICHT selbst verifiziert oder verantwortet — nur der
+      zeitliche Zusammenhang ist festgehalten. Vor jeder Statusaenderung hier: mit dem Worker
+      abstimmen, der gerade an bindung_an_gesamt.yaml/api_constants.py sitzt.
 
   - id: ratsche-misst-nicht-den-nutzerpfad
     titel: "Die Abgabe-Ratsche laeuft ueber die ungescopte Bindung — nicht ueber den Weg des Nutzers"
@@ -1255,6 +1270,136 @@ abgabe:
       Dieselbe Klasse wie test-prueft-nicht-was-er-behauptet und
       naht-blindstelle-zwei-repraesentationen: der Test ist gruen und misst etwas anderes
       als das, was seine Ueberschrift behauptet.
+    zwischenstand_2026_08_12: |
+      Der geplante Dialog-Durchstich ist gebaut (Skript, kein Commit noch; Julius' Zielfall:
+      Arbeitnehmer, Zusammenveranlagung, Scheibe gesamt, VZ 2025). Ausschliesslich ueber
+      /fragen + /event beantwortet, nie ein Feld direkt gesetzt. Ergebnis fuer den EHRLICHEN
+      Lauf (wahrheitsgemaesse Antworten):
+
+        218 Fragen beantwortet (219 Runden), dann Sperrgrund
+        input_kegel_nicht_bestaetigt, offen=["vv_entgelt_quote_prozent"]
+
+      Auf dem Weg dahin einen echten Blocker gefunden und behoben: pv_bruttoleistung_kwp/
+      pv_anzahl_einheiten/pv_auf_gebaeude hingen an der Pseudoregel-Sammel-Scope
+      p2_festzusetzung_einzel (24 sachfremde Felder). Ein bestaetigtes "nein" auf
+      pv_auf_gebaeude schloss ueber traverser.relevanz() die GANZE Regel aus und riss u.a.
+      veranlagung, bruttoarbeitslohn, alle stammdaten_*, person_b_idnr aus naechste_fragen()
+      — der Dialog blieb bei 183 von 231 Feldern haengen. Fix: eigene regel_id
+      p3_nr72_pv statt des Sammel-Scopes (bindung_p3_nr72_pv.yaml), Regressionsgate
+      test_p_sammelscope_ohne_bool_gate (tests/test_bindungstabelle.py, mutationsgeprueft).
+      NICHT committet — Pre-Commit-Gate steht wegen fremdem Stufe-1-WIP, team-lead haelt den
+      Commit zurueck bis der Baum frei ist.
+
+      Der verbleibende Sperrgrund ist ein ANDERER, strukturell verschiedener Fehler —
+      siehe traverser-ring-kegel-relevanz-naht. Frage 1 (erreicht der Dialog eine Zahl?) ist
+      damit ehrlich beantwortet: NEIN, nicht mit wahrheitsgemaessen Antworten — aber das
+      blockierende Feld (vv_entgelt_quote_prozent) WURDE gefragt (kein "nie erfragt"-Fall wie
+      person-b-idnr-wird-abgelehnt); die Regel dahinter wird nur legitim ausgeschlossen und
+      der Kegel akzeptiert den Ausschluss nicht.
+
+      Zweiter, ausdruecklich kuenstlicher Lauf (team-lead-Auftrag, vv_wohnzwecke UND
+      vv_auf_dauer=True statt False, damit die Regel relevant bleibt und der Kegel
+      schliesst) beantwortet Frage 2: 856200 Cent erreicht, aber checkESt liefert NICHT
+      rc=0, sondern rc=610001002 (RC_PLAUSIBILITAET) mit 46 echten Beanstandungen (Anlage V
+      unvollstaendig, IBAN/BIC-Land-Mismatch, Kind-/Behinderungsangaben unvollstaendig,
+      diverse Nullwert-Felder aus der 0/False-Default-Policy des Skripts). Das ist erwartbar
+      fuer einen Fall, der fast ueberall den Default statt eine echte Antwort traegt, und
+      sagt nichts ueber Julius' echten Zielfall — bestaetigt nur, dass die Pruefung bei
+      vollstaendigem Kegel die reale Plausibilitaetsstufe erreicht statt an einem I/O-Gate
+      haengenzubleiben. rc bei person_b_idnr s. person-b-idnr-wird-abgelehnt
+      (zwischenstand_dialog_durchstich dort).
+    naechster_schritt: |
+      traverser-ring-kegel-relevanz-naht (11 Faelle, davon 1 in gesamt) muss vor einem
+      erneuten Ehrlich-Lauf entweder behoben oder als bewusste Grenze akzeptiert sein — sonst
+      bleibt Frage 1 unbeantwortbar. Fix ist strukturell und liegt hinter dem
+      _bescheid_fn-Refactor (api-py-datei-split).
+
+  - id: traverser-ring-kegel-relevanz-naht
+    titel: "Kegel verlangt Werte fuer Regeln, die relevanz() bereits legitim ausgeschlossen hat — 11 Faelle"
+    status: analysiert
+    richtung: "ABGABE-BLOCKER fuer den Zielfall (Scheibe gesamt) — kein Geldfehler"
+    entdeckt: |
+      2026-08-12, als Fund des Dialog-Durchstichs (ratsche-misst-nicht-den-nutzerpfad):
+      wahrheitsgemaess vv_wohnzwecke=False und vv_auf_dauer=False beantwortet (echte
+      Vermietungssituation ohne verbilligte Ueberlassung), Sperrgrund
+      input_kegel_nicht_bestaetigt, offen=["vv_entgelt_quote_prozent"] — obwohl der Traverser
+      dieses Feld nie fragt (die Regel ist zu diesem Zeitpunkt bereits legitim ausgeschlossen).
+      team-lead hat den Fund gleichentags auf 3 Scheiben ausgeweitet nachgemessen.
+    abgrenzung_zum_pv_bug: |
+      ZWEI verschiedene Ursachen, nicht dieselbe Fehlerklasse wie die Sammel-Scope-Bindung
+      (bindung_p3_nr72_pv, s. ratsche-misst-nicht-den-nutzerpfad/zwischenstand_2026_08_12):
+        Sammel-Scope-Fehlbindung   ein Gate haengt an einer FREMDEN, zu grossen Pseudoregel
+                                   (p2_festzusetzung_einzel/_zusammen) — falsch GEBUNDEN.
+                                   Fix: eigene regel_id statt Sammel-Scope. ERLEDIGT.
+        Traverser/Ring-Naht (hier) das Gate haengt an der EIGENEN, richtig geschnittenen Regel
+                                   des Feldes — relevanz() schliesst korrekt aus, aber der
+                                   Kegel (_feste_zahl, api.py) fragt gar nicht erst, ob die
+                                   Regel noch relevant ist, sondern verlangt den Feldwert
+                                   unbedingt. Nichts falsch GEBUNDEN — die Naht zwischen
+                                   zwei Mechanismen fehlt.
+      Beide Klassen erzeugen denselben Symptomtyp (Dialog haengt am Sperrgrund fest), aber
+      am falschen Bindungs- vs. am fehlenden Respekt-Verweis zu fixen sind zwei verschiedene
+      Aenderungen an zwei verschiedenen Stellen.
+    messung: |
+      Kommando (rekonstruiert und gegen team-leads Zahlen exakt nachgerechnet):
+        python3 kegel_relevanz_messung.py
+      Logik: fuer jedes Feld in SCHEIBEN[scheibe]["kegel"] (produkt/haut/api_constants.py,
+      das ist die Pflicht-Kegel-Liste, die _feste_zahl() fuer den Meet-Zustand verlangt) die
+      eigene regel_id nachschlagen (quelle.regel_id ueber alle bindung_*.yaml), dann pruefen
+      ob IRGENDEIN Feld mit derselben regel_id ein askable-bool-Gate (eigene
+      geltungsbedingung) traegt.
+
+        gesamt          kegel 33  ausschliessbar 5  davon 4 harmlos (kein_gewinn/kap/vuv/
+                        sonstige -> p2_einkunftsarten, s.u.) -> 1 real:
+                          vv_entgelt_quote_prozent -> p21_2_verbilligte_vermietung_wk
+                          (gates: vv_wohnzwecke, vv_auf_dauer)
+        an_gesamt       kegel 34  ausschliessbar 14  davon 4 harmlos -> 10 real:
+                          7x dhf_* -> p9_1_3_nr5_doppelte_haushaltsfuehrung
+                            (dhf_unterkunftskosten_monat, dhf_monate, dhf_im_inland,
+                             dhf_beruflich_veranlasst, dhf_eigener_hausstand,
+                             dhf_finanzielle_beteiligung, dhf_keine_pflicht_dienstwohnung)
+                          3x tage_* -> p9_4a_verpflegungsmehraufwand
+                            (tage_24h, tage_an_abreise, tage_ueber_8h_eintaegig)
+        rentner_gesamt  kegel 26  ausschliessbar 4  alle 4 harmlos -> 0 real
+
+        Summe: 23 Kegel-Felder an einer ausschliessbaren Regel, davon 12 (4x pro Scheibe)
+        harmlos-selbstgatend, macht 11 ECHTE Faelle (1 + 10 + 0).
+      Unabhaengig eigenhaendig nachgerechnet und exakt deckungsgleich mit team-leads
+      Messung — kein abweichender Wert.
+    harmlos_warum: |
+      kein_gewinn/kein_kap/kein_vuv/kein_sonstige sind SELBST die vier Gates ihrer eigenen
+      Regel p2_einkunftsarten (jedes Feld ist askable+bool+eigenes geltungsbedingung). Zum
+      Zeitpunkt, an dem relevanz() ausschliessen koennte, ist das Feld also bereits
+      beantwortet — es ist ja selbst die Frage, die den Ausschluss ausloest. Kein
+      Erreichbarkeits-Loch, keine Aenderung noetig.
+    ursache: |
+      _feste_zahl() (produkt/haut/api.py, nahe scheibe_felder) prueft nur, ob JEDES Feld in
+      cfg["kegel"] einen bestaetigten Zustand traegt (ST.meet_zustand). Es fragt nicht, ob
+      die Regel, zu der das Feld gehoert, laut traverser.relevanz() ueberhaupt noch relevant
+      ist. Ein Feld, dessen Regel legitim ausgeschlossen wurde, bleibt trotzdem im
+      Pflicht-Kegel haengen und sperrt _feste_zahl() dauerhaft auf
+      input_kegel_nicht_bestaetigt — der Traverser fragt es ja nie, weil relevanz() es
+      korrekt nicht mehr anbietet.
+    fix_richtung: |
+      Nicht die 11 Einzelfaelle aus dem Kegel nehmen (das waere elf Patches statt einer
+      Ursache und wuerde bei jedem neuen ausschliessbaren Kegel-Feld wieder aufklaffen).
+      Strukturell: der Kegel-Meet in _feste_zahl() muss traverser.relevanz() respektieren —
+      ein Kegel-Feld, dessen Regel ausgeschlossen ist, darf den Meet nicht mehr sperren.
+      Sicherheitsseite (fail-closed erhalten): relevanz() schliesst NUR bei einem
+      BESTAETIGTEN False aus (traverser.py:120-123) — unbeantwortet oder vorlaeufig
+      schliesst NICHT aus. Der Kegel bleibt also fail-closed, solange der Nutzer nicht
+      geantwortet hat; er wird nur nicht mehr blockiert von Feldern, deren Regel der Nutzer
+      selbst schon abbestellt hat. Die Klasse "Regel faelschlich ausgeschlossen" (falsches
+      Gate) ist seit dem PV-Fix separat durch test_p_sammelscope_ohne_bool_gate abgesichert
+      — dieser Fix aendert daran nichts.
+    blockiert_durch: |
+      api.py ist fuer den _bescheid_fn-Refactor gesperrt (api-py-datei-split, laeuft bei
+      einem anderen Worker). Eine Verhaltensaenderung mitten im Refactor wuerde dessen
+      Zahlenbeweis (Vergleich der Ergebnisse vor/nach dem Schnitt) entwerten, weil genau
+      diese Aenderung die verglichenen Zahlen bewegen wuerde. Reiht sich hinter dem Refactor
+      ein.
+    aufwand_h: unbeziffert
+    api_py: "Fix noetig in produkt/haut/api.py (_feste_zahl) — gesperrt bis Refactor fertig"
 
 rechenluecken:
 
@@ -1926,7 +2071,40 @@ rechenluecken:
 
   - id: partnerseite-gewinneinkuenfte-fehlt-strukturell
     titel: "Partnerseite der Gewinneinkuenfte (§§13-18) fehlt strukturell — nicht nur der §16-Freibetrag"
-    status: offen
+    status: "teilweise erledigt (Stufe 1 Deklaration); Stufe 2 Rechenseite offen, Anlage-EÜR-Teil strukturell nicht schliessbar"
+    stufe_1_deklaration: |
+      2026-08-12, team-lead-freigegeben. Deklarationsseite gebaut: einkuenfte_gewinn_partner,
+      gewinn_betriebsart_partner, die 4 §15-Mitunternehmer-Felder (gewinnanteil_partner,
+      verguetung_taetigkeit_partner, verguetung_darlehen_partner,
+      verguetung_ueberlassung_partner), gewst_hebesatz_partner/gewst_messbetrag_partner (§35),
+      und die 4 §16 Abs.4-Felder (rentner_veraeusserungsgewinn_partner,
+      rentner_veraeusserungs_betriebsart_partner, rentner_alter_55_oder_berufsunfaehig_partner,
+      rentner_freibetrag_erstmalig_partner). Bindung in bindung_an_gesamt.yaml +
+      bindung_rentner.yaml, Dispatch in est_mapping.py (PARTNER_INSTANZ + PARTNER_VERZWEIGUNG),
+      Scheiben-Registrierung in api_constants.py (GESAMT_GEWINN_PARTNER,
+      P16_4_GATE_FELDER_PARTNER in SCHEIBEN["gesamt"] und ueber RENTNER_FELDER in
+      SCHEIBEN["rentner_gesamt"]). Ein Paar mit gegenseitigem Gewinn kann die Erklaerung damit
+      jetzt VOLLSTAENDIG abgeben (Deklarationspflicht erfuellt). Streichungen aus der Freigabe:
+      keine EÜR-Partnerfelder (siehe eueur_keine_partnerachse unten), keine §34-Abs.3-Dopplung
+      (anderer Worker fixt dort gerade echte Bugs auf Person-A-Feldern, Wiederholung waere
+      Doppel-Bug).
+    eueur_keine_partnerachse: |
+      Anlage EÜR (Datenart E77) hat KEINE Person-A/B-Achse — anders als Anlage G/S. Gemessen:
+      E77-2025.xsd 0 Treffer fuer Enum_INDEXFELD_PERSON (ELSTER_XSD/E77-2025.xsd), waehrend
+      E10-2025.xsd den Mechanismus (maxOccurs="2"-Container + Enum_INDEXFELD_PERSON_AB_1_
+      BaseCType-Pflichtkind) fuer G/S bestaetigt zeigt. Ein betriebseinnahmen_partner/
+      sonstige_betriebsausgaben_partner/afa_jahresbetrag_partner-Kz waere damit strukturell
+      totes Wiring, kein offener Deklarations-Fehlbetrag wie bei Person A — bewusst NICHT
+      gebaut (team-lead-Streichung 2026-08-12). Wenn der Partner einen eigenen EÜR-Betrieb hat,
+      bleibt das ausserhalb dieses Produkts abzubilden (separate Anlage EÜR-Instanz, vom
+      Produkt heute nicht unterstuetzt) — eigenstaendige Luecke, nicht durch Kz-Erweiterung
+      loesbar.
+    stufe_2_rechenseite_offen: |
+      Ring-Verdrahtung (zweiter §16-Freibetrag-Aufruf, gespiegeltes p16_4_gate_offen fuer
+      Person B) bewusst NICHT gebaut — team-lead-Entscheid 2026-08-12: api.py bleibt gesperrt,
+      bis der _bescheid_fn-Split (api-py-datei-split, s.u.) abgeschlossen und mit mir
+      abgestimmt ist. Ohne Stufe 2 wird ein deklarierter Partner-Gewinn zwar XML-uebermittelt,
+      aber im gesamt/rentner-Ring noch nicht in die Steuerberechnung des Partners einbezogen.
     entdeckt: |
       2026-08-12, bei der Messung zu commit-nur-defer-sweep-2026-08-10 Fund 6 (§16 Abs.4
       per-Person-Freibetrag). Die dortige Vermutung ("zweiter Freibetrag greift nicht") war
@@ -1958,6 +2136,64 @@ rechenluecken:
       nicht nur der Freibetrag dafuer.
     aufwand_h: unbeziffert
     api_py: "kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation"
+
+  - id: gewinneinkuenfte-einzelangaben-fehlen
+    titel: "checkESt verlangt 'Einzelangaben zu Gewinnen laut gesonderter Feststellung' zusaetzlich zur E0800502-Summe"
+    status: offen
+    entdeckt: |
+      2026-08-12, Task Gewinneinkuenfte-Partnerseite Stufe 1, beim ersten scharfen checkESt-Lauf
+      fuer einen Zusammenveranlagungsfall MIT Partner-Gewinn
+      (tests/test_checkest_durchstich.py::test_restfehler_zusammen_mit_gewinneinkuenfte_partner).
+    befund: |
+      checkESt (rc=610001002, 2 Beanstandungen) verlangt neben der Summe im Kz E0800502 einen
+      Sub-Block "Einzelangaben zu Gewinnen laut gesonderter Feststellung" — das Produkt fuehrt
+      diesen Block WEDER fuer Person A NOCH fuer Person B. Das Kz-Mapping selbst ist korrekt
+      (E0800502 landet XSD-valide im richtigen person_b-Bucket, s.
+      tests/test_person_b_xml_luecke.py) — die Luecke liegt eine Ebene tiefer: die
+      Einzelangaben-Struktur ist im Produkt bisher gar nicht modelliert.
+    praeexistenz_nachgewiesen: |
+      Isoliert gemessen: Person A ALLEIN mit einkuenfte_gewinn=500000 (kein_gewinn=False), OHNE
+      jeden Partner-Anteil, liefert dieselbe Beanstandungsklasse fuer Person A. Das ist also KEINE
+      durch die Partnerseite neu eingefuehrte Regression, sondern eine praeexistierende Luecke der
+      bestehenden einkuenfte_gewinn-Deklaration (Person A) — sie wurde nur nie sichtbar, weil alle
+      bisherigen Ratsche-Faelle in test_checkest_durchstich.py kein_gewinn=True halten und
+      einkuenfte_gewinn dadurch nie scharf gegen checkESt lief.
+    ratchet: "RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER = 2 in tests/test_checkest_durchstich.py"
+    wirkung: "Jeder Fall mit einkuenfte_gewinn > 0 (Person A oder B) ist damit vermutlich nicht abgabefaehig, nicht nur der Partner-Fall — betrifft potenziell mehr als nur diese Task."
+    aufwand_h: unbeziffert
+    api_py: "kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation (Task-Scope war Stufe 1 Partnerseite, nicht die bestehende Person-A-Luecke)"
+
+  - id: fragetext-polaritaet-tier2-unverifizierbar
+    titel: "6 Gate-Felder ueber 3 Regeln: fragetext_laie fragt entgegengesetzt zum Feldnamen — aus diesem Backend nicht entscheidbar, ob die Erfassungsschicht invertiert"
+    status: offen
+    entdeckt: "2026-08-12, gate_screening_polaritaet — Sweep aller 24 Regeln mit askable-bool-Gates"
+    bericht: reports/adjudikation/gate_screening_polaritaet_2026-08-12.md
+    betrifft:
+      - "p2_einkunftsarten: kein_gewinn, kein_kap, kein_vuv, kein_sonstige (alle 4 Gates dieser Regel)"
+      - "p9_4a_verpflegungsmehraufwand: vpf_keine_mahlzeitengestellung"
+      - "p9_1_3_nr5_doppelte_haushaltsfuehrung: dhf_keine_pflicht_dienstwohnung"
+    befund: |
+      Gleiches Muster wie beim bestaetigten historischen Bug 519199e, hier aber unentscheidbar:
+      `fragetext_laie` fragt in die ENTGEGENGESETZTE Richtung zum Feldnamen/zur
+      `geltungsbedingung` (Beispiel `vpf_keine_mahlzeitengestellung`, Frage „Hat dir dein
+      Arbeitgeber... Mahlzeiten bezahlt oder gestellt?" — Feld heisst „KEINE
+      Mahlzeitengestellung"). Die `relevanz()`-Ausschluss-MECHANIK selbst ist bei allen sechs
+      Feldern korrekt (per Test bestaetigt: bestaetigtes `False` schliesst korrekt aus).
+    abgrenzung: |
+      Offen ist ausschliesslich, ob die Antwort-Erfassungsschicht (Fragetext -> gespeicherter
+      `wert`) die Inversion richtig vornimmt. Diese Schicht liegt NICHT in diesem Backend-Repo —
+      geprueft: `produkt/haut/api.py`, `produkt/mapping/est_mapping.py` (dort nur eine andere,
+      unverwandte Negations-Klasse fuer Store->ELSTER-Kz-Mapping) enthalten keine
+      fragetext->wert-Inversionsschicht, die das bestaetigen oder widerlegen wuerde.
+    entlastung: |
+      p9_4a und p9_1_3_nr5 haben je einen zweiten, sicher korrekt polarisierten Gate in
+      derselben Regel (vpf_auswaertige_taetigkeit bzw. dhf_beruflich_veranlasst/
+      dhf_eigener_hausstand/dhf_finanzielle_beteiligung) — die Screening-Frage der Regel
+      insgesamt funktioniert also auch wenn genau dieses eine Zusatzfeld betroffen waere.
+      p2_einkunftsarten hat KEINE andere, sicher korrekte Screening-Frage — alle 4 Gates
+      der Regel sind Tier-2.
+    aufwand_h: unbeziffert
+    api_py: "kein Fix moeglich in diesem Repo — Erfassungsschicht (UI/Beleg-Mapping) liegt ausserhalb; naechster Schritt ist Pruefung dort, nicht hier"
 
 struktur:
 

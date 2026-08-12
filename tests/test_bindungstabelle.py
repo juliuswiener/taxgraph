@@ -487,6 +487,17 @@ BETRAGSFELDER_OHNE_KZ = {
     "vorsorge_unfall_haftpflicht_partner",
     "vorsorge_rv_alt_mit_ueberschuss_partner",
     "vorsorge_rv_alt_ohne_ueberschuss_partner",
+    # Gewinneinkuenfte-Partnerseite Stufe 1 (2026-08-12): dieselbe Gruppe-B-Naht — Bindung ist
+    # Interview-Scaffolding, der Ring-Aufruf (zweiter GESAMT_GEWINN-Durchlauf fuer Person B) ist
+    # Stufe 2 und explizit noch nicht gebaut (s. BACKLOG partnerseite-gewinneinkuenfte-fehlt-
+    # strukturell). elster_kz kann daher noch nicht gesetzt werden.
+    "einkuenfte_gewinn_partner",
+    "gewinnanteil_partner",
+    "verguetung_taetigkeit_partner",
+    "verguetung_darlehen_partner",
+    "verguetung_ueberlassung_partner",
+    "gewst_messbetrag_partner",
+    "rentner_veraeusserungsgewinn_partner",
 
     # Gruppe A: Accessor-Output ohne Kz-Mapping.
     # Begründung nennt Ziel-Kz (z.B. E0204401), aber grep über produkt/ findet es nur in elster_kz_grund,
@@ -1045,6 +1056,17 @@ GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
     ("rentner", "rentner_alter_bei_rentenbeginn", "p22_1_leibrente_besteuerungsanteil", "ertragsanteil_alter_bei_rentenbeginn"),
     ("rentner", "rentner_rentenfreibetrag", "p22_1_leibrente_besteuerungsanteil", "rentenfreibetrag_fixierung_folgejahr"),
     ("rentner", "rentner_veraeusserungs_betriebsart", "p16_4_freibetrag", "veraeusserungs_betriebsart_weiche"),
+    # rentner_alter_55_oder_berufsunfaehig_partner/rentner_freibetrag_erstmalig_partner/
+    # rentner_veraeusserungs_betriebsart_partner (2026-08-12, Gewinneinkuenfte-Partnerseite
+    # Stufe 1): dieselbe Naht wie rentner_veraeusserungs_betriebsart eine Zeile drueber — reine
+    # Interview-Scaffolding, p16_4_freibetrag kennt in rules.yaml nur die Person-A-Bedingungen
+    # (alter_55_oder_berufsunfaehig/freibetrag_einmal_im_leben/auf_antrag). Der zweite
+    # Freibetrags-Aufruf fuer Person B inkl. echter Bedingungspruefung ist Stufe 2 (Ring,
+    # api.py) und laut Auftrag noch nicht gebaut (s. P16_4_GATE_FELDER_PARTNER-Kommentar in
+    # api_constants.py).
+    ("rentner", "rentner_alter_55_oder_berufsunfaehig_partner", "p16_4_freibetrag", "alter_55_oder_berufsunfaehig_partner"),
+    ("rentner", "rentner_freibetrag_erstmalig_partner", "p16_4_freibetrag", "freibetrag_einmal_im_leben_partner"),
+    ("rentner", "rentner_veraeusserungs_betriebsart_partner", "p16_4_freibetrag", "veraeusserungs_betriebsart_partner_weiche"),
     # bindung_p10_1_9_schulgeld_gesamt.yaml / bindung_p33_2a_fahrtkostenpauschale.yaml — beide Regeln
     # haben ihre Ground Truth in golden/runner.py (RUNNER_ACCESSOR_FUER_REGEL, 2026-08-07 angebunden),
     # kein rules.yaml-Eintrag → keine geltungsbedingungen-Liste (gbs=set()). Die drei geltungsbedingung-
@@ -1131,6 +1153,17 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     #     Korrektheit ohne dieses Risiko.
     ("an_gesamt", "dauernd_berufsunfaehig", "p34_3_ermaessigter_durchschnittssatz", "berufsunfaehig"),
     ("an_gesamt", "ermaessigung_einmal_genutzt", "p34_3_ermaessigter_durchschnittssatz", "bereits_genutzt"),
+    # gewinnanteil_partner/verguetung_taetigkeit_partner/verguetung_darlehen_partner/
+    # verguetung_ueberlassung_partner (p15_1_2_mitunternehmer) + rentner_veraeusserungsgewinn_
+    # partner (p16_4_freibetrag) — 2026-08-12, Gewinneinkuenfte-Partnerseite Stufe 1. Dieselbe
+    # Naht wie oben: reine Interview-Scaffolding fuer Person B, der zweite Ring-Aufruf mit
+    # echten Signatur-Slots fuer Person B ist Stufe 2 (Ring, api.py) und laut Auftrag noch
+    # nicht gebaut (s. BACKLOG partnerseite-gewinneinkuenfte-fehlt-strukturell).
+    ("an_gesamt", "gewinnanteil_partner", "p15_1_2_mitunternehmer", "gewinnanteil_partner"),
+    ("an_gesamt", "verguetung_taetigkeit_partner", "p15_1_2_mitunternehmer", "verguetung_taetigkeit_partner"),
+    ("an_gesamt", "verguetung_darlehen_partner", "p15_1_2_mitunternehmer", "verguetung_darlehen_partner"),
+    ("an_gesamt", "verguetung_ueberlassung_partner", "p15_1_2_mitunternehmer", "verguetung_ueberlassung_partner"),
+    ("rentner", "rentner_veraeusserungsgewinn_partner", "p16_4_freibetrag", "veraeusserungsgewinn_partner"),
 }
 
 
@@ -1166,6 +1199,17 @@ REGELN_OHNE_GROUND_TRUTH = {
     "p33b_abs5_kind_uebertragung",
     # Positionale Signatur (catala_p22_nr3_einkuenfte(betrag_cent: int)), kein dict-Parameter.
     "p22_3_leistungen",
+    # NEU 2026-08-12: eigene regel_id fuer § 3 Nr. 72 (bindung_p3_nr72_pv.yaml). Kein
+    # rules.yaml-Eintrag, kein rules/estg/p3_nr72_pv/-Verzeichnis, kein RUNNER_ACCESSOR_FUER_
+    # REGEL-Eintrag (catala_p3_nr72_photovoltaik hat keinen einzelnen dict-Parameter). Vorher
+    # teilten sich pv_bruttoleistung_kwp/pv_anzahl_einheiten/pv_auf_gebaeude die Pseudoregel
+    # p2_festzusetzung_einzel mit 23 sachfremden Feldern (Bruttoarbeitslohn, Veranlagungsart,
+    # alle Stammdaten) — traverser.relevanz() schliesst pro regel_id aus, und das bestaetigte
+    # "nein" auf pv_auf_gebaeude (bool, Mehrheitsantwort) hat im Dialog-Durchstich die gesamte
+    # AN-Kernerklaerung dauerhaft aus naechste_fragen() genommen. Fix: eigene regel_id statt
+    # Umzug auf eine bestehende Ground-Truth-Regel (es gibt keine passende) — dieselbe
+    # Blindspot-Klasse wie p2_festzusetzung_* oben, hier bewusst neu statt vererbt.
+    "p3_nr72_pv",
 }
 
 
@@ -1395,3 +1439,62 @@ def test_o_gate_faengt_neue_jahreszahl(daten):
     d["bindungen"][0]["fragetext_laie"] = "Testfrage mit fester Jahreszahl 2026?"
     treffer = _harte_jahreszahlen({"mutiert.yaml": d})
     assert treffer and treffer[0][0] == fid, "Gegenprobe fehlgeschlagen: neue Jahreszahl nicht erkannt"
+
+
+# ========== Sammel-Scopes ohne bool-Gate ==========
+
+# Pseudoregel-Sammel-Scopes ohne eigene rules.yaml-Signatur (s. REGELN_OHNE_GROUND_TRUTH):
+# p2_festzusetzung_einzel buendelt 24, p2_festzusetzung_zusammen 34 sachlich unabhaengige
+# Felder unter EINER regel_id, weil hier keine echte Catala-Scope-Andockung existiert.
+_KEINE_BOOL_GATES_AUF = {"p2_festzusetzung_einzel", "p2_festzusetzung_zusammen"}
+
+
+def _bool_gates_auf_sammelscope(daten):
+    """[(datei, feld_id, regel_id, geltungsbedingung)] fuer jedes askable bool-Feld, dessen
+    geltungsbedingung auf einem der beiden Sammel-Scopes haengt."""
+    treffer = []
+    for f, d in daten.items():
+        for b in d["bindungen"]:
+            q = b["quelle"]
+            if (q.get("regel_id") in _KEINE_BOOL_GATES_AUF and "geltungsbedingung" in q
+                    and b.get("askable") and b.get("typ") == "bool"):
+                treffer.append((os.path.basename(f), b["feld_id"], q["regel_id"], q["geltungsbedingung"]))
+    return treffer
+
+
+def test_p_sammelscope_ohne_bool_gate(daten):
+    """p2_festzusetzung_einzel/_zusammen sind Pseudoregel-Sammel-Scopes ohne eigene
+    rules.yaml-Signatur (s. REGELN_OHNE_GROUND_TRUTH) — sie buendeln je zwei bis drei Dutzend
+    sachlich unabhaengige Felder (Bruttoarbeitslohn, Veranlagungsart, Steuerklasse, saemtliche
+    Stammdaten inkl. IBAN) unter EINER regel_id, weil hier keine echte Catala-Scope-Andockung
+    existiert. traverser.relevanz() schliesst aber PRO regel_id aus: sobald ein askables
+    bool-Gate dieser Regel bestaetigt False ist, verschwindet die GESAMTE regel_id dauerhaft
+    aus naechste_fragen() — inklusive aller sachfremden Felder. Genau das ist am 2026-08-12 im
+    Dialog-Durchstich (Task C) passiert: pv_auf_gebaeude ("Ist die Anlage an einem Gebaeude
+    angebracht?", bool) hing an p2_festzusetzung_einzel; die Mehrheitsantwort "Nein" hat
+    veranlagung/bruttoarbeitslohn/alle stammdaten_* aus dem Angebot genommen, BEVOR sie je
+    gefragt wurden — kein Sperrgrund, kein Fehler, die Felder waren einfach nie in der
+    Warteschlange. Fix: eigene regel_id (p3_nr72_pv) statt des Sammel-Scopes. Dieser Test
+    verhindert, dass ein neues bool-Gate wieder auf einem der beiden Sammel-Scopes landet."""
+    treffer = _bool_gates_auf_sammelscope(daten)
+    assert not treffer, "\n".join(
+        f"{datei}::{fid}: askable bool-Gate (geltungsbedingung={gb!r}) auf Sammel-Scope "
+        f"{rid!r} — schliesst bei bestaetigtem False die GANZE regel_id aus "
+        "traverser.relevanz()/naechste_fragen() aus und reisst alle sachfremden Felder mit. "
+        "Eigene regel_id statt des Sammel-Scopes verwenden."
+        for datei, fid, rid, gb in treffer)
+
+
+def test_p_gate_faengt_neues_bool_gate(daten):
+    """Gegenprobe: ein frisch angebundenes bool-Gate auf einem der Sammel-Scopes MUSS
+    auffallen — sonst ist (p) nur Dekoration."""
+    d = _erste_datei_daten(daten)
+    d["bindungen"].append({
+        "feld_id": "zzz_erfundenes_bool_gate",
+        "quelle": {"regel_id": "p2_festzusetzung_einzel", "geltungsbedingung": "zzz_bedingung"},
+        "typ": "bool",
+        "askable": True,
+    })
+    treffer = _bool_gates_auf_sammelscope({"mutiert.yaml": d})
+    assert treffer and treffer[0][1] == "zzz_erfundenes_bool_gate", (
+        "Gegenprobe fehlgeschlagen: neues bool-Gate nicht erkannt")
