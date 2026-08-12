@@ -98,7 +98,10 @@ def test_s3_s4_vorschlagsschreiber_kann_nicht_bestaetigen(schreiber, herkunft):
 
 # ---------- S5: Feld-Katalog — ein Vorschlags-Schreiber darf kein HUMAN-ONLY-Feld vorschlagen ----------
 @pytest.mark.parametrize("feld", [
-    "veranlagung",              # Wahlrecht (§26)
+    # "veranlagung" (Wahlrecht §26) stand hier bis 2026-08-12 und ist auf Julius' Entscheid
+    # für die KI FREIGEGEBEN worden — Begründung und Gegen-Gates in
+    # tests/test_veranlagung_llm_freigabe.py. Die Wahlrechts-Klasse bleibt hier abgedeckt
+    # (antrag_ermaessigter_satz); die Freigabe gilt ausdrücklich nur für dieses eine Feld.
     "antrag_ermaessigter_satz", # Wahlrecht (§34 Abs.3)
     "kein_kap",                 # ⭐ Abwesenheits-Erklärung (K2-scharf)
     "gewinn_betriebsart",       # Rechts-Klassifikation

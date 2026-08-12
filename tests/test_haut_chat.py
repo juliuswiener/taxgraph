@@ -101,7 +101,11 @@ def test_prompt_katalog_ist_liste(fall, monkeypatch):
     assert st == 200
     system_msg = spy.gesehene_messages[0]["content"]
     assert "agb_aufwendungen" in system_msg          # ein gesamt-Scheibe-llm-Feld wird angeboten
-    assert "veranlagung" not in system_msg           # human-only wird der KI GAR NICHT erst angeboten
+    # human-only wird der KI GAR NICHT erst angeboten. Beispielfeld ist antrag_ermaessigter_satz
+    # (Wahlrecht § 34 Abs. 3) — es liegt in der gesamt-Scheibe und ist askable, die Prüfung ist also
+    # nicht vakuos. Früher stand hier veranlagung; das ist seit 2026-08-12 auf Julius' Entscheid
+    # llm-freigegeben (s. tests/test_veranlagung_llm_freigabe.py).
+    assert "antrag_ermaessigter_satz" not in system_msg
 
 
 # --------------------------------------------------------------- Happy-Path: zwei erlaubte Felder → vorläufig
@@ -129,28 +133,34 @@ def test_happy_path_vorlaeufig(fall, monkeypatch):
 
 # --------------------------------------------------------------- Graceful-Skip: human-only-Vorschlag (Instructor)
 def test_graceful_skip_human_only(fall, monkeypatch, capsys):
-    """Instructor-Auflage: schlägt die KI ein HUMAN-ONLY-Feld (veranlagung, Wahlrecht §26) vor, wirft der
-    globale Store-Katalog-Check ValueError → der Handler fängt es, überspringt STILL, CRASHT NICHT, schreibt
-    das Feld NICHT und verarbeitet die anderen Vorschläge weiter. veranlagung erscheint in `abgelehnt`."""
+    """Instructor-Auflage: schlägt die KI ein HUMAN-ONLY-Feld (antrag_ermaessigter_satz, Wahlrecht § 34
+    Abs. 3) vor, wirft der globale Store-Katalog-Check ValueError → der Handler fängt es, überspringt
+    STILL, CRASHT NICHT, schreibt das Feld NICHT und verarbeitet die anderen Vorschläge weiter. Das Feld
+    erscheint in `abgelehnt`.
+
+    Beispielfeld war bis 2026-08-12 veranlagung (§ 26); das ist auf Julius' Entscheid llm-freigegeben
+    worden und wäre hier jetzt ein KONFLIKT statt einer Ablehnung — siehe
+    tests/test_veranlagung_llm_freigabe.py. antrag_ermaessigter_satz ist der gleichwertige Ersatz:
+    ebenfalls Wahlrecht, ebenfalls human-only, ebenfalls in der gesamt-Scheibe."""
     monkeypatch.setattr(LC, "complete", _fake_complete(
         ("agb_aufwendungen", 300000),
-        ("veranlagung", "zusammen"),                # human-only → muss abgewiesen werden
+        ("antrag_ermaessigter_satz", True),         # human-only → muss abgewiesen werden
         ("berufsausbildung_aufwendungen", 90000)))
     st, body = API.chat(fall, {"text": "…"})        # KEIN Crash trotz eines bösen Vorschlags
     assert st == 200
     assert {g["feld_id"] for g in body["vorschlaege"]} == {"agb_aufwendungen", "berufsausbildung_aufwendungen"}
-    assert body["abgelehnt"] == ["veranlagung"]      # UNVERÄNDERTE Form: list[feld_id] (Konsumenten-Vertrag)
+    assert body["abgelehnt"] == ["antrag_ermaessigter_satz"]   # UNVERÄNDERTE Form: list[feld_id]
     # NEU (additiv): der Grund steht jetzt daneben — Katalog-Text, PII-frei (kein Wert/Freitext, nur die feld_id).
-    assert "veranlagung" in body["abgelehnt_gruende"]
-    grund = body["abgelehnt_gruende"]["veranlagung"]
-    assert "veranlagung" in grund and "zusammen" not in grund
+    assert "antrag_ermaessigter_satz" in body["abgelehnt_gruende"]
+    grund = body["abgelehnt_gruende"]["antrag_ermaessigter_satz"]
+    assert "antrag_ermaessigter_satz" in grund and "True" not in grund
     assert body["konflikte"] == []                   # kein Konflikt — das Feld war nie LLM-vorschlagbar (Fall 1)
-    # veranlagung wurde NICHT geschrieben (kein aktives Event)
+    # das Feld wurde NICHT geschrieben (kein aktives Event)
     import store as ST
-    assert "veranlagung" not in ST._aktives(API.lade_fall(fall))
+    assert "antrag_ermaessigter_satz" not in ST._aktives(API.lade_fall(fall))
     # Observability PII-frei: nur die abgewiesene feld_id, kein Wert/Freitext
     err = capsys.readouterr().err
-    assert "veranlagung" in err and "zusammen" not in err
+    assert "antrag_ermaessigter_satz" in err and "True" not in err
 
 
 # --------------------------------------------------------------- Ring-e2e: vorläufig bewegt die Steuer NICHT
