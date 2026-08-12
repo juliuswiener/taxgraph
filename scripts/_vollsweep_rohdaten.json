@@ -1,0 +1,989 @@
+{
+  "pool_groesse": 100,
+  "rot_anzahl": 68,
+  "ergebnisse": [
+    {
+      "feld_id": "agb_aufwendungen",
+      "wert": 300000,
+      "elster_kz": "E0161804",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "berufsausbildung_aufwendungen",
+      "wert": 200000,
+      "elster_kz": "E0108202",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Es wurde die Summe der Aufwendungen für die eigene Berufsausbildung angegeben, bitte geben Sie auch die Bezeichnung der Ausbildung und die Art und Höhe der einzelnen Aufwendungen an (Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "bruttoarbeitslohn",
+      "wert": 4000000,
+      "elster_kz": "E0200201",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "dba_auslaendische_einkuenfte",
+      "wert": 4000000,
+      "elster_kz": "E0601401",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Es wurde nicht erklärt aus welchem Staat / Spezial-Investmentfonds die steuerpflichtigen ausländischen Einkünfte stammen (Anlage AUS der steuerpflichtigen Person / des Ehemannes / der Person A, 1. Staat / Spezial-Investmentfonds)."
+      ]
+    },
+    {
+      "feld_id": "dba_gezahlte_auslaendische_steuer",
+      "wert": 300000,
+      "elster_kz": "E0601901",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Es wurde nicht erklärt aus welchem Staat / Spezial-Investmentfonds die steuerpflichtigen ausländischen Einkünfte stammen (Anlage AUS der steuerpflichtigen Person / des Ehemannes / der Person A, 1. Staat / Spezial-Investmentfonds).",
+        "Anzurechnende ausländische Steuern angegeben, aber keine Einkünfte. Gegebenenfalls sind die Einkünfte mit dem Wert \"0\" zu erklären (Anlage AUS der steuerpflichtigen Person / des Ehemannes / der Person A, 1. Staat / Spezial-Investmentfonds)."
+      ]
+    },
+    {
+      "feld_id": "dhf_unterkunftskosten_monat",
+      "wert": 80000,
+      "elster_kz": "E0207611",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Es wurden Angaben zur doppelten Haushaltsführung gemacht. Bitte geben Sie auch den Beschäftigungsort, den Grund für den doppelten Haushalt und das Datum der Begründung des doppelten Haushalts an und treffen Sie eine Aussage, ob ein eigener Hausstand am Lebensmittelpunkt vorliegt (Steuerpflichtige Person / Ehemann / Person A, 1. doppelte Haushaltsführung)."
+      ]
+    },
+    {
+      "feld_id": "ep_arbeitstage",
+      "wert": 220,
+      "elster_kz": "E0203503",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bitte geben Sie bei den Angaben zur Entfernungspauschale die einfache Entfernung zwischen Wohnung und erster Tätigkeitsstätte / Sammelpunkt / weiträumigem Tätigkeitsgebiet und an wie vielen Tagen das Ziel des Weges aufgesucht wurde gemeinsam an (1. Angabe, Steuerpflichtige Person / Ehemann / Person A).",
+        "Bei den Angaben zur Entfernungspauschale fehlt die Angabe zum Ziel des Weges und / oder zu PLZ, Ort und Straße (1. Angabe, Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "ep_entfernung_km",
+      "wert": 30,
+      "elster_kz": "E0203504",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bitte geben Sie bei den Angaben zur Entfernungspauschale die einfache Entfernung zwischen Wohnung und erster Tätigkeitsstätte / Sammelpunkt / weiträumigem Tätigkeitsgebiet und an wie vielen Tagen das Ziel des Weges aufgesucht wurde gemeinsam an (1. Angabe, Steuerpflichtige Person / Ehemann / Person A).",
+        "Bei den Angaben zur Entfernungspauschale fehlt die Angabe zum Ziel des Weges und / oder zu PLZ, Ort und Straße (1. Angabe, Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "ep_oepnv_kosten",
+      "wert": 138000,
+      "elster_kz": "E0203611",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bei den Angaben zur Entfernungspauschale wurden Aufwendungen für Fahrten mit öffentlichen Verkehrsmitteln erklärt, hierzu sind die Angaben \"aufgesucht an Tagen\" und \"einfache Entfernung in km\" erforderlich (1. Angabe, Steuerpflichtige Person / Ehemann / Person A).",
+        "Bei den Angaben zur Entfernungspauschale fehlt die Angabe zum Ziel des Weges und / oder zu PLZ, Ort und Straße (1. Angabe, Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "fahrtkosten_pausch_ag_bl_tbl_h",
+      "wert": false,
+      "elster_kz": "E0161806",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Sie haben angegeben, dass Sie Angaben für 'PersonA' machen möchten, haben aber außer der Angabe im Feld '$/AgB[1]/Beh_Fk_Pausch[1]/Person[1]$' keine weiteren Angaben getätigt."
+      ]
+    },
+    {
+      "feld_id": "fahrtkosten_pausch_gdb80_oder_70g",
+      "wert": false,
+      "elster_kz": "E0161706",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Sie haben angegeben, dass Sie Angaben für 'PersonA' machen möchten, haben aber außer der Angabe im Feld '$/AgB[1]/Beh_Fk_Pausch[1]/Person[1]$' keine weiteren Angaben getätigt."
+      ]
+    },
+    {
+      "feld_id": "gewst_hebesatz",
+      "wert": 450,
+      "elster_kz": "E0801705",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Der Hebesatz zur Ermittlung der für den Veranlagungszeitraum tatsächlich zu zahlenden Gewerbesteuer wurde angegeben, die zu zahlende Gewerbesteuer jedoch nicht (Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "gewst_messbetrag",
+      "wert": 2024750,
+      "elster_kz": "E0801606",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Der für den Veranlagungszeitraum festzusetzende (anteilige) Gewerbesteuer-Messbetrag im Sinne des § 35 EStG und die darauf entfallende für den Veranlagungszeitraum tatsächlich zu zahlende Gewerbesteuer sind gemeinsam anzugeben (Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "gwg_anschaffungskosten_netto",
+      "wert": 60000,
+      "elster_kz": "E6002301",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "hh_dienstleistung_art",
+      "wert": "Gartenpflege",
+      "elster_kz": "E0107206",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bei den Aufwendungen für sozialversicherungspflichtige Beschäftigungen im Privathaushalt, haushaltsnahe Dienstleistungen, Hilfe im eigenen Haushalt, Pflege- und Betreuungsleistungen im Haushalt müssen Höhe und Art der Aufwendung gemeinsam angegeben werden (1. Angabemöglichkeit)."
+      ]
+    },
+    {
+      "feld_id": "hh_dienstleistung_betrag",
+      "wert": 50000,
+      "elster_kz": "E0107207",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bei den Aufwendungen für sozialversicherungspflichtige Beschäftigungen im Privathaushalt, haushaltsnahe Dienstleistungen, Hilfe im eigenen Haushalt, Pflege- und Betreuungsleistungen im Haushalt müssen Höhe und Art der Aufwendung gemeinsam angegeben werden (1. Angabemöglichkeit)."
+      ]
+    },
+    {
+      "feld_id": "hh_handwerker_art",
+      "wert": "Heizungswartung",
+      "elster_kz": "E0111217",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bei der Steuerermäßigung für Aufwendungen für Handwerkerleistungen im eigenen Haushalt muss für jede Aufwendung die Beschreibung der Handwerkerleistung und die Höhe der in den Rechnungsbeträgen enthaltenen Lohnanteile, Maschinen- und Fahrtkosten sowie die darin enthaltene Umsatzsteuer angegeben werden (1. Aufwendung)."
+      ]
+    },
+    {
+      "feld_id": "hh_handwerker_betrag",
+      "wert": 60000,
+      "elster_kz": "E0111214",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bei der Steuerermäßigung für Aufwendungen für Handwerkerleistungen im eigenen Haushalt muss für jede Aufwendung die Beschreibung der Handwerkerleistung und die Höhe der in den Rechnungsbeträgen enthaltenen Lohnanteile, Maschinen- und Fahrtkosten sowie die darin enthaltene Umsatzsteuer angegeben werden (1. Aufwendung)."
+      ]
+    },
+    {
+      "feld_id": "hh_minijob_art",
+      "wert": "Haushaltshilfe",
+      "elster_kz": "E0104206",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bei den Aufwendungen für geringfügige Beschäftigungen im Privathaushalt -sogenannte Minijobs - müssen Betrag und Art der Aufwendung gemeinsam angegeben werden (1. Erklärungsmöglichkeit)."
+      ]
+    },
+    {
+      "feld_id": "hh_minijob_betrag",
+      "wert": 25000,
+      "elster_kz": "E0104108",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bei den Aufwendungen für geringfügige Beschäftigungen im Privathaushalt -sogenannte Minijobs - müssen Betrag und Art der Aufwendung gemeinsam angegeben werden (1. Erklärungsmöglichkeit)."
+      ]
+    },
+    {
+      "feld_id": "kap_gewinn_aktien",
+      "wert": 0,
+      "elster_kz": "E1900901",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "kap_kapitalertraege",
+      "wert": 300000,
+      "elster_kz": "E1900701",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "kap_q_auslaendische_steuer",
+      "wert": 0,
+      "elster_kz": "E1905101",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Es wurden angerechnete / anrechenbare beziehungsweise fiktive ausländische Steuern erklärt, es wurden jedoch keine Angaben zu Kapitalerträgen getätigt (Anlage KAP beziehungsweise KAP-INV Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "kap_verlust_aktien",
+      "wert": 0,
+      "elster_kz": "E1901301",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "kap_verlust_sonstige",
+      "wert": 0,
+      "elster_kz": "E1901201",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "kind_anderer_elternteil_geburtsdatum",
+      "wert": "01.01.1985",
+      "elster_kz": "E0501104",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_anderer_elternteil_kindschaftsverhaeltnis",
+      "wert": "1",
+      "elster_kz": "E0501106",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind).",
+        "Bitte geben Sie den Namen der anderen Person, zu der ein Kindschaftsverhältnis bestand, die Dauer und die Art dieses Kindschaftsverhältnisses gemeinsam an (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_anderer_elternteil_name",
+      "wert": "Michael Beispiel",
+      "elster_kz": "E0501103",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind).",
+        "Bitte geben Sie den Namen der anderen Person, zu der ein Kindschaftsverhältnis bestand, die Dauer und die Art dieses Kindschaftsverhältnisses gemeinsam an (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_anderer_elternteil_zeitraum",
+      "wert": "01.01-31.12",
+      "elster_kz": "E0501903",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind).",
+        "Bitte geben Sie den Namen der anderen Person, zu der ein Kindschaftsverhältnis bestand, die Dauer und die Art dieses Kindschaftsverhältnisses gemeinsam an (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_betreuung_dienstleister",
+      "wert": "Kindertagesstätte Sonnenschein, Musterstr. 1, 12345 Musterstadt",
+      "elster_kz": "E0506101",
+      "rc": -1,
+      "klasse": "exception",
+      "texte": [
+        "EXCEPTION: XmlFehler(\"Deklaration unvollständig (1 offene Pflichtfelder) — kein Submission-XML. Erste: [{'feld_id': 'kind_betreuung_dienstleister', 'grund': 'Feld nicht in der Bindungstabelle'}]\")"
+      ]
+    },
+    {
+      "feld_id": "kind_betreuung_eigenanteil",
+      "wert": 600000,
+      "elster_kz": "E0506604",
+      "rc": -1,
+      "klasse": "exception",
+      "texte": [
+        "EXCEPTION: XmlFehler(\"Deklaration unvollständig (1 offene Pflichtfelder) — kein Submission-XML. Erste: [{'feld_id': 'kind_betreuung_eigenanteil', 'grund': 'Feld nicht in der Bindungstabelle'}]\")"
+      ]
+    },
+    {
+      "feld_id": "kind_betreuung_haushaltszugehoerigkeit_zeitraum",
+      "wert": "01.01-31.12",
+      "elster_kz": "E0505202",
+      "rc": -1,
+      "klasse": "exception",
+      "texte": [
+        "EXCEPTION: XmlFehler(\"Deklaration unvollständig (1 offene Pflichtfelder) — kein Submission-XML. Erste: [{'feld_id': 'kind_betreuung_haushaltszugehoerigkeit_zeitraum', 'grund': 'Feld nicht in der Bindungstabelle'}]\")"
+      ]
+    },
+    {
+      "feld_id": "kind_betreuung_kein_gemeinsamer_haushalt_zeitraum",
+      "wert": "01.01-31.12",
+      "elster_kz": "E0505201",
+      "rc": -1,
+      "klasse": "exception",
+      "texte": [
+        "EXCEPTION: XmlFehler(\"Deklaration unvollständig (1 offene Pflichtfelder) — kein Submission-XML. Erste: [{'feld_id': 'kind_betreuung_kein_gemeinsamer_haushalt_zeitraum', 'grund': 'Feld nicht in der Bindungstabelle'}]\")"
+      ]
+    },
+    {
+      "feld_id": "kind_betreuung_zeitraum",
+      "wert": "01.01-31.12",
+      "elster_kz": "E0506103",
+      "rc": -1,
+      "klasse": "exception",
+      "texte": [
+        "EXCEPTION: XmlFehler(\"Deklaration unvollständig (1 offene Pflichtfelder) — kein Submission-XML. Erste: [{'feld_id': 'kind_betreuung_zeitraum', 'grund': 'Feld nicht in der Bindungstabelle'}]\")"
+      ]
+    },
+    {
+      "feld_id": "kind_familienkasse",
+      "wert": "Familienkasse Bayern Nord",
+      "elster_kz": "E0500706",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind).",
+        "Der Vorname des Kindes, das Geburtsdatum des Kindes und die für die Kindergeldfestsetzung zuständige Familienkasse wurden nicht gemeinsam angegeben (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_geburtsdatum",
+      "wert": "15.03.2015",
+      "elster_kz": "E0500701",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind).",
+        "Der Vorname des Kindes, das Geburtsdatum des Kindes und die für die Kindergeldfestsetzung zuständige Familienkasse wurden nicht gemeinsam angegeben (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_grad_der_behinderung",
+      "wert": 50,
+      "elster_kz": "E0505809",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_hilflos_blind_taubblind",
+      "wert": false,
+      "elster_kz": "E0505807",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Der Kontext '/Kind[1]/Ueb_PB_Beh_Hbl[1]/Beh[1]/Blind_Hilfl[1]' ist leer."
+      ]
+    },
+    {
+      "feld_id": "kind_hinterbliebenen_uebertragung",
+      "wert": false,
+      "elster_kz": "E0505805",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Der Kontext '/Kind[1]/Ueb_PB_Beh_Hbl[1]/Hbl[1]' ist leer."
+      ]
+    },
+    {
+      "feld_id": "kind_idnr",
+      "wert": "12345678901",
+      "elster_kz": "E0500406",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Feld '$/Kind[1]/Ang_Kind[1]/Allg[1]/E0500406[1]$': Ungültige Identifikationsnummer."
+      ]
+    },
+    {
+      "feld_id": "kind_kindschaftsverh_zeitraum_a",
+      "wert": "01.01-31.12",
+      "elster_kz": "E0500601",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_kindschaftsverh_zeitraum_b",
+      "wert": "01.01-31.12",
+      "elster_kz": "E0500805",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_kindschaftsverhaeltnis_a",
+      "wert": "1",
+      "elster_kz": "E0500807",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind).",
+        "Die Angaben zum Kindschaftsverhältnis sind unvollständig: Es wurde nur ein Kindschaftsverhältnis zur steuerpflichtigen Person / zum Ehemann / zu Person A angegeben. Bitte ergänzen Sie die Angaben zum anderen Elternteil des Kindes (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_kindschaftsverhaeltnis_b",
+      "wert": "1",
+      "elster_kz": "E0500808",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind).",
+        "Es handelt sich um eine Einzelveranlagung, daher sind Angaben zum Kindschaftsverhältnis zur Ehefrau nicht zulässig (1. Anlage Kind).",
+        "Die Angaben zum Kindschaftsverhältnis sind unvollständig: Es wurde nur ein Kindschaftsverhältnis zur Ehefrau / zu Person B angegeben. Bitte ergänzen Sie die Angaben zum anderen Elternteil des Kindes (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_kv",
+      "wert": 300000,
+      "elster_kz": "E0503110",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_pv",
+      "wert": 100000,
+      "elster_kz": "E0503310",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_vorname",
+      "wert": "Anna",
+      "elster_kz": "E0500107",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Für das Kind fehlen im Veranlagungszeitraum Angaben zur Aufenthaltsdauer im In- / Ausland (1. Anlage Kind).",
+        "Der Vorname des Kindes, das Geburtsdatum des Kindes und die für die Kindergeldfestsetzung zuständige Familienkasse wurden nicht gemeinsam angegeben (1. Anlage Kind).",
+        "Der Vorname des Kindes wurde angegeben, die Angaben zum Kindschaftsverhältnis fehlen jedoch (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kind_wohnsitz_inland_zeitraum",
+      "wert": "01.01-31.12",
+      "elster_kz": "E0500703",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kinderbetreuungskosten",
+      "wert": 600000,
+      "elster_kz": "E0506105",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind).",
+        "Die Eltern des Kindes werden nicht zusammen veranlagt. Bitte geben Sie daher auch die Höhe der Kinderbetreuungskosten an, die von der steuerpflichtigen Person selbst getragen wurden (gegebenenfalls \"0\") (1. Anlage Kind).",
+        "Es wurde die Summe der Gesamtaufwendungen der Eltern für Kinderbetreuungskosten angegeben, es fehlen aber die Angaben zu Art der Dienstleistung, Name und Anschrift des Dienstleisters und Zeitraum der Dienstleistung (1. Anlage Kind).",
+        "Für den Abzug von Kinderbetreuungskosten werden auch Angaben zum Haushalt der Elternteile und zur Haushaltszugehörigkeit des Kindes benötigt (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "kirchensteuer_arbeitgeber",
+      "wert": 0,
+      "elster_kz": "E0200501",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "kist_erstattet",
+      "wert": 0,
+      "elster_kz": "E0107602",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "kist_gezahlt",
+      "wert": 60000,
+      "elster_kz": "E0107601",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "kist_konfession",
+      "wert": "roemisch-katholisch",
+      "elster_kz": "E0100402",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Arbeitslohn laut Lohnsteuerbescheinigung(en) Steuerklassen 1 - 5 angegeben, Kirchensteuer jedoch nicht. Gegebenenfalls ist die Kirchensteuer mit dem Wert 0 zu erklären (steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "kist_konfession_partner",
+      "wert": "roemisch-katholisch",
+      "elster_kz": "E0101002",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Vorname, Geburtsdatum und Religionszugehörigkeit wurden nicht alle gleichzeitig angegeben (Ehefrau / Person B)."
+      ]
+    },
+    {
+      "feld_id": "p22_nr3_einkuenfte",
+      "wert": 0,
+      "elster_kz": "E0305301",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bei den Leistungen wurden Einkünfte erklärt, es fehlt jedoch eine Angabe zu den Einnahmen (Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "p32b_progressionseinkuenfte",
+      "wert": 1000000,
+      "elster_kz": "E0104801",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "p33a_unterhalt_aufwendungen",
+      "wert": 1000000,
+      "elster_kz": "E0120103",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Es muss mindestens eine unterstützte Person zum Haushalt beziehungsweise Ort, an dem unterstützte Personen leben, erklärt werden.",
+        "Bei den Angaben zum Unterhalt für bedürftige Personen ist bei jedem Haushalt die Adresse des Haushalts beziehungsweise der Ort zu erklären.",
+        "Bei den Angaben zum Unterhalt für bedürftige Personen muss die Anzahl der Personen, die zum Haushalt gehören, erklärt werden.",
+        "Es wurden Angaben zu den Unterhaltszahlungen getätigt. Bitte geben Sie auch den Unterhaltszeitraum (Unterstützungszeitraum für den die Unterhaltsleistung erfolgte) an.",
+        "Bei den Angaben zum Unterhalt für bedürftige Personen sind die Höhe der Unterhaltszahlung und der Zeitraum für die Zahlung gemeinsam anzugeben (1. Angabemöglichkeit)."
+      ]
+    },
+    {
+      "feld_id": "p33a_unterhalt_kv_pv",
+      "wert": 0,
+      "elster_kz": "E0124401",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Es muss mindestens eine unterstützte Person zum Haushalt beziehungsweise Ort, an dem unterstützte Personen leben, erklärt werden.",
+        "Es wurden in den Unterhaltsaufwendungen enthaltene übernommene Beiträge für eine Basis-Kranken- und Pflege-Pflichtversicherung für die unterhaltene(n) Person(en) angegeben, die Höhe der Unterhaltszahlung(en) wurde jedoch nicht angegeben.",
+        "Bei den Angaben zum Unterhalt für bedürftige Personen ist bei jedem Haushalt die Adresse des Haushalts beziehungsweise der Ort zu erklären.",
+        "Bei den Angaben zum Unterhalt für bedürftige Personen muss die Anzahl der Personen, die zum Haushalt gehören, erklärt werden.",
+        "Für den Haushalt in dem '' lebte, sind Angaben zur Höhe der Unterhaltsleistung(en) und zum Zeitraum der Zahlung(en) erforderlich.",
+        "Es wurden Angaben zu der 1. unterstützten Person getätigt, die Angaben zu Name, Beruf, Familienstand und Geburtsdatum dieser Person sind jedoch unvollständig."
+      ]
+    },
+    {
+      "feld_id": "p35c_energieberater_aufwendungen",
+      "wert": 80000,
+      "elster_kz": "E0242001",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Auf der Anlage Energetische Maßnahmen muss mindestens der Standort des Wohngebäudes / der Eigentumswohnung angegeben werden (1. Anlage Energetische Maßnahmen).",
+        "Bitte geben Sie bei den Aufwendungen für energetische Maßnahmen bei zu eigenen Wohnzwecken genutzten Gebäuden den Herstellungsbeginn des Gebäudes an (1. Anlage Energetische Maßnahmen).",
+        "Bitte geben Sie bei den Aufwendungen für energetische Maßnahmen bei zu eigenen Wohnzwecken genutzten Gebäuden die Gesamtfläche sowie die zu eigenen Wohnzwecken genutzte oder zu Wohnzwecken unentgeltlich an andere Personen überlassene Fläche an (1. Anlage Energetische Maßnahmen).",
+        "Bitte geben Sie auf der Anlage Energetische Maßnahmen an, ob für das Objekt ab dem Jahr 2020 bereits eine Steuerermäßigung für energetische Maßnahmen in Anspruch genommen wurde (1. Anlage Energetische Maßnahmen).",
+        "Bitte geben Sie auf der Anlage Energetische Maßnahmen an, ob für die angegebenen energetischen Maßnahmen eine öffentliche Förderung durch zinsverbilligte Darlehen, steuerfreie Zuschüsse, eine Steuerbegünstigung für Gebäude in Sanierungsgebieten und städtebaulichen Entwicklungsbereichen oder eine Steuerermäßigung für Handwerkerleistungen nach § 35a EStG beantragt oder in Anspruch genommen wurde (1. Anlage Energetische Maßnahmen).",
+        "Bitte geben Sie bei den Aufwendungen für energetische Maßnahmen bei zu eigenen Wohnzwecken genutzten Gebäuden den Baubeginn der energetischen Maßnahme an (1. Anlage Energetische Maßnahmen)."
+      ]
+    },
+    {
+      "feld_id": "p35c_sanierungsaufwendungen",
+      "wert": 3000000,
+      "elster_kz": "E0241901",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Auf der Anlage Energetische Maßnahmen muss mindestens der Standort des Wohngebäudes / der Eigentumswohnung angegeben werden (1. Anlage Energetische Maßnahmen).",
+        "Bitte geben Sie bei den Aufwendungen für energetische Maßnahmen bei zu eigenen Wohnzwecken genutzten Gebäuden den Herstellungsbeginn des Gebäudes an (1. Anlage Energetische Maßnahmen).",
+        "Bitte geben Sie bei den Aufwendungen für energetische Maßnahmen bei zu eigenen Wohnzwecken genutzten Gebäuden die Gesamtfläche sowie die zu eigenen Wohnzwecken genutzte oder zu Wohnzwecken unentgeltlich an andere Personen überlassene Fläche an (1. Anlage Energetische Maßnahmen).",
+        "Bitte geben Sie auf der Anlage Energetische Maßnahmen an, ob für das Objekt ab dem Jahr 2020 bereits eine Steuerermäßigung für energetische Maßnahmen in Anspruch genommen wurde (1. Anlage Energetische Maßnahmen).",
+        "Bitte geben Sie auf der Anlage Energetische Maßnahmen an, ob für die angegebenen energetischen Maßnahmen eine öffentliche Förderung durch zinsverbilligte Darlehen, steuerfreie Zuschüsse, eine Steuerbegünstigung für Gebäude in Sanierungsgebieten und städtebaulichen Entwicklungsbereichen oder eine Steuerermäßigung für Handwerkerleistungen nach § 35a EStG beantragt oder in Anspruch genommen wurde (1. Anlage Energetische Maßnahmen).",
+        "Bitte geben Sie bei den Aufwendungen für energetische Maßnahmen bei zu eigenen Wohnzwecken genutzten Gebäuden den Baubeginn der energetischen Maßnahme an (1. Anlage Energetische Maßnahmen).",
+        "Es wurde die Summe der Aufwendungen für energetische Maßnahmen angegeben aber keine Angaben zu den einzelnen Aufwendungen gemacht (1. Anlage Energetische Maßnahmen)."
+      ]
+    },
+    {
+      "feld_id": "p36_kapitalertragsteuer",
+      "wert": 0,
+      "elster_kz": "E1904701",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Kapitalertragsteuer und / oder Solidaritätszuschlag zur Kapitalertragsteuer laut Bescheinigung(en) eingegeben, es wurden aber keine zugehörigen Kapitalerträge erklärt (Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "p36_kapitalertragsteuer_kist",
+      "wert": 0,
+      "elster_kz": "E1904801",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Es wurde einbehaltene Kirchensteuer zur Kapitalertragsteuer laut Bescheinigung eingegeben, aber keine zugehörige Kapitalertragsteuer (Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "p36_kapitalertragsteuer_solz",
+      "wert": 0,
+      "elster_kz": "E1904901",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Kapitalertragsteuer und / oder Solidaritätszuschlag zur Kapitalertragsteuer laut Bescheinigung(en) eingegeben, es wurden aber keine zugehörigen Kapitalerträge erklärt (Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "p36_lohnsteuer",
+      "wert": 800000,
+      "elster_kz": "E0200301",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "person_b_idnr",
+      "wert": "12345678901",
+      "elster_kz": "E0100082",
+      "rc": 610301106,
+      "klasse": "sonstig",
+      "texte": []
+    },
+    {
+      "feld_id": "realsplitting_empfaenger_kv_pv",
+      "wert": 400000,
+      "elster_kz": "E0300717",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Sie haben Angaben in Zeile 6 zu den in Zeile 5 enthaltenen Beiträgen zur Basis-Kranken- und gesetzlichen Pflegeversicherung laut Anlage U gemacht, jedoch keine Angaben zu Unterhaltsleistungen in Zeile 5 eingetragen. Bitte füllen Sie zusätzlich die Zeile 5 aus.",
+        "Sie haben in der Zeile 6 Angaben zu in Unterhaltsleistungen enthaltenen Basiskranken- und Pflegeversicherungsbeiträgen gemacht. Bitte machen Sie in Zeile 7 zusätzlich Angaben zu den in Zeile 6 enthaltenen Krankenversicherungsbeiträgen mit Anspruch auf Krankengeld laut Anlage U (gegebenenfalls \"0\")."
+      ]
+    },
+    {
+      "feld_id": "realsplitting_unterhaltsleistungen",
+      "wert": 1200000,
+      "elster_kz": "E0304601",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "rentner_gepflegter_hilflos",
+      "wert": false,
+      "elster_kz": "E0161808",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Der Kontext '/AgB[1]/Pflege_PB[1]/Einz[1]/Ang_pflegebeduerft_Pers[1]' ist leer."
+      ]
+    },
+    {
+      "feld_id": "rentner_grad_der_behinderung",
+      "wert": 50,
+      "elster_kz": "E0109708",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "rentner_hilflos_blind_taubblind",
+      "wert": false,
+      "elster_kz": "E0109706",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Der Kontext '/AgB[1]/Beh[1]/Geh_Steh_Blind_Hilfl[1]' ist leer.",
+        "Sie haben angegeben, dass Sie Angaben für 'PersonA' machen möchten, haben aber außer der Angabe im Feld '$/AgB[1]/Beh[1]/Person[1]$' keine weiteren Angaben getätigt."
+      ]
+    },
+    {
+      "feld_id": "rentner_hinterbliebenenbezuege",
+      "wert": false,
+      "elster_kz": "E0109704",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Sie haben angegeben, dass Sie Angaben für 'PersonA' machen möchten, haben aber außer der Angabe im Feld '$/AgB[1]/Hinterbl[1]/Person[1]$' keine weiteren Angaben getätigt."
+      ]
+    },
+    {
+      "feld_id": "rentner_pflegegrad",
+      "wert": 3,
+      "elster_kz": "E0161606",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bitte geben Sie an, ob die pflegebedürftige Person ihren Wohnsitz / gewöhnlichen Aufenthalt im Inland hat (1. Angabemöglichkeit zum Pflegepauschbetrag).",
+        "Sie haben Angaben zum Pflege-Pauschbetrag gemacht, jedoch haben Sie keine Angaben zur Anzahl der weiteren an der Pflege beteiligten Personen gemacht (gegebenenfalls 0)."
+      ]
+    },
+    {
+      "feld_id": "schulgeld",
+      "wert": 300000,
+      "elster_kz": "E0505607",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Tragen Sie bitte den Vornamen des Kindes ein (1. Anlage Kind).",
+        "Die Eltern des Kindes werden nicht zusammen veranlagt. Bitte geben Sie daher auch die Höhe des Schulgeldes an, das von der steuerpflichtigen Person selbst getragen wurde (gegebenenfalls \"0\") (1. Anlage Kind).",
+        "Bei den Angaben zum Schulgeld wurde die Summe der Aufwendungen angegeben, die einzelnen Aufwendungen wurden jedoch nicht erklärt (1. Anlage Kind)."
+      ]
+    },
+    {
+      "feld_id": "sonstige_betriebsausgaben",
+      "wert": 3000000,
+      "elster_kz": "E6004901",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "spenden_betrag",
+      "wert": 30000,
+      "elster_kz": "E0108405",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bitte geben Sie an, in welcher Höhe die 2025 geleisteten Spenden in den Vermögensstock einer Stiftung im Veranlagungszeitraum 2025 berücksichtigt werden sollen (Steuerpflichtige Person / Ehemann / Person A)."
+      ]
+    },
+    {
+      "feld_id": "stammdaten_bic",
+      "wert": "PBNKDEFF370",
+      "elster_kz": "E0102201",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Bei der Angabe der Bankverbindung im SEPA-Format ist die Angabe der IBAN erforderlich. Bei Angabe einer IBAN aus Albanien, Moldawien (Republik Moldau), Monaco, Montenegro, Nordmazedonien, San Marino oder der Schweiz ist zudem die Angabe des BIC erforderlich.",
+        "Bei den Bankverbindungsdaten fehlt die Angabe des Kontoinhabers.",
+        "Es wurde angegeben, dass keine Bankverbindung vorhanden ist, es wurden aber gleichzeitig Angaben zu einer Bankverbindung getätigt.",
+        "Es wurde der BIC eines ausländischen Geldinstitutes angegeben, der jedoch an den Stellen 5 und 6 \"DE\" enthält."
+      ]
+    },
+    {
+      "feld_id": "stammdaten_geburtsdatum",
+      "wert": "05.05.1955",
+      "elster_kz": "E0100401",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "stammdaten_geburtsdatum_partner",
+      "wert": "09.07.1988",
+      "elster_kz": "E0101001",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Vorname, Geburtsdatum und Religionszugehörigkeit wurden nicht alle gleichzeitig angegeben (Ehefrau / Person B)."
+      ]
+    },
+    {
+      "feld_id": "stammdaten_hausnummer",
+      "wert": "55",
+      "elster_kz": "E0101206",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "stammdaten_keine_bankverbindung",
+      "wert": true,
+      "elster_kz": "E0102002",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "stammdaten_nachname",
+      "wert": "Maier",
+      "elster_kz": "E0100201",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "stammdaten_nachname_partner",
+      "wert": "Maier",
+      "elster_kz": "E0100901",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Es wurde der Nachname, Titel oder Beruf angegeben ohne gleichzeitige Angabe von Vorname, Geburtsdatum und Religion (Ehefrau / Person B)."
+      ]
+    },
+    {
+      "feld_id": "stammdaten_plz",
+      "wert": "55555",
+      "elster_kz": "E0100601",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "stammdaten_strasse",
+      "wert": "Musterstr.",
+      "elster_kz": "E0101104",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "stammdaten_vorname",
+      "wert": "Hans",
+      "elster_kz": "E0100301",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "stammdaten_vorname_partner",
+      "wert": "Carolina",
+      "elster_kz": "E0100801",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Vorname, Geburtsdatum und Religionszugehörigkeit wurden nicht alle gleichzeitig angegeben (Ehefrau / Person B)."
+      ]
+    },
+    {
+      "feld_id": "stammdaten_wohnort",
+      "wert": "Musterort",
+      "elster_kz": "E0100602",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "steuerklasse",
+      "wert": "1",
+      "elster_kz": "E0200002",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "tage_24h",
+      "wert": 0,
+      "elster_kz": "E0205409",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Der im Feld '$/N[1]/Wk[1]/VMA[1]/Inl[1]/E0205409[1]$' eingegebene Wert muss größer als 0 sein."
+      ]
+    },
+    {
+      "feld_id": "tage_an_abreise",
+      "wert": 0,
+      "elster_kz": "E0205302",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Der im Feld '$/N[1]/Wk[1]/VMA[1]/Inl[1]/E0205302[1]$' eingegebene Wert muss größer als 0 sein."
+      ]
+    },
+    {
+      "feld_id": "tage_ueber_8h_eintaegig",
+      "wert": 0,
+      "elster_kz": "E0205201",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "Der im Feld '$/N[1]/Wk[1]/VMA[1]/Inl[1]/E0205201[1]$' eingegebene Wert muss größer als 0 sein."
+      ]
+    },
+    {
+      "feld_id": "vor_ag_anteil_rv",
+      "wert": 372000,
+      "elster_kz": "E2000801",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "vor_an_anteil_rv",
+      "wert": 372000,
+      "elster_kz": "E2000401",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "vor_rv_ausserhalb_lstb",
+      "wert": 0,
+      "elster_kz": "E2000601",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "vorsorge_arbeitslosenversicherung",
+      "wert": 50000,
+      "elster_kz": "E2001403",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "vorsorge_erwerbsunfaehigkeit",
+      "wert": 30000,
+      "elster_kz": "E2001503",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "vorsorge_rv_alt_mit_ueberschuss",
+      "wert": 40000,
+      "elster_kz": "E2001903",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "vorsorge_rv_alt_ohne_ueberschuss",
+      "wert": 30000,
+      "elster_kz": "E2002003",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "vorsorge_unfall_haftpflicht",
+      "wert": 20000,
+      "elster_kz": "E2001803",
+      "rc": 0,
+      "klasse": "plausibel",
+      "texte": []
+    },
+    {
+      "feld_id": "vv_einnahmen",
+      "wert": 1200000,
+      "elster_kz": "E0700201",
+      "rc": 610001002,
+      "klasse": "plausibilitaet_fehler",
+      "texte": [
+        "'$/V[1]/Laufende_Nummer_V[1]$': Das Feld muss angegeben werden.",
+        "Auf der Anlage V muss mindestens die Lage des Grundstücks / der Eigentumswohnung angegeben werden (1. Anlage V).",
+        "Bei den Einnahmen aus dem bebauten Grundstück wurden Mieteinnahmen angegeben, es wurden jedoch keine Angaben zu den umgelegten Neben- / Betriebskosten gemacht beziehungsweise nicht erklärt, dass diese nicht gesondert vereinbart wurden (1. Anlage V).",
+        "Es wurden Mieteinnahmen für Wohnungen aus den einzelnen Wohneinheiten angegeben, die Summe der Mieteinnahmen für Wohnungen wurde jedoch nicht erklärt (1. Anlage V).",
+        "Bei den Mieteinnahmen für Wohnungen wurden die Bezeichnung der Wohneinheit und der zugehörige Betrag nicht gemeinsam angegeben (1. Angabemöglichkeit, 1. Anlage V)."
+      ]
+    }
+  ]
+}
