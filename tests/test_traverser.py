@@ -254,3 +254,48 @@ def test_relevanz_p35a_mutation_mit_geltungsbedingung(bindung):
     rel = T.relevanz(s, b2)
     assert rel["p35a_2_3_haushaltsnahe"]["status"] == "ausgeschlossen", (
         "Gegenprobe fehlgeschlagen: mit geltungsbedingung müsste die Regel ausschließbar sein")
+
+
+# ---- dba_mehrere_staaten: Screening-Flag, kein Gate (Screening-Sweep 2026-08-12) -----
+#
+# dba_mehrere_staaten hing über geltungsbedingung: per_country_ein_staat an relevanz(). Anders
+# als bei p35a_mitveranlagung existiert per_country_ein_staat WIRKLICH in rules.yaml
+# (geltungsbedingungen von p34c_1_anrechnung_hoechstbetrag, § 34c Abs. 1 S. 1 EStG) — der
+# Bedingungsname ist korrekt. Der Fehler liegt im MECHANISMUS: relevanz() schließt die Regel
+# aus, sobald das Gate-Feld bestätigt False ist. dba_mehrere_staaten=False bedeutet "nur EIN
+# Staat" — das ist der Normalfall UND der eligible Fall (matched per_country_ein_staat) —
+# trotzdem schloss die Bindung die GESAMTE Regel für genau diese Antwort aus. Die einzige
+# tatsächlich nötige Sperre (mehrere Staaten -> Stufe-1 reicht nicht) existiert unabhängig davon
+# bereits fail-closed in produkt/haut/api.py als eigener Sperrgrund "dba_multi_country_offen"
+# (liest dba_mehrere_staaten direkt, unverändert von diesem Fix). Der True-Zweig war vom
+# relevanz()-Gate nie betroffen (das gated nur auf False) — die Bindung entfernt also nur die
+# fälschliche Exklusion des Normalfalls, ändert am Multi-Country-Schutz nichts.
+
+def test_dba_mehrere_staaten_ist_kein_gate(bindung):
+    assert "geltungsbedingung" not in bindung["dba_mehrere_staaten"]["quelle"]
+
+
+def test_relevanz_p34c_normalfall_bleibt_relevant(bindung):
+    """Normalfall: Nutzer hat ausländische Einkünfte aus genau einem Staat (Antwort 'Nein' auf
+    'mehrere Staaten?'). Die Regel darf NICHT ausgeschlossen werden — sonst wird die
+    DBA-Anrechnung dem häufigsten Fall nie angeboten."""
+    s = ST.leerer_store(2025)
+    _bestaetigt(s, "dba_mehrere_staaten", False)
+    rel = T.relevanz(s, bindung)
+    assert rel["p34c_1_anrechnung_hoechstbetrag"]["status"] != "ausgeschlossen"
+    fragen = T.naechste_fragen(s, bindung)
+    p34c_felder = [f for f in fragen if bindung[f]["quelle"]["regel_id"] == "p34c_1_anrechnung_hoechstbetrag"]
+    assert p34c_felder, "§34c-Folgefragen fehlen trotz Normalfall-Antwort (nur ein Staat)"
+
+
+def test_relevanz_p34c_mutation_mit_geltungsbedingung(bindung):
+    """Gegenprobe: MIT der (falschen, aber namentlich echten) geltungsbedingung wäre die Regel
+    bei der Normalfall-Antwort ausgeschlossen gewesen."""
+    b2 = {k: (dict(v, quelle=dict(v["quelle"])) if k == "dba_mehrere_staaten" else v)
+          for k, v in bindung.items()}
+    b2["dba_mehrere_staaten"]["quelle"]["geltungsbedingung"] = "per_country_ein_staat"
+    s = ST.leerer_store(2025)
+    _bestaetigt(s, "dba_mehrere_staaten", False)
+    rel = T.relevanz(s, b2)
+    assert rel["p34c_1_anrechnung_hoechstbetrag"]["status"] == "ausgeschlossen", (
+        "Gegenprobe fehlgeschlagen: mit geltungsbedingung müsste die Regel ausschließbar sein")

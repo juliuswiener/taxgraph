@@ -67,7 +67,7 @@ bindungen:
       zitatanker: "Einkünfte, die nach Artikel 11 Absatz 2, Artikel 12"
       datei: "sources/dba/dba_pl_abkommen_2003.txt"
   - feld_id: dba_mehrere_staaten
-    quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, geltungsbedingung: per_country_ein_staat}
+    quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, signatur_slot: mehrere_staaten}
     typ: bool
     einheit: null
     askable: true

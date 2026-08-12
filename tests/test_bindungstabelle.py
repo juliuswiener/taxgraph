@@ -1086,6 +1086,20 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     # wurde. Fix: signatur_slot statt geltungsbedingung — dieselbe Ground-Truth-Luecke wie bei
     # p9_4a/p7_1 oben, kein neuer Bug, nur derselbe dokumentierte Nicht-Signatur-Fall.
     ("sonder_agb_35a", "p35a_mitveranlagung", "p35a_2_3_haushaltsnahe", "mitveranlagung"),
+    # bindung_p34c_gesamt.yaml — p34c_1_anrechnung_hoechstbetrag: dba_mehrere_staaten ist ein
+    # Screening-/Routing-Flag (elster_kz_grund: "Bestaetigt true -> dba_multi_country_offen
+    # (fail-closed)", produkt/haut/api.py), kein Input der Catala-Signatur (die kennt nur die
+    # 4 Money-Inputs gezahlte_auslaendische_steuer/deutsche_est_inkl_ausl/zu_versteuerndes_
+    # einkommen/auslaendische_einkuenfte_staat). Bis 2026-08-12 stand das Feld als
+    # geltungsbedingung: per_country_ein_staat an derselben Bindung — der Bedingungsname
+    # existiert echt in rules.yaml (anders als bei p35a oben), aber die Kopplung war trotzdem
+    # falsch: relevanz() schliesst die Regel bei bestaetigt False aus, und False (nur EIN Staat)
+    # ist hier der Normalfall/Eligible-Fall — die DBA-Anrechnung wurde dem haeufigsten Nutzer
+    # nie angeboten (s. reports/adjudikation/gate_screening_polaritaet_2026-08-12.md). Der
+    # fail-closed-Schutz fuer den True-Fall (mehrere Staaten) laeuft unveraendert ueber den
+    # separaten dba_multi_country_offen-Sperrgrund in api.py, der von dieser Bindung nicht
+    # beruehrt wird. Fix: signatur_slot statt geltungsbedingung.
+    ("p34c_gesamt", "dba_mehrere_staaten", "p34c_1_anrechnung_hoechstbetrag", "mehrere_staaten"),
 }
 
 
