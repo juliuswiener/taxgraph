@@ -213,3 +213,44 @@ def test_guenstiger_anker_verifiziert(guenstiger):
         pfad = os.path.join(ROOT, a["datei"])
         norm = _normalize(open(pfad, encoding="utf-8").read())
         assert _normalize(a["zitatanker"]) in norm, f"{g['regel_id']}: Günstiger-Anker nicht in Quelle"
+
+
+# ---- p35a_mitveranlagung: Slot, kein Gate (Screening-Sweep 2026-08-12) ----------
+#
+# p35a_mitveranlagung hing ueber geltungsbedingung: mitveranlagung_faktor an relevanz().
+# "mitveranlagung_faktor" existiert nirgends in rules.yaml als bedingung — die Bindung war keine
+# Ob-Bedingung, sondern eine reine Slot-Frage: golden/runner.py catala_p35a_haushaltsnahe() liest
+# p35a_mitveranlagung direkt als Halbierungsfaktor, nicht als Eligibility-Check. Der Normalfall
+# (Antwort "Nein") schloss dadurch die GESAMTE Regel p35a_2_3_haushaltsnahe aus — die
+# haushaltsnahen Leistungen wurden nie erfragt, § 35a faktisch nie beantragt (over-tax). Fix:
+# geltungsbedingung entfernt (produkt/bindung/bindung_sonder_agb_35a.yaml).
+
+def test_p35a_mitveranlagung_ist_kein_gate(bindung):
+    assert "geltungsbedingung" not in bindung["p35a_mitveranlagung"]["quelle"]
+
+
+def test_relevanz_p35a_normalfall_bleibt_relevant(bindung):
+    """Normalfall: Nutzer beantwortet die Mitveranlagungs-Frage mit 'Nein' (häufigster Fall).
+    Die Regel darf NICHT ausgeschlossen werden — sonst verschwinden alle Fragen zu
+    Handwerkerleistungen/Dienstleistungen und § 35a wird faktisch nie beantragt."""
+    s = ST.leerer_store(2025)
+    _bestaetigt(s, "p35a_mitveranlagung", False)
+    rel = T.relevanz(s, bindung)
+    assert rel["p35a_2_3_haushaltsnahe"]["status"] != "ausgeschlossen"
+    fragen = T.naechste_fragen(s, bindung)
+    p35a_felder = [f for f in fragen if bindung[f]["quelle"]["regel_id"] == "p35a_2_3_haushaltsnahe"]
+    assert p35a_felder, "§35a-Folgefragen fehlen trotz Normalfall-Antwort"
+
+
+def test_relevanz_p35a_mutation_mit_geltungsbedingung(bindung):
+    """Gegenprobe: MIT der (falschen) geltungsbedingung wäre die Regel bei der Normalfall-Antwort
+    ausgeschlossen gewesen — das ist exakt der gefundene Bug. Beweist, dass der obige Test nicht
+    vakuos grün ist, sondern die entfernte geltungsbedingung wirklich der Grund war."""
+    b2 = {k: (dict(v, quelle=dict(v["quelle"])) if k == "p35a_mitveranlagung" else v)
+          for k, v in bindung.items()}
+    b2["p35a_mitveranlagung"]["quelle"]["geltungsbedingung"] = "mitveranlagung_faktor"
+    s = ST.leerer_store(2025)
+    _bestaetigt(s, "p35a_mitveranlagung", False)
+    rel = T.relevanz(s, b2)
+    assert rel["p35a_2_3_haushaltsnahe"]["status"] == "ausgeschlossen", (
+        "Gegenprobe fehlgeschlagen: mit geltungsbedingung müsste die Regel ausschließbar sein")

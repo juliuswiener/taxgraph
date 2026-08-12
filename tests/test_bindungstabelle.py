@@ -1045,8 +1045,6 @@ GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
     ("rentner", "rentner_alter_bei_rentenbeginn", "p22_1_leibrente_besteuerungsanteil", "ertragsanteil_alter_bei_rentenbeginn"),
     ("rentner", "rentner_rentenfreibetrag", "p22_1_leibrente_besteuerungsanteil", "rentenfreibetrag_fixierung_folgejahr"),
     ("rentner", "rentner_veraeusserungs_betriebsart", "p16_4_freibetrag", "veraeusserungs_betriebsart_weiche"),
-    # bindung_sonder_agb_35a.yaml — p35a_2_3_haushaltsnahe
-    ("sonder_agb_35a", "p35a_mitveranlagung", "p35a_2_3_haushaltsnahe", "mitveranlagung_faktor"),
     # bindung_p10_1_9_schulgeld_gesamt.yaml / bindung_p33_2a_fahrtkostenpauschale.yaml — beide Regeln
     # haben ihre Ground Truth in golden/runner.py (RUNNER_ACCESSOR_FUER_REGEL, 2026-08-07 angebunden),
     # kein rules.yaml-Eintrag → keine geltungsbedingungen-Liste (gbs=set()). Die drei geltungsbedingung-
@@ -1076,6 +1074,18 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     # bindung_n_vor_gwg.yaml — p7_1_lineare_afa (AfA-Slots)
     ("n_vor_gwg", "arbeitsmittel_nutzungsdauer", "p7_1_lineare_afa", "nutzungsdauer"),
     ("n_vor_gwg", "am_anschaffung_monat", "p7_1_lineare_afa", "anschaffung_monat"),
+    # bindung_sonder_agb_35a.yaml — p35a_2_3_haushaltsnahe: mitveranlagung (§ 35a Abs. 5 Satz 4
+    # EStG, Höchstbetrags-Halbierung bei zwei Alleinstehenden im gemeinsamen Haushalt) ist KEIN
+    # Input der rules.yaml-signature (die kennt nur minijob_aufwendungen/haushaltsnahe_
+    # dienstleistungen/handwerker_arbeitskosten) — golden/runner.py.catala_p35a_haushaltsnahe()
+    # wendet die Halbierung als Nachbearbeitung NACH dem Scope-Ergebnis an (Zeile ~430), nicht als
+    # Scope-Eingabe. Bis 2026-08-12 stand das Feld faelschlich als geltungsbedingung:
+    # mitveranlagung_faktor an derselben Bindung (Screening-Fund, s. reports/adjudikation/
+    # gate_screening_polaritaet_2026-08-12.md) — ein erfundener Bedingungsname, der relevanz()
+    # die GESAMTE Regel ausschliessen liess, sobald der Normalfall (Antwort "Nein") bestaetigt
+    # wurde. Fix: signatur_slot statt geltungsbedingung — dieselbe Ground-Truth-Luecke wie bei
+    # p9_4a/p7_1 oben, kein neuer Bug, nur derselbe dokumentierte Nicht-Signatur-Fall.
+    ("sonder_agb_35a", "p35a_mitveranlagung", "p35a_2_3_haushaltsnahe", "mitveranlagung"),
 }
 
 

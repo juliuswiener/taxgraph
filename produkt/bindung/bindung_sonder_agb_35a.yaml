@@ -379,7 +379,7 @@ bindungen:
       zitatanker: "für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: p35a_mitveranlagung
-    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: mitveranlagung_faktor}
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: mitveranlagung}
     typ: bool
     einheit: null
     askable: true
