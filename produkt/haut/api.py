@@ -322,8 +322,7 @@ def _oepnv_eur(slots: dict) -> int:
 
 
 def _shared_steuer_sonder_agb(g_dict, gde, ausserg, veranlagung,
-                              f_dict, kinderbetreuung_fn, schulgeld_fn,
-                              vz: int, store, bindung: dict, nur_bestaetigt: bool):
+                              f_dict, vz: int, store, bindung: dict, nur_bestaetigt: bool):
     """Füllt g_dict: steuerermaessigungen, sonderausgaben, aussergewoehnliche_belastungen.
 
     Aus _bescheid_fn herausgezogen (Refactor 2026-08-13, Schritt 5). vz/store/bindung/
@@ -388,8 +387,8 @@ def _shared_steuer_sonder_agb(g_dict, gde, ausserg, veranlagung,
                             + _kind_kv_pv_summe(store, bindung, nur_bestaetigt)) // 100,
             "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung") + _c("vorsorge_erwerbsunfaehigkeit") + _c("vorsorge_unfall_haftpflicht") + _c("vorsorge_rv_alt_mit_ueberschuss") + _c("vorsorge_rv_alt_ohne_ueberschuss")) // 100,
             "mit_anspruch_auf_zuschuss": f_dict.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
-        + kinderbetreuung_fn()
-        + schulgeld_fn()
+        + _kinderbetreuung_summe(store, bindung, nur_bestaetigt, vz)
+        + _schulgeld_summe(store, bindung, nur_bestaetigt, vz, f_dict)
         + (runner.catala_p10_1a_realsplitting({
             "unterhaltsleistungen": _c("realsplitting_unterhaltsleistungen") // 100,
             "kv_pv_beitraege": _c("realsplitting_empfaenger_kv_pv") // 100})
@@ -524,6 +523,57 @@ def _kind_kv_pv_summe(store, bindung: dict, nur_bestaetigt: bool) -> int:
             pv = inst["felder"].get("kind_pv", {}).get("wert")
             if isinstance(pv, (int, float)) and not isinstance(pv, bool) and pv > 0:
                 total += int(pv)
+    return total
+
+
+def _kinderbetreuung_summe(store, bindung: dict, nur_bestaetigt: bool, vz: int) -> int:
+    """Per-Kind-Summe §10 Abs.1 Nr.5 via EM.instanzen. Keine Gleichverteilung mehr.
+    (2026-08-06 Fix: 2 Kinder/10000€ → 6400€ statt 8000€.)
+    Voraussetzung kind_unter_14_haushaltszugehoerig (S.1, Geltungsbedingung in
+    rules.yaml/p10_1_5_kinderbetreuung, bislang unbewacht): bei fehlender/verneinter
+    Bestaetigung wird das Kind NICHT eingerechnet (over-tax-safe, kein Abzug ohne
+    Altersnachweis). 2026-08-11 Fix: vorher summierte diese Funktion JEDES Kind ohne
+    Alters-/Behinderungspruefung.
+
+    Zusammengeführt 2026-08-13: gesamt- und rentner-Zweig hielten je eine eigene Kopie mit
+    identischem Rumpf. Das Qualifikationsgate oben musste deshalb am 2026-08-11 zweimal
+    eingebaut werden — genau die Doppel-Bug-Klasse, die diese Zusammenführung beendet."""
+    import runner
+    if store is None:
+        return 0
+    total = 0
+    for inst in EM.instanzen(store, bindung, "kind"):
+        if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
+            qualifiziert = inst["felder"].get("kind_unter_14_haushaltszugehoerig", {}).get("wert")
+            if qualifiziert is not True:
+                continue
+            aufw = inst["felder"].get("kinderbetreuungskosten", {}).get("wert")
+            if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
+                total += runner.catala_p10_1_5_kinderbetreuung({
+                    "aufwendungen": int(aufw) // 100,
+                    "veranlagungszeitraum": vz})
+    return total
+
+
+def _schulgeld_summe(store, bindung: dict, nur_bestaetigt: bool, vz: int, f: dict) -> int:
+    """Per-Kind-Summe §10 Abs.1 Nr.9 via EM.instanzen (Ring-Lese-Naht wie Nr.5).
+    ANNAHME: bei Einzelveranlagung 2.500€ je Kind (hb aus params), bei Zusammenveranlagung
+    5.000€ je Kind (Accessor-splitting). Aufteilung bei getrennter Veranlagung (Kz E0504603)
+    wird NICHT ausgewertet — Begründung im Accessor-Docstring.
+
+    Zusammengeführt 2026-08-13 (s. _kinderbetreuung_summe). `f` nur für die Veranlagungsart."""
+    import runner
+    if store is None:
+        return 0
+    total = 0
+    splitting = f.get("veranlagung", {}).get("wert") == "zusammen"
+    for inst in EM.instanzen(store, bindung, "kind"):
+        if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
+            aufw = inst["felder"].get("schulgeld", {}).get("wert")
+            if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
+                total += runner.catala_p10_1_9_schulgeld({
+                    "aufwendungen": int(aufw) // 100,
+                    "veranlagungszeitraum": vz, "splitting": splitting})
     return total
 
 
@@ -777,47 +827,6 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
     def _c(fid):
         v = f.get(fid, {}).get("wert")
         return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
-
-    def _kinderbetreuung_summe() -> int:
-        """Per-Kind-Summe §10 Abs.1 Nr.5 via EM.instanzen. Keine Gleichverteilung mehr.
-        (2026-08-06 Fix: 2 Kinder/10000€ → 6400€ statt 8000€.)
-        Voraussetzung kind_unter_14_haushaltszugehoerig (S.1, Geltungsbedingung in
-        rules.yaml/p10_1_5_kinderbetreuung, bislang unbewacht): bei fehlender/verneinter
-        Bestaetigung wird das Kind NICHT eingerechnet (over-tax-safe, kein Abzug ohne
-        Altersnachweis). 2026-08-11 Fix: vorher summierte diese Funktion JEDES Kind ohne
-        Alters-/Behinderungspruefung."""
-        if store is None:
-            return 0
-        total = 0
-        for inst in EM.instanzen(store, bindung, "kind"):
-            if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
-                qualifiziert = inst["felder"].get("kind_unter_14_haushaltszugehoerig", {}).get("wert")
-                if qualifiziert is not True:
-                    continue
-                aufw = inst["felder"].get("kinderbetreuungskosten", {}).get("wert")
-                if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
-                    total += runner.catala_p10_1_5_kinderbetreuung({
-                        "aufwendungen": int(aufw) // 100,
-                        "veranlagungszeitraum": vz})
-        return total
-
-    def _schulgeld_summe() -> int:
-        """Per-Kind-Summe §10 Abs.1 Nr.9 via EM.instanzen (Ring-Lese-Naht wie Nr.5).
-        ANNAHME: bei Einzelveranlagung 2.500€ je Kind (hb aus params), bei Zusammenveranlagung
-        5.000€ je Kind (Accessor-splitting). Aufteilung bei getrennter Veranlagung (Kz E0504603)
-        wird NICHT ausgewertet — Begründung im Accessor-Docstring."""
-        if store is None:
-            return 0
-        total = 0
-        splitting = f.get("veranlagung", {}).get("wert") == "zusammen"
-        for inst in EM.instanzen(store, bindung, "kind"):
-            if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
-                aufw = inst["felder"].get("schulgeld", {}).get("wert")
-                if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
-                    total += runner.catala_p10_1_9_schulgeld({
-                        "aufwendungen": int(aufw) // 100,
-                        "veranlagungszeitraum": vz, "splitting": splitting})
-        return total
 
     def _vv_objekt(fi: dict) -> int:
         # § 21 Überschuss EINES Objekts (Einnahmen − Werbungskosten), Naht-CENT -> EURO. KEIN per-
@@ -1141,8 +1150,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
                 "ist_hilflos_blind_taubblind": f.get("rentner_hilflos_blind_taubblind_partner", {}).get("wert") is True})
         # Abzüge §35a/§35c + Sonderausgaben + agB (via _shared)
         _shared_steuer_sonder_agb(g, gde, ausserg, g["veranlagung"],
-                                  f, _kinderbetreuung_summe, _schulgeld_summe,
-                                  vz, store, bindung, nur_bestaetigt)
+                                  f, vz, store, bindung, nur_bestaetigt)
         # Kapital § 20/§ 32d: SINGLE-SOURCE (Instructor-Q1) — E1900701-Aggregat XOR Verlust-Töpfe;
         # Co-Okkurrenz sperrt der Guard (kapital_semantik_offen). Töpfe (§ 20 Abs. 6, per-Topf-Floor)
         # → verrechnete; sonst das Aggregat. Dann Sparer-PB (§ 20 Abs. 9). kapitaleinkuenfte ist UNABHÄNGIG
@@ -1461,42 +1469,6 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
             "rentenfreibetrag": (rf // 100 if isinstance(rf, (int, float))
                                  and not isinstance(rf, bool) else None)})
 
-    def _kinderbetreuung_summe() -> int:
-        """Per-Kind-Summe §10 Abs.1 Nr.5 — rentner-Zweig (eigene Closure).
-        Voraussetzung kind_unter_14_haushaltszugehoerig (S.1, s. gesamt-Zweig): bei
-        fehlender/verneinter Bestaetigung wird das Kind NICHT eingerechnet
-        (over-tax-safe). 2026-08-11 Fix: vorher summierte diese Funktion JEDES Kind ohne
-        Alters-/Behinderungspruefung."""
-        if store is None:
-            return 0
-        total = 0
-        for inst in EM.instanzen(store, bindung, "kind"):
-            if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
-                qualifiziert = inst["felder"].get("kind_unter_14_haushaltszugehoerig", {}).get("wert")
-                if qualifiziert is not True:
-                    continue
-                aufw = inst["felder"].get("kinderbetreuungskosten", {}).get("wert")
-                if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
-                    total += runner.catala_p10_1_5_kinderbetreuung({
-                        "aufwendungen": int(aufw) // 100,
-                        "veranlagungszeitraum": vz})
-        return total
-
-    def _schulgeld_summe() -> int:
-        """Per-Kind-Summe §10 Abs.1 Nr.9 — rentner-Zweig (eigene Closure, 1:1 gesamt-Pattern)."""
-        if store is None:
-            return 0
-        total = 0
-        splitting = f.get("veranlagung", {}).get("wert") == "zusammen"
-        for inst in EM.instanzen(store, bindung, "kind"):
-            if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
-                aufw = inst["felder"].get("schulgeld", {}).get("wert")
-                if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
-                    total += runner.catala_p10_1_9_schulgeld({
-                        "aufwendungen": int(aufw) // 100,
-                        "veranlagungszeitraum": vz, "splitting": splitting})
-        return total
-
     # Keine rentner-eigenen shared-Funktionen nötig — _shared_steuer_sonder_agb
     # und _shared_dba_sonstige im Hauptscope werden mit den rentner-Closures aufgerufen.
 
@@ -1669,8 +1641,7 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
             rentner_g["vorsorge_ag_anteil_steuerfrei"] += _c("vor_ag_anteil_rv_partner") // 100
         # Abzüge §35a/§35c + Sonderausgaben + agB (via _shared, 1:1 gesamt-Präzedenz)
         _shared_steuer_sonder_agb(rentner_g, gde, ausserg, rentner_g["veranlagung"],
-                                  f, _kinderbetreuung_summe, _schulgeld_summe,
-                                  vz, store, bindung, nur_bestaetigt)
+                                  f, vz, store, bindung, nur_bestaetigt)
         # § 35 GewSt-Anrechnung Basiswerte (freibetrag-unabhängig — Zähler/Nenner hängen nicht vom § 31-Zweig
         # ab, nur die tarifliche_est im Deckel-3 unten). Zähler = laufender Gewerbe-Gewinn (NUR betriebsart=
         # gewerbe, § 16-vg-netto RAUS § 7 S. 2 GewStG). Nenner = renten (§ 22 IM Nenner — echt hier, anders als
