@@ -1354,8 +1354,39 @@ abgabe:
       _bescheid_fn-Refactor (api-py-datei-split).
 
   - id: traverser-ring-kegel-relevanz-naht
-    titel: "Kegel verlangt Werte fuer Regeln, die relevanz() bereits legitim ausgeschlossen hat — 11 Faelle"
-    status: analysiert
+    titel: "Kegel verlangt Werte fuer Regeln, die relevanz() bereits legitim ausgeschlossen hat"
+    status: erledigt
+    erledigt: |
+      2026-08-13, nach dem _bescheid_fn-Refactor (der blockierte). Strukturell wie unter
+      fix_richtung beschrieben, NICHT als Einzelfallliste:
+
+        _relevante_kegel_felder(scheibe_felder, bindung, store)   (produkt/haut/api.py)
+
+      streicht aus dem Pflicht-Kegel jedes Feld, dessen regel_id laut traverser.relevanz()
+      "ausgeschlossen" ist. Benutzt an ZWEI Stellen — im Meet von _feste_zahl und in der
+      offen-Liste von ergebnis(). Die zweite ist nicht kosmetisch: ohne sie zeigte die API
+      weiter auf eine Frage, die der Traverser gar nicht mehr stellt.
+
+      Fail-closed an beiden Enden erhalten: relevanz() schliesst nur bei BESTAETIGTEM False
+      aus (unbeantwortet/vorlaeufig nicht), und ohne store wird gar nichts ausgeschlossen
+      (Alt-Aufrufer, Teil-Ringe sehen den vollen Kegel wie bisher).
+
+      Tests: tests/test_kegel_relevanz_naht.py, vier Stueck, gegen die drei Richtungen, in
+      die der Fix falsch laufen kann — (1) wirkt nicht, (2) wirkt zu frueh = fail-open,
+      (3) sprengt die slot_fn. Der Kern-Test war vor dem Fix rot, der fail-open-Gegentest
+      gruen. Suite 1903.
+
+      KORREKTUR DER ZAHL "11" im Titel/messung unten: die haengt vollstaendig an der
+      Definition von "harmlos" und ist mit drei Kriterien dreimal anders herausgekommen —
+      7, 11 oder 23 (bzw. 37, wenn man Enum-Gates mitzaehlt, was falsch ist: relevanz()
+      schliesst nur bei `wert is False` aus, ein Enum wie versicherungsart kann das nie).
+      Der Streit liegt bei den Gate-Feldern selbst: relevanz() bricht beim ERSTEN False ab
+      (traverser.py:118-124), also bleiben bei einer Regel mit mehreren Gates die uebrigen
+      unbeantwortet und im Kegel haengen — sie sind NICHT harmlos, anders als unten
+      behauptet. Nur ein Gate, das das EINZIGE seiner Regel ist, ist beim Ausschluss
+      zwangslaeufig selbst beantwortet.
+      Fuer den Fix ist die Zahl egal — er behandelt jedes ausgeschlossene Kegel-Feld gleich.
+      Sie steht hier nur, damit niemand die 11 fuer gemessen haelt und darauf aufbaut.
     richtung: "ABGABE-BLOCKER fuer den Zielfall (Scheibe gesamt) — kein Geldfehler"
     entdeckt: |
       2026-08-12, als Fund des Dialog-Durchstichs (ratsche-misst-nicht-den-nutzerpfad):

@@ -1826,6 +1826,34 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
     return None     # kein exponierter Accessor -> ehrlich None (dHf/Verpflegung/AM/VOR/GWG)
 
 
+def _relevante_kegel_felder(scheibe_felder: tuple, bindung: dict, store: dict | None) -> tuple:
+    """Der Pflicht-Kegel ohne die Felder, deren Regel der Nutzer selbst abbestellt hat.
+
+    _feste_zahl verlangt für den Meet jedes Kegel-Feld als bestätigt. Ein Feld, dessen Regel
+    traverser.relevanz() bereits ausgeschlossen hat, wird vom Traverser nie gefragt — es sperrte
+    den Ring dauerhaft auf input_kegel_nicht_bestaetigt, ohne dass der Nutzer die Frage je zu
+    sehen bekam (BACKLOG traverser-ring-kegel-relevanz-naht; gefunden am Fall vv_wohnzwecke=False,
+    das p21_2_verbilligte_vermietung_wk ausschließt und vv_entgelt_quote_prozent im Kegel zurückließ).
+
+    Fail-closed bleibt erhalten, und zwar an zwei Stellen:
+    - relevanz() schließt NUR bei einem BESTÄTIGTEN False aus (traverser.py:122). Unbeantwortet
+      oder vorläufig schließt NICHT aus, der Kegel bleibt also gesperrt, solange der Nutzer nicht
+      geantwortet hat.
+    - Ohne store (Alt-Aufrufer, Teil-Ringe) wird gar nichts ausgeschlossen — dann gilt der volle
+      Kegel wie bisher.
+
+    Nebenwirkung auf die slot_fn: ein weggelassenes Feld fehlt auch im Dict, das
+    bescheid_via_slots an die slot_fn übergibt. Das ist geprüft und abgesichert — kein
+    ausschließbares Kegel-Feld trägt einen Slot, den eine slot_fn liest
+    (test_kegel_relevanz_naht::test_kein_ausschliessbares_kegelfeld_ist_ein_gelesener_slot)."""
+    if store is None:
+        return scheibe_felder
+    rel = TR.relevanz(store, bindung)
+    return tuple(f for f in scheibe_felder
+                 if rel.get((bindung.get(f) or {}).get("quelle", {}).get("regel_id"),
+                            {}).get("status") != "ausgeschlossen")
+
+
 def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder: tuple,
                 store: dict | None = None):
     """Fail-closed: die festzusetzende Zahl NUR bei Scheiben-Gesamt-Accessor UND vollständig
@@ -1836,6 +1864,7 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     q = cfg["gesamt_ring"]
     if q is None:
         return None
+    scheibe_felder = _relevante_kegel_felder(scheibe_felder, bindung, store)
     zustaende = [felder[f]["zustand"] for f in scheibe_felder if f in felder]
     if len(zustaende) < len(scheibe_felder) or ST.meet_zustand(zustaende) != "bestaetigt":
         return None
@@ -2558,7 +2587,10 @@ def ergebnis(fall_id: str) -> tuple[int, dict]:
                          "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
                          "abschlusszahlung_cent": None,
                          "grund": "kein_scheiben_gesamtbescheid", "offen": [], "trace": None}
-        offen = [f for f in scheibe_felder
+        # dieselbe Relevanz-Sicht wie _feste_zahl: ein Feld, dessen Regel der Nutzer abbestellt
+        # hat, darf auch nicht als "offen" gemeldet werden — sonst zeigt die API weiter auf eine
+        # Frage, die der Traverser gar nicht mehr stellt.
+        offen = [f for f in _relevante_kegel_felder(scheibe_felder, bindung, store)
                  if f not in felder or felder[f]["zustand"] != "bestaetigt"]
         bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
         grund = "engine_unavailable" if (bf is None and not offen) else "input_kegel_nicht_bestaetigt"
