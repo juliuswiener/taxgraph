@@ -215,6 +215,64 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
     return gewinn, mitu
 
 
+def _laufender_gewinn_partner(f: dict):
+    """§§ 13-18 laufender Gewinn des EHEGATTEN (§ 26b Zusammenveranlagung), EURO.
+
+    Bewusst schmaler als _laufender_gewinn (Person A): Stufe 1 der Partnerachse hat für den
+    Ehegatten KEINE EÜR-Felder gebaut — Anlage EÜR (E77) hat anders als Anlage G/S keine
+    Person-A/B-Achse, ein betriebseinnahmen_partner wäre totes Wiring (BACKLOG
+    partnerseite-gewinneinkuenfte-fehlt-strukturell/eueur_keine_partnerachse). Ebenso gibt es
+    keine PV-Partnerfelder, also auch keine § 3 Nr. 72-Kürzung hier. Es bleiben der Direktwert
+    und die § 15 Abs. 1 S. 1 Nr. 2-Mitunternehmer-Komponente.
+
+    Returns (laufender_gewinn, mitu) wie die Person-A-Variante. `mitu` ist der
+    gewerbesteuerpflichtige Anteil; die § 35-Anrechnung für den Partner (gewst_messbetrag_partner)
+    ist NICHT Teil dieser Stufe und bleibt offen — sie wirkt zugunsten des Steuerpflichtigen,
+    ihr Fehlen ist also over-tax-safe."""
+    import runner
+
+    def _c(fid):
+        v = f.get(fid, {}).get("wert")
+        return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+
+    mitu = runner.catala_mitunternehmer_einkuenfte({
+        "gewinnanteil": _c("gewinnanteil_partner") // 100,
+        "verguetung_taetigkeit": _c("verguetung_taetigkeit_partner") // 100,
+        "verguetung_darlehen": _c("verguetung_darlehen_partner") // 100,
+        "verguetung_ueberlassung": _c("verguetung_ueberlassung_partner") // 100,
+    }) if any(_c(k + "_partner") for k in MITU_FELDER) else 0
+    return _c("einkuenfte_gewinn_partner") // 100 + mitu, mitu
+
+
+def _gewinn_partner_anteil(f: dict):
+    """Der Beitrag des Ehegatten zu g["einkuenfte_gewinn"] (EURO): laufender Gewinn + § 16-vg
+    netto nach EIGENEM § 16 Abs. 4-Freibetrag.
+
+    NUR bei Zusammenveranlagung — bei Einzelveranlagung gibt es in dieser Erklärung keinen
+    Ehegatten, dessen Einkünfte mitzuveranlagen wären; ein dort gesetztes Partner-Feld darf die
+    eigene Steuer nicht bewegen.
+
+    Der Freibetrag wird EIGENSTÄNDIG gerechnet, nicht auf die Summe beider Gewinne: § 16 Abs. 4
+    S. 1 knüpft an den Steuerpflichtigen an, bei Zusammenveranlagung also an jeden Ehegatten
+    einzeln. Ein gemeinsamer Freibetrag auf die Summe wäre over-tax
+    (test_gewinn_partner_ring::test_p16_4_freibetrag_gilt_je_person misst genau diesen
+    Unterschied)."""
+    if f.get("veranlagung", {}).get("wert") != "zusammen":
+        return 0, 0
+    import runner
+
+    def _c(fid):
+        v = f.get(fid, {}).get("wert")
+        return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+
+    laufend, mitu = _laufender_gewinn_partner(f)
+    vg_euro = _c("rentner_veraeusserungsgewinn_partner") // 100
+    # GEFLOORT bei 0 wie bei Person A: FB > vg darf keinen Phantom-Verlust erzeugen.
+    netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag(
+        {"rentner_veraeusserungsgewinn": vg_euro}))
+    return laufend + netto_vg, mitu
+
+
 def _p23_ansonsten_einkuenfte(f: dict, store: dict | None, bindung: dict | None,
                                 nur_bestaetigt: bool = True) -> int:
     """§23 Private Veräußerungsgeschäfte (Stufe-1), EURO — Σ über ALLE p23_veraeusserung-Instanzen:
@@ -974,7 +1032,11 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         vg_euro = _c("rentner_veraeusserungsgewinn") // 100
         netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}))
         laufender_gewinn, mitu = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (für § 35-Zähler, OHNE § 16-vg)
-        g["einkuenfte_gewinn"] = laufender_gewinn + netto_vg
+        # § 26b: bei Zusammenveranlagung kommen die Gewinneinkünfte des Ehegatten hinzu (Stufe 2
+        # der Partnerachse, 2026-08-13). Bis dahin wurde der Partner-Gewinn zwar deklariert und
+        # übermittelt, aber nicht besteuert — die angezeigte Steuer war zu niedrig.
+        gewinn_partner, _mitu_partner = _gewinn_partner_anteil(f)
+        g["einkuenfte_gewinn"] = laufender_gewinn + netto_vg + gewinn_partner
         # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
         # Altersentlastungsbetrag (§24a S.1: Arbeitslohn BRUTTO + max(0, positive Summe der Nicht-§19-Einkünfte =
         # V+V + §§13-18-Gewinn; Leibrenten/Versorgungsbez. raus S.2; Kohorten-Satz/-Deckel aus geburtsjahr + 65;
@@ -1536,11 +1598,15 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
             "alleinstehend": f.get("fam_alleinstehend", {}).get("wert") is True,
             "anzahl_kinder": _c("fam_anzahl_kinder"),
             "monate_ohne_voraussetzung": _c("fam_monate_ohne_voraussetzung")})
+        # § 26b: Gewinneinkünfte des Ehegatten (Stufe 2 der Partnerachse, 2026-08-13). BEWUSST erst
+        # hier und nicht in alt24a_r oben: § 24a S. 1 knüpft an "den Steuerpflichtigen" an, der
+        # Altersentlastungsbetrag von Person A darf sich am Gewinn von Person B nicht erhöhen.
+        gewinn_partner, _mitu_partner = _gewinn_partner_anteil(f)
         rentner_g = {
             "gesamtfall": True, "veranlagungszeitraum": vz,
             "veranlagung": _b("veranlagung") or "einzel",
             "einkuenfte_sonstige": renten,
-            "einkuenfte_gewinn": laufender_gewinn + netto_vg,
+            "einkuenfte_gewinn": laufender_gewinn + netto_vg + gewinn_partner,
             "altersentlastungsbetrag": alt24a_r,
             "entlastungsbetrag_alleinerziehende": ent24b_r,
             "aussergewoehnliche_belastungen": ausserg}
@@ -2111,6 +2177,17 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             if not (felder.get("rentner_alter_55_oder_berufsunfaehig", {}).get("wert") is True
                     and felder.get("rentner_freibetrag_erstmalig", {}).get("wert") is True):
                 return "p16_4_gate_offen"
+        # Dasselbe für den Ehegatten (Stufe 2 der Partnerachse, 2026-08-13). Ohne diesen Spiegel
+        # gewährte _gewinn_partner_anteil dem Partner-vg den Freibetrag, OHNE dass die Abs. 4-
+        # Bedingungen je geprüft wurden — under-tax. Nur bei Zusammenveranlagung: bei
+        # Einzelveranlagung rechnet der Ring den Partner-vg gar nicht, ein dort stehender Wert
+        # darf den eigenen Bescheid deshalb auch nicht sperren.
+        if felder.get("veranlagung", {}).get("wert") == "zusammen":
+            vg_p = (felder.get("rentner_veraeusserungsgewinn_partner") or {}).get("wert")
+            if isinstance(vg_p, (int, float)) and not isinstance(vg_p, bool) and vg_p > 0:
+                if not (felder.get("rentner_alter_55_oder_berufsunfaehig_partner", {}).get("wert") is True
+                        and felder.get("rentner_freibetrag_erstmalig_partner", {}).get("wert") is True):
+                    return "p16_4_gate_offen"
         # Gesamt-Ring: Flag↔Einkunftsart-Widerspruch (kein_X=true + echtes Feld > 0 bestätigt) surfacen —
         # K2, keine still übergangene Einkunftsart (dev-2s flag_check).
         if FC.flag_widersprueche(felder):

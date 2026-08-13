@@ -2169,12 +2169,38 @@ rechenluecken:
       bleibt das ausserhalb dieses Produkts abzubilden (separate Anlage EÜR-Instanz, vom
       Produkt heute nicht unterstuetzt) — eigenstaendige Luecke, nicht durch Kz-Erweiterung
       loesbar.
-    stufe_2_rechenseite_offen: |
-      Ring-Verdrahtung (zweiter §16-Freibetrag-Aufruf, gespiegeltes p16_4_gate_offen fuer
-      Person B) bewusst NICHT gebaut — team-lead-Entscheid 2026-08-12: api.py bleibt gesperrt,
-      bis der _bescheid_fn-Split (api-py-datei-split, s.u.) abgeschlossen und mit mir
-      abgestimmt ist. Ohne Stufe 2 wird ein deklarierter Partner-Gewinn zwar XML-uebermittelt,
-      aber im gesamt/rentner-Ring noch nicht in die Steuerberechnung des Partners einbezogen.
+    stufe_2_rechenseite: |
+      ERLEDIGT 2026-08-13, direkt nach dem _bescheid_fn-Refactor (der sie blockierte).
+
+      Gebaut: _laufender_gewinn_partner (Direktwert + §15-Mitunternehmer; KEINE EUER- und keine
+      PV-Achse, weil es fuer den Partner keine solchen Felder gibt, s. eueur_keine_partnerachse)
+      und _gewinn_partner_anteil (laufender Gewinn + §16-vg netto nach EIGENEM Abs.4-Freibetrag,
+      und zwar nur bei veranlagung=="zusammen"). Eingehaengt an beiden Call-Sites:
+      festzusetzende_est_gesamt und festzusetzende_est_rentner.
+
+      Gemessen, was vorher fehlte (Zusammenveranlagung, 60.000 EUR Arbeitslohn):
+        Partner laufender Gewinn 30.000 EUR   -> +9.248 EUR Steuer (vorher 0)
+        Partner Mitunternehmer   30.000 EUR   -> +9.248 EUR Steuer (vorher 0)
+        Partner Veraeusserungsgewinn 60.000   -> +4.424 EUR Steuer (vorher 0)
+      Die ABGEGEBENE Erklaerung war die ganze Zeit richtig (der Gewinn stand im XML), nur die im
+      Produkt ANGEZEIGTE Steuer war zu niedrig — der Nutzer haette eine Nachzahlung bekommen,
+      mit der er nicht rechnete.
+
+      MIT gebaut, weil sonst durch diesen Commit erst entstanden: p16_4_gate_offen gespiegelt.
+      Ohne den Spiegel haette _gewinn_partner_anteil dem Partner-vg den Abs.4-Freibetrag
+      gewaehrt, OHNE dass Alter>=55/Berufsunfaehigkeit und Erstmaligkeit je geprueft waren —
+      under-tax, und zwar eines, das dieser Commit selbst eingebaut haette. Mutationsprobe:
+      Gate abgeschaltet -> test_p16_4_gate_gilt_auch_fuer_den_partner rot.
+
+      Tests: tests/test_gewinn_partner_ring.py (7). Jede Richtung hat ihren Gegentest — wirkt
+      bei zusammen / wirkt NICHT bei einzel, Freibetrag je Person / vg wird ueberhaupt
+      besteuert, Gate sperrt / Gate sperrt nicht bei Einzelveranlagung.
+
+      NICHT Teil dieser Stufe und weiter offen: die §35-Gewerbesteueranrechnung fuer den
+      Partner (gewst_messbetrag_partner/gewst_hebesatz_partner sind deklariert, aber nicht im
+      §35-Zaehler). Der Partner-Gewinn steht jetzt im §35-NENNER, der Messbetrag fehlt im
+      ZAEHLER — die Anrechnung faellt damit zu klein aus, was zulasten des Steuerpflichtigen
+      geht (over-tax) und deshalb nicht eilt. Eigener Punkt, s. p35-anrechnung-partner-offen.
     entdeckt: |
       2026-08-12, bei der Messung zu commit-nur-defer-sweep-2026-08-10 Fund 6 (§16 Abs.4
       per-Person-Freibetrag). Die dortige Vermutung ("zweiter Freibetrag greift nicht") war
@@ -2206,6 +2232,34 @@ rechenluecken:
       nicht nur der Freibetrag dafuer.
     aufwand_h: unbeziffert
     api_py: "kein Fix in diesem Auftrag gefordert — nur Messung+Dokumentation"
+
+  - id: p35-anrechnung-partner-offen
+    titel: "§ 35 Gewerbesteueranrechnung fuer den Ehegatten nicht verdrahtet — Nenner ja, Zaehler nein"
+    status: offen
+    richtung: "OVER-TAX (zulasten des Steuerpflichtigen) — eilt deshalb nicht, ist aber Geld"
+    entstanden: |
+      2026-08-13 mit der Stufe 2 der Partnerachse (partnerseite-gewinneinkuenfte-fehlt-
+      strukturell). Seit diesem Commit steht der Gewinn des Ehegatten im § 35-NENNER (er ist
+      Teil von einkuenfte_gewinn und damit der Summe der Einkuenfte), sein
+      Gewerbesteuermessbetrag aber NICHT im ZAEHLER. gewst_messbetrag_partner und
+      gewst_hebesatz_partner sind seit Stufe 1 deklariert und gebunden, werden im Ring aber
+      nirgends gelesen.
+    wirkung: |
+      Die Anrechnung nach § 35 Abs. 1 faellt zu klein aus: der Nenner waechst um den
+      Partner-Gewinn, der anrechenbare Messbetrag im Zaehler nicht. Ein Paar, bei dem NUR der
+      Ehegatte einen Gewerbebetrieb hat, bekommt gar keine Anrechnung, obwohl es sie haette.
+      Richtung: over-tax. Der Nutzer zahlt zu viel, es reklamiert niemand, und kein Finanzamt
+      findet es — nicht harmlos, nur nicht dringend (dieselbe Einordnung wie bei
+      klasse3-fail-open).
+    warum_nicht_gleich_mit: |
+      Der § 35-Zaehler haengt an _laufender_gewinn(...)->mitu und an der Frage, welcher
+      Betriebsart-Anteil gewerbesteuerpflichtig ist (§ 7 S. 2 GewStG, § 16-vg raus). Das sauber
+      per Person zu trennen ist ein eigener Schnitt durch _p35_zaehler/_p35_nenner, kein
+      Anhaengsel — und die Stufe-2-Aenderung war bereits ein Eingriff in die Bemessung, den
+      ich nicht mit einem zweiten in derselben Runde vermischen wollte. _gewinn_partner_anteil
+      gibt den mitu-Anteil des Partners bereits zurueck (heute als _mitu_partner verworfen),
+      der Aufhaenger ist also da.
+    aufwand_h: unbeziffert
 
   - id: gewinneinkuenfte-einzelangaben-fehlen
     titel: "checkESt verlangt 'Einzelangaben zu Gewinnen laut gesonderter Feststellung' zusaetzlich zur E0800502-Summe"
