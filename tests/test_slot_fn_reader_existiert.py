@@ -105,6 +105,7 @@ def _slot_reader_namen_je_quantitaet(path: str) -> dict[str, set[str]]:
         return namen
 
     tree = ast.parse(open(path, encoding="utf-8").read())
+    modul_fns = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
     fn = next(n for n in ast.walk(tree)
               if isinstance(n, ast.FunctionDef) and n.name == "_bescheid_fn")
     out: dict[str, set[str]] = {}
@@ -113,7 +114,20 @@ def _slot_reader_namen_je_quantitaet(path: str) -> dict[str, set[str]]:
                 and isinstance(stmt.test.left, ast.Name) and stmt.test.left.id == "quantitaet"
                 and len(stmt.test.ops) == 1 and isinstance(stmt.test.ops[0], ast.Eq)
                 and isinstance(stmt.test.comparators[0], ast.Constant)):
-            out[stmt.test.comparators[0].value] = sammle(stmt)
+            namen = sammle(stmt)
+            # _bescheid_fn-Refactor (2026-08-13): ein quantitaet-Zweig darf seinen Rumpf in eine
+            # Modulfunktion `_zweig_*` ausgelagert haben — dann steht der slots-Leser DORT und
+            # nicht mehr im if-Block. Ohne dieses Nachfassen verlöre dieses Gate mit jedem
+            # extrahierten Zweig seine Sicht und bliebe trotzdem grün: am Ende des Refactors ist
+            # _bescheid_fn ein reiner Dispatcher, der Scan fände null Leser und das Gate prüfte
+            # nichts mehr, ohne dass jemand es merkt (dieselbe Klasse wie der Pre-Commit-Hook,
+            # der eine Datei ausführt). Ein Hop reicht, solange `_zweig_*` sich nicht gegenseitig
+            # aufrufen — trifft heute zu; ein zweiter Hop wäre hier nachzuziehen.
+            for n in ast.walk(stmt):
+                if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                        and n.func.id.startswith("_zweig_") and n.func.id in modul_fns):
+                    namen |= sammle(modul_fns[n.func.id])
+            out[stmt.test.comparators[0].value] = namen
     return out
 
 

@@ -263,6 +263,29 @@ def _oepnv_eur(slots: dict) -> int:
     return int(slots["oepnv_kosten_jahr"]) // 100
 
 
+def _zweig_abziehbarer_betrag(vz: int, bindung: dict):
+    """§ 9 Entfernungspauschale — quantitaet='abziehbarer_betrag'.
+
+    Aus _bescheid_fn herausgezogen (Refactor 2026-08-13, Schritt 1). Kontextfrei: hängt an
+    KEINER Closure des _bescheid_fn-Kopfes, nur an vz/bindung/_oepnv_eur. Deshalb der erste
+    Schnitt — Verhaltensgleichheit ist hier durch Augenschein nachweisbar, nicht nur durch
+    den Golden-Vergleich."""
+    try:
+        import runner  # noqa: F401
+    except Exception:
+        return None
+
+    def slot_fn(slots: dict) -> int:
+        s = {"veranlagungszeitraum": int(vz),
+             "arbeitstage": int(slots["arbeitstage"]),
+             "entfernung_km_roh": int(slots["entfernung_km_roh"]),
+             "oepnv_kosten_jahr": _oepnv_eur(slots),
+             "eigenes_oder_ueberlassenes_kfz": bool(slots["eigenes_oder_ueberlassenes_kfz"])}
+        return runner.catala_entfernungspauschale(s)
+
+    return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="abziehbarer_betrag")
+
+
 def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = None,
                  store: dict | None = None, nur_bestaetigt: bool = True, solz_container=None,
                  extras: dict | None = None):
@@ -513,20 +536,7 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
         return dba_anrechnung
 
     if quantitaet == "abziehbarer_betrag":          # § 9 Entfernungspauschale
-        try:
-            import runner  # noqa: F401
-        except Exception:
-            return None
-
-        def slot_fn(slots: dict) -> int:
-            s = {"veranlagungszeitraum": int(vz),
-                 "arbeitstage": int(slots["arbeitstage"]),
-                 "entfernung_km_roh": int(slots["entfernung_km_roh"]),
-                 "oepnv_kosten_jahr": _oepnv_eur(slots),
-                 "eigenes_oder_ueberlassenes_kfz": bool(slots["eigenes_oder_ueberlassenes_kfz"])}
-            return runner.catala_entfernungspauschale(s)
-
-        return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="abziehbarer_betrag")
+        return _zweig_abziehbarer_betrag(vz, bindung)
 
     if quantitaet == "festzusetzende_est":          # § 2 Gesamtsteuer MVP (reiner AN-Fall)
         try:
@@ -609,7 +619,11 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # A6-L2 (§ 7 Abs. 1 lineare AfA): AK > 80000 CENT → kein GWG mehr → mehrjährige AfA
             # über die Nutzungsdauer (Jahre). Nutzungsdauer absent → Guard sperrt (fail-closed).
             elif _cent(ARBEITSMITTEL_KOSTEN) > 80000:
-                nd = _c("arbeitsmittel_nutzungsdauer")
+                # `_cent`, nicht `_c`: dieser Block wurde aus dem Zweig festzusetzende_est_gesamt
+                # kopiert, wo der Feldleser `_c` heißt. Hier hieß er immer `_cent` — der falsche
+                # Name warf einen NameError, sobald ein Arbeitsmittel über 800 EUR im an_gesamt-
+                # Ring lag (Fix 2026-08-13, Test test_arbeitsmittel_ueber_gwg_schwelle_stuerzt_nicht_ab).
+                nd = _cent("arbeitsmittel_nutzungsdauer")
                 if nd > 0:
                     wk_input["am_anschaffungskosten"] = runner.catala_p7_linear_afa({
                         "anschaffungskosten_cent": _cent(ARBEITSMITTEL_KOSTEN),
