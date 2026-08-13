@@ -263,6 +263,31 @@ def _oepnv_eur(slots: dict) -> int:
     return int(slots["oepnv_kosten_jahr"]) // 100
 
 
+def _kind_kv_pv_summe(store, bindung: dict, nur_bestaetigt: bool) -> int:
+    """§10 Abs.1 Nr.3 S.2 KV/PV-Beiträge des Kindes — addiert kind_kv + kind_pv pro Kind-Instanz
+    (CENT, direkt zu basis_kv/basis_pv addierbar). Voraussetzung kind_idnr (S.2): bei fehlender
+    kind_idnr wird der Kind-Beitrag NICHT eingerechnet (over-tax-safe, kein Abzug ohne IdNr).
+
+    Aus _bescheid_fn herausgezogen (Refactor 2026-08-13, Schritt 2). Dort stand sie zweimal —
+    einmal echt (store vorhanden) und einmal als 0-Stub im else-Zweig; die Fallunterscheidung
+    ist jetzt die erste Zeile statt zweier konkurrierender Definitionen desselben Namens."""
+    if store is None:
+        return 0
+    total = 0
+    for inst in EM.instanzen(store, bindung, "kind"):
+        if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
+            idnr = inst["felder"].get("kind_idnr", {}).get("wert")
+            if not idnr or not isinstance(idnr, str) or len(idnr) < 11:
+                continue
+            kv = inst["felder"].get("kind_kv", {}).get("wert")
+            if isinstance(kv, (int, float)) and not isinstance(kv, bool) and kv > 0:
+                total += int(kv)
+            pv = inst["felder"].get("kind_pv", {}).get("wert")
+            if isinstance(pv, (int, float)) and not isinstance(pv, bool) and pv > 0:
+                total += int(pv)
+    return total
+
+
 def _zweig_abziehbarer_betrag(vz: int, bindung: dict):
     """§ 9 Entfernungspauschale — quantitaet='abziehbarer_betrag'.
 
@@ -313,28 +338,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
     # (_gwg_sofortabzug_summe/_laufender_gewinn + vv/rente-Σ inline), sonst zeigte /stand die gwg-Instanz-Wirkung nicht.
     if nur_bestaetigt and felder:
         felder = {fid: ev for fid, ev in felder.items() if ev.get("zustand") == "bestaetigt"}
-    if store is not None:
-        # §10 Abs.1 Nr.3 S.2 KV/PV-Beiträge des Kindes — EINMAL für alle quantitaet-Zweige.
-        # addiert kind_kv + kind_pv pro Kind-Instanz (CENT). Voraussetzung kind_idnr (S.2):
-        # bei fehlender kind_idnr wird der Kind-Beitrag NICHT eingerechnet (over-tax-safe,
-        # kein Abzug ohne IdNr).
-        def _kind_kv_pv_summe() -> int:
-            total = 0
-            for inst in EM.instanzen(store, bindung, "kind"):
-                if not nur_bestaetigt or inst["zustand"] == "bestaetigt":
-                    idnr = inst["felder"].get("kind_idnr", {}).get("wert")
-                    if not idnr or not isinstance(idnr, str) or len(idnr) < 11:
-                        continue
-                    kv = inst["felder"].get("kind_kv", {}).get("wert")
-                    if isinstance(kv, (int, float)) and not isinstance(kv, bool) and kv > 0:
-                        total += int(kv)
-                    pv = inst["felder"].get("kind_pv", {}).get("wert")
-                    if isinstance(pv, (int, float)) and not isinstance(pv, bool) and pv > 0:
-                        total += int(pv)
-            return total  # CENT, direkt zu basis_kv/basis_pv addierbar
-    else:
-        def _kind_kv_pv_summe() -> int:
-            return 0
+    # §10 Abs.1 Nr.3 S.2 Kind-KV/PV: _kind_kv_pv_summe(store, bindung, nur_bestaetigt) steht seit
+    # dem Refactor auf Modulebene — EINMAL für alle quantitaet-Zweige, wie vorher.
 
     # §33b Abs.5 Kind-PB-Übertragung.
     # S.1: "auf Antrag ... wenn ihn das Kind nicht in Anspruch nimmt" (kumulativ).
@@ -426,7 +431,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
                 "gezahlte_kirchensteuer": _c("kist_gezahlt") // 100,
                 "erstattete_kirchensteuer": _c("kist_erstattet") // 100})
             + runner.catala_p10_kv_pv({
-                "basis_kv_pv": (_c("basis_kv") + _c("basis_pv") + _kind_kv_pv_summe()) // 100,
+                "basis_kv_pv": (_c("basis_kv") + _c("basis_pv")
+                                + _kind_kv_pv_summe(store, bindung, nur_bestaetigt)) // 100,
                 "weitere_vorsorgeaufwendungen": (_c("vorsorge_arbeitslosenversicherung") + _c("vorsorge_erwerbsunfaehigkeit") + _c("vorsorge_unfall_haftpflicht") + _c("vorsorge_rv_alt_mit_ueberschuss") + _c("vorsorge_rv_alt_ohne_ueberschuss")) // 100,
                 "mit_anspruch_auf_zuschuss": f_dict.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
             + kinderbetreuung_fn()
@@ -633,7 +639,8 @@ def _bescheid_fn(quantitaet: str, vz: int, bindung: dict, felder: dict | None = 
             # eigener Abs.4-Höchstbetrag (1900/2800), additiv, GETRENNT von der VOR-Basisvorsorge unten.
             kv_pv_a = runner.catala_p10_kv_pv({
                 # §10 Abs.1 Nr.3 S.2: Kind-Beiträge in DENSELBEN Abs.4-Deckel (kind_summe CENT, direkt addiert).
-                "basis_kv_pv": (_cent("basis_kv") + _cent("basis_pv") + _kind_kv_pv_summe()) // 100,
+                "basis_kv_pv": (_cent("basis_kv") + _cent("basis_pv")
+                                + _kind_kv_pv_summe(store, bindung, nur_bestaetigt)) // 100,
                 "weitere_vorsorgeaufwendungen": (_cent("vorsorge_arbeitslosenversicherung") + _cent("vorsorge_erwerbsunfaehigkeit") + _cent("vorsorge_unfall_haftpflicht") + _cent("vorsorge_rv_alt_mit_ueberschuss") + _cent("vorsorge_rv_alt_ohne_ueberschuss")) // 100,
                 "mit_anspruch_auf_zuschuss": f.get("mit_anspruch_auf_zuschuss", {}).get("wert") is True})
             # Zusammenveranlagung (§ 26b): Roh-Bruttolohn + Roh-WK pro Person -> catala_est_zusammen
