@@ -273,6 +273,38 @@ def _gewinn_partner_anteil(f: dict):
     return laufend + netto_vg, mitu
 
 
+def _p35_partner_anteile(f: dict):
+    """(messbetrag_euro, hebesatz, gewerbliche_einkuenfte_euro) des Ehegatten für § 35.
+
+    Nur bei Zusammenveranlagung — sonst (0, 0, 0), dann rechnet unten alles wie vorher.
+
+    Der Zähler nimmt den LAUFENDEN Gewinn ohne § 16-Veräußerungsgewinn (§ 7 S. 2 GewStG: der
+    Veräußerungsgewinn einer natürlichen Person gehört nicht zum Gewerbeertrag), deshalb
+    _laufender_gewinn_partner und nicht _gewinn_partner_anteil. Betriebsart-Weiche wie bei
+    Person A: nur ein Gewerbebetrieb liefert den vollen laufenden Gewinn, sonst zählt allein der
+    § 15-Mitunternehmeranteil (§ 18-selbständig und § 13-LuF unterliegen keiner Gewerbesteuer)."""
+    if f.get("veranlagung", {}).get("wert") != "zusammen":
+        return 0, 0, 0
+
+    def _c(fid):
+        v = f.get(fid, {}).get("wert")
+        return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+
+    laufend, mitu = _laufender_gewinn_partner(f)
+    zaehler = (max(0, laufend) if f.get("gewinn_betriebsart_partner", {}).get("wert") == "gewerbe"
+               else max(0, mitu))
+    return _c("gewst_messbetrag_partner") // 100, _c("gewst_hebesatz_partner"), zaehler
+
+
+def _p35_gezahlte_gewst(messbetrag_a: int, hebesatz_a: int,
+                        messbetrag_b: int, hebesatz_b: int) -> int:
+    """§ 35 Abs. 1 S. 5: der Abzug ist auf die tatsächlich zu zahlende Gewerbesteuer beschränkt.
+
+    JE BETRIEB gerechnet und dann summiert — die Hebesätze zweier Gemeinden sind verschieden,
+    ein gemeinsamer Hebesatz auf die Messbetragssumme wäre schlicht eine andere Zahl."""
+    return messbetrag_a * hebesatz_a // 100 + messbetrag_b * hebesatz_b // 100
+
+
 def _p23_ansonsten_einkuenfte(f: dict, store: dict | None, bindung: dict | None,
                                 nur_bestaetigt: bool = True) -> int:
     """§23 Private Veräußerungsgeschäfte (Stufe-1), EURO — Σ über ALLE p23_veraeusserung-Instanzen:
@@ -1228,6 +1260,19 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         p35_messbetrag = _c("gewst_messbetrag") // 100
         p35_hebesatz = _c("gewst_hebesatz")
         p35_zaehler = max(0, laufender_gewinn) if f.get("gewinn_betriebsart", {}).get("wert") == "gewerbe" else max(0, mitu)
+        # § 26b + § 35 Abs. 1 S. 2 ("Summe der positiven gewerblichen Einkünfte"): bei
+        # Zusammenveranlagung zählt auch der Gewerbebetrieb des Ehegatten. Sein Gewinn steht seit
+        # der Partner-Stufe-2 ohnehin im Nenner — ohne diese Zeilen fehlte nur der Zähler, und ein
+        # Paar, bei dem NUR der Ehegatte gewerblich tätig ist, bekam gar keine Anrechnung.
+        # § 16-vg bleibt draußen (§ 7 S. 2 GewStG), deshalb _laufender_gewinn_partner statt
+        # _gewinn_partner_anteil. Der Hebesatz-Deckel wird je Betrieb gerechnet (s. _p35_gezahlt).
+        p35_messbetrag_p, p35_hebesatz_p, p35_zaehler_p = _p35_partner_anteile(f)
+        # EINE Stelle für die Summen, damit die Deckel unten nicht je Verwendung neu addiert
+        # werden müssen. p35_gezahlt ist der Deckel aus Abs. 1 S. 5, je Betrieb gerechnet.
+        p35_messbetrag_ges = p35_messbetrag + p35_messbetrag_p
+        p35_zaehler_ges = p35_zaehler + p35_zaehler_p
+        p35_gezahlt = _p35_gezahlte_gewst(p35_messbetrag, p35_hebesatz,
+                                          p35_messbetrag_p, p35_hebesatz_p)
         # Nenner (§ 35 Abs. 1 S. 2 „Summe aller positiven Einkünfte") = Σ positive TARIFLICHE Einkunftsarten:
         # § 19 (ns) + § 21 (vv) + § 22 (sonstige) + §§ 13-18 (gewinn, inkl. § 16-vg = § 2-Einkunft). Das
         # § 32d-Abgeltung-Kapital ist NICHT einzubeziehen (§ 2 Abs. 5b EStG: „Kapitalerträge nach § 32d Absatz 1
@@ -1251,7 +1296,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # §32b Progressionsvorbehalt (Stufe-1, Lohnersatz, Post-Engine-Wrapper)
         pe_raw = _c("p32b_progressionseinkuenfte") // 100
         pe_active = pe_raw > 0
-        p35_active = p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0
+        p35_active = p35_messbetrag_ges > 0 and p35_zaehler_ges > 0 and p35_nenner > 0
         # §32b×§34-Koinzidenz-Guard: Post-Engine §32b NACH §34 (tarif_modifiziert).
         # Bewegt: Guard in _an_gesamt_sperrgrund sperrt p32b_kombi_offen bei Co-Präsenz.
 
@@ -1296,12 +1341,11 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
             # §32b Progressionsvorbehalt: §35-Deckel-3 braucht POST-§32b tarifliche wenn pe_active.
             # Stufe-1: §35 NORMAL in g2 wenn ¬pe_active; POST-WRAPPER-APPLY wenn pe_active.
             p35_credit = 0
-            if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
+            if p35_messbetrag_ges > 0 and p35_zaehler_ges > 0 and p35_nenner > 0:
                 tarifliche_raw = runner.catala_gesamt_tarifliche(g2)
                 tarifliche_gemindert = max(0, tarifliche_raw - dba_anrechnung)
-                p35_credit = min(4 * p35_messbetrag,
-                                 p35_messbetrag * p35_hebesatz // 100,
-                                 p35_zaehler * tarifliche_gemindert // p35_nenner)
+                p35_credit = min(4 * p35_messbetrag_ges, p35_gezahlt,
+                                 p35_zaehler_ges * tarifliche_gemindert // p35_nenner)
                 if not pe_active:
                     g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35_credit)
             est_raw = runner.catala_est(g2)     # KEIN Kapital (est_regulaer_ohne_kap)
@@ -1321,9 +1365,9 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
                         "est_auf_erhoehte_bemessung": est_erhoeht})
                     est_raw = t_32b + est_without_tarifliche
                 # §35-Deckel-3 apply post-wrapper mit t_32b (§35 Abs.1 S.4 geminderte tarifliche = Post-§32b)
-                if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
-                    deckel3_32b = p35_zaehler * max(0, t_32b - dba_anrechnung) // p35_nenner
-                    p35_credit_pe = min(4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100, deckel3_32b)
+                if p35_messbetrag_ges > 0 and p35_zaehler_ges > 0 and p35_nenner > 0:
+                    deckel3_32b = p35_zaehler_ges * max(0, t_32b - dba_anrechnung) // p35_nenner
+                    p35_credit_pe = min(4 * p35_messbetrag_ges, p35_gezahlt, deckel3_32b)
                     est_raw = max(0, est_raw - p35_credit_pe)
             # End §32b wrapper
             if kapitaleinkuenfte <= 0:
@@ -1650,6 +1694,14 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         p35_messbetrag = _c("gewst_messbetrag") // 100
         p35_hebesatz = _c("gewst_hebesatz")
         p35_zaehler = max(0, laufender_gewinn) if _b("gewinn_betriebsart") == "gewerbe" else max(0, mitu)
+        # § 26b: Gewerbebetrieb des Ehegatten, s. gesamt-Zweig (§ 35 Abs. 1 S. 2).
+        p35_messbetrag_p, p35_hebesatz_p, p35_zaehler_p = _p35_partner_anteile(f)
+        # EINE Stelle für die Summen, damit die Deckel unten nicht je Verwendung neu addiert
+        # werden müssen. p35_gezahlt ist der Deckel aus Abs. 1 S. 5, je Betrieb gerechnet.
+        p35_messbetrag_ges = p35_messbetrag + p35_messbetrag_p
+        p35_zaehler_ges = p35_zaehler + p35_zaehler_p
+        p35_gezahlt = _p35_gezahlte_gewst(p35_messbetrag, p35_hebesatz,
+                                          p35_messbetrag_p, p35_hebesatz_p)
         p35_nenner = max(0, renten) + max(0, rentner_g["einkuenfte_gewinn"])
 
         # §3 Abs.2 SolzG: SolZ-Basis = KiFB-fiktive ESt (immer mit §32 Abs.6-Freibetraegen;
@@ -1687,13 +1739,13 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
             # § 35 GewSt-Anrechnung Deckel-3 (JE §31-Zweig — tarifliche_est ist freibetrag-abhängig, global-
             # einmal würde den Kinderfreibetrag-Zweig über-crediten = stille Under-tax, 1:1 gesamt-Präzedenz).
             p35_credit_r = 0
-            if p35_messbetrag > 0 and p35_zaehler > 0 and p35_nenner > 0:
+            if p35_messbetrag_ges > 0 and p35_zaehler_ges > 0 and p35_nenner > 0:
                 tarifliche_raw = runner.catala_gesamt_tarifliche(g2)
                 tarifliche_gemindert = max(0, tarifliche_raw - dba_anrechnung)
                 # Weg-ii-Fix (K2, PFLICHT): ADDITIV statt hart überschreiben — sonst löscht § 35 GewSt-
                 # Anrechnung das § 35a-Ergebnis (steuerermaessigungen) still.
-                p35_credit_r = min(4 * p35_messbetrag, p35_messbetrag * p35_hebesatz // 100,
-                                   p35_zaehler * tarifliche_gemindert // p35_nenner)
+                p35_credit_r = min(4 * p35_messbetrag_ges, p35_gezahlt,
+                                   p35_zaehler_ges * tarifliche_gemindert // p35_nenner)
                 if not pe_active:
                     g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35_credit_r)
             # § 32d Abs. 6 Günstigerprüfung: Kapitalerträge tariflich oder Abgeltungsteuer?

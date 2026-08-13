@@ -132,6 +132,86 @@ def test_p16_4_freibetrag_gilt_je_person():
         f"bekommt keinen eigenen § 16 Abs. 4-Freibetrag.")
 
 
+def test_p35_anrechnung_gilt_auch_fuer_den_betrieb_des_partners():
+    """§ 35 Abs. 1: die Ermäßigung bemisst sich nach der SUMME der gewerblichen Einkünfte
+    (S. 2: "Summe der positiven gewerblichen Einkünfte / Summe aller positiven Einkünfte"), nicht
+    je Person. Bei Zusammenveranlagung gehört der Gewerbebetrieb des Ehegatten also dazu.
+
+    Vorher: sein Gewinn stand seit Stufe 2 im NENNER, sein Messbetrag aber nicht im ZÄHLER — ein
+    Paar, bei dem nur der Ehegatte gewerblich tätig ist, bekam gar keine Anrechnung. Richtung
+    over-tax: der Nutzer zahlt zu viel, es reklamiert niemand.
+
+    Der Deckel auf die tatsächlich gezahlte Gewerbesteuer (S. 5) muss dabei JE BETRIEB gerechnet
+    werden — die Hebesätze zweier Gemeinden sind verschieden."""
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    f = _basis("zusammen")
+    f["einkuenfte_gewinn_partner"] = {"wert": 5000000, "zustand": "bestaetigt"}   # 50.000 EUR
+    f["gewinn_betriebsart_partner"] = {"wert": "gewerbe", "zustand": "bestaetigt"}
+    ohne_gewst = _zahl(f)
+
+    mit_gewst = dict(f)
+    mit_gewst["gewst_messbetrag_partner"] = {"wert": 175000, "zustand": "bestaetigt"}  # 1.750 EUR
+    mit_gewst["gewst_hebesatz_partner"] = {"wert": 400, "zustand": "bestaetigt"}
+    assert _zahl(mit_gewst) < ohne_gewst, (
+        "Der Gewerbesteuer-Messbetrag des Ehegatten mindert die Steuer nicht — sein Gewinn steht "
+        "im § 35-Nenner, sein Messbetrag aber nicht im Zähler.")
+
+
+def test_p35_hebesatz_deckel_wird_je_betrieb_gerechnet():
+    """§ 35 Abs. 1 S. 5 deckelt auf die TATSÄCHLICH zu zahlende Gewerbesteuer. Die ist je Betrieb
+    Messbetrag × Hebesatz — und zwei Gemeinden haben verschiedene Hebesätze. Ein gemeinsamer
+    Hebesatz auf die Messbetragssumme wäre eine andere Zahl.
+
+    Gemessen wird an einem Fall, in dem dieser Deckel bindet: bei Hebesatz 400 ist
+    Messbetrag × 4 exakt das Vierfache aus S. 1 Nr. 1, darunter greift S. 5. Person A steht bei
+    300, der Ehegatte bei 500 — würde der Code A's Hebesatz auf beide Messbeträge anwenden, käme
+    eine niedrigere Anrechnung heraus als bei korrekter Rechnung je Betrieb."""
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    gemeinsam = _basis("zusammen")
+    gemeinsam["einkuenfte_gewinn"] = {"wert": 5000000, "zustand": "bestaetigt"}
+    gemeinsam["gewinn_betriebsart"] = {"wert": "gewerbe", "zustand": "bestaetigt"}
+    gemeinsam["gewst_messbetrag"] = {"wert": 100000, "zustand": "bestaetigt"}      # 1.000 EUR
+    gemeinsam["gewst_hebesatz"] = {"wert": 300, "zustand": "bestaetigt"}
+    nur_a = _zahl(gemeinsam)
+
+    beide = dict(gemeinsam)
+    beide["einkuenfte_gewinn_partner"] = {"wert": 5000000, "zustand": "bestaetigt"}
+    beide["gewinn_betriebsart_partner"] = {"wert": "gewerbe", "zustand": "bestaetigt"}
+    beide["gewst_messbetrag_partner"] = {"wert": 100000, "zustand": "bestaetigt"}   # 1.000 EUR
+    beide["gewst_hebesatz_partner"] = {"wert": 500, "zustand": "bestaetigt"}
+    # Der Partner bringt Gewinn (erhöht) UND Anrechnung (mindert) — geprüft wird nur, dass seine
+    # Gewerbesteuer überhaupt mit dem EIGENEN Hebesatz zählt: mit Hebesatz 500 statt 300 muss die
+    # Steuer niedriger ausfallen, weil der S.-5-Deckel höher liegt.
+    beide_niedriger_hebesatz = dict(beide)
+    beide_niedriger_hebesatz["gewst_hebesatz_partner"] = {"wert": 300, "zustand": "bestaetigt"}
+    assert _zahl(beide) < _zahl(beide_niedriger_hebesatz), (
+        "Der Hebesatz des Ehegatten ändert nichts — sein Deckel nach § 16 Abs. 1 S. 5 wird "
+        "offenbar nicht mit seinem eigenen Hebesatz gerechnet.")
+    assert nur_a is not None
+
+
+def test_p35_partner_wirkt_nicht_bei_einzelveranlagung():
+    """Gegenrichtung: ohne Zusammenveranlagung gibt es keinen Ehegattenbetrieb in dieser
+    Erklärung — sein Messbetrag darf die eigene Steuer nicht mindern."""
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    f = _basis("einzel")
+    f["einkuenfte_gewinn"] = {"wert": 5000000, "zustand": "bestaetigt"}
+    f["gewinn_betriebsart"] = {"wert": "gewerbe", "zustand": "bestaetigt"}
+    f["gewst_messbetrag"] = {"wert": 100000, "zustand": "bestaetigt"}
+    f["gewst_hebesatz"] = {"wert": 400, "zustand": "bestaetigt"}
+    ohne = _zahl(f)
+    mit = dict(f)
+    mit["gewst_messbetrag_partner"] = {"wert": 500000, "zustand": "bestaetigt"}
+    mit["gewst_hebesatz_partner"] = {"wert": 400, "zustand": "bestaetigt"}
+    mit["einkuenfte_gewinn_partner"] = {"wert": 5000000, "zustand": "bestaetigt"}
+    mit["gewinn_betriebsart_partner"] = {"wert": "gewerbe", "zustand": "bestaetigt"}
+    assert _zahl(mit) == ohne, (
+        "Ein Partner-Gewerbebetrieb mindert die Steuer bei EINZELveranlagung.")
+
+
 def _sperrgrund(felder: dict):
     """Der Guard-Sperrgrund für Scheibe gesamt zu diesem Feld-Snapshot (None = frei)."""
     import api_constants as AC

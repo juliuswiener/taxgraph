@@ -2235,8 +2235,36 @@ rechenluecken:
 
   - id: p35-anrechnung-partner-offen
     titel: "§ 35 Gewerbesteueranrechnung fuer den Ehegatten nicht verdrahtet — Nenner ja, Zaehler nein"
-    status: offen
+    status: erledigt
     richtung: "OVER-TAX (zulasten des Steuerpflichtigen) — eilt deshalb nicht, ist aber Geld"
+    erledigt: |
+      2026-08-13, wenige Stunden nach dem Anlegen (der Eintrag war die Abgrenzung zur
+      Partner-Stufe-2, nicht ein Aufschub auf naechste Woche).
+
+      Gemessen, was verfiel: Ehegatte mit Gewerbebetrieb 50.000 EUR, Messbetrag 1.750 EUR,
+      Hebesatz 400 -> **7.000 EUR Anrechnung**, die vorher komplett unter den Tisch fiel.
+
+      NORMPRUEFUNG ZUERST, und sie hat meine Annahme widerlegt: ich war von einer
+      BETRIEBSBEZOGENEN Ermittlung des Ermaessigungshoechstbetrags ausgegangen ("seit 2020",
+      aus dem Gedaechtnis). Steht so nicht im Gesetz. sources/gesetze-im-internet/
+      estg_p35_2026-07-14.txt, Abs. 1 S. 2: der Hoechstbetrag ist "Summe der positiven
+      gewerblichen Einkuenfte / Summe aller positiven Einkuenfte x geminderte tarifliche
+      Steuer" — eine SUMME, nicht je Betrieb. Abs. 1 S. 5 sagt etwas anderes, als ich ihm
+      zugeschrieben hatte: "Der Abzug des Steuerermaessigungsbetrags ist auf die tatsaechlich
+      zu zahlende Gewerbesteuer beschraenkt." Damit ist schlichtes Addieren der Messbetraege
+      und der gewerblichen Einkuenfte richtig. (Erneuter Beleg fuer
+      instructor-gesetzeswert-nie-aus-gedaechtnis: die Fehlannahme haette die Struktur
+      unnoetig verkompliziert.)
+
+      Gebaut: _p35_partner_anteile(f) liefert (messbetrag, hebesatz, gewerbliche Einkuenfte)
+      des Ehegatten, nur bei Zusammenveranlagung, mit derselben Betriebsart-Weiche wie Person A
+      und OHNE § 16-vg (§ 7 S. 2 GewStG). _p35_gezahlte_gewst() rechnet den S.-5-Deckel JE
+      BETRIEB und summiert — zwei Gemeinden haben verschiedene Hebesaetze, ein gemeinsamer
+      Hebesatz auf die Messbetragssumme waere schlicht eine andere Zahl. Beide Zweige
+      (gesamt + rentner), alle sechs Verwendungsstellen ueber drei Summenvariablen.
+
+      Tests in tests/test_gewinn_partner_ring.py (jetzt 10): Anrechnung greift fuer den
+      Ehegatten / Hebesatz-Deckel je Betrieb / wirkt NICHT bei Einzelveranlagung.
     entstanden: |
       2026-08-13 mit der Stufe 2 der Partnerachse (partnerseite-gewinneinkuenfte-fehlt-
       strukturell). Seit diesem Commit steht der Gewinn des Ehegatten im § 35-NENNER (er ist
