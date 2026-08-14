@@ -47,6 +47,17 @@ import server as _server  # noqa: E402 — teilt server._lade_env_dateien mit de
 # Bestehendes Prozess-Env gewinnt IMMER (kein Override, s. Doku dort); fehlende .env = no-op.
 _server._lade_env_dateien(_ROOT)
 
+# ...ABER der LLM-Schlüssel wird für die Suite sofort wieder entfernt (2026-08-14).
+# Seit .env.llm existiert, lud die Zeile darüber einen ECHTEN Key in jeden Testlauf. Folge:
+# test_chat_501 bekam 200 statt der erwarteten Cap-Grenze — und, schwerer wiegend, jeder
+# Suite-Durchlauf hätte echte, kostenpflichtige LLM-Calls abgesetzt (~20-40 s pro Aufruf).
+# Tests, die den Chat prüfen, patchen llm_client.complete und brauchen den Key nicht; Tests,
+# die die Cap-Grenze prüfen, brauchen seine ABWESENHEIT. Wer wirklich live testen will, setzt
+# LLM_API_KEY im Testkörper selbst — dann ist es eine bewusste Entscheidung und steht im Test.
+# Base und Modell bleiben stehen: ohne Key passiert damit ohnehin nichts (llm_client._key()
+# wirft zuerst), und ihre Werte sind kein Geheimnis.
+os.environ.pop("LLM_API_KEY", None)
+
 _REAL_AUDIT_PFAD = os.path.abspath(os.path.join(_audit.AUDIT_DIR, "audit.jsonl"))
 
 

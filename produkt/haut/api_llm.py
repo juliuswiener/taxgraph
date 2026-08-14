@@ -43,8 +43,37 @@ def _chat_prompt(freitext: str, katalog: list[dict]) -> list[dict]:
         "Du darfst NUR diese Felder vorschlagen (keine anderen):\n" + felder + "\n\n"
         "Geld-Beträge MUSST du als GANZZAHL in CENT angeben (EUR × 100), z.B. 2156,50 € → 215650. "
         "Niemals als EUR-Kommazahl oder EUR-Ganzzahl.\n"
-        "Antworte AUSSCHLIESSLICH mit einem JSON-Array [{\"feld_id\":\"…\",\"wert\":…,\"begruendung\":\"kurz\"}], "
-        "nur Felder für die die Beschreibung einen konkreten Wert hergibt, sonst []. Kein Fließtext.")
+        # Gemessen 2026-08-14, erster echter Lauf: aus "Ich bin Arbeitnehmer, verheiratet, fahre an
+        # 220 Tagen 15 km zur Arbeit und habe 62000 Euro brutto verdient" schlug das Modell NEBEN
+        # den vier echten Werten auch kein_gewinn/kein_kap/kein_vuv/kein_sonstige = true vor. Der
+        # Nutzer hat das nicht gesagt — ein Arbeitnehmer kann sehr wohl ein Depot haben.
+        # Eine erfundene ABWESENHEIT ist gefährlicher als ein erfundener Betrag: ein zu hoher
+        # Betrag fällt beim Bestätigen auf, ein "nein, hatte ich nicht" klingt plausibel und wird
+        # durchgewunken — und dann fehlt eine ganze Einkunftsart in der Erklärung (Under-
+        # Deklaration). Deshalb diese Regel; die Felder bleiben vorschlagbar, wenn der Nutzer die
+        # Abwesenheit wirklich ausspricht.
+        # Erster Versuch endete mit "Im Zweifel dieses Feld weglassen" — das Modell bezog die
+        # Zurückhaltung auf ALLE Felder und lieferte statt acht nur noch einen Vorschlag. Die Regel
+        # muss also ausdrücklich sagen, dass sie nur für die kein_-Felder gilt.
+        "SONDERREGEL, GILT NUR FÜR FELDER MIT PRÄFIX 'kein_': diese behaupten das FEHLEN einer "
+        "Einkunftsart. Schlage sie NUR vor, wenn der Nutzer die Abwesenheit ausdrücklich nennt "
+        "('ich habe keine Kapitalerträge', 'ich vermiete nichts'). Aus einer Berufsangabe wie 'ich "
+        "bin Arbeitnehmer' folgt NICHT, dass es keine Kapitalerträge, Vermietung oder sonstigen "
+        "Einkünfte gibt — ein Arbeitnehmer kann ein Depot haben. Im Zweifel NUR das betroffene "
+        "kein_-Feld weglassen. Für alle anderen Felder gilt diese Zurückhaltung ausdrücklich NICHT: "
+        "dort schlägst du jeden Wert vor, den die Beschreibung hergibt.\n"
+        # OBJEKT, nicht Array — und das ist keine Geschmacksfrage: llm_client sendet
+        # response_format={"type":"json_object"}, und dieser Modus verlangt ein Objekt an der
+        # Wurzel. Der Prompt verlangte bis 2026-08-14 ein nacktes Array. Das Modell löste den
+        # Widerspruch, indem es EIN Objekt lieferte — also genau EINEN Vorschlag, egal wie viele
+        # Werte im Text standen. Gemessen am selben Satz: mal 8 Vorschläge (Array, gegen den
+        # Modus), zweimal nur 1. Die Schwankung sah aus wie Modell-Laune und war ein
+        # Format-Konflikt. _chat_parse versteht den Wrapper längst.
+        "Antworte AUSSCHLIESSLICH mit einem JSON-OBJEKT der Form "
+        "{\"vorschlaege\": [{\"feld_id\":\"…\",\"wert\":…,\"begruendung\":\"kurz\"}]}. "
+        "Die Liste enthält EINEN Eintrag JE FELD, für das die Beschreibung einen konkreten Wert "
+        "hergibt — nenne alle, die du erkennst, nicht nur den ersten. Kein Treffer → "
+        "{\"vorschlaege\": []}. Kein Fließtext.")
     return [{"role": "system", "content": system}, {"role": "user", "content": freitext}]
 
 
