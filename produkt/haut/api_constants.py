@@ -421,7 +421,7 @@ GESAMT_P35C = ("p35c_sanierungsaufwendungen", "p35c_ist_uebernaechstes_foerderja
 
 # ========== § 10 Abs.1a Nr.1 Realsplitting ==========
 GESAMT_REALSPLITTING = ("realsplitting_unterhaltsleistungen", "realsplitting_empfaenger_kv_pv",
-                        "realsplitting_zustimmung")
+                        "realsplitting_empfaenger_kv_krankengeld", "realsplitting_zustimmung")
 
 # ========== § 21 Veräußerungs-Gewinn (Gesamt) ==========
 GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")

@@ -55,6 +55,36 @@ bindungen:
       zitatanker: "Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten aufgewandten Beiträge"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
 
+  - feld_id: realsplitting_empfaenger_kv_krankengeld
+    vorschlagbar_von: [beleg]
+    # BEWUSST kein signatur_slot: der Rechenring kennt die 4-Prozent-Kürzung (§ 10 Abs. 1 Nr. 3
+    # Buchst. a S. 4) heute NICHT — er rechnet deckel = 13805 + kv_pv_beitraege, ungekürzt. Dieses
+    # Feld ist damit vorerst reine Deklaration. Es einfach als zweiten Summanden an
+    # `kv_pv_beitraege` zu hängen wäre falsch (es ist eine TEILMENGE davon, keine Ergänzung), und
+    # die Kürzung selbst gehört in die Regel, nicht in die Bindung. Der Befund ist gemeldet.
+    quelle: {regel_id: p10_1a_realsplitting, geltungsbedingung: deckel_13805_plus_kv_pv}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel von diesen Kranken- und Pflegeversicherungsbeiträgen entfällt auf eine Krankenversicherung mit Anspruch auf Krankengeld?"
+    hilfe_kurz: "Teilbetrag der Zeile davor, nicht zusätzlich. Bei gesetzlich Versicherten mit Krankengeldanspruch ist das meist der volle Krankenversicherungsanteil (ohne Pflegeversicherung); steht auf der Beitragsbescheinigung der Kasse. Kein Anspruch auf Krankengeld: 0."
+    beispielwert: 300000
+    herkunft_slots: null
+    # E10/SO/Unt_Leist — "Davon entfallen auf Krankenversicherungsbeiträge mit Anspruch auf
+    # Krankengeld laut Anlage U" (Wortlaut aus E10-2025.xsd, gelesen 2026-08-14). Dritte und
+    # letzte Kz dieses Containers; die anderen beiden (E0304601, E0300717) waren gebunden, diese
+    # nicht — deshalb beanstandete checkESt "Zeile 7", obwohl Zeile 5 gefüllt war
+    # (reports/adjudikation/feldmatrix_vollklassifikation_2026-08-12.md, Abschnitt 4).
+    #
+    # Wie E0300717 erst ab VZ 2025 im Schema: der Container trug 2024 nur E0304601.
+    elster_kz: E0300829
+    vz_gueltigkeit: [2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 Buchst. a S. 4 EStG"
+      zitatanker: "Wenn sich aus den Krankenversicherungsbeiträgen nach Satz 2 ein Anspruch auf Krankengeld oder ein Anspruch auf eine Leistung, die anstelle von Krankengeld gewährt wird, ergeben kann, ist der jeweilige Beitrag um 4 Prozent zu vermindern"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
   - feld_id: realsplitting_zustimmung
     vorschlagbar_von: []
     quelle: {regel_id: p10_1a_realsplitting, geltungsbedingung: antrag_mit_zustimmung}

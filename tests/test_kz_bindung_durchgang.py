@@ -147,6 +147,7 @@ def test_block4_kommt_im_xml_an(bindung):
     xml = _xml({"kinderbetreuungskosten": 300000,             #  3.000 EUR
                 "realsplitting_unterhaltsleistungen": 1200000,  # 12.000 EUR
                 "realsplitting_empfaenger_kv_pv": 180000,     #  1.800 EUR (darin enthalten)
+                "realsplitting_empfaenger_kv_krankengeld": 150000,  # 1.500 EUR (davon)
                 "dba_auslaendische_einkuenfte": 500000,       #  5.000 EUR
                 "dba_gezahlte_auslaendische_steuer": 70000},  #    700 EUR
                bindung)
@@ -154,6 +155,11 @@ def test_block4_kommt_im_xml_an(bindung):
     assert _pfad_im_xml(xml, ("Kind", "KBK", "Art", "Sum", "E0506105"), "3000")
     assert _pfad_im_xml(xml, ("SO", "Unt_Leist", "E0304601"), "12000")
     assert _pfad_im_xml(xml, ("SO", "Unt_Leist", "E0300717"), "1800")
+    # Dritte Kz desselben Containers, ergänzt 2026-08-14. Ohne sie beanstandete checkESt
+    # "Zeile 7" (Krankengeld-Anspruch), obwohl Zeile 5 gefüllt war — die Anlage U war über die
+    # zwei Summenfelder hinaus nicht gebaut. Die drei Beträge sind INEINANDER geschachtelt:
+    # 1.500 sind Teil der 1.800, die Teil der 12.000 sind. Keine Summanden.
+    assert _pfad_im_xml(xml, ("SO", "Unt_Leist", "E0300829"), "1500")
     assert _pfad_im_xml(xml, ("AUS", "Staat_Spez_InvFonds", "Ek", "E0601401"), "5000")
     assert _pfad_im_xml(xml, ("AUS", "Staat_Spez_InvFonds", "Anzur_ausl_St",
                               "E0601901"), "700")

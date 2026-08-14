@@ -168,6 +168,15 @@ BLOECKE = {
         ("tage_24h", 10),
         ("vpf_fruehstuecke_gestellt_anzahl", 5),
     ],
+    # Anlage U, Geberseite (§ 10 Abs. 1a Nr. 1). Die drei Kz des Containers SO/Unt_Leist sind
+    # INEINANDER geschachtelt, keine Summanden: 1.500 sind Teil der 1.800, die Teil der 12.000
+    # sind. Bis 2026-08-14 fehlte die dritte (E0300829, Krankengeld-Anspruch) in der Bindung —
+    # checkESt beanstandete "Zeile 7", obwohl Zeile 5 gefuellt war.
+    "realsplitting": [
+        ("realsplitting_unterhaltsleistungen", 1200000),
+        ("realsplitting_empfaenger_kv_pv", 180000),
+        ("realsplitting_empfaenger_kv_krankengeld", 150000),
+    ],
 }
 
 # Bloecke, die HEUTE nicht durchgehen — jeder mit der gemessenen ERiC-Meldung und einem
