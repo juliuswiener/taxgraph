@@ -258,6 +258,111 @@ def test_aendern_oeffnet_das_feld_im_fragefluss(seite):
     assert _stand(page)["felder"]["ep_arbeitstage"]["zustand"] == "vorlaeufig"
 
 
+# ---------------------------------------------------------------- Konflikte
+# Schlägt die KI etwas für ein Feld vor, das schon einen Wert trägt, darf sie es nicht
+# überschreiben (Auflage B — höchstens ein aktives Event je Feld). Der Server meldete solche Fälle
+# seit jeher in `konflikte`, die Oberfläche zeigte sie NIRGENDS: für den Nutzer sah es aus, als
+# hätte die KI seine Angabe überhört. Julius 2026-08-14 als offener Punkt benannt.
+KONFLIKT_TEXT = "Ich verdiene 70000 Euro brutto."
+
+
+@pytest.fixture
+def stub_llm_konflikt(monkeypatch):
+    monkeypatch.setattr(api_llm, "_llm_dialog",
+                        lambda freitext, katalog, kontext="", user_id=None: {
+                            "vorschlaege": [{"feld_id": "bruttoarbeitslohn", "wert": 7000000,
+                                             "beleg": "70000 Euro brutto", "begruendung": "genannt"}],
+                            "antwort": "", "unsicher": False})
+
+
+def test_konflikt_traegt_anzeige_metadaten(tmp_path, monkeypatch, stub_llm_konflikt):
+    """Ein Konflikt zeigt ZWEI Werte nebeneinander. Ohne Anzeige-Metadaten stünde dort zweimal
+    Speicherform — und genau hier muss der Nutzer zwei Zahlen vergleichen können."""
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
+    API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "k1"})
+    API.event("k1", {"feld_id": "bruttoarbeitslohn", "wert": 6200000, "zustand": "bestaetigt",
+                     "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                     "schreiber": "ui:laie",
+                     "signal": {"signal_1": None, "signal_2": "klick@bruttoarbeitslohn"}})
+    st, body = API.chat("k1", {"text": KONFLIKT_TEXT})
+    assert st == 200
+    assert body["vorschlaege"] == [], "Ein belegtes Feld darf nicht überschrieben werden"
+    assert len(body["konflikte"]) == 1
+    k = body["konflikte"][0]
+    assert k["aktueller_wert"] == 6200000 and k["vorschlag_wert"] == 7000000
+    assert k["typ"] == "cent", "ohne typ zeigt die Oberfläche zwei Cent-Rohwerte"
+    assert k["frage"], "ohne Fragetext weiß der Nutzer nicht, worum gestritten wird"
+    assert k["aktuelles_event_id"], "ohne event_id kann die Übernahme nichts ersetzen"
+
+
+@braucht_browser
+def test_konflikt_erscheint_und_keine_seite_gewinnt_von_allein(base, stub_llm_konflikt):
+    """Der Kern: beide Werte sichtbar, und ohne Klick ändert sich nichts. Vorher verschwand der
+    Vorschlag lautlos — der Nutzer erfuhr nie, dass die KI etwas anderes verstanden hatte."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 360, "height": 780})
+        page.goto(base)
+        page.wait_for_load_state("networkidle")
+        page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        page.evaluate("""async () => {
+            await jpost(`/fall/${FALL}/event`, {
+                feld_id: "bruttoarbeitslohn", wert: 6200000, zustand: "bestaetigt",
+                herkunft: {herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer"},
+                schreiber: "ui:laie",
+                signal: {signal_1: null, signal_2: "klick@bruttoarbeitslohn"}});
+        }""")
+        page.fill("#chat-text", KONFLIKT_TEXT)
+        page.click("#chat-send")
+        page.wait_for_selector(".v-konflikt", timeout=5000)
+
+        werte = page.eval_on_selector_all(".v-konflikt .v-seite-wert", "els => els.map(e => e.textContent)")
+        assert any("62.000,00" in w for w in werte), f"bisheriger Wert fehlt: {werte}"
+        assert any("70.000,00" in w for w in werte), f"Vorschlag fehlt: {werte}"
+
+        stand = page.evaluate("async () => (await jget(`/fall/${FALL}/stand`)).body.felder")
+        assert stand["bruttoarbeitslohn"]["wert"] == 6200000, (
+            "Der Wert hat sich ohne Klick verändert — ein Konflikt darf sich nicht selbst auflösen.")
+
+        page.click(".v-konflikt .v-uebernehmen")
+        page.wait_for_selector(".v-konflikt.v-fertig", timeout=5000)
+        stand2 = page.evaluate("async () => (await jget(`/fall/${FALL}/stand`)).body.felder")
+        assert stand2["bruttoarbeitslohn"]["wert"] == 7000000, "Die Übernahme hat nicht gewirkt."
+        assert stand2["bruttoarbeitslohn"]["zustand"] == "bestaetigt"
+        browser.close()
+
+
+@braucht_browser
+def test_meins_behalten_schreibt_nichts(base, stub_llm_konflikt):
+    """„Meins behalten" ist bewusst ein reiner Anzeige-Vorgang. Ein Event auf denselben Wert wäre
+    ein zweites Signal, das der Nutzer nie gegeben hat."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 360, "height": 780})
+        page.goto(base)
+        page.wait_for_load_state("networkidle")
+        page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        page.evaluate("""async () => {
+            await jpost(`/fall/${FALL}/event`, {
+                feld_id: "bruttoarbeitslohn", wert: 6200000, zustand: "bestaetigt",
+                herkunft: {herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer"},
+                schreiber: "ui:laie",
+                signal: {signal_1: null, signal_2: "klick@bruttoarbeitslohn"}});
+        }""")
+        page.fill("#chat-text", KONFLIKT_TEXT)
+        page.click("#chat-send")
+        page.wait_for_selector(".v-konflikt", timeout=5000)
+        vorher = page.evaluate("async () => (await jget(`/fall/${FALL}/stand`)).body.felder")
+        page.click(".v-konflikt .v-ok")
+        page.wait_for_selector(".v-konflikt.v-fertig", timeout=5000)
+        nachher = page.evaluate("async () => (await jget(`/fall/${FALL}/stand`)).body.felder")
+        assert nachher == vorher, 'Meins behalten hat etwas geschrieben.'
+        browser.close()
+
+
 @braucht_browser
 def test_keine_horizontale_scrollbar_bei_360px(seite):
     """Dieselbe Falle wie bei den enum-Labels (gemessen scrollWidth 458 > 360): Zitate und

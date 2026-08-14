@@ -465,10 +465,107 @@ function verstandenZeile(v) {
   return li;
 }
 
-function zeigeVerstanden(vorschlaege) {
+// Konflikt-Zeile: die KI schlägt etwas für ein Feld vor, das schon einen Wert trägt (Auflage B —
+// höchstens ein aktives Event je Feld). Bis 2026-08-14 fiel das lautlos unter den Tisch: der
+// Server meldete `konflikte`, die Oberfläche zeigte sie NIRGENDS. Für den Nutzer sah das aus, als
+// hätte die KI seine Angabe überhört.
+//
+// Hier stehen deshalb BEIDE Werte nebeneinander, und keiner gewinnt von allein: "Meins behalten"
+// schreibt gar nichts, "Ändern" ersetzt das bestehende Event. Das ist kein Vorschlag mehr, den man
+// nur bestätigt — es ist ein Widerspruch, den nur der Nutzer auflösen kann.
+function verstandenKonfliktZeile(k) {
+  const li = document.createElement("li");
+  li.className = "v-zeile v-konflikt";
+  li.dataset.feld = k.feld_id;
+  const frage = document.createElement("div");
+  frage.className = "v-frage";
+  frage.textContent = k.frage || k.feld_id;
+  li.appendChild(frage);
+
+  const alt = { ...k, wert: k.aktueller_wert };
+  const neu = { ...k, wert: k.vorschlag_wert };
+  const paar = document.createElement("div");
+  paar.className = "v-paar";
+  const seite = (label, text, cls) => {
+    const d = document.createElement("div");
+    d.className = "v-seite " + cls;
+    const l = document.createElement("div"); l.className = "v-seite-label"; l.textContent = label;
+    const w = document.createElement("div"); w.className = "v-seite-wert"; w.textContent = text;
+    d.appendChild(l); d.appendChild(w);
+    return d;
+  };
+  paar.appendChild(seite("bisher", verstandenWertText(alt), "v-seite-alt"));
+  paar.appendChild(seite("KI schlägt vor", verstandenWertText(neu), "v-seite-neu"));
+  li.appendChild(paar);
+
+  if (k.beleg) {
+    const b = document.createElement("div");
+    b.className = "v-beleg";
+    b.textContent = "weil du sagtest: „" + k.beleg + "“";
+    li.appendChild(b);
+  }
+  // `gross` heißt: dieses Feld steuert andere Regeln. Eine Änderung wechselt nicht bloß einen
+  // Wert, sondern WELCHE FRAGEN überhaupt noch gestellt werden — dafür reicht ein Häkchen nicht.
+  if (k.gross) {
+    const w = document.createElement("div");
+    w.className = "v-warnung";
+    w.textContent = "Achtung: diese Angabe entscheidet, welche weiteren Fragen überhaupt gestellt "
+      + "werden. Eine Änderung wirkt sich auf andere Teile deiner Erklärung aus.";
+    li.appendChild(w);
+  }
+
+  const akt = document.createElement("div");
+  akt.className = "v-aktionen";
+  const behalten = document.createElement("button");
+  behalten.type = "button"; behalten.className = "v-ok"; behalten.textContent = "Meins behalten";
+  behalten.addEventListener("click", () => {
+    // Bewusst KEIN Schreibvorgang: der bestehende Wert bleibt, wie er ist. Alles andere wäre ein
+    // überflüssiges Event auf denselben Wert — und ein zweites Signal, das der Nutzer nie gab.
+    li.classList.add("v-fertig");
+    behalten.textContent = "✓ unverändert";
+    behalten.disabled = true;
+    const a = li.querySelector(".v-uebernehmen");
+    if (a) a.remove();
+  });
+  const uebernehmen = document.createElement("button");
+  uebernehmen.type = "button"; uebernehmen.className = "v-aendern v-uebernehmen";
+  uebernehmen.textContent = "Auf " + verstandenWertText(neu) + " ändern";
+  uebernehmen.addEventListener("click", () => verstandenKonfliktUebernehmen(k, li, uebernehmen));
+  akt.appendChild(behalten);
+  akt.appendChild(uebernehmen);
+  li.appendChild(akt);
+  return li;
+}
+
+async function verstandenKonfliktUebernehmen(k, li, btn) {
+  if (btn.disabled) return;   // Doppel-Submit-Schutz
+  btn.disabled = true;
+  const r = await jpost(`/fall/${FALL}/event`, {
+    feld_id: k.feld_id, wert: k.vorschlag_wert, zustand: "bestaetigt",
+    herkunft: { herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer" },
+    schreiber: "ui:laie",
+    // Ersetzt das BESTEHENDE Event (nicht den Vorschlag — der wurde nie geschrieben, genau
+    // deshalb ist es ja ein Konflikt).
+    signal: { signal_1: k.aktuelles_event_id, signal_2: "konflikt@" + k.feld_id },
+    ersetzt: k.aktuelles_event_id,
+  });
+  if (!okStatus(r.status)) {
+    zeigeNetzFehler("Abgewiesen: " + (r.body.fehler || r.status));
+    btn.disabled = false;
+    return;
+  }
+  li.classList.add("v-fertig");
+  btn.textContent = "✓ geändert";
+  const b = li.querySelector(".v-ok");
+  if (b) b.remove();
+  await refresh();
+}
+
+function zeigeVerstanden(vorschlaege, konflikte) {
   const ul = $("verstanden-liste");
   ul.innerHTML = "";
   for (const v of vorschlaege) ul.appendChild(verstandenZeile(v));
+  for (const k of (konflikte || [])) ul.appendChild(verstandenKonfliktZeile(k));
   VERSTANDEN_OFFEN = true;
   $("wegpunkt").hidden = true;
   $("fertig").hidden = true;
@@ -588,6 +685,7 @@ async function chatSenden() {
       (r.body && r.body.vertrag) || "Der KI-Kanal ist noch nicht verbunden."));
   } else if (r.status === 200 && r.body) {
     const vorschlaege = r.body.vorschlaege || [];
+    const konflikte = r.body.konflikte || [];
     if (r.body.antwort) {
       body.appendChild(beraterZeile("chat-antwort", r.body.antwort));
       // Das Modell muss im Schema angeben, ob es sich sicher ist. Wird das verschwiegen, sieht
@@ -597,14 +695,22 @@ async function chatSenden() {
           "Die KI ist sich hier nicht sicher — bitte nachprüfen, im Zweifel steuerlich beraten lassen."));
       }
     }
-    if (vorschlaege.length) {
-      body.appendChild(beraterZeile("chat-erklaer",
-        `Dazu ${vorschlaege.length === 1 ? "ein Vorschlag" : vorschlaege.length + " Vorschläge"} `
-        + "— oben zum Bestätigen."));
+    if (vorschlaege.length || konflikte.length) {
+      const teile = [];
+      if (vorschlaege.length) {
+        teile.push(vorschlaege.length === 1 ? "ein Vorschlag" : vorschlaege.length + " Vorschläge");
+      }
+      // Konflikte gehören in dieselbe Meldung: sie sind der Grund, warum die KI eine Angabe
+      // scheinbar überhört hat — sie durfte ein belegtes Feld nicht überschreiben.
+      if (konflikte.length) {
+        teile.push(konflikte.length === 1 ? "ein Widerspruch zu deinen Angaben"
+                                          : konflikte.length + " Widersprüche zu deinen Angaben");
+      }
+      body.appendChild(beraterZeile("chat-erklaer", "Dazu " + teile.join(" und ") + " — oben."));
       // Die Verstanden-Seite tritt vor: der Nutzer sieht alles auf einmal, was aus seinem Satz
       // geworden ist, samt dem Satzteil, auf den es sich stützt. Der Berater bleibt darunter
       // stehen, die Antwort ist also weiter lesbar.
-      zeigeVerstanden(vorschlaege);
+      zeigeVerstanden(vorschlaege, konflikte);
       await refresh();   // Ring/Belegt aktualisieren; zeigeVerstanden hält die Seite vorn
     } else if (!r.body.antwort) {
       body.appendChild(beraterZeile("chat-erklaer",

@@ -3299,6 +3299,10 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
                 "begruendung": v.get("begruendung", ""),
                 "beleg": v.get("beleg", ""),
                 "gross": _ist_struktureller_konflikt(fid),
+                # Dieselben Anzeige-Metadaten wie bei den Vorschlägen. Ein Konflikt zeigt ZWEI
+                # Werte nebeneinander — ohne sie stünde dort zweimal Speicherform, und genau hier
+                # muss der Nutzer zwei Zahlen vergleichen können.
+                **_anzeige_metadaten(fid, bindung),
             })
             continue
         try:
