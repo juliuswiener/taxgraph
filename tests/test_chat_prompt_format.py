@@ -39,7 +39,7 @@ KATALOG = [{"feld_id": "bruttoarbeitslohn", "fragetext_laie": "Wie hoch war dein
 
 
 def _system() -> str:
-    return api_llm._chat_prompt("egal", KATALOG)[0]["content"]
+    return api_llm._dialog_prompt("egal", KATALOG)[0]["content"]
 
 
 def test_prompt_verlangt_ein_objekt_kein_nacktes_array():

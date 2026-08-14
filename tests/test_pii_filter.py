@@ -135,7 +135,7 @@ class TestPlzOrt:
 class TestLeak:
     def test_pii_entfernt_vor_llm_call(self, monkeypatch, tmp_path):
         """Monkeypatch llm_client.complete, Argument einfangen, Freitext MIT IdNr + IBAN
-        durch _llm_vorschlaege schicken, assert Roh-IdNr im messages-Objekt NICHT vorkommt."""
+        durch _llm_dialog schicken, assert Roh-IdNr im messages-Objekt NICHT vorkommt."""
         monkeypatch.setattr(AUDIT, "AUDIT_DIR", str(tmp_path))
         captured = {}
 
@@ -149,9 +149,9 @@ class TestLeak:
         import llm_client
         monkeypatch.setattr(llm_client, "complete", fake_complete)
 
-        # _llm_vorschlaege aufrufen — muss PII rausfiltern VOR complete
+        # _llm_dialog aufrufen — muss PII rausfiltern VOR complete
         freitext = "Meine IdNr ist 12345678901 und IBAN DE12500105170648489890"
-        result = api_llm._llm_vorschlaege(freitext, [], user_id="test")
+        result = api_llm._llm_dialog(freitext, [], user_id="test")
 
         assert "messages" in captured
         msgs = captured["messages"]
@@ -180,7 +180,7 @@ class TestAudit:
                             lambda role, messages, fixture_id=None, schema=None: llm_client.Completion(text='[]'))
 
         freitext = "Meine IdNr ist 12345678901"
-        api_llm._llm_vorschlaege(freitext, [], user_id="audit_test")
+        api_llm._llm_dialog(freitext, [], user_id="audit_test")
 
         # Audit-Eintrag prüfen
         eintraege = AUDIT.lies()
@@ -203,7 +203,7 @@ class TestAudit:
 # --------------------------------------------------------------- Fehlalarm-Test
 class TestNoFalsePositives:
     def test_steuertext_ohne_pii(self, monkeypatch):
-        """Steuer-Freitext ohne PII bleibt wortgleich durch _llm_vorschlaege."""
+        """Steuer-Freitext ohne PII bleibt wortgleich durch _llm_dialog."""
         import llm_client
         monkeypatch.setattr(llm_client, "complete",
                             lambda role, messages, fixture_id=None, schema=None: llm_client.Completion(text='[]'))
@@ -234,13 +234,13 @@ class TestNaht:
 
         monkeypatch.setattr(api_llm, "filtere", kaputt)
 
-        # _llm_vorschlaege muss filtere aufrufen → NAHT
+        # _llm_dialog muss filtere aufrufen → NAHT
         import llm_client
         monkeypatch.setattr(llm_client, "complete",
                             lambda role, messages, fixture_id=None, schema=None: llm_client.Completion(text='[]'))
 
         with pytest.raises(RuntimeError, match="NAHT"):
-            api_llm._llm_vorschlaege("Hallo Welt", [], user_id="test")
+            api_llm._llm_dialog("Hallo Welt", [], user_id="test")
 
 
 # --------------------------------------------------------------- Kategorien-Reihenfolge

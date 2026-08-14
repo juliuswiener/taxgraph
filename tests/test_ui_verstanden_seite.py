@@ -21,8 +21,8 @@ Drei Dinge, die hier schiefgehen können und deshalb geprüft werden:
      nächste Frage. Ohne Sperre säße der Nutzer nach der ersten Bestätigung im Fragefluss und
      seine restliche Liste wäre fort.
 
-NULL LLM: `_llm_vorschlaege` ist durch eine Fixture-Funktion ersetzt (kein Netz, kein Mock-
-Framework). Geprüft wird alles NACH dem Modellaufruf — Anzeige, Bestätigung, Schreibpfad.
+NULL LLM: `_llm_dialog` ist durch eine Fixture-Funktion ersetzt (kein Netz, kein Mock-Framework).
+Geprüft wird alles NACH dem Modellaufruf — Anzeige, Bestätigung, Schreibpfad.
 """
 from __future__ import annotations
 
@@ -73,8 +73,10 @@ VORSCHLAEGE = [
 def stub_llm(monkeypatch):
     """Ersetzt den Modellaufruf, nicht den Rest: Katalog-Check, Auflage A/B, Store-Schreibpfad und
     die Anreicherung mit Anzeige-Metadaten laufen echt."""
-    monkeypatch.setattr(api_llm, "_llm_vorschlaege",
-                        lambda freitext, katalog, user_id=None: [dict(v) for v in VORSCHLAEGE])
+    monkeypatch.setattr(api_llm, "_llm_dialog",
+                        lambda freitext, katalog, kontext="", user_id=None: {
+                            "vorschlaege": [dict(v) for v in VORSCHLAEGE],
+                            "antwort": "", "unsicher": False})
 
 
 @pytest.fixture

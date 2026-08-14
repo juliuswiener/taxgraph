@@ -3216,7 +3216,21 @@ def _anzeige_metadaten(fid: str, bindung: dict) -> dict:
 
 
 def chat(fall_id: str, body: dict) -> tuple[int, dict]:
-    """Chat-Berater (K1): der Nutzer beschreibt seine Situation in Freitext → das LLM SCHLÄGT Feld-Werte VOR →
+    """Chat-Berater (K1), EIN Kanal für beides: Werte vorschlagen UND Fragen beantworten.
+
+    Julius 2026-08-14: „‚Ein Satz an die KI' kann aber auch einfach eine Nachfrage sein." Vorher
+    gab es zwei Knöpfe und zwei Endpunkte — der Nutzer musste seinen eigenen Satz vorher
+    einsortieren, obwohl ein Satz oft beides ist. Jetzt geht jede Nachricht denselben Weg, und die
+    Antwort trägt `vorschlaege` UND `antwort`/`unsicher`; eines von beidem darf leer sein.
+
+    Die Trennung liegt damit nicht mehr im Kanal, sondern im UMGANG mit dem Ergebnis: aus
+    `vorschlaege` werden VORLÄUFIGE Events (Auflage A, Katalog-Check, Beleg-Gate), `antwort` ist
+    reiner Text und wird nirgends gespeichert. Ein Modell, das im Fließtext behauptet „ich trage
+    dir 220 Tage ein", ändert deshalb nichts — geschrieben wird nur, was durch das Beleg-Gate und
+    den Katalog kommt.
+
+    Ursprüngliche Beschreibung des Vorschlags-Teils:
+    der Nutzer beschreibt seine Situation in Freitext → das LLM SCHLÄGT Feld-Werte VOR →
     jeder Vorschlag wird als VORLÄUFIGES Event geschrieben (schreiber='llm:chat'). Store-Auflage A + der Katalog-
     Check (katalog=lade_katalog) erzwingen strukturell: herkunft=llm_vorschlag, zustand=vorlaeufig, signal_2=null
     (nie in die Summe ohne menschlichen Hold-Confirm) UND nur Felder die der Katalog als LLM-vorschlagbar führt
@@ -3260,10 +3274,14 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
          "hilfe_kurz": b.get("hilfe_kurz", ""), "typ": b.get("typ"),
          "bereich": b.get("bereich"), "enum_werte": b.get("enum_werte")}
         for fid, b in bindung.items() if fid in check_katalog["llm"]]
+    # Kontext für die ANTWORT-Hälfte: das gerade offene Feld (schickt die Oberfläche mit), sein
+    # Zitatanker und die schon bestätigten Angaben. Für die Vorschläge ist er ohne Bedeutung.
+    kontext = _erklaer_kontext(store, bindung, body.get("feld_id") or None)
     try:
-        vorschlaege = api_llm._llm_vorschlaege(freitext, prompt_katalog, user_id=api_auth._AUTH_USER)
+        erg = api_llm._llm_dialog(freitext, prompt_katalog, kontext, user_id=api_auth._AUTH_USER)
     except (api_llm.LlmNichtVerfuegbar, ImportError):   # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
         return 501, CHAT_501                             # echte Logik-/Parse-Bugs propagieren (konsistent zu kontoauszug)
+    vorschlaege = erg["vorschlaege"]
     geschrieben, abgelehnt, konflikte = [], [], []
     abgelehnt_gruende = {}
     for v in vorschlaege:
@@ -3311,6 +3329,11 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
         sys.stderr.write(f"[haut.chat] LLM-Vorschläge außerhalb Katalog abgelehnt: {sorted(set(_abg))}\n")
     return 200, {"vorschlaege": geschrieben, "abgelehnt": _abg, "abgelehnt_gruende": abgelehnt_gruende,
                  "konflikte": konflikte,
+                 # Die Antwort-Hälfte. Leer, wenn der Nutzer nichts gefragt hat — dann zeigt die
+                 # Oberfläche nur die Vorschläge. `unsicher` sagt, ob das Modell die Antwort selbst
+                 # für nicht gesichert hält; das gehört sichtbar zum Nutzer, sonst liest sich eine
+                 # Vermutung wie eine Auskunft.
+                 "antwort": erg["antwort"], "unsicher": erg["unsicher"],
                  "hinweis": "Vorschläge erfasst — bitte jeden einzeln bestätigen (die KI setzt nichts)."}
 
 
@@ -3362,37 +3385,6 @@ def _erklaer_kontext(store: dict, bindung: dict, fid: str | None) -> str:
                   for f, e in bestaetigt[:_ERKLAER_KONTEXT_MAX]]
         teile.append("Das hat der Nutzer bereits bestätigt:\n" + "\n".join(zeilen))
     return "\n".join(teile)
-
-
-def erklaere(fall_id: str, body: dict) -> tuple[int, dict]:
-    """Erklär-Kanal (Nachfragen): Freitext-Frage → Freitext-Antwort. KEIN Feld, KEIN Event.
-
-    Julius 2026-08-14: „Bei Erklär mir soll die AI das erklären … aber der Nutzer sollte
-    Nachfragen stellen können. Wenn möglich könnte die AI hier auch schon Sachen mit in Betracht
-    ziehen, die der Nutzer bereits geantwortet hat."
-
-    Die ERSTE Erklärung baut die Oberfläche selbst aus Fragetext, Kurzhilfe und Zitatanker — die
-    hat sie schon aus /fragen, sie kostet nichts und ist auch ohne Key da. Dieser Endpunkt ist für
-    das, was danach kommt.
-
-    Die Grenze zum Vorschlags-Kanal ist STRUKTURELL, nicht bloß eine Prompt-Regel: hier wird
-    append_event nie aufgerufen. Was das Modell hier sagt, kann keinen Wert setzen — auch keinen
-    vorläufigen. Deshalb braucht dieser Pfad auch keinen Katalog-Check.
-
-    Cap-gated wie /chat: kein Key/Provider oder eine unverwertbare Antwort → 501 + Erklär-Vertrag."""
-    _fall_owner_check(fall_id)
-    store = lade_fall(fall_id)
-    bindung = _scheibe_bindung(store)
-    frage = (body.get("frage") or "").strip()
-    if not frage:
-        raise ApiError(400, "frage fehlt")
-    fid = body.get("feld_id") or None
-    try:
-        erg = api_llm._llm_erklaerung(frage, _erklaer_kontext(store, bindung, fid),
-                                      user_id=api_auth._AUTH_USER)
-    except (api_llm.LlmNichtVerfuegbar, ImportError):
-        return 501, CHAT_501
-    return 200, {"fall_id": fall_id, "feld_id": fid, **erg}
 
 
 # ----------------------------------------------------------------- P8.3 Health / Ready

@@ -91,19 +91,16 @@
         </div>
       </section>
 
-      <!-- KI-Berater: dauerhaft offen, kein Modal mehr (Julius 2026-08-14: „Die KI sollte immer
-           offen sein, sodass man ihr ständig einfach auch was hinschmeißen kann"). Zwei Knöpfe,
-           weil es zwei verschiedene Dinge sind: aus einer Beschreibung Werte machen (schreibt
-           vorläufige Vorschläge) oder eine Frage stellen (schreibt nichts). -->
+      <!-- KI-Berater: dauerhaft offen, kein Modal (Julius 2026-08-14: „Die KI sollte immer offen
+           sein, sodass man ihr ständig einfach auch was hinschmeißen kann"). EIN Feld, EIN Knopf:
+           ein Satz kann Angabe, Frage oder beides sein — der Nutzer soll ihn nicht vorher
+           einsortieren müssen („‚Ein Satz an die KI' kann aber auch einfach eine Nachfrage sein"). -->
       <section id="berater" class="card berater">
         <div class="berater-kopf">💬 KI-Berater <span class="berater-hint">immer da</span></div>
         <div id="chat-body" class="chat-body"></div>
         <div class="chat-eingabe">
-          <textarea id="chat-text" rows="2" aria-label="Der KI etwas schreiben" placeholder="Beschreib deine Situation (z. B. „15 km zur Arbeit, 220 Tage") oder stell eine Frage."></textarea>
-          <div class="berater-aktionen">
-            <button id="chat-send" class="maps-berechnen" type="button">Werte übernehmen</button>
-            <button id="chat-frage" class="berater-frage" type="button">Nachfragen</button>
-          </div>
+          <textarea id="chat-text" rows="2" aria-label="Der KI etwas schreiben" placeholder="Schreib einfach drauflos — eine Angabe („15 km zur Arbeit, 220 Tage"), eine Frage, oder beides."></textarea>
+          <button id="chat-send" class="maps-berechnen" type="button">Senden</button>
         </div>
       </section>
 

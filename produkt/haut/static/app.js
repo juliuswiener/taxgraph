@@ -553,7 +553,7 @@ async function erklaereFeld() {
   };
   if (setzeGesetz(q.anker_ref)) body.appendChild(gesetz);
   body.appendChild(beraterZeile("chat-nachfrage-hint",
-    "Noch unklar? Schreib deine Frage unten hin und tippe auf „Nachfragen“."));
+    "Noch unklar? Frag einfach unten nach — oder schreib gleich deine Angabe hin."));
   $("berater").scrollIntoView({ block: "nearest" });
   // Hat das Feld schon ein Event, ist der Anker aus /warum der genauere (er folgt der Regel, die
   // tatsächlich gegriffen hat). Reine Verfeinerung — der Nutzer liest schon, während das läuft.
@@ -561,40 +561,15 @@ async function erklaereFeld() {
   if (r.status === 200 && r.body.justification) setzeGesetz(r.body.justification.anker_ref);
 }
 
-// Nachfrage an die KI: Freitext rein, Freitext raus. Dieser Weg schreibt NIE einen Wert — das
-// ist keine Prompt-Regel, sondern der Endpunkt: /erklaere ruft append_event nicht auf.
-async function nachfragen() {
-  const btn = $("chat-frage");
-  if (btn.disabled) return;   // Doppel-Submit-Schutz
-  const t = $("chat-text");
-  const frage = (t && t.value || "").trim();
-  if (!frage) return;
-  btn.disabled = true;
-  const body = $("chat-body");
-  body.appendChild(beraterZeile("chat-du", "Du: " + frage));
-  const warte = beraterZeile("chat-erklaer", "Die KI liest deine Frage …");
-  body.appendChild(warte);
-  const r = await jpost(`/fall/${FALL}/erklaere`,
-                        { frage, feld_id: AKTUELL ? AKTUELL.feld_id : null });
-  warte.remove();
-  if (r.status === 200 && r.body && r.body.antwort) {
-    body.appendChild(beraterZeile("chat-antwort", r.body.antwort));
-    // Das Modell muss im Schema angeben, ob es sich sicher ist. Wird es verschwiegen, sieht eine
-    // Vermutung aus wie eine Auskunft — und der Nutzer trägt sie in seine Steuererklärung ein.
-    if (r.body.unsicher) {
-      body.appendChild(beraterZeile("chat-unsicher",
-        "Die KI ist sich hier nicht sicher — bitte nachprüfen, im Zweifel steuerlich beraten lassen."));
-    }
-  } else if (r.status === 501) {
-    body.appendChild(beraterZeile("chat-vertrag",
-      (r.body && r.body.vertrag) || "Der KI-Kanal ist nicht verbunden."));
-  } else {
-    body.appendChild(beraterZeile("chat-vertrag", "Der KI-Kanal antwortete unerwartet (" + r.status + ")."));
-  }
-  t.value = "";
-  btn.disabled = false;
-}
-
+// EIN Weg für alles, was der Nutzer schreibt. Julius 2026-08-14: „‚Ein Satz an die KI' kann aber
+// auch einfach eine Nachfrage sein." Vorher gab es zwei Knöpfe — der Nutzer musste seinen eigenen
+// Satz vorher einsortieren, obwohl ein Satz oft beides ist („Ich fahre 15 km — zählt Homeoffice
+// eigentlich als Arbeitstag?"). Jetzt kommt beides zurück: Vorschläge UND Antwort, eines darf
+// leer sein.
+//
+// Der Verlauf wird ANGEHÄNGT, nicht ersetzt: erst dadurch sind Rückfragen möglich — man sieht,
+// worauf man sich bezieht. `feld_id` geht mit, damit die Antwort weiß, bei welcher Frage der
+// Nutzer gerade steht.
 async function chatSenden() {
   const sendBtn = $("chat-send");
   if (sendBtn.disabled) return;   // Doppel-Submit-Schutz
@@ -602,25 +577,46 @@ async function chatSenden() {
   if (!freitext) return;
   sendBtn.disabled = true;
   const body = $("chat-body");
-  body.innerHTML = `<p class="chat-erklaer">Die KI liest deine Beschreibung …</p>`;
-  const r = await jpost(`/fall/${FALL}/chat`, { text: freitext });
+  body.appendChild(beraterZeile("chat-du", "Du: " + freitext));
+  const warte = beraterZeile("chat-erklaer", "Die KI liest mit …");
+  body.appendChild(warte);
+  const r = await jpost(`/fall/${FALL}/chat`,
+                        { text: freitext, feld_id: AKTUELL ? AKTUELL.feld_id : null });
+  warte.remove();
   if (r.status === 501) {
-    body.innerHTML = `<p class="chat-erklaer">Die KI erklärt und verlinkt Paragraph &amp; Beleg — aber sie setzt <b>nie</b> selbst einen Wert. <span class="chat-grenze">Du entscheidest.</span></p>`
-      + `<p class="chat-vertrag">${(r.body && r.body.vertrag) ? r.body.vertrag : "Der KI-Kanal ist noch nicht verbunden."}</p>`;
+    body.appendChild(beraterZeile("chat-vertrag",
+      (r.body && r.body.vertrag) || "Der KI-Kanal ist noch nicht verbunden."));
   } else if (r.status === 200 && r.body) {
-    const n = (r.body.vorschlaege || []).length;
-    if (n) {
-      body.innerHTML = `<p class="chat-erklaer">Die KI hat <b>${n} Vorschlag${n === 1 ? "" : "e"}</b> gemacht — bitte bestätige jeden selbst.</p>`;
+    const vorschlaege = r.body.vorschlaege || [];
+    if (r.body.antwort) {
+      body.appendChild(beraterZeile("chat-antwort", r.body.antwort));
+      // Das Modell muss im Schema angeben, ob es sich sicher ist. Wird das verschwiegen, sieht
+      // eine Vermutung aus wie eine Auskunft — und der Nutzer trägt sie in seine Erklärung ein.
+      if (r.body.unsicher) {
+        body.appendChild(beraterZeile("chat-unsicher",
+          "Die KI ist sich hier nicht sicher — bitte nachprüfen, im Zweifel steuerlich beraten lassen."));
+      }
+    }
+    if (vorschlaege.length) {
+      body.appendChild(beraterZeile("chat-erklaer",
+        `Dazu ${vorschlaege.length === 1 ? "ein Vorschlag" : vorschlaege.length + " Vorschläge"} `
+        + "— oben zum Bestätigen."));
       // Die Verstanden-Seite tritt vor: der Nutzer sieht alles auf einmal, was aus seinem Satz
-      // geworden ist, samt dem Satzteil, auf den es sich stützt.
-      zeigeVerstanden(r.body.vorschlaege);
+      // geworden ist, samt dem Satzteil, auf den es sich stützt. Der Berater bleibt darunter
+      // stehen, die Antwort ist also weiter lesbar.
+      zeigeVerstanden(vorschlaege);
       await refresh();   // Ring/Belegt aktualisieren; zeigeVerstanden hält die Seite vorn
-    } else {
-      body.innerHTML = `<p class="chat-erklaer">Die KI konnte daraus keinen konkreten Feld-Wert vorschlagen. Beschreib es genauer oder trag den Wert direkt ein.</p>`;
+    } else if (!r.body.antwort) {
+      body.appendChild(beraterZeile("chat-erklaer",
+        "Daraus konnte die KI weder einen Wert ableiten noch eine Frage erkennen. "
+        + "Schreib es etwas genauer — oder trag den Wert oben direkt ein."));
     }
   } else {
-    body.textContent = "Der KI-Kanal antwortete unerwartet (" + r.status + ").";
+    body.appendChild(beraterZeile("chat-vertrag",
+      "Der KI-Kanal antwortete unerwartet (" + r.status + ")."));
   }
+  t.value = "";
+  body.scrollTop = body.scrollHeight;   // das Neueste im Blick behalten
   sendBtn.disabled = false;
 }
 
@@ -815,7 +811,6 @@ async function kontoauszugHochladen(datei) {
 document.querySelectorAll(".kachel").forEach(k => k.addEventListener("click", () => waehleScheibe(k.dataset.scheibe)));
 $("chat").addEventListener("click", erklaereFeld);
 $("chat-send").addEventListener("click", chatSenden);
-$("chat-frage").addEventListener("click", nachfragen);
 $("warum").addEventListener("click", zeigeWarum);
 $("verstanden-weiter").addEventListener("click", verstandenWeiter);
 $("kette-zu").addEventListener("click", () => $("kette-overlay").hidden = true);

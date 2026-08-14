@@ -89,7 +89,7 @@ def test_grossschreibung_und_leerzeichen_schaden_nicht():
 def test_schema_erzwingt_den_beleg():
     """Die zweite Hälfte: das Schema, das der Provider durchsetzt. Ohne `beleg` in `required`
     dürfte das Modell es weglassen, und das Gate oben verwürfe dann einfach alles."""
-    s = api_llm.CHAT_SCHEMA
+    s = api_llm.DIALOG_SCHEMA
     assert s.get("strict") is True, "strict fehlt — der Provider erzwingt das Schema dann nicht"
     item = s["schema"]["properties"]["vorschlaege"]["items"]
     assert "beleg" in item["required"], "beleg ist nicht verpflichtend"

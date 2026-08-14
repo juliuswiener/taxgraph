@@ -78,9 +78,6 @@ def _routes():
         ("GET", re.compile(rf"^/fall/{_ID}/graph$"), lambda m, b: api.graph(m["id"])),
         ("POST", re.compile(rf"^/fall/{_ID}/elster-ampel$"), lambda m, b: (503, api.AMPEL_503)),
         ("POST", re.compile(rf"^/fall/{_ID}/chat$"), lambda m, b: api.chat(m["id"], b)),
-        # Erklär-Kanal (Nachfragen): Freitext rein, Freitext raus. Schreibt NIE ein Event — die
-        # Trennung zum Vorschlags-Kanal oben liegt im Handler, nicht in einer Prompt-Regel.
-        ("POST", re.compile(rf"^/fall/{_ID}/erklaere$"), lambda m, b: api.erklaere(m["id"], b)),
         # Arbeitsweg-Entfernung über Karten-Dienst (ORS): Vorschlag-Fluss; kein Key/Fehler → 503-Fallback.
         ("POST", re.compile(rf"^/fall/{_ID}/entfernung$"), lambda m, b: api.entfernung(m["id"], b)),
         # Vorjahr-Übernahme: Vorjahres-Fall → vorläufige Vorschläge (herkunft=vorjahr) im aktuellen Fall.

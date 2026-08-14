@@ -166,8 +166,12 @@ def test_wegpunkt_buttons_responsive(base, playwright_context):
         # Klick auf Kachel startet Fall (JS, keine Playwright-Click wegen Overlay-Blocks)
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
 
-        # Warte, bis .card (Wegpunkt-Karte) sichtbar (nicht hidden)
-        page.wait_for_selector(".card:not([hidden])", timeout=5000)
+        # Warte, bis die WEGPUNKT-Karte sichtbar ist. Hier stand `.card:not([hidden])` — ein
+        # Stellvertreter, der solange trug, wie die Wegpunkt-Karte die einzige .card im Fluss war.
+        # Seit der KI-Berater ebenfalls eine .card ist (und nie versteckt), traf der Selektor
+        # sofort zu, und #bestaetigen hatte noch keine Bounding-Box. Der Test misst jetzt, was er
+        # meint.
+        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
 
         # Buttons
         btn_best = page.query_selector("#bestaetigen")
@@ -297,7 +301,7 @@ def test_overlay_und_berater_responsive(base, playwright_context):
         assert bbox is not None, "Der Berater ist nicht sichtbar — er soll dauerhaft offen sein."
         assert bbox.get("width", 0) <= 360, f"Berater: width={bbox.get('width')} > 360"
         assert page.query_selector("#chat-text") is not None, "Eingabefeld nicht erreichbar"
-        assert page.query_selector("#chat-frage") is not None, "Nachfragen-Knopf fehlt"
+        assert page.query_selector("#chat-send") is not None, "Absende-Knopf fehlt"
 
         # Das Herkunft-Overlay ist weiter ein Modal und muss weiter passen.
         page.evaluate("document.getElementById('kette-overlay').hidden = false")

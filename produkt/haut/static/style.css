@@ -185,8 +185,8 @@ h1,h2,h3{margin:0}
   border-radius:10px;padding:10px;font:inherit;font-size:14px;resize:vertical;min-height:44px}
 
 /* KI-Berater als dauerhaftes Panel (2026-08-14) statt Modal. Julius: „Die KI sollte immer offen
-   sein, sodass man ihr ständig einfach auch was hinschmeißen kann." Zwei Knöpfe, weil es zwei
-   verschiedene Wirkungen sind: Werte übernehmen SCHREIBT (vorläufig), Nachfragen schreibt nichts.
+   sein, sodass man ihr ständig einfach auch was hinschmeißen kann." EIN Feld, EIN Knopf — ein
+   Satz kann Angabe, Frage oder beides sein, und der Nutzer soll ihn nicht vorher einsortieren.
    Der Verlauf ist gedeckelt und scrollt in sich — sonst schiebt eine lange Unterhaltung die
    Belegt-Liste beliebig weit nach unten. */
 .berater{margin-top:4px}
@@ -195,12 +195,7 @@ h1,h2,h3{margin:0}
 .chat-body{max-height:44vh;overflow-y:auto}
 .chat-body p{margin:0 0 8px}
 .chat-body p:last-child{margin-bottom:0}
-.berater-aktionen{display:flex;gap:8px}
-.berater-aktionen .maps-berechnen{flex:1;min-width:0}
-.berater-frage{flex:1;min-width:0;min-height:44px;background:none;color:var(--ink);
-  border:1px solid var(--line);border-radius:8px;padding:10px;font-size:14px;font-weight:600;cursor:pointer}
-.berater-frage:hover{border-color:var(--muted)}
-.berater-frage:disabled,.maps-berechnen:disabled{opacity:.55;cursor:not-allowed}
+.maps-berechnen:disabled{opacity:.55;cursor:not-allowed}
 
 /* Erklärung: der zitierte Gesetzestext und die KI-Antwort dürfen NICHT gleich aussehen. Das eine
    ist der Wortlaut der Norm, das andere eine Umschreibung durch ein Sprachmodell — gleiche Optik
