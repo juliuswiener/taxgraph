@@ -15,7 +15,8 @@ from __future__ import annotations
 
 import json
 import os
-import urllib.request
+import urllib.error      # explizit: urllib.request zieht es zwar intern nach, aber darauf
+import urllib.request    # zu bauen ist Zufall, kein Vertrag — und _call fängt HTTPError
 from dataclasses import dataclass
 
 _TIMEOUT = 30
@@ -47,15 +48,35 @@ def _call(messages: list[dict]) -> str:
     base, model = _base(), _model()
     if not base or not model:
         raise LlmNichtVerfuegbar("LLM_API_BASE/LLM_MODEL nicht gesetzt — Provider nicht konfiguriert.")
+    schluessel = _key()
     body = json.dumps({"model": model, "messages": messages, "temperature": 0,
                        "response_format": {"type": "json_object"}}).encode("utf-8")
     req = urllib.request.Request(
         f"{base}/chat/completions", data=body, method="POST",
-        headers={"Authorization": f"Bearer {_key()}", "Content-Type": "application/json"})
+        headers={"Authorization": f"Bearer {schluessel}", "Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
             j = json.loads(r.read())
         return j["choices"][0]["message"]["content"]
+    except urllib.error.HTTPError as e:
+        # Statuscode UND Provider-Meldung mitnehmen (gekürzt). Vorher stand hier nur
+        # type(e).__name__, also "HTTPError" — und damit sah eine erschöpfte Budget-Grenze
+        # (403 "Budget limit exceeded") exakt aus wie ein falscher Key, ein totes Modell oder
+        # ein Tippfehler in der Base-URL. Gemessen 2026-08-14: die Ursache war nur über einen
+        # Direktaufruf am Client vorbei zu finden.
+        # KEIN Leak-Risiko: der Key steht im REQUEST-Header, nicht in der Antwort, und diese
+        # Meldung erreicht den Nutzer ohnehin nie — der /chat-Handler antwortet mit der festen
+        # CHAT_501-Konstante. Sie ist für das Server-Log und die Diagnose da.
+        try:
+            detail = e.read().decode("utf-8", "replace")[:300]
+        except Exception:                                    # noqa: BLE001
+            detail = ""
+        # Der Schlüssel steht im Request-Header — manche Provider spiegeln ihn in der
+        # Fehlerantwort zurück ("invalid key sk-…"). Ohne diese Maskierung landete er über die
+        # Ausnahme im Log. Gefunden vom eigenen Test dieser Änderung, nicht im Betrieb.
+        if schluessel and schluessel in detail:
+            detail = detail.replace(schluessel, "<KEY>")
+        raise LlmNichtVerfuegbar(f"LLM-Aufruf fehlgeschlagen: HTTP {e.code} {detail}") from e
     except Exception as e:
         raise LlmNichtVerfuegbar(f"LLM-Aufruf fehlgeschlagen: {type(e).__name__}") from e
 
