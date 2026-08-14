@@ -3263,6 +3263,7 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
                 "aktuelles_event_id": bestehendes["event_id"],
                 "vorschlag_wert": v["wert"],
                 "begruendung": v.get("begruendung", ""),
+                "beleg": v.get("beleg", ""),
                 "gross": _ist_struktureller_konflikt(fid),
             })
             continue
@@ -3271,9 +3272,16 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
                 store, feld_id=fid, wert=v["wert"], zustand="vorlaeufig",
                 herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                 schreiber="llm:chat",
-                signal={"signal_1": {"typ": "llm", "begruendung": v.get("begruendung", "")}, "signal_2": None},
+                # Der Beleg (wörtliches Nutzerzitat) wandert ins signal_1 und bleibt damit im
+                # Store — später ist am Event nachvollziehbar, WORAUF sich der Vorschlag stützte.
+                signal={"signal_1": {"typ": "llm", "begruendung": v.get("begruendung", ""),
+                                     "beleg": v.get("beleg", "")}, "signal_2": None},
                 katalog=check_katalog)               # dev-2s GLOBALER Katalog-Check lehnt human-only-Felder fail-closed ab
-            geschrieben.append({"feld_id": fid, "event_id": ev["event_id"], "wert": v["wert"]})
+            # `beleg` geht mit in die Antwort: die Oberfläche soll neben jedem Wert zeigen können,
+            # aus welchem Satzteil er stammt — das ist der Unterschied zwischen "bestätige 62000"
+            # und "bestätige 62000, weil du sagtest: 62000 Euro brutto verdient".
+            geschrieben.append({"feld_id": fid, "event_id": ev["event_id"], "wert": v["wert"],
+                                "beleg": v.get("beleg", "")})
         except (ValueError, KeyError) as e:
             abgelehnt.append(fid)                    # Katalog/Auflage-A/F2-Abweisung → still überspringen, Rest gilt
             if fid:

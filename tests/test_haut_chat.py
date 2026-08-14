@@ -66,15 +66,27 @@ def fall(tmp_path, monkeypatch):
     return "chat1"
 
 
-def _fake_complete(*eintraege):
+def _fake_complete(*eintraege, beleg="Euro"):
     """Baut eine llm_client.complete-Ersatzfunktion (Fixture-Antwort als Completion, kein echter Call, kein
-    Mock) — der reale _chat_prompt/_chat_parse-Code in api.py läuft mit, nur der Netz-Call ist ersetzt."""
-    liste = [{"feld_id": fid, "wert": w, "begruendung": "fixture"} for fid, w in eintraege]
+    Mock) — der reale _chat_prompt/_chat_parse-Code in api.py läuft mit, nur der Netz-Call ist ersetzt.
 
-    def fake(role, messages, fixture_id=None):
+    `beleg` muss WÖRTLICH im Freitext des jeweiligen Tests vorkommen: seit dem Beleg-Gate
+    (api_llm._beleg_geprueft, 2026-08-14) fliegt jeder Vorschlag raus, dessen Zitat nicht im Text
+    steht. Der Default "Euro" ist bewusst nur der gemeinsame Nenner der Freitexte hier unten — er
+    belegt inhaltlich nichts und soll das auch nicht: diese Tests prüfen den Handler-Pfad, nicht
+    die Beleg-Qualität. Dass ein falsches Zitat verworfen wird, prüft
+    tests/test_chat_beleg_gate.py.
+    Der `schema`-Parameter kommt seit den Structured Outputs mit und wird hier ignoriert; die
+    Fixture liefert ohnehin schon die Zielstruktur."""
+    liste = [{"feld_id": fid, "wert": w, "beleg": beleg, "begruendung": "fixture"}
+             for fid, w in eintraege]
+
+    def fake(role, messages, fixture_id=None, schema=None):
         fake.gesehene_messages = messages          # für den Split-Test festhalten
-        return LC.Completion(text=json.dumps(liste))
+        fake.gesehenes_schema = schema
+        return LC.Completion(text=json.dumps({"vorschlaege": liste}))
     fake.gesehene_messages = None
+    fake.gesehenes_schema = None
     return fake
 
 
@@ -155,7 +167,9 @@ def test_graceful_skip_human_only(fall, monkeypatch, capsys):
         ("agb_aufwendungen", 300000),
         ("antrag_ermaessigter_satz", True),         # human-only → muss abgewiesen werden
         ("berufsausbildung_aufwendungen", 90000)))
-    st, body = API.chat(fall, {"text": "…"})        # KEIN Crash trotz eines bösen Vorschlags
+    # Freitext enthält "Euro" — den Default-Beleg der Fixture; sonst scheiterten alle drei
+    # Vorschläge schon am Beleg-Gate und der Test prüfte nicht mehr die Katalog-Abweisung.
+    st, body = API.chat(fall, {"text": "3000 Euro."})   # KEIN Crash trotz eines bösen Vorschlags
     assert st == 200
     assert {g["feld_id"] for g in body["vorschlaege"]} == {"agb_aufwendungen", "berufsausbildung_aufwendungen"}
     assert body["abgelehnt"] == ["antrag_ermaessigter_satz"]   # UNVERÄNDERTE Form: list[feld_id]

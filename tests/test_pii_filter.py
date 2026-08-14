@@ -139,7 +139,7 @@ class TestLeak:
         monkeypatch.setattr(AUDIT, "AUDIT_DIR", str(tmp_path))
         captured = {}
 
-        def fake_complete(role, messages, fixture_id=None):
+        def fake_complete(role, messages, fixture_id=None, schema=None):
             captured["role"] = role
             captured["messages"] = messages
             from llm_client import Completion
@@ -177,7 +177,7 @@ class TestAudit:
 
         import llm_client
         monkeypatch.setattr(llm_client, "complete",
-                            lambda role, messages, fixture_id=None: llm_client.Completion(text='[]'))
+                            lambda role, messages, fixture_id=None, schema=None: llm_client.Completion(text='[]'))
 
         freitext = "Meine IdNr ist 12345678901"
         api_llm._llm_vorschlaege(freitext, [], user_id="audit_test")
@@ -206,7 +206,7 @@ class TestNoFalsePositives:
         """Steuer-Freitext ohne PII bleibt wortgleich durch _llm_vorschlaege."""
         import llm_client
         monkeypatch.setattr(llm_client, "complete",
-                            lambda role, messages, fixture_id=None: llm_client.Completion(text='[]'))
+                            lambda role, messages, fixture_id=None, schema=None: llm_client.Completion(text='[]'))
 
         freitext = "Ich habe 500 Euro für Kinderbetreuung gezahlt und 1200 Euro für ein Handwerkerleistung nach §35a"
         _, kategorien = filtere(freitext)
@@ -237,7 +237,7 @@ class TestNaht:
         # _llm_vorschlaege muss filtere aufrufen → NAHT
         import llm_client
         monkeypatch.setattr(llm_client, "complete",
-                            lambda role, messages, fixture_id=None: llm_client.Completion(text='[]'))
+                            lambda role, messages, fixture_id=None, schema=None: llm_client.Completion(text='[]'))
 
         with pytest.raises(RuntimeError, match="NAHT"):
             api_llm._llm_vorschlaege("Hallo Welt", [], user_id="test")

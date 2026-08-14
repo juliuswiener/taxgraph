@@ -62,7 +62,7 @@ def test_complete_cap_gate_kein_key(monkeypatch):
 def test_complete_wraps_call(monkeypatch):
     """complete() liefert eine Completion mit `.text` — der rohe HTTP-Call (_call) ist die einzige Stelle mit
     Netz-Zugriff; hier ersetzt (kein echter Call, kein Mock — plain Fixture-Funktion)."""
-    monkeypatch.setattr(LC, "_call", lambda messages: '{"kategorie": "spende"}')
+    monkeypatch.setattr(LC, "_call", lambda messages, schema=None: '{"kategorie": "spende"}')
     comp = LC.complete("kontoauszug_klassifikation", [{"role": "user", "content": "x"}], fixture_id="egal")
     assert isinstance(comp, LC.Completion)
     assert comp.text == '{"kategorie": "spende"}'

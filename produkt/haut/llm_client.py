@@ -42,15 +42,23 @@ def _model() -> str:
     return os.environ.get("LLM_MODEL", "").strip()
 
 
-def _call(messages: list[dict]) -> str:
+def _call(messages: list[dict], schema: dict | None = None) -> str:
     """OpenAI-kompatibler Chat-Completions-Call (provider-agnostisch). Roher Antwort-Text. Jeder Fehler
-    (kein Base/Modell, Netz, HTTP, JSON) → LlmNichtVerfuegbar (Aufrufer fällt auf die Erklär-Grenze zurück)."""
+    (kein Base/Modell, Netz, HTTP, JSON) → LlmNichtVerfuegbar (Aufrufer fällt auf die Erklär-Grenze zurück).
+
+    `schema`: optionales JSON-Schema (Form {"name": …, "strict": True, "schema": {…}}). Ist es gesetzt,
+    geht response_format={"type":"json_schema", …} raus statt des schwächeren json_object — der Provider
+    erzwingt dann die Struktur, statt sie nur zu erbitten. Ohne Schema bleibt es beim Objekt-Modus.
+    Nicht jedes Modell/Endpoint kann das (OpenRouter führt es als `structured_outputs` je Endpoint);
+    deepseek/deepseek-v4-pro kann es, gemessen 2026-08-14."""
     base, model = _base(), _model()
     if not base or not model:
         raise LlmNichtVerfuegbar("LLM_API_BASE/LLM_MODEL nicht gesetzt — Provider nicht konfiguriert.")
     schluessel = _key()
+    format_teil = ({"type": "json_schema", "json_schema": schema} if schema
+                   else {"type": "json_object"})
     body = json.dumps({"model": model, "messages": messages, "temperature": 0,
-                       "response_format": {"type": "json_object"}}).encode("utf-8")
+                       "response_format": format_teil}).encode("utf-8")
     req = urllib.request.Request(
         f"{base}/chat/completions", data=body, method="POST",
         headers={"Authorization": f"Bearer {schluessel}", "Content-Type": "application/json"})
@@ -87,10 +95,14 @@ class Completion:
     text: str
 
 
-def complete(role: str, messages: list[dict], fixture_id: str | None = None) -> Completion:
+def complete(role: str, messages: list[dict], fixture_id: str | None = None,
+             schema: dict | None = None) -> Completion:
     """Die EINE niedrig-level Wahrheit: OpenAI-kompatibler Chat-Call → Completion. Cap-gated wie `_call` (kein
     Key/Base/Modell → LlmNichtVerfuegbar, kein Netz-Zugriff). `role`/`fixture_id` sind Interface-Parität zum
     pipeline-Client (kontoauszug_writer.llm_klassifikator_factory erwartet `client.complete(role, msgs,
     fixture_id=)`) — dieser Haut-Client hat EIN Modell aus der Umgebung, kein Rollen-Routing/Fixture-Replay
-    (das lebt in pipeline/client.py, eine andere Baustelle)."""
-    return Completion(text=_call(messages))
+    (das lebt in pipeline/client.py, eine andere Baustelle).
+
+    `schema`: optionales JSON-Schema, das der Provider erzwingt (s. _call). Der Kontoauszug-Pfad
+    ruft weiter ohne — dessen Fixture-Replay-Signatur bleibt unberührt."""
+    return Completion(text=_call(messages, schema=schema))
