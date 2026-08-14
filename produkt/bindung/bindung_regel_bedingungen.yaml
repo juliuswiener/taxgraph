@@ -25,3 +25,65 @@ regel_bedingungen:
     feld: veranlagung
     wert: zusammen
     grund: "§ 26 Abs. 2 S. 2 EStG: Ehegatten werden zusammen veranlagt, wenn beide Ehegatten die Zusammenveranlagung wählen — bei veranlagung=einzel (bestätigt) sind alle Partner-Angaben der Regel gegenstandslos."
+
+  # ---------------------------------------------------------------------------------------------
+  # Screening-Gruppe B (2026-08-14, reports/adjudikation/screening_vorsortierung_2026-08-14.md).
+  #
+  # Die vier Abwesenheits-Fragen aus p2_einkunftsart_* existierten längst und wurden auch gestellt
+  # — nur hing keine einzige Folge-Regel daran. Wer "nein, keine Vermietung" antwortete, bekam
+  # trotzdem jede Vermietungs-Frage. 28 Felder, kein neues Feld, kein Code: nur die Verbindung
+  # zwischen der Frage und dem, was sie abschalten soll.
+  #
+  # Lesart der Bedingung: `wert` ist der Wert, bei dem die Regel GILT. Die kein_-Felder behaupten
+  # die ABWESENHEIT, die Regeln behandeln die ANWESENHEIT — deshalb steht hier durchgehend
+  # `wert: false`. Ausgeschlossen wird nur bei BESTÄTIGT abweichendem Wert; unbeantwortet oder
+  # vorläufig schließt nie aus (fail-closed, siehe test_s8 in test_ui_zwei_signal_sicherheit).
+  #
+  # p22_1_leibrente steht auch im rentner-Kegel. Das ist unbedenklich: ein Rentner antwortet auf
+  # "Hattest du sonstige Einkünfte (z.B. Rente)?" mit ja, also kein_sonstige=False — der Wert, bei
+  # dem die Regel gilt. Gegengemessen am Ehrlich-Lauf beider Scheiben.
+
+  - regel_id: p21_vermietung_einkuenfte
+    feld: kein_vuv
+    wert: false
+    grund: "§ 21 Abs. 1 EStG setzt Einkünfte aus Vermietung und Verpachtung voraus — wer bestätigt, keine zu haben, hat keinen Tatbestand, zu dem Miete, Werbungskosten oder AfA zu erklären wären."
+
+  - regel_id: p20_6_verlustverrechnung
+    feld: kein_kap
+    wert: false
+    grund: "§ 20 Abs. 6 EStG verrechnet Verluste aus Kapitalvermögen — ohne Kapitaleinkünfte gibt es weder Verluste noch eine Verrechnung."
+
+  - regel_id: p20_9_sparer_pauschbetrag
+    feld: kein_kap
+    wert: false
+    grund: "§ 20 Abs. 9 EStG gewährt den Sparer-Pauschbetrag von den Einnahmen aus Kapitalvermögen — ohne solche Einnahmen ist nichts abzuziehen."
+
+  - regel_id: p32d_1_kirchensteuer
+    feld: kein_kap
+    wert: false
+    grund: "§ 32d Abs. 1 S. 3 EStG mindert die Abgeltungsteuer um die darauf entfallende Kirchensteuer — ohne Kapitalerträge fällt keine Abgeltungsteuer an, auf die sich das beziehen könnte."
+
+  - regel_id: p15_1_2_mitunternehmer
+    feld: kein_gewinn
+    wert: false
+    grund: "§ 15 Abs. 1 S. 1 Nr. 2 EStG erfasst Gewinnanteile von Mitunternehmern — wer bestätigt, keine Gewinneinkünfte zu haben, ist an keiner Mitunternehmerschaft beteiligt."
+
+  - regel_id: p4_3_gewinn
+    feld: kein_gewinn
+    wert: false
+    grund: "§ 4 Abs. 3 EStG ist die Gewinnermittlung durch Einnahmen-Überschuss-Rechnung — ohne Gewinneinkünfte gibt es keinen Gewinn zu ermitteln."
+
+  - regel_id: p22_1_leibrente_besteuerungsanteil
+    feld: kein_sonstige
+    wert: false
+    grund: "§ 22 Nr. 1 S. 3 Buchst. a EStG besteuert Leibrenten mit ihrem Ertragsanteil — Renten sind sonstige Einkünfte; wer bestätigt, keine zu haben, hat keine Rente zu erklären."
+
+  - regel_id: p23_veraeusserungsgewinn
+    feld: kein_sonstige
+    wert: false
+    grund: "§ 23 EStG erfasst private Veräußerungsgeschäfte als sonstige Einkünfte (§ 22 Nr. 2 EStG) — ohne sonstige Einkünfte liegt kein solches Geschäft vor."
+
+  - regel_id: p22_3_leistungen
+    feld: kein_sonstige
+    wert: false
+    grund: "§ 22 Nr. 3 EStG erfasst Einkünfte aus Leistungen als sonstige Einkünfte — wer bestätigt, keine sonstigen Einkünfte zu haben, hat auch keine solchen Leistungen."
