@@ -12,7 +12,7 @@
       "items": {
         "type": "object",
         "required": ["feld_id", "typ", "fragetext_laie", "hilfe_kurz", "einheit", "bereich",
-                     "enum_werte", "beispielwert", "anker_ref"],
+                     "enum_werte", "enum_labels", "beispielwert", "anker_ref"],
         "additionalProperties": false,
         "properties": {
           "feld_id": {"type": "string"},
@@ -22,6 +22,11 @@
           "einheit": {"type": ["string", "null"]},
           "bereich": {"type": ["object", "null"]},
           "enum_werte": {"type": ["array", "null"]},
+          "enum_labels": {
+            "type": ["object", "null"],
+            "description": "Anzeigetext je enum_wert (2026-08-14). null bei Nicht-enum-Feldern; die UI faellt dann auf den Rohwert zurueck. Ohne diese Texte las der Nutzer 'land_forst' oder bei den Kindschaftsverhaeltnissen nur '1'.",
+            "additionalProperties": {"type": "string"}
+          },
           "beispielwert": {},
           "anker_ref": {"type": ["object", "null"]}
         }

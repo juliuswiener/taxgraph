@@ -197,7 +197,11 @@ function zeigeFrage(q, stand) {
   } else if (q.typ === "enum") {
     input = document.createElement("select");
     for (const v of (q.enum_werte || [])) {
-      const o = document.createElement("option"); o.value = v; o.textContent = v;
+      const o = document.createElement("option"); o.value = v;
+      // Anzeigetext statt Rohwert: ohne das las der Nutzer "land_forst" oder bei den
+      // Kindschaftsverhältnissen nur "1". Fallback auf den Rohwert, falls ein Feld noch kein
+      // Label hat — lieber technisch als leer.
+      o.textContent = (q.enum_labels && q.enum_labels[v]) || v;
       if (String(v) === String(q.beispielwert)) o.selected = true;
       input.appendChild(o);
     }

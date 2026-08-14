@@ -51,8 +51,13 @@ h1,h2,h3{margin:0}
 .frage{font-size:18px;font-weight:600;margin:2px 0 4px}
 .hilfe{color:var(--muted);font-size:14px;margin:0 0 14px}
 .eingabe{display:flex;gap:8px;align-items:center;margin-bottom:14px}
-.eingabe input,.eingabe select{flex:1;background:#12162a;border:1px solid var(--line);color:var(--ink);
-  border-radius:10px;padding:12px;font-size:16px}
+/* min-width:0 ist hier nicht kosmetisch: ein Flex-Item hat per Default min-width:auto, und ein
+   <select> erbt als Mindestbreite die seiner LÄNGSTEN Option. Seit die Auswahlfelder echte
+   Anzeigetexte tragen ("Zusammenveranlagung mit Ehe- oder Lebenspartner" statt "zusammen")
+   sprengte das die 360px-Ansicht — gemessen scrollWidth 458. text-overflow kürzt den angezeigten
+   Text, die Auswahlliste selbst bleibt vollständig lesbar. */
+.eingabe input,.eingabe select{flex:1;min-width:0;background:#12162a;border:1px solid var(--line);color:var(--ink);
+  border-radius:10px;padding:12px;font-size:16px;text-overflow:ellipsis}
 .einheit{color:var(--muted)}
 
 /* Maps-Affordance (Arbeitsweg-km, Julius-Feature) — Vorschlag-Fluss, Backend ge-stubbt */

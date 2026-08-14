@@ -2558,6 +2558,10 @@ def fragen(fall_id: str) -> tuple[int, dict]:
             "einheit": b.get("einheit"),
             "bereich": b.get("bereich"),
             "enum_werte": b.get("enum_werte"),
+            # Anzeigetexte je enum-Wert (2026-08-14). Ohne sie zeigte die Oberfläche den Rohwert:
+            # "land_forst", "gesetzlich_an", oder bei den Kindschaftsverhältnissen nur "1"/"2"/"3".
+            # Absent, wenn das Feld kein enum ist — die UI fällt dann auf den Rohwert zurück.
+            "enum_labels": ENUM_LABELS.get(fid),
             "beispielwert": b.get("beispielwert"),
             "anker_ref": b.get("anker_ref"),
         })

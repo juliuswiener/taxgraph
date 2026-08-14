@@ -587,4 +587,122 @@ __all__ = [
     "RENTNER_FELDER",
     # Scheiben
     "SCHEIBEN",
+    # Anzeigetexte
+    "ENUM_LABELS",
 ]
+
+# ========== Anzeigetexte für enum-Werte (2026-08-14) ==========
+# Bis hierher zeigte die Oberfläche den Rohwert: der Nutzer las "land_forst", "gesetzlich_an"
+# oder — bei den Kindschaftsverhältnissen — schlicht "1", "2", "3" (app.js:200 setzte
+# o.textContent = v). Diese Tabelle liegt bewusst NEBEN der Bindung statt darin: ein Label ist
+# reine Darstellung, kein Feldwissen, und 22 YAML-Dateien dafür anzufassen hätte die Bindung
+# aufgebläht, ohne dass die Rechenseite etwas davon hat.
+#
+# Die Texte sind KEINE Erfindung — sie stehen bereits in fragetext_laie/hilfe_kurz der jeweiligen
+# Bindung (z.B. "1 = leibliches Kind/Adoptivkind, 2 = Pflegekind, 3 = Enkelkind/Stiefkind") und
+# werden hier nur an die Stelle gehoben, an der der Nutzer sie braucht: ins Auswahlfeld.
+#
+# Vollständigkeit erzwingt tests/test_enum_labels.py — ein neuer enum_wert ohne Label wird rot.
+ENUM_LABELS = {
+    "dba_einkunftsart": {
+        "unbewegliches_vermoegen": "Unbewegliches Vermögen (z. B. Immobilie)",
+        "unternehmensgewinne": "Unternehmensgewinne",
+        "dividenden": "Dividenden",
+        "zinsen": "Zinsen",
+        "lizenzgebuehren": "Lizenzgebühren",
+        "veraeusserungsgewinne": "Veräußerungsgewinne",
+        "unselbstaendige_arbeit": "Arbeitslohn aus dem Ausland",
+        "aufsichtsratsverguetungen": "Aufsichtsratsvergütung",
+        "kuenstler_sportler": "Auftritt als Künstler oder Sportler",
+        "ruhegehaelter": "Ruhegehalt oder Pension",
+    },
+    "dba_methode": {
+        "kein_dba": "Kein Doppelbesteuerungsabkommen mit diesem Staat",
+        "dba_anrechnung": "Anrechnung — die ausländische Steuer wird angerechnet",
+        "dba_freistellung": "Freistellung — die Einkünfte bleiben hier steuerfrei",
+    },
+    "dba_staat": {
+        "Deutschland": "Deutschland", "Frankreich": "Frankreich", "Italien": "Italien",
+        "Oesterreich": "Österreich", "Schweiz": "Schweiz", "Niederlande": "Niederlande",
+        "Polen": "Polen", "Tschechien": "Tschechien", "Dänemark": "Dänemark",
+        "Luxemburg": "Luxemburg", "Türkei": "Türkei", "Grossbritannien": "Großbritannien",
+        "Spanien": "Spanien", "USA": "USA", "Kanada": "Kanada",
+        "sonstiger_staat": "Anderer Staat",
+    },
+    "gewinn_betriebsart": {
+        "gewerbe": "Gewerbebetrieb",
+        "selbstaendig": "Selbständige oder freiberufliche Arbeit",
+        "land_forst": "Land- und Forstwirtschaft",
+    },
+    # 1/2/3 stehen so im ELSTER-Feld; die Bedeutung stand bisher nur im Fragetext.
+    "kind_kindschaftsverhaeltnis_a": {
+        "1": "Leibliches Kind oder Adoptivkind",
+        "2": "Pflegekind",
+        "3": "Enkelkind oder Stiefkind",
+    },
+    "kind_anderer_elternteil_kindschaftsverhaeltnis": {
+        "1": "Leibliches Kind oder Adoptivkind",
+        "2": "Pflegekind",
+    },
+    "kist_bundesland": {
+        "baden_wuerttemberg": "Baden-Württemberg", "bayern": "Bayern", "berlin": "Berlin",
+        "brandenburg": "Brandenburg", "bremen": "Bremen", "hamburg": "Hamburg",
+        "hessen": "Hessen", "mecklenburg_vorpommern": "Mecklenburg-Vorpommern",
+        "niedersachsen": "Niedersachsen", "nordrhein_westfalen": "Nordrhein-Westfalen",
+        "rheinland_pfalz": "Rheinland-Pfalz", "saarland": "Saarland", "sachsen": "Sachsen",
+        "sachsen_anhalt": "Sachsen-Anhalt", "schleswig_holstein": "Schleswig-Holstein",
+        "thueringen": "Thüringen",
+    },
+    "kist_konfession": {
+        "keine": "Keine Konfession",
+        "evangelisch": "Evangelisch",
+        "roemisch-katholisch": "Römisch-katholisch",
+        "andere": "Andere Religionsgemeinschaft",
+    },
+    "p23_veraeusserungs_typ": {
+        "grundstueck": "Grundstück oder Immobilie",
+        "anderes_wg": "Anderes Wirtschaftsgut (z. B. Krypto, Kunst, Edelmetalle)",
+    },
+    "rentner_renten_art": {
+        "gesetzliche_rente": "Gesetzliche Rente",
+        "berufsstaendische_versorgung": "Berufsständische Versorgung (z. B. Ärzte, Anwälte)",
+        "private_basisrente": "Private Basisrente (Rürup)",
+        "private_leibrente": "Private Leibrente",
+        "sonstige_leibrente": "Sonstige Leibrente",
+    },
+    # Kurz und beschreibend, ohne Anspruchsvoraussetzungen — die gehören in die Beratung,
+    # nicht in ein Auswahlfeld.
+    "steuerklasse": {
+        "1": "I — ledig, verwitwet oder geschieden",
+        "2": "II — alleinerziehend",
+        "3": "III — verheiratet, Partner in Klasse V",
+        "4": "IV — verheiratet, beide in Klasse IV",
+        "5": "V — verheiratet, Partner in Klasse III",
+        "6": "VI — weiteres Dienstverhältnis",
+    },
+    "veranlagung": {
+        "einzel": "Einzelveranlagung — jeder für sich",
+        "zusammen": "Zusammenveranlagung mit Ehe- oder Lebenspartner",
+    },
+    "versicherungsart": {
+        "gesetzlich_an": "Gesetzlich als Arbeitnehmer",
+        "gesetzlich_freiwillig": "Gesetzlich freiwillig versichert (Selbstzahler)",
+        "privat": "Privat versichert",
+    },
+    "versorgung_art": {
+        "beamtenrechtlich": "Beamtenrechtliches Ruhegehalt",
+        "hinterbliebene": "Witwen- oder Waisengeld",
+        "erwerbsminderung": "Rente wegen Erwerbsminderung",
+        "altersgrenze_sonstige": "Betriebsrente oder Direktversicherung",
+    },
+}
+# Partner-Felder teilen die Labels ihres Person-A-Pendants — sonst müsste jede Ergänzung
+# zweimal gepflegt werden und liefe beim zweiten Mal auseinander.
+for _basis in ("gewinn_betriebsart", "kist_konfession", "rentner_renten_art", "steuerklasse",
+               "versicherungsart", "kind_kindschaftsverhaeltnis_a"):
+    ENUM_LABELS.setdefault(f"{_basis}_partner", ENUM_LABELS[_basis])
+ENUM_LABELS.setdefault("kind_kindschaftsverhaeltnis_b",
+                       ENUM_LABELS["kind_kindschaftsverhaeltnis_a"])
+ENUM_LABELS.setdefault("rentner_veraeusserungs_betriebsart", ENUM_LABELS["gewinn_betriebsart"])
+ENUM_LABELS.setdefault("rentner_veraeusserungs_betriebsart_partner",
+                       ENUM_LABELS["gewinn_betriebsart"])
