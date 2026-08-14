@@ -101,11 +101,15 @@ def test_prompt_katalog_ist_liste(fall, monkeypatch):
     assert st == 200
     system_msg = spy.gesehene_messages[0]["content"]
     assert "agb_aufwendungen" in system_msg          # ein gesamt-Scheibe-llm-Feld wird angeboten
-    # human-only wird der KI GAR NICHT erst angeboten. Beispielfeld ist antrag_ermaessigter_satz
-    # (Wahlrecht § 34 Abs. 3) — es liegt in der gesamt-Scheibe und ist askable, die Prüfung ist also
-    # nicht vakuos. Früher stand hier veranlagung; das ist seit 2026-08-12 auf Julius' Entscheid
-    # llm-freigegeben (s. tests/test_veranlagung_llm_freigabe.py).
-    assert "antrag_ermaessigter_satz" not in system_msg
+    # Seit dem Entscheid vom 2026-08-14 sieht die KI jedes askable Feld der Scheibe — auch die,
+    # die vorher human-only waren. Der Prompt-Katalog MUSS denselben Maßstab haben wie der
+    # Store-Check: sähe die KI weniger, könnte sie Angaben nicht übersetzen, die der Store
+    # akzeptieren würde; sähe sie mehr, schlüge sie Felder vor, die verlässlich abprallen.
+    assert "bruttoarbeitslohn" in system_msg, (
+        "Der Prompt-Katalog hängt noch am alten vorschlagbar_von statt am Store-Check-Katalog.")
+    # Und die Kurzhilfe kommt mit — sie sagt der KI, WAS zum Feld gehört (Julius 2026-08-14:
+    # "zu den arbeitstagen zählen x,y,z … wenn eines davon nicht genannt ist: nachfragen").
+    assert "dazu gehört:" in system_msg, "hilfe_kurz fehlt im Prompt"
 
 
 # --------------------------------------------------------------- Happy-Path: zwei erlaubte Felder → vorläufig
@@ -138,10 +142,15 @@ def test_graceful_skip_human_only(fall, monkeypatch, capsys):
     STILL, CRASHT NICHT, schreibt das Feld NICHT und verarbeitet die anderen Vorschläge weiter. Das Feld
     erscheint in `abgelehnt`.
 
-    Beispielfeld war bis 2026-08-12 veranlagung (§ 26); das ist auf Julius' Entscheid llm-freigegeben
-    worden und wäre hier jetzt ein KONFLIKT statt einer Ablehnung — siehe
-    tests/test_veranlagung_llm_freigabe.py. antrag_ermaessigter_satz ist der gleichwertige Ersatz:
-    ebenfalls Wahlrecht, ebenfalls human-only, ebenfalls in der gesamt-Scheibe."""
+    Beispielfeld war bis 2026-08-12 veranlagung (§ 26), danach antrag_ermaessigter_satz. Seit
+    Julius' Entscheid vom 2026-08-14 ("alles darf das llm ausfüllen, aber der mensch muss bei JEDEM
+    feld bestätigen") ist KEIN Feld mehr dauerhaft human-only — LLM_NICHT_VORSCHLAGBAR ist leer.
+
+    Der Test prüft trotzdem weiter etwas Wichtiges, nur eine Ebene tiefer: dass ein abgewiesener
+    Vorschlag den ganzen Aufruf nicht mitreißt. Deshalb setzt er die Sperre jetzt selbst. Ohne das
+    wäre der Robustheitspfad ungetestet, bis ihn irgendwann wieder jemand braucht."""
+    import store as ST      # lokal wie in den übrigen Tests dieser Datei
+    monkeypatch.setattr(ST, "LLM_NICHT_VORSCHLAGBAR", frozenset({"antrag_ermaessigter_satz"}))
     monkeypatch.setattr(LC, "complete", _fake_complete(
         ("agb_aufwendungen", 300000),
         ("antrag_ermaessigter_satz", True),         # human-only → muss abgewiesen werden

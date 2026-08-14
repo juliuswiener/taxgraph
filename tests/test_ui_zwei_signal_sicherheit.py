@@ -96,25 +96,37 @@ def test_s3_s4_vorschlagsschreiber_kann_nicht_bestaetigen(schreiber, herkunft):
                         katalog=KATALOG, ts=TS)
 
 
-# ---------- S5: Feld-Katalog — ein Vorschlags-Schreiber darf kein HUMAN-ONLY-Feld vorschlagen ----------
-@pytest.mark.parametrize("feld", [
-    # "veranlagung" (Wahlrecht §26) stand hier bis 2026-08-12 und ist auf Julius' Entscheid
-    # für die KI FREIGEGEBEN worden — Begründung und Gegen-Gates in
-    # tests/test_veranlagung_llm_freigabe.py. Die Wahlrechts-Klasse bleibt hier abgedeckt
-    # (antrag_ermaessigter_satz); die Freigabe gilt ausdrücklich nur für dieses eine Feld.
-    "antrag_ermaessigter_satz", # Wahlrecht (§34 Abs.3)
-    "kein_kap",                 # ⭐ Abwesenheits-Erklärung (K2-scharf)
-    "gewinn_betriebsart",       # Rechts-Klassifikation
-    "kap_gewinn_aktien",        # §20-Topf/Allokation
-    "geburtsjahr",              # Identität
-])
-def test_s5_katalog_human_only_abgelehnt(feld):
-    """Ein llm:-Schreiber, der ein HUMAN-ONLY-Feld setzen will → ValueError (Katalog fail-closed). Deckt das
-    Abwesenheits-Prinzip (kein_kap: eine halluzinierte Abwesenheit = Under-Deklaration) + Wahlrecht + Allokation
-    + Identität."""
-    s = _leer()
+# ---------- S5: Feld-Katalog — der Katalog-Check greift ----------
+# UMGEBAUT 2026-08-14 (Julius: "ich denke alles darf das llm ausfüllen, aber der mensch muss bei
+# JEDEM feld bestätigen"). Vorher stand hier eine Liste konkreter human-only-Felder; die gibt es
+# für das LLM nicht mehr — LLM_NICHT_VORSCHLAGBAR ist leer, jedes askable Feld ist vorschlagbar.
+#
+# Der prüfenswerte Kern ist damit nicht mehr WELCHE Felder gesperrt sind, sondern DASS die Sperre
+# überhaupt wirkt. Sonst wäre der Mechanismus tot und niemand merkte es, sollte später wieder ein
+# Feld eingetragen werden. Deshalb setzt der Test die Sperre selbst und prüft sie.
+def test_s5_katalog_sperre_wirkt(monkeypatch):
+    """Ein Feld in LLM_NICHT_VORSCHLAGBAR → llm:-Schreiber prallt ab (ValueError, Katalog).
+
+    Der Katalog wird NACH dem Setzen neu gebaut: lade_katalog() liest die Sperre beim Bauen, nicht
+    bei jeder Prüfung, und das modulweite KATALOG oben entsteht schon beim Import. Wer das
+    übersieht, schreibt einen Test, der die Sperre setzt und trotzdem den alten Katalog benutzt —
+    er wäre grün, ohne etwas zu prüfen."""
+    monkeypatch.setattr(ST, "LLM_NICHT_VORSCHLAGBAR", frozenset({"kein_kap"}))
+    katalog = ST.lade_katalog(TR.lade_bindung())
+    assert "kein_kap" not in katalog["llm"], "Sperre wirkt schon beim Katalogbau nicht"
     with pytest.raises(ValueError, match="Katalog"):
-        _vorschlag(s, feld, 1, "llm:chat", "llm_vorschlag")
+        _vorschlag(_leer(), "kein_kap", True, "llm:chat", "llm_vorschlag", katalog=katalog)
+
+
+def test_s5_ohne_sperre_ist_jedes_askable_feld_vorschlagbar():
+    """Die Gegenrichtung zur Entscheidung: was der Nutzer erzählt, darf die KI auch eintragen —
+    als Vorschlag. Vorher trugen 17 von 263 Feldern ein `vorschlagbar_von: [llm]`, weshalb
+    ausgerechnet Bruttolohn, Arbeitstage und Entfernung nicht übersetzt werden konnten."""
+    for feld, wert in [("bruttoarbeitslohn", 6200000), ("ep_arbeitstage", 220),
+                       ("gewinn_betriebsart", "gewerbe"), ("geburtsjahr", 1980)]:
+        ev = _vorschlag(_leer(), feld, wert, "llm:chat", "llm_vorschlag")
+        assert ev["zustand"] == "vorlaeufig", f"{feld}: {ev['zustand']}"
+        assert ev["signal"]["signal_2"] is None, f"{feld} kam mit zweitem Signal durch"
 
 
 def test_s5b_katalog_suggestible_erlaubt():

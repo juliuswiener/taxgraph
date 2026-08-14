@@ -120,15 +120,46 @@ def _vorschlag_typ(schreiber: str) -> str | None:
     return None
 
 
+# Felder, die das LLM trotz der Freigabe unten NICHT vorschlagen darf. Heute leer, und das ist
+# eine bewusste Entscheidung (Julius 2026-08-14), keine Nachlässigkeit: die Sicherheit liegt im
+# Zwei-Signal-Mechanismus, nicht in dieser Liste. Ein Vorschlag ist immer `vorlaeufig`, bewegt
+# also keine Zahl, und der Mensch bestätigt jedes Feld einzeln per Hold-Confirm.
+# Wer hier etwas einträgt, sollte begründen können, warum schon der VORSCHLAG schädlich wäre —
+# das Argument gibt es (eine halluzinierte IdNr oder IBAN sieht plausibel aus und wird eher
+# durchgewunken als eine falsche Zahl), es hat sich gegen den Nutzen nur nicht durchgesetzt.
+LLM_NICHT_VORSCHLAGBAR: frozenset[str] = frozenset()
+
+
 def lade_katalog(bindung: dict) -> dict:
-    """{schreiber_typ -> frozenset(feld_id)} aus dem per-Feld `vorschlagbar_von` der Bindung. DEFAULT
-    human-only (fail-closed): ein Feld ohne `vorschlagbar_von` ist in KEINER Menge → kein Vorschlags-Schreiber
-    darf es setzen. bindung = DATEN, dieser Store-Check = ENFORCEMENT."""
+    """{schreiber_typ -> frozenset(feld_id)} — welcher Vorschlags-Schreiber welches Feld setzen darf.
+    bindung = DATEN, dieser Store-Check = ENFORCEMENT.
+
+    beleg/kontoauszug/maps: DEFAULT human-only (fail-closed) über das per-Feld `vorschlagbar_von`.
+    Ein Feld ohne Eintrag ist in KEINER dieser Mengen. Diese Kanäle lesen fremde Dokumente bzw.
+    Dienste und sollen weiterhin nur dort schreiben, wo jemand es ausdrücklich vorgesehen hat.
+
+    llm: ALLE askable Felder minus LLM_NICHT_VORSCHLAGBAR (Julius-Entscheid 2026-08-14: "ich denke
+    alles darf das llm ausfüllen, aber der mensch muss bei JEDEM feld bestätigen"). Vorher trugen
+    17 von 263 Feldern ein `vorschlagbar_von: [llm]` — nie aktiv gesperrt, sondern nie freigegeben,
+    weil sie einzeln nachgetragen wurden, wenn man sie brauchte. Damit konnte die KI ausgerechnet
+    die häufigsten Angaben (Bruttolohn, Arbeitstage, Entfernung) nicht übersetzen, obwohl der
+    Nutzer sie im selben Satz genannt hatte.
+    NICHT-askable Felder bleiben ausgeschlossen: sie werden berechnet oder aus Instanz-Summen
+    gefüllt, ein Vorschlag darauf wäre kein Nutzereingabe-Ersatz, sondern eine Umgehung des Rings.
+
+    Was die Freigabe NICHT aufweicht (alles unverändert scharf):
+      - Auflage A: ein Vorschlags-Schreiber schreibt ausschließlich zustand=vorlaeufig, signal_2=None.
+      - Zwei-Signal: die festgesetzte Steuer liest nur bestätigte Werte (_bescheid_fn, nur_bestaetigt).
+      - Auflage B: ein Feld mit aktivem Event braucht `ersetzt` — und das ist Vorschlags-Schreibern
+        seit 29e923d verwehrt. Die KI kann einen bestätigten Nutzerwert also nicht überschreiben.
+    """
     katalog = {"llm": set(), "beleg": set(), "kontoauszug": set(), "maps": set()}
     for fid, b in bindung.items():
         for typ in (b.get("vorschlagbar_von") or ()):
             if typ in katalog:
                 katalog[typ].add(fid)
+        if b.get("askable") and fid not in LLM_NICHT_VORSCHLAGBAR:
+            katalog["llm"].add(fid)
     return {k: frozenset(v) for k, v in katalog.items()}
 
 

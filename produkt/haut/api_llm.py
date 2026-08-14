@@ -32,6 +32,10 @@ def _chat_prompt(freitext: str, katalog: list[dict]) -> list[dict]:
         + (f", Bereich {f['bereich']}" if f.get("bereich") else "")
         + (f", Werte {f['enum_werte']}" if f.get("enum_werte") else "")
         + ")"
+        # Die Kurzhilfe sagt, WAS zum Feld gehört und wo es steht ("Steht auf der
+        # Lohnsteuerbescheinigung Nr. 3", "Nach Abzug von Erstattungen"). Ohne sie ordnet die KI
+        # nach dem Feldnamen zu und merkt nicht, wenn eine Angabe unvollständig ist.
+        + (f"\n    dazu gehört: {f['hilfe_kurz']}" if f.get("hilfe_kurz") else "")
         for f in katalog)
     system = (
         "Du bist ein Steuer-Assistent, der aus der Freitext-Beschreibung eines Nutzers Feld-Werte VORSCHLÄGT. "

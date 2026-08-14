@@ -40,20 +40,47 @@ def test_llm_darf_veranlagung_vorschlagen():
         "bindung_an_gesamt.yaml.")
 
 
-def test_freigabe_bleibt_ein_einzelfall_kein_praezedenzfall():
-    """Kein anderes Feld ohne elster_kz und mit signatur_slot auf die Festsetzung ist
-    nebenbei mitgeöffnet worden.
+def test_llm_darf_jedes_askable_feld_vorschlagen():
+    """ERSETZT test_freigabe_bleibt_ein_einzelfall_kein_praezedenzfall (2026-08-14).
 
-    Der Katalog ist die einzige Stelle, die entscheidet, was eine KI anfassen darf. Wächst
-    er unbemerkt, ist die fail-closed-Zusage wertlos — deshalb hier eine harte Zahl statt
-    einer Stichprobe. Wird sie rot, ist das kein Fehler: prüfen, ob die neue Freigabe
-    beabsichtigt war, und die Zahl bewusst nachziehen.
-    """
-    katalog = ST.lade_katalog(_bindung())
-    llm_felder = katalog.get("llm", frozenset())
-    assert len(llm_felder) == 17, (
-        f"Zahl der llm-freigegebenen Felder ist {len(llm_felder)}, erwartet 17 "
-        f"(16 Bestand + veranlagung). Neu: {sorted(llm_felder)}")
+    Der alte Test nagelte die Zahl der llm-Felder auf 17 fest, damit der Katalog nicht unbemerkt
+    wächst. Er hat gehalten und ist an Julius' Entscheid rot geworden — genau wie in seinem
+    eigenen Docstring vorgesehen ("prüfen, ob die neue Freigabe beabsichtigt war").
+
+    Sie war es: "ich denke alles darf das llm ausfüllen, aber der mensch muss bei JEDEM feld
+    bestätigen." Anlass war der erste echte Chat-Aufruf — aus "Ich bin Arbeitnehmer, verheiratet,
+    fahre an 220 Tagen 15 km zur Arbeit und habe 62000 Euro brutto verdient" konnte die KI genau
+    EINEN Wert übernehmen (veranlagung), weil Bruttolohn, Arbeitstage und Entfernung nicht im
+    Katalog standen.
+
+    Statt einer Zahl prüft dieser Test jetzt die Invariante — sie veraltet nicht, wenn Felder
+    hinzukommen, und wird trotzdem rot, sobald jemand die Freigabe wieder einschränkt, ohne es
+    in LLM_NICHT_VORSCHLAGBAR zu schreiben."""
+    bindung = _bindung()
+    llm_felder = ST.lade_katalog(bindung).get("llm", frozenset())
+    askable = {f for f, b in bindung.items() if b.get("askable")}
+    erwartet = askable - ST.LLM_NICHT_VORSCHLAGBAR
+    assert llm_felder == erwartet, (
+        f"llm-Katalog weicht ab. Fehlend: {sorted(erwartet - llm_felder)}, "
+        f"zu viel: {sorted(llm_felder - erwartet)}")
+    # Nicht-askable Felder bleiben draußen: sie werden berechnet oder aus Instanz-Summen gefüllt.
+    nicht_askable = {f for f, b in bindung.items() if not b.get("askable")}
+    assert not (llm_felder & nicht_askable), (
+        f"Die KI darf berechnete Felder vorschlagen: {sorted(llm_felder & nicht_askable)[:5]}")
+
+
+def test_die_freigabe_hebelt_das_zwei_signal_nicht_aus():
+    """Der Preis der Freigabe wäre zu hoch, wenn mit dem Katalog auch die Sicherheit fiele.
+    Sie fällt nicht: der Schutz lag nie im Katalog, sondern darin, dass ein Vorschlag vorläufig
+    bleibt und der Mensch bestätigt. Hier für ein Feld nachgewiesen, das vorher gesperrt war."""
+    ev = ST.append_event(
+        ST.leerer_store(2025, fall_id="freigabe"), feld_id="bruttoarbeitslohn", wert=6200000,
+        zustand="vorlaeufig",
+        herkunft={"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        schreiber="llm:chat", signal={"signal_1": {"typ": "chat"}, "signal_2": None},
+        katalog=ST.lade_katalog(_bindung()), ts="2026-08-14T10:00:00Z")
+    assert ev["zustand"] == "vorlaeufig", "Die KI hat einen bestätigten Wert geschrieben."
+    assert ev["signal"]["signal_2"] is None, "Die KI hat das zweite Signal selbst gesetzt."
 
 
 def test_veranlagung_ist_ein_grosser_konflikt():

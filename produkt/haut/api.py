@@ -3230,11 +3230,20 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     #      hängt an seinem `vorschlagbar_von`, nicht an der offenen Scheibe (ein per-Scheibe-Check-Katalog würde
     #      Vorschlags-Schreiber auf global-autorisierte Nicht-Scheibe-Felder fälschlich abweisen — fail-OPEN wäre
     #      es NIE, aber falsch-abweisen bricht legitime beleg/kontoauszug-Writes).
-    prompt_katalog = [
-        {"feld_id": fid, "fragetext_laie": b.get("fragetext_laie", ""), "typ": b.get("typ"),
-         "bereich": b.get("bereich"), "enum_werte": b.get("enum_werte")}
-        for fid, b in bindung.items() if "llm" in (b.get("vorschlagbar_von") or [])]
     check_katalog = ST.lade_katalog(TR.lade_bindung())
+    # DERSELBE Maßstab wie der Check-Katalog. Vorher filterte diese Liste eigenständig auf
+    # `vorschlagbar_von` — seit die Freigabe in lade_katalog() entschieden wird (Julius-Entscheid
+    # 2026-08-14, alle askable Felder) hätte das LLM weiter nur die 17 alten Felder GESEHEN,
+    # während der Store 263 erlaubt. Zwei Listen mit zwei Regeln für dieselbe Frage: genau die
+    # Naht, an der hier schon mehrfach etwas auseinanderlief.
+    # `hilfe_kurz` kommt mit, weil dort steht, WAS zum Feld gehört ("Steht auf der
+    # Lohnsteuerbescheinigung Nr. 3", "Nach Abzug von Erstattungen"). Ohne diese Erklärung kann
+    # die KI weder sauber zuordnen noch merken, dass eine Angabe unvollständig ist.
+    prompt_katalog = [
+        {"feld_id": fid, "fragetext_laie": b.get("fragetext_laie", ""),
+         "hilfe_kurz": b.get("hilfe_kurz", ""), "typ": b.get("typ"),
+         "bereich": b.get("bereich"), "enum_werte": b.get("enum_werte")}
+        for fid, b in bindung.items() if fid in check_katalog["llm"]]
     try:
         vorschlaege = api_llm._llm_vorschlaege(freitext, prompt_katalog, user_id=api_auth._AUTH_USER)
     except (api_llm.LlmNichtVerfuegbar, ImportError):   # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
