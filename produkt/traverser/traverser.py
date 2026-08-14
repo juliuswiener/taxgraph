@@ -129,10 +129,52 @@ def relevanz(store: dict, bindung: dict) -> dict:
     return out
 
 
+def gate_gewicht(bindung: dict) -> dict:
+    """feld_id -> Zahl der askable Felder, die die Antwort auf dieses Gate abschalten kann.
+
+    Das ist die Reihenfolge-Information, die im Graphen ohnehin steckt: ein Gate, dessen „nein"
+    ganze Regeln streicht, erspart dem Nutzer mehr Fragen als eines, das nur sich selbst betrifft
+    — also gehört es nach vorn. Zwei Quellen, beide aus der Bindung, keine Handliste:
+
+      (a) eigenes bool-Gate der Regel — ein bestätigtes False schließt sie aus (relevanz(), s.o.),
+          und alle ÜBRIGEN askable Felder derselben Regel entfallen mit;
+      (b) das Feld steht als Ob-Bedingung einer FREMDEN Regel in regel_bedingungen — dann zählen
+          deren askable Felder.
+
+    Gemessen (Scheibe gesamt, 2026-08-14): veranlagung 38, vpf-Gates 13, hh_hat_aufwendungen 10.
+    Vor dieser Sortierung standen die Gates alphabetisch, veranlagung damit auf Frage 203 von 243
+    — die Antwort, die über 38 Partner-Felder entscheidet, kam fast zuletzt.
+
+    Wächst von selbst mit: jeder neue regel_bedingungen-Eintrag (Screening-Modell) gibt seinem
+    Gate automatisch Gewicht, ohne dass hier etwas nachgetragen werden muss."""
+    bedingungen = lade_regel_bedingungen()
+    felder_je_regel: dict[str, list[str]] = {}
+    for fid, b in bindung.items():
+        if b.get("askable"):
+            felder_je_regel.setdefault(b["quelle"]["regel_id"], []).append(fid)
+
+    gewicht: dict[str, int] = {}
+    for fid, b in bindung.items():
+        if not b.get("askable"):
+            continue
+        q = b["quelle"]
+        n = 0
+        if "geltungsbedingung" in q and b.get("typ") in ("bool", "boolean"):
+            n += sum(1 for f in felder_je_regel.get(q["regel_id"], []) if f != fid)
+        for rid, conds in bedingungen.items():
+            if any(c["feld"] == fid for c in conds):
+                n += len(felder_je_regel.get(rid, []))
+        gewicht[fid] = n
+    return gewicht
+
+
 def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> list[str]:
     """Geordnete Interview-Queue: unbeantwortete askable Felder nicht-ausgeschlossener Regeln.
     Gating-Bedingungen zuerst (streichen ganze Regeln), dann Slots nach Unsicherheits-Beitrag
     (aus intervall.py, wenn übergeben), sonst deterministisch feld_id-sortiert.
+
+    Die Gates untereinander stehen nach gate_gewicht() — wer viel abschaltet, kommt zuerst; bei
+    gleichem Gewicht alphabetisch, damit die Reihenfolge deterministisch bleibt.
 
     Günstiger-sicher by construction: ALLE unbeantworteten askable Felder nicht-ausgeschlossener
     Regeln kommen in die Queue — kein Zweig wird anhand eines vorläufigen Siegers weggeschnitten."""
@@ -141,8 +183,15 @@ def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> 
     kand = [fid for fid, b in bindung.items()
             if b.get("askable") and _unbeantwortet(aktiv.get(fid))
             and rel[b["quelle"]["regel_id"]]["status"] != "ausgeschlossen"]
-    gates = sorted(f for f in kand if "geltungsbedingung" in bindung[f]["quelle"])
-    slots = [f for f in kand if "geltungsbedingung" not in bindung[f]["quelle"]]
+    gw = gate_gewicht(bindung)
+    # „Gate" heißt hier: die Antwort streicht andere Fragen — nicht: das Feld trägt technisch eine
+    # geltungsbedingung. Beides fällt auseinander, und zwar beim wichtigsten Feld überhaupt:
+    # `veranlagung` hat KEINE geltungsbedingung (es wirkt über regel_bedingungen auf
+    # p2_festzusetzung_zusammen) und landete deshalb bei den Slots — alphabetisch auf Frage 203 von
+    # 243, obwohl seine Antwort 38 Partner-Felder entscheidet. Wer abschaltet, kommt nach vorn.
+    ist_gate = lambda f: "geltungsbedingung" in bindung[f]["quelle"] or gw.get(f, 0) > 0
+    gates = sorted((f for f in kand if ist_gate(f)), key=lambda f: (-gw.get(f, 0), f))
+    slots = [f for f in kand if not ist_gate(f)]
     if beitrag:
         slots.sort(key=lambda f: (-beitrag.get(f, 0), f))
     else:

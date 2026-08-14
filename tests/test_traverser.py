@@ -142,12 +142,26 @@ def test_ausgeschlossene_regel_wird_nicht_gefragt(bindung):
 
 
 def test_gating_vor_slots(bindung):
+    """Fragen, die ganze Regeln streichen, stehen vor Fragen, die nur Werte liefern.
+
+    PRÄZISIERT 2026-08-14: vorher verglich der Test "hat geltungsbedingung" gegen "hat
+    signatur_slot". Diese Einteilung ist zu eng — `veranlagung` trägt einen signatur_slot und
+    KEINE geltungsbedingung, streicht aber über regel_bedingungen die komplette Regel
+    p2_festzusetzung_zusammen (38 askable Partner-Felder). Nach der alten Prüfung musste es
+    deshalb hinter jedes bool-Gate, und landete alphabetisch auf Frage 203 von 243.
+
+    Die Absicht des Tests bleibt unverändert; gemessen wird sie jetzt an dem, was sie meint:
+    streicht die Antwort andere Fragen (gate_gewicht > 0) oder nicht."""
     s = ST.leerer_store(2025)
     fragen = T.naechste_fragen(s, bindung)
-    gate_pos = [i for i, f in enumerate(fragen) if "geltungsbedingung" in bindung[f]["quelle"]]
-    slot_pos = [i for i, f in enumerate(fragen) if "signatur_slot" in bindung[f]["quelle"]]
-    if gate_pos and slot_pos:
-        assert max(gate_pos) < min(slot_pos), "Gating-Fragen nicht vor Slot-Fragen"
+    gw = T.gate_gewicht(bindung)
+    streichend = [i for i, f in enumerate(fragen)
+                  if "geltungsbedingung" in bindung[f]["quelle"] or gw.get(f, 0) > 0]
+    nur_wert = [i for i, f in enumerate(fragen)
+                if "geltungsbedingung" not in bindung[f]["quelle"] and gw.get(f, 0) == 0]
+    if streichend and nur_wert:
+        assert max(streichend) < min(nur_wert), (
+            "Eine Frage, die nur einen Wert liefert, steht vor einer, die ganze Regeln streicht")
 
 
 def test_beitrag_sortiert_slots(bindung):
