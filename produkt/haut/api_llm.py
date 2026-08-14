@@ -211,6 +211,83 @@ def _llm_vorschlaege(freitext: str, katalog: list[dict],
     return behalten
 
 
+# ---------------------------------------------------------------- Erklär-Kanal (Nachfragen)
+#
+# Zweiter LLM-Task neben den Vorschlägen, mit einer anderen Grenze: hier kommt TEXT zurück und
+# NIE ein Feld-Wert. Kein Event, kein Store-Schreibvorgang — der Pfad ruft append_event gar nicht
+# erst auf. Der Nutzer fragt nach ("was zählt denn zu den Arbeitstagen?"), das Modell antwortet.
+#
+# Das Schema hat einen zweiten Zweck neben der Struktur: `unsicher` zwingt das Modell zu einer
+# ausdrücklichen Aussage darüber, ob die Antwort aus dem mitgegebenen Gesetzestext folgt. Wer ein
+# Feld setzen MUSS, gibt Zweifel eher zu als jemand, der nur höflich darum gebeten wird — und die
+# Oberfläche kann den Hinweis dann anzeigen, statt eine Vermutung wie eine Auskunft aussehen zu
+# lassen. (Ein response_format geht in _call ohnehin immer raus; ohne Schema wäre es json_object,
+# und die Erklärung käme als JSON-Objekt zurück, das niemand liest.)
+ERKLAER_SCHEMA = {
+    "name": "erklaerung",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "properties": {
+            "antwort": {"type": "string",
+                        "description": "Die Erklärung: höchstens fünf Sätze, Du-Form, ohne Fachjargon."},
+            "unsicher": {"type": "boolean",
+                         "description": "true, wenn die Antwort NICHT sicher aus dem angegebenen "
+                                        "Gesetzestext oder der Feldbeschreibung folgt."},
+        },
+        "required": ["antwort", "unsicher"],
+        "additionalProperties": False,
+    },
+}
+
+
+def _erklaer_prompt(frage: str, kontext: str) -> list[dict]:
+    """messages für den Erklär-Task. `kontext` ist der bereits PII-gefilterte Text mit Feld,
+    Kurzhilfe, Zitatanker und den schon bestätigten Angaben (baut api.py)."""
+    system = (
+        "Du erklärst einem Laien eine Frage aus seiner Einkommensteuererklärung. Du ERKLÄRST — du "
+        "setzt keinen Wert, triffst keine Entscheidung und rechnest seine Steuer nicht aus.\n\n"
+        + kontext + "\n"
+        "Antworte auf Deutsch, in der Du-Form, in höchstens fünf Sätzen, ohne Fachjargon (und wenn "
+        "ein Fachwort unvermeidlich ist, erkläre es im selben Satz). Stütze dich auf den zitierten "
+        "Gesetzestext, wenn einer angegeben ist.\n"
+        # Ohne diese zwei Regeln wird aus einer Erklärung unbemerkt eine Auskunft: das Modell nennt
+        # eine Zahl, der Nutzer trägt sie ein, und niemand hat je behauptet, sie sei geprüft.
+        "Nenne NIE einen konkreten Betrag als den Wert des Nutzers — er trägt jeden Wert selbst ein "
+        "und bestätigt ihn. Weißt du etwas nicht sicher, sag das ausdrücklich und setze "
+        "\"unsicher\": true, statt zu raten.")
+    return [{"role": "system", "content": system}, {"role": "user", "content": frage}]
+
+
+def _llm_erklaerung(frage: str, kontext: str, user_id: str | None = None) -> dict:
+    """{antwort, unsicher} — Fließtext-Antwort auf eine Nachfrage. Kein Feld, kein Event.
+
+    PII-Filter wie im Vorschlags-Pfad, hier auf BEIDEN Teilen: die Nachfrage kommt vom Nutzer, und
+    der Kontext trägt seine schon bestätigten Angaben. Audit nur Metadaten, nie den Text.
+
+    Eine unbrauchbare Antwort (kaputtes JSON, leeres Feld) wird zu LlmNichtVerfuegbar — der
+    Handler fällt dann auf dieselbe Erklär-Grenze zurück wie ohne Key. Ein halb geparster Satz
+    wäre schlechter als ein ehrliches „nicht verfügbar"."""
+    gefiltert, kategorien = filtere(frage)
+    kontext_gefiltert, kategorien_k = filtere(kontext)
+    import llm_client
+    comp = llm_client.complete("chat", _erklaer_prompt(gefiltert, kontext_gefiltert),
+                               schema=ERKLAER_SCHEMA)
+    try:
+        j = json.loads(comp.text)
+        antwort = str(j["antwort"]).strip()
+    except Exception as e:                                   # noqa: BLE001
+        raise llm_client.LlmNichtVerfuegbar(
+            f"Erklärung nicht verwertbar: {type(e).__name__}") from e
+    if not antwort:
+        raise llm_client.LlmNichtVerfuegbar("Erklärung war leer.")
+    audit.append(user_id or "unbekannt", "llm_call", None,
+                 f"task=erklaerung, pii_kategorien={kategorien}, kontext_kategorien={kategorien_k}, "
+                 f"fragelaenge={len(frage)}, antwortlaenge={len(antwort)}, "
+                 f"unsicher={bool(j.get('unsicher'))}")
+    return {"antwort": antwort, "unsicher": bool(j.get("unsicher"))}
+
+
 def _kontoauszug_llm_klassifikator():
     """Baut den Kontoauszug-LLM-Fallback-Klassifikator (dev-2s kontoauszug_writer.llm_klassifikator_factory,
     llm_client-MODUL als `client` — hat `.complete`, kein Klassen-Bau nötig). Cap-gated wie /chat: JEDER Aufruf

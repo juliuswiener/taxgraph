@@ -273,50 +273,46 @@ def test_belegt_liste_tap_targets(base, playwright_context):
         page.close()
 
 
-def test_overlays_responsive(base, playwright_context):
-    """Overlays (Herkunft, Chat): bei 360px lesbar, nicht breiter als Viewport."""
+def test_overlay_und_berater_responsive(base, playwright_context):
+    """Herkunft-Overlay (weiterhin ein Modal) und KI-Berater (seit 2026-08-14 ein dauerhaftes
+    Panel): bei 360px lesbar, nicht breiter als der Viewport.
+
+    Dieser Test hieß test_overlays_responsive und maß das CHAT-Overlay. Das gibt es nicht mehr —
+    Julius: „Die KI sollte immer offen sein". Zwei Lehren aus seiner alten Fassung bleiben
+    eingebaut: der Selektor ist auf EIN Overlay gescoped (ungescoped traf `.overlay-card` die
+    erste im DOM, also die falsche), und geprüft wird eine echte Bounding-Box (ein verstecktes
+    Element hat keine — vorher fiel deshalb nicht auf, dass beide Overlays dauerhaft sichtbar
+    waren)."""
     page = playwright_context.new_page()
     try:
         page.goto(base)
         page.wait_for_load_state("networkidle")
-
-        # Fall starten (JS)
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
-
-        # Warte auf Wegpunkt-Karte (ID=wegpunkt)
         page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
 
-        # Chat-Overlay öffnen (JS, wegen Overlay-Block)
-        try:
-            page.evaluate("document.querySelector('#chat').click()")
-            page.wait_for_selector("#chat-overlay:not([hidden])", timeout=3000)
-        except Exception as e:
-            pytest.skip(f"Overlay-Click fehlgeschlagen: {e}")
+        # Der Berater ist ohne jedes Öffnen da — das ist die Eigenschaft, um die es geht.
+        berater = page.query_selector("#berater")
+        assert berater is not None, "KI-Berater-Panel fehlt"
+        bbox = berater.bounding_box()
+        assert bbox is not None, "Der Berater ist nicht sichtbar — er soll dauerhaft offen sein."
+        assert bbox.get("width", 0) <= 360, f"Berater: width={bbox.get('width')} > 360"
+        assert page.query_selector("#chat-text") is not None, "Eingabefeld nicht erreichbar"
+        assert page.query_selector("#chat-frage") is not None, "Nachfragen-Knopf fehlt"
 
-        # Overlay-Card width <= 360 — SCOPED auf das Chat-Overlay.
-        # Vorher stand hier `.overlay-card` ohne Scope. Das traf die erste im DOM, und das ist die
-        # des kette-Overlays (index.html: kette-overlay steht vor chat-overlay). Der Test maß also
-        # nie das, was sein Name sagt — er kam damit durch, weil bis 2026-08-14 BEIDE Overlays
-        # dauerhaft sichtbar waren: style.css setzte .overlay{display:grid}, und es gab keine
-        # [hidden]-Regel, die das aufhebt. Der Test profitierte vom Bug, statt ihn zu finden.
-        # Mit dem Fix ist das kette-Overlay korrekt versteckt -> bounding_box() is None.
-        overlay_card = page.query_selector("#chat-overlay .overlay-card")
-        assert overlay_card is not None, "Overlay-Card im Chat-Overlay nicht gefunden"
-        bbox = overlay_card.bounding_box()
-        assert bbox is not None, (
-            "Chat-Overlay-Card hat keine Bounding-Box — das Overlay ist nicht wirklich offen.")
-        width = bbox.get("width", 0)
-        assert width <= 360, f"Overlay-Card: width={width} > 360"
+        # Das Herkunft-Overlay ist weiter ein Modal und muss weiter passen.
+        page.evaluate("document.getElementById('kette-overlay').hidden = false")
+        karte = page.query_selector("#kette-overlay .overlay-card")
+        assert karte is not None, "Overlay-Card im Herkunft-Overlay nicht gefunden"
+        kbox = karte.bounding_box()
+        assert kbox is not None, "Herkunft-Overlay-Card hat keine Bounding-Box — nicht offen."
+        assert kbox.get("width", 0) <= 360, f"Overlay-Card: width={kbox.get('width')} > 360"
 
-        # Schließen
-        btn_zu = page.query_selector("#chat-zu")
-        assert btn_zu is not None
-        btn_zu.click()
-        # state="hidden" statt Selektor "#chat-overlay[hidden]": wait_for_selector wartet ohne
+        page.evaluate("document.getElementById('kette-zu').click()")
+        # state="hidden" statt Selektor "#kette-overlay[hidden]": wait_for_selector wartet ohne
         # state-Angabe auf VISIBLE, und ein wirklich verstecktes Element wird das nie. Bis zum
         # [hidden]-Fix (2026-08-14) lief die alte Form durch, weil das Overlay trotz hidden-Attribut
         # sichtbar blieb — der Test hat also bestätigt, dass Schließen NICHT wirkt.
-        page.wait_for_selector("#chat-overlay", state="hidden", timeout=5000)
+        page.wait_for_selector("#kette-overlay", state="hidden", timeout=5000)
     finally:
         page.close()
 

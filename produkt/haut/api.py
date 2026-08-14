@@ -3314,6 +3314,87 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
                  "hinweis": "Vorschläge erfasst — bitte jeden einzeln bestätigen (die KI setzt nichts)."}
 
 
+def _wert_klartext(fid: str, wert, bindung: dict) -> str:
+    """Ein gespeicherter Wert so, wie ein Mensch ihn liest — für den Erklär-Kontext ans Modell.
+
+    Die Speicherform ist an drei Stellen irreführend, und alle drei erzeugen falsche Erklärungen:
+    6200000 liest ein Modell als sechs Millionen, `zusammen` sagt ihm nichts, und `kein_kap=true`
+    heißt das GEGENTEIL dessen, was die zugehörige Frage stellt. Dieselben drei Regeln wie in der
+    Oberfläche (verstandenWertText in app.js)."""
+    b = bindung.get(fid) or {}
+    typ = b.get("typ")
+    if typ == "cent" and isinstance(wert, (int, float)):
+        return f"{wert / 100:.2f} EUR".replace(".", ",")
+    if typ == "bool":
+        ja = (not wert) if fid.startswith("kein_") else bool(wert)
+        return "ja" if ja else "nein"
+    if typ == "enum":
+        return (ENUM_LABELS.get(fid) or {}).get(wert, str(wert))
+    return f"{wert} {b['einheit']}" if b.get("einheit") else str(wert)
+
+
+# So viele bestätigte Angaben gehen höchstens in den Erklär-Kontext. Julius wollte, dass die KI
+# „schon Sachen mit in Betracht zieht, die der Nutzer bereits geantwortet hat" — aber ein voller
+# Fall hat über 200 Felder, und der Prompt ist ohnehin die teuerste Zeile im Betrieb.
+_ERKLAER_KONTEXT_MAX = 40
+
+
+def _erklaer_kontext(store: dict, bindung: dict, fid: str | None) -> str:
+    """Kontext für eine Nachfrage: das Feld, seine Kurzhilfe, sein Zitatanker — und was der Nutzer
+    schon bestätigt hat. Reiner Text; die PII-Filterung passiert im ausgehenden Pfad (api_llm)."""
+    teile = []
+    b = (bindung.get(fid) or {}) if fid else {}
+    if b:
+        teile.append(f"Die Frage, um die es geht: „{b.get('fragetext_laie', '')}“")
+        if b.get("hilfe_kurz"):
+            teile.append(f"Dazu gehört laut Feldbeschreibung: {b['hilfe_kurz']}")
+        a = b.get("anker_ref") or {}
+        if a.get("quelle") or a.get("zitatanker"):
+            # Der Zitatanker ist der einzige Teil des Kontexts, der Gesetzestext IST statt ihn zu
+            # umschreiben. Er ist der Grund, warum die Antwort mehr sein kann als Allgemeinwissen.
+            teile.append(f"Wörtlicher Gesetzestext dazu — {a.get('quelle', '')}: "
+                         f"„{a.get('zitatanker', '')}“")
+    bestaetigt = [(f, e) for f, e in ST._aktives(store).items()
+                  if e.get("zustand") == "bestaetigt"]
+    if bestaetigt:
+        zeilen = [f"- {(bindung.get(f) or {}).get('fragetext_laie', f)} "
+                  f"→ {_wert_klartext(f, e['wert'], bindung)}"
+                  for f, e in bestaetigt[:_ERKLAER_KONTEXT_MAX]]
+        teile.append("Das hat der Nutzer bereits bestätigt:\n" + "\n".join(zeilen))
+    return "\n".join(teile)
+
+
+def erklaere(fall_id: str, body: dict) -> tuple[int, dict]:
+    """Erklär-Kanal (Nachfragen): Freitext-Frage → Freitext-Antwort. KEIN Feld, KEIN Event.
+
+    Julius 2026-08-14: „Bei Erklär mir soll die AI das erklären … aber der Nutzer sollte
+    Nachfragen stellen können. Wenn möglich könnte die AI hier auch schon Sachen mit in Betracht
+    ziehen, die der Nutzer bereits geantwortet hat."
+
+    Die ERSTE Erklärung baut die Oberfläche selbst aus Fragetext, Kurzhilfe und Zitatanker — die
+    hat sie schon aus /fragen, sie kostet nichts und ist auch ohne Key da. Dieser Endpunkt ist für
+    das, was danach kommt.
+
+    Die Grenze zum Vorschlags-Kanal ist STRUKTURELL, nicht bloß eine Prompt-Regel: hier wird
+    append_event nie aufgerufen. Was das Modell hier sagt, kann keinen Wert setzen — auch keinen
+    vorläufigen. Deshalb braucht dieser Pfad auch keinen Katalog-Check.
+
+    Cap-gated wie /chat: kein Key/Provider oder eine unverwertbare Antwort → 501 + Erklär-Vertrag."""
+    _fall_owner_check(fall_id)
+    store = lade_fall(fall_id)
+    bindung = _scheibe_bindung(store)
+    frage = (body.get("frage") or "").strip()
+    if not frage:
+        raise ApiError(400, "frage fehlt")
+    fid = body.get("feld_id") or None
+    try:
+        erg = api_llm._llm_erklaerung(frage, _erklaer_kontext(store, bindung, fid),
+                                      user_id=api_auth._AUTH_USER)
+    except (api_llm.LlmNichtVerfuegbar, ImportError):
+        return 501, CHAT_501
+    return 200, {"fall_id": fall_id, "feld_id": fid, **erg}
+
+
 # ----------------------------------------------------------------- P8.3 Health / Ready
 
 def health() -> tuple:

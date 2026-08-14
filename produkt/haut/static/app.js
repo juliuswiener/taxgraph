@@ -520,12 +520,79 @@ async function verstandenWeiter() {
   await refresh();
 }
 
-// --- Dim 5: Chat als Berater daneben — die KI SCHLÄGT VOR (vorläufig), setzt NIE einen Wert.
-//     Vorschläge erscheinen im Fluss mit ✦-Badge + Hold-Confirm (Zwei-Signal). Kein Key -> 501-Erklär-Grenze. ---
-async function oeffneChat() {
-  $("chat-body").innerHTML = `<p class="chat-erklaer">Beschreib deine Situation — die KI <b>schlägt Werte vor</b>, du bestätigst jeden selbst (die KI setzt <b>nie</b> einen Wert). <span class="chat-grenze">Du entscheidest.</span></p>`;
-  const t = $("chat-text"); if (t) t.value = "";
-  $("chat-overlay").hidden = false;
+// --- Dim 5: der KI-Berater. Dauerhaft offen (kein Modal), zwei getrennte Wege:
+//     „Werte übernehmen" schreibt VORLÄUFIGE Vorschläge, „Nachfragen" schreibt nichts.
+//     Kein Key -> 501-Erklär-Grenze, nie ein Fake-Wert. ---
+function beraterZeile(cls, text) {
+  const p = document.createElement("p");
+  p.className = cls;
+  p.textContent = text;   // textContent, nicht innerHTML: alles hier ist Fremdtext (YAML, Modell, Nutzer)
+  return p;
+}
+
+// „Erklär mir" erklärt jetzt wirklich. Julius 2026-08-14: „würde ich erwarten als Nutzer, dass es
+// wirklich erklärt und nicht dann die KI aufgeht und ich ihr eine Frage stellen kann."
+// Die erste Antwort kommt OHNE Modell: Fragetext, Kurzhilfe und Zitatanker liegen bereits vor
+// (aus /fragen). Damit ist sie sofort da, kostet nichts und funktioniert auch ohne LLM-Key —
+// und sie ist Gesetzestext, keine Paraphrase. Nachfragen gehen danach an die KI.
+async function erklaereFeld() {
+  if (!AKTUELL) return;
+  const q = AKTUELL;
+  const body = $("chat-body");
+  body.innerHTML = "";
+  // Alles hier steht SYNCHRON auf dem Bildschirm — kein await davor. Jedes askable Feld trägt
+  // einen Zitatanker (gemessen: 263 von 263), die Erklärung braucht also keinen Netzaufruf und
+  // erscheint sofort und vollständig statt in zwei Etappen.
+  body.appendChild(beraterZeile("chat-frage-titel", q.fragetext_laie || q.feld_id));
+  if (q.hilfe_kurz) body.appendChild(beraterZeile("chat-erklaer", q.hilfe_kurz));
+  const gesetz = beraterZeile("chat-gesetz", "");
+  const setzeGesetz = (a) => {
+    if (!a || !(a.quelle || a.zitatanker)) return false;
+    gesetz.textContent = `${a.quelle || ""}: „${a.zitatanker || ""}“`;
+    return true;
+  };
+  if (setzeGesetz(q.anker_ref)) body.appendChild(gesetz);
+  body.appendChild(beraterZeile("chat-nachfrage-hint",
+    "Noch unklar? Schreib deine Frage unten hin und tippe auf „Nachfragen“."));
+  $("berater").scrollIntoView({ block: "nearest" });
+  // Hat das Feld schon ein Event, ist der Anker aus /warum der genauere (er folgt der Regel, die
+  // tatsächlich gegriffen hat). Reine Verfeinerung — der Nutzer liest schon, während das läuft.
+  const r = await jget(`/fall/${FALL}/feld/${q.feld_id}/warum`);
+  if (r.status === 200 && r.body.justification) setzeGesetz(r.body.justification.anker_ref);
+}
+
+// Nachfrage an die KI: Freitext rein, Freitext raus. Dieser Weg schreibt NIE einen Wert — das
+// ist keine Prompt-Regel, sondern der Endpunkt: /erklaere ruft append_event nicht auf.
+async function nachfragen() {
+  const btn = $("chat-frage");
+  if (btn.disabled) return;   // Doppel-Submit-Schutz
+  const t = $("chat-text");
+  const frage = (t && t.value || "").trim();
+  if (!frage) return;
+  btn.disabled = true;
+  const body = $("chat-body");
+  body.appendChild(beraterZeile("chat-du", "Du: " + frage));
+  const warte = beraterZeile("chat-erklaer", "Die KI liest deine Frage …");
+  body.appendChild(warte);
+  const r = await jpost(`/fall/${FALL}/erklaere`,
+                        { frage, feld_id: AKTUELL ? AKTUELL.feld_id : null });
+  warte.remove();
+  if (r.status === 200 && r.body && r.body.antwort) {
+    body.appendChild(beraterZeile("chat-antwort", r.body.antwort));
+    // Das Modell muss im Schema angeben, ob es sich sicher ist. Wird es verschwiegen, sieht eine
+    // Vermutung aus wie eine Auskunft — und der Nutzer trägt sie in seine Steuererklärung ein.
+    if (r.body.unsicher) {
+      body.appendChild(beraterZeile("chat-unsicher",
+        "Die KI ist sich hier nicht sicher — bitte nachprüfen, im Zweifel steuerlich beraten lassen."));
+    }
+  } else if (r.status === 501) {
+    body.appendChild(beraterZeile("chat-vertrag",
+      (r.body && r.body.vertrag) || "Der KI-Kanal ist nicht verbunden."));
+  } else {
+    body.appendChild(beraterZeile("chat-vertrag", "Der KI-Kanal antwortete unerwartet (" + r.status + ")."));
+  }
+  t.value = "";
+  btn.disabled = false;
 }
 
 async function chatSenden() {
@@ -544,9 +611,8 @@ async function chatSenden() {
     const n = (r.body.vorschlaege || []).length;
     if (n) {
       body.innerHTML = `<p class="chat-erklaer">Die KI hat <b>${n} Vorschlag${n === 1 ? "" : "e"}</b> gemacht — bitte bestätige jeden selbst.</p>`;
-      // Der Berater tritt zurück, die Verstanden-Seite tritt vor: der Nutzer sieht alles auf einmal,
-      // was aus seinem Satz geworden ist, samt dem Satzteil, auf den es sich stützt.
-      $("chat-overlay").hidden = true;
+      // Die Verstanden-Seite tritt vor: der Nutzer sieht alles auf einmal, was aus seinem Satz
+      // geworden ist, samt dem Satzteil, auf den es sich stützt.
       zeigeVerstanden(r.body.vorschlaege);
       await refresh();   // Ring/Belegt aktualisieren; zeigeVerstanden hält die Seite vorn
     } else {
@@ -747,12 +813,12 @@ async function kontoauszugHochladen(datei) {
 
 // --- Verdrahtung ---
 document.querySelectorAll(".kachel").forEach(k => k.addEventListener("click", () => waehleScheibe(k.dataset.scheibe)));
-$("chat").addEventListener("click", oeffneChat);
+$("chat").addEventListener("click", erklaereFeld);
 $("chat-send").addEventListener("click", chatSenden);
+$("chat-frage").addEventListener("click", nachfragen);
 $("warum").addEventListener("click", zeigeWarum);
 $("verstanden-weiter").addEventListener("click", verstandenWeiter);
 $("kette-zu").addEventListener("click", () => $("kette-overlay").hidden = true);
-$("chat-zu").addEventListener("click", () => $("chat-overlay").hidden = true);
 $("vorjahr-toggle").addEventListener("click", () => { const p = $("vorjahr-panel"); p.hidden = !p.hidden; });
 $("vorjahr-go").addEventListener("click", vorjahrUebernehmen);
 $("konto-toggle").addEventListener("click", () => { const p = $("konto-panel"); p.hidden = !p.hidden; });

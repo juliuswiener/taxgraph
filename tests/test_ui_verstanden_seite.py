@@ -102,8 +102,7 @@ def seite(base):
         page.wait_for_load_state("networkidle")
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
         page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
-        page.click("#chat")
-        page.fill("#chat-text", TEXT)
+        page.fill("#chat-text", TEXT)   # der Berater ist dauerhaft offen, nichts aufzuklappen
         page.click("#chat-send")
         page.wait_for_selector("#verstanden:not([hidden])", timeout=5000)
         yield page
