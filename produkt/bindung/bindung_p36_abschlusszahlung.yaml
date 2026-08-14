@@ -23,7 +23,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
-    fragetext_laie: "Wie viel Lohnsteuer wurde im Jahr von Ihrem Arbeitgeber einbehalten und abgeführt?"
+    fragetext_laie: "Wie viel Lohnsteuer hat dein Arbeitgeber im Jahr für dich abgeführt?"
     hilfe_kurz: "Steht auf der Lohnsteuerbescheinigung (Nr. 4). Dieser bereits gezahlte Betrag wird auf die Steuerschuld angerechnet — er verringert die Nachzahlung bzw. führt zur Erstattung."
     beispielwert: 800000
     herkunft_slots: ["Lohnsteuerbescheinigung Nr. 4"]
@@ -40,7 +40,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
-    fragetext_laie: "Wie viel Einkommensteuer-Vorauszahlungen haben Sie im Laufe des Jahres bereits an das Finanzamt geleistet?"
+    fragetext_laie: "Wie viel hast du im Laufe des Jahres schon im Voraus ans Finanzamt gezahlt?"
     hilfe_kurz: "Vierteljährliche Vorauszahlungen, die das Finanzamt festgesetzt hat (falls zutreffend). Bereits Gezahltes wird auf die Steuerschuld angerechnet. Wenn keine: 0."
     beispielwert: 0
     herkunft_slots: null
@@ -58,8 +58,8 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
-    fragetext_laie: "Wie viel Kapitalertragsteuer wurde von Ihrer Bank/Ihrem Broker im Jahr einbehalten und abgeführt?"
-    hilfe_kurz: "Steht auf der Steuerbescheinigung Ihrer Bank (Zeile 37 der Anlage KAP). Nur relevant, wenn Sie Kapitalerträge über den Sparer-Pauschbetrag hinaus hatten und die Günstigerprüfung beantragt haben oder eine Pflichtveranlagung vorliegt — sonst 0. Bereits einbehaltene Steuer wird auf die Steuerschuld angerechnet."
+    fragetext_laie: "Wie viel Steuer haben deine Bank oder dein Broker im Jahr direkt einbehalten?"
+    hilfe_kurz: "Steht auf der Steuerbescheinigung deiner Bank (Zeile 37 der Anlage KAP). Nur nötig, wenn deine Kapitalerträge über dem Sparer-Pauschbetrag lagen — sonst 0. Bereits einbehaltene Steuer wird auf die Steuerschuld angerechnet."
     beispielwert: 0
     herkunft_slots: ["Steuerbescheinigung Zeile 37"]
     elster_kz: E1904701
@@ -76,7 +76,7 @@ bindungen:
     einheit: EUR
     askable: true
     fragetext_laie: "Wie viel Solidaritätszuschlag zur Kapitalertragsteuer wurde einbehalten?"
-    hilfe_kurz: "Steht auf der Steuerbescheinigung Ihrer Bank (Zeile 38 der Anlage KAP). Gilt nur zusammen mit der Kapitalertragsteuer oben — wenn Sie dort 0 eingetragen haben, hier auch 0."
+    hilfe_kurz: "Steht auf der Steuerbescheinigung deiner Bank (Zeile 38 der Anlage KAP). Gilt nur zusammen mit der Steuer oben — steht dort 0, hier auch 0."
     beispielwert: 0
     herkunft_slots: ["Steuerbescheinigung Zeile 38"]
     elster_kz: E1904901
@@ -93,7 +93,7 @@ bindungen:
     einheit: EUR
     askable: true
     fragetext_laie: "Wie viel Kirchensteuer zur Kapitalertragsteuer wurde einbehalten?"
-    hilfe_kurz: "Steht auf der Steuerbescheinigung Ihrer Bank (Zeile 39 der Anlage KAP) — nur bei Kirchensteuerpflicht und automatischem Kirchensteuerabzug (KiStAM). Gilt nur zusammen mit der Kapitalertragsteuer oben. Wenn keine: 0."
+    hilfe_kurz: "Steht auf der Steuerbescheinigung deiner Bank (Zeile 39 der Anlage KAP) — nur bei Kirchensteuerpflicht und automatischem Kirchensteuerabzug (KiStAM). Gilt nur zusammen mit der Kapitalertragsteuer oben. Wenn keine: 0."
     beispielwert: 0
     herkunft_slots: ["Steuerbescheinigung Zeile 39"]
     elster_kz: E1904801

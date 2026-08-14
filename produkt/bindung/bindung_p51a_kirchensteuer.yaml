@@ -17,7 +17,7 @@ bindungen:
     typ: enum
     enum_werte: [keine, evangelisch, roemisch-katholisch, andere]
     askable: true
-    fragetext_laie: "Gehören Sie einer Kirche an, die Kirchensteuer erhebt (evangelisch oder römisch-katholisch)?"
+    fragetext_laie: "Gehörst du einer Kirche an, die Kirchensteuer erhebt (evangelisch oder römisch-katholisch)?"
     hilfe_kurz: "Nur evangelische und römisch-katholische Kirche erheben hier Kirchensteuer. Andere Religionsgemeinschaften oder kein Bekenntnis: keine Kirchensteuer."
     beispielwert: roemisch-katholisch
     elster_kz: E0100402
@@ -69,7 +69,7 @@ bindungen:
                  mecklenburg_vorpommern, niedersachsen, nordrhein_westfalen, rheinland_pfalz,
                  saarland, sachsen, sachsen_anhalt, schleswig_holstein, thueringen]
     askable: true
-    fragetext_laie: "In welchem Bundesland wohnen Sie?"
+    fragetext_laie: "In welchem Bundesland wohnst du?"
     hilfe_kurz: "Bayern und Baden-Württemberg erheben 8 %, alle übrigen Länder 9 % Kirchensteuer."
     beispielwert: bayern
     elster_kz: null

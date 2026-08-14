@@ -13,7 +13,7 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
-    fragetext_laie: "Wie hoch waren Ihre sonstigen Einkünfte aus Leistungen im Jahr — also Einnahmen abzüglich Werbungskosten?"
+    fragetext_laie: "Wie viel hast du mit gelegentlichen Leistungen verdient — Einnahmen minus der Kosten, die dir dafür entstanden sind?"
     hilfe_kurz: "Dazu gehören z. B. gelegentliche Vermittlungen oder die Vermietung beweglicher Gegenstände. Wenn die Summe 256 € nicht übersteigt, ist sie steuerfrei. Übersteigt sie 256 €, ist der gesamte Betrag steuerpflichtig."
     beispielwert: 0
     herkunft_slots: null

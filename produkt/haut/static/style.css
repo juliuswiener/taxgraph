@@ -60,6 +60,18 @@ h1,h2,h3{margin:0}
   border-radius:10px;padding:12px;font-size:16px;text-overflow:ellipsis}
 .einheit{color:var(--muted)}
 
+/* Auswahl als Buttons (2026-08-14). Ja/Nein und kurze Auswahllisten standen bis dahin in einem
+   <select> — zwei Interaktionen für eine Information, und auf dem Handy ein Systemdialog über der
+   ganzen Seite. Umbruch statt Scrollen, damit lange Anzeigetexte die 360px-Ansicht nicht sprengen
+   (dieselbe Falle wie bei den enum-Labels: scrollWidth 458 > 360). */
+.wahl{display:flex;flex-wrap:wrap;gap:8px;flex:1;min-width:0}
+.wahl-opt{flex:1 1 auto;min-width:0;background:#12162a;border:1px solid var(--line);
+  color:var(--ink);border-radius:10px;padding:12px 14px;font-size:16px;cursor:pointer;
+  min-height:44px;text-align:left}
+.wahl-opt:hover{border-color:var(--muted)}
+.wahl-opt.aktiv{border-color:var(--akzent);background:var(--card2);font-weight:600}
+.wahl-opt:focus-visible{outline:2px solid var(--akzent);outline-offset:2px}
+
 /* Maps-Affordance (Arbeitsweg-km, Julius-Feature) — Vorschlag-Fluss, Backend ge-stubbt */
 .maps{background:#12162a;border:1px dashed var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
 .maps-titel{font-size:13px;color:var(--muted);margin-bottom:8px}

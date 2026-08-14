@@ -423,7 +423,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Wie viele volle Reisetage (24h) lagen nach Ablauf der ersten drei Monate am selben Ort?"
-    hilfe_kurz: "Nach drei Monaten am selben Ort entfällt die Pauschale. Zählen Sie nur die Tage nach der Frist. Wenn Sie eine Unterbrechung von mindestens vier Wochen hatten, beginnt die Frist danach neu."
+    hilfe_kurz: "Nach drei Monaten am selben Ort entfällt die Pauschale. Zähl nur die Tage nach der Frist. Wenn du eine Unterbrechung von mindestens vier Wochen hattest, beginnt die Frist danach neu."
     beispielwert: 0
     bereich: {min: 0, max: 366, grund: "Tage nach Ablauf der Dreimonats-Frist (nicht negativ)"}
     herkunft_slots: ["Interview: Dreimonatsfrist"]

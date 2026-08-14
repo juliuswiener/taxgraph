@@ -384,7 +384,7 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Haben Sie eine Zusammenveranlagung beantragt und möchten Sie die haushaltsnahen Leistungen im Rahmen der Mitveranlagung geltend machen?"
+    fragetext_laie: "Wollt ihr die Kosten für Handwerker und Haushaltshilfe gemeinsam geltend machen?"
     hilfe_kurz: "Bei Zusammenveranlagung wird der Höchstbetrag für haushaltsnahe Leistungen nur einmal gewährt und der Abzugsbetrag geteilt."
     beispielwert: false
     herkunft_slots: null

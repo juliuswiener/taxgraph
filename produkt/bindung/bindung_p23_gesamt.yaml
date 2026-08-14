@@ -52,7 +52,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     instanz_gruppe: p23_veraeusserung
-    fragetext_laie: "Hattest du Werbungskosten im Zusammenhang mit diesem Verkauf (z. B. Makler, Notar, Inserat)?"
+    fragetext_laie: "Hattest du Kosten rund um diesen Verkauf (z. B. Makler, Notar, Inserat)?"
     hilfe_kurz: "Kosten, die direkt mit dem Verkauf zusammenhängen — aber NUR Kosten, die nicht schon zuvor absetzbar waren."
     beispielwert: 500000
     herkunft_slots: null

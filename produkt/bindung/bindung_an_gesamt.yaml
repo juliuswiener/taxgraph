@@ -76,7 +76,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie lautet deine Bemessungsgrundlage laut Steuerbescheid (in Euro)?"
+    fragetext_laie: "Welcher Betrag steht in deinem Steuerbescheid als Bemessungsgrundlage für den Versorgungsfreibetrag (in Euro)?"
     hilfe_kurz: "Das Zwölffache des Monatsbezugs bei Versorgungsbeginn, plus anrechenbare Sonderzahlungen. Dieser Wert ändert sich nie — auch Rentensteigerungen ändern ihn nicht. Der Betrag steht im Steuerbescheid."
     beispielwert: 0
     herkunft_slots: null
@@ -379,7 +379,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie hoch war die Abschreibung (AfA) auf dein Betriebsvermögen dieses Jahr?"
+    fragetext_laie: "Wie viel hast du dieses Jahr für Anschaffungen deines Betriebs abgeschrieben (Fachwort: AfA)?"
     hilfe_kurz: "Der jährliche Abschreibungsbetrag für abnutzbare Wirtschaftsgüter deines Betriebs (z. B. Maschinen, Fahrzeuge, Geräte). Betriebs-AfA — NICHT die AfA einer vermieteten Immobilie (die läuft über die Anlage V)."
     beispielwert: 500000
     herkunft_slots: null
@@ -407,7 +407,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie hoch ist dein zugerechneter Gewinn- oder Verlustanteil als Mitunternehmer (OHG/KG/GbR)?"
+    fragetext_laie: "Wie hoch ist dein Anteil am Gewinn oder Verlust einer Personengesellschaft (OHG, KG oder GbR)?"
     hilfe_kurz: "Der ausgleichsfähige Gewinn-/Verlustanteil aus deinem Feststellungsbescheid (nach § 15a). Bei Kommanditist mit negativem Kapitalkonto: der nicht-ausgleichsfähige Verlust gehört NICHT hierher — er wird gesondert festgestellt/vorgetragen (§ 15a Abs. 2). Einen Verlust trägst du als negativen Betrag ein."
     beispielwert: 4000000
     herkunft_slots: null
@@ -563,7 +563,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie hoch ist dein Gewerbesteuer-Messbetrag?"
+    fragetext_laie: "Welcher Messbetrag steht in deinem Gewerbesteuer-Messbescheid?"
     hilfe_kurz: "Aus deinem Gewerbesteuer-Messbescheid. Trag ihn ein, wenn du die Anrechnung der Gewerbesteuer auf die Einkommensteuer (§ 35) willst — das ist freiwillig; ohne Eintrag entfällt die Anrechnung."
     beispielwert: 2024750
     herkunft_slots: null
@@ -592,7 +592,7 @@ bindungen:
     askable: true
     # KEIN vorjahr-Flag (bewusst, s. tests/test_vorjahr_writer.py): der Bestand aendert sich durch
     # Verrechnung im Vorjahr, vorjahr_writer.py kopiert den alten Wert aber wortwoertlich weiter.
-    fragetext_laie: "Wie hoch ist dein festgestellter verbleibender Verlustvortrag zum 31.12. des Vorjahres?"
+    fragetext_laie: "Welchen Verlust aus früheren Jahren hat dir das Finanzamt zum 31.12. des Vorjahres bescheinigt?"
     hilfe_kurz: "Aus deinem Verlustfeststellungs-Bescheid (§ 10d Abs. 4). Trag ihn ein, wenn du Verluste aus Vorjahren mit diesem Jahr verrechnen willst; ohne Eintrag entfällt der Verlustabzug."
     beispielwert: 6000000
     herkunft_slots: null
@@ -1334,7 +1334,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie hoch ist der zugerechnete Gewinn- oder Verlustanteil deines Ehe-/Lebenspartners als Mitunternehmer (OHG/KG/GbR)?"
+    fragetext_laie: "Wie hoch ist der Anteil deines Ehe- oder Lebenspartners am Gewinn oder Verlust einer Personengesellschaft (OHG, KG oder GbR)?"
     hilfe_kurz: "Der ausgleichsfähige Gewinn-/Verlustanteil deines Partners aus seinem eigenen Feststellungsbescheid (nach § 15a). Einen Verlust trägst du als negativen Betrag ein."
     beispielwert: 0
     herkunft_slots: null

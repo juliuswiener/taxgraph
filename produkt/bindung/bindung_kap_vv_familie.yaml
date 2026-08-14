@@ -288,7 +288,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie hoch ist die jährliche Abschreibung (AfA) für das vermietete Gebäude?"
+    fragetext_laie: "Wie viel schreibst du jährlich für das vermietete Gebäude ab (Fachwort: AfA)?"
     hilfe_kurz: "Meist ein fester Prozentsatz der Anschaffungskosten des Gebäudes (ohne Grundstück)."
     beispielwert: 300000
     herkunft_slots: null

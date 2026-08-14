@@ -187,24 +187,18 @@ function zeigeFrage(q, stand) {
 
   const box = $("eingabe"); box.innerHTML = ""; let input;
   if (q.typ === "bool") {
-    input = document.createElement("select");
-    for (const [t, v] of [["Ja", "true"], ["Nein", "false"]]) {
-      const o = document.createElement("option"); o.value = v; o.textContent = t;
-      // bool-Prefill (dev-2 #4): beispielwert als Vorauswahl statt fix „Ja".
-      if (q.beispielwert !== undefined && q.beispielwert !== null && String(o.value) === String(q.beispielwert)) o.selected = true;
-      input.appendChild(o);
-    }
+    // Buttons statt Dropdown: eine Ja/Nein-Frage hinter einem Klapp-Menü zu verstecken kostet
+    // zwei Interaktionen für eine Information. Der Wert landet in einem hidden input, damit
+    // leseWert() unverändert `#feld-input`.value liest.
+    input = wahlFeld([["Ja", "true"], ["Nein", "false"]], q.beispielwert);
   } else if (q.typ === "enum") {
-    input = document.createElement("select");
-    for (const v of (q.enum_werte || [])) {
-      const o = document.createElement("option"); o.value = v;
-      // Anzeigetext statt Rohwert: ohne das las der Nutzer "land_forst" oder bei den
-      // Kindschaftsverhältnissen nur "1". Fallback auf den Rohwert, falls ein Feld noch kein
-      // Label hat — lieber technisch als leer.
-      o.textContent = (q.enum_labels && q.enum_labels[v]) || v;
-      if (String(v) === String(q.beispielwert)) o.selected = true;
-      input.appendChild(o);
-    }
+    // Anzeigetext statt Rohwert: ohne das las der Nutzer "land_forst" oder bei den
+    // Kindschaftsverhältnissen nur "1". Fallback auf den Rohwert, falls ein Feld noch kein
+    // Label hat — lieber technisch als leer.
+    const opt = (q.enum_werte || []).map(v => [(q.enum_labels && q.enum_labels[v]) || v, v]);
+    // Ab WAHL_MAX wird die Button-Reihe länger als der Bildschirm (16 Bundesländer, 16
+    // DBA-Staaten) — dort bleibt das Dropdown die bessere Bedienung.
+    input = opt.length <= WAHL_MAX ? wahlFeld(opt, q.beispielwert) : selectFeld(opt, q.beispielwert);
   } else {
     input = document.createElement("input"); input.type = "number";
     input.inputMode = q.typ === "cent" ? "decimal" : "numeric";
@@ -212,7 +206,9 @@ function zeigeFrage(q, stand) {
     input.placeholder = q.typ === "cent" ? "Betrag in Euro" : String(q.beispielwert ?? "");
     if (kiVorschlag && vorhanden.wert !== null) input.value = (q.typ === "cent") ? (vorhanden.wert / 100) : vorhanden.wert;
   }
-  input.id = "feld-input";
+  // Bei der Button-Gruppe trägt das versteckte input im Container die id — der Container selbst
+  // darf sie nicht überschreiben, sonst findet leseWert() ein <div> ohne .value.
+  if (!input.classList.contains("wahl")) input.id = "feld-input";
   input.setAttribute("aria-labelledby", "frage");   // a11y: Screenreader liest die Frage als Feldnamen
   box.appendChild(input);
   if (q.einheit) { const s = document.createElement("span"); s.className = "einheit"; s.textContent = " " + q.einheit; box.appendChild(s); }
@@ -279,6 +275,53 @@ function mapsAffordanz(q) {
       st.textContent = (r.body && r.body.vertrag) ? r.body.vertrag : "Karten-Dienst nicht verbunden — bitte km manuell eingeben.";
     }
   });
+}
+
+// Bis zu so vielen Optionen werden Buttons gezeigt, darüber ein Dropdown. 6 passt auf 360px
+// (Steuerklassen sind der Grenzfall); 16 Bundesländer als Button-Reihe wären eine Tapete.
+const WAHL_MAX = 6;
+
+// Button-Gruppe statt Dropdown. optionen: [[anzeigetext, wert], ...].
+// Der gewählte Wert landet in einem versteckten input mit id="feld-input" — dadurch bleibt
+// leseWert() unverändert und muss nicht wissen, wie die Auswahl aussieht.
+function wahlFeld(optionen, vorauswahl) {
+  const wrap = document.createElement("div");
+  wrap.className = "wahl";
+  const hidden = document.createElement("input");
+  hidden.type = "hidden"; hidden.id = "feld-input";
+  wrap.appendChild(hidden);
+  for (const [text, wert] of optionen) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "wahl-opt"; b.textContent = text;
+    b.dataset.wert = String(wert);
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => {
+      hidden.value = String(wert);
+      for (const x of wrap.querySelectorAll(".wahl-opt")) {
+        x.classList.remove("aktiv"); x.setAttribute("aria-pressed", "false");
+      }
+      b.classList.add("aktiv"); b.setAttribute("aria-pressed", "true");
+    });
+    if (vorauswahl !== undefined && vorauswahl !== null && String(wert) === String(vorauswahl)) {
+      hidden.value = String(wert); b.classList.add("aktiv"); b.setAttribute("aria-pressed", "true");
+    }
+    wrap.appendChild(b);
+  }
+  // Ohne Vorauswahl bleibt der Wert leer statt still auf der ersten Option zu stehen — ein
+  // Dropdown zeigt die erste Option an, ein Button-Feld zeigt gar keine, und genau das ist
+  // ehrlicher: der Nutzer hat noch nicht geantwortet.
+  return wrap;
+}
+
+function selectFeld(optionen, vorauswahl) {
+  const sel = document.createElement("select");
+  for (const [text, wert] of optionen) {
+    const o = document.createElement("option"); o.value = wert; o.textContent = text;
+    if (String(wert) === String(vorauswahl)) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.id = "feld-input";
+  return sel;
 }
 
 function leseWert(q) {
