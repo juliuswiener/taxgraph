@@ -7,6 +7,7 @@ let AKTUELL = null;   // aktuelle Frage (aus /fragen)
 let STAND = null;     // letzter /stand
 let SPANNE0 = null;   // Referenz-Spanne (für den Schrumpf-Anteil)
 let KORREKTUR_FID = null;  // feld_id bei Korrektur; null = neue Frage
+let VERSTANDEN_OFFEN = false;  // Verstanden-Seite liegt vorn -> refresh() darf sie nicht wegschieben
 
 const NETZ_FEHLER_TEXT = "Netzwerkfehler — bitte Verbindung prüfen und erneut versuchen.";
 function zeigeNetzFehler(msg) { const b = document.getElementById("netz-banner"); b.textContent = msg; b.hidden = false; }
@@ -75,6 +76,10 @@ async function refresh() {
   STAND = (await jget(`/fall/${FALL}/stand`)).body;
   zeigeRing(STAND);
   zeigeBelegt(STAND.felder);
+  // Die Verstanden-Seite arbeitet eine eigene Liste ab. Ring und Belegt-Liste sollen dabei
+  // mitlaufen (jede Bestätigung bewegt den Ring), aber der Fragefluss darf sich nicht davorschieben
+  // — sonst springt der Nutzer nach der ersten Bestätigung aus seiner Liste heraus.
+  if (VERSTANDEN_OFFEN) return;
   const fragen = (await jget(`/fall/${FALL}/fragen`)).body.fragen;
   if (fragen.length === 0) { $("wegpunkt").hidden = true; await zeigeErgebnis(); }
   else { AKTUELL = fragen[0]; zeigeFrage(AKTUELL, STAND); }
@@ -333,36 +338,39 @@ function leseWert(q) {
 }
 
 // --- Korrektur: Belegt-Feld erneut bearbeiten (event_id aus /warum holen + mit ersetzt überschreiben)
+// Rückgabe true/false: der Aufrufer muss wissen, ob jetzt eine Frage sichtbar ist. Die Verstanden-
+// Seite blendet sich für „Ändern" aus und stünde sonst bei einem Fehlschlag vor einem leeren Bild.
 async function korrigiereBestaetigt(fid) {
   // event_id für dieses Feld holen (aus justification)
   const r = await jget(`/fall/${FALL}/feld/${fid}/warum`);
   if (r.status !== 200 || !r.body.justification) {
     zeigeNetzFehler("Korrektur konnte nicht geladen werden.");
-    return;
+    return false;
   }
   const event_id = r.body.justification.event_id;
   if (!event_id) {
     zeigeNetzFehler("Feld hat keine event_id (nicht belegbar?).");
-    return;
+    return false;
   }
 
   // Frage aus /fragen laden — wir brauchen Feldtyp, Optionen etc.
   const fragen_r = await jget(`/fall/${FALL}/fragen`);
   if (fragen_r.status !== 200) {
     zeigeNetzFehler("Fragen konnten nicht geladen werden.");
-    return;
+    return false;
   }
   const frage = (fragen_r.body.fragen || []).find(q => q.feld_id === fid);
   if (!frage) {
     // Feld steht nicht mehr in den offenen Fragen — könnte sein, dass andere
     // Felder es obsolet gemacht haben. Für Korrektur brauchen wir die Frage.
     zeigeNetzFehler(`Feld ${fid} ist nicht mehr im Fragenfluss.`);
-    return;
+    return false;
   }
 
   KORREKTUR_FID = fid;
   AKTUELL = frage;  // Jetzt ist dieses Feld die "aktuelle" Frage
   zeigeFrage(AKTUELL, STAND);
+  return true;
 }
 
 // --- Bestätigen: Zwei-Signal über den EINZIGEN Schreibpfad. kiFeld gesetzt -> ersetzt das vorläufige KI-Event. ---
@@ -401,6 +409,117 @@ async function bestaetigen(kiFeld) {
   await refresh();
 }
 
+// --- „Das habe ich verstanden": alle KI-Vorschläge auf einer Seite, jeder mit seinem Zitat,
+//     jeder EINZELN zu bestätigen. Julius 2026-08-14: „dann eine Seite anzeigen und dem Nutzer
+//     sagen, okay, das habe ich jetzt verstanden … soll ich das so eintragen? Und dann schon,
+//     dass der Nutzer das dann nochmal bestätigt". Bis eine Zeile bestätigt ist, bleibt ihr Wert
+//     vorläufig und zählt in keiner Summe — die Seite ist die Sichtbarmachung genau dieser Grenze.
+
+// Wert -> Anzeigetext, mit denselben Regeln wie der Fragefluss.
+// Die bool-Umkehr bei `kein_` ist der heikle Teil (vgl. leseWert): das FELD behauptet die
+// Abwesenheit, die FRAGE fragt nach der Anwesenheit. `kein_kap = true` unter „Hattest du dieses
+// Jahr Kapitalerträge?" als „Ja" anzuzeigen wäre das glatte Gegenteil dessen, was gespeichert
+// wird — und hier bestätigt der Nutzer mit einem Klick, was er liest.
+function verstandenWertText(v) {
+  if (v.typ === "bool") {
+    const ja = String(v.feld_id).startsWith("kein_") ? !v.wert : !!v.wert;
+    return ja ? "Ja" : "Nein";
+  }
+  if (v.typ === "enum") return (v.enum_labels && v.enum_labels[v.wert]) || String(v.wert);
+  if (v.typ === "cent") return euro(v.wert);
+  return String(v.wert) + (v.einheit ? " " + v.einheit : "");
+}
+
+function verstandenZeile(v) {
+  const li = document.createElement("li");
+  li.className = "v-zeile";
+  li.dataset.feld = v.feld_id;
+  const frage = document.createElement("div");
+  frage.className = "v-frage";
+  frage.textContent = v.frage || v.feld_id;   // ohne Bindungs-Eintrag lieber die ID als nichts
+  const wert = document.createElement("div");
+  wert.className = "v-wert";
+  wert.textContent = verstandenWertText(v);
+  li.appendChild(frage);
+  li.appendChild(wert);
+  if (v.beleg) {
+    // Das geprüfte Nutzerzitat. Es ist der Unterschied zwischen „bestätige 62.000 €" und
+    // „bestätige 62.000 €, weil du sagtest: 62000 Euro brutto verdient" — der Nutzer kann die
+    // Behauptung an seinem eigenen Satz nachprüfen, statt der KI zu glauben.
+    const b = document.createElement("div");
+    b.className = "v-beleg";
+    b.textContent = "weil du sagtest: „" + v.beleg + "“";
+    li.appendChild(b);
+  }
+  const akt = document.createElement("div");
+  akt.className = "v-aktionen";
+  const ok = document.createElement("button");
+  ok.type = "button"; ok.className = "v-ok"; ok.textContent = "Stimmt";
+  ok.addEventListener("click", () => verstandenBestaetigen(v, li, ok));
+  const aendern = document.createElement("button");
+  aendern.type = "button"; aendern.className = "v-aendern"; aendern.textContent = "Ändern";
+  aendern.addEventListener("click", () => verstandenAendern(v));
+  akt.appendChild(ok);
+  akt.appendChild(aendern);
+  li.appendChild(akt);
+  return li;
+}
+
+function zeigeVerstanden(vorschlaege) {
+  const ul = $("verstanden-liste");
+  ul.innerHTML = "";
+  for (const v of vorschlaege) ul.appendChild(verstandenZeile(v));
+  VERSTANDEN_OFFEN = true;
+  $("wegpunkt").hidden = true;
+  $("fertig").hidden = true;
+  $("verstanden").hidden = false;
+  $("verstanden").focus({ preventScroll: true });   // Screen-Reader: Wechsel des Screens ansagen
+}
+
+async function verstandenBestaetigen(v, li, btn) {
+  if (btn.disabled) return;   // Doppel-Submit-Schutz
+  btn.disabled = true;
+  const r = await jpost(`/fall/${FALL}/event`, {
+    feld_id: v.feld_id, wert: v.wert, zustand: "bestaetigt",
+    herkunft: { herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer" },
+    schreiber: "ui:laie",
+    // `ersetzt` ist Pflicht, nicht Kosmetik: das Feld trägt bereits das vorläufige KI-Event, und
+    // Auflage B lässt höchstens ein aktives Event je Feld zu. Die event_id liefert /chat gleich
+    // mit — dieser Pfad braucht also keinen zusätzlichen /warum-Aufruf.
+    signal: { signal_1: v.event_id, signal_2: "verstanden@" + v.feld_id },
+    ersetzt: v.event_id,
+  });
+  if (!okStatus(r.status)) {
+    zeigeNetzFehler("Abgewiesen: " + (r.body.fehler || r.status));
+    btn.disabled = false;
+    return;
+  }
+  li.classList.add("v-fertig");
+  btn.textContent = "✓ bestätigt";
+  const ae = li.querySelector(".v-aendern");
+  if (ae) ae.remove();
+  await refresh();   // Ring + Belegt-Liste ziehen mit; die Seite selbst bleibt vorn
+}
+
+async function verstandenAendern(v) {
+  $("verstanden").hidden = true;
+  VERSTANDEN_OFFEN = false;
+  if (!await korrigiereBestaetigt(v.feld_id)) {
+    // Frage nicht ladbar -> die Liste ist immer noch die bessere Anzeige als ein leerer Bildschirm.
+    VERSTANDEN_OFFEN = true;
+    $("verstanden").hidden = false;
+  }
+}
+
+async function verstandenWeiter() {
+  // Nicht bestätigte Zeilen bleiben vorläufig und stehen damit weiter im Fragefluss — dort
+  // begegnen sie dem Nutzer erneut, mit Hold-to-confirm. Nichts geht verloren, nichts zählt
+  // ungefragt.
+  VERSTANDEN_OFFEN = false;
+  $("verstanden").hidden = true;
+  await refresh();
+}
+
 // --- Dim 5: Chat als Berater daneben — die KI SCHLÄGT VOR (vorläufig), setzt NIE einen Wert.
 //     Vorschläge erscheinen im Fluss mit ✦-Badge + Hold-Confirm (Zwei-Signal). Kein Key -> 501-Erklär-Grenze. ---
 async function oeffneChat() {
@@ -424,8 +543,12 @@ async function chatSenden() {
   } else if (r.status === 200 && r.body) {
     const n = (r.body.vorschlaege || []).length;
     if (n) {
-      body.innerHTML = `<p class="chat-erklaer">Die KI hat <b>${n} Vorschlag${n === 1 ? "" : "e"}</b> gemacht — sie erscheinen im Fluss mit dem <span class="chat-grenze">✦-Abzeichen</span>. Bitte bestätige jeden selbst (halten zum Bestätigen).</p>`;
-      await refresh();   // die vorläufigen KI-Vorschläge im Fluss zeigen (Hold-Confirm = Zwei-Signal)
+      body.innerHTML = `<p class="chat-erklaer">Die KI hat <b>${n} Vorschlag${n === 1 ? "" : "e"}</b> gemacht — bitte bestätige jeden selbst.</p>`;
+      // Der Berater tritt zurück, die Verstanden-Seite tritt vor: der Nutzer sieht alles auf einmal,
+      // was aus seinem Satz geworden ist, samt dem Satzteil, auf den es sich stützt.
+      $("chat-overlay").hidden = true;
+      zeigeVerstanden(r.body.vorschlaege);
+      await refresh();   // Ring/Belegt aktualisieren; zeigeVerstanden hält die Seite vorn
     } else {
       body.innerHTML = `<p class="chat-erklaer">Die KI konnte daraus keinen konkreten Feld-Wert vorschlagen. Beschreib es genauer oder trag den Wert direkt ein.</p>`;
     }
@@ -627,6 +750,7 @@ document.querySelectorAll(".kachel").forEach(k => k.addEventListener("click", ()
 $("chat").addEventListener("click", oeffneChat);
 $("chat-send").addEventListener("click", chatSenden);
 $("warum").addEventListener("click", zeigeWarum);
+$("verstanden-weiter").addEventListener("click", verstandenWeiter);
 $("kette-zu").addEventListener("click", () => $("kette-overlay").hidden = true);
 $("chat-zu").addEventListener("click", () => $("chat-overlay").hidden = true);
 $("vorjahr-toggle").addEventListener("click", () => { const p = $("vorjahr-panel"); p.hidden = !p.hidden; });

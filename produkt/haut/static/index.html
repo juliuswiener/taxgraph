@@ -64,6 +64,17 @@
         <pre id="anker" class="anker" hidden></pre>
       </section>
 
+      <!-- „Das habe ich verstanden" — KI-Vorschläge mit ihrem Nutzerzitat, EINZELN zu bestätigen.
+           Julius 2026-08-14: „dann eine Seite anzeigen und dem Nutzer sagen, okay, das habe ich
+           jetzt verstanden … soll ich das so eintragen?" Bis hier ist jeder Wert vorläufig und
+           zählt in keiner Summe. -->
+      <section id="verstanden" class="card screen" tabindex="-1" hidden>
+        <h2 class="verstanden-titel">Das habe ich verstanden</h2>
+        <p class="verstanden-sub">Bitte bestätige jede Angabe einzeln — bis dahin zählt keine davon.</p>
+        <ul id="verstanden-liste" class="verstanden-liste"></ul>
+        <button id="verstanden-weiter" class="btn btn-best" type="button">Weiter zu den Fragen</button>
+      </section>
+
       <section id="fertig" class="card screen" tabindex="-1" hidden>
         <h2>Ergebnis</h2>
         <p id="ergebnis" class="ergebnis" role="status" aria-live="polite"></p>

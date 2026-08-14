@@ -149,6 +149,25 @@ h1,h2,h3{margin:0}
 .preflight-hinweis .preflight-badge{background:rgba(255,180,84,.18);color:var(--warn)}
 .preflight-text{flex:1;color:var(--ink);font-size:13px}
 
+/* „Das habe ich verstanden" (2026-08-14) — KI-Vorschläge mit ihrem Nutzerzitat, einzeln bestätigen.
+   Der Beleg bekommt bewusst die Schimmer-Farbe der KI-Herkunft (--schimmernd, wie das ✦-Badge):
+   er ist die Begründung der Maschine, nicht die Aussage des Systems. overflow-wrap:anywhere, weil
+   Zitat und Anzeigetext beliebig lang sein können und die 360px-Ansicht sonst seitwärts scrollt. */
+.verstanden-titel{font-size:20px;margin-bottom:6px}
+.verstanden-sub{color:var(--muted);font-size:14px;margin:0 0 14px;line-height:1.4}
+.verstanden-liste{list-style:none;margin:0 0 14px;padding:0}
+.v-zeile{background:#12162a;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.v-frage{font-size:14px;color:var(--muted);line-height:1.35;overflow-wrap:anywhere}
+.v-wert{font-size:19px;font-weight:700;margin-top:4px;overflow-wrap:anywhere}
+.v-beleg{font-size:13px;color:var(--schimmernd);margin-top:6px;line-height:1.35;overflow-wrap:anywhere}
+.v-aktionen{display:flex;gap:8px;margin-top:10px}
+.v-ok,.v-aendern{flex:1;min-width:0;min-height:44px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
+.v-ok{background:#3d5fa8;color:#fff;border:0}
+.v-aendern{background:none;color:var(--ink);border:1px solid var(--line)}
+.v-ok:disabled{opacity:.55;cursor:default}
+.v-fertig{border-color:rgba(61,220,151,.45)}
+.v-fertig .v-ok{background:none;color:var(--solide);border:1px solid rgba(61,220,151,.45);opacity:1}
+
 /* Overlays: Herkunft-Kette + Chat */
 .overlay{position:fixed;inset:0;background:rgba(6,8,18,.72);display:grid;place-items:end center;z-index:10}
 .overlay-card{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);

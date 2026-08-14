@@ -3199,6 +3199,22 @@ def _ist_struktureller_konflikt(fid: str) -> bool:
     return any(rb["feld"] == fid for liste in bedingungen.values() for rb in liste)
 
 
+def _anzeige_metadaten(fid: str, bindung: dict) -> dict:
+    """Anzeige-Metadaten eines Felds — dieselben Schlüssel und dieselbe Quelle wie in fragen().
+
+    Ohne sie zeigt die Verstanden-Seite das, was der Store führt: `bruttoarbeitslohn = 6200000`.
+    Das ist die Feld-ID und der Cent-Rohwert, also genau die zwei Dinge, die ein Laie nicht lesen
+    kann — und er soll hier ja BESTÄTIGEN, was verstanden wurde. Mit `frage`/`typ`/`einheit`/
+    `enum_labels` kann die Oberfläche daraus „Wie hoch war dein Bruttoarbeitslohn? 62.000,00 €"
+    machen, mit denselben Formatierern, die sie im Fragefluss schon benutzt.
+
+    Fehlt das Feld in der Bindung (kann nach einem Scheiben-Wechsel passieren), bleiben die Werte
+    None — die Oberfläche fällt dann auf feld_id + Rohwert zurück, statt nichts anzuzeigen."""
+    b = bindung.get(fid) or {}
+    return {"frage": b.get("fragetext_laie"), "typ": b.get("typ"),
+            "einheit": b.get("einheit"), "enum_labels": ENUM_LABELS.get(fid)}
+
+
 def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     """Chat-Berater (K1): der Nutzer beschreibt seine Situation in Freitext → das LLM SCHLÄGT Feld-Werte VOR →
     jeder Vorschlag wird als VORLÄUFIGES Event geschrieben (schreiber='llm:chat'). Store-Auflage A + der Katalog-
@@ -3280,8 +3296,11 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
             # `beleg` geht mit in die Antwort: die Oberfläche soll neben jedem Wert zeigen können,
             # aus welchem Satzteil er stammt — das ist der Unterschied zwischen "bestätige 62000"
             # und "bestätige 62000, weil du sagtest: 62000 Euro brutto verdient".
+            # Dazu die Anzeige-Metadaten, damit die Verstanden-Seite eine Frage und einen lesbaren
+            # Wert zeigen kann statt feld_id und Cent-Rohwert.
             geschrieben.append({"feld_id": fid, "event_id": ev["event_id"], "wert": v["wert"],
-                                "beleg": v.get("beleg", "")})
+                                "beleg": v.get("beleg", ""),
+                                **_anzeige_metadaten(fid, bindung)})
         except (ValueError, KeyError) as e:
             abgelehnt.append(fid)                    # Katalog/Auflage-A/F2-Abweisung → still überspringen, Rest gilt
             if fid:
@@ -3292,7 +3311,7 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
         sys.stderr.write(f"[haut.chat] LLM-Vorschläge außerhalb Katalog abgelehnt: {sorted(set(_abg))}\n")
     return 200, {"vorschlaege": geschrieben, "abgelehnt": _abg, "abgelehnt_gruende": abgelehnt_gruende,
                  "konflikte": konflikte,
-                 "hinweis": "Vorschläge erfasst — bitte im Fluss neben jedem Wert bestätigen (die KI setzt nichts)."}
+                 "hinweis": "Vorschläge erfasst — bitte jeden einzeln bestätigen (die KI setzt nichts)."}
 
 
 # ----------------------------------------------------------------- P8.3 Health / Ready
