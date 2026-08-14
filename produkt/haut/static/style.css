@@ -4,6 +4,14 @@
   --solide:#3ddc97; --schimmernd:#c9a3ff; --akzent:#5b8cff; --warn:#ffb454; --line:#2c3457; --fehler:#ff6b6b;
 }
 *{box-sizing:border-box}
+/* hidden schlägt jede display-Regel (2026-08-14). Ohne diese Zeile war die UI unbenutzbar:
+   das HTML-Attribut `hidden` wirkt nur über den User-Agent-Style [hidden]{display:none}, und
+   JEDE Autoren-Regel mit display gewinnt dagegen — .overlay{display:grid} (Z. 128) hielt das
+   Chat-Overlay dauerhaft im Vordergrund (position:fixed, inset:0, z-index:10). Folge: der
+   Start-Screen lag darunter und war nicht anklickbar, und der Schließen-Button blieb wirkungslos,
+   weil er `hidden` setzt — was das CSS weiter überstimmte. Betroffen waren chat-overlay,
+   kette-overlay und ring. Gate: tests/test_ui_hidden_wirkt.py. */
+[hidden]{display:none !important}
 body{margin:0;background:var(--bg);color:var(--ink);
   font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 #app{max-width:440px;margin:0 auto;padding:16px}

@@ -395,6 +395,32 @@ bindungen:
       quelle: "§ 35a Abs. 5 EStG"
       zitatanker: "Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge nach den Absätzen 1 bis 3 insgesamt jeweils nur einmal in Anspruch nehmen."
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  # Top-Level-Screening (Julius-Entscheid 2026-08-14): die drei bestehenden bool-Gates
+  # (rechnung_unbar, in_eu_ewr, keine_foerderung) sind TATBESTANDSMERKMALE — sie fragen nach den
+  # Bedingungen des Abzugs, nicht danach, ob es ihn überhaupt zu prüfen gibt. Wer nie einen
+  # Handwerker im Haus hatte, wurde trotzdem durch alle neun hh-Felder geführt. Dieses Feld ist
+  # die vorgelagerte Ob-Frage; bei "nein" schließt relevanz() die ganze Regel aus und nimmt alle
+  # neun aus dem Dialog.
+  # POSITIVE Benennung mit Absicht: app.js:283 invertiert bool-Antworten NUR bei Feldern mit
+  # "kein_"-Präfix. Ein "kein_haushaltsnahe"-Feld hätte hier eine stille Inversion geerbt, die
+  # niemand beim Lesen der Bindung sieht.
+  - feld_id: hh_hat_aufwendungen
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: haushaltsnahe_aufwendungen_vorhanden}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hattest du dieses Jahr Kosten für Handwerker, Haushaltshilfe oder haushaltsnahe Dienstleistungen?"
+    hilfe_kurz: "Zum Beispiel Handwerkerrechnung, Putzhilfe, Gartenpflege, Winterdienst oder Schornsteinfeger. Wenn nein, entfallen alle weiteren Fragen dazu."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag (Ob-Frage vor den Tatbestandsmerkmalen), kein Deklarationsfeld — es steuert nur, ob die § 35a-Fragen überhaupt gestellt werden."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 1-3 EStG"
+      zitatanker: "Für haushaltsnahe Beschäftigungsverhältnisse"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: hh_rechnung_unbar
     quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: rechnung_und_unbare_zahlung}
     typ: bool

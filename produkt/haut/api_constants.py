@@ -193,7 +193,9 @@ HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")
 HAUSHALT_35A_EINZ = ("hh_minijob_betrag", "hh_minijob_art",
                      "hh_dienstleistung_betrag", "hh_dienstleistung_art",
                      "hh_handwerker_betrag", "hh_handwerker_art")
-HAUSHALT_35A = ("hh_minijob_aufwendungen",) + HAUSHALT_35A_ABS23 + HAUSHALT_35A_EINZ + ("hh_in_eu_ewr", "hh_handwerker_keine_foerderung")
+# hh_hat_aufwendungen zuerst: die Ob-Frage vor den Beträgen und Tatbestandsmerkmalen
+# (Screening-Gate, 2026-08-14 — bei "nein" schließt relevanz() die ganze § 35a-Regel aus).
+HAUSHALT_35A = ("hh_hat_aufwendungen", "hh_minijob_aufwendungen") + HAUSHALT_35A_ABS23 + HAUSHALT_35A_EINZ + ("hh_in_eu_ewr", "hh_handwerker_keine_foerderung")
 P35A_MITVER_ANZEIGE = ("p35a_mitveranlagung",)
 
 # ========== § 10b Spenden + § 10 KiSt (Gesamt) ==========
@@ -463,8 +465,14 @@ SCHEIBEN = {
     "n_vor_gwg": {
         "felder": None, "felder_datei": "bindung_n_vor_gwg.yaml",
         "gesamt_ring": None,
-        "teil_ringe": [("ep_werbungskosten", "abziehbarer_betrag", EP_FELDER),
-                       ("arbeitsmittel_afa", "am_afa_betrag", ARBEITSMITTEL_RING)],
+        # ("arbeitsmittel_afa", "am_afa_betrag", ARBEITSMITTEL_RING) gestrichen (Julius-Entscheid
+        # 2026-08-14): _bescheid_fn hatte nie einen am_afa_betrag-Zweig, der Aufruf fiel ins
+        # abschliessende `return None` und /stand meldete für diesen Teil-Ring dauerhaft
+        # engine_unavailable. Kein Geldfehler — die § 7-AfA wird in BEIDEN echten Bescheid-Pfaden
+        # gerechnet (api.py, ns_wk += am_afa_betrag). Einen Zweig zu bauen hätte eine ZWEITE
+        # Rechenquelle für dieselbe AfA geschaffen; genau diese Naht hat hier schon dreimal Geld
+        # gekostet. Deshalb der Eintrag weg statt eines zweiten Wegs.
+        "teil_ringe": [("ep_werbungskosten", "abziehbarer_betrag", EP_FELDER)],
         "guard": False,
     },
     "an_gesamt": {

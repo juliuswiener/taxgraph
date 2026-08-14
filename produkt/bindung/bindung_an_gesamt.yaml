@@ -200,15 +200,22 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p26_2026-07-17.txt"
 
   # ===== Abwesenheits-Flags (§ 2 Abs. 1 Einkunftsarten): bestätigte-Null-Blöcke =====
-  # Anwendbarkeits-VORAUSSETZUNG des reinen Arbeitnehmerfalls (kein Festsetzungs-Input) → eigener
-  # Pseudoregel-Scope p2_einkunftsarten. Positive Frage in der Haut ("Hattest du X?"), Antwort "nein"
+  # Anwendbarkeits-VORAUSSETZUNG des reinen Arbeitnehmerfalls (kein Festsetzungs-Input) → JE FRAGE
+  # ein eigener Pseudoregel-Scope (p2_einkunftsart_gewinn/_kap/_vuv/_sonstige).
+  # 2026-08-14: die vier Flags hingen vorher an EINER Regel p2_einkunftsarten. relevanz() wertet die
+  # Gates einer Regel konjunktiv aus und bricht beim ersten bestätigten False ab (traverser.py:118-124)
+  # — wer eine Einkunftsart BEJAHTE (Haut-Inversion: kein_X=false), schloss damit die ganze Regel aus
+  # und bekam die anderen drei Fragen nie gestellt. Konjunktive Gates sind für Tatbestandsmerkmale
+  # richtig (§ 35a: bar bezahlt → kein Abzug, alle Detailfragen entfallen zu Recht) und für
+  # UNABHÄNGIGE Screeningfragen falsch. Deshalb je Frage eine eigene regel_id, in der sie das
+  # einzige Gate ist. Gate: tests/test_screening_fragen_unabhaengig.py. Positive Frage in der Haut ("Hattest du X?"), Antwort "nein"
   # → die Haut speichert kein_X=true (bestätigte Null der Einkunftsart) — Invertierung liegt in der Haut
   # (dev-1), hier nur das bool-Feld. Kein Kz (Anwendbarkeits-Flag, kein Deklarationsfeld).
   # beispielwert=false: Normalfall Privatnutzer 'Nein, hatte kein X' (Haut-Inversion !ja -> kein_X=true=abwesend,
   # fail-closed-sicher). UI-PREFILL-Effekt hängt an dev-1s bool-select-Prefill (app.js liest beispielwert noch
   # nicht, defaultet 'Ja') = dev-1 UI-Politur; beispielwert ist forward-ready (Instructor-Ruling 2026-07-18).
   - feld_id: kein_gewinn
-    quelle: {regel_id: p2_einkunftsarten, geltungsbedingung: keine_gewinneinkuenfte}
+    quelle: {regel_id: p2_einkunftsart_gewinn, geltungsbedingung: keine_gewinneinkuenfte}
     typ: bool
     einheit: null
     askable: true
@@ -225,7 +232,7 @@ bindungen:
       zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
   - feld_id: kein_kap
-    quelle: {regel_id: p2_einkunftsarten, geltungsbedingung: keine_kapitaleinkuenfte}
+    quelle: {regel_id: p2_einkunftsart_kap, geltungsbedingung: keine_kapitaleinkuenfte}
     typ: bool
     einheit: null
     askable: true
@@ -242,7 +249,7 @@ bindungen:
       zitatanker: "Einkünfte aus Kapitalvermögen"
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
   - feld_id: kein_vuv
-    quelle: {regel_id: p2_einkunftsarten, geltungsbedingung: keine_vermietungseinkuenfte}
+    quelle: {regel_id: p2_einkunftsart_vuv, geltungsbedingung: keine_vermietungseinkuenfte}
     typ: bool
     einheit: null
     askable: true
@@ -259,7 +266,7 @@ bindungen:
       zitatanker: "Einkünfte aus Vermietung und Verpachtung"
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
   - feld_id: kein_sonstige
-    quelle: {regel_id: p2_einkunftsarten, geltungsbedingung: keine_sonstigen_einkuenfte}
+    quelle: {regel_id: p2_einkunftsart_sonstige, geltungsbedingung: keine_sonstigen_einkuenfte}
     typ: bool
     einheit: null
     askable: true

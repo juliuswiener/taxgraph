@@ -1004,6 +1004,17 @@ def test_l_unbekannte_feld_id_in_deklariere():
 # p9_4a_verpflegungsmehraufwand nicht gibt). Wer einen Eintrag entfernt, hat ihn korrigiert
 # (Bindung auf die echte Bedingung umgehängt) oder die Regel in rules.yaml erweitert.
 GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
+    # bindung_sonder_agb_35a.yaml — p35a_2_3_haushaltsnahe, Screening-Gate (2026-08-14).
+    # hh_hat_aufwendungen fragt, OB es haushaltsnahe Kosten gibt, bevor die neun Detailfelder
+    # gestellt werden. Das ist bewusst KEINE Rechtsbedingung: § 35a Abs. 1-3 setzt Aufwendungen
+    # voraus, aber "es gibt sie" ist die Existenz des Sachverhalts, kein Tatbestandsmerkmal —
+    # die drei echten Merkmale der Regel (rechnung_und_unbare_zahlung, haushalt_in_eu_ewr,
+    # keine_foerderung) sind gebunden und bleiben es. Die Alternative wäre gewesen, in
+    # rules.yaml eine Bedingung zu erfinden, die im Gesetz nicht steht; dieselbe Abwägung wie
+    # bei kind_vorname unten ("solange es keine eigene Regel gibt, steht der Eintrag hier statt
+    # in einer erfundenen Bedingung"). Wirkung gemessen: 10 offene § 35a-Fragen -> 0 bei "nein".
+    ("sonder_agb_35a", "hh_hat_aufwendungen", "p35a_2_3_haushaltsnahe",
+     "haushaltsnahe_aufwendungen_vorhanden"),
     # bindung_kap_vv_familie.yaml — p32_6_kinderfreibetraege
     ("kap_vv_familie", "kind_idnr", "p32_6_kinderfreibetraege", "kind_durch_idnr_identifiziert"),
     # kind_vorname (Kz E0500107) teilt die Identifikations-Naht mit kind_idnr und damit auch
@@ -1175,8 +1186,16 @@ REGELN_OHNE_GROUND_TRUTH = {
     # snake_case und PascalCase hier keinen gemeinsamen Wortstamm haben.
     "p2_festzusetzung_einzel",
     "p2_festzusetzung_zusammen",
-    # Pseudoregel-Scope, hat wirklich keine Signatur.
-    "p2_einkunftsarten",
+    # Pseudoregel-Scopes, haben wirklich keine Signatur. Bis 2026-08-14 war das EINE Regel
+    # "p2_einkunftsarten" mit allen vier Abwesenheits-Flags. Aufgeteilt, weil relevanz() die Gates
+    # einer Regel konjunktiv auswertet und beim ersten bestaetigten False abbricht: wer eine
+    # Einkunftsart BEJAHTE (Haut-Inversion in app.js:283 -> kein_X=false), schloss die ganze Regel
+    # aus und bekam die anderen drei Fragen nie gestellt. Vier unabhaengige Screeningfragen
+    # brauchen vier regel_ids. Gate: tests/test_screening_fragen_unabhaengig.py.
+    "p2_einkunftsart_gewinn",
+    "p2_einkunftsart_kap",
+    "p2_einkunftsart_vuv",
+    "p2_einkunftsart_sonstige",
     # Hat einen dict-Accessor (catala_p19_2_versorgungsfreibetrag), aber der liest FELD-IDs
     # (versorgung_bemessungsgrundlage), waehrend die Bindung SLOT-Namen fuehrt
     # (bemessungsgrundlage). Der Ring ruft ausserdem catala_einkuenfte_versorgung, nicht den

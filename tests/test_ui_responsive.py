@@ -293,11 +293,18 @@ def test_overlays_responsive(base, playwright_context):
         except Exception as e:
             pytest.skip(f"Overlay-Click fehlgeschlagen: {e}")
 
-        # Overlay-Card width <= 360
-        overlay_card = page.query_selector(".overlay-card")
-        assert overlay_card is not None, "Overlay-Card nicht gefunden"
+        # Overlay-Card width <= 360 — SCOPED auf das Chat-Overlay.
+        # Vorher stand hier `.overlay-card` ohne Scope. Das traf die erste im DOM, und das ist die
+        # des kette-Overlays (index.html: kette-overlay steht vor chat-overlay). Der Test maß also
+        # nie das, was sein Name sagt — er kam damit durch, weil bis 2026-08-14 BEIDE Overlays
+        # dauerhaft sichtbar waren: style.css setzte .overlay{display:grid}, und es gab keine
+        # [hidden]-Regel, die das aufhebt. Der Test profitierte vom Bug, statt ihn zu finden.
+        # Mit dem Fix ist das kette-Overlay korrekt versteckt -> bounding_box() is None.
+        overlay_card = page.query_selector("#chat-overlay .overlay-card")
+        assert overlay_card is not None, "Overlay-Card im Chat-Overlay nicht gefunden"
         bbox = overlay_card.bounding_box()
-        assert bbox is not None, "Overlay-Card: bounding_box() ist None"
+        assert bbox is not None, (
+            "Chat-Overlay-Card hat keine Bounding-Box — das Overlay ist nicht wirklich offen.")
         width = bbox.get("width", 0)
         assert width <= 360, f"Overlay-Card: width={width} > 360"
 
@@ -305,7 +312,11 @@ def test_overlays_responsive(base, playwright_context):
         btn_zu = page.query_selector("#chat-zu")
         assert btn_zu is not None
         btn_zu.click()
-        page.wait_for_selector("#chat-overlay[hidden]", timeout=5000)
+        # state="hidden" statt Selektor "#chat-overlay[hidden]": wait_for_selector wartet ohne
+        # state-Angabe auf VISIBLE, und ein wirklich verstecktes Element wird das nie. Bis zum
+        # [hidden]-Fix (2026-08-14) lief die alte Form durch, weil das Overlay trotz hidden-Attribut
+        # sichtbar blieb — der Test hat also bestätigt, dass Schließen NICHT wirkt.
+        page.wait_for_selector("#chat-overlay", state="hidden", timeout=5000)
     finally:
         page.close()
 
