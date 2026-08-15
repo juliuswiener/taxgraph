@@ -1471,6 +1471,42 @@ abgabe:
     aufwand_h: unbeziffert
     api_py: "Fix noetig in produkt/haut/api.py (_feste_zahl) — gesperrt bis Refactor fertig"
 
+  - id: realsplitting-4-prozent-kuerzung
+    titel: Deckel des Realsplittings ist um 4 % des Krankengeld-Anteils zu hoch
+    status: analysiert
+    richtung: Geldfehler zugunsten des Nutzers — Steuer zu NIEDRIG (die gefaehrliche Richtung)
+    entdeckt: '2026-08-14'
+    messung: >
+      § 10 Abs. 1 Nr. 3 Buchst. a S. 4 EStG: "Wenn sich aus den Krankenversicherungsbeitraegen
+      nach Satz 2 ein Anspruch auf Krankengeld oder ein Anspruch auf eine Leistung, die anstelle
+      von Krankengeld gewaehrt wird, ergeben kann, ist der jeweilige Beitrag um 4 Prozent zu
+      vermindern". § 10 Abs. 1a Nr. 1 S. 2 erhoeht den 13.805-Deckel um die Beitraege "nach
+      Absatz 1 Nummer 3" — die Verweisung zieht die Kuerzung mit.
+      golden/runner.py catala_p10_1a_realsplitting rechnet deckel = 13805 + kv_pv_beitraege,
+      ungekuerzt. Wirkung nur, wenn die Unterhaltsleistungen den Deckel uebersteigen; dann ist
+      der Abzug um bis zu 4 % des Krankengeld-Anteils zu gross.
+    warum_kein_alleingang: >
+      KEINE Implementierungsluecke, sondern eine ADJUDIKATIONS-Luecke: der adjudizierte catala_a
+      im Snapshot pipeline/snapshots/p10_1a_realsplitting.json kennt die Kuerzung ebenfalls nicht
+      (geprueft 2026-08-15). Die Python-Funktion spiegelt ihn treu. Ein Fix in runner.py allein
+      faellt beim naechsten Pipeline-Lauf still zurueck.
+    blocker: >
+      Der dokumentierte Hand-Fix-Weg (Hand-Fix catala_a/b im Live-Report, test_seed korrigieren,
+      Unit-Seed ergaenzen, `run.py --regate --only <rid>`, `snapshot.py write`) ist mit dem
+      heutigen Repo nicht gangbar: pipeline/run.py existiert nicht mehr, pipeline/runs/ ist
+      gitignored und leer, und snapshot.py write liest genau von dort. Einen Snapshot von Hand
+      zu schreiben hiesse judge_verdict und sha256 zu faelschen — snapshot.py wehrt das
+      ausdruecklich ab ("Ein manipulierter Snapshot FAILt hart").
+    vorarbeit_erledigt: >
+      Der Deklarations-Teil ist gebaut und gemessen: realsplitting_empfaenger_kv_krankengeld
+      (E0300829) erfasst den Anteil seit 12ec7a3, checkESt rc=0. Ohne dieses Feld waere die
+      Kuerzung ueberhaupt nicht rechenbar gewesen.
+    naechster_schritt: >
+      Julius entscheidet, ob (a) die Pipeline-Werkzeuge fuer eine Re-Adjudikation dieser Regel
+      wiederhergestellt werden, oder (b) die Regel bewusst ausserhalb der Snapshot-Mechanik
+      hand-gefuehrt wird (dann mit expliziter Provenance, nicht als LLM-verifiziert getarnt).
+      Formel steht fest: deckel = 13805 + kv_pv - (kv_krankengeld - kv_krankengeld*96//100).
+
 rechenluecken:
 
   - id: vpf-dreimonatsfrist
