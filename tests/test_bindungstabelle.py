@@ -1196,6 +1196,13 @@ REGELN_OHNE_GROUND_TRUTH = {
     "p2_einkunftsart_kap",
     "p2_einkunftsart_vuv",
     "p2_einkunftsart_sonstige",
+    # Sechste Pseudoregel derselben Bauart (2026-08-15): Traeger des Screening-Flags
+    # "Hast du Kinder?". Eine eigene regel_id ist noetig, weil ein askable bool an einer
+    # geltungsbedingung IMMER ein Gate ist und relevanz() bei bestaetigtem FALSE ausschliesst
+    # — ein kein_kind-Gate direkt an p32_6 wuerde die Kinderfreibetraege ausgerechnet dem
+    # streichen, der Kinder HAT. Die sechs echten Kinder-Regeln haengen ueber
+    # regel_bedingungen daran (22 Felder).
+    "p2_kind_vorhanden",
     # Hat einen dict-Accessor (catala_p19_2_versorgungsfreibetrag), aber der liest FELD-IDs
     # (versorgung_bemessungsgrundlage), waehrend die Bindung SLOT-Namen fuehrt
     # (bemessungsgrundlage). Der Ring ruft ausserdem catala_einkuenfte_versorgung, nicht den

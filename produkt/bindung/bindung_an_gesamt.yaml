@@ -231,6 +231,37 @@ bindungen:
       quelle: "§ 2 Abs. 1 S. 1 Nr. 1-3 EStG"
       zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  # Screening C1 (reports/adjudikation/screening_vorsortierung_2026-08-14.md): der groesste
+  # Einzelhebel des ganzen Fragebogens — eine Antwort nimmt 22 Felder aus dem Dialog jedes
+  # Kinderlosen (Kinderfreibetraege 13, Entlastungsbetrag 3, KV/PV-Kind 2, Uebertragung 2,
+  # Schulgeld 1, Ausbildungsfreibetrag 1).
+  #
+  # Warum ein eigenes bool und nicht `fam_anzahl_kinder`: regel_bedingungen vergleicht auf EINEN
+  # Wert ("Regel gilt bei feld == wert"). "Anzahl >= 1" laesst sich damit nicht ausdruecken.
+  #
+  # Warum eine eigene Pseudo-Regel und keine geltungsbedingung an p32_6: ein askable bool an einer
+  # geltungsbedingung IST ein Gate, und relevanz() schliesst bei bestaetigtem FALSE aus. Ein
+  # kein_kind-Gate an p32_6 wuerde die Kinderfreibetraege also ausgerechnet dem streichen, der
+  # Kinder HAT. Dieselbe Polaritaets-Falle wie beim Verpflegungsmehraufwand (519199e); die vier
+  # Einkunftsart-Flags loesen sie ebenso ueber eine eigene regel_id plus regel_bedingungen.
+  - feld_id: kein_kind
+    quelle: {regel_id: p2_kind_vorhanden, geltungsbedingung: keine_kinder}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hast du Kinder, für die du dieses Jahr Kindergeld oder einen Kinderfreibetrag bekommst?"
+    hilfe_kurz: "Auch Pflege-, Stief- und Enkelkinder zählen, ebenso Kinder in Ausbildung bis 25. Ohne Kinder entfällt ein ganzer Block an Fragen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — es steuert nur, ob der Kinder-Block überhaupt gefragt wird. Die Kinderangaben selbst tragen ihre eigenen Kz (Anlage Kind)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 1 EStG"
+      zitatanker: "Bei der Veranlagung zur Einkommensteuer wird für jedes zu berücksichtigende Kind des Steuerpflichtigen ein Freibetrag"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+
   - feld_id: kein_kap
     quelle: {regel_id: p2_einkunftsart_kap, geltungsbedingung: keine_kapitaleinkuenfte}
     typ: bool

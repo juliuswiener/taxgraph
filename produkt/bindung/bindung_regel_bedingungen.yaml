@@ -87,3 +87,43 @@ regel_bedingungen:
     feld: kein_sonstige
     wert: false
     grund: "§ 22 Nr. 3 EStG erfasst Einkünfte aus Leistungen als sonstige Einkünfte — wer bestätigt, keine sonstigen Einkünfte zu haben, hat auch keine solchen Leistungen."
+
+  # ---------------------------------------------------------------------------------------------
+  # Screening C1: "Hast du Kinder?" — der größte Einzelhebel des Fragebogens (22 Felder).
+  #
+  # Dieselbe Lesart wie oben: `wert` ist der Wert, bei dem die Regel GILT. `kein_kind` behauptet
+  # die Abwesenheit, die Regeln setzen ein Kind voraus — daher durchgehend `wert: false`.
+  #
+  # p24b (Entlastungsbetrag für Alleinerziehende) steht bewusst mit in der Liste: er setzt ein
+  # haushaltszugehöriges Kind mit Kindergeldanspruch voraus (§ 24b Abs. 1 S. 1), hängt also
+  # sachlich unter derselben Frage — auch wenn sein Name das nicht sagt.
+
+  - regel_id: p32_6_kinderfreibetraege
+    feld: kein_kind
+    wert: false
+    grund: "§ 32 Abs. 6 S. 1 EStG gewährt den Freibetrag für jedes zu berücksichtigende Kind — ohne Kind gibt es keinen Freibetrag und keine der 13 Angaben dazu."
+
+  - regel_id: p24b_entlastungsbetrag
+    feld: kein_kind
+    wert: false
+    grund: "§ 24b Abs. 1 S. 1 EStG setzt ein zum Haushalt gehörendes Kind voraus, für das Kindergeld oder ein Freibetrag nach § 32 Abs. 6 zusteht — ohne Kind kein Entlastungsbetrag."
+
+  - regel_id: p10_1_3_kv_pv_kind
+    feld: kein_kind
+    wert: false
+    grund: "§ 10 Abs. 1 Nr. 3 S. 2 EStG lässt Kranken-/Pflegeversicherungsbeiträge eines Kindes als eigene Beiträge zu — ohne Kind gibt es keine solchen Beiträge zu übernehmen."
+
+  - regel_id: p33b_abs5_kind_uebertragung
+    feld: kein_kind
+    wert: false
+    grund: "§ 33b Abs. 5 S. 1 EStG überträgt den Behinderten-Pauschbetrag EINES KINDES auf die Eltern — ohne Kind gibt es nichts zu übertragen."
+
+  - regel_id: p10_1_9_schulgeld
+    feld: kein_kind
+    wert: false
+    grund: "§ 10 Abs. 1 Nr. 9 EStG betrifft das Entgelt für den Schulbesuch eines Kindes, für das ein Freibetrag oder Kindergeld zusteht — ohne Kind kein Schulgeldabzug."
+
+  - regel_id: p33a_ausbildungsfreibetrag
+    feld: kein_kind
+    wert: false
+    grund: "§ 33a Abs. 2 S. 1 EStG gewährt den Ausbildungsfreibetrag für ein auswärtig untergebrachtes Kind, für das ein Freibetrag oder Kindergeld zusteht — ohne Kind kein Freibetrag."

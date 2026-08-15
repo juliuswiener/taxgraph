@@ -20,6 +20,10 @@ EP_FELDER = ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigene
 
 # ========== an_gesamt MVP + Flags ==========
 AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
+# Screening-Flag "Hast du Kinder?" (2026-08-15). BEWUSST NICHT in AN_GESAMT_FLAGS: das Tupel
+# fliesst in RENTNER_KEGEL und in den an_gesamt-Kegel, und ein Screening-Flag im Kegel machte
+# jede Zahl von seiner Beantwortung abhaengig. Es steuert nur, welche Fragen kommen.
+KIND_SCREENING = ("kein_kind",)
 # person_b_idnr NICHT hier: ERiC lehnt E0100082 amtlich ab (rc=610301106, "Eingefuegt-Kennzeichen
 # J/P"), unabhaengig vom Wert — Feld wird nicht mehr deklariert (elster_kz: null in
 # bindung_an_gesamt.yaml), darf also auch keinen Ehepaar-Bescheid mehr blockieren. Gemessen
@@ -511,7 +515,7 @@ SCHEIBEN = {
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_VERSORGUNG
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER
-                   + GESAMT_33B + GESAMT_33B_PARTNER
+                   + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
@@ -555,7 +559,7 @@ __all__ = [
     # § 19 Einkünfte
     "EP_FELDER",
     # an_gesamt
-    "AN_GESAMT_FLAGS", "AN_GESAMT_PARTNER",
+    "AN_GESAMT_FLAGS", "KIND_SCREENING", "AN_GESAMT_PARTNER",
     # Arbeitsmittel
     "ARBEITSMITTEL_KOSTEN", "ARBEITSMITTEL_RING", "ARBEITSMITTEL_AFA_GESAMT",
     # § 36/§22/§10 KiSt

@@ -58,6 +58,16 @@ PAARE = [
     ("kein_sonstige", "p22_1_leibrente_besteuerungsanteil"),
     ("kein_sonstige", "p23_veraeusserungsgewinn"),
     ("kein_sonstige", "p22_3_leistungen"),
+    # Screening C1 (2026-08-15), der größte Einzelhebel: eine Antwort nimmt 22 Felder aus dem
+    # Dialog jedes Kinderlosen. Bewusst in DERSELBEN Liste wie Gruppe B — die vier Richtungen
+    # (schaltet ab / lässt stehen / unbeantwortet / vorläufig) gelten hier genauso, und eine
+    # eigene Testdatei hätte nur die Gefahr geschaffen, dass eine Richtung vergessen wird.
+    ("kein_kind", "p32_6_kinderfreibetraege"),
+    ("kein_kind", "p24b_entlastungsbetrag"),
+    ("kein_kind", "p10_1_3_kv_pv_kind"),
+    ("kein_kind", "p33b_abs5_kind_uebertragung"),
+    ("kein_kind", "p10_1_9_schulgeld"),
+    ("kein_kind", "p33a_ausbildungsfreibetrag"),
 ]
 
 
@@ -158,6 +168,29 @@ def _dialog_lauf(explizit: dict, scheibe: str = "gesamt", max_fragen: int = 600)
 
 
 _STAMM = {"veranlagung": "zusammen", "bruttoarbeitslohn": 6000000}
+_KEINE_EINKUNFTSARTEN = dict(_STAMM, kein_gewinn=True, kein_kap=True, kein_vuv=True,
+                             kein_sonstige=True)
+
+
+def test_kinderfrage_nimmt_zweiundzwanzig_felder_aus_dem_dialog():
+    """Screening C1, der größte Einzelhebel — gemessen auf dem Nutzerpfad.
+
+    Beide Läufe verneinen alle vier Einkunftsarten, unterscheiden sich also NUR in der
+    Kinderfrage. Die Differenz ist damit sauber dieser einen Antwort zuzuordnen: 156 → 134.
+
+    Geprüft wird zusätzlich, dass alles Entfernte auch wirklich kinderbezogen ist. Eine reine
+    Zahl würde nicht auffallen lassen, wenn das Tor nebenbei etwas Fremdes mitnimmt — und genau
+    das ist der Schaden, den ein zu breit gezogenes Screening anrichtet."""
+    ja = _dialog_lauf(dict(_KEINE_EINKUNFTSARTEN, kein_kind=False))
+    nein = _dialog_lauf(dict(_KEINE_EINKUNFTSARTEN, kein_kind=True))
+    assert "kein_kind" in ja, "Die Kinderfrage wird gar nicht gestellt."
+    entfernt = set(ja) - set(nein)
+    assert len(entfernt) >= 20, (
+        f"Die Kinderfrage nimmt nur {len(entfernt)} Felder aus dem Dialog (gemessen: 22).")
+    regeln = {r for f, r in PAARE if f == "kein_kind"}
+    fremd = sorted(f for f in entfernt
+                   if (BINDUNG.get(f) or {}).get("quelle", {}).get("regel_id") not in regeln)
+    assert not fremd, f"Die Kinderfrage entfernt Felder fremder Regeln: {fremd}"
 
 
 def test_screening_filtert_und_loescht_nicht():
