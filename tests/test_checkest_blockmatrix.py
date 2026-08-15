@@ -177,6 +177,29 @@ BLOECKE = {
         ("realsplitting_empfaenger_kv_pv", 180000),
         ("realsplitting_empfaenger_kv_krankengeld", 150000),
     ],
+    # Pflege-Pauschbetrag (§ 33b Abs. 6). ERiC gab seine Anforderungen in DREI Schichten preis:
+    # erst Wohnsitz+Helferzahl, nach deren Ergaenzung IdNr+Personenangaben+"durch wen". Der
+    # Pflegegrad allein — so stand es bis 2026-08-15 in der Bindung — war nie einreichbar.
+    # Beide Ausloeser werden gefahren, weil sie getrennt in die Anlage fuehren (Staffel bzw.
+    # Merkzeichen H) und je fuer sich den Block ausloesen koennen.
+    "pflege_pauschbetrag": [
+        ("rentner_pflegegrad", 4),
+        ("rentner_gepflegter_wohnsitz_inland", True),
+        ("rentner_pflege_weitere_personen", 0),
+        ("rentner_gepflegter_idnr", "12345678911"),
+        ("rentner_gepflegter_angaben",
+         "Maria Muster, Musterweg 3, 12345 Musterstadt, meine Mutter"),
+        ("rentner_pflege_durch", "1"),
+    ],
+    "pflege_merkzeichen_h": [
+        ("rentner_gepflegter_hilflos", True),
+        ("rentner_gepflegter_wohnsitz_inland", True),
+        ("rentner_pflege_weitere_personen", 0),
+        ("rentner_gepflegter_idnr", "12345678911"),
+        ("rentner_gepflegter_angaben",
+         "Maria Muster, Musterweg 3, 12345 Musterstadt, meine Mutter"),
+        ("rentner_pflege_durch", "1"),
+    ],
 }
 
 # Bloecke, die HEUTE nicht durchgehen — jeder mit der gemessenen ERiC-Meldung und einem

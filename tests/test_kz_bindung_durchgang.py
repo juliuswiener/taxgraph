@@ -331,3 +331,41 @@ def test_fahrtkostenpauschale_xml_ist_schema_valide(bindung, tmp_path):
                           "fahrtkosten_pausch_ag_bl_tbl_h": False}, bindung), encoding="utf-8")
     ok, meldung = VX.validate(str(ziel), "2025")
     assert ok, f"XML nicht schema-valide: {meldung}"
+
+
+# ---------------------------------------------------------------- Pflege-Pauschbetrag § 33b Abs. 6
+
+def test_pflege_pauschbetrag_pflichtangaben_im_xml(bindung):
+    """Die fünf Begleitangaben neben der Betrags-Staffel (2026-08-15).
+
+    Bis dahin trug die Anlage nur Pflegegrad und Merkzeichen H — also genau die zwei Felder mit
+    Rechenwirkung. checkESt lehnte den Pflege-Pauschbetrag deshalb ab (rc=610001002), und zwar in
+    DREI Schichten: erst fehlten Wohnsitz und Helferzahl, nach deren Ergänzung IdNr,
+    Personenangaben und "durch wen die Pflege erfolgt".
+
+    Der Test prüft die Kz einzeln, weil sie in DREI verschiedenen Containern liegen: die Angaben
+    zur gepflegten Person, die zur pflegenden Person und die zu weiteren Beteiligten. Eine
+    Verwechslung dazwischen wäre XSD-valide und trotzdem falsch.
+    """
+    xml = _xml({"rentner_pflegegrad": 4,
+                "rentner_gepflegter_hilflos": True,
+                "rentner_gepflegter_wohnsitz_inland": True,
+                "rentner_pflege_weitere_personen": 0,
+                "rentner_gepflegter_idnr": "12345678911",
+                "rentner_gepflegter_angaben": "Maria Muster, Musterweg 3, 12345 Musterstadt, meine Mutter",
+                "rentner_pflege_durch": "1"},
+               bindung)
+
+    pers = ("AgB", "Pflege_PB", "Einz", "Ang_pflegebeduerft_Pers")
+    assert _pfad_im_xml(xml, pers + ("E0161506",), "12345678911")
+    assert _pfad_im_xml(xml, pers + ("E0110601",),
+                        "Maria Muster, Musterweg 3, 12345 Musterstadt, meine Mutter")
+    assert _pfad_im_xml(xml, pers + ("E0161607",), "1")          # JaNein12: 1 = Ja
+    assert _pfad_im_xml(xml, ("AgB", "Pflege_PB", "Einz", "Ang_pflegende_Pers", "E0106507"), "1")
+    assert _pfad_im_xml(xml, ("AgB", "Pflege_PB", "Einz", "Ang_an_Pflege_bet_Pers", "E0106603"), "0")
+
+    # Die 0 bei den weiteren Pflegepersonen ist der Normalfall (Alleinpflege) und MUSS erklärt
+    # werden — ERiC verlangt sie ausdrücklich "(gegebenenfalls 0)". Ein Writer, der Nullwerte
+    # generell weglässt, würde die Anlage wieder unabgabefähig machen.
+    import re
+    assert "<E0106603>0</E0106603>" in re.sub(r"<(/?)[a-zA-Z0-9]+:", r"<\1", xml)

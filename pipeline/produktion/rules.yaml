@@ -1929,6 +1929,29 @@ regeln:
     deckt_ab: Als Pflege-Pauschbetrag wird gewährt
     quelle: § 33b Abs. 6 S. 3-4 EStG
     beschreibung: 'Lookup Pflegegrad -> Betrag: PG2 600, PG3 1.100, PG4/5 1.800. Pflegegrad unter 2 -> 0. ist_hilflos (Satz 4) -> 1.800 (Betrag wie PG4/5), auch bei niedrigerem/keinem Pflegegrad.'
+  # Drei Tatbestandsmerkmale des Satzes 1 bzw. der Saetze 8-9, die die Staffel NICHT abdeckt.
+  # Sie aendern den BETRAG nicht (den bestimmen Pflegegrad und Merkzeichen H), sind aber
+  # Voraussetzung dafuer, dass es den Pauschbetrag ueberhaupt gibt — und amtlich zu erklaeren:
+  # ohne sie lehnt checkESt den Pflege-Pauschbetrag ab (gemessen 2026-08-14, rc=610001002, in
+  # DREI Schichten: erst Wohnsitz+Helferzahl, dann IdNr+Personenangaben+"durch wen").
+  # Bis dahin trug die Regel nur die Staffel, weil nur sie eine Rechenwirkung hat. Genau daran
+  # scheiterte der Bau: das Bindungsmodell laesst kein Feld ohne Slot ODER Bedingung zu (gemessen:
+  # 0 von allen gebundenen Feldern kaeme ohne aus), und eine Pflichtangabe ohne Rechenwirkung
+  # hatte damit keinen Platz. Julius-Entscheid 2026-08-15: Deklarations-Pflichtfelder duerfen eine
+  # eigene Bedingung bekommen — mit Ankerpflicht, also einem woertlichen Gesetzeszitat, das das
+  # deckt_ab-Freeze-Gate (tests/test_deckt_ab_freeze.py) gegen die Quelldatei prueft.
+  - bedingung: pflege_persoenlich_in_eu_ewr
+    deckt_ab: die Pflege entweder in seiner Wohnung oder in der Wohnung des Pflegebedürftigen persönlich durchführt und diese Wohnung in einem Mitgliedstaat der Europäischen Union oder in einem Staat gelegen ist, auf den das Abkommen über den Europäischen Wirtschaftsraum anzuwenden ist
+    quelle: § 33b Abs. 6 S. 1 EStG
+    beschreibung: 'Tatbestand des Satzes 1: die Pflege muss PERSOENLICH erfolgen (durch wen von Person A/B) und die Wohnung im EU-/EWR-Raum liegen. Keine Betragswirkung; ohne beide Angaben ist die Erklaerung nicht einreichbar.'
+  - bedingung: idnr_der_gepflegten_person
+    deckt_ab: Voraussetzung für die Gewährung des Pflege-Pauschbetrags ist die Angabe der erteilten Identifikationsnummer (§ 139b der Abgabenordnung) der gepflegten Person in der Einkommensteuererklärung des Steuerpflichtigen
+    quelle: § 33b Abs. 6 S. 8 EStG
+    beschreibung: 'Identifikation der gepflegten Person (IdNr sowie Name/Anschrift/Geburtsdatum/Verwandtschaftsverhaeltnis). Das Gesetz macht die IdNr ausdruecklich zur VORAUSSETZUNG der Gewaehrung, nicht bloss zur Formalie.'
+  - bedingung: teilung_bei_mehreren_pflegepersonen
+    deckt_ab: Wird ein Pflegebedürftiger von mehreren Steuerpflichtigen im Veranlagungszeitraum gepflegt, wird der Pflege-Pauschbetrag nach der Zahl der Pflegepersonen
+    quelle: § 33b Abs. 6 S. 9 EStG
+    beschreibung: 'Anzahl weiterer an der Pflege beteiligter Personen. Der Ring teilt heute NICHT (er kennt die Zahl nicht) — die Angabe ist die Voraussetzung dafuer, dass er es koennte; bis dahin reine Deklaration. Bei Alleinpflege ist 0 zu erklaeren.'
   rundung: []
   signature:
     scope: PflegePauschbetrag

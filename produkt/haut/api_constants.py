@@ -142,11 +142,23 @@ RENTNER_22 = ("rentner_renten_art", "rentner_jahresrente", "rentner_renten_begin
               "rentner_alter_bei_rentenbeginn")
 RENTNER_33B = ("rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad",
                "rentner_gepflegter_hilflos", "rentner_hinterbliebenenbezuege")
+# Die fünf Pflichtangaben der Anlage (IdNr, Personendaten, Wohnsitz, "durch wen", Helferzahl)
+# gehören BEWUSST NICHT hierher: RENTNER_33B fließt in RENTNER_KEGEL, und der Kegel ist die
+# Liste der Felder, ohne die es KEINE Zahl gibt. Gemessen 2026-08-15: einmal dort eingetragen,
+# lieferte jeder Rentner-Fall nur noch input_kegel_nicht_bestaetigt — 74 rote Tests. Sie sind
+# Deklarations-Pflicht gegenüber dem Finanzamt, nicht Rechen-Voraussetzung; sie hängen deshalb
+# unten an RENTNER_FELDER (Scheibe), wie rentner_rentenfreibetrag.
+RENTNER_33B_PFLEGE_ANGABEN = ("rentner_gepflegter_wohnsitz_inland", "rentner_pflege_durch",
+                              "rentner_gepflegter_idnr", "rentner_gepflegter_angaben",
+                              "rentner_pflege_weitere_personen")
 RENTNER_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner")
 RENTNER_22_PARTNER = ("rentner_renten_art_partner", "rentner_jahresrente_partner",
                       "rentner_renten_beginn_jahr_partner", "rentner_alter_bei_rentenbeginn_partner")
 GESAMT_33B = ("rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind",
-              "rentner_hinterbliebenenbezuege", "rentner_pflegegrad", "rentner_gepflegter_hilflos")
+              "rentner_hinterbliebenenbezuege", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
+              "rentner_gepflegter_wohnsitz_inland", "rentner_pflege_durch",
+              "rentner_gepflegter_idnr", "rentner_gepflegter_angaben",
+              "rentner_pflege_weitere_personen")
 GESAMT_33B_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner")
 
 # ========== §§ 13-18 Gewinn ==========
@@ -181,7 +193,8 @@ RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner
 RENTNER_KEGEL = RENTNER_22 + RENTNER_33B + ("veranlagung",) + AN_GESAMT_FLAGS + VOR_FELDER + KV_PV_FELDER
 
 # ========== RENTNER_FELDER — ERSTE DEFINITION (Z.188 api.py) ==========
-RENTNER_FELDER = (RENTNER_KEGEL + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
+RENTNER_FELDER = (RENTNER_KEGEL + RENTNER_33B_PFLEGE_ANGABEN
+                  + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
                   + RENTNER_PARTNER + RENTNER_22_PARTNER + RENTNER_GEWINN
                   + ("gewst_hebesatz", "gewst_messbetrag") + VERLUST_FELD)
 
@@ -560,7 +573,7 @@ __all__ = [
     # Kapital
     "KAP_ERTRAEGE", "KAP_TOEPFE", "KAP_FELDER", "KAP_ERTRAEGE_PARTNER", "KAP_TOEPFE_PARTNER", "GESAMT_PARTNER_KAP", "GESAMT_PARTNER_19",
     # Rentner
-    "RENTNER_AA_ARTEN", "RENTNER_22", "RENTNER_33B", "RENTNER_PARTNER", "RENTNER_22_PARTNER", "GESAMT_33B", "GESAMT_33B_PARTNER",
+    "RENTNER_AA_ARTEN", "RENTNER_22", "RENTNER_33B", "RENTNER_33B_PFLEGE_ANGABEN", "RENTNER_PARTNER", "RENTNER_22_PARTNER", "GESAMT_33B", "GESAMT_33B_PARTNER",
     # Gewinn
     "EUER_KOMPONENTEN", "GWG_FELDER", "VERLUST_FELD", "MITU_FELDER", "ABS3_FELDER",
     # § 35
@@ -643,6 +656,14 @@ ENUM_LABELS = {
     "kind_anderer_elternteil_kindschaftsverhaeltnis": {
         "1": "Leibliches Kind oder Adoptivkind",
         "2": "Pflegekind",
+    },
+    # Ebenfalls 1/2/3 aus dem ELSTER-Feld (E0106507). Die Beschriftung stammt wörtlich aus dem
+    # Schema ("Steuerpflichtige Person / Ehemann / Person A" usw.) und ist hier auf das übersetzt,
+    # was der Nutzer von sich weiß — er kennt weder "Person A" noch seine Rolle im Datensatz.
+    "rentner_pflege_durch": {
+        "1": "Ich",
+        "2": "Mein Ehe- oder Lebenspartner",
+        "3": "Wir beide gemeinsam",
     },
     "kist_bundesland": {
         "baden_wuerttemberg": "Baden-Württemberg", "bayern": "Bayern", "berlin": "Berlin",

@@ -316,6 +316,114 @@ bindungen:
       zitatanker: "Als Pflege-Pauschbetrag wird gewährt"
       datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
 
+  # ===== Pflege-Pauschbetrag: die Pflichtangaben neben der Betrags-Staffel =====
+  # Ohne diese fünf lehnt checkESt den Pflege-Pauschbetrag ab (gemessen 2026-08-14, rc=610001002).
+  # ERiC gab seine Anforderungen in DREI Schichten preis — erst Wohnsitz + Helferzahl, nach deren
+  # Ergänzung IdNr + Personenangaben + "durch wen die Pflege erfolgt". Wer nach der ersten grünen
+  # Meldung aufhört, hält einen halben Bau für fertig.
+  #
+  # Keines der fünf trägt einen signatur_slot: der Betrag hängt an Pflegegrad und Merkzeichen H,
+  # nicht am Wohnort oder der Helferzahl. Sie hängen an drei NEUEN Geltungsbedingungen der Regel
+  # (Julius-Entscheid 2026-08-15: Deklarations-Pflichtfelder dürfen eine eigene Bedingung
+  # bekommen, aber nur mit wörtlichem Gesetzesanker — geprüft vom deckt_ab-Freeze-Gate).
+  - feld_id: rentner_gepflegter_wohnsitz_inland
+    quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: pflege_persoenlich_in_eu_ewr}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wohnt die Person, die du pflegst, in Deutschland?"
+    hilfe_kurz: "Gemeint ist der Wohnsitz oder gewöhnliche Aufenthalt im Inland. Auch ein anderer EU-Staat oder ein EWR-Staat zählt."
+    beispielwert: true
+    herkunft_slots: null
+    # E0161607 [AgB/Pflege_PB/Einz/Ang_pflegebeduerft_Pers], JaNein12BaseCType, XSD-Label
+    # "Die pflegebedürftige Person hat ihren Wohnsitz / gewöhnlichen Aufenthalt im Inland".
+    # Selbe Instanz wie E0161606/E0161808 (Pflegegrad, Merkzeichen H).
+    elster_kz: E0161607
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 1 EStG"
+      zitatanker: "diese Wohnung in einem Mitgliedstaat der Europäischen Union oder in einem Staat gelegen ist, auf den das Abkommen über den Europäischen Wirtschaftsraum anzuwenden ist"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: rentner_pflege_durch
+    quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: pflege_persoenlich_in_eu_ewr}
+    typ: enum
+    enum_werte: ["1", "2", "3"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wer von euch pflegt die Person?"
+    hilfe_kurz: "Bei Einzelveranlagung ist es immer die erste Antwort. Pflegt ihr gemeinsam, wird der Pauschbetrag geteilt."
+    beispielwert: "1"
+    herkunft_slots: null
+    # E0106507 [AgB/Pflege_PB/Einz/Ang_pflegende_Pers], Enum: 1 = "Steuerpflichtige Person /
+    # Ehemann / Person A", 2 = "Ehefrau / Person B", 3 = "beide Ehegatten / Lebenspartner"
+    # (Werte samt Beschriftung aus E10-2025.xsd gelesen, nicht aus dem Vordruck abgeschrieben).
+    elster_kz: E0106507
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 1 EStG"
+      zitatanker: "die Pflege entweder in seiner Wohnung oder in der Wohnung des Pflegebedürftigen persönlich durchführt"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: rentner_gepflegter_idnr
+    quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: idnr_der_gepflegten_person}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer der Person, die du pflegst (11 Ziffern)?"
+    hilfe_kurz: "Ohne diese Nummer gibt es den Pflege-Pauschbetrag nicht — das Gesetz verlangt sie ausdrücklich. Zu finden auf jedem Steuerbescheid der Person oder auf ihrem Schreiben vom Bundeszentralamt für Steuern."
+    beispielwert: "12345678911"
+    herkunft_slots: null
+    # E0161506 [AgB/Pflege_PB/Einz/Ang_pflegebeduerft_Pers], IDNrBaseCType.
+    elster_kz: E0161506
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 8 EStG"
+      zitatanker: "Voraussetzung für die Gewährung des Pflege-Pauschbetrags ist die Angabe der erteilten Identifikationsnummer (§ 139b der Abgabenordnung) der gepflegten Person"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: rentner_gepflegter_angaben
+    quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: idnr_der_gepflegten_person}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wer ist die Person, die du pflegst? Bitte Name, Anschrift, Geburtsdatum und in welchem Verhältnis sie zu dir steht."
+    hilfe_kurz: "Alles in ein Feld, zum Beispiel: „Maria Muster, Musterweg 3, 12345 Musterstadt, geb. am 4. Februar, meine Mutter“."
+    beispielwert: "Maria Muster, Musterweg 3, 12345 Musterstadt, meine Mutter"
+    herkunft_slots: null
+    # E0110601 [AgB/Pflege_PB/Einz/Ang_pflegebeduerft_Pers], String_MinL1_MaxL999.
+    elster_kz: E0110601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 8 EStG"
+      zitatanker: "der gepflegten Person in der Einkommensteuererklärung des Steuerpflichtigen"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: rentner_pflege_weitere_personen
+    quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: teilung_bei_mehreren_pflegepersonen}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 20, grund: "Anzahl weiterer Pflegepersonen; 0 ist der Normalfall und laut ERiC ausdrücklich anzugeben."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele weitere Personen pflegen diese Person außer dir noch unentgeltlich? (0, wenn du allein pflegst)"
+    hilfe_kurz: "Teilen sich mehrere den Pauschbetrag, wird er nach Köpfen aufgeteilt. Pflegst du allein, trag 0 ein — die Angabe ist Pflicht."
+    beispielwert: 0
+    herkunft_slots: null
+    # E0106603 [AgB/Pflege_PB/Einz/Ang_an_Pflege_bet_Pers], GanzzahlNichtNegOhneFuehrNull,
+    # XSD-Label "Anzahl der weiteren an der Pflege beteiligten Personen — Sofern an der Pflege
+    # keine weiteren Personen beteiligt (sind), ist eine 0 einzutragen".
+    elster_kz: E0106603
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 9 EStG"
+      zitatanker: "wird der Pflege-Pauschbetrag nach der Zahl der Pflegepersonen"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
   # ========== Ehegatte-Behinderung §33b (Partner-Zwillinge, NUR Zusammenveranlagung §26b) ==========
   # Klasse g (est_mapping PARTNER_INSTANZ), NICHT Klasse 1: KEIN distinktes Person-B-Kz. E05058
   # (Ueb_PB_Beh_Hbl/Beh) ist der §33b Abs.5-Übertragungsmechanismus für den Behinderten-Pauschbetrag
