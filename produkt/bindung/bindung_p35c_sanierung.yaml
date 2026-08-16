@@ -162,11 +162,17 @@ bindungen:
       zitatanker: "zu eigenen Wohnzwecken genutzten eigenen Gebäude"
       datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
 
+  # `gate: false`: die Frage ist DEKLARATION, kein Ausschluss. Beide Antworten liessen die Regel
+  # bisher falsch laufen — "nein" (der Normalfall, noch nie beantragt) schloss sie aus, "ja"
+  # liess sie stehen, obwohl gerade dann der 40.000-EUR-Deckel angerechnet werden muesste. Die
+  # Kumulation ueber Jahre ist nicht modelliert (VZ-State, benannter Nachtrag); die
+  # Geltungsbedingung steht deshalb als OFFENE ANNAHME, nicht als beantwortetes Gate.
   - feld_id: p35c_bereits_ermaessigung_frueher
     quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: objekt_hoechstbetrag_40k_nicht_ausgeschoepft}
     typ: bool
     einheit: null
     askable: true
+    gate: false
     vorjahr: uebernehmbar
     fragetext_laie: "Hast du für dieses Gebäude in früheren Jahren schon einmal eine Steuerermäßigung für energetische Maßnahmen bekommen?"
     hilfe_kurz: "Je Objekt gibt es die Ermäßigung über alle Jahre zusammen nur bis 40.000 Euro. Deshalb fragt das Finanzamt nach früheren Anträgen für dasselbe Gebäude."
