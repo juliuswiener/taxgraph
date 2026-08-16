@@ -38,7 +38,24 @@ _PFLICHT_CACHE: dict[int, dict[tuple, list[str]]] = {}
 # Pflicht-Diskriminatoren ohne Kz, die das Schema in Personen-Containern verlangt.
 # Der Walk findet sie nicht (er indiziert nur Kz), der Writer muss sie setzen.
 # Für Person B wird der Wert dynamisch aus dem Container-Index abgeleitet.
-PFLICHT_DEFAULT = {"Person": "PersonA"}
+PFLICHT_DEFAULT = {"Person": "PersonA", "Laufende_Nummer_V": "1"}
+
+# Kinder, die das SCHEMA als optional führt (minOccurs=0), die ERiC in der Plausibilitätsprüfung
+# aber verlangt. Jeder Eintrag ist GEMESSEN, nicht vermutet — dieselbe Klasse wie der
+# Kontoinhaber, der trotz minOccurs=0 Pflicht ist: Schema und Plausibilität fallen in beide
+# Richtungen auseinander, und nur der scharfe Lauf sagt, in welche.
+#
+#   Laufende_Nummer_V  gemessen 2026-08-16: "'$/V[1]/Laufende_Nummer_V[1]$': Das Feld muss
+#                      angegeben werden." Nummeriert die Anlage V (Enum "1".."n", eine je
+#                      Objekt). Solange nur EIN Objekt erklärt wird, ist es konstant "1";
+#                      mehrere Objekte brauchen die Instanz-Achse (benannter Nachtrag).
+ERIC_PFLICHT_TROTZ_OPTIONAL: dict[tuple, list[str]] = {
+    ("E10", "V"): ["Laufende_Nummer_V"],
+}
+
+# Pflicht-Kinder, die die Anlage NUMMERIEREN. Sie tragen im XSD eine unique-Bedingung
+# (Indexfeld), muessen je Instanz also verschieden sein — 1, 2, 3 … statt einer Konstante.
+INSTANZ_NUMMER_FELDER = frozenset({"Laufende_Nummer_V"})
 
 # Kz, die in anlage_instanzen auftauchen, aber NICHT ins E10-XML gehören (andere Datenart).
 # Jeder Eintrag ist ein EXPLIZITER, benannter Ausschluss mit Begründung — kein stilles
@@ -131,6 +148,11 @@ def pflicht_kinder(vz: int) -> dict[tuple, list[str]]:
             treffer[neu] = pflicht
 
     recurse(element_index["E10"], (), 0)
+    for pfad, kinder in ERIC_PFLICHT_TROTZ_OPTIONAL.items():
+        vorhanden = treffer.setdefault(pfad, [])
+        for k in kinder:
+            if k not in vorhanden:
+                vorhanden.append(k)
     _PFLICHT_CACHE[vz] = treffer
     return treffer
 
@@ -200,6 +222,13 @@ def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
                             if pflicht_name == "Person":
                                 wert_person = "PersonB" if j >= 1 else "PersonA"
                                 ET.SubElement(last, f"{{{ns}}}{pflicht_name}").text = wert_person
+                            elif pflicht_name in INSTANZ_NUMMER_FELDER:
+                                # Laufende Nummer der Anlage: MUSS je Instanz verschieden sein.
+                                # Das XSD führt darauf eine unique-Bedingung (Indexfeld) — eine
+                                # Konstante wäre bei einem Objekt richtig und ab dem zweiten
+                                # schema-INVALIDE ("Duplicate key-sequence ['1']"). Gefunden vom
+                                # bestehenden Instanzen-Test, nicht im Betrieb (2026-08-16).
+                                ET.SubElement(last, f"{{{ns}}}{pflicht_name}").text = str(j + 1)
                             else:
                                 vorgabe = PFLICHT_DEFAULT.get(pflicht_name)
                                 if vorgabe is None:

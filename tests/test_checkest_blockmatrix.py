@@ -182,6 +182,21 @@ BLOECKE = {
     # Pflegegrad allein — so stand es bis 2026-08-15 in der Bindung — war nie einreichbar.
     # Beide Ausloeser werden gefahren, weil sie getrennt in die Anlage fuehren (Staffel bzw.
     # Merkzeichen H) und je fuer sich den Block ausloesen koennen.
+    # Anlage V (§ 21). Gemessen 2026-08-16 in FUENF Schichten: Laufende_Nummer_V ->
+    # Lage+Wohneinheit+Umlagen -> drei Nutzungs-Flags+Einnahmensumme -> WK-Summe+Ueberschuss ->
+    # Zurechnung. Jede Schicht kam erst zum Vorschein, nachdem die vorige beantwortet war.
+    "anlage_v_vermietung": [
+        ("vv_einnahmen", 1200000),
+        ("vv_wohnzwecke", True), ("vv_auf_dauer", True),
+        ("vv_objekt_strasse", "Mietweg 7"), ("vv_objekt_plz", "12345"),
+        ("vv_objekt_ort", "Musterstadt"),
+        ("vv_wohneinheit_bezeichnung", "1. OG links"),
+        ("vv_nebenkosten_nicht_vereinbart", True),
+        ("vv_nutzung_ferienwohnung", False), ("vv_nutzung_an_angehoerige", False),
+        ("vv_nutzung_kurzfristig", False),
+        ("vv_gebaeude_afa", 200000), ("vv_schuldzinsen", 0),
+        ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0),
+    ],
     "pflege_pauschbetrag": [
         ("rentner_pflegegrad", 4),
         ("rentner_gepflegter_wohnsitz_inland", True),

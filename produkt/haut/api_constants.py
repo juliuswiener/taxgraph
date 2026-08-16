@@ -113,6 +113,15 @@ UEBERNACHTUNG_BEDINGUNGEN = ("uebernachtung_auswaerts", "uebernachtung_alleinnut
 # ========== § 21 Vermietung ==========
 VV_GESAMT_FELDER = ("vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen",
                     "vv_erhaltungsaufwand", "vv_sonstige_wk", "vv_entgelt_quote_prozent")
+# Anlage V — Objekt- und Einnahmen-Formalien (2026-08-16). BEWUSST getrennt von
+# VV_GESAMT_FELDER: das Tupel fliesst in den gesamt-Kegel, und eine Adresse ist keine
+# Voraussetzung dafuer, dass eine Zahl herauskommt — sie ist Voraussetzung fuers Einreichen.
+VV_ANLAGE_FORMALIEN = ("vv_objekt_strasse", "vv_objekt_plz", "vv_objekt_ort",
+                       "vv_wohneinheit_bezeichnung", "vv_nebenkosten_nicht_vereinbart",
+                       "vv_nebenkosten_umgelegt", "vv_mieteinnahmen_summe",
+                       "vv_nutzung_ferienwohnung", "vv_nutzung_an_angehoerige",
+                       "vv_nutzung_kurzfristig", "vv_einnahmen_summe_gesamt",
+                       "vv_summe_werbungskosten", "vv_ueberschuss", "vv_ueberschuss_person_a")
 VV_ABS2_TATBESTAND = ("vv_wohnzwecke", "vv_auf_dauer")
 
 # ========== § 20 Kapital ==========
@@ -524,7 +533,7 @@ SCHEIBEN = {
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_VERSORGUNG
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER
-                   + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING
+                   + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + VV_ANLAGE_FORMALIEN
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
@@ -582,7 +591,7 @@ __all__ = [
     # Übernachtung
     "UEBERNACHTUNG_KOSTEN", "UEBERNACHTUNG_RING", "UEBERNACHTUNG_BEDINGUNGEN",
     # Vermietung
-    "VV_GESAMT_FELDER", "VV_ABS2_TATBESTAND",
+    "VV_GESAMT_FELDER", "VV_ANLAGE_FORMALIEN", "VV_ABS2_TATBESTAND",
     # Kapital
     "KAP_ERTRAEGE", "KAP_TOEPFE", "KAP_FELDER", "KAP_ERTRAEGE_PARTNER", "KAP_TOEPFE_PARTNER", "GESAMT_PARTNER_KAP", "GESAMT_PARTNER_19",
     # Rentner

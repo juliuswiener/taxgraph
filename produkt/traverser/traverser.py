@@ -91,6 +91,12 @@ def relevanz(store: dict, bindung: dict) -> dict:
     unentschieden. Nicht-askable (berechnete) Geltungsbedingungen sind KEIN Gate, werden aber als
     `annahmen_offen` geführt (nie still als erfüllt, Auflage 1-Zusatz).
 
+    `gate: false` (Bindungs-Schema) nimmt ein askables Feld aus den Gates heraus: es ist DEKLARATION,
+    keine Rechen-Voraussetzung. Der Vordruck verlangt die Angabe ("wurde als Ferienwohnung
+    genutzt?"), die Regel gilt in beide Richtungen. Ohne diese Unterscheidung nahm ein "nein" des
+    Normalfalls dem Vermieter die ganze Anlage V aus dem Dialog (gemessen 2026-08-16). Die
+    Geltungsbedingung erscheint dann als offene Annahme — nie still als erfüllt.
+
     Zusätzlich `regel_bedingungen` (lade_regel_bedingungen, schema.json $defs/regel_bedingung):
     strukturierte Ob-Bedingung AUSSERHALB der eigenen Regel-Felder (z.B. p2_festzusetzung_zusammen
     gilt nur bei veranlagung=="zusammen" — ein Feld, das selbst zu einer ANDEREN Regel gehört, kann
@@ -105,7 +111,7 @@ def relevanz(store: dict, bindung: dict) -> dict:
             q = b["quelle"]
             if q["regel_id"] != rid or "geltungsbedingung" not in q:
                 continue
-            if b.get("askable"):
+            if b.get("askable") and b.get("gate", True):
                 gates.append(fid)
             else:
                 annahmen.append(q["geltungsbedingung"])

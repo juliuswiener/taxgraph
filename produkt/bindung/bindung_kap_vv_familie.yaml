@@ -264,6 +264,271 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
 
   # ========================= V+V §21 — laufende Einkünfte (p21) =========================
+  # Zurechnung des Überschusses. Bei Einzelveranlagung und bei Alleineigentum entfällt der
+  # ganze Betrag auf Person A — Person B (E0701802) ist ein benannter Nachtrag zusammen mit
+  # der Miteigentums-Aufteilung.
+  - feld_id: vv_ueberschuss_person_a
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: dem Steuerpflichtigen zugerechneter Überschuss"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0701801
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_summe_werbungskosten
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Summe der Werbungskosten des Objekts"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0705701
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_ueberschuss
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Einnahmen minus Werbungskosten (Ergebniszeile der Anlage V)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0701601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  # Die drei Nutzungs-Flags und die Nebenkosten-Frage tragen `gate: false`: sie sind DEKLARATION.
+  # Der Vordruck verlangt sie, § 21 gilt aber unabhaengig von der Antwort. Ohne das Flag waere
+  # jede dieser Fragen ein bool-Gate — und der Normalfall antwortet dreimal "nein", was dem
+  # Vermieter die ganze Anlage V aus dem Dialog genommen haette (gemessen 2026-08-16: 155 statt
+  # 174 Fragen, kein einziges vv_-Betragsfeld mehr). Dieselbe Falle wie beim
+  # Verpflegungsmehraufwand (519199e).
+  - feld_id: vv_nutzung_ferienwohnung
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: bool
+    einheit: null
+    askable: true
+    gate: false
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wurde das Objekt ganz oder teilweise als Ferienwohnung genutzt?"
+    hilfe_kurz: "Ferienwohnungen werden anders behandelt als Dauervermietung — das Finanzamt fragt danach ausdrücklich."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0700703
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_nutzung_an_angehoerige
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: bool
+    einheit: null
+    askable: true
+    gate: false
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wurde das Objekt ganz oder teilweise an Angehörige zu Wohnzwecken vermietet?"
+    hilfe_kurz: "Bei Vermietung an Angehörige prüft das Finanzamt, ob die Miete ortsüblich ist."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0700704
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_nutzung_kurzfristig
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: bool
+    einheit: null
+    askable: true
+    gate: false
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wurde das Objekt ganz oder teilweise kurzfristig vermietet?"
+    hilfe_kurz: "Zum Beispiel tage- oder wochenweise über eine Vermittlungsplattform."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0700705
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_einnahmen_summe_gesamt
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Summe aller Einnahmen aus dem Objekt"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0701401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_objekt_strasse
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wo liegt das vermietete Objekt? Straße und Hausnummer."
+    hilfe_kurz: "Je vermietetem Objekt eine eigene Anlage V. Bei mehreren Objekten ist heute nur eines erklärbar (folgt)."
+    beispielwert: "Mietweg 7"
+    herkunft_slots: null
+    elster_kz: E0700407
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_objekt_plz
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Postleitzahl des vermieteten Objekts?"
+    hilfe_kurz: "Fünfstellig."
+    beispielwert: "12345"
+    herkunft_slots: null
+    elster_kz: E0700503
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_objekt_ort
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Ort des vermieteten Objekts?"
+    hilfe_kurz: "Nur der Ortsname."
+    beispielwert: "Musterstadt"
+    herkunft_slots: null
+    elster_kz: E0700504
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_wohneinheit_bezeichnung
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie heißt die vermietete Wohneinheit? (z. B. Stockwerk oder Wohnungsnummer)"
+    hilfe_kurz: "Das Finanzamt will Bezeichnung und Mieteinnahme zusammen sehen. Bei einem Einfamilienhaus reicht „gesamtes Haus“."
+    beispielwert: "1. OG links"
+    herkunft_slots: null
+    elster_kz: E0701202
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_nebenkosten_nicht_vereinbart
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: bool
+    einheit: null
+    askable: true
+    gate: false
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wurden mit dem Mieter KEINE Neben- und Betriebskosten gesondert vereinbart?"
+    hilfe_kurz: "Antworte mit ja, wenn die Miete eine Pauschale ohne getrennte Nebenkostenabrechnung ist. Bei getrennter Abrechnung antworte nein und trage die umgelegten Kosten ein."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: E0702404
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_nebenkosten_umgelegt
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viel hast du im Jahr an Neben- und Betriebskosten auf die Mieter umgelegt?"
+    hilfe_kurz: "Nur wenn ihr sie gesondert vereinbart habt. Diese Umlagen sind Einnahmen und stehen in der Anlage V in einer eigenen Zeile."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E0700501
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_mieteinnahmen_summe
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Summe der Mieteinnahmen für Wohnungen"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0700206
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
   - feld_id: vv_einnahmen
     instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: einnahmen}

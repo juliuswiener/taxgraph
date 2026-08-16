@@ -2919,6 +2919,53 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
     # Sorte Fehler, die niemand im XML nachrechnet.
     # (6) § 35c-Einzelzeile: derselbe Betrag wie die Summe, nur in der Zeile der gewaehlten
     # Massnahmenart (est_mapping VERZWEIGUNG). Ohne eine Einzelzeile ist die Anlage unvollstaendig.
+    # (7) Anlage V: die Summenzeile der Wohnungs-Mieteinnahmen (E0700206). checkESt verlangt
+    # Einzelbetrag UND Summe ("Es wurden Mieteinnahmen fuer Wohnungen aus den einzelnen
+    # Wohneinheiten angegeben, die Summe wurde jedoch nicht erklaert"). Solange nur EINE
+    # Wohneinheit erklaert wird, ist die Summe gleich dem Einzelbetrag.
+    _vv_einn = felder.get("vv_einnahmen")
+    if isinstance(_vv_einn, dict) and _vv_einn.get("zustand") == "bestaetigt" \
+            and isinstance(_vv_einn.get("wert"), int) and _vv_einn["wert"] > 0:
+        # Werbungskosten-Summe und Ergebniszeile: checkESt verlangt beide, sobald Einnahmen
+        # erklaert sind ("die Summe der Einnahmen ... erklaert, der Ueberschuss jedoch nicht").
+        _wk = 0
+        for _f in ("vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand", "vv_sonstige_wk"):
+            _e = felder.get(_f) or {}
+            _w = _e.get("wert") if _e.get("zustand") == "bestaetigt" else 0
+            _wk += _w if isinstance(_w, int) and not isinstance(_w, bool) else 0
+        _vv_uml = felder.get("vv_nebenkosten_umgelegt") or {}
+        _uml = _vv_uml.get("wert") if _vv_uml.get("zustand") == "bestaetigt" else 0
+        _uml = _uml if isinstance(_uml, int) and not isinstance(_uml, bool) else 0
+        # E0701401 ist die Summe ALLER Einnahmen des Objekts (Mieten + Umlagen + Sonstiges),
+        # E0700206 nur die der Wohnungs-Mieten. Zwei Zeilen, zwei Bedeutungen.
+        felder["vv_einnahmen_summe_gesamt"] = {
+            "wert": _vv_einn["wert"] + _uml,
+            "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+            "schreiber": "engine",
+            "signal": {"signal_1": None, "signal_2": None},
+        }
+        _vv_ueberschuss = _vv_einn["wert"] + _uml - _wk
+        for _fid, _wert in (("vv_summe_werbungskosten", _wk),
+                            ("vv_ueberschuss", _vv_ueberschuss),
+                            # Zurechnung: bei Alleineigentum voll auf Person A. Die Aufteilung
+                            # auf Person B (E0701802) braucht die Miteigentums-Angaben — Nachtrag.
+                            ("vv_ueberschuss_person_a", _vv_ueberschuss)):
+            felder[_fid] = {
+                "wert": _wert,
+                "zustand": "bestaetigt",
+                "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+                "schreiber": "engine",
+                "signal": {"signal_1": None, "signal_2": None},
+            }
+        felder["vv_mieteinnahmen_summe"] = {
+            "wert": _vv_einn["wert"],
+            "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+            "schreiber": "engine",
+            "signal": {"signal_1": None, "signal_2": None},
+        }
+
     _p35c_sum = felder.get("p35c_sanierungsaufwendungen")
     if isinstance(_p35c_sum, dict) and _p35c_sum.get("zustand") == "bestaetigt" \
             and isinstance(_p35c_sum.get("wert"), int) and _p35c_sum["wert"] > 0:

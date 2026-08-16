@@ -23,8 +23,11 @@ Was hier geprüft wird, und warum genau das:
      sonstige Einkünfte (z.B. Rente)?" mit ja, also kein_sonstige=False — genau der Wert, bei dem
      die Regel gilt. Der Test hält das fest, weil eine spätere Umformulierung der Frage die
      Polarität kippen könnte.
-  4. **Der gemessene Nutzerpfad.** Ende zu ende, über den echten Traverser: die 23 abgeschalteten
-     Felder dürfen nicht mehr gefragt werden. Gemessen 179 -> 156 Fragen in der Scheibe `gesamt`.
+  4. **Der gemessene Nutzerpfad.** Ende zu ende, über den echten Traverser: die abgeschalteten
+     Felder dürfen nicht mehr gefragt werden. Gemessen 188 -> 156 Fragen in der Scheibe `gesamt`
+     (2026-08-16, nach der Anlage V; davor 179 -> 156 mit 23 Feldern — die neuen Objekt- und
+     Nutzungsangaben der Anlage V hängen alle an `p21_vermietung_einkuenfte` und verschwinden
+     mit ihr).
 
 NULL LLM.
 """
@@ -200,8 +203,14 @@ def test_screening_filtert_und_loescht_nicht():
     Die Invariante steht bewusst als DIFFERENZ der beiden Läufe da und nicht als feste Feldliste:
     welche Felder eine Scheibe überhaupt enthält, ist ihre Sache. Ein erster Anlauf mit fester
     Liste war rot und hatte recht — die fünf `rentner_*`-Felder werden in `gesamt` NIE gefragt,
-    auch ohne Screening nicht. Genau deshalb sind es gemessen 23 verschwundene Fragen und nicht
+    auch ohne Screening nicht. Genau deshalb waren es gemessen 23 verschwundene Fragen und nicht
     die 28 Felder aus dem Bericht.
+
+    Dass die Zahl mitwächst, ist der Zweck der Bauart: mit der Anlage V (2026-08-16) sind es 32.
+    Sie ist deshalb eine UNTERGRENZE. Ein Sinken wäre der interessante Fall — und war es auch:
+    23 -> 19 deckte auf, dass vier neue Deklarations-Bools der Anlage V als Gates wirkten und
+    dem normalen Vermieter die ganze Vermietung aus dem Dialog nahmen (siehe
+    tests/test_gate_polaritaet.py).
 
     Geprüft wird beides zusammen, weil nur das Paar die Aussage trägt: verschwunden sein muss
     etwas (sonst wirkt das Screening nicht), und alles Verschwundene muss dem wieder gestellt
@@ -212,9 +221,11 @@ def test_screening_filtert_und_loescht_nicht():
         _STAMM, kein_gewinn=False, kein_kap=False, kein_vuv=False, kein_sonstige=False))
 
     entfernt = set(mit) - set(ohne)
-    assert len(entfernt) >= 20, (
-        f"Das Screening nimmt nur {len(entfernt)} Fragen aus dem Dialog (gemessen: 23). "
-        f"Die Verbindung zwischen Screening-Frage und Folge-Regel ist verloren.")
+    assert len(entfernt) >= 30, (
+        f"Das Screening nimmt nur {len(entfernt)} Fragen aus dem Dialog (gemessen: 32). "
+        f"Entweder ist die Verbindung zwischen Screening-Frage und Folge-Regel verloren — oder "
+        f"die Regel wird schon vorher von einem verdrehten Gate abgeschaltet, dann fehlen ihre "
+        f"Felder in BEIDEN Läufen (so gefunden am 2026-08-16, Anlage V).")
     # Jedes entfernte Feld muss zu einer der neun Regeln gehören — sonst hat das Screening
     # etwas mitgenommen, das niemand daran gehängt hat.
     regeln = {r for _, r in PAARE}

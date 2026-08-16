@@ -56,6 +56,8 @@
         "einheit": {"type": ["string", "null"], "description": "z.B. 'km', 'Tage', 'EUR'; null bei bool/enum/datum."},
         "askable": {"type": "boolean",
           "description": "true = der Laie gibt es ein; false = abgeleitete/berechnete/Parameter-Größe (nie abfragen)."},
+        "gate": {"type": "boolean",
+          "description": "Nur bei askable bool-Feldern an einer geltungsbedingung sinnvoll, Vorgabe true: ein bestätigtes `false` schliesst die ganze Regel aus (relevanz()). `gate: false` heisst: das Feld ist DEKLARATION, keine Rechen-Voraussetzung — der Vordruck verlangt die Angabe, die Regel gilt aber in beide Richtungen (z.B. 'wurde als Ferienwohnung genutzt?'). Ohne diese Unterscheidung nimmt ein 'nein' des Normalfalls dem Nutzer die ganze Einkunftsart aus dem Dialog. NIE fuer eine echte Tatbestandsvoraussetzung setzen; die Geltungsbedingung erscheint dann als offene Annahme statt als beantwortetes Gate."},
         "fragetext_laie": {
           "oneOf": [
             {"type": "null"},

@@ -2990,6 +2990,20 @@ regeln:
     zitatanker: Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen
     auszug: Einkünfte aus Vermietung und Verpachtung sind 1. Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen
   geltungsbedingungen:
+  # Zwei Bedingungen fuer die DEKLARATION der Anlage V (2026-08-16). Sie aendern die Rechnung
+  # nicht — die Einkuenfte sind Einnahmen minus Werbungskosten, unabhaengig von Adresse und
+  # Aufteilung. Ohne sie lehnt checkESt aber ab: die Anlage verlangt die Lage des Grundstuecks,
+  # die Bezeichnung der Wohneinheit, die umgelegten Nebenkosten und die Summenzeile.
+  # Julius-Entscheid 2026-08-15: Deklarations-Pflichtfelder duerfen eine eigene Bedingung
+  # bekommen, mit Ankerpflicht (deckt_ab woertlich in der Quelldatei).
+  - bedingung: objekt_unbewegliches_vermoegen
+    deckt_ab: Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen
+    quelle: § 21 Abs. 1 S. 1 Nr. 1 EStG
+    beschreibung: 'Die Einkuenfte haengen an EINEM unbeweglichen Objekt. Die Anlage V identifiziert es (Lage, Bezeichnung der Wohneinheit) — je Objekt eine Anlage.'
+  - bedingung: einnahmen_aufteilung_und_summe
+    deckt_ab: Einkünfte aus Vermietung und Verpachtung sind
+    quelle: § 21 Abs. 1 S. 1 EStG
+    beschreibung: 'Die Einnahmenseite ist im Vordruck aufgeteilt (Mieten je Wohneinheit, Summenzeile, umgelegte Neben-/Betriebskosten). Der Rechenring kennt nur die Gesamtsumme; die Aufteilung ist reine Deklaration.'
   - bedingung: einkuenfte_ueberschuss_einnahmen_ueber_wk
     deckt_ab: Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen
     quelle: § 21 i.V.m. § 2 Abs. 2 Nr. 2, § 9 EStG

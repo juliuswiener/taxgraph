@@ -473,3 +473,81 @@ def test_p35c_massnahmenart_trifft_ihre_zeile(bindung, art, container, kz):
     fremde = [k for _, _, k in P35C_ARTEN if k != kz]
     getroffen = [k for k in fremde if k in xml]
     assert not getroffen, f"{art} schreibt auch in fremde Zeilen: {getroffen}"
+
+
+# ---------------------------------------------------------------- Anlage V § 21
+
+def test_anlage_v_kommt_im_xml_an(bindung):
+    """Die Formalien der Anlage V (2026-08-16). Bis dahin trug die Bindung nur die fünf
+    Rechen-Slots (Einnahmen, AfA, Zinsen, Erhaltung, sonstige WK) — checkESt lehnte in fünf
+    aufeinander folgenden Schichten ab.
+
+    Der Test nagelt die DREI Summenzeilen fest, die leicht verwechselt werden:
+      E0700206  Summe der Wohnungs-Mieteinnahmen
+      E0701401  Summe ALLER Einnahmen des Objekts (Mieten + Umlagen + Sonstiges)
+      E0705701  Summe der Werbungskosten
+    und die Ergebniszeile E0701601 samt ihrer Zurechnung E0701801. Eine Verwechslung wäre
+    XSD-valide und stünde in der falschen Zeile.
+    """
+    xml = _xml({"vv_einnahmen": 1200000,               # 12.000 EUR
+                "vv_mieteinnahmen_summe": 1200000,
+                "vv_einnahmen_summe_gesamt": 1200000,
+                "vv_summe_werbungskosten": 200000,     #  2.000 EUR
+                "vv_ueberschuss": 1000000,             # 10.000 EUR
+                "vv_ueberschuss_person_a": 1000000,
+                "vv_objekt_strasse": "Mietweg 7",
+                "vv_objekt_plz": "12345",
+                "vv_objekt_ort": "Musterstadt",
+                "vv_wohneinheit_bezeichnung": "1. OG links",
+                "vv_nebenkosten_nicht_vereinbart": True,
+                "vv_nutzung_ferienwohnung": False,
+                "vv_nutzung_an_angehoerige": False,
+                "vv_nutzung_kurzfristig": False},
+               bindung)
+
+    lage = ("V", "Allg", "Lage")
+    assert _pfad_im_xml(xml, lage + ("E0700407",), "Mietweg 7")
+    assert _pfad_im_xml(xml, lage + ("E0700503",), "12345")
+    assert _pfad_im_xml(xml, lage + ("E0700504",), "Musterstadt")
+    nutzung = ("V", "Allg", "Nutzung")
+    assert _pfad_im_xml(xml, nutzung + ("E0700703",), "2")     # JaNein12: 2 = Nein
+    assert _pfad_im_xml(xml, nutzung + ("E0700704",), "2")
+    assert _pfad_im_xml(xml, nutzung + ("E0700705",), "2")
+    einz = ("V", "Einn", "Mieteinn", "Whg", "Einz")
+    assert _pfad_im_xml(xml, einz + ("E0701202",), "1. OG links")
+    assert _pfad_im_xml(xml, einz + ("E0700201",), "12000")
+    # drei verschiedene Summen, drei verschiedene Bedeutungen
+    assert _pfad_im_xml(xml, ("V", "Einn", "Mieteinn", "Whg", "Sum", "E0700206"), "12000")
+    assert _pfad_im_xml(xml, ("V", "Einn", "Sum", "E0701401"), "12000")
+    assert _pfad_im_xml(xml, ("V", "Wk", "Se_WK", "E0705701"), "2000")
+    assert _pfad_im_xml(xml, ("V", "Erm_Zuord_Ek", "E0701601"), "10000")
+    assert _pfad_im_xml(xml, ("V", "Erm_Zuord_Ek", "E0701801"), "10000")
+    assert _pfad_im_xml(xml, ("V", "Einn", "Uml", "E0702404"), "1")   # Ja1: nicht vereinbart
+
+    # Gegenprobe mit gesondert vereinbarten Nebenkosten: dann steht der BETRAG in E0700501, und
+    # die Gesamt-Einnahmensumme enthaelt ihn (12.000 Miete + 600 Umlagen).
+    xml2 = _xml({"vv_einnahmen": 1200000, "vv_nebenkosten_umgelegt": 60000,
+                 "vv_nebenkosten_nicht_vereinbart": False,
+                 "vv_einnahmen_summe_gesamt": 1260000}, bindung)
+    assert _pfad_im_xml(xml2, ("V", "Einn", "Uml", "E0700501"), "600")
+    assert _pfad_im_xml(xml2, ("V", "Einn", "Sum", "E0701401"), "12600")
+    # E0702404 ist Ja1, KEIN JaNein12 — im selben Formular stehen beide Familien nebeneinander:
+    # die drei Nutzungs-Flags oben sind zweiwertig ("2" = Nein), diese Zeile ist ein Ankreuzfeld
+    # (Nein = Element weglassen). Genau diese Unterscheidung trifft der Writer-Fix.
+    import re as _re
+    assert "E0702404" not in _re.sub(r"<(/?)[a-zA-Z0-9]+:", r"<\1", xml2), (
+        "Ja1-Nein darf NICHT als Element erscheinen")
+
+
+def test_laufende_nummer_v_wird_geschrieben(bindung):
+    """`Laufende_Nummer_V` ist im Schema OPTIONAL (minOccurs=0), von ERiC aber verlangt:
+    "'$/V[1]/Laufende_Nummer_V[1]$': Das Feld muss angegeben werden."
+
+    Dieselbe Klasse wie der Kontoinhaber, der trotz minOccurs=0 Pflicht ist — Schema und
+    Plausibilität fallen in beide Richtungen auseinander, und nur der scharfe Lauf sagt, in
+    welche. Der Writer führt die Ausnahme deshalb als GEMESSENE Liste, nicht als Ableitung."""
+    import re
+    xml = _xml({"vv_einnahmen": 1200000}, bindung)
+    flach = re.sub(r"<(/?)[a-zA-Z0-9]+:", r"<\1", xml)
+    assert "<Laufende_Nummer_V>1</Laufende_Nummer_V>" in flach, (
+        "Laufende_Nummer_V fehlt — ERiC verlangt es trotz minOccurs=0")
