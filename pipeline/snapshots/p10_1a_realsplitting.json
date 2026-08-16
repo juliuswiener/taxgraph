@@ -1,14 +1,15 @@
 {
   "bedingungen": [
     "deckel_13805_plus_kv_pv",
+    "kuerzung_krankengeld_4_prozent",
     "antrag_mit_zustimmung",
     "empfaenger_geschieden_getrennt_unbeschraenkt"
   ],
   "candidate_id": "p10_1a_realsplitting",
-  "catala_a": "declaration scope Realsplitting:\n  input unterhaltsleistungen content money\n  input kv_pv_beitraege content money\n  output realsplitting_abzug content money\n\nscope Realsplitting:\n  definition realsplitting_abzug equals\n    let hoechstbetrag equals $13,805.00 + kv_pv_beitraege in\n    if unterhaltsleistungen > hoechstbetrag then hoechstbetrag\n    else unterhaltsleistungen",
-  "catala_a_sha256": "b85dee669bae25d7424652f9f163bab97277835a67e4c94847b7a991ef9b9138",
-  "catala_b": "declaration scope Realsplitting:\n  input unterhaltsleistungen content money\n  input kv_pv_beitraege content money\n  output realsplitting_abzug content money\n\nscope Realsplitting:\n  definition realsplitting_abzug equals\n    if unterhaltsleistungen > $13,805.00 + kv_pv_beitraege\n    then $13,805.00 + kv_pv_beitraege\n    else unterhaltsleistungen",
-  "catala_b_sha256": "907e5f9382afe4ef1b2c825ead789417a446202c2be1186f70bd52359f0e8f00",
+  "catala_a": "declaration scope Realsplitting:\n  input unterhaltsleistungen content money\n  input kv_pv_beitraege content money\n  input kv_krankengeld content money\n  output realsplitting_abzug content money\n\nscope Realsplitting:\n  definition realsplitting_abzug equals\n    let beruecksichtigte_beitraege equals\n      kv_pv_beitraege - kv_krankengeld * 0.04 in\n    let hoechstbetrag equals $13,805.00 + beruecksichtigte_beitraege in\n    if unterhaltsleistungen > hoechstbetrag then hoechstbetrag\n    else unterhaltsleistungen",
+  "catala_a_sha256": "89d0de3a1b22c647311705aac601f8781ace8c5e77c574c6618abc5cebd0aeea",
+  "catala_b": "declaration scope Realsplitting:\n  input unterhaltsleistungen content money\n  input kv_pv_beitraege content money\n  input kv_krankengeld content money\n  output realsplitting_abzug content money\n\nscope Realsplitting:\n  definition realsplitting_abzug equals\n    if unterhaltsleistungen > $13,805.00 + kv_pv_beitraege - kv_krankengeld * 0.04\n    then $13,805.00 + kv_pv_beitraege - kv_krankengeld * 0.04\n    else unterhaltsleistungen",
+  "catala_b_sha256": "a6c63e36b6225aace99840c5836f467dd206623d5f727247da977358534094b8",
   "gates": [
     {
       "detail": "catala parser ok",
@@ -61,7 +62,7 @@
       "status": "PASS"
     },
     {
-      "detail": "A == B on 4 raster point(s) for 'realsplitting_abzug'",
+      "detail": "A == B on 6 raster point(s) for 'realsplitting_abzug'",
       "name": "equivalence",
       "status": "PASS"
     },
@@ -91,7 +92,7 @@
       "status": "PASS"
     },
     {
-      "detail": "4 seed test(s) passed, anchors verified",
+      "detail": "6 seed test(s) passed, anchors verified",
       "name": "clerk",
       "status": "PASS"
     },

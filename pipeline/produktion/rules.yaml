@@ -2300,6 +2300,7 @@ regeln:
     inputs:
       aufwendungen: 10000
       kv_pv_beitraege: 0
+      kv_krankengeld: 0
       andere_einkuenfte_bezuege: 0
     expected: 10000.0
   - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
@@ -2309,6 +2310,7 @@ regeln:
     inputs:
       aufwendungen: 15000
       kv_pv_beitraege: 0
+      kv_krankengeld: 0
       andere_einkuenfte_bezuege: 0
     expected: 12348.0
   - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
@@ -2318,6 +2320,7 @@ regeln:
     inputs:
       aufwendungen: 15000
       kv_pv_beitraege: 0
+      kv_krankengeld: 0
       andere_einkuenfte_bezuege: 2000
     expected: 10972.0
   - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
@@ -2327,6 +2330,7 @@ regeln:
     inputs:
       aufwendungen: 15000
       kv_pv_beitraege: 1500
+      kv_krankengeld: 0
       andere_einkuenfte_bezuege: 0
     expected: 13848.0
   - quelle: sources/gesetze-im-internet/estg_p33a_2026-07-13.txt
@@ -2336,23 +2340,29 @@ regeln:
     inputs:
       aufwendungen: 15000
       kv_pv_beitraege: 0
+      kv_krankengeld: 0
       andere_einkuenfte_bezuege: 500
     expected: 12348.0
   raster:
   - aufwendungen: 10000
     kv_pv_beitraege: 0
+    kv_krankengeld: 0
     andere_einkuenfte_bezuege: 0
   - aufwendungen: 15000
     kv_pv_beitraege: 0
+    kv_krankengeld: 0
     andere_einkuenfte_bezuege: 0
   - aufwendungen: 15000
     kv_pv_beitraege: 0
+    kv_krankengeld: 0
     andere_einkuenfte_bezuege: 2000
   - aufwendungen: 15000
     kv_pv_beitraege: 1500
+    kv_krankengeld: 0
     andere_einkuenfte_bezuege: 0
   - aufwendungen: 15000
     kv_pv_beitraege: 0
+    kv_krankengeld: 0
     andere_einkuenfte_bezuege: 500
 - rule_id: p10_1_5_kinderbetreuung
   norm: § 10 Abs. 1 Nr. 5 EStG (Kinderbetreuungskosten, 80 % / 4.800-Euro-Deckel)
@@ -2486,11 +2496,25 @@ regeln:
     datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
     zitatanker: Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3
     auszug: Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3 für die Absicherung des geschiedenen oder dauernd g
+  - typ: gesetz
+    label: § 10 Abs. 1 Nr. 3 Buchst. a S. 4 EStG (4-Prozent-Kuerzung bei Krankengeldanspruch)
+    datei: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: ist der jeweilige Beitrag um 4 Prozent zu vermindern
+    auszug: Wenn sich aus den Krankenversicherungsbeiträgen nach Satz 2 ein Anspruch auf Krankengeld oder ein Anspruch auf eine Leistung, die anstelle von Krankengeld gewährt wird, ergeben kann, ist der jeweilige Beitrag um 4 Prozent zu vermindern
   geltungsbedingungen:
   - bedingung: deckel_13805_plus_kv_pv
     deckt_ab: bis zu 13 805 Euro im Kalenderjahr
     quelle: § 10 Abs. 1a Nr. 1 S. 1-2 EStG
     beschreibung: Abzug = min(unterhaltsleistungen, 13.805 + kv_pv_beitraege). Der 13.805-Hoechstbetrag ist Norm-Konstante (Wortlaut), erhoeht um KV/PV-Beitraege fuer den Ex-Ehegatten (S. 2).
+  # Hand-Fix 2026-08-16 (Provenance s. hand_fix unten): S. 2 verweist auf "Beitraege nach Absatz 1
+  # Nummer 3", und Nummer 3 Buchst. a S. 4 vermindert Krankenversicherungsbeitraege mit
+  # Krankengeldanspruch um 4 Prozent. Die Verweisung zieht die Kuerzung mit — der Hoechstbetrag
+  # erhoeht sich also um die GEKUERZTEN Beitraege. Vorher rechnete die Regel ungekuerzt: Deckel zu
+  # hoch, Abzug ggf. zu gross, Steuer zu niedrig.
+  - bedingung: kuerzung_krankengeld_4_prozent
+    deckt_ab: ist der jeweilige Beitrag um 4 Prozent zu vermindern
+    quelle: § 10 Abs. 1 Nr. 3 Buchst. a S. 4 EStG
+    beschreibung: 'Der Teil der KV/PV-Beitraege, aus dem ein Anspruch auf Krankengeld folgen kann, geht nur zu 96 Prozent in die Hoechstbetrags-Erhoehung ein. Eingabe kv_krankengeld ist eine TEILMENGE von kv_pv_beitraege, kein zusaetzlicher Summand: beruecksichtigt = kv_pv_beitraege - kv_krankengeld * 0.04.'
   - bedingung: antrag_mit_zustimmung
     deckt_ab: wenn der Geber dies mit Zustimmung des Empfängers beantragt
     quelle: § 10 Abs. 1a Nr. 1 S. 1 EStG
@@ -2499,12 +2523,26 @@ regeln:
     deckt_ab: geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten
     quelle: § 10 Abs. 1a Nr. 1 S. 1 EStG
     beschreibung: 'Anwendbarkeitsvoraussetzung (binaer): der Empfaenger der Unterhaltsleistungen ist der geschiedene oder dauernd getrennt lebende, unbeschraenkt einkommensteuerpflichtige Ehegatte (und der Geber ist als Steuerpflichtiger unbeschraenkt stpfl.). Auswahl in der § 2-Integration. Nachdeklariert nach mistral-Judge-Nachzug (Bucket B, Instructor-Adjudikation msg 1639: Anwendbarkeit = Geltungsbedingung).'
+  # PROVENANCE, ausdruecklich: diese Regel wurde am 2026-08-16 VON HAND korrigiert, nicht neu
+  # durch die Modell-Kaskade gefahren. Das gespeicherte judge_verdict im Snapshot stammt vom
+  # urspruenglichen Lauf und bezieht sich auf die Fassung OHNE die 4-Prozent-Kuerzung — es ist
+  # also kein Beleg fuer die heutige Fassung. Der Beleg sind die zwei woertlich zitierten
+  # Gesetzessaetze (§ 10 Abs. 1a Nr. 1 S. 2 verweist auf Absatz 1 Nummer 3; § 10 Abs. 1 Nr. 3
+  # Buchst. a S. 4 vermindert um 4 Prozent) plus die deterministischen Gates: syntax, typecheck,
+  # equivalence A==B auf 6 Rasterpunkten (davon 2 mit aktiver Kuerzung) und 6 clerk-Seeds
+  # (davon 2 differenzierend). Kein Modellaufruf, keine Kosten.
+  hand_fix:
+    datum: '2026-08-16'
+    was: 4-Prozent-Kuerzung nach § 10 Abs. 1 Nr. 3 Buchst. a S. 4 ergaenzt (neuer Input kv_krankengeld)
+    judge_verdict_gilt_fuer: Fassung vor dem Hand-Fix
+    beleg: deterministische Gates + Zitatanker; NICHT modellverifiziert
   rundung: []
   signature:
     scope: Realsplitting
     inputs:
       unterhaltsleistungen: money
       kv_pv_beitraege: money
+      kv_krankengeld: money
     output: realsplitting_abzug
   test_seed:
   - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
@@ -2514,6 +2552,7 @@ regeln:
     inputs:
       unterhaltsleistungen: 10000
       kv_pv_beitraege: 0
+      kv_krankengeld: 0
     expected: 10000.0
   - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
     zitatanker: bis zu 13 805 Euro im Kalenderjahr
@@ -2522,6 +2561,7 @@ regeln:
     inputs:
       unterhaltsleistungen: 15000
       kv_pv_beitraege: 0
+      kv_krankengeld: 0
     expected: 13805.0
   - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
     zitatanker: Der Höchstbetrag nach Satz 1 erhöht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach Absatz 1 Nummer 3
@@ -2530,6 +2570,7 @@ regeln:
     inputs:
       unterhaltsleistungen: 15000
       kv_pv_beitraege: 2000
+      kv_krankengeld: 0
     expected: 15000.0
   - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
     zitatanker: bis zu 13 805 Euro im Kalenderjahr
@@ -2538,16 +2579,52 @@ regeln:
     inputs:
       unterhaltsleistungen: 20000
       kv_pv_beitraege: 0
+      kv_krankengeld: 0
     expected: 13805.0
+  # DIFFERENZIERENDE Seeds (Hand-Fix 2026-08-16): genau die Faelle, die vor der Kuerzung ein
+  # ANDERES Ergebnis hatten. Ohne sie waere der Fix nicht bewiesen — alle vier Seeds darueber
+  # fuehren kv_krankengeld = 0 und laufen deshalb vor wie nach dem Fix gleich durch.
+  - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: ist der jeweilige Beitrag um 4 Prozent zu vermindern
+    herkunft: synthetisch
+    rechenweg: 'KUERZUNG voll: Unterhalt 16.000, KV/PV 2.000, davon 2.000 mit Krankengeldanspruch. Kuerzung 2.000 x 4 % = 80. Beruecksichtigt 1.920. Deckel 13.805 + 1.920 = 15.725. min(16.000; 15.725) = 15.725,00. OHNE Kuerzung waeren es 15.805,00 gewesen.'
+    inputs:
+      unterhaltsleistungen: 16000
+      kv_pv_beitraege: 2000
+      kv_krankengeld: 2000
+    expected: 15725.0
+  - quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+    zitatanker: ist der jeweilige Beitrag um 4 Prozent zu vermindern
+    herkunft: synthetisch
+    rechenweg: 'KUERZUNG anteilig (Pflegeversicherung begruendet keinen Krankengeldanspruch): Unterhalt 20.000, KV/PV 3.000, davon 2.500 mit Krankengeldanspruch. Kuerzung 2.500 x 4 % = 100. Beruecksichtigt 2.900. Deckel 13.805 + 2.900 = 16.705. min(20.000; 16.705) = 16.705,00. OHNE Kuerzung waeren es 16.805,00 gewesen.'
+    inputs:
+      unterhaltsleistungen: 20000
+      kv_pv_beitraege: 3000
+      kv_krankengeld: 2500
+    expected: 16705.0
   raster:
   - unterhaltsleistungen: 10000
     kv_pv_beitraege: 0
+    kv_krankengeld: 0
   - unterhaltsleistungen: 15000
     kv_pv_beitraege: 0
+    kv_krankengeld: 0
   - unterhaltsleistungen: 15000
     kv_pv_beitraege: 2000
+    kv_krankengeld: 0
   - unterhaltsleistungen: 20000
     kv_pv_beitraege: 0
+    kv_krankengeld: 0
+  # Rasterpunkte MIT aktiver Kuerzung (Hand-Fix 2026-08-16). Ohne sie prueft das
+  # equivalence-Gate A==B nur dort, wo der neue Zweig gar nicht laeuft — genau die Blindheit,
+  # an der 2026-07-19 der p10d_2-Defekt alle Gates ueberlebte: A und B waren gleich-buggy UND
+  # das Raster traf den Defektfall nicht.
+  - unterhaltsleistungen: 16000
+    kv_pv_beitraege: 2000
+    kv_krankengeld: 2000
+  - unterhaltsleistungen: 20000
+    kv_pv_beitraege: 3000
+    kv_krankengeld: 2500
 - rule_id: p20_6_verlustverrechnung
   hinweis: 'Zwei GETRENNTE Verlust-Toepfe, jeder mit Boden bei 0 (kein negativer Saldo): saldo_aktien = wenn (gewinn_aktien - verlust_aktien) < 0 dann 0 sonst (gewinn_aktien - verlust_aktien); saldo_sonstige = wenn (gewinn_sonstige - verlust_sonstige) < 0 dann 0 sonst (gewinn_sonstige - verlust_sonstige); verrechnete_kapitaleinkuenfte = saldo_aktien + saldo_sonstige. KEINE topfuebergreifende Verrechnung (Aktienverlust mindert NUR Aktiengewinn, nie den sonstigen Topf); ein negativer Topf ist Verlustvortrag (ausserhalb dieser Regel) und wird hier als 0 behandelt.'
   norm: § 20 Abs. 6 EStG (Verlustverrechnung, getrennte Toepfe Aktien/sonstige)

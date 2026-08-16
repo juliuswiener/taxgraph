@@ -1147,28 +1147,35 @@ def catala_p10_1_9_schulgeld(s: dict) -> int:
 # 4 pipeline-seeds fidel. Abzug = min(unterhaltsleistungen, 13.805 + kv_pv_beitraege).
 def catala_p10_1a_realsplitting(s: dict) -> int:
     """§10 Abs.1a Nr.1 EStG — Realsplitting, Unterhalt Ex-Ehegatte bis 13.805€ + KV/PV.
-    Accessor nimmt EUROS. Seeds: 10k/0→10k, 15k/0→13805, 15k/2k→15k, 20k/0→13805.
+    Accessor nimmt EUROS.
 
-    BENANNTER NACHTRAG (Backlog realsplitting-4-prozent-kuerzung, gefunden 2026-08-14):
-    die 4-Prozent-Kuerzung fehlt. § 10 Abs. 1 Nr. 3 Buchst. a S. 4 vermindert Krankenver-
-    sicherungsbeitraege, aus denen ein Anspruch auf Krankengeld folgen kann, "um 4 Prozent";
-    § 10 Abs. 1a Nr. 1 S. 2 erhoeht den Deckel um die Beitraege "nach Absatz 1 Nummer 3" — die
-    Verweisung zieht die Kuerzung mit. Der Deckel ist hier also um 4 % des Krankengeld-Anteils
-    ZU HOCH, der Abzug ggf. zu gross, die Steuer zu niedrig (die gefaehrliche Richtung).
+    Der Hoechstbetrag erhoeht sich um die KV/PV-Beitraege fuer den Ex-Ehegatten (S. 2), aber
+    nur um die GEKUERZTEN: S. 2 verweist auf "Beitraege nach Absatz 1 Nummer 3", und
+    § 10 Abs. 1 Nr. 3 Buchst. a S. 4 vermindert Krankenversicherungsbeitraege, aus denen ein
+    Anspruch auf Krankengeld folgen kann, "um 4 Prozent". `kv_krankengeld` ist eine TEILMENGE
+    von `kv_pv_beitraege`, kein zusaetzlicher Summand (die Pflegeversicherung begruendet keinen
+    Krankengeldanspruch, ihr Anteil bleibt ungekuerzt).
 
-    Kein Alleingang, sondern eine ADJUDIKATIONS-Luecke: der adjudizierte catala_a im Snapshot
-    p10_1a_realsplitting.json kennt die Kuerzung ebenfalls nicht (geprueft), diese Funktion
-    spiegelt ihn also treu. Ein Fix hier allein wuerde beim naechsten Pipeline-Lauf still
-    zurueckfallen; er braucht die Regel (quellen + geltungsbedingung + signature-Input
-    kv_krankengeld) und einen neuen Snapshot.
+    Seeds (pipeline/produktion/rules.yaml, alle sechs ueber clerk gegen das kompilierte Catala
+    gefahren): 10k/0/0→10k, 15k/0/0→13805, 15k/2k/0→15k, 20k/0/0→13805,
+    16k/2k/2k→15725 (ohne Kuerzung waeren es 15805), 20k/3k/2,5k→16705 (ohne: 16805).
 
-    Der Deklarations-Teil ist bereits gebaut: `realsplitting_empfaenger_kv_krankengeld`
-    (E0300829) erfasst den Anteil seit 12ec7a3 — ohne ihn waere die Kuerzung gar nicht
-    rechenbar. Formel dann: deckel = 13805 + kv_pv - (kv_krankengeld - kv_krankengeld*96//100).
+    Die Kuerzung wird AUFGERUNDET. Der Accessor rechnet in ganzen Euro (api.py uebergibt
+    Cent//100), Catala in Cent — bei krummen Betraegen weichen beide um bis zu einen Euro ab.
+    Aufrunden der Kuerzung senkt den Deckel und damit den Abzug: die vorsichtige Richtung.
+    Bei allen Seeds ist die Kuerzung glatt, dort stimmen beide exakt ueberein.
+
+    HAND-FIX 2026-08-16 (Provenance in rules.yaml unter `hand_fix`): die Regel wurde von Hand
+    korrigiert und deterministisch regatet, NICHT neu durch die Modell-Kaskade gefahren. Das
+    judge_verdict im Snapshot stammt vom urspruenglichen Lauf und gilt der Fassung OHNE
+    Kuerzung. Beleg sind die zwei Zitatanker plus syntax/typecheck/equivalence (A==B auf 6
+    Rasterpunkten, davon 2 mit aktiver Kuerzung) und die 6 clerk-Seeds.
     """
     unterhaltsleistungen = int(s.get("unterhaltsleistungen", 0))
     kv_pv_beitraege = int(s.get("kv_pv_beitraege", 0))
-    deckel = 13805 + kv_pv_beitraege
+    kv_krankengeld = int(s.get("kv_krankengeld", 0))
+    kuerzung = -((-kv_krankengeld * 4) // 100)          # aufgerundet, s. Docstring
+    deckel = 13805 + kv_pv_beitraege - kuerzung
     return min(unterhaltsleistungen, deckel)
 
 

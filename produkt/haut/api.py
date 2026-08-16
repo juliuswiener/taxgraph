@@ -423,7 +423,12 @@ def _shared_steuer_sonder_agb(g_dict, gde, ausserg, veranlagung,
         + _schulgeld_summe(store, bindung, nur_bestaetigt, vz, f_dict)
         + (runner.catala_p10_1a_realsplitting({
             "unterhaltsleistungen": _c("realsplitting_unterhaltsleistungen") // 100,
-            "kv_pv_beitraege": _c("realsplitting_empfaenger_kv_pv") // 100})
+            "kv_pv_beitraege": _c("realsplitting_empfaenger_kv_pv") // 100,
+            # TEILMENGE von kv_pv_beitraege, kein zusätzlicher Summand: der Anteil, aus dem ein
+            # Anspruch auf Krankengeld folgen kann, geht nur zu 96 % in die Deckel-Erhöhung ein
+            # (§ 10 Abs. 1 Nr. 3 Buchst. a S. 4, über die Verweisung in Abs. 1a Nr. 1 S. 2).
+            # Fehlt der Wert, ist die Kürzung 0 — dann rechnet die Regel wie vor dem Hand-Fix.
+            "kv_krankengeld": _c("realsplitting_empfaenger_kv_krankengeld") // 100})
            if f_dict.get("realsplitting_zustimmung", {}).get("wert") is True else 0)
         + (runner.catala_p10_kv_pv({
             "basis_kv_pv": (_c("basis_kv_partner") + _c("basis_pv_partner")) // 100,

@@ -57,12 +57,11 @@ bindungen:
 
   - feld_id: realsplitting_empfaenger_kv_krankengeld
     vorschlagbar_von: [beleg]
-    # BEWUSST kein signatur_slot: der Rechenring kennt die 4-Prozent-Kürzung (§ 10 Abs. 1 Nr. 3
-    # Buchst. a S. 4) heute NICHT — er rechnet deckel = 13805 + kv_pv_beitraege, ungekürzt. Dieses
-    # Feld ist damit vorerst reine Deklaration. Es einfach als zweiten Summanden an
-    # `kv_pv_beitraege` zu hängen wäre falsch (es ist eine TEILMENGE davon, keine Ergänzung), und
-    # die Kürzung selbst gehört in die Regel, nicht in die Bindung. Der Befund ist gemeldet.
-    quelle: {regel_id: p10_1a_realsplitting, geltungsbedingung: deckel_13805_plus_kv_pv}
+    # Seit dem Hand-Fix der Regel (2026-08-16) ein echter Rechen-Eingang: die 4-Prozent-Kürzung
+    # nach § 10 Abs. 1 Nr. 3 Buchst. a S. 4 steht jetzt in catala_a/b und in der Signatur.
+    # Der Slot heißt kv_krankengeld und ist eine TEILMENGE von kv_pv_beitraege, kein zweiter
+    # Summand — deshalb ist `slot_beitrag` bewusst NICHT auf summand gesetzt.
+    quelle: {regel_id: p10_1a_realsplitting, signatur_slot: kv_krankengeld}
     typ: cent
     einheit: EUR
     askable: true
@@ -113,3 +112,7 @@ luecken:
   - regel_id: p10_1a_realsplitting
     geltungsbedingung: deckel_13805_plus_kv_pv
     grund: "13.805€-Höchstbetrag + KV/PV-Erhöhung (§ 10 Abs. 1a Nr. 1 S. 1-2) sind im pure-python Accessor catala_p10_1a_realsplitting materialisiert (Rechenlogik: min(unterhaltsleistungen, 13.805 + kv_pv_beitraege))."
+
+  - regel_id: p10_1a_realsplitting
+    geltungsbedingung: kuerzung_krankengeld_4_prozent
+    grund: "Die 4-Prozent-Kürzung (§ 10 Abs. 1 Nr. 3 Buchst. a S. 4, über die Verweisung in Abs. 1a Nr. 1 S. 2) ist Rechenlogik der Regel und im Accessor materialisiert — genau wie der Deckel darüber. Das ERFASSTE Feld realsplitting_empfaenger_kv_krankengeld hängt nicht an dieser Bedingung, sondern am Rechen-Slot kv_krankengeld: es liefert den Anteil, die Kürzung selbst rechnet die Regel."

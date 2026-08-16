@@ -1473,7 +1473,19 @@ abgabe:
 
   - id: realsplitting-4-prozent-kuerzung
     titel: Deckel des Realsplittings ist um 4 % des Krankengeld-Anteils zu hoch
-    status: analysiert
+    status: erledigt
+    erledigt_in: 2026-08-16 (Hand-Fix der Regel + Snapshot + Spiegelung + Naht)
+    erledigt_wie: >
+      Dokumentierter Hand-Fix-Weg, deterministisch und ohne Modellkosten: catala_a und catala_b im
+      Live-Report um den Eingang kv_krankengeld und die Kuerzung ergaenzt, rules.yaml um Quelle
+      (§ 10 Abs. 1 Nr. 3 Buchst. a S. 4), Geltungsbedingung kuerzung_krankengeld_4_prozent,
+      Signatur-Input und ZWEI differenzierende test_seeds erweitert, Raster um zwei Punkte MIT
+      aktiver Kuerzung ergaenzt (sonst haette equivalence A==B nur dort geprueft, wo der neue
+      Zweig gar nicht laeuft — die Blindheit, an der 2026-07-19 der p10d_2-Defekt alle Gates
+      ueberlebte), dann `run.py --regate --only p10_1a_realsplitting` und `snapshot.py write`.
+      Ergebnis: verified_bedingt unter 4 Bedingungen, keine offenen Gates, equivalence PASS auf
+      6 Rasterpunkten, clerk PASS mit 6 Seeds. Danach die Python-Spiegelung in runner.py, die
+      Naht in api.py (Slot-Uebergabe) und der signatur_slot am erfassten Feld.
     richtung: Geldfehler zugunsten des Nutzers — Steuer zu NIEDRIG (die gefaehrliche Richtung)
     entdeckt: '2026-08-14'
     messung: >
@@ -1490,22 +1502,27 @@ abgabe:
       im Snapshot pipeline/snapshots/p10_1a_realsplitting.json kennt die Kuerzung ebenfalls nicht
       (geprueft 2026-08-15). Die Python-Funktion spiegelt ihn treu. Ein Fix in runner.py allein
       faellt beim naechsten Pipeline-Lauf still zurueck.
-    blocker: >
-      Der dokumentierte Hand-Fix-Weg (Hand-Fix catala_a/b im Live-Report, test_seed korrigieren,
-      Unit-Seed ergaenzen, `run.py --regate --only <rid>`, `snapshot.py write`) ist mit dem
-      heutigen Repo nicht gangbar: pipeline/run.py existiert nicht mehr, pipeline/runs/ ist
-      gitignored und leer, und snapshot.py write liest genau von dort. Einen Snapshot von Hand
-      zu schreiben hiesse judge_verdict und sha256 zu faelschen — snapshot.py wehrt das
-      ausdruecklich ab ("Ein manipulierter Snapshot FAILt hart").
-    vorarbeit_erledigt: >
-      Der Deklarations-Teil ist gebaut und gemessen: realsplitting_empfaenger_kv_krankengeld
-      (E0300829) erfasst den Anteil seit 12ec7a3, checkESt rc=0. Ohne dieses Feld waere die
-      Kuerzung ueberhaupt nicht rechenbar gewesen.
-    naechster_schritt: >
-      Julius entscheidet, ob (a) die Pipeline-Werkzeuge fuer eine Re-Adjudikation dieser Regel
-      wiederhergestellt werden, oder (b) die Regel bewusst ausserhalb der Snapshot-Mechanik
-      hand-gefuehrt wird (dann mit expliziter Provenance, nicht als LLM-verifiziert getarnt).
-      Formel steht fest: deckel = 13805 + kv_pv - (kv_krankengeld - kv_krankengeld*96//100).
+    korrektur_am_eigenen_eintrag: >
+      Dieser Eintrag behauptete am 2026-08-15 einen Blocker, den es nicht gab: "pipeline/run.py
+      existiert nicht mehr". FALSCH — der Runner liegt unter pipeline/produktion/run.py, ich hatte
+      nur unter pipeline/run.py gesucht. `regate` rekonstruiert den Report ausdruecklich AUS dem
+      Snapshot, wenn kein Live-Report existiert (runs/-Blocker-Fix, snapshot.resolve_report), und
+      rechnet die deterministischen Gates ohne Modellaufruf neu. Der Weg war die ganze Zeit offen.
+      Der einzige echte Vorbehalt war die Werkzeugkette: clerk/catala liegen im opam-Switch
+      `taxgraph` und muessen auf den PATH (`export PATH="$HOME/.opam/taxgraph/bin:$PATH"`) —
+      ohne sie liefern die Compiler-Gates SKIP statt PASS, und ein Snapshot-Write wuerde den
+      verifizierten Anker abwerten. Gegenprobe vor dem Eingriff: ein Regate OHNE Aenderung ergab
+      "0 Gate-Ergebnisse geaendert" und bewies damit, dass die Umgebung den verifizierten Zustand
+      exakt reproduziert.
+    provenance: >
+      HAND-FIX, nicht modellverifiziert. Das judge_verdict im Snapshot stammt vom urspruenglichen
+      Lauf und gilt der Fassung OHNE Kuerzung. Beleg sind die zwei woertlichen Zitatanker plus die
+      deterministischen Gates. Ausdruecklich vermerkt in rules.yaml unter `hand_fix`, im Docstring
+      von golden/runner.py und in tests/test_realsplitting_krankengeld_kuerzung.py.
+    vorarbeit: >
+      Der Deklarations-Teil war Voraussetzung: realsplitting_empfaenger_kv_krankengeld (E0300829)
+      erfasst den Anteil seit 12ec7a3, checkESt rc=0. Ohne dieses Feld waere die Kuerzung
+      ueberhaupt nicht rechenbar gewesen.
 
 rechenluecken:
 
