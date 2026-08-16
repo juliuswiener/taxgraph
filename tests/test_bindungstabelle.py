@@ -467,6 +467,12 @@ def test_g_gate_faengt_tote_bindung(daten):
 # Stand: 2026-07-31, Audit zeigt 58/77 steuerwirksame Beträge ohne Weg ins XML-Schema.
 
 BETRAGSFELDER_OHNE_KZ = {
+    # Gruppe VERZWEIGT: das Kz steht nicht am Feld, sondern haengt an einem Art-Feld
+    # (est_mapping.VERZWEIGUNG, Klasse f). Kein fehlendes Mapping, sondern ein anderes.
+    # p35c_massnahme_einzelbetrag -> eine der neun Einzelzeilen der Anlage Energetische
+    # Massnahmen, gewaehlt ueber p35c_massnahme_art (2026-08-16).
+    "p35c_massnahme_einzelbetrag",
+
     # Gruppe B: Partner-Instanzen — XML-Writer kennt PersonB nicht (elster_xml.py Z. 39 nur PersonA).
     # Stille Fehler bei Zusammenveranlagung: Ehepaar 50k+50k rechnet 20.490€ ESt, Erklärung enthält
     # nur Lohn von Person A → 14.982€ Under-Tax (gemessen 2026-07-31).

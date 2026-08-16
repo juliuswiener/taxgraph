@@ -68,33 +68,212 @@ bindungen:
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anwendbarkeits-Flag: es steuert, OB die Ermäßigung zusteht, und ist kein eigener Betrag im Vordruck. Die Anlage Energetische Maßnahmen fragt die Förder-Historie über eigene Zeilen ab (benannter Nachtrag, s. BACKLOG)."
+    elster_kz_grund: "Internes Gate mit NEGATIVER Benennung (keine_doppelfoerderung) — das amtliche Feld E0240902 fragt umgekehrt (\"habe ich in Anspruch genommen\"). Deklariert wird deshalb das berechnete Zwillingsfeld p35c_foerderung_in_anspruch, das die Umkehrung sichtbar und testbar macht, statt sie im Writer zu verstecken."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35c Abs. 3 S. 2 EStG"
       zitatanker: "Die Steuerermäßigung nach Absatz 1 ist ebenfalls nicht zu gewähren, wenn für die energetischen Maßnahmen eine Steuerbegünstigung nach § 10f oder eine Steuerermäßigung nach § 35a in Anspruch genommen wird"
       datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
 
+  - feld_id: p35c_objekt_strasse
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: eigenes_gebaeude}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wo steht das Gebäude, das du saniert hast? Straße und Hausnummer."
+    hilfe_kurz: "Die Anlage Energetische Maßnahmen gilt immer für EIN Objekt. Bei mehreren sanierten Objekten ist für jedes eine eigene Anlage nötig (folgt)."
+    beispielwert: "Musterweg 3"
+    herkunft_slots: null
+    elster_kz: E0240401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 1 EStG"
+      zitatanker: "zu eigenen Wohnzwecken genutzten eigenen Gebäude"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  - feld_id: p35c_objekt_plz_ort
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: eigenes_gebaeude}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Postleitzahl und Ort des Gebäudes?"
+    hilfe_kurz: "Bei einem Objekt im Ausland zusätzlich den Staat angeben."
+    beispielwert: "12345 Musterstadt"
+    herkunft_slots: null
+    elster_kz: E0240501
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 1 EStG"
+      zitatanker: "zu eigenen Wohnzwecken genutzten eigenen Gebäude"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  - feld_id: p35c_gebaeude_herstellungsbeginn
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: objekt_aelter_zehn_jahre}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann wurde mit dem Bau des Gebäudes begonnen? (TT.MM.JJJJ)"
+    hilfe_kurz: "Danach richtet sich das Alter des Gebäudes. Die Ermäßigung gibt es nur, wenn das Gebäude bei Beginn der Sanierung älter als zehn Jahre war. Steht in der Baugenehmigung oder im Kaufvertrag."
+    beispielwert: "01.06.1995"
+    herkunft_slots: null
+    elster_kz: E0240402
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 2 EStG"
+      zitatanker: "Voraussetzung ist, dass das begünstigte Objekt bei der Durchführung der energetischen Maßnahme älter als zehn Jahre ist; maßgebend hierfür ist der Beginn der Herstellung"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  - feld_id: p35c_gesamtflaeche_qm
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: ausschliesslich_eigene_wohnzwecke}
+    typ: int
+    einheit: null
+    bereich: {min: 1, max: 100000, grund: "Wohnfläche in m²; positiv (Schema GanzzahlPos), Obergrenze großzügig."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie groß ist die Gesamtfläche des Gebäudes in Quadratmetern?"
+    hilfe_kurz: "Die gesamte Wohnfläche des Objekts, auch vermietete oder gewerblich genutzte Teile."
+    beispielwert: 120
+    herkunft_slots: null
+    elster_kz: E0240801
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 1 EStG"
+      zitatanker: "zu eigenen Wohnzwecken genutzten eigenen Gebäude"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  - feld_id: p35c_eigene_wohnflaeche_qm
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: ausschliesslich_eigene_wohnzwecke}
+    typ: int
+    einheit: null
+    bereich: {min: 1, max: 100000, grund: "Teilmenge der Gesamtfläche; positiv (Schema GanzzahlPos)."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele dieser Quadratmeter nutzt du selbst zu Wohnzwecken (oder überlässt sie unentgeltlich)?"
+    hilfe_kurz: "Nur dieser Teil ist begünstigt. Bei ausschließlicher Eigennutzung ist es dieselbe Zahl wie oben."
+    beispielwert: 120
+    herkunft_slots: null
+    elster_kz: E0240802
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 1 EStG"
+      zitatanker: "zu eigenen Wohnzwecken genutzten eigenen Gebäude"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  - feld_id: p35c_bereits_ermaessigung_frueher
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: objekt_hoechstbetrag_40k_nicht_ausgeschoepft}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hast du für dieses Gebäude in früheren Jahren schon einmal eine Steuerermäßigung für energetische Maßnahmen bekommen?"
+    hilfe_kurz: "Je Objekt gibt es die Ermäßigung über alle Jahre zusammen nur bis 40.000 Euro. Deshalb fragt das Finanzamt nach früheren Anträgen für dasselbe Gebäude."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0240803
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 5 EStG"
+      zitatanker: "je begünstigtes Objekt beträgt der Höchstbetrag der Steuerermäßigung 40 000 Euro"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  - feld_id: p35c_baubeginn_massnahme
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: objekt_aelter_zehn_jahre}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann hat die Sanierung begonnen? (TT.MM.JJJJ)"
+    hilfe_kurz: "Der Baubeginn der energetischen Maßnahme selbst, nicht der des Gebäudes."
+    beispielwert: "15.03.2025"
+    herkunft_slots: null
+    elster_kz: E0240901
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 1 EStG"
+      zitatanker: "bei der Durchführung der energetischen Maßnahme älter als zehn Jahre ist"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  # Berechneter Zwilling des Gates darüber: dieselbe Aussage, umgekehrt gefragt. Das amtliche
+  # Feld lautet "Ich habe / Wir haben für die energetischen Maßnahmen beantragt / in Anspruch
+  # genommen" — unser Gate heißt keine_doppelfoerderung. Statt die Umkehrung im Writer zu
+  # verstecken, steht sie hier als eigenes Feld (askable: false, injiziert in _mit_ring_werten),
+  # genau wie p9_4a_kuerzung_nach_entgelt. Ohne dieses Feld beanstandet checkESt "Bitte geben Sie
+  # an, ob für die angegebenen energetischen Maßnahmen eine öffentliche Förderung ..." (gemessen).
+  - feld_id: p35c_foerderung_in_anspruch
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: keine_10f_35a_oeffentliche_foerderung}
+    typ: bool
+    einheit: null
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet aus der Antwort zur Doppelförderung (umgekehrt gefragt)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0240902
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 3 S. 2 EStG"
+      zitatanker: "es sich um eine öffentlich geförderte Maßnahme handelt, für die zinsverbilligte Darlehen oder steuerfreie Zuschüsse in Anspruch genommen werden"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  # Die Aufschlüsselung, ohne die checkESt ablehnt: "Es wurde die Summe der Aufwendungen für
+  # energetische Maßnahmen angegeben aber keine Angaben zu den einzelnen Aufwendungen gemacht."
+  # Das Formular führt neun Einzelzeilen (Wände, Dach, Geschossdecken, Fenster/Türen, sommerlicher
+  # Wärmeschutz, Lüftung, Heizung, Digital, Heizungsoptimierung) plus die Summe. Wir fragen die
+  # ART und lenken den bereits erfassten Gesamtbetrag auf die passende Zeile (est_mapping
+  # VERZWEIGUNG, dasselbe Muster wie die Anlage-R-Zeile bei rentner_renten_art).
+  #
+  # MVP-GRENZE, ausdrücklich: EINE Maßnahmenart je Erklärung. Wer im selben Jahr Dach UND Heizung
+  # saniert hat, muss die Summe heute einer Art zuordnen. Mehrere Zeilen brauchen eine
+  # Instanzgruppe (benannter Nachtrag, s. BACKLOG).
+  - feld_id: p35c_massnahme_art
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: fachunternehmen_bescheinigung}
+    typ: enum
+    enum_werte: ["waende", "dach", "geschossdecken", "fenster_tueren", "sommerlicher_waermeschutz", "lueftung", "heizung", "digital", "heizung_optimierung"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Um welche Maßnahme ging es hauptsächlich?"
+    hilfe_kurz: "Das Finanzamt will die Kosten nach Art der Maßnahme aufgeschlüsselt. Bei mehreren Maßnahmen im selben Jahr wähle die mit dem größten Anteil."
+    beispielwert: "heizung"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche: sie steuert, in welche Zeile der Anlage der Betrag geschrieben wird (est_mapping VERZWEIGUNG), und ist selbst kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 3 EStG"
+      zitatanker: "Energetische Maßnahmen im Sinne des Satzes 1 sind"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  # Berechneter Zwilling: derselbe Betrag wie die Summe, nur in der Einzelzeile. Wird in
+  # _mit_ring_werten injiziert und über VERZWEIGUNG nach p35c_massnahme_art auf eines der neun
+  # Einzel-Kz gelenkt. Ohne ihn steht im XML nur die Summe, und die Anlage ist unvollständig.
+  - feld_id: p35c_massnahme_einzelbetrag
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: fachunternehmen_bescheinigung}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Gesamtbetrag in der Zeile der gewählten Maßnahmenart"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Verzweigt: das Kz haengt an p35c_massnahme_art (est_mapping VERZWEIGUNG, Klasse f) — E0241001 Waende / E0241101 Dach / E0241201 Geschossdecken / E0241301 Fenster+Tueren / E0241302 sommerlicher Waermeschutz / E0241401 Lueftung / E0241501 Heizung / E0241601 Digital / E0241701 Heizungsoptimierung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 3 EStG"
+      zitatanker: "Energetische Maßnahmen im Sinne des Satzes 1 sind"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
   # ===== Lücken + Geltungsbedingungen =====
 luecken:
-  - regel_id: p35c_sanierung_ermaessigung
-    geltungsbedingung: eigenes_gebaeude
-    grund: "Eigentuemer-Erfordernis. Vorfrage der §2-Integration (Sachverhaltsermittlung), nicht im Laien-Feld abgedeckt."
-  - regel_id: p35c_sanierung_ermaessigung
-    geltungsbedingung: objekt_aelter_zehn_jahre
-    grund: "Gebaeudealter >= 10 Jahre. Dokumentation über Fachunternehmen-Bescheinigung (S.6-7); wird mit Belege hochgeladen, kein Laien-Feld nötig."
-  - regel_id: p35c_sanierung_ermaessigung
-    geltungsbedingung: ausschliesslich_eigene_wohnzwecke
-    grund: "Ausschließliche Eigennutzung im Förderjahr. Vorfrage der §2-Integration, kein separates Feld (unentgeltliche Teilu. unschaedlich)."
   - regel_id: p35c_sanierung_ermaessigung
     geltungsbedingung: kein_doppelabzug_ba_wk_sa_agb
     grund: "Aufwendungen nicht bereits als BA/WK/SA/agB berücksichtigt. Komplementär-Guard im Ring (nicht aktuell kodiert, Folge-Gate)."
   - regel_id: p35c_sanierung_ermaessigung
     geltungsbedingung: rechnung_und_zahlung_aufs_konto
     grund: "Rechnung deutsch + unbare Zahlung aufs Leistungserbringer-Konto. Belege-Validierung, nicht im Feld abgedeckt (Stufe-2)."
-  - regel_id: p35c_sanierung_ermaessigung
-    geltungsbedingung: fachunternehmen_bescheinigung
-    grund: "Fachunternehmen-Bescheinigung nach amtlichem Muster. Belege-Upload + Validierung (Stufe-2), nicht im Feld codiert."
-  - regel_id: p35c_sanierung_ermaessigung
-    geltungsbedingung: objekt_hoechstbetrag_40k_nicht_ausgeschoepft
-    grund: "Lebensdauer-Objektdeckel 40k EUR nicht überschritten. Mehrjahres-State über alle Förderjahre (§2-Integration), Stufe-2 (Ring-Wert)."

@@ -369,3 +369,107 @@ def test_pflege_pauschbetrag_pflichtangaben_im_xml(bindung):
     # generell weglässt, würde die Anlage wieder unabgabefähig machen.
     import re
     assert "<E0106603>0</E0106603>" in re.sub(r"<(/?)[a-zA-Z0-9]+:", r"<\1", xml)
+
+
+# ---------------------------------------------------------------- Anlage Energetische Maßnahmen § 35c
+
+def test_p35c_anlage_kommt_im_xml_an(bindung):
+    """Die Formalien der Anlage (2026-08-16). Bis dahin trug die Bindung nur die zwei
+    Summenfelder — checkESt lehnte mit SIEBEN Beanstandungen ab.
+
+    Zwei Dinge nagelt der Test fest, die man leicht falsch baut:
+
+    1. Der Betrag steht ZWEIMAL im XML: als Summe (E0241901) und in der Zeile der gewählten
+       Maßnahmenart (hier Heizung, E0241501). Das Formular verlangt beides; wer nur die Summe
+       schreibt, bekommt "keine Angaben zu den einzelnen Aufwendungen".
+    2. E0240902 fragt UMGEKEHRT zu unserem Gate ("habe ich in Anspruch genommen" gegen
+       "keine Doppelförderung"). Bei keine_doppelfoerderung=True muss dort "2" (Nein) stehen.
+       Vorher hätte der Writer das Element bei False ganz weggelassen — JaNein12 ist aber kein
+       Ankreuzfeld, sondern zweiwertig.
+    """
+    xml = _xml({"p35c_sanierungsaufwendungen": 2000000,        # 20.000 EUR
+                "p35c_massnahme_art": "heizung",
+                "p35c_massnahme_einzelbetrag": 2000000,
+                "p35c_foerderung_in_anspruch": False,          # = keine Doppelförderung
+                "p35c_objekt_strasse": "Musterweg 3",
+                "p35c_objekt_plz_ort": "12345 Musterstadt",
+                "p35c_gebaeude_herstellungsbeginn": "01.06.1995",
+                "p35c_baubeginn_massnahme": "15.03.2025",
+                "p35c_gesamtflaeche_qm": 120,
+                "p35c_eigene_wohnflaeche_qm": 120,
+                "p35c_bereits_ermaessigung_frueher": False},
+               bindung)
+
+    allg = ("EM_35c", "Obj", "Allg")
+    assert _pfad_im_xml(xml, allg + ("E0240401",), "Musterweg 3")
+    assert _pfad_im_xml(xml, allg + ("E0240501",), "12345 Musterstadt")
+    assert _pfad_im_xml(xml, allg + ("E0240402",), "01.06.1995")
+    assert _pfad_im_xml(xml, allg + ("E0240801",), "120")
+    assert _pfad_im_xml(xml, allg + ("E0240802",), "120")
+    assert _pfad_im_xml(xml, allg + ("E0240803",), "2")        # JaNein12: 2 = Nein
+    assert _pfad_im_xml(xml, ("EM_35c", "Obj", "Aufw", "E0240902"), "2")
+    assert _pfad_im_xml(xml, ("EM_35c", "Obj", "Aufw", "Massn", "E0240901"), "15.03.2025")
+    # Summe UND Einzelzeile — der Betrag steht zweimal, das ist gewollt.
+    assert _pfad_im_xml(xml, ("EM_35c", "Obj", "Aufw", "Massn", "Sum", "E0241901"), "20000")
+    assert _pfad_im_xml(xml, ("EM_35c", "Obj", "Aufw", "Massn", "Heizung", "E0241501"), "20000")
+
+
+def test_janein12_nein_wird_geschrieben_nicht_weggelassen(bindung):
+    """Der Writer-Fix von 2026-08-16, isoliert.
+
+    Ja-Typen sind zwei verschiedene Dinge: Ja1/JaX sind ANKREUZFELDER (Nein = weglassen),
+    JaNein12 hat ZWEI echte Werte. Vorher ließ der Writer bei False in beiden Fällen das Element
+    weg — bei JaNein12 verschwand damit eine gegebene Antwort, und checkESt beanstandete "Bitte
+    geben Sie an, ob …". Betroffen war auch E0161607 (Wohnsitz der gepflegten Person).
+    """
+    import re
+    xml = _xml({"p35c_bereits_ermaessigung_frueher": False,
+                "rentner_gepflegter_wohnsitz_inland": False,
+                "rentner_gepflegter_hilflos": False}, bindung)
+    flach = re.sub(r"<(/?)[a-zA-Z0-9]+:", r"<\1", xml)
+    assert "<E0240803>2</E0240803>" in flach, "JaNein12-Nein fehlt (Element weggelassen?)"
+    assert "<E0161607>2</E0161607>" in flach, "JaNein12-Nein fehlt beim Pflege-Wohnsitz"
+    # Ja1 bleibt ein Ankreuzfeld: False -> Element gar nicht erst anlegen.
+    assert "E0161808" not in flach, "Ja1-Nein darf NICHT als Element erscheinen"
+
+
+# Neun Maßnahmenarten -> neun Zeilen der Anlage.
+P35C_ARTEN = [
+    ("waende", "Waende", "E0241001"),
+    ("dach", "Dach", "E0241101"),
+    ("geschossdecken", "Geschossd", "E0241201"),
+    ("fenster_tueren", "Fenst_Tuer", "E0241301"),
+    ("sommerlicher_waermeschutz", "Somm_Waerm", "E0241302"),
+    ("lueftung", "Lueftung", "E0241401"),
+    ("heizung", "Heizung", "E0241501"),
+    ("digital", "Digital", "E0241601"),
+    ("heizung_optimierung", "Heizung_alt", "E0241701"),
+]
+
+
+# Die Kz stehen ABSICHTLICH auch im parametrize-Aufruf und nicht nur in der Konstante darueber:
+# test_m prueft per AST, ob ein gebundenes Kz in einem assert-gesteuerten Pfad LIEGT, und eine
+# Liste daneben zaehlt dort zu Recht nicht — sonst genuegte jede Erwaehnung im Dateitext.
+@pytest.mark.parametrize("art,container,kz", [
+    ("waende", "Waende", "E0241001"),
+    ("dach", "Dach", "E0241101"),
+    ("geschossdecken", "Geschossd", "E0241201"),
+    ("fenster_tueren", "Fenst_Tuer", "E0241301"),
+    ("sommerlicher_waermeschutz", "Somm_Waerm", "E0241302"),
+    ("lueftung", "Lueftung", "E0241401"),
+    ("heizung", "Heizung", "E0241501"),
+    ("digital", "Digital", "E0241601"),
+    ("heizung_optimierung", "Heizung_alt", "E0241701"),
+])
+def test_p35c_massnahmenart_trifft_ihre_zeile(bindung, art, container, kz):
+    """Jede Maßnahmenart landet in IHRER Zeile — und in keiner anderen.
+
+    Die Tabelle steht in est_mapping.VERZWEIGUNG; ein Zahlendreher darin waere XSD-valide und
+    stuende in der falschen Zeile. Deshalb wird JEDE Art gefahren, nicht nur die aus dem
+    Block-Test."""
+    xml = _xml({"p35c_massnahme_art": art, "p35c_massnahme_einzelbetrag": 2000000}, bindung)
+    assert _pfad_im_xml(xml, ("EM_35c", "Obj", "Aufw", "Massn", container, kz), "20000"), (
+        f"{art} landet nicht in {container}/{kz}")
+    fremde = [k for _, _, k in P35C_ARTEN if k != kz]
+    getroffen = [k for k in fremde if k in xml]
+    assert not getroffen, f"{art} schreibt auch in fremde Zeilen: {getroffen}"

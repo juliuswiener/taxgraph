@@ -157,6 +157,15 @@ VERZWEIGUNG = {
     # Anlage S E0804501 [Vor_FB]; land_forst § 14 -> Anlage L E0901201 [VAe_G_FB_Antr].
     "rentner_veraeusserungsgewinn": {"art_feld": "rentner_veraeusserungs_betriebsart", "kz": {
         "gewerbe": "E0801301", "selbstaendig": "E0804501", "land_forst": "E0901201"}},
+    # § 35c: die Anlage Energetische Massnahmen fuehrt neun Einzelzeilen plus eine Summe. Die
+    # Summe traegt p35c_sanierungsaufwendungen (E0241901); dieser berechnete Zwilling traegt
+    # denselben Betrag in die Zeile der gewaehlten Massnahmenart. Ohne eine Einzelzeile lehnt
+    # checkESt ab ("Summe angegeben aber keine Angaben zu den einzelnen Aufwendungen").
+    "p35c_massnahme_einzelbetrag": {"art_feld": "p35c_massnahme_art", "kz": {
+        "waende": "E0241001", "dach": "E0241101", "geschossdecken": "E0241201",
+        "fenster_tueren": "E0241301", "sommerlicher_waermeschutz": "E0241302",
+        "lueftung": "E0241401", "heizung": "E0241501", "digital": "E0241601",
+        "heizung_optimierung": "E0241701"}},
     # §§ 13-18 Gewinneinkünfte (Stufe 1, p2_festzusetzung_einzel): der vorberechnete Gewinn verzweigt nach
     # gewinn_betriebsart in Anlage G/S. land_forst NICHT gebunden — Anlage L hat zwei alternative Kz
     # (P4_Abs_1_3=E0901007, P13a=E0901103) je Gewinnermittlungsart; unser Modell differenziert nicht.

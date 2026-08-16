@@ -2912,6 +2912,35 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
                 "signal": {"signal_1": None, "signal_2": None},
             }
 
+    # (5) § 35c: E0240902 fragt UMGEKEHRT zu unserem Gate. Das amtliche Feld lautet "Ich habe /
+    # Wir haben für die energetischen Maßnahmen beantragt / in Anspruch genommen", unser Gate
+    # heißt p35c_keine_doppelfoerderung. Die Umkehrung steht hier als eigenes Feld statt im
+    # Writer: dort wäre sie unsichtbar, und eine still gedrehte Ja/Nein-Antwort ist genau die
+    # Sorte Fehler, die niemand im XML nachrechnet.
+    # (6) § 35c-Einzelzeile: derselbe Betrag wie die Summe, nur in der Zeile der gewaehlten
+    # Massnahmenart (est_mapping VERZWEIGUNG). Ohne eine Einzelzeile ist die Anlage unvollstaendig.
+    _p35c_sum = felder.get("p35c_sanierungsaufwendungen")
+    if isinstance(_p35c_sum, dict) and _p35c_sum.get("zustand") == "bestaetigt" \
+            and isinstance(_p35c_sum.get("wert"), int) and _p35c_sum["wert"] > 0:
+        felder["p35c_massnahme_einzelbetrag"] = {
+            "wert": _p35c_sum["wert"],
+            "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+            "schreiber": "engine",
+            "signal": {"signal_1": None, "signal_2": None},
+        }
+
+    _p35c_gate = felder.get("p35c_keine_doppelfoerderung")
+    if isinstance(_p35c_gate, dict) and _p35c_gate.get("zustand") == "bestaetigt" \
+            and isinstance(_p35c_gate.get("wert"), bool):
+        felder["p35c_foerderung_in_anspruch"] = {
+            "wert": not _p35c_gate["wert"],
+            "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+            "schreiber": "engine",
+            "signal": {"signal_1": None, "signal_2": None},
+        }
+
     return felder
 
 

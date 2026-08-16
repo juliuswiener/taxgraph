@@ -435,6 +435,14 @@ GESAMT_P32B = ("p32b_progressionseinkuenfte",)
 # ========== § 35c Energetische Sanierung ==========
 GESAMT_P35C = ("p35c_sanierungsaufwendungen", "p35c_ist_uebernaechstes_foerderjahr",
                 "p35c_keine_doppelfoerderung",
+                # Anlage Energetische Maßnahmen — die Formalien, ohne die ERiC ablehnt
+                # (gemessen 2026-08-16, sieben Beanstandungen).
+                "p35c_objekt_strasse", "p35c_objekt_plz_ort",
+                "p35c_gebaeude_herstellungsbeginn", "p35c_baubeginn_massnahme",
+                "p35c_gesamtflaeche_qm", "p35c_eigene_wohnflaeche_qm",
+                "p35c_bereits_ermaessigung_frueher",
+                "p35c_foerderung_in_anspruch",
+                "p35c_massnahme_art", "p35c_massnahme_einzelbetrag",
                "p35c_energieberater_aufwendungen")
 
 # ========== § 10 Abs.1a Nr.1 Realsplitting ==========
@@ -665,6 +673,17 @@ ENUM_LABELS = {
     # Ebenfalls 1/2/3 aus dem ELSTER-Feld (E0106507). Die Beschriftung stammt wörtlich aus dem
     # Schema ("Steuerpflichtige Person / Ehemann / Person A" usw.) und ist hier auf das übersetzt,
     # was der Nutzer von sich weiß — er kennt weder "Person A" noch seine Rolle im Datensatz.
+    "p35c_massnahme_art": {
+        "waende": "Wärmedämmung von Wänden",
+        "dach": "Wärmedämmung von Dachflächen",
+        "geschossdecken": "Wärmedämmung von Geschossdecken",
+        "fenster_tueren": "Neue Fenster oder Außentüren",
+        "sommerlicher_waermeschutz": "Sommerlicher Wärmeschutz (z. B. Rollläden, Markisen)",
+        "lueftung": "Neue oder erneuerte Lüftungsanlage",
+        "heizung": "Neue Heizungsanlage",
+        "digital": "Digitale Systeme zur Verbrauchsoptimierung",
+        "heizung_optimierung": "Optimierung einer bestehenden Heizung (älter als 2 Jahre)",
+    },
     "rentner_pflege_durch": {
         "1": "Ich",
         "2": "Mein Ehe- oder Lebenspartner",

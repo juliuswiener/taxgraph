@@ -191,6 +191,22 @@ BLOECKE = {
          "Maria Muster, Musterweg 3, 12345 Musterstadt, meine Mutter"),
         ("rentner_pflege_durch", "1"),
     ],
+    # Anlage Energetische Maßnahmen (§ 35c). Gemessen 2026-08-16 in DREI Schichten: sieben
+    # Beanstandungen -> nach den Formalien noch eine (fehlende Einzelaufwendungen) -> rc=0.
+    # Der Betrag steht zweimal im XML: als Summe (E0241901) und in der Zeile der Maßnahmenart
+    # (hier Heizung, E0241501) — das Formular verlangt beides.
+    "p35c_anlage_energetische_massnahmen": [
+        ("p35c_sanierungsaufwendungen", 2000000),
+        ("p35c_keine_doppelfoerderung", True),
+        ("p35c_objekt_strasse", "Musterweg 3"),
+        ("p35c_objekt_plz_ort", "12345 Musterstadt"),
+        ("p35c_gebaeude_herstellungsbeginn", "01.06.1995"),
+        ("p35c_baubeginn_massnahme", "15.03.2025"),
+        ("p35c_gesamtflaeche_qm", 120),
+        ("p35c_eigene_wohnflaeche_qm", 120),
+        ("p35c_bereits_ermaessigung_frueher", False),
+        ("p35c_massnahme_art", "heizung"),
+    ],
     "pflege_merkzeichen_h": [
         ("rentner_gepflegter_hilflos", True),
         ("rentner_gepflegter_wohnsitz_inland", True),
