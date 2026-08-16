@@ -48,6 +48,33 @@ bindungen:
       zitatanker: "im übernächsten Kalenderjahr um 6 Prozent"
       datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
 
+  # § 35c Abs. 3 S. 2 — der Wächter gegen Doppelbegünstigung. Bis 2026-08-16 war diese
+  # Geltungsbedingung nur ein Lücken-Eintrag ("Komplementär-Guard im Ring, Folge-Gate"), also an
+  # keine Frage gebunden: gemessen ergaben dieselben 20.000 EUR einmal als § 35a-Handwerker und
+  # einmal als § 35c-Sanierung 1.200 + 1.400 = 2.600 EUR Entlastung. Das Gesetz gewährt § 35c
+  # dann GAR NICHT — 1.200 EUR zu wenig Steuer.
+  #
+  # Positiv gefragt, negativ benannt — wie hh_handwerker_keine_foerderung (§ 35a Abs. 3 S. 2),
+  # dessen Zwilling dieses Feld ist. Bestätigt FALSE heißt "es gibt eine Doppelförderung", und
+  # dann schließt relevanz() die ganze Regel aus: richtig, denn dann steht die Ermäßigung nicht zu.
+  - feld_id: p35c_keine_doppelfoerderung
+    quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: keine_10f_35a_oeffentliche_foerderung}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hast du für diese Sanierung WEDER Handwerkerkosten abgesetzt NOCH eine Förderung genutzt (zum Beispiel KfW-Zuschuss oder zinsverbilligtes Darlehen)?"
+    hilfe_kurz: "Gemeint ist dieselbe Maßnahme: Wer dieselben Kosten schon als Handwerkerleistung nach § 35a absetzt, eine Denkmal-Abschreibung nach § 10f nutzt oder einen Zuschuss bzw. ein zinsverbilligtes Darlehen bekommen hat, kann diese Ermäßigung nicht zusätzlich bekommen — sie entfällt dann ganz. Andere Maßnahmen im selben Jahr sind unschädlich."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag: es steuert, OB die Ermäßigung zusteht, und ist kein eigener Betrag im Vordruck. Die Anlage Energetische Maßnahmen fragt die Förder-Historie über eigene Zeilen ab (benannter Nachtrag, s. BACKLOG)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 3 S. 2 EStG"
+      zitatanker: "Die Steuerermäßigung nach Absatz 1 ist ebenfalls nicht zu gewähren, wenn für die energetischen Maßnahmen eine Steuerbegünstigung nach § 10f oder eine Steuerermäßigung nach § 35a in Anspruch genommen wird"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
   # ===== Lücken + Geltungsbedingungen =====
 luecken:
   - regel_id: p35c_sanierung_ermaessigung
@@ -62,9 +89,6 @@ luecken:
   - regel_id: p35c_sanierung_ermaessigung
     geltungsbedingung: kein_doppelabzug_ba_wk_sa_agb
     grund: "Aufwendungen nicht bereits als BA/WK/SA/agB berücksichtigt. Komplementär-Guard im Ring (nicht aktuell kodiert, Folge-Gate)."
-  - regel_id: p35c_sanierung_ermaessigung
-    geltungsbedingung: keine_10f_35a_oeffentliche_foerderung
-    grund: "Keine §10f / §35a / öffentliche Förderung (zinsverbilligte Darlehen). Komplementär-Guard im Ring (Folge-Gate)."
   - regel_id: p35c_sanierung_ermaessigung
     geltungsbedingung: rechnung_und_zahlung_aufs_konto
     grund: "Rechnung deutsch + unbare Zahlung aufs Leistungserbringer-Konto. Belege-Validierung, nicht im Feld abgedeckt (Stufe-2)."

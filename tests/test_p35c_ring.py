@@ -147,10 +147,15 @@ RENTNER_KEGEL_BASIS = [
 # §35c-Felder sind cent-typisiert (typ: cent). Sanierung 20.000 € = 2.000.000 Cent.
 P35C_SANIERUNG_J1 = [                       # 20.000 € × 7 % = 1.400 € Deckel → 140.000 ct Δ
     ("p35c_sanierungsaufwendungen", 2000000), ("p35c_ist_uebernaechstes_foerderjahr", False),
+    # § 35c Abs. 3 S. 2 (2026-08-16): conditional-mandatory, sobald § 35c-Aufwand erklärt ist.
+    # True = weder § 35a/§ 10f noch Förderung für DIESE Maßnahme — die Annahme, unter der diese
+    # Fixturen ihre Beträge schon immer gerechnet haben; sie stand nur nirgends.
+    ("p35c_keine_doppelfoerderung", True),
 ]
 P35C_KOMBI_DECKEL = [                       # 215.000 € San + 3.000 € EB → Deckel 14.000 € → 1.400.000 ct Δ
     ("p35c_sanierungsaufwendungen", 21500000), ("p35c_ist_uebernaechstes_foerderjahr", False),
     ("p35c_energieberater_aufwendungen", 300000),
+    ("p35c_keine_doppelfoerderung", True),
 ]
 
 

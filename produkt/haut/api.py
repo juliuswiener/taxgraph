@@ -399,10 +399,26 @@ def _shared_steuer_sonder_agb(g_dict, gde, ausserg, veranlagung,
         "hh_rechnung_unbar": f_dict.get("hh_rechnung_unbar", {}),
         "p35a_mitveranlagung": f_dict.get("p35a_mitveranlagung", {})})
     g_dict["steuerermaessigungen"] = base
-    p35c_sanierung = runner.catala_p35c_sanierung({
+    # § 35c Abs. 3 S. 2: "Die Steuerermäßigung nach Absatz 1 ist ebenfalls nicht zu gewähren, wenn
+    # für die energetischen Maßnahmen eine Steuerbegünstigung nach § 10f oder eine Steuerermäßigung
+    # nach § 35a in Anspruch genommen wird oder es sich um eine öffentlich geförderte Maßnahme
+    # handelt, für die zinsverbilligte Darlehen oder steuerfreie Zuschüsse in Anspruch genommen
+    # werden." NICHT anteilig — die Ermäßigung entfällt ganz.
+    #
+    # Gemessen 2026-08-16, VOR diesem Guard: dieselben 20.000 EUR einmal als § 35a-Handwerker und
+    # einmal als § 35c-Sanierung ergaben 1.200 + 1.400 = 2.600 EUR Entlastung. Zulässig sind
+    # höchstens 1.400 (oder 1.200, wenn der Nutzer § 35a wählt) — 1.200 EUR zu wenig Steuer.
+    #
+    # Der Guard sitzt hier im Ring und nicht in der Regel: die Bedingung
+    # keine_10f_35a_oeffentliche_foerderung war von Anfang an als "Komplementär-Guard im Ring"
+    # vorgesehen (Lücken-Eintrag der Bindung). Bestätigt-False heißt "es gibt eine solche
+    # Doppelförderung" -> beide § 35c-Töpfe auf 0. Unbeantwortet sperrt der Guard in
+    # _an_gesamt_sperrgrund (p35c_doppelfoerderung_offen), hier zählt also nur der klare Fall.
+    _p35c_doppelt = f_dict.get("p35c_keine_doppelfoerderung", {}).get("wert") is False
+    p35c_sanierung = 0 if _p35c_doppelt else runner.catala_p35c_sanierung({
         "sanierungsaufwendungen": _c("p35c_sanierungsaufwendungen") // 100,
         "ist_uebernaechstes_foerderjahr": f_dict.get("p35c_ist_uebernaechstes_foerderjahr", {}).get("wert") is True})
-    p35c_energieberater = runner.catala_p35c_energieberater({
+    p35c_energieberater = 0 if _p35c_doppelt else runner.catala_p35c_energieberater({
         "energieberater_aufwendungen": _c("p35c_energieberater_aufwendungen") // 100})
     p35c_deckel = runner.catala_p35c_jahresdeckel({
         "sanierung_ermaessigung": p35c_sanierung,
@@ -2421,6 +2437,15 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if _hh_instanz_positiv("hh_handwerker", "hh_handwerker_betrag", "hh_handwerker_arbeitskosten"):
             if (felder.get("hh_handwerker_keine_foerderung") or {}).get("zustand") != "bestaetigt":
                 return "handwerker_foerderung_offen"
+        # § 35c Abs. 3 S. 2 (Zwilling des Guards darüber): die Ermäßigung entfällt GANZ, wenn für
+        # dieselben energetischen Maßnahmen § 10f oder § 35a in Anspruch genommen wird oder eine
+        # öffentliche Förderung vorliegt. Conditional-mandatory wie bei § 35a — nur wenn § 35c-
+        # Aufwendungen erklärt sind. Unbeantwortet sperrt: ohne die Antwort lässt sich nicht
+        # sagen, ob die Ermäßigung überhaupt zusteht, und ein stiller Abzug wäre Under-tax
+        # (gemessen 2026-08-16: 1.200 EUR zu wenig Steuer bei identischem Betrag in beiden Töpfen).
+        if _positiv("p35c_sanierungsaufwendungen") or _positiv("p35c_energieberater_aufwendungen"):
+            if (felder.get("p35c_keine_doppelfoerderung") or {}).get("zustand") != "bestaetigt":
+                return "p35c_doppelfoerderung_offen"
         # § 10 Abs. 4b KiSt-Erstattungsüberhang: früher sperrte hier erstattungsueberhang_offen,
         # weil die GdE-Hinzurechnung (S. 3) fehlte und ein stiller Abzug 0 unterbesteuert hätte.
         # Sie ist jetzt gebaut (catala_p10_4b_erstattungsueberhang, im Ring vor den GdE-Verwendungen

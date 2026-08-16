@@ -434,6 +434,7 @@ GESAMT_P32B = ("p32b_progressionseinkuenfte",)
 
 # ========== § 35c Energetische Sanierung ==========
 GESAMT_P35C = ("p35c_sanierungsaufwendungen", "p35c_ist_uebernaechstes_foerderjahr",
+                "p35c_keine_doppelfoerderung",
                "p35c_energieberater_aufwendungen")
 
 # ========== § 10 Abs.1a Nr.1 Realsplitting ==========
