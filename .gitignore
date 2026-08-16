@@ -53,3 +53,8 @@ corpus/dba_text_nwb/
 corpus/kommentare/
 # Werkzeug-Output (Codebase-Graph, 11M AST-Cache) — reproduzierbar, nie committen
 graphify-out/
+# Werkzeug-Laufzeitzustand (nord-Shelljobs) und Audit-Berichte externer Läufe.
+# Beides gehört dem Werkzeug, nicht dem Produkt; ein Bericht, den wir behalten wollen,
+# gehört bewusst nach reports/ — nicht versehentlich über ein Punkt-Verzeichnis hinein.
+.nord/
+.audit/
