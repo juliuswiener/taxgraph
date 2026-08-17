@@ -54,18 +54,33 @@ class ApiError(ValueError):
 
 
 
-def _fall_owner_check(fall_id: str) -> None:
-    """Prüft Zugriff auf fall_id gegen api_auth._AUTH_USER. Kein Auth-Kontext → erlaubt.
-    Alt-Fall ohne user_id → erlaubt. Sonst: user_id muss stimmen."""
+def _auth_uid_oder_401() -> str | None:
+    """Gemeinsame Auth-Politik für _fall_owner_check() (Zugriff auf bestehende Fälle)
+    UND fall_anlegen() (neue Fälle): kein Auth-Kontext → 401, AUSSER TAXGRAPH_NO_AUTH=1
+    (bewusster Einzelnutzer-Opt-out, UI ohne Login) — zur LAUFZEIT gelesen, nicht beim
+    Import (cfg-env-load-order: Modul-Import läuft vor dem .env-Loader). Rückgabe None
+    NUR im Opt-out; dort ist "kein Nutzer" die ehrliche Antwort, nicht ein Bypass.
+    EIN Ort für diese Entscheidung, weil fall_anlegen() sie sonst leicht driften lassen
+    könnte (separat dupliziertes Fail-Closed ist ein Fail-Closed, das irgendwann nur noch
+    an einer Stelle stimmt)."""
     uid = api_auth._AUTH_USER
+    if uid is None and os.environ.get("TAXGRAPH_NO_AUTH") != "1":
+        raise ApiError(401, "Authentifizierung erforderlich")
+    return uid
+
+
+def _fall_owner_check(fall_id: str) -> None:
+    """Prüft Zugriff auf fall_id gegen api_auth._AUTH_USER. FAIL-CLOSED (Audit 2026-08-16,
+    sec-authz-fail-open-no-token): kein Auth-Kontext → 401, Fall ohne user_id → 403."""
+    uid = _auth_uid_oder_401()
     if uid is None:
-        return  # dev/Test → immer erlaubt
+        return  # Einzelnutzer-Opt-out: kein Nutzer da, gegen den geprüft werden könnte
     try:
         store = lade_fall(fall_id)
     except ApiError:
         return  # 404 wird der Aufrufer werfen — kein Grund zur Sperre
     stored = store.get("user_id")
-    if stored is not None and stored != uid:
+    if stored is None or stored != uid:
         audit.append(uid, "zugriff_verweigert", fall_id, f"user={uid}, owner={stored}")
         raise ApiError(403, f"Zugriff auf Fall {fall_id!r} verweigert")
 
@@ -2485,6 +2500,14 @@ def fall_loeschen(fall_id: str) -> tuple[int, dict]:
     Kein Soft-Delete (§ 147 AO Abs. 1 zählt Buchführungsunterlagen auf —
     trifft Arbeitnehmer/Rentner als Zielgruppe nicht).
 
+    Owner-Check ZUERST, vor jeder Existenz-Prüfung (Audit 2026-08-16,
+    sec-authz-fail-open-no-token: dieser Endpunkt hatte eine eigene, unveränderte
+    Kopie der ALTEN fail-open-Prüfung statt _fall_owner_check() zu nutzen — anonymer
+    DELETE auf einen fremden Fall kam mit 200 durch). Reihenfolge wie überall sonst
+    im Modul (_fall_owner_check() vor lade_fall(), siehe warum()/ergebnis()/...):
+    ein Anonymer ohne Auth-Kontext bekommt 401, BEVOR irgendetwas über die fall_id
+    verrät, ob sie überhaupt existiert.
+
     Reihenfolge Owner-Check → remove → audit ist bewusst:
     - Scheitert das Löschen (Permission, Datei weg), gibt es keinen Eintrag
       über einen Vorgang, der nicht stattfand.
@@ -2496,17 +2519,10 @@ def fall_loeschen(fall_id: str) -> tuple[int, dict]:
       Ein Audit-Write VOR dem Löschen würde bei voller Platte die Löschung
       selbst verhindern — inakzeptabel für DSGVO.
     """
+    _fall_owner_check(fall_id)
+    store = lade_fall(fall_id)
     pfad = _fall_pfad(fall_id)
-    if not os.path.exists(pfad):
-        raise ApiError(404, f"Fall {fall_id!r} existiert nicht")
-    with open(pfad, encoding="utf-8") as f:
-        store = json.load(f)
     uid = api_auth._AUTH_USER
-    if uid is not None:
-        stored = store.get("user_id")
-        if stored is not None and stored != uid:
-            audit.append(uid, "zugriff_verweigert", fall_id, f"user={uid}, owner={stored}")
-            raise ApiError(403, f"Zugriff auf Fall {fall_id!r} verweigert")
     os.remove(pfad)
     audit.append(uid or "unbekannt", "fall_geloescht", fall_id,
                  f"scheibe={store.get('scheibe')}, vz={store.get('veranlagungszeitraum')}")
@@ -2518,7 +2534,20 @@ def fall_loeschen(fall_id: str) -> tuple[int, dict]:
 def fall_anlegen(body: dict) -> tuple[int, dict]:
     """Neuen Fall anlegen. Speichert zuerst, protokolliert danach — Regel
     im Modul: erst wirken (store/speichern), dann auditieren. Der Audit-
-    Eintrag steht NUR, wenn die Datei auf Platte ist."""
+    Eintrag steht NUR, wenn die Datei auf Platte ist.
+
+    Auth-Pflicht ZUERST (_auth_uid_oder_401, dieselbe Politik wie beim Zugriff auf
+    bestehende Fälle): vorher hing das Setzen von user_id nur an "ist _AUTH_USER
+    zufällig gesetzt" — ein anonymer Request legte auch dann einen Fall an, wenn
+    Auth eigentlich aktiv war (TAXGRAPH_NO_AUTH nicht 1), nur eben OHNE Besitzer.
+    Ein solcher Fall ist für niemanden — auch nicht den Ersteller — je wieder über
+    _fall_owner_check() erreichbar (stored is None sperrt IMMER, s. dort, ohne
+    Ausnahme). Diese Funktion ist die EINZIGE Stelle, an der ein Fall je einen
+    Besitzer bekommt — die Sperre hier verhindert, dass ownerless Fälle überhaupt
+    entstehen, statt sie im Nachhinein zu reparieren.
+    Im TAXGRAPH_NO_AUTH=1-Opt-out bleibt ein Fall bewusst ownerless — dort gibt es
+    keinen Nutzer, den man eintragen könnte, das ist die ehrliche Antwort."""
+    uid = _auth_uid_oder_401()
     scheibe = body.get("scheibe", "ep")
     if scheibe not in SCHEIBEN:
         raise ApiError(400, f"unbekannte Scheibe {scheibe!r}")
@@ -2530,11 +2559,11 @@ def fall_anlegen(body: dict) -> tuple[int, dict]:
         raise ApiError(409, f"Fall {fall_id!r} existiert bereits")
     store = ST.leerer_store(vz, fall_id=fall_id)
     store["scheibe"] = scheibe
-    if api_auth._AUTH_USER is not None:
-        store["user_id"] = api_auth._AUTH_USER
+    if uid is not None:
+        store["user_id"] = uid
     speichere_fall(fall_id, store)
-    if api_auth._AUTH_USER is not None:
-        audit.append(api_auth._AUTH_USER, "fall_angelegt", fall_id, f"scheibe={scheibe}")
+    if uid is not None:
+        audit.append(uid, "fall_angelegt", fall_id, f"scheibe={scheibe}")
     return 201, {"fall_id": fall_id, "scheibe": scheibe, "veranlagungszeitraum": vz}
 
 

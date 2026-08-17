@@ -88,22 +88,39 @@ def test_auth_mutation_blocks_wrong_owner(monkeypatch, tmp_path):
         api_auth._AUTH_USER = None
 
 
-def test_auth_mutation_allows_no_owner():
-    """Falls ohne user_id sind für jeden sichtbar (legacy Falls)."""
+def test_auth_mutation_denies_no_owner(monkeypatch, tmp_path):
+    """Vertrag GEKIPPT (Julius, 2026-08-17, sec-authz-fail-open-no-token-Nachzug):
+    ein Fall ohne Besitzer gehört niemandem und ist für niemanden zugänglich — ohne
+    Wenn und Aber, keine Übergangsregel. Die alte Zusage ("legacy Falls sind für
+    jeden offen") war selbst ein Rest-Fail-Open — api.py behandelt `stored is None`
+    jetzt genauso wie `stored != uid` (ein Fremder), s. _fall_owner_check():
+    `if stored is None or stored != uid: raise 403`.
+
+    monkeypatch für audit.AUDIT_DIR ist Pflicht: der 403-Pfad ruft jetzt audit.append()
+    auf (vorher lief dieser Test nie durch den Deny-Zweig) — ohne Patch würde der Test
+    zusätzlich zum FAIL einen ERROR werfen, weil conftest.py jeden Schreibversuch ins
+    ECHTE audit.jsonl als Verstoß meldet.
+    """
     import api_auth
     import api
+    import audit
+
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
 
     api_auth._AUTH_USER = "alice"
 
-    # Fall ohne user_id (legacy)
+    # Fall ohne user_id (legacy / vor dem Vertragswechsel angelegt)
     fall_store = {"veranlagungszeitraum": 2025}
 
     original_lade_fall = api.lade_fall
     try:
         api.lade_fall = lambda fid: fall_store
 
-        # Darf nicht werfen
-        api._fall_owner_check("test_fall_id")
+        # Muss 403 werfen — ownerless ist jetzt "fremd", nicht "offen"
+        with pytest.raises(api.ApiError) as exc_info:
+            api._fall_owner_check("test_fall_id")
+
+        assert exc_info.value.status == 403
 
     finally:
         api.lade_fall = original_lade_fall

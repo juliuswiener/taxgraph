@@ -121,10 +121,26 @@ class TestOwnerCheck:
 
 
 # --------------------------------------------------------------- Audit
+def _setze_besitzer(fall_id: str, uid: str) -> None:
+    """Trägt user_id direkt in die Fall-Datei ein (Test-Setup). Nötig seit dem Vertrags-
+    wechsel (Julius, 2026-08-17): die `fall`-Fixture legt OHNE Auth-Kontext an, der Fall
+    ist also ownerless — und ownerless ist jetzt für JEDEN uid ein 403 (s. api.py
+    _fall_owner_check: `stored is None` sperrt genau wie ein fremder Besitzer). Diese
+    TestAudit-Tests wollen den Audit-Trail einer ERFOLGREICHEN, autorisierten Löschung
+    prüfen — dafür muss "testuser" hier wirklich der Besitzer sein."""
+    pfad = API._fall_pfad(fall_id)
+    with open(pfad, encoding="utf-8") as f:
+        store = json.load(f)
+    store["user_id"] = uid
+    with open(pfad, "w", encoding="utf-8") as f:
+        json.dump(store, f)
+
+
 class TestAudit:
     def test_audit_eintrag_nach_loeschung(self, fall, audit_dir, monkeypatch):
         """Nach Löschen steht ein Audit-Eintrag mit action=fall_geloescht."""
         monkeypatch.setattr(api_auth, "_AUTH_USER", "testuser")
+        _setze_besitzer(fall, "testuser")
         audit.AUDIT_DIR = audit_dir
         API.fall_loeschen(fall)
         entries = audit.lies()
@@ -136,6 +152,7 @@ class TestAudit:
     def test_audit_ueberlebt_loeschung(self, fall, audit_dir, monkeypatch):
         """Audit-Eintrag existiert, NACHDEM die Fall-Datei weg ist."""
         monkeypatch.setattr(api_auth, "_AUTH_USER", "testuser")
+        _setze_besitzer(fall, "testuser")
         audit.AUDIT_DIR = audit_dir
         API.fall_loeschen(fall)
         # Fall-Datei ist weg
@@ -147,6 +164,7 @@ class TestAudit:
     def test_audit_kein_freitext(self, fall, audit_dir, monkeypatch):
         """Detail enthält nur Metadaten, nie PII."""
         monkeypatch.setattr(api_auth, "_AUTH_USER", "testuser")
+        _setze_besitzer(fall, "testuser")
         audit.AUDIT_DIR = audit_dir
         API.fall_loeschen(fall)
         entries = audit.lies()

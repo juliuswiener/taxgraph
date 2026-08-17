@@ -34,7 +34,7 @@ jobs:
           sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-deu img2pdf
 
       - name: Python-Abhaengigkeiten
-        run: pip install pyyaml jsonschema Pillow
+        run: pip install pytest pyyaml jsonschema Pillow bcrypt PyJWT
 
       - name: pytest tests/
         run: python3 -m pytest tests/ -q --ignore=tests/test_kapital_accessoren.py
@@ -67,7 +67,7 @@ jobs:
             opam m4 build-essential pkg-config libgmp-dev
 
       - name: Python-Abhaengigkeiten
-        run: pip install pyyaml jsonschema Pillow
+        run: pip install pytest pyyaml jsonschema Pillow bcrypt PyJWT
 
       - name: opam-Root cachen (opam init + switch taxgraph 4.14.2 + catala 1.2.0)
         uses: actions/cache@v4
@@ -112,7 +112,7 @@ jobs:
           sudo apt-get install -y opam m4 build-essential pkg-config libgmp-dev
 
       - name: Python-Abhaengigkeiten
-        run: pip install pyyaml jsonschema Pillow
+        run: pip install pytest pyyaml jsonschema Pillow bcrypt PyJWT
 
       - name: opam-Root cachen (gleicher Key wie catala-toolchain)
         uses: actions/cache@v4

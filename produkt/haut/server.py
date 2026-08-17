@@ -139,9 +139,26 @@ class Handler(BaseHTTPRequestHandler):
         if method == "GET" and (pfad == "/" or pfad.startswith("/static/")):
             self._static(pfad)
             return
+        # Boundary-Checks (Audit 2026-08-16, sec-csrf-simple-request-write): eine besuchte
+        # Webseite kann sonst per CORS-Simple-Request (text/plain, kein Preflight) in den
+        # lokalen Fall schreiben. Fremder Host = DNS-Rebinding; Content-Type-Zwang auf
+        # application/json erzwingt den Preflight, den kein Access-Control-Allow-Origin beantwortet.
+        host = (self.headers.get("Host") or "").split(":")[0]
+        if host not in ("127.0.0.1", "localhost", ""):
+            self._json(421, {"fehler": "unerwarteter_host"})
+            return
+        origin = self.headers.get("Origin")
+        if method in ("POST", "DELETE") and origin is not None:
+            o_host = origin.split("//", 1)[-1].split("/")[0].split(":")[0]
+            if o_host not in ("127.0.0.1", "localhost"):
+                self._json(403, {"fehler": "cross_origin_verboten"})
+                return
         body = {}
         if method == "POST":
             laenge = int(self.headers.get("Content-Length") or 0)
+            if laenge and not (self.headers.get("Content-Type") or "").startswith("application/json"):
+                self._json(415, {"fehler": "Content-Type muss application/json sein"})
+                return
             roh = self.rfile.read(laenge) if laenge else b""
             if roh:
                 try:

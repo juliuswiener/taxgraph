@@ -58,6 +58,18 @@ _server._lade_env_dateien(_ROOT)
 # wirft zuerst), und ihre Werte sind kein Geheimnis.
 os.environ.pop("LLM_API_KEY", None)
 
+# Zertifikats-PIN gehört nicht in die Umgebung jedes Testprozesses (Audit 2026-08-16,
+# sec-elster-pin-in-every-test-process). Kein Test liest ihn (grep tests/ leer); der
+# Versand (elster/versand.py) läuft manuell, nie unter pytest.
+os.environ.pop("ELSTER_ZERTIFIKAT_PIN", None)
+
+# Die Suite läuft im EXPLIZITEN Einzelnutzer-Modus: _fall_owner_check ist seit dem
+# Audit-Fix (sec-authz-fail-open-no-token) fail-closed — ohne Token 401. Die 2000+
+# Bestandstests fahren die API bewusst ohne Login; das ist jetzt eine sichtbare
+# Entscheidung statt eines stillen Defaults. Negativtests (test_authz_fail_closed)
+# löschen die Variable gezielt per monkeypatch.
+os.environ["TAXGRAPH_NO_AUTH"] = "1"
+
 _REAL_AUDIT_PFAD = os.path.abspath(os.path.join(_audit.AUDIT_DIR, "audit.jsonl"))
 
 
