@@ -138,6 +138,13 @@ def test_d_eric_bindet_an_snapshot(sample):
 # ---- (e) feld_id existiert in der Bindungstabelle -----------------------------
 
 def test_e_feld_id_in_bindung(sample):
+    """Schreibpfad-Test: die feld_ids, die DIESES `sample`-Fixture selbst per ST.append_event mit
+    hartkodierten feld_ids erzeugt, muessen in der Bindungstabelle stehen. NICHT geprueft: der
+    echte Fall-Bestand (produkt/haut/faelle/) — die Events hier sind literale Strings im Test und
+    damit per Konstruktion immer aktuell, dieser Test kann strukturell nie anschlagen, egal wie
+    viele echte Falldateien nach einer Feld-Umbenennung verwaiste feld_ids enthalten (Audit
+    2026-08-16: 739 verwaiste Events in 267/313 echten Falldateien, dieser Test blieb dabei gruen).
+    Korpus-Abdeckung gegen die echten Falldateien prueft tests/test_store_korpus.py."""
     typen = _bindung_typen()
     for e in sample["events"]:
         assert e["feld_id"] in typen, f"feld_id {e['feld_id']} nicht in Bindungstabelle"

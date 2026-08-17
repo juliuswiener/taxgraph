@@ -330,7 +330,9 @@ def _p23_ansonsten_einkuenfte(f: dict, store: dict | None, bindung: dict | None,
     import runner
     if store is None or bindung is None:
         return 0
-    from produkt.mapping import est_mapping as EM
+    # EM = Modul-Level-Import (Z.38). Der frühere lokale `from produkt.mapping import est_mapping`
+    # erzeugte eine ZWEITE Modul-Identität (sys.modules['est_mapping'] + ['produkt.mapping.est_mapping'])
+    # und hing am sys.path-Seiteneffekt von golden/runner.py (Audit 2026-08-16, arch-dual-module-identity).
     instanzen = EM.instanzen(store, bindung, "p23_veraeusserung")
     gewinn_pvg = 0
     verlust_pvg = 0
