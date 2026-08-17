@@ -62,7 +62,18 @@ def base(tmp_path, monkeypatch):
 def seite(base):
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": 360, "height": 780})
+        # bypass_csp: NICHT weil die Anwendung unter der Richtlinie Probleme hätte, sondern weil
+        # das WERKZEUG sie hat. `page.wait_for_function()` pollt, indem es eine Zeichenkette als
+        # JavaScript auswertet — das verbietet jede CSP ohne 'unsafe-eval', und Chrome meldet
+        # genau das ("Refused to evaluate a string as JavaScript"). Nachgemessen 2026-08-17: derselbe
+        # Ablauf (Feld rendern, 0 eintragen, bestätigen) läuft unter der scharfen Richtlinie ohne
+        # eine einzige Verletzung durch, sobald man ihn ohne wait_for_function fährt.
+        # Dass die Richtlinie die Oberfläche NICHT bricht, prüft deshalb ein eigener Test ohne
+        # diesen Schalter: tests/test_idor_und_csp.py::test_die_oberflaeche_laeuft_unter_der_csp.
+        # 'unsafe-eval' ins Produkt aufzunehmen, damit ein Testwerkzeug pollen kann, wäre die
+        # falsche Richtung — dann schützte die Richtlinie gegen genau nichts mehr.
+        kontext = browser.new_context(viewport={"width": 360, "height": 780}, bypass_csp=True)
+        page = kontext.new_page()
         page.goto(base)
         page.wait_for_load_state("networkidle")
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")

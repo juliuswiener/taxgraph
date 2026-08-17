@@ -99,11 +99,35 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
     # -- Antworten --
+    def _sicherheits_header(self) -> None:
+        """Zweite Verteidigungslinie, falls doch einmal ein Sink durchrutscht. Beide
+        Antwortpfade (_json, _static) rufen sie — EINE Stelle, wie beim Origin-/Host-Check.
+
+        Die Richtlinie ist streng, weil sie es hier SEIN KANN, und das ist nachgemessen und
+        nicht geraten: die ausgelieferten Seiten haben kein Inline-<script>, keinen
+        on*=-Handler, kein style=-Attribut, keine javascript:-URL, kein @font-face, keine
+        url()-Referenz und keine einzige externe Ressource — geladen werden ausschliesslich
+        /static/app.js, /static/graph.js und die beiden lokalen Stylesheets. Eine Richtlinie,
+        die die eigene Oberflaeche stumm abschaltet, waere schlimmer als keine: ein UI-Test,
+        der nur den HTTP-Status prueft, merkt davon nichts.
+
+        'none' als Standard heisst: was hier nicht ausdruecklich erlaubt ist, laedt nicht.
+        Kein 'unsafe-inline' — sonst waere die Richtlinie gegen genau den Fall blind, fuer den
+        sie da ist (OCR-Rohtext eines fremden Dokuments im DOM, s. app.js:herkunftKette).
+        """
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; "
+            "img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+
     def _json(self, status: int, obj) -> None:
         payload = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(payload)))
+        self._sicherheits_header()
         self.end_headers()
         self.wfile.write(payload)
 
@@ -121,6 +145,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", _CTYPE.get(ext, "application/octet-stream"))
         self.send_header("Content-Length", str(len(data)))
+        self._sicherheits_header()
         self.end_headers()
         self.wfile.write(data)
 

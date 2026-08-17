@@ -63,7 +63,17 @@ def playwright_context():
             except Exception as e:
                 pytest.skip(f"Chromium Start fehlgeschlagen: {e}")
             try:
-                yield browser.new_context(viewport={"width": 360, "height": 640})
+                # bypass_csp: axe-core wird per add_script_tag von einem CDN nachgeladen, und die
+                # Auslieferung setzt seit 2026-08-17 eine strenge Content-Security-Policy
+                # (script-src 'self'). Ohne diesen Schalter blockiert sie das Skript, und diese
+                # Tests SKIPPEN still — gemessen genau so, als die Richtlinie eingeführt wurde:
+                # aus 5 wurden 6 Skips, und die Barrierefreiheits-Prüfung war lautlos weg.
+                # Der Schalter gilt nur für dieses Testfenster; die ausgelieferte Anwendung
+                # behält die scharfe Richtlinie (tests/test_idor_und_csp.py prüft sie ohne ihn).
+                # Offen und aelter als diese Zeile: der CDN-Abruf macht den Test vom Internet
+                # abhaengig — er skippt auch dann, wenn nur die Leitung fehlt.
+                yield browser.new_context(viewport={"width": 360, "height": 640},
+                                          bypass_csp=True)
             finally:
                 browser.close()
     except Exception as e:

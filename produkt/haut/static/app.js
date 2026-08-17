@@ -199,9 +199,19 @@ async function herkunftKette(fid, f) {
   const bi = badgeInfo(f.herkunft_badge);
   $("kette-titel").textContent = `${fid}: ${JSON.stringify(f.wert)}`;
   const body = $("kette-body"); body.innerHTML = "";
+  // Struktur per createElement, Text per textContent — NIE interpoliert. Vorher stand hier
+  // `d.innerHTML = ...${txt}...`, und `txt` trägt bei der Beleg-Zeile den OCR-ROHTEXT eines
+  // hochgeladenen Dokuments (s1.roh_text). Ein Dokument schreibt aber nicht der Nutzer, sondern
+  // wer immer ihm die Rechnung geschickt hat — präpariertes Markup darin lief damit im Kontext
+  // der Anwendung und konnte das Anmelde-Token aus sessionStorage lesen. Genau das Fenster, mit
+  // dem oben die Wahl von sessionStorage begründet ist; solange es offen war, beschrieb die
+  // Begründung nur das Problem.
   const step = (dot, titel, txt) => {
     const d = document.createElement("div"); d.className = "step";
-    d.innerHTML = `<span class="dot">${dot}</span> <b>${titel}</b> ${txt ? "· " + txt : ""}`;
+    const s = document.createElement("span"); s.className = "dot"; s.textContent = dot;
+    const b = document.createElement("b"); b.textContent = titel;
+    d.append(s, " ", b);
+    if (txt) d.append(" · " + txt);        // append(string) erzeugt einen TextNode, kein Markup
     body.appendChild(d);
   };
   step("◗", "Wert", `${JSON.stringify(f.wert)} (${bi.lab}, ${f.zustand})`);
@@ -837,7 +847,15 @@ async function zeigeErgebnis() {
     else el.textContent = "Noch offen: " + (r.offen || []).join(", ");
   } else {
     el.className = "ergebnis";
-    el.innerHTML = `<span class="erg-zahl">${euro(r.zahl_cent)}</span><span class="erg-label">festzusetzende Einkommensteuer</span>`;
+    // Auch hier ohne innerHTML-Interpolation — nicht weil euro() gefaehrlich waere (es
+    // formatiert eine selbst gerechnete Zahl), sondern damit die Regel AUSNAHMSLOS gilt:
+    // eine Ausnahmeliste fuer "diese eine Stelle ist harmlos" verrottet, und die naechste
+    // Stelle wird dann nach ihrem Vorbild gebaut. tests/test_kein_innerhtml_sink.py haelt es.
+    el.replaceChildren(
+      Object.assign(document.createElement("span"),
+                    {className: "erg-zahl", textContent: euro(r.zahl_cent)}),
+      Object.assign(document.createElement("span"),
+                    {className: "erg-label", textContent: "festzusetzende Einkommensteuer"}));
     // stille-null-klasse-c (Variante b): grund bleibt "bestaetigt", zahl_cent gilt — aber offen listet
     // Felder aus vorlaeufigen Zusatz-Instanzen (gwg/kind/p23), die NICHT in der Zahl stecken. Hinweis,
     // keine Sperre — anderer Stil als ergebnis-guard (der ist rot/blockierend, das hier ist informativ).

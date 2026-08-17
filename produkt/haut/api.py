@@ -3258,6 +3258,13 @@ def vorjahr(fall_id: str, body: dict) -> tuple[int, dict]:
         raise ApiError(400, "vorjahr_fall_id fehlt oder ungültig")
     if vj_id == fall_id:
         raise ApiError(400, "vorjahr_fall_id muss ein ANDERER (Vorjahres-)Fall sein")
+    # Die QUELLE gehoert derselben Pruefung wie das Ziel. Ohne diese Zeile konnte ein
+    # eingeloggter Nutzer Felder aus einem FREMDEN Fall in seinen eigenen ziehen: die Kennung
+    # kommt aus dem Request-Body, und _fall_owner_check() oben deckt nur fall_id ab.
+    # Dieselbe Klasse wie das DELETE-Loch (39fcf79): eine Route, die die Naht nur halb benutzt.
+    # tests/test_zweite_fall_kennung_gate.py haelt fest, dass JEDE aus dem Body aufgeloeste
+    # zweite Fall-Kennung geprueft wird — der Fix ist eine Zeile, das Wiederkommen ist das Problem.
+    _fall_owner_check(vj_id)
     vj_store = lade_fall(vj_id)                           # 404, wenn der Vorjahres-Fall fehlt
     vj_felder, _ = ST.materialisiere(vj_store)
     n = VW.uebernehme_vorjahr(store, vj_felder, bindung,
