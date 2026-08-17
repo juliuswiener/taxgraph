@@ -48,7 +48,15 @@ yaml = pytest.importorskip("yaml")
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 BIND_DIR = os.path.join(ROOT, "produkt", "bindung")
-API_PY = os.path.join(ROOT, "produkt", "haut", "api.py")
+# _bescheid_fn und die _zweig_*-Funktionen sind am 2026-08-18 (Phase 3) nach
+# produkt/bescheid/bescheid.py gezogen. BEIDE Dateien werden gescannt, nicht nur die neue:
+# der Kommentar bei Z.118ff. beschreibt genau, wie dieses Gate durch eine Verschiebung blind
+# und trotzdem grün wird — ein fester Pfad ist dieselbe Falle eine Ebene höher. Was in keiner
+# der Dateien steht, meldet _bescheid_fn_und_modulfns() namentlich.
+QUELL_PFADE = (
+    os.path.join(ROOT, "produkt", "bescheid", "bescheid.py"),
+    os.path.join(ROOT, "produkt", "haut", "api.py"),
+)
 
 sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
 import api_constants as AC  # noqa: E402
@@ -72,8 +80,29 @@ GELESENE_SLOT_NAMEN_JE_QUANTITAET = {
 QUANTITAET_ZU_SCHEIBE = {v["gesamt_ring"]: k for k, v in AC.SCHEIBEN.items() if v.get("gesamt_ring")}
 
 
-def _slot_reader_namen_je_quantitaet(path: str) -> dict[str, set[str]]:
-    """Sammelt String-Literale, mit denen api.py den `slots`-Parameter einer slot_fn liest
+def _bescheid_fn_und_modulfns() -> tuple[ast.FunctionDef, dict[str, ast.FunctionDef]]:
+    """(_bescheid_fn, alle top-level-Funktionen) über sämtliche QUELL_PFADE hinweg. Der
+    `_zweig_*`-Hop unten braucht die Modulfunktionen; nach einer Verschiebung können Dispatcher
+    und Zweige theoretisch in verschiedenen Dateien liegen, deshalb werden sie zusammengelegt."""
+    modul_fns: dict[str, ast.FunctionDef] = {}
+    dispatcher = None
+    for pfad in QUELL_PFADE:
+        if not os.path.exists(pfad):
+            continue
+        tree = ast.parse(open(pfad, encoding="utf-8").read(), filename=pfad)
+        for n in tree.body:
+            if isinstance(n, ast.FunctionDef):
+                modul_fns.setdefault(n.name, n)
+                if n.name == "_bescheid_fn":
+                    dispatcher = n
+    assert dispatcher is not None, (
+        f"_bescheid_fn in keiner der Quelldateien gefunden ({QUELL_PFADE}) — ohne Fund scannt "
+        f"dieses Gate null Zweige und prüfte nichts mehr.")
+    return dispatcher, modul_fns
+
+
+def _slot_reader_namen_je_quantitaet() -> dict[str, set[str]]:
+    """Sammelt String-Literale, mit denen der Rechenkern den `slots`-Parameter einer slot_fn liest
     (slots.get("X", ...), slots["X"], {k: slots[k] for k in ("X", "Y", ...)}), GETRENNT je
     `if quantitaet == "..."`-Zweig innerhalb von _bescheid_fn."""
     def sammle(node) -> set[str]:
@@ -104,10 +133,7 @@ def _slot_reader_namen_je_quantitaet(path: str) -> dict[str, set[str]]:
                 namen.add("oepnv_kosten_jahr")
         return namen
 
-    tree = ast.parse(open(path, encoding="utf-8").read())
-    modul_fns = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
-    fn = next(n for n in ast.walk(tree)
-              if isinstance(n, ast.FunctionDef) and n.name == "_bescheid_fn")
+    fn, modul_fns = _bescheid_fn_und_modulfns()
     out: dict[str, set[str]] = {}
     for stmt in fn.body:
         if (isinstance(stmt, ast.If) and isinstance(stmt.test, ast.Compare)
@@ -184,7 +210,7 @@ def test_z_ast_scan_ist_vollstaendig():
     """Gegen-Assert: GELESENE_SLOT_NAMEN_JE_QUANTITAET muss exakt decken, was der AST-Scan in
     api.py heute je quantitaet-Zweig findet. Wird rot, wenn api.py einen neuen slots.get/
     slots[...]-Leser bekommt, der hier nicht nachgetragen wurde."""
-    gefunden = _slot_reader_namen_je_quantitaet(API_PY)
+    gefunden = _slot_reader_namen_je_quantitaet()
     assert set(gefunden) == set(GELESENE_SLOT_NAMEN_JE_QUANTITAET), (
         f"quantitaet-Zweige in _bescheid_fn haben sich geändert: "
         f"{sorted(set(gefunden) ^ set(GELESENE_SLOT_NAMEN_JE_QUANTITAET))}"

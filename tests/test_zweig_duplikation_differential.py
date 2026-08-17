@@ -57,7 +57,15 @@ for sub in ("produkt/haut", "golden", "produkt/unsicherheit", "produkt/store",
 import api as API      # noqa: E402
 import traverser as TR  # noqa: E402
 
-API_PFAD = os.path.join(ROOT, "produkt", "haut", "api.py")
+# Die Zweig-Funktionen sind am 2026-08-18 (Phase 3) nach produkt/bescheid/bescheid.py gezogen.
+# BEIDE Dateien werden gelesen, nicht nur die neue: ein Scanner mit festem Pfad wird beim
+# nächsten Umzug still blind, und ein Duplikations-Gate, das seine Funktionen nicht findet, ist
+# genau die Prüfung, deren Ausfall niemandem auffällt. Fehlt eine Datei, ist das kein Fehler
+# (sie kann verschoben worden sein) — fehlt die FUNKTION in allen, schlägt _funktion() zu.
+QUELL_PFADE = (
+    os.path.join(ROOT, "produkt", "bescheid", "bescheid.py"),
+    os.path.join(ROOT, "produkt", "haut", "api.py"),
+)
 VZ = 2025
 
 
@@ -71,15 +79,30 @@ def _catala_da() -> bool:
 
 # --------------------------------------------------------------------- AST-Schnittmenge
 
+def _funktion(funcname: str) -> ast.FunctionDef:
+    """Die Definition von `funcname`, gesucht über alle QUELL_PFADE. Wird sie nirgends
+    gefunden, ist das ein harter Fehlschlag mit Namen — nicht ein StopIteration, aus dem
+    niemand liest, wonach gesucht wurde."""
+    for pfad in QUELL_PFADE:
+        if not os.path.exists(pfad):
+            continue
+        with open(pfad, encoding="utf-8") as f:
+            baum = ast.parse(f.read(), filename=pfad)
+        for n in ast.walk(baum):
+            if isinstance(n, ast.FunctionDef) and n.name == funcname:
+                return n
+    raise AssertionError(
+        f"{funcname} in keiner der Quelldateien gefunden ({QUELL_PFADE}) — umbenannt oder "
+        f"in eine Datei gezogen, die dieses Gate nicht liest. Ohne Fund prüft das "
+        f"Duplikations-Gate nichts mehr.")
+
+
 def _catala_namen_in_funktion(funcname: str) -> set[str]:
     """Namen aller runner.catala_*-Aufrufe, die DIREKT (auch in verschachtelten Closures wie
-    _festzusetzende) im Körper von `funcname` in api.py stehen. Läuft über den echten
-    Quelltext, nicht über eine Erinnerung daran — wächst automatisch mit jeder neuen
-    Codezeile, ohne dass diese Datei angefasst werden muss."""
-    with open(API_PFAD, encoding="utf-8") as f:
-        baum = ast.parse(f.read(), filename=API_PFAD)
-    ziel = next(n for n in ast.walk(baum)
-                if isinstance(n, ast.FunctionDef) and n.name == funcname)
+    _festzusetzende) im Körper von `funcname` stehen. Läuft über den echten Quelltext, nicht
+    über eine Erinnerung daran — wächst automatisch mit jeder neuen Codezeile, ohne dass diese
+    Datei angefasst werden muss."""
+    ziel = _funktion(funcname)
     namen = set()
     for node in ast.walk(ziel):
         if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)

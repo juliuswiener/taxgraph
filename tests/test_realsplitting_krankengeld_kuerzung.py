@@ -138,9 +138,18 @@ def test_feld_ist_an_den_slot_gebunden():
 def test_api_uebergibt_den_slot():
     """Die Naht selbst: api.py muss den Wert auch mitgeben. Ein Slot, den niemand füllt, ist
     stumm — und das fällt in keiner Ring-Rechnung auf, weil 0 ein gültiger Wert ist."""
-    quelle = open(os.path.join(ROOT, "produkt", "haut", "api.py"), encoding="utf-8").read()
+    # Der Rechenkern ist am 2026-08-18 (Phase 3) von produkt/haut/api.py nach
+    # produkt/bescheid/bescheid.py gezogen. Beide Dateien werden gelesen, damit dieser Scanner
+    # die Aufrufstelle findet, wo immer sie steht — mit festem Pfad wäre er nach dem Umzug
+    # stumm gewesen, und ein stummer Naht-Test ist hier schon mehrfach teuer geworden.
+    quelle = ""
+    for _p in (os.path.join(ROOT, "produkt", "bescheid", "bescheid.py"),
+               os.path.join(ROOT, "produkt", "haut", "api.py")):
+        if os.path.exists(_p):
+            quelle += open(_p, encoding="utf-8").read()
     i = quelle.find("catala_p10_1a_realsplitting")
-    assert i > 0
+    assert i > 0, ("catala_p10_1a_realsplitting in keiner Quelldatei gefunden — die Regel wird "
+                   "nirgends mehr gerufen, oder der Rechenkern ist erneut umgezogen.")
     aufruf = quelle[i:i + 900]
     assert '"kv_krankengeld"' in aufruf, (
         "api.py ruft die Regel ohne den Krankengeld-Slot auf — die Kürzung bliebe im Betrieb "
