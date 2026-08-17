@@ -320,6 +320,25 @@ def _p35_gezahlte_gewst(messbetrag_a: int, hebesatz_a: int,
     return messbetrag_a * hebesatz_a // 100 + messbetrag_b * hebesatz_b // 100
 
 
+def _p35_summen(f: dict, messbetrag_a: int, hebesatz_a: int, zaehler_a: int):
+    """(messbetrag_ges, zaehler_ges, gezahlt) für § 35 — Person A plus Ehegatte.
+
+    EINE Stelle für die Summen, damit die Deckel weiter unten nicht je Verwendung neu addiert
+    werden müssen; `gezahlt` ist der Deckel aus Abs. 1 S. 5, JE BETRIEB gerechnet (zwei
+    Gemeinden, zwei Hebesätze — ein gemeinsamer Hebesatz auf die Messbetragssumme wäre eine
+    andere Zahl, s. _p35_gezahlte_gewst).
+
+    Extrahiert aus beiden Zweigen (Phase 2b, 2026-08-17), wo diese sieben Zeilen byte-identisch
+    standen. Die Anteile des Ehegatten kamen schon vorher aus einer gemeinsamen Quelle
+    (_p35_partner_anteile) — nur ihre Verrechnung war doppelt gepflegt, und genau dort ist
+    schon einmal Geld verfallen: § 35-Partneranteile wurden im Rentner-Ring gar nicht
+    angerechnet (7.000 EUR, Fund vom 2026-08-13)."""
+    messbetrag_b, hebesatz_b, zaehler_b = _p35_partner_anteile(f)
+    return (messbetrag_a + messbetrag_b,
+            zaehler_a + zaehler_b,
+            _p35_gezahlte_gewst(messbetrag_a, hebesatz_a, messbetrag_b, hebesatz_b))
+
+
 def _p23_ansonsten_einkuenfte(f: dict, store: dict | None, bindung: dict | None,
                                 nur_bestaetigt: bool = True) -> int:
     """§23 Private Veräußerungsgeschäfte (Stufe-1), EURO — Σ über ALLE p23_veraeusserung-Instanzen:
@@ -1346,13 +1365,8 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # Paar, bei dem NUR der Ehegatte gewerblich tätig ist, bekam gar keine Anrechnung.
         # § 16-vg bleibt draußen (§ 7 S. 2 GewStG), deshalb _laufender_gewinn_partner statt
         # _gewinn_partner_anteil. Der Hebesatz-Deckel wird je Betrieb gerechnet (s. _p35_gezahlt).
-        p35_messbetrag_p, p35_hebesatz_p, p35_zaehler_p = _p35_partner_anteile(f)
-        # EINE Stelle für die Summen, damit die Deckel unten nicht je Verwendung neu addiert
-        # werden müssen. p35_gezahlt ist der Deckel aus Abs. 1 S. 5, je Betrieb gerechnet.
-        p35_messbetrag_ges = p35_messbetrag + p35_messbetrag_p
-        p35_zaehler_ges = p35_zaehler + p35_zaehler_p
-        p35_gezahlt = _p35_gezahlte_gewst(p35_messbetrag, p35_hebesatz,
-                                          p35_messbetrag_p, p35_hebesatz_p)
+        p35_messbetrag_ges, p35_zaehler_ges, p35_gezahlt = _p35_summen(
+            f, p35_messbetrag, p35_hebesatz, p35_zaehler)
         # Nenner (§ 35 Abs. 1 S. 2 „Summe aller positiven Einkünfte") = Σ positive TARIFLICHE Einkunftsarten:
         # § 19 (ns) + § 21 (vv) + § 22 (sonstige) + §§ 13-18 (gewinn, inkl. § 16-vg = § 2-Einkunft). Das
         # § 32d-Abgeltung-Kapital ist NICHT einzubeziehen (§ 2 Abs. 5b EStG: „Kapitalerträge nach § 32d Absatz 1
@@ -1749,13 +1763,8 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         p35_hebesatz = _c("gewst_hebesatz")
         p35_zaehler = max(0, laufender_gewinn) if _b("gewinn_betriebsart") == "gewerbe" else max(0, mitu)
         # § 26b: Gewerbebetrieb des Ehegatten, s. gesamt-Zweig (§ 35 Abs. 1 S. 2).
-        p35_messbetrag_p, p35_hebesatz_p, p35_zaehler_p = _p35_partner_anteile(f)
-        # EINE Stelle für die Summen, damit die Deckel unten nicht je Verwendung neu addiert
-        # werden müssen. p35_gezahlt ist der Deckel aus Abs. 1 S. 5, je Betrieb gerechnet.
-        p35_messbetrag_ges = p35_messbetrag + p35_messbetrag_p
-        p35_zaehler_ges = p35_zaehler + p35_zaehler_p
-        p35_gezahlt = _p35_gezahlte_gewst(p35_messbetrag, p35_hebesatz,
-                                          p35_messbetrag_p, p35_hebesatz_p)
+        p35_messbetrag_ges, p35_zaehler_ges, p35_gezahlt = _p35_summen(
+            f, p35_messbetrag, p35_hebesatz, p35_zaehler)
         p35_nenner = max(0, renten) + max(0, rentner_g["einkuenfte_gewinn"])
 
         # §3 Abs.2 SolzG: SolZ-Basis = KiFB-fiktive ESt (immer mit §32 Abs.6-Freibetraegen;
