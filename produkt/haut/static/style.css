@@ -264,3 +264,16 @@ h1,h2,h3{margin:0}
 .netz-banner{background:rgba(255,107,107,.14);color:var(--fehler);border:1px solid rgba(255,107,107,.4);
   border-radius:12px;padding:12px 14px;margin:0 0 14px;font-size:14px}
 .kachel:disabled,.btn:disabled{opacity:.55;cursor:not-allowed}
+
+/* ============================================================================
+   Anmeldung (P1.1-Verdrahtung, 2026-08-17) — Login-Maske + Konto-Leiste.
+   ========================================================================== */
+.konto-leiste{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin:0 4px 12px;font-size:13px;color:var(--muted)}
+.login-feld{margin-bottom:12px}
+.login-feld label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.login-feld input{width:100%;background:#12162a;border:1px solid var(--line);color:var(--ink);
+  border-radius:10px;padding:12px;font-size:16px}
+.login-aktionen{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.login-fehler{background:rgba(255,107,107,.14);color:var(--fehler);border:1px solid rgba(255,107,107,.4);
+  border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:14px}

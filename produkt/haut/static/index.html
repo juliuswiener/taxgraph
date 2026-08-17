@@ -11,8 +11,36 @@
 
     <div id="netz-banner" class="netz-banner" role="alert" hidden></div>
 
+    <!-- Konto-Leiste: nur sichtbar, wenn ein Token existiert (s. app.js aktualisiereKontoLeiste).
+         Im Einzelnutzer-Modus (TAXGRAPH_NO_AUTH=1) gibt es nie ein Token -> bleibt immer hidden. -->
+    <div id="konto-leiste" class="konto-leiste" hidden>
+      <span id="konto-user"></span>
+      <button id="logout-btn" class="btn-link" type="button">Abmelden</button>
+    </div>
+
+    <!-- Anmeldemaske: erscheint entweder gleich beim Start (initAuth() stellt vorab per Sonde fest,
+         ob diese Instanz Auth verlangt — s. app.js) oder später, wenn ein Token mitten im Fluss
+         abläuft (401 wird zentral in jget/jpost abgefangen). Im Einzelnutzer-Modus wird dieser
+         Screen nie sichtbar. -->
+    <section id="login" class="screen card" tabindex="-1" hidden>
+      <h1 class="start-titel">Anmelden</h1>
+      <p id="login-fehler" class="login-fehler" role="alert" hidden></p>
+      <div class="login-feld">
+        <label for="login-user">Benutzername</label>
+        <input id="login-user" type="text" autocomplete="username">
+      </div>
+      <div class="login-feld">
+        <label for="login-pw">Passwort</label>
+        <input id="login-pw" type="password" autocomplete="current-password">
+      </div>
+      <div class="login-aktionen">
+        <button id="login-go" class="btn btn-best" type="button">Anmelden</button>
+        <button id="login-umschalten" class="btn-link" type="button">Neu hier? Registrieren</button>
+      </div>
+    </section>
+
     <!-- P0: Start — 2 Kacheln (Scheiben-Wahl, scheibe nicht hardcoden) -->
-    <section id="start" class="screen">
+    <section id="start" class="screen" hidden>
       <h1 class="start-titel">Was trifft auf dich zu?</h1>
       <button class="kachel" type="button" data-scheibe="gesamt">
         <span class="k-ico">💼</span>

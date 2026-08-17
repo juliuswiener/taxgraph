@@ -9,16 +9,49 @@ let SPANNE0 = null;   // Referenz-Spanne (für den Schrumpf-Anteil)
 let KORREKTUR_FID = null;  // feld_id bei Korrektur; null = neue Frage
 let VERSTANDEN_OFFEN = false;  // Verstanden-Seite liegt vorn -> refresh() darf sie nicht wegschieben
 
+// --- P1.1-Verdrahtung: Token-Haltung ---
+// Sicherheitsentscheidung, keine Geschmacksfrage (team-lead-Auftrag): sessionStorage statt
+// localStorage. Der Server bindet ausschließlich an 127.0.0.1 (kein Zugriff von außen), aber die
+// Oberfläche hat einen KI-Chat, der Fremdtext ins DOM setzt — ein XSS-Fenster ist nicht mit
+// Sicherheit ausgeschlossen, auch wenn der bestehende Code konsequent textContent statt innerHTML
+// für Fremdtext nutzt. sessionStorage begrenzt den Schaden eines gestohlenen Tokens auf die
+// Lebensdauer des Tabs statt auf die vollen 24h der JWT_TTL_H (auth.py) wie bei localStorage.
+// Rein In-Memory (nur die JS-Variable) wäre noch enger, würde aber bei jedem Seiten-Reload einen
+// Neu-Login erzwingen — für eine mehrteilige Steuererklärung zu hart für den Nutzer.
+const TOKEN_KEY = "taxgraph_token";
+let TOKEN = sessionStorage.getItem(TOKEN_KEY) || null;
+let AUTH_USER = null;   // Benutzername des angemeldeten Kontos (nur Anzeige, keine Sicherheitsgrenze)
+function setToken(t) { TOKEN = t; sessionStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { TOKEN = null; AUTH_USER = null; sessionStorage.removeItem(TOKEN_KEY); }
+
 const NETZ_FEHLER_TEXT = "Netzwerkfehler — bitte Verbindung prüfen und erneut versuchen.";
-function zeigeNetzFehler(msg) { const b = document.getElementById("netz-banner"); b.textContent = msg; b.hidden = false; }
+function zeigeNetzFehler(msg) {
+  // Steht die Anmeldemaske bereits vorn (401 abgefangen, s. jget/jpost unten), gewinnt sie: ein
+  // technischer Banner ("Abgewiesen: Authentifizierung erforderlich") daneben wäre nur verwirrend
+  // — der eigentliche Grund ist längst als Anmeldemaske sichtbar, nicht als Netzwerkfehler.
+  const login = document.getElementById("login");
+  if (login && !login.hidden) return;
+  const b = document.getElementById("netz-banner"); b.textContent = msg; b.hidden = false;
+}
 function versteckeNetzFehler() { const b = document.getElementById("netz-banner"); b.hidden = true; }
 function okStatus(s) { return s >= 200 && s < 300; }
 
+// 401 zentral abfangen: EIN Ort statt an jeder der acht jpost-Aufrufstellen (und jeder jget-Stelle).
+// /auth/* ist ausgenommen — /auth/login und /auth/register liefern ihre eigenen 4xx (falsches
+// Passwort etc.) und der Aufrufer muss die Meldung selbst zeigen; /auth/session liefert beim
+// Start-Check bewusst 401 auch im Einzelnutzer-Modus (der Endpunkt kennt TAXGRAPH_NO_AUTH nicht,
+// s. initAuth()) — das darf die Maske dort NICHT auslösen, sonst bräche der Einzelnutzer-Modus.
+function _401Abfangen(url, status) {
+  if (status === 401 && !url.startsWith("/auth/")) zeigeAnmeldemaske();
+}
+
 async function jget(url) {
   try {
-    const r = await fetch(url);
+    const headers = TOKEN ? { "Authorization": "Bearer " + TOKEN } : {};
+    const r = await fetch(url, { headers });
     const body = await r.json();
     versteckeNetzFehler();
+    _401Abfangen(url, r.status);
     return { status: r.status, body };
   } catch (e) {
     zeigeNetzFehler(NETZ_FEHLER_TEXT);
@@ -27,9 +60,12 @@ async function jget(url) {
 }
 async function jpost(url, obj) {
   try {
-    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj || {}) });
+    const headers = { "Content-Type": "application/json" };
+    if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
+    const r = await fetch(url, { method: "POST", headers, body: JSON.stringify(obj || {}) });
     const body = await r.json();
     versteckeNetzFehler();
+    _401Abfangen(url, r.status);
     return { status: r.status, body };
   } catch (e) {
     zeigeNetzFehler(NETZ_FEHLER_TEXT);
@@ -73,14 +109,20 @@ async function waehleScheibe(scheibe) {
 }
 
 async function refresh() {
-  STAND = (await jget(`/fall/${FALL}/stand`)).body;
+  const st = await jget(`/fall/${FALL}/stand`);
+  // 401 (Token abgelaufen/fehlt): der jget-Interceptor hat die Anmeldemaske schon gezeigt — hier
+  // abbrechen statt auf st.body.felder zu crashen (der Fehlerbody hat kein .felder).
+  if (st.status === 401) return;
+  STAND = st.body;
   zeigeRing(STAND);
   zeigeBelegt(STAND.felder);
   // Die Verstanden-Seite arbeitet eine eigene Liste ab. Ring und Belegt-Liste sollen dabei
   // mitlaufen (jede Bestätigung bewegt den Ring), aber der Fragefluss darf sich nicht davorschieben
   // — sonst springt der Nutzer nach der ersten Bestätigung aus seiner Liste heraus.
   if (VERSTANDEN_OFFEN) return;
-  const fragen = (await jget(`/fall/${FALL}/fragen`)).body.fragen;
+  const fr = await jget(`/fall/${FALL}/fragen`);
+  if (fr.status === 401) return;
+  const fragen = fr.body.fragen;
   if (fragen.length === 0) { $("wegpunkt").hidden = true; await zeigeErgebnis(); }
   else { AKTUELL = fragen[0]; zeigeFrage(AKTUELL, STAND); }
 }
@@ -152,6 +194,7 @@ function zeigeBelegt(felder) {
 // --- Dim 1: Herkunft-Kette (Euro -> Regel -> Norm -> Beleg) im Bestätigungsmoment ---
 async function herkunftKette(fid, f) {
   const r = await jget(`/fall/${FALL}/feld/${fid}/warum`);
+  if (r.status === 401) return;   // Anmeldemaske hat übernommen — kein Overlay mehr darüberlegen
   const j = (r.status === 200 && r.body.justification) ? r.body.justification : {};
   const bi = badgeInfo(f.herkunft_badge);
   $("kette-titel").textContent = `${fid}: ${JSON.stringify(f.wert)}`;
@@ -602,6 +645,7 @@ async function verstandenAendern(v) {
   $("verstanden").hidden = true;
   VERSTANDEN_OFFEN = false;
   if (!await korrigiereBestaetigt(v.feld_id)) {
+    if (!$("login").hidden) return;   // Anmeldemaske hat übernommen (401) — Verstanden-Seite nicht zurückholen
     // Frage nicht ladbar -> die Liste ist immer noch die bessere Anzeige als ein leerer Bildschirm.
     VERSTANDEN_OFFEN = true;
     $("verstanden").hidden = false;
@@ -913,6 +957,123 @@ async function kontoauszugHochladen(datei) {
   input.disabled = false;
 }
 
+// --- P1.1-Verdrahtung: Anmeldung, Registrierung, Abmeldung ---
+// Bislang schickte die Oberfläche nie einen Authorization-Header — das Backend (/auth/register,
+// /auth/login, /auth/logout, /auth/session) existierte, wurde aber nie erreicht (team-lead-Auftrag).
+
+let LOGIN_MODUS = "anmelden";   // "anmelden" | "registrieren" — teilen sich dieselben Felder
+
+function loginFehler(text) {
+  const el = $("login-fehler");
+  if (!text) { el.hidden = true; el.textContent = ""; return; }
+  el.textContent = text; el.hidden = false;
+}
+
+function loginModusUmschalten() {
+  LOGIN_MODUS = LOGIN_MODUS === "anmelden" ? "registrieren" : "anmelden";
+  $("login-go").textContent = LOGIN_MODUS === "anmelden" ? "Anmelden" : "Registrieren";
+  $("login-umschalten").textContent = LOGIN_MODUS === "anmelden" ? "Neu hier? Registrieren" : "Schon registriert? Anmelden";
+  loginFehler("");
+}
+
+// Anmeldemaske zeigen: entweder beim Start (initAuth() stellt vorab fest, dass diese Instanz Auth
+// verlangt) oder mitten im Fluss, wenn jget/jpost ein 401 auffängt (Token abgelaufen/fehlt).
+function zeigeAnmeldemaske(hinweis) {
+  VERSTANDEN_OFFEN = false;
+  $("start").hidden = true;
+  $("flow").hidden = true;
+  $("verstanden").hidden = true;
+  $("kette-overlay").hidden = true;
+  $("login").hidden = false;
+  loginFehler(hinweis || "");
+  $("login").focus({ preventScroll: true });
+}
+
+function aktualisiereKontoLeiste() {
+  const leiste = $("konto-leiste");
+  if (TOKEN) { $("konto-user").textContent = AUTH_USER ? ("Angemeldet als " + AUTH_USER) : ""; leiste.hidden = false; }
+  else { leiste.hidden = true; }
+}
+
+// EIN Knopf für Anmelden UND Registrieren (LOGIN_MODUS unterscheidet) — Registrierung loggt direkt
+// im Anschluss ein, damit sie kein zweiter Schritt für den Nutzer ist.
+async function loginGo() {
+  const btn = $("login-go");
+  if (btn.disabled) return;
+  const user = $("login-user").value.trim(), pw = $("login-pw").value;
+  if (!user || !pw) { loginFehler("Bitte Benutzername und Passwort angeben."); return; }
+  btn.disabled = true;
+  if (LOGIN_MODUS === "registrieren") {
+    const rr = await jpost("/auth/register", { username: user, password: pw });
+    if (rr.status !== 201) {
+      btn.disabled = false;
+      loginFehler((rr.body && rr.body.fehler) || "Registrierung fehlgeschlagen.");
+      return;
+    }
+  }
+  const r = await jpost("/auth/login", { username: user, password: pw });
+  btn.disabled = false;
+  if (r.status === 200 && r.body && r.body.token) {
+    setToken(r.body.token);
+    AUTH_USER = r.body.username || user;
+    $("login-pw").value = "";
+    aktualisiereKontoLeiste();
+    nachAnmeldungWeiter();
+  } else {
+    loginFehler((r.body && r.body.fehler) || "Anmeldung fehlgeschlagen.");
+  }
+}
+
+// Nach erfolgreicher (Neu-)Anmeldung: war schon ein Fall offen (Token mitten im Fluss abgelaufen),
+// denselben Fall weiterführen; sonst zum Start. Ein VOR dem Login angelegter Fall käme hier nie an
+// (initAuth() lässt den Nutzer keinen Fall anlegen, bevor der Auth-Zustand geklärt ist) — sonst
+// bliebe ein Fall ohne user_id für immer unlesbar (403, s. api.py _fall_owner_check).
+function nachAnmeldungWeiter() {
+  $("login").hidden = true;
+  loginFehler("");
+  if (FALL) { $("start").hidden = true; $("flow").hidden = false; refresh(); }
+  else { $("start").hidden = false; }
+}
+
+async function abmelden() {
+  const btn = $("logout-btn");
+  if (btn.disabled) return;
+  btn.disabled = true;
+  await jpost("/auth/logout", { token: TOKEN });
+  clearToken();
+  FALL = null; AKTUELL = null; STAND = null; SPANNE0 = null; KORREKTUR_FID = null; VERSTANDEN_OFFEN = false;
+  btn.disabled = false;
+  aktualisiereKontoLeiste();
+  zeigeAnmeldemaske();
+}
+
+// Start-Sequenz: entscheidet, ob die Login-Maske oder der Start-Screen zuerst erscheint — OHNE
+// vorher einen Fall anzulegen (POST /fall prüft nie den Besitz, ein so entstandener herrenloser
+// Fall wäre nach einem Login für niemanden mehr lesbar, s. api.py _fall_owner_check).
+async function initAuth() {
+  if (TOKEN) {
+    const r = await jget("/auth/session");   // /auth/* -> kein automatisches 401-Abfangen, s. _401Abfangen()
+    if (r.status === 200 && r.body && r.body.username) {
+      AUTH_USER = r.body.username;
+      aktualisiereKontoLeiste();
+      $("start").hidden = false;
+      return;
+    }
+    // Token ungültig/abgelaufen: räumen, aber NICHT die Maske zeigen — ob diese Instanz überhaupt
+    // Auth verlangt (TAXGRAPH_NO_AUTH), kennt /auth/session nicht (s. server.py _session_check).
+    // Das klärt erst die Sonde unten.
+    clearToken();
+  }
+  // Sonde gegen einen garantiert nicht existierenden Fall, OHNE Authorization-Header. Der Handler
+  // (produkt/haut/api.py stand()/_fall_owner_check) prüft die Berechtigung VOR dem Laden der Datei:
+  // im Einzelnutzer-Modus (TAXGRAPH_NO_AUTH=1) kommt die Prüfung durch und die Sonde endet bei 404
+  // ("Fall existiert nicht"); ist Auth Pflicht, bricht sie schon davor mit 401 ab. So lässt sich der
+  // Modus feststellen, ohne selbst einen Fall anzulegen.
+  const probe = await jget("/fall/auth-sonde-taxgraph/stand");
+  if (probe.status !== 401) $("start").hidden = false;
+  // bei 401 hat der jget-Interceptor (_401Abfangen) die Anmeldemaske bereits gezeigt.
+}
+
 // --- Verdrahtung ---
 document.querySelectorAll(".kachel").forEach(k => k.addEventListener("click", () => waehleScheibe(k.dataset.scheibe)));
 $("chat").addEventListener("click", erklaereFeld);
@@ -924,3 +1085,7 @@ $("vorjahr-toggle").addEventListener("click", () => { const p = $("vorjahr-panel
 $("vorjahr-go").addEventListener("click", vorjahrUebernehmen);
 $("konto-toggle").addEventListener("click", () => { const p = $("konto-panel"); p.hidden = !p.hidden; });
 $("konto-file").addEventListener("change", (e) => kontoauszugHochladen(e.target.files[0]));
+$("login-go").addEventListener("click", loginGo);
+$("login-umschalten").addEventListener("click", loginModusUmschalten);
+$("logout-btn").addEventListener("click", abmelden);
+initAuth();
