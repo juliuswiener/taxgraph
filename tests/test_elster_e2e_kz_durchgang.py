@@ -132,7 +132,7 @@ def test_e2e_kz_durchgang_26_felder(base):
         "tage_ueber_8h_eintaegig": 0,
         "tage_an_abreise": 0,
         "tage_24h": 0,
-        "vpf_keine_mahlzeitengestellung": 0,
+        "vpf_keine_mahlzeitengestellung": False,
         "basis_kv": 450000,  # 4.5k 10 (KV)
         "basis_pv": 0,  # PV
         "versicherungsart": "gesetzlich_freiwillig",

@@ -258,8 +258,10 @@ def test_belegt_liste_tap_targets(base, playwright_context):
         q = fragen.get("fragen", [{}])[0]
         feld_id = q.get("feld_id")
 
-        # Event: Feld bestätigen (darf nach Typ fragen)
-        status, _ = _req(base, "POST", f"/fall/{fall_id}/event", _laie(feld_id, 42))
+        # Event: Feld bestätigen. Welches Feld zuerst gefragt wird, hängt von der
+        # Screening-Reihenfolge ab (nicht stabil) — ein fester Wert wie 42 passt nicht zu
+        # jedem Bindungstyp (enum/bool/...). beispielwert ist je Bindung typkorrekt vorgegeben.
+        status, _ = _req(base, "POST", f"/fall/{fall_id}/event", _laie(feld_id, q.get("beispielwert")))
 
         # Seite laden
         page.goto(base)

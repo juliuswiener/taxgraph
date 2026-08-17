@@ -50,6 +50,10 @@ def uebernehme_vorjahr(neuer_store: dict, vorjahr_felder: dict, bindung: dict, *
         ST.append_event(neuer_store, feld_id=fid, wert=wert, zustand="vorlaeufig",
                         herkunft={"herkunft": "vorjahr", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                         schreiber="import:vorjahr",
-                        signal={"signal_1": sig1, "signal_2": None}, ts=ts)
+                        signal={"signal_1": sig1, "signal_2": None}, ts=ts,
+                        # Auflage T (Stille-Null-Klasse): gerade Vorjahres-Altbestände können vor
+                        # dieser Pruefung geschrieben worden sein — bindung liegt hier schon vor
+                        # (uebertragbare_felder() braucht sie ohnehin), also mitgeben statt Luecke lassen.
+                        bindung=bindung)
         n += 1
     return n

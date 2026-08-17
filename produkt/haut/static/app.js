@@ -372,12 +372,24 @@ function selectFeld(optionen, vorauswahl) {
   return sel;
 }
 
+// Stille-Null-Fix (team-lead-Auftrag, Befund B): vorher machte `parseFloat(el.value || "0")` /
+// `parseInt(el.value || "0", 10)` aus einem LEEREN oder browser-ungültigen Feld (z.B. "12,5" mit
+// Komma statt Punkt -> parseFloat liest nur "12" korrekt, der Rest verwirft -> "12,5x" wäre sogar
+// NaN) kommentarlos eine 0 — ununterscheidbar von einer echten, absichtlich eingegebenen 0. Jetzt:
+// leer/ungültig -> `undefined` (der Aufrufer in bestaetigen() muss das prüfen und abbrechen statt
+// zu schreiben); eine explizit eingegebene 0 bleibt eine echte, gültige 0 (roh="0" ist NICHT leer).
 function leseWert(q) {
   const el = $("feld-input");
   if (q.typ === "enum") return el.value;
   if (q.typ === "bool") { const ja = el.value === "true"; return q.feld_id.startsWith("kein_") ? !ja : ja; }
-  if (q.typ === "cent") return Math.round(parseFloat(el.value || "0") * 100);
-  return parseInt(el.value || "0", 10);
+  const roh = (el.value ?? "").trim();
+  if (roh === "") return undefined;
+  if (q.typ === "cent") {
+    const eur = parseFloat(roh);
+    return Number.isFinite(eur) ? Math.round(eur * 100) : undefined;
+  }
+  const n = parseInt(roh, 10);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 // --- Korrektur: Belegt-Feld erneut bearbeiten (event_id aus /warum holen + mit ersetzt überschreiben)
@@ -425,6 +437,15 @@ async function bestaetigen(kiFeld) {
   const altLabel = kiFeld ? null : btn.textContent;
   if (!kiFeld) btn.textContent = "Wird gespeichert …";
   const wert = leseWert(AKTUELL);
+  if (wert === undefined) {
+    // Stille-Null-Fix (Befund B): leer/ungültig -> KEIN Event, kein "0" -- Nutzer wird informiert
+    // statt dass eine falsche Zahl bestätigt in den Store wandert (derselbe Fehler-Anzeige-Stil
+    // wie jede andere Ablehnung in dieser Funktion, s. unten).
+    zeigeNetzFehler("Bitte einen gültigen Wert eingeben.");
+    btn.disabled = false;
+    if (!kiFeld) btn.textContent = altLabel;
+    return;
+  }
   const ev = {
     feld_id: AKTUELL.feld_id, wert, zustand: "bestaetigt",
     herkunft: { herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer" },

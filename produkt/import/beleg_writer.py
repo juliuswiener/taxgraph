@@ -165,7 +165,8 @@ def schreibe_kandidaten(store: dict, kandidaten: list, *, beleg_ref: str, bindun
                              herkunft={"herkunft": "beleg_import", "pruef_tiefe": "ungeprueft",
                                        "haftung": "nutzer"},
                              schreiber="import:beleg",
-                             signal={"signal_1": sig1, "signal_2": None}, ts=ts, katalog=katalog)
+                             signal={"signal_1": sig1, "signal_2": None}, ts=ts, katalog=katalog,
+                             bindung=bindung)   # Auflage T (Stille-Null-Klasse) — OCR/Textlayer liefert oft Strings
         events.append(ev)
     return events
 

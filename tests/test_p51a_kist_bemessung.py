@@ -297,7 +297,11 @@ RENTNER_KEGEL_BASE = [
     ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
     ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
     ("einkuenfte_gewinn", 0), ("rentner_veraeusserungsgewinn", 0),
-    ("gewinn_betriebsart", "keine"), ("geburtsjahr", 1960),
+    # gewinn_betriebsart absichtlich NICHT gesetzt: "keine" war nie ein gültiger enum-Wert
+    # (bindung_an_gesamt.yaml erlaubt nur gewerbe/selbstaendig/land_forst). kein_gewinn=True
+    # trägt die Abwesenheit schon; das Feld hat keinen signatur_slot (reine Anlage-G/S/L-Weiche
+    # fürs XML, kein Catala-Input), absent verhält sich wie "keine" — kein Rechenwert ändert sich.
+    ("geburtsjahr", 1960),
     ("gewst_hebesatz", 0), ("gewst_messbetrag", 0), ("verlustvortrag_bestand", 0),
     ("rentner_rentenfreibetrag", 0),
 ]

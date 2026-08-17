@@ -23,7 +23,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), "store"))
 import store as ST   # noqa: E402
 
 
-def uebernehme_edaten(store: dict, edaten_record: list, *, ts: str | None = None) -> int:
+def uebernehme_edaten(store: dict, edaten_record: list, *, ts: str | None = None,
+                      bindung: dict | None = None) -> int:
     """Übernimmt eDaten in den Store (bestätigt, One-Active-Event).
 
     edaten_record = Liste von {"feld_id": ..., "wert": ..., "kategorie": ...}
@@ -32,6 +33,14 @@ def uebernehme_edaten(store: dict, edaten_record: list, *, ts: str | None = None
     Überträgt je Feld ein BESTÄTIGTES Event in den Store — aber NUR, wenn dort noch KEIN aktives
     Event für das feld_id liegt (One-Active-Event: eine abweichende Angabe des Stpfl. hat Vorrang,
     § 150 Abs. 7 S. 2 AO). Gibt die Anzahl übertragener Felder zurück.
+
+    bindung: optional (Auflage T, Stille-Null-Klasse) — dieser Writer schreibt DIREKT zustand=
+    bestaetigt (kein Zwischenschritt über einen Mensch-Confirm), darum ist er der riskanteste
+    Schreiber für den genau hier gejagten Fehler (String/Falschtyp aus dem eDaten-XML → still
+    bestätigt → Ring liest 0). Aktuell hat dieser Writer noch KEINEN Produktions-Aufrufer
+    (gemessen: nur tests/test_elster_writer.py, tests/test_vast_mapping.py rufen ihn — s. Bericht
+    an team-lead) — bindung bleibt darum optional/unverdrahtet, statt einen nicht-existenten
+    Aufrufer zu erfinden.
     """
     aktiv = ST._aktives(store)
     n = 0
@@ -59,6 +68,7 @@ def uebernehme_edaten(store: dict, edaten_record: list, *, ts: str | None = None
             schreiber="import:elster",
             signal={"signal_1": sig1, "signal_2": "edaten_uebermittelt"},
             ts=ts,
+            bindung=bindung,
         )
         n += 1
     return n

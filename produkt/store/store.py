@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import tempfile
 from datetime import datetime, timezone
 
@@ -163,11 +164,85 @@ def lade_katalog(bindung: dict) -> dict:
     return {k: frozenset(v) for k, v in katalog.items()}
 
 
+_TYP_ORD = ("cent", "int", "bool", "enum", "datum", "text")   # gesamte Bindungs-typ-Menge (bindung/SCHEMA.md)
+
+
+def _typ_konform(wert, typ: str, enum_werte) -> bool:
+    """Wert↔Bindungstyp-Prüfung — DIESELBE Semantik wie tests/test_store.py:_typ_ok (bewusst gespiegelt,
+    nicht importiert: Store-Produktionscode zieht keine Test-Datei). `bool` ist in Python ein `int` —
+    isinstance(True, int) ist True — darum der explizite `not isinstance(wert, bool)`-Ausschluss bei
+    cent/int, sonst ginge ein Häkchen als 1 Cent durch. Unbekannter/unerwarteter typ-String: True
+    (durchlassen) — diese Funktion wird nur mit typ aus _TYP_ORD aufgerufen (s. Aufrufer unten)."""
+    if typ in ("cent", "int"):
+        return isinstance(wert, int) and not isinstance(wert, bool)
+    if typ == "bool":
+        return isinstance(wert, bool)
+    if typ == "enum":
+        return wert in (enum_werte or [])
+    if typ == "datum":
+        # TT.MM.JJJJ, NICHT ISO. Das ist keine Geschmacksfrage: die Bindung schreibt es vor
+        # (bindung_an_gesamt.yaml:985 "amtliches ELSTER-Format, kein ISO-8601 — nichts in der
+        # Pipeline konvertiert Datumswerte", beispielwert "05.05.1955"), das XSD verlangt es
+        # (DatumTTpMMpJJJJBekanntBaseCType_RABE zu E0100401), und die scharfen Einreichungs-
+        # laeufe erreichten mit genau diesem Format rc=0. Ein erster Anlauf prueste hier auf
+        # ISO und haette damit JEDE echte Geburtsdatums-Eingabe mit 422 abgewiesen — die
+        # Pruefung waere fail-closed gegen den eigenen dokumentierten Standard gewesen.
+        return isinstance(wert, str) and re.match(r"^\d{2}\.\d{2}\.\d{4}$", wert) is not None
+    if typ == "text":
+        return isinstance(wert, str)
+    return True
+
+
+def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
+    """Auflage T (Typ-Konformität, Stille-Null-Klasse): wert muss zum Bindungstyp von feld_id passen —
+    fängt genau den Fall, der den Ring bisher stumm auf 0 fallen liess (String '50000' auf einem
+    typ=cent-Feld wurde ohne Fehler bestaetigt; die _c/_cent/_best-Lesehelfer in api.py machen aus
+    jedem Nicht-Zahl-Wert kommentarlos 0 — keine dieser >15 Lesestellen hätte je etwas gemeldet).
+
+    Nur aktiv, wenn ein `bindung`-Dict übergeben wird (s. append_event-Signatur) — bewusst OPTIONAL,
+    nicht scharf für alle 2100+ Bestands-Testaufrufe von ST.append_event(...), die kein bindung=
+    übergeben (die testen andere Mechanismen mit absichtlich minimalem Setup). Real produktiv verdrahtet
+    an JEDEM Schreibpfad, der wert von AUSSEN übernimmt: api.event() (HTTP), beleg_writer, kontoauszug_
+    writer, elster_writer (eDaten, § 150 Abs. 7 AO — schreibt sogar DIREKT zustand=bestaetigt, ohne
+    jeden Zwischenschritt) — s. Bericht an team-lead für die Naht-(a)-vs-(b)-Abwägung.
+
+    Repeated-Instance (base__n, s. api.py Z.2658-2665): dieselbe Enumerations-Wahrheit wie überall
+    (est_mapping.parse_instanz) — LOKALER Import, denn est_mapping importiert store nur lokal
+    (Z.694 dort) und ein Modul-Top-Level-Import hier würde die vielen Tests brechen, die store.py
+    isoliert importieren (nur produkt/store auf sys.path, ohne produkt/mapping).
+
+    Unbekanntes feld_id (nicht in bindung) oder Bindungseintrag ohne `typ`: durchlassen, NICHT raten
+    (Team-Lead-Vorgabe Schritt 3) — dokumentiert hier, nicht stillschweigend im Code versteckt."""
+    basis = feld_id
+    try:
+        import est_mapping as _EM
+        parsed = _EM.parse_instanz(feld_id)
+        if parsed:
+            basis = parsed[0]
+    except ImportError:
+        pass   # Aufrufer ohne produkt/mapping auf sys.path (reine Store-Tests) -- kein Instanz-Feld dort
+
+    eintrag = bindung.get(basis)
+    if eintrag is None:
+        return   # unbekanntes feld_id: durchlassen, nicht raten
+    typ = eintrag.get("typ")
+    if typ not in _TYP_ORD:
+        return   # kein/unerwarteter typ-Eintrag: durchlassen, nicht raten
+    if not _typ_konform(wert, typ, eintrag.get("enum_werte")):
+        raise ValueError(
+            f"fail-closed (Typ): {feld_id}={wert!r} passt nicht zum Bindungstyp '{typ}' — "
+            "der Ring läse das sonst still als 0 (Stille-Null-Klasse).")
+
+
 def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dict,
                  schreiber: str, signal: dict | None = None, ersetzt: str | None = None,
-                 ts: str | None = None, katalog: dict | None = None) -> dict:
-    """Baut EIN Event, prüft fail-closed (Auflagen A+B), setzt den content-adressierten event_id,
-    hängt es an. Gibt das Event zurück. KEINE zweite Schreib-Implementierung."""
+                 ts: str | None = None, katalog: dict | None = None,
+                 bindung: dict | None = None) -> dict:
+    """Baut EIN Event, prüft fail-closed (Auflagen A+B+T), setzt den content-adressierten event_id,
+    hängt es an. Gibt das Event zurück. KEINE zweite Schreib-Implementierung.
+
+    bindung: optional — wenn gesetzt, greift Auflage T (Typ-Konformität, s. _pruefe_typ_konformitaet).
+    Weggelassen bleibt der Aufruf wie bisher (Rückwärtskompatibilität zu den Bestandsaufrufen)."""
     signal = signal or {"signal_1": None, "signal_2": None}
 
     # Auflage A: ein llm:-Schreiber muss sich ehrlich deklarieren (kein Herkunfts-Schlupfloch).
@@ -267,6 +342,10 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
             raise ValueError(
                 f"fail-closed (F2/Magnitude): {feld_id}={wert!r} von {schreiber} — vermuteter "
                 f"Einheiten-/Skalierungsfehler (EUR statt Cent).")
+
+    # Auflage T (Typ-Konformität, Stille-Null-Klasse): s. _pruefe_typ_konformitaet-Docstring.
+    if bindung is not None:
+        _pruefe_typ_konformitaet(feld_id, wert, bindung)
 
     # Typ-Zwang: bestaetigt braucht signal_2.
     if zustand == "bestaetigt" and not (signal.get("signal_2") or "").strip():

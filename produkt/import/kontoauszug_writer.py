@@ -367,7 +367,8 @@ def uebernehme_kontoauszug(store: dict, transaktionen: list[dict], bindung: dict
         ST.append_event(store, feld_id=feld, wert=abs(betrag), zustand="vorlaeufig",
                         herkunft={"herkunft": "kontoauszug", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                         schreiber="import:kontoauszug",
-                        signal={"signal_1": sig1, "signal_2": None}, ts=ts, katalog=katalog)
+                        signal={"signal_1": sig1, "signal_2": None}, ts=ts, katalog=katalog,
+                        bindung=bindung)   # Auflage T (Stille-Null-Klasse), defense-in-depth
         aktiv.add(feld)
         n += 1
     return n

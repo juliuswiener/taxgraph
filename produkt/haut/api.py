@@ -2706,7 +2706,10 @@ def event(fall_id: str, body: dict) -> tuple[int, dict]:
             schreiber=schreiber, signal=body.get("signal"), ersetzt=body.get("ersetzt"),
             ts=body.get("ts"),
             # GLOBALER Katalog (TR.lade_bindung()), nicht per-Scheibe: die Autorisierung hängt am Feld, dev-2-Kontrakt.
-            katalog=(ST.lade_katalog(TR.lade_bindung()) if _vorschlag else None))
+            katalog=(ST.lade_katalog(TR.lade_bindung()) if _vorschlag else None),
+            # Auflage T (Stille-Null-Klasse, team-lead-Auftrag): body["wert"] kommt roh vom Client (Befund A —
+            # jeder Typ wurde bisher akzeptiert). bindung = die schon oben (Z.2655) geprüfte Scheiben-Bindung.
+            bindung=bindung)
     except ValueError as e:
         # fail-closed-Abweisung des Stores -> 422 (nicht 500): die Haut hat korrekt weitergereicht.
         raise ApiError(422, str(e))
@@ -3231,7 +3234,8 @@ def entfernung(fall_id: str, body: dict) -> tuple[int, dict]:
             schreiber="berechnet:maps",
             signal={"signal_1": {"typ": "maps", "dienst": "openrouteservice"}, "signal_2": None},
             ersetzt=(aktiv_ev["event_id"] if aktiv_ev else None),
-            katalog=ST.lade_katalog(TR.lade_bindung()))  # berechnet:-Schreiber → GLOBALER Katalog-Check (dev-2-Kontrakt)
+            katalog=ST.lade_katalog(TR.lade_bindung()),  # berechnet:-Schreiber → GLOBALER Katalog-Check (dev-2-Kontrakt)
+            bindung=bindung)   # Auflage T (Stille-Null-Klasse) — s. event() oben
     except ValueError as e:
         raise ApiError(422, str(e))
     speichere_fall(fall_id, store)
@@ -3449,7 +3453,8 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
                 # Store — später ist am Event nachvollziehbar, WORAUF sich der Vorschlag stützte.
                 signal={"signal_1": {"typ": "llm", "begruendung": v.get("begruendung", ""),
                                      "beleg": v.get("beleg", "")}, "signal_2": None},
-                katalog=check_katalog)               # dev-2s GLOBALER Katalog-Check lehnt human-only-Felder fail-closed ab
+                katalog=check_katalog,               # dev-2s GLOBALER Katalog-Check lehnt human-only-Felder fail-closed ab
+                bindung=bindung)   # Auflage T (Stille-Null-Klasse) — die KI liefert Werte auch mal als JSON-String
             # `beleg` geht mit in die Antwort: die Oberfläche soll neben jedem Wert zeigen können,
             # aus welchem Satzteil er stammt — das ist der Unterschied zwischen "bestätige 62000"
             # und "bestätige 62000, weil du sagtest: 62000 Euro brutto verdient".

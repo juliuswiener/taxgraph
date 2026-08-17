@@ -228,11 +228,13 @@ class SQLStore(MutableMapping):
                      ersetzt: str | None = None,
                      ts: str | None = None,
                      katalog: dict | None = None,
+                     bindung: dict | None = None,
                      expected_version: int | None = None) -> dict:
         """Event an SQL-Store anhängen (mit optimistic-lock).
 
         expected_version: Erwartete Version des betroffenen Events (bei ersetzt).
         None = kein Lock-Check (Neuanlage).
+        bindung: durchgereicht an ST.append_event (Auflage T, Typ-Konformität) — s. store.py.
         """
         # Validierung via store.py delegieren
         import produkt.store.store as ST
@@ -240,7 +242,7 @@ class SQLStore(MutableMapping):
         event = ST.append_event(
             self, feld_id=feld_id, wert=wert, zustand=zustand,
             herkunft=herkunft, schreiber=schreiber, signal=signal,
-            ersetzt=ersetzt, ts=ts, katalog=katalog,
+            ersetzt=ersetzt, ts=ts, katalog=katalog, bindung=bindung,
         )
 
         # Optimistic Lock: Version prüfen beim Überschreiben

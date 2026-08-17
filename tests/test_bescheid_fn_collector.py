@@ -122,7 +122,14 @@ GESAMT_KEGEL = [
     ("hh_minijob_betrag", 50000),
     ("realsplitting_unterhaltsleistungen", 100000), ("realsplitting_empfaenger_kv_pv", 0),
     ("realsplitting_zustimmung", True),
-    ("dba_staat", "polen"), ("dba_methode", "anrechnung"),
+    # enum_werte in bindung_p34c_gesamt.yaml führt deutsche Ländernamen groß ("Polen") — die
+    # Kleinschreibung war nie ein gültiger Wert, nur ungeprüft; dba_staat_iso() lowercased ohnehin
+    # vor dem ISO-Lookup, die berechnete DBA-Methode bleibt identisch.
+    # dba_methode: gültige Werte sind kein_dba/dba_anrechnung/dba_freistellung (bindung_p34c_gesamt.yaml);
+    # "anrechnung" war nie gültig. Rechnerisch ändert sich nichts — api.py:544-546 vergleicht den
+    # Feldwert NUR auf Gleichheit mit "dba_freistellung", alles andere fällt auf dba_methode_fuer()
+    # zurück (staat+einkunftsart-Lookup), das bleibt für Polen/dividenden unverändert "anrechnung".
+    ("dba_staat", "Polen"), ("dba_methode", "dba_anrechnung"),
     ("dba_einkunftsart", "dividenden"),
     ("dba_gezahlte_auslaendische_steuer", 50000),
     ("dba_auslaendische_einkuenfte", 100000),
@@ -150,7 +157,10 @@ RENTNER_KEGEL = [
     ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
     ("einkuenfte_gewinn", 0), ("rentner_veraeusserungsgewinn", 0),
     ("rentner_veraeusserungs_betriebsart", "gewerbe"),
-    ("gewinn_betriebsart", "keine"),
+    # gewinn_betriebsart absichtlich NICHT gesetzt: "keine" war nie ein gültiger enum-Wert
+    # (bindung_an_gesamt.yaml erlaubt nur gewerbe/selbstaendig/land_forst). kein_gewinn=True
+    # trägt die Abwesenheit schon; das Feld hat keinen signatur_slot (reine Anlage-G/S/L-Weiche
+    # fürs XML, kein Catala-Input), absent verhält sich wie "keine" — kein Rechenwert ändert sich.
     ("geburtsjahr", 1960),
     ("gewst_hebesatz", 0), ("gewst_messbetrag", 0),
     ("verlustvortrag_bestand", 0),

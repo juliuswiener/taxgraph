@@ -59,7 +59,9 @@ def _typ_ok(wert, typ, enum_werte) -> bool:
     if typ == "enum":
         return wert in (enum_werte or [])
     if typ == "datum":
-        return isinstance(wert, str) and bool(re.match(r"^\d{4}-\d{2}-\d{2}", wert))
+        # TT.MM.JJJJ — amtliches ELSTER-Format, kein ISO. Muss mit store._typ_konform
+        # uebereinstimmen; test_typ_konform_spiegelt_test_store_typ_ok haelt beide synchron.
+        return isinstance(wert, str) and bool(re.match(r"^\d{2}\.\d{2}\.\d{4}$", wert))
     if typ == "text":
         return isinstance(wert, str)
     return False
