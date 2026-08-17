@@ -15,6 +15,7 @@ Run: python golden/runner.py   (or: make golden)
 
 from __future__ import annotations
 
+import functools
 import glob
 import os
 import re
@@ -32,6 +33,22 @@ def load_yaml_fh(fh):
     """Strikt laden: doppelte Schluessel sind ein Fehler, kein Ueberschreiben."""
     with fh:
         return load_str(fh.read(), herkunft=getattr(fh, "name", "<yaml>"))
+
+
+@functools.lru_cache(maxsize=None)
+def _load_yaml_path(path: str) -> dict:
+    """Prozesslebensdauer-Cache je Pfad fuer Parameter-YAML (statischer Repo-Content je VZ,
+    aendert sich nie zur Laufzeit) -- gleiches Muster wie produkt/traverser/traverser.py:
+    lade_bindung(). War ungecacht 3028 load_yaml_fh()-Aufrufe in EINEM api.fragen()-Request
+    (88 % der Laufzeit in yaml.load, gemessen 6444ms->790ms mit Cache, Faktor 8,2; eigene
+    Nachmessung 2026-08-17 auf kleinerem Fall: 140 Aufrufe, ebenfalls 88 % der Laufzeit).
+    Pfad statt Datei-Handle als Schluessel, weil load_yaml_fh() ein bereits offenes fh bekommt,
+    das sich nicht als Cache-Key eignet. Alle Aufrufer LESEN nur aus dem zurueckgegebenen dict
+    (per grep bestaetigt: kein p[...]=, .pop(), .update() auf einem load_yaml_fh-Ergebnis in
+    dieser Datei) -- das geteilte Objekt ist deshalb sicher, keine Kopie noetig."""
+    return load_yaml_fh(open(path, encoding="utf-8"))
+
+
 _CAT = os.path.join(ROOT, "oracle", "gettsim", "_catala")
 sys.path.insert(0, os.path.join(_CAT, "rt"))
 sys.path.insert(0, _CAT)
@@ -59,8 +76,8 @@ from catala_runtime import Money, Decimal, Bool, Integer  # noqa: E402
 
 
 def _az_params(year: int) -> dict:
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "arbeitszimmer_homeoffice.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "arbeitszimmer_homeoffice.yaml"))
     return {k: p[k]["wert"] for k in
             ("jahrespauschale", "tagespauschale_pro_tag", "tagespauschale_hoechstbetrag")}
 
@@ -82,23 +99,23 @@ def catala_raumkosten(s: dict) -> int:
 
 def _ep_saetze(year: int) -> dict:
     """Read the Entfernungspauschale rates for a VZ from params/."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "entfernungspauschale.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "entfernungspauschale.yaml"))
     return {k: p[k]["wert"] for k in
             ("satz_bis_20_km", "satz_ab_21_km", "staffelgrenze_km", "hoechstbetrag_ohne_kfz")}
 
 
 def catala_grundfreibetrag(year: int) -> int:
     """§ 32a Abs. 1 S. 2 Nr. 1 EStG — Grundfreibetrag des VZ, EURO (aus params/)."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "einkommensteuertarif_p32a.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "einkommensteuertarif_p32a.yaml"))
     return int(p["grundfreibetrag"]["wert"])
 
 
 def catala_arbeitnehmer_pauschbetrag(year: int) -> int:
     """§ 9a S. 1 Nr. 1a EStG — Arbeitnehmer-Pauschbetrag des VZ, EURO (aus params/)."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "arbeitnehmerpauschbetrag.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "arbeitnehmerpauschbetrag.yaml"))
     return int(p["wert"]["wert"])
 
 
@@ -207,8 +224,8 @@ def catala_werbungskosten_n(s: dict) -> int:
 
 def _dhf_params(year: int) -> dict:
     """Kappungsgrenzen doppelte Haushaltsfuehrung aus params/<vz> (§ 9 Abs. 1 S. 3 Nr. 5)."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "dhf_p9_1_nr5.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "dhf_p9_1_nr5.yaml"))
     return {k: p[k]["wert"] for k in ("cap_monat_inland", "cap_monat_ausland")}
 
 
@@ -226,8 +243,8 @@ def _dhf_abzug(s: dict, year: int) -> int:
 
 def _verpflegung_params(year: int) -> dict:
     """Verpflegungspauschalen (Inland) aus params/<vz> (§ 9 Abs. 4a S. 3 Nr. 1-3 + Satz 8 Kürzungssätze)."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "verpflegung_p9_4a.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "verpflegung_p9_4a.yaml"))
     # Pauschalen + Kürzungssätze
     out = {k: p[k]["wert"] for k in ("pauschale_24h", "pauschale_an_abreise", "pauschale_ab_8h")}
     # Kürzungssätze: 20% Frühstück, 40% Mittag/Abend (S. 8) — fallback auf 0 wenn fehlt (Test-Robustheit)
@@ -594,8 +611,8 @@ def catala_p36_abschlusszahlung(s: dict) -> int:
 def _altersentlastung_kohorte(folgejahr: int):
     """§ 24a S. 5 Kohorten-Staffel (prozentsatz % + hoechstbetrag EURO) je maßgebendem Folgejahr (Jahr NACH der
     Vollendung des 64. Lj), lebenslang fix. Außerhalb der Tabelle geklemmt: vor 2005 → Höchststaffel, ab 2058 → 0."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", "kohorten", "altersentlastungsbetrag_p24a.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", "kohorten", "altersentlastungsbetrag_p24a.yaml"))
     k = p["kohorten"]
     j = min(max(folgejahr, min(k)), max(k))
     return k[j]["prozentsatz"], k[j]["hoechstbetrag"]
@@ -799,15 +816,15 @@ def catala_p7_linear_afa(s: dict) -> int:
 
 def _sparer_pauschbetrag(year: int) -> int:
     """§ 20 Abs. 9 S. 1 EStG Sparer-Pauschbetrag (je Person, 1000) aus params/<vz>."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "sparer_pauschbetrag_p20_9.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "sparer_pauschbetrag_p20_9.yaml"))
     return p["wert"]["wert"]
 
 
 def _abgeltungssatz(year: int) -> int:
     """§ 32d Abs. 1 S. 1 EStG Abgeltungsteuersatz in Prozent (25) aus params/<vz>."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "abgeltungssatz_p32d.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "abgeltungssatz_p32d.yaml"))
     return p["wert"]["wert"]
 
 
@@ -857,22 +874,22 @@ BB_RENTEN_ARTEN = frozenset({"private_leibrente", "sonstige_leibrente"})
 
 def _rente_besteuerungsanteil(jahr: int) -> float:
     """§ 22 Nr. 1 S. 3 aa — Besteuerungsanteil je Rentenbeginn-Kohorte (params/kohorten, VZ-agnostisch)."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", "kohorten", "rente_besteuerungsanteil_p22.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", "kohorten", "rente_besteuerungsanteil_p22.yaml"))
     return p["kohorten"][jahr]["besteuerungsanteil_prozent"]
 
 
 def _rente_ertragsanteil(alter: int) -> float:
     """§ 22 Nr. 1 S. 3 a bb — Ertragsanteil je Alter bei Rentenbeginn (params/kohorten, VZ-agnostisch)."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", "kohorten", "rente_ertragsanteil_p22.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", "kohorten", "rente_ertragsanteil_p22.yaml"))
     return p["kohorten"][alter]["ertragsanteil_prozent"]
 
 
 def _renten_wk_pb(year: int) -> int:
     """§ 9a S. 1 Nr. 3 EStG Werbungskosten-Pauschbetrag für Renten (102) aus params/<vz>."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "renten_werbungskostenpauschbetrag_p9a.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "renten_werbungskostenpauschbetrag_p9a.yaml"))
     return p["wert"]["wert"]
 
 
@@ -917,8 +934,8 @@ def _versorgungsfreibetrag_kohorte(versorgungsbeginn_jahr: int):
     """§ 19 Abs. 2 S. 3 Kohorten-Staffel (prozentsatz % + hoechstbetrag + zuschlag, alle EURO)
     je Jahr des Versorgungsbeginns, lebenslang fix (S. 8-9). Außerhalb der Tabelle geklemmt:
     vor 2005 → Höchststaffel, ab 2058 → 0."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", "kohorten", "versorgungsfreibetrag_p19_2.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", "kohorten", "versorgungsfreibetrag_p19_2.yaml"))
     k = p["kohorten"]
     j = min(max(versorgungsbeginn_jahr, min(k)), max(k))
     return k[j]["prozentsatz"], k[j]["hoechstbetrag"], k[j]["zuschlag"]
@@ -1020,8 +1037,8 @@ def catala_einkuenfte_versorgung(s: dict) -> int:
 
 def _p33b_params(year: int) -> dict:
     """§ 33b Pauschbetrag-Tabellen aus params/<vz> (2021er-Reform-Fassung)."""
-    return load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "behinderten_pauschbetrag_p33b.yaml"), encoding="utf-8"))
+    return _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "behinderten_pauschbetrag_p33b.yaml"))
 
 
 def catala_behinderten_pb(s: dict) -> int:
@@ -1060,9 +1077,8 @@ def catala_p33_2a_fahrtkostenpauschale(s: dict) -> int:
     S.4: 4.500 EUR für aG/Bl/TBl/H (fahrtkosten_pausch_ag_bl_tbl_h).
     S.5: 4.500 schließt 900 aus — sind beide Tatbestände erfüllt, gilt NUR die höhere Pauschale
     (nie additiv). Werte aus params/<vz> (fahrtkostenpauschale_p33_2a)."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(s["veranlagungszeitraum"]), "fahrtkostenpauschale_p33_2a.yaml"),
-        encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(s["veranlagungszeitraum"]), "fahrtkostenpauschale_p33_2a.yaml"))
     if s.get("hat_ag_bl_tbl_h"):
         return p["pauschale_4500"]
     if s.get("hat_gdb80_oder_70g"):
@@ -1109,8 +1125,8 @@ def catala_p10_1_5_kinderbetreuung(s: dict) -> int:
     if aufw <= 0:
         return 0
     vz = int(s.get("veranlagungszeitraum", 2025))
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(vz), "kinderbetreuung_p10.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(vz), "kinderbetreuung_p10.yaml"))
     abzugssatz = p["abzugssatz"]["wert"]
     hb = p["hoechstbetrag_je_kind"]["wert"]
     return min(int(aufw * abzugssatz), hb)
@@ -1133,8 +1149,8 @@ def catala_p10_1_9_schulgeld(s: dict) -> int:
     if aufw <= 0:
         return 0
     vz = int(s.get("veranlagungszeitraum", 2025))
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(vz), "schulgeld_p10.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(vz), "schulgeld_p10.yaml"))
     abzugssatz = p["abzugssatz"]["wert"]
     hb = p["hoechstbetrag_je_kind"]["wert"]
     if s.get("splitting"):
@@ -1200,8 +1216,8 @@ def catala_p32b_1(s: dict) -> int:
 
 def _kindergeld(year: int) -> int:
     """Monatliches Kindergeld je Kind aus params/<vz> (§ 66 EStG): 250/255/259."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "kindergeld_p66.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "kindergeld_p66.yaml"))
     return p["kindergeld_monatlich_je_kind"]["wert"]
 
 
@@ -1209,8 +1225,8 @@ def _kinderfreibetrag(year: int, veranlagung) -> int:
     """§ 32 Abs. 6 EStG Kinderfreibetrag JE KIND (sächliches Existenzminimum + BEA-Freibetrag je Elternteil),
     EURO, aus params/<vz>. Einzelveranlagung = ein Elternteil-Anteil; Zusammenveranlagung = verdoppelt (Abs. 2).
     Basis der § 31-Günstigerprüfung (Kinderfreibetrag-Wirkung vs. Kindergeld)."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "kinderfreibetrag_p32.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "kinderfreibetrag_p32.yaml"))
     je_elternteil = p["kinderfreibetrag_je_elternteil"]["wert"] + p["bea_freibetrag_je_elternteil"]["wert"]
     return je_elternteil * (2 if veranlagung == "zusammen" else 1)
 
@@ -1219,8 +1235,8 @@ def _vorsorge_hb(year: int) -> int:
     """Vorsorge-Hoechstbetrag aus params/<vz> (§ 10 Abs. 3): 27566/29344/30826.
     Deckel-Eingabe von p10_1_2_altersvorsorge; ueber _vorsorge_abzug in den
     Sonderausgaben-Pfad von catala_gesamt verdrahtet."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "vorsorge_hoechstbetrag_p10.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "vorsorge_hoechstbetrag_p10.yaml"))
     return p["hoechstbeitrag"]["wert"]
 
 
@@ -1239,8 +1255,8 @@ def _vorsorge_abzug(s: dict, year: int) -> int:
 
 def _sonderausgabenpauschbetrag(year: int) -> int:
     """§ 10c Satz 1 EStG Sonderausgaben-Pauschbetrag (je Person, 36) aus params/<vz>."""
-    p = load_yaml_fh(open(os.path.join(
-        ROOT, "params", str(year), "sonderausgabenpauschbetrag.yaml"), encoding="utf-8"))
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "sonderausgabenpauschbetrag.yaml"))
     return p["wert"]["wert"]
 
 
