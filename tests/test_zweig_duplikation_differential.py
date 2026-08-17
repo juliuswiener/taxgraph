@@ -105,12 +105,17 @@ def _geteilte_catala_namen() -> set[str]:
 # api.py:1108), §22 Nr.3-Freigrenze, §24b Entlastungsbetrag Alleinerziehende (Feldtripel
 # fam_alleinstehend/fam_anzahl_kinder/fam_monate_ohne_voraussetzung, api.py:1142-1145 ==
 # 1651-1654, byte-identisch).
+# SCHRUMPFT MIT DER DUPLIKATION, und das ist der Zweck: was einquellig wird, braucht keinen
+# Zweig-Vergleich mehr — ein Funktionsaufruf mit gleicher Eingabe kann nicht auseinanderlaufen.
+# Am 2026-08-17 sind `catala_kapital_verrechnung` und `catala_sparer_pb` hier ausgezogen, weil
+# der § 20-Block in `_p20_kapitaleinkuenfte` zusammengeführt wurde; der Tote-Einträge-Wächter
+# unten hat das gemeldet, statt es durchgehen zu lassen. Ebenso sind die Kind-Pauschbeträge nach
+# `_p33b_kind_pauschbetraege` gewandert — `catala_behinderten_pb` und `catala_hinterbliebenen_pb`
+# bleiben trotzdem hier, weil beide Zweige sie für die EIGENE Person weiterhin selbst aufrufen.
 VERGLEICHBAR = frozenset({
     "catala_behinderten_pb",
     "catala_hinterbliebenen_pb",
     "catala_pflege_pb",
-    "catala_kapital_verrechnung",
-    "catala_sparer_pb",
     "catala_p10_4b_erstattungsueberhang",
     "catala_p16_4_freibetrag",
     "catala_p22_nr3_einkuenfte",

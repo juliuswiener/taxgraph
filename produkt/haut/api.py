@@ -680,6 +680,76 @@ def _kind_behinderten_pb_daten(store, bindung: dict, nur_bestaetigt: bool) -> li
     return daten
 
 
+def _p33b_kind_pauschbetraege(store, bindung: dict, nur_bestaetigt: bool, vz: int) -> int:
+    """Summe der auf die Eltern übertragenen Kind-Pauschbeträge (§ 33b Abs. 5) — additiv zum
+    eigenen PB, deshalb ein eigener Betrag statt einer Kürzung.
+
+    Extrahiert aus BEIDEN Zweig-Funktionen (Phase 2b, 2026-08-17), wo dieselben neun Zeilen
+    byte-identisch standen. Die Duplikation ist keine Kosmetik: derselbe Paragraf zweimal
+    gepflegt ist genau die Bauart des Kirchensteuer-Doppelbugs, bei dem ein Fix nur in EINER
+    Kopie ankam und die beiden Zweige in entgegengesetzte Geldrichtungen liefen. Ein
+    Funktionsaufruf mit gleicher Eingabe kann nicht auseinanderlaufen — deshalb ist die
+    Extraktion der Fix und nicht nur die Aufräumarbeit.
+
+    Abgesichert durch tests/test_zweig_duplikation_differential.py: catala_behinderten_pb und
+    catala_hinterbliebenen_pb gehören zu den neun Rechenstellen, die dort in beiden Zweigen auf
+    Cent-Gleichheit geprüft werden."""
+    import runner
+    summe = 0
+    for kd in _kind_behinderten_pb_daten(store, bindung, nur_bestaetigt):
+        summe += runner.catala_behinderten_pb({
+            "veranlagungszeitraum": vz,
+            "grad_der_behinderung": kd["grad_der_behinderung"],
+            "ist_hilflos_blind_taubblind": kd["ist_hilflos_blind_taubblind"]})
+        if kd["hat_hinterbliebenenbezuege"]:
+            summe += runner.catala_hinterbliebenen_pb({
+                "veranlagungszeitraum": vz,
+                "hat_hinterbliebenenbezuege": True})
+    return summe
+
+
+def _p20_kapitaleinkuenfte(_c, zusammen: bool, vz: int) -> int:
+    """§ 20 Abs. 6 Verlustverrechnung + § 20 Abs. 9 Sparer-Pauschbetrag, für beide Zweige.
+
+    Töpfe XOR Aggregat: sind einzelne Töpfe belegt, entscheidet die Verrechnung; sonst zählt
+    der Aggregat-Betrag. Bei Zusammenveranlagung kommt das Kapital des Ehegatten ROH dazu,
+    VOR dem gemeinsamen Sparer-PB — der wird über `zusammenveranlagung` verdoppelt
+    (§ 20 Abs. 9 S. 3), nicht zweimal einzeln gewährt.
+
+    `zusammen` wird bewusst übergeben statt hier aus einem Zweig-Dict gelesen: der gesamt-Zweig
+    braucht dieselbe Größe an einem Dutzend weiterer Stellen, und zwei Herleitungen desselben
+    Merkmals wären wieder der Anfang einer Divergenz. Die Veranlagungsart kommt ohnehin
+    AUSSCHLIESSLICH aus § 26 — ein zweites Feld dafür gab es schon einmal, es widersprach der
+    Veranlagungsart und kostete 250 EUR Steuer (entfernt 2026-07-30).
+
+    Extrahiert aus beiden Zweigen (Phase 2b, 2026-08-17), wo die zwölf Zeilen bis auf die
+    Herkunft von `zusammen` identisch standen. Abgesichert durch
+    tests/test_zweig_duplikation_differential.py: catala_kapital_verrechnung und
+    catala_sparer_pb gehören zu den Rechenstellen, die dort auf Cent-Gleichheit geprüft werden.
+    """
+    import runner
+    if any(_c(t) != 0 for t in KAP_TOEPFE):
+        verrechnete = runner.catala_kapital_verrechnung({
+            "gewinn_aktien": _c("kap_gewinn_aktien") // 100,
+            "verlust_aktien": _c("kap_verlust_aktien") // 100,
+            "gewinn_sonstige": _c("kap_gewinn_sonstige") // 100,
+            "verlust_sonstige": _c("kap_verlust_sonstige") // 100})
+    else:
+        verrechnete = _c(KAP_ERTRAEGE) // 100
+    if zusammen:
+        if any(_c(t) != 0 for t in KAP_TOEPFE_PARTNER):
+            verrechnete += runner.catala_kapital_verrechnung({
+                "gewinn_aktien": _c("kap_gewinn_aktien_partner") // 100,
+                "verlust_aktien": _c("kap_verlust_aktien_partner") // 100,
+                "gewinn_sonstige": _c("kap_gewinn_sonstige_partner") // 100,
+                "verlust_sonstige": _c("kap_verlust_sonstige_partner") // 100})
+        else:
+            verrechnete += _c(KAP_ERTRAEGE_PARTNER) // 100
+    return runner.catala_sparer_pb({
+        "veranlagungszeitraum": vz, "kapitalertraege": verrechnete,
+        "zusammenveranlagung": zusammen})
+
+
 def _zweig_abziehbarer_betrag(vz: int, bindung: dict):
     """§ 9 Entfernungspauschale — quantitaet='abziehbarer_betrag'.
 
@@ -1202,15 +1272,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # Kind-nimmt-nicht + kind_idnr (kumulativ). S.4-Ausschluss greift
         # in _shared_steuer_sonder_agb (agb_cent-Kürzung).
         # Kind-PB additiv zu Person-A/B-PB (eigener Abzugstatbestand).
-        for kd in _kind_behinderten_pb_daten(store, bindung, nur_bestaetigt):
-            ausserg += runner.catala_behinderten_pb({
-                "veranlagungszeitraum": vz,
-                "grad_der_behinderung": kd["grad_der_behinderung"],
-                "ist_hilflos_blind_taubblind": kd["ist_hilflos_blind_taubblind"]})
-            if kd["hat_hinterbliebenenbezuege"]:
-                ausserg += runner.catala_hinterbliebenen_pb({
-                    "veranlagungszeitraum": vz,
-                    "hat_hinterbliebenenbezuege": True})
+        ausserg += _p33b_kind_pauschbetraege(store, bindung, nur_bestaetigt, vz)
         # Person-B-§33b: eigener Behinderten-Pauschbetrag des Ehegatten additiv (1:1 Rentner-Präzedenz
         # api.py:1015-1018). Nur Zusammenveranlagung. Pflege-/Hinterbliebenen-PB für Person B nicht
         # modelliert (wie rentner). Felder = rentner_*-globale IDs.
@@ -1225,14 +1287,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # Co-Okkurrenz sperrt der Guard (kapital_semantik_offen). Töpfe (§ 20 Abs. 6, per-Topf-Floor)
         # → verrechnete; sonst das Aggregat. Dann Sparer-PB (§ 20 Abs. 9). kapitaleinkuenfte ist UNABHÄNGIG
         # vom § 31-Kinderfreibetrag (§ 2 Abs. 5b/Abs. 6) → EINMAL vorab, vor der § 31-Verzweigung.
-        if any(_c(t) != 0 for t in KAP_TOEPFE):
-            verrechnete = runner.catala_kapital_verrechnung({
-                "gewinn_aktien": _c("kap_gewinn_aktien") // 100,
-                "verlust_aktien": _c("kap_verlust_aktien") // 100,
-                "gewinn_sonstige": _c("kap_gewinn_sonstige") // 100,
-                "verlust_sonstige": _c("kap_verlust_sonstige") // 100})
-        else:
-            verrechnete = _c(KAP_ERTRAEGE) // 100
+        #
         # Zusammenveranlagung für § 20 kommt AUSSCHLIESSLICH aus der Veranlagungsart (§ 26).
         # Bis 2026-07-30 gab es ein zweites Feld kap_zusammenveranlagung, das dieselbe Frage
         # stellte und ihr widersprechen konnte: bei veranlagung=einzel + Flag=true wurde der
@@ -1240,20 +1295,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # Steuer bei 4.000 € Kapital. Das Feld ist entfernt; eine Kapital-Veranlagung getrennt
         # von der allgemeinen Veranlagungsart kennt § 26 EStG nicht.
         zusammen = g["veranlagung"] == "zusammen"
-        # Person B (§ 26b, #4b): das Kapital des Ehegatten single-source (Aggregat XOR Töpfe) ROH
-        # addieren VOR dem gemeinsamen Sparer-PB (§ 20 Abs. 9 S. 3, ×2 über zusammenveranlagung). Nur
-        # bei Zusammenveranlagung; Co-Okkurrenz B sperrt der Guard (kapital_semantik_offen).
-        if zusammen:
-            if any(_c(t) != 0 for t in KAP_TOEPFE_PARTNER):
-                verrechnete += runner.catala_kapital_verrechnung({
-                    "gewinn_aktien": _c("kap_gewinn_aktien_partner") // 100,
-                    "verlust_aktien": _c("kap_verlust_aktien_partner") // 100,
-                    "gewinn_sonstige": _c("kap_gewinn_sonstige_partner") // 100,  # Register-B-K2-Fix: symmetrisch statt hart 0
-                    "verlust_sonstige": _c("kap_verlust_sonstige_partner") // 100})
-            else:
-                verrechnete += _c(KAP_ERTRAEGE_PARTNER) // 100
-        kapitaleinkuenfte = runner.catala_sparer_pb({
-            "veranlagungszeitraum": vz, "kapitalertraege": verrechnete, "zusammenveranlagung": zusammen})
+        kapitaleinkuenfte = _p20_kapitaleinkuenfte(_c, zusammen, vz)
 
         # §23 Private Veräußerungsgeschäfte (Stufe-1): Σ über Instanzen → ADDITIV in einkuenfte_sonstige
         g["einkuenfte_sonstige"] = _p23_ansonsten_einkuenfte(f, store, bindung, nur_bestaetigt)
@@ -1596,15 +1638,7 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         # §33b Abs.5 Kind-PB-Übertragung: per Kind, nur wenn Antrag +
         # Kind-nimmt-nicht + kind_idnr (kumulativ). S.4-Ausschluss greift
         # in _shared_steuer_sonder_agb (agb_cent-Kürzung).
-        for kd in _kind_behinderten_pb_daten(store, bindung, nur_bestaetigt):
-            ausserg += runner.catala_behinderten_pb({
-                "veranlagungszeitraum": vz,
-                "grad_der_behinderung": kd["grad_der_behinderung"],
-                "ist_hilflos_blind_taubblind": kd["ist_hilflos_blind_taubblind"]})
-            if kd["hat_hinterbliebenenbezuege"]:
-                ausserg += runner.catala_hinterbliebenen_pb({
-                    "veranlagungszeitraum": vz,
-                    "hat_hinterbliebenenbezuege": True})
+        ausserg += _p33b_kind_pauschbetraege(store, bindung, nur_bestaetigt, vz)
         # Partner-§33b (§ 26b, #4b, Wiring-Fix): eigener Behinderten-Pauschbetrag des Ehegatten additiv zur
         # gemeinsamen ausserg-Summe — nur Zusammenveranlagung (RENTNER_PARTNER hat nur GdB/hilflos, kein
         # Pflegegrad/Hinterbliebenenbezüge für Person B). Vorher: Felder standen nur im Gate-Tuple, nie
@@ -1676,28 +1710,10 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         # Kapital § 20/§ 32d (Rentner): SINGLE-SOURCE (Instructor-Q1) — Töpfe XOR Aggregat.
         # Töpfe (§ 20 Abs. 6) → verrechnet; sonst Aggregat. Sparer-PB (§ 20 Abs. 9) — UNABHÄNGIG von GdE.
         # § 2 Abs. 5b: § 32d-Kapitalerträge gehören NICHT in gde (oben berechnet) — nur Renten + Gewinn.
-        if any(_c(t) != 0 for t in KAP_TOEPFE):
-            verrechnete = runner.catala_kapital_verrechnung({
-                "gewinn_aktien": _c("kap_gewinn_aktien") // 100,
-                "verlust_aktien": _c("kap_verlust_aktien") // 100,
-                "gewinn_sonstige": _c("kap_gewinn_sonstige") // 100,
-                "verlust_sonstige": _c("kap_verlust_sonstige") // 100})
-        else:
-            verrechnete = _c(KAP_ERTRAEGE) // 100
-        # Zusammenveranlagung für § 20 Sparer-PB: nur aus Veranlagungsart (§ 26).
-        # § 20 Abs. 9 S. 3: PB wird verdoppelt bei Zusammenveranlagung.
+        # Zusammenveranlagung für den Sparer-PB: nur aus der Veranlagungsart (§ 26),
+        # § 20 Abs. 9 S. 3 verdoppelt ihn dann — s. _p20_kapitaleinkuenfte.
         zusammen_r = rentner_g["veranlagung"] == "zusammen"
-        if zusammen_r:
-            if any(_c(t) != 0 for t in KAP_TOEPFE_PARTNER):
-                verrechnete += runner.catala_kapital_verrechnung({
-                    "gewinn_aktien": _c("kap_gewinn_aktien_partner") // 100,
-                    "verlust_aktien": _c("kap_verlust_aktien_partner") // 100,
-                    "gewinn_sonstige": _c("kap_gewinn_sonstige_partner") // 100,
-                    "verlust_sonstige": _c("kap_verlust_sonstige_partner") // 100})
-            else:
-                verrechnete += _c(KAP_ERTRAEGE_PARTNER) // 100
-        kapitaleinkuenfte_r = runner.catala_sparer_pb({
-            "veranlagungszeitraum": vz, "kapitalertraege": verrechnete, "zusammenveranlagung": zusammen_r})
+        kapitaleinkuenfte_r = _p20_kapitaleinkuenfte(_c, zusammen_r, vz)
         # § 10 Abs. 4b S. 3 — wie im gesamt-Pfad: der Erstattungsüberhang erhöht den GdE
         # (lokale gde für §10b/§33) und geht mangels Hinzurechnungs-Slot über
         # einkuenfte_sonstige in die Engine. NICHT in den § 35-Nenner unten — der liest
