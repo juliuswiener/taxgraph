@@ -42,6 +42,13 @@ def _session_check():
 HOST = "127.0.0.1"          # Auflage B — niemals 0.0.0.0
 STATIC = os.path.join(HERE, "static")
 
+# Höchstmaß für einen Anfrage-Rumpf (Audit sec-unbounded-request-body). Bemessen am größten
+# echten Anwendungsfall: ein PDF kommt base64-kodiert IM JSON-Rumpf (server.py macht nur
+# json.loads, kein Multipart), und base64 bläht um rund ein Drittel auf. 32 MiB Rumpf tragen
+# damit ein PDF von etwa 23 MB — großzügig für einen gescannten Jahres-Kontoauszug und weit
+# unterhalb dessen, was einen einfädigen Server beim blossen Einlesen lahmlegt.
+MAX_BODY_BYTES = 32 * 1024 * 1024
+
 _CTYPE = {".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8",
           ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8"}
 
@@ -180,7 +187,22 @@ class Handler(BaseHTTPRequestHandler):
                 return
         body = {}
         if method == "POST":
-            laenge = int(self.headers.get("Content-Length") or 0)
+            try:
+                laenge = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                # Ein nicht-numerischer Header ist kein Serverfehler, sondern eine kaputte
+                # Anfrage — ohne diesen Zweig würde die ValueError bis in die 500-Behandlung
+                # durchschlagen.
+                self._json(400, {"fehler": "Content-Length ist keine Zahl"})
+                return
+            if laenge < 0 or laenge > MAX_BODY_BYTES:
+                # Ohne diese Grenze liest rfile.read(laenge) so viel, wie der Client BEHAUPTET
+                # zu senden. Der Server ist einfädig (s. make_server), ein angekündigtes
+                # Gigabyte belegt also nicht nur Speicher, sondern hält den ganzen Dienst auf,
+                # solange gelesen wird — dieselbe Angriffsfläche wie ein Unterprozess ohne
+                # Zeitlimit (Audit sec-unbounded-request-body / res-ocr-subprocess-no-timeout).
+                self._json(413, {"fehler": f"Anfrage zu groß (Höchstmaß: {MAX_BODY_BYTES} Bytes)"})
+                return
             if laenge and not (self.headers.get("Content-Type") or "").startswith("application/json"):
                 self._json(415, {"fehler": "Content-Type muss application/json sein"})
                 return
