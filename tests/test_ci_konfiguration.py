@@ -212,16 +212,52 @@ def test_catala_version_ist_festgenagelt_und_passt_zum_cache_schluessel():
         f"läuft eine andere Version als die, die der Schlüssel benennt.")
 
 
-def test_gettsim_ist_exakt_festgenagelt():
-    """Das Vergleichs-Oracle bestimmt, welche Abweichung als bekannt gilt. Eine neue Fassung
-    verschiebt die Vergleichsbasis stillschweigend — schlimmstenfalls zeigt eine
-    Allowlist-Zeile ins Leere und deckt fortan eine ECHTE Abweichung mit ab."""
+def _gepinnte_gettsim_version() -> str:
     zeilen = [z.split("#")[0].strip() for z in REQ_ORACLE.read_text(encoding="utf-8").splitlines()]
     gettsim = [z for z in zeilen if z.lower().startswith("gettsim")]
     assert gettsim, "gettsim steht nicht in requirements-oracle.txt"
     assert "==" in gettsim[0], (
         f"gettsim ist nicht exakt festgenagelt: {gettsim[0]!r} — bei einem Oracle ist die "
         f"Version ein Zahlenwert, kein Ablaufdetail")
+    return gettsim[0].split("==", 1)[1].strip()
+
+
+def test_gettsim_ist_exakt_festgenagelt():
+    """Das Vergleichs-Oracle bestimmt, welche Abweichung als bekannt gilt. Eine neue Fassung
+    verschiebt die Vergleichsbasis stillschweigend — schlimmstenfalls zeigt eine
+    Allowlist-Zeile ins Leere und deckt fortan eine ECHTE Abweichung mit ab."""
+    assert _gepinnte_gettsim_version()
+
+
+def test_gepinnte_gettsim_version_ist_die_installierbare():
+    """Die gepinnte Zahl muss die DISTRIBUTIONS-Version sein, nicht die des Moduls.
+
+    Hier stand erst 1.2.1, und der CI-Lauf scheiterte mit "no version of gettsim==1.2.1". Der
+    Grund: das Paket meldet zwei verschiedene Versionen. `gettsim.__version__` sagt 1.2.1, die
+    Metadaten sagen 1.2 — und pip/uv kennen nur die Metadaten. Zwei Repräsentationen derselben
+    Zahl, die auseinanderfallen; genau die Bauart, an der hier schon Geld verlorengegangen ist,
+    diesmal in der Werkzeugkette.
+
+    Der Test liest die INSTALLIERTE Metadaten-Version aus dem venv312 und vergleicht. Ohne
+    venv312 (jeder CI-Job ausser dem Crosscheck, frischer Checkout) übersprungen — die
+    Alternative wäre eine Netzabfrage bei PyPI in einer Unit-Suite."""
+    venv_py = ROOT / "oracle" / ".venv312" / "bin" / "python"
+    if not venv_py.exists():
+        pytest.skip("oracle/.venv312 nicht vorhanden — Metadaten nicht lesbar")
+    import subprocess
+    ergebnis = subprocess.run(
+        [str(venv_py), "-c",
+         "import importlib.metadata as m; print(m.version('gettsim'))"],
+        capture_output=True, text=True, timeout=30)
+    if ergebnis.returncode != 0:
+        pytest.skip(f"gettsim im venv312 nicht installiert: {ergebnis.stderr.strip()[:120]}")
+    installiert = ergebnis.stdout.strip()
+    gepinnt = _gepinnte_gettsim_version()
+    assert gepinnt == installiert, (
+        f"requirements-oracle.txt pinnt gettsim=={gepinnt}, installiert ist laut Metadaten "
+        f"{installiert}. Wurde die Zahl aus `gettsim.__version__` abgeschrieben? Die weicht ab "
+        f"— pip und uv kennen nur die Metadaten-Version, und ein Pin auf die andere lässt den "
+        f"CI-Job mit 'no version of gettsim=={gepinnt}' scheitern.")
 
 
 # ------------------------------------------------------------ Betrieb: Grenzen und Rechte

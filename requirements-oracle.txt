@@ -11,10 +11,18 @@
 # behobener GETTSIM-Bug lässt eine Allowlist-Zeile ins Leere zeigen, und die deckt fortan eine
 # ECHTE Abweichung mit ab, ohne dass es auffällt.
 #
-# 1.2.1 ist die Fassung, gegen die die heutigen Erwartungswerte erhoben sind (lokal gemessen
-# 2026-08-18). Ein Wechsel gehört bewusst gemacht: Version hier heben, Crosscheck laufen
-# lassen, die Allowlist gegen die neuen Ergebnisse durchsehen.
-gettsim==1.2.1
+# 1.2 ist die Fassung, gegen die die heutigen Erwartungswerte erhoben sind. Ein Wechsel gehört
+# bewusst gemacht: Version hier heben, Crosscheck laufen lassen, die Allowlist gegen die neuen
+# Ergebnisse durchsehen.
+#
+# ACHTUNG, HIER STAND ERST 1.2.1 UND DER CI-LAUF SCHEITERTE DARAN ("no version of
+# gettsim==1.2.1"): das Paket meldet ZWEI verschiedene Versionen. `gettsim.__version__` sagt
+# 1.2.1, die Distributions-Metadaten (importlib.metadata.version) sagen 1.2 — und pip/uv
+# kennen nur die zweite. Zwei Repräsentationen derselben Zahl, die auseinanderfallen; wer die
+# Version hier nachzieht, liest sie mit
+#     oracle/.venv312/bin/python -c "import importlib.metadata as m; print(m.version('gettsim'))"
+# und NICHT über __version__.
+gettsim==1.2
 
 # Drumherum für den Testlauf im selben venv. tests/conftest.py importiert `server` (f0e1c71),
 # damit zieht jede Collection unter tests/ den vollen server->auth-Importpfad — ohne bcrypt und
