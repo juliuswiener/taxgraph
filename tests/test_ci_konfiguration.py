@@ -349,6 +349,57 @@ def test_guard_findet_die_catala_gebundenen_dateien():
     assert all(n.startswith("test_") and n.endswith(".py") for n in gefunden)
 
 
+def test_eric_skip_greift_nur_ohne_schema():
+    """Der ERiC-Skip-Hook darf ausschliesslich greifen, wenn das Schema wirklich fehlt.
+
+    102 Tests scheiterten in CI daran, dass das lizenzpflichtige ERiC-XSD dort nicht liegt. Sie
+    zu überspringen ist richtig — sie in einer Umgebung MIT Schema zu überspringen wäre der
+    Schaden: dann verschwände die halbe ELSTER-Prüfung lautlos, und ein echter XSD-Fehler sähe
+    aus wie eine fehlende Lizenzdatei. Genau diese Richtung prüft dieser Test."""
+    sys.path.insert(0, HERE)
+    import conftest                       # noqa: E402
+
+    class _Attrappe(Exception):
+        pass
+    _Attrappe.__name__ = "XmlFehler"      # der Hook prüft den Typnamen, nicht die Klasse
+    echte_meldung = "E10-2025.xsd nicht gefunden — $ERIC_DIR setzen / ERiC-Doku entpacken."
+
+    if conftest.ERIC_SCHEMA_FEHLT:
+        assert conftest._ist_fehlendes_eric_schema(_Attrappe(echte_meldung)), (
+            "ohne Schema erkennt der Hook den ERiC-Fehler nicht — dann bleiben die 102 Tests rot")
+    else:
+        assert not conftest._ist_fehlendes_eric_schema(_Attrappe(echte_meldung)), (
+            "das Schema ist vorhanden, der Hook würde trotzdem überspringen — so verschwände "
+            "die ELSTER-Prüfung lautlos, und ein echter XSD-Fehler sähe aus wie eine fehlende "
+            "Lizenzdatei")
+
+
+def test_eric_skip_frisst_keine_fremden_fehler():
+    """Die Gegenprobe zur Weite des Musters: ein anderer XmlFehler und eine andere Ausnahme mit
+    derselben Meldung dürfen NICHT übersprungen werden. Ein Hook, der jede Ausnahme in einen
+    Skip verwandelt, macht die Suite grün, indem er sie abschaltet."""
+    sys.path.insert(0, HERE)
+    import conftest                       # noqa: E402
+
+    class _XmlFehler(Exception):
+        pass
+    _XmlFehler.__name__ = "XmlFehler"
+
+    assert not conftest._ist_fehlendes_eric_schema(
+        _XmlFehler("Pflichtfeld E0100082 fehlt im Container")), \
+        "ein inhaltlicher XmlFehler wird übersprungen — das versteckt echte Abgabe-Blocker"
+    assert not conftest._ist_fehlendes_eric_schema(
+        ValueError("E10-2025.xsd nicht gefunden — $ERIC_DIR setzen")), \
+        "eine beliebige Ausnahme mit der Meldung wird übersprungen — zu weit gefasst"
+
+    # AssertionError IST zugelassen, aber nur mit der Lizenz-Meldung: 12 Tests fangen den
+    # Fehler mit pytest.raises(match=...) ab, dort kommt nie ein XmlFehler beim Test an.
+    # Ein gewöhnlicher Assertion-Fehler darf davon nicht profitieren.
+    assert not conftest._ist_fehlendes_eric_schema(
+        AssertionError("erwartet 4711, war 0")), \
+        "ein gewöhnlicher AssertionError wird übersprungen — so wird jede rote Zahl grün"
+
+
 def test_guard_greift_nur_ohne_toolchain():
     """Die andere Richtung, und die wichtigere: mit verfügbarer Toolchain darf NICHTS
     übersprungen werden. Ein Guard, der immer greift, versteckt die halbe Suite."""

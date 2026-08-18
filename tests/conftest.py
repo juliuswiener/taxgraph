@@ -105,6 +105,72 @@ def _dateien_die_catala_brauchen() -> list[str]:
     return treffer
 
 
+# ------------------------------------------- Fehlendes ERiC-Schema ist ein Skip, kein Fehler
+#
+# Das ERiC-XSD ist lizenzpflichtig: kein öffentlicher Download, in CI nicht vorhanden. Der
+# Workflow hält das seit jeher fest — "alle @requires_real_schema-Tests skippen hier graceful
+# weiter". Gemessen am 2026-08-18, als die Suite dort zum ersten Mal wirklich lief: das gilt
+# NUR für tests/test_xsd_verify.py, wo das Muster steht. 14 weitere Dateien kennen es nicht,
+# und 102 Tests scheiterten mit
+#     XmlFehler: E10-2025.xsd nicht gefunden — $ERIC_DIR setzen / ERiC-Doku entpacken.
+#
+# Dieselbe Klasse wie die 23 ungeguardeten runner-Importe darüber: eine Konvention, die an
+# genau einer Stelle durchgehalten wurde. Deshalb auch hier zentral und gemessen statt in 14
+# Dateien nachgezogen — eine Liste, die man an 15 Stellen pflegen muss, wird an einer gepflegt.
+#
+# ENG GEFASST, damit er keine echten Fehler frisst:
+#   - nur wenn das Schema WIRKLICH nirgends liegt (dieselbe Suche wie test_xsd_verify),
+#   - nur die Ausnahme XmlFehler,
+#   - nur mit genau dieser Meldung.
+# Ist das Schema da (jeder lokale Lauf mit ERIC_DIR, `make eric-gate`), greift nichts davon,
+# und ein echter XSD-Fehler schlägt durch wie bisher — geprüft in
+# tests/test_ci_konfiguration.py::test_eric_skip_greift_nur_ohne_schema.
+def _eric_schema_fehlt() -> bool:
+    for teil in ("produkt/mapping", "produkt/traverser"):
+        p = os.path.join(_ROOT, teil)
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    try:
+        import xsd_verify
+        return xsd_verify._find_schema(2025) is None
+    except Exception:
+        return True          # ohne den Sucher ist das Schema erst recht nicht prüfbar
+
+
+ERIC_SCHEMA_FEHLT = _eric_schema_fehlt()
+_ERIC_MUSTER = "nicht gefunden — $ERIC_DIR setzen"
+
+
+def _ist_fehlendes_eric_schema(fehler: BaseException) -> bool:
+    """Trägt diese Ausnahme das fehlende ERiC-Schema als Ursache?
+
+    ZWEI Typen, und der zweite ist nicht Bequemlichkeit, sondern gemessen: 12 der betroffenen
+    Tests fangen den Fehler mit `pytest.raises(..., match=...)` ab, weil sie ein fail-closed-
+    Verhalten prüfen. Dort kommt beim Test nie ein XmlFehler an — pytest verwandelt den
+    verfehlten Vergleich in einen AssertionError ("Regex pattern did not match"), der die
+    tatsächliche Meldung mitführt. Ohne den zweiten Typ blieben genau diese 12 rot, und zwar
+    ausgerechnet die Sicherheitstests.
+
+    Die Meldung selbst ist der enge Teil: "$ERIC_DIR setzen / ERiC-Doku entpacken" steht an
+    genau zwei Stellen in elster_xml.py und sagt eindeutig, dass die Lizenzdatei fehlt. Ein
+    inhaltlicher XmlFehler (fehlendes Pflicht-Kz, falscher Container) trägt sie nicht und wird
+    weiterhin rot — geprüft in test_eric_skip_frisst_keine_fremden_fehler."""
+    if not ERIC_SCHEMA_FEHLT or _ERIC_MUSTER not in str(fehler):
+        return False
+    return type(fehler).__name__ in ("XmlFehler", "AssertionError")
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_call(item):
+    try:
+        return (yield)
+    except Exception as e:
+        if _ist_fehlendes_eric_schema(e):
+            pytest.skip("ERiC-XSD nicht verfügbar (lizenzpflichtig, $ERIC_DIR nicht gesetzt) — "
+                        "dieser Test braucht das echte Schema")
+        raise
+
+
 collect_ignore = []
 if _catala_fehlt():
     collect_ignore = _dateien_die_catala_brauchen()
