@@ -34,7 +34,25 @@ def _hole(url: str, *, data: bytes | None = None, headers: dict | None = None) -
         with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
             return json.loads(r.read())
     except Exception as e:                       # Netz/HTTP/JSON — alles zum Fallback
-        raise OrsNichtVerfuegbar(f"ORS-Aufruf fehlgeschlagen: {type(e).__name__}") from e
+        # `from None`, NICHT `from e` (Audit 2026-08-16, sec-ors-key-in-query-string): der
+        # Geocoding-Aufruf trägt den Schlüssel im Query-String, und urllib.error.HTTPError führt
+        # die vollständige angefragte URL in `.url` mit. Mit erhaltener Kette bliebe der
+        # Schlüssel über `__cause__.url` ERREICHBAR — für alles, was Ausnahmen samt Attributen
+        # serialisiert (Fehler-Meldedienste, Diagnose-Dumps). Im gedruckten Standard-Traceback
+        # steht er NICHT; das war die erste, zu weit gehende Begründung dieser Zeile, und die
+        # Mutationsprobe hat sie widerlegt (der Test dazu war grün, gleich was hier stand).
+        #
+        # Der Preis ist Diagnose: die ursprüngliche Ausnahme ist weg. Deshalb wandert ihr Typ
+        # in die Meldung (wie bisher) — das reicht, um Netz von HTTP von JSON zu unterscheiden,
+        # und mehr braucht ein Client, der ohnehin sauber auf manuelle Eingabe zurückfällt.
+        #
+        # WAS DAS NICHT LÖST: der Schlüssel steht weiterhin in den Zugriffsprotokollen des
+        # Anbieters und jedes Proxys dazwischen. Ihn in den Authorization-Header zu verlegen
+        # ist für /geocode/search NICHT belegt — dieser Endpunkt ist keine ORS-Route, sondern
+        # eine vorgeschaltete Pelias-Instanz, und sämtliche offiziellen Beispiele dafür, auch
+        # die des ORS-Supports, verwenden api_key im Query. Der Routing-Aufruf unten nutzt
+        # bereits den Header. Offen für eine Prüfung gegen den echten Dienst.
+        raise OrsNichtVerfuegbar(f"ORS-Aufruf fehlgeschlagen: {type(e).__name__}") from None
 
 
 def geocode(adresse: str) -> list[float]:
