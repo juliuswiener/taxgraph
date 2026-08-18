@@ -37,6 +37,11 @@ def konfiguriert(monkeypatch):
     monkeypatch.setenv("LLM_API_KEY", KEY)
     monkeypatch.setenv("LLM_API_BASE", "https://example.test/v1")
     monkeypatch.setenv("LLM_MODEL", "test/modell")
+    # Seit der Client vorübergehende Störungen wiederholt (2026-08-18, Audit
+    # res-product-clients-no-retry), wartet er zwischen den Versuchen wirklich. Für die
+    # Diagnose-Prüfungen hier ist das reine Wartezeit: sie prüfen den TEXT der Meldung, nicht
+    # die Wiederholung selbst (die hat ihre eigene Datei, test_llm_deckel_und_wiederholung.py).
+    monkeypatch.setattr(LC.time, "sleep", lambda s: None)
 
 
 def _antworte_mit(status: int, body: bytes):

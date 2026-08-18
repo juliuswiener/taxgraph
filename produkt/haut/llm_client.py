@@ -15,16 +15,42 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import urllib.error      # explizit: urllib.request zieht es zwar intern nach, aber darauf
 import urllib.request    # zu bauen ist Zufall, kein Vertrag — und _call fängt HTTPError
 from dataclasses import dataclass
 
 _TIMEOUT = 30
 
+# ------------------------------------------------- Wiederholung bei vorübergehenden Störungen
+# (Audit res-product-clients-no-retry): jeder Fehlschlag wurde bisher sofort zu
+# LlmNichtVerfuegbar — auch ein 503, das eine Sekunde später verschwunden wäre. Die
+# Entwicklungs-Pipeline hat für dieselbe Anbieterklasse längst einen Backoff, und ihr eigener
+# Kommentar hält fest, dass vorübergehende 503 dort gemessene Realität sind.
+_VERSUCHE = 3                       # ein regulärer + zwei Wiederholungen
+_BACKOFF_S = (1, 2)                 # wie pipeline/client.py: 2**versuch
+
+# WELCHE Statuscodes wiederholt werden, ist NICHT aus der Pipeline übernommen — dort gilt 403
+# als vorübergehend, ausdrücklich begründet mit einer OpenRouter-Eigenheit ("an invalid key
+# gives 401, not 403"). Dieser Client ist provider-agnostisch, und sein eigener Kommentar unten
+# hält fest, wofür 403 hier steht: "Budget limit exceeded". Ein erschöpftes Budget dreimal
+# anzufragen kostet nur Zeit und ändert nichts — im einfädigen Server dreimal so lange
+# Stillstand für dieselbe Antwort.
+#
+# Das ist der Punkt, an dem "die Pipeline macht es doch schon richtig" nicht trägt: die
+# Erkenntnis ist anbieterspezifisch, die Übernahme wäre eine Verschlechterung gewesen.
+_VORUEBERGEHEND = frozenset({429, 500, 502, 503, 504})
+
 
 class LlmNichtVerfuegbar(Exception):
     """Kein $LLM_API_KEY gesetzt oder der Dienst antwortete nicht verwertbar — der /chat-Handler fällt auf die
     reine Erklär-Grenze zurück (die KI schlägt nichts vor, setzt erst recht nichts). Nie crashen, nie Fake."""
+
+
+class _Voruebergehend(Exception):
+    """Intern: dieser Fehlschlag ist einen weiteren Versuch wert. Bewusst NICHT von
+    LlmNichtVerfuegbar abgeleitet — sonst fingen ihn die Aufrufer, die auf ihre Erklär-Grenze
+    zurückfallen, schon ab, bevor überhaupt wiederholt wurde. Verlässt dieses Modul nie."""
 
 
 def _key() -> str:
@@ -62,6 +88,21 @@ def _call(messages: list[dict], schema: dict | None = None) -> str:
     req = urllib.request.Request(
         f"{base}/chat/completions", data=body, method="POST",
         headers={"Authorization": f"Bearer {schluessel}", "Content-Type": "application/json"})
+    for versuch in range(_VERSUCHE):
+        letzter = versuch == _VERSUCHE - 1
+        try:
+            return _ein_versuch(req, schluessel)
+        except _Voruebergehend as e:
+            if letzter:
+                raise LlmNichtVerfuegbar(
+                    f"LLM-Aufruf nach {_VERSUCHE} Versuchen fehlgeschlagen: {e}") from e
+            time.sleep(_BACKOFF_S[versuch])
+    raise AssertionError("unerreichbar")   # die Schleife kehrt zurück oder wirft
+
+
+def _ein_versuch(req, schluessel: str) -> str:
+    """Ein einzelner Aufruf. Wirft _Voruebergehend bei Störungen, die vorübergehen können, und
+    LlmNichtVerfuegbar bei allem, was ein zweiter Versuch nicht heilt."""
     try:
         with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
             j = json.loads(r.read())
@@ -84,8 +125,23 @@ def _call(messages: list[dict], schema: dict | None = None) -> str:
         # Ausnahme im Log. Gefunden vom eigenen Test dieser Änderung, nicht im Betrieb.
         if schluessel and schluessel in detail:
             detail = detail.replace(schluessel, "<KEY>")
+        if e.code in _VORUEBERGEHEND:
+            raise _Voruebergehend(f"HTTP {e.code} {detail}") from e
         raise LlmNichtVerfuegbar(f"LLM-Aufruf fehlgeschlagen: HTTP {e.code} {detail}") from e
+    except urllib.error.URLError as e:
+        # Netzstörung oder Zeitüberschreitung (socket.timeout kommt hier als URLError.reason an)
+        # — beides kann vorübergehen, anders als eine falsche Base-URL. Die Unterscheidung ist
+        # aus der Ausnahme allein nicht zu treffen; ein zweiter Versuch kostet im schlimmsten
+        # Fall eine Sekunde und den zweiten Fehlschlag.
+        raise _Voruebergehend(f"{type(e).__name__}: {e.reason}") from e
+    except TimeoutError as e:
+        # Der Typname gehört MIT in die Meldung, nicht nur die verständliche Beschreibung: die
+        # Diagnose-Lehre von 2026-08-14 war, dass eine Meldung ohne Ursache jede Fehlerart gleich
+        # aussehen lässt (test_llm_client_fehlerdiagnose.py hält das fest). Der eigene Umbau
+        # hätte das beinahe wieder weggenommen — aufgefallen ist es nur, weil jener Test rot wurde.
+        raise _Voruebergehend(f"{type(e).__name__}: Zeitüberschreitung nach {_TIMEOUT}s") from e
     except Exception as e:
+        # Alles Übrige (kaputtes JSON, fehlende choices-Struktur) heilt kein zweiter Versuch.
         raise LlmNichtVerfuegbar(f"LLM-Aufruf fehlgeschlagen: {type(e).__name__}") from e
 
 
