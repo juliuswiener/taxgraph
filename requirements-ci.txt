@@ -1,0 +1,32 @@
+# Python-Abhängigkeiten für die CI-Jobs (Audit 2026-08-16: no-dependency-manifest,
+# dep-no-manifest-no-lockfile).
+#
+# Vorher stand diese Liste DREIMAL wortgleich in .github/workflows/ci.yml. Genau dort ist am
+# 2026-08-18 sichtbar geworden, was das kostet: `requests` fehlte in allen drei Kopien, und der
+# volle CI-Gate scheiterte deshalb bei der Collection — 5 Fehler, null gelaufene Tests, seit
+# Monaten rot. Eine Liste, die man an drei Stellen pflegen muss, wird an null Stellen gepflegt.
+#
+# KEIN Lockfile und keine oberen Schranken: das ist bewusst und kein Versehen. Die Versionen
+# hier sind Untergrenzen, damit ein CI-Lauf nicht an einer zu alten Distributions-Version
+# scheitert; nach oben offen, weil die Suite gegen die jeweils aktuelle Fassung laufen SOLL —
+# sie ist mit 2226 Tests genau das Werkzeug, das eine Unverträglichkeit findet. Was hier NICHT
+# gilt, gilt für die Rechenbasis: catala und gettsim sind exakt festgenagelt (ci.yml bzw.
+# requirements-oracle.txt), weil eine andere Version dort andere ZAHLEN bedeutet, nicht nur
+# einen anderen Ablauf.
+
+# Testlauf
+pytest>=8.0
+
+# Produkt: Bindungstabellen, Schema-Prüfung, Auth
+pyyaml>=6.0
+jsonschema>=4.0
+bcrypt>=4.0
+PyJWT>=2.8
+
+# Beleg-/Kontoauszug-Writer: Scan-Fixtures (zusammen mit img2pdf aus apt)
+Pillow>=10.0
+
+# pipeline/client.py (Entwicklungs-Werkzeugkette). Wird von der Produkt-Oberfläche NICHT
+# gebraucht — llm_client und ors_client sind bewusst stdlib-only (urllib) — aber die Tests
+# unter tests/ sammeln pipeline/ mit ein, und ohne dieses Paket bricht die Collection.
+requests>=2.31

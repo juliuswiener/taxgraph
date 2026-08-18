@@ -38,6 +38,84 @@ _HAUT = os.path.join(_ROOT, "produkt", "haut")
 if _HAUT not in sys.path:
     sys.path.insert(0, _HAUT)
 
+
+# --------------------------------------------------- Sammel-Guard ohne Catala-Toolchain
+#
+# OHNE gebaute Catala-Toolchain ist `runner` nicht importierbar (es zieht den
+# Compiler-Output `pkg` nach). 23 Testdateien importieren ihn auf Modulebene ohne try —
+# ihre Collection scheitert dann mit ModuleNotFoundError, und pytest bricht die GESAMTE
+# Sammlung ab: gemessen am 2026-08-18 in CI 27 Collection-Fehler, 1 skipped, NULL Tests
+# gelaufen. Der schnelle CI-Job war damit seit Monaten rot und hat nie etwas geprüft.
+#
+# WARUM ZENTRAL, obwohl .github/workflows/ci.yml ausdrücklich "kein zentrales conftest"
+# festhält: die dort beschriebene Regel — jede Datei guardet sich selbst — hat nicht
+# getragen. Derselbe Kommentar sagt "verifiziert gegen ALLE tests/*.py, Stand 2026-07-21:
+# EINE Luecke gefunden" und nennt test_kapital_accessoren.py, das im YAML per --ignore
+# ausgenommen ist. Aus dieser einen sind 23 geworden, ohne dass irgendetwas es meldete.
+# Eine Konvention, die 22-mal hintereinander gebrochen wird, ist keine Konvention; eine
+# --ignore-Liste im YAML wäre dieselbe Pflegeliste mit demselben Schicksal.
+#
+# Die Menge wird deshalb GEMESSEN statt gepflegt: der AST sagt, welche Datei `runner`
+# oder `pkg` auf Modulebene importiert. Eine neue solche Datei ist automatisch dabei.
+#
+# WAS DAS NICHT TUT: Fehler verstecken. Übersprungen wird NUR, wenn `runner` wirklich
+# nicht importierbar ist — mit Toolchain (der volle CI-Job, jeder lokale Lauf) läuft
+# jede Datei echt. Ein ImportError aus einem ANDEREN Grund bleibt sichtbar, weil er die
+# Probe unten nicht betrifft.
+def _catala_fehlt() -> bool:
+    """Ist `runner` importierbar?
+
+    ACHTUNG, HIER LAG BEIM ERSTEN ENTWURF EIN SCHWERER FEHLER (gefunden 2026-08-18 von
+    test_ci_konfiguration.test_guard_greift_nur_ohne_toolchain, nicht beim Schreiben): die
+    Prüfung stand OHNE den golden-Pfad. `runner` liegt in golden/, und den fügen sonst die
+    Testdateien selbst hinzu, kurz bevor sie ihn importieren — zum conftest-Zeitpunkt ist er
+    noch nicht in sys.path. Die Probe scheiterte also IMMER, und der Guard hätte 23 Dateien
+    auch dort übersprungen, wo Catala vollständig verfügbar ist: lokal und im vollen CI-Job.
+    Ergebnis wäre eine grüne Suite mit einem Viertel weniger Tests gewesen — ein Guard, der
+    genau den Schaden anrichtet, gegen den er gebaut ist."""
+    for teil in ("golden", "produkt/mapping", "produkt/traverser", "produkt/unsicherheit"):
+        p = os.path.join(_ROOT, teil)
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    try:
+        import runner  # noqa: F401
+        return False
+    except Exception:
+        return True
+
+
+def _dateien_die_catala_brauchen() -> list[str]:
+    import ast
+    treffer = []
+    for name in sorted(os.listdir(_HERE)):
+        if not (name.startswith("test_") and name.endswith(".py")):
+            continue
+        try:
+            baum = ast.parse(open(os.path.join(_HERE, name), encoding="utf-8").read())
+        except SyntaxError:
+            continue                     # soll die Collection selbst melden, nicht wir
+        for knoten in baum.body:         # NUR top-level: ein Import in try/except ist geguardet
+            if isinstance(knoten, ast.Import) and any(
+                    a.name in ("runner", "pkg") for a in knoten.names):
+                treffer.append(name)
+                break
+            if isinstance(knoten, ast.ImportFrom) and knoten.module in ("runner", "pkg"):
+                treffer.append(name)
+                break
+    return treffer
+
+
+collect_ignore = []
+if _catala_fehlt():
+    collect_ignore = _dateien_die_catala_brauchen()
+    # Sichtbar machen, nicht stillschweigend weglassen: eine übersprungene Datei ist eine
+    # NICHT gelaufene Prüfung. Die Zahl gehört ins Protokoll, wie jede Skip-Zahl — sonst
+    # liest sich ein grüner Lauf wie ein vollständiger (Lehre 2026-08-17: eine CSP schaltete
+    # die Barrierefreiheits-Tests still ab, bemerkt allein an der Skip-Zahl 5 -> 6).
+    print(f"\n[conftest] Catala-Toolchain nicht verfügbar — {len(collect_ignore)} von "
+          f"{len([n for n in os.listdir(_HERE) if n.startswith('test_') and n.endswith('.py')])} "
+          f"Testdateien werden NICHT gesammelt. Voller Lauf braucht `clerk build p32a-python`.")
+
 import audit as _audit  # echtes Modul-Attribut, gelesen VOR jedem Test-Monkeypatch
 import server as _server  # noqa: E402 — teilt server._lade_env_dateien mit dem Server-Start
 

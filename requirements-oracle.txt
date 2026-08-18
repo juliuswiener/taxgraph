@@ -1,0 +1,25 @@
+# Das GETTSIM-Vergleichs-Oracle (oracle/.venv312, Python 3.12 — GETTSIM verlangt es).
+#
+# HIER IST DIE VERSION EIN ZAHLENWERT, KEIN ABLAUFDETAIL. GETTSIM ist das unabhängige
+# Rechenmodell, gegen das unsere Catala-Regeln geprüft werden: tests/test_gettsim_crosscheck.py
+# führt eine Allowlist bekannter Abweichungen (KNOWN_DEVIATIONS, u.a. GETTSIM-Bug #1209
+# Splitting-Rundung), und eine NEUE Abweichung schlägt rot — das ist der Zweck des Gates.
+#
+# Ungepinnt (Audit dep-gettsim-oracle-unpinned) hiesse: eine neue GETTSIM-Fassung verschiebt
+# die Vergleichsbasis stillschweigend. Entweder wird der Lauf rot, ohne dass sich bei uns etwas
+# geändert hat — dann sucht jemand den Fehler an der falschen Stelle. Oder, schlimmer, ein
+# behobener GETTSIM-Bug lässt eine Allowlist-Zeile ins Leere zeigen, und die deckt fortan eine
+# ECHTE Abweichung mit ab, ohne dass es auffällt.
+#
+# 1.2.1 ist die Fassung, gegen die die heutigen Erwartungswerte erhoben sind (lokal gemessen
+# 2026-08-18). Ein Wechsel gehört bewusst gemacht: Version hier heben, Crosscheck laufen
+# lassen, die Allowlist gegen die neuen Ergebnisse durchsehen.
+gettsim==1.2.1
+
+# Drumherum für den Testlauf im selben venv. tests/conftest.py importiert `server` (f0e1c71),
+# damit zieht jede Collection unter tests/ den vollen server->auth-Importpfad — ohne bcrypt und
+# PyJWT scheitert schon das Sammeln von test_gettsim_crosscheck.py, nicht erst ein Test.
+pyyaml>=6.0
+jsonschema>=4.0
+bcrypt>=4.0
+PyJWT>=2.8

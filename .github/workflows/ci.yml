@@ -4,19 +4,50 @@ name: CI
   push:
   pull_request:
 
+# Ein Commit auf einem Branch MIT offenem PR löste bisher zwei komplette Läufe aus (push- und
+# pull_request-Ereignis), jeder mit vier Jobs und opam-Build. Und ein neuer Commit liess den
+# alten Lauf weiterlaufen, obwohl sein Ergebnis niemanden mehr interessiert. Beides zusammen
+# ist die Erklärung für einen guten Teil der verbrauchten Minuten (Audit
+# no-concurrency-double-runs).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+# Das Standard-Token darf schreiben (Inhalte, Pakete, Aktionen). Kein Job hier braucht das —
+# sie lesen den Code und führen Tests aus. Ein kompromittierter Schritt oder eine Action mit
+# beweglichem Tag hätte damit Schreibzugriff auf das Repository (Audit
+# actions-floating-tags-no-permissions).
+permissions:
+  contents: read
+
 jobs:
-  # Fast Gate: reine Python-Logik (Makefile-Ziel `unit`). Kein Catala/opam, kein Netz.
-  # Alle catala-gebundenen Tests (runner.catala_*) skippen sich hier SELBST graceful, PER
-  # DATEI (kein zentrales conftest) -- jedes Testfile hat sein eigenes
-  # `try: import runner ... except Exception: pytest.skip(...)`. Verifiziert gegen ALLE
-  # tests/*.py (nicht nur die catala-gebundenen), Stand 2026-07-21: EINE Luecke gefunden --
-  # tests/test_kapital_accessoren.py importiert `runner` UNGEGUARDET auf Modul-Top-Level
-  # (kein try/except) -> ImportError bei der Collection ohne Toolchain, wuerde den ganzen
-  # Job rot machen. Deshalb hier per --ignore ausgenommen (Test-Fix ist ein Testfile-Edit,
-  # nicht Teil dieser CI-Zone). Im catala-toolchain-Job unten NICHT ausgenommen, dort ist
-  # `runner` importierbar und die Datei laeuft echt.
-  unit-tests:
+  # Schnell-Gate: ist die Suite ueberhaupt SAMMELBAR, und stimmt die Konfiguration?
+  # Sekunden statt Minuten, keine Toolchain. Laeuft dem vollen Gate unten voraus, ersetzt es
+  # nicht.
+  #
+  # WARUM NICHT MEHR "pytest tests/", NACHGEMESSEN 2026-08-18. Hier stand ein Job, der die
+  # ganze Suite ohne Catala fahren wollte, mit dem Kommentar: die catala-gebundenen Tests
+  # skippen sich SELBST, PER DATEI, "verifiziert gegen ALLE tests/*.py, Stand 2026-07-21:
+  # EINE Luecke gefunden". Aus dieser einen Luecke waren 23 geworden, ohne dass irgendetwas
+  # es meldete -- in CI 27 Collection-Fehler und NULL gelaufene Tests. Der Job war seit
+  # Monaten rot und hat nie etwas geprueft.
+  #
+  # Der Collection-Abbruch ist repariert (Guard in tests/conftest.py, misst per AST statt eine
+  # Liste zu pflegen). Aber die Messung danach: ohne Toolchain laufen 1759 Tests gruen, 221
+  # skippen -- und 30 SCHEITERN. Die scheitern NICHT an einem fehlenden Import (nur 2 von 30),
+  # sondern mit AssertionError: der Code faengt das fehlende `runner` intern ab und antwortet
+  # ehrlich "kein Wert", waehrend der Test einen Betrag erwartet. Das ist kein Mechanismus-
+  # Problem, das ein Guard loesen koennte; jeder dieser 30 Tests behauptet inhaltlich etwas,
+  # das nur MIT Catala gilt.
+  #
+  # Ein Job, der 30 Fehlschlaege produziert, die niemand beheben will, ist dauerhaft rot --
+  # und dauerhaft rot sieht nach kurzer Zeit aus wie der Normalzustand. Genau das ist hier
+  # passiert. Deshalb prueft dieser Job jetzt das, was er OHNE Toolchain ehrlich pruefen kann:
+  # dass die Suite sammelbar ist. Ausgerechnet DAS war der Fehler, der die CI monatelang lahm
+  # gelegt hat (ein fehlendes `requests`), und er kostet hier Sekunden.
+  sammelbarkeit:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -24,20 +55,20 @@ jobs:
         with:
           python-version: "3.12"
 
-      # poppler-utils (pdftotext/pdfunite/pdftoppm) + tesseract-deu + img2pdf + Pillow:
-      # damit sind die Beleg-/Kontoauszug-Writer-Tests (PDF-Textlayer, OCR-Fallback,
-      # Scan-Fixtures) NICHT wegskipped, sondern laufen echt (kein Mock, siehe Testcode
-      # _SCAN_FIXTURE_OK = PIL vorhanden AND img2pdf im PATH).
-      - name: System-Abhaengigkeiten (poppler, tesseract, img2pdf)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-deu img2pdf
-
       - name: Python-Abhaengigkeiten
-        run: pip install pytest pyyaml jsonschema Pillow bcrypt PyJWT
+        run: pip install -r requirements-ci.txt
 
-      - name: pytest tests/
-        run: python3 -m pytest tests/ -q --ignore=tests/test_kapital_accessoren.py
+      # --collect-only importiert JEDE Testdatei, fuehrt aber keinen Test aus. Genau die
+      # Stufe, an der ein fehlendes Paket auffaellt -- und die einzige, die ohne Catala ein
+      # verlaessliches Urteil erlaubt.
+      - name: Suite ist sammelbar (ohne Catala-Toolchain)
+        run: python3 -m pytest tests/ --collect-only -q
+
+      # Die Konfigurations-Gates selbst brauchen weder Catala noch Netz und sind in
+      # Sekunden durch. Sie pruefen u.a., dass jedes importierte Fremdpaket im Manifest
+      # steht -- der Fehler, der diesen ganzen Job monatelang wertlos gemacht hat.
+      - name: CI-Konfiguration und Dateirechte
+        run: python3 -m pytest tests/test_ci_konfiguration.py tests/test_dateirechte.py -q
 
   # Voller Gate: Catala/Clerk-Toolchain (docs/setup.md) dazu, damit die catala-gebundenen
   # Tests ECHT laufen statt zu skippen. `clerk test -W rules/` (Makefile-Ziel `tests`) ist
@@ -53,6 +84,7 @@ jobs:
   # graceful weiter. Dieses Gate bleibt lokal (make eric-gate, ERIC_DIR gesetzt).
   catala-toolchain:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -67,13 +99,13 @@ jobs:
             opam m4 build-essential pkg-config libgmp-dev
 
       - name: Python-Abhaengigkeiten
-        run: pip install pytest pyyaml jsonschema Pillow bcrypt PyJWT
+        run: pip install -r requirements-ci.txt
 
-      - name: opam-Root cachen (opam init + switch taxgraph 4.14.2 + catala 1.2.0)
+      - name: opam-Root cachen (opam init + switch taxgraph 4.14.2 + catala 1.2.1)
         uses: actions/cache@v4
         with:
           path: ~/.opam
-          key: opam-taxgraph-catala-1.2.0-ocaml-4.14.2-${{ runner.os }}
+          key: opam-taxgraph-catala-1.2.1-ocaml-4.14.2-${{ runner.os }}
 
       # docs/setup.md Abschnitt 1, ein Schritt (opam-Env muss im selben Shell-Prozess
       # geladen bleiben wie catala/clerk-Aufrufe). opam init/switch create sind bei
@@ -86,7 +118,7 @@ jobs:
           opam init --bare -y || true
           opam switch create taxgraph 4.14.2 || true
           eval $(opam env --switch=taxgraph --set-switch)
-          opam install -y catala
+          opam install -y catala.1.2.1
           catala --version
           clerk --version
           clerk build p32a-python
@@ -99,6 +131,7 @@ jobs:
 
   golden:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -112,13 +145,13 @@ jobs:
           sudo apt-get install -y opam m4 build-essential pkg-config libgmp-dev
 
       - name: Python-Abhaengigkeiten
-        run: pip install pytest pyyaml jsonschema Pillow bcrypt PyJWT
+        run: pip install -r requirements-ci.txt
 
       - name: opam-Root cachen (gleicher Key wie catala-toolchain)
         uses: actions/cache@v4
         with:
           path: ~/.opam
-          key: opam-taxgraph-catala-1.2.0-ocaml-4.14.2-${{ runner.os }}
+          key: opam-taxgraph-catala-1.2.1-ocaml-4.14.2-${{ runner.os }}
 
       - name: Catala bauen + assembliertes Package
         run: |
@@ -128,7 +161,7 @@ jobs:
           opam init --bare -y || true
           opam switch create taxgraph 4.14.2 || true
           eval $(opam env --switch=taxgraph --set-switch)
-          opam install -y catala
+          opam install -y catala.1.2.1
           clerk build p32a-python
           bash oracle/gettsim/assemble_catala.sh
 
@@ -150,6 +183,7 @@ jobs:
   # Braucht — anders als golden — die venv312: golden_crosscheck.py importiert GETTSIM.
   gettsim-crosscheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -166,7 +200,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.opam
-          key: opam-taxgraph-catala-1.2.0-ocaml-4.14.2-${{ runner.os }}
+          key: opam-taxgraph-catala-1.2.1-ocaml-4.14.2-${{ runner.os }}
 
       - name: Catala bauen + assembliertes Package
         run: |
@@ -176,7 +210,7 @@ jobs:
           opam init --bare -y || true
           opam switch create taxgraph 4.14.2 || true
           eval $(opam env --switch=taxgraph --set-switch)
-          opam install -y catala
+          opam install -y catala.1.2.1
           clerk build p32a-python
           bash oracle/gettsim/assemble_catala.sh
 
@@ -190,7 +224,8 @@ jobs:
           set -e
           pip install uv
           uv venv oracle/.venv312 --python 3.12
-          uv pip install --python oracle/.venv312/bin/python gettsim pyyaml jsonschema bcrypt PyJWT
+          uv pip install --python oracle/.venv312/bin/python \
+            -r requirements-oracle.txt
 
       - name: gettsim-crosscheck (Report + Gate)
         run: |
