@@ -59,6 +59,55 @@ _ANREDE = re.compile(r"\b(?:Herr|Frau)\s+[A-ZÄÖÜ][a-zäöüß]+\b")
 
 _PLATZHALTER = "[PII]"
 
+# --------------------------------------------------- Art. 9 DSGVO: besondere Kategorien
+#
+# Der Filter oben maskiert KENNUNGEN (IBAN, Steuer-ID, Datum, Anschrift, Anrede+Name). Er
+# maskiert keine MERKMALE — und kann es nicht: „80" ist als Zeichenfolge nicht von einem
+# Betrag zu unterscheiden. Ob eine Angabe eine Behinderung offenbart, weiss allein das FELD,
+# aus dem sie stammt. Deshalb steht die Sperre hier auf der Feld-Ebene, nicht als Textregel.
+#
+# GEMESSEN 2026-08-18 (Audit gdpr-art9-und-drittdaten-an-llm, nachgerechnet): der Chat-Kontext
+# trug „Grad der Behinderung → 80", „hilflos, blind oder taubblind → ja", „Pflegegrad → 3"
+# unverändert nach draussen; filtere() gab die Probe BYTE-IDENTISCH zurück und meldete keine
+# Kategorie. Bei der gepflegten Person wurden Anschrift und Geburtsdatum zu [PII] — ihr NAME
+# blieb stehen (die Anrede-Regel greift nur bei „Herr/Frau“). Name plus Pflegegrad plus
+# Verwandtschaftsverhältnis einer Person, die nie mit dem System zu tun hatte.
+#
+# 21 von 307 Bindungsfeldern fallen darunter, 13 davon betreffen DRITTE (Partner, Kind,
+# gepflegte Person). Art. 9 Abs. 1 DSGVO nennt religiöse Überzeugung und Gesundheitsdaten
+# ausdrücklich; ein Auftragsverarbeitungsvertrag mit dem LLM-Anbieter existiert nicht.
+#
+# WAS HIER NICHT DRINSTEHT und bewusst nicht: reine Beträge, die aus einem solchen Sachverhalt
+# FOLGEN, ihn aber nicht nennen (`kist_gezahlt`, `basis_kv`). Sie zu sperren würde den Chat
+# ohne Gewinn verstümmeln — aus „Kirchensteuer gezahlt: 412 €" folgt keine Konfession, und die
+# Zahl steht ohnehin auf jeder Lohnsteuerbescheinigung.
+#
+# Die Liste ist ein REGEX über feld_id UND Fragetext, nicht eine Aufzählung: eine Aufzählung
+# vergisst das nächste Feld. tests/test_art9_nicht_an_llm.py hält beides zusammen und wird rot,
+# sobald ein neues Bindungsfeld ein solches Merkmal trägt, ohne dass jemand hier hingesehen hat.
+_ART9 = re.compile(
+    r"konfession|kirche"                                    # religiöse Überzeugung
+    r"|grad_der_behinderung|schwerbehind|gehbehind|behinderungsbedingte"
+    r"|behinderten_pb|behinderten.?pausch"                  # „Behinderten-Pauschbetrag" im Text
+    r"|pflegegrad|pflegebeduerftig|gepflegter"              # Gesundheit
+    r"|pflegst|pflege_durch|pflegt die person"              # wer pflegt WEN
+    r"|hilflos|blind|taubblind|merkzeichen"
+    r"|berufsunfaehig|erwerbsunfaehig|krankheitskosten|heilbehandlung",
+    re.I)
+
+
+def ist_besondere_kategorie(feld_id: str, fragetext: str = "") -> bool:
+    """Offenbart dieses FELD eine besondere Kategorie nach Art. 9 DSGVO?
+
+    Geprüft wird die feld_id UND der Fragetext: ein Feld kann unverdächtig heissen und in der
+    Frage nach dem Merkmal fragen (`rentner_gepflegter_angaben` → „Wer ist die Person, die du
+    pflegst?“), und umgekehrt.
+
+    Der Aufrufer entscheidet, was er damit tut — hier wird nichts maskiert. Für den
+    LLM-Kontext heisst es: der WERT bleibt daheim. Die blosse Frage darf hinaus, sie steht in
+    jedem amtlichen Vordruck und ist ohne Antwort kein personenbezogenes Datum."""
+    return bool(_ART9.search(feld_id or "") or _ART9.search(fragetext or ""))
+
 _KATEGORIEN: list[tuple[str, re.Pattern]] = [
     ("iban", _IBAN),
     ("steuer_id", _STEUER_ID),

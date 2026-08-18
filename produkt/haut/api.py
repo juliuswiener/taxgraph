@@ -46,6 +46,7 @@ from api_constants import *  # noqa: E402, F401, F403  (55 Feld-Konstanten + Sch
 import api_llm  # noqa: E402  (LLM-Integration: _llm_vorschlaege, _kontoauszug_llm_klassifikator)
 import preflight as PF  # noqa: E402  (P5.5 Preflight-Check: Konsistenz + vergessene Pauschalen)
 import api_auth  # noqa: E402  (Request-scoped Auth, Modul-Attribute für Mutation-Sicherheit)
+import pii_filter as PII  # noqa: E402  (Art.-9-Sperre für den LLM-Kontext, s. _erklaer_kontext)
 # Rechenkern (Phase 3): die Steuerlogik liegt in produkt/bescheid/, api.py ist ihre Hülle.
 # Namentlich importiert, nicht per Star — und re-exportiert, weil 23 Testdateien und mehrere
 # Endpunkte diese Namen über `api.` auflösen. tests/test_bescheid_grenze.py prüft, dass es
@@ -1100,13 +1101,35 @@ def _erklaer_kontext(store: dict, bindung: dict, fid: str | None) -> str:
             # umschreiben. Er ist der Grund, warum die Antwort mehr sein kann als Allgemeinwissen.
             teile.append(f"Wörtlicher Gesetzestext dazu — {a.get('quelle', '')}: "
                          f"„{a.get('zitatanker', '')}“")
+    # Art. 9 DSGVO: der WERT besonderer Kategorien verlässt das Gerät nicht (Audit
+    # gdpr-art9-und-drittdaten-an-llm). Gemessen ging bisher „Grad der Behinderung → 80",
+    # „hilflos, blind oder taubblind → ja" und der Pflegegrad einer DRITTEN Person an den
+    # externen Anbieter; der PII-Filter dahinter maskiert Kennungen, keine Merkmale, und kann
+    # das auch nicht — „80" ist als Zeichenfolge kein Gesundheitsdatum, das weiss nur das Feld.
+    #
+    # Gesperrt wird deshalb hier, an der Quelle, und nur der WERT. Die Zahl der ausgelassenen
+    # Angaben wird genannt: ohne sie hielte die KI einen unvollständigen Kontext für den ganzen
+    # und schlüge Dinge vor, die längst beantwortet sind — eine stille Kürzung, deren Folge der
+    # Nutzer als schlechte Antwort erlebt, ohne den Grund zu sehen.
     bestaetigt = [(f, e) for f, e in ST._aktives(store).items()
                   if e.get("zustand") == "bestaetigt"]
     if bestaetigt:
-        zeilen = [f"- {(bindung.get(f) or {}).get('fragetext_laie', f)} "
-                  f"→ {_wert_klartext(f, e['wert'], bindung)}"
-                  for f, e in bestaetigt[:_ERKLAER_KONTEXT_MAX]]
-        teile.append("Das hat der Nutzer bereits bestätigt:\n" + "\n".join(zeilen))
+        offen, zurueckgehalten = [], 0
+        for f, e in bestaetigt:
+            frage = (bindung.get(f) or {}).get("fragetext_laie", f)
+            if PII.ist_besondere_kategorie(f, frage):
+                zurueckgehalten += 1
+                continue
+            offen.append(f"- {frage} → {_wert_klartext(f, e['wert'], bindung)}")
+            if len(offen) >= _ERKLAER_KONTEXT_MAX:
+                break
+        if offen:
+            teile.append("Das hat der Nutzer bereits bestätigt:\n" + "\n".join(offen))
+        if zurueckgehalten:
+            teile.append(
+                f"({zurueckgehalten} weitere Angaben liegen vor, dürfen dir aber nicht "
+                f"übermittelt werden — es sind Gesundheits- oder Konfessionsangaben. Frage "
+                f"nicht danach und behandle sie als beantwortet.)")
     return "\n".join(teile)
 
 

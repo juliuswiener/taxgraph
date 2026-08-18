@@ -74,7 +74,11 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # Alle vier Male ging es um eine Antwort, eine Erklärung oder eine Store-Naht an einem Endpunkt:
 # das gehört in die Haut. Rechenlogik gehört es nicht, und dafür ist Lage (A) ohnehin schärfer.
 # Wer diese Zahl hebt, schreibt daneben, wofür.
-API_ZEILEN_OBERGRENZE = 1124
+#
+# 1124 → 1147 (2026-08-19): die Art.-9-Sperre im LLM-Kontext. Die REGEL selbst liegt in
+# pii_filter.py, wo die Datenschutz-Entscheidungen wohnen; in api.py steht nur, dass
+# _erklaer_kontext sie anwendet und die Zahl der zurückgehaltenen Angaben nennt.
+API_ZEILEN_OBERGRENZE = 1147
 
 
 def _runner_stellen(pfad: str) -> list[int]:
