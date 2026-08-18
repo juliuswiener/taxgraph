@@ -42,10 +42,24 @@ def _lade_users() -> dict:
 
 
 def _speichere_users(store: dict) -> None:
+    """Schreibt die Nutzerdatenbank atomar und NUR für den Eigentümer lesbar.
+
+    `open(tmp, "w")` erbt die umask — gemessen 0644 auf der Platte (Audit 2026-08-16,
+    sec-users-json-world-readable). Darin stehen bcrypt-Hashes: jeder Nutzer des Rechners
+    konnte sie mitlesen und offline gegen sie rechnen. bcrypt macht das teuer, nicht unmöglich,
+    und ein Hash, den niemand lesen kann, muss gar nicht erst standhalten.
+
+    os.open mit 0o600 statt chmod NACH dem Schreiben: dazwischen läge ein Zeitfenster, in dem
+    die Datei mit Hashes bereits existiert und noch für alle lesbar ist. Der Modus gilt nur bei
+    Neuanlage — eine vorhandene tmp-Datei behielte ihren; deshalb O_EXCL, das eine solche
+    ablehnt, statt sie stillschweigend weiterzuverwenden."""
     d = os.path.dirname(USER_STORE) or "."
     os.makedirs(d, exist_ok=True)
     tmp = USER_STORE + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
+    if os.path.exists(tmp):
+        os.unlink(tmp)          # Rest eines abgebrochenen Laufs; Rechte davon sind unbekannt
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
         json.dump(store, f, ensure_ascii=False, sort_keys=True)
         f.flush()
         os.fsync(f.fileno())

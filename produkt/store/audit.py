@@ -38,8 +38,14 @@ def append(user_id: str | None, action: str, fall_id: str | None = None,
     d = os.path.dirname(pfad) or "."
     os.makedirs(d, exist_ok=True)
     line = json.dumps(entry, ensure_ascii=False, sort_keys=True) + "\n"
-    # O_APPEND-artig hinten anfügen — kein read/write/truncate.
-    with open(pfad, "a", encoding="utf-8") as f:
+    # O_APPEND — kein read/write/truncate. Über os.open statt open("a"), um den Modus bei
+    # NEUANLAGE festzulegen: sonst erbt das Protokoll die umask (gemessen 0644, Audit
+    # 2026-08-16 sec-users-json-world-readable nennt dieselbe Stelle). Es führt Nutzer-Kennung,
+    # Fall-Kennung und Aktion — wer eine Steuererklärung bearbeitet und wann. Bei einer
+    # bestehenden Datei bleibt ihr Modus unangetastet; das ist Absicht, ein Protokoll wird nicht
+    # unterwegs umgeschrieben.
+    fd = os.open(pfad, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+    with os.fdopen(fd, "a", encoding="utf-8") as f:
         f.write(line)
         f.flush()
         os.fsync(f.fileno())

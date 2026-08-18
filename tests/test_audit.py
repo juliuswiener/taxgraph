@@ -318,39 +318,48 @@ class TestRobustheit:
 # --------------------------------------------------------------- Mutationsprobe
 class TestMutation:
     def test_append_only_mutation_wirkt(self, audit_dir, monkeypatch):
-        """Beweis: Wenn 'a' durch 'w' ersetzt wird, überlebt nur der
-        letzte Eintrag. Der Test bestätigt den Schaden, nicht seine
-        Abwesenheit — bei Mutation ASSERTIERT er 1 Eintrag (den letzten).
+        """Beweis: Wird das Anhängen abgeschaltet, überlebt nur der letzte Eintrag. Der Test
+        bestätigt den Schaden, nicht seine Abwesenheit — bei Mutation ASSERTIERT er 1 Eintrag.
 
-        Einmaliger Commit-Beleg (P1.6). Dauerhafter Guard ist der
-        statische Check test_file_append_mode_ist_a daneben."""
-        import builtins
-        _real_open = builtins.open
+        NACHGEZOGEN am 2026-08-18: die alte Fassung mutierte `builtins.open` und ersetzte den
+        Modus "a" durch "w". Seit audit.py über `os.open(..., O_APPEND, 0o600)` schreibt (damit
+        das Protokoll nicht die umask erbt und für alle lesbar ist, Audit
+        sec-users-json-world-readable), griff diese Mutation ins Leere: der Test blieb grün,
+        obwohl er nichts mehr bewies. Mutiert wird jetzt die Stelle, die das Anhängen wirklich
+        garantiert — O_APPEND raus, O_TRUNC rein.
 
-        def mut_open(path, mode="r", *args, **kwargs):
-            if "audit.jsonl" in str(path) and mode == "a":
-                mode = "w"  # Mutation: "a" → "w"
-            return _real_open(path, mode, *args, **kwargs)
+        Dauerhafter Guard ist der statische Check daneben."""
+        _echtes_os_open = os.open
 
-        monkeypatch.setattr(builtins, "open", mut_open)
+        def mut_open(pfad, flags, mode=0o777, **kwargs):
+            if "audit.jsonl" in str(pfad):
+                flags = (flags & ~os.O_APPEND) | os.O_TRUNC   # Mutation: anhängen -> überschreiben
+            return _echtes_os_open(pfad, flags, mode, **kwargs)
+
+        monkeypatch.setattr(os, "open", mut_open)
 
         audit.append("erster", "login", None, None)
         audit.append("zweiter", "logout", None, None)
 
         entries = audit.lies()
-        # Bei "w" überschreibt der zweite Eintrag den ersten → nur 1
         assert len(entries) == 1, \
-            f"'a'→'w'-Mutation wirkungslos: {len(entries)} Einträge"
+            f"O_APPEND-Mutation wirkungslos: {len(entries)} Einträge — das Anhängen hängt " \
+            f"nicht an der mutierten Stelle, dieser Beweis prüft ins Leere"
         assert entries[0]["user_id"] == "zweiter", \
-            f"'a'→'w'-Mutation überschrieb nicht: {entries[0]['user_id']}"
+            f"O_APPEND-Mutation überschrieb nicht: {entries[0]['user_id']}"
 
-    def test_file_append_mode_ist_a(self, audit_dir):
-        """Die audit.py-Datei verwendet 'a' zum Öffnen (static check)."""
+    def test_datei_wird_im_append_modus_geoeffnet(self, audit_dir):
+        """Statischer Guard. Prüft die Stelle, die das Anhängen HEUTE garantiert.
+
+        Hiess bis 2026-08-18 test_file_append_mode_ist_a und suchte den Modus-String "a". Der
+        steht nach dem Umbau auf os.open weiterhin da (in `os.fdopen(fd, "a")`) — nur garantiert
+        er nichts mehr, das tut O_APPEND im os.open darüber. Der Test wäre also grün geblieben,
+        auch wenn das Anhängen verschwunden wäre: ein Guard, der auf ein Überbleibsel zeigt."""
         audit_path = os.path.join(ROOT, "produkt", "store", "audit.py")
         with open(audit_path, encoding="utf-8") as f:
             content = f.read()
-        # "a" als open-mode muss vorkommen
-        assert '"a"' in content or "'a'" in content, \
-            "audit.py verwendet nicht 'a' als open-mode"
-        # "w" darf nicht als open-mode für audit.jsonl vorkommen
-        # (aber "w" kann in anderen Kontexten vorkommen — hier nicht prüfbar)
+        assert "O_APPEND" in content, \
+            "audit.py öffnet das Protokoll nicht mehr mit O_APPEND — ein Eintrag könnte das " \
+            "gesamte bisherige Protokoll überschreiben"
+        assert "O_TRUNC" not in content, \
+            "audit.py verwendet O_TRUNC — das Protokoll wird abgeschnitten"

@@ -135,6 +135,12 @@ def lade_fall(fall_id: str) -> dict:
 
 
 def speichere_fall(fall_id: str, store: dict) -> None:
+    """Schreibt den Fall atomar. Der Modus 0600 kommt von tempfile.NamedTemporaryFile, das so
+    anlegt — das war bisher ein GLÜCKLICHER ZUFALL und nirgends festgehalten (Audit 2026-08-16
+    im Zusammenhang mit sec-users-json-world-readable). In diesen Dateien stehen Steuer-ID,
+    Einkommen und IBAN. Wer hier je auf ein gewöhnliches open() umstellt, erbt die umask und
+    macht sie für jeden Nutzer des Rechners lesbar, ohne dass es auffällt; deshalb steht es
+    jetzt hier und wird in tests/test_dateirechte.py geprüft."""
     p = _fall_pfad(fall_id)
     os.makedirs(FAELLE, exist_ok=True)
     tmp = tempfile.NamedTemporaryFile("w", dir=FAELLE, delete=False, encoding="utf-8", suffix=".tmp")
