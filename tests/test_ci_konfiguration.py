@@ -81,6 +81,18 @@ def test_alle_importierten_fremdpakete_stehen_im_manifest():
     # Namen, unter denen ein Paket importiert wird, weichen manchmal vom Paketnamen ab.
     alias = {"pil": "pillow", "yaml": "pyyaml", "jwt": "pyjwt", "dateutil": "python-dateutil"}
 
+    # Erzeugnisse des Catala-Übersetzers, keine PyPI-Pakete: sie entstehen erst durch
+    # `clerk build p32a-python` + assemble_catala.sh unter oracle/gettsim/_catala/ und gehören
+    # in kein Manifest.
+    #
+    # OHNE DIESE AUSNAHME URTEILT DER TEST UMGEBUNGSABHÄNGIG — gemessen am 2026-08-18 im ersten
+    # CI-Lauf nach seiner Einführung: lokal liegt _catala/pkg auf der Platte, also fand die
+    # Modulsuche es und verfolgte es als projekteigenes Modul weiter; in CI fehlt es vor dem
+    # Build, also galt es als fehlendes Fremdpaket und der Test wurde rot. Ein Test, der
+    # lokal und in CI verschieden urteilt, ist schlimmer als keiner: er lehrt, seinen roten
+    # Zustand zu ignorieren, und genau davon hat diese CI schon zu viel gesehen.
+    erzeugt = {"pkg", "runner", "catala_runtime", "rt"}
+
     # Gescannt wird die TRANSITIVE HÜLLE der Modulebene-Importe ab tests/ — genau diese, aus
     # zwei gemessenen Gründen:
     #
@@ -148,7 +160,7 @@ def test_alle_importierten_fremdpakete_stehen_im_manifest():
         gesehen.add(datei)
         for name in _modulebene_importe(datei):
             k = name.lower()
-            if name in stdlib:
+            if name in stdlib or name in erzeugt:
                 continue
             if name in modul_datei:                 # projekteigenes Modul: weiterverfolgen
                 offen.append(modul_datei[name])
