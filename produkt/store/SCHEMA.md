@@ -17,6 +17,22 @@ Strukturen, beide in einer Datei je Fall/VZ:
 2. **Content-adressierte Snapshots** (`snapshots`) — deterministische Materialisierung eines
    Log-Präfixes (`feld_id → aktueller Wert`), adressiert per `snapshot_id = sha256(felder)`. Der
    ERiC-Befund bindet an genau diesen Hash → eine Prüfung gilt nachweislich für EINEN Zustand.
+   **Verdrahtet seit 2026-08-19**: `api.einreichen()` hält jedes checkESt-Ergebnis als Snapshot
+   fest, auch ein rotes — gerade das ist das, was man später einem Datenstand zuordnen will.
+   Davor rief `erzeuge_snapshot()` niemand aus dem Produktivpfad; die Zusage in diesem Absatz
+   stand also über ein Jahr nur auf dem Papier (tests/test_befund_bindet_an_zustand.py).
+
+Daneben trägt die Datei zwei Kopfangaben, die den Fall einordnen statt seinen Inhalt zu
+beschreiben: **`scheibe`** (welcher Fragenkegel — `api._cfg()` liest sie, gesetzt bei
+`fall_anlegen` und danach unveränderlich) und **`user_id`** (Besitzer; `_fall_owner_check`
+prüft fail-closed dagegen, im Einzelnutzer-Betrieb fehlt sie).
+
+Beide fehlten bis 2026-08-19 im `schema.json`, das `additionalProperties: false` setzt — **jeder
+über die API angelegte Fall verletzte damit sein eigenes Schema**, seit dem ersten Paket-B-Commit.
+Aufgefallen ist es nie, weil der Schema-Test seinen Store SELBST baut (`leerer_store` +
+`append_event`) statt einen echten zu laden: ein Gate, das sein eigenes Fixture prüft. Seither
+prüft `tests/test_befund_bindet_an_zustand.py` einen Store, der wirklich durch `fall_anlegen`
+und den Endpunkt gelaufen ist.
 
 ## Der Wert-Typ: `zustand` (Julius #2)
 

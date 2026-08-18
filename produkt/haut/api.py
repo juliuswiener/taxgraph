@@ -643,7 +643,47 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
                      "detail": str(e)}
 
     klasse = CE.klassifiziere_rc(rc)
+
+    # ------------------------------------------------------ Invariante 5: Befund an den Zustand binden
+    # produkt/store/SCHEMA.md sagt zu: "Der ERiC-Befund bindet an genau diesen Hash → eine
+    # Prüfung gilt nachweislich für EINEN Zustand." erzeuge_snapshot() existierte dafür seit
+    # jeher — mit NULL Produktionsaufrufern (Audit 2026-08-16). Die Zusage stand also nur auf
+    # dem Papier: der Nutzer bekam `basis_snapshot` in der Antwort, aber nichts hielt fest,
+    # WELCHER Zustand geprüft worden war. Ändert er danach ein Feld, war bisher nicht
+    # feststellbar, dass ein früherer Befund nicht mehr gilt.
+    #
+    # VOR den Fallunterscheidungen, damit JEDES Ergebnis gebunden wird — ein
+    # "plausibilitaet_verletzt" ist genauso ein Befund über einen bestimmten Zustand wie ein
+    # rc=0, und gerade der rote Fall ist der, den man später einem Datenstand zuordnen will.
+    #
+    # DAMIT WIRD DIESER ENDPUNKT SCHREIBEND. Er war es bisher nicht. Ein Snapshot ist kein
+    # Event: er ändert keinen Wert und keinen Zustand, er hält fest, was zu einem Zeitpunkt
+    # galt (SCHEMA.md: zwei Strukturen, Events und Snapshots). Mehrfaches Prüfen erzeugt
+    # mehrere Snapshots — das ist die Prüfhistorie, nicht ein Leck.
+    # OHNE EVENTS GIBT ES KEINEN ZUSTAND, an den zu binden wäre: der Snapshot führt laut Schema
+    # `bis_event` = event_id des letzten enthaltenen Events, und ein leerer Log hat keine. Das
+    # ist eine Eigenschaft, kein Sonderfall — und in der Produktion unerreichbar, weil eine
+    # Deklaration ohne ein einziges Event nie vollständig ist (der Aufruf oben gäbe 409). Er
+    # entsteht nur, wo Tests `deklariere` mocken. Damit das nicht STILL passiert, sagt die
+    # Antwort es: `befund_gebunden` ist die einzige Stelle, an der ein Aufrufer erkennen kann,
+    # ob die Zusage aus SCHEMA.md für dieses Ergebnis wirklich eingelöst wurde.
+    befund_gebunden = bool(store.get("events"))
+    if befund_gebunden:
+        snap = ST.erzeuge_snapshot(store, eric_befund={
+            "rc": rc,
+            "klasse": klasse,
+            "gekappt_verdacht": CE.gekappt_verdacht(antwort),
+        })
+        if snap["snapshot_id"] != sid:
+            # Darf nicht vorkommen: zwischen der Materialisierung oben und hier schreibt
+            # niemand. Wäre es doch so, bände der Befund an einen ANDEREN Zustand als den
+            # geprüften — schlimmer als keine Bindung, weil sie Gewissheit vortäuscht.
+            raise ApiError(500, f"Snapshot-Hash weicht ab ({snap['snapshot_id'][:12]} != "
+                                f"{sid[:12]}) — der Befund würde an einen anderen Zustand binden")
+        speichere_fall(fall_id, store)
+
     basis = {"fall_id": fall_id, "eingereicht": False, "basis_snapshot": sid,
+             "befund_gebunden": befund_gebunden,
              "vz": vz, "rc": rc, "klasse": klasse, "xml_bytes": len(xml.encode("utf-8"))}
     if rc == CE.RC_DATENARTVERSION_UNBEKANNT:
         # Kein Pruefmodul fuer diesen VZ (z.B. ESt_2026 in ERiC 44.2.4.0). Die Erklaerung
