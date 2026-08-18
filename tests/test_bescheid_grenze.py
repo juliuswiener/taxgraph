@@ -63,8 +63,14 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # Zweite Ratsche, gegen die Lücke, die die erste offenlässt: `_an_gesamt_sperrgrund` waren 458
 # Zeilen Steuerlogik OHNE einen einzigen runner-Aufruf. Eine Zeilen-Obergrenze ist grob, aber
 # sie ist das einzige Maß, das solche Logik überhaupt sieht — und sie kann nicht vakuum-grün
-# werden. api.py hatte 3579 Zeilen, hat 1055 und darf nicht zurückwachsen.
-API_ZEILEN_OBERGRENZE = 1055
+# werden. api.py hatte 3579 Zeilen und darf nicht zurückwachsen.
+#
+# NACHGEZOGEN von 1055 auf 1065 (2026-08-18): die Behandlung der OCR-Zeitüberschreitung am
+# Kontoauszug-Endpunkt (+10 Zeilen). Das ist der Zweck dieser Ratsche, nicht ihre Umgehung —
+# sie erzwingt, dass jedes Wachstum begründet wird, statt es zu verbieten. Eine Fehlerantwort
+# an einem Endpunkt gehört in die Haut; Rechenlogik gehört es nicht, und dafür ist Lage (A)
+# ohnehin schärfer. Wer diese Zahl hebt, schreibt daneben, wofür.
+API_ZEILEN_OBERGRENZE = 1065
 
 
 def _runner_stellen(pfad: str) -> list[int]:

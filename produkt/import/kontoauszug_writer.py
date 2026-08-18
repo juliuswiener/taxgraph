@@ -29,6 +29,37 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "store"))
 import store as ST   # noqa: E402
 
+# ------------------------------------------------------- OCR-Zeitlimits (Audit res-ocr-subprocess-no-timeout)
+# Der HTTP-Server ist EINFÄDIG (server.py:make_server — bewusst so, catala_runtime ist nicht
+# threadsicher). Ein Unterprozess ohne Zeitlimit hält deshalb nicht diese eine Anfrage auf,
+# sondern den ganzen Dienst. Ausgelöst wird er von einer HOCHGELADENEN Datei: ein PDF, das
+# pdftoppm oder tesseract in eine Endlosschleife oder eine Speicherlawine schickt, ist der
+# billigste denkbare Angriff auf diesen Server — ein Upload, und niemand kann mehr arbeiten.
+#
+# Die Werte sind großzügig gegen ECHTE Auszüge gewählt (200-dpi-Scan, tesseract-deu: wenige
+# Sekunden je Seite) und eng gegen Pathologien. Sie sind eine Obergrenze, keine Erwartung.
+PDFTOTEXT_ZEITLIMIT_S = 30
+PDFTOPPM_ZEITLIMIT_S = 60
+TESSERACT_ZEITLIMIT_S = 60
+
+# Deckel über die GESAMTE Seitenschleife. Die Einzel-Zeitlimits oben begrenzen jeden Aufruf,
+# aber nicht ihre ANZAHL: ein 500-seitiges PDF ohne brauchbaren Textlayer erzeugt 500 OCR-Läufe,
+# jeder einzeln brav unter seinem Limit. 500 × 60 s sind acht Stunden Stillstand — die
+# Einzelgrenze allein ist also kein Schutz, sie verteilt das Problem nur.
+OCR_SEITEN_HOECHSTZAHL = 40
+
+
+class OcrZuAufwendig(RuntimeError):
+    """Der Auszug ließ sich nicht in vertretbarer Zeit lesen.
+
+    BEWUSST eine Ausnahme und KEIN Teilergebnis. Gäbe die Funktion die bereits gelesenen Seiten
+    zurück, fehlten die Beträge der übrigen — lautlos, an einer Stelle, die vom Aufrufer nicht
+    von einem vollständig gelesenen Auszug zu unterscheiden ist. Ein halber Kontoauszug ist
+    gefährlicher als gar keiner: er sieht aus wie ein Ergebnis.
+
+    Genau diese Klasse hat hier schon Geld gekostet (slot-fail-open-get-default: eine falsche
+    Zeile löschte 13.568 EUR, und der Zustand blieb "bestaetigt")."""
+
 # Kategorie -> Ziel-feld_id (NUR MVP-Kategorien mit EXISTIERENDEM Feld; Instructor-Ruling 2026-07-18).
 # Andere Kategorien = benannte GAP (kein Vorschlag ohne Zielfeld).
 KATEGORIE_FELD = {
@@ -212,7 +243,8 @@ def lies_kontoauszug_pdf(pfad: str) -> tuple[str, dict]:
     Teil-Textlayer (z.B. Seite 1 Textlayer + Seite 2 Scan): pdftotext trennt Seiten mit \\x0c (ein
     Trailing-\\x0c auch nach der letzten Seite, daher [:-1]) — jede implausible Seite wird EINZELN
     nach-OCR't, plausible Seiten behalten ihren Textlayer (kein unnötiges Voll-Rastern)."""
-    text = subprocess.run(["pdftotext", "-layout", pfad, "-"], capture_output=True, text=True).stdout
+    text = subprocess.run(["pdftotext", "-layout", pfad, "-"], capture_output=True, text=True,
+                          timeout=PDFTOTEXT_ZEITLIMIT_S).stdout
     text = _fix_bel(text)
     if not text.strip():
         return _ocr_tesseract_zeilen(pfad)
@@ -220,6 +252,18 @@ def lies_kontoauszug_pdf(pfad: str) -> tuple[str, dict]:
     seiten = text.split("\x0c")[:-1]
     if all(_textlayer_ist_plausibel(s) for s in seiten):
         return text, {}
+
+    # Der Deckel greift VOR der Schleife, nicht in ihr: nach 40 gerasterten Seiten abzubrechen
+    # hieße, 40 Seiten Arbeit wegzuwerfen und den Nutzer trotzdem warten zu lassen. Gezählt
+    # werden nur die Seiten, die wirklich OCR brauchen — ein 200-seitiges PDF mit sauberem
+    # Textlayer läuft unbehelligt durch.
+    nach_ocr = [s for s in seiten if not _textlayer_ist_plausibel(s)]
+    if len(nach_ocr) > OCR_SEITEN_HOECHSTZAHL:
+        raise OcrZuAufwendig(
+            f"{len(nach_ocr)} von {len(seiten)} Seiten haben keinen lesbaren Textlayer und "
+            f"müssten einzeln per Bilderkennung gelesen werden (Höchstzahl: "
+            f"{OCR_SEITEN_HOECHSTZAHL}). Bitte den Auszug auf den benötigten Zeitraum kürzen "
+            f"oder als CSV exportieren.")
 
     text_teile = []
     conf_map: dict = {}
@@ -248,10 +292,10 @@ def _ocr_tesseract_seite(pfad: str, seiten_nr: int) -> tuple[str, dict]:
     with tempfile.TemporaryDirectory() as td:
         praefix = os.path.join(td, "seite")
         subprocess.run(["pdftoppm", "-png", "-r", "200", "-f", str(seiten_nr), "-l", str(seiten_nr),
-                        pfad, praefix], capture_output=True)
+                        pfad, praefix], capture_output=True, timeout=PDFTOPPM_ZEITLIMIT_S)
         png = sorted(os.listdir(td))[0]
         tsv = subprocess.run(["tesseract", os.path.join(td, png), "stdout", "-l", "deu", "tsv"],
-                             capture_output=True, text=True).stdout
+                             capture_output=True, text=True, timeout=TESSERACT_ZEITLIMIT_S).stdout
         zeilen = _tsv_zu_zeilen(tsv)
     text = "\n".join(z for z, _ in zeilen)
     conf_map = {i: c for i, (_, c) in enumerate(zeilen)}
@@ -264,12 +308,20 @@ def _ocr_tesseract_zeilen(pfad: str) -> tuple[str, dict]:
     K2 Under-tax > Over-tax). Zeilen-Reihenfolge = Lesereihenfolge (block/par/line, Seiten sequenziell)."""
     with tempfile.TemporaryDirectory() as td:
         praefix = os.path.join(td, "seite")
-        subprocess.run(["pdftoppm", "-png", "-r", "200", pfad, praefix], capture_output=True)
+        subprocess.run(["pdftoppm", "-png", "-r", "200", pfad, praefix], capture_output=True,
+                       timeout=PDFTOPPM_ZEITLIMIT_S)
         seiten = sorted(f for f in os.listdir(td) if f.endswith(".png"))
+        # Voll-Scan-Pfad: hier ist JEDE Seite ein OCR-Lauf, der Deckel gilt also unmittelbar.
+        # Abbruch VOR dem ersten tesseract-Aufruf, aus demselben Grund wie oben.
+        if len(seiten) > OCR_SEITEN_HOECHSTZAHL:
+            raise OcrZuAufwendig(
+                f"Der Auszug hat {len(seiten)} Seiten ohne jeden Textlayer und müsste komplett "
+                f"per Bilderkennung gelesen werden (Höchstzahl: {OCR_SEITEN_HOECHSTZAHL}). "
+                f"Bitte auf den benötigten Zeitraum kürzen oder als CSV exportieren.")
         zeilen = []
         for seite in seiten:
             tsv = subprocess.run(["tesseract", os.path.join(td, seite), "stdout", "-l", "deu", "tsv"],
-                                 capture_output=True, text=True).stdout
+                                 capture_output=True, text=True, timeout=TESSERACT_ZEITLIMIT_S).stdout
             zeilen.extend(_tsv_zu_zeilen(tsv))
     text = "\n".join(z for z, _ in zeilen)
     conf_map = {i: c for i, (_, c) in enumerate(zeilen)}

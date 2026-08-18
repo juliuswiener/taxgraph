@@ -19,6 +19,8 @@ import base64
 import json
 import os
 import re
+import subprocess   # nur für subprocess.TimeoutExpired am OCR-Endpunkt — api.py startet selbst
+                    # keinen Unterprozess (das tun die Writer unter produkt/import/)
 import sys
 import tempfile
 
@@ -821,7 +823,15 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
         try:
             with os.fdopen(fd, "wb") as fh:
                 fh.write(pdf_bytes)
-            text, conf_map = KW.lies_kontoauszug_pdf(pfad)
+            try:
+                text, conf_map = KW.lies_kontoauszug_pdf(pfad)
+            except (subprocess.TimeoutExpired, KW.OcrZuAufwendig) as e:
+                # Der Server ist einfädig; ein hängendes pdftoppm/tesseract legt ihn ganz still
+                # (Audit res-ocr-subprocess-no-timeout). Die Zeitlimits im Writer brechen das ab,
+                # hier wird daraus eine Antwort, die der Nutzer versteht — 422, weil die Ursache
+                # in aller Regel die eingereichte Datei ist und er handeln kann (kürzen, als CSV
+                # exportieren), nicht ein vorübergehender Systemzustand.
+                raise ApiError(422, f"Kontoauszug nicht lesbar: {e}")
             tx, n_verworfen = KW.parse_pdf_zeilen(text, conf_map)
         finally:
             os.unlink(pfad)
