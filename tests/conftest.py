@@ -140,6 +140,21 @@ def _eric_schema_fehlt() -> bool:
 ERIC_SCHEMA_FEHLT = _eric_schema_fehlt()
 _ERIC_MUSTER = "nicht gefunden — $ERIC_DIR setzen"
 
+# Zweiter Fall derselben Art, gefunden im nächsten CI-Lauf: neun Tests scheiterten mit
+#     XmlFehler: keine Hersteller-ID — $ELSTER_HERSTELLER_ID setzen (nie im Repo, nie im Code).
+# Die Hersteller-ID ist ein Geheimnis, kein Download — sie steht in der gitignored .env, die
+# conftest hier lädt, und existiert in CI zurecht nicht. Anders geartet als die Lizenzdatei,
+# gleiche Folge: der Test kann nicht prüfen, was er prüfen soll, und das ist ein Skip.
+#
+# Die Bedingung wird ZUR LAUFZEIT gelesen, nicht beim Import: die .env wird oben in dieser
+# Datei geladen, und ein Test darf sie per monkeypatch entfernen, um genau die
+# fail-closed-Antwort zu prüfen — dann muss der Hook wegbleiben und den Fehler durchlassen.
+_HERSTELLER_MUSTER = "keine Hersteller-ID — $ELSTER_HERSTELLER_ID setzen"
+
+
+def _hersteller_id_fehlt() -> bool:
+    return not os.environ.get("ELSTER_HERSTELLER_ID", "").strip()
+
 
 def _ist_fehlendes_eric_schema(fehler: BaseException) -> bool:
     """Trägt diese Ausnahme das fehlende ERiC-Schema als Ursache?
@@ -160,6 +175,13 @@ def _ist_fehlendes_eric_schema(fehler: BaseException) -> bool:
     return type(fehler).__name__ in ("XmlFehler", "AssertionError")
 
 
+def _ist_fehlende_hersteller_id(fehler: BaseException) -> bool:
+    """Wie _ist_fehlendes_eric_schema, für das zweite lokal-vorhandene / in-CI-fehlende Stück."""
+    if not _hersteller_id_fehlt() or _HERSTELLER_MUSTER not in str(fehler):
+        return False
+    return type(fehler).__name__ in ("XmlFehler", "AssertionError")
+
+
 @pytest.hookimpl(wrapper=True)
 def pytest_runtest_call(item):
     try:
@@ -168,6 +190,9 @@ def pytest_runtest_call(item):
         if _ist_fehlendes_eric_schema(e):
             pytest.skip("ERiC-XSD nicht verfügbar (lizenzpflichtig, $ERIC_DIR nicht gesetzt) — "
                         "dieser Test braucht das echte Schema")
+        if _ist_fehlende_hersteller_id(e):
+            pytest.skip("$ELSTER_HERSTELLER_ID nicht gesetzt (Geheimnis, nie im Repo) — "
+                        "dieser Test baut ein vollständiges Übermittlungs-XML")
         raise
 
 

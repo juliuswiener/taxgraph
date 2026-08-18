@@ -400,6 +400,37 @@ def test_eric_skip_frisst_keine_fremden_fehler():
         "ein gewöhnlicher AssertionError wird übersprungen — so wird jede rote Zahl grün"
 
 
+def test_hersteller_id_skip_ist_genauso_eng():
+    """Zweiter Fall derselben Art (neun Tests im CI-Lauf danach): die Hersteller-ID ist ein
+    Geheimnis aus der gitignored .env und fehlt in CI zurecht. Gleiche Enge wie beim Schema —
+    und dieselbe wichtigere Richtung: ist sie gesetzt, darf nichts übersprungen werden.
+
+    Die Bedingung wird zur LAUFZEIT gelesen, damit ein Test, der die Variable per monkeypatch
+    entfernt, um die fail-closed-Antwort zu prüfen, weiterhin seinen Fehler bekommt."""
+    sys.path.insert(0, HERE)
+    import conftest                       # noqa: E402
+
+    class _XmlFehler(Exception):
+        pass
+    _XmlFehler.__name__ = "XmlFehler"
+    echte = _XmlFehler("keine Hersteller-ID — $ELSTER_HERSTELLER_ID setzen "
+                       "(nie im Repo, nie im Code).")
+
+    if conftest._hersteller_id_fehlt():
+        assert conftest._ist_fehlende_hersteller_id(echte)
+    else:
+        assert not conftest._ist_fehlende_hersteller_id(echte), (
+            "die Hersteller-ID ist gesetzt, der Hook würde trotzdem überspringen")
+
+    # Enge in beide Richtungen, unabhängig vom Umgebungszustand:
+    assert not conftest._ist_fehlende_hersteller_id(
+        _XmlFehler("Pflichtfeld E0100082 fehlt im Container")), \
+        "ein inhaltlicher XmlFehler wird übersprungen"
+    assert not conftest._ist_fehlende_hersteller_id(
+        ValueError("keine Hersteller-ID — $ELSTER_HERSTELLER_ID setzen")), \
+        "eine beliebige Ausnahme mit der Meldung wird übersprungen — zu weit gefasst"
+
+
 def test_guard_greift_nur_ohne_toolchain():
     """Die andere Richtung, und die wichtigere: mit verfügbarer Toolchain darf NICHTS
     übersprungen werden. Ein Guard, der immer greift, versteckt die halbe Suite."""
