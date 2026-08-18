@@ -24,6 +24,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "store"))
@@ -47,6 +48,23 @@ TESSERACT_ZEITLIMIT_S = 60
 # jeder einzeln brav unter seinem Limit. 500 × 60 s sind acht Stunden Stillstand — die
 # Einzelgrenze allein ist also kein Schutz, sie verteilt das Problem nur.
 OCR_SEITEN_HOECHSTZAHL = 40
+
+# --------------------------------------------------- Deckel auf die LLM-Klassifikation je Upload
+# Dieselbe Bauart wie beim OCR, eine Schicht höher: uebernehme_kontoauszug ruft den
+# LLM-Klassifikator JE mehrdeutiger Buchung. Ein Auszug mit 200 unklaren Zwecken erzeugt 200
+# Aufrufe à 30 s Zeitlimit — im einfädigen Server bis zu 100 Minuten Stillstand, und 200 mal
+# Kosten, ohne dass irgendwo eine Grenze steht.
+#
+# 50 ist Julius' Zahl (2026-08-18): deckt einen Monatsauszug mit reichlich Unklarem und
+# begrenzt die Kosten je Upload auf einen bekannten Betrag.
+LLM_AUFRUFE_HOECHSTZAHL = 50
+
+# Der Anzahl-Deckel allein genügt nicht, seit der Client wiederholt (llm_client._VERSUCHE):
+# 50 × 3 Versuche × 30 s wären 75 Minuten — die Wiederholung, die einzelne Aufrufe rettet,
+# vervielfacht im schlimmsten Fall die Blockade. Deshalb zusätzlich eine Wanduhr über die
+# ganze Schleife. Sie greift NUR, wenn die Aufrufe wirklich lange brauchen; im Normalfall
+# (Antwort in ein bis zwei Sekunden) ist der Anzahl-Deckel die bindende Grenze.
+LLM_ZEITBUDGET_S = 300
 
 
 class OcrZuAufwendig(RuntimeError):
@@ -388,10 +406,16 @@ def llm_klassifikator_factory(client, role, *, fixture_id: str | None = None):
 
 def uebernehme_kontoauszug(store: dict, transaktionen: list[dict], bindung: dict, *,
                            llm_klassifikator=None, ts: str | None = None,
-                           katalog: dict | None = None) -> int:
+                           katalog: dict | None = None) -> tuple[int, int]:
     """Je AUSGABEN-Transaktion (betrag < 0): Kategorie deterministisch, sonst LLM-Fallback (falls injiziert),
-    sonst kein Vorschlag. Kategorie mit existierendem Ziel-Feld → ein vorlaeufiges Event (Vorschlag). Gibt
-    die Anzahl geschriebener Vorschläge zurück. Kein Überschreiben aktiver Events; keine Aggregation (je
+    sonst kein Vorschlag. Kategorie mit existierendem Ziel-Feld → ein vorlaeufiges Event (Vorschlag).
+
+    Gibt (anzahl_vorschlaege, llm_uebersprungen) zurück. Die zweite Zahl ist KEIN Nebenergebnis,
+    sondern die Bedingung dafür, dass der Deckel ehrlich ist: eine Buchung, die wegen der
+    Aufruf- oder Zeitgrenze nie klassifiziert wurde, sieht im Store exakt aus wie eine, die
+    geprüft und für unklar befunden wurde. Ohne diese Zahl könnte der Aufrufer beides nicht
+    auseinanderhalten — und ein Auszug, bei dem die Hälfte nie angesehen wurde, sähe aus wie
+    ein vollständig geprüfter. Kein Überschreiben aktiver Events; keine Aggregation (je
     Transaktion ein eigenständiger Vorschlag — bei mehreren derselben Kategorie gewinnt der Store-One-Active-
     Guard: nur die erste, weitere brauchen Nutzer-Merge = benannter Folge-Nachtrag Multi-Transaktion).
 
@@ -402,6 +426,9 @@ def uebernehme_kontoauszug(store: dict, transaktionen: list[dict], bindung: dict
     katalog = katalog if katalog is not None else ST.lade_katalog(bindung)   # K1: import:kontoauszug nur kontoauszug-Felder
     aktiv = set(ST._aktives(store))
     n = 0
+    llm_aufrufe = 0
+    llm_uebersprungen = 0
+    beginn = time.monotonic()
     for tx in transaktionen:
         betrag = int(tx.get("betrag", 0))
         if betrag >= 0:                            # nur Ausgaben sind § 35a/§ 10b/§ 10-Kandidaten
@@ -409,6 +436,19 @@ def uebernehme_kontoauszug(store: dict, transaktionen: list[dict], bindung: dict
         zweck = tx.get("verwendungszweck", "")
         kategorie = klassifiziere_det(zweck)
         if kategorie is None and llm_klassifikator is not None:
+            # Zwei Grenzen, weil eine nicht reicht: die Anzahl deckelt Kosten und Regelfall-
+            # Laufzeit, die Wanduhr fängt den Fall ab, dass einzelne Aufrufe ins Zeitlimit
+            # laufen und der Client sie wiederholt (llm_client._VERSUCHE).
+            if (llm_aufrufe >= LLM_AUFRUFE_HOECHSTZAHL
+                    or time.monotonic() - beginn > LLM_ZEITBUDGET_S):
+                # KEIN Rate-Wert und kein stiller Abbruch der ganzen Übernahme: diese Buchung
+                # bleibt schlicht unklassifiziert, wie jede andere ohne sichere Kategorie
+                # (FAIL-CLOSED, s. Moduldocstring). Gezählt wird sie trotzdem — der Aufrufer
+                # muss es dem Nutzer sagen können, sonst sieht ein Auszug, bei dem die Hälfte
+                # nie angesehen wurde, aus wie ein vollständig geprüfter.
+                llm_uebersprungen += 1
+                continue
+            llm_aufrufe += 1
             kategorie = llm_klassifikator(maskiere(zweck), betrag)   # LLM-Fallback (maskiert)
         feld = KATEGORIE_FELD.get(kategorie or "")
         if not feld or feld not in bindung or feld in aktiv:
@@ -423,4 +463,4 @@ def uebernehme_kontoauszug(store: dict, transaktionen: list[dict], bindung: dict
                         bindung=bindung)   # Auflage T (Stille-Null-Klasse), defense-in-depth
         aktiv.add(feld)
         n += 1
-    return n
+    return n, llm_uebersprungen

@@ -140,7 +140,7 @@ def test_uebernahme_ausgaben_als_vorschlag(bindung):
     tx = [{"datum": "12.03.", "betrag": -48000, "verwendungszweck": "Malermeister Schmidt"},
           {"datum": "15.03.", "betrag": -20000, "verwendungszweck": "Spende Rotes Kreuz"},
           {"datum": "31.03.", "betrag": 250000, "verwendungszweck": "Gehalt"}]         # Einnahme
-    n = KW.uebernehme_kontoauszug(s, tx, bindung, ts=TS)
+    n, _uebersprungen = KW.uebernehme_kontoauszug(s, tx, bindung, ts=TS)
     assert n == 2
     felder, _ = ST.materialisiere(s)
     assert felder["hh_handwerker_betrag"]["wert"] == 48000
@@ -153,14 +153,14 @@ def test_uebernahme_ausgaben_als_vorschlag(bindung):
 
 def test_unklassifiziert_kein_vorschlag(bindung):
     s = ST.leerer_store(2025, fall_id="ka-unklar")
-    n = KW.uebernehme_kontoauszug(s, [{"datum": "1.1.", "betrag": -5000,
+    n, _uebersprungen = KW.uebernehme_kontoauszug(s, [{"datum": "1.1.", "betrag": -5000,
                                        "verwendungszweck": "Firma XY Zahlung"}], bindung, ts=TS)
     assert n == 0 and not ST._aktives(s)
 
 
 def test_einnahme_kein_vorschlag(bindung):
     s = ST.leerer_store(2025, fall_id="ka-ein")
-    n = KW.uebernehme_kontoauszug(s, [{"datum": "1.1.", "betrag": 300000,
+    n, _uebersprungen = KW.uebernehme_kontoauszug(s, [{"datum": "1.1.", "betrag": 300000,
                                        "verwendungszweck": "Spende erhalten"}], bindung, ts=TS)
     assert n == 0                                    # positive Beträge sind keine § 35a/Spenden-AUSGABE
 
@@ -172,7 +172,7 @@ def test_llm_fallback_injiziert(bindung):
     # ein plain-python-Stub simuliert NICHT den LLM-Call, er testet den Injektions-Punkt:
     stub = lambda zweck, betrag: "spende" if "kryptisch" in zweck.lower() else None
     tx = [{"datum": "1.1.", "betrag": -7500, "verwendungszweck": "KRYPTISCH-REF-4711"}]
-    n = KW.uebernehme_kontoauszug(s, tx, bindung, llm_klassifikator=stub, ts=TS)
+    n, _uebersprungen = KW.uebernehme_kontoauszug(s, tx, bindung, llm_klassifikator=stub, ts=TS)
     assert n == 1
     ev = ST._aktives(s)["spenden_betrag"]
     assert ev["signal"]["signal_1"]["quelle"] == "llm" and ev["signal"]["signal_1"]["kategorie"] == "spende"

@@ -65,12 +65,13 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # sie ist das einzige Maß, das solche Logik überhaupt sieht — und sie kann nicht vakuum-grün
 # werden. api.py hatte 3579 Zeilen und darf nicht zurückwachsen.
 #
-# NACHGEZOGEN von 1055 auf 1065 (2026-08-18): die Behandlung der OCR-Zeitüberschreitung am
-# Kontoauszug-Endpunkt (+10 Zeilen). Das ist der Zweck dieser Ratsche, nicht ihre Umgehung —
-# sie erzwingt, dass jedes Wachstum begründet wird, statt es zu verbieten. Eine Fehlerantwort
-# an einem Endpunkt gehört in die Haut; Rechenlogik gehört es nicht, und dafür ist Lage (A)
-# ohnehin schärfer. Wer diese Zahl hebt, schreibt daneben, wofür.
-API_ZEILEN_OBERGRENZE = 1065
+# NACHGEZOGEN am 2026-08-18, zweimal an einem Tag: 1055 → 1065 (Behandlung der
+# OCR-Zeitüberschreitung am Kontoauszug-Endpunkt) → 1078 (Hinweistext für die übersprungenen
+# LLM-Klassifikationen). Das ist der Zweck dieser Ratsche, nicht ihre Umgehung — sie erzwingt,
+# dass jedes Wachstum begründet wird, statt es zu verbieten. Beide Male ging es um eine
+# Fehler- bzw. Hinweisantwort an einem Endpunkt: das gehört in die Haut. Rechenlogik gehört es
+# nicht, und dafür ist Lage (A) ohnehin schärfer. Wer diese Zahl hebt, schreibt daneben, wofür.
+API_ZEILEN_OBERGRENZE = 1078
 
 
 def _runner_stellen(pfad: str) -> list[int]:

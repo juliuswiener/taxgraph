@@ -838,12 +838,25 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
     else:
         raise ApiError(400, "format muss csv, json oder pdf sein")
     # katalog GLOBAL (dev-2-Kontrakt): Enforcement decoupled vom per-Scheibe-Targeting.
-    n = KW.uebernehme_kontoauszug(store, tx, bindung, llm_klassifikator=api_llm._kontoauszug_llm_klassifikator(),
-                                  katalog=ST.lade_katalog(TR.lade_bindung()))
+    n, llm_uebersprungen = KW.uebernehme_kontoauszug(
+        store, tx, bindung, llm_klassifikator=api_llm._kontoauszug_llm_klassifikator(),
+        katalog=ST.lade_katalog(TR.lade_bindung()))
     speichere_fall(fall_id, store)
     out = {"uebernommen": n, "transaktionen": len(tx), "verworfen": n_verworfen}
+    hinweise = []
     if n_verworfen > 0:
-        out["hinweis"] = f"{n_verworfen} Zeile(n) unsicher erkannt (Confidence < 60%) — bitte manuell prüfen/nachtragen."
+        hinweise.append(f"{n_verworfen} Zeile(n) unsicher erkannt (Confidence < 60%) — bitte manuell prüfen/nachtragen.")
+    if llm_uebersprungen > 0:
+        # Ohne diesen Hinweis wäre der Deckel eine stille Kürzung: die übersprungenen Buchungen
+        # sehen im Store aus wie geprüft-und-unklar, und der Nutzer hielte einen halb angesehenen
+        # Auszug für einen ganz angesehenen.
+        out["llm_uebersprungen"] = llm_uebersprungen
+        hinweise.append(
+            f"{llm_uebersprungen} Buchung(en) wurden NICHT automatisch eingeordnet — die Grenze "
+            f"von {KW.LLM_AUFRUFE_HOECHSTZAHL} Klassifikationen je Auszug war erreicht. Bitte "
+            f"diese Buchungen selbst zuordnen oder den Auszug in kleineren Zeiträumen hochladen.")
+    if hinweise:
+        out["hinweis"] = " ".join(hinweise)
     return 200, out
 
 
