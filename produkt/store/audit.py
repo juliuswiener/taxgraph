@@ -9,9 +9,32 @@ import json
 import os
 from datetime import datetime, timezone
 
-# Default: neben den Fall-Dateien (gleiche Festplatten-Partition, kein extra Mount).
-_HIER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-AUDIT_DIR = os.environ.get("TAXGRAPH_AUDIT_DIR") or os.path.join(_HIER, "haut", "faelle")
+# Default: neben den Fall-Dateien (gleiche Festplatten-Partition, kein extra Mount) — und die
+# sind am 2026-08-19 aus dem Projektverzeichnis nach $XDG_DATA_HOME/taxgraph gezogen. Der
+# Gleichlauf ist Absicht und nicht bloss Bequemlichkeit: das Protokoll führt user_id, fall_id
+# und Aktion, also wer wann welche Steuererklärung bearbeitet hat. Es gehört zu den Falldaten,
+# nicht ins Repository — und `make backup` sichert beides in einem Zug, weil es zusammenliegt.
+#
+# Der Pfad wird über dieselbe Funktion bestimmt statt hier zweitgeschrieben: zwei Stellen, die
+# denselben Ort meinen, laufen auseinander (die Klasse, die in diesem Projekt schon mehrfach
+# Geld gekostet hat). Der Import ist lokal, weil produkt/haut nicht immer im sys.path liegt,
+# wenn der Store allein benutzt wird — dann greift der ausdrückliche Rückfall.
+def _standard_dir() -> str:
+    try:
+        import sys
+        _h = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "haut")
+        if _h not in sys.path:
+            sys.path.insert(0, _h)
+        from api_constants import FAELLE
+        return FAELLE
+    except Exception:                       # noqa: BLE001 — Store ohne Haut ist ein gültiger Fall
+        xdg = os.environ.get("XDG_DATA_HOME", "").strip()
+        basis = os.path.expanduser(xdg) if xdg else os.path.join(
+            os.path.expanduser("~"), ".local", "share")
+        return os.path.join(basis, "taxgraph", "faelle")
+
+
+AUDIT_DIR = os.environ.get("TAXGRAPH_AUDIT_DIR") or _standard_dir()
 
 
 def _audit_pfad() -> str:

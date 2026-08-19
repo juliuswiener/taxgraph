@@ -9,7 +9,40 @@ import os
 import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FAELLE = os.path.join(HERE, "faelle")
+
+
+def _daten_wurzel() -> str:
+    """Wo die Steuerdaten liegen — AUSSERHALB des Projektverzeichnisses.
+
+    Bis 2026-08-19 lagen sie in `produkt/haut/faelle`, also mitten im Arbeitsbaum: Steuer-ID,
+    Einkommen und IBAN in einem Verzeichnis, das jedes Sync- und Sicherungswerkzeug mitnimmt,
+    das auf das Projekt zeigt, und das bei jedem Kopieren des Ordners mitwandert. Vor git
+    geschützt waren sie (`.gitignore:36`), vor dem Rest nicht.
+
+    Jetzt nach XDG-Konvention unter `$XDG_DATA_HOME/taxgraph` bzw. `~/.local/share/taxgraph` —
+    dorthin zeigt kein Projekt-Werkzeug, und ein `rm -rf` im Projektverzeichnis trifft sie nicht
+    mehr. `$TAXGRAPH_DATEN` überschreibt beides (Tests setzen stattdessen api.FAELLE direkt).
+
+    NICHT MITGEZOGEN: produkt/auth/users.json. Das sind Zugangsdaten, keine Steuerdaten, und
+    ein Umzug bräche eine bestehende Anmeldung. Eigene Entscheidung, eigener Schritt.
+
+    KEINE VERSCHLÜSSELUNG: die Dateien liegen weiterhin im Klartext (0600). Der Umzug schliesst
+    die Sicherungs- und Weitergabe-Lücke, nicht die gestohlene Platte — das war die bewusste
+    Wahl (Audit verschluesselung-steuerdaten-im-klartext, Entscheidung 2026-08-19)."""
+    eigen = os.environ.get("TAXGRAPH_DATEN", "").strip()
+    if eigen:
+        return os.path.expanduser(eigen)
+    xdg = os.environ.get("XDG_DATA_HOME", "").strip()
+    basis = os.path.expanduser(xdg) if xdg else os.path.join(os.path.expanduser("~"),
+                                                             ".local", "share")
+    return os.path.join(basis, "taxgraph")
+
+
+FAELLE = os.path.join(_daten_wurzel(), "faelle")
+
+# Der alte Ort — nur noch, damit der Umzugs-Hinweis in server.py darauf zeigen kann und ein
+# Test belegt, dass wir NICHT mehr dorthin schreiben.
+FAELLE_ALT = os.path.join(HERE, "faelle")
 
 # ========== Private (führender Unterstrich) Konstanten — müssen in __all__ sein für import * ==========
 _FALL_RE = re.compile(r"[A-Za-z0-9_-]{1,64}")

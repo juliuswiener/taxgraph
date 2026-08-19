@@ -22,7 +22,7 @@ unit:
 	python3 -m pytest tests/ -q
 
 ## Sicherung Fall-Store + Audit-Log + Benutzerkonten (Audit 2026-08-16/17, data-no-backup-restore).
-## 313 Falldateien sind gitignored — ohne dieses Ziel gibt es KEINE Recovery. audit.jsonl liegt
+## Die Falldateien sind gitignored — ohne dieses Ziel gibt es KEINE Recovery. audit.jsonl liegt
 ## BEREITS unter faelle/ (produkt/store/audit.py:AUDIT_DIR) und wird von der faelle/-Sicherung
 ## automatisch mit erfasst — der alte "audit.jsonl"-Operand traf nie (er lag relativ zu
 ## FAELLE_ROOT statt zu FAELLE_ROOT/faelle, Review 2026-08-17). users.json (produkt/auth/) MUSS
@@ -32,8 +32,14 @@ unit:
 ## Round-Trip-Test in tests/test_backup_restore_roundtrip.py, der NIE die echten Pfade anfasst).
 ## BACKUP_DIR liegt NEBEN dem Checkout, nicht unter $(HOME) (Nutzer-Vorgabe: nichts im Home anlegen;
 ## dort liegen die bisherigen Sicherungen ohnehin schon).
+##
+## FAELLE_ROOT zeigt seit 2026-08-19 nach $XDG_DATA_HOME/taxgraph statt nach produkt/haut: die
+## Steuerdaten liegen nicht mehr im Projektverzeichnis (Entscheidung zum Audit-Punkt
+## verschluesselung-steuerdaten-im-klartext). Der Wert MUSS mit api_constants._daten_wurzel()
+## uebereinstimmen — laufen die beiden auseinander, sichert `make backup` ein leeres Verzeichnis
+## und meldet Erfolg. Genau das prueft tests/test_datenwurzel_ausserhalb_repo.py.
 BACKUP_DIR  ?= $(abspath $(CURDIR)/../taxgraph-backups)
-FAELLE_ROOT ?= produkt/haut
+FAELLE_ROOT ?= $(if $(XDG_DATA_HOME),$(XDG_DATA_HOME),$(HOME)/.local/share)/taxgraph
 AUTH_USERS  ?= produkt/auth/users.json
 
 backup:
