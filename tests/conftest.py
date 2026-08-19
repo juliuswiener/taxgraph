@@ -73,7 +73,10 @@ def _catala_fehlt() -> bool:
     auch dort übersprungen, wo Catala vollständig verfügbar ist: lokal und im vollen CI-Job.
     Ergebnis wäre eine grüne Suite mit einem Viertel weniger Tests gewesen — ein Guard, der
     genau den Schaden anrichtet, gegen den er gebaut ist."""
-    for teil in ("golden", "produkt/mapping", "produkt/traverser", "produkt/unsicherheit"):
+    # produkt/engine zuerst: dort liegt der Rechenkern seit 2026-08-19. `golden` bleibt
+    # in der Liste, weil dort weiterhin Daten und der Golden-Lauf selbst liegen.
+    for teil in ("produkt/engine", "golden", "produkt/mapping", "produkt/traverser",
+                 "produkt/unsicherheit"):
         p = os.path.join(_ROOT, teil)
         if p not in sys.path:
             sys.path.insert(0, p)

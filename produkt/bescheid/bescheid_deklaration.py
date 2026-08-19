@@ -13,7 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PRODUKT = os.path.dirname(HERE)
 ROOT = os.path.dirname(PRODUKT)
 for _sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/unsicherheit",
-             "produkt/mapping", "produkt/konsistenz", "produkt/import", "golden", "elster"):
+             "produkt/mapping", "produkt/konsistenz", "produkt/import", "produkt/engine", "golden", "elster"):
     _p = os.path.join(ROOT, _sub)
     if _p not in sys.path:
         sys.path.insert(0, _p)

@@ -165,7 +165,7 @@ jobs:
           clerk build p32a-python
           bash oracle/gettsim/assemble_catala.sh
 
-      # golden/runner.py ruft direkt python golden/runner.py auf, NICHT `make golden`.
+      # golden/runner.py ruft direkt python golden/golden_lauf.py auf, NICHT `make golden`.
       # Grund: Makefile-Target `golden` sourcet venv312 (oracle/.venv312/bin/activate),
       # das golden/runner.py NICHT braucht — es importiert Catala-Compiler-Output aus
       # oracle/gettsim/_catala/{pkg,rt} (sys.path.insert in Z. 36-37), kein GETTSIM.
@@ -174,7 +174,7 @@ jobs:
       - name: golden (135 Faelle, direkt — venv312 nicht noetig)
         run: |
           eval $(opam env --switch=taxgraph --set-switch)
-          python golden/runner.py
+          python golden/golden_lauf.py
 
   # Differentielles Rechen-Oracle: unsere Catala-Werte gegen GETTSIM. Faengt Rechen-
   # Regressionen, die die Unit-Suite nicht sieht. Die bekannten Divergenzen stehen als

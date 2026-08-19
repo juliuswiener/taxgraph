@@ -37,7 +37,7 @@ ROOT = os.path.dirname(HERE)
 
 def _catala_da() -> bool:
     try:
-        sys.path.insert(0, os.path.join(ROOT, "golden"))
+        sys.path.insert(0, os.path.join(ROOT, "produkt", "engine"))
         import runner  # noqa: F401
         return True
     except Exception:
@@ -121,16 +121,24 @@ def test_kein_produkt_modul_importiert_ueber_die_repo_wurzel():
     # Module, die im Repo-Wurzelverzeichnis liegen und deshalb ROOT im Pfad brauchen.
     wurzel_module = {p.stem for p in pathlib.Path(ROOT).glob("*.py")}
 
-    # LEER seit 2026-08-19. Hier standen vier Dateien der Store-Abstraktion
-    # (__init__/file_backend/sql_backend/migrations), die sich selbst als PAKET ansprachen
-    # (`from produkt.store.sql_backend import …`) und deshalb ROOT im Pfad gebraucht hätten.
-    # Sie hatten null Produktionsaufrufer und sind auf Julius' Entscheidung gelöscht worden;
-    # damit ist auch die zweite Modul-Identität von store.py weg, die sie mitbrachten.
+    # Hier standen bis 2026-08-19 vier Dateien der Store-Abstraktion, die sich selbst als PAKET
+    # ansprachen (`from produkt.store.sql_backend import …`). Sie hatten null Produktionsaufrufer
+    # und sind gelöscht worden; test_ausnahmen_leben_noch hat den Übergang gemeldet.
     #
-    # Die Liste bleibt stehen, nicht der Ordnung halber: sie ist die Stelle, an der eine neue
-    # Ausnahme begründet werden müsste. Leer heisst hier „es gibt keinen Sonderfall mehr", und
-    # test_ausnahmen_leben_noch hat den Übergang gemeldet, statt ihn durchgehen zu lassen.
-    ausnahmen: dict[str, str] = {}
+    # Geblieben ist genau ein Sonderfall, und er ist neu:
+    ausnahmen = {
+        "produkt/engine/runner.py": (
+            "Der Catala-Rechenkern, am 2026-08-19 aus golden/ hierher gezogen. Er importiert "
+            "`yamlstrict` aus der Repo-Wurzel und legt sie sich dafür SELBST in den Pfad "
+            "(runner.py:26) — nicht aus Nachlässigkeit, sondern weil er ohnehin drei Pfade "
+            "setzen muss, um den Catala-Compiler-Output unter oracle/gettsim/_catala zu finden. "
+            "Ohne diese Zeilen ist er nicht importierbar, mit ihnen ist er es aus jedem "
+            "Bootstrap heraus; der Produktionsstart bleibt davon unberührt (die Tests oben "
+            "fahren einen echten Rechenweg unter server.py-Bedingungen). Ihn davon zu befreien "
+            "hiesse, yamlstrict zu verschieben und 22 Aufrufer nachzuziehen — für einen "
+            "Seiteneffekt, an dem seit dem Aufräumen der doppelten Modul-Identität nichts mehr "
+            "hängt."),
+    }
 
     verstoss = []
     for pfad in sorted(pathlib.Path(ROOT, "produkt").rglob("*.py")):
@@ -171,7 +179,7 @@ def test_ausnahmen_leben_noch():
 def ausnahmen_der_pruefung() -> dict[str, str]:
     """Die Ausnahmeliste aus test_kein_produkt_modul_importiert_ueber_die_repo_wurzel, damit
     der Wächter oben dieselbe Menge prüft und nicht eine handgepflegte Kopie davon."""
-    return {}
+    return {"produkt/engine/runner.py": "Catala-Rechenkern, setzt seine Pfade selbst"}
 
 
 def test_kein_paketweg_im_produktionspfad():
@@ -220,14 +228,14 @@ def test_die_probe_wuerde_den_alten_fund_finden():
 @pytest.mark.skipif(not _catala_da(), reason="Catala-Toolchain nicht verfügbar")
 def test_runner_legt_die_repo_wurzel_in_den_pfad():
     """Festgehalten, was HEUTE gilt — nicht als Billigung, sondern damit die Kopplung sichtbar
-    bleibt: golden/runner.py mutiert beim Import sys.path. Das Produkt hängt nicht mehr daran
+    bleibt: der Rechenkern (seit 2026-08-19 produkt/engine/runner.py) mutiert beim Import sys.path. Das Produkt hängt nicht mehr daran
     (die Tests darüber beweisen es), aber der Seiteneffekt existiert weiter und macht die
     Reihenfolge von Importen bedeutsam.
 
     Wird der Insert entfernt, gehört dieser Test gestrichen — dann ist Phase 4 an der Stelle
     fertig. Er soll dabei auffallen, statt stillschweigend grün zu bleiben."""
     r = _in_frischem_prozess(_BOOTSTRAP + textwrap.dedent("""
-        sys.path.insert(0, os.path.join(ROOT, "golden"))
+        sys.path.insert(0, os.path.join(ROOT, "produkt", "engine"))
         vorher = ROOT in sys.path
         import runner        # noqa: F401
         print("VORHER", vorher, "NACHHER", ROOT in sys.path)

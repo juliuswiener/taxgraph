@@ -23,7 +23,18 @@ import sys
 
 import yaml  # noqa: F401
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# ZWEI Ebenen hoch, nicht eine: diese Datei lag bis 2026-08-19 in golden/, wo ".." schon die
+# Repo-Wurzel war. Nach dem Umzug nach produkt/engine/ zeigte dieselbe Zeile auf produkt/ —
+# und `from pkg import …` scheiterte sofort mit ModuleNotFoundError, weil _CAT darunter auf
+# produkt/oracle/gettsim/_catala zeigte. Der Fehler kam beim ersten Import; ein Umzug, der
+# einen relativen Pfad mitnimmt, verschiebt ihn eben auch.
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+# Import-Zeit-Mutation von sys.path, absichtlich beibehalten und hier benannt: `yamlstrict`
+# liegt in der Repo-Wurzel (22 Nutzer), und ohne diesen Eintrag findet der Import darunter es
+# nicht. Der Audit-Plan wollte sie loswerden — das hiesse, yamlstrict zu verschieben und 22
+# Aufrufer nachzuziehen, für einen Seiteneffekt, an dem seit dem Aufräumen der doppelten
+# Modul-Identität nichts mehr hängt (nachgemessen: tests/test_bootstrap_wie_server.py).
 sys.path.insert(0, ROOT)
 
 from yamlstrict import load_str  # noqa: E402
@@ -253,21 +264,6 @@ def _verpflegung_params(year: int) -> dict:
     return out
 
 
-def _verpflegung_pauschale(s: dict, year: int) -> int:
-    """§ 9 Abs. 4a S. 3 EStG — Verpflegungspauschale JE Reise-Tag, EURO. WOERTLICHE Transkription
-    der Registry-Staffel p9_4a_verpflegungsmehraufwand: An-/Abreisetag (Nr. 2) -> 14; sonst voller
-    Tag ab 24 h (Nr. 1) -> 28; eintaegig > 8 h (Nr. 3) -> 14; sonst 0. Saetze aus params/<vz>.
-    Der Jahres-WK-Abzug (_verpflegung_abzug) summiert diese Pauschale ueber die Tage je Kategorie
-    (Tage-Bindung dev-2). KOPPLUNG: bei Aenderung der Registry-Regel p9_4a diese Staffel nachziehen."""
-    p = _verpflegung_params(year)
-    if s.get("an_oder_abreisetag"):
-        return p["pauschale_an_abreise"]
-    stunden = int(s.get("abwesenheit_stunden", 0))
-    if stunden >= 24:
-        return p["pauschale_24h"]
-    if stunden > 8:
-        return p["pauschale_ab_8h"]
-    return 0
 
 
 def _verpflegung_roh_cent(s: dict, year: int) -> tuple[int, int, int]:
@@ -362,11 +358,6 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
     return result_cent // 100
 
 
-def _verpflegung_kuerzung_cent(s: dict, year: int) -> int:
-    """Netto-Kürzungsbetrag wegen Mahlzeitengestellung (für E0205508), in CENT.
-    § 9 Abs. 4a S. 8-10 EStG: Kürzung − gezahltes Entgelt, min 0."""
-    _, kuerzung_nach_entgelt_cent, _ = _verpflegung_roh_cent(s, year)
-    return kuerzung_nach_entgelt_cent
 
 
 def _uebernachtung_abzug(s: dict, year: int) -> int:
@@ -1221,14 +1212,6 @@ def _kindergeld(year: int) -> int:
     return p["kindergeld_monatlich_je_kind"]["wert"]
 
 
-def _kinderfreibetrag(year: int, veranlagung) -> int:
-    """§ 32 Abs. 6 EStG Kinderfreibetrag JE KIND (sächliches Existenzminimum + BEA-Freibetrag je Elternteil),
-    EURO, aus params/<vz>. Einzelveranlagung = ein Elternteil-Anteil; Zusammenveranlagung = verdoppelt (Abs. 2).
-    Basis der § 31-Günstigerprüfung (Kinderfreibetrag-Wirkung vs. Kindergeld)."""
-    p = _load_yaml_path(os.path.join(
-        ROOT, "params", str(year), "kinderfreibetrag_p32.yaml"))
-    je_elternteil = p["kinderfreibetrag_je_elternteil"]["wert"] + p["bea_freibetrag_je_elternteil"]["wert"]
-    return je_elternteil * (2 if veranlagung == "zusammen" else 1)
 
 
 def _vorsorge_hb(year: int) -> int:
@@ -1505,8 +1488,6 @@ _UMLAUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
                          "Ä": "ae", "Ö": "oe", "Ü": "ue"})
 
 
-def normalize(text: str) -> str:
-    return re.sub(r"\s+", " ", text.translate(_UMLAUT).lower()).strip()
 
 
 def _gesamt_out(s: dict):
@@ -1834,53 +1815,6 @@ def catala_est_zusammen(s: dict) -> int:
     return int(out.festzusetzende_est) // 100
 
 
-def main() -> int:
-    cases = sorted(glob.glob(os.path.join(ROOT, "golden", "cases", "*.yaml")))
-    if not cases:
-        print("no golden cases found")
-        return 1
-
-    source_cache: dict[str, str] = {}
-    failures = []
-
-    for path in cases:
-        c = load_yaml_fh(open(path, encoding="utf-8"))
-        cid = c["id"]
-        s = c["sachverhalt"]
-        erw = c["erwartung"]
-        exp = erw.get("tarifliche_est",
-                      erw.get("festzusetzende_est",
-                              erw.get("abziehbarer_betrag",
-                                      erw.get("abzug_gesamt",
-                                              erw.get("gewst_cent",
-                                                      erw.get("nenner_b_cent",
-                                                              erw.get("sanierung_ermaessigung_cent",
-                                                                      erw.get("nutzungswert_monat_cent"))))))))
-        q = c["quelle"]
-
-        # 1. citation-anchor gate
-        src_path = os.path.join(ROOT, q["datei"])
-        if src_path not in source_cache:
-            source_cache[src_path] = normalize(open(src_path, encoding="utf-8").read())
-        anchor_ok = normalize(q["zitatanker"]) in source_cache[src_path]
-
-        # 2. value check against Catala
-        got = catala_est(s)
-        value_ok = got == exp
-
-        if anchor_ok and value_ok:
-            print(f"OK       {cid}  (est={got})")
-        else:
-            reason = []
-            if not anchor_ok:
-                reason.append("Zitatanker nicht im Quelltext")
-            if not value_ok:
-                reason.append(f"Wert Catala={got} != erwartet={exp}")
-            print(f"FAIL     {cid}  -> {'; '.join(reason)}")
-            failures.append(cid)
-
-    print(f"\n{len(cases) - len(failures)}/{len(cases)} Faelle bestanden.")
-    return 0 if not failures else 1
 
 
 # -- §35c EStG energetische Sanierungsmassnahmen + Energieberater ---------------
@@ -1940,5 +1874,39 @@ def catala_p22_nr3_einkuenfte(betrag_cent: int) -> int:
     return 0 if betrag_cent < 25600 else betrag_cent
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+def normalize(text: str) -> str:
+    return re.sub(r"\s+", " ", text.translate(_UMLAUT).lower()).strip()
+
+
+def _verpflegung_pauschale(s: dict, year: int) -> int:
+    """§ 9 Abs. 4a S. 3 EStG — Verpflegungspauschale JE Reise-Tag, EURO. WOERTLICHE Transkription
+    der Registry-Staffel p9_4a_verpflegungsmehraufwand: An-/Abreisetag (Nr. 2) -> 14; sonst voller
+    Tag ab 24 h (Nr. 1) -> 28; eintaegig > 8 h (Nr. 3) -> 14; sonst 0. Saetze aus params/<vz>.
+    Der Jahres-WK-Abzug (_verpflegung_abzug) summiert diese Pauschale ueber die Tage je Kategorie
+    (Tage-Bindung dev-2). KOPPLUNG: bei Aenderung der Registry-Regel p9_4a diese Staffel nachziehen."""
+    p = _verpflegung_params(year)
+    if s.get("an_oder_abreisetag"):
+        return p["pauschale_an_abreise"]
+    stunden = int(s.get("abwesenheit_stunden", 0))
+    if stunden >= 24:
+        return p["pauschale_24h"]
+    if stunden > 8:
+        return p["pauschale_ab_8h"]
+    return 0
+
+
+def _verpflegung_kuerzung_cent(s: dict, year: int) -> int:
+    """Netto-Kürzungsbetrag wegen Mahlzeitengestellung (für E0205508), in CENT.
+    § 9 Abs. 4a S. 8-10 EStG: Kürzung − gezahltes Entgelt, min 0."""
+    _, kuerzung_nach_entgelt_cent, _ = _verpflegung_roh_cent(s, year)
+    return kuerzung_nach_entgelt_cent
+
+
+def _kinderfreibetrag(year: int, veranlagung) -> int:
+    """§ 32 Abs. 6 EStG Kinderfreibetrag JE KIND (sächliches Existenzminimum + BEA-Freibetrag je Elternteil),
+    EURO, aus params/<vz>. Einzelveranlagung = ein Elternteil-Anteil; Zusammenveranlagung = verdoppelt (Abs. 2).
+    Basis der § 31-Günstigerprüfung (Kinderfreibetrag-Wirkung vs. Kindergeld)."""
+    p = _load_yaml_path(os.path.join(
+        ROOT, "params", str(year), "kinderfreibetrag_p32.yaml"))
+    je_elternteil = p["kinderfreibetrag_je_elternteil"]["wert"] + p["bea_freibetrag_je_elternteil"]["wert"]
+    return je_elternteil * (2 if veranlagung == "zusammen" else 1)

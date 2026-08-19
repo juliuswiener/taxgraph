@@ -1285,7 +1285,13 @@ def test_n_bindung_zeigt_auf_existierende_bedingung(daten):
         f"gb={sorted(tot_gb)} slot={sorted(tot_slot)}")
 
 
-GOLDEN_RUNNER_PATH = os.path.join(ROOT, "golden", "runner.py")
+# Der Rechenkern liegt seit 2026-08-19 in produkt/engine/runner.py (vorher golden/runner.py):
+# das Produkt hing an einem Entwicklungswerkzeug, jetzt ist es umgekehrt. Der Rückfall auf
+# den alten Ort steht nicht aus Nostalgie da — er hält diese Prüfung lauffähig, falls der
+# Umzug je zurückgedreht wird, statt sie mit FileNotFoundError sterben zu lassen.
+GOLDEN_RUNNER_PATH = os.path.join(ROOT, "produkt", "engine", "runner.py")
+if not os.path.exists(GOLDEN_RUNNER_PATH):
+    GOLDEN_RUNNER_PATH = os.path.join(ROOT, "golden", "runner.py")
 
 # regel_id -> Name der golden/runner.py-Funktion, die die ECHTE Ground Truth für diese
 # Pseudoregel ist (kein rules.yaml-Eintrag, kein rules/estg/<rid>/-Dir). Nur Funktionen mit

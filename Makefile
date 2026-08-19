@@ -131,7 +131,7 @@ snapshot-verify:
 
 ## Run the golden corpus against the Catala formalisation (value + citation anchor).
 golden: build-python
-	. $(VENV312); python golden/runner.py
+	. $(VENV312); python golden/golden_lauf.py
 
 ## Regenerate the golden § 32a cases from the published tariff.
 golden-generate:
