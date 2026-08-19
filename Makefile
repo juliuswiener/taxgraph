@@ -18,8 +18,13 @@ tests:
 	$(OPAM_ENV); clerk test -W rules/
 
 ## Regressionstests der Gate-Semantik (kein Catala, kein Netz, <1s).
+## Parallel mit 6 Workern (Julius-Vorgabe 2026-08-19, Maschine hat 12 Kerne). Gemessen am
+## selben Checkout: sequenziell 312s, -n 12 68s, beide Läufe 0 Fails. --dist loadfile hält
+## jede Testdatei auf EINEM Worker — Pflicht, nicht Kür: test_bescheid_fn_collector und
+## test_datenwurzel_ausserhalb_repo schreiben feste /tmp-Pfade, dateiübergreifend gäbe das
+## Kollisionen. Prozess-basiert, daher kein Konflikt mit der catala-Thread-Unsafety.
 unit:
-	python3 -m pytest tests/ -q
+	python3 -m pytest tests/ -q -n 6 --dist loadfile
 
 ## Sicherung Fall-Store + Audit-Log + Benutzerkonten (Audit 2026-08-16/17, data-no-backup-restore).
 ## Die Falldateien sind gitignored — ohne dieses Ziel gibt es KEINE Recovery. audit.jsonl liegt

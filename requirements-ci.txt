@@ -14,8 +14,10 @@
 # requirements-oracle.txt), weil eine andere Version dort andere ZAHLEN bedeutet, nicht nur
 # einen anderen Ablauf.
 
-# Testlauf
+# Testlauf. xdist: `make unit` fährt die Suite parallel (-n 6 --dist loadfile, s. Makefile) —
+# ohne das Plugin bricht der Aufruf auf frischen Maschinen mit "unrecognized arguments: -n".
 pytest>=8.0
+pytest-xdist>=3.5
 
 # Produkt: Bindungstabellen, Schema-Prüfung, Auth
 pyyaml>=6.0
