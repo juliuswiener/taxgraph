@@ -1,4 +1,4 @@
-"""Split-Naht-Gate — Voraussetzung 1 aus BACKLOG.yaml api-py-datei-split.
+"""Split-Naht-Gate — Voraussetzung 1 aus dem Backlog-Eintrag api-py-datei-split (Vault).
 
 `from api import _AUTH_USER` bindet den WERT beim Import, nicht den Namen (fffd7c8-Lehre).
 Ein `from <modul> import *` ist dieselbe Bauart für ALLE exportierten Namen auf einmal,

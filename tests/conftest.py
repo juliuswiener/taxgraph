@@ -1,7 +1,7 @@
 """Gate: kein Test darf ins ECHTE audit.jsonl schreiben.
 
 Grund: 32 Testdateien haben genau das versehentlich getan (Audit-Log auf 582 MB
-angewachsen, s. BACKLOG.yaml "audit-jsonl-wucherung"). Ein Grep nach dem Patch-
+angewachsen, s. Backlog-Eintrag "audit-jsonl-wucherung", Vault backlog/taxgraph.md). Ein Grep nach dem Patch-
 Muster (`monkeypatch.setattr(audit, "AUDIT_DIR", ...)`) faengt die Faelle NICHT,
 die den Fix noetig machten: unconditionaler audit.append-Aufruf ohne jeden Patch,
 eine Schwesterklasse in derselben Datei ohne Patch, eine von zwei Fixtures in

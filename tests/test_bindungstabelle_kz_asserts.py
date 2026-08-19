@@ -1,4 +1,4 @@
-"""Explizite Kz-Asserts für 7 gebundene Kz ohne Test-Coverage (BACKLOG.yaml id: kz-ohne-assert).
+"""Explizite Kz-Asserts für 7 gebundene Kz ohne Test-Coverage (Backlog-Eintrag kz-ohne-assert, Vault).
 
 Jeder Test prüft, dass:
   1. Das Feld in der Bindung existiert

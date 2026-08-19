@@ -3,7 +3,13 @@
 Regelbasierte Formalisierung der deutschen Einkommensteuer in
 [Catala](https://catala-lang.org), verifiziert gegen unabhaengige Oracles.
 Leitprinzip (AINA): LLM schlaegt vor, deterministische Tools verifizieren,
-Mensch entscheidet. Roadmap in `docs/taxgraph-v3-roadmap.md`.
+Mensch entscheidet.
+
+Backlog, Entscheidungen, Audits und die Roadmap liegen seit 2026-08-19
+**nicht mehr im Repo**, sondern im Obsidian-Vault unter `~/00_projects/vault/`
+(`backlog/taxgraph.md`, `decisions/`, `audits/`, `architecture/`). Code-Kommentare der
+Form `BACKLOG <id>` verweisen auf einen Eintrag dort — die IDs sind beim Umzug erhalten
+geblieben und dienen als Ueberschriften.
 
 Dieser Stand ist **Phase 0 (Spike)**: die komplette Kette einmal durchstechen und
 Gate G0 (Go/No-Go fuer Catala) mit Daten beantworten.
@@ -60,11 +66,11 @@ rules/estg/p04_arbeitszimmer_homeoffice/# § 4 Abs. 5 Nr. 6b/6c literate Catala 
 params/2024|2025|2026/                  # Tarifparameter je VZ mit Quellen
 params/derive_coefficients.py           # Ableitung/Validierung der Koeffizienten
 oracle/gettsim/                         # Differentialtest-Harness + Assembler
-golden/                                 # Golden-Test-Korpus (M1.4) + Runner
+golden/                                 # Golden-Test-Korpus (M1.4) + Lauf; Rechenkern: produkt/engine/
 docstore/                               # Dokumentstore-Schema, Ingest, docker-compose (M1.5)
 sources/                                # Fassungsarchiv: eingefrorene Gesetzestexte + Hash
 reports/                                # s02-divergenzen, s03-ergonomie, gate-g0, gettsim-issue-draft
-docs/                                   # setup.md, roadmap, handover
+docs/                                   # setup.md (Roadmap/Handover: Vault)
 scripts/                                # Installations- und Verifikationsskripte
 ```
 

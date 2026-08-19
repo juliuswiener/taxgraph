@@ -195,7 +195,7 @@ def test_einreichen_endpunkt_erreicht_die_amtliche_pruefung(base, monkeypatch):
     """Echter HTTP-Durchstich: /fall -> /event (bestaetigt) -> /einreichen, ECHTES XML,
     ECHTES checkESt — nichts gemockt. Die Deklaration ist absichtlich NICHT vollstaendig
     im Sinne einer abgabefertigen Erklaerung (Vorsatz-Block, Anlage N sind noch offene
-    Baustellen, s. BACKLOG.yaml) — das ist erlaubt, das XML muss nur bis zur
+    Baustellen, s. Backlog im Vault) — das ist erlaubt, das XML muss nur bis zur
     Plausibilitaetspruefung durchkommen, nicht sie bestehen (rc=0 ist NICHT erwartet)."""
     monkeypatch.setenv("ELSTER_HERSTELLER_ID", _HID)
     fid = _fall_einzel(base)
