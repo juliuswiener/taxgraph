@@ -121,18 +121,16 @@ def test_kein_produkt_modul_importiert_ueber_die_repo_wurzel():
     # Module, die im Repo-Wurzelverzeichnis liegen und deshalb ROOT im Pfad brauchen.
     wurzel_module = {p.stem for p in pathlib.Path(ROOT).glob("*.py")}
 
-    # produkt/store/__init__.py und die Migration darunter sprechen sich selbst als PAKET an
-    # (`from produkt.store.sql_backend import …`). Dieser Weg wird ausschliesslich von Tests
-    # benutzt — der Produktionscode lädt store.py flach über sys.path, und beide Wege führen zu
-    # verschiedenen DATEIEN (store.py vs __init__.py), nicht zu zwei Instanzen derselben.
-    # Nachgemessen 2026-08-18; wird der Paketweg je in den Produktionsstart gezogen, muss er
-    # hier heraus und die Importe müssen umgestellt werden.
-    ausnahmen = {
-        "produkt/store/__init__.py": "Paket-Init, nur über den Testweg `import produkt.store` geladen",
-        "produkt/store/migrations/json_to_sql.py": "Migrationsskript, wird von Hand/Tests gefahren",
-        "produkt/store/file_backend.py": "Backend-Klasse, delegiert per `import produkt.store.store`",
-        "produkt/store/sql_backend.py": "Backend-Klasse, delegiert per `import produkt.store.store`",
-    }
+    # LEER seit 2026-08-19. Hier standen vier Dateien der Store-Abstraktion
+    # (__init__/file_backend/sql_backend/migrations), die sich selbst als PAKET ansprachen
+    # (`from produkt.store.sql_backend import …`) und deshalb ROOT im Pfad gebraucht hätten.
+    # Sie hatten null Produktionsaufrufer und sind auf Julius' Entscheidung gelöscht worden;
+    # damit ist auch die zweite Modul-Identität von store.py weg, die sie mitbrachten.
+    #
+    # Die Liste bleibt stehen, nicht der Ordnung halber: sie ist die Stelle, an der eine neue
+    # Ausnahme begründet werden müsste. Leer heisst hier „es gibt keinen Sonderfall mehr", und
+    # test_ausnahmen_leben_noch hat den Übergang gemeldet, statt ihn durchgehen zu lassen.
+    ausnahmen: dict[str, str] = {}
 
     verstoss = []
     for pfad in sorted(pathlib.Path(ROOT, "produkt").rglob("*.py")):
@@ -161,28 +159,32 @@ def test_kein_produkt_modul_importiert_ueber_die_repo_wurzel():
 
 def test_ausnahmen_leben_noch():
     """Kein toter Eintrag: eine Ausnahme für eine Datei, die es nicht mehr gibt, täuscht eine
-    geprüfte Entscheidung vor."""
+    geprüfte Entscheidung vor.
+
+    Hat am 2026-08-19 genau das getan — nach dem Löschen der Store-Abstraktion zeigten alle
+    vier Einträge ins Leere, und der Test hat es gemeldet, statt sie stumm mitzuschleppen."""
     import pathlib
-    for rel in ("produkt/store/__init__.py", "produkt/store/migrations/json_to_sql.py",
-                "produkt/store/file_backend.py", "produkt/store/sql_backend.py"):
+    for rel in ausnahmen_der_pruefung():
         assert (pathlib.Path(ROOT) / rel).exists(), f"Ausnahme {rel} existiert nicht mehr"
 
 
-def test_die_store_doppelidentitaet_bleibt_aus_dem_produktionspfad():
-    """Die Ausnahmen oben erlauben etwas, das man kennen muss: `import produkt.store.store`
-    lädt DIESELBE DATEI wie das flache `import store` — unter einem zweiten Modulnamen.
+def ausnahmen_der_pruefung() -> dict[str, str]:
+    """Die Ausnahmeliste aus test_kein_produkt_modul_importiert_ueber_die_repo_wurzel, damit
+    der Wächter oben dieselbe Menge prüft und nicht eine handgepflegte Kopie davon."""
+    return {}
 
-    Gemessen 2026-08-18: `flach.__file__ == ueber_paket.__file__` ist True, `flach is
-    ueber_paket` ist False, und ein Attribut, das auf dem einen gesetzt wird, ist auf dem
-    anderen nicht sichtbar. Dieselbe Klasse, die bei est_mapping schon einmal aufgeräumt werden
-    musste (Audit arch-dual-module-identity) und hinter der die fffd7c8-Lehre steht: ein Patch
-    auf dem einen Modul erreicht das andere nicht.
 
-    HEUTE FOLGENLOS, und genau das hält dieser Test fest: der Produktionsstart lädt kein
-    backend-Modul (nachgemessen — nach `import api` ist keines in sys.modules), und der
-    audit-Wächter in conftest.py bleibt scharf, weil store.py audit gar nicht importiert.
-    Wandert der Paketweg je in den Produktionspfad, wird dieser Test rot — dann sind es zwei
-    Instanzen im selben Prozess, und Monkeypatches greifen nur auf einer davon."""
+def test_kein_paketweg_im_produktionspfad():
+    """`import produkt.store.store` lädt DIESELBE DATEI wie das flache `import store` — unter
+    einem zweiten Modulnamen. Gemessen 2026-08-18: gleiche Datei, verschiedene Modulobjekte,
+    ein Attribut auf dem einen ist auf dem anderen unsichtbar. Dieselbe Klasse, die bei
+    est_mapping aufgeräumt werden musste (arch-dual-module-identity), und hinter der die
+    fffd7c8-Lehre steht: ein Patch auf dem einen Modul erreicht das andere nicht.
+
+    Die vier Dateien, die diesen Weg benutzten, sind am 2026-08-19 gelöscht — der Anlass ist
+    also weg. Die Prüfung bleibt, weil der Weg selbst weiter offen steht: `produkt` ist ein
+    Namespace-Paket (kein __init__.py), jeder kann jederzeit wieder `import produkt.store.x`
+    schreiben. Dann lägen zwei Instanzen im selben Prozess."""
     r = _in_frischem_prozess(_BOOTSTRAP + textwrap.dedent("""
         import api        # noqa: F401
         geladen = sorted(m for m in sys.modules

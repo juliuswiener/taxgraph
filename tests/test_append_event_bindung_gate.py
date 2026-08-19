@@ -21,14 +21,15 @@ PRODUKT = os.path.join(ROOT, "produkt")
 # Aufrufstellen, die bindung NICHT literal als Keyword tragen — mit Begründung, warum das
 # hier kein Auflage-T-Loch ist. Jeder Eintrag ist eine geprüfte Ausnahme: beide Tests unten
 # wachen, dass sie erstens wirklich nur **kwargs weiterreicht und zweitens noch existiert.
-AUSNAHMEN = {
-    ("store/file_backend.py", 88): (
-        "FileBackend.append_event(self, **kwargs) ist ein reiner Passthrough zu "
-        "ST.append_event(self, **kwargs) — bindung reist mit, WENN der eigentliche Aufrufer "
-        "(z.B. api.py) es setzt. Die Prüfung greift an der Stelle, die den Wert kennt, nicht "
-        "an diesem Weiterreicher; ein bindung=None des Aufrufers würde dort selbst auffallen."
-    ),
-}
+# LEER seit 2026-08-19. Der einzige Eintrag war FileBackend.append_event — ein reiner
+# Passthrough (self, **kwargs) zu ST.append_event, an dem die Auflage-T-Prüfung nichts zu
+# suchen hatte, weil er den Wert nicht kennt. Die Datei ist mit der Store-Abstraktion gelöscht
+# worden (null Produktionsaufrufer, Entscheidung Julius); der Tote-Einträge-Wächter unten hat
+# den Übergang gemeldet, statt ihn stumm durchgehen zu lassen.
+#
+# Die Liste bleibt als Ort für die nächste begründete Ausnahme. Leer heisst: JEDER Aufruf von
+# append_event im Repo reicht `bindung` mit — kein Sonderfall, keine Erklärung nötig.
+AUSNAHMEN: dict[tuple[str, int], str] = {}
 
 
 def _call_sites(pfad: str) -> list[ast.Call]:
