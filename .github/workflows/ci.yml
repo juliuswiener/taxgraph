@@ -124,10 +124,20 @@ jobs:
           clerk build p32a-python
           bash oracle/gettsim/assemble_catala.sh
 
+      # -n 4: GitHub-Runner haben 4 Kerne, und der Catala-Build ist zu diesem Zeitpunkt
+      # fertig — sie stehen frei. --dist loadfile haelt jede Testdatei auf EINEM Worker;
+      # das ist Pflicht, nicht Kuer: test_bescheid_fn_collector und
+      # test_datenwurzel_ausserhalb_repo schreiben feste /tmp-Pfade, dateiuebergreifend
+      # verteilt gaebe das Kollisionen. Prozess-basiert, daher kein Konflikt mit der
+      # Thread-Unsicherheit von catala_runtime.
+      #
+      # pytest-xdist kommt aus requirements-ci.txt (e1fb69a) und wird oben installiert —
+      # ohne das Plugin braeche dieser Schritt mit "unrecognized arguments: -n".
+      # Lokal gemessen (12 Kerne): sequenziell 343 s, -n 6 71,6 s, gleiche 2229/3.
       - name: pytest tests/ (mit gebauter Catala-Toolchain)
         run: |
           eval $(opam env --switch=taxgraph --set-switch)
-          python3 -m pytest tests/ -q
+          python3 -m pytest tests/ -q -n 4 --dist loadfile
 
   golden:
     runs-on: ubuntu-latest
