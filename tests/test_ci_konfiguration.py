@@ -442,3 +442,139 @@ def test_guard_greift_nur_ohne_toolchain():
     assert conftest.collect_ignore == [], (
         f"Catala ist verfügbar, aber {len(conftest.collect_ignore)} Dateien werden trotzdem "
         f"übersprungen — der Guard greift zu früh und versteckt echte Tests")
+
+
+# ---------------------------------------------- was CI und Makefile starten, muss startbar sein
+#
+# DER FUND (Abnahme-Audit 2026-08-19): der Umzug des Rechenkerns nach produkt/engine/ liess
+# `golden/golden_lauf.py` ohne den Pfad zurück, unter dem `runner` seither zu finden ist. Das
+# Skript war damit nicht mehr startbar — `make golden` und der CI-Job `golden` brachen sofort
+# ab. Gemeldet hat es das Audit, nicht die Suite.
+#
+# WARUM DIE SUITE BLIND WAR, und das ist der eigentliche Punkt: tests/conftest.py legt
+# produkt/engine für JEDEN pytest-Lauf in den Pfad. Unter pytest war der Import also immer in
+# Ordnung. Und mein eigener Beleg "Golden-Lauf 135/135" kam aus einem Aufruf, der denselben
+# Pfad mitbrachte — das Gate bekam seine Vorbedingung von dem geliefert, der es prüfen wollte.
+# Dieselbe Klasse wie der conftest-Guard, der ohne golden/ im Pfad immer "Catala fehlt" sagte.
+#
+# Deshalb: eigener Prozess, `-I` (weder PYTHONPATH noch site-packages des Nutzers), und die
+# Liste der Skripte wird aus ci.yml + Makefile GEMESSEN statt gepflegt. Ein neues Skript im
+# Workflow ist automatisch dabei.
+_SKRIPT_AUFRUF = re.compile(r"python3?\s+(?:-\S+\s+)*([\w./-]+\.py)")
+
+
+def _gestartete_skripte() -> set[str]:
+    treffer = set()
+    for quelle in (CI, ROOT / "Makefile"):
+        for zeile in quelle.read_text(encoding="utf-8").splitlines():
+            if zeile.strip().startswith("#"):
+                continue                      # ein Kommentar startet nichts
+            treffer.update(_SKRIPT_AUFRUF.findall(zeile))
+    return treffer
+
+
+def _repo_eigene_module() -> set[str]:
+    """Jeder Modulname, der als .py im Repo liegt. Die Trennlinie des Gates unten."""
+    namen = set()
+    for p in ROOT.rglob("*.py"):
+        if any(t in p.parts for t in ("__pycache__", ".git", "_catala", "node_modules")):
+            continue
+        namen.add(p.stem)
+    return namen
+
+
+def _importiert_isoliert(skript: pathlib.Path) -> tuple[int, str]:
+    import subprocess
+    r = subprocess.run(
+        [sys.executable, "-I", "-c",
+         f"import sys; sys.path.insert(0, {str(skript.parent)!r}); import {skript.stem}"],
+        capture_output=True, text=True, cwd=str(ROOT), timeout=180)
+    return r.returncode, r.stderr
+
+
+def test_jedes_von_ci_gestartete_skript_ist_importierbar():
+    """Ein Skript, das der Workflow aufruft, muss sich ohne fremde Hilfe importieren lassen.
+
+    ENG GEFASST, sonst wäre das Gate unbrauchbar: fünf der zwölf Skripte scheitern hier an
+    `gettsim` bzw. `psycopg` — Fremdpakete, die im venv312 bzw. in der Datenbank-Umgebung
+    stehen und in diesem Interpreter zurecht fehlen. Das ist eine Umgebungsfrage, kein Fund.
+    Ein Fund ist NUR ein Modul, das als .py IM REPO liegt und trotzdem nicht gefunden wird —
+    genau die Signatur des Umzugs-Fehlers (`No module named 'runner'`, während
+    produkt/engine/runner.py danebenliegt).
+
+    Dieselbe Trennlinie wie bei den drei anderen Fällen dieser Art (runner+pkg, ERiC-XSD,
+    Hersteller-ID): lokal vorhanden / in CI zurecht nicht ist kein Fehler — im Repo vorhanden
+    und trotzdem nicht auffindbar ist einer."""
+    skripte = _gestartete_skripte()
+
+    # Leere-Menge-Falle, und heute schon einmal zugeschlagen: eine Umzugsliste, die leerläuft,
+    # wird still grün. Hier hinge alles am Regex — ändert jemand die Aufrufform in ci.yml
+    # (`uv run`, ein Shell-Wrapper, ein Makefile-Variablenname), findet es nichts mehr und der
+    # Test meldet Erfolg über eine leere Menge. Die Untergrenze ist absichtlich stumpf: sie
+    # muss nur merken, dass die MESSUNG kaputt ist, nicht wie viele Skripte es geben sollte.
+    assert len(skripte) >= 8, (
+        f"Nur {len(skripte)} gestartete Skripte in ci.yml/Makefile gefunden (erwartet >= 8) — "
+        f"vermutlich passt _SKRIPT_AUFRUF nicht mehr auf die Aufrufform. Gefunden: "
+        f"{sorted(skripte)}")
+    assert "golden/golden_lauf.py" in skripte, (
+        "golden/golden_lauf.py wird nicht mehr erkannt — das ist genau das Skript, dessen "
+        "fehlender Pfad-Prolog dieses Gate ausgelöst hat")
+
+    eigene = _repo_eigene_module()
+    fehlt_re = re.compile(r"No module named '([\w.]+)'")
+    verstoss, umgebung = [], []
+
+    for rel in sorted(skripte):
+        pfad = ROOT / rel
+        assert pfad.exists(), (
+            f"{rel} wird von ci.yml/Makefile gestartet, existiert aber nicht — toter Aufruf "
+            f"(genau so blieb der ci.yml-Kommentar auf golden/runner.py stehen, nachdem die "
+            f"Datei umgezogen war)")
+        rc, stderr = _importiert_isoliert(pfad)
+        if rc == 0:
+            continue
+        m = fehlt_re.search(stderr)
+        fehlend = m.group(1).split(".")[0] if m else None
+        if fehlend and fehlend in eigene:
+            verstoss.append(f"{rel}: findet '{fehlend}' nicht, obwohl es im Repo liegt")
+        elif fehlend:
+            umgebung.append(f"{rel} ({fehlend})")
+        else:
+            verstoss.append(f"{rel}: Import scheitert — {stderr.strip().splitlines()[-1][:120]}")
+
+    assert not verstoss, (
+        "Von CI/Makefile gestartete Skripte sind nicht startbar, und zwar an einem Modul, das "
+        "IM REPO LIEGT — d.h. ein Pfad-Prolog fehlt oder zeigt nach einem Umzug ins Leere:\n  "
+        + "\n  ".join(verstoss)
+        + f"\n(Umgebungsbedingt übersprungen, kein Fund: {', '.join(umgebung) or 'keine'})")
+
+
+def test_die_probe_faengt_den_umzugs_fehler():
+    """Negativprobe: ohne sie ist nicht belegt, dass das Gate darüber den Fund vom 2026-08-19
+    überhaupt sehen KANN — und ein Test, der seinen eigenen Fehlerfall nicht kennt, ist eine
+    Behauptung. Nachgestellt wird golden_lauf.py ohne die Pfadzeile für produkt/engine."""
+    import subprocess
+    import tempfile
+
+    quelle = (ROOT / "golden" / "golden_lauf.py").read_text(encoding="utf-8")
+    ohne = quelle.replace(
+        'sys.path.insert(0, os.path.join(ROOT, "produkt", "engine"))', "")
+    assert ohne != quelle, (
+        "Die Pfadzeile für produkt/engine steht nicht mehr wörtlich in golden_lauf.py — "
+        "wurde sie umgebaut, gehört diese Probe nachgezogen, sonst prüft sie nichts")
+
+    with tempfile.TemporaryDirectory(dir=str(ROOT / "golden")) as d:
+        # im selben Verzeichnis, damit der relative ROOT-Aufstieg gleich viele Ebenen hat
+        kaputt = pathlib.Path(d) / "golden_lauf_ohne_pfad.py"
+        kaputt.write_text(ohne.replace(
+            'os.path.join(os.path.dirname(__file__), "..")',
+            'os.path.join(os.path.dirname(__file__), "..", "..")'), encoding="utf-8")
+        r = subprocess.run(
+            [sys.executable, "-I", "-c",
+             f"import sys; sys.path.insert(0, {d!r}); import golden_lauf_ohne_pfad"],
+            capture_output=True, text=True, cwd=str(ROOT), timeout=180)
+
+    assert r.returncode != 0 and "No module named 'runner'" in r.stderr, (
+        f"Ohne die Pfadzeile gelingt der Import trotzdem — dann prüft das Gate darüber nichts. "
+        f"(Läge ein zweites `runner` im Pfad, wäre genau das die Doppel-Identitäts-Falle.)\n"
+        f"rc={r.returncode}\n{r.stderr[-800:]}")

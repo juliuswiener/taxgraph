@@ -165,12 +165,16 @@ jobs:
           clerk build p32a-python
           bash oracle/gettsim/assemble_catala.sh
 
-      # golden/runner.py ruft direkt python golden/golden_lauf.py auf, NICHT `make golden`.
-      # Grund: Makefile-Target `golden` sourcet venv312 (oracle/.venv312/bin/activate),
-      # das golden/runner.py NICHT braucht — es importiert Catala-Compiler-Output aus
-      # oracle/gettsim/_catala/{pkg,rt} (sys.path.insert in Z. 36-37), kein GETTSIM.
-      # `pip install pyyaml jsonschema Pillow` oben reicht. Venv312 im Makefile ist
-      # funktionsloser Nebeneffekt von build-python-Dep-Chain.
+      # Direkt `python golden/golden_lauf.py`, NICHT `make golden`. Grund: das
+      # Makefile-Target sourcet venv312 (oracle/.venv312/bin/activate), das hier niemand
+      # braucht — der Rechenkern (produkt/engine/runner.py, bis 2026-08-19 golden/runner.py)
+      # importiert Catala-Compiler-Output aus oracle/gettsim/_catala/{pkg,rt} und legt sich
+      # die Pfade selbst, kein GETTSIM. `pip install pyyaml jsonschema Pillow` oben reicht.
+      # Venv312 im Makefile ist funktionsloser Nebeneffekt der build-python-Dep-Chain.
+      #
+      # Dass dieses Skript ueberhaupt startet, prueft seit dem Abnahme-Audit 2026-08-19
+      # tests/test_ci_konfiguration.py::test_jedes_von_ci_gestartete_skript_ist_importierbar
+      # — der Umzug des Kerns hatte genau hier den Pfad-Prolog zurueckgelassen.
       - name: golden (135 Faelle, direkt — venv312 nicht noetig)
         run: |
           eval $(opam env --switch=taxgraph --set-switch)

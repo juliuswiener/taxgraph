@@ -25,6 +25,14 @@ import yaml  # noqa: F401
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
+# Der Rechenkern liegt seit 2026-08-19 in produkt/engine/ — dieses Skript muss den Ort
+# SELBST auf den Pfad legen. Fehlte beim Umzug (c6380cd) und machte `python
+# golden/golden_lauf.py` sofort unstartbar; gemeldet vom Abnahme-Audit, nicht von der Suite.
+# Warum die Suite es nicht sah: tests/conftest.py legt produkt/engine für jeden pytest-Lauf
+# hin, und mein "135/135"-Beleg kam aus einem Aufruf, der den Pfad ebenfalls mitbrachte —
+# das Gate bekam seine Vorbedingung von mir geliefert. Deshalb steht die Gegenprobe jetzt
+# in tests/test_ci_konfiguration.py und ruft das Skript als eigenen Prozess auf.
+sys.path.insert(0, os.path.join(ROOT, "produkt", "engine"))
 
 from yamlstrict import load_str  # noqa: E402
 

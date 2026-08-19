@@ -3050,6 +3050,64 @@ struktur:
       Entscheidung, ob am_afa_betrag ueberhaupt separat abfragbar sein soll.
     entscheidung_noetig: "Julius — Zweig fuer am_afa_betrag in _bescheid_fn ergaenzen (dann echter Teil-Ring), oder Eintrag aus teil_ringe streichen (dann ehrlich wie die anderen 4 Scheiben)? Kein Bau ohne diese Entscheidung, kein Geldfehler dahinter."
 
+  - id: fall-store-leer-gestartet-kein-restore
+    titel: "Live-Store leer gestartet — bewusst kein Restore der 313 Entwicklungsfaelle"
+    status: entschieden
+    entschieden_am: "2026-08-19"
+    entschieden_von: "Julius"
+    anlass: |
+      Nach dem XDG-Umzug (bd889a4, Falldaten von produkt/haut/faelle nach
+      $XDG_DATA_HOME/taxgraph/faelle) ist der Live-Store LEER: 0 Falldateien an beiden
+      Orten, nur audit.jsonl + .gz-Archiv liegen noch da. Das Abnahme-Audit vom 2026-08-19
+      hat das als moeglichen Umzugsverlust gemeldet — zurecht, denn aus dem Repo allein ist
+      nicht erkennbar, ob der leere Store Absicht war.
+    messung: |
+      Read-only gegen ../taxgraph-backups/taxgraph-20260817-123714.tar.gz gefahren
+      (nichts eingespielt), gegen die HEUTIGE Bindungstabelle:
+
+        313 Falldateien, 8084 Events, davon 695 verwaist in 267 Dateien
+        verteilt auf nur SECHS feld_ids:
+
+          kap_zusammenveranlagung              158  bewusst gestrichenes Doppel-Feld
+                                                    (c8eec39), alle Werte leer
+          kap_ertraege                           1  Nachfolger kap_kapitalertraege da
+          basis_kv_pv                          265  in basis_kv + basis_pv AUFGETEILT
+          basis_kv_pv_partner                    3  dito
+          weitere_vorsorgeaufwendungen         266  ersatzlos, kein Nachfolger
+          weitere_vorsorgeaufwendungen_partner   2  dito
+
+      Alle 313 Namen sind Kuerzel nach Paragraph/Merkmal (f31f, p35k, vpf, zbgs_ohne,
+      a4ceil), Median 29 Events, VZ durchgaengig 2025, scheibe=gesamt. Identitaetsfelder
+      nur als Testwerte (geburtsjahr 16x, person_b_idnr 14x). Das ist ENTWICKLUNGS-
+      MATERIAL, keine Personenfaelle.
+    entscheidung: |
+      KEIN Restore, und KEINE Reconciliation.
+
+      Ein Restore holt genau die 695 verwaisten Events zurueck. Eine Migration koennte
+      davon 159 mechanisch behandeln (kap_zusammenveranlagung ist wertlos, kap_ertraege
+      hat einen benannten Nachfolger) — die restlichen 536 nicht:
+        * basis_kv_pv ist eine SUMME, die in zwei Felder aufgeteilt wurde. Die Aufteilung
+          steckt nicht in den Daten; eine Migration muesste 268 Betraege RATEN.
+        * weitere_vorsorgeaufwendungen hat gar keinen Nachfolger.
+      268 Summen fuer Wegwerf-Faelle zu raten ist teurer und riskanter als der Verzicht.
+    auflage: |
+      Die zwei Archive vom 2026-08-17 in ../taxgraph-backups/ BLEIBEN liegen
+      (taxgraph-20260817-000256.tar.gz und -123714.tar.gz, byte-gleich, je 28,9 MB).
+      Nicht aufraeumen — sie sind der einzige Beleg, dass hier nichts verloren ging.
+    gate: |
+      tests/test_store_korpus.py liest den Bestand jetzt aus api_constants (BEIDE Orte,
+      neu und alt) statt aus einem fest verdrahteten Pfad — bis 2026-08-19 zeigte es auf
+      produkt/haut/faelle und meldete nach dem Umzug "Korpus leer", ohne den echten Ort
+      je zu sehen. Es SKIPPT bei 0 Dateien (kein stilles PASS) und wird von selbst scharf,
+      sobald der erste echte Fall entsteht. Belegt: gegen den Sicherungsbestand gefahren
+      wird es rot mit genau den 695 Funden oben, ist also nicht vakuum-gruen.
+    wann_neu_zu_bewerten: |
+      Sobald ein ECHTER Fall im Store liegt. Dann ist eine Feld-Umbenennung kein
+      Entwicklungsartefakt mehr, und die Abwaegung "raten vs. verzichten" faellt anders
+      aus. Die Ratsche (produkt/bindung/FELD_BESTAND.yaml) schuetzt ab sofort gegen NEUE
+      Entfernungen; sie sagt nichts ueber diesen Altbestand.
+
+
 test-schulden:
 
   - id: kz-ohne-assert
