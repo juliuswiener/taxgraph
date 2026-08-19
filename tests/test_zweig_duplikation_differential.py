@@ -57,15 +57,26 @@ for sub in ("produkt/haut", "golden", "produkt/unsicherheit", "produkt/store",
 import api as API      # noqa: E402
 import traverser as TR  # noqa: E402
 
-# Die Zweig-Funktionen sind am 2026-08-18 (Phase 3) nach produkt/bescheid/bescheid.py gezogen.
-# BEIDE Dateien werden gelesen, nicht nur die neue: ein Scanner mit festem Pfad wird beim
-# nächsten Umzug still blind, und ein Duplikations-Gate, das seine Funktionen nicht findet, ist
-# genau die Prüfung, deren Ausfall niemandem auffällt. Fehlt eine Datei, ist das kein Fehler
-# (sie kann verschoben worden sein) — fehlt die FUNKTION in allen, schlägt _funktion() zu.
-QUELL_PFADE = (
-    os.path.join(ROOT, "produkt", "bescheid", "bescheid.py"),
-    os.path.join(ROOT, "produkt", "haut", "api.py"),
-)
+def _quell_pfade() -> tuple[str, ...]:
+    """Alle Dateien, in denen die Zweig-Funktionen stehen KÖNNTEN — als Verzeichnis-Suche, nicht
+    als Liste.
+
+    Die Funktionen sind am 2026-08-18 nach produkt/bescheid/ gezogen und am 2026-08-19 dort noch
+    einmal auf vier Sachgebiets-Module aufgeteilt worden. Beide Male hätte ein fester Pfad dieses
+    Gate stillgelegt — beim zweiten Mal ist genau das passiert, obwohl der Kommentar an dieser
+    Stelle vor drei Zeilen noch vor der Falle warnte: „ein Scanner mit festem Pfad wird beim
+    nächsten Umzug still blind". Die Warnung stand da, die Liste war trotzdem fest.
+
+    Jetzt wird das VERZEICHNIS gelesen. Ein weiterer Schnitt darin ändert nichts mehr; nur ein
+    Umzug aus produkt/bescheid/ heraus würde auffallen — und dann meldet _funktion() namentlich,
+    was sie nicht findet, statt still eine leere Menge zu vergleichen."""
+    pfade = [os.path.join(ROOT, "produkt", "haut", "api.py")]
+    kern = os.path.join(ROOT, "produkt", "bescheid")
+    if os.path.isdir(kern):
+        pfade += sorted(os.path.join(kern, n) for n in os.listdir(kern) if n.endswith(".py"))
+    return tuple(pfade)
+
+
 VZ = 2025
 
 
@@ -83,7 +94,7 @@ def _funktion(funcname: str) -> ast.FunctionDef:
     """Die Definition von `funcname`, gesucht über alle QUELL_PFADE. Wird sie nirgends
     gefunden, ist das ein harter Fehlschlag mit Namen — nicht ein StopIteration, aus dem
     niemand liest, wonach gesucht wurde."""
-    for pfad in QUELL_PFADE:
+    for pfad in _quell_pfade():
         if not os.path.exists(pfad):
             continue
         with open(pfad, encoding="utf-8") as f:
@@ -92,7 +103,7 @@ def _funktion(funcname: str) -> ast.FunctionDef:
             if isinstance(n, ast.FunctionDef) and n.name == funcname:
                 return n
     raise AssertionError(
-        f"{funcname} in keiner der Quelldateien gefunden ({QUELL_PFADE}) — umbenannt oder "
+        f"{funcname} in keiner der Quelldateien gefunden ({_quell_pfade()}) — umbenannt oder "
         f"in eine Datei gezogen, die dieses Gate nicht liest. Ohne Fund prüft das "
         f"Duplikations-Gate nichts mehr.")
 

@@ -138,13 +138,20 @@ def test_feld_ist_an_den_slot_gebunden():
 def test_api_uebergibt_den_slot():
     """Die Naht selbst: api.py muss den Wert auch mitgeben. Ein Slot, den niemand füllt, ist
     stumm — und das fällt in keiner Ring-Rechnung auf, weil 0 ein gültiger Wert ist."""
-    # Der Rechenkern ist am 2026-08-18 (Phase 3) von produkt/haut/api.py nach
-    # produkt/bescheid/bescheid.py gezogen. Beide Dateien werden gelesen, damit dieser Scanner
-    # die Aufrufstelle findet, wo immer sie steht — mit festem Pfad wäre er nach dem Umzug
-    # stumm gewesen, und ein stummer Naht-Test ist hier schon mehrfach teuer geworden.
+    # Das VERZEICHNIS lesen, nicht einzelne Dateien aufzählen.
+    #
+    # Am 2026-08-18 zog der Rechenkern von api.py nach produkt/bescheid/bescheid.py, und dieser
+    # Scanner bekam eine feste Zweierliste — mit dem Kommentar, ein fester Pfad wäre nach dem
+    # Umzug stumm gewesen. Am 2026-08-19 wurde bescheid.py in vier Module geteilt, und genau
+    # diese Zweierliste ging ins Leere. Dritter Scanner, dieselbe Lehre, drittes Mal.
+    #
+    # Die Menge wächst jetzt mit dem Verzeichnis: ein weiterer Schnitt darin ändert nichts.
     quelle = ""
-    for _p in (os.path.join(ROOT, "produkt", "bescheid", "bescheid.py"),
-               os.path.join(ROOT, "produkt", "haut", "api.py")):
+    _pfade = [os.path.join(ROOT, "produkt", "haut", "api.py")]
+    _kern = os.path.join(ROOT, "produkt", "bescheid")
+    if os.path.isdir(_kern):
+        _pfade += sorted(os.path.join(_kern, n) for n in os.listdir(_kern) if n.endswith(".py"))
+    for _p in _pfade:
         if os.path.exists(_p):
             quelle += open(_p, encoding="utf-8").read()
     i = quelle.find("catala_p10_1a_realsplitting")

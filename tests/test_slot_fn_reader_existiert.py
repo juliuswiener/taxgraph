@@ -53,10 +53,20 @@ BIND_DIR = os.path.join(ROOT, "produkt", "bindung")
 # der Kommentar bei Z.118ff. beschreibt genau, wie dieses Gate durch eine Verschiebung blind
 # und trotzdem grün wird — ein fester Pfad ist dieselbe Falle eine Ebene höher. Was in keiner
 # der Dateien steht, meldet _bescheid_fn_und_modulfns() namentlich.
-QUELL_PFADE = (
-    os.path.join(ROOT, "produkt", "bescheid", "bescheid.py"),
-    os.path.join(ROOT, "produkt", "haut", "api.py"),
-)
+def _quell_pfade() -> tuple[str, ...]:
+    """Das VERZEICHNIS lesen, nicht eine Liste pflegen.
+
+    Am 2026-08-18 stand hier eine feste Zweierliste (bescheid.py, api.py) — mit dem Kommentar,
+    ein fester Pfad sei „dieselbe Falle eine Ebene höher". Am 2026-08-19 wurde bescheid.py in
+    vier Sachgebiets-Module geteilt, und genau diese Liste ging ins Leere: der Scan fand
+    _bescheid_fn nicht mehr. Zweimal dieselbe Lehre, zweimal nicht gezogen.
+
+    Jetzt wächst die Menge mit dem Verzeichnis. Ein weiterer Schnitt darin ändert nichts."""
+    pfade = [os.path.join(ROOT, "produkt", "haut", "api.py")]
+    kern = os.path.join(ROOT, "produkt", "bescheid")
+    if os.path.isdir(kern):
+        pfade += sorted(os.path.join(kern, n) for n in os.listdir(kern) if n.endswith(".py"))
+    return tuple(pfade)
 
 sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
 import api_constants as AC  # noqa: E402
@@ -86,7 +96,7 @@ def _bescheid_fn_und_modulfns() -> tuple[ast.FunctionDef, dict[str, ast.Function
     und Zweige theoretisch in verschiedenen Dateien liegen, deshalb werden sie zusammengelegt."""
     modul_fns: dict[str, ast.FunctionDef] = {}
     dispatcher = None
-    for pfad in QUELL_PFADE:
+    for pfad in _quell_pfade():
         if not os.path.exists(pfad):
             continue
         tree = ast.parse(open(pfad, encoding="utf-8").read(), filename=pfad)
@@ -96,7 +106,7 @@ def _bescheid_fn_und_modulfns() -> tuple[ast.FunctionDef, dict[str, ast.Function
                 if n.name == "_bescheid_fn":
                     dispatcher = n
     assert dispatcher is not None, (
-        f"_bescheid_fn in keiner der Quelldateien gefunden ({QUELL_PFADE}) — ohne Fund scannt "
+        f"_bescheid_fn in keiner der Quelldateien gefunden ({_quell_pfade()}) — ohne Fund scannt "
         f"dieses Gate null Zweige und prüfte nichts mehr.")
     return dispatcher, modul_fns
 
