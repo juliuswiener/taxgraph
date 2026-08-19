@@ -75,6 +75,58 @@ bindungen:
       zitatanker: "0,30 Euro"
       datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
 
+  # ---- Formalien der Entfernungspauschale: ohne sie weist das Finanzamt die Erklaerung zurueck ----
+  # Gemessen 2026-08-19: nur mit Arbeitstagen und Entfernung antwortet checkESt rc=610001002,
+  # "Bei den Angaben zur Entfernungspauschale fehlt die Angabe zum Ziel des Weges und / oder zu
+  # PLZ, Ort und Strasse".
+  #
+  # WARUM signatur_slot AUF EINEN NICHT EXISTIERENDEN SLOT ZEIGT: p09_entfernungspauschale ist
+  # ein reiner Catala-Scope ohne rules.yaml-Eintrag, hat also KEINE geltungsbedingungen (die
+  # kaemen nur von dort). Das Bindungs-Schema laesst nur signatur_slot ODER geltungsbedingung zu.
+  # Beides trifft hier nicht zu: die Catala-Signatur kennt vier Inputs (entfernung_km_roh,
+  # arbeitstage, eigenes_oder_ueberlassenes_kfz, oepnv_kosten_jahr), und Ziel/Zieladresse gehoeren
+  # nicht dazu — sie aendern keinen Betrag. Deshalb der dokumentierte Weg
+  # SIGNATUR_SLOT_ZEIGT_INS_LEERE (tests/test_bindungstabelle.py), wie schon 13-mal in dieser
+  # Datei. Die Alternative waere gewesen, p09 eine geltungsbedingung zu erfinden — genau die
+  # Fehlerklasse, die mitveranlagung_faktor und vpf_frist_unterbrochen gekostet haben: ein
+  # erfundener Bedingungsname schliesst ueber relevanz() die GANZE Regel aus, sobald der
+  # Normalfall bestaetigt wird.
+  - feld_id: ep_ziel_des_weges
+    quelle: {regel_id: p09_entfernungspauschale, signatur_slot: ziel_des_weges}
+    typ: enum
+    enum_werte: ["1", "2"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Fährst du zu einem festen Arbeitsplatz oder zu einem Sammelpunkt?"
+    hilfe_kurz: "Fester Arbeitsplatz = deine erste Tätigkeitsstätte. Sammelpunkt = ein Treffpunkt, von dem aus es weitergeht (z. B. Betriebshof), oder ein weiträumiges Gebiet wie ein Hafen oder Forst."
+    beispielwert: "1"
+    herkunft_slots: null
+    elster_kz: E0203003
+    elster_kz_grund: "E0203003 [N/Wk/EP/Erste_Taetig], XSD-Label 'Ziel des Weges' (E10-2025.xsd:18020-18024), Enum 1 = erste Tätigkeitsstätte, 2 = Sammelpunkt/weiträumiges Tätigkeitsgebiet."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 4 EStG"
+      zitatanker: "erste Tätigkeitsstätte"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
+  - feld_id: ep_ziel_adresse
+    quelle: {regel_id: p09_entfernungspauschale, signatur_slot: zieladresse}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wo liegt dein Arbeitsplatz? (Postleitzahl, Ort und Straße)"
+    hilfe_kurz: "Die Adresse, zu der du gefahren bist. Bei einem Sammelpunkt die Adresse des Treffpunkts."
+    beispielwert: "80331 München, Marienplatz 1"
+    herkunft_slots: null
+    elster_kz: E0203501
+    elster_kz_grund: "E0203501 [N/Wk/EP/Erste_Taetig], XSD-Label 'PLZ, Ort und Straße' (E10-2025.xsd:18025-18029)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 4 EStG"
+      zitatanker: "erste Tätigkeitsstätte"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
+
   # ========================= dHf — p9_1_3_nr5_doppelte_haushaltsfuehrung =========================
   - feld_id: dhf_unterkunftskosten_monat
     quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, signatur_slot: unterkunftskosten_monat}
@@ -144,6 +196,94 @@ bindungen:
       quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 1 EStG"
       zitatanker: "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen"
       datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+
+  # ---- Formalien der dHf: ohne sie weist das Finanzamt die Erklaerung zurueck ----
+  # Bis 2026-08-19 trug die Bindung nur die Betraege und die vier Tatbestands-Bools. Wer eine
+  # doppelte Haushaltsfuehrung erklaerte, bekam eine Erklaerung, die zurueckkommt — unabhaengig
+  # davon, wie richtig die Zahlen waren. Gemessen in zwei Schichten, jede ein eigener Lauf gegen
+  # das amtliche Plugin (scripts/measure_abgabe_luecke.py):
+  #   nur Betraege                rc=610001002  Beschaeftigungsort, Grund, Datum der Begruendung,
+  #                                             Aussage zum eigenen Hausstand
+  #   + eigener Hausstand (Kz)    rc=610001002  NEUE Meldung: PLZ/Ort des eigenen Hausstandes und
+  #                                             der Zeitpunkt, seit dem er besteht
+  # Die zweite Schicht kam erst zum Vorschein, nachdem die erste beantwortet war — dieselbe
+  # Staffelung wie bei § 35c (drei Schichten) und Anlage V (fuenf).
+  - feld_id: dhf_beschaeftigungsort
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: beruflich_veranlasste_doppelte_haushaltsfuehrung}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Ort arbeitest du? (Postleitzahl und Ort)"
+    hilfe_kurz: "Der Ort deiner ersten Tätigkeitsstätte. Liegt er im Ausland, gib auch den Staat an."
+    beispielwert: "80331 München"
+    herkunft_slots: null
+    elster_kz: E0206404
+    elster_kz_grund: "E0206404 [N_DHH/DHHF/Allg], XSD-Label 'Beschäftigungsort (PLZ, Ort, sowie zusätzlich den Staat - falls im Ausland und abweichend vom Staat, in dem der doppelte Haushalt liegt -)' (E10-2025.xsd:18584-18588)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 2 EStG"
+      zitatanker: "außerhalb des Ortes seiner ersten Tätigkeitsstätte"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+  - feld_id: dhf_grund
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: beruflich_veranlasste_doppelte_haushaltsfuehrung}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Warum hast du die Zweitwohnung bezogen?"
+    hilfe_kurz: "Ein Satz reicht, zum Beispiel „Versetzung an den Standort München\" oder „Arbeitsbeginn bei neuem Arbeitgeber\"."
+    beispielwert: "Versetzung an den Beschäftigungsort"
+    herkunft_slots: null
+    elster_kz: E0206205
+    elster_kz_grund: "E0206205 [N_DHH/DHHF/Allg], XSD-Label 'Grund' (E10-2025.xsd:18574-18578). Freitext; das Finanzamt verlangt die Begründung neben dem blossen Ja zur beruflichen Veranlassung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 1 EStG"
+      zitatanker: "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+  - feld_id: dhf_begruendet_am
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: beruflich_veranlasste_doppelte_haushaltsfuehrung}
+    typ: datum
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Seit wann hast du die Zweitwohnung? (Tag, Monat, Jahr)"
+    hilfe_kurz: "Der Tag, an dem der zweite Haushalt aus beruflichem Anlass entstanden ist. Format TT.MM.JJJJ."
+    beispielwert: "01.03.2025"
+    herkunft_slots: null
+    elster_kz: E0206103
+    elster_kz_grund: "E0206103 [N_DHH/DHHF/Allg], XSD-Label 'Der doppelte Haushalt wurde aus beruflichem Anlass begründet am' (E10-2025.xsd:18569-18573), Typ DatumTTpMMpJJJJ — amtliches Format TT.MM.JJJJ, nichts in der Pipeline konvertiert Datumswerte (s. stammdaten_geburtsdatum)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 1 EStG"
+      zitatanker: "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+  # typ ist text, NICHT datum — und das ist kein Schlamperei-Fallback:
+  # Der XSD-Typ ist DatumTTpMMp (E10-2025.xsd:94-104) mit dem Muster
+  #   (0[1-9]|[1-2][0-9]|3[0-1])\.(01|…|12)\.
+  # also Tag und Monat MIT abschliessendem Punkt und OHNE Jahr, weil das Jahr der
+  # Veranlagungszeitraum ist. Der Store prueft typ "datum" fail-closed gegen
+  # ^\d{2}\.\d{2}\.\d{4}$ (store.py:190) und wiese "31.12." als ValueError ab. Diese Pruefung
+  # fuer ein Teildatum aufzuweichen hiesse, eine dokumentierte fail-closed-Grenze fuer einen
+  # Sonderfall zu oeffnen — dann lieber hier text, mit dem Format im Fragetext.
+  - feld_id: dhf_bestanden_bis
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: beruflich_veranlasste_doppelte_haushaltsfuehrung}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Bis wann bestand die Zweitwohnung in diesem Jahr? (Tag und Monat, z. B. 31.12.)"
+    hilfe_kurz: "Bestand sie das ganze Jahr über, trag 31.12. ein. Das Jahr selbst brauchst du nicht — das Finanzamt kennt den Veranlagungszeitraum."
+    beispielwert: "31.12."
+    herkunft_slots: null
+    elster_kz: E0206304
+    elster_kz_grund: "E0206304 [N_DHH/DHHF/Allg], XSD-Label 'Der doppelte Haushalt hat seitdem ununterbrochen bestanden bis ... ($VZ$)' (E10-2025.xsd:18579-18583). ERiC verlangt dieses Feld GEMEINSAM mit E0206103 ('Bitte geben Sie das Datum der Begründung und des ununterbrochenen Bestehens gemeinsam ein') — es wurde erst sichtbar, nachdem E0206103 gesetzt war."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 1 EStG"
+      zitatanker: "notwendige Mehraufwendungen, die einem Arbeitnehmer wegen einer beruflich veranlassten doppelten Haushaltsführung entstehen"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
   - feld_id: dhf_eigener_hausstand
     quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: eigener_hausstand_ausserhalb_des_taetigkeitsorts}
     typ: bool
@@ -154,8 +294,47 @@ bindungen:
     hilfe_kurz: "Ein eigenes Zuhause, in dem du wohnst, wenn du nicht am Arbeitsort bist."
     beispielwert: true
     herkunft_slots: null
-    elster_kz: null
-    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    elster_kz: E0206504
+    elster_kz_grund: "E0206504 [N_DHH/DHHF/Allg], XSD-Label 'Es liegt ein eigener Hausstand am Lebensmittelpunkt vor' (E10-2025.xsd:18599-18603), Typ JaNein12 — zwei echte Werte, 'Nein' ist eine Antwort und kein leeres Feld. Bis 2026-08-19 stand hier null mit dem Grund 'Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld'. Das erste war richtig, das zweite eine Fehlfolgerung: kein Betragsfeld zu sein heisst nicht, keine Deklarationsseite zu haben. Das Feld war askable und ring-wirksam (DHF_BEDINGUNGEN gated in bescheid_zweige.py:158/399 den ganzen Werbungskostenabzug), aber die Antwort erreichte das Finanzamt nie — checkESt beanstandete genau das."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 2 EStG"
+      zitatanker: "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+
+  # Diese beiden verlangt ERiC ERST, nachdem E0206504 gesetzt ist ("Es wurde angegeben, dass ein
+  # eigener Hausstand am Lebensmittelpunkt vorliegt. Bitte geben Sie auch Postleitzahl und Ort
+  # des eigenen Hausstandes sowie den Zeitpunkt, seit dem dieser besteht, an"). Vorher sind sie
+  # unsichtbar — wer nach der ersten Meldung aufhoert, haelt einen halben Bau fuer fertig.
+  - feld_id: dhf_hausstand_plz_ort
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: eigener_hausstand_ausserhalb_des_taetigkeitsorts}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wo ist dein Hauptwohnsitz? (Postleitzahl und Ort)"
+    hilfe_kurz: "Der Ort, an dem dein eigener Haushalt liegt — nicht die Zweitwohnung am Arbeitsort."
+    beispielwert: "20095 Hamburg"
+    herkunft_slots: null
+    elster_kz: E0206505
+    elster_kz_grund: "E0206505 [N_DHH/DHHF/Allg], XSD-Label 'PLZ, Ort des eigenen Hausstandes' (E10-2025.xsd:18604-18608)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 2 EStG"
+      zitatanker: "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+  - feld_id: dhf_hausstand_seit
+    quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: eigener_hausstand_ausserhalb_des_taetigkeitsorts}
+    typ: datum
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Seit wann besteht dein Hauptwohnsitz? (Tag, Monat, Jahr)"
+    hilfe_kurz: "Format TT.MM.JJJJ. Gemeint ist der eigene Hausstand am Lebensmittelpunkt, nicht die Zweitwohnung."
+    beispielwert: "01.01.2015"
+    herkunft_slots: null
+    elster_kz: E0206506
+    elster_kz_grund: "E0206506 [N_DHH/DHHF/Allg], XSD-Label 'seit' (E10-2025.xsd:18609-18613), Typ DatumTTpMMpJJJJ. Das knappe Label ist nur im Container eindeutig — es gehoert zu E0206505 (eigener Hausstand), nicht zu E0206103 (Begruendung des doppelten Haushalts)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 2 EStG"

@@ -261,6 +261,24 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
             "signal": {"signal_1": None, "signal_2": None},
         }
 
+    # § 10 Abs. 1 Nr. 7: dieselbe Bauart wie § 35c darüber. Die Anlage führt eine Summe
+    # (E0108202, vom Nutzer erfragt) und eine Einzelzeile (E0108002); ohne die Einzelzeile
+    # lehnt checkESt ab ("Es wurde die Summe der Aufwendungen für die eigene Berufsausbildung
+    # angegeben, bitte geben Sie auch die Bezeichnung der Ausbildung und die Art und Höhe der
+    # einzelnen Aufwendungen an", gemessen 2026-08-19). Bei EINEM Posten — der MVP-Grenze, s.
+    # bindung_sonder_agb_35a.yaml — ist die Einzelzeile betragsgleich mit der Summe. Der
+    # Nutzer tippt sie deshalb nicht ein zweites Mal.
+    _ausb_sum = felder.get("berufsausbildung_aufwendungen")
+    if isinstance(_ausb_sum, dict) and _ausb_sum.get("zustand") == "bestaetigt" \
+            and isinstance(_ausb_sum.get("wert"), int) and _ausb_sum["wert"] > 0:
+        felder["berufsausbildung_einzelbetrag"] = {
+            "wert": _ausb_sum["wert"],
+            "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+            "schreiber": "engine",
+            "signal": {"signal_1": None, "signal_2": None},
+        }
+
     _p35c_gate = felder.get("p35c_keine_doppelfoerderung")
     if isinstance(_p35c_gate, dict) and _p35c_gate.get("zustand") == "bestaetigt" \
             and isinstance(_p35c_gate.get("wert"), bool):

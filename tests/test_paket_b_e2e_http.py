@@ -31,7 +31,13 @@ import store as ST       # noqa: E402
 jsonschema = pytest.importorskip("jsonschema")
 
 SCHEMA_DIR = os.path.join(ROOT, "produkt", "haut", "api_schema")
-EP_FELDER = {"ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigenes_kfz"}
+EP_FELDER = {"ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigenes_kfz",
+             # Formalien seit 2026-08-19 (E0203003 Ziel des Weges, E0203501 Zieladresse) — ohne
+             # sie weist ERiC die Erklärung zurück. Sie ändern keinen Betrag und stehen deshalb
+             # in der Produktion in einem eigenen Tupel EP_FORMALIEN, nicht im Teil-Ring; hier
+             # gehören sie in die Menge, weil dieser Test die GESTELLTEN FRAGEN vergleicht und
+             # die Formalien gefragt werden müssen.
+             "ep_ziel_des_weges", "ep_ziel_adresse"}
 
 
 def _schema(name: str) -> dict:
@@ -403,9 +409,11 @@ def test_durchstich_http(base):
     assert st == 201
     llm_ev = vorl["event_id"]
 
-    # nur das offene Feld bleibt in der Queue
+    # nur die offenen Felder bleiben in der Queue: ep_arbeitstage (nur vorläufig beantwortet,
+    # deshalb weiter offen) plus die zwei Formalien, die dieser Ablauf gar nicht beantwortet.
     st, b = _req(base, "GET", f"/fall/{fid}/fragen")
-    assert [q["feld_id"] for q in b["fragen"]] == ["ep_arbeitstage"]
+    assert sorted(q["feld_id"] for q in b["fragen"]) == [
+        "ep_arbeitstage", "ep_ziel_adresse", "ep_ziel_des_weges"]
 
     # 3) stand: arbeitstage vorläufig (Nutzer-Entwurf), Spanne offen (nur mit Engine numerisch)
     st, stand_a = _req(base, "GET", f"/fall/{fid}/stand")
@@ -540,7 +548,14 @@ AN_GESAMT_VOR = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb
 AN_GESAMT_KV_PV = ("versicherungsart", "basis_kv", "basis_pv", "vorsorge_arbeitslosenversicherung", "vorsorge_erwerbsunfaehigkeit", "vorsorge_unfall_haftpflicht", "vorsorge_rv_alt_mit_ueberschuss", "vorsorge_rv_alt_ohne_ueberschuss", "mit_anspruch_auf_zuschuss")
 AN_GESAMT_DHF = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland",
                  "dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
-                 "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
+                 "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung",
+                 # Formalien seit 2026-08-19: ohne sie weist ERiC die Erklärung zurück
+                 # (vier Messschichten bis rc=0). Sie stehen bewusst NICHT im Kegel — sie
+                 # ändern keinen Betrag und dürfen die Zahl nicht blockieren —, müssen aber
+                 # gefragt werden. Genau das prüft dieser Test: er vergleicht gegen die
+                 # tatsächlich gestellten Fragen, nicht gegen die Feldliste der Scheibe.
+                 "dhf_beschaeftigungsort", "dhf_grund", "dhf_begruendet_am",
+                 "dhf_bestanden_bis", "dhf_hausstand_plz_ort", "dhf_hausstand_seit")
 AN_GESAMT_PARTNER = ("versicherungsart_partner", "bruttoarbeitslohn_partner",
                      "vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
                      "vor_rv_ausserhalb_lstb_partner", "basis_kv_partner", "basis_pv_partner",

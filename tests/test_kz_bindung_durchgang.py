@@ -551,3 +551,148 @@ def test_laufende_nummer_v_wird_geschrieben(bindung):
     flach = re.sub(r"<(/?)[a-zA-Z0-9]+:", r"<\1", xml)
     assert "<Laufende_Nummer_V>1</Laufende_Nummer_V>" in flach, (
         "Laufende_Nummer_V fehlt — ERiC verlangt es trotz minOccurs=0")
+
+
+# ---------------------------------------------------------------- doppelte Haushaltsführung § 9 Abs. 1 S. 3 Nr. 5
+
+def test_dhf_formalien_kommen_im_xml_an(bindung):
+    """Die Formalien der doppelten Haushaltsführung (2026-08-19). Bis dahin trug die Bindung
+    nur die Beträge und vier Tatbestands-Bools — checkESt lehnte ab, egal wie richtig die
+    Zahlen waren.
+
+    VIER SCHICHTEN, jede erst sichtbar, nachdem die vorige beantwortet war:
+
+        nur Beträge                rc=610001002  Beschäftigungsort, Grund, Datum der
+                                                 Begründung, Aussage zum eigenen Hausstand
+        + E0206504 (Rewiring)      rc=610001002  NEU: PLZ/Ort des eigenen Hausstandes und
+                                                 der Zeitpunkt, seit dem er besteht
+        + die fünf Formalien       rc=610001002  Datum der Begründung und des ununter-
+                                                 brochenen Bestehens GEMEINSAM
+        + E0206304                 rc=0
+
+    Zwei Dinge nagelt der Test fest, die man leicht falsch baut:
+
+    1. E0206504 ist JaNein12, kein Ankreuzfeld. `dhf_eigener_hausstand` trug bis zu diesem
+       Bau `elster_kz: null` mit dem Grund "Tatbestands-Voraussetzung (Ja/Nein), kein
+       Betragsfeld". Der erste Halbsatz stimmt, der Schluss daraus war falsch: kein
+       Betragsfeld zu sein heißt nicht, keine Deklarationsseite zu haben. Das Feld war
+       askable und ring-wirksam (DHF_BEDINGUNGEN gated in bescheid_zweige.py den ganzen
+       Werbungskostenabzug), aber die Antwort erreichte das Finanzamt nie.
+    2. E0206304 ist DatumTTpMMp — Tag und Monat MIT abschließendem Punkt, OHNE Jahr, weil das
+       Jahr der Veranlagungszeitraum ist. Deshalb trägt das Feld `typ: text` und nicht
+       `typ: datum`: Letzteres prüft fail-closed auf ^\\d{2}\\.\\d{2}\\.\\d{4}$ (store.py:190)
+       und wiese "31.12." ab.
+    """
+    xml = _xml({"dhf_unterkunftskosten_monat": 80000,          # 800 EUR/Monat
+                "dhf_monate": 12,
+                "dhf_eigener_hausstand": True,
+                "dhf_beschaeftigungsort": "80331 München",
+                "dhf_grund": "Versetzung an den Beschäftigungsort",
+                "dhf_begruendet_am": "01.03.2025",
+                "dhf_bestanden_bis": "31.12.",
+                "dhf_hausstand_plz_ort": "20095 Hamburg",
+                "dhf_hausstand_seit": "01.01.2015"},
+               bindung)
+
+    allg = ("N_DHH", "DHHF", "Allg")
+    assert _pfad_im_xml(xml, allg + ("E0206404",), "80331 München")
+    assert _pfad_im_xml(xml, allg + ("E0206205",), "Versetzung an den Beschäftigungsort")
+    assert _pfad_im_xml(xml, allg + ("E0206103",), "01.03.2025")
+    assert _pfad_im_xml(xml, allg + ("E0206304",), "31.12.")
+    assert _pfad_im_xml(xml, allg + ("E0206504",), "1")        # JaNein12: 1 = Ja
+    assert _pfad_im_xml(xml, allg + ("E0206505",), "20095 Hamburg")
+    assert _pfad_im_xml(xml, allg + ("E0206506",), "01.01.2015")
+
+
+def test_dhf_eigener_hausstand_nein_schreibt_die_zwei(bindung):
+    """Gegenprobe zu Punkt 1 oben: bei "Nein" muss "2" im XML stehen, nicht nichts.
+
+    Das ist der Unterschied, an dem die JaNein12-Klasse hängt (E0240803/E0240902/E0161607
+    haben ihn schon einmal gekostet): bei einem Ankreuzfeld IST das Weglassen die Antwort
+    "Nein", bei JaNein12 ist "Nein" ein eigener Wert. Ließe der Writer das Element weg,
+    verschwände eine gegebene Antwort lautlos — und checkESt beanstandet genau das
+    ("Bitte treffen Sie eine Aussage, ob …").
+    """
+    xml = _xml({"dhf_unterkunftskosten_monat": 80000,
+                "dhf_monate": 12,
+                "dhf_eigener_hausstand": False},
+               bindung)
+    assert _pfad_im_xml(xml, ("N_DHH", "DHHF", "Allg", "E0206504"), "2")
+
+
+# ---------------------------------------------------------------- Entfernungspauschale § 9 Abs. 1 S. 3 Nr. 4
+
+def test_ep_zieladresse_kommt_im_xml_an(bindung):
+    """Ziel des Weges + Zieladresse (2026-08-19). Ohne sie lehnte checkESt ab: "Bei den Angaben
+    zur Entfernungspauschale fehlt die Angabe zum Ziel des Weges und / oder zu PLZ, Ort und
+    Straße". EINE Schicht, danach rc=0.
+
+    Die zweite Zusicherung dieses Tests ist die WENIGER offensichtliche: das amtliche Beispiel
+    est_e10_2025.xml füllt im selben Container acht Geschwisterfelder, darunter E0203101
+    (Zeitraum), E0203508 (Arbeitstage je Woche) und E0203509 (Ausfalltage). Aus dem Beispiel
+    allein liest sich das wie eine Folgeanforderung — gemessen wurde sie NICHT nachgefordert.
+    Hätte man dem Beispiel statt der Messung geglaubt, wären drei überflüssige Pflichtfragen
+    im Dialog gelandet. Ein amtliches Beispiel zeigt, was erlaubt ist, nicht was verlangt wird.
+    """
+    xml = _xml({"ep_arbeitstage": 220,
+                "ep_entfernung_km": 42,
+                "ep_ziel_des_weges": "1",
+                "ep_ziel_adresse": "80331 München, Marienplatz 1"},
+               bindung)
+
+    erste = ("N", "Wk", "EP", "Erste_Taetig")
+    assert _pfad_im_xml(xml, erste + ("E0203003",), "1")
+    assert _pfad_im_xml(xml, erste + ("E0203501",), "80331 München, Marienplatz 1")
+    assert _pfad_im_xml(xml, erste + ("E0203503",), "220")     # Arbeitstage, schon vorher gebunden
+    assert _pfad_im_xml(xml, erste + ("E0203504",), "42")      # Entfernung, schon vorher gebunden
+
+
+# ---------------------------------------------------------------- eigene Berufsausbildung § 10 Abs. 1 Nr. 7
+
+def test_berufsausbildung_einzelaufstellung_kommt_im_xml_an(bindung):
+    """Bezeichnung + Einzelbetrag neben der Summe (2026-08-19). Mit der Summe allein lehnte
+    checkESt ab: "Es wurde die Summe der Aufwendungen für die eigene Berufsausbildung
+    angegeben, bitte geben Sie auch die Bezeichnung der Ausbildung und die Art und Höhe der
+    einzelnen Aufwendungen an".
+
+    Der Betrag steht ZWEIMAL im XML — als Summe (E0108202, vom Nutzer erfragt) und in der
+    Einzelzeile (E0108002, von bescheid_deklaration._mit_ring_werten aus der Summe berechnet).
+    Bei EINEM Posten sind beide gleich; das ist die ausdrückliche MVP-Grenze, das Schema
+    erlaubt bis zu zehn Einz-Einträge.
+
+    Hier wird der Einzelbetrag von Hand gesetzt, weil dieser Test den WRITER prüft, nicht die
+    Ring-Injektion — der berechnete Zwilling entsteht eine Schicht früher.
+    """
+    xml = _xml({"berufsausbildung_aufwendungen": 200000,        # 2.000 EUR
+                "berufsausbildung_einzelbetrag": 200000,
+                "berufsausbildung_bezeichnung": "Studium Betriebswirtschaft, Semesterbeiträge"},
+               bindung)
+
+    assert _pfad_im_xml(xml, ("SA", "AW_eig_BAusb", "Sum", "E0108202"), "2000")
+    assert _pfad_im_xml(xml, ("SA", "AW_eig_BAusb", "Einz", "E0108002"), "2000")
+    assert _pfad_im_xml(xml, ("SA", "AW_eig_BAusb", "Einz", "E0108201"),
+                        "Studium Betriebswirtschaft, Semesterbeiträge")
+
+
+def test_berufsausbildung_einzelbetrag_wird_aus_der_summe_berechnet():
+    """Die andere Hälfte: der Zwilling entsteht in _mit_ring_werten, nicht im Writer.
+
+    Ohne diesen Schritt bliebe E0108002 leer und die Beanstandung stünde wieder da — der
+    Writer-Test oben würde das NICHT bemerken, weil er den Wert selbst setzt. Genau diese Naht
+    (Ring ODER Writer geprüft, nie die Übergabe) war die Person-B-Lücke.
+    """
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(root, "produkt", "bescheid"))
+    import bescheid_deklaration as BD
+
+    felder = {"berufsausbildung_aufwendungen": {"wert": 200000, "zustand": "bestaetigt"}}
+    aus = BD._mit_ring_werten(dict(felder), 2025)
+    assert aus["berufsausbildung_einzelbetrag"]["wert"] == 200000
+    assert aus["berufsausbildung_einzelbetrag"]["zustand"] == "bestaetigt"
+
+    # Gegenprobe: ohne bestätigte Summe entsteht kein Zwilling — sonst schriebe die Erklärung
+    # eine Einzelzeile für einen Betrag, den der Nutzer nie bestätigt hat.
+    offen = {"berufsausbildung_aufwendungen": {"wert": 200000, "zustand": "vorlaeufig"}}
+    assert "berufsausbildung_einzelbetrag" not in BD._mit_ring_werten(dict(offen), 2025)

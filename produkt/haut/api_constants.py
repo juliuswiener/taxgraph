@@ -50,6 +50,11 @@ _ERLAUBTE_ZUSTAENDE = {"vorlaeufig", "bestaetigt"}
 
 # ========== § 19 Einkünfte (Arbeit) ==========
 EP_FELDER = ("ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigenes_kfz")
+# Formalien ohne Rechenwirkung (2026-08-19) — bewusst NICHT in EP_FELDER: dieses Tupel ist
+# zugleich der Teil-Ring ("ep_werbungskosten", "abziehbarer_betrag", EP_FELDER), s. Scheibe "ep".
+# Ein Formalienfeld darin wäre eine Eingabe des Teil-Rings, obwohl es keinen Betrag berührt.
+# Dieselbe Trennung wie bei DHF_FORMALIEN und VV_ANLAGE_FORMALIEN.
+EP_FORMALIEN = ("ep_ziel_des_weges", "ep_ziel_adresse")
 
 # ========== an_gesamt MVP + Flags ==========
 AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
@@ -135,6 +140,15 @@ DHF_KOSTEN = "dhf_unterkunftskosten_monat"
 DHF_RING = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland")
 DHF_BEDINGUNGEN = ("dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
                    "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
+# Formalien ohne Rechenwirkung — sie ändern keinen Betrag, aber ohne sie weist das Finanzamt
+# die Erklärung zurück (gemessen 2026-08-16 und -19, zwei Schichten bis rc=0). Bewusst ein
+# eigenes Tupel statt an DHF_RING/DHF_BEDINGUNGEN angehängt: DHF_RING geht in die Berechnung,
+# DHF_BEDINGUNGEN gated in bescheid_zweige.py den ganzen Werbungskostenabzug. Ein Formalienfeld
+# in einem dieser beiden Tupel würde entweder mitgerechnet oder zur Abzugsvoraussetzung — beides
+# falsch, und Letzteres ist genau die Gate-Polaritätsfalle, die hier schon dreimal Geld gekostet
+# hat (zuletzt vpf, wo der ganze Verpflegungsmehraufwand verschwand).
+DHF_FORMALIEN = ("dhf_beschaeftigungsort", "dhf_grund", "dhf_begruendet_am", "dhf_bestanden_bis",
+                 "dhf_hausstand_plz_ort", "dhf_hausstand_seit")
 
 # ========== § 9 Abs. 1 S. 3 Nr. 5a Übernachtung ==========
 UEBERNACHTUNG_KOSTEN = "uebernachtung_kosten_monat"
@@ -326,7 +340,12 @@ FAHRTKOSTEN_PAUSCHALE = ("fahrtkosten_pausch_gdb80_oder_70g",
 
 # ========== Gefaltete Sonder-Abzüge (Weg ii) ==========
 GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
-                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen") + AGB_KIST + KINDERBETREUUNG + SCHULGELD + KIND_KV_PV + KIND_PB_UEBERTRAGUNG + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_PARTNER + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT_PARTNER + FAHRTKOSTEN_PAUSCHALE)
+                  "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen",
+                  # Einzelaufstellung der Berufsausbildung (2026-08-19): ohne sie weist ERiC
+                  # ab. _bezeichnung wird gefragt, _einzelbetrag rechnet bescheid_deklaration
+                  # aus der Summe. GESAMT_ABZUEGE fließt nur in felder-Listen, nie in einen
+                  # Kegel — die zwei blockieren also keine Zahl.
+                  "berufsausbildung_bezeichnung", "berufsausbildung_einzelbetrag") + AGB_KIST + KINDERBETREUUNG + SCHULGELD + KIND_KV_PV + KIND_PB_UEBERTRAGUNG + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_PARTNER + BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT_PARTNER + FAHRTKOSTEN_PAUSCHALE)
 
 # ========== RENTNER_FELDER — ZWEITE ÄNDERUNG (Z.218 api.py) ==========
 RENTNER_FELDER = RENTNER_FELDER + GESAMT_ABZUEGE
@@ -526,7 +545,14 @@ RENTNER_FELDER = RENTNER_FELDER + GESAMT_GEWINN_PARTNER + P16_4_GATE_FELDER_PART
 # ========== Scheiben-Konfiguration ==========
 SCHEIBEN = {
     "ep": {
-        "felder": EP_FELDER, "felder_datei": None,
+        "felder": EP_FELDER + EP_FORMALIEN, "felder_datei": None,
+        # Expliziter Kegel, seit die Formalien dazukamen (2026-08-19). Ohne ihn faellt
+        # api.py:478 auf ALLE Scheiben-Felder zurueck ("kegel" or _scheibe_felder) — und dann
+        # blockieren Ziel/Zieladresse die Zahl, obwohl sie keinen Betrag beruehren. Gemessen:
+        # das Intervall kam als min_cent=None/max_cent=None zurueck, der Nutzer haette auf eine
+        # Adresse gewartet, um eine Entfernungspauschale zu sehen. Die anderen Scheiben hatten
+        # den Fehler nicht, weil sie ihren Kegel ohnehin ausschreiben.
+        "kegel": EP_FELDER,
         "gesamt_ring": "abziehbarer_betrag",
         "teil_ringe": [],
     },
@@ -544,8 +570,8 @@ SCHEIBEN = {
         "guard": False,
     },
     "an_gesamt": {
-        "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + VOR_FELDER + KV_PV_FELDER
-                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST
+        "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER
+                   + DHF_RING + DHF_BEDINGUNGEN + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER
                    + P36_ANRECHNUNG
@@ -562,14 +588,14 @@ SCHEIBEN = {
     },
     "gesamt": {
         "felder": (VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ("veranlagung", "bruttoarbeitslohn")
-                   + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS
+                   + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_VERSORGUNG
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER
                    + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + VV_ANLAGE_FORMALIEN
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
-                   + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
+                   + DHF_RING + DHF_BEDINGUNGEN + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + ARBEITSMITTEL_AFA_GESAMT
                    + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER
@@ -608,7 +634,7 @@ __all__ = [
     # Pfade
     "HERE", "FAELLE",
     # § 19 Einkünfte
-    "EP_FELDER",
+    "EP_FELDER", "EP_FORMALIEN",
     # an_gesamt
     "AN_GESAMT_FLAGS", "KIND_SCREENING", "AN_GESAMT_PARTNER",
     # Arbeitsmittel
@@ -620,7 +646,7 @@ __all__ = [
     # Vorsorge
     "VOR_FELDER", "VOR_PARTNER_FELDER", "KV_PV_FELDER", "KV_PV_PARTNER_FELDER", "VORSORGE_PARTNER_FELDER",
     # dHf
-    "DHF_KOSTEN", "DHF_RING", "DHF_BEDINGUNGEN",
+    "DHF_KOSTEN", "DHF_RING", "DHF_BEDINGUNGEN", "DHF_FORMALIEN",
     # Übernachtung
     "UEBERNACHTUNG_KOSTEN", "UEBERNACHTUNG_RING", "UEBERNACHTUNG_BEDINGUNGEN",
     # Vermietung
@@ -711,6 +737,12 @@ ENUM_LABELS = {
     "kind_anderer_elternteil_kindschaftsverhaeltnis": {
         "1": "Leibliches Kind oder Adoptivkind",
         "2": "Pflegekind",
+    },
+    # 1/2 stehen so im ELSTER-Feld E0203003. Die Schema-Doku sagt nur "Ziel des Weges" — die
+    # Bedeutung der beiden Werte steht im Vordruck, nicht im XSD.
+    "ep_ziel_des_weges": {
+        "1": "Fester Arbeitsplatz (erste Tätigkeitsstätte)",
+        "2": "Sammelpunkt oder weiträumiges Tätigkeitsgebiet",
     },
     # Ebenfalls 1/2/3 aus dem ELSTER-Feld (E0106507). Die Beschriftung stammt wörtlich aus dem
     # Schema ("Steuerpflichtige Person / Ehemann / Person A" usw.) und ist hier auf das übersetzt,

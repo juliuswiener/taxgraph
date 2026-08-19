@@ -64,6 +64,67 @@ bindungen:
       zitatanker: "bis zu 6 000 Euro im Kalenderjahr"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
 
+  # ---- Einzelaufstellung: ohne sie weist das Finanzamt die Erklaerung zurueck ----
+  # Gemessen 2026-08-19: mit der Summe allein antwortet checkESt rc=610001002, "Es wurde die
+  # Summe der Aufwendungen fuer die eigene Berufsausbildung angegeben, bitte geben Sie auch die
+  # Bezeichnung der Ausbildung und die Art und Hoehe der einzelnen Aufwendungen an". Dieselbe
+  # Bauart wie bei § 35c: eine Summe ohne Einzelzeile ist keine vollstaendige Erklaerung.
+  #
+  # MVP-GRENZE, ausdruecklich: EIN Ausbildungsposten je Erklaerung. Das Schema erlaubt bis zu
+  # zehn (Einz maxOccurs=10, E10-2025.xsd:9324-9334). Mehrere Posten brauchten eine
+  # instanz_gruppe wie bei § 35a — und dabei zuerst eine Haertung von elster_xml.py:532, das
+  # den Instanz-Container als kz_path[:2] ableitet; bei AW_eig_BAusb waere das ('E10','SA'),
+  # und SA hat maxOccurs=1. Ein zweiter Posten legte damit vermutlich ein zweites <SA> an,
+  # statt in AW_eig_BAusb/Einz zu wiederholen. Fuer EINE Instanz ist der Pfad erprobt
+  # (E0108202 laeuft seit 2026-08-05 darueber), fuer mehrere ist er ungetestet.
+  #
+  # signatur_slot zeigt bei beiden ins Leere (s. SIGNATUR_SLOT_ZEIGT_INS_LEERE in
+  # tests/test_bindungstabelle.py): p10_1_7_berufsausbildung hat genau EINEN Rechen-Input,
+  # `aufwendungen`, den das Summenfeld oben belegt. Die Regel fuehrt zwar eine
+  # geltungsbedingung (hoechstbetrag_gilt_je_person), aber die sagt "der Hoechstbetrag steht
+  # jedem Ehegatten einzeln zu" — sie an eine Ausbildungsbezeichnung zu haengen behauptete
+  # einen Zusammenhang, den es nicht gibt.
+  - feld_id: berufsausbildung_bezeichnung
+    quelle: {regel_id: p10_1_7_berufsausbildung, signatur_slot: bezeichnung_der_ausbildung}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Ausbildung war das, und wofür hast du bezahlt?"
+    hilfe_kurz: "Zum Beispiel: Studium Betriebswirtschaft, Semesterbeiträge und Fachbücher. Das Finanzamt will neben der Summe wissen, worum es ging."
+    # KEIN Gedankenstrich (—, U+2014) im Beispielwert. Gemessen 2026-08-19: ERiC antwortet
+    # darauf "Das Feld '$/SA[1]/AW_eig_BAusb[1]/Einz[1]/E0108201[1]$' enthält ein oder mehrere
+    # ungültige Zeichen". Umlaute, ß, Bindestrich, Komma und Punkt sind dagegen erlaubt — je
+    # einzeln gegen das amtliche Plugin geprüft. Der Beispielwert ist kein Dekor: er ist der
+    # Probewert der Feldmatrix-Sweeps, ein unzulässiges Zeichen darin macht dort einen
+    # Scheinbefund.
+    beispielwert: "Studium Betriebswirtschaft, Semesterbeiträge und Fachbücher"
+    herkunft_slots: null
+    elster_kz: E0108201
+    elster_kz_grund: "E0108201 [SA/AW_eig_BAusb/Einz], XSD-Label 'Bezeichnung der Ausbildung, Art der Aufwendungen' (E10-2025.xsd:9335-9348). Freitext 1-999 Zeichen, aber NICHT jedes Zeichen: der Gedankenstrich (U+2014) wird abgelehnt, Umlaute/ß/Bindestrich/Komma/Punkt nicht."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 7 EStG"
+      zitatanker: "bis zu 6 000 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: berufsausbildung_einzelbetrag
+    quelle: {regel_id: p10_1_7_berufsausbildung, signatur_slot: einzelaufwendung}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: derselbe Betrag wie die Jahressumme, in der Einzelzeile der Anlage."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0108002
+    elster_kz_grund: "E0108002 [SA/AW_eig_BAusb/Einz], XSD-Label 'Höhe der Aufwendungen' (E10-2025.xsd:9335-9348). Traegt bei EINEM Posten denselben Betrag wie die Summe E0108202 — das Formular verlangt beides, wer nur die Summe schreibt, bekommt die Beanstandung oben. Nicht askable: den Nutzer denselben Betrag zweimal eintippen zu lassen, waere eine Frage ohne Erkenntnisgewinn und eine zweite Repraesentation derselben Sache."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 7 EStG"
+      zitatanker: "bis zu 6 000 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
   # ========================= agB §33 (p33_1_2_agb_abzug) =========================
   - feld_id: agb_aufwendungen
     vorschlagbar_von: [beleg, llm]

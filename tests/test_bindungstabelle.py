@@ -1114,6 +1114,33 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     # bindung_n_vor_gwg.yaml — p7_1_lineare_afa (AfA-Slots)
     ("n_vor_gwg", "arbeitsmittel_nutzungsdauer", "p7_1_lineare_afa", "nutzungsdauer"),
     ("n_vor_gwg", "am_anschaffung_monat", "p7_1_lineare_afa", "anschaffung_monat"),
+    # bindung_n_vor_gwg.yaml — p09_entfernungspauschale: Formalien der Anlage N, die ERiC
+    # verlangt ("Bei den Angaben zur Entfernungspauschale fehlt die Angabe zum Ziel des Weges
+    # und / oder zu PLZ, Ort und Strasse", gemessen 2026-08-19). Sie aendern keinen Betrag: die
+    # Catala-Signatur kennt vier Inputs (entfernung_km_roh, arbeitstage,
+    # eigenes_oder_ueberlassenes_kfz, oepnv_kosten_jahr), Ziel und Zieladresse sind keiner davon.
+    #
+    # ERSTE INSTANZ FUER EINE REGEL OHNE rules.yaml-EINTRAG. Die 13 Eintraege darueber gehoeren zu
+    # Regeln, die dort stehen; p09 ist ein reiner Catala-Scope. Der geltungsbedingung-Weg, mit dem
+    # § 35c seine Formalien (p35c_objekt_strasse/_plz_ort) an eigenes_gebaeude gehaengt hat, steht
+    # deshalb hier NICHT offen: ohne rules.yaml-Eintrag ist die Bedingungsmenge leer, und ein
+    # erfundener Bedingungsname waere die Fehlerklasse aus dem Kommentar unten —
+    # mitveranlagung_faktor schloss ueber relevanz() die ganze Regel aus, sobald der Normalfall
+    # bestaetigt wurde. Ein Slot, der sichtbar ins Leere zeigt, sagt die Wahrheit: das Feld ist
+    # Formvoraussetzung der Anlage, kein Rechen-Input.
+    ("n_vor_gwg", "ep_ziel_des_weges", "p09_entfernungspauschale", "ziel_des_weges"),
+    ("n_vor_gwg", "ep_ziel_adresse", "p09_entfernungspauschale", "zieladresse"),
+    # bindung_sonder_agb_35a.yaml — p10_1_7_berufsausbildung: die Einzelaufstellung, die ERiC
+    # neben der Summe verlangt ("Es wurde die Summe der Aufwendungen fuer die eigene
+    # Berufsausbildung angegeben, bitte geben Sie auch die Bezeichnung der Ausbildung und die
+    # Art und Hoehe der einzelnen Aufwendungen an", gemessen 2026-08-19). Die Regel hat GENAU
+    # EINEN Rechen-Input, `aufwendungen`, den berufsausbildung_aufwendungen belegt. Anders als
+    # bei p09 fuehrt sie zwar eine geltungsbedingung (hoechstbetrag_gilt_je_person), aber die
+    # sagt "der Hoechstbetrag steht jedem Ehegatten einzeln zu" — an einer Ausbildungs-
+    # bezeichnung behauptete sie einen Zusammenhang, den es nicht gibt. Ein Slot, der sichtbar
+    # ins Leere zeigt, ist ehrlicher als eine Bedingung, die nicht passt.
+    ("sonder_agb_35a", "berufsausbildung_bezeichnung", "p10_1_7_berufsausbildung", "bezeichnung_der_ausbildung"),
+    ("sonder_agb_35a", "berufsausbildung_einzelbetrag", "p10_1_7_berufsausbildung", "einzelaufwendung"),
     # bindung_sonder_agb_35a.yaml — p35a_2_3_haushaltsnahe: mitveranlagung (§ 35a Abs. 5 Satz 4
     # EStG, Höchstbetrags-Halbierung bei zwei Alleinstehenden im gemeinsamen Haushalt) ist KEIN
     # Input der rules.yaml-signature (die kennt nur minijob_aufwendungen/haushaltsnahe_
