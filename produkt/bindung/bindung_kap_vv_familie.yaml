@@ -98,9 +98,22 @@ bindungen:
   # Einkommensteuer ... führt" — der Antrag löst eine PRÜFUNG aus und kann strukturell nicht
   # schlechterstellen. Jetzt gesetzt, sobald irgendein KAP-Betragsfeld erklärt wird (eigen ODER
   # — bei Zusammenveranlagung — Partner). S.3/S.4: EIN Antrag je Erklaerung (auch bei
-  # Zusammenveranlagung fuer saemtliche Kapitalertraege beider Ehegatten) — kein Partner-
-  # Zwilling, kein eigenes distinktes Kz je Person (XSD: E1900401 erscheint schemaweit genau
-  # einmal). Injektion in _mit_ring_werten (produkt/haut/api.py).
+  # Zusammenveranlagung fuer saemtliche Kapitalertraege beider Ehegatten) — deshalb kein
+  # eigenes Partner-FELD und keine zweite Bindung. Injektion in _mit_ring_werten
+  # (produkt/haut/api.py).
+  #
+  # KORREKTUR 2026-08-20: hier stand "kein Partner-Zwilling, kein eigenes distinktes Kz je
+  # Person (XSD: E1900401 erscheint schemaweit genau einmal)". Der erste Halbsatz war falsch
+  # und hat einen Abgabe-Blocker verursacht. "Schemaweit genau einmal" heisst einmal IM
+  # PERSON-CONTAINER, nicht einmal je Erklaerung: E1900401 sitzt in Ant_2368107_CType, das von
+  # KAP_67907_CType gefuehrt wird — und KAP_67907_CType traegt einen eigenen <Person>-
+  # Diskriminator, existiert also je Person einmal. Genau wie E1900701 (kap_kapitalertraege),
+  # das fuer den Partner dieselbe Kz-Nummer in der Person-B-Instanz benutzt (PARTNER_INSTANZ).
+  # Der Antrag ist EIN Antrag (S.4), muss aber in BEIDEN Person-Containern stehen; checkESt
+  # verlangt das woertlich ("...ist dieser Antrag auch bei der Ehefrau / bei Person B zu
+  # stellen"). Die Spiegelung sitzt in est_mapping.deklariere() — es gibt bewusst kein
+  # zweites Feld, weil S.4 einen eigenstaendigen Partner-Antrag rechtlich ausschliesst.
+  # Gate: tests/test_kap_antrag_person_b.py
   # Anlage KAP Zeile 16 (Kz 217/417): der IN ANSPRUCH GENOMMENE Sparer-Pauschbetrag. Ohne dieses
   # Feld bleibt die Erklaerung uneinreichbar, auch MIT Antrag — gemessen 2026-08-10, Kz direkt in
   # die Deklaration injiziert, Basisfall + kap_kapitalertraege=5.000:

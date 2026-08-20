@@ -657,6 +657,28 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             if kz and person_b.pop(kz, None) is not None:
                 nicht_deklariert.append({"feld_id": f, "grund": _KAP_NULL_GRUND})
 
+    # Antrag Guenstigerpruefung in die Person-B-Instanz spiegeln (§ 32d Abs. 6 S. 4: "Bei
+    # zusammenveranlagten Ehegatten kann der Antrag nur fuer saemtliche Kapitalertraege beider
+    # Ehegatten gestellt werden"). Deshalb KEIN eigenes Partner-Feld und keine zweite Bindung:
+    # es ist EIN Antrag, der im XML zweimal erscheinen muss, weil KAP_67907_CType je
+    # Person-Container einen eigenen <Ant>-Block fuehrt — E1900401 ist minOccurs=0/maxOccurs=1
+    # IM CONTAINER, nicht je Erklaerung. Derselbe Instanz-Mechanismus wie kap_kapitalertraege ->
+    # E1900701 in PARTNER_INSTANZ. (Der Bindungs-Kommentar schloss aus "erscheint schemaweit
+    # genau einmal" auf "kein Partner-Zwilling" — das war der Fehler, s. dort.)
+    #
+    # Gemessen 2026-08-20 gegen checkESt, `zusammen` mit Kapitalertraegen: ohne die Spiegelung
+    # rc=610001002 mit zwei Beanstandungen ("...ist dieser Antrag auch bei der Ehefrau / bei
+    # Person B zu stellen" + "...einen Grund fuer die Angabe der Kapitalertraege ... (Ehefrau /
+    # Person B)"), mit ihr rc=0 — unabhaengig davon, WER die Ertraege hat (A, B oder beide).
+    # E1901401 (Sparer-Pauschbetrag) braucht Person B dagegen NICHT: er ist nach § 20 Abs. 9 S. 2
+    # ein GEMEINSAMER, die Angabe bei einer Person genuegt. Ebenfalls gemessen — E1901401 allein
+    # bei B laesst beide Beanstandungen stehen, E1900401 allein bei B schliesst auf rc=0.
+    veranl = snapshot.get("veranlagung") or {}
+    antrag_kz = bindung.get("kap_antrag_guenstigerpruefung", {}).get("elster_kz")
+    if (veranl.get("zustand") == "bestaetigt" and veranl.get("wert") == "zusammen"
+            and antrag_kz and antrag_kz in deklaration):
+        person_b[antrag_kz] = deklaration[antrag_kz]
+
     # Dokumentierte Aggregation ausrechnen (Auflage A: Summe + Quell-Felder explizit; NICHT deklariert)
     for ziel, akku in agg_akku.items():
         if akku:
