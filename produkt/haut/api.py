@@ -35,6 +35,7 @@ for _sub in ("produkt/store", "produkt/traverser", "produkt/unsicherheit", "prod
 
 import store as ST          # noqa: E402
 import audit                # noqa: E402 — P1.6 Audit-Log
+import fehler_log           # noqa: E402 — Fehler-Protokoll (Metadaten only, nie str(exception))
 import traverser as TR      # noqa: E402
 import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
@@ -786,7 +787,11 @@ def entfernung(fall_id: str, body: dict) -> tuple[int, dict]:
     import ors_client
     try:
         km = ors_client.entfernung_km(von, nach)
-    except (ors_client.OrsNichtVerfuegbar, ImportError):  # Cap-Gate/Netzfehler/Import → Erklär-Grenze;
+    except (ors_client.OrsNichtVerfuegbar, ImportError) as e:  # Cap-Gate/Netzfehler/Import → Erklär-Grenze;
+        # Fehlender Schlüssel, toter Dienst und Adresse-ohne-Koordinate sahen von aussen gleich
+        # aus (ors_client wirft für alle drei OrsNichtVerfuegbar); der Ursprungsort trennt sie.
+        # KEINE Adressen — `von`/`nach` sind Nutzereingaben (gleiche Regel wie unten bei signal_1).
+        fehler_log.protokolliere("api.entfernung ors", e, stufe=fehler_log.WARNUNG, fall_id=fall_id)
         return 503, ENTFERNUNG_FALLBACK                   # ein echter Logik-Bug propagiert (K2, konsistent zu chat()/kontoauszug)
     # PROVENIENZ (K2, „Herkunft je Wert"): der km-Wert kommt aus dem Karten-Dienst → als VORLÄUFIGES
     # Event mit herkunft=berechnet ins Store (Badge zeigt „berechnet/maps", NICHT „selbst"). Der Nutzer
@@ -1005,7 +1010,11 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     kontext = _erklaer_kontext(store, bindung, body.get("feld_id") or None)
     try:
         erg = api_llm._llm_dialog(freitext, prompt_katalog, kontext, user_id=api_auth._AUTH_USER)
-    except (api_llm.LlmNichtVerfuegbar, ImportError):   # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
+    except (api_llm.LlmNichtVerfuegbar, ImportError) as e:  # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
+        # llm_client baut seine Meldung ausdrücklich "für das Server-Log und die Diagnose"
+        # (llm_client.py:117) — nur gab es kein Server-Log, und hier fiel sie ohne `as e` weg.
+        # WARNUNG, nicht FEHLER: der Ausfall ist erwartet, verloren ging bloss der Grund.
+        fehler_log.protokolliere("api.chat llm", e, stufe=fehler_log.WARNUNG, fall_id=fall_id)
         return 501, CHAT_501                             # echte Logik-/Parse-Bugs propagieren (konsistent zu kontoauszug)
     vorschlaege = erg["vorschlaege"]
     geschrieben, abgelehnt, konflikte = [], [], []

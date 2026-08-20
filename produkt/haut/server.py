@@ -30,6 +30,7 @@ import api  # noqa: E402
 import api_auth  # noqa: E402 — Request-Auth (Modul-Attribute)
 import auth  # noqa: E402 — P1.1 Authentifizierung
 import audit  # noqa: E402 — P1.6 Audit-Log
+import fehler_log  # noqa: E402 — Fehler-Protokoll (Metadaten only, nie str(exception))
 
 
 def _session_check():
@@ -227,6 +228,19 @@ class Handler(BaseHTTPRequestHandler):
                     except (api.ApiError, auth.AuthError) as e:
                         self._json(e.status, {"fehler": str(e)})
                     except Exception as e:  # nie eine nackte Exception nach aussen lecken
+                        # Die einzige Stelle, an der ein UNERWARTETER Fehler aus irgendeiner
+                        # Route landet. Ohne diese Zeile ist er nach dem 500 nicht mehr
+                        # rekonstruierbar: kein Traceback, keine Datei, keine Zeile — genau
+                        # die Frage "warum hat der Nutzer keine Erklärung bekommen".
+                        # Geloggt wird das Routen-MUSTER, nicht der Pfad: der konkrete Pfad
+                        # trägt die Fall-Kennung, das Muster ist ein Literal aus ROUTES.
+                        # Die Methode steht bewusst NICHT dabei, obwohl `method` hier nur
+                        # "GET"/"POST" sein kann: der Struktur-Test verbietet jede freie
+                        # Variable im ort, weil er ihr nicht ansehen kann, woher sie stammt
+                        # (`self.command` etwa käme roh vom Client). Muster plus Ursprungsort
+                        # im Traceback benennen die Stelle ohnehin eindeutig.
+                        fehler_log.protokolliere(f"server.dispatch {muster.pattern}", e,
+                                                 fall_id=treffer.groupdict().get("id"))
                         self._json(500, {"fehler": f"{type(e).__name__}: {e}"})
                     else:
                         self._json(status, obj)

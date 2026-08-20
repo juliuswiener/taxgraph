@@ -211,6 +211,7 @@ if _catala_fehlt():
           f"Testdateien werden NICHT gesammelt. Voller Lauf braucht `clerk build p32a-python`.")
 
 import audit as _audit  # echtes Modul-Attribut, gelesen VOR jedem Test-Monkeypatch
+import fehler_log as _fehler_log  # dito — zweite Datei in derselben Ablage, zweite Wache unten
 import server as _server  # noqa: E402 — teilt server._lade_env_dateien mit dem Server-Start
 
 # .env-Naht (s. tests/test_env_loader.py): pytest rief server._lade_env_dateien() bisher NIE auf
@@ -276,4 +277,44 @@ def _kein_schreiben_ins_echte_audit_log(request, monkeypatch):
         f"({_REAL_AUDIT_PFAD}): " + "; ".join(treffer) + ". Schreibvorgang wurde geblockt, "
         'Datei ist unangetastet. Fix: monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path)) '
         "im Test/Fixture setzen."
+    )
+
+
+_REAL_FEHLER_PFAD = os.path.abspath(os.path.join(_audit.AUDIT_DIR, "fehler.log"))
+
+
+@pytest.fixture(autouse=True)
+def _kein_schreiben_ins_echte_fehler_log(request, monkeypatch):
+    """Dieselbe Wache fuer das Fehler-Protokoll (produkt/store/fehler_log.py).
+
+    Es liegt in derselben Ablage wie audit.jsonl und faellt deshalb NICHT unter die
+    Wache darueber: die umwickelt audit.append, und protokolliere() ist ein anderer
+    Aufruf. Ohne diese zweite Fixture schreibt jeder Test, der einen 500er ausloest,
+    in die echte fehler.log des Nutzers -- genau die Fehlklasse, die das Audit-Log
+    einmal auf 582 MB hat wachsen lassen.
+
+    Gleiche Mechanik, gleiche Gruende: Pfad zur AUFRUFZEIT aufloesen (nicht beim
+    Import), Treffer BLOCKEN statt durchreichen, und erst nach yield asserten --
+    ein raise im Wrapper wuerde von server.py:229 als generisches 500 verschluckt.
+
+    Ein Test, der das Protokoll pruefen WILL, lenkt audit.AUDIT_DIR auf tmp_path um;
+    dann zeigt _pfad() woandershin und die Wache laesst ihn durch.
+    """
+    treffer: list[str] = []
+    echtes_protokolliere = _fehler_log.protokolliere
+
+    def _wache(*args, **kwargs):
+        pfad = os.path.abspath(_fehler_log._pfad())
+        if pfad == _REAL_FEHLER_PFAD:
+            treffer.append(f"pfad={pfad!r} ort={(args[0] if args else kwargs.get('ort'))!r}")
+            return None  # geblockt -- echte Datei unangetastet
+        return echtes_protokolliere(*args, **kwargs)
+
+    monkeypatch.setattr(_fehler_log, "protokolliere", _wache)
+    yield
+    assert not treffer, (
+        f"{request.node.nodeid} hat versucht, ins ECHTE fehler.log zu schreiben "
+        f"({_REAL_FEHLER_PFAD}): " + "; ".join(treffer) + ". Schreibvorgang wurde geblockt, "
+        'Datei ist unangetastet. Fix: monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path)) '
+        "im Test/Fixture setzen -- fehler_log folgt derselben Ablage."
     )

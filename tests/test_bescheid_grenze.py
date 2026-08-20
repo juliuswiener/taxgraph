@@ -91,7 +91,17 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # sieben sind Kommentar: warum `fid.startswith("kein_")` dem Modell bei zwei Feldern das Gegenteil
 # der Nutzerantwort erzählte. Keine Steuerlogik, gegen die diese Ratsche gebaut ist; auslagern
 # ginge nur um den Preis, die Bindungs-Metadaten nicht mehr am Endpunkt zu füllen.
-API_ZEILEN_OBERGRENZE = 1158
+# 1158 → 1167 (2026-08-20): Fehlerprotokollierung an den zwei Fangstellen in api.py, die den
+# Grund WIRKLICH verwarfen — `except (...)` ohne `as e` bei chat()/LLM und entfernung()/ORS.
+# Aufschlüsselung der neun Zeilen: 1 Import, 2 Aufrufe, 6 Kommentar. NULL Zeilen Steuerlogik —
+# Protokollierung ist keine, und gegen sie ist diese Ratsche gebaut.
+# Vorher versucht, sie nicht heben zu müssen: die anderen zehn except-Blöcke in api.py sind
+# nicht angefasst. Sie übersetzen entweder in eine ApiError, die der Nutzer als Antwort sieht
+# (kein Verlust), oder sie fangen erwarteten Kontrollfluss. Alles, was von dort unerwartet
+# durchpropagiert, landet in server.py:229 und wird dort mit EINEM Aufruf erfasst — deshalb
+# steht der Rest der Arbeit in server.py und in produkt/store/fehler_log.py, nicht hier.
+# Diese zwei blieben übrig, weil ihr Grund an keiner anderen Stelle mehr existiert.
+API_ZEILEN_OBERGRENZE = 1167
 
 
 def _runner_stellen(pfad: str) -> list[int]:
