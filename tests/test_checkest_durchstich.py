@@ -300,17 +300,24 @@ def test_restfehler_kirchensteuerpflichtig(name, bauer):
         f"Beanstandungen: {texte}")
 
 
-# Gemessen 2026-08-12, Task Gewinneinkuenfte-Partnerseite Stufe 1. Das Kz-Mapping selbst ist
-# korrekt (E0800502 im person_b-Bucket, XSD-valide -- s. tests/test_person_b_xml_luecke.py).
-# checkESt verlangt aber ZUSAETZLICH zur Summe (E0800502) "Einzelangaben zu Gewinnen laut
-# gesonderter Feststellung" -- ein Sub-Block, den WEDER Person A NOCH Person B hat. Isoliert
-# gemessen: Person A ALLEIN mit einkuenfte_gewinn=500000 (kein_gewinn=False, ohne jeden
-# Partner-Anteil) liefert dieselbe Beanstandungsklasse fuer PersonA. Das ist also eine
-# PRAEEXISTIERENDE Luecke (E0800502-Summe ohne Einzelangaben-Unterbau), keine durch die
-# Partnerseite neu eingefuehrte Regression -- sie wird hier nur zum ersten Mal sichtbar, weil
-# RESTFEHLER_ZUSAMMEN/EINZEL oben kein_gewinn nie auf False stellen. Siehe BACKLOG rechenluecken:
+# Gemessen 2026-08-12 (2 Fehler), nachgemessen 2026-08-20 (1 Fehler).
+#
+# WEG war die "Einzelangaben zu Gewinnen laut gesonderter Feststellung"-Beanstandung. Sie kam
+# nicht daher, dass uns Einzelangaben fehlten, sondern daher, dass wir im FALSCHEN Container
+# standen: einkuenfte_gewinn deklarierte nach G/Gew/Ges_Fest/Sum (E0800502) -- der gesondert
+# festgestellte Anteil an einer Personengesellschaft, dessen Einz-Block Finanzamt und
+# Steuernummer DER GESELLSCHAFT fuehrt. Unser Feld fragt aber den selbst ermittelten Gewinn ab.
+# Seit der Container-Korrektur (E0800302, G/Gew/Einz_U/Betr_1_2, plus die Bezeichnung E0800301
+# im selben Block) faellt die Klasse ganz weg. Details in produkt/mapping/est_mapping.py.
+#
+# GEBLIEBEN ist eine andere Klasse, die vorher darunter lag: "Sie haben angegeben, dass Sie
+# Angaben fuer 'PersonA' machen moechten, haben aber ausser der Angabe im Feld
+# '$/G[1]/Person[1]$' keine weiteren Angaben getaetigt." In diesem Fall hat NUR der Partner
+# einen Betrieb; der Writer legt fuer Person B die zweite Anlage-G-Instanz an und braucht dafuer
+# die erste -- die dann leer bleibt bis auf ihr Person-Indexfeld. Das ist eine Writer-Naht
+# (leere Anlagen-Instanz), keine fehlende Angabe. Siehe BACKLOG rechenluecken:
 # gewinneinkuenfte-einzelangaben-fehlen.
-RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER = 2
+RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER = 1
 
 
 def _fall_zusammen_mit_gewinn_partner():
@@ -323,6 +330,7 @@ def _fall_zusammen_mit_gewinn_partner():
         _b(s, f, w)
     _b(s, "einkuenfte_gewinn_partner", 500000)   # 5.000 EUR
     _b(s, "gewinn_betriebsart_partner", "gewerbe")
+    _b(s, "gewinn_bezeichnung_partner", "Grafikdesign")   # Formalie des Betriebs-Blocks B
     _b(s, "veranlagung", "zusammen")
     return s
 

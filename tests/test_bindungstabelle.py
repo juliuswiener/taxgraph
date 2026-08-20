@@ -1170,6 +1170,12 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     ("p33a_gesamt", "p33a_kindergeld_anspruch", "p33a_unterhalt", "kindergeld_anspruch"),
     ("p33a_gesamt", "p33a_verwandtschaftsverhaeltnis", "p33a_unterhalt", "verwandtschaftsverhaeltnis"),
     ("p33a_gesamt", "p33a_person_idnr", "p33a_unterhalt", "unterstuetzte_person_idnr"),
+    # (gewinn_bezeichnung / gewinn_bezeichnung_partner brauchen KEINE Eintraege, obwohl ihr
+    # signatur_slot ebenso ins Leere zeigt: p2_festzusetzung_einzel/_zusammen haben weder
+    # rules.yaml-Eintrag noch Catala-Scope, stehen also in der Liste der 12 uebersprungenen
+    # Regeln von test_n. Ein Eintrag hier waere eine Ausnahme fuer einen Verstoss, den der Test
+    # gar nicht sehen kann — derselbe Fall wie p22_3_leistungen unten. Gemessen 2026-08-20:
+    # mit Eintrag meldet test_n sie als "erledigte Eintraege — bitte streichen".)
     # bindung_p22_nr3.yaml — p22_3_leistungen: die Bruttoeinnahmen, die ERiC neben den
     # Einkuenften verlangt ("Bei den Leistungen wurden Einkuenfte erklaert, es fehlt jedoch eine
     # Angabe zu den Einnahmen", gemessen 2026-08-19). p22_3_leistungen hat keinen

@@ -228,8 +228,32 @@ VERZWEIGUNG = {
     # gewinn_betriebsart in Anlage G/S. land_forst NICHT gebunden — Anlage L hat zwei alternative Kz
     # (P4_Abs_1_3=E0901007, P13a=E0901103) je Gewinnermittlungsart; unser Modell differenziert nicht.
     # land_forst -> fail-closed in nicht_deklariert ("ohne Kz-Zweig", kein Over-Tax — Gewinn rechnet).
+    #
+    # CONTAINER-KORREKTUR 2026-08-20 (vorher E0800502/E0803402): beide Anlagen führen ZWEI
+    # Gewinn-Container nebeneinander, und wir standen im falschen.
+    #
+    #   G/Gew/Einz_U/Betr_1_2   E0800301 Bezeichnung, E0800508 StNr, E0800302 Betrag   (max 2)
+    #   G/Gew/Ges_Fest/Einz     E0800501 Bezeichnung, E0800704 FINANZAMT, E0800804 StNr, E0800504
+    #   G/Gew/Ges_Fest/Sum      E0800502 "Summe"                                    <- war hier
+    #   S/Gewinn/Freiber_T      E0803101 Berufsbez., E0820502 StNr, E0803202 Betrag    (max 2)
+    #   S/Gewinn/Ges_Fest/Einz  E0803301 Berufsbez., E0820601 FINANZAMT, E0820701 StNr, E0800505
+    #   S/Gewinn/Ges_Fest/Sum   E0803402 Betrag                                    <- war hier
+    #
+    # `Ges_Fest` ist die gesonderte Feststellung (§ 180 Abs. 1 S. 1 Nr. 2 AO): ein Anteil an einer
+    # Personengesellschaft, den ein ANDERES Finanzamt feststellt. Genau deshalb verlangt der Einz-Block
+    # dort Finanzamt UND Steuernummer — die der Gesellschaft. Unser Feld fragt aber nach dem selbst
+    # ermittelten Gewinn ("z. B. aus deiner Einnahmenüberschussrechnung"), also nach dem eigenen
+    # Betrieb. Der gehört in Einz_U/Betr_1_2 (Gewerbe) bzw. Freiber_T (selbständig), wo kein fremdes
+    # Finanzamt steht. Der frühere Container kam aus einer Kz-Wahl nach dem LABEL ("Summe" klang nach
+    # Gesamtgewinn) statt nach dem Pfad; der Recon-Bericht 2026-07-19 hatte den [Einz]-Block bereits
+    # als Kandidaten genannt. Beide Container sind maxOccurs=2 -> unser Ein-Betrieb-Modell füllt den
+    # ersten. Nebenbefund: checkESt verlangt Bezeichnung und Betrag GEMEINSAM (gewinn_bezeichnung).
     "einkuenfte_gewinn": {"art_feld": "gewinn_betriebsart", "kz": {
-        "gewerbe": "E0800502", "selbstaendig": "E0803402"}},
+        "gewerbe": "E0800302", "selbstaendig": "E0803202"}},
+    # Formvoraussetzung des Betriebs-Blocks: ohne sie lehnt checkESt den Betrag ab ("Beim 1. Betrieb
+    # müssen die genaue Bezeichnung des Gewerbes und der Gewinn gemeinsam angegeben werden").
+    "gewinn_bezeichnung": {"art_feld": "gewinn_betriebsart", "kz": {
+        "gewerbe": "E0800301", "selbstaendig": "E0803101"}},
 
 # KV/PV-Versicherungsart-Weiche: ein Betragsfeld -> 3 Kz je Art.
 # Art-Feld = versicherungsart. XML-Writer routet ueber Schema-Pfad.
@@ -288,8 +312,13 @@ PARTNER_VERZWEIGUNG = {
     # aber der Wert läuft in den person_b-Bucket (dieselben Person-A-Kz, kein Ehegatte-Kz). Art-Weichen =
     # gewinn_betriebsart_partner / rentner_veraeusserungs_betriebsart_partner. land_forst bei
     # einkuenfte_gewinn_partner bewusst ohne Kz (spiegelt Person A, Anlage L hat zwei alternative Kz).
+    # Container-Korrektur 2026-08-20 wie Person A (s. VERZWEIGUNG): eigener Betrieb = Einz_U/Betr_1_2
+    # bzw. Freiber_T, nicht Ges_Fest/Sum. Der Ehegatte hat seinen eigenen Betrieb, also eine eigene
+    # Anlage-G/S-Instanz mit denselben Kz.
     "einkuenfte_gewinn_partner": {"art_feld": "gewinn_betriebsart_partner", "kz": {
-        "gewerbe": "E0800502", "selbstaendig": "E0803402"}},
+        "gewerbe": "E0800302", "selbstaendig": "E0803202"}},
+    "gewinn_bezeichnung_partner": {"art_feld": "gewinn_betriebsart_partner", "kz": {
+        "gewerbe": "E0800301", "selbstaendig": "E0803101"}},
     "rentner_veraeusserungsgewinn_partner": {"art_feld": "rentner_veraeusserungs_betriebsart_partner", "kz": {
         "gewerbe": "E0801301", "selbstaendig": "E0804501", "land_forst": "E0901201"}},
 

@@ -262,9 +262,15 @@ def test_ernte_est_mapping_kz_negation_und_verzweigung_mit_echtem_vz():
         "elster_kz": "E0503701", "vz_gueltigkeit": bindung["fam_alleinstehend"]["vz_gueltigkeit"]}
     assert synth["verzweigung:rentner_jahresrente:sonstige_leibrente"] == {
         "elster_kz": "E1803102", "vz_gueltigkeit": bindung["rentner_jahresrente"]["vz_gueltigkeit"]}
-    # einkuenfte_gewinn hat Kz (gewerbe=E0800502, selbstaendig=E0803402)
-    assert synth.get("verzweigung:einkuenfte_gewinn:gewerbe", {}).get("elster_kz") == "E0800502"
-    assert synth.get("verzweigung:einkuenfte_gewinn:selbstaendig", {}).get("elster_kz") == "E0803402"
+    # einkuenfte_gewinn hat Kz — der EIGENE Betrieb (Container-Korrektur 2026-08-20):
+    # gewerbe=E0800302 (G/Gew/Einz_U/Betr_1_2), selbstaendig=E0803202 (S/Gewinn/Freiber_T).
+    # NICHT E0800502/E0803402 (Ges_Fest/Sum) — das ist der gesondert festgestellte
+    # Beteiligungsanteil, dessen Einz-Block Finanzamt und Steuernummer der Gesellschaft fuehrt.
+    assert synth.get("verzweigung:einkuenfte_gewinn:gewerbe", {}).get("elster_kz") == "E0800302"
+    assert synth.get("verzweigung:einkuenfte_gewinn:selbstaendig", {}).get("elster_kz") == "E0803202"
+    # Die Bezeichnung steht im selben Block wie der Betrag (checkESt verlangt sie gemeinsam).
+    assert synth.get("verzweigung:gewinn_bezeichnung:gewerbe", {}).get("elster_kz") == "E0800301"
+    assert synth.get("verzweigung:gewinn_bezeichnung:selbstaendig", {}).get("elster_kz") == "E0803101"
     # land_forst BEWUSST ohne Kz: Anlage L trennt § 4 Abs. 1/3 (E0901007) und
     # § 13a (E0901103) — unser gewinn_betriebsart unterscheidet das nicht.
     # fail-closed bis zweites Art-Feld existiert.

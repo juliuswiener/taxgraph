@@ -259,7 +259,8 @@ GESAMT_VERSORGUNG = ("versorgung_jahresrente", "versorgung_bemessungsgrundlage",
                      "versorgung_beginn_jahr", "versorgung_art", "versorgung_alter_bei_beginn")
 
 # ========== Rentner: §§ 13-18 Gewinn + Veräußerungs-Gewinn ==========
-RENTNER_GEWINN = (("einkuenfte_gewinn", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
+RENTNER_GEWINN = (("einkuenfte_gewinn", "gewinn_bezeichnung", "rentner_veraeusserungsgewinn",
+                   "rentner_veraeusserungs_betriebsart",
                    "gewinn_betriebsart", "geburtsjahr") + EUER_KOMPONENTEN + GWG_FELDER + MITU_FELDER + ABS3_FELDER)
 
 # ========== RENTNER_KEGEL (Pflicht-Felder im Rentner-Ring) ==========
@@ -557,11 +558,12 @@ STAMMDATEN_FELDER_PARTNER = ("stammdaten_nachname_partner", "stammdaten_vorname_
                              "stammdaten_geburtsdatum_partner", "kist_konfession_partner")
 
 # ========== § 2 Gewinn (Gesamt) ==========
-GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD + MITU_FELDER + ABS3_FELDER + GESAMT_PV
+GESAMT_GEWINN = ("einkuenfte_gewinn", "gewinn_betriebsart", "gewinn_bezeichnung") + EUER_KOMPONENTEN + GWG_FELDER + GESAMT_VG + GESAMT_P35 + VERLUST_FELD + MITU_FELDER + ABS3_FELDER + GESAMT_PV
 # Person-B (Task Gewinneinkünfte-Partnerseite Stufe 1, Deklaration): EÜR-Komponenten und §34 Abs.3-
 # Flags bewusst NICHT dupliziert (s. EUER_KOMPONENTEN-Kommentar bzw. ABS3_FELDER; §34-Fixes laufen an
 # Person A). GWG_FELDER/VERLUST_FELD sind global (nicht person-individuell), kein Pendant nötig.
-GESAMT_GEWINN_PARTNER = (("einkuenfte_gewinn_partner", "gewinn_betriebsart_partner")
+GESAMT_GEWINN_PARTNER = (("einkuenfte_gewinn_partner", "gewinn_betriebsart_partner",
+                          "gewinn_bezeichnung_partner")
                          + GESAMT_VG_PARTNER + GESAMT_P35_PARTNER + MITU_FELDER_PARTNER)
 
 # ========== RENTNER_FELDER — DRITTE ÄNDERUNG (Z.282 api.py) ==========

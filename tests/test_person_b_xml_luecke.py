@@ -157,7 +157,7 @@ def test_person_b_xsd_valide(bindung, tmp_path):
 
 def test_gewinneinkuenfte_partner_kommt_im_xml_an(bindung):
     """Stufe 1 (Deklaration) der Gewinneinkünfte-Partnerseite: einkuenfte_gewinn_partner
-    (gewerbe) -> E0800502, rentner_veraeusserungsgewinn_partner (selbstaendig) -> E0804501,
+    (gewerbe) -> E0800302, rentner_veraeusserungsgewinn_partner (selbstaendig) -> E0804501,
     gewst_hebesatz_partner/gewst_messbetrag_partner -> E0801705/E0801606. Alle vier laufen
     in den person_b-Bucket (dieselben Person-A-Kz, zweite Anlage-G-Instanz) — kein eigenes
     Ehegatte-Kz. Person A und B mit UNTERSCHIEDLICHEN Werten, damit ein Vertauschen der
@@ -166,8 +166,10 @@ def test_gewinneinkuenfte_partner_kommt_im_xml_an(bindung):
     s = ST.leerer_store(2025, fall_id="gewinn_partner_xml")
     _b(s, "einkuenfte_gewinn", 500000)                        # 5.000 EUR, Person A
     _b(s, "gewinn_betriebsart", "gewerbe")
+    _b(s, "gewinn_bezeichnung", "Softwareentwicklung")        # Formalie des Betriebs-Blocks A
     _b(s, "einkuenfte_gewinn_partner", 300000)                # 3.000 EUR, Person B
     _b(s, "gewinn_betriebsart_partner", "gewerbe")
+    _b(s, "gewinn_bezeichnung_partner", "Grafikdesign")       # Formalie des Betriebs-Blocks B
     _b(s, "rentner_veraeusserungsgewinn_partner", 4500000)    # 45.000 EUR, Person B
     _b(s, "rentner_veraeusserungs_betriebsart_partner", "selbstaendig")
     _b(s, "gewst_hebesatz_partner", 410)                      # Prozent, kein Cent-Feld
@@ -185,12 +187,16 @@ def test_gewinneinkuenfte_partner_kommt_im_xml_an(bindung):
 
     assert "<Person>PersonB</Person>" in clean
 
-    # Gewerbe-Gewinn: A (5000) und B (3000) teilen sich dasselbe Kz E0800502 in zwei
+    # Gewerbe-Gewinn: A (5000) und B (3000) teilen sich dasselbe Kz E0800302 in zwei
     # Anlage-G-Instanzen — Reihenfolge A vor B, keine Verwechslung der Werte.
     import re
-    gewinn_werte = re.findall(r"<E0800502>(\d+)</E0800502>", clean)
+    gewinn_werte = re.findall(r"<E0800302>(\d+)</E0800302>", clean)
     assert gewinn_werte == ["5000", "3000"], (
-        f"E0800502 nicht [5000 (Person A), 3000 (Person B)]: {gewinn_werte}\n" + xml)
+        f"E0800302 nicht [5000 (Person A), 3000 (Person B)]: {gewinn_werte}\n" + xml)
+    # Die Bezeichnung steht im selben Betriebs-Block und darf die Buckets nicht tauschen.
+    bez_werte = re.findall(r"<E0800301>([^<]+)</E0800301>", clean)
+    assert bez_werte == ["Softwareentwicklung", "Grafikdesign"], (
+        f"E0800301 nicht [Person A, Person B]: {bez_werte}\n" + xml)
 
     # § 16 Abs.4 Veräußerungsgewinn Person B, selbstaendig -> E0804501 = 45000
     assert "<E0804501>45000</E0804501>" in clean, (
@@ -234,7 +240,7 @@ def test_gewinneinkuenfte_partner_xsd_valide(bindung, tmp_path):
 
 def test_mitunternehmer_partner_faellt_in_nicht_deklariert(bindung):
     """Die 4 §15-Mitunternehmer-Partnerfelder haben (wie Person A) elster_kz: null — sie
-    sind im gemeinsamen Gewinn-Kz (E0800502/E0803402) AUFGEGANGEN, nicht separat deklariert.
+    sind im gemeinsamen Gewinn-Kz (E0800302/E0803202) AUFGEGANGEN, nicht separat deklariert.
     Muessen daher in nicht_deklariert erscheinen, NICHT in person_b landen (Klasse c)."""
     s = ST.leerer_store(2025, fall_id="mitu_partner_nd")
     _b(s, "gewinnanteil_partner", 100000)
