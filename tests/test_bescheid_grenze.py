@@ -78,7 +78,14 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # 1124 → 1147 (2026-08-19): die Art.-9-Sperre im LLM-Kontext. Die REGEL selbst liegt in
 # pii_filter.py, wo die Datenschutz-Entscheidungen wohnen; in api.py steht nur, dass
 # _erklaer_kontext sie anwendet und die Zahl der zurückgehaltenen Angaben nennt.
-API_ZEILEN_OBERGRENZE = 1147
+#
+# 1147 → 1149 (2026-08-19): die Preflight-Kategorie "nicht_gerechnet" — Angaben, die das
+# Finanzamt bekommt, unsere Berechnung aber nicht kennt (erster Fall: der Vermögensstock-Betrag
+# nach § 10b Abs. 1a). Die Regel liegt in produkt/konsistenz/check_nicht_gerechnet.py, hier
+# stehen zwei Zeilen Auslieferung. Netto sind es zwei statt vier: die vier gleichförmigen
+# Schleifen darunter wurden dabei zu einer Tabelle zusammengezogen — wer eine Ratsche hebt,
+# soll vorher versucht haben, sie nicht heben zu müssen.
+API_ZEILEN_OBERGRENZE = 1149
 
 
 def _runner_stellen(pfad: str) -> list[int]:

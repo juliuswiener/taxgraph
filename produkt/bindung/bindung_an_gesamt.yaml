@@ -578,7 +578,6 @@ bindungen:
     hilfe_kurz: "Steht auf deinem Gewerbesteuer-Bescheid oder bei der Gemeinde (übliche Werte 200-900 %, z. B. 450). Bestimmt die tatsächlich gezahlte Gewerbesteuer für die Anrechnung auf die Einkommensteuer (§ 35)."
     beispielwert: 450
     herkunft_slots: null
-    elster_kz: null
     # E10/G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Zu_zah_GSt_VZ — "Hebesatz in Prozent",
     # Ganzzahl wie unser typ:int. Erster Betrieb (s. gewst_messbetrag). Belegt 2026-08-05.
     elster_kz: E0801705
@@ -598,7 +597,6 @@ bindungen:
     hilfe_kurz: "Aus deinem Gewerbesteuer-Messbescheid. Trag ihn ein, wenn du die Anrechnung der Gewerbesteuer auf die Einkommensteuer (§ 35) willst — das ist freiwillig; ohne Eintrag entfällt die Anrechnung."
     beispielwert: 2024750
     herkunft_slots: null
-    elster_kz: null
     # E10/G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Festzus_GMB_VZ — erster Betrieb. Die früher als
     # offen notierte "Disambiguierung E0801606 vs E0802009" löst der Pfad auf: E0802009 liegt
     # unter Weit_Betr/Einz (weitere Betriebe), also dieselbe Instanz-Achse wie Person B.
@@ -610,6 +608,44 @@ bindungen:
       quelle: "§ 11 Abs. 1 S. 1 GewStG"
       zitatanker: "von einem Steuermessbetrag auszugehen"
       datei: "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt"
+
+  # Die dritte Zahl, die ERiC verlangt (gemessen 2026-08-19): mit Messbetrag und Hebesatz allein
+  # antwortet checkESt rc=610001002 zweimal — "Messbetrag ... und die darauf entfallende ...
+  # tatsaechlich zu zahlende Gewerbesteuer sind GEMEINSAM anzugeben" und "Der Hebesatz wurde
+  # angegeben, die zu zahlende Gewerbesteuer jedoch nicht".
+  #
+  # BERECHNET, NICHT GEFRAGT — und das ist hier etwas anderes als bei § 22 Nr. 3 daneben. Dort
+  # war der fehlende Wert eine Angabe, die nur der Nutzer kennt; hier ist er das Ergebnis einer
+  # gesetzlichen Formel: § 16 Abs. 1 GewStG, Steuermessbetrag mal Hebesatz. Beide Faktoren hat
+  # der Nutzer selbst aus seinen Bescheiden eingetragen. Wir raten also nicht, wir rechnen.
+  #
+  # NICHT ZU VERWECHSELN mit dem 4-fachen Messbetrag aus § 35 Abs. 1 S. 2 EStG
+  # (_gewst_p35_anrechnung_cent in produkt/engine/runner.py): das ist die Obergrenze der
+  # ANRECHNUNG auf die Einkommensteuer, eine andere Norm und eine andere Zahl. Hier steht die
+  # Schuld gegenueber der Gemeinde, ungedeckelt.
+  #
+  # Grenze, benannt: bei einem Erlass oder abweichender Festsetzung durch die Gemeinde weicht die
+  # wirklich gezahlte Steuer von der Formel ab. Das Finanzamt prueft die § 35-Anrechnung ohnehin
+  # gegen den Gewerbesteuerbescheid. Ein vom Nutzer ueberschreibbarer Vorschlag waere der
+  # sauberere Zuschnitt, waere aber die erste Anwendung von zustand:vorlaeufig auf einen
+  # Engine-Wert — eigener Bau, bewusst nicht hier.
+  - feld_id: gewst_zu_zahlen
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_zu_zahlen}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Messbetrag mal Hebesatz (§ 16 Abs. 1 GewStG)."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0801704
+    elster_kz_grund: "E0801704 [G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Zu_zah_GSt_VZ], XSD-Label 'Gewerbesteuer' — direktes Geschwister von E0801705 (Hebesatz) im selben Container. Erster Betrieb, wie E0801606/E0801705."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35 Abs. 1 S. 1 EStG"
+      zitatanker: "tatsächlich zu zahlende Gewerbesteuer"
+      datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
 
   # ===== § 10d Verlustvortrag (Mindestbesteuerung): GdE-Abzug vorrangig vor Sonderausgaben =====
   # § 10d Abs. 2: der festgestellte Verlustvortrag (Abs. 4) mindert den GdE, begrenzt auf
@@ -628,7 +664,6 @@ bindungen:
     beispielwert: 6000000
     herkunft_slots: null
     elster_kz: null
-    kz_status: offen
     kz_status: endgueltig
     elster_kz_grund: "ENDGUELTIG: Typ-Unterschied. E0190701 ist Ja/Nein-Feld (RABE), unser Feld cent (Betrag). FA kennt Betrag aus Feststellungsbescheid. E10 fragt ihn nicht ab."
     vz_gueltigkeit: [2024, 2025, 2026]
@@ -1472,6 +1507,26 @@ bindungen:
       quelle: "§ 11 Abs. 1 S. 1 GewStG"
       zitatanker: "von einem Steuermessbetrag auszugehen"
       datei: "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt"
+  # Spiegel zu gewst_zu_zahlen (Person A, s. dort fuer die Formel und ihre Grenze). Ein eigener
+  # Betrieb hat einen eigenen Hebesatz, also auch eine eigene Gewerbesteuerschuld — dieselbe
+  # Rechnung, andere Faktoren.
+  - feld_id: gewst_zu_zahlen_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_zu_zahlen_partner}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Messbetrag mal Hebesatz des Partnerbetriebs (§ 16 Abs. 1 GewStG)."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse g PARTNER_INSTANZ (est_mapping): derselbe Kz E0801704 wie Person A (G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Zu_zah_GSt_VZ), Anlage-G-INSTANZ B (person_b-Bucket) — kein distinktes Ehegatte-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35 Abs. 1 S. 1 EStG"
+      zitatanker: "tatsächlich zu zahlende Gewerbesteuer"
+      datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
 
 luecken:
   # -- §24a Altersentlastungsbetrag: Bemessungs-Inputs + Kohorten-Parameter (gesamt-Kontext, §24a gesamt-only) --

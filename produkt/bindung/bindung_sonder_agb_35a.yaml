@@ -553,6 +553,49 @@ bindungen:
       zitatanker: "Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke"
       datei: "sources/gesetze-im-internet/estg_p10b_2026-07-13.txt"
 
+  # Gemessen 2026-08-19: mit spenden_betrag allein antwortet checkESt rc=610001002, "Bitte geben
+  # Sie an, in welcher Hoehe die 2025 geleisteten Spenden in den Vermoegensstock einer Stiftung
+  # im Veranlagungszeitraum 2025 beruecksichtigt werden sollen". Mit dem Feld (auch mit Wert 0)
+  # rc=0.
+  #
+  # GEFRAGT, NICHT AUF 0 GESETZT — und das war eine Entscheidung, keine Selbstverstaendlichkeit.
+  # Eine stille 0 haette fuer JEDEN Nutzer behauptet, er wolle nichts als Vermoegensstock-Spende
+  # beruecksichtigt sehen. Fuer fast alle stimmt das. Fuer den, der eine Stiftung mit aufbaut,
+  # waere es der Verzicht auf bis zu eine Million Abzugsvolumen (§ 10b Abs. 1a, ueber zehn Jahre
+  # verteilbar) — ohne dass er je gefragt worden waere.
+  #
+  # DER RECHENKERN KENNT ABS. 1A NICHT. rules.yaml sagt es ueber sich selbst: "Vortrag (S. 9),
+  # Stiftungs-Vermoegensstock (Abs. 1a) und Parteispenden (Abs. 2, § 34g) sind eigene
+  # Zuschnitte". Ein Wert > 0 wird also korrekt DEKLARIERT, aber nicht gerechnet: die angezeigte
+  # Steuer faellt zu hoch aus, der Bescheid guenstiger. Das ist die ungefaehrliche Richtung —
+  # niemand zahlt zu viel, niemand wird boese ueberrascht —, aber der Nutzer soll es wissen.
+  # Deshalb der Preflight-Hinweis in produkt/konsistenz/preflight.py (hinweise_nicht_gerechnet).
+  #
+  # Die Alternative waere ein Sperrgrund gewesen: dann bekaeme der Betroffene GAR KEINE
+  # Erklaerung. Das bestraft genau den, den es schuetzen soll.
+  #
+  # signatur_slot zeigt ins Leere: p10b_spenden kennt nur zuwendungen und
+  # gesamtbetrag_der_einkuenfte, und die zwei Geltungsbedingungen betreffen beide den
+  # 20-Prozent-Deckel des Abs. 1 — an einer Abs.-1a-Angabe behaupteten sie einen falschen
+  # Zusammenhang.
+  - feld_id: spenden_vermoegensstock
+    quelle: {regel_id: p10b_spenden, signatur_slot: vermoegensstock_betrag}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "War eine deiner Spenden für den Grundstock (das Startvermögen) einer Stiftung? Wenn ja: wie viel davon? Sonst 0."
+    hilfe_kurz: "Gemeint ist nur der Sonderfall, dass du einer Stiftung beim Aufbau ihres Vermögens geholfen hast — nicht die normale Spende an eine Stiftung. Im Zweifel 0."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E0108509
+    elster_kz_grund: "E0108509 [SA/Zuw/Sp_erh_Verm_Stift], XSD-Label 'Von den Spenden in den Zeilen ... sollen $VZ$ beruecksichtigt werden'. NICHT E0108607 — das ist der Vorjahres-Rest (Spenden aus Vorjahren, die bisher nicht beruecksichtigt wurden); der Backlog nannte faelschlich diese Kz. Typ GanzzahlNichtNeg, 0 also zulaessig (anders als E0108405 daneben, das GanzzahlPos ist)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10b Abs. 1a S. 1 EStG"
+      zitatanker: "in das zu erhaltende Vermögen (Vermögensstock) einer Stiftung"
+      datei: "sources/gesetze-im-internet/estg_p10b_2026-07-13.txt"
+
 luecken:
   # -- KiSt: beide Geltungsbedingungen sind MVP-Annahmen (kein Laien-Gate) --
   - regel_id: p10_1_4_kirchensteuer

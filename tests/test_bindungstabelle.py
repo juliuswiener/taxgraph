@@ -504,6 +504,10 @@ BETRAGSFELDER_OHNE_KZ = {
     "verguetung_darlehen_partner",
     "verguetung_ueberlassung_partner",
     "gewst_messbetrag_partner",
+    # Berechnet (Messbetrag x Hebesatz, § 16 Abs. 1 GewStG) und wie die anderen Partner-Felder
+    # ohne eigenes Kz: E0801704 wird ueber den person_b-Bucket geschrieben, es gibt kein
+    # distinktes Ehegatte-Kz (2026-08-19).
+    "gewst_zu_zahlen_partner",
     "rentner_veraeusserungsgewinn_partner",
 
     # Gruppe A: Accessor-Output ohne Kz-Mapping.
@@ -1141,6 +1145,33 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     # ins Leere zeigt, ist ehrlicher als eine Bedingung, die nicht passt.
     ("sonder_agb_35a", "berufsausbildung_bezeichnung", "p10_1_7_berufsausbildung", "bezeichnung_der_ausbildung"),
     ("sonder_agb_35a", "berufsausbildung_einzelbetrag", "p10_1_7_berufsausbildung", "einzelaufwendung"),
+    # bindung_sonder_agb_35a.yaml — p10b_spenden: der Vermoegensstock-Betrag nach § 10b
+    # Abs. 1a. Die Regel kennt nur zuwendungen und gesamtbetrag_der_einkuenfte, und ihre
+    # zwei Geltungsbedingungen betreffen beide den 20-Prozent-Deckel des Abs. 1 — an einer
+    # Abs.-1a-Angabe behaupteten sie einen Zusammenhang, den es nicht gibt. rules.yaml sagt
+    # ueber sich selbst, Abs. 1a sei "ein eigener Zuschnitt".
+    ("sonder_agb_35a", "spenden_vermoegensstock", "p10b_spenden", "vermoegensstock_betrag"),
+    # bindung_p33a_gesamt.yaml — p33a_unterhalt: die Angaben zur unterstuetzten Person und
+    # ihrem Haushalt, die ERiC in fuenf Beanstandungen verlangt (2026-08-19). Die Regel
+    # fuehrt drei Geltungsbedingungen, aber alle drei betreffen die Rechenmechanik
+    # (Grundfreibetrag als Norm-Konstante, Schonbetrag 624, Netto-Einkuenfte) — an einer
+    # Haushaltsadresse behauptete jede davon einen Zusammenhang, den es nicht gibt.
+    ("p33a_gesamt", "p33a_person_name", "p33a_unterhalt", "unterstuetzte_person_name"),
+    ("p33a_gesamt", "p33a_person_beruf_familienstand", "p33a_unterhalt", "unterstuetzte_person_beruf"),
+    ("p33a_gesamt", "p33a_person_geburtsdatum", "p33a_unterhalt", "unterstuetzte_person_geburtsdatum"),
+    ("p33a_gesamt", "p33a_haushalt_anschrift", "p33a_unterhalt", "haushalt_anschrift"),
+    ("p33a_gesamt", "p33a_haushalt_personenzahl", "p33a_unterhalt", "haushalt_personenzahl"),
+    ("p33a_gesamt", "p33a_unterstuetzungszeitraum", "p33a_unterhalt", "unterstuetzungszeitraum"),
+    ("p33a_gesamt", "p33a_zahlungszeitraum", "p33a_unterhalt", "zahlungszeitraum"),
+    # bindung_p22_nr3.yaml — p22_3_leistungen: die Bruttoeinnahmen, die ERiC neben den
+    # Einkuenften verlangt ("Bei den Leistungen wurden Einkuenfte erklaert, es fehlt jedoch eine
+    # Angabe zu den Einnahmen", gemessen 2026-08-19). p22_3_leistungen hat keinen
+    # rules.yaml-Eintrag, also auch keine geltungsbedingung; der einzige Catala-Input
+    # (einkuenfte_vor_freigrenze) gehoert dem Nettofeld. Die Einnahmen sind reine Formvoraussetzung
+    # — die Freigrenze von 256 Euro haengt an den Einkuenften, nicht an ihnen.
+    # (p22_3_leistungen braucht KEINE Eintraege: die Regel hat weder rules.yaml-Eintrag noch
+    # Catala-Scope unter rules/estg/, wird von test_n also gar nicht geprueft. Ein Eintrag hier
+    # waere eine Ausnahme fuer einen Verstoss, den es nicht gibt — genau das meldet der Test.)
     # bindung_sonder_agb_35a.yaml — p35a_2_3_haushaltsnahe: mitveranlagung (§ 35a Abs. 5 Satz 4
     # EStG, Höchstbetrags-Halbierung bei zwei Alleinstehenden im gemeinsamen Haushalt) ist KEIN
     # Input der rules.yaml-signature (die kennt nur minijob_aufwendungen/haushaltsnahe_
@@ -1553,3 +1584,42 @@ def test_p_gate_faengt_neues_bool_gate(daten):
     treffer = _bool_gates_auf_sammelscope({"mutiert.yaml": d})
     assert treffer and treffer[0][1] == "zzz_erfundenes_bool_gate", (
         "Gegenprobe fehlgeschlagen: neues bool-Gate nicht erkannt")
+
+
+def test_a_kein_doppelter_schluessel_im_feldblock():
+    """Kein Schlüssel darf in einem Feldblock ZWEIMAL stehen.
+
+    YAML nimmt klaglos den letzten Wert — die Schema-Validierung (test_a_schema_valid) sieht
+    also nur das Ergebnis und bleibt grün. Wer die Datei LIEST, sieht den ersten.
+
+    Gefunden am 2026-08-19 in fünf Feldblöcken, alle nach demselben Muster: `elster_kz: null`,
+    darunter ein Kommentar mit der Herleitung, darunter `elster_kz: E0…`. Beim Nachtragen der
+    Kennzahl war die alte Zeile stehen geblieben. Funktional harmlos — die Felder waren
+    gebunden —, aber der Kopfkommentar von bindung_p22_nr3.yaml behauptete deshalb bis zuletzt
+    "elster_kz bewusst null (kein XSD-verifiziertes Kz-Mapping)", und das war seit Monaten
+    falsch. Eine Datei, die zwei Antworten auf dieselbe Frage gibt, führt irgendwann jemanden
+    in die Irre; hier war es der eigene Dateikopf.
+    """
+    treffer = []
+    for f in _bindung_files():
+        zeilen = open(f, encoding="utf-8").read().splitlines()
+        # Nur die bindungen:-Sektion. Die luecken:-Einträge darunter sind gleich eingerückt,
+        # dürfen aber wiederholte Schlüssel führen (mehrere Lücken je Regel) — ohne diese
+        # Grenze meldete der Test dort ein Dutzend Falschtreffer.
+        ende = next((i for i, z in enumerate(zeilen) if z.startswith("luecken:")), len(zeilen))
+        zeilen = zeilen[:ende]
+        start = [i for i, z in enumerate(zeilen) if z.startswith("  - feld_id:")]
+        start.append(len(zeilen))
+        for a, b in zip(start, start[1:]):
+            gesehen = {}
+            for i in range(a, b):
+                m = re.match(r"^    ([a-z_]+):", zeilen[i])
+                if not m:
+                    continue
+                key = m.group(1)
+                if key in gesehen:
+                    fid = zeilen[a].split(":", 1)[1].strip()
+                    treffer.append(f"{os.path.basename(f)}:{i+1} {fid} → '{key}' "
+                                   f"schon in Zeile {gesehen[key]+1}")
+                gesehen[key] = i
+    assert not treffer, "doppelte Schlüssel im selben Feldblock:\n  " + "\n  ".join(treffer)

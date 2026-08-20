@@ -28,6 +28,160 @@ bindungen:
       quelle: "§ 33a Abs. 1 S. 1 EStG"
       zitatanker: "Aufwendungen fuer den Unterhalt und eine etwaige Berufsausbildung"
       datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+
+  # ================= Angaben zur unterstuetzten Person und ihrem Haushalt =================
+  # Bis 2026-08-19 trug die Bindung NUR die Betraege. Gemessen mit p33a_unterhalt_aufwendungen
+  # allein: rc=610001002 mit FUENF Beanstandungen auf einmal — mehr als jede andere Luecke:
+  #   "Es muss mindestens eine unterstuetzte Person ... erklaert werden"
+  #   "... ist bei jedem Haushalt die Adresse des Haushalts ... zu erklaeren"
+  #   "... muss die Anzahl der Personen, die zum Haushalt gehoeren, erklaert werden"
+  #   "Bitte geben Sie auch den Unterhaltszeitraum ... an"
+  #   "... sind die Hoehe der Unterhaltszahlung und der Zeitraum ... gemeinsam anzugeben"
+  #
+  # SIEBEN NEUE FRAGEN, und keine einzige davon ableitbar: wen jemand unterstuetzt, wo diese
+  # Person lebt, wie viele im Haushalt sind und in welchem Zeitraum gezahlt wurde, weiss nur der
+  # Nutzer. Das ist der Preis dafuer, dass Unterhalt an Angehoerige ueberhaupt einreichbar wird —
+  # ohne sie kommt die Erklaerung zurueck, egal wie richtig der Betrag ist.
+  #
+  # Sie erscheinen nur, wenn die Regel relevant ist, also wenn ueberhaupt Unterhalt eingetragen
+  # wurde. Wer keinen zahlt, sieht keine davon.
+  #
+  # MVP-GRENZE: EINE unterstuetzte Person, EIN Haushalt. Das Schema erlaubt mehr
+  # (Ang_HH_unt_P_Unt_Leist maxOccurs=99, darunter U_Ztr maxOccurs=12 und Ang_Unt_Pers
+  # maxOccurs=9). Fuer eine Instanz reicht der gewoehnliche Schreibpfad: _einhaengen() laeuft den
+  # Pfad segmentweise und legt fehlende Container schlicht an, unabhaengig von der Tiefe. Die
+  # kz_path[:2]-Ableitung in elster_xml.py:532 greift nur fuer echte Mehrfach-Gruppen ab Index 2
+  # und bleibt hier unberuehrt — geprueft, nicht vermutet.
+  #
+  # signatur_slot zeigt bei allen sieben ins Leere: p33a_unterhalt fuehrt zwar drei
+  # Geltungsbedingungen, aber alle drei betreffen die Rechenmechanik (Grundfreibetrag als
+  # Norm-Konstante, Schonbetrag 624, Netto-Einkuenfte). An einer Haushaltsadresse behauptete
+  # jede davon einen Zusammenhang, den es nicht gibt.
+  - feld_id: p33a_person_name
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzte_person_name}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wen hast du unterstützt? (Vor- und Nachname)"
+    hilfe_kurz: "Die Person, für die du Unterhalt gezahlt hast — zum Beispiel ein Elternteil oder ein Kind ohne Kindergeldanspruch."
+    beispielwert: "Maier, Erika"
+    herkunft_slots: null
+    elster_kz: E0120201
+    elster_kz_grund: "E0120201 [ESt1A_U/Ang_HH_unt_P_Unt_Leist/Ang_Unt_Pers/Allg/Persoenl], XSD-Label 'Name, Vorname'."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_person_beruf_familienstand
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzte_person_beruf}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Was macht diese Person beruflich, und ist sie verheiratet?"
+    hilfe_kurz: "Zum Beispiel: Rentnerin, verwitwet. Oder: ohne Beruf, ledig. Das Finanzamt fragt beides in einer Zeile."
+    beispielwert: "Rentnerin, verwitwet"
+    herkunft_slots: null
+    elster_kz: E0120202
+    elster_kz_grund: "E0120202 [.../Ang_Unt_Pers/Allg/Persoenl], XSD-Label 'Beruf, Familienstand' — ein Feld fuer beides, so fragt der Vordruck."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_person_geburtsdatum
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzte_person_geburtsdatum}
+    typ: datum
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann ist diese Person geboren? (Tag, Monat, Jahr)"
+    hilfe_kurz: "Format TT.MM.JJJJ (amtliches ELSTER-Format, mit Punkten und vierstelligem Jahr)."
+    beispielwert: "05.05.1955"
+    herkunft_slots: null
+    elster_kz: E0120203
+    elster_kz_grund: "E0120203 [.../Ang_Unt_Pers/Allg/Persoenl], XSD-Label 'Geburtsdatum', Typ DatumTTpMMpJJJJ — volles Datum, anders als die Zeitraum-Felder unten."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_haushalt_anschrift
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: haushalt_anschrift}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wo lebt diese Person? (Straße, Postleitzahl, Ort, bei Ausland auch der Staat)"
+    hilfe_kurz: "Die Anschrift des Haushalts, in dem die unterstützte Person gelebt hat."
+    beispielwert: "Musterstr. 5, 12345 Musterstadt"
+    herkunft_slots: null
+    elster_kz: E0120101
+    elster_kz_grund: "E0120101 [ESt1A_U/Ang_HH_unt_P_Unt_Leist/HH_unt_P], XSD-Label 'Anschrift dieses Haushaltes'."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_haushalt_personenzahl
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: haushalt_personenzahl}
+    typ: int
+    einheit: null
+    bereich: {min: 1, max: 20, grund: "Sanity-Bound: mindestens die unterstuetzte Person selbst. Keine gesetzliche Obergrenze, 20 ist eine Plausibilitaetsgrenze."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele Menschen lebten in diesem Haushalt insgesamt?"
+    hilfe_kurz: "Die unterstützte Person mitgezählt. Wenn sie allein lebt: 1."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: E0120108
+    elster_kz_grund: "E0120108 [.../HH_unt_P], XSD-Label 'Anzahl der Personen, die in dem Haushalt laut Zeile ... lebten', Typ GanzzahlNichtNeg."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  # Beide Zeitraum-Felder sind typ text, NICHT datum: der XSD-Typ ist
+  # DatumBereichTTpMMbTTpMM (E10-2025.xsd:58-64) mit dem Muster TT.MM-TT.MM — zwei Teildaten
+  # ohne Jahr, durch Bindestrich verbunden. Der Store prueft typ "datum" fail-closed gegen
+  # ^\d{2}\.\d{2}\.\d{4}$ (store.py:190) und wiese "01.01-31.12" ab. Dieselbe Entscheidung wie
+  # bei dhf_bestanden_bis.
+  - feld_id: p33a_unterstuetzungszeitraum
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzungszeitraum}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Zeitraum hast du diese Person unterstützt? (Tag und Monat, z. B. 01.01-31.12)"
+    hilfe_kurz: "Das ganze Jahr über? Dann 01.01-31.12. Sonst der tatsächliche Zeitraum. Das Jahr brauchst du nicht."
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0120109
+    elster_kz_grund: "E0120109 [.../AW_U/U_Ztr], XSD-Label 'Unterstuetzungszeitraum, fuer den Unterhalt geleistet wurde', Typ DatumBereichTTpMMbTTpMM."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_zahlungszeitraum
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: zahlungszeitraum}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann hast du gezahlt? (Von der ersten bis zur letzten Zahlung, z. B. 01.01-31.12)"
+    hilfe_kurz: "Der Zeitraum der Zahlungen selbst — bei monatlichen Überweisungen das ganze Jahr, bei einer Einmalzahlung derselbe Tag zweimal."
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0120104
+    elster_kz_grund: "E0120104 [.../AW_U/U_Ztr], XSD-Label 'Zeitraum, in dem die Zahlungen fuer den Unterhalt geleistet wurden (Tag der ersten Zahlung bis Tag der letzten Zahlung)'. ERiC verlangt ihn GEMEINSAM mit der Hoehe (E0120103, oben)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
   - feld_id: p33a_unterhalt_kv_pv
     quelle: {regel_id: p33a_unterhalt, signatur_slot: kv_pv_beitraege}
     typ: cent

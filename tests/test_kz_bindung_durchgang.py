@@ -696,3 +696,235 @@ def test_berufsausbildung_einzelbetrag_wird_aus_der_summe_berechnet():
     # eine Einzelzeile für einen Betrag, den der Nutzer nie bestätigt hat.
     offen = {"berufsausbildung_aufwendungen": {"wert": 200000, "zustand": "vorlaeufig"}}
     assert "berufsausbildung_einzelbetrag" not in BD._mit_ring_werten(dict(offen), 2025)
+
+
+# ---------------------------------------------------------------- § 22 Nr. 3 sonstige Leistungen
+
+def test_p22_nr3_einnahmen_und_werbungskosten_kommen_im_xml_an(bindung):
+    """Vier Zahlen, von denen der Nutzer zwei kennt (2026-08-19). Vier Messrunden:
+
+        nur Einkünfte                rc=610001002  "es fehlt eine Angabe zu den Einnahmen"
+        + Einnahmen                  rc=610001002  Einzelbeträge fehlen; UND: "Einkünfte
+                                                   entspricht nicht Einnahmen abzüglich
+                                                   Werbungskosten"
+        + Einzelbetrag + WK          rc=610001002  "Art und Höhe der Einnahmen gemeinsam"
+        + Art                        rc=0
+
+    Die zweite Runde ist der Grund, warum hier gerechnet statt behauptet wird: ERiC prüft
+    Einnahmen − Werbungskosten == Einkünfte nach. Ein leeres Werbungskosten-Feld erfüllt das
+    nicht, und ein Zwilling "Einnahmen = Einkünfte" hätte Werbungskosten von null behauptet,
+    obwohl das ältere Feld ausdrücklich netto fragt.
+    """
+    xml = _xml({"p22_nr3_einkuenfte": 100000,          # 1.000 EUR netto
+                "p22_nr3_einnahmen": 130000,           # 1.300 EUR brutto
+                "p22_nr3_einnahmen_art": "Gelegentliche Vermittlung",
+                "p22_nr3_einnahmen_einzelbetrag": 130000,
+                "p22_nr3_werbungskosten": 30000},      # 300 EUR Differenz
+               bindung)
+
+    assert _pfad_im_xml(xml, ("SO", "Leist", "Einz", "E0305103"), "Gelegentliche Vermittlung")
+    assert _pfad_im_xml(xml, ("SO", "Leist", "Einz", "E0305104"), "1300")
+    assert _pfad_im_xml(xml, ("SO", "Leist", "Sum", "E0305101"), "1300")
+    assert _pfad_im_xml(xml, ("SO", "Leist", "Sum", "E0305201"), "300")
+    assert _pfad_im_xml(xml, ("SO", "Leist", "Sum", "E0305301"), "1000")
+
+
+def test_p22_nr3_ohne_werbungskosten_bleibt_das_element_weg():
+    """E0305201 ist GanzzahlPos — eine 0 ist dort UNZULÄSSIG.
+
+    Wer keine Werbungskosten hatte, gibt Einnahmen gleich Einkünfte an. Ein Zwilling, der stur
+    die Differenz schreibt, setzte dann 0 und das Schema wiese es ab. Die Konsistenzprobe geht
+    ohne das Element trotzdem auf: Einnahmen minus nichts ist gleich Einkünfte (gemessen, rc=0).
+
+    Die Gegenrichtung wird gleich mitgeprüft: bei widersprüchlicher Eingabe (Einnahmen KLEINER
+    als Einkünfte) entsteht ebenfalls kein Feld — der Widerspruch wird nicht auf 0 geklemmt,
+    sondern bleibt sichtbar, damit checkESt ihn beanstandet statt ihn zu schlucken.
+    """
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(root, "produkt", "bescheid"))
+    import bescheid_deklaration as BD
+
+    def _lauf(einnahmen, einkuenfte):
+        f = {"p22_nr3_einnahmen": {"wert": einnahmen, "zustand": "bestaetigt"},
+             "p22_nr3_einkuenfte": {"wert": einkuenfte, "zustand": "bestaetigt"}}
+        return BD._mit_ring_werten(f, 2025)
+
+    gleich = _lauf(100000, 100000)
+    assert "p22_nr3_werbungskosten" not in gleich, "0 EUR Werbungskosten dürfen kein Element werden"
+    assert gleich["p22_nr3_einnahmen_einzelbetrag"]["wert"] == 100000
+
+    widerspruch = _lauf(80000, 100000)          # Einnahmen < Einkünfte: unmöglich
+    assert "p22_nr3_werbungskosten" not in widerspruch
+
+    mit_kosten = _lauf(130000, 100000)
+    assert mit_kosten["p22_nr3_werbungskosten"]["wert"] == 30000
+
+
+# ---------------------------------------------------------------- § 35 Gewerbesteuer-Anrechnung
+
+def test_gewst_zu_zahlen_kommt_im_xml_an(bindung):
+    """Die dritte Zahl neben Messbetrag und Hebesatz (2026-08-19). Ohne sie zwei Beanstandungen:
+    "... sind gemeinsam anzugeben" und "Der Hebesatz wurde angegeben, die zu zahlende
+    Gewerbesteuer jedoch nicht". Mit ihr rc=0.
+
+    Anders als bei § 22 Nr. 3, wo der fehlende Wert erfragt werden musste, wird hier gerechnet:
+    § 16 Abs. 1 GewStG sagt Messbetrag mal Hebesatz, und beide Faktoren hat der Nutzer aus
+    seinen Bescheiden eingetragen. 5.000 EUR Messbetrag bei 400 % ergeben 20.000 EUR.
+
+    NICHT der 4-fache Messbetrag aus § 35 Abs. 1 S. 2 EStG — das ist die Obergrenze der
+    Anrechnung auf die Einkommensteuer (runner.py), eine andere Norm und eine andere Zahl. Die
+    beiden liegen im Code nebeneinander und sind leicht zu verwechseln.
+    """
+    xml = _xml({"gewst_messbetrag": 500000,      # 5.000 EUR
+                "gewst_hebesatz": 400,           # 400 %
+                "gewst_zu_zahlen": 2000000},     # 20.000 EUR
+               bindung)
+
+    zu_zahlen = ("G", "St_Erm_P35", "Ang_GSt_GMB", "Einz_Betr", "Zu_zah_GSt_VZ")
+    assert _pfad_im_xml(xml, zu_zahlen + ("E0801704",), "20000")
+    assert _pfad_im_xml(xml, zu_zahlen + ("E0801705",), "400")
+
+
+def test_gewst_zu_zahlen_wird_berechnet_beide_personen():
+    """Die Rechnung selbst, für Person A und den Partnerbetrieb.
+
+    Der Hebesatz ist eine Prozentzahl, der Messbetrag steht in Cent — also
+    messbetrag * hebesatz // 100, Ergebnis wieder Cent. Ganzzahlig ABGERUNDET: die Gemeinde
+    setzt volle Euro fest, und Aufrunden behauptete eine höhere Steuerschuld als die
+    tatsächliche, was über § 35 zu einer zu hohen Anrechnung führte.
+    """
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(root, "produkt", "bescheid"))
+    import bescheid_deklaration as BD
+
+    aus = BD._mit_ring_werten({
+        "gewst_messbetrag": {"wert": 500000, "zustand": "bestaetigt"},
+        "gewst_hebesatz": {"wert": 400, "zustand": "bestaetigt"},
+        "gewst_messbetrag_partner": {"wert": 300000, "zustand": "bestaetigt"},
+        "gewst_hebesatz_partner": {"wert": 450, "zustand": "bestaetigt"},
+    }, 2025)
+    assert aus["gewst_zu_zahlen"]["wert"] == 2000000            # 5.000 * 400 %
+    assert aus["gewst_zu_zahlen_partner"]["wert"] == 1350000    # 3.000 * 450 %
+
+    # Ein Betrieb allein lässt die andere Seite unberührt — sonst entstünde eine
+    # Gewerbesteuerschuld für einen Partner, der gar keinen Betrieb hat.
+    nur_a = BD._mit_ring_werten({
+        "gewst_messbetrag": {"wert": 500000, "zustand": "bestaetigt"},
+        "gewst_hebesatz": {"wert": 400, "zustand": "bestaetigt"},
+    }, 2025)
+    assert "gewst_zu_zahlen_partner" not in nur_a
+
+    # Unbestätigt bleibt unberechnet: ein vorläufiger Messbetrag darf keine feste Steuerschuld
+    # in die Erklärung schreiben.
+    vorlaeufig = BD._mit_ring_werten({
+        "gewst_messbetrag": {"wert": 500000, "zustand": "vorlaeufig"},
+        "gewst_hebesatz": {"wert": 400, "zustand": "bestaetigt"},
+    }, 2025)
+    assert "gewst_zu_zahlen" not in vorlaeufig
+
+
+# ---------------------------------------------------------------- § 10b Abs. 1a Vermögensstock
+
+def test_spenden_vermoegensstock_kommt_im_xml_an(bindung):
+    """Ohne dieses Feld lehnte checkESt ab: "Bitte geben Sie an, in welcher Höhe die 2025
+    geleisteten Spenden in den Vermögensstock einer Stiftung ... berücksichtigt werden sollen."
+
+    E0108509, NICHT E0108607 — Letzteres ist der Vorjahres-Rest (Spenden aus Vorjahren, die
+    bisher nicht berücksichtigt wurden). Der Backlog-Eintrag nannte die falsche Kennzahl; das
+    fiel erst beim Lesen des Containers auf.
+    """
+    xml = _xml({"spenden_betrag": 50000,                # 500 EUR
+                "spenden_vermoegensstock": 20000},      # davon 200 EUR in den Vermögensstock
+               bindung)
+    stift = ("SA", "Zuw", "Sp_erh_Verm_Stift")
+    assert _pfad_im_xml(xml, stift + ("E0108405",), "500")
+    assert _pfad_im_xml(xml, stift + ("E0108509",), "200")
+
+
+def test_vermoegensstock_hinweis_nur_bei_echtem_betrag():
+    """Der Nutzer erfährt, dass diese Angabe deklariert, aber nicht gerechnet wird.
+
+    Das ist die Hälfte der Entscheidung, die dieses Feld überhaupt askable macht. Eine still
+    gesetzte 0 hätte für jeden behauptet, er wolle nichts als Vermögensstock-Spende
+    berücksichtigt sehen — für den, der eine Stiftung mit aufbaut, wären das bis zu eine
+    Million Abzugsvolumen, die niemand je erfragt hat. Der Rechenkern kennt § 10b Abs. 1a
+    nicht (rules.yaml nennt ihn selbst "einen eigenen Zuschnitt"), also fällt die angezeigte
+    Steuer zu hoch aus — die ungefährliche Richtung, aber keine, die man verschweigt.
+
+    Die Antwort 0 ist der Normalfall und sagt gerade, dass der Sonderfall NICHT vorliegt —
+    dafür darf kein Hinweis erscheinen, sonst ist er Rauschen und wird überlesen.
+    """
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(root, "produkt", "konsistenz"))
+    import check_nicht_gerechnet as CNG
+
+    mit = CNG.nicht_gerechnete_angaben(
+        {"spenden_vermoegensstock": {"wert": 20000, "zustand": "bestaetigt"}})
+    assert len(mit) == 1 and mit[0]["feld_id"] == "spenden_vermoegensstock"
+    assert "günstiger" in mit[0]["hinweis"]
+
+    for still in ({"spenden_vermoegensstock": {"wert": 0, "zustand": "bestaetigt"}},
+                  {"spenden_vermoegensstock": {"wert": 20000, "zustand": "vorlaeufig"}},
+                  {}):
+        assert CNG.nicht_gerechnete_angaben(still) == []
+
+
+def test_preflight_meldet_nicht_gerechnete_angabe_als_amber():
+    """Der Hinweis muss den Status anheben — GREEN hieße "hier gibt es nichts zu wissen"."""
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(root, "produkt", "konsistenz"))
+    import preflight as PF
+
+    erg = PF.preflight({"spenden_vermoegensstock": {"wert": 20000, "zustand": "bestaetigt"}})
+    assert erg["status"] == "AMBER"
+    assert len(erg["hinweise_nicht_gerechnet"]) == 1
+
+    sauber = PF.preflight({"spenden_vermoegensstock": {"wert": 0, "zustand": "bestaetigt"}})
+    assert sauber["hinweise_nicht_gerechnet"] == []
+
+
+# ---------------------------------------------------------------- § 33a Unterhalt an Angehörige
+
+def test_p33a_angaben_zur_unterstuetzten_person_kommen_im_xml_an(bindung):
+    """Sieben Angaben zur unterstützten Person und ihrem Haushalt (2026-08-19).
+
+    ACHTUNG, DIESE ANLAGE IST NOCH NICHT EINREICHBAR. Mit dem Betrag allein antwortete checkESt
+    mit FÜNF Beanstandungen; diese sieben Felder beheben sie. Danach kamen SIEBEN NEUE zum
+    Vorschein — Einkünfte und Vermögen der unterstützten Person, Beiträge Dritter zum Unterhalt,
+    Haushaltszugehörigkeit, Kindergeld-Anspruch, Verwandtschaftsverhältnis und die
+    Identifikationsnummer der unterstützten Person. Der Test hält also einen ZWISCHENSTAND fest:
+    die sieben Felder landen korrekt im XML, die Anlage erreicht noch kein rc=0.
+
+    Das ist bewusst so hinterlegt und nicht als Erfolg getarnt: § 33a ist die größte der acht
+    Lücken, und die zweite Schicht enthält mit der IdNr einer dritten Person eine Angabe, deren
+    Erhebung eine eigene Entscheidung ist.
+    """
+    xml = _xml({"p33a_unterhalt_aufwendungen": 600000,
+                "p33a_person_name": "Maier, Erika",
+                "p33a_person_beruf_familienstand": "Rentnerin, verwitwet",
+                "p33a_person_geburtsdatum": "05.05.1955",
+                "p33a_haushalt_anschrift": "Musterstr. 5, 12345 Musterstadt",
+                "p33a_haushalt_personenzahl": 1,
+                "p33a_unterstuetzungszeitraum": "01.01-31.12",
+                "p33a_zahlungszeitraum": "01.01-31.12"},
+               bindung)
+
+    wurzel = ("ESt1A_U", "Ang_HH_unt_P_Unt_Leist")
+    person = wurzel + ("Ang_Unt_Pers", "Allg", "Persoenl")
+    assert _pfad_im_xml(xml, person + ("E0120201",), "Maier, Erika")
+    assert _pfad_im_xml(xml, person + ("E0120202",), "Rentnerin, verwitwet")
+    assert _pfad_im_xml(xml, person + ("E0120203",), "05.05.1955")
+    assert _pfad_im_xml(xml, wurzel + ("HH_unt_P", "E0120101"), "Musterstr. 5, 12345 Musterstadt")
+    assert _pfad_im_xml(xml, wurzel + ("HH_unt_P", "E0120108"), "1")
+    assert _pfad_im_xml(xml, wurzel + ("AW_U", "U_Ztr", "E0120109"), "01.01-31.12")
+    assert _pfad_im_xml(xml, wurzel + ("AW_U", "U_Ztr", "E0120104"), "01.01-31.12")
+    # Der Betrag daneben, schon vorher gebunden — ERiC verlangt ihn GEMEINSAM mit dem Zeitraum.
+    assert _pfad_im_xml(xml, wurzel + ("AW_U", "U_Ztr", "E0120103"), "6000")

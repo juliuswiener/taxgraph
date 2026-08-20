@@ -261,6 +261,58 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
             "signal": {"signal_1": None, "signal_2": None},
         }
 
+    # § 35 / § 16 Abs. 1 GewStG: die zu zahlende Gewerbesteuer ist Messbetrag mal Hebesatz.
+    # checkESt verlangt sie neben den beiden Faktoren ("... sind gemeinsam anzugeben",
+    # "Der Hebesatz wurde angegeben, die zu zahlende Gewerbesteuer jedoch nicht", 2026-08-19).
+    #
+    # Der Hebesatz ist eine Prozentzahl (typ int, z. B. 450), der Messbetrag steht in Cent —
+    # Ergebnis also messbetrag * hebesatz // 100, und das bleibt Cent. Ganzzahlig abgerundet:
+    # die Gemeinde setzt volle Euro fest, und Aufrunden würde hier eine Steuerschuld behaupten,
+    # die höher ist als die tatsächliche.
+    for _mb, _hs, _ziel in (("gewst_messbetrag", "gewst_hebesatz", "gewst_zu_zahlen"),
+                            ("gewst_messbetrag_partner", "gewst_hebesatz_partner",
+                             "gewst_zu_zahlen_partner")):
+        _m, _h = felder.get(_mb), felder.get(_hs)
+        if all(isinstance(f, dict) and f.get("zustand") == "bestaetigt"
+               and isinstance(f.get("wert"), int) and f["wert"] > 0 for f in (_m, _h)):
+            felder[_ziel] = {
+                "wert": _m["wert"] * _h["wert"] // 100,
+                "zustand": "bestaetigt",
+                "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+                "schreiber": "engine",
+                "signal": {"signal_1": None, "signal_2": None},
+            }
+
+    # § 22 Nr. 3: das Formular verlangt drei Zahlen, der Nutzer kennt zwei. Er nennt die
+    # Einnahmen (brutto) und die Einkünfte (netto, das ältere Feld fragt ausdrücklich "Einnahmen
+    # minus der Kosten"). Daraus folgen der Einzelposten und die Werbungskosten.
+    #
+    # ERiC rechnet nach (gemessen 2026-08-19): "Der bei den sonstigen Einkünften (Leistungen)
+    # erklärte Betrag für die Einkünfte entspricht nicht den erklärten Einnahmen abzüglich der
+    # erklärten Werbungskosten". Ein leeres Werbungskosten-Feld erfüllt diese Probe nicht.
+    _p22_einn = felder.get("p22_nr3_einnahmen")
+    _p22_eink = felder.get("p22_nr3_einkuenfte")
+    if all(isinstance(f, dict) and f.get("zustand") == "bestaetigt"
+           and isinstance(f.get("wert"), int) for f in (_p22_einn, _p22_eink)) \
+            and _p22_einn["wert"] > 0:
+        _berechnet = {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"}
+        felder["p22_nr3_einnahmen_einzelbetrag"] = {
+            "wert": _p22_einn["wert"], "zustand": "bestaetigt", "herkunft": _berechnet,
+            "schreiber": "engine", "signal": {"signal_1": None, "signal_2": None},
+        }
+        # NUR bei echt positiver Differenz. E0305201 ist GanzzahlPos, eine 0 waere unzulässig;
+        # und eine negative Differenz (Einnahmen < Einkünfte) ist eine widersprüchliche Eingabe,
+        # die hier nicht glattgebügelt wird — dann fehlt das Feld, checkESt beanstandet, und der
+        # Widerspruch wird sichtbar statt auf 0 geklemmt. Eine Prüfung schon im Dialog wäre
+        # besser, aber die Bindung kennt keine feldübergreifenden Grenzen (bereich: ist überall
+        # statisch), das wäre ein eigener Bau.
+        _wk = _p22_einn["wert"] - _p22_eink["wert"]
+        if _wk > 0:
+            felder["p22_nr3_werbungskosten"] = {
+                "wert": _wk, "zustand": "bestaetigt", "herkunft": _berechnet,
+                "schreiber": "engine", "signal": {"signal_1": None, "signal_2": None},
+            }
+
     # § 10 Abs. 1 Nr. 7: dieselbe Bauart wie § 35c darüber. Die Anlage führt eine Summe
     # (E0108202, vom Nutzer erfragt) und eine Einzelzeile (E0108002); ohne die Einzelzeile
     # lehnt checkESt ab ("Es wurde die Summe der Aufwendungen für die eigene Berufsausbildung

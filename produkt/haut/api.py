@@ -530,16 +530,18 @@ def preflight_check(fall_id: str) -> tuple[int, dict]:
     store = lade_fall(fall_id)
     felder, _ = ST.materialisiere(store)
     ergebnis = PF.preflight(felder)
-    # Nur hinweise/items ausliefern, die auch was zu sagen haben
+    # Nur ausliefern, was auch was zu sagen hat. "nicht_gerechnet" ist ein eigener Bereich und
+    # läuft NICHT unter "pauschale" mit: dort wurde etwas vergessen, hier nicht — die Angabe
+    # steht korrekt in der Erklärung, nur die angezeigte Zahl kennt sie noch nicht.
     items = []
-    for w in ergebnis.get("widersprueche_flag", []):
-        items.append({"typ": "widerspruch", "bereich": "flag", "text": w["grund"]})
-    for w in ergebnis.get("widersprueche_partner", []):
-        items.append({"typ": "widerspruch", "bereich": "partner", "text": w["grund"]})
-    for w in ergebnis.get("widersprueche_alleinerziehend", []):
-        items.append({"typ": "widerspruch", "bereich": "alleinerziehend", "text": w["grund"]})
-    for h in ergebnis.get("hinweise_pauschalen", []):
-        items.append({"typ": "hinweis", "bereich": "pauschale", "text": h["hinweis"]})
+    for typ, bereich, schluessel, textfeld in (
+            ("widerspruch", "flag", "widersprueche_flag", "grund"),
+            ("widerspruch", "partner", "widersprueche_partner", "grund"),
+            ("widerspruch", "alleinerziehend", "widersprueche_alleinerziehend", "grund"),
+            ("hinweis", "pauschale", "hinweise_pauschalen", "hinweis"),
+            ("hinweis", "nicht_gerechnet", "hinweise_nicht_gerechnet", "hinweis")):
+        for e in ergebnis.get(schluessel, []):
+            items.append({"typ": typ, "bereich": bereich, "text": e[textfeld]})
     return 200, {"fall_id": fall_id, "status": ergebnis["status"], "items": items}
 
 

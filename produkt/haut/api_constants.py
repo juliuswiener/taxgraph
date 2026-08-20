@@ -86,7 +86,16 @@ P36_ANRECHNUNG = ("p36_lohnsteuer", "p36_vorauszahlungen")
 P36_ANRECHNUNG_PARTNER = ("p36_lohnsteuer_partner",)
 
 # ========== § 22 Sonstige Einkünfte + § 10 KiSt ==========
-P22_NR3_EINKUENFTE = ("p22_nr3_einkuenfte",)
+P22_NR3_EINKUENFTE = ("p22_nr3_einkuenfte",
+                      # Bruttoeinnahmen (E0305101) — ohne sie weist ERiC ab. Eigenes askable
+                      # Feld statt Kopie der Einkünfte: das Feld daneben fragt netto, wir kennen
+                      # den Bruttowert also nicht und würden sonst Werbungskosten von null
+                      # behaupten (2026-08-19).
+                      "p22_nr3_einnahmen",
+                      # berechnet in bescheid_deklaration: Einzelposten = Summe,
+                      # Werbungskosten = Einnahmen minus Einkuenfte. ERiC rechnet die
+                      # Probe nach, ein leeres WK-Feld erfuellt sie nicht.
+                      "p22_nr3_einnahmen_art", "p22_nr3_einnahmen_einzelbetrag", "p22_nr3_werbungskosten")
 KIST_KONFESSION_FELDER = ("kist_konfession", "kist_bundesland")
 KIRCHENSTEUER_ARBEITGEBER_FELDER = ("kirchensteuer_arbeitgeber", "kirchensteuer_arbeitgeber_partner")
 
@@ -238,8 +247,12 @@ MITU_FELDER_PARTNER = ("gewinnanteil_partner", "verguetung_taetigkeit_partner",
 ABS3_FELDER = ("antrag_ermaessigter_satz", "dauernd_berufsunfaehig", "ermaessigung_einmal_genutzt")
 
 # ========== § 35 GewSt-Anrechnung ==========
-GESAMT_P35 = ("gewst_hebesatz", "gewst_messbetrag")
-GESAMT_P35_PARTNER = ("gewst_hebesatz_partner", "gewst_messbetrag_partner")
+# gewst_zu_zahlen/_partner sind berechnet (Messbetrag x Hebesatz, § 16 Abs. 1 GewStG) und
+# muessen trotzdem in die Scheibe: sonst filtert _scheibe_bindung() sie aus der Deklaration
+# und ERiC beanstandet weiter "die zu zahlende Gewerbesteuer jedoch nicht" (2026-08-19).
+GESAMT_P35 = ("gewst_hebesatz", "gewst_messbetrag", "gewst_zu_zahlen")
+GESAMT_P35_PARTNER = ("gewst_hebesatz_partner", "gewst_messbetrag_partner",
+                      "gewst_zu_zahlen_partner")
 
 # ========== § 19 Abs. 2 Versorgungsfreibetrag ==========
 GESAMT_VERSORGUNG = ("versorgung_jahresrente", "versorgung_bemessungsgrundlage",
@@ -339,7 +352,7 @@ FAHRTKOSTEN_PAUSCHALE = ("fahrtkosten_pausch_gdb80_oder_70g",
                          "fahrtkosten_pausch_ag_bl_tbl_h")
 
 # ========== Gefaltete Sonder-Abzüge (Weg ii) ==========
-GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag",
+GESAMT_ABZUEGE = (HAUSHALT_35A + ("hh_rechnung_unbar", "spenden_betrag", "spenden_vermoegensstock",
                   "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen",
                   # Einzelaufstellung der Berufsausbildung (2026-08-19): ohne sie weist ERiC
                   # ab. _bezeichnung wird gefragt, _einzelbetrag rechnet bescheid_deklaration
@@ -488,7 +501,14 @@ GESAMT_P23 = ("p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten",
 
 # ========== § 33a Unterhalt + Ausbildungsfreibetrag ==========
 GESAMT_P33A = ("p33a_unterhalt_aufwendungen", "p33a_unterhalt_kv_pv",
-               "p33a_andere_einkuenfte_bezuege", "p33a_ausbildung_anzahl_kinder")
+               "p33a_andere_einkuenfte_bezuege", "p33a_ausbildung_anzahl_kinder",
+               # Angaben zur unterstützten Person und ihrem Haushalt (2026-08-19). Fünf
+               # Beanstandungen auf einmal ohne sie — die größte der acht Lücken. Sie ändern
+               # keinen Betrag, erscheinen aber nur, wenn überhaupt Unterhalt erklärt wird.
+               "p33a_person_name", "p33a_person_beruf_familienstand",
+               "p33a_person_geburtsdatum", "p33a_haushalt_anschrift",
+               "p33a_haushalt_personenzahl", "p33a_unterstuetzungszeitraum",
+               "p33a_zahlungszeitraum")
 
 # ========== § 32b Progressionsvorbehalt ==========
 GESAMT_P32B = ("p32b_progressionseinkuenfte",)

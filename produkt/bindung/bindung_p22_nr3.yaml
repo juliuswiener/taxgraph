@@ -2,7 +2,10 @@
 # Freigrenze 256 € (§ 22 Nr. 3 S. 2): < 25600 Cent → 0 (steuerfrei), ≥ 25600 Cent → voller Betrag.
 # Stufe-1: EIN Laien-Feld (Einnahmen − WK, ≥ 0), keine Verlustrestriktion (S. 3/4 = Stufe-2-Backlog).
 # Ring-Wiring: ADDITIV in einkuenfte_sonstige (neben §23 + §22-Renten).
-# elster_kz bewusst null (kein XSD-verifiziertes Kz-Mapping — fail-closed, Stufe-2).
+# Kz-Mapping seit 2026-08-05 XSD-verifiziert (E0305301). Der Satz "elster_kz bewusst null"
+# stand hier bis 2026-08-19 und war seither falsch — im Feldblock stand elster_kz sogar
+# ZWEIMAL (erst null, dann E0305301). YAML nimmt den letzten, das Feld war also gebunden;
+# gelesen hat man das Gegenteil.
 
 version: 1
 scheibe: "§22 Nr.3 Sonstige Leistungen"
@@ -17,11 +20,115 @@ bindungen:
     hilfe_kurz: "Dazu gehören z. B. gelegentliche Vermittlungen oder die Vermietung beweglicher Gegenstände. Wenn die Summe 256 € nicht übersteigt, ist sie steuerfrei. Übersteigt sie 256 €, ist der gesamte Betrag steuerpflichtig."
     beispielwert: 0
     herkunft_slots: null
-    elster_kz: null
     # E10/SO/Leist/Sum/E0305301 "Einkünfte" — NICHT E0305101 ("Summe der Einnahmen") und nicht
     # E0305104 (Einzelbetrag). Der Slot heißt einkuenfte_vor_freigrenze, ist also die Netto-Größe
     # nach Werbungskosten (die stehen separat in E0305201). Belegt 2026-08-05.
     elster_kz: E0305301
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 3 EStG (sonstige Einkünfte aus Leistungen)"
+      zitatanker: "Einkünfte aus Leistungen, soweit sie weder zu anderen Einkunftsarten (§ 2 Absatz 1 Satz 1 Nummer 1 bis 6) noch zu den Einkünften im Sinne der Nummern 1, 1a, 2 oder 4 gehören"
+      datei: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+
+  # ---- Die Einnahmen daneben: ohne sie weist das Finanzamt die Erklaerung zurueck ----
+  # Gemessen 2026-08-19 mit p22_nr3_einkuenfte=100000 allein: rc=610001002, "Bei den Leistungen
+  # wurden Einkuenfte erklaert, es fehlt jedoch eine Angabe zu den Einnahmen".
+  #
+  # WARUM EIN EIGENES ASKABLE FELD UND KEIN ZWILLING: naheliegend waere gewesen, E0305101 aus
+  # p22_nr3_einkuenfte zu kopieren — das haette fuer JEDEN Nutzer behauptet, seine
+  # Werbungskosten seien null. Das Feld oben fragt aber ausdruecklich netto ("Einnahmen minus
+  # der Kosten"), wir kennen den Bruttowert also gar nicht. Steuerlich waere die Behauptung
+  # folgenlos (die 256-Euro-Freigrenze haengt an den Einkuenften), im Formular waere sie eine
+  # unwahre Angabe. Eine Frage ist billiger als eine Behauptung.
+  #
+  # E0305201 (Werbungskosten) bleibt bewusst ungebunden: ERiC verlangt in der gemessenen
+  # Beanstandung nur die Einnahmen (Singular), und pflicht_kinder() liefert fuer den Container
+  # Sum keine Pflichtkinder. Sollte eine Konsistenzpruefung Einnahmen-WK==Einkuenfte auftauchen,
+  # ist die Differenz aus den beiden vorhandenen Feldern ableitbar — dann aber als eigener,
+  # gemessener Schritt.
+  #
+  # signatur_slot zeigt ins Leere (SIGNATUR_SLOT_ZEIGT_INS_LEERE in tests/test_bindungstabelle.py):
+  # p22_3_leistungen hat keinen rules.yaml-Eintrag, also gibt es dort keine geltungsbedingung,
+  # und der einzige Catala-Input (einkuenfte_vor_freigrenze) ist vom Feld oben belegt.
+  - feld_id: p22_nr3_einnahmen
+    quelle: {regel_id: p22_3_leistungen, signatur_slot: einnahmen_brutto}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du mit diesen gelegentlichen Leistungen eingenommen — vor Abzug deiner Kosten?"
+    hilfe_kurz: "Der Betrag, den du bekommen hast, bevor du deine Ausgaben abziehst. Das Finanzamt will beide Zahlen sehen: die Einnahmen und den Gewinn daraus."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E0305101
+    elster_kz_grund: "E0305101 [SO/Leist/Sum], XSD-Label 'Summe der Einnahmen laut den Zeilen ...' (E10-2025.xsd:22085-22103). Geschwister von E0305301 (Einkuenfte) und E0305201 (Werbungskosten)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 3 EStG (sonstige Einkünfte aus Leistungen)"
+      zitatanker: "Einkünfte aus Leistungen, soweit sie weder zu anderen Einkunftsarten (§ 2 Absatz 1 Satz 1 Nummer 1 bis 6) noch zu den Einkünften im Sinne der Nummern 1, 1a, 2 oder 4 gehören"
+      datei: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+
+  # Zwei berechnete Begleiter, beide erst durch Messung sichtbar geworden (2026-08-19). Mit
+  # Einkuenften UND Einnahmen antwortete checkESt:
+  #   "Bei den Leistungen wurde die Summe der Einnahmen angegeben, nicht aber die einzelnen
+  #    Betraege der Einnahmen"                                            -> E0305104
+  #   "Der ... erklaerte Betrag fuer die Einkuenfte entspricht nicht den erklaerten Einnahmen
+  #    abzueglich der erklaerten Werbungskosten"                          -> E0305201
+  # Die zweite ist eine echte Rechenprobe des Finanzamts: Einnahmen minus Werbungskosten muss
+  # die Einkuenfte ergeben. Ein leeres Werbungskosten-Feld erfuellt sie NICHT.
+  # Die Art der Leistung — nur der Nutzer weiss sie, also gefragt statt geraten. Erst nach der
+  # dritten Messrunde sichtbar geworden: "Bei den Leistungen muessen die Art und die Hoehe der
+  # Einnahmen gemeinsam angegeben werden."
+  - feld_id: p22_nr3_einnahmen_art
+    quelle: {regel_id: p22_3_leistungen, signatur_slot: einnahmen_art}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wofür hast du dieses Geld bekommen?"
+    hilfe_kurz: "Ein paar Worte reichen, zum Beispiel: Vermittlung einer Wohnung, Verleih von Werkzeug, gelegentliche Nachbarschaftshilfe."
+    beispielwert: "Gelegentliche Vermittlungstätigkeit"
+    herkunft_slots: null
+    elster_kz: E0305103
+    elster_kz_grund: "E0305103 [SO/Leist/Einz], XSD-Label 'Einnahmen aus:' (E10-2025.xsd:22073-22077). Freitext 1-999 Zeichen; ERiC verlangt Art und Hoehe gemeinsam."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 3 EStG (sonstige Einkünfte aus Leistungen)"
+      zitatanker: "Einkünfte aus Leistungen, soweit sie weder zu anderen Einkunftsarten (§ 2 Absatz 1 Satz 1 Nummer 1 bis 6) noch zu den Einkünften im Sinne der Nummern 1, 1a, 2 oder 4 gehören"
+      datei: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+  - feld_id: p22_nr3_einnahmen_einzelbetrag
+    quelle: {regel_id: p22_3_leistungen, signatur_slot: einnahmen_einzelposten}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: bei einer Leistungsart derselbe Betrag wie die Einnahmensumme."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0305104
+    elster_kz_grund: "E0305104 [SO/Leist/Einz], XSD-Label 'Betrag Einnahmen' (E10-2025.xsd:22078-22081). Dieselbe Summe/Einzelposten-Bauart wie bei der Berufsausbildung: das Formular verlangt beides. MVP-Grenze: EINE Leistungsart je Erklaerung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 3 EStG (sonstige Einkünfte aus Leistungen)"
+      zitatanker: "Einkünfte aus Leistungen, soweit sie weder zu anderen Einkunftsarten (§ 2 Absatz 1 Satz 1 Nummer 1 bis 6) noch zu den Einkünften im Sinne der Nummern 1, 1a, 2 oder 4 gehören"
+      datei: sources/gesetze-im-internet/estg_p22_2026-07-13.txt
+  # E0305201 ist GanzzahlPos — NULL IST DORT UNZULAESSIG. Wer keine Werbungskosten hatte
+  # (Einnahmen == Einkuenfte), darf das Element nicht mit 0 bekommen, sondern gar nicht. Deshalb
+  # setzt bescheid_deklaration das Feld nur, wenn die Differenz echt positiv ist; die
+  # Konsistenzprobe geht dann trotzdem auf (Einnahmen minus nichts == Einkuenfte).
+  - feld_id: p22_nr3_werbungskosten
+    quelle: {regel_id: p22_3_leistungen, signatur_slot: werbungskosten_zu_einnahmen}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Einnahmen minus Einkünfte — die Kosten, die der Nutzer bereits abgezogen hat."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0305201
+    elster_kz_grund: "E0305201 [SO/Leist/Sum], XSD-Label 'Werbungskosten zu den Einnahmen laut den Zeilen ...' (E10-2025.xsd:22092-22095), Typ GanzzahlPos — 0 ist unzulaessig, das Element bleibt dann weg. Wird NICHT gefragt: der Nutzer hat die Kosten schon im Nettofeld abgezogen, ihn dieselbe Zahl zweimal eingeben zu lassen waere eine zweite Repraesentation derselben Sache."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 22 Nr. 3 EStG (sonstige Einkünfte aus Leistungen)"

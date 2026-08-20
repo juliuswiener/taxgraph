@@ -18,7 +18,6 @@ bindungen:
     hilfe_kurz: "Nur Kosten für einen vom BAFA zugelassenen Energieberater, der mit dir die energetische Sanierung geplant/beaufsichtigt hat. Wird im Abschlussjahr vollständig berücksichtigt (nicht auf 3 Jahre aufgeteilt). Zählt zusammen mit den Sanierungskosten gegen den Jahresdeckel."
     beispielwert: 80000
     herkunft_slots: null
-    elster_kz: null
     # E10/EM_35c/Obj/Aufw/Massn/Energieberat — EIGENES Kz, NICHT E0241901 (das ist die
     # Maßnahmen-Summe von p35c_sanierungsaufwendungen). § 35c Abs. 1 S. 4 behandelt die
     # Energieberater-Kosten getrennt (50 % statt der Staffel), das Schema trennt sie ebenso.

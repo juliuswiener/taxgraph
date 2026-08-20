@@ -18,7 +18,6 @@ bindungen:
     hilfe_kurz: "Alle Kosten für die Wärmedämmung, Fenster-/Türenerneuerung, Lüftung, Heizung oder digitale Optimierung (ohne MwSt., falls gezogen). EINSCHL. Kosten der amtl. Bescheinigung und ggfs. BAFA-Energieberater-Kosten (falls diese im selben Jahr durchgeführt)."
     beispielwert: 3000000
     herkunft_slots: null
-    elster_kz: null
     # E10/EM_35c/Obj/Aufw/Massn/Sum — "Summe der Aufwendungen für energetische Maßnahmen".
     # Die Einzelmaßnahmen daneben (Wände E0241001, Dach E0241101, Fenster E0241301,
     # Heizung E0241501, Lüftung, Digital, …) sind eine optionale Aufschlüsselung; unser Feld
