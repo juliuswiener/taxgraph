@@ -148,7 +148,24 @@ VORSORGE_PARTNER_FELDER = VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER + ("geburtsj
 DHF_KOSTEN = "dhf_unterkunftskosten_monat"
 DHF_RING = ("dhf_unterkunftskosten_monat", "dhf_monate", "dhf_im_inland")
 DHF_BEDINGUNGEN = ("dhf_beruflich_veranlasst", "dhf_eigener_hausstand",
-                   "dhf_finanzielle_beteiligung", "dhf_keine_pflicht_dienstwohnung")
+                   "dhf_finanzielle_beteiligung")
+# dhf_keine_pflicht_dienstwohnung stand bis 2026-08-20 in DHF_BEDINGUNGEN und war damit
+# Voraussetzung des ganzen Abzugs — genau der Fehler, vor dem der Kommentar unten warnt. Die Norm
+# sagt über die Dienstwohnung nur eines (§ 9 Abs. 1 S. 3 Nr. 5 S. 4 Hs. 2): "die Grenze von
+# 2 000 Euro bei einer Unterkunft im AUSLAND gilt nicht, wenn eine Dienst- oder Werkswohnung
+# verpflichtend und zweckgebunden genutzt werden muss". Sie HEBT eine Obergrenze AUF, ist also
+# für den Steuerpflichtigen günstig, und sie betrifft ausschliesslich den Auslandsfall.
+#
+# Als Abzugsvoraussetzung wirkte sie doppelt falsch: sie schloss aus statt zu erweitern, und sie
+# tat es auch im INLAND, wo die Norm sie gar nicht erwähnt. Gemessen 2026-08-20: wer im Inland
+# eine Werkswohnung hat (1.000 EUR Miete, 12 Monate) und wahrheitsgemäss "ja" antwortete, zahlte
+# 3.178,00 EUR mehr Steuer.
+#
+# Eigenes Tupel, weil das Feld weiterhin GEFRAGT werden muss: der Vordruck verlangt die Angabe,
+# und sobald der Auslandsfall ring-fähig wird (heute Sperrgrund ausland_dhf_nicht_ring_faehig),
+# steuert sie dort cap_monat_ausland. Nicht im Kegel — solange Ausland gesperrt ist, hat sie keine
+# Rechenwirkung, und ein Kegel-Eintrag würde die Zahl blockieren, bis jemand sie beantwortet.
+DHF_AUSLANDSGRENZE = ("dhf_keine_pflicht_dienstwohnung",)
 # Formalien ohne Rechenwirkung — sie ändern keinen Betrag, aber ohne sie weist das Finanzamt
 # die Erklärung zurück (gemessen 2026-08-16 und -19, zwei Schichten bis rc=0). Bewusst ein
 # eigenes Tupel statt an DHF_RING/DHF_BEDINGUNGEN angehängt: DHF_RING geht in die Berechnung,
@@ -601,7 +618,7 @@ SCHEIBEN = {
     },
     "an_gesamt": {
         "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER
-                   + DHF_RING + DHF_BEDINGUNGEN + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST
+                   + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER
                    + P36_ANRECHNUNG
@@ -625,7 +642,7 @@ SCHEIBEN = {
                    + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + VV_ANLAGE_FORMALIEN
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
-                   + DHF_RING + DHF_BEDINGUNGEN + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
+                   + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + ARBEITSMITTEL_AFA_GESAMT
                    + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER
@@ -676,7 +693,7 @@ __all__ = [
     # Vorsorge
     "VOR_FELDER", "VOR_PARTNER_FELDER", "KV_PV_FELDER", "KV_PV_PARTNER_FELDER", "VORSORGE_PARTNER_FELDER",
     # dHf
-    "DHF_KOSTEN", "DHF_RING", "DHF_BEDINGUNGEN", "DHF_FORMALIEN",
+    "DHF_KOSTEN", "DHF_RING", "DHF_BEDINGUNGEN", "DHF_AUSLANDSGRENZE", "DHF_FORMALIEN",
     # Übernachtung
     "UEBERNACHTUNG_KOSTEN", "UEBERNACHTUNG_RING", "UEBERNACHTUNG_BEDINGUNGEN",
     # Vermietung

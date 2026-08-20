@@ -758,8 +758,14 @@ def test_an_gesamt_dhf_ring(base):
 
 def test_an_gesamt_dhf_tatbestand_offen(base):
     """K2: dHf-Kosten > 0, aber eine Geltungsbedingung nie bestätigt → Ring gesperrt (kein Abzug
-    ohne Tatbestand, kein 3143-Fake)."""
-    _an_gesamt_anlegen(base, "ag_to", _dhf_kegel(140000, weglassen=("dhf_keine_pflicht_dienstwohnung",)))
+    ohne Tatbestand, kein 3143-Fake).
+
+    Weggelassen wird dhf_beruflich_veranlasst, seit dhf_keine_pflicht_dienstwohnung keine
+    Abzugsvoraussetzung mehr ist (2026-08-20, DHF_AUSLANDSGRENZE): die Dienstwohnung hebt nach
+    § 9 Abs. 1 S. 3 Nr. 5 S. 4 Hs. 2 nur die 2.000-Euro-Auslandsgrenze auf und darf den Abzug
+    nirgends sperren. Der Test misst weiterhin dasselbe — nur an einem Feld, das wirklich
+    Tatbestand ist."""
+    _an_gesamt_anlegen(base, "ag_to", _dhf_kegel(140000, weglassen=("dhf_beruflich_veranlasst",)))
     st, erg = _req(base, "GET", "/fall/ag_to/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "dhf_tatbestand_offen"
 

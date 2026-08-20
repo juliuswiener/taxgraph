@@ -75,6 +75,14 @@ DEKLARATION_STATT_GATE = [
     # dann der 40.000-EUR-Objektdeckel anzurechnen wäre. Die Kumulation über Jahre ist nicht
     # modelliert (benannter Nachtrag), also ist die Bedingung eine offene Annahme.
     ("p35c_bereits_ermaessigung_frueher", "p35c_sanierung_ermaessigung"),
+    # 2026-08-20, beide aus SCHULD hierher: die Norm schliesst in keinem der beiden Faelle aus.
+    # § 9 Abs. 4a S. 8-9 sagt "sind die Verpflegungspauschalen zu KÜRZEN … die Kürzung darf die
+    # ermittelte Verpflegungspauschale nicht übersteigen" — kürzen, nie streichen.
+    ("vpf_keine_mahlzeitengestellung", "p9_4a_verpflegungsmehraufwand"),
+    # § 9 Abs. 1 S. 3 Nr. 5 S. 4 Hs. 2 sagt über die Dienstwohnung nur, dass die 2.000-Euro-Grenze
+    # bei einer Unterkunft im AUSLAND dann NICHT gilt. Sie hebt eine Obergrenze auf, ist also
+    # günstig — als Gate schloss sie aus, und zwar auch im Inland, wo die Norm sie nicht erwähnt.
+    ("dhf_keine_pflicht_dienstwohnung", "p9_1_3_nr5_doppelte_haushaltsfuehrung"),
 ]
 
 
@@ -100,6 +108,37 @@ def test_deklarationsfeld_wird_weiter_gefragt(feld, regel):
     assert b is not None, f"{feld} ist gar nicht mehr gebunden."
     assert b.get("askable") is True, f"{feld} wird nicht mehr gefragt."
     assert b.get("gate") is False, f"{feld} trägt kein gate: false mehr — dann ist es ein Gate."
+
+
+def test_gate_false_reicht_nicht_der_rechenpfad_fuehrt_eine_zweite_liste():
+    """Die Naht, an der `gate: false` allein wirkungslos bleibt.
+
+    GEMESSEN 2026-08-20: `gate: false` bei dhf_keine_pflicht_dienstwohnung setzte den Status in
+    relevanz() korrekt von "ausgeschlossen" auf "unentschieden" — und die Steuer blieb auf den
+    Cent gleich. Der Abzug hing gar nicht am Gate, sondern an einer ZWEITEN, unabhängigen
+    Repräsentation derselben Bedingung:
+
+        bescheid_zweige.py:158/399   all(f.get(b, {}).get("wert") is True for b in DHF_BEDINGUNGEN)
+
+    Zwei Listen, dieselbe Fachfrage, keine Verbindung — die Bindung sagte "keine Voraussetzung",
+    der Rechenpfad sagte weiter "Voraussetzung", und nur der Rechenpfad zählt für die Zahl. Erst
+    das Herausnehmen aus DHF_BEDINGUNGEN (eigenes Tupel DHF_AUSLANDSGRENZE) brachte die 3.178 EUR
+    zurück.
+
+    Dieser Test hält beide Repräsentationen zusammen: was in der Bindung `gate: false` trägt, darf
+    im Rechenpfad keine Voraussetzung sein. Ohne ihn kann jemand ein Feld aus DHF_BEDINGUNGEN
+    entfernen und das `gate: false` vergessen — oder umgekehrt, wie es hier zwei Jahre lang war.
+    """
+    import api_constants as AK
+    voraussetzungs_tupel = {"DHF_BEDINGUNGEN": AK.DHF_BEDINGUNGEN,
+                            "UEBERNACHTUNG_BEDINGUNGEN": AK.UEBERNACHTUNG_BEDINGUNGEN}
+    kein_gate = {fid for fid, b in BINDUNG.items() if b.get("gate") is False}
+    for name, tupel in voraussetzungs_tupel.items():
+        doppelt = kein_gate & set(tupel)
+        assert not doppelt, (
+            f"{sorted(doppelt)} trägt in der Bindung `gate: false`, steht aber in {name} und ist "
+            f"damit im Rechenpfad weiterhin Abzugsvoraussetzung. Die Bindung allein entscheidet "
+            f"nicht über die Zahl — beide Stellen müssen dasselbe sagen.")
 
 
 # ---------------------------------------------------------------- Sweep über alle bool-Gates
@@ -135,20 +174,16 @@ ECHTES_OPT_IN = {
 #
 # Die Prüfung unten misst über `beispielwert` als FELDWERT, nicht über die Antwort des Nutzers —
 # sie belegt (2), nicht (1).
-SCHULD = {
-    "vpf_keine_mahlzeitengestellung":
-        "Gate-Eigenschaft offen: ein bestätigtes false (= Mahlzeiten wurden gestellt) schließt "
-        "den GANZEN Verpflegungsmehraufwand aus (17 weitere askable Felder), statt nur zu "
-        "kürzen. Die Kürzung ist seit 826bfdf modelliert — Mahlzeiten dürften die Regel gar "
-        "nicht mehr ausschließen. Die Erfassungs-Hälfte ist behoben (frage_invertiert). "
-        "BACKLOG gate-polaritaet-vpf-dhf.",
-    "dhf_keine_pflicht_dienstwohnung":
-        "Gate-Eigenschaft offen: ein bestätigtes false (= es IST eine Pflicht-Dienstwohnung) "
-        "schließt die ganze doppelte Haushaltsführung aus (6 weitere askable Felder, gemessen "
-        "348600 Cent). Die Norm betrifft nur die 2.000-Euro-Auslandsgrenze, nicht den Abzug dem "
-        "Grunde nach. Die Erfassungs-Hälfte ist behoben (frage_invertiert). BACKLOG "
-        "gate-polaritaet-vpf-dhf.",
-}
+# LEER seit 2026-08-20 — und das ist ein Ergebnis, kein Versehen. Hier standen die beiden Felder
+# vpf_keine_mahlzeitengestellung und dhf_keine_pflicht_dienstwohnung, deren Gate-Eigenschaft dem
+# Nutzer bei wahrheitsgemässer Antwort den ganzen Abzug nahm statt ihn zu kürzen bzw. gar nichts
+# zu tun. Beide tragen jetzt `gate: false` (§ 9 Abs. 4a S. 8-9: "zu KÜRZEN … die Kürzung darf die
+# ermittelte Verpflegungspauschale nicht übersteigen"; § 9 Abs. 1 S. 3 Nr. 5 S. 4 Hs. 2: die
+# Dienstwohnung HEBT die Auslandsgrenze AUF, sie schliesst nichts aus).
+#
+# Ein Eintrag hier ist eine Schuld, kein Freibrief: test_schuld_eintraege_sind_noch_offen wird rot,
+# sobald das Feld kein Gate mehr ist. Genau so ist diese Liste leer geworden.
+SCHULD: dict[str, str] = {}
 
 
 def _bool_gates() -> list[tuple[str, str, bool, int]]:

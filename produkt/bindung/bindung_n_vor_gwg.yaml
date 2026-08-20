@@ -365,6 +365,15 @@ bindungen:
     vorjahr: uebernehmbar
     # Wie vpf_keine_mahlzeitengestellung: Verneinung in der Mitte des Namens, Frage positiv.
     frage_invertiert: true
+    # KEIN Gate (2026-08-20). § 9 Abs. 1 S. 3 Nr. 5 S. 4 Hs. 2 sagt über die Dienstwohnung genau
+    # eines: "die Grenze von 2 000 Euro bei einer Unterkunft im AUSLAND gilt nicht, wenn eine
+    # Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss". Sie hebt eine
+    # Obergrenze auf — sie ist für den Steuerpflichtigen GÜNSTIG und schließt den Abzug nirgends
+    # dem Grunde nach aus. Als Gate tat sie das Gegenteil, und zwar im falschen Fall: das Feld steht
+    # in DHF_BEDINGUNGEN und wirkte deshalb auch im INLAND, wo die Norm es gar nicht erwähnt. Wer im
+    # Inland eine Werkswohnung hat und wahrheitsgemäß "ja" antwortete, verlor den kompletten
+    # dHf-Abzug — gemessen 3.178,00 EUR zu viel Steuer bei 1.000 EUR Miete über 12 Monate.
+    gate: false
     fragetext_laie: "Ist deine Zweitwohnung im Ausland eine Dienst- oder Werkswohnung, die du verpflichtend nutzen musst?"
     hilfe_kurz: "Nur wichtig, wenn deine Zweitwohnung im Ausland liegt."
     beispielwert: false
@@ -474,6 +483,14 @@ bindungen:
     # nicht, und der Nutzer bekam das Gegenteil seiner Antwort gespeichert (3.486/87 EUR, s.
     # tests/test_ui_frage_polaritaet.py).
     frage_invertiert: true
+    # KEIN Gate (2026-08-20). § 9 Abs. 4a S. 8-9 sagt bei Mahlzeitengestellung "sind die
+    # Verpflegungspauschalen zu KÜRZEN: für Frühstück um 20 Prozent, für Mittag- und Abendessen um
+    # jeweils 40 Prozent" — und ausdrücklich "die Kürzung darf die ermittelte Verpflegungspauschale
+    # nicht übersteigen". Kürzen, nie streichen; der letzte Halbsatz sagt es wörtlich. Als Gate
+    # nahm ein wahrheitsgemäßes "ja" dem Nutzer die ganze Pauschale statt nur den Kürzungsbetrag.
+    # Die Kürzung selbst ist seit 826bfdf modelliert (p9_4a_kuerzung_nach_entgelt, gespeist aus den
+    # Mahlzeiten-Anzahlen), es gab also nie einen Grund, hier auszuschließen.
+    gate: false
     fragetext_laie: "Hat dir dein Arbeitgeber oder jemand anderes auf der Reise Mahlzeiten bezahlt oder gestellt?"
     hilfe_kurz: "Kostenlose oder verbilligte Mahlzeiten kürzen die Pauschale."
     beispielwert: false
