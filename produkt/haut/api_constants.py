@@ -508,7 +508,15 @@ GESAMT_P33A = ("p33a_unterhalt_aufwendungen", "p33a_unterhalt_kv_pv",
                "p33a_person_name", "p33a_person_beruf_familienstand",
                "p33a_person_geburtsdatum", "p33a_haushalt_anschrift",
                "p33a_haushalt_personenzahl", "p33a_unterstuetzungszeitraum",
-               "p33a_zahlungszeitraum")
+               "p33a_zahlungszeitraum",
+               # Zweite Schicht (2026-08-19): erst sichtbar, nachdem die sieben oben
+               # beantwortet waren. Fuenf Ja/Nein-Aussagen, das Verwandtschaftsverhaeltnis
+               # und die IdNr der unterstuetzten Person — Letztere ist nach § 33a Abs. 1
+               # S. 9 Voraussetzung fuer den Abzug, nicht Beiwerk.
+               "p33a_person_hat_einkuenfte", "p33a_person_hat_vermoegen",
+               "p33a_weitere_person_beteiligt", "p33a_person_im_inlaendischen_haushalt",
+               "p33a_kindergeld_anspruch", "p33a_verwandtschaftsverhaeltnis",
+               "p33a_person_idnr")
 
 # ========== § 32b Progressionsvorbehalt ==========
 GESAMT_P32B = ("p32b_progressionseinkuenfte",)

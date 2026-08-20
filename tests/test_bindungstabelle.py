@@ -1163,6 +1163,13 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     ("p33a_gesamt", "p33a_haushalt_personenzahl", "p33a_unterhalt", "haushalt_personenzahl"),
     ("p33a_gesamt", "p33a_unterstuetzungszeitraum", "p33a_unterhalt", "unterstuetzungszeitraum"),
     ("p33a_gesamt", "p33a_zahlungszeitraum", "p33a_unterhalt", "zahlungszeitraum"),
+    ("p33a_gesamt", "p33a_person_hat_einkuenfte", "p33a_unterhalt", "person_hat_einkuenfte"),
+    ("p33a_gesamt", "p33a_person_hat_vermoegen", "p33a_unterhalt", "person_hat_vermoegen"),
+    ("p33a_gesamt", "p33a_weitere_person_beteiligt", "p33a_unterhalt", "weitere_person_beteiligt"),
+    ("p33a_gesamt", "p33a_person_im_inlaendischen_haushalt", "p33a_unterhalt", "person_im_inlaendischen_haushalt"),
+    ("p33a_gesamt", "p33a_kindergeld_anspruch", "p33a_unterhalt", "kindergeld_anspruch"),
+    ("p33a_gesamt", "p33a_verwandtschaftsverhaeltnis", "p33a_unterhalt", "verwandtschaftsverhaeltnis"),
+    ("p33a_gesamt", "p33a_person_idnr", "p33a_unterhalt", "unterstuetzte_person_idnr"),
     # bindung_p22_nr3.yaml — p22_3_leistungen: die Bruttoeinnahmen, die ERiC neben den
     # Einkuenften verlangt ("Bei den Leistungen wurden Einkuenfte erklaert, es fehlt jedoch eine
     # Angabe zu den Einnahmen", gemessen 2026-08-19). p22_3_leistungen hat keinen

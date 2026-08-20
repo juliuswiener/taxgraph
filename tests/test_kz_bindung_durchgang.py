@@ -896,16 +896,19 @@ def test_preflight_meldet_nicht_gerechnete_angabe_als_amber():
 def test_p33a_angaben_zur_unterstuetzten_person_kommen_im_xml_an(bindung):
     """Sieben Angaben zur unterstützten Person und ihrem Haushalt (2026-08-19).
 
-    ACHTUNG, DIESE ANLAGE IST NOCH NICHT EINREICHBAR. Mit dem Betrag allein antwortete checkESt
-    mit FÜNF Beanstandungen; diese sieben Felder beheben sie. Danach kamen SIEBEN NEUE zum
-    Vorschein — Einkünfte und Vermögen der unterstützten Person, Beiträge Dritter zum Unterhalt,
-    Haushaltszugehörigkeit, Kindergeld-Anspruch, Verwandtschaftsverhältnis und die
-    Identifikationsnummer der unterstützten Person. Der Test hält also einen ZWISCHENSTAND fest:
-    die sieben Felder landen korrekt im XML, die Anlage erreicht noch kein rc=0.
+    DREI SCHICHTEN, die größte der acht Lücken:
 
-    Das ist bewusst so hinterlegt und nicht als Erfolg getarnt: § 33a ist die größte der acht
-    Lücken, und die zweite Schicht enthält mit der IdNr einer dritten Person eine Angabe, deren
-    Erhebung eine eigene Entscheidung ist.
+        nur der Betrag        rc=610001002, FÜNF Beanstandungen — unterstützte Person, Adresse
+                              des Haushalts, Personenzahl, Unterstützungszeitraum, Zahlungs-
+                              zeitraum gemeinsam mit der Höhe
+        + diese sieben        rc=610001002, SIEBEN NEUE — Einkünfte und Vermögen der Person,
+                              Beiträge Dritter, Haushaltszugehörigkeit, Kindergeld-Anspruch,
+                              Verwandtschaftsverhältnis, Identifikationsnummer
+        + die zweite Schicht  rc=0 (s. test_p33a_zweite_schicht_kommt_im_xml_an)
+
+    Vierzehn neue Fragen für eine Anlage, die vorher nur einen Betrag trug. Keine davon war
+    ableitbar: wen jemand unterstützt, wo diese Person lebt und wovon sie lebt, weiß nur der
+    Nutzer.
     """
     xml = _xml({"p33a_unterhalt_aufwendungen": 600000,
                 "p33a_person_name": "Maier, Erika",
@@ -928,3 +931,80 @@ def test_p33a_angaben_zur_unterstuetzten_person_kommen_im_xml_an(bindung):
     assert _pfad_im_xml(xml, wurzel + ("AW_U", "U_Ztr", "E0120104"), "01.01-31.12")
     # Der Betrag daneben, schon vorher gebunden — ERiC verlangt ihn GEMEINSAM mit dem Zeitraum.
     assert _pfad_im_xml(xml, wurzel + ("AW_U", "U_Ztr", "E0120103"), "6000")
+
+
+def test_p33a_zweite_schicht_kommt_im_xml_an(bindung):
+    """Die sieben Angaben, die erst nach der ersten Schicht sichtbar wurden — danach rc=0.
+
+    Fünf davon sind JaNein12: "Nein" ist eine ANTWORT und wird als "2" geschrieben, nicht
+    weggelassen. Genau das prüft der Test unten, denn bei einem Ankreuzfeld wäre das Weglassen
+    richtig — und diese Verwechslung hat im Repo schon dreimal Angaben verschluckt.
+
+    DIE IDENTIFIKATIONSNUMMER war die letzte Hürde, und sie kostete eine eigene Messrunde: eine
+    ausgedachte Nummer MIT korrekter Prüfziffer nach § 139b AO (03165413965) wurde von ERiC
+    abgelehnt. Die IdNr fordert zusätzlich, dass die erste Ziffer nicht 0 ist und unter den
+    ersten zehn Ziffern genau eine doppelt vorkommt. Das steht jetzt in
+    scripts/idnr_pruefziffer.py::strukturell_gueltig — sonst läuft der nächste in dieselbe Falle,
+    denn eine gültige Prüfziffer sieht aus wie ein fertiger Beweis.
+    """
+    xml = _xml({"p33a_unterhalt_aufwendungen": 600000,
+                "p33a_person_name": "Maier, Erika",
+                "p33a_person_beruf_familienstand": "Rentnerin, verwitwet",
+                "p33a_person_geburtsdatum": "05.05.1955",
+                "p33a_haushalt_anschrift": "Musterstr. 5, 12345 Musterstadt",
+                "p33a_haushalt_personenzahl": 1,
+                "p33a_unterstuetzungszeitraum": "01.01-31.12",
+                "p33a_zahlungszeitraum": "01.01-31.12",
+                "p33a_person_hat_einkuenfte": False,
+                "p33a_person_hat_vermoegen": False,
+                "p33a_weitere_person_beteiligt": False,
+                "p33a_person_im_inlaendischen_haushalt": False,
+                "p33a_kindergeld_anspruch": False,
+                "p33a_verwandtschaftsverhaeltnis": "Mutter",
+                "p33a_person_idnr": "86095742719"},
+               bindung)
+
+    person = ("ESt1A_U", "Ang_HH_unt_P_Unt_Leist", "Ang_Unt_Pers")
+    assert _pfad_im_xml(xml, person + ("Allg", "Persoenl", "E0120211"), "86095742719")
+    assert _pfad_im_xml(xml, person + ("Allg", "Persoenl", "E0120701"), "Mutter")
+    # JaNein12: "Nein" steht als "2" im XML, es fehlt nicht.
+    assert _pfad_im_xml(xml, person + ("Ek_Bez_u_P", "Allg", "E0123313"), "2")
+    assert _pfad_im_xml(xml, person + ("Allg", "Verm_u_P", "E0123105"), "2")
+    assert _pfad_im_xml(xml, person + ("Weit_beitr_P", "E0124801"), "2")
+    assert _pfad_im_xml(xml, person + ("Allg", "U_Berecht", "E0122505"), "2")
+    assert _pfad_im_xml(xml, person + ("Allg", "U_Berecht", "E0122613"), "2")
+
+
+def test_beispiel_idnr_sind_eric_tauglich():
+    """Jede 11-stellige Beispiel-IdNr in der Bindung muss BEIDE Regeln erfüllen.
+
+    Beispielwerte sind die Probewerte der Feldmatrix-Sweeps. Eine, die ERiC ablehnt, erzeugt
+    dort einen Befund über das Produkt, der in Wahrheit einer über den Beispielwert ist — genau
+    das ist beim Bau von § 33a passiert.
+
+    person_b_idnr ist ausgenommen und bleibt es: dessen Beispielwert verletzt die Strukturregel,
+    das Feld wird aber gar nicht mehr deklariert (elster_kz: null), weil ERiC E0100082 amtlich
+    ablehnt. Ein Beispielwert, der nirgends hingeht, muss nicht ERiC-tauglich sein — er wird
+    hier nur benannt, damit die Ausnahme sichtbar ist statt stillschweigend.
+    """
+    import glob
+    import os
+    import sys
+    import yaml
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(root, "scripts"))
+    from idnr_pruefziffer import ist_gueltig, strukturell_gueltig
+
+    schlecht = []
+    for pfad in sorted(glob.glob(os.path.join(root, "produkt", "bindung", "bindung_*.yaml"))):
+        with open(pfad, encoding="utf-8") as fh:
+            daten = yaml.safe_load(fh) or {}
+        for b in (daten.get("bindungen") or []):
+            wert = b.get("beispielwert")
+            if not (isinstance(wert, str) and len(wert) == 11 and wert.isdigit()):
+                continue
+            if b["feld_id"] == "person_b_idnr":
+                continue
+            if not (ist_gueltig(wert) and strukturell_gueltig(wert)):
+                schlecht.append(f"{b['feld_id']}={wert}")
+    assert not schlecht, ("Beispiel-IdNr, die ERiC ablehnen würde: " + ", ".join(schlecht))
