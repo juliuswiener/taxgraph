@@ -104,15 +104,77 @@ _KEYWORDS = [
     ("vorsorge",      ("rentenversicherung", "rürup", "basisrente", "altersvorsorge", "rürup-rente")),
 ]
 
-_IBAN = re.compile(r"\b([A-Z]{2}\d{2})[\sA-Z0-9]{10,30}\b")
-_KTO = re.compile(r"\b(\d{8,12})\b")
+# ------------------------------------------------------------ PII-Maskierung (Audit kontoauszug-maskierung-loechrig)
+# Diese Muster sind kein Aufräumen: der maskierte Verwendungszweck geht unten an einen EXTERNEN
+# LLM-Provider (uebernehme_kontoauszug) und in die dauerhafte Speicherung. Ein Loch hier ist ein
+# Datenabfluss an einen Dritten, der sich nicht zurückholen lässt.
+#
+# GEMESSEN 2026-08-20 gegen die Vorfassung (`[A-Z]{2}\d{2}…` / `\b\d{8,12}\b`): sieben Klassen
+# gingen unmaskiert durch — jede IBAN in KLEINSCHRIFT (bei mehreren Instituten die normale
+# Export-Schreibweise, also kein Randfall), die Steuernummer in ALLEN getrennten Schreibweisen
+# (Schrägstriche und Leerzeichen brechen `\b…\b`), und — die unauffälligste — die 13-stellige
+# bundeseinheitliche Steuernummer KOMPAKT: sie entkam nicht trotz, sondern WEGEN ihrer Länge,
+# weil `\d{8,12}` in einem 13-stelligen Lauf keine Wortgrenze findet und ihn ganz in Ruhe liess.
+# Deshalb steht bei _KTO jetzt `{8,}` ohne Obergrenze: eine Obergrenze in einem Sicherheitsmuster
+# ist eine Einladung, sie zu überschreiten (16-stellige Kartennummern liefen genauso durch).
+#
+# PARALLELE FASSUNG: produkt/haut/pii_filter.py führt für den Chat-Pfad einen zweiten Satz
+# derselben Klassen — dort mit Vollersetzung durch "[PII]" statt Präfix-Maskierung. Sie ist NICHT
+# zusammengelegt, weil beide Pfade verschieden maskieren müssen (hier bleibt Kontext für die
+# Klassifikation stehen). Ihr _IBAN trägt dieselbe Kleinschrift-Lücke wie die hier behobene,
+# liegt aber ausserhalb dieses Auftrags — gemeldet, nicht angefasst.
+
+# IBAN: Länderkürzel + Prüfziffern, dann Rumpf entweder zusammengeschrieben oder in Vierergruppen.
+# Die alte Fassung liess `[\sA-Z0-9]` frei laufen und frass dabei nachfolgende Grossbuchstaben-
+# Wörter mit; die Vierergruppen-Alternative endet dagegen an der ersten Gruppe, die keine vier
+# Zeichen hat — der Zweck hinter der IBAN bleibt lesbar.
+_IBAN = re.compile(
+    r"\b([A-Za-z]{2}\d{2})"
+    r"(?:[A-Za-z0-9]{10,30}"                       # DE89370400440532013000
+    r"|(?:[ -][A-Za-z0-9]{4}){2,7}(?:[ -][A-Za-z0-9]{1,4})?)"  # DE89 3704 0044 0532 0130 00
+    r"\b")                                         # Bindestrich mit, weil Handeingaben ihn führen
+
+# Steuernummer (Landesform 11-stellig, bundeseinheitlich 13-stellig) und IdNr (11-stellig, § 139b AO)
+# in ihren getrennten Schreibweisen. Muster-Bauart bewusst von produkt/haut/pii_filter.py:_STEUER_ID
+# übernommen (`\b\d(?:[ /]?\d){10}\b`) statt neu erfunden, nur die Länge auf 11–13 geöffnet —
+# die 13-stellige Bundesform fehlte dort.
+_STNR = re.compile(r"\b\d(?:[ /]?\d){10,12}\b")
+
+# Kontonummern und andere lange Ziffernläufe. Ohne Obergrenze, s.o.
+_KTO = re.compile(r"\b(\d{8,})\b")
 
 
 def maskiere(text: str) -> str:
-    """IBAN/Kontonummern maskieren (Präfix + Rest verdeckt) — Privacy vor LLM/Speicherung."""
+    """IBAN/Steuernummer/IdNr/Kontonummern maskieren — Privacy vor LLM-Versand und Speicherung.
+
+    Reihenfolge ist tragend: IBAN ZUERST, sonst frisst die Ziffernregel den IBAN-Rumpf und
+    hinterlässt ein Fragment, das wie ein unverdächtiger Rest aussieht.
+
+    BEWUSST NICHT MASKIERT — PERSONENNAMEN. Ein Namensmuster gibt es nicht: was "Dr. Anna
+    Musterfrau" fängt, lässt "Musterfrau, Anna" und "ANNA MUSTERFRAU" durch und trifft zugleich
+    Firmennamen und Steuerbegriffe, die die Klassifikation braucht. Eine solche Heuristik
+    schützt zu wenig, zerstört zu viel und sieht dabei aus, als wäre das Problem erledigt —
+    das ist teurer als die offene Flanke. Der Verwendungszweck einer Bankbuchung TRÄGT den
+    Namen des Empfängers; das ist kein Randfall, das ist sein Inhalt. Diese Funktion REDUZIERT
+    den Abfluss, sie beendet ihn nicht. Die belastbare Abhilfe liegt eine Ebene höher
+    (Auftragsverarbeitungsvertrag, lokales Modell, oder den Zweck gar nicht hinausgeben).
+
+    BEWUSST ÜBERMASKIERT — kompakte Datumsangaben: `20260819` ist als Zeichenfolge nicht von
+    einer Kontonummer zu unterscheiden, und eine Ausnahme für datumsförmige Läufe wäre genau
+    das Loch, durch das eine so geformte Kontonummer entkäme. Der Preis ist gemessen und klein:
+    die im Auszug übliche Punktform `19.08.2026` bleibt stehen (Punkte trennen den Ziffernlauf),
+    das Buchungsdatum steht ohnehin unmaskiert im eigenen Feld, und an das LLM geht gar kein
+    Datum. Ein verlorenes Datum ist hier billiger als ein durchgelassenes Geheimnis.
+
+    Gate: tests/test_kontoauszug_maskierung.py (Probentabelle, wächst beim nächsten Muster mit).
+    """
     if not text:
         return text
     t = _IBAN.sub(lambda m: m.group(1) + "****", text)
+    # Steuernummer/IdNr VOLL verdeckt, nicht mit Präfix wie unten: die führenden Ziffern der
+    # Steuernummer sind die Finanzamts-Kennung (verrät den Ort), und für die Klassifikation
+    # einer Buchung ist an einer Steuernummer nichts zu gewinnen.
+    t = _STNR.sub("****", t)
     t = _KTO.sub(lambda m: m.group(1)[:2] + "****", t)
     return t
 
