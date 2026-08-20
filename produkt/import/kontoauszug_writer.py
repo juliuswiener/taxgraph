@@ -121,8 +121,10 @@ _KEYWORDS = [
 # PARALLELE FASSUNG: produkt/haut/pii_filter.py führt für den Chat-Pfad einen zweiten Satz
 # derselben Klassen — dort mit Vollersetzung durch "[PII]" statt Präfix-Maskierung. Sie ist NICHT
 # zusammengelegt, weil beide Pfade verschieden maskieren müssen (hier bleibt Kontext für die
-# Klassifikation stehen). Ihr _IBAN trägt dieselbe Kleinschrift-Lücke wie die hier behobene,
-# liegt aber ausserhalb dieses Auftrags — gemeldet, nicht angefasst.
+# Klassifikation stehen). Sie trug dieselben Lücken und wurde am selben Tag nachgezogen: zehn von
+# siebzehn Proben gingen dort unmaskiert durch, darunter Konto- und Kartennummern, für die der
+# Chat-Pfad überhaupt keine Regel hatte. Wer hier ein Muster ändert, sieht dort nach — die beiden
+# Dateien verweisen gegenseitig aufeinander, weil kein Test sie aneinander bindet.
 
 # IBAN: Länderkürzel + Prüfziffern, dann Rumpf entweder zusammengeschrieben oder in Vierergruppen.
 # Die alte Fassung liess `[\sA-Z0-9]` frei laufen und frass dabei nachfolgende Grossbuchstaben-

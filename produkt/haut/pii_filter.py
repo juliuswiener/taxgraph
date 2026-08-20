@@ -11,20 +11,58 @@ Geldbeträge und Paragraphen-Nennungen bleiben unangetastet — sonst kann
 das LLM keine Cent-Werte mehr vorschlagen.
 
 Reihenfolge: IBAN vor steuer_id prüfen (sonst frisst die 11-Ziffern-Regel
-Teile der IBAN).
+Teile der IBAN), steuer_id vor kontonummer (sonst meldet die unspezifische
+Ziffernregel die Kategorie, und das Audit verliert die Aussage).
 """
 
 from __future__ import annotations
 
 import re
 
-# IBAN: DE + 2 Ziffern + 10-30 alphanum, optionale Leerzeichen
-_IBAN = re.compile(r"\b[A-Z]{2}\d{2}(?:[ ]?\d){10,30}\b")
+# ------------------------------------------------------------ Kennungen (Audit pii-filter-chat-pfad)
+# GEMESSEN 2026-08-20 gegen die Vorfassung (`[A-Z]{2}\d{2}(?:[ ]?\d){10,30}` / `\b\d(?:[ /]?\d){10}\b`
+# und GAR KEINE Ziffernlauf-Regel): von 17 Proben gingen ZEHN unmaskiert an den LLM-Provider.
+# Dieselben drei Bauart-Fehler, die am selben Tag im Kontoauszug-Pfad geschlossen wurden — plus
+# einer, den dieser Pfad allein hat:
+#
+#   [A-Z]{2}          jede IBAN in KLEINSCHRIFT ging durch, ebenso "De89" (nur Kürzel gross).
+#                     Bei mehreren Instituten ist Kleinschrift die normale Export-Schreibweise,
+#                     und wer tippt, tippt sowieso klein.
+#   \d im Rumpf       ausländische IBAN mit Buchstaben im Rumpf (NL91 ABNA …) ging durch.
+#   [ ]? als Trenner  die Bindestrich-Gruppierung (DE89-3704-…) ging durch.
+#   {10} fest         die 13-stellige bundeseinheitliche Steuernummer ging durch — in BEIDEN
+#                     Schreibweisen. Die kompakte entkam nicht trotz, sondern WEGEN ihrer Länge.
+#   (fehlte ganz)     Kontonummern und 16-stellige Kartennummern: dieser Pfad hatte nie eine
+#                     Regel dafür. Der Kontoauszug-Pfad hat sie seit jeher (_KTO).
+#
+# Deshalb trägt _KONTONUMMER `{8,}` OHNE Obergrenze: eine Obergrenze in einem Sicherheitsmuster
+# ist eine Einladung, sie zu überschreiten.
+#
+# PARALLELE FASSUNG: produkt/import/kontoauszug_writer.py führt dieselben Klassen für den
+# Kontoauszug-Pfad. NICHT zusammengelegt und bewusst nicht: dort bleibt ein Präfix stehen
+# (`DE89****`), damit die Klassifikation noch etwas zu greifen hat; hier wird vollständig durch
+# `[PII]` ersetzt. Gleiche Bauart, verschiedene Ersetzungsregel.
 
-# Steuer-ID: 11 Ziffern, optional mit Leerzeichen/Schrägstrich gruppiert
-# Ein Regex: \b\d + (?:[ /]?\d){10} = 11 Digits total, Trennzeichen erlaubt.
+# IBAN: Länderkürzel + Prüfziffern, dann Rumpf zusammengeschrieben ODER in Vierergruppen.
+# Die Vierergruppen-Alternative endet an der ersten Gruppe, die keine vier Zeichen hat — der
+# umgebende Satz bleibt lesbar, was hier zählt: das Beleg-Gate in api_llm prüft die Zitate des
+# Modells gegen genau diesen gefilterten Text.
+_IBAN = re.compile(
+    r"\b[A-Za-z]{2}\d{2}"
+    r"(?:[A-Za-z0-9]{10,30}"                                   # DE89370400440532013000
+    r"|(?:[ -][A-Za-z0-9]{4}){2,7}(?:[ -][A-Za-z0-9]{1,4})?)"  # DE89 3704 0044 0532 0130 00
+    r"\b")                                                     # Bindestrich mit, Handeingaben führen ihn
+
+# Steuernummer (Landesform 11-stellig, bundeseinheitlich 13-stellig) und IdNr (11-stellig,
+# § 139b AO) in ihren getrennten Schreibweisen. `{10,12}` = 11 bis 13 Ziffern insgesamt.
 # IBAN läuft VORHER (steht zuerst in _KATEGORIEN) — kein Konflikt mit DE...-IBAN.
-_STEUER_ID = re.compile(r"\b\d(?:[ /]?\d){10}\b")
+_STEUER_ID = re.compile(r"\b\d(?:[ /]?\d){10,12}\b")
+
+# Kontonummern, Kartennummern, sonstige lange Ziffernläufe. Ohne Obergrenze, s.o.
+# Läuft NACH _STEUER_ID, fängt also nur, was die spezifischere Regel übrig lässt.
+# 8 als Untergrenze ist die Trennlinie zum Geldbetrag: Beträge im Freitext tragen Punkt oder
+# Komma (`1.234,56`), und ein trennzeichenloser 8-stelliger Betrag wäre zweistellig in Millionen.
+_KONTONUMMER = re.compile(r"\b\d{8,}\b")
 
 # Datum TT.MM.JJJJ
 _DATUM = re.compile(r"\b(0[1-9]|[12]\d|3[01])\.(0[1-9]|1[0-2])\.\d{4}\b")
@@ -111,6 +149,7 @@ def ist_besondere_kategorie(feld_id: str, fragetext: str = "") -> bool:
 _KATEGORIEN: list[tuple[str, re.Pattern]] = [
     ("iban", _IBAN),
     ("steuer_id", _STEUER_ID),
+    ("kontonummer", _KONTONUMMER),
     ("datum", _DATUM),
     ("plz_ort", _PLZ_ORT),
     ("strasse", _STRASSE),
