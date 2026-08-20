@@ -355,6 +355,10 @@ def fragen(fall_id: str) -> tuple[int, dict]:
             "fragetext_laie": b.get("fragetext_laie"),
             "hilfe_kurz": b.get("hilfe_kurz"),
             "typ": b["typ"],
+            # Frage-Richtung (2026-08-20). Ohne sie riet die Oberfläche am Feldnamen, ob eine
+            # bool-Antwort umzukehren ist — und lag bei jeder Verneinung falsch, die nicht am
+            # Anfang des Namens steht. Absent/false = keine Umkehr.
+            "frage_invertiert": bool(b.get("frage_invertiert")),
             "einheit": b.get("einheit"),
             "bereich": b.get("bereich"),
             "enum_werte": b.get("enum_werte"),
@@ -933,6 +937,7 @@ def _anzeige_metadaten(fid: str, bindung: dict) -> dict:
     None — die Oberfläche fällt dann auf feld_id + Rohwert zurück, statt nichts anzuzeigen."""
     b = bindung.get(fid) or {}
     return {"frage": b.get("fragetext_laie"), "typ": b.get("typ"),
+            "frage_invertiert": bool(b.get("frage_invertiert")),
             "einheit": b.get("einheit"), "enum_labels": ENUM_LABELS.get(fid)}
 
 
@@ -1075,7 +1080,11 @@ def _wert_klartext(fid: str, wert, bindung: dict) -> str:
     if typ == "cent" and isinstance(wert, (int, float)):
         return f"{wert / 100:.2f} EUR".replace(".", ",")
     if typ == "bool":
-        ja = (not wert) if fid.startswith("kein_") else bool(wert)
+        # Welche Felder umzukehren sind, sagt die Bindung — nicht der Feldname. Vorher stand hier
+        # `fid.startswith("kein_")`; das erzählte dem Modell bei vpf_keine_mahlzeitengestellung
+        # und dhf_keine_pflicht_dienstwohnung das Gegenteil dessen, was der Nutzer geantwortet
+        # hatte, und die Erklärung argumentierte dann gegen seine eigene Angabe.
+        ja = (not wert) if b.get("frage_invertiert") else bool(wert)
         return "ja" if ja else "nein"
     if typ == "enum":
         return (ENUM_LABELS.get(fid) or {}).get(wert, str(wert))

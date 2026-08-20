@@ -111,22 +111,42 @@ ECHTES_OPT_IN = {
         "§ 34 Abs. 3 wirkt nur auf Antrag; ohne Antrag gibt es die Regel nicht.",
 }
 
-# Gemessene, HEUTE offene Polaritätsfehler derselben Klasse — Schuld, kein Freibrief. Beide
-# stammen nicht aus der Anlage-V-Arbeit; sie sind beim Sweep 2026-08-16 aufgefallen und liegen
-# Julius zur Entscheidung vor, weil der Fix die Frage-Semantik ändert (Feldname und Fragetext
-# widersprechen sich) und damit an Geld rührt.
+# Gemessene, HEUTE offene Polaritätsfehler derselben Klasse — Schuld, kein Freibrief.
+#
+# STAND 2026-08-20: von den ZWEI hier gestapelten Fehlern ist der erste behoben, der zweite offen.
+#
+#   (1) ERFASSUNG — behoben. Die Oberfläche speicherte das Gegenteil der Nutzerantwort, weil sie
+#       die Umkehr am Feldnamen riet (`startswith("kein_")`) und die Verneinung in der Mitte
+#       dieser beiden Namen nicht sah. Jetzt deklariert die Bindung sie (`frage_invertiert`),
+#       Gate in tests/test_bindung_frage_polaritaet.py, Nutzerpfad in
+#       tests/test_ui_frage_polaritaet.py. Der Normalfall — „nein, keine Mahlzeiten" bzw. „nein,
+#       keine Pflicht-Dienstwohnung" — speichert seither `true` und BEHÄLT seine Regel.
+#
+#   (2) GATE-EIGENSCHAFT — offen, Julius' Entscheidung. Ein bestätigtes `false` schließt weiter
+#       die ganze Regel aus. Betroffen ist jetzt der jeweils andere Nutzer: wer wahrheitsgemäß
+#       „ja" antwortet (Mahlzeiten wurden gestellt / es IST eine Pflicht-Dienstwohnung), verliert
+#       den ganzen Abzug statt nur die Kürzung bzw. die Auslandsgrenze zu bekommen. Gemessen am
+#       an_gesamt-Ring: dHf 348600 Cent Unterschied (314300 gegen 662900), Verpflegung geht bei
+#       `false` gar nicht erst durch (grund=verpflegung_reduktion_offen).
+#       Fachlich spricht beides für `gate: false`: die Mahlzeitenkürzung ist seit 826bfdf
+#       modelliert, Mahlzeiten schließen die Regel also gar nicht mehr aus; und § 9 Abs. 1 S. 3
+#       Nr. 5 S. 4 Hs. 2 betrifft nur die 2.000-Euro-Auslandsgrenze, nicht den Abzug dem Grunde
+#       nach. Das ändert die Rechen-Semantik und bleibt deshalb liegen.
+#
+# Die Prüfung unten misst über `beispielwert` als FELDWERT, nicht über die Antwort des Nutzers —
+# sie belegt (2), nicht (1).
 SCHULD = {
     "vpf_keine_mahlzeitengestellung":
-        "Feldname sagt 'keine Mahlzeitengestellung', der Fragetext fragt das Gegenteil ab "
-        "('Hat dir dein Arbeitgeber ... Mahlzeiten gestellt?'). Wer wahrheitsgemäß 'nein' "
-        "antwortet, verliert den GANZEN Verpflegungsmehraufwand (17 weitere askable Felder). "
-        "Zudem ist die Bedingung veraltet: die Mahlzeitenkürzung ist seit 826bfdf modelliert, "
-        "Mahlzeiten schließen die Regel also gar nicht mehr aus. BACKLOG gate-polaritaet-vpf-dhf.",
+        "Gate-Eigenschaft offen: ein bestätigtes false (= Mahlzeiten wurden gestellt) schließt "
+        "den GANZEN Verpflegungsmehraufwand aus (17 weitere askable Felder), statt nur zu "
+        "kürzen. Die Kürzung ist seit 826bfdf modelliert — Mahlzeiten dürften die Regel gar "
+        "nicht mehr ausschließen. Die Erfassungs-Hälfte ist behoben (frage_invertiert). "
+        "BACKLOG gate-polaritaet-vpf-dhf.",
     "dhf_keine_pflicht_dienstwohnung":
-        "Dieselbe Bauart: Feldname negiert, Fragetext positiv ('Ist deine Zweitwohnung ... eine "
-        "Dienst- oder Werkswohnung?'). Wer 'nein' antwortet — der Normalfall — verliert die "
-        "ganze doppelte Haushaltsführung (6 weitere askable Felder). Die Norm betrifft nur die "
-        "2.000-Euro-Auslandsgrenze, nicht den Abzug dem Grunde nach. BACKLOG "
+        "Gate-Eigenschaft offen: ein bestätigtes false (= es IST eine Pflicht-Dienstwohnung) "
+        "schließt die ganze doppelte Haushaltsführung aus (6 weitere askable Felder, gemessen "
+        "348600 Cent). Die Norm betrifft nur die 2.000-Euro-Auslandsgrenze, nicht den Abzug dem "
+        "Grunde nach. Die Erfassungs-Hälfte ist behoben (frage_invertiert). BACKLOG "
         "gate-polaritaet-vpf-dhf.",
 }
 

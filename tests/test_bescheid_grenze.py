@@ -85,7 +85,13 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # stehen zwei Zeilen Auslieferung. Netto sind es zwei statt vier: die vier gleichförmigen
 # Schleifen darunter wurden dabei zu einer Tabelle zusammengezogen — wer eine Ratsche hebt,
 # soll vorher versucht haben, sie nicht heben zu müssen.
-API_ZEILEN_OBERGRENZE = 1149
+# 1149 → 1158 (2026-08-20): `frage_invertiert` aus der Bindung an die Oberfläche durchgereicht
+# (zwei Payload-Zeilen in fragen() und _anzeige_metadaten) und die Umkehr in _wert_klartext von
+# der Feldnamen-Heuristik auf die Deklaration umgestellt — EINE geänderte Zeile. Die übrigen
+# sieben sind Kommentar: warum `fid.startswith("kein_")` dem Modell bei zwei Feldern das Gegenteil
+# der Nutzerantwort erzählte. Keine Steuerlogik, gegen die diese Ratsche gebaut ist; auslagern
+# ginge nur um den Preis, die Bindungs-Metadaten nicht mehr am Endpunkt zu füllen.
+API_ZEILEN_OBERGRENZE = 1158
 
 
 def _runner_stellen(pfad: str) -> list[int]:

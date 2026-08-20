@@ -12,13 +12,18 @@
       "items": {
         "type": "object",
         "required": ["feld_id", "typ", "fragetext_laie", "hilfe_kurz", "einheit", "bereich",
-                     "enum_werte", "enum_labels", "beispielwert", "anker_ref"],
+                     "enum_werte", "enum_labels", "beispielwert", "anker_ref",
+                     "frage_invertiert"],
         "additionalProperties": false,
         "properties": {
           "feld_id": {"type": "string"},
           "fragetext_laie": {"type": ["string", "null"]},
           "hilfe_kurz": {"type": ["string", "null"]},
           "typ": {"type": "string", "enum": ["cent", "int", "bool", "enum", "datum", "text"]},
+          "frage_invertiert": {
+            "type": "boolean",
+            "description": "Bei bool-Feldern: fragt fragetext_laie entgegengesetzt zum Feldnamen ('Hattest du Kapitalertraege?' fuer kein_kap)? Dann bedeutet ein 'Ja' des Nutzers den Wert false. Die Oberflaeche kehrt genau dann um (app.js boolAntwort). Immer gesetzt, false bei allen Nicht-bool-Feldern."
+          },
           "einheit": {"type": ["string", "null"]},
           "bereich": {"type": ["object", "null"]},
           "enum_werte": {"type": ["array", "null"]},

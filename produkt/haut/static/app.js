@@ -248,6 +248,14 @@ function zeigeFrage(q, stand) {
     // Buttons statt Dropdown: eine Ja/Nein-Frage hinter einem Klapp-Menü zu verstecken kostet
     // zwei Interaktionen für eine Information. Der Wert landet in einem hidden input, damit
     // leseWert() unverändert `#feld-input`.value liest.
+    //
+    // ACHTUNG, hier NICHT boolAntwort() ergänzen. Die Button-Werte sind ANTWORTEN, `beispielwert`
+    // ist laut Bindungs-Schema ein FELDWERT — bei den 7 invertierten Feldern fallen die
+    // auseinander. Gemessen 2026-08-20: die Bindung führt dort trotzdem die ANTWORT (`kein_kap`
+    // hat beispielwert false und die Kurzhilfe sagt ausdrücklich „Nur Arbeitslohn → Nein"), die
+    // Vorauswahl trifft also heute den Normalfall richtig. Wer hier eine Umkehr einbaut, dreht
+    // die Vorbelegung der fünf Screening-Fragen um. Die Doppeldeutigkeit von `beispielwert` ist
+    // gemeldet und ungelöst — sie ist eine Bindungs-Frage, keine Frage dieser Zeile.
     input = wahlFeld([["Ja", "true"], ["Nein", "false"]], q.beispielwert);
   } else if (q.typ === "enum") {
     // Anzeigetext statt Rohwert: ohne das las der Nutzer "land_forst" oder bei den
@@ -382,6 +390,22 @@ function selectFeld(optionen, vorauswahl) {
   return sel;
 }
 
+// Antwort <-> gespeicherter Wert bei bool-Feldern, die eine ABWESENHEIT benennen, während ihre
+// Frage nach der ANWESENHEIT fragt (`kein_kap` unter „Hattest du Kapitalerträge?"). Die Umkehr
+// ist eine Involution — dieselbe Funktion trägt beide Richtungen, und genau deshalb steht sie
+// hier EINMAL: leseWert() (Antwort -> Wert) und verstandenWertText() (Wert -> Antwort) müssen
+// sich immer einig sein, sonst bestätigt der Nutzer auf der Verstanden-Seite mit einem Klick das
+// Gegenteil dessen, was er im Fragefluss gesagt hat.
+//
+// WELCHE Felder das sind, sagt die Bindung (`frage_invertiert`), nicht der Feldname. Vorher stand
+// an beiden Stellen `feld_id.startsWith("kein_")`. Diese Heuristik traf `kein_kap`, verfehlte aber
+// jedes Feld mit der Verneinung in der MITTE (`vpf_keine_mahlzeitengestellung`,
+// `dhf_keine_pflicht_dienstwohnung` — dort speicherte die Oberfläche das Gegenteil der Antwort)
+// und hätte `stammdaten_keine_bankverbindung` falsch umgekehrt, dessen Frage die Verneinung
+// selbst führt („Hast du KEINE Bankverbindung?"). Ein Feldname ist keine Aussage über die
+// Richtung seiner Frage; eine Präfix-Regel bricht beim nächsten `x_ohne_y`.
+function boolAntwort(meta, b) { return meta.frage_invertiert ? !b : !!b; }
+
 // Stille-Null-Fix (team-lead-Auftrag, Befund B): vorher machte `parseFloat(el.value || "0")` /
 // `parseInt(el.value || "0", 10)` aus einem LEEREN oder browser-ungültigen Feld (z.B. "12,5" mit
 // Komma statt Punkt -> parseFloat liest nur "12" korrekt, der Rest verwirft -> "12,5x" wäre sogar
@@ -391,7 +415,7 @@ function selectFeld(optionen, vorauswahl) {
 function leseWert(q) {
   const el = $("feld-input");
   if (q.typ === "enum") return el.value;
-  if (q.typ === "bool") { const ja = el.value === "true"; return q.feld_id.startsWith("kein_") ? !ja : ja; }
+  if (q.typ === "bool") return boolAntwort(q, el.value === "true");
   const roh = (el.value ?? "").trim();
   if (roh === "") return undefined;
   if (q.typ === "cent") {
@@ -490,15 +514,12 @@ async function bestaetigen(kiFeld) {
 //     vorläufig und zählt in keiner Summe — die Seite ist die Sichtbarmachung genau dieser Grenze.
 
 // Wert -> Anzeigetext, mit denselben Regeln wie der Fragefluss.
-// Die bool-Umkehr bei `kein_` ist der heikle Teil (vgl. leseWert): das FELD behauptet die
+// Die bool-Umkehr ist der heikle Teil (vgl. boolAntwort bei leseWert): das FELD behauptet die
 // Abwesenheit, die FRAGE fragt nach der Anwesenheit. `kein_kap = true` unter „Hattest du dieses
 // Jahr Kapitalerträge?" als „Ja" anzuzeigen wäre das glatte Gegenteil dessen, was gespeichert
 // wird — und hier bestätigt der Nutzer mit einem Klick, was er liest.
 function verstandenWertText(v) {
-  if (v.typ === "bool") {
-    const ja = String(v.feld_id).startsWith("kein_") ? !v.wert : !!v.wert;
-    return ja ? "Ja" : "Nein";
-  }
+  if (v.typ === "bool") return boolAntwort(v, v.wert) ? "Ja" : "Nein";
   if (v.typ === "enum") return (v.enum_labels && v.enum_labels[v.wert]) || String(v.wert);
   if (v.typ === "cent") return euro(v.wert);
   return String(v.wert) + (v.einheit ? " " + v.einheit : "");

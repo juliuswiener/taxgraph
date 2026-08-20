@@ -363,6 +363,8 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
+    # Wie vpf_keine_mahlzeitengestellung: Verneinung in der Mitte des Namens, Frage positiv.
+    frage_invertiert: true
     fragetext_laie: "Ist deine Zweitwohnung im Ausland eine Dienst- oder Werkswohnung, die du verpflichtend nutzen musst?"
     hilfe_kurz: "Nur wichtig, wenn deine Zweitwohnung im Ausland liegt."
     beispielwert: false
@@ -468,6 +470,10 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
+    # Verneinung steht in der MITTE des Namens — die frühere Präfix-Heuristik (`kein_`) sah sie
+    # nicht, und der Nutzer bekam das Gegenteil seiner Antwort gespeichert (3.486/87 EUR, s.
+    # tests/test_ui_frage_polaritaet.py).
+    frage_invertiert: true
     fragetext_laie: "Hat dir dein Arbeitgeber oder jemand anderes auf der Reise Mahlzeiten bezahlt oder gestellt?"
     hilfe_kurz: "Kostenlose oder verbilligte Mahlzeiten kürzen die Pauschale."
     beispielwert: false

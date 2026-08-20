@@ -58,6 +58,9 @@
           "description": "true = der Laie gibt es ein; false = abgeleitete/berechnete/Parameter-Größe (nie abfragen)."},
         "gate": {"type": "boolean",
           "description": "Nur bei askable bool-Feldern an einer geltungsbedingung sinnvoll, Vorgabe true: ein bestätigtes `false` schliesst die ganze Regel aus (relevanz()). `gate: false` heisst: das Feld ist DEKLARATION, keine Rechen-Voraussetzung — der Vordruck verlangt die Angabe, die Regel gilt aber in beide Richtungen (z.B. 'wurde als Ferienwohnung genutzt?'). Ohne diese Unterscheidung nimmt ein 'nein' des Normalfalls dem Nutzer die ganze Einkunftsart aus dem Dialog. NIE fuer eine echte Tatbestandsvoraussetzung setzen; die Geltungsbedingung erscheint dann als offene Annahme statt als beantwortetes Gate."},
+        "frage_invertiert": {"type": "boolean",
+          "description": "Nur bei askable bool-Feldern, Vorgabe false: `fragetext_laie` fragt in die ENTGEGENGESETZTE Richtung zum Feldnamen — ein 'Ja' des Nutzers bedeutet `false` im Store und umgekehrt. Beispiel `kein_kap` mit der Frage 'Hattest du Kapitalerträge?'. Die Erfassungsschicht (leseWert/verstandenWertText in app.js, _wert_klartext in api.py) kehrt genau dann um. Bis 2026-08-20 riet sie stattdessen am Feldnamen (`startswith('kein_')`) — das traf `kein_kap`, verfehlte aber `vpf_keine_mahlzeitengestellung` und `dhf_keine_pflicht_dienstwohnung` (Verneinung in der MITTE des Namens) und hätte `stammdaten_keine_bankverbindung` falsch umgekehrt, dessen Frage die Verneinung selbst trägt. Der Feldname ist keine Aussage über die Frage-Richtung; diese Angabe ist es.",
+          "default": false},
         "fragetext_laie": {
           "oneOf": [
             {"type": "null"},
@@ -101,7 +104,9 @@
         {"if": {"properties": {"elster_kz": {"type": "null"}}},
          "then": {"required": ["elster_kz_grund"]}},
         {"if": {"properties": {"typ": {"const": "enum"}}},
-         "then": {"required": ["enum_werte"]}}
+         "then": {"required": ["enum_werte"]}},
+        {"if": {"required": ["frage_invertiert"], "properties": {"frage_invertiert": {"const": true}}},
+         "then": {"properties": {"typ": {"const": "bool"}, "askable": {"const": true}}}}
       ]
     },
     "regel_bedingung": {
