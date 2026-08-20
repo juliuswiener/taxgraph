@@ -186,7 +186,8 @@ def _wert_text(wert) -> str:
 def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
                 pflicht: dict[tuple, list[str]],
                 instanz: dict[tuple, int] | None = None,
-                kz_meta: dict[str, dict] | None = None) -> None:
+                kz_meta: dict[str, dict] | None = None,
+                person_override: dict[tuple, str] | None = None) -> None:
     """Legt den Pfad unterhalb `wurzel` an (idempotent) und setzt das Blatt auf `wert`.
 
     `pfad` beginnt mit dem Namen der Wurzel selbst (z.B. ('E10','ESt1A','Art_Erkl','E0100001'));
@@ -198,6 +199,13 @@ def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
     (0-basiert) für wiederholbare Container angibt — statt `knoten.find(tag)` wird das n-te
     Vorkommen gesucht und ggf. angelegt. Person-Diskriminatoren werden je nach Index gesetzt:
     Index 0 = PersonA, Index >= 1 = PersonB.
+
+    Mit `person_override` ({Container-Pfad: Wert}) trägt die ZIEL-Instanz (j == Index) den
+    angegebenen Person-Wert statt des aus dem Index abgeleiteten. Das ist keine Kosmetik: die
+    Ableitung „Index 0 = PersonA" bindet die Person an die Position, und genau diese Kopplung
+    zwingt Person B in eine zweite Instanz, auch wenn Person A in diesem Container gar nichts
+    erklärt (leere Hülle, s. `erzeuge_xml`). Vorgelagerte Füll-Instanzen (j < Index) bleiben
+    bei der Index-Ableitung — sie sind Platzhalter, nicht das Ziel des Aufrufs.
 
     Ja-Typ-Handling (mit `kz_meta`): True → enum-Wert ("1"/"X"), False → Element weglassen.
     Kz ohne Ja-Typ oder ohne kz_meta-Info werden normal über _wert_text gerendert.
@@ -221,6 +229,8 @@ def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
                         for pflicht_name in pflicht.get(container_pfad, []):
                             if pflicht_name == "Person":
                                 wert_person = "PersonB" if j >= 1 else "PersonA"
+                                if j == inst_idx and person_override:
+                                    wert_person = person_override.get(container_pfad, wert_person)
                                 ET.SubElement(last, f"{{{ns}}}{pflicht_name}").text = wert_person
                             elif pflicht_name in INSTANZ_NUMMER_FELDER:
                                 # Laufende Nummer der Anlage: MUSS je Instanz verschieden sein.
@@ -564,21 +574,58 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
     if fehlend_b:
         raise XmlFehler(f"{len(fehlend_b)} Kz in person_b ohne Pfad: {fehlend_b[:5]}")
 
+    # Welche Container belegt Person A in Instanz 0? Person A laeuft ohne `instanz`-Dict, landet
+    # also im ERSTEN Vorkommen jedes Containers auf seinem Pfad; ein anlage_instanzen-Eintrag mit
+    # index=1 (0-basiert 0, z.B. p23_veraeusserung) belegt dieselbe Instanz.
+    pfade_instanz_null = [pfade[kz] for kz in deklaration if kz in pfade]
+    for kz, eintraege in instanz_map.items():
+        if any(inst_idx_0 == 0 for _c, inst_idx_0, _w in eintraege):
+            pfade_instanz_null.append(pfade[kz])
+
+    person_b_index_cache: dict[tuple, int] = {}
+
+    def _person_b_index(cp: tuple) -> int:
+        """Instanz-Nummer (0-basiert), in der Person B in Container `cp` steht.
+
+        Normalfall 1 (Person A steht in Instanz 0). ABER: erklaert Person A in DIESEM Container
+        gar nichts, wuerde Instanz 0 als leere Huelle entstehen — angelegt allein, um Instanz 1
+        erreichbar zu machen, und befuellt nur mit ihrem Pflicht-Kind <Person>PersonA</Person>.
+        Genau das beanstandet checkESt (gemessen 2026-08-20, ERiC 44.2.4.0):
+
+            Sie haben angegeben, dass Sie Angaben fuer 'PersonA' machen moechten, haben aber
+            ausser der Angabe im Feld '$/G[1]/Person[1]$' keine weiteren Angaben getaetigt.
+
+        Das ist eine KLASSE, kein Einzelfall des Gewinn-Falls: dieselbe Beanstandung mit
+        '$/N[1]/Person[1]$', wenn nur der Partner Arbeitslohn hat (ebenfalls gemessen). Sie trifft
+        jeden Container mit Person-Diskriminator (G, N, KAP, R, S, ...).
+
+        Person B rueckt dann auf Instanz 0 — mit explizitem `person_override`, NICHT durch blosses
+        Umschalten des Index: Index 0 leitet den Diskriminator sonst als "PersonA" ab und gaebe
+        Person Bs Werte als Person A aus (die Bucket-Vertauschung, gegen die
+        tests/test_person_b_xml_luecke.py steht).
+        """
+        if cp not in person_b_index_cache:
+            belegt = any(p[:len(cp)] == cp for p in pfade_instanz_null)
+            person_b_index_cache[cp] = 1 if belegt else 0
+        return person_b_index_cache[cp]
+
     # Äußere Schleife über Kz in Schema-Reihenfolge, innere über Instanzen
     for kz in pfade:
         # Person A (Haupt-Deklaration, Index 0)
         if kz in deklaration:
             _einhaengen(e10, pfade[kz], deklaration[kz], ns_e10, pflicht, kz_meta=kz_meta)
 
-        # Person B (Instanz-Achse Index 1, nur Person-Container)
+        # Person B (Instanz-Achse, nur Person-Container): Index 1 hinter Person A — oder 0,
+        # wenn Person A in diesem Container nichts erklaert (s. `_person_b_index`).
         if kz in person_b:
             cp = _person_container(kz)
             if cp is None:
                 raise XmlFehler(
                     f"person_b-Kz {kz} liegt in Container ohne Person-Diskriminator "
-                    f"(Pfad: {'/'.join(pfade[kz])}) — kann nicht als Instanz 1 (PersonB) geschrieben werden.")
+                    f"(Pfad: {'/'.join(pfade[kz])}) — kann nicht als PersonB-Instanz geschrieben werden.")
             _einhaengen(e10, pfade[kz], person_b[kz], ns_e10, pflicht,
-                        instanz={cp: 1}, kz_meta=kz_meta)
+                        instanz={cp: _person_b_index(cp)}, kz_meta=kz_meta,
+                        person_override={cp: "PersonB"})
 
         # Anlage-Instanzen 2..N (Gruppen-kind, gwg, vv_objekt, rente, ...)
         for container, inst_idx_0, wert in instanz_map.get(kz, []):

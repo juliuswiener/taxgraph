@@ -310,14 +310,21 @@ def test_restfehler_kirchensteuerpflichtig(name, bauer):
 # Seit der Container-Korrektur (E0800302, G/Gew/Einz_U/Betr_1_2, plus die Bezeichnung E0800301
 # im selben Block) faellt die Klasse ganz weg. Details in produkt/mapping/est_mapping.py.
 #
-# GEBLIEBEN ist eine andere Klasse, die vorher darunter lag: "Sie haben angegeben, dass Sie
+# DARUNTER lag eine andere Klasse, die dann sichtbar wurde: "Sie haben angegeben, dass Sie
 # Angaben fuer 'PersonA' machen moechten, haben aber ausser der Angabe im Feld
 # '$/G[1]/Person[1]$' keine weiteren Angaben getaetigt." In diesem Fall hat NUR der Partner
-# einen Betrieb; der Writer legt fuer Person B die zweite Anlage-G-Instanz an und braucht dafuer
-# die erste -- die dann leer bleibt bis auf ihr Person-Indexfeld. Das ist eine Writer-Naht
-# (leere Anlagen-Instanz), keine fehlende Angabe. Siehe BACKLOG rechenluecken:
-# gewinneinkuenfte-einzelangaben-fehlen.
-RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER = 1
+# einen Betrieb; der Writer legte fuer Person B die zweite Anlage-G-Instanz an und brauchte dafuer
+# die erste -- die dann leer blieb bis auf ihr Person-Indexfeld. Eine Writer-Naht (leere
+# Anlagen-Instanz), keine fehlende Angabe.
+#
+# WEG seit dem Instanz-Fix (2026-08-20, produkt/import/elster_xml.py:_person_b_index): erklaert
+# Person A in einem Person-Container nichts, rueckt Person B auf Instanz 0 -- mit explizitem
+# person_override, damit der Diskriminator nicht ueber den Index zu "PersonA" wird. Die Klasse
+# war nicht auf Anlage G beschraenkt: dieselbe Beanstandung mit '$/N[1]/Person[1]$', wenn nur
+# der Partner Arbeitslohn hat. Beide gemessen 1 -> 0 (ERiC 44.2.4.0), Gegenprobe "beide haben
+# Lohn" war und bleibt rc=0. Der N-Fall haengt als eigener Test unten
+# (test_nur_partner_hat_anlage_n_keine_leere_person_a_huelle).
+RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER = 0
 
 
 def _fall_zusammen_mit_gewinn_partner():
@@ -338,8 +345,7 @@ def _fall_zusammen_mit_gewinn_partner():
 @braucht_eric
 def test_restfehler_zusammen_mit_gewinneinkuenfte_partner():
     """Ratsche (wie test_restfehler_ratsche oben): misst ehrlich, statt rc=0 zu behaupten.
-    Der Restfehler ist die "Einzelangaben"-Luecke (s. Kommentar bei RESTFEHLER_ZUSAMMEN_
-    GEWINN_PARTNER), keine Regression der Kz-Bindung selbst."""
+    Steht seit dem Instanz-Fix auf 0 (s. Kommentar bei RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER)."""
     rc, texte = _pruefe(_fall_zusammen_mit_gewinn_partner())
     if rc == CE.RC_OK:
         assert RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER == 0, (
@@ -353,6 +359,42 @@ def test_restfehler_zusammen_mit_gewinneinkuenfte_partner():
     assert len(texte) == RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER, (
         f"FORTSCHRITT: nur noch {len(texte)} statt {RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER} Fehler. "
         f"Trag das ein.\nVerbleibend:\n" + "\n".join(f"  - {t[:200]}" for t in texte))
+
+
+# Anlage-N-Felder von Person A. Sie muessen fuer den Fall unten RAUS, sonst belegt Person A
+# die Anlage N und die zu messende Klasse entsteht gar nicht.
+_N_FELDER_A = frozenset({"bruttoarbeitslohn", "steuerklasse", "p36_lohnsteuer"})
+
+
+def _fall_nur_partner_hat_lohn():
+    """Person A hat KEINE Anlage-N-Angabe (dafuer einen Betrieb), Person B hat Arbeitslohn.
+
+    Der zweite gemessene Fall der Klasse 'leere Person-A-Huelle' — andere Anlage als der
+    Gewinn-Fall oben, damit die Ratsche nicht eine Einzelfall-Korrektur fuer eine Klasse haelt.
+    Vor dem Instanz-Fix: 1 Beanstandung, '$/N[1]/Person[1]$' statt '$/G[1]/Person[1]$'.
+    """
+    s = ST.leerer_store(2025, fall_id="durchstich_nur_partner_lohn")
+    a = tuple((f, w) for f, w in _BASIS_A if f not in _N_FELDER_A)
+    a = tuple((f, False) if f == "kein_gewinn" else (f, w) for f, w in a)
+    for f, w in a + _BASIS_B:
+        _b(s, f, w)
+    _b(s, "einkuenfte_gewinn", 4000000)            # 40.000 EUR, Person A -> Anlage G
+    _b(s, "gewinn_betriebsart", "gewerbe")
+    _b(s, "gewinn_bezeichnung", "Softwareentwicklung")
+    _b(s, "veranlagung", "zusammen")
+    return s
+
+
+@braucht_eric
+def test_nur_partner_hat_anlage_n_keine_leere_person_a_huelle():
+    """Zweiter Fall derselben Klasse, andere Anlage (N statt G): amtlich rc=0.
+
+    Kein Ratschen-Kommentar noetig — die Klasse ist zu, und ein Rueckfall waere hier eine
+    echte Regression, keine Restfehler-Zahl."""
+    rc, texte = _pruefe(_fall_nur_partner_hat_lohn())
+    assert rc == CE.RC_OK, (
+        f"Nur-Partner-hat-Lohn: rc={rc} [{CE.klassifiziere_rc(rc)}], erwartet RC_OK. "
+        f"Beanstandungen:\n" + "\n".join(f"  - {t[:200]}" for t in texte))
 
 
 @braucht_eric

@@ -264,6 +264,100 @@ def test_mitunternehmer_partner_faellt_in_nicht_deklariert(bindung):
         f"Mitunternehmer-Partnerfelder duerfen NICHT im person_b-Bucket landen: {result.get('person_b')}")
 
 
+# ------------------------------------------- 1c. Nur Person B hat die Anlage (keine leere Huelle)
+
+def _container(xml_str: str, tag: str) -> list[ET.Element]:
+    """Alle <tag>-Elemente direkt unter <E10>, namespace-frei."""
+    wurzel = ET.fromstring(xml_str)
+    e10 = [e for e in wurzel.iter() if e.tag.split("}")[-1] == "E10"]
+    assert len(e10) == 1, f"Erwarte genau ein <E10>, habe {len(e10)}"
+    return [k for k in e10[0] if k.tag.split("}")[-1] == tag]
+
+
+def _kind_text(el: ET.Element, tag: str) -> str | None:
+    for k in el.iter():
+        if k.tag.split("}")[-1] == tag:
+            return k.text
+    return None
+
+
+def _fall_nur_partner_hat_lohn(fall_id: str):
+    """Zusammenveranlagung, in der NUR Person B Arbeitslohn hat. Person A traegt nur
+    Stammdaten (Anlage N bleibt fuer sie voellig leer)."""
+    s = ST.leerer_store(2025, fall_id=fall_id)
+    _b(s, "stammdaten_nachname", "Maier")
+    _b(s, "stammdaten_vorname", "Hans")
+    _b(s, "bruttoarbeitslohn_partner", 4000000)      # 40.000 EUR, nur Person B
+    _b(s, "veranlagung", "zusammen")
+    _b(s, "kein_gewinn", True)
+    _b(s, "kein_kap", True)
+    _b(s, "kein_vuv", True)
+    _b(s, "kein_sonstige", True)
+    return s
+
+
+def test_nur_person_b_keine_leere_person_a_huelle(bindung):
+    """Hat Person A in einem Person-Container NICHTS, darf keine leere Person-A-Instanz
+    entstehen — Person B rueckt auf Instanz 0.
+
+    Gegen die leere Huelle steht eine amtliche Messung (checkESt, ERiC 44.2.4.0, 2026-08-20):
+    "Sie haben angegeben, dass Sie Angaben fuer 'PersonA' machen moechten, haben aber ausser
+    der Angabe im Feld '$/N[1]/Person[1]$' keine weiteren Angaben getaetigt." Dieselbe
+    Beanstandung trat mit '$/G[1]/Person[1]$' auf, wenn nur der Partner einen Betrieb hat —
+    es ist eine Klasse ueber alle Anlagen mit Person-Diskriminator.
+
+    Der Test prueft BEIDE Richtungen, denn der naheliegende Fix (Index umschalten) waere
+    genau die Vertauschung, gegen die diese Datei sonst steht: die eine <N>-Instanz muss
+    <Person>PersonB</Person> tragen UND Person Bs Wert enthalten — nicht Person Bs Wert
+    unter PersonA."""
+    snap, _ = ST.materialisiere(_fall_nur_partner_hat_lohn("nur_b_lohn"))
+    result = est_mapping.deklariere(snap, bindung)
+    assert result["person_b"], "Vorbedingung: person_b-Bucket muss befuellt sein"
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+
+    n_container = _container(xml, "N")
+    assert len(n_container) == 1, (
+        f"Erwarte genau EINE <N>-Instanz (Person A erklaert dort nichts), habe "
+        f"{len(n_container)} — die leere Person-A-Huelle ist zurueck.\n" + xml)
+    assert _kind_text(n_container[0], "Person") == "PersonB", (
+        f"Die einzige <N>-Instanz traegt "
+        f"{_kind_text(n_container[0], 'Person')!r} statt 'PersonB' — Person Bs Werte "
+        f"stehen damit unter Person A (Bucket-Vertauschung).\n" + xml)
+    assert _kind_text(n_container[0], "E0200201") == "40000", (
+        f"Bruttolohn Person B (40000) steht nicht in der PersonB-Instanz.\n" + xml)
+
+
+def test_person_a_belegt_container_dann_bleibt_person_b_instanz_1(bindung):
+    """Gegenprobe zum Test darueber: erklaert Person A in der Anlage etwas, bleibt es bei
+    zwei Instanzen — A in der ersten, B in der zweiten. Sonst wuerde der Fix oben die
+    Person-A-Werte ueberschreiben statt eine leere Huelle zu vermeiden."""
+    s = _fall_nur_partner_hat_lohn("beide_lohn")
+    _b(s, "bruttoarbeitslohn", 5000000)              # jetzt hat auch Person A Lohn
+    snap, _ = ST.materialisiere(s)
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+
+    n_container = _container(xml, "N")
+    assert len(n_container) == 2, f"Erwarte 2 <N>-Instanzen, habe {len(n_container)}\n{xml}"
+    assert [_kind_text(n, "Person") for n in n_container] == ["PersonA", "PersonB"]
+    assert [_kind_text(n, "E0200201") for n in n_container] == ["50000", "40000"], (
+        "Bruttolohn A/B nicht in dieser Reihenfolge — Buckets vertauscht.\n" + xml)
+
+
+@braucht_xsd
+def test_nur_person_b_xsd_valide(bindung, tmp_path):
+    """Die Person-B-in-Instanz-0-Form gegen das amtliche Schema — das XSD fuehrt auf den
+    Person-Containern eigene Bedingungen, die eine verschobene Instanz brechen koennte."""
+    snap, _ = ST.materialisiere(_fall_nur_partner_hat_lohn("nur_b_lohn_xsd"))
+    result = est_mapping.deklariere(snap, bindung)
+    xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
+    pfad = str(tmp_path / "nur_person_b.xml")
+    with open(pfad, "w", encoding="utf-8") as f:
+        f.write(xml)
+    ok, meldung = VX.validate(pfad, "2025")
+    assert ok, f"Nur-Person-B-XML nicht schema-valide: {meldung}"
+
+
 # ---------------------------------------------------------------- 2. Kind-Instanz-Durchgang
 
 def test_kind_instanzen_zwei_kinder(bindung):
