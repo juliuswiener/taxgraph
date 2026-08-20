@@ -1630,3 +1630,51 @@ def test_a_kein_doppelter_schluessel_im_feldblock():
                                    f"schon in Zeile {gesehen[key]+1}")
                 gesehen[key] = i
     assert not treffer, "doppelte Schlüssel im selben Feldblock:\n  " + "\n  ".join(treffer)
+
+
+# _ABZUGS_KZ-Eintraege, die KEIN Bindungsfeld tragen. Sie sind sachlich richtig klassifiziert
+# (V+V-Werbungskosten, KV/PV-Beitraege), aber die Bindung nutzt inzwischen andere Kz. Stehen
+# gelassen, weil ein Kz ohne Feld nie nachgeschlagen wird und die Klassifikation erhalten bleibt,
+# falls eines der Felder spaeter doch gebunden wird — s. Kommentar in est_mapping.py.
+ABZUGS_KZ_OHNE_FELD = {
+    "E0703838",  # V+V Werbungskosten — abgeloest durch E0705701, das bis 2026-08-19 fehlte
+    "E2001203", "E2001505", "E2001805", "E2002105", "E2003104", "E2003202",  # KV/PV-Beitraege
+}
+
+
+def test_p_abzugs_kz_deckt_die_bindung(daten):
+    """Die Aufrundungsliste und die Bindung duerfen nicht auseinanderlaufen.
+
+    Warum das ein eigener Test ist: die Liste _ABZUGS_KZ entscheidet, ob ein Cent-Betrag beim
+    Weg ins XML auf- oder abgerundet wird. Die Anleitung zur Anlage (anl_est1a_2025.txt:269-274)
+    verlangt "zu Ihren Gunsten": Einnahmen ab, Abzuege auf. Ein Abzug, der nicht in der Liste
+    steht, faellt um bis zu 99 Cent zu niedrig aus — klein, aber systematisch und immer in
+    dieselbe Richtung.
+
+    Gefunden am 2026-08-19: die Liste war in BEIDE Richtungen abgedriftet. Vierzehn
+    Abzugs-Summen fehlten, und sieben Eintraege trugen kein Feld mehr. Bei E0703838 liess sich
+    beides an einem Fall zeigen — die V+V-Werbungskosten waren auf E0705701 umgezogen, die Liste
+    rundete weiter die alte Kennzahl auf, die niemand mehr schreibt.
+
+    Dieser Test prueft die Richtung, die MASCHINELL entscheidbar ist: zeigt jeder Eintrag noch
+    auf ein Feld? Die Gegenrichtung (ist jeder Abzug in der Liste?) braucht die Einordnung
+    "Einnahme oder Aufwand", und die steht nirgends maschinenlesbar — sie bleibt Handarbeit beim
+    Binden eines neuen Betragsfelds. Ein halber Waechter ist hier besser als keiner: genau die
+    Haelfte, die den E0703838-Fall gefunden haette.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "mapping"))
+    import est_mapping as M
+
+    gebunden = {b["elster_kz"] for d in daten.values() for b in d["bindungen"] if b.get("elster_kz")}
+    verwaist = sorted(set(M._ABZUGS_KZ) - gebunden - ABZUGS_KZ_OHNE_FELD)
+    assert not verwaist, (
+        f"_ABZUGS_KZ nennt Kennzahlen, die kein Bindungsfeld traegt: {verwaist}. Entweder ist "
+        f"das Feld umgezogen (dann die neue Kz eintragen — sonst rundet die Liste ins Leere) "
+        f"oder der Eintrag gehoert nach ABZUGS_KZ_OHNE_FELD mit Begruendung.")
+
+    # Ratsche in die Gegenrichtung: eine Ausnahme, die wieder gebunden ist, muss raus. Sonst
+    # verrottet die Liste nach oben und deckt irgendwann echte Drift zu.
+    erledigt = sorted(ABZUGS_KZ_OHNE_FELD & gebunden)
+    assert not erledigt, (
+        f"ABZUGS_KZ_OHNE_FELD nennt Kennzahlen, die inzwischen gebunden sind: {erledigt} — "
+        f"bitte aus der Ausnahmeliste streichen.")

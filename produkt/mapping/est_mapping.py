@@ -59,7 +59,65 @@ _ABZUGS_KZ = frozenset({
     "E0505607",  # Schulgeld-Summe (§10 Abs.1 Nr.9, Abzug) (ceiling)
     "E0503110",  # Kind-KV (§10 Abs.1 Nr.3 S.2, Abzug) (ceiling)
     "E0503310",  # Kind-PV (§10 Abs.1 Nr.3 S.2, Abzug) (ceiling)
+
+    # ---- Nachtrag 2026-08-19: Sweep ueber alle 63 cent-tragenden Kz der Bindung ----
+    # Ausloeser war ein Einzelbefund (E0108202 Berufsausbildung rundete ab, obwohl Sonderausgabe).
+    # Statt ihn nachzutragen, einmal alle geprueft — und dabei zeigte sich, dass die Liste in
+    # BEIDE Richtungen von der Bindung abgedriftet war: sieben Eintraege trugen KEIN Feld mehr
+    # (s. Kommentar unten), und vierzehn Abzugs-Summen fehlten. Jede der vierzehn ist ein
+    # Betrag, der das Einkommen mindert; abgerundet fiel er um bis zu 99 Cent zu niedrig aus,
+    # also zu Ungunsten der steuerpflichtigen Person — gegen die Regel, die oben zitiert steht.
+    #
+    # Einzelposten sind BEWUSST NICHT dabei: bei § 35a traegt die Summe (E0104109) das ceiling,
+    # der Einzelposten (E0104108) nicht. Das ist konsistent — abzugswirksam ist die Summe.
+    "E0107601",  # Kirchensteuer gezahlt (§10 Abs.1 Nr.4, Sonderausgabe) (ceiling)
+    "E0108202",  # Berufsausbildung Summe (§10 Abs.1 Nr.7, Sonderausgabe) (ceiling)
+    "E0108405",  # Spenden (§10b Abs.1, Sonderausgabe) (ceiling)
+    "E0304601",  # Realsplitting Unterhaltsleistungen (§10 Abs.1a Nr.1) (ceiling)
+    "E0506105",  # Kinderbetreuungskosten Summe (§10 Abs.1 Nr.5) (ceiling)
+    "E0120103",  # Unterhalt an Angehoerige (§33a Abs.1, agB) (ceiling)
+    "E0124401",  # KV/PV der unterstuetzten Person (§33a Abs.1 S.2 — erhoeht den Hoechstbetrag,
+                 # wirkt also wie ein Abzug) (ceiling)
+    "E0203611",  # OePNV-Kosten (§9 Abs.2, Werbungskosten) (ceiling)
+    "E0207611",  # Unterkunft doppelte Haushaltsfuehrung (§9 Abs.1 S.3 Nr.5) (ceiling)
+    "E0705701",  # V+V Werbungskosten-Summe (§21) (ceiling) — uebernimmt die Rolle des toten
+                 # Eintrags E0703838, s. Kommentar unten
+    "E0305201",  # §22 Nr.3 Werbungskosten zu den Einnahmen (ceiling)
+    "E0241901",  # §35c Sanierungsaufwendungen (ceiling)
+    "E0242001",  # §35c Energieberater-Aufwendungen (ceiling)
 })
+
+# SIEBEN EINTRAEGE OBEN TRAGEN KEIN BINDUNGSFELD (Stand 2026-08-19): E0703838, E2001203,
+# E2001505, E2001805, E2002105, E2003104, E2003202. Sie sind sachlich richtig klassifiziert
+# (V+V-Werbungskosten und KV/PV-Beitraege sind Abzuege), aber kein Feld schreibt sie — die
+# Bindung nutzt inzwischen andere Kz. Bei E0703838 laesst sich die Ablosung direkt zeigen: die
+# V+V-Werbungskosten laufen heute ueber E0705701, das bis zu diesem Nachtrag NICHT in der Liste
+# stand. Die Liste rundete also eine Kennzahl auf, die niemand schreibt, und nicht die, die
+# deren Aufgabe uebernommen hat.
+#
+# Sie bleiben trotzdem stehen: sie schaden nicht (ein Kz ohne Feld wird nie nachgeschlagen), und
+# sie zu streichen hiesse, die Klassifikation zu verlieren, falls eines der Felder spaeter doch
+# gebunden wird. Was fehlte, war nicht der Eintrag, sondern die Pruefung, ob die Liste noch auf
+# die Bindung passt — die steht jetzt als test_p_abzugs_kz_deckt_die_bindung in
+# tests/test_bindungstabelle.py.
+#
+# NICHT AUFGENOMMEN, WEIL DORT GAR NICHT GERUNDET WIRD: die EUeR-Kennzahlen E6004901 (uebrige
+# Betriebsausgaben) und E6002301 (geringwertige Wirtschaftsgueter). Sie sind sachlich
+# Betriebsausgaben und standen in einer ersten Fassung dieses Nachtrags mit drin — _cent_nach_kz
+# faengt aber jedes "E60"-Kz VOR der Rundungsentscheidung ab und schreibt den Cent-Betrag exakt
+# als Dezimalstring ("2000,50"). Ein Eintrag dort ist wirkungslos und behauptet eine Regel, die
+# nie greift. Gefunden von der Mutationsprobe in tests/test_kz_bindung_durchgang.py, nicht beim
+# Schreiben — die volle Suite blieb gruen, weil ihre Fixturen mit glatten Betraegen rechnen.
+#
+# BEWUSST NICHT AUFGENOMMEN, weil sie den Abzug MINDERN und Aufrunden dort zu Ungunsten wirkte:
+# E0107602 (erstattete Kirchensteuer), E0506604/E0506605 (Eigenanteil Kinderbetreuung),
+# E0205508 (Verpflegungskuerzung nach Entgelt), E0700501 (umgelegte Nebenkosten — eine EINNAHME
+# des Vermieters, kein Aufwand).
+# EBENFALLS NICHT: die Anrechnungsbetraege (E0601901 gezahlte auslaendische Steuer, E1905101,
+# E0200301 und die E19047xx-Kapitalertragsteuern). Sie mindern die STEUER, nicht das Einkommen —
+# eine andere Kategorie als die, fuer die die Anleitung ihre Rundungsregel gibt. Ob dort
+# ueberhaupt gerundet werden darf, ist eine eigene Frage; sie hier stillschweigend mitzunehmen
+# waere geraten.
 
 
 # _KOMMA_OHNE_E60_KZ — Kz vom XSD-Typ DezimalzahlNichtNegOhneFuehrNull_MaxL15_MaxVK12_MinNK2_MaxNK2_

@@ -1008,3 +1008,53 @@ def test_beispiel_idnr_sind_eric_tauglich():
             if not (ist_gueltig(wert) and strukturell_gueltig(wert)):
                 schlecht.append(f"{b['feld_id']}={wert}")
     assert not schlecht, ("Beispiel-IdNr, die ERiC ablehnen würde: " + ", ".join(schlecht))
+
+
+# ---------------------------------------------------------------- Rundung: Abzüge zugunsten
+
+def test_abzuege_werden_aufgerundet_einnahmen_abgerundet():
+    """Krumme Cent-Beträge: Abzüge auf, Einnahmen ab — "zu Ihren Gunsten".
+
+    Die Regel steht in der amtlichen Anleitung (anl_est1a_2025.txt:269-274) und im Code darüber,
+    umgesetzt über die Liste _ABZUGS_KZ. Am 2026-08-19 fehlten dort vierzehn Abzugs-Summen; sie
+    liefen auf den Default `wert // 100` und fielen damit um bis zu 99 Cent zu niedrig aus —
+    klein, aber systematisch und immer zu Ungunsten der steuerpflichtigen Person.
+
+    DIESER TEST EXISTIERT, WEIL DIE SUITE DEN NACHTRAG NICHT BEMERKT HAT. Nach dem Eintragen
+    blieben alle 2246 Tests grün: die Fixturen rechnen mit glatten Beträgen, bei denen auf- und
+    abrunden dasselbe Ergebnis liefern. Ein Fix, den kein Test von seinem Gegenteil unterscheiden
+    kann, ist nicht belegt — hier ist die Unterscheidung.
+    """
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(root, "produkt", "mapping"))
+    import est_mapping as EM
+
+    krumm = 200050          # 2.000,50 EUR — genau zwischen zwei vollen Euro
+
+    # Abzüge: aufrunden. Je einer aus den Gruppen, die 2026-08-19 nachgetragen wurden.
+    for kz, was in (("E0108202", "Berufsausbildung"),
+                    ("E0107601", "Kirchensteuer"),
+                    ("E0108405", "Spenden"),
+                    ("E0705701", "V+V-Werbungskosten"),
+                    ("E0120103", "Unterhalt § 33a"),
+                    ("E0241901", "§ 35c Sanierung")):
+        assert EM._cent_nach_kz(krumm, kz) == 2001, f"{was} ({kz}) muss aufgerundet werden"
+
+    # Die EÜR-Kennzahlen sind KEIN Rundungsfall: _cent_nach_kz fängt jedes "E60"-Kz vorher ab
+    # und schreibt den Cent-Betrag exakt als Dezimalstring. Sie standen in einer ersten Fassung
+    # des Nachtrags fälschlich in _ABZUGS_KZ — dieser Test hat es gefunden.
+    assert EM._cent_nach_kz(krumm, "E6004901") == "2000,50"
+    assert EM._cent_nach_kz(krumm, "E6002301") == "2000,50"
+
+    # Einnahmen: abrunden. Die Gegenprobe — ohne sie könnte die Liste alles aufrunden und der
+    # Test oben bliebe grün.
+    for kz, was in (("E0200201", "Bruttoarbeitslohn"),
+                    ("E0700201", "Mieteinnahmen"),
+                    ("E1900701", "Kapitalerträge")):
+        assert EM._cent_nach_kz(krumm, kz) == 2000, f"{was} ({kz}) muss abgerundet werden"
+
+    # Und die Beträge, die einen Abzug MINDERN, gehören auf die Einnahmen-Seite: dort wäre
+    # Aufrunden zu Ungunsten. Erstattete Kirchensteuer ist der klarste Fall.
+    assert EM._cent_nach_kz(krumm, "E0107602") == 2000, "erstattete KiSt mindert — abrunden"
