@@ -704,8 +704,31 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Du warst mehr als 3 Monate am selben Ort, hast aber keine Reisetage nach Ablauf der 3 Monate angegeben. Lief die Tätigkeit dort durchgehend, ohne eine Pause von 4 Wochen oder mehr?"
-    hilfe_kurz: "Antworte mit Nein, wenn du mindestens 4 Wochen am Stück pausiert hast — dann beginnt die Dreimonatsfrist neu und deine 0 Tage nach Fristablauf sind korrekt."
+    # FRAGETEXT 2026-08-21 entschärft. Vorher stand hier: "Du warst mehr als 3 Monate am selben
+    # Ort, hast aber keine Reisetage nach Ablauf der 3 Monate angegeben. Lief die Tätigkeit dort
+    # durchgehend …" — zwei BEHAUPTUNGEN über den Nutzer als Einleitung.
+    #
+    # Für den Rechenpfad ist das richtig: bescheid_deklaration.py:388-405 stellt die Rückfrage NUR,
+    # wenn vpf_monate_am_ort > 3 UND Tage gesamt > 0 UND alle Tage nach Frist == 0. Dort sind beide
+    # Behauptungen belegt.
+    #
+    # Der DIALOG kennt diese Bedingung aber nicht: traverser.naechste_fragen filtert allein nach
+    # askable / unbeantwortet / Regel nicht ausgeschlossen, es gibt keine feldbezogene
+    # Sichtbarkeitsbedingung. Die Frage erscheint deshalb JEDEM — auch dem, der nie an einem Ort
+    # war. Zwei Repräsentationen derselben Fachfrage, die nicht miteinander reden.
+    #
+    # GEMESSEN 2026-08-21 im echten Nutzerlauf (Julius, Fall demo-1787301323980): die Frage kam
+    # ungefragt, wurde mit "ja" beantwortet, und liegt seither als BESTÄTIGTE Angabe im Fall —
+    # ein Sachverhalt, den es nicht gibt. Nicht hypothetisch, ein Datensatz.
+    #
+    # Behoben wird der TEXT, nicht die Sichtbarkeit: `askable: true` MUSS bleiben (s. Kommentar
+    # oben, sonst Deadlock), und eine feldbezogene Sichtbarkeitsbedingung wäre ein Eingriff in den
+    # Traverser, der alle 316 Fragen beträfe — das ist eine eigene Entscheidung, kein Nebenfix.
+    # Die POLARITÄT bleibt unverändert (true = nicht unterbrochen, Normalfall antwortet ja):
+    # eine Umformulierung, die "ja" umdeutet, wäre genau die Falle, die hier schon dreimal Geld
+    # gekostet hat.
+    fragetext_laie: "Lief deine Tätigkeit am selben Ort durchgehend, ohne eine Pause von 4 Wochen oder mehr?"
+    hilfe_kurz: "Diese Frage zählt nur, wenn du länger als 3 Monate am selben Ort tätig warst und für die Zeit danach keine Reisetage angegeben hast. Trifft das auf dich nicht zu, antworte mit Ja — die Angabe bleibt dann ohne Wirkung auf deine Steuer. Antworte mit Nein, wenn du mindestens 4 Wochen am Stück pausiert hast: dann beginnt die Dreimonatsfrist neu und 0 Tage nach Fristablauf sind korrekt."
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
