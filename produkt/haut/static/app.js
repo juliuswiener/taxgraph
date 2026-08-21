@@ -6,6 +6,8 @@ let FALL = null;
 let AKTUELL = null;   // aktuelle Frage (aus /fragen)
 let STAND = null;     // letzter /stand
 let SPANNE0 = null;   // Referenz-Spanne (für den Schrumpf-Anteil)
+let OFFEN_ANZAHL = null;  // zuletzt bekannte Zahl offener Fragen (aus /fragen); null = nie geladen
+let GESAMT_VOR = null;    // zuletzt angezeigte Gesamtzahl — allein für die Änderungs-Notiz
 let KORREKTUR_FID = null;  // feld_id bei Korrektur; null = neue Frage
 let VERSTANDEN_OFFEN = false;  // Verstanden-Seite liegt vorn -> refresh() darf sie nicht wegschieben
 
@@ -103,6 +105,7 @@ async function waehleScheibe(scheibe) {
   kacheln.forEach(k => k.disabled = false);
   FALL = a.body.fall_id;
   SPANNE0 = null;
+  OFFEN_ANZAHL = null; GESAMT_VOR = null;   // neuer Fall -> keine Änderungs-Notiz aus dem alten
   $("start").hidden = true;
   $("flow").hidden = false;
   await refresh();
@@ -114,30 +117,81 @@ async function refresh() {
   // abbrechen statt auf st.body.felder zu crashen (der Fehlerbody hat kein .felder).
   if (st.status === 401) return;
   STAND = st.body;
-  zeigeRing(STAND);
+  // /fragen gehört jetzt VOR den Ring: die offenen Fragen sind sein Nenner (s. zeigeRing), nicht
+  // bloß der Nachschub für den Fragefluss. Deshalb wird die Queue bei JEDEM refresh neu geholt —
+  // auch wenn die Verstanden-Seite vorn liegt und den Fluss unterdrückt. Sonst stünde der
+  // Fortschritt dort auf einer alten Gesamtzahl, obwohl gerade Bestätigungen durchlaufen.
+  const fr = await jget(`/fall/${FALL}/fragen`);
+  if (fr.status === 401) return;
+  // Nicht ladbar (Netz weg -> jget liefert status 0 ohne .fragen): die zuletzt bekannte Zahl
+  // BEHALTEN statt sie als 0 zu lesen. `fest + 0` hieße „alles beantwortet" — ein Netzfehler darf
+  // keinen Fortschritt behaupten. jget hat den Banner bereits gesetzt.
+  const fragen = Array.isArray(fr.body.fragen) ? fr.body.fragen : null;
+  if (fragen) OFFEN_ANZAHL = fragen.length;
+  zeigeRing(STAND, OFFEN_ANZAHL);
   zeigeBelegt(STAND.felder);
   // Die Verstanden-Seite arbeitet eine eigene Liste ab. Ring und Belegt-Liste sollen dabei
   // mitlaufen (jede Bestätigung bewegt den Ring), aber der Fragefluss darf sich nicht davorschieben
   // — sonst springt der Nutzer nach der ersten Bestätigung aus seiner Liste heraus.
   if (VERSTANDEN_OFFEN) return;
-  const fr = await jget(`/fall/${FALL}/fragen`);
-  if (fr.status === 401) return;
-  const fragen = fr.body.fragen;
+  if (!fragen) return;   // ohne Queue keine neue Frage — die bisherige bleibt stehen
   if (fragen.length === 0) { $("wegpunkt").hidden = true; await zeigeErgebnis(); }
   else { AKTUELL = fragen[0]; zeigeFrage(AKTUELL, STAND); }
 }
 
+// Was sich seit der letzten Anzeige an der GESAMTZAHL geändert hat, als Text — oder "" beim ersten
+// Mal und wenn sie gleich blieb. Setzt GESAMT_VOR gleich mit; zeigeRing() ist der einzige Aufrufer
+// und läuft genau einmal je refresh.
+function aenderungsNotiz(gesamt) {
+  const vor = GESAMT_VOR;
+  GESAMT_VOR = gesamt;
+  if (vor === null || vor === gesamt) return "";
+  const d = Math.abs(gesamt - vor);
+  const wieviel = d === 1 ? "1 Frage" : d + " Fragen";
+  return gesamt < vor ? ` · ${wieviel} entfallen` : ` · ${wieviel} dazugekommen`;
+}
+
 // --- Dim 4: der Bescheid als schrumpfender Ring ---
-function zeigeRing(stand) {
+//
+// DER NENNER. Julius 2026-08-21: „wenn bei bescheid 2/2 -> 3/3 -> 4/4 steht hat das keine aussage:
+// es sollte 1/(gesamte fragenanzahl die noch beantwortet werden muss (regelmäßig geupdated)) da
+// stehen." Hier stand `felder.length` — die Zahl der schon ANGEFASSTEN Felder, also nur derer, zu
+// denen bereits ein Event existiert. Dieser Nenner wuchs mit jeder Antwort um genau so viel wie der
+// Zähler; daher 2/2, 3/3, 4/4, und Ring wie Leiste standen aus demselben Grund dauerhaft fast voll.
+//
+// Jetzt: bestätigte + noch OFFENE Fragen. Die offenen kommen aus /fragen, also aus der
+// Traverser-Queue (naechste_fragen: unbeantwortete askable Felder nicht-ausgeschlossener Regeln)
+// — bei JEDEM refresh neu geholt. Diese Zahl ist keine Konstante: sie hängt an den bisherigen
+// Antworten, und genau das meint „regelmäßig geupdated".
+//
+// KEIN DOPPELZÄHLEN: ein VORLÄUFIGES Feld steht in `stand.felder` UND in der Queue (der Traverser
+// hält `vorlaeufig` für unbeantwortet, _unbeantwortet()). Es zählt hier genau einmal, nämlich als
+// offene Frage. Deshalb `fest + offen` und nicht `felder.length + offen`.
+//
+// WENN DIE GESAMTZAHL SICH ÄNDERT — die Entscheidung, nicht der Zufall:
+// Eine Antwort kann ganze Blöcke abschalten (Screening-Flags; dann SINKT die Gesamtzahl und der
+// Balken springt vor) oder aufmachen (dann STEIGT sie und der Balken springt zurück). Verworfen
+// wurden beide „ruhigen" Varianten: ein eingefrorener Höchststand-Nenner meldete nach dem
+// Abschalten eines Blocks weiter Arbeit, die es nicht mehr gibt, und ein nur-vorwärts-Balken
+// behauptete nach dem Aufmachen eines Blocks Fortschritt, den es nicht gibt. Ein Balken, der
+// zurückspringt, irritiert; einer, der lügt, ist schlimmer. Also: der Balken zeigt immer den echten
+// Anteil, in beide Richtungen — und jede Änderung der Gesamtzahl wird unter der Leiste BENANNT
+// („12 Fragen entfallen"), damit kein Sprung unerklärt bleibt.
+function zeigeRing(stand, offen) {
   const spanneEl = $("spanne"), hintEl = $("spanne-hint"), ringEl = $("ring"), mitteEl = $("ring-mitte");
-  const fortschritt = $("fortschritt");
+  const fortschritt = $("fortschritt"), textEl = $("fortschritt-text");
   const felder = Object.values(stand.felder || {});
   const fest = felder.filter(f => f.zustand === "bestaetigt").length;
-  const anteil = felder.length ? fest / felder.length : 0;
+  // offen === null heißt: /fragen war noch nie erreichbar. Dann gibt es keinen ehrlichen Nenner —
+  // `fest + 0` läse sich als „fertig". Lieber gar keine Zahl als eine erfundene.
+  const gesamt = (offen === null) ? null : fest + offen;
+  const anteil = gesamt ? fest / gesamt : 0;
   ringEl.style.setProperty("--anteil", anteil);
-  mitteEl.textContent = felder.length ? `${fest}/${felder.length}` : "";
-  fortschritt.max = Math.max(1, felder.length);
+  mitteEl.textContent = (gesamt === null) ? "" : `${fest}/${gesamt}`;
+  fortschritt.max = Math.max(1, gesamt || 1);
   fortschritt.value = fest;
+  textEl.textContent = (gesamt === null) ? ""
+    : `${fest} von ${gesamt} Fragen beantwortet` + aenderungsNotiz(gesamt);
 
   if (stand.ring_gesperrt) {
     spanneEl.textContent = "Vereinfachter Bescheid hier nicht möglich"; hintEl.textContent = "siehe Ergebnis unten";
@@ -151,8 +205,11 @@ function zeigeRing(stand) {
     if (iv.min_cent === iv.max_cent) { spanneEl.textContent = `Bescheid: ${euro(iv.min_cent)}`; hintEl.textContent = "steht"; }
     else {
       spanneEl.textContent = `${euro(iv.min_cent)} – ${euro(iv.max_cent)}`;
-      const offen = felder.length - fest;
-      hintEl.textContent = `▼ schrumpft mit jeder Antwort · noch ${offen} offen`;
+      // „noch N offen" hieß hier `felder.length - fest` — das sind die VORLÄUFIGEN Felder, nicht die
+      // offenen Fragen. Bei einem Nutzer ohne KI-Vorschläge war das dauerhaft 0. Dieselbe
+      // Verwechslung wie beim Nenner oben, an derselben Quelle behoben.
+      hintEl.textContent = "▼ schrumpft mit jeder Antwort"
+        + ((offen === null) ? "" : ` · noch ${offen} offen`);
     }
   } else if (stand.teil_ringe && stand.teil_ringe.length) {
     spanneEl.textContent = stand.teil_ringe.map(t => `${t.familie}: ${euro(t.intervall.min_cent)}–${euro(t.intervall.max_cent)}`).join(" · ");
@@ -723,6 +780,61 @@ function beraterZeile(cls, text) {
   return p;
 }
 
+// Die Laufanzeige — bewusst NICHT über beraterZeile(). Genau das war der Fehler (Befund B1):
+// „Die KI liest mit …" entstand mit derselben Funktion wie jede Antwort und stand danach als
+// unbewegter Absatz im Verlauf. Ein Antwortverlauf ist der eine Ort, an dem stillstehender Text
+// als Antwort gelesen wird — und wer ihn für eine Antwort hält, hört auf zu warten.
+// Die Bewegung steckt im CSS (.chat-warte-punkte); unter prefers-reduced-motion tritt an ihre
+// Stelle das sichtbare Wort „läuft" (.chat-warte-still), damit der Zustand nicht mit der
+// Animation verschwindet.
+function chatWarteZeile() {
+  const p = document.createElement("p");
+  p.className = "chat-warte";
+  p.setAttribute("role", "status");     // Screen-Reader: Zustandswechsel, keine neue Nachricht
+  p.setAttribute("aria-live", "polite");
+  const txt = document.createElement("span");
+  txt.textContent = "Die KI liest mit …";
+  p.appendChild(txt);
+  const punkte = document.createElement("span");
+  punkte.className = "chat-warte-punkte";
+  punkte.setAttribute("aria-hidden", "true");   // reine Optik, nichts zum Vorlesen
+  for (let i = 0; i < 3; i++) punkte.appendChild(document.createElement("i"));
+  p.appendChild(punkte);
+  const still = document.createElement("span");
+  still.className = "chat-warte-still";
+  still.setAttribute("aria-hidden", "true");
+  still.textContent = "läuft";
+  p.appendChild(still);
+  return p;
+}
+
+// Was während eines laufenden KI-Aufrufs gesperrt wird. Julius 2026-08-20: „ansonsten kann der
+// nutzer etwas klicken und torpediert u.U. die KI ausgabe" — bis hierher war NUR der Absende-
+// knopf gesperrt, der ganze Rest der Oberfläche nicht.
+//
+// Es sind genau die Bereiche, aus denen heraus sich `AKTUELL` ändern lässt: der Fragebereich
+// (bestaetigen → refresh), die Verstanden-Liste (Stimmt/Ändern → refresh bzw. korrigiereBestaetigt),
+// die Belegt-Liste (Klick → korrigiereBestaetigt) und die Import-Box (Vorjahr/Kontoauszug →
+// refresh). Dazu das Chat-Eingabefeld selbst, dessen Inhalt am Ende ohnehin geleert wird.
+//
+// `inert` statt `disabled`: die Bereiche bleiben LESBAR — der Nutzer soll seine Frage weiter
+// sehen können, während die KI seinen Satz liest — nehmen aber weder Klick noch Tastatur noch
+// Vorlesefokus an. `disabled` gibt es auf einem <section> gar nicht, und jedes Kind einzeln zu
+// sperren hieße, sich beim Freigeben genau zu merken, welche vorher schon gesperrt waren.
+const CHAT_SPERRE_IDS = ["wegpunkt", "verstanden", "belegt-liste"];
+
+function chatSperren(an) {
+  for (const id of CHAT_SPERRE_IDS) {
+    const el = $(id);
+    if (el) el.toggleAttribute("inert", an);
+  }
+  const box = document.querySelector(".vorjahr-box");
+  if (box) box.toggleAttribute("inert", an);
+  const t = $("chat-text");
+  if (t) t.disabled = an;
+  $("chat-send").disabled = an;
+}
+
 // „Erklär mir" erklärt jetzt wirklich. Julius 2026-08-14: „würde ich erwarten als Nutzer, dass es
 // wirklich erklärt und nicht dann die KI aufgeht und ich ihr eine Frage stellen kann."
 // Die erste Antwort kommt OHNE Modell: Fragetext, Kurzhilfe und Zitatanker liegen bereits vor
@@ -768,14 +880,33 @@ async function chatSenden() {
   if (sendBtn.disabled) return;   // Doppel-Submit-Schutz
   const t = $("chat-text"); const freitext = (t && t.value || "").trim();
   if (!freitext) return;
-  sendBtn.disabled = true;
+  chatSperren(true);
+  // Der Kontext, für den die Antwort erzeugt wird — EINMAL beim Absenden gelesen. Er geht mit in
+  // den Prompt (_erklaer_kontext in api.py) und wird unten gegen den dann aktuellen verglichen.
+  const kontextFeld = AKTUELL ? AKTUELL.feld_id : null;
   const body = $("chat-body");
   body.appendChild(beraterZeile("chat-du", "Du: " + freitext));
-  const warte = beraterZeile("chat-erklaer", "Die KI liest mit …");
+  const warte = chatWarteZeile();
   body.appendChild(warte);
-  const r = await jpost(`/fall/${FALL}/chat`,
-                        { text: freitext, feld_id: AKTUELL ? AKTUELL.feld_id : null });
-  warte.remove();
+  body.scrollTop = body.scrollHeight;
+  let r;
+  try {
+    r = await jpost(`/fall/${FALL}/chat`, { text: freitext, feld_id: kontextFeld });
+  } finally {
+    // Was gesperrt wurde, wird IMMER wieder freigegeben. Vorher stand `sendBtn.disabled = false`
+    // allein am Ende des Rumpfs: jede Ausnahme davor ließ den Knopf DAUERHAFT gesperrt und die
+    // Wartemeldung für immer stehen — ohne Neuladen der Seite kam der Nutzer da nicht mehr heraus.
+    // Nachgemessen 2026-08-20: `jpost` fängt Netzabbrüche bereits selbst ab (catch → status 0), der
+    // ursprünglich vermutete Auslöser greift also nicht. Die Zusage hängt trotzdem nicht länger an
+    // dieser Messung — und für die Sperren oben ist sie neu und zwingend: sie umfassen jetzt den
+    // ganzen Fragebereich, nicht mehr nur einen Knopf.
+    warte.remove();
+    chatSperren(false);
+  }
+  // Ab hier ist nichts mehr gesperrt: die Auswertung darf refresh() rufen und die Verstanden-Seite
+  // den Fokus nehmen (in einem inerten Bereich liefe focus() ins Leere), und eine Ausnahme hier
+  // strandet nichts mehr.
+  const kontextGewechselt = (AKTUELL ? AKTUELL.feld_id : null) !== kontextFeld;
   if (r.status === 501) {
     body.appendChild(beraterZeile("chat-vertrag",
       (r.body && r.body.vertrag) || "Der KI-Kanal ist noch nicht verbunden."));
@@ -783,6 +914,19 @@ async function chatSenden() {
     const vorschlaege = r.body.vorschlaege || [];
     const konflikte = r.body.konflikte || [];
     if (r.body.antwort) {
+      // Die Antwort wurde für die Frage erzeugt, bei der der Nutzer sie abgeschickt hat — der
+      // Kontext dafür ging als `feld_id` mit. Steht er inzwischen woanders, ist sie eine Auskunft
+      // zu einer ANDEREN Frage, und still darunter gehängt liest sie sich als Antwort auf die
+      // jetzt offene. Die Sperre oben verhindert den Wechsel per Klick; ein Wechsel aus einem
+      // schon vorher laufenden Vorgang (Kontoauszug-/Vorjahr-Import ruft refresh() und setzt
+      // AKTUELL neu) kann sie NICHT verhindern — dann sagt es die Zeile hier.
+      // Nur die Antwort braucht das: die Vorschläge tragen ihre eigene `feld_id` bis in den
+      // Schreibpfad (verstandenBestaetigen postet v.feld_id, nicht AKTUELL), nachgemessen.
+      if (kontextGewechselt) {
+        body.appendChild(beraterZeile("chat-kontext-hinweis",
+          "Diese Antwort gehört zu der Frage, bei der du sie abgeschickt hast — inzwischen ist "
+          + "eine andere Frage offen."));
+      }
       body.appendChild(beraterZeile("chat-antwort", r.body.antwort));
       // Das Modell muss im Schema angeben, ob es sich sicher ist. Wird das verschwiegen, sieht
       // eine Vermutung aus wie eine Auskunft — und der Nutzer trägt sie in seine Erklärung ein.
@@ -819,7 +963,9 @@ async function chatSenden() {
   }
   t.value = "";
   body.scrollTop = body.scrollHeight;   // das Neueste im Blick behalten
-  sendBtn.disabled = false;
+  // Kein `sendBtn.disabled = false` mehr: das Freigeben steht jetzt vollständig im finally oben.
+  // Zwei Freigabestellen wären eine zu viel — diese hier liefe nach einer Ausnahme nie, und genau
+  // darauf beruhte der Dauer-Sperr-Fehler.
 }
 
 async function zeigeWarum() {

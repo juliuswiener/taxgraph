@@ -224,6 +224,38 @@ h1,h2,h3{margin:0}
 .chat-unsicher{font-size:13px;color:var(--warn);background:rgba(255,180,84,.1);
   border:1px solid rgba(255,180,84,.35);border-radius:10px;padding:10px;line-height:1.4}
 
+/* Der Aufruf läuft — ein ZUSTAND, keine Aussage (Befund B1, Julius 2026-08-20: „es sollte in der
+   zwischenzeit ein spinner o.ä. kommen"). Vorher stand hier „Die KI liest mit …" als ganz normale
+   Chatzeile, erzeugt mit derselben Funktion wie jede Antwort — stillstehender Text in einem
+   Antwortverlauf liest sich als Antwort, und wer ihn für eine hält, wartet nicht mehr.
+   Reine CSS-Animation, kein Bild und keine Bibliothek: die Seite muss ohne Netz laufen. */
+.chat-warte{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink);
+  background:#12162a;border:1px solid var(--line);border-left:3px solid var(--schimmernd);
+  border-radius:10px;padding:10px 12px}
+.chat-warte-punkte{display:inline-flex;gap:5px;flex:none}
+.chat-warte-punkte i{width:7px;height:7px;border-radius:50%;background:var(--schimmernd);
+  animation:chat-warte-puls 1.05s ease-in-out infinite}
+.chat-warte-punkte i:nth-child(2){animation-delay:.18s}
+.chat-warte-punkte i:nth-child(3){animation-delay:.36s}
+@keyframes chat-warte-puls{0%,80%,100%{opacity:.25;transform:translateY(0)}
+  40%{opacity:1;transform:translateY(-3px)}}
+/* Nur unter prefers-reduced-motion sichtbar (s. Block weiter unten) — sonst sagt es die Bewegung
+   selbst. Die Grundregel MUSS vor der Media-Query stehen: gleiche Spezifität, es gewinnt sonst
+   schlicht die spätere Zeile und die Kennzeichnung bliebe auch dort unsichtbar. */
+.chat-warte-still{display:none;font-size:12px;color:var(--schimmernd);border:1px solid var(--line);
+  border-radius:999px;padding:1px 8px;flex:none}
+
+/* Die Antwort kam für eine ANDERE Frage als die jetzt offene. Warnfarbe, nicht Schimmerfarbe:
+   das ist kein KI-Text, sondern eine Einschränkung seiner Geltung. */
+.chat-kontext-hinweis{font-size:13px;color:var(--warn);background:rgba(255,180,84,.1);
+  border:1px solid rgba(255,180,84,.35);border-radius:10px;padding:10px;line-height:1.4}
+
+/* Gesperrte Bereiche während des Aufrufs: LESBAR, aber nicht bedienbar (s. chatSperren in app.js).
+   Nur eine leichte Rücknahme — sie sollen nicht wie ausgegraut-kaputt wirken, sondern wie
+   „gleich wieder da". Der Cursor sagt es zusätzlich. */
+[inert]{opacity:.55}
+[inert],[inert] *{cursor:progress}
+
 @media (min-width:520px){ #app{padding:24px} }
 
 /* ============================================================================
@@ -256,6 +288,12 @@ h1,h2,h3{margin:0}
 /* Bewegungs-Reduktion respektieren (Barrierefreiheit) */
 @media (prefers-reduced-motion:reduce){
   *,.screen,.overlay-card,.ring::after,.btn-hold .fill{animation:none !important;transition:none !important}
+  /* Die Laufanzeige darf dabei nicht einfach verschwinden: ohne Bewegung fehlt genau das Merkmal,
+     das sie als ZUSTAND kenntlich macht. Statt Animation deshalb eine ruhige, aber eindeutige
+     Kennzeichnung — volle Punkte plus das Wort „läuft", das sonst ausgeblendet ist. */
+  .chat-warte-punkte i{opacity:1;transform:none}
+  .chat-warte-still{display:inline-block}
+  .chat-warte{border-left-width:5px}
 }
 
 /* ============================================================================
