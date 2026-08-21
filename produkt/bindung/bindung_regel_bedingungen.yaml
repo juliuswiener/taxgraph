@@ -127,3 +127,64 @@ regel_bedingungen:
     feld: kein_kind
     wert: false
     grund: "§ 33a Abs. 2 S. 1 EStG gewährt den Ausbildungsfreibetrag für ein auswärtig untergebrachtes Kind, für das ein Freibetrag oder Kindergeld zusteht — ohne Kind kein Freibetrag."
+
+  # -----------------------------------------------------------------------------------------------
+  # Screening-Gruppe C — AUSGABENSEITE (2026-08-21).
+  #
+  # Die Gruppen davor decken die EINNAHMEN ab (kein_gewinn/_kap/_vuv/_sonstige/_kind). Für die
+  # Ausgaben- und Ermäßigungsseite gab es bis heute KEIN einziges Flag: 143 der 316 fragbaren
+  # Felder lagen in Regeln, die keine Antwort abschalten konnte. Gemessen im echten Nutzerlauf
+  # (Julius, 2026-08-21) — er bekam Fragen zu Handwerkerleistungen, zu einem Gebäude und zu einer
+  # auswärtigen Tätigkeit, die es alle nicht gab. Felder in bindung_screening_ausgaben.yaml.
+  #
+  # Die Wirkung läuft AUSSCHLIESSLICH hier über regel_bedingungen und NICHT über ein Gate an der
+  # Ziel-Regel. Der Unterschied ist kein Stilfrage: ein askable bool an der geltungsbedingung einer
+  # echten Regel IST ein Gate, und relevanz() schliesst bei bestätigtem `false` aus — ein
+  # `keine_behinderung_pflege`-Gate an p33b_behinderten_pauschbetrag nähme den Pauschbetrag
+  # ausgerechnet dem Behinderten weg. Dieselbe Polaritätsfalle wie 519199e und wie die Anlage V
+  # am 2026-08-16.
+
+  - regel_id: p33a_unterhalt
+    feld: kein_unterhalt
+    wert: false
+    grund: "§ 33a Abs. 1 S. 1 EStG setzt Aufwendungen für den Unterhalt einer gesetzlich unterhaltsberechtigten Person voraus — wer bestätigt, niemanden unterstützt zu haben, hat keinen Tatbestand, zu dem Name, Anschrift, Vermögen und Einkünfte der unterstützten Person zu erklären wären. Grösster ungefilterter Block des Fragebogens: 17 Fragen."
+
+  - regel_id: p34c_1_anrechnung_hoechstbetrag
+    feld: keine_auslandseinkuenfte
+    wert: false
+    grund: "§ 34c Abs. 1 S. 1 EStG rechnet die im Ausland gezahlte Steuer auf die deutsche Einkommensteuer an, soweit sie auf ausländische Einkünfte entfällt — ohne ausländische Einkünfte gibt es weder eine anzurechnende Steuer noch einen Höchstbetrag zu ermitteln."
+
+  - regel_id: p34c_2_abzug_statt_anrechnung
+    feld: keine_auslandseinkuenfte
+    wert: false
+    grund: "§ 34c Abs. 2 EStG ist das Wahlrecht, dieselbe ausländische Steuer bei der Ermittlung der Einkünfte abzuziehen statt sie anzurechnen — ohne ausländische Einkünfte gibt es nichts zu wählen."
+
+  - regel_id: p33b_behinderten_pauschbetrag
+    feld: keine_behinderung_pflege
+    wert: false
+    grund: "§ 33b Abs. 2 EStG gewährt den Pauschbetrag Menschen mit einem festgestellten Grad der Behinderung ab 20 — wer bestätigt, dass weder er selbst noch eines seiner Kinder eine festgestellte Behinderung hat, erfüllt den Tatbestand nicht. Die Frage nennt die Kinder ausdrücklich mit, weil diese Regel auch kind_grad_der_behinderung trägt."
+
+  - regel_id: p33b_pflege_pauschbetrag
+    feld: keine_behinderung_pflege
+    wert: false
+    grund: "§ 33b Abs. 6 S. 1 EStG setzt voraus, dass der Steuerpflichtige eine pflegebedürftige Person persönlich in der Wohnung pflegt — wer bestätigt, niemanden zu pflegen, hat keinen Pflege-Pauschbetrag. Dieselbe Frage deckt beides ab, weil sie beide Tatbestände nennt."
+
+  - regel_id: p33_2a_fahrtkostenpauschale
+    feld: keine_behinderung_pflege
+    wert: false
+    grund: "§ 33 Abs. 2a S. 1 EStG gewährt die behinderungsbedingte Fahrtkostenpauschale nur Menschen mit den dort genannten Merkzeichen bzw. einem Grad der Behinderung ab 80 — ohne festgestellte Behinderung ist der Tatbestand nicht erfüllt."
+
+  - regel_id: p19_2_versorgungsfreibetrag
+    feld: keine_versorgungsbezuege
+    wert: false
+    grund: "§ 19 Abs. 2 S. 1 EStG stellt einen Teil der VERSORGUNGSBEZÜGE steuerfrei — wer keine bezieht, hat nichts freizustellen. Die gesetzliche Altersrente gehört ausdrücklich nicht dazu (§ 19 Abs. 2 S. 2 zählt die Bezüge abschliessend auf), deshalb nennt die Frage Pension, Ruhegehalt und Werkspension."
+
+  - regel_id: p35c_sanierung_ermaessigung
+    feld: keine_energetische_sanierung
+    wert: false
+    grund: "§ 35c Abs. 1 S. 1 EStG ermäßigt die Steuer für energetische Maßnahmen an einem zu eigenen Wohnzwecken genutzten EIGENEN Gebäude — wer bestätigt, nicht saniert zu haben, hat kein begünstigtes Objekt. Deckt den am 2026-08-21 gemeldeten Fall ab: die Frage nach früheren Ermäßigungen 'für dieses Gebäude' erreichte einen Nutzer ohne Gebäude."
+
+  - regel_id: p35c_energieberater_ermaessigung
+    feld: keine_energetische_sanierung
+    wert: false
+    grund: "§ 35c Abs. 1 S. 4 EStG rechnet die Kosten eines Energieberaters zu den Aufwendungen für die energetische Maßnahme — ohne Maßnahme gibt es keine Beratungskosten dazu."

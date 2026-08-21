@@ -1280,6 +1280,20 @@ REGELN_OHNE_GROUND_TRUTH = {
     # streichen, der Kinder HAT. Die sechs echten Kinder-Regeln haengen ueber
     # regel_bedingungen daran (22 Felder).
     "p2_kind_vorhanden",
+    # Screening-Gruppe C, AUSGABENSEITE (2026-08-21): fuenf weitere Pseudoregeln derselben Bauart.
+    # Die Gruppen davor decken die EINNAHMEN ab; fuer Ausgaben und Ermaessigungen gab es KEIN
+    # einziges Flag — 143 der 316 fragbaren Felder lagen in Regeln, die keine Antwort abschalten
+    # konnte. Gemessen im echten Nutzerlauf: der Nutzer bekam Fragen zu Handwerkerleistungen, zu
+    # einem Gebaeude und zu einer auswaertigen Taetigkeit, die es alle nicht gab.
+    # Je eine eigene regel_id aus demselben Grund wie oben bei p2_einkunftsart_*: relevanz() wertet
+    # die Gates EINER Regel konjunktiv aus und bricht beim ersten bestaetigten False ab — lagen
+    # zwei Flags auf derselben Pseudoregel, naehme eine bejahte Frage der anderen ihre Antwort.
+    # Felder in bindung_screening_ausgaben.yaml, Wirkung ueber regel_bedingungen.
+    "p33a_unterhalt_vorhanden",
+    "p34c_auslandseinkuenfte_vorhanden",
+    "p33b_behinderung_pflege_vorhanden",
+    "p19_2_versorgungsbezuege_vorhanden",
+    "p35c_sanierung_vorhanden",
     # Hat einen dict-Accessor (catala_p19_2_versorgungsfreibetrag), aber der liest FELD-IDs
     # (versorgung_bemessungsgrundlage), waehrend die Bindung SLOT-Namen fuehrt
     # (bemessungsgrundlage). Der Ring ruft ausserdem catala_einkuenfte_versorgung, nicht den

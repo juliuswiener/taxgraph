@@ -62,6 +62,23 @@ AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
 # fliesst in RENTNER_KEGEL und in den an_gesamt-Kegel, und ein Screening-Flag im Kegel machte
 # jede Zahl von seiner Beantwortung abhaengig. Es steuert nur, welche Fragen kommen.
 KIND_SCREENING = ("kein_kind",)
+
+# Screening der AUSGABENSEITE (2026-08-21). Dieselbe Bauart und dieselbe Auflage wie KIND_SCREENING
+# direkt darüber: NICHT in einen Kegel — ein Screening-Flag im Kegel machte jede Zahl von seiner
+# Beantwortung abhängig, obwohl es nur steuert, welche Fragen kommen.
+#
+# WARUM DIESE ZEILE ÜBERHAUPT NÖTIG IST, und warum sie die eigentliche Falle war: SCHEIBEN["gesamt"]
+# führt eine HANDGESCHRIEBENE Feldliste. Ein Feld, das in der Bindung steht und hier nicht, wird
+# nie gefragt — das Flag existiert, wird nie beantwortet, schaltet nie etwas ab. Tote Verdrahtung,
+# dieselbe Klasse wie der § 35c-Teil-Ring. Gate dagegen:
+# tests/test_screening_ausgabenseite.py::test_flags_haengen_in_der_scheibe_gesamt.
+#
+# Gemessen am 2026-08-21 im echten Nutzerlauf: ein Arbeitnehmer (einzel, Bruttolohn, alle vier
+# Einkunftsarten verneint, keine Kinder) bekam 115 Fragen — darunter 17 zum Unterhalt an eine
+# bedürftige Person, 12 zur energetischen Sanierung und 5 zu Versorgungsbezügen. Sachverhalte,
+# die er mit je EINER Antwort ausschliessen kann.
+AUSGABEN_SCREENING = ("kein_unterhalt", "keine_auslandseinkuenfte", "keine_behinderung_pflege",
+                      "keine_versorgungsbezuege", "keine_energetische_sanierung")
 # person_b_idnr NICHT hier: ERiC lehnt E0100082 amtlich ab (rc=610301106, "Eingefuegt-Kennzeichen
 # J/P"), unabhaengig vom Wert — Feld wird nicht mehr deklariert (elster_kz: null in
 # bindung_an_gesamt.yaml), darf also auch keinen Ehepaar-Bescheid mehr blockieren. Gemessen
@@ -639,7 +656,7 @@ SCHEIBEN = {
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_VERSORGUNG
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER
-                   + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + VV_ANLAGE_FORMALIEN
+                   + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + VV_ANLAGE_FORMALIEN
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
@@ -683,7 +700,7 @@ __all__ = [
     # § 19 Einkünfte
     "EP_FELDER", "EP_FORMALIEN",
     # an_gesamt
-    "AN_GESAMT_FLAGS", "KIND_SCREENING", "AN_GESAMT_PARTNER",
+    "AN_GESAMT_FLAGS", "KIND_SCREENING", "AUSGABEN_SCREENING", "AN_GESAMT_PARTNER",
     # Arbeitsmittel
     "ARBEITSMITTEL_KOSTEN", "ARBEITSMITTEL_RING", "ARBEITSMITTEL_AFA_GESAMT",
     # § 36/§22/§10 KiSt

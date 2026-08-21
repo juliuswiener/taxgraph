@@ -1,0 +1,156 @@
+# Screening-Flags der AUSGABENSEITE (2026-08-21).
+#
+# Fortsetzung eines vorhandenen, begründeten Musters, kein neues Konzept. Die Einnahmenseite hat
+# seit 2026-08-14 fünf solche Flags (kein_gewinn/_kap/_vuv/_sonstige in bindung_an_gesamt.yaml,
+# kein_kind seit 2026-08-15); die Ausgabenseite hatte bis heute KEIN einziges. Gemessen am echten
+# Nutzerpfad: ein Arbeitnehmer (einzel, Bruttolohn, alle vier Einkunftsarten verneint, keine
+# Kinder) bekam 115 Fragen in der Scheibe `gesamt`, darunter 17 zum Unterhalt an eine bedürftige
+# Person, 6 zu ausländischen Einkünften und 5 zu Versorgungsbezügen — alles Sachverhalte, die er
+# mit EINER Antwort ausschließen kann.
+#
+# BAUART, dreimal dieselbe wie bei kein_vuv (Abweichung davon war hier schon teuer):
+#
+#   1. Das Feld benennt die ABWESENHEIT (`kein_*`/`keine_*`), die Frage fragt nach der ANWESENHEIT.
+#      Die Umkehr ist DEKLARIERT (`frage_invertiert: true`), nicht geraten — bis 2026-08-20 riet
+#      die Erfassungsschicht am Feldnamen und verfehlte jede Verneinung in der Mitte des Namens
+#      (tests/test_bindung_frage_polaritaet.py).
+#
+#   2. Jedes Flag ist das EINZIGE Feld einer eigenen Pseudo-Regel. Nicht aus Ordnungsliebe: ein
+#      askable bool an der geltungsbedingung einer ECHTEN Regel IST ein Gate, und relevanz()
+#      schließt bei bestätigtem `false` aus — ein `keine_behinderung_pflege`-Gate an
+#      p33b_behinderten_pauschbetrag nähme den Pauschbetrag also ausgerechnet dem Behinderten weg.
+#      Dieselbe Polaritäts-Falle wie 519199e (Verpflegungsmehraufwand) und wie die Anlage V am
+#      2026-08-16. Die Wirkung läuft ausschließlich über `regel_bedingungen`
+#      (bindung_regel_bedingungen.yaml), wo sie regel-weit und mit Normbegründung steht.
+#
+#   3. `beispielwert: false` — der Normalfall schließt NICHTS vor. Nur eine BESTÄTIGTE Antwort
+#      schaltet ab (relevanz(): unbeantwortet und vorläufig schließen nie aus, fail-closed).
+#
+# KEIN Kz: Anwendbarkeits-Flags, keine Deklarationsfelder. Sie steuern nur, welche Fragen kommen;
+# die Angaben dahinter tragen ihre eigenen Kz (Anlage Unterhalt, Anlage AUS, Anlage Vorsorgeauf-
+# wand, Anlage Energetische Maßnahmen).
+#
+# WIRKSAM ERST MIT EINTRAG IN DIE SCHEIBE: SCHEIBEN["gesamt"]["felder"] in
+# produkt/haut/api_constants.py ist eine handgeschriebene Feldliste (so hängt auch KIND_SCREENING
+# dort, Zeile 64). Ein Feld, das hier steht und dort nicht, wird nie gefragt — tote Verdrahtung,
+# dieselbe Klasse wie der § 35c-Fund. Gate dagegen:
+# tests/test_screening_ausgabenseite.py::test_flags_haengen_in_der_scheibe_gesamt.
+version: 1
+scheibe: "Screening-Flags Ausgabenseite (Unterhalt, Ausland, Behinderung/Pflege, Versorgungsbezüge, energetische Sanierung)"
+
+bindungen:
+  # --- § 33a Abs. 1: der größte ungefilterte Block des Fragebogens (17 Fragen) ---------------
+  # Die Regel trägt NULL bool-Gates — sie konnte strukturell nie ausgeschlossen werden, egal was
+  # der Nutzer antwortet. Die 17 Fragen (Name, Geburtsdatum, IdNr, Beruf, Anschrift, Vermögen,
+  # Einkünfte der unterstützten Person …) bekam damit auch, wer niemanden unterstützt.
+  - feld_id: kein_unterhalt
+    quelle: {regel_id: p33a_unterhalt_vorhanden, geltungsbedingung: kein_unterhalt_gezahlt}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr eine Person finanziell unterstützt, der du zum Unterhalt verpflichtet bist (zum Beispiel Eltern oder ein erwachsenes Kind)?"
+    hilfe_kurz: "Gemeint sind laufende Zahlungen an bedürftige Angehörige, für die es weder Kindergeld noch einen Kinderfreibetrag gibt. Bei Nein entfällt ein Block von 17 Fragen zur unterstützten Person."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — es steuert nur, ob der Unterhaltsblock gefragt wird. Die Angaben selbst tragen ihre eigenen Kz (Anlage Unterhalt, E0120101 ff.)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "Erwachsen einem Steuerpflichtigen Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+
+  # --- § 34c: ausländische Einkünfte (7 Felder über zwei Regeln) -----------------------------
+  - feld_id: keine_auslandseinkuenfte
+    quelle: {regel_id: p34c_auslandseinkuenfte_vorhanden, geltungsbedingung: keine_auslaendischen_einkuenfte}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hattest du dieses Jahr Einkünfte aus dem Ausland, oder hast du im Ausland Steuern darauf gezahlt?"
+    hilfe_kurz: "Zum Beispiel Arbeitslohn, Mieten oder Zinsen aus einem anderen Staat. Wer nur in Deutschland arbeitet und anlegt, antwortet mit Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Auslandsangaben selbst tragen ihre eigenen Kz (Anlage AUS, E0601401/E0601901)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 1 S. 1 EStG"
+      zitatanker: "Bei unbeschränkt Steuerpflichtigen, die mit ausländischen Einkünften in dem Staat, aus dem die Einkünfte stammen, zu einer der deutschen Einkommensteuer entsprechenden Steuer herangezogen werden"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+
+  # --- § 33b / § 33 Abs. 2a: Behinderung und Pflege (13 Felder über drei Regeln) -------------
+  # Die Frage nennt AUSDRÜCKLICH auch die Kinder: p33b_behinderten_pauschbetrag trägt neben den
+  # eigenen (rentner_*) auch die Kind-Felder kind_grad_der_behinderung und
+  # kind_hilflos_blind_taubblind. Eine Frage nur nach der EIGENEN Behinderung hätte dem Elternteil
+  # eines behinderten Kindes dessen Pauschbetrag genommen — ein Flag darf nur abschalten, wonach
+  # es auch gefragt hat.
+  # NICHT dabei: p33b_hinterbliebenen_pauschbetrag. § 33b Abs. 4 setzt bewilligte laufende
+  # Hinterbliebenenbezüge voraus, nicht eine Behinderung — ein anderer Tatbestand, den diese Frage
+  # nicht stellt.
+  - feld_id: keine_behinderung_pflege
+    quelle: {regel_id: p33b_behinderung_pflege_vorhanden, geltungsbedingung: keine_behinderung_und_keine_pflege}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du selbst oder hat eines deiner Kinder eine amtlich festgestellte Behinderung, oder pflegst du eine pflegebedürftige Person?"
+    hilfe_kurz: "Amtlich festgestellt heißt: es gibt einen Bescheid oder Ausweis mit einem Grad der Behinderung ab 20. Die Pflege zählt auch dann, wenn du eine andere Person zu Hause pflegst."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — Grad der Behinderung, Pflegegrad und Angaben zur gepflegten Person tragen ihre eigenen Kz (E0109708, E0161606, E0161506 ff.)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 2 EStG"
+      zitatanker: "Einen Pauschbetrag erhalten Menschen, deren Grad der Behinderung auf mindestens 20 festgestellt ist, sowie Menschen, die hilflos im Sinne des Absatzes 3 Satz 4 sind"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  # --- § 19 Abs. 2: Versorgungsbezüge (5 Felder) ---------------------------------------------
+  - feld_id: keine_versorgungsbezuege
+    quelle: {regel_id: p19_2_versorgungsbezuege_vorhanden, geltungsbedingung: keine_versorgungsbezuege_erhalten}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Beziehst du eine Beamtenpension, ein Ruhegehalt oder eine Werkspension aus einem früheren Dienstverhältnis?"
+    hilfe_kurz: "Solche Bezüge stehen in der Lohnsteuerbescheinigung gesondert als Versorgungsbezüge. Die gesetzliche Altersrente gehört NICHT dazu — wer nur Arbeitslohn bezieht, antwortet mit Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — der Versorgungsfreibetrag wird vom Finanzamt aus den Versorgungsbezügen der Lohnsteuerbescheinigung berechnet."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 1 EStG"
+      zitatanker: "Von Versorgungsbezügen bleiben ein nach einem Prozentsatz ermittelter, auf einen Höchstbetrag begrenzter Betrag (Versorgungsfreibetrag) und ein Zuschlag zum Versorgungsfreibetrag steuerfrei"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  # --- § 35c: energetische Sanierung (12 Felder über zwei Regeln) ----------------------------
+  # Einer der drei von Julius im echten Lauf gemeldeten Fälle: „Hast du für dieses Gebäude in
+  # früheren Jahren schon einmal …" — er hat kein Gebäude. Die Regel hat zwar bool-Gates, aber
+  # keines davon fragt nach dem Gebäude; p35c_bereits_ermaessigung_frueher trägt seit 2026-08-16
+  # zu Recht `gate: false` (die Frage ist Deklaration, keine Voraussetzung) und schaltet deshalb
+  # auch nichts ab.
+  - feld_id: keine_energetische_sanierung
+    quelle: {regel_id: p35c_sanierung_vorhanden, geltungsbedingung: keine_energetische_massnahme}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr an deinem eigenen, selbst bewohnten Haus oder deiner Eigentumswohnung energetisch saniert (zum Beispiel Dämmung, neue Fenster oder eine neue Heizung)?"
+    hilfe_kurz: "Nur für Gebäude, die dir gehören und in denen du selbst wohnst; das Gebäude muss älter als zehn Jahre sein. Wer zur Miete wohnt, antwortet mit Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Sanierungsangaben tragen ihre eigenen Kz (Anlage Energetische Maßnahmen, E0240401 ff.)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 1 EStG"
+      zitatanker: "Für energetische Maßnahmen an einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum belegenen zu eigenen Wohnzwecken genutzten eigenen Gebäude (begünstigtes Objekt) ermäßigt sich auf Antrag die tarifliche Einkommensteuer"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
