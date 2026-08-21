@@ -318,3 +318,80 @@ def _kein_schreiben_ins_echte_fehler_log(request, monkeypatch):
         'Datei ist unangetastet. Fix: monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path)) '
         "im Test/Fixture setzen -- fehler_log folgt derselben Ablage."
     )
+
+
+# --------------------------------------------------- Wache 3: die echte Nutzerdatenbank
+#
+# Anlass (Befund 2026-08-21): in produkt/auth/users.json stand ein Konto "TestUser",
+# angelegt am 2026-08-20T14:30:33 mitten in einem Testlauf. Verursacher war
+# test_auth_security.py::TestPasswordPolicy::test_username_case_sensitive -- der Test
+# nimmt die `base`-Fixture NICHT, in der USER_STORE umgelenkt wird, und schrieb deshalb
+# ueber _lade_users()/_speichere_users() in die ECHTE Datei des Nutzers.
+#
+# Das ist dieselbe Fehlklasse wie bei den beiden Wachen darueber, nur mit hoeherem
+# Einsatz: hier stehen bcrypt-Hashes und Zugangsdaten drin, nicht Protokollzeilen. Ein
+# Grep nach dem Patch-Muster faengt den Fall wieder nicht -- test_ui_login.py und
+# test_authz_fail_closed.py lenken sauber um und WARNEN im eigenen Docstring wortwoertlich
+# davor, waehrend die Datei nebenan es ungeschuetzt tat. Deshalb auch hier: den echten
+# Schreibpfad zur Laufzeit messen statt ein Namensmuster.
+_AUTH_DIR = os.path.join(_ROOT, "produkt", "auth")
+if _AUTH_DIR not in sys.path:
+    sys.path.insert(0, _AUTH_DIR)
+
+import auth as _auth  # noqa: E402 — echtes Modul-Attribut, wie _audit/_fehler_log oben
+
+_REAL_USER_STORE = os.path.abspath(_auth.USER_STORE)
+
+
+@pytest.fixture(autouse=True)
+def _kein_schreiben_in_den_echten_user_store(request, monkeypatch):
+    """Dieselbe Wache fuer die Nutzerdatenbank (produkt/auth/auth.py).
+
+    Umwickelt wird _speichere_users, nicht register(): _speichere_users ist der
+    EINZIGE Schreibpfad des Moduls (verifiziert -- register() ist sein einziger
+    Aufrufer im Produktcode, und keine weitere Funktion in auth.py schreibt; eine
+    Passwortaenderung gibt es dort heute nicht). Eine Wache an register() haette
+    die direkten _speichere_users-Aufrufe aus den Tests durchgelassen, und genau
+    so einer war der Verursacher. Am Engpass haengt sie auch an einem kuenftigen
+    zweiten Schreiber schon dran, ohne dass jemand daran denken muss.
+
+    Gleiche Mechanik, gleiche Gruende wie oben:
+      - Pfad zur AUFRUFZEIT ueber `_auth.USER_STORE` aufloesen, nicht beim Import
+        binden. `_speichere_users` liest die Modul-Globale selbst erst beim Aufruf,
+        deshalb WIRKT monkeypatch.setattr(AUTH, "USER_STORE", ...) im Test -- eine
+        beim Import kopierte Variable wuerde die Umlenkung nicht mitbekommen und
+        jeden umlenkenden Test faelschlich beschuldigen.
+      - Treffer BLOCKEN statt durchreichen: die echte Datei bleibt auch bei einem
+        Test, der es versucht, unangetastet.
+      - Erst NACH yield asserten statt raise im Wrapper -- server.py faengt
+        Exceptions aus dem Request-Dispatch breit ab, ein raise wuerde als
+        generisches 500 verschluckt und der Test waere nur unklar rot.
+
+    In die Meldung kommen NUR die Benutzernamen, nie der store selbst: darin
+    stehen die Passwort-Hashes, und die gehoeren nicht in ein Testprotokoll.
+
+    Blinder Fleck, bewusst offen: zwei Tests laden das Modul zusaetzlich als
+    `produkt.auth.auth` (fuer _JWT_SECRET). Das ist ein zweites Modul-Objekt mit
+    eigenem _speichere_users, das dieser Patch nicht trifft. Heute schreibt
+    niemand darueber -- ein kuenftiger Schreiber auf diesem Weg waere ungesehen.
+    """
+    treffer: list[str] = []
+    echtes_speichern = _auth._speichere_users
+
+    def _wache(store, *args, **kwargs):
+        pfad = os.path.abspath(_auth.USER_STORE)
+        if pfad == _REAL_USER_STORE:
+            namen = sorted((store or {}).get("users", {}))  # nur Namen, keine Hashes
+            treffer.append(f"pfad={pfad!r} users={namen!r}")
+            return None  # geblockt -- echte Datei unangetastet
+        return echtes_speichern(store, *args, **kwargs)
+
+    monkeypatch.setattr(_auth, "_speichere_users", _wache)
+    yield
+    assert not treffer, (
+        f"{request.node.nodeid} hat versucht, in die ECHTE Nutzerdatenbank zu schreiben "
+        f"({_REAL_USER_STORE}): " + "; ".join(treffer) + ". Schreibvorgang wurde geblockt, "
+        'Datei ist unangetastet. Fix: monkeypatch.setattr(auth, "USER_STORE", '
+        'str(tmp_path / "users.json")) im Test/Fixture setzen -- so machen es '
+        "test_ui_login.py und test_authz_fail_closed.py."
+    )

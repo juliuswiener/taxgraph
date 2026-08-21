@@ -147,8 +147,16 @@ class TestPasswordPolicy:
         assert AUTH._USER_RE.match("-hyphen") is None   # starts with hyphen
         assert AUTH._USER_RE.match("invalid-user") is not None  # dash inside word = valid
 
-    def test_username_case_sensitive(self):
-        """Usernames are case-sensitive in the system."""
+    def test_username_case_sensitive(self, tmp_path, monkeypatch):
+        """Usernames are case-sensitive in the system.
+
+        Braucht `tmp_path`/`monkeypatch` statt der `base`-Fixture: der Test kommt ohne
+        Server aus, lenkt den Store aber selbst um. Ohne die Umlenkung las er die ECHTE
+        produkt/auth/users.json und schrieb sie zurueck — so entstand dort am
+        2026-08-20 ein Konto "TestUser" (Befund B2). Er blieb dabei gruen, weil sein
+        eigener Rueckstand aus dem Vorlauf die Zusicherung erfuellte.
+        """
+        monkeypatch.setattr(AUTH, "USER_STORE", str(tmp_path / "users.json"))
         store = AUTH._lade_users()
         store["users"]["TestUser"] = {
             "password_hash": AUTH._hash_pw("password1"),
