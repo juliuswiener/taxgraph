@@ -272,15 +272,34 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
     PII-Filter: Vor dem ausgehenden LLM-Call werden personenbezogene Daten (IdNr, IBAN, Datum,
     PLZ/Ort, Straße, Anrede+Name) maskiert — im Freitext UND im Kontext, der die schon bestätigten
     Angaben trägt. Geldbeträge und Paragraphen bleiben unangetastet.
-    Audit: pro Call ein Eintrag mit Kategorien + Längen (NIEMALS der Freitext selbst)."""
+    Audit: pro Call ein Eintrag mit Kategorien + Längen (NIEMALS der Freitext selbst). Dazu der
+    ANBIETER, der geantwortet hat: bei einem Vermittler wie OpenRouter bedient dieselbe
+    Modell-Kennung viele Endpunkte, und ob unser JSON-Schema erzwungen oder stillschweigend
+    ignoriert wird, hängt am Endpunkt. Ohne den Namen ist die Absicherung im Client
+    (`provider.require_parameters`) nicht nachprüfbar. Ein Anbietername ist ein Metadatum — der
+    Antworttext bleibt draussen, wie jeder Text."""
     leer = {"vorschlaege": [], "antwort": "", "unsicher": False}
     if not (freitext or "").strip():
         return leer
     gefiltert, kategorien = filtere(freitext)
     kontext_gefiltert, kategorien_k = filtere(kontext) if kontext else ("", [])
     import llm_client
-    comp = llm_client.complete("chat", _dialog_prompt(gefiltert, katalog, kontext_gefiltert),
-                               schema=DIALOG_SCHEMA)
+    kopf = (f"pii_kategorien={kategorien}, kontext_kategorien={kategorien_k}, "
+            f"textlaenge_vor={len(freitext)}, textlaenge_nach={len(gefiltert)}")
+    try:
+        comp = llm_client.complete("chat", _dialog_prompt(gefiltert, katalog, kontext_gefiltert),
+                                   schema=DIALOG_SCHEMA)
+    except llm_client.LlmNichtVerfuegbar as e:
+        # Der Aufrufer sieht wie bisher nur die Ausnahme (api.py → 501). Ohne diesen Eintrag
+        # bliebe im Protokoll aber GAR NICHTS stehen — ein Aufruf, der leer zurückkam und nach
+        # drei Versuchen aufgab, wäre von einem, der nie stattfand, nicht zu unterscheiden.
+        # `grund` ist ein Wort aus dem kontrollierten Vokabular des Clients, NICHT die Meldung:
+        # die trägt gekürzten Anbietertext und gehört damit nicht in ein Metadaten-Protokoll.
+        audit.append(user_id or "unbekannt", "llm_call", None,
+                     f"{kopf}, ergebnis=kein_ergebnis, "
+                     f"grund={getattr(e, 'grund', '') or 'sonstiger_fehler'}, "
+                     f"provider={llm_client.letzte_meta().get('provider', '')!r}")
+        raise
     roh = _chat_parse(comp.text)
     # Beleg-Gate: nur Vorschläge mit wörtlichem Zitat aus DEM Text, den das Modell gesehen hat.
     # Das Modell kann eine Begründung erfinden, aber kein Zitat, das im Text nicht vorkommt.
@@ -289,12 +308,17 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
     # Audit: nur Metadaten, nie den Freitext (roh oder gefiltert). Die Zahl der belegfrei
     # verworfenen Vorschläge gehört dazu — sie ist das Maß dafür, wie oft das Modell etwas
     # behauptet, das im Text nicht steht.
+    #
+    # `inhalt_laenge` ist die Länge der Antwort, NICHT ihr Text — und der Unterschied, der bisher
+    # fehlte: „vorschlaege=0, antwortlaenge=0" hiess entweder „das Modell hatte nichts zu sagen"
+    # oder „es kam etwas zurück, das wir nicht verwerten konnten". Mit der Länge daneben sind die
+    # beiden auseinanderzuhalten, ohne dass ein Zeichen des Inhalts ins Protokoll wandert.
     audit.append(user_id or "unbekannt", "llm_call", None,
-                 f"pii_kategorien={kategorien}, kontext_kategorien={kategorien_k}, "
-                 f"textlaenge_vor={len(freitext)}, "
-                 f"textlaenge_nach={len(gefiltert)}, vorschlaege={len(behalten)}, "
+                 f"{kopf}, vorschlaege={len(behalten)}, "
                  f"ohne_beleg_verworfen={len(verworfen)}, "
-                 f"antwortlaenge={len(antwort)}, unsicher={unsicher}")
+                 f"antwortlaenge={len(antwort)}, unsicher={unsicher}, "
+                 f"inhalt_laenge={len(comp.text or '')}, provider={comp.provider!r}, "
+                 f"finish={comp.finish!r}")
     return {"vorschlaege": behalten, "antwort": antwort, "unsicher": unsicher}
 
 

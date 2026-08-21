@@ -15,12 +15,40 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 import urllib.error      # explizit: urllib.request zieht es zwar intern nach, aber darauf
 import urllib.request    # zu bauen ist Zufall, kein Vertrag — und _call fängt HTTPError
 from dataclasses import dataclass
 
 _TIMEOUT = 30
+
+# ------------------------------------------------- Obergrenze für die Erzeugung
+# Die Anbieter-Doku zu DeepSeeks JSON-Ausgabe verlangt ausdrücklich ein gesetztes max_tokens,
+# damit die JSON-Zeichenkette nicht mitten im Satz abbricht. Bisher stand hier gar keins — die
+# Grenze war allein das 30-s-Zeitlimit, und ein durchdrehender Lauf wurde danach noch zweimal
+# wiederholt.
+#
+# Die Zahl ist NICHT geraten, sondern über der Messung angesetzt (echter Aufruf 2026-08-21,
+# Anbieter StreamLake): 1508 Antwort-Tokens, davon 1185 REASONING — der sichtbare Inhalt war
+# knapp 1000 Zeichen. Genau das ist die Falle bei einem denkenden Modell: das Nachdenken zählt
+# gegen dasselbe Budget wie die Antwort. Ein "vernünftig" klein gewähltes max_tokens erzeugt
+# deshalb selbst den leeren Inhalt, den es verhindern soll. 8192 ist gut fünfmal der gemessene
+# Bedarf — eine Deckelung gegen den Ausreisser, kein enger Rahmen.
+_MAX_TOKENS = 8192
+
+# ------------------------------------------------- Gründe, die der Aufrufer unterscheiden muss
+# Kontrolliertes Vokabular aus UNSEREM Code, ausdrücklich kein Anbietertext: die Ausnahme trägt
+# daneben eine gekürzte Provider-Meldung, und die darf nicht in ein Protokoll wandern, das nur
+# Metadaten führen soll (produkt/store/audit.py). Ein Wort aus dieser Liste ist ein Metadatum.
+GRUND_LEER = "leere_antwort"
+GRUND_ABGESCHNITTEN = "abgeschnitten"
+
+# Metadaten der zuletzt gelesenen Antwort (welcher Anbieter, wie die Erzeugung endete). Nötig,
+# weil `_call` einen nackten `str` zurückgibt und diese Signatur bleiben muss — sie wird an
+# mehreren Stellen als solche ersetzt. Thread-lokal statt Modul-global: der Server ist heute
+# einfädig, aber eine Zuordnung, die nur unter dieser Bedingung stimmt, ist keine Zuordnung.
+_letzte = threading.local()
 
 # ------------------------------------------------- Wiederholung bei vorübergehenden Störungen
 # (Audit res-product-clients-no-retry): jeder Fehlschlag wurde bisher sofort zu
@@ -53,6 +81,29 @@ class _Voruebergehend(Exception):
     zurückfallen, schon ab, bevor überhaupt wiederholt wurde. Verlässt dieses Modul nie."""
 
 
+def _mit_grund(e: Exception, grund: str) -> Exception:
+    """Hängt der Ausnahme ein Wort aus dem kontrollierten Vokabular an. `getattr(e, "grund", "")`
+    beim Aufrufer — so bleibt `except LlmNichtVerfuegbar` überall unverändert gültig."""
+    e.grund = grund
+    return e
+
+
+def _merke(provider: str, ende: str) -> None:
+    _letzte.meta = {"provider": provider, "finish_reason": ende}
+
+
+def letzte_meta() -> dict:
+    """Metadaten der letzten Antwort in DIESEM Thread: `provider` (wer bei einem Vermittler wie
+    OpenRouter tatsächlich geantwortet hat) und `finish_reason`. Wird zu Beginn jedes `_call`
+    geleert, kann also nie die Angabe eines früheren Aufrufs zurückgeben. Leeres dict, solange
+    keine Antwort gelesen wurde.
+
+    Warum das überhaupt herausgeführt wird: ohne den Namen des antwortenden Endpunkts ist nicht
+    nachprüfbar, ob die Absicherung unten (`require_parameters`) greift — und eine Absicherung,
+    deren Wirkung man nicht messen kann, ist nur ein Vorsatz."""
+    return dict(getattr(_letzte, "meta", None) or {})
+
+
 def _key() -> str:
     k = os.environ.get("LLM_API_KEY", "").strip()
     if not k:
@@ -75,27 +126,43 @@ def _call(messages: list[dict], schema: dict | None = None) -> str:
     `schema`: optionales JSON-Schema (Form {"name": …, "strict": True, "schema": {…}}). Ist es gesetzt,
     geht response_format={"type":"json_schema", …} raus statt des schwächeren json_object — der Provider
     erzwingt dann die Struktur, statt sie nur zu erbitten. Ohne Schema bleibt es beim Objekt-Modus.
-    Nicht jedes Modell/Endpoint kann das (OpenRouter führt es als `structured_outputs` je Endpoint);
-    deepseek/deepseek-v4-pro kann es, gemessen 2026-08-14."""
+
+    DASS DAS SCHEMA ERZWUNGEN WIRD, IST NICHT UMSONST ZU HABEN. OpenRouter kann dieselbe Modell-Kennung
+    über viele Endpunkte bedienen, und die Fähigkeit hängt am ENDPUNKT, nicht am Modell: "Support for
+    structured outputs is determined per endpoint rather than solely per model." Unter der Standard-
+    Wegewahl bekommen Endpunkte, die einen Parameter nicht können, die Anfrage trotzdem — sie ignorieren
+    ihn dann stillschweigend. Gemessen 2026-08-21 an deepseek/deepseek-v4-pro: 19 Endpunkte, 7 davon
+    OHNE `structured_outputs` (darunter DeepSeek selbst, dessen Chat-API nur `json_object` kennt; BaseTen
+    führt nicht einmal `response_format`). Ohne die Zeile unten war also gut jeder dritte Endpunkt einer,
+    bei dem wir irgendein JSON zurückbekommen und es für schema-geprüft halten — fail-open.
+    `provider.require_parameters` schliesst genau diese Endpunkte aus. NUR mit Schema: ohne eines gäbe es
+    nichts zu erzwingen, und die Wegewahl würde grundlos verengt (der Kontoauszug-Pfad ruft ohne Schema).
+
+    Nachprüfbar ist das über `letzte_meta()["provider"]` — wer tatsächlich geantwortet hat."""
     base, model = _base(), _model()
     if not base or not model:
         raise LlmNichtVerfuegbar("LLM_API_BASE/LLM_MODEL nicht gesetzt — Provider nicht konfiguriert.")
     schluessel = _key()
     format_teil = ({"type": "json_schema", "json_schema": schema} if schema
                    else {"type": "json_object"})
-    body = json.dumps({"model": model, "messages": messages, "temperature": 0,
-                       "response_format": format_teil}).encode("utf-8")
+    nutzlast = {"model": model, "messages": messages, "temperature": 0,
+                "response_format": format_teil, "max_tokens": _MAX_TOKENS}
+    if schema:
+        nutzlast["provider"] = {"require_parameters": True}
+    body = json.dumps(nutzlast).encode("utf-8")
     req = urllib.request.Request(
         f"{base}/chat/completions", data=body, method="POST",
         headers={"Authorization": f"Bearer {schluessel}", "Content-Type": "application/json"})
+    _merke("", "")            # nie die Angabe eines früheren Aufrufs stehen lassen
     for versuch in range(_VERSUCHE):
         letzter = versuch == _VERSUCHE - 1
         try:
             return _ein_versuch(req, schluessel)
         except _Voruebergehend as e:
             if letzter:
-                raise LlmNichtVerfuegbar(
-                    f"LLM-Aufruf nach {_VERSUCHE} Versuchen fehlgeschlagen: {e}") from e
+                raise _mit_grund(
+                    LlmNichtVerfuegbar(f"LLM-Aufruf nach {_VERSUCHE} Versuchen fehlgeschlagen: {e}"),
+                    getattr(e, "grund", "")) from e
             time.sleep(_BACKOFF_S[versuch])
     raise AssertionError("unerreichbar")   # die Schleife kehrt zurück oder wirft
 
@@ -106,7 +173,6 @@ def _ein_versuch(req, schluessel: str) -> str:
     try:
         with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
             j = json.loads(r.read())
-        return j["choices"][0]["message"]["content"]
     except urllib.error.HTTPError as e:
         # Statuscode UND Provider-Meldung mitnehmen (gekürzt). Vorher stand hier nur
         # type(e).__name__, also "HTTPError" — und damit sah eine erschöpfte Budget-Grenze
@@ -141,14 +207,55 @@ def _ein_versuch(req, schluessel: str) -> str:
         # hätte das beinahe wieder weggenommen — aufgefallen ist es nur, weil jener Test rot wurde.
         raise _Voruebergehend(f"{type(e).__name__}: Zeitüberschreitung nach {_TIMEOUT}s") from e
     except Exception as e:
-        # Alles Übrige (kaputtes JSON, fehlende choices-Struktur) heilt kein zweiter Versuch.
+        # Alles Übrige (kaputtes JSON) heilt kein zweiter Versuch.
         raise LlmNichtVerfuegbar(f"LLM-Aufruf fehlgeschlagen: {type(e).__name__}") from e
+    return _inhalt(j)
+
+
+def _inhalt(j: dict) -> str:
+    """Antwort-JSON → Inhalt, und die beiden Fälle benannt, die bisher als leerer Text durchliefen.
+
+    AUSSERHALB des try-Blocks oben, und das ist der Punkt: dort fängt ein `except Exception` alles
+    ein und macht LlmNichtVerfuegbar daraus — ein hier geworfenes `_Voruebergehend` würde also
+    verschluckt, und die Wiederholung fände nie statt. Ein Gate, das im Aufräum-Zweig eines anderen
+    hängt, ist keins."""
+    try:
+        wahl = j["choices"][0]
+        inhalt = wahl["message"].get("content")
+        ende = str(wahl.get("finish_reason") or "")
+    except Exception as e:                                   # noqa: BLE001
+        # Fehlende choices-Struktur — wie bisher: kein zweiter Versuch.
+        raise LlmNichtVerfuegbar(f"LLM-Aufruf fehlgeschlagen: {type(e).__name__}") from e
+    _merke(str(j.get("provider") or ""), ende)
+    # REIHENFOLGE IST DIE AUSSAGE. Ein denkendes Modell kann sein ganzes Token-Budget im
+    # Nachdenken verbrauchen; dann ist der Inhalt leer UND abgeschnitten. "Abgeschnitten" ist
+    # die genauere Diagnose und die einzige der beiden, die ein zweiter Versuch nicht heilt:
+    # bei temperature=0 läuft derselbe Aufruf in dieselbe Grenze, dreimal für dieselbe Antwort.
+    if ende == "length":
+        raise _mit_grund(LlmNichtVerfuegbar(
+            f"LLM-Antwort bei {_MAX_TOKENS} Tokens abgeschnitten — unvollständiges JSON."),
+            GRUND_ABGESCHNITTEN)
+    if not (inhalt or "").strip():
+        # Kein Ausrutscher, sondern ein vom Anbieter selbst benannter Fall: die DeepSeek-Doku zur
+        # JSON-Ausgabe hält fest, die API gebe gelegentlich leeren Inhalt zurück, daran werde
+        # gearbeitet. Damit ist er per Definition einen weiteren Versuch wert — dieselbe Bauart
+        # wie ein 503, und die Wiederholschleife dafür steht schon. Bisher lief er als leerer
+        # String bis in `_chat_parse`/`_antwort_parse` durch und endete dort als "keine
+        # Vorschläge, keine Antwort": nicht von einer Nachricht zu unterscheiden, zu der das
+        # Modell schlicht nichts zu sagen hatte.
+        raise _mit_grund(_Voruebergehend("leerer Inhalt vom Anbieter"), GRUND_LEER)
+    return inhalt
 
 
 @dataclass
 class Completion:
-    """Rohe LLM-Antwort. Nur `text` — dieser Client kennt keine Aufgabe, nur den Call."""
+    """Rohe LLM-Antwort: `text` plus die Metadaten der Antwort — `provider` (bei einem Vermittler
+    wie OpenRouter der Endpunkt, der TATSÄCHLICH geantwortet hat) und `finish` (finish_reason).
+    Beides ist Metadatum, nie Inhalt; Vorgabe leer, damit Fixture-Antworten in Tests unverändert
+    gebaut werden können. Der Client kennt weiter keine Aufgabe, nur den Call."""
     text: str
+    provider: str = ""
+    finish: str = ""
 
 
 def complete(role: str, messages: list[dict], fixture_id: str | None = None,
@@ -161,4 +268,7 @@ def complete(role: str, messages: list[dict], fixture_id: str | None = None,
 
     `schema`: optionales JSON-Schema, das der Provider erzwingt (s. _call). Der Kontoauszug-Pfad
     ruft weiter ohne — dessen Fixture-Replay-Signatur bleibt unberührt."""
-    return Completion(text=_call(messages, schema=schema))
+    text = _call(messages, schema=schema)
+    meta = letzte_meta()
+    return Completion(text=text, provider=meta.get("provider", ""),
+                      finish=meta.get("finish_reason", ""))
