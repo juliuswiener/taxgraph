@@ -64,7 +64,12 @@
           <div id="spanne-hint" class="spanne-hint"></div>
         </div>
       </header>
-      <progress id="fortschritt" class="fortschritt" min="0" max="1" value="0" aria-label="Fortschritt der Befragung"></progress>
+      <progress id="fortschritt" class="fortschritt" min="0" max="1" value="0"
+                aria-label="Fortschritt der Befragung" aria-describedby="fortschritt-text"></progress>
+      <!-- Die Gesamtzahl in Worten, plus ihre Änderung. Sie kann während des Dialogs sinken (eine
+           Antwort schaltet einen Block ab) oder steigen (sie macht einen auf) — dann springt der
+           Balken, und diese Zeile sagt warum („12 Fragen entfallen"). Siehe zeigeRing() in app.js. -->
+      <p id="fortschritt-text" class="fortschritt-text"></p>
 
       <div class="vorjahr-box">
         <button id="vorjahr-toggle" class="btn-link" type="button">↻ Vorjahr-Daten übernehmen</button>

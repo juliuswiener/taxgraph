@@ -1248,6 +1248,7 @@ async function abmelden() {
   await jpost("/auth/logout", { token: TOKEN });
   clearToken();
   FALL = null; AKTUELL = null; STAND = null; SPANNE0 = null; KORREKTUR_FID = null; VERSTANDEN_OFFEN = false;
+  OFFEN_ANZAHL = null; GESAMT_VOR = null;
   btn.disabled = false;
   aktualisiereKontoLeiste();
   zeigeAnmeldemaske();

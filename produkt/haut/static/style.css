@@ -40,11 +40,15 @@ h1,h2,h3{margin:0}
 .spanne-hint{color:var(--muted);font-size:12px;margin-top:2px}
 
 /* Fortschrittsleiste */
-.fortschritt{width:100%;height:6px;border:0;border-radius:3px;background:var(--line);margin:12px 0 12px 0;
-  appearance:none;-webkit-appearance:none}
+.fortschritt{width:100%;height:6px;border:0;border-radius:3px;background:var(--line);margin:12px 0 6px 0;
+  appearance:none;-webkit-appearance:none;display:block}
 .fortschritt::-webkit-progress-bar{background:var(--line);border-radius:3px}
 .fortschritt::-webkit-progress-value{background:var(--akzent);border-radius:3px;transition:width .3s ease}
 .fortschritt::-moz-progress-bar{background:var(--akzent);border-radius:3px;transition:width .3s ease}
+/* „N von M Fragen beantwortet · 12 Fragen entfallen" — M ist die Gesamtzahl, die mit den Antworten
+   wandert (s. zeigeRing in app.js). Die Notiz hinter dem Mittelpunkt erklärt den Sprung, den ein
+   ehrlicher Balken bei einer wandernden Gesamtzahl zwangsläufig macht. */
+.fortschritt-text{color:var(--muted);font-size:12px;margin:0 4px 14px}
 
 /* Wegpunkt-Karte */
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
@@ -257,6 +261,48 @@ h1,h2,h3{margin:0}
 [inert],[inert] *{cursor:progress}
 
 @media (min-width:520px){ #app{padding:24px} }
+
+/* ============================================================================
+   Der KI-Berater als eigene Spalte rechts (Julius 2026-08-21: „es macht mehr sinn den KI agent als
+   eigenes panel rechts darzustellen als in die column der felder").
+
+   REIN CSS, das Markup bleibt unverändert — und das ist hier keine Bequemlichkeit. chatSperren()
+   in app.js legt während eines laufenden KI-Aufrufs `inert` auf #wegpunkt, #verstanden,
+   #belegt-liste und .vorjahr-box. Würde der Berater beim Umbauen in einen dieser Bereiche rutschen
+   (oder einer von ihnen ihn umschließen), sperrte der laufende Aufruf sein eigenes Eingabefeld mit
+   — der Nutzer käme bis zum Seiten-Neuladen nicht mehr heraus. Ein Grid auf #flow braucht dafür
+   keinen Wrapper und verschiebt nichts im DOM: alle Kinder bleiben in Spalte 1, nur #berater
+   bekommt Spalte 2.
+
+   Unter 900px greift dieser Block nicht. Dann steht der Berater wieder im normalen Fluss, also
+   UNTER dem Inhalt statt neben ihm abgeschnitten — das ist die schmale Ansicht, die
+   tests/test_ui_responsive.py bei 360px misst. */
+@media (min-width:900px){
+  #app{max-width:1080px}
+  /* Start, Anmeldung und Konto-Leiste haben keine zweite Spalte. In die Breite gezogen wären es
+     nur sehr lange Kacheln, also bleiben sie schmal und mittig. */
+  #start,#login,#konto-leiste{max-width:440px;margin-left:auto;margin-right:auto}
+  #flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,360px);
+        column-gap:28px;align-items:start}
+  /* min-width:0 gegen die Grid-Voreinstellung min-width:auto — sonst diktiert der breiteste
+     Inhalt (Auswahlliste, langes Zitat) die Spaltenbreite. Dieselbe Falle wie bei .eingabe oben. */
+  #flow > *{grid-column:1;min-width:0}
+  /* Die Zeilen-Spanne ist nicht Kosmetik: ein sticky Element bewegt sich nur innerhalb seiner
+     Grid-Area, und über eine einzelne Zeile (Höhe der .kopf-Zeile) hätte es keinen Weg zum Kleben.
+     `span 20` statt `1 / -1`, weil -1 auf das Ende des EXPLIZITEN Rasters zeigt und dieses Grid
+     gar keine expliziten Zeilen hat — was daraus folgt, ist zwischen den Engines nicht verlässlich.
+     NACHGEMESSEN (Mutationsprobe, Chromium): `1 / -1` klebt dort ebenso, die Tests bleiben grün.
+     Es ist also kein Fehler, den man hier sähe, sondern eine Annahme, die nur Chromium abdeckt —
+     `span 20` kommt ohne sie aus. Dass Kleben überhaupt passiert, hält
+     tests/test_ui_fortschritt_und_panel.py::test_panel_bleibt_beim_scrollen_stehen fest (die
+     Mutation position:static macht ihn rot). #flow hat acht Kinder; die überzähligen Zeilen sind
+     leer und ohne row-gap null Pixel hoch. */
+  #berater{grid-column:2;grid-row:1 / span 20;align-self:start;
+           position:sticky;top:24px;margin-top:0}
+  /* Neben statt unter dem Inhalt darf der Verlauf höher werden — 44vh waren für eine eigene
+     Spalte, die den ganzen Bildschirm zur Verfügung hat, unnötig knapp. */
+  .chat-body{max-height:52vh}
+}
 
 /* ============================================================================
    K2-POLITUR (2026-07-20, dev-1) — reine Präsentation: Accessibility, Tap-Targets,
