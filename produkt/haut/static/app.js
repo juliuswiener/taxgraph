@@ -875,6 +875,25 @@ async function erklaereFeld() {
 // Der Verlauf wird ANGEHÄNGT, nicht ersetzt: erst dadurch sind Rückfragen möglich — man sieht,
 // worauf man sich bezieht. `feld_id` geht mit, damit die Antwort weiß, bei welcher Frage der
 // Nutzer gerade steht.
+// Das Eingabefeld wächst mit dem Text (Julius, 2026-08-21: „das ki input feld muss mitwachsen
+// wenn der user viel text eingibt"). Zwei feste Zeilen zwangen sonst jeden längeren Satz in ein
+// Guckloch — man sieht beim Tippen nicht mehr, was oben steht, und kann seine eigene Angabe vor
+// dem Absenden nicht überprüfen.
+//
+// `height = "auto"` VOR dem Lesen von scrollHeight ist nicht kosmetisch: scrollHeight meldet
+// sonst nie einen Wert UNTER der aktuellen Höhe, das Feld könnte also nur wachsen und nie wieder
+// schrumpfen — nach dem Absenden bliebe es in voller Größe stehen.
+//
+// Die Obergrenze steht in CSS (max-height), nicht hier: darüber übernimmt der eigene Scrollbalken
+// des Feldes. Ohne sie schöbe ein langer Text den Absendeknopf aus dem Bild — das Panel ist
+// sticky und hat nur die Fensterhöhe.
+function chatHoeheAnpassen() {
+  const t = $("chat-text");
+  if (!t) return;
+  t.style.height = "auto";
+  t.style.height = t.scrollHeight + "px";
+}
+
 async function chatSenden() {
   const sendBtn = $("chat-send");
   if (sendBtn.disabled) return;   // Doppel-Submit-Schutz
@@ -962,6 +981,7 @@ async function chatSenden() {
       "Der KI-Kanal antwortete unerwartet (" + r.status + ")."));
   }
   t.value = "";
+  chatHoeheAnpassen();                  // zurück auf die Grundhöhe, sonst bleibt das leere Feld gross
   body.scrollTop = body.scrollHeight;   // das Neueste im Blick behalten
   // Kein `sendBtn.disabled = false` mehr: das Freigeben steht jetzt vollständig im finally oben.
   // Zwei Freigabestellen wären eine zu viel — diese hier liefe nach einer Ausnahme nie, und genau
@@ -1285,6 +1305,9 @@ async function initAuth() {
 document.querySelectorAll(".kachel").forEach(k => k.addEventListener("click", () => waehleScheibe(k.dataset.scheibe)));
 $("chat").addEventListener("click", erklaereFeld);
 $("chat-send").addEventListener("click", chatSenden);
+// `input` statt `keyup`: es feuert auch beim Einfügen aus der Zwischenablage und beim Ziehen von
+// Text ins Feld — und gerade der eingefügte Absatz ist der Fall, für den das Mitwachsen gebaut ist.
+$("chat-text").addEventListener("input", chatHoeheAnpassen);
 $("warum").addEventListener("click", zeigeWarum);
 $("verstanden-weiter").addEventListener("click", verstandenWeiter);
 $("kette-zu").addEventListener("click", () => $("kette-overlay").hidden = true);

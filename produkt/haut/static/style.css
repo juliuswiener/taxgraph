@@ -198,8 +198,15 @@ h1,h2,h3{margin:0}
 .chat-vertrag{color:var(--muted);font-size:13px;background:#12162a;border:1px solid var(--line);border-radius:10px;padding:12px}
 /* K1 Chat-Eingabe (Freitext → KI-Vorschläge) */
 .chat-eingabe{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+/* Das Feld wächst mit dem Text (app.js chatHoeheAnpassen). `overflow-y:auto` MUSS gesetzt sein:
+   ohne es meldet scrollHeight in manchen Fällen die volle Texthöhe auch dann, wenn max-height
+   längst greift, und das Feld ragte über die Obergrenze hinaus. `resize:vertical` bleibt — wer
+   von Hand grösser ziehen will, darf das; das JS überschreibt die Höhe erst bei der nächsten
+   Eingabe. max-height in vh, weil das Panel sticky ist und nur die Fensterhöhe hat: ein langer
+   Text schöbe den Absendeknopf sonst aus dem Bild. */
 .chat-eingabe textarea{width:100%;background:#12162a;border:1px solid var(--line);color:var(--ink);
-  border-radius:10px;padding:10px;font:inherit;font-size:14px;resize:vertical;min-height:44px}
+  border-radius:10px;padding:10px;font:inherit;font-size:14px;resize:vertical;min-height:44px;
+  max-height:40vh;overflow-y:auto}
 
 /* KI-Berater als dauerhaftes Panel (2026-08-14) statt Modal. Julius: „Die KI sollte immer offen
    sein, sodass man ihr ständig einfach auch was hinschmeißen kann." EIN Feld, EIN Knopf — ein
