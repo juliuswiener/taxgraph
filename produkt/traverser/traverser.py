@@ -195,8 +195,22 @@ def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> 
     # `veranlagung` hat KEINE geltungsbedingung (es wirkt über regel_bedingungen auf
     # p2_festzusetzung_zusammen) und landete deshalb bei den Slots — alphabetisch auf Frage 203 von
     # 243, obwohl seine Antwort 38 Partner-Felder entscheidet. Wer abschaltet, kommt nach vorn.
+    # BEI GLEICHEM GEWICHT ENTSCHIED BISHER DER BUCHSTABE — und das ist keine Ordnung, sondern
+    # Zufall. Gemessen 2026-08-21 im echten Nutzerlauf: § 35a führt vier Gates mit je Gewicht 10;
+    # `hh_handwerker_keine_foerderung` steht alphabetisch vor `hh_hat_aufwendungen`. Julius bekam
+    # deshalb "Wurden die Handwerkerleistungen NICHT öffentlich gefördert?", bevor überhaupt
+    # gefragt war, ob er Handwerkerkosten hatte — eine Frage nach dem Merkmal eines Sachverhalts,
+    # dessen Existenz niemand erhoben hatte. Antwortet er darauf "nein", ist die Regel
+    # ausgeschlossen und die Eingangsfrage kommt nie: das Ergebnis stimmt zufällig, die Begründung
+    # nicht. In ZEHN Regeln entscheidet so der Feldname (tests/test_eingangsfrage_zuerst.py misst es).
+    #
+    # `eingangsfrage: true` in der Bindung bricht den Gleichstand: die Frage nach der EXISTENZ
+    # kommt vor jeder Frage nach MERKMALEN. Deklariert statt geraten — eine Heuristik über den
+    # Feldnamen ("hat_", "kein_") ist genau der Fehler, der bei der Frage-Polarität schon einmal
+    # zwei Feldern das Gegenteil der Nutzerantwort entlockt hat (s. `frage_invertiert`).
     ist_gate = lambda f: "geltungsbedingung" in bindung[f]["quelle"] or gw.get(f, 0) > 0
-    gates = sorted((f for f in kand if ist_gate(f)), key=lambda f: (-gw.get(f, 0), f))
+    gates = sorted((f for f in kand if ist_gate(f)),
+                   key=lambda f: (-gw.get(f, 0), not bindung[f].get("eingangsfrage"), f))
     slots = [f for f in kand if not ist_gate(f)]
     if beitrag:
         slots.sort(key=lambda f: (-beitrag.get(f, 0), f))

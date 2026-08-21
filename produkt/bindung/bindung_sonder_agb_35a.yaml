@@ -465,8 +465,16 @@ bindungen:
   # POSITIVE Benennung mit Absicht: app.js:283 invertiert bool-Antworten NUR bei Feldern mit
   # "kein_"-Präfix. Ein "kein_haushaltsnahe"-Feld hätte hier eine stille Inversion geerbt, die
   # niemand beim Lesen der Bindung sieht.
+  # EINGANGSFRAGE der Regel: sie fragt, OB es haushaltsnahe Aufwendungen gibt. Die drei anderen
+  # Gates (hh_handwerker_keine_foerderung, hh_in_eu_ewr, hh_rechnung_unbar) fragen nach MERKMALEN
+  # dieser Aufwendungen und ergeben ohne sie keinen Sinn. Alle vier tragen gate_gewicht 10 — sie
+  # schalten dieselben Felder ab —, und der Gleichstand wurde bis 2026-08-21 ALPHABETISCH
+  # gebrochen: "hh_handwerker_" liegt vor "hh_hat_". Gemessen im echten Nutzerlauf bekam Julius
+  # deshalb "Wurden die Handwerkerleistungen NICHT öffentlich gefördert?" als erste Frage dieser
+  # Regel — zu Handwerkern, nach denen nie jemand gefragt hatte.
   - feld_id: hh_hat_aufwendungen
     quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: haushaltsnahe_aufwendungen_vorhanden}
+    eingangsfrage: true
     typ: bool
     einheit: null
     askable: true

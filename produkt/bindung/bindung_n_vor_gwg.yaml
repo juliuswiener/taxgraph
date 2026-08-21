@@ -456,8 +456,14 @@ bindungen:
       quelle: "§ 9 Abs. 4a Satz 6 EStG"
       zitatanker: "auf die ersten drei Monate"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  # EINGANGSFRAGE der Regel: sie fragt, OB es eine auswärtige Tätigkeit gab. Alle übrigen
+  # vpf_-Gates fragen nach MERKMALEN dieser Tätigkeit (Frist, Mahlzeiten) und ergeben ohne sie
+  # keinen Sinn. Die Reihenfolge stimmte hier bis 2026-08-21 nur ZUFÄLLIG — "auswaertige" liegt
+  # alphabetisch vor "frist" und "keine" —, und genau darum steht die Angabe jetzt hier: was
+  # zufällig richtig ist, bleibt es nur bis zum nächsten Feldnamen.
   - feld_id: vpf_auswaertige_taetigkeit
     quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: auswaertige_berufliche_taetigkeit}
+    eingangsfrage: true
     typ: bool
     einheit: null
     askable: true
@@ -874,8 +880,14 @@ bindungen:
       quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 4 EStG"
       zitatanker: "höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland"
       datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
+  # EINGANGSFRAGE der Regel: sie fragt, OB der Übernachtungsort ein auswärtiger Arbeitsort war.
+  # Die übrigen Gates (Alleinnutzung, Inland, keine lange Unterbrechung) fragen nach MERKMALEN
+  # dieser Übernachtung. Bis 2026-08-21 stand "uebernachtung_alleinnutzung" alphabetisch davor —
+  # der Nutzer wurde also gefragt, ob die eingetragenen Kosten nur sein eigener Anteil sind,
+  # bevor feststand, dass es überhaupt eine auswärtige Übernachtung gab.
   - feld_id: uebernachtung_auswaerts
     quelle: {regel_id: p9_1_3_nr5a_uebernachtung_nach_48, geltungsbedingung: erste_taetigkeitsstaette_liegt_nicht_am_ort}
+    eingangsfrage: true
     typ: bool
     einheit: null
     askable: true
