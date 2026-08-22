@@ -164,6 +164,12 @@ h1,h2,h3{margin:0}
 .v-frage{font-size:14px;color:var(--muted);line-height:1.35;overflow-wrap:anywhere}
 .v-wert{font-size:19px;font-weight:700;margin-top:4px;overflow-wrap:anywhere}
 .v-beleg{font-size:13px;color:var(--schimmernd);margin-top:6px;line-height:1.35;overflow-wrap:anywhere}
+/* Der Rechenweg (2026-08-23): KI-Text, den der Nutzer wirklich LESEN und nachrechnen soll. Deshalb
+   dieselbe Bauart wie .chat-antwort — Schimmerkante links („von der KI"), aber normale Schriftfarbe
+   statt der gedämpften des Belegzitats. Der Beleg daneben ist ein Zitat, das man überfliegt; das
+   hier ist eine Behauptung, die man prüft, und Ziffern in Schimmerfarbe liest niemand nach. */
+.v-rechenweg{font-size:13px;margin-top:6px;line-height:1.35;overflow-wrap:anywhere;
+  border-left:3px solid var(--schimmernd);padding-left:8px}
 .v-aktionen{display:flex;gap:8px;margin-top:10px}
 .v-ok,.v-aendern{flex:1;min-width:0;min-height:44px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
 .v-ok{background:#3d5fa8;color:#fff;border:0}
@@ -184,6 +190,23 @@ h1,h2,h3{margin:0}
 .v-seite-neu .v-seite-wert{color:var(--schimmernd)}
 .v-warnung{margin-top:8px;font-size:13px;color:var(--warn);background:rgba(255,180,84,.1);
   border:1px solid rgba(255,180,84,.35);border-radius:10px;padding:8px 10px;line-height:1.4}
+
+/* Der Rückfragen-Schritt (2026-08-23) — eine Frage, ein Feld, „Weiter". Er borgt sich bewusst die
+   Bauteile des Fragebogens (.frage/.hilfe/.eingabe/.btn) und die Überschriften der
+   Verstanden-Seite: es ist derselbe Vorgang in derselben Kette, und ein eigenes Aussehen wäre ein
+   Unterschied ohne Bedeutung. Deshalb stehen hier nur drei Regeln.
+
+   .rf-frage trägt Modelltext beliebiger Länge — anders als #frage, das aus der Bindung kommt.
+   overflow-wrap ist dort deshalb Pflicht und nicht Politur: ein unteilbares Wort (IBAN, Feld-ID)
+   schöbe die ganze Seite seitwärts, weil die Karte keinen eigenen Scrollbereich hat.
+
+   flex-wrap bei den Aktionen: „Später beantworten" ist ein langes Etikett, und zwei Knöpfe
+   nebeneinander passen auf 360px nicht mehr — dann bekommt jeder seine eigene Zeile. */
+.rf-frage{overflow-wrap:anywhere}
+.rf-aktionen{flex-wrap:wrap}
+.rf-aktionen .btn{flex:1 1 150px}
+.rf-fuss{color:var(--muted);font-size:12px;margin:12px 0 0;line-height:1.4}
+.rf-ohne-feld{margin:0}
 
 /* Overlays: Herkunft-Kette + Chat */
 .overlay{position:fixed;inset:0;background:rgba(6,8,18,.72);display:grid;place-items:end center;z-index:10}
@@ -327,9 +350,9 @@ h1,h2,h3{margin:0}
    tests/test_ui_responsive.py bei 360px misst. */
 @media (min-width:900px){
   #app{max-width:1080px}
-  /* Start, Anmeldung und Konto-Leiste haben keine zweite Spalte. In die Breite gezogen wären es
-     nur sehr lange Kacheln, also bleiben sie schmal und mittig. */
-  #start,#login,#konto-leiste{max-width:440px;margin-left:auto;margin-right:auto}
+  /* Start, Wegwahl, Anmeldung und Konto-Leiste haben keine zweite Spalte. In die Breite gezogen
+     wären es nur sehr lange Kacheln, also bleiben sie schmal und mittig. */
+  #start,#wegwahl,#login,#konto-leiste{max-width:440px;margin-left:auto;margin-right:auto}
   #flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,360px);
         column-gap:28px;align-items:start}
   /* min-width:0 gegen die Grid-Voreinstellung min-width:auto — sonst diktiert der breiteste

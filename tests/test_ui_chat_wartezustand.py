@@ -145,6 +145,8 @@ def seite_factory(base):
         page.goto(base)
         page.wait_for_load_state("networkidle")
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+        page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
         page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
         page.evaluate(_STUB)
         return page

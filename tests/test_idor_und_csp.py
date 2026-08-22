@@ -180,6 +180,8 @@ def test_die_oberflaeche_laeuft_unter_der_csp(base):
             page.goto(base)
             page.wait_for_load_state("networkidle")
             page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+            # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+            page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
             # Bis hierher ist alles beteiligt, was die Richtlinie überhaupt betreffen kann:
             # das Stylesheet (style-src), app.js (script-src), die fetch-Aufrufe von
             # /fall, /stand und /fragen (connect-src) und das Rendern der ersten Frage.

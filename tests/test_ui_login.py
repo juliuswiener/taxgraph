@@ -127,6 +127,8 @@ def test_request_nach_login_traegt_authorization_header(seite, monkeypatch):
 
     with page.expect_request(lambda req: "/fall/" in req.url and req.url.endswith("/stand")) as req_info:
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+        page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
     req = req_info.value
     headers = {k.lower(): v for k, v in req.headers.items()}
     auth_header = headers.get("authorization")
@@ -161,6 +163,8 @@ def test_ungueltiges_token_zeigt_maske_nicht_fehlerbanner(seite, monkeypatch):
     page.goto(base)
     _registrieren_und_anmelden(page)
     page.click(".kachel[data-scheibe='gesamt']")
+    # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+    page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
     page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
 
     page.evaluate("versteckeNetzFehler()")   # Ausgangszustand definiert
@@ -187,6 +191,8 @@ def test_einzelnutzer_modus_zeigt_nie_die_anmeldemaske(seite):
     assert page.is_hidden("#konto-leiste"), "Konto-Leiste erscheint ohne Login — falsch."
 
     page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+    # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+    page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
     page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
     assert page.is_hidden("#login"), "Anmeldemaske erscheint mitten im Einzelnutzer-Fluss — darf nicht."
     assert page.evaluate("TOKEN") is None, "Im Einzelnutzer-Modus darf nie ein Token existieren."

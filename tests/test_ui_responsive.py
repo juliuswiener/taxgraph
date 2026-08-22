@@ -129,8 +129,12 @@ def test_start_screen_kacheln_responsive(base, playwright_context):
         scroll_width = page.evaluate("document.documentElement.scrollWidth")
         assert scroll_width <= 360, f"Horizontales Scrollen: scrollWidth={scroll_width} > 360"
 
-        # Kachel-Buttons: 44×44 Minimum
-        kacheln = page.query_selector_all(".kachel")
+        # Kachel-Buttons: 44×44 Minimum.
+        # `#start .kachel` statt `.kachel`: die Wegwahl (P0b, 2026-08-23) benutzt dieselbe
+        # Kachel-Bauart, liegt zu diesem Zeitpunkt aber noch versteckt im DOM — ein verstecktes
+        # Element hat keine Bounding-Box, und der Test misst hier ausdrücklich den START-Screen.
+        # Die Wegwahl-Kacheln misst tests/test_ui_ki_flow.py an ihrem eigenen Ort.
+        kacheln = page.query_selector_all("#start .kachel")
         assert len(kacheln) >= 2, "Keine Kacheln gefunden"
         for i, kachel in enumerate(kacheln):
             bbox = kachel.bounding_box()
@@ -165,6 +169,8 @@ def test_wegpunkt_buttons_responsive(base, playwright_context):
 
         # Klick auf Kachel startet Fall (JS, keine Playwright-Click wegen Overlay-Blocks)
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+        page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
 
         # Warte, bis die WEGPUNKT-Karte sichtbar ist. Hier stand `.card:not([hidden])` — ein
         # Stellvertreter, der solange trug, wie die Wegpunkt-Karte die einzige .card im Fluss war.
@@ -215,6 +221,8 @@ def test_fortschrittsleiste_responsive(base, playwright_context):
 
         # Klick auf Kachel startet Fall (JS)
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+        page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
 
         # Warte auf Fluss sichtbar
         page.wait_for_selector("#flow:not([hidden])", timeout=5000)
@@ -294,6 +302,8 @@ def test_overlay_und_berater_responsive(base, playwright_context):
         page.goto(base)
         page.wait_for_load_state("networkidle")
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+        page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
         page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
 
         # Der Berater ist ohne jedes Öffnen da — das ist die Eigenschaft, um die es geht.

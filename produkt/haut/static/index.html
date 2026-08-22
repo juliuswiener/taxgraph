@@ -55,6 +55,31 @@
       <p class="start-fuss">Beides ist ein vollständiger Rechenweg — der Rest folgt aus deinen Antworten.</p>
     </section>
 
+    <!-- P0b: Wegwahl — der zweite und letzte Schritt vor dem Fluss (Julius 2026-08-23: „direkt am
+         anfang den nutzer mit zwei buttons auswählen lassen: fragebogen starten oder erst
+         automatisch auffüllen lassen. dann bei fragebogen auswahl der hinweis das man auch
+         zwischendurch immer die ki gefüttert werden kann").
+         Bewusst dieselbe Kachel-Bauart wie der Start-Screen: es ist dieselbe Art Entscheidung,
+         und sie braucht kein eigenes Aussehen. Der Hinweis steht IN der Fragebogen-Kachel — dort
+         wird er gelesen, wo die Wahl getroffen wird, nicht auf einer Seite danach.
+         Beide Wege führen in DENSELBEN Fluss; es gibt keinen zweiten Modus und keinen Zustand,
+         der einen Neuladen nicht überlebt. Der Unterschied ist, wo der Nutzer landet. -->
+    <section id="wegwahl" class="screen" tabindex="-1" hidden>
+      <h1 class="start-titel">Wie möchtest du anfangen?</h1>
+      <button id="weg-fragebogen" class="kachel" type="button">
+        <span class="k-ico">📝</span>
+        <span class="k-titel">Fragebogen starten</span>
+        <span class="k-sub">Frage für Frage. Du kannst der KI jederzeit zwischendurch etwas
+          hinschreiben — sie füllt dann Felder für dich aus.</span>
+      </button>
+      <button id="weg-ki" class="kachel" type="button">
+        <span class="k-ico">💬</span>
+        <span class="k-titel">Erst von der KI ausfüllen lassen</span>
+        <span class="k-sub">Schreib in eigenen Worten, was dieses Jahr war — den Rest fragt der
+          Fragebogen danach ab.</span>
+      </button>
+    </section>
+
     <!-- Wegpunkt-Fluss -->
     <div id="flow" hidden>
       <header class="kopf">
@@ -106,6 +131,33 @@
         <p class="verstanden-sub">Bitte bestätige jede Angabe einzeln — bis dahin zählt keine davon.</p>
         <ul id="verstanden-liste" class="verstanden-liste"></ul>
         <button id="verstanden-weiter" class="btn btn-best" type="button">Weiter zu den Fragen</button>
+      </section>
+
+      <!-- Die Rückfragen der KI, EINE nach der anderen (Julius 2026-08-23: „es ist vom user flow
+           her unklar wenn die ai dinge verstanden hat und man felder bestätigen soll UND fragen
+           beantworten, was man zuerst machen sollte … also zb könnte das ki window dann 1 für 1
+           die nachfragen stellen").
+           Eine eigene SEITE, kein Overlay — dieselbe Bauart wie #verstanden (screen im Fluss,
+           tabindex=-1, Fokus beim Einblenden). Beide sind Schritte derselben Kette; ein Overlay
+           für den einen und eine Seite für den anderen wäre ein Unterschied ohne Grund. Dazu:
+           #flow ist ab 900px ein Grid, das jedes Kind in Spalte 1 setzt — die schmale wie die
+           breite Ansicht stimmen damit ohne eine einzige eigene Regel, und der KI-Berater bleibt
+           daneben sichtbar. Genau er ist der Kontext, in dem die Rückfrage steht (der eigene Satz,
+           die gelesenen Aussagen); ein Vollbild-Overlay verdeckte ihn.
+           Die Bedienelemente sind dieselben wie im Fragebogen (.frage/.hilfe/.eingabe/.btn), die
+           Eingabe baut baueEingabe() — dieselbe Funktion, die auch zeigeFrage() benutzt. -->
+      <section id="rueckfragen" class="card screen" tabindex="-1" hidden>
+        <h2 class="verstanden-titel">Kurz nachgefragt</h2>
+        <p id="rf-zaehler" class="verstanden-sub"></p>
+        <p id="rf-frage" class="frage rf-frage" aria-live="polite"></p>
+        <p id="rf-hilfe" class="hilfe"></p>
+        <div id="rf-eingabe" class="eingabe"></div>
+        <div class="aktionen rf-aktionen">
+          <button id="rf-weiter" class="btn btn-best" type="button">Weiter</button>
+          <button id="rf-spaeter" class="btn btn-chat" type="button">Später beantworten</button>
+        </div>
+        <p class="rf-fuss">„Später beantworten“ überspringt nur — die Frage steht danach wieder im
+          Fragebogen.</p>
       </section>
 
       <section id="fertig" class="card screen" tabindex="-1" hidden>

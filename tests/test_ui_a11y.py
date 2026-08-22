@@ -150,6 +150,8 @@ def test_a11y_wegpunkt(base, playwright_context):
 
         # Fall starten (JS-Klick auf Kachel)
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+        page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
 
         # Wegpunkt-Karte warten
         page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)

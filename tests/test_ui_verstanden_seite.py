@@ -103,6 +103,8 @@ def seite(base):
         page.goto(base)
         page.wait_for_load_state("networkidle")
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+        page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
         page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
         page.fill("#chat-text", TEXT)   # der Berater ist dauerhaft offen, nichts aufzuklappen
         page.click("#chat-send")
@@ -306,6 +308,8 @@ def test_konflikt_erscheint_und_keine_seite_gewinnt_von_allein(base, stub_llm_ko
         page.goto(base)
         page.wait_for_load_state("networkidle")
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+        page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
         page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
         page.evaluate("""async () => {
             await jpost(`/fall/${FALL}/event`, {
@@ -344,6 +348,8 @@ def test_meins_behalten_schreibt_nichts(base, stub_llm_konflikt):
         page.goto(base)
         page.wait_for_load_state("networkidle")
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
+        # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
+        page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
         page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
         page.evaluate("""async () => {
             await jpost(`/fall/${FALL}/event`, {
