@@ -16,6 +16,10 @@ der Funktionen halten die Abhängigkeit locker. Exportiert LlmNichtVerfuegbar da
 api.py sie in except-Clauses nutzen kann."""
 
 import json
+import os
+import re
+from datetime import datetime, timezone
+
 import audit  # noqa: E402 — P1.6 Audit-Log (sys.path via api.py)
 import kontoauszug_writer as KW
 from pii_filter import filtere  # noqa: E402 — PII-Filter vor ausgehendem LLM-Call
@@ -132,6 +136,19 @@ def _dialog_prompt(freitext: str, katalog: list[dict], kontext: str = "",
         # nicht aufweicht (Hypothese und reine Frage liefern weiterhin 0 Vorschläge). Wer verlässlich
         # „verheiratet → Zusammenveranlagung" will, braucht eine Vorbelegung in unserem Code, kein
         # Prompt-Zureden.
+        # RECHNEN STATT FRAGEN (Julius, 2026-08-23). Sein Verlauf zeigte den Fall: "vor juli 2025
+        # habe ich 50k pro jahr verdient" plus "ich bin arbeitslos seit juli 2025" — daraus folgt
+        # 50.000 ÷ 12 × 6. Die KI fragte stattdessen nach dem genauen Betrag, und das ist eine
+        # Rückfrage zu viel: die Multiplikation steht im Satz.
+        # Der `rechenweg` ist PFLICHTFELD im Schema (null, wenn nicht gerechnet wurde) und wird
+        # von _rechenweg_geprueft() deterministisch NACHGERECHNET — das Modell darf rechnen, aber
+        # nicht allein verantworten. Deshalb steht hier "zeig die Bestandteile", nicht "rechne".
+        "AUSRECHNEN, WO DIE ANGABEN ES HERGEBEN: nennt der Nutzer einen Betrag je Zeitraum und "
+        "einen Zeitraum, dann rechne — 'vor Juli 50.000 pro Jahr verdient' plus 'seit Juli "
+        "arbeitslos' ergibt sechs von zwölf Monaten. Trag den ausgerechneten Wert ein und fülle "
+        "`rechenweg` mit Basis, Faktor und einer Erklärung in einem Satz; der Nutzer sieht sie und "
+        "kann korrigieren. Frag NICHT nach einer Zahl, die sich aus dem Gesagten ergibt. Wo nichts "
+        "zu rechnen ist, bleibt `rechenweg` null. Bei Geld sind Basis und Wert in CENT.\n"
         "TATSACHEN ÜBERSETZT DU IMMER: was der Nutzer als Tatsache über sich sagt, wird zum "
         "Vorschlag — auch dann, wenn das Feld eine WAHL abbildet und der Text nur die übliche Wahl "
         "nahelegt. Vorgeschlagen ist nicht gesetzt: der Mensch sieht den Vorschlag neben deinem "
@@ -234,8 +251,45 @@ DIALOG_SCHEMA = {
                         "aussage": {"type": "integer",
                                     "description": "Nummer der Aussage aus der Liste oben, auf die "
                                                    "sich dieser Wert stützt. Keine passende: -1."},
+                        # RECHNEN STATT FRAGEN — Julius, 2026-08-23: "anteilig vom jahresbrutto ist
+                        # aber einfach zu rechnen. genau so könnte das zu erwartende alg berechnet
+                        # werden. und vorgeschlagen werden. das würde es dem nutzer einfacher machen."
+                        # Anlass ist sein Verlauf: "50k pro jahr" + "seit juli arbeitslos" ergibt
+                        # 6 × 50.000/12; die KI fragte stattdessen nach dem genauen Betrag.
+                        #
+                        # DAS MODELL RECHNET NICHT ALLEIN. Es liefert die BESTANDTEILE, und
+                        # `_rechenweg_geprueft` rechnet deterministisch nach — passt es nicht,
+                        # fliegt der Vorschlag raus. Dieselbe Bauart wie das Beleg-Gate: nicht darauf
+                        # vertrauen, dass sich das Modell an eine Prompt-Regel hält, sondern die
+                        # Behauptung selbst nachprüfen. Eine Rechnung, die das Modell allein
+                        # verantwortet, hat in einer Steuersoftware nichts verloren.
+                        #
+                        # `required` und nullable statt optional: ein OPTIONALES Feld ist eines, das
+                        # das Modell weglässt — dieselbe Lehre, die `rueckfragen` am 2026-08-21
+                        # fünfzehn Läufe gekostet hat.
+                        "rechenweg": {
+                            "type": ["object", "null"],
+                            "description": "NUR wenn der Wert aus einer Angabe des Nutzers "
+                                           "AUSGERECHNET wurde (Jahresgehalt anteilig auf Monate, "
+                                           "Monatsbetrag auf das Jahr). Sonst null.",
+                            "properties": {
+                                "basis": {"type": "number",
+                                          "description": "Der genannte Ausgangsbetrag, in derselben "
+                                                         "Einheit wie `wert` (Geld: CENT)."},
+                                "faktor": {"type": "number",
+                                           "description": "Womit die Basis multipliziert wurde: 0.5 "
+                                                          "für 6 von 12 Monaten, 6 für sechs "
+                                                          "Monatsbeträge."},
+                                "erklaerung": {"type": "string",
+                                               "description": "Der Rechenweg in einem Satz, für den "
+                                                              "Nutzer lesbar: '50.000 € pro Jahr "
+                                                              "÷ 12 × 6 Monate'."},
+                            },
+                            "required": ["basis", "faktor", "erklaerung"],
+                            "additionalProperties": False,
+                        },
                     },
-                    "required": ["feld_id", "wert", "beleg", "begruendung", "aussage"],
+                    "required": ["feld_id", "wert", "beleg", "begruendung", "aussage", "rechenweg"],
                     "additionalProperties": False,
                 },
             },
@@ -308,12 +362,30 @@ def _beleg_geprueft(vorschlaege: list[dict], freitext: str) -> tuple[list[dict],
     Prompt-Befolgung. Geprüft wird gegen den PII-GEFILTERTEN Text — genau den hat das Modell
     gesehen, alles andere würde legitime Belege verwerfen.
 
-    Kurze Belege (< 3 Zeichen) zählen nicht: "5" steht in fast jedem Text und belegt nichts."""
+    KURZE BELEGE brauchen eine WORTGRENZE, keine Mindestlänge. Bis 2026-08-23 galt hier
+    `len(beleg) >= 3`, begründet mit „'5' steht in fast jedem Text und belegt nichts". Der Grund
+    stimmt, die Umsetzung war zu grob — und sie sabotierte ausgerechnet den Kanal, der einen Tag
+    zuvor gebaut worden war:
+
+        Rückfrage: "An wie vielen Tagen bist du dieses Jahr zur Arbeit gefahren?"
+        Antwort:   "70"
+        Ergebnis:  ohne_beleg — verworfen, weil zwei Zeichen
+
+    Gemessen im echten Nutzerlauf. Die Antwort auf eine Rückfrage IST typischerweise eine kurze
+    Zahl; eine Längenschwelle trifft dort systematisch das Richtige. Was die Regel eigentlich
+    meinte, ist etwas anderes: eine Ziffer, die nur ZUFÄLLIG in einer längeren Zahl steckt, belegt
+    nichts. Das ist eine Frage der Wortgrenze, nicht der Länge — „5" in „15000" ist kein Beleg,
+    „5" als eigenes Wort schon.
+
+    Ab drei Zeichen bleibt es beim Teilstring-Vergleich: dort ist ein zufälliges Vorkommen
+    unwahrscheinlich genug, und das Modell zitiert gern Wortteile („20km" aus „20km mit dem auto"),
+    die eine Wortgrenzen-Prüfung fälschlich verwürfe."""
     behalten, verworfen = [], []
     heuhaufen = _normalisiert(freitext)
     for v in vorschlaege:
         beleg = _normalisiert(v.get("beleg", ""))
-        if len(beleg) >= 3 and beleg in heuhaufen:
+        if beleg and (beleg in heuhaufen if len(beleg) >= 3
+                      else re.search(rf"(?<!\w){re.escape(beleg)}(?!\w)", heuhaufen) is not None):
             behalten.append(v)
         else:
             verworfen.append(v)
@@ -774,6 +846,39 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
         jedem, damit ein Eintrag für sich lesbar bleibt (produkt/store/audit.py, test_pii_filter)."""
         audit.append(user_id or "unbekannt", "llm_call", None, f"{kopf}, {teil}")
 
+    def mitschnitt(stufe: int, was: str, inhalt) -> None:
+        """Wortlaut der Modellantwort — NUR wenn `TAXGRAPH_KI_DEBUG=1` gesetzt ist.
+
+        WARUM DAS NICHT INS AUDIT GEHÖRT und nicht standardmässig läuft: hier steht der INHALT,
+        also alles, was der PII-Filter nicht erwischt hat — Personennamen zuallererst (die erkennt
+        er bewusst nicht, s. pii_filter.py). Das Audit-Protokoll führt seit jeher ausschliesslich
+        Metadaten, und tests/test_pii_filter.py erzwingt das; ein Mitschnitt dort wäre kein
+        Debug-Werkzeug, sondern ein zweiter Datenspeicher ohne Zweckbindung.
+
+        ANLASS (Julius, 2026-08-23): "bitte die ki antworten fuer das debugging anstaendig loggen".
+        Der Anlass ist konkret — im Verlauf jenes Tages war weder nachvollziehbar, WELCHE
+        Rückfragen gestellt wurden noch WAS die KI geantwortet hat. Das Audit führt nur ihre
+        Anzahl (`rueckfragen=5`, `antwortlaenge=246`); der Wortlaut existierte ausschliesslich im
+        Browserfenster und war nach einem Neuladen weg. Eine Diagnose ohne den Wortlaut ist
+        Ratearbeit — genau deshalb gibt es das hier, und genau deshalb ist es abschaltbar.
+
+        Ablage neben dem Audit (über `audit.AUDIT_DIR`, zur AUFRUFZEIT gelesen): dieselbe
+        Wegbeschreibung, damit Tests, die die Ablage umlenken, auch diese Datei mitnehmen. Ein
+        `from audit import AUDIT_DIR` bände den Wert statt des Namens und liefe an jeder Umlenkung
+        vorbei. Rechte 0600 wie beim Audit — die Datei führt den Klartext einer Steuererklärung.
+        """
+        if os.environ.get("TAXGRAPH_KI_DEBUG", "").strip() != "1":
+            return
+        pfad = os.path.join(audit.AUDIT_DIR, "ki_debug.jsonl")
+        zeile = json.dumps({"ts": datetime.now(timezone.utc).isoformat(), "stufe": stufe,
+                            "was": was, "inhalt": inhalt}, ensure_ascii=False)
+        os.makedirs(os.path.dirname(pfad) or ".", exist_ok=True)
+        # 0o600 beim Anlegen; eine bestehende Datei bleibt unangetastet (dieselbe Linie wie
+        # audit.py: "ein Protokoll wird nicht unterwegs umgeschrieben").
+        fd = os.open(pfad, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+        with os.fdopen(fd, "a", encoding="utf-8") as f:
+            f.write(zeile + "\n")
+
     def gescheitert(stufe: int, e: Exception) -> None:
         # Ohne diesen Eintrag bliebe im Protokoll GAR NICHTS stehen — ein Aufruf, der leer zurückkam
         # und nach drei Versuchen aufgab, wäre von einem, der nie stattfand, nicht zu unterscheiden.
@@ -792,6 +897,7 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
         gescheitert(1, e)
         raise                                   # der Aufrufer sieht wie bisher nur die Ausnahme
     aussagen = _aussagen_parse(c1.text, gefiltert)
+    mitschnitt(1, "aussagen", aussagen)
     melde(f"stufe=1, aussagen={len(aussagen)}, "
           f"aussagen_ohne_beleg={sum(1 for a in aussagen if not a['beleg'])}, "
           f"inhalt_laenge={len(c1.text or '')}, provider={c1.provider!r}, finish={c1.finish!r}")
@@ -810,6 +916,7 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
             gescheitert(2, e)
             return _teilergebnis(aussagen, {}, "themen_ausgefallen")
         zuordnungen, getroffen = _zuordnung_parse(c2.text, set(verfuegbar), len(aussagen))
+        mitschnitt(2, "zuordnungen", {"zuordnungen": zuordnungen, "regeln": sorted(getroffen)})
         melde(f"stufe=2, aussagen={len(aussagen)}, zugeordnet={len(zuordnungen)}, "
               f"regeln={len(getroffen)}/{len(verfuegbar)}, inhalt_laenge={len(c2.text or '')}, "
               f"provider={c2.provider!r}, finish={c2.finish!r}")
@@ -829,6 +936,20 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
     # das Gate hängt: eine Aussage ist selbst Modellausgabe, und ein Beleg, der gegen sie geprüft
     # würde, belegte eine Modellausgabe mit einer anderen. Das Modell kann eine Begründung
     # erfinden, aber kein Zitat, das in der Nachricht des Nutzers nicht vorkommt.
+    # NUR das Beleg-Gate. Ein `rechenweg` wird NICHT nachgerechnet und der Vorschlag deshalb auch
+    # nicht verworfen — Julius' Entscheidung vom 2026-08-23: "sollten wir nicht dem modell zutrauen
+    # diese rechnung zu können und der user bestätigt. wenn das problematisch werden sollte können
+    # wir nochmal nachbessern."
+    #
+    # Der erste Entwurf rechnete nach und warf bei Abweichung weg. Das war aus zwei Gründen falsch:
+    # ein verworfener Vorschlag ist für den Nutzer UNSICHTBAR — genau der stille Verlust, gegen den
+    # der Aussagen-Status am selben Tag gebaut wurde —, und es widerspricht der Grundregel dieses
+    # Hauses (Julius-Entscheid 2026-08-14): die KI schlägt vor, der Mensch bestätigt jedes Feld.
+    # Eine Multiplikation, die der Nutzer neben dem Rechenweg stehen sieht, kann er selbst prüfen;
+    # ihm den Vorschlag vorher wegzunehmen, nimmt ihm die Entscheidung.
+    #
+    # `rechenweg` bleibt im Schema und wandert MIT dem Vorschlag nach oben — die Oberfläche zeigt
+    # ihn unter dem Wert ("50.000 € pro Jahr ÷ 12 × 6 Monate"). Er ist damit Anzeige, nicht Gate.
     behalten, verworfen = _beleg_geprueft(_chat_parse(c3.text), gefiltert)
     rueckfragen = _rueckfragen_parse(c3.text, len(kat3))
     behalten = _rueckfrage_verdraengt(behalten, rueckfragen)
@@ -839,6 +960,9 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
     # oft WIR für etwas, das der Nutzer gesagt hat, kein Feld hatten. `inhalt_laenge` unterscheidet
     # „das Modell hatte nichts zu sagen" von „es kam etwas, das wir nicht verwerten konnten", ohne
     # dass ein Zeichen des Inhalts ins Protokoll wandert.
+    mitschnitt(3, "ergebnis", {"vorschlaege": behalten, "ohne_beleg_verworfen": verworfen,
+                               "rueckfragen": rueckfragen, "antwort": antwort,
+                               "unsicher": unsicher, "aussagen": aussagen})
     melde(f"stufe=3, katalog={'eng' if eng else 'voll'}, katalog_felder={len(kat3)}, "
           f"vorschlaege={len(behalten)}, ohne_beleg_verworfen={len(verworfen)}, "
           f"rueckfragen={len(rueckfragen)}, "

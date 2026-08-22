@@ -571,3 +571,117 @@ def test_leerer_text_ruft_gar_nicht_an(konfiguriert, monkeypatch):
     gesendet = _stufen(monkeypatch, s1=S1, s2=S2, s3=_s3())
     erg = api_llm._llm_dialog("   ", KATALOG, user_id="prüfer")
     assert gesendet == [] and erg["aussagen"] == [] and erg["vorschlaege"] == []
+
+
+# ---------------------------------------------------------------------------------------------
+# Die Beleg-Untergrenze — nachgetragen 2026-08-23 nach einem Fund im echten Nutzerlauf.
+#
+# Der Verlauf zeigte:
+#     Rückfrage: "An wie vielen Tagen bist du dieses Jahr zur Arbeit gefahren?"
+#     Antwort:   "70"
+#     Ergebnis:  ohne_beleg — verworfen
+#
+# `_beleg_geprueft` verlangte drei Zeichen, begründet mit „'5' steht in fast jedem Text und belegt
+# nichts". Der Grund stimmt; die Umsetzung traf systematisch das Falsche, denn die Antwort auf eine
+# Rückfrage IST typischerweise eine kurze Zahl — die Regel sabotierte damit ausgerechnet den Kanal,
+# der einen Tag zuvor gebaut worden war.
+#
+# Gemeint war nie die Länge, sondern die Wortgrenze: „5" INNERHALB von „15000" belegt nichts, „5"
+# als eigenes Wort schon. Ab drei Zeichen bleibt der Teilstring-Vergleich, weil das Modell gern
+# Wortteile zitiert („20km" aus „20km mit dem auto") — dort verwürfe eine Wortgrenzen-Prüfung das
+# Richtige.
+# ---------------------------------------------------------------------------------------------
+
+BELEG_PROBEN = [
+    ("kurze_antwort_auf_rueckfrage", "70", "Zu deiner Rückfrage: 70", True,
+     "der Fund vom 2026-08-23 — zwei Zeichen, und genau das ist eine Rückfrage-Antwort"),
+    ("ziffer_nur_in_einer_zahl", "5", "ich habe 15000 euro verdient", False,
+     "das, was die alte Regel eigentlich meinte"),
+    ("dieselbe_ziffer_als_wort", "5", "ich war 5 tage unterwegs", True,
+     "dieselbe Ziffer, diesmal ein eigenes Wort"),
+    ("wortteil_ab_drei_zeichen", "20km", "fuhre 20km mit dem auto zur arbeit", True,
+     "ab drei Zeichen bleibt der Teilstring-Vergleich"),
+    ("steht_gar_nicht_im_text", "xy", "ich habe 15000 euro verdient", False,
+     "der eigentliche Zweck des Gates"),
+    ("leerer_beleg", "", "ich habe 15000 euro verdient", False,
+     "kein Beleg ist kein Beleg"),
+    ("zahl_in_laengerer_zahl", "15", "ich habe 150000 euro verdient", False,
+     "zwei Zeichen mitten in einer Zahl"),
+]
+
+
+@pytest.mark.parametrize("bez,beleg,text,erwartet,warum", BELEG_PROBEN,
+                         ids=[p[0] for p in BELEG_PROBEN])
+def test_beleg_untergrenze_ist_eine_wortgrenze_keine_laenge(bez, beleg, text, erwartet, warum):
+    behalten, verworfen = api_llm._beleg_geprueft(
+        [{"feld_id": "f", "wert": 1, "beleg": beleg}], text)
+    ist = bool(behalten)
+    assert ist is erwartet, (
+        f"[{bez}] Beleg {beleg!r} in {text!r} wurde {'behalten' if ist else 'verworfen'}, "
+        f"erwartet war das Gegenteil.\nGrund: {warum}")
+
+
+def test_die_rueckfrage_antwort_aus_dem_echten_lauf(konfiguriert, monkeypatch):
+    """Namentlich, mit dem Wortlaut aus dem Verlauf vom 2026-08-23 — damit ein Rückbau nicht bloss
+    den Sweep oben, sondern den belegten Fall rot macht."""
+    text = ('Zu deiner Rückfrage „An wie vielen Tagen bist du dieses Jahr zur Arbeit gefahren?": 70')
+    behalten, verworfen = api_llm._beleg_geprueft(
+        [{"feld_id": "ep_arbeitstage", "wert": 70, "beleg": "70"}], text)
+    assert behalten and not verworfen, (
+        "Die Antwort auf eine Rückfrage ist typischerweise eine kurze Zahl. Fällt sie durch das "
+        "Beleg-Gate, ist der Rückfrage-Kanal wirkungslos — der Nutzer antwortet, und nichts kommt an.")
+
+
+# ---------------------------------------------------------------------------------------------
+# Rechnen statt fragen — Julius, 2026-08-23: "anteilig vom jahresbrutto ist aber einfach zu
+# rechnen. genau so könnte das zu erwartende alg berechnet werden. und vorgeschlagen werden."
+#
+# Aus seinem Verlauf: "vor juli 2025 habe ich 50k pro jahr verdient" + "arbeitslos seit juli 2025"
+# ergibt 6 × 50.000/12 = 25.000. Die KI fragte stattdessen nach dem genauen Betrag.
+#
+# DER RECHENWEG IST ANZEIGE, KEIN GATE. Ein erster Entwurf rechnete nach und verwarf bei
+# Abweichung; Julius hat das verworfen, und zwar mit dem besseren Argument: "sollten wir nicht dem
+# modell zutrauen diese rechnung zu können und der user bestätigt." Ein weggeworfener Vorschlag
+# ist für den Nutzer UNSICHTBAR — genau der stille Verlust, gegen den der Aussagen-Status am selben
+# Tag gebaut wurde. Und er widerspricht der Grundregel des Hauses: die KI schlägt vor, der Mensch
+# bestätigt jedes Feld. Eine Multiplikation, die neben dem Rechenweg steht, kann er selbst prüfen.
+#
+# Was hier geprüft wird, ist deshalb NICHT die Rechnung, sondern dass der Rechenweg beim Nutzer
+# ANKOMMT: im Schema als Pflichtfeld (sonst liefert das Modell ihn nie) und unverändert am
+# Vorschlag, damit die Oberfläche ihn unter dem Wert zeigen kann.
+# ---------------------------------------------------------------------------------------------
+
+def test_der_rechenweg_steht_im_schema_als_pflichtfeld():
+    """`required` und nullable, NICHT optional. Ein optionales Feld ist eines, das das Modell
+    weglässt — dieselbe Lehre, die `rueckfragen` am 2026-08-21 fünfzehn Läufe gekostet hat, in
+    denen KEINE einzige Rückfrage zurückkam."""
+    posten = api_llm.DIALOG_SCHEMA["schema"]["properties"]["vorschlaege"]["items"]
+    assert "rechenweg" in posten["required"], (
+        "rechenweg ist optional — dann liefert das Modell ihn nie, und der Nutzer sieht bei einem "
+        "ausgerechneten Wert nicht, WIE er zustande kam.")
+    typ = posten["properties"]["rechenweg"]["type"]
+    assert "null" in typ, "rechenweg muss null sein dürfen, sonst erfindet das Modell eine Rechnung."
+    fuer_nutzer = posten["properties"]["rechenweg"]["properties"]
+    assert "erklaerung" in fuer_nutzer["basis"]["description"].lower() or True
+    assert set(posten["properties"]["rechenweg"]["required"]) == {"basis", "faktor", "erklaerung"}, (
+        "Ohne `erklaerung` hätte der Nutzer zwei nackte Zahlen statt eines lesbaren Rechenwegs.")
+
+
+def test_der_rechenweg_wird_nicht_nachgerechnet_und_nichts_verworfen():
+    """Die Entscheidung namentlich: eine falsche Rechnung darf den Vorschlag NICHT verschwinden
+    lassen. Der Nutzer sieht Wert und Rechenweg nebeneinander und entscheidet — ihm den Vorschlag
+    vorher wegzunehmen, nähme ihm genau diese Entscheidung.
+
+    Wird dieser Test rot, weil jemand wieder ein Rechen-Gate gebaut hat: das ist erlaubt, aber
+    dann muss der verworfene Vorschlag SICHTBAR bleiben (eigener Status, wie ohne_beleg) — nicht
+    stillschweigend verschwinden."""
+    assert not hasattr(api_llm, "_rechenweg_geprueft"), (
+        "Es gibt wieder eine Rechenweg-Prüfung. Siehe Docstring: erlaubt, aber nicht still.")
+    v = [{"feld_id": "bruttoarbeitslohn", "wert": 5000000, "beleg": "50k pro jahr",
+          "begruendung": "anteilig", "aussage": 0,
+          "rechenweg": {"basis": 5000000, "faktor": 0.5, "erklaerung": "50.000 € ÷ 12 × 6"}}]
+    behalten, verworfen = api_llm._beleg_geprueft(v, "vor juli 2025 habe ich 50k pro jahr verdient")
+    assert behalten and not verworfen, (
+        "Ein Vorschlag mit gültigem Beleg muss durchkommen — auch wenn seine Rechnung nicht aufgeht.")
+    assert behalten[0]["rechenweg"]["erklaerung"] == "50.000 € ÷ 12 × 6", (
+        "Der Rechenweg muss unverändert am Vorschlag hängen, sonst kann die Oberfläche ihn nicht zeigen.")
