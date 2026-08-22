@@ -866,6 +866,132 @@ async function erklaereFeld() {
   if (r.status === 200 && r.body.justification) setzeGesetz(r.body.justification.anker_ref);
 }
 
+// --- Die Zwischenstufe, sichtbar gemacht (2026-08-21) ----------------------------------------
+// Der KI-Dialog lief bis hierher als EIN Aufruf: Satz rein, Werte raus. Gemessen an einem echten
+// Satz (222 Zeichen, FÜNF Fakten) kamen ZWEI Vorschläge zurück — der Prompt trug 301 Feld-
+// beschreibungen, 87.000 von 90.000 Zeichen waren Katalog. Die Zerlegung in drei Stufen
+// (produkt/haut/api_llm.py) hat für die Oberfläche eine Folge, die schwerer wiegt als die
+// Trefferquote: die mittlere Stufe ist ZEIGBAR.
+//
+// Der Nutzer sieht jetzt, was aus seinem Satz gelesen wurde, BEVOR daraus Werte werden — und vor
+// allem sieht er, was NICHT zugeordnet werden konnte. Genau das verschwand vorher ersatzlos: fünf
+// Fakten hin, zwei Vorschläge zurück, und über die drei anderen stand nirgends ein Wort. Der
+// Nutzer merkte nur, dass etwas fehlt, und hatte keinen Anhaltspunkt, was.
+//
+// Alles hier hängt sich an den Chat-Verlauf (#chat-body) und NICHT an #wegpunkt / #verstanden /
+// #belegt-liste / .vorjahr-box. Das ist kein Zufall: chatSperren() legt während eines laufenden
+// Aufrufs `inert` genau auf jene vier. Eine Anzeige, die dort hineinwüchse, sperrte sich selbst —
+// und eine Rückfrage, die man während des nächsten Aufrufs nicht mehr anklicken kann, ist keine.
+const AUSSAGE_MARKE = {
+  vorschlag: "als Vorschlag oben",
+  rueckfrage: "Rückfrage",
+  kein_feld: "keinem Feld zugeordnet",
+};
+
+// Die Antwort auf eine Rückfrage geht durch DENSELBEN Kanal wie jeder andere Satz: sie landet im
+// Chat-Eingabefeld, der Nutzer schreibt sie zu Ende und schickt sie ab. Kein zweiter Weg und kein
+// eigener Zustand — eine Rückfrage, die nur über ein Sonderformular beantwortbar wäre, eröffnete
+// ein zweites Gespräch neben dem Gespräch, und der Verlauf zeigte danach nur noch die Hälfte.
+// Die Frage steht im Vorspann mit drin: der Nutzer sieht wörtlich, was er absendet, und die
+// nächste Runde bekommt den Bezug mitgeliefert, statt ihn erraten zu müssen.
+function rueckfrageBeantworten(rf) {
+  const t = $("chat-text");
+  // Läuft gerade ein Aufruf, wird `chat-text` am Ende von chatSenden() geleert — der Vorspann
+  // wäre dann still weg, und der Nutzer hätte auf einen Knopf gedrückt, der nichts tat.
+  if (!t || $("chat-send").disabled) return;
+  const vorspann = "Zu deiner Rückfrage „" + (rf.frage || "") + "“: ";
+  const bisher = (t.value || "").trim();
+  // Schon Getipptes NICHT überschreiben: der Nutzer hat womöglich längst angefangen zu schreiben.
+  t.value = (bisher ? bisher + "\n" : "") + vorspann;
+  chatHoeheAnpassen();
+  t.focus();
+  t.setSelectionRange(t.value.length, t.value.length);
+  t.scrollIntoView({ block: "nearest" });
+}
+
+function rueckfrageBlock(rf) {
+  const d = document.createElement("div");
+  d.className = "a-rueckfrage-box";
+  const f = document.createElement("div");
+  f.className = "a-frage";
+  f.textContent = rf.frage || "";
+  d.appendChild(f);
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "a-antworten";
+  btn.textContent = "Antworten";
+  btn.addEventListener("click", () => rueckfrageBeantworten(rf));
+  d.appendChild(btn);
+  return d;
+}
+
+function aussagenZeile(a, rueckfragen) {
+  const li = document.createElement("li");
+  // Nur bekannte Zustände bekommen ihre eigene Klasse. Ein unbekannter darf NICHT in die Optik
+  // eines erfolgreichen rutschen — sonst sähe ein Zustand, den diese Oberfläche nicht kennt, aus
+  // wie „hat geklappt".
+  const bekannt = Object.prototype.hasOwnProperty.call(AUSSAGE_MARKE, a.status);
+  li.className = "a-zeile " + (bekannt ? "a-" + a.status : "a-unbekannt");
+  li.dataset.status = a.status || "";
+
+  const kopf = document.createElement("div");
+  kopf.className = "a-kopf";
+  const txt = document.createElement("span");
+  txt.className = "a-text";
+  txt.textContent = a.text || "(ohne Text)";
+  const marke = document.createElement("span");
+  marke.className = "a-marke";
+  marke.textContent = bekannt ? AUSSAGE_MARKE[a.status] : (a.status || "ohne Angabe");
+  kopf.appendChild(txt);
+  kopf.appendChild(marke);
+  li.appendChild(kopf);
+
+  if (a.beleg) {
+    // Dasselbe wörtliche Nutzerzitat wie in der Verstanden-Liste, und aus demselben Grund: die
+    // Aussage ist eine Behauptung der KI über den Satz des Nutzers. Erst der Beleg macht sie
+    // nachprüfbar — ohne ihn muss man glauben.
+    const b = document.createElement("div");
+    b.className = "a-beleg";
+    b.textContent = "weil du sagtest: „" + a.beleg + "“";
+    li.appendChild(b);
+  }
+  if (a.status === "kein_feld") {
+    const h = document.createElement("div");
+    h.className = "a-hinweis";
+    h.textContent = "Dazu wurde kein passendes Feld gefunden — schreib es etwas genauer, "
+      + "oder trag den Wert oben direkt ein.";
+    li.appendChild(h);
+  }
+  for (const rf of rueckfragen) li.appendChild(rueckfrageBlock(rf));
+  return li;
+}
+
+function aussagenBlock(aussagen, rueckfragen) {
+  const box = document.createElement("div");
+  box.className = "chat-aussagen";
+  const titel = document.createElement("div");
+  titel.className = "chat-aussagen-titel";
+  titel.textContent = "Das habe ich aus deinem Satz gelesen:";
+  box.appendChild(titel);
+  const ul = document.createElement("ul");
+  ul.className = "a-liste";
+  const zugeordnet = new Set();
+  aussagen.forEach((a, i) => {
+    const meine = rueckfragen.filter(rf => rf.aussage === i);
+    for (const rf of meine) zugeordnet.add(rf);
+    ul.appendChild(aussagenZeile(a, meine));
+  });
+  // Eine Rückfrage ohne gültigen Index darf nicht verschwinden — sie ist der eine Ort, an dem die
+  // KI zugibt, dass sie sonst raten müsste. Lieber ohne die Aussage darüber als gar nicht.
+  for (const rf of rueckfragen) {
+    if (!zugeordnet.has(rf)) {
+      ul.appendChild(aussagenZeile({ text: "Nachfrage der KI", status: "rueckfrage" }, [rf]));
+    }
+  }
+  box.appendChild(ul);
+  return box;
+}
+
 // EIN Weg für alles, was der Nutzer schreibt. Julius 2026-08-14: „‚Ein Satz an die KI' kann aber
 // auch einfach eine Nachfrage sein." Vorher gab es zwei Knöpfe — der Nutzer musste seinen eigenen
 // Satz vorher einsortieren, obwohl ein Satz oft beides ist („Ich fahre 15 km — zählt Homeoffice
@@ -930,8 +1056,34 @@ async function chatSenden() {
     body.appendChild(beraterZeile("chat-vertrag",
       (r.body && r.body.vertrag) || "Der KI-Kanal ist noch nicht verbunden."));
   } else if (r.status === 200 && r.body) {
-    const vorschlaege = r.body.vorschlaege || [];
     const konflikte = r.body.konflikte || [];
+    // Die drei neuen Felder sind ADDITIV und dürfen fehlen: der dreistufige Dialog kann später
+    // kommen oder ganz ausbleiben, und dann muss hier exakt das Verhalten von vorher stehen —
+    // keine leere Überschrift, keine Ausnahme in der Konsole. Array.isArray statt `|| []`, weil
+    // ein Nicht-Array (null, ein Objekt, eine Zeichenkette) sonst bis in .forEach durchliefe.
+    const aussagen = Array.isArray(r.body.aussagen) ? r.body.aussagen : [];
+    const rueckfragen = Array.isArray(r.body.rueckfragen) ? r.body.rueckfragen : [];
+    // Auflage: zu einer Rückfrage gibt es KEINEN Vorschlag am selben Feld. Kommt beides, hat die
+    // KI gleichzeitig gefragt und geraten — und der Vorschlag IST die Vermutung, nach der sie
+    // gerade fragt. Gemessener Anlass (2026-08-21): aus „bis Juni 100k p.a." wurde ein Jahres-
+    // brutto von 100.000 EUR, und zwar sicher — 70.000 EUR zu viel, nur durch Julius' Korrektur
+    // verhindert. Hier gewinnt deshalb die Rückfrage, und dass ein Wert zurückgehalten wurde,
+    // steht sichtbar da: still verschwinden lassen wäre derselbe Fehler in die andere Richtung.
+    const gefragteFelder = new Set(rueckfragen.map(rf => rf.feld_id).filter(Boolean));
+    const alleVorschlaege = r.body.vorschlaege || [];
+    const vorschlaege = alleVorschlaege.filter(v => !gefragteFelder.has(v.feld_id));
+    const zurueckgehalten = alleVorschlaege.length - vorschlaege.length;
+    if (aussagen.length || rueckfragen.length) {
+      body.appendChild(aussagenBlock(aussagen, rueckfragen));
+      if (zurueckgehalten) {
+        body.appendChild(beraterZeile("chat-unsicher",
+          zurueckgehalten === 1
+            ? "Zu einem Feld kamen gleichzeitig eine Rückfrage und ein fertiger Wert — der Wert "
+              + "wird zurückgehalten, bis die Rückfrage beantwortet ist."
+            : zurueckgehalten + " Werte werden zurückgehalten, weil zu denselben Feldern noch "
+              + "eine Rückfrage offen ist."));
+      }
+    }
     if (r.body.antwort) {
       // Die Antwort wurde für die Frage erzeugt, bei der der Nutzer sie abgeschickt hat — der
       // Kontext dafür ging als `feld_id` mit. Steht er inzwischen woanders, ist sie eine Auskunft
@@ -971,7 +1123,10 @@ async function chatSenden() {
       // stehen, die Antwort ist also weiter lesbar.
       zeigeVerstanden(vorschlaege, konflikte);
       await refresh();   // Ring/Belegt aktualisieren; zeigeVerstanden hält die Seite vorn
-    } else if (!r.body.antwort) {
+    } else if (!r.body.antwort && !rueckfragen.length) {
+      // `!rueckfragen.length` ist neu und keine Kosmetik: steht eine Rückfrage auf dem Schirm, hat
+      // die KI sehr wohl etwas erkannt — sie fragt ja nach. „Weder einen Wert noch eine Frage"
+      // wäre dort schlicht falsch und schickte den Nutzer zum Umformulieren, statt zum Antworten.
       body.appendChild(beraterZeile("chat-erklaer",
         "Daraus konnte die KI weder einen Wert ableiten noch eine Frage erkennen. "
         + "Schreib es etwas genauer — oder trag den Wert oben direkt ein."));
