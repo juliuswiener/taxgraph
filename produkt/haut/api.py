@@ -949,24 +949,22 @@ def _anzeige_metadaten(fid: str, bindung: dict) -> dict:
 def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     """Chat-Berater (K1), EIN Kanal für beides: Werte vorschlagen UND Fragen beantworten.
 
-    Julius 2026-08-14: „‚Ein Satz an die KI' kann aber auch einfach eine Nachfrage sein." Vorher
-    gab es zwei Knöpfe und zwei Endpunkte — der Nutzer musste seinen eigenen Satz vorher
-    einsortieren, obwohl ein Satz oft beides ist. Jetzt geht jede Nachricht denselben Weg, und die
-    Antwort trägt `vorschlaege` UND `antwort`/`unsicher`; eines von beidem darf leer sein.
+    Julius 2026-08-14: „‚Ein Satz an die KI' kann aber auch einfach eine Nachfrage sein." Vorher gab
+    es zwei Knöpfe und zwei Endpunkte — der Nutzer musste seinen eigenen Satz vorher einsortieren,
+    obwohl ein Satz oft beides ist. Jetzt geht jede Nachricht denselben Weg, und die Antwort trägt
+    `vorschlaege` UND `antwort`/`unsicher`; eines von beidem darf leer sein.
 
     Die Trennung liegt damit nicht mehr im Kanal, sondern im UMGANG mit dem Ergebnis: aus
     `vorschlaege` werden VORLÄUFIGE Events (Auflage A, Katalog-Check, Beleg-Gate), `antwort` ist
-    reiner Text und wird nirgends gespeichert. Ein Modell, das im Fließtext behauptet „ich trage
-    dir 220 Tage ein", ändert deshalb nichts — geschrieben wird nur, was durch das Beleg-Gate und
-    den Katalog kommt.
+    reiner Text und wird nirgends gespeichert. Ein Modell, das im Fließtext behauptet „ich trage dir
+    220 Tage ein", ändert nichts — geschrieben wird nur, was durch Beleg-Gate und Katalog kommt.
 
-    Ursprüngliche Beschreibung des Vorschlags-Teils:
-    der Nutzer beschreibt seine Situation in Freitext → das LLM SCHLÄGT Feld-Werte VOR →
-    jeder Vorschlag wird als VORLÄUFIGES Event geschrieben (schreiber='llm:chat'). Store-Auflage A + der Katalog-
-    Check (katalog=lade_katalog) erzwingen strukturell: herkunft=llm_vorschlag, zustand=vorlaeufig, signal_2=null
-    (nie in die Summe ohne menschlichen Hold-Confirm) UND nur Felder die der Katalog als LLM-vorschlagbar führt
-    (identitäts-/rechtskritische Felder lehnt der Check ab). CAP-GATED: kein LLM-Key/Provider → 501 + Erklär-
-    Vertrag ($0, kein Mock-Call). Die KI setzt NIE einen Wert.
+    Der Vorschlags-Teil (seit 2026-08-21 in DREI Stufen, s. api_llm._llm_dialog: Aussagen → Themen →
+    Werte; zusätzlich `aussagen` mit Status je Aussage und `rueckfragen` im Rückgabewert): Freitext →
+    LLM SCHLÄGT VOR → VORLÄUFIGES Event (schreiber='llm:chat'). Store-Auflage A + der Katalog-Check
+    (katalog=lade_katalog) erzwingen strukturell herkunft=llm_vorschlag, zustand=vorlaeufig,
+    signal_2=null (nie in die Summe ohne menschlichen Hold-Confirm) UND nur Katalog-Felder.
+    CAP-GATED: kein LLM-Key/Provider → 501 + Erklär-Vertrag ($0). Die KI setzt NIE einen Wert.
 
     ZWEI sichtbare Abweisungs-Formen (vorher beide gleich still in `abgelehnt`, ununterscheidbar — Auftrag
     Konfliktdialog): additiv, `abgelehnt`/dessen Form bleibt UNVERÄNDERT (Konsumenten-Vertrag).
@@ -1003,7 +1001,9 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     prompt_katalog = [
         {"feld_id": fid, "fragetext_laie": b.get("fragetext_laie", ""),
          "hilfe_kurz": b.get("hilfe_kurz", ""), "typ": b.get("typ"),
-         "bereich": b.get("bereich"), "enum_werte": b.get("enum_werte")}
+         "bereich": b.get("bereich"), "enum_werte": b.get("enum_werte"),
+         # Stufen-2-Verengung: api_llm gruppiert DIESE Liste zu 62 Themen, statt einer zweiten.
+         "regel_id": (b.get("quelle") or {}).get("regel_id")}
         for fid, b in bindung.items() if fid in check_katalog["llm"]]
     # Kontext für die ANTWORT-Hälfte: das gerade offene Feld (schickt die Oberfläche mit), sein
     # Zitatanker und die schon bestätigten Angaben. Für die Vorschläge ist er ohne Bedeutung.
@@ -1069,11 +1069,11 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
         sys.stderr.write(f"[haut.chat] LLM-Vorschläge außerhalb Katalog abgelehnt: {sorted(set(_abg))}\n")
     return 200, {"vorschlaege": geschrieben, "abgelehnt": _abg, "abgelehnt_gruende": abgelehnt_gruende,
                  "konflikte": konflikte,
-                 # Die Antwort-Hälfte. Leer, wenn der Nutzer nichts gefragt hat — dann zeigt die
-                 # Oberfläche nur die Vorschläge. `unsicher` sagt, ob das Modell die Antwort selbst
-                 # für nicht gesichert hält; das gehört sichtbar zum Nutzer, sonst liest sich eine
-                 # Vermutung wie eine Auskunft.
+                 # `antwort` leer = nichts gefragt; `unsicher` sagt, ob das Modell sie selbst für
+                 # ungesichert hält (sonst liest sich eine Vermutung wie eine Auskunft). `aussagen`
+                 # (Status je Aussage) + `rueckfragen`: was offen blieb, statt still wegzufallen.
                  "antwort": erg["antwort"], "unsicher": erg["unsicher"],
+                 "aussagen": erg.get("aussagen", []), "rueckfragen": erg.get("rueckfragen", []),
                  "hinweis": "Vorschläge erfasst — bitte jeden einzeln bestätigen (die KI setzt nichts)."}
 
 

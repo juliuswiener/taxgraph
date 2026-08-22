@@ -197,7 +197,11 @@ def test_beleg_gate_ist_im_dialog_pfad_verdrahtet(fall, monkeypatch):
 def test_schema_erzwingt_beide_haelften():
     s = api_llm.DIALOG_SCHEMA
     assert s.get("strict") is True
-    assert set(s["schema"]["required"]) == {"vorschlaege", "antwort", "unsicher"}, (
+    # 2026-08-21 um `rueckfragen` erweitert (Drei-Stufen-Dialog). Die Begründung dieses Tests gilt
+    # unverändert und trägt die dritte Hälfte mit: gemessen liess das Modell die Liste in FÜNFZEHN
+    # Läufen leer, solange sie optional war, und füllte sie in 3 von 3, sobald sie verpflichtend
+    # wurde. Ein optionales Feld ist eines, das man weglässt.
+    assert set(s["schema"]["required"]) == {"vorschlaege", "rueckfragen", "antwort", "unsicher"}, (
         "Fehlt eine Hälfte in `required`, hängt die Struktur davon ab, ob das Modell den Text für "
         "eine Frage hielt.")
     assert s["schema"]["additionalProperties"] is False
