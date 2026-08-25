@@ -217,6 +217,7 @@ bindungen:
   - feld_id: kein_gewinn
     quelle: {regel_id: p2_einkunftsart_gewinn, geltungsbedingung: keine_gewinneinkuenfte}
     typ: bool
+    screening: true
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -248,6 +249,7 @@ bindungen:
   - feld_id: kein_kind
     quelle: {regel_id: p2_kind_vorhanden, geltungsbedingung: keine_kinder}
     typ: bool
+    screening: true
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -267,6 +269,7 @@ bindungen:
   - feld_id: kein_kap
     quelle: {regel_id: p2_einkunftsart_kap, geltungsbedingung: keine_kapitaleinkuenfte}
     typ: bool
+    screening: true
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -285,6 +288,7 @@ bindungen:
   - feld_id: kein_vuv
     quelle: {regel_id: p2_einkunftsart_vuv, geltungsbedingung: keine_vermietungseinkuenfte}
     typ: bool
+    screening: true
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -303,6 +307,7 @@ bindungen:
   - feld_id: kein_sonstige
     quelle: {regel_id: p2_einkunftsart_sonstige, geltungsbedingung: keine_sonstigen_einkuenfte}
     typ: bool
+    screening: true
     einheit: null
     askable: true
     vorjahr: vorschlag

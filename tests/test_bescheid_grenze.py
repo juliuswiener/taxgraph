@@ -143,7 +143,23 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # damit unter die Frage nach dem Bruttoarbeitslohn einen Knopf „Üblich: 62.000 €".
 # ANLASS: „01.01-31.122" (ein Tippfehler) wurde anstandslos gespeichert; der Wert geht als
 # Zeitraum ins ELSTER-Feld und wäre erst beim Finanzamt aufgefallen.
-API_ZEILEN_OBERGRENZE = 1185
+#
+# 1185 -> 1190 (2026-08-25, Ankreuzliste). Aufschlüsselung der fünf Zeilen:
+# 1 Zuweisung `"screening": bool(b.get("screening"))` in fragen(), 4 Kommentar.
+# NULL Zeilen Steuerlogik — eine weitere Bindungs-Eigenschaft an den Browser durchreichen.
+# Die Liste selbst steht in app.js/index.html, welche Fragen dazugehören in der Bindung.
+# ANLASS: zehn Fragen, die je die Existenz eines ganzen Themas erheben, standen einzeln über die
+# Queue verteilt (Position 2 bis 38) — dazwischen die Detailfragen der Themen, nach denen noch
+# gar nicht gefragt war. Gemeinsam angekreuzt nehmen sie 147 der 321 Fragen weg.
+#
+# 1190 -> 1195 (2026-08-25, Instanz-Achse). Aufschlüsselung der fünf Zeilen:
+# 2 Zuweisung (`**dict(zip(("instanz_anzahl","instanz_etikett"), TR.instanz_anzahl(...)))`),
+# 3 Kommentar. NULL Zeilen Steuerlogik — die Zählung selbst steht in traverser.instanz_anzahl,
+# die Eingabefelder in app.js, die Deklaration in der Bindung (`instanz_gruppen`).
+# ANLASS: 69 Felder tragen eine Instanz-Achse (31 für Kinder), Store und ELSTER-Mapping kennen sie
+# seit langem — der Fragebogen fragte trotzdem einmal. Wer zwei Kinder hatte, konnte einen
+# Vornamen eintragen; für das zweite gab es kein Feld. Abgabe-Blocker, kein Anzeigefehler.
+API_ZEILEN_OBERGRENZE = 1195
 
 
 def _runner_stellen(pfad: str) -> list[int]:

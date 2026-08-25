@@ -26,6 +26,10 @@ let RF_NACHHER = null;          // {vorschlaege, konflikte} — dran, wenn die R
 // Hier liegen die Rückfragen, solange die Verstanden-Seite steht — sie werden danach neu gegen die
 // dann offenen Fragen geprüft, weil eine Bestätigung ganze Blöcke abschalten kann.
 let VERSTANDEN_DANACH = null;   // {rueckfragen, vorschlaege, konflikte, zurueckgestellt}
+let RF_BEANTWORTET = 0;         // wie viele Rückfragen dieser Runde einen Wert bekommen haben
+let RF_SPAETER = 0;             // und wie viele der Nutzer zurückgestellt hat
+let SCREENING_OFFEN = false;    // wie VERSTANDEN_OFFEN: refresh() darf die Seite nicht wegschieben
+let SCREENING_LISTE = [];       // die Fragen mit `screening: true`, aus /fragen
 
 // --- P1.1-Verdrahtung: Token-Haltung ---
 // Sicherheitsentscheidung, keine Geschmacksfrage (team-lead-Auftrag): sessionStorage statt
@@ -154,7 +158,10 @@ async function wegWaehlen(weg) {
   $("flow").hidden = false;
   kiFokus(weg === "ki");
   await refresh();   // setzt AKTUELL und zeigt den Wegpunkt — auch auf dem KI-Weg
-  if (weg !== "ki") return;
+  // Der Fragebogen beginnt mit der Ankreuzliste: zehn Kreuze nehmen 147 der 321 Fragen weg.
+  // Auf dem KI-Weg NICHT — dort erhebt die KI dieselben Dinge aus dem Satz des Nutzers, und die
+  // Liste käme erst, wenn er später in den Fragebogen wechselt (s. zumFragebogen).
+  if (weg !== "ki") { await zeigeScreening(); return; }
   const body = $("chat-body");
   body.appendChild(beraterZeile("chat-erklaer",
     "Schreib einfach los — zum Beispiel: „Ich bin ledig, hatte 62.000 Euro brutto und fahre "
@@ -189,7 +196,7 @@ async function refresh() {
   // Für den Rückfragen-Schritt gilt dasselbe, und aus demselben Grund: jede beantwortete Rückfrage
   // ruft refresh(), damit Ring und Belegt-Liste mitziehen. Schöbe sich dabei der Fragebogen davor,
   // stünde der Nutzer nach der ersten Antwort mitten in einer anderen Frage.
-  if (VERSTANDEN_OFFEN || RUECKFRAGEN_OFFEN) return;
+  if (VERSTANDEN_OFFEN || RUECKFRAGEN_OFFEN || SCREENING_OFFEN) return;
   if (!fragen) return;   // ohne Queue keine neue Frage — die bisherige bleibt stehen
   if (fragen.length === 0) {
     $("wegpunkt").hidden = true;
@@ -299,6 +306,107 @@ function zeigeRing(stand, offen) {
     spanneEl.textContent = stand.teil_ringe.map(t => `${t.familie}: ${euro(t.intervall.min_cent)}–${euro(t.intervall.max_cent)}`).join(" · ");
     hintEl.textContent = "einzelne Abzüge — noch kein Gesamt-Bescheid";
   } else { spanneEl.textContent = "Bescheid-Spanne"; hintEl.textContent = "(Rechen-Engine nicht verfügbar)"; }
+}
+
+// --- Die Ankreuzliste am Anfang -------------------------------------------------------------
+//
+// Zehn Fragen erheben je die EXISTENZ eines ganzen Themas (Kinder, Vermietung, Kapitalerträge,
+// Behinderung, …). Einzeln durch den Fragebogen verteilt standen sie auf den Positionen 2, 4, 5,
+// 8, 9, 18, 19, 27, 33 und 38 — dazwischen die Detailfragen genau der Themen, nach denen noch
+// gar nicht gefragt war. Gemessen 2026-08-25: zehn Kreuze nehmen 147 der 321 Fragen weg.
+//
+// WELCHE Fragen das sind, sagt die Bindung (`screening: true`), nicht diese Datei. Ein Filter über
+// den Feldnamen („kein_…") wäre dieselbe Heuristik, die hier schon einmal zwei Feldern das
+// Gegenteil der Nutzerantwort entlockt hat — dafür gibt es `frage_invertiert`, und aus demselben
+// Grund gibt es jetzt `screening`.
+//
+// EIN KREUZ HEISST „JA, GAB ES". Der Speicherwert ist bei diesen Feldern das Gegenteil
+// (`kein_kap` = true heisst „keine Kapitalerträge"), deshalb läuft die Antwort durch dieselbe
+// Umkehr wie im Fragebogen: boolAntwort(q, angekreuzt).
+async function zeigeScreening(danach) {
+  const fr = await jget(`/fall/${FALL}/fragen`);
+  if (fr.status === 401) return false;      // Anmeldemaske hat übernommen
+  const offen = (Array.isArray(fr.body.fragen) ? fr.body.fragen : []).filter(q => q.screening);
+  if (!offen.length) return false;          // alle schon beantwortet: nichts zu zeigen
+
+  SCREENING_LISTE = offen;
+  const ul = $("screening-liste");
+  ul.innerHTML = "";
+  for (const q of offen) {
+    const li = document.createElement("li");
+    li.className = "sc-zeile";
+    const lab = document.createElement("label");
+    lab.className = "sc-label";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.className = "sc-box";
+    box.dataset.feld = q.feld_id;
+    const txt = document.createElement("span");
+    txt.className = "sc-text";
+    txt.textContent = q.fragetext_laie || q.feld_id;
+    lab.append(box, txt);
+    li.appendChild(lab);
+    if (q.hilfe_kurz) {
+      const h = document.createElement("div");
+      h.className = "sc-hilfe";
+      h.textContent = q.hilfe_kurz;
+      li.appendChild(h);
+    }
+    ul.appendChild(li);
+  }
+  SCREENING_DANACH = danach || null;
+  SCREENING_OFFEN = true;
+  $("wegpunkt").hidden = true;
+  $("fertig").hidden = true;
+  $("screening").hidden = false;
+  $("screening").focus({ preventScroll: true });
+  return true;
+}
+
+let SCREENING_DANACH = null;   // was nach dem Weiter dran ist (Funktion oder null = Fragebogen)
+
+// „Weiter": JEDE Frage bekommt eine Antwort — die angekreuzten ein Ja, die übrigen ein Nein.
+//
+// Das ist die eigentliche Entscheidung dieser Seite, und sie ist nicht selbstverständlich: ein
+// leeres Kästchen könnte auch „noch nicht gelesen" heissen. Dann müsste man jede Frage einzeln
+// stellen — also genau das, was die Seite abschaffen soll. Deshalb sagt die Seite ausdrücklich
+// „wozu du nichts ankreuzt, fragen wir gar nicht erst" UND nennt den Rückweg: die Felder bleiben
+// änderbar, und mit ihnen kommen die Folgefragen zurück.
+async function screeningWeiter() {
+  const btn = $("screening-weiter");
+  if (btn.disabled) return;                 // Doppel-Submit-Schutz
+  btn.disabled = true;
+  const alt = btn.textContent;
+  btn.textContent = "Wird gespeichert …";
+  try {
+    for (const q of SCREENING_LISTE) {
+      const box = $("screening-liste").querySelector(`.sc-box[data-feld="${q.feld_id}"]`);
+      const wert = boolAntwort(q, !!(box && box.checked));
+      const r = await jpost(`/fall/${FALL}/event`, {
+        feld_id: q.feld_id, wert, zustand: "bestaetigt",
+        herkunft: { herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer" },
+        schreiber: "ui:laie",
+        signal: { signal_1: null, signal_2: "screening@" + q.feld_id },
+      });
+      if (!okStatus(r.status)) {
+        // Abbrechen statt weiterlaufen: die übrigen Felder blieben sonst unbeantwortet, während
+        // der Nutzer die Seite verlässt — und er hielte sie für erledigt.
+        zeigeNetzFehler("Abgewiesen: " + (r.body.fehler || r.status));
+        btn.disabled = false; btn.textContent = alt;
+        return;
+      }
+    }
+  } finally {
+    btn.textContent = alt;
+    btn.disabled = false;
+  }
+  SCREENING_OFFEN = false;
+  $("screening").hidden = true;
+  SCREENING_LISTE = [];
+  const danach = SCREENING_DANACH;
+  SCREENING_DANACH = null;
+  if (danach) return danach();
+  await refresh();
 }
 
 // --- Dim 1: Herkunft zum Anfassen (per-Quelle-Badge) ---
@@ -416,7 +524,44 @@ function zeigeFrage(q, stand) {
 // `id`/`labelId` sind Parameter, weil es die id `feld-input` nur EINMAL im Dokument geben darf:
 // leseWert() holt sein Element per getElementById, und ein verstecktes #wegpunkt behält seine
 // Eingabe im DOM. Zwei gleiche ids, und der Rückfragen-Schritt läse den Wert der Frage darunter.
+// N Eingabefelder statt N-mal derselben Frage (Julius 2026-08-25: „wie hier mehrere angeben bei
+// nur einem feld?? … oder man gibt direkt n inputfelder anstatt jedesmal einen neue frage").
+//
+// 69 Felder tragen eine `instanz_gruppe`, 31 davon für Kinder. Store, ELSTER-Mapping und Bescheid
+// kennen die Achse seit langem (`base`, `base__2`, `base__3`; est_mapping.parse_instanz ist die
+// EINE Enumerations-Wahrheit) — der Fragebogen fragte trotzdem einmal. Wer zwei Kinder hatte,
+// konnte einen Vornamen eintragen; für das zweite gab es kein Feld.
+//
+// Der Traverser bleibt dabei unangetastet: er liefert das Basisfeld wie bisher einmal, und die
+// Zahl steht als `instanz_anzahl` daneben. Diese Funktion baut daraus die Felder.
+function baueInstanzEingaben(q, box, id, labelId, vorbelegungen) {
+  box.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "instanzen";
+  wrap.id = id;                       // damit leseInstanzWerte() den Block wiederfindet
+  for (let i = 1; i <= q.instanz_anzahl; i++) {
+    const zeile = document.createElement("div");
+    zeile.className = "instanz-zeile";
+    const marke = document.createElement("span");
+    marke.className = "instanz-marke";
+    marke.textContent = `${q.instanz_etikett || "Nr."} ${i}`;
+    const feld = document.createElement("div");
+    feld.className = "eingabe instanz-feld";
+    zeile.append(marke, feld);
+    wrap.appendChild(zeile);
+    // Jede Instanz bekommt EIN normales Eingabefeld — derselbe Bau wie sonst, damit Typ, Format,
+    // Standardwert-Knopf und Auswertung überall gleich sind.
+    const einzeln = { ...q, instanz_anzahl: 1 };
+    const el = baueEingabe(einzeln, feld, `${id}__${i}`, labelId,
+                           (vorbelegungen || {})[i] ?? null);
+    el.dataset.instanz = String(i);
+  }
+  box.appendChild(wrap);
+  return wrap;
+}
+
 function baueEingabe(q, box, id, labelId, vorbelegung) {
+  if (q.instanz_anzahl > 1) return baueInstanzEingaben(q, box, id, labelId, vorbelegung);
   box.innerHTML = ""; let input;
   if (q.typ === "bool") {
     // Buttons statt Dropdown: eine Ja/Nein-Frage hinter einem Klapp-Menü zu verstecken kostet
@@ -637,6 +782,26 @@ function selectFeld(optionen, vorauswahl, id) {
 // Richtung seiner Frage; eine Präfix-Regel bricht beim nächsten `x_ohne_y`.
 function boolAntwort(meta, b) { return meta.frage_invertiert ? !b : !!b; }
 
+// Die Werte ALLER Instanzen, in der Reihenfolge 1..n. Eine leere Instanz liefert `undefined` und
+// wird vom Aufrufer NICHT geschrieben — dieselbe Regel wie bei einem einzelnen leeren Feld
+// (Stille-Null-Fix). Wer nur das erste Kind kennt, trägt eben nur das erste ein.
+function leseInstanzWerte(q, id) {
+  const wrap = $(id);
+  if (!wrap) return [];
+  const out = [];
+  for (let i = 1; i <= q.instanz_anzahl; i++) {
+    const el = wrap.querySelector(`#${CSS.escape(id + "__" + i)}`);
+    out.push(el ? leseWert(q, el) : undefined);
+  }
+  return out;
+}
+
+// Wie das Feld der i-ten Instanz im Store heisst. `base` ist Instanz 1, ab 2 mit Suffix — genau
+// das Format, das est_mapping.parse_instanz liest. Kein zweites Regex, keine Drift.
+function instanzFeldId(basis, i) {
+  return i <= 1 ? basis : `${basis}__${i}`;
+}
+
 // „Bitte einen gültigen Wert eingeben" sagt einem Nutzer, der gerade „01.01-31.122" getippt hat,
 // nichts — er sieht ja einen Wert dastehen. Wo die Bindung ein Format zusagt, wird es genannt,
 // mit dem üblichen Wert als Beispiel.
@@ -739,6 +904,17 @@ async function bestaetigen(kiFeld) {
   btn.disabled = true;
   const altLabel = kiFeld ? null : btn.textContent;
   if (!kiFeld) btn.textContent = "Wird gespeichert …";
+
+  // Feld mit Instanz-Achse: N Werte, N Events (`base`, `base__2`, …). Eigener Zweig, weil die
+  // Fehlerbehandlung eine andere ist — bei fünf Kindern soll nicht die ganze Antwort verworfen
+  // werden, weil eines leer blieb.
+  if (AKTUELL.instanz_anzahl > 1) {
+    const ok = await bestaetigeInstanzen(kiFeld, btn, altLabel);
+    if (!ok) return;
+    await weiterNachDemSchreiben();
+    return;
+  }
+
   const wert = leseWert(AKTUELL);
   if (wert === undefined) {
     // Stille-Null-Fix (Befund B): leer/ungültig -> KEIN Event, kein "0" -- Nutzer wird informiert
@@ -771,9 +947,62 @@ async function bestaetigen(kiFeld) {
     if (!kiFeld) btn.textContent = altLabel;
     return;
   }
-  btn.disabled = false;   // refresh() klont den Button (rüsteBestaetigen) — Attribut sonst dauerhaft übernommen
-  KORREKTUR_FID = null;  // Korrektur abgeschlossen
+  await weiterNachDemSchreiben();
+}
+
+// Was nach einem erfolgreichen Schreiben immer passiert — einmal statt zweimal, seit der
+// Instanz-Zweig daneben steht.
+async function weiterNachDemSchreiben() {
+  $("bestaetigen").disabled = false;   // refresh() klont den Knopf (rüsteBestaetigen); das
+                                       // Attribut wäre sonst dauerhaft übernommen
+  KORREKTUR_FID = null;                // Korrektur abgeschlossen
   await refresh();
+}
+
+// N Instanzen schreiben: `base`, `base__2`, `base__3` … Gibt false zurück, wenn nichts geschrieben
+// wurde (dann hat der Aufrufer den Knopf schon wieder freigegeben).
+//
+// LEERE INSTANZEN WERDEN ÜBERSPRUNGEN, nicht als Fehler behandelt. Wer drei Kinder angegeben hat,
+// aber nur zwei Namen zur Hand, soll die zwei speichern können — die dritte Frage bleibt offen und
+// kommt im Fragebogen wieder. Nur wenn ALLE leer sind, ist es keine Antwort: dann dieselbe Meldung
+// wie beim einzelnen leeren Feld (Stille-Null-Fix).
+async function bestaetigeInstanzen(kiFeld, btn, altLabel) {
+  const basis = AKTUELL.feld_id;
+  const werte = leseInstanzWerte(AKTUELL, "feld-input");
+  const gefuellt = werte.map((w, i) => [i + 1, w]).filter(([, w]) => w !== undefined);
+  if (!gefuellt.length) {
+    zeigeNetzFehler(formatHinweis(AKTUELL)
+                    || `Bitte mindestens einen Wert eingeben (${AKTUELL.instanz_etikett} 1).`);
+    btn.disabled = false;
+    if (!kiFeld) btn.textContent = altLabel;
+    return false;
+  }
+  for (const [i, wert] of gefuellt) {
+    const fid = instanzFeldId(basis, i);
+    const ev = {
+      feld_id: fid, wert, zustand: "bestaetigt",
+      herkunft: { herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer" },
+      schreiber: "ui:laie",
+      signal: { signal_1: null, signal_2: (kiFeld ? "hold@" : "klick@") + fid },
+    };
+    // Trägt die Instanz schon einen Wert (Korrektur, KI-Vorschlag), verlangt Auflage B ein
+    // `ersetzt` — sonst weist der Store sie ab und die Antwort wäre verloren.
+    if (STAND && STAND.felder && STAND.felder[fid]) {
+      const j = (await jget(`/fall/${FALL}/feld/${fid}/warum`)).body.justification || {};
+      if (j.event_id) { ev.ersetzt = j.event_id; ev.signal.signal_1 = j.event_id; }
+    }
+    const r = await jpost(`/fall/${FALL}/event`, ev);
+    if (!okStatus(r.status)) {
+      // Abbrechen und SAGEN, welche Instanz — sonst sucht der Nutzer den Fehler in der falschen
+      // Zeile. Was vorher durchging, bleibt geschrieben; der Rest steht weiter offen.
+      zeigeNetzFehler(`${AKTUELL.instanz_etikett} ${i} abgewiesen: `
+                      + (r.body.fehler || r.status));
+      btn.disabled = false;
+      if (!kiFeld) btn.textContent = altLabel;
+      return false;
+    }
+  }
+  return true;
 }
 
 // --- „Das habe ich verstanden": alle KI-Vorschläge auf einer Seite, jeder mit seinem Zitat,
@@ -1045,6 +1274,7 @@ async function verstandenWeiter() {
   // NUR das Panel da) und der Knopf führte ins Leere.
   kiFokus(false);
   chatVerlaufAufraeumen();
+  if (await zeigeScreening()) return;   // der Fragebogen beginnt mit der Ankreuzliste
   await refresh();
 }
 
@@ -1057,6 +1287,9 @@ async function zumFragebogen() {
   $("verstanden").hidden = true;
   kiFokus(false);
   chatVerlaufAufraeumen();
+  // Der Fragebogen beginnt mit der Ankreuzliste — auch wenn man über den KI-Weg dorthin kommt.
+  // Was die KI schon geklärt hat, steht nicht mehr drin (zeigeScreening liest die OFFENEN Fragen).
+  if (await zeigeScreening()) return;
   await refresh();
 }
 
@@ -1212,6 +1445,7 @@ async function rueckfrageWeiter() {
     zeigeNetzFehler("Abgewiesen: " + (r.body.fehler || r.status));
     return;
   }
+  RF_BEANTWORTET += 1;
   await refresh();   // Ring + Belegt-Liste ziehen mit; die Seite bleibt vorn (RUECKFRAGEN_OFFEN)
   RF_INDEX += 1;
   zeigeRueckfrage();
@@ -1223,6 +1457,7 @@ async function rueckfrageWeiter() {
 // die die Software nicht hält.
 function rueckfrageSpaeter() {
   if (RF_INDEX >= RF_LISTE.length) return;
+  RF_SPAETER += 1;
   RF_INDEX += 1;
   zeigeRueckfrage();
 }
@@ -1230,11 +1465,66 @@ function rueckfrageSpaeter() {
 // Die Runde ist durch: jetzt erst die Bestätigungen (Teil 3 der Reihenfolge), sonst zurück in den
 // Fragebogen. refresh() holt in beiden Fällen Ring und Belegt-Liste nach — und schiebt den
 // Fragebogen nur dann vor, wenn keine Verstanden-Seite ihn festhält.
-function rueckfragenFertig() {
+// Die Runde ist durch — und das muss DASTEHEN.
+//
+// Julius 2026-08-25, mit Screenshot: „nachdem alle nachfragen beantwortet wurden sehen wir das …
+// hier sollte eher eine erfolgsnachricht mit zusammenfassung stehen." Der Wizard verschwand, und
+// zurück blieb der Verlauf von vorhin — inklusive vier Marken „frage ich gleich" an Aussagen,
+// deren Fragen längst beantwortet waren. Nichts sagte, dass etwas fertig ist.
+//
+// Zwei Dinge passieren hier deshalb: die abgearbeiteten Aussagen-Kästen werden geräumt (ihre
+// Marken beschreiben einen Zustand, den es nicht mehr gibt), und an ihre Stelle tritt eine
+// Bilanz — was angekommen ist, was zurückgestellt wurde, und wie es weitergeht.
+async function rueckfragenFertig() {
   const n = RF_NACHHER || { vorschlaege: [], konflikte: [] };
+  const beantwortet = RF_BEANTWORTET, spaeter = RF_SPAETER;
   rueckfragenSchliessen();
-  if (n.vorschlaege.length || n.konflikte.length) zeigeVerstanden(n.vorschlaege, n.konflikte);
-  return refresh();
+  if (n.vorschlaege.length || n.konflikte.length) {
+    // Alter Pfad (Bestätigungen NACH den Rückfragen). Seit der Umkehr der Reihenfolge am
+    // 2026-08-25 läuft er nicht mehr — RF_NACHHER ist leer, weil zeigeVerstanden vorher kam.
+    zeigeVerstanden(n.vorschlaege, n.konflikte);
+    return refresh();
+  }
+  await refresh();
+  if (beantwortet || spaeter) zeigeRundenBilanz(beantwortet, spaeter);
+
+  // Und dann der nächste Schritt (Julius 2026-08-25: „die checkboxen kommen nicht nach den
+  // nachfragen"). Die KI-Kette ist hier zu Ende: Text gelesen, bestätigt, nachgefragt. Was folgt,
+  // ist der Fragebogen — und der beginnt mit der Ankreuzliste. Sie zeigt nur noch die Themen, die
+  // offen geblieben sind; was die KI aus dem Satz geklärt hat, steht nicht mehr drin.
+  kiFokus(false);
+  await zeigeScreening();
+}
+
+// Was aus der Runde geworden ist, in Zahlen, die der Nutzer selbst nachzählen kann.
+function zeigeRundenBilanz(beantwortet, spaeter) {
+  chatVerlaufAufraeumen();      // die Kästen von vorhin sind abgearbeitet
+  const body = $("chat-body");
+
+  const teile = [];
+  if (beantwortet) {
+    teile.push(beantwortet === 1 ? "eine Angabe übernommen"
+                                 : beantwortet + " Angaben übernommen");
+  }
+  if (spaeter) {
+    teile.push(spaeter === 1 ? "eine Frage zurückgestellt"
+                             : spaeter + " Fragen zurückgestellt");
+  }
+  const p = beraterZeile("chat-bilanz", "✓ Fertig — " + teile.join(", ") + ".");
+  body.appendChild(p);
+
+  // Wie es weitergeht, und wo das Zurückgestellte geblieben ist. Ohne diesen Satz liest sich
+  // „zurückgestellt" wie „verworfen".
+  const offen = (OFFEN_ANZAHL === null || OFFEN_ANZAHL === undefined) ? null : OFFEN_ANZAHL;
+  const wie = spaeter
+    ? "Was du zurückgestellt hast, steht im Fragebogen wieder da."
+    : "";
+  const rest = (offen === null) ? "" : (offen === 0
+    ? "Es sind keine Fragen mehr offen."
+    : `Im Fragebogen sind noch ${offen} Fragen offen.`);
+  const satz = [wie, rest].filter(Boolean).join(" ");
+  if (satz) body.appendChild(beraterZeile("chat-erklaer", satz));
+  body.scrollTop = body.scrollHeight;
 }
 
 // Die Seite räumen, ohne etwas zu zeigen. Zweiter Aufrufer ist chatSenden(): eine neue KI-Antwort
@@ -2018,6 +2308,7 @@ $("chat-text").addEventListener("input", chatHoeheAnpassen);
 $("warum").addEventListener("click", zeigeWarum);
 $("verstanden-weiter").addEventListener("click", verstandenWeiter);
 $("zum-fragebogen").addEventListener("click", zumFragebogen);
+$("screening-weiter").addEventListener("click", screeningWeiter);
 $("kette-zu").addEventListener("click", () => $("kette-overlay").hidden = true);
 $("vorjahr-toggle").addEventListener("click", () => { const p = $("vorjahr-panel"); p.hidden = !p.hidden; });
 $("vorjahr-go").addEventListener("click", vorjahrUebernehmen);

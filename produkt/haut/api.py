@@ -374,6 +374,16 @@ def fragen(fall_id: str) -> tuple[int, dict]:
             # Vorgabe. Beide absent, wo die Bindung nichts zusagt (2026-08-25).
             "muster": b.get("muster"),
             "standardwert": b.get("standardwert"),
+            # `screening`: erhebt die EXISTENZ eines ganzen Themas. Die Oberfläche stellt diese
+            # Fragen gemeinsam als Ankreuzliste an den Anfang (2026-08-25, Julius: „wenn wir eine
+            # liste von unüblichen/seltenen dingen haben können wir die auch schnell in einer
+            # checkbox abfrage abhandeln"). Gemessen: zehn Kreuze nehmen 147 Einzelfragen weg.
+            "screening": bool(b.get("screening")),
+            # Wie viele Eingabefelder dieses Feld braucht (Instanz-Achse) und wie eine Instanz
+            # heisst. 1/"" für alles ohne Achse. Die Zahl kommt aus dem deklarierten Zählfeld der
+            # Gruppe (bindung `instanz_gruppen`), NICHT aus dem Feldnamen.
+            **dict(zip(("instanz_anzahl", "instanz_etikett"),
+                       TR.instanz_anzahl(store, bindung, fid))),
             "anker_ref": b.get("anker_ref"),
         })
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "fragen": out}

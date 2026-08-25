@@ -40,6 +40,7 @@ for sub in ("produkt/haut", "produkt/store", "produkt/traverser", "golden"):
 import api as API        # noqa: E402
 import audit             # noqa: E402
 import server as SRV     # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 try:
     from playwright.sync_api import sync_playwright  # noqa: E402
@@ -193,7 +194,7 @@ def seite_factory(base):
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
         # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
         page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=8000)
+        zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
         return page
 
     try:

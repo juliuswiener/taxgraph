@@ -5,140 +5,491 @@
   "description": "Bindet fachliche Regel-Slots (Signatur-Inputs / Geltungsbedingungen) an laienverständliche Abfrage-Felder und amtliche ELSTER-Kz. LLM-frei, deterministisch, source-verankert.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "scheibe", "bindungen"],
+  "required": [
+    "version",
+    "scheibe",
+    "bindungen"
+  ],
   "properties": {
-    "version": {"type": "integer", "minimum": 1},
-    "scheibe": {"type": "string", "description": "Welche Regel-Familien diese Datei abdeckt."},
-    "bindungen": {"type": "array", "items": {"$ref": "#/$defs/bindung"}},
-    "luecken": {"type": "array", "items": {"$ref": "#/$defs/luecke"},
-      "description": "Benannte Lücken: Slot/Geltungsbedingung einer Scheiben-Regel OHNE Bindung, mit Grund. Der Gate akzeptiert sie als bewusste Nicht-Abdeckung."},
-    "regel_bedingungen": {"type": "array", "items": {"$ref": "#/$defs/regel_bedingung"},
-      "description": "Strukturierte Ob-Bedingung EINER Regel (regel-weit, nicht je Gate-Feld): die Regel ist nur relevant, wenn `feld` bestätigt den Wert `wert` trägt. `feld` muss kein eigenes Feld der Regel sein. Unbeantwortet/vorläufig schließt NICHT aus (fail-closed, wie die bool-Gates in relevanz())."}
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "scheibe": {
+      "type": "string",
+      "description": "Welche Regel-Familien diese Datei abdeckt."
+    },
+    "bindungen": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/bindung"
+      }
+    },
+    "luecken": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/luecke"
+      },
+      "description": "Benannte Lücken: Slot/Geltungsbedingung einer Scheiben-Regel OHNE Bindung, mit Grund. Der Gate akzeptiert sie als bewusste Nicht-Abdeckung."
+    },
+    "regel_bedingungen": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/regel_bedingung"
+      },
+      "description": "Strukturierte Ob-Bedingung EINER Regel (regel-weit, nicht je Gate-Feld): die Regel ist nur relevant, wenn `feld` bestätigt den Wert `wert` trägt. `feld` muss kein eigenes Feld der Regel sein. Unbeantwortet/vorläufig schließt NICHT aus (fail-closed, wie die bool-Gates in relevanz())."
+    },
+    "instanz_gruppen": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/instanz_gruppe"
+      },
+      "description": "Je Instanz-Gruppe (instanz_gruppe an den Feldern): woher die ANZAHL kommt. Ohne Eintrag verhaelt sich die Gruppe wie eine einzige Instanz."
+    }
   },
   "$defs": {
     "quelle": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["regel_id"],
+      "required": [
+        "regel_id"
+      ],
       "properties": {
-        "regel_id": {"type": "string", "description": "rule_id aus rules.yaml ODER Catala-Scope (z.B. p09_entfernungspauschale, Andockung ohne rules.yaml-Eintrag)."},
-        "signatur_slot": {"type": "string", "description": "Name eines Catala-Input-Slots (Regel-Eingabe)."},
-        "geltungsbedingung": {"type": "string", "description": "bedingung-id aus rules.yaml geltungsbedingungen."}
+        "regel_id": {
+          "type": "string",
+          "description": "rule_id aus rules.yaml ODER Catala-Scope (z.B. p09_entfernungspauschale, Andockung ohne rules.yaml-Eintrag)."
+        },
+        "signatur_slot": {
+          "type": "string",
+          "description": "Name eines Catala-Input-Slots (Regel-Eingabe)."
+        },
+        "geltungsbedingung": {
+          "type": "string",
+          "description": "bedingung-id aus rules.yaml geltungsbedingungen."
+        }
       },
       "oneOf": [
-        {"required": ["signatur_slot"], "not": {"required": ["geltungsbedingung"]}},
-        {"required": ["geltungsbedingung"], "not": {"required": ["signatur_slot"]}}
+        {
+          "required": [
+            "signatur_slot"
+          ],
+          "not": {
+            "required": [
+              "geltungsbedingung"
+            ]
+          }
+        },
+        {
+          "required": [
+            "geltungsbedingung"
+          ],
+          "not": {
+            "required": [
+              "signatur_slot"
+            ]
+          }
+        }
       ]
     },
     "anker_ref": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["quelle", "zitatanker"],
+      "required": [
+        "quelle",
+        "zitatanker"
+      ],
       "properties": {
-        "quelle": {"type": "string", "description": "Norm-Fundstelle, z.B. '§ 9 Abs. 1 S. 3 Nr. 4 EStG'."},
-        "zitatanker": {"type": "string", "minLength": 3, "description": "Wörtlicher Gesetzes-/Quelltext-Ausschnitt (das 'warum' hinter dem Feld). Gate (d) prüft ihn voll-Länge via _normalize gegen die Quelldatei."},
-        "datei": {"type": "string", "description": "Optionaler expliziter Quelldatei-Pfad; sonst löst der Gate über regel_id -> rules.yaml norm_source (Pflicht bei Catala-Scope-Quellen wie EP)."}
+        "quelle": {
+          "type": "string",
+          "description": "Norm-Fundstelle, z.B. '§ 9 Abs. 1 S. 3 Nr. 4 EStG'."
+        },
+        "zitatanker": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Wörtlicher Gesetzes-/Quelltext-Ausschnitt (das 'warum' hinter dem Feld). Gate (d) prüft ihn voll-Länge via _normalize gegen die Quelldatei."
+        },
+        "datei": {
+          "type": "string",
+          "description": "Optionaler expliziter Quelldatei-Pfad; sonst löst der Gate über regel_id -> rules.yaml norm_source (Pflicht bei Catala-Scope-Quellen wie EP)."
+        }
       }
     },
     "bindung": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["feld_id", "quelle", "typ", "askable", "hilfe_kurz", "beispielwert",
-                   "elster_kz", "vz_gueltigkeit", "anker_ref"],
+      "required": [
+        "feld_id",
+        "quelle",
+        "typ",
+        "askable",
+        "hilfe_kurz",
+        "beispielwert",
+        "elster_kz",
+        "vz_gueltigkeit",
+        "anker_ref"
+      ],
       "properties": {
-        "feld_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$",
-          "description": "Eindeutiger stabiler Feld-Schlüssel (snake_case)."},
-        "quelle": {"$ref": "#/$defs/quelle"},
-        "typ": {"enum": ["cent", "int", "bool", "enum", "datum", "text"],
-          "description": "cent = Geldbetrag in Cent (Ganzzahl); int = Zähl-/Stückzahl; datum = ISO-8601."},
-        "slot_beitrag": {"enum": ["exakt", "summand"], "default": "exakt",
-          "description": "exakt = dieses Feld IST der Slot-Wert (1:1). summand = dieses Feld ist ein Summand; mehrere summand-Felder auf denselben signatur_slot addieren sich (nur typ cent/int, Typ-homogen; Gate prüft)."},
-        "einheit": {"type": ["string", "null"], "description": "z.B. 'km', 'Tage', 'EUR'; null bei bool/enum/datum."},
-        "askable": {"type": "boolean",
-          "description": "true = der Laie gibt es ein; false = abgeleitete/berechnete/Parameter-Größe (nie abfragen)."},
-        "gate": {"type": "boolean",
-          "description": "Nur bei askable bool-Feldern an einer geltungsbedingung sinnvoll, Vorgabe true: ein bestätigtes `false` schliesst die ganze Regel aus (relevanz()). `gate: false` heisst: das Feld ist DEKLARATION, keine Rechen-Voraussetzung — der Vordruck verlangt die Angabe, die Regel gilt aber in beide Richtungen (z.B. 'wurde als Ferienwohnung genutzt?'). Ohne diese Unterscheidung nimmt ein 'nein' des Normalfalls dem Nutzer die ganze Einkunftsart aus dem Dialog. NIE fuer eine echte Tatbestandsvoraussetzung setzen; die Geltungsbedingung erscheint dann als offene Annahme statt als beantwortetes Gate."},
-        "frage_invertiert": {"type": "boolean",
+        "feld_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Eindeutiger stabiler Feld-Schlüssel (snake_case)."
+        },
+        "quelle": {
+          "$ref": "#/$defs/quelle"
+        },
+        "typ": {
+          "enum": [
+            "cent",
+            "int",
+            "bool",
+            "enum",
+            "datum",
+            "text"
+          ],
+          "description": "cent = Geldbetrag in Cent (Ganzzahl); int = Zähl-/Stückzahl; datum = ISO-8601."
+        },
+        "slot_beitrag": {
+          "enum": [
+            "exakt",
+            "summand"
+          ],
+          "default": "exakt",
+          "description": "exakt = dieses Feld IST der Slot-Wert (1:1). summand = dieses Feld ist ein Summand; mehrere summand-Felder auf denselben signatur_slot addieren sich (nur typ cent/int, Typ-homogen; Gate prüft)."
+        },
+        "einheit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "z.B. 'km', 'Tage', 'EUR'; null bei bool/enum/datum."
+        },
+        "askable": {
+          "type": "boolean",
+          "description": "true = der Laie gibt es ein; false = abgeleitete/berechnete/Parameter-Größe (nie abfragen)."
+        },
+        "gate": {
+          "type": "boolean",
+          "description": "Nur bei askable bool-Feldern an einer geltungsbedingung sinnvoll, Vorgabe true: ein bestätigtes `false` schliesst die ganze Regel aus (relevanz()). `gate: false` heisst: das Feld ist DEKLARATION, keine Rechen-Voraussetzung — der Vordruck verlangt die Angabe, die Regel gilt aber in beide Richtungen (z.B. 'wurde als Ferienwohnung genutzt?'). Ohne diese Unterscheidung nimmt ein 'nein' des Normalfalls dem Nutzer die ganze Einkunftsart aus dem Dialog. NIE fuer eine echte Tatbestandsvoraussetzung setzen; die Geltungsbedingung erscheint dann als offene Annahme statt als beantwortetes Gate."
+        },
+        "frage_invertiert": {
+          "type": "boolean",
           "description": "Nur bei askable bool-Feldern, Vorgabe false: `fragetext_laie` fragt in die ENTGEGENGESETZTE Richtung zum Feldnamen — ein 'Ja' des Nutzers bedeutet `false` im Store und umgekehrt. Beispiel `kein_kap` mit der Frage 'Hattest du Kapitalerträge?'. Die Erfassungsschicht (leseWert/verstandenWertText in app.js, _wert_klartext in api.py) kehrt genau dann um. Bis 2026-08-20 riet sie stattdessen am Feldnamen (`startswith('kein_')`) — das traf `kein_kap`, verfehlte aber `vpf_keine_mahlzeitengestellung` und `dhf_keine_pflicht_dienstwohnung` (Verneinung in der MITTE des Namens) und hätte `stammdaten_keine_bankverbindung` falsch umgekehrt, dessen Frage die Verneinung selbst trägt. Der Feldname ist keine Aussage über die Frage-Richtung; diese Angabe ist es.",
-          "default": false},
-        "eingangsfrage": {"type": "boolean",
+          "default": false
+        },
+        "eingangsfrage": {
+          "type": "boolean",
           "description": "Nur bei askable Gate-Feldern, Vorgabe false: dieses Feld fragt nach der EXISTENZ des Sachverhalts, den die Regel voraussetzt ('Hattest du dieses Jahr Kosten für Handwerker?'), nicht nach einem seiner MERKMALE ('Wurden die Handwerkerleistungen NICHT öffentlich gefördert?'). traverser.naechste_fragen zieht sie damit vor jede Merkmalsfrage derselben Regel. Nötig, weil gate_gewicht() für alle Gates einer Regel denselben Wert liefert (sie schalten dieselben Felder ab) und der Gleichstand bisher ALPHABETISCH gebrochen wurde — gemessen 2026-08-21 bekam der Nutzer die Förder-Detailfrage vor der Eingangsfrage, weil 'hh_handwerker_' vor 'hh_hat_' liegt. Antwortet er auf die Merkmalsfrage mit 'nein', ist die Regel ausgeschlossen und die Eingangsfrage kommt nie: das Ergebnis stimmt zufällig, die Begründung nicht. Höchstens EINE je Regel (tests/test_eingangsfrage_zuerst.py erzwingt es); wo es keine gibt, fehlt die Existenzfrage ganz und gehört gebaut — nicht diese Angabe an eine Merkmalsfrage gehängt.",
-          "default": false},
+          "default": false
+        },
         "fragetext_laie": {
           "oneOf": [
-            {"type": "null"},
-            {"type": "string", "not": {"pattern": "§|EStG|GewStG|KStG|Abs\\.|i\\.\\s?S\\.\\s?d\\.|Satz\\s?[0-9]|Aufwendungen i"}}
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "not": {
+                "pattern": "§|EStG|GewStG|KStG|Abs\\.|i\\.\\s?S\\.\\s?d\\.|Satz\\s?[0-9]|Aufwendungen i"
+              }
+            }
           ],
-          "description": "Einfaches Deutsch, KEINE Paragraphen/Amtssprache im Fragetext (die hängen als anker_ref). Pflicht (nicht-null) wenn askable=true; null wenn askable=false."},
-        "hilfe_kurz": {"type": "string", "minLength": 3,
-          "description": "Kurzer Hilfetext (auch einfach gehalten)."},
-        "beispielwert": {"description": "Beispielwert passend zu typ (cent: Ganzzahl Cent; bool: true/false; ...)."},
-        "muster": {"type": "string", "description": "Optional. Regulaerer Ausdruck, dem der Wert entsprechen MUSS — fuer typ=text-Felder mit festem Format (Zeitraeume 'TT.MM-TT.MM', Datumsangaben). Wird fail-closed durchgesetzt (store._pruefe_typ_konformitaet, Auflage F) und in der Oberflaeche als HTML-pattern gesetzt. Anlass 2026-08-25: '01.01-31.122' wurde anstandslos gespeichert, weil typ=text jeden String erlaubt."},
-        "standardwert": {"description": "Optional. Der Wert, der in den allermeisten Faellen gilt — die Oberflaeche bietet ihn als 'Uebernehmen'-Knopf an. NICHT dasselbe wie beispielwert: der ist ein Beispiel und waere bei einem Geldfeld eine gefaehrliche Vorgabe. Nur setzen, wo die Hilfe selbst 'meist X' sagt."},
-        "herkunft_slots": {"type": ["array", "null"], "items": {"type": "string"},
-          "description": "Provenance je Teilbetrag, z.B. ['Lohnsteuerbescheinigung Nr. 23'] (VOR-Musterfall)."},
-        "vorjahr": {"enum": ["uebernehmbar", "vorschlag"],
-          "description": "Vorjahres-Übernahme-Flag (fail-closed-default: absent = NICHT übertragen). uebernehmbar = Stammdaten/kohorten-fix (direkter Vorschlag); vorschlag = jahres-spezifischer Betrag (Nutzer aktualisiert). Alle Übernahmen bleiben vorlaeufig (Zwei-Signal)."},
-        "vorschlagbar_von": {"type": "array", "items": {"enum": ["kontoauszug", "beleg", "maps", "llm"]},
-          "description": "Feld-Katalog (K1, Sicherheit): welche Vorschlags-Schreiber dieses Feld setzen dürfen (vorlaeufig, Zwei-Signal). ABSENT/[] = DEFAULT human-only (fail-closed) — nur der Mensch setzt es. SUGGESTIBLE = ableitbarer DOKUMENT-BETRAG (Beleg/Auszug/Adresse→Zahl); human-only = Klassifikation/Wahlrecht/Status/Identität/Abwesenheits-Erklärung/Allokations-Urteil. Der store.append_event-Choke-Point erzwingt es (store.lade_katalog baut die Map)."},
-        "instanz_gruppe": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$",
-          "description": "Repeated-Instance (Store-Modell A): markiert das Feld als wiederholbar über mehrere Anlage-Instanzen (z.B. mehrere Vermietungsobjekte, mehrere Kinder). Instanz 1 = die Basis-feld_id (unverändert); weitere Instanzen tragen das Suffix __<n> (n≥2) am feld_id und mappen je Instanz auf DIESELBE elster_kz (Instanz-Reuse, kein neuer Kz — analog Person-B). Der Store bleibt unverändert (__<n> erfüllt das feld_id-Pattern ^[a-z][a-z0-9_]*$; kein '#')."},
-        "elster_kz": {"type": ["string", "null"], "pattern": "^E[0-9]{7}$",
-          "description": "Amtliche XSD-E-Nummer; null wenn (noch) nicht belegt — dann elster_kz_grund Pflicht."},
-        "elster_kz_grund": {"type": "string",
-          "description": "Grund, warum elster_kz null ist (benannte Lücke, kein Rate-Mapping)."},
-        "kz_status": {"enum": ["offen", "endgueltig"],
-          "description": "Explizite Einordnung der Lücke, schlägt jede Textheuristik. 'endgueltig' = am amtlichen XSD BELEGT, dass es kein Kz gibt (z.B. § 36: E10 erklärt Besteuerungsgrundlagen, die Anrechnung rechnet das FA). 'offen' = Kz existiert oder ist ungeprüft, Bindungsarbeit steht aus. Fehlt das Feld, klassifiziert das Inventar-Gate über Marker-Wörter im Grund — das ist die Altbestands-Heuristik und scheitert an Prosa wie 'belegt, nicht Backlog'."},
-        "vz_gueltigkeit": {"type": "array", "items": {"type": "integer"}, "minItems": 1,
-          "description": "Veranlagungszeiträume, für die die Bindung gilt, z.B. [2024, 2025, 2026]."},
-        "anker_ref": {"$ref": "#/$defs/anker_ref"},
-        "enum_werte": {"type": "array", "items": {"type": "string"}, "minItems": 1,
-          "description": "Zulässige Werte bei typ=enum."},
-        "bereich": {"type": "object", "additionalProperties": false, "required": ["min", "max"],
+          "description": "Einfaches Deutsch, KEINE Paragraphen/Amtssprache im Fragetext (die hängen als anker_ref). Pflicht (nicht-null) wenn askable=true; null wenn askable=false."
+        },
+        "hilfe_kurz": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Kurzer Hilfetext (auch einfach gehalten)."
+        },
+        "beispielwert": {
+          "description": "Beispielwert passend zu typ (cent: Ganzzahl Cent; bool: true/false; ...)."
+        },
+        "muster": {
+          "type": "string",
+          "description": "Optional. Regulaerer Ausdruck, dem der Wert entsprechen MUSS — fuer typ=text-Felder mit festem Format (Zeitraeume 'TT.MM-TT.MM', Datumsangaben). Wird fail-closed durchgesetzt (store._pruefe_typ_konformitaet, Auflage F) und in der Oberflaeche als HTML-pattern gesetzt. Anlass 2026-08-25: '01.01-31.122' wurde anstandslos gespeichert, weil typ=text jeden String erlaubt."
+        },
+        "standardwert": {
+          "description": "Optional. Der Wert, der in den allermeisten Faellen gilt — die Oberflaeche bietet ihn als 'Uebernehmen'-Knopf an. NICHT dasselbe wie beispielwert: der ist ein Beispiel und waere bei einem Geldfeld eine gefaehrliche Vorgabe. Nur setzen, wo die Hilfe selbst 'meist X' sagt."
+        },
+        "herkunft_slots": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Provenance je Teilbetrag, z.B. ['Lohnsteuerbescheinigung Nr. 23'] (VOR-Musterfall)."
+        },
+        "vorjahr": {
+          "enum": [
+            "uebernehmbar",
+            "vorschlag"
+          ],
+          "description": "Vorjahres-Übernahme-Flag (fail-closed-default: absent = NICHT übertragen). uebernehmbar = Stammdaten/kohorten-fix (direkter Vorschlag); vorschlag = jahres-spezifischer Betrag (Nutzer aktualisiert). Alle Übernahmen bleiben vorlaeufig (Zwei-Signal)."
+        },
+        "vorschlagbar_von": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "kontoauszug",
+              "beleg",
+              "maps",
+              "llm"
+            ]
+          },
+          "description": "Feld-Katalog (K1, Sicherheit): welche Vorschlags-Schreiber dieses Feld setzen dürfen (vorlaeufig, Zwei-Signal). ABSENT/[] = DEFAULT human-only (fail-closed) — nur der Mensch setzt es. SUGGESTIBLE = ableitbarer DOKUMENT-BETRAG (Beleg/Auszug/Adresse→Zahl); human-only = Klassifikation/Wahlrecht/Status/Identität/Abwesenheits-Erklärung/Allokations-Urteil. Der store.append_event-Choke-Point erzwingt es (store.lade_katalog baut die Map)."
+        },
+        "instanz_gruppe": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Repeated-Instance (Store-Modell A): markiert das Feld als wiederholbar über mehrere Anlage-Instanzen (z.B. mehrere Vermietungsobjekte, mehrere Kinder). Instanz 1 = die Basis-feld_id (unverändert); weitere Instanzen tragen das Suffix __<n> (n≥2) am feld_id und mappen je Instanz auf DIESELBE elster_kz (Instanz-Reuse, kein neuer Kz — analog Person-B). Der Store bleibt unverändert (__<n> erfüllt das feld_id-Pattern ^[a-z][a-z0-9_]*$; kein '#')."
+        },
+        "elster_kz": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^E[0-9]{7}$",
+          "description": "Amtliche XSD-E-Nummer; null wenn (noch) nicht belegt — dann elster_kz_grund Pflicht."
+        },
+        "elster_kz_grund": {
+          "type": "string",
+          "description": "Grund, warum elster_kz null ist (benannte Lücke, kein Rate-Mapping)."
+        },
+        "kz_status": {
+          "enum": [
+            "offen",
+            "endgueltig"
+          ],
+          "description": "Explizite Einordnung der Lücke, schlägt jede Textheuristik. 'endgueltig' = am amtlichen XSD BELEGT, dass es kein Kz gibt (z.B. § 36: E10 erklärt Besteuerungsgrundlagen, die Anrechnung rechnet das FA). 'offen' = Kz existiert oder ist ungeprüft, Bindungsarbeit steht aus. Fehlt das Feld, klassifiziert das Inventar-Gate über Marker-Wörter im Grund — das ist die Altbestands-Heuristik und scheitert an Prosa wie 'belegt, nicht Backlog'."
+        },
+        "vz_gueltigkeit": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "description": "Veranlagungszeiträume, für die die Bindung gilt, z.B. [2024, 2025, 2026]."
+        },
+        "anker_ref": {
+          "$ref": "#/$defs/anker_ref"
+        },
+        "enum_werte": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Zulässige Werte bei typ=enum."
+        },
+        "bereich": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "min",
+            "max"
+          ],
           "description": "Optionale Wertebereichsgrenzen (nur cent/int) für das Unsicherheits-Derivat. Fehlt es, ist die Achse unbounded (offene Intervallseite).",
           "properties": {
-            "min": {"type": "integer"},
-            "max": {"type": "integer"},
-            "grund": {"type": "string", "description": "Woher die Grenze stammt (Kalender-Logik, amtliche Grenze, physikalisch)."}
-          }}
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "grund": {
+              "type": "string",
+              "description": "Woher die Grenze stammt (Kalender-Logik, amtliche Grenze, physikalisch)."
+            }
+          }
+        },
+        "screening": {
+          "type": "boolean",
+          "description": "Optional. Diese Frage erhebt die EXISTENZ eines ganzen Themas (Kinder, Vermietung, Kapitalertraege, Behinderung ...) und schaltet bei Verneinung einen ganzen Block ab. Die Oberflaeche stellt alle screening-Fragen GEMEINSAM als Ankreuzliste an den Anfang, statt sie einzeln durch den Fragebogen zu verteilen — gemessen 2026-08-25: zehn Kreuze nehmen 147 Einzelfragen weg. Deklariert und nicht am Feldnamen abgelesen: eine Heuristik ueber 'kein_' ist genau der Fehler, den frage_invertiert hier schon einmal ersetzt hat."
+        }
       },
       "allOf": [
-        {"if": {"properties": {"askable": {"const": true}}},
-         "then": {"required": ["fragetext_laie"],
-                  "properties": {"fragetext_laie": {"type": "string", "minLength": 5}}}},
-        {"if": {"properties": {"elster_kz": {"type": "null"}}},
-         "then": {"required": ["elster_kz_grund"]}},
-        {"if": {"properties": {"typ": {"const": "enum"}}},
-         "then": {"required": ["enum_werte"]}},
-        {"if": {"required": ["frage_invertiert"], "properties": {"frage_invertiert": {"const": true}}},
-         "then": {"properties": {"typ": {"const": "bool"}, "askable": {"const": true}}}}
+        {
+          "if": {
+            "properties": {
+              "askable": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "fragetext_laie"
+            ],
+            "properties": {
+              "fragetext_laie": {
+                "type": "string",
+                "minLength": 5
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "elster_kz": {
+                "type": "null"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "elster_kz_grund"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "typ": {
+                "const": "enum"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "enum_werte"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "frage_invertiert"
+            ],
+            "properties": {
+              "frage_invertiert": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "typ": {
+                "const": "bool"
+              },
+              "askable": {
+                "const": true
+              }
+            }
+          }
+        }
       ]
     },
     "regel_bedingung": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["regel_id", "feld", "wert", "grund"],
+      "required": [
+        "regel_id",
+        "feld",
+        "wert",
+        "grund"
+      ],
       "properties": {
-        "regel_id": {"type": "string", "description": "Regel (rid), die nur bei passendem `feld`-Wert relevant ist."},
-        "feld": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "feld_id eines beliebigen gebundenen Felds (nicht notwendig Teil derselben Regel)."},
-        "wert": {"description": "Bestätigter Wert von `feld`, bei dem die Regel gilt. Abweichender bestätigter Wert -> Regel ausgeschlossen."},
-        "grund": {"type": "string", "minLength": 5, "description": "Fachliche Begründung (Norm-Bezug) der Bedingung."}
+        "regel_id": {
+          "type": "string",
+          "description": "Regel (rid), die nur bei passendem `feld`-Wert relevant ist."
+        },
+        "feld": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "feld_id eines beliebigen gebundenen Felds (nicht notwendig Teil derselben Regel)."
+        },
+        "wert": {
+          "description": "Bestätigter Wert von `feld`, bei dem die Regel gilt. Abweichender bestätigter Wert -> Regel ausgeschlossen."
+        },
+        "grund": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Fachliche Begründung (Norm-Bezug) der Bedingung."
+        }
       }
     },
     "luecke": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["regel_id", "grund"],
+      "required": [
+        "regel_id",
+        "grund"
+      ],
       "properties": {
-        "regel_id": {"type": "string"},
-        "signatur_slot": {"type": "string"},
-        "geltungsbedingung": {"type": "string"},
-        "grund": {"type": "string", "minLength": 5}
+        "regel_id": {
+          "type": "string"
+        },
+        "signatur_slot": {
+          "type": "string"
+        },
+        "geltungsbedingung": {
+          "type": "string"
+        },
+        "grund": {
+          "type": "string",
+          "minLength": 5
+        }
       },
       "oneOf": [
-        {"required": ["signatur_slot"], "not": {"required": ["geltungsbedingung"]}},
-        {"required": ["geltungsbedingung"], "not": {"required": ["signatur_slot"]}}
+        {
+          "required": [
+            "signatur_slot"
+          ],
+          "not": {
+            "required": [
+              "geltungsbedingung"
+            ]
+          }
+        },
+        {
+          "required": [
+            "geltungsbedingung"
+          ],
+          "not": {
+            "required": [
+              "signatur_slot"
+            ]
+          }
+        }
       ]
+    },
+    "instanz_gruppe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gruppe",
+        "anzahl_feld",
+        "etikett",
+        "max",
+        "grund"
+      ],
+      "properties": {
+        "gruppe": {
+          "type": "string",
+          "description": "Wert von `instanz_gruppe` an den Feldern."
+        },
+        "anzahl_feld": {
+          "type": "string",
+          "description": "feld_id (typ int, askable), die sagt, wie viele Instanzen es gibt. Liegt in der Regel NICHT in derselben Regel wie die Instanzfelder — deshalb deklariert."
+        },
+        "etikett": {
+          "type": "string",
+          "description": "Wie eine Instanz in der Oberflaeche heisst ('Kind' -> 'Kind 1', 'Kind 2')."
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Obergrenze der Eingabefelder. Schuetzt gegen eine unsinnige Zahl im Zaehlfeld."
+        },
+        "grund": {
+          "type": "string",
+          "minLength": 40,
+          "description": "Warum diese Gruppe je Instanz erhoben wird, mit Normbezug."
+        }
+      }
     }
   }
 }

@@ -44,6 +44,7 @@ import api as API        # noqa: E402
 import audit             # noqa: E402
 import server as SRV     # noqa: E402
 import store as STORE    # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 try:
     from playwright.sync_api import sync_playwright
@@ -78,7 +79,7 @@ def page(base):
         # Bis in den Fluss: #eingabe existiert erst dort, und baueEingabe schreibt dort hinein.
         seite.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
         seite.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-        seite.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        zum_fragebogen(seite)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
         yield seite
         browser.close()
 

@@ -38,6 +38,7 @@ for sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/mappi
 import api as API        # noqa: E402
 import audit             # noqa: E402
 import server as SRV     # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 try:
     from playwright.sync_api import sync_playwright
@@ -101,7 +102,7 @@ def seite_factory(base):
         if weg == "ki":
             page.wait_for_selector("#chat-body .chat-erklaer", timeout=8000)
         else:
-            page.wait_for_selector("#wegpunkt:not([hidden])", timeout=8000)
+            zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
         page.wait_for_timeout(120)   # nur noch das Layout setzen lassen
         return page
 
@@ -275,7 +276,8 @@ def test_es_gibt_einen_weg_zurueck_in_den_fragebogen(seite_factory):
     assert knopf is not None and knopf.bounding_box() is not None, (
         "Es gibt keinen sichtbaren Weg zurück in den Fragebogen — der Nutzer sitzt im Panel fest.")
     page.click("#zum-fragebogen")
-    page.wait_for_selector("#wegpunkt:not([hidden])", timeout=8000)
+    # Der Fragebogen beginnt mit der Ankreuzliste — auch wenn man über den KI-Weg dorthin kommt.
+    zum_fragebogen(page)
     page.wait_for_timeout(200)
 
     s = _sichtbar(page)

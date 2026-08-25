@@ -43,6 +43,7 @@ import api_llm           # noqa: E402
 import audit             # noqa: E402
 import server as SRV     # noqa: E402
 import store as ST       # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 try:
     from playwright.sync_api import sync_playwright
@@ -105,7 +106,7 @@ def seite(base):
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
         # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
         page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
         page.fill("#chat-text", TEXT)   # der Berater ist dauerhaft offen, nichts aufzuklappen
         page.click("#chat-send")
         page.wait_for_selector("#verstanden:not([hidden])", timeout=5000)
@@ -236,7 +237,9 @@ def test_weiter_fuehrt_in_den_fragefluss_und_verliert_nichts(seite):
     erneut trifft. „Weiter" darf keine stille Zustimmung sein und auch kein stilles Verwerfen."""
     page = seite
     page.click("#verstanden-weiter")
-    page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+    # Hinter „Weiter zu den Fragen" liegt seit 2026-08-25 die Ankreuzliste — der Fragebogen
+    # beginnt mit ihr, auch wenn man über die Bestätigungen dorthin kommt.
+    zum_fragebogen(page)
     assert not page.is_visible("#verstanden")
     felder = _stand(page)["felder"]
     for v in VORSCHLAEGE:
@@ -310,7 +313,7 @@ def test_konflikt_erscheint_und_keine_seite_gewinnt_von_allein(base, stub_llm_ko
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
         # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
         page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
         page.evaluate("""async () => {
             await jpost(`/fall/${FALL}/event`, {
                 feld_id: "bruttoarbeitslohn", wert: 6200000, zustand: "bestaetigt",
@@ -350,7 +353,7 @@ def test_meins_behalten_schreibt_nichts(base, stub_llm_konflikt):
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
         # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
         page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
         page.evaluate("""async () => {
             await jpost(`/fall/${FALL}/event`, {
                 feld_id: "bruttoarbeitslohn", wert: 6200000, zustand: "bestaetigt",

@@ -51,6 +51,7 @@ import audit             # noqa: E402
 import llm_client as LC  # noqa: E402
 import server as SRV     # noqa: E402
 import store as ST       # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 try:
     from playwright.sync_api import sync_playwright
@@ -293,7 +294,7 @@ def seite(base):
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
         # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
         page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
         yield page
         browser.close()
 

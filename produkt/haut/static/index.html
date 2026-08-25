@@ -110,6 +110,26 @@
         </div>
       </div>
 
+      <!-- Die Ankreuzliste am Anfang (Julius 2026-08-25: „wenn wir eine liste von unüblichen/
+           seltenen dingen haben können wir die auch schnell in einer checkbox abfrage abhandeln …
+           also behindert, einkünfte aus vermietung, kapitalerträge usw").
+           Zehn Fragen, die je die EXISTENZ eines ganzen Themas erheben. Einzeln durch den
+           Fragebogen verteilt standen sie auf Position 2, 4, 5, 8, 9, 18, 19, 27, 33 und 38 —
+           dazwischen die Detailfragen der Themen, nach denen noch gar nicht gefragt war.
+           Gemessen: zehn Kreuze nehmen 147 der 321 Fragen weg.
+           Welche Fragen hier stehen, sagt die Bindung (`screening: true`), nicht diese Datei. -->
+      <section id="screening" class="card screen" tabindex="-1" hidden>
+        <h2 class="verstanden-titel">Was trifft auf dich zu?</h2>
+        <p class="verstanden-sub">Kreuz alles an, was es bei dir dieses Jahr gab. Wozu du nichts
+          ankreuzt, fragen wir gar nicht erst.</p>
+        <ul id="screening-liste" class="screening-liste"></ul>
+        <div class="aktionen">
+          <button id="screening-weiter" class="btn btn-best" type="button">Weiter</button>
+        </div>
+        <p class="rf-fuss">Nichts geht verloren: was du hier auslässt, kannst du später jederzeit
+          nachtragen — die Fragen kommen dann zurück.</p>
+      </section>
+
       <section id="wegpunkt" class="card screen" tabindex="-1" hidden>
         <p id="frage" class="frage" aria-live="polite"></p>
         <p id="hilfe" class="hilfe"></p>

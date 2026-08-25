@@ -41,6 +41,7 @@ for sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/mappi
 import api as API        # noqa: E402
 import audit             # noqa: E402
 import server as SRV     # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 try:
     from playwright.sync_api import sync_playwright
@@ -74,7 +75,7 @@ def page(base):
         seite.wait_for_load_state("networkidle")
         seite.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
         seite.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-        seite.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        zum_fragebogen(seite)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
         yield seite
         browser.close()
 
@@ -174,7 +175,7 @@ def test_ein_langer_wert_quetscht_die_frage_nicht_zu_tode(base):
         page.wait_for_load_state("networkidle")
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
         page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
         fall = page.evaluate("FALL")
         # Genau der Fall aus dem Bild: langes enum-Label neben langem Fragetext.
         _schreib(base, fall, "veranlagung", "zusammen")

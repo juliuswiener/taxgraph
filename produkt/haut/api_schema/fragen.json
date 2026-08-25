@@ -2,45 +2,131 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "haut.fragen response",
   "type": "object",
-  "required": ["fall_id", "snapshot_id", "fragen"],
+  "required": [
+    "fall_id",
+    "snapshot_id",
+    "fragen"
+  ],
   "additionalProperties": false,
   "properties": {
-    "fall_id": {"type": "string"},
-    "snapshot_id": {"type": "string"},
+    "fall_id": {
+      "type": "string"
+    },
+    "snapshot_id": {
+      "type": "string"
+    },
     "fragen": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["feld_id", "typ", "fragetext_laie", "hilfe_kurz", "einheit", "bereich",
-                     "enum_werte", "enum_labels", "beispielwert", "anker_ref",
-                     "frage_invertiert", "muster", "standardwert"],
+        "required": [
+          "feld_id",
+          "typ",
+          "fragetext_laie",
+          "hilfe_kurz",
+          "einheit",
+          "bereich",
+          "enum_werte",
+          "enum_labels",
+          "beispielwert",
+          "anker_ref",
+          "frage_invertiert",
+          "muster",
+          "standardwert",
+          "screening",
+          "instanz_anzahl",
+          "instanz_etikett"
+        ],
         "additionalProperties": false,
         "properties": {
-          "feld_id": {"type": "string"},
-          "fragetext_laie": {"type": ["string", "null"]},
-          "hilfe_kurz": {"type": ["string", "null"]},
-          "typ": {"type": "string", "enum": ["cent", "int", "bool", "enum", "datum", "text"]},
+          "feld_id": {
+            "type": "string"
+          },
+          "fragetext_laie": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hilfe_kurz": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "typ": {
+            "type": "string",
+            "enum": [
+              "cent",
+              "int",
+              "bool",
+              "enum",
+              "datum",
+              "text"
+            ]
+          },
           "frage_invertiert": {
             "type": "boolean",
             "description": "Bei bool-Feldern: fragt fragetext_laie entgegengesetzt zum Feldnamen ('Hattest du Kapitalertraege?' fuer kein_kap)? Dann bedeutet ein 'Ja' des Nutzers den Wert false. Die Oberflaeche kehrt genau dann um (app.js boolAntwort). Immer gesetzt, false bei allen Nicht-bool-Feldern."
           },
-          "einheit": {"type": ["string", "null"]},
-          "bereich": {"type": ["object", "null"]},
-          "enum_werte": {"type": ["array", "null"]},
+          "einheit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bereich": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "enum_werte": {
+            "type": [
+              "array",
+              "null"
+            ]
+          },
           "enum_labels": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "description": "Anzeigetext je enum_wert (2026-08-14). null bei Nicht-enum-Feldern; die UI faellt dann auf den Rohwert zurueck. Ohne diese Texte las der Nutzer 'land_forst' oder bei den Kindschaftsverhaeltnissen nur '1'.",
-            "additionalProperties": {"type": "string"}
+            "additionalProperties": {
+              "type": "string"
+            }
           },
           "beispielwert": {},
           "muster": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Regulaerer Ausdruck, dem der Wert entsprechen MUSS (Bindung `muster`, 2026-08-25). null, wo die Bindung kein Format zusagt. Die Oberflaeche setzt ihn als HTML-pattern und prueft in leseWert(); durchgesetzt wird er fail-closed im Store (Auflage F)."
           },
           "standardwert": {
             "description": "Der Wert, der in den allermeisten Faellen gilt — die Oberflaeche bietet ihn als Knopf an. null, wo die Bindung keinen zusagt. NICHT beispielwert: der ist ein Beispiel und waere bei einem Geldfeld eine gefaehrliche Vorgabe."
           },
-          "anker_ref": {"type": ["object", "null"]}
+          "screening": {
+            "type": "boolean",
+            "description": "Diese Frage erhebt die EXISTENZ eines ganzen Themas (Kinder, Vermietung, Kapitalertraege, Behinderung ...). Die Oberflaeche stellt alle screening-Fragen gemeinsam als Ankreuzliste an den Anfang, statt sie einzeln durch den Fragebogen zu verteilen. Immer gesetzt, false bei allen uebrigen Feldern."
+          },
+          "anker_ref": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "instanz_anzahl": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Wie viele Eingabefelder dieses Feld braucht. 1 fuer alles ohne Instanz-Achse. Bei >1 schreibt die Oberflaeche `base`, `base__2`, `base__3` … (est_mapping.parse_instanz ist die eine Enumerations-Wahrheit)."
+          },
+          "instanz_etikett": {
+            "type": "string",
+            "description": "Wie eine Instanz heisst ('Kind' -> 'Kind 1', 'Kind 2'). Leer, wo es keine Achse gibt."
+          }
         }
       }
     }

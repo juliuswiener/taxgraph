@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 import api as API        # noqa: E402
 import server as SRV     # noqa: E402
 import audit                # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 
 try:
@@ -177,7 +178,7 @@ def test_wegpunkt_buttons_responsive(base, playwright_context):
         # Seit der KI-Berater ebenfalls eine .card ist (und nie versteckt), traf der Selektor
         # sofort zu, und #bestaetigen hatte noch keine Bounding-Box. Der Test misst jetzt, was er
         # meint.
-        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
 
         # Buttons
         btn_best = page.query_selector("#bestaetigen")
@@ -304,7 +305,7 @@ def test_overlay_und_berater_responsive(base, playwright_context):
         page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
         # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
         page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
 
         # Der Berater ist ohne jedes Öffnen da — das ist die Eigenschaft, um die es geht.
         berater = page.query_selector("#berater")

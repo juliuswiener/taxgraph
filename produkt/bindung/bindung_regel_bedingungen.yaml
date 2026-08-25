@@ -227,3 +227,34 @@ regel_bedingungen:
     feld: vpf_auswaertige_taetigkeit
     wert: true
     grund: "§ 9 Abs. 1 S. 3 Nr. 5a S. 1 EStG erfasst Mehraufwendungen 'fuer beruflich veranlasste Uebernachtungen an einer Taetigkeitsstaette, die nicht erste Taetigkeitsstaette ist' — die Uebernachtung setzt eine auswaertige Taetigkeit voraus. `vpf_auswaertige_taetigkeit` erhebt genau diese; wer sie verneint, war nicht auswaerts und hat dort auch nicht uebernachtet. Anders als die kein_-Felder behauptet dieses Feld die ANWESENHEIT, deshalb `wert: true`."
+
+# =================================================================================================
+# INSTANZ-GRUPPEN (2026-08-25)
+#
+# ANLASS, Julius im echten Durchgang: „Wie heissen deine Kinder mit Vornamen? … wie hier mehrere
+# angeben bei nur einem feld??"
+#
+# 69 Felder tragen eine `instanz_gruppe` — 31 allein fuer Kinder. Store, ELSTER-Mapping und
+# Bescheid kennen die Achse seit langem (`est_mapping.parse_instanz`: `base__2`, `base__3`, …,
+# die Basis ohne Suffix ist Instanz 1). Der Fragebogen kannte sie NICHT und fragte jedes Feld
+# genau einmal: wer zwei Kinder hat, konnte einen Vornamen eintragen, und fuer das zweite Kind
+# gab es kein Feld. Das ist ein Abgabe-Blocker, kein Anzeigefehler.
+#
+# Julius' Loesung, und sie ist besser als N Fragen hintereinander: „oder man gibt direkt n
+# inputfelder anstatt jedesmal einen neue frage." Der Traverser bleibt damit unangetastet — er
+# liefert das Basisfeld wie bisher einmal, und die Oberflaeche baut daraus N Eingabefelder.
+#
+# `anzahl_feld` sagt, WOHER die Zahl kommt. Deklariert, nicht geraten: das Zaehlfeld liegt in einer
+# anderen Regel als die Instanzfelder (fam_anzahl_kinder gehoert zu p24b_entlastungsbetrag, die
+# Kind-Felder zu p32_6_kinderfreibetraege), eine Heuristik ueber Regel oder Namen faende es nicht.
+#
+# NUR `kind` ist hier bisher gepflegt. Die uebrigen sieben Gruppen (vv_objekt mit 22 Feldern,
+# rente, p23_veraeusserung, hh_*, gwg) haben KEIN Zaehlfeld im Fragebogen — dort muss erst eines
+# gebaut werden. Bis dahin verhalten sie sich wie bisher (eine Instanz), und das ist ehrlicher als
+# eine geratene Anzahl.
+instanz_gruppen:
+  - gruppe: kind
+    anzahl_feld: fam_anzahl_kinder
+    etikett: "Kind"
+    max: 9
+    grund: "Anlage Kind wird je Kind einmal ausgefuellt (§ 32 EStG, Kz E05001xx je Kind). `fam_anzahl_kinder` erhebt die Zahl der Kinder, fuer die Kindergeld oder ein Freibetrag zusteht — genau die, fuer die je eine Anlage Kind abzugeben ist. Obergrenze 9: das amtliche Formular sieht keine hoehere Zahl vor, und `fam_anzahl_kinder` selbst laesst bis 20 zu (praktische Obergrenze, kein Formularlimit)."

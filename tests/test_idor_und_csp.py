@@ -37,6 +37,7 @@ import api as API           # noqa: E402
 import server as SRV        # noqa: E402
 import audit                # noqa: E402
 import auth as AUTH         # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 
 @pytest.fixture
@@ -185,7 +186,7 @@ def test_die_oberflaeche_laeuft_unter_der_csp(base):
             # Bis hierher ist alles beteiligt, was die Richtlinie überhaupt betreffen kann:
             # das Stylesheet (style-src), app.js (script-src), die fetch-Aufrufe von
             # /fall, /stand und /fragen (connect-src) und das Rendern der ersten Frage.
-            page.wait_for_selector("#wegpunkt:not([hidden])", timeout=15000)
+            zum_fragebogen(page, timeout=15000)   # Ankreuzliste, s. tests/ui_hilfen.py
             sichtbar = page.evaluate("!document.getElementById('wegpunkt').hidden")
             frage = page.evaluate("document.getElementById('frage').textContent")
         finally:

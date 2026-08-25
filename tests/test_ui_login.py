@@ -39,6 +39,7 @@ import api as API        # noqa: E402
 import audit             # noqa: E402
 import server as SRV     # noqa: E402
 import auth as AUTH      # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 try:
     from playwright.sync_api import sync_playwright
@@ -135,8 +136,9 @@ def test_request_nach_login_traegt_authorization_header(seite, monkeypatch):
     assert auth_header, f"Kein Authorization-Header am Request {req.url}: {headers}"
     assert auth_header.startswith("Bearer "), f"Unerwartetes Header-Format: {auth_header!r}"
     # Der Header muss auch wirklich AKZEPTIERT werden — sonst misst der Test nur, dass irgendein
-    # Header geschickt wird, nicht dass die Verdrahtung stimmt.
-    page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+    # Header geschickt wird, nicht dass die Verdrahtung stimmt. (Dazwischen liegt seit 2026-08-25
+    # die Ankreuzliste; auch sie kommt nur, wenn /fragen den Header akzeptiert hat.)
+    zum_fragebogen(page)
 
 
 def test_abmelden_entfernt_das_token(seite, monkeypatch):
@@ -165,7 +167,7 @@ def test_ungueltiges_token_zeigt_maske_nicht_fehlerbanner(seite, monkeypatch):
     page.click(".kachel[data-scheibe='gesamt']")
     # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
     page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-    page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+    zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
 
     page.evaluate("versteckeNetzFehler()")   # Ausgangszustand definiert
     page.evaluate("TOKEN = 'kaputt.und.abgelaufen'")   # Token verfälschen, ohne neu zu laden
@@ -193,6 +195,6 @@ def test_einzelnutzer_modus_zeigt_nie_die_anmeldemaske(seite):
     page.evaluate("document.querySelector(\".kachel[data-scheibe='gesamt']\").click()")
     # P0b (2026-08-23): zwischen Fallart und Fluss liegt jetzt die Wegwahl (Fragebogen / erst KI).
     page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
-    page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+    zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
     assert page.is_hidden("#login"), "Anmeldemaske erscheint mitten im Einzelnutzer-Fluss — darf nicht."
     assert page.evaluate("TOKEN") is None, "Im Einzelnutzer-Modus darf nie ein Token existieren."

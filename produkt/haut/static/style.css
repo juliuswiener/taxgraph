@@ -230,6 +230,33 @@ h1,h2,h3{margin:0}
 
    flex-wrap bei den Aktionen: „Später beantworten" ist ein langes Etikett, und zwei Knöpfe
    nebeneinander passen auf 360px nicht mehr — dann bekommt jeder seine eigene Zeile. */
+/* N Eingabefelder für ein Feld mit Instanz-Achse („Kind 1", „Kind 2" …). Die Marke steht LINKS
+   daneben, nicht darüber: bei drei bis neun Zeilen wäre eine Überschrift je Zeile mehr Text als
+   Inhalt, und die Zeilen sollen als eine Gruppe lesbar bleiben. */
+.instanzen{display:flex;flex-direction:column;gap:8px;width:100%}
+.instanz-zeile{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.instanz-marke{flex:0 0 5.5em;color:var(--muted);font-size:13px;font-weight:600}
+.instanz-feld{flex:1 1 12em;min-width:0;margin-bottom:0}
+
+/* Die Bilanz nach einer Rückfragen-Runde. Grün wie die belegten Werte (--solide): sie meldet, dass
+   etwas ANGEKOMMEN ist — im Gegensatz zu chat-unsicher (Warnfarbe) und chat-erklaer (Fliesstext).
+   Ohne sie verschwand der Wizard einfach, und zurück blieb der Verlauf von vorher. */
+.chat-bilanz{font-size:15px;font-weight:600;color:var(--solide);
+  background:rgba(61,220,151,.1);border:1px solid rgba(61,220,151,.35);
+  border-radius:10px;padding:10px 12px;margin:4px 0 8px}
+
+/* Die Ankreuzliste am Anfang. Grosse Tap-Ziele (44px, s. test_ui_responsive) und die ganze Zeile
+   als <label> — auf dem Handy ein Kästchen von 16px zu treffen ist Arbeit, die keinen Ertrag hat. */
+.screening-liste{list-style:none;margin:0 0 16px;padding:0}
+.sc-zeile{border-bottom:1px solid var(--line);padding:2px 0}
+.sc-zeile:last-child{border-bottom:none}
+.sc-label{display:flex;align-items:center;gap:12px;min-height:44px;cursor:pointer;padding:4px 2px}
+.sc-label:hover{background-color:rgba(91,140,255,.06)}
+.sc-box{width:20px;height:20px;flex:none;accent-color:var(--akzent);cursor:pointer}
+.sc-text{font-size:15px;line-height:1.35;overflow-wrap:break-word}
+.sc-hilfe{color:var(--muted);font-size:13px;line-height:1.4;margin:0 0 8px 32px;
+  overflow-wrap:break-word}
+
 .rf-frage{overflow-wrap:anywhere}
 .rf-aktionen{flex-wrap:wrap}
 .rf-aktionen .btn{flex:1 1 150px}

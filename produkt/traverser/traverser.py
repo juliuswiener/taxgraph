@@ -63,6 +63,56 @@ def lade_regel_bedingungen() -> dict:
     return out
 
 
+@functools.lru_cache(maxsize=1)
+def lade_instanz_gruppen() -> dict:
+    """gruppe -> {gruppe, anzahl_feld, etikett, max, grund} über alle bindung_*.yaml
+    (schema.json $defs/instanz_gruppe).
+
+    Sagt, WOHER die Zahl der Instanzen kommt. Ohne Eintrag verhält sich eine Gruppe wie eine
+    einzige Instanz — das ist der Zustand aller Gruppen ausser `kind` (2026-08-25), und ehrlicher
+    als eine geratene Anzahl.
+
+    GECACHT, wie `lade_bindung` daneben — und das ist hier keine Mikro-Optimierung: `/fragen` ruft
+    `instanz_anzahl()` für JEDE Frage der Queue auf, und 69 Felder tragen eine `instanz_gruppe`.
+    Ohne Cache parste ein einziger Fragen-Aufruf sämtliche bindung_*.yaml 69-mal von Platte.
+    GEMESSEN 2026-08-25, am Tag des Baus: `/fragen` 24,7 s — und zwar bei jedem Aufruf, also nach
+    jeder beantworteten Frage. 147 UI-Tests liefen daran in den Timeout.
+    """
+    yaml = _yaml()
+    out = {}
+    for f in glob.glob(os.path.join(PRODUKT, "bindung", "bindung_*.yaml")):
+        d = yaml.safe_load(open(f))
+        for g in d.get("instanz_gruppen", []):
+            out[g["gruppe"]] = g
+    return out
+
+
+def instanz_anzahl(store: dict, bindung: dict, feld_id: str) -> tuple[int, str]:
+    """Wie viele Eingabefelder braucht `feld_id` — und wie heisst eine Instanz?
+
+    (1, "") für jedes Feld ohne Instanz-Achse oder ohne gepflegte Gruppe. Sonst die BESTÄTIGTE
+    Zahl aus dem Zählfeld, begrenzt auf `max`.
+
+    Nur BESTÄTIGT zählt: ein vorläufiger Vorschlag der KI („2 Kinder") darf nicht darüber
+    entscheiden, wie viele Felder der Nutzer ausfüllen soll — er hat ihn ja noch nicht gesehen.
+    Solange die Zahl fehlt, bleibt es bei einem Feld, und das Feld verhält sich wie bisher.
+    """
+    b = bindung.get(feld_id) or {}
+    gruppe = b.get("instanz_gruppe")
+    if not gruppe:
+        return 1, ""
+    g = lade_instanz_gruppen().get(gruppe)
+    if not g:
+        return 1, ""
+    ev = _aktive_events(store).get(g["anzahl_feld"])
+    if _unbeantwortet(ev):
+        return 1, g["etikett"]
+    n = ev.get("wert")
+    if not isinstance(n, int) or isinstance(n, bool) or n < 1:
+        return 1, g["etikett"]
+    return min(n, int(g["max"])), g["etikett"]
+
+
 def _aktive_events(store: dict) -> dict:
     """feld_id -> aktuell aktives Event (nicht durch ein späteres ersetzt)."""
     ersetzt = {e["ersetzt"] for e in store.get("events", []) if e.get("ersetzt")}

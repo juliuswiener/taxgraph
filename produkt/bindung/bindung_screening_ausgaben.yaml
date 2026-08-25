@@ -46,6 +46,7 @@ bindungen:
   - feld_id: kein_unterhalt
     quelle: {regel_id: p33a_unterhalt_vorhanden, geltungsbedingung: kein_unterhalt_gezahlt}
     typ: bool
+    screening: true
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -66,6 +67,7 @@ bindungen:
   - feld_id: keine_auslandseinkuenfte
     quelle: {regel_id: p34c_auslandseinkuenfte_vorhanden, geltungsbedingung: keine_auslaendischen_einkuenfte}
     typ: bool
+    screening: true
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -94,6 +96,7 @@ bindungen:
   - feld_id: keine_behinderung_pflege
     quelle: {regel_id: p33b_behinderung_pflege_vorhanden, geltungsbedingung: keine_behinderung_und_keine_pflege}
     typ: bool
+    screening: true
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -114,6 +117,7 @@ bindungen:
   - feld_id: keine_versorgungsbezuege
     quelle: {regel_id: p19_2_versorgungsbezuege_vorhanden, geltungsbedingung: keine_versorgungsbezuege_erhalten}
     typ: bool
+    screening: true
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -139,6 +143,7 @@ bindungen:
   - feld_id: keine_energetische_sanierung
     quelle: {regel_id: p35c_sanierung_vorhanden, geltungsbedingung: keine_energetische_massnahme}
     typ: bool
+    screening: true
     einheit: null
     askable: true
     vorjahr: vorschlag

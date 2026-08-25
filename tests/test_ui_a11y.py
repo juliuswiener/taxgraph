@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 import api as API        # noqa: E402
 import server as SRV     # noqa: E402
 import audit                # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 
 try:
@@ -154,7 +155,7 @@ def test_a11y_wegpunkt(base, playwright_context):
         page.wait_for_selector("#weg-fragebogen", timeout=5000).click()
 
         # Wegpunkt-Karte warten
-        page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+        zum_fragebogen(page)   # Ankreuzliste am Anfang, s. tests/ui_hilfen.py
 
         # axe laufen lassen
         result = _inject_axe_and_run(page, "body")

@@ -53,6 +53,7 @@ for sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/mappi
 import api as API        # noqa: E402
 import audit             # noqa: E402
 import server as SRV     # noqa: E402
+from ui_hilfen import zum_fragebogen  # noqa: E402
 
 try:
     from playwright.sync_api import sync_playwright
@@ -65,7 +66,13 @@ pytestmark = pytest.mark.skipif(sync_playwright is None, reason="playwright fehl
 #   cent  — die Oberfläche nimmt Euro, der Store hält Cent (Faktor 100)
 #   bool  — `kein_unterhalt` benennt die ABWESENHEIT, die Frage fragt nach der ANWESENHEIT
 CENT_FELD = "bruttoarbeitslohn"
-BOOL_FELD_INVERTIERT = "kein_unterhalt"
+# Bis 2026-08-25 stand hier `kein_unterhalt`. Das ist seitdem ein SCREENING-Feld: die Ankreuzliste
+# am Anfang des Fragebogens beantwortet es, damit ist es nicht mehr offen — und eine Rückfrage zu
+# einem nicht mehr offenen Feld wird bewusst gar nicht mehr gestellt (starteRueckfragen). Der Test
+# hätte also seine eigene Vorbedingung weggeräumt.
+# `vpf_keine_mahlzeitengestellung` trägt dieselbe Eigenschaft, um die es geht — die Frage fragt
+# entgegengesetzt zum Feldnamen —, ist aber ein Detail-Gate und bleibt offen. Nachgemessen.
+BOOL_FELD_INVERTIERT = "vpf_keine_mahlzeitengestellung"
 
 
 def _antwort(antwort="", vorschlaege=None, aussagen=None, rueckfragen=None, konflikte=None,
@@ -132,7 +139,7 @@ def seite_factory(base):
     gestartet = []
     SONDE = "/fall/auth-sonde-taxgraph/stand"
 
-    def _mach(weg="fragebogen", breite=360, hoehe=780):
+    def _mach(weg="fragebogen", breite=360, hoehe=780, ankreuzen=None):
         p = sync_playwright().start()
         gestartet.append(p)
         browser = p.chromium.launch()
@@ -157,7 +164,7 @@ def seite_factory(base):
             if weg == "ki":
                 page.wait_for_selector("#chat-body .chat-erklaer", timeout=8000)
             else:
-                page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+                zum_fragebogen(page, ankreuzen)   # Ankreuzliste, s. tests/ui_hilfen.py
         return page
 
     try:
@@ -481,7 +488,7 @@ def test_nach_den_bestaetigungen_kommen_die_rueckfragen(seite):
     assert not page.fehler, f"Konsolenfehler: {page.fehler}"
 
 
-def test_eine_rueckfrage_zu_einem_erledigten_feld_wird_nicht_gestellt(seite, base):
+def test_eine_rueckfrage_zu_einem_erledigten_feld_wird_nicht_gestellt(seite_factory, base):
     """DER GRUND für die Umkehrung der Reihenfolge, an Julius' eigenem Beispiel:
 
       „wenn ich hier angebe dass ich nicht mit dem auto gefahren bin erübrigt sich die nachfrage an
@@ -499,22 +506,27 @@ def test_eine_rueckfrage_zu_einem_erledigten_feld_wird_nicht_gestellt(seite, bas
     eine Bestätigung nimmt), danach kommt die Rückfrage. Über die Verstanden-Seite ginge es nicht:
     deren Vorschläge sind hier gestubbt und haben kein vorläufiges Event im Store, das eine
     Bestätigung ersetzen könnte."""
-    page = seite
+    page = seite_factory("fragebogen", ankreuzen=["kein_kap"])
     fall = page.evaluate("FALL")
     assert "kap_kapitalertraege" in _offene_felder(base, fall), (
-        "Vorbedingung: kap_kapitalertraege muss offen sein — sonst misst der Test nichts.")
+        "Vorbedingung: kap_kapitalertraege muss offen sein — sonst misst der Test nichts. Die "
+        "Ankreuzliste am Anfang muss dafür „Kapitalerträge“ bejaht haben.")
 
+    # Das Feld beantworten — der direkteste Weg, es aus den offenen Fragen zu nehmen. (Erst über
+    # das Gate `kein_kap` versucht: das hat seit der Ankreuzliste schon ein Event, und Auflage B
+    # verlangt fürs Überschreiben ein `ersetzt` — 422. Für DIESEN Test ist der Umweg ohnehin
+    # unnötig: gemessen wird, dass eine Rückfrage zu einem nicht mehr offenen Feld entfällt.)
     ok = page.evaluate("""async () => {
       const r = await jpost(`/fall/${FALL}/event`, {
-        feld_id: 'kein_kap', wert: true, zustand: 'bestaetigt',
+        feld_id: 'kap_kapitalertraege', wert: 0, zustand: 'bestaetigt',
         herkunft: {herkunft: 'laie', pruef_tiefe: 'ungeprueft', haftung: 'nutzer'},
         schreiber: 'ui:laie',
-        signal: {signal_1: null, signal_2: 'klick@kein_kap'}});
+        signal: {signal_1: null, signal_2: 'klick@kap_kapitalertraege'}});
       return r.status;
     }""")
     assert ok in (200, 201), f"Der Wert liess sich nicht schreiben: {ok}"
     assert "kap_kapitalertraege" not in _offene_felder(base, fall), (
-        "Vorbedingung 2: „keine Kapitalerträge“ hat den Frageblock gar nicht abgeschaltet — dann "
+        "Vorbedingung 2: das beantwortete Feld steht immer noch in den offenen Fragen — dann "
         "prüft dieser Test nichts.")
 
     _stub(page, _antwort(rueckfragen=[_rf("Wie hoch waren deine Kapitalerträge?",
