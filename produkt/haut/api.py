@@ -368,6 +368,12 @@ def fragen(fall_id: str) -> tuple[int, dict]:
             # Absent, wenn das Feld kein enum ist — die UI fällt dann auf den Rohwert zurück.
             "enum_labels": ENUM_LABELS.get(fid),
             "beispielwert": b.get("beispielwert"),
+            # `muster`: wie der Wert aussehen MUSS (store.py setzt es fail-closed durch).
+            # `standardwert`: was in den allermeisten Fällen gilt — NICHT `beispielwert`, der ist
+            # laut Schema ein blosser Beispielwert und wäre bei einem Geldfeld eine gefährliche
+            # Vorgabe. Beide absent, wo die Bindung nichts zusagt (2026-08-25).
+            "muster": b.get("muster"),
+            "standardwert": b.get("standardwert"),
             "anker_ref": b.get("anker_ref"),
         })
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "fragen": out}
@@ -385,9 +391,14 @@ def stand(fall_id: str) -> tuple[int, dict]:
     # event_id je feld_id: aus aktiven Events (ST._aktives ist Quelle der Wahrheit)
     aktiv = ST._aktives(store)
 
+    # Mit den Anzeige-Metadaten (2026-08-24). Ohne sie zeigte die Liste der beantworteten Felder
+    # genau das, was der Store führt: `bruttoarbeitslohn 2500000`, `ep_eigenes_kfz true`,
+    # `veranlagung "einzel"` — Feld-Kennung und Rohwert, die zwei Dinge, die ein Laie nicht lesen
+    # kann. Die Verstanden-Seite bekam sie längst (s. _anzeige_metadaten), diese Liste nicht.
     felder_out = {
         fid: {"wert": v["wert"], "zustand": v["zustand"], "herkunft": v["herkunft"],
-              "herkunft_badge": _badge(v["herkunft"]), "event_id": (aktiv.get(fid) or {}).get("event_id")}
+              "herkunft_badge": _badge(v["herkunft"]), "event_id": (aktiv.get(fid) or {}).get("event_id"),
+              **_anzeige_metadaten(fid, bindung)}
         for fid, v in felder.items()
     }
 
@@ -1034,6 +1045,8 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
                 "begruendung": v.get("begruendung", ""),
                 "beleg": v.get("beleg", ""),
                 "gross": _ist_struktureller_konflikt(fid),
+                # Gerade im Konflikt: sonst entscheidet der Nutzer zwischen zwei Zahlen ohne Grund.
+                "rechenweg": v.get("rechenweg"),
                 # Dieselben Anzeige-Metadaten wie bei den Vorschlägen. Ein Konflikt zeigt ZWEI
                 # Werte nebeneinander — ohne sie stünde dort zweimal Speicherform, und genau hier
                 # muss der Nutzer zwei Zahlen vergleichen können.
@@ -1058,6 +1071,8 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
             # Wert zeigen kann statt feld_id und Cent-Rohwert.
             geschrieben.append({"feld_id": fid, "event_id": ev["event_id"], "wert": v["wert"],
                                 "beleg": v.get("beleg", ""),
+                                # Vom Modell, nicht aus der Bindung (tests/test_rechenweg_durchgereicht.py).
+                                "rechenweg": v.get("rechenweg"),
                                 **_anzeige_metadaten(fid, bindung)})
         except (ValueError, KeyError) as e:
             abgelehnt.append(fid)                    # Katalog/Auflage-A/F2-Abweisung → still überspringen, Rest gilt
@@ -1074,6 +1089,9 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
                  # (Status je Aussage) + `rueckfragen`: was offen blieb, statt still wegzufallen.
                  "antwort": erg["antwort"], "unsicher": erg["unsicher"],
                  "aussagen": erg.get("aussagen", []), "rueckfragen": erg.get("rueckfragen", []),
+                 # Wie viele Rückfragen gebündelt wurden (api_llm._rueckfragen_gebuendelt). Geht mit,
+                 # damit die Oberfläche es SAGEN kann: still kürzen spiegelte Vollständigkeit vor.
+                 "rueckfragen_zurueckgestellt": erg.get("rueckfragen_zurueckgestellt", 0),
                  "hinweis": "Vorschläge erfasst — bitte jeden einzeln bestätigen (die KI setzt nichts)."}
 
 

@@ -22,6 +22,10 @@ let RUECKFRAGEN_OFFEN = false;  // wie VERSTANDEN_OFFEN: refresh() darf die Seit
 let RF_LISTE = [];              // [{frage, feld_id, aussage, meta}] — meta = Frage aus /fragen oder null
 let RF_INDEX = 0;
 let RF_NACHHER = null;          // {vorschlaege, konflikte} — dran, wenn die Rückfragen durch sind
+// Seit der Umkehrung der Reihenfolge (2026-08-25) der Normalfall: erst bestätigen, DANN nachfragen.
+// Hier liegen die Rückfragen, solange die Verstanden-Seite steht — sie werden danach neu gegen die
+// dann offenen Fragen geprüft, weil eine Bestätigung ganze Blöcke abschalten kann.
+let VERSTANDEN_DANACH = null;   // {rueckfragen, vorschlaege, konflikte, zurueckgestellt}
 
 // --- P1.1-Verdrahtung: Token-Haltung ---
 // Sicherheitsentscheidung, keine Geschmacksfrage (team-lead-Auftrag): sessionStorage statt
@@ -131,9 +135,24 @@ async function waehleScheibe(scheibe) {
 // zuerst steht — und genau das war seine Frage („was man zuerst machen sollte").
 // Ein eigener „KI-Modus" wäre die falsche Antwort darauf: er überlebte kein Neuladen und
 // verspräche dem Nutzer etwas, das die Software nicht halten kann.
+// KI-FOKUS: der Chat wird vom Begleiter zum Arbeitsbereich und bekommt die breite Spalte
+// (Julius 2026-08-23: „die kis sidebar ist zu klein wenn das aber der bereich ist in dem der user
+// gerade arbeitet … es sollte den main fokus bekommen").
+//
+// Eine Klasse am Rahmen, sonst nichts — kein gespeicherter Modus, keine zweite Wahrheit darüber,
+// „wo man ist". Sie hält über den GANZEN KI-Weg: Antwort, Rückfragen, Bestätigungen. Sie fällt
+// erst weg, wenn der Nutzer im Fragebogen selbst antwortet (bestaetigen). Genau deshalb muss sie
+// kein Neuladen überleben — wer neu lädt, steht nicht mehr am Anfang, und dann ist die
+// Seitenleiste wieder die richtige Form.
+function kiFokus(an) {
+  const f = $("flow");
+  if (f) f.classList.toggle("ki-fokus", !!an);
+}
+
 async function wegWaehlen(weg) {
   $("wegwahl").hidden = true;
   $("flow").hidden = false;
+  kiFokus(weg === "ki");
   await refresh();   // setzt AKTUELL und zeigt den Wegpunkt — auch auf dem KI-Weg
   if (weg !== "ki") return;
   const body = $("chat-body");
@@ -172,7 +191,14 @@ async function refresh() {
   // stünde der Nutzer nach der ersten Antwort mitten in einer anderen Frage.
   if (VERSTANDEN_OFFEN || RUECKFRAGEN_OFFEN) return;
   if (!fragen) return;   // ohne Queue keine neue Frage — die bisherige bleibt stehen
-  if (fragen.length === 0) { $("wegpunkt").hidden = true; await zeigeErgebnis(); }
+  if (fragen.length === 0) {
+    $("wegpunkt").hidden = true;
+    // Keine offene Frage mehr: der KI-Weg ist an seinem Ziel. Ohne das bliebe der KI-Fokus
+    // stehen, und der blendet ALLES ausser dem Panel aus — auch das Ergebnis, auf das der
+    // Nutzer die ganze Zeit hingearbeitet hat.
+    kiFokus(false);
+    await zeigeErgebnis();
+  }
   else { AKTUELL = fragen[0]; zeigeFrage(AKTUELL, STAND); }
 }
 
@@ -231,15 +257,36 @@ function zeigeRing(stand, offen) {
     : `${fest} von ${gesamt} Fragen beantwortet` + aenderungsNotiz(gesamt);
 
   if (stand.ring_gesperrt) {
-    spanneEl.textContent = "Vereinfachter Bescheid hier nicht möglich"; hintEl.textContent = "siehe Ergebnis unten";
+    // „Vereinfachter Bescheid hier nicht möglich / siehe Ergebnis unten" — Julius 2026-08-25:
+    // „was soll das heißen?" Zu Recht: der Satz nennt eine Einschränkung, die der Nutzer nie
+    // verlangt hat („vereinfacht"?), und verweist auf ein Ergebnis, das es noch gar nicht gibt.
+    // Gemeint ist: eine deiner Angaben braucht eine Rechnung, die die schnelle Schätzung hier
+    // oben nicht leisten kann — die vollständige kommt am Ende.
+    spanneEl.textContent = "Schätzung hier nicht möglich";
+    hintEl.textContent = "eine deiner Angaben braucht die volle Rechnung — die steht am Ende";
     ringEl.style.setProperty("--schrumpf", 1); return;
   }
   const iv = stand.intervall;
+  // GEMESSEN 2026-08-24: hier stand „Bescheid: —" mit dem Untertitel „steht". Beides zusammen ist
+  // eine Behauptung über einen Wert, den es nicht gibt: `euro(null)` ist „—", und die Bedingung
+  // `min === max` ist für zwei null-Grenzen erfüllt. Der Nutzer las also „steht" an einer Stelle,
+  // an der die Rechnung noch gar nichts hergibt. Ein fehlender Wert muss als fehlend dastehen.
+  if (iv && (iv.min_cent === null || iv.max_cent === null)) {
+    spanneEl.textContent = "Noch keine Zahl";
+    hintEl.textContent = "sobald genug beantwortet ist, steht hier deine Steuer";
+    ringEl.style.setProperty("--schrumpf", 1);
+    return;
+  }
   if (iv) {
     const breite = Math.max(0, iv.max_cent - iv.min_cent);
     if (SPANNE0 === null || breite > SPANNE0) SPANNE0 = breite || 1;
     ringEl.style.setProperty("--schrumpf", SPANNE0 ? breite / SPANNE0 : 0);
-    if (iv.min_cent === iv.max_cent) { spanneEl.textContent = `Bescheid: ${euro(iv.min_cent)}`; hintEl.textContent = "steht"; }
+    // „steht" allein sagte einem Laien nichts — es ist die Aussage, dass die Spanne zu einem Punkt
+    // geschrumpft ist und keine offene Frage den Betrag mehr bewegt.
+    if (iv.min_cent === iv.max_cent) {
+      spanneEl.textContent = `Deine Steuer: ${euro(iv.min_cent)}`;
+      hintEl.textContent = "steht fest — keine offene Frage ändert diesen Betrag mehr";
+    }
     else {
       spanneEl.textContent = `${euro(iv.min_cent)} – ${euro(iv.max_cent)}`;
       // „noch N offen" hieß hier `felder.length - fest` — das sind die VORLÄUFIGEN Felder, nicht die
@@ -269,6 +316,11 @@ function badgeInfo(k) { return BADGE[k] || BADGE.laie; }
 
 function zeigeBelegt(felder) {
   const ul = $("belegt-liste"); ul.innerHTML = "";
+  // Eine Überschrift ohne Inhalt ist eine Zusage, die nichts einlöst: „Schon beantwortet" stand
+  // im Bild, als noch nichts beantwortet war (gemessen 2026-08-24, KI-Weg vor der ersten
+  // Antwort). Gilt für beide Wege — leer ist leer.
+  const sektion = ul.closest(".belegt");
+  if (sektion) sektion.hidden = !Object.keys(felder || {}).length;
   for (const [fid, f] of Object.entries(felder || {})) {
     const li = document.createElement("li"); li.className = "zeile zeile-klickbar";
     li.addEventListener("click", () => korrigiereBestaetigt(fid));
@@ -279,8 +331,17 @@ function zeigeBelegt(felder) {
     badge.title = "Herkunft ansehen"; badge.type = "button";
     badge.addEventListener("click", (e) => { e.stopPropagation(); herkunftKette(fid, f); });
     li.appendChild(badge);
-    const t = document.createElement("span"); t.className = "z-name"; t.textContent = fid;
-    const v = document.createElement("span"); v.className = "z-wert"; v.textContent = JSON.stringify(f.wert);
+    // Die FRAGE und der LESBARE Wert, nicht Kennung und Rohwert (2026-08-24). Vorher stand hier
+    // „bruttoarbeitslohn 2500000" — beides für einen Laien unlesbar, und die Zahl liest sich als
+    // sein Betrag. Dieselben Formatierer wie in der Verstanden-Liste; die Metadaten liefert
+    // /stand seit demselben Tag mit (api._anzeige_metadaten).
+    // Fällt zurück auf Kennung + Rohwert, wenn die Metadaten fehlen (Feld nicht mehr in der
+    // Bindung, etwa nach einem Scheiben-Wechsel) — lieber technisch als leer.
+    const t = document.createElement("span"); t.className = "z-name";
+    t.textContent = f.frage || fid;
+    t.title = fid;                       // die Kennung bleibt erreichbar, nur nicht im Weg
+    const v = document.createElement("span"); v.className = "z-wert";
+    v.textContent = f.typ ? verstandenWertText(f) : JSON.stringify(f.wert);
     li.appendChild(t); li.appendChild(v); ul.appendChild(li);
   }
 }
@@ -291,7 +352,8 @@ async function herkunftKette(fid, f) {
   if (r.status === 401) return;   // Anmeldemaske hat übernommen — kein Overlay mehr darüberlegen
   const j = (r.status === 200 && r.body.justification) ? r.body.justification : {};
   const bi = badgeInfo(f.herkunft_badge);
-  $("kette-titel").textContent = `${fid}: ${JSON.stringify(f.wert)}`;
+  $("kette-titel").textContent = (f.frage || fid) + ": "
+    + (f.typ ? verstandenWertText(f) : JSON.stringify(f.wert));
   const body = $("kette-body"); body.innerHTML = "";
   // Struktur per createElement, Text per textContent — NIE interpoliert. Vorher stand hier
   // `d.innerHTML = ...${txt}...`, und `txt` trägt bei der Beleg-Zeile den OCR-ROHTEXT eines
@@ -308,7 +370,8 @@ async function herkunftKette(fid, f) {
     if (txt) d.append(" · " + txt);        // append(string) erzeugt einen TextNode, kein Markup
     body.appendChild(d);
   };
-  step("◗", "Wert", `${JSON.stringify(f.wert)} (${bi.lab}, ${f.zustand})`);
+  step("◗", "Wert", `${f.typ ? verstandenWertText(f) : JSON.stringify(f.wert)} `
+                    + `(${bi.lab}, ${f.zustand})`);
   if (j.regel_id) step("◗", "Regel", j.regel_id);
   const a = j.anker_ref || AKTUELL_ANKER(fid);
   if (a && (a.quelle || a.zitatanker)) step("§", "Paragraph", `${a.quelle || ""} — „${a.zitatanker || ""}"`);
@@ -376,6 +439,40 @@ function baueEingabe(q, box, id, labelId, vorbelegung) {
     // Ab WAHL_MAX wird die Button-Reihe länger als der Bildschirm (16 Bundesländer, 16
     // DBA-Staaten) — dort bleibt das Dropdown die bessere Bedienung.
     input = opt.length <= WAHL_MAX ? wahlFeld(opt, q.beispielwert, id) : selectFeld(opt, q.beispielwert, id);
+  } else if (q.typ === "text" && q.muster) {
+    // Feld MIT zugesagtem Format (Bindung `muster`, seit 2026-08-25). `pattern` lässt den Browser
+    // selbst warnen, bevor abgeschickt wird; leseWert() prüft zusätzlich, und der Store setzt es
+    // fail-closed durch. Drei Ebenen, weil ein formal falscher Wert erst beim Finanzamt auffiele:
+    // Julius' Durchgang speicherte „01.01-31.122" (eine 2 zu viel) anstandslos.
+    input = document.createElement("input");
+    input.type = "text";
+    input.pattern = q.muster.replace(/^\^|\$$/g, "");   // HTML verankert ohnehin am ganzen Wert
+    input.placeholder = String(q.standardwert ?? q.beispielwert ?? "");
+    if (vorbelegung !== null && vorbelegung !== undefined) input.value = String(vorbelegung);
+  } else if (q.typ === "text") {
+    // GEMESSEN 2026-08-24, im Live-Lauf des KI-Wegs: bis hierher fielen `text` und `datum` in den
+    // Zahlen-Zweig unten. Die Rückfrage „Wie heißen deine Kinder mit Vornamen?" stand über einem
+    // <input type="number"> mit dem Platzhalter „Anna" — ein Feld, das den eigenen Beispielwert
+    // nicht annimmt. 56 text- und 5 datum-Felder der Bindung waren damit nicht beantwortbar,
+    // im Fragebogen genauso wie im Wizard (beide rufen diese Funktion).
+    input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = String(q.beispielwert ?? "");
+    // Vorbelegung wie im Zahlen-Zweig: beim Korrigieren eines schon belegten Feldes
+    // (korrigiereBestaetigt) stünde der Name sonst nicht mehr da, und der Nutzer müsste ihn
+    // neu tippen, um eine Kleinigkeit zu ändern.
+    if (vorbelegung !== null && vorbelegung !== undefined) input.value = String(vorbelegung);
+  } else if (q.typ === "datum") {
+    // Kalenderfeld statt Tippen — aber ACHTUNG bei der Auswertung: `.value` ist hier IMMER ISO
+    // (2025-07-15), unabhängig davon, wie der Browser es anzeigt. Der Store verlangt TT.MM.JJJJ
+    // und weist ISO mit 422 ab (store.py `_typ_konform`, mit Begründung: amtliches ELSTER-Format,
+    // nichts in der Pipeline konvertiert). Die Umrechnung steht in leseWert().
+    input = document.createElement("input");
+    input.type = "date";
+    // Der gespeicherte Wert ist TT.MM.JJJJ, das Feld will ISO — dieselbe Umrechnung wie in
+    // leseWert(), nur andersherum. Ohne sie stünde das Feld beim Korrigieren leer da.
+    const d = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(String(vorbelegung ?? ""));
+    if (d) input.value = `${d[3]}-${d[2]}-${d[1]}`;
   } else {
     input = document.createElement("input"); input.type = "number";
     input.inputMode = q.typ === "cent" ? "decimal" : "numeric";
@@ -393,6 +490,27 @@ function baueEingabe(q, box, id, labelId, vorbelegung) {
   input.setAttribute("aria-labelledby", labelId);   // a11y: Screenreader liest die Frage als Feldnamen
   box.appendChild(input);
   if (q.einheit) { const s = document.createElement("span"); s.className = "einheit"; s.textContent = " " + q.einheit; box.appendChild(s); }
+
+  // „Üblichen Wert übernehmen" — nur wo die Bindung einen `standardwert` ZUSAGT (2026-08-25).
+  // Julius: „wenn in 95% der default fall eintritt sollte man evtl einen button ergänzen der
+  // diesen default wert übernimmt." Es sind die Zeitraum-Felder, deren Hilfe selbst sagt „Meist
+  // das ganze Jahr": den Nutzer 01.01-31.12 abtippen zu lassen ist Arbeit ohne Ertrag.
+  //
+  // AUSDRÜCKLICH NICHT aus `beispielwert` abgeleitet, obwohl der bei fast jedem Feld dasteht: der
+  // ist laut Bindungs-Schema ein BEISPIEL, kein Standard. Ein Knopf „Üblich: 62.000 €" unter der
+  // Frage nach dem Bruttoarbeitslohn wäre eine Vorgabe, die der Nutzer womöglich übernimmt.
+  if (q.standardwert !== null && q.standardwert !== undefined && q.standardwert !== "") {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn-link standardwert";
+    b.textContent = "Üblichen Wert übernehmen: " + q.standardwert;
+    b.addEventListener("click", () => {
+      input.value = String(q.standardwert);
+      input.focus();
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    box.appendChild(b);
+  }
   return input;
 }
 
@@ -519,6 +637,16 @@ function selectFeld(optionen, vorauswahl, id) {
 // Richtung seiner Frage; eine Präfix-Regel bricht beim nächsten `x_ohne_y`.
 function boolAntwort(meta, b) { return meta.frage_invertiert ? !b : !!b; }
 
+// „Bitte einen gültigen Wert eingeben" sagt einem Nutzer, der gerade „01.01-31.122" getippt hat,
+// nichts — er sieht ja einen Wert dastehen. Wo die Bindung ein Format zusagt, wird es genannt,
+// mit dem üblichen Wert als Beispiel.
+function formatHinweis(q) {
+  if (!q || !q.muster) return "";
+  const bsp = q.standardwert || q.beispielwert;
+  return "Der Wert passt nicht zum erwarteten Format"
+         + (bsp ? ` — er muss aussehen wie „${bsp}“` : "");
+}
+
 // Stille-Null-Fix (team-lead-Auftrag, Befund B): vorher machte `parseFloat(el.value || "0")` /
 // `parseInt(el.value || "0", 10)` aus einem LEEREN oder browser-ungültigen Feld (z.B. "12,5" mit
 // Komma statt Punkt -> parseFloat liest nur "12" korrekt, der Rest verwirft -> "12,5x" wäre sogar
@@ -535,6 +663,23 @@ function leseWert(q, el) {
   if (q.typ === "bool") return boolAntwort(q, el.value === "true");
   const roh = (el.value ?? "").trim();
   if (roh === "") return undefined;
+  if (q.typ === "text") {
+    // Passt der Wert nicht zum zugesagten Format, wird NICHTS geschrieben — dieselbe Regel wie
+    // bei leer/ungültig sonst. Der Aufrufer meldet es dem Nutzer; ohne das nähme der Store ihn an
+    // (typ text = beliebiger String) und der Fehler fiele erst beim Finanzamt auf.
+    if (q.muster && !new RegExp(q.muster).test(roh)) return undefined;
+    return roh;
+  }
+  if (q.typ === "datum") {
+    // Ein <input type="date"> liefert ISO, der Store verlangt TT.MM.JJJJ (store.py `_typ_konform`:
+    // amtliches ELSTER-Format, im XSD verankert, nichts konvertiert unterwegs). Beides wird
+    // angenommen — falls das Feld doch einmal ein Textfeld ist, tippt der Nutzer deutsch.
+    const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(roh);
+    if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+    // Kein erkennbares Datum -> undefined statt einer Zeichenkette, die der Store mit 422
+    // abweist: leer/ungültig schreibt NICHTS (dieselbe Regel wie beim Stille-Null-Fix).
+    return /^\d{2}\.\d{2}\.\d{4}$/.test(roh) ? roh : undefined;
+  }
   if (q.typ === "cent") {
     const eur = parseFloat(roh);
     return Number.isFinite(eur) ? Math.round(eur * 100) : undefined;
@@ -569,7 +714,13 @@ async function korrigiereBestaetigt(fid) {
   if (!frage) {
     // Feld steht nicht mehr in den offenen Fragen — könnte sein, dass andere
     // Felder es obsolet gemacht haben. Für Korrektur brauchen wir die Frage.
-    zeigeNetzFehler(`Feld ${fid} ist nicht mehr im Fragenfluss.`);
+    // Die Kennung gehört nicht in eine Meldung an den Laien — er hat sie nie gesehen (gemessen
+    // 2026-08-25: „Feld kind_wohnsitz_inland_zeitraum ist nicht mehr im Fragenfluss."). Und der
+    // Satz sagte nicht, WARUM: eine andere Antwort hat die Frage abgeschaltet. Das ist kein
+    // Fehler, sondern ein Ergebnis — nur eines, das man erklären muss.
+    zeigeNetzFehler("Diese Frage ist durch eine andere Antwort entfallen und lässt sich nicht mehr "
+                    + "ändern. Willst du sie zurückholen, ändere die Antwort, die sie abgeschaltet "
+                    + "hat.");
     return false;
   }
 
@@ -584,6 +735,7 @@ async function bestaetigen(kiFeld) {
   if (!AKTUELL) return;
   const btn = $("bestaetigen");
   if (btn.disabled) return;   // Doppel-Submit-Schutz
+  kiFokus(false);   // der Nutzer arbeitet im Fragebogen — der Chat ist wieder Begleiter
   btn.disabled = true;
   const altLabel = kiFeld ? null : btn.textContent;
   if (!kiFeld) btn.textContent = "Wird gespeichert …";
@@ -592,7 +744,7 @@ async function bestaetigen(kiFeld) {
     // Stille-Null-Fix (Befund B): leer/ungültig -> KEIN Event, kein "0" -- Nutzer wird informiert
     // statt dass eine falsche Zahl bestätigt in den Store wandert (derselbe Fehler-Anzeige-Stil
     // wie jede andere Ablehnung in dieser Funktion, s. unten).
-    zeigeNetzFehler("Bitte einen gültigen Wert eingeben.");
+    zeigeNetzFehler(formatHinweis(AKTUELL) || "Bitte einen gültigen Wert eingeben.");
     btn.disabled = false;
     if (!kiFeld) btn.textContent = altLabel;
     return;
@@ -816,11 +968,22 @@ function zeigeVerstanden(vorschlaege, konflikte) {
   ul.innerHTML = "";
   for (const v of vorschlaege) ul.appendChild(verstandenZeile(v));
   for (const k of (konflikte || [])) ul.appendChild(verstandenKonfliktZeile(k));
+  // Der Knopf muss sagen, wohin er führt. Folgen noch Rückfragen, ist „Weiter zu den Fragen"
+  // falsch — der Nutzer landet dann bei der nächsten Nachfrage, nicht im Fragebogen.
+  const folgt = VERSTANDEN_DANACH && VERSTANDEN_DANACH.rueckfragen
+                && VERSTANDEN_DANACH.rueckfragen.length;
+  $("verstanden-weiter").textContent = folgt ? "Weiter zu den Nachfragen" : "Weiter zu den Fragen";
   VERSTANDEN_OFFEN = true;
+  // Auch hier KEIN kiFokus(false) — dieselbe falsche Annahme wie in starteRueckfragen(). Was die
+  // KI vorgeschlagen hat, zu bestätigen, ist die letzte Stufe des KI-Wegs, nicht Arbeit im
+  // Fragebogen. Der Fokus endet erst, wenn der Nutzer dort wirklich antwortet (bestaetigen()).
   $("wegpunkt").hidden = true;
   $("fertig").hidden = true;
   $("verstanden").hidden = false;
   $("verstanden").focus({ preventScroll: true });   // Screen-Reader: Wechsel des Screens ansagen
+  // Wie beim Wizard: das Panel sitzt im Berater, bei langem Verlauf stünde die Liste sonst
+  // unterhalb des sichtbaren Bereichs.
+  $("verstanden").scrollIntoView({ block: "nearest" });
 }
 
 async function verstandenBestaetigen(v, li, btn) {
@@ -865,7 +1028,50 @@ async function verstandenWeiter() {
   // ungefragt.
   VERSTANDEN_OFFEN = false;
   $("verstanden").hidden = true;
+
+  // Stehen noch Rückfragen an, sind SIE der nächste Schritt — nicht der Fragebogen (Reihenfolge
+  // seit 2026-08-25: erst bestätigen, dann nachfragen). starteRueckfragen() prüft dabei gegen die
+  // JETZT offenen Fragen: was die eben bestätigten Werte abgeschaltet haben, wird gar nicht mehr
+  // gefragt.
+  const n = VERSTANDEN_DANACH;
+  VERSTANDEN_DANACH = null;
+  if (n && n.rueckfragen && n.rueckfragen.length) {
+    await starteRueckfragen(n.rueckfragen, [], [], n.zurueckgestellt);
+    return;
+  }
+
+  // Sonst ist die Kette zu Ende: „Weiter zu den Fragen" ist der Moment, in dem der Nutzer den
+  // KI-Weg verlässt. Ohne kiFokus(false) bliebe der Fragebogen ausgeblendet (auf diesem Weg ist
+  // NUR das Panel da) und der Knopf führte ins Leere.
+  kiFokus(false);
+  chatVerlaufAufraeumen();
   await refresh();
+}
+
+// Derselbe Übergang, nur jederzeit erreichbar: der Nutzer muss nicht erst Vorschläge bestätigen,
+// um in den Fragebogen zu kommen.
+async function zumFragebogen() {
+  rueckfragenSchliessen();
+  VERSTANDEN_OFFEN = false;
+  VERSTANDEN_DANACH = null;
+  $("verstanden").hidden = true;
+  kiFokus(false);
+  chatVerlaufAufraeumen();
+  await refresh();
+}
+
+// Was die KI aus einem Satz gelesen hat, ist erledigt, sobald der Nutzer im Fragebogen steht: die
+// Vorschläge sind bestätigt oder verworfen, die Rückfragen beantwortet oder verschoben.
+//
+// Julius 2026-08-25, mit Screenshot: „hier sind wir weiter zum fragebogen geführt worden (korrekt)
+// aber die KI spalte zeigt immernoch die alten infos an (jetzt nicht mehr relevant). hier sollte
+// einfach nur das inputfeld sein für nachfragen und weitere textangaben."
+//
+// Weg müssen die Aussagen-Kästen und die Ablaufmeldungen dazu („Dazu 4 Vorschläge …"). Der eigene
+// Satz („Du: …") und die ANTWORTEN der KI bleiben: das eine ist, was der Nutzer gesagt hat, das
+// andere eine Auskunft, die auch später noch gilt.
+function chatVerlaufAufraeumen() {
+  for (const e of $("chat-body").querySelectorAll(".chat-aussagen, .chat-erklaer")) e.remove();
 }
 
 // --- Der Rückfragen-Schritt: eine Frage, ein Feld, „Weiter" ----------------------------------
@@ -876,21 +1082,54 @@ async function verstandenWeiter() {
 // könnte die Angabe erneut falsch deuten: genau das, was die Rückfrage verhindern soll.
 //
 // Der TYP kommt aus /fragen, nicht aus der Rückfrage — die trägt nur {frage, feld_id, aussage}.
-// Steht das Feld dort nicht (schon beantwortet, von einer Antwort abgeschaltet) oder nennt die
-// Rückfrage gar kein Feld, gibt es keine Bauart für ein Eingabefeld und erst recht keinen Typ, in
-// den sich ein Wert schreiben ließe. Dann bleibt der Chat der Weg — wie bisher.
-async function starteRueckfragen(rueckfragen, vorschlaege, konflikte) {
-  // Die Typen frisch holen: der eben gelaufene KI-Aufruf kann vorläufige Werte geschrieben und
-  // damit die offene Fragenliste verändert haben.
+// Nennt die Rückfrage gar kein Feld, gibt es keine Bauart für ein Eingabefeld; dann bleibt der Chat
+// der Weg.
+//
+// NENNT SIE EIN FELD, DAS NICHT MEHR OFFEN IST, FÄLLT SIE WEG (2026-08-25). Das ist der Gewinn der
+// umgekehrten Reihenfolge, und Julius' Beispiel dafür ist genau dieser Fall: „wenn ich hier angebe
+// dass ich nicht mit dem auto gefahren bin erübrigt sich die nachfrage an wievielen tagen das war."
+// Nach der Bestätigung „kein eigenes Auto" steht `ep_arbeitstage` nicht mehr in /fragen — die
+// Rückfrage danach ist gegenstandslos. Vorher landete sie im Chat („Im Berater beantworten"), und
+// der Nutzer beantwortete eine Frage, die es nicht mehr gab.
+async function starteRueckfragen(rueckfragen, vorschlaege, konflikte, zurueckgestellt) {
+  // Die Typen frisch holen: die eben bestätigten Werte haben die offene Fragenliste verändert.
   const fr = await jget(`/fall/${FALL}/fragen`);
   if (fr.status === 401) return;   // Anmeldemaske hat übernommen — keine Seite darüberlegen
   const katalog = {};
   for (const q of (Array.isArray(fr.body.fragen) ? fr.body.fragen : [])) katalog[q.feld_id] = q;
-  RF_LISTE = rueckfragen.map(rf => ({ ...rf, meta: rf.feld_id ? (katalog[rf.feld_id] || null) : null }));
+  const entfallen = rueckfragen.filter(rf => rf.feld_id && !katalog[rf.feld_id]);
+  RF_LISTE = rueckfragen
+    .filter(rf => !rf.feld_id || katalog[rf.feld_id])
+    .map(rf => ({ ...rf, meta: rf.feld_id ? katalog[rf.feld_id] : null }));
   RF_INDEX = 0;
   RF_NACHHER = { vorschlaege: vorschlaege || [], konflikte: konflikte || [] };
+
+  // Was weggefallen ist, SAGEN — sonst wirkt es, als hätte die KI die Frage vergessen. Und die
+  // gebündelten erst hier: vorher stünde eine Zahl da, die sich gleich noch ändert.
+  const body = $("chat-body");
+  if (entfallen.length) {
+    body.appendChild(beraterZeile("chat-erklaer",
+      entfallen.length === 1
+        ? "Eine Nachfrage hat sich durch deine Bestätigung erledigt."
+        : entfallen.length + " Nachfragen haben sich durch deine Bestätigungen erledigt."));
+  }
+  if (zurueckgestellt) {
+    body.appendChild(beraterZeile("chat-erklaer",
+      zurueckgestellt === 1
+        ? "Eine weitere Nachfrage habe ich in den Fragebogen verschoben — hier stelle ich je "
+          + "Angabe nur die eine, die wirklich offen ist."
+        : zurueckgestellt + " weitere Nachfragen habe ich in den Fragebogen verschoben — hier "
+          + "stelle ich je Angabe nur die eine, die wirklich offen ist."));
+  }
+  body.scrollTop = body.scrollHeight;
   RUECKFRAGEN_OFFEN = true;
   VERSTANDEN_OFFEN = false;
+  // KEIN kiFokus(false) hier. Das stand bis 2026-08-24 da, mit der Begründung „die Aufgabe steht
+  // jetzt auf der Rückfragen-Seite" — und war falsch: Rückfragen sind derselbe KI-Weg. Der Nutzer
+  // hat „erst von der KI ausfüllen lassen" gewählt und wartet auf die KI; der Fragebogen ist in
+  // diesem Moment Kulisse. Julius: „der user wartet auf die rückfragen bzw zustimmungen."
+  // Gemessene Wirkung des alten Standes: der Spaltentausch war genau im wichtigsten Moment wieder
+  // aus — Fragebogen breit, KI schmal.
   $("wegpunkt").hidden = true;
   $("fertig").hidden = true;
   $("verstanden").hidden = true;
@@ -922,6 +1161,9 @@ function zeigeRueckfrage() {
   }
   $("rueckfragen").hidden = false;
   $("rueckfragen").focus({ preventScroll: true });   // Screen-Reader: Wechsel des Screens ansagen
+  // preventScroll oben verhindert den Sprung des DOKUMENTS; hier wird nur das Panel selbst in
+  // seinen sichtbaren Bereich geholt — bei langem Verlauf stünde die Frage sonst unterhalb.
+  $("rueckfragen").scrollIntoView({ block: "nearest" });
 }
 
 // „Weiter": den Wert schreiben und zur nächsten. Ohne Feld führt derselbe Knopf in den Chat —
@@ -939,7 +1181,8 @@ async function rueckfrageWeiter() {
   // (Stille-Null-Fix): eine stille 0 wäre hier so falsch wie dort.
   const wert = leseWert(q, $("rf-input"));
   if (wert === undefined) {
-    zeigeNetzFehler("Bitte einen gültigen Wert eingeben — oder „Später beantworten“.");
+    zeigeNetzFehler((formatHinweis(q) || "Bitte einen gültigen Wert eingeben")
+                    + " — oder „Später beantworten“.");
     return;
   }
   btn.disabled = true;
@@ -1028,7 +1271,10 @@ function chatWarteZeile() {
   p.setAttribute("role", "status");     // Screen-Reader: Zustandswechsel, keine neue Nachricht
   p.setAttribute("aria-live", "polite");
   const txt = document.createElement("span");
-  txt.textContent = "Die KI liest mit …";
+  // „Die KI liest mit …" klang nach jemandem, der über die Schulter schaut (Julius 2026-08-25:
+  // „auch eine eigenartige formulierung"). Sie liest nicht MIT, sie liest den Satz, den er ihr
+  // gerade geschickt hat.
+  txt.textContent = "Ich lese deinen Satz …";
   p.appendChild(txt);
   const punkte = document.createElement("span");
   punkte.className = "chat-warte-punkte";
@@ -1058,9 +1304,10 @@ function chatWarteZeile() {
 // sperren hieße, sich beim Freigeben genau zu merken, welche vorher schon gesperrt waren.
 //
 // #rueckfragen gehört seit 2026-08-23 dazu, und zwar aus genau demselben Grund wie #wegpunkt:
-// „Weiter" dort schreibt ein Event und ruft refresh(), ändert also `AKTUELL`. Dass die Seite
-// während eines laufenden Aufrufs ohnehin meist im Hintergrund liegt, ist kein Argument — sie
-// bleibt sichtbar, wenn der Nutzer aus ihr heraus etwas in den Chat schreibt.
+// „Weiter" dort schreibt ein Event und ruft refresh(), ändert also `AKTUELL`. Seit dem Umzug ins
+// Berater-Panel (2026-08-24) ist das keine Randbedingung mehr, sondern der Normalfall: der Wizard
+// steht direkt über dem Eingabefeld, aus dem heraus der Aufruf gestartet wird, und bleibt dabei
+// vollständig sichtbar. Gesperrt wird das Panel, NICHT der Berater — der Verlauf bleibt lesbar.
 const CHAT_SPERRE_IDS = ["wegpunkt", "verstanden", "belegt-liste", "rueckfragen"];
 
 function chatSperren(an) {
@@ -1122,16 +1369,31 @@ async function erklaereFeld() {
 // #belegt-liste / .vorjahr-box. Das ist kein Zufall: chatSperren() legt während eines laufenden
 // Aufrufs `inert` genau auf jene vier. Eine Anzeige, die dort hineinwüchse, sperrte sich selbst —
 // und eine Rückfrage, die man während des nächsten Aufrufs nicht mehr anklicken kann, ist keine.
+// ALLE Status, die api_llm setzt — vollständig, nicht nur die drei häufigen. Gemessen im
+// Live-Lauf 2026-08-25: bei einem Ausfall von Stufe 2 stand im Chat wörtlich die Marke
+// „themen_ausgefallen". Ein unbekannter Status fällt auf `a-unbekannt` und zeigt seinen ROHEN
+// Namen — das ist als Notnagel richtig (ein unbekannter Zustand darf nicht wie ein erfolgreicher
+// aussehen), aber für die Status, die es WIRKLICH gibt, ist es schlicht eine vergessene Zeile.
 const AUSSAGE_MARKE = {
   vorschlag: "als Vorschlag oben",
-  rueckfrage: "Rückfrage",
+  // Die Frage steht auf der Rückfragen-Seite, nicht hier. Stünde da bloss „Rückfrage", suchte der
+  // Nutzer sie in diesem Kasten — die Marke sagt deshalb, wo sie hinkommt.
+  rueckfrage: "frage ich gleich",
   kein_feld: "keinem Feld zugeordnet",
+  kein_thema: "kein passendes Thema gefunden",
+  ohne_beleg: "nicht belegt — verworfen",
+  // Die beiden sagen etwas über UNS, nicht über den Satz des Nutzers.
+  themen_ausgefallen: "bei mir ausgefallen",
+  werte_ausgefallen: "bei mir ausgefallen",
 };
 
-// Die Antwort auf eine Rückfrage geht durch DENSELBEN Kanal wie jeder andere Satz: sie landet im
-// Chat-Eingabefeld, der Nutzer schreibt sie zu Ende und schickt sie ab. Kein zweiter Weg und kein
-// eigener Zustand — eine Rückfrage, die nur über ein Sonderformular beantwortbar wäre, eröffnete
-// ein zweites Gespräch neben dem Gespräch, und der Verlauf zeigte danach nur noch die Hälfte.
+// Genau die Status, bei denen die Ursache auf unserer Seite liegt. Wichtig für die Meldung
+// darunter: „schreib es genauer" wäre dann eine Fehldiagnose zu Lasten des Nutzers.
+const AUSGEFALLEN = ["themen_ausgefallen", "werte_ausgefallen"];
+
+// Rückfragen OHNE `feld_id` haben kein Eingabefeld, in das sich etwas schreiben ließe — für sie
+// bleibt der Chat der Weg. Aufgerufen wird das aus rueckfrageWeiter() („Im Berater beantworten"),
+// nicht mehr aus dem Verlauf: siehe den Block über aussagenBlock().
 // Die Frage steht im Vorspann mit drin: der Nutzer sieht wörtlich, was er absendet, und die
 // nächste Runde bekommt den Bezug mitgeliefert, statt ihn erraten zu müssen.
 function rueckfrageBeantworten(rf) {
@@ -1149,23 +1411,7 @@ function rueckfrageBeantworten(rf) {
   t.scrollIntoView({ block: "nearest" });
 }
 
-function rueckfrageBlock(rf) {
-  const d = document.createElement("div");
-  d.className = "a-rueckfrage-box";
-  const f = document.createElement("div");
-  f.className = "a-frage";
-  f.textContent = rf.frage || "";
-  d.appendChild(f);
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "a-antworten";
-  btn.textContent = "Antworten";
-  btn.addEventListener("click", () => rueckfrageBeantworten(rf));
-  d.appendChild(btn);
-  return d;
-}
-
-function aussagenZeile(a, rueckfragen) {
+function aussagenZeile(a) {
   const li = document.createElement("li");
   // Nur bekannte Zustände bekommen ihre eigene Klasse. Ein unbekannter darf NICHT in die Optik
   // eines erfolgreichen rutschen — sonst sähe ein Zustand, den diese Oberfläche nicht kennt, aus
@@ -1202,11 +1448,22 @@ function aussagenZeile(a, rueckfragen) {
       + "oder trag den Wert oben direkt ein.";
     li.appendChild(h);
   }
-  for (const rf of rueckfragen) li.appendChild(rueckfrageBlock(rf));
   return li;
 }
 
-function aussagenBlock(aussagen, rueckfragen) {
+// NUR die Aussagen — die Rückfragen stehen auf der Rückfragen-SEITE, und zwar dort allein.
+//
+// ANLASS, wörtlich (Julius, 2026-08-24, aus dem echten Durchgang): „gleiche rückfrage links und
+// rechts. das ist quatsch. wir wollen einen dialog fenster dass der nutzer durchklickt."
+// Bis hierher zeichnete dieser Block dieselben Fragen ein zweites Mal in den Verlauf, mit einem
+// eigenen „Antworten"-Knopf. Der Nutzer sah zwei Aufforderungen und musste raten, welche gilt —
+// und die beiden Wege schrieben verschieden: die Seite direkt ins Feld (/event), der Knopf schickte
+// die Antwort noch einmal durch alle drei Modellstufen, die sie erneut falsch deuten konnten.
+// Genau das sollte die Rückfrage verhindern.
+//
+// Die Aussagen bleiben: sie sind Information über den eigenen Satz, keine Aufforderung. Ihre Marke
+// sagt, dass gleich nachgefragt wird — die Frage selbst kommt auf der Seite.
+function aussagenBlock(aussagen) {
   const box = document.createElement("div");
   box.className = "chat-aussagen";
   const titel = document.createElement("div");
@@ -1215,19 +1472,7 @@ function aussagenBlock(aussagen, rueckfragen) {
   box.appendChild(titel);
   const ul = document.createElement("ul");
   ul.className = "a-liste";
-  const zugeordnet = new Set();
-  aussagen.forEach((a, i) => {
-    const meine = rueckfragen.filter(rf => rf.aussage === i);
-    for (const rf of meine) zugeordnet.add(rf);
-    ul.appendChild(aussagenZeile(a, meine));
-  });
-  // Eine Rückfrage ohne gültigen Index darf nicht verschwinden — sie ist der eine Ort, an dem die
-  // KI zugibt, dass sie sonst raten müsste. Lieber ohne die Aussage darüber als gar nicht.
-  for (const rf of rueckfragen) {
-    if (!zugeordnet.has(rf)) {
-      ul.appendChild(aussagenZeile({ text: "Nachfrage der KI", status: "rueckfrage" }, [rf]));
-    }
-  }
+  for (const a of aussagen) ul.appendChild(aussagenZeile(a));
   box.appendChild(ul);
   return box;
 }
@@ -1271,6 +1516,13 @@ async function chatSenden() {
   const kontextFeld = AKTUELL ? AKTUELL.feld_id : null;
   const body = $("chat-body");
   body.appendChild(beraterZeile("chat-du", "Du: " + freitext));
+  // SOFORT leeren, im selben Augenblick, in dem der Satz in den Verlauf wandert. Julius 2026-08-25:
+  // „hier steht meine eingabe 2 mal … das ist quatsch." Vorher stand `t.value = ""` hinter dem
+  // `await` — während des ganzen Modellaufrufs (Sekunden bis Minuten) stand der Satz doppelt da:
+  // einmal als „Du: …" im Verlauf, einmal noch im Feld.
+  // Bei einem Fehlschlag kommt er zurück (s. unten): der Satz ist Nutzerarbeit und darf nicht
+  // verloren gehen, nur weil der Aufruf nicht durchkam.
+  if (t) { t.value = ""; chatHoeheAnpassen(); }
   const warte = chatWarteZeile();
   body.appendChild(warte);
   body.scrollTop = body.scrollHeight;
@@ -1292,13 +1544,13 @@ async function chatSenden() {
   // den Fokus nehmen (in einem inerten Bereich liefe focus() ins Leere), und eine Ausnahme hier
   // strandet nichts mehr.
   //
-  // Das Eingabefeld wird HIER geleert, nicht am Ende: „Absendeknopf wieder frei" und „Feld wieder
-  // leer" müssen derselbe Augenblick sein. Am Ende der Funktion waren sie das nur, solange bis
-  // dorthin kein `await` lag — die Auswertung darunter ruft aber refresh() und (seit dem
-  // Rückfragen-Schritt) /fragen. Dazwischen stand das Feld sichtbar mit dem eben abgeschickten
-  // Satz da, obwohl der Knopf schon wieder ansprach: ein zweiter Klick hätte denselben Satz noch
-  // einmal an die KI geschickt. Zwischen dem finally oben und dieser Zeile liegt kein `await`.
-  if (t) { t.value = ""; chatHoeheAnpassen(); }
+  // Der Satz ist Nutzerarbeit. Kam der Aufruf nicht durch, gehört er zurück ins Feld, statt dass
+  // der Nutzer ihn neu tippt — 501 ist KEIN Fehlschlag in diesem Sinn (die Erklär-Grenze ist eine
+  // Antwort), 200 ohnehin nicht.
+  if (t && r.status !== 200 && r.status !== 501 && !t.value.trim()) {
+    t.value = freitext;
+    chatHoeheAnpassen();
+  }
   const kontextGewechselt = (AKTUELL ? AKTUELL.feld_id : null) !== kontextFeld;
   if (r.status === 501) {
     body.appendChild(beraterZeile("chat-vertrag",
@@ -1321,16 +1573,16 @@ async function chatSenden() {
     const alleVorschlaege = r.body.vorschlaege || [];
     const vorschlaege = alleVorschlaege.filter(v => !gefragteFelder.has(v.feld_id));
     const zurueckgehalten = alleVorschlaege.length - vorschlaege.length;
-    if (aussagen.length || rueckfragen.length) {
-      body.appendChild(aussagenBlock(aussagen, rueckfragen));
-      if (zurueckgehalten) {
-        body.appendChild(beraterZeile("chat-unsicher",
-          zurueckgehalten === 1
-            ? "Zu einem Feld kamen gleichzeitig eine Rückfrage und ein fertiger Wert — der Wert "
-              + "wird zurückgehalten, bis die Rückfrage beantwortet ist."
-            : zurueckgehalten + " Werte werden zurückgehalten, weil zu denselben Feldern noch "
-              + "eine Rückfrage offen ist."));
-      }
+    if (aussagen.length) body.appendChild(aussagenBlock(aussagen));
+    // Steht ausserhalb des Aussagen-Kastens: die Meldung gehört zu den Rückfragen, und die kommen
+    // auch ohne Aussagen vor (dann wäre der Kasten leer und die Meldung mit ihm verschwunden).
+    if (zurueckgehalten) {
+      body.appendChild(beraterZeile("chat-unsicher",
+        zurueckgehalten === 1
+          ? "Zu einem Feld kamen gleichzeitig eine Rückfrage und ein fertiger Wert — der Wert "
+            + "wird zurückgehalten, bis die Rückfrage beantwortet ist."
+          : zurueckgehalten + " Werte werden zurückgehalten, weil zu denselben Feldern noch "
+            + "eine Rückfrage offen ist."));
     }
     if (r.body.antwort) {
       // Die Antwort wurde für die Frage erzeugt, bei der der Nutzer sie abgeschickt hat — der
@@ -1370,32 +1622,54 @@ async function chatSenden() {
       teile.push(konflikte.length === 1 ? "ein Widerspruch zu deinen Angaben"
                                         : konflikte.length + " Widersprüche zu deinen Angaben");
     }
-    // DIE REIHENFOLGE (Julius 2026-08-23): erst die Rückfragen, dann die Bestätigungen, dann
-    // zurück in den Fragebogen. Nie zwei Aufforderungen gleichzeitig — bis hierher erschienen
-    // Verstanden-Seite und Rückfrage-Kästen nebeneinander, und der Nutzer musste raten, was
-    // zuerst dran ist. Ohne Rückfragen bleibt alles, wie es war.
-    if (rueckfragen.length) {
-      if (teile.length) {
-        body.appendChild(beraterZeile("chat-erklaer",
-          "Dazu " + teile.join(" und ") + " — die zeige ich dir gleich nach den Rückfragen."));
-      }
-      await starteRueckfragen(rueckfragen, vorschlaege, konflikte);
-    } else if (vorschlaege.length || konflikte.length) {
-      body.appendChild(beraterZeile("chat-erklaer", "Dazu " + teile.join(" und ") + " — oben."));
-      // Die Verstanden-Seite tritt vor: der Nutzer sieht alles auf einmal, was aus seinem Satz
-      // geworden ist, samt dem Satzteil, auf den es sich stützt. Der Berater bleibt darunter
-      // stehen, die Antwort ist also weiter lesbar.
+    // DIE REIHENFOLGE — UMGEDREHT AM 2026-08-25. Hier stand seit dem 2026-08-23: erst die
+    // Rückfragen, dann die Bestätigungen. Julius aus dem echten Durchgang:
+    //
+    //   „diese bestätigungen kamen nach den nachfragen dazu. das sollte andersrum sein. wenn ich
+    //    hier angebe dass ich nicht mit dem auto gefahren bin erübrigt sich die nachfrage an
+    //    wievielen tagen das war."
+    //
+    // Das ist zwingend, nicht Geschmack: eine Bestätigung kann einen ganzen Frageblock
+    // ABSCHALTEN. „Kein eigenes Auto" nimmt der Frage nach den Arbeitstagen die Grundlage — sie
+    // steht danach nicht mehr in /fragen. In der alten Reihenfolge hat der Nutzer sie trotzdem
+    // beantwortet, und zwar bevor irgendetwas entschieden war.
+    //
+    // Die Regel „nie zwei Aufforderungen gleichzeitig" bleibt: es ist weiter eine Kette, nur
+    // andersherum. Und starteRueckfragen() wirft danach jede Rückfrage weg, deren Feld nicht mehr
+    // offen ist — genau das ist der Gewinn dieser Umkehrung.
+    const zurueckgestellt = Number(r.body.rueckfragen_zurueckgestellt) || 0;
+    if (vorschlaege.length || konflikte.length) {
+      body.appendChild(beraterZeile("chat-erklaer",
+        "Dazu " + teile.join(" und ") + (rueckfragen.length
+          ? " — bitte erst bestätigen, danach frage ich das Offene nach." : " — oben.")));
+      // Die zurückgestellten NACH den Bestätigungen melden hiesse: der Nutzer liest von Fragen,
+      // die er vielleicht nie sieht (weil sie entfallen). Deshalb erst, wenn feststeht, welche
+      // Rückfragen wirklich kommen — s. starteRueckfragen().
+      RF_NACHHER = null;
+      VERSTANDEN_DANACH = { rueckfragen, vorschlaege, konflikte, zurueckgestellt };
       zeigeVerstanden(vorschlaege, konflikte);
       await refresh();   // Ring/Belegt aktualisieren; zeigeVerstanden hält die Seite vorn
+    } else if (rueckfragen.length) {
+      await starteRueckfragen(rueckfragen, [], [], zurueckgestellt);
     } else {
       if (!r.body.antwort) {
         // Hier ist `rueckfragen` bereits leer (sonst liefe der Zweig oben): steht eine Rückfrage
         // auf dem Schirm, hat die KI sehr wohl etwas erkannt — sie fragt ja nach. „Weder einen
         // Wert noch eine Frage" wäre dort schlicht falsch und schickte den Nutzer zum
         // Umformulieren, statt zum Antworten.
-        body.appendChild(beraterZeile("chat-erklaer",
-          "Daraus konnte die KI weder einen Wert ableiten noch eine Frage erkennen. "
-          + "Schreib es etwas genauer — oder trag den Wert oben direkt ein."));
+        //
+        // Dieselbe Fehldiagnose in schwerer: fällt eine STUFE des Dialogs aus, liegt die Ursache
+        // bei uns. Gemessen 2026-08-25 im Live-Lauf (Stufe 2 nach 188s ausgefallen): der Nutzer
+        // las „schreib es etwas genauer", obwohl sein Satz einwandfrei war und die gelesene
+        // Aussage direkt darüber stand. Ihn für unseren Ausfall zum Umformulieren zu schicken,
+        // ist die unfreundlichste Art, einen Fehler zu verschweigen.
+        const ausgefallen = aussagen.some(a => AUSGEFALLEN.includes(a.status));
+        body.appendChild(beraterZeile(ausgefallen ? "chat-unsicher" : "chat-erklaer",
+          ausgefallen
+            ? "Bei mir ist gerade ein Schritt ausgefallen — dein Satz ist angekommen, ich konnte "
+              + "ihn nur nicht zu Ende verarbeiten. Schick ihn gleich noch einmal ab."
+            : "Daraus konnte die KI weder einen Wert ableiten noch eine Frage erkennen. "
+              + "Schreib es etwas genauer — oder trag den Wert oben direkt ein."));
       }
       // Die Rückfragen-Seite ist gerade weggeräumt worden und nichts tritt an ihre Stelle: ohne
       // das hier bliebe der Fluss leer, weil #wegpunkt noch versteckt ist.
@@ -1743,6 +2017,7 @@ $("chat-send").addEventListener("click", chatSenden);
 $("chat-text").addEventListener("input", chatHoeheAnpassen);
 $("warum").addEventListener("click", zeigeWarum);
 $("verstanden-weiter").addEventListener("click", verstandenWeiter);
+$("zum-fragebogen").addEventListener("click", zumFragebogen);
 $("kette-zu").addEventListener("click", () => $("kette-overlay").hidden = true);
 $("vorjahr-toggle").addEventListener("click", () => { const p = $("vorjahr-panel"); p.hidden = !p.hidden; });
 $("vorjahr-go").addEventListener("click", vorjahrUebernehmen);

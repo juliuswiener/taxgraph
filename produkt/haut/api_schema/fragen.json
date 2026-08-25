@@ -13,7 +13,7 @@
         "type": "object",
         "required": ["feld_id", "typ", "fragetext_laie", "hilfe_kurz", "einheit", "bereich",
                      "enum_werte", "enum_labels", "beispielwert", "anker_ref",
-                     "frage_invertiert"],
+                     "frage_invertiert", "muster", "standardwert"],
         "additionalProperties": false,
         "properties": {
           "feld_id": {"type": "string"},
@@ -33,6 +33,13 @@
             "additionalProperties": {"type": "string"}
           },
           "beispielwert": {},
+          "muster": {
+            "type": ["string", "null"],
+            "description": "Regulaerer Ausdruck, dem der Wert entsprechen MUSS (Bindung `muster`, 2026-08-25). null, wo die Bindung kein Format zusagt. Die Oberflaeche setzt ihn als HTML-pattern und prueft in leseWert(); durchgesetzt wird er fail-closed im Store (Auflage F)."
+          },
+          "standardwert": {
+            "description": "Der Wert, der in den allermeisten Faellen gilt — die Oberflaeche bietet ihn als Knopf an. null, wo die Bindung keinen zusagt. NICHT beispielwert: der ist ein Beispiel und waere bei einem Geldfeld eine gefaehrliche Vorgabe."
+          },
           "anker_ref": {"type": ["object", "null"]}
         }
       }

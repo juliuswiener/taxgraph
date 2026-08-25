@@ -56,16 +56,33 @@ def _catala_da() -> bool:
 
 def _fall(mit_gate: bool):
     """Voller gesamt-Kegel MINUS dem Blockierer. `mit_gate`: vv_wohnzwecke=False bestätigt
-    (schließt p21_2_verbilligte_vermietung_wk aus) oder gar nicht gesetzt (Regel unentschieden)."""
+    (schließt p21_2_verbilligte_vermietung_wk aus) oder gar nicht gesetzt (Regel unentschieden).
+
+    `kein_vuv` wird auf False GEDREHT (der Bestandskegel führt True). Grund, gemessen 2026-08-25:
+    seit `p21_2_verbilligte_vermietung_wk` eine Regelbedingung auf `kein_vuv=false` hat, schliesst
+    ein bestätigtes „keine Vermietung" die Regel bereits aus — und zwar zu Recht. Dann misst
+    `test_unbeantwortetes_gate_sperrt_weiter` aber nicht mehr, was sein Name sagt: die Regel wäre
+    auf einem ZWEITEN Weg ausgeschlossen, und das unbeantwortete Gate hätte nichts mehr zu sperren.
+    Mit `kein_vuv=False` gibt es Vermietung, die Regel ist wieder unentschieden, und das Gate ist
+    das Einzige, worauf es ankommt."""
     store = ST.leerer_store(2025, fall_id="kegel_relevanz")
     for feld, wert in _GESAMT_KEGEL:
         if feld == BLOCKIERER:
             continue                       # genau das Feld, das der Nutzer nie gefragt bekommt
-        _b(store, feld, wert)
+        _b(store, feld, False if feld == "kein_vuv" else wert)
     if mit_gate:
         _b(store, GATE, False)
     store["scheibe"] = "gesamt"
     return store
+
+
+def test_vorbedingung_die_regel_haengt_am_gate_und_nicht_am_screening():
+    """Hält die Anpassung oben ehrlich: stünde `kein_vuv` wieder auf True, wären die beiden Tests
+    darunter grün, ohne das Gate je zu berühren."""
+    felder, _ = ST.materialisiere(_fall(mit_gate=False))
+    assert felder.get("kein_vuv", {}).get("wert") is False, (
+        "kein_vuv ist nicht False — dann schliesst das Screening die Regel aus und das Gate wird "
+        "gar nicht mehr geprüft.")
 
 
 def _feste_zahl_fuer(store):

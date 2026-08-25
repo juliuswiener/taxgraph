@@ -557,12 +557,17 @@ def test_ausfall_in_stufe_3_kostet_nicht_die_zuordnung(konfiguriert, monkeypatch
 # ============================================================ Der Vertrag zum Aufrufer
 
 @pytest.mark.parametrize("fehler", [None, 2, 3])
-def test_rueckgabe_traegt_immer_alle_fuenf_schluessel(konfiguriert, monkeypatch, fehler):
+def test_rueckgabe_traegt_immer_alle_schluessel(konfiguriert, monkeypatch, fehler):
     """api.py liest sie unmittelbar in die HTTP-Antwort. Fehlte einer auf einem der Ausfallpfade,
-    fiele der Chat mit einem KeyError aus — ausgerechnet dort, wo ohnehin schon etwas schiefging."""
+    fiele der Chat mit einem KeyError aus — ausgerechnet dort, wo ohnehin schon etwas schiefging.
+
+    `rueckfragen_zurueckgestellt` kam am 2026-08-24 dazu (Rückfragen-Bündelung). Dieser Test hat
+    den Nachtrag in den beiden Ausfallpfaden eingefordert und ist dafür da: er misst die FORM der
+    Rückgabe, nicht ihren Inhalt, und deshalb fällt ein vergessener Pfad sofort auf."""
     _stufen(monkeypatch, s1=S1, s2=S2, s3=_s3(), fehler=fehler)
     erg = api_llm._llm_dialog(TEXT, KATALOG, user_id="prüfer")
-    assert set(erg) == {"vorschlaege", "antwort", "unsicher", "aussagen", "rueckfragen"}, (
+    assert set(erg) == {"vorschlaege", "antwort", "unsicher", "aussagen", "rueckfragen",
+                        "rueckfragen_zurueckgestellt"}, (
         f"Rückgabe-Schlüssel bei Ausfall={fehler}: {sorted(erg)}")
 
 

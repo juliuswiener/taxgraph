@@ -106,10 +106,38 @@ h1,h2,h3{margin:0}
 .belegt h3{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:0 4px 10px;font-weight:600}
 .belegt-hint{text-transform:none;letter-spacing:0;font-weight:400}
 #belegt-liste{list-style:none;margin:0;padding:0}
-.zeile{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line)}
+/* `flex-wrap` ist hier kein Detail: auf 360px teilen sich Abzeichen, Fragetext und Wert eine
+   Zeile, und der Fragetext ist seit 2026-08-24 ein ganzer Satz statt einer kurzen Kennung. Ohne
+   Umbruch blieben für ihn ~150px, also sieben Zeilen à drei Wörtern. Bricht der Wert stattdessen
+   um, steht er als eigene Zeile darunter und beide sind lesbar. */
+.zeile{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:8px 4px;
+  border-bottom:1px solid var(--line)}
 .zeile-klickbar{cursor:pointer;transition:background-color .15s}
 .zeile-klickbar:hover{background-color:rgba(91,140,255,.08)}
-.z-name{flex:1;font-size:14px}.z-wert{color:var(--muted);font-size:14px}
+/* `min-width:0` ist hier nicht kosmetisch, sondern die Bedingung fürs Umbrechen — dieselbe Falle
+   wie bei .eingabe weiter oben: ein Flex-Item hat per Default `min-width:auto` und schrumpft nicht
+   unter seinen Inhalt. Seit .z-name die FRAGE trägt statt der kurzen Feld-Kennung (2026-08-24),
+   schob es die Seite bei 360px auf 373px hinaus. `overflow-wrap` dazu, weil eine Frage ein langes
+   unteilbares Wort enthalten kann („Lohnsteuerbescheinigung").
+   Zwei Anläufe, beide im Bild nachgemessen und beide falsch:
+     1. `white-space:nowrap` auf .z-wert — machte es schlimmer (373px -> 435px): ein Textwert wie
+        ein Kindername oder ein Zeitraum ist keineswegs immer kurz.
+     2. `overflow-wrap:anywhere` auf beiden — die Seite passte (360px, Test grün), aber ein langer
+        Wert („Zusammenveranlagung mit Ehe- oder Lebenspartner") drückte den Fragetext daneben auf
+        Nullbreite, und der brach BUCHSTABENWEISE um: „G / i / b / s / t / …". `anywhere` erlaubt
+        nicht nur den Bruch im Wort, es setzt auch die intrinsische Mindestbreite auf 0.
+   Jetzt: `break-word` bricht lange Wörter, lässt die Mindestbreite aber stehen — und der Wert
+   bekommt eine Obergrenze, damit er den Fragetext nicht zusammenschieben kann. */
+/* „Üblichen Wert übernehmen" steht UNTER dem Feld, nicht daneben: .eingabe ist ein Flex-Container,
+   und in der Reihe säße der Knopf zwischen Feld und Einheit. `flex-basis:100%` erzwingt die neue
+   Zeile, ohne die Reihenfolge der anderen Kinder anzufassen. */
+.eingabe{flex-wrap:wrap}
+.standardwert{flex:0 0 100%;text-align:left;margin-top:2px;font-size:13px}
+
+.z-name{flex:1 1 12em;min-width:6em;font-size:14px;overflow-wrap:break-word}
+/* `margin-left:auto` schiebt den Wert nach rechts, solange er neben der Frage steht; nach einem
+   Umbruch steht er linksbündig unter ihr (dann ist er die einzige Sache in seiner Zeile). */
+.z-wert{flex:0 1 auto;margin-left:auto;color:var(--muted);font-size:14px;overflow-wrap:break-word}
 .badge{font-size:12px;padding:3px 9px;border-radius:999px;font-weight:600;white-space:nowrap;cursor:pointer;border:1px solid transparent}
 .b-laie{background:#2c3457;color:var(--muted)}
 .b-beleg{background:rgba(61,220,151,.15);color:var(--solide);border-color:rgba(61,220,151,.4)}
@@ -207,6 +235,50 @@ h1,h2,h3{margin:0}
 .rf-aktionen .btn{flex:1 1 150px}
 .rf-fuss{color:var(--muted);font-size:12px;margin:12px 0 0;line-height:1.4}
 .rf-ohne-feld{margin:0}
+
+/* Der Wizard sitzt IM Berater (2026-08-24) und braucht darum eine sichtbare Naht nach oben: er ist
+   nicht die nächste Verlaufszeile, sondern das, was jetzt zu tun ist. Warnfarbe wie .a-rueckfrage —
+   dieselbe Sache, und der Nutzer erkennt sie an der Farbe wieder.
+   Kein eigener Kartenhintergrund: der Berater IST die Karte, eine zweite darin wäre Karte-in-Karte. */
+.rf-panel{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);
+  border-left:3px solid var(--warn);padding-left:12px}
+.rf-panel .verstanden-titel{font-size:16px}
+/* ============================================================================
+   KI-WEG: NUR DAS KI-FENSTER.
+
+   Julius 2026-08-25, im echten Durchgang, nachdem ich den Kopf bloss ausgedünnt hatte: „hier ist
+   immernoch der fragebogen. das ist der screen den ich sehe nachdem ich angeklickt habe: ich will
+   mit ki loslegen. dem user dann trotzdem direkt den fragebogen zu zeigen ist gegen den willen des
+   users. KI fenster Only."
+
+   Meine vorherige Fassung war „zurücktreten, nicht verschwinden" — mit einem eigenen Test, der das
+   festhielt. Das war MEINE Annahme. Wer „erst von der KI ausfüllen lassen" wählt, hat den
+   Fragebogen gerade abgewählt; ihn trotzdem hinzustellen, macht die Wahl bedeutungslos.
+
+   Weg ist deshalb ALLES ausser dem Panel: Ring, Spanne, Fortschritt, Import-Wege, die Frage-Karte
+   und die Liste der belegten Felder. Zurück kommt der Fragebogen, wenn der Nutzer ihn will — über
+   „Weiter im Fragebogen" im Panel oder „Weiter zu den Fragen" nach den Bestätigungen. Beide rufen
+   kiFokus(false), und dann greift keine dieser Regeln mehr.
+
+   Einspaltig: ohne linke Spalte gäbe es sonst eine leere Fläche neben dem Panel.
+   ============================================================================ */
+#flow.ki-fokus{display:block}
+#flow.ki-fokus > *:not(#berater){display:none}
+#flow.ki-fokus #berater{max-width:900px;margin:0 auto}
+/* Der Rückweg ist nur auf diesem Weg sichtbar — im Fragebogen wäre er sinnlos. */
+.zum-fragebogen{display:none}
+#flow.ki-fokus .zum-fragebogen{display:block;margin-top:12px;width:100%}
+
+/* Solange im Panel gearbeitet wird — Rückfrage ODER Bestätigung —, tritt der Verlauf zurück:
+   beides muss zusammen ins Bild passen, sonst scrollt aus dem Blick, was gerade zu tun ist.
+
+   Abgeleitet aus dem Zustand statt aus einer Klasse, die JS setzt. Erster Anlauf war eine Klasse
+   (`rf-laeuft`) — die musste an FÜNF Stellen gepflegt werden, sobald die Verstanden-Seite dazukam
+   (sie wird an vier verschiedenen Orten ausgeblendet). Eine vergessene Stelle wäre ein Verlauf,
+   der dauerhaft geschrumpft bleibt.
+   `:has()` ist eine Browser-Fähigkeit — fällt sie aus, bleibt der Verlauf lang. Das ist NICHT
+   still: tests/test_ui_ki_fokus.py misst die tatsächliche Höhe und wird dann rot. */
+.berater:has(> .rf-panel:not([hidden])) .chat-body{max-height:22vh}
 
 /* Overlays: Herkunft-Kette + Chat */
 .overlay{position:fixed;inset:0;background:rgba(6,8,18,.72);display:grid;place-items:end center;z-index:10}
@@ -310,15 +382,11 @@ h1,h2,h3{margin:0}
 /* Ein Zustand, den diese Oberfläche nicht kennt: neutral, aber nicht wie ein Treffer. */
 .a-unbekannt{border-left-color:var(--muted)}
 
-/* Die Rückfrage. Warnfarbe, weil hier gerade NICHT geraten wird — und der Knopf führt zurück in
-   den einen Kanal, den es gibt: er füllt das Chat-Eingabefeld, abgeschickt wird wie immer. */
+/* Die Aussage, zu der nachgefragt wird. Warnfarbe, weil hier gerade NICHT geraten wird. Die FRAGE
+   selbst steht nicht hier, sondern auf der Rückfragen-Seite (#rueckfragen) — bis 2026-08-24 stand
+   sie an beiden Orten, samt eigenem Antworten-Knopf (.a-rueckfrage-box/.a-frage/.a-antworten, alle
+   drei mit dem Knopf entfallen). */
 .a-rueckfrage{border-left-color:var(--warn)}
-.a-rueckfrage-box{margin-top:8px;background:rgba(255,180,84,.1);
-  border:1px solid rgba(255,180,84,.35);border-radius:8px;padding:8px 10px}
-.a-frage{font-size:14px;line-height:1.4;overflow-wrap:anywhere}
-.a-antworten{margin-top:8px;width:100%;min-height:44px;border-radius:10px;font-size:14px;
-  font-weight:600;background:none;color:var(--ink);border:1px solid var(--line);cursor:pointer}
-.a-antworten:hover{border-color:var(--akzent)}
 
 /* Die Antwort kam für eine ANDERE Frage als die jetzt offene. Warnfarbe, nicht Schimmerfarbe:
    das ist kein KI-Text, sondern eine Einschränkung seiner Geltung. */
@@ -373,6 +441,31 @@ h1,h2,h3{margin:0}
   /* Neben statt unter dem Inhalt darf der Verlauf höher werden — 44vh waren für eine eigene
      Spalte, die den ganzen Bildschirm zur Verfügung hat, unnötig knapp. */
   .chat-body{max-height:52vh}
+
+  /* ---- KI-FOKUS (Julius 2026-08-23) --------------------------------------------------
+     „die kis sidebar ist zu klein wenn das aber der bereich ist in dem der user gerade
+     arbeitet … es sollte den main fokus bekommen. der rest ist in dem moment nicht wichtig
+     bekommt aber den größten real estate."
+
+     Die Seitenleiste ist richtig, solange die KI den Fragebogen BEGLEITET. Wer „erst von der
+     KI ausfüllen lassen" wählt, arbeitet aber IM Chat — dort steht dann die Aufgabe, und 360px
+     sind dafür zu wenig. Also werden die Spalten getauscht, nicht der Aufbau geändert: der
+     Fragebogen bleibt sichtbar (er ist der Zielort), tritt aber auf ein Drittel zurück.
+
+     REIN VISUELL, KEIN ZUSTAND. Das war mein Einwand gegen einen eigenen „KI-Modus" — er
+     überlebte kein Neuladen. Eine Klasse am Rahmen MUSS das gar nicht: nach einem Neuladen
+     steht der Nutzer nicht mehr am Anfang, und dann ist die Seitenleiste wieder die richtige
+     Form. Die Klasse fällt weg, sobald die Arbeit weiterwandert (Rückfragen, Bestätigungen,
+     eine beantwortete Frage) — gesetzt und entfernt wird sie in app.js. */
+  /* KEIN verschachteltes minmax() — das ist ungültige Syntax und macht die GANZE Regel
+     unwirksam (gemessen: berater blieb bei 360px, als hier minmax(0,minmax(260px,34%)) stand). */
+  /* Auf dem KI-Weg gibt es NUR das KI-Fenster. Die Regel steht ausserhalb der Media-Query weiter
+     unten — sie gilt in jeder Breite. */
+  #flow.ki-fokus .chat-body{max-height:68vh}
+  /* … ausser der Wizard steht darunter. Ohne das gewönne die Regel darüber (gleiche Spezifität
+     wäre es nicht: #flow.ki-fokus schlägt .berater allein), und der Verlauf drückte die Frage
+     aus dem Bild. */
+  #flow.ki-fokus .berater:has(> .rf-panel:not([hidden])) .chat-body{max-height:30vh}
 }
 
 /* ============================================================================

@@ -208,7 +208,17 @@ def _aussagen_block(aussagen) -> str:
             "Vorschlag, wenn der Wert im Text steht — sonst eine Rückfrage. Übergehen darfst du "
             "eine Zeile nur, wenn die Feldliste oben zu ihrem Thema wirklich nichts enthält; "
             "Unsicherheit ist KEIN Grund zum Übergehen, dafür ist die Rückfrage da. Gib in "
-            "`aussage` die Nummer der Zeile an, auf die sich der Eintrag stützt.\n\n")
+            "`aussage` die Nummer der Zeile an, auf die sich der Eintrag stützt.\n"
+            # GEMESSEN 2026-08-24: ohne diesen Absatz kamen auf fünf Aussagen 21 Rückfragen. Der
+            # Grund steht eine Regel weiter oben — „gibt der Text zu einem Feld das Thema her,
+            # frag nach" — und „2 Kinder" gibt jedem Kind-Feld sein Thema (Vorname, Geburtsdatum,
+            # anderer Elternteil, Zeitraum). Das Modell hat wörtlich befolgt, was dastand.
+            "HÖCHSTENS EINE RÜCKFRAGE JE ZEILE, und sie fragt nach GENAU EINER Sache. Eine Zeile "
+            "lässt eine Unklarheit offen — die klärst du. Frag NICHT alle Felder ab, deren Thema "
+            "die Zeile berührt: „zwei Kinder\" berührt Vornamen, Geburtsdaten und Elternteile, "
+            "aber die stehen im Fragebogen und sind dort nicht verloren. Und bündle nie zwei "
+            "Fragen in einen Satz („Wie heissen sie und wann sind sie geboren?\") — der Nutzer hat "
+            "genau EIN Eingabefeld dafür und kann nur eine der beiden beantworten.\n\n")
 
 
 # JSON-Schema, das der Provider ERZWINGT (OpenRouter structured_outputs, strict). Ersetzt die
@@ -456,6 +466,50 @@ def _rueckfragen_parse(text: str, felder: int) -> list[dict]:
             continue
         out.append({"frage": frage, "feld_id": fid, "aussage": _index(r.get("aussage"))})
     return out
+
+
+# Absolute Obergrenze für EINE Runde. Die Regel darunter (eine je Aussage) ist die inhaltliche;
+# diese hier fängt den Fall ab, dass Stufe 1 selbst viele Aussagen liefert. Mehr als acht Fragen
+# hintereinander ist kein Dialog mehr, sondern ein Fragebogen mit Gesprächsanstrich — und den gibt
+# es daneben bereits. Eine Einzelgrenze ohne Anzahlgrenze ist an anderer Stelle dieses Hauses schon
+# dreimal aufgelaufen; deshalb steht hier beides.
+RUECKFRAGEN_MAX = 8
+
+
+def _rueckfragen_gebuendelt(rueckfragen: list[dict]) -> tuple[list[dict], int]:
+    """Höchstens EINE Rückfrage je Aussage, höchstens RUECKFRAGEN_MAX insgesamt.
+
+    GEMESSEN 2026-08-24, Live-Lauf: auf „ich bin verheiratet, habe 2 kinder, fuhre 20km …" kamen
+    **21 Rückfragen** — darunter „Wie heissen die anderen Elternteile deiner Kinder?" und „Wann sind
+    die anderen Elternteile deiner Kinder geboren?". Frühere Läufe mit demselben Text lagen bei 5–8.
+
+    Das war keine Verirrung des Modells, sondern die Anweisung wörtlich befolgt: der Prompt sagt
+    „gibt der Text zu einem Feld das Thema her, aber nicht den Wert, dann MUSST du eine RÜCKFRAGE
+    stellen". „2 Kinder" gibt JEDEM Kind-Feld sein Thema — Vorname, Geburtsdatum, Zeitraum, anderer
+    Elternteil. Also fragte es zu allen.
+
+    Die Korrektur ist inhaltlich, nicht kosmetisch: eine Rückfrage klärt, was der Nutzer GESAGT hat.
+    Zu einer Aussage gibt es genau eine Unklarheit, nämlich die, die sie offen lässt. Alles Weitere
+    sind Fragebogen-Felder — und die stehen ohnehin im Fragebogen, unverloren.
+
+    Deterministisch statt als Prompt-Bitte, aus demselben Grund wie das Beleg-Gate und
+    `_rueckfrage_verdraengt`: eine Regel, die nur im Prompt steht, gilt, solange das Modell mag.
+    Der Prompt sagt es zusätzlich — beides, nicht eines von beidem.
+
+    Rückgabe: (behalten, zurueckgestellt). Die Zahl wandert bis in die Oberfläche; still kürzen
+    hiesse, dem Nutzer eine Vollständigkeit vorzuspiegeln, die er nicht bekommen hat.
+    """
+    gesehen: set[int] = set()
+    behalten: list[dict] = []
+    for r in rueckfragen:
+        # `aussage: -1` heisst „keine passende Aussage". Auch das ist eine Gruppe, sonst käme eine
+        # Flut heimatloser Fragen ungefiltert durch und nur die absolute Grenze griffe.
+        nr = r.get("aussage", -1)
+        if nr in gesehen or len(behalten) >= RUECKFRAGEN_MAX:
+            continue
+        gesehen.add(nr)
+        behalten.append(r)
+    return behalten, len(rueckfragen) - len(behalten)
 
 
 def _rueckfrage_verdraengt(vorschlaege: list[dict], rueckfragen: list[dict]) -> list[dict]:
@@ -776,7 +830,7 @@ def _teilergebnis(aussagen: list[dict], zuordnungen: dict, status: str) -> dict:
         a["regeln"] = zuordnungen.get(i, [])
         a["status"] = status
     return {"vorschlaege": [], "antwort": "", "unsicher": False,
-            "aussagen": aussagen, "rueckfragen": []}
+            "aussagen": aussagen, "rueckfragen": [], "rueckfragen_zurueckgestellt": 0}
 
 
 def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
@@ -828,7 +882,8 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
     ignoriert wird, hängt am Endpunkt. Ohne den Namen ist die Absicherung im Client
     (`provider.require_parameters`) nicht nachprüfbar. Ein Anbietername ist ein Metadatum — der
     Antworttext bleibt draussen, wie jeder Text."""
-    leer = {"vorschlaege": [], "antwort": "", "unsicher": False, "aussagen": [], "rueckfragen": []}
+    leer = {"vorschlaege": [], "antwort": "", "unsicher": False, "aussagen": [],
+            "rueckfragen": [], "rueckfragen_zurueckgestellt": 0}
     if not (freitext or "").strip():
         return leer
     # GENAU EINMAL gefiltert, und zwar hier. Die Stufen 2 und 3 arbeiten auf dem Ergebnis von
@@ -952,6 +1007,10 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
     # ihn unter dem Wert ("50.000 € pro Jahr ÷ 12 × 6 Monate"). Er ist damit Anzeige, nicht Gate.
     behalten, verworfen = _beleg_geprueft(_chat_parse(c3.text), gefiltert)
     rueckfragen = _rueckfragen_parse(c3.text, len(kat3))
+    # ERST bündeln, DANN verdrängen. Andersherum nähme eine Rückfrage, die gleich wegfällt, den
+    # Vorschlag zu ihrem Feld mit — der Nutzer verlöre den Wert UND die Frage danach, und zwar
+    # lautlos. Genau die Bauart von stillem Verlust, gegen die die Aussagen-Liste gebaut wurde.
+    rueckfragen, zurueckgestellt = _rueckfragen_gebuendelt(rueckfragen)
     behalten = _rueckfrage_verdraengt(behalten, rueckfragen)
     antwort, unsicher = _antwort_parse(c3.text)
     _status_setzen(aussagen, zuordnungen, behalten, verworfen, rueckfragen)
@@ -965,12 +1024,13 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
                                "unsicher": unsicher, "aussagen": aussagen})
     melde(f"stufe=3, katalog={'eng' if eng else 'voll'}, katalog_felder={len(kat3)}, "
           f"vorschlaege={len(behalten)}, ohne_beleg_verworfen={len(verworfen)}, "
-          f"rueckfragen={len(rueckfragen)}, "
+          f"rueckfragen={len(rueckfragen)}, rueckfragen_zurueckgestellt={zurueckgestellt}, "
           f"offen={sum(1 for a in aussagen if a['status'] not in ('vorschlag', 'rueckfrage'))}, "
           f"antwortlaenge={len(antwort)}, unsicher={unsicher}, "
           f"inhalt_laenge={len(c3.text or '')}, provider={c3.provider!r}, finish={c3.finish!r}")
     return {"vorschlaege": behalten, "antwort": antwort, "unsicher": unsicher,
-            "aussagen": aussagen, "rueckfragen": rueckfragen}
+            "aussagen": aussagen, "rueckfragen": rueckfragen,
+            "rueckfragen_zurueckgestellt": zurueckgestellt}
 
 
 def _kontoauszug_llm_klassifikator():

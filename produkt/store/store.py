@@ -233,6 +233,23 @@ def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
             f"fail-closed (Typ): {feld_id}={wert!r} passt nicht zum Bindungstyp '{typ}' — "
             "der Ring läse das sonst still als 0 (Stille-Null-Klasse).")
 
+    # Auflage F (Format), 2026-08-25. `typ: text` heisst „beliebiger String" — für ein Feld mit
+    # festem Format ist das zu wenig. Julius' Durchgang: `kind_wohnsitz_inland_zeitraum` bekam
+    # "01.01-31.122" (ein Tippfehler, eine 2 zu viel) und wurde anstandslos gespeichert. Der Wert
+    # geht später als Zeitraum ins ELSTER-Feld — die Ablehnung käme dann vom Finanzamt.
+    #
+    # Geprüft wird HIER und nicht nur in der Oberfläche, aus demselben Grund wie bei Auflage T:
+    # dieser Pfad trägt jeden Schreiber (HTTP, Beleg-Import, Kontoauszug, eDaten). Ein Muster, das
+    # nur der Browser kennt, gilt für die anderen vier nicht.
+    #
+    # Feld ohne `muster`: durchlassen. Das Muster ist eine ZUSAGE der Bindung, keine Vermutung —
+    # wo keine steht, wird nichts geraten (dieselbe Regel wie beim fehlenden `typ` oben).
+    muster = eintrag.get("muster")
+    if muster and isinstance(wert, str) and not re.match(muster, wert):
+        raise ValueError(
+            f"fail-closed (Format): {feld_id}={wert!r} passt nicht zum Muster '{muster}' der "
+            "Bindung — ein formal falscher Wert wird spätestens beim Finanzamt abgelehnt.")
+
 
 def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dict,
                  schreiber: str, signal: dict | None = None, ersetzt: str | None = None,

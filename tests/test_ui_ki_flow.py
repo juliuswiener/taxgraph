@@ -150,7 +150,14 @@ def seite_factory(base):
         page.wait_for_selector("#wegwahl:not([hidden])", timeout=5000)
         if weg is not None:
             page.evaluate(f"document.getElementById('weg-{weg}').click()")
-            page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+            # Je Weg ein anderer Marker: auf dem KI-Weg ist #wegpunkt seit 2026-08-25 gar nicht
+            # mehr im Bild („KI fenster Only"). Dort ist die Einführungszeile im Verlauf der
+            # Marker — wegWaehlen() hängt sie NACH `await refresh()` an, sie steht also genau
+            # dann da, wenn der Fluss fertig ist.
+            if weg == "ki":
+                page.wait_for_selector("#chat-body .chat-erklaer", timeout=8000)
+            else:
+                page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
         return page
 
     try:
@@ -247,18 +254,30 @@ def test_der_fragebogen_weg_stellt_die_erste_frage(seite_factory):
     assert not page.fehler, f"Konsolenfehler: {page.fehler}"
 
 
-def test_der_ki_weg_fuehrt_in_denselben_fluss(seite_factory):
-    """Kein zweiter Modus: der KI-Weg öffnet denselben Fragebogen. Der Unterschied ist allein, wo
-    der Nutzer zuerst steht — ein echter „KI-Modus" überlebte kein Neuladen und verspräche etwas,
-    das die Software nicht hält."""
+def test_der_ki_weg_zeigt_nur_das_ki_fenster(seite_factory):
+    """UMGEDREHT AM 2026-08-25. Hier stand „der KI-Weg führt in denselben Fluss", mit der
+    Begründung: kein zweiter Modus, der Fragebogen bleibt sichtbar, der Unterschied sei allein, wo
+    der Nutzer zuerst steht.
+
+    Julius, im echten Durchgang: „ich will mit ki loslegen. dem user dann trotzdem direkt den
+    fragebogen zu zeigen ist gegen den willen des users. KI fenster Only."
+
+    Der Einwand von damals bleibt richtig — ein Modus, der ein Neuladen nicht überlebt, verspricht
+    etwas, das die Software nicht hält. Genau deshalb ist der KI-Fokus eine reine ANZEIGE-Klasse
+    ohne gespeicherten Zustand: wer neu lädt, steht wieder im Fragebogen, und das ist in Ordnung —
+    er steht dann nicht mehr am Anfang. Was falsch war, ist die Folgerung, der Fragebogen müsse
+    deshalb von Anfang an danebenstehen."""
     page = seite_factory(weg="ki")
-    assert not page.is_hidden("#wegpunkt"), (
-        "Der KI-Weg versteckt den Fragebogen — dann sind es zwei Modi statt zweier Einstiege.")
+    assert page.is_hidden("#wegpunkt") or page.query_selector("#wegpunkt").bounding_box() is None, (
+        "Der Fragebogen steht neben dem KI-Fenster — der Nutzer hat ihn gerade abgewählt.")
     assert page.evaluate("document.activeElement.id") == "chat-text", (
         "Auf dem KI-Weg liegt der Fokus nicht im Eingabefeld der KI — dann ist der Knopf nur ein "
         "anderer Name für denselben Einstieg.")
     assert "Schreib einfach los" in page.text_content("#chat-body"), (
         "Der KI-Weg sagt nicht, was der Nutzer jetzt tun soll.")
+    # Und der Rückweg muss da sein: ohne ihn säße der Nutzer im Panel fest.
+    assert page.query_selector("#zum-fragebogen").bounding_box() is not None, (
+        "Kein sichtbarer Weg zurück in den Fragebogen.")
     assert not page.fehler, f"Konsolenfehler: {page.fehler}"
 
 
@@ -413,43 +432,101 @@ def test_eine_rueckfrage_ohne_feld_bleibt_beim_chat(seite):
 # ============================================================ TEIL 3: die Reihenfolge
 
 def test_nie_zwei_aufforderungen_gleichzeitig(seite):
-    """Der Befund selbst: solange eine Rückfrage offen ist, darf die Verstanden-Seite NICHT
-    danebenstehen. Der Vorschlag gehört zu einem anderen Feld, ist also kein zurückgehaltener
-    Wert — er wartet schlicht, bis er dran ist."""
+    """Die Regel bleibt, die REIHENFOLGE ist am 2026-08-25 umgedreht worden: erst bestätigen, dann
+    nachfragen (s. Test darunter). Hier wird nur geprüft, dass immer genau EINES dasteht."""
     page = seite
     _stub(page, _antwort(
         rueckfragen=[_rf("Ganzes Jahr oder anteilig?", CENT_FELD)],
         vorschlaege=[{"feld_id": "aussergewoehnliche_belastungen", "wert": 62000,
                       "beleg": "620 euro arztkosten"}]))
-    _senden(page)
+    _senden(page, rueckfragen_erwartet=False)
+    page.wait_for_selector("#verstanden:not([hidden])", timeout=5000)
 
-    assert page.is_hidden("#verstanden"), (
+    assert page.is_hidden("#rueckfragen"), (
         "Bestätigungen und Rückfrage stehen gleichzeitig auf dem Schirm — genau der Befund.")
     assert page.is_hidden("#wegpunkt"), (
         "Der Fragebogen steht daneben — dann sind es wieder zwei Aufforderungen.")
-    assert not page.is_hidden("#rueckfragen")
     # Und der Nutzer erfährt, dass da noch etwas kommt — statt es zu übersehen.
-    assert "nach den Rückfragen" in page.text_content("#chat-body"), (
-        "Der zurückgestellte Vorschlag wird nirgends erwähnt — für den Nutzer ist er verschwunden.")
+    assert "danach frage ich das Offene nach" in page.text_content("#chat-body"), (
+        "Die zurückgestellte Rückfrage wird nirgends erwähnt — für den Nutzer ist sie verschwunden.")
+    assert "Nachfragen" in page.text_content("#verstanden-weiter"), (
+        f"Der Knopf verspricht den Fragebogen, führt aber zu einer Nachfrage: "
+        f"{page.text_content('#verstanden-weiter')!r}")
 
 
-def test_nach_der_letzten_rueckfrage_kommen_die_bestaetigungen(seite):
-    """Julius: „entweder dann oder nachdem es keine rückfragen mehr gibt die verstandenen feld
-    zuordnungen bestätigen". Also: erst wenn die Rückfragen durch sind."""
+def test_nach_den_bestaetigungen_kommen_die_rueckfragen(seite):
+    """UMGEDREHT AM 2026-08-25. Hier stand „nach der letzten Rückfrage kommen die Bestätigungen",
+    gestützt auf Julius' Wort vom 2026-08-23. Zwei Tage später, im echten Durchgang:
+
+      „diese bestätigungen kamen nach den nachfragen dazu. das sollte andersrum sein. wenn ich hier
+       angebe dass ich nicht mit dem auto gefahren bin erübrigt sich die nachfrage an wievielen
+       tagen das war."
+
+    Das ist kein Geschmack: eine Bestätigung kann einen ganzen Frageblock abschalten. In der alten
+    Reihenfolge beantwortete der Nutzer Fragen, die sich gleich darauf erledigten."""
     page = seite
     _stub(page, _antwort(
         rueckfragen=[_rf("Ganzes Jahr oder anteilig?", CENT_FELD)],
         vorschlaege=[{"feld_id": "aussergewoehnliche_belastungen", "wert": 62000,
                       "beleg": "620 euro arztkosten"}]))
-    _senden(page)
-
-    page.fill("#rf-input", "62000")
-    page.click("#rf-weiter")
+    _senden(page, rueckfragen_erwartet=False)
     page.wait_for_selector("#verstanden:not([hidden])", timeout=5000)
-    assert page.is_hidden("#rueckfragen"), "Die Rückfragen-Seite steht noch daneben."
     assert page.query_selector("#verstanden-liste .v-ok") is not None, (
         "Die Bestätigung ist nicht anklickbar angekommen.")
+
+    page.click("#verstanden-weiter")
+    page.wait_for_selector("#rueckfragen:not([hidden])", timeout=5000)
+    assert page.is_hidden("#verstanden"), "Die Verstanden-Seite steht noch daneben."
+    assert "anteilig" in page.text_content("#rf-frage"), "Falsche oder keine Rückfrage."
     assert not page.fehler, f"Konsolenfehler: {page.fehler}"
+
+
+def test_eine_rueckfrage_zu_einem_erledigten_feld_wird_nicht_gestellt(seite, base):
+    """DER GRUND für die Umkehrung der Reihenfolge, an Julius' eigenem Beispiel:
+
+      „wenn ich hier angebe dass ich nicht mit dem auto gefahren bin erübrigt sich die nachfrage an
+       wievielen tagen das war."
+
+    NACHGEMESSEN: sein wörtliches Beispiel trifft in der Bindung NICHT zu — `ep_eigenes_kfz=false`
+    nimmt keine einzige Frage weg (die Entfernungspauschale gilt unabhängig vom Verkehrsmittel;
+    gemessen: 301 offene Fragen vorher, 300 nachher, und die eine ist das Feld selbst).
+
+    Der Mechanismus existiert aber, und zwar bei den Screening-Fragen: `kein_kap=true` schliesst
+    sechs Felder, `kein_kind=true` sogar 22. Geprüft wird deshalb an `kein_kap` — dieselbe Sache an
+    einem Feldpaar, bei dem sie wirklich greift.
+
+    Gemessen wird die Filterung selbst: der Wert wird über /event geschrieben (derselbe Weg, den
+    eine Bestätigung nimmt), danach kommt die Rückfrage. Über die Verstanden-Seite ginge es nicht:
+    deren Vorschläge sind hier gestubbt und haben kein vorläufiges Event im Store, das eine
+    Bestätigung ersetzen könnte."""
+    page = seite
+    fall = page.evaluate("FALL")
+    assert "kap_kapitalertraege" in _offene_felder(base, fall), (
+        "Vorbedingung: kap_kapitalertraege muss offen sein — sonst misst der Test nichts.")
+
+    ok = page.evaluate("""async () => {
+      const r = await jpost(`/fall/${FALL}/event`, {
+        feld_id: 'kein_kap', wert: true, zustand: 'bestaetigt',
+        herkunft: {herkunft: 'laie', pruef_tiefe: 'ungeprueft', haftung: 'nutzer'},
+        schreiber: 'ui:laie',
+        signal: {signal_1: null, signal_2: 'klick@kein_kap'}});
+      return r.status;
+    }""")
+    assert ok in (200, 201), f"Der Wert liess sich nicht schreiben: {ok}"
+    assert "kap_kapitalertraege" not in _offene_felder(base, fall), (
+        "Vorbedingung 2: „keine Kapitalerträge“ hat den Frageblock gar nicht abgeschaltet — dann "
+        "prüft dieser Test nichts.")
+
+    _stub(page, _antwort(rueckfragen=[_rf("Wie hoch waren deine Kapitalerträge?",
+                                          "kap_kapitalertraege")]))
+    _senden(page, "ich hatte gar keine kapitalertraege", rueckfragen_erwartet=False)
+    page.wait_for_timeout(600)
+
+    assert page.is_hidden("#rueckfragen"), (
+        "Die Nachfrage wird gestellt, obwohl das Feld gar nicht mehr offen ist.")
+    assert "erledigt" in page.text_content("#chat-body"), (
+        "Die weggefallene Nachfrage wird nirgends erwähnt — für den Nutzer sieht es aus, als hätte "
+        "die KI sie vergessen.")
 
 
 def test_ohne_bestaetigungen_geht_es_zurueck_in_den_fragebogen(seite):
@@ -688,23 +765,36 @@ def test_der_rechenweg_steht_auch_am_widerspruch(seite):
     assert not page.fehler, f"Konsolenfehler: {page.fehler}"
 
 
-def test_die_seite_passt_auch_neben_das_ki_panel(seite_factory):
-    """Ab 900px ist #flow ein Grid: Inhalt links, KI-Berater rechts. Die neue Seite ist ein Kind
-    von #flow und muss dort in Spalte 1 landen — nicht unter oder hinter dem Panel. Genau dieses
-    Nebeneinander ist der Grund, eine Seite statt eines Vollbild-Overlays zu bauen: die Rückfrage
-    steht neben dem Satz, auf den sie sich bezieht."""
+def test_die_seite_liegt_im_ki_panel(seite_factory):
+    """UMGEDREHT AM 2026-08-24. Hier stand „die Seite passt auch NEBEN das KI-Panel", und die
+    Begründung war: die Rückfrage solle neben dem Satz stehen, auf den sie sich bezieht.
+
+    Das Ziel war richtig, der Ort falsch. Nebeneinander hiess in der Praxis: dieselbe Frage stand
+    links als Seite UND rechts im Verlauf, mit zwei verschiedenen Antwortwegen. Julius aus dem
+    echten Durchgang: „gleiche rückfrage links und rechts. das ist quatsch. wir wollen einen dialog
+    fenster dass der nutzer durchklickt" — und danach: „wizard und ki fenster miteinander
+    integrieren."
+
+    Jetzt steht die Frage IM Panel, also erst recht neben ihrem Zusammenhang: der Verlauf mit dem
+    eigenen Satz und den gelesenen Aussagen liegt direkt darüber."""
     page = seite_factory(breite=1280, hoehe=800)
     _stub(page, _antwort(rueckfragen=[_rf("Ganzes Jahr oder anteilig?", CENT_FELD)]))
     _senden(page)
 
     lage = page.evaluate("""() => {
-        const r = document.getElementById('rueckfragen').getBoundingClientRect();
-        const b = document.getElementById('berater').getBoundingClientRect();
-        return {rf_rechts: r.right, berater_links: b.left, rf_breite: r.width,
-                berater_sichtbar: b.width > 0 && b.height > 0};
+        const rf = document.getElementById('rueckfragen');
+        const b = document.getElementById('berater');
+        const r = rf.getBoundingClientRect(), bb = b.getBoundingClientRect();
+        return {im_panel: b.contains(rf), rf_breite: r.width,
+                rf_links: r.left, rf_rechts: r.right,
+                berater_links: bb.left, berater_rechts: bb.right,
+                berater_sichtbar: bb.width > 0 && bb.height > 0};
     }""")
-    assert lage["berater_sichtbar"], "Das KI-Panel ist neben der Seite verschwunden."
-    assert lage["rf_rechts"] <= lage["berater_links"] + 1, (
-        f"Die Rückfragen-Seite schiebt sich über das KI-Panel: {lage} — dann verdeckt sie genau "
-        "den Zusammenhang, aus dem die Frage stammt.")
+    assert lage["berater_sichtbar"], "Das KI-Panel ist verschwunden."
+    assert lage["im_panel"], f"Der Wizard liegt wieder ausserhalb des KI-Panels: {lage}"
+    # Und er füllt es auch aus — ein Panel-Kind, das über den Rand ragt, wäre optisch derselbe
+    # Fehler wie vorher, nur andersherum.
+    assert lage["rf_links"] >= lage["berater_links"] - 1 and \
+           lage["rf_rechts"] <= lage["berater_rechts"] + 1, (
+        f"Der Wizard ragt aus dem Panel heraus: {lage}")
     assert page.query_selector("#rf-input") is not None, "Das Eingabefeld fehlt in der Breite."

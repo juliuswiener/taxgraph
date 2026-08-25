@@ -1295,7 +1295,7 @@ bindungen:
     einheit: null
     askable: true
     fragetext_laie: "Gehört dein Ehe-/Lebenspartner einer Kirche an, die Kirchensteuer erhebt (evangelisch oder römisch-katholisch)?"
-    hilfe_kurz: "Wie kist_konfession, aber für den Ehe-/Lebenspartner. Nur evangelisch/römisch-katholisch werden hier deklariert."
+    hilfe_kurz: "Wie bei deiner eigenen Konfession, aber für den Ehe-/Lebenspartner. Nur evangelisch/römisch-katholisch werden hier deklariert."
     beispielwert: roemisch-katholisch
     herkunft_slots: null
     elster_kz: E0101002

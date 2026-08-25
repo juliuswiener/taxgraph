@@ -791,8 +791,8 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Wie heisst dein Kind mit Vornamen?"
-    hilfe_kurz: "Das Finanzamt ordnet die Anlage Kind ueber den Vornamen zu. Bei mehreren Kindern jeweils der Vorname des einzelnen Kindes."
+    fragetext_laie: "Wie heißt dein Kind mit Vornamen?"
+    hilfe_kurz: "Das Finanzamt ordnet die Anlage Kind über den Vornamen zu. Bei mehreren Kindern jeweils der Vorname des einzelnen Kindes."
     beispielwert: "Anna"
     herkunft_slots: null
     elster_kz: E0500107
@@ -829,6 +829,7 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
     typ: text
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
     einheit: null
     askable: true
     vorjahr: uebernehmbar
@@ -853,7 +854,7 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Welche Familienkasse ist fuer das Kindergeld deines Kindes zustaendig?"
+    fragetext_laie: "Welche Familienkasse ist für das Kindergeld deines Kindes zuständig?"
     hilfe_kurz: "Steht auf dem Kindergeldbescheid, z.B. 'Familienkasse Bayern Nord'. Bei mehreren Kindern jeweils die des einzelnen Kindes."
     beispielwert: "Familienkasse Bayern Nord"
     herkunft_slots: null
@@ -871,6 +872,8 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
     typ: text
+    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    standardwert: "01.01-31.12"
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -924,6 +927,8 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverh_zeitraum_elternteil_a}
     typ: text
+    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    standardwert: "01.01-31.12"
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -941,6 +946,8 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverh_zeitraum_elternteil_b}
     typ: text
+    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    standardwert: "01.01-31.12"
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -970,8 +977,8 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Wie heisst der andere Elternteil deines Kindes (Vor- und Nachname)?"
-    hilfe_kurz: "Nur noetig, wenn ihr nicht zusammen veranlagt werdet. Format: Vorname Nachname."
+    fragetext_laie: "Wie heißt der andere Elternteil deines Kindes (Vor- und Nachname)?"
+    hilfe_kurz: "Nur nötig, wenn ihr nicht zusammen veranlagt werdet. Format: Vorname Nachname."
     beispielwert: "Michael Beispiel"
     herkunft_slots: null
     elster_kz: E0501103
@@ -984,11 +991,12 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
     typ: text
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
     einheit: null
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Wann ist der andere Elternteil deines Kindes geboren?"
-    hilfe_kurz: "Nur noetig, wenn ihr nicht zusammen veranlagt werdet. Format: TT.MM.JJJJ (z.B. 01.01.1985)."
+    hilfe_kurz: "Nur nötig, wenn ihr nicht zusammen veranlagt werdet. Format: TT.MM.JJJJ (z.B. 01.01.1985)."
     beispielwert: "01.01.1985"
     herkunft_slots: null
     elster_kz: E0501104
@@ -1005,7 +1013,7 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "In welchem Verhaeltnis steht das Kind zum anderen Elternteil? 1 = leibliches Kind/Adoptivkind, 2 = Pflegekind"
+    fragetext_laie: "In welchem Verhältnis steht das Kind zum anderen Elternteil? 1 = leibliches Kind/Adoptivkind, 2 = Pflegekind"
     hilfe_kurz: "1 = leibliches Kind/Adoptivkind, 2 = Pflegekind"
     beispielwert: "1"
     herkunft_slots: null
@@ -1019,10 +1027,12 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
     typ: text
+    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    standardwert: "01.01-31.12"
     einheit: null
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "In welchem Zeitraum dieses Jahr bestand das Verhaeltnis zwischen dem anderen Elternteil und dem Kind (von – bis)?"
+    fragetext_laie: "In welchem Zeitraum dieses Jahr bestand das Verhältnis zwischen dem anderen Elternteil und dem Kind (von – bis)?"
     hilfe_kurz: "Meist das ganze Jahr. Nur bei Geburt, Adoption oder Wegfall im Jahr den genauen Zeitraum angeben. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
     beispielwert: "01.01-31.12"
     herkunft_slots: null

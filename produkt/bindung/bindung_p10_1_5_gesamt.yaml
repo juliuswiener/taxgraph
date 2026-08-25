@@ -76,6 +76,8 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: text
+    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    standardwert: "01.01-31.12"
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -97,7 +99,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Welchen Anteil der Betreuungskosten hast du (nicht der andere Elternteil) selbst getragen?"
-    hilfe_kurz: "Nur noetig, wenn ihr nicht zusammen veranlagt werdet. Falls du nichts selbst getragen hast, '0' eingeben."
+    hilfe_kurz: "Nur nötig, wenn ihr nicht zusammen veranlagt werdet. Falls du nichts selbst getragen hast, '0' eingeben."
     beispielwert: 600000
     herkunft_slots: ["Betreuungsrechnung: Eigenanteil"]
     elster_kz: E0506604
@@ -150,6 +152,8 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: text
+    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    standardwert: "01.01-31.12"
     einheit: null
     askable: true
     vorjahr: vorschlag
@@ -167,11 +171,13 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: text
+    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    standardwert: "01.01-31.12"
     einheit: null
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "In welchem Zeitraum hattet du und der andere Elternteil KEINEN gemeinsamen Haushalt?"
-    hilfe_kurz: "Nur noetig, wenn ihr nicht zusammen veranlagt werdet. Meist das ganze Jahr. Format: TT.MM-TT.MM"
+    hilfe_kurz: "Nur nötig, wenn ihr nicht zusammen veranlagt werdet. Meist das ganze Jahr. Format: TT.MM-TT.MM"
     beispielwert: "01.01-31.12"
     herkunft_slots: null
     elster_kz: E0505201
@@ -184,6 +190,8 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: text
+    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    standardwert: "01.01-31.12"
     einheit: null
     askable: true
     vorjahr: vorschlag

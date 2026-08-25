@@ -14,7 +14,9 @@
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["wert", "zustand", "herkunft", "herkunft_badge", "event_id"],
+        "$comment": "Die letzten fuenf ab 2026-08-24: dieselben Anzeige-Metadaten, die chat() schon lieferte (api._anzeige_metadaten). Ohne sie zeigte die Liste der beantworteten Felder die Feld-Kennung und den Cent-Rohwert — `bruttoarbeitslohn 2500000` —, also genau die zwei Dinge, die ein Laie nicht lesen kann. Alle fuenf duerfen null sein: steht das Feld nicht (mehr) in der Bindung, faellt die Oberflaeche auf Kennung + Rohwert zurueck.",
+        "required": ["wert", "zustand", "herkunft", "herkunft_badge", "event_id",
+                     "frage", "typ", "frage_invertiert", "einheit", "enum_labels"],
         "additionalProperties": false,
         "properties": {
           "wert": {},
@@ -22,7 +24,13 @@
           "herkunft": {"type": "object"},
           "herkunft_badge": {"type": "string",
             "enum": ["laie", "beleg_import", "vorjahr", "kontoauszug", "berechnet", "orakel", "llm_vorschlag"]},
-          "event_id": {"type": ["string", "null"]}
+          "event_id": {"type": ["string", "null"]},
+          "frage": {"type": ["string", "null"]},
+          "typ": {"type": ["string", "null"],
+                  "enum": ["cent", "int", "bool", "enum", "datum", "text", null]},
+          "frage_invertiert": {"type": "boolean"},
+          "einheit": {"type": ["string", "null"]},
+          "enum_labels": {"type": ["object", "null"]}
         }
       }
     },

@@ -71,6 +71,14 @@ PAARE = [
     ("kein_kind", "p33b_abs5_kind_uebertragung"),
     ("kein_kind", "p10_1_9_schulgeld"),
     ("kein_kind", "p33a_ausbildungsfreibetrag"),
+    # Screening C (2026-08-25). Anlass: Julius meldete vier Fragen mit „frage hat keine
+    # daseinsberechtigung" — Merkmalsfragen zu Sachverhalten, deren Existenz er verneint hatte.
+    # Die Existenzfrage stand jeweils früh in der Queue; sie zu beantworten nahm die Detailfrage
+    # trotzdem nicht weg, weil zwischen den Regeln keine Verbindung bestand.
+    ("kein_kind", "p10_1_5_kinderbetreuung"),          # „War dein Kind unter 14 Jahre alt?"
+    ("kein_gewinn", "p16_4_freibetrag"),               # „Warst du beim Verkauf mind. 55?"
+    ("kein_gewinn", "p34_3_ermaessigter_durchschnittssatz"),
+    ("kein_vuv", "p21_2_verbilligte_vermietung_wk"),
 ]
 
 

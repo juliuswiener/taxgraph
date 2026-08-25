@@ -362,8 +362,8 @@ bindungen:
     bereich: {min: 0, max: 20, grund: "Anzahl qualifizierender Kinder (volljaehrig, auswaertig in Berufsausbildung, mit Kindergeld/§32-Abs.6-Anspruch). Max 20 = praktischer Cap."}
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Wie viele deiner volljaehrigen Kinder sind in auswaertiger Berufsausbildung UND du hast Anspruch auf Kindergeld oder den Kinderfreibetrag fuer sie?"
-    hilfe_kurz: "1.200€ Freibetrag JE Kind. Nur fuer Kinder zaahlen, fuer die dir der VOLLE Jahresbetrag zusteht (keine Elternteil-Haelftelung in Stufe-1). Monats-Zwoelftelung bei nicht-ganzjaehriger Ausbildung = Stufe-2-Backlog."
+    fragetext_laie: "Wie viele deiner volljährigen Kinder sind in auswärtiger Berufsausbildung UND du hast Anspruch auf Kindergeld oder den Kinderfreibetrag für sie?"
+    hilfe_kurz: "1.200€ Freibetrag JE Kind. Nur für Kinder zählen, für die dir der VOLLE Jahresbetrag zusteht (keine Elternteil-Hälftelung in Stufe-1). Monats-Zwölftelung bei nicht-ganzjähriger Ausbildung = Stufe-2-Backlog."
     beispielwert: 1
     herkunft_slots: null
     elster_kz: null

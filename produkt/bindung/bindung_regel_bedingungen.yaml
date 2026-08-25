@@ -188,3 +188,42 @@ regel_bedingungen:
     feld: keine_energetische_sanierung
     wert: false
     grund: "§ 35c Abs. 1 S. 4 EStG rechnet die Kosten eines Energieberaters zu den Aufwendungen für die energetische Maßnahme — ohne Maßnahme gibt es keine Beratungskosten dazu."
+
+  # ---------------------------------------------------------------------------------------------
+  # Screening-Gruppe C (2026-08-25). Anlass: Julius meldete im echten Durchgang vier Fragen
+  # nacheinander mit demselben Satz — „frage hat keine daseinsberechtigung“. Alle vier fragten nach
+  # einem MERKMAL eines Sachverhalts, dessen EXISTENZ er nie bejaht hatte: der auswaertige
+  # Uebernachtungsort, das Alter beim Betriebsverkauf, das Alter des Kindes waehrend der Betreuung
+  # und die Zustimmung des Ex-Ehepartners.
+  #
+  # NACHGEMESSEN: die zugehoerige Existenzfrage stand jeweils frueh in der Queue (keine_behinderung_
+  # pflege auf Position 8, kein_gewinn auf 26) — sie zu BEANTWORTEN nahm die Detailfrage aber nicht
+  # weg, weil zwischen den beiden Regeln keine Verbindung bestand. Genau diese Luecke schliessen
+  # regel_bedingungen; die Gruppen A und B oben sind dieselbe Sache, nur frueher.
+  #
+  # Lesart wie oben: `wert` ist der Wert, bei dem die Regel GILT.
+
+  - regel_id: p10_1_5_kinderbetreuung
+    feld: kein_kind
+    wert: false
+    grund: "§ 10 Abs. 1 Nr. 5 S. 1 EStG beguenstigt Kinderbetreuungskosten fuer ein Kind, 'welches das 14. Lebensjahr noch nicht vollendet hat oder wegen einer vor Vollendung des 25. Lebensjahres eingetretenen Behinderung ausserstande ist, sich selbst zu unterhalten' — ohne Kind gibt es weder Betreuung noch die Frage nach dem Alter waehrend dieser Betreuung. Genau jene Altersfrage meldete Julius am 2026-08-25."
+
+  - regel_id: p16_4_freibetrag
+    feld: kein_gewinn
+    wert: false
+    grund: "§ 16 Abs. 4 S. 1 EStG gewaehrt den Freibetrag, wenn der Steuerpflichtige das 55. Lebensjahr vollendet hat oder dauernd berufsunfaehig ist — und zwar auf den VERAEUSSERUNGSGEWINN. Der entsteht bei der Veraeusserung eines Gewerbebetriebs (§ 16 Abs. 1); wer bestaetigt, keine Gewinneinkuenfte zu haben, hat keinen Betrieb veraeussert und damit keinen Gewinn, auf den ein Freibetrag anzuwenden waere."
+
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    feld: kein_gewinn
+    wert: false
+    grund: "§ 34 Abs. 3 S. 1 EStG setzt 'ausserordentliche Einkuenfte im Sinne des Absatzes 2 Nummer 1' voraus — das sind die Veraeusserungsgewinne nach §§ 14, 16, 18 Abs. 3 EStG, also Gewinneinkuenfte. Ohne sie gibt es keinen Antrag auf den ermaessigten Durchschnittssatz."
+
+  - regel_id: p21_2_verbilligte_vermietung_wk
+    feld: kein_vuv
+    wert: false
+    grund: "§ 21 Abs. 2 EStG regelt den Werbungskostenabzug bei 'Ueberlassung einer Wohnung zu Wohnzwecken' unter der ortsueblichen Marktmiete — wer bestaetigt, nicht zu vermieten, ueberlaesst keine Wohnung und hat keine Miete, die mit der ortsueblichen zu vergleichen waere."
+
+  - regel_id: p9_1_3_nr5a_uebernachtung_nach_48
+    feld: vpf_auswaertige_taetigkeit
+    wert: true
+    grund: "§ 9 Abs. 1 S. 3 Nr. 5a S. 1 EStG erfasst Mehraufwendungen 'fuer beruflich veranlasste Uebernachtungen an einer Taetigkeitsstaette, die nicht erste Taetigkeitsstaette ist' — die Uebernachtung setzt eine auswaertige Taetigkeit voraus. `vpf_auswaertige_taetigkeit` erhebt genau diese; wer sie verneint, war nicht auswaerts und hat dort auch nicht uebernachtet. Anders als die kein_-Felder behauptet dieses Feld die ANWESENHEIT, deshalb `wert: true`."

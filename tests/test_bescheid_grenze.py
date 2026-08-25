@@ -101,7 +101,49 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # durchpropagiert, landet in server.py:229 und wird dort mit EINEM Aufruf erfasst — deshalb
 # steht der Rest der Arbeit in server.py und in produkt/store/fehler_log.py, nicht hier.
 # Diese zwei blieben übrig, weil ihr Grund an keiner anderen Stelle mehr existiert.
-API_ZEILEN_OBERGRENZE = 1167
+#
+# 1167 -> 1171 (2026-08-23, rechenweg-Durchreichung). Aufschlüsselung der vier Zeilen:
+# 2 Zuweisungen `"rechenweg": v.get("rechenweg")` (Vorschlag + Konflikt), 2 Kommentar.
+# NULL Zeilen Steuerlogik — ein Feld aus der Modellantwort in die Antwort an den Browser zu
+# kopieren ist keine, und gegen Steuerlogik ist diese Ratsche gebaut.
+# Vorher versucht, sie nicht heben zu müssen: die Kommentare sind auf eine Zeile gekürzt und die
+# Begründung nach tests/test_rechenweg_durchgereicht.py gewandert. Die zwei Zuweisungen selbst
+# lassen sich nicht auslagern — sie stehen mitten in den beiden dict-Literalen, aus denen die
+# Antwort gebaut wird, und ein Helfer dafür wäre mehr Zeilen, nicht weniger.
+# ANLASS: das Modell rechnete richtig (25.000 EUR aus "50k/Jahr" + "ab Juli arbeitslos"), aber die
+# Rechnung erreichte den Nutzer nicht — er sah eine Zahl ohne Herkunft und sollte sie bestätigen.
+#
+# 1171 -> 1174 (2026-08-24, Rückfragen-Bündelung). Aufschlüsselung der drei Zeilen:
+# 1 Zuweisung `"rueckfragen_zurueckgestellt": erg.get(..., 0)`, 2 Kommentar.
+# NULL Zeilen Steuerlogik — dieselbe Bauart wie der Eintrag darüber: ein Feld aus der
+# Modellantwort in die Antwort an den Browser kopieren.
+# Vorher versucht, sie nicht heben zu müssen: das Bündeln selbst steht vollständig in
+# api_llm._rueckfragen_gebuendelt, hier landet nur die Zahl. An die bestehende Zeile anhängen
+# ginge, machte die Zeile aber überlang und die Begründung unlesbar.
+# ANLASS: auf einen Satz mit fünf Angaben kamen 21 Rückfragen — die Oberfläche muss sagen können,
+# dass sie nur eine Auswahl zeigt, sonst hält der Nutzer sie für alles, was die KI wissen wollte.
+#
+# 1174 -> 1179 (2026-08-24, Anzeige-Metadaten in /stand). Aufschlüsselung der fünf Zeilen:
+# 1 Aufruf `**_anzeige_metadaten(fid, bindung)` im felder_out-Dict, 4 Kommentar.
+# NULL Zeilen Steuerlogik — die Funktion existierte bereits und wurde von chat() längst benutzt;
+# hier bekommt sie nur einen zweiten Aufrufer.
+# Vorher versucht, sie nicht heben zu müssen: der Kommentar liesse sich kürzen, aber er nennt die
+# drei gemessenen Beispiele (`bruttoarbeitslohn 2500000`, `ep_eigenes_kfz true`,
+# `veranlagung "einzel"`), und ohne die läse sich die Zeile wie eine Geschmacksfrage.
+# ANLASS: die Liste der beantworteten Felder zeigte Feld-Kennung und Rohwert — beides für einen
+# Laien unlesbar, und die Cent-Zahl liest sich als sein Betrag.
+#
+# 1179 -> 1185 (2026-08-25, Format und Standardwert). Aufschlüsselung der sechs Zeilen:
+# 2 Zuweisungen (`"muster"`, `"standardwert"` in fragen()), 4 Kommentar.
+# NULL Zeilen Steuerlogik — zwei weitere Bindungs-Eigenschaften an den Browser durchreichen.
+# Die Durchsetzung des Musters steht in produkt/store/store.py (fail-closed, Auflage F), nicht
+# hier; die Anzeige in app.js.
+# Vorher versucht, sie nicht heben zu müssen: der Kommentar begründet, warum `standardwert` NICHT
+# aus `beispielwert` abgeleitet wird — ohne ihn baut der nächste Leser genau das ein und setzt
+# damit unter die Frage nach dem Bruttoarbeitslohn einen Knopf „Üblich: 62.000 €".
+# ANLASS: „01.01-31.122" (ein Tippfehler) wurde anstandslos gespeichert; der Wert geht als
+# Zeitraum ins ELSTER-Feld und wäre erst beim Finanzamt aufgefallen.
+API_ZEILEN_OBERGRENZE = 1185
 
 
 def _runner_stellen(pfad: str) -> list[int]:

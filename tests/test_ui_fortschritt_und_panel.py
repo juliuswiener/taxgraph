@@ -415,12 +415,22 @@ def _kasten(page, sel):
     return b
 
 
-def test_panel_liegt_auf_breitem_schirm_rechts_neben_dem_inhalt(seite_factory):
+def test_panel_liegt_auf_breitem_schirm_rechts_neben_dem_inhalt(seite_factory, base, fall_fragen):
     """Julius: „als eigenes panel rechts … als in die column der felder". Also: rechts NEBEN der
-    Frage-Karte, nicht unter ihr — und ohne sie zu überlappen."""
+    Frage-Karte, nicht unter ihr — und ohne sie zu überlappen.
+
+    Seit 2026-08-24 wird erst eine Antwort geschrieben: die Belegt-Sektion blendet sich aus, solange
+    sie leer ist (eine Überschrift „Schon beantwortet" über nichts sagte dem Nutzer, es gäbe schon
+    etwas zu sehen). Ihre SPALTENLAGE lässt sich nur an einer Liste messen, die auch dasteht."""
     page = seite_factory(breite=1280, hoehe=900)
     frage = _kasten(page, "#wegpunkt")
     berater = _kasten(page, "#berater")
+
+    fall = page.evaluate("FALL")
+    q = next(q for q in fall_fragen if q.get("beispielwert") is not None)
+    _req(base, "POST", f"/fall/{fall}/event", _event(q["feld_id"], q["beispielwert"]))
+    page.evaluate("() => refresh()")
+    page.wait_for_selector("#belegt-liste li", timeout=5000)
 
     assert berater["x"] >= frage["x"] + frage["width"] - 1, (
         f"Der Berater beginnt bei x={berater['x']}, die Frage-Karte endet bei "

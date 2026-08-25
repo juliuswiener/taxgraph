@@ -73,6 +73,8 @@
         "hilfe_kurz": {"type": "string", "minLength": 3,
           "description": "Kurzer Hilfetext (auch einfach gehalten)."},
         "beispielwert": {"description": "Beispielwert passend zu typ (cent: Ganzzahl Cent; bool: true/false; ...)."},
+        "muster": {"type": "string", "description": "Optional. Regulaerer Ausdruck, dem der Wert entsprechen MUSS — fuer typ=text-Felder mit festem Format (Zeitraeume 'TT.MM-TT.MM', Datumsangaben). Wird fail-closed durchgesetzt (store._pruefe_typ_konformitaet, Auflage F) und in der Oberflaeche als HTML-pattern gesetzt. Anlass 2026-08-25: '01.01-31.122' wurde anstandslos gespeichert, weil typ=text jeden String erlaubt."},
+        "standardwert": {"description": "Optional. Der Wert, der in den allermeisten Faellen gilt — die Oberflaeche bietet ihn als 'Uebernehmen'-Knopf an. NICHT dasselbe wie beispielwert: der ist ein Beispiel und waere bei einem Geldfeld eine gefaehrliche Vorgabe. Nur setzen, wo die Hilfe selbst 'meist X' sagt."},
         "herkunft_slots": {"type": ["array", "null"], "items": {"type": "string"},
           "description": "Provenance je Teilbetrag, z.B. ['Lohnsteuerbescheinigung Nr. 23'] (VOR-Musterfall)."},
         "vorjahr": {"enum": ["uebernehmbar", "vorschlag"],

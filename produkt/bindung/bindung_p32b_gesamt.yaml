@@ -13,8 +13,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Wie hoch ist die SUMME aller erhaltenen Lohnersatzleistungen laut Bescheinigung? (Arbeitslosengeld, Krankengeld, Elterngeld, Mutterschaftsgeld, Kurzarbeitergeld, Insolvenzgeld u.ae.)"
-    hilfe_kurz: "Diese Leistungen sind steuerfrei, erhoehen aber den Steuersatz auf dein uebriges Einkommen (Progressionsvorbehalt). Nur den Gesamtbetrag aller Lohnersatzleistungen eintragen — NUR falls dein Sozialversicherungstraeger die Daten NICHT elektronisch gemeldet hat."
+    fragetext_laie: "Wie hoch ist die SUMME aller erhaltenen Lohnersatzleistungen laut Bescheinigung? (Arbeitslosengeld, Krankengeld, Elterngeld, Mutterschaftsgeld, Kurzarbeitergeld, Insolvenzgeld und Ähnliches)"
+    hilfe_kurz: "Diese Leistungen sind steuerfrei, erhöhen aber den Steuersatz auf dein übriges Einkommen (Progressionsvorbehalt). Nur den Gesamtbetrag aller Lohnersatzleistungen eintragen — NUR falls dein Sozialversicherungsträger die Daten NICHT elektronisch gemeldet hat."
     beispielwert: 1000000
     herkunft_slots: null
     elster_kz: E0104801
