@@ -38,6 +38,7 @@ bindungen:
     quelle:
       regel_id: p2_festzusetzung_einzel
       signatur_slot: kirchensteuer_arbeitgeber
+    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
     typ: cent
     einheit: EUR
     askable: true
@@ -64,6 +65,7 @@ bindungen:
     quelle:
       regel_id: p51a_kirchensteuer
       signatur_slot: bundesland
+    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. Landes-KiStG: der Hebesatz des Bundeslandes wird nur gebraucht, um die Kirchensteuer eines Mitglieds zu berechnen. Bei kist_konfession='keine' gibt es keine Kirchensteuer und damit keinen Hebesatz anzuwenden."}
     typ: enum
     enum_werte: [baden_wuerttemberg, bayern, berlin, brandenburg, bremen, hamburg, hessen,
                  mecklenburg_vorpommern, niedersachsen, nordrhein_westfalen, rheinland_pfalz,

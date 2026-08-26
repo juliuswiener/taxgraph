@@ -490,12 +490,13 @@ bindungen:
   - feld_id: vv_nebenkosten_nicht_vereinbart
     instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt seit 2026-08-26 nach der Anwesenheit
     typ: bool
     einheit: null
     askable: true
     gate: false
     vorjahr: uebernehmbar
-    fragetext_laie: "Wurden mit dem Mieter KEINE Neben- und Betriebskosten gesondert vereinbart?"
+    fragetext_laie: "Wurden mit dem Mieter Neben- und Betriebskosten gesondert vereinbart?"
     hilfe_kurz: "Antworte mit ja, wenn die Miete eine Pauschale ohne getrennte Nebenkostenabrechnung ist. Bei getrennter Abrechnung antworte nein und trage die umgelegten Kosten ein."
     beispielwert: true
     herkunft_slots: null
@@ -734,6 +735,13 @@ bindungen:
     fragetext_laie: "Für wie viele Kinder stehen dir in diesem Jahr Kindergeld oder ein Kinderfreibetrag zu?"
     hilfe_kurz: "Zähle nur Kinder, für die du im Steuerjahr Anspruch auf Kindergeld oder Kinderfreibetrag hattest — nicht einfach alle Kinder im Haushalt."
     beispielwert: 1
+    # Wer sagt, für wie viele Kinder ihm Kindergeld zusteht, hat damit gesagt, DASS er Kinder hat.
+    # Ohne diese Zeile stand `kein_kind` danach auf Position 2 von 320 und fragte es noch einmal
+    # (Julius im Durchgang 2026-08-25: „frage gerade beantwortet wird jetzt wieder gestellt").
+    # `ab: 1` mit Absicht: bei 0 Kindern wird NICHTS abgeleitet, dann bleibt die Existenzfrage
+    # stehen. Die Bindung selbst lässt 0 zu (bereich.min), und aus einer 0 einen stillen Wert zu
+    # machen wäre die schlechtere Hälfte des Handels.
+    beweist: {feld_id: kein_kind, wert: false, ab: 1}
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Zahl = Anzahl der Kind-Anlagen (je Kind eine Anlage im E10), kein Einzel-Zähl-Kz; ergibt sich aus der Zahl der ausgefüllten Anlagen Kind."
@@ -828,7 +836,7 @@ bindungen:
   - feld_id: kind_geburtsdatum
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
-    typ: text
+    typ: datum   # war `text` mit Muster (2026-08-26): als `datum` gibt die Oberflaeche einen Datumswaehler statt TT.MM.JJJJ zum Abtippen
     muster: '^\d{2}\.\d{2}\.\d{4}$'
     einheit: null
     askable: true
@@ -990,7 +998,7 @@ bindungen:
   - feld_id: kind_anderer_elternteil_geburtsdatum
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
-    typ: text
+    typ: datum   # war `text` mit Muster (2026-08-26): als `datum` gibt die Oberflaeche einen Datumswaehler statt TT.MM.JJJJ zum Abtippen
     muster: '^\d{2}\.\d{2}\.\d{4}$'
     einheit: null
     askable: true

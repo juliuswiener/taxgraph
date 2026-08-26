@@ -150,6 +150,7 @@ bindungen:
   # bei dhf_bestanden_bis.
   - feld_id: p33a_unterstuetzungszeitraum
     quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzungszeitraum}
+    standardwert: "01.01-31.12"   # der Normalfall: das ganze Jahr. Ohne Vorgabe muss der Nutzer das Format raten (2026-08-26)
     typ: text
     einheit: null
     askable: true
@@ -303,6 +304,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
   - feld_id: p33a_zahlungszeitraum
     quelle: {regel_id: p33a_unterhalt, signatur_slot: zahlungszeitraum}
+    standardwert: "01.01-31.12"   # der Normalfall: das ganze Jahr. Ohne Vorgabe muss der Nutzer das Format raten (2026-08-26)
     typ: text
     einheit: null
     askable: true

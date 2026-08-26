@@ -143,10 +143,25 @@ def test_eingangsfrage_ist_ein_gate_und_wird_gefragt():
             continue
         if not b.get("askable"):
             schaden.append(f"{fid}: nicht askable")
-        elif GEWICHT.get(fid, 0) <= 0:
-            schaden.append(f"{fid}: gate_gewicht 0 — schaltet nichts ab, steht bei den Slots")
-        elif b.get("gate") is False:
+        # gate_gewicht 0 ist seit 2026-08-26 KEIN Schaden mehr: `_nach_themen` zieht jede
+        # Eingangsfrage in ihrem Thema nach vorn, auch ein Betragsfeld. Vorher galt die
+        # Deklaration dort als tot — und genau daran scheiterten die zwei Faelle aus dem
+        # E2E-Durchgang: „Hattest du groessere aussergewoehnliche Ausgaben?" (Position 3 von 3)
+        # und „Wie viel hast du fuer die Betreuung deines Kindes gezahlt?" (Position 10 von 10)
+        # sind beide Betragsfelder und beide die Existenzfrage ihres Themas.
+        #
+        # Was weiterhin Schaden ist: die Frage steht in der Queue ueberhaupt nicht vorn. Das
+        # pruefen wir jetzt direkt statt ueber das Gewicht als Stellvertreter.
+        elif b.get("gate") is False and GEWICHT.get(fid, 0) > 0:
             schaden.append(f"{fid}: `gate: false` — Deklaration, kann keine Regel eröffnen")
+        else:
+            s_ = ST.leerer_store(2025, fall_id="eingang")
+            q = TR.naechste_fragen(s_, BINDUNG)
+            thema = [f for f in q
+                     if (BINDUNG[f].get("quelle") or {}).get("regel_id")
+                     == b["quelle"]["regel_id"]]
+            if thema and thema[0] != fid:
+                schaden.append(f"{fid}: steht in seinem Thema nicht vorn (dort: {thema[0]})")
     assert not schaden, "eingangsfrage an ungeeigneten Feldern:\n  " + "\n  ".join(schaden)
 
 
@@ -195,3 +210,54 @@ def test_der_gefundene_fall_namentlich():
     platz = {f: i for i, f in enumerate(r)}
     assert platz["hh_hat_aufwendungen"] < platz["hh_handwerker_keine_foerderung"], (
         "Die Förder-Detailfrage kommt wieder vor der Frage, ob es überhaupt Handwerkerkosten gab.")
+
+
+# ---------------------------------------------------------------- ein Thema am Stück
+
+def _wechsel(felder):
+    """Wie oft wechselt die Queue das Thema?"""
+    regeln = [(BINDUNG[f].get("quelle") or {}).get("regel_id") or "" for f in felder]
+    return sum(1 for a, b in zip(regeln, regeln[1:]) if a != b), len(set(regeln))
+
+
+def test_die_queue_springt_nicht_zwischen_themen_hin_und_her():
+    """Julius, 2026-08-25: „abwechselnd fragen zu kindern, behinderung, arbeitsort, dann wieder
+    kinder ist schwer nachvollziehbar."
+
+    GEMESSEN vorher: 175 Wechsel bei 62 Themen — fast dreimal so viele Sprünge wie nötig, weil
+    Gates nach Gewicht und Slots nach Unsicherheits-Beitrag stehen und beides quer zum Thema läuft.
+
+    Nachher: **61 Wechsel bei 62 Themen** — das theoretische Minimum, jedes Thema genau einmal.
+    Deshalb steht hier eine exakte Schranke und keine Ratsche: mehr als ein Wechsel je Thema
+    bedeutet, dass ein Thema wieder auseinandergerissen wird.
+
+    Ein Zwischenstand, der grün ausgesehen hätte: Gates und Slots getrennt zu gruppieren ergab 84
+    Wechsel und liess jedes Thema ZWEIMAL erscheinen — die Zweitwohnung mit zehn Fragen vorn und
+    drei weiteren viel später. Eine Schranke von 100 hätte das durchgelassen."""
+    s = ST.leerer_store(2025, fall_id="reihenfolge")
+    q = TR.naechste_fragen(s, BINDUNG)
+    wechsel, themen = _wechsel(q)
+    assert wechsel == themen - 1, (
+        f"{wechsel} Themenwechsel bei {themen} Themen — {wechsel - themen + 1} Thema/Themen "
+        f"kommen mehrfach vor, die Queue springt wieder hin und her.")
+    assert wechsel >= themen - 1, (
+        f"{wechsel} Wechsel bei {themen} Themen — weniger als ein Wechsel je Thema ist unmöglich; "
+        f"die Messung stimmt nicht.")
+
+
+def test_zusammenhaengende_themen_bleiben_zusammen():
+    """Der Fall, an dem es Julius auffiel, namentlich: die Zweitwohnung. Ihre dreizehn Fragen
+    standen über die Queue verteilt; jetzt stehen sie an einem Stück, mit der Eingangsfrage
+    vorneweg."""
+    s = ST.leerer_store(2025, fall_id="dhf-block")
+    q = TR.naechste_fragen(s, BINDUNG)
+    plaetze = [i for i, f in enumerate(q) if f.startswith("dhf_")]
+    assert len(plaetze) >= 10, f"Nur {len(plaetze)} dhf-Fragen — Messung prüfen."
+    spanne = plaetze[-1] - plaetze[0] + 1
+    assert spanne == len(plaetze), (
+        f"Die {len(plaetze)} Zweitwohnungs-Fragen sind über {spanne} Plätze verteilt — dazwischen "
+        f"stehen {spanne - len(plaetze)} fremde Fragen.")
+# Die Existenzfrage steht seit 2026-08-26 in der Ankreuzliste (`keine_zweitwohnung`), nicht
+    # mehr im Block selbst — `dhf_eigener_hausstand` fragt nach dem Hauptwohnsitz und taugte nie
+    # als Eingang. Geprueft wird deshalb nur noch, dass der Block zusammenhaengt.
+    assert all(q[i].startswith("dhf_") for i in range(plaetze[0], plaetze[-1] + 1))

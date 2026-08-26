@@ -117,8 +117,18 @@ def test_die_bindung_erklaert_welche_fragen_dazugehoeren():
     # Speichern. Ein screening-Feld ohne das wäre eine Falle.
     for f in s:
         assert b[f].get("typ") == "bool", f"{f} ist kein bool"
-        assert b[f].get("frage_invertiert"), (
-            f"{f} ist nicht `frage_invertiert` — dann bedeutet ein Kreuz das Gegenteil.")
+        # frage_invertiert NUR dort, wo der Feldname die Abwesenheit benennt (`kein_`/`keine_`).
+        # Ein Kreuz muss „ja, trifft zu" heissen — bei `kein_kap` durch die Umkehr, bei einem
+        # positiv benannten Feld direkt. GEAENDERT 2026-08-26: bis dahin verlangte der Test die
+        # Umkehr von JEDEM Ankreuz-Feld und verhinderte damit, dass
+        # `vpf_auswaertige_taetigkeit` in die Liste kommt — die Existenzfrage von zwei Regeln,
+        # deren Fehlen Julius dreimal gemeldet hat. Die Polaritaet selbst prueft
+        # test_bindung_frage_polaritaet.py gegen den Fragetext, nicht gegen den Namen.
+        benennt_abwesenheit = f.startswith(("kein_", "keine_"))
+        assert bool(b[f].get("frage_invertiert")) == benennt_abwesenheit, (
+            f"{f}: frage_invertiert={b[f].get('frage_invertiert')!r}, aber der Feldname "
+            f"{'benennt' if benennt_abwesenheit else 'benennt NICHT'} die Abwesenheit — dann "
+            f"bedeutet ein Kreuz das Gegenteil der Nutzerantwort.")
 
 
 # ---------------------------------------------------------------- die Seite

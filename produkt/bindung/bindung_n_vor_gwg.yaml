@@ -286,6 +286,12 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
   - feld_id: dhf_eigener_hausstand
     quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: eigener_hausstand_ausserhalb_des_taetigkeitsorts}
+    # EIN Tatbestandsmerkmal der doppelten Haushaltsführung, NICHT ihre Eingangsfrage — das war
+    # ein Fehlgriff am 2026-08-25. § 9 Abs. 1 S. 3 Nr. 5 S. 2 EStG verlangt ZWEIERLEI: einen eigenen
+    # Hausstand ausserhalb des Arbeitsorts UND eine Wohnung AM Arbeitsort. Diese Frage erhebt nur
+    # das erste — und das trifft auf fast jeden zu. Julius, 2026-08-26: „die meisten menschen wohnen
+    # nicht unmittelbar am ort ihrer arbeit, aber hier geht es um 2. wohnsitz". Wer hier bejaht,
+    # bekam alle zwölf Detailfragen. Die Existenzfrage ist jetzt `keine_zweitwohnung`.
     typ: bool
     einheit: null
     askable: true
@@ -464,6 +470,14 @@ bindungen:
   - feld_id: vpf_auswaertige_taetigkeit
     quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: auswaertige_berufliche_taetigkeit}
     eingangsfrage: true
+    # In die Ankreuzliste (2026-08-26). Diese Frage ist die Existenzfrage von ZWEI Regeln:
+    # Verpflegungsmehraufwand UND Uebernachtung (p9_1_3_nr5a haengt per regel_bedingungen
+    # daran). Sie stand aber nur im Fragebogen, nicht in der Liste — blieb sie unbeantwortet,
+    # liessen beide Regeln fail-closed alles durch. Julius meldete „War der Uebernachtungsort
+    # ein auswaertiger Arbeitsort?" DREIMAL; zweimal habe ich an der Reihenfolge geschraubt
+    # statt hier. NICHT frage_invertiert: Feldname und Frage behaupten beide die Anwesenheit,
+    # ein Kreuz heisst also direkt „ja, war ich".
+    screening: true
     typ: bool
     einheit: null
     askable: true
@@ -497,7 +511,7 @@ bindungen:
     # Die Kürzung selbst ist seit 826bfdf modelliert (p9_4a_kuerzung_nach_entgelt, gespeist aus den
     # Mahlzeiten-Anzahlen), es gab also nie einen Grund, hier auszuschließen.
     gate: false
-    fragetext_laie: "Hat dir dein Arbeitgeber oder jemand anderes auf der Reise Mahlzeiten bezahlt oder gestellt?"
+    fragetext_laie: "Falls du auswärts tätig warst: hat dir dein Arbeitgeber oder jemand anderes dabei Mahlzeiten bezahlt oder gestellt?"
     hilfe_kurz: "Kostenlose oder verbilligte Mahlzeiten kürzen die Pauschale."
     beispielwert: false
     herkunft_slots: ["Anlage N: Kürzung Mahlzeitengestellung"]
@@ -847,6 +861,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
   - feld_id: uebernachtung_monate_bisher
     quelle: {regel_id: p9_1_3_nr5a_uebernachtung_nach_48, signatur_slot: monate_bisher_am_ort}
+    ableitung: {aus: vpf_monate_am_ort, art: uebernahme, grund: "Wortgleiche Frage wie `vpf_monate_am_ort` (die wortgleiche Monatsfrage der Verpflegungsregel).. Beide Regeln brauchen dieselbe Angabe, nur mit verschiedenen Fristen: § 9 Abs. 4a S. 6 EStG kappt die Verpflegungspauschale nach drei Monaten, § 9 Abs. 1 S. 3 Nr. 5a S. 4 EStG begrenzt die Unterkunftskosten nach 48 Monaten. Zweimal zu fragen ist eine Frage zu viel."}
     typ: int
     einheit: Monate
     bereich: {min: 0, max: 600, grund: "Kumulierte Monate der Tätigkeit am selben auswärtigen Ort (48-Monats-Schwelle Satz 4)."}
@@ -892,7 +907,7 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "War der Übernachtungsort ein auswärtiger Arbeitsort und nicht deine feste Arbeitsstelle?"
+    fragetext_laie: "Hast du an einem auswärtigen Arbeitsort übernachtet — also nicht an deiner festen Arbeitsstelle?"
     hilfe_kurz: "Zum Beispiel eine Montage, Baustelle oder ein längerer Einsatz weg von deiner normalen Arbeitsstelle."
     beispielwert: true
     herkunft_slots: null

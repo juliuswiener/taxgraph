@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 
 import audit  # noqa: E402 — P1.6 Audit-Log (sys.path via api.py)
 import kontoauszug_writer as KW
+import traverser as TR  # noqa: E402 — nur lade_instanz_gruppen (Zählfeld je Instanz-Gruppe)
 from pii_filter import filtere  # noqa: E402 — PII-Filter vor ausgehendem LLM-Call
 
 # Exception für Exception-Handling in api.py (ohne dass api.py selbst llm_client importiert)
@@ -715,6 +716,36 @@ def _regel_zeilen(je_regel: dict[str, list[dict]], regeln: list[str]) -> str:
     return "\n".join(zeilen)
 
 
+def _mit_zaehlfeldern(kat3: list[dict], katalog: list[dict]) -> list[dict]:
+    """Legt das Zählfeld einer Instanz-Gruppe dazu, wenn Felder dieser Gruppe im Katalog stehen.
+
+    Stufe 2 wählt THEMEN, Stufe 3 sieht nur die Felder der gewählten Themen. Das Zählfeld einer
+    Instanz-Gruppe liegt aber ausdrücklich in einer ANDEREN Regel — bei `kind` gehört
+    `fam_anzahl_kinder` zu `p24b_entlastungsbetrag` (Entlastungsbetrag für Alleinerziehende),
+    die Kind-Felder zu `p32_6_kinderfreibetraege`. Das steht so in bindung_regel_bedingungen.yaml
+    und war beim Bau der Instanz-Achse als blosse Notiz vermerkt.
+
+    Julius, 2026-08-25, mit „verheiratet, 2 kinder" im Chat: das Modell nahm das Thema
+    Kinderfreibeträge (dessen erste Frage nach dem Vornamen fragt — genau die kam) und NICHT das
+    Thema Alleinerziehende, denn er ist verheiratet. Die Zahl 2 hatte damit kein Feld, in das sie
+    gehen konnte. Folge: ein einziges Vornamensfeld statt zwei, und die Existenzfrage nach Kindern
+    stand danach noch in der Ankreuzliste.
+
+    Die Zuordnung wird NICHT geraten: `instanz_gruppen` sagt je Gruppe, welches Feld die Zahl
+    trägt. Fehlt die Gruppe dort (sieben der acht), passiert hier nichts.
+    """
+    gruppen = TR.lade_instanz_gruppen()
+    if not gruppen:
+        return kat3
+    drin = {f.get("feld_id") for f in kat3}
+    gebraucht = {gruppen[g]["anzahl_feld"] for f in kat3
+                 for g in [f.get("instanz_gruppe")] if g and g in gruppen}
+    fehlend = gebraucht - drin
+    if not fehlend:
+        return kat3
+    return kat3 + [f for f in katalog if f.get("feld_id") in fehlend]
+
+
 def _themen_prompt(freitext: str, aussagen: list[dict], regel_zeilen: str) -> list[dict]:
     """Stufe 2: Aussagen → Regel-Kennungen. Der Nutzertext geht MIT hinaus, und zwar für den Fall,
     dass Stufe 1 nichts fand: eine reine Frage ist keine Tatsachenaussage, hat aber sehr wohl ein
@@ -979,6 +1010,7 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
     # --------------------------------------------------------- Stufe 3: welcher Wert ist das
     eng = bool(getroffen)
     kat3 = ([f for r in getroffen for f in je_regel[r]] + je_regel.get("", [])) if eng else katalog
+    kat3 = _mit_zaehlfeldern(kat3, katalog)
     try:
         c3 = llm_client.complete("chat",
                                  _dialog_prompt(gefiltert, kat3, kontext_gefiltert, aussagen),

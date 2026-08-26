@@ -10,6 +10,7 @@ scheibe: "§ 3 Nr. 72 EStG Photovoltaik-Steuerbefreiung (gesamt)"
 bindungen:
   - feld_id: pv_einnahmen
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: einkuenfte_gewinn}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 3 Nr. 72 EStG stellt Einnahmen aus kleinen Photovoltaikanlagen steuerfrei; die Einnahmen gehoeren zu den Gewinneinkuenften (§ 15 EStG).  erhebt deren Existenz — wer bestaetigt, keine zu haben, betreibt auch keine Anlage. Das Feld sitzt in der Basisregel p2_festzusetzung_einzel, die nie entfallen darf, deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true

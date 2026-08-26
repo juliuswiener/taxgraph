@@ -64,6 +64,23 @@ def lade_regel_bedingungen() -> dict:
 
 
 @functools.lru_cache(maxsize=1)
+def lade_themen_zuerst() -> list[str]:
+    """Regeln, die den Fragebogen eröffnen — in dieser Reihenfolge.
+
+    Deklariert in bindung_regel_bedingungen.yaml, nicht hier: welche Themen den Einstieg bilden,
+    ist eine fachliche Entscheidung und keine Eigenschaft des Sortierverfahrens.
+    """
+    yaml = _yaml()
+    out = []
+    for f in glob.glob(os.path.join(PRODUKT, "bindung", "bindung_*.yaml")):
+        d = yaml.safe_load(open(f)) or {}
+        for e in (d.get("themen_zuerst") or []):
+            if e["regel_id"] not in out:
+                out.append(e["regel_id"])
+    return out
+
+
+@functools.lru_cache(maxsize=1)
 def lade_instanz_gruppen() -> dict:
     """gruppe -> {gruppe, anzahl_feld, etikett, max, grund} über alle bindung_*.yaml
     (schema.json $defs/instanz_gruppe).
@@ -238,7 +255,8 @@ def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> 
     aktiv = _aktive_events(store)
     kand = [fid for fid, b in bindung.items()
             if b.get("askable") and _unbeantwortet(aktiv.get(fid))
-            and rel[b["quelle"]["regel_id"]]["status"] != "ausgeschlossen"]
+            and rel[b["quelle"]["regel_id"]]["status"] != "ausgeschlossen"
+            and not _feld_ausgeschlossen(b, aktiv)]
     gw = gate_gewicht(bindung)
     # „Gate" heißt hier: die Antwort streicht andere Fragen — nicht: das Feld trägt technisch eine
     # geltungsbedingung. Beides fällt auseinander, und zwar beim wichtigsten Feld überhaupt:
@@ -266,7 +284,133 @@ def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> 
         slots.sort(key=lambda f: (-beitrag.get(f, 0), f))
     else:
         slots.sort()
-    return gates + slots
+    return _nach_themen(gates + slots, bindung)
+
+
+def _nach_themen(felder: list[str], bindung: dict) -> list[str]:
+    """Hält Fragen desselben Themas beisammen, ohne die Rangfolge davor umzuwerfen.
+
+    Julius, 2026-08-25: „wichtig auch dass die fragen in einer für den user sinnvollen reihenfolge
+    kommt. abwechselnd fragen zu kindern, behinderung, arbeitsort, dann wieder kinder ist schwer
+    nachvollziehbar."
+
+    GEMESSEN vor dem Eingriff: **175 Themenwechsel bei 62 Themen** — fast dreimal so viele Sprünge
+    wie nötig; in den ersten 24 Fragen allein 14. Die Ursache ist keine Nachlässigkeit, sondern
+    das Ordnungsprinzip: Gates stehen nach Gewicht, Slots nach Unsicherheits-Beitrag, und beides
+    ist quer zum Thema. Zwei Vermietungsfragen können durch eine Kinderfrage getrennt sein, weil
+    die eben mehr Spanne trägt.
+
+    DIE RANGFOLGE BLEIBT, sie wird nur auf die Themenebene gehoben: ein Thema steht dort, wo sein
+    BESTES Feld nach der bisherigen Sortierung stand, und innerhalb des Themas gilt weiterhin die
+    bisherige Reihenfolge. Damit steht das wichtigste Thema weiterhin vorn — `veranlagung` trägt
+    das höchste Gate-Gewicht und zieht sein Thema mit an den Anfang —, aber niemand wird mehr
+    zwischen zwei Themen hin- und hergeschickt.
+
+    Stabil in beide Richtungen: `dict` hält die Einfügereihenfolge, also entscheidet allein die
+    Position des ersten Feldes je Thema. Gleiche Eingabe, gleiche Ausgabe.
+
+    ÜBER GATES UND SLOTS HINWEG, und das ist sicher: Weil `gates` vor `slots` steht, beginnt jedes
+    Thema weiterhin mit seinen Gate-Fragen. Ein Thema kann seine Detailfragen also nicht vor sein
+    eigenes Gate ziehen — und beantwortet der Nutzer das Gate mit „nein", ist die Regel
+    ausgeschlossen und ihre Detailfragen stehen in der nächsten Queue gar nicht mehr. Getrennt
+    gruppiert (erst alle Gates, dann alle Slots) erschien dagegen jedes Thema ZWEIMAL: die
+    Zweitwohnung mit zehn Fragen vorn und drei weiteren viel später — genau das Hin und Her, um
+    das es hier geht.
+    """
+    nach_thema: dict[str, list[str]] = {}
+    for f in felder:
+        nach_thema.setdefault((bindung[f].get("quelle") or {}).get("regel_id") or "", []).append(f)
+    # Die Eingangsfrage steht in ihrem Thema IMMER vorn — auch wenn sie kein Gate ist.
+    #
+    # `eingangsfrage` brach bisher nur den Gleichstand zwischen gleich schweren GATES. Ein Thema,
+    # dessen Existenzfrage ein Betragsfeld ist, ging deshalb leer aus: gemessen im E2E-Durchgang
+    # am 2026-08-26 stand „Hattest du grössere aussergewöhnliche Ausgaben?" an Position 3 von 3
+    # (hinter „Waren die Ausgaben notwendig?" und „Konntest du sie nicht vermeiden?"), und „Wie
+    # viel hast du für die Betreuung deines Kindes gezahlt?" als LETZTE von zehn Betreuungsfragen.
+    # Beide Male fragte der Fragebogen nach Merkmalen einer Sache, die er nie erhoben hatte.
+    for thema, gruppe in nach_thema.items():
+        eingang = [f for f in gruppe if bindung[f].get("eingangsfrage")]
+        if eingang:
+            nach_thema[thema] = eingang + [f for f in gruppe if f not in eingang]
+    return [f for thema in _themen_folge(nach_thema, bindung) for f in nach_thema[thema]]
+
+
+def _feld_ausgeschlossen(eintrag: dict, aktiv: dict) -> bool:
+    """Fällt DIESES Feld weg, obwohl seine Regel für alle gilt?
+
+    `regel_bedingungen` schaltet ganze Regeln ab. Das reicht nicht, wo ein Spezialfeld in einer
+    ALLGEMEINEN Regel sitzt — dann hängt am selben Regel-Schalter beides, das für jeden Geltende
+    und das Besondere. Julius, 2026-08-26, zweimal an einem Abend:
+
+      „Möchtest du für deine behinderungsbedingten Aufwendungen deinen Behinderten-Pauschbetrag
+       nutzen…? … in der checkliste war keine behinderung angehakt."
+      „Aus welcher Art von Tätigkeit stammt dieser Gewinn? … kein gewinn ist erwähnt worden"
+
+    Beide Male hatte er die Existenzfrage BESTÄTIGT verneint. Das Wahlrecht steht in
+    `p33_1_2_agb_abzug` (außergewöhnliche Belastungen — hat fast jeder), die Betriebsart in
+    `p2_festzusetzung_einzel` (die Basisregel schlechthin). Beide Regeln durften nicht entfallen,
+    also blieb das Spezialfeld stehen.
+
+    FAIL-CLOSED wie die Regel-Bedingung daneben: ausgeschlossen wird nur bei einer BESTÄTIGTEN
+    abweichenden Antwort. Schweigen schliesst nichts aus, ein vorläufiger KI-Vorschlag auch nicht
+    — sonst nähme ein Vorschlag dem Nutzer eine Frage weg, die er nie gesehen hat.
+    """
+    bed = eintrag.get("feld_bedingung")
+    if not bed:
+        return False
+    ev = aktiv.get(bed["feld"])
+    if _unbeantwortet(ev):
+        return False
+    # `wert_nicht` statt `wert`, wo die Existenzfrage ein AUSWAHLFELD ist: `kist_konfession` hat
+    # drei Werte, bei denen die Frage gilt (evangelisch, römisch-katholisch, andere) und einen,
+    # bei dem sie entfällt („keine"). Ein einzelner `wert` könnte das nicht ausdrücken, und die
+    # Folge stand im E2E-Durchgang am 2026-08-26 in der Queue: „Wie viel Kirchensteuer wurde von
+    # deinem Arbeitgeber einbehalten?" auf Platz 51, „Gehörst du einer Kirche an?" auf Platz 75.
+    if "wert_nicht" in bed:
+        return ev.get("wert") == bed["wert_nicht"]
+    return ev.get("wert") != bed["wert"]
+
+
+def _themen_folge(nach_thema: dict[str, list[str]], bindung: dict) -> list[str]:
+    """Ein Thema folgt dem Thema, das seine Voraussetzung erhebt.
+
+    Julius, 2026-08-26: „hier wird immernoch ohne anlass nach einem übernachtungsort gefragt".
+    Die Regelbedingung dafür gibt es und sie ist geprüft — `p9_1_3_nr5a_uebernachtung_nach_48`
+    hängt an `vpf_auswaertige_taetigkeit`. Nur stand die Voraussetzung auf Platz 38 und die
+    Übernachtungsfragen auf 109: **71 Fragen dazwischen.** Wer die Voraussetzung überspringt
+    (nicht verneint), bekommt sie alle — fail-closed ist richtig, aber 71 Fragen später sieht
+    niemand mehr den Zusammenhang.
+
+    GEMESSEN, vor dem Eingriff: **28 von 30 abhängigen Themen** standen mehr als 20 Fragen von
+    ihrer Bedingungsfrage entfernt, das weiteste (`p10_1_9_schulgeld` an `kein_kind`) um 293.
+    Die meisten davon hängen an `screening`-Feldern und sind in der Praxis entschärft, weil die
+    Ankreuzliste sie vorab erhebt — Julius' Fall gerade nicht.
+
+    KEINE Topologie-Sortierung, mit Absicht: das Verfahren setzt jedes Thema EINMAL, direkt hinter
+    das Thema seiner ersten Bedingung, sofern jenes schon steht. Ein Ring von Bedingungen kann
+    damit keine Endlosschleife und keine Auslassung erzeugen — im schlimmsten Fall bleibt ein
+    Thema an seinem alten Platz, und das ist der heutige Zustand.
+    """
+    bedingt = lade_regel_bedingungen()
+    quelle: dict[str, str] = {}
+    for thema in nach_thema:
+        for c in bedingt.get(thema, []):
+            qt = (bindung.get(c["feld"], {}).get("quelle") or {}).get("regel_id")
+            if qt and qt != thema and qt in nach_thema:
+                quelle[thema] = qt
+                break
+
+    # Der Einstieg steht fest (s. lade_themen_zuerst): Stammdaten zuerst, dann der Rest nach
+    # Gewicht. Ohne das eröffnete der Fragebogen mit „Hattest du Kosten für Handwerker?", während
+    # Name und Anschrift auf Platz 50 standen.
+    zuerst = [t for t in lade_themen_zuerst() if t in nach_thema and t not in quelle]
+    folge = zuerst + [t for t in nach_thema if t not in quelle and t not in zuerst]
+    for thema, qt in quelle.items():
+        if qt in folge:
+            folge.insert(folge.index(qt) + 1, thema)
+    # Was nirgends untergekommen ist (Bedingungsthema selbst verschoben oder Ring), hängt hinten
+    # an — verlieren darf die Umordnung nichts.
+    return folge + [t for t in nach_thema if t not in folge]
 
 
 # ---------------------------------------------------------------- (b) VORWÄRTS

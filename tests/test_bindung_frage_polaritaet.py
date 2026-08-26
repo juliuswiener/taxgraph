@@ -196,8 +196,16 @@ def test_fragen_reicht_die_umkehr_an_die_oberflaeche(tmp_path, monkeypatch):
     ("dhf_keine_pflicht_dienstwohnung", True, "nein"),
     # nicht invertiert: die Frage traegt die Verneinung selbst
     ("stammdaten_keine_bankverbindung", True, "ja"),
-    ("vv_nebenkosten_nicht_vereinbart", True, "ja"),
-    ("hh_handwerker_keine_foerderung", False, "nein"),
+    # GEDREHT 2026-08-26 mit der Frage selbst (Julius: „1 ändern auf positive fragen"). Beide
+    # Fragen tragen die Verneinung nicht mehr im Text — „Wurden Nebenkosten vereinbart?" statt
+    # „Wurden KEINE Nebenkosten vereinbart?" —, also sind beide Felder jetzt `frage_invertiert`
+    # und ein gespeichertes `true` (= „nicht vereinbart") heisst auf die gestellte Frage „nein".
+    # Dass diese beiden Zeilen sich mitdrehen MUSSTEN, ist der Beleg, dass die Umkehr greift:
+    # bliebe die Anzeige gleich, waere die neue Frage mit der alten Antwort beschriftet.
+    ("vv_nebenkosten_nicht_vereinbart", True, "nein"),
+    ("vv_nebenkosten_nicht_vereinbart", False, "ja"),
+    ("hh_handwerker_keine_foerderung", False, "ja"),
+    ("hh_handwerker_keine_foerderung", True, "nein"),
 ])
 def test_erklaer_kontext_nennt_die_antwort_nicht_den_rohwert(fid, gespeichert, erwartet):
     """`_wert_klartext` sagt dem Modell, was der Nutzer geantwortet hat. Vorher riet es am

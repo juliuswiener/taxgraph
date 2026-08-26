@@ -78,7 +78,20 @@ KIND_SCREENING = ("kein_kind",)
 # bedürftige Person, 12 zur energetischen Sanierung und 5 zu Versorgungsbezügen. Sachverhalte,
 # die er mit je EINER Antwort ausschliessen kann.
 AUSGABEN_SCREENING = ("kein_unterhalt", "keine_auslandseinkuenfte", "keine_behinderung_pflege",
-                      "keine_versorgungsbezuege", "keine_energetische_sanierung")
+                      "keine_versorgungsbezuege", "keine_energetische_sanierung",
+                      # 2026-08-26: sechs Themen, die bis dahin KEINE einzige Frage nach
+                      # ihrer Existenz hatten — Julius bekam sie alle ungefiltert
+                      # („es war von keiner photovoltaikanlage die rede", „es war von
+                      # keinem arbeitsmittel die rede", „es wird anlasslos von einem ex
+                      # ehepartner ausgegangen"). 39 Fragen weniger, wenn alle verneint.
+                      "keine_arbeitsmittel",
+                      "kein_realsplitting",
+                      "keine_spenden",
+                      "keine_berufsausbildung",
+                      "kein_verlustvortrag",
+                      "keine_lohnersatzleistungen",
+                      "keine_zweitwohnung",
+                      "vpf_auswaertige_taetigkeit")
 # person_b_idnr NICHT hier: ERiC lehnt E0100082 amtlich ab (rc=610301106, "Eingefuegt-Kennzeichen
 # J/P"), unabhaengig vom Wert — Feld wird nicht mehr deklariert (elster_kz: null in
 # bindung_an_gesamt.yaml), darf also auch keinen Ehepaar-Bescheid mehr blockieren. Gemessen

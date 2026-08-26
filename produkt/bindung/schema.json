@@ -45,6 +45,13 @@
         "$ref": "#/$defs/instanz_gruppe"
       },
       "description": "Je Instanz-Gruppe (instanz_gruppe an den Feldern): woher die ANZAHL kommt. Ohne Eintrag verhaelt sich die Gruppe wie eine einzige Instanz."
+    },
+    "themen_zuerst": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/thema_zuerst"
+      },
+      "description": "Regeln, die den Fragebogen eroeffnen — in dieser Reihenfolge, unabhaengig vom Gate-Gewicht. Ohne sie beginnt der Fragebogen mit dem Thema der groessten Streichkraft; gemessen 2026-08-26 war das „Hattest du Kosten fuer Handwerker?\", waehrend Name und Anschrift auf Platz 50 standen."
     }
   },
   "$defs": {
@@ -306,6 +313,86 @@
         "screening": {
           "type": "boolean",
           "description": "Optional. Diese Frage erhebt die EXISTENZ eines ganzen Themas (Kinder, Vermietung, Kapitalertraege, Behinderung ...) und schaltet bei Verneinung einen ganzen Block ab. Die Oberflaeche stellt alle screening-Fragen GEMEINSAM als Ankreuzliste an den Anfang, statt sie einzeln durch den Fragebogen zu verteilen — gemessen 2026-08-25: zehn Kreuze nehmen 147 Einzelfragen weg. Deklariert und nicht am Feldnamen abgelesen: eine Heuristik ueber 'kein_' ist genau der Fehler, den frage_invertiert hier schon einmal ersetzt hat."
+        },
+        "beweist": {
+          "type": "object",
+          "description": "Optional. Dieses Feld BEWEIST die Antwort auf eine Existenzfrage: wer die Anzahl seiner Kinder nennt, hat Kinder. Ohne diese Deklaration fragt der Fragebogen die Existenz danach trotzdem (Julius' Befund 2026-08-25: `fam_anzahl_kinder=2` beantwortet, `kein_kind` stand danach auf Position 2 von 320). Greift NUR bei zustand=bestaetigt und NUR, solange das Zielfeld unbeantwortet ist — ein vorlaeufiger Vorschlag beweist nichts, und ein vorhandenes Event wird nie ueberschrieben (Auflage B). Der abgeleitete Wert traegt herkunft=berechnet und ist als solcher sichtbar; er wird NICHT als Eingabe des Nutzers ausgegeben.",
+          "properties": {
+            "feld_id": {
+              "type": "string",
+              "description": "Das Existenzfeld, das dadurch beantwortet ist."
+            },
+            "wert": {
+              "description": "Der Wert, der fuer das Zielfeld feststeht."
+            },
+            "ab": {
+              "type": "number",
+              "description": "Numerischer Mindestwert, ab dem der Beweis traegt (Vorgabe 1). Darunter greift NICHTS: `0 Kinder` laesst die Existenzfrage stehen, statt still das Gegenteil zu schreiben."
+            }
+          },
+          "required": [
+            "feld_id",
+            "wert"
+          ],
+          "additionalProperties": false
+        },
+        "feld_bedingung": {
+          "type": "object",
+          "description": "Optional. DIESES Feld entfällt, wenn `feld` einen anderen Wert als `wert` traegt. Fuer Spezialfelder, die in einer ALLGEMEINEN Regel sitzen: `regel_bedingungen` schaltet ganze Regeln ab und kann dort nicht greifen, weil dieselbe Regel auch das fuer jeden Geltende traegt. Julius 2026-08-26: „Aus welcher Art von Taetigkeit stammt dieser Gewinn? — kein gewinn ist erwaehnt worden\" (Feld in p2_festzusetzung_einzel, der Basisregel) und „Moechtest du deinen Behinderten-Pauschbetrag nutzen? — in der checkliste war keine behinderung angehakt\" (Feld in p33_1_2_agb_abzug). Fail-closed wie die Regel-Bedingung: nur eine BESTAETIGTE abweichende Antwort schliesst aus, Schweigen und ein vorlaeufiger Vorschlag nicht.",
+          "properties": {
+            "feld": {
+              "type": "string",
+              "description": "Das Feld, dessen Antwort entscheidet."
+            },
+            "wert": {
+              "description": "Der Wert, bei dem dieses Feld gefragt wird."
+            },
+            "grund": {
+              "type": "string",
+              "minLength": 40,
+              "description": "Warum das Feld ohne diesen Wert gegenstandslos ist, mit Norm."
+            },
+            "wert_nicht": {
+              "description": "Alternative zu `wert`, wo die Existenzfrage ein AUSWAHLFELD ist: das Feld entfaellt, wenn `feld` GENAU diesen Wert traegt. Fuer kist_konfession, das drei zutreffende Werte hat und einen ausschliessenden ('keine')."
+            }
+          },
+          "required": [
+            "feld",
+            "grund"
+          ],
+          "additionalProperties": false
+        },
+        "ableitung": {
+          "type": "object",
+          "description": "Optional. Dieses Feld wird BERECHNET, sobald `aus` bestaetigt vorliegt — es wird dann nicht mehr gefragt. Anders als `beweist` (fester Wert) rechnet die Ableitung. Gefunden im E2E-Durchgang 2026-08-26: „Hattest du vor Beginn dieses Jahres schon deinen 64. Geburtstag?\", direkt danach „In welchem Jahr bist du geboren?\" — und das Geburtsdatum stand schon in den Stammdaten. Drei Fragen fuer dieselbe Angabe. Fail-closed wie ueberall: ohne bestaetigtes Quellfeld oder bei unlesbarem Wert passiert NICHTS, die Frage bleibt.",
+          "properties": {
+            "aus": {
+              "type": "string",
+              "description": "Feld, aus dem gerechnet wird."
+            },
+            "art": {
+              "enum": [
+                "jahr_aus_datum",
+                "alter_am_jahresbeginn_erreicht",
+                "uebernahme"
+              ],
+              "description": "jahr_aus_datum: das Jahr der Jahreszahl. alter_am_jahresbeginn_erreicht: true, wenn die Person zu Beginn des Veranlagungszeitraums `schwelle` Jahre alt war. uebernahme: derselbe Wert (zwei Felder, eine Frage)."
+            },
+            "schwelle": {
+              "type": "number",
+              "description": "Altersschwelle, nur bei alter_*."
+            },
+            "grund": {
+              "type": "string",
+              "minLength": 40
+            }
+          },
+          "required": [
+            "aus",
+            "art",
+            "grund"
+          ],
+          "additionalProperties": false
         }
       },
       "allOf": [
@@ -490,6 +577,23 @@
           "description": "Warum diese Gruppe je Instanz erhoben wird, mit Normbezug."
         }
       }
+    },
+    "thema_zuerst": {
+      "type": "object",
+      "properties": {
+        "regel_id": {
+          "type": "string"
+        },
+        "grund": {
+          "type": "string",
+          "minLength": 40
+        }
+      },
+      "required": [
+        "regel_id",
+        "grund"
+      ],
+      "additionalProperties": false
     }
   }
 }

@@ -207,6 +207,8 @@ bindungen:
   # ========================= Altersentlastungsbetrag §24a (p24a) =========================
   - feld_id: rentner_alter_64_erfuellt
     quelle: {regel_id: p24a_altersentlastungsbetrag, geltungsbedingung: alter_64_vor_bezugsjahr_vollendet}
+    eingangsfrage: true
+    ableitung: {aus: stammdaten_geburtsdatum, art: alter_am_jahresbeginn_erreicht, schwelle: 64, grund: "§ 24a S. 3 EStG stellt darauf ab, ob der Steuerpflichtige vor Beginn des Kalenderjahres das 64. Lebensjahr vollendet hat. Das ergibt sich aus dem Geburtsdatum, das die Stammdaten erheben — die Frage danach ist rechnerisch redundant."}
     typ: bool
     einheit: null
     askable: true
@@ -263,6 +265,7 @@ bindungen:
   # ========================= Hinterbliebenen-Pauschbetrag §33b Abs. 4 =========================
   - feld_id: rentner_hinterbliebenenbezuege
     quelle: {regel_id: p33b_hinterbliebenen_pauschbetrag, signatur_slot: hat_hinterbliebenenbezuege}
+    eingangsfrage: true
     typ: bool
     einheit: null
     askable: true
@@ -437,6 +440,7 @@ bindungen:
   # Person A). Store-/Feldseite folgt person_b-Bucket (wie kap_kapitalertraege_partner).
   - feld_id: rentner_grad_der_behinderung_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: grad_der_behinderung_partner}
+    feld_bedingung: {feld: keine_behinderung_pflege, wert: false, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus. Das Ankreuzfeld `keine_behinderung_pflege` erhebt sie ausdruecklich fuer die eigene Person und fuer Kinder; wer sie bestaetigt verneint, hat auch fuer den Partner keinen Grad anzugeben. Das Feld sitzt in der Zusammenveranlagungs-Regel, die nicht entfallen darf — deshalb auf Feldebene."}
     typ: int
     einheit: null
     bereich: {min: 20, max: 100, grund: "GdB des Ehe-/Lebenspartners, amtlich 20..100; jeder Ehegatte hat einen eigenen Behinderten-Pauschbetrag (§ 33b personenbezogen)."}

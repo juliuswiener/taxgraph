@@ -65,6 +65,11 @@ FAELLE = [
      "Wird die Wohnung zum Wohnen vermietet?"),
     ("vpf_auswaertige_taetigkeit", False, "uebernachtung_auswaerts",
      "War der Übernachtungsort ein auswärtiger Arbeitsort?"),
+    # 2026-08-25, derselbe Nutzer, derselbe Satz: „diese frage hat immernoch keine gundlage …
+    # es gibt keine zweitwohnung". Der grösste Fall der Reihe: die Regel führte DREIZEHN askable
+    # Felder und KEINES davon erhob, ob es überhaupt eine Zweitwohnung gibt.
+    ("keine_zweitwohnung", True, "dhf_beruflich_veranlasst",
+     "Hast du die Zweitwohnung nur aus beruflichen Gründen (wegen deiner Arbeit)?"),
 ]
 
 
@@ -127,3 +132,37 @@ def test_die_bedingung_zeigt_auf_ein_feld_das_es_gibt(bindung):
                if c["feld"] not in bindung]
     assert not fehlend, ("Regelbedingungen zeigen auf Felder, die es nicht gibt:\n  "
                          + "\n  ".join(fehlend))
+
+
+def test_die_zweitwohnung_wird_zuerst_gefragt_und_nimmt_dann_alles_mit(bindung):
+    """Der Fall vom 2026-08-25, in Zahlen — und er prüft ZWEI Dinge, weil eines allein nicht reicht.
+
+    `eingangsfrage: true` regelt nur die REIHENFOLGE. Stünde die Frage vorn, ohne dass eine
+    Regelbedingung sie scharf macht, käme sie zuerst und die zwölf anderen kämen trotzdem — der
+    Nutzer bekäme dann sogar zweimal Unrecht. Deshalb: Position UND Wirkung.
+    """
+    queue = _queue(bindung)
+    dhf = [f for f in queue if f.startswith("dhf_")]
+    assert len(dhf) >= 12, f"Nur {len(dhf)} dhf-Felder in der Queue — Messung prüfen."
+    # Die Existenzfrage steht seit 2026-08-26 in der Ankreuzliste (`keine_zweitwohnung`) und NICHT
+    # mehr im Block. `dhf_eigener_hausstand` war als Eingang ein Fehlgriff: es fragt nach dem
+    # Hauptwohnsitz, den fast jeder ausserhalb des Arbeitsorts hat — Julius: „die meisten menschen
+    # wohnen nicht unmittelbar am ort ihrer arbeit, aber hier geht es um 2. wohnsitz". Wer bejahte,
+    # bekam alle zwölf Detailfragen. Geprüft wird deshalb nur noch, dass der Block zusammenhängt.
+    plaetze_alle = [i for i, f in enumerate(queue) if f.startswith("dhf_")]
+    assert plaetze_alle[-1] - plaetze_alle[0] + 1 == len(plaetze_alle), (
+        "Die Zweitwohnungs-Fragen sind nicht mehr zusammenhängend.")
+
+    s = ST.leerer_store(veranlagungszeitraum=2025, fall_id="dhf")
+    ST.append_event(s, feld_id="keine_zweitwohnung", wert=True, zustand="bestaetigt",
+                    herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                    schreiber="ui:laie",
+                    signal={"signal_1": None, "signal_2": "klick@keine_zweitwohnung"},
+                    bindung=bindung)
+    nachher = TR.naechste_fragen(s, bindung, None)
+    uebrig = [f for f in nachher if f.startswith("dhf_")]
+    assert not uebrig, (
+        f"Nach „kein eigener Hausstand“ stehen noch {len(uebrig)} Zweitwohnungs-Fragen: {uebrig}")
+    assert len(queue) - len(nachher) >= 13, (
+        f"Nur {len(queue) - len(nachher)} Fragen weniger — die Bedingung greift nicht auf die "
+        f"ganze Regel.")

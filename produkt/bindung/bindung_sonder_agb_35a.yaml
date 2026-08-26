@@ -8,6 +8,7 @@ bindungen:
   # ========================= Sonderausgaben — KiSt (p10_1_4_kirchensteuer) =========================
   - feld_id: kist_gezahlt
     quelle: {regel_id: p10_1_4_kirchensteuer, signatur_slot: gezahlte_kirchensteuer}
+    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
     typ: cent
     einheit: EUR
     askable: true
@@ -26,6 +27,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: kist_erstattet
     quelle: {regel_id: p10_1_4_kirchensteuer, signatur_slot: erstattete_kirchensteuer}
+    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
     typ: cent
     einheit: EUR
     askable: true
@@ -129,6 +131,8 @@ bindungen:
   - feld_id: agb_aufwendungen
     vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p33_1_2_agb_abzug, signatur_slot: aussergewoehnliche_belastungen}
+    # Eingangsfrage (2026-08-26, E2E-Durchgang auf Julius' Bitte). Frage 24 von 24: „Hattest du groessere aussergewoehnliche Ausgaben?" stand HINTER „Waren die Ausgaben notwendig?" und „Konntest du sie nicht vermeiden?" — zwei Merkmalen von Ausgaben, die niemand erhoben hatte.
+    eingangsfrage: true
     typ: cent
     einheit: EUR
     askable: true
@@ -159,6 +163,7 @@ bindungen:
   - feld_id: behinderungsbedingte_aufwendungen
     vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: kein_uebertragener_behinderten_pb_fuer_dieselben_aufwendungen}
+    feld_bedingung: {feld: keine_behinderung_pflege, wert: false, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus; das Wahlrecht zwischen Pauschbetrag und Einzelnachweis besteht nur fuer behinderungsbedingte Aufwendungen. `keine_behinderung_pflege` erhebt die Existenz — wer bestaetigt, keine zu haben, hat weder solche Aufwendungen noch ein Wahlrecht darueber. Die Felder sitzen in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -185,6 +190,7 @@ bindungen:
   # nicht an einen Slot — reine Tatbestands-Voraussetzung wie agb_zwangslaeufig.
   - feld_id: behinderungsbedingte_aufwendungen_wahlrecht_pb
     quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb}
+    feld_bedingung: {feld: keine_behinderung_pflege, wert: false, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus; das Wahlrecht zwischen Pauschbetrag und Einzelnachweis besteht nur fuer behinderungsbedingte Aufwendungen. `keine_behinderung_pflege` erhebt die Existenz — wer bestaetigt, keine zu haben, hat weder solche Aufwendungen noch ein Wahlrecht darueber. Die Felder sitzen in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
     typ: bool
     einheit: null
     askable: true
@@ -209,6 +215,7 @@ bindungen:
   - feld_id: behinderungsbedingte_aufwendungen_partner
     vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb_partner}
+    feld_bedingung: {feld: keine_behinderung_pflege, wert: false, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus; das Wahlrecht zwischen Pauschbetrag und Einzelnachweis besteht nur fuer behinderungsbedingte Aufwendungen. `keine_behinderung_pflege` erhebt die Existenz — wer bestaetigt, keine zu haben, hat weder solche Aufwendungen noch ein Wahlrecht darueber. Die Felder sitzen in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -226,6 +233,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
   - feld_id: behinderungsbedingte_aufwendungen_wahlrecht_pb_partner
     quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb_partner}
+    feld_bedingung: {feld: keine_behinderung_pflege, wert: false, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus; das Wahlrecht zwischen Pauschbetrag und Einzelnachweis besteht nur fuer behinderungsbedingte Aufwendungen. `keine_behinderung_pflege` erhebt die Existenz — wer bestaetigt, keine zu haben, hat weder solche Aufwendungen noch ein Wahlrecht darueber. Die Felder sitzen in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
     typ: bool
     einheit: null
     askable: true
@@ -247,7 +255,7 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Konntest du diese Ausgaben nicht vermeiden (aus rechtlichen, tatsächlichen oder sittlichen Gründen)?"
+    fragetext_laie: "Musstest du diese Ausgaben zwangsläufig tragen (aus rechtlichen, tatsächlichen oder sittlichen Gründen)?"
     hilfe_kurz: "Zum Beispiel Krankheitskosten kannst du nicht einfach weglassen."
     beispielwert: true
     herkunft_slots: null
@@ -307,7 +315,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Was hast du deiner Haushaltshilfe auf Minijob-Basis für diesen Posten gezahlt?"
+    fragetext_laie: "Was hast du einer Haushaltshilfe auf Minijob-Basis gezahlt?"
     hilfe_kurz: "Ein einzelner Zahlungsposten (z. B. ein Monat). Mehrere Zahlungen? Trag sie einzeln ein."
     beispielwert: 25000
     herkunft_slots: ["Minijob-Bescheinigung: Aufwendungen"]
@@ -357,7 +365,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Was hast du für diesen Posten an Arbeitskosten für eine haushaltsnahe Dienstleistung gezahlt (ohne Material)?"
+    fragetext_laie: "Was hast du an Arbeitskosten für haushaltsnahe Dienstleistungen gezahlt (ohne Material)?"
     hilfe_kurz: "Ein einzelner Rechnungsposten. Nur die Arbeitskosten, nicht das Material."
     beispielwert: 50000
     herkunft_slots: ["Dienstleistungsrechnung: Arbeitskosten"]
@@ -412,7 +420,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Was hast du für diesen Posten an Arbeitskosten für eine Handwerkerleistung gezahlt (ohne Material)?"
+    fragetext_laie: "Was hast du an Arbeitskosten für Handwerkerleistungen gezahlt (ohne Material)?"
     hilfe_kurz: "Ein einzelner Rechnungsposten. Nur die Arbeitskosten, nicht das Material."
     beispielwert: 60000
     herkunft_slots: ["Handwerkerrechnung: Arbeitskosten"]
@@ -526,11 +534,12 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: hh_handwerker_keine_foerderung
     quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: handwerker_keine_oeffentliche_foerderung}
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt seit 2026-08-26 nach der Anwesenheit
     typ: bool
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Wurden die Handwerkerleistungen NICHT öffentlich gefördert (zum Beispiel durch einen KfW-Zuschuss oder ein zinsverbilligtes Darlehen)?"
+    fragetext_laie: "Wurden die Handwerkerleistungen öffentlich gefördert (zum Beispiel durch einen KfW-Zuschuss oder ein zinsverbilligtes Darlehen)?"
     hilfe_kurz: "Öffentlich geförderte Maßnahmen zählen hier nicht mit."
     beispielwert: true
     herkunft_slots: null

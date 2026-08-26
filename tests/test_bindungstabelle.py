@@ -1294,6 +1294,16 @@ REGELN_OHNE_GROUND_TRUTH = {
     "p33b_behinderung_pflege_vorhanden",
     "p19_2_versorgungsbezuege_vorhanden",
     "p35c_sanierung_vorhanden",
+    # 2026-08-26, sechs weitere derselben Bauart: Themen, die bis dahin keine
+    # einzige Frage nach ihrer Existenz hatten (Arbeitsmittel, Realsplitting,
+    # Spenden, Berufsausbildung, Verlustvortrag, Lohnersatzleistungen).
+    "p9_1_3_nr6_arbeitsmittel_vorhanden",
+    "p10_1a_realsplitting_vorhanden",
+    "p10b_spenden_vorhanden",
+    "p10_1_7_berufsausbildung_vorhanden",
+    "p10d_2_verlustvortrag_vorhanden",
+    "p32b_progression_vorhanden",
+    "p9_1_3_nr5_zweitwohnung_vorhanden",
     # Hat einen dict-Accessor (catala_p19_2_versorgungsfreibetrag), aber der liest FELD-IDs
     # (versorgung_bemessungsgrundlage), waehrend die Bindung SLOT-Namen fuehrt
     # (bemessungsgrundlage). Der Ring ruft ausserdem catala_einkuenfte_versorgung, nicht den

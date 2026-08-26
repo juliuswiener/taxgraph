@@ -132,14 +132,20 @@ INVERTIERT = [
     ("kein_vuv", "true", "ja, ich hatte Mieteinnahmen", False),
     ("kein_sonstige", "true", "ja, ich hatte sonstige Einkünfte", False),
     ("kein_kind", "true", "ja, ich habe Kinder", False),
+    # seit 2026-08-26 positiv gefragt und deshalb invertiert (s. NICHT_INVERTIERT unten)
+    ("vv_nebenkosten_nicht_vereinbart", "true", "ja, Nebenkosten wurden vereinbart", False),
+    ("hh_handwerker_keine_foerderung", "true", "ja, die Leistungen waren gefördert", False),
 ]
 
 # Felder, deren Frage die Verneinung SELBST trägt — hier wäre eine Umkehr der Fehler.
+#
+# ZWEI EINTRÄGE SIND AM 2026-08-26 IN DIE OBERE LISTE GEWANDERT (Julius: „1 ändern auf positive
+# fragen"): `vv_nebenkosten_nicht_vereinbart` und `hh_handwerker_keine_foerderung` fragten
+# „Wurden KEINE Nebenkosten vereinbart?" bzw. „Wurden die Leistungen NICHT gefördert?" — beim
+# Antworten also doppelt verneint. Die Fragen sind jetzt positiv formuliert und die Felder
+# deshalb `frage_invertiert`. Dass diese Datei das bemerkt hat, ist der Zweck der Sache: wandert
+# ein Fragetext, ohne dass die Umkehr mitwandert, speichert die Oberfläche das Gegenteil.
 NICHT_INVERTIERT = [
-    ("vv_nebenkosten_nicht_vereinbart", "true",
-     "ja, es wurden KEINE Nebenkosten vereinbart", True),
-    ("hh_handwerker_keine_foerderung", "true",
-     "ja, die Leistungen waren NICHT gefördert", True),
     ("uebernachtung_keine_lange_unterbrechung", "false",
      "nein, es gab eine Pause von sechs Monaten", False),
 ]
@@ -173,7 +179,10 @@ def test_selbstverneinende_frage_wird_nicht_umgekehrt(seite, fid, klick, bedeutu
     ("vpf_keine_mahlzeitengestellung", False, "Ja"),
     ("dhf_keine_pflicht_dienstwohnung", True, "Nein"),
     ("kein_kap", True, "Nein"),
-    ("vv_nebenkosten_nicht_vereinbart", True, "Ja"),    # Frage verneint selbst -> keine Umkehr
+    # seit 2026-08-26: Frage „Wurden Nebenkosten vereinbart?", gespeichert wird die
+    # ABWESENHEIT — ein true heisst auf die gestellte Frage also „Nein".
+    ("vv_nebenkosten_nicht_vereinbart", True, "Nein"),
+    ("vv_nebenkosten_nicht_vereinbart", False, "Ja"),
 ])
 def test_verstanden_seite_zeigt_die_antwort_nicht_den_rohwert(seite, fid, gespeichert, erwartet_text):
     """Auf der Verstanden-Seite bestätigt der Nutzer mit EINEM Klick, was er dort liest. Steht

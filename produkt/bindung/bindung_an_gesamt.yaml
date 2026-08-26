@@ -151,6 +151,7 @@ bindungen:
   # params/kohorten/altersentlastungsbetrag_p24a.yaml. Optional (Feld-Präsenz, absent -> §24a 0).
   - feld_id: geburtsjahr
     quelle: {regel_id: p24a_altersentlastungsbetrag, geltungsbedingung: prozentsatz_hoechstbetrag_aus_kohortentabelle}
+    ableitung: {aus: stammdaten_geburtsdatum, art: jahr_aus_datum, grund: "Das Geburtsjahr steht im Geburtsdatum, das die Stammdaten ohnehin erheben (§ 25 EStG i.V.m. § 149 AO, Angaben zur Person). Zweimal danach zu fragen ist eine Frage zu viel."}
     typ: int
     einheit: null
     bereich: {min: 1900, max: 2010, grund: "Geburtsjahr, plausibler Bereich für erwerbstätige/rentennahe Steuerpflichtige."}
@@ -333,6 +334,7 @@ bindungen:
   # sie blockiert die BERECHNUNG nicht (der Ring rechnet nur aus dem Betrag, die Weiche steuert nur den Kz).
   - feld_id: einkuenfte_gewinn
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: einkuenfte_gewinn}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: cent
     einheit: EUR
     askable: true
@@ -351,6 +353,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
   - feld_id: gewinn_betriebsart
     quelle: {regel_id: p2_festzusetzung_einzel, geltungsbedingung: gewinn_betriebsart_weiche}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: enum
     einheit: null
     enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
@@ -373,6 +376,7 @@ bindungen:
   # Betrag, die Bezeichnung steht nur in der Anlage (SIGNATUR_SLOT_ZEIGT_INS_LEERE).
   - feld_id: gewinn_bezeichnung
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewinn_bezeichnung}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: text
     einheit: null
     askable: true
@@ -601,6 +605,7 @@ bindungen:
   # (§18/§13 nicht gewerbesteuerpflichtig; dev-1s Zähler-Gating). dev-1s slot_fn liest die feld_ids 1:1.
   - feld_id: gewst_hebesatz
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_hebesatz}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: int
     einheit: null
     bereich: {min: 1, max: 999, grund: "Reine Sanity-Bound (Hebesatz-Prozentzahl > 0). KEIN gesetzlicher Mindesthebesatz-Anker — § 16 Abs. 4 S. 2 GewStG (200 %) ist source-pending (GewStG-§ 16-Quelle nicht lokal); übliche Hebesätze 200-900 % sind nur Hinweis, keine harte Grenze."}
@@ -621,6 +626,7 @@ bindungen:
   - feld_id: gewst_messbetrag
     vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_messbetrag}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1358,6 +1364,7 @@ bindungen:
 
   - feld_id: kirchensteuer_arbeitgeber_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    feld_bedingung: {feld: kist_konfession_partner, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1388,6 +1395,7 @@ bindungen:
   # Verdopplung eines bekannten Fehlers.
   - feld_id: einkuenfte_gewinn_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: einkuenfte_gewinn_partner}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1406,6 +1414,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
   - feld_id: gewinn_betriebsart_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: gewinn_betriebsart_partner_weiche}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: enum
     einheit: null
     enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
@@ -1426,6 +1435,7 @@ bindungen:
   # Person A. Ohne sie lehnt checkESt den Partner-Betrag ab, sobald einkuenfte_gewinn_partner steht.
   - feld_id: gewinn_bezeichnung_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewinn_bezeichnung_partner}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: text
     einheit: null
     askable: true
@@ -1448,6 +1458,7 @@ bindungen:
     # nur Person-A-Signatur-Slots, ein zweiter Aufruf fuer Person B ist Stufe 2 (Ring, api.py) und
     # noch nicht gebaut. Rechtsgrundlage bleibt § 15 Abs. 1 S. 1 Nr. 2 EStG (s. anker_ref unten).
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewinnanteil_partner}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1526,6 +1537,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
   - feld_id: gewst_hebesatz_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_hebesatz_partner}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: int
     einheit: null
     bereich: {min: 1, max: 999, grund: "Reine Sanity-Bound (Hebesatz-Prozentzahl > 0), wie gewst_hebesatz (Person A). KEIN gesetzlicher Mindesthebesatz-Anker."}
@@ -1544,6 +1556,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
   - feld_id: gewst_messbetrag_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_messbetrag_partner}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: cent
     einheit: EUR
     askable: true

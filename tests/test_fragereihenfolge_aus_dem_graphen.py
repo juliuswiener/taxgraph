@@ -59,21 +59,48 @@ def test_veranlagung_kommt_zuerst():
 
 
 def test_gates_stehen_nach_gewicht_absteigend():
-    """Kernsortierung: Fragen, die viel abschalten, zuerst. Ohne diesen Test wäre eine Rückkehr
-    zur alphabetischen Ordnung unbemerkt möglich — sie sieht in keiner Rechnung anders aus."""
+    """Kernsortierung: Fragen, die viel abschalten, zuerst.
+
+    JE THEMA, nicht mehr global — GEÄNDERT 2026-08-25 auf Julius' Anforderung: „wichtig auch dass
+    die fragen in einer für den user sinnvollen reihenfolge kommt. abwechselnd fragen zu kindern,
+    behinderung, arbeitsort, dann wieder kinder ist schwer nachvollziehbar."
+
+    Die globale Ordnung nach Gewicht und die thematische Gruppierung schliessen einander aus, und
+    der Preis ist gemessen, nicht geschätzt: die Summe der Gate-Gewichte in den ersten 20 Fragen
+    fällt von **344 auf 44**, `kein_vuv` rutscht von Platz 6 auf 55.
+
+    Warum das vertretbar ist — beides gehört zusammen gelesen:
+    1. Vier der zehn schwersten Gates (`kein_kind`, `kein_unterhalt`, `kein_vuv`, `kein_gewinn`)
+       sind `screening`-Felder und werden in der Ankreuzliste beantwortet, BEVOR die Queue
+       überhaupt zum Zug kommt. Ihre Position in der Queue sagt über den echten Ablauf nichts.
+    2. Innerhalb eines Themas steht sein Gate weiterhin vorn. Wer es verneint, dessen Regel ist
+       ausgeschlossen — die Detailfragen erscheinen in der nächsten Queue gar nicht erst. Das
+       Streichen geschieht also weiterhin, bevor gefragt wird; nur nicht mehr über Themen hinweg.
+
+    Was dieser Test seit jeher verhindert, verhindert er weiterhin: eine Rückkehr zur
+    alphabetischen Ordnung. Sie sieht in keiner Rechnung anders aus."""
     store, bindung = _leerer_fall()
     fragen = TR.naechste_fragen(store, bindung)
     gw = TR.gate_gewicht(bindung)
-    mit_gewicht = [(f, gw.get(f, 0)) for f in fragen if gw.get(f, 0) > 0]
-    assert mit_gewicht, "Kein einziges Feld hat Gewicht — gate_gewicht() misst nichts."
-    gewichte = [g for _f, g in mit_gewicht]
-    assert gewichte == sorted(gewichte, reverse=True), (
-        f"Gates stehen nicht absteigend nach Gewicht: {mit_gewicht[:8]}")
-    # und sie stehen VOR den gewichtslosen Feldern
-    erstes_ohne = next((i for i, f in enumerate(fragen) if gw.get(f, 0) == 0), len(fragen))
-    letztes_mit = max(i for i, f in enumerate(fragen) if gw.get(f, 0) > 0)
-    assert letztes_mit < erstes_ohne, (
-        "Ein Feld ohne Gewicht steht vor einem Feld mit Gewicht — die Queue mischt die Ebenen.")
+    assert any(gw.get(f, 0) > 0 for f in fragen), (
+        "Kein einziges Feld hat Gewicht — gate_gewicht() misst nichts.")
+    je_thema: dict[str, list[str]] = {}
+    for f in fragen:
+        je_thema.setdefault((bindung[f].get("quelle") or {}).get("regel_id") or "", []).append(f)
+    for regel, felder in je_thema.items():
+        # Die Eingangsfrage steht immer vorn (s. traverser._nach_themen) — auch wenn sie kein Gate
+        # ist. Sie darf die Gewichts-Reihenfolge der übrigen also nicht widerlegen.
+        felder = [f for f in felder if not bindung[f].get("eingangsfrage")]
+        gewichte = [gw.get(f, 0) for f in felder if gw.get(f, 0) > 0]
+        assert gewichte == sorted(gewichte, reverse=True), (
+            f"{regel}: Gates stehen nicht absteigend nach Gewicht: "
+            f"{[(f, gw.get(f, 0)) for f in felder if gw.get(f, 0) > 0][:8]}")
+        erstes_ohne = next((i for i, f in enumerate(felder) if gw.get(f, 0) == 0), len(felder))
+        mit = [i for i, f in enumerate(felder) if gw.get(f, 0) > 0]
+        if mit:
+            assert max(mit) < erstes_ohne, (
+                f"{regel}: ein Feld ohne Gewicht steht vor einem Feld mit Gewicht — innerhalb "
+                f"eines Themas mischt die Queue die Ebenen.")
 
 
 def test_gewicht_folgt_der_bindung_nicht_einer_liste():

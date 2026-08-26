@@ -159,7 +159,7 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # ANLASS: 69 Felder tragen eine Instanz-Achse (31 für Kinder), Store und ELSTER-Mapping kennen sie
 # seit langem — der Fragebogen fragte trotzdem einmal. Wer zwei Kinder hatte, konnte einen
 # Vornamen eintragen; für das zweite gab es kein Feld. Abgabe-Blocker, kein Anzeigefehler.
-API_ZEILEN_OBERGRENZE = 1195
+API_ZEILEN_OBERGRENZE = 1199
 
 
 def _runner_stellen(pfad: str) -> list[int]:

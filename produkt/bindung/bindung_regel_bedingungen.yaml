@@ -252,9 +252,108 @@ regel_bedingungen:
 # rente, p23_veraeusserung, hh_*, gwg) haben KEIN Zaehlfeld im Fragebogen — dort muss erst eines
 # gebaut werden. Bis dahin verhalten sie sich wie bisher (eine Instanz), und das ist ehrlicher als
 # eine geratene Anzahl.
+  # ---- Zweitwohnung: zwölf Detailfragen ohne Eingangsfrage (Julius, 2026-08-25) ----
+  # „diese frage hat immernoch keine gundlage: Hast du die Zweitwohnung nur aus beruflichen
+  # Gründen? … es gibt keine zweitwohnung"
+  #
+  # GEMESSEN: die Regel führt 13 askable Felder, ALLE dreizehn wurden gefragt, und KEINES davon
+  # erhob, ob es überhaupt eine Zweitwohnung gibt. `dhf_eigener_hausstand` trägt jetzt
+  # `eingangsfrage: true` und kommt zuerst; diese Bedingung sorgt dafür, dass ein „Nein" die
+  # übrigen zwölf wegnimmt, statt sie nur nach hinten zu schieben.
+  - regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung
+    feld: keine_zweitwohnung
+    wert: false
+    grund: "§ 9 Abs. 1 S. 3 Nr. 5 S. 2 EStG: eine doppelte Haushaltsfuehrung liegt NUR vor, wenn der Arbeitnehmer ausserhalb des Ortes seiner ersten Taetigkeitsstaette einen eigenen Hausstand unterhaelt. Wer bestaetigt, keinen solchen Hausstand zu haben, erfuellt den Tatbestand nicht — dann gibt es keine Zweitwohnung, zu der Miete, Monate, Lage oder berufliche Veranlassung zu erklaeren waeren. Fail-closed wie die uebrigen Bedingungen: nur eine BESTAETIGTE abweichende Antwort schliesst aus, Schweigen nicht."
+
+  # ---- Photovoltaik: drei Fragen ohne Eingangsfrage (Julius, 2026-08-26) ----
+  # Gemeldet als: es war von keiner photovoltaikanlage die rede.
+  - regel_id: p3_nr72_pv
+    feld: kein_gewinn
+    wert: false
+    grund: "§ 3 Nr. 72 EStG stellt Einnahmen aus kleinen Photovoltaikanlagen steuerfrei; sie zaehlen zu den Gewinneinkuenften (§ 15 EStG), und genau deren Existenz erhebt `kein_gewinn`. Wer bestaetigt, keine Gewinneinkuenfte zu haben, betreibt keine Anlage — dann ist weder nach Bauart, Bruttoleistung noch Zahl der Einheiten zu fragen. Die drei Felder der Regel hatten bis dahin keine einzige Frage, die ihre Existenz erhebt."
+
+  # ---- Themen ohne jede Eingangsfrage, Teil 1 (Julius, 2026-08-26: „beides angehen") ----
+  # Diese beiden hatten ihr Existenzfeld bereits — es war nur nicht als Eingang markiert und
+  # schaltete nichts ab. Kein neues Feld noetig, nur die Verbindung.
+
+  - regel_id: p24a_altersentlastungsbetrag
+    feld: rentner_alter_64_erfuellt
+    wert: true
+    grund: "§ 24a S. 3 EStG gewaehrt den Altersentlastungsbetrag nur dem, der vor Beginn des Kalenderjahres das 64. Lebensjahr vollendet hat. `rentner_alter_64_erfuellt` erhebt genau diese Voraussetzung — wer sie verneint, bekommt den Betrag nicht, und die Folgefragen dazu sind gegenstandslos."
+
+  - regel_id: p33b_hinterbliebenen_pauschbetrag
+    feld: rentner_hinterbliebenenbezuege
+    wert: true
+    grund: "§ 33b Abs. 4 EStG gewaehrt den Hinterbliebenen-Pauschbetrag nur, wenn laufende Hinterbliebenenbezuege bewilligt sind. `rentner_hinterbliebenenbezuege` erhebt deren Existenz — wer keine bezieht, hat weder Pauschbetrag noch etwas zu uebertragen."
+
+  # ---- Themen ohne jede Eingangsfrage, Teil 2: sechs neue Flags (Julius, 2026-08-26) ----
+  # „bitte geh doch mal den fragebogen selbst durch. dir sollte dabei auffallen dass das so gut
+  # wie bei jeder frage der fall ist." Gemessen: 13 Themen hatten weder Eingangsfrage noch
+  # Ankreuzfeld noch Regelbedingung. Zwei davon hatten ihr Existenzfeld schon (Teil 1 oben), fuer
+  # sechs weitere gibt es jetzt eines — die vorhandenen bool-Felder taugten NICHT, sie fragen nach
+  # MERKMALEN und setzen das Objekt bereits voraus („Ist die Anlage auf einem Gebaeude?", „Hast du
+  # das Arbeitsmittel in diesem Jahr angeschafft?").
+
+  - regel_id: p6_2_gwg_sofortabzug
+    feld: keine_arbeitsmittel
+    wert: false
+    grund: "§ 9 Abs. 1 S. 3 Nr. 6 EStG erfasst Aufwendungen fuer Arbeitsmittel; §§ 6 Abs. 2 und 7 Abs. 1 EStG regeln, ob sie sofort oder ueber die Nutzungsdauer abgezogen werden. Alle drei setzen voraus, dass ueberhaupt ein Arbeitsmittel angeschafft wurde. Wer das verneint, hat weder Anschaffungskosten noch Nutzungsdauer noch ein Wahlrecht zwischen Sofortabzug und AfA."
+
+  - regel_id: p7_1_lineare_afa
+    feld: keine_arbeitsmittel
+    wert: false
+    grund: "§ 9 Abs. 1 S. 3 Nr. 6 EStG erfasst Aufwendungen fuer Arbeitsmittel; §§ 6 Abs. 2 und 7 Abs. 1 EStG regeln, ob sie sofort oder ueber die Nutzungsdauer abgezogen werden. Alle drei setzen voraus, dass ueberhaupt ein Arbeitsmittel angeschafft wurde. Wer das verneint, hat weder Anschaffungskosten noch Nutzungsdauer noch ein Wahlrecht zwischen Sofortabzug und AfA."
+
+  - regel_id: p9_1_3_nr6_7_arbeitsmittel_afa
+    feld: keine_arbeitsmittel
+    wert: false
+    grund: "§ 9 Abs. 1 S. 3 Nr. 6 EStG erfasst Aufwendungen fuer Arbeitsmittel; §§ 6 Abs. 2 und 7 Abs. 1 EStG regeln, ob sie sofort oder ueber die Nutzungsdauer abgezogen werden. Alle drei setzen voraus, dass ueberhaupt ein Arbeitsmittel angeschafft wurde. Wer das verneint, hat weder Anschaffungskosten noch Nutzungsdauer noch ein Wahlrecht zwischen Sofortabzug und AfA."
+
+  - regel_id: p10_1a_realsplitting
+    feld: kein_realsplitting
+    wert: false
+    grund: "§ 10 Abs. 1a Nr. 1 S. 1 EStG laesst Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden Ehegatten als Sonderausgaben zu. Wer keinen solchen Unterhalt zahlt, hat weder Betrag noch Zustimmung des Empfaengers zu erklaeren — die Frage nach der Zustimmung setzt einen Ex-Partner voraus, den es nicht gibt."
+
+  - regel_id: p10b_spenden
+    feld: keine_spenden
+    wert: false
+    grund: "§ 10b Abs. 1 S. 1 EStG laesst Zuwendungen zur Foerderung steuerbeguenstigter Zwecke als Sonderausgaben zu. Wer nichts gespendet hat, hat weder einen Betrag noch eine Zuwendung in den Vermoegensstock zu erklaeren."
+
+  - regel_id: p10_1_7_berufsausbildung
+    feld: keine_berufsausbildung
+    wert: false
+    grund: "§ 10 Abs. 1 Nr. 7 EStG laesst Aufwendungen fuer die eigene Berufsausbildung bis 6.000 Euro als Sonderausgaben zu. Wer keine solche Ausbildung bezahlt hat, hat weder Betrag noch Bezeichnung der Ausbildung zu erklaeren."
+
+  - regel_id: p10d_2_verlustvortrag_abzug
+    feld: kein_verlustvortrag
+    wert: false
+    grund: "§ 10d Abs. 2 S. 1 EStG zieht Verluste frueherer Jahre vom Gesamtbetrag der Einkuenfte ab, soweit sie gesondert festgestellt sind. Ohne einen solchen Feststellungsbescheid gibt es keinen Bestand, nach dessen Hoehe zu fragen waere."
+
+  - regel_id: p32b_progressionsvorbehalt
+    feld: keine_lohnersatzleistungen
+    wert: false
+    grund: "§ 32b Abs. 1 Nr. 1 EStG unterwirft Lohnersatzleistungen dem Progressionsvorbehalt. Wer keine bezogen hat, hat keine Summe zu erklaeren."
+
 instanz_gruppen:
   - gruppe: kind
     anzahl_feld: fam_anzahl_kinder
     etikett: "Kind"
     max: 9
     grund: "Anlage Kind wird je Kind einmal ausgefuellt (§ 32 EStG, Kz E05001xx je Kind). `fam_anzahl_kinder` erhebt die Zahl der Kinder, fuer die Kindergeld oder ein Freibetrag zusteht — genau die, fuer die je eine Anlage Kind abzugeben ist. Obergrenze 9: das amtliche Formular sieht keine hoehere Zahl vor, und `fam_anzahl_kinder` selbst laesst bis 20 zu (praktische Obergrenze, kein Formularlimit)."
+
+# Themen, die im Fragebogen ZUERST kommen — unabhaengig von ihrem Gate-Gewicht.
+#
+# Die Reihenfolge folgt sonst der Streichkraft: wer viel abschaltet, kommt zuerst. Das ist fuer
+# Gates richtig, macht den EINSTIEG aber absurd. Gemessen im E2E-Durchgang am 2026-08-26 (Julius:
+# „zeig mir bitte mal die reihenfolge der fragen aus deinem e2e"): Frage 1 war „Hattest du Kosten
+# fuer Handwerker, Haushaltshilfe?" — ein Nebenthema —, waehrend Name, Adresse, Steuernummer und
+# Geburtsdatum auf den Plaetzen 50 bis 63 standen. Stammdaten schalten nichts ab und landen
+# deshalb hinten, obwohl sie die einfachsten Fragen sind und jeder sie beantworten muss.
+#
+# Nur der EINSTIEG wird hier festgelegt, nicht die ganze Ordnung: was nicht genannt ist, sortiert
+# sich weiter nach Gewicht und Thema.
+themen_zuerst:
+  - regel_id: p2_festzusetzung_einzel
+    grund: "Stammdaten (Name, Anschrift, Geburtsdatum, Steuernummer, IBAN, Steuerklasse) plus Bruttoarbeitslohn. Jeder Steuerpflichtige muss sie angeben, sie sind ohne Nachschlagen zu beantworten und sie eroeffnen den Fragebogen in der Form, die ein Papierformular auch haette."
+  - regel_id: p2_festzusetzung_zusammen
+    grund: "Dieselben Angaben fuer den Ehe-/Lebenspartner. Steht direkt hinter den eigenen Stammdaten, weil es dieselbe Sorte Frage ist — und entfaellt ganz, sobald veranlagung=einzel bestaetigt ist."

@@ -159,9 +159,29 @@ def test_gating_vor_slots(bindung):
                   if "geltungsbedingung" in bindung[f]["quelle"] or gw.get(f, 0) > 0]
     nur_wert = [i for i, f in enumerate(fragen)
                 if "geltungsbedingung" not in bindung[f]["quelle"] and gw.get(f, 0) == 0]
-    if streichend and nur_wert:
-        assert max(streichend) < min(nur_wert), (
-            "Eine Frage, die nur einen Wert liefert, steht vor einer, die ganze Regeln streicht")
+    # JE THEMA, nicht mehr global (2026-08-25, Julius: „abwechselnd fragen zu kindern,
+    # behinderung, arbeitsort … ist schwer nachvollziehbar"). Die Queue gruppiert seither nach
+    # Thema; global gemessen stünde deshalb ein Wert-Feld von Thema A vor einem Gate von Thema B.
+    # Die Absicht des Tests bleibt und gilt dort, wo sie wirkt: innerhalb eines Themas kommt das
+    # Gate zuerst, und wer es verneint, sieht die Detailfragen nie — die Regel ist dann
+    # ausgeschlossen und sie stehen in der nächsten Queue nicht mehr.
+    je_thema: dict[str, list[str]] = {}
+    for i, f in enumerate(fragen):
+        je_thema.setdefault((bindung[f].get("quelle") or {}).get("regel_id") or "", []).append(i)
+    # Die Eingangsfrage ist ausgenommen: sie steht in ihrem Thema immer vorn, auch wenn sie ein
+    # Betragsfeld ist. Gemessen 2026-08-26 im E2E-Durchgang — „Wie viel hast du für die Betreuung
+    # deines Kindes gezahlt?" ist die Existenzfrage des Themas und stand als LETZTE von zehn,
+    # hinter neun Fragen nach Zeiträumen und Dienstleistern einer Betreuung, nach der nie gefragt
+    # war. Ein Gate, das erst nach der Existenzfrage kommt, ist kein Mangel: verneint der Nutzer
+    # die Existenz, entfällt die ganze Regel und die Gates kommen nie.
+    eingang = {i for i, f in enumerate(fragen) if bindung[f].get("eingangsfrage")}
+    for regel, plaetze in je_thema.items():
+        s_t = [i for i in plaetze if i in streichend and i not in eingang]
+        w_t = [i for i in plaetze if i in nur_wert and i not in eingang]
+        if s_t and w_t:
+            assert max(s_t) < min(w_t), (
+                f"{regel}: eine Frage, die nur einen Wert liefert, steht vor einer, die ganze "
+                f"Regeln streicht")
 
 
 def test_beitrag_sortiert_slots(bindung):

@@ -63,6 +63,18 @@ def _store(antworten: dict):
     return s
 
 
+def _verneint(flag: str) -> bool:
+    """Der Wert, mit dem der Nutzer den Sachverhalt VERNEINT.
+
+    Bei `kein_*`/`keine_*` ist das `True` (das Feld benennt die Abwesenheit, die Frage fragt nach
+    der Anwesenheit, `frage_invertiert` dreht sie um). Seit 2026-08-26 steht mit
+    `vpf_auswaertige_taetigkeit` auch ein POSITIV benanntes Feld in der Liste — dort verneint
+    `False`. Es musste hinein, weil es die Existenzfrage von ZWEI Regeln ist (Verpflegung und
+    Übernachtung) und Julius die Übernachtungsfrage dreimal ohne Anlass bekam.
+    """
+    return bool(BINDUNG[flag].get("frage_invertiert"))
+
+
 def _fragen(antworten: dict) -> list[str]:
     """Nur Felder der Scheibe `gesamt` — das ist der Fragebogen, den der Nutzer wirklich sieht."""
     return [f for f in TR.naechste_fragen(_store(antworten), BINDUNG) if f in SCHEIBE_GESAMT]
@@ -85,7 +97,7 @@ def test_jedes_flag_schaltet_wirklich_etwas_ab(flag):
     sondern ob die Antwort MESSBAR Fragen entfernt. Ein Eintrag, der auf eine Regel zeigt, die
     ohnehin schon ausgeschlossen ist, sähe in einer Existenzprüfung genauso aus."""
     ohne = _fragen(BASIS)
-    mit = _fragen({**BASIS, flag: True})
+    mit = _fragen({**BASIS, flag: _verneint(flag)})
     entfallen = set(ohne) - set(mit) - {flag}
     assert entfallen, (
         f"Ein bestätigtes {flag} entfernt KEINE einzige Frage. Entweder fehlt der Eintrag in "
@@ -100,7 +112,7 @@ def test_die_gegenrichtung_nimmt_niemandem_etwas(flag):
     antwortet mit `false` — und muss dann MEHR Fragen sehen, nicht weniger. Ein Flag, das in
     beide Richtungen abschaltet, nähme den Pauschbetrag ausgerechnet dem Behinderten weg."""
     ohne = set(_fragen(BASIS))
-    verneint = set(_fragen({**BASIS, flag: False}))
+    verneint = set(_fragen({**BASIS, flag: not _verneint(flag)}))
     verloren = ohne - verneint - {flag}
     assert not verloren, (
         f"{flag}=false (der Nutzer HAT den Sachverhalt) entfernt Fragen: {sorted(verloren)}\n"
@@ -114,8 +126,9 @@ def test_unbeantwortet_schaltet_nichts_ab(flag):
     """fail-closed: solange niemand geantwortet hat, bleiben alle Fragen stehen. Ein Flag, das
     schon durch seine blosse Existenz vorauswählt, würde dem Nutzer Abzüge nehmen, nach denen er
     nie gefragt wurde."""
-    assert BINDUNG[flag].get("beispielwert") is False, (
-        f"{flag}: beispielwert muss false sein — der Normalfall schliesst nichts vor.")
+    assert BINDUNG[flag].get("beispielwert") is not _verneint(flag), (
+        f"{flag}: der beispielwert entspricht der Verneinung — der Normalfall darf nichts "
+        f"vorwegnehmen.")
     ohne = set(_fragen(BASIS))
     ziel_regeln = [r for r, eintraege in BEDINGUNGEN.items()
                    if any(e.get("feld") == flag for e in eintraege)]
@@ -133,10 +146,15 @@ def test_flags_sind_invertiert_deklariert():
     """Das Feld benennt die ABWESENHEIT, die Frage fragt nach der ANWESENHEIT. Bis 2026-08-20 riet
     die Erfassungsschicht am Feldnamen (`startswith('kein_')`) — das hätte `keine_*` verfehlt und
     dem Nutzer das Gegenteil seiner Antwort gespeichert."""
-    fehlend = [f for f in AK.AUSGABEN_SCREENING if not BINDUNG[f].get("frage_invertiert")]
-    assert not fehlend, (
-        f"{fehlend} tragen kein `frage_invertiert: true`. Der Feldname sagt 'keine', die Frage "
-        f"fragt 'hattest du' — ohne die Deklaration speichert die Oberfläche das Gegenteil.")
+    # Massgeblich ist der FELDNAME, nicht die blosse Zugehoerigkeit zur Liste: seit 2026-08-26
+    # steht mit `vpf_auswaertige_taetigkeit` ein positiv benanntes Feld darin, bei dem ein Kreuz
+    # direkt „ja" heisst und eine Umkehr das Gegenteil speichern wuerde.
+    falsch = [f for f in AK.AUSGABEN_SCREENING
+              if bool(BINDUNG[f].get("frage_invertiert")) != f.startswith(("kein_", "keine_"))]
+    assert not falsch, (
+        f"{falsch}: `frage_invertiert` passt nicht zum Feldnamen. Benennt der Name die "
+        f"Abwesenheit ('kein…'), muss die Umkehr gesetzt sein; benennt er die Anwesenheit, darf "
+        f"sie es nicht — sonst speichert die Oberfläche das Gegenteil der Antwort.")
 
 
 def test_kein_flag_traegt_eine_elster_kennzahl():

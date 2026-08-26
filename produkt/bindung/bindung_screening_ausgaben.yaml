@@ -159,3 +159,157 @@ bindungen:
       quelle: "§ 35c Abs. 1 S. 1 EStG"
       zitatanker: "Für energetische Maßnahmen an einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum belegenen zu eigenen Wohnzwecken genutzten eigenen Gebäude (begünstigtes Objekt) ermäßigt sich auf Antrag die tarifliche Einkommensteuer"
       datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  # --- keine_arbeitsmittel: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: keine_arbeitsmittel
+    quelle: {regel_id: p9_1_3_nr6_arbeitsmittel_vorhanden, geltungsbedingung: keine_arbeitsmittel_angeschafft}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr etwas für deine Arbeit gekauft, das länger hält (zum Beispiel Laptop, Werkzeug, Fachbücher, Büromöbel)?"
+    hilfe_kurz: "Gemeint sind Gegenstände, die du überwiegend beruflich nutzt. Verbrauchsmaterial wie Papier zählt nicht dazu. Bei Nein entfallen neun Fragen zu Preis, Anschaffungsmonat und Abschreibung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Arbeitsmittel selbst werden in Anlage N erklärt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "800 Euro nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+
+  # --- kein_realsplitting: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: kein_realsplitting
+    quelle: {regel_id: p10_1a_realsplitting_vorhanden, geltungsbedingung: kein_realsplitting_beantragt}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Zahlst du Unterhalt an einen geschiedenen oder dauernd getrennt lebenden Ehe-/Lebenspartner?"
+    hilfe_kurz: "Gemeint ist nur Unterhalt an den früheren Partner, nicht an Kinder oder andere Angehörige. Der Abzug setzt dessen Zustimmung voraus (Anlage U). Bei Nein entfallen vier Fragen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Unterhaltsleistungen selbst stehen in Anlage U."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1a Nr. 1 S. 1 EStG"
+      zitatanker: "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung des Empfängers beantragt, bis zu 13 805 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  # --- keine_spenden: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: keine_spenden
+    quelle: {regel_id: p10b_spenden_vorhanden, geltungsbedingung: keine_spenden_geleistet}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr an gemeinnützige Vereine, Stiftungen, Kirchen oder Parteien gespendet?"
+    hilfe_kurz: "Zum Beispiel eine Dauerspende, eine Fluthilfe oder der Mitgliedsbeitrag an einen gemeinnützigen Verein. Ohne Spendenquittung geht es meist nicht."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Spenden selbst stehen in der Anlage Sonderausgaben."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10b Abs. 1 S. 1 EStG"
+      zitatanker: "Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke"
+      datei: "sources/gesetze-im-internet/estg_p10b_2026-07-13.txt"
+
+  # --- keine_berufsausbildung: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: keine_berufsausbildung
+    quelle: {regel_id: p10_1_7_berufsausbildung_vorhanden, geltungsbedingung: keine_berufsausbildung_kosten}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hattest du dieses Jahr Kosten für deine eigene erste Berufsausbildung oder ein Erststudium?"
+    hilfe_kurz: "Gemeint ist die ERSTE Ausbildung oder das erste Studium — zum Beispiel Studiengebühren, Fachbücher, Fahrten zur Hochschule. Eine Fortbildung im schon erlernten Beruf gehört nicht hierher, sie zählt als Werbungskosten."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Aufwendungen selbst stehen in der Anlage Sonderausgaben."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 7 EStG"
+      zitatanker: "bis zu 6 000 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  # --- kein_verlustvortrag: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: kein_verlustvortrag
+    quelle: {regel_id: p10d_2_verlustvortrag_vorhanden, geltungsbedingung: kein_verlustvortrag_festgestellt}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hat dir das Finanzamt aus früheren Jahren einen noch offenen Verlust bescheinigt?"
+    hilfe_kurz: "Das steht in einem eigenen Bescheid über die „gesonderte Feststellung des verbleibenden Verlustvortrags“. Wer so einen Bescheid nicht hat, antwortet mit Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — der Verlustvortrag wird vom Finanzamt gesondert festgestellt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10d Abs. 2 S. 1 EStG"
+      zitatanker: "bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt"
+      datei: "sources/gesetze-im-internet/estg_p10d_2026-07-13.txt"
+
+  # --- keine_lohnersatzleistungen: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: keine_lohnersatzleistungen
+    quelle: {regel_id: p32b_progression_vorhanden, geltungsbedingung: keine_lohnersatzleistungen_bezogen}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr Arbeitslosengeld, Krankengeld, Elterngeld oder eine ähnliche Lohnersatzleistung bekommen?"
+    hilfe_kurz: "Auch Kurzarbeitergeld, Mutterschaftsgeld und Insolvenzgeld gehören dazu. Diese Leistungen sind selbst steuerfrei, erhöhen aber den Steuersatz auf dein übriges Einkommen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Leistungen selbst stehen in Anlage N bzw. der Bescheinigung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32b Abs. 1 Nr. 1 EStG"
+      zitatanker: "Arbeitslosengeld, Teilarbeitslosengeld, Zuschuesse zum Arbeitsentgelt, Kurzarbeitergeld"
+      datei: "sources/gesetze-im-internet/estg_p32b_2026-07-13.txt"
+
+  # --- keine_zweitwohnung: die Existenzfrage der doppelten Haushaltsführung ------------------
+  # Am 2026-08-25 stand hier `dhf_eigener_hausstand` als Eingangsfrage („Hast du an deinem
+  # Hauptwohnort einen eigenen Haushalt, der außerhalb des Arbeitsorts liegt?"). Das ist ein
+  # Tatbestandsmerkmal der Norm, aber keine Existenzfrage: § 9 Abs. 1 S. 3 Nr. 5 S. 2 EStG
+  # verlangt einen eigenen Hausstand ausserhalb des Arbeitsorts UND eine Wohnung AM Arbeitsort.
+  # Nur das ZWEITE ist ungewoehnlich. Julius, 2026-08-26: „die meisten menschen wohnen nicht
+  # unmittelbar am ort ihrer arbeit, aber hier geht es um 2. wohnsitz" — wer die alte Frage
+  # bejahte (also fast jeder), bekam alle zwoelf Detailfragen.
+  - feld_id: keine_zweitwohnung
+    quelle: {regel_id: p9_1_3_nr5_zweitwohnung_vorhanden, geltungsbedingung: keine_zweitwohnung_am_arbeitsort}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du am Arbeitsort eine ZWEITE Wohnung, zusätzlich zu deinem Zuhause?"
+    hilfe_kurz: "Gemeint ist eine zweite Unterkunft, weil dein Arbeitsort zu weit von deinem Zuhause entfernt ist — Wohnung, Zimmer, Hotel oder Monteurunterkunft. Wer nur eine Wohnung hat und von dort zur Arbeit pendelt, antwortet mit Nein, auch wenn der Weg weit ist."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die doppelte Haushaltsführung selbst wird in Anlage N erklärt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 2 EStG"
+      zitatanker: "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"

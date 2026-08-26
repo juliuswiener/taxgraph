@@ -30,10 +30,13 @@ def zum_fragebogen(page, ankreuzen=None, timeout: int = 8000):
     """
     da = page.query_selector("#screening") and not page.is_hidden("#screening")
     if not da:
-        # Sie kann noch im Kommen sein (zeigeScreening holt erst /fragen). Kurz darauf warten,
-        # aber nicht darauf bestehen.
+        # Sie kann noch im Kommen sein (zeigeScreening holt erst /fragen — zwei serielle
+        # /fragen-Aufrufe, kalt gemessen bis zu ~1,8s durch die gewachsene Bindung). `timeout`
+        # statt eines eigenen kurzen Werts: sonst gewinnt bei einem kalten Prozess das Rennen
+        # der Zweifel, #screening zeigt sich ERST NACH dem Aufgeben, versteckt #wegpunkt dann
+        # dauerhaft — nichts im Fluss holt ihn danach zurück (gemessen 2026-08-26).
         try:
-            page.wait_for_selector("#screening:not([hidden])", timeout=1500)
+            page.wait_for_selector("#screening:not([hidden])", timeout=timeout)
             da = True
         except Exception:
             da = False
@@ -41,9 +44,20 @@ def zum_fragebogen(page, ankreuzen=None, timeout: int = 8000):
     if da and ankreuzen is None:
         # Wegräumen ohne zu schreiben. Kein Produktionsweg — es gibt in der Oberfläche keinen
         # Knopf dafür, und das ist richtig so: der Nutzer soll die Liste beantworten.
+        #
+        # Die zehn Felder bleiben dabei im Store UNBEANTWORTET (Absicht, s. Docstring oben).
+        # zeigeScreening() entscheidet aber serverseitig (/fragen), nicht am Client: ruft ein
+        # späterer Schritt sie erneut auf — rueckfragenFertig() tut das nach jeder Rückfragenrunde
+        # —, findet sie dieselben zehn offenen Felder wieder, zeigt die Liste erneut und versteckt
+        # #wegpunkt damit ein zweites Mal, kurz nachdem refresh() es gerade gezeigt hatte. Ein
+        # Wettlauf, den ein Test nur zufällig gewinnt (gemessen 2026-08-26, test_spaeter_schreibt_
+        # nichts_und_die_frage_kommt_im_fragebogen_wieder). Deshalb: zeigeScreening() für den Rest
+        # dieser Seite stilllegen statt nur den DOM-Zustand einmalig zu räumen — genau das Verhalten,
+        # das alle 23 Fixtures mit `ankreuzen=None` erwarten ("die Liste soll aus dem Weg").
         page.evaluate("""() => {
           SCREENING_OFFEN = false;
           document.getElementById('screening').hidden = true;
+          zeigeScreening = async () => false;
           return refresh();
         }""")
     elif da:

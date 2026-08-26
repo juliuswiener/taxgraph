@@ -388,7 +388,147 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
              "signal": signal, "ersetzt": ersetzt}
     event["event_id"] = event_id(event)
     store["events"].append(event)
+    _leite_ab(store, feld_id=feld_id, wert=wert, zustand=zustand, bindung=bindung)
+    _rechne_ab(store, feld_id=feld_id, wert=wert, zustand=zustand, bindung=bindung)
     return event
+
+
+def _leite_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict | None) -> None:
+    """Schreibt die Existenzfrage mit, die durch diese Angabe schon beantwortet IST.
+
+    Wer sagt, für wie viele Kinder ihm Kindergeld zusteht, hat gesagt, dass er Kinder hat. Ohne
+    das fragte der Fragebogen danach trotzdem — Julius im Durchgang 2026-08-25, mit der Anzahl
+    sichtbar unter „schon beantwortet": „frage gerade beantwortet wird jetzt wieder gestellt".
+
+    WARUM HIER UND NICHT IN DER OBERFLÄCHE: sein Fall kam über den KI-Chat, nicht über den
+    Fragebogen. `append_event` ist der eine Schreibpfad, den alle nehmen (Haut, KI, Vorjahr,
+    Beleg, Kontoauszug) — eine Ableitung in `api.event` hätte genau den Weg verfehlt, auf dem
+    der Befund entstand.
+
+    WARUM EIN ECHTES EVENT UND NICHT NUR DIE FRAGE WEG: die Frage bloss zu unterdrücken liesse
+    `kein_kind` leer. Der Wert fehlte dann in der Rechnung und in der ELSTER-Deklaration, und
+    zwar still — dieselbe Bauform, die hier schon einmal 351 EUR gekostet hat.
+
+    VIER SCHRANKEN, jede fail-closed:
+    - nur `zustand=bestaetigt` — ein vorläufiger KI-Vorschlag („2 Kinder") beweist nichts, solange
+      der Nutzer ihn nicht gesehen hat. Dieselbe Regel wie bei `instanz_anzahl`.
+    - nur oberhalb `ab` (Vorgabe 1) — aus `0 Kinder` wird NICHTS abgeleitet, dann bleibt die
+      Existenzfrage stehen. Die Umkehrung wäre bequem und schriebe dem Nutzer eine Aussage zu,
+      die er nicht gemacht hat.
+    - nur wenn das Zielfeld noch unbeantwortet ist (Auflage B) — ein vorhandenes Event wird nie
+      überschrieben, auch kein vorläufiges.
+    - keine Kette: das abgeleitete Event läuft nicht noch einmal durch die Ableitung. Eine Ebene,
+      damit `beweist` nicht unbemerkt eine Lawine auslöst.
+
+    Der Wert trägt `herkunft=berechnet` und erscheint dem Nutzer als „∑ berechnet", nicht als
+    „✓ selbst". Er hat die Zahl gesagt, nicht diesen Satz — die Haftung bleibt bei ihm, die
+    Urheberschaft nicht.
+    """
+    if zustand != "bestaetigt" or not bindung:
+        return
+    regel = (bindung.get(feld_id) or {}).get("beweist")
+    if not regel:
+        return
+    if isinstance(wert, bool) or not isinstance(wert, (int, float)):
+        return
+    if wert < regel.get("ab", 1):
+        return
+    ziel = regel["feld_id"]
+    if ziel not in bindung or ziel in _aktives(store):
+        return
+    abgeleitet = {"event_id": "", "ts": _now(), "feld_id": ziel, "wert": regel["wert"],
+                  "zustand": "bestaetigt",
+                  "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "ungeprueft",
+                               "haftung": "nutzer"},
+                  "schreiber": "abgeleitet:beweist",
+                  "signal": {"signal_1": None, "signal_2": f"beweist@{feld_id}={wert}"},
+                  "ersetzt": None}
+    abgeleitet["event_id"] = event_id(abgeleitet)
+    store["events"].append(abgeleitet)
+
+
+def _jahr(wert) -> int | None:
+    """Jahreszahl aus einem Datum — ISO (JJJJ-MM-TT) oder deutsch (TT.MM.JJJJ)."""
+    if not isinstance(wert, str):
+        return None
+    m = re.match(r"^(\d{4})-\d{2}-\d{2}$", wert.strip())
+    if m:
+        return int(m.group(1))
+    m = re.match(r"^\d{2}\.\d{2}\.(\d{4})$", wert.strip())
+    return int(m.group(1)) if m else None
+
+
+def _monat_tag(wert) -> tuple[int, int] | None:
+    if not isinstance(wert, str):
+        return None
+    m = re.match(r"^\d{4}-(\d{2})-(\d{2})$", wert.strip())
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    m = re.match(r"^(\d{2})\.(\d{2})\.\d{4}$", wert.strip())
+    return (int(m.group(2)), int(m.group(1))) if m else None
+
+
+def _berechne(regel: dict, wert, vz: int):
+    """Der abgeleitete Wert, oder None, wenn er sich nicht sicher bestimmen lässt."""
+    art = regel["art"]
+    if art == "uebernahme":
+        # Zwei Felder, EINE Frage. `vpf_monate_am_ort` und `uebernachtung_monate_bisher` tragen
+        # denselben Fragetext bis aufs Wort („Seit wie vielen Monaten arbeitest du schon an genau
+        # diesem auswärtigen Ort?") und standen im E2E-Durchgang am 2026-08-26 gleichzeitig in der
+        # Queue, auf Platz 112 und 123. Sie gehören zwei Regeln mit verschiedenen Fristen (3 Monate
+        # Verpflegung, 48 Monate Übernachtung) — die ANGABE ist dieselbe, nur die Grenze nicht.
+        return wert
+    jahr = _jahr(wert)
+    if jahr is None:
+        return None
+    if art == "jahr_aus_datum":
+        return jahr
+    if art == "alter_am_jahresbeginn_erreicht":
+        # „vor Beginn des Kalenderjahres das N. Lebensjahr vollendet" (§ 24a S. 3 EStG).
+        #
+        # Der Grenzfall ist der 1. Januar, und er geht ANDERS aus, als man beim Lesen erwartet:
+        # nach § 188 Abs. 2 BGB endet das Lebensjahr mit ABLAUF DES TAGES, DER DEM GEBURTSTAG
+        # VORAUSGEHT. Wer am 01.01.1961 geboren ist, vollendet sein 64. Lebensjahr also mit Ablauf
+        # des 31.12.2024 — und das liegt vor Beginn des Jahres 2025. Ergebnis: true.
+        # Deshalb steht hier `md == (1, 1)` als Einschluss und nicht als Ausschluss.
+        md = _monat_tag(wert)
+        if md is None:
+            return None
+        vollendet_im_jahr = jahr + int(regel["schwelle"])
+        return vollendet_im_jahr < vz or (vollendet_im_jahr == vz and md == (1, 1))
+    return None
+
+
+def _rechne_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict | None) -> None:
+    """Schreibt Felder mit, die sich aus dieser Angabe BERECHNEN lassen.
+
+    Julius' E2E-Durchgang am 2026-08-26: „Hattest du vor Beginn dieses Jahres schon deinen 64.
+    Geburtstag?" (Frage 25), direkt danach „In welchem Jahr bist du geboren?" (Frage 26) — und
+    „Wann bist du geboren?" stand als Frage 53 in den Stammdaten. Dreimal dieselbe Angabe.
+
+    Unterschied zu `beweist`: dort steht der Zielwert fest, hier wird er gerechnet. Sonst
+    dieselben Schranken — nur bestätigte Quellen, nie überschreiben, keine Kette. Zusätzlich:
+    lässt sich der Wert nicht SICHER bestimmen (unlesbares Datum), passiert nichts und die Frage
+    bleibt stehen. Ein gerateter Geburtsjahrgang wäre schlimmer als eine Frage zu viel.
+    """
+    if zustand != "bestaetigt" or not bindung:
+        return
+    for ziel, eintrag in bindung.items():
+        regel = eintrag.get("ableitung")
+        if not regel or regel.get("aus") != feld_id or ziel in _aktives(store):
+            continue
+        neu = _berechne(regel, wert, int(store["veranlagungszeitraum"]))
+        if neu is None:
+            continue
+        ev = {"event_id": "", "ts": _now(), "feld_id": ziel, "wert": neu,
+              "zustand": "bestaetigt",
+              "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "ungeprueft",
+                           "haftung": "nutzer"},
+              "schreiber": "abgeleitet:ableitung",
+              "signal": {"signal_1": None, "signal_2": f"ableitung@{feld_id}"},
+              "ersetzt": None}
+        ev["event_id"] = event_id(ev)
+        store["events"].append(ev)
 
 
 # ------------------------------------------------------------------ Materialisierung

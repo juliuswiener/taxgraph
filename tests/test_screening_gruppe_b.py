@@ -234,11 +234,32 @@ def test_screening_filtert_und_loescht_nicht():
         f"Entweder ist die Verbindung zwischen Screening-Frage und Folge-Regel verloren — oder "
         f"die Regel wird schon vorher von einem verdrehten Gate abgeschaltet, dann fehlen ihre "
         f"Felder in BEIDEN Läufen (so gefunden am 2026-08-16, Anlage V).")
-    # Jedes entfernte Feld muss zu einer der neun Regeln gehören — sonst hat das Screening
-    # etwas mitgenommen, das niemand daran gehängt hat.
+    # Jedes entfernte Feld muss zu einer der neun Regeln gehören ODER selbst eine `feld_bedingung`
+    # auf eines der Screening-Felder tragen — sonst hat das Screening etwas mitgenommen, das
+    # niemand daran gehängt hat.
+    #
+    # ERWEITERT 2026-08-26: bis dahin wirkte das Screening ausschliesslich über ganze Regeln, und
+    # genau das war die Lücke, die Julius im Durchgang fand: „Aus welcher Art von Tätigkeit stammt
+    # dieser Gewinn? — kein gewinn ist erwähnt worden". Das Feld sitzt in `p2_festzusetzung_einzel`,
+    # der Basisregel, die nie entfallen darf; dieselbe Bauart beim Behinderten-Wahlrecht in der
+    # allgemeinen agB-Regel. Solche Felder tragen jetzt eine `feld_bedingung` (Feldebene statt
+    # Regelebene) — sie verschwinden zu Recht, und der Test muss sie kennen, sonst verbietet er
+    # genau die Abhilfe.
+    #
+    # Die Prüfung bleibt eng: es genügt NICHT, dass ein Feld irgendeine Bedingung trägt — sie muss
+    # auf eines der vier Screening-Felder dieses Laufs zeigen.
     regeln = {r for _, r in PAARE}
-    fremd = sorted(f for f in entfernt
-                   if (BINDUNG.get(f) or {}).get("quelle", {}).get("regel_id") not in regeln)
+    geprueft = {"kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige"}
+    # Seit 2026-08-26 hängen weitere Regeln an denselben vier Fragen (z. B. p3_nr72_pv an
+    # `kein_gewinn` — „es war von keiner photovoltaikanlage die rede"). PAARE listet nur die neun
+    # der ursprünglichen Gruppe; massgeblich ist, woran die Regel TATSÄCHLICH hängt.
+    import traverser as _TR  # noqa: E402 — nur für die Bedingungs-Tabelle
+    rb = _TR.lade_regel_bedingungen()
+    regeln |= {r for r, cs in rb.items() if any(c["feld"] in geprueft for c in cs)}
+    fremd = sorted(
+        f for f in entfernt
+        if (BINDUNG.get(f) or {}).get("quelle", {}).get("regel_id") not in regeln
+        and ((BINDUNG.get(f) or {}).get("feld_bedingung") or {}).get("feld") not in geprueft)
     assert not fremd, f"Screening entfernt Felder fremder Regeln: {fremd}"
     # Und die Gegenrichtung: nichts aus den neun Regeln bleibt dem erspart, der sie braucht.
     assert not (set(ohne) & entfernt)

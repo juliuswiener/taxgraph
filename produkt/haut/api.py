@@ -1024,7 +1024,11 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
          "hilfe_kurz": b.get("hilfe_kurz", ""), "typ": b.get("typ"),
          "bereich": b.get("bereich"), "enum_werte": b.get("enum_werte"),
          # Stufen-2-Verengung: api_llm gruppiert DIESE Liste zu 62 Themen, statt einer zweiten.
-         "regel_id": (b.get("quelle") or {}).get("regel_id")}
+         "regel_id": (b.get("quelle") or {}).get("regel_id"),
+         # `instanz_gruppe` NUR, damit api_llm._mit_zaehlfeldern das Zählfeld der Gruppe
+         # nachlegen kann: es liegt in einer anderen Regel als die Instanzfelder und fiele
+         # sonst durch die Themen-Verengung (2026-08-25, „verheiratet, 2 kinder" ohne Zahl).
+         "instanz_gruppe": b.get("instanz_gruppe")}
         for fid, b in bindung.items() if fid in check_katalog["llm"]]
     # Kontext für die ANTWORT-Hälfte: das gerade offene Feld (schickt die Oberfläche mit), sein
     # Zitatanker und die schon bestätigten Angaben. Für die Vorschläge ist er ohne Bedeutung.

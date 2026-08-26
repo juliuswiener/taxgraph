@@ -110,7 +110,7 @@ bindungen:
 
   - feld_id: p35c_gebaeude_herstellungsbeginn
     quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: objekt_aelter_zehn_jahre}
-    typ: text
+    typ: datum   # war `text` mit Muster (2026-08-26): als `datum` gibt die Oberflaeche einen Datumswaehler statt TT.MM.JJJJ zum Abtippen
     muster: '^\d{2}\.\d{2}\.\d{4}$'
     einheit: null
     askable: true
@@ -187,7 +187,7 @@ bindungen:
 
   - feld_id: p35c_baubeginn_massnahme
     quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: objekt_aelter_zehn_jahre}
-    typ: text
+    typ: datum   # war `text` mit Muster (2026-08-26): als `datum` gibt die Oberflaeche einen Datumswaehler statt TT.MM.JJJJ zum Abtippen
     muster: '^\d{2}\.\d{2}\.\d{4}$'
     einheit: null
     askable: true

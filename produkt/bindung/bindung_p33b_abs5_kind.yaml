@@ -99,11 +99,12 @@ bindungen:
     instanz_gruppe: kind
     vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p33b_abs5_kind_uebertragung, signatur_slot: kind_pb_nicht_selbst_genutzt}
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt seit 2026-08-26 nach der Anwesenheit
     typ: bool
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Nimmt dein Kind den Behinderten-Pauschbetrag oder Hinterbliebenen-Pauschbetrag nicht selbst in Anspruch (z.B. weil es kein eigenes Einkommen hat oder keine Steuererklärung abgibt)?"
+    fragetext_laie: "Nimmt dein Kind den Behinderten-Pauschbetrag oder Hinterbliebenen-Pauschbetrag selbst in Anspruch (z.B. weil es eigenes Einkommen hat und eine Steuererklärung abgibt)?"
     hilfe_kurz: "Der Pauschbetrag kann nur auf dich übertragen werden, wenn das Kind ihn nicht selbst geltend macht. Das ist typischerweise der Fall, wenn das Kind keine Steuererklärung abgibt."
     beispielwert: true
     herkunft_slots: null
