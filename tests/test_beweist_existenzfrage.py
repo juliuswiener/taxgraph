@@ -194,6 +194,51 @@ def test_das_zaehlfeld_erreicht_die_ki_auch_ueber_das_falsche_thema():
         "wählt — dann bleibt es bei einem Eingabefeld je Kind-Angabe.")
 
 
+def test_das_kind_unter_14_wird_nur_in_der_sicheren_richtung_abgeleitet():
+    """Julius, 2026-08-26: die Frage „War dein Kind während der Betreuung unter 14 und gehört zu
+    deinem Haushalt — oder ist es behindert?" bündelte DREI Bedingungen, von denen zwei längst
+    erhoben waren (Geburtsdatum, Haushaltszeitraum).
+
+    Abgeleitet wird nur, was sicher folgt. § 10 Abs. 1 Nr. 5 S. 1 EStG qualifiziert ein Kind unter
+    14 ODER ein behindertes Kind — aus dem Geburtsdatum folgt deshalb nur die eine Hälfte:
+
+    - jünger als 14 UND Haushaltszeitraum da  -> true, Frage entfällt
+    - 14 oder älter                           -> NICHTS, denn die Behinderungs-Ausnahme kann
+                                                 greifen. Ein abgeleitetes `false` nähme dem
+                                                 Nutzer den Abzug, ohne ihn zu fragen.
+    - Haushaltszugehörigkeit unbekannt        -> NICHTS, sonst würde sie unterstellt und der
+                                                 Abzug entstünde ohne Grundlage.
+
+    Beide Nicht-Ableitungen sind der eigentliche Gegenstand des Tests: eine Ableitung, die zu viel
+    behauptet, ist teurer als eine Frage zu viel."""
+    b = TR.lade_bindung()
+    regel = b["kind_unter_14_haushaltszugehoerig"].get("ableitung")
+    assert regel and regel["aus"] == "kind_geburtsdatum"
+    assert regel["und_feld"] == "kind_betreuung_haushaltszugehoerigkeit_zeitraum"
+
+    def _fall(geburt, haushalt):
+        s = ST.leerer_store(veranlagungszeitraum=2025, fall_id="u14")
+        if haushalt:
+            ST.append_event(s, feld_id="kind_betreuung_haushaltszugehoerigkeit_zeitraum",
+                            wert=haushalt, zustand="bestaetigt", herkunft=LAIE,
+                            schreiber="ui:laie",
+                            signal={"signal_1": None, "signal_2": "klick"}, bindung=b)
+        ST.append_event(s, feld_id="kind_geburtsdatum", wert=geburt, zustand="bestaetigt",
+                        herkunft=LAIE, schreiber="ui:laie",
+                        signal={"signal_1": None, "signal_2": "klick"}, bindung=b)
+        felder, _ = ST.materialisiere(s)
+        return (felder.get("kind_unter_14_haushaltszugehoerig", {}).get("wert"),
+                "kind_unter_14_haushaltszugehoerig" in TR.naechste_fragen(s, b, None))
+
+    assert _fall("05.06.2015", "01.01-31.12") == (True, False), (
+        "Neunjähriges Kind mit Haushaltszeitraum: die Qualifikation steht fest, die Frage muss weg.")
+    assert _fall("05.06.2005", "01.01-31.12") == (None, True), (
+        "Zwanzigjähriges Kind: ohne Frage nach der Behinderung darf NICHTS geschrieben werden — "
+        "ein abgeleitetes Nein nähme den Abzug ungefragt.")
+    assert _fall("05.06.2015", None) == (None, True), (
+        "Ohne erhobene Haushaltszugehörigkeit würde die Ableitung sie unterstellen.")
+
+
 def test_ein_katalog_ohne_instanzfelder_waechst_nicht():
     """Die Erweiterung darf nicht jedem Thema fremde Felder anhängen — sonst verwässert sie genau
     die Verengung, für die Stufe 2 gebaut wurde."""

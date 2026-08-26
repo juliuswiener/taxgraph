@@ -374,9 +374,10 @@
               "enum": [
                 "jahr_aus_datum",
                 "alter_am_jahresbeginn_erreicht",
-                "uebernahme"
+                "uebernahme",
+                "alter_unter_am_jahresende"
               ],
-              "description": "jahr_aus_datum: das Jahr der Jahreszahl. alter_am_jahresbeginn_erreicht: true, wenn die Person zu Beginn des Veranlagungszeitraums `schwelle` Jahre alt war. uebernahme: derselbe Wert (zwei Felder, eine Frage)."
+              "description": "jahr_aus_datum: das Jahr der Jahreszahl. alter_am_jahresbeginn_erreicht: true, wenn die Person zu Beginn des Veranlagungszeitraums `schwelle` Jahre alt war. uebernahme: derselbe Wert (zwei Felder, eine Frage). alter_unter_am_jahresende: true, wenn die Person am Jahresende juenger als `schwelle` ist — sonst NICHTS (die Gegenrichtung ist nicht sicher)."
             },
             "schwelle": {
               "type": "number",
@@ -385,6 +386,10 @@
             "grund": {
               "type": "string",
               "minLength": 40
+            },
+            "und_feld": {
+              "type": "string",
+              "description": "Optional. Die Ableitung greift nur, wenn AUCH dieses Feld bestaetigt und nicht leer/false ist. Fuer Bedingungen aus mehreren Angaben."
             }
           },
           "required": [

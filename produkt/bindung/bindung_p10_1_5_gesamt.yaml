@@ -14,12 +14,13 @@ bindungen:
   - feld_id: kind_unter_14_haushaltszugehoerig
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_unter_14_haushaltszugehoerig}
+    ableitung: {aus: kind_geburtsdatum, art: alter_unter_am_jahresende, schwelle: 14, und_feld: kind_betreuung_haushaltszugehoerigkeit_zeitraum, grund: "§ 10 Abs. 1 Nr. 5 S. 1 EStG qualifiziert ein Kind, das das 14. Lebensjahr noch nicht vollendet hat ODER wegen einer vor dem 25. Lebensjahr eingetretenen Behinderung ausserstande ist, sich selbst zu unterhalten — und das zum Haushalt gehoert. Das Alter steht im Geburtsdatum, die Haushaltszugehoerigkeit im erhobenen Zeitraum. Ist das Kind juenger als 14 und der Haushaltszeitraum angegeben, steht die Qualifikation fest und die Frage entfaellt. Ist es aelter, wird weiter gefragt: dann kann die Behinderungs-Ausnahme greifen, und ein abgeleitetes Nein naehme dem Nutzer den Abzug ungefragt."}
     typ: bool
     einheit: null
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "War dein Kind während der Betreuung unter 14 Jahre alt und gehört zu deinem Haushalt — oder ist es wegen einer vor dem 25. Lebensjahr eingetretenen Behinderung außerstande, sich selbst zu unterhalten?"
-    hilfe_kurz: "Betreuungskosten sind nur für Kinder unter 14 absetzbar, außer bei Behinderung (Eintritt vor dem 25. Geburtstag)."
+    fragetext_laie: "Ist dein Kind wegen einer Behinderung außerstande, für sich selbst zu sorgen?"
+    hilfe_kurz: "Diese Frage kommt nur, wenn dein Kind 14 oder älter ist — bis 14 sind Betreuungskosten ohne Weiteres absetzbar. Danach nur noch, wenn eine Behinderung vorliegt, die vor dem 25. Geburtstag eingetreten ist."
     beispielwert: true
     herkunft_slots: null
     elster_kz: null

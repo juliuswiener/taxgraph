@@ -471,6 +471,17 @@ def _monat_tag(wert) -> tuple[int, int] | None:
 def _berechne(regel: dict, wert, vz: int):
     """Der abgeleitete Wert, oder None, wenn er sich nicht sicher bestimmen lässt."""
     art = regel["art"]
+    if art == "alter_unter_am_jahresende":
+        # NUR die sichere Richtung. § 10 Abs. 1 Nr. 5 S. 1 EStG qualifiziert ein Kind, das das 14.
+        # Lebensjahr noch nicht vollendet hat ODER wegen einer vor dem 25. Lebensjahr eingetretenen
+        # Behinderung ausserstande ist, sich selbst zu unterhalten. Aus dem Geburtsdatum folgt nur
+        # die erste Hälfte: ist das Kind jünger, steht die Qualifikation fest. Ist es älter, sagt
+        # das Geburtsdatum NICHTS — die Behinderungs-Ausnahme kann greifen, also wird weiter
+        # gefragt. Ein abgeleitetes `false` nähme dem Nutzer sonst den Abzug, ohne ihn zu fragen.
+        jahr = _jahr(wert)
+        if jahr is None:
+            return None
+        return True if (vz - jahr) < int(regel["schwelle"]) else None
     if art == "uebernahme":
         # Zwei Felder, EINE Frage. `vpf_monate_am_ort` und `uebernachtung_monate_bisher` tragen
         # denselben Fragetext bis aufs Wort („Seit wie vielen Monaten arbeitest du schon an genau
@@ -517,6 +528,16 @@ def _rechne_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict |
         regel = eintrag.get("ableitung")
         if not regel or regel.get("aus") != feld_id or ziel in _aktives(store):
             continue
+        # `und_feld`: die Ableitung greift nur, wenn AUCH dieses Feld bestätigt beantwortet ist.
+        # Für Bedingungen, die aus mehreren Angaben folgen — § 10 Abs. 1 Nr. 5 S. 1 EStG verlangt
+        # ein Kind unter 14 UND Haushaltszugehörigkeit. Aus dem Geburtsdatum allein zu schliessen
+        # hiesse, die Haushaltszugehörigkeit zu unterstellen; das gäbe einen Abzug, den niemand
+        # erklärt hat.
+        und = regel.get("und_feld")
+        if und:
+            ev = _aktives(store).get(und)
+            if ev is None or ev.get("zustand") != "bestaetigt" or ev.get("wert") in (None, "", False):
+                continue
         neu = _berechne(regel, wert, int(store["veranlagungszeitraum"]))
         if neu is None:
             continue
