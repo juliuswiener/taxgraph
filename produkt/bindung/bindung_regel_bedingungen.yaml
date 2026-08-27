@@ -335,6 +335,41 @@ regel_bedingungen:
     grund: "§ 32b Abs. 1 Nr. 1 EStG unterwirft Lohnersatzleistungen dem Progressionsvorbehalt. Wer keine bezogen hat, hat keine Summe zu erklaeren."
 
 instanz_gruppen:
+  - gruppe: vv_objekt
+    anzahl_feld: vv_anzahl_objekte
+    etikett: "Objekt"
+    max: 9
+    grund: "Die Anlage V wird je vermietetem Objekt einmal ausgefuellt (§ 21 EStG). 22 Felder haengen an dieser Gruppe — Adresse, Einnahmen, Werbungskosten, AfA je Objekt. Ohne Zaehlfeld konnte der Fragebogen nur EIN Objekt aufnehmen."
+  - gruppe: rente
+    anzahl_feld: rentner_anzahl_renten
+    etikett: "Rente"
+    max: 5
+    grund: "Der Besteuerungsanteil haengt am Jahr des Rentenbeginns (§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG) und wird je Rente getrennt bestimmt. Ohne Zaehlfeld liess sich nur eine Rente erfassen — bei gesetzlicher Rente PLUS Betriebsrente fiel eine unter den Tisch."
+  - gruppe: p23_veraeusserung
+    anzahl_feld: p23_anzahl_verkaeufe
+    etikett: "Verkauf"
+    max: 9
+    grund: "§ 23 Abs. 3 S. 1 EStG rechnet Gewinn und Verlust je Veraeusserungsgeschaeft. Preis, Anschaffungskosten und Werbungskosten gehoeren zu je EINEM Verkauf; ohne Zaehlfeld liessen sich zwei Verkaeufe nicht trennen und die Zahlen vermischten sich."
+  - gruppe: hh_handwerker
+    anzahl_feld: hh_anzahl_handwerker
+    etikett: "Handwerkerleistung"
+    max: 9
+    grund: "§ 35a Abs. 3 EStG ermaessigt die Steuer um 20 % der Arbeitskosten. Art und Betrag gehoeren zu je einer Leistung; ohne Zaehlfeld war nur eine erfassbar."
+  - gruppe: hh_dienstleistung
+    anzahl_feld: hh_anzahl_dienstleistungen
+    etikett: "Dienstleistung"
+    max: 9
+    grund: "§ 35a Abs. 2 EStG ermaessigt die Steuer um 20 % der Arbeitskosten. Art und Betrag gehoeren zu je einer Dienstleistung; ohne Zaehlfeld war nur eine erfassbar."
+  - gruppe: hh_minijob
+    anzahl_feld: hh_anzahl_minijobs
+    etikett: "Minijob"
+    max: 5
+    grund: "§ 35a Abs. 1 EStG ermaessigt die Steuer um 20 % der Aufwendungen, hoechstens 510 Euro. Art und Betrag gehoeren zu je einer Beschaeftigung."
+  - gruppe: gwg
+    anzahl_feld: gwg_anzahl
+    etikett: "Gerät"
+    max: 9
+    grund: "§ 6 Abs. 2 S. 1 EStG laesst den Sofortabzug fuer jedes Wirtschaftsgut einzeln zu, dessen Anschaffungskosten 800 Euro nicht uebersteigen. Die Grenze gilt je Gegenstand — ohne Zaehlfeld liess sich nur einer erfassen, und wer zwei kaufte, verlor den zweiten Abzug."
   - gruppe: kind
     anzahl_feld: fam_anzahl_kinder
     etikett: "Kind"

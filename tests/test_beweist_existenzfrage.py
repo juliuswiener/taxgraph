@@ -284,6 +284,54 @@ def test_jede_ableitungsquelle_steht_vor_ihrem_ziel():
     assert not verdreht, "\n  ".join(["Ableitung vor ihrer Quelle:"] + verdreht)
 
 
+def test_jedes_zaehlfeld_steht_vor_seinen_instanzfeldern():
+    """Dieselbe Invariante wie oben, für die Instanz-Achse — und aus demselben Grund gefunden.
+
+    Das Zählfeld einer Gruppe („Wie viele Wohnungen vermietest du?") liegt in einer eigenen
+    Pseudo-Regel, damit es kein Gate der Rechenregel wird. Steht diese Pseudo-Regel HINTER dem
+    Thema der Instanzfelder, trägt der Nutzer die erste Adresse ein, bevor ihn jemand nach der
+    Zahl gefragt hat — und findet für das zweite Objekt kein Feld. Gemessen 2026-08-27, direkt
+    nachdem die sieben Zählfelder angelegt waren: `vv_anzahl_objekte` auf Platz 91, die
+    Objektfragen begannen vorher.
+
+    MEHRERE VORGÄNGER SIND DER NORMALFALL: § 35a führt drei Gruppen (Handwerker, Dienstleistung,
+    Minijob) mit je eigenem Zählfeld. Mit nur EINER Abhängigkeit je Thema — so war es zuerst
+    gebaut — landeten zwei der drei Zählfragen hinter ihren eigenen Feldern."""
+    b = TR.lade_bindung()
+    gruppen = TR.lade_instanz_gruppen()
+    assert len(gruppen) >= 8, f"Nur {len(gruppen)} Instanz-Gruppen — Messung prüfen."
+
+    s = ST.leerer_store(veranlagungszeitraum=2025, fall_id="zaehl")
+    # Möglichst viele Themen offen halten, damit die Prüfung nicht ins Leere greift.
+    for fid, e in b.items():
+        if e.get("screening"):
+            verneint = fid.startswith(("kein_", "keine_"))
+            bejaht = fid in ("kein_vuv", "kein_sonstige", "keine_arbeitsmittel", "kein_kind")
+            ST.append_event(s, feld_id=fid, wert=(False if bejaht else verneint),
+                            zustand="bestaetigt", herkunft=LAIE, schreiber="ui:laie",
+                            signal={"signal_1": None, "signal_2": "klick"}, bindung=b)
+    ST.append_event(s, feld_id="hh_hat_aufwendungen", wert=True, zustand="bestaetigt",
+                    herkunft=LAIE, schreiber="ui:laie",
+                    signal={"signal_1": None, "signal_2": "klick"}, bindung=b)
+
+    platz = {f: i for i, f in enumerate(TR.naechste_fragen(s, b, None))}
+    geprueft, verdreht = 0, []
+    for gruppe, eintrag in gruppen.items():
+        zaehl = eintrag["anzahl_feld"]
+        felder = [f for f, e in b.items()
+                  if e.get("instanz_gruppe") == gruppe and f != zaehl and f in platz]
+        if not felder or zaehl not in platz:
+            continue
+        geprueft += 1
+        erstes = min(platz[f] for f in felder)
+        if platz[zaehl] > erstes:
+            verdreht.append(
+                f"{gruppe}: Zählfeld {zaehl} auf Platz {platz[zaehl] + 1}, erstes Instanzfeld "
+                f"schon auf Platz {erstes + 1} — der Nutzer füllt aus, bevor die Zahl feststeht.")
+    assert geprueft >= 5, f"Nur {geprueft} Gruppen geprüft — die Vorbedingung greift nicht."
+    assert not verdreht, "\n  ".join(["Zählfeld hinter seinen Instanzfeldern:"] + verdreht)
+
+
 def test_ein_katalog_ohne_instanzfelder_waechst_nicht():
     """Die Erweiterung darf nicht jedem Thema fremde Felder anhängen — sonst verwässert sie genau
     die Verengung, für die Stufe 2 gebaut wurde."""

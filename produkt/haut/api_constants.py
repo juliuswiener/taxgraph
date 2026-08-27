@@ -92,6 +92,21 @@ AUSGABEN_SCREENING = ("kein_unterhalt", "keine_auslandseinkuenfte", "keine_behin
                       "keine_lohnersatzleistungen",
                       "keine_zweitwohnung",
                       "vpf_auswaertige_taetigkeit")
+
+# Zaehlfelder der Instanz-Gruppen (2026-08-27). KEINE Screening-Flags, auch wenn sie daneben
+# stehen: sie sind `int`, schalten nichts ab und tragen keine Umkehr — sie erheben, WIE OFT
+# ein Thema vorkommt. Zwei vermietete Wohnungen, drei Handwerkerrechnungen, zwei Renten.
+# Ohne sie baute die Oberflaeche je Angabe genau EIN Eingabefeld, und alles Weitere fiel
+# unter den Tisch (bis 2026-08-25 galt das auch fuer Kinder).
+INSTANZ_ZAEHLFELDER = (
+    "vv_anzahl_objekte",
+    "rentner_anzahl_renten",
+    "p23_anzahl_verkaeufe",
+    "hh_anzahl_handwerker",
+    "hh_anzahl_dienstleistungen",
+    "hh_anzahl_minijobs",
+    "gwg_anzahl",
+)
 # person_b_idnr NICHT hier: ERiC lehnt E0100082 amtlich ab (rc=610301106, "Eingefuegt-Kennzeichen
 # J/P"), unabhaengig vom Wert — Feld wird nicht mehr deklariert (elster_kz: null in
 # bindung_an_gesamt.yaml), darf also auch keinen Ehepaar-Bescheid mehr blockieren. Gemessen
@@ -669,7 +684,7 @@ SCHEIBEN = {
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_VERSORGUNG
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER
-                   + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + VV_ANLAGE_FORMALIEN
+                   + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
@@ -713,7 +728,7 @@ __all__ = [
     # § 19 Einkünfte
     "EP_FELDER", "EP_FORMALIEN",
     # an_gesamt
-    "AN_GESAMT_FLAGS", "KIND_SCREENING", "AUSGABEN_SCREENING", "AN_GESAMT_PARTNER",
+    "AN_GESAMT_FLAGS", "KIND_SCREENING", "AUSGABEN_SCREENING", "INSTANZ_ZAEHLFELDER", "AN_GESAMT_PARTNER",
     # Arbeitsmittel
     "ARBEITSMITTEL_KOSTEN", "ARBEITSMITTEL_RING", "ARBEITSMITTEL_AFA_GESAMT",
     # § 36/§22/§10 KiSt

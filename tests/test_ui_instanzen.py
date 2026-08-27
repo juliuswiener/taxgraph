@@ -117,14 +117,28 @@ def test_ein_feld_ohne_achse_bleibt_bei_einem():
 
 
 def test_eine_gruppe_ohne_zaehlfeld_bleibt_bei_einem():
-    """Sieben der acht Gruppen sind (noch) nicht gepflegt. Sie müssen sich verhalten wie bisher —
-    eine geratene Anzahl wäre schlimmer als keine."""
+    """Eine Gruppe ohne Zählfeld verhält sich wie EINE Instanz — eine geratene Anzahl wäre
+    schlimmer als keine.
+
+    UMGESCHRIEBEN 2026-08-27, und der Anlass ist der angenehme: der Test prüfte bis dahin an einer
+    der sieben ungepflegten Gruppen und trug den Satz „Alle Gruppen gepflegt — dann prüft dieser
+    Test nichts mehr (dann bitte löschen)". Genau das ist eingetreten; seit heute haben alle acht
+    Gruppen ein Zählfeld (Julius: „beides angehen"). Der Fall bleibt trotzdem prüfenswert, denn
+    die nächste neue Gruppe hat wieder keines — also wird er jetzt mit einer künstlichen Gruppe
+    gemessen statt an einem Bestand, der verschwinden sollte."""
     s, b = _store_mit(3)
-    ohne = [f for f, e in b.items()
-            if e.get("instanz_gruppe") and e["instanz_gruppe"] not in TR.lade_instanz_gruppen()]
-    assert ohne, "Alle Gruppen gepflegt — dann prüft dieser Test nichts mehr (dann bitte löschen)."
-    n, _ = TR.instanz_anzahl(s, b, ohne[0])
-    assert n == 1, f"{ohne[0]} spannt {n} Instanzen auf, obwohl seine Gruppe kein Zählfeld hat."
+    assert not [f for f, e in b.items()
+                if e.get("instanz_gruppe") and e["instanz_gruppe"] not in TR.lade_instanz_gruppen()], (
+        "Es gibt wieder eine Gruppe ohne Zählfeld. Das ist kein Fehler, aber ein Befund: dort "
+        "nimmt der Fragebogen nur EINE Instanz auf. Entweder Zählfeld nachtragen oder diesen "
+        "Test wieder am Bestand messen lassen.")
+
+    # Künstliche Gruppe, die es in keiner instanz_gruppen-Datei gibt.
+    bindung = dict(b)
+    bindung["test_feld_ohne_gruppe"] = {**b["kind_vorname"], "instanz_gruppe": "gruppe_gibt_es_nicht"}
+    n, etikett = TR.instanz_anzahl(s, bindung, "test_feld_ohne_gruppe")
+    assert (n, etikett) == (1, ""), (
+        f"Eine Gruppe ohne Eintrag spannt {n} Instanzen auf — die Zahl wäre geraten.")
 
 
 def test_das_feldformat_ist_dasselbe_das_der_store_liest():

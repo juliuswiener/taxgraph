@@ -392,15 +392,16 @@ def _themen_folge(nach_thema: dict[str, list[str]], bindung: dict) -> list[str]:
     Thema an seinem alten Platz, und das ist der heutige Zustand.
     """
     bedingt = lade_regel_bedingungen()
-    quelle: dict[str, str] = {}
+    quelle: dict[str, set[str]] = {t: set() for t in nach_thema}
+
+    def _merke(thema: str, feld: str | None) -> None:
+        qt = (bindung.get(feld or "", {}).get("quelle") or {}).get("regel_id")
+        if qt and qt != thema and qt in nach_thema:
+            quelle[thema].add(qt)
+
     for thema, felder_des_themas in nach_thema.items():
         for c in bedingt.get(thema, []):
-            qt = (bindung.get(c["feld"], {}).get("quelle") or {}).get("regel_id")
-            if qt and qt != thema and qt in nach_thema:
-                quelle[thema] = qt
-                break
-        if thema in quelle:
-            continue
+            _merke(thema, c["feld"])
         # Auch eine ABLEITUNG erzeugt eine Abhängigkeit: steht die Quelle hinter dem Feld, das aus
         # ihr berechnet wird, greift die Ableitung im echten Ablauf NIE — der Nutzer beantwortet
         # die Frage, bevor die Angabe da ist, aus der sie folgt.
@@ -410,26 +411,50 @@ def _themen_folge(nach_thema: dict[str, list[str]], bindung: dict) -> list[str]:
         # Platz 25, „Wann ist dein Kind geboren?" auf Platz 44. Die Ableitung war damit wirkungslos,
         # und zwar auf eine Art, die kein Einzeltest zeigt: jede Prüfung setzt das Geburtsdatum
         # selbst und misst danach.
+        gruppen = lade_instanz_gruppen()
         for fid in felder_des_themas:
-            ab = (bindung.get(fid) or {}).get("ableitung")
-            if not ab:
-                continue
-            qt = (bindung.get(ab["aus"], {}).get("quelle") or {}).get("regel_id")
-            if qt and qt != thema and qt in nach_thema:
-                quelle[thema] = qt
-                break
+            eintrag = bindung.get(fid) or {}
+            # Eine ABLEITUNG braucht ihre Quelle vorher: steht sie dahinter, greift die Ableitung
+            # im echten Ablauf nie. Gemessen 2026-08-26: „Ist dein Kind wegen einer Behinderung
+            # ausserstande…" auf Platz 25, „Wann ist dein Kind geboren?" auf Platz 44.
+            if eintrag.get("ableitung"):
+                _merke(thema, eintrag["ableitung"]["aus"])
+            # Dasselbe für die Instanz-Achse: das ZÄHLFELD muss vor den Feldern stehen, die aus ihm
+            # entstehen. Es liegt in einer eigenen Pseudo-Regel (damit es kein Gate der Rechenregel
+            # wird), also in einem anderen Thema. Gemessen 2026-08-27: `vv_anzahl_objekte` auf
+            # Platz 91, während die Objektfragen vorher begannen — der Nutzer hätte die Adresse
+            # eingetragen, bevor ihn jemand nach der Zahl der Objekte gefragt hat.
+            gr = eintrag.get("instanz_gruppe")
+            zaehl = (gruppen.get(gr) or {}).get("anzahl_feld") if gr else None
+            if zaehl and zaehl not in felder_des_themas:
+                _merke(thema, zaehl)
 
     # Der Einstieg steht fest (s. lade_themen_zuerst): Stammdaten zuerst, dann der Rest nach
     # Gewicht. Ohne das eröffnete der Fragebogen mit „Hattest du Kosten für Handwerker?", während
     # Name und Anschrift auf Platz 50 standen.
-    zuerst = [t for t in lade_themen_zuerst() if t in nach_thema and t not in quelle]
-    folge = zuerst + [t for t in nach_thema if t not in quelle and t not in zuerst]
-    for thema, qt in quelle.items():
-        if qt in folge:
-            folge.insert(folge.index(qt) + 1, thema)
-    # Was nirgends untergekommen ist (Bedingungsthema selbst verschoben oder Ring), hängt hinten
-    # an — verlieren darf die Umordnung nichts.
-    return folge + [t for t in nach_thema if t not in folge]
+    vorne = [t for t in lade_themen_zuerst() if t in nach_thema]
+    rest = [t for t in nach_thema if t not in vorne]
+    wunsch = vorne + rest
+
+    # Jedes Thema kommt hinter ALLE seine Quellen. Mehrere sind der Normalfall: § 35a führt drei
+    # Instanz-Gruppen (Handwerker, Dienstleistung, Minijob) mit je eigenem Zählfeld, also drei
+    # Vorgänger — mit nur EINER Abhängigkeit je Thema (so war es bis 2026-08-27) kamen zwei der
+    # drei Zählfragen hinter ihren eigenen Feldern.
+    #
+    # KEINE echte Topologie-Sortierung, und das ist Absicht: bei einem Ring von Bedingungen bricht
+    # die Schleife nach `len(wunsch)` Runden ab und hängt den Rest in der Wunschreihenfolge an.
+    # Schlimmstenfalls steht ein Thema wie vorher — nie eine Endlosschleife, nie ein verlorenes.
+    folge: list[str] = []
+    offen = list(wunsch)
+    for _runde in range(len(wunsch) + 1):
+        if not offen:
+            break
+        gesetzt = [t for t in offen if quelle[t] <= set(folge)]
+        if not gesetzt:                      # Ring: Rest unverändert anhängen
+            break
+        folge += gesetzt
+        offen = [t for t in offen if t not in gesetzt]
+    return folge + offen
 
 
 # ---------------------------------------------------------------- (b) VORWÄRTS

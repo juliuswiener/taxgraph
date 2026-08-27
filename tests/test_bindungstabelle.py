@@ -1304,6 +1304,16 @@ REGELN_OHNE_GROUND_TRUTH = {
     "p10d_2_verlustvortrag_vorhanden",
     "p32b_progression_vorhanden",
     "p9_1_3_nr5_zweitwohnung_vorhanden",
+    # Zaehlfelder der Instanz-Gruppen (2026-08-27): eigene Pseudo-Regel je Gruppe,
+    # damit das Feld kein Gate der echten Rechenregel wird. Die Zahl geht nicht in
+    # die Rechnung ein — sie bestimmt, wie viele Eingabefelder die Oberflaeche baut.
+    "p21_anzahl_objekte_erhebung",
+    "p22_anzahl_renten_erhebung",
+    "p23_anzahl_verkaeufe_erhebung",
+    "p35a_anzahl_handwerker_erhebung",
+    "p35a_anzahl_dienstleistungen_erhebung",
+    "p35a_anzahl_minijobs_erhebung",
+    "p6_2_anzahl_gwg_erhebung",
     # Hat einen dict-Accessor (catala_p19_2_versorgungsfreibetrag), aber der liest FELD-IDs
     # (versorgung_bemessungsgrundlage), waehrend die Bindung SLOT-Namen fuehrt
     # (bemessungsgrundlage). Der Ring ruft ausserdem catala_einkuenfte_versorgung, nicht den

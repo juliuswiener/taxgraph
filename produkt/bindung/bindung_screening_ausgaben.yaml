@@ -313,3 +313,157 @@ bindungen:
       quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 2 EStG"
       zitatanker: "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält"
       datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+
+  # --- vv_anzahl_objekte: Zaehlfeld der Instanz-Gruppe `vv_objekt` (2026-08-27) ------------------
+  - feld_id: vv_anzahl_objekte
+    quelle: {regel_id: p21_anzahl_objekte_erhebung, geltungsbedingung: vermietete_objekte_gezaehlt}
+    feld_bedingung: {feld: kein_vuv, wert: false, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Zahl der vermieteten Objekte; das amtliche Formular sieht keine hoehere Zahl vor"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele Wohnungen oder Häuser vermietest du?"
+    hilfe_kurz: "Zähle jedes Objekt einzeln — für jedes wird eine eigene Anlage V ausgefüllt. Ein Haus mit mehreren vermieteten Wohnungen zählt als ein Objekt, wenn du es als Ganzes vermietest."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  # --- rentner_anzahl_renten: Zaehlfeld der Instanz-Gruppe `rente` (2026-08-27) ------------------
+  - feld_id: rentner_anzahl_renten
+    quelle: {regel_id: p22_anzahl_renten_erhebung, geltungsbedingung: renten_gezaehlt}
+    feld_bedingung: {feld: kein_sonstige, wert: false, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 5, grund: "Zahl der bezogenen Renten; mehr als fuenf ist praktisch ausgeschlossen"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele verschiedene Renten bekommst du?"
+    hilfe_kurz: "Zum Beispiel gesetzliche Rente und zusätzlich eine Betriebsrente — das sind zwei. Jede wird getrennt erfasst, weil Beginn und Art den steuerpflichtigen Anteil bestimmen."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "Bemessungsgrundlage für den der Besteuerung unterliegenden Anteil ist der Jahresbetrag der Rente"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+
+  # --- p23_anzahl_verkaeufe: Zaehlfeld der Instanz-Gruppe `p23_veraeusserung` (2026-08-27) ------------------
+  - feld_id: p23_anzahl_verkaeufe
+    quelle: {regel_id: p23_anzahl_verkaeufe_erhebung, geltungsbedingung: verkaeufe_gezaehlt}
+    feld_bedingung: {feld: kein_sonstige, wert: false, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Zahl der privaten Veraeusserungsgeschaefte"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele private Verkäufe innerhalb der Spekulationsfrist hattest du?"
+    hilfe_kurz: "Gemeint sind Verkäufe von Grundstücken innerhalb von zehn Jahren oder anderen Gegenständen innerhalb eines Jahres nach dem Kauf. Jeder Verkauf wird einzeln gerechnet."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 3 S. 1 EStG"
+      zitatanker: "Gewinn oder Verlust aus Veraeusserungsgeschaeften nach Absatz 1 ist der Unterschied zwischen Veraeusserungspreis"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+
+  # --- hh_anzahl_handwerker: Zaehlfeld der Instanz-Gruppe `hh_handwerker` (2026-08-27) ------------------
+  - feld_id: hh_anzahl_handwerker
+    quelle: {regel_id: p35a_anzahl_handwerker_erhebung, geltungsbedingung: handwerkerleistungen_gezaehlt}
+    feld_bedingung: {feld: hh_hat_aufwendungen, wert: true, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Zahl der Handwerkerleistungen"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele verschiedene Handwerkerrechnungen hattest du dieses Jahr?"
+    hilfe_kurz: "Zum Beispiel eine Heizungswartung und eine Badsanierung — das sind zwei. Du kannst auch alles zusammenzählen und 1 angeben, wenn dir das lieber ist."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 3 EStG"
+      zitatanker: "für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+
+  # --- hh_anzahl_dienstleistungen: Zaehlfeld der Instanz-Gruppe `hh_dienstleistung` (2026-08-27) ------------------
+  - feld_id: hh_anzahl_dienstleistungen
+    quelle: {regel_id: p35a_anzahl_dienstleistungen_erhebung, geltungsbedingung: dienstleistungen_gezaehlt}
+    feld_bedingung: {feld: hh_hat_aufwendungen, wert: true, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Zahl der haushaltsnahen Dienstleistungen"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele verschiedene haushaltsnahe Dienstleistungen hattest du dieses Jahr?"
+    hilfe_kurz: "Zum Beispiel Gartenpflege und Fensterputzen — das sind zwei. Du kannst auch alles zusammenzählen und 1 angeben, wenn dir das lieber ist."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 2 EStG"
+      zitatanker: "gilt nur für Arbeitskosten"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+
+  # --- hh_anzahl_minijobs: Zaehlfeld der Instanz-Gruppe `hh_minijob` (2026-08-27) ------------------
+  - feld_id: hh_anzahl_minijobs
+    quelle: {regel_id: p35a_anzahl_minijobs_erhebung, geltungsbedingung: minijobs_gezaehlt}
+    feld_bedingung: {feld: hh_hat_aufwendungen, wert: true, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 5, grund: "Zahl der Minijob-Beschaeftigungen im Haushalt"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele Haushaltshilfen auf Minijob-Basis hattest du dieses Jahr?"
+    hilfe_kurz: "Gemeint sind bei der Minijob-Zentrale angemeldete Beschäftigungen im Privathaushalt."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 1 EStG"
+      zitatanker: "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+
+  # --- gwg_anzahl: Zaehlfeld der Instanz-Gruppe `gwg` (2026-08-27) ------------------
+  - feld_id: gwg_anzahl
+    quelle: {regel_id: p6_2_anzahl_gwg_erhebung, geltungsbedingung: gwg_gezaehlt}
+    feld_bedingung: {feld: keine_arbeitsmittel, wert: false, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Zahl der geringwertigen Wirtschaftsgueter"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele günstige Arbeitsmittel (bis 800 Euro netto) hast du dieses Jahr gekauft?"
+    hilfe_kurz: "Zum Beispiel ein Bürostuhl und eine Tastatur — das sind zwei. Jedes wird einzeln geprüft, weil die 800-Euro-Grenze je Gegenstand gilt."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "800 Euro nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
