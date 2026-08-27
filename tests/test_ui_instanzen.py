@@ -325,7 +325,18 @@ def test_die_werte_landen_unter_base_und_base__n(seite):
 
 def test_eine_leere_instanz_wird_uebersprungen_nicht_verworfen(seite):
     """Wer drei Kinder angegeben hat, aber nur zwei Namen zur Hand hat, soll die zwei speichern
-    können. Die dritte Instanz bleibt leer — und damit offen, nicht falsch."""
+    können. Die dritte Instanz bleibt leer — ein leeres Feld ist keine Antwort (Stille-Null).
+
+    WAS HIER FRÜHER STAND UND NICHT STIMMTE: „Die dritte Instanz bleibt offen, nicht falsch."
+    Offen ist sie nicht. Gemessen am 2026-08-27: sobald die erste Instanz beantwortet ist, fällt
+    das Basisfeld GANZ aus `naechste_fragen` — `kind_vorname__3` steht dort nie als eigene Frage,
+    die Instanzfelder stehen nicht einmal in der Bindung. Auch die Korrektur führt nicht zurück,
+    sie sucht das Feld in `/fragen`. Derselbe falsche Satz stand als Zusage in app.js.
+
+    Dieser Test prüft weiterhin nur, was er immer geprüft hat: dass die zwei gefüllten Instanzen
+    ankommen und die leere nicht als Null geschrieben wird. Dass die dritte Angabe FEHLT, erfährt
+    der Nutzer seit 2026-08-27 aus dem Preflight (`preflight.unvollstaendige_instanzen`, geprüft
+    in tests/test_instanz_luecke_wird_gemeldet.py) — nicht daraus, dass die Frage wiederkäme."""
     page, base_url = seite
     fall = page.evaluate("FALL")
     assert _setze_kinderzahl(page, 3) in (200, 201)

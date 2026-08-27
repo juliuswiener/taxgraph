@@ -13,12 +13,14 @@ from __future__ import annotations
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                "konsistenz"))
+_PRODUKT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(_PRODUKT, "konsistenz"))
+sys.path.insert(0, os.path.join(_PRODUKT, "traverser"))
 import flag_check       # noqa: E402
 import partner_check    # noqa: E402
 import check_pauschalen  # noqa: E402
 import check_nicht_gerechnet  # noqa: E402
+import traverser as TR   # noqa: E402
 from _helpers import _bestaetigt_wert  # noqa: E402
 
 
@@ -108,6 +110,57 @@ def _schulgeld_felder(snapshot: dict) -> list:
     return treffer
 
 
+def _aufzaehlung(etikett: str, nummern: list) -> str:
+    """[3] -> „Kind 3"; [2, 3] -> „Kind 2 und Kind 3"; [2, 3, 4] -> „Kind 2, Kind 3 und Kind 4".
+
+    Das Etikett bleibt im Singular, weil es aus der Bindung kommt und dort kein Plural steht — und
+    einen deutschen Plural zu RATEN geht bei „Objekt/Gerät/Verkauf" reihenweise schief.
+    """
+    teile = [f"{etikett} {n}" for n in nummern]
+    return teile[0] if len(teile) == 1 else ", ".join(teile[:-1]) + " und " + teile[-1]
+
+
+def _frage_kurz(feld_id: str, bindung: dict) -> str:
+    """Der Fragetext bis zum Fragezeichen — der Nutzer erkennt die Frage wieder, ohne dass ihm der
+    ganze Erklärsatz noch einmal vorgelegt wird (`schulgeld` trägt drei Zeilen Hinweis mit)."""
+    text = (bindung.get(feld_id) or {}).get("fragetext_laie") or ""
+    kopf, marke, _ = text.partition("?")
+    return (kopf + marke) if marke else text
+
+
+def unvollstaendige_instanzen(snapshot: dict) -> list:
+    """Angekündigt, aber nicht ausgefüllt: „3 Kinder angegeben, 2 Namen eingetragen".
+
+    ANLASS, gemessen am 2026-08-27: wer drei Kinder angibt und nur zwei Namen einträgt, verliert
+    den dritten LAUTLOS. Ist die erste Instanz beantwortet, fällt das Feld ganz aus dem Fragebogen
+    — der Traverser führt nur das Basisfeld, `kind_vorname__3` steht dort nie als eigene Frage.
+    Die Oberfläche versprach an zwei Stellen wörtlich das Gegenteil („die dritte Frage bleibt offen
+    und kommt im Fragebogen wieder"); die Zusage galt nie.
+
+    WARUM DIE MELDUNG HIER STEHT UND NICHT DIE FRAGE OFFEN BLEIBT: das Zählfeld ist nach dem
+    Beantworten selbst nicht mehr im Fragebogen. Der Nutzer könnte „es sind doch nur zwei" also
+    gar nicht mehr sagen, und die Frage würde nie schliessen — eine Sackgasse statt einer Lücke.
+    Gemeldet wird sie hier, wo Angabe gegen Angabe steht, wie die IBAN-trotz-„keine Bankverbindung"
+    darunter: derselbe Bauart-Fall, ohne Betrag und ohne Bezugsgrösse.
+
+    Welche Instanzen fehlen, rechnet `traverser.fehlende_instanzen` aus — die `__n`-Konvention
+    stand am selben Tag an vier Stellen nachgebaut (auch gleich nebenan in `_schulgeld_felder`),
+    und eine fünfte hätte sie nicht besser gemacht.
+    """
+    bindung = TR.lade_bindung()
+    return [{
+        "feld_id": luecke["feld_id"], "wert": len(luecke["vorhanden"]), "bezug": luecke["anzahl"],
+        "grund": f"Angegeben hast du {luecke['anzahl']}, ausgefüllt sind "
+                 f"{len(luecke['vorhanden'])}: auf die Frage "
+                 f"»{_frage_kurz(luecke['feld_id'], bindung)}« fehlt die Antwort für "
+                 f"{_aufzaehlung(luecke['etikett'], luecke['fehlend'])}. Diese Frage kommt im "
+                 f"Fragebogen nicht noch einmal — ohne die Antwort steht "
+                 f"{_aufzaehlung(luecke['etikett'], luecke['fehlend'])} nicht in deiner "
+                 f"Steuererklärung. Bitte trage die fehlende Angabe nach, oder gib die Zahl an, "
+                 f"die wirklich in die Erklärung soll."}
+        for luecke in TR.fehlende_instanzen(snapshot, bindung)]
+
+
 def plausibilitaets_widersprueche(snapshot: dict) -> list:
     """{feld_id -> {wert, zustand, ...}} → Liste der Betrag↔Bezugsgröße-Widersprüche.
 
@@ -192,6 +245,13 @@ def plausibilitaets_widersprueche(snapshot: dict) -> list:
                      "wollen — trotzdem ist eine Kontonummer (IBAN) erfasst. Ohne Konto kann "
                      "das Finanzamt eine Erstattung nicht überweisen. Bitte prüfe, welche der "
                      "beiden Angaben stimmt."})
+
+    # Angekündigt, aber nicht ausgefüllt — Angabe gegen Angabe wie die beiden Fälle darüber, nur
+    # zählt hier eine Anzahl gegen die Zahl der Antworten. BEWUSST IM SELBEN SCHLÜSSEL
+    # (`widersprueche_plausibilitaet`): `api.preflight_check` führt eine fest verdrahtete Liste der
+    # ausgelieferten Schlüssel, und ein neuer Schlüssel ohne Eintrag dort wäre totes Wiring — genau
+    # das ist an dieser Datei schon einmal passiert.
+    widersprueche += unvollstaendige_instanzen(snapshot)
 
     return widersprueche
 

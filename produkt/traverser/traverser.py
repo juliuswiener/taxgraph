@@ -114,20 +114,90 @@ def instanz_anzahl(store: dict, bindung: dict, feld_id: str) -> tuple[int, str]:
     entscheiden, wie viele Felder der Nutzer ausfüllen soll — er hat ihn ja noch nicht gesehen.
     Solange die Zahl fehlt, bleibt es bei einem Feld, und das Feld verhält sich wie bisher.
     """
-    b = bindung.get(feld_id) or {}
-    gruppe = b.get("instanz_gruppe")
-    if not gruppe:
-        return 1, ""
-    g = lade_instanz_gruppen().get(gruppe)
+    g = _gruppe_von(bindung, feld_id)
     if not g:
         return 1, ""
-    ev = _aktive_events(store).get(g["anzahl_feld"])
-    if _unbeantwortet(ev):
-        return 1, g["etikett"]
-    n = ev.get("wert")
+    return _anzahl_aus_eintrag(_aktive_events(store).get(g["anzahl_feld"]), g), g["etikett"]
+
+
+def _gruppe_von(bindung: dict, feld_id: str) -> dict | None:
+    """Der Instanz-Gruppen-Eintrag zu einem Feld, oder None (kein Achsen-Feld / Gruppe ungepflegt)."""
+    gruppe = (bindung.get(feld_id) or {}).get("instanz_gruppe")
+    return lade_instanz_gruppen().get(gruppe) if gruppe else None
+
+
+def _anzahl_aus_eintrag(eintrag, gruppe: dict) -> int:
+    """Die Zahl der Instanzen aus dem Eintrag des Zählfeldes — EINE Regel für beide Leserichtungen.
+
+    Store-Event und Snapshot-Eintrag haben dieselbe Gestalt (`{wert, zustand, …}`), also liest
+    dieselbe Funktion beide. Getrennt geschrieben wären es zwei Regeln, die gleich BLEIBEN müssten
+    — und genau daran ist im Repo schon mehr als einmal etwas auseinandergelaufen (zwei
+    Repräsentationen, ungeprüfte Übergabe).
+    """
+    if _unbeantwortet(eintrag):
+        return 1
+    n = eintrag.get("wert")
     if not isinstance(n, int) or isinstance(n, bool) or n < 1:
-        return 1, g["etikett"]
-    return min(n, int(g["max"])), g["etikett"]
+        return 1
+    return min(n, int(gruppe["max"]))
+
+
+def instanz_feld_id(basis: str, i: int) -> str:
+    """Instanz i eines Feldes: `basis` für die erste, `basis__i` ab der zweiten.
+
+    Die Konvention selbst ist alt (est_mapping.parse_instanz ist die Enumerations-Wahrheit); sie
+    stand am 2026-08-27 an VIER Stellen nachgebaut — dort, in app.js `instanzFeldId`, im
+    Typprüfer des Stores und in `preflight._schulgeld_felder`. Hier steht sie als Auskunft, damit
+    der Traverser sie nicht zum fünften Mal implizit mitführt.
+    """
+    return basis if i <= 1 else f"{basis}__{i}"
+
+
+def fehlende_instanzen(felder: dict, bindung: dict) -> list[dict]:
+    """Welche angekündigten Instanzen hat der Nutzer NICHT ausgefüllt?
+
+    ANLASS, gemessen am 2026-08-27: wer drei Kinder angibt und zwei Namen einträgt, verliert den
+    dritten lautlos. Ist Instanz 1 beantwortet, fällt das Basisfeld GANZ aus `naechste_fragen` —
+    der Traverser führt nur das Basisfeld und legt die Zahl als `instanz_anzahl` daneben; ein
+    `kind_vorname__3` steht dort nie als eigene Frage. Zurück führt auch kein Weg: die Korrektur
+    sucht das Feld in `/fragen`, und `__n` steht dort nicht.
+
+    Deshalb sagt der Traverser die Lücke nur AN, statt die Frage offenzuhalten. Eine offene Frage
+    wäre eine Sackgasse: das Zählfeld selbst ist nach dem Beantworten ebenfalls nicht mehr in
+    `/fragen`, der Nutzer könnte „es sind doch nur zwei" also gar nicht mehr sagen — und seit
+    `_themen_folge` ein angefangenes Thema vorn hält, bliebe der Fragebogen dauerhaft darauf stehen.
+
+    NUR FELDER, DIE SCHON EINE ANTWORT TRAGEN. Ein Feld ganz ohne Instanz ist schlicht
+    unbeantwortet und geht diese Prüfung nichts an — sonst meldete sie bei drei Kindern jedes
+    kinderbezogene Feld dreifach, und das Signal ginge im Rauschen unter. Gemeldet wird die Lücke
+    IN einer begonnenen Reihe: Name 1 und 2 da, Name 3 fehlt.
+
+    Nur BESTÄTIGT zählt, wie überall: ein vorläufiger Vorschlag geht in keine Summe und in keine
+    Erklärung ein, ist für die Abgabe also so gut wie nicht da.
+
+    Arbeitet auf dem materialisierten Snapshot (`{feld_id -> {wert, zustand, …}}`), nicht auf dem
+    Store — dort liegen die `__n`-Felder flach nebeneinander, und dort fragt die Konsistenzprüfung.
+    NICHT im Hotpath: `naechste_fragen` ruft das hier nicht.
+    """
+    def _da(feld_id: str) -> bool:
+        eintrag = felder.get(feld_id)
+        return bool(eintrag) and eintrag.get("zustand") == "bestaetigt"
+
+    out = []
+    for basis in sorted(bindung):
+        g = _gruppe_von(bindung, basis)
+        if not g or basis == g["anzahl_feld"]:
+            continue
+        anzahl = _anzahl_aus_eintrag(felder.get(g["anzahl_feld"]), g)
+        if anzahl < 2:
+            continue
+        alle = [i for i in range(1, anzahl + 1)]
+        vorhanden = [i for i in alle if _da(instanz_feld_id(basis, i))]
+        fehlend = [i for i in alle if i not in vorhanden]
+        if vorhanden and fehlend:
+            out.append({"feld_id": basis, "gruppe": g["gruppe"], "etikett": g["etikett"],
+                        "anzahl": anzahl, "vorhanden": vorhanden, "fehlend": fehlend})
+    return out
 
 
 def _aktive_events(store: dict) -> dict:
