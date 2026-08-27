@@ -521,12 +521,28 @@ def _rechne_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict |
     dieselben Schranken — nur bestätigte Quellen, nie überschreiben, keine Kette. Zusätzlich:
     lässt sich der Wert nicht SICHER bestimmen (unlesbares Datum), passiert nichts und die Frage
     bleibt stehen. Ein gerateter Geburtsjahrgang wäre schlimmer als eine Frage zu viel.
+
+    ZWEI AUSLÖSER, nicht einer (2026-08-27). Bis dahin lief diese Funktion nur beim Schreiben des
+    QUELLFELDS und prüfte das `und_feld` in genau diesem Moment. Wurde das und_feld erst danach
+    bestätigt, löste nichts die Ableitung erneut aus — dieselben Angaben ergaben je nach
+    Eingabereihenfolge ein anderes Ergebnis. Gemessen an einem Kind von fünf Jahren mit 6.000 €
+    Betreuungskosten: Haushaltszeitraum zuerst → 4.800 € Abzug, Geburtsdatum zuerst → 0 €.
+    Deshalb löst jetzt AUCH das und_feld aus; der Quellwert kommt dann aus dem Store.
+
+    Was sich dadurch NICHT ändert: `ziel in aktiv` bleibt die Sperre (Auflage B, nie
+    überschreiben). Hat der Nutzer die Frage schon beantwortet, gewinnt seine Antwort — auch
+    wenn das und_feld danach noch bestätigt wird. Später zu feuern heisst nicht, ihn zu
+    korrigieren.
     """
     if zustand != "bestaetigt" or not bindung:
         return
+    # EINMAL lesen, vor der Schleife. Das hält zugleich die Zusage „keine Kette" ein: eine
+    # Ableitung sieht nur den Stand VOR diesem Aufruf und kann deshalb nicht auf dem Ergebnis
+    # einer anderen Ableitung desselben Aufrufs aufsetzen.
+    aktiv = _aktives(store)
     for ziel, eintrag in bindung.items():
         regel = eintrag.get("ableitung")
-        if not regel or regel.get("aus") != feld_id or ziel in _aktives(store):
+        if not regel:
             continue
         # `und_feld`: die Ableitung greift nur, wenn AUCH dieses Feld bestätigt beantwortet ist.
         # Für Bedingungen, die aus mehreren Angaben folgen — § 10 Abs. 1 Nr. 5 S. 1 EStG verlangt
@@ -534,11 +550,22 @@ def _rechne_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict |
         # hiesse, die Haushaltszugehörigkeit zu unterstellen; das gäbe einen Abzug, den niemand
         # erklärt hat.
         und = regel.get("und_feld")
+        if feld_id not in (regel.get("aus"), und) or ziel in aktiv:
+            continue
+        if regel.get("aus") == feld_id:
+            quellwert = wert
+        else:
+            # Ausgelöst über das und_feld: der Quellwert muss aus dem Store kommen, und auch dort
+            # gilt „nur bestätigte Quellen" — ein vorläufiger Vorschlag rechnet nichts aus.
+            qev = aktiv.get(regel.get("aus"))
+            if qev is None or qev.get("zustand") != "bestaetigt":
+                continue
+            quellwert = qev.get("wert")
         if und:
-            ev = _aktives(store).get(und)
+            ev = aktiv.get(und)
             if ev is None or ev.get("zustand") != "bestaetigt" or ev.get("wert") in (None, "", False):
                 continue
-        neu = _berechne(regel, wert, int(store["veranlagungszeitraum"]))
+        neu = _berechne(regel, quellwert, int(store["veranlagungszeitraum"]))
         if neu is None:
             continue
         ev = {"event_id": "", "ts": _now(), "feld_id": ziel, "wert": neu,
@@ -546,7 +573,10 @@ def _rechne_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict |
               "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "ungeprueft",
                            "haftung": "nutzer"},
               "schreiber": "abgeleitet:ableitung",
-              "signal": {"signal_1": None, "signal_2": f"ableitung@{feld_id}"},
+              # Die Spur nennt das QUELLFELD, aus dem gerechnet wurde — nicht das Feld, dessen
+              # Bestätigung die Ableitung ausgelöst hat. Seit es zwei Auslöser gibt, fallen die
+              # beiden auseinander, und `warum` soll die Herkunft des Wertes zeigen.
+              "signal": {"signal_1": None, "signal_2": f"ableitung@{regel.get('aus')}"},
               "ersetzt": None}
         ev["event_id"] = event_id(ev)
         store["events"].append(ev)

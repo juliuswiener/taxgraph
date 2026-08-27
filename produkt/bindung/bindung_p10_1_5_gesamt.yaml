@@ -14,13 +14,31 @@ bindungen:
   - feld_id: kind_unter_14_haushaltszugehoerig
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_unter_14_haushaltszugehoerig}
-    ableitung: {aus: kind_geburtsdatum, art: alter_unter_am_jahresende, schwelle: 14, und_feld: kind_betreuung_haushaltszugehoerigkeit_zeitraum, grund: "§ 10 Abs. 1 Nr. 5 S. 1 EStG qualifiziert ein Kind, das das 14. Lebensjahr noch nicht vollendet hat ODER wegen einer vor dem 25. Lebensjahr eingetretenen Behinderung ausserstande ist, sich selbst zu unterhalten — und das zum Haushalt gehoert. Das Alter steht im Geburtsdatum, die Haushaltszugehoerigkeit im erhobenen Zeitraum. Ist das Kind juenger als 14 und der Haushaltszeitraum angegeben, steht die Qualifikation fest und die Frage entfaellt. Ist es aelter, wird weiter gefragt: dann kann die Behinderungs-Ausnahme greifen, und ein abgeleitetes Nein naehme dem Nutzer den Abzug ungefragt."}
+    ableitung: {aus: kind_geburtsdatum, art: alter_unter_am_jahresende, schwelle: 14, und_feld: kind_betreuung_haushaltszugehoerigkeit_zeitraum, grund: "§ 10 Abs. 1 Nr. 5 S. 1 EStG qualifiziert ein Kind, das das 14. Lebensjahr noch nicht vollendet hat ODER wegen einer vor dem 25. Lebensjahr eingetretenen Behinderung ausserstande ist, sich selbst zu unterhalten — und das zum Haushalt gehoert. Das Alter steht im Geburtsdatum, die Haushaltszugehoerigkeit im erhobenen Zeitraum. Ist das Kind juenger als 14 und der Haushaltszeitraum angegeben, steht die Qualifikation fest und die Frage entfaellt. Ist es aelter, wird weiter gefragt: dann kann die Behinderungs-Ausnahme greifen, und ein abgeleitetes Nein naehme dem Nutzer den Abzug ungefragt. Dieselbe Gefahr besteht in die andere Richtung, und sie war bis 2026-08-27 offen: ein WAHRHEITSGEMAESSES Nein des Nutzers nimmt ihm den Abzug genauso, wenn die Frage nur nach der Behinderung fragt und das Kind in Wahrheit ueber das Alter qualifiziert. Deshalb nennt der Fragetext seit dem beide Wege."}
     typ: bool
     einheit: null
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Ist dein Kind wegen einer Behinderung außerstande, für sich selbst zu sorgen?"
-    hilfe_kurz: "Diese Frage kommt nur, wenn dein Kind 14 oder älter ist — bis 14 sind Betreuungskosten ohne Weiteres absetzbar. Danach nur noch, wenn eine Behinderung vorliegt, die vor dem 25. Geburtstag eingetreten ist."
+    # Der Fragetext deckte bis 2026-08-27 nur EINEN der beiden Qualifikationswege ab (Behinderung),
+    # das Feld und der Rechenkern meinen aber beide. Wer ein fünfjähriges Kind hat und wahrheits-
+    # gemäss „nein" antwortete, bekam `false` gespeichert — und bescheid_abzuege._kinderbetreuung_
+    # summe lässt bei allem ausser `True` das Kind aus der Summe fallen. Gemessen an einem Kind von
+    # fünf Jahren mit 6.000 € Betreuungskosten: 4.800 € Abzug weg, je nach Einkommen 1.460 bis
+    # 1.965 € zu viel Steuer.
+    #
+    # Die Frage nennt jetzt beide Wege und die gemeinsame Voraussetzung (Haushalt). Sie ist damit
+    # länger — der Preis ist bewusst gewählt: sie wird nur noch gestellt, wenn Geburtsdatum oder
+    # Haushaltszeitraum fehlen, die Ableitung also nichts weiss. Wer beides angegeben hat, sieht
+    # sie gar nicht.
+    #
+    # NICHT über eine `feld_bedingung` gelöst („nur fragen, wenn das Kind 14 oder älter ist"):
+    # `feld_bedingung` vergleicht nur auf Gleichheit gegen den Wert eines anderen Feldes
+    # (schema.json: `wert`/`wert_nicht`, traverser._feld_ausgeschlossen: `==`/`!=`), und
+    # `kind_geburtsdatum` ist ein Datum — ein Altersvergleich lässt sich dort nicht ausdrücken.
+    # Er würde ausserdem nicht reichen: fehlt der Haushaltszeitraum, feuert die Ableitung nie, und
+    # das Kind fiele dann ohne jede Frage still aus der Summe (gemessen: 0 € Abzug).
+    fragetext_laie: "Gehört dein Kind zu deinem Haushalt — und ist es entweder jünger als 14 oder wegen einer Behinderung außerstande, für sich selbst zu sorgen?"
+    hilfe_kurz: "Bis 14 zählt allein das Alter; danach nur noch eine Behinderung, die vor dem 25. Geburtstag eingetreten ist. In beiden Fällen muss das Kind zu deinem Haushalt gehören. Hast du Geburtsdatum und Haushaltszeitraum bereits angegeben, beantwortet sich die Frage von selbst und wird dir gar nicht gestellt."
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
