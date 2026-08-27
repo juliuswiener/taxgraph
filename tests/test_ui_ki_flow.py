@@ -424,6 +424,206 @@ def test_spaeter_schreibt_nichts_und_die_frage_kommt_im_fragebogen_wieder(seite,
     page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
 
 
+# ------------------------------------------------ TEIL 2b: eine Rückfrage, die N Felder meint
+#
+# ANLASS, Julius' echter Durchgang am 2026-08-27 — im Mitschnitt zwei Zeilen untereinander:
+#
+#     10:12:19  rueckfrage@kind_vorname   kind_vorname = "Anna"
+#               Frage der KI: „Wie heißen deine Kinder mit Vornamen?"   (er hat ZWEI Kinder)
+#     10:19:17  klick@kind_geburtsdatum   kind_geburtsdatum + kind_geburtsdatum__2
+#
+# `fam_anzahl_kinder = 2` war bestätigt, und der FRAGEBOGEN baute für jedes Kind-Feld zwei
+# Instanzen — der RÜCKFRAGEN-Schritt für `kind_vorname` nicht. Danach galt das Feld als beantwortet
+# und kam nie wieder: das zweite Kind hatte keinen Vornamen mehr, und niemand wurde je danach
+# gefragt. Julius, zum zweiten Mal an zwei Tagen: „es wird immer noch nur ein Kinder vorname
+# abgefragt."
+#
+# Gemessen war die Ursache eine Asymmetrie zwischen zwei Schreibpfaden, die dasselbe tun:
+# `bestaetigen()` kannte den Zweig `if (AKTUELL.instanz_anzahl > 1)`, `rueckfrageWeiter()` nicht.
+# Deshalb misst dieser Block den RÜCKFRAGEN-Pfad gegen dieselben drei Zusagen, die
+# tests/test_ui_instanzen.py schon für den Fragebogen misst — N Felder, N Ereignisse, leere
+# Instanz schreibt nichts — plus die Gegenrichtung.
+
+def _setze_kinderzahl(page, n):
+    """`fam_anzahl_kinder` BESTÄTIGT setzen. Nur bestätigt zählt: ein vorläufiger Vorschlag der KI
+    spannt bewusst keine Eingabefelder auf (traverser.instanz_anzahl)."""
+    return page.evaluate("""async (n) => {
+      const r = await jpost(`/fall/${FALL}/event`, {
+        feld_id: 'fam_anzahl_kinder', wert: n, zustand: 'bestaetigt',
+        herkunft: {herkunft: 'laie', pruef_tiefe: 'ungeprueft', haftung: 'nutzer'},
+        schreiber: 'ui:laie', signal: {signal_1: null, signal_2: 'klick@fam_anzahl_kinder'}});
+      if (r.status < 200 || r.status >= 300) return r.status;
+      await refresh();
+      return r.status;
+    }""", n)
+
+
+def _rf_instanzen(page):
+    """Was im Rückfragen-Fenster an Instanz-Zeilen steht — Marken und Feld-ids."""
+    return page.evaluate("""() => {
+      const zeilen = [...document.querySelectorAll('#rf-eingabe .instanz-zeile')];
+      return {zeilen: zeilen.length,
+              marken: zeilen.map(z => z.querySelector('.instanz-marke').textContent),
+              ids: zeilen.map(z => (z.querySelector('input, select') || {}).id),
+              eingaben: document.querySelectorAll('#rf-eingabe input, #rf-eingabe select').length};
+    }""")
+
+
+@pytest.fixture
+def seite_mit_kindern(seite_factory, base):
+    """Fragebogen-Weg MIT bejahten Kindern und bestätigter Kinderzahl 2.
+
+    `ankreuzen=["kein_kind"]` ist hier Pflicht (dieselbe Vorbedingung wie in
+    tests/test_ui_instanzen.py): wird die Ankreuzliste ohne Kinder beantwortet, nimmt sie den
+    ganzen Kind-Block aus dem Dialog — dann gäbe es gar kein Feld mit Achse mehr zu messen.
+    """
+    page = seite_factory(ankreuzen=["kein_kind"])
+    fall = page.evaluate("FALL")
+    assert _setze_kinderzahl(page, 2) in (200, 201), "Die Kinderzahl liess sich nicht setzen."
+    assert "kind_vorname" in _offene_felder(base, fall), (
+        "kind_vorname steht nicht in den offenen Fragen — dann fiele die Rückfrage weg "
+        "(starteRueckfragen verwirft Fragen zu nicht mehr offenen Feldern) und der Test misse "
+        "den Fallback statt den Weg.")
+    return page, fall
+
+
+def test_zwei_kinder_geben_zwei_eingabefelder_in_der_nachfrage(seite_mit_kindern):
+    """DER BEFUND, erste Hälfte: die KI fragt im PLURAL, darunter stand EIN Feld.
+
+    Der Fragebogen konnte das seit dem 2026-08-25; der Rückfragen-Schritt daneben nicht. Ein Feld
+    unter „Wie heißen deine Kinder mit Vornamen?" ist keine bloße Unbequemlichkeit — die Frage gilt
+    danach als beantwortet und kommt nicht wieder."""
+    page, _ = seite_mit_kindern
+    _stub(page, _antwort(rueckfragen=[
+        _rf("Wie heißen deine Kinder mit Vornamen?", "kind_vorname")]))
+    _senden(page)
+
+    m = _rf_instanzen(page)
+    assert m["zeilen"] == 2, (
+        f"Die Nachfrage bietet {m['zeilen']} Instanz-Zeilen für zwei Kinder an: {m}")
+    assert m["marken"] == ["Kind 1", "Kind 2"], (
+        f"Ohne Nummer weiss der Nutzer nicht, welches Kind gemeint ist: {m['marken']}")
+    assert all(m["ids"]), f"Ein Feld ohne id — der Schreibpfad findet es nicht: {m['ids']}"
+    assert m["eingaben"] == 2, f"Nicht genau zwei Eingabefelder: {m}"
+    assert not page.fehler, f"Konsolenfehler: {page.fehler}"
+
+
+def test_zwei_kinder_geben_zwei_ereignisse_im_store(seite_mit_kindern, base):
+    """DER BEFUND, zweite Hälfte — und die teurere: gemessen wird der STORE über echtes HTTP.
+
+    Zwei Felder anzuzeigen und trotzdem eines zu schreiben wäre derselbe Verlust mit besserer
+    Optik. Das Feldformat (`base`, `base__2`) ist dabei die Naht zu ELSTER: schriebe die
+    Oberfläche hier anders, fände der Writer den zweiten Namen nie."""
+    page, fall = seite_mit_kindern
+    _stub(page, _antwort(rueckfragen=[
+        _rf("Wie heißen deine Kinder mit Vornamen?", "kind_vorname")]))
+    _senden(page)
+
+    page.fill("#rf-input__1", "Anna")
+    page.fill("#rf-input__2", "Ben")
+    page.click("#rf-weiter")
+    page.wait_for_selector("#rueckfragen", state="hidden", timeout=8000)
+
+    f = _felder(base, fall)
+    assert f.get("kind_vorname", {}).get("wert") == "Anna", (
+        f"Instanz 1 fehlt oder steht falsch: {f.get('kind_vorname')}")
+    assert f.get("kind_vorname__2", {}).get("wert") == "Ben", (
+        f"Das zweite Kind hat keinen Vornamen — GENAU der Befund vom 2026-08-27: "
+        f"{sorted(k for k in f if k.startswith('kind_vorname'))}")
+    for fid in ("kind_vorname", "kind_vorname__2"):
+        assert f[fid]["zustand"] == "bestaetigt", (
+            f"{fid} liegt nur vorläufig vor ({f[fid]['zustand']}) — der Nutzer hat es selbst "
+            "getippt.")
+        assert f[fid]["herkunft_badge"] == "laie", (
+            f"{fid} trägt Herkunft {f[fid]['herkunft_badge']!r} statt 'laie'.")
+    assert not page.fehler, f"Konsolenfehler: {page.fehler}"
+
+
+def test_eine_leer_gelassene_instanz_schreibt_nichts(seite_mit_kindern, base):
+    """Stille-Null-Regel, hier auf der Achse: ein leerer Text ist von einer echten Angabe nicht zu
+    unterscheiden. Wer den zweiten Namen gerade nicht zur Hand hat, speichert den ersten.
+
+    Dieselbe Regel misst tests/test_ui_instanzen.py für den Fragebogen; sie darf im
+    Rückfragen-Schritt nicht anders ausfallen.
+
+    ANGRENZENDER BEFUND, hier gemessen und BEWUSST festgeschrieben (2026-08-27): die
+    übersprungene Instanz kommt NICHT von selbst wieder. Sobald Instanz 1 (`kind_vorname`)
+    beantwortet ist, fällt das Feld ganz aus der Fragen-Queue — `kind_vorname__2` steht dort nie
+    als eigene Frage, denn der Traverser führt bewusst nur das Basisfeld und legt die Zahl als
+    `instanz_anzahl` daneben. Die letzte Zusage darunter hält die Software also heute nicht ein.
+    Das ist KEIN Fehler dieses Schreibwegs — der Fragebogen verhält sich identisch, und dessen
+    Kommentar verspricht dasselbe („die dritte Frage bleibt offen und kommt im Fragebogen
+    wieder"). Es liegt im Traverser und ist gemeldet.
+
+    Die letzte Zusicherung unten hält diesen Stand deshalb ABSICHTLICH fest: wird die Lücke
+    geschlossen, wird sie rot — und dann gehört sie in die Zusage umgeschrieben, die dann gilt.
+    """
+    page, fall = seite_mit_kindern
+    _stub(page, _antwort(rueckfragen=[
+        _rf("Wie heißen deine Kinder mit Vornamen?", "kind_vorname")]))
+    _senden(page)
+
+    page.fill("#rf-input__1", "Anna")        # Instanz 2 bleibt leer
+    page.click("#rf-weiter")
+    page.wait_for_selector("#rueckfragen", state="hidden", timeout=8000)
+
+    f = _felder(base, fall)
+    assert f.get("kind_vorname", {}).get("wert") == "Anna", (
+        f"Die gefüllte Instanz ging mit der leeren verloren: {f.get('kind_vorname')}")
+    assert "kind_vorname__2" not in f, (
+        f"Die leere Instanz wurde geschrieben — ein leerer Text ist keine Antwort: "
+        f"{f.get('kind_vorname__2')}")
+    assert "kind_vorname__2" not in _offene_felder(base, fall), (
+        "Die übersprungene Instanz steht jetzt als eigene Frage in der Queue — schön, aber dann "
+        "ist der Befund im Docstring erledigt: diese Zusicherung bitte in die neue umschreiben "
+        "(„die zweite Instanz kommt wieder“) statt sie zu löschen.")
+
+
+def test_spaeter_beantworten_gilt_auch_auf_der_achse(seite_mit_kindern, base):
+    """„Später beantworten" schreibt nichts und legt keinen Merker an — auch nicht, wenn N Felder
+    dastehen. Ohne diese Messung könnte eine Pflichtprüfung auf der Achse („mindestens ein Wert")
+    den Aufschub versehentlich blockieren."""
+    page, fall = seite_mit_kindern
+    _stub(page, _antwort(rueckfragen=[
+        _rf("Wie heißen deine Kinder mit Vornamen?", "kind_vorname")]))
+    _senden(page)
+
+    page.click("#rf-spaeter")
+    page.wait_for_selector("#rueckfragen", state="hidden", timeout=8000)
+
+    f = _felder(base, fall)
+    assert not [k for k in f if k.startswith("kind_vorname")], (
+        f"„Später“ hat etwas geschrieben — dann ist es kein Aufschub, sondern eine Antwort: "
+        f"{[k for k in f if k.startswith('kind_vorname')]}")
+    assert "kind_vorname" in _offene_felder(base, fall), (
+        "Das Feld steht nicht mehr in den offenen Fragen — dann ist die Frage weg, obwohl der "
+        "Nutzer sie nur aufgeschoben hat.")
+
+
+def test_ein_feld_ohne_achse_bleibt_bei_einem_feld_und_einem_ereignis(seite_mit_kindern, base):
+    """DIE GEGENRICHTUNG, und sie ist hier keine Formsache: gemessen wird bei GESETZTER
+    Kinderzahl 2. „Immer N Eingabefelder" wäre sonst eine bestandene Lösung — und
+    `bruttoarbeitslohn__2` ein Feld, das der ELSTER-Writer nie erwartet."""
+    page, fall = seite_mit_kindern
+    _stub(page, _antwort(rueckfragen=[
+        _rf("Wie hoch war dein Bruttoarbeitslohn?", CENT_FELD)]))
+    _senden(page)
+
+    z = _rf_instanzen(page)
+    assert z["zeilen"] == 0, f"Ein Feld ohne Achse zeigt Instanz-Zeilen: {z}"
+    assert z["eingaben"] == 1, f"Nicht genau ein Eingabefeld: {z}"
+
+    page.fill("#rf-input", "62000")
+    page.click("#rf-weiter")
+    page.wait_for_selector("#rueckfragen", state="hidden", timeout=8000)
+
+    f = _felder(base, fall)
+    assert f.get(CENT_FELD, {}).get("wert") == 6200000, (
+        f"Der Wert steht falsch im Store: {f.get(CENT_FELD)}")
+    assert f"{CENT_FELD}__2" not in f, (
+        f"Ein Feld ohne Achse hat eine zweite Instanz erzeugt: {f.get(CENT_FELD + '__2')}")
+
+
 def test_eine_rueckfrage_ohne_feld_bleibt_beim_chat(seite):
     """Ohne `feld_id` (oder zu einem Feld, das gar nicht mehr gefragt wird) gibt es keinen Typ und
     damit kein Eingabefeld, in das sich etwas schreiben ließe. Dann bleibt der Chat der Weg — wie

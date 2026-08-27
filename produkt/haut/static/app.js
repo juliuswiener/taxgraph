@@ -995,31 +995,46 @@ async function weiterNachDemSchreiben() {
   }
 }
 
-// N Instanzen schreiben: `base`, `base__2`, `base__3` … Gibt false zurück, wenn nichts geschrieben
-// wurde (dann hat der Aufrufer den Knopf schon wieder freigegeben).
+// N Instanzen schreiben: `base`, `base__2`, `base__3` … DER EINE SCHREIBWEG FÜR DIE ACHSE, für den
+// Fragebogen wie für den Rückfragen-Schritt.
+//
+// Dass er beiden gehört, ist seit 2026-08-27 keine Vorsorge mehr, sondern der behobene Befund.
+// Julius' Mitschnitt vom selben Tag, zwei Zeilen untereinander:
+//
+//     10:12:19  rueckfrage@kind_vorname   kind_vorname = "Anna"    (Frage im PLURAL, er hat zwei)
+//     10:19:17  klick@kind_geburtsdatum   kind_geburtsdatum + kind_geburtsdatum__2
+//
+// Der Fragebogen bediente die Achse, der Rückfragen-Schritt nicht — er schrieb genau EIN Ereignis
+// für `q.feld_id`. Danach galt das Feld als beantwortet und kam nie wieder: das zweite Kind hatte
+// keinen Vornamen mehr, und niemand fragte je danach. Die Anzeige war dabei nicht das Problem
+// (baueEingabe verzweigt selbst auf die Achse und baute die N Felder auch in der Rückfrage) — der
+// Wert wurde nur nie gelesen: `leseWert(q, $("rf-input"))` traf den Wrapper-<div> statt eines
+// Eingabefelds und lieferte `undefined`. Zwei Felder dastehen und eines schreiben wäre derselbe
+// Verlust mit besserer Optik gewesen, deshalb misst der Test den STORE.
+//
+// KNOPF UND MELDUNG MACHT DER AUFRUFER. Genau darin unterscheiden sich die beiden: der Fragebogen
+// setzt die Beschriftung seines Knopfes zurück, der Rückfragen-Schritt verweist auf „Später
+// beantworten". Das Feldformat (instanzFeldId), die Stille-Null-Regel und `ersetzt` dagegen dürfen
+// nicht zweimal stimmen müssen — die letzte Naht dieser Art hat einen ganzen Vornamen gekostet.
 //
 // LEERE INSTANZEN WERDEN ÜBERSPRUNGEN, nicht als Fehler behandelt. Wer drei Kinder angegeben hat,
 // aber nur zwei Namen zur Hand, soll die zwei speichern können — die dritte Frage bleibt offen und
-// kommt im Fragebogen wieder. Nur wenn ALLE leer sind, ist es keine Antwort: dann dieselbe Meldung
-// wie beim einzelnen leeren Feld (Stille-Null-Fix).
-async function bestaetigeInstanzen(kiFeld, btn, altLabel) {
-  const basis = AKTUELL.feld_id;
-  const werte = leseInstanzWerte(AKTUELL, "feld-input");
+// kommt im Fragebogen wieder. Nur wenn ALLE leer sind, ist es keine Antwort (`{leer: true}`): dann
+// meldet der Aufrufer dasselbe wie beim einzelnen leeren Feld (Stille-Null-Fix).
+//
+// Rückgabe: {ok: true} · {leer: true} · {fehler, instanz} — bei letzterem bleibt geschrieben, was
+// davor durchging, und die Nummer sagt, in welcher Zeile der Nutzer suchen muss.
+async function schreibeInstanzen(q, id, signal2) {
+  const werte = leseInstanzWerte(q, id);
   const gefuellt = werte.map((w, i) => [i + 1, w]).filter(([, w]) => w !== undefined);
-  if (!gefuellt.length) {
-    zeigeNetzFehler(formatHinweis(AKTUELL)
-                    || `Bitte mindestens einen Wert eingeben (${AKTUELL.instanz_etikett} 1).`);
-    btn.disabled = false;
-    if (!kiFeld) btn.textContent = altLabel;
-    return false;
-  }
+  if (!gefuellt.length) return { leer: true };
   for (const [i, wert] of gefuellt) {
-    const fid = instanzFeldId(basis, i);
+    const fid = instanzFeldId(q.feld_id, i);
     const ev = {
       feld_id: fid, wert, zustand: "bestaetigt",
       herkunft: { herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer" },
       schreiber: "ui:laie",
-      signal: { signal_1: null, signal_2: (kiFeld ? "hold@" : "klick@") + fid },
+      signal: { signal_1: null, signal_2: signal2 + fid },
     };
     // Trägt die Instanz schon einen Wert (Korrektur, KI-Vorschlag), verlangt Auflage B ein
     // `ersetzt` — sonst weist der Store sie ab und die Antwort wäre verloren.
@@ -1028,17 +1043,24 @@ async function bestaetigeInstanzen(kiFeld, btn, altLabel) {
       if (j.event_id) { ev.ersetzt = j.event_id; ev.signal.signal_1 = j.event_id; }
     }
     const r = await jpost(`/fall/${FALL}/event`, ev);
-    if (!okStatus(r.status)) {
-      // Abbrechen und SAGEN, welche Instanz — sonst sucht der Nutzer den Fehler in der falschen
-      // Zeile. Was vorher durchging, bleibt geschrieben; der Rest steht weiter offen.
-      zeigeNetzFehler(`${AKTUELL.instanz_etikett} ${i} abgewiesen: `
-                      + (r.body.fehler || r.status));
-      btn.disabled = false;
-      if (!kiFeld) btn.textContent = altLabel;
-      return false;
-    }
+    if (!okStatus(r.status)) return { fehler: r.body.fehler || r.status, instanz: i };
   }
-  return true;
+  return { ok: true };
+}
+
+// Der Fragebogen-Aufrufer: Knopf freigeben und die Beschriftung zurücksetzen, wenn nichts
+// geschrieben wurde. Gibt false zurück, wenn der Fluss nicht weitergehen darf.
+async function bestaetigeInstanzen(kiFeld, btn, altLabel) {
+  const s = await schreibeInstanzen(AKTUELL, "feld-input", kiFeld ? "hold@" : "klick@");
+  if (s.ok) return true;
+  zeigeNetzFehler(s.leer
+    ? (formatHinweis(AKTUELL)
+       || `Bitte mindestens einen Wert eingeben (${AKTUELL.instanz_etikett} 1).`)
+    // Abbrechen und SAGEN, welche Instanz — sonst sucht der Nutzer den Fehler in der falschen Zeile.
+    : `${AKTUELL.instanz_etikett} ${s.instanz} abgewiesen: ${s.fehler}`);
+  btn.disabled = false;
+  if (!kiFeld) btn.textContent = altLabel;
+  return false;
 }
 
 // --- „Das habe ich verstanden": alle KI-Vorschläge auf einer Seite, jeder mit seinem Zitat,
@@ -1508,41 +1530,61 @@ async function rueckfrageWeiter() {
   if (btn.disabled) return;   // Doppel-Submit-Schutz
   const q = rf.meta;
   if (!q) { rueckfrageBeantworten(rf); RF_INDEX += 1; zeigeRueckfrage(); return; }
-  // Dieselbe Lesart wie im Fragebogen: cent rechnet Euro in Cent, bool dreht `frage_invertiert`
-  // zurück in den Speicherwert. leer/ungültig -> undefined, und dann wird NICHTS geschrieben
-  // (Stille-Null-Fix): eine stille 0 wäre hier so falsch wie dort.
-  const wert = leseWert(q, $("rf-input"));
-  if (wert === undefined) {
-    zeigeNetzFehler((formatHinweis(q) || "Bitte einen gültigen Wert eingeben")
-                    + " — oder „Später beantworten“.");
-    return;
-  }
-  btn.disabled = true;
-  const ev = {
-    feld_id: q.feld_id, wert, zustand: "bestaetigt",
-    herkunft: { herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer" },
-    schreiber: "ui:laie",
-    signal: { signal_1: null, signal_2: "rueckfrage@" + q.feld_id },
-  };
-  // Trägt das Feld schon ein aktives Event, verlangt Auflage B (höchstens eines je Feld) ein
-  // `ersetzt` — sonst weist der Store die Antwort ab und sie wäre verloren. Der Katalog, aus dem
-  // die KI ihre Rückfragen zieht, ist NICHT auf unbeantwortete Felder beschränkt (genau daher
-  // rührt der Konflikt-Fall in /chat), das ist also kein hypothetischer Zweig.
-  //
-  // Ob es ein Event GIBT, sagt `STAND` — dieselbe Quelle, aus der auch zeigeFrage() ableitet, ob
-  // ein Vorschlag zu bestätigen ist. Der /warum-Aufruf steht bewusst dahinter und nicht davor:
-  // ohne Event antwortet er mit 404, und ein 404 je beantworteter Rückfrage wäre eine Fehlermeldung
-  // in der Konsole für den Normalfall. Liegt STAND einmal daneben, weist der Store die Antwort ab
-  // und der Nutzer SIEHT es (Banner unten) — kein stiller Verlust.
-  if (STAND && STAND.felder && STAND.felder[q.feld_id]) {
-    const j = (await jget(`/fall/${FALL}/feld/${q.feld_id}/warum`)).body.justification || {};
-    if (j.event_id) { ev.ersetzt = j.event_id; ev.signal.signal_1 = j.event_id; }
-  }
-  const r = await jpost(`/fall/${FALL}/event`, ev);
-  btn.disabled = false;
-  if (!okStatus(r.status)) {
-    zeigeNetzFehler("Abgewiesen: " + (r.body.fehler || r.status));
-    return;
+
+  // Feld mit Instanz-Achse: N Eingabefelder stehen da, also müssen N Ereignisse geschrieben werden.
+  // Dieser Zweig fehlte bis 2026-08-27 — der Fragebogen hatte ihn, der Rückfragen-Schritt nicht,
+  // und unter „Wie heißen deine KINDER mit Vornamen?" kam genau ein Vorname an. Näheres bei
+  // schreibeInstanzen(), dem gemeinsamen Schreibweg beider Wege.
+  if (q.instanz_anzahl > 1) {
+    btn.disabled = true;
+    const s = await schreibeInstanzen(q, "rf-input", "rueckfrage@");
+    btn.disabled = false;
+    if (!s.ok) {
+      // „Später beantworten“ mitnennen: es ist hier der einzige Weg an einer Frage vorbei, und
+      // ohne den Hinweis säße der Nutzer vor einem Knopf, der nichts tut.
+      zeigeNetzFehler(s.leer
+        ? ((formatHinweis(q) || `Bitte mindestens einen Wert eingeben (${q.instanz_etikett} 1)`)
+           + " — oder „Später beantworten“.")
+        : `${q.instanz_etikett} ${s.instanz} abgewiesen: ${s.fehler}`);
+      return;
+    }
+  } else {
+    // Dieselbe Lesart wie im Fragebogen: cent rechnet Euro in Cent, bool dreht `frage_invertiert`
+    // zurück in den Speicherwert. leer/ungültig -> undefined, und dann wird NICHTS geschrieben
+    // (Stille-Null-Fix): eine stille 0 wäre hier so falsch wie dort.
+    const wert = leseWert(q, $("rf-input"));
+    if (wert === undefined) {
+      zeigeNetzFehler((formatHinweis(q) || "Bitte einen gültigen Wert eingeben")
+                      + " — oder „Später beantworten“.");
+      return;
+    }
+    btn.disabled = true;
+    const ev = {
+      feld_id: q.feld_id, wert, zustand: "bestaetigt",
+      herkunft: { herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer" },
+      schreiber: "ui:laie",
+      signal: { signal_1: null, signal_2: "rueckfrage@" + q.feld_id },
+    };
+    // Trägt das Feld schon ein aktives Event, verlangt Auflage B (höchstens eines je Feld) ein
+    // `ersetzt` — sonst weist der Store die Antwort ab und sie wäre verloren. Der Katalog, aus dem
+    // die KI ihre Rückfragen zieht, ist NICHT auf unbeantwortete Felder beschränkt (genau daher
+    // rührt der Konflikt-Fall in /chat), das ist also kein hypothetischer Zweig.
+    //
+    // Ob es ein Event GIBT, sagt `STAND` — dieselbe Quelle, aus der auch zeigeFrage() ableitet, ob
+    // ein Vorschlag zu bestätigen ist. Der /warum-Aufruf steht bewusst dahinter und nicht davor:
+    // ohne Event antwortet er mit 404, und ein 404 je beantworteter Rückfrage wäre eine
+    // Fehlermeldung in der Konsole für den Normalfall. Liegt STAND einmal daneben, weist der Store
+    // die Antwort ab und der Nutzer SIEHT es (Banner unten) — kein stiller Verlust.
+    if (STAND && STAND.felder && STAND.felder[q.feld_id]) {
+      const j = (await jget(`/fall/${FALL}/feld/${q.feld_id}/warum`)).body.justification || {};
+      if (j.event_id) { ev.ersetzt = j.event_id; ev.signal.signal_1 = j.event_id; }
+    }
+    const r = await jpost(`/fall/${FALL}/event`, ev);
+    btn.disabled = false;
+    if (!okStatus(r.status)) {
+      zeigeNetzFehler("Abgewiesen: " + (r.body.fehler || r.status));
+      return;
+    }
   }
   RF_BEANTWORTET += 1;
   await refresh();   // Ring + Belegt-Liste ziehen mit; die Seite bleibt vorn (RUECKFRAGEN_OFFEN)
