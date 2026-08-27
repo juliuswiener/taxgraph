@@ -579,6 +579,7 @@ def preflight_check(fall_id: str) -> tuple[int, dict]:
             ("widerspruch", "flag", "widersprueche_flag", "grund"),
             ("widerspruch", "partner", "widersprueche_partner", "grund"),
             ("widerspruch", "alleinerziehend", "widersprueche_alleinerziehend", "grund"),
+            ("widerspruch", "plausibilitaet", "widersprueche_plausibilitaet", "grund"),
             ("hinweis", "pauschale", "hinweise_pauschalen", "hinweis"),
             ("hinweis", "nicht_gerechnet", "hinweise_nicht_gerechnet", "hinweis")):
         for e in ergebnis.get(schluessel, []):

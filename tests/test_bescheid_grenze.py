@@ -176,7 +176,15 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # wo der ganze flow nachvollziehbar ist." Keiner der neun Befunde kam aus einem Protokoll — die
 # Reihenfolge der Fragen, die Doppelungen und das blockierte Ende mussten aus den Ereignissen im
 # Fall rekonstruiert werden, und das trägt nur, solange man die Reihenfolge schon kennt.
-API_ZEILEN_OBERGRENZE = 1225
+#
+# 1225 -> 1226 (2026-08-27, Plausibilitäts-Befunde erreichen den Nutzer). EINE Zeile, und sie ist
+# ein Eintrag in der Auslieferungsliste von `preflight_check()`, keine Logik:
+#     ("widerspruch", "plausibilitaet", "widersprueche_plausibilitaet", "grund"),
+# ANLASS: sechs neue Prüfungen in produkt/konsistenz/preflight.py liefen, hoben den Status auf RED
+# — und beim Nutzer kam NICHTS an, weil diese Liste fest verdrahtet ist. Die Wirkung wäre genau
+# die Form gewesen, die Julius am selben Tag als neunten Befund meldete: ein roter Zustand ohne
+# einen einzigen Grund daneben. tests/test_preflight_erreichbarkeit.py bewacht das jetzt.
+API_ZEILEN_OBERGRENZE = 1226
 
 
 def _runner_stellen(pfad: str) -> list[int]:
