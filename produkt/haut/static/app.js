@@ -470,13 +470,43 @@ function zeigeBelegt(felder) {
     // /stand seit demselben Tag mit (api._anzeige_metadaten).
     // Fällt zurück auf Kennung + Rohwert, wenn die Metadaten fehlen (Feld nicht mehr in der
     // Bindung, etwa nach einem Scheiben-Wechsel) — lieber technisch als leer.
+    const a = belegtAnzeige(fid, f, felder);
     const t = document.createElement("span"); t.className = "z-name";
-    t.textContent = f.frage || fid;
+    t.textContent = a.frage || fid;
     t.title = fid;                       // die Kennung bleibt erreichbar, nur nicht im Weg
     const v = document.createElement("span"); v.className = "z-wert";
-    v.textContent = f.typ ? verstandenWertText(f) : JSON.stringify(f.wert);
+    v.textContent = a.typ ? verstandenWertText(a) : JSON.stringify(f.wert);
     li.appendChild(t); li.appendChild(v); ul.appendChild(li);
   }
+}
+
+// Anzeige-Daten einer Belegt-Zeile. Fuer fast jedes Feld ist das die Zeile selbst; fuer ein
+// INSTANZ-Feld nicht.
+//
+// GEMESSEN 2026-08-27, zwei Kinder eingetragen — untereinander standen:
+//     Wie heisst dein Kind mit Vornamen?    Anna
+//     kind_vorname__2                       "Ben"
+// Die zweite Zeile zeigt Kennung und Rohwert, also genau die zwei Dinge, die diese Liste dem Laien
+// ersparen soll. Ursache: die Anzeige-Metadaten kommen aus der Bindung (api._anzeige_metadaten),
+// und dort steht nur das Basisfeld — ein Nachschlagen unter `kind_vorname__2` findet nichts, alle
+// Werte bleiben None.
+//
+// Der Rueckgriff aufs Basisfeld passiert deshalb HIER, nicht serverseitig: /stand liefert beide
+// Zeilen im selben Aufruf, die noetigen Angaben stehen also schon im Bild. Die Nummer kommt dazu,
+// sonst stuenden zwei Zeilen mit derselben Frage untereinander und niemand wuesste, welche welche
+// ist. Das gilt fuer die KLICKBARE Zeile — eine, die der Nutzer nicht als seine Frage erkennt,
+// klickt er auch nicht an, und der Korrekturweg dahinter bliebe unerreichbar.
+//
+// Fehlt auch das Basisfeld (Instanz 1 leer gelassen), bleibt es beim bisherigen Rueckfall auf
+// Kennung + Rohwert — lieber technisch als leer.
+function belegtAnzeige(fid, f, felder) {
+  if (f.typ) return f;
+  const { basis, instanz } = basisFeldId(fid);
+  const b = basis !== fid ? (felder || {})[basis] : null;
+  if (!b || !b.typ) return f;
+  return { ...f, typ: b.typ, einheit: b.einheit, enum_labels: b.enum_labels,
+           frage_invertiert: b.frage_invertiert,
+           frage: b.frage ? `${b.frage} (Nr. ${instanz})` : null };
 }
 
 // --- Dim 1: Herkunft-Kette (Euro -> Regel -> Norm -> Beleg) im Bestätigungsmoment ---
@@ -533,8 +563,13 @@ function zeigeFrage(q, stand) {
   const altMaps = document.getElementById("maps-affordanz"); if (altMaps) altMaps.remove();
   if (q.feld_id === "ep_entfernung_km") mapsAffordanz(q);
 
+  // Bei einer Instanz-Achse kommt die Vorbelegung JE INSTANZ aus dem Stand, nicht als ein Wert.
+  // Sonst laesst sich ein Instanz-Feld nicht korrigieren, ohne alle anderen Zeilen neu zu tippen —
+  // und wer eine vorbelegte Zeile leer vorfindet, muss annehmen, seine Antwort sei weg.
   baueEingabe(q, $("eingabe"), "feld-input", "frage",
-              (kiVorschlag && vorhanden.wert !== null) ? vorhanden.wert : null);
+              q.instanz_anzahl > 1
+                ? instanzVorbelegungen(q, stand)
+                : ((kiVorschlag && vorhanden.wert !== null) ? vorhanden.wert : null));
 
   // Bestätigungs-Geste skaliert mit KI-Konfidenz (Dim 2): KI-Vorschlag -> Halten; sonst 1-Tipp.
   rüsteBestaetigen(kiVorschlag ? vorhanden : null, q);
@@ -559,6 +594,37 @@ function zeigeFrage(q, stand) {
 //
 // Der Traverser bleibt dabei unangetastet: er liefert das Basisfeld wie bisher einmal, und die
 // Zahl steht als `instanz_anzahl` daneben. Diese Funktion baut daraus die Felder.
+// Was fuer dieses Feld schon im Fall steht, je Instanz: `{1: "Anna", 2: "Ben"}`. Die Werte liegen
+// in `stand.felder` als EIGENE Schluessel nebeneinander (`kind_vorname`, `kind_vorname__2`), nicht
+// als Liste unter dem Basisfeld — deshalb wird je Instanz nachgeschlagen. Kein eigener Endpunkt:
+// /stand fuehrt sie laengst, sie wurden hier nur nie gelesen.
+//
+// Eine Instanz ohne Wert bleibt WEG statt als `null` einzuziehen: `baueEingabe` unterscheidet
+// "nicht vorbelegt" an genau diesem Unterschied, und eine leere Zeile mit Platzhalter liest sich
+// richtig — als noch nicht beantwortet.
+function instanzVorbelegungen(q, stand) {
+  const felder = (stand && stand.felder) || {};
+  const out = {};
+  for (let i = 1; i <= q.instanz_anzahl; i++) {
+    const f = felder[instanzFeldId(q.feld_id, i)];
+    if (f && f.wert !== null && f.wert !== undefined) out[i] = f.wert;
+  }
+  return out;
+}
+
+// Die Vorbelegung genau EINER Instanz. Nur ein Objekt `{1: …, 2: …}` traegt Werte je Instanz.
+//
+// EIN SKALAR IST KEINER, und das war nicht bloss wirkungslos: Zeichenketten lassen sich indizieren.
+// GEMESSEN 2026-08-27, zwei Kinder und die Vorbelegung "Anna": beide Zeilen standen mit dem
+// Buchstaben "n" da ("Anna"[1] und "Anna"[2]). Erreichbar, sobald ein KI-Vorschlag auf einem Feld
+// mit Achse liegt — zeigeFrage reichte den Wert bis hierher als einzelnen Wert durch. Ein
+// Buchstabe im Feld sieht dabei wie eine Antwort aus, nicht wie ein Fehler.
+function vorbelegungJe(vorbelegungen, i) {
+  if (!vorbelegungen || typeof vorbelegungen !== "object") return null;
+  const w = vorbelegungen[i];
+  return w === undefined ? null : w;
+}
+
 function baueInstanzEingaben(q, box, id, labelId, vorbelegungen) {
   box.innerHTML = "";
   const wrap = document.createElement("div");
@@ -578,7 +644,7 @@ function baueInstanzEingaben(q, box, id, labelId, vorbelegungen) {
     // Standardwert-Knopf und Auswertung überall gleich sind.
     const einzeln = { ...q, instanz_anzahl: 1 };
     const el = baueEingabe(einzeln, feld, `${id}__${i}`, labelId,
-                           (vorbelegungen || {})[i] ?? null);
+                           vorbelegungJe(vorbelegungen, i));
     el.dataset.instanz = String(i);
   }
   box.appendChild(wrap);
@@ -827,6 +893,27 @@ function instanzFeldId(basis, i) {
   return i <= 1 ? basis : `${basis}__${i}`;
 }
 
+// Der Rueckweg: aus `kind_vorname__2` wird `{basis: "kind_vorname", instanz: 2}`, aus einem Feld
+// ohne Achse `{basis: <es selbst>, instanz: 1}`.
+//
+// KEIN eigenes Muster, und das ist hier der ganze Punkt: die Zerlegung wird gegen instanzFeldId
+// GEGENGEPROBT. Nur was der Hinweg genau so gebaut haette, gilt als Instanz. Damit koennen Hin-
+// und Rueckweg nicht auseinanderlaufen — ein zweites Regex daneben muesste bei jeder Aenderung
+// mitgezogen werden, und die `__n`-Konvention steht ohnehin schon an drei Stellen
+// (est_mapping.parse_instanz, instanzFeldId hier, der Typpruefer im Store).
+//
+// Die Gegenprobe faengt nebenbei die Faelle, die ein handgeschriebenes Regex gern durchlaesst:
+// `x__02` (fuehrende Null), `x__0`, `x__` und `x__2x` sind KEINE Instanzen — instanzFeldId haette
+// sie nie so geschrieben.
+function basisFeldId(fid) {
+  const p = String(fid || "").lastIndexOf("__");
+  if (p < 0) return { basis: fid, instanz: 1 };
+  const basis = fid.slice(0, p);
+  const n = Number(fid.slice(p + 2));
+  return (Number.isInteger(n) && n >= 2 && instanzFeldId(basis, n) === fid)
+    ? { basis, instanz: n } : { basis: fid, instanz: 1 };
+}
+
 // „Bitte einen gültigen Wert eingeben" sagt einem Nutzer, der gerade „01.01-31.122" getippt hat,
 // nichts — er sieht ja einen Wert dastehen. Wo die Bindung ein Format zusagt, wird es genannt,
 // mit dem üblichen Wert als Beispiel.
@@ -882,7 +969,10 @@ function leseWert(q, el) {
 // Rückgabe true/false: der Aufrufer muss wissen, ob jetzt eine Frage sichtbar ist. Die Verstanden-
 // Seite blendet sich für „Ändern" aus und stünde sonst bei einem Fehlschlag vor einem leeren Bild.
 async function korrigiereBestaetigt(fid) {
-  // event_id für dieses Feld holen (aus justification)
+  // Die event_id wird fuer DAS ANGEKLICKTE Feld geholt, auch wenn es eine Instanz ist:
+  // `kind_vorname__2` ist ein eigenes Feld im Store mit eigenem aktivem Event (gemessen
+  // 2026-08-27). Nur seine event_id belegt, dass da wirklich etwas zu korrigieren ist — die des
+  // Basisfelds sagt ueber Instanz 2 nichts.
   const r = await jget(`/fall/${FALL}/feld/${fid}/warum`);
   if (r.status !== 200 || !r.body.justification) {
     zeigeNetzFehler("Korrektur konnte nicht geladen werden.");
@@ -900,7 +990,7 @@ async function korrigiereBestaetigt(fid) {
     zeigeNetzFehler("Fragen konnten nicht geladen werden.");
     return false;
   }
-  const frage = (fragen_r.body.fragen || []).find(q => q.feld_id === fid);
+  const frage = (fragen_r.body.fragen || []).find(q => q.feld_id === basis);
   if (!frage) {
     // Feld steht nicht mehr in den offenen Fragen — könnte sein, dass andere
     // Felder es obsolet gemacht haben. Für Korrektur brauchen wir die Frage.
@@ -908,13 +998,27 @@ async function korrigiereBestaetigt(fid) {
     // 2026-08-25: „Feld kind_wohnsitz_inland_zeitraum ist nicht mehr im Fragenfluss."). Und der
     // Satz sagte nicht, WARUM: eine andere Antwort hat die Frage abgeschaltet. Das ist kein
     // Fehler, sondern ein Ergebnis — nur eines, das man erklären muss.
-    zeigeNetzFehler("Diese Frage ist durch eine andere Antwort entfallen und lässt sich nicht mehr "
-                    + "ändern. Willst du sie zurückholen, ändere die Antwort, die sie abgeschaltet "
-                    + "hat.");
+    //
+    // ZWEI GRUENDE, EINE MELDUNG — das war der Fehler. /fragen ist die Queue der UNBEANTWORTETEN
+    // Felder (traverser.naechste_fragen: `_unbeantwortet`); ein bestaetigtes Feld faellt heraus,
+    // ein vorlaeufiges bleibt drin. Ein Feld fehlt hier also aus zwei ganz verschiedenen Gruenden,
+    // und die Meldung nannte immer nur den einen. GEMESSEN 2026-08-27, an einem Feld ganz ohne
+    // Instanz-Achse: korrigiereBestaetigt('fam_anzahl_kinder') -> "durch eine andere Antwort
+    // entfallen", obwohl der Nutzer die Frage gerade selbst beantwortet hatte.
+    //
+    // Der Store weiss, welcher der beiden Faelle vorliegt: steht der Wert bestaetigt in STAND, ist
+    // er beantwortet und nicht entfallen. Dann sagt die Meldung das auch — der Nutzer soll nicht
+    // eine Antwort suchen gehen, die es nicht gibt.
+    const b = (STAND.felder || {})[basis];
+    zeigeNetzFehler(b && b.zustand === "bestaetigt"
+      ? "Diese Antwort ist schon gespeichert. Ändern lässt sie sich hier gerade nicht — der "
+        + "Fragebogen legt nur noch offene Fragen vor."
+      : "Diese Frage ist durch eine andere Antwort entfallen und lässt sich nicht mehr "
+        + "ändern. Willst du sie zurückholen, ändere die Antwort, die sie abgeschaltet hat.");
     return false;
   }
 
-  KORREKTUR_FID = fid;
+  KORREKTUR_FID = basis;
   AKTUELL = frage;  // Jetzt ist dieses Feld die "aktuelle" Frage
   zeigeFrage(AKTUELL, STAND);
   return true;
@@ -985,8 +1089,21 @@ async function weiterNachDemSchreiben() {
   // wenn der Nutzer die vorgelegte Frage überspringt und eine andere beantwortet — dann gehört er
   // nicht in die Liste zurückgeworfen. AKTUELL zeigt hier noch auf das eben geschriebene Feld;
   // refresh() darunter setzt es weiter.
+  //
+  // Verglichen wird gegen das BASISFELD, weil korrigiereBestaetigt seit 2026-08-27 aufloest: in
+  // AKTUELL liegt danach das Basisfeld, in VERSTANDEN_ZURUECK die Kennung, mit der der Aufrufer
+  // kam. Das sind seither zwei verschiedene Raeume, und dieser Vergleich stellt sie wieder in
+  // denselben — es ist die Naht meiner eigenen Aenderung, nicht Vorsorge fuer einen fremden Fall.
+  //
+  // HEUTE NICHT AUSLOESBAR, und das gehoert dazugesagt: VERSTANDEN_ZURUECK wird nur von
+  // verstandenAendern gesetzt, die Pruefliste zeigt nur vorlaeufige KI-Vorschlaege, und die KI darf
+  // kein `__n` schreiben — der Store weist es ab („fail-closed (Katalog): llm:chat darf
+  // kind_vorname__2 nicht vorschlagen", gemessen 2026-08-27). Fuer jedes Feld ohne Achse gibt
+  // basisFeldId die Kennung unveraendert zurueck, die Zeile verhaelt sich also wie vorher. Sollte
+  // die Pruefliste eines Tages Instanzen fuehren, bricht der Rueckweg hier nicht still.
   const zurueck = (VERSTANDEN_ZURUECK && AKTUELL
-                   && AKTUELL.feld_id === VERSTANDEN_ZURUECK.feld_id) ? VERSTANDEN_ZURUECK : null;
+                   && basisFeldId(VERSTANDEN_ZURUECK.feld_id).basis === AKTUELL.feld_id)
+                  ? VERSTANDEN_ZURUECK : null;
   KORREKTUR_FID = null;                // Korrektur abgeschlossen
   await refresh();
   if (zurueck) {
