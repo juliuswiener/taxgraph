@@ -16,11 +16,10 @@ der Funktionen halten die Abhängigkeit locker. Exportiert LlmNichtVerfuegbar da
 api.py sie in except-Clauses nutzen kann."""
 
 import json
-import os
 import re
-from datetime import datetime, timezone
 
 import audit  # noqa: E402 — P1.6 Audit-Log (sys.path via api.py)
+import flow  # noqa: E402 — Fluss-Mitschnitt, nur mit TAXGRAPH_FLOW=1
 import kontoauszug_writer as KW
 import traverser as TR  # noqa: E402 — nur lade_instanz_gruppen (Zählfeld je Instanz-Gruppe)
 from pii_filter import filtere  # noqa: E402 — PII-Filter vor ausgehendem LLM-Call
@@ -953,17 +952,12 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
         `from audit import AUDIT_DIR` bände den Wert statt des Namens und liefe an jeder Umlenkung
         vorbei. Rechte 0600 wie beim Audit — die Datei führt den Klartext einer Steuererklärung.
         """
-        if os.environ.get("TAXGRAPH_KI_DEBUG", "").strip() != "1":
-            return
-        pfad = os.path.join(audit.AUDIT_DIR, "ki_debug.jsonl")
-        zeile = json.dumps({"ts": datetime.now(timezone.utc).isoformat(), "stufe": stufe,
-                            "was": was, "inhalt": inhalt}, ensure_ascii=False)
-        os.makedirs(os.path.dirname(pfad) or ".", exist_ok=True)
-        # 0o600 beim Anlegen; eine bestehende Datei bleibt unangetastet (dieselbe Linie wie
-        # audit.py: "ein Protokoll wird nicht unterwegs umgeschrieben").
-        fd = os.open(pfad, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
-        with os.fdopen(fd, "a", encoding="utf-8") as f:
-            f.write(zeile + "\n")
+        # Seit 2026-08-27 in DENSELBEN Strang wie Fragen und Antworten (produkt/haut/flow.py).
+        # Vorher lag der Wortlaut der Modellstufen in einer eigenen Datei, und der Fragebogen —
+        # wo der Nutzer die meiste Zeit verbringt — kam darin gar nicht vor. Julius: „ich will so
+        # ein log wo der ganze flow nachvollziehbar ist." Zwei Dateien nebeneinander sind kein
+        # Fluss; die Reihenfolge zwischen ihnen musste man sich aus Zeitstempeln zusammenlegen.
+        flow.schreibe(None, "ki", {"stufe": stufe, "was": was, "inhalt": inhalt})
 
     def gescheitert(stufe: int, e: Exception) -> None:
         # Ohne diesen Eintrag bliebe im Protokoll GAR NICHTS stehen — ein Aufruf, der leer zurückkam

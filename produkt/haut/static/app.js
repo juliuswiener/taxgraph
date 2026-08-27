@@ -34,6 +34,23 @@ let RF_SPAETER = 0;             // und wie viele der Nutzer zurückgestellt hat
 let SCREENING_OFFEN = false;    // wie VERSTANDEN_OFFEN: refresh() darf die Seite nicht wegschieben
 let SCREENING_LISTE = [];       // die Fragen mit `screening: true`, aus /fragen
 
+// Fluss-Mitschnitt: läuft er? Einmal beim Start aus /health gelesen (dort steht `flow`). Der
+// Server sieht nur die fertigen /event-Aufrufe — die Ankreuzliste, die Nachfragen und die
+// KI-Prüfliste sind Bildschirme HIER, und was VORGELEGT wurde, weiss nur diese Seite. Eine
+// übersprungene Nachfrage hinterlässt im Fall überhaupt nichts.
+//
+// Julius, 2026-08-27: „du hast in dem verlauf nicht die nachfragen, ki überprüfungsfragen und die
+// checkliste drin!!!"
+let FLOW_AN = false;
+
+// Melden und NICHT darauf warten: der Mitschnitt ist Beobachtung, er darf den Ablauf nicht
+// aufhalten und erst recht nicht anhalten, wenn er scheitert. Deshalb ohne `await` gerufen und mit
+// eigenem catch — ein Protokoll darf nicht kaputtmachen, was es beschreibt.
+function meldeFluss(art, inhalt) {
+  if (!FLOW_AN || !FALL) return;
+  jpost(`/fall/${FALL}/flow`, { art, inhalt }).catch(() => {});
+}
+
 // --- P1.1-Verdrahtung: Token-Haltung ---
 // Sicherheitsentscheidung, keine Geschmacksfrage (team-lead-Auftrag): sessionStorage statt
 // localStorage. Der Server bindet ausschließlich an 127.0.0.1 (kein Zugriff von außen), aber die
@@ -157,6 +174,7 @@ function kiFokus(an) {
 }
 
 async function wegWaehlen(weg) {
+  meldeFluss("weg_gewaehlt", { weg });   // steht sonst nirgends — der Fall kennt nur das Ergebnis
   $("wegwahl").hidden = true;
   $("flow").hidden = false;
   kiFokus(weg === "ki");
@@ -381,6 +399,10 @@ async function screeningWeiter() {
   btn.disabled = true;
   const alt = btn.textContent;
   btn.textContent = "Wird gespeichert …";
+  // KEINE Meldung für die Ankreuzliste: jede ihrer Antworten trägt `screening@…` als zweites
+  // Signal, und das Kreuz hinter dem gespeicherten Wert liefert `frage_invertiert` aus der
+  // Bindung. Sie ist damit aus dem Fall vollständig rekonstruierbar (nachgemessen 2026-08-27) —
+  // eine zusätzliche Anfrage brächte nichts Neues.
   try {
     for (const q of SCREENING_LISTE) {
       const box = $("screening-liste").querySelector(`.sc-box[data-feld="${q.feld_id}"]`);
@@ -1268,6 +1290,9 @@ async function verstandenAendern(v, btn) {
   // In dieser Reihenfolge braucht es auch die Rücknahme nicht mehr (Seite zurückholen, wenn die
   // Frage nicht ladbar war) und den Sonderfall der Anmeldemaske nicht: was nie versteckt wurde,
   // muss nicht zurückgeholt werden.
+  // Die Korrektur kommt gleich als gewöhnliches `klick@…` im Fall an und ist dort von jeder
+  // anderen Antwort nicht mehr zu unterscheiden. Dass sie aus der Prüfliste kam, steht nur hier.
+  meldeFluss("pruefliste_aendern", { feld_id: v.feld_id, war: v.wert });
   if (btn) { btn.disabled = true; btn.textContent = "Wird geladen …"; }
   try {
     if (!await korrigiereBestaetigt(v.feld_id)) return;   // Meldung steht, Liste bleibt stehen
@@ -1315,7 +1340,12 @@ function verstandenZurueck(z) {
 async function verstandenWeiter() {
   // Nicht bestätigte Zeilen bleiben vorläufig und stehen damit weiter im Fragefluss — dort
   // begegnen sie dem Nutzer erneut, mit Hold-to-confirm. Nichts geht verloren, nichts zählt
-  // ungefragt.
+  // ungefragt. Welche das waren, steht danach nirgends: im Fall liegt nur ein vorläufiges
+  // KI-Event, und das lag dort auch schon, bevor die Liste überhaupt erschien.
+  meldeFluss("pruefliste_weiter", {
+    unbestaetigt: [...document.querySelectorAll("#verstanden-liste .v-zeile:not(.v-fertig)")]
+                    .map(li => li.dataset.feld),
+  });
   VERSTANDEN_OFFEN = false;
   $("verstanden").hidden = true;
 
@@ -1392,6 +1422,14 @@ async function starteRueckfragen(rueckfragen, vorschlaege, konflikte, zurueckges
   const katalog = {};
   for (const q of (Array.isArray(fr.body.fragen) ? fr.body.fragen : [])) katalog[q.feld_id] = q;
   const entfallen = rueckfragen.filter(rf => rf.feld_id && !katalog[rf.feld_id]);
+  // Was hier WEGFÄLLT, hinterlässt im Fall nichts — und sieht danach genau so aus wie eine, die
+  // der Nutzer übersprungen hat. Nur an dieser Stelle sind die beiden noch zu unterscheiden.
+  meldeFluss("nachfragen_gestartet", {
+    gestellt: rueckfragen.filter(rf => !rf.feld_id || katalog[rf.feld_id])
+                         .map(rf => ({ feld_id: rf.feld_id, frage: (rf.frage || "").slice(0, 120) })),
+    entfallen: entfallen.map(rf => rf.feld_id),
+    zurueckgestellt: zurueckgestellt || 0,
+  });
   RF_LISTE = rueckfragen
     .filter(rf => !rf.feld_id || katalog[rf.feld_id])
     .map(rf => ({ ...rf, meta: rf.feld_id ? katalog[rf.feld_id] : null }));
@@ -1518,6 +1556,11 @@ async function rueckfrageWeiter() {
 // die die Software nicht hält.
 function rueckfrageSpaeter() {
   if (RF_INDEX >= RF_LISTE.length) return;
+  // Schreibt bewusst nichts in den Fall (s. den Kommentar darüber) — deshalb ist DAS hier die
+  // einzige Stelle, an der ein Übersprungenes überhaupt festgehalten werden kann.
+  const rf = RF_LISTE[RF_INDEX];
+  meldeFluss("nachfrage_spaeter", { feld_id: rf && rf.feld_id,
+                                    frage: ((rf && rf.frage) || "").slice(0, 120) });
   RF_SPAETER += 1;
   RF_INDEX += 1;
   zeigeRueckfrage();
@@ -2352,6 +2395,10 @@ async function abmelden() {
 // vorher einen Fall anzulegen (POST /fall prüft nie den Besitz, ein so entstandener herrenloser
 // Fall wäre nach einem Login für niemanden mehr lesbar, s. api.py _fall_owner_check).
 async function initAuth() {
+  // Läuft der Fluss-Mitschnitt? Einmal, öffentlich, ohne Fall — ohne diese Frage müsste die Seite
+  // ihre Bildschirme immer melden, auch wenn niemand mitschreibt, und das sind auf einem
+  // einfädigen Server Anfragen, die echte blockieren.
+  jget("/health").then(r => { FLOW_AN = !!(r.body && r.body.flow); }).catch(() => {});
   if (TOKEN) {
     const r = await jget("/auth/session");   // /auth/* -> kein automatisches 401-Abfangen, s. _401Abfangen()
     if (r.status === 200 && r.body && r.body.username) {

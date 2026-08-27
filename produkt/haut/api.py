@@ -48,6 +48,7 @@ import api_llm  # noqa: E402  (LLM-Integration: _llm_vorschlaege, _kontoauszug_l
 import preflight as PF  # noqa: E402  (P5.5 Preflight-Check: Konsistenz + vergessene Pauschalen)
 import api_auth  # noqa: E402  (Request-scoped Auth, Modul-Attribute für Mutation-Sicherheit)
 import pii_filter as PII  # noqa: E402  (Art.-9-Sperre für den LLM-Kontext, s. _erklaer_kontext)
+import flow  # noqa: E402  (Fluss-Mitschnitt, nur mit TAXGRAPH_FLOW=1 — s. produkt/haut/flow.py)
 # Rechenkern (Phase 3): die Steuerlogik liegt in produkt/bescheid/, api.py ist ihre Hülle.
 # Namentlich importiert, nicht per Star — und re-exportiert, weil 23 Testdateien und mehrere
 # Endpunkte diese Namen über `api.` auflösen. tests/test_bescheid_grenze.py prüft, dass es
@@ -386,6 +387,7 @@ def fragen(fall_id: str) -> tuple[int, dict]:
                        TR.instanz_anzahl(store, bindung, fid))),
             "anker_ref": b.get("anker_ref"),
         })
+    flow.schreibe(fall_id, "fragen", {"offen": len(out), "kopf": flow.kopf_der_queue(out)})
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "fragen": out}
 
 
@@ -478,8 +480,14 @@ def event(fall_id: str, body: dict) -> tuple[int, dict]:
             bindung=bindung)
     except ValueError as e:
         # fail-closed-Abweisung des Stores -> 422 (nicht 500): die Haut hat korrekt weitergereicht.
+        flow.schreibe(fall_id, "abgewiesen", {"feld_id": fid, "wert": body.get("wert"),
+                                              "grund": str(e)[:200]})
         raise ApiError(422, str(e))
     speichere_fall(fall_id, store)
+    flow.schreibe(fall_id, "antwort", {
+        "feld_id": fid, "wert": body.get("wert"), "zustand": zustand,
+        "weg": (body.get("signal") or {}).get("signal_2"),
+        "ersetzt": bool(body.get("ersetzt")), "schreiber": schreiber})
     return 201, {"event_id": ev["event_id"], "feld_id": fid, "zustand": zustand}
 
 
@@ -494,6 +502,13 @@ def warum(fall_id: str, feld_id: str) -> tuple[int, dict]:
 
 
 def ergebnis(fall_id: str) -> tuple[int, dict]:
+    """Hülle um `_ergebnis_roh`: schreibt nur den Ausgang in den Fluss (s. flow.py)."""
+    st, obj = _ergebnis_roh(fall_id)
+    flow.ergebnis_notiert(fall_id, obj)
+    return st, obj
+
+
+def _ergebnis_roh(fall_id: str) -> tuple[int, dict]:
     _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     cfg = _cfg(store)
@@ -1033,6 +1048,8 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     # Kontext für die ANTWORT-Hälfte: das gerade offene Feld (schickt die Oberfläche mit), sein
     # Zitatanker und die schon bestätigten Angaben. Für die Vorschläge ist er ohne Bedeutung.
     kontext = _erklaer_kontext(store, bindung, body.get("feld_id") or None)
+    flow.AKTUELLER_FALL = fall_id   # damit die KI-Stufen im selben Strang landen, s. flow.py
+    flow.schreibe(fall_id, "nutzertext", {"text": freitext, "bei_feld": body.get("feld_id")})
     try:
         erg = api_llm._llm_dialog(freitext, prompt_katalog, kontext, user_id=api_auth._AUTH_USER)
     except (api_llm.LlmNichtVerfuegbar, ImportError) as e:  # Cap-Gate/Import → reine Erklär-Grenze (kein Key, $0);
@@ -1188,8 +1205,17 @@ def _erklaer_kontext(store: dict, bindung: dict, fid: str | None) -> str:
 # ----------------------------------------------------------------- P8.3 Health / Ready
 
 def health() -> tuple:
-    """GET /health — Lebendtest, keine Abhängigkeiten."""
-    return 200, {"status": "ok"}
+    """GET /health — Lebendtest, keine Abhängigkeiten. `flow`: läuft der Mitschnitt (s. flow.py)."""
+    return 200, {"status": "ok", "flow": flow.an()}
+
+
+def flow_melden(fall_id: str, body: dict) -> tuple:
+    """POST /fall/<id>/flow — was die OBERFLÄCHE gezeigt hat (s. flow.melde_ui)."""
+    _fall_owner_check(fall_id)
+    try:
+        return flow.melde_ui(fall_id, body)
+    except ValueError as e:
+        raise ApiError(400, str(e))
 
 
 def ready() -> tuple:

@@ -159,7 +159,24 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # ANLASS: 69 Felder tragen eine Instanz-Achse (31 für Kinder), Store und ELSTER-Mapping kennen sie
 # seit langem — der Fragebogen fragte trotzdem einmal. Wer zwei Kinder hatte, konnte einen
 # Vornamen eintragen; für das zweite gab es kein Feld. Abgabe-Blocker, kein Anzeigefehler.
-API_ZEILEN_OBERGRENZE = 1199
+#
+# 1199 -> 1225 (2026-08-27, Fluss-Mitschnitt). Aufschlüsselung der 26 Zeilen, NULL davon
+# Steuerlogik — die liegt vollständig in produkt/haut/flow.py:
+#   1  `import flow`
+#   7  sechs Aufrufpunkte (fragen / event-Erfolg / event-Abweisung / chat-Nutzertext /
+#      chat-Fallmerker / health), also je die Stelle, AN DER das Ereignis entsteht. Die kann
+#      nicht in ein Modul wandern: sie ist der Ort selbst.
+#  10  `ergebnis` als Hülle um `_ergebnis_roh`. Eine Hülle statt eines Eintrags an jeder der
+#      sechs Rückgabestellen von `ergebnis` — die sind über die Funktion verteilt, und der
+#      nächste Zweig, den jemand hinzufügt, würde den Eintrag vergessen.
+#   7  `flow_melden` — der Endpunkt POST /fall/<id>/flow. Rumpf ist `flow.melde_ui`; hier steht
+#      nur Besitzprüfung und die Übersetzung ValueError -> 400.
+#   1  Leerzeile
+# ANLASS (Julius, 2026-08-27, nach einem Live-Durchgang mit neun Befunden): „ich will so ein log
+# wo der ganze flow nachvollziehbar ist." Keiner der neun Befunde kam aus einem Protokoll — die
+# Reihenfolge der Fragen, die Doppelungen und das blockierte Ende mussten aus den Ereignissen im
+# Fall rekonstruiert werden, und das trägt nur, solange man die Reihenfolge schon kennt.
+API_ZEILEN_OBERGRENZE = 1225
 
 
 def _runner_stellen(pfad: str) -> list[int]:

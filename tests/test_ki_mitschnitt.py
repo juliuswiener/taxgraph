@@ -43,7 +43,11 @@ AUSSAGEN = [{"text": f"Der Nutzer pflegt {NAME}.", "beleg": f"ich pflege {NAME}"
 
 
 def _pfad(tmp_path) -> str:
-    return os.path.join(str(tmp_path), "ki_debug.jsonl")
+    # Seit 2026-08-27 schreibt der Mitschnitt in DENSELBEN Strang wie Fragen und Antworten
+    # (produkt/haut/flow.py). Vorher lag der Wortlaut der Modellstufen in `ki_debug.jsonl`, und
+    # der Fragebogen — wo der Nutzer die meiste Zeit verbringt — kam darin gar nicht vor.
+    # Was diese Datei prüft, gilt unverändert: der Schalter, und dass AUS wirklich AUS ist.
+    return os.path.join(str(tmp_path), "flow.jsonl")
 
 
 @pytest.fixture
@@ -96,8 +100,14 @@ def test_eingeschaltet_steht_der_wortlaut_drin(umgelenkt, monkeypatch):
     assert any(NAME in json.dumps(z, ensure_ascii=False) for z in zeilen), (
         "der Wortlaut fehlt — genau dafür gibt es den Schalter")
     e = zeilen[0]
-    for schluessel in ("ts", "stufe", "was", "inhalt"):
+    # Der Strang führt seit 2026-08-27 alle Sorten (Fragen, Antworten, Ergebnis, KI). Aussen steht
+    # deshalb `art`, und was früher direkt in der Zeile lag, steht im `inhalt` — sonst hiesse
+    # `stufe` bei einer Fragebogen-Zeile nichts und stünde trotzdem daneben.
+    for schluessel in ("ts", "fall", "art", "inhalt"):
         assert schluessel in e, f"{schluessel} fehlt im Eintrag"
+    assert e["art"] == "ki", f"Ein Modell-Mitschnitt trägt eine andere Sorte: {e['art']!r}"
+    for schluessel in ("stufe", "was", "inhalt"):
+        assert schluessel in e["inhalt"], f"{schluessel} fehlt im KI-Eintrag"
 
 
 def test_die_datei_ist_nicht_fuer_andere_lesbar(umgelenkt, monkeypatch):

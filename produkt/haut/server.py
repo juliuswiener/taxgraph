@@ -86,6 +86,9 @@ def _routes():
         ("GET", re.compile(rf"^/fall/{_ID}/graph$"), lambda m, b: api.graph(m["id"])),
         ("POST", re.compile(rf"^/fall/{_ID}/elster-ampel$"), lambda m, b: (503, api.AMPEL_503)),
         ("POST", re.compile(rf"^/fall/{_ID}/chat$"), lambda m, b: api.chat(m["id"], b)),
+        # Was die OBERFLÄCHE gezeigt hat (Ankreuzliste, Nachfragen, Prüfliste) — der Server sieht
+        # sonst nur die fertigen Antworten. Schreibt nur mit TAXGRAPH_FLOW=1, s. produkt/haut/flow.py.
+        ("POST", re.compile(rf"^/fall/{_ID}/flow$"), lambda m, b: api.flow_melden(m["id"], b)),
         # Arbeitsweg-Entfernung über Karten-Dienst (ORS): Vorschlag-Fluss; kein Key/Fehler → 503-Fallback.
         ("POST", re.compile(rf"^/fall/{_ID}/entfernung$"), lambda m, b: api.entfernung(m["id"], b)),
         # Vorjahr-Übernahme: Vorjahres-Fall → vorläufige Vorschläge (herkunft=vorjahr) im aktuellen Fall.
