@@ -269,6 +269,100 @@ def test_aendern_oeffnet_das_feld_im_fragefluss(seite):
     assert _stand(page)["felder"]["ep_arbeitstage"]["zustand"] == "vorlaeufig"
 
 
+def _halten(page, sel="#bestaetigen"):
+    """Ein KI-Vorschlag wird GEHALTEN, nicht geklickt (holdGeste, 600 ms) — und nach einer
+    Korrektur steht dort genau so ein Vorschlag: `korrigiereBestaetigt` legt das Feld vor, das
+    noch das vorläufige KI-Event trägt. Ein `click` schreibt hier nichts.
+
+    Die feste Wartezeit ist hier KEINE Synchronisation auf gut Glück (anders als die 600 ms, die
+    in 4d2e4d3 herausgeflogen sind): sie bildet das Halten selbst ab, also die Handlung des
+    Nutzers. Gewartet wird darunter trotzdem auf einen Zustand."""
+    page.hover(sel)
+    page.mouse.down()
+    page.wait_for_timeout(800)   # 600 ms Haltedauer plus Luft
+    page.mouse.up()
+
+
+@braucht_browser
+def test_aendern_kehrt_in_die_liste_zurueck(seite):
+    """Punkt 3 dieser Datei, für „Ändern" — und der Befund kam aus dem echten Lauf.
+
+    Julius 2026-08-27: „habe bei einer nachfrage anstatt ‚Stimmt‘ ‚Ändern‘ geklickt, das hat den
+    ganzen bestaetigungsbogen beendet."
+
+    Verloren war dabei nichts: die übrigen Zeilen bleiben vorläufig und stehen weiter im
+    Fragefluss. Weg war die ARBEIT — der Nutzer ging eine Liste durch und traf ihre Reste danach
+    einzeln und ohne Zusammenhang wieder. Genau das beschreibt der Kopf dieser Datei unter Punkt 3;
+    für „Stimmt" hält VERSTANDEN_OFFEN dagegen, und „Ändern" schaltete diese Sperre ab, ohne sie
+    je zurückzunehmen.
+
+    Geprüft wird deshalb dreierlei: die Liste kommt zurück, sie kommt MIT dem Häkchen zurück, das
+    vorher gesetzt wurde (sie wird nicht neu gebaut), und die korrigierte Zeile steht als erledigt
+    darin — ein „Stimmt" daneben wäre eine Frage nach etwas Entschiedenem."""
+    page = seite
+    page.click(".v-zeile[data-feld='veranlagung'] .v-ok")
+    page.wait_for_selector(".v-zeile[data-feld='veranlagung'].v-fertig", timeout=5000)
+    offen_vorher = len(page.query_selector_all("#verstanden-liste .v-zeile:not(.v-fertig)"))
+    assert offen_vorher >= 2, (
+        f"Vorbedingung: mindestens zwei Zeilen müssen offen bleiben, sonst prüft dieser Test "
+        f"nichts — offen sind {offen_vorher}.")
+
+    page.click(".v-zeile[data-feld='ep_arbeitstage'] .v-aendern")
+    page.wait_for_selector("#verstanden[hidden]", state="attached", timeout=8000)
+    page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
+    assert page.evaluate("AKTUELL && AKTUELL.feld_id") == "ep_arbeitstage"
+
+    page.fill("#feld-input", "210")
+    _halten(page)
+    page.wait_for_selector("#verstanden:not([hidden])", timeout=8000)
+
+    assert _stand(page)["felder"]["ep_arbeitstage"]["wert"] == 210, (
+        "Der korrigierte Wert steht nicht im Store — dann führt die Rückkehr in die Liste nur "
+        "darüber hinweg.")
+    zeilen = page.evaluate("""() => [...document.querySelectorAll('#verstanden-liste .v-zeile')]
+        .map(li => ({feld: li.dataset.feld, fertig: li.classList.contains('v-fertig')}))""")
+    fertig = {z["feld"] for z in zeilen if z["fertig"]}
+    assert "veranlagung" in fertig, (
+        f"Das vorher gesetzte Häkchen ist weg — die Liste wurde neu gebaut statt zurückgeholt: "
+        f"{zeilen}")
+    assert "ep_arbeitstage" in fertig, (
+        f"Die korrigierte Zeile bietet weiter ein Bestaetigen an, obwohl der Wert entschieden "
+        f"ist: {zeilen}")
+    offen = [z["feld"] for z in zeilen if not z["fertig"]]
+    assert len(offen) == offen_vorher - 1, (
+        f"Die übrigen Zeilen stimmen nicht: erwartet {offen_vorher - 1} offene, da sind {offen}")
+
+
+@braucht_browser
+def test_die_letzte_aenderung_laesst_die_liste_nicht_leer_stehen(seite):
+    """Gegenprobe zur Rückkehr: ist nach der Korrektur NICHTS mehr offen, wäre die Liste eine
+    leere Aufforderung. Dann bleibt der Fragebogen stehen, den refresh() gerade vorgelegt hat."""
+    page = seite
+    for feld in ("veranlagung", "bruttoarbeitslohn", "kein_kap"):
+        page.click(f".v-zeile[data-feld='{feld}'] .v-ok")
+        page.wait_for_selector(f".v-zeile[data-feld='{feld}'].v-fertig", timeout=5000)
+    assert len(page.query_selector_all("#verstanden-liste .v-zeile:not(.v-fertig)")) == 1, (
+        "Vorbedingung: genau eine Zeile darf offen sein.")
+
+    page.click(".v-zeile[data-feld='ep_arbeitstage'] .v-aendern")
+    page.wait_for_selector("#verstanden[hidden]", state="attached", timeout=8000)
+    page.fill("#feld-input", "210")
+    _halten(page)
+    # Gewartet wird auf etwas, das EINTRITT — nicht auf eine Zeitspanne vor einer negativen
+    # Behauptung (s. die Begründung in 4d2e4d3). `verstandenZurueck` markiert die korrigierte Zeile
+    # als erledigt, BEVOR es über die Sichtbarkeit entscheidet, und zwischen beidem liegt kein
+    # `await`. Steht das Häkchen, ist die Entscheidung gefallen — so oder so.
+    #
+    # KEIN `wait_for_function`: die scharfe CSP dieser Seite (script-src 'self', kein unsafe-eval)
+    # verbietet es, eine Zeichenkette als JavaScript auszuwerten. Gemessen 2026-08-27, der Versuch
+    # scheitert mit „EvalError: Evaluating a string as JavaScript violates …". Deshalb ein
+    # CSS-Selektor, wie überall sonst in diesen Dateien.
+    page.wait_for_selector("#verstanden-liste .v-zeile[data-feld='ep_arbeitstage'].v-fertig",
+                           state="attached", timeout=8000)
+    assert page.is_hidden("#verstanden"), (
+        "Die Liste steht wieder da, obwohl in ihr nichts mehr offen ist.")
+
+
 # ---------------------------------------------------------------- Konflikte
 # Schlägt die KI etwas für ein Feld vor, das schon einen Wert trägt, darf sie es nicht
 # überschreiben (Auflage B — höchstens ein aktives Event je Feld). Der Server meldete solche Fälle

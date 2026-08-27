@@ -26,6 +26,9 @@ let RF_NACHHER = null;          // {vorschlaege, konflikte} — dran, wenn die R
 // Hier liegen die Rückfragen, solange die Verstanden-Seite steht — sie werden danach neu gegen die
 // dann offenen Fragen geprüft, weil eine Bestätigung ganze Blöcke abschalten kann.
 let VERSTANDEN_DANACH = null;   // {rueckfragen, vorschlaege, konflikte, zurueckgestellt}
+// „Ändern" führt in den Fragebogen und MUSS danach zurück in die Liste. Gemerkt wird, aus welcher
+// Zeile es kam — die Liste selbst bleibt im DOM stehen, samt der Häkchen, die schon gesetzt sind.
+let VERSTANDEN_ZURUECK = null;  // {feld_id, li}
 let RF_BEANTWORTET = 0;         // wie viele Rückfragen dieser Runde einen Wert bekommen haben
 let RF_SPAETER = 0;             // und wie viele der Nutzer zurückgestellt hat
 let SCREENING_OFFEN = false;    // wie VERSTANDEN_OFFEN: refresh() darf die Seite nicht wegschieben
@@ -955,8 +958,19 @@ async function bestaetigen(kiFeld) {
 async function weiterNachDemSchreiben() {
   $("bestaetigen").disabled = false;   // refresh() klont den Knopf (rüsteBestaetigen); das
                                        // Attribut wäre sonst dauerhaft übernommen
+  // Kam die Korrektur aus der Bestätigungsliste, geht es dorthin zurück. Verglichen wird das
+  // GESCHRIEBENE Feld, nicht bloss „es lief eine Korrektur": KORREKTUR_FID bleibt auch stehen,
+  // wenn der Nutzer die vorgelegte Frage überspringt und eine andere beantwortet — dann gehört er
+  // nicht in die Liste zurückgeworfen. AKTUELL zeigt hier noch auf das eben geschriebene Feld;
+  // refresh() darunter setzt es weiter.
+  const zurueck = (VERSTANDEN_ZURUECK && AKTUELL
+                   && AKTUELL.feld_id === VERSTANDEN_ZURUECK.feld_id) ? VERSTANDEN_ZURUECK : null;
   KORREKTUR_FID = null;                // Korrektur abgeschlossen
   await refresh();
+  if (zurueck) {
+    VERSTANDEN_ZURUECK = null;
+    verstandenZurueck(zurueck);
+  }
 }
 
 // N Instanzen schreiben: `base`, `base__2`, `base__3` … Gibt false zurück, wenn nichts geschrieben
@@ -1260,8 +1274,42 @@ async function verstandenAendern(v, btn) {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = "Ändern"; }
   }
+  // GEMERKT, WOHER: ohne das endete EIN „Ändern" den ganzen Bestätigungsbogen. Julius im Live-Lauf
+  // 2026-08-27: „habe bei einer nachfrage anstatt ‚Stimmt‘ ‚Ändern‘ geklickt, das hat den ganzen
+  // bestaetigungsbogen beendet."
+  //
+  // Verloren war dabei nichts — die übrigen Zeilen bleiben vorläufig und stehen weiter im
+  // Fragefluss. Weg war die ARBEIT: der Nutzer war dabei, eine Liste durchzugehen, und traf ihre
+  // Reste danach einzeln und ohne Zusammenhang wieder. Genau davor warnt der Kopf von
+  // tests/test_ui_verstanden_seite.py seit jeher unter Punkt 3 — für „Stimmt" ist es durch
+  // VERSTANDEN_OFFEN abgesichert, und „Ändern" schaltete diese Sperre ab, ohne sie je
+  // zurückzunehmen.
+  VERSTANDEN_ZURUECK = { feld_id: v.feld_id, li: btn ? btn.closest(".v-zeile") : null };
   VERSTANDEN_OFFEN = false;
   $("verstanden").hidden = true;
+}
+
+// Zurück in die Bestätigungsliste, nachdem die Korrektur im Fragebogen geschrieben wurde. Die
+// Liste steht noch im DOM — mit allen Häkchen, die vorher gesetzt wurden; sie muss nur wieder
+// sichtbar werden. Die korrigierte Zeile wird dabei als erledigt markiert: der Wert, über den sie
+// spricht, ist jetzt bestätigt, und ein „Stimmt" daneben wäre eine Frage nach etwas Entschiedenem.
+function verstandenZurueck(z) {
+  if (z.li) {
+    z.li.classList.add("v-fertig");
+    const ok = z.li.querySelector(".v-ok");
+    if (ok) ok.remove();
+    const ae = z.li.querySelector(".v-aendern");
+    if (ae) { ae.textContent = "✓ geändert"; ae.disabled = true; }
+  }
+  // Ist nichts mehr offen, wäre die Liste eine leere Aufforderung — dann bleibt der Fragebogen
+  // stehen, den refresh() gerade vorgelegt hat.
+  if (!$("verstanden-liste").querySelectorAll(".v-zeile:not(.v-fertig)").length) return;
+  VERSTANDEN_OFFEN = true;
+  $("wegpunkt").hidden = true;
+  $("fertig").hidden = true;
+  $("verstanden").hidden = false;
+  $("verstanden").focus({ preventScroll: true });
+  $("verstanden").scrollIntoView({ block: "nearest" });
 }
 
 async function verstandenWeiter() {
@@ -2293,6 +2341,7 @@ async function abmelden() {
   await jpost("/auth/logout", { token: TOKEN });
   clearToken();
   FALL = null; AKTUELL = null; STAND = null; SPANNE0 = null; KORREKTUR_FID = null; VERSTANDEN_OFFEN = false;
+  VERSTANDEN_ZURUECK = null;   // sonst zöge die Liste des ABGEMELDETEN Falls den nächsten hinein
   OFFEN_ANZAHL = null; GESAMT_VOR = null;
   btn.disabled = false;
   aktualisiereKontoLeiste();
