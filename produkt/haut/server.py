@@ -77,6 +77,9 @@ def _routes():
         ("GET", re.compile(rf"^/fall/{_ID}/stand$"), lambda m, b: api.stand(m["id"])),
         ("POST", re.compile(rf"^/fall/{_ID}/event$"), lambda m, b: api.event(m["id"], b)),
         ("GET", re.compile(rf"^/fall/{_ID}/feld/{_FID}/warum$"), lambda m, b: api.warum(m["id"], m["fid"])),
+        # Die Frage zu EINEM Feld, auch einem beantworteten. /fragen ist die Queue der OFFENEN
+        # Fragen — eine Korrektur findet ihr Feld dort nicht mehr (s. api.frage_einzeln).
+        ("GET", re.compile(rf"^/fall/{_ID}/feld/{_FID}/frage$"), lambda m, b: api.frage_einzeln(m["id"], m["fid"])),
         ("GET", re.compile(rf"^/fall/{_ID}/ergebnis$"), lambda m, b: api.ergebnis(m["id"])),
         ("GET", re.compile(rf"^/fall/{_ID}/preflight$"), lambda m, b: api.preflight_check(m["id"])),
         ("GET", re.compile(rf"^/fall/{_ID}/deklaration$"), lambda m, b: api.deklaration(m["id"])),

@@ -349,10 +349,48 @@ def fragen(fall_id: str) -> tuple[int, dict]:
     felder, sid = ST.materialisiere(store)
     beitrag = _gesamt_beitrag(store, cfg, bindung, felder, sid, int(store["veranlagungszeitraum"]))
     queue = TR.naechste_fragen(store, bindung, beitrag)
-    out = []
-    for fid in queue:
-        b = bindung[fid]
-        out.append({
+    out = [_frage_metadaten(fid, bindung, store) for fid in queue]
+    flow.schreibe(fall_id, "fragen", {"offen": len(out), "kopf": flow.kopf_der_queue(out)})
+    return 200, {"fall_id": fall_id, "snapshot_id": sid, "fragen": out}
+
+
+def frage_einzeln(fall_id: str, feld_id: str) -> tuple[int, dict]:
+    """GET /fall/<id>/feld/<fid>/frage — die Frage zu EINEM Feld, auch einem BEANTWORTETEN.
+
+    GEMESSEN 2026-08-27: `korrigiereBestaetigt` in app.js sucht das zu korrigierende Feld in
+    /fragen — und /fragen ist die Queue der UNBEANTWORTETEN Felder. Bestätigt heisst beantwortet
+    heisst draussen. Jede Korrektur eines bestätigten Feldes endete deshalb bei „Diese Frage ist
+    durch eine andere Antwort entfallen und lässt sich nicht mehr ändern", was schlicht nicht
+    stimmt. Dass „Ändern" auf der Prüfliste trotzdem geht, liegt nur daran, dass KI-Vorschläge
+    vorläufig sind und damit in der Queue bleiben.
+
+    /fragen bleibt deshalb, was es ist — die Antwort auf „was ist noch offen". Diese Frage hier
+    ist eine andere („wie sieht die Frage zu DIESEM Feld aus"), und sie bekommt einen eigenen Weg
+    statt die Bedeutung der Queue aufzuweichen.
+
+    `__n` wird auf das Basisfeld aufgelöst: der Traverser führt nur Basisfelder, die Instanz ist
+    reine Mapping-Konvention. Die Zahl kommt als `instanz_anzahl` mit.
+    """
+    _fall_owner_check(fall_id)
+    store = lade_fall(fall_id)
+    bindung = _scheibe_bindung(store)
+    zerlegt = EM.parse_instanz(feld_id) if isinstance(feld_id, str) else None
+    basis = zerlegt[0] if zerlegt else feld_id
+    if basis not in bindung:
+        raise ApiError(404, f"Feld {feld_id!r} nicht in dieser Scheibe")
+    return 200, {"fall_id": fall_id, "frage": _frage_metadaten(basis, bindung, store)}
+
+
+def _frage_metadaten(fid: str, bindung: dict, store: dict) -> dict:
+    """Alles, was die Oberfläche braucht, um EINE Frage zu bauen — an EINER Stelle.
+
+    Herausgezogen aus `fragen()`, damit `frage_einzeln()` nicht eine zweite Liste derselben
+    Schlüssel führt. Zwei Listen für dieselbe Sache sind in diesem Haus schon mehrfach
+    auseinandergelaufen; die Oberfläche fiele dann auf ein fehlendes `muster` oder `enum_labels`
+    herein, ohne dass es jemand merkt.
+    """
+    b = bindung[fid]
+    return {
             "feld_id": fid,
             "fragetext_laie": b.get("fragetext_laie"),
             "hilfe_kurz": b.get("hilfe_kurz"),
@@ -386,9 +424,7 @@ def fragen(fall_id: str) -> tuple[int, dict]:
             **dict(zip(("instanz_anzahl", "instanz_etikett"),
                        TR.instanz_anzahl(store, bindung, fid))),
             "anker_ref": b.get("anker_ref"),
-        })
-    flow.schreibe(fall_id, "fragen", {"offen": len(out), "kopf": flow.kopf_der_queue(out)})
-    return 200, {"fall_id": fall_id, "snapshot_id": sid, "fragen": out}
+    }
 
 
 def stand(fall_id: str) -> tuple[int, dict]:

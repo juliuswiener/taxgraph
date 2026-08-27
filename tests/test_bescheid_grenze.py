@@ -184,7 +184,23 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # — und beim Nutzer kam NICHTS an, weil diese Liste fest verdrahtet ist. Die Wirkung wäre genau
 # die Form gewesen, die Julius am selben Tag als neunten Befund meldete: ein roter Zustand ohne
 # einen einzigen Grund daneben. tests/test_preflight_erreichbarkeit.py bewacht das jetzt.
-API_ZEILEN_OBERGRENZE = 1226
+#
+# 1226 -> 1262 (2026-08-27, die Frage zu EINEM Feld). 36 Zeilen, NULL davon Steuerlogik — es ist
+# ein fehlender ENDPUNKT, und der kann per Definition nicht „in ein eigenes Modul":
+#   26  `frage_einzeln()` samt Docstring. Der Docstring ist der teure Teil und bleibt: er hält
+#       fest, WARUM /fragen die Frage nicht liefern kann und warum die Queue trotzdem nicht
+#       erweitert wurde.
+#    8  `_frage_metadaten()` als gemeinsamer Bauer für Queue UND Einzelabruf, samt Begründung.
+#       Ohne ihn führten die beiden Wege zwei Listen derselben Schlüssel — die Bauart, die hier
+#       schon mehrfach auseinandergelaufen ist.
+#    2  Umbau von `fragen()` auf den Bauer (die 45 Zeilen des Dicts sind nur verschoben, nicht neu)
+# ANLASS, gemessen: `korrigiereBestaetigt` sucht das zu korrigierende Feld in /fragen — und
+# /fragen ist die Queue der UNBEANTWORTETEN Felder. Jede Korrektur eines BESTAETIGTEN Feldes
+# endete deshalb bei „Diese Frage ist durch eine andere Antwort entfallen und laesst sich nicht
+# mehr aendern", was nicht stimmt. Dass „Aendern" auf der Pruefliste ging, lag nur daran, dass
+# KI-Vorschlaege vorlaeufig sind und in der Queue bleiben — der Weg war genau fuer die Felder
+# heil, an denen er gebaut wurde.
+API_ZEILEN_OBERGRENZE = 1262
 
 
 def _runner_stellen(pfad: str) -> list[int]:
