@@ -1796,6 +1796,27 @@ function chatHoeheAnpassen() {
 }
 
 async function chatSenden() {
+  // „Der Knopf ist wieder frei" heisst NICHT „der Vorgang ist durch". Die Sperre fällt bewusst
+  // früh (s. das finally weiter unten und die Begründung dahinter), und erst danach entscheidet
+  // sich, ob die Verstanden- oder die Rückfragen-Seite kommt — die Rückfragen-Seite holt dafür
+  // sogar noch /fragen. Zwischen beidem liegt also ein Zustand, den nichts nach aussen anzeigte.
+  //
+  // GEMESSEN 2026-08-27, 1 von 6 Läufen: die Rückfragen-Seite stand noch nicht, als der Knopf
+  // schon wieder frei war. Genau daran hingen zwei Tests, die unter Last zufällig rot wurden —
+  // und, leiser, mindestens einer, der zu früh mass und deshalb GRÜN war.
+  //
+  // Diese Marke ist deshalb kein Test-Anhängsel, sondern die fehlende Aussage: läuft gerade eine
+  // KI-Runde zu Ende? Sie steht am <body>, ist per CSS erreichbar (die Seite verbietet
+  // script-src eval, ein Ausdruck im Test ginge nicht) und wird im finally IMMER abgeräumt.
+  document.body.dataset.chatLaeuft = "1";
+  try {
+    await chatSendenLauf();
+  } finally {
+    delete document.body.dataset.chatLaeuft;
+  }
+}
+
+async function chatSendenLauf() {
   const sendBtn = $("chat-send");
   if (sendBtn.disabled) return;   // Doppel-Submit-Schutz
   const t = $("chat-text"); const freitext = (t && t.value || "").trim();

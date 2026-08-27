@@ -157,13 +157,26 @@ def _senden(page, text="ich bin ledig und hatte 620 euro arztkosten"):
     tests/test_ui_chat_wartezustand.py für seine Zeitfenster-Messungen tun muss. Hier geht es
     ohne, also läuft diese Datei unter der Richtlinie, die auch im Betrieb gilt.
 
-    Kein Wettlauf: chatSperren(false) im finally und die Auswertung darunter laufen in DEMSELBEN
-    synchronen Block (das erste `await` steht erst hinter zeigeVerstanden). Ist der Knopf wieder
-    frei, steht die Anzeige bereits vollständig im DOM.
+    HIER STAND EIN FALSCHER SATZ, und er hat genau das angerichtet, wovor er beruhigte: „Kein
+    Wettlauf: … das erste `await` steht erst hinter zeigeVerstanden. Ist der Knopf wieder frei,
+    steht die Anzeige bereits vollständig im DOM."
+
+    Für den Verstanden-Zweig stimmt das. Für den Rückfragen-Zweig nicht: app.js ruft dort
+    `await starteRueckfragen(...)`, und das holt zuerst /fragen — den langsamsten Endpunkt der
+    Anwendung. Der Knopf ist da längst wieder frei (chatSperren(false) steht im finally davor,
+    absichtlich).
+
+    GEMESSEN 2026-08-27, sechs Läufe unter `-n 6`: in einem stand die Rückfragen-Seite bei der
+    Rückkehr noch nicht. Das ist die ganze Erklärung für zwei Tests, die seit Tagen unter Last
+    zufällig rot wurden und solo immer grün waren.
+
+    Gewartet wird deshalb jetzt auf `data-chat-laeuft` am <body> — die Marke fällt erst, wenn
+    chatSenden GANZ durch ist, gleich welcher Zweig lief.
     """
     page.fill("#chat-text", text)
     page.click("#chat-send")
     page.wait_for_selector("#chat-send:not([disabled])", timeout=5000)
+    page.wait_for_selector("body:not([data-chat-laeuft])", timeout=10000)
 
 
 def _zeilen(page):
@@ -651,14 +664,19 @@ def test_die_anzeige_passt_auf_den_schmalen_schirm(seite_factory):
         "Horizontales Scrollen bei 360px durch die neue Anzeige.")
     # #rueckfragen steht seit dem Umzug (2026-08-24) IM Berater und ist damit derselben
     # Breitenbeschränkung unterworfen wie der Verlauf — es gehört deshalb in dieselbe Messung.
+    # `null` statt `-1` für ein fehlendes Element, und `null` fällt NICHT durch den Filter: mit
+    # `-1` wurde ein Element, das es gar nicht gab, still übersprungen — die Messung meldete dann
+    # „kein Überlauf", weil sie nichts gemessen hatte. Genau so war dieser Test am 2026-08-27 grün,
+    # obwohl er die Rückfragen-Karte regelmässig vor ihrer Entstehung mass (s. `_senden`).
     ueberlauf = page.evaluate("""() => ['#chat-body', '#chat-body .chat-aussagen',
                                         '#chat-body .a-zeile', '#rueckfragen', '#rf-frage']
         .map(s => { const e = document.querySelector(s);
-                    return {sel: s, ueber: e ? e.scrollWidth - e.clientWidth : -1}; })
-        .filter(x => x.ueber > 0)""")
+                    return {sel: s, ueber: e ? e.scrollWidth - e.clientWidth : null}; })
+        .filter(x => x.ueber === null || x.ueber > 0)""")
     assert ueberlauf == [], (
         f"Der Text läuft aus seinem Kasten heraus: {ueberlauf} — der Nutzer sieht die Aussage nur "
-        "zur Hälfte und muss seitwärts wischen, ohne dass die Seite es anzeigt.")
+        "zur Hälfte und muss seitwärts wischen, ohne dass die Seite es anzeigt. "
+        "(`ueber: None` heisst: das Element war gar nicht da — dann misst dieser Test nichts.)")
     kasten = page.query_selector("#chat-body .chat-aussagen").bounding_box()
     assert kasten["x"] >= 0 and kasten["x"] + kasten["width"] <= 360, (
         f"Der Aussagen-Kasten ragt aus dem Bild: {kasten}")

@@ -197,10 +197,16 @@ def _senden(page, text="ich habe bis juni gearbeitet", rueckfragen_erwartet=True
     Auf die Rückfragen-Seite MUSS eigens gewartet werden: sie erscheint hinter einem `await`
     (starteRueckfragen holt die Feldtypen aus /fragen). Der freigegebene Absendeknopf allein sagt
     hier also — anders als bei der Aussagen-Anzeige — noch nichts über den Bildschirm.
+
+    Deshalb steht seit 2026-08-27 zuerst die allgemeine Wartestelle: `data-chat-laeuft` am <body>
+    verschwindet erst, wenn chatSenden GANZ durch ist, gleich welcher der drei Zweige lief. Das
+    `rueckfragen_erwartet` darunter bleibt trotzdem — es sagt aus, WAS erwartet wird, und liefert
+    bei Ausbleiben eine Fehlermeldung, die auf die Seite zeigt statt auf eine Zeitüberschreitung.
     """
     page.fill("#chat-text", text)
     page.click("#chat-send")
     page.wait_for_selector("#chat-send:not([disabled])", timeout=5000)
+    page.wait_for_selector("body:not([data-chat-laeuft])", timeout=10000)
     if rueckfragen_erwartet:
         page.wait_for_selector("#rueckfragen:not([hidden])", timeout=5000)
 
@@ -531,8 +537,11 @@ def test_eine_rueckfrage_zu_einem_erledigten_feld_wird_nicht_gestellt(seite_fact
 
     _stub(page, _antwort(rueckfragen=[_rf("Wie hoch waren deine Kapitalerträge?",
                                           "kap_kapitalertraege")]))
+    # Hier stand bis 2026-08-27 `page.wait_for_timeout(600)`. Eine feste Wartezeit ist bei einer
+    # NEGATIVEN Behauptung („die Seite kommt nicht") die gefährlichste Sorte Wartestelle: reicht
+    # sie unter Last nicht, ist der Test grün, WEIL er zu früh gemessen hat. `_senden` wartet
+    # jetzt darauf, dass chatSenden ganz durch ist — danach ist „versteckt" eine Aussage.
     _senden(page, "ich hatte gar keine kapitalertraege", rueckfragen_erwartet=False)
-    page.wait_for_timeout(600)
 
     assert page.is_hidden("#rueckfragen"), (
         "Die Nachfrage wird gestellt, obwohl das Feld gar nicht mehr offen ist.")
