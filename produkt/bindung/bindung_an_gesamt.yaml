@@ -721,6 +721,23 @@ bindungen:
     typ: cent
     einheit: EUR
     askable: true
+    # Diese Frage erhebt, ob der Partner ueberhaupt Arbeitslohn hatte — und daran haengen vier
+    # weitere Fragen, die alle aus SEINER Lohnsteuerbescheinigung ablesen (Steuerklasse, Lohnsteuer,
+    # Arbeitnehmer- und Arbeitgeberanteil zur Rentenversicherung, s. deren `feld_bedingung`).
+    # Ohne Arbeitslohn gibt es keine Lohnsteuerbescheinigung, aus der sie abzulesen waeren.
+    #
+    # OHNE diese Zeile wirkt die Bedingung fuer drei der vier Felder gar nicht: gemessen am
+    # 2026-08-27 stand diese Frage auf Platz 112 der Queue, `p36_lohnsteuer_partner` aber auf 99
+    # und `steuerklasse_partner` auf 108. Beide tragen eine `geltungsbedingung` und sortieren
+    # deshalb in den Gate-Block, waehrend diese Betragsfrage ein Slot ist und dahinter faellt —
+    # die Torfrage kaeme also NACH den Fragen, die sie erspart. `_nach_themen` zieht eine
+    # Eingangsfrage in ihrem Thema nach vorn, auch ein Betragsfeld (seit 2026-08-26);
+    # `_nach_vordruck` fasst sie nicht an. Genau derselbe Zuschnitt wie bei `kinderbetreuungskosten`
+    # und `agb_aufwendungen`: ein Betragsfeld, dessen Frage zugleich die Existenzfrage ist.
+    #
+    # Ein eigenes bool-Flag daneben („Hatte dein Partner Arbeitslohn?") waere sprachlich sauberer,
+    # kostete aber eine Frage MEHR fuer jeden — und diese hier steht ohnehin in der Queue.
+    eingangsfrage: true
     vorjahr: vorschlag
     fragetext_laie: "Wie hoch war der Bruttoarbeitslohn deines Ehe-/Lebenspartners dieses Jahr?"
     hilfe_kurz: "Person-individuell, weil jeder Ehegatte einen EIGENEN Arbeitnehmer-Pauschbetrag hat; steht auf der Lohnsteuerbescheinigung des Partners (Nummer 3)."
@@ -735,6 +752,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
   - feld_id: vor_an_anteil_rv_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: vor_gesamtbeitraege_partner}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: der Arbeitnehmeranteil zur Rentenversicherung steht unter Nummer 23 der Lohnsteuerbescheinigung. Er ist ein Anteil des Arbeitslohns — ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) ist er zwangslaeufig null, und es gibt keine Bescheinigung, auf der er stuende. Der Vorsorgeabzug des Partners geht dadurch NICHT verloren: Beitraege ausserhalb der Lohnsteuerbescheinigung — der Weg fuer einen freiwillig oder als Selbstaendiger einzahlenden Partner — laufen ueber `vor_rv_ausserhalb_lstb_partner`, und das bleibt ungegated. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus."}
     slot_beitrag: summand
     typ: cent
     einheit: EUR
@@ -753,6 +771,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: vor_ag_anteil_rv_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: vor_gesamtbeitraege_partner}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: der Arbeitgeberanteil zur Rentenversicherung steht unter Nummer 22 der Lohnsteuerbescheinigung. Er ist ein Anteil des Arbeitslohns — ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es keinen Arbeitgeber, der ihn traegt. Der Vorsorgeabzug des Partners geht dadurch NICHT verloren: Beitraege ausserhalb der Lohnsteuerbescheinigung laufen ueber `vor_rv_ausserhalb_lstb_partner`, und das bleibt ungegated. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus."}
     slot_beitrag: summand
     typ: cent
     einheit: EUR
@@ -970,6 +989,14 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: geburtsjahr_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: geburtsjahr_partner}
+    # Dieselbe Ableitung, die `geburtsjahr` fuer die eigene Person schon hat — sie fehlte nur auf
+    # der Partner-Seite. Gemessen im Durchgang vom 2026-08-27: „In welchem Jahr bist du geboren?"
+    # stand im Verlauf als ABLEITUNG und wurde nie gefragt, „In welchem Jahr ist dein
+    # Ehe-/Lebenspartner geboren?" wurde gestellt — unmittelbar nachdem das Geburtsdatum des
+    # Partners erhoben worden war. Die Angabe lag also schon vor.
+    # Systematisch nachgesehen (alle 49 Partner-Felder gegen ihr Nutzer-Gegenstueck): das hier war
+    # die EINZIGE Ableitung, die nur auf einer Seite deklariert war.
+    ableitung: {aus: stammdaten_geburtsdatum_partner, art: jahr_aus_datum, grund: "Das Geburtsjahr des Partners steht in dessen Geburtsdatum, das die Stammdaten ohnehin erheben (§ 25 EStG i.V.m. § 149 AO, Angaben zur Person). Zweimal danach zu fragen ist eine Frage zu viel — fuer die eigene Person wird sie seit der Ableitung an `geburtsjahr` nicht mehr gestellt, fuer den Partner stand sie weiter in der Queue."}
     typ: int
     einheit: null
     bereich: {min: 1900, max: 2010, grund: "Geburtsjahr Ehe-/Lebenspartner, plausibler Bereich für erwerbstätige/rentennahe Steuerpflichtige."}
@@ -1328,6 +1355,7 @@ bindungen:
   # PARTNER_INSTANZ in est_mapping.py routet auf DIESELBEN Person-A-Kz (kein eigenes Ehegatte-Kz).
   - feld_id: steuerklasse_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Steuerklasse steht unter Nummer 1 der Lohnsteuerbescheinigung, die der Arbeitgeber ausstellt. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es keinen Arbeitgeber, der eine Lohnsteuerklasse anwendet, und keine Bescheinigung, auf der sie stuende. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. Das Feld traegt kein elster_kz, entfaellt also aus der Frageliste, ohne der Deklaration etwas zu nehmen."}
     typ: enum
     enum_werte: ["1", "2", "3", "4", "5", "6"]
     einheit: null
@@ -1347,6 +1375,7 @@ bindungen:
 
   - feld_id: p36_lohnsteuer_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Lohnsteuerbescheinigung stellt der Arbeitgeber am Ende des Dienstverhaeltnisses aus; einbehaltene Lohnsteuer, Steuerklasse und die beiden Rentenversicherungsanteile stehen darauf. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es weder Arbeitgeber noch Bescheinigung, aus der etwas abzulesen waere. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. NICHT gegated sind die Vorsorge-Felder des Partners (basis_kv_partner, basis_pv_partner, vorsorge_*_partner und vor_rv_ausserhalb_lstb_partner = Beitraege AUSSERHALB der Lohnsteuerbescheinigung): die traegt auch ein Partner ohne Anstellung, und eine Bedingung darauf naehme ihm den Vorsorgeabzug."}
     typ: cent
     einheit: EUR
     askable: true
