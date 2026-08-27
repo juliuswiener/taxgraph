@@ -393,9 +393,28 @@ def _themen_folge(nach_thema: dict[str, list[str]], bindung: dict) -> list[str]:
     """
     bedingt = lade_regel_bedingungen()
     quelle: dict[str, str] = {}
-    for thema in nach_thema:
+    for thema, felder_des_themas in nach_thema.items():
         for c in bedingt.get(thema, []):
             qt = (bindung.get(c["feld"], {}).get("quelle") or {}).get("regel_id")
+            if qt and qt != thema and qt in nach_thema:
+                quelle[thema] = qt
+                break
+        if thema in quelle:
+            continue
+        # Auch eine ABLEITUNG erzeugt eine Abhängigkeit: steht die Quelle hinter dem Feld, das aus
+        # ihr berechnet wird, greift die Ableitung im echten Ablauf NIE — der Nutzer beantwortet
+        # die Frage, bevor die Angabe da ist, aus der sie folgt.
+        #
+        # Gefunden im E2E-Durchgang am 2026-08-26, unmittelbar nachdem die Ableitung gebaut war:
+        # „Ist dein Kind wegen einer Behinderung außerstande, für sich selbst zu sorgen?" stand auf
+        # Platz 25, „Wann ist dein Kind geboren?" auf Platz 44. Die Ableitung war damit wirkungslos,
+        # und zwar auf eine Art, die kein Einzeltest zeigt: jede Prüfung setzt das Geburtsdatum
+        # selbst und misst danach.
+        for fid in felder_des_themas:
+            ab = (bindung.get(fid) or {}).get("ableitung")
+            if not ab:
+                continue
+            qt = (bindung.get(ab["aus"], {}).get("quelle") or {}).get("regel_id")
             if qt and qt != thema and qt in nach_thema:
                 quelle[thema] = qt
                 break

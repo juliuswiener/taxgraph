@@ -239,6 +239,51 @@ def test_das_kind_unter_14_wird_nur_in_der_sicheren_richtung_abgeleitet():
         "Ohne erhobene Haushaltszugehörigkeit würde die Ableitung sie unterstellen.")
 
 
+def test_jede_ableitungsquelle_steht_vor_ihrem_ziel():
+    """DIE INVARIANTE, DIE KEIN EINZELTEST ZEIGT — und die im E2E-Durchgang am 2026-08-26 sofort
+    verletzt war, nur Minuten nachdem die Ableitung gebaut worden war.
+
+    Steht die Quelle in der Fragen-Queue HINTER dem Feld, das aus ihr berechnet wird, greift die
+    Ableitung im echten Ablauf nie: der Nutzer beantwortet die Frage, bevor die Angabe existiert,
+    aus der sie folgen würde. Gemessen war „Ist dein Kind wegen einer Behinderung außerstande…"
+    auf Platz 25 und „Wann ist dein Kind geboren?" auf Platz 44.
+
+    Warum die anderen Tests das nicht sehen: jeder von ihnen SETZT die Quelle selbst und misst
+    danach. Die Reihenfolge, in der ein Mensch die beiden Fragen bekommt, kommt darin nicht vor.
+    Nur ein Durchgang durch die ganze Queue zeigt es — deshalb steht die Prüfung hier."""
+    b = TR.lade_bindung()
+    s = ST.leerer_store(veranlagungszeitraum=2025, fall_id="reihenfolge")
+    # Die Ankreuzliste wird verneint — MIT AUSNAHME DER KINDER. Das ist keine Kosmetik: verneint
+    # man auch sie, sind die Kind-Regeln ausgeschlossen, `kind_geburtsdatum` und
+    # `kind_unter_14_haushaltszugehoerig` stehen gar nicht in der Queue, und der Test prüft eine
+    # leere Menge. Genau so war er beim ersten Schreiben — die Mutationsprobe (Abhängigkeit im
+    # Traverser zurückgenommen) blieb GRÜN und deckte es auf.
+    for fid, e in b.items():
+        if e.get("screening") and fid != "kein_kind":
+            ST.append_event(s, feld_id=fid, wert=fid.startswith(("kein_", "keine_")),
+                            zustand="bestaetigt", herkunft=LAIE, schreiber="ui:laie",
+                            signal={"signal_1": None, "signal_2": "klick"}, bindung=b)
+    ST.append_event(s, feld_id="kein_kind", wert=False, zustand="bestaetigt", herkunft=LAIE,
+                    schreiber="ui:laie", signal={"signal_1": None, "signal_2": "klick"}, bindung=b)
+    q = TR.naechste_fragen(s, b, None)
+    platz = {f: i for i, f in enumerate(q)}
+    assert "kind_geburtsdatum" in platz and "kind_unter_14_haushaltszugehoerig" in platz, (
+        "Vorbedingung: beide Kind-Felder müssen in der Queue stehen, sonst misst der Test nichts.")
+
+    verdreht = []
+    for ziel, e in b.items():
+        regel = e.get("ableitung")
+        if not regel:
+            continue
+        quelle = regel["aus"]
+        assert quelle in b, f"{ziel}: Ableitungsquelle {quelle!r} gibt es nicht."
+        if ziel in platz and quelle in platz and platz[quelle] > platz[ziel]:
+            verdreht.append(
+                f"{ziel} (Platz {platz[ziel] + 1}) wird aus {quelle} (Platz {platz[quelle] + 1}) "
+                f"berechnet — die Quelle kommt zu spät, die Ableitung greift nie.")
+    assert not verdreht, "\n  ".join(["Ableitung vor ihrer Quelle:"] + verdreht)
+
+
 def test_ein_katalog_ohne_instanzfelder_waechst_nicht():
     """Die Erweiterung darf nicht jedem Thema fremde Felder anhängen — sonst verwässert sie genau
     die Verengung, für die Stufe 2 gebaut wurde."""
