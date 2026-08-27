@@ -425,6 +425,14 @@ def _frage_metadaten(fid: str, bindung: dict, store: dict) -> dict:
             **dict(zip(("instanz_anzahl", "instanz_etikett"),
                        TR.instanz_anzahl(store, bindung, fid))),
             "anker_ref": b.get("anker_ref"),
+            # WELCHE REGEL diese Frage stellt. Gemessen 2026-08-27: ohne sie kann die Oberfläche
+            # „beantwortet" nicht von „abgeschaltet" unterscheiden. Wer Kinder eingetragen und
+            # danach „keine Kinder" geantwortet hat, bekam die Frage nach dem Vornamen seines
+            # Kindes vorgelegt — die Regel war ausgeschlossen, das Feld aber weiterhin da, und
+            # `frage_einzeln` antwortete 200 wie bei jedem beantworteten Feld. Der Nutzer braucht
+            # dort den Satz „durch eine andere Antwort entfallen", und nur diesen Schlüssel
+            # trennt die beiden Fälle: `relevanz` in /stand hängt an der REGEL, nicht am Feld.
+            "regel_id": (b.get("quelle") or {}).get("regel_id"),
     }
 
 

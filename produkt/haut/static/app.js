@@ -984,41 +984,60 @@ async function korrigiereBestaetigt(fid) {
     return false;
   }
 
-  // Frage aus /fragen laden — wir brauchen Feldtyp, Optionen etc.
-  const fragen_r = await jget(`/fall/${FALL}/fragen`);
-  if (fragen_r.status !== 200) {
-    zeigeNetzFehler("Fragen konnten nicht geladen werden.");
+  // Die Frage zu DIESEM Feld — nicht die Suche in /fragen, die hier bis zum 2026-08-27 stand.
+  //
+  // /fragen ist die Queue der UNBEANTWORTETEN Felder (traverser.naechste_fragen: `_unbeantwortet`).
+  // Ein bestaetigtes Feld faellt heraus, ein vorlaeufiges bleibt drin — also fand die Suche hier das
+  // zu korrigierende Feld NIE, sobald es bestaetigt war, und schickte den Nutzer mit „durch eine
+  // andere Antwort entfallen" weg. Gemessen an einem Feld ganz ohne Instanz-Achse:
+  // korrigiereBestaetigt('fam_anzahl_kinder') -> false, obwohl er die Frage gerade selbst
+  // beantwortet hatte. Dass „Ändern" auf der Pruefliste trotzdem lief, lag allein daran, dass
+  // KI-Vorschlaege vorlaeufig sind und damit in der Queue bleiben.
+  //
+  // Der Endpunkt loest `__n` selbst aufs Basisfeld auf und legt `instanz_anzahl` daneben — deshalb
+  // wird `fid` unveraendert uebergeben und die Basis aus der ANTWORT genommen. Eine zweite
+  // Aufloesung hier waere eine zweite Wahrheit ueber dieselbe Konvention.
+  const frage_r = await jget(`/fall/${FALL}/feld/${fid}/frage`);
+  if (frage_r.status !== 200 || !frage_r.body.frage) {
+    // 404 heisst: das Feld gehoert nicht (mehr) zu dieser Scheibe — nach einem Scheiben-Wechsel
+    // etwa. Die Kennung gehoert nicht in die Meldung, der Laie hat sie nie gesehen (gemessen
+    // 2026-08-25: „Feld kind_wohnsitz_inland_zeitraum ist nicht mehr im Fragenfluss.").
+    //
+    // Der ANDERE Fall — Frage durch eine andere Antwort abgeschaltet — steht unten und hat seine
+    // eigene Meldung. Beides in einen Satz zu legen war der urspruengliche Fehler.
+    zeigeNetzFehler("Diese Frage gehört nicht mehr zu deiner Erklärung und lässt sich deshalb "
+                    + "nicht ändern.");
     return false;
   }
-  const frage = (fragen_r.body.fragen || []).find(q => q.feld_id === basis);
-  if (!frage) {
-    // Feld steht nicht mehr in den offenen Fragen — könnte sein, dass andere
-    // Felder es obsolet gemacht haben. Für Korrektur brauchen wir die Frage.
-    // Die Kennung gehört nicht in eine Meldung an den Laien — er hat sie nie gesehen (gemessen
-    // 2026-08-25: „Feld kind_wohnsitz_inland_zeitraum ist nicht mehr im Fragenfluss."). Und der
-    // Satz sagte nicht, WARUM: eine andere Antwort hat die Frage abgeschaltet. Das ist kein
-    // Fehler, sondern ein Ergebnis — nur eines, das man erklären muss.
-    //
-    // ZWEI GRUENDE, EINE MELDUNG — das war der Fehler. /fragen ist die Queue der UNBEANTWORTETEN
-    // Felder (traverser.naechste_fragen: `_unbeantwortet`); ein bestaetigtes Feld faellt heraus,
-    // ein vorlaeufiges bleibt drin. Ein Feld fehlt hier also aus zwei ganz verschiedenen Gruenden,
-    // und die Meldung nannte immer nur den einen. GEMESSEN 2026-08-27, an einem Feld ganz ohne
-    // Instanz-Achse: korrigiereBestaetigt('fam_anzahl_kinder') -> "durch eine andere Antwort
-    // entfallen", obwohl der Nutzer die Frage gerade selbst beantwortet hatte.
-    //
-    // Der Store weiss, welcher der beiden Faelle vorliegt: steht der Wert bestaetigt in STAND, ist
-    // er beantwortet und nicht entfallen. Dann sagt die Meldung das auch — der Nutzer soll nicht
-    // eine Antwort suchen gehen, die es nicht gibt.
-    const b = (STAND.felder || {})[basis];
-    zeigeNetzFehler(b && b.zustand === "bestaetigt"
-      ? "Diese Antwort ist schon gespeichert. Ändern lässt sie sich hier gerade nicht — der "
-        + "Fragebogen legt nur noch offene Fragen vor."
-      : "Diese Frage ist durch eine andere Antwort entfallen und lässt sich nicht mehr "
-        + "ändern. Willst du sie zurückholen, ändere die Antwort, die sie abgeschaltet hat.");
+  const frage = frage_r.body.frage;
+
+  // Ist die Frage durch eine ANDERE ANTWORT abgeschaltet? Dann ist sie wirklich entfallen — und
+  // genau dafuer war dieser Hinweis gedacht. Bis der Endpunkt eine `regel_id` mitgab, war dieser
+  // Fall von einem bloss beantworteten Feld nicht zu trennen (gemessen 2026-08-27: Kinder
+  // eingetragen, dann „keine Kinder" geantwortet -> `kind_vorname` bleibt bestaetigt im Stand,
+  // faellt aus /fragen, und der Endpunkt antwortet 200 mit voller Frage). Die Oberflaeche legte dem
+  // Nutzer dann die Frage nach dem Vornamen seines Kindes vor, kurz nachdem er gesagt hatte, er
+  // habe keine.
+  //
+  // NUR `ausgeschlossen` SPERRT, und das ist keine Vorsicht, sondern gemessen: `relevanz` kennt
+  // DREI Werte, und im selben Fall standen 39 Regeln auf `ausgeschlossen`, 24 auf `relevant` und
+  // 13 auf `unentschieden` — darunter die Kinderfreibetraege selbst, solange noch Gates offen
+  // waren. Eine Sperre auf `!== "relevant"` haette also den Normalfall dieses Feldes mitgesperrt
+  // und die Korrektur genau dort verhindert, wo sie gerade erst moeglich wurde.
+  //
+  // Fehlt die Relevanz ganz, wird NICHT gesperrt. Alle 89 Fragen tragen heute eine regel_id, die
+  // in /stand steht (gemessen) — faellt das eines Tages auseinander, ist die Korrektur zu erlauben
+  // die harmlose Richtung: sie schreibt einen Wert, den der Nutzer sieht. Sie faelschlich zu
+  // sperren ist der Fehler, der hier gerade behoben wurde.
+  const rel = (STAND.relevanz || {})[frage.regel_id];
+  if (rel && rel.status === "ausgeschlossen") {
+    zeigeNetzFehler("Diese Frage ist durch eine andere Antwort entfallen und lässt sich nicht mehr "
+                    + "ändern. Willst du sie zurückholen, ändere die Antwort, die sie abgeschaltet "
+                    + "hat.");
     return false;
   }
 
-  KORREKTUR_FID = basis;
+  KORREKTUR_FID = frage.feld_id;   // die Basis, wie der Endpunkt sie aufgeloest hat
   AKTUELL = frage;  // Jetzt ist dieses Feld die "aktuelle" Frage
   zeigeFrage(AKTUELL, STAND);
   return true;

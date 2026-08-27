@@ -35,7 +35,8 @@
           "standardwert",
           "screening",
           "instanz_anzahl",
-          "instanz_etikett"
+          "instanz_etikett",
+          "regel_id"
         ],
         "additionalProperties": false,
         "properties": {
@@ -126,6 +127,12 @@
           "instanz_etikett": {
             "type": "string",
             "description": "Wie eine Instanz heisst ('Kind' -> 'Kind 1', 'Kind 2'). Leer, wo es keine Achse gibt."
+          },
+          "regel_id": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       }

@@ -203,7 +203,14 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # 1262 -> 1267 (2026-08-27, Klartext zum Sperrgrund). 5 Zeilen: 3 Kommentar, 2 Code —
 # `ergebnis()` legt `klartext` in die Antwort, wenn der Grund nicht „bestaetigt" ist. Der Text
 # selbst steht in produkt/bescheid/bescheid_deklaration.py; hier steht nur der Aufruf.
-API_ZEILEN_OBERGRENZE = 1267
+#
+# 1267 -> 1275 (2026-08-27, `regel_id` in den Fragedaten). 8 Zeilen: 1 Code, 7 Kommentar.
+# ANLASS, gemessen: ohne diesen Schluessel kann die Oberflaeche „beantwortet" nicht von
+# „abgeschaltet" unterscheiden. Wer Kinder eingetragen und danach „keine Kinder" geantwortet hat,
+# bekam die Frage nach dem Vornamen seines Kindes vorgelegt — die Regel war ausgeschlossen, das
+# Feld aber weiterhin da, und `frage_einzeln` antwortete 200 wie bei jedem beantworteten Feld.
+# `relevanz` in /stand haengt an der REGEL, nicht am Feld; nur dieser Schluessel verbindet beide.
+API_ZEILEN_OBERGRENZE = 1275
 
 
 def _runner_stellen(pfad: str) -> list[int]:

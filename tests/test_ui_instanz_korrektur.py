@@ -12,20 +12,23 @@ Der Nutzer las daraufhin:
 Das war doppelt falsch. Die Frage ist nicht entfallen — sie steht unter ihrem Basisnamen da. Und
 aendern liesse sie sich sehr wohl. Der Satz schickte den Nutzer von einer moeglichen Korrektur weg.
 
-WAS DIESE DATEI **NICHT** ABDECKT, und das ist der groessere Befund derselben Messung: /fragen ist
-die Queue der UNBEANTWORTETEN Felder (`traverser.naechste_fragen` -> `_unbeantwortet`). Ein
-BESTAETIGTES Feld faellt heraus, ein vorlaeufiges bleibt drin. Damit ist der Korrekturweg fuer jedes
-vollstaendig bestaetigte Feld tot, mit oder ohne Instanz-Achse — gemessen an einem Feld ganz ohne
-Achse: `korrigiereBestaetigt('fam_anzahl_kinder')` -> false, dieselbe Meldung. Das laesst sich in
-app.js nicht heilen: `baueEingabe` braucht typ/enum_werte/muster/beispielwert/instanz_anzahl, und
-/stand fuehrt davon nur einen Bruchteil (api._anzeige_metadaten). Gemeldet an team-lead; hier
-steht dafuer `test_ein_bestaetigtes_feld_sagt_die_wahrheit_statt_entfallen`, der genau diese Grenze
-festhaelt, statt sie zu verschweigen.
+DAHINTER LAG EIN GROESSERER BEFUND derselben Messung: /fragen ist die Queue der UNBEANTWORTETEN
+Felder (`traverser.naechste_fragen` -> `_unbeantwortet`). Ein BESTAETIGTES Feld faellt heraus, ein
+vorlaeufiges bleibt drin. Damit war der Korrekturweg fuer JEDES vollstaendig bestaetigte Feld tot,
+mit oder ohne Instanz-Achse — gemessen an einem Feld ganz ohne Achse:
+`korrigiereBestaetigt('fam_anzahl_kinder')` -> false, dieselbe Meldung. Dass „Ändern" auf der
+Pruefliste lief, lag allein daran, dass KI-Vorschlaege vorlaeufig sind.
 
-Die Faelle unten sind deshalb der Zustand, in dem der Weg HEUTE erreichbar ist — und der ist kein
-Kunstgriff, sondern der haeufige: solange irgendeine Instanz des Feldes noch offen ist, steht das
-Basisfeld in /fragen. Wer die erste Zeile leer gelassen oder einen KI-Vorschlag noch nicht
-bestaetigt hat, ist genau dort.
+Behoben mit `GET /fall/<id>/feld/<fid>/frage` (e7f9f2a): die Frage zu EINEM Feld, auch einem
+beantworteten, mit demselben Schluesselsatz wie ein Eintrag aus /fragen und serverseitiger
+`__n`-Aufloesung. /fragen bleibt die Antwort auf „was ist noch offen".
+
+Damit fiel zunaechst der Hinweis „durch eine andere Antwort entfallen" fuer den Fall weg, fuer den
+er gedacht war: eine abgeschaltete Frage antwortet 200 mit voller Frage, genau wie eine bloss
+beantwortete. Seit `_frage_metadaten` eine `regel_id` mitfuehrt, kommt die Oberflaeche an
+`relevanz` aus /stand und trennt die beiden wieder — NUR bei `ausgeschlossen`, denn `relevanz`
+kennt drei Werte und `unentschieden` ist der Normalfall eines Feldes mit offenen Gates
+(gemessen: 39 / 24 / 13).
 """
 from __future__ import annotations
 
@@ -109,13 +112,20 @@ def _schreibe(page, fid, wert, zustand="bestaetigt"):
     }""", [fid, wert, zustand])
 
 
-def _zwei_kinder_eine_zeile_offen(page):
-    """Der Ausgangszustand fuer den Korrekturweg: zwei Kinder, Kind 1 als KI-Vorschlag (vorlaeufig,
-    also noch unbeantwortet), Kind 2 vom Nutzer selbst bestaetigt.
+def _zwei_kinder_beide_bestaetigt(page):
+    """DER EIGENTLICHE NUTZERFALL: zwei Kinder, beide Namen eingetragen und bestaetigt — und
+    danach faellt jemandem auf, dass der zweite falsch geschrieben ist.
 
-    Warum so und nicht beide bestaetigt: dann faellt das Basisfeld aus /fragen und der Weg endet
-    vor der Frage — s. Modulkopf. Der Zustand hier ist der eines Nutzers, der einen Vorschlag noch
-    nicht abgenickt hat, und das ist der Normalfall im KI-Weg."""
+    Bis e7f9f2a war genau dieser Zustand der unerreichbare: beide Instanzen bestaetigt heisst, das
+    Basisfeld ist beantwortet und steht in /fragen nicht mehr."""
+    assert _schreibe(page, "fam_anzahl_kinder", 2) in (200, 201)
+    assert _schreibe(page, "kind_vorname", "Anna") in (200, 201)
+    assert _schreibe(page, "kind_vorname__2", "Ben") in (200, 201)
+
+
+def _zwei_kinder_eine_zeile_offen(page):
+    """Die Variante mit einem offenen KI-Vorschlag: Kind 1 vorlaeufig, Kind 2 vom Nutzer bestaetigt.
+    Der Knopf verlangt hier die Halte-Geste (s. `_halten`)."""
     assert _schreibe(page, "fam_anzahl_kinder", 2) in (200, 201)
     assert _schreibe(page, "kind_vorname", "Anna", "vorlaeufig") in (200, 201)
     assert _schreibe(page, "kind_vorname__2", "Ben") in (200, 201)
@@ -197,13 +207,15 @@ def test_die_zerlegung_misst_sich_am_hinweg(seite):
 # ------------------------------------------------------------------ (a) der Klickweg
 
 def test_klick_auf_die_zweite_instanz_oeffnet_die_frage_mit_beiden_zeilen(seite):
-    """DER BEFUND. Vorher endete dieser Klick in „durch eine andere Antwort entfallen"; jetzt liegt
-    die Frage mit BEIDEN Zeilen vor, jede mit dem Wert, der schon da war.
+    """DER BEFUND, im echten Nutzerfall: BEIDE Kinder eingetragen und bestaetigt, dann die zweite
+    Zeile korrigieren wollen. Vorher endete dieser Klick in „durch eine andere Antwort entfallen" —
+    aus zwei sich ueberlagernden Gruenden (Kennung mit `__n`, und bestaetigt = raus aus /fragen).
 
-    Die Vorbelegung ist kein Komfort: stuenden die Zeilen leer, muesste der Nutzer annehmen, seine
+    Jetzt liegt die Frage mit BEIDEN Zeilen vor, jede mit dem Wert, der schon da war. Die
+    Vorbelegung ist kein Komfort: stuenden die Zeilen leer, muesste der Nutzer annehmen, seine
     Antworten seien weg — und wer nur einen Buchstaben aendern will, tippt alles neu."""
     page, _ = seite
-    _zwei_kinder_eine_zeile_offen(page)
+    _zwei_kinder_beide_bestaetigt(page)
 
     assert _klick_belegt(page, "kind_vorname__2"), (
         "Die Zeile fuer kind_vorname__2 steht gar nicht in der Belegt-Liste.")
@@ -239,8 +251,8 @@ def test_die_geaenderte_zweite_zeile_trifft_genau_ihre_instanz(seite):
     noch keiner bestaetigten Antwort gleichzusetzen, nur weil daneben eine korrigiert wurde."""
     page, base_url = seite
     fall = page.evaluate("FALL")
-    _zwei_kinder_eine_zeile_offen(page)
-    vorher = _stand(base_url, fall)["kind_vorname__2"]
+    _zwei_kinder_beide_bestaetigt(page)
+    vorher = _stand(base_url, fall)
 
     assert _klick_belegt(page, "kind_vorname__2")
     page.wait_for_selector("#eingabe .instanz-zeile", timeout=8000)
@@ -248,27 +260,53 @@ def test_die_geaenderte_zweite_zeile_trifft_genau_ihre_instanz(seite):
       const els = [...document.querySelectorAll('#eingabe .instanz-zeile input')];
       els[1].value = 'Bernd';        // nur die ZWEITE Zeile
     }""")
-    _halten(page)
+    page.click("#bestaetigen")
     page.wait_for_timeout(1500)
 
     felder = _stand(base_url, fall)
     assert felder["kind_vorname__2"]["wert"] == "Bernd", (
         f"Die Korrektur kam nicht an: {felder.get('kind_vorname__2')}")
     assert felder["kind_vorname__2"]["zustand"] == "bestaetigt"
-    assert felder["kind_vorname__2"]["event_id"] != vorher["event_id"], (
+    assert felder["kind_vorname__2"]["event_id"] != vorher["kind_vorname__2"]["event_id"], (
         "Es steht noch dasselbe Event da — dann wurde nichts geschrieben.")
     # Die erste Zeile behaelt IHREN Wert — der korrigierte darf nicht auf sie ueberlaufen.
     assert felder["kind_vorname"]["wert"] == "Anna", (
         f"Kind 1 hat den Wert von Kind 2 mitbekommen: {felder.get('kind_vorname')}")
-    # FESTGEHALTEN, was dabei ausserdem passiert (gemessen, nicht gewuenscht): Kind 1 war ein
-    # vorlaeufiger KI-Vorschlag und ist nach dem Halten BESTAETIGT. Das ist vertretbar — der
-    # Vorschlag stand sichtbar in der Zeile darueber und der Knopf verlangt die Halte-Geste, also
-    # hat der Nutzer ihn mit abgenickt. Uebersehen sollte es trotzdem niemand: eine Korrektur an
-    # Zeile 2 entscheidet einen offenen Vorschlag in Zeile 1 mit.
-    assert felder["kind_vorname"]["zustand"] == "bestaetigt", (
-        "Wenn Kind 1 vorlaeufig bleibt, hat sich der Schreibweg geaendert — dann gehoert dieser "
-        "Kommentar ueberprueft, nicht der Assert angepasst.")
+    assert felder["kind_vorname"]["zustand"] == "bestaetigt"
     assert not page.fehler, f"Konsolenfehler: {page.fehler}"
+
+
+def test_eine_korrektur_schreibt_auch_die_unveraenderten_zeilen_neu(seite):
+    """FESTGEHALTEN, WAS DABEI AUSSERDEM PASSIERT — gemessen, nicht gewuenscht.
+
+    `schreibeInstanzen` schreibt ALLE gefuellten Zeilen, nicht nur die geaenderte. Wer Kind 2
+    korrigiert, erzeugt also auch fuer Kind 1 ein neues Ereignis mit demselben Wert. Fuer den Nutzer
+    aendert das nichts — der Wert bleibt, der Zustand bleibt —, aber die Ereigniskette traegt einen
+    Eintrag, dem keine Handlung entspricht, und `/warum` zeigt fuer Kind 1 danach ein Ereignis von
+    einem Zeitpunkt, an dem der Nutzer Kind 1 gar nicht angefasst hat.
+
+    Das ist keine Regression dieses Fixes — der Schreibweg tat das schon vorher, es war nur nie
+    erreichbar, weil die Korrektur nie bis dorthin kam. Dieser Test haelt es fest, damit es nicht
+    unbemerkt bleibt."""
+    page, base_url = seite
+    fall = page.evaluate("FALL")
+    _zwei_kinder_beide_bestaetigt(page)
+    vorher = _stand(base_url, fall)
+
+    assert _klick_belegt(page, "kind_vorname__2")
+    page.wait_for_selector("#eingabe .instanz-zeile", timeout=8000)
+    page.evaluate("""() => {
+      [...document.querySelectorAll('#eingabe .instanz-zeile input')][1].value = 'Bernd';
+    }""")
+    page.click("#bestaetigen")
+    page.wait_for_timeout(1500)
+
+    nachher = _stand(base_url, fall)
+    assert nachher["kind_vorname"]["wert"] == vorher["kind_vorname"]["wert"], (
+        "Der Wert von Kind 1 hat sich geaendert — das waere mehr als ein neues Ereignis.")
+    assert nachher["kind_vorname"]["event_id"] != vorher["kind_vorname"]["event_id"], (
+        "Kind 1 traegt noch sein altes Ereignis — dann schreibt der Weg nur noch die geaenderte "
+        "Zeile, und dieser Test beschreibt den falschen Zustand (die bessere Richtung).")
 
 
 def test_die_korrektur_materialisiert_keine_leeren_instanzen(seite):
@@ -352,25 +390,140 @@ def test_ein_feld_ohne_achse_geht_denselben_weg_wie_bisher(seite):
     assert not page.fehler, f"Konsolenfehler: {page.fehler}"
 
 
-def test_ein_bestaetigtes_feld_sagt_die_wahrheit_statt_entfallen(seite):
-    """DIE GRENZE, festgehalten statt verschwiegen (s. Modulkopf).
+def test_ein_bestaetigtes_feld_ohne_achse_laesst_sich_jetzt_korrigieren(seite):
+    """DER GROESSERE BEFUND, und er hat mit der Instanz-Achse nichts zu tun: bis e7f9f2a endete die
+    Korrektur JEDES bestaetigten Feldes in „durch eine andere Antwort entfallen", weil /fragen nur
+    unbeantwortete Felder fuehrt.
 
-    Ein BESTAETIGTES Feld faellt aus /fragen, die Korrektur kommt also nicht bis zur Frage — das
-    liegt an der Fragen-Queue und ist in app.js nicht zu heilen. Was hier zu heilen war, ist die
-    MELDUNG: „durch eine andere Antwort entfallen" ist bei einer Frage, die der Nutzer gerade selbst
-    beantwortet hat, schlicht falsch und schickt ihn eine Antwort suchen, die es nicht gibt.
-
-    Gemessen an einem Feld ganz ohne Instanz-Achse — der Befund ist keiner der Achse."""
+    Gemessen an `fam_anzahl_kinder` — ein Feld ganz ohne Achse, das der Nutzer eine Frage zuvor
+    selbst beantwortet hat."""
     page, _ = seite
     assert _schreibe(page, "fam_anzahl_kinder", 2) in (200, 201)
 
     ok = page.evaluate("async () => await korrigiereBestaetigt('fam_anzahl_kinder')")
     page.wait_for_timeout(500)
-    assert ok is False, "Wenn das jetzt geht, ist /fragen erweitert worden — dann diesen Test ersetzen."
+    assert ok is True, (
+        f"Die Korrektur eines bestaetigten Feldes schlaegt weiter fehl. Banner: {_banner(page)!r}")
+    assert "entfallen" not in _banner(page)
+    m = page.evaluate("() => ({feld: AKTUELL.feld_id, frage: document.getElementById('frage').textContent})")
+    assert m["feld"] == "fam_anzahl_kinder", f"AKTUELL steht auf {m['feld']!r}."
+    assert m["frage"] and "Kinder" in m["frage"], f"Die falsche Frage liegt vor: {m['frage']!r}"
+
+
+def test_eine_regel_mit_offenen_gates_sperrt_die_korrektur_nicht(seite):
+    """DIE GEGENRICHTUNG ZUR SPERRE, und sie ist der eigentlich gefaehrliche Fall.
+
+    `relevanz` kennt DREI Werte, nicht zwei: gemessen im selben Fall 39 `ausgeschlossen`, 24
+    `relevant`, 13 `unentschieden`. `unentschieden` heisst „diese Regel hat noch offene Gates" —
+    der voellig normale Zustand eines Feldes, das mitten im Fragebogen steht. Genau darauf steht
+    `kind_vorname` hier, solange die uebrigen Kind-Fragen offen sind.
+
+    Eine Sperre auf `!== "relevant"` waere gruen durch jeden Test darueber gelaufen und haette die
+    Korrektur trotzdem fuer den Normalfall verboten — dieselbe Klasse Fehler wie der, der hier
+    behoben wurde, nur eine Ebene tiefer. Deshalb misst dieser Test den Status AUSDRUECKLICH und
+    dann, dass die Korrektur trotzdem laeuft."""
+    page, _ = seite
+    _zwei_kinder_beide_bestaetigt(page)
+
+    lage = page.evaluate("""async () => {
+      const q = (await jget(`/fall/${FALL}/feld/kind_vorname__2/frage`)).body.frage || {};
+      const s = (await jget(`/fall/${FALL}/stand`)).body;
+      return {regel_id: q.regel_id, status: ((s.relevanz || {})[q.regel_id] || {}).status};
+    }""")
+    assert lage["status"] == "unentschieden", (
+        f"Der Aufbau trifft den Fall nicht mehr — Status ist {lage['status']!r} statt "
+        f"'unentschieden'. Dann prueft dieser Test die Polaritaet nicht mehr.")
+
+    ok = page.evaluate("async () => await korrigiereBestaetigt('kind_vorname__2')")
+    page.wait_for_timeout(600)
+    assert ok is True, (
+        f"Eine Regel mit offenen Gates sperrt die Korrektur — das trifft den Normalfall. "
+        f"Banner: {_banner(page)!r}")
+    assert "entfallen" not in _banner(page)
+
+
+def test_ein_feld_ohne_ereignis_legt_keine_frage_vor(seite):
+    """Ein Fehlschlag darf den Nutzer nicht vor einem leeren Eingabefeld stehen lassen, und er darf
+    die Frage nicht ersetzen, an der er gerade sitzt.
+
+    DIESER TEST MISST DIE `/warum`-SCHRANKE, NICHT DIE FRAGE-SCHRANKE, und das gehoert
+    dazugeschrieben, weil der Name sonst mehr verspricht: bei einem unbekannten Feld antworten BEIDE
+    Endpunkte 404 (gemessen), und `/warum` wird zuerst gerufen. Die 404-Behandlung hinter
+    `/feld/<fid>/frage` ist damit im Normalbetrieb gar nicht erreichbar — sie faengt jeden
+    Nicht-200-Status ab (Netz- oder Serverfehler) und verhindert, dass gleich darauf `frage.feld_id`
+    auf `undefined` zugreift. Belegt ist sie NICHT: die Mutationsprobe „404 wird verschluckt" laesst
+    diese Datei vollstaendig gruen. Herstellbar waere der Fall nur mit einem Feld, das ein Ereignis
+    traegt und trotzdem keine Frage hat — dafuer muesste ein bestehender Fall die Scheibe wechseln,
+    was die Oberflaeche nicht anbietet (ein Kachel-Klick legt einen neuen Fall an)."""
+    page, _ = seite
+    vorher = page.evaluate("document.getElementById('frage').textContent")
+
+    ok = page.evaluate("async () => await korrigiereBestaetigt('gibt_es_dieses_feld_nicht')")
+    page.wait_for_timeout(500)
+    assert ok is False, "Fuer ein Feld ohne Ereignis wurde trotzdem eine Frage vorgelegt."
     b = _banner(page)
-    assert "entfallen" not in b, (
-        f"Die Meldung behauptet weiter, die Frage sei entfallen: {b!r}")
-    assert "gespeichert" in b, f"Die Meldung sagt nicht, was wirklich los ist: {b!r}"
+    assert b, "Der Klick tat nichts und sagte nichts."
+    assert "gibt_es_dieses_feld_nicht" not in b, (
+        f"Die Kennung steht in der Meldung — die hat der Nutzer nie gesehen: {b!r}")
+    assert page.evaluate("document.getElementById('frage').textContent") == vorher, (
+        "Die vorher offene Frage wurde ersetzt, obwohl die Korrektur fehlschlug.")
+
+
+def test_eine_abgeschaltete_frage_bekommt_den_hinweis_statt_der_frage(seite):
+    """DER FALL, FUER DEN DIE MELDUNG GEDACHT WAR — und der einzige, der sie noch bekommt.
+
+    Aufbau: Kinder eingetragen, danach „keine Kinder" geantwortet. `kind_vorname` bleibt bestaetigt
+    im Stand, faellt aus /fragen, und der Endpunkt antwortet 200 mit voller Frage — von einem bloss
+    beantworteten Feld ist das an der Antwort allein nicht zu unterscheiden. Der Unterschied steht
+    in `relevanz`, und seit die Frage eine `regel_id` mittraegt, kommt die Oberflaeche dorthin.
+
+    Ohne das legte sie dem Nutzer die Frage nach dem Vornamen seines Kindes vor, kurz nachdem er
+    gesagt hatte, er habe keine — das war der Preis des Fixes und ist jetzt bezahlt."""
+    page, _ = seite
+    _zwei_kinder_beide_bestaetigt(page)
+    # Das Gate umdrehen: `kein_kind` ist invertiert (Frage „Hast du Kinder?", Feld benennt die
+    # Abwesenheit). Ersetzen, weil Auflage B ein zweites aktives Event abweist.
+    vor = page.evaluate("async () => (await jget(`/fall/${FALL}/stand`)).body.felder.kein_kind")
+    assert page.evaluate("""async (neu) => {
+      const ev = {feld_id: 'kein_kind', wert: neu, zustand: 'bestaetigt',
+        herkunft: {herkunft: 'laie', pruef_tiefe: 'ungeprueft', haftung: 'nutzer'},
+        schreiber: 'ui:laie', signal: {signal_1: null, signal_2: 'klick@kein_kind'}};
+      const j = (await jget(`/fall/${FALL}/feld/kein_kind/warum`)).body.justification || {};
+      if (j.event_id) { ev.ersetzt = j.event_id; ev.signal.signal_1 = j.event_id; }
+      const r = await jpost(`/fall/${FALL}/event`, ev);
+      await refresh();
+      return r.status;
+    }""", not vor["wert"]) in (200, 201)
+
+    lage = page.evaluate("""async () => {
+      const f = (await jget(`/fall/${FALL}/fragen`)).body.fragen || [];
+      const s = (await jget(`/fall/${FALL}/stand`)).body;
+      const q = (await jget(`/fall/${FALL}/feld/kind_vorname__2/frage`)).body.frage || {};
+      return {in_fragen: f.some(x => x.feld_id === 'kind_vorname'),
+              zustand: (s.felder.kind_vorname || {}).zustand,
+              regel_id: q.regel_id,
+              regel_status: ((s.relevanz || {})[q.regel_id] || {}).status,
+              endpunkt_liefert_frage: !!q.feld_id};
+    }""")
+    assert lage["zustand"] == "bestaetigt" and not lage["in_fragen"], (
+        f"Der Aufbau stimmt nicht — das Feld ist nicht abgeschaltet-aber-beantwortet: {lage}")
+    assert lage["endpunkt_liefert_frage"], (
+        "Der Endpunkt liefert gar keine Frage mehr — dann misst dieser Test die falsche Schranke.")
+    assert lage["regel_status"] == "ausgeschlossen", (
+        f"Die Regel gilt nicht als ausgeschlossen ({lage}) — dann gibt es hier nichts zu erkennen.")
+
+    vorher = page.evaluate("document.getElementById('frage').textContent")
+    ok = page.evaluate("async () => await korrigiereBestaetigt('kind_vorname__2')")
+    page.wait_for_timeout(600)
+    assert ok is False, (
+        f"Die abgeschaltete Frage wurde vorgelegt. Im Bild steht: "
+        f"{page.evaluate('document.getElementById(\"frage\").textContent')!r}")
+    b = _banner(page)
+    assert "entfallen" in b, f"Der Hinweis nennt den Grund nicht: {b!r}"
+    assert "abgeschaltet" in b, (
+        f"Der Hinweis sagt nicht, was der Nutzer tun kann, um sie zurueckzuholen: {b!r}")
+    assert page.evaluate("document.getElementById('frage').textContent") == vorher, (
+        "Die Frage im Bild wurde ersetzt, obwohl die Korrektur abgelehnt wurde.")
 
 
 # ------------------------------------------------------------------ die Belegt-Zeile
